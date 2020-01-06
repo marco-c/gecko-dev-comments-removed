@@ -418,10 +418,6 @@ TestObserver::OnStateChange(PCObserverStateType state_type, ER&, void*)
         << PCImplIceGatheringStateStrings[int(goticegathering)]
         << std::endl;
     break;
-  case PCObserverStateType::SdpState:
-    std::cout << "SDP State: " << std::endl;
-    
-    break;
   case PCObserverStateType::SignalingState:
     MOZ_ASSERT(NS_IsMainThread());
     rv = pc->SignalingState(&gotsignaling);
