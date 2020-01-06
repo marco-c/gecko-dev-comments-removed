@@ -859,7 +859,6 @@ CompositorBridgeParent::UpdatePaintTime(LayerTransactionParent* aLayerTree,
 
 void
 CompositorBridgeParent::NotifyShadowTreeTransaction(uint64_t aId, bool aIsFirstPaint,
-    const FocusTarget& aFocusTarget,
     bool aScheduleComposite, uint32_t aPaintSequenceNumber,
     bool aIsRepeatTransaction, bool aHitTestUpdate)
 {
@@ -880,13 +879,9 @@ CompositorBridgeParent::NotifyShadowTreeTransaction(uint64_t aId, bool aIsFirstP
     }
 #endif
 
-    if (mApzcTreeManager) {
-      mApzcTreeManager->UpdateFocusState(mRootLayerTreeID, aId,
-                                         aFocusTarget);
-      if (aHitTestUpdate) {
-        mApzcTreeManager->UpdateHitTestingTree(mRootLayerTreeID,
-            mLayerManager->GetRoot(), aIsFirstPaint, aId, aPaintSequenceNumber);
-      }
+    if (mApzcTreeManager && aHitTestUpdate) {
+      mApzcTreeManager->UpdateHitTestingTree(mRootLayerTreeID,
+          mLayerManager->GetRoot(), aIsFirstPaint, aId, aPaintSequenceNumber);
     }
 
     mLayerManager->NotifyShadowTreeTransaction();
@@ -1237,18 +1232,12 @@ CompositorBridgeParent::ShadowLayersUpdated(LayerTransactionParent* aLayerTree,
   Layer* root = aLayerTree->GetRoot();
   mLayerManager->SetRoot(root);
 
-  if (mApzcTreeManager && !aInfo.isRepeatTransaction()) {
-    mApzcTreeManager->UpdateFocusState(mRootLayerTreeID,
-                                       mRootLayerTreeID,
-                                       aInfo.focusTarget());
+  if (mApzcTreeManager && !aInfo.isRepeatTransaction() && aHitTestUpdate) {
+    AutoResolveRefLayers resolve(mCompositionManager);
 
-    if (aHitTestUpdate) {
-      AutoResolveRefLayers resolve(mCompositionManager);
-
-      mApzcTreeManager->UpdateHitTestingTree(
-        mRootLayerTreeID, root, aInfo.isFirstPaint(),
-        mRootLayerTreeID, aInfo.paintSequenceNumber());
-    }
+    mApzcTreeManager->UpdateHitTestingTree(
+      mRootLayerTreeID, root, aInfo.isFirstPaint(),
+      mRootLayerTreeID, aInfo.paintSequenceNumber());
   }
 
   
@@ -1277,7 +1266,7 @@ CompositorBridgeParent::ForceComposite(LayerTransactionParent* aLayerTree)
 }
 
 bool
-CompositorBridgeParent::SetTestSampleTime(LayerTransactionParent* aLayerTree,
+CompositorBridgeParent::SetTestSampleTime(const uint64_t& aId,
                                           const TimeStamp& aTime)
 {
   if (aTime.IsNull()) {
@@ -1306,7 +1295,7 @@ CompositorBridgeParent::SetTestSampleTime(LayerTransactionParent* aLayerTree,
 }
 
 void
-CompositorBridgeParent::LeaveTestMode(LayerTransactionParent* aLayerTree)
+CompositorBridgeParent::LeaveTestMode(const uint64_t& aId)
 {
   mIsTesting = false;
 }
@@ -1647,9 +1636,6 @@ CompositorBridgeParent::RecvAdoptChild(const uint64_t& child)
     NotifyChildCreated(child);
     if (sIndirectLayerTrees[child].mLayerTree) {
       sIndirectLayerTrees[child].mLayerTree->SetLayerManager(mLayerManager);
-      
-      
-      ScheduleComposition();
     }
     parent = sIndirectLayerTrees[child].mApzcTreeManagerParent;
   }
