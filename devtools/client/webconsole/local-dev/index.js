@@ -50,18 +50,6 @@ const NewConsoleOutputWrapper = require("../new-console-output/new-console-outpu
 const NewWebConsoleFrame = require("../new-webconsole").NewWebConsoleFrame;
 
 
-const el = document.createElement("div");
-el.style.flex = "1";
-el.innerHTML = `
-  <div id="app-wrapper" class="theme-body">
-    <div id="output-container" role="document" aria-live="polite" />
-  </div>
-`;
-document.querySelector("#mount").appendChild(el);
-
-document.documentElement.classList.add("theme-light");
-
-
 window.addEventListener("DOMContentLoaded", () => {
   for (let link of document.head.querySelectorAll("link")) {
     link.href = link.href.replace(/(resource|chrome)\:\/\//, "/");
@@ -82,6 +70,13 @@ function onConnect(connection) {
   if (!connection || !connection.tabConnection || !connection.tabConnection.tabTarget) {
     return;
   }
+
+  
+  document.querySelector("#mount").innerHTML = `
+    <div id="app-wrapper" class="theme-body">
+      <div id="output-container" role="document" aria-live="polite" />
+    </div>
+  `;
 
   
   const owner = {
@@ -107,4 +102,5 @@ window.evaluateJS = function (input) {
   }, {});
 };
 
-bootstrap(React, ReactDOM, el).then(onConnect);
+document.documentElement.classList.add("theme-light");
+bootstrap(React, ReactDOM).then(onConnect);
