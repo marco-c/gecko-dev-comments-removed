@@ -3661,13 +3661,9 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
     
     SVGCharClipDisplayItem item(run);
 
-    
-    
-    aContext.SetMatrix(initialMatrix);
-
     RefPtr<SVGContextPaintImpl> contextPaint = new SVGContextPaintImpl();
     DrawMode drawMode = contextPaint->Init(&aDrawTarget,
-                                           aContext.CurrentMatrix(),
+                                           initialMatrix,
                                            frame, outerContextPaint,
                                            aImgParams);
     if (drawMode & DrawMode::GLYPH_STROKE) {
