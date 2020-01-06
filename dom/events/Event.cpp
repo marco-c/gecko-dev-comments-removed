@@ -900,8 +900,7 @@ Event::PopupAllowedEventsChanged()
     free(sPopupAllowedEvents);
   }
 
-  nsAutoCString str;
-  Preferences::GetCString("dom.popup_allowed_events", str);
+  nsAdoptingCString str = Preferences::GetCString("dom.popup_allowed_events");
 
   
   

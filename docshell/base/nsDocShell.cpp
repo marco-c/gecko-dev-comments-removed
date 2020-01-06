@@ -5099,11 +5099,9 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
         }
 
         
-        nsAutoCString alternateErrorPage;
-        nsresult rv =
-          Preferences::GetCString("security.alternate_certificate_error_page",
-                                  alternateErrorPage);
-        if (NS_SUCCEEDED(rv)) {
+        nsAdoptingCString alternateErrorPage =
+          Preferences::GetCString("security.alternate_certificate_error_page");
+        if (alternateErrorPage) {
           errorPage.Assign(alternateErrorPage);
         }
 
@@ -5125,10 +5123,9 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
 
     
     
-    nsAutoCString alternateErrorPage;
-    nsresult rv = Preferences::GetCString("urlclassifier.alternate_error_page",
-                                          alternateErrorPage);
-    if (NS_SUCCEEDED(rv)) {
+    nsAdoptingCString alternateErrorPage =
+      Preferences::GetCString("urlclassifier.alternate_error_page");
+    if (alternateErrorPage) {
       errorPage.Assign(alternateErrorPage);
     }
 

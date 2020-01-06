@@ -49,8 +49,8 @@ FallbackEncoding::Get()
     return WrapNotNull(mFallback);
   }
 
-  nsAutoCString override;
-  Preferences::GetCString("intl.charset.fallback.override", override);
+  const nsAdoptingCString& override =
+    Preferences::GetCString("intl.charset.fallback.override");
   
   
   auto encoding = Encoding::ForLabel(override);

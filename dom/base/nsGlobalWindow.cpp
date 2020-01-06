@@ -1705,11 +1705,12 @@ nsGlobalWindow::nsGlobalWindow(nsGlobalWindow *aOuterWindow)
   }
 
   if (gDumpFile == nullptr) {
-    nsAutoCString fname;
-    Preferences::GetCString("browser.dom.window.dump.file", fname);
+    const nsAdoptingCString& fname =
+      Preferences::GetCString("browser.dom.window.dump.file");
     if (!fname.IsEmpty()) {
       
-      gDumpFile = fopen(fname.get(), "wb+");
+      
+      gDumpFile = fopen(fname, "wb+");
     } else {
       gDumpFile = stdout;
     }
@@ -6940,8 +6941,7 @@ GetFullscreenTransitionDuration(bool aEnterFullscreen,
   const char* pref = aEnterFullscreen ?
     "full-screen-api.transition-duration.enter" :
     "full-screen-api.transition-duration.leave";
-  nsAutoCString prefValue;
-  Preferences::GetCString(pref, prefValue);
+  nsAdoptingCString prefValue = Preferences::GetCString(pref);
   if (!prefValue.IsEmpty()) {
     sscanf(prefValue.get(), "%hu%hu",
            &aDuration->mFadeIn, &aDuration->mFadeOut);

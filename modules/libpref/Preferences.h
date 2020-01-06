@@ -21,6 +21,7 @@
 #include "mozilla/MemoryReporting.h"
 
 class nsIFile;
+class nsAdoptingCString;
 
 #ifndef have_PrefChangedFunc_typedef
 typedef void (*PrefChangedFunc)(const char *, void *);
@@ -145,6 +146,30 @@ public:
     GetFloat(aPref, &result);
     return result;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static nsAdoptingCString GetCString(const char* aPref);
+  static nsAdoptingCString GetLocalizedCString(const char* aPref);
 
   
 
@@ -353,6 +378,14 @@ public:
 
   
 
+
+
+
+
+
+
+  static nsAdoptingCString GetDefaultCString(const char* aPref);
+  static nsAdoptingCString GetDefaultLocalizedCString(const char* aPref);
 
   static nsresult GetDefaultCString(const char* aPref, nsACString& aResult);
   static nsresult GetDefaultString(const char* aPref, nsAString& aResult);

@@ -204,8 +204,8 @@ nsHtml5StreamParser::nsHtml5StreamParser(nsHtml5TreeOpExecutor* aExecutor,
   
   
   
-  nsAutoCString detectorName;
-  Preferences::GetLocalizedCString("intl.charset.detector", detectorName);
+  const nsAdoptingCString& detectorName =
+    Preferences::GetLocalizedCString("intl.charset.detector");
   if (!detectorName.IsEmpty()) {
     nsAutoCString detectorContractID;
     detectorContractID.AssignLiteral(NS_CHARSET_DETECTOR_CONTRACTID_BASE);

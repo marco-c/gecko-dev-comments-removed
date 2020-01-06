@@ -431,8 +431,8 @@ IndexedDatabaseManager::Init()
                                        kPrefMaxSerilizedMsgSize);
 
 #ifdef ENABLE_INTL_API
-  nsAutoCString acceptLang;
-  Preferences::GetLocalizedCString("intl.accept_languages", acceptLang);
+  const nsAdoptingCString& acceptLang =
+    Preferences::GetLocalizedCString("intl.accept_languages");
 
   
   nsCCharSeparatedTokenizer langTokenizer(acceptLang, ',');

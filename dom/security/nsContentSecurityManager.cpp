@@ -714,10 +714,8 @@ nsContentSecurityManager::IsOriginPotentiallyTrustworthy(nsIPrincipal* aPrincipa
   
   
   if (scheme.EqualsLiteral("http") || scheme.EqualsLiteral("ws")) {
-    nsAutoCString whitelist;
-    nsresult rv =
-      Preferences::GetCString("dom.securecontext.whitelist", whitelist);
-    if (NS_SUCCEEDED(rv)) {
+    nsAdoptingCString whitelist = Preferences::GetCString("dom.securecontext.whitelist");
+    if (whitelist) {
       nsCCharSeparatedTokenizer tokenizer(whitelist, ',');
       while (tokenizer.hasMoreTokens()) {
         const nsACString& allowedHost = tokenizer.nextToken();

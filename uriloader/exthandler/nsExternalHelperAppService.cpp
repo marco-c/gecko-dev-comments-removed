@@ -2509,8 +2509,7 @@ void nsExternalAppHandler::ProcessAnyRefreshTags()
 bool nsExternalAppHandler::GetNeverAskFlagFromPref(const char * prefName, const char * aContentType)
 {
   
-  nsAutoCString prefCString;
-  Preferences::GetCString(prefName, prefCString);
+  nsAdoptingCString prefCString = Preferences::GetCString(prefName);
   if (prefCString.IsEmpty()) {
     
     return true;

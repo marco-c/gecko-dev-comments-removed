@@ -1174,9 +1174,8 @@ nsLookAndFeel::EnsureInit()
     
     
     if (XRE_IsContentProcess()) {
-        nsAutoCString contentThemeName;
-        mozilla::Preferences::GetCString("widget.content.gtk-theme-override",
-                                         contentThemeName);
+        auto contentThemeName =
+            mozilla::Preferences::GetCString("widget.content.gtk-theme-override");
         if (!contentThemeName.IsEmpty()) {
             g_object_set(settings, "gtk-theme-name", contentThemeName.get(), nullptr);
         }
