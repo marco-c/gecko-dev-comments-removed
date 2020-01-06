@@ -59,6 +59,8 @@ public:
 
   bool operator==(const FocusTarget& aRhs) const;
 
+  const char* Type() const;
+
 public:
   
   uint64_t mSequenceNumber;
