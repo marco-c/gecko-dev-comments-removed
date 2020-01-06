@@ -4269,10 +4269,7 @@ CodeGenerator::visitCallGeneric(LCallGeneric* call)
     }
 
     
-    masm.loadPtr(Address(calleereg, JSFunction::offsetOfScript()), objreg);
-
-    
-    masm.loadBaselineOrIonRaw(objreg, objreg, &invoke);
+    masm.loadJitCodeRaw(calleereg, objreg, &invoke);
 
     
     masm.freeStack(unusedStack);
@@ -4381,13 +4378,10 @@ CodeGenerator::visitCallKnown(LCallKnown* call)
     masm.branchIfFunctionHasNoScript(calleereg, &uncompiled);
 
     
-    masm.loadPtr(Address(calleereg, JSFunction::offsetOfScript()), objreg);
-
-    
     if (call->mir()->needsArgCheck())
-        masm.loadBaselineOrIonRaw(objreg, objreg, &uncompiled);
+        masm.loadJitCodeRaw(calleereg, objreg, &uncompiled);
     else
-        masm.loadBaselineOrIonNoArgCheck(objreg, objreg, &uncompiled);
+        masm.loadJitCodeNoArgCheck(calleereg, objreg, &uncompiled);
 
     
     masm.freeStack(unusedStack);
@@ -4687,10 +4681,7 @@ CodeGenerator::emitApplyGeneric(T* apply)
                             calleereg, objreg, &invoke);
 
     
-    masm.loadPtr(Address(calleereg, JSFunction::offsetOfScript()), objreg);
-
-    
-    masm.loadBaselineOrIonRaw(objreg, objreg, &invoke);
+    masm.loadJitCodeRaw(calleereg, objreg, &invoke);
 
     
     {

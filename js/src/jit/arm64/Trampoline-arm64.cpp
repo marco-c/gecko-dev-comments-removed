@@ -397,8 +397,7 @@ JitRuntime::generateArgumentsRectifier(MacroAssembler& masm)
               r6); 
 
     
-    masm.Ldr(x3, MemOperand(x5, JSFunction::offsetOfScript()));
-    masm.loadBaselineOrIonRaw(r3, r3, nullptr);
+    masm.loadJitCodeRaw(r5, r3, nullptr);
     argumentsRectifierReturnOffset_ = masm.callJitNoProfiler(r3);
 
     

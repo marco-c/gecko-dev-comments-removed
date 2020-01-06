@@ -512,8 +512,7 @@ JitRuntime::generateArgumentsRectifier(MacroAssembler& masm)
     
     
     masm.andq(Imm32(uint32_t(CalleeTokenMask)), rax);
-    masm.loadPtr(Address(rax, JSFunction::offsetOfScript()), rax);
-    masm.loadBaselineOrIonRaw(rax, rax, nullptr);
+    masm.loadJitCodeRaw(rax, rax, nullptr);
     argumentsRectifierReturnOffset_ = masm.callJitNoProfiler(rax);
 
     
