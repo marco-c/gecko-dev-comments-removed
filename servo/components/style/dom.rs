@@ -31,6 +31,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::Deref;
 use stylearc::Arc;
+use stylist::Stylist;
 use thread_state;
 
 pub use style_traits::UnsafeNode;
@@ -624,12 +625,31 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     }
 
     
-    fn get_declarations_from_xbl_bindings<V>(&self,
-                                             _pseudo_element: Option<&PseudoElement>,
-                                             _applicable_declarations: &mut V)
-                                             -> bool
-        where V: Push<ApplicableDeclarationBlock> + VecLike<ApplicableDeclarationBlock> {
+    
+    
+    fn each_xbl_stylist<F>(&self, _: F) -> bool
+    where
+        F: FnMut(&Stylist),
+    {
         false
+    }
+
+    
+    fn get_declarations_from_xbl_bindings<V>(
+        &self,
+        pseudo_element: Option<&PseudoElement>,
+        applicable_declarations: &mut V
+    ) -> bool
+    where
+        V: Push<ApplicableDeclarationBlock> + VecLike<ApplicableDeclarationBlock>
+    {
+        self.each_xbl_stylist(|stylist| {
+            stylist.push_applicable_declarations_as_xbl_only_stylist(
+                self,
+                pseudo_element,
+                applicable_declarations
+            );
+        })
     }
 
     
