@@ -3,6 +3,8 @@
 
 
 #include "InProcessCompositorWidget.h"
+
+#include "mozilla/VsyncDispatcher.h"
 #include "nsBaseWidget.h"
 
 #if defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING)

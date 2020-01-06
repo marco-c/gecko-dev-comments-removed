@@ -7,8 +7,7 @@
 
 #include "mozilla/Attributes.h"     
 #include "mozilla/StaticPtr.h"      
-
-class nsIContent;
+#include "nsIContent.h"
 
 namespace mozilla {
 namespace widget {

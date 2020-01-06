@@ -13,6 +13,7 @@
 #include "nsIObserverService.h"
 #include "nsServiceManagerUtils.h"
 #include "mozilla/Services.h"
+#include "nsXULAppAPI.h"
 
 
 
