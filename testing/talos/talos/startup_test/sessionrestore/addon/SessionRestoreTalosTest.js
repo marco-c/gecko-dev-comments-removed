@@ -130,7 +130,24 @@ nsSessionRestoreTalosTest.prototype = {
 
 
   onWindow(win) {
-    win.gBrowser.addTab("chrome://session-restore-test/content/index.html");
+    let args = win.arguments[0];
+    let queryString = "";
+
+    if (args && args instanceof Ci.nsIArray) {
+      
+      
+      
+      
+      
+      
+      
+      
+      Cu.importGlobalProperties(["URL"]);
+      let url = new URL(args.queryElementAt(0, Ci.nsISupportsString).data);
+      queryString = url.search;
+    }
+
+    win.gBrowser.addTab("chrome://session-restore-test/content/index.html" + queryString);
   }
 };
 
