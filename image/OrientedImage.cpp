@@ -132,7 +132,7 @@ OrientedImage::GetFrame(uint32_t aWhichFrame,
   RefPtr<gfxContext> ctx = gfxContext::CreateOrNull(target);
   MOZ_ASSERT(ctx); 
   ctx->Multiply(OrientationMatrix(size));
-  gfxUtils::DrawPixelSnapped(ctx, drawable, size, ImageRegion::Create(size),
+  gfxUtils::DrawPixelSnapped(ctx, drawable, SizeDouble(size), ImageRegion::Create(size),
                              surfaceFormat, SamplingFilter::LINEAR);
 
   return target->Snapshot();

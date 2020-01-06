@@ -313,7 +313,7 @@ ClippedImage::GetFrameInternal(const nsIntSize& aSize,
       new gfxCallbackDrawable(drawTileCallback, aSize);
 
     
-    gfxUtils::DrawPixelSnapped(ctx, drawable, aSize,
+    gfxUtils::DrawPixelSnapped(ctx, drawable, SizeDouble(aSize),
                                ImageRegion::Create(aSize),
                                SurfaceFormat::B8G8R8A8,
                                SamplingFilter::LINEAR,
@@ -404,7 +404,7 @@ ClippedImage::Draw(gfxContext* aContext,
       new gfxSurfaceDrawable(surface, aSize);
 
     
-    gfxUtils::DrawPixelSnapped(aContext, drawable, aSize, aRegion,
+    gfxUtils::DrawPixelSnapped(aContext, drawable, SizeDouble(aSize), aRegion,
                                SurfaceFormat::B8G8R8A8, aSamplingFilter,
                                aOpacity);
 

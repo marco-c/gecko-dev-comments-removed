@@ -33,7 +33,7 @@ void ImageLayer::ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransformToSu
   
   gfxRect sourceRect(0, 0, 0, 0);
   if (mContainer) {
-    sourceRect.SizeTo(mContainer->GetCurrentSize());
+    sourceRect.SizeTo(SizeDouble(mContainer->GetCurrentSize()));
   }
   
   

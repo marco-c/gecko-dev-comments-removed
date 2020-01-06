@@ -363,7 +363,7 @@ imgFrame::InitWithDrawable(gfxDrawable* aDrawable,
   
   RefPtr<gfxContext> ctx = gfxContext::CreateOrNull(target);
   MOZ_ASSERT(ctx);  
-  gfxUtils::DrawPixelSnapped(ctx, aDrawable, mFrameRect.Size(),
+  gfxUtils::DrawPixelSnapped(ctx, aDrawable, SizeDouble(mFrameRect.Size()),
                              ImageRegion::Create(ThebesRect(mFrameRect)),
                              mFormat, aSamplingFilter, aImageFlags);
 
