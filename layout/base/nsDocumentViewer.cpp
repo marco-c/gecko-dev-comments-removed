@@ -1063,7 +1063,13 @@ nsDocumentViewer::LoadComplete(nsresult aStatus)
     nsIDocShell *docShell = window->GetDocShell();
     NS_ENSURE_TRUE(docShell, NS_ERROR_UNEXPECTED);
 
-    docShell->GetRestoringDocument(&restoring);
+    
+    
+    
+    
+    
+    restoring = (mDocument->GetReadyStateEnum() ==
+                 nsIDocument::READYSTATE_COMPLETE);
     if (!restoring) {
       NS_ASSERTION(mDocument->IsXULDocument() || 
                    mDocument->GetReadyStateEnum() ==
@@ -1074,6 +1080,13 @@ nsDocumentViewer::LoadComplete(nsresult aStatus)
                       nsIDocument::READYSTATE_UNINITIALIZED &&
                     NS_IsAboutBlank(mDocument->GetDocumentURI())),
                    "Bad readystate");
+#ifdef DEBUG
+      bool docShellThinksWeAreRestoring;
+      docShell->GetRestoringDocument(&docShellThinksWeAreRestoring);
+      MOZ_ASSERT(!docShellThinksWeAreRestoring,
+                 "How can docshell think we are restoring if we don't have a "
+                 "READYSTATE_COMPLETE document?");
+#endif 
       nsCOMPtr<nsIDocument> d = mDocument;
       mDocument->SetReadyStateInternal(nsIDocument::READYSTATE_COMPLETE);
 
