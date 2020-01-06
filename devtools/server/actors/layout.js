@@ -233,24 +233,14 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
 
 
 
-
-
-  getAllGrids(rootNode, traverseFrames) {
+  getAllGrids(rootNode) {
     let grids = [];
 
     if (!rootNode) {
       return grids;
     }
 
-    if (!traverseFrames) {
-      return this.getGrids(rootNode.rawNode);
-    }
-
-    for (let {document} of this.tabActor.windows) {
-      grids = [...grids, ...this.getGrids(document.documentElement)];
-    }
-
-    return grids;
+    return this.getGrids(rootNode.rawNode);
   },
 });
 
