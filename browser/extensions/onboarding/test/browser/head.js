@@ -56,7 +56,7 @@ function promiseOnboardingOverlayLoaded(browser) {
     condition,
     "Should load onboarding overlay",
     100,
-    30
+    50 
   );
 }
 
