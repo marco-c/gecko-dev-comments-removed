@@ -111,8 +111,6 @@ const RECOMMENDED_PREFS = new Map([
   
   ["browser.safebrowsing.blockedURIs.enabled", false],
   ["browser.safebrowsing.downloads.enabled", false],
-  ["browser.safebrowsing.enabled", false],
-  ["browser.safebrowsing.forbiddenURIs.enabled", false],
   ["browser.safebrowsing.malware.enabled", false],
   ["browser.safebrowsing.phishing.enabled", false],
 
