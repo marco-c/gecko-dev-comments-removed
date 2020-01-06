@@ -277,7 +277,7 @@ define(function (require, exports, module) {
 
       return children.map(child => {
         let key = provider.getKey(child);
-        let nodePath = path + "/" + key;
+        let nodePath = TreeView.subPath(path, key);
         let type = provider.getType(child);
         let hasChildren = provider.hasChildren(child);
 
@@ -418,6 +418,55 @@ define(function (require, exports, module) {
       );
     }
   });
+
+  TreeView.subPath = function (path, subKey) {
+    return path + "/" + subKey.replace(/[\\/]/g, "\\$&");
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+  TreeView.getExpandedNodes = function (rootObj,
+    { maxLevel = Infinity, maxNodes = Infinity } = {}
+  ) {
+    let expandedNodes = new Set();
+    let queue = [{
+      object: rootObj,
+      level: 1,
+      path: ""
+    }];
+    while (queue.length) {
+      let {object, level, path} = queue.shift();
+      if (Object(object) !== object) {
+        continue;
+      }
+      let keys = Object.keys(object);
+      if (expandedNodes.size + keys.length > maxNodes) {
+        
+        break;
+      }
+      for (let key of keys) {
+        let nodePath = TreeView.subPath(path, key);
+        expandedNodes.add(nodePath);
+        if (level < maxLevel) {
+          queue.push({
+            object: object[key],
+            level: level + 1,
+            path: nodePath
+          });
+        }
+      }
+    }
+    return expandedNodes;
+  };
 
   
 
