@@ -132,6 +132,7 @@ public:
 
 
 
+
   void Put(KeyType aKey, const UserDataType& aData)
   {
     if (!Put(aKey, aData, mozilla::fallible)) {
@@ -148,30 +149,6 @@ public:
     }
 
     ent->mData = aData;
-
-    return true;
-  }
-
-  
-
-
-
-
-  void Put(KeyType aKey, UserDataType&& aData)
-  {
-    if (!Put(aKey, mozilla::Move(aData), mozilla::fallible)) {
-      NS_ABORT_OOM(this->mTable.EntrySize() * this->mTable.EntryCount());
-    }
-  }
-
-  MOZ_MUST_USE bool Put(KeyType aKey, UserDataType&& aData, const fallible_t&)
-  {
-    EntryType* ent = this->PutEntry(aKey, mozilla::fallible);
-    if (!ent) {
-      return false;
-    }
-
-    ent->mData = mozilla::Move(aData);
 
     return true;
   }
