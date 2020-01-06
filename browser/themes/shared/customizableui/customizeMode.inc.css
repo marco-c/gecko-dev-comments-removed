@@ -447,14 +447,11 @@ toolbarpaletteitem[place=toolbar] > toolbarspring {
 }
 
 
-#nav-bar[customizing] > .overflow-button {
-  
-  fill: hsla(0,0%,30%,.4);
-}
 
 #nav-bar[customizing] > .overflow-button > .toolbarbutton-icon {
   background-color: var(--toolbarbutton-active-background);
   opacity: 1;
+  fill-opacity: 0.4;
 }
 
 #customization-panelWrapper > .panel-arrowbox > .panel-arrow[side="top"] {
