@@ -174,7 +174,23 @@ var loadListener = {
       curContainer.frame.addEventListener("unload", this);
 
       Services.obs.addObserver(this, "outer-window-destroyed");
+
     } else {
+      
+      
+      
+      
+      
+      let readyState = content.document.readyState;
+      let documentURI = content.document.documentURI;
+      logger.debug(`Check readyState "${readyState} for "${documentURI}"`);
+
+      
+      
+      if (this.handleReadyState(readyState, documentURI)) {
+        return;
+      }
+
       addEventListener("DOMContentLoaded", loadListener);
       addEventListener("pageshow", loadListener);
     }
@@ -250,43 +266,77 @@ var loadListener = {
         
         addEventListener("DOMContentLoaded", this, false);
         addEventListener("pageshow", this, false);
-
         break;
 
       case "hashchange":
         this.stop();
         sendOk(this.command_id);
-
         break;
 
       case "DOMContentLoaded":
-        if (event.target.documentURI.startsWith("about:certerror")) {
+      case "pageshow":
+        this.handleReadyState(event.target.readyState,
+            event.target.documentURI);
+        break;
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  handleReadyState(readyState, documentURI) {
+    let finished = false;
+
+    switch (readyState) {
+      case "interactive":
+        if (documentURI.startsWith("about:certerror")) {
           this.stop();
           sendError(new InsecureCertificateError(), this.command_id);
+          finished = true;
 
-        } else if (/about:.*(error)\?/.exec(event.target.documentURI)) {
+        } else if (/about:.*(error)\?/.exec(documentURI)) {
           this.stop();
-          sendError(new UnknownError("Reached error page: " +
-              event.target.documentURI), this.command_id);
+          sendError(new UnknownError(`Reached error page: ${documentURI}`),
+              this.command_id);
+          finished = true;
 
+        
+        
+        
         
         
         
         } else if ((capabilities.get("pageLoadStrategy") ===
-            session.PageLoadStrategy.Eager) ||
-            /about:blocked\?/.exec(event.target.documentURI)) {
+            session.PageLoadStrategy.Eager &&
+            documentURI != "about:blank") ||
+            /about:blocked\?/.exec(documentURI)) {
           this.stop();
           sendOk(this.command_id);
+          finished = true;
         }
 
         break;
 
-      case "pageshow":
+      case "complete":
         this.stop();
         sendOk(this.command_id);
+        finished = true;
 
         break;
     }
+
+    return finished;
   },
 
   
