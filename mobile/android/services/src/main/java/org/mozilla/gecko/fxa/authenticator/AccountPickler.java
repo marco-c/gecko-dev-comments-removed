@@ -23,6 +23,7 @@ import org.mozilla.gecko.sync.NonObjectJSONException;
 import org.mozilla.gecko.sync.Utils;
 
 import android.content.Context;
+import android.support.annotation.Nullable;
 
 
 
@@ -128,6 +129,10 @@ public class AccountPickler {
 
 
 
+
+
+
+
   public synchronized static void pickle(final AndroidFxAccount account, final String filename) {
     final ExtendedJSONObject o = toJSON(account, System.currentTimeMillis());
     writeToDisk(account.context, filename, o);
@@ -155,17 +160,8 @@ public class AccountPickler {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-  public synchronized static AndroidFxAccount unpickle(final Context context, final String filename) {
+  @Nullable
+  public synchronized static UnpickleParams unpickleParams(final Context context, final String filename) {
     final String jsonString = Utils.readFile(context, filename);
     if (jsonString == null) {
       Logger.info(LOG_TAG, "Pickle file '" + filename + "' not found; aborting.");
@@ -180,17 +176,35 @@ public class AccountPickler {
       return null;
     }
 
-    final UnpickleParams params;
     try {
-      params = UnpickleParams.fromJSON(json);
+      return UnpickleParams.fromJSON(json);
     } catch (Exception e) {
       Logger.warn(LOG_TAG, "Got exception extracting unpickle json; aborting.", e);
+      return null;
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  @Nullable
+  public synchronized static AndroidFxAccount unpickle(final Context context, final String filename) {
+    final UnpickleParams params = unpickleParams(context, filename);
+
+    if (params == null) {
       return null;
     }
 
     final AndroidFxAccount account;
     try {
-      account = AndroidFxAccount.addAndroidAccount(context, params.email, params.profile,
+      account = AndroidFxAccount.addAndroidAccount(context, params.state.uid, params.email, params.profile,
           params.authServerURI, params.tokenServerURI, params.profileServerURI, params.state,
           params.authoritiesToSyncAutomaticallyMap,
           params.accountVersion,
@@ -205,19 +219,13 @@ public class AccountPickler {
       return null;
     }
 
-    Long timestamp = json.getLong(KEY_PICKLE_TIMESTAMP);
-    if (timestamp == null) {
-      Logger.warn(LOG_TAG, "Did not find timestamp in pickle file; ignoring.");
-      timestamp = -1L;
-    }
-
     Logger.info(LOG_TAG, "Un-pickled Android account named " + params.email + " (version " +
-        params.pickleVersion + ", pickled at " + timestamp + ").");
+        params.pickleVersion + ").");
 
     return account;
   }
 
-  private static class UnpickleParams {
+   static class UnpickleParams {
     private Long pickleVersion;
 
     private int accountVersion;
@@ -357,6 +365,11 @@ public class AccountPickler {
       } catch (Exception e) {
         throw new IllegalStateException("could not get state", e);
       }
+    }
+
+    @Nullable
+     String getUID() {
+      return this.state.uid;
     }
   }
 }

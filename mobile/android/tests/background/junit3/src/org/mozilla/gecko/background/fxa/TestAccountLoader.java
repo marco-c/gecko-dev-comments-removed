@@ -149,7 +149,7 @@ public class TestAccountLoader extends AndroidSyncTestCaseWithAccounts {
 
     
     final State state = new Separated(TEST_USERNAME, "uid", false); 
-    final AndroidFxAccount account = AndroidFxAccount.addAndroidAccount(context,
+    final AndroidFxAccount account = AndroidFxAccount.addAndroidAccount(context, "uid",
         TEST_USERNAME, TEST_PROFILE, TEST_AUTH_SERVER_URI, TEST_TOKEN_SERVER_URI, TEST_PROFILE_SERVER_URI,
         state, AndroidSyncTestCaseWithAccounts.TEST_SYNC_AUTOMATICALLY_MAP_WITH_ALL_AUTHORITIES_DISABLED);
     assertNotNull(account);

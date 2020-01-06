@@ -256,9 +256,9 @@ public class Utils {
 
 
 
-  public static String getPrefsPath(final String product, final String username, final String serverURL, final String profile, final long version)
+  public static String getPrefsPath(final String product, final String accountKey, final String serverURL, final String profile, final long version)
       throws NoSuchAlgorithmException, UnsupportedEncodingException {
-    final String encodedAccount = sha1Base32(serverURL + ":" + usernameFromAccount(username));
+    final String encodedAccount = sha1Base32(serverURL + ":" + usernameFromAccount(accountKey));
 
     if (version <= 0) {
       return "sync.prefs." + encodedAccount;
