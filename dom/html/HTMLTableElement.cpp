@@ -24,14 +24,20 @@ namespace dom {
 
 
 
-class TableRowsCollection final : public nsIHTMLCollection,
-                                  public nsWrapperCache
+class TableRowsCollection final : public nsIHTMLCollection
+                                , public nsStubMutationObserver
+                                , public nsWrapperCache
 {
 public:
   explicit TableRowsCollection(HTMLTableElement* aParent);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_NSIDOMHTMLCOLLECTION
+
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
+  NS_DECL_NSIMUTATIONOBSERVER_NODEWILLBEDESTROYED
 
   virtual Element* GetElementAt(uint32_t aIndex) override;
   virtual nsINode* GetParentObject() override
@@ -45,14 +51,27 @@ public:
 
   NS_IMETHOD    ParentDestroyed();
 
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(TableRowsCollection)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(TableRowsCollection, nsIHTMLCollection)
 
   
   using nsWrapperCache::GetWrapperPreserveColor;
   using nsWrapperCache::PreserveWrapper;
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 protected:
-  virtual ~TableRowsCollection();
+  
+  void CleanUp();
+  void LastRelease()
+  {
+    CleanUp();
+  }
+  virtual ~TableRowsCollection()
+  {
+    
+    
+    
+    
+    CleanUp();
+  }
 
   virtual JSObject* GetWrapperPreserveColorInternal() override
   {
@@ -64,21 +83,125 @@ protected:
   }
 
   
+  
+  void EnsureInitialized();
+
+  
+  
+  bool InterestingContainer(nsIContent* aContainer);
+
+  
+  
+  
+  bool IsAppropriateRow(nsIAtom* aSection, nsIContent* aContent);
+
+  
+  
+  nsIContent* PreviousRow(nsIAtom* aSection, nsIContent* aCurrent);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  int32_t HandleInsert(nsIContent* aContainer,
+                       nsIContent* aChild,
+                       int32_t aIndexGuess = -1);
+
+  
   HTMLTableElement* mParent;
+
+  
+  
+  
+  
+  nsTArray<nsCOMPtr<nsIContent>> mRows;
+  uint32_t mBodyStart;
+  uint32_t mFootStart;
+  bool mInitialized;
 };
 
 
 TableRowsCollection::TableRowsCollection(HTMLTableElement *aParent)
   : mParent(aParent)
+  , mBodyStart(0)
+  , mFootStart(0)
+  , mInitialized(false)
 {
+  MOZ_ASSERT(mParent);
 }
 
-TableRowsCollection::~TableRowsCollection()
+void
+TableRowsCollection::EnsureInitialized()
+{
+  if (mInitialized) {
+    return;
+  }
+  mInitialized = true;
+
+  
+  
+  
+  
+  
+  
+  AutoTArray<nsCOMPtr<nsIContent>, 32> body;
+  AutoTArray<nsCOMPtr<nsIContent>, 32> foot;
+  mRows.Clear();
+
+  auto addRowChildren = [&] (nsTArray<nsCOMPtr<nsIContent>>& aArray, nsIContent* aNode) {
+    for (nsIContent* inner = aNode->nsINode::GetFirstChild();
+         inner; inner = inner->GetNextSibling()) {
+      if (inner->IsHTMLElement(nsGkAtoms::tr)) {
+        aArray.AppendElement(inner);
+      }
+    }
+  };
+
+  for (nsIContent* node = mParent->nsINode::GetFirstChild();
+       node; node = node->GetNextSibling()) {
+    if (node->IsHTMLElement(nsGkAtoms::thead)) {
+      addRowChildren(mRows, node);
+    } else if (node->IsHTMLElement(nsGkAtoms::tbody)) {
+      addRowChildren(body, node);
+    } else if (node->IsHTMLElement(nsGkAtoms::tfoot)) {
+      addRowChildren(foot, node);
+    } else if (node->IsHTMLElement(nsGkAtoms::tr)) {
+      body.AppendElement(node);
+    }
+  }
+
+  mBodyStart = mRows.Length();
+  mRows.AppendElements(Move(body));
+  mFootStart = mRows.Length();
+  mRows.AppendElements(Move(foot));
+
+  mParent->AddMutationObserver(this);
+}
+
+void
+TableRowsCollection::CleanUp()
 {
   
+  if (mInitialized && mParent)  {
+    mParent->RemoveMutationObserver(this);
+  }
+
   
   
+  mRows.Clear();
+  mBodyStart = 0;
+  mFootStart = 0;
+
   
+  
+  mInitialized = true;
+  mParent = nullptr;
 }
 
 JSObject*
@@ -87,136 +210,33 @@ TableRowsCollection::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProt
   return HTMLCollectionBinding::Wrap(aCx, this, aGivenProto);
 }
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_0(TableRowsCollection)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TableRowsCollection, mRows)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(TableRowsCollection)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(TableRowsCollection)
+NS_IMPL_CYCLE_COLLECTING_RELEASE_WITH_LAST_RELEASE(TableRowsCollection,
+                                                   LastRelease())
 
 NS_INTERFACE_TABLE_HEAD(TableRowsCollection)
   NS_WRAPPERCACHE_INTERFACE_TABLE_ENTRY
   NS_INTERFACE_TABLE(TableRowsCollection, nsIHTMLCollection,
-                     nsIDOMHTMLCollection)
+                     nsIDOMHTMLCollection, nsIMutationObserver)
   NS_INTERFACE_TABLE_TO_MAP_SEGUE_CYCLE_COLLECTION(TableRowsCollection)
 NS_INTERFACE_MAP_END
-
-
-
-
-
-
-
-  #define DO_FOR_EACH_BY_ORDER(_code, _trCode)                       \
-    do {                                                             \
-      if (mParent) {                                                 \
-        HTMLTableSectionElement* rowGroup;                           \
-        nsIHTMLCollection* rows;                                     \
-        /* THead */                                                  \
-        for (nsIContent* _node = mParent->nsINode::GetFirstChild();  \
-             _node; _node = _node->GetNextSibling()) {               \
-           if (_node->IsHTMLElement(nsGkAtoms::thead)) {             \
-             rowGroup = static_cast<HTMLTableSectionElement*>(_node);\
-             rows = rowGroup->Rows();                                \
-             do { /* gives scoping */                                \
-               _code                                                 \
-             } while (0);                                            \
-           }                                                         \
-        }                                                            \
-        /* TBodies */                                                \
-        for (nsIContent* _node = mParent->nsINode::GetFirstChild();  \
-             _node; _node = _node->GetNextSibling()) {               \
-          if (_node->IsHTMLElement(nsGkAtoms::tr)) {                 \
-            do {                                                     \
-              _trCode                                                \
-            } while (0);                                             \
-          } else if (_node->IsHTMLElement(nsGkAtoms::tbody)) {       \
-            rowGroup = static_cast<HTMLTableSectionElement*>(_node); \
-            rows = rowGroup->Rows();                                 \
-            do { /* gives scoping */                                 \
-              _code                                                  \
-            } while (0);                                             \
-          }                                                          \
-        }                                                            \
-        /* TFoot */                                                  \
-        for (nsIContent* _node = mParent->nsINode::GetFirstChild();  \
-             _node; _node = _node->GetNextSibling()) {               \
-           if (_node->IsHTMLElement(nsGkAtoms::tfoot)) {             \
-             rowGroup = static_cast<HTMLTableSectionElement*>(_node);\
-             rows = rowGroup->Rows();                                \
-             do { /* gives scoping */                                \
-               _code                                                 \
-             } while (0);                                            \
-           }                                                         \
-        }                                                            \
-      }                                                              \
-    } while (0)
-
-static uint32_t
-CountRowsInRowGroup(nsIDOMHTMLCollection* rows)
-{
-  uint32_t length = 0;
-
-  if (rows) {
-    rows->GetLength(&length);
-  }
-
-  return length;
-}
-
-
-
 
 NS_IMETHODIMP
 TableRowsCollection::GetLength(uint32_t* aLength)
 {
-  *aLength=0;
-
-  DO_FOR_EACH_BY_ORDER({
-    *aLength += CountRowsInRowGroup(rows);
-  }, {
-    (*aLength)++;
-  });
-
+  EnsureInitialized();
+  *aLength = mRows.Length();
   return NS_OK;
-}
-
-
-
-
-static Element*
-GetItemOrCountInRowGroup(nsIDOMHTMLCollection* rows,
-                         uint32_t aIndex, uint32_t* aCount)
-{
-  *aCount = 0;
-
-  if (rows) {
-    rows->GetLength(aCount);
-    if (aIndex < *aCount) {
-      nsIHTMLCollection* list = static_cast<nsIHTMLCollection*>(rows);
-      return list->GetElementAt(aIndex);
-    }
-  }
-
-  return nullptr;
 }
 
 Element*
 TableRowsCollection::GetElementAt(uint32_t aIndex)
 {
-  DO_FOR_EACH_BY_ORDER({
-    uint32_t count;
-    Element* node = GetItemOrCountInRowGroup(rows, aIndex, &count);
-    if (node) {
-      return node;
-    }
-
-    NS_ASSERTION(count <= aIndex, "GetItemOrCountInRowGroup screwed up");
-    aIndex -= count;
-  },{
-    if (aIndex == 0) {
-      return _node->AsElement();
-    }
-    aIndex--;
-  });
-
+  EnsureInitialized();
+  if (aIndex < mRows.Length()) {
+    return mRows[aIndex]->AsElement();
+  }
   return nullptr;
 }
 
@@ -236,23 +256,20 @@ TableRowsCollection::Item(uint32_t aIndex, nsIDOMNode** aReturn)
 Element*
 TableRowsCollection::GetFirstNamedElement(const nsAString& aName, bool& aFound)
 {
+  EnsureInitialized();
   aFound = false;
   nsCOMPtr<nsIAtom> nameAtom = NS_Atomize(aName);
   NS_ENSURE_TRUE(nameAtom, nullptr);
-  DO_FOR_EACH_BY_ORDER({
-    Element* item = rows->NamedGetter(aName, aFound);
-    if (aFound) {
-      return item;
-    }
-  }, {
-    if (_node->AttrValueIs(kNameSpaceID_None, nsGkAtoms::name,
-                           nameAtom, eCaseMatters) ||
-        _node->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id,
-                           nameAtom, eCaseMatters)) {
+
+  for (auto& node : mRows) {
+    if (node->AttrValueIs(kNameSpaceID_None, nsGkAtoms::name,
+                          nameAtom, eCaseMatters) ||
+        node->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id,
+                          nameAtom, eCaseMatters)) {
       aFound = true;
-      return _node->AsElement();
+      return node->AsElement();
     }
-  });
+  }
 
   return nullptr;
 }
@@ -260,20 +277,10 @@ TableRowsCollection::GetFirstNamedElement(const nsAString& aName, bool& aFound)
 void
 TableRowsCollection::GetSupportedNames(nsTArray<nsString>& aNames)
 {
-  DO_FOR_EACH_BY_ORDER({
-    nsTArray<nsString> names;
-    nsCOMPtr<nsIHTMLCollection> coll = do_QueryInterface(rows);
-    if (coll) {
-      coll->GetSupportedNames(names);
-      for (uint32_t i = 0; i < names.Length(); ++i) {
-        if (!aNames.Contains(names[i])) {
-          aNames.AppendElement(names[i]);
-        }
-      }
-    }
-  }, {
-    if (_node->HasID()) {
-      nsIAtom* idAtom = _node->GetID();
+  EnsureInitialized();
+  for (auto& node : mRows) {
+    if (node->HasID()) {
+      nsIAtom* idAtom = node->GetID();
       MOZ_ASSERT(idAtom != nsGkAtoms::_empty,
                  "Empty ids don't get atomized");
       nsDependentAtomString idStr(idAtom);
@@ -282,7 +289,7 @@ TableRowsCollection::GetSupportedNames(nsTArray<nsString>& aNames)
       }
     }
 
-    nsGenericHTMLElement* el = nsGenericHTMLElement::FromContent(_node);
+    nsGenericHTMLElement* el = nsGenericHTMLElement::FromContent(node);
     if (el) {
       const nsAttrValue* val = el->GetParsedAttr(nsGkAtoms::name);
       if (val && val->Type() == nsAttrValue::eAtom) {
@@ -295,7 +302,7 @@ TableRowsCollection::GetSupportedNames(nsTArray<nsString>& aNames)
         }
       }
     }
-  });
+  }
 }
 
 
@@ -317,10 +324,255 @@ TableRowsCollection::NamedItem(const nsAString& aName,
 NS_IMETHODIMP
 TableRowsCollection::ParentDestroyed()
 {
-  
-  mParent = nullptr;
-
+  CleanUp();
   return NS_OK;
+}
+
+bool
+TableRowsCollection::InterestingContainer(nsIContent* aContainer)
+{
+  return mParent && aContainer &&
+    (aContainer == mParent ||
+     (aContainer->GetParent() == mParent &&
+      aContainer->IsAnyOfHTMLElements(nsGkAtoms::thead,
+                                      nsGkAtoms::tbody,
+                                      nsGkAtoms::tfoot)));
+}
+
+bool
+TableRowsCollection::IsAppropriateRow(nsIAtom* aSection, nsIContent* aContent)
+{
+  if (!aContent->IsHTMLElement(nsGkAtoms::tr)) {
+    return false;
+  }
+  
+  nsIContent* parent = aContent->GetParent();
+  if (aSection == nsGkAtoms::tbody && parent == mParent) {
+    return true;
+  }
+  return parent->IsHTMLElement(aSection);
+}
+
+nsIContent*
+TableRowsCollection::PreviousRow(nsIAtom* aSection, nsIContent* aCurrent)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  nsIContent* prev = aCurrent;
+  do {
+    nsIContent* parent = prev->GetParent();
+    prev = prev->GetPreviousSibling();
+
+    
+    
+    if (!prev && parent != mParent) {
+      prev = parent->GetPreviousSibling();
+    }
+
+    
+    if (prev && prev->GetParent() == mParent && prev->IsHTMLElement(aSection)) {
+      prev = prev->GetLastChild();
+    }
+  } while (prev && !IsAppropriateRow(aSection, prev));
+  return prev;
+}
+
+int32_t
+TableRowsCollection::HandleInsert(nsIContent* aContainer,
+                                  nsIContent* aChild,
+                                  int32_t aIndexGuess)
+{
+  if (!nsContentUtils::IsInSameAnonymousTree(mParent, aChild)) {
+    return aIndexGuess; 
+  }
+
+  
+  
+  if (aContainer == mParent &&
+      aChild->IsAnyOfHTMLElements(nsGkAtoms::thead,
+                                  nsGkAtoms::tbody,
+                                  nsGkAtoms::tfoot)) {
+    
+    
+    
+    bool isTBody = aChild->IsHTMLElement(nsGkAtoms::tbody);
+    int32_t indexGuess = isTBody ? aIndexGuess : -1;
+
+    for (nsIContent* inner = aChild->GetFirstChild();
+         inner; inner = inner->GetNextSibling()) {
+      indexGuess = HandleInsert(aChild, inner, indexGuess);
+    }
+
+    return isTBody ? indexGuess : -1;
+  }
+  if (!aChild->IsHTMLElement(nsGkAtoms::tr)) {
+    return aIndexGuess; 
+  }
+
+  
+  
+  nsIAtom* section = aContainer == mParent
+    ? nsGkAtoms::tbody
+    : aContainer->NodeInfo()->NameAtom();
+
+  
+  
+  
+  size_t index = 0;
+  if (section == nsGkAtoms::thead) {
+    mBodyStart++;
+    mFootStart++;
+  } else if (section == nsGkAtoms::tbody) {
+    index = mBodyStart;
+    mFootStart++;
+  } else if (section == nsGkAtoms::tfoot) {
+    index = mFootStart;
+  } else {
+    MOZ_ASSERT(false, "section should be one of thead, tbody, or tfoot");
+  }
+
+  
+  if (aIndexGuess >= 0) {
+    index = aIndexGuess;
+  } else {
+    
+    
+    
+    
+    nsIContent* insertAfter = PreviousRow(section, aChild);
+    if (insertAfter) {
+      
+      
+      index = mRows.LastIndexOf(insertAfter) + 1;
+      MOZ_ASSERT(index != nsTArray<nsCOMPtr<nsIContent>>::NoIndex);
+    }
+  }
+
+#ifdef DEBUG
+  
+  if (section == nsGkAtoms::thead) {
+    MOZ_ASSERT(index < mBodyStart);
+  } else if (section == nsGkAtoms::tbody) {
+    MOZ_ASSERT(index >= mBodyStart);
+    MOZ_ASSERT(index < mFootStart);
+  } else if (section == nsGkAtoms::tfoot) {
+    MOZ_ASSERT(index >= mFootStart);
+    MOZ_ASSERT(index <= mRows.Length());
+  }
+
+  MOZ_ASSERT(mBodyStart <= mFootStart);
+  MOZ_ASSERT(mFootStart <= mRows.Length() + 1);
+#endif
+
+  mRows.InsertElementAt(index, aChild);
+  return index + 1;
+}
+
+
+
+void
+TableRowsCollection::ContentAppended(nsIDocument* aDocument,
+                                     nsIContent* aContainer,
+                                     nsIContent* aFirstNewContent,
+                                     int32_t aNewIndexInContainer)
+{
+  if (!nsContentUtils::IsInSameAnonymousTree(mParent, aFirstNewContent) ||
+      !InterestingContainer(aContainer)) {
+    return;
+  }
+
+  
+  
+  
+  
+  int32_t indexGuess = mParent == aContainer ? mFootStart : -1;
+
+  
+  
+  for (nsIContent* content = aFirstNewContent;
+       content; content = content->GetNextSibling()) {
+    indexGuess = HandleInsert(aContainer, content, indexGuess);
+  }
+}
+
+void
+TableRowsCollection::ContentInserted(nsIDocument* aDocument,
+                                     nsIContent* aContainer,
+                                     nsIContent* aChild,
+                                     int32_t aIndexInContainer)
+{
+  if (!nsContentUtils::IsInSameAnonymousTree(mParent, aChild) ||
+      !InterestingContainer(aContainer)) {
+    return;
+  }
+
+  HandleInsert(aContainer, aChild);
+}
+
+void
+TableRowsCollection::ContentRemoved(nsIDocument* aDocument,
+                                    nsIContent* aContainer,
+                                    nsIContent* aChild,
+                                    int32_t aIndexInContainer,
+                                    nsIContent* aPreviousSibling)
+{
+  if (!nsContentUtils::IsInSameAnonymousTree(mParent, aChild) ||
+      !InterestingContainer(aContainer)) {
+    return;
+  }
+
+  
+  
+  if (aChild->IsHTMLElement(nsGkAtoms::tr)) {
+    size_t index = mRows.IndexOf(aChild);
+    if (index != nsTArray<nsCOMPtr<nsIContent>>::NoIndex) {
+      mRows.RemoveElementAt(index);
+      if (mBodyStart > index) {
+        mBodyStart--;
+      }
+      if (mFootStart > index) {
+        mFootStart--;
+      }
+    }
+    return;
+  }
+
+  
+  
+  
+  if (!aChild->IsAnyOfHTMLElements(nsGkAtoms::thead, nsGkAtoms::tbody, nsGkAtoms::tfoot)) {
+    return;
+  }
+
+  size_t beforeLength = mRows.Length();
+  mRows.RemoveElementsBy([&] (nsIContent* element) {
+    return element->GetParent() == aChild;
+  });
+  size_t removed = beforeLength - mRows.Length();
+  if (aChild->IsHTMLElement(nsGkAtoms::thead)) {
+    
+    mBodyStart -= removed;
+    mFootStart -= removed;
+  } else if (aChild->IsHTMLElement(nsGkAtoms::tbody)) {
+    
+    mFootStart -= removed;
+  }
+}
+
+void
+TableRowsCollection::NodeWillBeDestroyed(const nsINode* aNode)
+{
+  
+  
+  
+  mInitialized = false;
+  CleanUp();
 }
 
 
