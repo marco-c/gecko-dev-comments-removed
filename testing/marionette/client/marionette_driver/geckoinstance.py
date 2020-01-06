@@ -48,6 +48,8 @@ class GeckoInstance(object):
         "extensions.getAddons.cache.enabled": False,
         
         "extensions.installDistroAddons": False,
+        
+        "extensions.shield-recipe-client.api_url": "",
         "extensions.showMismatchUI": False,
         
         "extensions.update.enabled": False,

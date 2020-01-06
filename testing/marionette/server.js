@@ -209,6 +209,10 @@ const RECOMMENDED_PREFS = new Map([
   
   
   ["extensions.installDistroAddons", false],
+
+  
+  ["extensions.shield-recipe-client.api_url", ""],
+
   ["extensions.showMismatchUI", false],
 
   
