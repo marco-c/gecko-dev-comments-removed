@@ -237,7 +237,6 @@ function transformPacket(packet) {
 
 function getRepeatId(message) {
   message = message.toJS();
-  message.repeat = null;
   message.timeStamp = null;
   return JSON.stringify(message);
 }
