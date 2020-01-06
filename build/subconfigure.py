@@ -131,6 +131,10 @@ def split_template(s):
 
 
 def get_config_files(data):
+    
+    if data['relobjdir'] == 'js/src':
+        return [], []
+
     config_status = mozpath.join(data['objdir'], 'config.status')
     if not os.path.exists(config_status):
         return [], []
@@ -260,6 +264,7 @@ def run(objdir):
         data = pickle.load(f)
 
     data['objdir'] = objdir
+    relobjdir = data['relobjdir'] = os.path.relpath(objdir, os.getcwd())
 
     cache_file = data['cache-file']
     cleared_cache = True
@@ -296,8 +301,6 @@ def run(objdir):
                 data.get('previous-args', data['args']) != data['args'] or \
                 cleared_cache:
             skip_configure = False
-
-    relobjdir = os.path.relpath(objdir, os.getcwd())
 
     if not skip_configure:
         if mozpath.normsep(relobjdir) == 'js/src':
@@ -345,7 +348,11 @@ def run(objdir):
     
     
     skip_config_status = True
-    if not config_status or config_status.modified:
+    if mozpath.normsep(relobjdir) == 'js/src':
+        
+        
+        pass
+    elif not config_status or config_status.modified:
         
         
         if os.path.exists(config_status_path):
