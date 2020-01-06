@@ -22,6 +22,8 @@
 
 
 
+class InfallibleAllocPolicy;
+
 namespace mozilla {
 
 template<typename AllocPolicy>
@@ -68,6 +70,8 @@ class BufferList : private AllocPolicy
   
   
   
+  
+  
   BufferList(size_t aInitialSize,
              size_t aInitialCapacity,
              size_t aStandardCapacity,
@@ -82,6 +86,10 @@ class BufferList : private AllocPolicy
     MOZ_ASSERT(aStandardCapacity % kSegmentAlignment == 0);
 
     if (aInitialCapacity) {
+      MOZ_ASSERT((aInitialSize == 0 || IsSame<AllocPolicy, InfallibleAllocPolicy>::value),
+                 "BufferList may only be constructed with an initial size when "
+                 "using an infallible alloc policy");
+
       AllocateSegment(aInitialSize, aInitialCapacity);
     }
   }
@@ -113,6 +121,17 @@ class BufferList : private AllocPolicy
   }
 
   ~BufferList() { Clear(); }
+
+  
+  
+  bool Init(size_t aInitialSize, size_t aInitialCapacity)
+  {
+    MOZ_ASSERT(mSegments.empty());
+    MOZ_ASSERT(aInitialCapacity != 0);
+    MOZ_ASSERT(aInitialCapacity % kSegmentAlignment == 0);
+
+    return AllocateSegment(aInitialSize, aInitialCapacity);
+  }
 
   
   size_t Size() const { return mSize; }
@@ -254,7 +273,11 @@ class BufferList : private AllocPolicy
   };
 
   
-  char* Start() { return mSegments[0].mData; }
+  char* Start()
+  {
+    MOZ_RELEASE_ASSERT(!mSegments.empty());
+    return mSegments[0].mData;
+  }
   const char* Start() const { return mSegments[0].mData; }
 
   IterImpl Iter() const { return IterImpl(*this); }
@@ -321,6 +344,7 @@ private:
   char* AllocateSegment(size_t aSize, size_t aCapacity)
   {
     MOZ_RELEASE_ASSERT(mOwning);
+    MOZ_ASSERT(aCapacity != 0);
     MOZ_ASSERT(aSize <= aCapacity);
 
     char* data = this->template pod_malloc<char>(aCapacity);
