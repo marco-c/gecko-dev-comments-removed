@@ -8,6 +8,8 @@
 #define mozilla_dom_FetchConsumer_h
 
 #include "Fetch.h"
+#include "nsIObserver.h"
+#include "nsWeakReference.h"
 
 class nsIThread;
 
@@ -27,10 +29,12 @@ template <class Derived> class FetchBody;
 
 
 template <class Derived>
-class FetchBodyConsumer final
+class FetchBodyConsumer final : public nsIObserver
+                              , public nsSupportsWeakReference
 {
 public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FetchBodyConsumer<Derived>)
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIOBSERVER
 
   static already_AddRefed<Promise>
   Create(nsIGlobalObject* aGlobal,
@@ -68,6 +72,7 @@ public:
 
 private:
   FetchBodyConsumer(nsIEventTarget* aMainThreadEventTarget,
+                    nsIGlobalObject* aGlobalObject,
                     workers::WorkerPrivate* aWorkerPrivate,
                     FetchBody<Derived>* aBody,
                     Promise* aPromise,
@@ -89,6 +94,8 @@ private:
   
   
   UniquePtr<workers::WorkerHolder> mWorkerHolder;
+
+  nsCOMPtr<nsIGlobalObject> mGlobal;
 
   
   workers::WorkerPrivate* mWorkerPrivate;
