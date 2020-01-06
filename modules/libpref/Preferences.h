@@ -74,7 +74,7 @@ public:
   
 
 
-  static nsresult ResetAndReadUserPrefs();
+  static void InitializeUserPrefs();
 
   
 
@@ -440,9 +440,13 @@ protected:
 
 
 
+  already_AddRefed<nsIFile> ReadSavedPrefs();
 
-  nsresult UseDefaultPrefFile();
-  void UseUserPrefFile();
+  
+
+
+  void ReadUserOverridePrefs();
+
   nsresult MakeBackupPrefFile(nsIFile *aFile);
 
   
