@@ -409,8 +409,54 @@ public:
   template<typename A, typename B>
   bool operator==(const RangeBoundaryBase<A, B>& aOther) const
   {
-    return mParent == aOther.mParent &&
-      (mRef ? mRef == aOther.mRef : mOffset == aOther.mOffset);
+    if (mParent != aOther.mParent) {
+      return false;
+    }
+
+    if (mOffset.isSome() && aOther.mOffset.isSome()) {
+      
+      
+      
+      if (mOffset != aOther.mOffset) {
+        return false;
+      }
+      if (mRef == aOther.mRef) {
+        return true;
+      }
+      if (NS_WARN_IF(mRef && aOther.mRef)) {
+        
+        
+        
+        return false;
+      }
+      
+      
+      
+      
+      return true;
+    }
+
+    if (mOffset.isSome() && !mRef &&
+        !aOther.mOffset.isSome() && aOther.mRef) {
+      
+      
+      EnsureRef();
+      return mRef == aOther.mRef;
+    }
+
+    if (!mOffset.isSome() && mRef &&
+        aOther.mOffset.isSome() && !aOther.mRef) {
+      
+      
+      aOther.EnsureRef();
+      return mRef == aOther.mRef;
+    }
+
+    
+    
+    
+    
+    return mRef == aOther.mRef;
   }
 
   template<typename A, typename B>
