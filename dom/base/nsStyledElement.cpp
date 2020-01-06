@@ -26,9 +26,11 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-NS_IMPL_QUERY_INTERFACE_INHERITED(nsStyledElement,
-                                  nsStyledElementBase,
-                                  nsStyledElement)
+
+
+NS_IMPL_QUERY_INTERFACE_CYCLE_COLLECTION_INHERITED(nsStyledElement,
+                                                   nsStyledElementBase,
+                                                   nsStyledElement)
 
 
 
