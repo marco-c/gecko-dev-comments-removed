@@ -25,6 +25,7 @@
 #include "nsError.h"
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
+#include "nsIDocumentEncoder.h"
 #include "nsIDOMDocument.h"
 #include "nsIDOMNode.h"
 #include "nsIDOMNodeFilter.h"
@@ -296,7 +297,7 @@ TextEditRules::WillDoAction(Selection* aSelection,
       return WillRemoveTextProperty(aSelection, aCancel, aHandled);
     case EditAction::outputText:
       return WillOutputText(aSelection, info->outputFormat, info->outString,
-                            aCancel, aHandled);
+                            info->flags, aCancel, aHandled);
     case EditAction::insertElement:
       
       
@@ -1186,11 +1187,13 @@ nsresult
 TextEditRules::WillOutputText(Selection* aSelection,
                               const nsAString* aOutputFormat,
                               nsAString* aOutString,
+                              uint32_t aFlags,
                               bool* aCancel,
                               bool* aHandled)
 {
   
-  if (!aOutString || !aOutputFormat || !aCancel || !aHandled) {
+  if (NS_WARN_IF(!aOutString) || NS_WARN_IF(!aOutputFormat) ||
+      NS_WARN_IF(!aCancel) || NS_WARN_IF(!aHandled)) {
     return NS_ERROR_NULL_POINTER;
   }
 
@@ -1198,17 +1201,100 @@ TextEditRules::WillOutputText(Selection* aSelection,
   *aCancel = false;
   *aHandled = false;
 
-  if (aOutputFormat->LowerCaseEqualsLiteral("text/plain")) {
-    
-    if (IsPasswordEditor()) {
-      *aOutString = mPasswordText;
-      *aHandled = true;
-    } else if (mBogusNode) {
-      
-      aOutString->Truncate();
-      *aHandled = true;
-    }
+  if (!aOutputFormat->LowerCaseEqualsLiteral("text/plain")) {
+    return NS_OK;
   }
+
+  
+  
+  
+  
+  if (IsPasswordEditor()) {
+    *aOutString = mPasswordText;
+    *aHandled = true;
+    return NS_OK;
+  }
+
+  
+  if (mBogusNode) {
+    aOutString->Truncate();
+    *aHandled = true;
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  if (aFlags & nsIDocumentEncoder::OutputSelectionOnly ||
+      aFlags & nsIDocumentEncoder::OutputWrap) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  if (NS_WARN_IF(!mTextEditor) || mTextEditor->AsHTMLEditor()) {
+    return NS_OK;
+  }
+
+  RefPtr<Element> root = mTextEditor->GetRoot();
+  if (!root) { 
+    aOutString->Truncate();
+    *aHandled = true;
+    return NS_OK;
+  }
+
+  nsIContent* firstChild = root->GetFirstChild();
+  if (!firstChild) {
+    aOutString->Truncate();
+    *aHandled = true;
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  Text* text = firstChild->GetAsText();
+  nsIContent* firstChildExceptText =
+    text ? firstChild->GetNextSibling() : firstChild;
+  
+  bool isInput = IsSingleLineEditor();
+  bool isTextarea = !isInput;
+  if (NS_WARN_IF(isInput && firstChildExceptText) ||
+      NS_WARN_IF(isTextarea && !firstChildExceptText) ||
+      NS_WARN_IF(isTextarea &&
+                 !TextEditUtils::IsMozBR(firstChildExceptText) &&
+                 !firstChildExceptText->IsXULElement(nsGkAtoms::scrollbar))) {
+    return NS_OK;
+  }
+
+  
+  
+  if (!text) {
+    aOutString->Truncate();
+    *aHandled = true;
+    return NS_OK;
+  }
+
+  
+  nsresult rv = text->GetData(*aOutString);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    return NS_OK;
+  }
+
+  *aHandled = true;
   return NS_OK;
 }
 

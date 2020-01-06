@@ -1313,6 +1313,7 @@ TextEditor::OutputToString(const nsAString& aFormatType,
   nsString resultString;
   TextRulesInfo ruleInfo(EditAction::outputText);
   ruleInfo.outString = &resultString;
+  ruleInfo.flags = aFlags;
   
   nsAutoString str(aFormatType);
   ruleInfo.outputFormat = &str;
