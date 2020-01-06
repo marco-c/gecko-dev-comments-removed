@@ -64,7 +64,7 @@ BackendTypeBit(BackendType b)
 
 } 
 namespace dom {
-class SystemFontListEntry;
+class FontFamilyListEntry;
 }
 } 
 
@@ -341,8 +341,8 @@ public:
 
 
 
-    virtual void ReadSystemFontList(
-      InfallibleTArray<mozilla::dom::SystemFontListEntry>* aFontList)
+    virtual void GetSystemFontFamilyList(
+      InfallibleTArray<mozilla::dom::FontFamilyListEntry>* aFontFamilies)
     { }
 
     
