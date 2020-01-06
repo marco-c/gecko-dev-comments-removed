@@ -52,7 +52,7 @@ enum class Visibility : uint8_t;
 #undef GetCurrentTime
 #endif
 
-struct MediaDecoderInit
+struct MOZ_STACK_CLASS MediaDecoderInit
 {
   MediaDecoderOwner* const mOwner;
   const dom::AudioChannel mAudioChannel;
@@ -62,6 +62,7 @@ struct MediaDecoderInit
   const bool mMinimizePreroll;
   const bool mHasSuspendTaint;
   const bool mLooping;
+  const MediaContainerType mContainerType;
 
   MediaDecoderInit(MediaDecoderOwner* aOwner,
                    dom::AudioChannel aAudioChannel,
@@ -70,7 +71,8 @@ struct MediaDecoderInit
                    double aPlaybackRate,
                    bool aMinimizePreroll,
                    bool aHasSuspendTaint,
-                   bool aLooping)
+                   bool aLooping,
+                   const MediaContainerType& aContainerType)
     : mOwner(aOwner)
     , mAudioChannel(aAudioChannel)
     , mVolume(aVolume)
@@ -79,6 +81,7 @@ struct MediaDecoderInit
     , mMinimizePreroll(aMinimizePreroll)
     , mHasSuspendTaint(aHasSuspendTaint)
     , mLooping(aLooping)
+    , mContainerType(aContainerType)
   {
   }
 };
@@ -107,6 +110,10 @@ public:
   static void InitStatics();
 
   explicit MediaDecoder(MediaDecoderInit& aInit);
+
+  
+  
+  const MediaContainerType& ContainerType() const { return mContainerType; }
 
   
   
@@ -828,6 +835,7 @@ private:
   
   bool mIsMediaElement;
   WeakPtr<dom::HTMLMediaElement> mElement;
+  const MediaContainerType mContainerType;
 };
 
 } 

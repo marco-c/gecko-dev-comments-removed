@@ -44,7 +44,6 @@ public:
   
   
   static already_AddRefed<ChannelMediaDecoder> CreateDecoder(
-    const nsACString& aType,
     MediaDecoderInit& aInit,
     DecoderDoctorDiagnostics* aDiagnostics);
 
