@@ -119,7 +119,7 @@ var gEMEHandler = {
       });
     }
 
-    let iconURL = "chrome://browser/skin/drm-icon.svg#chains-black";
+    let iconURL = "chrome://browser/skin/drm-icon.svg";
 
     
     let fragment = document.createDocumentFragment();

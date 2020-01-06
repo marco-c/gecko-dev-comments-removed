@@ -574,11 +574,6 @@ html|span.ac-emphasize-text-url {
 }
 
 
-#page-report-button {
-  list-style-image: url("chrome://browser/skin/Info.png");
-}
-
-
 #editBookmarkPanelStarIcon {
   list-style-image: url("chrome://browser/skin/places/starred48.png");
   width: 48px;
