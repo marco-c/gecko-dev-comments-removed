@@ -38,6 +38,7 @@
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSetHandleInlines.h"
 #include "mozilla/GeckoRestyleManager.h"
+#include "mozilla/ServoRestyleManager.h"
 #include "mozilla/RestyleManagerInlines.h"
 #include "imgIRequest.h"
 #include "nsLayoutUtils.h"
@@ -99,6 +100,71 @@ GetBackgroundList(T nsStyleImageLayers::Layer::* aMember,
   }
 
   return valueList.forget();
+}
+
+
+static bool
+ContentNeedsRestyle(nsIContent* aContent)
+{
+  MOZ_ASSERT(aContent);
+  nsIContent* node = aContent;
+  while (node) {
+    
+    
+    
+    if (node->HasFlag(ELEMENT_ALL_RESTYLE_FLAGS |
+                      ELEMENT_HAS_CHILD_WITH_LATER_SIBLINGS_HINT)) {
+      return true;
+    }
+    node = node->GetFlattenedTreeParent();
+  }
+  return false;
+}
+
+
+static bool
+DocumentNeedsRestyle(const nsIDocument* aDocument, Element* aElement)
+{
+  nsIPresShell* shell = aDocument->GetShell();
+  if (!shell) {
+    return true;
+  }
+  
+  
+  StyleSetHandle styleSet = shell->StyleSet();
+  if (styleSet->StyleSheetsHaveChanged()) {
+    return true;
+  }
+  
+  nsPresContext* context = shell->GetPresContext();
+  if (context->EffectCompositor()->HasPendingStyleUpdatesFor(aElement)) {
+    return true;
+  }
+  if (styleSet->IsServo()) {
+    
+    
+    
+    ServoRestyleManager* restyleManager = context->RestyleManager()->AsServo();
+    restyleManager->ProcessAllPendingAttributeAndStateInvalidations();
+
+    
+    
+    
+    
+    
+    if (aDocument->GetServoRestyleRoot() &&
+        restyleManager->HasPendingRestyleAncestor(aElement)) {
+      return true;
+    }
+  } else {
+    
+    
+    GeckoRestyleManager* restyleManager = context->RestyleManager()->AsGecko();
+    if (restyleManager->HasPendingRestyles() && ContentNeedsRestyle(aElement)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 
@@ -807,6 +873,32 @@ nsComputedDOMStyle::SetFrameStyleContext(nsStyleContext* aContext,
   mStyleContextGeneration = aGeneration;
 }
 
+FlushTarget
+nsComputedDOMStyle::GetFlushTarget(nsIDocument* aDocument) const
+{
+  
+  
+  
+  
+  
+  if (aDocument != mContent->OwnerDoc()) {
+    return FlushTarget::Normal;
+  }
+  if (DocumentNeedsRestyle(aDocument, mContent->AsElement())) {
+    return FlushTarget::Normal;
+  }
+  
+  
+  while (nsIDocument* parentDocument = aDocument->GetParentDocument()) {
+    Element* element = parentDocument->FindContentForSubDocument(aDocument);
+    if (DocumentNeedsRestyle(parentDocument, element)) {
+      return FlushTarget::Normal;
+    }
+    aDocument = parentDocument;
+  }
+  return FlushTarget::ParentOnly;
+}
+
 void
 nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
 {
@@ -817,11 +909,14 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
   }
 
   
+  FlushTarget target = aNeedsLayoutFlush ? FlushTarget::Normal : GetFlushTarget(document);
+
+  
   
   
   
   document->FlushPendingNotifications(
-    aNeedsLayoutFlush ? FlushType::Layout : FlushType::Style);
+    aNeedsLayoutFlush ? FlushType::Layout : FlushType::Style, target);
 #ifdef DEBUG
   mFlushedPendingReflows = aNeedsLayoutFlush;
 #endif
@@ -933,10 +1028,12 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
 
     
     
-    NS_ASSERTION(mPresShell &&
-                 currentGeneration ==
-                   mPresShell->GetPresContext()->GetUndisplayedRestyleGeneration(),
-                 "why should we have flushed style again?");
+    
+    NS_ASSERTION(target == FlushTarget::ParentOnly ||
+                 (mPresShell &&
+                   currentGeneration ==
+                     mPresShell->GetPresContext()->GetUndisplayedRestyleGeneration()),
+                   "why should we have flushed style again?");
 
     SetResolvedStyleContext(Move(resolvedStyleContext), currentGeneration);
     NS_ASSERTION(mPseudo || !mStyleContext->HasPseudoElementData(),

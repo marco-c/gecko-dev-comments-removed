@@ -715,6 +715,10 @@ private:
   void BasicShapeRadiiToString(nsAString& aCssText,
                                const nsStyleCorners& aCorners);
 
+  
+  
+  mozilla::FlushTarget GetFlushTarget(nsIDocument* aDocument) const;
+
 
   static nsComputedStyleMap* GetComputedStyleMap();
 
