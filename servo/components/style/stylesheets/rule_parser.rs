@@ -50,6 +50,10 @@ pub struct TopLevelRuleParser<'a> {
     
     
     
+    pub had_hierarchy_error: bool,
+    
+    
+    
     pub namespaces: Option<&'a mut Namespaces>,
 }
 
@@ -71,6 +75,16 @@ impl<'b> TopLevelRuleParser<'b> {
     pub fn state(&self) -> State {
         self.state
     }
+
+    
+    
+    
+    
+    pub fn take_had_hierarchy_error(&mut self) -> bool {
+        let had_hierarchy_error = self.had_hierarchy_error;
+        self.had_hierarchy_error = false;
+        had_hierarchy_error
+    }
 }
 
 
@@ -84,9 +98,6 @@ pub enum State {
     Namespaces = 3,
     
     Body = 4,
-    
-    
-    Invalid = 5,
 }
 
 #[derive(Clone, Debug)]
@@ -153,8 +164,8 @@ impl<'a, 'i> AtRuleParser<'i> for TopLevelRuleParser<'a> {
         match_ignore_ascii_case! { &*name,
             "import" => {
                 if self.state > State::Imports {
-                    self.state = State::Invalid;
                     // "@import must be before any rule but @charset"
+                    self.had_hierarchy_error = true;
                     return Err(StyleParseError::UnexpectedImportRule.into())
                 }
 
@@ -180,8 +191,8 @@ impl<'a, 'i> AtRuleParser<'i> for TopLevelRuleParser<'a> {
             },
             "namespace" => {
                 if self.state > State::Namespaces {
-                    self.state = State::Invalid;
                     // "@namespace must be before any rule but @charset and @import"
+                    self.had_hierarchy_error = true;
                     return Err(StyleParseError::UnexpectedNamespaceRule.into())
                 }
                 self.state = State::Namespaces;
@@ -221,13 +232,11 @@ impl<'a, 'i> AtRuleParser<'i> for TopLevelRuleParser<'a> {
             },
             // @charset is removed by rust-cssparser if it’s the first rule in the stylesheet
             // anything left is invalid.
-            "charset" => return Err(StyleParseError::UnexpectedCharsetRule.into()),
+            "charset" => {
+                self.had_hierarchy_error = true;
+                return Err(StyleParseError::UnexpectedCharsetRule.into())
+            }
             _ => {}
-        }
-        
-        if self.state > State::Body {
-            self.state = State::Invalid;
-            return Err(StyleParseError::UnspecifiedError.into());
         }
         self.state = State::Body;
 
