@@ -117,11 +117,21 @@ InSendMessageExHook(LPVOID lpReserved)
     
     
     
-    static HMODULE comModule = LoadLibrary(L"combase.dll");
+    static const HMODULE comModule = []() -> HMODULE {
+      HMODULE module = LoadLibraryW(L"combase.dll");
+      if (!module) {
+        
+        module = LoadLibraryW(L"ole32.dll");
+      }
+
+      return module;
+    }();
+
     MOZ_ASSERT(comModule);
     if (!comModule) {
       return result;
     }
+
     
     HMODULE callingModule;
     if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
@@ -219,7 +229,7 @@ Compatibility::Init()
 
   
   
-  if ((sConsumers & ~(Compatibility::UNKNOWN | NVDA)) &&
+  if ((sConsumers & (~NVDA)) &&
       BrowserTabsRemoteAutostart()) {
     sUser32Interceptor.Init("user32.dll");
     if (!sInSendMessageExStub) {
