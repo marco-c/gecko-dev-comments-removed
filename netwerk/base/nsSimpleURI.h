@@ -100,6 +100,8 @@ protected:
                                    const nsACString &newRef,
                                    nsIURI** clone);
 
+    nsresult SetPathQueryRefEscaped(const nsACString &aPath, bool aNeedsEscape);
+
     nsCString mScheme;
     nsCString mPath; 
     nsCString mRef;  
