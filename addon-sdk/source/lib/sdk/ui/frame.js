@@ -1,0 +1,15 @@
+
+
+
+"use strict";
+
+module.metadata = {
+  "stability": "experimental",
+  "engines": {
+    "Firefox": "> 28"
+  }
+};
+
+const { Frame } = require("./frame/model");
+
+exports.Frame = Frame;

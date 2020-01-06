@@ -1,0 +1,18 @@
+
+
+
+
+'use strict';
+
+module.metadata = {
+  'stability': 'experimental',
+  'engines': {
+    'Firefox': '*',
+    'SeaMonkey': '*',
+    'Thunderbird': '*'
+  }
+};
+
+var channel = {};
+
+exports.events = channel;
