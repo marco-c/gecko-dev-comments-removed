@@ -14,6 +14,9 @@ const JSON_XHR_URL = URL_ROOT + "test.json";
 
 
 add_task(function* () {
+  
+  yield pushPref("network.http.rcwn.enabled", false);
+
   info("Test XHR Spy headers started");
 
   let {hud} = yield addTestTab(TEST_PAGE_URL);
