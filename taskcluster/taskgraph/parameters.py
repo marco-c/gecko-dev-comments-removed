@@ -11,6 +11,11 @@ import yaml
 from mozbuild.util import ReadOnlyDict
 
 
+class ParameterMismatch(Exception):
+    """Raised when a parameters.yml has extra or missing parameters."""
+
+
+
 PARAMETER_NAMES = set([
     'base_repository',
     'build_date',
@@ -50,7 +55,7 @@ class Parameters(ReadOnlyDict):
             msg.append("extra parameters: " + ", ".join(extra))
 
         if msg:
-            raise Exception("; ".join(msg))
+            raise ParameterMismatch("; ".join(msg))
 
     def __getitem__(self, k):
         if k not in PARAMETER_NAMES:
