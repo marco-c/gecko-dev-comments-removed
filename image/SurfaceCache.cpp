@@ -319,27 +319,10 @@ public:
       }
 
       SurfaceKey bestMatchKey = bestMatch->GetSurfaceKey();
-
-      
-      
-      
-      int64_t idealArea = AreaOfIntSize(aIdealKey.Size());
-      int64_t currentArea = AreaOfIntSize(currentKey.Size());
-      int64_t bestMatchArea = AreaOfIntSize(bestMatchKey.Size());
-
-      
-      if (bestMatchArea < idealArea) {
-        if (currentArea > bestMatchArea) {
-          bestMatch = current;
-        }
-        continue;
-      }
-      
-      if (idealArea <= currentArea && currentArea < bestMatchArea) {
+      if (CompareArea(aIdealKey.Size(), bestMatchKey.Size(),
+                      currentKey.Size())) {
         bestMatch = current;
-        continue;
       }
-      
     }
 
     MatchType matchType;
@@ -366,6 +349,34 @@ public:
     }
 
     return MakePair(bestMatch.forget(), matchType);
+  }
+
+  bool CompareArea(const IntSize& aIdealSize,
+                   const IntSize& aBestSize,
+                   const IntSize& aSize) const
+  {
+    
+    
+    
+    int64_t idealArea = AreaOfIntSize(aIdealSize);
+    int64_t currentArea = AreaOfIntSize(aSize);
+    int64_t bestMatchArea = AreaOfIntSize(aBestSize);
+
+    
+    if (bestMatchArea < idealArea) {
+      if (currentArea > bestMatchArea) {
+        return true;
+      }
+      return false;
+    }
+
+    
+    if (idealArea <= currentArea && currentArea < bestMatchArea) {
+      return true;
+    }
+
+    
+    return false;
   }
 
   SurfaceTable::Iterator ConstIter() const
