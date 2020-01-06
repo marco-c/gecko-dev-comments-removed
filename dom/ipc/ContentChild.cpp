@@ -662,7 +662,13 @@ ContentChild::Init(MessageLoop* aIOLoop,
   SetProcessName(NS_LITERAL_STRING("Web Content"));
 
 #ifdef NIGHTLY_BUILD
-  HangMonitor::RegisterAnnotator(PendingInputEventHangAnnotator::sSingleton);
+  
+  
+  SystemGroup::Dispatch(TaskCategory::Other,
+                        NS_NewRunnableFunction("RegisterPendingInputEventHangAnnotator", [] {
+                          HangMonitor::RegisterAnnotator(
+                            PendingInputEventHangAnnotator::sSingleton);
+                        }));
 #endif
 
   return true;
