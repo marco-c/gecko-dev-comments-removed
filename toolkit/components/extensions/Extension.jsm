@@ -579,6 +579,13 @@ this.ExtensionData = class {
 
       this.permissions.add(perm);
     }
+
+    
+    if (this.id) {
+      let matcher = new MatchPattern(this.getURL(), {ignorePath: true});
+      whitelist.push(matcher);
+    }
+
     this.whiteListedHosts = new MatchPatternSet(whitelist);
 
     for (let api of this.apiNames) {
