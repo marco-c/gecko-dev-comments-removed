@@ -95,6 +95,19 @@ const char* GetNameForProcessID(ProcessID process);
 
 GeckoProcessType GetGeckoProcessType(ProcessID process);
 
+
+
+
+
+
+
+
+
+
+bool
+IsValidIdentifierString(const nsACString& aStr, const size_t aMaxLength,
+                        const bool aAllowInfixPeriod, const bool aAllowInfixUnderscore);
+
 } 
 } 
 } 

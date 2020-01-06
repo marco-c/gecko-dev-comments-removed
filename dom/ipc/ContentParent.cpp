@@ -2264,6 +2264,9 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
   DataStorage::GetAllChildProcessData(xpcomInit.dataStorage());
 
   
+  TelemetryIPC::GetDynamicScalarDefinitions(xpcomInit.dynamicScalarDefs());
+
+  
   ScreenManager& screenManager = ScreenManager::GetSingleton();
   screenManager.CopyScreensToRemote(this);
 

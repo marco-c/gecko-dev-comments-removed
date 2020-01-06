@@ -1290,7 +1290,7 @@ var Impl = {
           payloadLoc = payloadObj;
         }
         
-        if (processType == "dynamic" && key != "events") {
+        if (processType == "dynamic" && !["events", "scalars"].includes(key)) {
           continue;
         }
 

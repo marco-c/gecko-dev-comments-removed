@@ -15,12 +15,14 @@
 
 
 namespace mozilla {
+
 namespace Telemetry {
 
 struct HistogramAccumulation;
 struct KeyedHistogramAccumulation;
 struct ScalarAction;
 struct KeyedScalarAction;
+struct DynamicScalarDefinition;
 struct ChildEventData;
 struct DiscardedData;
 
@@ -81,6 +83,19 @@ void RecordChildEvents(Telemetry::ProcessID aProcessType,
 
 void RecordDiscardedData(Telemetry::ProcessID aProcessType,
                          const Telemetry::DiscardedData& aDiscardedData);
+
+
+
+
+
+void GetDynamicScalarDefinitions(nsTArray<mozilla::Telemetry::DynamicScalarDefinition>& aDefs);
+
+
+
+
+
+
+void AddDynamicScalarDefinitions(const nsTArray<mozilla::Telemetry::DynamicScalarDefinition>& aDefs);
 
 }
 }
