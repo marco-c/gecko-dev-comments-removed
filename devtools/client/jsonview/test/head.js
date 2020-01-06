@@ -27,7 +27,12 @@ registerCleanupFunction(() => {
 
 
 
-function addJsonViewTab(url) {
+
+
+
+
+
+function addJsonViewTab(url, timeout = -1) {
   info("Adding a new JSON tab with URL: '" + url + "'");
 
   let deferred = promise.defer();
@@ -49,6 +54,21 @@ function addJsonViewTab(url) {
     } else {
       waitForContentMessage("Test:JsonView:JSONViewInitialized").then(() => {
         deferred.resolve(tab);
+      });
+    }
+
+    
+    if (timeout >= 0) {
+      new Promise(resolve => {
+        if (content.window.document.readyState === "complete") {
+          resolve();
+        } else {
+          waitForContentMessage("Test:JsonView:load").then(resolve);
+        }
+      }).then(() => {
+        setTimeout(() => {
+          deferred.reject("JSON Viewer did not load.");
+        }, timeout);
       });
     }
   });
