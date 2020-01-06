@@ -55,7 +55,7 @@ impl StyleRule {
             
             
             
-            n += ops.malloc_size_of(selector.thin_arc_heap_ptr());
+            n += unsafe { ops.malloc_size_of(selector.thin_arc_heap_ptr()) };
         }
 
         n += self.block.unconditional_shallow_size_of(ops) +
