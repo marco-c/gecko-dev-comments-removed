@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef GMPServiceParent_h_
 #define GMPServiceParent_h_
@@ -38,7 +38,7 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
 
-  
+  // mozIGeckoMediaPluginService
   NS_IMETHOD HasPluginForAPI(const nsACString& aAPI,
                              nsTArray<nsCString>* aTags,
                              bool *aRetVal) override;
@@ -53,14 +53,14 @@ public:
   RefPtr<GenericPromise> EnsureInitialized();
   RefPtr<GenericPromise> AsyncAddPluginDirectory(const nsAString& aDirectory);
 
-  
+  // GMP thread access only
   bool IsShuttingDown();
 
   already_AddRefed<GMPStorage> GetMemoryStorageFor(const nsACString& aNodeId);
   nsresult ForgetThisSiteNative(const nsAString& aSite,
                                 const mozilla::OriginAttributesPattern& aPattern);
 
-  
+  // Notifies that some user of this class is created/destroyed.
   void ServiceUserCreated(GMPServiceParent* aServiceParent);
   void ServiceUserDestroyed(GMPServiceParent* aServiceParent);
 
@@ -131,8 +131,8 @@ protected:
     const nsTArray<nsCString>& aTags) override;
 
 private:
-  
-  
+  // Creates a copy of aOriginal. Note that the caller is responsible for
+  // adding this to GeckoMediaPluginServiceParent::mPlugins.
   already_AddRefed<GMPParent> ClonePlugin(const GMPParent* aOriginal);
   nsresult EnsurePluginsOnDiskScanned();
   nsresult InitStorage();
@@ -165,12 +165,12 @@ private:
     bool mDefer;
   };
 
-  
+  // Protected by mMutex from the base class.
   nsTArray<RefPtr<GMPParent>> mPlugins;
   bool mShuttingDown;
 
-  
-  
+  // True if we've inspected MOZ_GMP_PATH on the GMP thread and loaded any
+  // plugins found there into mPlugins.
   Atomic<bool> mScannedPluginOnDisk;
 
   template<typename T>
@@ -194,26 +194,26 @@ private:
 
   nsCOMPtr<nsIFile> mStorageBaseDir;
 
-  
-  
+  // Hashes of (origin,topLevelOrigin) to the node id for
+  // non-persistent sessions.
   nsClassHashtable<nsUint32HashKey, nsCString> mTempNodeIds;
 
-  
-  
+  // Hashes node id to whether that node id is allowed to store data
+  // persistently on disk.
   nsDataHashtable<nsCStringHashKey, bool> mPersistentStorageAllowed;
 
-  
-  
+  // Synchronization for barrier that ensures we've loaded GMPs from
+  // MOZ_GMP_PATH before allowing GetContentParentFrom() to proceed.
   Monitor mInitPromiseMonitor;
   MozPromiseHolder<GenericPromise> mInitPromise;
   bool mLoadPluginsFromDiskComplete;
 
-  
+  // Hashes nodeId to the hashtable of storage for that nodeId.
   nsRefPtrHashtable<nsCStringHashKey, GMPStorage> mTempGMPStorage;
 
-  
-  
-  
+  // Tracks how many IPC connections to GMPServices running in content
+  // processes we have. When this is empty we can safely shut down.
+  // Synchronized across thread via mMutex in base class.
   nsTArray<GMPServiceParent*> mServiceParents;
 
   const RefPtr<AbstractThread> mMainThread;
@@ -246,7 +246,8 @@ public:
                                ProcessId* aOutID,
                                nsCString* aOutDisplayName,
                                Endpoint<PGMPContentParent>* aOutEndpoint,
-                               nsresult* aOutRv) override;
+                               nsresult* aOutRv,
+                               nsCString* aOutErrorDescription) override;
 
   ipc::IPCResult RecvLaunchGMPForNodeId(
     const NodeIdData& nodeId,
@@ -257,7 +258,8 @@ public:
     ProcessId* aOutID,
     nsCString* aOutDisplayName,
     Endpoint<PGMPContentParent>* aOutEndpoint,
-    nsresult* aOutRv) override;
+    nsresult* aOutRv,
+    nsCString* aOutErrorDescription) override;
 
 private:
   void CloseTransport(Monitor* aSyncMonitor, bool* aCompleted);
@@ -265,7 +267,7 @@ private:
   RefPtr<GeckoMediaPluginServiceParent> mService;
 };
 
-} 
-} 
+} // namespace gmp
+} // namespace mozilla
 
-#endif 
+#endif // GMPServiceParent_h_
