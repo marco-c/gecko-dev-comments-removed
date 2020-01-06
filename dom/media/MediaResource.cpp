@@ -14,6 +14,7 @@
 #include "nsDebug.h"
 #include "nsNetUtil.h"
 #include "nsThreadUtils.h"
+#include "nsIClassOfService.h"
 #include "nsIFile.h"
 #include "nsIFileChannel.h"
 #include "nsIFileStreams.h"
@@ -846,6 +847,13 @@ ChannelMediaResource::RecreateChannel()
                               nullptr,  
                               loadFlags);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(mChannel));
+  if (cos) {
+    
+    
+    cos->AddClassFlags(nsIClassOfService::DontThrottle);
+  }
 
   mSuspendAgent.NotifyChannelOpened(mChannel);
 

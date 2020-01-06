@@ -1196,14 +1196,19 @@ public:
       return;
     }
 
-    nsCOMPtr<nsIClassOfService> cos;
-    if (aElement->mUseUrgentStartForChannel &&
-        (cos = do_QueryInterface(channel))) {
-      cos->AddClassFlags(nsIClassOfService::UrgentStart);
+    nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(channel));
+    if (cos) {
+      if (aElement->mUseUrgentStartForChannel) {
+        cos->AddClassFlags(nsIClassOfService::UrgentStart);
+
+        
+        
+        aElement->mUseUrgentStartForChannel = false;
+      }
 
       
       
-      aElement->mUseUrgentStartForChannel = false;
+      cos->AddClassFlags(nsIClassOfService::DontThrottle);
     }
 
     
