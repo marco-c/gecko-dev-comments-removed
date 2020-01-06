@@ -90,8 +90,7 @@ var gSync = {
   },
 
   init() {
-    
-    if (this._initialized || !window.toolbar.visible) {
+    if (this._initialized) {
       return;
     }
 
