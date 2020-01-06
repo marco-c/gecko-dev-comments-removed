@@ -318,8 +318,7 @@ function ModuleInstantiate()
             typeof(UnsafeGetReservedSlot(module, MODULE_OBJECT_ERROR_SLOT)) === "undefined")
         {
             
-            assert(error === "out of memory",
-                   "Stack must contain module unless we hit OOM");
+            
             RecordModuleError(module, error);
         }
 
@@ -543,8 +542,7 @@ function ModuleEvaluate()
             typeof(UnsafeGetReservedSlot(module, MODULE_OBJECT_ERROR_SLOT)) === "undefined")
         {
             
-            assert(error === "out of memory",
-                  "Stack must contain module unless we hit OOM");
+            
             RecordModuleError(module, error);
         }
 
