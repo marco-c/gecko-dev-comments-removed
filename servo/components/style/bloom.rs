@@ -161,6 +161,14 @@ impl<E: TElement> StyleBloom<E> {
     
     
     
+    #[inline]
+    pub fn current_parent(&self) -> Option<E> {
+        self.elements.last().map(|el| **el)
+    }
+
+    
+    
+    
     
     
     
@@ -185,7 +193,7 @@ impl<E: TElement> StyleBloom<E> {
             }
         };
 
-        if self.elements.last().map(|el| **el) == Some(parent_element) {
+        if self.current_parent() == Some(parent_element) {
             
             return;
         }

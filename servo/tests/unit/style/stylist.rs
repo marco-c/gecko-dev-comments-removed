@@ -77,10 +77,18 @@ fn test_revalidation_selectors() {
     let test = parse_selectors(&[
         
         "div",
-        "#bar",
         "div:not(.foo)",
         "div span",
         "div > span",
+
+        
+        "#foo1", 
+                
+                
+        "#foo2::before",
+        "#foo3 > span",
+        "#foo1 > span", 
+                        
 
         
         "div[foo]",
@@ -122,6 +130,12 @@ fn test_revalidation_selectors() {
       .collect::<Vec<_>>();
 
     let reference = parse_selectors(&[
+        
+        "#foo1",
+        "#foo2::before",
+        "#foo3 > span",
+        "#foo1 > span",
+
         
         "div[foo]",
         "div:not([foo])",

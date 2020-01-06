@@ -5,15 +5,76 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use Atom;
 use bit_vec::BitVec;
+use bloom::StyleBloom;
 use cache::{LRUCache, LRUCacheMutIterator};
 use context::{SelectorFlagsMap, SharedStyleContext, StyleContext};
 use data::{ComputedStyle, ElementData, ElementStyles};
 use dom::{TElement, SendElement};
 use matching::{ChildCascadeRequirement, MatchMethods};
 use properties::ComputedValues;
-use selectors::bloom::BloomFilter;
 use selectors::matching::{ElementSelectorFlags, VisitedHandlingMode, StyleRelations};
 use smallvec::SmallVec;
 use std::mem;
@@ -95,19 +156,40 @@ impl ValidationData {
     }
 
     
+    
+    #[inline]
     fn revalidation_match_results<E, F>(
         &mut self,
         element: E,
         stylist: &Stylist,
-        bloom: &BloomFilter,
+        bloom: &StyleBloom<E>,
+        bloom_known_valid: bool,
         flags_setter: &mut F
     ) -> &BitVec
         where E: TElement,
               F: FnMut(&E, ElementSelectorFlags),
     {
         if self.revalidation_match_results.is_none() {
+            
+            
+            
+            
+            
+            
+            let bloom_to_use = if bloom_known_valid {
+                debug_assert_eq!(bloom.current_parent(),
+                                 element.parent_element());
+                Some(bloom.filter())
+            } else {
+                if bloom.current_parent() == element.parent_element() {
+                    Some(bloom.filter())
+                } else {
+                    None
+                }
+            };
             self.revalidation_match_results =
-                Some(stylist.match_revalidation_selectors(&element, bloom,
+                Some(stylist.match_revalidation_selectors(&element,
+                                                          bloom_to_use,
                                                           flags_setter));
         }
 
@@ -150,15 +232,17 @@ impl<E: TElement> StyleSharingCandidate<E> {
     }
 
     
+    
     fn revalidation_match_results(
         &mut self,
         stylist: &Stylist,
-        bloom: &BloomFilter,
+        bloom: &StyleBloom<E>,
     ) -> &BitVec {
         self.validation_data.revalidation_match_results(
             *self.element,
             stylist,
             bloom,
+             false,
             &mut |_, _| {})
     }
 }
@@ -204,7 +288,7 @@ impl<E: TElement> StyleSharingTarget<E> {
     fn revalidation_match_results(
         &mut self,
         stylist: &Stylist,
-        bloom: &BloomFilter,
+        bloom: &StyleBloom<E>,
         selector_flags_map: &mut SelectorFlagsMap<E>
     ) -> &BitVec {
         
@@ -231,6 +315,7 @@ impl<E: TElement> StyleSharingTarget<E> {
             self.element,
             stylist,
             bloom,
+             true,
             &mut set_selector_flags)
     }
 
@@ -243,7 +328,10 @@ impl<E: TElement> StyleSharingTarget<E> {
     {
         let shared_context = &context.shared;
         let selector_flags_map = &mut context.thread_local.selector_flags;
-        let bloom_filter = context.thread_local.bloom_filter.filter();
+        let bloom_filter = &context.thread_local.bloom_filter;
+
+        debug_assert_eq!(bloom_filter.current_parent(),
+                         self.element.parent_element());
 
         let result = context.thread_local
             .style_sharing_candidate_cache
@@ -400,7 +488,7 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
         &mut self,
         shared_context: &SharedStyleContext,
         selector_flags_map: &mut SelectorFlagsMap<E>,
-        bloom_filter: &BloomFilter,
+        bloom_filter: &StyleBloom<E>,
         target: &mut StyleSharingTarget<E>,
         data: &mut ElementData
     ) -> StyleSharingResult {
@@ -419,11 +507,6 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
         if target.is_native_anonymous() {
             debug!("{:?} Cannot share style: NAC", target.element);
             return StyleSharingResult::CannotShare;
-        }
-
-        if target.get_id().is_some() {
-            debug!("{:?} Cannot share style: element has id", target.element);
-            return StyleSharingResult::CannotShare
         }
 
         let mut should_clear_cache = false;
@@ -498,7 +581,7 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
     fn test_candidate(target: &mut StyleSharingTarget<E>,
                       candidate: &mut StyleSharingCandidate<E>,
                       shared: &SharedStyleContext,
-                      bloom: &BloomFilter,
+                      bloom: &StyleBloom<E>,
                       selector_flags_map: &mut SelectorFlagsMap<E>)
                       -> Result<ComputedStyle, CacheMiss> {
         macro_rules! miss {
@@ -544,8 +627,14 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
             miss!(State)
         }
 
-        if target.get_id() != candidate.element.get_id() {
-            miss!(IdAttr)
+        let element_id = target.element.get_id();
+        let candidate_id = candidate.element.get_id();
+        if element_id != candidate_id {
+            
+            if checks::may_have_rules_for_ids(shared, element_id.as_ref(),
+                                              candidate_id.as_ref()) {
+                miss!(IdAttr)
+            }
         }
 
         if !checks::have_same_style_attribute(target, candidate) {

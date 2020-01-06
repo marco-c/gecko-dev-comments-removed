@@ -160,6 +160,12 @@ impl SelectorMap<Rule> {
     }
 
     
+    #[inline]
+    pub fn has_rules_for_id(&self, id: &Atom) -> bool {
+        self.id_hash.get(id).is_some()
+    }
+
+    
     
     pub fn get_universal_rules(&self,
                                cascade_level: CascadeLevel)

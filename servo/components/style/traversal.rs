@@ -799,19 +799,6 @@ fn compute_style<E, D>(_traversal: &D,
     context.thread_local.statistics.elements_styled += 1;
     let kind = data.restyle_kind();
 
-    
-    
-    if let MatchAndCascade = kind {
-        let target = StyleSharingTarget::new(element);
-        let sharing_result = target.share_style_if_possible(context, data);
-
-        if let StyleWasShared(index, had_damage) = sharing_result {
-            context.thread_local.statistics.styles_shared += 1;
-            context.thread_local.style_sharing_candidate_cache.touch(index);
-            return had_damage;
-        }
-    }
-
     match kind {
         MatchAndCascade => {
             
@@ -820,6 +807,18 @@ fn compute_style<E, D>(_traversal: &D,
                                               traversal_data.current_dom_depth);
 
             context.thread_local.bloom_filter.assert_complete(element);
+
+            
+            
+            let target = StyleSharingTarget::new(element);
+            let sharing_result = target.share_style_if_possible(context, data);
+
+            if let StyleWasShared(index, had_damage) = sharing_result {
+                context.thread_local.statistics.styles_shared += 1;
+                context.thread_local.style_sharing_candidate_cache.touch(index);
+                return had_damage;
+            }
+
             context.thread_local.statistics.elements_matched += 1;
 
             

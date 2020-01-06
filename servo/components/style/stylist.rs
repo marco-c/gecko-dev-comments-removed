@@ -149,6 +149,15 @@ pub struct Stylist {
     
     
     
+    
+    
+    
+    #[cfg_attr(feature = "servo", ignore_heap_size_of = "just an array")]
+    mapped_ids: BloomFilter,
+
+    
+    
+    
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
     selectors_for_cache_revalidation: SelectorMap<SelectorInner<SelectorImpl>>,
 
@@ -249,6 +258,7 @@ impl Stylist {
             attribute_dependencies: BloomFilter::new(),
             style_attribute_dependency: false,
             state_dependencies: ElementState::empty(),
+            mapped_ids: BloomFilter::new(),
             selectors_for_cache_revalidation: SelectorMap::new(),
             num_selectors: 0,
             num_declarations: 0,
@@ -323,6 +333,7 @@ impl Stylist {
         self.attribute_dependencies.clear();
         self.style_attribute_dependency = false;
         self.state_dependencies = ElementState::empty();
+        self.mapped_ids.clear();
         self.selectors_for_cache_revalidation = SelectorMap::new();
         self.num_selectors = 0;
         self.num_declarations = 0;
@@ -467,6 +478,9 @@ impl Stylist {
                             attribute_dependencies: &mut self.attribute_dependencies,
                             style_attribute_dependency: &mut self.style_attribute_dependency,
                             state_dependencies: &mut self.state_dependencies,
+                        });
+                        selector.visit(&mut MappedIdVisitor {
+                            mapped_ids: &mut self.mapped_ids,
                         });
                     }
                     self.rules_source_order += 1;
@@ -1072,6 +1086,13 @@ impl Stylist {
     
     
     #[inline]
+    pub fn may_have_rules_for_id(&self, id: &Atom) -> bool {
+        self.mapped_ids.might_contain(id)
+    }
+
+    
+    
+    #[inline]
     pub fn is_device_dirty(&self) -> bool {
         self.is_device_dirty
     }
@@ -1092,7 +1113,7 @@ impl Stylist {
     
     pub fn match_revalidation_selectors<E, F>(&self,
                                               element: &E,
-                                              bloom: &BloomFilter,
+                                              bloom: Option<&BloomFilter>,
                                               flags_setter: &mut F)
                                               -> BitVec
         where E: TElement,
@@ -1101,7 +1122,7 @@ impl Stylist {
         
         
         let mut matching_context =
-            MatchingContext::new(MatchingMode::Normal, Some(bloom));
+            MatchingContext::new(MatchingMode::Normal, bloom);
 
         
         
@@ -1233,6 +1254,37 @@ impl<'a> SelectorVisitor for AttributeAndStateDependencyVisitor<'a> {
 }
 
 
+struct MappedIdVisitor<'a> {
+    mapped_ids: &'a mut BloomFilter,
+}
+
+impl<'a> SelectorVisitor for MappedIdVisitor<'a> {
+    type Impl = SelectorImpl;
+
+    
+    fn visit_simple_selector(&mut self, s: &Component<SelectorImpl>) -> bool {
+        if let Component::ID(ref id) = *s {
+            self.mapped_ids.insert(id);
+        }
+        true
+    }
+
+    
+    
+    
+    
+    
+    fn visit_complex_selector(&mut self,
+                              _: SelectorIter<SelectorImpl>,
+                              combinator: Option<Combinator>) -> bool {
+        match combinator {
+            None | Some(Combinator::PseudoElement) => true,
+            _ => false,
+        }
+    }
+}
+
+
 
 
 
@@ -1282,6 +1334,10 @@ impl SelectorVisitor for RevalidationVisitor {
             Component::AttributeInNoNamespace { .. } |
             Component::AttributeOther(_) |
             Component::Empty |
+            
+            
+            
+            Component::ID(_) |
             Component::FirstChild |
             Component::LastChild |
             Component::OnlyChild |
