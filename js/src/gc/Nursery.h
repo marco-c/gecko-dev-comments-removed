@@ -353,6 +353,12 @@ class Nursery
     ProfileDurations totalDurations_;
     uint64_t minorGcCount_;
 
+    struct {
+        JS::gcreason::Reason reason;
+        uint64_t nurseryUsedBytes;
+        uint64_t tenuredBytes;
+    } previousGC;
+
     
 
 
