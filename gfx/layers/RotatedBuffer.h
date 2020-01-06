@@ -297,8 +297,14 @@ public:
   gfx::DrawTarget* BorrowDrawTargetForPainting(PaintState& aPaintState,
                                                DrawIterator* aIter = nullptr);
 
+  
+
+
+
+
   gfx::DrawTarget* BorrowDrawTargetForRecording(PaintState& aPaintState,
-                                                DrawIterator* aIter = nullptr);
+                                                DrawIterator* aIter,
+                                                gfx::Matrix* aOutTransform);
 
   void ExpandDrawRegion(PaintState& aPaintState,
                         DrawIterator* aIter,
@@ -384,7 +390,9 @@ protected:
   gfx::DrawTarget*
   BorrowDrawTargetForQuadrantUpdate(const gfx::IntRect& aBounds,
                                     ContextSource aSource,
-                                    DrawIterator* aIter);
+                                    DrawIterator* aIter,
+                                    bool aSetTransform = true,
+                                    gfx::Matrix* aOutTransform = nullptr);
 
   static bool IsClippingCheap(gfx::DrawTarget* aTarget, const nsIntRegion& aRegion);
 
