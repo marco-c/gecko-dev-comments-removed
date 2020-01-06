@@ -62,6 +62,18 @@ public:
 
   virtual nsresult MinMaxStepAttrChanged();
 
+  
+
+
+
+
+
+
+
+
+  virtual bool ConvertStringToNumber(nsAString& aValue,
+                                     mozilla::Decimal& aResultValue) const;
+
 protected:
   explicit InputType(mozilla::dom::HTMLInputElement* aInputElement)
     : mInputElement(aInputElement)
@@ -109,6 +121,80 @@ protected:
 
 
   nsIFrame* GetPrimaryFrame() const;
+
+  
+
+
+
+
+
+
+  bool ParseDate(const nsAString& aValue,
+                 uint32_t* aYear,
+                 uint32_t* aMonth,
+                 uint32_t* aDay) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+  bool ParseTime(const nsAString& aValue, uint32_t* aResult) const;
+
+  
+
+
+
+
+
+
+  bool ParseMonth(const nsAString& aValue,
+                  uint32_t* aYear,
+                  uint32_t* aMonth) const;
+
+  
+
+
+
+
+
+
+  bool ParseWeek(const nsAString& aValue,
+                 uint32_t* aYear,
+                 uint32_t* aWeek) const;
+
+  
+
+
+
+
+
+
+
+
+  bool ParseDateTimeLocal(const nsAString& aValue,
+                          uint32_t* aYear,
+                          uint32_t* aMonth,
+                          uint32_t* aDay,
+                          uint32_t* aTime) const;
+
+  
+
+
+
+  int32_t MonthsSinceJan1970(uint32_t aYear, uint32_t aMonth) const;
+
+  
+
+
+
+  double DaysSinceEpochFromWeek(uint32_t aYear, uint32_t aWeek) const;
 
   mozilla::dom::HTMLInputElement* mInputElement;
 };

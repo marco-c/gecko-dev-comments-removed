@@ -1175,17 +1175,6 @@ protected:
 
 
 
-  bool ConvertStringToNumber(nsAString& aValue, Decimal& aResultValue) const;
-
-  
-
-
-
-
-
-
-
-
 
 
   bool ConvertNumberToString(Decimal aValue, nsAString& aResultString) const;
