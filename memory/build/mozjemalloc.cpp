@@ -903,6 +903,8 @@ struct arena_bin_t
 
   
   unsigned long mNumRuns;
+
+  static constexpr long double kRunOverhead = 1.5_percent;
 };
 
 struct arena_t
@@ -3023,7 +3025,7 @@ arena_bin_run_size_calc(arena_bin_t* bin, size_t min_run_size)
     }
 
     
-    if ((try_reg0_offset << RUN_BFP) <= RUN_MAX_OVRHD * try_run_size) {
+    if (Fraction(try_reg0_offset, try_run_size) <= arena_bin_t::kRunOverhead) {
       break;
     }
   }
