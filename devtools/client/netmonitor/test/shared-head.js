@@ -24,7 +24,6 @@ async function waitForExistingRequests(monitor) {
       
       if (!request.requestHeaders || !request.requestCookies ||
           !request.eventTimings ||
-          (!request.securityInfo && !request.fromServiceWorker) ||
           ((!request.responseHeaders || !request.responseCookies) &&
             request.securityState != "broken" &&
             (!request.responseContentAvailable || request.status))) {

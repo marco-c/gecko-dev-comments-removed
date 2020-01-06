@@ -259,12 +259,9 @@ class FirefoxDataProvider {
     
     
     
-    
-    
     return record.requestHeaders &&
       record.requestCookies &&
       record.eventTimings &&
-      (record.securityInfo || record.fromServiceWorker) &&
       (
        (record.responseHeaders && record.responseCookies) ||
        payload.securityState == "broken" ||
@@ -344,12 +341,7 @@ class FirefoxDataProvider {
       requestCookies: false,
       responseHeaders: false,
       responseCookies: false,
-      securityInfo: false,
       eventTimings: false,
-
-      
-      
-      fromServiceWorker,
     });
 
     this.addRequest(actor, {
@@ -391,12 +383,10 @@ class FirefoxDataProvider {
       case "responseCookies":
         this.requestPayloadData(actor, updateType);
         break;
+      
+      
       case "securityInfo":
-        this.updateRequest(actor, {
-          securityState: networkInfo.securityInfo,
-        }).then(() => {
-          this.requestPayloadData(actor, updateType);
-        });
+        this.updateRequest(actor, { securityState: networkInfo.securityInfo });
         break;
       case "responseStart":
         this.updateRequest(actor, {
@@ -422,10 +412,8 @@ class FirefoxDataProvider {
         });
         break;
       case "eventTimings":
-        this.updateRequest(actor, { totalTime: networkInfo.totalTime })
-          .then(() => {
-            this.requestPayloadData(actor, updateType);
-          });
+        this.pushRequestToQueue(actor, { totalTime: networkInfo.totalTime });
+        this.requestPayloadData(actor, updateType);
         break;
     }
 
