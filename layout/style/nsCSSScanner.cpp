@@ -1165,6 +1165,7 @@ nsCSSScanner::NextURL(nsCSSToken& aToken)
   
   aToken.mIdent.Truncate();
 
+  bool hasString = false;
   int32_t ch = Peek();
   
   if (ch == '"' || ch == '\'') {
@@ -1174,7 +1175,7 @@ nsCSSScanner::NextURL(nsCSSToken& aToken)
       return;
     }
     MOZ_ASSERT(aToken.mType == eCSSToken_String, "unexpected token type");
-
+    hasString = true;
   } else {
     
     aToken.mSymbol = char16_t(0);
@@ -1194,6 +1195,25 @@ nsCSSScanner::NextURL(nsCSSToken& aToken)
   } else {
     mSeenBadToken = true;
     aToken.mType = eCSSToken_Bad_URL;
+    if (!hasString) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      do {
+        if (IsVertSpace(ch)) {
+          AdvanceLine();
+        } else {
+          Advance();
+        }
+        ch = Peek();
+      } while (ch >= 0 && ch != ')');
+    }
   }
 }
 
