@@ -216,7 +216,7 @@ nsHtml5TreeOpExecutor::SetParser(nsParserBase* aParser)
 void
 nsHtml5TreeOpExecutor::FlushPendingNotifications(FlushType aType)
 {
-  if (aType >= FlushType::EnsurePresShellInitAndFrames) {
+  if (aType >= FlushType::InterruptibleLayout) {
     
     nsContentSink::StartLayout(true);
   }

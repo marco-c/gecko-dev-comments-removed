@@ -4090,9 +4090,6 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
     "",
     "Content",
     "ContentAndNotify",
-    
-    
-    "Style",
     "Style",
     "InterruptibleLayout",
     "Layout",
