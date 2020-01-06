@@ -587,7 +587,7 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
   }
 
   if (gRunningTimeoutDepth == 0 &&
-      mWindow.GetPopupControlState() < openBlocked) {
+      nsContentUtils::GetPopupControlState() < openBlocked) {
     
     
     
@@ -597,7 +597,7 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
     
     
     if (interval <= gDisableOpenClickDelay) {
-      timeout->mPopupState = mWindow.GetPopupControlState();
+      timeout->mPopupState = nsContentUtils::GetPopupControlState();
     }
   }
 

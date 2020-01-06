@@ -343,6 +343,8 @@ bool nsContentUtils::sDoNotTrackEnabled = false;
 
 mozilla::LazyLogModule nsContentUtils::sDOMDumpLog("Dump");
 
+PopupControlState nsContentUtils::sPopupControlState = openAbused;
+
 
 enum AutocompleteUnsupportedFieldName : uint8_t
 {
