@@ -805,7 +805,7 @@ function BuildConditionSandbox(aURL) {
 
     
     
-    sandbox.haveTestPlugin = !!getTestPlugin("Test Plug-in");
+    sandbox.haveTestPlugin = !sandbox.Android && !!getTestPlugin("Test Plug-in");
 
     
     sandbox.windowsDefaultTheme = gContainingWindow.matchMedia("(-moz-windows-default-theme)").matches;
