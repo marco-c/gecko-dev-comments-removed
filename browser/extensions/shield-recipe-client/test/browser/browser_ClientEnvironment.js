@@ -117,6 +117,9 @@ add_task(async function isFirstRun() {
   let environment = ClientEnvironment.getEnvironment();
 
   
+  ok(!environment.isFirstRun, "isFirstRun has a default value");
+
+  
   await SpecialPowers.pushPrefEnv({set: [["extensions.shield-recipe-client.first_run", true]]});
   environment = ClientEnvironment.getEnvironment();
   ok(environment.isFirstRun, "isFirstRun is read from preferences");
