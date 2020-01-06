@@ -18,7 +18,7 @@ namespace mozilla {
 namespace Telemetry {
 
 nsresult
-ComputeAnnotationsKey(const HangMonitor::HangAnnotationsPtr& aAnnotations, nsAString& aKeyOut);
+ComputeAnnotationsKey(const HangMonitor::HangAnnotations& aAnnotations, nsAString& aKeyOut);
 
 class HangReports {
 public:
@@ -28,7 +28,7 @@ public:
 
   struct AnnotationInfo {
     AnnotationInfo(uint32_t aHangIndex,
-                   HangMonitor::HangAnnotationsPtr aAnnotations)
+                   HangMonitor::HangAnnotations&& aAnnotations)
       : mAnnotations(Move(aAnnotations))
     {
       mHangIndices.AppendElement(aHangIndex);
@@ -47,7 +47,7 @@ public:
     
     
     nsTArray<uint32_t> mHangIndices;
-    HangMonitor::HangAnnotationsPtr mAnnotations;
+    HangMonitor::HangAnnotations mAnnotations;
 
   private:
     
@@ -58,7 +58,7 @@ public:
 #if defined(MOZ_GECKO_PROFILER)
   void AddHang(const Telemetry::ProcessedStack& aStack, uint32_t aDuration,
                int32_t aSystemUptime, int32_t aFirefoxUptime,
-               HangMonitor::HangAnnotationsPtr aAnnotations);
+               HangMonitor::HangAnnotations&& aAnnotations);
   void PruneStackReferences(const size_t aRemovedStackIndex);
 #endif
   uint32_t GetDuration(unsigned aIndex) const;

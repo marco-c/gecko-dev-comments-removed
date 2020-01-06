@@ -190,7 +190,7 @@ public:
   
   NativeHangStack mNativeHangStack;
   
-  UniquePtr<HangMonitor::HangAnnotations> mAnnotations;
+  HangMonitor::HangAnnotations mAnnotations;
   
   HangMonitor::Observer::Annotators mAnnotators;
   
