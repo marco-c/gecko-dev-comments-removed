@@ -117,7 +117,9 @@ window {
   border-bottom-width: 0px;
   border-top-width: 1px;
   border-top-color: var(--theme-splitter-color);
-  background-color: var(--theme-toolbar-background);
+  
+
+  background-color: var(--theme-body-background);
   display: block;
   position: relative;
 }
