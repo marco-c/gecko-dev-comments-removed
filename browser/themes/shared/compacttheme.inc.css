@@ -9,7 +9,9 @@
 :root {
   --tab-toolbar-navbar-overlap: 0px;
   --navbar-tab-toolbar-highlight-overlap: 0px;
+%ifndef MOZ_PHOTON_THEME
   --space-above-tabbar: 0px;
+%endif
   --toolbarbutton-text-shadow: none;
   --backbutton-urlbar-overlap: 0px;
   
@@ -98,12 +100,13 @@ toolbar:-moz-lwtheme-darktext {
   --toolbarbutton-checkedhover-backgroundcolor: #d7d7d8;
 }
 
+%ifndef MOZ_PHOTON_THEME
 
 
 #main-window[tabsintitlebar][customizing] {
   --space-above-tabbar: 9px;
 }
-
+%endif
 
 .tab-background-middle {
   border-left-width: 0;
@@ -353,7 +356,7 @@ window:not([chromehidden~="toolbar"]) #urlbar-wrapper > #urlbar:-moz-locale-dir(
 
 .tab-icon-sound[soundplaying],
 .tab-icon-sound[muted] {
-  filter: none !important; 
+  filter: url(chrome://global/skin/filters.svg#fill) !important; 
 }
 
 

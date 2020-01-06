@@ -28,12 +28,13 @@
   background: var(--chrome-background-color);
 }
 
+%ifndef MOZ_PHOTON_THEME
 
 #main-window[tabsintitlebar] > #titlebar > #titlebar-content > #titlebar-buttonbox-container,
 #main-window[tabsintitlebar] > #titlebar > #titlebar-content > #titlebar-secondary-buttonbox > #titlebar-fullscreen-button {
   margin-top: 6px;
 }
-
+%endif
 
 
 #identity-box {
