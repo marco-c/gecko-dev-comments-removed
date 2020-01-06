@@ -478,6 +478,7 @@ private:
     
     TCPFastOpen *mFastOpenCallback;
     bool mFastOpenLayerHasBufferedData;
+    uint8_t mFastOpenStatus;
 
     bool mDoNotRetryToConnect;
 };
