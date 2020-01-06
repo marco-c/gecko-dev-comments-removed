@@ -129,13 +129,6 @@ const char* PlatformBuildID();
 
 void SetupErrorHandling(const char* progname);
 
-
-
-
-
-
-uint32_t MultiprocessBlockPolicy();
-
 #ifdef MOZ_WIDGET_GTK
 const char* DetectDisplay();
 #endif
