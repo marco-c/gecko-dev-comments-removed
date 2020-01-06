@@ -10,9 +10,7 @@ function test() {
   waitForExplicitFinish();
 
   
-  let profilePath = Cc["@mozilla.org/file/directory_service;1"].
-                    getService(Ci.nsIProperties).
-                    get("ProfD", Ci.nsIFile);
+  let profilePath = Services.dirsvc.get("ProfD", Ci.nsIFile);
   function getSessionstoreFile() {
     let sessionStoreJS = profilePath.clone();
     sessionStoreJS.append("sessionstore.jsonlz4");

@@ -254,7 +254,6 @@ function confirmRestartPrompt(aRestartToEnable, aDefaultButtonIndex,
                                       "featureDisableRequiresRestart",
                                       [brandName]);
   let title = bundle.getFormattedString("shouldRestartTitle", [brandName]);
-  let prompts = Cc["@mozilla.org/embedcomp/prompt-service;1"].getService(Ci.nsIPromptService);
 
   
   let button0Text = bundle.getFormattedString("okToRestartButton", [brandName]);
@@ -295,9 +294,9 @@ function confirmRestartPrompt(aRestartToEnable, aDefaultButtonIndex,
       break;
   }
 
-  let buttonIndex = prompts.confirmEx(window, title, msg, buttonFlags,
-                                      button0Text, button1Text, button2Text,
-                                      null, {});
+  let buttonIndex = Services.prompt.confirmEx(window, title, msg, buttonFlags,
+                                              button0Text, button1Text, button2Text,
+                                              null, {});
 
   
   

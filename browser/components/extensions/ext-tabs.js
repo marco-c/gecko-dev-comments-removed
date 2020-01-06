@@ -5,17 +5,16 @@
 
 
 
-XPCOMUtils.defineLazyGetter(this, "strBundle", function() {
-  const stringSvc = Cc["@mozilla.org/intl/stringbundle;1"].getService(Ci.nsIStringBundleService);
-  return stringSvc.createBundle("chrome://global/locale/extensions.properties");
-});
-
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
                                   "resource://gre/modules/PromiseUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
+
+XPCOMUtils.defineLazyGetter(this, "strBundle", function() {
+  return Services.strings.createBundle("chrome://global/locale/extensions.properties");
+});
 
 var {
   ExtensionError,

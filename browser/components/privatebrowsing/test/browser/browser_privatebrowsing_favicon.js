@@ -187,16 +187,12 @@ async function openTab(aBrowser, aURL) {
 
 registerCleanupFunction(() => {
   
-  let cookieMgr = Cc["@mozilla.org/cookiemanager;1"]
-                     .getService(Ci.nsICookieManager);
-  cookieMgr.removeAll();
+  Services.cookies.removeAll();
 
   
   clearAllImageCaches();
 
-  let networkCache = Cc["@mozilla.org/netwerk/cache-storage-service;1"]
-                        .getService(Ci.nsICacheStorageService);
-  networkCache.clear();
+  Services.cache2.clear();
 });
 
 add_task(async function test_favicon_privateBrowsing() {
@@ -252,9 +248,7 @@ add_task(async function test_favicon_cache_privateBrowsing() {
   
   clearAllImageCaches();
 
-  let networkCache = Cc["@mozilla.org/netwerk/cache-storage-service;1"]
-                        .getService(Ci.nsICacheStorageService);
-  networkCache.clear();
+  Services.cache2.clear();
 
   
   await clearAllPlacesFavicons();
