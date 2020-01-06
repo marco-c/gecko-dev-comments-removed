@@ -464,6 +464,7 @@ public:
         IDX_EXPOSEDPROPS            ,
         IDX_EVAL                    ,
         IDX_CONTROLLERS             ,
+        IDX_CONTROLLERS_CLASS       ,
         IDX_REALFRAMEELEMENT        ,
         IDX_LENGTH                  ,
         IDX_NAME                    ,
