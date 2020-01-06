@@ -4,11 +4,9 @@
 
 
 
-var BUGNUMBER     = "(none)";
 var summary = "|it.send(o)| without an RHS";
 var actual, expect;
 
-printBugNumber(BUGNUMBER);
 printStatus(summary);
 
 

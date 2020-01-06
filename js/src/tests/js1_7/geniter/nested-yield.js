@@ -4,11 +4,9 @@
 
 
 
-var BUGNUMBER     = "(none)";
 var summary = "YieldExpression is and contains an AssignmentExpression";
 var actual, expect;
 
-printBugNumber(BUGNUMBER);
 printStatus(summary);
 
 

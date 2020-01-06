@@ -4,11 +4,9 @@
 
 
 
-var BUGNUMBER     = "(none)";
 var summary = "Sequential yields";
 var actual, expect;
 
-printBugNumber(BUGNUMBER);
 printStatus(summary);
 
 

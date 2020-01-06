@@ -7,11 +7,9 @@
 
 
 
-var BUGNUMBER     = "(none)";
 var summary = "|yield;| is equivalent to |yield undefined;| ";
 var actual, expect;
 
-printBugNumber(BUGNUMBER);
 printStatus(summary);
 
 
