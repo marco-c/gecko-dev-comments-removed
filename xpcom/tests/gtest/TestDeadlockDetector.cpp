@@ -136,6 +136,8 @@ TEST_F(TESTNAME(DeadlockDetectorTest), TESTNAME(Sanity2DeathTest))
     ASSERT_DEATH_IF_SUPPORTED(Sanity2_Child(), regex);
 }
 
+#if 0
+
 int
 Sanity3_Child()
 {
@@ -173,6 +175,7 @@ TEST_F(TESTNAME(DeadlockDetectorTest), TESTNAME(Sanity3DeathTest))
 
     ASSERT_DEATH_IF_SUPPORTED(Sanity3_Child(), regex);
 }
+#endif
 
 int
 Sanity4_Child()
@@ -218,6 +221,8 @@ struct ThreadState
 
   int id;
 };
+
+#if 0
 
 static void
 TwoThreads_thread(void* arg)
@@ -277,6 +282,7 @@ TEST_F(TESTNAME(DeadlockDetectorTest), TESTNAME(TwoThreadsDeathTest))
 
     ASSERT_DEATH_IF_SUPPORTED(TwoThreads_Child(), regex);
 }
+#endif
 
 static void
 ContentionNoDeadlock_thread(void* arg)
