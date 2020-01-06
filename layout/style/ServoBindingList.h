@@ -33,6 +33,9 @@ SERVO_BINDING_FUNC(Servo_StyleSheet_FromUTF8Bytes, RawServoStyleSheetStrong,
                    RawGeckoURLExtraData* extra_data,
                    uint32_t line_number_offset,
                    nsCompatibility quirks_mode)
+SERVO_BINDING_FUNC(Servo_ImportRule_GetSheet,
+                   RawServoStyleSheetStrong,
+                   const RawServoImportRuleBorrowed import_rule)
 SERVO_BINDING_FUNC(Servo_StyleSheet_ClearAndUpdate,
                    void,
                    RawServoStyleSheetBorrowed stylesheet,
@@ -47,6 +50,8 @@ SERVO_BINDING_FUNC(Servo_StyleSheet_GetRules, ServoCssRulesStrong,
                    RawServoStyleSheetBorrowed sheet)
 SERVO_BINDING_FUNC(Servo_StyleSheet_Clone, RawServoStyleSheetStrong,
                    RawServoStyleSheetBorrowed sheet)
+SERVO_BINDING_FUNC(Servo_StyleSheet_SizeOfIncludingThis, size_t,
+                   mozilla::MallocSizeOf malloc_size_of, RawServoStyleSheetBorrowed sheet)
 SERVO_BINDING_FUNC(Servo_StyleSet_Init, RawServoStyleSetOwned, RawGeckoPresContextOwned pres_context)
 SERVO_BINDING_FUNC(Servo_StyleSet_Clear, void,
                    RawServoStyleSetBorrowed set)
@@ -69,8 +74,7 @@ SERVO_BINDING_FUNC(Servo_StyleSet_InsertStyleSheetBefore, void,
                    RawServoStyleSheetBorrowed sheet,
                    uint64_t unique_id,
                    uint64_t before_unique_id)
-SERVO_BINDING_FUNC(Servo_StyleSet_FlushStyleSheets, void, RawServoStyleSetBorrowed set,
-                   RawGeckoElementBorrowedOrNull doc_elem)
+SERVO_BINDING_FUNC(Servo_StyleSet_FlushStyleSheets, void, RawServoStyleSetBorrowed set)
 SERVO_BINDING_FUNC(Servo_StyleSet_NoteStyleSheetsChanged, void,
                    RawServoStyleSetBorrowed set, bool author_style_disabled)
 SERVO_BINDING_FUNC(Servo_StyleSet_GetKeyframesForName, bool,
@@ -120,7 +124,6 @@ SERVO_BINDING_FUNC(Servo_CssRules_DeleteRule, nsresult,
   SERVO_BINDING_FUNC(Servo_##type_##Rule_GetRules, ServoCssRulesStrong, \
                      RawServo##type_##RuleBorrowed rule)
 BASIC_RULE_FUNCS(Style)
-BASIC_RULE_FUNCS(Import)
 BASIC_RULE_FUNCS_WITHOUT_GETTER(Keyframe)
 BASIC_RULE_FUNCS(Keyframes)
 GROUP_RULE_FUNCS(Media)
@@ -142,10 +145,6 @@ SERVO_BINDING_FUNC(Servo_StyleRule_SetStyle, void,
                    RawServoDeclarationBlockBorrowed declarations)
 SERVO_BINDING_FUNC(Servo_StyleRule_GetSelectorText, void,
                    RawServoStyleRuleBorrowed rule, nsAString* result)
-SERVO_BINDING_FUNC(Servo_ImportRule_GetHref, void,
-                   RawServoImportRuleBorrowed rule, nsAString* result)
-SERVO_BINDING_FUNC(Servo_ImportRule_GetSheet, const RawServoStyleSheet*,
-                   RawServoImportRuleBorrowed rule)
 SERVO_BINDING_FUNC(Servo_Keyframe_GetKeyText, void,
                    RawServoKeyframeBorrowed keyframe, nsAString* result)
 
