@@ -370,9 +370,14 @@ function FxAccountsInternal() {
 
 FxAccountsInternal.prototype = {
   
-  VERIFICATION_POLL_TIMEOUT_INITIAL: 15000, 
   
-  VERIFICATION_POLL_TIMEOUT_SUBSEQUENT: 30000, 
+  
+  VERIFICATION_POLL_TIMEOUT_INITIAL: 60000, 
+  
+  VERIFICATION_POLL_TIMEOUT_SUBSEQUENT: 5 * 60000, 
+  
+  
+  VERIFICATION_POLL_START_SLOWDOWN_THRESHOLD: 5,
   
   
   DEVICE_REGISTRATION_VERSION: 2,
@@ -698,7 +703,7 @@ FxAccountsInternal.prototype = {
           return Promise.reject(new Error(
             "resendVerificationEmail called without a session token"));
         }
-        this.pollEmailStatus(currentState, data.sessionToken, "start");
+        this.startPollEmailStatus(currentState, data.sessionToken, "start");
         return this.fxAccountsClient.resendVerificationEmail(
           data.sessionToken).catch(err => this._handleTokenError(err));
       }
@@ -746,7 +751,7 @@ FxAccountsInternal.prototype = {
       
       
       log.trace("checkVerificationStatus - forcing verification status check");
-      return this.pollEmailStatus(currentState, data.sessionToken, "push");
+      return this.startPollEmailStatus(currentState, data.sessionToken, "push");
     });
   },
 
@@ -1111,7 +1116,7 @@ FxAccountsInternal.prototype = {
         if (data) {
           Services.telemetry.getHistogramById("FXA_CONFIGURED").add(1);
           if (!this.isUserEmailVerified(data)) {
-            this.pollEmailStatus(currentState, data.sessionToken, "start");
+            this.startPollEmailStatus(currentState, data.sessionToken, "browser-startup");
           }
         }
         return data;
@@ -1148,7 +1153,7 @@ FxAccountsInternal.prototype = {
     }
     if (!currentState.whenVerifiedDeferred) {
       log.debug("whenVerified promise starts polling for verified email");
-      this.pollEmailStatus(currentState, data.sessionToken, "start");
+      this.startPollEmailStatus(currentState, data.sessionToken, "start");
     }
     return currentState.whenVerifiedDeferred.promise.then(
       result => currentState.resolve(result)
@@ -1160,84 +1165,60 @@ FxAccountsInternal.prototype = {
     Services.obs.notifyObservers(null, topic, data);
   },
 
-  
-  pollEmailStatus: function pollEmailStatus(currentState, sessionToken, why) {
-    log.debug("entering pollEmailStatus: " + why);
-    if (why == "start" || why == "push") {
-      if (this.currentTimer) {
-        log.debug("pollEmailStatus starting while existing timer is running");
-        clearTimeout(this.currentTimer);
-        this.currentTimer = null;
-      }
-
-      
-      
-      
-      this.pollStartDate = Date.now();
-      if (!currentState.whenVerifiedDeferred) {
-        currentState.whenVerifiedDeferred = PromiseUtils.defer();
-        
-        
-        
-        
-        currentState.whenVerifiedDeferred.promise.catch(err => {
-          log.info("the wait for user verification was stopped: " + err);
-        });
-      }
+  startPollEmailStatus(currentState, sessionToken, why) {
+    log.debug("entering startPollEmailStatus: " + why);
+    
+    
+    
+    if (this.currentTimer) {
+      log.debug("startPollEmailStatus starting while existing timer is running");
+      clearTimeout(this.currentTimer);
+      this.currentTimer = null;
     }
 
-    
-    
-    return this.checkEmailStatus(sessionToken, { reason: why })
-      .then((response) => {
-        log.debug("checkEmailStatus -> " + JSON.stringify(response));
-        if (response && response.verified) {
-          currentState.updateUserAccountData({ verified: true })
-            .then(() => {
-              return currentState.getUserAccountData();
-            })
-            .then(data => {
-              
-              if (currentState.whenVerifiedDeferred) {
-                currentState.whenVerifiedDeferred.resolve(data);
-                delete currentState.whenVerifiedDeferred;
-              }
-              
-              this.notifyObservers(ON_FXA_UPDATE_NOTIFICATION, ONVERIFIED_NOTIFICATION);
-              
-              Services.telemetry.scalarSet("services.sync.fxa_verification_method",
-                                           why == "push" ? "push" : "poll");
-            });
-        } else {
-          
-          this.pollEmailStatusAgain(currentState, sessionToken);
-        }
-      }, error => {
-        let timeoutMs = undefined;
-        if (error && error.retryAfter) {
-          
-          timeoutMs = (error.retryAfter + 3) * 1000;
-        }
-        
-        
-        if (!error || !error.code || error.code != 401) {
-          this.pollEmailStatusAgain(currentState, sessionToken, timeoutMs);
-        } else {
-          let error = new Error("Verification status check failed");
-          this._rejectWhenVerified(currentState, error);
-        }
+    this.pollStartDate = Date.now();
+    if (!currentState.whenVerifiedDeferred) {
+      currentState.whenVerifiedDeferred = PromiseUtils.defer();
+      
+      
+      
+      
+      currentState.whenVerifiedDeferred.promise.catch(err => {
+        log.info("the wait for user verification was stopped: " + err);
       });
-  },
-
-  _rejectWhenVerified(currentState, error) {
-    currentState.whenVerifiedDeferred.reject(error);
-    delete currentState.whenVerifiedDeferred;
+    }
+    return this.pollEmailStatus(currentState, sessionToken, why);
   },
 
   
-  pollEmailStatusAgain(currentState, sessionToken, timeoutMs) {
-    let ageMs = Date.now() - this.pollStartDate;
-    if (ageMs >= this.POLL_SESSION) {
+  
+  async pollEmailStatus(currentState, sessionToken, why) {
+    log.debug("entering pollEmailStatus: " + why);
+    let nextPollMs;
+    try {
+      const response = await this.checkEmailStatus(sessionToken, { reason: why });
+      log.debug("checkEmailStatus -> " + JSON.stringify(response));
+      if (response && response.verified) {
+        await this.onPollEmailSuccess(currentState, why);
+        return;
+      }
+    } catch (error) {
+      if (error && error.code && error.code == 401) {
+        let error = new Error("Verification status check failed");
+        this._rejectWhenVerified(currentState, error);
+        return;
+      }
+      if (error && error.retryAfter) {
+        
+        nextPollMs = (error.retryAfter + 3) * 1000;
+      }
+    }
+    if (why == "push") {
+      return;
+    }
+    let pollDuration = Date.now() - this.pollStartDate;
+    
+    if (pollDuration >= this.POLL_SESSION) {
       if (currentState.whenVerifiedDeferred) {
         let error = new Error("User email verification timed out.");
         this._rejectWhenVerified(currentState, error);
@@ -1245,15 +1226,46 @@ FxAccountsInternal.prototype = {
       log.debug("polling session exceeded, giving up");
       return;
     }
-    if (timeoutMs === undefined) {
-      let currentMinute = Math.ceil(ageMs / 60000);
-      timeoutMs = currentMinute <= 2 ? this.VERIFICATION_POLL_TIMEOUT_INITIAL
-                                     : this.VERIFICATION_POLL_TIMEOUT_SUBSEQUENT;
+    
+    if (nextPollMs === undefined) {
+      let currentMinute = Math.ceil(pollDuration / 60000);
+      nextPollMs = (why == "start" && currentMinute < this.VERIFICATION_POLL_START_SLOWDOWN_THRESHOLD) ?
+                   this.VERIFICATION_POLL_TIMEOUT_INITIAL :
+                   this.VERIFICATION_POLL_TIMEOUT_SUBSEQUENT;
     }
-    log.debug("polling with timeout = " + timeoutMs);
+    this._scheduleNextPollEmailStatus(currentState, sessionToken, nextPollMs, why);
+  },
+
+  
+  _scheduleNextPollEmailStatus(currentState, sessionToken, nextPollMs, why) {
+    log.debug("polling with timeout = " + nextPollMs);
     this.currentTimer = setTimeout(() => {
-      this.pollEmailStatus(currentState, sessionToken, "timer");
-    }, timeoutMs);
+      this.pollEmailStatus(currentState, sessionToken, why);
+    }, nextPollMs);
+  },
+
+  async onPollEmailSuccess(currentState, why) {
+    try {
+      await currentState.updateUserAccountData({ verified: true })
+      const accountData = await currentState.getUserAccountData();
+      
+      if (currentState.whenVerifiedDeferred) {
+        currentState.whenVerifiedDeferred.resolve(accountData);
+        delete currentState.whenVerifiedDeferred;
+      }
+      
+      this.notifyObservers(ON_FXA_UPDATE_NOTIFICATION, ONVERIFIED_NOTIFICATION);
+      
+      Services.telemetry.scalarSet("services.sync.fxa_verification_method",
+                                   why == "push" ? "push" : "poll");
+    } catch (e) {
+      log.error(e);
+    }
+  },
+
+  _rejectWhenVerified(currentState, error) {
+    currentState.whenVerifiedDeferred.reject(error);
+    delete currentState.whenVerifiedDeferred;
   },
 
   requiresHttps() {
