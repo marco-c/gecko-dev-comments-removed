@@ -6,6 +6,7 @@
 
 
 
+
 "use strict";
 
 const MANAGE_ADDRESSES_DIALOG_URL = "chrome://formautofill/content/manageAddresses.xhtml";
@@ -18,6 +19,7 @@ const CREDITCARD_FORM_URL =
   "http://mochi.test:8888/browser/browser/extensions/formautofill/test/browser/autocomplete_creditcard_basic.html";
 const FTU_PREF = "extensions.formautofill.firstTimeUse";
 const ENABLED_AUTOFILL_ADDRESSES_PREF = "extensions.formautofill.addresses.enabled";
+const AUTOFILL_CREDITCARDS_AVAILABLE_PREF = "extensions.formautofill.creditCards.available";
 const ENABLED_AUTOFILL_CREDITCARDS_PREF = "extensions.formautofill.creditCards.enabled";
 const SYNC_USERNAME_PREF = "services.sync.username";
 const SYNC_ADDRESSES_PREF = "services.sync.engine.addresses";
