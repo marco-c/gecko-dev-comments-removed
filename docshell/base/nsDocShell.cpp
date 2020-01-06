@@ -9928,39 +9928,6 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     isTargetTopLevelDocShell = true;
   }
 
-  if (contentType == nsIContentPolicy::TYPE_DOCUMENT &&
-      nsIOService::BlockToplevelDataUriNavigations()) {
-    bool isDataURI =
-      (NS_SUCCEEDED(aURI->SchemeIs("data", &isDataURI)) && isDataURI);
-    
-    
-    
-    
-    
-    
-    
-    
-    bool loadFromExternal =
-      LOAD_TYPE_HAS_FLAGS(aLoadType, LOAD_NORMAL_EXTERNAL);
-    if (isDataURI && (loadFromExternal || 
-        !nsContentUtils::IsSystemPrincipal(aTriggeringPrincipal))) {
-      NS_ConvertUTF8toUTF16 specUTF16(aURI->GetSpecOrDefault());
-      if (specUTF16.Length() > 50) {
-        specUTF16.Truncate(50);
-        specUTF16.AppendLiteral("...");
-      }
-      const char16_t* params[] = { specUTF16.get() };
-      nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                      NS_LITERAL_CSTRING("DATA_URI_BLOCKED"),
-                                      
-                                      nullptr,
-                                      nsContentUtils::eSECURITY_PROPERTIES,
-                                      "BlockTopLevelDataURINavigation",
-                                      params, ArrayLength(params));
-      return NS_OK;
-    }
-  }
-
   
   
   
@@ -11137,6 +11104,37 @@ nsDocShell::DoURILoad(nsIURI* aURI,
                    securityFlags) :
       new LoadInfo(loadingPrincipal, aTriggeringPrincipal, loadingNode,
                    securityFlags, aContentPolicyType);
+
+  if (aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT &&
+      nsIOService::BlockToplevelDataUriNavigations()) {
+    bool isDataURI =
+      (NS_SUCCEEDED(aURI->SchemeIs("data", &isDataURI)) && isDataURI);
+    
+    
+    
+    
+    
+    
+    
+    
+    if (isDataURI && (aLoadFromExternal || 
+        !nsContentUtils::IsSystemPrincipal(aTriggeringPrincipal))) {
+      NS_ConvertUTF8toUTF16 specUTF16(aURI->GetSpecOrDefault());
+      if (specUTF16.Length() > 50) {
+        specUTF16.Truncate(50);
+        specUTF16.AppendLiteral("...");
+      }
+      const char16_t* params[] = { specUTF16.get() };
+      nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                      NS_LITERAL_CSTRING("DATA_URI_BLOCKED"),
+                                      
+                                      nullptr,
+                                      nsContentUtils::eSECURITY_PROPERTIES,
+                                      "BlockTopLevelDataURINavigation",
+                                      params, ArrayLength(params));
+      return NS_OK;
+    }
+  }
 
   if (aPrincipalToInherit) {
     loadInfo->SetPrincipalToInherit(aPrincipalToInherit);
