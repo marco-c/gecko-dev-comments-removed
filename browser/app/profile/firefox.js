@@ -696,13 +696,7 @@ pref("plugin.defaultXpi.state", 2);
 pref("plugin.state.java", 1);
 
 
-
-
-#ifdef NIGHTLY_BUILD
 pref("plugin.state.flash", 1);
-#else
-pref("plugin.state.flash", 2);
-#endif
 
 
 pref("plugins.flashBlock.enabled", true);
