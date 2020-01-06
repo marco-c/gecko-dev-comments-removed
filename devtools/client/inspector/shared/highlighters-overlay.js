@@ -7,7 +7,6 @@
 "use strict";
 
 const Services = require("Services");
-const {Task} = require("devtools/shared/task");
 const EventEmitter = require("devtools/shared/old-event-emitter");
 const {
   VIEW_NODE_VALUE_TYPE,
@@ -20,54 +19,56 @@ const INSET_POINT_TYPES = ["top", "right", "bottom", "left"];
 
 
 
-
-
-
-function HighlightersOverlay(inspector) {
-  this.inspector = inspector;
-  this.highlighters = {};
-  this.highlighterUtils = this.inspector.toolbox.highlighterUtils;
+class HighlightersOverlay {
 
   
-  this.supportsHighlighters = this.highlighterUtils.supportsCustomHighlighters();
 
-  
-  this.geometryEditorHighlighterShown = null;
-  
-  this.gridHighlighterShown = null;
-  
-  this.hoveredHighlighterShown = null;
-  
-  this.selectorHighlighterShown = null;
-  
-  this.shapesHighlighterShown = null;
-  
-  this.state = {
-    grid: {},
-    shapes: {}
-  };
 
-  this.onClick = this.onClick.bind(this);
-  this.onMarkupMutation = this.onMarkupMutation.bind(this);
-  this.onMouseMove = this.onMouseMove.bind(this);
-  this.onMouseOut = this.onMouseOut.bind(this);
-  this.onWillNavigate = this.onWillNavigate.bind(this);
-  this.showGridHighlighter = this.showGridHighlighter.bind(this);
-  this.showShapesHighlighter = this.showShapesHighlighter.bind(this);
-  this._handleRejection = this._handleRejection.bind(this);
-  this._onHighlighterEvent = this._onHighlighterEvent.bind(this);
 
-  
-  this.inspector.on("markupmutation", this.onMarkupMutation);
-  this.inspector.target.on("will-navigate", this.onWillNavigate);
+  constructor(inspector) {
+    this.inspector = inspector;
+    this.highlighters = {};
+    this.highlighterUtils = this.inspector.toolbox.highlighterUtils;
 
-  EventEmitter.decorate(this);
-}
+    
+    this.supportsHighlighters = this.highlighterUtils.supportsCustomHighlighters();
 
-HighlightersOverlay.prototype = {
+    
+    this.geometryEditorHighlighterShown = null;
+    
+    this.gridHighlighterShown = null;
+    
+    this.hoveredHighlighterShown = null;
+    
+    this.selectorHighlighterShown = null;
+    
+    this.shapesHighlighterShown = null;
+    
+    this.state = {
+      grid: {},
+      shapes: {}
+    };
+
+    this.onClick = this.onClick.bind(this);
+    this.onMarkupMutation = this.onMarkupMutation.bind(this);
+    this.onMouseMove = this.onMouseMove.bind(this);
+    this.onMouseOut = this.onMouseOut.bind(this);
+    this.onWillNavigate = this.onWillNavigate.bind(this);
+    this.showGridHighlighter = this.showGridHighlighter.bind(this);
+    this.showShapesHighlighter = this.showShapesHighlighter.bind(this);
+    this._handleRejection = this._handleRejection.bind(this);
+    this._onHighlighterEvent = this._onHighlighterEvent.bind(this);
+
+    
+    this.inspector.on("markupmutation", this.onMarkupMutation);
+    this.inspector.target.on("will-navigate", this.onWillNavigate);
+
+    EventEmitter.decorate(this);
+  }
+
   get isRuleView() {
     return this.inspector.sidebar.getCurrentTabID() == "ruleview";
-  },
+  }
 
   
 
@@ -76,8 +77,7 @@ HighlightersOverlay.prototype = {
 
 
 
-
-  addToView: function (view) {
+  addToView(view) {
     if (!this.supportsHighlighters) {
       return;
     }
@@ -87,7 +87,7 @@ HighlightersOverlay.prototype = {
     el.addEventListener("mousemove", this.onMouseMove);
     el.addEventListener("mouseout", this.onMouseOut);
     el.ownerDocument.defaultView.addEventListener("mouseout", this.onMouseOut);
-  },
+  }
 
   
 
@@ -97,7 +97,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  removeFromView: function (view) {
+  removeFromView(view) {
     if (!this.supportsHighlighters) {
       return;
     }
@@ -106,7 +106,7 @@ HighlightersOverlay.prototype = {
     el.removeEventListener("click", this.onClick, true);
     el.removeEventListener("mousemove", this.onMouseMove);
     el.removeEventListener("mouseout", this.onMouseOut);
-  },
+  }
 
   
 
@@ -116,21 +116,23 @@ HighlightersOverlay.prototype = {
 
 
 
-  toggleShapesHighlighter: Task.async(function* (node, options = {}) {
+  async toggleShapesHighlighter(node, options = {}) {
     options.transformMode = options.ctrlOrMetaPressed;
+
     if (node == this.shapesHighlighterShown &&
         options.mode === this.state.shapes.options.mode) {
       
       if (!options.ctrlOrMetaPressed) {
-        yield this.hideShapesHighlighter(node);
+        await this.hideShapesHighlighter(node);
         return;
       }
+
       
       options.transformMode = !this.state.shapes.options.transformMode;
     }
 
-    yield this.showShapesHighlighter(node, options);
-  }),
+    await this.showShapesHighlighter(node, options);
+  }
 
   
 
@@ -140,13 +142,13 @@ HighlightersOverlay.prototype = {
 
 
 
-  showShapesHighlighter: Task.async(function* (node, options) {
-    let highlighter = yield this._getHighlighter("ShapesHighlighter");
+  async showShapesHighlighter(node, options) {
+    let highlighter = await this._getHighlighter("ShapesHighlighter");
     if (!highlighter) {
       return;
     }
 
-    let isShown = yield highlighter.show(node, options);
+    let isShown = await highlighter.show(node, options);
     if (!isShown) {
       return;
     }
@@ -159,15 +161,14 @@ HighlightersOverlay.prototype = {
     try {
       
       let { url } = this.inspector.target;
-      let selector = yield node.getUniqueSelector();
+      let selector = await node.getUniqueSelector();
       this.state.shapes = { selector, options, url };
-
       this.shapesHighlighterShown = node;
       this.emit("shapes-highlighter-shown", node, options);
     } catch (e) {
       this._handleRejection(e);
     }
-  }),
+  }
 
   
 
@@ -175,19 +176,19 @@ HighlightersOverlay.prototype = {
 
 
 
-  hideShapesHighlighter: Task.async(function* (node) {
+  async hideShapesHighlighter(node) {
     if (!this.shapesHighlighterShown || !this.highlighters.ShapesHighlighter) {
       return;
     }
 
     this._toggleRuleViewIcon(node, false, ".ruleview-shape");
 
-    yield this.highlighters.ShapesHighlighter.hide();
+    await this.highlighters.ShapesHighlighter.hide();
     this.emit("shapes-highlighter-hidden", this.shapesHighlighterShown,
       this.state.shapes.options);
     this.shapesHighlighterShown = null;
     this.state.shapes = {};
-  }),
+  }
 
   
 
@@ -197,13 +198,13 @@ HighlightersOverlay.prototype = {
 
 
 
-  hoverPointShapesHighlighter: Task.async(function* (node, point) {
+  async hoverPointShapesHighlighter(node, point) {
     if (node == this.shapesHighlighterShown) {
       let options = Object.assign({}, this.state.shapes.options);
       options.hoverPoint = point;
-      yield this.showShapesHighlighter(node, options);
+      await this.showShapesHighlighter(node, options);
     }
-  }),
+  }
 
   
 
@@ -211,10 +212,11 @@ HighlightersOverlay.prototype = {
 
 
 
-  highlightRuleViewShapePoint: function (point) {
+  highlightRuleViewShapePoint(point) {
     let view = this.inspector.getPanel("ruleview").view;
     let ruleViewEl = view.element;
     let selector = `.ruleview-shape-point.active`;
+
     for (let pointNode of ruleViewEl.querySelectorAll(selector)) {
       this._toggleShapePointActive(pointNode, false);
     }
@@ -225,6 +227,7 @@ HighlightersOverlay.prototype = {
       selector = (INSET_POINT_TYPES.includes(point)) ?
                  `.ruleview-shape-point.${point}` :
                  `.ruleview-shape-point[data-point='${point}']`;
+
       for (let pointNode of ruleViewEl.querySelectorAll(selector)) {
         let nodeInfo = view.getNodeInfo(pointNode);
         if (this.isRuleViewShapePoint(nodeInfo)) {
@@ -232,7 +235,7 @@ HighlightersOverlay.prototype = {
         }
       }
     }
-  },
+  }
 
   
 
@@ -246,14 +249,14 @@ HighlightersOverlay.prototype = {
 
 
 
-  toggleGridHighlighter: Task.async(function* (node, options = {}, trigger) {
+  async toggleGridHighlighter(node, options = {}, trigger) {
     if (node == this.gridHighlighterShown) {
-      yield this.hideGridHighlighter(node);
+      await this.hideGridHighlighter(node);
       return;
     }
 
-    yield this.showGridHighlighter(node, options, trigger);
-  }),
+    await this.showGridHighlighter(node, options, trigger);
+  }
 
   
 
@@ -263,13 +266,13 @@ HighlightersOverlay.prototype = {
 
 
 
-  showGridHighlighter: Task.async(function* (node, options, trigger) {
-    let highlighter = yield this._getHighlighter("CssGridHighlighter");
+  async showGridHighlighter(node, options, trigger) {
+    let highlighter = await this._getHighlighter("CssGridHighlighter");
     if (!highlighter) {
       return;
     }
 
-    let isShown = yield highlighter.show(node, options);
+    let isShown = await highlighter.show(node, options);
     if (!isShown) {
       return;
     }
@@ -285,9 +288,8 @@ HighlightersOverlay.prototype = {
     try {
       
       let { url } = this.inspector.target;
-      let selector = yield node.getUniqueSelector();
+      let selector = await node.getUniqueSelector();
       this.state.grid = { selector, options, url };
-
       this.gridHighlighterShown = node;
       
       
@@ -295,7 +297,7 @@ HighlightersOverlay.prototype = {
     } catch (e) {
       this._handleRejection(e);
     }
-  }),
+  }
 
   
 
@@ -303,14 +305,14 @@ HighlightersOverlay.prototype = {
 
 
 
-  hideGridHighlighter: Task.async(function* (node) {
+  async hideGridHighlighter(node) {
     if (!this.gridHighlighterShown || !this.highlighters.CssGridHighlighter) {
       return;
     }
 
     this._toggleRuleViewIcon(node, false, ".ruleview-grid");
 
-    yield this.highlighters.CssGridHighlighter.hide();
+    await this.highlighters.CssGridHighlighter.hide();
 
     
     
@@ -320,7 +322,7 @@ HighlightersOverlay.prototype = {
 
     
     this.state.grid = {};
-  }),
+  }
 
   
 
@@ -328,14 +330,14 @@ HighlightersOverlay.prototype = {
 
 
 
-  toggleGeometryHighlighter: Task.async(function* (node) {
+  async toggleGeometryHighlighter(node) {
     if (node == this.geometryEditorHighlighterShown) {
-      yield this.hideGeometryEditor();
+      await this.hideGeometryEditor();
       return;
     }
 
-    yield this.showGeometryEditor(node);
-  }),
+    await this.showGeometryEditor(node);
+  }
 
   
 
@@ -343,35 +345,35 @@ HighlightersOverlay.prototype = {
 
 
 
-  showGeometryEditor: Task.async(function* (node) {
-    let highlighter = yield this._getHighlighter("GeometryEditorHighlighter");
+  async showGeometryEditor(node) {
+    let highlighter = await this._getHighlighter("GeometryEditorHighlighter");
     if (!highlighter) {
       return;
     }
 
-    let isShown = yield highlighter.show(node);
+    let isShown = await highlighter.show(node);
     if (!isShown) {
       return;
     }
 
     this.emit("geometry-editor-highlighter-shown");
     this.geometryEditorHighlighterShown = node;
-  }),
+  }
 
   
 
 
-  hideGeometryEditor: Task.async(function* () {
+  async hideGeometryEditor() {
     if (!this.geometryEditorHighlighterShown ||
         !this.highlighters.GeometryEditorHighlighter) {
       return;
     }
 
-    yield this.highlighters.GeometryEditorHighlighter.hide();
+    await this.highlighters.GeometryEditorHighlighter.hide();
 
     this.emit("geometry-editor-highlighter-hidden");
     this.geometryEditorHighlighterShown = null;
-  }),
+  }
 
   
 
@@ -379,7 +381,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  _onHighlighterEvent: function (data) {
+  _onHighlighterEvent(data) {
     if (data.type === "shape-hover-on") {
       this.state.shapes.hoverPoint = data.point;
       this.emit("hover-shape-point", data.point);
@@ -387,30 +389,31 @@ HighlightersOverlay.prototype = {
       this.state.shapes.hoverPoint = null;
       this.emit("hover-shape-point", null);
     }
+
     this.emit("highlighter-event-handled");
-  },
+  }
 
   
 
 
-  restoreGridState: Task.async(function* () {
+  async restoreGridState() {
     try {
-      yield this.restoreState("grid", this.state.grid, this.showGridHighlighter);
+      await this.restoreState("grid", this.state.grid, this.showGridHighlighter);
     } catch (e) {
       this._handleRejection(e);
     }
-  }),
+  }
 
   
 
 
-  restoreShapeState: Task.async(function* () {
+  async restoreShapeState() {
     try {
-      yield this.restoreState("shapes", this.state.shapes, this.showShapesHighlighter);
+      await this.restoreState("shapes", this.state.shapes, this.showShapesHighlighter);
     } catch (e) {
       this._handleRejection(e);
     }
-  }),
+  }
 
   
 
@@ -425,7 +428,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  restoreState: Task.async(function* (name, state, showFunction) {
+  async restoreState(name, state, showFunction) {
     let { selector, options, url } = state;
 
     if (!selector || url !== this.inspector.target.url) {
@@ -435,19 +438,20 @@ HighlightersOverlay.prototype = {
     }
 
     let walker = this.inspector.walker;
-    let rootNode = yield walker.getRootNode();
-    let nodeFront = yield walker.querySelector(rootNode, selector);
+    let rootNode = await walker.getRootNode();
+    let nodeFront = await walker.querySelector(rootNode, selector);
 
     if (nodeFront) {
       if (options.hoverPoint) {
         options.hoverPoint = null;
       }
-      yield showFunction(nodeFront, options);
+
+      await showFunction(nodeFront, options);
       this.emit(`${name}-state-restored`, { restored: true });
     }
 
     this.emit(`${name}-state-restored`, { restored: false });
-  }),
+  }
 
   
 
@@ -456,7 +460,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  _getHighlighter: Task.async(function* (type) {
+  async _getHighlighter(type) {
     let utils = this.highlighterUtils;
 
     if (this.highlighters[type]) {
@@ -466,7 +470,7 @@ HighlightersOverlay.prototype = {
     let highlighter;
 
     try {
-      highlighter = yield utils.getHighlighterByType(type);
+      highlighter = await utils.getHighlighterByType(type);
     } catch (e) {
       
     }
@@ -478,13 +482,13 @@ HighlightersOverlay.prototype = {
     highlighter.on("highlighter-event", this._onHighlighterEvent);
     this.highlighters[type] = highlighter;
     return highlighter;
-  }),
+  }
 
-  _handleRejection: function (error) {
+  _handleRejection(error) {
     if (!this.destroyed) {
       console.error(error);
     }
-  },
+  }
 
   
 
@@ -497,7 +501,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  _toggleRuleViewIcon: function (node, active, selector) {
+  _toggleRuleViewIcon(node, active, selector) {
     if (this.inspector.selection.nodeFront != node) {
       return;
     }
@@ -507,7 +511,7 @@ HighlightersOverlay.prototype = {
     for (let icon of ruleViewEl.querySelectorAll(selector)) {
       icon.classList.toggle("active", active);
     }
-  },
+  }
 
   
 
@@ -518,18 +522,18 @@ HighlightersOverlay.prototype = {
 
 
 
-  _toggleShapePointActive: function (node, active) {
+  _toggleShapePointActive(node, active) {
     if (this.inspector.selection.nodeFront != this.shapesHighlighterShown) {
       return;
     }
 
     node.classList.toggle("active", active);
-  },
+  }
 
   
 
 
-  _hideHoveredHighlighter: function () {
+  _hideHoveredHighlighter() {
     if (!this.hoveredHighlighterShown ||
         !this.highlighters[this.hoveredHighlighterShown]) {
       return;
@@ -546,7 +550,7 @@ HighlightersOverlay.prototype = {
 
     this.hoveredHighlighterShown = null;
     this.emit("highlighter-hidden");
-  },
+  }
 
   
 
@@ -555,11 +559,11 @@ HighlightersOverlay.prototype = {
 
 
 
-  _isComputedViewTransform: function (nodeInfo) {
+  _isComputedViewTransform(nodeInfo) {
     let isTransform = nodeInfo.type === VIEW_NODE_VALUE_TYPE &&
                       nodeInfo.value.property === "transform";
     return !this.isRuleView && isTransform;
-  },
+  }
 
   
 
@@ -568,9 +572,9 @@ HighlightersOverlay.prototype = {
 
 
 
-  _isRuleViewDisplayGrid: function (node) {
+  _isRuleViewDisplayGrid(node) {
     return this.isRuleView && node.classList.contains("ruleview-grid");
-  },
+  }
 
   
 
@@ -579,9 +583,9 @@ HighlightersOverlay.prototype = {
 
 
 
-  _isRuleViewShape: function (node) {
+  _isRuleViewShape(node) {
     return this.isRuleView && node.classList.contains("ruleview-shape");
-  },
+  }
 
   
 
@@ -589,14 +593,14 @@ HighlightersOverlay.prototype = {
 
 
 
-  _isRuleViewTransform: function (nodeInfo) {
+  _isRuleViewTransform(nodeInfo) {
     let isTransform = nodeInfo.type === VIEW_NODE_VALUE_TYPE &&
                       nodeInfo.value.property === "transform";
     let isEnabled = nodeInfo.value.enabled &&
                     !nodeInfo.value.overridden &&
                     !nodeInfo.value.pseudoElement;
     return this.isRuleView && isTransform && isEnabled;
-  },
+  }
 
   
 
@@ -604,7 +608,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  isRuleViewShapePoint: function (nodeInfo) {
+  isRuleViewShapePoint(nodeInfo) {
     let isShape = nodeInfo.type === VIEW_NODE_SHAPE_POINT_TYPE &&
                   (nodeInfo.value.property === "clip-path" ||
                   nodeInfo.value.property === "shape-outside");
@@ -613,9 +617,9 @@ HighlightersOverlay.prototype = {
                     !nodeInfo.value.pseudoElement;
     return this.isRuleView && isShape && isEnabled && nodeInfo.value.toggleActive &&
            !this.state.shapes.options.transformMode;
-  },
+  }
 
-  onClick: function (event) {
+  onClick(event) {
     if (this._isRuleViewDisplayGrid(event.target)) {
       event.stopPropagation();
 
@@ -636,9 +640,9 @@ HighlightersOverlay.prototype = {
       };
       this.toggleShapesHighlighter(this.inspector.selection.nodeFront, settings);
     }
-  },
+  }
 
-  onMouseMove: function (event) {
+  onMouseMove(event) {
     
     if (event.target === this._lastHovered) {
       return;
@@ -682,9 +686,9 @@ HighlightersOverlay.prototype = {
             }
           });
     }
-  },
+  }
 
-  onMouseOut: function (event) {
+  onMouseOut(event) {
     
     if (!this._lastHovered ||
         (event && this._lastHovered.contains(event.relatedTarget))) {
@@ -702,13 +706,13 @@ HighlightersOverlay.prototype = {
     }
     this._lastHovered = null;
     this._hideHoveredHighlighter();
-  },
+  }
 
   
 
 
 
-  onMarkupMutation: Task.async(function* (evt, mutations) {
+  async onMarkupMutation(evt, mutations) {
     let hasInterestingMutation = mutations.some(mut => mut.type === "childList");
     if (!hasInterestingMutation) {
       
@@ -720,7 +724,7 @@ HighlightersOverlay.prototype = {
       let nodeFront = this.gridHighlighterShown;
 
       try {
-        let isInTree = yield this.inspector.walker.isInDOMTree(nodeFront);
+        let isInTree = await this.inspector.walker.isInDOMTree(nodeFront);
         if (!isInTree) {
           this.hideGridHighlighter(nodeFront);
         }
@@ -733,7 +737,7 @@ HighlightersOverlay.prototype = {
       let nodeFront = this.shapesHighlighterShown;
 
       try {
-        let isInTree = yield this.inspector.walker.isInDOMTree(nodeFront);
+        let isInTree = await this.inspector.walker.isInDOMTree(nodeFront);
         if (!isInTree) {
           this.hideShapesHighlighter(nodeFront);
         }
@@ -741,24 +745,24 @@ HighlightersOverlay.prototype = {
         console.error(e);
       }
     }
-  }),
+  }
 
   
 
 
-  onWillNavigate: function () {
+  onWillNavigate() {
     this.geometryEditorHighlighterShown = null;
     this.gridHighlighterShown = null;
     this.hoveredHighlighterShown = null;
     this.selectorHighlighterShown = null;
     this.shapesHighlighterShown = null;
-  },
+  }
 
   
 
 
 
-  destroy: function () {
+  destroy() {
     for (let type in this.highlighters) {
       if (this.highlighters[type]) {
         if (this.highlighters[type].off) {
@@ -789,6 +793,7 @@ HighlightersOverlay.prototype = {
 
     this.destroyed = true;
   }
-};
+
+}
 
 module.exports = HighlightersOverlay;
