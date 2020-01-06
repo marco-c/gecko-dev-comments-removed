@@ -404,6 +404,11 @@ public:
     
     
     eIncludeOnlyCurrentFrameForNonSVGElement = 1 << 8,
+    
+    
+    
+    
+    eUseUserSpaceOfUseElement = 1 << 9,
   };
   
 

@@ -1127,7 +1127,9 @@ nsSVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
     matrix = *aToBoundsSpace;
   }
 
-  if (aFrame->IsSVGForeignObjectFrame()) {
+  if (aFrame->IsSVGForeignObjectFrame() ||
+      (aFrame->IsSVGUseFrame() &&
+       (aFlags & nsSVGUtils::eUseUserSpaceOfUseElement))) {
     
     
     
