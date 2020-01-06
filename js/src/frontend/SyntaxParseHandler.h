@@ -50,7 +50,16 @@ class SyntaxParseHandler
         NodeVarDeclaration,
         NodeLexicalDeclaration,
 
-        NodeFunctionDefinition,
+        
+        
+        NodeFunctionExpressionBlockBody,
+
+        
+        
+        NodeFunctionExpressionClosure,
+
+        NodeFunctionArrow,
+        NodeFunctionStatement,
 
         
         
@@ -118,6 +127,10 @@ class SyntaxParseHandler
         
         NodeSuperBase
     };
+
+    bool isNonArrowFunctionExpression(Node node) const {
+        return node == NodeFunctionExpressionBlockBody || node == NodeFunctionExpressionClosure;
+    }
 
     bool isPropertyAccess(Node node) {
         return node == NodeDottedProperty || node == NodeElement;
@@ -319,9 +332,20 @@ class SyntaxParseHandler
 
     void checkAndSetIsDirectRHSAnonFunction(Node pn) {}
 
-    Node newFunctionStatement(const TokenPos& pos) { return NodeFunctionDefinition; }
-    Node newFunctionExpression(const TokenPos& pos) { return NodeFunctionDefinition; }
-    Node newArrowFunction(const TokenPos& pos) { return NodeFunctionDefinition; }
+    Node newFunctionStatement(const TokenPos& pos) { return NodeFunctionStatement; }
+
+    Node newFunctionExpression(const TokenPos& pos) {
+        
+        
+        
+        return NodeFunctionExpressionBlockBody;
+    }
+
+    Node newArrowFunction(const TokenPos& pos) { return NodeFunctionArrow; }
+
+    bool isExpressionClosure(Node node) const {
+        return node == NodeFunctionExpressionClosure;
+    }
 
     void setFunctionFormalParametersAndBody(Node pn, Node kid) {}
     void setFunctionBody(Node pn, Node kid) {}
@@ -420,7 +444,8 @@ class SyntaxParseHandler
     }
 
     bool isStatementPermittedAfterReturnStatement(Node pn) {
-        return pn == NodeFunctionDefinition || pn == NodeVarDeclaration ||
+        return pn == NodeFunctionStatement || isNonArrowFunctionExpression(pn) ||
+               pn == NodeVarDeclaration ||
                pn == NodeBreak ||
                pn == NodeThrow ||
                pn == NodeEmptyStatement;
