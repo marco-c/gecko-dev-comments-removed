@@ -1001,6 +1001,9 @@ void ExceptionHandler::UnregisterAppMemory(void* ptr) {
 void ExceptionHandler::set_include_context_heap(bool enabled) {
   if (enabled && !include_context_heap_) {
     
+    InitAppMemoryInternal();
+
+    
     auto predicate = [] (const AppMemory& appMemory) -> bool {
       return appMemory.preallocated;
     };

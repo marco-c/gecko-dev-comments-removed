@@ -68,6 +68,10 @@ BOOL CALLBACK MinidumpWriteDumpCallback(
     const PMINIDUMP_CALLBACK_INPUT callback_input,
     PMINIDUMP_CALLBACK_OUTPUT callback_output);
 
+
+
+void InitAppMemoryInternal();
+
 }  
 
 #endif
