@@ -1040,14 +1040,6 @@ nsIFrame::MarkNeedsDisplayItemRebuild()
 
   modifiedFrames->AppendElement(this);
 
-  
-  
-  if (displayRoot != rootFrame &&
-      !displayRoot->HasProperty(nsIFrame::ModifiedFrameList())) {
-    displayRoot->SetProperty(nsIFrame::ModifiedFrameList(),
-                             new nsTArray<nsIFrame*>());
-  }
-
   MOZ_ASSERT(PresContext()->LayoutPhaseCount(eLayoutPhase_DisplayListBuilding) == 0);
   SetFrameIsModified(true);
 
@@ -4088,7 +4080,6 @@ nsFrame::HandlePress(nsPresContext* aPresContext,
   
   
   
-  bool hasCapturedContent = false;
   if (!nsIPresShell::GetCapturingContent()) {
     nsIScrollableFrame* scrollFrame =
       nsLayoutUtils::GetNearestScrollableFrame(this,
@@ -4098,7 +4089,6 @@ nsFrame::HandlePress(nsPresContext* aPresContext,
       nsIFrame* capturingFrame = do_QueryFrame(scrollFrame);
       nsIPresShell::SetCapturingContent(capturingFrame->GetContent(),
                                         CAPTURE_IGNOREALLOWED);
-      hasCapturedContent = true;
     }
   }
 
@@ -4135,24 +4125,6 @@ nsFrame::HandlePress(nsPresContext* aPresContext,
 
   if (!offsets.content)
     return NS_ERROR_FAILURE;
-
-  
-  
-  
-  
-  if (!offsets.content->IsEditable() &&
-      Preferences::GetBool("browser.ignoreNativeFrameTextSelection", false)) {
-    
-    
-    
-    if (hasCapturedContent) {
-      nsIPresShell::SetCapturingContent(nullptr, 0);
-    }
-
-    return fc->HandleClick(offsets.content, offsets.StartOffset(),
-                           offsets.EndOffset(), false, false,
-                           offsets.associate);
-  }
 
   
   nsCOMPtr<nsIContent>parentContent;
