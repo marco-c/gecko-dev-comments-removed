@@ -127,7 +127,9 @@ void CALLBACK ObjectWatcher::DoneWaiting(void* param, BOOLEAN timed_out) {
   
   
   
-  watch->origin_loop->PostTask(addrefedWatch.forget());
+  if (watch->origin_loop->IsAcceptingTasks()) {
+    watch->origin_loop->PostTask(addrefedWatch.forget());
+  }
 }
 
 void ObjectWatcher::WillDestroyCurrentMessageLoop() {

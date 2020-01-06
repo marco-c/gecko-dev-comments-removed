@@ -177,6 +177,7 @@ MessageLoop::MessageLoop(Type type, nsIThread* aThread)
       exception_restoration_(false),
       state_(NULL),
       run_depth_base_(1),
+      shutting_down_(false),
 #ifdef OS_WIN
       os_modal_loop_(false),
 #endif  
@@ -377,6 +378,9 @@ void MessageLoop::PostTask_Helper(already_AddRefed<nsIRunnable> task, int delay_
     return;
   }
 
+  
+  MOZ_ASSERT(!shutting_down_);
+
 #ifdef MOZ_TASK_TRACER
   nsCOMPtr<nsIRunnable> tracedTask = task;
   if (mozilla::tasktracer::IsStartLogging()) {
@@ -568,6 +572,9 @@ bool MessageLoop::DoIdleWork() {
 
 MessageLoop::AutoRunState::AutoRunState(MessageLoop* loop) : loop_(loop) {
   
+  MOZ_ASSERT(!loop_->shutting_down_);
+
+  
   previous_state_ = loop_->state_;
   if (previous_state_) {
     run_depth = previous_state_->run_depth + 1;
@@ -585,6 +592,9 @@ MessageLoop::AutoRunState::AutoRunState(MessageLoop* loop) : loop_(loop) {
 
 MessageLoop::AutoRunState::~AutoRunState() {
   loop_->state_ = previous_state_;
+
+  
+  loop_->shutting_down_ = !previous_state_;
 }
 
 

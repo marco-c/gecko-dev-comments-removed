@@ -114,6 +114,13 @@ public:
   
   
   
+  
+  
+  
+  
+  
+
+  bool IsAcceptingTasks() const { return !shutting_down_; }
 
   void PostTask(already_AddRefed<nsIRunnable> task);
 
@@ -429,6 +436,7 @@ public:
 
   RunState* state_;
   int run_depth_base_;
+  bool shutting_down_;
 
 #if defined(OS_WIN)
   
