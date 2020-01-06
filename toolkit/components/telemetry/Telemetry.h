@@ -263,21 +263,6 @@ bool CanRecordExtended();
 
 
 
-bool CanRecordReleaseData();
-
-
-
-
-
-
-
-bool CanRecordPrereleaseData();
-
-
-
-
-
-
 
 
 void RecordSlowSQLStatement(const nsACString &statement,
