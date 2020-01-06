@@ -447,7 +447,7 @@ Snapshot(JSContext* cx, HandleObject pobj_, unsigned flags, AutoIdVector* props)
             } else {
                 
                 
-                if (!pobj->is<UnboxedPlainObject>() && !pobj->is<UnboxedArrayObject>())
+                if (!pobj->is<UnboxedPlainObject>())
                     checkForDuplicates = true;
 
                 if (checkForDuplicates) {
