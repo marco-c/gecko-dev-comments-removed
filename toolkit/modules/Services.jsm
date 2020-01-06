@@ -13,6 +13,11 @@ Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 this.Services = {};
 
+
+
+
+
+
 XPCOMUtils.defineLazyGetter(Services, "prefs", function() {
   return Cc["@mozilla.org/preferences-service;1"]
            .getService(Ci.nsIPrefService)
