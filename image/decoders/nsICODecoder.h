@@ -81,7 +81,7 @@ private:
 
   
   
-  bool WriteToContainedDecoder(const char* aBuffer, uint32_t aCount);
+  bool FlushContainedDecoder();
 
   
   nsresult GetFinalStateFromContainedDecoder();
@@ -92,7 +92,7 @@ private:
   LexerTransition<ICOState> ReadHeader(const char* aData);
   LexerTransition<ICOState> ReadDirEntry(const char* aData);
   LexerTransition<ICOState> SniffResource(const char* aData);
-  LexerTransition<ICOState> ReadResource(const char* aData, uint32_t aLen);
+  LexerTransition<ICOState> ReadResource();
   LexerTransition<ICOState> ReadBIH(const char* aData);
   LexerTransition<ICOState> PrepareForMask();
   LexerTransition<ICOState> ReadMaskRow(const char* aData);
@@ -101,7 +101,7 @@ private:
 
   StreamingLexer<ICOState, 32> mLexer; 
   RefPtr<Decoder> mContainedDecoder; 
-  RefPtr<SourceBuffer> mContainedSourceBuffer;  
+  Maybe<SourceBufferIterator> mContainedIterator; 
   UniquePtr<uint8_t[]> mMaskBuffer;    
   char mBIHraw[bmp::InfoHeaderLength::WIN_ICO]; 
   IconDirEntry mDirEntry;              
