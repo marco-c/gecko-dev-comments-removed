@@ -3254,7 +3254,7 @@ ContentEventHandler::OnSelectionEvent(WidgetSelectionEvent* aEvent)
 
   
   
-  mSelection->EndBatchChangesInternal(aEvent->mReason);
+  mSelection->EndBatchChanges(aEvent->mReason);
   NS_ENSURE_SUCCESS(rv, rv);
 
   mSelection->ScrollIntoViewInternal(
