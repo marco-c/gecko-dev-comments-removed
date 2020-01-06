@@ -1155,6 +1155,14 @@ function isSafeVariable(entry, variable)
 
             
             
+            if (isDirectCall(edge, /RefPtr<.*?>::operator(->|\*)\(\)/) &&
+                isEdgeSafeArgument(entry, edge.PEdgeCallInstance.Exp))
+            {
+                return true;
+            }
+
+            
+            
             
             
             if (isDirectCall(edge, /operator new/) &&
