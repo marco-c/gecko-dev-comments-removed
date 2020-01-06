@@ -9,6 +9,7 @@ var MANIFESTS = [
 
 
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+Components.utils.import("resource://gre/modules/Services.jsm");
 
 registerManifests(MANIFESTS);
 
@@ -33,7 +34,7 @@ function enum_to_array(strings) {
 function run_test() {
 
   
-  prefService.setCharPref("general.useragent.locale", "de");
+  Services.locale.setRequestedLocales(["de"]);
   do_check_eq(chromeReg.getSelectedLocale("basepack"), "en-US");
   do_check_eq(chromeReg.getSelectedLocale("overpack"), "de");
   do_check_matches(enum_to_array(chromeReg.getLocalesForPackage("basepack")),

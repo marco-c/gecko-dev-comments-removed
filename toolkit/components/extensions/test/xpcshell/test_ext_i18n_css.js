@@ -122,23 +122,20 @@ async function test_i18n_css(options = {}) {
 
   
   if (false) {
-    const LOCALE = "general.useragent.locale";
     const DIR = "intl.uidirection";
-    const DIR_LEGACY = "intl.uidirection.en"; 
 
     
     
     
-    Preferences.set(LOCALE, "he");
+    const origReqLocales = Services.locale.getRequestedLocales();
+    Services.locale.setRequestedLocales(["he"]);
     Preferences.set(DIR, 1);
-    Preferences.set(DIR_LEGACY, "rtl");
 
     css = await fetch(cssURL);
     equal(css, '* { content: "he rtl ltr right left" }', "CSS file localized in mochitest scope");
 
-    Preferences.reset(LOCALE);
+    Services.locale.setRequestedLocales(origReqLocales);
     Preferences.reset(DIR);
-    Preferences.reset(DIR_LEGACY);
   }
 
   await extension.awaitFinish("i18n-css");
