@@ -91,6 +91,12 @@ public:
 
 
   static void SendBidiKeyboardInfoToContent();
+
+  
+
+
+  static void GetBrandShortName(nsAString& aBrandName);
+
 };
 
 } 
