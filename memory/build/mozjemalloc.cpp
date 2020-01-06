@@ -3335,13 +3335,12 @@ arena_t::Malloc(size_t aSize, bool aZero)
 }
 
 static inline void*
-imalloc(size_t aSize, bool aZero, arena_t* aArena)
+imalloc(size_t aSize, bool aZero)
 {
   MOZ_ASSERT(aSize != 0);
 
   if (aSize <= arena_maxclass) {
-    aArena = aArena ? aArena : choose_arena(aSize);
-    return aArena->Malloc(aSize, aZero);
+    return choose_arena(aSize)->Malloc(aSize, aZero);
   }
   return huge_malloc(aSize, aZero);
 }
@@ -3399,15 +3398,13 @@ arena_t::Palloc(size_t aAlignment, size_t aSize, size_t aAllocSize)
   return ret;
 }
 
-static inline void*
-ipalloc(size_t aAlignment, size_t aSize, arena_t* aArena)
+static inline void *
+ipalloc(size_t alignment, size_t size)
 {
-  void* ret;
-  size_t ceil_size;
+	void *ret;
+	size_t ceil_size;
 
-  
-
-
+	
 
 
 
@@ -3423,54 +3420,31 @@ ipalloc(size_t aAlignment, size_t aSize, arena_t* aArena)
 
 
 
-  ceil_size = ALIGNMENT_CEILING(aSize, aAlignment);
-  
+
+
+	ceil_size = ALIGNMENT_CEILING(size, alignment);
+	
 
 
 
-  if (ceil_size < aSize) {
-    
-    return nullptr;
-  }
+	if (ceil_size < size) {
+		
+		return nullptr;
+	}
 
-  if (ceil_size <= pagesize || (aAlignment <= pagesize
-      && ceil_size <= arena_maxclass)) {
-    aArena = aArena ? aArena : choose_arena(aSize);
-    ret = aArena->Malloc(ceil_size, false);
-  } else {
-    size_t run_size;
+	if (ceil_size <= pagesize || (alignment <= pagesize
+	    && ceil_size <= arena_maxclass))
+		ret = choose_arena(size)->Malloc(ceil_size, false);
+	else {
+		size_t run_size;
 
-    
-
-
-
-    aAlignment = PAGE_CEILING(aAlignment);
-    ceil_size = PAGE_CEILING(aSize);
-    
+		
 
 
 
-
-
-
-
-
-
-
-
-    if (ceil_size < aSize || ceil_size + aAlignment < ceil_size) {
-      
-      return nullptr;
-    }
-
-    
-
-
-
-    if (ceil_size >= aAlignment) {
-      run_size = ceil_size + aAlignment - pagesize;
-    } else {
-      
+		alignment = PAGE_CEILING(alignment);
+		ceil_size = PAGE_CEILING(size);
+		
 
 
 
@@ -3479,20 +3453,44 @@ ipalloc(size_t aAlignment, size_t aSize, arena_t* aArena)
 
 
 
-      run_size = (aAlignment << 1) - pagesize;
-    }
 
-    if (run_size <= arena_maxclass) {
-      aArena = aArena ? aArena : choose_arena(aSize);
-      ret = aArena->Palloc(aAlignment, ceil_size, run_size);
-    } else if (aAlignment <= chunksize)
-      ret = huge_malloc(ceil_size, false);
-    else
-      ret = huge_palloc(ceil_size, aAlignment, false);
-  }
 
-  MOZ_ASSERT((uintptr_t(ret) & (aAlignment - 1)) == 0);
-  return ret;
+
+		if (ceil_size < size || ceil_size + alignment < ceil_size) {
+			
+			return nullptr;
+		}
+
+		
+
+
+
+		if (ceil_size >= alignment)
+			run_size = ceil_size + alignment - pagesize;
+		else {
+			
+
+
+
+
+
+
+
+
+			run_size = (alignment << 1) - pagesize;
+		}
+
+		if (run_size <= arena_maxclass) {
+			ret = choose_arena(size)->Palloc(alignment, ceil_size,
+			    run_size);
+		} else if (alignment <= chunksize)
+			ret = huge_malloc(ceil_size, false);
+		else
+			ret = huge_palloc(ceil_size, alignment, false);
+	}
+
+	MOZ_ASSERT(((uintptr_t)ret & (alignment - 1)) == 0);
+	return (ret);
 }
 
 
@@ -3950,81 +3948,74 @@ arena_ralloc_large(void *ptr, size_t size, size_t oldsize)
 	}
 }
 
-static void*
-arena_ralloc(void* aPtr, size_t aSize, size_t aOldSize, arena_t* aArena)
+static void *
+arena_ralloc(void *ptr, size_t size, size_t oldsize)
 {
-  void* ret;
-  size_t copysize;
+	void *ret;
+	size_t copysize;
 
-  
-  if (aSize < small_min) {
-    if (aOldSize < small_min &&
-        ffs((int)(pow2_ceil(aSize) >> (TINY_MIN_2POW + 1))) ==
-        ffs((int)(pow2_ceil(aOldSize) >> (TINY_MIN_2POW + 1)))) {
-      goto IN_PLACE; 
-    }
-  } else if (aSize <= small_max) {
-    if (aOldSize >= small_min && aOldSize <= small_max &&
-        (QUANTUM_CEILING(aSize) >> opt_quantum_2pow) ==
-        (QUANTUM_CEILING(aOldSize) >> opt_quantum_2pow)) {
-      goto IN_PLACE; 
-    }
-  } else if (aSize <= bin_maxclass) {
-    if (aOldSize > small_max && aOldSize <= bin_maxclass &&
-        pow2_ceil(aSize) == pow2_ceil(aOldSize)) {
-      goto IN_PLACE; 
-    }
-  } else if (aOldSize > bin_maxclass && aOldSize <= arena_maxclass) {
-    MOZ_ASSERT(aSize > bin_maxclass);
-    if (arena_ralloc_large(aPtr, aSize, aOldSize) == false) {
-      return aPtr;
-    }
-  }
+	
+	if (size < small_min) {
+		if (oldsize < small_min &&
+		    ffs((int)(pow2_ceil(size) >> (TINY_MIN_2POW + 1)))
+		    == ffs((int)(pow2_ceil(oldsize) >> (TINY_MIN_2POW + 1))))
+			goto IN_PLACE; 
+	} else if (size <= small_max) {
+		if (oldsize >= small_min && oldsize <= small_max &&
+		    (QUANTUM_CEILING(size) >> opt_quantum_2pow)
+		    == (QUANTUM_CEILING(oldsize) >> opt_quantum_2pow))
+			goto IN_PLACE; 
+	} else if (size <= bin_maxclass) {
+		if (oldsize > small_max && oldsize <= bin_maxclass &&
+		    pow2_ceil(size) == pow2_ceil(oldsize))
+			goto IN_PLACE; 
+	} else if (oldsize > bin_maxclass && oldsize <= arena_maxclass) {
+		MOZ_ASSERT(size > bin_maxclass);
+		if (arena_ralloc_large(ptr, size, oldsize) == false)
+			return (ptr);
+	}
 
-  
+	
 
 
 
 
-  aArena = aArena ? aArena : choose_arena(aSize);
-  ret = aArena->Malloc(aSize, false);
-  if (!ret) {
-    return nullptr;
-  }
+	ret = choose_arena(size)->Malloc(size, false);
+	if (!ret)
+		return nullptr;
 
-  
-  copysize = (aSize < aOldSize) ? aSize : aOldSize;
+	
+	copysize = (size < oldsize) ? size : oldsize;
 #ifdef VM_COPY_MIN
-  if (copysize >= VM_COPY_MIN) {
-    pages_copy(ret, aPtr, copysize);
-  } else
+	if (copysize >= VM_COPY_MIN)
+		pages_copy(ret, ptr, copysize);
+	else
 #endif
-  {
-    memcpy(ret, aPtr, copysize);
-  }
-  idalloc(aPtr);
-  return ret;
+		memcpy(ret, ptr, copysize);
+	idalloc(ptr);
+	return (ret);
 IN_PLACE:
-  if (aSize < aOldSize) {
-    memset((void *)(uintptr_t(aPtr) + aSize), kAllocPoison, aOldSize - aSize);
-  } else if (opt_zero && aSize > aOldSize) {
-    memset((void *)(uintptr_t(aPtr) + aOldSize), 0, aSize - aOldSize);
-  }
-  return aPtr;
+	if (size < oldsize)
+		memset((void *)((uintptr_t)ptr + size), kAllocPoison, oldsize - size);
+	else if (opt_zero && size > oldsize)
+		memset((void *)((uintptr_t)ptr + oldsize), 0, size - oldsize);
+	return (ptr);
 }
 
-static inline void*
-iralloc(void* aPtr, size_t aSize, arena_t* aArena)
+static inline void *
+iralloc(void *ptr, size_t size)
 {
-  size_t oldsize;
+	size_t oldsize;
 
-  MOZ_ASSERT(aPtr);
-  MOZ_ASSERT(aSize != 0);
+	MOZ_ASSERT(ptr);
+	MOZ_ASSERT(size != 0);
 
-  oldsize = isalloc(aPtr);
+	oldsize = isalloc(ptr);
 
-  return (aSize <= arena_maxclass) ? arena_ralloc(aPtr, aSize, oldsize, aArena)
-                                   : huge_ralloc(aPtr, aSize, oldsize);
+	if (size <= arena_maxclass)
+		return (arena_ralloc(ptr, size, oldsize));
+	else
+		return (huge_ralloc(ptr, size, oldsize));
 }
 
 bool
@@ -4690,7 +4681,7 @@ MozJemalloc::malloc(size_t aSize)
     aSize = 1;
   }
 
-  ret = imalloc(aSize,  false, nullptr);
+  ret = imalloc(aSize,  false);
 
 RETURN:
   if (!ret) {
@@ -4716,7 +4707,7 @@ MozJemalloc::memalign(size_t aAlignment, size_t aSize)
   }
 
   aAlignment = aAlignment < sizeof(void*) ? sizeof(void*) : aAlignment;
-  ret = ipalloc(aAlignment, aSize, nullptr);
+  ret = ipalloc(aAlignment, aSize);
 
   return ret;
 }
@@ -4748,7 +4739,7 @@ MozJemalloc::calloc(size_t aNum, size_t aSize)
     goto RETURN;
   }
 
-  ret = imalloc(num_size,  true, nullptr);
+  ret = imalloc(num_size,  true);
 
 RETURN:
   if (!ret) {
@@ -4770,7 +4761,7 @@ MozJemalloc::realloc(void* aPtr, size_t aSize)
   if (aPtr) {
     MOZ_ASSERT(malloc_initialized);
 
-    ret = iralloc(aPtr, aSize, nullptr);
+    ret = iralloc(aPtr, aSize);
 
     if (!ret) {
       errno = ENOMEM;
@@ -4779,7 +4770,7 @@ MozJemalloc::realloc(void* aPtr, size_t aSize)
     if (malloc_init()) {
       ret = nullptr;
     } else {
-      ret = imalloc(aSize,  false, nullptr);
+      ret = imalloc(aSize,  false);
     }
 
     if (!ret) {
