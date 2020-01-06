@@ -4,16 +4,17 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["FormAutofillUtils", "AddressDataLoader"];
+this.EXPORTED_SYMBOLS = ["FormAutofillUtils"];
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
-const ADDRESS_METADATA_PATH = "resource://formautofill/addressmetadata/";
-const ADDRESS_REFERENCES = "addressReferences.js";
-const ADDRESS_REFERENCES_EXT = "addressReferencesExt.js";
+const ADDRESS_REFERENCES = "chrome://formautofill/content/addressReferences.js";
 
 
-const SUPPORTED_COUNTRY_LIST = ["US"];
+
+const ALTERNATIVE_COUNTRY_NAMES = {
+  "US": ["US", "United States of America", "United States", "America", "U.S.", "USA", "U.S.A.", "U.S.A"],
+};
 
 const ADDRESSES_COLLECTION_NAME = "addresses";
 const CREDITCARDS_COLLECTION_NAME = "creditCards";
@@ -41,77 +42,6 @@ const MAX_FIELD_VALUE_LENGTH = 200;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-
-let AddressDataLoader = {
-  
-  
-  
-  
-  _dataLoaded: {
-    country: false,
-    level1: new Set(),
-  },
-  
-
-
-
-
-
-
-
-  _loadScripts(path) {
-    let sandbox = {};
-    let extSandbox = {};
-
-    try {
-      sandbox = FormAutofillUtils.loadDataFromScript(path + ADDRESS_REFERENCES);
-      extSandbox = FormAutofillUtils.loadDataFromScript(path + ADDRESS_REFERENCES_EXT);
-    } catch (e) {
-      
-      
-      return sandbox;
-    }
-
-    if (extSandbox.addressDataExt) {
-      for (let key in extSandbox.addressDataExt) {
-        Object.assign(sandbox.addressData[key], extSandbox.addressDataExt[key]);
-      }
-    }
-    return sandbox;
-  },
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getData(country, level1 = null) {
-    
-    if (!this._dataLoaded.country) {
-      this._addressData = this._loadScripts(ADDRESS_METADATA_PATH).addressData;
-      this._dataLoaded.country = true;
-    }
-    if (!level1) {
-      return this._addressData[`data/${country}`];
-    }
-    
-    
-    if (!this._dataLoaded.level1.has(country)) {
-      Object.assign(this._addressData,
-                    this._loadScripts(`${ADDRESS_METADATA_PATH}${country}/`).addressData);
-      this._dataLoaded.level1.add(country);
-    }
-    return this._addressData[`data/${country}/${level1}`];
-  },
-};
 
 this.FormAutofillUtils = {
   get AUTOFILL_FIELDS_THRESHOLD() { return 3; },
@@ -164,7 +94,7 @@ this.FormAutofillUtils = {
     "cc-exp-year": "creditCard",
     "cc-exp": "creditCard",
   },
-
+  _addressDataLoaded: false,
   _collators: {},
   _reAlternativeCountryNames: {},
 
@@ -292,14 +222,17 @@ this.FormAutofillUtils = {
   },
 
   
-  
-  getCountryAddressData(country, level1 = null) {
-    let metadata = AddressDataLoader.getData(country, level1);
-    if (!metadata) {
-      metadata = level1 ? null : AddressDataLoader.getData("US");
-    }
 
-    return metadata;
+
+
+
+  getCountryAddressData(country) {
+    
+    if (!this._addressDataLoaded) {
+      Object.assign(this, this.loadDataFromScript(ADDRESS_REFERENCES));
+      this._addressDataLoaded = true;
+    }
+    return this.addressData[`data/${country}`] || this.addressData["data/US"];
   },
 
   
@@ -378,13 +311,12 @@ this.FormAutofillUtils = {
 
 
   identifyCountryCode(countryName, countrySpecified) {
-    let countries = countrySpecified ? [countrySpecified] : SUPPORTED_COUNTRY_LIST;
+    let countries = countrySpecified ? [countrySpecified] : Object.keys(ALTERNATIVE_COUNTRY_NAMES);
 
     for (let country of countries) {
       let collators = this.getCollators(country);
 
-      let metadata = this.getCountryAddressData(country);
-      let alternativeCountryNames = metadata.alternative_names || [metadata.name];
+      let alternativeCountryNames = ALTERNATIVE_COUNTRY_NAMES[country];
       let reAlternativeCountryNames = this._reAlternativeCountryNames[country];
       if (!reAlternativeCountryNames) {
         reAlternativeCountryNames = this._reAlternativeCountryNames[country] = [];
@@ -513,7 +445,7 @@ this.FormAutofillUtils = {
         break;
       }
       case "country": {
-        if (this.getCountryAddressData(value).alternative_names) {
+        if (ALTERNATIVE_COUNTRY_NAMES[value]) {
           for (let option of selectEl.options) {
             if (this.identifyCountryCode(option.text, value) || this.identifyCountryCode(option.value, value)) {
               return option;
