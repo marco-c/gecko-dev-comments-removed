@@ -265,7 +265,13 @@ public:
 
     
     virtual bool IsFontLoadAllowed(nsIURI* aFontLocation,
-                                   nsIPrincipal* aPrincipal) = 0;
+                                   nsIPrincipal* aPrincipal,
+                                   nsTArray<nsCOMPtr<nsIRunnable>>* aViolations) = 0;
+
+    
+    
+    virtual void DispatchFontLoadViolations(
+        nsTArray<nsCOMPtr<nsIRunnable>>& aViolations) = 0;
 
     
     
@@ -430,9 +436,12 @@ public:
             gfxFontEntry* GetFontEntry() const { return mFontEntry; }
             bool IsPrivate() const { return mPrivate; }
 
-            bool IsFontSetAllowed(gfxUserFontSet* aUserFontSet) const;
+            bool CheckIsFontSetAllowed(gfxUserFontSet* aUserFontSet) const;
+            bool CheckIsFontSetAllowedAndDispatchViolations(gfxUserFontSet* aUserFontSet) const;
             bool IsFontSetAllowedKnown(gfxUserFontSet* aUserFontSet) const;
-            void SetIsFontSetAllowed(gfxUserFontSet* aUserFontSet, bool aAllowed);
+            void SetIsFontSetAllowed(gfxUserFontSet* aUserFontSet,
+                                     bool aAllowed,
+                                     nsTArray<nsCOMPtr<nsIRunnable>>&& aViolations);
             void ClearIsFontSetAllowed(gfxUserFontSet* aUserFontSet);
 
             void ReportMemory(nsIHandleReportCallback* aHandleReport,
@@ -450,6 +459,36 @@ public:
             }
 
             
+            class LoadResultEntry : public nsPtrHashKey<gfxUserFontSet>
+            {
+            public:
+                explicit LoadResultEntry(KeyTypePointer aKey)
+                  : nsPtrHashKey(aKey)
+                  , mAllowed(false)
+                {
+                }
+
+                explicit LoadResultEntry(LoadResultEntry&& aOther)
+                  : nsPtrHashKey(aOther.mKey)
+                  , mAllowed(aOther.mAllowed)
+                  , mViolations(mozilla::Move(aOther.mViolations))
+                {
+                }
+
+                ~LoadResultEntry() {}
+
+                
+                
+                bool mAllowed;
+
+                
+                
+                
+                nsTArray<nsCOMPtr<nsIRunnable>> mViolations;
+
+                enum { ALLOW_MEMMOVE = false };
+            };
+
             
             
             
@@ -461,7 +500,8 @@ public:
             
             
             
-            nsDataHashtable<nsPtrHashKey<gfxUserFontSet>, bool> mAllowedFontSets;
+            
+            nsTHashtable<LoadResultEntry> mAllowedFontSets;
 
             RefPtr<gfxFontSrcURI>  mURI;
             RefPtr<gfxFontSrcPrincipal> mPrincipal; 
