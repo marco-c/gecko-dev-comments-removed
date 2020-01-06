@@ -425,7 +425,27 @@ SubstitutingProtocolHandler::ResolveURI(nsIURI *uri, nsACString &result)
     rv = baseURI->GetSpec(result);
   } else {
     
-    path.Insert('.', 0);
+    
+    
+    
+    
+    nsCOMPtr<nsIFileURL> baseDir = do_QueryInterface(baseURI);
+    if (baseDir) {
+      nsAutoCString basePath;
+      rv = baseURI->GetFilePath(basePath);
+      if (NS_SUCCEEDED(rv) && !StringEndsWith(basePath, NS_LITERAL_CSTRING("/"))) {
+        
+        
+        
+        path.Insert(basePath, 0);
+      } else {
+        
+        baseDir = nullptr;
+      }
+    }
+    if (!baseDir) {
+      path.Insert('.', 0);
+    }
     rv = baseURI->Resolve(path, result);
   }
 
