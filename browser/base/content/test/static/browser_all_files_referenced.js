@@ -131,8 +131,6 @@ var whitelist = [
   
   {file: "chrome://global/content/url-classifier/unittests.xul"},
   
-  {file: "chrome://global/locale/headsUpDisplay.properties"},
-  
   {file: "chrome://global/skin/icons/warning-64.png", platforms: ["linux", "win"]},
   
   {file: "chrome://global/skin/splitter/grip-bottom.gif", platforms: ["linux"]},
