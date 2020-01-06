@@ -244,18 +244,18 @@ nsHostObjectURI::GetScriptableHelper(nsIXPCScriptable **_retval)
 }
 
 NS_IMETHODIMP
-nsHostObjectURI::GetContractID(char * *aContractID)
+nsHostObjectURI::GetContractID(nsACString& aContractID)
 {
   
   
-  *aContractID = nullptr;
+  aContractID.SetIsVoid(true);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsHostObjectURI::GetClassDescription(char * *aClassDescription)
+nsHostObjectURI::GetClassDescription(nsACString& aClassDescription)
 {
-  *aClassDescription = nullptr;
+  aClassDescription.SetIsVoid(true);
   return NS_OK;
 }
 

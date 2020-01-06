@@ -744,18 +744,18 @@ nsSimpleURI::GetScriptableHelper(nsIXPCScriptable **_retval)
 }
 
 NS_IMETHODIMP
-nsSimpleURI::GetContractID(char * *aContractID)
+nsSimpleURI::GetContractID(nsACString& aContractID)
 {
     
     
-    *aContractID = nullptr;
+    aContractID.SetIsVoid(true);
     return NS_OK;
 }
 
 NS_IMETHODIMP
-nsSimpleURI::GetClassDescription(char * *aClassDescription)
+nsSimpleURI::GetClassDescription(nsACString& aClassDescription)
 {
-    *aClassDescription = nullptr;
+    aClassDescription.SetIsVoid(true);
     return NS_OK;
 }
 
