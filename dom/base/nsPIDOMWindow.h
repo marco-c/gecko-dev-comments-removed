@@ -1224,11 +1224,6 @@ protected:
   
   nsPIDOMWindowInner* MOZ_NON_OWNING_REF mInnerWindow;
 
-  
-  
-  
-  nsCOMPtr<nsIContent> mFocusedNode;
-
   RefPtr<mozilla::dom::TabGroup> mTabGroup;
 
   
