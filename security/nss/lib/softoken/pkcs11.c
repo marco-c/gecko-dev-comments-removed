@@ -3566,6 +3566,7 @@ NSC_InitToken(CK_SLOT_ID slotID, CK_CHAR_PTR pPin,
 {
     SFTKSlot *slot = sftk_SlotFromID(slotID, PR_FALSE);
     SFTKDBHandle *handle;
+    SFTKDBHandle *certHandle;
     SECStatus rv;
     unsigned int i;
     SFTKObject *object;
@@ -3613,16 +3614,19 @@ NSC_InitToken(CK_SLOT_ID slotID, CK_CHAR_PTR pPin,
     }
 
     rv = sftkdb_ResetKeyDB(handle);
-    
-    sftkdb_ClearPassword(handle);
-    
-    sftk_checkNeedLogin(slot, handle);
     sftk_freeDB(handle);
     if (rv != SECSuccess) {
         return CKR_DEVICE_ERROR;
     }
 
-    return CKR_OK;
+    
+    certHandle = sftk_getCertDB(slot);
+    if (certHandle == NULL)
+        return CKR_OK;
+
+    sftk_freeDB(certHandle);
+
+    return CKR_OK; 
 }
 
 

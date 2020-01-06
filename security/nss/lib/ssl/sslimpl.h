@@ -298,7 +298,6 @@ typedef struct sslOptionsStr {
     unsigned int requireDHENamedGroups : 1;
     unsigned int enable0RttData : 1;
     unsigned int enableShortHeaders : 1;
-    unsigned int enableAltHandshaketype : 1;
 } sslOptions;
 
 typedef enum { sslHandshakingUndetermined = 0,
@@ -884,7 +883,6 @@ typedef struct SSL3HandshakeStateStr {
     ssl3KEADef kea_def_mutable;     
 
     PRBool shortHeaders;            
-    PRBool altHandshakeType;        
 } SSL3HandshakeState;
 
 

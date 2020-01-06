@@ -1600,7 +1600,7 @@ loser:
     return error;
 }
 
-static const char RESET_CMD[] = "DELETE FROM %s;";
+static const char RESET_CMD[] = "DROP TABLE IF EXISTS %s;";
 CK_RV
 sdb_Reset(SDB *sdb)
 {
@@ -1621,19 +1621,17 @@ sdb_Reset(SDB *sdb)
         goto loser;
     }
 
-    if (tableExists(sqlDB, sdb_p->table)) {
-        
-        newStr = sqlite3_mprintf(RESET_CMD, sdb_p->table);
-        if (newStr == NULL) {
-            error = CKR_HOST_MEMORY;
-            goto loser;
-        }
-        sqlerr = sqlite3_exec(sqlDB, newStr, NULL, 0, NULL);
-        sqlite3_free(newStr);
-
-        if (sqlerr != SQLITE_OK)
-            goto loser;
+    
+    newStr = sqlite3_mprintf(RESET_CMD, sdb_p->table);
+    if (newStr == NULL) {
+        error = CKR_HOST_MEMORY;
+        goto loser;
     }
+    sqlerr = sqlite3_exec(sqlDB, newStr, NULL, 0, NULL);
+    sqlite3_free(newStr);
+
+    if (sqlerr != SQLITE_OK)
+        goto loser;
 
     
     sqlerr = sqlite3_exec(sqlDB, "DROP TABLE IF EXISTS metaData;",
@@ -1886,11 +1884,12 @@ sdb_init(char *dbname, char *table, sdbDataType type, int *inUpdate,
 
 
 
+
     env = PR_GetEnvSecure("NSS_SDB_USE_CACHE");
 
-    if (!env || PORT_Strcasecmp(env, "no") == 0) {
+    if (env && PORT_Strcasecmp(env, "no") == 0) {
         enableCache = PR_FALSE;
-    } else if (PORT_Strcasecmp(env, "yes") == 0) {
+    } else if (env && PORT_Strcasecmp(env, "yes") == 0) {
         enableCache = PR_TRUE;
     } else {
         char *tempDir = NULL;
@@ -2038,9 +2037,8 @@ s_open(const char *directory, const char *certPrefix, const char *keyPrefix,
         env = PR_GetEnvSecure("NSS_SDB_USE_CACHE");
         
 
-
-        if (env && PORT_Strcasecmp(env, "no") != 0 &&
-            PORT_Strcasecmp(env, "yes") != 0) {
+        if (!env || ((PORT_Strcasecmp(env, "no") != 0) &&
+                     (PORT_Strcasecmp(env, "yes") != 0))) {
             accessOps = sdb_measureAccess(directory);
         }
     }

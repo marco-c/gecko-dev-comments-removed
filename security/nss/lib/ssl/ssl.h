@@ -1374,13 +1374,6 @@ extern const char *NSSSSL_GetVersion(void);
 
 SSL_IMPORT SECStatus SSL_AuthCertificateComplete(PRFileDesc *fd,
                                                  PRErrorCode error);
-
-
-
-
-
-SSL_IMPORT void *SSL_GetExperimentalAPI(const char *name);
-
 SEC_END_PROTOS
 
 #endif 
