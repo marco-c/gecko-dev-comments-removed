@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
+import org.mozilla.gecko.activitystream.homepanel.topsites.TopSitesPage;
 import org.mozilla.gecko.activitystream.homepanel.topsites.TopSitesPagerAdapter;
 import org.mozilla.gecko.home.HomePager;
 
@@ -60,10 +61,23 @@ public class TopPanelRow extends StreamViewHolder {
         final Resources resources = itemView.getResources();
         final int tilesMargin = resources.getDimensionPixelSize(R.dimen.activity_stream_base_margin);
 
-        final int rows = cursor == null || cursor.getCount() > 4 ? 2 : 1;
+        final int rows;
+
+        
+        
+        
+        
+        if (cursor == null || cursor.getCount() > TopSitesPage.NUM_COLUMNS) {
+            rows = 2;
+        } else if (cursor.getCount() > 0) {
+            rows = 1;
+        } else {
+            
+            rows = 0;
+        }
 
         ViewGroup.LayoutParams layoutParams = topSitesPager.getLayoutParams();
-        layoutParams.height = (tilesSize * rows) + (tilesMargin * 2);
+        layoutParams.height = rows > 0 ? (tilesSize * rows) + (tilesMargin * 2) : 0;
         topSitesPager.setLayoutParams(layoutParams);
 
         
