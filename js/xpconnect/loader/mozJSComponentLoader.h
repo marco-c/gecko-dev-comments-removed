@@ -144,7 +144,8 @@ class mozJSComponentLoader : public mozilla::ModuleLoader,
         nsCOMPtr<xpcIJSGetFactory> getfactoryobj;
         JS::PersistentRootedObject obj;
         JS::PersistentRootedScript thisObjectKey;
-        char*               location;
+        char* location;
+        nsCString resolvedURL;
     };
 
     friend class ModuleEntry;
@@ -160,6 +161,11 @@ class mozJSComponentLoader : public mozilla::ModuleLoader,
 
     nsClassHashtable<nsCStringHashKey, ModuleEntry> mImports;
     nsDataHashtable<nsCStringHashKey, ModuleEntry*> mInProgressImports;
+
+    
+    
+    
+    nsClassHashtable<nsCStringHashKey, nsCString> mLocations;
 
     bool mInitialized;
 };
