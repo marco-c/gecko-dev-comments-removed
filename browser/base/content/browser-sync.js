@@ -2,6 +2,9 @@
 
 
 
+
+
+
 Cu.import("resource://services-sync/UIState.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "EnsureFxAccountsWebChannel",
