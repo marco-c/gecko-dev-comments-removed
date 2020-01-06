@@ -7480,28 +7480,9 @@ nsCSSFrameConstructor::GetRangeInsertionPoint(nsIContent* aContainer,
   if (insertionPoint.mMultiple || aStartChild->GetXBLInsertionPoint()) {
     
     
-    uint32_t childCount = 0;
-
-    if (!insertionPoint.mMultiple) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      childCount = insertionPoint.mParentFrame->GetContent()->GetChildCount();
-    }
-
     
-    
-    
-    if (insertionPoint.mMultiple || aEndChild != nullptr || childCount > 0) {
+    if (insertionPoint.mMultiple || aEndChild ||
+        insertionPoint.mParentFrame->GetContent()->HasChildren()) {
       
       
       
