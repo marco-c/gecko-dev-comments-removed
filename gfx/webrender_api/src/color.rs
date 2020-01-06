@@ -2,6 +2,8 @@
 
 
 
+use std::hash::{Hash, Hasher};
+
 
 
 
@@ -48,6 +50,26 @@ impl ColorF {
     pub fn premultiplied(&self) -> ColorF {
         self.scale_rgb(self.a)
     }
+}
+
+
+impl Eq for ColorF { }
+impl Hash for ColorF {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        
+        self.r._to_bits().hash(state);
+        self.g._to_bits().hash(state);
+        self.b._to_bits().hash(state);
+        self.a._to_bits().hash(state);
+    }
+}
+
+
+trait ToBits {
+    fn _to_bits(self) -> u32;
+}
+impl ToBits for f32 {
+    fn _to_bits(self) -> u32 { unsafe { ::std::mem::transmute(self) } }
 }
 
 
