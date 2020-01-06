@@ -320,11 +320,6 @@ WebGLTexture::IsComplete(const char* funcName, uint32_t texUnit,
         return false;
     }
 
-    if (!EnsureLevelInitialized(funcName, mBaseMipmapLevel)) {
-        *out_initFailed = true;
-        return false;
-    }
-
     
     
 
@@ -450,6 +445,11 @@ WebGLTexture::IsComplete(const char* funcName, uint32_t texUnit,
         
         
         
+    }
+
+    if (!EnsureLevelInitialized(funcName, mBaseMipmapLevel)) {
+        *out_initFailed = true;
+        return false;
     }
 
     return true;
