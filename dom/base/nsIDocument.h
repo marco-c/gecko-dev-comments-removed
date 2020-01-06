@@ -2404,12 +2404,17 @@ public:
 
 
 
+
+
   virtual already_AddRefed<nsIURI>
     ResolvePreloadImage(nsIURI *aBaseURI,
                         const nsAString& aSrcAttr,
                         const nsAString& aSrcsetAttr,
-                        const nsAString& aSizesAttr) = 0;
+                        const nsAString& aSizesAttr,
+                        bool *aIsImgSet) = 0;
   
+
+
 
 
 
@@ -2417,7 +2422,8 @@ public:
 
   virtual void MaybePreLoadImage(nsIURI* uri,
                                  const nsAString& aCrossOriginAttr,
-                                 ReferrerPolicyEnum aReferrerPolicy) = 0;
+                                 ReferrerPolicyEnum aReferrerPolicy,
+                                 bool aIsImgSet) = 0;
 
   
 
