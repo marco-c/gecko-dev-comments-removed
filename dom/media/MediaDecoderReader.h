@@ -187,7 +187,6 @@ public:
   
   void SetIgnoreAudioOutputFormat()
   {
-    mIgnoreAudioOutputFormat = true;
   }
 
   
@@ -299,12 +298,6 @@ protected:
   MediaQueue<VideoData> mVideoQueue;
 
   
-  
-  
-  
-  AudioCompactor mAudioCompactor;
-
-  
   AbstractMediaDecoder* mDecoder;
 
   
@@ -318,16 +311,6 @@ protected:
 
   media::NullableTimeUnit mDuration;
 
-  
-  
-  
-  bool mIgnoreAudioOutputFormat;
-
-  
-  
-  
-  
-  bool mHitAudioDecodeError;
   bool mShutdown;
 
   
@@ -349,11 +332,6 @@ protected:
 
 private:
   virtual nsresult InitInternal() = 0;
-
-  
-  
-  MozPromiseHolder<AudioDataPromise> mBaseAudioPromise;
-  MozPromiseHolder<VideoDataPromise> mBaseVideoPromise;
 };
 
 } 
