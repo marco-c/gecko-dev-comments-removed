@@ -881,7 +881,7 @@ gfxWindowsPlatform::CreateFontGroup(const FontFamilyList& aFontFamilyList,
 }
 
 bool
-gfxWindowsPlatform::IsFontFormatSupported(nsIURI *aFontURI, uint32_t aFormatFlags)
+gfxWindowsPlatform::IsFontFormatSupported(uint32_t aFormatFlags)
 {
     
     NS_ASSERTION(!(aFormatFlags & gfxUserFontSet::FLAG_FORMAT_NOT_USED),
