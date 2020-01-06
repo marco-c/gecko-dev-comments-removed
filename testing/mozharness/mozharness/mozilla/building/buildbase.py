@@ -399,9 +399,6 @@ class BuildOptionParser(object):
     
     platform = None
     bits = None
-    config_file_search_path = [
-        DEFAULT_CONFIG_PATH,
-    ]
 
     
     
@@ -523,7 +520,13 @@ class BuildOptionParser(object):
         else:
             
             
-            for path in cls.config_file_search_path:
+            
+            
+            extra_config_paths = parser.values.config_paths or []
+            config_paths = extra_config_paths + [DEFAULT_CONFIG_PATH]
+            
+            
+            for path in config_paths:
                 if os.path.exists(os.path.join(path, prospective_cfg_path)):
                     
                     valid_variant_cfg_path = os.path.join(path,
