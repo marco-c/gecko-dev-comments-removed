@@ -495,7 +495,6 @@ public:
   }
 
 private:
-  
   static const uint32_t kParserVariantTable[eCSSProperty_COUNT_no_shorthands];
 
 public:
