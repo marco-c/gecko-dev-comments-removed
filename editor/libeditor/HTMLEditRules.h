@@ -410,11 +410,22 @@ protected:
   void CheckInterlinePosition(Selection& aSelection);
   nsresult AdjustSelection(Selection* aSelection,
                            nsIEditor::EDirection aAction);
-  nsresult FindNearSelectableNode(nsINode* aSelNode,
-                                  int32_t aSelOffset,
-                                  nsINode* aChildAtOffset,
-                                  nsIEditor::EDirection& aDirection,
-                                  nsCOMPtr<nsIContent>* outSelectableNode);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  nsIContent* FindNearEditableNode(const EditorRawDOMPoint& aPoint,
+                                   nsIEditor::EDirection aDirection);
   
 
 
