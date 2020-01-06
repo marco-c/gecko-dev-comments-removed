@@ -209,11 +209,7 @@ GeckoMediaPluginServiceParent::InitStorage()
 
   
   
-#ifdef MOZ_WIDGET_GONK
-  nsresult rv = NS_NewLocalFile(NS_LITERAL_STRING("/data/b2g/mozilla"), false, getter_AddRefs(mStorageBaseDir));
-#else
   nsresult rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR, getter_AddRefs(mStorageBaseDir));
-#endif
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;

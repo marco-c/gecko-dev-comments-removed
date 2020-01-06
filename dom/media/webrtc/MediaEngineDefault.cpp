@@ -187,7 +187,7 @@ MediaEngineDefaultVideoSource::Start(SourceMediaStream* aStream, TrackID aID,
   mTrackID = aID;
 
   
-#if (defined(MOZ_WIDGET_GONK) || defined(MOZ_WIDGET_ANDROID)) && defined(DEBUG)
+#if defined(MOZ_WIDGET_ANDROID) && defined(DEBUG)
 
   mTimer->InitWithCallback(this, (1000 / mOpts.mFPS)*10, nsITimer::TYPE_REPEATING_SLACK);
 #else

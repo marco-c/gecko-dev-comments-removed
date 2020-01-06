@@ -337,7 +337,7 @@ MediaEngineCameraVideoSource::SetName(nsString aName)
   VideoFacingModeEnum facingMode = VideoFacingModeEnum::User;
 
   
-#if defined(ANDROID) && !defined(MOZ_WIDGET_GONK)
+#if defined(ANDROID)
   
   
   

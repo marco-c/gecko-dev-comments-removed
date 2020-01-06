@@ -325,7 +325,7 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
   int nDevices = 0;
   mAudioInput->GetNumOfRecordingDevices(nDevices);
   int i;
-#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
+#if defined(MOZ_WIDGET_ANDROID)
   i = 0; 
 #else
   
