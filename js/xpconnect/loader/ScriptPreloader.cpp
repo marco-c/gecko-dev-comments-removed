@@ -696,7 +696,7 @@ ScriptPreloader::NoteScript(const nsCString& url, const nsCString& cachePath,
 {
     
     
-    if (mStartupFinished || !mCacheInitialized || cachePath.FindChar('?') >= 0) {
+    if (!Active() || cachePath.FindChar('?') >= 0) {
         return;
     }
 
@@ -940,7 +940,8 @@ ScriptPreloader::DecodeNextBatch(size_t chunkSize)
     JSContext* cx = jsapi.cx();
 
     JS::CompileOptions options(cx, JSVERSION_LATEST);
-    options.setNoScriptRval(true);
+    options.setNoScriptRval(true)
+           .setSourceIsLazy(true);
 
     if (!JS::CanCompileOffThread(cx, options, size) ||
         !JS::DecodeMultiOffThreadScripts(cx, options, mParsingSources,
