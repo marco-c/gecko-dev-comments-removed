@@ -299,7 +299,8 @@ GetCurrentWindow(nsIContent* aContent)
 
 
 nsIContent*
-nsFocusManager::GetFocusedDescendant(nsPIDOMWindowOuter* aWindow, bool aDeep,
+nsFocusManager::GetFocusedDescendant(nsPIDOMWindowOuter* aWindow,
+                                     SearchRange aSearchRange,
                                      nsPIDOMWindowOuter** aFocusedWindow)
 {
   NS_ENSURE_TRUE(aWindow, nullptr);
@@ -308,13 +309,34 @@ nsFocusManager::GetFocusedDescendant(nsPIDOMWindowOuter* aWindow, bool aDeep,
 
   nsIContent* currentContent = nullptr;
   nsPIDOMWindowOuter* window = aWindow;
-  while (window) {
+  for (;;) {
     *aFocusedWindow = window;
     currentContent = window->GetFocusedNode();
-    if (!currentContent || !aDeep)
+    if (!currentContent || aSearchRange == eOnlyCurrentWindow) {
       break;
+    }
 
     window = GetContentWindow(currentContent);
+    if (!window) {
+      break;
+    }
+
+    if (aSearchRange == eIncludeAllDescendants) {
+      continue;
+    }
+
+    MOZ_ASSERT(aSearchRange == eIncludeVisibleDescendants);
+
+    
+    
+    nsIDocShell* docShell = window->GetDocShell();
+    if (!docShell) {
+      break;
+    }
+    nsIPresShell* presShell = docShell->GetPresShell();
+    if (!presShell) {
+      break;
+    }
   }
 
   NS_IF_ADDREF(*aFocusedWindow);
@@ -628,7 +650,10 @@ nsFocusManager::GetFocusedElementForWindow(mozIDOMWindowProxy* aWindow,
 
   nsCOMPtr<nsPIDOMWindowOuter> focusedWindow;
   nsCOMPtr<nsIContent> focusedContent =
-    GetFocusedDescendant(window, aDeep, getter_AddRefs(focusedWindow));
+    GetFocusedDescendant(window,
+                         aDeep ? nsFocusManager::eIncludeAllDescendants :
+                                 nsFocusManager::eOnlyCurrentWindow,
+                         getter_AddRefs(focusedWindow));
   if (focusedContent)
     CallQueryInterface(focusedContent, aElement);
 
@@ -738,7 +763,8 @@ nsFocusManager::WindowRaised(mozIDOMWindowProxy* aWindow)
   
   nsCOMPtr<nsPIDOMWindowOuter> currentWindow;
   nsCOMPtr<nsIContent> currentFocus =
-    GetFocusedDescendant(window, true, getter_AddRefs(currentWindow));
+    GetFocusedDescendant(window, eIncludeAllDescendants,
+                         getter_AddRefs(currentWindow));
 
   NS_ASSERTION(currentWindow, "window raised with no window current");
   if (!currentWindow)
@@ -910,7 +936,8 @@ nsFocusManager::WindowShown(mozIDOMWindowProxy* aWindow, bool aNeedsFocus)
   if (aNeedsFocus) {
     nsCOMPtr<nsPIDOMWindowOuter> currentWindow;
     nsCOMPtr<nsIContent> currentFocus =
-      GetFocusedDescendant(window, true, getter_AddRefs(currentWindow));
+      GetFocusedDescendant(window, eIncludeAllDescendants,
+                           getter_AddRefs(currentWindow));
     if (currentWindow)
       Focus(currentWindow, currentFocus, 0, true, false, false, true);
   }
@@ -1213,7 +1240,8 @@ nsFocusManager::SetFocusInner(nsIContent* aNewContent, int32_t aFlags,
   nsCOMPtr<nsPIDOMWindowOuter> newWindow;
   nsCOMPtr<nsPIDOMWindowOuter> subWindow = GetContentWindow(contentToFocus);
   if (subWindow) {
-    contentToFocus = GetFocusedDescendant(subWindow, true, getter_AddRefs(newWindow));
+    contentToFocus = GetFocusedDescendant(subWindow, eIncludeAllDescendants,
+                                          getter_AddRefs(newWindow));
     
     
     aFocusChanged = false;
@@ -2290,7 +2318,8 @@ nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow)
   
   
   nsCOMPtr<nsPIDOMWindowOuter> childWindow;
-  GetFocusedDescendant(aWindow, true, getter_AddRefs(childWindow));
+  GetFocusedDescendant(aWindow, eIncludeAllDescendants,
+                       getter_AddRefs(childWindow));
   if (!childWindow)
     childWindow = aWindow;
 
@@ -2654,7 +2683,8 @@ nsFocusManager::DetermineElementToMoveFocus(nsPIDOMWindowOuter* aWindow,
       
       
       nsCOMPtr<nsPIDOMWindowOuter> focusedWindow;
-      startContent = GetFocusedDescendant(aWindow, true, getter_AddRefs(focusedWindow));
+      startContent = GetFocusedDescendant(aWindow, eIncludeAllDescendants,
+                                          getter_AddRefs(focusedWindow));
     }
     else if (aType != MOVEFOCUS_LASTDOC) {
       

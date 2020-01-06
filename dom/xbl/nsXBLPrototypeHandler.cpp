@@ -516,10 +516,14 @@ nsXBLPrototypeHandler::DispatchXBLCommand(EventTarget* aTarget, nsIDOMEvent* aEv
   }
 
   NS_LossyConvertUTF16toASCII command(mHandlerText);
-  if (windowRoot)
-    windowRoot->GetControllerForCommand(command.get(), getter_AddRefs(controller));
-  else
+  if (windowRoot) {
+    
+    
+    windowRoot->GetControllerForCommand(command.get(), true,
+                                        getter_AddRefs(controller));
+  } else {
     controller = GetController(aTarget); 
+  }
 
   
   
@@ -541,7 +545,10 @@ nsXBLPrototypeHandler::DispatchXBLCommand(EventTarget* aTarget, nsIDOMEvent* aEv
     if (windowToCheck) {
       nsCOMPtr<nsPIDOMWindowOuter> focusedWindow;
       focusedContent =
-        nsFocusManager::GetFocusedDescendant(windowToCheck, true, getter_AddRefs(focusedWindow));
+        nsFocusManager::GetFocusedDescendant(
+                          windowToCheck,
+                          nsFocusManager::eIncludeAllDescendants,
+                          getter_AddRefs(focusedWindow));
     }
 
     

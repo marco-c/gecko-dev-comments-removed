@@ -81,7 +81,8 @@ DoCommandCallback(Command aCommand, void* aData)
   const char* commandStr = WidgetKeyboardEvent::GetCommandStr(aCommand);
 
   nsCOMPtr<nsIController> controller;
-  root->GetControllerForCommand(commandStr, getter_AddRefs(controller));
+  root->GetControllerForCommand(commandStr, false ,
+                                getter_AddRefs(controller));
   if (!controller) {
     return;
   }

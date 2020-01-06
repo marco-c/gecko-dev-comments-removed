@@ -134,7 +134,17 @@ public:
 
 
 
-  static nsIContent* GetFocusedDescendant(nsPIDOMWindowOuter* aWindow, bool aDeep,
+  enum SearchRange
+  {
+    
+    eOnlyCurrentWindow,
+    
+    eIncludeAllDescendants,
+    
+    eIncludeVisibleDescendants,
+  };
+  static nsIContent* GetFocusedDescendant(nsPIDOMWindowOuter* aWindow,
+                                          SearchRange aSearchRange,
                                           nsPIDOMWindowOuter** aFocusedWindow);
 
   

@@ -256,5 +256,6 @@ nsCommandManager::GetControllerForCommand(const char* aCommand,
   NS_ENSURE_TRUE(root, NS_ERROR_FAILURE);
 
   
-  return root->GetControllerForCommand(aCommand, aResult);
+  return root->GetControllerForCommand(aCommand, false ,
+                                       aResult);
 }
