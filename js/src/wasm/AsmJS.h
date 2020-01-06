@@ -60,6 +60,9 @@ IsAsmJSFunction(JSFunction* fun);
 extern bool
 IsAsmJSStrictModeModuleOrFunction(JSFunction* fun);
 
+extern bool
+InstantiateAsmJS(JSContext* cx, unsigned argc, JS::Value* vp);
+
 
 
 extern bool

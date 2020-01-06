@@ -8189,8 +8189,8 @@ AsmJSModuleFunctionToModule(JSFunction* fun)
 }
 
 
-static bool
-InstantiateAsmJS(JSContext* cx, unsigned argc, JS::Value* vp)
+bool
+js::InstantiateAsmJS(JSContext* cx, unsigned argc, JS::Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 

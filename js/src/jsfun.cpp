@@ -50,6 +50,7 @@
 #include "vm/StringBuffer.h"
 #include "vm/WrapperObject.h"
 #include "vm/Xdr.h"
+#include "wasm/AsmJS.h"
 
 #include "jsscriptinlines.h"
 
@@ -2113,6 +2114,8 @@ bool
 js::CanReuseScriptForClone(JSCompartment* compartment, HandleFunction fun,
                            HandleObject newParent)
 {
+    MOZ_ASSERT(fun->isInterpreted());
+
     if (compartment != fun->compartment() ||
         fun->isSingleton() ||
         ObjectGroup::useSingletonForClone(fun))
@@ -2135,8 +2138,7 @@ js::CanReuseScriptForClone(JSCompartment* compartment, HandleFunction fun,
     
     
     
-    return !fun->isInterpreted() ||
-           (fun->hasScript() && fun->nonLazyScript()->hasNonSyntacticScope());
+    return fun->hasScript() && fun->nonLazyScript()->hasNonSyntacticScope();
 }
 
 static inline JSFunction*
@@ -2187,6 +2189,7 @@ js::CloneFunctionReuseScript(JSContext* cx, HandleFunction fun, HandleObject enc
                              HandleObject proto )
 {
     MOZ_ASSERT(NewFunctionEnvironmentIsWellFormed(cx, enclosingEnv));
+    MOZ_ASSERT(fun->isInterpreted());
     MOZ_ASSERT(!fun->isBoundFunction());
     MOZ_ASSERT(CanReuseScriptForClone(cx->compartment(), fun, enclosingEnv));
 
@@ -2197,13 +2200,12 @@ js::CloneFunctionReuseScript(JSContext* cx, HandleFunction fun, HandleObject enc
     if (fun->hasScript()) {
         clone->initScript(fun->nonLazyScript());
         clone->initEnvironment(enclosingEnv);
-    } else if (fun->isInterpretedLazy()) {
+    } else {
+        MOZ_ASSERT(fun->isInterpretedLazy());
         MOZ_ASSERT(fun->compartment() == clone->compartment());
         LazyScript* lazy = fun->lazyScriptOrNull();
         clone->initLazyScript(lazy);
         clone->initEnvironment(enclosingEnv);
-    } else {
-        clone->initNative(fun->native(), fun->jitInfo());
     }
 
     
@@ -2221,25 +2223,19 @@ js::CloneFunctionAndScript(JSContext* cx, HandleFunction fun, HandleObject enclo
                            HandleObject proto )
 {
     MOZ_ASSERT(NewFunctionEnvironmentIsWellFormed(cx, enclosingEnv));
+    MOZ_ASSERT(fun->isInterpreted());
     MOZ_ASSERT(!fun->isBoundFunction());
 
-    JSScript::AutoDelazify funScript(cx);
-    if (fun->isInterpreted()) {
-        funScript = fun;
-        if (!funScript)
-            return nullptr;
-    }
+    JSScript::AutoDelazify funScript(cx, fun);
+    if (!funScript)
+        return nullptr;
 
     RootedFunction clone(cx, NewFunctionClone(cx, fun, SingletonObject, allocKind, proto));
     if (!clone)
         return nullptr;
 
-    if (fun->hasScript()) {
-        clone->initScript(nullptr);
-        clone->initEnvironment(enclosingEnv);
-    } else {
-        clone->initNative(fun->native(), fun->jitInfo());
-    }
+    clone->initScript(nullptr);
+    clone->initEnvironment(enclosingEnv);
 
     
 
@@ -2256,18 +2252,54 @@ js::CloneFunctionAndScript(JSContext* cx, HandleFunction fun, HandleObject enclo
                   newScope->hasOnChain(ScopeKind::NonSyntactic));
 #endif
 
-    if (clone->isInterpreted()) {
-        RootedScript script(cx, fun->nonLazyScript());
-        MOZ_ASSERT(script->compartment() == fun->compartment());
-        MOZ_ASSERT(cx->compartment() == clone->compartment(),
-                   "Otherwise we could relazify clone below!");
+    RootedScript script(cx, fun->nonLazyScript());
+    MOZ_ASSERT(script->compartment() == fun->compartment());
+    MOZ_ASSERT(cx->compartment() == clone->compartment(),
+               "Otherwise we could relazify clone below!");
 
-        RootedScript clonedScript(cx, CloneScriptIntoFunction(cx, newScope, clone, script));
-        if (!clonedScript)
-            return nullptr;
-        Debugger::onNewScript(cx, clonedScript);
-    }
+    RootedScript clonedScript(cx, CloneScriptIntoFunction(cx, newScope, clone, script));
+    if (!clonedScript)
+        return nullptr;
+    Debugger::onNewScript(cx, clonedScript);
 
+    return clone;
+}
+
+JSFunction*
+js::CloneAsmJSModuleFunction(JSContext* cx, HandleFunction fun)
+{
+    MOZ_ASSERT(fun->isNative());
+    MOZ_ASSERT(IsAsmJSModule(fun));
+    MOZ_ASSERT(fun->isExtended());
+    MOZ_ASSERT(cx->compartment() == fun->compartment());
+
+    JSFunction* clone = NewFunctionClone(cx, fun, GenericObject, AllocKind::FUNCTION_EXTENDED,
+                                          nullptr);
+    if (!clone)
+        return nullptr;
+
+    MOZ_ASSERT(fun->native() == InstantiateAsmJS);
+    MOZ_ASSERT(!fun->jitInfo());
+    clone->initNative(InstantiateAsmJS, nullptr);
+
+    clone->setGroup(fun->group());
+    return clone;
+}
+
+JSFunction*
+js::CloneSelfHostingIntrinsic(JSContext* cx, HandleFunction fun)
+{
+    MOZ_ASSERT(fun->isNative());
+    MOZ_ASSERT(fun->compartment()->isSelfHosting);
+    MOZ_ASSERT(!fun->isExtended());
+    MOZ_ASSERT(cx->compartment() != fun->compartment());
+
+    JSFunction* clone = NewFunctionClone(cx, fun, SingletonObject, AllocKind::FUNCTION,
+                                          nullptr);
+    if (!clone)
+        return nullptr;
+
+    clone->initNative(fun->native(), fun->jitInfo());
     return clone;
 }
 
