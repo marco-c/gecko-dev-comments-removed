@@ -112,7 +112,8 @@ def update_nspr_or_nss(tag, depfile, destination, hgpath):
     sys.exit(2)
   warn_if_patch_exists(permanent_patch_dir)
   
-  shutil.move(permanent_patch_dir, temporary_patch_dir)
+  if os.path.exists(permanent_patch_dir):
+    shutil.move(permanent_patch_dir, temporary_patch_dir)
   
   print "reverting to HG version of %s to get its blank line state" % depfile
   check_call_noisy([options.hg, 'revert', depfile])
@@ -127,7 +128,8 @@ def update_nspr_or_nss(tag, depfile, destination, hgpath):
   tag_file = destination + "/TAG-INFO"
   print >>file(tag_file, "w"), tag
   
-  shutil.move(temporary_patch_dir, permanent_patch_dir)
+  if os.path.exists(temporary_patch_dir):
+    shutil.move(temporary_patch_dir, permanent_patch_dir)
 
 def warn_if_patch_exists(path):
   
