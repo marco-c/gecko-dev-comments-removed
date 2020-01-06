@@ -50,8 +50,9 @@ nsGfxButtonControlFrame::GetFrameName(nsAString& aResult) const
 nsresult
 nsGfxButtonControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
 {
-  nsXPIDLString label;
-  GetLabel(label);
+  nsAutoString label;
+  nsresult rv = GetLabel(label);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   mTextContent = new nsTextNode(mContent->NodeInfo()->NodeInfoManager());
@@ -83,7 +84,7 @@ NS_QUERYFRAME_TAIL_INHERITING(nsHTMLButtonControlFrame)
 
 
 nsresult
-nsGfxButtonControlFrame::GetDefaultLabel(nsXPIDLString& aString) const
+nsGfxButtonControlFrame::GetDefaultLabel(nsAString& aString) const
 {
   nsCOMPtr<nsIFormControl> form = do_QueryInterface(mContent);
   NS_ENSURE_TRUE(form, NS_ERROR_UNEXPECTED);
@@ -106,7 +107,7 @@ nsGfxButtonControlFrame::GetDefaultLabel(nsXPIDLString& aString) const
 }
 
 nsresult
-nsGfxButtonControlFrame::GetLabel(nsXPIDLString& aLabel)
+nsGfxButtonControlFrame::GetLabel(nsString& aLabel)
 {
   
   
@@ -160,7 +161,7 @@ nsGfxButtonControlFrame::AttributeChanged(int32_t         aNameSpaceID,
   
   if (nsGkAtoms::value == aAttribute) {
     if (mTextContent && mContent) {
-      nsXPIDLString label;
+      nsAutoString label;
       rv = GetLabel(label);
       NS_ENSURE_SUCCESS(rv, rv);
 

@@ -179,7 +179,7 @@ private:
   mozilla::Mutex mLock;
 
   
-  nsXPIDLString mIDNBlacklist;
+  nsString mIDNBlacklist;
 
   
 

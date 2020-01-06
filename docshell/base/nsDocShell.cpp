@@ -9730,7 +9730,6 @@ public:
 
 private:
   
-  nsXPIDLString mWindowTarget;
   nsXPIDLCString mTypeHint;
   nsString mSrcdoc;
 
