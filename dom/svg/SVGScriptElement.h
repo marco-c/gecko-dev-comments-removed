@@ -79,6 +79,13 @@ protected:
 
   virtual StringAttributesInfo GetStringInfo() override;
 
+  
+  
+  virtual bool GetAsyncState() override
+  {
+    return false;
+  }
+
   enum { HREF, XLINK_HREF };
   nsSVGString mStringAttributes[2];
   static StringInfo sStringInfo[2];
