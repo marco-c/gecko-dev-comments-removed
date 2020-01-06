@@ -8,24 +8,29 @@ const mockRemoteClients = [
 
 add_task(async function copyURL() {
   
-  await promisePageActionPanelOpen();
-
   
-  let copyURLButton = document.getElementById("page-action-copy-url-button");
-  let hiddenPromise = promisePageActionPanelHidden();
-  EventUtils.synthesizeMouseAtCenter(copyURLButton, {});
-  await hiddenPromise;
+  let url = "http://example.com/";
+  await BrowserTestUtils.withNewTab(url, async () => {
+    
+    await promisePageActionPanelOpen();
 
-  
-  let transferable = Cc["@mozilla.org/widget/transferable;1"]
-                       .createInstance(Ci.nsITransferable);
-  transferable.init(null);
-  let flavor = "text/unicode";
-  transferable.addDataFlavor(flavor);
-  Services.clipboard.getData(transferable, Services.clipboard.kGlobalClipboard);
-  let strObj = {};
-  transferable.getTransferData(flavor, strObj, {});
-  Assert.ok(!!strObj.value);
-  strObj.value.QueryInterface(Ci.nsISupportsString);
-  Assert.equal(strObj.value.data, gBrowser.selectedBrowser.currentURI.spec);
+    
+    let copyURLButton = document.getElementById("pageAction-panel-copyURL");
+    let hiddenPromise = promisePageActionPanelHidden();
+    EventUtils.synthesizeMouseAtCenter(copyURLButton, {});
+    await hiddenPromise;
+
+    
+    let transferable = Cc["@mozilla.org/widget/transferable;1"]
+                         .createInstance(Ci.nsITransferable);
+    transferable.init(null);
+    let flavor = "text/unicode";
+    transferable.addDataFlavor(flavor);
+    Services.clipboard.getData(transferable, Services.clipboard.kGlobalClipboard);
+    let strObj = {};
+    transferable.getTransferData(flavor, strObj, {});
+    Assert.ok(!!strObj.value);
+    strObj.value.QueryInterface(Ci.nsISupportsString);
+    Assert.equal(strObj.value.data, gBrowser.selectedBrowser.currentURI.spec);
+  });
 });

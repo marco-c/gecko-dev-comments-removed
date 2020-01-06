@@ -1494,9 +1494,12 @@ toolbarpaletteitem[place="palette"][hidden] {
   -moz-window-shadow: none;
 }
 
+%ifdef MOZ_PHOTON_THEME
 
-#page-action-sendToDeviceView-body:not([state="notready"]) > #page-action-sync-not-ready-button {
+#pageAction-panel-sendToDevice-subview-body:not([state="notready"]) > #pageAction-panel-sendToDevice-notReady,
+#pageAction-urlbar-sendToDevice-subview-body:not([state="notready"]) > #pageAction-urlbar-sendToDevice-notReady {
   display: none;
 }
+%endif
 
 %include theme-vars.inc.css
