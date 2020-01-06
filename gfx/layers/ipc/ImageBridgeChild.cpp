@@ -181,26 +181,19 @@ ImageBridgeChild::HoldUntilCompositableRefReleasedIfNecessary(TextureClient* aCl
 void
 ImageBridgeChild::NotifyNotUsed(uint64_t aTextureId, uint64_t aFwdTransactionId)
 {
-  RefPtr<TextureClient> client = mTexturesWaitingRecycled.Get(aTextureId);
-  if (!client) {
-    return;
+  if (auto entry = mTexturesWaitingRecycled.Lookup(aTextureId)) {
+    if (aFwdTransactionId < entry.Data()->GetLastFwdTransactionId()) {
+      
+      return;
+    }
+    entry.Remove();
   }
-  if (aFwdTransactionId < client->GetLastFwdTransactionId()) {
-    
-    return;
-  }
-  mTexturesWaitingRecycled.Remove(aTextureId);
 }
 
 void
 ImageBridgeChild::CancelWaitForRecycle(uint64_t aTextureId)
 {
   MOZ_ASSERT(InImageBridgeChildThread());
-
-  RefPtr<TextureClient> client = mTexturesWaitingRecycled.Get(aTextureId);
-  if (!client) {
-    return;
-  }
   mTexturesWaitingRecycled.Remove(aTextureId);
 }
 
