@@ -841,6 +841,12 @@ public:
 
 
 
+  inline nsIFrame* GetFlattenedTreeParentPrimaryFrame() const;
+
+  
+
+
+
 
   inline nsPlaceholderFrame* GetPlaceholderFrame() const {
     MOZ_ASSERT(HasAnyStateBits(NS_FRAME_OUT_OF_FLOW));
@@ -2587,13 +2593,6 @@ public:
 
 
   virtual bool HasAnyNoncollapsedCharacters()
-  { return false; }
-
-  
-
-
-
-  virtual bool OnlySystemGroupDispatch(mozilla::EventMessage aMessage) const
   { return false; }
 
   
