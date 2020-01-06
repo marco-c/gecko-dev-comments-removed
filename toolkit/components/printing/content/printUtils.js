@@ -215,8 +215,8 @@ var PrintUtils = {
   printPreview(aListenerObj) {
     
     
-    
-    if (!this.inPrintPreview) {
+    let printPreviewTB = document.getElementById("print-preview-toolbar");
+    if (!printPreviewTB) {
       this._listener = aListenerObj;
       this._sourceBrowser = aListenerObj.getSourceBrowser();
       this._originalTitle = this._sourceBrowser.contentTitle;
@@ -225,6 +225,10 @@ var PrintUtils = {
       
       this.logTelemetry("PRINT_PREVIEW_OPENED_COUNT");
     } else {
+      
+      
+      printPreviewTB.disableUpdateTriggers(true);
+
       
       
       
@@ -317,10 +321,6 @@ var PrintUtils = {
     }
 
     return this._currentPPBrowser.docShell.printPreview;
-  },
-
-  get inPrintPreview() {
-    return document.getElementById("print-preview-toolbar") != null;
   },
 
   
@@ -445,6 +445,10 @@ var PrintUtils = {
           
           mm.removeMessageListener("Printing:Preview:StateChange", this);
           mm.removeMessageListener("Printing:Preview:ProgressChange", this);
+
+          
+          let printPreviewTB = document.getElementById("print-preview-toolbar");
+          printPreviewTB.disableUpdateTriggers(false);
         }
 
         return listener.onStateChange(null, null,
@@ -593,9 +597,11 @@ var PrintUtils = {
       sendEnterPreviewMessage(this._sourceBrowser, false);
     }
 
+    let waitForPrintProgressToEnableToolbar = false;
     if (this._webProgressPP.value) {
       mm.addMessageListener("Printing:Preview:StateChange", this);
       mm.addMessageListener("Printing:Preview:ProgressChange", this);
+      waitForPrintProgressToEnableToolbar = true;
     }
 
     let onEntered = (message) => {
@@ -622,6 +628,12 @@ var PrintUtils = {
           
           printPreviewTB.updateToolbar();
         }
+
+        
+        if (!waitForPrintProgressToEnableToolbar) {
+          printPreviewTB.disableUpdateTriggers(false);
+        }
+
         ppBrowser.collapsed = false;
         ppBrowser.focus();
         return;
@@ -647,6 +659,13 @@ var PrintUtils = {
       let navToolbox = this._listener.getNavToolbox();
       navToolbox.parentNode.insertBefore(printPreviewTB, navToolbox);
       printPreviewTB.initialize(ppBrowser);
+
+      
+      
+      
+      if (waitForPrintProgressToEnableToolbar) {
+        printPreviewTB.disableUpdateTriggers(true);
+      }
 
       
       if (this._sourceBrowser.isArticle) {
