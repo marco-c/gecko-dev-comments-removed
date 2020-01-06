@@ -159,6 +159,8 @@ public:
     
 
     
+    eColorID__moz_win_accentcolor,
+    
     eColorID__moz_win_mediatext,
     
     eColorID__moz_win_communicationstext,
