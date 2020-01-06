@@ -40,7 +40,7 @@ pub enum PictureCompositeMode {
 
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum RasterizationSpace {
     Local = 0,
     Screen = 1,

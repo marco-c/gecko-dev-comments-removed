@@ -36,11 +36,14 @@ pub type ClipChain = Option<Rc<ClipChainNode>>;
 #[derive(Debug)]
 pub struct ClipChainNode {
     pub work_item: ClipWorkItem,
+    pub screen_inner_rect: DeviceIntRect,
+    pub combined_outer_screen_rect: DeviceIntRect,
+    pub combined_inner_screen_rect: DeviceIntRect,
     pub prev: ClipChain,
 }
 
-struct ClipChainNodeIter {
-    current: ClipChain,
+pub struct ClipChainNodeIter {
+    pub current: ClipChain,
 }
 
 impl Iterator for ClipChainNodeIter {
@@ -326,79 +329,33 @@ impl RenderTask {
 
     pub fn new_mask(
         key: Option<ClipId>,
-        task_rect: DeviceIntRect,
-        raw_clips: ClipChain,
-        extra_clip: ClipChain,
-        prim_rect: DeviceIntRect,
+        outer_rect: DeviceIntRect,
+        inner_rect: DeviceIntRect,
+        clips: Vec<ClipWorkItem>,
         clip_store: &ClipStore,
         is_axis_aligned: bool,
         prim_coordinate_system_id: CoordinateSystemId,
-    ) -> Option<Self> {
-        
-        let mut current_coordinate_system_id = prim_coordinate_system_id;
-        let mut inner_rect = Some(task_rect);
-        let clips: Vec<_> = ClipChainNodeIter { current: raw_clips }
-            .chain(ClipChainNodeIter { current: extra_clip })
-            .filter_map(|node| {
-                let work_item = node.work_item.clone();
-
-                
-                
-                if !node.work_item.has_compatible_coordinate_system(current_coordinate_system_id) {
-                    current_coordinate_system_id = node.work_item.coordinate_system_id;
-                    inner_rect = None;
-                    return Some(work_item)
-                }
-
-                let clip_info = clip_store
-                    .get_opt(&node.work_item.clip_sources)
-                    .expect("bug: clip item should exist");
-                debug_assert!(clip_info.has_clips());
-
-                match clip_info.bounds.inner {
-                    Some(ref inner) if !inner.device_rect.is_empty() => {
-                        inner_rect = inner_rect.and_then(|r| r.intersection(&inner.device_rect));
-                        if inner.device_rect.contains_rect(&task_rect) {
-                            return None;
-                        }
-                    }
-                    _ => inner_rect = None,
-                }
-
-                Some(work_item)
-            })
-            .collect();
-
-        
-        if clips.is_empty() {
-            return None;
-        }
-
-
+    ) -> Option<RenderTask> {
         
         
         
         
         
-        let mut geometry_kind = MaskGeometryKind::Default;
-        if let Some(inner_rect) = inner_rect {
-            
-            
-            if inner_rect.contains_rect(&prim_rect) {
-                return None;
-            }
-            if is_axis_aligned && clips.len() == 1 {
-                geometry_kind = clips[0].get_geometry_kind(clip_store, prim_coordinate_system_id);
-            }
-        }
+        let geometry_kind = if is_axis_aligned &&
+            clips.len() == 1 &&
+            inner_rect.size != DeviceIntSize::zero() {
+            clips[0].get_geometry_kind(clip_store, prim_coordinate_system_id)
+        } else {
+            MaskGeometryKind::Default
+        };
 
         Some(RenderTask {
             cache_key: key.map(RenderTaskKey::CacheMask),
             children: Vec::new(),
-            location: RenderTaskLocation::Dynamic(None, task_rect.size),
+            location: RenderTaskLocation::Dynamic(None, outer_rect.size),
             kind: RenderTaskKind::CacheMask(CacheMaskTask {
-                actual_rect: task_rect,
-                inner_rect: inner_rect.unwrap_or(DeviceIntRect::zero()),
+                actual_rect: outer_rect,
+                inner_rect: inner_rect,
                 clips,
                 geometry_kind,
                 coordinate_system_id: prim_coordinate_system_id,
