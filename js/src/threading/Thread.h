@@ -17,6 +17,9 @@
 #include <stdint.h>
 
 #include "js/Utility.h"
+#include "threading/LockGuard.h"
+#include "threading/Mutex.h"
+#include "vm/MutexIDs.h"
 
 #ifdef XP_WIN
 # define THREAD_RETURN_TYPE unsigned int
@@ -95,7 +98,8 @@ public:
             typename = typename mozilla::EnableIf<mozilla::IsSame<DerefO, Options>::value,
                                                   void*>::Type>
   explicit Thread(O&& options = Options())
-    : id_(Id())
+    : idMutex_(mutexid::ThreadId)
+    , id_(Id())
     , options_(mozilla::Forward<O>(options))
   { }
 
@@ -107,7 +111,7 @@ public:
   
   template <typename F, typename... Args>
   MOZ_MUST_USE bool init(F&& f, Args&&... args) {
-    MOZ_RELEASE_ASSERT(!joinable());
+    MOZ_RELEASE_ASSERT(id_ == Id());
     using Trampoline = detail::ThreadTrampoline<F, Args...>;
     AutoEnterOOMUnsafeRegion oom;
     auto trampoline = js_new<Trampoline>(mozilla::Forward<F>(f),
@@ -118,9 +122,7 @@ public:
   }
 
   
-  ~Thread() {
-    MOZ_RELEASE_ASSERT(!joinable());
-  }
+  ~Thread();
 
   
   
@@ -139,14 +141,12 @@ public:
   
   
   
-  bool joinable() const {
-    return get_id() != Id();
-  }
+  bool joinable();
 
   
   
   
-  Id get_id() const { return id_; }
+  Id get_id();
 
   
   Thread(Thread&& aOther);
@@ -156,6 +156,11 @@ private:
   
   Thread(const Thread&) = delete;
   void operator=(const Thread&) = delete;
+
+  bool joinable(LockGuard<Mutex>& lock);
+
+  
+  Mutex idMutex_;
 
   
   Id id_;
