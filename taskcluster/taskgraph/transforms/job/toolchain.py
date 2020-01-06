@@ -9,6 +9,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import hashlib
 
+from mozbuild.shellutil import quote as shell_quote
+
 from taskgraph.util.schema import Schema
 from voluptuous import Optional, Required, Any
 
@@ -33,6 +35,9 @@ toolchain_run_schema = Schema({
     
     
     Required('script'): basestring,
+
+    
+    Optional('arguments'): [basestring],
 
     
     
@@ -66,7 +71,8 @@ def add_optimization(config, run, taskdesc):
     if tooltool_manifest:
         files.append(tooltool_manifest)
 
-    digest = hash_paths(GECKO, files)
+    
+    data = [hash_paths(GECKO, files)]
 
     
     
@@ -74,13 +80,17 @@ def add_optimization(config, run, taskdesc):
     
     deps = taskdesc['dependencies']
     if deps:
-        data = [digest] + sorted(deps.values())
-        digest = hashlib.sha256('\n'.join(data)).hexdigest()
+        data.extend(sorted(deps.values()))
+
+    
+    args = run.get('arguments')
+    if args:
+        data.extend(args)
 
     label = taskdesc['label']
     subs = {
         'name': label.replace('%s-' % config.kind, ''),
-        'digest': digest,
+        'digest': hashlib.sha256('\n'.join(data)).hexdigest()
     }
 
     
@@ -128,6 +138,10 @@ def docker_worker_toolchain(config, job, taskdesc):
     else:
         wrapper = ''
 
+    args = run.get('arguments', '')
+    if args:
+        args = ' ' + shell_quote(*args)
+
     worker['command'] = [
         '/builds/worker/bin/run-task',
         '--vcs-checkout=/builds/worker/workspace/build/src',
@@ -136,8 +150,8 @@ def docker_worker_toolchain(config, job, taskdesc):
         'bash',
         '-c',
         'cd /builds/worker && '
-        '{}workspace/build/src/taskcluster/scripts/misc/{}'.format(
-            wrapper, run['script'])
+        '{}workspace/build/src/taskcluster/scripts/misc/{}{}'.format(
+            wrapper, run['script'], args)
     ]
 
     attributes = taskdesc.setdefault('attributes', {})
@@ -184,11 +198,16 @@ def windows_toolchain(config, job, taskdesc):
     if run['script'].endswith('.py'):
         raise NotImplementedError("Python scripts don't work on Windows")
 
+    args = run.get('arguments', '')
+    if args:
+        args = ' ' + shell_quote(*args)
+
     bash = r'c:\mozilla-build\msys\bin\bash'
     worker['command'] = [
         ' '.join(hg_command),
         
-        r'{} -c ./build/src/taskcluster/scripts/misc/{}'.format(bash, run['script'])
+        r'{} build/src/taskcluster/scripts/misc/{}{}'.format(
+            bash, run['script'], args)
     ]
 
     attributes = taskdesc.setdefault('attributes', {})
