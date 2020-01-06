@@ -499,6 +499,33 @@ class MOZ_RAII AutoCheckShapeConsistency
 
 } 
 
+ MOZ_ALWAYS_INLINE bool
+NativeObject::maybeConvertToOrGrowDictionaryForAdd(JSContext* cx, HandleNativeObject obj, HandleId id,
+                                                   ShapeTable** table, ShapeTable::Entry** entry,
+                                                   const AutoKeepShapeTables& keep)
+{
+    MOZ_ASSERT(!!*table == !!*entry);
+
+    
+    
+    if (!obj->inDictionaryMode()) {
+        if (!ShouldConvertToDictionary(obj))
+            return true;
+        if (!toDictionaryMode(cx, obj))
+            return false;
+        *table = obj->lastProperty()->maybeTable(keep);
+    } else {
+        if (!(*table)->needsToGrow())
+            return true;
+        if (!(*table)->grow(cx))
+            return false;
+    }
+
+    *entry = &(*table)->search<MaybeAdding::Adding>(id, keep);
+    MOZ_ASSERT(!(*entry)->shape());
+    return true;
+}
+
  Shape*
 NativeObject::addAccessorPropertyInternal(JSContext* cx,
                                           HandleNativeObject obj, HandleId id,
@@ -509,25 +536,8 @@ NativeObject::addAccessorPropertyInternal(JSContext* cx,
     AutoCheckShapeConsistency check(obj);
     AutoRooterGetterSetter gsRoot(cx, attrs, &getter, &setter);
 
-    
-    
-    if (!obj->inDictionaryMode()) {
-        if (ShouldConvertToDictionary(obj)) {
-            if (!toDictionaryMode(cx, obj))
-                return nullptr;
-            table = obj->lastProperty()->maybeTable(keep);
-            entry = &table->search<MaybeAdding::Adding>(id, keep);
-        }
-    } else {
-        if (table->needsToGrow()) {
-            if (!table->grow(cx))
-                return nullptr;
-            entry = &table->search<MaybeAdding::Adding>(id, keep);
-            MOZ_ASSERT(!entry->shape());
-        }
-    }
-
-    MOZ_ASSERT(!!table == !!entry);
+    if (!maybeConvertToOrGrowDictionaryForAdd(cx, obj, id, &table, &entry, keep))
+        return nullptr;
 
     
     RootedShape shape(cx);
@@ -573,25 +583,8 @@ NativeObject::addDataPropertyInternal(JSContext* cx,
     MOZ_ASSERT(slot == SHAPE_INVALID_SLOT ||
                slot < JSCLASS_RESERVED_SLOTS(obj->getClass()));
 
-    
-    
-    if (!obj->inDictionaryMode()) {
-        if (ShouldConvertToDictionary(obj)) {
-            if (!toDictionaryMode(cx, obj))
-                return nullptr;
-            table = obj->lastProperty()->maybeTable(keep);
-            entry = &table->search<MaybeAdding::Adding>(id, keep);
-        }
-    } else {
-        if (table->needsToGrow()) {
-            if (!table->grow(cx))
-                return nullptr;
-            entry = &table->search<MaybeAdding::Adding>(id, keep);
-            MOZ_ASSERT(!entry->shape());
-        }
-    }
-
-    MOZ_ASSERT(!!table == !!entry);
+    if (!maybeConvertToOrGrowDictionaryForAdd(cx, obj, id, &table, &entry, keep))
+        return nullptr;
 
     
     RootedShape shape(cx);
