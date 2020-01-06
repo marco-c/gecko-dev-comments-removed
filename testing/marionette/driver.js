@@ -1314,6 +1314,7 @@ GeckoDriver.prototype.getChromeWindowHandles = function(cmd, resp) {
 
 
 GeckoDriver.prototype.getWindowRect = function(cmd, resp) {
+  assert.window(this.getCurrentWindow());
   assert.noUserPrompt(this.dialog);
   return this.curBrowser.rect;
 };
