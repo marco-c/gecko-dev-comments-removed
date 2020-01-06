@@ -482,15 +482,6 @@ protected:
 
 private:
   
-  
-  
-  
-  
-  
-  
-  virtual MediaResource* GetResource() const = 0;
-
-  
   virtual void PinForSeek() = 0;
 
   
