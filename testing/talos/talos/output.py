@@ -55,7 +55,6 @@ class Output(object):
                 replicates = {}
 
                 
-                
                 for result in test.results:
                     
                     
@@ -88,6 +87,14 @@ class Output(object):
                             'value': val['filtered'],
                             'replicates': replicates[page],
                         }
+                        
+                        
+                        
+                        base_runs = result.results[0].get('base_runs', None)
+                        ref_runs = result.results[0].get('ref_runs', None)
+                        if base_runs and ref_runs:
+                            subtest['base_replicates'] = base_runs
+                            subtest['ref_replicates'] = ref_runs
                         subtests.append(subtest)
                         if test.test_config.get('lower_is_better') is not None:
                             subtest['lowerIsBetter'] = \
