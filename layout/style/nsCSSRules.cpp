@@ -36,7 +36,6 @@
 #include "nsCSSParser.h"
 #include "nsDOMClassInfoID.h"
 #include "mozilla/dom/CSSStyleDeclarationBinding.h"
-#include "mozilla/dom/CSSImportRuleBinding.h"
 #include "mozilla/dom/CSSFontFaceRuleBinding.h"
 #include "mozilla/dom/CSSFontFeatureValuesRuleBinding.h"
 #include "mozilla/dom/CSSCounterStyleRuleBinding.h"
@@ -173,7 +172,7 @@ Rule::GetParentRule() const
 
 ImportRule::ImportRule(nsMediaList* aMedia, const nsString& aURLSpec,
                        uint32_t aLineNumber, uint32_t aColumnNumber)
-  : Rule(aLineNumber, aColumnNumber)
+  : CSSImportRule(aLineNumber, aColumnNumber)
   , mURLSpec(aURLSpec)
   , mMedia(aMedia)
 {
@@ -184,7 +183,7 @@ ImportRule::ImportRule(nsMediaList* aMedia, const nsString& aURLSpec,
 }
 
 ImportRule::ImportRule(const ImportRule& aCopy)
-  : Rule(aCopy),
+  : CSSImportRule(aCopy),
     mURLSpec(aCopy.mURLSpec)
 {
   
@@ -209,22 +208,14 @@ ImportRule::~ImportRule()
   }
 }
 
-NS_IMPL_ADDREF_INHERITED(ImportRule, Rule)
-NS_IMPL_RELEASE_INHERITED(ImportRule, Rule)
+NS_IMPL_ADDREF_INHERITED(ImportRule, CSSImportRule)
+NS_IMPL_RELEASE_INHERITED(ImportRule, CSSImportRule)
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(ImportRule, Rule, mMedia, mChildSheet)
-
-bool
-ImportRule::IsCCLeaf() const
-{
-  
-  return false;
-}
+NS_IMPL_CYCLE_COLLECTION_INHERITED(ImportRule, CSSImportRule, mMedia, mChildSheet)
 
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(ImportRule)
-  NS_INTERFACE_MAP_ENTRY(nsIDOMCSSImportRule)
-NS_INTERFACE_MAP_END_INHERITING(Rule)
+NS_INTERFACE_MAP_END_INHERITING(CSSImportRule)
 
 #ifdef DEBUG
  void
@@ -248,12 +239,6 @@ ImportRule::List(FILE* out, int32_t aIndent) const
 }
 #endif
 
- int32_t
-ImportRule::GetType() const
-{
-  return Rule::IMPORT_RULE;
-}
-
  already_AddRefed<Rule>
 ImportRule::Clone() const
 {
@@ -272,12 +257,6 @@ ImportRule::SetSheet(CSSStyleSheet* aSheet)
 
   
   mMedia = static_cast<nsMediaList*>(mChildSheet->Media());
-}
-
-uint16_t
-ImportRule::Type() const
-{
-  return nsIDOMCSSRule::IMPORT_RULE;
 }
 
 void
@@ -316,24 +295,6 @@ ImportRule::GetHref(nsAString & aHref)
   return NS_OK;
 }
 
-NS_IMETHODIMP
-ImportRule::GetMedia(nsIDOMMediaList * *aMedia)
-{
-  NS_ENSURE_ARG_POINTER(aMedia);
-
-  NS_ADDREF(*aMedia = mMedia);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-ImportRule::GetStyleSheet(nsIDOMCSSStyleSheet * *aStyleSheet)
-{
-  NS_ENSURE_ARG_POINTER(aStyleSheet);
-
-  NS_IF_ADDREF(*aStyleSheet = mChildSheet);
-  return NS_OK;
-}
-
  size_t
 ImportRule::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 {
@@ -346,13 +307,6 @@ ImportRule::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
   
   
   
-}
-
- JSObject*
-ImportRule::WrapObject(JSContext* aCx,
-                       JS::Handle<JSObject*> aGivenProto)
-{
-  return CSSImportRuleBinding::Wrap(aCx, this, aGivenProto);
 }
 
 
