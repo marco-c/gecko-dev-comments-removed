@@ -224,7 +224,7 @@ ProxyMessenger = {
       responseType,
     });
 
-    if (!extension.isEmbedded || !extension.remote) {
+    if (!(extension.isEmbedded || recipient.toProxyScript) || !extension.remote) {
       return promise1;
     }
 
