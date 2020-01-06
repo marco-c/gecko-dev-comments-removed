@@ -87,7 +87,7 @@ public:
   nsCOMPtr<nsIPrintSettings>  mPrintSettings;
   nsPrintPreviewListener*     mPPEventListeners;
 
-  char16_t*            mBrandName; 
+  nsString                    mBrandName; 
 
 private:
   nsPrintData() = delete;

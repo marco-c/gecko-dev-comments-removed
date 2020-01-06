@@ -65,9 +65,9 @@ public:
   }
 
   
-  static void GetAlternateTextFor(nsIContent*    aContent,
-                                  nsIAtom*       aTag,  
-                                  nsXPIDLString& aAltText);
+  static void GetAlternateTextFor(nsIContent* aContent,
+                                  nsIAtom* aTag,  
+                                  nsAString& aAltText);
 
 private:
   nsCSSFrameConstructor(const nsCSSFrameConstructor& aCopy) = delete;

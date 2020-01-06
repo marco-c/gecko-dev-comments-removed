@@ -393,7 +393,7 @@ void
 nsSimplePageSequenceFrame::SetPageNumberFormat(const char* aPropName, const char* aDefPropVal, bool aPageNumOnly)
 {
   
-  nsXPIDLString pageNumberFormat;
+  nsAutoString pageNumberFormat;
   
   nsresult rv =
     nsContentUtils::GetLocalizedString(nsContentUtils::ePRINTING_PROPERTIES,

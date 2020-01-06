@@ -1837,7 +1837,7 @@ nsCSSFrameConstructor::CreateGeneratedContent(nsFrameConstructorState& aState,
           return content.forget();
         }
 
-        nsXPIDLString temp;
+        nsAutoString temp;
         nsContentUtils::GetLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
                                            "Submit", temp);
         return CreateGenConTextNode(aState, temp, nullptr, nullptr);
@@ -9129,9 +9129,9 @@ nsCSSFrameConstructor::WillDestroyFrameTree()
 
 
 void
-nsCSSFrameConstructor::GetAlternateTextFor(nsIContent*    aContent,
-                                           nsIAtom*       aTag,
-                                           nsXPIDLString& aAltText)
+nsCSSFrameConstructor::GetAlternateTextFor(nsIContent* aContent,
+                                           nsIAtom* aTag,
+                                           nsAString& aAltText)
 {
   
   

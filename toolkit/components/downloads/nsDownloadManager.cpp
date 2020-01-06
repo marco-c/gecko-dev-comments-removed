@@ -117,8 +117,8 @@ nsDownloadManager::GetDefaultDownloadsDirectory(nsIFile **aResult)
   
   
 
-  nsXPIDLString folderName;
-  mBundle->GetStringFromName("downloadsFolder", getter_Copies(folderName));
+  nsAutoString folderName;
+  mBundle->GetStringFromName("downloadsFolder", folderName);
 
 #if defined (XP_MACOSX)
   rv = dirService->Get(NS_OSX_DEFAULT_DOWNLOAD_DIR,

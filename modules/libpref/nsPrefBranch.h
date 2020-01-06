@@ -242,7 +242,7 @@ protected:
 
   virtual ~nsPrefBranch();
 
-  nsresult   GetDefaultFromPropertiesFile(const char *aPrefName, char16_t **return_buf);
+  nsresult   GetDefaultFromPropertiesFile(const char *aPrefName, nsAString& aReturn);
   
   nsresult   SetCharPrefInternal(const char *aPrefName, const char *aValue);
   

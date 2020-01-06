@@ -87,11 +87,11 @@ ProfileResetCleanup(nsIToolkitProfile* aOldProfile)
   NS_ConvertUTF8toUTF16 appName(gAppData->name);
   const char16_t* params[] = {appName.get(), appName.get()};
 
-  nsXPIDLString resetBackupDirectoryName;
+  nsAutoString resetBackupDirectoryName;
 
   static const char* kResetBackupDirectory = "resetBackupDirectory";
   rv = sb->FormatStringFromName(kResetBackupDirectory, params, 2,
-                                getter_Copies(resetBackupDirectoryName));
+                                resetBackupDirectoryName);
 
   
   nsCOMPtr<nsIFile> backupDest, containerDest, profileDest;

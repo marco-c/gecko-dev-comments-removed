@@ -779,8 +779,8 @@ nsCSPContext::logToConsole(const char* aName,
 {
   
   if (mQueueUpMessages) {
-    nsXPIDLString msg;
-    CSP_GetLocalizedStr(aName, aParams, aParamsLength, getter_Copies(msg));
+    nsAutoString msg;
+    CSP_GetLocalizedStr(aName, aParams, aParamsLength, msg);
     ConsoleMsgQueueElem &elem = *mConsoleMsgQueue.AppendElement();
     elem.mMsg = msg;
     elem.mSourceName = PromiseFlatString(aSourceName);

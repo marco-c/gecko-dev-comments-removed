@@ -20,8 +20,8 @@ public:
   bool HasStepMismatch(bool aUseZeroIfValueNaN) const override;
   bool HasBadInput() const override;
 
-  nsresult GetRangeOverflowMessage(nsXPIDLString& aMessage) override;
-  nsresult GetRangeUnderflowMessage(nsXPIDLString& aMessage) override;
+  nsresult GetRangeOverflowMessage(nsAString& aMessage) override;
+  nsresult GetRangeUnderflowMessage(nsAString& aMessage) override;
 
   nsresult MinMaxStepAttrChanged() override;
 
@@ -71,7 +71,7 @@ public:
   
   
   
-  nsresult GetBadInputMessage(nsXPIDLString& aMessage) override;
+  nsresult GetBadInputMessage(nsAString& aMessage) override;
 
   bool ConvertStringToNumber(nsAString& aValue,
                              mozilla::Decimal& aResultValue) const override;
