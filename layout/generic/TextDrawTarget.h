@@ -212,20 +212,6 @@ public:
     return true;
   }
 
-  bool
-  TryMerge(const TextDrawTarget& other) {
-    if (mShadows != other.mShadows) {
-      return false;
-    }
-
-    mText.AppendElements(other.mText);
-    mSelections.AppendElements(other.mSelections);
-    mBeforeDecorations.AppendElements(other.mBeforeDecorations);
-    mAfterDecorations.AppendElements(other.mAfterDecorations);
-
-    return true;
-  }
-
 
 private:
   
