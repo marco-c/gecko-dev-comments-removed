@@ -160,7 +160,7 @@ pub struct Stylist {
     
     
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
-    selectors_for_cache_revalidation: SelectorMap<SelectorAndHashes<SelectorImpl>>,
+    selectors_for_cache_revalidation: SelectorMap<RevalidationSelectorAndHashes>,
 
     
     num_selectors: usize,
@@ -474,7 +474,8 @@ impl Stylist {
 
                         self.dependencies.note_selector(selector_and_hashes);
                         if needs_revalidation(&selector_and_hashes.selector) {
-                            self.selectors_for_cache_revalidation.insert(selector_and_hashes.clone());
+                            self.selectors_for_cache_revalidation.insert(
+                                RevalidationSelectorAndHashes::new(&selector_and_hashes));
                         }
                         selector_and_hashes.selector.visit(&mut AttributeAndStateDependencyVisitor {
                             attribute_dependencies: &mut self.attribute_dependencies,
@@ -1165,7 +1166,7 @@ impl Stylist {
         let mut results = BitVec::new();
         self.selectors_for_cache_revalidation.lookup(*element, &mut |selector_and_hashes| {
             results.push(matches_selector(&selector_and_hashes.selector,
-                                          0,
+                                          selector_and_hashes.selector_offset,
                                           &selector_and_hashes.hashes,
                                           element,
                                           &mut matching_context,
@@ -1316,6 +1317,51 @@ impl<'a> SelectorVisitor for MappedIdVisitor<'a> {
             None | Some(Combinator::PseudoElement) => true,
             _ => false,
         }
+    }
+}
+
+
+#[derive(Clone, Debug)]
+struct RevalidationSelectorAndHashes {
+    selector: Selector<SelectorImpl>,
+    selector_offset: usize,
+    hashes: AncestorHashes,
+}
+
+impl RevalidationSelectorAndHashes {
+    fn new(selector_and_hashes: &SelectorAndHashes<SelectorImpl>) -> Self {
+        
+        
+        
+        let mut index = 0;
+        let mut iter = selector_and_hashes.selector.iter();
+
+        
+        
+        for _ in &mut iter {
+            index += 1; 
+        }
+
+        let offset = match iter.next_sequence() {
+            Some(Combinator::PseudoElement) => index + 1, 
+            _ => 0
+        };
+
+        RevalidationSelectorAndHashes {
+            selector: selector_and_hashes.selector.clone(),
+            selector_offset: offset,
+            hashes: selector_and_hashes.hashes.clone(),
+        }
+    }
+}
+
+impl SelectorMapEntry for RevalidationSelectorAndHashes {
+    fn selector(&self) -> SelectorIter<SelectorImpl> {
+        self.selector.iter_from(self.selector_offset)
+    }
+
+    fn hashes(&self) -> &AncestorHashes {
+        &self.hashes
     }
 }
 

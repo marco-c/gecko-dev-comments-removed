@@ -479,6 +479,9 @@ impl<'a, Impl: 'a + SelectorImpl> AncestorIter<'a, Impl> {
     fn skip_until_ancestor(&mut self) {
         loop {
             while self.0.next().is_some() {}
+            
+            
+            
             if self.0.next_sequence().map_or(true, |x| matches!(x, Combinator::Child | Combinator::Descendant)) {
                 break;
             }
@@ -512,6 +515,8 @@ pub enum Combinator {
     Descendant,  
     NextSibling,  
     LaterSibling,  
+    
+    
     
     
     
