@@ -215,17 +215,17 @@ add_task(async function testOverflowingBookmarksItemsContextMenu() {
   await PanelUI.ensureReady();
 
   let bookmarksToolbarItems = document.getElementById(kBookmarksItems);
-  gCustomizeMode.addToToolbar(bookmarksToolbarItems);
+  await gCustomizeMode.addToToolbar(bookmarksToolbarItems);
   await checkPlacesContextMenu(bookmarksToolbarItems);
 
   await overflowEverything();
   checkOverflowing(kBookmarksItems)
 
-  gCustomizeMode.addToPanel(bookmarksToolbarItems);
+  await gCustomizeMode.addToPanel(bookmarksToolbarItems);
 
   await stopOverflowing();
 
-  gCustomizeMode.addToToolbar(bookmarksToolbarItems);
+  await gCustomizeMode.addToToolbar(bookmarksToolbarItems);
   await checkPlacesContextMenu(bookmarksToolbarItems);
 });
 
@@ -237,7 +237,7 @@ add_task(async function testOverflowingBookmarksItemsChevronContextMenu() {
   
   
   let bookmarksToolbarItems = document.getElementById(kBookmarksItems);
-  gCustomizeMode.addToToolbar(bookmarksToolbarItems);
+  await gCustomizeMode.addToToolbar(bookmarksToolbarItems);
 
   
   
