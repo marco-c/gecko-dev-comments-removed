@@ -62,7 +62,15 @@ public:
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
 
-  void InvalidateViaReferencedElement();
+  
+
+
+
+
+
+
+
+  void OnNonDOMMutationRenderingChange();
 
   
   
