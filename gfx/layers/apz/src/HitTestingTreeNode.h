@@ -100,6 +100,8 @@ public:
                         const Maybe<ScrollDirection>& aScrollContainerDirection);
   bool MatchesScrollDragMetrics(const AsyncDragMetrics& aDragMetrics) const;
   bool IsScrollbarNode() const;  
+  
+  ScrollDirection GetScrollbarDirection() const;
   bool IsScrollThumbNode() const;  
   FrameMetrics::ViewID GetScrollTargetId() const;
   const ScrollThumbData& GetScrollThumbData() const;
