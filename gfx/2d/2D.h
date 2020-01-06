@@ -74,6 +74,7 @@ class Mutex;
 
 namespace gfx {
 class UnscaledFont;
+class ScaledFont;
 }
 
 template<>
@@ -85,6 +86,15 @@ struct WeakPtrTraits<gfx::UnscaledFont>
     
     
     
+    AssertIsMainThreadOrServoFontMetricsLocked();
+  }
+};
+
+template<>
+struct WeakPtrTraits<gfx::ScaledFont>
+{
+  static void AssertSafeToAccessFromNonOwningThread()
+  {
     AssertIsMainThreadOrServoFontMetricsLocked();
   }
 };
@@ -769,22 +779,28 @@ protected:
   UnscaledFont() {}
 
 private:
-  static uint32_t sDeletionCounter;
+  static Atomic<uint32_t> sDeletionCounter;
 };
 
 
 
 
 
-class ScaledFont : public external::AtomicRefCounted<ScaledFont>
+class ScaledFont
+  : public external::AtomicRefCounted<ScaledFont>
+  , public SupportsWeakPtr<ScaledFont>
 {
 public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(ScaledFont)
-  virtual ~ScaledFont() {}
+  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(ScaledFont)
+
+  virtual ~ScaledFont();
 
   virtual FontType GetType() const = 0;
   virtual Float GetSize() const = 0;
   virtual AntialiasMode GetDefaultAAMode();
+
+  static uint32_t DeletionCounter() { return sDeletionCounter; }
 
   
 
@@ -833,6 +849,9 @@ protected:
 
   UserData mUserData;
   RefPtr<UnscaledFont> mUnscaledFont;
+
+private:
+  static Atomic<uint32_t> sDeletionCounter;
 };
 
 

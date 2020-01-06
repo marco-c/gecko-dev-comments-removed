@@ -123,6 +123,14 @@ public:
 
   void DeleteFont(wr::FontKey aKey);
 
+  void AddFontInstance(wr::FontInstanceKey aKey,
+                       wr::FontKey aFontKey,
+                       float aGlyphSize,
+                       const wr::FontInstanceOptions* aOptions,
+                       const wr::FontInstancePlatformOptions* aPlatformOptions);
+
+  void DeleteFontInstance(wr::FontInstanceKey aKey);
+
   void SetFrameStartTime(const TimeStamp& aTime);
 
   void RunOnRenderThread(UniquePtr<RendererEvent> aEvent);
@@ -195,11 +203,9 @@ public:
 
   void PushBuiltDisplayList(wr::BuiltDisplayList &dl);
 
-  bool IsScrollLayerDefined(layers::FrameMetrics::ViewID aScrollId) const;
-  void DefineScrollLayer(const layers::FrameMetrics::ViewID& aScrollId,
-                         const wr::LayoutRect& aContentRect, 
-                         const wr::LayoutRect& aClipRect);
-  void PushScrollLayer(const layers::FrameMetrics::ViewID& aScrollId);
+  void PushScrollLayer(const layers::FrameMetrics::ViewID& aScrollId,
+                       const wr::LayoutRect& aContentRect, 
+                       const wr::LayoutRect& aClipRect);
   void PopScrollLayer();
 
   void PushClipAndScrollInfo(const layers::FrameMetrics::ViewID& aScrollId,
@@ -302,9 +308,9 @@ public:
   void PushText(const wr::LayoutRect& aBounds,
                 const wr::LayoutRect& aClip,
                 const gfx::Color& aColor,
-                wr::FontKey aFontKey,
+                wr::FontInstanceKey aFontKey,
                 Range<const wr::GlyphInstance> aGlyphBuffer,
-                float aGlyphSize);
+                const wr::GlyphOptions* aGlyphOptions = nullptr);
 
   void PushLine(const wr::LayoutRect& aClip,
                 const wr::Line& aLine);
@@ -351,9 +357,7 @@ protected:
   std::vector<layers::FrameMetrics::ViewID> mScrollIdStack;
 
   
-  
-  
-  std::unordered_map<layers::FrameMetrics::ViewID, Maybe<layers::FrameMetrics::ViewID>> mScrollParents;
+  std::unordered_map<layers::FrameMetrics::ViewID, layers::FrameMetrics::ViewID> mScrollParents;
 
   friend class WebRenderAPI;
 };
