@@ -115,18 +115,6 @@
 
 
 
-#define NS_RUSTURL_CONTRACTID \
-    "@mozilla.org/network/rust-url;1"
-#define NS_RUSTURL_CID                               \
-{ /* fd2d9f76-b34a-459e-b80e-447b03a1283a */         \
-    0xfd2d9f76,                                      \
-    0xb34a,                                          \
-    0x459e,                                          \
-    {0xb8, 0x0e, 0x44, 0x7b, 0x03, 0xa1, 0x28, 0x3a} \
-}
-
-
-
 #define NS_NOAUTHURLPARSER_CONTRACTID \
     "@mozilla.org/network/url-parser;1?auth=no"
 #define NS_NOAUTHURLPARSER_CID                       \
