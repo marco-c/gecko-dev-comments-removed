@@ -786,6 +786,16 @@ this.PlacesDBUtils = {
     cleanupStatements.push(fixMissingHashes);
 
     
+    let fixInvalidPlaceGuids = {
+      query:
+      `UPDATE moz_places
+       SET guid = GENERATE_GUID()
+       WHERE guid IS NULL OR
+             NOT IS_VALID_GUID(guid)`
+    };
+    cleanupStatements.push(fixInvalidPlaceGuids);
+
+    
     
     
     
