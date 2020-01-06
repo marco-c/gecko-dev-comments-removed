@@ -44,6 +44,7 @@ class DeclarationBlock;
 
 namespace dom {
 class SVGSVGElement;
+class SVGViewportElement;
 
 static const unsigned short SVG_UNIT_TYPE_UNKNOWN           = 0;
 static const unsigned short SVG_UNIT_TYPE_USERSPACEONUSE    = 1;
@@ -145,7 +146,7 @@ public:
   
   
   
-  mozilla::dom::SVGSVGElement* GetCtx() const;
+  mozilla::dom::SVGViewportElement* GetCtx() const;
 
   
 

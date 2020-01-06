@@ -32,6 +32,7 @@ class SVGPreserveAspectRatio;
 namespace dom {
 class Element;
 class SVGSVGElement;
+class SVGViewportElement;
 } 
 
 } 
@@ -238,8 +239,8 @@ public:
 
   static bool EstablishesViewport(nsIContent *aContent);
 
-  static nsSVGElement*
-  GetNearestViewportElement(nsIContent *aContent);
+  static mozilla::dom::SVGViewportElement*
+  GetNearestViewportElement(const nsIContent *aContent);
 
   
   enum ctxDirection { X, Y, XY };

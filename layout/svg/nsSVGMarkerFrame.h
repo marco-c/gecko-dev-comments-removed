@@ -20,7 +20,7 @@ class gfxContext;
 namespace mozilla {
 class SVGGeometryFrame;
 namespace dom {
-class SVGSVGElement;
+class SVGViewportElement;
 } 
 } 
 
@@ -118,7 +118,7 @@ private:
   };
 
   
-  void SetParentCoordCtxProvider(mozilla::dom::SVGSVGElement *aContext);
+  void SetParentCoordCtxProvider(mozilla::dom::SVGViewportElement *aContext);
 
   
   bool mInUse;
