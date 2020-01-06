@@ -375,7 +375,9 @@ class AutofillRecords {
 
 
 
-  update(guid, record) {
+
+
+  update(guid, record, preserveOldProperties = false) {
     this.log.debug("update:", guid, record);
 
     let recordFound = this._findByGUID(guid);
@@ -383,17 +385,23 @@ class AutofillRecords {
       throw new Error("No matching record.");
     }
 
-    let recordToUpdate = this._clone(record);
+    
+    let recordToUpdate = Object.assign({}, record);
     this._normalizeRecord(recordToUpdate);
 
     for (let field of this.VALID_FIELDS) {
       let oldValue = recordFound[field];
       let newValue = recordToUpdate[field];
 
-      if (newValue != null) {
-        recordFound[field] = newValue;
-      } else {
+      
+      if (preserveOldProperties && newValue === undefined) {
+        newValue = oldValue;
+      }
+
+      if (!newValue) {
         delete recordFound[field];
+      } else {
+        recordFound[field] = newValue;
       }
 
       this._maybeStoreLastSyncedField(recordFound, field, oldValue);

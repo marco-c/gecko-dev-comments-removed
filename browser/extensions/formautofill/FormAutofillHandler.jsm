@@ -536,6 +536,8 @@ FormAutofillHandler.prototype = {
           
           
           if (!value || element.selectedOptions.length != 1) {
+            
+            data[type].record[detail.fieldName] = "";
             return;
           }
 
@@ -544,6 +546,8 @@ FormAutofillHandler.prototype = {
         }
 
         if (!value) {
+          
+          data[type].record[detail.fieldName] = "";
           return;
         }
 
@@ -556,7 +560,8 @@ FormAutofillHandler.prototype = {
     });
 
     if (data.address &&
-        Object.keys(data.address.record).length < FormAutofillUtils.AUTOFILL_FIELDS_THRESHOLD) {
+        Object.values(data.address.record).filter(v => v).length <
+        FormAutofillUtils.AUTOFILL_FIELDS_THRESHOLD) {
       log.debug("No address record saving since there are only",
                      Object.keys(data.address.record).length,
                      "usable fields");
