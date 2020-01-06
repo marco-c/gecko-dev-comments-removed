@@ -205,7 +205,7 @@ TextTrack::UpdateActiveCueList()
   
   
   for (uint32_t i = mActiveCueList->Length(); i > 0; i--) {
-    if ((*mActiveCueList)[i - 1]->EndTime() < playbackTime) {
+    if ((*mActiveCueList)[i - 1]->EndTime() <= playbackTime) {
       mActiveCueList->RemoveCueAt(i - 1);
     }
   }
@@ -215,7 +215,7 @@ TextTrack::UpdateActiveCueList()
   
   for (; mCuePos < mCueList->Length() &&
          (*mCueList)[mCuePos]->StartTime() <= playbackTime; mCuePos++) {
-    if ((*mCueList)[mCuePos]->EndTime() >= playbackTime) {
+    if ((*mCueList)[mCuePos]->EndTime() > playbackTime) {
       mActiveCueList->AddCue(*(*mCueList)[mCuePos]);
     }
   }
