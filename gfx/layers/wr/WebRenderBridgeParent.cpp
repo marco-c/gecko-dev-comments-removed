@@ -846,11 +846,11 @@ WebRenderBridgeParent::RecvClearCachedResources()
   mCompositorBridge->ObserveLayerUpdate(GetLayersId(), GetChildLayerObserverEpoch(), false);
 
   
-  
   ++mWrEpoch; 
   mApi->ClearRootDisplayList(wr::NewEpoch(mWrEpoch), mPipelineId);
   
   mCompositorScheduler->ScheduleComposition();
+  DeleteOldImages();
   
   for (std::unordered_set<uint64_t>::iterator iter = mActiveAnimations.begin(); iter != mActiveAnimations.end(); iter++) {
     mAnimStorage->ClearById(*iter);

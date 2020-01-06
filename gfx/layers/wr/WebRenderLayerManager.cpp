@@ -630,18 +630,18 @@ WebRenderLayerManager::MakeSnapshotIfRequired(LayoutDeviceIntSize aSize)
 void
 WebRenderLayerManager::AddImageKeyForDiscard(wr::ImageKey key)
 {
-  mImageKeys.push_back(key);
+  mImageKeysToDelete.push_back(key);
 }
 
 void
 WebRenderLayerManager::DiscardImages()
 {
   if (WrBridge()->IPCOpen()) {
-    for (auto key : mImageKeys) {
+    for (auto key : mImageKeysToDelete) {
       WrBridge()->SendDeleteImage(key);
     }
   }
-  mImageKeys.clear();
+  mImageKeysToDelete.clear();
 }
 
 void
@@ -666,7 +666,7 @@ WebRenderLayerManager::DiscardLocalImages()
   
   
   
-  mImageKeys.clear();
+  mImageKeysToDelete.clear();
 }
 
 void
@@ -764,6 +764,7 @@ WebRenderLayerManager::ClearCachedResources(Layer* aSubtree)
   } else if (mRoot) {
     ClearLayer(mRoot);
   }
+  DiscardImages();
   WrBridge()->EndClearCachedResources();
 }
 

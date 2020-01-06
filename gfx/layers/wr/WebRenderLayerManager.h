@@ -214,7 +214,7 @@ private:
 
 private:
   nsIWidget* MOZ_NON_OWNING_REF mWidget;
-  std::vector<wr::ImageKey> mImageKeys;
+  std::vector<wr::ImageKey> mImageKeysToDelete;
   nsTArray<uint64_t> mDiscardedCompositorAnimationsIds;
 
   
