@@ -69,7 +69,7 @@ use std::sync::mpsc::{Receiver, Sender, RecvTimeoutError};
 use style_traits::CSSPixel;
 use style_traits::SpeculativePainter;
 use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
-use webrender_api::{ClipId, DevicePixel, ImageKey};
+use webrender_api::{ClipId, DevicePixel, DocumentId, ImageKey};
 use webvr_traits::{WebVREvent, WebVRMsg};
 
 pub use script_msg::{LayoutMsg, ScriptMsg, EventResult, LogEntry};
@@ -554,7 +554,9 @@ pub struct InitialScriptState {
     
     pub webgl_chan: WebGLPipeline,
     
-    pub webvr_chan: Option<IpcSender<WebVRMsg>>
+    pub webvr_chan: Option<IpcSender<WebVRMsg>>,
+    
+    pub webrender_document: DocumentId,
 }
 
 

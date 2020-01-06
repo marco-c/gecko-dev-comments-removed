@@ -124,6 +124,7 @@ use time::{get_time, precise_time_ns, Tm};
 use url::Position;
 use url::percent_encoding::percent_decode;
 use webdriver_handlers;
+use webrender_api::DocumentId;
 use webvr_traits::{WebVREvent, WebVRMsg};
 
 pub type ImageCacheMsg = (PipelineId, PendingImageResponse);
@@ -495,6 +496,9 @@ pub struct ScriptThread {
 
     
     custom_element_reaction_stack: CustomElementReactionStack,
+
+    
+    webrender_document: DocumentId,
 }
 
 
@@ -871,6 +875,8 @@ impl ScriptThread {
             transitioning_nodes: Default::default(),
 
             custom_element_reaction_stack: CustomElementReactionStack::new(),
+
+            webrender_document: state.webrender_document,
         }
     }
 
@@ -2062,6 +2068,7 @@ impl ScriptThread {
             self.webgl_chan.channel(),
             self.webvr_chan.clone(),
             self.microtask_queue.clone(),
+            self.webrender_document,
         );
 
         

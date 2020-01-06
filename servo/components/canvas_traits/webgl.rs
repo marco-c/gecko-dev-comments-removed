@@ -6,7 +6,7 @@ use euclid::Size2D;
 use nonzero::NonZeroU32;
 use offscreen_gl_context::{GLContextAttributes, GLLimits};
 use std::fmt;
-use webrender_api;
+use webrender_api::{DocumentId, ImageKey, PipelineId};
 
 
 pub use ::webgl_channel::WebGLSender;
@@ -46,7 +46,9 @@ pub enum WebGLMsg {
     
     Unlock(WebGLContextId),
     
-    UpdateWebRenderImage(WebGLContextId, WebGLSender<webrender_api::ImageKey>),
+    UpdateWebRenderImage(WebGLContextId, WebGLSender<ImageKey>),
+    
+    DOMToTextureCommand(DOMToTextureCommand),
     
     Exit,
 }
@@ -87,6 +89,11 @@ impl WebGLMsgSender {
     }
 
     
+    pub fn context_id(&self) -> WebGLContextId {
+        self.ctx_id
+    }
+
+    
     #[inline]
     pub fn send(&self, command: WebGLCommand) -> WebGLSendResult {
         self.sender.send(WebGLMsg::WebGLCommand(self.ctx_id, command))
@@ -113,8 +120,12 @@ impl WebGLMsgSender {
     }
 
     #[inline]
-    pub fn send_update_wr_image(&self, sender: WebGLSender<webrender_api::ImageKey>) -> WebGLSendResult {
+    pub fn send_update_wr_image(&self, sender: WebGLSender<ImageKey>) -> WebGLSendResult {
         self.sender.send(WebGLMsg::UpdateWebRenderImage(self.ctx_id, sender))
+    }
+
+    pub fn send_dom_to_texture(&self, command: DOMToTextureCommand) -> WebGLSendResult {
+        self.sender.send(WebGLMsg::DOMToTextureCommand(command))
     }
 }
 
@@ -377,6 +388,17 @@ pub enum WebVRCommand {
 
 pub trait WebVRRenderHandler: Send {
     fn handle(&mut self, command: WebVRCommand, texture: Option<(u32, Size2D<i32>)>);
+}
+
+
+#[derive(Clone, Deserialize, Serialize)]
+pub enum DOMToTextureCommand {
+    
+    Attach(WebGLContextId, WebGLTextureId, DocumentId, PipelineId, Size2D<i32>),
+    
+    Detach(WebGLTextureId),
+    
+    Lock(PipelineId, usize, WebGLSender<Option<(u32, Size2D<i32>)>>),
 }
 
 impl fmt::Debug for WebGLCommand {

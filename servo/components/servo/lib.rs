@@ -553,12 +553,17 @@ fn create_constellation(user_agent: Cow<'static, str>,
     };
 
     
-    let (webgl_threads, image_handler) = WebGLThreads::new(gl_factory,
-                                                           window_gl,
-                                                           webrender_api_sender.clone(),
-                                                           webvr_compositor.map(|c| c as Box<_>));
+    let (webgl_threads, image_handler, output_handler) = WebGLThreads::new(gl_factory,
+                                                                           window_gl,
+                                                                           webrender_api_sender.clone(),
+                                                                           webvr_compositor.map(|c| c as Box<_>));
     
     webrender.set_external_image_handler(image_handler);
+
+    
+    if let Some(output_handler) = output_handler {
+        webrender.set_output_image_handler(output_handler);
+    }
 
     let initial_state = InitialConstellationState {
         compositor_proxy,
