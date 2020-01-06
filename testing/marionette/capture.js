@@ -44,7 +44,7 @@ capture.element = function (node, highlights = []) {
       rect.top,
       rect.width,
       rect.height,
-      highlights);
+      {highlights});
 };
 
 
@@ -70,7 +70,7 @@ capture.viewport = function (win, highlights = []) {
       win.pageYOffset,
       rootNode.clientWidth,
       rootNode.clientHeight,
-      highlights);
+      {highlights});
 };
 
 
@@ -95,12 +95,16 @@ capture.viewport = function (win, highlights = []) {
 
 
 
-capture.canvas = function (win, left, top, width, height, highlights = []) {
+
+
+capture.canvas = function (win, left, top, width, height, {highlights = [], canvas = null} = {}) {
   let scale = win.devicePixelRatio;
 
-  let canvas = win.document.createElementNS(XHTML_NS, "canvas");
-  canvas.width = width * scale;
-  canvas.height = height * scale;
+  if (canvas === null) {
+    canvas = win.document.createElementNS(XHTML_NS, "canvas");
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+  }
 
   let ctx = canvas.getContext(CONTEXT_2D);
   let flags = ctx.DRAWWINDOW_DRAW_CARET;
