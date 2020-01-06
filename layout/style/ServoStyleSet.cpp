@@ -1330,6 +1330,11 @@ ServoStyleSet::UpdateStylist()
     mBindingManager->UpdateBoundContentBindingsForServo(mPresContext);
   }
 
+  
+  
+  
+  mPresContext->RestyleManager()->AsServo()->IncrementUndisplayedRestyleGeneration();
+
   mStylistState = StylistState::NotDirty;
 }
 
