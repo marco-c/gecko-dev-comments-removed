@@ -7176,9 +7176,22 @@ nsContentUtils::IsFullScreenApiEnabled()
 bool
 nsContentUtils::IsRequestFullScreenAllowed(CallerType aCallerType)
 {
-  return !sTrustedFullScreenOnly ||
-         EventStateManager::IsHandlingUserInput() ||
-         aCallerType == CallerType::System;
+  
+  
+  
+
+  if (!sTrustedFullScreenOnly || aCallerType == CallerType::System) {
+    return true;
+  }
+
+  if (EventStateManager::IsHandlingUserInput()) {
+    TimeDuration timeout = HandlingUserInputTimeout();
+    return timeout <= TimeDuration(0) ||
+      (TimeStamp::Now() -
+       EventStateManager::GetHandlingInputStart()) <= timeout;
+  }
+
+  return false;
 }
 
 

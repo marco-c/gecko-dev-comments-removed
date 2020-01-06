@@ -215,10 +215,11 @@ public:
     }
   }
 
+  static TimeStamp GetHandlingInputStart() {
+    return sHandlingInputStart;
+  }
+
   
-
-
-
 
 
 
