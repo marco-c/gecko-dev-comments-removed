@@ -4,21 +4,6 @@
 
 %endif
 
-:root {
-  
-  --urlbar-icon-padding: 6px;
-}
-
-:root[uidensity=compact] {
-  
-  --urlbar-icon-padding: 4px;
-}
-
-:root[uidensity=touch] {
-  
-  --urlbar-icon-padding: 7px;
-}
-
 #urlbar,
 .searchbar-textbox {
   -moz-appearance: none;
@@ -184,7 +169,8 @@
 .urlbar-icon {
   width: 28px;
   height: 28px;
-  padding: var(--urlbar-icon-padding);
+  
+  padding: 6px;
   -moz-context-properties: fill, fill-opacity;
   fill: currentColor;
   fill-opacity: 0.6;
@@ -194,11 +180,15 @@
 :root[uidensity=compact] .urlbar-icon {
   width: 24px;
   height: 24px;
+  
+  padding: 4px;
 }
 
 :root[uidensity=touch] .urlbar-icon {
   width: 30px;
   height: 30px;
+  
+  padding: 7px;
 }
 
 .urlbar-icon:hover,

@@ -83,8 +83,3 @@ menu.subviewbutton > .menu-right:-moz-locale-dir(rtl) {
   }
 }
 
-
-
-#toolbar-menubar #BMB_bookmarksPopup {
-  margin-top: -6px;
-}

@@ -558,9 +558,6 @@ var DownloadsPanel = {
         return;
       }
 
-      let onBookmarksToolbar = !!anchor.closest("#PersonalToolbar");
-      this.panel.classList.toggle("bookmarks-toolbar", onBookmarksToolbar);
-
       
       
       
