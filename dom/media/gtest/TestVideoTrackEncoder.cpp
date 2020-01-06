@@ -260,10 +260,7 @@ TEST(VP8VideoTrackEncoder, FetchMetaData)
 
 TEST(VP8VideoTrackEncoder, FrameEncode)
 {
-  
   TestVP8TrackEncoder encoder;
-  InitParam param = {true, 640, 480};
-  encoder.TestInit(param);
 
   
   nsTArray<RefPtr<Image>> images;
@@ -288,6 +285,7 @@ TEST(VP8VideoTrackEncoder, FrameEncode)
                         now + TimeDuration::FromSeconds(i));
   }
 
+  encoder.SetStartOffset(0);
   encoder.AppendVideoSegment(Move(segment));
   encoder.AdvanceCurrentTime(images.Length() * 90000);
 
@@ -299,10 +297,7 @@ TEST(VP8VideoTrackEncoder, FrameEncode)
 
 TEST(VP8VideoTrackEncoder, SingleFrameEncode)
 {
-  
   TestVP8TrackEncoder encoder;
-  InitParam param = {true, 640, 480};
-  encoder.TestInit(param);
 
   
   YUVBufferGenerator generator;
@@ -313,6 +308,7 @@ TEST(VP8VideoTrackEncoder, SingleFrameEncode)
                       generator.GetSize(),
                       PRINCIPAL_HANDLE_NONE);
 
+  encoder.SetStartOffset(0);
   encoder.AppendVideoSegment(Move(segment));
   encoder.AdvanceCurrentTime(45000);
   encoder.NotifyEndOfStream();
@@ -337,10 +333,7 @@ TEST(VP8VideoTrackEncoder, SingleFrameEncode)
 
 TEST(VP8VideoTrackEncoder, SameFrameEncode)
 {
-  
   TestVP8TrackEncoder encoder;
-  InitParam param = {true, 640, 480};
-  encoder.TestInit(param);
 
   
   YUVBufferGenerator generator;
@@ -357,6 +350,7 @@ TEST(VP8VideoTrackEncoder, SameFrameEncode)
                         now + TimeDuration::FromSeconds(i * 0.1));
   }
 
+  encoder.SetStartOffset(0);
   encoder.AppendVideoSegment(Move(segment));
   encoder.AdvanceCurrentTime(15 * 9000);
   encoder.NotifyEndOfStream();
@@ -378,10 +372,7 @@ TEST(VP8VideoTrackEncoder, SameFrameEncode)
 
 TEST(VP8VideoTrackEncoder, NullFrameFirst)
 {
-  
   TestVP8TrackEncoder encoder;
-  InitParam param = {true, 640, 480};
-  encoder.TestInit(param);
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
   RefPtr<Image> image = generator.GenerateI420Image();
@@ -406,6 +397,7 @@ TEST(VP8VideoTrackEncoder, NullFrameFirst)
                       false,
                       now + TimeDuration::FromSeconds(0.3));
 
+  encoder.SetStartOffset(0);
   encoder.AppendVideoSegment(Move(segment));
   encoder.AdvanceCurrentTime(3 * 9000);
   encoder.NotifyEndOfStream();
@@ -427,10 +419,7 @@ TEST(VP8VideoTrackEncoder, NullFrameFirst)
 
 TEST(VP8VideoTrackEncoder, SkippedFrames)
 {
-  
   TestVP8TrackEncoder encoder;
-  InitParam param = {true, 640, 480};
-  encoder.TestInit(param);
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
   TimeStamp now = TimeStamp::Now();
@@ -447,6 +436,7 @@ TEST(VP8VideoTrackEncoder, SkippedFrames)
                         now + TimeDuration::FromMilliseconds(i));
   }
 
+  encoder.SetStartOffset(0);
   encoder.AppendVideoSegment(Move(segment));
   encoder.AdvanceCurrentTime(100 * 90);
   encoder.NotifyEndOfStream();
@@ -468,10 +458,7 @@ TEST(VP8VideoTrackEncoder, SkippedFrames)
 
 TEST(VP8VideoTrackEncoder, RoundingErrorFramesEncode)
 {
-  
   TestVP8TrackEncoder encoder;
-  InitParam param = {true, 640, 480};
-  encoder.TestInit(param);
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
   TimeStamp now = TimeStamp::Now();
@@ -497,6 +484,7 @@ TEST(VP8VideoTrackEncoder, RoundingErrorFramesEncode)
                       false,
                       now + TimeDuration::FromSeconds(0.9));
 
+  encoder.SetStartOffset(0);
   encoder.AppendVideoSegment(Move(segment));
   encoder.AdvanceCurrentTime(10 * 9000);
   encoder.NotifyEndOfStream();
@@ -518,10 +506,7 @@ TEST(VP8VideoTrackEncoder, RoundingErrorFramesEncode)
 
 TEST(VP8VideoTrackEncoder, TimestampFrameEncode)
 {
-  
   TestVP8TrackEncoder encoder;
-  InitParam param = {true, 640, 480};
-  encoder.TestInit(param);
 
   
   
@@ -548,6 +533,7 @@ TEST(VP8VideoTrackEncoder, TimestampFrameEncode)
                       false,
                       now + TimeDuration::FromSeconds(0.2));
 
+  encoder.SetStartOffset(0);
   encoder.AppendVideoSegment(Move(segment));
   encoder.AdvanceCurrentTime(3 * 9000);
   encoder.NotifyEndOfStream();
@@ -574,10 +560,7 @@ TEST(VP8VideoTrackEncoder, TimestampFrameEncode)
 
 TEST(VP8VideoTrackEncoder, Suspended)
 {
-  
   TestVP8TrackEncoder encoder;
-  InitParam param = {true, 640, 480};
-  encoder.TestInit(param);
 
   
   
@@ -592,6 +575,7 @@ TEST(VP8VideoTrackEncoder, Suspended)
                       false,
                       now);
 
+  encoder.SetStartOffset(0);
   encoder.AppendVideoSegment(Move(segment));
   encoder.AdvanceCurrentTime(9000);
 
@@ -639,10 +623,7 @@ TEST(VP8VideoTrackEncoder, Suspended)
 
 TEST(VP8VideoTrackEncoder, SuspendedUntilEnd)
 {
-  
   TestVP8TrackEncoder encoder;
-  InitParam param = {true, 640, 480};
-  encoder.TestInit(param);
 
   
   YUVBufferGenerator generator;
@@ -656,6 +637,7 @@ TEST(VP8VideoTrackEncoder, SuspendedUntilEnd)
                       false,
                       now);
 
+  encoder.SetStartOffset(0);
   encoder.AppendVideoSegment(Move(segment));
   encoder.AdvanceCurrentTime(9000);
 
@@ -692,10 +674,7 @@ TEST(VP8VideoTrackEncoder, SuspendedUntilEnd)
 
 TEST(VP8VideoTrackEncoder, AlwaysSuspended)
 {
-  
   TestVP8TrackEncoder encoder;
-  InitParam param = {true, 640, 480};
-  encoder.TestInit(param);
 
   
   YUVBufferGenerator generator;
@@ -713,6 +692,7 @@ TEST(VP8VideoTrackEncoder, AlwaysSuspended)
                       false,
                       now);
 
+  encoder.SetStartOffset(0);
   encoder.AppendVideoSegment(Move(segment));
   encoder.AdvanceCurrentTime(180000);
 
@@ -731,10 +711,7 @@ TEST(VP8VideoTrackEncoder, AlwaysSuspended)
 
 TEST(VP8VideoTrackEncoder, SuspendedBeginning)
 {
-  
   TestVP8TrackEncoder encoder;
-  InitParam param = {true, 640, 480};
-  encoder.TestInit(param);
   TimeStamp now = TimeStamp::Now();
 
   
@@ -750,6 +727,7 @@ TEST(VP8VideoTrackEncoder, SuspendedBeginning)
                       false,
                       now);
 
+  encoder.SetStartOffset(0);
   encoder.AppendVideoSegment(Move(segment));
   encoder.AdvanceCurrentTime(45000);
 
@@ -787,10 +765,7 @@ TEST(VP8VideoTrackEncoder, SuspendedBeginning)
 
 TEST(VP8VideoTrackEncoder, SuspendedOverlap)
 {
-  
   TestVP8TrackEncoder encoder;
-  InitParam param = {true, 640, 480};
-  encoder.TestInit(param);
 
   
   YUVBufferGenerator generator;
@@ -804,6 +779,7 @@ TEST(VP8VideoTrackEncoder, SuspendedOverlap)
                       false,
                       now);
 
+  encoder.SetStartOffset(0);
   encoder.AppendVideoSegment(Move(segment));
 
   encoder.AdvanceCurrentTime(45000);
@@ -843,10 +819,7 @@ TEST(VP8VideoTrackEncoder, SuspendedOverlap)
 
 TEST(VP8VideoTrackEncoder, PrematureEnding)
 {
-  
   TestVP8TrackEncoder encoder;
-  InitParam param = {true, 640, 480};
-  encoder.TestInit(param);
 
   
   YUVBufferGenerator generator;
@@ -860,6 +833,7 @@ TEST(VP8VideoTrackEncoder, PrematureEnding)
                       false,
                       now);
 
+  encoder.SetStartOffset(0);
   encoder.AppendVideoSegment(Move(segment));
   encoder.AdvanceCurrentTime(45000);
   encoder.NotifyEndOfStream();
@@ -880,10 +854,7 @@ TEST(VP8VideoTrackEncoder, PrematureEnding)
 
 TEST(VP8VideoTrackEncoder, EncodeComplete)
 {
-  
   TestVP8TrackEncoder encoder;
-  InitParam param = {true, 640, 480};
-  encoder.TestInit(param);
 
   
   encoder.NotifyEndOfStream();
