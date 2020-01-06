@@ -566,12 +566,10 @@ VRDisplayPuppet::SubmitFrame(const mozilla::layers::EGLImageDescriptor* aDescrip
 #endif
 
 void
-VRDisplayPuppet::NotifyVSync()
+VRDisplayPuppet::Refresh()
 {
   
   mDisplayInfo.mIsConnected = true;
-
-  VRDisplayHost::NotifyVSync();
 }
 
 VRControllerPuppet::VRControllerPuppet(dom::GamepadHand aHand, uint32_t aDisplayID)
@@ -703,14 +701,45 @@ VRSystemManagerPuppet::Shutdown()
   mPuppetHMD = nullptr;
 }
 
-bool
-VRSystemManagerPuppet::GetHMDs(nsTArray<RefPtr<VRDisplayHost>>& aHMDResult)
+void
+VRSystemManagerPuppet::NotifyVSync()
+{
+  VRSystemManager::NotifyVSync();
+  if (mPuppetHMD) {
+    mPuppetHMD->Refresh();
+  }
+}
+
+void
+VRSystemManagerPuppet::Enumerate()
 {
   if (mPuppetHMD == nullptr) {
     mPuppetHMD = new VRDisplayPuppet();
   }
-  aHMDResult.AppendElement(mPuppetHMD);
-  return true;
+}
+
+bool
+VRSystemManagerPuppet::ShouldInhibitEnumeration()
+{
+  if (VRSystemManager::ShouldInhibitEnumeration()) {
+    return true;
+  }
+  if (mPuppetHMD) {
+    
+    
+    
+    
+    return true;
+  }
+  return false;
+}
+
+void
+VRSystemManagerPuppet::GetHMDs(nsTArray<RefPtr<VRDisplayHost>>& aHMDResult)
+{
+  if (mPuppetHMD) {
+    aHMDResult.AppendElement(mPuppetHMD);
+  }
 }
 
 bool

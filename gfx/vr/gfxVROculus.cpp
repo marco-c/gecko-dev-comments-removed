@@ -204,8 +204,11 @@ VROculusSession::VROculusSession()
   , mSession(nullptr)
   , mInitFlags((ovrInitFlags)0)
   , mTextureSet(nullptr)
-  , mPresenting(false)
+  , mRequestPresentation(false)
+  , mRequestTracking(false)
   , mDrawBlack(false)
+  , mIsConnected(false)
+  , mIsMounted(false)
 {
 }
 
@@ -219,26 +222,47 @@ VROculusSession::Get()
 bool
 VROculusSession::IsTrackingReady() const
 {
-  return mSession != nullptr;
+  
+  
+  MOZ_ASSERT(!mIsConnected || mSession);
+  return mIsConnected;
 }
 
 bool
-VROculusSession::IsRenderReady() const
+VROculusSession::IsPresentationReady() const
 {
   return !mRenderTargets.IsEmpty();
+}
+
+bool
+VROculusSession::IsMounted() const
+{
+  return mIsMounted;
 }
 
 void
 VROculusSession::StopTracking()
 {
-  Uninitialize(true);
+  if (mRequestTracking) {
+    mRequestTracking = false;
+    Refresh();
+  }
+}
+
+void
+VROculusSession::StartTracking()
+{
+  if (!mRequestTracking) {
+    mRequestTracking = true;
+    Refresh();
+  }
 }
 
 void
 VROculusSession::StartPresentation(const IntSize& aSize)
 {
-  if (!mPresenting) {
-    mPresenting = true;
+  if (!mRequestPresentation) {
+    mRequestPresentation = true;
     mTelemetry.Clear();
     mTelemetry.mPresentationStart = TimeStamp::Now();
 
@@ -258,9 +282,9 @@ VROculusSession::StartPresentation(const IntSize& aSize)
 void
 VROculusSession::StopPresentation()
 {
-  if (mPresenting) {
+  if (mRequestPresentation) {
     mLastPresentationEnd = TimeStamp::Now();
-    mPresenting = false;
+    mRequestPresentation = false;
 
     const TimeDuration duration = mLastPresentationEnd - mTelemetry.mPresentationStart;
     Telemetry::Accumulate(Telemetry::WEBVR_USERS_VIEW_IN, 1);
@@ -315,6 +339,8 @@ VROculusSession::StopSession()
 {
   if (mSession) {
     ovr_Destroy(mSession);
+    mIsConnected = false;
+    mIsMounted = false;
     mSession = nullptr;
   }
 }
@@ -337,9 +363,14 @@ VROculusSession::Refresh(bool aForceRefresh)
     return;
   }
 
+  if (!mRequestTracking) {
+    Uninitialize(true);
+    return;
+  }
+
   ovrInitFlags flags = (ovrInitFlags)(ovrInit_RequestVersion | ovrInit_MixedRendering);
   bool bInvisible = true;
-  if (mPresenting) {
+  if (mRequestPresentation) {
     bInvisible = false;
   } else if (!mLastPresentationEnd.IsNull()) {
     TimeDuration duration = TimeStamp::Now() - mLastPresentationEnd;
@@ -384,15 +415,25 @@ VROculusSession::Refresh(bool aForceRefresh)
     Uninitialize(false);
   }
 
-  Initialize(flags);
+  if(!Initialize(flags)) {
+    
+    
+    
+    Uninitialize(true);
+  }
 
   if (mSession) {
     ovrSessionStatus status;
     if (OVR_SUCCESS(ovr_GetSessionStatus(mSession, &status))) {
+      mIsConnected = status.HmdPresent;
+      mIsMounted = status.HmdMounted;
       if (status.ShouldQuit) {
         mLastShouldQuit = TimeStamp::Now();
         Uninitialize(true);
       }
+    } else {
+      mIsConnected = false;
+      mIsMounted = false;
     }
   }
 }
@@ -437,7 +478,7 @@ VROculusSession::Initialize(ovrInitFlags aFlags)
 bool
 VROculusSession::StartRendering()
 {
-  if (!mPresenting) {
+  if (!mRequestPresentation) {
     
     return true;
   }
@@ -973,7 +1014,7 @@ VRDisplayOculus::StartPresentation()
     return;
   }
   mSession->StartPresentation(IntSize(mDisplayInfo.mEyeResolution.width * 2, mDisplayInfo.mEyeResolution.height));
-  if (!mSession->IsRenderReady()) {
+  if (!mSession->IsPresentationReady()) {
     return;
   }
 
@@ -1103,7 +1144,7 @@ VRDisplayOculus::SubmitFrame(ID3D11Texture2D* aSource,
     return false;
   }
 
-  if (!mSession->IsRenderReady()) {
+  if (!mSession->IsPresentationReady()) {
     return false;
   }
   
@@ -1248,18 +1289,10 @@ VRDisplayOculus::SubmitFrame(ID3D11Texture2D* aSource,
 }
 
 void
-VRDisplayOculus::NotifyVSync()
+VRDisplayOculus::Refresh()
 {
-  mSession->Refresh();
-  if (mSession->IsTrackingReady()) {
-    ovrSessionStatus sessionStatus;
-    ovrResult ovr = ovr_GetSessionStatus(mSession->Get(), &sessionStatus);
-    mDisplayInfo.mIsConnected = (ovr == ovrSuccess && sessionStatus.HmdPresent);
-  } else {
-    mDisplayInfo.mIsConnected = false;
-  }
-
-  VRDisplayHost::NotifyVSync();
+  mDisplayInfo.mIsConnected = mSession->IsTrackingReady();
+  mDisplayInfo.mIsMounted = mSession->IsMounted();
 }
 
 VRControllerOculus::VRControllerOculus(dom::GamepadHand aHand, uint32_t aDisplayID)
@@ -1517,37 +1550,66 @@ VRSystemManagerOculus::Shutdown()
   mDisplay = nullptr;
 }
 
+void
+VRSystemManagerOculus::NotifyVSync()
+{
+  VRSystemManager::NotifyVSync();
+  if (!mSession) {
+    return;
+  }
+  mSession->Refresh();
+  if (mDisplay) {
+    mDisplay->Refresh();
+  }
+  
+  if (!mSession->IsTrackingReady()) {
+    
+    mDisplay = nullptr;
+  }
+}
+
 bool
-VRSystemManagerOculus::GetHMDs(nsTArray<RefPtr<VRDisplayHost>>& aHMDResult)
+VRSystemManagerOculus::ShouldInhibitEnumeration()
+{
+  if (VRSystemManager::ShouldInhibitEnumeration()) {
+    return true;
+  }
+  if (mDisplay) {
+    
+    
+    
+    
+    return true;
+  }
+  if (mSession && mSession->IsQuitTimeoutActive()) {
+    
+    
+    
+    
+    return true;
+  }
+  return false;
+}
+
+void
+VRSystemManagerOculus::Enumerate()
 {
   if (!mSession) {
     mSession = new VROculusSession();
   }
-  mSession->Refresh();
-  if (mSession->IsQuitTimeoutActive()) {
-    
-    
-    
-    
-    
-    
-    mDisplay = nullptr;
-    return true;
-  }
-
-  if (!mSession->IsTrackingReady()) {
-    
-    mDisplay = nullptr;
-  } else if (mDisplay == nullptr) {
+  mSession->StartTracking();
+  if (mDisplay == nullptr && mSession->IsTrackingReady()) {
     
     mDisplay = new VRDisplayOculus(mSession);
   }
+}
 
+void
+VRSystemManagerOculus::GetHMDs(nsTArray<RefPtr<VRDisplayHost>>& aHMDResult)
+{
   if (mDisplay) {
     aHMDResult.AppendElement(mDisplay);
-    return true;
   }
-  return false;
 }
 
 bool
