@@ -633,6 +633,7 @@ pref("layers.geometry.d3d11.enabled", true);
 
 pref("apz.allow_checkerboarding", true);
 pref("apz.allow_immediate_handoff", true);
+pref("apz.allow_with_webrender", false);
 pref("apz.allow_zooming", false);
 
 
@@ -5261,9 +5262,9 @@ pref("browser.safebrowsing.provider.google.reportMalwareMistakeURL", "https://%L
 
 pref("browser.safebrowsing.provider.google4.pver", "4");
 pref("browser.safebrowsing.provider.google4.lists", "goog-badbinurl-proto,goog-downloadwhite-proto,goog-phish-proto,googpub-phish-proto,goog-malware-proto,goog-unwanted-proto");
-pref("browser.safebrowsing.provider.google4.updateURL", "https://safebrowsing.googleapis.com/v4/threatListUpdates:fetch?$ct=application/x-protobuf&key=%GOOGLE_API_KEY%&$httpMethod=POST");
+pref("browser.safebrowsing.provider.google4.updateURL", "https://safebrowsing.googleapis.com/v4/threatListUpdates:fetch?$ct=application/x-protobuf&key=%GOOGLE_API_KEY%");
 #ifdef NIGHTLY_BUILD
-pref("browser.safebrowsing.provider.google4.gethashURL", "https://safebrowsing.googleapis.com/v4/fullHashes:find?$ct=application/x-protobuf&key=%GOOGLE_API_KEY%&$httpMethod=POST");
+pref("browser.safebrowsing.provider.google4.gethashURL", "https://safebrowsing.googleapis.com/v4/fullHashes:find?$ct=application/x-protobuf&key=%GOOGLE_API_KEY%");
 #else
 pref("browser.safebrowsing.provider.google4.gethashURL", "");
 #endif // NIGHTLY_BUILD
@@ -5716,3 +5717,6 @@ pref("layers.advanced.caret-layers", 2);
 pref("layers.advanced.displaybuttonborder-layers", 2);
 pref("layers.advanced.outline-layers", 2);
 pref("layers.advanced.solid-color-layers", 2);
+
+
+pref("dom.xhr.lowercase_header.enabled", true);
