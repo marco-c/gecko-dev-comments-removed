@@ -2527,11 +2527,31 @@ public:
   }
 
   
-  
   static bool StyloSupportedInCurrentProcess() {
-     return XRE_IsContentProcess() ||
-            (XRE_IsParentProcess() && !XRE_IsE10sParentProcess());
+#ifdef MOZ_STYLO
+    if (XRE_IsContentProcess()) {
+      return true;
+    }
+    if (XRE_IsParentProcess()) {
+      
+      
+      if (StyloChromeEnabled()) {
+        return true;
+      }
+      
+      return !XRE_IsE10sParentProcess();
+    }
+#endif
+    
+    MOZ_DIAGNOSTIC_ASSERT(false, "We should not be creating any document "
+                          "in processes other than content and parent");
+    return false;
   }
+
+#ifdef MOZ_STYLO
+  
+  static bool StyloChromeEnabled();
+#endif
 
   static uint32_t IdlePeriodDeadlineLimit() {
     return sIdlePeriodDeadlineLimit;

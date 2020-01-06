@@ -8152,7 +8152,8 @@ nsLayoutUtils::ShouldUseStylo(nsIURI* aDocumentURI, nsIPrincipal* aPrincipal)
   
   
   
-  if (nsContentUtils::IsSystemPrincipal(aPrincipal)) {
+  if (!StyloChromeEnabled() &&
+      nsContentUtils::IsSystemPrincipal(aPrincipal)) {
     return false;
   }
   
@@ -8231,6 +8232,21 @@ nsLayoutUtils::RemoveFromStyloBlocklist(const nsACString& aBlockedDomain)
     delete sStyloBlocklist;
     sStyloBlocklist = nullptr;
   }
+}
+
+
+bool
+nsLayoutUtils::StyloChromeEnabled()
+{
+  static bool sInitialized = false;
+  static bool sEnabled = false;
+  if (!sInitialized) {
+    
+    
+    sEnabled = Preferences::GetBool("layout.css.servo.chrome.enabled");
+    sInitialized = true;
+  }
+  return sEnabled;
 }
 #endif
 

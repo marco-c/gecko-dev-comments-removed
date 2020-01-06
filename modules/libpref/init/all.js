@@ -5818,6 +5818,11 @@ pref("layout.css.servo.enabled", true);
 #else
 pref("layout.css.servo.enabled", false);
 #endif
+
+
+
+
+pref("layout.css.servo.chrome.enabled", false);
 #endif
 
 
