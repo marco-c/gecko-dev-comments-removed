@@ -217,7 +217,7 @@ CrossProcessCompositorBridgeParent::AllocPWebRenderBridgeParent(const wr::Pipeli
     
     
     NS_WARNING("Created child without a matching parent?");
-    parent = WebRenderBridgeParent::CeateDestroyed();
+    parent = WebRenderBridgeParent::CreateDestroyed();
     *aIdNamespace = parent->GetIdNameSpace();
     *aTextureFactoryIdentifier = TextureFactoryIdentifier(LayersBackend::LAYERS_NONE);
     return parent;

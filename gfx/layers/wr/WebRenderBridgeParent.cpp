@@ -157,7 +157,7 @@ WebRenderBridgeParent::WebRenderBridgeParent()
 }
 
  WebRenderBridgeParent*
-WebRenderBridgeParent::CeateDestroyed()
+WebRenderBridgeParent::CreateDestroyed()
 {
   return new WebRenderBridgeParent();
 }
