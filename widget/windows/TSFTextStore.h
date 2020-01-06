@@ -1008,8 +1008,10 @@ protected:
   static StaticRefPtr<ITfKeystrokeMgr> sKeystrokeMgr;
   
   static StaticRefPtr<ITfDisplayAttributeMgr> sDisplayAttrMgr;
+  static already_AddRefed<ITfDisplayAttributeMgr> GetDisplayAttributeMgr();
   
   static StaticRefPtr<ITfCategoryMgr> sCategoryMgr;
+  static already_AddRefed<ITfCategoryMgr> GetCategoryMgr();
 
   
   
