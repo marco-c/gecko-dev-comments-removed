@@ -86,16 +86,17 @@ function chooseProfileFolder() {
   
   dirChooser.displayDirectory = gDefaultProfileParent;
 
-  dirChooser.show();
-  newProfileRoot = dirChooser.file;
+  dirChooser.open(() => {
+    newProfileRoot = dirChooser.file;
 
-  
-  
-  document.getElementById("useDefault").disabled =
-    (newProfileRoot.parent.equals(gDefaultProfileParent));
+    
+    
+    document.getElementById("useDefault").disabled =
+      (newProfileRoot.parent.equals(gDefaultProfileParent));
 
-  gProfileRoot = newProfileRoot;
-  updateProfileDisplay();
+    gProfileRoot = newProfileRoot;
+    updateProfileDisplay();
+  });
 }
 
 

@@ -64,10 +64,10 @@ LocalFileToDirectoryOrBlob(nsPIDOMWindowInner* aWindow,
 
 
 
-class AsyncShowFilePicker : public mozilla::Runnable
+class nsBaseFilePicker::AsyncShowFilePicker : public mozilla::Runnable
 {
 public:
-  AsyncShowFilePicker(nsIFilePicker* aFilePicker,
+  AsyncShowFilePicker(nsBaseFilePicker* aFilePicker,
                       nsIFilePickerShownCallback* aCallback)
     : mozilla::Runnable("AsyncShowFilePicker")
     , mFilePicker(aFilePicker)
@@ -96,7 +96,7 @@ public:
   }
 
 private:
-  RefPtr<nsIFilePicker> mFilePicker;
+  RefPtr<nsBaseFilePicker> mFilePicker;
   RefPtr<nsIFilePickerShownCallback> mCallback;
 };
 

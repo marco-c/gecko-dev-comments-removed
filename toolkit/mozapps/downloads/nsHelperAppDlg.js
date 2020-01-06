@@ -1096,14 +1096,19 @@ nsUnknownContentTypeDialog.prototype = {
 
       fp.appendFilters(nsIFilePicker.filterApps);
 
-      if (fp.show() == nsIFilePicker.returnOK && fp.file) {
-        
-        var localHandlerApp =
-          Components.classes["@mozilla.org/uriloader/local-handler-app;1"].
-                     createInstance(Components.interfaces.nsILocalHandlerApp);
-        localHandlerApp.executable = fp.file;
-        this.chosenApp = localHandlerApp;
-      }
+      fp.open(aResult => {
+        if (aResult == nsIFilePicker.returnOK && fp.file) {
+          
+          var localHandlerApp =
+            Components.classes["@mozilla.org/uriloader/local-handler-app;1"].
+                       createInstance(Components.interfaces.nsILocalHandlerApp);
+          localHandlerApp.executable = fp.file;
+          this.chosenApp = localHandlerApp;
+        }
+        this.finishChooseApp();
+      });
+      
+      return;
     }
 
     this.finishChooseApp();
