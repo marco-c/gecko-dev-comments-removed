@@ -648,7 +648,7 @@ class ContextMenu {
     cleanTarget.ownerDocument = {
       
       
-      fullscreenElement: context.target.ownerDocument.fullscreenElement,
+      fullscreen: context.target.ownerDocument.fullscreen,
 
       
       contentType: context.target.ownerDocument.contentType,
