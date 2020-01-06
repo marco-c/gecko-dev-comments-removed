@@ -4824,6 +4824,7 @@ pref("xpinstall.signatures.required", false);
 pref("extensions.alwaysUnpack", false);
 pref("extensions.minCompatiblePlatformVersion", "2.0");
 pref("extensions.webExtensionsMinPlatformVersion", "42.0a1");
+pref("extensions.legacy.enabled", true);
 pref("extensions.allow-non-mpc-extensions", true);
 
 
@@ -5730,25 +5731,13 @@ pref("fuzzing.enabled", false);
 
 
 
-pref("layers.advanced.background-color", 2);
-pref("layers.advanced.background-image", 2);
 pref("layers.advanced.border-layers", 2);
 pref("layers.advanced.boxshadow-inset-layers", 2);
 pref("layers.advanced.boxshadow-outer-layers", 2);
-pref("layers.advanced.bullet-layers", 2);
-pref("layers.advanced.button-foreground-layers", 2);
-pref("layers.advanced.canvas-background-color", 2);
 pref("layers.advanced.caret-layers", 2);
-pref("layers.advanced.columnRule-layers", 2);
 pref("layers.advanced.displaybuttonborder-layers", 2);
-pref("layers.advanced.image-layers", 2);
 pref("layers.advanced.outline-layers", 2);
-pref("layers.advanced.solid-color", 2);
-pref("layers.advanced.table", 2);
-pref("layers.advanced.text-layers", 2);
-
-
-pref("gfx.webrendest.enabled", false);
+pref("layers.advanced.solid-color-layers", 2);
 
 
 pref("dom.xhr.lowercase_header.enabled", true);
