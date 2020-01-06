@@ -13,6 +13,7 @@
 #include "mozilla/Attributes.h"         
 #include "mozilla/WidgetUtils.h"        
 #include "mozilla/layers/LayersTypes.h"  
+#include "mozilla/TimeStamp.h"
 #include "nsAString.h"
 #include "nsCOMPtr.h"                   
 #include "nsISupportsImpl.h"            
@@ -168,6 +169,11 @@ public:
   virtual int32_t GetMaxTextureSize() const override { return INT32_MAX; }
   bool CompositorMightResample() { return mCompositorMightResample; }
 
+  TimeStamp GetCompositionTime() const
+  {
+    return mCompositionTime;
+  }
+
 protected:
   enum TransactionPhase {
     PHASE_NONE, PHASE_CONSTRUCTION, PHASE_DRAWING, PHASE_FORWARD
@@ -198,6 +204,11 @@ protected:
 
   void FlashWidgetUpdateArea(gfxContext* aContext);
 
+  void SetCompositionTime(TimeStamp aTimeStamp)
+  {
+    mCompositionTime = aTimeStamp;
+  }
+
   
   
   nsIWidget* mWidget;
@@ -213,6 +224,8 @@ protected:
   bool mUsingDefaultTarget;
   bool mTransactionIncomplete;
   bool mCompositorMightResample;
+
+  TimeStamp mCompositionTime;
 };
 
 } 
