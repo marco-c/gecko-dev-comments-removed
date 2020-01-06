@@ -373,9 +373,11 @@ var FormAutofillContent = {
 
 
 
-  _onFormSubmit(profile, domWin) {
+
+  _onFormSubmit(profile, domWin, timeStartedFillingMS) {
     let mm = this._messageManagerFromWindow(domWin);
-    mm.sendAsyncMessage("FormAutofill:OnFormSubmit", profile);
+    mm.sendAsyncMessage("FormAutofill:OnFormSubmit",
+                        {profile, timeStartedFillingMS});
   },
 
   
@@ -407,7 +409,7 @@ var FormAutofillContent = {
       return true;
     }
 
-    this._onFormSubmit(records, domWin);
+    this._onFormSubmit(records, domWin, handler.timeStartedFillingMS);
     return true;
   },
 
