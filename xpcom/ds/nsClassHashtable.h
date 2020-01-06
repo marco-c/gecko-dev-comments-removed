@@ -136,6 +136,41 @@ public:
 
 
   MOZ_MUST_USE EntryPtr LookupForAdd(KeyType aKey);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template<class F>
+  void LookupRemoveIf(KeyType aKey, F aFunction)
+  {
+#ifdef DEBUG
+    auto tableGeneration = base_type::GetGeneration();
+#endif
+    typename base_type::EntryType* ent = this->GetEntry(aKey);
+    if (!ent) {
+      return;
+    }
+    bool shouldRemove = aFunction(ent->mData);
+    MOZ_ASSERT(tableGeneration == base_type::GetGeneration(),
+               "hashtable was modified by the LookupRemoveIf callback!");
+    if (shouldRemove) {
+      this->RemoveEntry(ent);
+    }
+  }
 };
 
 
@@ -210,7 +245,7 @@ nsClassHashtable<KeyClass, T>::RemoveAndForget(KeyType aKey, nsAutoPtr<T>& aOut)
   
   aOut = mozilla::Move(ent->mData);
 
-  this->Remove(aKey);
+  this->RemoveEntry(ent);
 }
 
 #endif 
