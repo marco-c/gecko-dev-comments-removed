@@ -102,11 +102,9 @@ nsCommandManager::AddCommandObserver(nsIObserver* aCommandObserver,
   
 
   
-  ObserverList* commandObservers;
-  if (!mObserversTable.Get(aCommandToObserve, &commandObservers)) {
-    commandObservers = new ObserverList;
-    mObserversTable.Put(aCommandToObserve, commandObservers);
-  }
+  ObserverList* commandObservers =
+    mObserversTable.LookupForAdd(aCommandToObserve).OrInsert(
+      [] () { return new ObserverList; });
 
   
   int32_t existingIndex = commandObservers->IndexOf(aCommandObserver);
