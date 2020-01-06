@@ -202,7 +202,6 @@ pref("dom.gamepad.non_standard_events.enabled", false);
 pref("dom.gamepad.non_standard_events.enabled", true);
 #endif
 pref("dom.gamepad.extensions.enabled", true);
-pref("dom.gamepad.haptic_feedback.enabled", true);
 
 
 
@@ -445,7 +444,7 @@ pref("media.decoder-doctor.wmf-disabled-is-failure", false);
 pref("media.decoder-doctor.new-issue-endpoint", "https://webcompat.com/issues/new");
 
 
-#ifdef RELEASE_OR_BETA
+#ifdef RELEASE
 pref("media.suspend-bkgnd-video.enabled", false);
 #else
 pref("media.suspend-bkgnd-video.enabled", true);
@@ -1331,7 +1330,7 @@ pref("dom.forms.datetime.others", false);
 pref("dom.forms.datetime.timepicker", false);
 
 
-pref("dom.forms.autocomplete.formautofill", false);
+pref("dom.forms.autocomplete.experimental", false);
 
 
 pref("dom.forms.selectSearch", false);
@@ -3124,6 +3123,26 @@ pref("dom.idle_period.throttled_length", 10000);
 pref("idle_queue.long_period", 50);
 
 
+#ifdef NIGHTLY_BUILD
+pref("prioritized_input_events.enabled", true);
+#else
+pref("prioritized_input_events.enabled", false);
+#endif
+
+
+
+pref("prioritized_input_events.duration.max", 8);
+pref("prioritized_input_events.duration.min", 1);
+
+
+
+pref("prioritized_input_events.default_duration_per_event", 1);
+
+
+
+pref("prioritized_input_events.count_for_prediction", 9);
+
+
 
 
 
@@ -4771,8 +4790,8 @@ pref("layers.bench.enabled", false);
 #if defined(XP_WIN)
 pref("layers.gpu-process.enabled", true);
 pref("media.gpu-process-decoder", true);
-#ifdef NIGHTLY_BUILD
 pref("layers.gpu-process.allow-software", true);
+#ifdef NIGHTLY_BUILD
 pref("layers.gpu-process.max_restarts", 3);
 #endif
 #endif
