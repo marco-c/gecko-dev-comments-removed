@@ -72,8 +72,4 @@ add_task(async function() {
   await promiseTabLoadEvent(gBrowser.selectedTab, gHttpTestRoot + "plugin_small_2.html");
   let notification = await waitForNotificationBar("plugin-hidden", gBrowser.selectedBrowser);
   ok(notification, "There should be a notification shown for the new page.");
-  
-  
-  let label = notification.label;
-  ok(label.includes("Second Test"), "Should mention the second plugin");
 });
