@@ -557,8 +557,10 @@ impl MarionetteSession {
                                           .as_u64(),
                                       ErrorStatus::UnknownError,
                                       "Failed to interpret script timeout duration as u64");
-                let page_load = try_opt!(try_opt!(resp.result
-                                                      .find("pageLoad"),
+                
+                
+                let page_load = try_opt!(try_opt!(resp.result.find("pageLoad")
+                                                      .or(resp.result.find("page load")),
                                                   ErrorStatus::UnknownError,
                                                   "Missing field: pageLoad")
                                              .as_u64(),
