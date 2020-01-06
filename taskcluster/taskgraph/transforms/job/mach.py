@@ -16,6 +16,10 @@ mach_schema = Schema({
 
     
     Required('mach'): basestring,
+
+    
+    
+    Required('comm-checkout', default=False): bool,
 })
 
 
