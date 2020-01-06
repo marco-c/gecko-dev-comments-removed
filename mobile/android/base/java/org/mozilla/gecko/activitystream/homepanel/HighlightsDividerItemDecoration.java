@@ -18,7 +18,7 @@ import android.view.View;
 
  class HighlightsDividerItemDecoration extends RecyclerView.ItemDecoration {
     
-    private static final int START_DRAWING_AT_POSITION = 1;
+    private static final int START_DRAWING_AT_POSITION = 2;
 
     private static final int[] ATTRS = new int[]{
             android.R.attr.listDivider
