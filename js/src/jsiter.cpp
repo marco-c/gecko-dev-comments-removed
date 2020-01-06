@@ -1045,19 +1045,24 @@ js::CreateIterResultObject(JSContext* cx, HandleValue value, bool done)
 {
     
 
-    Rooted<IdValueVector> props(cx, IdValueVector(cx));
-    if (!props.reserve(2))
+    
+    RootedObject resultObj(cx, NewBuiltinClassInstance<PlainObject>(cx));
+    if (!resultObj)
         return nullptr;
 
     
-    props.infallibleAppend(IdValuePair(NameToId(cx->names().value), value));
+    if (!DefineProperty(cx, resultObj, cx->names().value, value))
+        return nullptr;
 
     
-    props.infallibleAppend(IdValuePair(NameToId(cx->names().done),
-                                       done ? TrueHandleValue : FalseHandleValue));
+    if (!DefineProperty(cx, resultObj, cx->names().done,
+                        done ? TrueHandleValue : FalseHandleValue))
+    {
+        return nullptr;
+    }
 
     
-    return ObjectGroup::newPlainObject(cx, props.begin(), props.length(), GenericObject);
+    return resultObj;
 }
 
 bool
