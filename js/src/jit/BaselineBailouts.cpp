@@ -1113,19 +1113,18 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
             
             JitSpew(JitSpew_BaselineBailouts, "      Popping top stack value into R0.");
             builder.popValueInto(PCMappingSlotInfo::SlotInR0);
+            frameSize -= sizeof(Value);
 
             if (JSOp(*pc) == JSOP_GETELEM_SUPER) {
                 
-                if (!builder.writeValue(UndefinedValue(), "GETELEM_SUPER stack blance"))
+                if (!builder.writeValue(UndefinedValue(), "GETELEM_SUPER stack balance"))
                     return false;
+                frameSize += sizeof(Value);
             }
 
             
-            
-            frameSize -= sizeof(Value);
             blFrame->setFrameSize(frameSize);
-            JitSpew(JitSpew_BaselineBailouts, "      Adjusted framesize -= %d: %d",
-                            (int) sizeof(Value), (int) frameSize);
+            JitSpew(JitSpew_BaselineBailouts, "      Adjusted framesize: %u", unsigned(frameSize));
 
             
             
