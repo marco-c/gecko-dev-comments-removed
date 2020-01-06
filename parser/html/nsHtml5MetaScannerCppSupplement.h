@@ -2,7 +2,6 @@
 
 
  
-#include "nsEncoderDecoderUtils.h"
 #include "nsISupportsImpl.h"
 
 #include "mozilla/dom/EncodingUtils.h"

@@ -36,11 +36,11 @@ const inStrings = [
 
 const expectedStrings = [
                          "\x1B$B!#!V!W!\x22!&%r%!%#%%%'%)%c%e%g%C!<%\x22%$%&%(%*%+%-%/%1%3%5%7%9%;%=%?%A%D%F%H%J%K%L%M%N%O%R%U%X%[%^%_%`%a%b%d%f%h%i%j%k%l%m%o%s!+!,\x1B(B",
-                         "\x1B$B%,%.%0%2%4%6%8%:%<%>%@%B%E%G%I%P%S%V%Y%\x5C\x1B(B",
-                         "\x1B$B%Q%T%W%Z%]\x1B(B",
-			 "\x1B$B%U%i%s%D!&%h!<%<%U!&%O%$%I%s\x1B(B",
-			 "Mozilla (\x1B$B%b%8%i\x1B(B) Foundation",
-			 "??????\x1B$B!&%G%j!<!&\x1B(B?????"
+                         "\x1B$B%+!+%-!+%/!+%1!+%3!+%5!+%7!+%9!+%;!+%=!+%?!+%A!+%D!+%F!+%H!+%O!+%R!+%U!+%X!+%[!+\x1B(B",
+                         "\x1B$B%O!,%R!,%U!,%X!,%[!,\x1B(B",
+			 "\x1B$B%U%i%s%D!&%h!<%;!+%U!&%O%$%I%s\x1B(B",
+			 "Mozilla (\x1B$B%b%7!+%i\x1B(B) Foundation",
+			 "??????\x1B$B!&%F!+%j!<!&\x1B(B?????"
 			 ];
 
 function run_test()

@@ -44,6 +44,7 @@
 #include "mozilla/dom/XMLHttpRequestBinding.h"
 #include "mozilla/dom/XMLHttpRequestEventTarget.h"
 #include "mozilla/dom/XMLHttpRequestString.h"
+#include "mozilla/Encoding.h"
 
 #ifdef Status
 
@@ -53,7 +54,6 @@
 
 class nsIJARChannel;
 class nsILoadGroup;
-class nsIUnicodeDecoder;
 class nsIJSID;
 
 namespace mozilla {
@@ -692,7 +692,7 @@ protected:
   
   
   
-  nsCOMPtr<nsIUnicodeDecoder> mDecoder;
+  mozilla::UniquePtr<mozilla::Decoder> mDecoder;
 
   nsCString mResponseCharset;
 

@@ -710,7 +710,7 @@ nsHtml5StreamParser::SniffStreamBytes(const uint8_t* aFromSegment,
   }
   
   
-  
+
   MOZ_ASSERT(mCharsetSource != kCharsetFromByteOrderMark,
              "Should not come here if BOM was found.");
   MOZ_ASSERT(mCharsetSource != kCharsetFromOtherComponent,
@@ -734,7 +734,7 @@ nsHtml5StreamParser::SniffStreamBytes(const uint8_t* aFromSegment,
                         mMode == LOAD_AS_DATA)) {
     mMetaScanner = new nsHtml5MetaScanner(mTreeBuilder);
   }
-  
+
   if (mSniffingLength + aCount >= NS_HTML5_STREAM_PARSER_SNIFFING_BUFFER_SIZE) {
     
     uint32_t countToSniffingLimit =
@@ -841,29 +841,21 @@ nsHtml5StreamParser::WriteStreamBytes(const uint8_t* aFromSegment,
     }
     mLastBuffer = (mLastBuffer->next = newBuf.forget());
   }
-  int32_t totalByteCount = 0;
+  size_t totalRead = 0;
+  auto src = MakeSpan(aFromSegment, aCount);
   for (;;) {
-    int32_t end = mLastBuffer->getEnd();
-    int32_t byteCount = aCount - totalByteCount;
-    int32_t utf16Count = NS_HTML5_STREAM_PARSER_READ_BUFFER_SIZE - end;
-
-    NS_ASSERTION(utf16Count, "Trying to convert into a buffer with no free space!");
-    
-    
-
-    nsresult convResult = mUnicodeDecoder->Convert((const char*)aFromSegment, &byteCount, mLastBuffer->getBuffer() + end, &utf16Count);
-    MOZ_ASSERT(NS_SUCCEEDED(convResult));
-
-    end += utf16Count;
-    mLastBuffer->setEnd(end);
-    totalByteCount += byteCount;
-    aFromSegment += byteCount;
-
-    NS_ASSERTION(end <= NS_HTML5_STREAM_PARSER_READ_BUFFER_SIZE,
-        "The Unicode decoder wrote too much data.");
-    NS_ASSERTION(byteCount >= -1, "The decoder consumed fewer than -1 bytes.");
-
-    if (convResult == NS_PARTIAL_MORE_OUTPUT) {
+    auto dst = mLastBuffer->TailAsSpan(NS_HTML5_STREAM_PARSER_READ_BUFFER_SIZE);
+    uint32_t result;
+    size_t read;
+    size_t written;
+    bool hadErrors;
+    Tie(result, read, written, hadErrors) =
+      mUnicodeDecoder->DecodeToUTF16(src, dst, false);
+    Unused << hadErrors;
+    src = src.From(read);
+    totalRead += read;
+    mLastBuffer->AdvanceEnd(written);
+    if (result == kOutputFull) {
       RefPtr<nsHtml5OwningUTF16Buffer> newBuf =
         nsHtml5OwningUTF16Buffer::FalliblyCreate(
           NS_HTML5_STREAM_PARSER_READ_BUFFER_SIZE);
@@ -875,9 +867,9 @@ nsHtml5StreamParser::WriteStreamBytes(const uint8_t* aFromSegment,
       
       
     } else {
-      NS_ASSERTION(totalByteCount == (int32_t)aCount,
-          "The Unicode decoder consumed the wrong number of bytes.");
-      *aWriteCount = (uint32_t)totalByteCount;
+      MOZ_ASSERT(totalRead == aCount,
+                 "The Unicode decoder consumed the wrong number of bytes.");
+      *aWriteCount = totalRead;
       return NS_OK;
     }
   }
@@ -888,8 +880,9 @@ nsHtml5StreamParser::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
 {
   NS_PRECONDITION(STREAM_NOT_STARTED == mStreamState,
                   "Got OnStartRequest when the stream had already started.");
-  NS_PRECONDITION(!mExecutor->HasStarted(), 
-                  "Got OnStartRequest at the wrong stage in the executor life cycle.");
+  NS_PRECONDITION(
+    !mExecutor->HasStarted(),
+    "Got OnStartRequest at the wrong stage in the executor life cycle.");
   NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
   if (mObserver) {
     mObserver->OnStartRequest(aRequest, aContext);
@@ -940,7 +933,7 @@ nsHtml5StreamParser::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
 
   rv = mExecutor->WillBuildModel(eDTDMode_unknown);
   NS_ENSURE_SUCCESS(rv, rv);
-  
+
   RefPtr<nsHtml5OwningUTF16Buffer> newBuf =
     nsHtml5OwningUTF16Buffer::FalliblyCreate(
       NS_HTML5_STREAM_PARSER_READ_BUFFER_SIZE);
@@ -995,7 +988,7 @@ nsHtml5StreamParser::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
   if (mCharsetSource >= kCharsetFromAutoDetection) {
     mFeedChardet = false;
   }
-  
+
   nsCOMPtr<nsIWyciwygChannel> wyciwygChannel(do_QueryInterface(mRequest));
   if (mCharsetSource < kCharsetFromUtf8OnlyMime && !wyciwygChannel) {
     
@@ -1059,7 +1052,7 @@ nsHtml5StreamParser::DoStopRequest()
     return;
   }
 
-  ParseAvailableData(); 
+  ParseAvailableData();
 }
 
 class nsHtml5RequestStopper : public Runnable
@@ -1459,12 +1452,12 @@ nsHtml5StreamParser::ParseAvailableData()
         
         MOZ_ASSERT(mMode == NORMAL);
         mozilla::MutexAutoLock speculationAutoLock(mSpeculationMutex);
-        nsHtml5Speculation* speculation = 
+        nsHtml5Speculation* speculation =
           new nsHtml5Speculation(mFirstBuffer,
                                  mFirstBuffer->getStart(),
                                  mTokenizer->getLineNumber(),
                                  mTreeBuilder->newSnapshot());
-        mTreeBuilder->AddSnapshotToScript(speculation->GetSnapshot(), 
+        mTreeBuilder->AddSnapshotToScript(speculation->GetSnapshot(),
                                           speculation->GetStartLineNumber());
         FlushTreeOpsAndDisarmTimer();
         mTreeBuilder->SetOpSink(speculation);
@@ -1498,7 +1491,7 @@ public:
 };
 
 void
-nsHtml5StreamParser::ContinueAfterScripts(nsHtml5Tokenizer* aTokenizer, 
+nsHtml5StreamParser::ContinueAfterScripts(nsHtml5Tokenizer* aTokenizer,
                                           nsHtml5TreeBuilder* aTreeBuilder,
                                           bool aLastWasCR)
 {
@@ -1519,8 +1512,7 @@ nsHtml5StreamParser::ContinueAfterScripts(nsHtml5Tokenizer* aTokenizer,
       return;
     }
     nsHtml5Speculation* speculation = mSpeculations.ElementAt(0);
-    if (aLastWasCR || 
-        !aTokenizer->isInDataState() || 
+    if (aLastWasCR || !aTokenizer->isInDataState() ||
         !aTreeBuilder->snapshotMatches(speculation->GetSnapshot())) {
       speculationFailed = true;
       
@@ -1544,7 +1536,7 @@ nsHtml5StreamParser::ContinueAfterScripts(nsHtml5Tokenizer* aTokenizer,
       }
       
       Interrupt(); 
-      
+
       
       
       
@@ -1585,7 +1577,7 @@ nsHtml5StreamParser::ContinueAfterScripts(nsHtml5Tokenizer* aTokenizer,
         buffer->setStart(0);
         buffer = buffer->next;
       }
-      
+
       mSpeculations.Clear(); 
                              
 
@@ -1600,7 +1592,7 @@ nsHtml5StreamParser::ContinueAfterScripts(nsHtml5Tokenizer* aTokenizer,
       mLastWasCR = aLastWasCR;
       mTokenizer->loadState(aTokenizer);
       mTreeBuilder->loadState(aTreeBuilder, &mAtomTable);
-    } else {    
+    } else {
       
       
       mSpeculations.ElementAt(0)->FlushToSink(mExecutor);

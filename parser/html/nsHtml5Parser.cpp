@@ -65,7 +65,7 @@ nsHtml5Parser::~nsHtml5Parser()
 NS_IMETHODIMP_(void)
 nsHtml5Parser::SetContentSink(nsIContentSink* aSink)
 {
-  NS_ASSERTION(aSink == static_cast<nsIContentSink*> (mExecutor), 
+  NS_ASSERTION(aSink == static_cast<nsIContentSink*>(mExecutor),
                "Attempt to set a foreign sink.");
 }
 
@@ -95,7 +95,7 @@ nsHtml5Parser::SetCommand(const char* aCommand)
 NS_IMETHODIMP_(void)
 nsHtml5Parser::SetCommand(eParserCommands aParserCommand)
 {
-  NS_ASSERTION(aParserCommand == eViewNormal, 
+  NS_ASSERTION(aParserCommand == eViewNormal,
                "Parser command was not eViewNormal.");
 }
 
@@ -190,7 +190,7 @@ nsHtml5Parser::Parse(nsIURI* aURL,
 
 
 
-  NS_PRECONDITION(!mExecutor->HasStarted(), 
+  NS_PRECONDITION(!mExecutor->HasStarted(),
                   "Tried to start parse without initializing the parser.");
   NS_PRECONDITION(GetStreamParser(),
                   "Can't call this Parse() variant on script-created parser");
@@ -219,7 +219,7 @@ nsHtml5Parser::Parse(const nsAString& aSourceBuffer,
   
   
   nsCOMPtr<nsIParser> kungFuDeathGrip(this);
-  
+
   
   
   RefPtr<nsHtml5StreamParser> streamKungFuDeathGrip(GetStreamParser());

@@ -74,7 +74,7 @@ private:
   nsresult mSRIStatus;
 
   
-  nsCOMPtr<nsIUnicodeDecoder> mDecoder;
+  mozilla::UniquePtr<mozilla::Decoder> mDecoder;
 };
 
 } 

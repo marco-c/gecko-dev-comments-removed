@@ -2442,78 +2442,77 @@ ScriptLoader::ConvertToUTF16(nsIChannel* aChannel, const uint8_t* aData,
     return NS_OK;
   }
 
+  auto data = MakeSpan(aData, aLength);
+
   
   
   
   
   
 
-  nsAutoCString charset;
+  UniquePtr<Decoder> unicodeDecoder;
 
-  nsCOMPtr<nsIUnicodeDecoder> unicodeDecoder;
-
-  if (nsContentUtils::CheckForBOM(aData, aLength, charset)) {
-    
-    
-    unicodeDecoder = EncodingUtils::DecoderForEncoding(charset);
+  const Encoding* encoding;
+  size_t bomLength;
+  Tie(encoding, bomLength) = Encoding::ForBOM(data);
+  if (encoding) {
+    unicodeDecoder = encoding->NewDecoderWithBOMRemoval();
   }
 
-  if (!unicodeDecoder &&
-      aChannel &&
-      NS_SUCCEEDED(aChannel->GetContentCharset(charset)) &&
-      EncodingUtils::FindEncodingForLabel(charset, charset)) {
-    unicodeDecoder = EncodingUtils::DecoderForEncoding(charset);
+  if (!unicodeDecoder && aChannel) {
+    nsAutoCString label;
+    if (NS_SUCCEEDED(aChannel->GetContentCharset(label)) &&
+        (encoding = Encoding::ForLabel(label))) {
+      unicodeDecoder = encoding->NewDecoderWithoutBOMHandling();
+    }
   }
 
-  if (!unicodeDecoder &&
-      EncodingUtils::FindEncodingForLabel(aHintCharset, charset)) {
-    unicodeDecoder = EncodingUtils::DecoderForEncoding(charset);
+  if (!unicodeDecoder && (encoding = Encoding::ForLabel(aHintCharset))) {
+    unicodeDecoder = encoding->NewDecoderWithoutBOMHandling();
   }
 
   if (!unicodeDecoder && aDocument) {
-    charset = aDocument->GetDocumentCharacterSet();
-    unicodeDecoder = EncodingUtils::DecoderForEncoding(charset);
+    unicodeDecoder = Encoding::ForName(aDocument->GetDocumentCharacterSet())
+                       ->NewDecoderWithoutBOMHandling();
   }
 
   if (!unicodeDecoder) {
     
     
     
-    
-    charset = "windows-1252";
-    unicodeDecoder = EncodingUtils::DecoderForEncoding(charset);
+    unicodeDecoder = WINDOWS_1252_ENCODING->NewDecoderWithoutBOMHandling();
   }
 
-  int32_t unicodeLength = 0;
+  CheckedInt<size_t> unicodeLength =
+    unicodeDecoder->MaxUTF16BufferLength(aLength);
+  if (!unicodeLength.isValid()) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
 
-  nsresult rv =
-    unicodeDecoder->GetMaxLength(reinterpret_cast<const char*>(aData),
-                                 aLength, &unicodeLength);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  aBufOut = static_cast<char16_t*>(js_malloc(unicodeLength * sizeof(char16_t)));
+  aBufOut =
+    static_cast<char16_t*>(js_malloc(unicodeLength.value() * sizeof(char16_t)));
   if (!aBufOut) {
     aLengthOut = 0;
     return NS_ERROR_OUT_OF_MEMORY;
   }
-  aLengthOut = unicodeLength;
 
-  rv = unicodeDecoder->Convert(reinterpret_cast<const char*>(aData),
-                               (int32_t *) &aLength, aBufOut,
-                               &unicodeLength);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
-  aLengthOut = unicodeLength;
-  if (NS_FAILED(rv)) {
-    js_free(aBufOut);
-    aBufOut = nullptr;
-    aLengthOut = 0;
-  }
-  if (charset.Length() == 0) {
-    charset = "?";
-  }
+  uint32_t result;
+  size_t read;
+  size_t written;
+  bool hadErrors;
+  Tie(result, read, written, hadErrors) = unicodeDecoder->DecodeToUTF16(
+    data, MakeSpan(aBufOut, unicodeLength.value()), true);
+  MOZ_ASSERT(result == kInputEmpty);
+  MOZ_ASSERT(read == aLength);
+  MOZ_ASSERT(written <= unicodeLength.value());
+  Unused << hadErrors;
+  aLengthOut = written;
+
+  nsAutoCString charset;
+  unicodeDecoder->Encoding()->Name(charset);
   mozilla::Telemetry::Accumulate(mozilla::Telemetry::DOM_SCRIPT_SRC_ENCODING,
     charset);
-  return rv;
+  return NS_OK;
 }
 
 nsresult

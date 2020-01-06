@@ -113,14 +113,17 @@ OSCrypto.prototype = {
 
     
     data += "\0";
-    let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].
-                    createInstance(Ci.nsIScriptableUnicodeConverter);
-    converter.charset = "UTF-16";
+
     
-    
-    let result = {};
-    
-    let dataArray = converter.convertToByteArray(data, result);
+    let dataArray = new Array(data.length * 2);
+    for (let i = 0; i < data.length; i++) {
+      let c = data.charCodeAt(i);
+      let lo = c & 0xFF;
+      let hi = (c & 0xFF00) >> 8;
+      dataArray[i * 2] = lo;
+      dataArray[i * 2 + 1] = hi;
+    }
+
     
     let cryptoHash = Cc["@mozilla.org/security/hash;1"].
                      createInstance(Ci.nsICryptoHash);

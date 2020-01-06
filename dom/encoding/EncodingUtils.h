@@ -9,9 +9,7 @@
 
 #include "nsDataHashtable.h"
 #include "nsString.h"
-
-class nsIUnicodeDecoder;
-class nsIUnicodeEncoder;
+#include "mozilla/Encoding.h"
 
 namespace mozilla {
 namespace dom {
@@ -19,8 +17,10 @@ namespace dom {
 class EncodingUtils
 {
 public:
-
   
+
+
+
 
 
 
@@ -43,6 +43,9 @@ public:
   }
 
   
+
+
+
 
 
 
@@ -92,8 +95,12 @@ public:
 
 
 
-  static already_AddRefed<nsIUnicodeDecoder>
-  DecoderForEncoding(const char* aEncoding)
+
+
+
+
+
+  static UniquePtr<Decoder> DecoderForEncoding(const char* aEncoding)
   {
     nsDependentCString encoding(aEncoding);
     return DecoderForEncoding(encoding);
@@ -105,8 +112,12 @@ public:
 
 
 
-  static already_AddRefed<nsIUnicodeDecoder>
-  DecoderForEncoding(const nsACString& aEncoding);
+
+
+
+
+
+  static UniquePtr<Decoder> DecoderForEncoding(const nsACString& aEncoding);
 
   
 
@@ -114,8 +125,11 @@ public:
 
 
 
-  static already_AddRefed<nsIUnicodeEncoder>
-  EncoderForEncoding(const char* aEncoding)
+
+
+
+
+  static UniquePtr<Encoder> EncoderForEncoding(const char* aEncoding)
   {
     nsDependentCString encoding(aEncoding);
     return EncoderForEncoding(encoding);
@@ -127,8 +141,11 @@ public:
 
 
 
-  static already_AddRefed<nsIUnicodeEncoder>
-  EncoderForEncoding(const nsACString& aEncoding);
+
+
+
+
+  static UniquePtr<Encoder> EncoderForEncoding(const nsACString& aEncoding);
 
   
 

@@ -702,11 +702,7 @@ SheetLoadData::OnDetermineCharset(nsIUnicharStreamLoader* aLoader,
                          aSegment.Length(),
                          specified)) {
     if (EncodingUtils::FindEncodingForLabel(specified, aCharset)) {
-      
-      
-      
-      if (aCharset.EqualsLiteral("UTF-16") ||
-          aCharset.EqualsLiteral("UTF-16BE") ||
+      if (aCharset.EqualsLiteral("UTF-16BE") ||
           aCharset.EqualsLiteral("UTF-16LE")) {
         
         

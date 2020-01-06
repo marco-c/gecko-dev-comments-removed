@@ -623,6 +623,9 @@ public:
 
 
 
+
+
+
   static nsresult ConvertStringFromEncoding(const nsACString& aEncoding,
                                             const char* aInput,
                                             uint32_t aInputLen,
@@ -636,6 +639,9 @@ public:
   }
 
   
+
+
+
 
 
 

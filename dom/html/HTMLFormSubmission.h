@@ -10,7 +10,7 @@
 #include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
 #include "nsIContent.h"
-#include "nsNCRFallbackEncoderWrapper.h"
+#include "mozilla/Encoding.h"
 #include "nsString.h"
 
 class nsIURI;
@@ -112,10 +112,7 @@ public:
   
 
 
-  void GetCharset(nsACString& aCharset)
-  {
-    aCharset = mCharset;
-  }
+  void GetCharset(nsACString& aCharset) { mEncoding->Name(aCharset); }
 
   nsIContent* GetOriginatingElement() const
   {
@@ -129,16 +126,16 @@ protected:
 
 
 
-  HTMLFormSubmission(const nsACString& aCharset,
+  HTMLFormSubmission(mozilla::NotNull<const mozilla::Encoding*> aEncoding,
                      nsIContent* aOriginatingElement)
-    : mCharset(aCharset)
+    : mEncoding(aEncoding)
     , mOriginatingElement(aOriginatingElement)
   {
     MOZ_COUNT_CTOR(HTMLFormSubmission);
   }
 
   
-  nsCString mCharset;
+  mozilla::NotNull<const mozilla::Encoding*> mEncoding;
 
   
   nsCOMPtr<nsIContent> mOriginatingElement;
@@ -147,7 +144,7 @@ protected:
 class EncodingFormSubmission : public HTMLFormSubmission
 {
 public:
-  EncodingFormSubmission(const nsACString& aCharset,
+  EncodingFormSubmission(mozilla::NotNull<const mozilla::Encoding*> aEncoding,
                          nsIContent* aOriginatingElement);
 
   virtual ~EncodingFormSubmission();
@@ -163,10 +160,6 @@ public:
 
   nsresult EncodeVal(const nsAString& aStr, nsCString& aResult,
                      bool aHeaderEncode);
-
-private:
-  
-  nsNCRFallbackEncoderWrapper mEncoder;
 };
 
 
@@ -179,7 +172,7 @@ public:
   
 
 
-  FSMultipartFormData(const nsACString& aCharset,
+  FSMultipartFormData(mozilla::NotNull<const mozilla::Encoding*> aEncoding,
                       nsIContent* aOriginatingElement);
   ~FSMultipartFormData();
  

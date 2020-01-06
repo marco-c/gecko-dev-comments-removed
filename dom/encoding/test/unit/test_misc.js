@@ -180,7 +180,7 @@ test(
       for (var i = 0; i < 128; ++i) {
 
         
-        if (encoding === "iso-2022-jp" && i === 0x1B)
+        if (encoding === "iso-2022-jp" && (i === 0x1B || i === 0xE || i === 0xF))
           continue;
 
         string += String.fromCharCode(i);

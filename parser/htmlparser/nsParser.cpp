@@ -1342,6 +1342,7 @@ ParserWriteFunc(nsIInputStream* in,
     if (nsContentUtils::CheckForBOM(buf, count, maybePrefer)) {
       
       
+      
       preferred.Assign(maybePrefer);
       source = kCharsetFromByteOrderMark;
     } else if (source < kCharsetFromChannel) {

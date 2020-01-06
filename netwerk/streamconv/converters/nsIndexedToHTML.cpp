@@ -500,9 +500,8 @@ nsIndexedToHTML::DoOnStartRequest(nsIRequest* request, nsISupports *aContext,
       encoding.AssignLiteral("UTF-8");
     }
 
-    nsXPIDLString unEscapeSpec;
-    rv = mTextToSubURI->UnEscapeAndConvert(encoding, titleUri.get(),
-                                           getter_Copies(unEscapeSpec));
+    nsAutoString unEscapeSpec;
+    rv = mTextToSubURI->UnEscapeAndConvert(encoding, titleUri, unEscapeSpec);
     
     
     
@@ -514,8 +513,7 @@ nsIndexedToHTML::DoOnStartRequest(nsIRequest* request, nsISupports *aContext,
         rv = platformCharset->GetCharset(kPlatformCharsetSel_FileName, charset);
         NS_ENSURE_SUCCESS(rv, rv);
 
-        rv = mTextToSubURI->UnEscapeAndConvert(charset.get(), titleUri.get(),
-                                               getter_Copies(unEscapeSpec));
+        rv = mTextToSubURI->UnEscapeAndConvert(charset, titleUri, unEscapeSpec);
     }
     if (NS_FAILED(rv)) return rv;
 
