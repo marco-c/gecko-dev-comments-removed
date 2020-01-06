@@ -30,7 +30,7 @@
 #include "nsIDOMHTMLElement.h"
 #include "nsFrameList.h"
 #include "nsGkAtoms.h"
-#include "nsAtom.h"
+#include "nsIAtom.h"
 #include "nsCaret.h"
 #include "nsCSSPseudoElements.h"
 #include "nsCSSAnonBoxes.h"
@@ -785,7 +785,7 @@ nsLayoutUtils::UnionChildOverflow(nsIFrame* aFrame,
   }
 }
 
-static void DestroyViewID(void* aObject, nsAtom* aPropertyName,
+static void DestroyViewID(void* aObject, nsIAtom* aPropertyName,
                           void* aPropertyValue, void* aData)
 {
   ViewID* id = static_cast<ViewID*>(aPropertyValue);
@@ -1581,7 +1581,7 @@ nsLayoutUtils::GetChildListNameFor(nsIFrame* aChildFrame)
 }
 
 static Element*
-GetPseudo(const nsIContent* aContent, nsAtom* aPseudoProperty)
+GetPseudo(const nsIContent* aContent, nsIAtom* aPseudoProperty)
 {
   MOZ_ASSERT(aPseudoProperty == nsGkAtoms::beforePseudoProperty ||
              aPseudoProperty == nsGkAtoms::afterPseudoProperty);
@@ -1693,7 +1693,7 @@ nsLayoutUtils::GetFloatFromPlaceholder(nsIFrame* aFrame) {
 bool
 nsLayoutUtils::IsGeneratedContentFor(nsIContent* aContent,
                                      nsIFrame* aFrame,
-                                     nsAtom* aPseudoElement)
+                                     nsIAtom* aPseudoElement)
 {
   NS_PRECONDITION(aFrame, "Must have a frame");
   NS_PRECONDITION(aPseudoElement, "Must have a pseudo name");
@@ -3804,7 +3804,7 @@ nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
       
       
       if (profilerNeedsDisplayList && !consoleNeedsDisplayList) {
-        profiler_tracing("log", ss->str().c_str());
+        profiler_tracing("log", ss->str().c_str(), TRACING_EVENT);
       } else {
         fprint_stderr(gfxUtils::sDumpPaintFile, *ss);
       }
@@ -3877,7 +3877,7 @@ nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
     }
 
     if (profilerNeedsDisplayList && !consoleNeedsDisplayList) {
-      profiler_tracing("log", ss->str().c_str());
+      profiler_tracing("log", ss->str().c_str(), TRACING_EVENT);
     } else {
       fprint_stderr(gfxUtils::sDumpPaintFile, *ss);
     }
@@ -4025,7 +4025,7 @@ void
 nsLayoutUtils::AddBoxesForFrame(nsIFrame* aFrame,
                                 nsLayoutUtils::BoxCallback* aCallback)
 {
-  nsAtom* pseudoType = aFrame->StyleContext()->GetPseudo();
+  nsIAtom* pseudoType = aFrame->StyleContext()->GetPseudo();
 
   if (pseudoType == nsCSSAnonBoxes::tableWrapper) {
     AddBoxesForFrame(aFrame->PrincipalChildList().FirstChild(), aCallback);
@@ -4059,7 +4059,7 @@ nsIFrame*
 nsLayoutUtils::GetFirstNonAnonymousFrame(nsIFrame* aFrame)
 {
   while (aFrame) {
-    nsAtom* pseudoType = aFrame->StyleContext()->GetPseudo();
+    nsIAtom* pseudoType = aFrame->StyleContext()->GetPseudo();
 
     if (pseudoType == nsCSSAnonBoxes::tableWrapper) {
       nsIFrame* f = GetFirstNonAnonymousFrame(aFrame->PrincipalChildList().FirstChild());
@@ -8113,7 +8113,7 @@ nsLayoutUtils::PostRestyleEvent(Element* aElement,
 }
 
 nsSetAttrRunnable::nsSetAttrRunnable(nsIContent* aContent,
-                                     nsAtom* aAttrName,
+                                     nsIAtom* aAttrName,
                                      const nsAString& aValue)
   : mozilla::Runnable("nsSetAttrRunnable")
   , mContent(aContent)
@@ -8124,7 +8124,7 @@ nsSetAttrRunnable::nsSetAttrRunnable(nsIContent* aContent,
 }
 
 nsSetAttrRunnable::nsSetAttrRunnable(nsIContent* aContent,
-                                     nsAtom* aAttrName,
+                                     nsIAtom* aAttrName,
                                      int32_t aValue)
   : mozilla::Runnable("nsSetAttrRunnable")
   , mContent(aContent)
@@ -8141,7 +8141,7 @@ nsSetAttrRunnable::Run()
 }
 
 nsUnsetAttrRunnable::nsUnsetAttrRunnable(nsIContent* aContent,
-                                         nsAtom* aAttrName)
+                                         nsIAtom* aAttrName)
   : mozilla::Runnable("nsUnsetAttrRunnable")
   , mContent(aContent)
   , mAttrName(aAttrName)
@@ -8934,7 +8934,7 @@ nsLayoutUtils::SetScrollPositionClampingScrollPortSize(nsIPresShell* aPresShell,
 }
 
  bool
-nsLayoutUtils::CanScrollOriginClobberApz(nsAtom* aScrollOrigin)
+nsLayoutUtils::CanScrollOriginClobberApz(nsIAtom* aScrollOrigin)
 {
   return aScrollOrigin != nullptr
       && aScrollOrigin != nsGkAtoms::apz
@@ -9016,7 +9016,7 @@ nsLayoutUtils::ComputeScrollMetadata(nsIFrame* aForFrame,
     }
     scrollableFrame->AllowScrollOriginDowngrade();
 
-    nsAtom* lastSmoothScrollOrigin = scrollableFrame->LastSmoothScrollOrigin();
+    nsIAtom* lastSmoothScrollOrigin = scrollableFrame->LastSmoothScrollOrigin();
     if (lastSmoothScrollOrigin) {
       metrics.SetSmoothScrollOffsetUpdated(scrollableFrame->CurrentScrollGeneration());
     }
