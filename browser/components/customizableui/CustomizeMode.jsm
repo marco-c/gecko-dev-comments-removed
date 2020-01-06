@@ -31,8 +31,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "DragPositionManager",
                                   "resource:///modules/DragPositionManager.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "BrowserUITelemetry",
                                   "resource:///modules/BrowserUITelemetry.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils",
-                                  "resource://gre/modules/BrowserUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "LightweightThemeManager",
                                   "resource://gre/modules/LightweightThemeManager.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "SessionStore",
@@ -820,10 +818,6 @@ CustomizeMode.prototype = {
     if (AppConstants.MOZ_PHOTON_ANIMATIONS &&
         Services.prefs.getBoolPref("toolkit.cosmeticAnimations.enabled")) {
       let overflowButton = this.document.getElementById("nav-bar-overflow-button");
-      
-      
-      
-      BrowserUtils.setToolbarButtonHeightProperty(overflowButton, {forceLayoutFlushIfNeeded: true});
       overflowButton.setAttribute("animate", "true");
       overflowButton.addEventListener("animationend", function onAnimationEnd(event) {
         if (event.animationName.startsWith("overflow-animation")) {

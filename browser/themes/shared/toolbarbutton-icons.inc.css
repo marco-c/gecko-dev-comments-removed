@@ -369,21 +369,21 @@ toolbar:not([brighttext]) #bookmarks-menu-button@attributeSelectorForToolbar@[st
 }
 
 #nav-bar-overflow-button > .toolbarbutton-animatable-box {
-  position: absolute;
+  position: fixed;
   overflow: hidden;
-  top: calc(50% - 18px); 
+  
+
+
+  margin-top: -8px;
   
 
   margin-inline-start: calc((16px + 2 * var(--toolbarbutton-inner-padding) - 18px) / 2);
   width: 18px; 
-  height: 36px; 
+  height: 24px; 
 }
 
 #nav-bar-overflow-button > .toolbarbutton-animatable-box > .toolbarbutton-animatable-image {
-  
-
-
-  height: var(--toolbarbutton-height);
+  height: 24px; 
 }
 
 #nav-bar-overflow-button[animate] > .toolbarbutton-animatable-box > .toolbarbutton-animatable-image {
