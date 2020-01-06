@@ -1058,8 +1058,6 @@ public abstract class GeckoApp extends GeckoActivity
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        GeckoAppShell.ensureCrashHandling();
-
         
         if ("default".equals(AppConstants.MOZ_UPDATE_CHANNEL)) {
             enableStrictMode();

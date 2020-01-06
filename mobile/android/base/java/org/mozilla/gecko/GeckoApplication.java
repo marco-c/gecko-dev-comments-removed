@@ -202,6 +202,10 @@ public class GeckoApplication extends Application
         Log.i(LOG_TAG, "zerdatime " + SystemClock.elapsedRealtime() +
               " - application start");
 
+        final Context context = getApplicationContext();
+        GeckoAppShell.ensureCrashHandling();
+        GeckoAppShell.setApplicationContext(context);
+
         
         
         
@@ -223,8 +227,6 @@ public class GeckoApplication extends Application
         GeckoActivityMonitor.getInstance().initialize(this);
         MemoryMonitor.getInstance().init(this);
 
-        final Context context = getApplicationContext();
-        GeckoAppShell.setApplicationContext(context);
         GeckoAppShell.setHapticFeedbackDelegate(this);
         GeckoAppShell.setGeckoInterface(new GeckoAppShell.GeckoInterface() {
             @Override
