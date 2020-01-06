@@ -101,7 +101,7 @@ function onBrowserReady() {
   waitingForBrowserReady = false;
 
   
-  Services.prefs.addObserver(ACTIVITY_STREAM_ENABLED_PREF, observe);
+  Services.prefs.addObserver(ACTIVITY_STREAM_ENABLED_PREF, observe); 
 
   
   if (Services.prefs.getBoolPref(ACTIVITY_STREAM_ENABLED_PREF, false)) {
@@ -120,7 +120,7 @@ function observe(subject, topic, data) {
       Services.tm.dispatchToMainThread(() => onBrowserReady());
       break;
     case PREF_CHANGED_TOPIC:
-      if (data == ACTIVITY_STREAM_ENABLED_PREF) {
+      if (data === ACTIVITY_STREAM_ENABLED_PREF) {
         onPrefChanged();
       }
       break;

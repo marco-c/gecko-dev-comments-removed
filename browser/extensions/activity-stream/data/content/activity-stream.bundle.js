@@ -63,7 +63,7 @@
  	__webpack_require__.p = "";
 
  	
- 	return __webpack_require__(__webpack_require__.s = 26);
+ 	return __webpack_require__(__webpack_require__.s = 25);
  })
 
  ([
@@ -300,56 +300,19 @@ module.exports = ReactRedux;
 "use strict";
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-module.exports = function shortURL(link) {
-  if (!link.url && !link.hostname) {
-    return "";
-  }
-  const eTLD = link.eTLD;
-
-  const hostname = (link.hostname || new URL(link.url).hostname).replace(/^www\./i, "");
-
-  
-  const eTLDLength = (eTLD || "").length || hostname.match(/\.com$/) && 3;
-  const eTLDExtra = eTLDLength > 0 ? -(eTLDLength + 1) : Infinity;
-  
-  return hostname.slice(0, eTLDExtra).toLowerCase() || hostname || link.title || link.url;
-};
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
 const React = __webpack_require__(0);
 
 var _require = __webpack_require__(2);
 
 const injectIntl = _require.injectIntl;
 
-const ContextMenu = __webpack_require__(16);
+const ContextMenu = __webpack_require__(15);
 
 var _require2 = __webpack_require__(1);
 
 const ac = _require2.actionCreators;
 
-const linkMenuOptions = __webpack_require__(23);
+const linkMenuOptions = __webpack_require__(22);
 const DEFAULT_SITE_MENU_OPTIONS = ["CheckPinTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow"];
 
 class LinkMenu extends React.Component {
@@ -544,12 +507,12 @@ var _require2 = __webpack_require__(2);
 const addLocaleData = _require2.addLocaleData,
       IntlProvider = _require2.IntlProvider;
 
-const TopSites = __webpack_require__(21);
-const Search = __webpack_require__(19);
-const ConfirmDialog = __webpack_require__(15);
-const ManualMigration = __webpack_require__(17);
-const PreferencesPane = __webpack_require__(18);
-const Sections = __webpack_require__(20);
+const TopSites = __webpack_require__(20);
+const Search = __webpack_require__(18);
+const ConfirmDialog = __webpack_require__(14);
+const ManualMigration = __webpack_require__(16);
+const PreferencesPane = __webpack_require__(17);
+const Sections = __webpack_require__(19);
 
 
 const RTL_LIST = ["ar", "he", "fa", "ur"];
@@ -573,7 +536,8 @@ class Base extends React.Component {
   componentWillUpdate(_ref2) {
     let App = _ref2.App;
 
-    if (App.locale !== this.props.App.locale) {
+    
+    if (App.locale && App.locale !== this.props.App.locale) {
       addLocaleDataForReactIntl(App);
       this.updateTitle(App);
     }
@@ -631,7 +595,7 @@ var _require = __webpack_require__(1);
 
 const at = _require.actionTypes;
 
-var _require2 = __webpack_require__(6);
+var _require2 = __webpack_require__(5);
 
 const perfSvc = _require2.perfService;
 
@@ -709,7 +673,7 @@ module.exports = class DetectUserSessionStart {
 
 
 
-var _require = __webpack_require__(25);
+var _require = __webpack_require__(24);
 
 const createStore = _require.createStore,
       combineReducers = _require.combineReducers,
@@ -1097,7 +1061,7 @@ module.exports = {
   SnippetsProvider,
   SNIPPETS_UPDATE_INTERVAL_MS
 };
-}.call(exports, __webpack_require__(24)))
+}.call(exports, __webpack_require__(23)))
 
  }),
 
@@ -1149,7 +1113,7 @@ function App() {
 
   switch (action.type) {
     case at.INIT:
-      return Object.assign({}, action.data || {}, { initialized: true });
+      return Object.assign({}, prevState, action.data || {}, { initialized: true });
     case at.LOCALE_UPDATED:
       {
         if (!action.data) {
@@ -1414,14 +1378,13 @@ module.exports = ReactDOM;
 
 
 const React = __webpack_require__(0);
-const LinkMenu = __webpack_require__(5);
-const shortURL = __webpack_require__(4);
+const LinkMenu = __webpack_require__(4);
 
 var _require = __webpack_require__(2);
 
 const FormattedMessage = _require.FormattedMessage;
 
-const cardContextTypes = __webpack_require__(14);
+const cardContextTypes = __webpack_require__(13);
 
 var _require2 = __webpack_require__(1);
 
@@ -1483,7 +1446,6 @@ class Card extends React.Component {
           eventSource = _props.eventSource;
 
     const isContextMenuOpen = this.state.showContextMenu && this.state.activeCard === index;
-    const hostname = shortURL(link);
     var _cardContextTypes$lin = cardContextTypes[link.type];
     const icon = _cardContextTypes$lin.icon,
           intlID = _cardContextTypes$lin.intlID;
@@ -1506,7 +1468,7 @@ class Card extends React.Component {
               "div",
               { className: "card-host-name" },
               " ",
-              hostname,
+              link.hostname,
               " "
             ),
             React.createElement(
@@ -1928,10 +1890,13 @@ class PreferencesPane extends React.Component {
     this.togglePane = this.togglePane.bind(this);
 
     
-    try {
-      this.topStoriesOptions = JSON.parse(props.Prefs.values["feeds.section.topstories.options"]);
-    } catch (e) {
-      console.error("Problem parsing feeds.section.topstories.options", e); 
+    const optionJSON = props.Prefs.values["feeds.section.topstories.options"];
+    if (optionJSON) {
+      try {
+        this.topStoriesOptions = JSON.parse(optionJSON);
+      } catch (e) {
+        console.error("Problem parsing feeds.section.topstories.options", e); 
+      }
     }
   }
   componentDidMount() {
@@ -2133,12 +2098,32 @@ const connect = _require.connect;
 
 var _require2 = __webpack_require__(2);
 
-const FormattedMessage = _require2.FormattedMessage;
+const injectIntl = _require2.injectIntl,
+      FormattedMessage = _require2.FormattedMessage;
 
-const Card = __webpack_require__(13);
-const Topics = __webpack_require__(22);
+const Card = __webpack_require__(12);
+const Topics = __webpack_require__(21);
 
 class Section extends React.Component {
+  constructor(props) {
+    super(props);
+    this.onInfoEnter = this.onInfoEnter.bind(this);
+    this.onInfoLeave = this.onInfoLeave.bind(this);
+    this.state = { infoActive: false };
+  }
+
+  onInfoEnter() {
+    this.setState({ infoActive: true });
+  }
+
+  onInfoLeave(event) {
+    
+    
+    this.setState({
+      infoActive: event && event.relatedTarget && event.relatedTarget.compareDocumentPosition(event.currentTarget) & Node.DOCUMENT_POSITION_CONTAINS
+    });
+  }
+
   render() {
     var _props = this.props;
     const id = _props.id,
@@ -2150,10 +2135,22 @@ class Section extends React.Component {
           emptyState = _props.emptyState,
           dispatch = _props.dispatch,
           maxCards = _props.maxCards,
-          contextMenuOptions = _props.contextMenuOptions;
+          contextMenuOptions = _props.contextMenuOptions,
+          intl = _props.intl;
 
     const initialized = rows && rows.length > 0;
     const shouldShowTopics = id === "TopStories" && this.props.topics && this.props.read_more_endpoint;
+
+    const infoOptionIconA11yAttrs = {
+      "aria-haspopup": "true",
+      "aria-controls": "info-option",
+      "aria-expanded": this.state.infoActive ? "true" : "false",
+      "role": "note",
+      "tabIndex": 0
+    };
+
+    const sectionInfoTitle = intl.formatMessage({ id: "section_info_option" });
+
     
     
     return React.createElement(
@@ -2170,19 +2167,19 @@ class Section extends React.Component {
         ),
         infoOption && React.createElement(
           "span",
-          { className: "section-info-option" },
-          React.createElement(
-            "span",
-            { className: "sr-only" },
-            React.createElement(FormattedMessage, { id: "section_info_option" })
-          ),
-          React.createElement("img", { className: "info-option-icon" }),
+          { className: "section-info-option",
+            onBlur: this.onInfoLeave,
+            onFocus: this.onInfoEnter,
+            onMouseOut: this.onInfoLeave,
+            onMouseOver: this.onInfoEnter },
+          React.createElement("img", _extends({ className: "info-option-icon", title: sectionInfoTitle
+          }, infoOptionIconA11yAttrs)),
           React.createElement(
             "div",
             { className: "info-option" },
             infoOption.header && React.createElement(
               "div",
-              { className: "info-option-header" },
+              { className: "info-option-header", role: "heading" },
               React.createElement(FormattedMessage, infoOption.header)
             ),
             infoOption.body && React.createElement(
@@ -2222,20 +2219,23 @@ class Section extends React.Component {
   }
 }
 
+const SectionIntl = injectIntl(Section);
+
 class Sections extends React.Component {
   render() {
     const sections = this.props.Sections;
     return React.createElement(
       "div",
       { className: "sections-list" },
-      sections.map(section => React.createElement(Section, _extends({ key: section.id }, section, { dispatch: this.props.dispatch })))
+      sections.map(section => React.createElement(SectionIntl, _extends({ key: section.id }, section, { dispatch: this.props.dispatch })))
     );
   }
 }
 
 module.exports = connect(state => ({ Sections: state.Sections }))(Sections);
 module.exports._unconnected = Sections;
-module.exports.Section = Section;
+module.exports.SectionIntl = SectionIntl;
+module.exports._unconnectedSection = Section;
 
  }),
 
@@ -2254,15 +2254,14 @@ var _require2 = __webpack_require__(2);
 
 const FormattedMessage = _require2.FormattedMessage;
 
-const shortURL = __webpack_require__(4);
-const LinkMenu = __webpack_require__(5);
+const LinkMenu = __webpack_require__(4);
 
 var _require3 = __webpack_require__(1);
 
 const ac = _require3.actionCreators,
       at = _require3.actionTypes;
 
-var _require4 = __webpack_require__(6);
+var _require4 = __webpack_require__(5);
 
 const perfSvc = _require4.perfService;
 
@@ -2304,10 +2303,22 @@ class TopSite extends React.Component {
           dispatch = _props.dispatch;
 
     const isContextMenuOpen = this.state.showContextMenu && this.state.activeTile === index;
-    const title = link.pinTitle || shortURL(link);
-    const screenshotClassName = `screenshot${link.screenshot ? " active" : ""}`;
+    const title = link.pinTitle || link.hostname;
     const topSiteOuterClassName = `top-site-outer${isContextMenuOpen ? " active" : ""}`;
-    const style = { backgroundImage: link.screenshot ? `url(${link.screenshot})` : "none" };
+    const tippyTopIcon = link.tippyTopIcon;
+
+    let imageClassName;
+    let imageStyle;
+    if (tippyTopIcon) {
+      imageClassName = "tippy-top-icon";
+      imageStyle = {
+        backgroundColor: link.backgroundColor,
+        backgroundImage: `url(${tippyTopIcon})`
+      };
+    } else {
+      imageClassName = `screenshot${link.screenshot ? " active" : ""}`;
+      imageStyle = { backgroundImage: link.screenshot ? `url(${link.screenshot})` : "none" };
+    }
     return React.createElement(
       "li",
       { className: topSiteOuterClassName, key: link.guid || link.url },
@@ -2322,7 +2333,7 @@ class TopSite extends React.Component {
             { className: "letter-fallback" },
             title[0]
           ),
-          React.createElement("div", { className: screenshotClassName, style: style })
+          React.createElement("div", { className: imageClassName, style: imageStyle })
         ),
         React.createElement(
           "div",
@@ -2549,7 +2560,6 @@ var _require = __webpack_require__(1);
 const at = _require.actionTypes,
       ac = _require.actionCreators;
 
-const shortURL = __webpack_require__(4);
 
 
 
@@ -2621,7 +2631,7 @@ module.exports = {
     icon: "pin",
     action: ac.SendToMain({
       type: at.TOP_SITES_PIN,
-      data: { site: { url: site.url, title: shortURL(site) }, index }
+      data: { site: { url: site.url, title: site.hostname }, index }
     }),
     userEvent: "PIN"
   }),
@@ -2689,22 +2699,22 @@ module.exports = Redux;
 
 
 const React = __webpack_require__(0);
-const ReactDOM = __webpack_require__(12);
-const Base = __webpack_require__(7);
+const ReactDOM = __webpack_require__(11);
+const Base = __webpack_require__(6);
 
 var _require = __webpack_require__(3);
 
 const Provider = _require.Provider;
 
-const initStore = __webpack_require__(9);
+const initStore = __webpack_require__(8);
 
-var _require2 = __webpack_require__(11);
+var _require2 = __webpack_require__(10);
 
 const reducers = _require2.reducers;
 
-const DetectUserSessionStart = __webpack_require__(8);
+const DetectUserSessionStart = __webpack_require__(7);
 
-var _require3 = __webpack_require__(10);
+var _require3 = __webpack_require__(9);
 
 const addSnippetsSubscriber = _require3.addSnippetsSubscriber;
 

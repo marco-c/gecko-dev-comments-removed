@@ -7,7 +7,10 @@ const {utils: Cu} = Components;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const {actionCreators: ac, actionTypes: at} = Cu.import("resource://activity-stream/common/Actions.jsm", {});
+const {TippyTopProvider} = Cu.import("resource://activity-stream/lib/TippyTopProvider.jsm", {});
 const {insertPinned} = Cu.import("resource://activity-stream/common/Reducers.jsm", {});
+const {Dedupe} = Cu.import("resource://activity-stream/common/Dedupe.jsm", {});
+const {shortURL} = Cu.import("resource://activity-stream/common/ShortURL.jsm", {});
 
 XPCOMUtils.defineLazyModuleGetter(this, "NewTabUtils",
   "resource://gre/modules/NewTabUtils.jsm");
@@ -22,6 +25,12 @@ const DEFAULT_TOP_SITES = [];
 this.TopSitesFeed = class TopSitesFeed {
   constructor() {
     this.lastUpdated = 0;
+    this._tippyTopProvider = new TippyTopProvider();
+    this._tippyTopProvider.init();
+    this.dedupe = new Dedupe(this._dedupeKey);
+  }
+  _dedupeKey(site) {
+    return site && site.hostname;
   }
   refreshDefaults(sites) {
     
@@ -54,7 +63,17 @@ this.TopSitesFeed = class TopSitesFeed {
       frecent = frecent.filter(link => link && link.type !== "affiliate");
     }
 
-    return insertPinned([...frecent, ...DEFAULT_TOP_SITES], pinned).slice(0, TOP_SITES_SHOWMORE_LENGTH);
+    
+    let topsitesGroup = [];
+    for (const group of [pinned, frecent, DEFAULT_TOP_SITES]) {
+      topsitesGroup.push(group.filter(site => site).map(site => Object.assign({}, site, {hostname: shortURL(site)})));
+    }
+
+    const dedupedGroups = this.dedupe.group(topsitesGroup);
+    
+    pinned = insertPinned([...dedupedGroups[1], ...dedupedGroups[2]], pinned);
+
+    return pinned.slice(0, TOP_SITES_SHOWMORE_LENGTH);
   }
   async refresh(target = null) {
     const links = await this.getLinksWithDefaults();
@@ -70,6 +89,12 @@ this.TopSitesFeed = class TopSitesFeed {
     
     for (let link of links) {
       if (!link) { continue; }
+
+      
+      link = this._tippyTopProvider.processSite(link);
+      if (link.tippyTopIcon) { continue; }
+
+      
       if (currentScreenshots[link.url]) {
         link.screenshot = currentScreenshots[link.url];
       } else {
@@ -110,15 +135,9 @@ this.TopSitesFeed = class TopSitesFeed {
     }));
   }
   onAction(action) {
-    let realRows;
     switch (action.type) {
       case at.NEW_TAB_LOAD:
-        
-        realRows = this.store.getState().TopSites.rows.filter(row => !row.isDefault);
         if (
-          
-          (realRows.length < TOP_SITES_SHOWMORE_LENGTH) ||
-
           
           
           (Date.now() - this.lastUpdated >= UPDATE_TIME)
