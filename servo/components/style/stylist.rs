@@ -893,7 +893,7 @@ impl Stylist {
     ) -> Arc<ComputedValues> {
         
         
-        let visited_values = if inputs.visited_rules.is_some() || parent_style.get_visited_style().is_some() {
+        let visited_values = if inputs.visited_rules.is_some() || parent_style.visited_style().is_some() {
             
             
             
@@ -913,11 +913,11 @@ impl Stylist {
                 
                 
                 inherited_style =
-                    parent_style.get_visited_style().unwrap_or(parent_style);
+                    parent_style.visited_style().unwrap_or(parent_style);
                 inherited_style_ignoring_first_line =
-                    parent_style_ignoring_first_line.get_visited_style().unwrap_or(parent_style_ignoring_first_line);
+                    parent_style_ignoring_first_line.visited_style().unwrap_or(parent_style_ignoring_first_line);
                 layout_parent_style_for_visited =
-                    layout_parent_style.get_visited_style().unwrap_or(layout_parent_style);
+                    layout_parent_style.visited_style().unwrap_or(layout_parent_style);
             }
 
             Some(properties::cascade(

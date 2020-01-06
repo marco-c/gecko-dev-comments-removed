@@ -281,7 +281,7 @@ fn compute_damage(old: &ComputedValues, new: &ComputedValues) -> ServoRestyleDam
 
     
     
-    if old.get_custom_properties() != new.get_custom_properties() {
+    if old.custom_properties() != new.custom_properties() {
         damage.insert(REPAINT);
     }
 
