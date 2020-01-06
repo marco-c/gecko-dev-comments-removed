@@ -455,7 +455,7 @@ function translateTreeTypes(node) {
     let lastModified = PlacesUtils.toDate(node.lastModified);
     
     
-    if (lastModified >= node.dataAdded) {
+    if (lastModified >= node.dateAdded) {
       node.lastModified = lastModified;
     } else {
       delete node.lastModified;
