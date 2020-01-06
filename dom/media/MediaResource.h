@@ -580,8 +580,6 @@ protected:
   
   MediaCacheStream mCacheStream;
 
-  
-  Mutex               mLock;
   MediaChannelStatistics mChannelStatistics;
 
   
