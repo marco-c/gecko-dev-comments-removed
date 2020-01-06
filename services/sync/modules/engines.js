@@ -1204,20 +1204,18 @@ SyncEngine.prototype = {
     for (let ids of PlacesSyncUtils.chunkArray(idsToBackfill, this.guidFetchBatchSize)) {
       backfilledItems.ids = ids;
 
-      let resp = await backfilledItems.get();
-      if (!resp.success) {
-        resp.failureCode = ENGINE_DOWNLOAD_FAIL;
-        throw resp;
+      let {response, records} = await backfilledItems.getBatched(this.downloadBatchSize);
+      if (!response.success) {
+        response.failureCode = ENGINE_DOWNLOAD_FAIL;
+        throw response;
       }
 
       let maybeYield = Async.jankYielder();
       let backfilledRecordsToApply = [];
       let failedInBackfill = [];
 
-      for (let json of resp.obj) {
+      for (let record of records) {
         await maybeYield();
-        let record = new this._recordObj();
-        record.deserialize(json);
 
         let { shouldApply, error } = await this._maybeReconcile(record);
         if (error) {
