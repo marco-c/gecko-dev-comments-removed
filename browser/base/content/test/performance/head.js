@@ -66,19 +66,16 @@
 
 
 
-
-
-
-
-
-async function withReflowObserver(testFn, expectedStacks = [], win = window, elemToDirty) {
-  if (!elemToDirty) {
-    elemToDirty = win.document.firstElementChild;
-  }
-
-  let i = 0;
-  let dirtyFrameFn = (e) => {
-    elemToDirty.style.margin = (++i % 4) + "px";
+async function withReflowObserver(testFn, expectedStacks = [], win = window) {
+  let dwu = win.QueryInterface(Ci.nsIInterfaceRequestor)
+               .getInterface(Ci.nsIDOMWindowUtils);
+  let dirtyFrameFn = () => {
+    try {
+      dwu.ensureDirtyRootFrame();
+    } catch (e) {
+      
+      info("Note: ensureDirtyRootFrame threw an exception.");
+    }
   };
 
   let els = Cc["@mozilla.org/eventlistenerservice;1"]
@@ -121,6 +118,8 @@ async function withReflowObserver(testFn, expectedStacks = [], win = window, ele
 
     reflowInterruptible(start, end) {
       
+      
+      dirtyFrameFn();
     },
 
     QueryInterface: XPCOMUtils.generateQI([Ci.nsIReflowObserver,
@@ -148,8 +147,6 @@ async function withReflowObserver(testFn, expectedStacks = [], win = window, ele
 
     els.removeListenerForAllEvents(win, dirtyFrameFn, true);
     docShell.removeWeakReflowObserver(observer);
-
-    elemToDirty.style.margin = "";
   }
 }
 

@@ -36,12 +36,6 @@ add_task(async function() {
   const TAB_COUNT_FOR_GROWTH = computeMaxTabCount();
   await createTabs(TAB_COUNT_FOR_GROWTH);
 
-  
-  
-  
-  
-  
-  let origTab = gBrowser.selectedTab;
   let lastTab = gBrowser.tabs[gBrowser.tabs.length - 1];
   await BrowserTestUtils.switchTab(gBrowser, lastTab);
 
@@ -52,7 +46,7 @@ add_task(async function() {
     await BrowserTestUtils.waitForEvent(tab, "transitionend",
       false, e => e.propertyName === "max-width");
     await switchDone;
-  }, EXPECTED_REFLOWS, window, origTab);
+  }, EXPECTED_REFLOWS);
 
   await removeAllButFirstTab();
 });

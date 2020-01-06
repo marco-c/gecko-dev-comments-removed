@@ -22,13 +22,6 @@ const EXPECTED_REFLOWS = [
 add_task(async function() {
   await ensureNoPreloadedBrowser();
 
-  
-  
-  
-  
-  
-  let origTab = gBrowser.selectedTab;
-
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
   await BrowserTestUtils.waitForCondition(() => tab._fullyOpen);
 
@@ -39,6 +32,6 @@ add_task(async function() {
     await BrowserTestUtils.waitForEvent(tab, "transitionend",
         false, e => e.propertyName === "max-width");
     await switchDone;
-  }, EXPECTED_REFLOWS, window, origTab);
+  }, EXPECTED_REFLOWS);
   is(EXPECTED_REFLOWS.length, 0, "No reflows are expected when closing a tab");
 });
