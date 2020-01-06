@@ -28,6 +28,7 @@ namespace layers {
 WebRenderLayerManager::WebRenderLayerManager(nsIWidget* aWidget)
   : mWidget(aWidget)
   , mLatestTransactionId(0)
+  , mWindowOverlayChanged(false)
   , mNeedsComposite(false)
   , mIsFirstPaint(false)
   , mTarget(nullptr)
@@ -174,6 +175,16 @@ WebRenderLayerManager::BeginTransaction()
 bool
 WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
 {
+  if (mWindowOverlayChanged) {
+    
+    
+    
+    
+    
+    
+    return false;
+  }
+
   
   
   
@@ -275,6 +286,8 @@ WebRenderLayerManager::EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
                                                   contentSize);
 
   mWidget->AddWindowOverlayWebRenderCommands(WrBridge(), builder, resourceUpdates);
+  mWindowOverlayChanged = false;
+
   WrBridge()->ClearReadLocks();
 
   if (AsyncPanZoomEnabled()) {
