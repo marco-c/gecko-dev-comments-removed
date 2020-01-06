@@ -196,7 +196,7 @@ public abstract class AndroidBrowserRepositoryTestCase extends AndroidSyncTestCa
     return new Runnable() {
       @Override
       public void run() {
-        session.fetchSince(timestamp, preparedExpectFetchSinceDelegate(timestamp, expected));
+        session.fetchModified(preparedExpectFetchSinceDelegate(timestamp, expected));
       }
     };
   }

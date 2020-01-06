@@ -17,8 +17,6 @@ import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionStoreDeleg
 import org.mozilla.gecko.sync.repositories.domain.Record;
 
 import java.util.Collection;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 
 
@@ -43,8 +41,8 @@ import java.util.concurrent.Executors;
     }
 
     @Override
-    public void fetchSince(long timestamp, RepositorySessionFetchRecordsDelegate delegate) {
-        this.inner.fetchSince(timestamp, delegate);
+    public void fetchModified(RepositorySessionFetchRecordsDelegate delegate) {
+        this.inner.fetchModified(delegate);
     }
 
     @Override

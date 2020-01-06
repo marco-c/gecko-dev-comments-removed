@@ -423,7 +423,7 @@ public class TestPasswordsRepository extends AndroidSyncTestCase {
     return new Runnable() {
       @Override
       public void run() {
-        session.fetchSince(timestamp, new ExpectFetchSinceDelegate(timestamp, expected));
+        session.fetchModified(new ExpectFetchSinceDelegate(timestamp, expected));
       }
     };
   }

@@ -83,7 +83,12 @@ public abstract class RepositorySession {
     this.repository = repository;
   }
 
-  public abstract void fetchSince(long timestamp, RepositorySessionFetchRecordsDelegate delegate);
+  
+
+
+
+
+  public abstract void fetchModified(RepositorySessionFetchRecordsDelegate delegate);
   public abstract void fetch(String[] guids, RepositorySessionFetchRecordsDelegate delegate) throws InactiveSessionException;
   public abstract void fetchAll(RepositorySessionFetchRecordsDelegate delegate);
 
