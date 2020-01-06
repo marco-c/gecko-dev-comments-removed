@@ -101,8 +101,7 @@ public:
                       RectCornerRadii& aBorderRadii,
                       const nscolor* aBorderColors,
                       nsBorderColors* const* aCompositeColors,
-                      nscolor aBackgroundColor,
-                      bool aBackfaceIsVisible);
+                      nscolor aBackgroundColor);
 
   
   void DrawBorders();
@@ -163,7 +162,6 @@ private:
   bool mOneUnitBorder;
   bool mNoBorderRadius;
   bool mAvoidStroke;
-  bool mBackfaceIsVisible;
 
   
   

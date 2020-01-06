@@ -788,8 +788,7 @@ ConstructBorderRenderer(nsPresContext* aPresContext,
                              bgRadii,
                              borderColors,
                              compositeColors,
-                             bgColor,
-                             !aForFrame->BackfaceIsHidden());
+                             bgColor);
 }
 
 
@@ -1068,8 +1067,7 @@ nsCSSRendering::CreateBorderRendererForOutline(nsPresContext* aPresContext,
                          outlineRadii,
                          outlineColors,
                          nullptr,
-                         bgColor,
-                         !aForFrame->BackfaceIsHidden());
+                         bgColor);
 
   return Some(br);
 }
@@ -1131,9 +1129,6 @@ nsCSSRendering::PaintFocus(nsPresContext* aPresContext,
   
   
   
-  
-  
-  
   nsCSSBorderRenderer br(aPresContext,
                          nullptr,
                          aDrawTarget,
@@ -1144,8 +1139,7 @@ nsCSSRendering::PaintFocus(nsPresContext* aPresContext,
                          focusRadii,
                          focusColors,
                          nullptr,
-                         NS_RGB(255, 0, 0),
-                         true);
+                         NS_RGB(255, 0, 0));
   br.DrawBorders();
 
   PrintAsStringNewline();

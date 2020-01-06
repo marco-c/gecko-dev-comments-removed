@@ -176,7 +176,7 @@ public:
         
 
         wr::LayoutRect r = aSc.ToRelativeLayoutRect(bounds);
-        aBuilder.PushIFrame(r, !BackfaceIsHidden(), data->GetPipelineId().ref());
+        aBuilder.PushIFrame(r, data->GetPipelineId().ref());
 
         gfx::Matrix4x4 scTransform;
         if (data->NeedsYFlip()) {
