@@ -1663,6 +1663,7 @@ WebrtcVideoConduit::SelectBitrates(
   }
   
   out_min = std::max(kViEMinCodecBitrate_bps, out_min);
+  out_max = std::max(kViEMinCodecBitrate_bps, out_max);
   if (mStartBitrate && mStartBitrate > out_start) {
     out_start = mStartBitrate;
   }
