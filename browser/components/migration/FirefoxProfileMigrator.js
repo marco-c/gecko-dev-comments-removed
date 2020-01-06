@@ -138,37 +138,45 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileD
     [PlacesBackups.profileRelativeFolderPath]);
   let dictionary = getFileResource(types.OTHERDATA, ["persdict.dat"]);
 
-  let sessionCheckpoints = this._getFileObject(sourceProfileDir, "sessionCheckpoints.json");
-  let sessionFile = this._getFileObject(sourceProfileDir, "sessionstore.jsonlz4");
   let session;
-  if (sessionFile) {
-    session = {
-      type: types.SESSION,
-      migrate(aCallback) {
-        sessionCheckpoints.copyTo(currentProfileDir, "sessionCheckpoints.json");
-        let newSessionFile = currentProfileDir.clone();
-        newSessionFile.append("sessionstore.jsonlz4");
-        let migrationPromise = SessionMigration.migrate(sessionFile.path, newSessionFile.path);
-        migrationPromise.then(function() {
-          let buildID = Services.appinfo.platformBuildID;
-          let mstone = Services.appinfo.platformVersion;
-          
-          Services.prefs.setBoolPref("browser.sessionstore.resume_session_once", true);
-          
-          
-          Services.prefs.setCharPref("browser.startup.homepage_override.mstone", mstone);
-          Services.prefs.setCharPref("browser.startup.homepage_override.buildID", buildID);
-          
-          
-          let newPrefsFile = currentProfileDir.clone();
-          newPrefsFile.append("prefs.js");
-          Services.prefs.savePrefFile(newPrefsFile);
-          aCallback(true);
-        }, function() {
-          aCallback(false);
-        });
-      }
-    };
+  let env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
+  if (env.get("MOZ_RESET_PROFILE_MIGRATE_SESSION")) {
+    
+    
+    
+    
+    env.set("MOZ_RESET_PROFILE_MIGRATE_SESSION", "");
+    let sessionCheckpoints = this._getFileObject(sourceProfileDir, "sessionCheckpoints.json");
+    let sessionFile = this._getFileObject(sourceProfileDir, "sessionstore.jsonlz4");
+    if (sessionFile) {
+      session = {
+        type: types.SESSION,
+        migrate(aCallback) {
+          sessionCheckpoints.copyTo(currentProfileDir, "sessionCheckpoints.json");
+          let newSessionFile = currentProfileDir.clone();
+          newSessionFile.append("sessionstore.jsonlz4");
+          let migrationPromise = SessionMigration.migrate(sessionFile.path, newSessionFile.path);
+          migrationPromise.then(function() {
+            let buildID = Services.appinfo.platformBuildID;
+            let mstone = Services.appinfo.platformVersion;
+            
+            Services.prefs.setBoolPref("browser.sessionstore.resume_session_once", true);
+            
+            
+            Services.prefs.setCharPref("browser.startup.homepage_override.mstone", mstone);
+            Services.prefs.setCharPref("browser.startup.homepage_override.buildID", buildID);
+            
+            
+            let newPrefsFile = currentProfileDir.clone();
+            newPrefsFile.append("prefs.js");
+            Services.prefs.savePrefFile(newPrefsFile);
+            aCallback(true);
+          }, function() {
+            aCallback(false);
+          });
+        }
+      };
+    }
   }
 
   

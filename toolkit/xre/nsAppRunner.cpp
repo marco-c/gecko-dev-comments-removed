@@ -2278,6 +2278,12 @@ SelectProfile(nsIProfileLock* *aResult, nsIToolkitProfileService* aProfileSvc, n
     gDoProfileReset = true;
     gDoMigration = true;
     SaveToEnv("MOZ_RESET_PROFILE_RESTART=");
+    
+    
+    
+    
+    
+    SaveToEnv("MOZ_RESET_PROFILE_MIGRATE_SESSION=1");
   }
 
   
