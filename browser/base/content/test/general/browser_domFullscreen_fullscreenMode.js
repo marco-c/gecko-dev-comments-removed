@@ -17,6 +17,9 @@ function frameScript() {
       inFullscreen: content.fullScreen
     });
   });
+  addMessageListener("Test:WaitActivated", () => {
+    waitUntilActive();
+  });
   content.document.addEventListener("fullscreenchange", () => {
     sendAsyncMessage("Test:FullscreenChanged", {
       inDOMFullscreen: !!content.document.fullscreenElement,
@@ -65,6 +68,13 @@ const FS_CHANGE_DOM = 1 << 0;
 const FS_CHANGE_SIZE = 1 << 1;
 const FS_CHANGE_BOTH = FS_CHANGE_DOM | FS_CHANGE_SIZE;
 
+function waitForDocActivated() {
+  return new Promise(resolve => {
+    listenOneMessage("Test:Activated", resolve);
+    gMessageManager.sendAsyncMessage("Test:WaitActivated");
+  });
+}
+
 function waitForFullscreenChanges(aFlags) {
   return new Promise(resolve => {
     let fullscreenData = null;
@@ -72,11 +82,18 @@ function waitForFullscreenChanges(aFlags) {
     function tryResolve() {
       if ((!(aFlags & FS_CHANGE_DOM) || fullscreenData) &&
           (!(aFlags & FS_CHANGE_SIZE) || sizemodeChanged)) {
-        if (!fullscreenData) {
-          queryFullscreenState().then(resolve);
-        } else {
-          resolve(fullscreenData);
-        }
+        
+        
+        
+        
+        
+        waitForDocActivated().then(() => {
+          if (!fullscreenData) {
+            queryFullscreenState().then(resolve);
+          } else {
+            resolve(fullscreenData);
+          }
+        });
       }
     }
     if (aFlags & FS_CHANGE_SIZE) {
