@@ -109,7 +109,6 @@ body {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  color: var(--theme-content-color3);
 }
 
 
