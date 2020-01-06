@@ -295,8 +295,9 @@ FinderHighlighter.prototype = {
       
       if (window != window.top) {
         let dict = this.getForWindow(window.top);
-        if (!dict.frames.has(window))
-          dict.frames.set(window, null);
+        
+        
+        dict.frames.set(window, {});
       }
     }
 
@@ -572,6 +573,9 @@ FinderHighlighter.prototype = {
     
     let currWin = window;
     while (currWin != window.top) {
+      let frameOffsets = this._getFrameElementOffsets(currWin);
+      cssPageRect.translate(frameOffsets.x, frameOffsets.y);
+
       
       
       let el = this._getDWU(currWin).containerElement;
@@ -594,8 +598,46 @@ FinderHighlighter.prototype = {
 
       cssPageRect.translate(parentRect.left, parentRect.top);
     }
+    let frameOffsets = this._getFrameElementOffsets(currWin);
+    cssPageRect.translate(frameOffsets.x, frameOffsets.y);
 
     return cssPageRect;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  _getFrameElementOffsets(window) {
+    let frame = window.frameElement;
+    if (!frame)
+      return { x: 0, y: 0 };
+
+    
+    
+    let dict = this.getForWindow(window.top);
+    let frameData = dict.frames.get(window);
+    if (!frameData)
+      dict.frames.set(window, frameData = {});
+    if (frameData.offset)
+      return frameData.offset;
+
+    let style = frame.ownerGlobal.getComputedStyle(frame);
+    
+    
+    let borderOffset = [parseInt(style.borderLeftWidth, 10) || 0, parseInt(style.borderTopWidth, 10) || 0];
+    let paddingOffset = [parseInt(style.paddingLeft, 10) || 0, parseInt(style.paddingTop, 10) || 0];
+    return frameData.offset = {
+      x: borderOffset[0] + paddingOffset[0],
+      y: borderOffset[1] + paddingOffset[1]
+    };
   },
 
   
@@ -761,7 +803,7 @@ FinderHighlighter.prototype = {
     
     if (window != window.top) {
       if (!dict.frames.has(window))
-        dict.frames.set(window, null);
+        dict.frames.set(window, {});
       return true;
     }
 
@@ -791,13 +833,13 @@ FinderHighlighter.prototype = {
     let bounds;
     
     if (dict && dict.frames.has(window)) {
-      bounds = dict.frames.get(window);
-      if (!bounds) {
-        bounds = this._getRootBounds(window);
-        dict.frames.set(window, bounds);
-      }
-    } else
+      let frameData = dict.frames.get(window);
+      bounds = frameData.bounds;
+      if (!bounds)
+        bounds = frameData.bounds = this._getRootBounds(window);
+    } else {
       bounds = this._getRootBounds(window);
+    }
 
     let topBounds = this._getRootBounds(window.top, false);
     let rects = [];
@@ -856,8 +898,8 @@ FinderHighlighter.prototype = {
 
   _updateDynamicRangesRects(dict) {
     
-    for (let frame of dict.frames.keys())
-      dict.frames.set(frame, null);
+    for (let frameData of dict.frames.values())
+      frameData.bounds = null;
     for (let range of dict.dynamicRangesSet)
       this._updateRangeRects(range, false, dict);
   },
