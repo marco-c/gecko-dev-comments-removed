@@ -1,4 +1,3 @@
-#filter substitution
 
 
 
@@ -7,7 +6,9 @@
 this.EXPORTED_SYMBOLS = [];
 for (let [key, val] of Object.entries({
 
-WEAVE_VERSION:                         "@weave_version@",
+
+
+WEAVE_VERSION: "1.58.0",
 
 
 SYNC_API_VERSION:                      "1.5",
