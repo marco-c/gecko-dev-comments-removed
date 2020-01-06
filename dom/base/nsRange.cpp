@@ -1061,12 +1061,12 @@ nsRange::GetStartOffset(ErrorResult& aRv) const
 }
 
 NS_IMETHODIMP
-nsRange::GetEndContainer(nsIDOMNode** aEndParent)
+nsRange::GetEndContainer(nsIDOMNode** aEndContainer)
 {
   if (!mIsPositioned)
     return NS_ERROR_NOT_INITIALIZED;
 
-  return CallQueryInterface(mEndContainer, aEndParent);
+  return CallQueryInterface(mEndContainer, aEndContainer);
 }
 
 nsINode*
@@ -1388,9 +1388,9 @@ nsRange::SetEnd(nsINode* aContainer, int32_t aOffset)
 
 nsresult
 nsRange::SetStartAndEnd(nsINode* aStartContainer, int32_t aStartOffset,
-                        nsINode* aEndParent, int32_t aEndOffset)
+                        nsINode* aEndContainer, int32_t aEndOffset)
 {
-  if (NS_WARN_IF(!aStartContainer) || NS_WARN_IF(!aEndParent)) {
+  if (NS_WARN_IF(!aStartContainer) || NS_WARN_IF(!aEndContainer)) {
     return NS_ERROR_INVALID_ARG;
   }
 
@@ -1402,46 +1402,49 @@ nsRange::SetStartAndEnd(nsINode* aStartContainer, int32_t aStartOffset,
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
   }
 
-  if (aStartContainer == aEndParent) {
-    if (!IsValidOffset(aEndParent, aEndOffset)) {
+  if (aStartContainer == aEndContainer) {
+    if (!IsValidOffset(aEndContainer, aEndOffset)) {
       return NS_ERROR_DOM_INDEX_SIZE_ERR;
     }
     
     
     if (aStartOffset > aEndOffset) {
-      DoSetRange(aEndParent, aEndOffset, aEndParent, aEndOffset, newStartRoot);
+      DoSetRange(aEndContainer, aEndOffset,
+                 aEndContainer, aEndOffset, newStartRoot);
     } else {
       DoSetRange(aStartContainer, aStartOffset,
-                 aEndParent, aEndOffset, newStartRoot);
+                 aEndContainer, aEndOffset, newStartRoot);
     }
     return NS_OK;
   }
 
-  nsINode* newEndRoot = IsValidBoundary(aEndParent);
+  nsINode* newEndRoot = IsValidBoundary(aEndContainer);
   if (!newEndRoot) {
     return NS_ERROR_DOM_INVALID_NODE_TYPE_ERR;
   }
-  if (!IsValidOffset(aEndParent, aEndOffset)) {
+  if (!IsValidOffset(aEndContainer, aEndOffset)) {
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
   }
 
   
   if (newStartRoot != newEndRoot) {
-    DoSetRange(aEndParent, aEndOffset, aEndParent, aEndOffset, newEndRoot);
+    DoSetRange(aEndContainer, aEndOffset,
+               aEndContainer, aEndOffset, newEndRoot);
     return NS_OK;
   }
 
   
   
   if (nsContentUtils::ComparePoints(aStartContainer, aStartOffset,
-                                    aEndParent, aEndOffset) == 1) {
-    DoSetRange(aEndParent, aEndOffset, aEndParent, aEndOffset, newEndRoot);
+                                    aEndContainer, aEndOffset) == 1) {
+    DoSetRange(aEndContainer, aEndOffset,
+               aEndContainer, aEndOffset, newEndRoot);
     return NS_OK;
   }
 
   
   DoSetRange(aStartContainer, aStartOffset,
-             aEndParent, aEndOffset, newStartRoot);
+             aEndContainer, aEndOffset, newStartRoot);
   return NS_OK;
 }
 
@@ -1952,7 +1955,7 @@ CollapseRangeAfterDelete(nsRange* aRange)
 
 static nsresult SplitDataNode(nsIDOMCharacterData* aStartContainer,
                               uint32_t aStartOffset,
-                              nsIDOMCharacterData** aEndNode,
+                              nsIDOMCharacterData** aEndContainer,
                               bool aCloneAfterOriginal = true)
 {
   nsresult rv;
@@ -1964,7 +1967,7 @@ static nsresult SplitDataNode(nsIDOMCharacterData* aStartContainer,
   rv = dataNode->SplitData(aStartOffset, getter_AddRefs(newData),
                            aCloneAfterOriginal);
   NS_ENSURE_SUCCESS(rv, rv);
-  return CallQueryInterface(newData, aEndNode);
+  return CallQueryInterface(newData, aEndContainer);
 }
 
 NS_IMETHODIMP
@@ -3098,12 +3101,13 @@ nsRange::CollectClientRectsAndText(nsLayoutUtils::RectCallback* aCollector,
                                    nsRange* aRange,
                                    nsINode* aStartContainer,
                                    int32_t aStartOffset,
-                                   nsINode* aEndParent, int32_t aEndOffset,
+                                   nsINode* aEndContainer,
+                                   int32_t aEndOffset,
                                    bool aClampToEdge, bool aFlushLayout)
 {
   
   nsCOMPtr<nsINode> startContainer = aStartContainer;
-  nsCOMPtr<nsINode> endContainer = aEndParent;
+  nsCOMPtr<nsINode> endContainer = aEndContainer;
 
   
   if (!aStartContainer->IsInUncomposedDoc()) {
@@ -3621,14 +3625,14 @@ IsLastNonemptyRowGroupOfTable(nsIFrame* aFrame)
 void
 nsRange::GetInnerTextNoFlush(DOMString& aValue, ErrorResult& aError,
                              nsIContent* aStartContainer, uint32_t aStartOffset,
-                             nsIContent* aEndParent, uint32_t aEndOffset)
+                             nsIContent* aEndContainer, uint32_t aEndOffset)
 {
   InnerTextAccumulator result(aValue);
   nsIContent* currentNode = aStartContainer;
   TreeTraversalState currentState = AFTER_NODE;
   if (aStartContainer->IsNodeOfType(nsINode::eTEXT)) {
     auto t = static_cast<nsGenericDOMDataNode*>(aStartContainer);
-    if (aStartContainer == aEndParent) {
+    if (aStartContainer == aEndContainer) {
       AppendTransformedText(result, t, aStartOffset, aEndOffset);
       return;
     }
@@ -3640,13 +3644,13 @@ nsRange::GetInnerTextNoFlush(DOMString& aValue, ErrorResult& aError,
     }
   }
 
-  nsIContent* endNode = aEndParent;
+  nsIContent* endNode = aEndContainer;
   TreeTraversalState endState = AFTER_NODE;
-  if (aEndParent->IsNodeOfType(nsINode::eTEXT)) {
+  if (aEndContainer->IsNodeOfType(nsINode::eTEXT)) {
     endState = AT_NODE;
   } else {
-    if (uint32_t(aEndOffset) < aEndParent->GetChildCount()) {
-      endNode = aEndParent->GetChildAt(aEndOffset);
+    if (uint32_t(aEndOffset) < aEndContainer->GetChildCount()) {
+      endNode = aEndContainer->GetChildAt(aEndOffset);
       endState = AT_NODE;
     }
   }
@@ -3708,8 +3712,8 @@ nsRange::GetInnerTextNoFlush(DOMString& aValue, ErrorResult& aError,
     }
   }
 
-  if (aEndParent->IsNodeOfType(nsINode::eTEXT)) {
-    nsGenericDOMDataNode* t = static_cast<nsGenericDOMDataNode*>(aEndParent);
+  if (aEndContainer->IsNodeOfType(nsINode::eTEXT)) {
+    nsGenericDOMDataNode* t = static_cast<nsGenericDOMDataNode*>(aEndContainer);
     AppendTransformedText(result, t, 0, aEndOffset);
   }
   
