@@ -1,0 +1,62 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package com.google.android.exoplayer2.upstream;
+
+import java.io.IOException;
+
+
+
+
+public interface DataSink {
+
+  
+
+
+  interface Factory {
+
+    
+
+
+    DataSink createDataSink();
+
+  }
+
+  
+
+
+
+
+
+  void open(DataSpec dataSpec) throws IOException;
+
+  
+
+
+
+
+
+
+
+  void write(byte[] buffer, int offset, int length) throws IOException;
+
+  
+
+
+
+
+  void close() throws IOException;
+
+}

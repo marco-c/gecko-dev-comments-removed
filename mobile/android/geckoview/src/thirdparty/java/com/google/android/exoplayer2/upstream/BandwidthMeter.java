@@ -1,0 +1,54 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package com.google.android.exoplayer2.upstream;
+
+
+
+
+public interface BandwidthMeter {
+
+  
+
+
+  interface EventListener {
+
+    
+
+
+
+
+
+
+
+
+
+
+    void onBandwidthSample(int elapsedMs, long bytes, long bitrate);
+
+  }
+
+  
+
+
+  long NO_ESTIMATE = -1;
+
+  
+
+
+
+  long getBitrateEstimate();
+
+}
