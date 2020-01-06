@@ -22,10 +22,9 @@
 
 class nsIFile;
 
-#ifndef have_PrefChangedFunc_typedef
-typedef void (*PrefChangedFunc)(const char*, void*);
-#define have_PrefChangedFunc_typedef
-#endif
+
+
+typedef void (*PrefChangedFunc)(const char* aPref, void* aData);
 
 #ifdef DEBUG
 enum pref_initPhase
