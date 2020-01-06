@@ -293,6 +293,13 @@ public:
 
 
 
+
+  void ClearDataAndMarkDeviceDirty();
+
+  
+
+
+
   already_AddRefed<ServoComputedValues> ResolveServoStyle(dom::Element* aElement);
 
   bool GetKeyframesForName(const nsString& aName,
@@ -423,16 +430,48 @@ private:
 
 
 
-  void RebuildStylist();
+  enum class StylistState : uint8_t {
+    
+    NotDirty,
+    
+    StyleSheetsDirty,
+    
+
+
+
+    FullyDirty,
+  };
+
+  
+
+
+  void SetStylistStyleSheetsDirty()
+  {
+    if (mStylistState == StylistState::NotDirty) {
+      mStylistState = StylistState::StyleSheetsDirty;
+    }
+  }
+
+  bool StylistNeedsUpdate() const
+  {
+    return mStylistState != StylistState::NotDirty;
+  }
 
   
 
 
 
-  void MaybeRebuildStylist()
+
+  void UpdateStylist();
+
+  
+
+
+
+  void UpdateStylistIfNeeded()
   {
-    if (mStylistMayNeedRebuild) {
-      RebuildStylist();
+    if (StylistNeedsUpdate()) {
+      UpdateStylist();
     }
   }
 
@@ -460,7 +499,7 @@ private:
                   nsTArray<RefPtr<ServoStyleSheet>>> mSheets;
   bool mAllowResolveStaleStyles;
   bool mAuthorStyleDisabled;
-  bool mStylistMayNeedRebuild;
+  StylistState mStylistState;
 
   
   

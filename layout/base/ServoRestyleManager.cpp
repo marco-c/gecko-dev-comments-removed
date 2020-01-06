@@ -95,9 +95,11 @@ void
 ServoRestyleManager::PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
                                                   nsRestyleHint aRestyleHint)
 {
-  
-  
-  RebuildAllStyleData(aExtraHint, aRestyleHint);
+  StyleSet()->ClearDataAndMarkDeviceDirty();
+
+  if (Element* root = mPresContext->Document()->GetRootElement()) {
+    PostRestyleEvent(root, aRestyleHint, aExtraHint);
+  }
 }
 
  void
