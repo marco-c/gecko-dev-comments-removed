@@ -2963,7 +2963,26 @@ HttpBaseChannel::ShouldIntercept(nsIURI* aURI)
   nsCOMPtr<nsINetworkInterceptController> controller;
   GetCallback(controller);
   bool shouldIntercept = false;
-  if (controller && !BypassServiceWorker() && mLoadInfo) {
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool internalRedirect = mLastRedirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL;
+
+  if (controller && mLoadInfo && !BypassServiceWorker() && !internalRedirect) {
     nsresult rv = controller->ShouldPrepareForIntercept(aURI ? aURI : mURI.get(),
                                                         nsContentUtils::IsNonSubresourceRequest(this),
                                                         &shouldIntercept);
