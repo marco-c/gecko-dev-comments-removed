@@ -395,6 +395,14 @@ const SIGNED_TYPES = new Set([
   "webextension-theme",
 ]);
 
+const ALL_TYPES = new Set([
+  "dictionary",
+  "extension",
+  "experiment",
+  "locale",
+  "theme",
+]);
+
 
 
 
@@ -2920,6 +2928,12 @@ this.XPIProvider = {
   _closing: false,
 
   
+  
+  get isDBLoaded() {
+    return gLazyObjectsLoaded && XPIDatabase.initialized;
+  },
+
+  
 
 
 
@@ -3360,6 +3374,22 @@ this.XPIProvider = {
           Services.obs.removeObserver(this, "final-ui-startup");
         }
       }, "final-ui-startup");
+
+      
+      
+      
+      if (!this.isDBLoaded) {
+        Services.obs.addObserver({
+          observe(subject, topic, data) {
+            Services.obs.removeObserver(this, "sessionstore-windows-restored");
+
+            
+            
+            
+            XPIDatabase.asyncLoadDB();
+          },
+        }, "sessionstore-windows-restored");
+      }
 
       AddonManagerPrivate.recordTimestamp("XPI_startup_end");
 
@@ -4648,11 +4678,65 @@ this.XPIProvider = {
 
   getAddonsByTypes(aTypes, aCallback) {
     let typesToGet = getAllAliasesForTypes(aTypes);
+    if (typesToGet && !typesToGet.some(type => ALL_TYPES.has(type))) {
+      aCallback([]);
+      return;
+    }
 
     XPIDatabase.getVisibleAddons(typesToGet, function(aAddons) {
       aCallback(aAddons.map(a => a.wrapper));
     });
   },
+
+  
+
+
+
+
+
+
+  getActiveAddons(aTypes) {
+    
+    if (this.isDBLoaded) {
+      return new Promise(resolve => {
+        this.getAddonsByTypes(aTypes, addons => {
+          
+          
+          
+          resolve(addons.filter(addon => addon.isActive ||
+                                       (addon.type == "experiment" && !addon.appDisabled)));
+        });
+      });
+    }
+
+    
+    
+    if (!XPIStates.db) {
+      return Promise.reject(new Error("XPIStates not yet initialized"));
+    }
+
+    let result = [];
+    for (let addon of XPIStates.enabledAddons()) {
+      let location = this.installLocationsByName[addon.location.name];
+      let scope, isSystem;
+      if (location) {
+        ({scope, isSystem} = location);
+      }
+      result.push({
+        id: addon.id,
+        version: addon.version,
+        type: addon.type,
+        updateDate: addon.lastModifiedTime,
+        scope,
+        isSystem,
+        isWebExtension: isWebExtension(addon),
+        multiprocessCompatible: addon.multiprocessCompatible,
+      });
+    }
+
+    return Promise.resolve(result);
+  },
+
 
   
 
