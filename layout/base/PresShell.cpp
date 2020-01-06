@@ -802,7 +802,6 @@ nsIPresShell::nsIPresShell()
     , mObservingLayoutFlushes(false)
     , mNeedThrottledAnimationFlush(true)
     , mPresShellId(0)
-    , mAPZFocusSequenceNumber(0)
     , mFontSizeInflationEmPerLine(0)
     , mFontSizeInflationMinTwips(0)
     , mFontSizeInflationLineThreshold(0)
@@ -831,6 +830,7 @@ PresShell::PresShell()
   , mLastCallbackEventRequest(nullptr)
   , mLastReflowStart(0.0)
   , mLastAnchorScrollPositionY(0)
+  , mAPZFocusSequenceNumber(0)
   , mChangeNestCount(0)
   , mDocumentLoading(false)
   , mIgnoreFrameDestruction(false)
@@ -6370,6 +6370,10 @@ PresShell::Paint(nsView*         aViewToPaint,
     return;
   }
 
+  
+  
+  layerManager->SetFocusTarget(mAPZFocusTarget);
+
   if (frame) {
     
     
@@ -7159,8 +7163,10 @@ PresShell::HandleEvent(nsIFrame* aFrame,
 
   
   if (mAPZFocusSequenceNumber < aEvent->mFocusSequenceNumber) {
-    
     mAPZFocusSequenceNumber = aEvent->mFocusSequenceNumber;
+
+    
+    aFrame->SchedulePaint(nsIFrame::PAINT_COMPOSITE_ONLY);
   }
 
   if (sPointerEventEnabled) {

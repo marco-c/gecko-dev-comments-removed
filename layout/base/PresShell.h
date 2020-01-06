@@ -863,6 +863,11 @@ protected:
   nsCOMPtr<nsIContent>      mPointerEventTarget;
 
   
+  uint64_t                  mAPZFocusSequenceNumber;
+  
+  FocusTarget               mAPZFocusTarget;
+
+  
   
   
   uint16_t                  mChangeNestCount;

@@ -2227,9 +2227,6 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
     }
 
     
-    layerManager->SetFocusTarget(presShell->GetAPZFocusTarget());
-
-    
     
 #ifdef DEBUG
     bool usingDisplayport = false;

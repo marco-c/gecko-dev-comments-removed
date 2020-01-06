@@ -1531,11 +1531,6 @@ public:
   
 
 
-  const FocusTarget& GetAPZFocusTarget() const { return mAPZFocusTarget; }
-
-  
-
-
 
 
   virtual void SynthesizeMouseMove(bool aFromScroll) = 0;
@@ -1904,11 +1899,6 @@ protected:
   bool mNeedThrottledAnimationFlush : 1;
 
   uint32_t                  mPresShellId;
-
-  
-  uint64_t                  mAPZFocusSequenceNumber;
-  
-  FocusTarget               mAPZFocusTarget;
 
   static nsIContent*        gKeyDownTarget;
 
