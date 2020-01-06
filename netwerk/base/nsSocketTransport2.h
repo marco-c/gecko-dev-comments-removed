@@ -136,6 +136,15 @@ public:
 
     
     
+    
+    nsresult InitPreResolved(const char **socketTypes, uint32_t typeCount,
+                             const nsACString &host, uint16_t port,
+                             const nsACString &hostRoute, uint16_t portRoute,
+                             nsIProxyInfo *proxyInfo,
+                             const mozilla::net::NetAddr* addr);
+
+    
+    
     nsresult InitWithConnectedSocket(PRFileDesc *socketFD,
                                      const NetAddr *addr);
 
@@ -161,7 +170,7 @@ public:
 
     uint64_t ByteCountReceived() override { return mInput.ByteCount(); }
     uint64_t ByteCountSent() override { return mOutput.ByteCount(); }
-    static void CloseSocket(PRFileDesc *aFd, nsSocketTransportService *aSTS);
+    static void CloseSocket(PRFileDesc *aFd, bool aTelemetryEnabled);
     static void SendPRBlockingTelemetry(PRIntervalTime aStart,
         Telemetry::HistogramID aIDNormal,
         Telemetry::HistogramID aIDShutdown,

@@ -27,6 +27,7 @@
 #include "nsThreadUtils.h"
 #include "nsIFile.h"
 #include "nsIWidget.h"
+#include "mozilla/dom/FlyWebService.h"
 
 #ifdef MOZ_TASK_TRACER
 #include "GeckoTaskTracer.h"
@@ -97,11 +98,6 @@ nsSocketTransportService::nsSocketTransportService()
 #if defined(XP_WIN)
     , mPolling(false)
 #endif
-#if defined(_WIN64) && defined(WIN95)
-    , mFileDesc2PlatformOverlappedIOHandleFuncChecked(false)
-    , mNsprLibrary(nullptr)
-    , mFileDesc2PlatformOverlappedIOHandleFunc(nullptr)
-#endif
 {
     NS_ASSERTION(NS_IsMainThread(), "wrong thread");
 
@@ -126,12 +122,6 @@ nsSocketTransportService::~nsSocketTransportService()
     free(mIdleList);
     free(mPollList);
     gSocketTransportService = nullptr;
-#if defined(_WIN64) && defined(WIN95)
-    if (mNsprLibrary) {
-        BOOL rv = FreeLibrary(mNsprLibrary);
-        SOCKET_LOG(("Free nspr library: %d\n", rv));
-    }
-#endif
 }
 
 
@@ -749,6 +739,20 @@ nsSocketTransportService::CreateRoutedTransport(const char **types,
                                                 nsIProxyInfo *proxyInfo,
                                                 nsISocketTransport **result)
 {
+    
+    RefPtr<mozilla::dom::FlyWebService> fws =
+        mozilla::dom::FlyWebService::GetExisting();
+    if (fws) {
+        nsresult rv = fws->CreateTransportForHost(types, typeCount, host, port,
+                                                  hostRoute, portRoute,
+                                                  proxyInfo, result);
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        if (*result) {
+            return NS_OK;
+        }
+    }
+
     NS_ENSURE_TRUE(mInitialized, NS_ERROR_NOT_INITIALIZED);
     NS_ENSURE_TRUE(port >= 0 && port <= 0xFFFF, NS_ERROR_ILLEGAL_VALUE);
 
@@ -940,9 +944,6 @@ nsSocketTransportService::Run()
                     TimeStamp::NowLoRes());
                 pollDuration += singlePollDuration;
             }
-#if defined(_WIN64) && defined(WIN95)
-            CheckOverlappedPendingSocketsAreDone();
-#endif
 
             mRawThread->HasPendingEvents(&pendingEvents);
             if (pendingEvents) {
@@ -1034,19 +1035,6 @@ nsSocketTransportService::Run()
     
     
     NS_ProcessPendingEvents(mRawThread);
-
-#if defined(_WIN64) && defined(WIN95)
-    
-    
-    CheckOverlappedPendingSocketsAreDone();
-#ifdef NS_BUILD_REFCNT_LOGGING
-    if (mOverlappedPendingSockets.Length()) {
-        PRIntervalTime delay = PR_MillisecondsToInterval(5000);
-        PR_Sleep(delay); 
-        CheckOverlappedPendingSocketsAreDone();
-    }
-#endif
-#endif
 
     gSocketThread = nullptr;
 
@@ -1682,107 +1670,6 @@ nsSocketTransportService::EndPolling()
         mPollRepairTimer->Cancel();
     }
 }
-#endif
-
-#if defined(_WIN64) && defined(WIN95)
-void
-nsSocketTransportService::AddOverlappedPendingSocket(PRFileDesc *aFd)
-{
-    MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-    MOZ_ASSERT(HasFileDesc2PlatformOverlappedIOHandleFunc());
-    SOCKET_LOG(("STS AddOverlappedPendingSocket append aFd=%p\n", aFd));
-    mOverlappedPendingSockets.AppendElement(aFd);
-}
-
-void
-nsSocketTransportService::CheckOverlappedPendingSocketsAreDone()
-{
-    MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-    if (!HasFileDesc2PlatformOverlappedIOHandleFunc()) {
-        return;
-    }
-
-    SOCKET_LOG(("STS CheckOverlappedPendingSocketsAreDone: "
-                "pending sockets = %d\n", mOverlappedPendingSockets.Length()));
-    for (int i = mOverlappedPendingSockets.Length() - 1; i >= 0; i--) {
-        bool canClose = false;
-        PRFileDesc *fd = mOverlappedPendingSockets[i];
-        LPOVERLAPPED ol = nullptr;
-        if (mFileDesc2PlatformOverlappedIOHandleFunc(fd, (void**)&ol) == PR_SUCCESS) {
-            PROsfd osfd = PR_FileDesc2NativeHandle(fd);
-            SOCKET_LOG(("STS CheckOverlappedPendingSocketsAreDone "
-                        "fd=%p osfd=%d\n", fd, (int)osfd));
-            DWORD rvSent;
-            if (GetOverlappedResult((HANDLE)osfd, ol, &rvSent, FALSE) == TRUE) {
-                SOCKET_LOG(("STS CheckOverlappedPendingSocketsAreDone "
-                            "GetOverlappedResult succeeded\n"));
-                canClose = true;
-            } else {
-                int err = WSAGetLastError();
-                SOCKET_LOG(("STS CheckOverlappedPendingSocketsAreDone "
-                            "GetOverlappedResult failed error=%x \n", err));
-                if (err != ERROR_IO_INCOMPLETE) {
-                    canClose = true;
-                }
-            }
-        } else {
-            canClose = true;
-        }
-
-        if (canClose) {
-            SOCKET_LOG(("STS CheckOverlappedPendingSocketsAreDone "
-                        "remove fd=%p\n", fd));
-            mOverlappedPendingSockets.RemoveElementAt(i);
-            PR_Close(fd);
-        }
-    }
-    SOCKET_LOG(("STS CheckOverlappedPendingSocketsAreDone: end a check, "
-                "pending sockets = %d\n", mOverlappedPendingSockets.Length()));
-}
-
-void
-nsSocketTransportService::CheckFileDesc2PlatformOverlappedIOHandleFunc()
-{
-    if (mFileDesc2PlatformOverlappedIOHandleFuncChecked) {
-        return;
-    }
-
-    mFileDesc2PlatformOverlappedIOHandleFuncChecked = true;
-    HMODULE library = LoadLibraryA("nss3.dll");
-    MOZ_ASSERT(library);
-    if (library) {
-        mFileDesc2PlatformOverlappedIOHandleFunc =
-            reinterpret_cast<FileDesc2PlatformOverlappedIOHandleFunc>(
-                GetProcAddress(library, "PR_EXPERIMENTAL_ONLY_IN_4_17_GetOverlappedIOHandle"));
-        if (mFileDesc2PlatformOverlappedIOHandleFunc) {
-            SOCKET_LOG(("PR_EXPERIMENTAL_ONLY_IN_4_17_GetOverlappedIOHandle function "
-                        "present"));
-            mNsprLibrary = library;
-        } else {
-            BOOL rv = FreeLibrary(library);
-            SOCKET_LOG(("No PR_EXPERIMENTAL_ONLY_IN_4_17_GetOverlappedIOHandle function: "
-                        "%d\n", rv));
-        }
-    }
-}
-
-bool
-nsSocketTransportService::HasFileDesc2PlatformOverlappedIOHandleFunc()
-{
-    CheckFileDesc2PlatformOverlappedIOHandleFunc();
-    return mFileDesc2PlatformOverlappedIOHandleFunc;
-}
-
-PRStatus
-nsSocketTransportService::CallFileDesc2PlatformOverlappedIOHandleFunc(PRFileDesc *fd, void **ol)
-{
-    CheckFileDesc2PlatformOverlappedIOHandleFunc();
-    if (mFileDesc2PlatformOverlappedIOHandleFunc) {
-        return mFileDesc2PlatformOverlappedIOHandleFunc(fd, ol);
-    }
-    return PR_FAILURE;
-}
-
 #endif
 
 } 

@@ -23,12 +23,6 @@
 #include "mozilla/UniquePtr.h"
 #include "PollableEvent.h"
 
-#if defined(_WIN64) && defined(WIN95)
-#include "WinDef.h"
-
-typedef PRStatus (*FileDesc2PlatformOverlappedIOHandleFunc)(PRFileDesc *fd, void **ol);
-#endif
-
 class nsASocketHandler;
 struct PRPollDesc;
 class nsIPrefBranch;
@@ -126,11 +120,6 @@ public:
                                                        !mSleepPhase; }
     PRIntervalTime MaxTimeForPrClosePref() {return mMaxTimeForPrClosePref; }
 
-#if defined(_WIN64) && defined(WIN95)
-    void AddOverlappedPendingSocket(PRFileDesc *aFd);
-    bool HasFileDesc2PlatformOverlappedIOHandleFunc();
-    PRStatus CallFileDesc2PlatformOverlappedIOHandleFunc(PRFileDesc *fd, void **ol);
-#endif
 protected:
 
     virtual ~nsSocketTransportService();
@@ -281,21 +270,6 @@ private:
     void StartPolling();
     void EndPolling();
 #endif
-
-#if defined(_WIN64) && defined(WIN95)       
-    
-    
-    
-    nsTArray<PRFileDesc *> mOverlappedPendingSockets;
-
-    bool mFileDesc2PlatformOverlappedIOHandleFuncChecked;
-    HMODULE mNsprLibrary;
-    FileDesc2PlatformOverlappedIOHandleFunc mFileDesc2PlatformOverlappedIOHandleFunc;
-
-    void CheckFileDesc2PlatformOverlappedIOHandleFunc();
-    void CheckOverlappedPendingSocketsAreDone();
-#endif
-
 };
 
 extern nsSocketTransportService *gSocketTransportService;

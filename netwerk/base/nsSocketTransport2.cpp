@@ -931,6 +931,23 @@ nsSocketTransport::Init(const char **types, uint32_t typeCount,
 }
 
 nsresult
+nsSocketTransport::InitPreResolved(const char **socketTypes, uint32_t typeCount,
+                                   const nsACString &host, uint16_t port,
+                                   const nsACString &hostRoute, uint16_t portRoute,
+                                   nsIProxyInfo *proxyInfo,
+                                   const mozilla::net::NetAddr* addr)
+{
+  nsresult rv = Init(socketTypes, typeCount, host, port, hostRoute, portRoute, proxyInfo);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  mNetAddr = *addr;
+  mNetAddrPreResolved = true;
+  return NS_OK;
+}
+
+nsresult
 nsSocketTransport::InitWithFilename(const char *filename)
 {
 #if defined(XP_UNIX)
@@ -1263,7 +1280,8 @@ nsSocketTransport::BuildSocket(PRFileDesc *&fd, bool &proxyTransparent, bool &us
             SOCKET_LOG(("  error pushing io layer [%u:%s rv=%" PRIx32 "]\n", i, mTypes[i],
                         static_cast<uint32_t>(rv)));
             if (fd) {
-                CloseSocket(fd, mSocketTransportService); 
+                CloseSocket(fd,
+                    mSocketTransportService->IsTelemetryEnabledAndNotSleepPhase()); 
             }
         }
     }
@@ -1457,7 +1475,8 @@ nsSocketTransport::InitiateSocket()
     
     rv = mSocketTransportService->AttachSocket(fd, this);
     if (NS_FAILED(rv)) {
-        CloseSocket(fd, mSocketTransportService);
+        CloseSocket(fd,
+            mSocketTransportService->IsTelemetryEnabledAndNotSleepPhase());
         return rv;
     }
     mAttached = true;
@@ -1984,7 +2003,8 @@ public:
 
   NS_IMETHOD Run() override
   {
-    nsSocketTransport::CloseSocket(mFD, gSocketTransportService);
+    nsSocketTransport::CloseSocket(mFD,
+      gSocketTransportService->IsTelemetryEnabledAndNotSleepPhase());
     return NS_OK;
   }
 private:
@@ -2018,7 +2038,8 @@ nsSocketTransport::ReleaseFD_Locked(PRFileDesc *fd)
           SOCKET_LOG(("Intentional leak"));
         } else if (OnSocketThread()) {
             SOCKET_LOG(("nsSocketTransport: calling PR_Close [this=%p]\n", this));
-            CloseSocket(mFD, mSocketTransportService);
+            CloseSocket(mFD,
+                mSocketTransportService->IsTelemetryEnabledAndNotSleepPhase());
         } else {
             
             STS_PRCloseOnSocketTransport(mFD);
@@ -3469,10 +3490,8 @@ nsSocketTransport::PRFileDescAutoLock::SetKeepaliveVals(bool aEnabled,
 }
 
 void
-nsSocketTransport::CloseSocket(PRFileDesc *aFd, nsSocketTransportService *aSTS)
+nsSocketTransport::CloseSocket(PRFileDesc *aFd, bool aTelemetryEnabled)
 {
-    bool telemetryEnabled = aSTS->IsTelemetryEnabledAndNotSleepPhase();
-
 #if defined(XP_WIN)
     AttachShutdownLayer(aFd);
 #endif
@@ -3481,67 +3500,14 @@ nsSocketTransport::CloseSocket(PRFileDesc *aFd, nsSocketTransportService *aSTS)
     
     
     PRIntervalTime closeStarted;
-    if (telemetryEnabled) {
+    if (aTelemetryEnabled) {
         closeStarted = PR_IntervalNow();
     }
 
-#if defined(_WIN64) && defined(WIN95)
-    bool canClose = false;
-    if (aSTS->HasFileDesc2PlatformOverlappedIOHandleFunc()) {
-      LPOVERLAPPED ol = nullptr;
-      if (aSTS->CallFileDesc2PlatformOverlappedIOHandleFunc(aFd, (void**)&ol) == PR_SUCCESS) {
-        SOCKET_LOG(("nsSocketTransport::CloseSocket - we have an overlapped "
-                    "structure=%p aFd=%p\n", ol, aFd));
-        PROsfd osfd = PR_FileDesc2NativeHandle(aFd);
-        if (telemetryEnabled) {
-            Telemetry::ScalarAdd(Telemetry::ScalarID::NETWORK_TCP_OVERLAPPED_IO_CANCELED_BEFORE_FINISHED, 1);
-        }
-        if (CancelIo((HANDLE) osfd) == TRUE) {
-            SOCKET_LOG(("nsSocketTransport::CloseSocket - "
-                        "CancelIo succeeded\n"));
-        } else {
-            int err = WSAGetLastError();
-            SOCKET_LOG(("nsSocketTransport::CloseSocket - "
-                        "CancelIo failed err=%x\n", err));
-        }
-
-        DWORD rvSent;
-        if (GetOverlappedResult((HANDLE) osfd, ol, &rvSent, FALSE) == TRUE) {
-            SOCKET_LOG(("nsSocketTransport::CloseSocket - "
-                        "GetOverlappedResult done\n"));
-            canClose = true;
-        } else {
-            int err = WSAGetLastError();
-            SOCKET_LOG(("nsSocketTransport::CloseSocket - "
-                        "GetOverlappedResult err=%x\n", err));
-            if (err != ERROR_IO_INCOMPLETE) {
-                canClose = true;
-            }
-        }
-
-      } else {
-        SOCKET_LOG(("nsSocketTransport::CloseSocket - no overlapped struct\n"));
-        canClose = true;
-      }
-    } else {
-      SOCKET_LOG(("nsSocketTransport::CloseSocket - there is no "
-                  "PR_EXPERIMENTAL_ONLY_IN_4_17_GetOverlappedIOHandle function.\n"));
-      canClose = true;
-    }
-
-    if (canClose) {
-        PR_Close(aFd);
-    } else {
-        if (telemetryEnabled) {
-            Telemetry::ScalarAdd(Telemetry::ScalarID::NETWORK_TCP_OVERLAPPED_RESULT_DELAYED, 1);
-        }
-        aSTS->AddOverlappedPendingSocket(aFd);
-    }
-#else
     PR_Close(aFd);
-#endif
 
-    if (telemetryEnabled) {
+
+    if (aTelemetryEnabled) {
         SendPRBlockingTelemetry(closeStarted,
             Telemetry::PRCLOSE_TCP_BLOCKING_TIME_NORMAL,
             Telemetry::PRCLOSE_TCP_BLOCKING_TIME_SHUTDOWN,
