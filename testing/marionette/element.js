@@ -407,6 +407,7 @@ element.findByXPathAll = function(root, startNode, expr) {
 
 
 
+
 element.findByLinkText = function(node, s) {
   return filterLinks(node, link => link.text.trim() === s);
 };
