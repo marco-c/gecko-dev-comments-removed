@@ -262,10 +262,19 @@ class EventEmitter {
 
 
 
+
+
+
+
+
+
+
+
 class LimitedSet extends Set {
-  constructor(limit, iterable = undefined) {
+  constructor(limit, slop = Math.round(limit * .25), iterable = undefined) {
     super(iterable);
     this.limit = limit;
+    this.slop = slop;
   }
 
   truncate(limit) {
@@ -278,7 +287,7 @@ class LimitedSet extends Set {
   }
 
   add(item) {
-    if (!this.has(item) && this.size >= this.limit) {
+    if (!this.has(item) && this.size >= this.limit + this.slop) {
       this.truncate(this.limit - 1);
     }
     super.add(item);
