@@ -97,8 +97,9 @@ ReadRequestedLocales(nsTArray<nsCString>& aRetVal)
   
   
   
-  if (!locale.Equals("en-US")) {
-    aRetVal.AppendElement("en-US");
+  LocaleService::GetInstance()->GetLastFallbackLocale(locale);
+  if (!aRetVal.Contains(locale)) {
+    aRetVal.AppendElement(locale);
   }
   return true;
 }
@@ -314,7 +315,6 @@ LocaleService::GetAvailableLocales(nsTArray<nsCString>& aRetVal)
   aRetVal = mAvailableLocales;
   return true;
 }
-
 
 void
 LocaleService::AvailableLocalesChanged()
@@ -632,15 +632,21 @@ LocaleService::GetDefaultLocale(nsACString& aRetVal)
       }
       mDefaultLocale.Assign(item.Buffer(), len);
     }
-    
-    
+
     
     if (mDefaultLocale.IsEmpty()) {
-      mDefaultLocale.AssignLiteral("en-US");
+      GetLastFallbackLocale(mDefaultLocale);
     }
   }
 
   aRetVal = mDefaultLocale;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LocaleService::GetLastFallbackLocale(nsACString& aRetVal)
+{
+  aRetVal.AssignLiteral("en-US");
   return NS_OK;
 }
 
@@ -971,9 +977,11 @@ NS_IMETHODIMP
 LocaleService::SetRequestedLocales(const char** aRequested,
                                    uint32_t aRequestedCount)
 {
+  nsAutoCString lastFallbackLocale;
+  GetLastFallbackLocale(lastFallbackLocale);
   MOZ_ASSERT(aRequestedCount < 2 ||
-             (aRequestedCount == 2 && strcmp(aRequested[1], "en-US") == 0),
-      "We can only handle one requested locale (optionally with en-US last fallback)");
+             (aRequestedCount == 2 && lastFallbackLocale.Equals(aRequested[1])),
+      "We can only handle one requested locale (optionally with last fallback)");
 
   if (aRequestedCount == 0) {
     Preferences::ClearUser(SELECTED_LOCALE_PREF);
