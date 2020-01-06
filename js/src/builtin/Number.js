@@ -54,24 +54,52 @@ function Number_isNaN(num) {
 }
 
 
+
+function Number_isInteger(number) {
+    
+    if (typeof number !== "number")
+        return false;
+
+    
+    
+    if (number === -(2 ** 31))
+        return true;
+
+    
+    
+    var absNumber = std_Math_abs(number);
+    var integer = std_Math_floor(absNumber);
+
+    
+    if (absNumber - integer !== 0)
+        return false;
+
+    
+    return true;
+}
+
+
+
 function Number_isSafeInteger(number) {
     
     if (typeof number !== "number")
         return false;
 
     
-    if (!Number_isFinite(number))
+    
+    if (number === -(2 ** 31))
+        return true;
+
+    
+    var absNumber = std_Math_abs(number);
+    var integer = std_Math_floor(absNumber);
+
+    
+    if (absNumber - integer !== 0)
         return false;
 
     
-    var integer = ToInteger(number);
-
-    
-    if (integer !== number)
-        return false;
-
-    
-    if (std_Math_abs(integer) <= 9007199254740991)
+    if (integer <= (2 ** 53) - 1)
         return true;
 
     
