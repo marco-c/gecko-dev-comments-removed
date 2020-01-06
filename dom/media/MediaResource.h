@@ -175,17 +175,6 @@ public:
   
   virtual bool ShouldCacheReads() = 0;
 
-  already_AddRefed<MediaByteBuffer> CachedReadAt(int64_t aOffset, uint32_t aCount)
-  {
-    RefPtr<MediaByteBuffer> bytes = new MediaByteBuffer();
-    bool ok = bytes->SetLength(aCount, fallible);
-    NS_ENSURE_TRUE(ok, nullptr);
-    char* curr = reinterpret_cast<char*>(bytes->Elements());
-    nsresult rv = ReadFromCache(curr, aOffset, aCount);
-    NS_ENSURE_SUCCESS(rv, nullptr);
-    return bytes.forget();
-  }
-
   
   
   
@@ -777,6 +766,19 @@ public:
     bytes->SetLength(curr - start);
     return bytes.forget();
   }
+
+  already_AddRefed<MediaByteBuffer> CachedMediaReadAt(int64_t aOffset,
+                                                      uint32_t aCount) const
+  {
+    RefPtr<MediaByteBuffer> bytes = new MediaByteBuffer();
+    bool ok = bytes->SetLength(aCount, fallible);
+    NS_ENSURE_TRUE(ok, nullptr);
+    char* curr = reinterpret_cast<char*>(bytes->Elements());
+    nsresult rv = mResource->ReadFromCache(curr, aOffset, aCount);
+    NS_ENSURE_SUCCESS(rv, nullptr);
+    return bytes.forget();
+  }
+
   
   
   
