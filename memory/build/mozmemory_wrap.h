@@ -104,12 +104,6 @@
 
 
 
-
-
-
-
-
-
 #ifndef MOZ_MEMORY
 #  error Should only include mozmemory_wrap.h when MOZ_MEMORY is set.
 #endif
@@ -153,9 +147,6 @@
 #    define mozmem_dup_impl(a)      wrap_ ## a
 #  endif
 #endif
-
-
-#define je_(a) je_ ## a
 
 #if !defined(MOZ_MEMORY_IMPL)
 #  define MOZ_MEMORY_API MFBT_API
