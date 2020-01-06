@@ -14,6 +14,7 @@
 #include "mozilla/dom/MediaStreamTrackBinding.h"
 #include "mozilla/dom/MediaTrackSettingsBinding.h"
 #include "mozilla/media/MediaUtils.h"
+#include "mozilla/WeakPtr.h"
 #include "nsError.h"
 #include "nsID.h"
 #include "nsIPrincipal.h"
@@ -221,11 +222,11 @@ protected:
 
 
 
-class MediaStreamTrackConsumer : public nsISupports
+class MediaStreamTrackConsumer
+  : public SupportsWeakPtr<MediaStreamTrackConsumer>
 {
 public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(MediaStreamTrackConsumer)
+  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(MediaStreamTrackConsumer)
 
   
 
@@ -233,9 +234,6 @@ public:
 
 
   virtual void NotifyEnded(MediaStreamTrack* aTrack) {};
-
-protected:
-  virtual ~MediaStreamTrackConsumer() {}
 };
 
 
@@ -456,7 +454,7 @@ protected:
 
   nsTArray<PrincipalChangeObserver<MediaStreamTrack>*> mPrincipalChangeObservers;
 
-  nsTArray<RefPtr<MediaStreamTrackConsumer>> mConsumers;
+  nsTArray<WeakPtr<MediaStreamTrackConsumer>> mConsumers;
 
   RefPtr<DOMMediaStream> mOwningStream;
   TrackID mTrackID;
