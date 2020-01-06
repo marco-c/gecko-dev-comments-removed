@@ -60,6 +60,8 @@ add_task(async function focus() {
   changeOptionsLink.click();
   await prefsPromise;
   Assert.ok(!gURLBar.popup.popupOpen, "popup should be closed");
+  
+  await BrowserTestUtils.loadURI(gBrowser.selectedBrowser, "about:blank");
 });
 
 add_task(async function new_tab() {
