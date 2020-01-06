@@ -122,8 +122,16 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
         final int keyPressMetaState = (unicodeChar >= ' ' &&
                 unicodeChar != unmodifiedUnicodeChar) ? unmodifiedMetaState : metaState;
 
+        
+        
+        
+        
+        
+        final int keyUpDownMetaState =
+                isSynthesizedImeKey ? (unmodifiedMetaState | savedMetaState) : metaState;
+
         child.onKeyEvent(action, event.getKeyCode(), event.getScanCode(),
-                   metaState, keyPressMetaState, event.getEventTime(),
+                   keyUpDownMetaState, keyPressMetaState, event.getEventTime(),
                    domPrintableKeyValue, event.getRepeatCount(), event.getFlags(),
                    isSynthesizedImeKey, event);
     }
