@@ -2031,31 +2031,30 @@ UpdateService.prototype = {
     }
 
     let validUpdateURL = true;
-    try {
-      this.backgroundChecker.getUpdateURL(false);
-    } catch (e) {
+    this.backgroundChecker.getUpdateURL(false).catch(e => {
       validUpdateURL = false;
-    }
-    
-    
-    if (!UpdateUtils.OSVersion) {
-      AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_OS_VERSION);
-    } else if (!UpdateUtils.ABI) {
-      AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_OS_ABI);
-    } else if (!validUpdateURL) {
-      AUSTLMY.pingCheckCode(this._pingSuffix,
-                            AUSTLMY.CHK_INVALID_DEFAULT_URL);
-    } else if (!getPref("getBoolPref", PREF_APP_UPDATE_ENABLED, true)) {
-      AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_PREF_DISABLED);
-    } else if (!hasUpdateMutex()) {
-      AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_MUTEX);
-    } else if (!gCanCheckForUpdates) {
-      AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_UNABLE_TO_CHECK);
-    } else if (!this.backgroundChecker._enabled) {
-      AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_DISABLED_FOR_SESSION);
-    }
+    }).then(() => {
+      
+      
+      if (!UpdateUtils.OSVersion) {
+        AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_OS_VERSION);
+      } else if (!UpdateUtils.ABI) {
+        AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_OS_ABI);
+      } else if (!validUpdateURL) {
+        AUSTLMY.pingCheckCode(this._pingSuffix,
+                              AUSTLMY.CHK_INVALID_DEFAULT_URL);
+      } else if (!getPref("getBoolPref", PREF_APP_UPDATE_ENABLED, true)) {
+        AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_PREF_DISABLED);
+      } else if (!hasUpdateMutex()) {
+        AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_MUTEX);
+      } else if (!gCanCheckForUpdates) {
+        AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_UNABLE_TO_CHECK);
+      } else if (!this.backgroundChecker._enabled) {
+        AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_DISABLED_FOR_SESSION);
+      }
 
-    this.backgroundChecker.checkForUpdates(this, false);
+      this.backgroundChecker.checkForUpdates(this, false);
+    });
   },
 
   
@@ -2818,7 +2817,7 @@ Checker.prototype = {
 
 
 
-  getUpdateURL: function UC_getUpdateURL(force) {
+  getUpdateURL: async function UC_getUpdateURL(force) {
     this._forced = force;
 
     let url = Services.prefs.getDefaultBranch(null).
@@ -2829,7 +2828,7 @@ Checker.prototype = {
       return null;
     }
 
-    url = UpdateUtils.formatUpdateURL(url);
+    url = await UpdateUtils.formatUpdateURL(url);
 
     if (force) {
       url += (url.indexOf("?") != -1 ? "&" : "?") + "force=1";
@@ -2844,40 +2843,47 @@ Checker.prototype = {
 
   checkForUpdates: function UC_checkForUpdates(listener, force) {
     LOG("Checker: checkForUpdates, force: " + force);
-    if (!listener)
+    if (!listener) {
       throw Cr.NS_ERROR_NULL_POINTER;
+    }
 
-    var url = this.getUpdateURL(force);
-    if (!url || (!this.enabled && !force))
+    if (!this.enabled && !force) {
       return;
+    }
 
-    this._request = new XMLHttpRequest();
-    this._request.open("GET", url, true);
-    this._request.channel.notificationCallbacks = new gCertUtils.BadCertHandler(false);
-    
-    this._request.channel.loadFlags |= Ci.nsIRequest.LOAD_BYPASS_CACHE;
-    
-    this._request.channel.loadFlags |= Ci.nsIRequest.INHIBIT_CACHING;
-    
-    this._request.channel.QueryInterface(Ci.nsIHttpChannelInternal).beConservative = true;
+    this.getUpdateURL(force).then(url => {
+      if (!url) {
+        return;
+      }
 
-    this._request.overrideMimeType("text/xml");
-    
-    
-    
-    this._request.setRequestHeader("Cache-Control", "no-cache");
-    
-    
-    this._request.setRequestHeader("Pragma", "no-cache");
+      this._request = new XMLHttpRequest();
+      this._request.open("GET", url, true);
+      this._request.channel.notificationCallbacks = new gCertUtils.BadCertHandler(false);
+      
+      this._request.channel.loadFlags |= Ci.nsIRequest.LOAD_BYPASS_CACHE;
+      
+      this._request.channel.loadFlags |= Ci.nsIRequest.INHIBIT_CACHING;
+      
+      this._request.channel.QueryInterface(Ci.nsIHttpChannelInternal).beConservative = true;
 
-    var self = this;
-    this._request.addEventListener("error", function(event) { self.onError(event); });
-    this._request.addEventListener("load", function(event) { self.onLoad(event); });
+      this._request.overrideMimeType("text/xml");
+      
+      
+      
+      this._request.setRequestHeader("Cache-Control", "no-cache");
+      
+      
+      this._request.setRequestHeader("Pragma", "no-cache");
 
-    LOG("Checker:checkForUpdates - sending request to: " + url);
-    this._request.send(null);
+      var self = this;
+      this._request.addEventListener("error", function(event) { self.onError(event); });
+      this._request.addEventListener("load", function(event) { self.onLoad(event); });
 
-    this._callback = listener;
+      LOG("Checker:checkForUpdates - sending request to: " + url);
+      this._request.send(null);
+
+      this._callback = listener;
+    });
   },
 
   
@@ -2913,7 +2919,7 @@ Checker.prototype = {
         LOG("Checker:_updates get - invalid <update/>, ignoring...");
         continue;
       }
-      update.serviceURL = this.getUpdateURL(this._forced);
+      update.serviceURL = this._request.responseURL;
       update.channel = UpdateUtils.UpdateChannel;
       updates.push(update);
     }
