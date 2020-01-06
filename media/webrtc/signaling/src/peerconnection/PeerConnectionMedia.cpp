@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include <ostream>
 #include <string>
@@ -62,7 +62,7 @@ static const char* pcmLogTag = "PeerConnectionMedia";
 #endif
 #define LOGTAG pcmLogTag
 
-//XXX(pkerr) What about bitrate settings? Going with the defaults for now.
+
 RefPtr<WebRtcCallWrapper>
 CreateCall()
 {
@@ -111,8 +111,8 @@ PipelineDetachTransport_s(RefPtr<MediaPipeline> pipeline,
 {
   pipeline->DetachTransport_s();
   mainThread->Dispatch(
-      // Make sure we let go of our reference before dispatching
-      // If the dispatch fails, well, we're hosed anyway.
+      
+      
       WrapRunnableNM(PipelineReleaseRef_m, pipeline.forget()),
       NS_DISPATCH_NORMAL);
 }
@@ -161,8 +161,8 @@ SourceStreamInfo::RemoveTrack(const std::string& trackId)
 void SourceStreamInfo::DetachTransport_s()
 {
   ASSERT_ON_THREAD(mParent->GetSTSThread());
-  // walk through all the MediaPipelines and call the shutdown
-  // transport functions. Must be on the STS thread.
+  
+  
   for (auto& pipeline : mPipelines) {
     pipeline.second->DetachTransport_s();
   }
@@ -172,8 +172,8 @@ void SourceStreamInfo::DetachMedia_m()
 {
   ASSERT_ON_THREAD(mParent->GetMainThread());
 
-  // walk through all the MediaPipelines and call the shutdown
-  // media functions. Must be on the main thread.
+  
+  
   for (auto& pipeline : mPipelines) {
     pipeline.second->ShutdownMedia_m();
   }
@@ -206,7 +206,7 @@ OnProxyAvailable(nsICancelable *request,
                  nsresult result) {
 
   if (!pcm_->mProxyRequest) {
-    // PeerConnectionMedia is no longer waiting
+    
     return NS_OK;
   }
 
@@ -246,11 +246,11 @@ PeerConnectionMedia::ProtocolProxyQueryHandler::SetProxyOnPcm(
 
   if (pcm_->mIceCtxHdlr.get()) {
     assert(httpsProxyPort >= 0 && httpsProxyPort < (1 << 16));
-    // Note that this could check if PrivacyRequested() is set on the PC and
-    // remove "webrtc" from the ALPN list.  But that would only work if the PC
-    // was constructed with a peerIdentity constraint, not when isolated
-    // streams are added.  If we ever need to signal to the proxy that the
-    // media is isolated, then we would need to restructure this code.
+    
+    
+    
+    
+    
     pcm_->mProxyServer.reset(
       new NrIceProxyServer(httpsProxyHost.get(),
                            static_cast<uint16_t>(httpsProxyPort),
@@ -274,6 +274,13 @@ PeerConnectionMedia::StunAddrsHandler::OnStunAddrsAvailable(
     pcm_->mLocalAddrsCompleted = true;
     pcm_->mStunAddrsRequest = nullptr;
     pcm_->FlushIceCtxOperationQueueIfReady();
+    
+    
+    if (!pcm_->mStunAddrs.Length()) {
+      pcm_->SignalIceConnectionStateChange(pcm_->mIceCtxHdlr->ctx().get(),
+                                           NrIceCtx::ICE_CTX_FAILED);
+    }
+
     pcm_ = nullptr;
   }
 }
@@ -303,15 +310,15 @@ PeerConnectionMedia::InitLocalAddrs()
       ? mParent->GetWindow()->EventTargetFor(TaskCategory::Other)
       : nullptr;
 
-    // We're in the content process, so send a request over IPC for the
-    // stun address discovery.
+    
+    
     mStunAddrsRequest =
       new StunAddrsRequestChild(new StunAddrsHandler(this), target);
     mStunAddrsRequest->SendGetStunAddrs();
   } else {
-    // No content process, so don't need to hold up the ice event queue
-    // until completion of stun address discovery. We can let the
-    // discovery of stun addresses happen in the same process.
+    
+    
+    
     mLocalAddrsCompleted = true;
   }
 }
@@ -319,8 +326,8 @@ PeerConnectionMedia::InitLocalAddrs()
 nsresult
 PeerConnectionMedia::InitProxy()
 {
-  // Allow mochitests to disable this, since mochitest configures a fake proxy
-  // that serves up content.
+  
+  
   bool disable = Preferences::GetBool("media.peerconnection.disable_http_proxy",
                                       false);
   if (disable) {
@@ -336,9 +343,9 @@ PeerConnectionMedia::InitProxy()
     return NS_ERROR_FAILURE;
   }
 
-  // We use the following URL to find the "default" proxy address for all HTTPS
-  // connections.  We will only attempt one HTTP(S) CONNECT per peer connection.
-  // "example.com" is guaranteed to be unallocated and should return the best default.
+  
+  
+  
   nsCOMPtr<nsIURI> fakeHttpsLocation;
   rv = NS_NewURI(getter_AddRefs(fakeHttpsLocation), "https://example.com");
   if (NS_FAILED(rv)) {
@@ -384,11 +391,11 @@ nsresult PeerConnectionMedia::Init(const std::vector<NrIceStunServer>& stun_serv
 
   bool ice_tcp = Preferences::GetBool("media.peerconnection.ice.tcp", false);
 
-  // setup the stun local addresses IPC async call
+  
   InitLocalAddrs();
 
-  // TODO(ekr@rtfm.com): need some way to set not offerer later
-  // Looks like a bug in the NrIceCtx API.
+  
+  
   mIceCtxHdlr = NrIceCtxHandler::Create("PC:" + mParentName,
                                         mParent->GetAllowIceLoopback(),
                                         ice_tcp,
@@ -403,7 +410,7 @@ nsresult PeerConnectionMedia::Init(const std::vector<NrIceStunServer>& stun_serv
     CSFLogError(LOGTAG, "%s: Failed to set stun servers", __FUNCTION__);
     return rv;
   }
-  // Give us a way to globally turn off TURN support
+  
   bool disabled = Preferences::GetBool("media.peerconnection.turn.disable", false);
   if (!disabled) {
     if (NS_FAILED(rv = mIceCtxHdlr->ctx()->SetTurnServers(turn_servers))) {
@@ -424,7 +431,7 @@ nsresult PeerConnectionMedia::Init(const std::vector<NrIceStunServer>& stun_serv
   }
   ConnectSignals(mIceCtxHdlr->ctx().get());
 
-  // This webrtc:Call instance will be shared by audio and video media conduits.
+  
   mCall = CreateCall();
 
   return NS_OK;
@@ -497,7 +504,7 @@ PeerConnectionMedia::ActivateOrRemoveTransports(const JsepSession& aSession,
       candidates = transport->mIce->GetCandidates();
     } else {
       CSFLogDebug(LOGTAG, "Transport %u is disabled", static_cast<unsigned>(i));
-      // Make sure the MediaPipelineFactory doesn't try to use these.
+      
       RemoveTransportFlow(i, false);
       RemoveTransportFlow(i, true);
     }
@@ -523,7 +530,7 @@ PeerConnectionMedia::ActivateOrRemoveTransports(const JsepSession& aSession,
         NS_DISPATCH_NORMAL);
   }
 
-  // We can have more streams than m-lines due to rollback.
+  
   RUN_ON_THREAD(
       GetSTSThread(),
       WrapRunnable(RefPtr<PeerConnectionMedia>(this),
@@ -561,7 +568,7 @@ PeerConnectionMedia::ActivateOrRemoveTransport_s(
                 static_cast<unsigned>(aComponentCount));
 
     std::vector<std::string> attrs;
-    attrs.reserve(aCandidateList.size() + 2 /* ufrag + pwd */);
+    attrs.reserve(aCandidateList.size() + 2 );
     for (const auto& candidate : aCandidateList) {
       attrs.push_back("candidate:" + candidate);
     }
@@ -575,7 +582,7 @@ PeerConnectionMedia::ActivateOrRemoveTransport_s(
     }
 
     for (size_t c = aComponentCount; c < stream->components(); ++c) {
-      // components are 1-indexed
+      
       stream->DisableComponent(c + 1);
     }
   }
@@ -629,7 +636,7 @@ PeerConnectionMedia::StartIceChecks(const JsepSession& aSession)
         aSession.IsIceControlling(),
         aSession.IsOfferer(),
         aSession.RemoteIsIceLite(),
-        // Copy, just in case API changes to return a ref
+        
         std::vector<std::string>(aSession.GetIceOptions())));
 
   PerformOrEnqueueIceCtxOperation(runnable);
@@ -710,7 +717,7 @@ PeerConnectionMedia::BeginIceRestart_s(RefPtr<NrIceCtx> new_ctx)
 {
   ASSERT_ON_THREAD(mSTSThread);
 
-  // hold the original context so we can disconnect signals if needed
+  
   RefPtr<NrIceCtx> originalCtx = mIceCtxHdlr->ctx();
 
   if (mIceCtxHdlr->BeginIceRestart(new_ctx)) {
@@ -751,7 +758,7 @@ PeerConnectionMedia::FinalizeIceRestart_s()
 {
   ASSERT_ON_THREAD(mSTSThread);
 
-  // reset old streams since we don't need them anymore
+  
   for (auto& transportFlow : mTransportFlows) {
     RefPtr<TransportFlow> aFlow = transportFlow.second;
     if (!aFlow) continue;
@@ -785,10 +792,10 @@ PeerConnectionMedia::RollbackIceRestart_s()
 {
   ASSERT_ON_THREAD(mSTSThread);
 
-  // hold the restart context so we can disconnect signals
+  
   RefPtr<NrIceCtx> restartCtx = mIceCtxHdlr->ctx();
 
-  // restore old streams since we're rolling back
+  
   for (auto& transportFlow : mTransportFlows) {
     RefPtr<TransportFlow> aFlow = transportFlow.second;
     if (!aFlow) continue;
@@ -800,7 +807,7 @@ PeerConnectionMedia::RollbackIceRestart_s()
   mIceCtxHdlr->RollbackIceRestart();
   ConnectSignals(mIceCtxHdlr->ctx().get(), restartCtx.get());
 
-  // Fixup the telemetry by transferring abandoned ctx stats to current ctx.
+  
   NrIceStats stats = restartCtx->Destroy();
   restartCtx = nullptr;
   mIceCtxHdlr->ctx()->AccumulateStats(stats);
@@ -809,7 +816,7 @@ PeerConnectionMedia::RollbackIceRestart_s()
 bool
 PeerConnectionMedia::GetPrefDefaultAddressOnly() const
 {
-  ASSERT_ON_THREAD(mMainThread); // will crash on STS thread
+  ASSERT_ON_THREAD(mMainThread); 
 
   uint64_t winId = mParent->GetWindow()->WindowID();
 
@@ -823,7 +830,7 @@ PeerConnectionMedia::GetPrefDefaultAddressOnly() const
 bool
 PeerConnectionMedia::GetPrefProxyOnly() const
 {
-  ASSERT_ON_THREAD(mMainThread); // will crash on STS thread
+  ASSERT_ON_THREAD(mMainThread); 
 
   return Preferences::GetBool("media.peerconnection.ice.proxy_only", false);
 }
@@ -843,10 +850,10 @@ PeerConnectionMedia::ConnectSignals(NrIceCtx *aCtx, NrIceCtx *aOldCtx)
     aOldCtx->SignalGatheringStateChange.disconnect(this);
     aOldCtx->SignalConnectionStateChange.disconnect(this);
 
-    // if the old and new connection state and/or gathering state is
-    // different fire the state update.  Note: we don't fire the update
-    // if the state is *INIT since updates for the INIT state aren't
-    // sent during the normal flow. (mjf)
+    
+    
+    
+    
     if (aOldCtx->connection_state() != aCtx->connection_state() &&
         aCtx->connection_state() != NrIceCtx::ICE_CTX_INIT) {
       aCtx->SignalConnectionStateChange(aCtx, aCtx->connection_state());
@@ -867,7 +874,7 @@ PeerConnectionMedia::AddIceCandidate(const std::string& candidate,
                 WrapRunnable(
                     RefPtr<PeerConnectionMedia>(this),
                     &PeerConnectionMedia::AddIceCandidate_s,
-                    std::string(candidate), // Make copies.
+                    std::string(candidate), 
                     std::string(mid),
                     aMLine),
                 NS_DISPATCH_NORMAL);
@@ -956,17 +963,29 @@ PeerConnectionMedia::EnsureIceGathering_s(bool aDefaultRouteOnly,
     return;
   }
 
-  // Belt and suspenders - in e10s mode, the call below to SetStunAddrs
-  // needs to have the proper flags set on ice ctx.  For non-e10s,
-  // setting those flags happens in StartGathering.  We could probably
-  // just set them here, and only do it here.
+  
+  
+  
+  
+  
+  if (!mStunAddrs.Length() && XRE_IsContentProcess()) {
+    CSFLogInfo(LOGTAG,
+               "%s: No STUN addresses returned from parent process",
+               __FUNCTION__);
+    return;
+  }
+
+  
+  
+  
+  
   mIceCtxHdlr->ctx()->SetCtxFlags(aDefaultRouteOnly, aProxyOnly);
 
   if (mStunAddrs.Length()) {
     mIceCtxHdlr->ctx()->SetStunAddrs(mStunAddrs);
   }
 
-  // Start gathering, but only if there are streams
+  
   for (size_t i = 0; i < mIceCtxHdlr->ctx()->GetStreamCount(); ++i) {
     if (mIceCtxHdlr->ctx()->GetStream(i)) {
       mIceCtxHdlr->ctx()->StartGathering(aDefaultRouteOnly, aProxyOnly);
@@ -974,9 +993,9 @@ PeerConnectionMedia::EnsureIceGathering_s(bool aDefaultRouteOnly,
     }
   }
 
-  // If there are no streams, we're probably in a situation where we've rolled
-  // back while still waiting for our proxy configuration to come back. Make
-  // sure content knows that the rollback has stuck wrt gathering.
+  
+  
+  
   IceGatheringStateChange_s(mIceCtxHdlr->ctx().get(),
                             NrIceCtx::ICE_CTX_GATHER_COMPLETE);
 }
@@ -1054,7 +1073,7 @@ PeerConnectionMedia::SelfDestruct()
 
   CSFLogDebug(LOGTAG, "%s: ", __FUNCTION__);
 
-  // Shut down the media
+  
   for (uint32_t i=0; i < mLocalSourceStreams.Length(); ++i) {
     mLocalSourceStreams[i]->DetachMedia_m();
   }
@@ -1073,7 +1092,7 @@ PeerConnectionMedia::SelfDestruct()
     mProxyRequest = nullptr;
   }
 
-  // Shutdown the transport (async)
+  
   RUN_ON_THREAD(mSTSThread, WrapRunnable(
       this, &PeerConnectionMedia::ShutdownMediaTransport_s),
                 NS_DISPATCH_NORMAL);
@@ -1093,7 +1112,7 @@ PeerConnectionMedia::SelfDestruct_m()
 
   mMainThread = nullptr;
 
-  // Final self-destruct.
+  
   this->Release();
 }
 
@@ -1104,11 +1123,11 @@ PeerConnectionMedia::ShutdownMediaTransport_s()
 
   CSFLogDebug(LOGTAG, "%s: ", __FUNCTION__);
 
-  // Here we access m{Local|Remote}SourceStreams off the main thread.
-  // That's OK because by here PeerConnectionImpl has forgotten about us,
-  // so there is no chance of getting a call in here from outside.
-  // The dispatches from SelfDestruct() and to SelfDestruct_m() provide
-  // memory barriers that protect us from badness.
+  
+  
+  
+  
+  
   for (uint32_t i=0; i < mLocalSourceStreams.Length(); ++i) {
     mLocalSourceStreams[i]->DetachTransport_s();
   }
@@ -1140,7 +1159,7 @@ PeerConnectionMedia::ShutdownMediaTransport_s()
 
   mIceCtxHdlr = nullptr;
 
-  // we're holding a ref to 'this' that's released by SelfDestruct_m
+  
   mMainThread->Dispatch(WrapRunnable(this, &PeerConnectionMedia::SelfDestruct_m),
                         NS_DISPATCH_NORMAL);
 }
@@ -1235,7 +1254,7 @@ PeerConnectionMedia::IceGatheringStateChange_s(NrIceCtx* ctx,
   ASSERT_ON_THREAD(mSTSThread);
 
   if (state == NrIceCtx::ICE_CTX_GATHER_COMPLETE) {
-    // Fire off EndOfLocalCandidates for each stream
+    
     for (size_t i = 0; ; ++i) {
       RefPtr<NrIceMediaStream> stream(ctx->GetStream(i));
       if (!stream) {
@@ -1253,10 +1272,10 @@ PeerConnectionMedia::IceGatheringStateChange_s(NrIceCtx* ctx,
     }
   }
 
-  // ShutdownMediaTransport_s has not run yet because it unhooks this function
-  // from its signal, which means that SelfDestruct_m has not been dispatched
-  // yet either, so this PCMedia will still be around when this dispatch reaches
-  // main.
+  
+  
+  
+  
   GetMainThread()->Dispatch(
     WrapRunnable(this,
                  &PeerConnectionMedia::IceGatheringStateChange_m,
@@ -1270,10 +1289,10 @@ PeerConnectionMedia::IceConnectionStateChange_s(NrIceCtx* ctx,
                                                 NrIceCtx::ConnectionState state)
 {
   ASSERT_ON_THREAD(mSTSThread);
-  // ShutdownMediaTransport_s has not run yet because it unhooks this function
-  // from its signal, which means that SelfDestruct_m has not been dispatched
-  // yet either, so this PCMedia will still be around when this dispatch reaches
-  // main.
+  
+  
+  
+  
   GetMainThread()->Dispatch(
     WrapRunnable(this,
                  &PeerConnectionMedia::IceConnectionStateChange_m,
@@ -1296,10 +1315,10 @@ PeerConnectionMedia::OnCandidateFound_s(NrIceMediaStream *aStream,
   NrIceCandidate rtcpCandidate;
   GetDefaultCandidates(*aStream, &candidate, &rtcpCandidate);
 
-  // ShutdownMediaTransport_s has not run yet because it unhooks this function
-  // from its signal, which means that SelfDestruct_m has not been dispatched
-  // yet either, so this PCMedia will still be around when this dispatch reaches
-  // main.
+  
+  
+  
+  
   GetMainThread()->Dispatch(
     WrapRunnable(this,
                  &PeerConnectionMedia::OnCandidateFound_m,
@@ -1336,7 +1355,7 @@ PeerConnectionMedia::GetDefaultCandidates(const NrIceMediaStream& aStream,
                                           NrIceCandidate* aRtcpCandidate)
 {
   nsresult res = aStream.GetDefaultCandidate(1, aCandidate);
-  // Optional; component won't exist if doing rtcp-mux
+  
   if (NS_FAILED(aStream.GetDefaultCandidate(2, aRtcpCandidate))) {
     aRtcpCandidate->cand_addr.host.clear();
     aRtcpCandidate->cand_addr.port = 0;
@@ -1485,8 +1504,8 @@ LocalSourceStreamInfo::TakePipelineFrom(RefPtr<LocalSourceStreamInfo>& info,
   RefPtr<MediaPipeline> pipeline(info->ForgetPipelineByTrackId_m(oldTrackId));
 
   if (!pipeline) {
-    // Replacetrack can potentially happen in the middle of offer/answer, before
-    // the pipeline has been created.
+    
+    
     CSFLogInfo(LOGTAG, "%s: Replacing track before the pipeline has been "
                        "created, nothing to do.", __FUNCTION__);
     return NS_OK;
@@ -1501,15 +1520,15 @@ LocalSourceStreamInfo::TakePipelineFrom(RefPtr<LocalSourceStreamInfo>& info,
   return NS_OK;
 }
 
-/**
- * Tells you if any local track is isolated to a specific peer identity.
- * Obviously, we want all the tracks to be isolated equally so that they can
- * all be sent or not.  We check once when we are setting a local description
- * and that determines if we flip the "privacy requested" bit on.  Once the bit
- * is on, all media originating from this peer connection is isolated.
- *
- * @returns true if any track has a peerIdentity set on it
- */
+
+
+
+
+
+
+
+
+
 bool
 PeerConnectionMedia::AnyLocalTrackHasPeerIdentity() const
 {
@@ -1562,9 +1581,9 @@ LocalSourceStreamInfo::UpdateSinkIdentity_m(MediaStreamTrack* aTrack,
 
 void RemoteSourceStreamInfo::UpdatePrincipal_m(nsIPrincipal* aPrincipal)
 {
-  // This blasts away the existing principal.
-  // We only do this when we become certain that the all tracks are safe to make
-  // accessible to the script principal.
+  
+  
+  
   for (auto& trackPair : mTracks) {
     MOZ_RELEASE_ASSERT(trackPair.second);
     RemoteTrackSource& source =
@@ -1599,7 +1618,7 @@ PeerConnectionMedia::AnyCodecHasPluginID(uint64_t aPluginID)
 bool
 SourceStreamInfo::AnyCodecHasPluginID(uint64_t aPluginID)
 {
-  // Scan the videoConduits for this plugin ID
+  
   for (auto& pipeline : mPipelines) {
     if (pipeline.second->Conduit()->CodecPluginID() == aPluginID) {
       return true;
@@ -1647,14 +1666,14 @@ void
 RemoteSourceStreamInfo::SyncPipeline(
   RefPtr<MediaPipelineReceive> aPipeline)
 {
-  // See if we have both audio and video here, and if so cross the streams and
-  // sync them
-  // TODO: Do we need to prevent multiple syncs if there is more than one audio
-  // or video track in a single media stream? What are we supposed to do in this
-  // case?
+  
+  
+  
+  
+  
   for (auto i = mPipelines.begin(); i != mPipelines.end(); ++i) {
     if (i->second->IsVideo() != aPipeline->IsVideo()) {
-      // Ok, we have one video, one non-video - cross the streams!
+      
       WebrtcAudioConduit *audio_conduit =
         static_cast<WebrtcAudioConduit*>(aPipeline->IsVideo() ?
                                                   i->second->Conduit() :
@@ -1682,11 +1701,11 @@ RemoteSourceStreamInfo::StartReceiving()
 
   SourceMediaStream* source = GetMediaStream()->GetInputStream()->AsSourceStream();
   source->SetPullEnabled(true);
-  // AdvanceKnownTracksTicksTime(HEAT_DEATH_OF_UNIVERSE) means that in
-  // theory per the API, we can't add more tracks before that
-  // time. However, the impl actually allows it, and it avoids a whole
-  // bunch of locking that would be required (and potential blocking)
-  // if we used smaller values and updated them on each NotifyPull.
+  
+  
+  
+  
+  
   source->AdvanceKnownTracksTime(STREAM_TIME_MAX);
   CSFLogDebug(LOGTAG, "Finished adding tracks to MediaStream %p", source);
 }
@@ -1695,11 +1714,11 @@ RefPtr<MediaPipeline> SourceStreamInfo::GetPipelineByTrackId_m(
     const std::string& trackId) {
   ASSERT_ON_THREAD(mParent->GetMainThread());
 
-  // Refuse to hand out references if we're tearing down.
-  // (Since teardown involves a dispatch to and from STS before MediaPipelines
-  // are released, it is safe to start other dispatches to and from STS with a
-  // RefPtr<MediaPipeline>, since that reference won't be the last one
-  // standing)
+  
+  
+  
+  
+  
   if (mMediaStream) {
     if (mPipelines.count(trackId)) {
       return mPipelines[trackId];
@@ -1714,11 +1733,11 @@ LocalSourceStreamInfo::ForgetPipelineByTrackId_m(const std::string& trackId)
 {
   ASSERT_ON_THREAD(mParent->GetMainThread());
 
-  // Refuse to hand out references if we're tearing down.
-  // (Since teardown involves a dispatch to and from STS before MediaPipelines
-  // are released, it is safe to start other dispatches to and from STS with a
-  // RefPtr<MediaPipeline>, since that reference won't be the last one
-  // standing)
+  
+  
+  
+  
+  
   if (mMediaStream) {
     if (mPipelines.count(trackId)) {
       RefPtr<MediaPipeline> pipeline(mPipelines[trackId]);
@@ -1743,4 +1762,4 @@ RemoteTrackSource::ApplyConstraints(
   return p.forget();
 }
 
-} // namespace mozilla
+} 
