@@ -141,18 +141,6 @@
 #  define	MALLOC_PRODUCTION
 #endif
 
-
-
-
-
-
-#ifdef MOZ_WIDGET_GONK
-    
-#   define MOZ_MALLOC_OPTIONS "ff"
-#else
-#   define MOZ_MALLOC_OPTIONS ""
-#endif
-
 #ifndef MALLOC_PRODUCTION
    
 
@@ -1074,8 +1062,6 @@ static __thread arena_t	*arenas_map;
 
 
 
-
-const char	*_malloc_options = MOZ_MALLOC_OPTIONS;
 
 const uint8_t kAllocJunk = 0xe4;
 const uint8_t kAllocPoison = 0xe5;
@@ -4760,7 +4746,7 @@ malloc_init_hard(void)
 	pagesize_2pow = ffs((int)result) - 1;
 #endif
 
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < 2; i++) {
 		unsigned j;
 
 		
@@ -4790,19 +4776,6 @@ malloc_init_hard(void)
 
 
 
-			} else {
-				
-				buf[0] = '\0';
-				opts = buf;
-			}
-			break;
-		case 2:
-			if (_malloc_options != NULL) {
-				
-
-
-
-				opts = _malloc_options;
 			} else {
 				
 				buf[0] = '\0';
