@@ -4,7 +4,6 @@
 
 "use strict";
 
-const I = require("devtools/client/shared/vendor/immutable");
 const {
   getUrlDetails,
   processNetworkUpdates,
@@ -21,59 +20,173 @@ const {
   UPDATE_REQUEST,
 } = require("../constants");
 
-const Request = I.Record({
-  id: null,
-  
-  isCustom: false,
-  
-  startedMillis: undefined,
-  endedMillis: undefined,
-  method: undefined,
-  url: undefined,
-  urlDetails: undefined,
-  remotePort: undefined,
-  remoteAddress: undefined,
-  isXHR: undefined,
-  cause: undefined,
-  fromCache: undefined,
-  fromServiceWorker: undefined,
-  status: undefined,
-  statusText: undefined,
-  httpVersion: undefined,
-  securityState: undefined,
-  securityInfo: undefined,
-  mimeType: "text/plain",
-  contentSize: undefined,
-  transferredSize: undefined,
-  totalTime: undefined,
-  eventTimings: undefined,
-  headersSize: undefined,
-  
-  
-  customQueryValue: undefined,
-  requestHeaders: undefined,
-  requestHeadersFromUploadStream: undefined,
-  requestCookies: undefined,
-  requestPostData: undefined,
-  responseHeaders: undefined,
-  responseCookies: undefined,
-  responseContent: undefined,
-  responseContentAvailable: false,
-  formDataSections: undefined,
-});
 
-const Requests = I.Record({
-  
-  requests: I.Map(),
-  
-  selectedId: null,
-  preselectedId: null,
-  
-  firstStartedMillis: +Infinity,
-  lastEndedMillis: -Infinity,
-  
-  recording: true,
-});
+
+
+
+
+function Requests() {
+  return {
+    
+    requests: mapNew(),
+    
+    selectedId: null,
+    preselectedId: null,
+    
+    recording: true,
+    
+    firstStartedMillis: +Infinity,
+    lastEndedMillis: -Infinity,
+  };
+}
+
+
+
+
+
+function requestsReducer(state = Requests(), action) {
+  switch (action.type) {
+    
+    case ADD_REQUEST: {
+      let nextState = { ...state };
+
+      let newRequest = {
+        id: action.id,
+        ...action.data,
+        urlDetails: getUrlDetails(action.data.url),
+      };
+
+      nextState.requests = mapSet(state.requests, newRequest.id, newRequest);
+
+      
+      let { startedMillis } = action.data;
+      if (startedMillis < state.firstStartedMillis) {
+        nextState.firstStartedMillis = startedMillis;
+      }
+      if (startedMillis > state.lastEndedMillis) {
+        nextState.lastEndedMillis = startedMillis;
+      }
+
+      
+      if (state.preselectedId && state.preselectedId === action.id) {
+        nextState.selectedId = state.selectedId || state.preselectedId;
+        nextState.preselectedId = null;
+      }
+
+      return nextState;
+    }
+
+    
+    case UPDATE_REQUEST: {
+      let { requests, lastEndedMillis } = state;
+
+      let request = requests.get(action.id);
+      if (!request) {
+        return state;
+      }
+
+      request = {
+        ...request,
+        ...processNetworkUpdates(action.data),
+      };
+
+      return {
+        ...state,
+        requests: mapSet(state.requests, action.id, request),
+        lastEndedMillis: lastEndedMillis,
+      };
+    }
+
+    
+    
+    case CLEAR_REQUESTS: {
+      return {
+        ...Requests(),
+        recording: state.recording,
+      };
+    }
+
+    
+    case SELECT_REQUEST: {
+      return {
+        ...state,
+        selectedId: action.id,
+      };
+    }
+
+    
+    case CLONE_SELECTED_REQUEST: {
+      let { requests, selectedId } = state;
+
+      if (!selectedId) {
+        return state;
+      }
+
+      let clonedRequest = requests.get(selectedId);
+      if (!clonedRequest) {
+        return state;
+      }
+
+      let newRequest = {
+        id: clonedRequest.id + "-clone",
+        method: clonedRequest.method,
+        url: clonedRequest.url,
+        urlDetails: clonedRequest.urlDetails,
+        requestHeaders: clonedRequest.requestHeaders,
+        requestPostData: clonedRequest.requestPostData,
+        isCustom: true
+      };
+
+      return {
+        ...state,
+        requests: mapSet(requests, newRequest.id, newRequest),
+        selectedId: newRequest.id,
+      };
+    }
+
+    
+    case REMOVE_SELECTED_CUSTOM_REQUEST: {
+      return closeCustomRequest(state);
+    }
+
+    
+    case SEND_CUSTOM_REQUEST: {
+      
+      
+      
+      return closeCustomRequest(state.set("preselectedId", action.id));
+    }
+
+    
+    case TOGGLE_RECORDING: {
+      return {
+        ...state,
+        recording: !state.recording,
+      };
+    }
+
+    
+    case OPEN_NETWORK_DETAILS: {
+      let nextState = { ...state };
+      if (!action.open) {
+        nextState.selectedId = null;
+        return nextState;
+      }
+
+      if (!state.selectedId && !state.requests.isEmpty()) {
+        nextState.selectedId = [...state.requests.values()][0].id;
+        return nextState;
+      }
+
+      return state;
+    }
+
+    default:
+      return state;
+  }
+}
+
+
 
 
 
@@ -92,119 +205,41 @@ function closeCustomRequest(state) {
     return state;
   }
 
-  return state.withMutations(st => {
-    st.requests = st.requests.delete(selectedId);
-    st.selectedId = null;
-  });
+  return {
+    ...state,
+    requests: mapDelete(state.requests, selectedId),
+    selectedId: null,
+  };
 }
 
-function requestsReducer(state = new Requests(), action) {
-  switch (action.type) {
-    case ADD_REQUEST: {
-      return state.withMutations(st => {
-        let newRequest = new Request(Object.assign(
-          { id: action.id },
-          action.data,
-          { urlDetails: getUrlDetails(action.data.url) }
-        ));
-        st.requests = st.requests.set(newRequest.id, newRequest);
 
-        
-        let { startedMillis } = action.data;
-        if (startedMillis < st.firstStartedMillis) {
-          st.firstStartedMillis = startedMillis;
-        }
-        if (startedMillis > st.lastEndedMillis) {
-          st.lastEndedMillis = startedMillis;
-        }
 
-        
-        if (st.preselectedId && st.preselectedId === action.id) {
-          st.selectedId = st.selectedId || st.preselectedId;
-          st.preselectedId = null;
-        }
-      });
-    }
-    case CLEAR_REQUESTS: {
-      return new Requests({
-        recording: state.recording
-      });
-    }
-    case CLONE_SELECTED_REQUEST: {
-      let { requests, selectedId } = state;
 
-      if (!selectedId) {
-        return state;
-      }
 
-      let clonedRequest = requests.get(selectedId);
-      if (!clonedRequest) {
-        return state;
-      }
 
-      let newRequest = new Request({
-        id: clonedRequest.id + "-clone",
-        method: clonedRequest.method,
-        url: clonedRequest.url,
-        urlDetails: clonedRequest.urlDetails,
-        requestHeaders: clonedRequest.requestHeaders,
-        requestPostData: clonedRequest.requestPostData,
-        isCustom: true
-      });
 
-      return state.withMutations(st => {
-        st.requests = requests.set(newRequest.id, newRequest);
-        st.selectedId = newRequest.id;
-      });
-    }
-    case OPEN_NETWORK_DETAILS: {
-      if (!action.open) {
-        return state.set("selectedId", null);
-      }
+function mapNew(map) {
+  let newMap = new Map(map);
+  newMap.isEmpty = () => newMap.size == 0;
+  newMap.valueSeq = () => [...newMap.values()];
+  return newMap;
+}
 
-      if (!state.selectedId && !state.requests.isEmpty()) {
-        return state.set("selectedId", state.requests.first().id);
-      }
 
-      return state;
-    }
-    case REMOVE_SELECTED_CUSTOM_REQUEST: {
-      return closeCustomRequest(state);
-    }
-    case SELECT_REQUEST: {
-      return state.set("selectedId", action.id);
-    }
-    case SEND_CUSTOM_REQUEST: {
-      
-      
-      
-      return closeCustomRequest(state.set("preselectedId", action.id));
-    }
-    case TOGGLE_RECORDING: {
-      return state.set("recording", !state.recording);
-    }
-    case UPDATE_REQUEST: {
-      let { requests, lastEndedMillis } = state;
 
-      let updatedRequest = requests.get(action.id);
-      if (!updatedRequest) {
-        return state;
-      }
 
-      updatedRequest = updatedRequest.withMutations(request => {
-        let values = processNetworkUpdates(action.data);
-        request = Object.assign(request, values);
-      });
+function mapSet(map, key, value) {
+  let newMap = mapNew(map);
+  return newMap.set(key, value);
+}
 
-      return state.withMutations(st => {
-        st.requests = requests.set(updatedRequest.id, updatedRequest);
-        st.lastEndedMillis = lastEndedMillis;
-      });
-    }
 
-    default:
-      return state;
-  }
+
+
+function mapDelete(map, key) {
+  let newMap = mapNew(map);
+  newMap.requests.delete(key);
+  return newMap;
 }
 
 module.exports = {
