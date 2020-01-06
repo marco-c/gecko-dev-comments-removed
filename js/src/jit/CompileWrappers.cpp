@@ -4,8 +4,9 @@
 
 
 
-#include "jit/Ion.h"
+#include "jsgc.h"
 
+#include "jit/Ion.h"
 #include "jit/JitCompartment.h"
 
 #include "jscompartmentinlines.h"
