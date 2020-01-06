@@ -315,7 +315,7 @@ private:
 
   
   
-  virtual bool CanPlayThrough();
+  bool CanPlayThrough();
 
   dom::AudioChannel GetAudioChannel() { return mAudioChannel; }
 
@@ -531,6 +531,8 @@ private:
 
   void ConnectMirrors(MediaDecoderStateMachine* aObject);
   void DisconnectMirrors();
+
+  virtual bool CanPlayThroughImpl();
 
   
   
@@ -773,6 +775,7 @@ private:
 
   bool mTelemetryReported;
   const MediaContainerType mContainerType;
+  bool mCanPlayThrough = false;
 };
 
 } 

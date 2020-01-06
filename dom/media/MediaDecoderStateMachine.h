@@ -208,6 +208,17 @@ public:
     OwnerThread()->Dispatch(r.forget());
   }
 
+  void DispatchCanPlayThrough(bool aCanPlayThrough)
+  {
+    RefPtr<MediaDecoderStateMachine> self = this;
+    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+      "MediaDecoderStateMachine::DispatchCanPlayThrough",
+      [self, aCanPlayThrough]() {
+        self->mCanPlayThrough = aCanPlayThrough;
+      });
+    OwnerThread()->DispatchStateChange(r.forget());
+  }
+
   
   void BreakCycles() {
     MOZ_ASSERT(NS_IsMainThread());
@@ -575,6 +586,8 @@ private:
 
   void OnSuspendTimerResolved();
   void CancelSuspendTimer();
+
+  bool mCanPlayThrough = false;
 
   
   
