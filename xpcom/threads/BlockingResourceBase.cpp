@@ -22,6 +22,7 @@
 #include "mozilla/DeadlockDetector.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/RWLock.h"
 
 #if defined(MOZILLA_INTERNAL_API)
 #include "GeckoProfiler.h"
@@ -396,6 +397,44 @@ void
 OffTheBooksMutex::AssertCurrentThreadOwns() const
 {
   MOZ_ASSERT(IsAcquired() && mOwningThread == PR_GetCurrentThread());
+}
+
+
+
+
+
+void
+RWLock::ReadLock()
+{
+  
+  
+  CheckAcquire();
+  this->ReadLockInternal();
+  MOZ_ASSERT(mOwningThread == nullptr);
+}
+
+void
+RWLock::ReadUnlock()
+{
+  MOZ_ASSERT(mOwningThread == nullptr);
+  this->ReadUnlockInternal();
+}
+
+void
+RWLock::WriteLock()
+{
+  CheckAcquire();
+  this->WriteLockInternal();
+  mOwningThread = PR_GetCurrentThread();
+  Acquire();
+}
+
+void
+RWLock::WriteUnlock()
+{
+  Release();
+  mOwningThread = nullptr;
+  this->WriteUnlockInternal();
 }
 
 
