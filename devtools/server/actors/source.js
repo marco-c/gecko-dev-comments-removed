@@ -27,6 +27,7 @@ function isEvalSource(source) {
   
   
   return (introType === "eval" ||
+          introType === "debugger eval" ||
           introType === "Function" ||
           introType === "eventHandler" ||
           introType === "setTimeout" ||
@@ -41,8 +42,7 @@ function getSourceURL(source, window) {
     
     
 
-    if (source.displayURL && source.introductionScript &&
-       !isEvalSource(source.introductionScript.source)) {
+    if (source.displayURL && source.introductionScript) {
       if (source.introductionScript.source.url === "debugger eval code") {
         if (window) {
           
@@ -50,7 +50,7 @@ function getSourceURL(source, window) {
           
           return joinURI(window.location.href, source.displayURL);
         }
-      } else {
+      } else if (!isEvalSource(source.introductionScript.source)) {
         return joinURI(source.introductionScript.source.url, source.displayURL);
       }
     }
