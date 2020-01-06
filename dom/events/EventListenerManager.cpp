@@ -520,6 +520,7 @@ EventListenerManager::EnableDevice(EventMessage aEventMessage)
       
       
       window->EnableDeviceSensor(SENSOR_GAME_ROTATION_VECTOR);
+      window->EnableDeviceSensor(SENSOR_ROTATION_VECTOR);
 #else
       window->EnableDeviceSensor(SENSOR_ORIENTATION);
 #endif
