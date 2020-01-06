@@ -146,6 +146,10 @@ pref("browser.sessionstore.privacy_level", 0);
 pref("browser.sessionstore.debug_logging", false);
 
 
+pref("urlclassifier.downloadAllowTable", "");
+pref("urlclassifier.downloadBlockTable", "");
+
+
 pref("mozilla.widget.force-24bpp", true);
 pref("mozilla.widget.use-buffer-pixmap", true);
 pref("mozilla.widget.disable-native-theme", true);
