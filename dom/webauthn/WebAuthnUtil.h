@@ -32,6 +32,11 @@ nsresult
 ReadToCryptoBuffer(pkix::Reader& aSrc,  CryptoBuffer& aDest,
                    uint32_t aLen);
 
+nsresult
+U2FDecomposeECKey(const CryptoBuffer& aPubKeyBuf,
+                   CryptoBuffer& aXcoord,
+                   CryptoBuffer& aYcoord);
+
 } 
 } 
 
