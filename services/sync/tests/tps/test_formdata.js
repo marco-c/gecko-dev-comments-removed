@@ -31,11 +31,6 @@ var formdata1 = [
   }
 ];
 
-
-
-
-
-
 var formdata2 = [
   { fieldname: "testing",
     value: "success",
@@ -72,15 +67,10 @@ Phase("phase2", [
   [Formdata.verify, formdata1],
 ]);
 
-
-
-
-
-
 Phase("phase3", [
   [Sync],
   [Formdata.delete, formdata_delete],
-
+  [Formdata.verifyNot, formdata_delete],
   [Formdata.verify, formdata2],
   
   [Formdata.add, formdata_new],
@@ -91,7 +81,7 @@ Phase("phase4", [
   [Sync],
   [Formdata.verify, formdata2],
   [Formdata.verify, formdata_new],
-
+  [Formdata.verifyNot, formdata_delete]
 ]);
 
 
