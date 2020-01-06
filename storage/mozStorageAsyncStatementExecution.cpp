@@ -179,7 +179,7 @@ AsyncExecuteStatements::executeAndProcessStatement(sqlite3_stmt *aStatement,
     hasResults = executeStatement(aStatement);
 
     
-    if (mState == ERROR)
+    if (mState == ERROR || mState == CANCELED)
       return false;
 
     
@@ -255,6 +255,11 @@ AsyncExecuteStatements::executeStatement(sqlite3_stmt *aStatement)
       
       (void)::PR_Sleep(PR_INTERVAL_NO_WAIT);
       continue;
+    }
+
+    if (rc == SQLITE_INTERRUPT) {
+      mState = CANCELED;
+      return false;
     }
 
     
