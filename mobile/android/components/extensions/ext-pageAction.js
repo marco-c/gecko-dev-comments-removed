@@ -147,7 +147,8 @@ class PageAction extends EventEmitter {
 
 
   show() {
-    if (this.id) {
+    
+    if (this.id || this.shouldShow) {
       return Promise.resolve();
     }
 
@@ -177,6 +178,10 @@ class PageAction extends EventEmitter {
         this.id = PageActions.add(this.options);
       }
     }).catch(() => {
+      
+      
+      this.shouldShow = false;
+
       return Promise.reject({
         message: "Failed to load PageAction icon",
       });
