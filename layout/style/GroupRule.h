@@ -87,6 +87,7 @@ struct ServoGroupRuleRules
     
     MOZ_ASSERT_UNREACHABLE("stylo: Cloning GroupRule not implemented");
   }
+  ~ServoGroupRuleRules();
 
   void SetParentRule(GroupRule* aParentRule) {
     if (mRuleList) {

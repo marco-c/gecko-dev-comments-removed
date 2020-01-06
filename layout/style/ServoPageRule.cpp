@@ -26,6 +26,7 @@ ServoPageRuleDeclaration::ServoPageRuleDeclaration(
 
 ServoPageRuleDeclaration::~ServoPageRuleDeclaration()
 {
+  mDecls->SetOwningRule(nullptr);
 }
 
 
@@ -143,6 +144,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(ServoPageRule, CSSPageRule)
   
   
   tmp->mDecls.ReleaseWrapper(static_cast<nsISupports*>(p));
+  tmp->mDecls.mDecls->SetOwningRule(nullptr);
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(ServoPageRule, CSSPageRule)
