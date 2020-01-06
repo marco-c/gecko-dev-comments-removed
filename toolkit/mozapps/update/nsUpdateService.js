@@ -191,13 +191,20 @@ const APPID_TO_TOPIC = {
   "{33cb9019-c295-46dd-be21-8c4936574bee}": "xul-window-visible",
 };
 
+
+var gSaveUpdateXMLDelay = 2000;
 var gUpdateMutexHandle = null;
 
 XPCOMUtils.defineLazyModuleGetter(this, "UpdateUtils",
                                   "resource://gre/modules/UpdateUtils.jsm");
-
 XPCOMUtils.defineLazyModuleGetter(this, "WindowsRegistry",
                                   "resource://gre/modules/WindowsRegistry.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
+                                  "resource://gre/modules/AsyncShutdown.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "OS",
+                                  "resource://gre/modules/osfile.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "DeferredTask",
+                                  "resource://gre/modules/DeferredTask.jsm");
 
 XPCOMUtils.defineLazyGetter(this, "gLogEnabled", function aus_gLogEnabled() {
   return getPref("getBoolPref", PREF_APP_UPDATE_LOG, false);
@@ -1573,7 +1580,10 @@ const UpdateServiceFactory = {
 
 function UpdateService() {
   LOG("Creating UpdateService");
-  Services.obs.addObserver(this, "xpcom-shutdown");
+  
+  
+  
+  Services.obs.addObserver(this, "quit-application");
   Services.prefs.addObserver(PREF_APP_UPDATE_LOG, this);
 }
 
@@ -1652,7 +1662,7 @@ UpdateService.prototype = {
           gLogEnabled = getPref("getBoolPref", PREF_APP_UPDATE_LOG, false);
         }
         break;
-      case "xpcom-shutdown":
+      case "quit-application":
         Services.obs.removeObserver(this, topic);
         Services.prefs.removeObserver(PREF_APP_UPDATE_LOG, this);
 
@@ -2511,10 +2521,16 @@ UpdateService.prototype = {
 
 
 function UpdateManager() {
-  
+  if (Services.appinfo.ID == "xpcshell@tests.mozilla.org") {
+    
+    
+    gSaveUpdateXMLDelay = 0;
+  }
+
   
   let activeUpdates = this._loadXMLFileIntoArray(FILE_ACTIVE_UPDATE_XML);
   if (activeUpdates.length > 0) {
+    
     this._activeUpdate = activeUpdates[0];
     
     
@@ -2554,11 +2570,21 @@ UpdateManager.prototype = {
   observe: function UM_observe(subject, topic, data) {
     
     if (topic == "um-reload-update-data") {
+      if (this._updatesXMLSaver) {
+        this._updatesXMLSaver.disarm();
+        AsyncShutdown.profileBeforeChange.removeBlocker(this._updatesXMLSaverCallback);
+        this._updatesXMLSaver = null;
+        this._updatesXMLSaverCallback = null;
+      }
+      
+      
+      gSaveUpdateXMLDelay = 0;
       this._activeUpdate = null;
       let activeUpdates = this._loadXMLFileIntoArray(FILE_ACTIVE_UPDATE_XML);
       if (activeUpdates.length > 0) {
         this._activeUpdate = activeUpdates[0];
       }
+      this._updatesDirty = true;
       delete this._updates;
       let updates = this._loadXMLFileIntoArray(FILE_UPDATES_XML);
       Object.defineProperty(this, "_updates", {
@@ -2617,6 +2643,17 @@ UpdateManager.prototype = {
           "list. Exception: " + ex);
     }
     fileStream.close();
+    if (updates.length == 0) {
+      LOG("UpdateManager:_loadXMLFileIntoArray - update xml file " + fileName +
+          " exists but doesn't contain any updates");
+      
+      try {
+        file.remove(false);
+      } catch (e) {
+        LOG("UpdateManager:_loadXMLFileIntoArray - error removing " + fileName +
+            " file. Exception: " + e);
+      }
+    }
     return updates;
   },
 
@@ -2677,50 +2714,65 @@ UpdateManager.prototype = {
 
 
 
-  _writeUpdatesToXMLFile: function UM__writeUpdatesToXMLFile(updates, fileName) {
+  _writeUpdatesToXMLFile: async function UM__writeUpdatesToXMLFile(updates, fileName) {
     let file = getUpdateFile([fileName]);
     if (updates.length == 0) {
       LOG("UpdateManager:_writeUpdatesToXMLFile - no updates to write. " +
           "removing file: " + file.path);
-      try {
-        file.remove(false);
-      } catch (e) {
-      }
+      await OS.File.remove(file.path, {ignoreAbsent: true});
       return;
     }
 
-    var fos = Cc["@mozilla.org/network/safe-file-output-stream;1"].
-              createInstance(Ci.nsIFileOutputStream);
-    var modeFlags = FileUtils.MODE_WRONLY | FileUtils.MODE_CREATE |
-                    FileUtils.MODE_TRUNCATE;
-    if (!file.exists()) {
-      file.create(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
-    }
-    fos.init(file, modeFlags, FileUtils.PERMS_FILE, 0);
-
+    const EMPTY_UPDATES_DOCUMENT_OPEN = "<?xml version=\"1.0\"?><updates xmlns=\"http://www.mozilla.org/2005/app-update\">";
+    const EMPTY_UPDATES_DOCUMENT_CLOSE = "</updates>";
     try {
       var parser = Cc["@mozilla.org/xmlextras/domparser;1"].
                    createInstance(Ci.nsIDOMParser);
-      const EMPTY_UPDATES_DOCUMENT = "<?xml version=\"1.0\"?><updates xmlns=\"http://www.mozilla.org/2005/app-update\"></updates>";
-      var doc = parser.parseFromString(EMPTY_UPDATES_DOCUMENT, "text/xml");
+      var doc = parser.parseFromString(EMPTY_UPDATES_DOCUMENT_OPEN + EMPTY_UPDATES_DOCUMENT_CLOSE, "text/xml");
 
       for (var i = 0; i < updates.length; ++i) {
         doc.documentElement.appendChild(updates[i].serialize(doc));
       }
 
-      var serializer = Cc["@mozilla.org/xmlextras/xmlserializer;1"].
-                       createInstance(Ci.nsIDOMSerializer);
-      serializer.serializeToStream(doc.documentElement, fos, null);
+      var xml = EMPTY_UPDATES_DOCUMENT_OPEN + doc.documentElement.innerHTML +
+                EMPTY_UPDATES_DOCUMENT_CLOSE;
+      await OS.File.writeAtomic(file.path, xml, {encoding: "utf-8",
+                                                 tmpPath: file.path + ".tmp"});
+      await OS.File.setPermissions(file.path, {unixMode: FileUtils.PERMS_FILE});
     } catch (e) {
+      LOG("UpdateManager:_writeUpdatesToXMLFile - Exception: " + e);
+    }
+  },
+
+  _updatesXMLSaver: null,
+  _updatesXMLSaverCallback: null,
+  
+
+
+  saveUpdates: function UM_saveUpdates() {
+    if (!this._updatesXMLSaver) {
+      this._updatesXMLSaverCallback = () => this._updatesXMLSaver.finalize();
+
+      this._updatesXMLSaver = new DeferredTask(() => this._saveUpdatesXML(),
+                                               gSaveUpdateXMLDelay);
+      AsyncShutdown.profileBeforeChange.addBlocker(
+        "UpdateManager: writing update xml data", this._updatesXMLSaverCallback);
+    } else {
+      this._updatesXMLSaver.disarm();
     }
 
-    FileUtils.closeSafeFileOutputStream(fos);
+    this._updatesXMLSaver.arm();
   },
 
   
 
 
-  saveUpdates: function UM_saveUpdates() {
+
+  _saveUpdatesXML: function UM__saveUpdatesXML() {
+    AsyncShutdown.profileBeforeChange.removeBlocker(this._updatesXMLSaverCallback);
+    this._updatesXMLSaver = null;
+    this._updatesXMLSaverCallback = null;
+
     
     
     
@@ -2731,7 +2783,7 @@ UpdateManager.prototype = {
     
     if (this._updatesDirty) {
       this._updatesDirty = false;
-      this._writeUpdatesToXMLFile(this._updates.slice(0, 10), FILE_UPDATES_XML);
+      this._writeUpdatesToXMLFile(this._updates, FILE_UPDATES_XML);
     }
   },
 
