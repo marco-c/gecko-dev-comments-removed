@@ -975,31 +975,31 @@ using namespace std;
 void
 imgCacheQueue::Remove(imgCacheEntry* entry)
 {
-  auto it = find(mQueue.begin(), mQueue.end(), entry);
-  if (it == mQueue.end()) {
+  uint64_t index = mQueue.IndexOf(entry);
+  if (index == queueContainer::NoIndex) {
     return;
   }
 
-  mSize -= (*it)->GetDataSize();
+  mSize -= mQueue[index]->GetDataSize();
 
   
   
   
-  if (!IsDirty() && it == mQueue.begin()) {
+  if (!IsDirty() && index == 0) {
     std::pop_heap(mQueue.begin(), mQueue.end(),
                   imgLoader::CompareCacheEntries);
-    mQueue.pop_back();
+    mQueue.RemoveElementAt(mQueue.Length() - 1);
     return;
   }
 
   
   
-  mQueue.erase(it);
+  mQueue.RemoveElementAt(index);
 
   
   
   
-  if (mQueue.size() <= 1) {
+  if (mQueue.Length() <= 1) {
     Refresh();
     return;
   }
@@ -1015,7 +1015,7 @@ imgCacheQueue::Push(imgCacheEntry* entry)
   mSize += entry->GetDataSize();
 
   RefPtr<imgCacheEntry> refptr(entry);
-  mQueue.push_back(refptr);
+  mQueue.AppendElement(Move(refptr));
   
   
   if (!IsDirty()) {
@@ -1026,16 +1026,16 @@ imgCacheQueue::Push(imgCacheEntry* entry)
 already_AddRefed<imgCacheEntry>
 imgCacheQueue::Pop()
 {
-  if (mQueue.empty()) {
+  if (mQueue.IsEmpty()) {
     return nullptr;
   }
   if (IsDirty()) {
     Refresh();
   }
 
-  RefPtr<imgCacheEntry> entry = mQueue[0];
   std::pop_heap(mQueue.begin(), mQueue.end(), imgLoader::CompareCacheEntries);
-  mQueue.pop_back();
+  RefPtr<imgCacheEntry> entry = Move(mQueue.LastElement());
+  mQueue.RemoveElementAt(mQueue.Length() - 1);
 
   mSize -= entry->GetDataSize();
   return entry.forget();
@@ -1065,7 +1065,7 @@ imgCacheQueue::IsDirty()
 uint32_t
 imgCacheQueue::GetNumElements() const
 {
-  return mQueue.size();
+  return mQueue.Length();
 }
 
 imgCacheQueue::iterator
@@ -2046,13 +2046,13 @@ imgLoader::EvictEntries(imgCacheQueue& aQueueToClear)
   
   
   nsTArray<RefPtr<imgCacheEntry> > entries(aQueueToClear.GetNumElements());
-  for (imgCacheQueue::const_iterator i = aQueueToClear.begin();
-       i != aQueueToClear.end(); ++i) {
+  for (auto i = aQueueToClear.begin(); i != aQueueToClear.end(); ++i) {
     entries.AppendElement(*i);
   }
 
-  for (uint32_t i = 0; i < entries.Length(); ++i) {
-    if (!RemoveFromCache(entries[i])) {
+  
+  for (auto& entry : entries) {
+    if (!RemoveFromCache(entry)) {
       return NS_ERROR_FAILURE;
     }
   }
