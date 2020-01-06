@@ -179,6 +179,10 @@ public:
 
   
   virtual void AsyncRejectSeekDOMPromiseIfExists() = 0;
+
+  
+  
+  virtual void NotifyWaitingForKey() {}
 };
 
 } 

@@ -4849,7 +4849,7 @@ HTMLMediaElement::FinishDecoderSetup(MediaDecoder* aDecoder)
   
   if (waitingForKeyProducer) {
     mWaitingForKeyListener = waitingForKeyProducer->Connect(
-      mAbstractMainThread, this, &HTMLMediaElement::CannotDecryptWaitingForKey);
+      mAbstractMainThread, this, &HTMLMediaElement::NotifyWaitingForKey);
   }
 
   if (mChannelLoader) {
@@ -7049,9 +7049,9 @@ HTMLMediaElement::GetTopLevelPrincipal()
 }
 
 void
-HTMLMediaElement::CannotDecryptWaitingForKey()
+HTMLMediaElement::NotifyWaitingForKey()
 {
-  LOG(LogLevel::Debug, ("%p, CannotDecryptWaitingForKey()", this));
+  LOG(LogLevel::Debug, ("%p, NotifyWaitingForKey()", this));
 
   
   
