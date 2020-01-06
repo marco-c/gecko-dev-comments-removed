@@ -140,7 +140,7 @@ class JitRuntime
 
     
     
-    using VMWrapperMap = HashMap<const VMFunction*, uint32_t>;
+    using VMWrapperMap = HashMap<const VMFunction*, uint32_t, VMFunction>;
     ExclusiveAccessLockWriteOnceData<VMWrapperMap*> functionWrappers_;
 
     
