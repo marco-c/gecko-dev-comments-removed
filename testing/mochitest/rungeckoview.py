@@ -2,6 +2,7 @@
 
 
 
+from __future__ import absolute_import, print_function
 
 import posixpath
 import shutil
@@ -192,8 +193,8 @@ class GeckoviewTestRunner:
                 
                 
                 
-                print "Automation Error: No crash directory (%s) found on remote device" % \
-                    remote_dir
+                print("Automation Error: No crash directory (%s) found on remote device" %
+                      remote_dir)
                 
                 return True
             self.dm.getDirectory(remote_dir, dump_dir)
