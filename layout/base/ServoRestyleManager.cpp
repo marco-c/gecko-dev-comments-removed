@@ -74,21 +74,9 @@ void
 ServoRestyleManager::RebuildAllStyleData(nsChangeHint aExtraHint,
                                          nsRestyleHint aRestyleHint)
 {
-  StyleSet()->RebuildData();
-
-  mHaveNonAnimationRestyles = true;
-
-  
-  
-  
-  
-  if (Element* root = mPresContext->Document()->GetRootElement()) {
-    PostRestyleEvent(root, aRestyleHint, aExtraHint);
-  }
-
-  
-  
-  
+   
+   
+  PostRebuildAllStyleDataEvent(aExtraHint, aRestyleHint);
 }
 
 void
@@ -100,6 +88,10 @@ ServoRestyleManager::PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
   if (Element* root = mPresContext->Document()->GetRootElement()) {
     PostRestyleEvent(root, aRestyleHint, aExtraHint);
   }
+
+  
+  
+  
 }
 
  void

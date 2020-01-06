@@ -287,12 +287,6 @@ public:
 
 
 
-  void RebuildData();
-
-  
-
-
-
 
   void ClearDataAndMarkDeviceDirty();
 
@@ -383,6 +377,12 @@ private:
                                               nsIAtom* aPseudoTag,
                                               CSSPseudoElementType aPseudoType,
                                               LazyComputeBehavior aMayCompute);
+
+  
+
+
+
+  void RebuildData();
 
   
 
