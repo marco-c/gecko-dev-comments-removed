@@ -574,7 +574,7 @@ SVGSVGElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 }
 
 bool
-SVGSVGElement::IsEventAttributeName(nsIAtom* aName)
+SVGSVGElement::IsEventAttributeNameInternal(nsIAtom* aName)
 {
   
 

@@ -653,7 +653,7 @@ public:
   void DispatchEncrypted(const nsTArray<uint8_t>& aInitData,
                          const nsAString& aInitDataType) override;
 
-  bool IsEventAttributeName(nsIAtom* aName) override;
+  bool IsEventAttributeNameInternal(nsIAtom* aName) override;
 
   
   

@@ -82,7 +82,7 @@ public:
     SetHTMLAttr(nsGkAtoms::rows, aRows, aError);
   }
 
-  virtual bool IsEventAttributeName(nsIAtom *aName) override;
+  virtual bool IsEventAttributeNameInternal(nsIAtom *aName) override;
 
   
   

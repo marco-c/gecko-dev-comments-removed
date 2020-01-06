@@ -201,7 +201,7 @@ public:
 
 
 
-  virtual bool IsEventAttributeName(nsIAtom* aName) override;
+  virtual bool IsEventAttributeNameInternal(nsIAtom* aName) override;
 
 #define EVENT(name_, id_, type_, struct_)
 

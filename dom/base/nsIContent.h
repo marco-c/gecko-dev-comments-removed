@@ -530,7 +530,9 @@ public:
 
 
 
-  virtual bool IsEventAttributeName(nsIAtom* aName)
+  bool IsEventAttributeName(nsIAtom* aName);
+
+  virtual bool IsEventAttributeNameInternal(nsIAtom* aName)
   {
     return false;
   }
