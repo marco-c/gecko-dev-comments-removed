@@ -1568,7 +1568,7 @@ gfxFont::HasFeatureSet(uint32_t aFeature, bool& aFeatureOn)
 
 
 #define ToDeviceUnits(aAppUnits, aDevUnitsPerAppUnit) \
-    (aAppUnits * gfx::Float(aDevUnitsPerAppUnit))
+    (double(aAppUnits)*double(aDevUnitsPerAppUnit))
 
 static AntialiasMode Get2DAAMode(gfxFont::AntialiasOption aAAOption) {
   switch (aAAOption) {
@@ -1863,7 +1863,7 @@ private:
 
 
 
-gfx::Float
+double
 gfxFont::CalcXScale(DrawTarget* aDrawTarget)
 {
     
@@ -1873,7 +1873,7 @@ gfxFont::CalcXScale(DrawTarget* aDrawTarget)
         return 1.0;
     }
 
-    gfx::Float m = sqrtf(t.width * t.width + t.height * t.height);
+    double m = sqrt(t.width * t.width + t.height * t.height);
 
     NS_ASSERTION(m != 0.0, "degenerate transform while synthetic bolding");
     if (m == 0.0) {
@@ -2216,7 +2216,7 @@ gfxFont::Draw(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
     
     
     if (IsSyntheticBold()) {
-        gfx::Float xscale = CalcXScale(aRunParams.context->GetDrawTarget());
+        double xscale = CalcXScale(aRunParams.context->GetDrawTarget());
         fontParams.synBoldOnePixelOffset = aRunParams.direction * xscale;
         if (xscale != 0.0) {
             
