@@ -34,21 +34,14 @@ classifierHelper._updatesToCleanup = [];
 
 
 classifierHelper.waitForInit = function() {
-  let observerService = Cc["@mozilla.org/observer-service;1"]
-                        .getService(Ci.nsIObserverService);
-  let secMan = Cc["@mozilla.org/scriptsecuritymanager;1"]
-               .getService(Ci.nsIScriptSecurityManager);
-  let iosvc = Cc["@mozilla.org/network/io-service;1"]
-              .getService(Ci.nsIIOService);
-
   
   const table = "test-phish-simple";
   const url = "http://itisatrap.org/firefox/its-a-trap.html";
-  let principal = secMan.createCodebasePrincipal(
-    iosvc.newURI(url), {});
+  let principal = Services.scriptSecurityManager.createCodebasePrincipal(
+    Services.io.newURI(url), {});
 
   return new Promise(function(resolve, reject) {
-    observerService.addObserver(function() {
+    Services.obs.addObserver(function() {
       resolve();
     }, "mozentries-update-finished");
 
