@@ -437,8 +437,7 @@ nsPluginTag::InitSandboxLevel()
   
   
   
-  if (mIsFlashPlugin &&
-      !PR_GetEnv("MOZ_ALLOW_WEAKER_SANDBOX") && mSandboxLevel < 2) {
+  if (mIsFlashPlugin && mSandboxLevel < 2) {
     mSandboxLevel = 2;
   }
 #endif
@@ -487,7 +486,7 @@ nsresult nsPluginTag::EnsureMembersAreUTF8()
     ConvertToUTF8(decoder, mFileName);
     ConvertToUTF8(decoder, mFullPath);
   }
-  
+
   
   
   
