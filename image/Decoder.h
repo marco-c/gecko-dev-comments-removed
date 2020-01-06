@@ -219,6 +219,23 @@ public:
 
 
 
+  void SetExpectedSize(const gfx::IntSize& aSize)
+  {
+    mExpectedSize.emplace(aSize);
+  }
+
+  
+
+
+  bool IsExpectedSize() const
+  {
+    return mExpectedSize.isNothing() || *mExpectedSize == Size();
+  }
+
+  
+
+
+
 
 
 
@@ -527,6 +544,7 @@ private:
   ImageMetadata mImageMetadata;
   gfx::IntRect mInvalidRect; 
   Maybe<gfx::IntSize> mOutputSize;  
+  Maybe<gfx::IntSize> mExpectedSize; 
   Progress mProgress;
 
   uint32_t mFrameCount; 
