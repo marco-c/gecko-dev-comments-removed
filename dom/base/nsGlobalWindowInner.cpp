@@ -6332,6 +6332,20 @@ nsGlobalWindowInner::SetTimeout(JSContext* aCx, const nsAString& aHandler,
   return SetTimeoutOrInterval(aCx, aHandler, aTimeout, false, aError);
 }
 
+static bool
+IsInterval(const Optional<int32_t>& aTimeout, int32_t& aResultTimeout)
+{
+  if (aTimeout.WasPassed()) {
+    aResultTimeout = aTimeout.Value();
+    return true;
+  }
+
+  
+  
+  aResultTimeout = 0;
+  return false;
+}
+
 int32_t
 nsGlobalWindowInner::SetInterval(JSContext* aCx, Function& aFunction,
                                  const Optional<int32_t>& aTimeout,
