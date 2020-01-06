@@ -127,10 +127,19 @@ function getDisplayedRequestById(state, id) {
   return getDisplayedRequests(state).find(r => r.id === id);
 }
 
+
+
+
+
+function getRecordingState(state) {
+  return state.requests.recording;
+}
+
 module.exports = {
   getDisplayedRequestById,
   getDisplayedRequests,
   getDisplayedRequestsSummary,
+  getRecordingState,
   getRequestById,
   getSelectedRequest,
   getSortedRequests,
