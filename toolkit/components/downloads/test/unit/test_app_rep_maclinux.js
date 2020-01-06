@@ -5,12 +5,17 @@
 
 
 
+
+
+
+
+
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
                                   "resource://gre/modules/NetUtil.jsm");
 
-const gAppRep = Cc["@mozilla.org/reputationservice/application-reputation-service;1"].
+const gAppRep = Cc["@mozilla.org/downloads/application-reputation-service;1"].
                   getService(Ci.nsIApplicationReputationService);
 var gStillRunning = true;
 var gTables = {};

@@ -1111,12 +1111,6 @@ BrowserGlue.prototype = {
     
     Services.tm.idleDispatchToMainThread(() => {
       SafeBrowsing.init();
-
-      
-      if (Services.prefs.getBoolPref("browser.safebrowsing.passwords.enabled")) {
-        Cc["@mozilla.org/reputationservice/login-reputation-service;1"]
-        .getService(Ci.ILoginReputationService);
-      }
     }, 5000);
 
     if (AppConstants.MOZ_CRASHREPORTER) {
