@@ -370,8 +370,14 @@ nsUnknownContentTypeDialog.prototype = {
 
   getFinalLeafName: function (aLeafName, aFileExt)
   {
-    return DownloadPaths.sanitize(aLeafName) ||
-           "unnamed" + (aFileExt ? "." + aFileExt : "");
+    
+    
+    aLeafName = aLeafName.replace(/^\.+/, "");
+
+    if (aLeafName == "")
+      aLeafName = "unnamed" + (aFileExt ? "." + aFileExt : "");
+
+    return aLeafName;
   },
 
   
