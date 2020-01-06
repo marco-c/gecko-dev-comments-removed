@@ -15,7 +15,6 @@
 
 
 var SECTION = "";
-var VERSION = "ECMA_2";
 var TITLE   = "The Call Constructor";
 
 writeHeaderToLog( SECTION + " "+ TITLE);

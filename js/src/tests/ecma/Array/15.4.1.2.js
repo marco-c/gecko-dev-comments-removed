@@ -21,7 +21,6 @@
 
 
 var SECTION = "15.4.1.2";
-var VERSION = "ECMA_1";
 var TITLE   = "Array Constructor Called as a Function:  Array(len)";
 
 writeHeaderToLog( SECTION + " "+ TITLE);

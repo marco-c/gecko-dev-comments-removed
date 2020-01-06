@@ -14,7 +14,6 @@
 
 
 var SECTION = "statement-007";
-var VERSION = "JS1_4";
 var TITLE   = "The continue statement";
 
 writeHeaderToLog( SECTION + " "+ TITLE);

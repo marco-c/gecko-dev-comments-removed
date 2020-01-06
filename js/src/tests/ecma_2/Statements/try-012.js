@@ -16,7 +16,6 @@
 
 
 var SECTION = "try-012";
-var VERSION = "ECMA_2";
 var TITLE   = "The try statement";
 var BUGNUMBER="336872";
 

@@ -22,7 +22,6 @@
 
 
 var SECTION = "11.4.5";
-var VERSION = "ECMA_1";
 
 writeHeaderToLog( SECTION + " Prefix decrement operator");
 

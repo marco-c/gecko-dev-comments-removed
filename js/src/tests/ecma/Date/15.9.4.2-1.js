@@ -21,7 +21,6 @@
 
 
 var SECTION = "15.9.4.2-1";       
-var VERSION = "ECMA"; 
 var TITLE   = "Regression Test for Date.parse";       
 var BUGNUMBER = "http://bugzilla.mozilla.org/show_bug.cgi?id=4088";     
 

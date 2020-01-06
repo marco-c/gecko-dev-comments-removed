@@ -294,7 +294,6 @@
 
 
 
-  global.VERSION = "";
   global.BUGNUMBER = "";
 
   

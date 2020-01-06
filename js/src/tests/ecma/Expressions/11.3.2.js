@@ -24,7 +24,6 @@
 
 
 var SECTION = "11.3.2";
-var VERSION = "ECMA_1";
 
 writeHeaderToLog( SECTION + " Postfix decrement operator");
 

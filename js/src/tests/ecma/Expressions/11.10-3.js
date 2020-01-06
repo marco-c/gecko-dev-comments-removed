@@ -27,7 +27,6 @@
 
 
 var SECTION = "11.10-3";
-var VERSION = "ECMA_1";
 
 writeHeaderToLog( SECTION + " Binary Bitwise Operators:  ^");
 

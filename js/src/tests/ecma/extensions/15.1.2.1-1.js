@@ -14,7 +14,6 @@
 
 
 var SECTION = "15.1.2.1-1";
-var VERSION = "ECMA_1";
 var TITLE   = "eval(x)";
 
 writeHeaderToLog( SECTION + " "+ TITLE);

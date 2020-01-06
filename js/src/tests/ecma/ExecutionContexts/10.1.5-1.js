@@ -26,7 +26,6 @@
 
 
 var SECTION = "10.5.1-1";
-var VERSION = "ECMA_1";
 
 writeHeaderToLog( SECTION + " Global Object");
 

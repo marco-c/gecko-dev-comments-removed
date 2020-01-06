@@ -17,7 +17,6 @@
 
 
 var SECTION = "12.6.2-2";
-var VERSION = "ECMA_1";
 var TITLE   = "The for statement";
 
 writeHeaderToLog( SECTION + " "+ TITLE);

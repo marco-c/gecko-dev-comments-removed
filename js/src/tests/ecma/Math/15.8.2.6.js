@@ -23,7 +23,6 @@
 
 
 var SECTION = "15.8.2.6";
-var VERSION = "ECMA_1";
 var TITLE   = "Math.ceil(x)";
 
 writeHeaderToLog( SECTION + " "+ TITLE);

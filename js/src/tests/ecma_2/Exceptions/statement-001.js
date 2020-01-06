@@ -20,7 +20,6 @@
 
 var SECTION = "statement-001.js";
 
-var VERSION = "ECMA_1";
 var TITLE   = "The for statement";
 
 writeHeaderToLog( SECTION + " "+ TITLE);

@@ -19,7 +19,6 @@
 
 
 var SECTION = "number-003";
-var VERSION = "JS1_4";
 var TITLE   = "Exceptions for Number.valueOf()";
 
 writeHeaderToLog( SECTION + " Number.prototype.valueOf()");

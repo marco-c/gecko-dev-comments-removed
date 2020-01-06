@@ -13,7 +13,6 @@
 
 
 var SECTION = "RegExp/unicode-001.js";
-var VERSION = "ECMA_2";
 var TITLE   = "new RegExp( pattern, flags )";
 
 

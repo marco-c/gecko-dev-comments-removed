@@ -47,7 +47,6 @@
 
 
 var SECTION = "11.2.1-5";
-var VERSION = "ECMA_1";
 var TITLE   = "Property Accessors";
 writeHeaderToLog( SECTION + " "+TITLE );
 

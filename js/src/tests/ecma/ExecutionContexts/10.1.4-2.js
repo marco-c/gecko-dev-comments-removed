@@ -39,7 +39,6 @@
 
 
 var SECTION = "10.1.4-2";
-var VERSION = "ECMA_1";
 
 writeHeaderToLog( SECTION + " Scope Chain and Identifier Resolution");
 

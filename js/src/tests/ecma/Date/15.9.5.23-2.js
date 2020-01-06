@@ -19,7 +19,6 @@
 
 
 var SECTION = "15.9.5.23-2";
-var VERSION = "ECMA_1";
 var TITLE   = "Date.prototype.setTime()";
 
 writeHeaderToLog( SECTION + " "+ TITLE);

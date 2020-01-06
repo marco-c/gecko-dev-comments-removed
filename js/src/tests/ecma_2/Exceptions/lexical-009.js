@@ -24,7 +24,6 @@
 
 
 var SECTION = "lexical-009";
-var VERSION = "ECMA_1";
 var TITLE   = "Future Reserved Words";
 
 writeHeaderToLog( SECTION + " "+ TITLE);

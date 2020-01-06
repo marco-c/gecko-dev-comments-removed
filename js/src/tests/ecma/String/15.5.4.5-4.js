@@ -14,7 +14,6 @@
 
 
 
-var VERSION = "0697";
 var SECTION = "15.5.4.5-4";
 
 writeHeaderToLog( SECTION + " String.prototype.charCodeAt(pos)" );

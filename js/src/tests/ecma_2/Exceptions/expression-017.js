@@ -13,7 +13,6 @@
 
 
 var SECTION = "expression-017";
-var VERSION = "JS1_4";
 var TITLE   = "Function Calls";
 
 writeHeaderToLog( SECTION + " "+ TITLE);

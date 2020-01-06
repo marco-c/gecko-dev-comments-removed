@@ -13,7 +13,6 @@
 
 
 var SECTION = "RegExp/hex-001";
-var VERSION = "ECMA_2";
 var TITLE   = "RegExp patterns that contain HexicdecimalEscapeSequences";
 
 

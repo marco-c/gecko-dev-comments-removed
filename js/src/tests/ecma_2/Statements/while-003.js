@@ -15,7 +15,6 @@
 
 
 var SECTION = "while-003";
-var VERSION = "ECMA_2";
 var TITLE   = "while statement";
 
 writeHeaderToLog( SECTION + " "+ TITLE);

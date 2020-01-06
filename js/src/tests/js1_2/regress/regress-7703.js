@@ -12,7 +12,6 @@
 
 
 var SECTION = "js1_2";       
-var VERSION = "JS1_2"; 
 var TITLE   = "Regression test for bugzilla # 7703";       
 var BUGNUMBER = "http://bugzilla.mozilla.org/show_bug.cgi?id=7703";     
 

@@ -15,7 +15,6 @@
 
 
 var SECTION = "new-001";
-var VERSION = "JS1_3";
 var TITLE   = "new-001";
 var BUGNUMBER="31567";
 

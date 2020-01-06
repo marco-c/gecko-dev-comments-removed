@@ -40,7 +40,6 @@
 
 
 var SECTION = "11.6.3";
-var VERSION = "ECMA_1";
 
 writeHeaderToLog( SECTION + " Applying the additive operators (+,-) to numbers");
 

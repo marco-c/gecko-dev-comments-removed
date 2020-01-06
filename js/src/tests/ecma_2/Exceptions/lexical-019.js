@@ -24,7 +24,6 @@
 
 
 var SECTION = "lexical-019";
-var VERSION = "JS1_4";
 var TITLE   = "Future Reserved Words";
 
 writeHeaderToLog( SECTION + " "+ TITLE);

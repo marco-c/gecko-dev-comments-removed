@@ -18,7 +18,6 @@
 
 
 var SECTION = "15.7.4.3-3-n";
-var VERSION = "ECMA_1";
 
 writeHeaderToLog( SECTION + " Number.prototype.valueOf()");
 

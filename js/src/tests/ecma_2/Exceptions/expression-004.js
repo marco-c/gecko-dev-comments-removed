@@ -14,7 +14,6 @@
 
 
 var SECTION = "expression-004";
-var VERSION = "JS1_4";
 var TITLE   = "Property Accessors";
 writeHeaderToLog( SECTION + " "+TITLE );
 

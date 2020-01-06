@@ -17,7 +17,6 @@
 
 
 var SECTION = "forin-002";
-var VERSION = "ECMA_2";
 var TITLE   = "The for...in  statement";
 
 writeHeaderToLog( SECTION + " "+ TITLE);

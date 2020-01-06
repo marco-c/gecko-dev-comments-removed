@@ -16,7 +16,6 @@
 
 
 var SECTION = "in-001";
-var VERSION = "JS1_3";
 var TITLE   = "Regression test for 196109";
 var BUGNUMBER="196109";
 

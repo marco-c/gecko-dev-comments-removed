@@ -15,7 +15,6 @@
 
 
 var SECTION = "instanceof-004-n";
-var VERSION = "ECMA_2";
 var TITLE   = "instanceof"
 
 writeHeaderToLog( SECTION + " "+ TITLE);

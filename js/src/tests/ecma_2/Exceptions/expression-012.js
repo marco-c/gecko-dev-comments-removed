@@ -14,7 +14,6 @@
 
 
 var SECTION = "expression-012";
-var VERSION = "JS1_4";
 var TITLE   = "The new operator";
 var BUGNUMBER= "327765";
 

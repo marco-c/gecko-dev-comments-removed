@@ -23,7 +23,6 @@
 
 
 var SECTION = "9.7";
-var VERSION = "ECMA_1";
 
 writeHeaderToLog( SECTION + " Type Conversion:  ToInt16");
 
