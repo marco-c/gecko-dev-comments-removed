@@ -275,6 +275,10 @@ HTMLEditor::Init(nsIDOMDocument* aDoc,
     nsCOMPtr<nsINode> document = do_QueryInterface(aDoc);
     document->AddMutationObserverUnlessExists(this);
 
+    if (!mRootElement) {
+      UpdateRootElement();
+    }
+
     
     if (IsMailEditor()) {
       SetAbsolutePositioningEnabled(false);
@@ -346,48 +350,27 @@ HTMLEditor::PreDestroy(bool aDestroyingFrames)
   return TextEditor::PreDestroy(aDestroyingFrames);
 }
 
-NS_IMETHODIMP
-HTMLEditor::GetRootElement(nsIDOMElement** aRootElement)
+void
+HTMLEditor::UpdateRootElement()
 {
-  NS_ENSURE_ARG_POINTER(aRootElement);
-
-  if (mRootElement) {
-    return EditorBase::GetRootElement(aRootElement);
-  }
-
-  *aRootElement = nullptr;
-
   
   
 
   nsCOMPtr<nsIDOMElement> rootElement;
   nsCOMPtr<nsIDOMHTMLElement> bodyElement;
-  nsresult rv = GetBodyElement(getter_AddRefs(bodyElement));
-  NS_ENSURE_SUCCESS(rv, rv);
-
+  GetBodyElement(getter_AddRefs(bodyElement));
   if (bodyElement) {
     rootElement = bodyElement;
   } else {
     
     
     nsCOMPtr<nsIDOMDocument> domDocument = GetDOMDocument();
-    if (NS_WARN_IF(!domDocument)) {
-      return NS_ERROR_NOT_INITIALIZED;
-    }
-    rv = domDocument->GetDocumentElement(getter_AddRefs(rootElement));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-    
-    if (!rootElement) {
-      return NS_ERROR_NOT_AVAILABLE;
+    if (domDocument) {
+      domDocument->GetDocumentElement(getter_AddRefs(rootElement));
     }
   }
 
   mRootElement = do_QueryInterface(rootElement);
-  rootElement.forget(aRootElement);
-
-  return NS_OK;
 }
 
 already_AddRefed<nsIContent>
@@ -3282,10 +3265,11 @@ HTMLEditor::DoContentInserted(nsIDocument* aDocument,
   RefPtr<HTMLEditor> kungFuDeathGrip(this);
 
   if (ShouldReplaceRootElement()) {
+    UpdateRootElement();
     nsContentUtils::AddScriptRunner(
-      NewRunnableMethod("HTMLEditor::ResetRootElementAndEventTarget",
+      NewRunnableMethod("HTMLEditor::NotifyRootChanged",
                         this,
-                        &HTMLEditor::ResetRootElementAndEventTarget));
+                        &HTMLEditor::NotifyRootChanged));
   }
   
   else if (!mAction && (aContainer ? aContainer->IsEditable() : aDocument->IsEditable())) {
@@ -3335,10 +3319,11 @@ HTMLEditor::ContentRemoved(nsIDocument* aDocument,
   RefPtr<HTMLEditor> kungFuDeathGrip(this);
 
   if (SameCOMIdentity(aChild, mRootElement)) {
+    mRootElement = nullptr;
     nsContentUtils::AddScriptRunner(
-      NewRunnableMethod("HTMLEditor::ResetRootElementAndEventTarget",
+      NewRunnableMethod("HTMLEditor::NotifyRootChanged",
                         this,
-                        &HTMLEditor::ResetRootElementAndEventTarget));
+                        &HTMLEditor::NotifyRootChanged));
   }
   
   else if (!mAction && (aContainer ? aContainer->IsEditable() : aDocument->IsEditable())) {
@@ -5073,24 +5058,18 @@ HTMLEditor::ShouldReplaceRootElement()
 }
 
 void
-HTMLEditor::ResetRootElementAndEventTarget()
+HTMLEditor::NotifyRootChanged()
 {
   nsCOMPtr<nsIMutationObserver> kungFuDeathGrip(this);
 
-  
-  
-  
   RemoveEventListeners();
-  mRootElement = nullptr;
   nsresult rv = InstallEventListeners();
   if (NS_FAILED(rv)) {
     return;
   }
 
-  
-  nsCOMPtr<nsIDOMElement> root;
-  rv = GetRootElement(getter_AddRefs(root));
-  if (NS_FAILED(rv) || !mRootElement) {
+  UpdateRootElement();
+  if (!mRootElement) {
     return;
   }
 
