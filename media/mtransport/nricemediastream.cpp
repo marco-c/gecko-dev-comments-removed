@@ -402,6 +402,13 @@ nsresult NrIceMediaStream::GetCandidatePairs(std::vector<NrIceCandidatePair>*
 
     pair.priority = p1->priority;
     pair.nominated = p1->peer_nominated || p1->nominated;
+    
+    
+    
+    
+    
+    pair.writable = p1->remote->component->can_send;
+    pair.readable = p1->remote->component->can_send;
     pair.selected = p1->remote->component &&
                     p1->remote->component->active == p1;
     pair.codeword = p1->codeword;

@@ -115,6 +115,8 @@ struct NrIceCandidatePair {
   
   
   bool nominated;
+  bool writable;
+  bool readable;
   
   
   bool selected;
