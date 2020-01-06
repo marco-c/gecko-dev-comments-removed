@@ -12,14 +12,14 @@
 #include "gtest/gtest.h"
 #include "scoped_ptrs.h"
 
-#include "pk11_rsapss_vectors.h"
 #include "pk11_signature_test.h"
+#include "pk11_rsapss_vectors.h"
 
 namespace nss_test {
 
-class Pkcs11RsaPssVectorTest : public Pk11SignatureTest {
+class Pkcs11RsaPssTest : public Pk11SignatureTest {
  public:
-  Pkcs11RsaPssVectorTest() {
+  Pkcs11RsaPssTest() : Pk11SignatureTest(CKM_RSA_PKCS_PSS, SEC_OID_SHA1) {
     rsaPssParams_.hashAlg = CKM_SHA_1;
     rsaPssParams_.mgf = CKG_MGF1_SHA1;
     rsaPssParams_.sLen = HASH_ResultLenByOidTag(SEC_OID_SHA1);
@@ -30,16 +30,14 @@ class Pkcs11RsaPssVectorTest : public Pk11SignatureTest {
   }
 
  protected:
-  CK_MECHANISM_TYPE mechanism() { return CKM_RSA_PKCS_PSS; }
-  SECItem* parameters() { return &params_; }
-  SECOidTag hashOID() { return SEC_OID_SHA1; }
+  const SECItem* parameters() const { return &params_; }
 
  private:
   CK_RSA_PKCS_PSS_PARAMS rsaPssParams_;
   SECItem params_;
 };
 
-TEST_F(Pkcs11RsaPssVectorTest, GenerateAndSignAndVerify) {
+TEST_F(Pkcs11RsaPssTest, GenerateAndSignAndVerify) {
   
   SECOidTag hashOid = SEC_OID_SHA256;
   CK_MECHANISM_TYPE hashMech = CKM_SHA256;
@@ -95,105 +93,56 @@ TEST_F(Pkcs11RsaPssVectorTest, GenerateAndSignAndVerify) {
   EXPECT_EQ(rv, SECFailure);
 }
 
+class Pkcs11RsaPssVectorTest
+    : public Pkcs11RsaPssTest,
+      public ::testing::WithParamInterface<Pkcs11SignatureTestParams> {};
 
+TEST_P(Pkcs11RsaPssVectorTest, Verify) { Verify(GetParam()); }
 
-TEST_F(Pkcs11RsaPssVectorTest, VerifyKnownSignature1) {
-  SIG_TEST_VECTOR_VERIFY(kTestVector1Spki, kTestVector1Data, kTestVector1Sig);
-}
-TEST_F(Pkcs11RsaPssVectorTest, SignAndVerify1) {
-  SIG_TEST_VECTOR_SIGN_VERIFY(kTestVector1Pkcs8, kTestVector1Spki,
-                              kTestVector1Data);
-}
+TEST_P(Pkcs11RsaPssVectorTest, SignAndVerify) { SignAndVerify(GetParam()); }
 
+#define VECTOR(pkcs8, spki, data, sig)                                \
+  {                                                                   \
+    DataBuffer(pkcs8, sizeof(pkcs8)), DataBuffer(spki, sizeof(spki)), \
+        DataBuffer(data, sizeof(data)), DataBuffer(sig, sizeof(sig))  \
+  }
+#define VECTOR_N(n)                                                         \
+  VECTOR(kTestVector##n##Pkcs8, kTestVector##n##Spki, kTestVector##n##Data, \
+         kTestVector##n##Sig)
 
+static const Pkcs11SignatureTestParams kRsaPssVectors[] = {
+    
+    
+    VECTOR_N(1),
+    
+    
+    VECTOR_N(2),
+    
+    
+    VECTOR_N(3),
+    
+    
+    VECTOR_N(4),
+    
+    
+    VECTOR_N(5),
+    
+    
+    VECTOR_N(6),
+    
+    
+    VECTOR_N(7),
+    
+    
+    VECTOR_N(8),
+    
+    
+    VECTOR_N(9),
+    
+    
+    VECTOR_N(10)};
 
-TEST_F(Pkcs11RsaPssVectorTest, VerifyKnownSignature2) {
-  SIG_TEST_VECTOR_VERIFY(kTestVector2Spki, kTestVector2Data, kTestVector2Sig);
-}
-TEST_F(Pkcs11RsaPssVectorTest, SignAndVerify2) {
-  SIG_TEST_VECTOR_SIGN_VERIFY(kTestVector2Pkcs8, kTestVector2Spki,
-                              kTestVector2Data);
-}
-
-
-
-TEST_F(Pkcs11RsaPssVectorTest, VerifyKnownSignature3) {
-  SIG_TEST_VECTOR_VERIFY(kTestVector3Spki, kTestVector3Data, kTestVector3Sig);
-}
-TEST_F(Pkcs11RsaPssVectorTest, SignAndVerify3) {
-  SIG_TEST_VECTOR_SIGN_VERIFY(kTestVector3Pkcs8, kTestVector3Spki,
-                              kTestVector3Data);
-}
-
-
-
-TEST_F(Pkcs11RsaPssVectorTest, VerifyKnownSignature4) {
-  SIG_TEST_VECTOR_VERIFY(kTestVector4Spki, kTestVector4Data, kTestVector4Sig);
-}
-TEST_F(Pkcs11RsaPssVectorTest, SignAndVerify4) {
-  SIG_TEST_VECTOR_SIGN_VERIFY(kTestVector4Pkcs8, kTestVector4Spki,
-                              kTestVector4Data);
-}
-
-
-
-TEST_F(Pkcs11RsaPssVectorTest, VerifyKnownSignature5) {
-  SIG_TEST_VECTOR_VERIFY(kTestVector5Spki, kTestVector5Data, kTestVector5Sig);
-}
-TEST_F(Pkcs11RsaPssVectorTest, SignAndVerify5) {
-  SIG_TEST_VECTOR_SIGN_VERIFY(kTestVector5Pkcs8, kTestVector5Spki,
-                              kTestVector5Data);
-}
-
-
-
-TEST_F(Pkcs11RsaPssVectorTest, VerifyKnownSignature6) {
-  SIG_TEST_VECTOR_VERIFY(kTestVector6Spki, kTestVector6Data, kTestVector6Sig);
-}
-TEST_F(Pkcs11RsaPssVectorTest, SignAndVerify6) {
-  SIG_TEST_VECTOR_SIGN_VERIFY(kTestVector6Pkcs8, kTestVector6Spki,
-                              kTestVector6Data);
-}
-
-
-
-TEST_F(Pkcs11RsaPssVectorTest, VerifyKnownSignature7) {
-  SIG_TEST_VECTOR_VERIFY(kTestVector7Spki, kTestVector7Data, kTestVector7Sig);
-}
-TEST_F(Pkcs11RsaPssVectorTest, SignAndVerify7) {
-  SIG_TEST_VECTOR_SIGN_VERIFY(kTestVector7Pkcs8, kTestVector7Spki,
-                              kTestVector7Data);
-}
-
-
-
-TEST_F(Pkcs11RsaPssVectorTest, VerifyKnownSignature8) {
-  SIG_TEST_VECTOR_VERIFY(kTestVector8Spki, kTestVector8Data, kTestVector8Sig);
-}
-TEST_F(Pkcs11RsaPssVectorTest, SignAndVerify8) {
-  SIG_TEST_VECTOR_SIGN_VERIFY(kTestVector8Pkcs8, kTestVector8Spki,
-                              kTestVector8Data);
-}
-
-
-
-TEST_F(Pkcs11RsaPssVectorTest, VerifyKnownSignature9) {
-  SIG_TEST_VECTOR_VERIFY(kTestVector9Spki, kTestVector9Data, kTestVector9Sig);
-}
-TEST_F(Pkcs11RsaPssVectorTest, SignAndVerify9) {
-  SIG_TEST_VECTOR_SIGN_VERIFY(kTestVector9Pkcs8, kTestVector9Spki,
-                              kTestVector9Data);
-}
-
-
-
-TEST_F(Pkcs11RsaPssVectorTest, VerifyKnownSignature10) {
-  SIG_TEST_VECTOR_VERIFY(kTestVector10Spki, kTestVector10Data,
-                         kTestVector10Sig);
-}
-TEST_F(Pkcs11RsaPssVectorTest, SignAndVerify10) {
-  SIG_TEST_VECTOR_SIGN_VERIFY(kTestVector10Pkcs8, kTestVector10Spki,
-                              kTestVector10Data);
-}
+INSTANTIATE_TEST_CASE_P(RsaPssSignVerify, Pkcs11RsaPssVectorTest,
+                        ::testing::ValuesIn(kRsaPssVectors));
 
 }  
