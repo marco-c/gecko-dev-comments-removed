@@ -37,12 +37,8 @@ let gFirstPartyBasicPage = TEST_URL_PATH + "file_firstPartyBasic.html";
 
 
 async function openTabInUserContext(aURL, aUserContextId) {
-  let originAttributes =  {
-    userContextId: aUserContextId
-  };
-  let triggeringPrincipal = Services.scriptSecurityManager.createCodebasePrincipal(makeURI(aURL), originAttributes);
   
-  let tab = BrowserTestUtils.addTab(gBrowser, aURL, {userContextId: aUserContextId, triggeringPrincipal});
+  let tab = BrowserTestUtils.addTab(gBrowser, aURL, {userContextId: aUserContextId});
 
   
   gBrowser.selectedTab = tab;
