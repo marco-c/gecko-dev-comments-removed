@@ -2,7 +2,6 @@
 
 
 
-use canvas_traits::webgl::WebGLVertexArrayId;
 use core::cell::Ref;
 use core::iter::FromIterator;
 use dom::bindings::cell::DOMRefCell;
@@ -16,6 +15,7 @@ use dom::webglobject::WebGLObject;
 use dom_struct::dom_struct;
 use std::cell::Cell;
 use std::collections::HashMap;
+use webrender_api::WebGLVertexArrayId;
 
 #[dom_struct]
 pub struct WebGLVertexArrayObjectOES {

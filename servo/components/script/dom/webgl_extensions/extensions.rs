@@ -2,7 +2,6 @@
 
 
 
-use canvas_traits::webgl::WebGLError;
 use core::iter::FromIterator;
 use core::nonzero::NonZero;
 use dom::bindings::cell::DOMRefCell;
@@ -20,6 +19,7 @@ use std::cell::Ref;
 use std::collections::{HashMap, HashSet};
 use super::{ext, WebGLExtension};
 use super::wrapper::{WebGLExtensionWrapper, TypedWebGLExtensionWrapper};
+use webrender_api::WebGLError;
 
 
 
