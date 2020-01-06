@@ -982,23 +982,21 @@ BaselineCompiler::emitBody()
             continue;
         }
 
-        
         if (info->jumpTarget) {
+            
             frame.syncStack(0);
             frame.setStackDepth(info->stackDepth);
+            masm.bind(labelOf(pc));
+        } else if (MOZ_UNLIKELY(compileDebugInstrumentation_)) {
+            
+            frame.syncStack(0);
+        } else {
+            
+            if (frame.stackDepth() > 2)
+                frame.syncStack(2);
         }
 
-        
-        if (compileDebugInstrumentation_)
-            frame.syncStack(0);
-
-        
-        if (frame.stackDepth() > 2)
-            frame.syncStack(2);
-
         frame.assertValidState(*info);
-
-        masm.bind(labelOf(pc));
 
         
         
@@ -1007,13 +1005,13 @@ BaselineCompiler::emitBody()
         bool addIndexEntry = (pc == script->code() || lastOpUnreachable || emittedOps > 100);
         if (addIndexEntry)
             emittedOps = 0;
-        if (!addPCMappingEntry(addIndexEntry)) {
+        if (MOZ_UNLIKELY(!addPCMappingEntry(addIndexEntry))) {
             ReportOutOfMemory(cx);
             return Method_Error;
         }
 
         
-        if (compileDebugInstrumentation_ && !emitDebugTrap())
+        if (MOZ_UNLIKELY(compileDebugInstrumentation_) && !emitDebugTrap())
             return Method_Error;
 
         switch (op) {
@@ -1033,7 +1031,7 @@ BaselineCompiler::emitBody()
 
 #define EMIT_OP(OP)                            \
           case OP:                             \
-            if (!this->emit_##OP())            \
+            if (MOZ_UNLIKELY(!this->emit_##OP())) \
                 return Method_Error;           \
             break;
 OPCODE_LIST(EMIT_OP)
