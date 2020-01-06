@@ -123,11 +123,11 @@ class DependsFunction(object):
             other = self.sandbox._depends.get(other)
         assert isinstance(other, DependsFunction)
         assert self.sandbox is other.sandbox
-        return CombinedDependsFunction(self.sandbox, self.first_true,
+        return CombinedDependsFunction(self.sandbox, self.or_impl,
                                        (self, other))
 
     @staticmethod
-    def first_true(iterable):
+    def or_impl(iterable):
         
         
         for i in iterable:
