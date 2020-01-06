@@ -7929,7 +7929,7 @@ CheckCrossStyleBackendAdoption(nsIDocument* aOldDoc,
   if (styleDataTypes.isEmpty()) {
     return;
   }
-#ifdef MOZ_CRASHREPORTER
+
   
   
   
@@ -7994,7 +7994,7 @@ CheckCrossStyleBackendAdoption(nsIDocument* aOldDoc,
   }
   note.Append('\n');
   CrashReporter::AppendAppNotesToCrashReport(note);
-#endif 
+
   MOZ_CRASH("Must not adopt a node with pre-existing style data "
             "into a document with different style backend");
 }
