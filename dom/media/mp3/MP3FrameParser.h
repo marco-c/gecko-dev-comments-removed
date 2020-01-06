@@ -8,7 +8,8 @@
 #include <vector>
 
 #include "mozilla/Maybe.h"
-#include "mp4_demuxer/ByteReader.h"
+#include "mozilla/Result.h"
+#include "mp4_demuxer/BufferReader.h"
 
 namespace mozilla {
 
@@ -83,7 +84,7 @@ public:
 
   
   
-  uint32_t Parse(mp4_demuxer::ByteReader* aReader);
+  Result<uint32_t, nsresult> Parse(mp4_demuxer::BufferReader* aReader);
 
   
   void Reset();
@@ -227,20 +228,20 @@ public:
     
     
     
-    bool Parse(mp4_demuxer::ByteReader* aReader);
+    bool Parse(mp4_demuxer::BufferReader* aReader);
 
   private:
     
     
     
-    bool ParseXing(mp4_demuxer::ByteReader* aReader);
+    Result<bool, nsresult> ParseXing(mp4_demuxer::BufferReader* aReader);
 
     
     
     
     
     
-    bool ParseVBRI(mp4_demuxer::ByteReader* aReader);
+    Result<bool, nsresult> ParseVBRI(mp4_demuxer::BufferReader* aReader);
 
     
     Maybe<uint32_t> mNumAudioFrames;
@@ -315,13 +316,13 @@ public:
   
   
   
-  bool Parse(mp4_demuxer::ByteReader* aReader, uint32_t* aBytesToSkip);
+  Result<bool, nsresult> Parse(mp4_demuxer::BufferReader* aReader, uint32_t* aBytesToSkip);
 
   
   
   
   
-  bool ParseVBRHeader(mp4_demuxer::ByteReader* aReader);
+  bool ParseVBRHeader(mp4_demuxer::BufferReader* aReader);
 
 private:
   
