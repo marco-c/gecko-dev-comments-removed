@@ -14,6 +14,7 @@ const {
   UnsupportedOperationError,
 } = Cu.import("chrome://marionette/content/error.js", {});
 Cu.import("chrome://marionette/content/frame.js");
+const {WindowState} = Cu.import("chrome://marionette/content/wm.js", {});
 
 this.EXPORTED_SYMBOLS = ["browser", "WindowState"];
 
@@ -450,49 +451,4 @@ browser.Windows = class extends Map {
     return wref.get();
   }
 
-};
-
-
-
-
-
-
-
-
-this.WindowState = {
-  Maximized: "maximized",
-  Minimized: "minimized",
-  Normal: "normal",
-  Fullscreen: "fullscreen",
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  from(windowState) {
-    switch (windowState) {
-      case 1:
-        return WindowState.Maximized;
-
-      case 2:
-        return WindowState.Minimized;
-
-      case 3:
-        return WindowState.Normal;
-
-      case 4:
-        return WindowState.Fullscreen;
-
-      default:
-        throw new TypeError(`Unknown window state: ${windowState}`);
-    }
-  },
 };
