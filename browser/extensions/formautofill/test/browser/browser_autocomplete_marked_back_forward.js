@@ -51,6 +51,11 @@ add_task(async function test_back_forward() {
     await openPopupOn(browser, "#street-address");
     checkPopup(autoCompletePopup);
 
-    await closePopup(browser);
+    
+    await ContentTask.spawn(browser, {}, async function() {
+      content.document.getElementById("street-address").blur();
+    });
+    await BrowserTestUtils.waitForCondition(() => !autoCompletePopup.popupOpen,
+                                            "popup should have closed");
   });
 });
