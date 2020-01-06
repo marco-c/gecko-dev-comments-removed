@@ -5251,6 +5251,9 @@ Selection::Collapse(nsINode& aParentNode, uint32_t aOffset, ErrorResult& aRv)
   }
 
   
+  RefPtr<nsRange> oldRange = !mRanges.IsEmpty() ? mRanges[0].mRange : nullptr;
+
+  
   Clear(presContext);
 
   
@@ -5273,7 +5276,14 @@ Selection::Collapse(nsINode& aParentNode, uint32_t aOffset, ErrorResult& aRv)
     }
   }
 
-  RefPtr<nsRange> range = new nsRange(parentNode);
+  RefPtr<nsRange> range;
+  
+  
+  if (oldRange && oldRange->GetRefCount() == 1) {
+    range = oldRange;
+  } else {
+    range = new nsRange(parentNode);
+  }
   result = range->CollapseTo(parentNode, aOffset);
   if (NS_FAILED(result)) {
     aRv.Throw(result);
