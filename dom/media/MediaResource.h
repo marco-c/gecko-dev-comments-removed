@@ -540,7 +540,7 @@ protected:
 
   
   
-  nsresult OpenChannel(nsIStreamListener** aStreamListener);
+  nsresult OpenChannel();
   nsresult RecreateChannel();
   
   nsresult SetupChannelHeaders();
