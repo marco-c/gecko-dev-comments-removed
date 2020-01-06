@@ -329,7 +329,7 @@ var TPS = {
               
               Utils.namedTimer(function() {
                 that.FinishAsyncOperation();
-              }, 1000, this, "postTabsOpening");
+              }, 2500, this, "postTabsOpening");
             }
           });
           break;
