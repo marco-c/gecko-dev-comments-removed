@@ -5062,7 +5062,6 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
   if (emptyBlock && emptyBlock->IsEditable()) {
     nsCOMPtr<nsINode> blockParent = emptyBlock->GetParentNode();
     NS_ENSURE_TRUE(blockParent, NS_ERROR_FAILURE);
-    int32_t offset = blockParent->IndexOf(emptyBlock);
 
     if (HTMLEditUtils::IsListItem(emptyBlock)) {
       
@@ -5086,6 +5085,8 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
         
       }
     } else {
+      int32_t offset = blockParent->IndexOf(emptyBlock);
+
       if (aAction == nsIEditor::eNext || aAction == nsIEditor::eNextWord ||
           aAction == nsIEditor::eToEndOfLine) {
         
