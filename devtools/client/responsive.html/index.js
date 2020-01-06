@@ -102,14 +102,14 @@ Object.defineProperty(window, "store", {
 
 
 
-function onDPRChange() {
+function onDevicePixelRatioChange() {
   let dpr = window.devicePixelRatio;
   let mql = window.matchMedia(`(resolution: ${dpr}dppx)`);
 
   function listener() {
     bootstrap.dispatch(changeDisplayPixelRatio(window.devicePixelRatio));
     mql.removeListener(listener);
-    onDPRChange();
+    onDevicePixelRatioChange();
   }
 
   mql.addListener(listener);
@@ -120,7 +120,7 @@ function onDPRChange() {
 
 window.addInitialViewport = contentURI => {
   try {
-    onDPRChange();
+    onDevicePixelRatioChange();
     bootstrap.dispatch(changeLocation(contentURI));
     bootstrap.dispatch(changeDisplayPixelRatio(window.devicePixelRatio));
     bootstrap.dispatch(addViewport());
