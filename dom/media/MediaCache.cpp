@@ -62,11 +62,6 @@ static const uint32_t FREE_BLOCK_SCAN_LIMIT = 16;
 
 #endif
 
-
-
-
-static MediaCache* gMediaCache;
-
 class MediaCacheFlusher final : public nsIObserver,
                                 public nsSupportsWeakReference
 {
@@ -394,6 +389,9 @@ protected:
   void ShutdownAndDestroyThis();
 
   
+  static MediaCache* gMediaCache;
+
+  
   
   int64_t                       mNextResourceID;
 
@@ -425,6 +423,9 @@ protected:
   
   nsTArray<int64_t> mSuspendedStatusToNotify;
 };
+
+
+ MediaCache* MediaCache::gMediaCache;
 
 NS_IMETHODIMP
 MediaCacheFlusher::Observe(nsISupports *aSubject, char const *aTopic, char16_t const *aData)
