@@ -2344,11 +2344,11 @@ ServiceWorkerManager::RemoveScopeAndRegistration(ServiceWorkerRegistrationInfo* 
     return;
   }
 
-  nsCOMPtr<nsITimer> timer = data->mUpdateTimers.Get(aRegistration->mScope);
-  if (timer) {
-    timer->Cancel();
-    data->mUpdateTimers.Remove(aRegistration->mScope);
-  }
+  data->mUpdateTimers.LookupRemoveIf(aRegistration->mScope,
+    [] (nsCOMPtr<nsITimer>& aTimer) {
+      aTimer->Cancel();
+      return true;  
+    });
 
   
   
@@ -3679,12 +3679,11 @@ ServiceWorkerManager::ForceUnregister(RegistrationDataPerPrincipal* aRegistratio
     queue->CancelAll();
   }
 
-  nsCOMPtr<nsITimer> timer =
-    aRegistrationData->mUpdateTimers.Get(aRegistration->mScope);
-  if (timer) {
-    timer->Cancel();
-    aRegistrationData->mUpdateTimers.Remove(aRegistration->mScope);
-  }
+  aRegistrationData->mUpdateTimers.LookupRemoveIf(aRegistration->mScope,
+    [] (nsCOMPtr<nsITimer>& aTimer) {
+      aTimer->Cancel();
+      return true;  
+    });
 
   
   Unregister(aRegistration->mPrincipal, nullptr, NS_ConvertUTF8toUTF16(aRegistration->mScope));
@@ -4250,7 +4249,7 @@ ServiceWorkerManager::ScheduleUpdateTimer(nsIPrincipal* aPrincipal,
     return;
   }
 
-  nsCOMPtr<nsITimer> timer = data->mUpdateTimers.Get(aScope);
+  nsCOMPtr<nsITimer>& timer = data->mUpdateTimers.GetOrInsert(aScope);
   if (timer) {
     
     
@@ -4261,6 +4260,7 @@ ServiceWorkerManager::ScheduleUpdateTimer(nsIPrincipal* aPrincipal,
 
   timer = do_CreateInstance("@mozilla.org/timer;1", &rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
+    data->mUpdateTimers.Remove(aScope); 
     return;
   }
 
@@ -4272,10 +4272,9 @@ ServiceWorkerManager::ScheduleUpdateTimer(nsIPrincipal* aPrincipal,
   rv = timer->InitWithCallback(callback, UPDATE_DELAY_MS,
                                nsITimer::TYPE_ONE_SHOT);
   if (NS_WARN_IF(NS_FAILED(rv))) {
+    data->mUpdateTimers.Remove(aScope); 
     return;
   }
-
-  data->mUpdateTimers.Put(aScope, timer);
 }
 
 void
@@ -4302,11 +4301,11 @@ ServiceWorkerManager::UpdateTimerFired(nsIPrincipal* aPrincipal,
     return;
   }
 
-  nsCOMPtr<nsITimer> timer = data->mUpdateTimers.Get(aScope);
-  if (timer) {
-    timer->Cancel();
-    data->mUpdateTimers.Remove(aScope);
-  }
+  data->mUpdateTimers.LookupRemoveIf(aScope,
+    [] (nsCOMPtr<nsITimer>& aTimer) {
+      aTimer->Cancel();
+      return true;  
+    });
 
   RefPtr<ServiceWorkerRegistrationInfo> registration;
   data->mInfos.Get(aScope, getter_AddRefs(registration));
