@@ -161,12 +161,6 @@ public:
   virtual int32_t TabIndexDefault() override;
 
   
-
-
-
-  virtual void NotifyOwnerDocumentActivityChanged();
-
-  
   
   
   virtual void MetadataLoaded(
@@ -238,6 +232,12 @@ public:
   
   virtual VideoFrameContainer* GetVideoFrameContainer() final override;
   layers::ImageContainer* GetImageContainer();
+
+  
+
+
+
+  void NotifyOwnerDocumentActivityChanged();
 
   
   void PrincipalChanged(DOMMediaStream* aStream) override;

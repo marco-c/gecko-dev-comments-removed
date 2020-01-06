@@ -129,8 +129,6 @@ public:
 
   bool MozHasAudio() const;
 
-  void NotifyOwnerDocumentActivityChanged() override;
-
   
   FrameStatistics* GetFrameStatistics();
 
