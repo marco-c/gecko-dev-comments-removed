@@ -1712,19 +1712,6 @@ JS::GetFirstArgumentAsTypeHint(JSContext* cx, CallArgs args, JSType *result)
     return false;
 }
 
-JS_PUBLIC_API(bool)
-JS_PropertyStub(JSContext* cx, HandleObject obj, HandleId id, MutableHandleValue vp)
-{
-    return true;
-}
-
-JS_PUBLIC_API(bool)
-JS_StrictPropertyStub(JSContext* cx, HandleObject obj, HandleId id, MutableHandleValue vp,
-                      ObjectOpResult& result)
-{
-    return result.succeed();
-}
-
 JS_PUBLIC_API(JSObject*)
 JS_InitClass(JSContext* cx, HandleObject obj, HandleObject parent_proto,
              const JSClass* clasp, JSNative constructor, unsigned nargs,
@@ -2185,23 +2172,11 @@ DefinePropertyById(JSContext* cx, HandleObject obj, HandleId id, HandleValue val
     
     
     
-    
-    
-    
-    
-    MOZ_ASSERT_IF(getter == JS_PropertyStub,
-                  setter == JS_StrictPropertyStub || (attrs & JSPROP_PROPOP_ACCESSORS));
-    MOZ_ASSERT_IF(setter == JS_StrictPropertyStub,
-                  getter == JS_PropertyStub || (attrs & JSPROP_PROPOP_ACCESSORS));
 
     
     
     
-    
-    
-    if (!(attrs & JSPROP_PROPOP_ACCESSORS) &&
-        getter != JS_PropertyStub && setter != JS_StrictPropertyStub)
-    {
+    if (!(attrs & JSPROP_PROPOP_ACCESSORS)) {
         if (getter && !(attrs & JSPROP_GETTER)) {
             RootedAtom atom(cx, IdToFunctionName(cx, id, FunctionPrefixKind::Get));
             if (!atom)
@@ -2246,10 +2221,6 @@ DefinePropertyById(JSContext* cx, HandleObject obj, HandleId id, HandleValue val
                           ? JS_FUNC_TO_DATA_PTR(JSObject*, setter)
                           : nullptr);
 
-    if (getter == JS_PropertyStub)
-        getter = nullptr;
-    if (setter == JS_StrictPropertyStub)
-        setter = nullptr;
     return DefineProperty(cx, obj, id, value, getter, setter, attrs);
 }
 
