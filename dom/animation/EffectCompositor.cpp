@@ -260,7 +260,8 @@ EffectCompositor::RequestRestyle(dom::Element* aElement,
   }
 
   
-  if (!aElement->IsInComposedDoc()) {
+  
+  if (!nsComputedDOMStyle::GetPresShellForContent(aElement)) {
     return;
   }
 
@@ -487,6 +488,10 @@ EffectCompositor::GetServoAnimationRule(
   MOZ_ASSERT(aAnimationValues);
   MOZ_ASSERT(mPresContext && mPresContext->IsDynamic(),
              "Should not be in print preview");
+  
+  MOZ_ASSERT(nsComputedDOMStyle::GetPresShellForContent(aElement),
+             "Should not be trying to run animations on elements in documents"
+             " without a pres shell (e.g. XMLHttpRequest documents)");
 
   EffectSet* effectSet = EffectSet::GetEffectSet(aElement, aPseudoType);
   if (!effectSet) {
@@ -965,6 +970,9 @@ EffectCompositor::PreTraverseInSubtree(Element* aRoot,
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mPresContext->RestyleManager()->IsServo());
+  MOZ_ASSERT(!aRoot || nsComputedDOMStyle::GetPresShellForContent(aRoot),
+             "Traversal root, if provided, should be bound to a display "
+             "document");
 
   AutoRestore<bool> guard(mIsInPreTraverse);
   mIsInPreTraverse = true;
@@ -1082,6 +1090,13 @@ EffectCompositor::PreTraverse(dom::Element* aElement,
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mPresContext->RestyleManager()->IsServo());
+
+  
+  
+  
+  if (!nsComputedDOMStyle::GetPresShellForContent(aElement)) {
+    return false;
+  }
 
   bool found = false;
   if (aPseudoType != CSSPseudoElementType::NotPseudo &&
