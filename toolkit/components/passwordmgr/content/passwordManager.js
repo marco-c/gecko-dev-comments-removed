@@ -629,6 +629,15 @@ function FilterPasswords() {
   removeAllButton.setAttribute("accesskey", kSignonBundle.getString("removeAllShown.accesskey"));
 }
 
+function CopySiteUrl() {
+  
+  let clipboard = Cc["@mozilla.org/widget/clipboardhelper;1"].
+                  getService(Ci.nsIClipboardHelper);
+  let row = signonsTree.currentIndex;
+  let url = signonsTreeView.getCellText(row, {id: "siteCol"});
+  clipboard.copyString(url);
+}
+
 function CopyPassword() {
   
   
@@ -659,6 +668,12 @@ function EditCellInSelectedRow(columnName) {
   signonsTree.startEditing(row, signonsTree.columns.getColumnFor(columnElement));
 }
 
+function LaunchSiteUrl() {
+  let row = signonsTree.currentIndex;
+  let url = signonsTreeView.getCellText(row, {id: "siteCol"});
+  window.openUILinkIn(url, "tab");
+}
+
 function UpdateContextMenu() {
   let singleSelection = (signonsTreeView.selection.count == 1);
   let menuItems = new Map();
@@ -677,12 +692,21 @@ function UpdateContextMenu() {
   let selectedRow = signonsTree.currentIndex;
 
   
+  if (window.openUILinkIn) {
+    menuItems.get("context-launchsiteurl").removeAttribute("disabled");
+  } else {
+    menuItems.get("context-launchsiteurl").setAttribute("disabled", "true");
+    menuItems.get("context-launchsiteurl").setAttribute("hidden", "true");
+  }
+
+  
   if (signonsTreeView.getCellText(selectedRow, { id: "userCol" }) != "") {
     menuItems.get("context-copyusername").removeAttribute("disabled");
   } else {
     menuItems.get("context-copyusername").setAttribute("disabled", "true");
   }
 
+  menuItems.get("context-copysiteurl").removeAttribute("disabled");
   menuItems.get("context-editusername").removeAttribute("disabled");
   menuItems.get("context-copypassword").removeAttribute("disabled");
 
