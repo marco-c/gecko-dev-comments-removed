@@ -1304,16 +1304,9 @@ WebRenderBridgeParent::ClearResources()
   
   mCompositorScheduler->ScheduleComposition();
   
-  
-  for (std::unordered_set<uint64_t>::iterator iter = mFontKeys.begin(); iter != mFontKeys.end(); iter++) {
-    mApi->DeleteFont(wr::AsFontKey(*iter));
-  }
   mFontKeys.clear();
-  for (std::unordered_set<uint64_t>::iterator iter = mActiveImageKeys.begin(); iter != mActiveImageKeys.end(); iter++) {
-    mKeysToDelete.push_back(wr::AsImageKey(*iter));
-  }
   mActiveImageKeys.clear();
-  DeleteOldImages();
+  mKeysToDelete.clear();
   for (auto iter = mExternalImageIds.Iter(); !iter.Done(); iter.Next()) {
     iter.Data()->ClearWrBridge();
   }

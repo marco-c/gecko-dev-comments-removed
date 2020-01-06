@@ -466,9 +466,6 @@ WebRenderBridgeChild::RecvWrUpdated(const wr::IdNamespace& aNewIdNamespace)
   
   mIdNamespace = aNewIdNamespace;
   
-  for (auto iter = mFontKeys.Iter(); !iter.Done(); iter.Next()) {
-    SendDeleteFont(iter.Data());
-  }
   mFontKeys.Clear();
   GetCompositorBridgeChild()->RecvInvalidateLayers(wr::AsUint64(mPipelineId));
   return IPC_OK();
