@@ -622,6 +622,20 @@ GetWidget(WidgetNodeType aWidgetType)
   GtkWidget* widget = sWidgetStorage[aWidgetType];
   if (!widget) {
     widget = CreateWidget(aWidgetType);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    GtkStyleContext* style = gtk_widget_get_style_context(widget);
+    gtk_style_context_invalidate(style);
+
     sWidgetStorage[aWidgetType] = widget;
   }
   return widget;
