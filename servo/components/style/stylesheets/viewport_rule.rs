@@ -7,8 +7,6 @@
 
 
 
-#![deny(missing_docs)]
-
 use app_units::Au;
 use context::QuirksMode;
 use cssparser::{AtRuleParser, DeclarationListParser, DeclarationParser, Parser, parse_important};

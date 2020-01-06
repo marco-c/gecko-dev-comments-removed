@@ -4,10 +4,8 @@
 
 
 
-#![deny(missing_docs)]
-
 use cssparser::{AtRuleParser, Parser, QualifiedRuleParser, RuleListParser};
-use cssparser::{DeclarationListParser, DeclarationParser, parse_one_rule};
+use cssparser::{DeclarationListParser, DeclarationParser, parse_one_rule, SourceLocation};
 use error_reporting::NullReporter;
 use parser::{PARSING_MODE_DEFAULT, ParserContext, log_css_error};
 use properties::{Importance, PropertyDeclaration, PropertyDeclarationBlock, PropertyId};
@@ -15,11 +13,82 @@ use properties::{PropertyDeclarationId, LonghandId, SourcePropertyDeclaration};
 use properties::LonghandIdSet;
 use properties::animated_properties::TransitionProperty;
 use properties::longhands::transition_timing_function::single_value::SpecifiedValue as SpecifiedTimingFunction;
-use shared_lock::{SharedRwLock, SharedRwLockReadGuard, Locked, ToCssWithGuard};
+use shared_lock::{DeepCloneWithLock, SharedRwLock, SharedRwLockReadGuard, Locked, ToCssWithGuard};
 use std::fmt;
 use style_traits::ToCss;
 use stylearc::Arc;
-use stylesheets::{CssRuleType, Stylesheet, VendorPrefix};
+use stylesheets::{CssRuleType, Stylesheet};
+use stylesheets::rule_parser::VendorPrefix;
+use values::KeyframesName;
+
+
+
+
+#[derive(Debug)]
+pub struct KeyframesRule {
+    
+    pub name: KeyframesName,
+    
+    pub keyframes: Vec<Arc<Locked<Keyframe>>>,
+    
+    pub vendor_prefix: Option<VendorPrefix>,
+    
+    pub source_location: SourceLocation,
+}
+
+impl ToCssWithGuard for KeyframesRule {
+    
+    fn to_css<W>(&self, guard: &SharedRwLockReadGuard, dest: &mut W) -> fmt::Result
+        where W: fmt::Write,
+    {
+        dest.write_str("@keyframes ")?;
+        self.name.to_css(dest)?;
+        dest.write_str(" {")?;
+        let iter = self.keyframes.iter();
+        for lock in iter {
+            dest.write_str("\n")?;
+            let keyframe = lock.read_with(&guard);
+            keyframe.to_css(guard, dest)?;
+        }
+        dest.write_str("\n}")
+    }
+}
+
+impl KeyframesRule {
+    
+    
+    
+    
+    
+    pub fn find_rule(&self, guard: &SharedRwLockReadGuard, selector: &str) -> Option<usize> {
+        if let Ok(selector) = Parser::new(selector).parse_entirely(KeyframeSelector::parse) {
+            for (i, keyframe) in self.keyframes.iter().enumerate().rev() {
+                if keyframe.read_with(guard).selector == selector {
+                    return Some(i);
+                }
+            }
+        }
+        None
+    }
+}
+
+impl DeepCloneWithLock for KeyframesRule {
+    fn deep_clone_with_lock(
+        &self,
+        lock: &SharedRwLock,
+        guard: &SharedRwLockReadGuard
+    ) -> Self {
+        KeyframesRule {
+            name: self.name.clone(),
+            keyframes: self.keyframes.iter()
+                .map(|ref x| Arc::new(lock.wrap(
+                    x.read_with(guard).deep_clone_with_lock(lock, guard))))
+                .collect(),
+            vendor_prefix: self.vendor_prefix.clone(),
+            source_location: self.source_location.clone(),
+        }
+    }
+}
 
 
 
@@ -150,14 +219,18 @@ impl Keyframe {
         };
         parse_one_rule(&mut input, &mut rule_parser)
     }
+}
 
+impl DeepCloneWithLock for Keyframe {
     
-    pub fn deep_clone_with_lock(&self,
-                                lock: &SharedRwLock) -> Keyframe {
-        let guard = lock.read();
+    fn deep_clone_with_lock(
+        &self,
+        lock: &SharedRwLock,
+        guard: &SharedRwLockReadGuard
+    ) -> Keyframe {
         Keyframe {
             selector: self.selector.clone(),
-            block: Arc::new(lock.wrap(self.block.read_with(&guard).clone())),
+            block: Arc::new(lock.wrap(self.block.read_with(guard).clone())),
         }
     }
 }

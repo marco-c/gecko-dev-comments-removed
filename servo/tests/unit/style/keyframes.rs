@@ -2,12 +2,12 @@
 
 
 
-use style::keyframes::{Keyframe, KeyframesAnimation, KeyframePercentage,  KeyframeSelector};
-use style::keyframes::{KeyframesStep, KeyframesStepValue};
 use style::properties::{PropertyDeclaration, PropertyDeclarationBlock, Importance};
 use style::properties::animated_properties::TransitionProperty;
 use style::shared_lock::SharedRwLock;
 use style::stylearc::Arc;
+use style::stylesheets::keyframes_rule::{Keyframe, KeyframesAnimation, KeyframePercentage,  KeyframeSelector};
+use style::stylesheets::keyframes_rule::{KeyframesStep, KeyframesStepValue};
 use style::values::specified::{LengthOrPercentageOrAuto, NoCalcLength};
 
 #[test]
