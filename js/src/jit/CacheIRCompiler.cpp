@@ -2450,6 +2450,11 @@ CacheIRCompiler::emitMegamorphicLoadSlotByValueResult()
         return false;
 
     
+    masm.loadObjClass(obj, scratch);
+    masm.branchTest32(Assembler::NonZero, Address(scratch, Class::offsetOfFlags()),
+                      Imm32(Class::NON_NATIVE), failure->label());
+
+    
     masm.reserveStack(sizeof(Value));
     masm.Push(idVal);
     masm.moveStackPtrTo(idVal.scratchReg());
