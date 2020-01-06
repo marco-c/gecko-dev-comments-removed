@@ -1684,14 +1684,6 @@ nsGenericHTMLElement::GetURIAttr(nsIAtom* aAttr, nsIAtom* aBaseAttr, nsIURI** aU
   return true;
 }
 
- bool
-nsGenericHTMLElement::IsScrollGrabAllowed(JSContext*, JSObject*)
-{
-  
-  nsIPrincipal* prin = nsContentUtils::SubjectPrincipal();
-  return nsContentUtils::IsSystemPrincipal(prin);
-}
-
 HTMLMenuElement*
 nsGenericHTMLElement::GetContextMenu() const
 {
