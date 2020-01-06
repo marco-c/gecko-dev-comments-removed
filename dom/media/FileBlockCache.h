@@ -8,8 +8,8 @@
 #define FILE_BLOCK_CACHE_H_
 
 #include "mozilla/Attributes.h"
-#include "mozilla/Monitor.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/AbstractThread.h"
 #include "nsTArray.h"
@@ -146,7 +146,7 @@ private:
   
   
   
-  Monitor mFileMonitor;
+  Mutex mFileMutex;
   
   nsresult MoveBlockInFile(int32_t aSourceBlockIndex,
                            int32_t aDestBlockIndex);
@@ -168,7 +168,7 @@ private:
   
   
   
-  Monitor mDataMonitor;
+  Mutex mDataMutex;
   
   
   
