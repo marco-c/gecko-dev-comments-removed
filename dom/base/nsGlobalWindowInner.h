@@ -760,7 +760,6 @@ public:
 
   
   bool IsSecureContext() const;
-  bool IsSecureContextIfOpenerIgnored() const;
 
   void GetSidebar(mozilla::dom::OwningExternalOrWindowProxy& aResult,
                   mozilla::ErrorResult& aRv);
@@ -1371,8 +1370,6 @@ protected:
   
   bool                          mHavePendingClose : 1;
   bool                          mHadOriginalOpener : 1;
-  bool                          mOriginalOpenerWasSecureContext : 1;
-  bool                          mIsSecureContextIfOpenerIgnored : 1;
   bool                          mIsPopupSpam : 1;
 
   

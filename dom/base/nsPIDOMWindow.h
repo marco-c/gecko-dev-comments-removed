@@ -863,7 +863,6 @@ public:
 
 
   bool IsSecureContext() const;
-  bool IsSecureContextIfOpenerIgnored() const;
 
   
   
