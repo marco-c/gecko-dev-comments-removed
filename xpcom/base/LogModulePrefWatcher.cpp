@@ -73,7 +73,7 @@ LoadPrefValue(const char* aName)
 
       
       if (!strstr(prefValue.get(), "%PID")) {
-        prefValue.Append("%PID");
+        prefValue.AppendLiteral("%PID");
       }
 
       LogModule::SetLogFile(prefValue.BeginReading());

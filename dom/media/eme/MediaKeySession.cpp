@@ -154,7 +154,7 @@ MediaKeySession::UpdateKeyStatusMap()
       message.Append(nsPrintfCString(" (%s,%s)", ToHexString(status.mId).get(),
         MediaKeyStatusValues::strings[static_cast<IntegerType>(status.mStatus)].value));
     }
-    message.Append(" }");
+    message.AppendLiteral(" }");
     
     EME_LOG("%s", message.get());
   }

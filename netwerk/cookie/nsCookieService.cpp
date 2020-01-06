@@ -1544,7 +1544,7 @@ nsCookieService::CreateTableWorker(const char* aName)
   
   nsAutoCString command("CREATE TABLE ");
   command.Append(aName);
-  command.Append(" ("
+  command.AppendLiteral(" ("
       "id INTEGER PRIMARY KEY, "
       "baseDomain TEXT, "
       "originAttributes TEXT NOT NULL DEFAULT '', "
