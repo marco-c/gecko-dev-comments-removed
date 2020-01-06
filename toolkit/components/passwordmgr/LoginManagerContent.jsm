@@ -492,7 +492,9 @@ var LoginManagerContent = {
     let hasInsecureLoginForms = (thisWindow) => {
       let doc = thisWindow.document;
       let hasLoginForm = this.stateForDocument(doc).loginFormRootElements.size > 0;
-      return (hasLoginForm && !thisWindow.isSecureContext) ||
+      
+      
+      return (hasLoginForm && !thisWindow.isSecureContextIfOpenerIgnored) ||
              Array.some(thisWindow.frames,
                         frame => hasInsecureLoginForms(frame));
     };

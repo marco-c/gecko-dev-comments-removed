@@ -30,6 +30,17 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 this.InsecurePasswordUtils = {
   _formRootsWarned: new WeakMap(),
 
@@ -109,7 +120,8 @@ this.InsecurePasswordUtils = {
 
 
   isFormSecure(aForm) {
-    let isSafePage = aForm.ownerDocument.defaultView.isSecureContext;
+    
+    let isSafePage = aForm.ownerDocument.defaultView.isSecureContextIfOpenerIgnored;
 
     
     
@@ -144,7 +156,8 @@ this.InsecurePasswordUtils = {
     }
 
     let domDoc = aForm.ownerDocument;
-    let isSafePage = domDoc.defaultView.isSecureContext;
+    
+    let isSafePage = domDoc.defaultView.isSecureContextIfOpenerIgnored;
 
     let { isFormSubmitHTTP, isFormSubmitSecure } = this._checkFormSecurity(aForm);
 
