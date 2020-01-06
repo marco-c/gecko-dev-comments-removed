@@ -1066,6 +1066,7 @@ Scanner.prototype = {
     
     aToken.mIdent.length = 0;
 
+    let hasString = false;
     let ch = this.Peek();
     
     if (ch == QUOTATION_MARK || ch == APOSTROPHE) {
@@ -1074,6 +1075,7 @@ Scanner.prototype = {
         aToken.mType = eCSSToken_Bad_URL;
         return;
       }
+      hasString = true;
     } else {
       
       aToken.mSymbol = 0;
@@ -1092,6 +1094,25 @@ Scanner.prototype = {
       }
     } else {
       aToken.mType = eCSSToken_Bad_URL;
+      if (!hasString) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        do {
+          if (IsVertSpace(ch)) {
+            this.AdvanceLine();
+          } else {
+            this.Advance();
+          }
+          ch = this.Peek();
+        } while (ch >= 0 && ch != RIGHT_PARENTHESIS);
+      }
     }
   },
 
