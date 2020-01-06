@@ -500,7 +500,7 @@ this.BrowserUtils = {
     
     if (!selectionStr && focusedElement instanceof Ci.nsIDOMNSEditableElement) {
       
-      if (focusedElement instanceof Ci.nsIDOMHTMLTextAreaElement ||
+      if (ChromeUtils.getClassName(focusedElement) === "HTMLTextAreaElement" ||
           (focusedElement instanceof Ci.nsIDOMHTMLInputElement &&
            focusedElement.mozIsTextField(true))) {
         selectionStr = focusedElement.editor.selection.toString();
