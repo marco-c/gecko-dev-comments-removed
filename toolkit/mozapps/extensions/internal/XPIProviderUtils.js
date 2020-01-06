@@ -658,7 +658,7 @@ this.XPIDatabase = {
 
 
 
-  shutdown() {
+  async shutdown() {
     logger.debug("shutdown");
     if (this.initialized) {
       
@@ -678,26 +678,31 @@ this.XPIDatabase = {
 
       
       
-      let flushPromise = this.flush();
-      flushPromise.catch(error => {
-          logger.error("Flush of XPI database failed", error);
-          AddonManagerPrivate.recordSimpleMeasure("XPIDB_shutdownFlush_failed", 1);
-          
-          
-          Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, true);
-        })
-        .then(count => {
-          
-          delete this.addonDB;
-          delete this._dbPromise;
-          
-          delete this._deferredSave;
-          
-          delete this._schemaVersionSet;
-        });
-      return flushPromise;
+      if (this._dbPromise) {
+        await this._dbPromise;
+      }
+
+      
+      try {
+        await this.flush();
+      } catch (error) {
+        logger.error("Flush of XPI database failed", error);
+        AddonManagerPrivate.recordSimpleMeasure("XPIDB_shutdownFlush_failed", 1);
+        
+        
+        Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, true);
+
+        throw error;
+      }
+
+      
+      delete this.addonDB;
+      delete this._dbPromise;
+      
+      delete this._deferredSave;
+      
+      delete this._schemaVersionSet;
     }
-    return Promise.resolve(0);
   },
 
   

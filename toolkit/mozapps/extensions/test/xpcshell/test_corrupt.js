@@ -256,6 +256,15 @@ function run_test_1() {
     startupManager(false);
 
     
+    awaitPromise(new Promise(resolve => {
+      Services.obs.addObserver(function listener() {
+        Services.obs.removeObserver(listener, "xpi-database-loaded");
+        resolve();
+      }, "xpi-database-loaded");
+      Services.obs.notifyObservers(null, "sessionstore-windows-restored");
+    }));
+
+    
     AddonManager.getAddonsByIDs(["addon1@tests.mozilla.org",
                                  "addon2@tests.mozilla.org",
                                  "addon3@tests.mozilla.org",
