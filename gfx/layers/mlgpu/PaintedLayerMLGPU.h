@@ -59,10 +59,7 @@ public:
            : SamplerMode::LinearRepeat;
   }
 
-  
-  
-  
-  nsIntRegion GetRenderRegion();
+  void SetRenderRegion(LayerIntRegion&& aRegion);
 
   MOZ_LAYER_DECL_NAME("PaintedLayerMLGPU", TYPE_PAINTED)
 
