@@ -767,12 +767,12 @@ var gMainPane = {
   updateBrowserStartupLastSession() {
     let pbAutoStartPref = document.getElementById("browser.privatebrowsing.autostart");
     let startupPref = document.getElementById("browser.startup.page");
-    let menu = document.getElementById("browserStartupPage");
+    let group = document.getElementById("browserStartupPage");
     let option = document.getElementById("browserStartupLastSession");
     if (pbAutoStartPref.value) {
       option.setAttribute("disabled", "true");
       if (option.selected) {
-        menu.selectedItem = document.getElementById("browserStartupHomePage");
+        group.selectedItem = document.getElementById("browserStartupHomePage");
       }
     } else {
       option.removeAttribute("disabled");
