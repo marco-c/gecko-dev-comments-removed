@@ -4,11 +4,12 @@
 
 "use strict";
 
-const { createFactory, DOM: dom, PropTypes, PureComponent } =
-  require("devtools/client/shared/vendor/react");
+const { createFactory, PureComponent } = require("devtools/client/shared/vendor/react");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
 
-const AnimationListContainer = createFactory(require("./AnimationListContainer"));
+const AnimationList = createFactory(require("./AnimationList"));
 const NoAnimationPanel = createFactory(require("./NoAnimationPanel"));
 
 class App extends PureComponent {
@@ -30,14 +31,13 @@ class App extends PureComponent {
       {
         id: "animation-container"
       },
-      animations.length ?
-      AnimationListContainer(
+      animations.length
+      ? AnimationList(
         {
           animations
         }
       )
-      :
-      NoAnimationPanel(
+      : NoAnimationPanel(
         {
           toggleElementPicker
         }
