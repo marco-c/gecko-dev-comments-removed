@@ -9,9 +9,8 @@
 
 #include "mozilla/Assertions.h"         
 #include "mozilla/RefPtr.h"             
-#include "mozilla/layers/KnowsCompositor.h"
 #include "mozilla/layers/LayersTypes.h"
-#include "mozilla/RefCounted.h"
+#include "mozilla/layers/ShadowLayers.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/Vector.h"
 
@@ -25,7 +24,6 @@ namespace gfx {
 namespace layers {
 
 class CopyableCanvasLayer;
-class TextureClient;
 
 
 
@@ -67,7 +65,7 @@ public:
 
   virtual void OnShutdown() {}
 
-  virtual bool SetKnowsCompositor(KnowsCompositor* aKnowsCompositor) { return true; }
+  virtual bool SetForwarder(ShadowLayerForwarder* aFwd) { return true; }
 
   virtual void ClearCachedResources() {}
 
@@ -122,9 +120,9 @@ public:
 
   static already_AddRefed<PersistentBufferProviderShared>
   Create(gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
-         KnowsCompositor* aKnowsCompositor);
+         ShadowLayerForwarder* aFwd);
 
-  virtual LayersBackend GetType() override;
+  virtual LayersBackend GetType() override { return LayersBackend::LAYERS_CLIENT; }
 
   virtual already_AddRefed<gfx::DrawTarget> BorrowDrawTarget(const gfx::IntRect& aPersistedRect) override;
 
@@ -140,14 +138,14 @@ public:
 
   virtual void OnShutdown() override { Destroy(); }
 
-  virtual bool SetKnowsCompositor(KnowsCompositor* aKnowsCompositor) override;
+  virtual bool SetForwarder(ShadowLayerForwarder* aFwd) override;
 
   virtual void ClearCachedResources() override;
 
   virtual bool PreservesDrawingState() const override { return false; }
 protected:
   PersistentBufferProviderShared(gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
-                                 KnowsCompositor* aKnowsCompositor,
+                                 ShadowLayerForwarder* aFwd,
                                  RefPtr<TextureClient>& aTexture);
 
   ~PersistentBufferProviderShared();
@@ -159,7 +157,7 @@ protected:
 
   gfx::IntSize mSize;
   gfx::SurfaceFormat mFormat;
-  RefPtr<KnowsCompositor> mKnowsCompositor;
+  RefPtr<ShadowLayerForwarder> mFwd;
   Vector<RefPtr<TextureClient>, 4> mTextures;
   
   Maybe<uint32_t> mBack;

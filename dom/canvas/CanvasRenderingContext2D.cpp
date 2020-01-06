@@ -1884,9 +1884,7 @@ CanvasRenderingContext2D::TrySharedTarget(RefPtr<gfx::DrawTarget>& aOutDT,
     return false;
   }
 
-  if (mBufferProvider &&
-      (mBufferProvider->GetType() == LayersBackend::LAYERS_CLIENT ||
-       mBufferProvider->GetType() == LayersBackend::LAYERS_WR)) {
+  if (mBufferProvider && mBufferProvider->GetType() == LayersBackend::LAYERS_CLIENT) {
     
     
     return false;
@@ -5600,9 +5598,7 @@ CanvasRenderingContext2D::DrawWindow(nsGlobalWindow& aWindow, double aX,
     }
   }
   if (op == CompositionOp::OP_OVER &&
-      (!mBufferProvider ||
-       (mBufferProvider->GetType() != LayersBackend::LAYERS_CLIENT &&
-        mBufferProvider->GetType() != LayersBackend::LAYERS_WR)))
+      (!mBufferProvider || mBufferProvider->GetType() != LayersBackend::LAYERS_CLIENT))
   {
     thebes = gfxContext::CreateOrNull(mTarget);
     MOZ_ASSERT(thebes); 

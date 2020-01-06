@@ -9,7 +9,6 @@
 
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/CompositorTypes.h"
-#include "nsExpirationTracker.h"
 
 namespace mozilla {
 namespace layers {
@@ -17,37 +16,6 @@ namespace layers {
 class SyncObjectClient;
 class TextureForwarder;
 class LayersIPCActor;
-
-
-
-
-class ActiveResource
-{
-public:
- virtual void NotifyInactive() = 0;
-  nsExpirationState* GetExpirationState() { return &mExpirationState; }
-  bool IsActivityTracked() { return mExpirationState.IsTracked(); }
-private:
-  nsExpirationState mExpirationState;
-};
-
-
-
-
-class ActiveResourceTracker : public nsExpirationTracker<ActiveResource, 3>
-{
-public:
-  ActiveResourceTracker(uint32_t aExpirationCycle, const char* aName,
-                        nsIEventTarget* aEventTarget)
-  : nsExpirationTracker(aExpirationCycle, aName, aEventTarget)
-  {}
-
-  virtual void NotifyExpired(ActiveResource* aResource) override
-  {
-    RemoveObject(aResource);
-    aResource->NotifyInactive();
-  }
-};
 
 
 
@@ -113,26 +81,8 @@ public:
   
 
 
-
-
-
-
-
-  virtual void SyncWithCompositor()
-  {
-    MOZ_ASSERT_UNREACHABLE("Unimplemented");
-  }
-
-  
-
-
   virtual TextureForwarder* GetTextureForwarder() = 0;
   virtual LayersIPCActor* GetLayersIPCActor() = 0;
-  virtual ActiveResourceTracker* GetActiveResourceTracker()
-  {
-    MOZ_ASSERT_UNREACHABLE("Unimplemented");
-    return nullptr;
-  }
 
 protected:
   TextureFactoryIdentifier mTextureFactoryIdentifier;
