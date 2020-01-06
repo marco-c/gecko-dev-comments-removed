@@ -313,7 +313,8 @@ VRDisplayPuppet::SubmitFrame(TextureSourceD3D11* aSource,
       D3D11_TEXTURE2D_DESC desc;
       ID3D11Texture2D* texture = aSource->GetD3D11Texture();
       texture->GetDesc(&desc);
-      DXGI_FORMAT format = desc.Format;
+      MOZ_ASSERT(desc.Format == DXGI_FORMAT_B8G8R8A8_UNORM,
+                 "Only support B8G8R8A8_UNORM format.");
       
       ID3D11Texture2D* mappedTexture = nullptr;
       D3D11_MAPPED_SUBRESOURCE mapInfo;
@@ -371,7 +372,10 @@ VRDisplayPuppet::SubmitFrame(TextureSourceD3D11* aSource,
       char* srcData = static_cast<char*>(mapInfo.pData);
       VRSubmitFrameResultInfo result;
       result.mFormat = SurfaceFormat::B8G8R8A8;
-      result.mWidth = desc.Width;
+      
+      
+      
+      result.mWidth = mapInfo.RowPitch / 4;
       result.mHeight = desc.Height;
       result.mFrameNum = mDisplayInfo.mFrameId;
       nsCString rawString(Substring((char*)srcData, mapInfo.RowPitch * desc.Height));
