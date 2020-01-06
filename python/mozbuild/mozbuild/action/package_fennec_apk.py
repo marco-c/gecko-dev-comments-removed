@@ -73,6 +73,12 @@ def package_fennec_apk(inputs=[], omni_ja=None, classes_dex=None,
                     cmd = [buildconfig.substs.get('XZ'), '-zkf',
                            mozpath.join(finder.base, p)]
 
+                    
+                    
+                    
+                    
+                    cmd.extend(['--threads=1'])
+
                     bcj = None
                     if buildconfig.substs.get('MOZ_THUMB2'):
                         bcj = '--armthumb'
@@ -82,7 +88,14 @@ def package_fennec_apk(inputs=[], omni_ja=None, classes_dex=None,
                         bcj = '--x86'
 
                     if bcj:
-                        cmd.extend([bcj, '--lzma2'])
+                        cmd.extend([bcj])
+                    
+                    
+                    
+                    
+                    
+                    
+                    cmd.extend(['--lzma2=dict=8MiB,lc=3,lp=0,pb=2,mode=normal,nice=64,mf=bt4,depth=0'])
                     print('xz-compressing %s with %s' % (p, ' '.join(cmd)))
                     subprocess.check_output(cmd)
                     os.rename(f.path + '.xz', f.path)
