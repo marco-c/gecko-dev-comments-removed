@@ -46,11 +46,11 @@ public:
     
     
     if (!mOverscrollHandoffChain->CanScrollInDirection(&mApzc, ScrollDirection::HORIZONTAL)) {
-      ReentrantMonitorAutoEnter lock(mApzc.mMonitor);
+      RecursiveMutexAutoLock lock(mApzc.mRecursiveMutex);
       mApzc.mX.SetVelocity(0);
     }
     if (!mOverscrollHandoffChain->CanScrollInDirection(&mApzc, ScrollDirection::VERTICAL)) {
-      ReentrantMonitorAutoEnter lock(mApzc.mMonitor);
+      RecursiveMutexAutoLock lock(mApzc.mRecursiveMutex);
       mApzc.mY.SetVelocity(0);
     }
 

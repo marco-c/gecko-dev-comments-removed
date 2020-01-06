@@ -33,12 +33,21 @@ public:
   void Unlock() { UnlockInternal(); }
 #endif
 
-  void AssertCurrentThreadIn()
 #ifdef DEBUG
-    ;
-#else
+  
+
+
+  void AssertCurrentThreadIn();
+  
+
+
+  void AssertNotCurrentThreadIn()
   {
+    
   }
+#else
+  void AssertCurrentThreadIn() {}
+  void AssertNotCurrentThreadIn() {}
 #endif
 
 private:

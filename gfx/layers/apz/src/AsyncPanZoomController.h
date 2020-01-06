@@ -14,7 +14,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Monitor.h"
-#include "mozilla/ReentrantMonitor.h"
+#include "mozilla/RecursiveMutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Atomics.h"
@@ -737,7 +737,7 @@ protected:
   
   
   
-  mutable ReentrantMonitor mMonitor;
+  mutable RecursiveMutex mRecursiveMutex;
 
 private:
   
@@ -804,7 +804,7 @@ public:
   template <typename Callable>
   auto CallWithLastContentPaintMetrics(const Callable& callable) const
     -> decltype(callable(mLastContentPaintMetrics)) {
-    ReentrantMonitorAutoEnter lock(mMonitor);
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
     return callable(mLastContentPaintMetrics);
   }
 
@@ -918,7 +918,6 @@ protected:
     KEYBOARD_SCROLL,          
     AUTOSCROLL                
   };
-
   
   
   PanZoomState mState;
@@ -1075,12 +1074,12 @@ public:
   }
 
   bool IsRootForLayersId() const {
-    ReentrantMonitorAutoEnter lock(mMonitor);
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
     return mScrollMetadata.IsLayersIdRoot();
   }
 
   bool IsRootContent() const {
-    ReentrantMonitorAutoEnter lock(mMonitor);
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
     return mFrameMetrics.IsRootContent();
   }
 
