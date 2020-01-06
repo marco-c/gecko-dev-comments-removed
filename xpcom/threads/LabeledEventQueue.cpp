@@ -13,8 +13,28 @@
 
 using namespace mozilla::dom;
 
+LinkedList<SchedulerGroup>* LabeledEventQueue::sSchedulerGroups;
+size_t LabeledEventQueue::sLabeledEventQueueCount;
+SchedulerGroup* LabeledEventQueue::sCurrentSchedulerGroup;
+
 LabeledEventQueue::LabeledEventQueue()
 {
+  
+  
+  
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (sLabeledEventQueueCount++ == 0) {
+    sSchedulerGroups = new LinkedList<SchedulerGroup>();
+  }
+}
+
+LabeledEventQueue::~LabeledEventQueue()
+{
+  if (--sLabeledEventQueueCount == 0) {
+    delete sSchedulerGroups;
+    sSchedulerGroups = nullptr;
+  }
 }
 
 static SchedulerGroup*
@@ -94,8 +114,14 @@ LabeledEventQueue::PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
   RunnableEpochQueue* queue = isLabeled ? mLabeled.LookupOrAdd(group) : &mUnlabeled;
   queue->Push(QueueEntry(event.forget(), epoch->mEpochNumber));
 
-  if (group && !group->isInList()) {
-    mSchedulerGroups.insertBack(group);
+  if (group && group->EnqueueEvent() == SchedulerGroup::NewlyQueued) {
+    
+    
+    MOZ_ASSERT(!group->isInList());
+    sSchedulerGroups->insertBack(group);
+    if (!sCurrentSchedulerGroup) {
+      sCurrentSchedulerGroup = group;
+    }
   }
 }
 
@@ -111,6 +137,18 @@ LabeledEventQueue::PopEpoch()
   }
 
   mNumEvents--;
+}
+
+
+
+ SchedulerGroup*
+LabeledEventQueue::NextSchedulerGroup(SchedulerGroup* aGroup)
+{
+  SchedulerGroup* result = aGroup->getNext();
+  if (!result) {
+    result = sSchedulerGroups->getFirst();
+  }
+  return result;
 }
 
 already_AddRefed<nsIRunnable>
@@ -133,13 +171,17 @@ LabeledEventQueue::GetEvent(EventPriority* aPriority,
     }
   }
 
+  if (!sCurrentSchedulerGroup) {
+    return nullptr;
+  }
+
   
   
   
   if (TabChild::HasActiveTabs() && mAvoidActiveTabCount <= 0) {
     for (TabChild* tabChild : TabChild::GetActiveTabs()) {
       SchedulerGroup* group = tabChild->TabGroup();
-      if (!group->isInList() || group == mSchedulerGroups.getFirst()) {
+      if (!group->isInList() || group == sCurrentSchedulerGroup) {
         continue;
       }
 
@@ -148,40 +190,56 @@ LabeledEventQueue::GetEvent(EventPriority* aPriority,
       
       mAvoidActiveTabCount += 2;
 
-      group->removeFrom(mSchedulerGroups);
-      mSchedulerGroups.insertFront(group);
+      
+      
+      MOZ_ASSERT(group != sCurrentSchedulerGroup);
+      group->removeFrom(*sSchedulerGroups);
+      sCurrentSchedulerGroup->setPrevious(group);
+      sCurrentSchedulerGroup = group;
     }
   }
 
   
-  
-  
-  
-  SchedulerGroup* firstGroup = mSchedulerGroups.getFirst();
+  SchedulerGroup* firstGroup = sCurrentSchedulerGroup;
   SchedulerGroup* group = firstGroup;
   do {
-    RunnableEpochQueue* queue = mLabeled.Get(group);
-    MOZ_ASSERT(queue);
-    MOZ_ASSERT(!queue->IsEmpty());
-
     mAvoidActiveTabCount--;
-    SchedulerGroup* next = group->removeAndGetNext();
-    mSchedulerGroups.insertBack(group);
+
+    RunnableEpochQueue* queue = mLabeled.Get(group);
+    if (!queue) {
+      
+      group = NextSchedulerGroup(group);
+      continue;
+    }
+    MOZ_ASSERT(!queue->IsEmpty());
 
     QueueEntry entry = queue->FirstElement();
     if (entry.mEpochNumber == epoch.mEpochNumber &&
         IsReadyToRun(entry.mRunnable, group)) {
+      sCurrentSchedulerGroup = NextSchedulerGroup(group);
+
       PopEpoch();
 
+      if (group->DequeueEvent() == SchedulerGroup::NoLongerQueued) {
+        
+        if (sCurrentSchedulerGroup == group) {
+          
+          
+          
+          MOZ_ASSERT(group->getNext() == nullptr);
+          MOZ_ASSERT(group->getPrevious() == nullptr);
+          sCurrentSchedulerGroup = nullptr;
+        }
+        group->removeFrom(*sSchedulerGroups);
+      }
       queue->Pop();
       if (queue->IsEmpty()) {
         mLabeled.Remove(group);
-        group->removeFrom(mSchedulerGroups);
       }
       return entry.mRunnable.forget();
     }
 
-    group = next;
+    group = NextSchedulerGroup(group);
   } while (group != firstGroup);
 
   return nullptr;
