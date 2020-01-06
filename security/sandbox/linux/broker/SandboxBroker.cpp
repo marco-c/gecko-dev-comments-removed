@@ -214,7 +214,9 @@ SandboxBroker::Policy::AddDir(int aPerms, const char* aPath)
   
   
   path.Truncate(path.Length() - 1);
-  Policy::AddPath(aPerms, path.get(), AddAlways);
+  if (!path.IsEmpty()) {
+    Policy::AddPath(aPerms, path.get(), AddAlways);
+  }
 }
 
 void

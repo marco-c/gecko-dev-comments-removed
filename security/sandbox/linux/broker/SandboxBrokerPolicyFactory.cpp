@@ -88,12 +88,6 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
 #endif
 
   
-  
-  if (Preferences::GetInt("security.sandbox.content.level") <= 2) {
-    policy->AddDir(rdonly, "/");
-    mCommonContentPolicy.reset(policy);
-    return;
-  }
   policy->AddPath(rdonly, "/dev/urandom");
   policy->AddPath(rdonly, "/proc/cpuinfo");
   policy->AddPath(rdonly, "/proc/meminfo");
@@ -234,26 +228,34 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
     policy(new SandboxBroker::Policy(*mCommonContentPolicy));
 
   
-  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/maps", aPid).get());
-
   
-  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/statm", aPid).get());
-  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/smaps", aPid).get());
-  
-  
-  
-  AddDynamicPathList(policy.get(),
-                     "security.sandbox.content.read_path_whitelist",
-                     rdonly);
   AddDynamicPathList(policy.get(),
                      "security.sandbox.content.write_path_whitelist",
                      rdwr);
 
   
-  if (aFileProcess) {
+  
+  
+  
+  if (GetEffectiveContentSandboxLevel() <= 2 || aFileProcess) {
     policy->AddDir(rdonly, "/");
+    return policy;
   }
 
+  
+  
+  AddDynamicPathList(policy.get(),
+                    "security.sandbox.content.read_path_whitelist",
+                    rdonly);
+
+  
+  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/maps", aPid).get());
+
+  
+  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/statm", aPid).get());
+  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/smaps", aPid).get());
+
+  
   
   
   nsCOMPtr<nsIFile> profileDir;
