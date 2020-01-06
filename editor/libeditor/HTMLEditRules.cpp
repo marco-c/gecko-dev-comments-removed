@@ -2452,8 +2452,10 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         
         join = true;
 
-        AutoRangeArray arrayOfRanges(aSelection);
-        for (auto& range : arrayOfRanges.mRanges) {
+        uint32_t rangeCount = aSelection->RangeCount();
+        for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; ++rangeIdx) {
+          OwningNonNull<nsRange> range = *aSelection->GetRangeAt(rangeIdx);
+
           
           nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
           TrivialFunctor functor;
