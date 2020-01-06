@@ -476,6 +476,14 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
   LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(paintBounds, appUnitsPerDevPixel);
 
   gfx::Size scale = aSc.GetInheritedScale();
+  gfx::Size oldScale = fallbackData->GetScale();
+  
+  
+  
+  
+  bool differentScale = gfx::FuzzyEqual(scale.width, oldScale.width, 1e-6f) &&
+                        gfx::FuzzyEqual(scale.height, oldScale.height, 1e-6f);
+
   
   
   LayerIntSize paintSize = RoundedToInt(LayerSize(bounds.width * scale.width, bounds.height * scale.height));
@@ -494,7 +502,7 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
   if (geometry && !fallbackData->IsInvalid() &&
       aItem->GetType() != DisplayItemType::TYPE_FILTER &&
       aItem->GetType() != DisplayItemType::TYPE_SVG_WRAPPER &&
-      scale == fallbackData->GetScale()) {
+      differentScale) {
     nsRect invalid;
     nsRegion invalidRegion;
 
