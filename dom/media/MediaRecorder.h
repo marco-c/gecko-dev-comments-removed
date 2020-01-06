@@ -141,6 +141,13 @@ protected:
   
   void InitializeDomExceptions();
   
+  
+  
+  void ForceInactive();
+  
+  
+  void StopForSessionDestruction();
+  
   RefPtr<DOMMediaStream> mDOMStream;
   
   RefPtr<AudioNode> mAudioNode;
