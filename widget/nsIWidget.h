@@ -839,6 +839,11 @@ class nsIWidget : public nsISupports
     
 
 
+    virtual bool IsFullyOccluded() const = 0;
+
+    
+
+
 
 
     virtual void Enable(bool aState) = 0;
