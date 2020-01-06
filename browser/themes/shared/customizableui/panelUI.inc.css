@@ -951,10 +951,11 @@ toolbaritem[cui-areatype="menu-panel"][sdkstylewidget="true"]:not(.panel-wide-it
 
 .PanelUI-remotetabs-prefs-button {
   -moz-appearance: none;
-  background-color: #0096dd;
+  background-color: #0060df;
   
 
   color: white !important;
+  font-size: 13px;
   border-radius: 2px;
   
 
@@ -966,9 +967,12 @@ toolbaritem[cui-areatype="menu-panel"][sdkstylewidget="true"]:not(.panel-wide-it
   min-width: 200px;
 }
 
-.PanelUI-remotetabs-prefs-button:hover,
+.PanelUI-remotetabs-prefs-button:hover {
+  background-color: #003eaa;
+}
+
 .PanelUI-remotetabs-prefs-button:hover:active {
-  background-color: #018acb;
+  background-color: #002275;
 }
 
 .remotetabs-promo-link {
