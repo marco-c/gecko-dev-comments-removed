@@ -126,8 +126,18 @@ public class TelemetrySyncPingBundleBuilderTest {
         assertTrue(application.containsKey("buildId"));
         assertTrue(application.containsKey("xpcomAbi"));
 
+
         
-        ExtendedJSONObject os = outgoingPing.getPayload().getObject("os");
+        
+        
+        
+        ExtendedJSONObject payload = outgoingPing.getPayload().getObject("payload");
+        assertEquals(4, payload.keySet().size());
+        assertEquals("schedule", payload.getString("why"));
+        assertEquals(Integer.valueOf(1), payload.getIntegerSafely("version"));
+        assertEquals(0, payload.getArray("syncs").size());
+        
+        ExtendedJSONObject os = payload.getObject("os");
         assertEquals(3, os.keySet().size());
         assertEquals("Android", os.getString("name"));
         
@@ -135,15 +145,6 @@ public class TelemetrySyncPingBundleBuilderTest {
         assertTrue(os.getIntegerSafely("version") != null);
         
         assertTrue(os.getString("locale") != null);
-
-        
-        
-        
-        ExtendedJSONObject payload = outgoingPing.getPayload().getObject("payload");
-        assertEquals(3, payload.keySet().size());
-        assertEquals("schedule", payload.getString("why"));
-        assertEquals(Integer.valueOf(1), payload.getIntegerSafely("version"));
-        assertEquals(0, payload.getArray("syncs").size());
     }
 
     @Test
