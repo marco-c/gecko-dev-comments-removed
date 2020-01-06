@@ -1397,6 +1397,12 @@ enum ModuleKind
     AsmJS
 };
 
+enum class Shareable
+{
+    False,
+    True
+};
+
 
 
 struct Limits
@@ -1404,9 +1410,14 @@ struct Limits
     uint32_t initial;
     Maybe<uint32_t> maximum;
 
+    
+    
+    Shareable shared;
+
     Limits() = default;
-    explicit Limits(uint32_t initial, const Maybe<uint32_t>& maximum = Nothing())
-      : initial(initial), maximum(maximum)
+    explicit Limits(uint32_t initial, const Maybe<uint32_t>& maximum = Nothing(),
+                    Shareable shared = Shareable::False)
+      : initial(initial), maximum(maximum), shared(shared)
     {}
 };
 
