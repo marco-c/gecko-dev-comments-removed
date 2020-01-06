@@ -4,7 +4,7 @@
 
 
 
-pref("startup.homepage_override_url", "");
+pref("startup.homepage_override_url", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%a2/whatsnew/");
 pref("startup.homepage_welcome_url", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%a2/firstrun/");
 pref("startup.homepage_welcome_url.additional", "");
 
