@@ -3,6 +3,9 @@
 
 
 
+#ifndef ROUNDED_RECT_H
+#define ROUNDED_RECT_H
+
 #include "gfxRect.h"
 #include "mozilla/gfx/PathHelpers.h"
 
@@ -49,3 +52,5 @@ struct RoundedRect {
 };
 
 } 
+
+#endif
