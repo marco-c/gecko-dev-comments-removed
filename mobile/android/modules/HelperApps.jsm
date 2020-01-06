@@ -196,7 +196,7 @@ var HelperApps =  {
       type: type,
       mime: mimeType,
       action: options.action || "", 
-      url: uri ? uri.spec : "",
+      url: uri ? uri.displaySpec : "",
       packageName: options.packageName || "",
       className: options.className || ""
     };
