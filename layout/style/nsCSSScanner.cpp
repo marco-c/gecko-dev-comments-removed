@@ -545,26 +545,49 @@ nsCSSScanner::SkipWhitespace()
 
 
 
+
+
+bool
+nsCSSScanner::CheckCommentDirective(const nsAString& aDirective)
+{
+  nsDependentSubstring text(&mBuffer[mOffset], &mBuffer[mCount]);
+
+  if (StringBeginsWith(text, aDirective)) {
+    Advance(aDirective.Length());
+    return true;
+  }
+  return false;
+}
+
+
+
+
 void
 nsCSSScanner::SkipComment()
 {
-  static const char sourceMappingURLDirective[] = "# sourceMappingURL=";
+  
+  
+  static NS_NAMED_LITERAL_STRING(kSourceMappingURLDirective, " sourceMappingURL=");
+  static NS_NAMED_LITERAL_STRING(kSourceURLDirective, " sourceURL=");
 
   MOZ_ASSERT(Peek() == '/' && Peek(1) == '*', "should not have been called");
   Advance(2);
+
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  int sourceMapIndex = 0;
-  bool copying = false;
+  nsString* directive = nullptr;
+  if (Peek() == '#' || Peek() == '@') {
+    
+    Advance();
+    if (CheckCommentDirective(kSourceMappingURLDirective)) {
+      mSourceMapURL.Truncate();
+      directive = &mSourceMapURL;
+    } else if (CheckCommentDirective(kSourceURLDirective)) {
+      mSourceURL.Truncate();
+      directive = &mSourceURL;
+    }
+  }
+
   for (;;) {
     int32_t ch = Peek();
     if (ch < 0) {
@@ -572,22 +595,6 @@ nsCSSScanner::SkipComment()
         mReporter->ReportUnexpectedEOF("PECommentEOF");
       SetEOFCharacters(eEOFCharacters_Asterisk | eEOFCharacters_Slash);
       return;
-    }
-    if (sourceMapIndex >= 0) {
-      if ((sourceMapIndex == 0 && ch == '@') || ch == sourceMappingURLDirective[sourceMapIndex]) {
-        ++sourceMapIndex;
-        if (sourceMappingURLDirective[sourceMapIndex] == '\0') {
-          sourceMapIndex = -1;
-          mSourceMapURL.Truncate();
-          copying = true;
-          Advance();
-          
-          continue;
-        }
-      } else {
-        
-        sourceMapIndex = -1;
-      }
     }
 
     if (ch == '*') {
@@ -605,20 +612,20 @@ nsCSSScanner::SkipComment()
         Advance();
         return;
       }
-      if (copying) {
-        mSourceMapURL.Append('*');
+      if (directive != nullptr) {
+        directive->Append('*');
       }
     } else if (IsVertSpace(ch)) {
       AdvanceLine();
       
-      copying = false;
+      directive = nullptr;
     } else if (IsWhitespace(ch)) {
       Advance();
       
-      copying = false;
+      directive = nullptr;
     } else {
-      if (copying) {
-        mSourceMapURL.Append(ch);
+      if (directive != nullptr) {
+        directive->Append(ch);
       }
       Advance();
     }

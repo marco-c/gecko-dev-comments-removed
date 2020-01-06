@@ -68,6 +68,8 @@ SERVO_BINDING_FUNC(Servo_StyleSheet_SizeOfIncludingThis, size_t,
                    RawServoStyleSheetContentsBorrowed sheet)
 SERVO_BINDING_FUNC(Servo_StyleSheet_GetSourceMapURL, void,
                    RawServoStyleSheetContentsBorrowed sheet, nsAString* result)
+SERVO_BINDING_FUNC(Servo_StyleSheet_GetSourceURL, void,
+                   RawServoStyleSheetContentsBorrowed sheet, nsAString* result)
 
 
 
