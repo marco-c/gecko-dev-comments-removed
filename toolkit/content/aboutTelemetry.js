@@ -1841,12 +1841,6 @@ function toggleSection(aEvent) {
   }
 
   parentElement.classList.toggle("expanded");
-
-  
-  let statebox = parentElement.getElementsByClassName("statebox")[0];
-  if (statebox) {
-    statebox.checked = parentElement.classList.contains("expanded");
-  }
 }
 
 
@@ -2047,12 +2041,7 @@ function onLoad() {
   Settings.render();
 
   
-  let stateboxes = document.getElementsByClassName("statebox");
-  for (let box of stateboxes) {
-    if (box.checked) { 
-        box.parentElement.classList.add("expanded");
-    }
-  }
+  
 
   
   Telemetry.asyncFetchTelemetryData(() => PingPicker.update());
