@@ -80,29 +80,33 @@ NewConsoleOutputWrapper.prototype = {
         }]));
       },
       hudProxyClient: this.jsterm.hud.proxy.client,
-      openContextMenu: (e, message) => {
-        let { screenX, screenY, target } = e;
-
-        let messageEl = target.closest(".message");
-        let clipboardText = messageEl ? messageEl.textContent : null;
-
-        
-        let actorEl = target.closest("[data-link-actor-id]");
-        let actor = actorEl ? actorEl.dataset.linkActorId : null;
-
-        let menu = createContextMenu(this.jsterm, this.parentNode,
-          { actor, clipboardText, message });
-
-        
-        menu.once("open", () => this.emit("menu-open"));
-        menu.popup(screenX, screenY, this.toolbox);
-
-        return menu;
-      },
       openLink: url => this.jsterm.hud.owner.openLink(url),
       createElement: nodename => {
         return this.document.createElementNS("http://www.w3.org/1999/xhtml", nodename);
       },
+    };
+
+    
+    
+    
+    serviceContainer.openContextMenu = (e, message) => {
+      let { screenX, screenY, target } = e;
+
+      let messageEl = target.closest(".message");
+      let clipboardText = messageEl ? messageEl.textContent : null;
+
+      
+      let actorEl = target.closest("[data-link-actor-id]");
+      let actor = actorEl ? actorEl.dataset.linkActorId : null;
+
+      let menu = createContextMenu(this.jsterm, this.parentNode,
+        { actor, clipboardText, message, serviceContainer });
+
+      
+      menu.once("open", () => this.emit("menu-open"));
+      menu.popup(screenX, screenY, this.toolbox);
+
+      return menu;
     };
 
     if (this.toolbox) {
