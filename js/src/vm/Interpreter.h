@@ -552,6 +552,9 @@ ReportRuntimeLexicalError(JSContext* cx, unsigned errorNumber, HandlePropertyNam
 void
 ReportRuntimeLexicalError(JSContext* cx, unsigned errorNumber, HandleScript script, jsbytecode* pc);
 
+void
+ReportInNotObjectError(JSContext* cx, HandleValue lref, int lindex, HandleValue rref, int rindex);
+
 
 
 
