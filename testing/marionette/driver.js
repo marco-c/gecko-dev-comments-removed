@@ -19,7 +19,10 @@ Cu.import("chrome://marionette/content/accessibility.js");
 Cu.import("chrome://marionette/content/addon.js");
 Cu.import("chrome://marionette/content/assert.js");
 Cu.import("chrome://marionette/content/atom.js");
-Cu.import("chrome://marionette/content/browser.js");
+const {
+  browser,
+  WindowState,
+} = Cu.import("chrome://marionette/content/browser.js", {});
 Cu.import("chrome://marionette/content/capture.js");
 Cu.import("chrome://marionette/content/cert.js");
 Cu.import("chrome://marionette/content/cookie.js");
@@ -48,7 +51,7 @@ Cu.import("chrome://marionette/content/modal.js");
 Cu.import("chrome://marionette/content/proxy.js");
 Cu.import("chrome://marionette/content/reftest.js");
 Cu.import("chrome://marionette/content/session.js");
-Cu.import("chrome://marionette/content/wait.js");
+const {wait, TimedPromise} = Cu.import("chrome://marionette/content/wait.js", {});
 
 Cu.importGlobalProperties(["URL"]);
 
@@ -2909,26 +2912,17 @@ GeckoDriver.prototype.minimizeWindow = function* (cmd, resp) {
   const win = assert.window(this.getCurrentWindow());
   assert.noUserPrompt(this.dialog);
 
-  let state;
   yield new Promise(resolve => {
     win.addEventListener("sizemodechange", resolve, {once: true});
 
     if (win.windowState == win.STATE_MINIMIZED) {
       win.restore();
-      state = "normal";
     } else {
       win.minimize();
-      state = "minimized";
     }
   });
 
-  resp.body = {
-    x: win.screenX,
-    y: win.screenY,
-    width: win.outerWidth,
-    height: win.outerHeight,
-    state,
-  };
+  return this.curBrowser.rect;
 };
 
 
@@ -2947,27 +2941,68 @@ GeckoDriver.prototype.minimizeWindow = function* (cmd, resp) {
 
 
 
-GeckoDriver.prototype.maximizeWindow = function* (cmd, resp) {
+GeckoDriver.prototype.maximizeWindow = async function(cmd, resp) {
   assert.firefox();
   const win = assert.window(this.getCurrentWindow());
   assert.noUserPrompt(this.dialog);
 
-  yield new Promise(resolve => {
-    win.addEventListener("resize", resolve, {once: true});
+  const origSize = {
+    outerWidth: win.outerWidth,
+    outerHeight: win.outerHeight,
+  };
+
+  
+  async function windowSizeChange(from) {
+    return wait.until((resolve, reject) => {
+      let curSize = {
+        outerWidth: win.outerWidth,
+        outerHeight: win.outerHeight,
+      };
+      if (curSize.outerWidth != origSize.outerWidth ||
+          curSize.outerHeight != origSize.outerHeight) {
+        resolve();
+      } else {
+        reject();
+      }
+    });
+  }
+
+  let modeChangeEv;
+  await new TimedPromise(resolve => {
+    modeChangeEv = resolve;
+    win.addEventListener("sizemodechange", modeChangeEv, {once: true});
 
     if (win.windowState == win.STATE_MAXIMIZED) {
       win.restore();
     } else {
       win.maximize();
     }
-  });
+  }, {throws: null});
+  win.removeEventListener("sizemodechange", modeChangeEv);
 
-  resp.body = {
-    x: win.screenX,
-    y: win.screenY,
-    width: win.outerWidth,
-    height: win.outerHeight,
-  };
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  await windowSizeChange();
+
+  return this.curBrowser.rect;
 };
 
 
@@ -2994,16 +3029,10 @@ GeckoDriver.prototype.fullscreen = function* (cmd, resp) {
 
   yield new Promise(resolve => {
     win.addEventListener("sizemodechange", resolve, {once: true});
-
     win.fullScreen = !win.fullScreen;
   });
 
-  resp.body = {
-    x: win.screenX,
-    y: win.screenY,
-    width: win.outerWidth,
-    height: win.outerHeight,
-  };
+  return this.curBrowser.rect;
 };
 
 
