@@ -167,11 +167,11 @@ this.BasePromiseWorker.prototype = {
 
 
   get _worker() {
-    delete this._worker;
-    let worker = new ChromeWorker(this._url);
-    Object.defineProperty(this, "_worker", {value:
-      worker
-    });
+    if (this.__worker) {
+      return this.__worker;
+    }
+
+    let worker = this.__worker = new ChromeWorker(this._url);
 
     
     
@@ -357,6 +357,35 @@ this.BasePromiseWorker.prototype = {
       return reply.ok;
 
     }.bind(this))();
+  },
+
+  
+
+
+
+
+  terminate() {
+    if (!this.__worker) {
+      return;
+    }
+
+    try {
+      this.__worker.terminate();
+      delete this.__worker;
+    } catch (ex) {
+      
+      this.log("Error whilst terminating ChromeWorker: " + ex.message);
+    }
+
+    let error;
+    while (!this._queue.isEmpty()) {
+      if (!error) {
+        
+        error = new Error("Internal error: worker terminated");
+      }
+      let {deferred} = this._queue.pop();
+      deferred.reject(error);
+    }
   }
 };
 
