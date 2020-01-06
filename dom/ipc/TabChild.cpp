@@ -407,10 +407,6 @@ TabChild::TabChild(nsIContentChild* aManager,
 #if defined(ACCESSIBILITY)
   , mTopLevelDocAccessibleChild(nullptr)
 #endif
-  , mPendingDocShellIsActive(false)
-  , mPendingDocShellPreserveLayers(false)
-  , mPendingDocShellReceivedMessage(false)
-  , mPendingDocShellBlockers(0)
 {
   nsWeakPtr weakPtrThis(do_GetWeakReference(static_cast<nsITabChild*>(this)));  
   mSetAllowedTouchBehaviorCallback = [weakPtrThis](uint64_t aInputBlockId,
@@ -2367,26 +2363,20 @@ TabChild::RecvDestroy()
   return IPC_OK();
 }
 
-void
-TabChild::AddPendingDocShellBlocker()
+mozilla::ipc::IPCResult
+TabChild::RecvSetDocShellIsActive(const bool& aIsActive,
+                                  const bool& aPreserveLayers,
+                                  const uint64_t& aLayerObserverEpoch)
 {
-  mPendingDocShellBlockers++;
-}
-
-void
-TabChild::RemovePendingDocShellBlocker()
-{
-  mPendingDocShellBlockers--;
-  if (!mPendingDocShellBlockers && mPendingDocShellReceivedMessage) {
-    mPendingDocShellReceivedMessage = false;
-    InternalSetDocShellIsActive(mPendingDocShellIsActive,
-                                mPendingDocShellPreserveLayers);
+  
+  
+  
+  
+  if (mLayerObserverEpoch >= aLayerObserverEpoch) {
+    return IPC_OK();
   }
-}
+  mLayerObserverEpoch = aLayerObserverEpoch;
 
-void
-TabChild::InternalSetDocShellIsActive(bool aIsActive, bool aPreserveLayers)
-{
   auto clearForcePaint = MakeScopeExit([&] {
     
     
@@ -2412,7 +2402,7 @@ TabChild::InternalSetDocShellIsActive(bool aIsActive, bool aPreserveLayers)
     
     
     
-    mPuppetWidget->GetLayerManager()->SetLayerObserverEpoch(mLayerObserverEpoch);
+    mPuppetWidget->GetLayerManager()->SetLayerObserverEpoch(aLayerObserverEpoch);
   }
 
   
@@ -2426,8 +2416,8 @@ TabChild::InternalSetDocShellIsActive(bool aIsActive, bool aPreserveLayers)
       
       
       if (IPCOpen()) {
-        Unused << SendForcePaintNoOp(mLayerObserverEpoch);
-        return;
+        Unused << SendForcePaintNoOp(aLayerObserverEpoch);
+        return IPC_OK();
       }
     }
 
@@ -2468,33 +2458,7 @@ TabChild::InternalSetDocShellIsActive(bool aIsActive, bool aPreserveLayers)
   } else if (!aPreserveLayers) {
     MakeHidden();
   }
-}
 
-mozilla::ipc::IPCResult
-TabChild::RecvSetDocShellIsActive(const bool& aIsActive,
-                                  const bool& aPreserveLayers,
-                                  const uint64_t& aLayerObserverEpoch)
-{
-  
-  
-  
-  
-  if (mLayerObserverEpoch >= aLayerObserverEpoch) {
-    return IPC_OK();
-  }
-  mLayerObserverEpoch = aLayerObserverEpoch;
-
-  
-  
-  
-  if (mPendingDocShellBlockers > 0) {
-    mPendingDocShellReceivedMessage = true;
-    mPendingDocShellIsActive = aIsActive;
-    mPendingDocShellPreserveLayers = aPreserveLayers;
-    return IPC_OK();
-  }
-
-  InternalSetDocShellIsActive(aIsActive, aPreserveLayers);
   return IPC_OK();
 }
 
