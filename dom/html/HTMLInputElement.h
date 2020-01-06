@@ -838,12 +838,6 @@ public:
 
   void SetFocusState(bool aIsFocused);
 
-  
-
-
-
-  void UpdateValidityState();
-
   HTMLInputElement* GetOwnerNumberControl();
 
   void StartNumberControlSpinnerSpin();
@@ -1145,7 +1139,7 @@ protected:
 
   nsresult SetDefaultValueAsValue();
 
-  virtual void SetDirectionIfAuto(bool aAuto, bool aNotify);
+  void SetDirectionFromValue(bool aNotify);
 
   
 
