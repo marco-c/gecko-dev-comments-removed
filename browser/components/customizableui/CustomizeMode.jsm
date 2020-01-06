@@ -608,9 +608,12 @@ CustomizeMode.prototype = {
         resolve();
       }
 
-      animationNode.classList.add("animate-out");
-      animationNode.ownerGlobal.gNavToolbox.addEventListener("customizationending", cleanupCustomizationExit);
-      animationNode.addEventListener("animationend", cleanupWidgetAnimationEnd);
+      
+      BrowserUtils.promiseLayoutFlushed(this.document, "style", () => {
+        animationNode.classList.add("animate-out");
+        animationNode.ownerGlobal.gNavToolbox.addEventListener("customizationending", cleanupCustomizationExit);
+        animationNode.addEventListener("animationend", cleanupWidgetAnimationEnd);
+      });
     });
   },
 
