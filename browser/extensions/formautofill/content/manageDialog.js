@@ -348,7 +348,7 @@ class ManageCreditCards extends ManageRecords {
   async openEditDialog(creditCard) {
     
     
-    if (!this._hasMasterPassword || !creditCard || await MasterPassword.prompt()) {
+    if (!creditCard || !this._hasMasterPassword || await MasterPassword.ensureLoggedIn(true)) {
       this.prefWin.gSubDialog.open(EDIT_CREDIT_CARD_URL, null, creditCard);
     }
   }

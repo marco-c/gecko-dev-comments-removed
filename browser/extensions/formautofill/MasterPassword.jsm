@@ -38,17 +38,40 @@ this.MasterPassword = {
   
 
 
+  get isLoggedIn() {
+    return Services.logins.isLoggedIn;
+  },
+
+  
+
+
+
+  get isUIBusy() {
+    return Services.logins.uiBusy;
+  },
+
+  
 
 
 
 
-  async prompt() {
+
+
+
+
+
+
+  async ensureLoggedIn(reauth = false) {
     if (!this.isEnabled) {
       return true;
     }
 
+    if (this.isLoggedIn && !reauth) {
+      return true;
+    }
+
     
-    if (Services.logins.uiBusy) {
+    if (this.isUIBusy) {
       return this.waitForExistingDialog();
     }
 
@@ -81,17 +104,28 @@ this.MasterPassword = {
 
 
   async decrypt(cipherText, reauth = false) {
-    let loggedIn = false;
-    if (reauth) {
-      loggedIn = await this.prompt();
-    } else {
-      loggedIn = await this.waitForExistingDialog();
-    }
-
-    if (!loggedIn) {
+    if (!await this.ensureLoggedIn(reauth)) {
       throw Components.Exception("User canceled master password entry", Cr.NS_ERROR_ABORT);
     }
+    return cryptoSDR.decrypt(cipherText);
+  },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  decryptSync(cipherText) {
+    if (this.isUIBusy) {
+      throw Components.Exception("\"ensureLoggedIn()\" should be called first", Cr.NS_ERROR_UNEXPECTED);
+    }
     return cryptoSDR.decrypt(cipherText);
   },
 
@@ -102,7 +136,7 @@ this.MasterPassword = {
 
 
   async encrypt(plainText) {
-    if (Services.logins.uiBusy && !await this.waitForExistingDialog()) {
+    if (!await this.ensureLoggedIn()) {
       throw Components.Exception("User canceled master password entry", Cr.NS_ERROR_ABORT);
     }
 
@@ -117,11 +151,29 @@ this.MasterPassword = {
 
 
 
+
+
+
+
+  encryptSync(plainText) {
+    if (this.isUIBusy) {
+      throw Components.Exception("\"ensureLoggedIn()\" should be called first", Cr.NS_ERROR_UNEXPECTED);
+    }
+    return cryptoSDR.encrypt(plainText);
+  },
+
+  
+
+
+
+
+
+
+
   async waitForExistingDialog() {
-    if (!Services.logins.uiBusy) {
-      log.debug("waitForExistingDialog: Dialog isn't showing. isLoggedIn:",
-                Services.logins.isLoggedIn);
-      return Services.logins.isLoggedIn;
+    if (!this.isUIBusy) {
+      log.debug("waitForExistingDialog: Dialog isn't showing. isLoggedIn:", this.isLoggedIn);
+      return this.isLoggedIn;
     }
 
     return new Promise((resolve) => {

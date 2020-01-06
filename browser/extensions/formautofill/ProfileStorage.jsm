@@ -99,6 +99,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 "use strict";
 
 
@@ -182,7 +200,6 @@ const VALID_ADDRESS_COMPUTED_FIELDS = [
 const VALID_CREDIT_CARD_FIELDS = [
   "cc-name",
   "cc-number",
-  "cc-number-encrypted",
   "cc-exp-month",
   "cc-exp-year",
 ];
@@ -191,6 +208,7 @@ const VALID_CREDIT_CARD_COMPUTED_FIELDS = [
   "cc-given-name",
   "cc-additional-name",
   "cc-family-name",
+  "cc-number-encrypted",
   "cc-exp",
 ];
 
@@ -247,7 +265,7 @@ class AutofillRecords {
     this._schemaVersion = schemaVersion;
 
     let hasChanges = (result, record) => this._migrateRecord(record) || result;
-    if (this._store.data[this._collectionName].reduce(hasChanges, false)) {
+    if (this.data.reduce(hasChanges, false)) {
       this._store.saveSoon();
     }
   }
@@ -260,6 +278,16 @@ class AutofillRecords {
 
   get version() {
     return this._schemaVersion;
+  }
+
+  
+
+
+
+
+
+  get data() {
+    return this._store.data[this._collectionName];
   }
 
   
@@ -292,9 +320,9 @@ class AutofillRecords {
         includeDeleted: true,
       });
       if (index > -1) {
-        let existing = this._store.data[this._collectionName][index];
+        let existing = this.data[index];
         if (existing.deleted) {
-          this._store.data[this._collectionName].splice(index, 1);
+          this.data.splice(index, 1);
         } else {
           throw new Error(`Record ${record.guid} already exists`);
         }
@@ -349,7 +377,7 @@ class AutofillRecords {
       sync.changeCounter = 0;
     }
 
-    this._store.data[this._collectionName].push(recordToSave);
+    this.data.push(recordToSave);
 
     this._store.saveSoon();
 
@@ -379,13 +407,16 @@ class AutofillRecords {
   update(guid, record, preserveOldProperties = false) {
     this.log.debug("update:", guid, record);
 
-    let recordFound = this._findByGUID(guid);
-    if (!recordFound) {
+    let recordFoundIndex = this._findIndexByGUID(guid);
+    if (recordFoundIndex == -1) {
       throw new Error("No matching record.");
     }
 
     
-    let recordToUpdate = Object.assign({}, record);
+    let recordFound = this._clone(this.data[recordFoundIndex]);
+    this._stripComputedFields(recordFound);
+
+    let recordToUpdate = this._clone(record);
     this._normalizeRecord(recordToUpdate);
 
     for (let field of this.VALID_FIELDS) {
@@ -412,8 +443,8 @@ class AutofillRecords {
       syncMetadata.changeCounter += 1;
     }
 
-    this._stripComputedFields(recordFound);
     this._computeFields(recordFound);
+    this.data[recordFoundIndex] = recordFound;
 
     this._store.saveSoon();
     Services.obs.notifyObservers(null, "formautofill-storage-changed", "update");
@@ -461,7 +492,7 @@ class AutofillRecords {
         this.log.warn("attempting to remove non-existing entry", guid);
         return;
       }
-      let existing = this._store.data[this._collectionName][index];
+      let existing = this.data[index];
       if (existing.deleted) {
         return; 
       }
@@ -469,7 +500,7 @@ class AutofillRecords {
       if (existingSync) {
         
         
-        this._store.data[this._collectionName][index] = {
+        this.data[index] = {
           guid,
           timeLastModified: Date.now(),
           deleted: true,
@@ -479,7 +510,7 @@ class AutofillRecords {
       } else {
         
         
-        this._store.data[this._collectionName].splice(index, 1);
+        this.data.splice(index, 1);
       }
     }
 
@@ -507,7 +538,7 @@ class AutofillRecords {
     }
 
     
-    let clonedRecord = this._clone(recordFound);
+    let clonedRecord = this._cloneAndCleanUp(recordFound);
     if (rawData) {
       this._stripComputedFields(clonedRecord);
     } else {
@@ -529,9 +560,9 @@ class AutofillRecords {
   getAll({rawData = false, includeDeleted = false} = {}) {
     this.log.debug("getAll", rawData, includeDeleted);
 
-    let records = this._store.data[this._collectionName].filter(r => !r.deleted || includeDeleted);
+    let records = this.data.filter(r => !r.deleted || includeDeleted);
     
-    let clonedRecords = records.map(r => this._clone(r));
+    let clonedRecords = records.map(r => this._cloneAndCleanUp(r));
     clonedRecords.forEach(record => {
       if (rawData) {
         this._stripComputedFields(record);
@@ -603,8 +634,9 @@ class AutofillRecords {
 
 
 
-  _mergeSyncedRecords(localRecord, remoteRecord) {
-    let sync = this._getSyncMetaData(localRecord, true);
+
+  _mergeSyncedRecords(strippedLocalRecord, remoteRecord) {
+    let sync = this._getSyncMetaData(strippedLocalRecord, true);
 
     
     
@@ -623,30 +655,30 @@ class AutofillRecords {
         
         
         let lastSyncedValue = sync.lastSyncedFields[field];
-        isLocalSame = lastSyncedValue == sha512(localRecord[field]);
+        isLocalSame = lastSyncedValue == sha512(strippedLocalRecord[field]);
         isRemoteSame = lastSyncedValue == sha512(remoteRecord[field]);
       } else {
         
         
         isLocalSame = true;
-        isRemoteSame = localRecord[field] == remoteRecord[field];
+        isRemoteSame = strippedLocalRecord[field] == remoteRecord[field];
       }
 
       let value;
       if (isLocalSame && isRemoteSame) {
         
-        value = localRecord[field];
+        value = strippedLocalRecord[field];
       } else if (isLocalSame && !isRemoteSame) {
         value = remoteRecord[field];
       } else if (!isLocalSame && isRemoteSame) {
         
         
         
-        value = localRecord[field];
-      } else if (localRecord[field] == remoteRecord[field]) {
+        value = strippedLocalRecord[field];
+      } else if (strippedLocalRecord[field] == remoteRecord[field]) {
         
         
-        value = localRecord[field];
+        value = strippedLocalRecord[field];
       } else {
         
         
@@ -676,12 +708,12 @@ class AutofillRecords {
 
 
   _replaceRecordAt(index, remoteRecord, {keepSyncMetadata = false} = {}) {
-    let localRecord = this._store.data[this._collectionName][index];
+    let localRecord = this.data[index];
     let newRecord = this._clone(remoteRecord);
 
     this._stripComputedFields(newRecord);
 
-    this._store.data[this._collectionName][index] = newRecord;
+    this.data[index] = newRecord;
 
     if (keepSyncMetadata) {
       
@@ -725,13 +757,9 @@ class AutofillRecords {
 
 
 
-  _forkLocalRecord(localRecord) {
-    let forkedLocalRecord = this._clone(localRecord);
-
-    this._stripComputedFields(forkedLocalRecord);
-
+  _forkLocalRecord(strippedLocalRecord) {
+    let forkedLocalRecord = this._cloneAndCleanUp(strippedLocalRecord);
     forkedLocalRecord.guid = this._generateGUID();
-    this._store.data[this._collectionName].push(forkedLocalRecord);
 
     
     
@@ -740,6 +768,7 @@ class AutofillRecords {
     this._getSyncMetaData(forkedLocalRecord, true);
 
     this._computeFields(forkedLocalRecord);
+    this.data.push(forkedLocalRecord);
 
     return forkedLocalRecord;
   }
@@ -770,7 +799,7 @@ class AutofillRecords {
       throw new Error(`Record ${remoteRecord.guid} not found`);
     }
 
-    let localRecord = this._store.data[this._collectionName][localIndex];
+    let localRecord = this.data[localIndex];
     let sync = this._getSyncMetaData(localRecord, true);
 
     let forkedGUID = null;
@@ -781,7 +810,10 @@ class AutofillRecords {
         keepSyncMetadata: false,
       });
     } else {
-      let mergedRecord = this._mergeSyncedRecords(localRecord, remoteRecord);
+      let strippedLocalRecord = this._clone(localRecord);
+      this._stripComputedFields(strippedLocalRecord);
+
+      let mergedRecord = this._mergeSyncedRecords(strippedLocalRecord, remoteRecord);
       if (mergedRecord) {
         
         
@@ -791,7 +823,7 @@ class AutofillRecords {
       } else {
         
         
-        let forkedLocalRecord = this._forkLocalRecord(localRecord);
+        let forkedLocalRecord = this._forkLocalRecord(strippedLocalRecord);
         forkedGUID = forkedLocalRecord.guid;
         this._replaceRecordAt(localIndex, remoteRecord, {
           keepSyncMetadata: false,
@@ -821,11 +853,11 @@ class AutofillRecords {
 
       let sync = this._getSyncMetaData(tombstone, true);
       sync.changeCounter = 0;
-      this._store.data[this._collectionName].push(tombstone);
+      this.data.push(tombstone);
       return;
     }
 
-    let existing = this._store.data[this._collectionName][index];
+    let existing = this.data[index];
     let sync = this._getSyncMetaData(existing, true);
     if (sync.changeCounter > 0) {
       
@@ -842,7 +874,7 @@ class AutofillRecords {
 
     
     
-    this._store.data[this._collectionName][index] = {
+    this.data[index] = {
       guid,
       timeLastModified: Date.now(),
       deleted: true,
@@ -864,7 +896,7 @@ class AutofillRecords {
   pullSyncChanges() {
     let changes = {};
 
-    let profiles = this._store.data[this._collectionName];
+    let profiles = this.data;
     for (let profile of profiles) {
       let sync = this._getSyncMetaData(profile, true);
       if (sync.changeCounter < 1) {
@@ -921,7 +953,7 @@ class AutofillRecords {
 
 
   resetSync() {
-    for (let record of this._store.data[this._collectionName]) {
+    for (let record of this.data) {
       delete record._sync;
     }
     
@@ -951,7 +983,7 @@ class AutofillRecords {
     }
 
     let index = this._findIndexByGUID(oldID);
-    let profile = this._store.data[this._collectionName][index];
+    let profile = this.data[index];
     if (!profile) {
       throw new Error("changeGUID: no source record");
     }
@@ -991,41 +1023,42 @@ class AutofillRecords {
 
 
 
-  findDuplicateGUID(record) {
-    if (!record.guid) {
+  findDuplicateGUID(remoteRecord) {
+    if (!remoteRecord.guid) {
       throw new Error("Record missing GUID");
     }
-    this._ensureMatchingVersion(record);
-    if (record.deleted) {
+    this._ensureMatchingVersion(remoteRecord);
+    if (remoteRecord.deleted) {
       
       
       throw new Error("Tombstones can't have duplicates");
     }
-    let records = this._store.data[this._collectionName];
-    for (let profile of records) {
-      if (profile.deleted) {
+    let localRecords = this.data;
+    for (let localRecord of localRecords) {
+      if (localRecord.deleted) {
         continue;
       }
-      if (profile.guid == record.guid) {
-        throw new Error(`Record ${record.guid} already exists`);
+      if (localRecord.guid == remoteRecord.guid) {
+        throw new Error(`Record ${remoteRecord.guid} already exists`);
       }
-      if (this._getSyncMetaData(profile)) {
+      if (this._getSyncMetaData(localRecord)) {
         
         
         continue;
       }
-      let keys = new Set(Object.keys(record));
-      for (let key of Object.keys(profile)) {
+
+      
+      let strippedLocalRecord = this._clone(localRecord);
+      this._stripComputedFields(strippedLocalRecord);
+
+      let keys = new Set(Object.keys(remoteRecord));
+      for (let key of Object.keys(strippedLocalRecord)) {
         keys.add(key);
       }
       
       
       
-      
       for (let field of INTERNAL_FIELDS) {
-        keys.delete(field);
-      }
-      for (let field of this.VALID_COMPUTED_FIELDS) {
         keys.delete(field);
       }
       if (!keys.size) {
@@ -1039,13 +1072,13 @@ class AutofillRecords {
         
         
         
-        same = key in profile == key in record && profile[key] == record[key];
+        same = key in strippedLocalRecord == key in remoteRecord && strippedLocalRecord[key] == remoteRecord[key];
         if (!same) {
           break;
         }
       }
       if (same) {
-        return profile.guid;
+        return strippedLocalRecord.guid;
       }
     }
     return null;
@@ -1056,6 +1089,10 @@ class AutofillRecords {
 
 
   _clone(record) {
+    return Object.assign({}, record);
+  }
+
+  _cloneAndCleanUp(record) {
     let result = {};
     for (let key in record) {
       
@@ -1069,11 +1106,11 @@ class AutofillRecords {
 
   _findByGUID(guid, {includeDeleted = false} = {}) {
     let found = this._findIndexByGUID(guid, {includeDeleted});
-    return found < 0 ? undefined : this._store.data[this._collectionName][found];
+    return found < 0 ? undefined : this.data[found];
   }
 
   _findIndexByGUID(guid, {includeDeleted = false} = {}) {
-    return this._store.data[this._collectionName].findIndex(record => {
+    return this.data.findIndex(record => {
       return record.guid == guid && (!record.deleted || includeDeleted);
     });
   }
@@ -1410,7 +1447,7 @@ class Addresses extends AutofillRecords {
 
   mergeToStorage(targetAddress) {
     let mergedGUIDs = [];
-    for (let address of this._store.data[this._collectionName]) {
+    for (let address of this.data) {
       if (!address.deleted && this.mergeIfPossible(address.guid, targetAddress)) {
         mergedGUIDs.push(address.guid);
       }
@@ -1423,6 +1460,13 @@ class Addresses extends AutofillRecords {
 class CreditCards extends AutofillRecords {
   constructor(store) {
     super(store, "creditCards", VALID_CREDIT_CARD_FIELDS, VALID_CREDIT_CARD_COMPUTED_FIELDS, CREDIT_CARD_SCHEMA_VERSION);
+  }
+
+  _getMaskedCCNumber(ccNumber) {
+    if (ccNumber.length <= 4) {
+      throw new Error(`Invalid credit card number`);
+    }
+    return "*".repeat(ccNumber.length - 4) + ccNumber.substr(-4);
   }
 
   _computeFields(creditCard) {
@@ -1448,15 +1492,31 @@ class CreditCards extends AutofillRecords {
       hasNewComputedFields = true;
     }
 
+    
+    if (!("cc-number-encrypted" in creditCard)) {
+      let ccNumber = (creditCard["cc-number"] || "").replace(/\s/g, "");
+      if (FormAutofillUtils.isCCNumber(ccNumber)) {
+        creditCard["cc-number"] = this._getMaskedCCNumber(ccNumber);
+        creditCard["cc-number-encrypted"] = MasterPassword.encryptSync(ccNumber);
+      } else {
+        delete creditCard["cc-number"];
+        
+        
+        creditCard["cc-number-encrypted"] = "";
+      }
+    }
+
     return hasNewComputedFields;
   }
 
-  _normalizeFields(creditCard) {
-    
-    if (!creditCard["cc-number-encrypted"] || !creditCard["cc-number"].includes("*")) {
-      throw new Error("Credit card number needs to be normalized first.");
+  _stripComputedFields(creditCard) {
+    if (creditCard["cc-number-encrypted"]) {
+      creditCard["cc-number"] = MasterPassword.decryptSync(creditCard["cc-number-encrypted"]);
     }
+    super._stripComputedFields(creditCard);
+  }
 
+  _normalizeFields(creditCard) {
     
     if (creditCard["cc-given-name"] || creditCard["cc-additional-name"] || creditCard["cc-family-name"]) {
       if (!creditCard["cc-name"]) {
@@ -1491,31 +1551,6 @@ class CreditCards extends AutofillRecords {
       } else {
         creditCard["cc-exp-year"] = expYear;
       }
-    }
-  }
-
-  
-
-
-
-
-
-
-  async normalizeCCNumberFields(creditCard) {
-    
-    delete creditCard["cc-number-encrypted"];
-
-    
-    if (creditCard["cc-number"]) {
-      let ccNumber = creditCard["cc-number"].replace(/\s/g, "");
-      delete creditCard["cc-number"];
-
-      if (!FormAutofillUtils.isCCNumber(ccNumber)) {
-        throw new Error("Credit card number contains invalid characters or is under 12 digits.");
-      }
-
-      creditCard["cc-number-encrypted"] = await MasterPassword.encrypt(ccNumber);
-      creditCard["cc-number"] = "*".repeat(ccNumber.length - 4) + ccNumber.substr(-4);
     }
   }
 }

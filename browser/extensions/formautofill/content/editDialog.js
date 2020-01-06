@@ -263,9 +263,12 @@ class EditCreditCard extends EditDialog {
       this._elements.ccNumber.setCustomValidity(true);
       return;
     }
-    let storage = await this.getStorage();
-    await storage.normalizeCCNumberFields(creditCard);
-    await this.saveRecord(creditCard, this._record ? this._record.guid : null);
+
+    
+    
+    if (await MasterPassword.ensureLoggedIn()) {
+      await this.saveRecord(creditCard, this._record ? this._record.guid : null);
+    }
     window.close();
   }
 
