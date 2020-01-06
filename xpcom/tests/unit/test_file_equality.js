@@ -26,6 +26,10 @@ function test_normalized_vs_non_normalized()
     return;
 
   
+  
+  tmp1.normalize();
+
+  
   var tmp2 = new LocalFile(tmp1.path);
   do_check_true(tmp1.equals(tmp2));
 
