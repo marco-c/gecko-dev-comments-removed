@@ -7,6 +7,8 @@ Support for running toolchain-building jobs via dedicated scripts
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+import hashlib
+
 from taskgraph.util.schema import Schema
 from voluptuous import Optional, Required, Any
 
@@ -57,10 +59,21 @@ def add_optimizations(config, run, taskdesc):
     
     files.append('taskcluster/scripts/misc/{}'.format(run['script']))
 
+    digest = hash_paths(GECKO, files)
+
+    
+    
+    
+    
+    deps = taskdesc['dependencies']
+    if deps:
+        data = [digest] + sorted(deps.values())
+        digest = hashlib.sha256('\n'.join(data)).hexdigest()
+
     label = taskdesc['label']
     subs = {
         'name': label.replace('%s-' % config.kind, ''),
-        'digest': hash_paths(GECKO, files),
+        'digest': digest,
     }
 
     optimizations = taskdesc.setdefault('optimizations', [])
