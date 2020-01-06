@@ -559,23 +559,23 @@ var gMainPane = {
     }
   },
 
-  onGetStarted(aEvent) {
-    if (AppConstants.MOZ_DEV_EDITION) {
-      const Cc = Components.classes, Ci = Components.interfaces;
-      let win = Services.wm.getMostRecentWindow("navigator:browser");
-
-      fxAccounts.getSignedInUser().then(data => {
-        if (win) {
-          if (data) {
-            
-            win.openUILinkIn("about:preferences#sync", "current");
-            return;
-          }
-          let accountsTab = win.gBrowser.addTab("about:accounts?action=signin&entrypoint=dev-edition-setup");
-          win.gBrowser.selectedTab = accountsTab;
-        }
-      });
+  async onGetStarted(aEvent) {
+    if (!AppConstants.MOZ_DEV_EDITION) {
+      return;
     }
+    const win = Services.wm.getMostRecentWindow("navigator:browser");
+    if (!win) {
+      return;
+    }
+    const user = await fxAccounts.getSignedInUser();
+    if (user) {
+      
+      win.openUILinkIn("about:preferences#sync", "current");
+      return;
+    }
+    let url = await fxAccounts.promiseAccountsSignInURI("dev-edition-setup");
+    let accountsTab = win.gBrowser.addTab(url);
+    win.gBrowser.selectedTab = accountsTab;
   },
 
   
