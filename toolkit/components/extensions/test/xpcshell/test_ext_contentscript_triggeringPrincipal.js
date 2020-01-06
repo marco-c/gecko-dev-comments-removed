@@ -247,6 +247,12 @@ function toHTML(test, opts) {
 
 function injectElements(tests, baseOpts) {
   window.addEventListener("load", () => {
+    
+    
+    let img = document.createElement("img");
+    img.src = "data:image/svg+xml,%3Csvg%2F%3E";
+    document.body.appendChild(img);
+
     let overrideOpts = opts => Object.assign({}, baseOpts, opts);
     let opts = baseOpts;
 

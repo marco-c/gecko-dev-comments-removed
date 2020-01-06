@@ -111,6 +111,7 @@
 #include "nsIScriptSecurityManager.h"
 #include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
+#include "ExpandedPrincipal.h"
 #include "NullPrincipal.h"
 
 #include "nsIDOMWindow.h"
@@ -2484,6 +2485,20 @@ nsDocument::MaybeDowngradePrincipal(nsIPrincipal* aPrincipal)
 {
   if (!aPrincipal) {
     return nullptr;
+  }
+
+  
+  
+  
+  auto* basePrin = BasePrincipal::Cast(aPrincipal);
+  if (basePrin->Is<ExpandedPrincipal>()) {
+    auto* expanded = basePrin->As<ExpandedPrincipal>();
+
+    nsTArray<nsCOMPtr<nsIPrincipal>>* whitelist;
+    MOZ_ALWAYS_SUCCEEDS(expanded->GetWhiteList(&whitelist));
+    MOZ_ASSERT(whitelist->Length() > 0);
+
+    return do_AddRef(whitelist->LastElement().get());
   }
 
   if (!sChromeInContentPrefCached) {
@@ -4995,7 +5010,6 @@ nsIDocument::SetContainer(nsDocShell* aContainer)
   }
 
   mAncestorPrincipals = aContainer->AncestorPrincipals();
-  mAncestorOuterWindowIDs = aContainer->AncestorOuterWindowIDs();
 }
 
 nsISupports*
