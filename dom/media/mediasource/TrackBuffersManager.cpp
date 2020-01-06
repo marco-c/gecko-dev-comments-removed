@@ -145,6 +145,15 @@ TrackBuffersManager::DoAppendData(already_AddRefed<MediaByteBuffer> aData,
 void
 TrackBuffersManager::QueueTask(SourceBufferTask* aTask)
 {
+  
+  
+  
+  if (!GetTaskQueue()) {
+    MOZ_ASSERT(aTask->GetType() == SourceBufferTask::Type::Detach,
+               "only detach task could happen here!");
+    return;
+  }
+
   if (!OnTaskQueue()) {
     GetTaskQueue()->Dispatch(NewRunnableMethod<RefPtr<SourceBufferTask>>(
       "TrackBuffersManager::QueueTask",
