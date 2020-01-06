@@ -41,7 +41,6 @@
 #include "mozilla/Unused.h"
 #include "PlatformMacros.h"
 #include <vector>
-#include "StackTop.h"
 
 
 
