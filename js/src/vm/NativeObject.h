@@ -805,6 +805,7 @@ class NativeObject : public ShapedObject
                                                 JSGetterOp getter, JSSetterOp setter,
                                                 uint32_t slot, unsigned attrs, unsigned flags,
                                                 bool allowDictionary = true);
+    static Shape* addEnumerableDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id);
 
     
     static Shape* addDataProperty(JSContext* cx, HandleNativeObject obj,
