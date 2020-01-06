@@ -4138,13 +4138,20 @@ Element::SetCustomElementData(CustomElementData* aData)
   slots->mCustomElementData = aData;
 }
 
+MOZ_DEFINE_MALLOC_SIZE_OF(ServoElementMallocSizeOf)
+
 size_t
 Element::SizeOfExcludingThis(SizeOfState& aState) const
 {
   size_t n = FragmentOrElement::SizeOfExcludingThis(aState);
 
   
-
+  
+  
+  if (mServoData.Get()) {
+    n += Servo_Element_SizeOfExcludingThis(ServoElementMallocSizeOf,
+                                           &aState.mSeenPtrs, this);
+  }
   return n;
 }
 
