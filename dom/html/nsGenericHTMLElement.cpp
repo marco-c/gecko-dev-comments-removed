@@ -198,17 +198,16 @@ nsGenericHTMLElement::CopyInnerTo(Element* aDst, bool aPreallocateChildren)
       
       
 
-      nsAutoString valStr;
-      value->ToString(valStr);
-
-      DeclarationBlock* decl = value->GetCSSDeclarationValue();
       
       
       
-      RefPtr<DeclarationBlock> declClone = decl->Clone();
-
-      rv = aDst->SetInlineStyleDeclaration(declClone, &valStr, false);
+      nsAttrValue valueCopy(*value);
+      rv = aDst->SetParsedAttr(name->NamespaceID(), name->LocalName(),
+                               name->GetPrefix(), valueCopy, false);
       NS_ENSURE_SUCCESS(rv, rv);
+
+      DeclarationBlock* cssDeclaration = value->GetCSSDeclarationValue();
+      cssDeclaration->SetImmutable();
     } else if (reparse) {
       nsAutoString valStr;
       value->ToString(valStr);
