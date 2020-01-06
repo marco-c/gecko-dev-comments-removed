@@ -7,6 +7,7 @@
 #include "mozilla/ServoStyleSet.h"
 
 #include "gfxPlatformFontList.h"
+#include "mozilla/AutoRestyleTimelineMarker.h"
 #include "mozilla/DocumentStyleRootIterator.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoRestyleManager.h"
@@ -341,6 +342,12 @@ ServoStyleSet::PrepareAndTraverseSubtree(
   TraversalRootBehavior aRootBehavior,
   TraversalRestyleBehavior aRestyleBehavior)
 {
+  bool forAnimationOnly =
+    aRestyleBehavior == TraversalRestyleBehavior::ForAnimationOnly;
+
+  AutoRestyleTimelineMarker marker(
+    mPresContext->GetDocShell(), forAnimationOnly);
+
   
   
   
@@ -354,8 +361,6 @@ ServoStyleSet::PrepareAndTraverseSubtree(
   bool isInitial = !aRoot->HasServoData();
   bool forReconstruct =
     aRestyleBehavior == TraversalRestyleBehavior::ForReconstruct;
-  bool forAnimationOnly =
-    aRestyleBehavior == TraversalRestyleBehavior::ForAnimationOnly;
 #ifdef DEBUG
   bool forNewlyBoundElement =
     aRestyleBehavior == TraversalRestyleBehavior::ForNewlyBoundElement;

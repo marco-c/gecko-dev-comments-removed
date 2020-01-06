@@ -6,6 +6,8 @@
 
 #include "mozilla/ServoRestyleManager.h"
 
+#include "mozilla/AutoRestyleTimelineMarker.h"
+#include "mozilla/AutoTimelineMarker.h"
 #include "mozilla/DocumentStyleRootIterator.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleSet.h"
@@ -782,42 +784,50 @@ ServoRestyleManager::DoProcessPendingRestyles(TraversalRestyleBehavior
       ClearSnapshots();
     }
 
-    
-    
     nsStyleChangeList currentChanges(StyleBackendType::Servo);
-    DocumentStyleRootIterator iter(doc);
     bool anyStyleChanged = false;
-    while (Element* root = iter.GetNextStyleRoot()) {
-      ServoRestyleState state(*styleSet, currentChanges);
-      anyStyleChanged |= ProcessPostTraversal(root, nullptr, state);
-    }
 
     
     
-    
-    
-    
-    ReentrantChangeList newChanges;
-    mReentrantChanges = &newChanges;
-    while (!currentChanges.IsEmpty()) {
-      ProcessRestyledFrames(currentChanges);
-      MOZ_ASSERT(currentChanges.IsEmpty());
-      for (ReentrantChange& change: newChanges)  {
-        if (!(change.mHint & nsChangeHint_ReconstructFrame) &&
-            !change.mContent->GetPrimaryFrame()) {
-          
-          
-          
-          
-          continue;
-        }
-        currentChanges.AppendChange(change.mContent->GetPrimaryFrame(),
-                                    change.mContent, change.mHint);
+    {
+      AutoRestyleTimelineMarker marker(
+        mPresContext->GetDocShell(), animationOnly);
+      DocumentStyleRootIterator iter(doc);
+      while (Element* root = iter.GetNextStyleRoot()) {
+        ServoRestyleState state(*styleSet, currentChanges);
+        anyStyleChanged |= ProcessPostTraversal(root, nullptr, state);
       }
-      newChanges.Clear();
     }
-    mReentrantChanges = nullptr;
 
+    
+    
+    
+    
+    
+    {
+      AutoTimelineMarker marker(
+        mPresContext->GetDocShell(), "StylesApplyChanges");
+      ReentrantChangeList newChanges;
+      mReentrantChanges = &newChanges;
+      while (!currentChanges.IsEmpty()) {
+        ProcessRestyledFrames(currentChanges);
+        MOZ_ASSERT(currentChanges.IsEmpty());
+        for (ReentrantChange& change: newChanges)  {
+          if (!(change.mHint & nsChangeHint_ReconstructFrame) &&
+              !change.mContent->GetPrimaryFrame()) {
+            
+            
+            
+            
+            continue;
+          }
+          currentChanges.AppendChange(change.mContent->GetPrimaryFrame(),
+                                      change.mContent, change.mHint);
+        }
+        newChanges.Clear();
+      }
+      mReentrantChanges = nullptr;
+    }
 
     if (anyStyleChanged) {
       
