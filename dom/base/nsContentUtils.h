@@ -3132,6 +3132,12 @@ public:
 
 
 
+  static bool ShouldBlockReservedKeys(mozilla::WidgetKeyboardEvent* aKeyEvent);
+
+  
+
+
+
   static Element* GetClosestNonNativeAnonymousAncestor(Element* aElement);
 
   
@@ -3411,6 +3417,7 @@ private:
   static int32_t sBytecodeCacheStrategy;
   static uint32_t sCookiesLifetimePolicy;
   static uint32_t sCookiesBehavior;
+  static bool sShortcutsCustomized;
 
   static int32_t sPrivacyMaxInnerWidth;
   static int32_t sPrivacyMaxInnerHeight;
