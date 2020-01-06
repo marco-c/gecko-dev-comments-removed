@@ -225,6 +225,11 @@
   transition: opacity 0.15s ease;
 }
 
+
+.urlbar-history-dropmarker[open] {
+  pointer-events: none;
+}
+
 #urlbar[switchingtabs] > .urlbar-textbox-container > .urlbar-history-dropmarker {
   transition: none;
 }
