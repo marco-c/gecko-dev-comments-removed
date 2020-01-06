@@ -254,6 +254,20 @@ public:
   #undef STYLE_STRUCT
 
   
+  
+  
+  
+  enum { kAllResolvedStructs = 0xffffffff };
+  static_assert(kAllResolvedStructs != NS_STYLE_INHERIT_MASK,
+                "uint32_t not big enough for special kAllResolvedStructs value");
+
+  
+
+
+
+
+
+
 
 
 
@@ -269,21 +283,16 @@ public:
 
   nsChangeHint CalcStyleDifference(nsStyleContext* aNewContext,
                                    uint32_t* aEqualStructs,
-                                   uint32_t* aSamePointerStructs);
-
-  
-
-
-
-  nsChangeHint CalcStyleDifference(const ServoComputedValues* aNewComputedValues,
-                                   uint32_t* aEqualStructs,
-                                   uint32_t* aSamePointerStructs);
+                                   uint32_t* aSamePointerStructs,
+                                   uint32_t aRelevantStructs =
+                                     kAllResolvedStructs);
 
 private:
   template<class StyleContextLike>
   nsChangeHint CalcStyleDifferenceInternal(StyleContextLike* aNewContext,
                                            uint32_t* aEqualStructs,
-                                           uint32_t* aSamePointerStructs);
+                                           uint32_t* aSamePointerStructs,
+                                           uint32_t aRelevantStructs);
 
 public:
   
