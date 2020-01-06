@@ -549,6 +549,9 @@ class nsHtml5TreeOperation final {
                      bool* aInterrupted);
 
   private:
+    nsHtml5TreeOperation(const nsHtml5TreeOperation&) = delete;
+    nsHtml5TreeOperation& operator=(const nsHtml5TreeOperation&) = delete;
+
     
     
     
