@@ -154,7 +154,7 @@ impl HTMLMediaElement {
             let target = Trusted::new(self.upcast::<EventTarget>());
             
             let _ = window.dom_manipulation_task_source().queue(
-                box task!(internal_pause_steps: move || {
+                task!(internal_pause_steps: move || {
                     let target = target.root();
 
                     // Step 2.3.1.
@@ -170,23 +170,23 @@ impl HTMLMediaElement {
                 window.upcast(),
             );
 
-            // Step 2.4.
-            // FIXME(nox): Set the official playback position to the current
-            // playback position.
+            
+            
+            
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#notify-about-playing
+    
     fn notify_about_playing(&self) {
-        // Step 1.
-        // TODO(nox): Take pending play promises and let promises be the result.
+        
+        
 
-        // Step 2.
+        
         let target = Trusted::new(self.upcast::<EventTarget>());
         let window = window_from_node(self);
-        // FIXME(nox): Why are errors silenced here?
+        
         let _ = window.dom_manipulation_task_source().queue(
-            box task!(notify_about_playing: move || {
+            task!(notify_about_playing: move || {
                 let target = target.root();
 
                 // Step 2.1.
@@ -199,7 +199,7 @@ impl HTMLMediaElement {
         );
     }
 
-    // https://html.spec.whatwg.org/multipage/#ready-states
+    
     fn change_ready_state(&self, ready_state: ReadyState) {
         let old_ready_state = self.ready_state.get();
         self.ready_state.set(ready_state);
@@ -211,7 +211,7 @@ impl HTMLMediaElement {
         let window = window_from_node(self);
         let task_source = window.dom_manipulation_task_source();
 
-        // Step 1.
+        
         match (old_ready_state, ready_state) {
             (ReadyState::HaveNothing, ReadyState::HaveMetadata) => {
                 task_source.queue_simple_event(
@@ -220,7 +220,7 @@ impl HTMLMediaElement {
                     &window,
                 );
 
-                // No other steps are applicable in this case.
+                
                 return;
             },
             (ReadyState::HaveMetadata, new) if new >= ReadyState::HaveCurrentData => {
@@ -233,15 +233,15 @@ impl HTMLMediaElement {
                     );
                 }
 
-                // Steps for the transition from HaveMetadata to HaveCurrentData
-                // or HaveFutureData also apply here, as per the next match
-                // expression.
+                
+                
+                
             },
             (ReadyState::HaveFutureData, new) if new <= ReadyState::HaveCurrentData => {
-                // FIXME(nox): Queue a task to fire timeupdate and waiting
-                // events if the conditions call from the spec are met.
+                
+                
 
-                // No other steps are applicable in this case.
+                
                 return;
             },
 
@@ -261,30 +261,30 @@ impl HTMLMediaElement {
         }
 
         if ready_state == ReadyState::HaveEnoughData {
-            // TODO: Check sandboxed automatic features browsing context flag.
-            // FIXME(nox): I have no idea what this TODO is about.
+            
+            
 
-            // FIXME(nox): Review this block.
+            
             if self.autoplaying.get() &&
                 self.Paused() &&
                 self.Autoplay() {
-                // Step 1
+                
                 self.paused.set(false);
-                // TODO step 2: show poster
-                // Step 3
+                
+                
                 task_source.queue_simple_event(
                     self.upcast(),
                     atom!("play"),
                     &window,
                 );
-                // Step 4
+                
                 self.notify_about_playing();
-                // Step 5
+                
                 self.autoplaying.set(false);
             }
 
-            // FIXME(nox): According to the spec, this should come *before* the
-            // "play" event.
+            
+            
             task_source.queue_simple_event(
                 self.upcast(),
                 atom!("canplaythrough"),
@@ -292,53 +292,53 @@ impl HTMLMediaElement {
             );
         }
 
-        // TODO Step 2: Media controller.
-        // FIXME(nox): There is no step 2 in the spec.
+        
+        
     }
 
-    // https://html.spec.whatwg.org/multipage/#concept-media-load-algorithm
+    
     fn invoke_resource_selection_algorithm(&self) {
-        // Step 1.
+        
         self.network_state.set(NetworkState::NoSource);
 
-        // Step 2.
-        // FIXME(nox): Set show poster flag to true.
+        
+        
 
-        // Step 3.
-        // FIXME(nox): Set the delaying-the-load-event flag to true.
+        
+        
 
-        // Step 4.
-        // If the resource selection mode in the synchronous section is
-        // "attribute", the URL of the resource to fetch is relative to the
-        // media element's node document when the src attribute was last
-        // changed, which is why we need to pass the base URL in the task
-        // right here.
+        
+        
+        
+        
+        
+        
         let doc = document_from_node(self);
         let task = MediaElementMicrotask::ResourceSelectionTask {
             elem: Root::from_ref(self),
             base_url: doc.base_url()
         };
 
-        // FIXME(nox): This will later call the resource_selection_algorith_sync
-        // method from below, if microtasks were trait objects, we would be able
-        // to put the code directly in this method, without the boilerplate
-        // indirections.
+        
+        
+        
+        
         ScriptThread::await_stable_state(Microtask::MediaElement(task));
     }
 
-    // https://html.spec.whatwg.org/multipage/#concept-media-load-algorithm
-    // FIXME(nox): Why does this need to be passed the base URL?
+    
+    
     fn resource_selection_algorithm_sync(&self, base_url: ServoUrl) {
-        // Step 5.
-        // FIXME(nox): Maybe populate the list of pending text tracks.
+        
+        
 
-        // Step 6.
+        
         enum Mode {
-            // FIXME(nox): Support media object provider.
+            
             #[allow(dead_code)]
             Object,
             Attribute(String),
-            // FIXME(nox): Support source element child.
+            
             #[allow(dead_code)]
             Children(Root<HTMLSourceElement>),
         }
@@ -349,10 +349,10 @@ impl HTMLMediaElement {
             return;
         };
 
-        // Step 7.
+        
         self.network_state.set(NetworkState::Loading);
 
-        // Step 8.
+        
         let window = window_from_node(self);
         window.dom_manipulation_task_source().queue_simple_event(
             self.upcast(),
@@ -360,30 +360,30 @@ impl HTMLMediaElement {
             &window,
         );
 
-        // Step 9.
+        
         match mode {
-            // Step 9.obj.
+            
             Mode::Object => {
-                // Step 9.obj.1.
+                
                 *self.current_src.borrow_mut() = "".to_owned();
 
-                // Step 9.obj.2.
-                // FIXME(nox): The rest of the steps should be ran in parallel.
+                
+                
 
-                // Step 9.obj.3.
-                // Note that the resource fetch algorithm itself takes care
-                // of the cleanup in case of failure itself.
-                // FIXME(nox): Pass the assigned media provider here.
+                
+                
+                
+                
                 self.resource_fetch_algorithm(Resource::Object);
             },
             Mode::Attribute(src) => {
-                // Step 9.attr.1.
+                
                 if src.is_empty() {
                     self.queue_dedicated_media_source_failure_steps();
                     return;
                 }
 
-                // Step 9.attr.2.
+                
                 let url_record = match base_url.join(&src) {
                     Ok(url) => url,
                     Err(_) => {
@@ -392,39 +392,39 @@ impl HTMLMediaElement {
                     }
                 };
 
-                // Step 9.attr.3.
+                
                 *self.current_src.borrow_mut() = url_record.as_str().into();
 
-                // Step 9.attr.4.
-                // Note that the resource fetch algorithm itself takes care
-                // of the cleanup in case of failure itself.
+                
+                
+                
                 self.resource_fetch_algorithm(Resource::Url(url_record));
             },
             Mode::Children(_source) => {
-                // Step 9.children.
+                
                 self.queue_dedicated_media_source_failure_steps()
             },
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#concept-media-load-resource
+    
     fn resource_fetch_algorithm(&self, resource: Resource) {
-        // Steps 1-2.
-        // Unapplicable, the `resource` variable already conveys which mode
-        // is in use.
+        
+        
+        
 
-        // Step 3.
-        // FIXME(nox): Remove all media-resource-specific text tracks.
+        
+        
 
-        // Step 4.
+        
         match resource {
             Resource::Url(url) => {
-                // Step 4.remote.1.
+                
                 if self.Preload() == "none" && !self.autoplaying.get() {
-                    // Step 4.remote.1.1.
+                    
                     self.network_state.set(NetworkState::Idle);
 
-                    // Step 4.remote.1.2.
+                    
                     let window = window_from_node(self);
                     window.dom_manipulation_task_source().queue_simple_event(
                         self.upcast(),
@@ -432,23 +432,23 @@ impl HTMLMediaElement {
                         &window,
                     );
 
-                    // Step 4.remote.1.3.
-                    // FIXME(nox): Queue a task to set the delaying-the-load-event
-                    // flag to false.
+                    
+                    
+                    
 
-                    // Steps 4.remote.1.4.
-                    // FIXME(nox): Somehow we should wait for the task from previous
-                    // step to be ran before continuing.
+                    
+                    
+                    
 
-                    // Steps 4.remote.1.5-4.remote.1.7.
-                    // FIXME(nox): Wait for an implementation-defined event and
-                    // then continue with the normal set of steps instead of just
-                    // returning.
+                    
+                    
+                    
+                    
                     return;
                 }
 
-                // Step 4.remote.2.
-                // FIXME(nox): Handle CORS setting from crossorigin attribute.
+                
+                
                 let document = document_from_node(self);
                 let type_ = match self.media_type_id() {
                     HTMLMediaElementTypeId::HTMLAudioElement => RequestType::Audio,
@@ -495,7 +495,7 @@ impl HTMLMediaElement {
         let window = window_from_node(self);
         // FIXME(nox): Why are errors silenced here?
         let _ = window.dom_manipulation_task_source().queue(
-            box task!(dedicated_media_source_failure_steps: move || {
+            task!(dedicated_media_source_failure_steps: move || {
                 let this = this.root();
 
                 // Step 1.

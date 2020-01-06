@@ -35,7 +35,7 @@ use std::os::raw::c_void;
 use std::panic::AssertUnwindSafe;
 use std::ptr;
 use style::thread_state;
-use task::Task;
+use task::TaskBox;
 use time::{Tm, now};
 
 
@@ -44,7 +44,7 @@ pub enum CommonScriptMsg {
     
     CollectReports(ReportsChan),
     
-    Task(ScriptThreadEventCategory, Box<Task + Send>),
+    Task(ScriptThreadEventCategory, Box<TaskBox>),
 }
 
 impl fmt::Debug for CommonScriptMsg {

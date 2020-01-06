@@ -100,7 +100,7 @@ impl EventSourceContext {
         let event_source = self.event_source.clone();
         
         let _ = global.networking_task_source().queue(
-            box task!(announce_the_event_source_connection: move || {
+            task!(announce_the_event_source_connection: move || {
                 let event_source = event_source.root();
                 if event_source.ready_state.get() != ReadyState::Closed {
                     event_source.ready_state.set(ReadyState::Open);
@@ -111,7 +111,7 @@ impl EventSourceContext {
         );
     }
 
-    /// https://html.spec.whatwg.org/multipage/#fail-the-connection
+    
     fn fail_the_connection(&self) {
         let event_source = self.event_source.root();
         if self.gen_id != event_source.generation_id.get() {
@@ -119,9 +119,9 @@ impl EventSourceContext {
         }
         let global = event_source.global();
         let event_source = self.event_source.clone();
-        // FIXME(nox): Why are errors silenced here?
+        
         let _ = global.networking_task_source().queue(
-            box task!(fail_the_event_source_connection: move || {
+            task!(fail_the_event_source_connection: move || {
                 let event_source = event_source.root();
                 if event_source.ready_state.get() != ReadyState::Closed {
                     event_source.ready_state.set(ReadyState::Closed);
@@ -132,7 +132,7 @@ impl EventSourceContext {
         );
     }
 
-    // https://html.spec.whatwg.org/multipage/#reestablish-the-connection
+    
     fn reestablish_the_connection(&self) {
         let event_source = self.event_source.root();
 
@@ -143,9 +143,9 @@ impl EventSourceContext {
         let trusted_event_source = self.event_source.clone();
         let action_sender = self.action_sender.clone();
         let global = event_source.global();
-        // FIXME(nox): Why are errors silenced here?
+        
         let _ = global.networking_task_source().queue(
-            box task!(reestablish_the_event_source_onnection: move || {
+            task!(reestablish_the_event_source_onnection: move || {
                 let event_source = trusted_event_source.root();
 
                 // Step 1.1.
@@ -179,7 +179,7 @@ impl EventSourceContext {
         );
     }
 
-    // https://html.spec.whatwg.org/multipage/#processField
+    
     fn process_field(&mut self) {
         match &*self.field {
             "event" => mem::swap(&mut self.event_type, &mut self.value),
@@ -198,31 +198,31 @@ impl EventSourceContext {
         self.value.clear();
     }
 
-    // https://html.spec.whatwg.org/multipage/#dispatchMessage
+    
     #[allow(unsafe_code)]
     fn dispatch_event(&mut self) {
         let event_source = self.event_source.root();
-        // Step 1
+        
         *event_source.last_event_id.borrow_mut() = DOMString::from(self.last_event_id.clone());
-        // Step 2
+        
         if self.data.is_empty() {
             self.data.clear();
             self.event_type.clear();
             return;
         }
-        // Step 3
+        
         if let Some(last) = self.data.pop() {
             if last != '\n' {
                 self.data.push(last);
             }
         }
-        // Step 6
+        
         let type_ = if !self.event_type.is_empty() {
             Atom::from(self.event_type.clone())
         } else {
             atom!("message")
         };
-        // Steps 4-5
+        
         let event = {
             let _ac = JSAutoCompartment::new(event_source.global().get_cx(),
                                              event_source.reflector().get_jsobject().get());
@@ -232,17 +232,17 @@ impl EventSourceContext {
                               DOMString::from(self.origin.clone()),
                               event_source.last_event_id.borrow().clone())
         };
-        // Step 7
+        
         self.event_type.clear();
         self.data.clear();
 
-        // Step 8.
+        
         let global = event_source.global();
         let event_source = self.event_source.clone();
         let event = Trusted::new(&*event);
-        // FIXME(nox): Why are errors silenced here?
+        
         let _ = global.networking_task_source().queue(
-            box task!(dispatch_the_event_source_event: move || {
+            task!(dispatch_the_event_source_event: move || {
                 let event_source = event_source.root();
                 if event_source.ready_state.get() != ReadyState::Closed {
                     event.root().upcast::<Event>().fire(&event_source.upcast());
@@ -252,7 +252,7 @@ impl EventSourceContext {
         );
     }
 
-    // https://html.spec.whatwg.org/multipage/#event-stream-interpretation
+    
     fn parse(&mut self, stream: Chars) {
         let mut stream = stream.peekable();
 
@@ -320,11 +320,11 @@ impl EventSourceContext {
 
 impl FetchResponseListener for EventSourceContext {
     fn process_request_body(&mut self) {
-        // TODO
+        
     }
 
     fn process_request_eof(&mut self) {
-        // TODO
+        
     }
 
     fn process_response(&mut self, metadata: Result<FetchMetadata, NetworkError>) {

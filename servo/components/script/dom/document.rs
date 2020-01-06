@@ -1716,7 +1716,7 @@ impl Document {
         debug!("Document loads are complete.");
         let document = Trusted::new(self);
         self.window.dom_manipulation_task_source().queue(
-            box task!(fire_load_event: move || {
+            task!(fire_load_event: move || {
                 let document = document.root();
                 let window = document.window();
                 if !window.is_alive() {
@@ -1766,23 +1766,23 @@ impl Document {
             self.window.upcast(),
         ).unwrap();
 
-        // Step 8.
-        // TODO: pageshow event.
+        
+        
 
-        // Step 9.
-        // TODO: pending application cache download process tasks.
+        
+        
 
-        // Step 10.
-        // TODO: printing steps.
+        
+        
 
-        // Step 11.
-        // TODO: ready for post-load tasks.
+        
+        
 
-        // Step 12.
-        // TODO: completely loaded.
+        
+        
     }
 
-    // https://html.spec.whatwg.org/multipage/#pending-parsing-blocking-script
+    
     pub fn set_pending_parsing_blocking_script(&self,
                                                script: &HTMLScriptElement,
                                                load: Option<ScriptResult>) {
@@ -1790,12 +1790,12 @@ impl Document {
         *self.pending_parsing_blocking_script.borrow_mut() = Some(PendingScript::new_with_load(script, load));
     }
 
-    // https://html.spec.whatwg.org/multipage/#pending-parsing-blocking-script
+    
     pub fn has_pending_parsing_blocking_script(&self) -> bool {
         self.pending_parsing_blocking_script.borrow().is_some()
     }
 
-    /// https://html.spec.whatwg.org/multipage/#prepare-a-script step 22.d.
+    
     pub fn pending_parsing_blocking_script_loaded(&self, element: &HTMLScriptElement, result: ScriptResult) {
         {
             let mut blocking_script = self.pending_parsing_blocking_script.borrow_mut();
@@ -1820,13 +1820,13 @@ impl Document {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#set-of-scripts-that-will-execute-as-soon-as-possible
+    
     pub fn add_asap_script(&self, script: &HTMLScriptElement) {
         self.asap_scripts_set.borrow_mut().push(JS::from_ref(script));
     }
 
-    /// https://html.spec.whatwg.org/multipage/#the-end step 5.
-    /// https://html.spec.whatwg.org/multipage/#prepare-a-script step 22.d.
+    
+    
     pub fn asap_script_loaded(&self, element: &HTMLScriptElement, result: ScriptResult) {
         {
             let mut scripts = self.asap_scripts_set.borrow_mut();
@@ -1836,13 +1836,13 @@ impl Document {
         element.execute(result);
     }
 
-    // https://html.spec.whatwg.org/multipage/#list-of-scripts-that-will-execute-in-order-as-soon-as-possible
+    
     pub fn push_asap_in_order_script(&self, script: &HTMLScriptElement) {
         self.asap_in_order_scripts_list.push(script);
     }
 
-    /// https://html.spec.whatwg.org/multipage/#the-end step 5.
-    /// https://html.spec.whatwg.org/multipage/#prepare-a-script step 22.c.
+    
+    
     pub fn asap_in_order_script_loaded(&self,
                                        element: &HTMLScriptElement,
                                        result: ScriptResult) {
@@ -1852,24 +1852,24 @@ impl Document {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#list-of-scripts-that-will-execute-when-the-document-has-finished-parsing
+    
     pub fn add_deferred_script(&self, script: &HTMLScriptElement) {
         self.deferred_scripts.push(script);
     }
 
-    /// https://html.spec.whatwg.org/multipage/#the-end step 3.
-    /// https://html.spec.whatwg.org/multipage/#prepare-a-script step 22.d.
+    
+    
     pub fn deferred_script_loaded(&self, element: &HTMLScriptElement, result: ScriptResult) {
         self.deferred_scripts.loaded(element, result);
         self.process_deferred_scripts();
     }
 
-    /// https://html.spec.whatwg.org/multipage/#the-end step 3.
+    
     fn process_deferred_scripts(&self) {
         if self.ready_state.get() != DocumentReadyState::Interactive {
             return;
         }
-        // Part of substep 1.
+        
         loop {
             if self.script_blocking_stylesheets_count.get() > 0 {
                 return;
@@ -1881,12 +1881,12 @@ impl Document {
             }
         }
         if self.deferred_scripts.is_empty() {
-            // https://html.spec.whatwg.org/multipage/#the-end step 4.
+            
             self.maybe_dispatch_dom_content_loaded();
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#the-end step 4.
+    
     pub fn maybe_dispatch_dom_content_loaded(&self) {
         if self.domcontentloaded_dispatched.get() {
             return;
@@ -1897,7 +1897,7 @@ impl Document {
 
         update_with_current_time_ms(&self.dom_content_loaded_event_start);
 
-        // Step 4.1.
+        
         let window = self.window();
         window.dom_manipulation_task_source().queue_event(self.upcast(), atom!("DOMContentLoaded"),
             EventBubbles::Bubbles, EventCancelable::NotCancelable, window);
@@ -1907,38 +1907,38 @@ impl Document {
                       ReflowReason::DOMContentLoaded);
         update_with_current_time_ms(&self.dom_content_loaded_event_end);
 
-        // Step 4.2.
-        // TODO: client message queue.
+        
+        
     }
 
-    // https://html.spec.whatwg.org/multipage/#abort-a-document
+    
     fn abort(&self) {
-        // We need to inhibit the loader before anything else.
+        
         self.loader.borrow_mut().inhibit_events();
 
-        // Step 1.
+        
         for iframe in self.iter_iframes() {
             if let Some(document) = iframe.GetContentDocument() {
-                // TODO: abort the active documents of every child browsing context.
+                
                 document.abort();
-                // TODO: salvageable flag.
+                
             }
         }
 
-        // Step 2.
+        
         self.script_blocking_stylesheets_count.set(0);
         *self.pending_parsing_blocking_script.borrow_mut() = None;
         *self.asap_scripts_set.borrow_mut() = vec![];
         self.asap_in_order_scripts_list.clear();
         self.deferred_scripts.clear();
 
-        // TODO: https://github.com/servo/servo/issues/15236
+        
         self.window.cancel_all_tasks();
 
-        // Step 3.
+        
         if let Some(parser) = self.get_current_parser() {
             parser.abort();
-            // TODO: salvageable flag.
+            
         }
     }
 
@@ -1954,20 +1954,20 @@ impl Document {
         self.current_parser.get()
     }
 
-    /// Iterate over all iframes in the document.
+    
     pub fn iter_iframes(&self) -> impl Iterator<Item=Root<HTMLIFrameElement>> {
         self.upcast::<Node>()
             .traverse_preorder()
             .filter_map(Root::downcast::<HTMLIFrameElement>)
     }
 
-    /// Find an iframe element in the document.
+    
     pub fn find_iframe(&self, browsing_context_id: BrowsingContextId) -> Option<Root<HTMLIFrameElement>> {
         self.iter_iframes()
             .find(|node| node.browsing_context_id() == Some(browsing_context_id))
     }
 
-    /// Find a mozbrowser iframe element in the document.
+    
     pub fn find_mozbrowser_iframe(&self,
                                   top_level_browsing_context_id: TopLevelBrowsingContextId)
                                   -> Option<Root<HTMLIFrameElement>>
@@ -2009,7 +2009,7 @@ impl Document {
         self.load_event_end.get()
     }
 
-    // https://html.spec.whatwg.org/multipage/#fire-a-focus-event
+    
     fn fire_focus_event(&self, focus_event_type: FocusEventType, node: &Node, related_target: Option<&EventTarget>) {
         let (event_name, does_bubble) = match focus_event_type {
             FocusEventType::Focus => (DOMString::from("focus"), EventBubbles::DoesNotBubble),
@@ -2028,7 +2028,7 @@ impl Document {
         event.fire(target);
     }
 
-    /// https://html.spec.whatwg.org/multipage/#cookie-averse-document-object
+    
     pub fn is_cookie_averse(&self) -> bool {
         !self.has_browsing_context || !url_has_network_scheme(&self.url())
     }
@@ -2043,7 +2043,7 @@ impl Document {
         self.window.layout().nodes_from_point_response()
     }
 
-    /// https://html.spec.whatwg.org/multipage/#look-up-a-custom-element-definition
+    
     pub fn lookup_custom_element_definition(&self,
                                             namespace: &Namespace,
                                             local_name: &LocalName,
@@ -2053,17 +2053,17 @@ impl Document {
             return None;
         }
 
-        // Step 1
+        
         if *namespace != ns!(html) {
             return None;
         }
 
-        // Step 2
+        
         if !self.has_browsing_context {
             return None;
         }
 
-        // Step 3
+        
         let registry = self.window.CustomElements();
 
         registry.lookup_definition(local_name, is)
@@ -2102,8 +2102,8 @@ impl LayoutDocumentHelpers for LayoutJS<Document> {
     #[allow(unrooted_must_root)]
     unsafe fn drain_pending_restyles(&self) -> Vec<(LayoutJS<Element>, PendingRestyle)> {
         let mut elements = (*self.unsafe_get()).pending_restyles.borrow_mut_for_layout();
-        // Elements were in a document when they were adding to this list, but that
-        // may no longer be true when the next layout occurs.
+        
+        
         let result = elements.drain()
             .map(|(k, v)| (k.to_layout(), v))
             .filter(|&(ref k, _)| k.upcast::<Node>().get_flag(IS_IN_DOC))
@@ -2132,24 +2132,24 @@ impl LayoutDocumentHelpers for LayoutJS<Document> {
     }
 }
 
-// https://html.spec.whatwg.org/multipage/#is-a-registrable-domain-suffix-of-or-is-equal-to
-// The spec says to return a bool, we actually return an Option<Host> containing
-// the parsed host in the successful case, to avoid having to re-parse the host.
+
+
+
 fn get_registrable_domain_suffix_of_or_is_equal_to(host_suffix_string: &str, original_host: Host) -> Option<Host> {
-    // Step 1
+    
     if host_suffix_string.is_empty() {
         return None;
     }
 
-    // Step 2-3.
+    
     let host = match Host::parse(host_suffix_string) {
         Ok(host) => host,
         Err(_) => return None,
     };
 
-    // Step 4.
+    
     if host != original_host {
-        // Step 4.1
+        
         let host = match host {
             Host::Domain(ref host) => host,
             _ => return None,
@@ -2159,7 +2159,7 @@ fn get_registrable_domain_suffix_of_or_is_equal_to(host_suffix_string: &str, ori
             _ => return None,
         };
 
-        // Step 4.2
+        
         let (prefix, suffix) = match original_host.len().checked_sub(host.len()) {
             Some(index) => original_host.split_at(index),
             None => return None,
@@ -2171,17 +2171,17 @@ fn get_registrable_domain_suffix_of_or_is_equal_to(host_suffix_string: &str, ori
             return None;
         }
 
-        // Step 4.3
+        
         if is_pub_domain(host) {
             return None;
         }
     }
 
-    // Step 5
+    
     Some(host)
 }
 
-/// https://url.spec.whatwg.org/#network-scheme
+
 fn url_has_network_scheme(url: &ServoUrl) -> bool {
     match url.scheme() {
         "ftp" | "http" | "https" => true,
@@ -2226,17 +2226,17 @@ impl Document {
             content_type: match content_type {
                 Some(string) => string,
                 None => DOMString::from(match is_html_document {
-                    // https://dom.spec.whatwg.org/#dom-domimplementation-createhtmldocument
+                    
                     IsHTMLDocument::HTMLDocument => "text/html",
-                    // https://dom.spec.whatwg.org/#concept-document-content-type
+                    
                     IsHTMLDocument::NonHTMLDocument => "application/xml",
                 }),
             },
             last_modified: last_modified,
             url: DOMRefCell::new(url),
-            // https://dom.spec.whatwg.org/#concept-document-quirks
+            
             quirks_mode: Cell::new(QuirksMode::NoQuirks),
-            // https://dom.spec.whatwg.org/#concept-document-encoding
+            
             encoding: Cell::new(UTF_8),
             is_html_document: is_html_document == IsHTMLDocument::HTMLDocument,
             activity: Cell::new(activity),
@@ -2264,7 +2264,7 @@ impl Document {
                     };
                 }
                 PER_PROCESS_AUTHOR_SHARED_LOCK.clone()
-                //StyleSharedRwLock::new()
+                
             },
             stylesheets: DOMRefCell::new(StylesheetSet::new()),
             stylesheet_list: MutNullableJS::new(None),
@@ -2312,7 +2312,7 @@ impl Document {
         }
     }
 
-    // https://dom.spec.whatwg.org/#dom-document-document
+    
     pub fn Constructor(window: &Window) -> Fallible<Root<Document>> {
         let doc = window.Document();
         let docloader = DocumentLoader::new(&*doc.loader());
