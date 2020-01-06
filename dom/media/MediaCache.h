@@ -339,7 +339,6 @@ public:
   
   
   
-  nsresult Seek(int64_t aOffset);
   int64_t Tell();
   
   
@@ -432,6 +431,9 @@ private:
   
   Result<uint32_t, nsresult> ReadBlockFromCache(int64_t aOffset,
                                                 Span<char> aBuffer);
+
+  
+  nsresult Seek(int64_t aOffset);
 
   
   
