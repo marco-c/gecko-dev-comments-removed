@@ -349,7 +349,7 @@ struct Zone : public JS::shadow::Zone,
 
   private:
     
-    js::ZoneGroupData<mozilla::LinkedList<detail::WeakCacheBase>> weakCaches_;
+    js::ZoneGroupOrGCTaskData<mozilla::LinkedList<detail::WeakCacheBase>> weakCaches_;
   public:
     mozilla::LinkedList<detail::WeakCacheBase>& weakCaches() { return weakCaches_.ref(); }
     void registerWeakCache(detail::WeakCacheBase* cachep) {
@@ -530,7 +530,7 @@ struct Zone : public JS::shadow::Zone,
     
     MOZ_MUST_USE bool getOrCreateUniqueId(js::gc::Cell* cell, uint64_t* uidp) {
         MOZ_ASSERT(uidp);
-        MOZ_ASSERT(js::CurrentThreadCanAccessZone(this));
+        MOZ_ASSERT(js::CurrentThreadCanAccessZone(this) || js::CurrentThreadIsPerformingGC());
 
         
         auto p = uniqueIds().lookupForAdd(cell);
@@ -538,6 +538,8 @@ struct Zone : public JS::shadow::Zone,
             *uidp = p->value();
             return true;
         }
+
+        MOZ_ASSERT(js::CurrentThreadCanAccessZone(this));
 
         
         *uidp = js::gc::NextCellUniqueId(runtimeFromAnyThread());
@@ -569,7 +571,7 @@ struct Zone : public JS::shadow::Zone,
 
     
     MOZ_MUST_USE bool hasUniqueId(js::gc::Cell* cell) {
-        MOZ_ASSERT(js::CurrentThreadCanAccessZone(this));
+        MOZ_ASSERT(js::CurrentThreadCanAccessZone(this) || js::CurrentThreadIsPerformingGC());
         return uniqueIds().has(cell);
     }
 

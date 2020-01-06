@@ -157,7 +157,8 @@ MovableCellHasher<T>::hash(const Lookup& l)
     
     
     MOZ_ASSERT(CurrentThreadCanAccessZone(l->zoneFromAnyThread()) ||
-               l->zoneFromAnyThread()->isSelfHostingZone());
+               l->zoneFromAnyThread()->isSelfHostingZone() ||
+               CurrentThreadIsPerformingGC());
 
     return l->zoneFromAnyThread()->getHashCodeInfallible(l);
 }
