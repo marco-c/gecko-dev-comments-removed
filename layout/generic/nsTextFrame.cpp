@@ -5137,8 +5137,7 @@ nsDisplayText::nsDisplayText(nsDisplayListBuilder* aBuilder, nsTextFrame* aFrame
     Color color;
     if (!capture->ContainsOnlyColoredGlyphs(mFont, color, glyphs)
         || !mFont
-        || !mFont->CanSerialize()
-        || XRE_IsParentProcess()) {
+        || !mFont->CanSerialize()) {
       mFont = nullptr;
       mGlyphs.Clear();
     } else {
@@ -5273,7 +5272,7 @@ nsDisplayText::RenderToContext(gfxContext* aCtx, nsDisplayListBuilder* aBuilder,
       
       gfxPoint pt = nsLayoutUtils::PointToGfxPoint(framePt, A2D);
       gfxMatrix mat = aCtx->CurrentMatrix()
-        .PreTranslate(pt).PreScale(scaleFactor, 1.0).PreTranslate(-pt);
+        .Translate(pt).Scale(scaleFactor, 1.0).Translate(-pt);
       aCtx->SetMatrix(mat);
     }
   }
@@ -7296,7 +7295,7 @@ nsTextFrame::DrawTextRunAndDecorations(Range aRange,
         scaledRestorer.SetContext(aParams.context);
         gfxMatrix unscaled = aParams.context->CurrentMatrix();
         gfxPoint pt(x / app, y / app);
-        unscaled.PreTranslate(pt).PreScale(1.0f / scaleFactor, 1.0f).PreTranslate(-pt);
+        unscaled.Translate(pt).Scale(1.0f / scaleFactor, 1.0f).Translate(-pt);
         aParams.context->SetMatrix(unscaled);
       }
     }
