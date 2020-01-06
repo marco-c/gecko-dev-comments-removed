@@ -54,6 +54,7 @@ const EVENTS = {
   
   
   NETWORK_EVENT: "NetMonitor:NetworkEvent",
+  NETWORK_EVENT_UPDATED: "NetMonitor:NetworkEventUpdated",
   TIMELINE_EVENT: "NetMonitor:TimelineEvent",
 
   
