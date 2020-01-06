@@ -21,20 +21,17 @@ const TEST_THRESHOLD = {
 
 
 const MULTI_EXPERIMENT = {
-  "beta": { buckets: { 4: 1, }, 
+  "beta": { buckets: { 4: 1 }, 
 
             
             
             
-            
-            
-            addonsDisableExperiment(prefix) { return getAddonsDisqualifyForMulti(); } },
+            addonsDisableExperiment(prefix) { return false; } },
 
   "release": { buckets: { 4: 1 }, 
 
                
-               
-               addonsDisableExperiment(prefix) { return getAddonsDisqualifyForMulti(); } }
+               addonsDisableExperiment(prefix) { return false; } }
 };
 
 const ADDON_ROLLOUT_POLICY = {
