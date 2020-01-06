@@ -949,6 +949,8 @@ nsContentUtils::InitializeEventTable() {
 
   
   for (uint32_t i = 0; i < ArrayLength(eventArray) - 1; ++i) {
+    MOZ_ASSERT(!sAtomEventTable->Lookup(eventArray[i].mAtom),
+               "Double-defining event name; fix your EventNameList.h");
     sAtomEventTable->Put(eventArray[i].mAtom, eventArray[i]);
     if (ShouldAddEventToStringEventTable(eventArray[i])) {
       sStringEventTable->Put(
@@ -7458,9 +7460,9 @@ nsContentUtils::GetSelectionInTextControl(Selection* aSelection,
 
   
   
-  nsINode* startContainer = range->GetStartContainer();
+  nsINode* startParent = range->GetStartParent();
   uint32_t startOffset = range->StartOffset();
-  nsINode* endContainer = range->GetEndContainer();
+  nsINode* endParent = range->GetEndParent();
   uint32_t endOffset = range->EndOffset();
 
   
@@ -7469,10 +7471,10 @@ nsContentUtils::GetSelectionInTextControl(Selection* aSelection,
   nsIContent* firstChild = aRoot->GetFirstChild();
 #ifdef DEBUG
   nsCOMPtr<nsIContent> lastChild = aRoot->GetLastChild();
-  NS_ASSERTION(startContainer == aRoot || startContainer == firstChild ||
-               startContainer == lastChild, "Unexpected startContainer");
-  NS_ASSERTION(endContainer == aRoot || endContainer == firstChild ||
-               endContainer == lastChild, "Unexpected endContainer");
+  NS_ASSERTION(startParent == aRoot || startParent == firstChild ||
+               startParent == lastChild, "Unexpected startParent");
+  NS_ASSERTION(endParent == aRoot || endParent == firstChild ||
+               endParent == lastChild, "Unexpected endParent");
   
   MOZ_ASSERT_IF(firstChild,
                 firstChild->IsNodeOfType(nsINode::eTEXT) || firstChild->IsElement());
@@ -7487,12 +7489,12 @@ nsContentUtils::GetSelectionInTextControl(Selection* aSelection,
     
     
     
-    if ((startContainer == aRoot && startOffset != 0) ||
-        (startContainer != aRoot && startContainer != firstChild)) {
+    if ((startParent == aRoot && startOffset != 0) ||
+        (startParent != aRoot && startParent != firstChild)) {
       startOffset = firstChild->Length();
     }
-    if ((endContainer == aRoot && endOffset != 0) ||
-        (endContainer != aRoot && endContainer != firstChild)) {
+    if ((endParent == aRoot && endOffset != 0) ||
+        (endParent != aRoot && endParent != firstChild)) {
       endOffset = firstChild->Length();
     }
   }
