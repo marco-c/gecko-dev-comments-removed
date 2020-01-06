@@ -30,8 +30,7 @@ public:
   Register(const nsTArray<WebAuthnScopedCredentialDescriptor>& aDescriptors,
            const nsTArray<uint8_t>& aApplication,
            const nsTArray<uint8_t>& aChallenge,
-            nsTArray<uint8_t>& aRegistration,
-            nsTArray<uint8_t>& aSignature) = 0;
+            nsTArray<uint8_t>& aRegistration) = 0;
 
   virtual RefPtr<ResultPromise>
   Sign(const nsTArray<WebAuthnScopedCredentialDescriptor>& aDescriptors,
