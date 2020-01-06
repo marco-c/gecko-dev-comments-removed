@@ -23,9 +23,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "HttpServer",
 var gTestTargetFile = FileUtils.getFile("TmpD", ["dm-ui-test.file"]);
 gTestTargetFile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
 
-registerCleanupFunction(function() {
-  gTestTargetFile.remove(false);
-});
+
+registerCleanupFunction(() => OS.File.remove(gTestTargetFile.path,
+                                             { ignoreAbsent: true }));
 
 
 
