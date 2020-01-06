@@ -5,8 +5,11 @@
 
 package org.mozilla.gecko.toolbar;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.text.TextUtils;
 
+import org.mozilla.gecko.AboutPages;
 import org.mozilla.gecko.SiteIdentity;
 import org.mozilla.gecko.SiteIdentity.MixedMode;
 import org.mozilla.gecko.SiteIdentity.SecurityMode;
@@ -18,18 +21,70 @@ import java.util.Map;
 
 
 
-
 public class SecurityModeUtil {
 
     
-    private static final Map<SecurityMode, Mode> securityModeMap;
+
+
+
+    public enum IconType {
+        UNKNOWN,
+        DEFAULT,
+        SEARCH,
+        LOCK_SECURE,
+        LOCK_WARNING, 
+        LOCK_INSECURE,
+        WARNING,
+        TRACKING_CONTENT_BLOCKED,
+        TRACKING_CONTENT_LOADED
+    }
+
+    
+    private static final Map<IconType, Integer> imgLevelMap = new HashMap<>();
+
+    
+    static {
+        imgLevelMap.put(IconType.UNKNOWN, 0);
+        imgLevelMap.put(IconType.DEFAULT, 0);
+        imgLevelMap.put(IconType.LOCK_SECURE, 1);
+        imgLevelMap.put(IconType.WARNING, 2);
+        imgLevelMap.put(IconType.LOCK_INSECURE, 3);
+        imgLevelMap.put(IconType.TRACKING_CONTENT_BLOCKED, 4);
+        imgLevelMap.put(IconType.TRACKING_CONTENT_LOADED, 5);
+        imgLevelMap.put(IconType.SEARCH, 6);
+    }
+
+    
+    private static final Map<SecurityMode, IconType> securityModeMap;
 
     static {
         securityModeMap = new HashMap<>();
-        securityModeMap.put(SecurityMode.UNKNOWN, Mode.UNKNOWN);
-        securityModeMap.put(SecurityMode.IDENTIFIED, Mode.LOCK_SECURE);
-        securityModeMap.put(SecurityMode.VERIFIED, Mode.LOCK_SECURE);
-        securityModeMap.put(SecurityMode.CHROMEUI, Mode.UNKNOWN);
+        securityModeMap.put(SecurityMode.UNKNOWN, IconType.UNKNOWN);
+        securityModeMap.put(SecurityMode.IDENTIFIED, IconType.LOCK_SECURE);
+        securityModeMap.put(SecurityMode.VERIFIED, IconType.LOCK_SECURE);
+        securityModeMap.put(SecurityMode.CHROMEUI, IconType.UNKNOWN);
+    }
+
+    
+
+
+
+
+
+    public static int getImageLevel(@NonNull final IconType type) {
+        return imgLevelMap.containsKey(type)
+                ? imgLevelMap.get(type)
+                : imgLevelMap.get(IconType.UNKNOWN);
+    }
+
+    
+
+
+
+
+
+    public static IconType resolve(@Nullable final SiteIdentity identity) {
+        return resolve(identity, null);
     }
 
     
@@ -39,9 +94,16 @@ public class SecurityModeUtil {
 
 
 
-    public static Mode resolve(final @Nullable SiteIdentity identity) {
+    public static IconType resolve(@Nullable final SiteIdentity identity,
+                                   @Nullable final String url) {
+
+        if (!TextUtils.isEmpty(url) && AboutPages.isTitlelessAboutPage(url)) {
+            
+            return IconType.SEARCH;
+        }
+
         if (identity == null) {
-            return Mode.UNKNOWN;
+            return IconType.UNKNOWN;
         }
 
         final SecurityMode securityMode = identity.getSecurityMode();
@@ -50,35 +112,40 @@ public class SecurityModeUtil {
         final TrackingMode trackingMode = identity.getTrackingMode();
         final boolean securityException = identity.isSecurityException();
 
-        if (securityMode == SiteIdentity.SecurityMode.CHROMEUI) {
-            return Mode.UNKNOWN;
+        if (securityException) {
+            return IconType.WARNING;
+        } else if (trackingMode == TrackingMode.TRACKING_CONTENT_LOADED) {
+            return IconType.TRACKING_CONTENT_LOADED;
+        } else if (trackingMode == TrackingMode.TRACKING_CONTENT_BLOCKED) {
+            return IconType.TRACKING_CONTENT_BLOCKED;
+        } else if (activeMixedMode == MixedMode.LOADED) {
+            return IconType.LOCK_INSECURE;
+        } else if (displayMixedMode == MixedMode.LOADED) {
+            return IconType.WARNING;
         }
 
-        if (securityException) {
-            return Mode.MIXED_MODE;
-        } else if (trackingMode == TrackingMode.TRACKING_CONTENT_LOADED) {
-            return Mode.TRACKING_CONTENT_LOADED;
-        } else if (trackingMode == TrackingMode.TRACKING_CONTENT_BLOCKED) {
-            return Mode.TRACKING_CONTENT_BLOCKED;
-        } else if (activeMixedMode == MixedMode.LOADED) {
-            return Mode.MIXED_MODE;
-        } else if (displayMixedMode == MixedMode.LOADED) {
-            return Mode.WARNING;
+        
+        
+        if (securityMode == SiteIdentity.SecurityMode.CHROMEUI) {
+            return IconType.DEFAULT;
         }
 
         return securityModeMap.containsKey(securityMode)
                 ? securityModeMap.get(securityMode)
-                : Mode.UNKNOWN;
+                : IconType.UNKNOWN;
     }
 
     
-    
-    public enum Mode {
-        UNKNOWN,
-        LOCK_SECURE,
-        WARNING,
-        MIXED_MODE,
-        TRACKING_CONTENT_BLOCKED,
-        TRACKING_CONTENT_LOADED
+
+
+
+
+
+    public static boolean isTrackingProtectionEnabled(final @Nullable SiteIdentity identity) {
+        final TrackingMode trackingMode = (identity == null)
+                ? TrackingMode.UNKNOWN
+                : identity.getTrackingMode();
+
+        return (trackingMode == TrackingMode.TRACKING_CONTENT_BLOCKED);
     }
 }
