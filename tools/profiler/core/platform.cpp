@@ -195,12 +195,12 @@ private:
 
   ~CorePS()
   {
-    while (mLiveThreads.size() > 0) {
+    while (!mLiveThreads.empty()) {
       delete mLiveThreads.back();
       mLiveThreads.pop_back();
     }
 
-    while (mDeadThreads.size() > 0) {
+    while (!mDeadThreads.empty()) {
       delete mDeadThreads.back();
       mDeadThreads.pop_back();
     }
@@ -2846,7 +2846,7 @@ locked_profiler_stop(PSLockRef aLock)
 
   
   CorePS::ThreadVector& deadThreads = CorePS::DeadThreads(aLock);
-  while (deadThreads.size() > 0) {
+  while (!deadThreads.empty()) {
     delete deadThreads.back();
     deadThreads.pop_back();
   }

@@ -700,6 +700,7 @@ nsTableFrame::CreateAnonymousColGroupFrame(nsTableColGroupType aColGroupType)
 void
 nsTableFrame::AppendAnonymousColFrames(int32_t aNumColsToAdd)
 {
+  MOZ_ASSERT(aNumColsToAdd > 0, "We should be adding _something_.");
   
   nsTableColGroupFrame* colGroupFrame =
     static_cast<nsTableColGroupFrame*>(mColGroups.LastChild());
@@ -732,6 +733,7 @@ nsTableFrame::AppendAnonymousColFrames(nsTableColGroupFrame* aColGroupFrame,
 {
   NS_PRECONDITION(aColGroupFrame, "null frame");
   NS_PRECONDITION(aColType != eColAnonymousCol, "Shouldn't happen");
+  MOZ_ASSERT(aNumColsToAdd > 0, "We should be adding _something_.");
 
   nsIPresShell *shell = PresContext()->PresShell();
 
@@ -741,6 +743,8 @@ nsTableFrame::AppendAnonymousColFrames(nsTableColGroupFrame* aColGroupFrame,
   int32_t startIndex = mColFrames.Length();
   int32_t lastIndex  = startIndex + aNumColsToAdd - 1;
 
+  
+  aColGroupFrame->AddStateBits(NS_FRAME_OWNS_ANON_BOXES);
   for (int32_t childX = startIndex; childX <= lastIndex; childX++) {
     nsIContent* iContent;
     RefPtr<nsStyleContext> styleContext;
@@ -972,7 +976,7 @@ nsTableFrame::InsertRows(nsTableRowGroupFrame*       aRowGroupFrame,
 void
 nsTableFrame::AddDeletedRowIndex(int32_t aDeletedRowStoredIndex)
 {
-  if (mDeletedRowIndexRanges.size() == 0) {
+  if (mDeletedRowIndexRanges.empty()) {
     mDeletedRowIndexRanges.insert(std::pair<int32_t, int32_t>
                                     (aDeletedRowStoredIndex,
                                      aDeletedRowStoredIndex));
@@ -1044,7 +1048,7 @@ nsTableFrame::AddDeletedRowIndex(int32_t aDeletedRowStoredIndex)
 int32_t
 nsTableFrame::GetAdjustmentForStoredIndex(int32_t aStoredIndex)
 {
-  if (mDeletedRowIndexRanges.size() == 0)
+  if (mDeletedRowIndexRanges.empty())
     return 0;
 
   int32_t adjustment = 0;
@@ -7445,7 +7449,7 @@ BCBlockDirSeg::CreateWebRenderCommands(BCPaintBorderIterator& aIter,
   }
   wrSide[eSideLeft] = wr::ToBorderSide(ToDeviceColor(param->mBorderColor), param->mBorderStyle);
 
-  wr::BorderRadius borderRadii = wr::ToBorderRadius( {0, 0}, {0, 0}, {0, 0}, {0, 0} );
+  wr::BorderRadius borderRadii = wr::EmptyBorderRadius();
 
   
   
@@ -7703,7 +7707,7 @@ BCInlineDirSeg::CreateWebRenderCommands(BCPaintBorderIterator& aIter,
   }
   wrSide[eSideTop] = wr::ToBorderSide(ToDeviceColor(param->mBorderColor), param->mBorderStyle);
 
-  wr::BorderRadius borderRadii = wr::ToBorderRadius( {0, 0}, {0, 0}, {0, 0}, {0, 0} );
+  wr::BorderRadius borderRadii = wr::EmptyBorderRadius();
 
   
   
@@ -8027,6 +8031,27 @@ nsTableFrame::AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult)
              "What happened to our parent?");
   aResult.AppendElement(
     OwnedAnonBox(wrapper, &UpdateStyleOfOwnedAnonBoxesForTableWrapper));
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  auto colGroupFrame =
+    static_cast<nsTableColGroupFrame*>(mColGroups.LastChild());
+  if (colGroupFrame && colGroupFrame->GetColType() == eColGroupAnonymousCell) {
+    aResult.AppendElement(colGroupFrame);
+  }
 }
 
  void

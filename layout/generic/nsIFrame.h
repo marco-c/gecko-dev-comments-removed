@@ -619,6 +619,8 @@ public:
     , mMayHaveRoundedCorners(false)
     , mHasImageRequest(false)
     , mHasFirstLetterChild(false)
+    , mParentIsWrapperAnonBox(false)
+    , mIsWrapperBoxNeedingRestyle(false)
   {
     mozilla::PodZero(&mOverflow);
   }
@@ -3335,6 +3337,9 @@ protected:
   void UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
                                  mozilla::ServoRestyleState& aRestyleState);
 
+  
+  friend class mozilla::ServoRestyleState;
+
 public:
   
   
@@ -3986,6 +3991,23 @@ public:
 
 
 
+  bool ParentIsWrapperAnonBox() const { return mParentIsWrapperAnonBox; }
+  void SetParentIsWrapperAnonBox() { mParentIsWrapperAnonBox = true; }
+
+  
+
+
+  bool IsWrapperAnonBoxNeedingRestyle() const {
+    return mIsWrapperBoxNeedingRestyle;
+  }
+  void SetIsWrapperAnonBoxNeedingRestyle(bool aNeedsRestyle) {
+    mIsWrapperBoxNeedingRestyle = aNeedsRestyle;
+  }
+
+  
+
+
+
 
 
   virtual bool RenumberFrameAndDescendants(int32_t* aOrdinal,
@@ -4127,6 +4149,26 @@ protected:
 
 
   bool mHasFirstLetterChild : 1;
+
+  
+
+
+
+
+
+
+
+
+
+
+  bool mParentIsWrapperAnonBox : 1;
+
+  
+
+
+
+
+  bool mIsWrapperBoxNeedingRestyle : 1;
 
   
 

@@ -1274,51 +1274,47 @@ var Impl = {
     }
 
     
-    let histograms = protect(() => this.getHistograms(isSubsession, clearSubsession), {});
-    let keyedHistograms = protect(() => this.getKeyedHistograms(isSubsession, clearSubsession), {});
-    let scalars = protect(() => this.getScalars(isSubsession, clearSubsession), {});
-    let keyedScalars = protect(() => this.getScalars(isSubsession, clearSubsession, true), {});
-    let events = protect(() => this.getEvents(isSubsession, clearSubsession))
-
-    payloadObj.histograms = histograms.parent || {};
-    payloadObj.keyedHistograms = keyedHistograms.parent || {};
-    payloadObj.processes = {
-      parent: {
-        scalars: scalars.parent || {},
-        keyedScalars: keyedScalars.parent || {},
-        events: events.parent || [],
-      },
-      content: {
-        scalars: scalars.content,
-        keyedScalars: keyedScalars.content,
-        histograms: histograms.content,
-        keyedHistograms: keyedHistograms.content,
-        events: events.content || [],
-      },
-      extension: {
-        scalars: scalars.extension,
-        keyedScalars: keyedScalars.extension,
-        histograms: histograms.extension,
-        keyedHistograms: keyedHistograms.extension,
-        events: events.extension || [],
-      },
-      dynamic: {
-        events: events.dynamic || [],
-      },
+    let measurements = {
+      histograms: protect(() => this.getHistograms(isSubsession, clearSubsession), {}),
+      keyedHistograms: protect(() => this.getKeyedHistograms(isSubsession, clearSubsession), {}),
+      scalars: protect(() => this.getScalars(isSubsession, clearSubsession), {}),
+      keyedScalars: protect(() => this.getScalars(isSubsession, clearSubsession, true), {}),
+      events: protect(() => this.getEvents(isSubsession, clearSubsession)),
     };
 
+    let measurementsContainGPU = Object
+      .keys(measurements)
+      .some(key => "gpu" in measurements[key]);
+
+    payloadObj.processes = {};
+    let processTypes = ["parent", "content", "extension", "dynamic"];
     
-    if ("gpu" in histograms ||
-        "gpu" in keyedHistograms ||
-        "gpu" in scalars ||
-        "gpu" in keyedScalars) {
-      payloadObj.processes.gpu = {
-        scalars: scalars.gpu,
-        keyedScalars: keyedScalars.gpu,
-        histograms: histograms.gpu,
-        keyedHistograms: keyedHistograms.gpu,
-        events: events.gpu || [],
-      };
+    if (measurementsContainGPU) {
+      processTypes.push("gpu");
+    }
+
+    
+    for (const processType of processTypes) {
+      let processPayload = {};
+
+      for (const key in measurements) {
+        let payloadLoc = processPayload;
+        
+        if (processType == "parent" && (key == "histograms" || key == "keyedHistograms")) {
+          payloadLoc = payloadObj;
+        }
+        
+        if (processType == "dynamic" && key != "events") {
+          continue;
+        }
+
+        
+        let defaultValue = key == "events" ? [] : {};
+        payloadLoc[key] = measurements[key][processType] || defaultValue;
+      }
+
+      
+      payloadObj.processes[processType] = processPayload;
     }
 
     payloadObj.info = info;
