@@ -234,8 +234,8 @@ public class TestSynchronizerSession {
 
     
     SynchronizerConfiguration sc = syncSession.getSynchronizer().save();
-    TestSynchronizer.assertInRangeInclusive(before, sc.localBundle.getTimestamp(), after);
-    TestSynchronizer.assertInRangeInclusive(before, sc.remoteBundle.getTimestamp(), after);
+    assertEquals(0L, sc.localBundle.getTimestamp());
+    assertEquals(0L, sc.remoteBundle.getTimestamp());
   }
 
   protected void doSkipTest(boolean remoteShouldSkip, boolean localShouldSkip) {

@@ -21,7 +21,7 @@ public interface RepositorySessionFetchRecordsDelegate {
 
 
 
-  void onFetchCompleted(final long fetchEnd);
+  void onFetchCompleted();
 
   
 

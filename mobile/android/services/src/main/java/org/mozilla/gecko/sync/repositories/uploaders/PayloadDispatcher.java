@@ -88,22 +88,23 @@ class PayloadDispatcher {
             for (String guid : guids) {
                 uploader.sessionStoreDelegate.onRecordStoreSucceeded(guid);
             }
+
+            
+            
+            
+            bumpTimestampTo(uploadTimestamp, response.normalizedTimestampForHeader(SyncResponse.X_LAST_MODIFIED));
+            uploader.setLastStoreTimestamp(uploadTimestamp);
         }
 
         
         
         if (isLastPayload) {
-            finished(response.normalizedTimestampForHeader(SyncResponse.X_LAST_MODIFIED));
+            uploader.finished();
         }
     }
 
     void lastPayloadFailed(Exception e) {
         uploader.sessionStoreDelegate.onStoreFailed(e);
-    }
-
-    private void finished(long lastModifiedTimestamp) {
-        bumpTimestampTo(uploadTimestamp, lastModifiedTimestamp);
-        uploader.finished(uploadTimestamp);
     }
 
     void finalizeQueue(final boolean needToCommit, final Runnable finalRunnable) {
@@ -116,7 +117,7 @@ class PayloadDispatcher {
 
                     
                 } else {
-                    uploader.finished(uploadTimestamp);
+                    uploader.finished();
                 }
             }
         });

@@ -68,6 +68,8 @@ implements RecordsChannelDelegate,
   
   
   
+  
+  
   private long pendingATimestamp = -1;
   private long pendingBTimestamp = -1;
   private long storeEndATimestamp = -1;
@@ -200,8 +202,8 @@ implements RecordsChannelDelegate,
     
     RecordsChannelDelegate channelAToBDelegate = new RecordsChannelDelegate() {
       @Override
-      public void onFlowCompleted(RecordsChannel recordsChannel, long fetchEnd, long storeEnd) {
-        session.onFirstFlowCompleted(recordsChannel, fetchEnd, storeEnd);
+      public void onFlowCompleted(RecordsChannel recordsChannel) {
+        session.onFirstFlowCompleted(recordsChannel);
       }
 
       @Override
@@ -243,13 +245,11 @@ implements RecordsChannelDelegate,
 
 
 
-
-
-  public void onFirstFlowCompleted(RecordsChannel recordsChannel, long fetchEnd, long storeEnd) {
+  public void onFirstFlowCompleted(RecordsChannel recordsChannel) {
     Logger.trace(LOG_TAG, "First RecordsChannel onFlowCompleted.");
-    Logger.debug(LOG_TAG, "Fetch end is " + fetchEnd + ". Store end is " + storeEnd + ". Starting next.");
-    pendingATimestamp = fetchEnd;
-    storeEndBTimestamp = storeEnd;
+    pendingATimestamp = sessionA.getLastFetchTimestamp();
+    storeEndBTimestamp = sessionB.getLastStoreTimestamp();
+    Logger.debug(LOG_TAG, "Fetch end is " + pendingATimestamp + ". Store end is " + storeEndBTimestamp + ". Starting next.");
     numInboundRecords.set(recordsChannel.getFetchCount());
     numInboundRecordsStored.set(recordsChannel.getStoreAcceptedCount());
     numInboundRecordsFailed.set(recordsChannel.getStoreFailureCount());
@@ -264,14 +264,11 @@ implements RecordsChannelDelegate,
 
 
 
-
-
-  public void onSecondFlowCompleted(RecordsChannel recordsChannel, long fetchEnd, long storeEnd) {
+  public void onSecondFlowCompleted(RecordsChannel recordsChannel) {
     Logger.trace(LOG_TAG, "Second RecordsChannel onFlowCompleted.");
-    Logger.debug(LOG_TAG, "Fetch end is " + fetchEnd + ". Store end is " + storeEnd + ". Finishing.");
-
-    pendingBTimestamp = fetchEnd;
-    storeEndATimestamp = storeEnd;
+    pendingBTimestamp = sessionB.getLastFetchTimestamp();
+    storeEndATimestamp = sessionA.getLastStoreTimestamp();
+    Logger.debug(LOG_TAG, "Fetch end is " + pendingBTimestamp + ". Store end is " + storeEndATimestamp + ". Finishing.");
     numOutboundRecords.set(recordsChannel.getFetchCount());
     numOutboundRecordsStored.set(recordsChannel.getStoreAcceptedCount());
     numOutboundRecordsFailed.set(recordsChannel.getStoreFailureCount());
@@ -287,8 +284,8 @@ implements RecordsChannelDelegate,
   }
 
   @Override
-  public void onFlowCompleted(RecordsChannel recordsChannel, long fetchEnd, long storeEnd) {
-    onSecondFlowCompleted(recordsChannel, fetchEnd, storeEnd);
+  public void onFlowCompleted(RecordsChannel recordsChannel) {
+    onSecondFlowCompleted(recordsChannel);
   }
 
   @Override

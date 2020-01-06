@@ -4,6 +4,9 @@
 
 package org.mozilla.gecko.sync.repositories;
 
+import android.support.annotation.Nullable;
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -67,6 +70,39 @@ public abstract class RepositorySession {
 
   
   private long lastSyncTimestamp = 0;
+
+  
+  
+  private volatile Long fetchEnd;
+  private volatile Long storeEnd;
+
+  public void setLastFetchTimestamp(long timestamp) {
+    fetchEnd = timestamp;
+  }
+
+  public void setLastStoreTimestamp(long timestamp) {
+    storeEnd = timestamp;
+  }
+
+  
+
+
+  public long getLastFetchTimestamp() {
+    if (fetchEnd != null) {
+      return fetchEnd;
+    }
+    return lastSyncTimestamp;
+  }
+
+  
+
+
+  public long getLastStoreTimestamp() {
+    if (storeEnd != null) {
+      return storeEnd;
+    }
+    return lastSyncTimestamp;
+  }
 
   public long getLastSyncTimestamp() {
     return lastSyncTimestamp;
@@ -136,12 +172,13 @@ public abstract class RepositorySession {
     
     
     
+    Logger.debug(LOG_TAG, "Scheduling onStoreCompleted for after storing is done");
     final long end = now();
-    Logger.debug(LOG_TAG, "Scheduling onStoreCompleted for after storing is done: " + end);
     Runnable command = new Runnable() {
       @Override
       public void run() {
-        storeDelegate.onStoreCompleted(end);
+        setLastStoreTimestamp(end);
+        storeDelegate.onStoreCompleted();
       }
     };
     storeWorkQueue.execute(command);

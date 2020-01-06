@@ -197,9 +197,12 @@ public class BatchingDownloader {
         }
 
         
+        final long normalizedTimestamp = response.normalizedTimestampForHeader(SyncResponse.X_LAST_MODIFIED);
+        repositorySession.setLastFetchTimestamp(normalizedTimestamp);
+
+        
         final String offset = response.weaveOffset();
         if (offset == null || !allowMultipleBatches) {
-            final long normalizedTimestamp = response.normalizedTimestampForHeader(SyncResponse.X_LAST_MODIFIED);
             Logger.debug(LOG_TAG, "Fetch completed. Timestamp is " + normalizedTimestamp);
 
             
@@ -216,7 +219,7 @@ public class BatchingDownloader {
                 @Override
                 public void run() {
                     Logger.debug(LOG_TAG, "Delayed onFetchCompleted running.");
-                    fetchRecordsDelegate.onFetchCompleted(normalizedTimestamp);
+                    fetchRecordsDelegate.onFetchCompleted();
                 }
             });
             return;

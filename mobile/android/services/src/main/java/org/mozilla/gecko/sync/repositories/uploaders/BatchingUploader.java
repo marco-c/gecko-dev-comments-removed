@@ -246,8 +246,12 @@ public class BatchingUploader {
         });
     }
 
-     void finished(AtomicLong lastModifiedTimestamp) {
-        sessionStoreDelegate.deferredStoreDelegate(executor).onStoreCompleted(lastModifiedTimestamp.get());
+     void setLastStoreTimestamp(AtomicLong lastModifiedTimestamp) {
+        repositorySession.setLastStoreTimestamp(lastModifiedTimestamp.get());
+    }
+
+     void finished() {
+        sessionStoreDelegate.deferredStoreDelegate(executor).onStoreCompleted();
     }
 
     
