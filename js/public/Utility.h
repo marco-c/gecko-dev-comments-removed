@@ -55,6 +55,9 @@ namespace js {
 
 
 
+
+
+
 enum ThreadType {
     THREAD_TYPE_NONE = 0,       
     THREAD_TYPE_COOPERATING,    
@@ -83,13 +86,22 @@ namespace oom {
 
 
 # if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
+
+
+
+const ThreadType FirstThreadTypeToTest = THREAD_TYPE_COOPERATING;
+const ThreadType LastThreadTypeToTest = THREAD_TYPE_WASM_TIER2;
+
 extern bool InitThreadType(void);
 extern void SetThreadType(ThreadType);
 extern JS_FRIEND_API(uint32_t) GetThreadType(void);
+
 # else
+
 inline bool InitThreadType(void) { return true; }
 inline void SetThreadType(ThreadType t) {};
 inline uint32_t GetThreadType(void) { return 0; }
+
 # endif
 
 } 
