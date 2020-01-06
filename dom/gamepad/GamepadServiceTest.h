@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_GamepadServiceTest_h_
 #define mozilla_dom_GamepadServiceTest_h_
 
-#include "nsIIPCBackgroundChildCreateCallback.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/dom/GamepadBinding.h"
 
@@ -20,11 +19,9 @@ class GamepadTestChannelChild;
 class Promise;
 
 
-class GamepadServiceTest final : public DOMEventTargetHelper,
-                                 public nsIIPCBackgroundChildCreateCallback
+class GamepadServiceTest final : public DOMEventTargetHelper
 {
 public:
-  NS_DECL_NSIIPCBACKGROUNDCHILDCREATECALLBACK
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(GamepadServiceTest,
                                            DOMEventTargetHelper)
@@ -64,22 +61,8 @@ private:
 
   
   
-  
-  struct PendingOperation {
-    explicit PendingOperation(const uint32_t& aID,
-                              const GamepadChangeEvent& aEvent,
-                              Promise* aPromise = nullptr)
-               : mID(aID), mEvent(aEvent), mPromise(aPromise) {}
-    uint32_t mID;
-    const GamepadChangeEvent& mEvent;
-    RefPtr<Promise> mPromise;
-  };
-
-  
-  
   RefPtr<GamepadManager> mService;
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
-  nsTArray<PendingOperation> mPendingOperations;
   uint32_t mEventNumber;
   bool mShuttingDown;
 
@@ -92,7 +75,6 @@ private:
   ~GamepadServiceTest();
   void InitPBackgroundActor();
   void DestroyPBackgroundActor();
-  void FlushPendingOperations();
 
 };
 
