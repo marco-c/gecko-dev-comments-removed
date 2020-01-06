@@ -2749,7 +2749,8 @@ public:
 
 
   Matrix4x4 GetTransformMatrix(const nsIFrame* aStopAtAncestor,
-                               nsIFrame **aOutAncestor);
+                               nsIFrame **aOutAncestor,
+                               bool aInCSSUnits = false);
 
   
 
