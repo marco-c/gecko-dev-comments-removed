@@ -615,14 +615,7 @@ AudioCallbackDriver::Init()
   }
 
   
-  mOutputChannels = mGraphImpl->AudioChannelCount();
-  if (!mOutputChannels) {
-    LOG(LogLevel::Warning, ("Output number of channels is 0."));
-    MonitorAutoLock lock(GraphImpl()->GetMonitor());
-    FallbackToSystemClockDriver();
-    return true;
-  }
-
+  mOutputChannels = std::max<uint32_t>(1, mGraphImpl->AudioChannelCount());
   mBuffer = AudioCallbackBufferWrapper<AudioDataValue>(mOutputChannels);
   mScratchBuffer = SpillBuffer<AudioDataValue, WEBAUDIO_BLOCK_SIZE * 2>(mOutputChannels);
 
@@ -704,8 +697,18 @@ AudioCallbackDriver::Init()
       if (!mFromFallback) {
         CubebUtils::ReportCubebStreamInitFailure(firstStream);
       }
+      
+      
       MonitorAutoLock lock(GraphImpl()->GetMonitor());
-      FallbackToSystemClockDriver();
+      SystemClockDriver* nextDriver = new SystemClockDriver(GraphImpl());
+      SetNextDriver(nextDriver);
+      nextDriver->MarkAsFallback();
+      nextDriver->SetGraphTime(this, mIterationStart, mIterationEnd);
+      
+      
+      
+      mGraphImpl->SetCurrentDriver(nextDriver);
+      nextDriver->Start();
       return true;
     }
   }
@@ -1058,8 +1061,18 @@ AudioCallbackDriver::StateCallback(cubeb_state aState)
       return;
     }
 
+    
+    
+    SystemClockDriver* nextDriver = new SystemClockDriver(GraphImpl());
+    SetNextDriver(nextDriver);
     RemoveCallback();
-    FallbackToSystemClockDriver();
+    nextDriver->MarkAsFallback();
+    nextDriver->SetGraphTime(this, mIterationStart, mIterationEnd);
+    
+    
+    
+    mGraphImpl->SetCurrentDriver(nextDriver);
+    nextDriver->Start();
   }
 }
 
@@ -1203,19 +1216,6 @@ void AudioCallbackDriver::CompleteAudioContextOperations(AsyncCubebOperation aOp
   }
 }
 
-void AudioCallbackDriver::FallbackToSystemClockDriver()
-{
-  GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
-  SystemClockDriver* nextDriver = new SystemClockDriver(GraphImpl());
-  SetNextDriver(nextDriver);
-  nextDriver->MarkAsFallback();
-  nextDriver->SetGraphTime(this, mIterationStart, mIterationEnd);
-  
-  
-  
-  mGraphImpl->SetCurrentDriver(nextDriver);
-  nextDriver->Start();
-}
 
 } 
 

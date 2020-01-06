@@ -492,10 +492,6 @@ private:
   friend class AsyncCubebTask;
   bool Init();
   void Stop();
-  
-
-
-  void FallbackToSystemClockDriver();
 
   
   uint32_t mOutputChannels;
