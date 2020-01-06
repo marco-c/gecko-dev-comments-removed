@@ -116,12 +116,6 @@ var UI = {
 
     this.configureSimulator = this.configureSimulator.bind(this);
     Simulators.on("configure", this.configureSimulator);
-
-    
-    
-    if (navigator.platform.startsWith("Mac")) {
-      document.documentElement.setAttribute("platform", "mac");
-    }
   },
 
   destroy: function () {
