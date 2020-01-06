@@ -88,6 +88,7 @@ private:
   
   MediaDecoderStateMachine* CreateStateMachine();
 
+  virtual ChannelMediaDecoder* CloneImpl(MediaDecoderInit& aInit) = 0;
   nsresult OpenResource(nsIStreamListener** aStreamListener);
   nsresult Load(BaseMediaResource* aOriginal);
 

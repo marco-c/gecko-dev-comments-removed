@@ -11,6 +11,16 @@
 
 namespace mozilla {
 
+ChannelMediaDecoder*
+FlacDecoder::CloneImpl(MediaDecoderInit& aInit)
+{
+  if (!IsEnabled()) {
+    return nullptr;
+  }
+
+  return new FlacDecoder(aInit);
+}
+
  bool
 FlacDecoder::IsEnabled()
 {

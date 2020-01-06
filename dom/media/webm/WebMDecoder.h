@@ -12,15 +12,27 @@ namespace mozilla {
 
 class MediaContainerType;
 
-class WebMDecoder
+class WebMDecoder : public ChannelMediaDecoder
 {
 public:
+  explicit WebMDecoder(MediaDecoderInit& aInit)
+    : ChannelMediaDecoder(aInit)
+  {
+  }
 
   
   
   
   static bool IsSupportedType(const MediaContainerType& aContainerType);
 
+private:
+  ChannelMediaDecoder* CloneImpl(MediaDecoderInit& aInit) override
+  {
+    if (!IsWebMEnabled()) {
+      return nullptr;
+    }
+    return new WebMDecoder(aInit);
+  }
 };
 
 } 

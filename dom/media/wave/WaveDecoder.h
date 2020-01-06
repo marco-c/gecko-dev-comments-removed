@@ -12,12 +12,21 @@ namespace mozilla {
 
 class MediaContainerType;
 
-class WaveDecoder
+class WaveDecoder : public ChannelMediaDecoder
 {
 public:
   
+  explicit WaveDecoder(MediaDecoderInit& aInit)
+    : ChannelMediaDecoder(aInit)
+  {
+  }
+
+  
   
   static bool IsSupportedType(const MediaContainerType& aContainerType);
+
+private:
+  ChannelMediaDecoder* CloneImpl(MediaDecoderInit& aInit) override;
 };
 
 } 
