@@ -314,7 +314,6 @@ CompositorBridgeParent::CompositorBridgeParent(CSSToLayoutDeviceScale aScale,
   , mOptions(aOptions)
   , mPauseCompositionMonitor("PauseCompositionMonitor")
   , mResumeCompositionMonitor("ResumeCompositionMonitor")
-  , mResetCompositorMonitor("ResetCompositorMonitor")
   , mRootLayerTreeID(0)
   , mOverrideComposeReadiness(false)
   , mForceCompositionTask(nullptr)
@@ -395,25 +394,6 @@ CompositorBridgeParent::Initialize()
   if (!mOptions.UseWebRender()) {
     mCompositorScheduler = new CompositorVsyncScheduler(this, mWidget);
   }
-}
-
-mozilla::ipc::IPCResult
-CompositorBridgeParent::RecvReset(nsTArray<LayersBackend>&& aBackendHints,
-                                  const uint64_t& aSeqNo,
-                                  bool* aResult,
-                                  TextureFactoryIdentifier* aOutIdentifier)
-{
-  Maybe<TextureFactoryIdentifier> newIdentifier;
-  ResetCompositorTask(aBackendHints, aSeqNo, &newIdentifier);
-
-  if (newIdentifier) {
-    *aResult = true;
-    *aOutIdentifier = newIdentifier.value();
-  } else {
-    *aResult = false;
-  }
-
-  return IPC_OK();
 }
 
 uint64_t
@@ -1927,105 +1907,6 @@ CompositorBridgeParent::InvalidateRemoteLayers()
       Unused << cpcp->SendInvalidateLayers(aLayersId);
     }
   });
-}
-
-bool
-CompositorBridgeParent::ResetCompositor(const nsTArray<LayersBackend>& aBackendHints,
-                                        uint64_t aSeqNo,
-                                        TextureFactoryIdentifier* aOutIdentifier)
-{
-  Maybe<TextureFactoryIdentifier> newIdentifier;
-  {
-    MonitorAutoLock lock(mResetCompositorMonitor);
-
-    CompositorLoop()->PostTask(NewRunnableMethod
-                               <StoreCopyPassByConstLRef<nsTArray<LayersBackend>>,
-                               uint64_t,
-                               Maybe<TextureFactoryIdentifier>*>(this,
-                                                                 &CompositorBridgeParent::ResetCompositorTask,
-                                                                 aBackendHints,
-                                                                 aSeqNo,
-                                                                 &newIdentifier));
-
-    mResetCompositorMonitor.Wait();
-  }
-
-  if (!newIdentifier) {
-    return false;
-  }
-
-  *aOutIdentifier = newIdentifier.value();
-  return true;
-}
-
-
-
-void
-CompositorBridgeParent::ResetCompositorTask(const nsTArray<LayersBackend>& aBackendHints,
-                                            uint64_t aSeqNo,
-                                            Maybe<TextureFactoryIdentifier>* aOutNewIdentifier)
-{
-  
-  
-  Maybe<TextureFactoryIdentifier> newIdentifier;
-  {
-    MonitorAutoLock lock(mResetCompositorMonitor);
-
-    newIdentifier = ResetCompositorImpl(aBackendHints);
-    *aOutNewIdentifier = newIdentifier;
-
-    mResetCompositorMonitor.NotifyAll();
-  }
-
-  
-  
-  
-
-  if (!newIdentifier) {
-    
-    return;
-  }
-
-  MonitorAutoLock lock(*sIndirectLayerTreesLock);
-  ForEachIndirectLayerTree([&] (LayerTreeState* lts, uint64_t layersId) -> void {
-    if (CrossProcessCompositorBridgeParent* cpcp = lts->mCrossProcessParent) {
-      Unused << cpcp->SendCompositorUpdated(layersId, newIdentifier.value(), aSeqNo);
-
-      if (LayerTransactionParent* ltp = lts->mLayerTree) {
-        ltp->SetPendingCompositorUpdate(aSeqNo);
-      }
-      lts->mPendingCompositorUpdate = Some(aSeqNo);
-    }
-  });
-}
-
-Maybe<TextureFactoryIdentifier>
-CompositorBridgeParent::ResetCompositorImpl(const nsTArray<LayersBackend>& aBackendHints)
-{
-  if (!mLayerManager) {
-    return Nothing();
-  }
-
-  RefPtr<Compositor> compositor = NewCompositor(aBackendHints);
-  if (!compositor) {
-    MOZ_RELEASE_ASSERT(compositor, "Failed to reset compositor.");
-  }
-
-  
-  if (mCompositor &&
-      mCompositor->GetBackendType() == LayersBackend::LAYERS_BASIC &&
-      compositor->GetBackendType() == LayersBackend::LAYERS_BASIC)
-  {
-    return Nothing();
-  }
-
-  if (mCompositor) {
-    mCompositor->SetInvalid();
-  }
-  mCompositor = compositor;
-  mLayerManager->ChangeCompositor(compositor);
-
-  return Some(compositor->GetTextureFactoryIdentifier());
 }
 
 static void
