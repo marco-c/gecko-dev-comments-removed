@@ -6883,6 +6883,7 @@ nsLayoutUtils::DrawBackgroundImage(gfxContext&         aContext,
 
  DrawResult
 nsLayoutUtils::DrawImage(gfxContext&         aContext,
+                         nsStyleContext*     aStyleContext,
                          nsPresContext*      aPresContext,
                          imgIContainer*      aImage,
                          const SamplingFilter aSamplingFilter,
@@ -6893,10 +6894,13 @@ nsLayoutUtils::DrawImage(gfxContext&         aContext,
                          uint32_t            aImageFlags,
                          float               aOpacity)
 {
+  Maybe<SVGImageContext> svgContext;
+  SVGImageContext::MaybeStoreContextPaint(svgContext, aStyleContext, aImage);
+
   return DrawImageInternal(aContext, aPresContext, aImage,
                            aSamplingFilter, aDest, aFill, aAnchor,
                            aDirty,
-                            Nothing(),
+                           svgContext,
                            aImageFlags, ExtendMode::CLAMP,
                            aOpacity);
 }

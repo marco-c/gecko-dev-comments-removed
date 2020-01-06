@@ -1817,7 +1817,11 @@ public:
 
 
 
+
+
+
   static DrawResult DrawImage(gfxContext&         aContext,
+                              nsStyleContext*     aStyleContext,
                               nsPresContext*      aPresContext,
                               imgIContainer*      aImage,
                               const SamplingFilter aSamplingFilter,

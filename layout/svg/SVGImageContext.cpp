@@ -22,7 +22,17 @@ SVGImageContext::MaybeStoreContextPaint(Maybe<SVGImageContext>& aContext,
                                         nsIFrame* aFromFrame,
                                         imgIContainer* aImgContainer)
 {
-  const nsStyleSVG* style = aFromFrame->StyleSVG();
+  return MaybeStoreContextPaint(aContext,
+                                aFromFrame->StyleContext(),
+                                aImgContainer);
+}
+
+ void
+SVGImageContext::MaybeStoreContextPaint(Maybe<SVGImageContext>& aContext,
+                                        nsStyleContext* aFromStyleContext,
+                                        imgIContainer* aImgContainer)
+{
+  const nsStyleSVG* style = aFromStyleContext->StyleSVG();
 
   if (!style->ExposesContextProperties()) {
     
