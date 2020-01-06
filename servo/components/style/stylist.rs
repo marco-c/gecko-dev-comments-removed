@@ -1397,7 +1397,7 @@ impl Rule {
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ApplicableDeclarationBlock {
     
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]

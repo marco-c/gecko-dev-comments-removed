@@ -23,7 +23,7 @@ use rule_tree::{CascadeLevel, StrongRuleNode};
 use selector_parser::{PseudoElement, RestyleDamage, SelectorImpl};
 use selectors::matching::{ElementSelectorFlags, MatchingContext, MatchingMode, StyleRelations};
 use selectors::matching::{VisitedHandlingMode, AFFECTED_BY_PSEUDO_ELEMENTS};
-use sharing::{StyleSharingBehavior, StyleSharingResult};
+use sharing::StyleSharingBehavior;
 use stylearc::Arc;
 use stylist::{ApplicableDeclarationList, RuleInclusion};
 
@@ -855,17 +855,19 @@ pub trait MatchMethods : TElement {
             
             
             
-            let revalidation_match_results = context.thread_local
-                                                    .current_element_info
-                                                    .as_mut().unwrap()
-                                                    .revalidation_match_results
-                                                    .take();
+            let validation_data =
+                context.thread_local
+                    .current_element_info
+                    .as_mut().unwrap()
+                    .validation_data
+                    .take();
+
             context.thread_local
                    .style_sharing_candidate_cache
                    .insert_if_possible(self,
                                        data.styles().primary.values(),
                                        primary_results.relations,
-                                       revalidation_match_results);
+                                       validation_data);
         }
 
         child_cascade_requirement
@@ -1339,30 +1341,6 @@ pub trait MatchMethods : TElement {
         }
 
         false
-    }
-
-    
-    
-    
-    
-    unsafe fn share_style_if_possible(&self,
-                                      context: &mut StyleContext<Self>,
-                                      data: &mut ElementData)
-                                      -> StyleSharingResult {
-        let shared_context = &context.shared;
-        let current_element_info =
-            context.thread_local.current_element_info.as_mut().unwrap();
-        let selector_flags_map = &mut context.thread_local.selector_flags;
-        let bloom_filter = context.thread_local.bloom_filter.filter();
-
-        context.thread_local
-            .style_sharing_candidate_cache
-            .share_style_if_possible(shared_context,
-                                     current_element_info,
-                                     selector_flags_map,
-                                     bloom_filter,
-                                     *self,
-                                     data)
     }
 
     

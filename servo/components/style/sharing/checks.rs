@@ -6,14 +6,12 @@
 
 
 
-use context::{CurrentElementInfo, SelectorFlagsMap, SharedStyleContext};
+use context::{SelectorFlagsMap, SharedStyleContext};
 use dom::TElement;
 use element_state::*;
-use matching::MatchMethods;
 use selectors::bloom::BloomFilter;
-use selectors::matching::{ElementSelectorFlags, StyleRelations};
-use sharing::StyleSharingCandidate;
-use sink::ForgetfulSink;
+use selectors::matching::StyleRelations;
+use sharing::{StyleSharingCandidate, StyleSharingTarget};
 use stylearc::Arc;
 
 
@@ -24,8 +22,7 @@ pub fn relations_are_shareable(relations: &StyleRelations) -> bool {
     use selectors::matching::*;
     !relations.intersects(AFFECTED_BY_ID_SELECTOR |
                           AFFECTED_BY_PSEUDO_ELEMENTS |
-                          AFFECTED_BY_STYLE_ATTRIBUTE |
-                          AFFECTED_BY_PRESENTATIONAL_HINTS)
+                          AFFECTED_BY_STYLE_ATTRIBUTE)
 }
 
 
@@ -52,33 +49,24 @@ pub fn same_computed_values<E>(first: Option<E>, second: Option<E>) -> bool
 
 
 
-pub fn has_presentational_hints<E>(element: E) -> bool
+pub fn have_same_presentational_hints<E>(
+    target: &mut StyleSharingTarget<E>,
+    candidate: &mut StyleSharingCandidate<E>
+) -> bool
     where E: TElement,
 {
-    let mut hints = ForgetfulSink::new();
-    element.synthesize_presentational_hints_for_legacy_attributes(&mut hints);
-    !hints.is_empty()
+    target.pres_hints() == candidate.pres_hints()
 }
 
 
 
 
-pub fn have_same_class<E>(element: E,
+pub fn have_same_class<E>(target: &mut StyleSharingTarget<E>,
                           candidate: &mut StyleSharingCandidate<E>)
                           -> bool
     where E: TElement,
 {
-    
-    let mut element_class_attributes = vec![];
-    element.each_class(|c| element_class_attributes.push(c.clone()));
-
-    if candidate.class_attributes.is_none() {
-        let mut attrs = vec![];
-        candidate.element.each_class(|c| attrs.push(c.clone()));
-        candidate.class_attributes = Some(attrs)
-    }
-
-    element_class_attributes == *candidate.class_attributes.as_ref().unwrap()
+    target.class_list() == candidate.class_list()
 }
 
 
@@ -102,50 +90,20 @@ pub fn have_same_state_ignoring_visitedness<E>(element: E,
 
 
 #[inline]
-pub fn revalidate<E>(element: E,
+pub fn revalidate<E>(target: &mut StyleSharingTarget<E>,
                      candidate: &mut StyleSharingCandidate<E>,
                      shared_context: &SharedStyleContext,
                      bloom: &BloomFilter,
-                     info: &mut CurrentElementInfo,
                      selector_flags_map: &mut SelectorFlagsMap<E>)
                      -> bool
     where E: TElement,
 {
     let stylist = &shared_context.stylist;
 
-    if info.revalidation_match_results.is_none() {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let mut set_selector_flags = |el: &E, flags: ElementSelectorFlags| {
-            element.apply_selector_flags(selector_flags_map, el, flags);
-        };
-        info.revalidation_match_results =
-            Some(stylist.match_revalidation_selectors(&element, bloom,
-                                                      &mut set_selector_flags));
-    }
+    let for_element =
+        target.revalidation_match_results(stylist, bloom, selector_flags_map);
 
-    if candidate.revalidation_match_results.is_none() {
-        let results =
-            stylist.match_revalidation_selectors(&*candidate.element, bloom,
-                                                 &mut |_, _| {});
-        candidate.revalidation_match_results = Some(results);
-    }
-
-    let for_element = info.revalidation_match_results.as_ref().unwrap();
-    let for_candidate = candidate.revalidation_match_results.as_ref().unwrap();
+    let for_candidate = candidate.revalidation_match_results(stylist, bloom);
 
     
     
