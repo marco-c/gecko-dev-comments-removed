@@ -111,5 +111,7 @@ module.exports = {
   messageClose,
   messageTableDataGet,
   networkMessageUpdate,
+  
+  messageTableDataReceive,
 };
 
