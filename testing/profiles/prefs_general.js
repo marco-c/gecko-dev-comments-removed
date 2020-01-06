@@ -237,38 +237,38 @@ user_pref("dom.presentation.testing.simulate-receiver", false);
 
 
 
-user_pref('browser.contentHandlers.types.0.uri', 'http://test1.example.org/rss?url=%%s')
-user_pref('browser.contentHandlers.types.1.uri', 'http://test1.example.org/rss?url=%%s')
-user_pref('browser.contentHandlers.types.2.uri', 'http://test1.example.org/rss?url=%%s')
-user_pref('browser.contentHandlers.types.3.uri', 'http://test1.example.org/rss?url=%%s')
-user_pref('browser.contentHandlers.types.4.uri', 'http://test1.example.org/rss?url=%%s')
-user_pref('browser.contentHandlers.types.5.uri', 'http://test1.example.org/rss?url=%%s')
+user_pref("browser.contentHandlers.types.0.uri", "http://test1.example.org/rss?url=%%s")
+user_pref("browser.contentHandlers.types.1.uri", "http://test1.example.org/rss?url=%%s")
+user_pref("browser.contentHandlers.types.2.uri", "http://test1.example.org/rss?url=%%s")
+user_pref("browser.contentHandlers.types.3.uri", "http://test1.example.org/rss?url=%%s")
+user_pref("browser.contentHandlers.types.4.uri", "http://test1.example.org/rss?url=%%s")
+user_pref("browser.contentHandlers.types.5.uri", "http://test1.example.org/rss?url=%%s")
 
 
-user_pref('toolkit.telemetry.server', 'https://%(server)s/telemetry-dummy/');
+user_pref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy/");
 
 
 user_pref("toolkit.telemetry.newProfilePing.enabled", false);
 
 
 
-user_pref('toolkit.telemetry.test.pref1', true);
-user_pref('toolkit.telemetry.test.pref2', false);
+user_pref("toolkit.telemetry.test.pref1", true);
+user_pref("toolkit.telemetry.test.pref2", false);
 
 
 
 
-user_pref('identity.fxaccounts.auth.uri', 'https://%(server)s/fxa-dummy/');
+user_pref("identity.fxaccounts.auth.uri", "https://%(server)s/fxa-dummy/");
 
 
 user_pref("identity.fxaccounts.remote.signup.uri", "https://%(server)s/fxa-signup");
 user_pref("identity.fxaccounts.remote.force_auth.uri", "https://%(server)s/fxa-force-auth");
 user_pref("identity.fxaccounts.remote.signin.uri", "https://%(server)s/fxa-signin");
 user_pref("identity.fxaccounts.settings.uri", "https://%(server)s/fxa-settings");
-user_pref('identity.fxaccounts.remote.webchannel.uri', 'https://%(server)s/');
+user_pref("identity.fxaccounts.remote.webchannel.uri", "https://%(server)s/");
 
 
-user_pref('identity.fxaccounts.skipDeviceRegistration', true);
+user_pref("identity.fxaccounts.skipDeviceRegistration", true);
 
 
 
