@@ -1053,7 +1053,7 @@ addEventListener("MozAfterPaint", function onFirstPaint() {
 
 
 addEventListener("MozAfterPaint", function onFirstNonBlankPaint() {
-  if (content.document.documentURI == "about:blank")
+  if (content.document.documentURI == "about:blank" && !content.opener)
     return;
   removeEventListener("MozAfterPaint", onFirstNonBlankPaint);
   sendAsyncMessage("Browser:FirstNonBlankPaint");
