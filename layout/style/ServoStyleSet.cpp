@@ -10,6 +10,8 @@
 #include "mozilla/DocumentStyleRootIterator.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoRestyleManager.h"
+#include "mozilla/ServoStyleRuleMap.h"
+#include "mozilla/css/Loader.h"
 #include "mozilla/dom/AnonymousContent.h"
 #include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/Element.h"
@@ -93,6 +95,13 @@ ServoStyleSet::BeginShutdown()
   nsIDocument* doc = mPresContext->Document();
 
   
+  if (mStyleRuleMap) {
+    doc->RemoveObserver(mStyleRuleMap);
+    doc->CSSLoader()->RemoveObserver(mStyleRuleMap);
+    mStyleRuleMap = nullptr;
+  }
+
+  
   
   
   
@@ -144,6 +153,10 @@ size_t
 ServoStyleSet::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 {
   size_t n = aMallocSizeOf(this);
+
+  if (mStyleRuleMap) {
+    n += mStyleRuleMap->SizeOfIncludingThis(aMallocSizeOf);
+  }
 
   
   
@@ -1354,6 +1367,18 @@ ServoStyleSet::RunPostTraversalTasks()
   for (auto& task : tasks) {
     task.Run();
   }
+}
+
+ServoStyleRuleMap*
+ServoStyleSet::StyleRuleMap()
+{
+  if (!mStyleRuleMap) {
+    mStyleRuleMap = new ServoStyleRuleMap(this);
+    nsIDocument* doc = mPresContext->Document();
+    doc->AddObserver(mStyleRuleMap);
+    doc->CSSLoader()->AddObserver(mStyleRuleMap);
+  }
+  return mStyleRuleMap;
 }
 
 bool

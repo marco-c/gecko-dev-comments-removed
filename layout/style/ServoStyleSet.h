@@ -33,6 +33,7 @@ class ServoRestyleManager;
 class ServoStyleSheet;
 struct Keyframe;
 class ServoElementSnapshotTable;
+class ServoStyleRuleMap;
 } 
 class nsCSSCounterStyleRule;
 class nsIContent;
@@ -248,6 +249,13 @@ public:
   int32_t SheetCount(SheetType aType) const;
   ServoStyleSheet* StyleSheetAt(SheetType aType, int32_t aIndex) const;
 
+  template<typename Func>
+  void EnumerateStyleSheetArrays(Func aCallback) const {
+    for (const auto& sheetArray : mSheets) {
+      aCallback(sheetArray);
+    }
+  }
+
   nsresult RemoveDocStyleSheet(ServoStyleSheet* aSheet);
   nsresult AddDocStyleSheet(ServoStyleSheet* aSheet, nsIDocument* aDocument);
 
@@ -433,6 +441,9 @@ public:
   }
 
   
+  ServoStyleRuleMap* StyleRuleMap();
+
+  
 
 
 
@@ -602,6 +613,10 @@ private:
   
   
   nsTArray<PostTraversalTask> mPostTraversalTasks;
+
+  
+  
+  RefPtr<ServoStyleRuleMap> mStyleRuleMap;
 
   static ServoStyleSet* sInServoTraversal;
 };
