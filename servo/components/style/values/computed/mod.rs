@@ -135,7 +135,6 @@ impl<'a> Context<'a> {
         &self.builder
     }
 
-
     
     #[cfg(feature = "gecko")]
     pub fn maybe_zoom_text(&self, size: NonNegativeAu) -> NonNegativeAu {
