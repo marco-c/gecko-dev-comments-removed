@@ -113,6 +113,21 @@ class TestNrSocket;
 
 class TestNat {
   public:
+
+    
+
+
+
+
+
+    class NatDelegate {
+    public:
+      virtual int on_read(TestNat *nat, void *buf, size_t maxlen, size_t *len) = 0;
+      virtual int on_sendto(TestNat *nat, const void *msg, size_t len,
+                    int flags, nr_transport_addr *to) = 0;
+      virtual int on_write(TestNat *nat, const void *msg, size_t len, size_t *written) = 0;
+    };
+
     typedef enum {
       
 
@@ -140,6 +155,7 @@ class TestNat {
       block_stun_(false),
       block_tcp_(false),
       delay_stun_resp_ms_(0),
+      nat_delegate_(nullptr),
       sockets_() {}
 
     bool has_port_mappings() const;
@@ -173,6 +189,8 @@ class TestNat {
     bool block_tcp_;
     
     uint32_t delay_stun_resp_ms_;
+
+    NatDelegate* nat_delegate_;
 
   private:
     std::set<TestNrSocket*> sockets_;
