@@ -581,12 +581,6 @@ protected:
   MediaCacheStream mCacheStream;
 
   MediaChannelStatistics mChannelStatistics;
-
-  
-  
-  
-  bool mIgnoreResume;
-
   ChannelSuspendAgent mSuspendAgent;
 };
 
