@@ -30,6 +30,7 @@
 #include "nsIRunnable.h"
 #include "nsThreadUtils.h"
 
+class nsISerialEventTarget;
 class nsIThread;
 
 namespace mozilla {
@@ -144,6 +145,9 @@ public:
       return NS_OK;
     }
   };
+
+  
+  nsISerialEventTarget* SerialEventTarget();
 
   
   
@@ -437,6 +441,9 @@ public:
 
   
   int next_sequence_num_;
+
+  class EventTarget;
+  RefPtr<EventTarget> mEventTarget;
 
   DISALLOW_COPY_AND_ASSIGN(MessageLoop);
 };
