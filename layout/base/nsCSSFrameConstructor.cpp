@@ -6292,12 +6292,10 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
 static void
 AddGenConPseudoToFrame(nsIFrame* aOwnerFrame, nsIContent* aContent)
 {
-  NS_ASSERTION(nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aOwnerFrame),
-               "property should only be set on first continuation/ib-sibling");
-
   
   
 
+  aOwnerFrame = nsLayoutUtils::FirstContinuationOrIBSplitSibling(aOwnerFrame);
   nsIFrame::ContentArray* value =
     aOwnerFrame->GetProperty(nsIFrame::GenConProperty());
   if (!value) {
@@ -6557,7 +6555,9 @@ AdjustAppendParentForAfterContent(nsFrameManager* aFrameManager,
   
   
   
-  if (aParentFrame->GetProperty(nsIFrame::GenConProperty()) ||
+  nsIFrame* afterBeforeOwnerFrame =
+    nsLayoutUtils::FirstContinuationOrIBSplitSibling(aParentFrame);
+  if (afterBeforeOwnerFrame->GetProperty(nsIFrame::GenConProperty()) ||
       nsLayoutUtils::HasPseudoStyle(aContainer, aParentFrame->StyleContext(),
                                     CSSPseudoElementType::after,
                                     aParentFrame->PresContext()) ||
