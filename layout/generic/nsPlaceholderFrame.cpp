@@ -160,16 +160,15 @@ nsPlaceholderFrame::DestroyFrom(nsIFrame* aDestructRoot)
 {
   nsIFrame* oof = mOutOfFlowFrame;
   if (oof) {
-    
-    nsFrameManager* fm = PresContext()->GetPresShell()->FrameManager();
-    fm->UnregisterPlaceholderFrame(this);
     mOutOfFlowFrame = nullptr;
+    oof->DeleteProperty(nsIFrame::PlaceholderFrameProperty());
     
     
     
     if ((GetStateBits() & PLACEHOLDER_FOR_POPUP) ||
         !nsLayoutUtils::IsProperAncestorFrame(aDestructRoot, oof)) {
       ChildListID listId = nsLayoutUtils::GetChildListNameFor(oof);
+      nsFrameManager* fm = PresContext()->GetPresShell()->FrameManager();
       fm->RemoveFrame(listId, oof);
     }
     
