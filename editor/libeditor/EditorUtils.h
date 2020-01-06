@@ -147,6 +147,8 @@ EditActionCanceled(nsresult aRv = NS_OK)
 
 
 
+
+
 class MOZ_RAII AutoPlaceHolderBatch
 {
 private:
