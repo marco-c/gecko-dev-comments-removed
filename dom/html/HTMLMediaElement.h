@@ -247,7 +247,7 @@ public:
                                                     const PrincipalHandle& aNewPrincipalHandle);
 
   
-  virtual nsresult DispatchAsyncEvent(const nsAString& aName) final override;
+  virtual void DispatchAsyncEvent(const nsAString& aName) final override;
 
   
   void UpdateReadyState() override { UpdateReadyStateInternal(); }
