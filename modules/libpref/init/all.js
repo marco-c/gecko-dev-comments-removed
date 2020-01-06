@@ -3126,6 +3126,7 @@ pref("layout.frame_rate", -1);
 
 pref("layout.display-list.dump", false);
 pref("layout.display-list.dump-content", false);
+pref("layout.display-list.dump-parent", false);
 
 
 pref("layout.spammy_warnings.enabled", false);
