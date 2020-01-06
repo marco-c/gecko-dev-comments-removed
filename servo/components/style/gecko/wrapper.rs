@@ -694,6 +694,11 @@ impl<'le> GeckoElement<'le> {
         let node = self.as_node();
         unsafe { Gecko_GetDocumentLWTheme(node.owner_doc()) }
     }
+
+    
+    pub fn owner_document_quirks_mode(&self) -> QuirksMode {
+        self.as_node().owner_doc().mCompatMode.into()
+    }
 }
 
 
