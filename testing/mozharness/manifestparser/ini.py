@@ -79,7 +79,7 @@ def read_ini(fp, variables=None, default='DEFAULT', defaults_only=False,
         
         if len(stripped) > 2 and stripped[0] == '[' and stripped[-1] == ']':
             section = stripped[1:-1].strip()
-            key = value = None
+            key = value = key_indent = None
 
             
             if section.lower() == default.lower():
@@ -105,11 +105,19 @@ def read_ini(fp, variables=None, default='DEFAULT', defaults_only=False,
                                              "instead found '{}'".format(stripped))
 
         
+        line_indent = len(line) - len(line.lstrip(' '))
+        if key and line_indent > key_indent:
+            value = '%s%s%s' % (value, os.linesep, stripped)
+            current_section[key] = value
+            continue
+
+        
         for separator in separators:
             if separator in stripped:
                 key, value = stripped.split(separator, 1)
                 key = key.strip()
                 value = value.strip()
+                key_indent = line_indent
 
                 if strict:
                     
@@ -121,12 +129,7 @@ def read_ini(fp, variables=None, default='DEFAULT', defaults_only=False,
                 break
         else:
             
-            if line[0].isspace() and key:
-                value = '%s%s%s' % (value, os.linesep, stripped)
-                current_section[key] = value
-            else:
-                
-                raise IniParseError(fp, linenum, "Unexpected line '{}'".format(stripped))
+            raise IniParseError(fp, linenum, "Unexpected line '{}'".format(stripped))
 
     
     
