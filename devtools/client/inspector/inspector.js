@@ -838,8 +838,6 @@ Inspector.prototype = {
     try {
       let hasSupportsHighlighters =
         yield this.target.actorHasMethod("inspector", "supportsHighlighters");
-      let hasPickColorFromPage =
-        yield this.target.actorHasMethod("inspector", "pickColorFromPage");
 
       let supportsHighlighters;
       if (hasSupportsHighlighters) {
@@ -851,7 +849,7 @@ Inspector.prototype = {
         supportsHighlighters = nodeFront && nodeFront.isInHTMLDocument;
       }
 
-      return supportsHighlighters && hasPickColorFromPage;
+      return supportsHighlighters;
     } catch (e) {
       console.error(e);
       return false;
@@ -1703,7 +1701,6 @@ Inspector.prototype = {
 
 
   hideEyeDropper: function () {
-    
     
     if (!this.eyeDropperButton) {
       return null;
