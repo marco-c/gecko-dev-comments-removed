@@ -338,6 +338,7 @@ this.PanelMultiView = class {
     this._panel.removeEventListener("popupshown", this);
     this._panel.removeEventListener("popuphidden", this);
     this.window.removeEventListener("keydown", this);
+    this._dispatchViewEvent(this.node, "destructed");
     this.node = this._clickCapturer = this._viewContainer = this._mainViewContainer =
       this._subViews = this._viewStack = this.__dwu = this._panelViewCache = null;
   }
@@ -675,7 +676,7 @@ this.PanelMultiView = class {
 
   _dispatchViewEvent(viewNode, eventName, anchor, detail) {
     let cancel = false;
-    if (eventName != "PanelMultiViewHidden") {
+    if (eventName != "PanelMultiViewHidden" && eventName != "destructed") {
       
       CustomizableUI.ensureSubviewListeners(viewNode);
     }

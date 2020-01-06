@@ -2020,7 +2020,8 @@ this.PlacesPanelview = class extends PlacesViewBase {
   get events() {
     if (this._events)
       return this._events;
-    return this._events = ["click", "command", "dragend", "dragstart", "ViewHiding", "ViewShown"];
+    return this._events = ["command", "destructed", "dragend", "dragstart",
+      "ViewHiding", "ViewShowing", "ViewShown"];
   }
 
   get panel() {
@@ -2033,13 +2034,11 @@ this.PlacesPanelview = class extends PlacesViewBase {
 
   handleEvent(event) {
     switch (event.type) {
-      case "click":
-        
-        if (event.button >= 2) {
-          break;
-        }
       case "command":
         this._onCommand(event);
+        break;
+      case "destructed":
+        this._onDestructed(event);
         break;
       case "dragend":
         this._onDragEnd(event);
@@ -2053,6 +2052,9 @@ this.PlacesPanelview = class extends PlacesViewBase {
       case "ViewHiding":
         this._onPopupHidden(event);
         break;
+      case "ViewShowing":
+        this._onPopupShowing(event);
+        break;
       case "ViewShown":
         this._onViewShown(event);
         break;
@@ -2065,7 +2067,13 @@ this.PlacesPanelview = class extends PlacesViewBase {
       return;
 
     PlacesUIUtils.openNodeWithEvent(button._placesNode, event);
-    this.panelMultiView.closest("panel").hidePopup();
+  }
+
+  _onDestructed(event) {
+    
+    
+    this._removeEventListeners(event.target, this.events);
+    this._addEventListeners(this._viewElt, ["ViewShowing"]);
   }
 
   _onDragEnd() {
@@ -2087,6 +2095,7 @@ this.PlacesPanelview = class extends PlacesViewBase {
 
   uninit(event) {
     this._removeEventListeners(this.panelMultiView, this.events);
+    this._removeEventListeners(this._viewElt, ["ViewShowing"]);
     this._removeEventListeners(window, ["unload"]);
     super.uninit(event);
   }
@@ -2170,7 +2179,9 @@ this.PlacesPanelview = class extends PlacesViewBase {
   _onPopupShowing(event) {
     
     
-    if (event.originalTarget == this._rootElt) {
+    
+    if (event.originalTarget == this._viewElt) {
+      this._removeEventListeners(this._viewElt, ["ViewShowing"]);
       
       this._addEventListeners(this.panelMultiView, this.events);
     }
