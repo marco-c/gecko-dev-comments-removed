@@ -1046,6 +1046,7 @@ public class Tabs implements BundleEventListener {
 
 
 
+    @RobocopTarget
     public Tab addTab() {
         return loadUrl(getHomepageForNewTab(mAppContext), Tabs.LOADURL_NEW_TAB);
     }
