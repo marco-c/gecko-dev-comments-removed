@@ -334,11 +334,22 @@ private:
                             uint32_t lastLoad, uint32_t loadCount,
                             int32_t globalDegradation, bool fullUri);
 
+  enum PrefetchIgnoreReason {
+    PREFETCH_OK,
+    NOT_FULL_URI,
+    NO_REFERRER,
+    MISSED_A_LOAD,
+    PREFETCH_DISABLED,
+    PREFETCH_DISABLED_VIA_COUNT,
+    CONFIDENCE_TOO_LOW
+  };
+
   
   
   
   
-  void SetupPrediction(int32_t confidence, uint32_t flags, const nsCString &uri);
+  void SetupPrediction(int32_t confidence, uint32_t flags, const nsCString &uri,
+                       PrefetchIgnoreReason reason);
 
   
   

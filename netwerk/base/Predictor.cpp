@@ -1327,33 +1327,51 @@ Predictor::CalculatePredictions(nsICacheEntry *entry, nsIURI *referrer,
       UpdateRollingLoadCount(entry, flags, key, hitCount, lastHit);
     }
     PREDICTOR_LOG(("CalculatePredictions key=%s value=%s confidence=%d", key, value, confidence));
+    PrefetchIgnoreReason reason = PREFETCH_OK;
     if (!fullUri) {
       
       PREDICTOR_LOG(("    forcing non-cacheability - not full URI"));
+      if (flags & FLAG_PREFETCHABLE) {
+        
+        
+        reason = NOT_FULL_URI;
+      }
       flags &= ~FLAG_PREFETCHABLE;
     } else if (!referrer) {
       
       
       PREDICTOR_LOG(("    forcing non-cacheability - no referrer"));
+      if (flags & FLAG_PREFETCHABLE) {
+        
+        
+        reason = NO_REFERRER;
+      }
       flags &= ~FLAG_PREFETCHABLE;
     } else {
       uint32_t expectedRollingLoadCount = (1 << mPrefetchRollingLoadCount) - 1;
       expectedRollingLoadCount <<= kRollingLoadOffset;
       if ((flags & expectedRollingLoadCount) != expectedRollingLoadCount) {
         PREDICTOR_LOG(("    forcing non-cacheability - missed a load"));
+        if (flags & FLAG_PREFETCHABLE) {
+          
+          
+          reason = MISSED_A_LOAD;
+        }
         flags &= ~FLAG_PREFETCHABLE;
       }
     }
 
     PREDICTOR_LOG(("    setting up prediction"));
-    SetupPrediction(confidence, flags, uri);
+    SetupPrediction(confidence, flags, uri, reason);
   }
 }
 
 
 
 void
-Predictor::SetupPrediction(int32_t confidence, uint32_t flags, const nsCString &uri)
+Predictor::SetupPrediction(int32_t confidence, uint32_t flags,
+                           const nsCString &uri,
+                           PrefetchIgnoreReason earlyReason)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -1363,8 +1381,32 @@ Predictor::SetupPrediction(int32_t confidence, uint32_t flags, const nsCString &
                  "flags=%d confidence=%d uri=%s", mEnablePrefetch,
                  mPrefetchMinConfidence, mPreconnectMinConfidence,
                  mPreresolveMinConfidence, flags, confidence, uri.get()));
-  if (mEnablePrefetch && (flags & FLAG_PREFETCHABLE) &&
-      (mPrefetchRollingLoadCount || (confidence >= mPrefetchMinConfidence))) {
+
+  bool prefetchOk = !!(flags & FLAG_PREFETCHABLE);
+  PrefetchIgnoreReason reason = earlyReason;
+  if (prefetchOk && !mEnablePrefetch) {
+    prefetchOk = false;
+    reason = PREFETCH_DISABLED;
+  } else if (prefetchOk && !mPrefetchRollingLoadCount &&
+             confidence < mPrefetchMinConfidence) {
+    prefetchOk = false;
+    if (!mPrefetchRollingLoadCount) {
+      reason = PREFETCH_DISABLED_VIA_COUNT;
+    } else {
+      reason = CONFIDENCE_TOO_LOW;
+    }
+  }
+
+  
+  
+  
+  
+  
+  if (!prefetchOk && reason != PREFETCH_OK) {
+    Telemetry::Accumulate(Telemetry::PREDICTOR_PREFETCH_IGNORE_REASON, reason);
+  }
+
+  if (prefetchOk) {
     nsCOMPtr<nsIURI> prefetchURI;
     rv = NS_NewURI(getter_AddRefs(prefetchURI), uri, nullptr, nullptr,
                    mIOService);
