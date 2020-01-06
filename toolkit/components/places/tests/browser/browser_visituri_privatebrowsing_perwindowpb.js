@@ -2,72 +2,60 @@
 
 
 
-function test() {
-  
-  waitForExplicitFinish();
-  let windowsToClose = [];
-  let initialURL =
-    "http://example.com/tests/toolkit/components/places/tests/browser/begin.html";
-  let finalURL =
-    "http://example.com/tests/toolkit/components/places/tests/browser/final.html";
-  let observer = null;
-  let enumerator = null;
-  let currentObserver = null;
-  let uri = null;
+const initialURL =
+  "http://example.com/tests/toolkit/components/places/tests/browser/begin.html";
+const finalURL =
+ "http://example.com/tests/toolkit/components/places/tests/browser/final.html";
 
-  function doTest(aIsPrivateMode, aWindow, aTestURI, aCallback) {
+var observer;
+var visitSavedPromise;
+
+add_task(async function setup() {
+  visitSavedPromise = new Promise(resolve => {
     observer = {
-      observe(aSubject, aTopic, aData) {
+      observe(subject, topic, data) {
         
-        if (aTopic == "uri-visit-saved") {
-          
-          
-          enumerator = aWindow.Services.obs.enumerateObservers("uri-visit-saved");
-          while (enumerator.hasMoreElements()) {
-            currentObserver = enumerator.getNext();
-            aWindow.Services.obs.removeObserver(currentObserver, "uri-visit-saved");
-          }
+        if (topic == "uri-visit-saved") {
+          Services.obs.removeObserver(observer, "uri-visit-saved");
 
           
           
-          uri = aSubject.QueryInterface(Ci.nsIURI);
-          is(uri.spec, finalURL, "Check received expected visit");
+          let uri = subject.QueryInterface(Ci.nsIURI);
+          resolve(uri.spec);
         }
       }
     };
-
-    aWindow.Services.obs.addObserver(observer, "uri-visit-saved");
-
-    BrowserTestUtils.browserLoaded(aWindow.gBrowser.selectedBrowser).then(aCallback);
-    aWindow.gBrowser.selectedBrowser.loadURI(aTestURI);
-  }
-
-  function testOnWindow(aOptions, aCallback) {
-    whenNewWindowLoaded(aOptions, function(aWin) {
-      windowsToClose.push(aWin);
-      
-      
-      
-      executeSoon(() => aCallback(aWin));
-    });
-  }
-
-   
-  registerCleanupFunction(function() {
-    windowsToClose.forEach(function(aWin) {
-      aWin.close();
-    });
   });
 
-  
-  testOnWindow({private: true}, function(aWin) {
-    doTest(true, aWin, initialURL, function() {
-      
-      testOnWindow({}, function(aWin2) {
-        doTest(false, aWin2, finalURL, function() {
-          PlacesTestUtils.clearHistory().then(finish);
-        });
-      });
-    });
+  Services.obs.addObserver(observer, "uri-visit-saved");
+
+  registerCleanupFunction(async function() {
+    await PlacesTestUtils.clearHistory()
   });
+});
+
+
+
+
+add_task(async function test_private_browsing_window() {
+  await testLoadInWindow({private: true}, initialURL);
+});
+
+add_task(async function test_normal_window() {
+  await testLoadInWindow({private: false}, finalURL);
+
+  let url = await visitSavedPromise;
+  Assert.equal(url, finalURL, "Check received expected visit");
+});
+
+async function testLoadInWindow(options, url) {
+  let win = await BrowserTestUtils.openNewBrowserWindow(options);
+
+  registerCleanupFunction(async function() {
+    await BrowserTestUtils.closeWindow(win);
+  });
+
+  let loadedPromise = BrowserTestUtils.browserLoaded(win.gBrowser.selectedBrowser);
+  await BrowserTestUtils.loadURI(win.gBrowser.selectedBrowser, url);
+  await loadedPromise;
 }
