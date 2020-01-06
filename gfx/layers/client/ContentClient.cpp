@@ -23,7 +23,6 @@
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/layers/LayersTypes.h"
-#include "mozilla/layers/PaintThread.h"
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
 #include "nsIWidget.h"                  
@@ -613,11 +612,6 @@ ContentClientDoubleBuffered::BeginAsyncPaint()
 void
 ContentClientDoubleBuffered::FinalizeFrame(const nsIntRegion& aRegionToDraw)
 {
-  MOZ_ASSERT(NS_IsMainThread() || PaintThread::IsOnPaintThread());
-  if (!HaveBuffer()) {
-    return;
-  }
-
   if (!mFrontAndBackBufferDiffer) {
     MOZ_ASSERT(!mDidSelfCopy, "If we have to copy the world, then our buffers are different, right?");
     return;
@@ -649,14 +643,6 @@ ContentClientDoubleBuffered::FinalizeFrame(const nsIntRegion& aRegionToDraw)
     return;
   }
 
-  CopyFrontBufferToBackBuffer(updateRegion);
-}
-
-void
-ContentClientDoubleBuffered::CopyFrontBufferToBackBuffer(nsIntRegion& aUpdateRegion)
-{
-  MOZ_ASSERT(NS_IsMainThread() || PaintThread::IsOnPaintThread());
-
   
   
   TextureClientAutoLock frontLock(mFrontClient, OpenMode::OPEN_READ_ONLY);
@@ -683,7 +669,7 @@ ContentClientDoubleBuffered::CopyFrontBufferToBackBuffer(nsIntRegion& aUpdateReg
                                     surfOnWhite,
                                     mFrontBufferRect,
                                     mFrontBufferRotation);
-    UpdateDestinationFrom(frontBuffer, aUpdateRegion);
+    UpdateDestinationFrom(frontBuffer, updateRegion);
   } else {
     
     

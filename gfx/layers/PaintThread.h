@@ -21,7 +21,6 @@ class DrawTargetCapture;
 };
 
 namespace layers {
-class ContentClientRemoteBuffer;
 
 
 
@@ -72,9 +71,6 @@ public:
   
   static bool IsOnPaintThread();
 
-  void CopyFrontBufferToBackBuffer(ContentClientRemoteBuffer* aContentClient,
-                                   nsIntRegion aRegionToDraw);
-
   void PaintContents(CapturedPaintState* aState,
                      PrepDrawTargetForPaintingCallback aCallback);
 
@@ -102,8 +98,6 @@ private:
   bool Init();
   void ShutdownOnPaintThread();
   void InitOnPaintThread();
-  void CopyFrontToBack(ContentClientRemoteBuffer* aContentClient,
-                       nsIntRegion aRegionToDraw);
 
   void AsyncPaintContents(CompositorBridgeChild* aBridge,
                           CapturedPaintState* aState,
