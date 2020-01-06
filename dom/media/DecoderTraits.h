@@ -61,6 +61,9 @@ public:
   
   static bool IsMP4SupportedType(const MediaContainerType& aType,
                                  DecoderDoctorDiagnostics* aDiagnostics);
+
+  
+  static bool IsHttpLiveStreamingType(const MediaContainerType& aType);
 };
 
 } 
