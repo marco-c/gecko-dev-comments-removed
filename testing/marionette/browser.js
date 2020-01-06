@@ -149,6 +149,21 @@ browser.Context = class {
 
 
 
+  get currentURL() {
+    
+    
+    if (this.contentBrowser) {
+      return this.contentBrowser.currentURI.spec;
+
+    } else {
+      throw new NoSuchWindowError("Current window does not have a content browser");
+    }
+  }
+
+  
+
+
+
   getTabModalUI() {
     let br = this.contentBrowser;
     if (!br.hasAttribute("tabmodalPromptShowing")) {
