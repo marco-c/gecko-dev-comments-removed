@@ -1470,6 +1470,12 @@ ComputeImplicitThis(JSObject* obj)
     if (IsCacheableEnvironment(obj))
         return UndefinedValue();
 
+    
+    
+    
+    if (obj->is<DebugEnvironmentProxy>())
+        return ComputeImplicitThis(&obj->as<DebugEnvironmentProxy>().environment());
+
     return GetThisValue(obj);
 }
 
