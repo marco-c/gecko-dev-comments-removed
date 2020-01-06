@@ -221,6 +221,31 @@ this.XPCOMUtils = {
 
 
 
+  defineLazyScriptGetter: function XPCU_defineLazyScriptGetter(aObject, aName,
+                                                               aResource)
+  {
+    Object.defineProperty(aObject, aName, {
+      get: function () {
+        delete aObject[aName];
+        Services.scriptloader.loadSubScript(aResource, aObject);
+        return aObject[aName];
+      },
+      configurable: true,
+      enumerable: true
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
 
 
   defineLazyServiceGetter: function XPCU_defineLazyServiceGetter(aObject, aName,
