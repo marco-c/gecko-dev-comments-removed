@@ -697,6 +697,10 @@ def split_chunks(config, tests):
             yield test
             continue
 
+        
+        if test['test-platform'] == 'windows7-32/debug' and test['test-name'] == 'reftest':
+            test['chunks'] = 32
+
         for this_chunk in range(1, test['chunks'] + 1):
             
             chunked = copy.deepcopy(test)
