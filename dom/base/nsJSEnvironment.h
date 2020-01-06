@@ -86,10 +86,7 @@ public:
                                 IsShrinking aShrinking = NonShrinkingGC,
                                 int64_t aSliceMillis = 0);
 
-  
-  
-  static void CycleCollectNow(nsICycleCollectorListener *aListener = nullptr,
-                              int32_t aExtraForgetSkippableCalls = 0);
+  static void CycleCollectNow(nsICycleCollectorListener *aListener = nullptr);
 
   
   static void RunCycleCollectorSlice(mozilla::TimeStamp aDeadline);
