@@ -81,6 +81,25 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
 
 
 
+
+
+  clampVisitDate(visitDate) {
+    let currentDate = new Date();
+    if (visitDate > currentDate) {
+      return currentDate;
+    }
+    if (visitDate < BookmarkSyncUtils.EARLIEST_BOOKMARK_TIMESTAMP) {
+      return new Date(BookmarkSyncUtils.EARLIEST_BOOKMARK_TIMESTAMP);
+    }
+    return visitDate;
+  },
+
+  
+
+
+
+
+
   async fetchURLFrecency(url) {
     let canonicalURL = PlacesUtils.SYNC_BOOKMARK_VALIDATORS.url(url);
 

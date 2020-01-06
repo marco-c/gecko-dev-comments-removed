@@ -276,15 +276,22 @@ HistoryStore.prototype = {
       }
 
       
-      visit.date = Math.round(visit.date);
+      
+      let originalVisitDate = PlacesUtils.toDate(Math.round(visit.date));
+      visit.date = PlacesSyncUtils.history.clampVisitDate(originalVisitDate);
 
-      if (curVisits.indexOf(visit.date + "," + visit.type) != -1) {
+      let visitDateAsPRTime = PlacesUtils.toPRTime(visit.date);
+      let visitKey = visitDateAsPRTime + "," + visit.type;
+      if (curVisits.indexOf(visitKey) != -1) {
         
         
         continue;
       }
 
-      visit.date = PlacesUtils.toDate(visit.date);
+      
+      
+      curVisits.push(visitKey);
+
       visit.transition = visit.type;
       k += 1;
     }
