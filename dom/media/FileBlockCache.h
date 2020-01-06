@@ -61,6 +61,8 @@ protected:
   virtual ~FileBlockCache();
 
 public:
+  
+  
   nsresult Init() override;
 
   

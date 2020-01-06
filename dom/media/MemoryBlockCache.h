@@ -39,6 +39,7 @@ protected:
 
 public:
   
+  
   virtual nsresult Init() override;
 
   

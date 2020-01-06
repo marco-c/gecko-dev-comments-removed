@@ -48,6 +48,8 @@ protected:
   virtual ~MediaBlockCacheBase() {}
 
 public:
+  
+  
   virtual nsresult Init() = 0;
 
   

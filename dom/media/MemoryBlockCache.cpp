@@ -71,14 +71,21 @@ MemoryBlockCache::EnsureBufferCanContain(size_t aContentLength)
 nsresult
 MemoryBlockCache::Init()
 {
-  LOG("@%p Init()", this);
   MutexAutoLock lock(mMutex);
-  
-  if (!EnsureBufferCanContain(mInitialContentLength)) {
-    LOG("@%p Init() MEMORYBLOCKCACHE_ERRORS='InitAllocation'", this);
-    Telemetry::Accumulate(Telemetry::HistogramID::MEMORYBLOCKCACHE_ERRORS,
-                          InitAllocation);
-    return NS_ERROR_FAILURE;
+  if (mBuffer.IsEmpty()) {
+    LOG("@%p Init()", this);
+    
+    if (!EnsureBufferCanContain(mInitialContentLength)) {
+      LOG("@%p Init() MEMORYBLOCKCACHE_ERRORS='InitAllocation'", this);
+      Telemetry::Accumulate(Telemetry::HistogramID::MEMORYBLOCKCACHE_ERRORS,
+                            InitAllocation);
+      return NS_ERROR_FAILURE;
+    }
+  } else {
+    LOG("@%p Init() again", this);
+    
+    MOZ_ASSERT(mBuffer.Length() >= mInitialContentLength);
+    memset(mBuffer.Elements(), 0, mBuffer.Length());
   }
   
   mHasGrown = false;
