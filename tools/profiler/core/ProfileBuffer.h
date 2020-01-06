@@ -64,6 +64,8 @@ public:
                            const mozilla::TimeStamp& aProcessStartTime,
                            double aSinceTime,
                            UniqueStacks& aUniqueStacks) const;
+  void StreamPausedRangesToJSON(SpliceableJSONWriter& aWriter,
+                                double aSinceTime) const;
 
   
   

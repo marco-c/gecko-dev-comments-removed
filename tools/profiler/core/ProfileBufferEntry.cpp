@@ -693,6 +693,12 @@ private:
 
 
 
+
+
+
+
+
+
 void
 ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                                    double aSinceTime,
@@ -705,42 +711,47 @@ ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
   
   
   
-  #define ERROR_AND_SKIP_TO_NEXT_SAMPLE(msg) \
-    do { \
+  #define ERROR_AND_CONTINUE(msg) \
+    { \
       fprintf(stderr, "ProfileBuffer parse error: %s", msg); \
       MOZ_ASSERT(false, msg); \
-      goto skip_to_next_sample; \
-    } while (0)
+      continue; \
+    }
 
   EntryGetter e(*this);
   bool seenFirstSample = false;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-skip_to_next_sample:
-  while (e.Has()) {
-    if (e.Get().IsThreadId()) {
-      break;
-    } else {
-      e.Next();
+  for (;;) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    while (e.Has()) {
+      if (e.Get().IsThreadId()) {
+        break;
+      } else {
+        e.Next();
+      }
     }
-  }
 
-  while (e.Has()) {
+    if (!e.Has()) {
+      break;
+    }
+
     if (e.Get().IsThreadId()) {
       int threadId = e.Get().u.mInt;
       e.Next();
 
       
       if (threadId != aThreadId) {
-        goto skip_to_next_sample;
+        continue;
       }
     } else {
       
@@ -756,7 +767,7 @@ skip_to_next_sample:
 
       
       if (sample.mTime < aSinceTime) {
-        goto skip_to_next_sample;
+        continue;
       }
 
       if (!seenFirstSample) {
@@ -766,7 +777,7 @@ skip_to_next_sample:
         seenFirstSample = true;
       }
     } else {
-      ERROR_AND_SKIP_TO_NEXT_SAMPLE("expected a Time entry");
+      ERROR_AND_CONTINUE("expected a Time entry");
     }
 
     UniqueStacks::Stack stack =
@@ -862,7 +873,7 @@ skip_to_next_sample:
     }
 
     if (numFrames == 0) {
-      ERROR_AND_SKIP_TO_NEXT_SAMPLE("expected one or more frame entries");
+      ERROR_AND_CONTINUE("expected one or more frame entries");
     }
 
     sample.mStack = stack.GetOrAddIndex();
@@ -894,7 +905,7 @@ skip_to_next_sample:
     WriteSample(aWriter, sample);
   }
 
-  #undef ERROR_AND_SKIP_TO_NEXT_SAMPLE
+  #undef ERROR_AND_CONTINUE
 }
 
 void
@@ -920,6 +931,61 @@ ProfileBuffer::StreamMarkersToJSON(SpliceableJSONWriter& aWriter,
       }
     }
     e.Next();
+  }
+}
+
+static void
+AddPausedRange(SpliceableJSONWriter& aWriter, const char* aReason,
+               const Maybe<double>& aStartTime, const Maybe<double>& aEndTime)
+{
+  aWriter.Start(SpliceableJSONWriter::SingleLineStyle);
+  if (aStartTime) {
+    aWriter.DoubleProperty("startTime", *aStartTime);
+  } else {
+    aWriter.NullProperty("startTime");
+  }
+  if (aEndTime) {
+    aWriter.DoubleProperty("endTime", *aEndTime);
+  } else {
+    aWriter.NullProperty("endTime");
+  }
+  aWriter.StringProperty("reason", aReason);
+  aWriter.End();
+}
+
+void
+ProfileBuffer::StreamPausedRangesToJSON(SpliceableJSONWriter& aWriter,
+                                        double aSinceTime) const
+{
+  EntryGetter e(*this);
+
+  Maybe<double> currentPauseStartTime;
+  Maybe<double> currentCollectionStartTime;
+
+  while (e.Has()) {
+    if (e.Get().IsPause()) {
+      currentPauseStartTime = Some(e.Get().u.mDouble);
+    } else if (e.Get().IsResume()) {
+      AddPausedRange(aWriter, "profiler-paused",
+                     currentPauseStartTime, Some(e.Get().u.mDouble));
+      currentPauseStartTime = Nothing();
+    } else if (e.Get().IsCollectionStart()) {
+      currentCollectionStartTime = Some(e.Get().u.mDouble);
+    } else if (e.Get().IsCollectionEnd()) {
+      AddPausedRange(aWriter, "collecting",
+                     currentCollectionStartTime, Some(e.Get().u.mDouble));
+      currentCollectionStartTime = Nothing();
+    }
+    e.Next();
+  }
+
+  if (currentPauseStartTime) {
+    AddPausedRange(aWriter, "profiler-paused",
+                   currentPauseStartTime, Nothing());
+  }
+  if (currentCollectionStartTime) {
+    AddPausedRange(aWriter, "collecting",
+                   currentCollectionStartTime, Nothing());
   }
 }
 
@@ -975,6 +1041,10 @@ ProfileBuffer::DuplicateLastSample(int aThreadId,
        readPos != mWritePos;
        readPos = (readPos + 1) % mEntrySize) {
     switch (mEntries[readPos].GetKind()) {
+      case ProfileBufferEntry::Kind::Pause:
+      case ProfileBufferEntry::Kind::Resume:
+      case ProfileBufferEntry::Kind::CollectionStart:
+      case ProfileBufferEntry::Kind::CollectionEnd:
       case ProfileBufferEntry::Kind::ThreadId:
         
         return true;
