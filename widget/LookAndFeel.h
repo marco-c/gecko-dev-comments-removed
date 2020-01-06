@@ -249,7 +249,7 @@ public:
 
 
 
-    eIntID_WindowsAccentColorApplies,
+    eIntID_WindowsAccentColorInTitlebar,
 
     
 
