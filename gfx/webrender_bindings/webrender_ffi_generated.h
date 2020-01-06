@@ -19,6 +19,13 @@ extern "C" {
 namespace mozilla {
 namespace wr {
 
+enum class ExtendMode : uint32_t {
+  Clamp = 0,
+  Repeat = 1,
+
+  Sentinel 
+};
+
 enum class WrBorderStyle : uint32_t {
   None = 0,
   Solid = 1,
@@ -68,13 +75,6 @@ enum class WrFilterOpType : uint32_t {
   Opacity = 6,
   Saturate = 7,
   Sepia = 8,
-
-  Sentinel 
-};
-
-enum class WrGradientExtendMode : uint32_t {
-  Clamp = 0,
-  Repeat = 1,
 
   Sentinel 
 };
@@ -423,27 +423,13 @@ struct LayoutPoint {
   }
 };
 
-struct WrGradientStop {
+struct GradientStop {
   float offset;
   ColorF color;
 
-  bool operator==(const WrGradientStop& aOther) const {
+  bool operator==(const GradientStop& aOther) const {
     return offset == aOther.offset &&
            color == aOther.color;
-  }
-};
-
-struct SideOffsets2D_u32 {
-  uint32_t top;
-  uint32_t right;
-  uint32_t bottom;
-  uint32_t left;
-
-  bool operator==(const SideOffsets2D_u32& aOther) const {
-    return top == aOther.top &&
-           right == aOther.right &&
-           bottom == aOther.bottom &&
-           left == aOther.left;
   }
 };
 
@@ -454,6 +440,20 @@ struct SideOffsets2D_f32 {
   float left;
 
   bool operator==(const SideOffsets2D_f32& aOther) const {
+    return top == aOther.top &&
+           right == aOther.right &&
+           bottom == aOther.bottom &&
+           left == aOther.left;
+  }
+};
+
+struct SideOffsets2D_u32 {
+  uint32_t top;
+  uint32_t right;
+  uint32_t bottom;
+  uint32_t left;
+
+  bool operator==(const SideOffsets2D_u32& aOther) const {
     return top == aOther.top &&
            right == aOther.right &&
            bottom == aOther.bottom &&
@@ -756,9 +756,9 @@ void wr_dp_push_border_gradient(WrState *aState,
                                 WrBorderWidths aWidths,
                                 LayoutPoint aStartPoint,
                                 LayoutPoint aEndPoint,
-                                const WrGradientStop *aStops,
+                                const GradientStop *aStops,
                                 size_t aStopsCount,
-                                WrGradientExtendMode aExtendMode,
+                                ExtendMode aExtendMode,
                                 SideOffsets2D_f32 aOutset)
 WR_FUNC;
 
@@ -781,9 +781,9 @@ void wr_dp_push_border_radial_gradient(WrState *aState,
                                        WrBorderWidths aWidths,
                                        LayoutPoint aCenter,
                                        LayoutSize aRadius,
-                                       const WrGradientStop *aStops,
+                                       const GradientStop *aStops,
                                        size_t aStopsCount,
-                                       WrGradientExtendMode aExtendMode,
+                                       ExtendMode aExtendMode,
                                        SideOffsets2D_f32 aOutset)
 WR_FUNC;
 
@@ -842,9 +842,9 @@ void wr_dp_push_linear_gradient(WrState *aState,
                                 LayoutRect aClip,
                                 LayoutPoint aStartPoint,
                                 LayoutPoint aEndPoint,
-                                const WrGradientStop *aStops,
+                                const GradientStop *aStops,
                                 size_t aStopsCount,
-                                WrGradientExtendMode aExtendMode,
+                                ExtendMode aExtendMode,
                                 LayoutSize aTileSize,
                                 LayoutSize aTileSpacing)
 WR_FUNC;
@@ -855,9 +855,9 @@ void wr_dp_push_radial_gradient(WrState *aState,
                                 LayoutRect aClip,
                                 LayoutPoint aCenter,
                                 LayoutSize aRadius,
-                                const WrGradientStop *aStops,
+                                const GradientStop *aStops,
                                 size_t aStopsCount,
-                                WrGradientExtendMode aExtendMode,
+                                ExtendMode aExtendMode,
                                 LayoutSize aTileSize,
                                 LayoutSize aTileSpacing)
 WR_FUNC;
