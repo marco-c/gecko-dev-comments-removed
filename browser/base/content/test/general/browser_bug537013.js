@@ -117,7 +117,7 @@ function continueTests3() {
   }
 
   newWindow = gBrowser.replaceTabWithWindow(tabs.pop());
-  whenDelayedStartupFinished(newWindow, () => { executeSoon(checkNewWindow); });
+  whenDelayedStartupFinished(newWindow, checkNewWindow);
 }
 
 
