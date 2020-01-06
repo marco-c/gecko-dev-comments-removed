@@ -28,6 +28,7 @@
 #include "js/TypeDecls.h"
 #include "mozilla/GuardObjects.h"
 #include "mozilla/UniquePtr.h"
+#include "PseudoStack.h"
 
 class SpliceableJSONWriter;
 
@@ -400,15 +401,52 @@ PROFILER_FUNC(void* profiler_get_stack_top(), nullptr)
 
 class nsISupports;
 class ProfilerMarkerPayload;
-class PseudoStack;
 
 
 
-void* profiler_call_enter(const char* aInfo,
-                          js::ProfileEntry::Category aCategory,
-                          void* aFrameAddress, bool aCopy, uint32_t aLine,
-                          const char* aDynamicString = nullptr);
-void profiler_call_exit(void* aHandle);
+extern MOZ_THREAD_LOCAL(PseudoStack*) sPseudoStack;
+
+
+
+
+
+
+
+
+
+
+inline void*
+profiler_call_enter(const char* aInfo,
+                    js::ProfileEntry::Category aCategory,
+                    void* aFrameAddress, bool aCopy, uint32_t aLine,
+                    const char* aDynamicString = nullptr)
+{
+  
+
+  PseudoStack* pseudoStack = sPseudoStack.get();
+  if (!pseudoStack) {
+    return pseudoStack;
+  }
+  pseudoStack->push(aInfo, aCategory, aFrameAddress, aCopy, aLine,
+                    aDynamicString);
+
+  
+  
+  return pseudoStack;
+}
+
+inline void
+profiler_call_exit(void* aHandle)
+{
+  
+
+  if (!aHandle) {
+    return;
+  }
+
+  PseudoStack* pseudoStack = static_cast<PseudoStack*>(aHandle);
+  pseudoStack->pop();
+}
 
 
 

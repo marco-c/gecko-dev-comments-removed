@@ -39,7 +39,6 @@
 #include "nsThreadUtils.h"
 #include "ProfilerMarkerPayload.h"
 #include "shared-libraries.h"
-#include "prdtoa.h"
 #include "prtime.h"
 
 #ifdef MOZ_TASK_TRACER
@@ -481,7 +480,12 @@ static PSMutex gPSMutex;
 class TLSInfo
 {
 public:
-  static bool Init(PSLockRef) { return sThreadInfo.init(); }
+  static bool Init(PSLockRef)
+  {
+    bool ok1 = sThreadInfo.init();
+    bool ok2 = sPseudoStack.init();
+    return ok1 && ok2;
+  }
 
   
   static ThreadInfo* Info(PSLockRef) { return sThreadInfo.get(); }
@@ -493,7 +497,16 @@ public:
     return info ? info->RacyInfo().get() : nullptr;
   }
 
-  static void SetInfo(PSLockRef, ThreadInfo* aInfo) { sThreadInfo.set(aInfo); }
+  
+  
+  
+  static PseudoStack* Stack() { return sPseudoStack.get(); }
+
+  static void SetInfo(PSLockRef, ThreadInfo* aInfo)
+  {
+    sThreadInfo.set(aInfo);
+    sPseudoStack.set(aInfo ? aInfo->RacyInfo().get() : nullptr);  
+  }
 
 private:
   
@@ -503,6 +516,22 @@ private:
 };
 
 MOZ_THREAD_LOCAL(ThreadInfo*) TLSInfo::sThreadInfo;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+MOZ_THREAD_LOCAL(PseudoStack*) sPseudoStack;
 
 
 static const char* const kMainThreadName = "GeckoMain";
@@ -2075,13 +2104,13 @@ profiler_init(void* aStackTop)
       }
     }
 
-    double interval = PROFILER_DEFAULT_INTERVAL;
+    int interval = PROFILER_DEFAULT_INTERVAL;
     const char* startupInterval = getenv("MOZ_PROFILER_STARTUP_INTERVAL");
     if (startupInterval) {
       errno = 0;
-      interval = PR_strtod(startupInterval, nullptr);
-      if (errno == 0 && interval > 0.0 && interval <= 1000.0) {
-        LOG("- MOZ_PROFILER_STARTUP_INTERVAL = %f", interval);
+      interval = strtol(startupInterval, nullptr, 10);
+      if (errno == 0 && 1 <= interval && interval <= 1000) {
+        LOG("- MOZ_PROFILER_STARTUP_INTERVAL = %d", interval);
       } else {
         PrintUsageThenExit(1);
       }
@@ -2779,15 +2808,15 @@ profiler_get_backtrace_noalloc(char *output, size_t outputSize)
     return;
   }
 
-  RacyThreadInfo* racyInfo = TLSInfo::RacyInfo();
-  if (!racyInfo) {
+  PseudoStack* pseudoStack = TLSInfo::Stack();
+  if (!pseudoStack) {
     return;
   }
 
   bool includeDynamicString = !ActivePS::FeaturePrivacy(lock);
 
-  volatile js::ProfileEntry* pseudoFrames = racyInfo->mStack;
-  uint32_t pseudoCount = racyInfo->stackSize();
+  volatile js::ProfileEntry* pseudoFrames = pseudoStack->mStack;
+  uint32_t pseudoCount = pseudoStack->stackSize();
 
   for (uint32_t i = 0; i < pseudoCount; i++) {
     const char* label = pseudoFrames[i].label();
@@ -2912,7 +2941,7 @@ profiler_get_pseudo_stack()
 {
   
 
-  return TLSInfo::RacyInfo();
+  return TLSInfo::Stack();
 }
 
 void
@@ -2961,45 +2990,6 @@ profiler_clear_js_context()
   
 
   info->mContext = nullptr;
-}
-
-
-
-
-
-
-
-void*
-profiler_call_enter(const char* aInfo,
-                    js::ProfileEntry::Category aCategory,
-                    void* aFrameAddress, bool aCopy, uint32_t aLine,
-                    const char* aDynamicString)
-{
-  
-
-  PseudoStack* pseudoStack = TLSInfo::RacyInfo();   
-  if (!pseudoStack) {
-    return pseudoStack;
-  }
-  pseudoStack->push(aInfo, aCategory, aFrameAddress, aCopy, aLine,
-                    aDynamicString);
-
-  
-  
-  return pseudoStack;
-}
-
-void
-profiler_call_exit(void* aHandle)
-{
-  
-
-  if (!aHandle) {
-    return;
-  }
-
-  PseudoStack* pseudoStack = static_cast<PseudoStack*>(aHandle);
-  pseudoStack->pop();
 }
 
 void*

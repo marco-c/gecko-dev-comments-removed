@@ -10,6 +10,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "js/ProfilingStack.h"
 #include "StoreSequencer.h"
+#include "nsISupportsImpl.h"  
 
 #include <stdlib.h>
 #include <stdint.h>
