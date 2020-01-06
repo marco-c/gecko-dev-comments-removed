@@ -13,6 +13,7 @@ use dom::{OpaqueNode, TElement, TNode};
 use element_state::ElementState;
 use fnv::FnvHashMap;
 use invalidation::element::element_wrapper::ElementSnapshot;
+use properties::PropertyFlags;
 use selector_parser::{AttrValue as SelectorAttrValue, ElementExt, PseudoElementCascadeType, SelectorParser};
 use selectors::Element;
 use selectors::attr::{AttrSelectorOperation, NamespaceConstraint, CaseSensitivity};
@@ -39,6 +40,12 @@ pub enum PseudoElement {
     Before,
     Selection,
     
+
+    
+    
+    
+    
+
     
     DetailsSummary,
     DetailsContent,
@@ -169,6 +176,12 @@ impl PseudoElement {
 
     
     pub fn pseudo_info(&self) { () }
+
+    
+    #[inline]
+    pub fn property_restriction(&self) -> Option<PropertyFlags> {
+        None
+    }
 }
 
 
