@@ -255,10 +255,6 @@ public:
 
   
   
-  void NotifyDownloadProgressed();
-
-  
-  
   void NotifyDataArrived();
 
   
@@ -590,6 +586,10 @@ protected:
 
 private:
   void NotifyDataArrivedInternal();
+
+  
+  
+  void NotifyDownloadProgressed();
 
   nsCString GetDebugInfo();
 
