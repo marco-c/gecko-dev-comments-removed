@@ -128,7 +128,7 @@ nsRubyTextContainerFrame::Reflow(nsPresContext* aPresContext,
   
   
   aStatus.Reset();
-  WritingMode lineWM = aReflowInput.mLineLayout->GetWritingMode();
+  WritingMode rtcWM = GetWritingMode();
 
   nscoord minBCoord = nscoord_MAX;
   nscoord maxBCoord = nscoord_MIN;
@@ -139,37 +139,37 @@ nsRubyTextContainerFrame::Reflow(nsPresContext* aPresContext,
   for (nsFrameList::Enumerator e(mFrames); !e.AtEnd(); e.Next()) {
     nsIFrame* child = e.get();
     MOZ_ASSERT(child->IsRubyTextFrame());
-    LogicalRect rect = child->GetLogicalRect(lineWM, dummyContainerSize);
-    LogicalMargin margin = child->GetLogicalUsedMargin(lineWM);
-    nscoord blockStart = rect.BStart(lineWM) - margin.BStart(lineWM);
+    LogicalRect rect = child->GetLogicalRect(rtcWM, dummyContainerSize);
+    LogicalMargin margin = child->GetLogicalUsedMargin(rtcWM);
+    nscoord blockStart = rect.BStart(rtcWM) - margin.BStart(rtcWM);
     minBCoord = std::min(minBCoord, blockStart);
-    nscoord blockEnd = rect.BEnd(lineWM) + margin.BEnd(lineWM);
+    nscoord blockEnd = rect.BEnd(rtcWM) + margin.BEnd(rtcWM);
     maxBCoord = std::max(maxBCoord, blockEnd);
   }
 
-  LogicalSize size(lineWM, mISize, 0);
+  LogicalSize size(rtcWM, mISize, 0);
   if (!mFrames.IsEmpty()) {
     if (MOZ_UNLIKELY(minBCoord > maxBCoord)) {
       
       NS_WARNING("bad block coord");
       minBCoord = maxBCoord = 0;
     }
-    size.BSize(lineWM) = maxBCoord - minBCoord;
-    nsSize containerSize = size.GetPhysicalSize(lineWM);
+    size.BSize(rtcWM) = maxBCoord - minBCoord;
+    nsSize containerSize = size.GetPhysicalSize(rtcWM);
     for (nsFrameList::Enumerator e(mFrames); !e.AtEnd(); e.Next()) {
       nsIFrame* child = e.get();
       
       
-      LogicalPoint pos = child->GetLogicalPosition(lineWM, dummyContainerSize);
+      LogicalPoint pos = child->GetLogicalPosition(rtcWM, dummyContainerSize);
       
       
-      pos.B(lineWM) -= minBCoord;
+      pos.B(rtcWM) -= minBCoord;
       
       
-      child->SetPosition(lineWM, pos, containerSize);
+      child->SetPosition(rtcWM, pos, containerSize);
       nsContainerFrame::PlaceFrameView(child);
     }
   }
 
-  aDesiredSize.SetSize(lineWM, size);
+  aDesiredSize.SetSize(rtcWM, size);
 }
