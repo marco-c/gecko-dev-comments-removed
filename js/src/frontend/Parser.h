@@ -321,7 +321,7 @@ ParseContext::VarScope::VarScope(ParserBase* parser)
 }
 
 template <class ParseHandler, typename CharT>
-class Parser final : public ParserBase, private JS::AutoGCRooter
+class Parser final : public ParserBase
 {
   private:
     using Node = typename ParseHandler::Node;
@@ -496,8 +496,6 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
 
     bool checkOptions();
 
-    friend void js::frontend::TraceParser(JSTracer* trc, JS::AutoGCRooter* parser);
-
     
 
 
@@ -508,6 +506,15 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
                                 GeneratorKind generatorKind, FunctionAsyncKind asyncKind);
 
     void trace(JSTracer* trc);
+
+    
+    
+    struct Rooter {
+        Parser* parser;
+        Rooter(Parser* parser) : parser(parser) {}
+        void trace(JSTracer* trc) { parser->trace(trc); }
+    };
+    PersistentRooted<Rooter> root;
 
   private:
     Parser* thisForCtor() { return this; }

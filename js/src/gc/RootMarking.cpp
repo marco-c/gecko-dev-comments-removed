@@ -150,10 +150,6 @@ inline void
 AutoGCRooter::trace(JSTracer* trc)
 {
     switch (tag_) {
-      case PARSER:
-        frontend::TraceParser(trc, this);
-        return;
-
       case VALARRAY: {
         
 
