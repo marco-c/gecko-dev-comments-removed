@@ -192,13 +192,49 @@ Interceptor::GetClassForHandler(DWORD aDestContext, void* aDestContextPtr,
   return mEventSink->GetHandler(WrapNotNull(aHandlerClsid));
 }
 
+
+
+
+
+
+
+
+
+
+DWORD
+Interceptor::GetMarshalFlags(DWORD aDestContext, DWORD aMarshalFlags)
+{
+  
+  if (aDestContext != MSHCTX_LOCAL) {
+    return aMarshalFlags;
+  }
+
+  
+  
+  DWORD callerTid;
+  if (::CoGetCallerTID(&callerTid) != S_FALSE) {
+    return aMarshalFlags;
+  }
+
+  
+  const DWORD chromeMainTid =
+    dom::ContentChild::GetSingleton()->GetChromeMainThreadId();
+  if (callerTid != chromeMainTid) {
+    return aMarshalFlags;
+  }
+
+  
+  return aMarshalFlags | MSHLFLAGS_NOPING;
+}
+
 HRESULT
 Interceptor::GetUnmarshalClass(REFIID riid, void* pv, DWORD dwDestContext,
                                void* pvDestContext, DWORD mshlflags,
                                CLSID* pCid)
 {
   return mStdMarshal->GetUnmarshalClass(riid, pv, dwDestContext, pvDestContext,
-                                        mshlflags, pCid);
+                                        GetMarshalFlags(dwDestContext,
+                                                        mshlflags), pCid);
 }
 
 HRESULT
@@ -207,7 +243,10 @@ Interceptor::GetMarshalSizeMax(REFIID riid, void* pv, DWORD dwDestContext,
                                DWORD* pSize)
 {
   HRESULT hr = mStdMarshal->GetMarshalSizeMax(riid, pv, dwDestContext,
-                                              pvDestContext, mshlflags, pSize);
+                                              pvDestContext,
+                                              GetMarshalFlags(dwDestContext,
+                                                              mshlflags),
+                                              pSize);
   if (FAILED(hr)) {
     return hr;
   }
@@ -240,7 +279,8 @@ Interceptor::MarshalInterface(IStream* pStm, REFIID riid, void* pv,
 #endif 
 
   hr = mStdMarshal->MarshalInterface(pStm, riid, pv, dwDestContext,
-                                     pvDestContext, mshlflags);
+                                     pvDestContext,
+                                     GetMarshalFlags(dwDestContext, mshlflags));
   if (FAILED(hr)) {
     return hr;
   }
@@ -594,14 +634,6 @@ Interceptor::ThreadSafeQueryInterface(REFIID aIid, IUnknown** aOutInterface)
   }
 
   if (aIid == IID_IMarshal) {
-    
-    
-    
-    CLSID dummy;
-    if (FAILED(mEventSink->GetHandler(WrapNotNull(&dummy)))) {
-      return E_NOINTERFACE;
-    }
-
     if (!mStdMarshalUnk) {
       HRESULT hr = ::CoGetStdMarshalEx(static_cast<IWeakReferenceSource*>(this),
                                        SMEXF_SERVER,
