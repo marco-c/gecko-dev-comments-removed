@@ -32,8 +32,10 @@ class KnownTabs {
 
 
 function* openTestTabInOwnProcess(name, knownTabs) {
-  let url = HELPER_PAGE_URL + '?' + encodeURIComponent(name);
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+  let opening = HELPER_PAGE_URL + '?' + encodeURIComponent(name);
+  let tab = yield BrowserTestUtils.openNewForegroundTab({
+    gBrowser, opening, forceNewProcess: true
+  });
   let pid = tab.linkedBrowser.frameLoader.tabParent.osPid;
   ok(!knownTabs.byName.has(name), "tab needs its own name: " + name);
   ok(!knownTabs.byPid.has(pid), "tab needs to be in its own process: " + pid);
@@ -218,49 +220,22 @@ requestLongerTimeout(4);
 
 
 add_task(function*() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  let keepAliveCount = 0;
-  try {
-    
-    
-    
-    
-    keepAliveCount = SpecialPowers.getIntPref("dom.ipc.keepProcessesAlive.web");
-  } catch (ex) {
-    
-  }
-  let safeProcessCount = keepAliveCount + 6;
-  info("dom.ipc.keepProcessesAlive.web is " + keepAliveCount + ", boosting " +
-       "process count temporarily to " + safeProcessCount);
-
-  
-  
   yield SpecialPowers.pushPrefEnv({
     set: [
-      ["dom.ipc.processCount", safeProcessCount],
-      ["dom.ipc.processCount.web", safeProcessCount]
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      ["dom.ipc.processPrelaunch.enabled", false],
     ]
   });
 
