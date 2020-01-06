@@ -306,8 +306,8 @@ ROLE(OUTLINE,
 
 ROLE(OUTLINEITEM,
      "outlineitem",
-     ATK_ROLE_LIST_ITEM,
-     NSAccessibilityRowRole,  
+     ATK_ROLE_TREE_ITEM,
+     NSAccessibilityRowRole,
      ROLE_SYSTEM_OUTLINEITEM,
      ROLE_SYSTEM_OUTLINEITEM,
      eNameFromSubtreeRule)
