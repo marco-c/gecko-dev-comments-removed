@@ -150,10 +150,6 @@ DownmixAndInterleave(const nsTArray<const SrcT*>& aChannelData,
 struct AudioChunk {
   typedef mozilla::AudioSampleFormat SampleFormat;
 
-  AudioChunk()
-    : mPrincipalHandle(PRINCIPAL_HANDLE_NONE)
-  {}
-
   
   void SliceTo(StreamTime aStart, StreamTime aEnd)
   {
@@ -249,18 +245,19 @@ struct AudioChunk {
 
   PrincipalHandle GetPrincipalHandle() const { return mPrincipalHandle; }
 
-  StreamTime mDuration; 
+  StreamTime mDuration = 0; 
   RefPtr<ThreadSharedObject> mBuffer; 
   
   AutoTArray<const void*,GUESS_AUDIO_CHANNELS> mChannelData;
-  float mVolume; 
-  SampleFormat mBufferFormat; 
+  float mVolume = 1.0f; 
+  
+  SampleFormat mBufferFormat = AUDIO_FORMAT_SILENCE;
 #ifdef MOZILLA_INTERNAL_API
   mozilla::TimeStamp mTimeStamp;           
 #endif
   
   
-  PrincipalHandle mPrincipalHandle;
+  PrincipalHandle mPrincipalHandle = PRINCIPAL_HANDLE_NONE;
 };
 
 
