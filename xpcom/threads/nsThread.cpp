@@ -795,9 +795,10 @@ nsThread::DispatchInternal(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlags
     }
 
     
-    while (wrapper->IsPending()) {
-      NS_ProcessNextEvent(thread, true);
-    }
+    SpinEventLoopUntil([&, wrapper]() -> bool {
+        return !wrapper->IsPending();
+      }, thread);
+
     return NS_OK;
   }
 
@@ -994,9 +995,11 @@ nsThread::ShutdownComplete(NotNull<nsThreadShutdownContext*> aContext)
 void
 nsThread::WaitForAllAsynchronousShutdowns()
 {
-  while (mRequestedShutdownContexts.Length()) {
-    NS_ProcessNextEvent(this, true);
-  }
+  
+  
+  SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>([&]() {
+      return mRequestedShutdownContexts.IsEmpty();
+    }, this);
 }
 
 NS_IMETHODIMP
@@ -1017,9 +1020,9 @@ nsThread::Shutdown()
 
   
   
-  while (context->mAwaitingShutdownAck) {
-    NS_ProcessNextEvent(context->mJoiningThread, true);
-  }
+  SpinEventLoopUntil([&, context]() {
+      return !context->mAwaitingShutdownAck;
+    }, context->mJoiningThread);
 
   ShutdownComplete(context);
 

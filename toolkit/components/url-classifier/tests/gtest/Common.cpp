@@ -56,17 +56,13 @@ nsresult SyncApplyUpdates(Classifier* aClassifier,
   }
 
   testingThread->Dispatch(r, NS_DISPATCH_NORMAL);
-  while (!done) {
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_ALWAYS_TRUE(NS_ProcessNextEvent(NS_GetCurrentThread(), true));
-  }
+
+  
+  
+  
+  
+  
+  MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() { return done; }));
 
   return ret;
 }

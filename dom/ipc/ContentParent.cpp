@@ -2704,9 +2704,7 @@ ContentParent::Observe(nsISupports* aSubject,
     
     
     
-    while (mIPCOpen && !mCalledKillHard) {
-      NS_ProcessNextEvent(nullptr, true);
-    }
+    SpinEventLoopUntil([&]() { return !mIPCOpen || mCalledKillHard; });
     NS_ASSERTION(!mSubprocess, "Close should have nulled mSubprocess");
   }
 

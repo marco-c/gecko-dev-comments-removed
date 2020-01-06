@@ -30,9 +30,7 @@ RemotePrintJobChild::InitializePrint(const nsString& aDocumentTitle,
   
   Unused << SendInitializePrint(aDocumentTitle, aPrintToFile, aStartPage,
                                 aEndPage);
-  while (!mPrintInitialized) {
-    Unused << NS_ProcessNextEvent();
-  }
+  mozilla::SpinEventLoopUntil([&]() { return mPrintInitialized; });
 
   return mInitializationResult;
 }

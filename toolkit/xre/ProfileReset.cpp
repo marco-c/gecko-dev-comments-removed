@@ -162,11 +162,8 @@ ProfileResetCleanup(nsIToolkitProfile* aOldProfile)
     cleanupThread->Dispatch(runnable, nsIThread::DISPATCH_NORMAL);
     
 
-    nsIThread *thread = NS_GetCurrentThread();
     
-    while(!gProfileResetCleanupCompleted) {
-      NS_ProcessNextEvent(thread);
-    }
+    SpinEventLoopUntil([&]() { return gProfileResetCleanupCompleted; });
   } else {
     gProfileResetCleanupCompleted = true;
     NS_WARNING("Cleanup thread creation failed");

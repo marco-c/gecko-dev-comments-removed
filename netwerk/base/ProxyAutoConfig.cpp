@@ -427,8 +427,7 @@ ProxyAutoConfig::ResolveAddress(const nsCString &aHostName,
   
   
   
-  while (helper->mRequest)
-    NS_ProcessNextEvent(NS_GetCurrentThread());
+  SpinEventLoopUntil([&, helper]() { return !helper->mRequest; });
 
   if (NS_FAILED(helper->mStatus) ||
       NS_FAILED(helper->mResponse->GetNextAddr(0, aNetAddr)))

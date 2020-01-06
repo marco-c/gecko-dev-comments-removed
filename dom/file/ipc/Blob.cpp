@@ -4790,12 +4790,7 @@ BlobParent::RecvBlobStreamSync(const uint64_t& aStart,
 
   
   
-  nsIThread* currentThread = NS_GetCurrentThread();
-  MOZ_ASSERT(currentThread);
-
-  while (!finished) {
-    MOZ_ALWAYS_TRUE(NS_ProcessNextEvent(currentThread));
-  }
+  MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() { return finished; }));
 
   return IPC_OK();
 }

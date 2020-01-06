@@ -1727,9 +1727,7 @@ nsPluginHost::SiteHasData(nsIPluginTag* plugin, const nsACString& domain,
   rv = library->NPP_GetSitesWithData(nsCOMPtr<nsIGetSitesWithDataCallback>(do_QueryInterface(closure)));
   NS_ENSURE_SUCCESS(rv, rv);
   
-  while (closure->keepWaiting) {
-    NS_ProcessNextEvent(nullptr, true);
-  }
+  SpinEventLoopUntil([&]() { return !closure->keepWaiting; });
   *result = closure->result;
   return closure->retVal;
 }

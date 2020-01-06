@@ -3670,7 +3670,7 @@ int main(int argc, char **argv) {
   
   
   
-  while (!gTestsComplete && NS_ProcessNextEvent());
+  SpinEventLoopUntil([&]() { return gTestsComplete; });
 
   gGtestThread->Shutdown();
 

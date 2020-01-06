@@ -182,6 +182,90 @@ extern bool NS_ProcessNextEvent(nsIThread* aThread = nullptr,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+namespace mozilla {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum class ProcessFailureBehavior {
+  IgnoreAndContinue,
+  ReportToCaller,
+};
+
+template<ProcessFailureBehavior Behavior = ProcessFailureBehavior::ReportToCaller,
+         typename Pred>
+bool
+SpinEventLoopUntil(Pred&& aPredicate, nsIThread* aThread = nullptr)
+{
+  nsIThread* thread = aThread ? aThread : NS_GetCurrentThread();
+
+  while (!aPredicate()) {
+    bool didSomething = NS_ProcessNextEvent(thread, true);
+
+    if (Behavior == ProcessFailureBehavior::IgnoreAndContinue) {
+      
+      continue;
+    } else if (!didSomething) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+} 
+
+
+
+
+
+
+
+
 extern bool NS_IsInCompositorThread();
 
 

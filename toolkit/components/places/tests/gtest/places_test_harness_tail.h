@@ -87,9 +87,7 @@ TEST(IHistory, Test)
   run_next_test();
 
   
-  while (gPendingTests) {
-    (void)NS_ProcessNextEvent();
-  }
+  mozilla::SpinEventLoopUntil([&]() { return !gPendingTests; });
 
   
   (void)NS_ProcessPendingEvents(nullptr);

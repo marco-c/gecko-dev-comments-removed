@@ -311,21 +311,16 @@ nsresult nsAutoConfig::downloadAutoConfig()
         firstTime = false;
     
         
-        
-
-        nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
-        NS_ENSURE_STATE(thread);
-    
-        
 
 
 
 
 
 
-        
-        while (!mLoaded)
-            NS_ENSURE_STATE(NS_ProcessNextEvent(thread));
+
+        if (!mozilla::SpinEventLoopUntil([&]() { return mLoaded; })) {
+            return NS_ERROR_FAILURE;
+        }
         
         int32_t minutes;
         rv = mPrefBranch->GetIntPref("autoadmin.refresh_interval", 

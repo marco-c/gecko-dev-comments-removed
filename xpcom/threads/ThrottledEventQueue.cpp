@@ -258,9 +258,9 @@ public:
     
     
     
-    while (!IsEmpty()) {
-      MOZ_ALWAYS_TRUE(NS_ProcessNextEvent());
-    }
+    MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() -> bool {
+        return IsEmpty();
+    }));
 
     return NS_OK;
   }

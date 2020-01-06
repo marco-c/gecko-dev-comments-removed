@@ -132,9 +132,7 @@ CompositorThreadHolder::Shutdown()
 
   
   
-  while (!sFinishedCompositorShutDown) {
-    NS_ProcessNextEvent(nullptr, true);
-  }
+  SpinEventLoopUntil([&]() { return sFinishedCompositorShutDown; });
 
   CompositorBridgeParent::FinishShutdown();
 }

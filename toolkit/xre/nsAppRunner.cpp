@@ -626,10 +626,7 @@ ProcessDDE(nsINativeAppSupport* aNative, bool aWait)
       
       
       int32_t count = 20;
-      while(--count >= 0) {
-        NS_ProcessNextEvent(thread);
-        PR_Sleep(PR_MillisecondsToInterval(1));
-      }
+      SpinEventLoopUntil([&]() { return --count < 0; });
     }
   }
 }

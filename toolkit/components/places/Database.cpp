@@ -2608,9 +2608,9 @@ Database::Observe(nsISupports *aSubject,
 
     
     
-    while (mClientsShutdown->State() != PlacesShutdownBlocker::States::RECEIVED_DONE) {
-      (void)NS_ProcessNextEvent();
-    }
+    SpinEventLoopUntil([&]() {
+	return mClientsShutdown->State() == PlacesShutdownBlocker::States::RECEIVED_DONE;
+      });
 
     {
       nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase = GetProfileBeforeChangePhase();

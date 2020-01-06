@@ -219,9 +219,7 @@ nsHttpConnectionMgr::Shutdown()
     }
 
     
-    while (!shutdownWrapper->mBool) {
-        NS_ProcessNextEvent(NS_GetCurrentThread());
-    }
+    SpinEventLoopUntil([&, shutdownWrapper]() { return shutdownWrapper->mBool; });
 
     return NS_OK;
 }
