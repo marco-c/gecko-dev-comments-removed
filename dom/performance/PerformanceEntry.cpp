@@ -28,8 +28,6 @@ PerformanceEntry::PerformanceEntry(nsISupports* aParent,
   mName(aName),
   mEntryType(aEntryType)
 {
-  
-  MOZ_ASSERT(mParent || !NS_IsMainThread());
 }
 
 PerformanceEntry::~PerformanceEntry()

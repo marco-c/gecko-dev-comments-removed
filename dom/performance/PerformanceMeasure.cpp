@@ -18,8 +18,6 @@ PerformanceMeasure::PerformanceMeasure(nsISupports* aParent,
   mStartTime(aStartTime),
   mDuration(aEndTime - aStartTime)
 {
-  
-  MOZ_ASSERT(mParent || !NS_IsMainThread());
 }
 
 PerformanceMeasure::~PerformanceMeasure()
