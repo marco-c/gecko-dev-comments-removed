@@ -4,10 +4,9 @@
 
 
 
-#include "WaveDemuxer.h"
-#include "MediaContainerType.h"
 #include "WaveDecoder.h"
-#include "PDMFactory.h"
+#include "MediaContainerType.h"
+#include "MediaDecoder.h"
 
 namespace mozilla {
 
