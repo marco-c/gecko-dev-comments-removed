@@ -1093,7 +1093,6 @@ ServoStyleSet::RebuildData()
 {
   ClearNonInheritingStyleContexts();
   Servo_StyleSet_RebuildData(mRawSet.get());
-  mStylistState = StylistState::NotDirty;
 }
 
 void
@@ -1101,7 +1100,7 @@ ServoStyleSet::ClearDataAndMarkDeviceDirty()
 {
   ClearNonInheritingStyleContexts();
   Servo_StyleSet_Clear(mRawSet.get());
-  mStylistState = StylistState::FullyDirty;
+  mStylistState |= StylistState::FullyDirty;
 }
 
 already_AddRefed<ServoComputedValues>
@@ -1203,9 +1202,28 @@ void
 ServoStyleSet::UpdateStylist()
 {
   MOZ_ASSERT(StylistNeedsUpdate());
-  if (mStylistState == StylistState::FullyDirty) {
+  if (mStylistState & StylistState::FullyDirty) {
     RebuildData();
+
+    if (mStylistState & StylistState::StyleSheetsDirty) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (Element* root = mPresContext->Document()->GetDocumentElement()) {
+        Servo_NoteExplicitHints(root, eRestyle_Subtree, nsChangeHint(0));
+      }
+    }
   } else {
+    MOZ_ASSERT(mStylistState & StylistState::StyleSheetsDirty);
     Element* root = mPresContext->Document()->GetDocumentElement();
     Servo_StyleSet_FlushStyleSheets(mRawSet.get(), root);
   }

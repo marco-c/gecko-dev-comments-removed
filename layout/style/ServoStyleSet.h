@@ -50,6 +50,26 @@ namespace mozilla {
 
 
 
+enum class StylistState : uint8_t {
+  
+  NotDirty = 0,
+
+  
+  StyleSheetsDirty = 1 << 0,
+
+  
+
+
+
+  FullyDirty = 1 << 1,
+};
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(StylistState)
+
+
+
+
+
 class ServoStyleSet
 {
   friend class ServoRestyleManager;
@@ -474,27 +494,9 @@ private:
   
 
 
-
-  enum class StylistState : uint8_t {
-    
-    NotDirty,
-    
-    StyleSheetsDirty,
-    
-
-
-
-    FullyDirty,
-  };
-
-  
-
-
   void SetStylistStyleSheetsDirty()
   {
-    if (mStylistState == StylistState::NotDirty) {
-      mStylistState = StylistState::StyleSheetsDirty;
-    }
+    mStylistState |= StylistState::StyleSheetsDirty;
   }
 
   bool StylistNeedsUpdate() const
