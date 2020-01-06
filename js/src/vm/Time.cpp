@@ -269,8 +269,10 @@ PRMJ_FormatTime(char* buf, int buflen, const char* fmt, PRMJTime* prtm)
     int fake_tm_year = 0;
 #ifdef XP_WIN
     _invalid_parameter_handler oldHandler;
+#ifndef __MINGW32__
     int oldReportMode;
-#endif
+#endif 
+#endif 
 
     memset(&a, 0, sizeof(struct tm));
 
@@ -343,15 +345,23 @@ PRMJ_FormatTime(char* buf, int buflen, const char* fmt, PRMJTime* prtm)
 
 #ifdef XP_WIN
     oldHandler = _set_invalid_parameter_handler(PRMJ_InvalidParameterHandler);
+#ifndef __MINGW32__
+    
+
+
+
     oldReportMode = _CrtSetReportMode(_CRT_ASSERT, 0);
-#endif
+#endif 
+#endif 
 
     result = strftime(buf, buflen, fmt, &a);
 
 #ifdef XP_WIN
     _set_invalid_parameter_handler(oldHandler);
+#ifndef __MINGW32__
     _CrtSetReportMode(_CRT_ASSERT, oldReportMode);
-#endif
+#endif 
+#endif 
 
     if (fake_tm_year && result) {
         char real_year[16];
