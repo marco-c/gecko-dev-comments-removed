@@ -216,6 +216,7 @@ private:
   void BeginProcessingRestyles(RestyleTracker& aRestyleTracker);
   void EndProcessingRestyles();
 
+public:
   
   
   
@@ -239,8 +240,6 @@ private:
   
   
   void UpdateAnimationStyles();
-
-public:
   void UpdateAnimationStylesForHitTesting();
 
   
