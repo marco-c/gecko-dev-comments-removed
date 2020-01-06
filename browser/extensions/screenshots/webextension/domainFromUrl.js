@@ -14,7 +14,7 @@ this.domainFromUrl = (function() {
         domain = "unknown";
       }
     }
-    if (domain.search(/^[a-z0-9.\-]+$/i) === -1) {
+    if (domain.search(/^[a-z0-9.\-]{1,1000}$/i) === -1) {
       
       
       domain = domain.replace(/[^a-z0-9.\-]/ig, "");

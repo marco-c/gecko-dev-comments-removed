@@ -18,7 +18,7 @@ this.documentMetadata = (function() {
   function getOpenGraph() {
     let openGraph = {};
     
-    let forceSingle = `title type url`.split(/\s+/g);
+    let forceSingle = `title type url`.split(" ");
     let openGraphProperties = `
     title type url image audio description determiner locale site_name video
     image:secure_url image:type image:width image:height
