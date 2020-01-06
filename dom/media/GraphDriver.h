@@ -119,7 +119,6 @@ public:
   virtual void WaitForNextIteration() = 0;
   
   virtual void WakeUp() = 0;
-  virtual void Destroy() {}
   
   virtual void Start() = 0;
   
@@ -389,7 +388,6 @@ public:
   explicit AudioCallbackDriver(MediaStreamGraphImpl* aGraphImpl);
   virtual ~AudioCallbackDriver();
 
-  void Destroy() override;
   void Start() override;
   void Revive() override;
   void RemoveCallback() override;
