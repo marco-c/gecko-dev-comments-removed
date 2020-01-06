@@ -523,23 +523,32 @@ module.exports = {
 
 
 
+
   get rootDir() {
     if (!gRootDir) {
-      let dirName = path.dirname(module.filename);
+      function searchUpForIgnore(dirName) {
+        let parsed = path.parse(dirName);
+        while (parsed.root !== dirName) {
+          if (fs.existsSync(path.join(dirName, ".eslintignore"))) {
+            return dirName;
+          }
+          
+          dirName = parsed.dir;
+          parsed = path.parse(dirName);
+        }
+        return null;
+      }
 
-      while (true) {
-        const parsed = path.parse(dirName);
-        if (parsed.root === dirName) {
+      let possibleRoot = searchUpForIgnore(path.dirname(module.filename));
+      if (!possibleRoot) {
+        possibleRoot = searchUpForIgnore(path.resolve());
+        if (!possibleRoot) {
           
           throw new Error("Unable to find root of repository");
         }
-        dirName = parsed.dir;
-        if (fs.existsSync(path.join(dirName, ".eslintignore"))) {
-          break;
-        }
       }
 
-      gRootDir = dirName;
+      gRootDir = possibleRoot;
     }
 
     return gRootDir;
