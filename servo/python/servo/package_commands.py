@@ -26,6 +26,8 @@ from mach.decorators import (
 )
 from mach.registrar import Registrar
 
+sys.path.append(path.join(path.dirname(__file__), "..", "..",
+                          "components", "style", "properties", "Mako-0.9.1.zip"))
 
 from servo.command_base import (
     archive_deterministically,
