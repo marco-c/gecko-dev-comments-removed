@@ -122,6 +122,12 @@ impl<E: TElement> StyleBloom<E> {
         self.elements.is_empty()
     }
 
+    
+    
+    
+    pub fn matching_depth(&self) -> usize {
+        self.elements.len()
+    }
 
     
     pub fn clear(&mut self) {
