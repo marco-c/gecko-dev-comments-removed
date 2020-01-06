@@ -3497,14 +3497,6 @@ public:
 
 
 
-
-
-  bool IsPseudoStackingContextFromStyle();
-
-  
-
-
-
   bool IsVisuallyAtomic(mozilla::EffectSet* aEffectSet,
                         const nsStyleDisplay* aStyleDisplay,
                         const nsStyleEffects* aStyleEffects);
