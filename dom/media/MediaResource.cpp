@@ -152,8 +152,8 @@ ChannelMediaResource::Listener::OnDataAvailable(nsIRequest* aRequest,
                                                 uint64_t aOffset,
                                                 uint32_t aCount)
 {
-  if (!mResource)
-    return NS_OK;
+  
+  MOZ_DIAGNOSTIC_ASSERT(mResource);
   return mResource->OnDataAvailable(aRequest, aStream, aCount);
 }
 
@@ -681,11 +681,6 @@ void ChannelMediaResource::CloseChannel()
     mChannelStatistics.Stop();
   }
 
-  if (mListener) {
-    mListener->Revoke();
-    mListener = nullptr;
-  }
-
   if (mChannel) {
     mSuspendAgent.NotifyChannelClosing();
     
@@ -697,6 +692,11 @@ void ChannelMediaResource::CloseChannel()
     
     mChannel->Cancel(NS_ERROR_PARSED_DATA_CACHED);
     mChannel = nullptr;
+  }
+
+  if (mListener) {
+    mListener->Revoke();
+    mListener = nullptr;
   }
 }
 
