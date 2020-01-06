@@ -46,10 +46,10 @@ SVGPathElement::SVGPathElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeIn
 
 
 size_t
-SVGPathElement::SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
+SVGPathElement::SizeOfExcludingThis(mozilla::SizeOfState& aState) const
 {
-  return SVGPathElementBase::SizeOfExcludingThis(aMallocSizeOf) +
-         mD.SizeOfExcludingThis(aMallocSizeOf);
+  return SVGPathElementBase::SizeOfExcludingThis(aState) +
+         mD.SizeOfExcludingThis(aState.mMallocSizeOf);
 }
 
 
