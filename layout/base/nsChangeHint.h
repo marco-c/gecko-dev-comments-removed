@@ -233,6 +233,12 @@ enum nsChangeHint : uint32_t {
   nsChangeHint_CSSOverflowChange = 1 << 28,
 
   
+
+
+
+  nsChangeHint_UpdateWidgetProperties = 1 << 29,
+
+  
   
   
   
@@ -247,7 +253,7 @@ enum nsChangeHint : uint32_t {
   
 
 
-  nsChangeHint_AllHints = (1 << 29) - 1,
+  nsChangeHint_AllHints = (1 << 30) - 1,
 };
 
 
@@ -349,7 +355,8 @@ inline nsChangeHint operator^=(nsChangeHint& aLeft, nsChangeHint aRight)
   nsChangeHint_UpdatePostTransformOverflow |               \
   nsChangeHint_UpdateTransformLayer |                      \
   nsChangeHint_UpdateUsesOpacity |                         \
-  nsChangeHint_AddOrRemoveTransform                        \
+  nsChangeHint_AddOrRemoveTransform |                      \
+  nsChangeHint_UpdateWidgetProperties                      \
 )
 
 
