@@ -51,7 +51,7 @@ protected:
   
   nsIPresShell* MOZ_NON_OWNING_REF mPresShell;
   nsIFrame*                       mRootFrame;
-  UndisplayedMap*                 mUndisplayedMap;
+  UndisplayedMap*                 mDisplayNoneMap;
   UndisplayedMap*                 mDisplayContentsMap;
   bool                            mIsDestroyingFrames;  
 };
