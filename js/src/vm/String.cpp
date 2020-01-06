@@ -1516,13 +1516,13 @@ JSFlatString::dumpRepresentation(FILE* fp, int indent) const
 #endif
 
 static void
-FinalizeRepresentativeExternalString(Zone* zone, const JSStringFinalizer* fin, char16_t* chars);
+FinalizeRepresentativeExternalString(const JSStringFinalizer* fin, char16_t* chars);
 
 static const JSStringFinalizer RepresentativeExternalStringFinalizer =
     { FinalizeRepresentativeExternalString };
 
 static void
-FinalizeRepresentativeExternalString(Zone* zone, const JSStringFinalizer* fin, char16_t* chars)
+FinalizeRepresentativeExternalString(const JSStringFinalizer* fin, char16_t* chars)
 {
     
     MOZ_ASSERT(fin == &RepresentativeExternalStringFinalizer);

@@ -29,7 +29,7 @@ using namespace JS;
 
 
 void
-XPCStringConvert::FinalizeLiteral(JS::Zone* zone, const JSStringFinalizer* fin, char16_t* chars)
+XPCStringConvert::FinalizeLiteral(const JSStringFinalizer* fin, char16_t* chars)
 {
 }
 
@@ -38,7 +38,7 @@ const JSStringFinalizer XPCStringConvert::sLiteralFinalizer =
 
 
 void
-XPCStringConvert::FinalizeDOMString(JS::Zone* zone, const JSStringFinalizer* fin, char16_t* chars)
+XPCStringConvert::FinalizeDOMString(const JSStringFinalizer* fin, char16_t* chars)
 {
     nsStringBuffer* buf = nsStringBuffer::FromData(chars);
     buf->Release();
