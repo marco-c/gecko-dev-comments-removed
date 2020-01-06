@@ -7785,8 +7785,10 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   
   Maybe<TreeMatchContext> matchContext;
   if (!aProvidedTreeMatchContext && !aContainer->IsStyledByServo()) {
+    
+    
     matchContext.emplace(mDocument, TreeMatchContext::ForFrameConstruction);
-    matchContext->InitAncestors(aContainer->AsElement());
+    matchContext->InitAncestors(aFirstNewContent->GetParentElementCrossingShadowRoot());
   }
   nsFrameConstructorState state(mPresShell,
                                 matchContext.ptrOr(aProvidedTreeMatchContext),
@@ -8126,7 +8128,9 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
   
   
   
-  if (!parentFrame && !aContainer->IsActiveChildrenElement()) {
+  if (!parentFrame &&
+      !(aContainer->IsActiveChildrenElement() ||
+        ShadowRoot::FromNode(aContainer))) {
     
     
     
@@ -8137,6 +8141,8 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     }
     return;
   }
+
+  MOZ_ASSERT_IF(ShadowRoot::FromNode(aContainer), !parentFrame);
 
   
   NS_ASSERTION(!parentFrame || parentFrame->GetContent() == aContainer ||
@@ -8251,8 +8257,10 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 
   Maybe<TreeMatchContext> matchContext;
   if (!aProvidedTreeMatchContext && !aContainer->IsStyledByServo()) {
+    
+    
     matchContext.emplace(mDocument, TreeMatchContext::ForFrameConstruction);
-    matchContext->InitAncestors(aContainer ? aContainer->AsElement() : nullptr);
+    matchContext->InitAncestors(aStartChild->GetParentElementCrossingShadowRoot());
   }
   nsFrameConstructorState state(mPresShell,
                                 matchContext.ptrOr(aProvidedTreeMatchContext),
@@ -9536,7 +9544,10 @@ nsCSSFrameConstructor::GetInsertionPoint(nsIContent* aContainer,
       return InsertionPoint(GetContentInsertionFrameFor(aContainer), aContainer);
     }
 
-    if (nsContentUtils::HasDistributedChildren(aContainer)) {
+    if (nsContentUtils::HasDistributedChildren(aContainer) ||
+        ShadowRoot::FromNode(aContainer)) {
+      
+      
       
       
       
