@@ -223,20 +223,18 @@ void
 DrawTargetCaptureImpl::FillGlyphs(ScaledFont* aFont,
                                   const GlyphBuffer& aBuffer,
                                   const Pattern& aPattern,
-                                  const DrawOptions& aOptions,
-                                  const GlyphRenderingOptions* aRenderingOptions)
+                                  const DrawOptions& aOptions)
 {
-  AppendCommand(FillGlyphsCommand)(aFont, aBuffer, aPattern, aOptions, aRenderingOptions);
+  AppendCommand(FillGlyphsCommand)(aFont, aBuffer, aPattern, aOptions);
 }
 
 void DrawTargetCaptureImpl::StrokeGlyphs(ScaledFont* aFont,
                                          const GlyphBuffer& aBuffer,
                                          const Pattern& aPattern,
                                          const StrokeOptions& aStrokeOptions,
-                                         const DrawOptions& aOptions,
-                                         const GlyphRenderingOptions* aRenderingOptions)
+                                         const DrawOptions& aOptions)
 {
-  AppendCommand(StrokeGlyphsCommand)(aFont, aBuffer, aPattern, aStrokeOptions, aOptions, aRenderingOptions);
+  AppendCommand(StrokeGlyphsCommand)(aFont, aBuffer, aPattern, aStrokeOptions, aOptions);
 }
 
 void

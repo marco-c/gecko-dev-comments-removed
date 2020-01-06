@@ -72,9 +72,6 @@ struct gfxTextRunDrawCallbacks;
 
 namespace mozilla {
 class SVGContextPaint;
-namespace gfx {
-class GlyphRenderingOptions;
-} 
 } 
 
 struct gfxFontStyle {
@@ -1585,11 +1582,6 @@ public:
     
     gfxFloat GetGlyphHAdvance(DrawTarget* aDrawTarget, uint16_t aGID);
 
-    
-    virtual already_AddRefed<mozilla::gfx::GlyphRenderingOptions>
-      GetGlyphRenderingOptions(const TextRunDrawParams* aRunParams = nullptr)
-    { return nullptr; }
-
     gfxFloat SynthesizeSpaceWidth(uint32_t aCh);
 
     
@@ -2279,7 +2271,6 @@ protected:
     bool RenderColorGlyph(DrawTarget* aDrawTarget,
                           gfxContext* aContext,
                           mozilla::gfx::ScaledFont* scaledFont,
-                          mozilla::gfx::GlyphRenderingOptions* renderingOptions,
                           mozilla::gfx::DrawOptions drawOptions,
                           const mozilla::gfx::Point& aPoint,
                           uint32_t aGlyphId) const;
@@ -2322,7 +2313,6 @@ struct MOZ_STACK_CLASS TextRunDrawParams {
 
 struct MOZ_STACK_CLASS FontDrawParams {
     RefPtr<mozilla::gfx::ScaledFont>            scaledFont;
-    RefPtr<mozilla::gfx::GlyphRenderingOptions> renderingOptions;
     mozilla::SVGContextPaint *contextPaint;
     mozilla::gfx::Matrix     *passedInvMatrix;
     mozilla::gfx::Matrix      matInv;

@@ -876,24 +876,6 @@ public:
   virtual ~NativeFontResource() {}
 };
 
-
-
-
-
-
-
-class GlyphRenderingOptions : public RefCounted<GlyphRenderingOptions>
-{
-public:
-  MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(GlyphRenderingOptions)
-  virtual ~GlyphRenderingOptions() {}
-
-  virtual FontType GetType() const = 0;
-
-protected:
-  GlyphRenderingOptions() {}
-};
-
 class DrawTargetCapture;
 
 
@@ -1106,8 +1088,7 @@ public:
   virtual void FillGlyphs(ScaledFont *aFont,
                           const GlyphBuffer &aBuffer,
                           const Pattern &aPattern,
-                          const DrawOptions &aOptions = DrawOptions(),
-                          const GlyphRenderingOptions *aRenderingOptions = nullptr) = 0;
+                          const DrawOptions &aOptions = DrawOptions()) = 0;
 
   
 
@@ -1116,8 +1097,7 @@ public:
                             const GlyphBuffer& aBuffer,
                             const Pattern& aPattern,
                             const StrokeOptions& aStrokeOptions = StrokeOptions(),
-                            const DrawOptions& aOptions = DrawOptions(),
-                            const GlyphRenderingOptions* aRenderingOptions = nullptr);
+                            const DrawOptions& aOptions = DrawOptions());
 
   
 
@@ -1682,11 +1662,6 @@ public:
 
 #ifdef USE_SKIA
   static already_AddRefed<DrawTarget> CreateDrawTargetWithSkCanvas(SkCanvas* aCanvas);
-#endif
-
-#ifdef XP_DARWIN
-  static already_AddRefed<GlyphRenderingOptions>
-    CreateCGGlyphRenderingOptions(const Color &aFontSmoothingBackgroundColor);
 #endif
 
 #ifdef MOZ_ENABLE_FREETYPE

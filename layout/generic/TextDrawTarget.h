@@ -99,11 +99,8 @@ public:
   FillGlyphs(ScaledFont* aFont,
              const GlyphBuffer& aBuffer,
              const Pattern& aPattern,
-             const DrawOptions& aOptions,
-             const GlyphRenderingOptions* aRenderingOptions) override
+             const DrawOptions& aOptions) override
   {
-    
-
     
     MOZ_RELEASE_ASSERT(aOptions.mCompositionOp == CompositionOp::OP_OVER);
     MOZ_RELEASE_ASSERT(aOptions.mAlpha == 1.0f);
@@ -395,8 +392,7 @@ public:
                     const GlyphBuffer& aBuffer,
                     const Pattern& aPattern,
                     const StrokeOptions& aStrokeOptions,
-                    const DrawOptions& aOptions,
-                    const GlyphRenderingOptions* aRenderingOptions) override {
+                    const DrawOptions& aOptions) override {
     MOZ_CRASH("TextDrawTarget: Method shouldn't be called");
   }
 
