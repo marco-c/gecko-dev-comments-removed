@@ -112,11 +112,8 @@ public:
 
 
 
-  void GetLogicalRun(int32_t aLogicalStart, int32_t* aLogicalLimit,
-                     nsBidiLevel* aLevel)
-  {
-    ubidi_getLogicalRun(mBiDi, aLogicalStart, aLogicalLimit, aLevel);
-  }
+  void GetLogicalRun(int32_t aLogicalStart,
+                     int32_t* aLogicalLimit, nsBidiLevel* aLevel);
 
   
 
@@ -128,12 +125,7 @@ public:
 
 
 
-  nsresult CountRuns(int32_t* aRunCount)
-  {
-    UErrorCode errorCode = U_ZERO_ERROR;
-    *aRunCount = ubidi_countRuns(mBiDi, &errorCode);
-    return ICUUtils::UErrorToNsResult(errorCode);
-  }
+  nsresult CountRuns(int32_t* aRunCount);
 
   
 
@@ -221,6 +213,9 @@ private:
   void operator=(const nsBidi&) = delete;
 
   UBiDi* mBiDi;
+  
+  const nsBidiLevel* mLevels = nullptr;
+  int32_t mLength = 0;
 };
 
 #endif 
