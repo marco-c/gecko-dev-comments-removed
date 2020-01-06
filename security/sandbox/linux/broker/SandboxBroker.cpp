@@ -393,6 +393,10 @@ AllowOpen(int aReqFlags, int aPerms)
   if (aReqFlags & O_CREAT) {
     needed |= SandboxBroker::MAY_CREATE;
   }
+  
+  if (aReqFlags & O_TRUNC) {
+    needed |= SandboxBroker::MAY_WRITE;
+  }
   return (aPerms & needed) == needed;
 }
 
