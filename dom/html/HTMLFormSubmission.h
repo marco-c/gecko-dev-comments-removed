@@ -193,13 +193,7 @@ private:
 
 
 
-  nsCOMPtr<nsIMultiplexInputStream> mPostData;
-
-  
-
-
-
-  nsIInputStream* mPostDataStream;
+  nsCOMPtr<nsIMultiplexInputStream> mPostDataStream;
 
   
 
