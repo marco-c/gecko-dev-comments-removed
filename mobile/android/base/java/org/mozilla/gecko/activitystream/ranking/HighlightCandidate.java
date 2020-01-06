@@ -115,7 +115,7 @@ import java.lang.annotation.RetentionPolicy;
                 FEATURE_DOMAIN_FREQUENCY,
                 Math.log(1 + domainCountSize / occurrences));
 
-        candidate.imageUrl = candidate.highlight.getFastImageURLForComparison();
+        candidate.imageUrl = candidate.highlight.getMetadata().getImageUrl();
 
         
         
@@ -124,13 +124,13 @@ import java.lang.annotation.RetentionPolicy;
         
         candidate.features.put(
                 FEATURE_IMAGE_COUNT,
-                candidate.highlight.hasFastImageURL() ? 1d : 0d);
+                candidate.highlight.getMetadata().hasImageUrl() ? 1d : 0d);
 
         
         
         candidate.features.put(
                 FEATURE_IMAGE_SIZE,
-                candidate.highlight.hasFastImageURL() ? 1d : 0d
+                candidate.highlight.getMetadata().hasImageUrl() ? 1d : 0d
         );
 
         
@@ -152,7 +152,7 @@ import java.lang.annotation.RetentionPolicy;
 
         candidate.features.put(
                 FEATURE_DESCRIPTION_LENGTH,
-                (double) candidate.highlight.getFastDescriptionLength());
+                (double) candidate.highlight.getMetadata().getDescriptionLength());
 
         final Uri uri = Uri.parse(candidate.highlight.getUrl());
 
@@ -194,12 +194,8 @@ import java.lang.annotation.RetentionPolicy;
         return host;
     }
 
-    
-
-
-
     @Nullable
-     String getFastImageUrlForComparison() {
+     String getImageUrl() {
         return imageUrl;
     }
 

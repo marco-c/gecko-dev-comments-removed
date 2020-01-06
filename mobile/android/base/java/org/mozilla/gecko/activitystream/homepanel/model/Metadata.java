@@ -5,20 +5,25 @@
 
 package org.mozilla.gecko.activitystream.homepanel.model;
 
-import android.support.annotation.Nullable;
+import android.database.Cursor;
 import android.text.TextUtils;
 import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.mozilla.gecko.activitystream.ranking.HighlightCandidateCursorIndices;
 
 public class Metadata {
     private static final String LOGTAG = "GeckoMetadata";
+
+    public static Metadata fromCursor(final Cursor cursor, final HighlightCandidateCursorIndices cursorIndices) {
+        return new Metadata(cursor.getString(cursorIndices.metadataColumnIndex));
+    }
 
     private String provider;
     private String imageUrl;
     private int descriptionLength;
 
-     Metadata(String json) {
+    private Metadata(String json) {
         if (TextUtils.isEmpty(json)) {
             
             
@@ -43,8 +48,13 @@ public class Metadata {
     
 
 
-    public @Nullable String getImageUrl() {
+
+    public String getImageUrl() {
         return imageUrl;
+    }
+
+    public boolean hasImageUrl() {
+        return imageUrl != null;
     }
 
     public String getProvider() {

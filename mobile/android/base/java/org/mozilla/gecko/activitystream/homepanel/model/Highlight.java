@@ -7,31 +7,11 @@ package org.mozilla.gecko.activitystream.homepanel.model;
 
 import android.database.Cursor;
 import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
-import android.text.TextUtils;
 import android.text.format.DateUtils;
 import org.mozilla.gecko.activitystream.Utils;
 import org.mozilla.gecko.activitystream.ranking.HighlightCandidateCursorIndices;
-import org.mozilla.gecko.activitystream.ranking.HighlightsRanking;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Highlight implements Item {
-
-    
-
-
-
-
-
-
-    private static final Pattern FAST_IMAGE_URL_PATTERN = Pattern.compile("\"image_url\":\"([^\"]+)\"");
-
-    
-    
-    private static final Pattern FAST_DESCRIPTION_LENGTH_PATTERN = Pattern.compile("\"description_length\":([0-9]+)");
-
     private final String title;
     private final String url;
     private final Utils.HighlightSource source;
@@ -39,10 +19,7 @@ public class Highlight implements Item {
 
     private long historyId;
 
-    private @Nullable Metadata metadata;
-    private @Nullable final String metadataJSON;
-    private @Nullable String fastImageURL;
-    private int fastDescriptionLength;
+    private Metadata metadata;
 
     private @Nullable Boolean isPinned;
     private @Nullable Boolean isBookmarked;
@@ -59,34 +36,9 @@ public class Highlight implements Item {
 
         historyId = cursor.getLong(cursorIndices.historyIDColumnIndex);
 
-        metadataJSON = cursor.getString(cursorIndices.metadataColumnIndex);
-        fastImageURL = initFastImageURL(metadataJSON);
-        fastDescriptionLength = initFastDescriptionLength(metadataJSON);
+        metadata = Metadata.fromCursor(cursor, cursorIndices);
 
         updateState();
-    }
-
-    
-    @VisibleForTesting static @Nullable String initFastImageURL(final String metadataJSON) {
-        return extractFirstGroupFromMetadataJSON(metadataJSON, FAST_IMAGE_URL_PATTERN);
-    }
-
-    
-    @VisibleForTesting static int initFastDescriptionLength(final String metadataJSON) {
-        final String extractedStr = extractFirstGroupFromMetadataJSON(metadataJSON, FAST_DESCRIPTION_LENGTH_PATTERN);
-        try {
-            return !TextUtils.isEmpty(extractedStr) ? Integer.parseInt(extractedStr) : 0;
-        } catch (final NumberFormatException e) {  }
-        return 0;
-    }
-
-    private static @Nullable String extractFirstGroupFromMetadataJSON(final String metadataJSON, final Pattern pattern) {
-        if (metadataJSON == null) {
-            return null;
-        }
-
-        final Matcher matcher = pattern.matcher(metadataJSON);
-        return matcher.find() ? matcher.group(1) : null;
     }
 
     private void updateState() {
@@ -115,65 +67,8 @@ public class Highlight implements Item {
         return url;
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public Metadata getMetadataSlow() {
-        if (metadata == null) {
-            metadata = new Metadata(metadataJSON);
-        }
+    public Metadata getMetadata() {
         return metadata;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    public @Nullable String getFastImageURLForComparison() {
-        return fastImageURL;
-    }
-
-    
-
-
-
-    public boolean hasFastImageURL() {
-        return fastImageURL != null;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-    public int getFastDescriptionLength() {
-        return fastDescriptionLength;
     }
 
     public Boolean isBookmarked() {
