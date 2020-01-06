@@ -49,10 +49,13 @@ class MozlintParser(ArgumentParser):
                   "mercurial or git."
           }],
         [['-w', '--workdir'],
-         {'default': False,
-          'action': 'store_true',
+         {'const': 'all',
+          'nargs': '?',
+          'choices': ['staged', 'all'],
           'help': "Lint files touched by changes in the working directory "
-                  "(i.e haven't been committed yet). Works with mercurial or git.",
+                  "(i.e haven't been committed yet). On git, --workdir=staged "
+                  "can be used to only consider staged files. Works with "
+                  "mercurial or git.",
           }],
         [['extra_args'],
          {'nargs': REMAINDER,
@@ -67,6 +70,13 @@ class MozlintParser(ArgumentParser):
             self.add_argument(*cli, **args)
 
     def parse_known_args(self, *args, **kwargs):
+        
+        for token in ('-wo', '-ow'):
+            if token in args[0]:
+                i = args[0].index(token)
+                args[0].pop(i)
+                args[0][i:i] = [token[:2], '-' + token[2]]
+
         
         
         args, extra = ArgumentParser.parse_known_args(self, *args, **kwargs)
