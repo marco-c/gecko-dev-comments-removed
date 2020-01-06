@@ -10,6 +10,26 @@ const TEST_URI = "data:text/html;charset=utf-8," +
 
 const TOOL_DELAY = 200;
 
+const asyncStorage = require("devtools/shared/async-storage");
+
+
+
+
+requestLongerTimeout(2);
+
+flags.testing = true;
+Services.prefs.clearUserPref("devtools.responsive.html.displayedDeviceList");
+Services.prefs.setCharPref("devtools.devices.url",
+  "http://example.com/browser/devtools/client/responsive.html/test/browser/devices.json");
+
+registerCleanupFunction(() => {
+  flags.testing = false;
+  Services.prefs.clearUserPref("devtools.devices.url");
+  Services.prefs.clearUserPref("devtools.responsive.html.displayedDeviceList");
+  asyncStorage.removeItem("devtools.devices.url_cache");
+  asyncStorage.removeItem("devtools.devices.local");
+});
+
 loader.lazyRequireGetter(this, "ResponsiveUIManager", "devtools/client/responsive.html/manager", true);
 
 add_task(function* () {
