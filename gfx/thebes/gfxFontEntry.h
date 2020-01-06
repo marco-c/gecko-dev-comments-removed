@@ -413,8 +413,7 @@ protected:
     
     virtual already_AddRefed<gfxCharacterMap>
     GetCMAPFromFontInfo(FontInfoData *aFontInfoData,
-                        uint32_t& aUVSOffset,
-                        bool& aSymbolFont);
+                        uint32_t& aUVSOffset);
 
     
     virtual bool TestCharacterMap(uint32_t aCh);
