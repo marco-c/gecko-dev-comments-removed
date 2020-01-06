@@ -14,10 +14,6 @@ const { assert, dumpn } = DevToolsUtils;
 
 loader.lazyRequireGetter(this, "ThreadSafeChromeUtils");
 
-const TYPED_ARRAY_CLASSES = ["Uint8Array", "Uint8ClampedArray", "Uint16Array",
-                             "Uint32Array", "Int8Array", "Int16Array", "Int32Array",
-                             "Float32Array", "Float64Array"];
-
 
 
 const OBJECT_PREVIEW_MAX_ITEMS = 10;
@@ -120,7 +116,7 @@ ObjectActor.prototype = {
 
     
     
-    if (TYPED_ARRAY_CLASSES.indexOf(g.class) != -1) {
+    if (isTypedArray(g)) {
       
       let length = DevToolsUtils.getProperty(this.obj, "length");
       g.ownPropertyLength = length;
@@ -349,8 +345,7 @@ ObjectActor.prototype = {
     
     
     
-    if (TYPED_ARRAY_CLASSES.includes(this.obj.class) ||
-        ["Array", "Object", "String"].includes(this.obj.class)) {
+    if (isArray(this.obj) || ["Object", "String"].includes(this.obj.class)) {
       obj = obj.proto;
       level++;
     }
@@ -820,7 +815,11 @@ function PropertyIteratorActor(objectActor, options) {
     } else {
       throw new Error("Unsupported class to enumerate entries from: " + cls);
     }
-  } else if (options.ignoreNonIndexedProperties && !options.query) {
+  } else if (
+    isArray(objectActor.obj)
+    && options.ignoreNonIndexedProperties
+    && !options.query
+  ) {
     this.iterator = enumArrayProperties(objectActor, options);
   } else {
     this.iterator = enumObjectProperties(objectActor, options);
@@ -872,13 +871,13 @@ PropertyIteratorActor.prototype.requestTypes = {
 
 function enumArrayProperties(objectActor, options) {
   let length = DevToolsUtils.getProperty(objectActor.obj, "length");
-  if (typeof length !== "number") {
+  if (!isSafePositiveInteger(length)) {
     
     
     length = 0;
     let names = objectActor.obj.getOwnPropertyNames();
     for (let key of names) {
-      if (isNaN(key) || key != length++) {
+      if (!isSafeIndex(key) || key != length++) {
         break;
       }
     }
@@ -906,15 +905,32 @@ function enumObjectProperties(objectActor, options) {
 
   if (options.ignoreNonIndexedProperties || options.ignoreIndexedProperties) {
     let length = DevToolsUtils.getProperty(objectActor.obj, "length");
-    if (typeof length !== "number") {
+    let sliceIndex;
+
+    const isLengthTrustworthy =
+      isSafePositiveInteger(length)
+      && (length > 0 && isSafeIndex(names[length - 1]))
+      && !isSafeIndex(names[length]);
+
+    if (!isLengthTrustworthy) {
       
       
-      length = 0;
-      for (let key of names) {
-        if (isNaN(key) || key != length++) {
-          break;
+
+      if (!isSafeIndex(names[0])) {
+        
+        
+        sliceIndex = 0;
+      } else {
+        sliceIndex = names.length;
+        while (sliceIndex > 0) {
+          if (isSafeIndex(names[sliceIndex - 1])) {
+            break;
+          }
+          sliceIndex--;
         }
       }
+    } else {
+      sliceIndex = length;
     }
 
     
@@ -923,10 +939,10 @@ function enumObjectProperties(objectActor, options) {
     
     if (options.ignoreIndexedProperties) {
       
-      names = names.slice(length);
+      names = names.slice(sliceIndex);
     } else if (options.ignoreNonIndexedProperties) {
       
-      names.splice(length);
+      names.length = sliceIndex;
     }
   }
 
@@ -1616,7 +1632,7 @@ function GenericObject(objectActor, grip, rawObj, specialStringBehavior = false)
 
 DebuggerServer.ObjectActorPreviewers.Object = [
   function TypedArray({obj, hooks}, grip) {
-    if (TYPED_ARRAY_CLASSES.indexOf(obj.class) == -1) {
+    if (!isTypedArray(obj)) {
       return false;
     }
 
@@ -2487,6 +2503,57 @@ function unwrap(obj) {
 
   
   return unwrap(unwrapped);
+}
+
+const TYPED_ARRAY_CLASSES = ["Uint8Array", "Uint8ClampedArray", "Uint16Array",
+                             "Uint32Array", "Int8Array", "Int16Array", "Int32Array",
+                             "Float32Array", "Float64Array"];
+
+
+
+
+
+
+
+
+function isTypedArray(object) {
+  return TYPED_ARRAY_CLASSES.includes(object.class);
+}
+
+
+
+
+
+
+
+
+function isArray(object) {
+  return isTypedArray(object) || object.class === "Array";
+}
+
+
+
+
+
+
+
+
+function isSafePositiveInteger(num) {
+  return Number.isSafeInteger(num) && 1 / num > 0;
+}
+
+
+
+
+
+
+
+function isSafeIndex(str) {
+  
+  let num = +str;
+  return isSafePositiveInteger(num) &&
+    
+    num + "" === str;
 }
 
 exports.ObjectActor = ObjectActor;
