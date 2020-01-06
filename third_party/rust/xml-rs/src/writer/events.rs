@@ -11,6 +11,7 @@ use namespace::{Namespace, NS_NO_PREFIX};
 
 
 
+#[derive(Debug)]
 pub enum XmlEvent<'a> {
     
     

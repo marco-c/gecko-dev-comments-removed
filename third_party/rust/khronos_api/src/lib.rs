@@ -15,13 +15,13 @@
 
 
 
-pub const GL_XML: &'static [u8] = include_bytes!("../api/gl.xml");
+pub const GL_XML: &'static [u8] = include_bytes!("../api/xml/gl.xml");
 
 
-pub const EGL_XML: &'static [u8] = include_bytes!("../api/egl.xml");
+pub const EGL_XML: &'static [u8] = include_bytes!("../api_egl/api/egl.xml");
 
 
-pub const WGL_XML: &'static [u8] = include_bytes!("../api/wgl.xml");
+pub const WGL_XML: &'static [u8] = include_bytes!("../api/xml/wgl.xml");
 
 
-pub const GLX_XML: &'static [u8] = include_bytes!("../api/glx.xml");
+pub const GLX_XML: &'static [u8] = include_bytes!("../api/xml/glx.xml");

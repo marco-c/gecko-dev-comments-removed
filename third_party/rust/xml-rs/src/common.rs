@@ -107,6 +107,13 @@ pub fn is_whitespace_char(c: char) -> bool {
 
 
 
+pub fn is_whitespace_str(s: &str) -> bool {
+    s.chars().all(is_whitespace_char)
+}
+
+
+
+
 
 pub fn is_name_start_char(c: char) -> bool {
     match c {

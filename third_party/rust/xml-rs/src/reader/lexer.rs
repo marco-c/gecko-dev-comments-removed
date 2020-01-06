@@ -265,6 +265,10 @@ impl Lexer {
     pub fn outside_comment(&mut self) { self.inside_comment = false; }
 
     
+    #[inline]
+    pub fn reset_eof_handled(&mut self) { self.eof_handled = false; }
+
+    
     
     
     

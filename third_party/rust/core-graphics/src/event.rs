@@ -1,11 +1,14 @@
-use core_foundation::base::{CFRelease, CFRetain, CFTypeID, CFTypeRef, TCFType};
+#![allow(non_upper_case_globals)]
+
+use core_foundation::base::{CFRelease, CFRetain, CFTypeID};
 use geometry::CGPoint;
-use event_source::{CGEventSource,CGEventSourceRef};
+use event_source::CGEventSource;
 
 use libc;
-use std::mem;
-use std::ptr;
 
+use foreign_types::ForeignType;
+
+pub type CGEventField = libc::uint32_t;
 pub type CGKeyCode = libc::uint16_t;
 
 
@@ -33,6 +36,62 @@ bitflags! {
         // Indicates if mouse/pen movement events are not being coalesced
         const CGEventFlagNonCoalesced = 0x00000100;
     }
+}
+
+
+
+
+#[repr(C)]
+pub struct KeyCode;
+impl KeyCode {
+    pub const RETURN: CGKeyCode = 0x24;
+    pub const TAB: CGKeyCode = 0x30;
+    pub const SPACE: CGKeyCode = 0x31;
+    pub const DELETE: CGKeyCode = 0x33;
+    pub const ESCAPE: CGKeyCode = 0x35;
+    pub const COMMAND: CGKeyCode = 0x37;
+    pub const SHIFT: CGKeyCode = 0x38;
+    pub const CAPS_LOCK: CGKeyCode = 0x39;
+    pub const OPTION: CGKeyCode = 0x3A;
+    pub const CONTROL: CGKeyCode = 0x3B;
+    pub const RIGHT_COMMAND: CGKeyCode = 0x36;
+    pub const RIGHT_SHIFT: CGKeyCode = 0x3C;
+    pub const RIGHT_OPTION: CGKeyCode = 0x3D;
+    pub const RIGHT_CONTROL: CGKeyCode = 0x3E;
+    pub const FUNCTION: CGKeyCode = 0x3F;
+    pub const VOLUME_UP: CGKeyCode = 0x48;
+    pub const VOLUME_DOWN: CGKeyCode = 0x49;
+    pub const MUTE: CGKeyCode = 0x4A;
+    pub const F1: CGKeyCode = 0x7A;
+    pub const F2: CGKeyCode = 0x78;
+    pub const F3: CGKeyCode = 0x63;
+    pub const F4: CGKeyCode = 0x76;
+    pub const F5: CGKeyCode = 0x60;
+    pub const F6: CGKeyCode = 0x61;
+    pub const F7: CGKeyCode = 0x62;
+    pub const F8: CGKeyCode = 0x64;
+    pub const F9: CGKeyCode = 0x65;
+    pub const F10: CGKeyCode = 0x6D;
+    pub const F11: CGKeyCode = 0x67;
+    pub const F12: CGKeyCode = 0x6F;
+    pub const F13: CGKeyCode = 0x69;
+    pub const F14: CGKeyCode = 0x6B;
+    pub const F15: CGKeyCode = 0x71;
+    pub const F16: CGKeyCode = 0x6A;
+    pub const F17: CGKeyCode = 0x40;
+    pub const F18: CGKeyCode = 0x4F;
+    pub const F19: CGKeyCode = 0x50;
+    pub const F20: CGKeyCode = 0x5A;
+    pub const HELP: CGKeyCode = 0x72;
+    pub const HOME: CGKeyCode = 0x73;
+    pub const PAGE_UP: CGKeyCode = 0x74;
+    pub const FORWARD_DELETE: CGKeyCode = 0x75;
+    pub const END: CGKeyCode = 0x77;
+    pub const PAGE_DOWN: CGKeyCode = 0x79;
+    pub const LEFT_ARROW: CGKeyCode = 0x7B;
+    pub const RIGHT_ARROW: CGKeyCode = 0x7C;
+    pub const DOWN_ARROW: CGKeyCode = 0x7D;
+    pub const UP_ARROW: CGKeyCode = 0x7E;
 }
 
 
@@ -72,6 +131,234 @@ pub enum CGEventType {
 }
 
 
+
+
+pub struct EventField;
+impl EventField {
+    
+    
+    
+    pub const MOUSE_EVENT_NUMBER: CGEventField = 0;
+
+    
+    
+    
+    
+    pub const MOUSE_EVENT_CLICK_STATE: CGEventField = 1;
+
+    
+    
+    
+    
+    pub const MOUSE_EVENT_PRESSURE: CGEventField = 2;
+
+    
+    pub const MOUSE_EVENT_BUTTON_NUMBER: CGEventField = 3;
+
+    
+    
+    pub const MOUSE_EVENT_DELTA_X: CGEventField = 4;
+
+    
+    
+    pub const MOUSE_EVENT_DELTA_Y: CGEventField = 5;
+
+    
+    
+    pub const MOUSE_EVENT_INSTANT_MOUSER: CGEventField = 6;
+
+    
+    
+    pub const MOUSE_EVENT_SUB_TYPE: CGEventField = 7;
+
+    
+    
+    pub const KEYBOARD_EVENT_AUTOREPEAT: CGEventField = 8;
+
+    
+    
+    pub const KEYBOARD_EVENT_KEYCODE: CGEventField = 9;
+
+    
+    
+    pub const KEYBOARD_EVENT_KEYBOARD_TYPE: CGEventField = 10;
+
+    
+    
+    
+    
+    pub const SCROLL_WHEEL_EVENT_DELTA_AXIS_1: CGEventField = 11;
+
+    
+    
+    
+    pub const SCROLL_WHEEL_EVENT_DELTA_AXIS_2: CGEventField = 12;
+
+    
+    
+    
+    
+    
+    
+    
+    pub const SCROLL_WHEEL_EVENT_FIXED_POINT_DELTA_AXIS_1: CGEventField = 93;
+
+    
+    
+    
+    
+    
+    
+    pub const SCROLL_WHEEL_EVENT_FIXED_POINT_DELTA_AXIS_2: CGEventField = 94;
+
+    
+    
+    
+    
+    pub const SCROLL_WHEEL_EVENT_POINT_DELTA_AXIS_1: CGEventField = 96;
+
+    
+    
+    
+    pub const SCROLL_WHEEL_EVENT_POINT_DELTA_AXIS_2: CGEventField = 97;
+
+    
+    
+    
+    pub const SCROLL_WHEEL_EVENT_INSTANT_MOUSER: CGEventField = 14;
+
+    
+    
+    pub const TABLET_EVENT_POINT_X: CGEventField = 15;
+
+    
+    
+    pub const TABLET_EVENT_POINT_Y: CGEventField = 16;
+
+    
+    
+    pub const TABLET_EVENT_POINT_Z: CGEventField = 17;
+
+    
+    
+    
+    pub const TABLET_EVENT_POINT_BUTTONS: CGEventField = 18;
+
+    
+    
+    
+    pub const TABLET_EVENT_POINT_PRESSURE: CGEventField = 19;
+
+    
+    
+    pub const TABLET_EVENT_TILT_X: CGEventField = 20;
+
+    
+    
+    pub const TABLET_EVENT_TILT_Y: CGEventField = 21;
+
+    
+    pub const TABLET_EVENT_ROTATION: CGEventField = 22;
+
+    
+    
+    
+    pub const TABLET_EVENT_TANGENTIAL_PRESSURE: CGEventField = 23;
+
+    
+    
+    pub const TABLET_EVENT_DEVICE_ID: CGEventField = 24;
+
+    
+    pub const TABLET_EVENT_VENDOR_1: CGEventField = 25;
+
+    
+    pub const TABLET_EVENT_VENDOR_2: CGEventField = 26;
+
+    
+    pub const TABLET_EVENT_VENDOR_3: CGEventField = 27;
+
+    
+    
+    pub const TABLET_PROXIMITY_EVENT_VENDOR_ID: CGEventField = 28;
+
+    
+    
+    pub const TABLET_PROXIMITY_EVENT_TABLET_ID: CGEventField = 29;
+
+    
+    
+    pub const TABLET_PROXIMITY_EVENT_POINTER_ID: CGEventField = 30;
+
+    
+    
+    pub const TABLET_PROXIMITY_EVENT_DEVICE_ID: CGEventField = 31;
+
+    
+    
+    pub const TABLET_PROXIMITY_EVENT_SYSTEM_TABLET_ID: CGEventField = 32;
+
+    
+    
+    pub const TABLET_PROXIMITY_EVENT_VENDOR_POINTER_TYPE: CGEventField = 33;
+
+    
+    
+    pub const TABLET_PROXIMITY_EVENT_VENDOR_POINTER_SERIAL_NUMBER: CGEventField = 34;
+
+    
+    
+    pub const TABLET_PROXIMITY_EVENT_VENDOR_UNIQUE_ID: CGEventField = 35;
+
+    
+    
+    pub const TABLET_PROXIMITY_EVENT_CAPABILITY_MASK: CGEventField = 36;
+
+    
+    pub const TABLET_PROXIMITY_EVENT_POINTER_TYPE: CGEventField = 37;
+
+    
+    
+    
+    pub const TABLET_PROXIMITY_EVENT_ENTER_PROXIMITY: CGEventField = 38;
+
+    
+    
+    pub const EVENT_TARGET_PROCESS_SERIAL_NUMBER: CGEventField = 39;
+
+    
+    pub const EVENT_TARGET_UNIX_PROCESS_ID: CGEventField = 40;
+
+    
+    pub const EVENT_SOURCE_UNIX_PROCESS_ID: CGEventField = 41;
+
+    
+    
+    pub const EVENT_SOURCE_USER_DATA: CGEventField = 42;
+
+    
+    pub const EVENT_SOURCE_USER_ID: CGEventField = 43;
+
+    
+    
+    pub const EVENT_SOURCE_GROUP_ID: CGEventField = 44;
+
+    
+    
+    pub const EVENT_SOURCE_STATE_ID: CGEventField = 45;
+
+    
+    
+    
+    
+    pub const SCROLL_WHEEL_EVENT_IS_CONTINUOUS: CGEventField = 88;
+
+    
+    pub const MOUSE_EVENT_WINDOW_UNDER_MOUSE_POINTER: CGEventField = 91;
+    pub const MOUSE_EVENT_WINDOW_UNDER_MOUSE_POINTER_THAT_CAN_HANDLE_THIS_EVENT: CGEventField = 92;
+}
+
+
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub enum CGMouseButton {
@@ -89,75 +376,27 @@ pub enum CGEventTapLocation {
     AnnotatedSession,
 }
 
-
-
-pub enum __CGEvent {}
-
-pub type CGEventRef = *const __CGEvent;
-
-pub struct CGEvent {
-    obj: CGEventRef,
+foreign_type! {
+    #[doc(hidden)]
+    type CType = ::sys::CGEvent;
+    fn drop = |p| CFRelease(p as *mut _);
+    fn clone = |p| CFRetain(p as *const _) as *mut _;
+    pub struct CGEvent;
+    pub struct CGEventRef;
 }
 
-impl Clone for CGEvent {
-    #[inline]
-    fn clone(&self) -> CGEvent {
-        unsafe {
-            TCFType::wrap_under_get_rule(self.obj)
-        }
-    }
-}
-
-impl Drop for CGEvent {
-    fn drop(&mut self) {
-        unsafe {
-            let ptr = self.as_CFTypeRef();
-            assert!(ptr != ptr::null());
-            CFRelease(ptr);
-        }
-    }
-}
-
-impl TCFType<CGEventRef> for CGEvent {
-    #[inline]
-    fn as_concrete_TypeRef(&self) -> CGEventRef {
-        self.obj
-    }
-
-    #[inline]
-    unsafe fn wrap_under_get_rule(reference: CGEventRef) -> CGEvent {
-        let reference: CGEventRef = mem::transmute(CFRetain(mem::transmute(reference)));
-        TCFType::wrap_under_create_rule(reference)
-    }
-
-    #[inline]
-    fn as_CFTypeRef(&self) -> CFTypeRef {
-        unsafe {
-            mem::transmute(self.as_concrete_TypeRef())
-        }
-    }
-
-    #[inline]
-    unsafe fn wrap_under_create_rule(obj: CGEventRef) -> CGEvent {
-        CGEvent {
-            obj: obj,
-        }
-    }
-
-    #[inline]
-    fn type_id() -> CFTypeID {
+impl CGEvent {
+    pub fn type_id() -> CFTypeID {
         unsafe {
             CGEventGetTypeID()
         }
     }
-}
 
-impl CGEvent {
     pub fn new(source: CGEventSource) -> Result<CGEvent, ()> {
         unsafe {
-            let event_ref = CGEventCreate(source.as_concrete_TypeRef());
-            if event_ref != ptr::null() {
-                Ok(TCFType::wrap_under_create_rule(event_ref))
+            let event_ref = CGEventCreate(source.as_ptr());
+            if !event_ref.is_null() {
+                Ok(Self::from_ptr(event_ref))
             } else {
                 Err(())
             }
@@ -170,9 +409,9 @@ impl CGEvent {
         keydown: bool
     ) -> Result<CGEvent, ()> {
         unsafe {
-            let event_ref = CGEventCreateKeyboardEvent(source.as_concrete_TypeRef(), keycode, keydown);
-            if event_ref != ptr::null() {
-                Ok(TCFType::wrap_under_create_rule(event_ref))
+            let event_ref = CGEventCreateKeyboardEvent(source.as_ptr(), keycode, keydown);
+            if !event_ref.is_null() {
+                Ok(Self::from_ptr(event_ref))
             } else {
                 Err(())
             }
@@ -186,10 +425,10 @@ impl CGEvent {
         mouse_button: CGMouseButton
     ) -> Result<CGEvent, ()> {
         unsafe {
-            let event_ref = CGEventCreateMouseEvent(source.as_concrete_TypeRef(), mouse_type,
+            let event_ref = CGEventCreateMouseEvent(source.as_ptr(), mouse_type,
                 mouse_cursor_position, mouse_button);
-            if event_ref != ptr::null() {
-                Ok(TCFType::wrap_under_create_rule(event_ref))
+            if !event_ref.is_null() {
+                Ok(Self::from_ptr(event_ref))
             } else {
                 Err(())
             }
@@ -198,51 +437,51 @@ impl CGEvent {
 
     pub fn post(&self, tap_location: CGEventTapLocation) {
         unsafe {
-            CGEventPost(tap_location, self.as_concrete_TypeRef());
+            CGEventPost(tap_location, self.as_ptr());
         }
     }
 
     pub fn location(&self) -> CGPoint {
         unsafe {
-            CGEventGetLocation(self.as_concrete_TypeRef())
+            CGEventGetLocation(self.as_ptr())
         }
     }
 
     #[cfg(feature = "elcapitan")]
     pub fn post_to_pid(&self, pid: libc::pid_t) {
         unsafe {
-            CGEventPostToPid(pid, self.as_concrete_TypeRef());
+            CGEventPostToPid(pid, self.as_ptr());
         }
     }
 
     pub fn set_flags(&self, flags: CGEventFlags) {
         unsafe {
-            CGEventSetFlags(self.as_concrete_TypeRef(), flags);
+            CGEventSetFlags(self.as_ptr(), flags);
         }
     }
 
     pub fn get_flags(&self) -> CGEventFlags {
         unsafe {
-            CGEventGetFlags(self.as_concrete_TypeRef())
+            CGEventGetFlags(self.as_ptr())
         }
     }
 
     pub fn set_type(&self, event_type: CGEventType) {
         unsafe {
-            CGEventSetType(self.as_concrete_TypeRef(), event_type);
+            CGEventSetType(self.as_ptr(), event_type);
         }
     }
 
     pub fn get_type(&self) -> CGEventType {
         unsafe {
-            CGEventGetType(self.as_concrete_TypeRef())
+            CGEventGetType(self.as_ptr())
         }
     }
 
     pub fn set_string_from_utf16_unchecked(&self, buf: &[u16]) {
         let buflen = buf.len() as libc::c_ulong;
         unsafe {
-            CGEventKeyboardSetUnicodeString(self.as_concrete_TypeRef(), buflen, buf.as_ptr());
+            CGEventKeyboardSetUnicodeString(self.as_ptr(), buflen, buf.as_ptr());
         }
     }
 
@@ -250,16 +489,32 @@ impl CGEvent {
         let buf: Vec<u16> = string.encode_utf16().collect();
         self.set_string_from_utf16_unchecked(&buf);
     }
+
+    pub fn get_integer_value_field(&self, field: CGEventField) -> i64 {
+        unsafe { CGEventGetIntegerValueField(self.as_ptr(), field) }
+    }
+
+    pub fn set_integer_value_field(&self, field: CGEventField, value: i64) {
+        unsafe { CGEventSetIntegerValueField(self.as_ptr(), field, value) }
+    }
+
+    pub fn get_double_value_field(&self, field: CGEventField) -> f64 {
+        unsafe { CGEventGetDoubleValueField(self.as_ptr(), field) }
+    }
+
+    pub fn set_double_value_field(&self, field: CGEventField, value: f64) {
+        unsafe { CGEventSetDoubleValueField(self.as_ptr(), field, value) }
+    }
 }
 
-#[link(name = "ApplicationServices", kind = "framework")]
+#[link(name = "CoreGraphics", kind = "framework")]
 extern {
     
     fn CGEventGetTypeID() -> CFTypeID;
 
     
     
-    fn CGEventCreate(source: CGEventSourceRef) -> CGEventRef;
+    fn CGEventCreate(source: ::sys::CGEventSourceRef) -> ::sys::CGEventRef;
 
     
     
@@ -271,8 +526,8 @@ extern {
     
     
     
-    fn CGEventCreateKeyboardEvent(source: CGEventSourceRef, keycode: CGKeyCode,
-        keydown: bool) -> CGEventRef;
+    fn CGEventCreateKeyboardEvent(source: ::sys::CGEventSourceRef, keycode: CGKeyCode,
+        keydown: bool) -> ::sys::CGEventRef;
 
     
     
@@ -287,45 +542,78 @@ extern {
     
     
     
-    fn CGEventCreateMouseEvent(source: CGEventSourceRef, mouseType: CGEventType,
-        mouseCursorPosition: CGPoint, mouseButton: CGMouseButton) -> CGEventRef;
+    fn CGEventCreateMouseEvent(source: ::sys::CGEventSourceRef, mouseType: CGEventType,
+        mouseCursorPosition: CGPoint, mouseButton: CGMouseButton) -> ::sys::CGEventRef;
 
     
     
     
     
     
-    fn CGEventPost(tapLocation: CGEventTapLocation, event: CGEventRef);
+    fn CGEventPost(tapLocation: CGEventTapLocation, event: ::sys::CGEventRef);
 
     #[cfg(feature = "elcapitan")]
     
-    fn CGEventPostToPid(pid: libc::pid_t, event: CGEventRef);
+    fn CGEventPostToPid(pid: libc::pid_t, event: ::sys::CGEventRef);
 
     
-    fn CGEventSetFlags(event: CGEventRef, flags: CGEventFlags);
+    fn CGEventSetFlags(event: ::sys::CGEventRef, flags: CGEventFlags);
 
     
-    fn CGEventGetFlags(event: CGEventRef) -> CGEventFlags;
-
-    
-    
-    fn CGEventGetLocation(event: CGEventRef) -> CGPoint;
-
-    
-    fn CGEventSetType(event: CGEventRef, eventType: CGEventType);
-
-    
-    fn CGEventGetType(event: CGEventRef) -> CGEventType;
+    fn CGEventGetFlags(event: ::sys::CGEventRef) -> CGEventFlags;
 
     
     
+    fn CGEventGetLocation(event: ::sys::CGEventRef) -> CGPoint;
+
+    
+    fn CGEventSetType(event: ::sys::CGEventRef, eventType: CGEventType);
+
+    
+    fn CGEventGetType(event: ::sys::CGEventRef) -> CGEventType;
+
     
     
     
     
     
     
-    fn CGEventKeyboardSetUnicodeString(event: CGEventRef, 
+    
+    
+    fn CGEventKeyboardSetUnicodeString(event: ::sys::CGEventRef,
                                        length: libc::c_ulong,
                                        string: *const u16);
+
+    
+    fn CGEventGetIntegerValueField(event: ::sys::CGEventRef, field: CGEventField) -> i64;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn CGEventSetIntegerValueField(event: ::sys::CGEventRef, field: CGEventField, value: i64);
+
+    
+    
+    
+    
+    
+    fn CGEventGetDoubleValueField(event: ::sys::CGEventRef, field: CGEventField) -> f64;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn CGEventSetDoubleValueField(event: ::sys::CGEventRef, field: CGEventField, value: f64);
 }

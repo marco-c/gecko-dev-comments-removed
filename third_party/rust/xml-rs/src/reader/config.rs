@@ -1,5 +1,6 @@
 
 use std::io::Read;
+use std::collections::HashMap;
 
 use reader::EventReader;
 
@@ -53,7 +54,27 @@ pub struct ParserConfig {
     
     
     
-    pub coalesce_characters: bool
+    pub coalesce_characters: bool,
+
+    
+    
+    
+    
+    
+    
+    pub extra_entities: HashMap<String, String>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub ignore_end_of_stream: bool
 }
 
 impl ParserConfig {
@@ -75,7 +96,9 @@ impl ParserConfig {
             whitespace_to_characters: false,
             cdata_to_characters: false,
             ignore_comments: true,
-            coalesce_characters: true
+            coalesce_characters: true,
+            extra_entities: HashMap::new(),
+            ignore_end_of_stream: false
         }
     }
 
@@ -101,6 +124,27 @@ impl ParserConfig {
     pub fn create_reader<R: Read>(self, source: R) -> EventReader<R> {
         EventReader::new_with_config(source, self)
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn add_entity<S: Into<String>, T: Into<String>>(mut self, entity: S, value: T) -> ParserConfig {
+        self.extra_entities.insert(entity.into(), value.into());
+        self
+    }
 }
 
 impl Default for ParserConfig {
@@ -115,5 +159,6 @@ gen_setters! { ParserConfig,
     whitespace_to_characters: val bool,
     cdata_to_characters: val bool,
     ignore_comments: val bool,
-    coalesce_characters: val bool
+    coalesce_characters: val bool,
+    ignore_end_of_stream: val bool
 }
