@@ -5,6 +5,8 @@
 
 #include "gfxConfig.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Unused.h"
+#include "mozilla/gfx/GPUParent.h"
 #include "mozilla/gfx/GraphicsMessages.h"
 #include "plstr.h"
 
@@ -185,7 +187,23 @@ gfxConfig::UseFallback(Fallback aFallback)
  void
 gfxConfig::EnableFallback(Fallback aFallback, const char* aMessage)
 {
-  
+  if (!NS_IsMainThread()) {
+    nsCString message(aMessage);
+    NS_DispatchToMainThread(
+      NS_NewRunnableFunction("gfxConfig::EnableFallback",
+                             [=]() -> void {
+
+        gfxConfig::EnableFallback(aFallback, message.get());
+      }));
+    return;
+  }
+
+  if (XRE_IsGPUProcess()) {
+    nsCString message(aMessage);
+    Unused << GPUParent::GetSingleton()->SendUsedFallback(aFallback, message);
+    return;
+  }
+
   sConfig->EnableFallbackImpl(aFallback, aMessage);
 }
 
