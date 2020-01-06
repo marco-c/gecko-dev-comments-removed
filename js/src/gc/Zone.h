@@ -210,11 +210,13 @@ struct Zone : public JS::shadow::Zone,
 
     void scheduleGC() { MOZ_ASSERT(!CurrentThreadIsHeapBusy()); gcScheduled_ = true; }
     void unscheduleGC() { gcScheduled_ = false; }
-    bool isGCScheduled() { return gcScheduled_ && canCollect(); }
+    bool isGCScheduled() { return gcScheduled_; }
 
     void setPreservingCode(bool preserving) { gcPreserveCode_ = preserving; }
     bool isPreservingCode() const { return gcPreserveCode_; }
 
+    
+    
     bool canCollect();
 
     void changeGCState(GCState prev, GCState next) {

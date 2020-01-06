@@ -3130,6 +3130,18 @@ GCRuntime::maybeGC(Zone* zone)
     }
 }
 
+void
+GCRuntime::triggerFullGCForAtoms(JSContext* cx)
+{
+    MOZ_ASSERT(fullGCForAtomsRequested_);
+    MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
+    MOZ_ASSERT(!JS::CurrentThreadIsHeapCollecting());
+    MOZ_ASSERT(!cx->keepAtoms);
+    MOZ_ASSERT(!rt->hasHelperThreadZones());
+    fullGCForAtomsRequested_ = false;
+    MOZ_RELEASE_ASSERT(triggerGC(JS::gcreason::DELAYED_ATOMS_GC));
+}
+
 
 
 void
@@ -3856,17 +3868,39 @@ static bool
 ShouldCollectZone(Zone* zone, JS::gcreason::Reason reason)
 {
     
-    if (reason != JS::gcreason::COMPARTMENT_REVIVED)
-        return zone->isGCScheduled();
+    
+    if (reason == JS::gcreason::COMPARTMENT_REVIVED) {
+        for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next()) {
+            if (comp->scheduledForDestruction)
+                return true;
+        }
 
-    
-    
-    for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next()) {
-        if (comp->scheduledForDestruction)
-            return true;
+        return false;
     }
 
-    return false;
+    
+    if (!zone->isGCScheduled())
+        return false;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (zone->isAtomsZone())
+        return TlsContext.get()->canCollectAtoms();
+
+    return true;
 }
 
 bool
@@ -3891,10 +3925,9 @@ GCRuntime::prepareZonesForCollection(JS::gcreason::Reason reason, bool* isFullOu
     for (ZonesIter zone(rt, WithAtoms); !zone.done(); zone.next()) {
         
         if (ShouldCollectZone(zone, reason)) {
-            if (!zone->isAtomsZone()) {
-                any = true;
-                zone->changeGCState(Zone::NoGC, Zone::Mark);
-            }
+            MOZ_ASSERT(zone->canCollect());
+            any = true;
+            zone->changeGCState(Zone::NoGC, Zone::Mark);
         } else {
             *isFullOut = false;
         }
@@ -3924,27 +3957,7 @@ GCRuntime::prepareZonesForCollection(JS::gcreason::Reason reason, bool* isFullOu
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    if (!TlsContext.get()->keepAtoms || rt->hasHelperThreadZones()) {
-        Zone* atomsZone = rt->atomsCompartment(lock)->zone();
-        if (atomsZone->isGCScheduled()) {
-            MOZ_ASSERT(!atomsZone->isCollecting());
-            atomsZone->changeGCState(Zone::NoGC, Zone::Mark);
-            any = true;
-        }
-    }
+    MOZ_ASSERT_IF(reason == JS::gcreason::DELAYED_ATOMS_GC, atomsZone->isGCMarking());
 
     
     return any;
@@ -6678,17 +6691,19 @@ GCRuntime::budgetIncrementalGC(bool nonincrementalByAPI, JS::gcreason::Reason re
     bool reset = false;
     for (ZonesIter zone(rt, WithAtoms); !zone.done(); zone.next()) {
         if (zone->usage.gcBytes() >= zone->threshold.gcTriggerBytes()) {
+            MOZ_ASSERT(zone->isGCScheduled());
             budget.makeUnlimited();
             stats().nonincremental(AbortReason::GCBytesTrigger);
         }
 
-        if (isIncrementalGCInProgress() && zone->isGCScheduled() != zone->wasGCStarted())
-            reset = true;
-
         if (zone->isTooMuchMalloc()) {
+            MOZ_ASSERT(zone->isGCScheduled());
             budget.makeUnlimited();
             stats().nonincremental(AbortReason::MallocBytesTrigger);
         }
+
+        if (isIncrementalGCInProgress() && zone->isGCScheduled() != zone->wasGCStarted())
+            reset = true;
     }
 
     if (reset)
@@ -6719,6 +6734,12 @@ class AutoScheduleZonesForGC
             {
                 zone->scheduleGC();
             }
+
+            
+            
+            
+            if (zone->isTooMuchMalloc())
+                zone->scheduleGC();
         }
     }
 
