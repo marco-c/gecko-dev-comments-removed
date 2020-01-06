@@ -32,36 +32,6 @@ const HIGHLIGHTER_TYPE = "CssGridHighlighter";
 
 
 
-function openLayoutView() {
-  return openInspectorSidebarTab("layoutview").then(data => {
-    
-    
-    function mockHighlighter({highlighter}) {
-      highlighter.showBoxModel = function () {
-        return promise.resolve();
-      };
-      highlighter.hideBoxModel = function () {
-        return promise.resolve();
-      };
-    }
-    mockHighlighter(data.toolbox);
-
-    return {
-      toolbox: data.toolbox,
-      inspector: data.inspector,
-      gridInspector: data.inspector.gridInspector,
-      testActor: data.testActor
-    };
-  });
-}
-
-
-
-
-
-
-
-
 
 var simulateColorPickerChange = Task.async(function* (colorPicker, newRgba) {
   info("Getting the spectrum colorpicker object");
