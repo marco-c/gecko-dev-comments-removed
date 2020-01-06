@@ -4588,6 +4588,14 @@ Tab.prototype = {
     Services.obs.notifyObservers(this.browser, "Content:HistoryChange");
   },
 
+  OnLengthChanged: function(aCount) {
+    
+  },
+
+  OnIndexChanged: function(aIndex) {
+    
+  },
+
   UpdateMediaPlaybackRelatedObserver: function(active) {
     
     

@@ -389,6 +389,14 @@ HistoryListener.prototype = {
     
     return false;
   },
+
+  OnLengthChanged(aCount) {
+    
+  },
+
+  OnIndexChanged(aIndex) {
+    
+  },
 }
 
 

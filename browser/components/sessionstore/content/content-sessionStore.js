@@ -378,6 +378,14 @@ var SessionHistoryListener = {
     this.collect();
   },
 
+  OnLengthChanged(aCount) {
+    
+  },
+
+  OnIndexChanged(aIndex) {
+    
+  },
+
   QueryInterface: XPCOMUtils.generateQI([
     Ci.nsISHistoryListener,
     Ci.nsISupportsWeakReference
