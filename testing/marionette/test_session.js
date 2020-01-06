@@ -146,7 +146,7 @@ add_test(function test_Proxy_init() {
 
   
   p = new session.Proxy();
-  p.proxyType = "noproxy";
+  p.proxyType = "direct";
   ok(p.init());
   equal(Preferences.get("network.proxy.type"), 0);
 
