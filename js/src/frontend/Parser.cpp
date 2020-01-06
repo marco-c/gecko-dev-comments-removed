@@ -5882,31 +5882,7 @@ Parser<ParseHandler, CharT>::consequentOrAlternative(YieldHandling yieldHandling
     
     
     
-    if (next == TOK_ASYNC) {
-        tokenStream.consumeKnownToken(next, TokenStream::Operand);
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        TokenKind maybeFunction;
-        if (!tokenStream.peekTokenSameLine(&maybeFunction))
-            return null();
-
-        if (maybeFunction == TOK_FUNCTION) {
-            error(JSMSG_FORBIDDEN_AS_STATEMENT, "async function declarations");
-            return null();
-        }
-
-        
-        tokenStream.ungetToken();
-    } else if (next == TOK_FUNCTION) {
+    if (next == TOK_FUNCTION) {
         tokenStream.consumeKnownToken(next, TokenStream::Operand);
 
         
@@ -7542,11 +7518,7 @@ Parser<ParseHandler, CharT>::statement(YieldHandling yieldHandling)
         if (tt == TOK_LET) {
             bool forbiddenLetDeclaration = false;
 
-            if (pc->sc()->strict() || versionNumber() >= JSVERSION_1_7) {
-                
-                
-                forbiddenLetDeclaration = true;
-            } else if (next == TOK_LB) {
+            if (next == TOK_LB) {
                 
                 forbiddenLetDeclaration = true;
             } else if (next == TOK_LC || TokenKindIsPossibleIdentifier(next)) {
@@ -7571,6 +7543,28 @@ Parser<ParseHandler, CharT>::statement(YieldHandling yieldHandling)
                 error(JSMSG_FORBIDDEN_AS_STATEMENT, "lexical declarations");
                 return null();
             }
+        } else if (tt == TOK_ASYNC) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            TokenKind maybeFunction;
+            if (!tokenStream.peekTokenSameLine(&maybeFunction))
+                return null();
+
+            if (maybeFunction == TOK_FUNCTION) {
+                error(JSMSG_FORBIDDEN_AS_STATEMENT, "async function declarations");
+                return null();
+            }
+
+            
+            
         }
 
         
