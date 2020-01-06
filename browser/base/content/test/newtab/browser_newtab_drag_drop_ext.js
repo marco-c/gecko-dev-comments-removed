@@ -4,6 +4,7 @@
 requestLongerTimeout(2);
 
 const PREF_NEWTAB_COLUMNS = "browser.newtabpage.columns";
+const PREF_NEWTAB_ROWS = "browser.newtabpage.rows";
 
 
 
@@ -36,6 +37,7 @@ const PREF_NEWTAB_COLUMNS = "browser.newtabpage.columns";
 
   
   await pushPrefs([PREF_NEWTAB_COLUMNS, 3]);
+  await pushPrefs([PREF_NEWTAB_ROWS, 3]);
   await simulateExternalDrop(5);
   await checkGrid("0,1,2,3,4,99p,5,7p,8p");
 
@@ -60,4 +62,14 @@ const PREF_NEWTAB_COLUMNS = "browser.newtabpage.columns";
 
   await simulateExternalDrop(1);
   await checkGrid("0p,99p,1p,2p,3,4,5,6,7");
+
+  
+  
+  await setLinks("0,1,2,3,4,5,6,7,8");
+  setPinnedLinks(",,,,,,,7,8");
+
+  await addNewTabPageTab();
+  await pushPrefs([PREF_NEWTAB_ROWS, 2]);
+  await simulateExternalDrop(5);
+  await checkGrid("0,1,2,3,4,99p");
 });
