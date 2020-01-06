@@ -264,13 +264,6 @@ public:
                           ServoStyleContext* aParentContext);
 
   
-  nsRestyleHint HasStateDependentStyle(dom::Element* aElement,
-                                       EventStates aStateMask);
-  nsRestyleHint HasStateDependentStyle(
-    dom::Element* aElement, mozilla::CSSPseudoElementType aPseudoType,
-    dom::Element* aPseudoElement, EventStates aStateMask);
-
-  
 
 
 
