@@ -1475,6 +1475,10 @@ nsWindow::~nsWindow()
 {
     gTopLevelWindows.RemoveElement(this);
     ALOG("nsWindow %p destructor", (void*)this);
+    
+    
+    
+    MOZ_ASSERT(!mCompositorSession);
 }
 
 bool
@@ -1545,6 +1549,9 @@ nsWindow::Destroy()
         ALOG("### Warning: Destroying window %p and reparenting child %p to null!", (void*)this, (void*)mChildren[0]);
         mChildren[0]->SetParent(nullptr);
     }
+
+    
+    nsBaseWidget::DestroyCompositor();
 
     nsBaseWidget::Destroy();
 
