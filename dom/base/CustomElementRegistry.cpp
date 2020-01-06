@@ -36,8 +36,20 @@ CustomElementCallback::Call()
       
       nsIDocument* document = mThisObject->GetComposedDoc();
       if (document && document->GetDocShell()) {
+        NodeInfo* ni = mThisObject->NodeInfo();
+        nsDependentAtomString extType(mOwnerData->mType);
+
+        
+        
+        
+        
+        CustomElementDefinition* definition =
+          nsContentUtils::LookupCustomElementDefinition(document,
+            ni->LocalName(), ni->NamespaceID(),
+            extType.IsEmpty() ? nullptr : &extType);
+
         nsContentUtils::EnqueueLifecycleCallback(
-          document, nsIDocument::eAttached, mThisObject);
+          document, nsIDocument::eAttached, mThisObject, nullptr, definition);
       }
 
       static_cast<LifecycleCreatedCallback *>(mCallback.get())->Call(mThisObject, rv);
@@ -314,51 +326,35 @@ CustomElementRegistry::CreateCustomElementCallback(
   nsIDocument::ElementCallbackType aType, Element* aCustomElement,
   LifecycleCallbackArgs* aArgs, CustomElementDefinition* aDefinition)
 {
+  MOZ_ASSERT(aDefinition, "CustomElementDefinition should not be null");
+
   RefPtr<CustomElementData> elementData = aCustomElement->GetCustomElementData();
   MOZ_ASSERT(elementData, "CustomElementData should exist");
-
-  
-  CustomElementDefinition* definition = aDefinition;
-  if (!definition) {
-    mozilla::dom::NodeInfo* info = aCustomElement->NodeInfo();
-
-    
-    
-    nsCOMPtr<nsIAtom> typeAtom = elementData ?
-      elementData->mType.get() : info->NameAtom();
-
-    definition = mCustomDefinitions.GetWeak(typeAtom);
-    if (!definition || definition->mLocalName != info->NameAtom()) {
-      
-      
-      return nullptr;
-    }
-  }
 
   
   CallbackFunction* func = nullptr;
   switch (aType) {
     case nsIDocument::eCreated:
-      if (definition->mCallbacks->mCreatedCallback.WasPassed()) {
-        func = definition->mCallbacks->mCreatedCallback.Value();
+      if (aDefinition->mCallbacks->mCreatedCallback.WasPassed()) {
+        func = aDefinition->mCallbacks->mCreatedCallback.Value();
       }
       break;
 
     case nsIDocument::eAttached:
-      if (definition->mCallbacks->mAttachedCallback.WasPassed()) {
-        func = definition->mCallbacks->mAttachedCallback.Value();
+      if (aDefinition->mCallbacks->mAttachedCallback.WasPassed()) {
+        func = aDefinition->mCallbacks->mAttachedCallback.Value();
       }
       break;
 
     case nsIDocument::eDetached:
-      if (definition->mCallbacks->mDetachedCallback.WasPassed()) {
-        func = definition->mCallbacks->mDetachedCallback.Value();
+      if (aDefinition->mCallbacks->mDetachedCallback.WasPassed()) {
+        func = aDefinition->mCallbacks->mDetachedCallback.Value();
       }
       break;
 
     case nsIDocument::eAttributeChanged:
-      if (definition->mCallbacks->mAttributeChangedCallback.WasPassed()) {
-        func = definition->mCallbacks->mAttributeChangedCallback.Value();
+      if (aDefinition->mCallbacks->mAttributeChangedCallback.WasPassed()) {
+        func = aDefinition->mCallbacks->mAttributeChangedCallback.Value();
       }
       break;
   }
@@ -414,21 +410,11 @@ CustomElementRegistry::EnqueueLifecycleCallback(nsIDocument::ElementCallbackType
                                                 LifecycleCallbackArgs* aArgs,
                                                 CustomElementDefinition* aDefinition)
 {
-  RefPtr<CustomElementData> elementData = aCustomElement->GetCustomElementData();
-  MOZ_ASSERT(elementData, "CustomElementData should exist");
-
-  
   CustomElementDefinition* definition = aDefinition;
   if (!definition) {
-    mozilla::dom::NodeInfo* info = aCustomElement->NodeInfo();
-
-    
-    
-    nsCOMPtr<nsIAtom> typeAtom = elementData ?
-      elementData->mType.get() : info->NameAtom();
-
-    definition = mCustomDefinitions.GetWeak(typeAtom);
-    if (!definition || definition->mLocalName != info->NameAtom()) {
+    definition = aCustomElement->GetCustomElementDefinition();
+    if (!definition ||
+        definition->mLocalName != aCustomElement->NodeInfo()->NameAtom()) {
       return;
     }
   }
