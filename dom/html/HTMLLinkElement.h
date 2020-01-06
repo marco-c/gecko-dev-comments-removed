@@ -10,6 +10,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Link.h"
 #include "nsGenericHTMLElement.h"
+#include "nsIDOMHTMLLinkElement.h"
 #include "nsStyleLinkElement.h"
 
 namespace mozilla {
@@ -18,6 +19,7 @@ class EventChainPreVisitor;
 namespace dom {
 
 class HTMLLinkElement final : public nsGenericHTMLElement,
+                              public nsIDOMHTMLLinkElement,
                               public nsStyleLinkElement,
                               public Link
 {
@@ -31,6 +33,8 @@ public:
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(HTMLLinkElement,
                                            nsGenericHTMLElement)
 
+  
+  NS_DECL_NSIDOMHTMLLINKELEMENT
   NS_IMPL_FROMCONTENT_HTML_WITH_TAG(HTMLLinkElement, link);
   NS_DECL_ADDSIZEOFEXCLUDINGTHIS
 
@@ -81,11 +85,7 @@ public:
   
   bool Disabled();
   void SetDisabled(bool aDisabled);
-
-  void GetHref(nsAString& aValue)
-  {
-    GetURIAttr(nsGkAtoms::href, nullptr, aValue);
-  }
+  
   void SetHref(const nsAString& aHref, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::href, aHref, aRv);
@@ -102,27 +102,17 @@ public:
     SetOrRemoveNullableStringAttr(nsGkAtoms::crossorigin, aCrossOrigin, aError);
   }
   
-  void GetRel(nsAString& aValue)
-  {
-    GetHTMLAttr(nsGkAtoms::rel, aValue);
-  }
   void SetRel(const nsAString& aRel, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::rel, aRel, aRv);
   }
   nsDOMTokenList* RelList();
-  void GetMedia(DOMString& aValue)
-  {
-    GetHTMLAttr(nsGkAtoms::media, aValue);
-  }
+  
   void SetMedia(const nsAString& aMedia, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::media, aMedia, aRv);
   }
-  void GetHreflang(DOMString& aValue)
-  {
-    GetHTMLAttr(nsGkAtoms::hreflang, aValue);
-  }
+  
   void SetHreflang(const nsAString& aHreflang, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::hreflang, aHreflang, aRv);
@@ -136,36 +126,22 @@ public:
   {
     return GetTokenList(nsGkAtoms::sizes);
   }
-  void GetType(DOMString& aValue)
-  {
-    GetHTMLAttr(nsGkAtoms::type, aValue);
-  }
+  
   void SetType(const nsAString& aType, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::type, aType, aRv);
   }
   
-  nsresult GetCharset(nsAString& aValue) override
-  {
-    GetHTMLAttr(nsGkAtoms::charset, aValue);
-    return NS_OK;
-  }
   void SetCharset(const nsAString& aCharset, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::charset, aCharset, aRv);
   }
-  void GetRev(DOMString& aValue)
-  {
-    GetHTMLAttr(nsGkAtoms::rev, aValue);
-  }
+  
   void SetRev(const nsAString& aRev, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::rev, aRev, aRv);
   }
-  void GetTarget(DOMString& aValue)
-  {
-    GetHTMLAttr(nsGkAtoms::target, aValue);
-  }
+  
   void SetTarget(const nsAString& aTarget, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::target, aTarget, aRv);
