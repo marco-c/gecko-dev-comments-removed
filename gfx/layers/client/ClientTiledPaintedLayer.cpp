@@ -30,7 +30,7 @@ using gfx::IntRect;
 using gfx::IntSize;
 
 ClientTiledPaintedLayer::ClientTiledPaintedLayer(ClientLayerManager* const aManager,
-                                               ClientLayerManager::PaintedLayerCreationHint aCreationHint)
+                                                 PaintedLayerCreationHint aCreationHint)
   : PaintedLayer(aManager, static_cast<ClientLayer*>(this), aCreationHint)
   , mContentClient()
   , mHaveSingleTiledContentClient(false)
@@ -441,7 +441,7 @@ ClientTiledPaintedLayer::RenderLayer()
   
   
   bool wantSingleTiledContentClient =
-      (mCreationHint == LayerManager::NONE ||
+      (!(mCreationHint & PaintedLayerCreationHint::SCROLLABLE) ||
        layerSize <= tileSize ||
        isHalfTileWidthOrHeight) &&
       SingleTiledContentClient::ClientSupportsLayerSize(layerSize, ClientManager()) &&
@@ -599,7 +599,7 @@ ClientTiledPaintedLayer::RenderLayer()
 }
 
 bool
-ClientTiledPaintedLayer::IsOptimizedFor(LayerManager::PaintedLayerCreationHint aHint)
+ClientTiledPaintedLayer::IsOptimizedFor(PaintedLayerCreationHint aHint)
 {
   
   

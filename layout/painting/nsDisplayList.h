@@ -1480,7 +1480,7 @@ private:
 
   nsCOMPtr<nsISelection>         mBoundingSelection;
   AutoTArray<PresShellState,8> mPresShellStates;
-  AutoTArray<nsIFrame*,400>    mFramesMarkedForDisplay;
+  AutoTArray<nsIFrame*,100>    mFramesMarkedForDisplay;
   AutoTArray<ThemeGeometry,2>  mThemeGeometries;
   nsDisplayTableItem*            mCurrentTableItem;
   DisplayListClipState           mClipState;
@@ -2026,6 +2026,13 @@ public:
   virtual bool ShouldFlattenAway(nsDisplayListBuilder* aBuilder) {
     return false;
   }
+
+  
+
+
+
+
+  virtual bool MustPaintOnContentSide() const { return false; }
 
   
 
@@ -3280,6 +3287,7 @@ public:
                                    bool* aSnap) override;
   virtual mozilla::Maybe<nscolor> IsUniform(nsDisplayListBuilder* aBuilder) override;
   virtual bool ProvidesFontSmoothingBackgroundColor(nscolor* aColor) override;
+  virtual bool MustPaintOnContentSide() const override { return true; }
 
   
 
