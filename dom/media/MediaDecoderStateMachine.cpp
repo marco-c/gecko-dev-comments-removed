@@ -1604,6 +1604,11 @@ public:
     AccurateSeekingState::Enter(Move(aCurrentSeekJob),
                                 EventVisibility::Suppressed);
 
+    
+    
+    
+    mMaster->mMinimizePreroll = false;
+
     return mFutureSeekJob.mPromise.Ensure(__func__);
   }
 
