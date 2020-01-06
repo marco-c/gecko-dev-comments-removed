@@ -313,14 +313,14 @@ PushDispatcher::DoNotifyObservers(nsISupports *aSubject, const char *aTopic,
   nsCOMPtr<nsICategoryManager> catMan =
     do_GetService(NS_CATEGORYMANAGER_CONTRACTID);
   if (catMan) {
-    nsXPIDLCString contractId;
+    nsCString contractId;
     nsresult rv = catMan->GetCategoryEntry("push",
                                            mScope.BeginReading(),
                                            getter_Copies(contractId));
     if (NS_SUCCEEDED(rv)) {
       
       
-      nsCOMPtr<nsISupports> service = do_GetService(contractId);
+      nsCOMPtr<nsISupports> service = do_GetService(contractId.get());
     }
   }
   return obsService->NotifyObservers(aSubject, aTopic,

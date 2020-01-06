@@ -735,11 +735,11 @@ nsDragService::GetData(nsITransferable * aTransferable,
             if (!currentFlavor)
                 continue;
 
-            nsXPIDLCString flavorStr;
+            nsCString flavorStr;
             currentFlavor->ToString(getter_Copies(flavorStr));
             MOZ_LOG(sDragLm,
                    LogLevel::Debug,
-                   ("flavor is %s\n", (const char *)flavorStr));
+                   ("flavor is %s\n", flavorStr.get()));
             
             nsCOMPtr<nsITransferable> item =
                 do_QueryElementAt(mSourceDataItems, aItemIndex);
@@ -750,8 +750,8 @@ nsDragService::GetData(nsITransferable * aTransferable,
             uint32_t tmpDataLen = 0;
             MOZ_LOG(sDragLm, LogLevel::Debug,
                    ("trying to get transfer data for %s\n",
-                   (const char *)flavorStr));
-            rv = item->GetTransferData(flavorStr,
+                   flavorStr.get()));
+            rv = item->GetTransferData(flavorStr.get(),
                                        getter_AddRefs(data),
                                        &tmpDataLen);
             if (NS_FAILED(rv)) {
@@ -759,7 +759,8 @@ nsDragService::GetData(nsITransferable * aTransferable,
                 continue;
             }
             MOZ_LOG(sDragLm, LogLevel::Debug, ("succeeded.\n"));
-            rv = aTransferable->SetTransferData(flavorStr,data,tmpDataLen);
+            rv = aTransferable->SetTransferData(flavorStr.get(), data,
+                                                tmpDataLen);
             if (NS_FAILED(rv)) {
                 MOZ_LOG(sDragLm,
                        LogLevel::Debug,
@@ -781,12 +782,12 @@ nsDragService::GetData(nsITransferable * aTransferable,
         currentFlavor = do_QueryElementAt(flavorList, i);
         if (currentFlavor) {
             
-            nsXPIDLCString flavorStr;
+            nsCString flavorStr;
             currentFlavor->ToString(getter_Copies(flavorStr));
-            GdkAtom gdkFlavor = gdk_atom_intern(flavorStr, FALSE);
+            GdkAtom gdkFlavor = gdk_atom_intern(flavorStr.get(), FALSE);
             MOZ_LOG(sDragLm, LogLevel::Debug,
                    ("looking for data in type %s, gdk flavor %p\n",
-                   static_cast<const char*>(flavorStr), gdkFlavor));
+                   flavorStr.get(), gdkFlavor));
             bool dataFound = false;
             if (gdkFlavor) {
                 GetTargetDragData(gdkFlavor);
@@ -800,7 +801,7 @@ nsDragService::GetData(nsITransferable * aTransferable,
 
                 
                 
-                if ( strcmp(flavorStr, kFileMime) == 0 ) {
+                if (flavorStr.EqualsLiteral(kFileMime)) {
                     gdkFlavor = gdk_atom_intern(kTextMime, FALSE);
                     GetTargetDragData(gdkFlavor);
                     if (!mTargetDragData) {
@@ -831,7 +832,7 @@ nsDragService::GetData(nsITransferable * aTransferable,
                                         
                                         
                                         
-                                        aTransferable->SetTransferData(flavorStr, file,
+                                        aTransferable->SetTransferData(flavorStr.get(), file,
                                                                        convertedTextLen);
                                         g_free(convertedText);
                                         return NS_OK;
@@ -847,7 +848,7 @@ nsDragService::GetData(nsITransferable * aTransferable,
                 
                 
                 
-                if ( strcmp(flavorStr, kUnicodeMime) == 0 ) {
+                if (flavorStr.EqualsLiteral(kUnicodeMime)) {
                     MOZ_LOG(sDragLm, LogLevel::Debug,
                            ("we were looking for text/unicode... \
                            trying with text/plain;charset=utf-8\n"));
@@ -902,7 +903,7 @@ nsDragService::GetData(nsITransferable * aTransferable,
                 
                 
                 
-                if (strcmp(flavorStr, kURLMime) == 0) {
+                if (flavorStr.EqualsLiteral(kURLMime)) {
                     MOZ_LOG(sDragLm, LogLevel::Debug,
                            ("we were looking for text/x-moz-url...\
                            trying again with text/uri-list\n"));
@@ -970,21 +971,21 @@ nsDragService::GetData(nsITransferable * aTransferable,
             } 
 
             if (dataFound) {
-                if (strcmp(flavorStr, kCustomTypesMime) != 0) {
+                if (!flavorStr.EqualsLiteral(kCustomTypesMime)) {
                   
                   
                   nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks(
-                               flavorStr,
+                               flavorStr.get(),
                                &mTargetDragData,
                                reinterpret_cast<int*>(&mTargetDragDataLen));
                 }
         
                 
                 nsCOMPtr<nsISupports> genericDataWrapper;
-                nsPrimitiveHelpers::CreatePrimitiveForData(flavorStr,
+                nsPrimitiveHelpers::CreatePrimitiveForData(flavorStr.get(),
                                     mTargetDragData, mTargetDragDataLen,
                                     getter_AddRefs(genericDataWrapper));
-                aTransferable->SetTransferData(flavorStr,
+                aTransferable->SetTransferData(flavorStr.get(),
                                                genericDataWrapper,
                                                mTargetDragDataLen);
                 
@@ -1046,12 +1047,12 @@ nsDragService::IsDataFlavorSupported(const char *aDataFlavor,
                         nsCOMPtr<nsISupportsCString> currentFlavor;
                         currentFlavor = do_QueryElementAt(flavorList, flavorIndex);
                         if (currentFlavor) {
-                            nsXPIDLCString flavorStr;
+                            nsCString flavorStr;
                             currentFlavor->ToString(getter_Copies(flavorStr));
                             MOZ_LOG(sDragLm, LogLevel::Debug,
                                    ("checking %s against %s\n",
-                                   (const char *)flavorStr, aDataFlavor));
-                            if (strcmp(flavorStr, aDataFlavor) == 0) {
+                                   flavorStr.get(), aDataFlavor));
+                            if (flavorStr.Equals(aDataFlavor)) {
                                 MOZ_LOG(sDragLm, LogLevel::Debug,
                                        ("boioioioiooioioioing!\n"));
                                 *_retval = true;
@@ -1282,13 +1283,13 @@ nsDragService::GetSourceList(void)
                     nsCOMPtr<nsISupportsCString> currentFlavor;
                     currentFlavor = do_QueryElementAt(flavorList, flavorIndex);
                     if (currentFlavor) {
-                        nsXPIDLCString flavorStr;
+                        nsCString flavorStr;
                         currentFlavor->ToString(getter_Copies(flavorStr));
 
                         
                         
                         
-                        if (strcmp(flavorStr, kURLMime) == 0) {
+                        if (flavorStr.EqualsLiteral(kURLMime)) {
                             listTarget =
                              (GtkTargetEntry *)g_malloc(sizeof(GtkTargetEntry));
                             listTarget->target = g_strdup(gTextUriListType);
@@ -1317,18 +1318,18 @@ nsDragService::GetSourceList(void)
                     nsCOMPtr<nsISupportsCString> currentFlavor;
                     currentFlavor = do_QueryElementAt(flavorList, flavorIndex);
                     if (currentFlavor) {
-                        nsXPIDLCString flavorStr;
+                        nsCString flavorStr;
                         currentFlavor->ToString(getter_Copies(flavorStr));
                         GtkTargetEntry *target =
                           (GtkTargetEntry *)g_malloc(sizeof(GtkTargetEntry));
-                        target->target = g_strdup(flavorStr);
+                        target->target = g_strdup(flavorStr.get());
                         target->flags = 0;
                         MOZ_LOG(sDragLm, LogLevel::Debug,
                                ("adding target %s\n", target->target));
                         targetArray.AppendElement(target);
 
                         
-                        if (strcmp(flavorStr, kFileMime) == 0) {
+                        if (flavorStr.EqualsLiteral(kFileMime)) {
                             GtkTargetEntry *urilistTarget =
                              (GtkTargetEntry *)g_malloc(sizeof(GtkTargetEntry));
                             urilistTarget->target = g_strdup(gTextUriListType);
@@ -1342,7 +1343,7 @@ nsDragService::GetSourceList(void)
                         
                         
                         
-                        else if (strcmp(flavorStr, kUnicodeMime) == 0) {
+                        else if (flavorStr.EqualsLiteral(kUnicodeMime)) {
                             GtkTargetEntry *plainUTF8Target =
                              (GtkTargetEntry *)g_malloc(sizeof(GtkTargetEntry));
                             plainUTF8Target->target = g_strdup(gTextPlainUTF8Type);
@@ -1364,7 +1365,7 @@ nsDragService::GetSourceList(void)
                         
                         
                         
-                        else if (strcmp(flavorStr, kURLMime) == 0) {
+                        else if (flavorStr.EqualsLiteral(kURLMime)) {
                             GtkTargetEntry *urlTarget =
                              (GtkTargetEntry *)g_malloc(sizeof(GtkTargetEntry));
                             urlTarget->target = g_strdup(gMozUrlType);
@@ -1578,7 +1579,7 @@ nsDragService::SourceDataGet(GtkWidget        *aWidget,
 {
     MOZ_LOG(sDragLm, LogLevel::Debug, ("nsDragService::SourceDataGet"));
     GdkAtom target = gtk_selection_data_get_target(aSelectionData);
-    nsXPIDLCString mimeFlavor;
+    nsCString mimeFlavor;
     gchar *typeName = 0;
     typeName = gdk_atom_name(target);
     if (!typeName) {
@@ -1602,26 +1603,26 @@ nsDragService::SourceDataGet(GtkWidget        *aWidget,
         
         
         bool needToDoConversionToPlainText = false;
-        const char* actualFlavor = mimeFlavor;
-        if (strcmp(mimeFlavor, kTextMime) == 0 ||
-            strcmp(mimeFlavor, gTextPlainUTF8Type) == 0) {
+        const char* actualFlavor;
+        if (mimeFlavor.EqualsLiteral(kTextMime) ||
+            mimeFlavor.EqualsLiteral(gTextPlainUTF8Type)) {
             actualFlavor = kUnicodeMime;
             needToDoConversionToPlainText = true;
         }
         
         
-        else if (strcmp(mimeFlavor, gMozUrlType) == 0) {
+        else if (mimeFlavor.EqualsLiteral(gMozUrlType)) {
             actualFlavor = kURLMime;
             needToDoConversionToPlainText = true;
         }
         
         
-        else if (strcmp(mimeFlavor, gTextUriListType) == 0) {
+        else if (mimeFlavor.EqualsLiteral(gTextUriListType)) {
             actualFlavor = gTextUriListType;
             needToDoConversionToPlainText = true;
         }
         else
-            actualFlavor = mimeFlavor;
+            actualFlavor = mimeFlavor.get();
 
         uint32_t tmpDataLen = 0;
         void    *tmpData = nullptr;
@@ -1660,7 +1661,7 @@ nsDragService::SourceDataGet(GtkWidget        *aWidget,
                 free(tmpData);
             }
         } else {
-            if (strcmp(mimeFlavor, gTextUriListType) == 0) {
+            if (mimeFlavor.EqualsLiteral(gTextUriListType)) {
                 
                 gchar *uriList;
                 gint length;

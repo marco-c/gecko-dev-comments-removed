@@ -175,36 +175,36 @@ nsresult nsClipboard::SetupNativeDataObject(nsITransferable * aTransferable, IDa
   for (i=0;i<cnt;i++) {
     nsCOMPtr<nsISupportsCString> currentFlavor = do_QueryElementAt(dfList, i);
     if ( currentFlavor ) {
-      nsXPIDLCString flavorStr;
+      nsCString flavorStr;
       currentFlavor->ToString(getter_Copies(flavorStr));
       
       
-      UINT format = GetFormat(flavorStr, false);
+      UINT format = GetFormat(flavorStr.get(), false);
 
       
       
       FORMATETC fe;
       SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
-      dObj->AddDataFlavor(flavorStr, &fe);
+      dObj->AddDataFlavor(flavorStr.get(), &fe);
       
       
       
       
-      if ( strcmp(flavorStr, kUnicodeMime) == 0 ) {
+      if (flavorStr.EqualsLiteral(kUnicodeMime)) {
         
         
         FORMATETC textFE;
         SET_FORMATETC(textFE, CF_TEXT, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
         dObj->AddDataFlavor(kTextMime, &textFE);
       }
-      else if ( strcmp(flavorStr, kHTMLMime) == 0 ) {      
+      else if (flavorStr.EqualsLiteral(kHTMLMime)) {
         
         
         FORMATETC htmlFE;
         SET_FORMATETC(htmlFE, CF_HTML, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
         dObj->AddDataFlavor(kHTMLMime, &htmlFE);     
       }
-      else if ( strcmp(flavorStr, kURLMime) == 0 ) {
+      else if (flavorStr.EqualsLiteral(kURLMime)) {
         
         
         
@@ -220,19 +220,21 @@ nsresult nsClipboard::SetupNativeDataObject(nsITransferable * aTransferable, IDa
         SET_FORMATETC(shortcutFE, ::RegisterClipboardFormat(CFSTR_INETURLW), 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
         dObj->AddDataFlavor(kURLMime, &shortcutFE);      
       }
-      else if ( strcmp(flavorStr, kPNGImageMime) == 0 || strcmp(flavorStr, kJPEGImageMime) == 0 ||
-                strcmp(flavorStr, kJPGImageMime) == 0 || strcmp(flavorStr, kGIFImageMime) == 0 ||
-                strcmp(flavorStr, kNativeImageMime) == 0  ) {
+      else if (flavorStr.EqualsLiteral(kPNGImageMime) ||
+               flavorStr.EqualsLiteral(kJPEGImageMime) ||
+               flavorStr.EqualsLiteral(kJPGImageMime) ||
+               flavorStr.EqualsLiteral(kGIFImageMime) ||
+               flavorStr.EqualsLiteral(kNativeImageMime)) {
         
         FORMATETC imageFE;
         
         SET_FORMATETC(imageFE, CF_DIBV5, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
-        dObj->AddDataFlavor(flavorStr, &imageFE);
+        dObj->AddDataFlavor(flavorStr.get(), &imageFE);
         
         SET_FORMATETC(imageFE, CF_DIB, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
-        dObj->AddDataFlavor(flavorStr, &imageFE);
+        dObj->AddDataFlavor(flavorStr.get(), &imageFE);
       }
-      else if ( strcmp(flavorStr, kFilePromiseMime) == 0 ) {
+      else if (flavorStr.EqualsLiteral(kFilePromiseMime)) {
          
          
          
@@ -613,9 +615,9 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
   for (i=0;i<cnt;i++) {
     nsCOMPtr<nsISupportsCString> currentFlavor = do_QueryElementAt(flavorList, i);
     if ( currentFlavor ) {
-      nsXPIDLCString flavorStr;
+      nsCString flavorStr;
       currentFlavor->ToString(getter_Copies(flavorStr));
-      UINT format = GetFormat(flavorStr);
+      UINT format = GetFormat(flavorStr.get());
 
       
       
@@ -623,7 +625,7 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
       uint32_t dataLen = 0;
       bool dataFound = false;
       if (nullptr != aDataObject) {
-        if (NS_SUCCEEDED(GetNativeDataOffClipboard(aDataObject, anIndex, format, flavorStr, &data, &dataLen))) {
+        if (NS_SUCCEEDED(GetNativeDataOffClipboard(aDataObject, anIndex, format, flavorStr.get(), &data, &dataLen))) {
           dataFound = true;
         }
       } 
@@ -637,10 +639,10 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
       
       
       if ( !dataFound ) {
-        if (strcmp(flavorStr, kUnicodeMime) == 0) {
+        if (flavorStr.EqualsLiteral(kUnicodeMime)) {
           dataFound = FindUnicodeFromPlainText(aDataObject, anIndex, &data, &dataLen);
         }
-        else if ( strcmp(flavorStr, kURLMime) == 0 ) {
+        else if (flavorStr.EqualsLiteral(kURLMime)) {
           
           
           dataFound = FindURLFromNativeURL ( aDataObject, anIndex, &data, &dataLen );
@@ -653,7 +655,7 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
       
       if ( dataFound ) {
         nsCOMPtr<nsISupports> genericDataWrapper;
-          if ( strcmp(flavorStr, kFileMime) == 0 ) {
+          if (flavorStr.EqualsLiteral(kFileMime)) {
             
             nsDependentString filepath(reinterpret_cast<char16_t*>(data));
             nsCOMPtr<nsIFile> file;
@@ -662,13 +664,13 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
             }
             free(data);
           }
-        else if ( strcmp(flavorStr, kNativeHTMLMime) == 0 ) {
+        else if (flavorStr.EqualsLiteral(kNativeHTMLMime)) {
           uint32_t dummy;
           
           
           
           if (FindPlatformHTML(aDataObject, anIndex, &data, &dummy, &dataLen)) {
-            nsPrimitiveHelpers::CreatePrimitiveForData(flavorStr, data, dataLen, getter_AddRefs(genericDataWrapper));
+            nsPrimitiveHelpers::CreatePrimitiveForData(flavorStr.get(), data, dataLen, getter_AddRefs(genericDataWrapper));
           }
           else
           {
@@ -677,7 +679,7 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
           }
           free(data);
         }
-        else if ( strcmp(flavorStr, kHTMLMime) == 0 ) {
+        else if (flavorStr.EqualsLiteral(kHTMLMime)) {
           uint32_t startOfData = 0;
           
           
@@ -694,23 +696,23 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
           }
           free(data);
         }
-        else if ( strcmp(flavorStr, kJPEGImageMime) == 0 ||
-                  strcmp(flavorStr, kJPGImageMime) == 0 ||
-                  strcmp(flavorStr, kPNGImageMime) == 0) {
+        else if (flavorStr.EqualsLiteral(kJPEGImageMime) ||
+                 flavorStr.EqualsLiteral(kJPGImageMime) ||
+                 flavorStr.EqualsLiteral(kPNGImageMime)) {
           nsIInputStream * imageStream = reinterpret_cast<nsIInputStream*>(data);
           genericDataWrapper = do_QueryInterface(imageStream);
           NS_IF_RELEASE(imageStream);
         }
         else {
           
-          if (strcmp(flavorStr, kCustomTypesMime) != 0) {
+          if (flavorStr.EqualsLiteral(kCustomTypesMime)) {
             
             
             int32_t signedLen = static_cast<int32_t>(dataLen);
-            nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks ( flavorStr, &data, &signedLen );
+            nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks(flavorStr.get(), &data, &signedLen);
             dataLen = signedLen;
 
-            if (strcmp(flavorStr, kRTFMime) == 0) {
+            if (flavorStr.EqualsLiteral(kRTFMime)) {
               
               if (dataLen > 0 && static_cast<char*>(data)[dataLen - 1] == '\0') {
                 dataLen--;
@@ -718,12 +720,12 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
             }
           }
 
-          nsPrimitiveHelpers::CreatePrimitiveForData ( flavorStr, data, dataLen, getter_AddRefs(genericDataWrapper) );
+          nsPrimitiveHelpers::CreatePrimitiveForData(flavorStr.get(), data, dataLen, getter_AddRefs(genericDataWrapper));
           free(data);
         }
         
         NS_ASSERTION ( genericDataWrapper, "About to put null data into the transferable" );
-        aTransferable->SetTransferData(flavorStr, genericDataWrapper, dataLen);
+        aTransferable->SetTransferData(flavorStr.get(), genericDataWrapper, dataLen);
         res = NS_OK;
 
         
