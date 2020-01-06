@@ -596,19 +596,31 @@ PuppetWidget::GetLayerManager(PLayerTransactionChild* aShadowManager,
       return mLayerManager;
     }
 
-    
-    
-    
-    
-    MOZ_ASSERT(!mTabChild || !mTabChild->IsLayersConnected());
-    mLayerManager = new BasicLayerManager(this);
+    if (mTabChild && !mTabChild->IsLayersConnected()) {
+      
+      
+      
+      
+      mLayerManager = new BasicLayerManager(this);
+    } else if (gfxVars::UseWebRender()) {
+      MOZ_ASSERT(!aShadowManager);
+      mLayerManager = new WebRenderLayerManager(this);
+    } else {
+      mLayerManager = new ClientLayerManager(this);
+    }
+  }
+
+  
+  ShadowLayerForwarder* lf = mLayerManager->AsShadowForwarder();
+  if (lf && !lf->HasShadowManager() && aShadowManager) {
+    lf->SetShadowManager(aShadowManager);
   }
 
   return mLayerManager;
 }
 
 bool
-PuppetWidget::CreateRemoteLayerManager(const std::function<bool(LayerManager*)>& aInitializeFunc)
+PuppetWidget::RecreateLayerManager(const std::function<bool(LayerManager*)>& aInitializeFunc)
 {
   RefPtr<LayerManager> lm;
   MOZ_ASSERT(mTabChild);
