@@ -9,9 +9,13 @@
 const Services = require("Services");
 const {Task} = require("devtools/shared/task");
 const EventEmitter = require("devtools/shared/event-emitter");
-const { VIEW_NODE_VALUE_TYPE } = require("devtools/client/inspector/shared/node-types");
+const {
+  VIEW_NODE_VALUE_TYPE,
+  VIEW_NODE_SHAPE_POINT_TYPE
+} = require("devtools/client/inspector/shared/node-types");
 
 const DEFAULT_GRID_COLOR = "#4B0082";
+const INSET_POINT_TYPES = ["top", "right", "bottom", "left"];
 
 
 
@@ -52,6 +56,7 @@ function HighlightersOverlay(inspector) {
   this.showGridHighlighter = this.showGridHighlighter.bind(this);
   this.showShapesHighlighter = this.showShapesHighlighter.bind(this);
   this._handleRejection = this._handleRejection.bind(this);
+  this._onHighlighterEvent = this._onHighlighterEvent.bind(this);
 
   
   this.inspector.on("markupmutation", this.onMarkupMutation);
@@ -179,6 +184,51 @@ HighlightersOverlay.prototype = {
     this.shapesHighlighterShown = null;
     this.state.shapes = {};
   }),
+
+  
+
+
+
+
+
+
+
+  hoverPointShapesHighlighter: Task.async(function* (node, point) {
+    if (node == this.shapesHighlighterShown) {
+      let options = Object.assign({}, this.state.shapes.options);
+      options.hoverPoint = point;
+      yield this.showShapesHighlighter(node, options);
+    }
+  }),
+
+  
+
+
+
+
+
+  highlightRuleViewShapePoint: function (point) {
+    let view = this.inspector.getPanel("ruleview").view;
+    let ruleViewEl = view.element;
+    let selector = `.ruleview-shape-point.active`;
+    for (let pointNode of ruleViewEl.querySelectorAll(selector)) {
+      this._toggleShapePointActive(pointNode, false);
+    }
+
+    if (point !== null && point !== undefined) {
+      
+      
+      selector = (INSET_POINT_TYPES.includes(point)) ?
+                 `.ruleview-shape-point.${point}` :
+                 `.ruleview-shape-point[data-point='${point}']`;
+      for (let pointNode of ruleViewEl.querySelectorAll(selector)) {
+        let nodeInfo = view.getNodeInfo(pointNode);
+        if (this.isRuleViewShapePoint(nodeInfo)) {
+          this._toggleShapePointActive(pointNode, true);
+        }
+      }
+    }
+  },
 
   
 
@@ -325,6 +375,18 @@ HighlightersOverlay.prototype = {
 
 
 
+  _onHighlighterEvent: function (data) {
+    if (data.type === "shape-hover-on") {
+      this.state.shapes.hoverPoint = data.point;
+      this.emit("hover-shape-point", data.point);
+    } else if (data.type === "shape-hover-off") {
+      this.state.shapes.hoverPoint = null;
+      this.emit("hover-shape-point", null);
+    }
+    this.emit("highlighter-event-handled");
+  },
+
+  
 
 
 
@@ -334,7 +396,9 @@ HighlightersOverlay.prototype = {
 
 
 
-  restoreState: Task.async(function* (name, {selector, options, url}, showFunction) {
+
+  restoreState: Task.async(function* (name, state, showFunction) {
+    let { selector, options, url } = state;
     if (!selector || url !== this.inspector.target.url) {
       
       this.emit(`${name}-state-restored`, { restored: false });
@@ -349,6 +413,9 @@ HighlightersOverlay.prototype = {
     let nodeFront = yield walker.querySelector(rootNode, selector);
 
     if (nodeFront) {
+      if (options.hoverPoint) {
+        options.hoverPoint = null;
+      }
       yield showFunction(nodeFront, options);
       this.emit(`${name}-state-restored`, { restored: true });
     }
@@ -382,6 +449,7 @@ HighlightersOverlay.prototype = {
       return null;
     }
 
+    highlighter.on("highlighter-event", this._onHighlighterEvent);
     this.highlighters[type] = highlighter;
     return highlighter;
   }),
@@ -413,6 +481,23 @@ HighlightersOverlay.prototype = {
     for (let icon of ruleViewEl.querySelectorAll(selector)) {
       icon.classList.toggle("active", active);
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+  _toggleShapePointActive: function (node, active) {
+    if (this.inspector.selection.nodeFront != this.shapesHighlighterShown) {
+      return;
+    }
+
+    node.classList.toggle("active", active);
   },
 
   
@@ -487,6 +572,22 @@ HighlightersOverlay.prototype = {
     return this.isRuleView && isTransform && isEnabled;
   },
 
+  
+
+
+
+
+
+  isRuleViewShapePoint: function (nodeInfo) {
+    let isShape = nodeInfo.type === VIEW_NODE_SHAPE_POINT_TYPE &&
+                  (nodeInfo.value.property === "clip-path" ||
+                  nodeInfo.value.property === "shape-outside");
+    let isEnabled = nodeInfo.value.enabled &&
+                    !nodeInfo.value.overridden &&
+                    !nodeInfo.value.pseudoElement;
+    return this.isRuleView && isShape && isEnabled && nodeInfo.value.toggleActive;
+  },
+
   onClick: function (event) {
     if (this._isRuleViewDisplayGrid(event.target)) {
       event.stopPropagation();
@@ -526,6 +627,13 @@ HighlightersOverlay.prototype = {
       return;
     }
 
+    if (this.isRuleViewShapePoint(nodeInfo)) {
+      let { point } = nodeInfo.value;
+      this.hoverPointShapesHighlighter(this.inspector.selection.nodeFront, point);
+      this.emit("hover-shape-point", point);
+      return;
+    }
+
     
     let type;
     if (this._isRuleViewTransform(nodeInfo) ||
@@ -554,6 +662,14 @@ HighlightersOverlay.prototype = {
     }
 
     
+    let view = this.isRuleView ?
+      this.inspector.getPanel("ruleview").view :
+      this.inspector.getPanel("computedview").computedView;
+    let nodeInfo = view.getNodeInfo(this._lastHovered);
+    if (nodeInfo && this.isRuleViewShapePoint(nodeInfo)) {
+      this.hoverPointShapesHighlighter(this.inspector.selection.nodeFront, null);
+      this.emit("hover-shape-point", null);
+    }
     this._lastHovered = null;
     this._hideHoveredHighlighter();
   },
@@ -630,6 +746,9 @@ HighlightersOverlay.prototype = {
   destroy: function () {
     for (let type in this.highlighters) {
       if (this.highlighters[type]) {
+        if (this.highlighters[type].off) {
+          this.highlighters[type].off("highlighter-event", this._onHighlighterEvent);
+        }
         this.highlighters[type].finalize();
         this.highlighters[type] = null;
       }

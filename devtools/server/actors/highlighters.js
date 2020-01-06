@@ -459,6 +459,9 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(customHighlighterSp
       this._highlighterEnv = new HighlighterEnvironment();
       this._highlighterEnv.initFromTabActor(inspector.tabActor);
       this._highlighter = new constructor(this._highlighterEnv);
+      if (this._highlighter.on) {
+        this._highlighter.on("highlighter-event", this._onHighlighterEvent.bind(this));
+      }
     } else {
       throw new Error("Custom " + typeName +
         "highlighter cannot be created in a XUL window");
@@ -514,9 +517,19 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(customHighlighterSp
   
 
 
+  _onHighlighterEvent: function (type, data) {
+    events.emit(this, "highlighter-event", data);
+  },
+
+  
+
+
 
   finalize: function () {
     if (this._highlighter) {
+      if (this._highlighter.off) {
+        this._highlighter.off("highlighter-event", this._onHighlighterEvent.bind(this));
+      }
       this._highlighter.destroy();
       this._highlighter = null;
     }
