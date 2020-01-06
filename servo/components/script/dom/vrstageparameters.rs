@@ -2,10 +2,10 @@
 
 
 
-use core::nonzero::NonZero;
 use dom::bindings::cell::DomRefCell;
 use dom::bindings::codegen::Bindings::VRStageParametersBinding;
 use dom::bindings::codegen::Bindings::VRStageParametersBinding::VRStageParametersMethods;
+use dom::bindings::nonnull::NonNullJSObjectPtr;
 use dom::bindings::num::Finite;
 use dom::bindings::reflector::{DomObject, Reflector, reflect_dom_object};
 use dom::bindings::root::DomRoot;
@@ -69,8 +69,8 @@ impl VRStageParameters {
 impl VRStageParametersMethods for VRStageParameters {
     #[allow(unsafe_code)]
     
-    unsafe fn SittingToStandingTransform(&self, _cx: *mut JSContext) -> NonZero<*mut JSObject> {
-        NonZero::new_unchecked(self.transform.get())
+    unsafe fn SittingToStandingTransform(&self, _cx: *mut JSContext) -> NonNullJSObjectPtr {
+        NonNullJSObjectPtr::new_unchecked(self.transform.get())
     }
 
     

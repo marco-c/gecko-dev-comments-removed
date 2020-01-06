@@ -2,10 +2,10 @@
 
 
 
-use core::nonzero::NonZero;
 use dom::bindings::codegen::Bindings::VRFrameDataBinding;
 use dom::bindings::codegen::Bindings::VRFrameDataBinding::VRFrameDataMethods;
 use dom::bindings::error::Fallible;
+use dom::bindings::nonnull::NonNullJSObjectPtr;
 use dom::bindings::num::Finite;
 use dom::bindings::reflector::{DomObject, Reflector, reflect_dom_object};
 use dom::bindings::root::{Dom, DomRoot};
@@ -118,26 +118,26 @@ impl VRFrameDataMethods for VRFrameData {
 
     #[allow(unsafe_code)]
     
-    unsafe fn LeftProjectionMatrix(&self, _cx: *mut JSContext) -> NonZero<*mut JSObject> {
-        NonZero::new_unchecked(self.left_proj.get())
+    unsafe fn LeftProjectionMatrix(&self, _cx: *mut JSContext) -> NonNullJSObjectPtr {
+        NonNullJSObjectPtr::new_unchecked(self.left_proj.get())
     }
 
     #[allow(unsafe_code)]
     
-    unsafe fn LeftViewMatrix(&self, _cx: *mut JSContext) -> NonZero<*mut JSObject> {
-        NonZero::new_unchecked(self.left_view.get())
+    unsafe fn LeftViewMatrix(&self, _cx: *mut JSContext) -> NonNullJSObjectPtr {
+        NonNullJSObjectPtr::new_unchecked(self.left_view.get())
     }
 
     #[allow(unsafe_code)]
     
-    unsafe fn RightProjectionMatrix(&self, _cx: *mut JSContext) -> NonZero<*mut JSObject> {
-        NonZero::new_unchecked(self.right_proj.get())
+    unsafe fn RightProjectionMatrix(&self, _cx: *mut JSContext) -> NonNullJSObjectPtr {
+        NonNullJSObjectPtr::new_unchecked(self.right_proj.get())
     }
 
     #[allow(unsafe_code)]
     
-    unsafe fn RightViewMatrix(&self, _cx: *mut JSContext) -> NonZero<*mut JSObject> {
-        NonZero::new_unchecked(self.right_view.get())
+    unsafe fn RightViewMatrix(&self, _cx: *mut JSContext) -> NonNullJSObjectPtr {
+        NonNullJSObjectPtr::new_unchecked(self.right_view.get())
     }
 
     
