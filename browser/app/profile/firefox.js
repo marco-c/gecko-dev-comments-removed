@@ -310,7 +310,9 @@ pref("browser.urlbar.maxRichResults", 10);
 pref("browser.urlbar.delay", 50);
 
 
-pref("browser.urlbar.maxHistoricalSearchSuggestions", 1);
+pref("browser.urlbar.maxHistoricalSearchSuggestions", 0);
+
+pref("browser.urlbar.matchBuckets", "suggestion:4,general:5");
 
 
 
