@@ -265,7 +265,10 @@ private:
 
 
 
-class StyleChildrenIterator : private AllChildrenIterator
+
+
+
+class MOZ_NEEDS_MEMMOVABLE_MEMBERS StyleChildrenIterator : private AllChildrenIterator
 {
 public:
   explicit StyleChildrenIterator(const nsIContent* aContent)
