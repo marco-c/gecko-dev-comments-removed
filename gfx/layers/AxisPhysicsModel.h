@@ -37,7 +37,7 @@ public:
   
 
 
-  double GetVelocity();
+  double GetVelocity() const;
 
   
 
@@ -47,7 +47,7 @@ public:
   
 
 
-  double GetPosition();
+  double GetPosition() const;
 
   
 
