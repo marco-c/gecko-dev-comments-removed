@@ -44,6 +44,9 @@ public:
                         nsRestyleHint aRestyleHint,
                         nsChangeHint aMinChangeHint);
   void PostRestyleEventForLazyConstruction();
+  void PostRestyleEventForCSSRuleChanges(dom::Element* aElement,
+                                         nsRestyleHint aRestyleHint,
+                                         nsChangeHint aMinChangeHint);
   void RebuildAllStyleData(nsChangeHint aExtraHint,
                            nsRestyleHint aRestyleHint);
   void PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
@@ -161,6 +164,14 @@ private:
   
   
   bool mHaveNonAnimationRestyles = false;
+
+  
+  
+  
+  
+  
+  
+  bool mRestyleForCSSRuleChanges = false;
 
   
   

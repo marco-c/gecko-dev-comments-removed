@@ -4584,12 +4584,14 @@ nsIPresShell::RestyleForCSSRuleChanges()
     
     
     
-    restyleManager->PostRestyleEvent(root, eRestyle_Subtree,
-                                     nsChangeHint(0));
+    restyleManager->PostRestyleEventForCSSRuleChanges(root,
+                                                      eRestyle_Subtree,
+                                                      nsChangeHint(0));
   } else {
     for (Element* scopeRoot : scopeRoots) {
-      restyleManager->PostRestyleEvent(scopeRoot, eRestyle_Subtree,
-                                       nsChangeHint(0));
+      restyleManager->PostRestyleEventForCSSRuleChanges(scopeRoot,
+                                                        eRestyle_Subtree,
+                                                        nsChangeHint(0));
     }
   }
 }
