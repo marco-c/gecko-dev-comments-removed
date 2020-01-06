@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, () => BigInt.parseInt(true));
+assert.throws(SyntaxError, () => BigInt.parseInt(false));
+assert.throws(SyntaxError, () => BigInt.parseInt(new Boolean(true)));
+assert.throws(SyntaxError, () => BigInt.parseInt(new Boolean(false)));
+
+reportCompare(0, 0);

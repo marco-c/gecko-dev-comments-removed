@@ -27,7 +27,6 @@
 
 
 
-
 var re = /./;
 
 assert.sameValue(re.lastIndex, 0);

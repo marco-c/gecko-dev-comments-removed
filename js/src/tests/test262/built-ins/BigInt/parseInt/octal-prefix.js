@@ -1,0 +1,37 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(BigInt.parseInt("010"), 10n, "parseInt should no longer accept octal");
+
+reportCompare(0, 0);

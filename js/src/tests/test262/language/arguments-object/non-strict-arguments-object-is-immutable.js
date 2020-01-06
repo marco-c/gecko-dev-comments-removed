@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function f1() {
+  assert.sameValue(delete arguments, false);
+}
+
+f1();
+
+reportCompare(0, 0);

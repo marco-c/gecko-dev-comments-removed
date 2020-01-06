@@ -7,7 +7,7 @@
 
 
 
+
+
 for (let in {}) { }
-
-
 reportCompare(0, 0);

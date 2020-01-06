@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => new BigInt.parseInt());
+
+reportCompare(0, 0);

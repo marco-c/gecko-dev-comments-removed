@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(BigInt.parseInt.prototype, undefined);
+
+reportCompare(0, 0);

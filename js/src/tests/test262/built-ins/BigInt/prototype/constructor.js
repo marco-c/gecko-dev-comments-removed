@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(BigInt.prototype, "constructor", {
+  value: BigInt,
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

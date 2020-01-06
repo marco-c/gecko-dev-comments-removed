@@ -7,33 +7,72 @@
 
 
 
-for ( var i=0 ; i < 3 ; i++ ) {
+var WAKEUP = 0;                 
+var DUMMY = 1;                  
+var RUNNING = 2;                
+var NUMELEM = 3;
+
+var NUMAGENT = 3;
+
+for (var i=0; i < NUMAGENT; i++) {
 $262.agent.start(
 `
 $262.agent.receiveBroadcast(function (sab) {
   var ia = new Int32Array(sab);
-  $262.agent.report(Atomics.wait(ia, 0, 0, 1000)); // We may timeout eventually
+  Atomics.add(ia, ${RUNNING}, 1);
+  $262.agent.report("A " + Atomics.wait(ia, ${WAKEUP}, 0));
   $262.agent.leaving();
 })
 `);
 }
 
-var ia = new Int32Array(new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT));
+$262.agent.start(
+`
+$262.agent.receiveBroadcast(function (sab) {
+  var ia = new Int32Array(sab);
+  Atomics.add(ia, ${RUNNING}, 1);
+  // This will always time out.
+  $262.agent.report("B " + Atomics.wait(ia, ${DUMMY}, 0, 1000));
+  $262.agent.leaving();
+})
+`);
 
+var ia = new Int32Array(new SharedArrayBuffer(NUMELEM * Int32Array.BYTES_PER_ELEMENT));
 $262.agent.broadcast(ia.buffer);
-$262.agent.sleep(500);                              
-assert.sameValue(Atomics.wake(ia, 0), 3);        
-var rs = [getReport(), getReport(), getReport()];
+
+
+waitUntil(ia, RUNNING, NUMAGENT+1);
+
+
+
+$262.agent.sleep(500);
+
+
+assert.sameValue(Atomics.wake(ia, WAKEUP), NUMAGENT);
+
+var rs = [];
+for (var i=0; i < NUMAGENT+1; i++)
+    rs.push(getReport());
 rs.sort();
-assert.sameValue(rs[0], "ok");
-assert.sameValue(rs[1], "ok");
-assert.sameValue(rs[2], "ok");
+
+for (var i=0; i < NUMAGENT; i++)
+    assert.sameValue(rs[i], "A ok");
+assert.sameValue(rs[NUMAGENT], "B timed-out");
 
 function getReport() {
     var r;
     while ((r = $262.agent.getReport()) == null)
         $262.agent.sleep(100);
     return r;
+}
+
+function waitUntil(ia, k, value) {
+    var i = 0;
+    while (Atomics.load(ia, k) !== value && i < 15) {
+	$262.agent.sleep(100);
+	i++;
+    }
+    assert.sameValue(Atomics.load(ia, k), value, "All agents are running");
 }
 
 reportCompare(0, 0);

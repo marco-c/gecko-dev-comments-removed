@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+var IsHTMLDDA = $262.IsHTMLDDA;
+var iter = {
+  [Symbol.iterator]() { return this; },
+  next() { return {}; },
+  return: IsHTMLDDA,
+};
+
+assert.throws(TypeError, function() {
+  
+  
+  
+  for (var x of iter)
+    break;
+});
+
+reportCompare(0, 0);

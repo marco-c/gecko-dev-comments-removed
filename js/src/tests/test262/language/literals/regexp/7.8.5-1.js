@@ -10,8 +10,22 @@
 
 
 
+
+
+
+
+
+
 assert.throws(SyntaxError, function() {
-            eval("var regExp = /\\\rn/;");
+  eval("/\\\rn/;");
+
+
+
+
+
+
+
+
 });
 
 reportCompare(0, 0);

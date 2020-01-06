@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(BigInt.parseInt, "name", {
+  value: "parseInt",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

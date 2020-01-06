@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(BigInt, "name", {
+  value: "BigInt",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

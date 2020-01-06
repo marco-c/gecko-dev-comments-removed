@@ -8,21 +8,20 @@
 
 
 
-
-
-
-
-
-
-
-
-
 let source = "(?<fst>.)(?<snd>.)|(?<thd>x)";
-for (let flags of ["", "u", "g", "gu"]) {
+for (let flags of ["", "u"]) {
   let re = new RegExp(source, flags);
-  assert.throws(SyntaxError, () => "abcd".replace(re, "$<42$1>"));
-  assert.throws(SyntaxError, () => "abcd".replace(re, "$<fth>"));
-  assert.throws(SyntaxError, () => "abcd".replace(re, "$<$1>"));
+  assert.sameValue("cd", "abcd".replace(re, "$<42$1>"));
+  assert.sameValue("cd", "abcd".replace(re, "$<fth>"));
+  assert.sameValue("cd", "abcd".replace(re, "$<$1>"));
+  assert.sameValue("cd", "abcd".replace(re, "$<>"));
+}
+for (let flags of ["g", "gu"]) {
+  let re = new RegExp(source, flags);
+  assert.sameValue("", "abcd".replace(re, "$<42$1>"));
+  assert.sameValue("", "abcd".replace(re, "$<fth>"));
+  assert.sameValue("", "abcd".replace(re, "$<$1>"));
+  assert.sameValue("", "abcd".replace(re, "$<>"));
 }
 
 reportCompare(0, 0);

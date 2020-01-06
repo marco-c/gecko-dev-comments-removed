@@ -1,0 +1,42 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, () => BigInt.parseInt(undefined));
+assert.throws(SyntaxError, () => BigInt.parseInt(null));
+
+reportCompare(0, 0);

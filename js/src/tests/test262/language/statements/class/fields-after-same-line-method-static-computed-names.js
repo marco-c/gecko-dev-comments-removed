@@ -22,6 +22,7 @@
 
 
 
+
 class C {
   m() { return 42; } static ["a"] = 42; ["a"] = 39;
 }

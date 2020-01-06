@@ -16,6 +16,7 @@
 
 
 
+
 assert.throws(Test262Error, function() {
     try {
         throw new Error();

@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof 0n, "bigint");
+assert.sameValue(typeof Object(0n), "object");
+
+reportCompare(0, 0);

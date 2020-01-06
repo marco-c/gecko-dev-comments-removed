@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(BigInt.prototype.toString, "name", {
+  value: "toString",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

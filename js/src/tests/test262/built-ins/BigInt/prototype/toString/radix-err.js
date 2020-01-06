@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+for (let r of [0, 1, 37, null]) {
+  assert.throws(RangeError, function() {
+    (0n).toString(r);
+  }, "0, radix " + r);
+  assert.throws(RangeError, function() {
+    (-1n).toString(r);
+  }, "-1, radix " + r);
+  assert.throws(RangeError, function() {
+    (1n).toString(r);
+  }, "1, radix " + r);
+}
+
+reportCompare(0, 0);

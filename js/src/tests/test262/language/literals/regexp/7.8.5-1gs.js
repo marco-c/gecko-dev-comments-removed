@@ -10,6 +10,28 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
 
-var re = 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var y = 42;
+var x = 
+y;
+
+assert.sameValue(x, y);
+
+
+reportCompare(0, 0);

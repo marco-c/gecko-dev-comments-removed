@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  BigInt.prototype.toString(1);
+});
+
+reportCompare(0, 0);
