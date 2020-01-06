@@ -331,30 +331,7 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static mozilla::Maybe<mozilla::TimeStamp> GetIdleDeadlineHint();
+  static mozilla::TimeStamp GetIdleDeadlineHint(mozilla::TimeStamp aDefault);
 
   bool SkippedPaints() const
   {
