@@ -34,6 +34,15 @@ ContentDispatchChooser.prototype =
     }
   },
 
+  _closeBlankWindow: function(aWindow) {
+    if (!aWindow || aWindow.history.length) {
+      return;
+    }
+    if (!aWindow.location.href || aWindow.location.href === "about:blank") {
+      aWindow.close();
+    }
+  },
+
   ask: function ask(aHandler, aWindowContext, aURI, aReason) {
     let window = null;
     try {
@@ -49,6 +58,8 @@ ContentDispatchChooser.prototype =
     
     if (aHandler.possibleApplicationHandlers.length > 1) {
       aHandler.launchWithURI(aURI, aWindowContext);
+      this._closeBlankWindow(window);
+
     } else {
       
       
@@ -65,6 +76,8 @@ ContentDispatchChooser.prototype =
 
       EventDispatcher.instance.sendRequestForResult(msg).then(() => {
         
+        this._closeBlankWindow(window);
+
       }, (data) => {
         if (data.isFallback) {
           
@@ -79,6 +92,8 @@ ContentDispatchChooser.prototype =
         let millis = dwu.millisSinceLastUserInput;
         if (millis > 0 && millis >= 1000) {
           window.location.href = data.uri;
+        } else {
+          this._closeBlankWindow(window);
         }
       });
     }
