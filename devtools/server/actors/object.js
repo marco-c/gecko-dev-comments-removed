@@ -1943,7 +1943,7 @@ DebuggerServer.ObjectActorPreviewers.Object = [
 
     
     
-    if (keys[0] >= OBJECT_PREVIEW_MAX_ITEMS) {
+    if (keys.some((key, i) => parseInt(key, 10) !== i && key !== "length")) {
       return false;
     }
 
@@ -1956,8 +1956,16 @@ DebuggerServer.ObjectActorPreviewers.Object = [
       
       length = +keys[keys.length - 1] + 1;
     }
+
     
-    if (typeof length !== "number" || length >>> 0 !== length) {
+    
+    
+    if (
+      keys.length === 0 ||
+      keys.length !== length ||
+      typeof length !== "number" ||
+      length >>> 0 !== length
+    ) {
       return false;
     }
 
