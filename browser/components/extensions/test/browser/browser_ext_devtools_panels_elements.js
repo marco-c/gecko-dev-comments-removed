@@ -11,7 +11,8 @@ add_task(async function test_devtools_panels_elements_onSelectionChanged() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://mochi.test:8888/");
 
   function devtools_page() {
-    let doTabReload = true;
+    let isReloading = false;
+    let collectedEvalResults = [];
 
     browser.devtools.panels.elements.onSelectionChanged.addListener(async () => {
       const [
@@ -23,13 +24,35 @@ add_task(async function test_devtools_panels_elements_onSelectionChanged() {
                           JSON.stringify(exceptionInfo));
       }
 
-      browser.test.sendMessage("devtools_eval_result", evalResult);
+      collectedEvalResults.push(evalResult);
 
-      if (doTabReload) {
-        
-        
-        doTabReload = false;
-        await browser.devtools.inspectedWindow.eval("window.location.reload();");
+      
+      
+      if (!isReloading) {
+        browser.test.sendMessage("devtools_eval_result", evalResult);
+      }
+    });
+
+    browser.test.onMessage.addListener(msg => {
+      switch (msg) {
+        case "inspectedWindow_reload": {
+          
+          
+          isReloading = true;
+          collectedEvalResults = [];
+          browser.devtools.inspectedWindow.eval("window.location.reload();");
+          break;
+        }
+
+        case "collected_devtools_eval_results:request": {
+          browser.test.sendMessage("collected_devtools_eval_results:reply",
+                                   collectedEvalResults);
+          break;
+        }
+
+        default: {
+          browser.test.fail(`Received unexpected test.onMesssage: ${msg}`);
+        }
       }
     });
 
@@ -63,23 +86,32 @@ add_task(async function test_devtools_panels_elements_onSelectionChanged() {
 
   await extension.awaitMessage("devtools_page_loaded");
 
-  toolbox.selectTool("inspector");
+  await toolbox.selectTool("inspector");
+
+  const inspector = toolbox.getPanel("inspector");
 
   const evalResult = await extension.awaitMessage("devtools_eval_result");
 
   is(evalResult, "BODY", "Got the expected onSelectionChanged once the inspector is selected");
 
-  const evalResultNavigating = await extension.awaitMessage("devtools_eval_result");
+  
+  
+  const onceMarkupReloaded = inspector.once("markuploaded");
+  extension.sendMessage("inspectedWindow_reload");
+  await onceMarkupReloaded;
 
-  is(evalResultNavigating, undefined, "Got the expected onSelectionChanged once the tab is navigating");
+  
+  
+  
+  extension.sendMessage("collected_devtools_eval_results:request");
+  const collectedEvalResults = await extension.awaitMessage("collected_devtools_eval_results:reply");
+  const evalResultNavigating = collectedEvalResults.shift();
+  const evalResultOnceMarkupReloaded = collectedEvalResults.pop();
 
-  const evalResultNavigated = await extension.awaitMessage("devtools_eval_result");
+  is(evalResultNavigating, undefined,
+     "Got the expected onSelectionChanged once the tab is navigating");
 
-  is(evalResultNavigated, undefined, "Got the expected onSelectionChanged once the tab navigated");
-
-  const evalResultReloaded = await extension.awaitMessage("devtools_eval_result");
-
-  is(evalResultReloaded, "BODY",
+  is(evalResultOnceMarkupReloaded, "BODY",
      "Got the expected onSelectionChanged once the tab has been completely reloaded");
 
   await gDevTools.closeToolbox(target);
