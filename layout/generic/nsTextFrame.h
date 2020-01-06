@@ -12,6 +12,7 @@
 #include "mozilla/UniquePtr.h"
 #include "nsFrame.h"
 #include "nsFrameSelection.h"
+#include "nsGenericDOMDataNode.h"
 #include "nsSplittableFrame.h"
 #include "nsLineBox.h"
 #include "gfxSkipChars.h"
@@ -96,7 +97,10 @@ public:
       aNextContinuation->RemoveStateBits(NS_FRAME_IS_FLUID_CONTINUATION);
     
     
-    GetContent()->DeleteProperty(nsGkAtoms::flowlength);
+    if (GetContent()->HasFlag(NS_HAS_FLOWLENGTH_PROPERTY)) {
+      GetContent()->DeleteProperty(nsGkAtoms::flowlength);
+      GetContent()->UnsetFlags(NS_HAS_FLOWLENGTH_PROPERTY);
+    }
   }
   nsIFrame* GetNextInFlowVirtual() const override { return GetNextInFlow(); }
   nsTextFrame* GetNextInFlow() const
@@ -119,7 +123,10 @@ public:
         !mNextContinuation->HasAnyStateBits(NS_FRAME_IS_FLUID_CONTINUATION)) {
       
       
-      GetContent()->DeleteProperty(nsGkAtoms::flowlength);
+      if (GetContent()->HasFlag(NS_HAS_FLOWLENGTH_PROPERTY)) {
+        GetContent()->DeleteProperty(nsGkAtoms::flowlength);
+        GetContent()->UnsetFlags(NS_HAS_FLOWLENGTH_PROPERTY);
+      }
     }
     if (aNextInFlow) {
       aNextInFlow->AddStateBits(NS_FRAME_IS_FLUID_CONTINUATION);
