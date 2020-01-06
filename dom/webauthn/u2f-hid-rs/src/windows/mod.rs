@@ -11,6 +11,7 @@ mod monitor;
 mod winapi;
 
 use consts::PARAMETER_SIZE;
+use khmatcher::KeyHandleMatcher;
 use runloop::RunLoop;
 use util::{io_err, OnceCallback};
 use u2fprotocol::{u2f_register, u2f_sign, u2f_is_keyhandle_valid};
@@ -33,6 +34,7 @@ impl PlatformManager {
         timeout: u64,
         challenge: Vec<u8>,
         application: Vec<u8>,
+        key_handles: Vec<Vec<u8>>,
         callback: OnceCallback<Vec<u8>>,
     ) {
         
@@ -43,7 +45,8 @@ impl PlatformManager {
         let thread = RunLoop::new_with_timeout(
             move |alive| {
                 let mut devices = DeviceMap::new();
-                let monitor = try_or!(Monitor::new(), |e| { callback.call(Err(e)); });
+                let monitor = try_or!(Monitor::new(), |e| callback.call(Err(e)));
+                let mut matches = KeyHandleMatcher::new(&key_handles);
 
                 while alive() && monitor.alive() {
                     
@@ -52,10 +55,19 @@ impl PlatformManager {
                     }
 
                     
-                    for device in devices.values_mut() {
-                        if let Ok(bytes) = u2f_register(device, &challenge, &application) {
-                            callback.call(Ok(bytes));
-                            return;
+                    matches.update(devices.iter_mut(), |device, key_handle| {
+                        u2f_is_keyhandle_valid(device, &challenge, &application, key_handle)
+                            .unwrap_or(false )
+                    });
+
+                    
+                    
+                    for (path, device) in devices.iter_mut() {
+                        if matches.get(path).is_empty() {
+                            if let Ok(bytes) = u2f_register(device, &challenge, &application) {
+                                callback.call(Ok(bytes));
+                                return;
+                            }
                         }
                     }
 
@@ -89,7 +101,8 @@ impl PlatformManager {
         let thread = RunLoop::new_with_timeout(
             move |alive| {
                 let mut devices = DeviceMap::new();
-                let monitor = try_or!(Monitor::new(), |e| { callback.call(Err(e)); });
+                let monitor = try_or!(Monitor::new(), |e| callback.call(Err(e)));
+                let mut matches = KeyHandleMatcher::new(&key_handles);
 
                 while alive() && monitor.alive() {
                     
@@ -98,38 +111,38 @@ impl PlatformManager {
                     }
 
                     
-                    for key_handle in &key_handles {
-                        for device in devices.values_mut() {
-                            
-                            let is_valid = match u2f_is_keyhandle_valid(
+                    matches.update(devices.iter_mut(), |device, key_handle| {
+                        u2f_is_keyhandle_valid(device, &challenge, &application, key_handle)
+                            .unwrap_or(false )
+                    });
+
+                    
+                    for (path, device) in devices.iter_mut() {
+                        let key_handles = matches.get(path);
+
+                        
+                        
+                        if key_handles.is_empty() {
+                            let blank = vec![0u8; PARAMETER_SIZE];
+                            if let Ok(_) = u2f_register(device, &blank, &blank) {
+                                callback.call(Err(io_err("invalid key")));
+                                return;
+                            }
+
+                            continue;
+                        }
+
+                        
+                        for key_handle in key_handles {
+                            if let Ok(bytes) = u2f_sign(
                                 device,
                                 &challenge,
                                 &application,
-                                &key_handle,
-                            ) {
-                                Ok(valid) => valid,
-                                Err(_) => continue, 
-                            };
-
-                            if is_valid {
-                                
-                                if let Ok(bytes) = u2f_sign(
-                                    device,
-                                    &challenge,
-                                    &application,
-                                    &key_handle,
-                                )
-                                {
-                                    callback.call(Ok((key_handle.clone(), bytes)));
-                                    return;
-                                }
-                            } else {
-                                
-                                let blank = vec![0u8; PARAMETER_SIZE];
-                                if let Ok(_) = u2f_register(device, &blank, &blank) {
-                                    callback.call(Err(io_err("invalid key")));
-                                    return;
-                                }
+                                key_handle,
+                            )
+                            {
+                                callback.call(Ok((key_handle.to_vec(), bytes)));
+                                return;
                             }
                         }
                     }
