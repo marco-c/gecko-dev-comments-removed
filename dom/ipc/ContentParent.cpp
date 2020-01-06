@@ -2796,7 +2796,7 @@ ContentParent::Observe(nsISupports* aSubject,
     
     NS_LossyConvertUTF16toASCII strData(aData);
 
-    PrefSetting pref(strData, null_t(), null_t());
+    Pref pref(strData, null_t(), null_t());
     Preferences::GetPreference(&pref);
     if (!SendPreferenceUpdate(pref)) {
       return NS_ERROR_NOT_AVAILABLE;
