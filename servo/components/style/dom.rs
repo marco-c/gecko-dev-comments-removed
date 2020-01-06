@@ -33,7 +33,6 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::Deref;
 use stylist::Stylist;
-use thread_state;
 use traversal_flags::{TraversalFlags, self};
 
 pub use style_traits::UnsafeNode;
@@ -238,44 +237,6 @@ fn fmt_subtree<F, N: TNode>(f: &mut fmt::Formatter, stringify: &F, n: N, indent:
     }
 
     Ok(())
-}
-
-
-
-
-
-
-
-
-
-
-
-pub unsafe fn raw_note_descendants<E, B>(element: E) -> bool
-    where E: TElement,
-          B: DescendantsBit<E>,
-{
-    debug_assert!(!thread_state::get().is_worker());
-    
-    
-    debug_assert!(element.get_data().is_some(),
-                  "You should ensure you only flag styled elements");
-
-    let mut curr = Some(element);
-    while let Some(el) = curr {
-        if B::has(el) {
-            break;
-        }
-        B::set(el);
-        curr = el.traversal_parent();
-    }
-
-    
-    
-    if cfg!(feature = "gecko") {
-        debug_assert!(element.descendants_bit_is_propagated::<B>());
-    }
-
-    curr.is_none()
 }
 
 
@@ -504,26 +465,7 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     
     
     
-    
-    
-    
-    unsafe fn note_descendants<B: DescendantsBit<Self>>(&self);
-
-    
-    
-    
     unsafe fn set_dirty_descendants(&self);
-
-    
-    fn descendants_bit_is_propagated<B: DescendantsBit<Self>>(&self) -> bool {
-        let mut current = Some(*self);
-        while let Some(el) = current {
-            if !B::has(el) { return false; }
-            current = el.traversal_parent();
-        }
-
-        true
-    }
 
     
     

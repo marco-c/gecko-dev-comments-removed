@@ -63,14 +63,13 @@ use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::mem::transmute;
 use std::sync::atomic::Ordering;
-use style;
 use style::CaseSensitivityExt;
 use style::applicable_declarations::ApplicableDeclarationBlock;
 use style::attr::AttrValue;
 use style::computed_values::display;
 use style::context::{QuirksMode, SharedStyleContext};
 use style::data::ElementData;
-use style::dom::{DescendantsBit, DirtyDescendants, LayoutIterator, NodeInfo, OpaqueNode};
+use style::dom::{LayoutIterator, NodeInfo, OpaqueNode};
 use style::dom::{PresentationalHintsSynthesizer, TElement, TNode, UnsafeNode};
 use style::element_state::*;
 use style::font_metrics::ServoMetricsProvider;
@@ -469,11 +468,6 @@ impl<'le> TElement for ServoLayoutElement<'le> {
         self.as_node().node.set_flag(HANDLED_SNAPSHOT, true);
     }
 
-    unsafe fn note_descendants<B: DescendantsBit<Self>>(&self) {
-        debug_assert!(self.get_data().is_some());
-        style::dom::raw_note_descendants::<Self, B>(*self);
-    }
-
     unsafe fn set_dirty_descendants(&self) {
         debug_assert!(self.as_node().node.get_flag(IS_IN_DOC));
         self.as_node().node.set_flag(HAS_DIRTY_DESCENDANTS, true)
@@ -625,12 +619,6 @@ impl<'le> ServoLayoutElement<'le> {
         self.as_node().node.set_flag(HAS_SNAPSHOT, true);
     }
 
-    
-    
-    
-    
-    
-    
     pub unsafe fn note_dirty_descendant(&self) {
         use ::selectors::Element;
 
@@ -644,8 +632,6 @@ impl<'le> ServoLayoutElement<'le> {
             el.set_dirty_descendants();
             current = el.parent_element();
         }
-
-        debug_assert!(self.descendants_bit_is_propagated::<DirtyDescendants>());
     }
 }
 
