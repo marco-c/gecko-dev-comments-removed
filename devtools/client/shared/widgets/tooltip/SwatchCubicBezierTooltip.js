@@ -26,8 +26,7 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 function SwatchCubicBezierTooltip(document) {
-  let stylesheet = "chrome://devtools/content/shared/widgets/cubic-bezier.css";
-  SwatchBasedEditorTooltip.call(this, document, stylesheet);
+  SwatchBasedEditorTooltip.call(this, document);
 
   
   

@@ -22,9 +22,7 @@ const INLINE_TOOLTIP_CLASS = "inline-tooltip-container";
 
 
 
-
-
-function SwatchBasedEditorTooltip(document, stylesheet, useInline) {
+function SwatchBasedEditorTooltip(document, useInline) {
   EventEmitter.decorate(this);
 
   this.useInline = useInline;
@@ -40,7 +38,6 @@ function SwatchBasedEditorTooltip(document, stylesheet, useInline) {
       type: "arrow",
       consumeOutsideClicks: true,
       useXulWrapper: true,
-      stylesheet
     });
   }
 
