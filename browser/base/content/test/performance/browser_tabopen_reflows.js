@@ -1,145 +1,108 @@
 
 
 
-XPCOMUtils.defineLazyGetter(this, "docShell", () => {
-  return window.QueryInterface(Ci.nsIInterfaceRequestor)
-               .getInterface(Ci.nsIWebNavigation)
-               .QueryInterface(Ci.nsIDocShell);
-});
+"use strict";
+
+
+
+
+
+
+
+
+
 
 const EXPECTED_REFLOWS = [
   
-  "adjustTabstrip@chrome://browser/content/tabbrowser.xml|" +
-    "_handleNewTab@chrome://browser/content/tabbrowser.xml|" +
-    "onxbltransitionend@chrome://browser/content/tabbrowser.xml|",
-
   
-  "_adjustFocusAfterTabSwitch@chrome://browser/content/tabbrowser.xml|" +
-    "updateCurrentBrowser@chrome://browser/content/tabbrowser.xml|" +
-    "onselect@chrome://browser/content/browser.xul|",
-
-  
-  "openLinkIn@chrome://browser/content/utilityOverlay.js|" +
-    "openUILinkIn@chrome://browser/content/utilityOverlay.js|" +
-    "BrowserOpenTab@chrome://browser/content/browser.js|",
+  [
+    "select@chrome://global/content/bindings/textbox.xml",
+    "focusAndSelectUrlBar@chrome://browser/content/browser.js",
+    "openLinkIn@chrome://browser/content/utilityOverlay.js",
+    "openUILinkIn@chrome://browser/content/utilityOverlay.js",
+    "BrowserOpenTab@chrome://browser/content/browser.js",
+  ],
 
   
   
-  "select@chrome://global/content/bindings/textbox.xml|" +
-    "focusAndSelectUrlBar@chrome://browser/content/browser.js|" +
-    "openLinkIn@chrome://browser/content/utilityOverlay.js|" +
-    "openUILinkIn@chrome://browser/content/utilityOverlay.js|" +
-    "BrowserOpenTab@chrome://browser/content/browser.js|",
+  [
+    "select@chrome://global/content/bindings/textbox.xml",
+    "focusAndSelectUrlBar@chrome://browser/content/browser.js",
+    "openLinkIn@chrome://browser/content/utilityOverlay.js",
+    "openUILinkIn@chrome://browser/content/utilityOverlay.js",
+    "BrowserOpenTab@chrome://browser/content/browser.js",
+  ],
 
+  [
+    "select@chrome://global/content/bindings/textbox.xml",
+    "focusAndSelectUrlBar@chrome://browser/content/browser.js",
+    "openLinkIn@chrome://browser/content/utilityOverlay.js",
+    "openUILinkIn@chrome://browser/content/utilityOverlay.js",
+    "BrowserOpenTab@chrome://browser/content/browser.js",
+  ],
+
+  [
+    "openLinkIn@chrome://browser/content/utilityOverlay.js",
+    "openUILinkIn@chrome://browser/content/utilityOverlay.js",
+    "BrowserOpenTab@chrome://browser/content/browser.js",
+  ],
 ];
 
-const PREF_PRELOAD = "browser.newtab.preload";
-const PREF_NEWTAB_DIRECTORYSOURCE = "browser.newtabpage.directory.source";
+if (!gMultiProcessBrowser) {
+  EXPECTED_REFLOWS.push(
+    [
+      "_adjustFocusAfterTabSwitch@chrome://browser/content/tabbrowser.xml",
+      "updateCurrentBrowser@chrome://browser/content/tabbrowser.xml",
+      "onselect@chrome://browser/content/browser.xul",
+    ],
+  );
+}
 
 
 
 
 
 add_task(async function() {
-  let DirectoryLinksProvider = Cu.import("resource:///modules/DirectoryLinksProvider.jsm", {}).DirectoryLinksProvider;
-  let NewTabUtils = Cu.import("resource://gre/modules/NewTabUtils.jsm", {}).NewTabUtils;
-  let Promise = Cu.import("resource://gre/modules/Promise.jsm", {}).Promise;
-
   
-  function watchLinksChangeOnce() {
-    return new Promise(resolve => {
-      let observer = {
-        onManyLinksChanged: () => {
-          DirectoryLinksProvider.removeObserver(observer);
-          NewTabUtils.links.populateCache(() => {
-            NewTabUtils.allPages.update();
-            resolve();
-          }, true);
-        }
-      };
-      observer.onDownloadFail = observer.onManyLinksChanged;
-      DirectoryLinksProvider.addObserver(observer);
-    });
+  
+  
+  
+  
+  let preloaded = gBrowser._getPreloadedBrowser();
+  if (preloaded) {
+    preloaded.remove();
   }
 
-  let gOrigDirectorySource = Services.prefs.getCharPref(PREF_NEWTAB_DIRECTORYSOURCE);
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref(PREF_PRELOAD);
-    Services.prefs.setCharPref(PREF_NEWTAB_DIRECTORYSOURCE, gOrigDirectorySource);
-    return watchLinksChangeOnce();
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.newtab.preload", false]],
   });
 
-  Services.prefs.setBoolPref(PREF_PRELOAD, false);
-  
-  Services.prefs.setCharPref(PREF_NEWTAB_DIRECTORYSOURCE, 'data:application/json,{"test":1}');
+  let aboutNewTabService = Cc["@mozilla.org/browser/aboutnewtab-service;1"]
+                             .getService(Ci.nsIAboutNewTabService);
+  aboutNewTabService.newTabURL = "about:blank";
+
+  registerCleanupFunction(() => {
+    aboutNewTabService.resetNewTabURL();
+  });
 
   
-  await watchLinksChangeOnce();
-
   
   
-  let target = gBrowser.selectedBrowser;
-  let rect = target.getBoundingClientRect();
-  let left = rect.left + 1;
-  let top = rect.top + 1;
-
-  let utils = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                    .getInterface(Ci.nsIDOMWindowUtils);
-  utils.sendMouseEvent("mousedown", left, top, 0, 1, 0, false, 0, 0);
-  utils.sendMouseEvent("mouseup", left, top, 0, 1, 0, false, 0, 0);
+  
+  
+  let origTab = gBrowser.selectedTab;
 
   
-  docShell.addWeakReflowObserver(observer);
-  BrowserOpenTab();
+  await withReflowObserver(async function() {
+    let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
+    BrowserOpenTab();
+    await BrowserTestUtils.waitForEvent(gBrowser.selectedTab, "transitionend",
+        false, e => e.propertyName === "max-width");
+    await switchDone;
+  }, EXPECTED_REFLOWS, window, origTab);
 
-  
-  await waitForTransitionEnd();
-
-  
-  docShell.removeWeakReflowObserver(observer);
-  gBrowser.removeCurrentTab();
+  let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await switchDone;
 });
 
-var observer = {
-  reflow(start, end) {
-    
-    let path = (new Error().stack).split("\n").slice(1).map(line => {
-      return line.replace(/:\d+:\d+$/, "");
-    }).join("|");
-    let pathWithLineNumbers = (new Error().stack).split("\n").slice(1).join("|");
-
-    
-    if (path === "") {
-      return;
-    }
-
-    
-    for (let stack of EXPECTED_REFLOWS) {
-      if (path.startsWith(stack)) {
-        ok(true, "expected uninterruptible reflow '" + stack + "'");
-        return;
-      }
-    }
-
-    ok(false, "unexpected uninterruptible reflow '" + pathWithLineNumbers + "'");
-  },
-
-  reflowInterruptible(start, end) {
-    
-  },
-
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIReflowObserver,
-                                         Ci.nsISupportsWeakReference])
-};
-
-function waitForTransitionEnd() {
-  return new Promise(resolve => {
-    let tab = gBrowser.selectedTab;
-    tab.addEventListener("transitionend", function onEnd(event) {
-      if (event.propertyName === "max-width") {
-        tab.removeEventListener("transitionend", onEnd);
-        resolve();
-      }
-    });
-  });
-}
