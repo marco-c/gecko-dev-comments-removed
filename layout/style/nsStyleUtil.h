@@ -201,8 +201,12 @@ public:
 
 
 
+
+
+
   static bool CSPAllowsInlineStyle(nsIContent* aContent,
                                    nsIPrincipal* aPrincipal,
+                                   nsIPrincipal* aTriggeringPrincipal,
                                    nsIURI* aSourceURI,
                                    uint32_t aLineNumber,
                                    const nsAString& aStyleText,
