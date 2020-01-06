@@ -101,6 +101,10 @@ public:
   typedef uint32_t                            size_type;
 
   
+  typedef StringDataFlags                     DataFlags;
+  typedef StringClassFlags                    ClassFlags;
+
+  
 
 
 
@@ -162,9 +166,9 @@ public:
     return mLength;
   }
 
-  uint32_t Flags() const
+  DataFlags GetDataFlags() const
   {
-    return mFlags;
+    return mDataFlags;
   }
 
   bool IsEmpty() const
@@ -174,17 +178,17 @@ public:
 
   bool IsLiteral() const
   {
-    return (mFlags & F_LITERAL) != 0;
+    return !!(mDataFlags & DataFlags::LITERAL);
   }
 
   bool IsVoid() const
   {
-    return (mFlags & F_VOIDED) != 0;
+    return !!(mDataFlags & DataFlags::VOIDED);
   }
 
   bool IsTerminated() const
   {
-    return (mFlags & F_TERMINATED) != 0;
+    return !!(mDataFlags & DataFlags::TERMINATED);
   }
 
   char_type CharAt(index_type aIndex) const
@@ -302,73 +306,19 @@ protected:
   nsTStringRepr_CharT() = delete; 
 
   constexpr
-  nsTStringRepr_CharT(char_type* aData, size_type aLength, uint32_t aFlags)
+  nsTStringRepr_CharT(char_type* aData, size_type aLength,
+                      DataFlags aDataFlags, ClassFlags aClassFlags)
     : mData(aData)
     , mLength(aLength)
-    , mFlags(aFlags)
+    , mDataFlags(aDataFlags)
+    , mClassFlags(aClassFlags)
   {
   }
 
-  char_type*  mData;
-  size_type   mLength;
-  uint32_t    mFlags;
-
-public:
-  
-  
-  
-  
-  
-
-  enum
-  {
-    F_NONE         = 0,       
-
-    
-    F_TERMINATED   = 1 << 0,  
-    F_VOIDED       = 1 << 1,  
-    F_SHARED       = 1 << 2,  
-    F_OWNED        = 1 << 3,  
-    F_FIXED        = 1 << 4,  
-    F_LITERAL      = 1 << 5,  
-
-    
-    F_CLASS_FIXED  = 1 << 16   
-  };
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  char_type* mData;
+  size_type mLength;
+  DataFlags mDataFlags;
+  ClassFlags const mClassFlags;
 };
 
 } 
@@ -1042,10 +992,10 @@ public:
 
   void ForgetSharedBuffer()
   {
-    if (mFlags & nsAString::F_SHARED) {
+    if (mDataFlags & DataFlags::SHARED) {
       mData = char_traits::sEmptyBuffer;
       mLength = 0;
-      SetDataFlags(F_TERMINATED);
+      SetDataFlags(DataFlags::TERMINATED);
     }
   }
 
@@ -1056,7 +1006,7 @@ public:
 
 
   MOZ_IMPLICIT nsTSubstring_CharT(const substring_tuple_type& aTuple)
-    : nsTStringRepr_CharT(nullptr, 0, F_NONE)
+    : nsTStringRepr_CharT(nullptr, 0, DataFlags(0), ClassFlags(0))
   {
     Assign(aTuple);
   }
@@ -1095,7 +1045,8 @@ protected:
 
   
   nsTSubstring_CharT()
-    : nsTStringRepr_CharT(char_traits::sEmptyBuffer, 0, F_TERMINATED)
+    : nsTStringRepr_CharT(char_traits::sEmptyBuffer, 0, DataFlags::TERMINATED,
+                          ClassFlags(0))
   {
   }
 
@@ -1103,21 +1054,23 @@ protected:
   
   nsTSubstring_CharT(const self_type& aStr)
     : nsTStringRepr_CharT(aStr.mData, aStr.mLength,
-                          aStr.mFlags & (F_TERMINATED | F_VOIDED))
+                          aStr.mDataFlags & (DataFlags::TERMINATED | DataFlags::VOIDED),
+                          ClassFlags(0))
   {
   }
 
  
 
 
-  
+  nsTSubstring_CharT(char_type* aData, size_type aLength,
+                     DataFlags aDataFlags, ClassFlags aClassFlags)
+
 #if defined(DEBUG) || defined(FORCE_BUILD_REFCNT_LOGGING)
 #define XPCOM_STRING_CONSTRUCTOR_OUT_OF_LINE
-  nsTSubstring_CharT(char_type* aData, size_type aLength, uint32_t aFlags);
+    ;
 #else
 #undef XPCOM_STRING_CONSTRUCTOR_OUT_OF_LINE
-  nsTSubstring_CharT(char_type* aData, size_type aLength, uint32_t aFlags)
-    : nsTStringRepr_CharT(aData, aLength, aFlags)
+    : nsTStringRepr_CharT(aData, aLength, aDataFlags, aClassFlags)
   {
     MOZ_RELEASE_ASSERT(CheckCapacity(aLength), "String is too large.");
   }
@@ -1149,7 +1102,7 @@ protected:
 
 
   bool NS_FASTCALL MutatePrep(size_type aCapacity,
-                              char_type** aOldData, uint32_t* aOldFlags);
+                              char_type** aOldData, DataFlags* aOldDataFlags);
 
   
 
@@ -1214,10 +1167,9 @@ protected:
   
 
 
-  void SetDataFlags(uint32_t aDataFlags)
+  void SetDataFlags(DataFlags aDataFlags)
   {
-    NS_ASSERTION((aDataFlags & 0xFFFF0000) == 0, "bad flags");
-    mFlags = aDataFlags | (mFlags & 0xFFFF0000);
+    mDataFlags = aDataFlags;
   }
 
   void NS_FASTCALL ReplaceLiteral(index_type aCutStart, size_type aCutLength,

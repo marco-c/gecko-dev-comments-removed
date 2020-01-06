@@ -11,7 +11,7 @@ nsTAdoptingString_CharT::operator=(const self_type& str)
   
   self_type* mutable_str = const_cast<self_type*>(&str);
 
-  if (str.mFlags & F_OWNED) {
+  if (str.mDataFlags & DataFlags::OWNED) {
     
     
     
@@ -20,7 +20,7 @@ nsTAdoptingString_CharT::operator=(const self_type& str)
     Finalize();
     mData = str.mData;
     mLength = str.mLength;
-    SetDataFlags(F_TERMINATED | F_OWNED);
+    SetDataFlags(DataFlags::TERMINATED | DataFlags::OWNED);
 
     
     new (mutable_str) self_type();
@@ -41,7 +41,7 @@ nsTString_CharT::Rebind(const char_type* data, size_type length)
 
   mData = const_cast<char_type*>(data);
   mLength = length;
-  SetDataFlags(F_TERMINATED);
+  SetDataFlags(DataFlags::TERMINATED);
   AssertValidDependentString();
 }
 

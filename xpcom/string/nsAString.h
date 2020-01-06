@@ -10,11 +10,74 @@
 
 #include "nsStringFwd.h"
 #include "nsStringIterator.h"
+#include "mozilla/TypedEnumBits.h"
 
 #include <string.h>
 #include <stdarg.h>
 
 #define kNotFound -1
+
+namespace mozilla {
+namespace detail {
+
+
+
+
+
+
+enum class StringDataFlags : uint16_t
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  TERMINATED   = 1 << 0,  
+  VOIDED       = 1 << 1,  
+  SHARED       = 1 << 2,  
+  OWNED        = 1 << 3,  
+  FIXED        = 1 << 4,  
+  LITERAL      = 1 << 5   
+};
+
+
+enum class StringClassFlags : uint16_t
+{
+  FIXED  = 1 << 0   
+};
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(StringDataFlags)
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(StringClassFlags)
+
+} 
+} 
 
 
 #include "string-template-def-unichar.h"
