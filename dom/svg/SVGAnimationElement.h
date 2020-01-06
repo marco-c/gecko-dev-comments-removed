@@ -99,7 +99,7 @@ public:
                         const nsAString& aHrefStr);
   void AnimationTargetChanged();
 
-  class TargetReference : public nsReferencedElement {
+  class TargetReference : public mozilla::dom::IDTracker {
   public:
     explicit TargetReference(SVGAnimationElement* aAnimationElement) :
       mAnimationElement(aAnimationElement) {}
@@ -108,7 +108,7 @@ public:
     
     
     virtual void ElementChanged(Element* aFrom, Element* aTo) override {
-      nsReferencedElement::ElementChanged(aFrom, aTo);
+      IDTracker::ElementChanged(aFrom, aTo);
       mAnimationElement->AnimationTargetChanged();
     }
 
