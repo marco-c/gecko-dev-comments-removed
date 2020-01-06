@@ -23,6 +23,7 @@ static const int netCharType[256] =
 
 
 
+
   
   {  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,   
      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,   
@@ -34,7 +35,8 @@ static const int netCharType[256] =
      7,7,7,7,7,7,7,7,7,7,7,0,0,0,0,7,   
      0,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,   
      7,7,7,7,7,7,7,7,7,7,7,0,0,0,0,0,   
-     0, };
+     0,
+  };
 
 
 
@@ -258,6 +260,7 @@ nsAppendEscapedHTML(const nsACString& aSrc, nsACString& aDst)
 
 static const uint32_t EscapeChars[256] =
 
+
 {
      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  
      0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  
@@ -269,6 +272,7 @@ static const uint32_t EscapeChars[256] =
   1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,1023, 896,1012, 896,1023,   0,  
      0                                                                              
 };
+
 
 static uint16_t dontNeedEscape(unsigned char aChar, uint32_t aFlags)
 {
