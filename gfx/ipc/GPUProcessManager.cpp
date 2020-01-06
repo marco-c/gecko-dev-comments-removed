@@ -378,7 +378,24 @@ ShouldLimitDeviceResets(uint32_t count, int32_t deltaMilliseconds)
 }
 
 void
-GPUProcessManager::OnProcessDeviceReset(GPUProcessHost* aHost)
+GPUProcessManager::TriggerDeviceResetForTesting()
+{
+  if (mProcess) {
+    OnRemoteProcessDeviceReset(mProcess);
+  } else {
+    OnInProcessDeviceReset();
+  }
+}
+
+void
+GPUProcessManager::OnInProcessDeviceReset()
+{
+  RebuildInProcessSessions();
+  NotifyListenersOnCompositeDeviceReset();
+}
+
+void
+GPUProcessManager::OnRemoteProcessDeviceReset(GPUProcessHost* aHost)
 {
   
   
@@ -397,7 +414,12 @@ GPUProcessManager::OnProcessDeviceReset(GPUProcessHost* aHost)
   }
 
   RebuildRemoteSessions();
+  NotifyListenersOnCompositeDeviceReset();
+}
 
+void
+GPUProcessManager::NotifyListenersOnCompositeDeviceReset()
+{
   for (const auto& listener : mListeners) {
     listener->OnCompositorDeviceReset();
   }
@@ -516,6 +538,23 @@ GPUProcessManager::RebuildRemoteSessions()
   
   nsTArray<RefPtr<RemoteCompositorSession>> sessions;
   for (auto& session : mRemoteSessions) {
+    sessions.AppendElement(session);
+  }
+
+  
+  
+  for (const auto& session : sessions) {
+    session->NotifySessionLost();
+  }
+}
+
+void
+GPUProcessManager::RebuildInProcessSessions()
+{
+  
+  
+  nsTArray<RefPtr<InProcessCompositorSession>> sessions;
+  for (auto& session : mInProcessSessions) {
     sessions.AppendElement(session);
   }
 
@@ -964,15 +1003,27 @@ GPUProcessManager::ShutdownVsyncIOThread()
 }
 
 void
-GPUProcessManager::RegisterSession(RemoteCompositorSession* aSession)
+GPUProcessManager::RegisterRemoteProcessSession(RemoteCompositorSession* aSession)
 {
   mRemoteSessions.AppendElement(aSession);
 }
 
 void
-GPUProcessManager::UnregisterSession(RemoteCompositorSession* aSession)
+GPUProcessManager::UnregisterRemoteProcessSession(RemoteCompositorSession* aSession)
 {
   mRemoteSessions.RemoveElement(aSession);
+}
+
+void
+GPUProcessManager::RegisterInProcessSession(InProcessCompositorSession* aSession)
+{
+  mInProcessSessions.AppendElement(aSession);
+}
+
+void
+GPUProcessManager::UnregisterInProcessSession(InProcessCompositorSession* aSession)
+{
+  mInProcessSessions.RemoveElement(aSession);
 }
 
 void
