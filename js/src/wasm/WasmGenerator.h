@@ -31,7 +31,6 @@ namespace wasm {
 
 struct FuncCompileInput
 {
-    Bytes          bytesToDelete;
     const uint8_t* begin;
     const uint8_t* end;
     uint32_t       index;
@@ -40,12 +39,10 @@ struct FuncCompileInput
 
     FuncCompileInput(uint32_t index,
                      uint32_t lineOrBytecode,
-                     Bytes&& bytesToDelete,
                      const uint8_t* begin,
                      const uint8_t* end,
                      Uint32Vector&& callSiteLineNums)
-      : bytesToDelete(Move(bytesToDelete)),
-        begin(begin),
+      : begin(begin),
         end(end),
         index(index),
         lineOrBytecode(lineOrBytecode),
@@ -145,7 +142,6 @@ struct CompileTask
 
 class MOZ_STACK_CLASS ModuleGenerator
 {
-    typedef HashSet<uint32_t, DefaultHasher<uint32_t>, SystemAllocPolicy> Uint32Set;
     typedef Vector<CompileTask, 0, SystemAllocPolicy> CompileTaskVector;
     typedef Vector<CompileTask*, 0, SystemAllocPolicy> CompileTaskPtrVector;
     typedef EnumeratedArray<Trap, Trap::Limit, uint32_t> Uint32TrapArray;
@@ -167,9 +163,6 @@ class MOZ_STACK_CLASS ModuleGenerator
 
     
     ExclusiveCompileTaskState       taskState_;
-    uint32_t                        numFuncDefs_;
-    uint32_t                        numSigs_;
-    uint32_t                        numTables_;
     LifoAlloc                       lifo_;
     jit::JitContext                 jcx_;
     jit::TempAllocator              masmAlloc_;
@@ -180,7 +173,6 @@ class MOZ_STACK_CLASS ModuleGenerator
     TrapFarJumpVector               trapFarJumps_;
     CallFarJumpVector               callFarJumps_;
     CallSiteTargetVector            callSiteTargets_;
-    Uint32Set                       exportedFuncs_;
     uint32_t                        lastPatchedCallSite_;
     uint32_t                        startOfUnpatchedCallsites_;
     CodeOffsetVector                debugTrapFarJumps_;
@@ -197,6 +189,8 @@ class MOZ_STACK_CLASS ModuleGenerator
     DebugOnly<bool>                 startedFuncDefs_;
     DebugOnly<bool>                 finishedFuncDefs_;
 
+    bool allocateGlobalBytes(uint32_t bytes, uint32_t align, uint32_t* globalDataOff);
+
     bool funcIsCompiled(uint32_t funcIndex) const;
     const CodeRange& funcCodeRange(uint32_t funcIndex) const;
 
@@ -204,23 +198,13 @@ class MOZ_STACK_CLASS ModuleGenerator
     void noteCodeRange(uint32_t codeRangeIndex, const CodeRange& codeRange);
     bool linkCompiledCode(const CompiledCode& code);
     bool finishTask(CompileTask* task);
+    bool launchBatchCompile();
     bool finishOutstandingTask();
-    bool finishFuncExports();
+
     bool finishLinking();
     bool finishMetadata(const ShareableBytes& bytecode);
     UniqueConstCodeSegment finishCodeSegment(const ShareableBytes& bytecode);
     UniqueJumpTable createJumpTable(const CodeSegment& codeSegment);
-    bool addFuncImport(const Sig& sig, uint32_t globalDataOffset);
-    bool allocateGlobalBytes(uint32_t bytes, uint32_t align, uint32_t* globalDataOff);
-    bool allocateGlobal(GlobalDesc* global);
-
-    bool launchBatchCompile();
-    bool compileFuncDef(uint32_t funcIndex, uint32_t lineOrBytecode,
-                        Bytes&& bytes, const uint8_t* begin, const uint8_t* end,
-                        Uint32Vector&& lineNums);
-
-    bool initAsmJS(Metadata* asmJSMetadata);
-    bool initWasm(size_t codeLength);
 
     bool isAsmJS() const { return env_->isAsmJS(); }
     Tier tier() const { return env_->tier(); }
@@ -231,39 +215,22 @@ class MOZ_STACK_CLASS ModuleGenerator
     ModuleGenerator(const CompileArgs& args, ModuleEnvironment* env,
                     Atomic<bool>* cancelled, UniqueChars* error);
     ~ModuleGenerator();
-
     MOZ_MUST_USE bool init(size_t codeSectionSize, Metadata* maybeAsmJSMetadata = nullptr);
 
     
+    
+    
+
     MOZ_MUST_USE bool startFuncDefs();
     MOZ_MUST_USE bool compileFuncDef(uint32_t funcIndex, uint32_t lineOrBytecode,
-                                     const uint8_t* begin, const uint8_t* end);
-    MOZ_MUST_USE bool compileFuncDef(uint32_t funcIndex, uint32_t lineOrBytecode,
-                                     Bytes&& bytes, Uint32Vector&& callSiteLineNums);
+                                     const uint8_t* begin, const uint8_t* end,
+                                     Uint32Vector&& callSiteLineNums = Uint32Vector());
     MOZ_MUST_USE bool finishFuncDefs();
 
     
-    uint32_t minMemoryLength() const { return env_->minMemoryLength; }
-    uint32_t numSigs() const { return numSigs_; }
-    const SigWithId& sig(uint32_t sigIndex) const;
-    const SigWithId& funcSig(uint32_t funcIndex) const;
-
     
-    void initSig(uint32_t sigIndex, Sig&& sig);
-    void initFuncSig(uint32_t funcIndex, uint32_t sigIndex);
-    MOZ_MUST_USE bool initImport(uint32_t funcIndex, uint32_t sigIndex);
-    MOZ_MUST_USE bool initSigTableLength(uint32_t sigIndex, uint32_t length);
-    MOZ_MUST_USE bool initSigTableElems(uint32_t sigIndex, Uint32Vector&& elemFuncIndices);
-    void initMemoryUsage(MemoryUsage memoryUsage);
-    void bumpMinMemoryLength(uint32_t newMinMemoryLength);
-    MOZ_MUST_USE bool addGlobal(ValType type, bool isConst, uint32_t* index);
-    MOZ_MUST_USE bool addExport(CacheableChars&& fieldChars, uint32_t funcIndex);
 
-    
     SharedModule finishModule(const ShareableBytes& bytecode);
-
-    
-    
     MOZ_MUST_USE bool finishTier2(Module& module);
 };
 
