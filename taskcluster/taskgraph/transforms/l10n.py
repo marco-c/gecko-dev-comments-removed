@@ -218,7 +218,7 @@ def setup_nightly_dependency(config, jobs):
         if job['attributes']['build_platform'].startswith('win'):
             
             job['dependencies'].update({
-                'signed-build': 'signing-{}'.format(job['name']),
+                'signed-build': 'build-signing-{}'.format(job['name']),
                 'repackage-signed': 'repackage-signing-{}'.format(job['name'])
             })
         yield job
