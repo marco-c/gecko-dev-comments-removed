@@ -141,7 +141,7 @@ private:
                   uint32_t aSequenceID, bool mNeutered, State aState,
                   ErrorResult& aRv);
 
-  void ConnectToPBackground();
+  bool ConnectToPBackground();
 
   
   void Dispatch();

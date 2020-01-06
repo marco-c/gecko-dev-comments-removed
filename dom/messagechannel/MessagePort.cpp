@@ -311,7 +311,10 @@ MessagePort::Initialize(const nsID& aUUID,
   }
 
   if (mState == eStateEntangling) {
-    ConnectToPBackground();
+    if (!ConnectToPBackground()) {
+      aRv.Throw(NS_ERROR_FAILURE);
+      return;
+    }
   } else {
     MOZ_ASSERT(mState == eStateUnshippedEntangled);
   }
@@ -781,7 +784,11 @@ MessagePort::CloneAndDisentangle(MessagePortIdentifier& aIdentifier)
     MOZ_ASSERT(mMessagesForTheOtherPort.IsEmpty());
 
     
-    mUnshippedEntangledPort->ConnectToPBackground();
+    if (!mUnshippedEntangledPort->ConnectToPBackground()) {
+      
+      return;
+    }
+
     mUnshippedEntangledPort = nullptr;
 
     
@@ -794,7 +801,10 @@ MessagePort::CloneAndDisentangle(MessagePortIdentifier& aIdentifier)
     }
 
     
-    ConnectToPBackground();
+    if (!ConnectToPBackground()) {
+      
+      return;
+    }
 
     mState = eStateEntanglingForDisentangle;
     return;
@@ -827,7 +837,7 @@ MessagePort::Closed()
   UpdateMustKeepAlive();
 }
 
-void
+bool
 MessagePort::ConnectToPBackground()
 {
   mState = eStateEntangling;
@@ -835,18 +845,22 @@ MessagePort::ConnectToPBackground()
   mozilla::ipc::PBackgroundChild* actorChild =
     mozilla::ipc::BackgroundChild::GetOrCreateForCurrentThread();
   if (NS_WARN_IF(!actorChild)) {
-    MOZ_CRASH("Failed to create a PBackgroundChild actor!");
+    return false;
   }
 
   PMessagePortChild* actor =
     actorChild->SendPMessagePortConstructor(mIdentifier->uuid(),
                                             mIdentifier->destinationUuid(),
                                             mIdentifier->sequenceId());
+  if (NS_WARN_IF(!actor)) {
+    return false;
+  }
 
   mActor = static_cast<MessagePortChild*>(actor);
   MOZ_ASSERT(mActor);
 
   mActor->SetPort(this);
+  return true;
 }
 
 void
