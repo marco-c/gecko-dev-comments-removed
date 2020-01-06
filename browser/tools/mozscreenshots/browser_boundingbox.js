@@ -67,11 +67,14 @@ add_task(async function() {
   is(rect.height, expectedBottom - expectedTop,
      "Checking _findBoundingBox union height calculation");
 
-  rect = TestRunner._findBoundingBox(["#does_not_exist"]);
-  
-  is(rect, null, "Checking that selector not found returns null");
+    
+  Assert.throws(() => {
+    TestRunner._findBoundingBox(["#does_not_exist"]);
+  }, "No element for '#does_not_exist' found.", "Checking that nonexistent selectors throws an exception");
 
-  rect = TestRunner._findBoundingBox([]);
   
-  is(rect, null, "Checking that no selectors returns null");
+  Assert.throws(() => {
+    rect = TestRunner._findBoundingBox([]);
+
+  }, "No selectors specified.", "Checking that no selectors throws an exception");
 });
