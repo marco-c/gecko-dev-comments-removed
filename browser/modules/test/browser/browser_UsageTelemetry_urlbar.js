@@ -31,7 +31,15 @@ let searchInAwesomebar = async function(inputText, win = window) {
   
   win.gURLBar.focus();
   win.gURLBar.value = inputText;
+
+  
+  
+  
+  let event = win.document.createEvent("Events");
+  event.initEvent("input", true, true);
+  win.gURLBar.dispatchEvent(event);
   win.gURLBar.controller.startSearch(inputText);
+
   
   await BrowserTestUtils.waitForEvent(win.gURLBar.popup, "popupshown");
   
@@ -49,13 +57,16 @@ function clickURLBarSuggestion(entryName) {
   
   
   const expectedSuggestionName = entryName + " " + SUGGESTION_ENGINE_NAME + " Search";
-  for (let child of gURLBar.popup.richlistbox.children) {
-    if (child.label === expectedSuggestionName) {
-      
-      child.click();
-      return;
+  return BrowserTestUtils.waitForCondition(() => {
+    for (let child of gURLBar.popup.richlistbox.children) {
+      if (child.label === expectedSuggestionName) {
+        
+        child.click();
+        return true;
+      }
     }
-  }
+    return false;
+  }, "Waiting for the expected suggestion to appear");
 }
 
 add_task(async function setup() {
@@ -379,7 +390,7 @@ add_task(async function test_suggestion_click() {
   let p = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   await searchInAwesomebar("query");
   info("Clicking the urlbar suggestion.");
-  clickURLBarSuggestion("queryfoo");
+  await clickURLBarSuggestion("queryfoo");
   await p;
 
   
