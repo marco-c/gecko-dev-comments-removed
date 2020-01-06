@@ -202,6 +202,14 @@ NS_EVENT_MESSAGE(eCompositionCommit)
 
 
 
+
+
+
+NS_EVENT_MESSAGE(eCompositionCommitRequestHandled)
+
+
+
+
 NS_EVENT_MESSAGE(eLegacyDOMActivate)
 
 NS_EVENT_MESSAGE(eLegacyDOMFocusIn)

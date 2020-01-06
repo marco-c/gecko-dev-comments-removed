@@ -653,6 +653,9 @@ PuppetWidget::RequestIMEToCommitComposition(bool aCancel)
   nsEventStatus status = nsEventStatus_eIgnore;
   DispatchEvent(&compositionCommitEvent, status);
 
+  Unused <<
+    mTabChild->SendOnEventNeedingAckHandled(eCompositionCommitRequestHandled);
+
   
   return NS_OK;
 }
@@ -1189,10 +1192,14 @@ PuppetWidget::GetNativeData(uint32_t aDataType)
 {
   switch (aDataType) {
   case NS_NATIVE_SHAREABLE_WINDOW: {
-    MOZ_ASSERT(mTabChild, "Need TabChild to get the nativeWindow from!");
+    
+    
+    if (!mTabChild) {
+      NS_WARNING("Need TabChild to get the nativeWindow from!");
+    }
     mozilla::WindowsHandle nativeData = 0;
     if (mTabChild) {
-      mTabChild->SendGetWidgetNativeData(&nativeData);
+      nativeData = mTabChild->WidgetNativeData();
     }
     return (void*)nativeData;
   }
