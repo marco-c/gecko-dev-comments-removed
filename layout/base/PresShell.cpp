@@ -2936,6 +2936,14 @@ PresShell::DestroyFramesFor(Element* aElement)
     PostRecreateFramesFor(aElement);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
   mPresContext->RestyleManager()->PostRestyleEvent(
     aElement, eRestyle_Subtree, nsChangeHint(0));
 

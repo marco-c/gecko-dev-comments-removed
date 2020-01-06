@@ -178,6 +178,13 @@ richlistitem.download button {
 
 
 
+#downloadsPanel[hasdownloads] #emptyDownloads,
+#downloadsPanel:not([hasdownloads]) #downloadsListBox {
+  display: none;
+}
+
+
+
 
 #downloadsPanel-mainView .download-state[state="8"] .downloadCancel,
 #downloadsPanel-mainView .download-state[state="8"] .downloadConfirmBlock,

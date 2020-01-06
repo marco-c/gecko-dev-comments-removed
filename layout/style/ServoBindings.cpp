@@ -229,8 +229,7 @@ ServoComputedData::GetStyleVariables() const
 MOZ_DEFINE_MALLOC_SIZE_OF(ServoStyleStructsMallocSizeOf)
 
 void
-ServoComputedData::AddSizeOfExcludingThis(SizeOfState& aState,
-                                          nsStyleSizes& aSizes) const
+ServoComputedData::AddSizeOfExcludingThis(nsWindowSizes& aSizes) const
 {
   
   
@@ -256,8 +255,8 @@ ServoComputedData::AddSizeOfExcludingThis(SizeOfState& aState,
                 "alignment will break AddSizeOfExcludingThis()"); \
   const char* p##name_ = reinterpret_cast<const char*>(GetStyle##name_()); \
   p##name_ -= sizeof(size_t); \
-  if (!aState.HaveSeenPtr(p##name_)) { \
-    aSizes.NS_STYLE_SIZES_FIELD(name_) += \
+  if (!aSizes.mState.HaveSeenPtr(p##name_)) { \
+    aSizes.mServoStyleSizes.NS_STYLE_SIZES_FIELD(name_) += \
       ServoStyleStructsMallocSizeOf(p##name_); \
   }
   #define STYLE_STRUCT_LIST_IGNORE_VARIABLES
@@ -265,9 +264,9 @@ ServoComputedData::AddSizeOfExcludingThis(SizeOfState& aState,
 #undef STYLE_STRUCT
 #undef STYLE_STRUCT_LIST_IGNORE_VARIABLES
 
-  if (visited_style.mPtr && !aState.HaveSeenPtr(visited_style.mPtr)) {
+  if (visited_style.mPtr && !aSizes.mState.HaveSeenPtr(visited_style.mPtr)) {
     visited_style.mPtr->AddSizeOfIncludingThis(
-      aState, aSizes, &aSizes.mComputedValuesVisited);
+      aSizes, &aSizes.mLayoutComputedValuesVisited);
   }
 
   
