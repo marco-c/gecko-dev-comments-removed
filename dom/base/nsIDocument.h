@@ -2777,6 +2777,11 @@ public:
     CaretPositionFromPoint(float aX, float aY);
 
   Element* GetScrollingElement();
+  
+  
+  
+  
+  bool IsScrollingElement(Element* aElement);
 
   
   nsINodeList* GetAnonymousNodes(Element& aElement);
@@ -3027,6 +3032,9 @@ protected:
   
   
   void UpdateFrameRequestCallbackSchedulingState(nsIPresShell* aOldShell = nullptr);
+
+  
+  bool IsPotentiallyScrollable(mozilla::dom::HTMLBodyElement* aBody);
 
   nsCString mReferrer;
   nsString mLastModified;

@@ -683,30 +683,30 @@ Element::GetScrollFrame(nsIFrame **aStyledFrame, bool aFlushLayout)
   if (aStyledFrame) {
     *aStyledFrame = frame;
   }
-  if (!frame) {
-    return nullptr;
-  }
-
-  
-  
-  LayoutFrameType type = frame->Type();
-  if (type != LayoutFrameType::Menu &&
-      type != LayoutFrameType::ComboboxControl) {
-    nsIScrollableFrame *scrollFrame = frame->GetScrollTargetFrame();
-    if (scrollFrame)
-      return scrollFrame;
+  if (frame) {
+    
+    
+    LayoutFrameType type = frame->Type();
+    if (type != LayoutFrameType::Menu &&
+        type != LayoutFrameType::ComboboxControl) {
+      nsIScrollableFrame *scrollFrame = frame->GetScrollTargetFrame();
+      if (scrollFrame) {
+        MOZ_ASSERT(!OwnerDoc()->IsScrollingElement(this),
+                   "How can we have a scrollframe if we're the "
+                   "scrollingElement for our document?");
+        return scrollFrame;
+      }
+    }
   }
 
   nsIDocument* doc = OwnerDoc();
-  bool quirksMode = doc->GetCompatibilityMode() == eCompatibility_NavQuirks;
-  Element* elementWithRootScrollInfo =
-    quirksMode ? doc->GetBodyElement() : doc->GetRootElement();
-  if (this == elementWithRootScrollInfo) {
+  
+  
+  if (OwnerDoc()->IsScrollingElement(this)) {
     
-    
-    
-    
-    return frame->PresContext()->PresShell()->GetRootScrollFrameAsScrollable();
+    if (nsIPresShell* shell = doc->GetShell()) {
+      return shell->GetRootScrollFrameAsScrollable();
+    }
   }
 
   return nullptr;

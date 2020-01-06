@@ -10545,9 +10545,12 @@ nsDocument::CaretPositionFromPoint(float aX, float aY, nsISupports** aCaretPos)
   return NS_OK;
 }
 
-static bool
-IsPotentiallyScrollable(HTMLBodyElement* aBody)
+bool
+nsIDocument::IsPotentiallyScrollable(HTMLBodyElement* aBody)
 {
+  
+  FlushPendingNotifications(FlushType::Frames);
+
   
   
 
@@ -10580,8 +10583,8 @@ IsPotentiallyScrollable(HTMLBodyElement* aBody)
 Element*
 nsIDocument::GetScrollingElement()
 {
+  
   if (GetCompatibilityMode() == eCompatibility_NavQuirks) {
-    FlushPendingNotifications(FlushType::Layout);
     HTMLBodyElement* body = GetBodyElement();
     if (body && !IsPotentiallyScrollable(body)) {
       return body;
@@ -10591,6 +10594,27 @@ nsIDocument::GetScrollingElement()
   }
 
   return GetRootElement();
+}
+
+bool
+nsIDocument::IsScrollingElement(Element* aElement)
+{
+  
+  MOZ_ASSERT(aElement);
+
+  if (GetCompatibilityMode() != eCompatibility_NavQuirks) {
+    return aElement == GetRootElement();
+  }
+
+  HTMLBodyElement* body = GetBodyElement();
+  if (aElement != body) {
+    return false;
+  }
+
+  
+  
+  
+  return !IsPotentiallyScrollable(body);
 }
 
 void
