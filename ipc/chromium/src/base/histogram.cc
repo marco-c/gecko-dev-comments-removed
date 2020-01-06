@@ -84,9 +84,7 @@ const size_t Histogram::kBucketCount_MAX = 16384u;
 Histogram* Histogram::FactoryGet(Sample minimum,
                                  Sample maximum,
                                  size_t bucket_count,
-                                 Flags flags,
-                                 const int* buckets) {
-  DCHECK(buckets);
+                                 Flags flags) {
   Histogram* histogram(NULL);
 
   
@@ -96,12 +94,20 @@ Histogram* Histogram::FactoryGet(Sample minimum,
     maximum = kSampleType_MAX - 1;
 
   histogram = new Histogram(minimum, maximum, bucket_count);
-  histogram->InitializeBucketRangeFromData(buckets);
+  histogram->InitializeBucketRange();
   histogram->SetFlags(flags);
 
   DCHECK_EQ(HISTOGRAM, histogram->histogram_type());
   DCHECK(histogram->HasConstructorArguments(minimum, maximum, bucket_count));
   return histogram;
+}
+
+Histogram* Histogram::FactoryTimeGet(TimeDelta minimum,
+                                     TimeDelta maximum,
+                                     size_t bucket_count,
+                                     Flags flags) {
+  return FactoryGet(minimum.InMilliseconds(), maximum.InMilliseconds(),
+                    bucket_count, flags);
 }
 
 void Histogram::Add(int value) {
@@ -272,10 +278,39 @@ Histogram::~Histogram() {
   DCHECK(ValidateBucketRanges());
 }
 
-void Histogram::InitializeBucketRangeFromData(const int* buckets) {
-  ranges_.assign(buckets, buckets + bucket_count());
+
+
+
+
+
+
+
+
+void Histogram::InitializeBucketRange() {
+  double log_max = log(static_cast<double>(declared_max()));
+  double log_ratio;
+  double log_next;
+  size_t bucket_index = 1;
+  Sample current = declared_min();
+  SetBucketRange(bucket_index, current);
+  while (bucket_count() > ++bucket_index) {
+    double log_current;
+    log_current = log(static_cast<double>(current));
+    
+    log_ratio = (log_max - log_current) / (bucket_count() - bucket_index);
+    
+    log_next = log_current + log_ratio;
+    int next;
+    next = static_cast<int>(floor(exp(log_next) + 0.5));
+    if (next > current)
+      current = next;
+    else
+      ++current;  
+    SetBucketRange(bucket_index, current);
+  }
   ResetRangeChecksum();
-  DCHECK(ValidateBucketRanges());
+
+  DCHECK_EQ(bucket_count(), bucket_index);
 }
 
 bool Histogram::PrintEmptyBucket(size_t index) const {
