@@ -14,6 +14,7 @@
 { 0x688be92e, 0x7ade, 0x4fdc, \
 { 0x9d, 0x83, 0x74, 0xcb, 0xef, 0xf4, 0xa5, 0x2c } }
 
+class nsIEventTarget;
 
 
 
@@ -28,8 +29,12 @@ public:
 
 
 
-  virtual void SetDeadline(mozilla::TimeStamp aDeadline) = 0;
-
+  virtual void SetDeadline(mozilla::TimeStamp aDeadline) {};
+  virtual void SetTimer(uint32_t aDelay, nsIEventTarget* aTarget)
+  {
+    NS_NOTREACHED("The nsIIdleRunnable instance does not support "
+                  "idle dispatch with timeout!");
+  };
 protected:
   nsIIdleRunnable() { }
   virtual ~nsIIdleRunnable() {}
