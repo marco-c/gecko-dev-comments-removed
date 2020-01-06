@@ -796,7 +796,8 @@ MoveScrollbarForLayerMargin(Layer* aRoot, FrameMetrics::ViewID aRootScrollId,
   
   Layer* scrollbar = BreadthFirstSearch<ReverseIterator>(aRoot,
     [aRootScrollId](Layer* aNode) {
-      return (aNode->GetScrollThumbData().mDirection == ScrollDirection::HORIZONTAL &&
+      return (aNode->GetScrollThumbData().mDirection.isSome() &&
+              *aNode->GetScrollThumbData().mDirection == ScrollDirection::eHorizontal &&
               aNode->GetScrollbarTargetContainerId() == aRootScrollId);
     });
   if (scrollbar) {
@@ -1073,7 +1074,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
 
         ExpandRootClipRect(layer, fixedLayerMargins);
 
-        if (layer->GetScrollThumbData().mDirection != ScrollDirection::NONE) {
+        if (layer->GetScrollThumbData().mDirection.isSome()) {
           ApplyAsyncTransformToScrollbar(layer);
         }
       });
@@ -1154,7 +1155,7 @@ AsyncCompositionManager::ComputeTransformForScrollThumb(
   
   
   AsyncTransformComponentMatrix scrollbarTransform;
-  if (aThumbData.mDirection == ScrollDirection::VERTICAL) {
+  if (*aThumbData.mDirection == ScrollDirection::eVertical) {
     const ParentLayerCoord asyncScrollY = asyncTransform._42;
     const float asyncZoomY = asyncTransform._22;
 
@@ -1206,7 +1207,7 @@ AsyncCompositionManager::ComputeTransformForScrollThumb(
     scrollbarTransform.PostScale(1.f, yScale, 1.f);
     scrollbarTransform.PostTranslate(0, yTranslation, 0);
   }
-  if (aThumbData.mDirection == ScrollDirection::HORIZONTAL) {
+  if (*aThumbData.mDirection == ScrollDirection::eHorizontal) {
     
 
     const ParentLayerCoord asyncScrollX = asyncTransform._41;

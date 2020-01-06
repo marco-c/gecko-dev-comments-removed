@@ -1622,6 +1622,7 @@ APZCTreeManager::SetupScrollbarDrag(MouseInput& aMouseInput,
   }
 
   const ScrollThumbData& thumbData = aScrollThumbNode->GetScrollThumbData();
+  MOZ_ASSERT(thumbData.mDirection.isSome());
 
   
   
@@ -1655,7 +1656,7 @@ APZCTreeManager::SetupScrollbarDrag(MouseInput& aMouseInput,
     
     
     CSSCoord thumbStart = thumbData.mThumbStart
-                        + ((thumbData.mDirection == ScrollDirection::HORIZONTAL)
+                        + ((*thumbData.mDirection == ScrollDirection::eHorizontal)
                            ? thumbTransform._41 : thumbTransform._42);
     dragStart -= thumbStart;
 
@@ -1671,7 +1672,7 @@ APZCTreeManager::SetupScrollbarDrag(MouseInput& aMouseInput,
                          aApzc->GetGuid().mPresShellId,
                          dragBlockId,
                          dragStart,
-                         thumbData.mDirection));
+                         *thumbData.mDirection));
   }
 }
 
