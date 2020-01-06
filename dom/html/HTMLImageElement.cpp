@@ -431,7 +431,7 @@ HTMLImageElement::AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName,
                                               mSrcTriggeringPrincipal);
       }
       QueueImageLoadTask(true);
-    } else if (aNotify && OwnerDoc()->ShouldLoadImages()) {
+    } else if (aNotify && OwnerDoc()->IsCurrentActiveDocument()) {
       
       
       
@@ -491,7 +491,7 @@ HTMLImageElement::AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName,
       
       
       QueueImageLoadTask(true);
-    } else if (OwnerDoc()->ShouldLoadImages()) {
+    } else if (OwnerDoc()->IsCurrentActiveDocument()) {
       
       
       
@@ -608,7 +608,7 @@ HTMLImageElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     
     
     if (LoadingEnabled() &&
-        OwnerDoc()->ShouldLoadImages()) {
+        OwnerDoc()->IsCurrentActiveDocument()) {
       nsContentUtils::AddScriptRunner(
         NewRunnableMethod<bool>("dom::HTMLImageElement::MaybeLoadImage",
                                 this,
@@ -830,7 +830,7 @@ HTMLImageElement::CopyInnerTo(Element* aDest, bool aPreallocateChildren)
     
     if (!dest->InResponsiveMode() &&
         dest->HasAttr(kNameSpaceID_None, nsGkAtoms::src) &&
-        dest->OwnerDoc()->ShouldLoadImages()) {
+        dest->OwnerDoc()->IsCurrentActiveDocument()) {
       
       
       mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
@@ -911,7 +911,7 @@ HTMLImageElement::QueueImageLoadTask(bool aAlwaysLoad)
 {
   
   
-  if (!LoadingEnabled() || !this->OwnerDoc()->ShouldLoadImages()) {
+  if (!LoadingEnabled() || !this->OwnerDoc()->IsCurrentActiveDocument()) {
     return;
   }
 
