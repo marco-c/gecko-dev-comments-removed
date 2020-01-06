@@ -11,22 +11,16 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/Unused.h"
 
+
 static
 float ComputeScaleFactor(int aDCWidth, int aDCHeight,
                          int aPageWidth, int aPageHeight)
 {
   MOZ_ASSERT(aPageWidth !=0 && aPageWidth != 0);
 
-  float scaleFactor = 1.0;
-  
-  if (aDCWidth < aPageWidth || aDCHeight < aPageHeight) {
-    float xFactor =
-      static_cast<float>(aDCWidth) / static_cast <float>(aPageWidth);
-    float yFactor =
-      static_cast<float>(aDCHeight) / static_cast <float>(aPageHeight);
-    scaleFactor = std::min(xFactor, yFactor);
-  }
-  return scaleFactor;
+  return (aDCWidth >= aPageWidth && aDCHeight >= aPageHeight)
+    ? 1.0 
+    : std::min(static_cast<float>(aDCWidth) / static_cast<float>(aPageWidth),         static_cast<float>(aDCHeight) / static_cast<float>(aPageHeight));
 }
 
 PDFViaEMFPrintHelper::PDFViaEMFPrintHelper()
