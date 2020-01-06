@@ -631,6 +631,10 @@ pref("media.mediadrm-widevinecdm.visible", true);
 pref("media.eme.enabled", true);
 #endif
 
+#ifdef NIGHTLY_BUILD
+pref("media.hls.enabled", true);
+#endif
+
 
 pref("image.downscale-during-decode.enabled", true);
 
