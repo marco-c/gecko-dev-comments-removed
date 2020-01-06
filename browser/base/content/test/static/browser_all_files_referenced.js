@@ -134,8 +134,6 @@ var whitelist = [
   
   {file: "chrome://global/content/findUtils.js"},
   
-  {file: "chrome://global/content/url-classifier/unittests.xul"},
-  
   {file: "chrome://global/skin/icons/warning-64.png", platforms: ["linux", "win"]},
   
   {file: "chrome://global/skin/splitter/grip-bottom.gif", platforms: ["linux"]},
