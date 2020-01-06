@@ -4,32 +4,19 @@
 
 
 
-
-
-
-
-
-
 #ifndef nsGkAtoms_h___
 #define nsGkAtoms_h___
 
-class nsAtom;
+#include "nsStaticAtom.h"
 
-class nsGkAtoms {
+class nsGkAtoms
+{
 public:
-
   static void AddRefAtoms();
 
-  
-
-
-
-
-
-
-#define GK_ATOM(_name, _value) static nsAtom* _name;
-#include "nsGkAtomList.h"
-#undef GK_ATOM
+  #define GK_ATOM(_name, _value) NS_STATIC_ATOM_DECL(_name)
+  #include "nsGkAtomList.h"
+  #undef GK_ATOM
 };
 
 #endif 

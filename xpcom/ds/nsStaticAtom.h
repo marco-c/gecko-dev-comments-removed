@@ -7,20 +7,105 @@
 #ifndef nsStaticAtom_h__
 #define nsStaticAtom_h__
 
-#include "nsAtom.h"
-#include "nsStringBuffer.h"
+#include <stdint.h>
 
-#define NS_STATIC_ATOM_SETUP(buffer_name, atom_ptr) \
-  { buffer_name, atom_ptr }
+class nsAtom;
 
 
 
 
-#define NS_STATIC_ATOM_BUFFER(buffer_name, str_data) \
-  static const char16_t buffer_name[sizeof(str_data)] = u"" str_data; \
-  static_assert(sizeof(str_data[0]) == 1, "non-8-bit static atom literal");
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define NS_STATIC_ATOM_DECL(name_) \
+  static nsAtom* name_;
+
+
+#define NS_STATIC_ATOM_SUBCLASS_DECL(type_, name_) \
+  static type_* name_;
+
+
+
+#define NS_STATIC_ATOM_DEFN(class_, name_) \
+  nsAtom* class_::name_;
+
+
+#define NS_STATIC_ATOM_SUBCLASS_DEFN(type_, class_, name_) \
+  type_* class_::name_;
+
+
+
+
+
+
+#define NS_STATIC_ATOM_BUFFER(name_, value_) \
+  static const char16_t name_##_buffer[sizeof(value_)] = u"" value_; \
+  static_assert(sizeof(value_[0]) == 1, "non-8-bit static atom literal");
+
+
+#define NS_STATIC_ATOM_SETUP(class_, name_) \
+  { name_##_buffer, &class_::name_ },
+
+
+#define NS_STATIC_ATOM_SUBCLASS_SETUP(class_, name_) \
+  { name_##_buffer, reinterpret_cast<nsAtom**>(&class_::name_) },
 
 
 

@@ -36,10 +36,6 @@ class nsTextServicesDocument final : public nsITextServicesDocument,
                                      public nsIEditActionListener
 {
 private:
-  #define TS_ATOM(name_, value_) static nsAtom* name_;
-  #include "nsTSAtomList.h" // IWYU pragma: keep
-  #undef TS_ATOM
-
   typedef enum { eIsDone=0,        
                  eValid,           
                  ePrev,            

@@ -13,6 +13,7 @@
 #include "mozilla/Sprintf.h"
 #include "mozilla/Unused.h"
 
+#include "nsAtom.h"
 #include "nsAtomTable.h"
 #include "nsStaticAtom.h"
 #include "nsString.h"
@@ -482,6 +483,20 @@ static bool gStaticAtomTableSealed = false;
 
 #define ATOM_HASHTABLE_INITIAL_LENGTH  4096
 
+class DefaultAtoms
+{
+public:
+  NS_STATIC_ATOM_DECL(empty)
+};
+
+NS_STATIC_ATOM_DEFN(DefaultAtoms, empty)
+
+NS_STATIC_ATOM_BUFFER(empty, "")
+
+static const nsStaticAtomSetup sDefaultAtomSetup[] = {
+  NS_STATIC_ATOM_SETUP(DefaultAtoms, empty)
+};
+
 void
 NS_InitAtomTable()
 {
@@ -496,11 +511,6 @@ NS_InitAtomTable()
   
   
   
-  NS_STATIC_ATOM_BUFFER(empty, "");
-  static nsAtom* empty_atom = nullptr;
-  static const nsStaticAtomSetup sDefaultAtomSetup[] = {
-    NS_STATIC_ATOM_SETUP(empty, &empty_atom)
-  };
   NS_RegisterStaticAtoms(sDefaultAtomSetup);
 }
 

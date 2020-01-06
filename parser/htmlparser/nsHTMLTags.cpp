@@ -23,13 +23,9 @@ const char16_t* const nsHTMLTags::sTagUnicodeTable[] = {
 #undef HTML_TAG
 #undef HTML_OTHER
 
-
-nsAtom* nsHTMLTags::sTagAtomTable[eHTMLTag_userdefined - 1];
-
 int32_t nsHTMLTags::gTableRefCount;
 PLHashTable* nsHTMLTags::gTagTable;
 PLHashTable* nsHTMLTags::gTagAtomTable;
-
 
 
 static PLHashNumber
@@ -57,27 +53,29 @@ HTMLTagsHashCodeAtom(const void *key)
 #define NS_HTMLTAG_NAME_MAX_LENGTH 10
 
 
-void
+nsAtom* nsHTMLTags::sTagAtomTable[eHTMLTag_userdefined - 1];
+
+#define HTML_TAG(_tag, _classname, _interfacename) \
+  NS_STATIC_ATOM_BUFFER(_tag, #_tag)
+#define HTML_OTHER(_tag)
+#include "nsHTMLTagList.h"
+#undef HTML_TAG
+#undef HTML_OTHER
+
+ void
 nsHTMLTags::RegisterAtoms(void)
 {
-#define HTML_TAG(_tag, _classname, _interfacename) NS_STATIC_ATOM_BUFFER(Atombuffer_##_tag, #_tag)
-#define HTML_OTHER(_tag)
-#include "nsHTMLTagList.h"
-#undef HTML_TAG
-#undef HTML_OTHER
-
-
-#define HTML_TAG(_tag, _classname, _interfacename) NS_STATIC_ATOM_SETUP(Atombuffer_##_tag, &nsHTMLTags::sTagAtomTable[eHTMLTag_##_tag - 1]),
-#define HTML_OTHER(_tag)
-  static const nsStaticAtomSetup sTagAtomSetup[] = {
-#include "nsHTMLTagList.h"
-  };
-#undef HTML_TAG
-#undef HTML_OTHER
-
   
-  NS_RegisterStaticAtoms(sTagAtomSetup);
+  static const nsStaticAtomSetup sTagAtomSetup[] = {
+    #define HTML_TAG(_tag, _classname, _interfacename) \
+      { _tag##_buffer, &nsHTMLTags::sTagAtomTable[eHTMLTag_##_tag - 1] },
+    #define HTML_OTHER(_tag)
+    #include "nsHTMLTagList.h"
+    #undef HTML_TAG
+    #undef HTML_OTHER
+  };
 
+  NS_RegisterStaticAtoms(sTagAtomSetup);
 
 #if defined(DEBUG)
   {
