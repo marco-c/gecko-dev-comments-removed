@@ -1030,60 +1030,14 @@ NotifyCallbacks(const char* aPrefName)
 }
 
 
-static void
-PREF_ReaderCallback(void* aClosure,
-                    const char* aPref,
-                    PrefValue aValue,
-                    PrefType aType,
-                    bool aIsDefault,
-                    bool aIsSticky)
-{
-  uint32_t flags = 0;
-  if (aIsDefault) {
-    flags |= kPrefSetDefault;
-    if (aIsSticky) {
-      flags |= kPrefSticky;
-    }
-  } else {
-    flags |= kPrefForceSet;
-  }
-  pref_SetPref(aPref, aValue, aType, flags);
-}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef void (*PrefReader)(void* aClosure,
-                           const char* aPrefName,
-                           PrefValue aValue,
-                           PrefType aType,
-                           bool aIsDefault,
-                           bool aIsSticky);
-
-
-typedef void (*ParseErrorReporter)(const char* aMessage,
-                                   int aLine,
-                                   bool aError);
 
 class Parser
 {
 public:
-  Parser(PrefReader aReader, ParseErrorReporter aReporter, void* aClosure)
-    : mReader(aReader)
-    , mClosure(aClosure)
-    , mReporter(aReporter)
-    , mState()
+  Parser()
+    : mState()
     , mNextState()
     , mStrMatch()
     , mStrIndex()
@@ -1106,6 +1060,12 @@ public:
   bool Parse(const char* aBuf, int aBufLen);
 
   bool GrowBuf();
+
+  void HandleValue(const char* aPrefName,
+                   PrefType aType,
+                   PrefValue aValue,
+                   bool aIsDefault,
+                   bool aIsSticky);
 
   void ReportProblem(const char* aMessage, int aLine, bool aError);
 
@@ -1142,25 +1102,22 @@ private:
   static constexpr const char* kTrue = "true";
   static constexpr const char* kFalse = "false";
 
-  PrefReader mReader;           
-  void* mClosure;               
-  ParseErrorReporter mReporter; 
-  State mState;                 
-  State mNextState;             
-  const char* mStrMatch;        
-  int mStrIndex;                
-                                
-  char16_t mUtf16[2];           
-  int mEscLen;                  
-  char mEscTmp[6];              
-  char mQuoteChar;              
-  char* mLb;                    
-  char* mLbCur;                 
-  char* mLbEnd;                 
-  char* mVb;                    
-  Maybe<PrefType> mVtype;       
-  bool mIsDefault;              
-  bool mIsSticky;               
+  State mState;           
+  State mNextState;       
+  const char* mStrMatch;  
+  int mStrIndex;          
+                          
+  char16_t mUtf16[2];     
+  int mEscLen;            
+  char mEscTmp[6];        
+  char mQuoteChar;        
+  char* mLb;              
+  char* mLbCur;           
+  char* mLbEnd;           
+  char* mVb;              
+  Maybe<PrefType> mVtype; 
+  bool mIsDefault;        
+  bool mIsSticky;         
 };
 
 
@@ -1202,17 +1159,40 @@ Parser::GrowBuf()
   return true;
 }
 
+void
+Parser::HandleValue(const char* aPrefName,
+                    PrefType aType,
+                    PrefValue aValue,
+                    bool aIsDefault,
+                    bool aIsSticky)
+{
+  uint32_t flags = 0;
+  if (aIsDefault) {
+    flags |= kPrefSetDefault;
+    if (aIsSticky) {
+      flags |= kPrefSticky;
+    }
+  } else {
+    flags |= kPrefForceSet;
+  }
+  pref_SetPref(aPrefName, aValue, aType, flags);
+}
+
 
 void
 Parser::ReportProblem(const char* aMessage, int aLine, bool aError)
 {
-  if (mReporter) {
-    mReporter(aMessage, aLine, aError);
+  nsPrintfCString message("** Preference parsing %s (line %d) = %s **\n",
+                          (aError ? "error" : "warning"),
+                          aLine,
+                          aMessage);
+  nsresult rv;
+  nsCOMPtr<nsIConsoleService> console =
+    do_GetService("@mozilla.org/consoleservice;1", &rv);
+  if (NS_SUCCEEDED(rv)) {
+    console->LogStringMessage(NS_ConvertUTF8toUTF16(message).get());
   } else {
-    printf_stderr("**** Preference parsing %s (line %d) = %s **\n",
-                  (aError ? "error" : "warning"),
-                  aLine,
-                  aMessage);
+    printf_stderr("%s", message.get());
   }
 }
 
@@ -1647,7 +1627,7 @@ Parser::Parse(const char* aBuf, int aBufLen)
           }
 
           
-          mReader(mClosure, mLb, value, *mVtype, mIsDefault, mIsSticky);
+          HandleValue(mLb, *mVtype, value, mIsDefault, mIsSticky);
 
           state = State::eInit;
         } else if (c == '/') {
@@ -1843,8 +1823,6 @@ public:
   static void NotifyObserver(const char* aNewpref, void* aData);
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
-
-  static void ReportToConsole(const nsAString& aMessage);
 
 private:
   
@@ -2383,20 +2361,6 @@ nsPrefBranch::CheckSanityOfStringLength(const char* aPrefName,
     return rv;
   }
   return NS_OK;
-}
-
- void
-nsPrefBranch::ReportToConsole(const nsAString& aMessage)
-{
-  nsresult rv;
-  nsCOMPtr<nsIConsoleService> console =
-    do_GetService("@mozilla.org/consoleservice;1", &rv);
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  nsAutoString message(aMessage);
-  console->LogStringMessage(message.get());
 }
 
 NS_IMETHODIMP
@@ -3191,16 +3155,6 @@ AssertNotAlreadyCached(const char* aPrefType, const char* aPref, void* aPtr)
   }
 }
 #endif
-
-static void
-ReportToConsole(const char* aMessage, int aLine, bool aError)
-{
-  nsPrintfCString message("** Preference parsing %s (line %d) = %s **\n",
-                          (aError ? "error" : "warning"),
-                          aLine,
-                          aMessage);
-  nsPrefBranch::ReportToConsole(NS_ConvertUTF8toUTF16(message.get()));
-}
 
 struct PrefsSizes
 {
@@ -4102,7 +4056,7 @@ openPrefFile(nsIFile* aFile)
   nsCString data;
   MOZ_TRY_VAR(data, URLPreloader::ReadFile(aFile));
 
-  Parser parser(PREF_ReaderCallback, ReportToConsole, nullptr);
+  Parser parser;
   if (!parser.Parse(data.get(), data.Length())) {
     return NS_ERROR_FILE_CORRUPTED;
   }
@@ -4274,7 +4228,7 @@ pref_ReadPrefFromJar(nsZipArchive* aJarReader, const char* aName)
   MOZ_TRY_VAR(manifest,
               URLPreloader::ReadZip(aJarReader, nsDependentCString(aName)));
 
-  Parser parser(PREF_ReaderCallback, ReportToConsole, nullptr);
+  Parser parser;
   parser.Parse(manifest.get(), manifest.Length());
 
   return NS_OK;
