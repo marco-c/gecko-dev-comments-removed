@@ -46,6 +46,8 @@ const ICON_STATE_DEFAULT = "default";
 
 
 
+
+
 var onboardingTourset = {
   "private": {
     id: "onboarding-tour-private-browsing",
@@ -130,6 +132,7 @@ var onboardingTourset = {
   },
   "default": {
     id: "onboarding-tour-default-browser",
+    instantComplete: true,
     tourNameId: "onboarding.tour-default-browser",
     getNotificationStrings(bundle) {
       return {
@@ -168,6 +171,7 @@ var onboardingTourset = {
   },
   "sync": {
     id: "onboarding-tour-sync",
+    instantComplete: true,
     tourNameId: "onboarding.tour-sync2",
     getNotificationStrings(bundle) {
       return {
@@ -277,6 +281,7 @@ var onboardingTourset = {
   },
   "performance": {
     id: "onboarding-tour-performance",
+    instantComplete: true,
     tourNameId: "onboarding.tour-performance",
     getNotificationStrings(bundle) {
       return {
@@ -807,25 +812,21 @@ class Onboarding {
           tour_id: tourId,
           session_key: this._session_key,
         });
+
+        
+        if (tab.getAttribute("data-instant-complete")) {
+          this.setToursCompleted([tourId]);
+          
+          telemetry({
+            event: "overlay-cta-click",
+            tour_id: tourId,
+            session_key: this._session_key,
+          });
+        }
       } else {
         tab.classList.remove("onboarding-active");
         tab.setAttribute("aria-selected", false);
       }
-    }
-
-    switch (tourId) {
-      
-      case "onboarding-tour-default-browser":
-      case "onboarding-tour-sync":
-      case "onboarding-tour-performance":
-        this.setToursCompleted([tourId]);
-        
-        telemetry({
-          event: "overlay-cta-click",
-          tour_id: tourId,
-          session_key: this._session_key,
-        });
-        break;
     }
   }
 
@@ -1220,6 +1221,9 @@ class Onboarding {
       tab.id = tour.id;
       tab.textContent = this._bundle.GetStringFromName(tour.tourNameId);
       tab.className = "onboarding-tour-item";
+      if (tour.instantComplete) {
+        tab.dataset.instantComplete = true;
+      }
       tab.tabIndex = 0;
       tab.setAttribute("role", "tab");
 
