@@ -112,10 +112,11 @@ private:
   
   
   
-  static intptr_t TKillCompatTrap(const sandbox::arch_seccomp_data& aArgs,
-                                  void *aux)
+  static intptr_t TKillCompatTrap(ArgsRef aArgs, void *aux)
   {
-    return DoSyscall(__NR_tgkill, getpid(), aArgs.args[0], aArgs.args[1]);
+    auto tid = static_cast<pid_t>(aArgs.args[0]);
+    auto sig = static_cast<int>(aArgs.args[1]);
+    return DoSyscall(__NR_tgkill, getpid(), tid, sig);
   }
 
   static intptr_t SetNoNewPrivsTrap(ArgsRef& aArgs, void* aux) {
@@ -1055,18 +1056,17 @@ class GMPSandboxPolicy : public SandboxPolicyCommon {
     return fd;
   }
 
-  static intptr_t SchedTrap(const sandbox::arch_seccomp_data& aArgs,
-                            void* aux)
+  static intptr_t SchedTrap(ArgsRef aArgs, void* aux)
   {
     const pid_t tid = syscall(__NR_gettid);
     if (aArgs.args[0] == static_cast<uint64_t>(tid)) {
       return DoSyscall(aArgs.nr,
                        0,
-                       aArgs.args[1],
-                       aArgs.args[2],
-                       aArgs.args[3],
-                       aArgs.args[4],
-                       aArgs.args[5]);
+                       static_cast<uintptr_t>(aArgs.args[1]),
+                       static_cast<uintptr_t>(aArgs.args[2]),
+                       static_cast<uintptr_t>(aArgs.args[3]),
+                       static_cast<uintptr_t>(aArgs.args[4]),
+                       static_cast<uintptr_t>(aArgs.args[5]));
     }
     SANDBOX_LOG_ERROR("unsupported tid in SchedTrap");
     return BlockedSyscallTrap(aArgs, nullptr);
