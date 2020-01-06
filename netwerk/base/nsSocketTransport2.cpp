@@ -794,6 +794,7 @@ nsSocketTransport::nsSocketTransport()
     , mKeepaliveProbeCount(-1)
     , mFastOpenCallback(nullptr)
     , mFastOpenLayerHasBufferedData(false)
+    , mDoNotRetryToConnect(false)
 {
     SOCKET_LOG(("creating nsSocketTransport @%p\n", this));
 
@@ -1698,6 +1699,13 @@ nsSocketTransport::RecoverFromError()
     SOCKET_LOG(("nsSocketTransport::RecoverFromError [this=%p state=%x cond=%" PRIx32 "]\n",
                 this, mState, static_cast<uint32_t>(mCondition)));
 
+    if (mDoNotRetryToConnect) {
+        SOCKET_LOG(("nsSocketTransport::RecoverFromError do not retry because "
+                    "mDoNotRetryToConnect is set [this=%p]\n",
+                    this));
+        return false;
+    }
+
 #if defined(XP_UNIX)
     
     
@@ -1745,7 +1753,7 @@ nsSocketTransport::RecoverFromError()
         
         
         if (mFastOpenCallback) {
-            mFastOpenCallback->SetFastOpenConnected(mCondition);
+            mFastOpenCallback->SetFastOpenConnected(mCondition, true);
         }
         mFastOpenCallback = nullptr;
     } else {
@@ -1875,7 +1883,7 @@ nsSocketTransport::OnSocketConnected()
         
         
         
-        mFastOpenCallback->SetFastOpenConnected(NS_OK);
+        mFastOpenCallback->SetFastOpenConnected(NS_OK, false);
     }
     mFastOpenCallback = nullptr;
 
@@ -2302,7 +2310,7 @@ nsSocketTransport::OnSocketDetached(PRFileDesc *fd)
         
         
         if (mFDFastOpenInProgress && mFastOpenCallback) {
-            mFastOpenCallback->SetFastOpenConnected(mCondition);
+            mFastOpenCallback->SetFastOpenConnected(mCondition, false);
         }
         mFastOpenCallback = nullptr;
 
@@ -2503,8 +2511,10 @@ nsSocketTransport::Close(nsresult reason)
     if (NS_SUCCEEDED(reason))
         reason = NS_BASE_STREAM_CLOSED;
 
+    mDoNotRetryToConnect = true;
+
     if (mFDFastOpenInProgress && mFastOpenCallback) {
-        mFastOpenCallback->SetFastOpenConnected(reason);
+        mFastOpenCallback->SetFastOpenConnected(reason, false);
     }
     mFastOpenCallback = nullptr;
 

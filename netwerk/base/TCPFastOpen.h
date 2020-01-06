@@ -36,7 +36,7 @@ public:
   
   
   
-  virtual void SetFastOpenConnected(nsresult error) = 0;
+  virtual void SetFastOpenConnected(nsresult error, bool aWillRetry) = 0;
   virtual void FastOpenNotSupported() = 0;
   virtual void SetFastOpenStatus(uint8_t tfoStatus) = 0;
 };

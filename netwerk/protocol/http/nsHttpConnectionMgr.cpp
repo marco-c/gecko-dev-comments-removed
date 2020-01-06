@@ -3567,13 +3567,14 @@ nsHalfOpenSocket::StartFastOpen()
 
 void
 nsHttpConnectionMgr::
-nsHalfOpenSocket::SetFastOpenConnected(nsresult aError)
+nsHalfOpenSocket::SetFastOpenConnected(nsresult aError, bool aWillRetry)
 {
     RefPtr<nsHalfOpenSocket> deleteProtector(this);
 
     
-    if ((aError == NS_ERROR_CONNECTION_REFUSED) ||
-        (aError == NS_ERROR_NET_TIMEOUT)) {
+    if (aWillRetry &&
+        ((aError == NS_ERROR_CONNECTION_REFUSED) ||
+         (aError == NS_ERROR_NET_TIMEOUT))) {
         if (mEnt->mUseFastOpen) {
             gHttpHandler->IncrementFastOpenConsecutiveFailureCounter();
             mEnt->mUseFastOpen = false;
