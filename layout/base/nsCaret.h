@@ -10,6 +10,7 @@
 #define nsCaret_h__
 
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/dom/Selection.h"
 #include "nsCoord.h"
 #include "nsISelectionListener.h"
 #include "nsIWeakReferenceUtils.h"
@@ -27,9 +28,6 @@ class nsIPresShell;
 class nsITimer;
 
 namespace mozilla {
-namespace dom {
-class Selection;
-} 
 namespace gfx {
 class DrawTarget;
 } 
@@ -77,7 +75,30 @@ class nsCaret final : public nsISelectionListener
 
 
 
-    bool IsVisible(nsISelection* aSelection = nullptr);
+    bool IsVisible(nsISelection* aSelection = nullptr)
+    {
+      if (!mVisible || mHideCount) {
+        return false;
+      }
+
+      if (!mShowDuringSelection) {
+        mozilla::dom::Selection* selection;
+        if (aSelection) {
+          selection = static_cast<mozilla::dom::Selection*>(aSelection);
+        } else {
+          selection = GetSelectionInternal();
+        }
+        if (!selection || !selection->IsCollapsed()) {
+          return false;
+        }
+      }
+
+      if (IsMenuPopupHidingCaret()) {
+        return false;
+      }
+
+      return true;
+    }
     
 
 
