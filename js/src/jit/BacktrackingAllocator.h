@@ -260,13 +260,28 @@ class LiveRange : public TempObject
     InlineForwardList<UsePosition> uses_;
 
     
+    
+    
+    
+    
+    size_t usesSpillWeight_;
+
+    
+    uint32_t numFixedUses_;
+
+    
     bool hasDefinition_;
 
     LiveRange(uint32_t vreg, Range range)
-      : vreg_(vreg), bundle_(nullptr), range_(range), hasDefinition_(false)
+      : vreg_(vreg), bundle_(nullptr), range_(range), usesSpillWeight_(0),
+        numFixedUses_(0), hasDefinition_(false)
+
     {
         MOZ_ASSERT(!range.empty());
     }
+
+    void noteAddedUse(UsePosition* use);
+    void noteRemovedUse(UsePosition* use);
 
   public:
     static LiveRange* FallibleNew(TempAllocator& alloc, uint32_t vreg,
@@ -316,9 +331,7 @@ class LiveRange : public TempObject
     bool hasUses() const {
         return !!usesBegin();
     }
-    UsePosition* popUse() {
-        return uses_.popFront();
-    }
+    UsePosition* popUse();
 
     bool hasDefinition() const {
         return hasDefinition_;
@@ -343,6 +356,13 @@ class LiveRange : public TempObject
     void setHasDefinition() {
         MOZ_ASSERT(!hasDefinition_);
         hasDefinition_ = true;
+    }
+
+    size_t usesSpillWeight() {
+        return usesSpillWeight_;
+    }
+    uint32_t numFixedUses() {
+        return numFixedUses_;
     }
 
 #ifdef JS_JITSPEW
@@ -683,6 +703,20 @@ class BacktrackingAllocator : protected RegisterAllocator
     { }
 
     MOZ_MUST_USE bool go();
+
+    static size_t SpillWeightFromUsePolicy(LUse::Policy policy) {
+        switch (policy) {
+        case LUse::ANY:
+            return 1000;
+
+        case LUse::REGISTER:
+        case LUse::FIXED:
+            return 2000;
+
+        default:
+            return 0;
+        }
+    }
 
   private:
 
