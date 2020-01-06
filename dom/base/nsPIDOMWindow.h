@@ -493,24 +493,6 @@ public:
   virtual void EnableTimeChangeNotifications() = 0;
   virtual void DisableTimeChangeNotifications() = 0;
 
-#ifdef MOZ_B2G
-  
-
-
-
-
-
-  virtual void EnableNetworkEvent(mozilla::EventMessage aEventMessage) = 0;
-
-  
-
-
-
-
-
-  virtual void DisableNetworkEvent(mozilla::EventMessage aEventMessage) = 0;
-#endif 
-
   
 
 

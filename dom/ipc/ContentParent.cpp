@@ -2098,12 +2098,10 @@ ContentParent::ContentParent(ContentParent* aOpener,
   if (XRE_IsParentProcess()) {
     audio::AudioNotificationSender::Init();
   }
-#if !defined(MOZ_B2G)
   
   
   
   GetIPCChannel()->SetChannelFlags(MessageChannel::REQUIRE_DEFERRED_MESSAGE_PROTECTION);
-#endif
 #endif
 
   NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
@@ -2932,7 +2930,7 @@ ContentParent::KillHard(const char* aReason)
   mCalledKillHard = true;
   mForceKillTimer = nullptr;
 
-#if defined(MOZ_CRASHREPORTER) && !defined(MOZ_B2G)
+#if defined(MOZ_CRASHREPORTER)
   
   
   
@@ -2972,7 +2970,7 @@ ContentParent::KillHard(const char* aReason)
 void
 ContentParent::OnGenerateMinidumpComplete(bool aDumpResult)
 {
-#if defined(MOZ_CRASHREPORTER) && !defined(MOZ_B2G)
+#if defined(MOZ_CRASHREPORTER)
   if (mCrashReporter && aDumpResult) {
     
     mCreatedPairedMinidumps = mCrashReporter->FinalizeCrashReport();

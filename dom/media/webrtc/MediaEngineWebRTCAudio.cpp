@@ -814,7 +814,6 @@ MediaEngineWebRTCMicrophoneSource::AllocChannel()
 
       
       if (!mAudioInput->SetRecordingDevice(mCapIndex)) {
-#ifndef MOZ_B2G
         
         
         bool avail = false;
@@ -825,7 +824,6 @@ MediaEngineWebRTCMicrophoneSource::AllocChannel()
           }
           return false;
         }
-#endif 
 
         
         ScopedCustomReleasePtr<webrtc::VoECodec> ptrVoECodec(webrtc::VoECodec::GetInterface(mVoiceEngine));

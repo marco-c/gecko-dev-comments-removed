@@ -246,10 +246,6 @@ MaybeInvalidTabContext::MaybeInvalidTabContext(const IPCTabContext& aParams)
       
       
       
-#ifdef MOZ_B2G
-      mInvalidReason = "ServiceWorkerClients::OpenWindow is not supported.";
-      return;
-#endif
       if (!Preferences::GetBool("dom.serviceWorkers.enabled", false)) {
         mInvalidReason = "ServiceWorkers should be enabled.";
         return;

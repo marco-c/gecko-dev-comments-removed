@@ -1025,13 +1025,6 @@ UploadLastDir::FetchDirectoryAndDisplayPicker(nsIDocument* aDoc,
   nsCOMPtr<nsIContentPrefCallback2> prefCallback =
     new UploadLastDir::ContentPrefCallback(aFilePicker, aFpCallback);
 
-#ifdef MOZ_B2G
-  if (XRE_IsContentProcess()) {
-    prefCallback->HandleCompletion(nsIContentPrefCallback2::COMPLETE_ERROR);
-    return NS_OK;
-  }
-#endif
-
   
   nsCOMPtr<nsIContentPrefService2> contentPrefService =
     do_GetService(NS_CONTENT_PREF_SERVICE_CONTRACTID);
@@ -1055,12 +1048,6 @@ UploadLastDir::StoreLastUsedDirectory(nsIDocument* aDoc, nsIFile* aDir)
   if (!aDir) {
     return NS_OK;
   }
-
-#ifdef MOZ_B2G
-  if (XRE_IsContentProcess()) {
-    return NS_OK;
-  }
-#endif
 
   nsCOMPtr<nsIURI> docURI = aDoc->GetDocumentURI();
   NS_PRECONDITION(docURI, "docURI is null");
@@ -5921,7 +5908,7 @@ HTMLInputElement::ChooseDirectory(ErrorResult& aRv)
   
   
   InitFilePicker(
-#if defined(ANDROID) || defined(MOZ_B2G)
+#if defined(ANDROID)
                  
                  FILE_PICKER_FILE
 #else

@@ -804,8 +804,6 @@ public:
 
 
 
-#if !defined(MOZ_B2G)
-
 class UpgradeDeserializationHelper
 {
 public:
@@ -871,8 +869,6 @@ public:
     return false;
   }
 };
-
-#endif 
 
 template <class Traits>
 JSObject*
@@ -1214,8 +1210,6 @@ IDBObjectStore::DeserializeIndexValue(JSContext* aCx,
   return true;
 }
 
-#if !defined(MOZ_B2G)
-
 
 bool
 IDBObjectStore::DeserializeUpgradeValue(JSContext* aCx,
@@ -1251,8 +1245,6 @@ IDBObjectStore::DeserializeUpgradeValue(JSContext* aCx,
 
   return true;
 }
-
-#endif 
 
 #ifdef DEBUG
 

@@ -868,15 +868,6 @@ nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
 {
   NS_ENSURE_ARG_MAX(aViolatedPolicyIndex, mPolicies.Length() - 1);
 
-#ifdef MOZ_B2G
-  
-  
-  if (!mCallingChannelLoadGroup) {
-    NS_WARNING("Load group required but not present for report sending; cannot send CSP violation reports");
-    return NS_ERROR_FAILURE;
-  }
-#endif
-
   dom::CSPReport report;
   nsresult rv;
 
