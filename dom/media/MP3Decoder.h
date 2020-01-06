@@ -16,8 +16,8 @@ class MP3Decoder : public MediaDecoder
 {
 public:
   
-  explicit MP3Decoder(MediaDecoderOwner* aOwner) : MediaDecoder(aOwner) {}
-  MediaDecoder* Clone(MediaDecoderOwner* aOwner) override;
+  explicit MP3Decoder(MediaDecoderInit& aInit) : MediaDecoder(aInit) {}
+  MediaDecoder* Clone(MediaDecoderInit& aInit) override;
   MediaDecoderStateMachine* CreateStateMachine() override;
 
   

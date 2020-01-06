@@ -17,8 +17,8 @@ class FlacDecoder : public MediaDecoder
 {
 public:
   
-  explicit FlacDecoder(MediaDecoderOwner* aOwner) : MediaDecoder(aOwner) {}
-  MediaDecoder* Clone(MediaDecoderOwner* aOwner) override;
+  explicit FlacDecoder(MediaDecoderInit& aInit) : MediaDecoder(aInit) {}
+  MediaDecoder* Clone(MediaDecoderInit& aInit) override;
   MediaDecoderStateMachine* CreateStateMachine() override;
 
   

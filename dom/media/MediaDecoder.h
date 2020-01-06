@@ -57,6 +57,16 @@ enum class Visibility : uint8_t;
 #undef GetCurrentTime
 #endif
 
+struct MediaDecoderInit
+{
+  MediaDecoderOwner* const mOwner;
+
+  explicit MediaDecoderInit(MediaDecoderOwner* aOwner)
+    : mOwner(aOwner)
+  {
+  }
+};
+
 class MediaDecoder : public AbstractMediaDecoder
 {
 public:
@@ -117,7 +127,7 @@ public:
   
   static void InitStatics();
 
-  explicit MediaDecoder(MediaDecoderOwner* aOwner);
+  explicit MediaDecoder(MediaDecoderInit& aInit);
 
   
   
@@ -125,7 +135,7 @@ public:
 
   
   
-  virtual MediaDecoder* Clone(MediaDecoderOwner* aOwner) = 0;
+  virtual MediaDecoder* Clone(MediaDecoderInit& aInit) = 0;
   
   
   virtual MediaDecoderStateMachine* CreateStateMachine() = 0;

@@ -18,6 +18,7 @@ class AbstractMediaDecoder;
 class DecoderDoctorDiagnostics;
 class MediaContainerType;
 class MediaDecoder;
+struct MediaDecoderInit;
 class MediaDecoderOwner;
 class MediaDecoderReader;
 
@@ -43,7 +44,7 @@ public:
   
   
   static already_AddRefed<MediaDecoder> CreateDecoder(const nsACString& aType,
-                                                      MediaDecoderOwner* aOwner,
+                                                      MediaDecoderInit& aInit,
                                                       DecoderDoctorDiagnostics* aDiagnostics);
 
   
