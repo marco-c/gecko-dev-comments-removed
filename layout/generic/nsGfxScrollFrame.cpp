@@ -4832,12 +4832,14 @@ nsXULScrollFrame::AddRemoveScrollbar(nsBoxLayoutState& aState,
 
      mHelper.SetScrollbarVisibility(mHelper.mHScrollbarBox, aAdd);
 
+     
+     
      bool hasHorizontalScrollbar;
      bool fit = AddRemoveScrollbar(hasHorizontalScrollbar,
                                    mHelper.mScrollPort.y,
                                    mHelper.mScrollPort.height,
                                    hSize.height, aOnRightOrBottom, aAdd);
-     mHelper.mHasHorizontalScrollbar = hasHorizontalScrollbar;    
+     mHelper.mHasHorizontalScrollbar = hasHorizontalScrollbar;
      if (!fit) {
        mHelper.SetScrollbarVisibility(mHelper.mHScrollbarBox, !aAdd);
      }
@@ -4851,12 +4853,14 @@ nsXULScrollFrame::AddRemoveScrollbar(nsBoxLayoutState& aState,
 
      mHelper.SetScrollbarVisibility(mHelper.mVScrollbarBox, aAdd);
 
+     
+     
      bool hasVerticalScrollbar;
      bool fit = AddRemoveScrollbar(hasVerticalScrollbar,
                                    mHelper.mScrollPort.x,
                                    mHelper.mScrollPort.width,
                                    vSize.width, aOnRightOrBottom, aAdd);
-     mHelper.mHasVerticalScrollbar = hasVerticalScrollbar;    
+     mHelper.mHasVerticalScrollbar = hasVerticalScrollbar;
      if (!fit) {
        mHelper.SetScrollbarVisibility(mHelper.mVScrollbarBox, !aAdd);
      }
