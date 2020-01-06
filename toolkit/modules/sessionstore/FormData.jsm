@@ -11,9 +11,6 @@ const Ci = Components.interfaces;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "XPathGenerator",
-				  "resource://gre/modules/XPathGenerator.jsm");
-
 
 
 
@@ -98,6 +95,56 @@ this.FormData = Object.freeze({
 
 
 var FormDataInternal = {
+  namespaceURIs: {
+    "xhtml": "http://www.w3.org/1999/xhtml",
+    "xul": "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+  },
+
+  
+
+
+  resolve(aDocument, aQuery) {
+    let xptype = Components.interfaces.nsIDOMXPathResult.FIRST_ORDERED_NODE_TYPE;
+    return aDocument.evaluate(aQuery, aDocument, this.resolveNS.bind(this), xptype, null).singleNodeValue;
+  },
+
+  
+
+
+  resolveNS(aPrefix) {
+    return this.namespaceURIs[aPrefix] || null;
+  },
+
+  
+
+
+  get restorableFormNodesXPath() {
+    
+    
+    let ignoreInputs = new Map([
+      ["type", ["password", "hidden", "button", "image", "submit", "reset"]],
+      ["autocomplete", ["off"]]
+    ]);
+    
+    let toLowerCase = '"ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"';
+    let ignores = [];
+    for (let [attrName, attrValues] of ignoreInputs) {
+      for (let attrValue of attrValues)
+        ignores.push(`translate(@${attrName}, ${toLowerCase})='${attrValue}'`);
+    }
+    let ignore = `not(${ignores.join(" or ")})`;
+
+    let formNodesXPath = `//textarea[${ignore}]|//xhtml:textarea[${ignore}]|` +
+      `//select[${ignore}]|//xhtml:select[${ignore}]|` +
+      `//input[${ignore}]|//xhtml:input[${ignore}]`;
+
+    
+    formNodesXPath += '|/xul:window[@id="config"]//xul:textbox[@id="textbox"]';
+
+    delete this.restorableFormNodesXPath;
+    return (this.restorableFormNodesXPath = formNodesXPath);
+  },
+
   
 
 
@@ -123,9 +170,9 @@ var FormDataInternal = {
 
   collect({document: doc}) {
     let formNodes = doc.evaluate(
-      XPathGenerator.restorableFormNodes,
+      this.restorableFormNodesXPath,
       doc,
-      XPathGenerator.resolveNS,
+      this.resolveNS.bind(this),
       Ci.nsIDOMXPathResult.UNORDERED_NODE_ITERATOR_TYPE, null
     );
 
@@ -198,7 +245,7 @@ var FormDataInternal = {
       } else {
         generatedCount++;
         ret.xpath = ret.xpath || {};
-        ret.xpath[XPathGenerator.generate(node)] = value;
+        ret.xpath[node.generateXPath()] = value;
       }
     }
 
@@ -256,7 +303,7 @@ var FormDataInternal = {
     }
 
     if ("xpath" in data) {
-      let retrieveNode = xpath => XPathGenerator.resolve(doc, xpath);
+      let retrieveNode = xpath => this.resolve(doc, xpath);
       this.restoreManyInputValues(data.xpath, retrieveNode);
     }
 
