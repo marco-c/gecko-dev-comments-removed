@@ -183,9 +183,59 @@ private:
   bool IsEditorComposing() const;
 
   
+
+
+
+  static nsIContent* GetChildNode(nsINode* aParent, int32_t aOffset);
+
+  
   
   void BeginDocumentUpdate();
   void EndDocumentUpdate();
+
+  
+
+  
+
+
+
+
+
+  void MaybeNotifyIMEOfAddedTextDuringDocumentChange();
+
+  
+
+
+
+
+
+  bool IsInDocumentChange() const
+  {
+    return mDocumentObserver && mDocumentObserver->IsUpdating();
+  }
+
+  
+
+
+  void ClearAddedNodesDuringDocumentChange();
+
+  
+
+
+
+
+
+  bool HasAddedNodesDuringDocumentChange() const
+  {
+    return mFirstAddedNodeContainer && mLastAddedNodeContainer;
+  }
+
+  
+
+
+
+
+  bool IsNextNodeOfLastAddedNode(nsINode* aParent, int32_t aOffset) const;
 
   void PostFocusSetNotification();
   void MaybeNotifyIMEOfFocusSet();
@@ -413,6 +463,27 @@ private:
   
   
   FlatTextCache mStartOfRemovingTextRangeCache;
+
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsINode> mFirstAddedNodeContainer;
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsINode> mLastAddedNodeContainer;
+  
+  
+  int32_t mFirstAddedNodeOffset;
+  
+  
+  int32_t mLastAddedNodeOffset;
 
   TextChangeData mTextChangeData;
 
