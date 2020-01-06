@@ -36,13 +36,12 @@ U2FHIDTokenManager::~U2FHIDTokenManager()
 
 
 
-RefPtr<ResultPromise>
+RefPtr<U2FRegisterPromise>
 U2FHIDTokenManager::Register(const nsTArray<WebAuthnScopedCredentialDescriptor>& aDescriptors,
                              const nsTArray<uint8_t>& aApplication,
-                             const nsTArray<uint8_t>& aChallenge,
-                              nsTArray<uint8_t>& aRegistration)
+                             const nsTArray<uint8_t>& aChallenge)
 {
-  return ResultPromise::CreateAndReject(NS_ERROR_NOT_IMPLEMENTED, __func__);
+  return U2FRegisterPromise::CreateAndReject(NS_ERROR_NOT_IMPLEMENTED, __func__);
 }
 
 
@@ -61,14 +60,12 @@ U2FHIDTokenManager::Register(const nsTArray<WebAuthnScopedCredentialDescriptor>&
 
 
 
-RefPtr<ResultPromise>
+RefPtr<U2FSignPromise>
 U2FHIDTokenManager::Sign(const nsTArray<WebAuthnScopedCredentialDescriptor>& aDescriptors,
                          const nsTArray<uint8_t>& aApplication,
-                         const nsTArray<uint8_t>& aChallenge,
-                          nsTArray<uint8_t>& aKeyHandle,
-                          nsTArray<uint8_t>& aSignature)
+                         const nsTArray<uint8_t>& aChallenge)
 {
-  return ResultPromise::CreateAndReject(NS_ERROR_NOT_IMPLEMENTED, __func__);
+  return U2FSignPromise::CreateAndReject(NS_ERROR_NOT_IMPLEMENTED, __func__);
 }
 
 void

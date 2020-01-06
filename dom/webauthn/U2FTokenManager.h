@@ -52,16 +52,15 @@ private:
   void MaybeAbortTransaction(uint64_t aTransactionId,
                              const nsresult& aError);
   void MaybeConfirmRegister(uint64_t aTransactionId,
-                            const nsTArray<uint8_t>& aRegister);
-  void MaybeConfirmSign(uint64_t aTransactionId,
-                        const nsTArray<uint8_t>& aKeyHandle,
-                        const nsTArray<uint8_t>& aSignature);
+                            U2FRegisterResult& aResult);
+  void MaybeConfirmSign(uint64_t aTransactionId, U2FSignResult& aResult);
   
   
   
   WebAuthnTransactionParent* mTransactionParent;
   RefPtr<U2FTokenTransport> mTokenManagerImpl;
-  RefPtr<ResultPromise> mResultPromise;
+  RefPtr<U2FRegisterPromise> mRegisterPromise;
+  RefPtr<U2FSignPromise> mSignPromise;
   
   
   
