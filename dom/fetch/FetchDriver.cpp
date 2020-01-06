@@ -872,26 +872,32 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   }
 
   
-  nsCOMPtr<nsIURI> uri;
-  MOZ_ALWAYS_SUCCEEDS(aNewChannel->GetURI(getter_AddRefs(uri)));
+  
+  
+  
+  if (!(aFlags & nsIChannelEventSink::REDIRECT_INTERNAL)) {
+    nsCOMPtr<nsIURI> uri;
+    MOZ_ALWAYS_SUCCEEDS(aNewChannel->GetURI(getter_AddRefs(uri)));
 
-  nsCOMPtr<nsIURI> uriClone;
-  nsresult rv = uri->CloneIgnoringRef(getter_AddRefs(uriClone));
-  if(NS_WARN_IF(NS_FAILED(rv))){
-    return rv;
-  }
-  nsCString spec;
-  rv = uriClone->GetSpec(spec);
-  if(NS_WARN_IF(NS_FAILED(rv))){
-    return rv;
-  }
-  nsCString fragment;
-  rv = uri->GetRef(fragment);
-  if(NS_WARN_IF(NS_FAILED(rv))){
-    return rv;
+    nsCOMPtr<nsIURI> uriClone;
+    nsresult rv = uri->CloneIgnoringRef(getter_AddRefs(uriClone));
+    if(NS_WARN_IF(NS_FAILED(rv))){
+      return rv;
+    }
+    nsCString spec;
+    rv = uriClone->GetSpec(spec);
+    if(NS_WARN_IF(NS_FAILED(rv))){
+      return rv;
+    }
+    nsCString fragment;
+    rv = uri->GetRef(fragment);
+    if(NS_WARN_IF(NS_FAILED(rv))){
+      return rv;
+    }
+
+    mRequest->AddURL(spec, fragment);
   }
 
-  mRequest->AddURL(spec, fragment);
   NS_ConvertUTF8toUTF16 tRPHeaderValue(tRPHeaderCValue);
   
   
@@ -902,10 +908,10 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
       mRequest->SetReferrerPolicy(net_referrerPolicy);
       
       if (httpChannel) {
-        rv = FetchUtil::SetRequestReferrer(mPrincipal,
-                                           mDocument,
-                                           httpChannel,
-                                           mRequest);
+        nsresult rv = FetchUtil::SetRequestReferrer(mPrincipal,
+                                                    mDocument,
+                                                    httpChannel,
+                                                    mRequest);
         NS_ENSURE_SUCCESS(rv, rv);
       }
     }
