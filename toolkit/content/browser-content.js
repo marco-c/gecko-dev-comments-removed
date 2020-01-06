@@ -1790,6 +1790,14 @@ let DateTimePickerListener = {
             (aEvent.originalTarget.type == "time" && !this.getTimePickerPref())) {
           return;
         }
+
+        if (this._inputElement) {
+          
+          
+          
+          return;
+        }
+
         this._inputElement = aEvent.originalTarget;
         this._inputElement.setDateTimePickerState(true);
         this.addListeners();
