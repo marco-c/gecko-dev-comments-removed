@@ -899,7 +899,7 @@ impl Stylist {
             
             let rule_node = match inputs.visited_rules.as_ref() {
                 Some(rules) => rules,
-                None => inputs.rules.as_ref().unwrap(),
+                None => inputs.rules.as_ref().unwrap_or(self.rule_tree().root()),
             };
             let inherited_style;
             let inherited_style_ignoring_first_line;
