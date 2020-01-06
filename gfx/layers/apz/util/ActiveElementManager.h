@@ -59,12 +59,6 @@ public:
 
 
   void HandleTouchEnd();
-  
-
-
-
-
-  bool ActiveElementUsesStyle() const;
 private:
   
 
@@ -84,10 +78,6 @@ private:
 
 
   RefPtr<CancelableRunnable> mSetActiveTask;
-  
-
-
-  bool mActiveElementUsesStyle;
 
   
   void TriggerElementActivation();
