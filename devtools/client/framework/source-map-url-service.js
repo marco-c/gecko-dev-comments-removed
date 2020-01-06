@@ -21,8 +21,16 @@ function SourceMapURLService(toolbox, sourceMapService) {
   this._toolbox = toolbox;
   this._target = toolbox.target;
   this._sourceMapService = sourceMapService;
+  
+  
   this._urls = new Map();
+  
+  
+  
   this._subscriptions = new Map();
+  
+  
+  this._idMap = new Map();
 
   this._onSourceUpdated = this._onSourceUpdated.bind(this);
   this.reset = this.reset.bind(this);
@@ -80,6 +88,7 @@ SourceMapURLService.prototype.reset = function () {
   this._sourceMapService.clearSourceMaps();
   this._urls.clear();
   this._subscriptions.clear();
+  this._idMap.clear();
 };
 
 
@@ -95,7 +104,7 @@ SourceMapURLService.prototype.destroy = function () {
     this._stylesheetsFront.off("stylesheet-added", this._onNewStyleSheet);
   }
   Services.prefs.removeObserver(SOURCE_MAP_PREF, this._onPrefChanged);
-  this._target = this._urls = this._subscriptions = null;
+  this._target = this._urls = this._subscriptions = this._idMap = null;
 };
 
 
@@ -114,6 +123,7 @@ SourceMapURLService.prototype._onSourceUpdated = function (_, sourceEvent) {
   
   let seenUrl = generatedUrl || url;
   this._urls.set(seenUrl, { id, url: seenUrl, sourceMapURL });
+  this._idMap.set(id, seenUrl);
 };
 
 
@@ -130,6 +140,43 @@ SourceMapURLService.prototype._onNewStyleSheet = function (sheet) {
 
   let {href: url, sourceMapURL, actor: id} = sheet._form;
   this._urls.set(url, { id, url, sourceMapURL});
+  this._idMap.set(id, url);
+};
+
+
+
+
+
+
+
+
+
+
+
+SourceMapURLService.prototype.sourceMapChanged = function (id, newUrl) {
+  if (!this._urls) {
+    return;
+  }
+
+  let urlKey = this._idMap.get(id);
+  if (urlKey) {
+    
+    this._urls.set(urlKey, { id, url: newUrl, sourceMapURL: "" });
+
+    
+    
+    
+    
+    for (let [, subscriptionEntry] of this._subscriptions) {
+      if (subscriptionEntry.url === urlKey) {
+        
+        subscriptionEntry.promise = null;
+        for (let callback of subscriptionEntry.callbacks) {
+          this._callOneCallback(subscriptionEntry, callback);
+        }
+      }
+    }
+  }
 };
 
 

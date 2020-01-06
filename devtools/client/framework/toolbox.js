@@ -603,6 +603,22 @@ Toolbox.prototype = {
                 });
             };
 
+          case "applySourceMap":
+            return (generatedId, url, code, mappings) => {
+              return target.applySourceMap(generatedId, url, code, mappings)
+                .then(result => {
+                  
+                  
+                  
+                  
+                  
+                  if (this._sourceMapURLService) {
+                    this._sourceMapURLService.sourceMapChanged(generatedId, url);
+                  }
+                  return result;
+                });
+            };
+
           default:
             return target[name];
         }
