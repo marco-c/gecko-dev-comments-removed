@@ -2276,6 +2276,14 @@ public:
   
 
 
+  static bool IsPerformanceNavigationTimingEnabled()
+  {
+    return sIsPerformanceNavigationTimingEnabled;
+  }
+
+  
+
+
   static bool SendPerformanceTimingNotifications()
   {
     return sSendPerformanceTimingNotifications;
@@ -3340,6 +3348,7 @@ private:
   static uint32_t sHandlingInputTimeout;
   static bool sIsPerformanceTimingEnabled;
   static bool sIsResourceTimingEnabled;
+  static bool sIsPerformanceNavigationTimingEnabled;
   static bool sIsUserTimingLoggingEnabled;
   static bool sIsFrameTimingPrefEnabled;
   static bool sIsFormAutofillAutocompleteEnabled;
