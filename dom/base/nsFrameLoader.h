@@ -113,6 +113,16 @@ public:
 
   void LoadURI(nsIURI* aURI, mozilla::ErrorResult& aRv);
 
+  
+
+
+
+
+
+
+
+  nsresult LoadURI(nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal);
+
   void SetIsPrerendered(mozilla::ErrorResult& aRv);
 
   void MakePrerenderedLoaderActive(mozilla::ErrorResult& aRv);
@@ -324,7 +334,7 @@ public:
 
   void ApplySandboxFlags(uint32_t sandboxFlags);
 
-  void GetURL(nsString& aURL);
+  void GetURL(nsString& aURL, nsIPrincipal** aTriggeringPrincipal);
 
   
   nsresult GetWindowDimensions(nsIntRect& aRect);
@@ -384,7 +394,16 @@ private:
   
   
   void UpdateBaseWindowPositionAndSize(nsSubDocumentFrame *aIFrame);
-  nsresult CheckURILoad(nsIURI* aURI);
+
+  
+
+
+
+
+
+
+
+  nsresult CheckURILoad(nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal);
   void FireErrorEvent();
   nsresult ReallyStartLoadingInternal();
 
@@ -430,6 +449,7 @@ private:
 
   nsCOMPtr<nsIDocShell> mDocShell;
   nsCOMPtr<nsIURI> mURIToLoad;
+  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   mozilla::dom::Element* mOwnerContent; 
 
   

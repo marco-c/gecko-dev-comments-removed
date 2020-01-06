@@ -433,6 +433,11 @@ add_task(async function test_contentscript_triggeringPrincipals() {
 
 
   const TESTS = [
+    
+    {
+      element: ["iframe", {}],
+      src: "iframe.html",
+    },
     {
       element: ["img", {}],
       src: "img.png",
