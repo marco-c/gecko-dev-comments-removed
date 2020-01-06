@@ -3201,6 +3201,12 @@ GeckoDriver.prototype.commands = {
   "Addon:Uninstall": GeckoDriver.prototype.uninstallAddon,
   "addon:uninstall": GeckoDriver.prototype.uninstallAddon,  
 
+  
+  "L10n:LocalizeEntity": GeckoDriver.prototype.localizeEntity,
+  "localization:l10n:localizeEntity": GeckoDriver.prototype.localizeEntity,  
+  "L10n:LocalizeProperty": GeckoDriver.prototype.localizeProperty,
+  "localization:l10n:localizeProperty": GeckoDriver.prototype.localizeProperty,  
+
   "newSession": GeckoDriver.prototype.newSession,
   "getSessionCapabilities": GeckoDriver.prototype.getSessionCapabilities,
   "executeScript": GeckoDriver.prototype.executeScript,
@@ -3269,9 +3275,6 @@ GeckoDriver.prototype.commands = {
   "acceptDialog": GeckoDriver.prototype.acceptDialog,
   "getTextFromDialog": GeckoDriver.prototype.getTextFromDialog,
   "sendKeysToDialog": GeckoDriver.prototype.sendKeysToDialog,
-
-  "localization:l10n:localizeEntity": GeckoDriver.prototype.localizeEntity,
-  "localization:l10n:localizeProperty": GeckoDriver.prototype.localizeProperty,
 };
 
 function copy (obj) {
