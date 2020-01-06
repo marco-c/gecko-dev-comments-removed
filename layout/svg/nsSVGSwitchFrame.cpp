@@ -5,7 +5,7 @@
 
 
 #include "gfxRect.h"
-#include "nsSVGEffects.h"
+#include "SVGObserverUtils.h"
 #include "nsSVGGFrame.h"
 #include "mozilla/dom/SVGSwitchElement.h"
 #include "nsSVGUtils.h"

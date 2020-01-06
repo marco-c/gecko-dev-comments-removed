@@ -4,7 +4,7 @@
 
 
 
-#include "nsSVGEffects.h"
+#include "SVGObserverUtils.h"
 
 
 #include "mozilla/RestyleManager.h"

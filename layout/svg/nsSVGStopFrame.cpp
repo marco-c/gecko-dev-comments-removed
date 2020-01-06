@@ -8,7 +8,7 @@
 #include "nsFrame.h"
 #include "nsGkAtoms.h"
 #include "nsStyleContext.h"
-#include "nsSVGEffects.h"
+#include "SVGObserverUtils.h"
 
 
 

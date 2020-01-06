@@ -24,7 +24,7 @@
 #include "nsRect.h"
 #include "nsString.h"
 #include "nsStubDocumentObserver.h"
-#include "nsSVGEffects.h" 
+#include "SVGObserverUtils.h" 
 #include "nsWindowSizes.h"
 #include "ImageRegion.h"
 #include "ISurfaceProvider.h"

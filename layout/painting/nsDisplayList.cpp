@@ -43,7 +43,7 @@
 #include "BasicLayers.h"
 #include "nsBoxFrame.h"
 #include "nsSubDocumentFrame.h"
-#include "nsSVGEffects.h"
+#include "SVGObserverUtils.h"
 #include "nsSVGElement.h"
 #include "nsSVGClipPathFrame.h"
 #include "GeckoProfiler.h"
@@ -6194,15 +6194,10 @@ nsDisplayOpacity::ShouldFlattenAway(nsDisplayListBuilder* aBuilder)
   
   
   
-  const DisplayItemClipChain* clip = nullptr;
-
-  if (mClip) {
-    clip = aBuilder->AllocateDisplayItemClipChain(*mClip, mActiveScrolledRoot,
-                                                  nullptr);
-  }
+  DisplayItemClipChain clip { GetClip(), mActiveScrolledRoot, nullptr };
 
   for (uint32_t i = 0; i < childCount; i++) {
-    children[i].item->ApplyOpacity(aBuilder, mOpacity, clip);
+    children[i].item->ApplyOpacity(aBuilder, mOpacity, mClip ? &clip : nullptr);
   }
 
   return true;
