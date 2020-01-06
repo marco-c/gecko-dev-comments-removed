@@ -16,6 +16,7 @@ const REQUESTS = [
   { url: "sjs_content-type-test-server.sjs?fmt=image" },
   { url: "sjs_content-type-test-server.sjs?fmt=audio" },
   { url: "sjs_content-type-test-server.sjs?fmt=video" },
+  { url: "sjs_content-type-test-server.sjs?fmt=gzip" },
   { url: "sjs_status-codes-test-server.sjs?sts=304" },
 ];
 
@@ -110,6 +111,18 @@ const EXPECTED_REQUESTS = [
   },
   {
     method: "GET",
+    url: CONTENT_TYPE_SJS + "?fmt=gzip",
+    data: {
+      fuzzyUrl: true,
+      status: 200,
+      statusText: "OK",
+      displayedStatus: "200",
+      type: "plain",
+      fullMimeType: "text/plain"
+    }
+  },
+  {
+    method: "GET",
     url: STATUS_CODES_SJS + "?sts=304",
     data: {
       status: 304,
@@ -145,97 +158,186 @@ add_task(function* () {
 
   
   setFreetextFilter("is:running");
-  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("is:from-cache");
-  testContents([0, 0, 0, 0, 0, 0, 0, 0, 1]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
 
   setFreetextFilter("is:cached");
-  testContents([0, 0, 0, 0, 0, 0, 0, 0, 1]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
 
   
   setFreetextFilter("-is:from-cache");
-  testContents([1, 1, 1, 1, 1, 1, 1, 1, 0]);
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 0]);
 
   setFreetextFilter("-is:cached");
-  testContents([1, 1, 1, 1, 1, 1, 1, 1, 0]);
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 0]);
 
   
   setFreetextFilter("status-code:200");
-  testContents([1, 1, 1, 1, 1, 1, 1, 1, 0]);
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 0]);
 
   
   setFreetextFilter("-status-code:200");
-  testContents([0, 0, 0, 0, 0, 0, 0, 0, 1]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
 
   
   setFreetextFilter("mime-type:HtmL");
-  testContents([1, 1, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([1, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("-mime-type:HtmL");
-  testContents([0, 0, 1, 1, 1, 1, 1, 1, 1]);
+  testContents([0, 0, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   
   setFreetextFilter("method:get");
-  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1]);
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   
   setFreetextFilter("method:post");
-  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("scheme:http");
-  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1]);
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   setFreetextFilter("scheme:https");
-  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("regexp:content.*?Sam");
-  testContents([1, 1, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([1, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("set-cookie-name:name2");
-  testContents([0, 1, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([0, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   setFreetextFilter("set-cookie-name:not-existing");
-  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("set-cookie-value:value2");
-  testContents([0, 1, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([0, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   setFreetextFilter("set-cookie-value:not-existing");
-  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("set-cookie-domain:.example.com");
-  testContents([0, 1, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([0, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   setFreetextFilter("set-cookie-domain:.foo.example.com");
-  testContents([0, 1, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([0, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   setFreetextFilter("set-cookie-domain:.not-existing.example.com");
-  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+  
+  setFreetextFilter("size:-1");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+  setFreetextFilter("size:0");
+  testContents([0, 0, 0, 0, 1, 1, 1, 1, 0, 1]);
+
+  setFreetextFilter("size:34");
+  testContents([0, 0, 1, 1, 0, 0, 0, 0, 0, 0]);
+
+  
+  setFreetextFilter("size:9.659k");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
+
+  
+  setFreetextFilter("size:10989");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
+
+  
+  setFreetextFilter("size:11.804k");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
+
+  
+  setFreetextFilter("transferred:0");
+  testContents([0, 0, 0, 0, 1, 1, 1, 1, 0, 1]);
+
+  setFreetextFilter("transferred:1");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+  setFreetextFilter("transferred:34");
+  testContents([0, 0, 1, 1, 0, 0, 0, 0, 0, 0]);
+
+  
+  setFreetextFilter("larger-than:-1");
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+
+  setFreetextFilter("larger-than:0");
+  testContents([1, 1, 1, 1, 0, 0, 0, 0, 1, 0]);
+
+  setFreetextFilter("larger-than:33");
+  testContents([0, 0, 1, 1, 0, 0, 0, 0, 1, 0]);
+
+  setFreetextFilter("larger-than:34");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
+
+  setFreetextFilter("larger-than:10.73k");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
+
+  setFreetextFilter("larger-than:10.732k");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("transferred-larger-than:-1");
-  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1]);
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   setFreetextFilter("transferred-larger-than:0");
-  testContents([1, 1, 1, 1, 0, 0, 0, 0, 0]);
+  testContents([1, 1, 1, 1, 0, 0, 0, 0, 1, 0]);
 
   setFreetextFilter("transferred-larger-than:33");
-  testContents([0, 0, 1, 1, 0, 0, 0, 0, 0]);
+  testContents([0, 0, 1, 1, 0, 0, 0, 0, 1, 0]);
 
   setFreetextFilter("transferred-larger-than:34");
-  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
+
+  setFreetextFilter("transferred-larger-than:10.73k");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+  
+  setFreetextFilter("cause:xhr");
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+
+  setFreetextFilter("cause:script");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+  
+  setFreetextFilter("has-response-header:Content-Type");
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+
+  setFreetextFilter("has-response-header:Last-Modified");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+  
+  setFreetextFilter("remote-ip:127.0.0.1");
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+
+  setFreetextFilter("remote-ip:192.168.1.2");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+  
+  setFreetextFilter("domain:example.com");
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+
+  setFreetextFilter("domain:wrongexample.com");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+  
+  setFreetextFilter("protocol:http/1");
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+
+  setFreetextFilter("protocol:http/2");
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   setFreetextFilter("-mime-type:HtmL status-code:200");
-  testContents([0, 0, 1, 1, 1, 1, 1, 1, 0]);
+  testContents([0, 0, 1, 1, 1, 1, 1, 1, 1, 0]);
 
   yield teardown(monitor);
 
