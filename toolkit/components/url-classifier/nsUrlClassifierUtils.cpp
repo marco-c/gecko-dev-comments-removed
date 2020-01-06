@@ -297,6 +297,9 @@ nsUrlClassifierUtils::GetTelemetryProvider(const nsACString& aTableName,
   if (!NS_LITERAL_CSTRING("mozilla").Equals(aProvider) &&
       !NS_LITERAL_CSTRING("google").Equals(aProvider) &&
       !NS_LITERAL_CSTRING("google4").Equals(aProvider) &&
+      !NS_LITERAL_CSTRING("baidu").Equals(aProvider) &&
+      !NS_LITERAL_CSTRING("mozcn").Equals(aProvider) &&
+      !NS_LITERAL_CSTRING("yandex").Equals(aProvider) &&
       !NS_LITERAL_CSTRING(TESTING_TABLE_PROVIDER_NAME).Equals(aProvider)) {
     aProvider.Assign(NS_LITERAL_CSTRING("other"));
   }
