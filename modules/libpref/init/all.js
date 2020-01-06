@@ -1450,13 +1450,38 @@ pref("javascript.options.discardSystemSource", false);
 
 
 
+
+
+
+
+
+
+
 pref("javascript.options.mem.high_water_mark", 128);
+
+
+
+
 pref("javascript.options.mem.max", -1);
-pref("javascript.options.mem.nursery.max_kb", -1);
+
+
+#if defined(ANDROID) || defined(XP_IOS) || defined(MOZ_B2G)
+pref("javascript.options.mem.nursery.max_kb", 4096);
+#else
+pref("javascript.options.mem.nursery.max_kb", 16384);
+#endif
+
+
 pref("javascript.options.mem.gc_per_zone", true);
 pref("javascript.options.mem.gc_incremental", true);
+
+
+
 pref("javascript.options.mem.gc_incremental_slice_ms", 5);
+
+
 pref("javascript.options.mem.gc_compacting", true);
+
 pref("javascript.options.mem.log", false);
 pref("javascript.options.mem.notify", false);
 pref("javascript.options.gc_on_memory_pressure", true);
@@ -1467,17 +1492,42 @@ pref("javascript.options.compact_on_user_inactive_delay", 15000);
 pref("javascript.options.compact_on_user_inactive_delay", 300000); 
 #endif
 
+
 pref("javascript.options.mem.gc_high_frequency_time_limit_ms", 1000);
+
+
 pref("javascript.options.mem.gc_high_frequency_low_limit_mb", 100);
+
+
 pref("javascript.options.mem.gc_high_frequency_high_limit_mb", 500);
+
+
 pref("javascript.options.mem.gc_high_frequency_heap_growth_max", 300);
+
+
 pref("javascript.options.mem.gc_high_frequency_heap_growth_min", 150);
+
+
 pref("javascript.options.mem.gc_low_frequency_heap_growth", 150);
+
+
+
 pref("javascript.options.mem.gc_dynamic_heap_growth", true);
+
+
+
 pref("javascript.options.mem.gc_dynamic_mark_slice", true);
+
+
 pref("javascript.options.mem.gc_refresh_frame_slices_enabled", true);
+
+
 pref("javascript.options.mem.gc_allocation_threshold_mb", 30);
+
+
 pref("javascript.options.mem.gc_min_empty_chunk_count", 1);
+
+
 pref("javascript.options.mem.gc_max_empty_chunk_count", 30);
 
 pref("javascript.options.showInConsole", false);
