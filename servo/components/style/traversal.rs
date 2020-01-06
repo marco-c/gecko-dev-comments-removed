@@ -38,6 +38,7 @@ bitflags! {
         /// Traverse without generating any change hints.
         const FOR_RECONSTRUCT = 0x04,
         /// Traverse triggered by CSS rule changes.
+        ///
         /// Traverse and update all elements with CSS animations since
         /// @keyframes rules may have changed
         const FOR_CSS_RULE_CHANGES = 0x08,
@@ -102,7 +103,9 @@ pub enum LogBehavior {
 }
 use self::LogBehavior::*;
 impl LogBehavior {
-    fn allow(&self) -> bool { matches!(*self, MayLog) }
+    fn allow(&self) -> bool {
+        matches!(*self, MayLog)
+    }
 }
 
 
@@ -172,12 +175,13 @@ pub trait DomTraversal<E: TElement> : Sync {
     
     
     
-    fn handle_postorder_traversal(&self,
-                                  thread_local: &mut Self::ThreadLocalContext,
-                                  root: OpaqueNode,
-                                  mut node: E::ConcreteNode,
-                                  children_to_process: isize)
-    {
+    fn handle_postorder_traversal(
+        &self,
+        thread_local: &mut Self::ThreadLocalContext,
+        root: OpaqueNode,
+        mut node: E::ConcreteNode,
+        children_to_process: isize
+    ) {
         
         if !Self::needs_postorder_traversal() {
             return;
@@ -218,14 +222,17 @@ pub trait DomTraversal<E: TElement> : Sync {
     
     
     
-    fn pre_traverse(root: E,
-                    shared_context: &SharedStyleContext,
-                    traversal_flags: TraversalFlags)
-                    -> PreTraverseToken
-    {
+    
+    
+    fn pre_traverse(
+        root: E,
+        shared_context: &SharedStyleContext,
+        traversal_flags: TraversalFlags
+    ) -> PreTraverseToken {
         debug_assert!(!(traversal_flags.for_reconstruct() &&
                         traversal_flags.for_unstyled_children_only()),
-                      "must not specify FOR_RECONSTRUCT in combination with UNSTYLED_CHILDREN_ONLY");
+                      "must not specify FOR_RECONSTRUCT in combination with \
+                       UNSTYLED_CHILDREN_ONLY");
 
         if traversal_flags.for_unstyled_children_only() {
             if root.borrow_data().map_or(true, |d| d.has_styles() && d.styles.is_display_none()) {
@@ -262,7 +269,10 @@ pub trait DomTraversal<E: TElement> : Sync {
     }
 
     
-    fn node_needs_traversal(node: E::ConcreteNode, traversal_flags: TraversalFlags) -> bool {
+    fn node_needs_traversal(
+        node: E::ConcreteNode,
+        traversal_flags: TraversalFlags
+    ) -> bool {
         
         if is_servo_nonincremental_layout() {
             return true;
@@ -277,8 +287,6 @@ pub trait DomTraversal<E: TElement> : Sync {
             Some(el) => el,
         };
 
-        
-        
         
         
         
@@ -394,22 +402,26 @@ pub trait DomTraversal<E: TElement> : Sync {
     
     
     
-    fn should_traverse_children(&self,
-                                thread_local: &mut ThreadLocalStyleContext<E>,
-                                parent: E,
-                                parent_data: &ElementData,
-                                log: LogBehavior) -> bool
-    {
+    fn should_traverse_children(
+        &self,
+        thread_local: &mut ThreadLocalStyleContext<E>,
+        parent: E,
+        parent_data: &ElementData,
+        log: LogBehavior
+    ) -> bool {
         
-        debug_assert!(cfg!(feature = "gecko") || parent.has_current_styles(parent_data));
+        debug_assert!(cfg!(feature = "gecko") ||
+                      parent.has_current_styles(parent_data));
 
         
         if parent_data.styles.is_display_none() {
-            if log.allow() { debug!("Parent {:?} is display:none, culling traversal", parent); }
+            if log.allow() {
+                debug!("Parent {:?} is display:none, culling traversal",
+                       parent);
+            }
             return false;
         }
 
-        
         
         
         
@@ -432,7 +444,10 @@ pub trait DomTraversal<E: TElement> : Sync {
         
         if cfg!(feature = "gecko") && thread_local.is_initial_style() &&
            parent_data.styles.primary().has_moz_binding() {
-            if log.allow() { debug!("Parent {:?} has XBL binding, deferring traversal", parent); }
+            if log.allow() {
+                debug!("Parent {:?} has XBL binding, deferring traversal",
+                       parent);
+            }
             return false;
         }
 
@@ -441,13 +456,24 @@ pub trait DomTraversal<E: TElement> : Sync {
 
     
     
-    fn traverse_children<F>(&self, thread_local: &mut Self::ThreadLocalContext, parent: E, mut f: F)
-        where F: FnMut(&mut Self::ThreadLocalContext, E::ConcreteNode)
+    fn traverse_children<F>(
+        &self,
+        thread_local: &mut Self::ThreadLocalContext,
+        parent: E,
+        mut f: F
+    )
+    where
+        F: FnMut(&mut Self::ThreadLocalContext, E::ConcreteNode)
     {
         
         let should_traverse =
-            self.should_traverse_children(thread_local.borrow_mut(), parent,
-                                          &parent.borrow_data().unwrap(), MayLog);
+            self.should_traverse_children(
+                thread_local.borrow_mut(),
+                parent,
+                &parent.borrow_data().unwrap(),
+                MayLog
+            );
+
         thread_local.borrow_mut().end_element(parent);
         if !should_traverse {
             return;
@@ -461,7 +487,7 @@ pub trait DomTraversal<E: TElement> : Sync {
                 if !self.shared_context().traversal_flags.for_reconstruct() {
                     let el = kid.as_element();
                     if el.as_ref().and_then(|el| el.borrow_data())
-                                  .map_or(false, |d| d.has_styles()) {
+                         .map_or(false, |d| d.has_styles()) {
                         if self.shared_context().traversal_flags.for_animation_only() {
                             unsafe { parent.set_animation_only_dirty_descendants(); }
                         } else {
@@ -504,9 +530,10 @@ pub trait DomTraversal<E: TElement> : Sync {
 }
 
 
-fn resolve_style_internal<E, F>(context: &mut StyleContext<E>,
-                                element: E, ensure_data: &F)
-                                -> Option<E>
+fn resolve_style_internal<E, F>(
+    context: &mut StyleContext<E>,
+    element: E, ensure_data: &F
+) -> Option<E>
     where E: TElement,
           F: Fn(E),
 {
@@ -539,6 +566,8 @@ fn resolve_style_internal<E, F>(context: &mut StyleContext<E>,
         context.thread_local.end_element(element);
 
         if !context.shared.traversal_flags.for_default_styles() {
+            
+            
             
             
             
@@ -582,6 +611,7 @@ pub fn resolve_style<E, F, G, H>(context: &mut StyleContext<E>, element: E,
     
     
     
+    
     let in_doc = element.as_node().is_in_doc();
     if !in_doc || display_none_root.is_some() {
         let mut curr = element;
@@ -606,15 +636,18 @@ pub fn resolve_style<E, F, G, H>(context: &mut StyleContext<E>, element: E,
 
 
 
-pub fn resolve_default_style<E, F, G, H>(context: &mut StyleContext<E>,
-                                         element: E,
-                                         ensure_data: &F,
-                                         set_data: &G,
-                                         callback: H)
-    where E: TElement,
-          F: Fn(E),
-          G: Fn(E, Option<ElementData>) -> Option<ElementData>,
-          H: FnOnce(&ElementStyles)
+pub fn resolve_default_style<E, F, G, H>(
+    context: &mut StyleContext<E>,
+    element: E,
+    ensure_data: &F,
+    set_data: &G,
+    callback: H
+)
+where
+    E: TElement,
+    F: Fn(E),
+    G: Fn(E, Option<ElementData>) -> Option<ElementData>,
+    H: FnOnce(&ElementStyles),
 {
     
     let mut old_data: SmallVec<[(E, Option<ElementData>); 8]> = SmallVec::new();
@@ -646,13 +679,16 @@ pub fn resolve_default_style<E, F, G, H>(context: &mut StyleContext<E>,
 
 #[inline]
 #[allow(unsafe_code)]
-pub fn recalc_style_at<E, D>(traversal: &D,
-                             traversal_data: &PerLevelTraversalData,
-                             context: &mut StyleContext<E>,
-                             element: E,
-                             data: &mut ElementData)
-    where E: TElement,
-          D: DomTraversal<E>
+pub fn recalc_style_at<E, D>(
+    traversal: &D,
+    traversal_data: &PerLevelTraversalData,
+    context: &mut StyleContext<E>,
+    element: E,
+    data: &mut ElementData
+)
+where
+    E: TElement,
+    D: DomTraversal<E>,
 {
     context.thread_local.begin_element(element, data);
     context.thread_local.statistics.elements_traversed += 1;
@@ -662,7 +698,8 @@ pub fn recalc_style_at<E, D>(traversal: &D,
     let compute_self = !element.has_current_styles(data);
     let mut hint = RestyleHint::empty();
 
-    debug!("recalc_style_at: {:?} (compute_self={:?}, dirty_descendants={:?}, data={:?})",
+    debug!("recalc_style_at: {:?} (compute_self={:?}, \
+            dirty_descendants={:?}, data={:?})",
            element, compute_self, element.has_dirty_descendants(), data);
 
     
@@ -725,12 +762,14 @@ pub fn recalc_style_at<E, D>(traversal: &D,
 
     
     
-    if traversal.should_traverse_children(&mut context.thread_local,
-                                          element,
-                                          &data,
-                                          DontLog) &&
-        (has_dirty_descendants_for_this_restyle ||
-         !propagated_hint.is_empty()) {
+    let should_traverse_children = traversal.should_traverse_children(
+        &mut context.thread_local,
+        element,
+        &data,
+        DontLog
+    );
+    if should_traverse_children &&
+        (has_dirty_descendants_for_this_restyle || !propagated_hint.is_empty()) {
         let reconstructed_ancestor =
             data.restyle.reconstructed_self_or_ancestor();
 
@@ -768,21 +807,22 @@ pub fn recalc_style_at<E, D>(traversal: &D,
     
     
     
-    
     if data.styles.is_display_none() ||
        context.shared.traversal_flags.for_reconstruct() {
         unsafe { element.unset_dirty_descendants(); }
     }
 }
 
-fn compute_style<E, D>(_traversal: &D,
-                       traversal_data: &PerLevelTraversalData,
-                       context: &mut StyleContext<E>,
-                       element: E,
-                       data: &mut ElementData)
-                       -> ChildCascadeRequirement
-    where E: TElement,
-          D: DomTraversal<E>,
+fn compute_style<E, D>(
+    _traversal: &D,
+    traversal_data: &PerLevelTraversalData,
+    context: &mut StyleContext<E>,
+    element: E,
+    data: &mut ElementData
+) -> ChildCascadeRequirement
+where
+    E: TElement,
+    D: DomTraversal<E>,
 {
     use data::RestyleKind::*;
     use sharing::StyleSharingResult::*;
@@ -830,9 +870,8 @@ fn compute_style<E, D>(_traversal: &D,
         }
         CascadeWithReplacements(flags) => {
             
-            context.thread_local.current_element_info
-                   .as_mut().unwrap()
-                   .cascade_inputs = ElementCascadeInputs::new_from_element_data(data);
+            *context.cascade_inputs_mut() =
+                ElementCascadeInputs::new_from_element_data(data);
             let important_rules_changed = element.replace_rules(flags, context);
             element.cascade_primary_and_pseudos(
                 context,
@@ -842,9 +881,8 @@ fn compute_style<E, D>(_traversal: &D,
         }
         CascadeOnly => {
             
-            context.thread_local.current_element_info
-                   .as_mut().unwrap()
-                   .cascade_inputs = ElementCascadeInputs::new_from_element_data(data);
+            *context.cascade_inputs_mut() =
+                ElementCascadeInputs::new_from_element_data(data);
             element.cascade_primary_and_pseudos(
                 context,
                 data,
@@ -904,9 +942,18 @@ where
 }
 
 
-pub fn clear_descendant_data<E: TElement, F: Fn(E)>(el: E, clear_data: &F) {
+pub fn clear_descendant_data<E, F>(
+    el: E,
+    clear_data: &F
+)
+where
+    E: TElement,
+    F: Fn(E),
+{
     for kid in el.as_node().traversal_children() {
         if let Some(kid) = kid.as_element() {
+            
+            
             
             
             
