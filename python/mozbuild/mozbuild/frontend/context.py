@@ -1584,6 +1584,10 @@ VARIABLES = {
         """List of manifest files defining python unit tests.
         """),
 
+    'CRAMTEST_MANIFESTS': (ManifestparserManifestList, list,
+        """List of manifest files defining cram unit tests.
+        """),
+
 
     
     'XPI_NAME': (unicode, unicode,
