@@ -65,14 +65,14 @@ public:
                  mozilla::wr::DisplayListBuilder& aBuilder,
                  mozilla::wr::IpcResourceUpdateQueue& aResources,
                  const StackingContextHelper& aSc,
-                 const LayoutDeviceRect& aRect);
+                 const LayerRect& aRect);
 
   Maybe<wr::WrImageMask> BuildWrMaskImage(nsDisplayItem* aItem,
                                           wr::DisplayListBuilder& aBuilder,
                                           wr::IpcResourceUpdateQueue& aResources,
                                           const StackingContextHelper& aSc,
                                           nsDisplayListBuilder* aDisplayListBuilder,
-                                          const LayoutDeviceRect& aBounds);
+                                          const LayerRect& aBounds);
 
   bool PushItemAsImage(nsDisplayItem* aItem,
                        wr::DisplayListBuilder& aBuilder,
@@ -91,9 +91,10 @@ public:
                                                                wr::IpcResourceUpdateQueue& aResources,
                                                                const StackingContextHelper& aSc,
                                                                nsDisplayListBuilder* aDisplayListBuilder,
-                                                               LayoutDeviceRect& aImageRect);
+                                                               LayerRect& aImageRect);
 
   void RemoveUnusedAndResetWebRenderUserData();
+  void ClearCachedResources();
 
   
   

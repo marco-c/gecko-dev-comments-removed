@@ -540,7 +540,8 @@ WebRenderLayerManager::ClearCachedResources(Layer* aSubtree)
 void
 WebRenderLayerManager::WrUpdated()
 {
-  
+  mWebRenderCommandBuilder.ClearCachedResources();
+  DiscardLocalImages();
 }
 
 void
