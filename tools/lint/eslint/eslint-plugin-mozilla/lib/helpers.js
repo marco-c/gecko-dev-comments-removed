@@ -439,8 +439,16 @@ module.exports = {
     }
 
     let manifests = [];
+    let names = [];
+    try {
+      names = fs.readdirSync(dir);
+    } catch (err) {
+      
+      if (err.code !== "ENOENT") {
+        throw err;
+      }
+    }
 
-    let names = fs.readdirSync(dir);
     for (let name of names) {
       if (!name.endsWith(".ini")) {
         continue;
