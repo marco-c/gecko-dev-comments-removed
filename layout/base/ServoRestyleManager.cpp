@@ -399,9 +399,31 @@ UpdateBackdropIfNeeded(nsIFrame* aFrame,
 }
 
 static void
+UpdateFirstLetterIfNeeded(nsIFrame* aFrame, ServoRestyleState& aRestyleState)
+{
+  if (!aFrame->HasFirstLetterChild()) {
+    return;
+  }
+
+  
+  
+  
+  nsIFrame* block = aFrame;
+  while (!block->IsFrameOfType(nsIFrame::eBlockFrame)) {
+    block = block->GetParent();
+  }
+  static_cast<nsBlockFrame*>(block->FirstContinuation())->
+    UpdateFirstLetterStyle(aRestyleState);
+}
+
+static void
 UpdateFramePseudoElementStyles(nsIFrame* aFrame,
                                ServoRestyleState& aRestyleState)
 {
+  
+  
+  UpdateFirstLetterIfNeeded(aFrame, aRestyleState);
+
   if (aFrame->IsFrameOfType(nsIFrame::eBlockFrame)) {
     static_cast<nsBlockFrame*>(aFrame)->UpdatePseudoElementStyles(aRestyleState);
   }
