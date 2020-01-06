@@ -47,7 +47,7 @@ TEST_F(APZCSnappingTester, Bug1265510)
   
   
   
-  while (outer->GetCurrentAsyncScrollOffset(AsyncPanZoomController::AsyncMode::NORMAL).y < 70) {
+  while (outer->GetCurrentAsyncScrollOffset(AsyncPanZoomController::AsyncTransformConsumer::eForHitTesting).y < 70) {
     mcc->AdvanceByMillis(5);
     outer->AdvanceAnimations(mcc->Time());
   }
@@ -56,10 +56,10 @@ TEST_F(APZCSnappingTester, Bug1265510)
   TimeStamp newTransactionTime = now + TimeDuration::FromMilliseconds(gfxPrefs::MouseWheelTransactionTimeoutMs() + 100);
   SmoothWheel(manager, ScreenIntPoint(50, 80), ScreenPoint(0, 6), newTransactionTime);
   inner->AdvanceAnimationsUntilEnd();
-  EXPECT_LT(0.0f, inner->GetCurrentAsyncScrollOffset(AsyncPanZoomController::AsyncMode::NORMAL).y);
+  EXPECT_LT(0.0f, inner->GetCurrentAsyncScrollOffset(AsyncPanZoomController::AsyncTransformConsumer::eForHitTesting).y);
 
   
   
   outer->AdvanceAnimationsUntilEnd();
-  EXPECT_EQ(100.0f, outer->GetCurrentAsyncScrollOffset(AsyncPanZoomController::AsyncMode::NORMAL).y);
+  EXPECT_EQ(100.0f, outer->GetCurrentAsyncScrollOffset(AsyncPanZoomController::AsyncTransformConsumer::eForHitTesting).y);
 }

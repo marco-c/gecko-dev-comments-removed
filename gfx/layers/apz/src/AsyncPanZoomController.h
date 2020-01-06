@@ -792,9 +792,17 @@ public:
 
 
 
-  enum AsyncMode {
-    NORMAL,
-    RESPECT_FORCE_DISABLE,
+
+
+
+
+
+
+
+
+  enum AsyncTransformConsumer {
+    eForHitTesting,
+    eForCompositing,
   };
 
   
@@ -802,20 +810,20 @@ public:
 
 
 
-  ParentLayerPoint GetCurrentAsyncScrollOffset(AsyncMode aMode) const;
+  ParentLayerPoint GetCurrentAsyncScrollOffset(AsyncTransformConsumer aMode) const;
 
   
 
 
 
 
-  CSSPoint GetCurrentAsyncScrollOffsetInCssPixels(AsyncMode aMode) const;
+  CSSPoint GetCurrentAsyncScrollOffsetInCssPixels(AsyncTransformConsumer aMode) const;
 
   
 
 
 
-  AsyncTransformComponentMatrix GetOverscrollTransform(AsyncMode aMode) const;
+  AsyncTransformComponentMatrix GetOverscrollTransform(AsyncTransformConsumer aMode) const;
 
   
 
@@ -823,13 +831,13 @@ public:
 
 
 
-  AsyncTransform GetCurrentAsyncTransform(AsyncMode aMode) const;
+  AsyncTransform GetCurrentAsyncTransform(AsyncTransformConsumer aMode) const;
 
   
 
 
 
-  AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll(AsyncMode aMode) const;
+  AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll(AsyncTransformConsumer aMode) const;
 
 
   

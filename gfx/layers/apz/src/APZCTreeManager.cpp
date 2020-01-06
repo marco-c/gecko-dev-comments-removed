@@ -500,7 +500,7 @@ APZCTreeManager::PushStateToWR(wr::WebRenderAPI* aWrApi,
         httnMap.emplace(guid, aNode);
 
         ParentLayerPoint layerTranslation = apzc->GetCurrentAsyncTransform(
-            AsyncPanZoomController::RESPECT_FORCE_DISABLE).mTranslation;
+            AsyncPanZoomController::eForCompositing).mTranslation;
         
         
         
@@ -851,7 +851,7 @@ APZCTreeManager::PrepareNodeForLayer(const ScrollNode& aLayer,
       }
       
       aState.mPaintLogger.LogTestData(aMetrics.GetScrollId(), "asyncScrollOffset",
-          apzc->GetCurrentAsyncScrollOffset(AsyncPanZoomController::NORMAL));
+          apzc->GetCurrentAsyncScrollOffset(AsyncPanZoomController::eForHitTesting));
     }
 
     if (newApzc) {
@@ -956,7 +956,7 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
     MutexAutoLock lock(mTreeLock);
     RefPtr<AsyncPanZoomController> apzc = FindRootContentOrRootApzc();
     if (apzc) {
-      scrollOffset = ViewAs<ScreenPixel>(apzc->GetCurrentAsyncScrollOffset(AsyncPanZoomController::NORMAL),
+      scrollOffset = ViewAs<ScreenPixel>(apzc->GetCurrentAsyncScrollOffset(AsyncPanZoomController::eForHitTesting),
                                          PixelCastJustification::ScreenIsParentLayerForRoot);
     }
   }
@@ -2425,7 +2425,7 @@ APZCTreeManager::GetScreenToApzcTransform(const AsyncPanZoomController *aApzc) c
     
     ancestorUntransform = parent->GetAncestorTransform().Inverse();
     
-    Matrix4x4 asyncUntransform = parent->GetCurrentAsyncTransformWithOverscroll(AsyncPanZoomController::NORMAL).Inverse().ToUnknownMatrix();
+    Matrix4x4 asyncUntransform = parent->GetCurrentAsyncTransformWithOverscroll(AsyncPanZoomController::eForHitTesting).Inverse().ToUnknownMatrix();
     
     Matrix4x4 untransformSinceLastApzc = ancestorUntransform * asyncUntransform;
 
@@ -2457,7 +2457,7 @@ APZCTreeManager::GetApzcToGeckoTransform(const AsyncPanZoomController *aApzc) co
   
 
   
-  Matrix4x4 asyncUntransform = aApzc->GetCurrentAsyncTransformWithOverscroll(AsyncPanZoomController::NORMAL).Inverse().ToUnknownMatrix();
+  Matrix4x4 asyncUntransform = aApzc->GetCurrentAsyncTransformWithOverscroll(AsyncPanZoomController::eForHitTesting).Inverse().ToUnknownMatrix();
 
   
   result = asyncUntransform * aApzc->GetTransformToLastDispatchedPaint() * aApzc->GetAncestorTransform();
@@ -2552,7 +2552,7 @@ APZCTreeManager::ComputeTransformForNode(const HitTestingTreeNode* aNode) const
     
     return aNode->GetTransform() *
         CompleteAsyncTransform(
-          apzc->GetCurrentAsyncTransformWithOverscroll(AsyncPanZoomController::NORMAL));
+          apzc->GetCurrentAsyncTransformWithOverscroll(AsyncPanZoomController::eForHitTesting));
   } else if (aNode->IsScrollThumbNode()) {
     
     

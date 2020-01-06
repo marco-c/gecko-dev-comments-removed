@@ -917,9 +917,9 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
           hasAsyncTransform = true;
 
           AsyncTransform asyncTransformWithoutOverscroll =
-              controller->GetCurrentAsyncTransform(AsyncPanZoomController::RESPECT_FORCE_DISABLE);
+              controller->GetCurrentAsyncTransform(AsyncPanZoomController::eForCompositing);
           AsyncTransformComponentMatrix overscrollTransform =
-              controller->GetOverscrollTransform(AsyncPanZoomController::RESPECT_FORCE_DISABLE);
+              controller->GetOverscrollTransform(AsyncPanZoomController::eForCompositing);
           AsyncTransformComponentMatrix asyncTransform =
               AsyncTransformComponentMatrix(asyncTransformWithoutOverscroll)
             * overscrollTransform;
@@ -1155,7 +1155,7 @@ AsyncCompositionManager::ComputeTransformForScrollThumb(
   MOZ_RELEASE_ASSERT(aApzc);
 
   AsyncTransformComponentMatrix asyncTransform =
-    aApzc->GetCurrentAsyncTransform(AsyncPanZoomController::RESPECT_FORCE_DISABLE);
+    aApzc->GetCurrentAsyncTransform(AsyncPanZoomController::eForCompositing);
 
   
   
@@ -1271,7 +1271,7 @@ AsyncCompositionManager::ComputeTransformForScrollThumb(
   
   if (aScrollbarIsDescendant) {
     AsyncTransformComponentMatrix overscroll =
-        aApzc->GetOverscrollTransform(AsyncPanZoomController::RESPECT_FORCE_DISABLE);
+        aApzc->GetOverscrollTransform(AsyncPanZoomController::eForCompositing);
     Matrix4x4 asyncUntransform = (asyncTransform * overscroll).Inverse().ToUnknownMatrix();
     Matrix4x4 contentTransform = aScrollableContentTransform;
     Matrix4x4 contentUntransform = contentTransform.Inverse();
