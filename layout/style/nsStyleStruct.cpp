@@ -3709,8 +3709,6 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
       || mContain != aNewData.mContain
       || (mFloat == StyleFloat::None) != (aNewData.mFloat == StyleFloat::None)
       || mScrollBehavior != aNewData.mScrollBehavior
-      || mOverscrollBehaviorX != aNewData.mOverscrollBehaviorX
-      || mOverscrollBehaviorY != aNewData.mOverscrollBehaviorY
       || mScrollSnapTypeX != aNewData.mScrollSnapTypeX
       || mScrollSnapTypeY != aNewData.mScrollSnapTypeY
       || mScrollSnapPointsX != aNewData.mScrollSnapPointsX
@@ -3899,6 +3897,13 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
   
   if (mTouchAction != aNewData.mTouchAction) {
     hint |= nsChangeHint_RepaintFrame;
+  }
+
+  
+  
+  if (mOverscrollBehaviorX != aNewData.mOverscrollBehaviorX ||
+      mOverscrollBehaviorY != aNewData.mOverscrollBehaviorY) {
+    hint |= nsChangeHint_SchedulePaint;
   }
 
   
