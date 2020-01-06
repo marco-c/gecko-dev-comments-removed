@@ -237,7 +237,11 @@ LazyInstantiator::ShouldInstantiate(const DWORD aClientTid)
   }
 
   nsCOMPtr<nsIFile> clientExe;
-  GetClientExecutableName(aClientTid, getter_AddRefs(clientExe));
+  if (!GetClientExecutableName(aClientTid, getter_AddRefs(clientExe))) {
+    AccumulateTelemetry(NS_LITERAL_STRING("(Failed to retrieve client image name)"));
+    
+    return true;
+  }
 
   
   
@@ -340,8 +344,10 @@ LazyInstantiator::AccumulateTelemetry(const nsString& aValue)
     Telemetry::ScalarSet(Telemetry::ScalarID::A11Y_INSTANTIATORS, aValue);
   }
 
-  mTelemetryThread->Shutdown();
-  mTelemetryThread = nullptr;
+  if (mTelemetryThread) {
+    mTelemetryThread->Shutdown();
+    mTelemetryThread = nullptr;
+  }
 }
 #endif 
 
