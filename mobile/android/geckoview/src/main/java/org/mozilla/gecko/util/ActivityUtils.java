@@ -42,7 +42,7 @@ public class ActivityUtils {
             newVis = View.SYSTEM_UI_FLAG_VISIBLE;
         }
 
-        if (AppConstants.Versions.feature23Plus) {
+        if (Build.VERSION.SDK_INT >= 23) {
             
             
             final int oldVis = window.getDecorView().getSystemUiVisibility();
