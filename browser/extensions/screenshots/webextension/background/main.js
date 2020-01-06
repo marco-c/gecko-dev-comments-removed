@@ -223,9 +223,7 @@ this.main = (function() {
   communication.register("downloadShot", (sender, info) => {
     
     
-    const binary = atob(info.url.split(',')[1]); 
-    const data = Uint8Array.from(binary, char => char.charCodeAt(0))
-    const blob = new Blob([data], {type: "image/png"})
+    const blob = blobConverters.dataUrlToBlob(info.url);
     let url = URL.createObjectURL(blob);
     let downloadId;
     let onChangedCallback = catcher.watchFunction(function(change) {
