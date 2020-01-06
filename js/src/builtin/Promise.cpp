@@ -3191,44 +3191,256 @@ PromiseObject::onSettled(JSContext* cx, Handle<PromiseObject*> promise)
     JS::dbg::onPromiseSettled(cx, promise);
 }
 
-PromiseTask::PromiseTask(JSContext* cx, Handle<PromiseObject*> promise)
+OffThreadPromiseTask::OffThreadPromiseTask(JSContext* cx, Handle<PromiseObject*> promise)
   : runtime_(cx->runtime()),
-    promise_(cx, promise)
-{}
-
-PromiseTask::~PromiseTask()
+    promise_(cx, promise),
+    registered_(false)
 {
-    MOZ_ASSERT(CurrentThreadCanAccessZone(promise_->zone()));
+    MOZ_ASSERT(runtime_ == promise->zone()->runtimeFromActiveCooperatingThread());
+    MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
+    MOZ_ASSERT(cx->runtime()->offThreadPromiseState.ref().initialized());
+}
+
+OffThreadPromiseTask::~OffThreadPromiseTask()
+{
+    MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
+
+    OffThreadPromiseRuntimeState& state = runtime_->offThreadPromiseState.ref();
+    MOZ_ASSERT(state.initialized());
+
+    if (registered_) {
+        LockGuard<Mutex> lock(state.mutex_);
+        state.live_.remove(this);
+    }
+}
+
+bool
+OffThreadPromiseTask::init(JSContext* cx)
+{
+    MOZ_ASSERT(cx->runtime() == runtime_);
+    MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
+
+    OffThreadPromiseRuntimeState& state = runtime_->offThreadPromiseState.ref();
+    MOZ_ASSERT(state.initialized());
+
+    LockGuard<Mutex> lock(state.mutex_);
+
+    if (!state.live_.putNew(this)) {
+        ReportOutOfMemory(cx);
+        return false;
+    }
+
+    registered_ = true;
+    return true;
 }
 
 void
-PromiseTask::finish(JSContext* cx)
+OffThreadPromiseTask::run(JSContext* cx, MaybeShuttingDown maybeShuttingDown)
 {
     MOZ_ASSERT(cx->runtime() == runtime_);
-    {
+    MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
+    MOZ_ASSERT(registered_);
+    MOZ_ASSERT(runtime_->offThreadPromiseState.ref().initialized());
+
+    if (maybeShuttingDown == JS::Dispatchable::NotShuttingDown) {
         
         
         
         AutoCompartment ac(cx, promise_);
-        if (!finishPromise(cx, promise_))
+        if (!resolve(cx, promise_))
             cx->clearPendingException();
     }
+
     js_delete(this);
 }
 
 void
-PromiseTask::cancel(JSContext* cx)
+OffThreadPromiseTask::dispatchResolve()
 {
-    MOZ_ASSERT(cx->runtime() == runtime_);
-    js_delete(this);
+    MOZ_ASSERT(registered_);
+
+    OffThreadPromiseRuntimeState& state = runtime_->offThreadPromiseState.ref();
+    MOZ_ASSERT(state.initialized());
+    MOZ_ASSERT((LockGuard<Mutex>(state.mutex_), state.live_.has(this)));
+
+    
+    
+    if (state.dispatchToEventLoopCallback_(state.dispatchToEventLoopClosure_, this))
+        return;
+
+    
+    
+    
+    
+    
+    
+    LockGuard<Mutex> lock(state.mutex_);
+    state.numCanceled_++;
+    if (state.numCanceled_ == state.live_.count())
+        state.allCanceled_.notify_one();
+}
+
+OffThreadPromiseRuntimeState::OffThreadPromiseRuntimeState()
+  : dispatchToEventLoopCallback_(nullptr),
+    dispatchToEventLoopClosure_(nullptr),
+    mutex_(mutexid::OffThreadPromiseState),
+    numCanceled_(0),
+    internalDispatchQueueClosed_(false)
+{
+    AutoEnterOOMUnsafeRegion noOOM;
+    if (!live_.init())
+        noOOM.crash("OffThreadPromiseRuntimeState");
+}
+
+OffThreadPromiseRuntimeState::~OffThreadPromiseRuntimeState()
+{
+    MOZ_ASSERT(live_.empty());
+    MOZ_ASSERT(numCanceled_ == 0);
+    MOZ_ASSERT(internalDispatchQueue_.empty());
+    MOZ_ASSERT(!initialized());
+}
+
+void
+OffThreadPromiseRuntimeState::init(JS::DispatchToEventLoopCallback callback, void* closure)
+{
+    MOZ_ASSERT(!initialized());
+
+    dispatchToEventLoopCallback_ = callback;
+    dispatchToEventLoopClosure_ = closure;
+
+    MOZ_ASSERT(initialized());
+}
+
+ bool
+OffThreadPromiseRuntimeState::internalDispatchToEventLoop(void* closure, JS::Dispatchable* d)
+{
+    OffThreadPromiseRuntimeState& state = *reinterpret_cast<OffThreadPromiseRuntimeState*>(closure);
+    MOZ_ASSERT(state.usingInternalDispatchQueue());
+
+    LockGuard<Mutex> lock(state.mutex_);
+
+    if (state.internalDispatchQueueClosed_)
+        return false;
+
+    
+    
+    AutoEnterOOMUnsafeRegion noOOM;
+    if (!state.internalDispatchQueue_.append(d))
+        noOOM.crash("internalDispatchToEventLoop");
+
+    
+    state.internalDispatchQueueAppended_.notify_one();
+    return true;
 }
 
 bool
-PromiseTask::executeAndFinish(JSContext* cx)
+OffThreadPromiseRuntimeState::usingInternalDispatchQueue() const
 {
-    MOZ_ASSERT(!CanUseExtraThreads());
-    execute();
-    return finishPromise(cx, promise_);
+    return dispatchToEventLoopCallback_ == internalDispatchToEventLoop;
+}
+
+void
+OffThreadPromiseRuntimeState::initInternalDispatchQueue()
+{
+    init(internalDispatchToEventLoop, this);
+    MOZ_ASSERT(usingInternalDispatchQueue());
+}
+
+bool
+OffThreadPromiseRuntimeState::initialized() const
+{
+    return !!dispatchToEventLoopCallback_;
+}
+
+void
+OffThreadPromiseRuntimeState::internalDrain(JSContext* cx)
+{
+    MOZ_ASSERT(usingInternalDispatchQueue());
+    MOZ_ASSERT(!internalDispatchQueueClosed_);
+
+    while (true) {
+        DispatchableVector dispatchQueue;
+        {
+            LockGuard<Mutex> lock(mutex_);
+
+            MOZ_ASSERT_IF(!internalDispatchQueue_.empty(), !live_.empty());
+            if (live_.empty())
+                return;
+
+            while (internalDispatchQueue_.empty())
+                internalDispatchQueueAppended_.wait(lock);
+
+            Swap(dispatchQueue, internalDispatchQueue_);
+            MOZ_ASSERT(internalDispatchQueue_.empty());
+        }
+
+        
+        for (JS::Dispatchable* d : dispatchQueue)
+            d->run(cx, JS::Dispatchable::NotShuttingDown);
+    }
+}
+
+bool
+OffThreadPromiseRuntimeState::internalHasPending()
+{
+    MOZ_ASSERT(usingInternalDispatchQueue());
+    MOZ_ASSERT(!internalDispatchQueueClosed_);
+
+    LockGuard<Mutex> lock(mutex_);
+    MOZ_ASSERT_IF(!internalDispatchQueue_.empty(), !live_.empty());
+    return !live_.empty();
+}
+
+void
+OffThreadPromiseRuntimeState::shutdown(JSContext* cx)
+{
+    if (!initialized())
+        return;
+
+    
+    
+    
+    if (usingInternalDispatchQueue()) {
+        DispatchableVector dispatchQueue;
+        {
+            LockGuard<Mutex> lock(mutex_);
+            Swap(dispatchQueue, internalDispatchQueue_);
+            MOZ_ASSERT(internalDispatchQueue_.empty());
+            internalDispatchQueueClosed_ = true;
+        }
+
+        
+        for (JS::Dispatchable* d : dispatchQueue)
+            d->run(cx, JS::Dispatchable::ShuttingDown);
+    }
+
+    {
+        
+        
+        LockGuard<Mutex> lock(mutex_);
+        while (live_.count() != numCanceled_) {
+            MOZ_ASSERT(numCanceled_ < live_.count());
+            allCanceled_.wait(lock);
+        }
+    }
+
+    
+    
+    
+    
+    for (OffThreadPromiseTaskSet::Range r = live_.all(); !r.empty(); r.popFront()) {
+        OffThreadPromiseTask* task = r.front();
+        MOZ_ASSERT(task->registered_);
+        task->registered_ = false;
+        js_delete(task);
+    }
+    live_.clear();
+    numCanceled_ = 0;
+
+    
+    
+    dispatchToEventLoopCallback_ = nullptr;
+    MOZ_ASSERT(!initialized());
 }
 
 static JSObject*

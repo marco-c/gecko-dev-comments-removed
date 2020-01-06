@@ -8,6 +8,8 @@
 #define builtin_Promise_h
 
 #include "builtin/SelfHostingDefines.h"
+#include "threading/ConditionVariable.h"
+#include "threading/Mutex.h"
 #include "vm/NativeObject.h"
 
 namespace js {
@@ -170,37 +172,83 @@ AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args, CompletionKind comple
 
 
 
-class PromiseTask : public JS::AsyncTask
-{
-    JSRuntime* runtime_;
-    PersistentRooted<PromiseObject*> promise_;
 
-    
-    
-    
-    void finish(JSContext* cx) override final;
-    void cancel(JSContext* cx) override final;
+class OffThreadPromiseTask : public JS::Dispatchable
+{
+    friend class OffThreadPromiseRuntimeState;
+
+    JSRuntime*                       runtime_;
+    PersistentRooted<PromiseObject*> promise_;
+    bool                             registered_;
+
+    void operator=(const OffThreadPromiseTask&) = delete;
+    OffThreadPromiseTask(const OffThreadPromiseTask&) = delete;
 
   protected:
+    OffThreadPromiseTask(JSContext* cx, Handle<PromiseObject*> promise);
+
     
+    virtual bool resolve(JSContext* cx, Handle<PromiseObject*> promise) = 0;
+
     
-    
-    virtual bool finishPromise(JSContext* cx, Handle<PromiseObject*> promise) = 0;
+    void run(JSContext* cx, MaybeShuttingDown maybeShuttingDown) override final;
 
   public:
-    PromiseTask(JSContext* cx, Handle<PromiseObject*> promise);
-    ~PromiseTask();
-    JSRuntime* runtime() const { return runtime_; }
+    ~OffThreadPromiseTask() override;
+    bool init(JSContext* cx);
 
     
     
     
     
-    virtual void execute() = 0;
+    
+    void dispatchResolve();
+};
+
+using OffThreadPromiseTaskSet = HashSet<OffThreadPromiseTask*,
+                                        DefaultHasher<OffThreadPromiseTask*>,
+                                        SystemAllocPolicy>;
+
+using DispatchableVector = Vector<JS::Dispatchable*, 0, SystemAllocPolicy>;
+
+class OffThreadPromiseRuntimeState
+{
+    friend class OffThreadPromiseTask;
 
     
     
-    bool executeAndFinish(JSContext* cx);
+    JS::DispatchToEventLoopCallback dispatchToEventLoopCallback_;
+    void*                           dispatchToEventLoopClosure_;
+
+    
+    Mutex                           mutex_;
+    ConditionVariable               allCanceled_;
+    OffThreadPromiseTaskSet         live_;
+    size_t                          numCanceled_;
+    DispatchableVector              internalDispatchQueue_;
+    ConditionVariable               internalDispatchQueueAppended_;
+    bool                            internalDispatchQueueClosed_;
+
+    static bool internalDispatchToEventLoop(void*, JS::Dispatchable*);
+    bool usingInternalDispatchQueue() const;
+
+    void operator=(const OffThreadPromiseRuntimeState&) = delete;
+    OffThreadPromiseRuntimeState(const OffThreadPromiseRuntimeState&) = delete;
+
+  public:
+    OffThreadPromiseRuntimeState();
+    ~OffThreadPromiseRuntimeState();
+    void init(JS::DispatchToEventLoopCallback callback, void* closure);
+    void initInternalDispatchQueue();
+    bool initialized() const;
+
+    
+    
+    void internalDrain(JSContext* cx);
+    bool internalHasPending();
+
+    
+    void shutdown(JSContext* cx);
 };
 
 bool

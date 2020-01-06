@@ -718,26 +718,25 @@ AsmJSCacheOpenEntryForWrite(JS::Handle<JSObject*> aGlobal,
                                        aHandle);
 }
 
-class AsyncTaskWorkerHolder final : public WorkerHolder
-{
-  bool Notify(Status aStatus) override
-  {
-    
-    
-    return true;
-  }
 
-public:
-  WorkerPrivate* Worker() const
-  {
-    return mWorkerPrivate;
-  }
-};
 
-template <class RunnableBase>
-class AsyncTaskBase : public RunnableBase
+
+
+
+
+
+
+
+
+
+class JSDispatchableRunnable final : public WorkerRunnable
 {
-  UniquePtr<AsyncTaskWorkerHolder> mHolder;
+  JS::Dispatchable* mDispatchable;
+
+  ~JSDispatchableRunnable()
+  {
+    MOZ_ASSERT(!mDispatchable);
+  }
 
   
   
@@ -748,153 +747,69 @@ class AsyncTaskBase : public RunnableBase
   }
 
   void PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
-  { }
-
-protected:
-  explicit AsyncTaskBase(UniquePtr<AsyncTaskWorkerHolder> aHolder)
-    : RunnableBase(aHolder->Worker(),
-                   WorkerRunnable::WorkerThreadUnchangedBusyCount)
-    , mHolder(Move(aHolder))
-  {
-    MOZ_ASSERT(mHolder);
-  }
-
-  ~AsyncTaskBase()
-  {
-    MOZ_ASSERT(!mHolder);
-  }
-
-  void DestroyHolder()
-  {
-    MOZ_ASSERT(mHolder);
-    mHolder.reset();
-  }
-
-public:
-  UniquePtr<AsyncTaskWorkerHolder> StealHolder()
-  {
-    return Move(mHolder);
-  }
-};
-
-class AsyncTaskRunnable final : public AsyncTaskBase<WorkerRunnable>
-{
-  JS::AsyncTask* mTask;
-
-  ~AsyncTaskRunnable()
-  {
-    MOZ_ASSERT(!mTask);
-  }
-
-  void PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
   {
     
     if (!aDispatchResult) {
-      mTask = nullptr;
+      mDispatchable = nullptr;
     }
   }
 
 public:
-  AsyncTaskRunnable(UniquePtr<AsyncTaskWorkerHolder> aHolder,
-                    JS::AsyncTask* aTask)
-    : AsyncTaskBase<WorkerRunnable>(Move(aHolder))
-    , mTask(aTask)
+  JSDispatchableRunnable(WorkerPrivate* aWorkerPrivate,
+                         JS::Dispatchable* aDispatchable)
+    : WorkerRunnable(aWorkerPrivate,
+                     WorkerRunnable::WorkerThreadUnchangedBusyCount)
+    , mDispatchable(aDispatchable)
   {
-    MOZ_ASSERT(mTask);
+    MOZ_ASSERT(mDispatchable);
   }
 
   bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
     MOZ_ASSERT(aWorkerPrivate == mWorkerPrivate);
     MOZ_ASSERT(aCx == mWorkerPrivate->GetJSContext());
-    MOZ_ASSERT(mTask);
+    MOZ_ASSERT(mDispatchable);
 
     AutoJSAPI jsapi;
     jsapi.Init();
 
-    mTask->finish(mWorkerPrivate->GetJSContext());
-    mTask = nullptr;  
-
-    DestroyHolder();
+    mDispatchable->run(mWorkerPrivate->GetJSContext(),
+                       JS::Dispatchable::NotShuttingDown);
+    mDispatchable = nullptr;  
 
     return true;
   }
 
   nsresult Cancel() override
   {
-    MOZ_ASSERT(mTask);
+    MOZ_ASSERT(mDispatchable);
 
     AutoJSAPI jsapi;
     jsapi.Init();
 
-    mTask->cancel(mWorkerPrivate->GetJSContext());
-    mTask = nullptr;  
-
-    DestroyHolder();
+    mDispatchable->run(mWorkerPrivate->GetJSContext(),
+                       JS::Dispatchable::ShuttingDown);
+    mDispatchable = nullptr;  
 
     return WorkerRunnable::Cancel();
   }
 };
 
-class AsyncTaskControlRunnable final
-  : public AsyncTaskBase<WorkerControlRunnable>
-{
-public:
-  explicit AsyncTaskControlRunnable(UniquePtr<AsyncTaskWorkerHolder> aHolder)
-    : AsyncTaskBase<WorkerControlRunnable>(Move(aHolder))
-  { }
-
-  bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
-  {
-    
-    DestroyHolder();
-    return true;
-  }
-};
-
 static bool
-StartAsyncTaskCallback(JSContext* aCx, JS::AsyncTask* aTask)
-{
-  WorkerPrivate* worker = GetWorkerPrivateFromContext(aCx);
-  worker->AssertIsOnWorkerThread();
-
-  auto holder = MakeUnique<AsyncTaskWorkerHolder>();
-  if (!holder->HoldWorker(worker, Status::Closing)) {
-    return false;
-  }
-
-  
-  
-  aTask->user = holder.release();
-  return true;
-}
-
-static bool
-FinishAsyncTaskCallback(JS::AsyncTask* aTask)
+DispatchToEventLoop(void* aClosure, JS::Dispatchable* aDispatchable)
 {
   
   
 
   
-  UniquePtr<AsyncTaskWorkerHolder> holder(
-    static_cast<AsyncTaskWorkerHolder*>(aTask->user));
-
-  RefPtr<AsyncTaskRunnable> r = new AsyncTaskRunnable(Move(holder), aTask);
+  
+  WorkerPrivate* workerPrivate = reinterpret_cast<WorkerPrivate*>(aClosure);
 
   
   
-  
-  
-  
-  if (!r->Dispatch()) {
-    RefPtr<AsyncTaskControlRunnable> cr =
-      new AsyncTaskControlRunnable(r->StealHolder());
-
-    MOZ_ALWAYS_TRUE(cr->Dispatch());
-    return false;
-  }
-
-  return true;
+  RefPtr<JSDispatchableRunnable> r =
+    new JSDispatchableRunnable(workerPrivate, aDispatchable);
+  return r->Dispatch();
 }
 
 class WorkerJSContext;
@@ -992,7 +907,9 @@ InitJSContextForWorker(WorkerPrivate* aWorkerPrivate, JSContext* aWorkerCx)
   };
   JS::SetAsmJSCacheOps(aWorkerCx, &asmJSCacheOps);
 
-  JS::SetAsyncTaskCallbacks(aWorkerCx, StartAsyncTaskCallback, FinishAsyncTaskCallback);
+  
+  
+  JS::InitDispatchToEventLoop(aWorkerCx, DispatchToEventLoop, (void*)aWorkerPrivate);
 
   if (!JS::InitSelfHostedCode(aWorkerCx)) {
     NS_WARNING("Could not init self-hosted code!");

@@ -4784,23 +4784,20 @@ GetWaitForAllPromise(JSContext* cx, const JS::AutoObjectVector& promises);
 
 
 
-
-
-
-struct JS_PUBLIC_API(AsyncTask)
+class JS_PUBLIC_API(Dispatchable)
 {
-    AsyncTask() : user(nullptr) {}
-    virtual ~AsyncTask() {}
+  protected:
+    
+    Dispatchable() = default;
+    virtual ~Dispatchable()  = default;
+
+  public:
+    
+    
+    enum MaybeShuttingDown { NotShuttingDown, ShuttingDown };
 
     
-
-
-
-    virtual void finish(JSContext* cx) = 0;
-    virtual void cancel(JSContext* cx) = 0;
-
-    
-    void* user;
+    virtual void run(JSContext* cx, MaybeShuttingDown maybeShuttingDown) = 0;
 };
 
 
@@ -4814,24 +4811,25 @@ struct JS_PUBLIC_API(AsyncTask)
 
 
 
-typedef bool
-(*StartAsyncTaskCallback)(JSContext* cx, AsyncTask* task);
-
-
-
-
-
-
 
 
 typedef bool
-(*FinishAsyncTaskCallback)(AsyncTask* task);
+(*DispatchToEventLoopCallback)(void* closure, Dispatchable* dispatchable);
+
+extern JS_PUBLIC_API(void)
+InitDispatchToEventLoop(JSContext* cx, DispatchToEventLoopCallback callback, void* closure);
+
+
+
+
+
+
 
 
 
 
 extern JS_PUBLIC_API(void)
-SetAsyncTaskCallbacks(JSContext* cx, StartAsyncTaskCallback start, FinishAsyncTaskCallback finish);
+ShutdownAsyncTasks(JSContext* cx);
 
 
 

@@ -36,9 +36,9 @@ namespace js {
 class AutoLockHelperThreadState;
 class AutoUnlockHelperThreadState;
 class CompileError;
-class PromiseTask;
 struct HelperThread;
 struct ParseTask;
+struct PromiseHelperTask;
 namespace jit {
   class IonBuilder;
 } 
@@ -76,7 +76,7 @@ class GlobalHelperThreadState
     typedef Vector<UniquePtr<SourceCompressionTask>, 0, SystemAllocPolicy> SourceCompressionTaskVector;
     typedef Vector<GCHelperState*, 0, SystemAllocPolicy> GCHelperStateVector;
     typedef Vector<GCParallelTask*, 0, SystemAllocPolicy> GCParallelTaskVector;
-    typedef Vector<PromiseTask*, 0, SystemAllocPolicy> PromiseTaskVector;
+    typedef Vector<PromiseHelperTask*, 0, SystemAllocPolicy> PromiseHelperTaskVector;
 
     
     using HelperThreadVector = Vector<HelperThread, 0, SystemAllocPolicy>;
@@ -99,7 +99,7 @@ class GlobalHelperThreadState
   private:
     
     
-    PromiseTaskVector promiseTasks_;
+    PromiseHelperTaskVector promiseHelperTasks_;
 
     
     ParseTaskVector parseWorklist_, parseFinishedList_;
@@ -194,8 +194,8 @@ class GlobalHelperThreadState
         return wasmFinishedList_;
     }
 
-    PromiseTaskVector& promiseTasks(const AutoLockHelperThreadState&) {
-        return promiseTasks_;
+    PromiseHelperTaskVector& promiseHelperTasks(const AutoLockHelperThreadState&) {
+        return promiseHelperTasks_;
     }
 
     ParseTaskVector& parseWorklist(const AutoLockHelperThreadState&) {
@@ -229,7 +229,7 @@ class GlobalHelperThreadState
     }
 
     bool canStartWasmCompile(const AutoLockHelperThreadState& lock);
-    bool canStartPromiseTask(const AutoLockHelperThreadState& lock);
+    bool canStartPromiseHelperTask(const AutoLockHelperThreadState& lock);
     bool canStartIonCompile(const AutoLockHelperThreadState& lock);
     bool canStartIonFreeTask(const AutoLockHelperThreadState& lock);
     bool canStartParseTask(const AutoLockHelperThreadState& lock);
@@ -354,7 +354,7 @@ HelperThreadState()
 
 typedef mozilla::Variant<jit::IonBuilder*,
                          wasm::CompileTask*,
-                         PromiseTask*,
+                         PromiseHelperTask*,
                          ParseTask*,
                          SourceCompressionTask*,
                          GCHelperState*,
@@ -430,7 +430,7 @@ struct HelperThread
     }
 
     void handleWasmWorkload(AutoLockHelperThreadState& locked);
-    void handlePromiseTaskWorkload(AutoLockHelperThreadState& locked);
+    void handlePromiseHelperTaskWorkload(AutoLockHelperThreadState& locked);
     void handleIonWorkload(AutoLockHelperThreadState& locked);
     void handleIonFreeWorkload(AutoLockHelperThreadState& locked);
     void handleParseWorkload(AutoLockHelperThreadState& locked);
@@ -483,9 +483,8 @@ CompileFunction(CompileTask* task, UniqueChars* error);
 
 
 
-
 bool
-StartPromiseTask(JSContext* cx, UniquePtr<PromiseTask> task);
+StartOffThreadPromiseHelperTask(JSContext* cx, UniquePtr<PromiseHelperTask> task);
 
 
 
@@ -788,6 +787,23 @@ class SourceCompressionTask
 
     void work();
     void complete();
+};
+
+
+
+
+struct PromiseHelperTask : OffThreadPromiseTask
+{
+    PromiseHelperTask(JSContext* cx, Handle<PromiseObject*> promise)
+      : OffThreadPromiseTask(cx, promise)
+    {}
+
+    
+    virtual void execute() = 0;
+
+    
+    
+    void executeAndResolve(JSContext* cx);
 };
 
 } 

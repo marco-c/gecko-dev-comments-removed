@@ -242,9 +242,12 @@ js::DestroyContext(JSContext* cx)
 
     if (cx->runtime()->cooperatingContexts().length() == 1) {
         
+        
+        cx->runtime()->offThreadPromiseState.ref().shutdown(cx);
+
+        
         cx->runtime()->destroyRuntime();
         js_delete(cx->runtime());
-
         js_delete_poison(cx);
     } else {
         DebugOnly<bool> found = false;
@@ -1119,27 +1122,6 @@ InternalEnqueuePromiseJobCallback(JSContext* cx, JS::HandleObject job,
     return cx->jobQueue->append(job);
 }
 
-static bool
-InternalStartAsyncTaskCallback(JSContext* cx, JS::AsyncTask* task)
-{
-    task->user = cx;
-
-    ExclusiveData<InternalAsyncTasks>::Guard asyncTasks = cx->asyncTasks.lock();
-    asyncTasks->outstanding++;
-    return true;
-}
-
-static bool
-InternalFinishAsyncTaskCallback(JS::AsyncTask* task)
-{
-    JSContext* cx = (JSContext*)task->user;
-
-    ExclusiveData<InternalAsyncTasks>::Guard asyncTasks = cx->asyncTasks.lock();
-    MOZ_ASSERT(asyncTasks->outstanding > 0);
-    asyncTasks->outstanding--;
-    return asyncTasks->finished.append(task);
-}
-
 namespace {
 class MOZ_STACK_CLASS ReportExceptionClosure : public ScriptEnvironmentPreparer::Closure
 {
@@ -1173,9 +1155,9 @@ js::UseInternalJobQueues(JSContext* cx)
         return false;
 
     cx->jobQueue = queue;
+    cx->runtime()->offThreadPromiseState.ref().initInternalDispatchQueue();
 
     JS::SetEnqueuePromiseJobCallback(cx, InternalEnqueuePromiseJobCallback);
-    JS::SetAsyncTaskCallbacks(cx, InternalStartAsyncTaskCallback, InternalFinishAsyncTaskCallback);
 
     return true;
 }
@@ -1196,28 +1178,7 @@ js::RunJobs(JSContext* cx)
         return;
 
     while (true) {
-        
-        
-        while (true) {
-            AutoLockHelperThreadState lock;
-            if (!cx->asyncTasks.lock()->outstanding)
-                break;
-            HelperThreadState().wait(lock, GlobalHelperThreadState::CONSUMER);
-        }
-
-        
-        
-        
-        
-        Vector<JS::AsyncTask*, 0, SystemAllocPolicy> finished;
-        {
-            ExclusiveData<InternalAsyncTasks>::Guard asyncTasks = cx->asyncTasks.lock();
-            finished = Move(asyncTasks->finished);
-            asyncTasks->finished.clear();
-        }
-
-        for (JS::AsyncTask* task : finished)
-            task->finish(cx);
+        cx->runtime()->offThreadPromiseState.ref().internalDrain(cx);
 
         
         
@@ -1279,12 +1240,8 @@ js::RunJobs(JSContext* cx)
         cx->jobQueue->clear();
 
         
-        
-        {
-            ExclusiveData<InternalAsyncTasks>::Guard asyncTasks = cx->asyncTasks.lock();
-            if (asyncTasks->outstanding == 0 && asyncTasks->finished.length() == 0)
-                break;
-        }
+        if (!cx->runtime()->offThreadPromiseState.ref().internalHasPending())
+            break;
     }
 }
 
@@ -1400,7 +1357,6 @@ JSContext::JSContext(JSRuntime* runtime, const JS::ContextOptions& options)
     jobQueue(nullptr),
     drainingJobQueue(false),
     stopDrainingJobQueue(false),
-    asyncTasks(mutexid::InternalAsyncTasks),
     promiseRejectionTrackerCallback(nullptr),
     promiseRejectionTrackerCallbackData(nullptr)
 {

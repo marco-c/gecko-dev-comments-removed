@@ -1115,9 +1115,9 @@ GlobalHelperThreadState::canStartWasmCompile(const AutoLockHelperThreadState& lo
 }
 
 bool
-GlobalHelperThreadState::canStartPromiseTask(const AutoLockHelperThreadState& lock)
+GlobalHelperThreadState::canStartPromiseHelperTask(const AutoLockHelperThreadState& lock)
 {
-    return !promiseTasks(lock).empty();
+    return !promiseHelperTasks(lock).empty();
 }
 
 static bool
@@ -1756,31 +1756,21 @@ HelperThread::handleWasmWorkload(AutoLockHelperThreadState& locked)
 }
 
 void
-HelperThread::handlePromiseTaskWorkload(AutoLockHelperThreadState& locked)
+HelperThread::handlePromiseHelperTaskWorkload(AutoLockHelperThreadState& locked)
 {
-    MOZ_ASSERT(HelperThreadState().canStartPromiseTask(locked));
+    MOZ_ASSERT(HelperThreadState().canStartPromiseHelperTask(locked));
     MOZ_ASSERT(idle());
 
-    PromiseTask* task = HelperThreadState().promiseTasks(locked).popCopy();
+    PromiseHelperTask* task = HelperThreadState().promiseHelperTasks(locked).popCopy();
     currentTask.emplace(task);
 
     {
         AutoUnlockHelperThreadState unlock(locked);
-
         task->execute();
-
-        if (!task->runtime()->finishAsyncTaskCallback(task)) {
-            
-            
-            
-            AutoEnterOOMUnsafeRegion oomUnsafe;
-            if (!task->runtime()->promiseTasksToDestroy.lock()->append(task))
-                oomUnsafe.crash("handlePromiseTaskWorkload");
-        }
+        task->dispatchResolve();
     }
 
     
-    HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, locked);
     currentTask.reset();
 }
 
@@ -2070,31 +2060,25 @@ js::CancelOffThreadCompressions(JSRuntime* runtime)
     ClearCompressionTaskList(HelperThreadState().compressionFinishedList(lock), runtime);
 }
 
+void
+PromiseHelperTask::executeAndResolve(JSContext* cx)
+{
+    execute();
+    run(cx, JS::Dispatchable::NotShuttingDown);
+}
+
 bool
-js::StartPromiseTask(JSContext* cx, UniquePtr<PromiseTask> task)
+js::StartOffThreadPromiseHelperTask(JSContext* cx, UniquePtr<PromiseHelperTask> task)
 {
     
-    if (!CanUseExtraThreads())
-        return task->executeAndFinish(cx);
-
-    
-    
-    
-    
-    
-    
-    if (!cx->runtime()->startAsyncTaskCallback(cx, task.get())) {
-        MOZ_ASSERT(!cx->isExceptionPending());
+    if (!CanUseExtraThreads()) {
+        task.release()->executeAndResolve(cx);
         return true;
     }
 
-    
-    
-
     AutoLockHelperThreadState lock;
 
-    if (!HelperThreadState().promiseTasks(lock).append(task.get())) {
-        Unused << cx->runtime()->finishAsyncTaskCallback(task.get());
+    if (!HelperThreadState().promiseHelperTasks(lock).append(task.get())) {
         ReportOutOfMemory(cx);
         return false;
     }
@@ -2205,7 +2189,7 @@ HelperThread::threadLoop()
                 task = js::THREAD_TYPE_ION;
             else if (HelperThreadState().canStartWasmCompile(lock))
                 task = js::THREAD_TYPE_WASM;
-            else if (HelperThreadState().canStartPromiseTask(lock))
+            else if (HelperThreadState().canStartPromiseHelperTask(lock))
                 task = js::THREAD_TYPE_PROMISE_TASK;
             else if (HelperThreadState().canStartParseTask(lock))
                 task = js::THREAD_TYPE_PARSE;
@@ -2237,7 +2221,7 @@ HelperThread::threadLoop()
             handleWasmWorkload(lock);
             break;
           case js::THREAD_TYPE_PROMISE_TASK:
-            handlePromiseTaskWorkload(lock);
+            handlePromiseHelperTaskWorkload(lock);
             break;
           case js::THREAD_TYPE_PARSE:
             handleParseWorkload(lock);
