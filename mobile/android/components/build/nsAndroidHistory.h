@@ -40,7 +40,7 @@ public:
 
 
 
-  static nsAndroidHistory* GetSingleton();
+  static already_AddRefed<nsAndroidHistory> GetSingleton();
 
   nsAndroidHistory();
 
