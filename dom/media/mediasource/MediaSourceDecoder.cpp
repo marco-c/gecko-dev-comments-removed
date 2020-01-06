@@ -311,7 +311,7 @@ MediaSourceDecoder::CanPlayThrough()
   TimeIntervals buffered = GetBuffered();
   buffered.SetFuzz(MediaSourceDemuxer::EOS_FUZZ / 2);
   TimeUnit timeAhead =
-    std::min(duration, currentPosition + TimeUnit::FromSeconds(30));
+    std::min(duration, currentPosition + TimeUnit::FromSeconds(10));
   TimeInterval interval(currentPosition, timeAhead);
   return buffered.ContainsStrict(ClampIntervalToEnd(interval));
 }
