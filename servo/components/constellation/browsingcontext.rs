@@ -1,0 +1,218 @@
+
+
+
+
+use euclid::size::TypedSize2D;
+use msg::constellation_msg::{BrowsingContextId, PipelineId};
+use pipeline::Pipeline;
+use script_traits::LoadData;
+use std::collections::HashMap;
+use std::iter::once;
+use std::mem::replace;
+use std::time::Instant;
+use style_traits::CSSPixel;
+
+
+
+
+
+
+
+
+pub struct BrowsingContext {
+    
+    pub id: BrowsingContextId,
+
+    
+    pub size: Option<TypedSize2D<f32, CSSPixel>>,
+
+    
+    pub instant: Instant,
+
+    
+    pub pipeline_id: PipelineId,
+
+    
+    pub load_data: LoadData,
+
+    
+    pub prev: Vec<SessionHistoryEntry>,
+
+    
+    pub next: Vec<SessionHistoryEntry>,
+}
+
+impl BrowsingContext {
+    
+    
+    pub fn new(id: BrowsingContextId, pipeline_id: PipelineId, load_data: LoadData) -> BrowsingContext {
+        BrowsingContext {
+            id: id,
+            size: None,
+            pipeline_id: pipeline_id,
+            instant: Instant::now(),
+            load_data: load_data,
+            prev: vec!(),
+            next: vec!(),
+        }
+    }
+
+    
+    pub fn current(&self) -> SessionHistoryEntry {
+        SessionHistoryEntry {
+            instant: self.instant,
+            browsing_context_id: self.id,
+            pipeline_id: Some(self.pipeline_id),
+            load_data: self.load_data.clone(),
+        }
+    }
+
+    
+    pub fn load(&mut self, pipeline_id: PipelineId, load_data: LoadData) {
+        let current = self.current();
+        self.prev.push(current);
+        self.instant = Instant::now();
+        self.pipeline_id = pipeline_id;
+        self.load_data = load_data;
+    }
+
+    
+    pub fn remove_forward_entries(&mut self) -> Vec<SessionHistoryEntry> {
+        replace(&mut self.next, vec!())
+    }
+
+    
+    pub fn update_current(&mut self, pipeline_id: PipelineId, entry: SessionHistoryEntry) {
+        self.pipeline_id = pipeline_id;
+        self.instant = entry.instant;
+        self.load_data = entry.load_data;
+    }
+}
+
+
+
+
+
+
+
+
+#[derive(Clone)]
+pub struct SessionHistoryEntry {
+    
+    pub instant: Instant,
+
+    
+    
+    pub pipeline_id: Option<PipelineId>,
+
+    
+    pub load_data: LoadData,
+
+    
+    pub browsing_context_id: BrowsingContextId,
+}
+
+
+
+pub struct SessionHistoryChange {
+    
+    pub browsing_context_id: BrowsingContextId,
+
+    
+    pub new_pipeline_id: PipelineId,
+
+    
+    pub load_data: LoadData,
+
+    
+    
+    
+    pub replace_instant: Option<Instant>,
+}
+
+
+
+
+pub struct FullyActiveBrowsingContextsIterator<'a> {
+    
+    pub stack: Vec<BrowsingContextId>,
+
+    
+    pub browsing_contexts: &'a HashMap<BrowsingContextId, BrowsingContext>,
+
+    
+    
+    
+    pub pipelines: &'a HashMap<PipelineId, Pipeline>,
+}
+
+impl<'a> Iterator for FullyActiveBrowsingContextsIterator<'a> {
+    type Item = &'a BrowsingContext;
+    fn next(&mut self) -> Option<&'a BrowsingContext> {
+        loop {
+            let browsing_context_id = match self.stack.pop() {
+                Some(browsing_context_id) => browsing_context_id,
+                None => return None,
+            };
+            let browsing_context = match self.browsing_contexts.get(&browsing_context_id) {
+                Some(browsing_context) => browsing_context,
+                None => {
+                    warn!("BrowsingContext {:?} iterated after closure.", browsing_context_id);
+                    continue;
+                },
+            };
+            let pipeline = match self.pipelines.get(&browsing_context.pipeline_id) {
+                Some(pipeline) => pipeline,
+                None => {
+                    warn!("Pipeline {:?} iterated after closure.", browsing_context.pipeline_id);
+                    continue;
+                },
+            };
+            self.stack.extend(pipeline.children.iter());
+            return Some(browsing_context)
+        }
+    }
+}
+
+
+
+
+pub struct AllBrowsingContextsIterator<'a> {
+    
+    pub stack: Vec<BrowsingContextId>,
+
+    
+    pub browsing_contexts: &'a HashMap<BrowsingContextId, BrowsingContext>,
+
+    
+    
+    
+    pub pipelines: &'a HashMap<PipelineId, Pipeline>,
+}
+
+impl<'a> Iterator for AllBrowsingContextsIterator<'a> {
+    type Item = &'a BrowsingContext;
+    fn next(&mut self) -> Option<&'a BrowsingContext> {
+        let pipelines = self.pipelines;
+        loop {
+            let browsing_context_id = match self.stack.pop() {
+                Some(browsing_context_id) => browsing_context_id,
+                None => return None,
+            };
+            let browsing_context = match self.browsing_contexts.get(&browsing_context_id) {
+                Some(browsing_context) => browsing_context,
+                None => {
+                    warn!("BrowsingContext {:?} iterated after closure.", browsing_context_id);
+                    continue;
+                },
+            };
+            let child_browsing_context_ids = browsing_context.prev.iter().chain(browsing_context.next.iter())
+                .filter_map(|entry| entry.pipeline_id)
+                .chain(once(browsing_context.pipeline_id))
+                .filter_map(|pipeline_id| pipelines.get(&pipeline_id))
+                .flat_map(|pipeline| pipeline.children.iter());
+            self.stack.extend(child_browsing_context_ids);
+            return Some(browsing_context)
+        }
+    }
+}

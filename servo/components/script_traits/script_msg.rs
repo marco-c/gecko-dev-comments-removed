@@ -17,7 +17,7 @@ use devtools_traits::{ScriptToDevtoolsControlMsg, WorkerId};
 use euclid::point::Point2D;
 use euclid::size::{Size2D, TypedSize2D};
 use ipc_channel::ipc::IpcSender;
-use msg::constellation_msg::{FrameId, FrameType, PipelineId, TraversalDirection};
+use msg::constellation_msg::{BrowsingContextId, FrameType, PipelineId, TraversalDirection};
 use msg::constellation_msg::{Key, KeyModifiers, KeyState};
 use net_traits::CoreResourceMsg;
 use net_traits::storage_thread::StorageType;
@@ -35,7 +35,7 @@ pub enum LayoutMsg {
     
     ChangeRunningAnimationsState(PipelineId, AnimationState),
     
-    FrameSizes(Vec<(FrameId, TypedSize2D<f32, CSSPixel>)>),
+    IFrameSizes(Vec<(BrowsingContextId, TypedSize2D<f32, CSSPixel>)>),
     
     SetCursor(Cursor),
     
@@ -87,7 +87,7 @@ pub enum ScriptMsg {
     
     GetClipboardContents(IpcSender<String>),
     
-    GetFrameId(PipelineId, IpcSender<Option<FrameId>>),
+    GetBrowsingContextId(PipelineId, IpcSender<Option<BrowsingContextId>>),
     
     GetParentInfo(PipelineId, IpcSender<Option<(PipelineId, FrameType)>>),
     
@@ -99,7 +99,7 @@ pub enum ScriptMsg {
     
     LoadUrl(PipelineId, LoadData, bool),
     
-    PostMessage(FrameId, Option<ImmutableOrigin>, Vec<u8>),
+    PostMessage(BrowsingContextId, Option<ImmutableOrigin>, Vec<u8>),
     
     
     MozBrowserEvent(PipelineId, PipelineId, MozBrowserEvent),
@@ -113,7 +113,7 @@ pub enum ScriptMsg {
     NodeStatus(Option<String>),
     
     
-    RemoveIFrame(FrameId, IpcSender<Vec<PipelineId>>),
+    RemoveIFrame(BrowsingContextId, IpcSender<Vec<PipelineId>>),
     
     SetVisible(PipelineId, bool),
     
@@ -148,7 +148,7 @@ pub enum ScriptMsg {
     
     TouchEventProcessed(EventResult),
     
-    LogEntry(Option<FrameId>, Option<String>, LogEntry),
+    LogEntry(Option<BrowsingContextId>, Option<String>, LogEntry),
     
     PipelineExited(PipelineId),
     

@@ -53,7 +53,7 @@ use hyper::header::Headers;
 use hyper::method::Method;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use libc::c_void;
-use msg::constellation_msg::{FrameId, FrameType, Key, KeyModifiers, KeyState};
+use msg::constellation_msg::{BrowsingContextId, FrameType, Key, KeyModifiers, KeyState};
 use msg::constellation_msg::{PipelineId, PipelineNamespaceId, TraversalDirection};
 use net_traits::{ReferrerPolicy, ResourceThreads};
 use net_traits::image::base::Image;
@@ -180,7 +180,7 @@ pub struct NewLayoutInfo {
     
     pub new_pipeline_id: PipelineId,
     
-    pub frame_id: FrameId,
+    pub browsing_context_id: BrowsingContextId,
     
     pub load_data: LoadData,
     
@@ -254,21 +254,21 @@ pub enum ConstellationControlMsg {
     ChangeFrameVisibilityStatus(PipelineId, bool),
     
     
-    NotifyVisibilityChange(PipelineId, FrameId, bool),
+    NotifyVisibilityChange(PipelineId, BrowsingContextId, bool),
     
     
-    Navigate(PipelineId, FrameId, LoadData, bool),
+    Navigate(PipelineId, BrowsingContextId, LoadData, bool),
     
     PostMessage(PipelineId, Option<ImmutableOrigin>, Vec<u8>),
     
     
-    MozBrowserEvent(PipelineId, Option<FrameId>, MozBrowserEvent),
+    MozBrowserEvent(PipelineId, Option<BrowsingContextId>, MozBrowserEvent),
     
     
-    UpdatePipelineId(PipelineId, FrameId, PipelineId, UpdatePipelineIdReason),
+    UpdatePipelineId(PipelineId, BrowsingContextId, PipelineId, UpdatePipelineIdReason),
     
     
-    FocusIFrame(PipelineId, FrameId),
+    FocusIFrame(PipelineId, BrowsingContextId),
     
     WebDriverScriptCommand(PipelineId, WebDriverScriptCommand),
     
@@ -279,9 +279,9 @@ pub enum ConstellationControlMsg {
     
     WebFontLoaded(PipelineId),
     
-    DispatchFrameLoadEvent {
+    DispatchIFrameLoadEvent {
         
-        target: FrameId,
+        target: BrowsingContextId,
         
         parent: PipelineId,
         
@@ -323,7 +323,7 @@ impl fmt::Debug for ConstellationControlMsg {
             TickAllAnimations(..) => "TickAllAnimations",
             TransitionEnd(..) => "TransitionEnd",
             WebFontLoaded(..) => "WebFontLoaded",
-            DispatchFrameLoadEvent { .. } => "DispatchFrameLoadEvent",
+            DispatchIFrameLoadEvent { .. } => "DispatchIFrameLoadEvent",
             DispatchStorageEvent(..) => "DispatchStorageEvent",
             ReportCSSError(..) => "ReportCSSError",
             Reload(..) => "Reload",
@@ -489,9 +489,9 @@ pub struct InitialScriptState {
     
     pub parent_info: Option<(PipelineId, FrameType)>,
     
-    pub frame_id: FrameId,
+    pub browsing_context_id: BrowsingContextId,
     
-    pub top_level_frame_id: FrameId,
+    pub top_level_browsing_context_id: BrowsingContextId,
     
     pub control_chan: IpcSender<ConstellationControlMsg>,
     
@@ -549,7 +549,7 @@ pub struct IFrameLoadInfo {
     
     pub parent_pipeline_id: PipelineId,
     
-    pub frame_id: FrameId,
+    pub browsing_context_id: BrowsingContextId,
     
     pub new_pipeline_id: PipelineId,
     
@@ -734,11 +734,11 @@ pub enum ConstellationMsg {
     Exit,
     
     
-    GetFrame(PipelineId, IpcSender<Option<FrameId>>),
+    GetBrowsingContext(PipelineId, IpcSender<Option<BrowsingContextId>>),
     
     
     
-    GetPipeline(Option<FrameId>, IpcSender<Option<PipelineId>>),
+    GetPipeline(Option<BrowsingContextId>, IpcSender<Option<PipelineId>>),
     
     
     GetPipelineTitle(PipelineId),
@@ -761,7 +761,7 @@ pub enum ConstellationMsg {
     
     Reload,
     
-    LogEntry(Option<FrameId>, Option<String>, LogEntry),
+    LogEntry(Option<BrowsingContextId>, Option<String>, LogEntry),
     
     SetWebVRThread(IpcSender<WebVRMsg>),
     
