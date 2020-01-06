@@ -100,20 +100,9 @@ public:
 
   static bool SystemSupportsVibrancy();
 
-  
-
-
-
-
-
-
-
-
-
-  static NSView* CreateEffectView(VibrancyType aType, BOOL aIsContainer = NO);
-
 protected:
   void ClearVibrantRegion(const LayoutDeviceIntRegion& aVibrantRegion) const;
+  NSView* CreateEffectView(VibrancyType aType);
 
   const nsChildView& mCoordinateConverter;
   NSView* mContainerView;
