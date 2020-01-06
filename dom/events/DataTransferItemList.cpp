@@ -562,6 +562,14 @@ DataTransferItemList::GenerateFiles(FileList* aFiles,
 {
   MOZ_ASSERT(aFiles);
   MOZ_ASSERT(aFilesPrincipal);
+
+  
+  
+  if (!nsContentUtils::IsSystemPrincipal(aFilesPrincipal) &&
+      mDataTransfer->IsProtected()) {
+    return;
+  }
+
   uint32_t count = Length();
   for (uint32_t i = 0; i < count; i++) {
     bool found;

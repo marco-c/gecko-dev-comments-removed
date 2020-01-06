@@ -503,13 +503,19 @@ DataTransferItem::Data(nsIPrincipal* aPrincipal, ErrorResult& aRv)
 {
   MOZ_ASSERT(aPrincipal);
 
-  nsCOMPtr<nsIVariant> variant = DataNoSecurityCheck();
-
   
   
   if (nsContentUtils::IsSystemPrincipal(aPrincipal)) {
-    return variant.forget();
+    return DataNoSecurityCheck();
   }
+
+  
+  
+  if (mDataTransfer->IsProtected()) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIVariant> variant = DataNoSecurityCheck();
 
   MOZ_ASSERT(!ChromeOnly(), "Non-chrome code shouldn't see a ChromeOnly DataTransferItem");
   if (ChromeOnly()) {
