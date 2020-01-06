@@ -26,6 +26,7 @@
 #include "nsExceptionHandler.h"
 #endif
 #include "MessageLink.h"
+#include "nsThreadUtils.h"
 
 #include <deque>
 #include <functional>
@@ -505,8 +506,8 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
     
     void AssertWorkerThread() const
     {
-        MOZ_ASSERT(mWorkerLoopID != -1, "Channel hasn't been opened yet");
-        MOZ_RELEASE_ASSERT(mWorkerLoopID == MessageLoop::current()->id(),
+        MOZ_ASSERT(mWorkerThread, "Channel hasn't been opened yet");
+        MOZ_RELEASE_ASSERT(mWorkerThread == GetCurrentVirtualThread(),
                            "not on worker thread!");
     }
 
@@ -515,8 +516,8 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
     
     void AssertLinkThread() const
     {
-        MOZ_ASSERT(mWorkerLoopID != -1, "Channel hasn't been opened yet");
-        MOZ_RELEASE_ASSERT(mWorkerLoopID != MessageLoop::current()->id(),
+        MOZ_ASSERT(mWorkerThread, "Channel hasn't been opened yet");
+        MOZ_RELEASE_ASSERT(mWorkerThread != GetCurrentVirtualThread(),
                            "on worker thread but should not be!");
     }
 
@@ -578,7 +579,7 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
 
     
     
-    int mWorkerLoopID;
+    PRThread* mWorkerThread;
 
     
     
