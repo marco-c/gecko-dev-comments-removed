@@ -1259,6 +1259,12 @@ function ReadManifest(aURL, inherited_status, aFilter)
                 
                 
                 
+                minAsserts *= 2;
+                maxAsserts *= 2;
+
+                
+                
+                
                 
                 if (expected_status === EXPECTED_FAIL ||
                     expected_status === EXPECTED_RANDOM) {
