@@ -110,6 +110,10 @@ nsPlaceholderFrame::Reflow(nsPresContext*           aPresContext,
                            const ReflowInput& aReflowInput,
                            nsReflowStatus&          aStatus)
 {
+  
+  
+  
+
 #ifdef DEBUG
   
   

@@ -391,6 +391,12 @@ ReflowInput::Init(nsPresContext*     aPresContext,
   mStyleText = mFrame->StyleText();
 
   LayoutFrameType type = mFrame->Type();
+  if (type == mozilla::LayoutFrameType::Placeholder) {
+    
+    
+    ComputedBSize() = ComputedISize() = 0;
+    return;
+  }
 
   InitFrameType(type);
   InitCBReflowInput();
