@@ -34,14 +34,28 @@ class CloneCleanupTest(unittest.TestCase):
         self.assertTrue(os.path.exists(user_js))
 
     def test_restore_true(self):
+        counter = [0]
+
+        def _feedback(dir, content):
+            
+            
+            
+            
+            
+            
+            counter[0] += 1
+            return []
+
         
-        clone = Profile.clone(self.profile.profile, restore=True)
+        clone = Profile.clone(self.profile.profile, restore=True,
+                              ignore=_feedback)
         self.addCleanup(mozfile.remove, clone.profile)
 
         clone.cleanup()
 
         
         self.assertFalse(os.path.exists(clone.profile))
+        self.assertTrue(counter[0] > 0)
 
     def test_restore_false(self):
         
