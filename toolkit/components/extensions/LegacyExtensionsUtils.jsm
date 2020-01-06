@@ -112,9 +112,12 @@ class EmbeddedExtension {
 
 
 
-  constructor({id, resourceURI}) {
+
+
+  constructor({id, resourceURI, version}) {
     this.addonId = id;
     this.resourceURI = resourceURI;
+    this.version = version;
 
     
     this.started = false;
@@ -139,6 +142,7 @@ class EmbeddedExtension {
       this.extension = new Extension({
         id: this.addonId,
         resourceURI: embeddedExtensionURI,
+        version: this.version,
       });
 
       
@@ -227,11 +231,11 @@ EmbeddedExtensionManager = {
     }
   },
 
-  getEmbeddedExtensionFor({id, resourceURI}) {
+  getEmbeddedExtensionFor({id, resourceURI, version}) {
     let embeddedExtension = this.embeddedExtensionsByAddonId.get(id);
 
     if (!embeddedExtension) {
-      embeddedExtension = new EmbeddedExtension({id, resourceURI});
+      embeddedExtension = new EmbeddedExtension({id, resourceURI, version});
       
       this.embeddedExtensionsByAddonId.set(id, embeddedExtension);
     }
