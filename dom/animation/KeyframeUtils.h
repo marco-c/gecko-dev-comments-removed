@@ -72,33 +72,6 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-  static nsTArray<ComputedKeyframeValues>
-  GetComputedKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
-                            dom::Element* aElement,
-                            nsStyleContext* aStyleContext);
-
-  static nsTArray<ComputedKeyframeValues>
-  GetComputedKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
-                            dom::Element* aElement,
-                            const ServoComputedValues* aComputedValues);
-
-  
-
-
-
-
-
-
-
   static void DistributeKeyframes(nsTArray<Keyframe>& aKeyframes);
 
   
@@ -117,11 +90,11 @@ public:
 
 
 
-
-
+  template<typename StyleType>
   static nsTArray<AnimationProperty> GetAnimationPropertiesFromKeyframes(
     const nsTArray<Keyframe>& aKeyframes,
-    const nsTArray<ComputedKeyframeValues>& aComputedValues,
+    dom::Element* aElement,
+    StyleType* aStyleType,
     dom::CompositeOperation aEffectComposite);
 
   

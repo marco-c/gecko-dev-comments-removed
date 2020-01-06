@@ -922,15 +922,11 @@ KeyframeEffectReadOnly::BuildProperties(StyleType* aStyle)
   
   auto keyframesCopy(mKeyframes);
 
-  nsTArray<ComputedKeyframeValues> computedValues =
-    KeyframeUtils::GetComputedKeyframeValues(keyframesCopy,
-                                             mTarget->mElement,
-                                             aStyle);
-
   result =
     KeyframeUtils::GetAnimationPropertiesFromKeyframes(
       keyframesCopy,
-      computedValues,
+      mTarget->mElement,
+      aStyle,
       mEffectOptions.mComposite);
 
 #ifdef DEBUG
