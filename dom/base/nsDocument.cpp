@@ -6121,19 +6121,63 @@ nsDocument::CustomElementConstructor(JSContext* aCx, unsigned aArgc, JS::Value* 
     return true;
   }
 
-  nsDependentAtomString localName(definition->mLocalName);
+  RefPtr<Element> element;
 
-  nsCOMPtr<Element> element =
-    document->CreateElem(localName, nullptr, kNameSpaceID_XHTML);
-  NS_ENSURE_TRUE(element, true);
+  
+  
+  
+  
+  nsTArray<RefPtr<nsGenericHTMLElement>>& constructionStack =
+    definition->mConstructionStack;
+  if (constructionStack.Length()) {
+    element = constructionStack.LastElement();
+    NS_ENSURE_TRUE(element != ALEADY_CONSTRUCTED_MARKER, false);
 
-  if (definition->mLocalName != typeAtom) {
     
-    
-    
-    nsContentUtils::SetupCustomElement(element, &elemName);
+    JS::Rooted<JSObject*> reflector(aCx, element->GetWrapper());
+    if (reflector) {
+      Maybe<JSAutoCompartment> ac;
+      JS::Rooted<JSObject*> prototype(aCx, definition->mPrototype);
+      if (element->NodePrincipal()->SubsumesConsideringDomain(nsContentUtils::ObjectPrincipal(prototype))) {
+        ac.emplace(aCx, reflector);
+        if (!JS_WrapObject(aCx, &prototype) ||
+            !JS_SetPrototype(aCx, reflector, prototype)) {
+          return false;
+        }
+      } else {
+        
+        
+        
+        
+        
+        
+        
+        
+        ac.emplace(aCx, prototype);
+        if (!JS_WrapObject(aCx, &reflector) ||
+            !JS_SetPrototype(aCx, reflector, prototype)) {
+          return false;
+        }
+      }
+
+      
+      if (!JS_WrapObject(aCx, &reflector)) {
+        return false;
+      }
+
+      args.rval().setObject(*reflector);
+      return true;
+    }
+  } else {
+    nsDependentAtomString localName(definition->mLocalName);
+    element =
+      document->CreateElem(localName, nullptr, kNameSpaceID_XHTML,
+                           (definition->mLocalName != typeAtom) ? &elemName
+                                                                : nullptr);
+    NS_ENSURE_TRUE(element, false);
   }
 
+  
   nsresult rv = nsContentUtils::WrapNative(aCx, element, element, args.rval());
   NS_ENSURE_SUCCESS(rv, true);
 
@@ -12390,25 +12434,26 @@ nsDocument::GetVisibilityState(nsAString& aState)
 }
 
  void
-nsIDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aSizes) const
+nsIDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const
 {
-  nsINode::AddSizeOfExcludingThis(aSizes.mState, aSizes.mStyleSizes,
-                                  &aSizes.mDOMOtherSize);
+  aWindowSizes.mDOMOtherSize +=
+    nsINode::SizeOfExcludingThis(aWindowSizes.mState);
 
   if (mPresShell) {
-    mPresShell->AddSizeOfIncludingThis(aSizes);
+    mPresShell->AddSizeOfIncludingThis(aWindowSizes);
   }
 
-  aSizes.mPropertyTablesSize +=
-    mPropertyTable.SizeOfExcludingThis(aSizes.mState.mMallocSizeOf);
+  aWindowSizes.mPropertyTablesSize +=
+    mPropertyTable.SizeOfExcludingThis(aWindowSizes.mState.mMallocSizeOf);
   for (uint32_t i = 0, count = mExtraPropertyTables.Length();
        i < count; ++i) {
-    aSizes.mPropertyTablesSize +=
-      mExtraPropertyTables[i]->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
+    aWindowSizes.mPropertyTablesSize +=
+      mExtraPropertyTables[i]->SizeOfIncludingThis(
+        aWindowSizes.mState.mMallocSizeOf);
   }
 
   if (EventListenerManager* elm = GetExistingListenerManager()) {
-    aSizes.mDOMEventListenersCount += elm->ListenerCount();
+    aWindowSizes.mDOMEventListenersCount += elm->ListenerCount();
   }
 
   
@@ -12439,10 +12484,8 @@ SizeOfOwnedSheetArrayExcludingThis(const nsTArray<RefPtr<StyleSheet>>& aSheets,
   return n;
 }
 
-void
-nsDocument::AddSizeOfExcludingThis(SizeOfState& aState,
-                                   nsStyleSizes& aSizes,
-                                   size_t* aNodeSize) const
+size_t
+nsDocument::SizeOfExcludingThis(SizeOfState& aState) const
 {
   
   
@@ -12454,47 +12497,39 @@ nsDocument::AddSizeOfExcludingThis(SizeOfState& aState,
 void
 nsDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const
 {
+  nsIDocument::DocAddSizeOfExcludingThis(aWindowSizes);
+
   for (nsIContent* node = nsINode::GetFirstChild();
        node;
        node = node->GetNextNode(this))
   {
-    size_t nodeSize = 0;
-    node->AddSizeOfIncludingThis(aWindowSizes.mState, aWindowSizes.mStyleSizes,
-                                 &nodeSize);
+    size_t nodeSize = node->SizeOfIncludingThis(aWindowSizes.mState);
+    size_t* p;
 
-    
-    
     switch (node->NodeType()) {
     case nsIDOMNode::ELEMENT_NODE:
-      aWindowSizes.mDOMElementNodesSize += nodeSize;
+      p = &aWindowSizes.mDOMElementNodesSize;
       break;
     case nsIDOMNode::TEXT_NODE:
-      aWindowSizes.mDOMTextNodesSize += nodeSize;
+      p = &aWindowSizes.mDOMTextNodesSize;
       break;
     case nsIDOMNode::CDATA_SECTION_NODE:
-      aWindowSizes.mDOMCDATANodesSize += nodeSize;
+      p = &aWindowSizes.mDOMCDATANodesSize;
       break;
     case nsIDOMNode::COMMENT_NODE:
-      aWindowSizes.mDOMCommentNodesSize += nodeSize;
+      p = &aWindowSizes.mDOMCommentNodesSize;
       break;
     default:
-      aWindowSizes.mDOMOtherSize += nodeSize;
+      p = &aWindowSizes.mDOMOtherSize;
       break;
     }
+
+    *p += nodeSize;
 
     if (EventListenerManager* elm = node->GetExistingListenerManager()) {
       aWindowSizes.mDOMEventListenersCount += elm->ListenerCount();
     }
   }
-
-  
-  
-  
-  
-  
-  
-  
-  nsIDocument::DocAddSizeOfExcludingThis(aWindowSizes);
 
   aWindowSizes.mStyleSheetsSize +=
     SizeOfOwnedSheetArrayExcludingThis(mStyleSheets,
