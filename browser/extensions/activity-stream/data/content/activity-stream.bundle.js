@@ -1094,19 +1094,11 @@ module.exports._unconnected = LinkMenu;
 
  (function(module, exports, __webpack_require__) {
 
-(function(global) {var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 const React = __webpack_require__(1);
-const { connect } = __webpack_require__(3);
-const { injectIntl, FormattedMessage } = __webpack_require__(2);
-const Card = __webpack_require__(20);
-const { PlaceholderCard } = Card;
-const Topics = __webpack_require__(22);
 const { actionCreators: ac, actionTypes: at } = __webpack_require__(0);
-
-const VISIBLE = "visible";
-const VISIBILITY_CHANGE_EVENT = "visibilitychange";
-const CARDS_PER_ROW = 3;
+const { injectIntl, FormattedMessage } = __webpack_require__(2);
 
 function getFormattedMessage(message) {
   return typeof message === "string" ? React.createElement(
@@ -1202,182 +1194,91 @@ class Info extends React.PureComponent {
 
 const InfoIntl = injectIntl(Info);
 
-class Section extends React.PureComponent {
-  _dispatchImpressionStats() {
-    const { props } = this;
-    const maxCards = 3 * props.maxRows;
-    const cards = props.rows.slice(0, maxCards);
-
-    if (this.needsImpressionStats(cards)) {
-      props.dispatch(ac.ImpressionStats({
-        source: props.eventSource,
-        tiles: cards.map(link => ({ id: link.guid })),
-        incognito: props.options && props.options.personalized
-      }));
-      this.impressionCardGuids = cards.map(link => link.guid);
-    }
+class CollapsibleSection extends React.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onInfoEnter = this.onInfoEnter.bind(this);
+    this.onInfoLeave = this.onInfoLeave.bind(this);
+    this.onHeaderClick = this.onHeaderClick.bind(this);
+    this.onTransitionEnd = this.onTransitionEnd.bind(this);
+    this.state = { enableAnimation: false, isAnimating: false, infoActive: false };
   }
-
-  
-  
-  
-  sendImpressionStatsOrAddListener() {
-    const { props } = this;
-
-    if (!props.shouldSendImpressionStats || !props.dispatch) {
-      return;
-    }
-
-    if (props.document.visibilityState === VISIBLE) {
-      this._dispatchImpressionStats();
-    } else {
-      
-      
-      if (this._onVisibilityChange) {
-        props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
-      }
-
-      
-      this._onVisibilityChange = () => {
-        if (props.document.visibilityState === VISIBLE) {
-          this._dispatchImpressionStats();
-          props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
-        }
-      };
-      props.document.addEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
-    }
-  }
-
-  componentDidMount() {
-    if (this.props.rows.length) {
-      this.sendImpressionStatsOrAddListener();
-    }
-  }
-
-  componentDidUpdate(prevProps) {
-    const { props } = this;
-    if (
+  componentDidUpdate(prevProps, prevState) {
     
-    props.rows.length &&
+    if (prevProps.Prefs.values[this.props.prefName] === undefined && this.props.Prefs.values[this.props.prefName] !== undefined) {
+      setTimeout(() => this.setState({ enableAnimation: true }), 0);
+    }
+  }
+  _setInfoState(nextActive) {
     
-    props.rows !== prevProps.rows) {
-      this.sendImpressionStatsOrAddListener();
+    const infoActive = !!nextActive;
+    if (infoActive !== this.state.infoActive) {
+      this.setState({ infoActive });
     }
   }
-
-  needsImpressionStats(cards) {
-    if (!this.impressionCardGuids || this.impressionCardGuids.length !== cards.length) {
-      return true;
-    }
-
-    for (let i = 0; i < cards.length; i++) {
-      if (cards[i].guid !== this.impressionCardGuids[i]) {
-        return true;
-      }
-    }
-
-    return false;
+  onInfoEnter() {
+    
+    this._setInfoState(true);
   }
-
-  numberOfPlaceholders(items) {
-    if (items === 0) {
-      return CARDS_PER_ROW;
-    }
-    const remainder = items % CARDS_PER_ROW;
-    if (remainder === 0) {
-      return 0;
-    }
-    return CARDS_PER_ROW - remainder;
+  onInfoLeave(event) {
+    
+    
+    
+    this._setInfoState(event && event.relatedTarget && (event.relatedTarget === event.currentTarget || event.relatedTarget.compareDocumentPosition(event.currentTarget) & Node.DOCUMENT_POSITION_CONTAINS));
   }
-
+  onHeaderClick() {
+    this.setState({ isAnimating: true });
+    this.props.dispatch(ac.SetPref(this.props.prefName, !this.props.Prefs.values[this.props.prefName]));
+  }
+  onTransitionEnd() {
+    this.setState({ isAnimating: false });
+  }
+  renderIcon() {
+    const icon = this.props.icon;
+    if (icon && icon.startsWith("moz-extension://")) {
+      return React.createElement("span", { className: "icon icon-small-spacer", style: { "background-image": `url('${icon}')` } });
+    }
+    return React.createElement("span", { className: `icon icon-small-spacer icon-${icon || "webextension"}` });
+  }
   render() {
-    const {
-      id, eventSource, title, icon, rows,
-      infoOption, emptyState, dispatch, maxRows,
-      contextMenuOptions, initialized
-    } = this.props;
-    const maxCards = CARDS_PER_ROW * maxRows;
+    const isCollapsed = this.props.Prefs.values[this.props.prefName];
+    const { enableAnimation, isAnimating } = this.state;
+    const infoOption = this.props.infoOption;
 
-    
-    
-    const shouldShowTopics = id === "topstories" && (!this.props.topics || this.props.topics.length > 0);
-
-    const realRows = rows.slice(0, maxCards);
-    const placeholders = this.numberOfPlaceholders(realRows.length);
-
-    
-    
-    const shouldShowEmptyState = initialized && !rows.length;
-
-    
-    
     return React.createElement(
       "section",
-      { className: "section" },
+      { className: `collapsible-section ${this.props.className}${isCollapsed ? " collapsed" : ""}` },
       React.createElement(
         "div",
         { className: "section-top-bar" },
         React.createElement(
           "h3",
           { className: "section-title" },
-          icon && icon.startsWith("moz-extension://") ? React.createElement("span", { className: "icon icon-small-spacer", style: { "background-image": `url('${icon}')` } }) : React.createElement("span", { className: `icon icon-small-spacer icon-${icon || "webextension"}` }),
-          getFormattedMessage(title)
-        ),
-        infoOption && React.createElement(InfoIntl, { infoOption: infoOption, dispatch: dispatch })
-      ),
-      !shouldShowEmptyState && React.createElement(
-        "ul",
-        { className: "section-list", style: { padding: 0 } },
-        realRows.map((link, index) => link && React.createElement(Card, { key: index, index: index, dispatch: dispatch, link: link, contextMenuOptions: contextMenuOptions,
-          eventSource: eventSource, shouldSendImpressionStats: this.props.shouldSendImpressionStats })),
-        placeholders > 0 && [...new Array(placeholders)].map((_, i) => React.createElement(PlaceholderCard, { key: i }))
-      ),
-      shouldShowEmptyState && React.createElement(
-        "div",
-        { className: "section-empty-state" },
-        React.createElement(
-          "div",
-          { className: "empty-state" },
-          emptyState.icon && emptyState.icon.startsWith("moz-extension://") ? React.createElement("img", { className: "empty-state-icon icon", style: { "background-image": `url('${emptyState.icon}')` } }) : React.createElement("img", { className: `empty-state-icon icon icon-${emptyState.icon}` }),
           React.createElement(
-            "p",
-            { className: "empty-state-message" },
-            getFormattedMessage(emptyState.message)
+            "span",
+            { className: "click-target", onClick: this.onHeaderClick },
+            this.renderIcon(),
+            this.props.title,
+            React.createElement("span", { className: `icon ${isCollapsed ? "icon-arrowhead-forward" : "icon-arrowhead-down"}` })
           )
-        )
+        ),
+        infoOption && React.createElement(InfoIntl, { infoOption: infoOption, dispatch: this.props.dispatch })
       ),
-      shouldShowTopics && React.createElement(Topics, { topics: this.props.topics, read_more_endpoint: this.props.read_more_endpoint })
+      React.createElement(
+        "div",
+        { className: `section-body${enableAnimation ? " animation-enabled" : ""}${isAnimating ? " animating" : ""}`, onTransitionEnd: this.onTransitionEnd },
+        this.props.children
+      )
     );
   }
 }
 
-Section.defaultProps = {
-  document: global.document,
-  rows: [],
-  emptyState: {},
-  title: ""
-};
+CollapsibleSection.defaultProps = { Prefs: { values: {} } };
 
-const SectionIntl = injectIntl(Section);
-
-class Sections extends React.PureComponent {
-  render() {
-    const sections = this.props.Sections;
-    return React.createElement(
-      "div",
-      { className: "sections-list" },
-      sections.filter(section => section.enabled).map(section => React.createElement(SectionIntl, _extends({ key: section.id }, section, { dispatch: this.props.dispatch })))
-    );
-  }
-}
-
-module.exports = connect(state => ({ Sections: state.Sections }))(Sections);
-module.exports._unconnected = Sections;
-module.exports.SectionIntl = SectionIntl;
-module.exports._unconnectedSection = Section;
+module.exports = injectIntl(CollapsibleSection);
+module.exports._unconnected = CollapsibleSection;
 module.exports.Info = Info;
 module.exports.InfoIntl = InfoIntl;
-}.call(exports, __webpack_require__(4)))
 
  }),
 
@@ -1387,10 +1288,10 @@ module.exports.InfoIntl = InfoIntl;
 const ReactDOM = __webpack_require__(12);
 const Base = __webpack_require__(13);
 const { Provider } = __webpack_require__(3);
-const initStore = __webpack_require__(29);
+const initStore = __webpack_require__(30);
 const { reducers } = __webpack_require__(6);
-const DetectUserSessionStart = __webpack_require__(31);
-const { addSnippetsSubscriber } = __webpack_require__(32);
+const DetectUserSessionStart = __webpack_require__(32);
+const { addSnippetsSubscriber } = __webpack_require__(33);
 const { actionTypes: at, actionCreators: ac } = __webpack_require__(0);
 
 new DetectUserSessionStart().sendEventOrAddListener();
@@ -1427,13 +1328,13 @@ const React = __webpack_require__(1);
 const { connect } = __webpack_require__(3);
 const { addLocaleData, IntlProvider } = __webpack_require__(2);
 const TopSites = __webpack_require__(14);
-const Search = __webpack_require__(23);
-const ConfirmDialog = __webpack_require__(25);
-const ManualMigration = __webpack_require__(26);
-const PreferencesPane = __webpack_require__(27);
-const Sections = __webpack_require__(10);
+const Search = __webpack_require__(20);
+const ConfirmDialog = __webpack_require__(22);
+const ManualMigration = __webpack_require__(23);
+const PreferencesPane = __webpack_require__(24);
+const Sections = __webpack_require__(25);
 const { actionTypes: at, actionCreators: ac } = __webpack_require__(0);
-const { PrerenderData } = __webpack_require__(28);
+const { PrerenderData } = __webpack_require__(29);
 
 
 
@@ -1545,7 +1446,7 @@ const { FormattedMessage } = __webpack_require__(2);
 const TopSitesPerfTimer = __webpack_require__(15);
 const TopSitesEdit = __webpack_require__(16);
 const { TopSite, TopSitePlaceholder } = __webpack_require__(8);
-const { InfoIntl } = __webpack_require__(10);
+const CollapsibleSection = __webpack_require__(10);
 
 const TopSites = props => {
   const realTopSites = props.TopSites.rows.slice(0, props.TopSitesCount);
@@ -1558,19 +1459,8 @@ const TopSites = props => {
     TopSitesPerfTimer,
     null,
     React.createElement(
-      "section",
-      { className: "section top-sites" },
-      React.createElement(
-        "div",
-        { className: "section-top-bar" },
-        React.createElement(
-          "h3",
-          { className: "section-title" },
-          React.createElement("span", { className: `icon icon-small-spacer icon-topsites` }),
-          React.createElement(FormattedMessage, { id: "header_top_sites" })
-        ),
-        React.createElement(InfoIntl, { infoOption: infoOption, dispatch: props.dispatch })
-      ),
+      CollapsibleSection,
+      { className: "top-sites", icon: "topsites", title: React.createElement(FormattedMessage, { id: "header_top_sites" }), infoOption: infoOption, prefName: "collapseTopSites", Prefs: props.Prefs, dispatch: props.dispatch },
       React.createElement(
         "ul",
         { className: "top-sites-list" },
@@ -1587,7 +1477,7 @@ const TopSites = props => {
   );
 };
 
-module.exports = connect(state => ({ TopSites: state.TopSites, TopSitesCount: state.Prefs.values.topSitesCount }))(TopSites);
+module.exports = connect(state => ({ TopSites: state.TopSites, Prefs: state.Prefs, TopSitesCount: state.Prefs.values.topSitesCount }))(TopSites);
 module.exports._unconnected = TopSites;
 
  }),
@@ -2293,282 +2183,6 @@ module.exports.CheckPinTopSite = (site, index) => site.isPinned ? module.exports
 
  (function(module, exports, __webpack_require__) {
 
-const React = __webpack_require__(1);
-const LinkMenu = __webpack_require__(9);
-const { FormattedMessage } = __webpack_require__(2);
-const cardContextTypes = __webpack_require__(21);
-const { actionCreators: ac, actionTypes: at } = __webpack_require__(0);
-
-
-const gImageLoading = new Map();
-
-
-
-
-
-
-
-
-
-
-class Card extends React.PureComponent {
-  constructor(props) {
-    super(props);
-    this.state = {
-      activeCard: null,
-      imageLoaded: false,
-      showContextMenu: false
-    };
-    this.onMenuButtonClick = this.onMenuButtonClick.bind(this);
-    this.onMenuUpdate = this.onMenuUpdate.bind(this);
-    this.onLinkClick = this.onLinkClick.bind(this);
-  }
-
-  
-
-
-  async maybeLoadImage() {
-    
-    const { image } = this.props.link;
-    if (!this.state.imageLoaded && image) {
-      
-      if (!gImageLoading.has(image)) {
-        const loaderPromise = new Promise((resolve, reject) => {
-          const loader = new Image();
-          loader.addEventListener("load", resolve);
-          loader.addEventListener("error", reject);
-          loader.src = image;
-        });
-
-        
-        gImageLoading.set(image, loaderPromise);
-        loaderPromise.catch(ex => ex).then(() => gImageLoading.delete(image)).catch();
-      }
-
-      
-      await gImageLoading.get(image);
-
-      
-      if (this.props.link.image === image && !this.state.imageLoaded) {
-        this.setState({ imageLoaded: true });
-      }
-    }
-  }
-
-  onMenuButtonClick(event) {
-    event.preventDefault();
-    this.setState({
-      activeCard: this.props.index,
-      showContextMenu: true
-    });
-  }
-  onLinkClick(event) {
-    event.preventDefault();
-    const { altKey, button, ctrlKey, metaKey, shiftKey } = event;
-    this.props.dispatch(ac.SendToMain({
-      type: at.OPEN_LINK,
-      data: Object.assign(this.props.link, { event: { altKey, button, ctrlKey, metaKey, shiftKey } })
-    }));
-    this.props.dispatch(ac.UserEvent({
-      event: "CLICK",
-      source: this.props.eventSource,
-      action_position: this.props.index
-    }));
-    if (this.props.shouldSendImpressionStats) {
-      this.props.dispatch(ac.ImpressionStats({
-        source: this.props.eventSource,
-        click: 0,
-        incognito: true,
-        tiles: [{ id: this.props.link.guid, pos: this.props.index }]
-      }));
-    }
-  }
-  onMenuUpdate(showContextMenu) {
-    this.setState({ showContextMenu });
-  }
-  componentDidMount() {
-    this.maybeLoadImage();
-  }
-  componentDidUpdate() {
-    this.maybeLoadImage();
-  }
-  componentWillReceiveProps(nextProps) {
-    
-    if (nextProps.link.image !== this.props.link.image) {
-      this.setState({ imageLoaded: false });
-    }
-  }
-  render() {
-    const { index, link, dispatch, contextMenuOptions, eventSource, shouldSendImpressionStats } = this.props;
-    const { props } = this;
-    const isContextMenuOpen = this.state.showContextMenu && this.state.activeCard === index;
-    
-    const { icon, intlID } = cardContextTypes[link.type === "now" ? "trending" : link.type] || {};
-    const hasImage = link.image || link.hasImage;
-    const imageStyle = { backgroundImage: link.image ? `url(${link.image})` : "none" };
-
-    return React.createElement(
-      "li",
-      { className: `card-outer${isContextMenuOpen ? " active" : ""}${props.placeholder ? " placeholder" : ""}` },
-      React.createElement(
-        "a",
-        { href: link.url, onClick: !props.placeholder && this.onLinkClick },
-        React.createElement(
-          "div",
-          { className: "card" },
-          hasImage && React.createElement(
-            "div",
-            { className: "card-preview-image-outer" },
-            React.createElement("div", { className: `card-preview-image${this.state.imageLoaded ? " loaded" : ""}`, style: imageStyle })
-          ),
-          React.createElement(
-            "div",
-            { className: `card-details${hasImage ? "" : " no-image"}` },
-            link.hostname && React.createElement(
-              "div",
-              { className: "card-host-name" },
-              link.hostname
-            ),
-            React.createElement(
-              "div",
-              { className: ["card-text", icon ? "" : "no-context", link.description ? "" : "no-description", link.hostname ? "" : "no-host-name", hasImage ? "" : "no-image"].join(" ") },
-              React.createElement(
-                "h4",
-                { className: "card-title", dir: "auto" },
-                link.title
-              ),
-              React.createElement(
-                "p",
-                { className: "card-description", dir: "auto" },
-                link.description
-              )
-            ),
-            React.createElement(
-              "div",
-              { className: "card-context" },
-              icon && !link.context && React.createElement("span", { className: `card-context-icon icon icon-${icon}` }),
-              link.icon && link.context && React.createElement("span", { className: "card-context-icon icon", style: { backgroundImage: `url('${link.icon}')` } }),
-              intlID && !link.context && React.createElement(
-                "div",
-                { className: "card-context-label" },
-                React.createElement(FormattedMessage, { id: intlID, defaultMessage: "Visited" })
-              ),
-              link.context && React.createElement(
-                "div",
-                { className: "card-context-label" },
-                link.context
-              )
-            )
-          )
-        )
-      ),
-      !props.placeholder && React.createElement(
-        "button",
-        { className: "context-menu-button icon",
-          onClick: this.onMenuButtonClick },
-        React.createElement(
-          "span",
-          { className: "sr-only" },
-          `Open context menu for ${link.title}`
-        )
-      ),
-      !props.placeholder && React.createElement(LinkMenu, {
-        dispatch: dispatch,
-        index: index,
-        source: eventSource,
-        onUpdate: this.onMenuUpdate,
-        options: link.contextMenuOptions || contextMenuOptions,
-        site: link,
-        visible: isContextMenuOpen,
-        shouldSendImpressionStats: shouldSendImpressionStats })
-    );
-  }
-}
-Card.defaultProps = { link: {} };
-
-const PlaceholderCard = () => React.createElement(Card, { placeholder: true });
-
-module.exports = Card;
-module.exports.PlaceholderCard = PlaceholderCard;
-
- }),
-
- (function(module, exports) {
-
-module.exports = {
-  history: {
-    intlID: "type_label_visited",
-    icon: "historyItem"
-  },
-  bookmark: {
-    intlID: "type_label_bookmarked",
-    icon: "bookmark-added"
-  },
-  trending: {
-    intlID: "type_label_recommended",
-    icon: "trending"
-  },
-  now: {
-    intlID: "type_label_now",
-    icon: "now"
-  }
-};
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-const React = __webpack_require__(1);
-const { FormattedMessage } = __webpack_require__(2);
-
-class Topic extends React.PureComponent {
-  render() {
-    const { url, name } = this.props;
-    return React.createElement(
-      "li",
-      null,
-      React.createElement(
-        "a",
-        { key: name, className: "topic-link", href: url },
-        name
-      )
-    );
-  }
-}
-
-class Topics extends React.PureComponent {
-  render() {
-    const { topics, read_more_endpoint } = this.props;
-    return React.createElement(
-      "div",
-      { className: "topic" },
-      React.createElement(
-        "span",
-        null,
-        React.createElement(FormattedMessage, { id: "pocket_read_more" })
-      ),
-      React.createElement(
-        "ul",
-        null,
-        topics && topics.map(t => React.createElement(Topic, { key: t.name, url: t.url, name: t.name }))
-      ),
-      read_more_endpoint && React.createElement(
-        "a",
-        { className: "topic-read-more", href: read_more_endpoint },
-        React.createElement(FormattedMessage, { id: "pocket_read_even_more" })
-      )
-    );
-  }
-}
-
-module.exports = Topics;
-module.exports._unconnected = Topics;
-module.exports.Topic = Topic;
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
 "use strict";
 
 
@@ -2577,7 +2191,7 @@ const React = __webpack_require__(1);
 const { connect } = __webpack_require__(3);
 const { FormattedMessage, injectIntl } = __webpack_require__(2);
 const { actionCreators: ac } = __webpack_require__(0);
-const { IS_NEWTAB } = __webpack_require__(24);
+const { IS_NEWTAB } = __webpack_require__(21);
 
 class Search extends React.PureComponent {
   constructor(props) {
@@ -2884,7 +2498,12 @@ const PreferencesInput = props => React.createElement(
     "p",
     { className: "prefs-input-description" },
     getFormattedMessage(props.descString)
-  )
+  ),
+  React.Children.map(props.children, child => React.createElement(
+    "div",
+    { className: `options${child.props.disabled ? " disabled" : ""}` },
+    child
+  ))
 );
 
 class PreferencesPane extends React.PureComponent {
@@ -2977,21 +2596,51 @@ class PreferencesPane extends React.PureComponent {
               null,
               React.createElement(FormattedMessage, { id: "settings_pane_body2" })
             ),
-            React.createElement(PreferencesInput, { className: "showSearch", prefName: "showSearch", value: prefs.showSearch, onChange: this.handlePrefChange,
-              titleString: { id: "settings_pane_search_header" }, descString: { id: "settings_pane_search_body" } }),
+            React.createElement(PreferencesInput, {
+              className: "showSearch",
+              prefName: "showSearch",
+              value: prefs.showSearch,
+              onChange: this.handlePrefChange,
+              titleString: { id: "settings_pane_search_header" },
+              descString: { id: "settings_pane_search_body" } }),
             React.createElement("hr", null),
-            React.createElement(PreferencesInput, { className: "showTopSites", prefName: "showTopSites", value: prefs.showTopSites, onChange: this.handlePrefChange,
-              titleString: { id: "settings_pane_topsites_header" }, descString: { id: "settings_pane_topsites_body" } }),
             React.createElement(
-              "div",
-              { className: `options${prefs.showTopSites ? "" : " disabled"}` },
-              React.createElement(PreferencesInput, { className: "showMoreTopSites", prefName: "topSitesCount", disabled: !prefs.showTopSites,
-                value: prefs.topSitesCount !== TOP_SITES_DEFAULT_LENGTH, onChange: this.handlePrefChange,
-                titleString: { id: "settings_pane_topsites_options_showmore" }, labelClassName: "icon icon-topsites" })
+              PreferencesInput,
+              {
+                className: "showTopSites",
+                prefName: "showTopSites",
+                value: prefs.showTopSites,
+                onChange: this.handlePrefChange,
+                titleString: { id: "settings_pane_topsites_header" },
+                descString: { id: "settings_pane_topsites_body" } },
+              React.createElement(PreferencesInput, {
+                className: "showMoreTopSites",
+                prefName: "topSitesCount",
+                disabled: !prefs.showTopSites,
+                value: prefs.topSitesCount !== TOP_SITES_DEFAULT_LENGTH,
+                onChange: this.handlePrefChange,
+                titleString: { id: "settings_pane_topsites_options_showmore" },
+                labelClassName: "icon icon-topsites" })
             ),
-            sections.filter(section => !section.shouldHidePref).map(({ id, title, enabled, pref }) => React.createElement(PreferencesInput, { key: id, className: "showSection", prefName: pref && pref.feed || id,
-              value: enabled, onChange: pref && pref.feed ? this.handlePrefChange : this.handleSectionChange,
-              titleString: pref && pref.titleString || title, descString: pref && pref.descString })),
+            sections.filter(section => !section.shouldHidePref).map(({ id, title, enabled, pref }) => React.createElement(
+              PreferencesInput,
+              {
+                key: id,
+                className: "showSection",
+                prefName: pref && pref.feed || id,
+                value: enabled,
+                onChange: pref && pref.feed ? this.handlePrefChange : this.handleSectionChange,
+                titleString: pref && pref.titleString || title,
+                descString: pref && pref.descString },
+              pref.nestedPrefs && pref.nestedPrefs.map(nestedPref => React.createElement(PreferencesInput, {
+                key: nestedPref.name,
+                prefName: nestedPref.name,
+                disabled: !enabled,
+                value: prefs[nestedPref.name],
+                onChange: this.handlePrefChange,
+                titleString: nestedPref.titleString,
+                labelClassName: `icon ${nestedPref.icon}` }))
+            )),
             React.createElement("hr", null),
             React.createElement(PreferencesInput, { className: "showSnippets", prefName: "feeds.snippets",
               value: prefs["feeds.snippets"], onChange: this.handlePrefChange,
@@ -3016,6 +2665,486 @@ class PreferencesPane extends React.PureComponent {
 module.exports = connect(state => ({ Prefs: state.Prefs, PreferencesPane: state.PreferencesPane, Sections: state.Sections }))(injectIntl(PreferencesPane));
 module.exports.PreferencesPane = PreferencesPane;
 module.exports.PreferencesInput = PreferencesInput;
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+(function(global) {var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+const React = __webpack_require__(1);
+const { connect } = __webpack_require__(3);
+const { injectIntl, FormattedMessage } = __webpack_require__(2);
+const Card = __webpack_require__(26);
+const { PlaceholderCard } = Card;
+const Topics = __webpack_require__(28);
+const { actionCreators: ac } = __webpack_require__(0);
+const CollapsibleSection = __webpack_require__(10);
+
+const VISIBLE = "visible";
+const VISIBILITY_CHANGE_EVENT = "visibilitychange";
+const CARDS_PER_ROW = 3;
+
+function getFormattedMessage(message) {
+  return typeof message === "string" ? React.createElement(
+    "span",
+    null,
+    message
+  ) : React.createElement(FormattedMessage, message);
+}
+
+class Section extends React.PureComponent {
+  _dispatchImpressionStats() {
+    const { props } = this;
+    const maxCards = 3 * props.maxRows;
+    const cards = props.rows.slice(0, maxCards);
+
+    if (this.needsImpressionStats(cards)) {
+      props.dispatch(ac.ImpressionStats({
+        source: props.eventSource,
+        tiles: cards.map(link => ({ id: link.guid })),
+        incognito: props.options && props.options.personalized
+      }));
+      this.impressionCardGuids = cards.map(link => link.guid);
+    }
+  }
+
+  
+  
+  
+  sendImpressionStatsOrAddListener() {
+    const { props } = this;
+
+    if (!props.shouldSendImpressionStats || !props.dispatch) {
+      return;
+    }
+
+    if (props.document.visibilityState === VISIBLE) {
+      this._dispatchImpressionStats();
+    } else {
+      
+      
+      if (this._onVisibilityChange) {
+        props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
+      }
+
+      
+      this._onVisibilityChange = () => {
+        if (props.document.visibilityState === VISIBLE) {
+          const { id, Prefs } = this.props;
+          const isCollapsed = Prefs.values[`section.${id}.collapsed`];
+          if (!isCollapsed) {
+            this._dispatchImpressionStats();
+          }
+          props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
+        }
+      };
+      props.document.addEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
+    }
+  }
+
+  componentDidMount() {
+    const { id, rows, Prefs } = this.props;
+    const isCollapsed = Prefs.values[`section.${id}.collapsed`];
+    if (rows.length && !isCollapsed) {
+      this.sendImpressionStatsOrAddListener();
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    const { props } = this;
+    const { id, Prefs } = props;
+    const isCollapsedPref = `section.${id}.collapsed`;
+    const isCollapsed = Prefs.values[isCollapsedPref];
+    const wasCollapsed = prevProps.Prefs.values[isCollapsedPref];
+    if (
+    
+    props.rows.length && (
+    
+    
+    props.rows !== prevProps.rows && !isCollapsed ||
+    
+    wasCollapsed && !isCollapsed)) {
+      this.sendImpressionStatsOrAddListener();
+    }
+  }
+
+  needsImpressionStats(cards) {
+    if (!this.impressionCardGuids || this.impressionCardGuids.length !== cards.length) {
+      return true;
+    }
+
+    for (let i = 0; i < cards.length; i++) {
+      if (cards[i].guid !== this.impressionCardGuids[i]) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  numberOfPlaceholders(items) {
+    if (items === 0) {
+      return CARDS_PER_ROW;
+    }
+    const remainder = items % CARDS_PER_ROW;
+    if (remainder === 0) {
+      return 0;
+    }
+    return CARDS_PER_ROW - remainder;
+  }
+
+  render() {
+    const {
+      id, eventSource, title, icon, rows,
+      infoOption, emptyState, dispatch, maxRows,
+      contextMenuOptions, initialized
+    } = this.props;
+    const maxCards = CARDS_PER_ROW * maxRows;
+
+    
+    
+    const shouldShowTopics = id === "topstories" && (!this.props.topics || this.props.topics.length > 0);
+
+    const realRows = rows.slice(0, maxCards);
+    const placeholders = this.numberOfPlaceholders(realRows.length);
+
+    
+    
+    const shouldShowEmptyState = initialized && !rows.length;
+
+    
+    
+    return React.createElement(
+      CollapsibleSection,
+      { className: "section", icon: icon, title: getFormattedMessage(title), infoOption: infoOption, prefName: `section.${id}.collapsed`, Prefs: this.props.Prefs, dispatch: this.props.dispatch },
+      !shouldShowEmptyState && React.createElement(
+        "ul",
+        { className: "section-list", style: { padding: 0 } },
+        realRows.map((link, index) => link && React.createElement(Card, { key: index, index: index, dispatch: dispatch, link: link, contextMenuOptions: contextMenuOptions,
+          eventSource: eventSource, shouldSendImpressionStats: this.props.shouldSendImpressionStats })),
+        placeholders > 0 && [...new Array(placeholders)].map((_, i) => React.createElement(PlaceholderCard, { key: i }))
+      ),
+      shouldShowEmptyState && React.createElement(
+        "div",
+        { className: "section-empty-state" },
+        React.createElement(
+          "div",
+          { className: "empty-state" },
+          emptyState.icon && emptyState.icon.startsWith("moz-extension://") ? React.createElement("img", { className: "empty-state-icon icon", style: { "background-image": `url('${emptyState.icon}')` } }) : React.createElement("img", { className: `empty-state-icon icon icon-${emptyState.icon}` }),
+          React.createElement(
+            "p",
+            { className: "empty-state-message" },
+            getFormattedMessage(emptyState.message)
+          )
+        )
+      ),
+      shouldShowTopics && React.createElement(Topics, { topics: this.props.topics, read_more_endpoint: this.props.read_more_endpoint })
+    );
+  }
+}
+
+Section.defaultProps = {
+  document: global.document,
+  rows: [],
+  emptyState: {},
+  title: ""
+};
+
+const SectionIntl = injectIntl(Section);
+
+class Sections extends React.PureComponent {
+  render() {
+    const sections = this.props.Sections;
+    return React.createElement(
+      "div",
+      { className: "sections-list" },
+      sections.filter(section => section.enabled).map(section => React.createElement(SectionIntl, _extends({ key: section.id }, section, { Prefs: this.props.Prefs, dispatch: this.props.dispatch })))
+    );
+  }
+}
+
+module.exports = connect(state => ({ Sections: state.Sections, Prefs: state.Prefs }))(Sections);
+module.exports._unconnected = Sections;
+module.exports.SectionIntl = SectionIntl;
+module.exports._unconnectedSection = Section;
+}.call(exports, __webpack_require__(4)))
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+const React = __webpack_require__(1);
+const LinkMenu = __webpack_require__(9);
+const { FormattedMessage } = __webpack_require__(2);
+const cardContextTypes = __webpack_require__(27);
+const { actionCreators: ac, actionTypes: at } = __webpack_require__(0);
+
+
+const gImageLoading = new Map();
+
+
+
+
+
+
+
+
+
+
+class Card extends React.PureComponent {
+  constructor(props) {
+    super(props);
+    this.state = {
+      activeCard: null,
+      imageLoaded: false,
+      showContextMenu: false
+    };
+    this.onMenuButtonClick = this.onMenuButtonClick.bind(this);
+    this.onMenuUpdate = this.onMenuUpdate.bind(this);
+    this.onLinkClick = this.onLinkClick.bind(this);
+  }
+
+  
+
+
+  async maybeLoadImage() {
+    
+    const { image } = this.props.link;
+    if (!this.state.imageLoaded && image) {
+      
+      if (!gImageLoading.has(image)) {
+        const loaderPromise = new Promise((resolve, reject) => {
+          const loader = new Image();
+          loader.addEventListener("load", resolve);
+          loader.addEventListener("error", reject);
+          loader.src = image;
+        });
+
+        
+        gImageLoading.set(image, loaderPromise);
+        loaderPromise.catch(ex => ex).then(() => gImageLoading.delete(image)).catch();
+      }
+
+      
+      await gImageLoading.get(image);
+
+      
+      if (this.props.link.image === image && !this.state.imageLoaded) {
+        this.setState({ imageLoaded: true });
+      }
+    }
+  }
+
+  onMenuButtonClick(event) {
+    event.preventDefault();
+    this.setState({
+      activeCard: this.props.index,
+      showContextMenu: true
+    });
+  }
+  onLinkClick(event) {
+    event.preventDefault();
+    const { altKey, button, ctrlKey, metaKey, shiftKey } = event;
+    this.props.dispatch(ac.SendToMain({
+      type: at.OPEN_LINK,
+      data: Object.assign(this.props.link, { event: { altKey, button, ctrlKey, metaKey, shiftKey } })
+    }));
+    this.props.dispatch(ac.UserEvent({
+      event: "CLICK",
+      source: this.props.eventSource,
+      action_position: this.props.index
+    }));
+    if (this.props.shouldSendImpressionStats) {
+      this.props.dispatch(ac.ImpressionStats({
+        source: this.props.eventSource,
+        click: 0,
+        incognito: true,
+        tiles: [{ id: this.props.link.guid, pos: this.props.index }]
+      }));
+    }
+  }
+  onMenuUpdate(showContextMenu) {
+    this.setState({ showContextMenu });
+  }
+  componentDidMount() {
+    this.maybeLoadImage();
+  }
+  componentDidUpdate() {
+    this.maybeLoadImage();
+  }
+  componentWillReceiveProps(nextProps) {
+    
+    if (nextProps.link.image !== this.props.link.image) {
+      this.setState({ imageLoaded: false });
+    }
+  }
+  render() {
+    const { index, link, dispatch, contextMenuOptions, eventSource, shouldSendImpressionStats } = this.props;
+    const { props } = this;
+    const isContextMenuOpen = this.state.showContextMenu && this.state.activeCard === index;
+    
+    const { icon, intlID } = cardContextTypes[link.type === "now" ? "trending" : link.type] || {};
+    const hasImage = link.image || link.hasImage;
+    const imageStyle = { backgroundImage: link.image ? `url(${link.image})` : "none" };
+
+    return React.createElement(
+      "li",
+      { className: `card-outer${isContextMenuOpen ? " active" : ""}${props.placeholder ? " placeholder" : ""}` },
+      React.createElement(
+        "a",
+        { href: link.url, onClick: !props.placeholder && this.onLinkClick },
+        React.createElement(
+          "div",
+          { className: "card" },
+          hasImage && React.createElement(
+            "div",
+            { className: "card-preview-image-outer" },
+            React.createElement("div", { className: `card-preview-image${this.state.imageLoaded ? " loaded" : ""}`, style: imageStyle })
+          ),
+          React.createElement(
+            "div",
+            { className: `card-details${hasImage ? "" : " no-image"}` },
+            link.hostname && React.createElement(
+              "div",
+              { className: "card-host-name" },
+              link.hostname
+            ),
+            React.createElement(
+              "div",
+              { className: ["card-text", icon ? "" : "no-context", link.description ? "" : "no-description", link.hostname ? "" : "no-host-name", hasImage ? "" : "no-image"].join(" ") },
+              React.createElement(
+                "h4",
+                { className: "card-title", dir: "auto" },
+                link.title
+              ),
+              React.createElement(
+                "p",
+                { className: "card-description", dir: "auto" },
+                link.description
+              )
+            ),
+            React.createElement(
+              "div",
+              { className: "card-context" },
+              icon && !link.context && React.createElement("span", { className: `card-context-icon icon icon-${icon}` }),
+              link.icon && link.context && React.createElement("span", { className: "card-context-icon icon", style: { backgroundImage: `url('${link.icon}')` } }),
+              intlID && !link.context && React.createElement(
+                "div",
+                { className: "card-context-label" },
+                React.createElement(FormattedMessage, { id: intlID, defaultMessage: "Visited" })
+              ),
+              link.context && React.createElement(
+                "div",
+                { className: "card-context-label" },
+                link.context
+              )
+            )
+          )
+        )
+      ),
+      !props.placeholder && React.createElement(
+        "button",
+        { className: "context-menu-button icon",
+          onClick: this.onMenuButtonClick },
+        React.createElement(
+          "span",
+          { className: "sr-only" },
+          `Open context menu for ${link.title}`
+        )
+      ),
+      !props.placeholder && React.createElement(LinkMenu, {
+        dispatch: dispatch,
+        index: index,
+        source: eventSource,
+        onUpdate: this.onMenuUpdate,
+        options: link.contextMenuOptions || contextMenuOptions,
+        site: link,
+        visible: isContextMenuOpen,
+        shouldSendImpressionStats: shouldSendImpressionStats })
+    );
+  }
+}
+Card.defaultProps = { link: {} };
+
+const PlaceholderCard = () => React.createElement(Card, { placeholder: true });
+
+module.exports = Card;
+module.exports.PlaceholderCard = PlaceholderCard;
+
+ }),
+
+ (function(module, exports) {
+
+module.exports = {
+  history: {
+    intlID: "type_label_visited",
+    icon: "historyItem"
+  },
+  bookmark: {
+    intlID: "type_label_bookmarked",
+    icon: "bookmark-added"
+  },
+  trending: {
+    intlID: "type_label_recommended",
+    icon: "trending"
+  },
+  now: {
+    intlID: "type_label_now",
+    icon: "now"
+  }
+};
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+const React = __webpack_require__(1);
+const { FormattedMessage } = __webpack_require__(2);
+
+class Topic extends React.PureComponent {
+  render() {
+    const { url, name } = this.props;
+    return React.createElement(
+      "li",
+      null,
+      React.createElement(
+        "a",
+        { key: name, className: "topic-link", href: url },
+        name
+      )
+    );
+  }
+}
+
+class Topics extends React.PureComponent {
+  render() {
+    const { topics, read_more_endpoint } = this.props;
+    return React.createElement(
+      "div",
+      { className: "topic" },
+      React.createElement(
+        "span",
+        null,
+        React.createElement(FormattedMessage, { id: "pocket_read_more" })
+      ),
+      React.createElement(
+        "ul",
+        null,
+        topics && topics.map(t => React.createElement(Topic, { key: t.name, url: t.url, name: t.name }))
+      ),
+      read_more_endpoint && React.createElement(
+        "a",
+        { className: "topic-read-more", href: read_more_endpoint },
+        React.createElement(FormattedMessage, { id: "pocket_read_even_more" })
+      )
+    );
+  }
+}
+
+module.exports = Topics;
+module.exports._unconnected = Topics;
+module.exports.Topic = Topic;
 
  }),
 
@@ -3113,7 +3242,7 @@ module.exports = {
 
 (function(global) {
 
-const { createStore, combineReducers, applyMiddleware } = __webpack_require__(30);
+const { createStore, combineReducers, applyMiddleware } = __webpack_require__(31);
 const { actionTypes: at, actionCreators: ac, actionUtils: au } = __webpack_require__(0);
 
 const MERGE_STORE_ACTION = "NEW_TAB_INITIAL_STATE";

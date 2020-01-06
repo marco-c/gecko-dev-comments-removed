@@ -33,15 +33,7 @@ this.HighlightsFeed = class HighlightsFeed {
     this.highlightsLength = 0;
     this.dedupe = new Dedupe(this._dedupeKey);
     this.linksCache = new LinksCache(NewTabUtils.activityStreamLinks,
-      "getHighlights", (oldLink, newLink) => {
-        
-        for (const property of ["__fetchingScreenshot", "image"]) {
-          const oldValue = oldLink[property];
-          if (oldValue) {
-            newLink[property] = oldValue;
-          }
-        }
-      });
+      "getHighlights", ["image"]);
   }
 
   _dedupeKey(site) {
@@ -118,8 +110,7 @@ this.HighlightsFeed = class HighlightsFeed {
       hosts.add(hostname);
 
       
-      delete page.__fetchingScreenshot;
-      delete page.__updateCache;
+      delete page.__sharedCache;
 
       
       if (highlights.length === HIGHLIGHTS_MAX_LENGTH) {
@@ -139,7 +130,7 @@ this.HighlightsFeed = class HighlightsFeed {
   async fetchImage(page) {
     
     const {preview_image_url: imageUrl, url} = page;
-    Screenshots.maybeGetAndSetScreenshot(page, imageUrl || url, "image", image => {
+    Screenshots.maybeCacheScreenshot(page, imageUrl || url, "image", image => {
       SectionsManager.updateSectionCard(SECTION_ID, url, {image}, true);
     });
   }
