@@ -118,9 +118,7 @@ public:
   virtual nsContainerFrame* GetContentInsertionFrame() override;
 
   
-  void DoUpdateStyleOfOwnedAnonBoxes(mozilla::ServoStyleSet& aStyleSet,
-                                     nsStyleChangeList& aChangeList,
-                                     nsChangeHint aHintForThisFrame) override;
+  void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
 
   
   virtual nsresult SetFormProperty(nsIAtom* aName, const nsAString& aValue) override;

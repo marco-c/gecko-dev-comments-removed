@@ -74,10 +74,7 @@ public:
   }
 
   
-  virtual void DoUpdateStyleOfOwnedAnonBoxes(
-    mozilla::ServoStyleSet& aStyleSet,
-    nsStyleChangeList& aChangeList,
-    nsChangeHint aHintForThisFrame) override;
+  void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
 
 #ifdef ACCESSIBILITY  
   virtual mozilla::a11y::AccType AccessibleType() override;

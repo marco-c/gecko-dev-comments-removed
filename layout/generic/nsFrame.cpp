@@ -46,7 +46,7 @@
 #include "mozilla/GeckoRestyleManager.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/RestyleManagerInlines.h"
-
+#include "nsInlineFrame.h"
 #include "nsIDOMNode.h"
 #include "nsISelection.h"
 #include "nsISelectionPrivate.h"
@@ -10201,10 +10201,10 @@ nsFrame::BoxMetrics() const
 }
 
 void
-nsFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
-                                   ServoStyleSet& aStyleSet,
-                                   nsStyleChangeList& aChangeList,
-                                   nsChangeHint aHintForThisFrame)
+nsIFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
+                                    ServoStyleSet& aStyleSet,
+                                    nsStyleChangeList& aChangeList,
+                                    nsChangeHint aHintForThisFrame)
 {
   MOZ_ASSERT(aChildFrame->GetParent() == this,
              "This should only be used for children!");
@@ -10479,14 +10479,71 @@ nsIFrame::IsScrolledOutOfView()
   return IsFrameScrolledOutOfView(this);
 }
 
-
 void
 nsIFrame::DoUpdateStyleOfOwnedAnonBoxes(ServoStyleSet& aStyleSet,
-                                      nsStyleChangeList& aChangeList,
-                                      nsChangeHint aHintForThisFrame)
+                                        nsStyleChangeList& aChangeList,
+                                        nsChangeHint aHintForThisFrame)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (IsInlineFrame()) {
+    if ((GetStateBits() & NS_FRAME_PART_OF_IBSPLIT)) {
+      static_cast<nsInlineFrame*>(this)->
+        UpdateStyleOfOwnedAnonBoxesForIBSplit(aStyleSet, aChangeList,
+                                              aHintForThisFrame);
+    }
+    return;
+  }
+
+  AutoTArray<OwnedAnonBox,4> frames;
+  AppendDirectlyOwnedAnonBoxes(frames);
+  for (OwnedAnonBox& box : frames) {
+    if (box.mUpdateStyleFn) {
+      box.mUpdateStyleFn(this, box.mAnonBoxFrame,
+                         aStyleSet, aChangeList, aHintForThisFrame);
+    } else {
+      UpdateStyleOfChildAnonBox(box.mAnonBoxFrame,
+                                aStyleSet, aChangeList, aHintForThisFrame);
+    }
+  }
+}
+
+ void
+nsIFrame::AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult)
 {
   MOZ_ASSERT(!(GetStateBits() & NS_FRAME_OWNS_ANON_BOXES));
   MOZ_ASSERT(false, "Why did this get called?");
+}
+
+void
+nsIFrame::DoAppendOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult)
+{
+  size_t i = aResult.Length();
+  AppendDirectlyOwnedAnonBoxes(aResult);
+
+  
+  
+  
+  
+  
+  
+
+  while (i < aResult.Length()) {
+    nsIFrame* f = aResult[i].mAnonBoxFrame;
+    if (f->GetStateBits() & NS_FRAME_OWNS_ANON_BOXES) {
+      f->AppendDirectlyOwnedAnonBoxes(aResult);
+    }
+    ++i;
+  }
 }
 
 nsIFrame::CaretPosition::CaretPosition()
