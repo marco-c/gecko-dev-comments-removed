@@ -24,18 +24,6 @@ const EXPECTED_REFLOWS = [
     "BrowserOpenTab@chrome://browser/content/browser.js|",
 
   
-  "get_scrollPosition@chrome://global/content/bindings/scrollbox.xml|" +
-    "_fillTrailingGap@chrome://browser/content/tabbrowser.xml|" +
-    "_handleNewTab@chrome://browser/content/tabbrowser.xml|" +
-    "onxbltransitionend@chrome://browser/content/tabbrowser.xml|",
-
-  
-  "ssi_getWindowDimension@resource:///modules/sessionstore/SessionStore.jsm|" +
-    "ssi_updateWindowFeatures/<@resource:///modules/sessionstore/SessionStore.jsm|" +
-    "ssi_updateWindowFeatures@resource:///modules/sessionstore/SessionStore.jsm|" +
-    "ssi_collectWindowData@resource:///modules/sessionstore/SessionStore.jsm|",
-
-  
   
   "select@chrome://global/content/bindings/textbox.xml|" +
     "focusAndSelectUrlBar@chrome://browser/content/browser.js|" +
