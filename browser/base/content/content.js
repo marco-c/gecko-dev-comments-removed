@@ -85,6 +85,7 @@ const MOZILLA_PKIX_ERROR_NOT_YET_VALID_CERTIFICATE = MOZILLA_PKIX_ERROR_BASE + 5
 const MOZILLA_PKIX_ERROR_NOT_YET_VALID_ISSUER_CERTIFICATE = MOZILLA_PKIX_ERROR_BASE + 6;
 
 const PREF_BLOCKLIST_CLOCK_SKEW_SECONDS = "services.blocklist.clock_skew_seconds";
+const PREF_BLOCKLIST_LAST_FETCHED = "services.blocklist.last_update_seconds";
 
 const PREF_SSL_IMPACT_ROOTS = ["security.tls.version.", "security.ssl3."];
 
@@ -262,6 +263,24 @@ var AboutNetAndCertErrorListener = {
     }
   },
 
+  _getCertValidityRange() {
+    let {securityInfo} = docShell.failedChannel;
+    securityInfo.QueryInterface(Ci.nsITransportSecurityInfo);
+    let certs = securityInfo.failedCertChain.getEnumerator();
+    let notBefore = 0;
+    let notAfter = Number.MAX_SAFE_INTEGER;
+    while (certs.hasMoreElements()) {
+      let cert = certs.getNext();
+      cert.QueryInterface(Ci.nsIX509Cert);
+      notBefore = Math.max(notBefore, cert.validity.notBefore);
+      notAfter = Math.min(notAfter, cert.validity.notAfter);
+    }
+    
+    notBefore /= 1000;
+    notAfter /= 1000;
+    return {notBefore, notAfter};
+  },
+
   onCertErrorDetails(msg) {
     let div = content.document.getElementById("certificateErrorText");
     div.textContent = msg.data.info;
@@ -284,26 +303,30 @@ var AboutNetAndCertErrorListener = {
 
         
         
-        let difference = 0;
-        if (Services.prefs.getPrefType(PREF_BLOCKLIST_CLOCK_SKEW_SECONDS)) {
-          difference = Services.prefs.getIntPref(PREF_BLOCKLIST_CLOCK_SKEW_SECONDS);
-        }
+        let difference = Services.prefs.getIntPref(PREF_BLOCKLIST_CLOCK_SKEW_SECONDS, 0);
+        let lastFetched = Services.prefs.getIntPref(PREF_BLOCKLIST_LAST_FETCHED, 0) * 1000;
 
+        let now = Date.now();
+        let certRange = this._getCertValidityRange();
+
+        let approximateDate = now - difference * 1000;
         
-        if (Math.abs(difference) > 60 * 60 * 24) {
+        
+        if (Math.abs(difference) > 60 * 60 * 24 && (now - lastFetched) <= 60 * 60 * 24 * 5 &&
+            certRange.notBefore < approximateDate && certRange.notAfter > approximateDate) {
           let formatter = Services.intl.createDateTimeFormat(undefined, {
             dateStyle: "short"
           });
           let systemDate = formatter.format(new Date());
           
-          let actualDate = formatter.format(new Date(Date.now() - difference * 1000));
+          approximateDate = formatter.format(new Date(approximateDate));
 
           content.document.getElementById("wrongSystemTime_URL")
             .textContent = content.document.location.hostname;
           content.document.getElementById("wrongSystemTime_systemDate")
             .textContent = systemDate;
           content.document.getElementById("wrongSystemTime_actualDate")
-            .textContent = actualDate;
+            .textContent = approximateDate;
 
           content.document.getElementById("errorShortDesc")
             .style.display = "none";
@@ -322,7 +345,11 @@ var AboutNetAndCertErrorListener = {
           let buildDate = new Date(year, month, day);
           let systemDate = new Date();
 
-          if (buildDate > systemDate) {
+          
+          
+          
+          
+          if (buildDate > systemDate && new Date(certRange.notAfter) > buildDate) {
             let formatter = Services.intl.createDateTimeFormat(undefined, {
               dateStyle: "short"
             });
