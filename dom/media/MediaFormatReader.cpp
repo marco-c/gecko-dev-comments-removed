@@ -1228,10 +1228,6 @@ MediaFormatReader::Shutdown()
   mMetadataPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   mSeekPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   mSkipRequest.DisconnectIfExists();
-  mSetCDMPromise.RejectIfExists(
-    MediaResult(NS_ERROR_DOM_INVALID_STATE_ERR,
-                "MediaFormatReader is shutting down"),
-    __func__);
 
   if (mAudio.HasPromise()) {
     mAudio.RejectPromise(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
@@ -1322,101 +1318,23 @@ MediaFormatReader::Init()
   return NS_OK;
 }
 
-bool
-MediaFormatReader::ResolveSetCDMPromiseIfDone(TrackType aTrack)
-{
-  
-  
-  MOZ_ASSERT(OnTaskQueue());
-
-  if (mSetCDMPromise.IsEmpty()) {
-    return true;
-  }
-
-  MOZ_ASSERT(mCDMProxy);
-  if (mSetCDMForTracks.contains(aTrack)) {
-    mSetCDMForTracks -= aTrack;
-  }
-
-  if (mSetCDMForTracks.isEmpty()) {
-    LOGV("%s : Done ", __func__);
-    mSetCDMPromise.Resolve( true, __func__);
-    ScheduleUpdate(TrackInfo::kAudioTrack);
-    ScheduleUpdate(TrackInfo::kVideoTrack);
-    return true;
-  }
-  LOGV("%s : %s track is ready.", __func__, TrackTypeToStr(aTrack));
-  return false;
-}
-
 void
-MediaFormatReader::PrepareToSetCDMForTrack(TrackType aTrack)
-{
-  MOZ_ASSERT(OnTaskQueue());
-  LOGV("%s : %s", __func__, TrackTypeToStr(aTrack));
-
-  mSetCDMForTracks += aTrack;
-  if (mCDMProxy) {
-    
-    
-    ShutdownDecoder(aTrack);
-  }
-  ScheduleUpdate(aTrack);
-}
-
-bool
-MediaFormatReader::IsDecoderWaitingForCDM(TrackType aTrack)
-{
-  MOZ_ASSERT(OnTaskQueue());
-  return IsEncrypted() && mSetCDMForTracks.contains(aTrack) && !mCDMProxy;
-}
-
-RefPtr<SetCDMPromise>
 MediaFormatReader::SetCDMProxy(CDMProxy* aProxy)
 {
-  MOZ_ASSERT(OnTaskQueue());
-  LOGV("SetCDMProxy (%p)", aProxy);
-
-  if (mShutdown) {
-    return SetCDMPromise::CreateAndReject(
-      MediaResult(NS_ERROR_DOM_INVALID_STATE_ERR,
-                  "MediaFormatReader is shutting down"),
-      __func__);
-  }
-
-  mSetCDMPromise.RejectIfExists(
-    MediaResult(NS_ERROR_DOM_INVALID_STATE_ERR,
-                "Another new CDM proxy is being set."),
-    __func__);
-
-  
-  
-  
-  if (HasAudio()) {
-    PrepareToSetCDMForTrack(TrackInfo::kAudioTrack);
-  }
-  if (HasVideo()) {
-    PrepareToSetCDMForTrack(TrackInfo::kVideoTrack);
-  }
-
-  mCDMProxy = aProxy;
-
-  if (IsEncrypted() && !mCDMProxy) {
-    
-    mPlatform = nullptr;
-  }
-
-  if (!mInitDone || mSetCDMForTracks.isEmpty() || !mCDMProxy) {
-    
-    
-    
-    
-    mSetCDMForTracks.clear();
-    return SetCDMPromise::CreateAndResolve( true, __func__);
-  }
-
-  RefPtr<SetCDMPromise> p = mSetCDMPromise.Ensure(__func__);
-  return p;
+  RefPtr<CDMProxy> proxy = aProxy;
+  RefPtr<MediaFormatReader> self = this;
+  nsCOMPtr<nsIRunnable> r =
+    NS_NewRunnableFunction("MediaFormatReader::SetCDMProxy", [=]() {
+      MOZ_ASSERT(self->OnTaskQueue());
+      self->mCDMProxy = proxy;
+      if (HasAudio()) {
+        self->ScheduleUpdate(TrackInfo::kAudioTrack);
+      }
+      if (HasVideo()) {
+        self->ScheduleUpdate(TrackInfo::kVideoTrack);
+      }
+    });
+  OwnerThread()->Dispatch(r.forget());
 }
 
 bool
@@ -2473,13 +2391,6 @@ MediaFormatReader::Update(TrackType aTrack)
       LOG("Rejecting %s promise: WAITING_FOR_DATA due to waiting for key",
           TrackTypeToStr(aTrack));
       decoder.RejectPromise(NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA, __func__);
-    } else if (IsDecoderWaitingForCDM(aTrack)) {
-      
-      
-      
-      LOG("Rejecting %s promise: WAITING_FOR_DATA due to waiting for CDM",
-          TrackTypeToStr(aTrack));
-      decoder.RejectPromise(NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA, __func__);
     }
   }
 
@@ -2537,7 +2448,7 @@ MediaFormatReader::Update(TrackType aTrack)
 
   LOGV("Update(%s) ni=%d no=%d in:%" PRIu64 " out:%" PRIu64
        " qs=%u decoding:%d flushing:%d desc:%s pending:%u waiting:%d eos:%d "
-       "ds:%d sid:%u waitcdm:%d",
+       "ds:%d sid:%u",
        TrackTypeToStr(aTrack),
        needInput,
        needOutput,
@@ -2551,10 +2462,9 @@ MediaFormatReader::Update(TrackType aTrack)
        decoder.mWaitingForData,
        decoder.mDemuxEOS,
        int32_t(decoder.mDrainState),
-       decoder.mLastStreamSourceID,
-       IsDecoderWaitingForCDM(aTrack));
+       decoder.mLastStreamSourceID);
 
-  if (IsWaitingOnCDMResource() || !ResolveSetCDMPromiseIfDone(aTrack)) {
+  if (IsWaitingOnCDMResource()) {
     
     
     return;
@@ -2564,9 +2474,7 @@ MediaFormatReader::Update(TrackType aTrack)
        (!decoder.mTimeThreshold || decoder.mTimeThreshold.ref().mWaiting)) ||
       (decoder.mWaitingForKey && decoder.mDecodeRequest.Exists())) {
     
-    LOGV("Still waiting for data or key. data(%d)/key(%d)",
-         decoder.mWaitingForData,
-         decoder.mWaitingForKey);
+    LOGV("Still waiting for data or key.");
     return;
   }
 

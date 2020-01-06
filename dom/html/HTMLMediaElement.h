@@ -12,7 +12,6 @@
 #include "MediaEventSource.h"
 #include "SeekTarget.h"
 #include "MediaDecoderOwner.h"
-#include "MediaPromiseDefs.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIObserver.h"
 #include "mozilla/CORSMode.h"
@@ -1333,15 +1332,6 @@ protected:
                                           const nsAttrValueOrString& aValue,
                                           bool aNotify) override;
 
-  bool DetachExistingMediaKeys();
-  bool TryRemoveMediaKeysAssociation();
-  void RemoveMediaKeys();
-  bool AttachNewMediaKeys();
-  bool TryMakeAssociationWithCDM(CDMProxy* aProxy);
-  void MakeAssociationWithCDMResolved();
-  void SetCDMProxyFailure(const MediaResult& aResult);
-  void ResetSetMediaKeysTempVariables();
-
   
   
   RefPtr<MediaDecoder> mDecoder;
@@ -1544,12 +1534,6 @@ protected:
 
   
   RefPtr<MediaKeys> mMediaKeys;
-  RefPtr<MediaKeys> mIncomingMediaKeys;
-  
-  RefPtr<DetailedPromise> mSetMediaKeysDOMPromise;
-  
-  bool mAttachingMediaKey;
-  MozPromiseRequestHolder<SetCDMPromise> mSetCDMRequest;
 
   
   double mCurrentPlayRangeStart;

@@ -18,7 +18,6 @@
 #include "MediaDataDemuxer.h"
 #include "MediaMetadataManager.h"
 #include "MediaPrefs.h"
-#include "MediaPromiseDefs.h"
 #include "nsAutoPtr.h"
 #include "PDMFactory.h"
 #include "SeekTarget.h"
@@ -92,6 +91,7 @@ class MediaFormatReader final
   static const bool IsExclusive = true;
   typedef TrackInfo::TrackType TrackType;
   typedef MozPromise<bool, MediaResult, IsExclusive> NotifyDataArrivedPromise;
+
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaFormatReader)
 
 public:
@@ -194,7 +194,7 @@ public:
   
   bool UseBufferingHeuristics() const { return mTrackDemuxersMayBlock; }
 
-  RefPtr<SetCDMPromise> SetCDMProxy(CDMProxy* aProxy);
+  void SetCDMProxy(CDMProxy* aProxy);
 
   
   
@@ -792,12 +792,6 @@ private:
 
   
   const MediaDecoderOwnerID mMediaDecoderOwnerID;
-
-  bool ResolveSetCDMPromiseIfDone(TrackType aTrack);
-  void PrepareToSetCDMForTrack(TrackType aTrack);
-  MozPromiseHolder<SetCDMPromise> mSetCDMPromise;
-  TrackSet mSetCDMForTracks{};
-  bool IsDecoderWaitingForCDM(TrackType aTrack);
 };
 
 } 
