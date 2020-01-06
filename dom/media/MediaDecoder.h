@@ -110,10 +110,6 @@ public:
 
   
   
-  virtual MediaDecoderStateMachine* CreateStateMachine() = 0;
-
-  
-  
   virtual void Shutdown();
 
   
