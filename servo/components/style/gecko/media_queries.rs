@@ -17,7 +17,9 @@ use gecko_bindings::structs::RawGeckoPresContextOwned;
 use media_queries::MediaType;
 use parser::ParserContext;
 use properties::{ComputedValues, StyleBuilder};
+use properties::longhands::font_size;
 use std::fmt::{self, Write};
+use std::sync::atomic::{AtomicIsize, Ordering};
 use str::starts_with_ignore_ascii_case;
 use string_cache::Atom;
 use style_traits::ToCss;
@@ -35,7 +37,19 @@ pub struct Device {
     pub pres_context: RawGeckoPresContextOwned,
     default_values: Arc<ComputedValues>,
     viewport_override: Option<ViewportConstraints>,
+    
+    
+    
+    
+    
+    
+    
+    
+    root_font_size: AtomicIsize,
 }
+
+unsafe impl Sync for Device {}
+unsafe impl Send for Device {}
 
 impl Device {
     
@@ -45,6 +59,7 @@ impl Device {
             pres_context: pres_context,
             default_values: ComputedValues::default_values(unsafe { &*pres_context }),
             viewport_override: None,
+            root_font_size: AtomicIsize::new(font_size::get_initial_value().0 as isize), 
         }
     }
 
@@ -71,6 +86,16 @@ impl Device {
     
     pub fn default_values_arc(&self) -> &Arc<ComputedValues> {
         &self.default_values
+    }
+
+    
+    pub fn root_font_size(&self) -> Au {
+        Au::new(self.root_font_size.load(Ordering::Relaxed) as i32)
+    }
+
+    
+    pub fn set_root_font_size(&self, size: Au) {
+        self.root_font_size.store(size.0 as isize, Ordering::Relaxed)
     }
 
     
@@ -110,9 +135,6 @@ impl Device {
         })
     }
 }
-
-unsafe impl Sync for Device {}
-unsafe impl Send for Device {}
 
 
 
