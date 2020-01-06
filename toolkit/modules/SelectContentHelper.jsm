@@ -43,6 +43,8 @@ this.SelectContentHelper = function(aElement, aOptions, aGlobal) {
   this._uaSelectBackgroundColor = null;
   this._uaSelectColor = null;
   this._closeAfterBlur = true;
+  this._pseudoStylesSetup = false;
+  this._lockedDescendants = null;
   this.init();
   this.showDropDown();
   this._updateTimer = new DeferredTask(this._update.bind(this), 0);
@@ -100,13 +102,12 @@ this.SelectContentHelper.prototype = {
 
   showDropDown() {
     this.element.openInParentProcess = true;
+    this._setupPseudoClassStyles();
     let rect = this._getBoundingContentRect();
-    DOMUtils.addPseudoClassLock(this.element, ":focus");
     let computedStyles = getComputedStyles(this.element);
     this._selectBackgroundColor = computedStyles.backgroundColor;
     this._selectColor = computedStyles.color;
     this._selectTextShadow = computedStyles.textShadow;
-    DOMUtils.clearPseudoClassLocks(this.element);
     this.global.sendAsyncMessage("Forms:ShowDropDown", {
       direction: computedStyles.direction,
       isOpenedViaTouch: this.isOpenedViaTouch,
@@ -121,7 +122,41 @@ this.SelectContentHelper.prototype = {
       uaSelectBackgroundColor: this.uaSelectBackgroundColor,
       uaSelectColor: this.uaSelectColor
     });
+    this._clearPseudoClassStyles();
     gOpen = true;
+  },
+
+  _setupPseudoClassStyles() {
+    if (this._pseudoStylesSetup) {
+      throw new Error("pseudo styles must not be set up yet");
+    }
+    
+    
+    this._pseudoStylesSetup = true;
+    DOMUtils.addPseudoClassLock(this.element, ":focus");
+    let lockedDescendants = this._lockedDescendants = this.element.querySelectorAll(":checked");
+    for (let child of lockedDescendants) {
+      
+      
+      
+      
+      DOMUtils.addPseudoClassLock(child, ":checked", false);
+    }
+  },
+
+  _clearPseudoClassStyles() {
+    if (!this._pseudoStylesSetup) {
+      throw new Error("pseudo styles must be set up already");
+    }
+    
+    
+    DOMUtils.clearPseudoClassLocks(this.element);
+    let lockedDescendants = this._lockedDescendants;
+    for (let child of lockedDescendants) {
+      DOMUtils.clearPseudoClassLocks(child);
+    }
+    this._lockedDescendants = null;
+    this._pseudoStylesSetup = false;
   },
 
   _getBoundingContentRect() {
@@ -129,10 +164,10 @@ this.SelectContentHelper.prototype = {
   },
 
   _buildOptionList() {
-    DOMUtils.addPseudoClassLock(this.element, ":focus");
-    let result = buildOptionListForChildren(this.element);
-    DOMUtils.clearPseudoClassLocks(this.element);
-    return result;
+    if (!this._pseudoStylesSetup) {
+      throw new Error("pseudo styles must be set up");
+    }
+    return buildOptionListForChildren(this.element);
   },
 
   _update() {
@@ -141,12 +176,11 @@ this.SelectContentHelper.prototype = {
     
     
     
-    DOMUtils.addPseudoClassLock(this.element, ":focus");
+    this._setupPseudoClassStyles();
     let computedStyles = getComputedStyles(this.element);
     this._selectBackgroundColor = computedStyles.backgroundColor;
     this._selectColor = computedStyles.color;
     this._selectTextShadow = computedStyles.textShadow;
-    DOMUtils.clearPseudoClassLocks(this.element);
     this.global.sendAsyncMessage("Forms:UpdateDropDown", {
       options: this._buildOptionList(),
       selectedIndex: this.element.selectedIndex,
@@ -158,6 +192,7 @@ this.SelectContentHelper.prototype = {
       uaSelectBackgroundColor: this.uaSelectBackgroundColor,
       uaSelectColor: this.uaSelectColor
     });
+    this._clearPseudoClassStyles();
   },
 
   
@@ -344,11 +379,6 @@ function buildOptionListForChildren(node) {
         textContent = "";
       }
 
-      
-      
-      
-      
-      DOMUtils.addPseudoClassLock(child, ":checked", false);
       let cs = getComputedStyles(child);
 
       let info = {
@@ -369,10 +399,6 @@ function buildOptionListForChildren(node) {
       if (cs.textShadow != "none") {
         info.textShadow = cs.textShadow;
       }
-
-      
-      
-      DOMUtils.clearPseudoClassLocks(child);
 
       result.push(info);
     }
