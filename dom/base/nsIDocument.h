@@ -3145,6 +3145,16 @@ public:
     return mUserHasInteracted;
   }
 
+  
+  void NotifyUserActivation();
+
+  
+  bool HasBeenUserActivated();
+
+  
+  
+  nsIDocument* GetFirstParentDocumentWithSamePrincipal(nsIPrincipal* aPrincipal);
+
   bool HasScriptsBlockedBySandbox();
 
   bool InlineScriptAllowedByCSP();
@@ -3330,6 +3340,9 @@ protected:
 
   
   bool IsPotentiallyScrollable(mozilla::dom::HTMLBodyElement* aBody);
+
+  
+  nsIDocument* GetSameTypeParentDocument(const nsIDocument* aDoc);
 
   
   static bool MatchNameAttribute(mozilla::dom::Element* aElement,
@@ -3765,6 +3778,10 @@ protected:
 
   
   bool mUserHasInteracted;
+
+  
+  
+  bool mUserHasActivatedInteraction;
 
   mozilla::TimeStamp mPageUnloadingEventTimeStamp;
 
