@@ -5,10 +5,6 @@
 
 
 
-#ifndef nsTSubstringTuple_h
-#define nsTSubstringTuple_h
-
-#include "nsTStringRepr.h"
 
 
 
@@ -18,31 +14,29 @@
 
 
 
-
-template <typename T>
-class nsTSubstringTuple
+class nsTSubstringTuple_CharT
 {
 public:
 
-  typedef T char_type;
-  typedef nsCharTraits<char_type> char_traits;
+  typedef CharT                                 char_type;
+  typedef nsCharTraits<char_type>               char_traits;
 
-  typedef nsTSubstringTuple<T> self_type;
-  typedef mozilla::detail::nsTStringRepr<char_type> base_string_type;
-  typedef uint32_t size_type;
+  typedef nsTSubstringTuple_CharT               self_type;
+  typedef mozilla::detail::nsTStringRepr_CharT  base_string_type;
+  typedef uint32_t                              size_type;
 
 public:
 
-  nsTSubstringTuple(const base_string_type* aStrA,
-                    const base_string_type* aStrB)
+  nsTSubstringTuple_CharT(const base_string_type* aStrA,
+                          const base_string_type* aStrB)
     : mHead(nullptr)
     , mFragA(aStrA)
     , mFragB(aStrB)
   {
   }
 
-  nsTSubstringTuple(const self_type& aHead,
-                    const base_string_type* aStrB)
+  nsTSubstringTuple_CharT(const self_type& aHead,
+                          const base_string_type* aStrB)
     : mHead(&aHead)
     , mFragA(nullptr) 
     , mFragB(aStrB)
@@ -74,20 +68,16 @@ private:
   const base_string_type* const mFragB;
 };
 
-template <typename T>
-inline const nsTSubstringTuple<T>
-operator+(const mozilla::detail::nsTStringRepr<T>& aStrA,
-          const mozilla::detail::nsTStringRepr<T>& aStrB)
+inline const nsTSubstringTuple_CharT
+operator+(const nsTSubstringTuple_CharT::base_string_type& aStrA,
+          const nsTSubstringTuple_CharT::base_string_type& aStrB)
 {
-  return nsTSubstringTuple<T>(&aStrA, &aStrB);
+  return nsTSubstringTuple_CharT(&aStrA, &aStrB);
 }
 
-template <typename T>
-inline const nsTSubstringTuple<T>
-operator+(const nsTSubstringTuple<T>& aHead,
-          const mozilla::detail::nsTStringRepr<T>& aStrB)
+inline const nsTSubstringTuple_CharT
+operator+(const nsTSubstringTuple_CharT& aHead,
+          const nsTSubstringTuple_CharT::base_string_type& aStrB)
 {
-  return nsTSubstringTuple<T>(aHead, &aStrB);
+  return nsTSubstringTuple_CharT(aHead, &aStrB);
 }
-
-#endif

@@ -302,8 +302,8 @@ IMMHandler::IsGoogleJapaneseInputActive()
 {
   
   
-  return sIMEName.Equals(u"Google \x65E5\x672C\x8A9E\x5165\x529B "
-                         u"IMM32 \x30E2\x30B8\x30E5\x30FC\x30EB");
+  return sIMEName.Equals(L"Google \x65E5\x672C\x8A9E\x5165\x529B "
+                         L"IMM32 \x30E2\x30B8\x30E5\x30FC\x30EB");
 }
 
 

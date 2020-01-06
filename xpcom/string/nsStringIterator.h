@@ -27,7 +27,8 @@ public:
   typedef const CharT&                reference;
 
 private:
-  friend class mozilla::detail::nsTStringRepr<CharT>;
+  friend class mozilla::detail::nsStringRepr;
+  friend class mozilla::detail::nsCStringRepr;
 
   
   
@@ -129,7 +130,8 @@ public:
   typedef CharT&                     reference;
 
 private:
-  friend class nsTSubstring<CharT>;
+  friend class nsAString;
+  friend class nsACString;
 
   
   

@@ -93,7 +93,7 @@ CacheDirAndAutoClear(nsIProperties* aDirSvc, const char* aDirKey,
   MOZ_ALWAYS_SUCCEEDS(dirToCache->GetPath(**cacheVar));
 
   
-  if (Substring(**cacheVar, 0, 2).Equals(NS_LITERAL_STRING("\\\\"))) {
+  if (Substring(**cacheVar, 0, 2).Equals(L"\\\\")) {
     (*cacheVar)->InsertLiteral(u"??\\UNC", 1);
   }
 }

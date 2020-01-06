@@ -4,24 +4,22 @@
 
 
 
-template <typename T>
-nsTDependentString<T>::nsTDependentString(const char_type* aStart,
-                                          const char_type* aEnd)
+nsTDependentString_CharT::nsTDependentString_CharT(const char_type* aStart,
+                                                   const char_type* aEnd)
   : string_type(const_cast<char_type*>(aStart), uint32_t(aEnd - aStart),
                 DataFlags::TERMINATED, ClassFlags(0))
 {
   MOZ_RELEASE_ASSERT(aStart <= aEnd, "Overflow!");
-  this->AssertValidDependentString();
+  AssertValidDependentString();
 }
 
-template <typename T>
 void
-nsTDependentString<T>::Rebind(const string_type& str, uint32_t startPos)
+nsTDependentString_CharT::Rebind(const string_type& str, uint32_t startPos)
 {
   MOZ_ASSERT(str.GetDataFlags() & DataFlags::TERMINATED, "Unterminated flat string");
 
   
-  this->Finalize();
+  Finalize();
 
   size_type strLength = str.Length();
 
@@ -33,13 +31,12 @@ nsTDependentString<T>::Rebind(const string_type& str, uint32_t startPos)
     const_cast<char_type*>(static_cast<const char_type*>(str.Data())) + startPos;
   size_type newLen = strLength - startPos;
   DataFlags newDataFlags = str.GetDataFlags() & (DataFlags::TERMINATED | DataFlags::LITERAL);
-  this->SetData(newData, newLen, newDataFlags);
+  SetData(newData, newLen, newDataFlags);
 }
 
-template <typename T>
 void
-nsTDependentString<T>::Rebind(const char_type* aStart, const char_type* aEnd)
+nsTDependentString_CharT::Rebind(const char_type* aStart, const char_type* aEnd)
 {
   MOZ_RELEASE_ASSERT(aStart <= aEnd, "Overflow!");
-  this->Rebind(aStart, uint32_t(aEnd - aStart));
+  Rebind(aStart, uint32_t(aEnd - aStart));
 }

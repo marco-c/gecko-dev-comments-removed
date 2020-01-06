@@ -352,7 +352,14 @@ nsStringBuffer::SizeOfIncludingThisEvenIfShared(mozilla::MallocSizeOf aMallocSiz
 
 
 
+#include "string-template-def-unichar.h"
 #include "nsTSubstring.cpp"
+#include "string-template-undef.h"
+
+
+#include "string-template-def-char.h"
+#include "nsTSubstring.cpp"
+#include "string-template-undef.h"
 
 
 extern "C" {

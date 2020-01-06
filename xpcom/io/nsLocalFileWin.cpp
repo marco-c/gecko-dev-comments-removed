@@ -1025,8 +1025,8 @@ nsLocalFile::ResolveAndStat()
   mResolvedPath.Assign(mWorkingPath);
 
   
-  nsAutoString nsprPath(mWorkingPath);
-  if (mWorkingPath.Length() == 2 && mWorkingPath.CharAt(1) == u':') {
+  nsAutoString nsprPath(mWorkingPath.get());
+  if (mWorkingPath.Length() == 2 && mWorkingPath.CharAt(1) == L':') {
     nsprPath.Append('\\');
   }
 

@@ -4,14 +4,13 @@
 
 
 
-template <typename T>
 void
-nsTString<T>::Rebind(const char_type* data, size_type length)
+nsTString_CharT::Rebind(const char_type* data, size_type length)
 {
   
-  this->Finalize();
+  Finalize();
 
-  this->SetData(const_cast<char_type*>(data), length, DataFlags::TERMINATED);
-  this->AssertValidDependentString();
+  SetData(const_cast<char_type*>(data), length, DataFlags::TERMINATED);
+  AssertValidDependentString();
 }
 

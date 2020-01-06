@@ -4,20 +4,18 @@
 
 
 
-template <typename T>
 int NS_FASTCALL
-Compare(const mozilla::detail::nsTStringRepr<T>& aLhs,
-        const mozilla::detail::nsTStringRepr<T>& aRhs,
-        const nsTStringComparator<T>& comp)
+Compare(const nsTSubstring_CharT::base_string_type& aLhs,
+        const nsTSubstring_CharT::base_string_type& aRhs,
+        const nsTStringComparator_CharT& comp)
 {
-  typedef typename nsTSubstring<T>::size_type size_type;
-  typedef typename nsTSubstring<T>::const_iterator const_iterator;
+  typedef nsTSubstring_CharT::size_type size_type;
 
   if (&aLhs == &aRhs) {
     return 0;
   }
 
-  const_iterator leftIter, rightIter;
+  nsTSubstring_CharT::const_iterator leftIter, rightIter;
   aLhs.BeginReading(leftIter);
   aRhs.BeginReading(rightIter);
 
@@ -40,14 +38,13 @@ Compare(const mozilla::detail::nsTStringRepr<T>& aLhs,
   return result;
 }
 
-template <typename T>
 int
-nsTDefaultStringComparator<T>::operator()(const char_type* aLhs,
-                                          const char_type* aRhs,
-                                          uint32_t aLLength,
-                                          uint32_t aRLength) const
+nsTDefaultStringComparator_CharT::operator()(const char_type* aLhs,
+                                             const char_type* aRhs,
+                                             uint32_t aLLength,
+                                             uint32_t aRLength) const
 {
   return
-    aLLength == aRLength ? nsCharTraits<T>::compare(aLhs, aRhs, aLLength) :
+    aLLength == aRLength ? nsCharTraits<CharT>::compare(aLhs, aRhs, aLLength) :
                             (aLLength > aRLength) ? 1 : -1;
 }
