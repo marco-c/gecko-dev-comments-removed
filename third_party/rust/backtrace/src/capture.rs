@@ -26,7 +26,7 @@ pub struct Backtrace {
 pub struct BacktraceFrame {
     ip: usize,
     symbol_address: usize,
-    symbols: Vec<BacktraceSymbol>,
+    symbols: Option<Vec<BacktraceSymbol>>,
 }
 
 
@@ -60,21 +60,36 @@ impl Backtrace {
     
     
     pub fn new() -> Backtrace {
+        let mut bt = Backtrace::new_unresolved();
+        bt.resolve();
+        return bt
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new_unresolved() -> Backtrace {
         let mut frames = Vec::new();
         trace(|frame| {
-            let mut symbols = Vec::new();
-            resolve(frame.ip(), |symbol| {
-                symbols.push(BacktraceSymbol {
-                    name: symbol.name().map(|m| m.as_bytes().to_vec()),
-                    addr: symbol.addr().map(|a| a as usize),
-                    filename: symbol.filename().map(|m| m.to_path_buf()),
-                    lineno: symbol.lineno(),
-                });
-            });
             frames.push(BacktraceFrame {
                 ip: frame.ip() as usize,
                 symbol_address: frame.symbol_address() as usize,
-                symbols: symbols,
+                symbols: None,
             });
             true
         });
@@ -89,6 +104,26 @@ impl Backtrace {
     
     pub fn frames(&self) -> &[BacktraceFrame] {
         &self.frames
+    }
+
+    
+    
+    
+    
+    
+    pub fn resolve(&mut self) {
+        for frame in self.frames.iter_mut().filter(|f| f.symbols.is_none()) {
+            let mut symbols = Vec::new();
+            resolve(frame.ip as *mut _, |symbol| {
+                symbols.push(BacktraceSymbol {
+                    name: symbol.name().map(|m| m.as_bytes().to_vec()),
+                    addr: symbol.addr().map(|a| a as usize),
+                    filename: symbol.filename().map(|m| m.to_path_buf()),
+                    lineno: symbol.lineno(),
+                });
+            });
+            frame.symbols = Some(symbols);
+        }
     }
 }
 
@@ -116,9 +151,10 @@ impl BacktraceFrame {
     pub fn symbol_address(&self) -> *mut c_void {
         self.symbol_address as *mut c_void
     }
-}
 
-impl BacktraceFrame {
+    
+    
+    
     
     
     
@@ -126,7 +162,7 @@ impl BacktraceFrame {
     
     
     pub fn symbols(&self) -> &[BacktraceSymbol] {
-        &self.symbols
+        self.symbols.as_ref().map(|s| &s[..]).unwrap_or(&[])
     }
 }
 
@@ -162,11 +198,18 @@ impl fmt::Debug for Backtrace {
             let ip = frame.ip();
             try!(write!(fmt, "\n{:4}: {:2$?}", idx, ip, hex_width));
 
-            if frame.symbols.len() == 0 {
+            let symbols = match frame.symbols {
+                Some(ref s) => s,
+                None => {
+                    try!(write!(fmt, " - <unresolved>"));
+                    continue
+                }
+            };
+            if symbols.len() == 0 {
                 try!(write!(fmt, " - <no info>"));
             }
 
-            for (idx, symbol) in frame.symbols().iter().enumerate() {
+            for (idx, symbol) in symbols.iter().enumerate() {
                 if idx != 0 {
                     try!(write!(fmt, "\n      {:1$}", "", hex_width));
                 }

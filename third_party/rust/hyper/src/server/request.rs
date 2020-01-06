@@ -34,7 +34,7 @@ pub struct Request<'a, 'b: 'a> {
 impl<'a, 'b: 'a> Request<'a, 'b> {
     
     
-    pub fn new(mut stream: &'a mut BufReader<&'b mut NetworkStream>, addr: SocketAddr)
+    pub fn new(stream: &'a mut BufReader<&'b mut NetworkStream>, addr: SocketAddr)
         -> ::Result<Request<'a, 'b>> {
 
         let Incoming { version, subject: (method, uri), headers } = try!(h1::parse_request(stream));

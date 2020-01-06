@@ -9,6 +9,9 @@
 
 
 
+
+#![cfg_attr(feature="cargo-clippy", allow(needless_pass_by_value))]
+
 use super::*;
 
 
@@ -21,7 +24,7 @@ use super::*;
 
 
 
-#[deprecated(since="0.3.0", note="please use `BidiInfo::visual_runs()` instead.")]
+#[deprecated(since = "0.3.0", note = "please use `BidiInfo::visual_runs()` instead.")]
 pub fn visual_runs(line: Range<usize>, levels: &[Level]) -> Vec<LevelRun> {
     assert!(line.start <= levels.len());
     assert!(line.end <= levels.len());
@@ -30,20 +33,19 @@ pub fn visual_runs(line: Range<usize>, levels: &[Level]) -> Vec<LevelRun> {
 
     
     let mut start = line.start;
-    let mut level = levels[start];
-    let mut min_level = level;
-    let mut max_level = level;
+    let mut run_level = levels[start];
+    let mut min_level = run_level;
+    let mut max_level = run_level;
 
-    for i in (start + 1)..line.end {
-        let new_level = levels[i];
-        if new_level != level {
+    for (i, &new_level) in levels.iter().enumerate().take(line.end).skip(start + 1) {
+        if new_level != run_level {
             
             runs.push(start..i);
             start = i;
-            level = new_level;
+            run_level = new_level;
 
-            min_level = min(level, min_level);
-            max_level = max(level, max_level);
+            min_level = min(run_level, min_level);
+            max_level = max(run_level, max_level);
         }
     }
     runs.push(start..line.end);
@@ -79,9 +81,9 @@ pub fn visual_runs(line: Range<usize>, levels: &[Level]) -> Vec<LevelRun> {
 
             seq_start = seq_end;
         }
-        max_level
-            .lower(1)
-            .expect("Lowering embedding level below zero");
+        max_level.lower(1).expect(
+            "Lowering embedding level below zero",
+        );
     }
 
     runs

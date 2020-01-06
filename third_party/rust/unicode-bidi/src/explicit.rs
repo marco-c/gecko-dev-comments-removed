@@ -20,6 +20,7 @@ use BidiClass::*;
 
 
 
+#[cfg_attr(feature = "flame_it", flame)]
 pub fn compute(
     text: &str,
     para_level: Level,
@@ -27,7 +28,7 @@ pub fn compute(
     levels: &mut [Level],
     processing_classes: &mut [BidiClass],
 ) {
-    assert!(text.len() == original_classes.len());
+    assert_eq!(text.len(), original_classes.len());
 
     
     let mut stack = DirectionalStatusStack::new();
@@ -61,15 +62,17 @@ pub fn compute(
                     last_level.new_explicit_next_ltr()
                 };
                 if new_level.is_ok() && overflow_isolate_count == 0 &&
-                   overflow_embedding_count == 0 {
+                    overflow_embedding_count == 0
+                {
                     let new_level = new_level.unwrap();
                     stack.push(
-                        new_level, match original_classes[i] {
+                        new_level,
+                        match original_classes[i] {
                             RLO => OverrideStatus::RTL,
                             LRO => OverrideStatus::LTR,
                             RLI | LRI | FSI => OverrideStatus::Isolate,
                             _ => OverrideStatus::Neutral,
-                        }
+                        },
                     );
                     if is_isolate {
                         valid_isolate_count += 1;
@@ -94,8 +97,8 @@ pub fn compute(
                     loop {
                         
                         match stack.vec.pop() {
+                            None |
                             Some(Status { status: OverrideStatus::Isolate, .. }) => break,
-                            None => break,
                             _ => continue,
                         }
                     }
@@ -174,13 +177,7 @@ impl DirectionalStatusStack {
     }
 
     fn push(&mut self, level: Level, status: OverrideStatus) {
-        self.vec
-            .push(
-                Status {
-                    level: level,
-                    status: status,
-                }
-            );
+        self.vec.push(Status { level, status });
     }
 
     fn last(&self) -> &Status {

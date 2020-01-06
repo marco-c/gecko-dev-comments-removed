@@ -1,3 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[macro_export]
 macro_rules! matches {
     ($expression:expr, $($pattern:tt)+) => {
@@ -11,10 +40,29 @@ macro_rules! matches {
 }
 
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! _matches_tt_as_expr_hack {
     ($value:expr) => ($value)
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[macro_export]
 macro_rules! assert_matches {
@@ -27,6 +75,26 @@ macro_rules! assert_matches {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[macro_export]
 macro_rules! debug_assert_matches {

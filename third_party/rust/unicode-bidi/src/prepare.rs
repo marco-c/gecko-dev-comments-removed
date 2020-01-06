@@ -41,6 +41,7 @@ pub struct IsolatingRunSequence {
 
 
 
+#[cfg_attr(feature = "flame_it", flame)]
 pub fn isolating_run_sequences(
     para_level: Level,
     original_classes: &[BidiClass],
@@ -58,7 +59,7 @@ pub fn isolating_run_sequences(
 
     for run in runs {
         assert!(run.len() > 0);
-        assert!(stack.len() > 0);
+        assert!(!stack.is_empty());
 
         let start_class = original_classes[run.start];
         let end_class = original_classes[run.end - 1];
@@ -82,56 +83,54 @@ pub fn isolating_run_sequences(
         }
     }
     
-    sequences.extend(stack.into_iter().rev().filter(|seq| seq.len() > 0));
+    sequences.extend(stack.into_iter().rev().filter(|seq| !seq.is_empty()));
 
     
     
     sequences
         .into_iter()
-        .map(
-            |sequence: Vec<LevelRun>| {
-                assert!(!sequence.is_empty());
+        .map(|sequence: Vec<LevelRun>| {
+            assert!(!sequence.is_empty());
 
-                let start_of_seq = sequence[0].start;
-                let end_of_seq = sequence[sequence.len() - 1].end;
-                let seq_level = levels[start_of_seq];
+            let start_of_seq = sequence[0].start;
+            let end_of_seq = sequence[sequence.len() - 1].end;
+            let seq_level = levels[start_of_seq];
 
-                #[cfg(test)]
-                for run in sequence.clone() {
-                    for idx in run {
-                        if not_removed_by_x9(&original_classes[idx]) {
-                            assert_eq!(seq_level, levels[idx]);
-                        }
+            #[cfg(test)]
+            for run in sequence.clone() {
+                for idx in run {
+                    if not_removed_by_x9(&original_classes[idx]) {
+                        assert_eq!(seq_level, levels[idx]);
                     }
-                }
-
-                
-                let pred_level = match original_classes[..start_of_seq]
-                          .iter()
-                          .rposition(not_removed_by_x9) {
-                    Some(idx) => levels[idx],
-                    None => para_level,
-                };
-
-                
-                let succ_level = if matches!(original_classes[end_of_seq - 1], RLI | LRI | FSI) {
-                    para_level
-                } else {
-                    match original_classes[end_of_seq..]
-                              .iter()
-                              .position(not_removed_by_x9) {
-                        Some(idx) => levels[end_of_seq + idx],
-                        None => para_level,
-                    }
-                };
-
-                IsolatingRunSequence {
-                    runs: sequence,
-                    sos: max(seq_level, pred_level).bidi_class(),
-                    eos: max(seq_level, succ_level).bidi_class(),
                 }
             }
-        )
+
+            
+            let pred_level = match original_classes[..start_of_seq].iter().rposition(
+                not_removed_by_x9,
+            ) {
+                Some(idx) => levels[idx],
+                None => para_level,
+            };
+
+            
+            let succ_level = if matches!(original_classes[end_of_seq - 1], RLI | LRI | FSI) {
+                para_level
+            } else {
+                match original_classes[end_of_seq..].iter().position(
+                    not_removed_by_x9,
+                ) {
+                    Some(idx) => levels[end_of_seq + idx],
+                    None => para_level,
+                }
+            };
+
+            IsolatingRunSequence {
+                runs: sequence,
+                sos: max(seq_level, pred_level).bidi_class(),
+                eos: max(seq_level, succ_level).bidi_class(),
+            }
+        })
         .collect()
 }
 
@@ -139,23 +138,21 @@ pub fn isolating_run_sequences(
 
 
 fn level_runs(levels: &[Level], original_classes: &[BidiClass]) -> Vec<LevelRun> {
-    assert!(levels.len() == original_classes.len());
+    assert_eq!(levels.len(), original_classes.len());
 
     let mut runs = Vec::new();
-    if levels.len() == 0 {
+    if levels.is_empty() {
         return runs;
     }
 
     let mut current_run_level = levels[0];
     let mut current_run_start = 0;
     for i in 1..levels.len() {
-        if !removed_by_x9(original_classes[i]) {
-            if levels[i] != current_run_level {
-                
-                runs.push(current_run_start..i);
-                current_run_level = levels[i];
-                current_run_start = i;
-            }
+        if !removed_by_x9(original_classes[i]) && levels[i] != current_run_level {
+            
+            runs.push(current_run_start..i);
+            current_run_level = levels[i];
+            current_run_start = i;
         }
     }
     runs.push(current_run_start..levels.len());

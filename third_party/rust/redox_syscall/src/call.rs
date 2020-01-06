@@ -1,9 +1,15 @@
 use super::arch::*;
-use super::data::{Stat, StatVfs, TimeSpec};
+use super::data::{SigAction, Stat, StatVfs, TimeSpec};
 use super::error::Result;
 use super::number::*;
 
-use core::mem;
+use core::{mem, ptr};
+
+
+extern "C" fn restorer() -> ! {
+    sigreturn().unwrap();
+    unreachable!();
+}
 
 
 
@@ -33,12 +39,12 @@ pub unsafe fn brk(addr: usize) -> Result<usize> {
 
 
 
-pub fn chdir(path: &str) -> Result<usize> {
-    unsafe { syscall2(SYS_CHDIR, path.as_ptr() as usize, path.len()) }
+pub fn chdir<T: AsRef<[u8]>>(path: T) -> Result<usize> {
+    unsafe { syscall2(SYS_CHDIR, path.as_ref().as_ptr() as usize, path.as_ref().len()) }
 }
 
-pub fn chmod(path: &str, mode: usize) -> Result<usize> {
-    unsafe { syscall3(SYS_CHMOD, path.as_ptr() as usize, path.len(), mode) }
+pub fn chmod<T: AsRef<[u8]>>(path: T, mode: usize) -> Result<usize> {
+    unsafe { syscall3(SYS_CHMOD, path.as_ref().as_ptr() as usize, path.as_ref().len(), mode) }
 }
 
 
@@ -67,8 +73,9 @@ pub fn dup2(fd: usize, newfd: usize, buf: &[u8]) -> Result<usize> {
 }
 
 
-pub fn execve(path: &str, args: &[[usize; 2]]) -> Result<usize> {
-    unsafe { syscall4(SYS_EXECVE, path.as_ptr() as usize, path.len(), args.as_ptr() as usize, args.len()) }
+pub fn execve<T: AsRef<[u8]>>(path: T, args: &[[usize; 2]]) -> Result<usize> {
+    unsafe { syscall4(SYS_EXECVE, path.as_ref().as_ptr() as usize,
+                      path.as_ref().len(), args.as_ptr() as usize, args.len()) }
 }
 
 
@@ -122,7 +129,13 @@ pub fn ftruncate(fd: usize, len: usize) -> Result<usize> {
 }
 
 
-pub unsafe fn futex(addr: *mut i32, op: usize, val: i32, val2: usize, addr2: *mut i32) -> Result<usize> {
+pub fn futimens(fd: usize, times: &[TimeSpec]) -> Result<usize> {
+    unsafe { syscall3(SYS_FUTIMENS, fd, times.as_ptr() as usize, times.len() * mem::size_of::<TimeSpec>()) }
+}
+
+
+pub unsafe fn futex(addr: *mut i32, op: usize, val: i32, val2: usize, addr2: *mut i32)
+                    -> Result<usize> {
     syscall5(SYS_FUTEX, addr as usize, op, (val as isize) as usize, val2, addr2 as usize)
 }
 
@@ -162,6 +175,16 @@ pub fn getpid() -> Result<usize> {
 }
 
 
+pub fn getpgid(pid: usize) -> Result<usize> {
+    unsafe { syscall1(SYS_GETPGID, pid) }
+}
+
+
+pub fn getppid() -> Result<usize> {
+    unsafe { syscall0(SYS_GETPPID) }
+}
+
+
 pub fn getuid() -> Result<usize> {
     unsafe { syscall0(SYS_GETUID) }
 }
@@ -193,12 +216,13 @@ pub fn mkns(schemes: &[[usize; 2]]) -> Result<usize> {
 
 
 pub fn nanosleep(req: &TimeSpec, rem: &mut TimeSpec) -> Result<usize> {
-    unsafe { syscall2(SYS_NANOSLEEP, req as *const TimeSpec as usize, rem as *mut TimeSpec as usize) }
+    unsafe { syscall2(SYS_NANOSLEEP, req as *const TimeSpec as usize,
+                                     rem as *mut TimeSpec as usize) }
 }
 
 
-pub fn open(path: &str, flags: usize) -> Result<usize> {
-    unsafe { syscall3(SYS_OPEN, path.as_ptr() as usize, path.len(), flags) }
+pub fn open<T: AsRef<[u8]>>(path: T, flags: usize) -> Result<usize> {
+    unsafe { syscall3(SYS_OPEN, path.as_ref().as_ptr() as usize, path.as_ref().len(), flags) }
 }
 
 
@@ -232,8 +256,13 @@ pub fn read(fd: usize, buf: &mut [u8]) -> Result<usize> {
 }
 
 
-pub fn rmdir(path: &str) -> Result<usize> {
-    unsafe { syscall2(SYS_RMDIR, path.as_ptr() as usize, path.len()) }
+pub fn rmdir<T: AsRef<[u8]>>(path: T) -> Result<usize> {
+    unsafe { syscall2(SYS_RMDIR, path.as_ref().as_ptr() as usize, path.as_ref().len()) }
+}
+
+
+pub fn setpgid(pid: usize, pgid: usize) -> Result<usize> {
+    unsafe { syscall2(SYS_SETPGID, pid, pgid) }
 }
 
 
@@ -252,8 +281,21 @@ pub fn setreuid(ruid: usize, euid: usize) -> Result<usize> {
 }
 
 
-pub fn unlink(path: &str) -> Result<usize> {
-    unsafe { syscall2(SYS_UNLINK, path.as_ptr() as usize, path.len()) }
+pub fn sigaction(sig: usize, act: Option<&SigAction>, oldact: Option<&mut SigAction>) -> Result<usize> {
+    unsafe { syscall4(SYS_SIGACTION, sig,
+                      act.map(|x| x as *const _).unwrap_or_else(ptr::null) as usize,
+                      oldact.map(|x| x as *mut _).unwrap_or_else(ptr::null_mut) as usize,
+                      restorer as usize) }
+}
+
+
+pub fn sigreturn() -> Result<usize> {
+    unsafe { syscall0(SYS_SIGRETURN) }
+}
+
+
+pub fn unlink<T: AsRef<[u8]>>(path: T) -> Result<usize> {
+    unsafe { syscall2(SYS_UNLINK, path.as_ref().as_ptr() as usize, path.as_ref().len()) }
 }
 
 
