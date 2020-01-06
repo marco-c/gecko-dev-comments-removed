@@ -528,6 +528,10 @@ Element::WrapObject(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
       if (customProto &&
           NodePrincipal()->SubsumesConsideringDomain(nsContentUtils::ObjectPrincipal(customProto))) {
         
+        if (!JS_WrapObject(aCx, &customProto)) {
+          return nullptr;
+        }
+        
         
         
         givenProto = customProto;
