@@ -2,7 +2,7 @@
 
 
 
-add_task(function* test() {
+add_task(async function test() {
   gPrefService.setBoolPref("browser.ctrlTab.previews", true);
 
   let [origTab] = gBrowser.visibleTabs;

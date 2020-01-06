@@ -20,14 +20,14 @@ function getPing() {
 
 
 
-add_task(function* test_setup() {
+add_task(async function test_setup() {
   do_get_profile();
 });
 
 
 
 
-add_task(function* test_pendingLoadTime() {
+add_task(async function test_pendingLoadTime() {
   TelemetryStorage.reset();
   var ping = getPing();
 
@@ -46,7 +46,7 @@ add_task(function* test_pendingLoadTime() {
 
 
 
-add_task(function* test_archiveLoadTime() {
+add_task(async function test_archiveLoadTime() {
   TelemetryStorage.reset();
 
   var ping = getPing();

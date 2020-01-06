@@ -68,7 +68,7 @@ MockContentPermissionRequest.prototype = {
 
 
 
-add_task(function* test_empty_types() {
+add_task(async function test_empty_types() {
   let mockRequest = new MockContentPermissionRequest([]);
   Assert.throws(() => { ContentPermissionPrompt.prompt(mockRequest); },
                 /NS_ERROR_UNEXPECTED/,
@@ -81,7 +81,7 @@ add_task(function* test_empty_types() {
 
 
 
-add_task(function* test_multiple_types() {
+add_task(async function test_multiple_types() {
   let mockRequest = new MockContentPermissionRequest([
     new MockContentPermissionType("test1"),
     new MockContentPermissionType("test2"),
@@ -97,7 +97,7 @@ add_task(function* test_multiple_types() {
 
 
 
-add_task(function* test_not_permission_type() {
+add_task(async function test_not_permission_type() {
   let mockRequest = new MockContentPermissionRequest([
     { QueryInterface: XPCOMUtils.generateQI([Ci.nsISupports]) },
   ]);
@@ -112,7 +112,7 @@ add_task(function* test_not_permission_type() {
 
 
 
-add_task(function* test_unrecognized_type() {
+add_task(async function test_unrecognized_type() {
   let mockRequest = new MockContentPermissionRequest([
     new MockContentPermissionType("test1"),
   ]);
@@ -128,7 +128,7 @@ add_task(function* test_unrecognized_type() {
 
 
 
-add_task(function* test_working_request() {
+add_task(async function test_working_request() {
   let mockType = new MockContentPermissionType("test-permission-type");
   let mockRequest = new MockContentPermissionRequest([mockType]);
 

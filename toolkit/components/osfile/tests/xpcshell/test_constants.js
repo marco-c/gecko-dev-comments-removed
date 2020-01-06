@@ -9,7 +9,7 @@ function run_test() {
 }
 
 
-add_task(function* check_definition() {
+add_task(async function check_definition() {
   do_check_true(OS.Constants!=null);
   do_check_true(!!OS.Constants.Win || !!OS.Constants.libc);
   do_check_true(OS.Constants.Path!=null);

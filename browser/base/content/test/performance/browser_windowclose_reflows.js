@@ -21,16 +21,16 @@ const EXPECTED_REFLOWS = [
 
 
 
-add_task(function*() {
+add_task(async function() {
   
   
   
-  yield new Promise(resolve => {
+  await new Promise(resolve => {
     waitForFocus(resolve, window);
   });
 
-  let win = yield BrowserTestUtils.openNewBrowserWindow();
-  yield new Promise(resolve => {
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+  await new Promise(resolve => {
     waitForFocus(resolve, win);
   });
 
@@ -40,7 +40,7 @@ add_task(function*() {
   Assert.equal(EXPECTED_REFLOWS.length, 0,
     "We shouldn't have added any new expected reflows for window close.");
 
-  yield withReflowObserver(async function() {
+  await withReflowObserver(async function() {
     let promiseOrigBrowserFocused = BrowserTestUtils.waitForCondition(() => {
       return Services.focus.activeWindow == window;
     });

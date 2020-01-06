@@ -38,7 +38,7 @@ function compareCookies(a) {
 }
 
 
-add_task(function* test_setup() {
+add_task(async function test_setup() {
   Services.prefs.clearUserPref("browser.sessionstore.privacy_level");
 
   registerCleanupFunction(() => {
@@ -48,7 +48,7 @@ add_task(function* test_setup() {
 });
 
 
-add_task(function* test_level_none() {
+add_task(async function test_level_none() {
   Services.cookies.removeAll();
 
   
@@ -68,7 +68,7 @@ add_task(function* test_level_none() {
 });
 
 
-add_task(function* test_level_encrypted() {
+add_task(async function test_level_encrypted() {
   Services.cookies.removeAll();
 
   
@@ -90,7 +90,7 @@ add_task(function* test_level_encrypted() {
 });
 
 
-add_task(function* test_level_full() {
+add_task(async function test_level_full() {
   Services.cookies.removeAll();
 
   

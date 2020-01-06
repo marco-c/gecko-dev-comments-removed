@@ -5,7 +5,7 @@
 
 
 
-add_task(function* run_next_throws() {
+add_task(async function run_next_throws() {
   let err = null;
   try {
     run_next_test();
