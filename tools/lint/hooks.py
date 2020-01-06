@@ -6,6 +6,7 @@
 import os
 import subprocess
 import sys
+from distutils.spawn import find_executable
 
 here = os.path.dirname(os.path.realpath(__file__))
 topsrcdir = os.path.join(here, os.pardir, os.pardir)
@@ -13,7 +14,8 @@ topsrcdir = os.path.join(here, os.pardir, os.pardir)
 
 def run_mozlint(hooktype, args):
     
-    cmd = [os.path.join(topsrcdir, 'mach'), 'lint', '--quiet']
+    python = find_executable('python2.7') or find_executable('python')
+    cmd = [python, os.path.join(topsrcdir, 'mach'), 'lint', '--quiet']
 
     if 'commit' in hooktype:
         
