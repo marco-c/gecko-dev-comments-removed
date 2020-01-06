@@ -19,6 +19,7 @@ use super::{CSSFloat, CSSInteger, RGBA};
 use super::generics::BorderRadiusSize as GenericBorderRadiusSize;
 use super::specified;
 use super::specified::grid::{TrackBreadth as GenericTrackBreadth, TrackSize as GenericTrackSize};
+use super::specified::grid::TrackList as GenericTrackList;
 
 pub use app_units::Au;
 pub use cssparser::Color as CSSColor;
@@ -594,6 +595,13 @@ pub type TrackBreadth = GenericTrackBreadth<LengthOrPercentage>;
 
 
 pub type TrackSize = GenericTrackSize<LengthOrPercentage>;
+
+
+
+pub type TrackList = GenericTrackList<TrackSize>;
+
+
+pub type TrackListOrNone = Either<TrackList, None_>;
 
 impl ClipRectOrAuto {
     
