@@ -65,11 +65,11 @@ function addBreakpoint(location, condition) {
 
         
         setBreakpointClient(bpClient.actor, bpClient);
-
+        let lineOrOffset = DebuggerView.editor.isWasm ? bp.location.line :
+          (actualLocation ? actualLocation.line : bp.location.line) - 1;
         return {
-          text: DebuggerView.editor.getText(
-            (actualLocation ? actualLocation.line : bp.location.line) - 1
-          ).trim(),
+          text: DebuggerView.editor.getText(lineOrOffset).trim(),
+          isWasm: DebuggerView.editor.isWasm,
 
           
           

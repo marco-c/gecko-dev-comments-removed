@@ -275,9 +275,12 @@ var DebuggerController = {
     this.client = client;
     this.activeThread = this._toolbox.threadClient;
 
+    let wasmBinarySource = !!this.client.mainRoot.traits.wasmBinarySource;
+
     
     
-    yield this.reconfigureThread({ observeAsmJS: true });
+    
+    yield this.reconfigureThread({ observeAsmJS: true, wasmBinarySource, });
     yield this.connectThread();
 
     
