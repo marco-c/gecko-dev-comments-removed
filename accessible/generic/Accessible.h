@@ -498,7 +498,7 @@ public:
 
 
   virtual bool IsAcceptableChild(nsIContent* aEl) const
-    { return true; }
+    { return aEl && !aEl->IsAnyOfHTMLElements(nsGkAtoms::option, nsGkAtoms::optgroup); }
 
   
 
