@@ -3529,9 +3529,11 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
       mFrameMetrics.SetZoom(aLayerMetrics.GetZoom());
       mFrameMetrics.SetDevPixelsPerCSSPixel(aLayerMetrics.GetDevPixelsPerCSSPixel());
     }
+    bool scrollableRectChanged = false;
     if (!mFrameMetrics.GetScrollableRect().IsEqualEdges(aLayerMetrics.GetScrollableRect())) {
       mFrameMetrics.SetScrollableRect(aLayerMetrics.GetScrollableRect());
       needContentRepaint = true;
+      scrollableRectChanged = true;
     }
     mFrameMetrics.SetCompositionBounds(aLayerMetrics.GetCompositionBounds());
     mFrameMetrics.SetRootCompositionSize(aLayerMetrics.GetRootCompositionSize());
@@ -3578,6 +3580,13 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
       
       
       needContentRepaint = true;
+    } else if (scrollableRectChanged) {
+      
+      
+      
+      mFrameMetrics.SetScrollOffset(
+          mFrameMetrics.CalculateScrollRange().ClampPoint(
+              mFrameMetrics.GetScrollOffset()));
     }
   }
 
