@@ -1336,7 +1336,7 @@ nsStyleContext::Destroy()
     
     
     presContext->PresShell()->
-      FreeByObjectID(eArenaObjectID_nsStyleContext, this);
+      FreeByObjectID(eArenaObjectID_GeckoStyleContext, this);
     } else {
       delete static_cast<ServoStyleContext*>(this);
     }

@@ -72,7 +72,7 @@ public:
   
   static mozilla::ArenaObjectID ArenaObjectID()
   {
-    return mozilla::eArenaObjectID_nsStyleContext;
+    return mozilla::eArenaObjectID_GeckoStyleContext;
   }
   nsIPresShell* Arena();
 

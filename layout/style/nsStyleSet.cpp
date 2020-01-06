@@ -308,7 +308,7 @@ nsStyleSet::BeginReconstruct()
 
   
   
-  PresContext()->PresShell()->ClearArenaRefPtrs(eArenaObjectID_nsStyleContext);
+  PresContext()->PresShell()->ClearArenaRefPtrs(eArenaObjectID_GeckoStyleContext);
 
   
   ClearNonInheritingStyleContexts();

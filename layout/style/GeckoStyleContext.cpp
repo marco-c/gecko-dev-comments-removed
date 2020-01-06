@@ -45,7 +45,8 @@ GeckoStyleContext::GeckoStyleContext(nsStyleContext* aParent,
 void*
 GeckoStyleContext::operator new(size_t sz, nsPresContext* aPresContext)
 {
+  MOZ_ASSERT(sz == sizeof(GeckoStyleContext));
   
   return aPresContext->PresShell()->
-    AllocateByObjectID(eArenaObjectID_nsStyleContext, sz);
+    AllocateByObjectID(eArenaObjectID_GeckoStyleContext, sz);
 }
