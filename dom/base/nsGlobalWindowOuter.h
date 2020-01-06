@@ -206,18 +206,8 @@ private:
 
 
 
-
-
-
-
-
-
-
-
-
-
 class nsGlobalWindowOuter : public mozilla::dom::EventTarget,
-                            public nsPIDOMWindow<nsISupports>,
+                            public nsPIDOMWindowOuter,
                             private nsIDOMWindow,
                             
                             
@@ -243,12 +233,10 @@ public:
 #endif
 
   static nsGlobalWindowOuter* Cast(nsPIDOMWindowOuter* aPIWin) {
-    return static_cast<nsGlobalWindowOuter*>(
-      reinterpret_cast<nsPIDOMWindow<nsISupports>*>(aPIWin));
+    return static_cast<nsGlobalWindowOuter*>(aPIWin);
   }
   static const nsGlobalWindowOuter* Cast(const nsPIDOMWindowOuter* aPIWin) {
-    return static_cast<const nsGlobalWindowOuter*>(
-      reinterpret_cast<const nsPIDOMWindow<nsISupports>*>(aPIWin));
+    return static_cast<const nsGlobalWindowOuter*>(aPIWin);
   }
   static nsGlobalWindowOuter* Cast(mozIDOMWindowProxy* aWin) {
     return Cast(nsPIDOMWindowOuter::From(aWin));
@@ -1685,6 +1673,8 @@ private:
   friend class nsPIDOMWindow<mozIDOMWindowProxy>;
   friend class nsPIDOMWindow<mozIDOMWindow>;
   friend class nsPIDOMWindow<nsISupports>;
+  friend class nsPIDOMWindowInner;
+  friend class nsPIDOMWindowOuter;
 
   mozilla::dom::TabGroup* TabGroupInner();
   mozilla::dom::TabGroup* TabGroupOuter();

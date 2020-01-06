@@ -214,18 +214,8 @@ ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
 
 
 
-
-
-
-
-
-
-
-
-
-
 class nsGlobalWindowInner : public mozilla::dom::EventTarget,
-                            public nsPIDOMWindow<nsISupports>,
+                            public nsPIDOMWindowInner,
                             private nsIDOMWindow,
                             
                             
@@ -251,12 +241,10 @@ public:
 #endif
 
   static nsGlobalWindowInner* Cast(nsPIDOMWindowInner* aPIWin) {
-    return static_cast<nsGlobalWindowInner*>(
-      reinterpret_cast<nsPIDOMWindow<nsISupports>*>(aPIWin));
+    return static_cast<nsGlobalWindowInner*>(aPIWin);
   }
   static const nsGlobalWindowInner* Cast(const nsPIDOMWindowInner* aPIWin) {
-    return static_cast<const nsGlobalWindowInner*>(
-      reinterpret_cast<const nsPIDOMWindow<nsISupports>*>(aPIWin));
+    return static_cast<const nsGlobalWindowInner*>(aPIWin);
   }
   static nsGlobalWindowInner* Cast(mozIDOMWindow* aWin) {
     return Cast(nsPIDOMWindowInner::From(aWin));
@@ -1695,6 +1683,8 @@ private:
   friend class nsPIDOMWindow<mozIDOMWindowProxy>;
   friend class nsPIDOMWindow<mozIDOMWindow>;
   friend class nsPIDOMWindow<nsISupports>;
+  friend class nsPIDOMWindowInner;
+  friend class nsPIDOMWindowOuter;
 
   mozilla::dom::TabGroup* TabGroupInner();
   mozilla::dom::TabGroup* TabGroupOuter();
