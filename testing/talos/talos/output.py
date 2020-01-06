@@ -73,6 +73,20 @@ class Output(object):
 
                 tresults = [tsresult] if tsresult else test.results
 
+                
+                merged_results = {}
+                for result in tresults:
+                    results = []
+                    for r in result.results:
+                        page = r['page']
+                        if page in merged_results:
+                            merged_results[page]['runs'].extend(r['runs'])
+                        else:
+                            merged_results[page] = r
+                            results.append(r)
+                    
+                    result.results = results
+
                 for result in tresults:
                     filtered_results = \
                         result.values(suite['name'],
