@@ -1708,7 +1708,8 @@ this.XPIDatabaseReconcile = {
 
         
         
-        aNewAddon.seen = !aOldAppVersion;
+        aNewAddon.seen = (aInstallLocation.name != KEY_APP_PROFILE &&
+                          !aOldAppVersion);
       }
     }
 
