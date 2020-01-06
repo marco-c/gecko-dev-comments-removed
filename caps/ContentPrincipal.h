@@ -30,6 +30,8 @@ public:
 
   ContentPrincipal();
 
+  static PrincipalKind Kind() { return eCodebasePrincipal; }
+
   
   nsresult Init(nsIURI* aCodebase,
                 const mozilla::OriginAttributes& aOriginAttributes,
