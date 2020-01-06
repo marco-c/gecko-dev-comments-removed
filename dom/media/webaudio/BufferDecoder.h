@@ -32,8 +32,6 @@ public:
   
   void BeginDecoding(TaskQueue* aTaskQueueIdentity);
 
-  MediaResource* GetResource() const final override;
-
   void NotifyDecodedFrames(const FrameStatisticsData& aStats) final override;
 
   VideoFrameContainer* GetVideoFrameContainer() final override;

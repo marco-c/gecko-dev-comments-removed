@@ -138,10 +138,7 @@ public:
   
   
   
-  MediaResource* GetResource() const final override
-  {
-    return mResource;
-  }
+  MediaResource* GetResource() const { return mResource; }
 
   
   virtual already_AddRefed<nsIPrincipal> GetCurrentPrincipal();

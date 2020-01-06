@@ -43,10 +43,6 @@ class AbstractMediaDecoder : public nsIObserver
 public:
   
   
-  virtual MediaResource* GetResource() const = 0;
-
-  
-  
   
   virtual void NotifyDecodedFrames(const FrameStatisticsData& aStats) = 0;
 
