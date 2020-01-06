@@ -622,6 +622,10 @@ WebSocketImpl::Disconnect()
 
   
   
+  RefPtr<WebSocketImpl> kungfuDeathGrip = this;
+
+  
+  
   
   
   mDisconnectingOrDisconnected = true;
@@ -640,10 +644,6 @@ WebSocketImpl::Disconnect()
     
     rv.SuppressException();
   }
-
-  
-  
-  RefPtr<WebSocketImpl> kungfuDeathGrip = this;
 
   NS_ReleaseOnMainThread("WebSocketImpl::mChannel", mChannel.forget());
   NS_ReleaseOnMainThread("WebSocketImpl::mService", mService.forget());
