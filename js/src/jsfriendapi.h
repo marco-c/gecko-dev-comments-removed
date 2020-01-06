@@ -833,7 +833,7 @@ StringHasLatin1Chars(JSString* s)
 }
 
 MOZ_ALWAYS_INLINE const JS::Latin1Char*
-GetLatin1LinearStringChars(const JS::AutoCheckCannotGC& nogc, JSLinearString* linear)
+GetLatin1LinearStringChars(const JS::AutoRequireNoGC& nogc, JSLinearString* linear)
 {
     MOZ_ASSERT(LinearStringHasLatin1Chars(linear));
 
@@ -845,7 +845,7 @@ GetLatin1LinearStringChars(const JS::AutoCheckCannotGC& nogc, JSLinearString* li
 }
 
 MOZ_ALWAYS_INLINE const char16_t*
-GetTwoByteLinearStringChars(const JS::AutoCheckCannotGC& nogc, JSLinearString* linear)
+GetTwoByteLinearStringChars(const JS::AutoRequireNoGC& nogc, JSLinearString* linear)
 {
     MOZ_ASSERT(!LinearStringHasLatin1Chars(linear));
 
@@ -875,13 +875,13 @@ FlatStringToLinearString(JSFlatString* s)
 }
 
 MOZ_ALWAYS_INLINE const JS::Latin1Char*
-GetLatin1AtomChars(const JS::AutoCheckCannotGC& nogc, JSAtom* atom)
+GetLatin1AtomChars(const JS::AutoRequireNoGC& nogc, JSAtom* atom)
 {
     return GetLatin1LinearStringChars(nogc, AtomToLinearString(atom));
 }
 
 MOZ_ALWAYS_INLINE const char16_t*
-GetTwoByteAtomChars(const JS::AutoCheckCannotGC& nogc, JSAtom* atom)
+GetTwoByteAtomChars(const JS::AutoRequireNoGC& nogc, JSAtom* atom)
 {
     return GetTwoByteLinearStringChars(nogc, AtomToLinearString(atom));
 }
@@ -1972,7 +1972,7 @@ GetSharedArrayBufferLengthAndData(JSObject* obj, uint32_t* length, bool* isShare
 } 
 
 JS_FRIEND_API(uint8_t*)
-JS_GetSharedArrayBufferData(JSObject* obj, bool* isSharedMemory, const JS::AutoCheckCannotGC&);
+JS_GetSharedArrayBufferData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireNoGC&);
 
 
 
@@ -2070,7 +2070,7 @@ JS_ArrayBufferHasData(JSObject* obj);
 
 
 extern JS_FRIEND_API(uint8_t*)
-JS_GetArrayBufferData(JSObject* obj, bool* isSharedMemory, const JS::AutoCheckCannotGC&);
+JS_GetArrayBufferData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireNoGC&);
 
 
 
@@ -2147,30 +2147,30 @@ JS_GetArrayBufferViewByteOffset(JSObject* obj);
 
 
 extern JS_FRIEND_API(int8_t*)
-JS_GetInt8ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoCheckCannotGC&);
+JS_GetInt8ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireNoGC&);
 extern JS_FRIEND_API(uint8_t*)
-JS_GetUint8ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoCheckCannotGC&);
+JS_GetUint8ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireNoGC&);
 extern JS_FRIEND_API(uint8_t*)
-JS_GetUint8ClampedArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoCheckCannotGC&);
+JS_GetUint8ClampedArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireNoGC&);
 extern JS_FRIEND_API(int16_t*)
-JS_GetInt16ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoCheckCannotGC&);
+JS_GetInt16ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireNoGC&);
 extern JS_FRIEND_API(uint16_t*)
-JS_GetUint16ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoCheckCannotGC&);
+JS_GetUint16ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireNoGC&);
 extern JS_FRIEND_API(int32_t*)
-JS_GetInt32ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoCheckCannotGC&);
+JS_GetInt32ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireNoGC&);
 extern JS_FRIEND_API(uint32_t*)
-JS_GetUint32ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoCheckCannotGC&);
+JS_GetUint32ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireNoGC&);
 extern JS_FRIEND_API(float*)
-JS_GetFloat32ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoCheckCannotGC&);
+JS_GetFloat32ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireNoGC&);
 extern JS_FRIEND_API(double*)
-JS_GetFloat64ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoCheckCannotGC&);
+JS_GetFloat64ArrayData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireNoGC&);
 
 
 
 
 
 extern JS_FRIEND_API(void*)
-JS_GetArrayBufferViewData(JSObject* obj, bool* isSharedMemory, const JS::AutoCheckCannotGC&);
+JS_GetArrayBufferViewData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireNoGC&);
 
 
 
@@ -2247,7 +2247,7 @@ JS_GetDataViewByteLength(JSObject* obj);
 
 
 JS_FRIEND_API(void*)
-JS_GetDataViewData(JSObject* obj, bool* isSharedMemory, const JS::AutoCheckCannotGC&);
+JS_GetDataViewData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireNoGC&);
 
 namespace js {
 

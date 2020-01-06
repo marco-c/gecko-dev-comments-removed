@@ -535,7 +535,7 @@ class JS_PUBLIC_API(AutoAssertNoGC) : public AutoRequireNoGC
 
 
 
-class JS_PUBLIC_API(AutoAssertNoAlloc)
+class JS_PUBLIC_API(AutoAssertNoAlloc) : public AutoRequireNoGC
 {
 #ifdef JS_DEBUG
     js::gc::GCRuntime* gc;
