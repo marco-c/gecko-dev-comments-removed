@@ -158,7 +158,7 @@ enum class OpKind {
 
 
 OpKind
-Classify(Op op);
+Classify(OpBytes op);
 #endif
 
 
@@ -310,7 +310,9 @@ class MOZ_STACK_CLASS OpIter : private Policy
     Vector<TypeAndValue<Value>, 8, SystemAllocPolicy> valueStack_;
     Vector<ControlStackEntry<ControlItem>, 8, SystemAllocPolicy> controlStack_;
 
-    DebugOnly<Op> op_;
+#ifdef DEBUG
+    OpBytes op_;
+#endif
     size_t offsetOfLastReadOp_;
 
     MOZ_MUST_USE bool readFixedU8(uint8_t* out) {
@@ -426,9 +428,15 @@ class MOZ_STACK_CLASS OpIter : private Policy
   public:
     typedef Vector<Value, 8, SystemAllocPolicy> ValueVector;
 
+#ifdef DEBUG
     explicit OpIter(const ModuleEnvironment& env, Decoder& decoder)
-      : d_(decoder), env_(env), op_(Op::Limit), offsetOfLastReadOp_(0)
+      : d_(decoder), env_(env), op_(OpBytes(Op::Limit)), offsetOfLastReadOp_(0)
     {}
+#else
+    explicit OpIter(const ModuleEnvironment& env, Decoder& decoder)
+      : d_(decoder), env_(env), offsetOfLastReadOp_(0)
+    {}
+#endif
 
     
     uint32_t currentOffset() const {
@@ -459,7 +467,7 @@ class MOZ_STACK_CLASS OpIter : private Policy
     MOZ_MUST_USE bool fail(const char* msg) MOZ_COLD;
 
     
-    MOZ_MUST_USE bool unrecognizedOpcode(uint32_t expr) MOZ_COLD;
+    MOZ_MUST_USE bool unrecognizedOpcode(const OpBytes* expr) MOZ_COLD;
 
     
     
@@ -470,7 +478,7 @@ class MOZ_STACK_CLASS OpIter : private Policy
     
     
 
-    MOZ_MUST_USE bool readOp(uint16_t* op);
+    MOZ_MUST_USE bool readOp(OpBytes* op);
     MOZ_MUST_USE bool readFunctionStart(ExprType ret);
     MOZ_MUST_USE bool readFunctionEnd(const uint8_t* bodyEnd);
     MOZ_MUST_USE bool readReturn(Value* value);
@@ -560,7 +568,7 @@ class MOZ_STACK_CLASS OpIter : private Policy
     
     
     
-    uint16_t peekOp();
+    void peekOp(OpBytes* op);
 
     
     
@@ -599,9 +607,10 @@ class MOZ_STACK_CLASS OpIter : private Policy
 
 template <typename Policy>
 inline bool
-OpIter<Policy>::unrecognizedOpcode(uint32_t expr)
+OpIter<Policy>::unrecognizedOpcode(const OpBytes* expr)
 {
-    UniqueChars error(JS_smprintf("unrecognized opcode: %x", expr));
+    UniqueChars error(JS_smprintf("unrecognized opcode: %x %x", expr->b0,
+                                  IsPrefixByte(expr->b0) ? expr->b1 : 0));
     if (!error)
         return false;
 
@@ -830,7 +839,7 @@ OpIter<Policy>::readBlockType(ExprType* type)
 
 template <typename Policy>
 inline bool
-OpIter<Policy>::readOp(uint16_t* op)
+OpIter<Policy>::readOp(OpBytes* op)
 {
     MOZ_ASSERT(!controlStack_.empty());
 
@@ -839,24 +848,23 @@ OpIter<Policy>::readOp(uint16_t* op)
     if (MOZ_UNLIKELY(!d_.readOp(op)))
         return fail("unable to read opcode");
 
-    op_ = Op(*op);  
+#ifdef DEBUG
+    op_ = *op;
+#endif
 
     return true;
 }
 
 template <typename Policy>
-inline uint16_t
-OpIter<Policy>::peekOp()
+inline void
+OpIter<Policy>::peekOp(OpBytes* op)
 {
     const uint8_t* pos = d_.currentPosition();
-    uint16_t op;
 
-    if (MOZ_UNLIKELY(!d_.readOp(&op)))
-        op = uint16_t(Op::Limit);
+    if (MOZ_UNLIKELY(!d_.readOp(op)))
+        op->b0 = uint16_t(Op::Limit);
 
     d_.rollbackPosition(pos);
-
-    return op;
 }
 
 template <typename Policy>
@@ -865,7 +873,7 @@ OpIter<Policy>::readFunctionStart(ExprType ret)
 {
     MOZ_ASSERT(valueStack_.empty());
     MOZ_ASSERT(controlStack_.empty());
-    MOZ_ASSERT(Op(op_) == Op::Limit);
+    MOZ_ASSERT(op_.b0 == uint16_t(Op::Limit));
 
     return pushControl(LabelKind::Block, ret);
 }
@@ -880,7 +888,9 @@ OpIter<Policy>::readFunctionEnd(const uint8_t* bodyEnd)
     if (!controlStack_.empty())
         return fail("unbalanced function body control flow");
 
-    op_ = Op::Limit;
+#ifdef DEBUG
+    op_ = OpBytes(Op::Limit);
+#endif
     valueStack_.clear();
     return true;
 }

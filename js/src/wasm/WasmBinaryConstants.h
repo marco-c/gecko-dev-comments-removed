@@ -306,12 +306,26 @@ enum class Op
     F32ReinterpretI32                    = 0xbe,
     F64ReinterpretI64                    = 0xbf,
 
+    AtomicPrefix                         = 0xfe,
+    MozPrefix                            = 0xff,
+
+    Limit                                = 0x100
+};
+
+inline bool
+IsPrefixByte(uint8_t b) {
+    return b >= uint8_t(Op::AtomicPrefix);
+}
+
+enum class MozOp
+{
     
     
     
 
     
-    TeeGlobal                            = 0xc8,
+    
+    TeeGlobal                            = 0x01,
     I32Min,
     I32Max,
     I32Neg,
@@ -427,6 +441,20 @@ enum class Op
 #undef OPCODE
 
     Limit
+};
+
+struct OpBytes
+{
+    
+    
+    uint16_t b0;
+    uint16_t b1;
+
+    explicit OpBytes(Op x) {
+        b0 = uint16_t(x);
+        b1 = 0;
+    }
+    OpBytes() = default;
 };
 
 static const char NameSectionName[]      = "name";
