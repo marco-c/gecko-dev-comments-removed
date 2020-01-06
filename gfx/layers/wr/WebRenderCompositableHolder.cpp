@@ -12,9 +12,6 @@
 #include "mozilla/webrender/WebRenderAPI.h"
 
 namespace mozilla {
-
-using namespace gfx;
-
 namespace layers {
 
 WebRenderCompositableHolder::AsyncImagePipelineHolder::AsyncImagePipelineHolder()
@@ -157,45 +154,6 @@ WebRenderCompositableHolder::UpdateAsyncImagePipeline(const wr::PipelineId& aPip
   holder->mMixBlendMode = aMixBlendMode;
 }
 
-void
-WebRenderCompositableHolder::GetImageKeys(nsTArray<wr::ImageKey>& aKeys, size_t aChannelNumber)
-{
-  MOZ_ASSERT(aChannelNumber > 0);
-  for (size_t i = 0; i < aChannelNumber; ++i) {
-    wr::ImageKey key = GetImageKey();
-    aKeys.AppendElement(key);
-  }
-}
-
-void
-WebRenderCompositableHolder::GetImageKeysForExternalImage(nsTArray<wr::ImageKey>& aKeys)
-{
-  MOZ_ASSERT(aKeys.IsEmpty());
-
-  
-#if defined(XP_WIN)
-  
-  GetImageKeys(aKeys, 1);
-#elif defined(XP_MACOSX)
-  if (gfxVars::CanUseHardwareVideoDecoding()) {
-    
-    
-    GetImageKeys(aKeys, 1);
-  } else {
-    
-    GetImageKeys(aKeys, 1);
-  }
-#elif defined(MOZ_WIDGET_GTK)
-  
-  GetImageKeys(aKeys, 1);
-#elif defined(ANDROID)
-  
-  GetImageKeys(aKeys, 1);
-#endif
-
-  MOZ_ASSERT(!aKeys.IsEmpty());
-}
-
 bool
 WebRenderCompositableHolder::GetImageKeyForTextureHost(wr::WebRenderAPI* aApi, TextureHost* aTexture, nsTArray<wr::ImageKey>& aKeys)
 {
@@ -205,23 +163,23 @@ WebRenderCompositableHolder::GetImageKeyForTextureHost(wr::WebRenderAPI* aApi, T
   WebRenderTextureHost* wrTexture = aTexture->AsWebRenderTextureHost();
 
   if (wrTexture) {
-    GetImageKeysForExternalImage(aKeys);
+    wrTexture->GetWRImageKeys(aKeys, std::bind(&WebRenderCompositableHolder::GetImageKey, this));
     MOZ_ASSERT(!aKeys.IsEmpty());
     Range<const wr::ImageKey> keys(&aKeys[0], aKeys.Length());
     wrTexture->AddWRImage(aApi, keys, wrTexture->GetExternalImageKey());
     return true;
   } else {
-    RefPtr<DataSourceSurface> dSurf = aTexture->GetAsSurface();
+    RefPtr<gfx::DataSourceSurface> dSurf = aTexture->GetAsSurface();
     if (!dSurf) {
       NS_ERROR("TextureHost does not return DataSourceSurface");
       return false;
     }
-    DataSourceSurface::MappedSurface map;
+    gfx::DataSourceSurface::MappedSurface map;
     if (!dSurf->Map(gfx::DataSourceSurface::MapType::READ, &map)) {
       NS_ERROR("DataSourceSurface failed to map");
       return false;
     }
-    IntSize size = dSurf->GetSize();
+    gfx::IntSize size = dSurf->GetSize();
     wr::ImageDescriptor descriptor(size, map.mStride, dSurf->GetFormat());
     auto slice = Range<uint8_t>(map.mData, size.height * map.mStride);
 
@@ -231,41 +189,6 @@ WebRenderCompositableHolder::GetImageKeyForTextureHost(wr::WebRenderAPI* aApi, T
     dSurf->Unmap();
   }
   return false;
-}
-
-void
-WebRenderCompositableHolder::PushExternalImage(wr::DisplayListBuilder& aBuilder,
-                                               const WrRect& aBounds,
-                                               const WrClipRegionToken aClip,
-                                               wr::ImageRendering aFilter,
-                                               nsTArray<wr::ImageKey>& aKeys)
-{
-  
-  
-  
-#if defined(XP_WIN)
-  
-  MOZ_ASSERT(aKeys.Length() == 1);
-  aBuilder.PushImage(aBounds, aClip, aFilter, aKeys[0]);
-#elif defined(XP_MACOSX)
-  if (gfx::gfxVars::CanUseHardwareVideoDecoding()) {
-    
-    MOZ_ASSERT(aKeys.Length() == 1);
-    aBuilder.PushYCbCrInterleavedImage(aBounds, aClip, aKeys[0], WrYuvColorSpace::Rec601, aFilter);
-  } else {
-    
-    MOZ_ASSERT(aKeys.Length() == 1);
-    aBuilder.PushImage(aBounds, aClip, aFilter, aKeys[0]);
-  }
-#elif defined(MOZ_WIDGET_GTK)
-  
-  MOZ_ASSERT(aKeys.Length() == 1);
-  aBuilder.PushImage(aBounds, aClip, aFilter, aKeys[0]);
-#elif defined(ANDROID)
-  
-  MOZ_ASSERT(aKeys.Length() == 1);
-  aBuilder.PushImage(aBounds, aClip, aFilter, aKeys[0]);
-#endif
 }
 
 bool
@@ -365,11 +288,12 @@ WebRenderCompositableHolder::ApplyAsyncImages(wr::WebRenderAPI* aApi)
 
       if (useExternalImage) {
         MOZ_ASSERT(holder->mCurrentTexture->AsWebRenderTextureHost());
-        PushExternalImage(builder,
-                          wr::ToWrRect(rect),
-                          clip,
-                          holder->mFilter,
-                          keys);
+        Range<const wr::ImageKey> range_keys(&keys[0], keys.Length());
+        holder->mCurrentTexture->PushExternalImage(builder,
+                                                   wr::ToWrRect(rect),
+                                                   clip,
+                                                   holder->mFilter,
+                                                   range_keys);
         HoldExternalImage(pipelineId, epoch, holder->mCurrentTexture->AsWebRenderTextureHost());
       } else {
         MOZ_ASSERT(keys.Length() == 1);
