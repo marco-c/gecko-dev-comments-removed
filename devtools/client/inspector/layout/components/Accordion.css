@@ -7,13 +7,24 @@
 
 
 
+
+
+
+:root {
+  --accordion-header-background: var(--theme-toolbar-background);
+}
+
+:root.theme-dark {
+  --accordion-header-background: #141416;
+}
+
 .accordion {
-  background-color: var(--theme-body-background);
+  background-color: var(--theme-sidebar-background);
   width: 100%;
 }
 
 .accordion ._header {
-  background-color: var(--theme-toolbar-background);
+  background-color: var(--accordion-header-background);
   border-bottom: 1px solid var(--theme-splitter-color);
   cursor: pointer;
   font-size: 12px;
