@@ -242,12 +242,6 @@ struct ScriptLoadInfo
     }
   }
 
-  bool
-  ReadyToExecute()
-  {
-    return !mChannel && NS_SUCCEEDED(mLoadResult) && !mExecutionScheduled;
-  }
-
   nsString mURL;
 
   
