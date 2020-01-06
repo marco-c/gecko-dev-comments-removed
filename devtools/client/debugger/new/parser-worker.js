@@ -30889,7 +30889,7 @@ return  (function(modules) {
 	function _parse(code, opts) {
 	  return babylon.parse(code, Object.assign({}, opts, {
 	    sourceType: "module",
-	    plugins: ["jsx", "flow"]
+	    plugins: ["jsx", "flow", "objectRestSpread"]
 	  }));
 	}
 
