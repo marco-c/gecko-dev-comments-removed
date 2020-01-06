@@ -71,6 +71,7 @@ struct IntrinsicSize;
 struct ContainerLayerParameters;
 class WritingMode;
 class DisplayItemClip;
+class EffectSet;
 namespace dom {
 class CanvasRenderingContext2D;
 class DOMRectList;
@@ -2253,6 +2254,13 @@ public:
 
 
   static bool HasAnimationOfProperty(const nsIFrame* aFrame,
+                                     nsCSSPropertyID aProperty);
+
+  
+
+
+
+  static bool HasAnimationOfProperty(mozilla::EffectSet* aEffectSet,
                                      nsCSSPropertyID aProperty);
 
   

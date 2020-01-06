@@ -100,6 +100,7 @@ struct ReflowInput;
 class ReflowOutput;
 class ServoStyleSet;
 class DisplayItemData;
+class EffectSet;
 
 namespace layers {
 class Layer;
@@ -1671,33 +1672,48 @@ public:
 
 
 
-  bool IsTransformed(const nsStyleDisplay* aStyleDisplay) const;
-  bool IsTransformed() const {
-    return IsTransformed(StyleDisplay());
+
+
+
+  bool IsTransformed(const nsStyleDisplay* aStyleDisplay, mozilla::EffectSet* aEffectSet = nullptr) const;
+  bool IsTransformed(mozilla::EffectSet* aEffectSet = nullptr) const {
+    return IsTransformed(StyleDisplay(), aEffectSet);
   }
 
   
 
 
-  bool HasAnimationOfTransform() const;
+
+
+
+
+  bool HasAnimationOfTransform(mozilla::EffectSet* aEffectSet = nullptr) const;
 
   
 
 
 
-  bool HasOpacity() const
+
+
+
+
+  bool HasOpacity(mozilla::EffectSet* aEffectSet = nullptr) const
   {
-    return HasOpacityInternal(1.0f);
+    return HasOpacityInternal(1.0f, aEffectSet);
   }
   
 
 
-  bool HasVisualOpacity() const
+
+
+
+
+  bool HasVisualOpacity(mozilla::EffectSet* aEffectSet = nullptr) const
   {
     
     
     
-    return HasOpacityInternal(0.99f);
+    return HasOpacityInternal(0.99f, aEffectSet);
   }
 
    
@@ -1725,9 +1741,14 @@ public:
 
 
 
-  bool Extend3DContext(const nsStyleDisplay* aStyleDisplay) const;
-  bool Extend3DContext() const {
-    return Extend3DContext(StyleDisplay());
+
+
+
+
+  bool Extend3DContext(const nsStyleDisplay* aStyleDisplay,
+                       mozilla::EffectSet* aEffectSet = nullptr) const;
+  bool Extend3DContext(mozilla::EffectSet* aEffectSet = nullptr) const {
+    return Extend3DContext(StyleDisplay(), aEffectSet);
   }
 
   
@@ -1738,9 +1759,13 @@ public:
 
 
 
-  bool Combines3DTransformWithAncestors(const nsStyleDisplay* aStyleDisplay) const;
-  bool Combines3DTransformWithAncestors() const {
-    return Combines3DTransformWithAncestors(StyleDisplay());
+
+
+
+  bool Combines3DTransformWithAncestors(const nsStyleDisplay* aStyleDisplay,
+                                        mozilla::EffectSet* aEffectSet = nullptr) const;
+  bool Combines3DTransformWithAncestors(mozilla::EffectSet* aEffectSet = nullptr) const {
+    return Combines3DTransformWithAncestors(StyleDisplay(), aEffectSet);
   }
 
   
@@ -1748,19 +1773,25 @@ public:
 
 
 
-  bool In3DContextAndBackfaceIsHidden() const;
 
-  bool IsPreserve3DLeaf(const nsStyleDisplay* aStyleDisplay) const {
+
+
+
+  bool In3DContextAndBackfaceIsHidden(mozilla::EffectSet* aEffectSet = nullptr) const;
+
+  bool IsPreserve3DLeaf(const nsStyleDisplay* aStyleDisplay,
+                        mozilla::EffectSet* aEffectSet = nullptr) const {
     return Combines3DTransformWithAncestors(aStyleDisplay) &&
-           !Extend3DContext(aStyleDisplay);
+           !Extend3DContext(aStyleDisplay, aEffectSet);
   }
-  bool IsPreserve3DLeaf() const {
-    return IsPreserve3DLeaf(StyleDisplay());
+  bool IsPreserve3DLeaf(mozilla::EffectSet* aEffectSet = nullptr) const {
+    return IsPreserve3DLeaf(StyleDisplay(), aEffectSet);
   }
 
-  bool HasPerspective(const nsStyleDisplay* aStyleDisplay) const;
-  bool HasPerspective() const {
-    return HasPerspective(StyleDisplay());
+  bool HasPerspective(const nsStyleDisplay* aStyleDisplay,
+                      mozilla::EffectSet* aEffectSet = nullptr) const;
+  bool HasPerspective(mozilla::EffectSet* aEffectSet = nullptr) const {
+    return HasPerspective(StyleDisplay(), aEffectSet);
   }
 
   bool ChildrenHavePerspective(const nsStyleDisplay* aStyleDisplay) const {
@@ -1777,7 +1808,8 @@ public:
 
   void ComputePreserve3DChildrenOverflow(nsOverflowAreas& aOverflowAreas);
 
-  void RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame);
+  void RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame,
+                                            mozilla::EffectSet* aEffectSet = nullptr);
 
   
 
@@ -3974,7 +4006,8 @@ private:
   template<bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
   static nsIFrame* MergeSort(nsIFrame *aSource);
 
-  bool HasOpacityInternal(float aThreshold) const;
+  bool HasOpacityInternal(float aThreshold,
+                          mozilla::EffectSet* aEffectSet = nullptr) const;
 
 #ifdef DEBUG_FRAME_DUMP
 public:
