@@ -9,8 +9,7 @@ const URLs = [ABOUT_HOME_URL, ABOUT_NEWTAB_URL];
 const TOUR_IDs = [
   "onboarding-tour-performance",
   "onboarding-tour-private-browsing",
-  
-  
+  "onboarding-tour-screenshots",
   "onboarding-tour-addons",
   "onboarding-tour-customize",
   "onboarding-tour-default-browser",
@@ -18,8 +17,7 @@ const TOUR_IDs = [
 const UPDATE_TOUR_IDs = [
   "onboarding-tour-performance",
   "onboarding-tour-library",
-  
-  
+  "onboarding-tour-screenshots",
   "onboarding-tour-singlesearch",
   "onboarding-tour-customize",
   "onboarding-tour-sync",

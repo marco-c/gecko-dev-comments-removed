@@ -295,6 +295,36 @@ var onboardingTourset = {
       return div;
     },
   },
+  "screenshots": {
+    id: "onboarding-tour-screenshots",
+    tourNameId: "onboarding.tour-screenshots",
+    getNotificationStrings(bundle) {
+      return {
+        title: bundle.GetStringFromName("onboarding.notification.onboarding-tour-screenshots.title"),
+        message: bundle.formatStringFromName("onboarding.notification.onboarding-tour-screenshots.message", [BRAND_SHORT_NAME], 1),
+        button: bundle.GetStringFromName("onboarding.button.learnMore"),
+      };
+    },
+    getPage(win, bundle) {
+      let div = win.document.createElement("div");
+      
+      
+      div.innerHTML = `
+        <section class="onboarding-tour-description">
+          <h1 data-l10n-id="onboarding.tour-screenshots.title"></h1>
+          <p data-l10n-id="onboarding.tour-screenshots.description"></p>
+        </section>
+        <section class="onboarding-tour-content">
+          <img src="resource://onboarding/img/figure_screenshots.svg" role="presentation"/>
+        </section>
+        <aside class="onboarding-tour-button-container">
+          <a id="onboarding-tour-screenshots-button" class="onboarding-tour-action-button" data-l10n-id="onboarding.tour-screenshots.button"
+             href="https://screenshots.firefox.com/#tour" target="_blank"></a>
+        </aside>
+      `;
+      return div;
+    },
+  },
 };
 
 
@@ -442,7 +472,7 @@ class Onboarding {
 
 
 
-  get selectedTour() {
+  get _firstUncompleteTour() {
     return this._tours.find(tour => !this.isTourCompleted(tour.id)) ||
            this._tours[0];
   }
@@ -458,7 +488,7 @@ class Onboarding {
     switch (id) {
       case "onboarding-overlay-button":
         this.showOverlay();
-        this.gotoPage(this.selectedTour.id);
+        this.gotoPage(this._firstUncompleteTour.id);
         break;
       case "onboarding-overlay-close-btn":
       
@@ -525,7 +555,6 @@ class Onboarding {
         this.handleClick(target);
         event.preventDefault();
       }
-
       return;
     }
 
@@ -649,7 +678,7 @@ class Onboarding {
       
       
       if (this._overlayIcon.dataset.keyboardFocus) {
-        doc.getElementById(this.selectedTour.id).focus();
+        doc.getElementById(this._firstUncompleteTour.id).focus();
       } else {
         
         
