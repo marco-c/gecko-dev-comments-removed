@@ -858,10 +858,7 @@ private:
   
   
   
-  nsresult CacheOrReadAt(int oOffset,
-                         unsigned oCount,
-                         const char* oContext,
-                         int64_t aOffset,
+  nsresult CacheOrReadAt(int64_t aOffset,
                          char* aBuffer,
                          uint32_t aCount,
                          uint32_t* aBytes);
