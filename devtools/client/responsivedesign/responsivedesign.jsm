@@ -727,13 +727,6 @@ ResponsiveUI.prototype = {
       return;
     }
 
-    
-    
-    
-    if (!system.constants.E10S_TESTING_ONLY) {
-      return;
-    }
-
     let buttons = [{
       label: this.strings.GetStringFromName("responsiveUI.newVersionEnableAndRestart"),
       callback: () => {
