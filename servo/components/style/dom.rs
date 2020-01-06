@@ -552,6 +552,11 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
 
     
     
+    
+    fn is_visited_link(&self) -> bool { false }
+
+    
+    
     fn is_native_anonymous(&self) -> bool { false }
 
     

@@ -431,9 +431,34 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     
     
     
+    
+    
+    
+    
+    fn adjust_for_visited(&mut self, flags: CascadeFlags) {
+        use properties::IS_VISITED_LINK;
+        use properties::computed_value_flags::IS_RELEVANT_LINK_VISITED;
+
+        if !self.style.has_visited_style() {
+            return;
+        }
+
+        if flags.contains(IS_VISITED_LINK) ||
+            self.style.inherited_style().flags.contains(IS_RELEVANT_LINK_VISITED) {
+            self.style.flags.insert(IS_RELEVANT_LINK_VISITED);
+        }
+    }
+
+    
+    
+    
+    
+    
+    
     pub fn adjust(&mut self,
                   layout_parent_style: &ComputedValues,
                   flags: CascadeFlags) {
+        self.adjust_for_visited(flags);
         #[cfg(feature = "gecko")]
         {
             self.adjust_for_prohibited_display_contents(flags);
