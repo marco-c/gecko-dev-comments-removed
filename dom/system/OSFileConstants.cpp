@@ -217,20 +217,10 @@ nsresult GetPathToSpecialDir(const char *aKey, nsString& aOutPath)
 
 
 
-class DelayedPathSetter final: public nsIObserver
-{
-  ~DelayedPathSetter() {}
-
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIOBSERVER
-
-  DelayedPathSetter() {}
-};
-
-NS_IMPL_ISUPPORTS(DelayedPathSetter, nsIObserver)
-
 NS_IMETHODIMP
-DelayedPathSetter::Observe(nsISupports*, const char * aTopic, const char16_t*)
+OSFileConstantsService::Observe(nsISupports*,
+                                const char* aTopic,
+                                const char16_t*)
 {
   if (gPaths == nullptr) {
     
@@ -296,8 +286,7 @@ OSFileConstantsService::InitOSFileConstants()
     if (NS_FAILED(rv)) {
       return rv;
     }
-    RefPtr<DelayedPathSetter> pathSetter = new DelayedPathSetter();
-    rv = obsService->AddObserver(pathSetter, "profile-do-change", false);
+    rv = obsService->AddObserver(this, "profile-do-change", false);
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -1059,7 +1048,8 @@ OSFileConstantsService::DefineOSFileConstants(JSContext* aCx,
   return true;
 }
 
-NS_IMPL_ISUPPORTS(OSFileConstantsService, nsIOSFileConstantsService)
+NS_IMPL_ISUPPORTS(OSFileConstantsService, nsIOSFileConstantsService,
+                  nsIObserver)
 
  already_AddRefed<OSFileConstantsService>
 OSFileConstantsService::GetOrCreate()
