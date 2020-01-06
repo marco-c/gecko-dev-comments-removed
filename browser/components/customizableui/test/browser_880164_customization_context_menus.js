@@ -10,7 +10,7 @@ const isOSX = (Services.appinfo.OS === "Darwin");
 
 
 
-add_task(async function() {
+add_task(async function home_button_context() {
   await SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
@@ -41,7 +41,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function tabstrip_context() {
   
   let extraTab = gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
   await promiseTabLoadEvent(extraTab, "http://example.com/");
@@ -79,7 +79,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function empty_toolbar_context() {
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
   let toolbar = createToolbarWithPlacements("880164_empty_toolbar", []);
@@ -113,7 +113,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function urlbar_context() {
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
   let urlBarContainer = document.getElementById("urlbar-container");
@@ -143,7 +143,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function searchbar_context_move_to_panel_and_back() {
   let searchbar = document.getElementById("searchbar");
   gCustomizeMode.addToPanel(searchbar);
   let placement = CustomizableUI.getPlacementOfWidget("search-container");
@@ -169,7 +169,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function context_within_panel() {
   let shownPanelPromise = promisePanelShown(window);
   PanelUI.toggle({type: "command"});
   await shownPanelPromise;
@@ -202,7 +202,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function context_home_button_in_customize_mode() {
   await startCustomizing();
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
@@ -232,7 +232,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function context_click_in_palette() {
   let contextMenu = document.getElementById("customizationPaletteItemContextMenu");
   let shownPromise = popupShown(contextMenu);
   let openFileButton = document.getElementById("wrapper-open-file-button");
@@ -252,7 +252,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function context_click_in_customize_mode() {
   let contextMenu = document.getElementById("customizationPanelItemContextMenu");
   let shownPromise = popupShown(contextMenu);
   let newWindowButton = document.getElementById("wrapper-new-window-button");
@@ -275,7 +275,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function context_click_customize_mode_panel_not_opened() {
   this.otherWin = await openAndLoadWindow(null, true);
 
   await new Promise(resolve => waitForFocus(resolve, this.otherWin));
@@ -308,7 +308,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function context_combined_buttons_toolbar() {
   await startCustomizing();
   let contextMenu = document.getElementById("customizationPanelItemContextMenu");
   let shownPromise = popupShown(contextMenu);
@@ -316,7 +316,8 @@ add_task(async function() {
   EventUtils.synthesizeMouse(zoomControls, 2, 2, {type: "contextmenu", button: 2});
   await shownPromise;
   
-  contextMenu.childNodes[0].doCommand();
+  let moveToToolbar = contextMenu.querySelector(".customize-context-moveToToolbar");
+  moveToToolbar.doCommand();
   let hiddenPromise = popupHidden(contextMenu);
   contextMenu.hidePopup();
   await hiddenPromise;
@@ -352,7 +353,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function context_after_customization_panel() {
   await startCustomizing();
   await endCustomizing();
 
@@ -386,7 +387,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function custom_context_menus() {
   let widgetId = "custom-context-menu-toolbarbutton";
   let expectedContext = "myfancycontext";
   let widget = createDummyXULButton(widgetId, "Test ctxt menu");

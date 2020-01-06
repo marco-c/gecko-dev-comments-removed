@@ -13,7 +13,7 @@ const overflowPanel = document.getElementById("widget-overflow");
 
 
 
-add_task(async function() {
+add_task(async function home_button_context() {
   await SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", true]]});
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
@@ -44,7 +44,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function tabstrip_context() {
   
   let extraTab = gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
   await promiseTabLoadEvent(extraTab, "http://example.com/");
@@ -82,7 +82,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function empty_toolbar_context() {
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
   let toolbar = createToolbarWithPlacements("880164_empty_toolbar", []);
@@ -116,7 +116,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function urlbar_context() {
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
   let urlBarContainer = document.getElementById("urlbar-container");
@@ -146,7 +146,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function searchbar_context_move_to_panel_and_back() {
   let searchbar = document.getElementById("searchbar");
   gCustomizeMode.addToPanel(searchbar);
   let placement = CustomizableUI.getPlacementOfWidget("search-container");
@@ -156,7 +156,7 @@ add_task(async function() {
   overflowButton.click();
   await shownPanelPromise;
   let hiddenPanelPromise = popupHidden(overflowPanel);
-  overflowButton.click();
+  overflowPanel.hidePopup();
   await hiddenPanelPromise;
 
   gCustomizeMode.addToToolbar(searchbar);
@@ -172,7 +172,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function context_within_panel() {
   CustomizableUI.addWidgetToArea("new-window-button", CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
   let shownPanelPromise = popupShown(overflowPanel);
   overflowButton.click();
@@ -200,7 +200,7 @@ add_task(async function() {
   await hiddenContextPromise;
 
   let hiddenPromise = popupHidden(overflowPanel);
-  overflowButton.click();
+  overflowPanel.hidePopup();
   await hiddenPromise;
 
   CustomizableUI.removeWidgetFromArea("new-window-button");
@@ -208,7 +208,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function context_home_button_in_customize_mode() {
   await startCustomizing();
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
@@ -238,7 +238,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function context_click_in_palette() {
   let contextMenu = document.getElementById("customizationPaletteItemContextMenu");
   let shownPromise = popupShown(contextMenu);
   let openFileButton = document.getElementById("wrapper-open-file-button");
@@ -258,7 +258,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function context_click_in_customize_mode() {
   CustomizableUI.addWidgetToArea("new-window-button", CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
   let contextMenu = document.getElementById("customizationPanelItemContextMenu");
   let shownPromise = popupShown(contextMenu);
@@ -283,7 +283,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function context_click_customize_mode_panel_not_opened() {
   CustomizableUI.addWidgetToArea("new-window-button", CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
   this.otherWin = await openAndLoadWindow(null, true);
 
@@ -318,7 +318,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function context_combined_buttons_toolbar() {
   CustomizableUI.addWidgetToArea("zoom-controls", CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
   await startCustomizing();
   let contextMenu = document.getElementById("customizationPanelItemContextMenu");
@@ -327,7 +327,8 @@ add_task(async function() {
   EventUtils.synthesizeMouse(zoomControls, 2, 2, {type: "contextmenu", button: 2});
   await shownPromise;
   
-  contextMenu.childNodes[0].doCommand();
+  let moveToToolbar = contextMenu.querySelector(".customize-context-moveToToolbar");
+  moveToToolbar.doCommand();
   let hiddenPromise = popupHidden(contextMenu);
   contextMenu.hidePopup();
   await hiddenPromise;
@@ -363,7 +364,7 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function context_after_customization_panel() {
   info("Check panel context menu is correct after customization");
   await startCustomizing();
   await endCustomizing();
@@ -395,14 +396,14 @@ add_task(async function() {
   await hiddenContextPromise;
 
   let hiddenPromise = popupHidden(overflowPanel);
-  overflowButton.click();
+  overflowPanel.hidePopup();
   await hiddenPromise;
   CustomizableUI.removeWidgetFromArea("new-window-button");
 });
 
 
 
-add_task(async function() {
+add_task(async function custom_context_menus() {
   let widgetId = "custom-context-menu-toolbarbutton";
   let expectedContext = "myfancycontext";
   let widget = createDummyXULButton(widgetId, "Test ctxt menu");
