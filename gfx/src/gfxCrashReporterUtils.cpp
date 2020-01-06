@@ -5,13 +5,6 @@
 
 
 #include "gfxCrashReporterUtils.h"
-
-#if defined(MOZ_CRASHREPORTER)
-#define MOZ_GFXFEATUREREPORTER 1
-#endif
-
-#ifdef MOZ_GFXFEATUREREPORTER
-#include "gfxCrashReporterUtils.h"
 #include <string.h>                     
 #include "mozilla/Assertions.h"         
 #include "mozilla/Services.h"           
@@ -137,13 +130,3 @@ ScopedGfxFeatureReporter::AppNote(const nsACString& aMessage)
 }
   
 } 
-
-#else
-
-namespace mozilla {
-void ScopedGfxFeatureReporter::WriteAppNote(char) {}
-void ScopedGfxFeatureReporter::AppNote(const nsACString&) {}
-  
-} 
-
-#endif
