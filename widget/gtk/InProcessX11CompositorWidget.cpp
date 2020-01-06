@@ -3,8 +3,11 @@
 
 
 
-#include "InProcessX11CompositorWidget.h"
+#include "gfxPlatform.h"
+#include "HeadlessCompositorWidget.h"
+#include "HeadlessWidget.h"
 
+#include "InProcessX11CompositorWidget.h"
 #include "nsWindow.h"
 
 namespace mozilla {
@@ -15,7 +18,11 @@ CompositorWidget::CreateLocal(const CompositorWidgetInitData& aInitData,
                               const layers::CompositorOptions& aOptions,
                               nsIWidget* aWidget)
 {
-  return new InProcessX11CompositorWidget(aInitData, aOptions, static_cast<nsWindow*>(aWidget));
+  if (gfxPlatform::IsHeadless()) {
+    return new HeadlessCompositorWidget(aInitData, aOptions, static_cast<HeadlessWidget*>(aWidget));
+  } else {
+    return new InProcessX11CompositorWidget(aInitData, aOptions, static_cast<nsWindow*>(aWidget));
+  }
 }
 
 InProcessX11CompositorWidget::InProcessX11CompositorWidget(const CompositorWidgetInitData& aInitData,
