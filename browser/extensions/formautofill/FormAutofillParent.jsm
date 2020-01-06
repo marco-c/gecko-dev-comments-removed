@@ -355,7 +355,7 @@ FormAutofillParent.prototype = {
     this._updateStatus();
   },
 
-  _onAddressSubmit(address, target) {
+  _onAddressSubmit(address, target, timeStartedFillingMS) {
     if (address.guid) {
       
       let originalAddress = this.profileStorage.addresses.get(address.guid);
@@ -366,6 +366,8 @@ FormAutofillParent.prototype = {
       }
 
       if (!this.profileStorage.addresses.mergeIfPossible(address.guid, address.record)) {
+        this._recordFormFillingTime("address", "autofill-update", timeStartedFillingMS);
+
         FormAutofillDoorhanger.show(target, "update").then((state) => {
           let changedGUIDs = this.profileStorage.addresses.mergeToStorage(address.record);
           switch (state) {
@@ -389,6 +391,7 @@ FormAutofillParent.prototype = {
         Services.telemetry.scalarAdd("formautofill.addresses.fill_type_autofill_update", 1);
         return;
       }
+      this._recordFormFillingTime("address", "autofill", timeStartedFillingMS);
       this.profileStorage.addresses.notifyUsed(address.guid);
       
       Services.telemetry.scalarAdd("formautofill.addresses.fill_type_autofill", 1);
@@ -398,6 +401,7 @@ FormAutofillParent.prototype = {
         changedGUIDs.push(this.profileStorage.addresses.add(address.record));
       }
       changedGUIDs.forEach(guid => this.profileStorage.addresses.notifyUsed(guid));
+      this._recordFormFillingTime("address", "manual", timeStartedFillingMS);
 
       
       if (Services.prefs.getBoolPref("extensions.formautofill.firstTimeUse")) {
@@ -441,13 +445,28 @@ FormAutofillParent.prototype = {
   },
 
   _onFormSubmit(data, target) {
-    let {address, creditCard} = data;
+    let {profile: {address, creditCard}, timeStartedFillingMS} = data;
 
     if (address) {
-      this._onAddressSubmit(address, target);
+      this._onAddressSubmit(address, target, timeStartedFillingMS);
     }
     if (creditCard) {
       this._onCreditCardSubmit(creditCard, target);
     }
+  },
+  
+
+
+
+
+
+
+
+
+
+
+  _recordFormFillingTime(formType, fillingType, startedFillingMS) {
+    let histogram = Services.telemetry.getKeyedHistogramById("FORM_FILLING_REQUIRED_TIME_MS");
+    histogram.add(`${formType}-${fillingType}`, Date.now() - startedFillingMS);
   },
 };

@@ -117,6 +117,11 @@ FormAutofillHandler.prototype = {
   
 
 
+  timeStartedFillingMS: null,
+
+  
+
+
 
 
 
@@ -127,6 +132,7 @@ FormAutofillHandler.prototype = {
     this._formFieldCount = this.form.elements.length;
     let fieldDetails = FormAutofillHeuristics.getFormInfo(this.form, allowDuplicates);
     this.fieldDetails = fieldDetails ? fieldDetails : [];
+    this.form.rootElement.addEventListener("input", this);
     log.debug("Collected details on", this.fieldDetails.length, "fields");
 
     this.address.fieldDetails = this.fieldDetails.filter(
@@ -581,5 +587,44 @@ FormAutofillHandler.prototype = {
 
       Services.cpmm.sendAsyncMessage("FormAutofill:GetDecryptedString", {cipherText, reauth});
     });
+  },
+
+  
+
+
+
+
+
+
+
+
+  getFieldDetailsForElement(element) {
+    for (let detail of this.fieldDetails) {
+      if (detail.elementWeakRef.get() == element) {
+        return detail;
+      }
+    }
+    return null;
+  },
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "input":
+        if (!event.isTrusted) {
+          return;
+        }
+
+        if (!FormAutofillUtils.isFieldEligibleForAutofill(event.target)) {
+          return;
+        }
+
+        if (!this.getFieldDetailsForElement(event.target)) {
+          return;
+        }
+
+        this.form.rootElement.removeEventListener("input", this);
+        this.timeStartedFillingMS = Date.now();
+        break;
+    }
   },
 };
