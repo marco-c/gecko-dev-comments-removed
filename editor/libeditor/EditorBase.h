@@ -659,8 +659,13 @@ public:
 
 
 
+
+
+
   static int32_t GetChildOffset(nsIDOMNode* aChild,
                                 nsIDOMNode* aParent);
+  static int32_t GetChildOffset(nsINode* aChild,
+                                nsINode* aParent);
 
   
 
