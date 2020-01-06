@@ -318,7 +318,7 @@ BrowserGlue.prototype = {
         this._onAppDefaults();
         break;
       case "final-ui-startup":
-        this._finalUIStartup();
+        this._beforeUIStartup();
         break;
       case "browser-delayed-startup-finished":
         this._onFirstWindowLoaded(subject);
@@ -590,7 +590,7 @@ BrowserGlue.prototype = {
 
   
   
-  _finalUIStartup: function BG__finalUIStartup() {
+  _beforeUIStartup: function BG__beforeUIStartup() {
     
     if (Services.appinfo.inSafeMode) {
       Services.ww.openWindow(null, "chrome://browser/content/safeMode.xul",
