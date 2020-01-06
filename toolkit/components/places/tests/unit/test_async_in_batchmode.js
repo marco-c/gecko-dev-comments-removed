@@ -8,7 +8,7 @@ Cu.import("resource://gre/modules/PlacesUtils.jsm");
 
 
 function waitForPromise(promise) {
-  let thread = Cc["@mozilla.org/thread-manager;1"].getService().currentThread;
+  let tm = Cc["@mozilla.org/thread-manager;1"].getService();
 
   let finalResult, finalException;
 
@@ -19,9 +19,8 @@ function waitForPromise(promise) {
   });
 
   
-  while (!finalResult && !finalException) {
-    thread.processNextEvent(true);
-  }
+  tm.spinEventLoopUntil(() => finalResult || finalException);
+
   if (finalException) {
     throw finalException;
   }

@@ -5175,9 +5175,9 @@ function server(port, basePath)
   srv.registerContentType("sjs", SJS_TYPE);
   srv.start(port);
 
+  gThreadManager.spinEventLoopUntil(() => srv.isStopped());
+
   var thread = gThreadManager.currentThread;
-  while (!srv.isStopped())
-    thread.processNextEvent(true);
 
   
   while (thread.hasPendingEvents())

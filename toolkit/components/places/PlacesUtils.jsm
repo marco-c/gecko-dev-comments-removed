@@ -3565,10 +3565,7 @@ PlacesEditBookmarkKeywordTransaction.prototype = {
                  .then(() => done = true);
     
     
-    let thread = Services.tm.currentThread;
-    while (!done) {
-      thread.processNextEvent(true);
-    }
+    Services.tm.spinEventLoopUntil(() => done);
   },
 
   undoTransaction: function EBKTXN_undoTransaction() {
@@ -3590,10 +3587,9 @@ PlacesEditBookmarkKeywordTransaction.prototype = {
                  .then(() => done = true);
     
     
-    let thread = Services.tm.currentThread;
-    while (!done) {
-      thread.processNextEvent(true);
-    }
+    Services.tm.spinEventLoopUntil(() => {
+      return done;
+    });
   }
 };
 

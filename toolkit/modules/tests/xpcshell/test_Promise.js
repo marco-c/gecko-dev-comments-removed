@@ -922,10 +922,7 @@ tests.push(
     let shouldExitNestedEventLoop = false;
 
     function event_loop() {
-      let thr = Services.tm.mainThread;
-      while (!shouldExitNestedEventLoop) {
-        thr.processNextEvent(true);
-      }
+      Services.tm.spinEventLoopUntil(() => shouldExitNestedEventLoop);
     }
 
     

@@ -60,12 +60,10 @@ var WindowWatcher = {
     
     
     
-    let thr = AM_Cc["@mozilla.org/thread-manager;1"].
-              getService(AM_Ci.nsIThreadManager).
-              mainThread;
+    let tm = AM_Cc["@mozilla.org/thread-manager;1"].
+             getService(AM_Ci.nsIThreadManager);
 
-    while (!installed || !updated)
-      thr.processNextEvent(false);
+    tm.spinEventLoopUntil(() => installed && updated);
   },
 
   QueryInterface(iid) {

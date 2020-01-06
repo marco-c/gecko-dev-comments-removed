@@ -91,12 +91,10 @@ this.Async = {
 
   waitForSyncCallback: function waitForSyncCallback(callback) {
     
-    let thread = Cc["@mozilla.org/thread-manager;1"].getService().currentThread;
+    let tm = Cc["@mozilla.org/thread-manager;1"].getService();
 
     
-    while (Async.checkAppReady() && callback.state == CB_READY) {
-      thread.processNextEvent(true);
-    }
+    tm.spinEventLoopUntil(() => !Async.checkAppReady || callback.state != CB_READY);
 
     
     let state = callback.state;

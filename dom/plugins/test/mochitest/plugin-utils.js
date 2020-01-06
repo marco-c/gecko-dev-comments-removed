@@ -28,11 +28,11 @@ function getTestPlugin(pluginName) {
 function setTestPluginEnabledState(newEnabledState, pluginName) {
   var oldEnabledState = SpecialPowers.setTestPluginEnabledState(newEnabledState, pluginName);
   var plugin = getTestPlugin(pluginName);
-  while (plugin.enabledState != newEnabledState) {
-    
-    
-    SpecialPowers.Services.tm.currentThread.processNextEvent(true);
-  }
+  
+  
+  SpecialPowers.Services.tm.spinEventLoopUntil(() => {
+    return plugin.enabledState == newEnabledState;
+  });
   SimpleTest.registerCleanupFunction(function() {
     SpecialPowers.setTestPluginEnabledState(oldEnabledState, pluginName);
   });

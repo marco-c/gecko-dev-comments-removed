@@ -163,9 +163,9 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       
-      while (!outer._remoteWebNavigation) {
-        Services.tm.currentThread.processNextEvent(true);
-      }
+      Services.tm.spinEventLoopUntil(() => {
+        return outer._remoteWebNavigation;
+      });
 
       
       

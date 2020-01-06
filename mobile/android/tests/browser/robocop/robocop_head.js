@@ -838,9 +838,7 @@ JavaBridge.prototype = {
     
     
     
-    while (this._repliesNeeded > initialReplies) {
-      thread.processNextEvent(true);
-    }
+    this._Services.tm.spinEventLoopUntil(() => this._repliesNeeded <= initialReplies);
   },
 
   

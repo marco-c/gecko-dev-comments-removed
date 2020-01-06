@@ -71,9 +71,7 @@ NSSDialogs.prototype = {
     });
 
     
-    let thread = Services.tm.currentThread;
-    while (response === null)
-      thread.processNextEvent(true);
+    Services.tm.spinEventLoopUntil(() => response != null);
 
     return response;
   },

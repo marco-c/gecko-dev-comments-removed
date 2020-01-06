@@ -425,20 +425,19 @@ BrowserElementChild.prototype = {
     win.modalDepth++;
     let origModalDepth = win.modalDepth;
 
-    let thread = Services.tm.currentThread;
     debug("Nested event loop - begin");
-    while (win.modalDepth == origModalDepth && !this._shuttingDown) {
+    Services.tm.spinEventLoopUntil(() => {
       
       
       
       if (this._tryGetInnerWindowID(win) !== innerWindowID) {
         debug("_waitForResult: Inner window ID changed " +
               "while in nested event loop.");
-        break;
+        return true;
       }
 
-      thread.processNextEvent( true);
-    }
+      return win.modalDepth !== origModalDepth || this._shuttingDown;
+    });
     debug("Nested event loop - finish");
 
     if (win.modalDepth == 0) {

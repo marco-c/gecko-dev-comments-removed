@@ -19,11 +19,9 @@ function setTestPluginEnabledState(newEnabledState, pluginName) {
     return;
   }
   var plugin = getTestPlugin(pluginName);
-  while (plugin.enabledState != newEnabledState) {
-    
-    
-    SpecialPowers.Services.tm.currentThread.processNextEvent(true);
-  }
+  
+  
+  SpecialPowers.Services.tm.spinEventLoopUntil(() => plugin.enabledState == newEnabledState);
   SimpleTest.registerCleanupFunction(function() {
     SpecialPowers.setTestPluginEnabledState(oldEnabledState, pluginName);
   });
