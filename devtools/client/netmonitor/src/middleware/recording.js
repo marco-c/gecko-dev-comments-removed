@@ -8,15 +8,32 @@ const {
   TOGGLE_RECORDING,
 } = require("../constants");
 
+const {
+  getRecordingState,
+} = require("../selectors/index");
 
 
 
-function recordingMiddleware(store) {
-  return next => action => {
+
+
+
+
+
+function recordingMiddleware(connector) {
+  return store => next => action => {
     const res = next(action);
+
+    
+    
     if (action.type === TOGGLE_RECORDING) {
-      
+      let recording = getRecordingState(store.getState());
+      if (recording) {
+        connector.resume();
+      } else {
+        connector.pause();
+      }
     }
+
     return res;
   };
 }
