@@ -270,7 +270,7 @@ evaluate.toJSON = function(obj, seenEls) {
     return [...obj].map(el => evaluate.toJSON(el, seenEls));
 
   
-  } else if ("nodeType" in obj && obj.nodeType == obj.ELEMENT_NODE) {
+  } else if (element.isElement(obj)) {
     let uuid = seenEls.add(obj);
     return element.makeWebElement(uuid);
 

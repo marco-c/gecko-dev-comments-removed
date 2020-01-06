@@ -1058,6 +1058,22 @@ element.scrollIntoView = function(el) {
 
 
 
+
+element.isElement = function(node) {
+  return element.isDOMElement(node) ||
+      element.isSVGElement(node) ||
+      element.isXULElement(node);
+};
+
+
+
+
+
+
+
+
+
+
 element.isDOMElement = function(node) {
   return typeof node == "object" &&
       node !== null &&
