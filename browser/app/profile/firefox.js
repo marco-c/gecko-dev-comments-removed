@@ -915,6 +915,14 @@ pref("browser.sessionstore.dom_storage_limit", 2048);
 pref("accessibility.blockautorefresh", false);
 
 
+
+#ifdef NIGHTLY_BUILD
+pref("browser.places.useAsyncTransactions", true);
+#else
+pref("browser.places.useAsyncTransactions", false);
+#endif
+
+
 pref("places.history.enabled", true);
 
 
