@@ -281,6 +281,7 @@ AudioSession::Start()
     return NS_ERROR_FAILURE;
   }
 
+  
   hr = mAudioSessionControl->RegisterAudioSessionNotification(this);
   if (FAILED(hr)) {
     StopInternal();
@@ -297,6 +298,7 @@ AudioSession::StopInternal()
 {
   if (mAudioSessionControl &&
       (mState == STARTED || mState == STOPPED)) {
+    
     mAudioSessionControl->UnregisterAudioSessionNotification(this);
   }
   mAudioSessionControl = nullptr;
@@ -420,6 +422,10 @@ AudioSession::OnSessionDisconnectedInternal()
   if (!mAudioSessionControl)
     return NS_OK;
 
+  
+  
+  
+  RefPtr<AudioSession> kungFuDeathGrip(this);
   mAudioSessionControl->UnregisterAudioSessionNotification(this);
   mAudioSessionControl = nullptr;
 
