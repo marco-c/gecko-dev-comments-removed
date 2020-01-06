@@ -1972,13 +1972,7 @@ void HTMLMediaElement::DoLoad()
     return;
   }
 
-  
-  
-  
-  
   if (EventStateManager::IsHandlingUserInput()) {
-    mHasUserInteraction = true;
-
     
     
     if (HasAttr(kNameSpaceID_None, nsGkAtoms::autoplay)) {
@@ -2752,12 +2746,6 @@ HTMLMediaElement::Seek(double aTime,
 
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
-  }
-
-  
-  
-  if (EventStateManager::IsHandlingUserInput()) {
-    mHasUserInteraction = true;
   }
 
   StopSuspendingAfterFirstFrame();
@@ -4043,7 +4031,6 @@ HTMLMediaElement::HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo>& aNo
     mIsEncrypted(false),
     mWaitingForKey(NOT_WAITING_FOR_KEY),
     mDisableVideo(false),
-    mHasUserInteraction(false),
     mFirstFrameLoaded(false),
     mDefaultPlaybackStartPosition(0.0),
     mHasSuspendTaint(false),
@@ -4227,9 +4214,6 @@ HTMLMediaElement::PlayInternal(ErrorResult& aRv)
     return nullptr;
   }
   mPendingPlayPromises.AppendElement(promise);
-
-  
-  mHasUserInteraction = true;
 
   if (mPreloadAction == HTMLMediaElement::PRELOAD_NONE) {
     

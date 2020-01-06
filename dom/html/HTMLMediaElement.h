@@ -1778,10 +1778,6 @@ private:
   TimeDurationAccumulator mVideoDecodeSuspendTime;
 
   
-  
-  bool mHasUserInteraction;
-
-  
   bool mFirstFrameLoaded;
 
   
