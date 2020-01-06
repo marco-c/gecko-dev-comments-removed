@@ -121,7 +121,7 @@ impl CSSKeyframesRuleMethods for CSSKeyframesRule {
         
         
         
-        let name = KeyframesName::from_ident(value.into());
+        let name = KeyframesName::from_ident(&value);
         let mut guard = self.cssrule.shared_lock().write();
         self.keyframesrule.write_with(&mut guard).name = name;
         Ok(())

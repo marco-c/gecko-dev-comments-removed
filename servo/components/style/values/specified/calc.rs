@@ -150,40 +150,36 @@ impl CalcNode {
         input: &mut Parser<'i, 't>,
         expected_unit: CalcUnit
     ) -> Result<Self, ParseError<'i>> {
+        
         match (input.next()?, expected_unit) {
-            (Token::Number { value, .. }, _) => Ok(CalcNode::Number(value)),
-            (Token::Dimension { value, ref unit, .. }, CalcUnit::Length) |
-            (Token::Dimension { value, ref unit, .. }, CalcUnit::LengthOrPercentage) => {
-                NoCalcLength::parse_dimension(context, value, unit)
+            (&Token::Number { value, .. }, _) => return Ok(CalcNode::Number(value)),
+            (&Token::Dimension { value, ref unit, .. }, CalcUnit::Length) |
+            (&Token::Dimension { value, ref unit, .. }, CalcUnit::LengthOrPercentage) => {
+                return NoCalcLength::parse_dimension(context, value, unit)
                     .map(CalcNode::Length)
                     .map_err(|()| StyleParseError::UnspecifiedError.into())
             }
-            (Token::Dimension { value, ref unit, .. }, CalcUnit::Angle) => {
-                Angle::parse_dimension(value, unit,  true)
+            (&Token::Dimension { value, ref unit, .. }, CalcUnit::Angle) => {
+                return Angle::parse_dimension(value, unit,  true)
                     .map(CalcNode::Angle)
                     .map_err(|()| StyleParseError::UnspecifiedError.into())
             }
-            (Token::Dimension { value, ref unit, .. }, CalcUnit::Time) => {
-                Time::parse_dimension(value, unit,  true)
+            (&Token::Dimension { value, ref unit, .. }, CalcUnit::Time) => {
+                return Time::parse_dimension(value, unit,  true)
                     .map(CalcNode::Time)
                     .map_err(|()| StyleParseError::UnspecifiedError.into())
             }
-            (Token::Percentage { unit_value, .. }, CalcUnit::LengthOrPercentage) |
-            (Token::Percentage { unit_value, .. }, CalcUnit::Percentage) => {
-                Ok(CalcNode::Percentage(unit_value))
+            (&Token::Percentage { unit_value, .. }, CalcUnit::LengthOrPercentage) |
+            (&Token::Percentage { unit_value, .. }, CalcUnit::Percentage) => {
+                return Ok(CalcNode::Percentage(unit_value))
             }
-            (Token::ParenthesisBlock, _) => {
-                input.parse_nested_block(|i| {
-                    CalcNode::parse(context, i, expected_unit)
-                })
-            }
-            (Token::Function(ref name), _) if name.eq_ignore_ascii_case("calc") => {
-                input.parse_nested_block(|i| {
-                    CalcNode::parse(context, i, expected_unit)
-                })
-            }
-            (t, _) => Err(BasicParseError::UnexpectedToken(t).into())
+            (&Token::ParenthesisBlock, _) => {}
+            (&Token::Function(ref name), _) if name.eq_ignore_ascii_case("calc") => {}
+            (t, _) => return Err(BasicParseError::UnexpectedToken(t.clone()).into())
         }
+        input.parse_nested_block(|i| {
+            CalcNode::parse(context, i, expected_unit)
+        })
     }
 
     
@@ -200,11 +196,12 @@ impl CalcNode {
         loop {
             let position = input.position();
             match input.next_including_whitespace() {
-                Ok(Token::WhiteSpace(_)) => {
+                Ok(&Token::WhiteSpace(_)) => {
                     if input.is_exhausted() {
                         break; 
                     }
-                    match input.next()? {
+                    
+                    match input.next()?.clone() {
                         Token::Delim('+') => {
                             let rhs =
                                 Self::parse_product(context, input, expected_unit)?;
@@ -252,13 +249,13 @@ impl CalcNode {
         loop {
             let position = input.position();
             match input.next() {
-                Ok(Token::Delim('*')) => {
+                Ok(&Token::Delim('*')) => {
                     let rhs = Self::parse_one(context, input, expected_unit)?;
                     let new_root = CalcNode::Mul(Box::new(root), Box::new(rhs));
                     root = new_root;
                 }
                 
-                Ok(Token::Delim('/')) if expected_unit != CalcUnit::Integer => {
+                Ok(&Token::Delim('/')) if expected_unit != CalcUnit::Integer => {
                     let rhs = Self::parse_one(context, input, expected_unit)?;
                     let new_root = CalcNode::Div(Box::new(root), Box::new(rhs));
                     root = new_root;

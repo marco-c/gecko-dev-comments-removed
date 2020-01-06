@@ -22,7 +22,7 @@ extern crate euclid;
 extern crate selectors;
 #[cfg(feature = "servo")] #[macro_use] extern crate serde;
 
-use cssparser::{CompactCowStr, Token};
+use cssparser::{CowRcStr, Token};
 use selectors::parser::SelectorParseError;
 
 
@@ -87,9 +87,9 @@ pub type ParseError<'i> = cssparser::ParseError<'i, SelectorParseError<'i, Style
 
 pub enum StyleParseError<'i> {
     
-    BadUrlInDeclarationValueBlock(CompactCowStr<'i>),
+    BadUrlInDeclarationValueBlock(CowRcStr<'i>),
     
-    BadStringInDeclarationValueBlock(CompactCowStr<'i>),
+    BadStringInDeclarationValueBlock(CowRcStr<'i>),
     
     UnbalancedCloseParenthesisInDeclarationValueBlock,
     
@@ -101,11 +101,11 @@ pub enum StyleParseError<'i> {
     
     PropertyDeclarationValueNotExhausted,
     
-    UnexpectedDimension(CompactCowStr<'i>),
+    UnexpectedDimension(CowRcStr<'i>),
     
     RangedExpressionWithNoValue,
     
-    UnexpectedFunction(CompactCowStr<'i>),
+    UnexpectedFunction(CowRcStr<'i>),
     
     UnexpectedNamespaceRule,
     
@@ -113,7 +113,7 @@ pub enum StyleParseError<'i> {
     
     UnexpectedCharsetRule,
     
-    UnsupportedAtRule(CompactCowStr<'i>),
+    UnsupportedAtRule(CowRcStr<'i>),
     
     UnspecifiedError,
     
@@ -124,13 +124,13 @@ pub enum StyleParseError<'i> {
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub enum PropertyDeclarationParseError<'i> {
     
-    UnknownProperty(CompactCowStr<'i>),
+    UnknownProperty(CowRcStr<'i>),
     
     UnknownVendorProperty,
     
     ExperimentalProperty,
     
-    InvalidValue(CompactCowStr<'i>),
+    InvalidValue(CowRcStr<'i>),
     
     
     
