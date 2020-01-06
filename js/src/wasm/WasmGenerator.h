@@ -29,77 +29,43 @@ namespace wasm {
 
 struct CompileArgs;
 struct ModuleEnvironment;
-class FunctionGenerator;
-
-
-
-
-
-class FuncBytes
-{
-    Bytes            bytes_;
-    uint32_t         index_;
-    const SigWithId* sig_;
-    uint32_t         lineOrBytecode_;
-    Uint32Vector     callSiteLineNums_;
-
-  public:
-    FuncBytes()
-      : index_(UINT32_MAX),
-        sig_(nullptr),
-        lineOrBytecode_(UINT32_MAX)
-    {}
-
-    Bytes& bytes() {
-        return bytes_;
-    }
-    MOZ_MUST_USE bool addCallSiteLineNum(uint32_t lineno) {
-        return callSiteLineNums_.append(lineno);
-    }
-    void setLineOrBytecode(uint32_t lineOrBytecode) {
-        MOZ_ASSERT(lineOrBytecode_ == UINT32_MAX);
-        lineOrBytecode_ = lineOrBytecode;
-    }
-    void setFunc(uint32_t index, const SigWithId* sig) {
-        MOZ_ASSERT(index_ == UINT32_MAX);
-        MOZ_ASSERT(sig_ == nullptr);
-        index_ = index;
-        sig_ = sig;
-    }
-    void reset() {
-        bytes_.clear();
-        index_ = UINT32_MAX;
-        sig_ = nullptr;
-        lineOrBytecode_ = UINT32_MAX;
-        callSiteLineNums_.clear();
-    }
-
-    const Bytes& bytes() const { return bytes_; }
-    uint32_t index() const { return index_; }
-    const SigWithId& sig() const { return *sig_; }
-    uint32_t lineOrBytecode() const { return lineOrBytecode_; }
-    const Uint32Vector& callSiteLineNums() const { return callSiteLineNums_; }
-};
-
-typedef UniquePtr<FuncBytes> UniqueFuncBytes;
-typedef Vector<UniqueFuncBytes, 8, SystemAllocPolicy> UniqueFuncBytesVector;
 
 
 
 
 class FuncCompileUnit
 {
-    UniqueFuncBytes func_;
+    
+    Bytes bytesToDelete_;
+    const uint8_t* begin_;
+    const uint8_t* end_;
+    uint32_t index_;
+    uint32_t lineOrBytecode_;
+    Uint32Vector callSiteLineNums_;
+
+    
     FuncOffsets offsets_;
     DebugOnly<bool> finished_;
 
   public:
-    explicit FuncCompileUnit(UniqueFuncBytes func)
-      : func_(Move(func)),
+    explicit FuncCompileUnit(uint32_t index, uint32_t lineOrBytecode,
+                             Bytes&& bytesToDelete, const uint8_t* begin, const uint8_t* end,
+                             Uint32Vector&& callSiteLineNums)
+      : bytesToDelete_(Move(bytesToDelete)),
+        begin_(begin),
+        end_(end),
+        index_(index),
+        lineOrBytecode_(lineOrBytecode),
+        callSiteLineNums_(Move(callSiteLineNums)),
         finished_(false)
     {}
 
-    const FuncBytes& func() const { return *func_; }
+    const uint8_t* begin() const { return begin_; }
+    const uint8_t* end() const { return end_; }
+    uint32_t index() const { return index_; }
+    uint32_t lineOrBytecode() const { return lineOrBytecode_; }
+    const Uint32Vector& callSiteLineNums() const { return callSiteLineNums_; }
+
     FuncOffsets offsets() const { MOZ_ASSERT(finished_); return offsets_; }
 
     void finish(FuncOffsets offsets) {
@@ -107,16 +73,9 @@ class FuncCompileUnit
         offsets_ = offsets;
         finished_ = true;
     }
-
-    UniqueFuncBytes recycle() {
-        MOZ_ASSERT(finished_);
-        func_->reset();
-        return Move(func_);
-    }
 };
 
 typedef Vector<FuncCompileUnit, 8, SystemAllocPolicy> FuncCompileUnitVector;
-
 
 
 
@@ -170,17 +129,11 @@ class CompileTask
     bool debugEnabled() const {
         return env_.debug == DebugEnabled::True;
     }
-    bool reset(UniqueFuncBytesVector* freeFuncBytes) {
-        for (FuncCompileUnit& unit : units_) {
-            if (!freeFuncBytes->emplaceBack(Move(unit.recycle())))
-                return false;
-        }
-
+    bool reset() {
         units_.clear();
         masm_.reset();
         alloc_.reset();
         lifo_.releaseAll();
-
         init();
         return true;
     }
@@ -233,12 +186,10 @@ class MOZ_STACK_CLASS ModuleGenerator
     uint32_t                        outstanding_;
     CompileTaskVector               tasks_;
     CompileTaskPtrVector            freeTasks_;
-    UniqueFuncBytesVector           freeFuncBytes_;
     CompileTask*                    currentTask_;
     uint32_t                        batchedBytecode_;
 
     
-    DebugOnly<FunctionGenerator*>   activeFuncDef_;
     DebugOnly<bool>                 startedFuncDefs_;
     DebugOnly<bool>                 finishedFuncDefs_;
     DebugOnly<uint32_t>             numFinishedFuncDefs_;
@@ -262,6 +213,9 @@ class MOZ_STACK_CLASS ModuleGenerator
     MOZ_MUST_USE bool allocateGlobal(GlobalDesc* global);
 
     MOZ_MUST_USE bool launchBatchCompile();
+    MOZ_MUST_USE bool compileFuncDef(uint32_t funcIndex, uint32_t lineOrBytecode,
+                                     Bytes&& bytes, const uint8_t* begin, const uint8_t* end,
+                                     Uint32Vector&& lineNums);
 
     MOZ_MUST_USE bool initAsmJS(Metadata* asmJSMetadata);
     MOZ_MUST_USE bool initWasm();
@@ -280,8 +234,10 @@ class MOZ_STACK_CLASS ModuleGenerator
 
     
     MOZ_MUST_USE bool startFuncDefs();
-    MOZ_MUST_USE bool startFuncDef(uint32_t lineOrBytecode, FunctionGenerator* fg);
-    MOZ_MUST_USE bool finishFuncDef(uint32_t funcIndex, FunctionGenerator* fg);
+    MOZ_MUST_USE bool compileFuncDef(uint32_t funcIndex, uint32_t lineOrBytecode,
+                                     const uint8_t* begin, const uint8_t* end);
+    MOZ_MUST_USE bool compileFuncDef(uint32_t funcIndex, uint32_t lineOrBytecode,
+                                     Bytes&& bytes, Uint32Vector&& callSiteLineNums);
     MOZ_MUST_USE bool finishFuncDefs();
 
     
@@ -307,33 +263,6 @@ class MOZ_STACK_CLASS ModuleGenerator
     
     
     MOZ_MUST_USE bool finishTier2(Module& module);
-};
-
-
-
-
-
-
-
-
-class MOZ_STACK_CLASS FunctionGenerator
-{
-    friend class ModuleGenerator;
-
-    ModuleGenerator* m_;
-    UniqueFuncBytes  funcBytes_;
-
-  public:
-    FunctionGenerator()
-      : m_(nullptr), funcBytes_(nullptr)
-    {}
-
-    Bytes& bytes() {
-        return funcBytes_->bytes();
-    }
-    MOZ_MUST_USE bool addCallSiteLineNum(uint32_t lineno) {
-        return funcBytes_->addCallSiteLineNum(lineno);
-    }
 };
 
 } 

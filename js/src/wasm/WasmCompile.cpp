@@ -47,16 +47,7 @@ DecodeFunctionBody(Decoder& d, ModuleGenerator& mg, uint32_t funcIndex)
     if (!d.readBytes(bodySize, &bodyBegin))
         return d.fail("function body length too big");
 
-    FunctionGenerator fg;
-    if (!mg.startFuncDef(offsetInModule, &fg))
-        return false;
-
-    if (!fg.bytes().resize(bodySize))
-        return false;
-
-    memcpy(fg.bytes().begin(), bodyBegin, bodySize);
-
-    return mg.finishFuncDef(funcIndex, &fg);
+    return mg.compileFuncDef(funcIndex, offsetInModule, bodyBegin, bodyBegin + bodySize);
 }
 
 static bool
