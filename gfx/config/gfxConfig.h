@@ -63,6 +63,9 @@ public:
   static FeatureStatus GetValue(Feature aFeature);
 
   
+  static void Reset(Feature aFeature);
+
+  
   static bool SetDefault(Feature aFeature,
                          bool aEnable,
                          FeatureStatus aDisableStatus,
