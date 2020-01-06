@@ -696,6 +696,10 @@ impl MaybeNew for ViewportConstraints {
         
         
         
+        
+        
+        
+        
         let initial_viewport = device.au_viewport_size();
 
         let provider = get_metrics_provider_for_product();

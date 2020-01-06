@@ -54,6 +54,9 @@ pub struct Device {
     
     
     used_root_font_size: AtomicBool,
+    
+    
+    used_viewport_size: AtomicBool,
 }
 
 unsafe impl Sync for Device {}
@@ -69,6 +72,7 @@ impl Device {
             viewport_override: None,
             root_font_size: AtomicIsize::new(font_size::get_initial_value().0 as isize), 
             used_root_font_size: AtomicBool::new(false),
+            used_viewport_size: AtomicBool::new(false),
         }
     }
 
@@ -112,6 +116,7 @@ impl Device {
         self.viewport_override = None;
         self.default_values = ComputedValues::default_values(self.pres_context());
         self.used_root_font_size.store(false, Ordering::Relaxed);
+        self.used_viewport_size.store(false, Ordering::Relaxed);
     }
 
     
@@ -146,6 +151,7 @@ impl Device {
 
     
     pub fn au_viewport_size(&self) -> Size2D<Au> {
+        self.used_viewport_size.store(true, Ordering::Relaxed);
         self.viewport_override.as_ref().map(|v| {
             Size2D::new(Au::from_f32_px(v.size.width),
                         Au::from_f32_px(v.size.height))
@@ -154,6 +160,11 @@ impl Device {
             let area = &self.pres_context().mVisibleArea;
             Size2D::new(Au(area.width), Au(area.height))
         })
+    }
+
+    
+    pub fn used_viewport_size(&self) -> bool {
+        self.used_viewport_size.load(Ordering::Relaxed)
     }
 
     
