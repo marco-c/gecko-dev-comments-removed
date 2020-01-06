@@ -39,10 +39,6 @@ const std::vector<std::wstring> kDllsToUnload = {
   L"k7pswsen.dll",
 
   
-  L"prntm64.dll",
-  L"sysfer.dll",
-
-  
   L"snxhk64.dll",
   L"snxhk.dll",
 
@@ -381,7 +377,7 @@ SetJobLevel(sandbox::TargetPolicy* aPolicy, sandbox::JobLevel aJobLevel,
 
 void
 SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
-                                                 bool aIsFileProcess)
+                                                 base::ChildPrivileges aPrivs)
 {
   MOZ_RELEASE_ASSERT(mPolicy, "mPolicy must be set before this call.");
 
@@ -422,8 +418,7 @@ SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
   }
 
   
-  
-  if (aIsFileProcess) {
+  if (aPrivs == base::ChildPrivileges::PRIVILEGES_FILEREAD) {
     if (accessTokenLevel < sandbox::USER_NON_ADMIN) {
       accessTokenLevel = sandbox::USER_NON_ADMIN;
     }
@@ -504,7 +499,8 @@ SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
 
   
   
-  if (aSandboxLevel == 1 || aIsFileProcess) {
+  if (aSandboxLevel == 1 ||
+      aPrivs == base::ChildPrivileges::PRIVILEGES_FILEREAD) {
     result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_FILES,
                               sandbox::TargetPolicy::FILES_ALLOW_READONLY,
                               L"*");
