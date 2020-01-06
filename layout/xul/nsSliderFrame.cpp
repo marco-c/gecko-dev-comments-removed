@@ -321,7 +321,6 @@ nsSliderFrame::AttributeChanged(int32_t aNameSpaceID,
 
 void
 nsSliderFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists)
 {
   if (aBuilder->IsForEventDelivery() && isDraggingThumb()) {
@@ -332,7 +331,7 @@ nsSliderFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     return;
   }
 
-  nsBoxFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
+  nsBoxFrame::BuildDisplayList(aBuilder, aLists);
 }
 
 static bool
@@ -352,7 +351,6 @@ UsesCustomScrollbarMediator(nsIFrame* scrollbarBox) {
 
 void
 nsSliderFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
-                                           const nsRect&           aDirtyRect,
                                            const nsDisplayListSet& aLists)
 {
   
@@ -421,8 +419,11 @@ nsSliderFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
         refSize.width /= scale.width;
         refSize.height /= scale.height;
       }
-      nsRect dirty = aDirtyRect.Intersect(thumbRect);
-      dirty = nsLayoutUtils::ComputePartialPrerenderArea(aDirtyRect, overflow, refSize);
+      nsRect dirty = aBuilder->GetDirtyRect().Intersect(thumbRect);
+      dirty = nsLayoutUtils::ComputePartialPrerenderArea(aBuilder->GetDirtyRect(), overflow, refSize);
+
+      nsDisplayListBuilder::AutoBuildingDisplayList
+        buildingDisplayList(aBuilder, this, dirty, false);
 
       
       
@@ -442,7 +443,7 @@ nsSliderFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
 
       nsDisplayListBuilder::AutoContainerASRTracker contASRTracker(aBuilder);
       nsDisplayListCollection tempLists;
-      nsBoxFrame::BuildDisplayListForChildren(aBuilder, dirty, tempLists);
+      nsBoxFrame::BuildDisplayListForChildren(aBuilder, tempLists);
 
       
       
@@ -456,9 +457,6 @@ nsSliderFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
 
       
       thumbContentsClipState.Restore();
-
-      nsDisplayListBuilder::AutoBuildingDisplayList
-        buildingDisplayList(aBuilder, this, dirty, false);
 
       
       const ActiveScrolledRoot* ownLayerASR = contASRTracker.GetContainerASR();
@@ -477,7 +475,7 @@ nsSliderFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
     }
   }
 
-  nsBoxFrame::BuildDisplayListForChildren(aBuilder, aDirtyRect, aLists);
+  nsBoxFrame::BuildDisplayListForChildren(aBuilder, aLists);
 }
 
 NS_IMETHODIMP

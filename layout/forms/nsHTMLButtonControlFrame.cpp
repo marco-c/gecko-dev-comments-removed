@@ -92,7 +92,6 @@ nsHTMLButtonControlFrame::ShouldClipPaintingToBorderBox()
 
 void
 nsHTMLButtonControlFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                           const nsRect&           aDirtyRect,
                                            const nsDisplayListSet& aLists)
 {
   
@@ -126,7 +125,7 @@ nsHTMLButtonControlFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       clipState.ClipContainingBlockDescendants(rect, hasRadii ? radii : nullptr);
     }
 
-    BuildDisplayListForChild(aBuilder, mFrames.FirstChild(), aDirtyRect, set,
+    BuildDisplayListForChild(aBuilder, mFrames.FirstChild(), set,
                              DISPLAY_CHILD_FORCE_PSEUDO_STACKING_CONTEXT);
     
   }

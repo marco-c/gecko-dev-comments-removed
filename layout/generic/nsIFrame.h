@@ -1634,20 +1634,13 @@ public:
 
 
 
-
-
-
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists) {}
   
 
 
 
-
-
   void DisplayCaret(nsDisplayListBuilder* aBuilder,
-                    const nsRect&         aDirtyRect,
                     nsDisplayList*        aList);
 
   
@@ -1682,10 +1675,7 @@ public:
 
 
 
-
-
   void BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
-                                          const nsRect&         aDirtyRect,
                                           nsDisplayList*        aList);
 
   enum {
@@ -1704,7 +1694,6 @@ public:
 
   void BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
                                 nsIFrame*               aChild,
-                                const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists,
                                 uint32_t                aFlags = 0);
 
@@ -4041,7 +4030,7 @@ private:
   nsIFrame*        mPrevSibling;  
   DisplayItemArray mDisplayItemData;
 
-  void MarkAbsoluteFramesForDisplayList(nsDisplayListBuilder* aBuilder, const nsRect& aDirtyRect);
+  void MarkAbsoluteFramesForDisplayList(nsDisplayListBuilder* aBuilder);
 
   static void DestroyPaintedPresShellList(nsTArray<nsWeakPtr>* list) {
     list->Clear();

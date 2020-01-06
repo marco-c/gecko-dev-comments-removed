@@ -77,12 +77,11 @@ nsMathMLmrootFrame::TransmitAutomaticData()
 
 void
 nsMathMLmrootFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                     const nsRect&           aDirtyRect,
                                      const nsDisplayListSet& aLists)
 {
   
   
-  nsMathMLContainerFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
+  nsMathMLContainerFrame::BuildDisplayList(aBuilder, aLists);
 
   
   

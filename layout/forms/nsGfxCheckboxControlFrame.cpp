@@ -113,10 +113,9 @@ nsGfxCheckboxControlFrame::AccessibleType()
 
 void
 nsGfxCheckboxControlFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                            const nsRect&           aDirtyRect,
                                             const nsDisplayListSet& aLists)
 {
-  nsFormControlFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
+  nsFormControlFrame::BuildDisplayList(aBuilder, aLists);
 
   
   if ((!IsChecked() && !IsIndeterminate()) || !IsVisibleForPainting(aBuilder))

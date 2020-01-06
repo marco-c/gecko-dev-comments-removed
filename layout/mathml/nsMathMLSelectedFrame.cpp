@@ -58,14 +58,13 @@ nsMathMLSelectedFrame::SetInitialChildList(ChildListID     aListID,
 
 void
 nsMathMLSelectedFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                        const nsRect&           aDirtyRect,
                                         const nsDisplayListSet& aLists)
 {
   
   
   
   if (NS_MATHML_HAS_ERROR(mPresentationData.flags)) {
-    nsMathMLContainerFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
+    nsMathMLContainerFrame::BuildDisplayList(aBuilder, aLists);
     return;
   }
 
@@ -76,7 +75,7 @@ nsMathMLSelectedFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     
     nsDisplayListSet set(aLists, aLists.Content());
     
-    BuildDisplayListForChild(aBuilder, childFrame, aDirtyRect, set);
+    BuildDisplayListForChild(aBuilder, childFrame, set);
   }
 
 #if defined(DEBUG) && defined(SHOW_BOUNDING_BOX)

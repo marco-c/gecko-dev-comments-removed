@@ -433,7 +433,7 @@ PruneDisplayListForExtraPage(nsDisplayListBuilder* aBuilder,
 static void
 BuildDisplayListForExtraPage(nsDisplayListBuilder* aBuilder,
                              nsPageFrame* aPage, nsIFrame* aExtraPage,
-                             const nsRect& aDirtyRect, nsDisplayList* aList)
+                             nsDisplayList* aList)
 {
   
   
@@ -443,7 +443,7 @@ BuildDisplayListForExtraPage(nsDisplayListBuilder* aBuilder,
     return;
   }
   nsDisplayList list;
-  aExtraPage->BuildDisplayListForStackingContext(aBuilder, aDirtyRect, &list);
+  aExtraPage->BuildDisplayListForStackingContext(aBuilder, &list);
   PruneDisplayListForExtraPage(aBuilder, aPage, aExtraPage, &list);
   aList->AppendToTop(&list);
 }
@@ -513,7 +513,6 @@ protected:
 
 void
 nsPageFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                              const nsRect&           aDirtyRect,
                               const nsDisplayListSet& aLists)
 {
   nsDisplayListCollection set;
@@ -554,7 +553,10 @@ nsPageFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     clipState.ClipContainingBlockDescendants(clipRect, nullptr);
 
     nsRect dirtyRect = child->GetVisualOverflowRectRelativeToSelf();
-    child->BuildDisplayListForStackingContext(aBuilder, dirtyRect, &content);
+    nsDisplayListBuilder::AutoBuildingDisplayList
+      buildingForChild(aBuilder, child, dirtyRect,
+                       aBuilder->IsAtRootOfPseudoStackingContext());
+    child->BuildDisplayListForStackingContext(aBuilder, &content);
 
     
     
@@ -565,8 +567,12 @@ nsPageFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     
     nsIFrame* page = child;
     while ((page = GetNextPage(page)) != nullptr) {
-      BuildDisplayListForExtraPage(aBuilder, this, page,
-          dirtyRect + child->GetOffsetTo(page), &content);
+      nsRect childDirty = dirtyRect + child->GetOffsetTo(page);
+
+      nsDisplayListBuilder::AutoBuildingDisplayList
+        buildingForChild(aBuilder, page, childDirty,
+                         aBuilder->IsAtRootOfPseudoStackingContext());
+      BuildDisplayListForExtraPage(aBuilder, this, page, &content);
     }
 
     
@@ -580,6 +586,7 @@ nsPageFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     
     nsRect backgroundRect =
       nsRect(aBuilder->ToReferenceFrame(child), child->GetSize());
+
     PresContext()->GetPresShell()->AddCanvasBackgroundColorItem(
       *aBuilder, content, child, backgroundRect, NS_RGBA(0,0,0,0));
   }

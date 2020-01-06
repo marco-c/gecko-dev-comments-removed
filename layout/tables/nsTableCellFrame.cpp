@@ -472,7 +472,6 @@ PaintTableCellSelection(nsIFrame* aFrame, DrawTarget* aDrawTarget,
 
 void
 nsTableCellFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                   const nsRect&           aDirtyRect,
                                    const nsDisplayListSet& aLists)
 {
   DO_GLOBAL_REFLOW_COUNT_DSP("nsTableCellFrame");
@@ -534,7 +533,7 @@ nsTableCellFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   
-  BuildDisplayListForChild(aBuilder, kid, aDirtyRect, aLists);
+  BuildDisplayListForChild(aBuilder, kid, aLists);
 }
 
 nsIFrame::LogicalSides
