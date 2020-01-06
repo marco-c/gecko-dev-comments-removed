@@ -10,6 +10,7 @@
 #define NS_SMILCSSPROPERTY_H_
 
 #include "mozilla/Attributes.h"
+#include "mozilla/StyleBackendType.h"
 #include "nsISMILAttr.h"
 #include "nsIAtom.h"
 #include "nsCSSPropertyID.h"
@@ -61,7 +62,11 @@ public:
 
 
 
-  static bool IsPropertyAnimatable(nsCSSPropertyID aPropID);
+
+
+
+  static bool IsPropertyAnimatable(nsCSSPropertyID aPropID,
+                                   mozilla::StyleBackendType aBackend);
 
 protected:
   nsCSSPropertyID mPropID;

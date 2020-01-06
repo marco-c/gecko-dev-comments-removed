@@ -28,7 +28,8 @@ nsSMILCSSProperty::nsSMILCSSProperty(nsCSSPropertyID aPropID,
   , mElement(aElement)
   , mBaseStyleContext(aBaseStyleContext)
 {
-  MOZ_ASSERT(IsPropertyAnimatable(mPropID),
+  MOZ_ASSERT(IsPropertyAnimatable(mPropID,
+               aElement->OwnerDoc()->GetStyleBackendType()),
              "Creating a nsSMILCSSProperty for a property "
              "that's not supported for animation");
 }
@@ -93,7 +94,9 @@ nsSMILCSSProperty::ValueFromString(const nsAString& aStr,
                                    nsSMILValue& aValue,
                                    bool& aPreventCachingOfSandwich) const
 {
-  NS_ENSURE_TRUE(IsPropertyAnimatable(mPropID), NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(IsPropertyAnimatable(mPropID,
+                   mElement->OwnerDoc()->GetStyleBackendType()),
+                 NS_ERROR_FAILURE);
 
   nsSMILCSSValueType::ValueFromString(mPropID, mElement, aStr, aValue,
       &aPreventCachingOfSandwich);
@@ -114,7 +117,9 @@ nsSMILCSSProperty::ValueFromString(const nsAString& aStr,
 nsresult
 nsSMILCSSProperty::SetAnimValue(const nsSMILValue& aValue)
 {
-  NS_ENSURE_TRUE(IsPropertyAnimatable(mPropID), NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(IsPropertyAnimatable(mPropID,
+                   mElement->OwnerDoc()->GetStyleBackendType()),
+                 NS_ERROR_FAILURE);
 
   
   nsAutoString valStr;
@@ -146,8 +151,15 @@ nsSMILCSSProperty::ClearAnimValue()
 
 
 bool
-nsSMILCSSProperty::IsPropertyAnimatable(nsCSSPropertyID aPropID)
+nsSMILCSSProperty::IsPropertyAnimatable(nsCSSPropertyID aPropID,
+                                        StyleBackendType aBackend)
 {
+  
+  if (aBackend == StyleBackendType::Servo &&
+      !Servo_Property_IsAnimatable(aPropID)) {
+    return false;
+  }
+
   
   
   
