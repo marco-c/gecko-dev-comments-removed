@@ -62,18 +62,17 @@ class ChildDevToolsPanel extends ExtensionUtils.EventEmitter {
   receiveMessage({name, data}) {
     
     
-    if (!this.panelContext || !this.panelContext.contentWindow) {
-      return;
-    }
-
-    
-    
     if (!data || data.toolboxPanelId !== this.id) {
       return;
     }
 
     switch (name) {
       case "Extension:DevToolsPanelShown":
+        
+        
+        if (!this.panelContext || !this.panelContext.contentWindow) {
+          return;
+        }
         this.onParentPanelShown();
         break;
       case "Extension:DevToolsPanelHidden":

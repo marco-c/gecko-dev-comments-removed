@@ -61,11 +61,18 @@ class ParentDevToolsPanel {
     this.id = this.panelOptions.id;
 
     this.onToolboxPanelSelect = this.onToolboxPanelSelect.bind(this);
+    this.onToolboxHostWillChange = this.onToolboxHostWillChange.bind(this);
+    this.onToolboxHostChanged = this.onToolboxHostChanged.bind(this);
 
     this.unwatchExtensionProxyContextLoad = null;
     this.waitTopLevelContext = new Promise(resolve => {
       this._resolveTopLevelContext = resolve;
     });
+
+    
+    
+    this.browser = null;
+    this.browserContainerWindow = null;
 
     this.panelAdded = false;
     this.addPanel();
@@ -103,7 +110,13 @@ class ParentDevToolsPanel {
 
     this.createBrowserElement(window);
 
+    
+    
+    this.browserContainerWindow = window;
+
     toolbox.on("select", this.onToolboxPanelSelect);
+    toolbox.on("host-will-change", this.onToolboxHostWillChange);
+    toolbox.on("host-changed", this.onToolboxHostChanged);
 
     
     
@@ -113,8 +126,48 @@ class ParentDevToolsPanel {
     
     return () => {
       this.destroyBrowserElement();
+      this.browserContainerWindow = null;
       toolbox.off("select", this.onToolboxPanelSelect);
+      toolbox.off("host-will-change", this.onToolboxHostWillChange);
+      toolbox.off("host-changed", this.onToolboxHostChanged);
     };
+  }
+
+  onToolboxHostWillChange() {
+    
+    
+    
+    
+    
+    
+    if (this.browser) {
+      
+      
+      if (this.visible) {
+        this.context.parentMessageManager.sendAsyncMessage("Extension:DevToolsPanelHidden", {
+          toolboxPanelId: this.id,
+        });
+      }
+
+      this.destroyBrowserElement();
+    }
+  }
+
+  async onToolboxHostChanged() {
+    if (this.browserContainerWindow) {
+      this.createBrowserElement(this.browserContainerWindow);
+
+      
+      
+      
+      if (this.visible) {
+        await this.waitTopLevelContext;
+
+        this.context.parentMessageManager.sendAsyncMessage("Extension:DevToolsPanelShown", {
+          toolboxPanelId: this.id,
+        });
+      }
+    }
   }
 
   async onToolboxPanelSelect(what, id) {
@@ -150,10 +203,12 @@ class ParentDevToolsPanel {
       toolbox.removeAdditionalTool(this.id);
     }
 
-    this.context = null;
-    this.toolbox = null;
     this.waitTopLevelContext = null;
     this._resolveTopLevelContext = null;
+    this.context = null;
+    this.toolbox = null;
+    this.browser = null;
+    this.browserContainerWindow = null;
   }
 
   createBrowserElement(window) {
@@ -179,12 +234,6 @@ class ParentDevToolsPanel {
       browser.setAttribute("remote", "true");
       browser.setAttribute("remoteType", E10SUtils.EXTENSION_REMOTE_TYPE);
       awaitFrameLoader = promiseEvent(browser, "XULFrameLoaderCreated");
-    } else if (!AppConstants.RELEASE_OR_BETA) {
-      
-      
-      
-      browser.setAttribute("type", "chrome");
-      browser.setAttribute("forcemessagemanager", true);
     }
 
     let hasTopLevelContext = false;
