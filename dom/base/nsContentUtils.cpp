@@ -2331,7 +2331,7 @@ nsContentUtils::CanCallerAccess(nsPIDOMWindowInner* aWindow)
 
 
 bool
-nsContentUtils::PrincipalHasPermission(nsIPrincipal* aPrincipal, const nsAString& aPerm)
+nsContentUtils::PrincipalHasPermission(nsIPrincipal* aPrincipal, const nsIAtom* aPerm)
 {
   
   if (IsSystemPrincipal(aPrincipal)) {
@@ -2344,7 +2344,7 @@ nsContentUtils::PrincipalHasPermission(nsIPrincipal* aPrincipal, const nsAString
 
 
 bool
-nsContentUtils::CallerHasPermission(JSContext* aCx, const nsAString& aPerm)
+nsContentUtils::CallerHasPermission(JSContext* aCx, const nsIAtom* aPerm)
 {
   return PrincipalHasPermission(SubjectPrincipal(aCx), aPerm);
 }
@@ -7350,7 +7350,7 @@ nsContentUtils::IsCutCopyAllowed(nsIPrincipal* aSubjectPrincipal)
     return true;
   }
 
-  return PrincipalHasPermission(aSubjectPrincipal, NS_LITERAL_STRING("clipboardWrite"));
+  return PrincipalHasPermission(aSubjectPrincipal, nsGkAtoms::clipboardWrite);
 }
 
 

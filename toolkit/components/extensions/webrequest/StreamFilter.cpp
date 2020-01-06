@@ -261,7 +261,7 @@ StreamFilter::FireErrorEvent(const nsAString& aError)
  bool
 StreamFilter::IsAllowedInContext(JSContext* aCx, JSObject* )
 {
-  return nsContentUtils::CallerHasPermission(aCx, NS_LITERAL_STRING("webRequestBlocking"));
+  return nsContentUtils::CallerHasPermission(aCx, nsGkAtoms::webRequestBlocking);
 }
 
 JSObject*

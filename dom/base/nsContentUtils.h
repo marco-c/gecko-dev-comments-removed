@@ -57,6 +57,7 @@ class imgRequestProxy;
 class nsAutoScriptBlockerSuppressNodeRemoved;
 class nsCacheableFuncStringHTMLCollection;
 class nsHtml5StringParser;
+class nsIAtom;
 class nsIChannel;
 class nsIConsoleService;
 class nsIContent;
@@ -590,10 +591,10 @@ public:
   static bool CanCallerAccess(nsPIDOMWindowInner* aWindow);
 
   
-  static bool PrincipalHasPermission(nsIPrincipal* aPrincipal, const nsAString& aPerm);
+  static bool PrincipalHasPermission(nsIPrincipal* aPrincipal, const nsIAtom* aPerm);
 
   
-  static bool CallerHasPermission(JSContext* aCx, const nsAString& aPerm);
+  static bool CallerHasPermission(JSContext* aCx, const nsIAtom* aPerm);
 
   
 
