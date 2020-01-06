@@ -323,15 +323,24 @@ GLContextWGL::Init()
 }
 
 bool
-GLContextWGL::MakeCurrentImpl() const
+GLContextWGL::MakeCurrentImpl(bool aForce)
 {
-    const bool succeeded = sWGLLib.mSymbols.fMakeCurrent(mDC, mContext);
-    NS_ASSERTION(succeeded, "Failed to make GL context current!");
+    BOOL succeeded = true;
+
+    
+    
+    
+    
+    if (aForce || sWGLLib.mSymbols.fGetCurrentContext() != mContext) {
+        succeeded = sWGLLib.mSymbols.fMakeCurrent(mDC, mContext);
+        NS_ASSERTION(succeeded, "Failed to make GL context current!");
+    }
+
     return succeeded;
 }
 
 bool
-GLContextWGL::IsCurrentImpl() const
+GLContextWGL::IsCurrent()
 {
     return sWGLLib.mSymbols.fGetCurrentContext() == mContext;
 }

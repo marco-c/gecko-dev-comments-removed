@@ -60,7 +60,11 @@ namespace gl {
 using namespace mozilla::gfx;
 using namespace mozilla::layers;
 
-MOZ_THREAD_LOCAL(const GLContext*) GLContext::sCurrentContext;
+#ifdef MOZ_GL_DEBUG
+unsigned GLContext::sCurrentGLContextTLS = -1;
+#endif
+
+MOZ_THREAD_LOCAL(GLContext*) GLContext::sCurrentContext;
 
 
 #define CORE_SYMBOL(x) { (PRFuncPtr*) &mSymbols.f##x, { #x, nullptr } }
@@ -263,8 +267,7 @@ ChooseDebugFlags(CreateContextFlags createFlags)
 
 GLContext::GLContext(CreateContextFlags flags, const SurfaceCaps& caps,
                      GLContext* sharedContext, bool isOffscreen, bool useTLSIsCurrent)
-  : mImplicitMakeCurrent(false),
-    mIsOffscreen(isOffscreen),
+  : mIsOffscreen(isOffscreen),
     mContextLost(false),
     mUseTLSIsCurrent(ShouldUseTLSIsCurrent(useTLSIsCurrent)),
     mVersion(0),
@@ -3026,31 +3029,37 @@ GetBytesPerTexel(GLenum format, GLenum type)
     return 0;
 }
 
-bool
-GLContext::MakeCurrent(bool aForce) const
+bool GLContext::MakeCurrent(bool aForce)
 {
-    if (MOZ_UNLIKELY( IsDestroyed() ))
+    if (IsDestroyed())
         return false;
 
-    if (MOZ_LIKELY( !aForce )) {
-        bool isCurrent;
-        if (mUseTLSIsCurrent) {
-            isCurrent = (sCurrentContext.get() == this);
-        } else {
-            isCurrent = IsCurrentImpl();
-        }
-        if (MOZ_LIKELY( isCurrent )) {
-            MOZ_ASSERT(IsCurrentImpl());
-            return true;
-        }
+#ifdef MOZ_GL_DEBUG
+    PR_SetThreadPrivate(sCurrentGLContextTLS, this);
+
+    
+    
+#if 0
+    
+    
+    
+    
+    NS_ASSERTION(IsOwningThreadCurrent(),
+                 "MakeCurrent() called on different thread than this context was created on!");
+#endif
+#endif
+    if (mUseTLSIsCurrent && !aForce && sCurrentContext.get() == this) {
+        MOZ_ASSERT(IsCurrent());
+        return true;
     }
 
-    if (!MakeCurrentImpl())
+    if (!MakeCurrentImpl(aForce))
         return false;
 
     if (mUseTLSIsCurrent) {
         sCurrentContext.set(this);
     }
+
     return true;
 }
 
@@ -3063,57 +3072,6 @@ GLContext::ResetSyncCallCount(const char* resetReason) const
     }
 
     mSyncGLCallCount = 0;
-}
-
-
-
-void
-GLContext::BeforeGLCall_Debug(const char* const funcName) const
-{
-    MOZ_ASSERT(mDebugFlags);
-
-    FlushErrors();
-
-    if (mDebugFlags & DebugFlagTrace) {
-        printf_stderr("[gl:%p] > %s\n", this, funcName);
-    }
-}
-
-void
-GLContext::AfterGLCall_Debug(const char* const funcName) const
-{
-    MOZ_ASSERT(mDebugFlags);
-
-    
-    
-    
-    mSymbols.fFinish();
-    GLenum err = FlushErrors();
-
-    if (mDebugFlags & DebugFlagTrace) {
-        printf_stderr("[gl:%p] < %s [%s (0x%04x)]\n", this, funcName,
-                      GLErrorToString(err), err);
-    }
-
-    if (err != LOCAL_GL_NO_ERROR &&
-        !mLocalErrorScopeStack.size())
-    {
-        printf_stderr("[gl:%p] %s: Generated unexpected %s error."
-                      " (0x%04x)\n", this, funcName,
-                      GLErrorToString(err), err);
-
-        if (mDebugFlags & DebugFlagAbortOnError) {
-            MOZ_CRASH("Unexpected error with MOZ_GL_DEBUG_ABORT_ON_ERROR. (Run"
-                      " with MOZ_GL_DEBUG_ABORT_ON_ERROR=0 to disable)");
-        }
-    }
-}
-
- void
-GLContext::OnImplicitMakeCurrentFailure(const char* const funcName)
-{
-    gfxCriticalError() << "Ignoring call to " << funcName << " with failed"
-                       << " mImplicitMakeCurrent.";
 }
 
 } 
