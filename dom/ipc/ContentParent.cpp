@@ -4451,6 +4451,14 @@ ContentParent::RecvSetOfflinePermission(const Principal& aPrincipal)
 void
 ContentParent::MaybeInvokeDragSession(TabParent* aParent)
 {
+  
+  
+  
+  
+  
+  
+  SetInputPriorityEventEnabled(false);
+
   nsCOMPtr<nsIDragService> dragService =
     do_GetService("@mozilla.org/widget/dragservice;1");
   if (dragService && dragService->MaybeAddChildProcess(this)) {

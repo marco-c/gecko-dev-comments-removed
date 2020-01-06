@@ -402,6 +402,9 @@ nsBaseDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers)
                                                               mUserCancelled,
                                                               mEndDragPoint,
                                                               aKeyModifiers);
+    
+    
+    mChildProcesses[i]->SetInputPriorityEventEnabled(true);
   }
   mChildProcesses.Clear();
 

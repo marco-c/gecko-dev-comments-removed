@@ -3308,6 +3308,9 @@ TabParent::RecvInvokeDragSession(nsTArray<IPCDataTransfer>&& aTransfers,
       Unused << Manager()->AsContentParent()->SendEndDragSession(true, true,
                                                                  LayoutDeviceIntPoint(),
                                                                  0);
+      
+      
+      Manager()->AsContentParent()->SetInputPriorityEventEnabled(true);
     }
     return IPC_OK();
   }
