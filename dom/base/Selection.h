@@ -437,7 +437,7 @@ private:
   
   
   
-  nsTArray<RangeData> mRanges;
+  AutoTArray<RangeData, 1> mRanges;
 
   RefPtr<nsRange> mAnchorFocusRange;
   RefPtr<nsFrameSelection> mFrameSelection;
