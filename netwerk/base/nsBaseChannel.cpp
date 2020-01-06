@@ -106,6 +106,28 @@ nsBaseChannel::Redirect(nsIChannel *newChannel, uint32_t redirectFlags,
       new nsRedirectHistoryEntry(uriPrincipal, nullptr, EmptyCString());
 
     newLoadInfo->AppendRedirectHistoryEntry(entry, isInternalRedirect);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIURI> resultPrincipalURI;
+
+    nsCOMPtr<nsILoadInfo> existingLoadInfo = newChannel->GetLoadInfo();
+    if (existingLoadInfo) {
+      existingLoadInfo->GetResultPrincipalURI(getter_AddRefs(resultPrincipalURI));
+    }
+    if (!resultPrincipalURI) {
+      newChannel->GetOriginalURI(getter_AddRefs(resultPrincipalURI));
+    }
+
+    newLoadInfo->SetResultPrincipalURI(resultPrincipalURI);
+
     newChannel->SetLoadInfo(newLoadInfo);
   }
   else {
