@@ -57,38 +57,6 @@ using UniqueProfilerBacktrace =
 #define PROFILER_FUNC(decl, rv)  decl;
 #define PROFILER_FUNC_VOID(decl) void decl;
 
-
-
-
-#ifdef MOZ_USE_SYSTRACE
-# ifndef ATRACE_TAG
-#  define ATRACE_TAG ATRACE_TAG_ALWAYS
-# endif
-
-
-# ifndef HAVE_ANDROID_OS
-#  define HAVE_ANDROID_OS
-#  define REMOVE_HAVE_ANDROID_OS
-# endif
-
-
-
-
-
-
-# undef _LIBS_CUTILS_TRACE_H
-# include <utils/Trace.h>
-# define PROFILER_PLATFORM_TRACING(name) \
-    android::ScopedTrace \
-    PROFILER_APPEND_LINE_NUMBER(scopedTrace)(ATRACE_TAG, name);
-# ifdef REMOVE_HAVE_ANDROID_OS
-#  undef HAVE_ANDROID_OS
-#  undef REMOVE_HAVE_ANDROID_OS
-# endif
-#else
-# define PROFILER_PLATFORM_TRACING(name)
-#endif
-
 #define PROFILER_APPEND_LINE_NUMBER_PASTE(id, line) id ## line
 #define PROFILER_APPEND_LINE_NUMBER_EXPAND(id, line) \
   PROFILER_APPEND_LINE_NUMBER_PASTE(id, line)
@@ -108,7 +76,6 @@ using UniqueProfilerBacktrace =
 
 
 #define PROFILER_LABEL(name_space, info, category) \
-  PROFILER_PLATFORM_TRACING(name_space "::" info) \
   mozilla::AutoProfilerLabel \
   PROFILER_APPEND_LINE_NUMBER(profiler_raii)(name_space "::" info, nullptr, \
                                              __LINE__, category)
@@ -116,7 +83,6 @@ using UniqueProfilerBacktrace =
 
 
 #define PROFILER_LABEL_FUNC(category) \
-  PROFILER_PLATFORM_TRACING(PROFILER_FUNCTION_NAME) \
   mozilla::AutoProfilerLabel \
   PROFILER_APPEND_LINE_NUMBER(profiler_raii)(PROFILER_FUNCTION_NAME, nullptr, \
                                              __LINE__, category)
@@ -138,7 +104,6 @@ using UniqueProfilerBacktrace =
 
 
 #define PROFILER_LABEL_DYNAMIC(name_space, info, category, dynamicStr) \
-  PROFILER_PLATFORM_TRACING(name_space "::" info) \
   mozilla::AutoProfilerLabel \
   PROFILER_APPEND_LINE_NUMBER(profiler_raii)(name_space "::" info, dynamicStr, \
                                              __LINE__, category)
