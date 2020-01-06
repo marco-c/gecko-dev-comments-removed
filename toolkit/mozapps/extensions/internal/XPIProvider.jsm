@@ -282,7 +282,7 @@ const TOOLKIT_ID                      = "toolkit@mozilla.org";
 
 const XPI_SIGNATURE_CHECK_PERIOD      = 24 * 60 * 60;
 
-XPCOMUtils.defineConstant(this, "DB_SCHEMA", 21);
+XPCOMUtils.defineConstant(this, "DB_SCHEMA", 20);
 
 XPCOMUtils.defineLazyPreferenceGetter(this, "ALLOW_NON_MPC", PREF_ALLOW_NON_MPC);
 
@@ -4468,6 +4468,7 @@ this.XPIProvider = {
                    resolve => XPIDatabase.getVisibleAddonForID(addon.id, resolve));
 
     let extraParams = {};
+    extraParams.temporarilyInstalled = aInstallLocation === TemporaryInstallLocation;
     if (oldAddon) {
       if (!oldAddon.bootstrap) {
         logger.warn("Non-restartless Add-on is already installed", addon.id);
