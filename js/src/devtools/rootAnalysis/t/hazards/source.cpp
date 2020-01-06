@@ -2,6 +2,8 @@
 
 struct Cell { int f; } ANNOTATE("GC Thing");
 
+struct RootedCell { RootedCell(Cell*) {} } ANNOTATE("Rooted Pointer");
+
 class AutoSuppressGC_Base {
   public:
     AutoSuppressGC_Base() {}
@@ -30,7 +32,7 @@ void GC()
     invisible();
 }
 
-extern void foo(Cell*);
+extern void usecell(Cell*);
 
 void suppressedFunction() {
     GC(); 
@@ -70,20 +72,115 @@ f()
         suppressedFunction();
         halfSuppressedFunction();
     }
-    foo(cell1);
+    usecell(cell1);
     halfSuppressedFunction();
-    foo(cell2);
+    usecell(cell2);
     unsuppressedFunction();
     {
         
         
         AutoSuppressGC nogc;
     }
-    foo(cell3);
+    usecell(cell3);
     Cell* cell5 = &cell;
-    foo(cell5);
+    usecell(cell5);
 
     
     Cell* cell6 = &cell;
     return cell6;
+}
+
+Cell* copy_and_gc(Cell* src)
+{
+    GC();
+    return reinterpret_cast<Cell*>(88);
+}
+
+void use(Cell* cell)
+{
+    static int x = 0;
+    if (cell)
+        x++;
+}
+
+struct CellContainer {
+    Cell* cell;
+    CellContainer() {
+        asm("");
+    }
+};
+
+void loopy()
+{
+    Cell cell;
+
+    
+    Cell* haz1;
+    for (int i = 0; i < 10; i++) {
+        haz1 = copy_and_gc(haz1);
+    }
+
+    
+    
+    Cell* haz2 = &cell;
+    for (int j = 0; j < 10; j++) {
+        use(haz2);
+        GC();
+        haz2 = &cell;
+    }
+
+    
+    
+    Cell* haz3;
+    for (int k = 0; k < 10; k++) {
+        GC();
+        use(haz3);
+        haz3 = &cell;
+    }
+
+    
+    Cell* haz4 = &cell;
+    for (int i2 = 0; i2 < 10; i2++) {
+        GC();
+    }
+    use(haz4);
+
+    
+    Cell* haz5;
+    for (int i3 = 0; i3 < 10; i3++) {
+        haz5 = &cell;
+    }
+    GC();
+    use(haz5);
+
+    
+    
+    Cell* haz6;
+    for (int i4 = 0; i4 < 10; i4++) {
+        GC();
+        haz6 = &cell;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    for (int i5 = 0; i5 < 10; i5++) {
+        GC();
+        CellContainer haz7;
+        use(haz7.cell);
+        haz7.cell = &cell;
+    }
+
+    
+    
+    CellContainer haz8;
+    for (int i6 = 0; i6 < 10; i6++) {
+        GC();
+        use(haz8.cell);
+        haz8.cell = &cell;
+    }
 }

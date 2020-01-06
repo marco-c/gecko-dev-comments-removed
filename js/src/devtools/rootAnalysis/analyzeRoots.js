@@ -15,7 +15,7 @@ if (typeof scriptArgs[0] != 'string' || typeof scriptArgs[1] != 'string')
     throw "Usage: analyzeRoots.js [-f function_name] <gcFunctions.lst> <gcEdges.txt> <suppressedFunctions.lst> <gcTypes.txt> <typeInfo.txt> [start end [tmpfile]]";
 
 var theFunctionNameToFind;
-if (scriptArgs[0] == '--function') {
+if (scriptArgs[0] == '--function' || scriptArgs[0] == '-f') {
     theFunctionNameToFind = scriptArgs[1];
     scriptArgs = scriptArgs.slice(2);
 }
@@ -141,6 +141,16 @@ function isReturningImmobileValue(edge, variable)
 
 
 
+
+
+
+
+
+
+
+
+
+
 function edgeUsesVariable(edge, variable, body)
 {
     if (ignoreEdgeUse(edge, variable, body))
@@ -153,24 +163,39 @@ function edgeUsesVariable(edge, variable, body)
 
     switch (edge.Kind) {
 
-    case "Assign":
+    case "Assign": {
         if (isReturningImmobileValue(edge, variable))
             return 0;
-        if (expressionUsesVariable(edge.Exp[0], variable))
+        const [lhs, rhs] = edge.Exp;
+        if (expressionUsesVariable(rhs, variable))
             return src;
-        return expressionUsesVariable(edge.Exp[1], variable) ? src : 0;
+        if (expressionUsesVariable(lhs, variable) && !expressionIsVariable(lhs, variable))
+            return src;
+        return 0;
+    }
 
     case "Assume":
         return expressionUsesVariableContents(edge.Exp[0], variable) ? src : 0;
 
-    case "Call":
-        if (expressionUsesVariable(edge.Exp[0], variable))
-            return src;
-        if (1 in edge.Exp && expressionUsesVariable(edge.Exp[1], variable))
+    case "Call": {
+        const callee = edge.Exp[0];
+        if (expressionUsesVariable(callee, variable))
             return src;
         if ("PEdgeCallInstance" in edge) {
-            if (expressionUsesVariable(edge.PEdgeCallInstance.Exp, variable))
-                return src;
+            if (expressionUsesVariable(edge.PEdgeCallInstance.Exp, variable)) {
+                if (edgeKillsVariable(edge, variable)) {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                } else {
+                    return src;
+                }
+            }
         }
         if ("PEdgeCallArguments" in edge) {
             for (var exp of edge.PEdgeCallArguments.Exp) {
@@ -178,7 +203,15 @@ function edgeUsesVariable(edge, variable, body)
                     return src;
             }
         }
+        if (edge.Exp.length == 1)
+            return 0;
+
+        
+        const lhs = edge.Exp[1];
+        if (expressionUsesVariable(lhs, variable) && !expressionIsVariable(lhs, variable))
+            return src;
         return 0;
+    }
 
     case "Loop":
         return 0;
@@ -217,13 +250,26 @@ function edgeTakesVariableAddress(edge, variable, body)
     }
 }
 
+function expressionIsVariable(exp, variable)
+{
+    return exp.Kind == "Var" && sameVariable(exp.Variable, variable);
+}
+
+
+
+
+
+
+
+
+
 function edgeKillsVariable(edge, variable)
 {
     
     if (edge.Kind == "Assign") {
-        var lhs = edge.Exp[0];
-        if (lhs.Kind == "Var" && sameVariable(lhs.Variable, variable))
-            return !isReturningImmobileValue(edge, variable);
+        const [lhs] = edge.Exp;
+        return (expressionIsVariable(lhs, variable) &&
+                !isReturningImmobileValue(edge, variable));
     }
 
     if (edge.Kind != "Call")
@@ -232,48 +278,46 @@ function edgeKillsVariable(edge, variable)
     
     if (1 in edge.Exp) {
         var lhs = edge.Exp[1];
-        if (lhs.Kind == "Var" && sameVariable(lhs.Variable, variable))
+        if (expressionIsVariable(lhs, variable))
             return true;
     }
 
     
     if ("PEdgeCallInstance" in edge) {
-        do {
-            var instance = edge.PEdgeCallInstance.Exp;
+        var instance = edge.PEdgeCallInstance.Exp;
 
-            
-            if (instance.Kind == "Drf")
-                instance = instance.Exp[0];
+        
+        if (instance.Kind == "Drf")
+            instance = instance.Exp[0];
 
-            if (instance.Kind != "Var" || !sameVariable(instance.Variable, variable))
-                break;
+        if (!expressionIsVariable(instance, variable))
+            return false;
 
-            var callee = edge.Exp[0];
-            if (callee.Kind != "Var")
-                break;
+        var callee = edge.Exp[0];
+        if (callee.Kind != "Var")
+            return false;
 
-            assert(callee.Variable.Kind == "Func");
-            var calleeName = readable(callee.Variable.Name[0]);
+        assert(callee.Variable.Kind == "Func");
+        var calleeName = readable(callee.Variable.Name[0]);
 
-            
-            var openParen = calleeName.indexOf('(');
-            if (openParen < 0)
-                break;
-            calleeName = calleeName.substring(0, openParen);
+        
+        var openParen = calleeName.indexOf('(');
+        if (openParen < 0)
+            return false;
+        calleeName = calleeName.substring(0, openParen);
 
-            var lastColon = calleeName.lastIndexOf('::');
-            if (lastColon < 0)
-                break;
-            var constructorName = calleeName.substr(lastColon + 2);
-            calleeName = calleeName.substr(0, lastColon);
+        var lastColon = calleeName.lastIndexOf('::');
+        if (lastColon < 0)
+            return false;
+        var constructorName = calleeName.substr(lastColon + 2);
+        calleeName = calleeName.substr(0, lastColon);
 
-            var lastTemplateOpen = calleeName.lastIndexOf('<');
-            if (lastTemplateOpen >= 0)
-                calleeName = calleeName.substr(0, lastTemplateOpen);
+        var lastTemplateOpen = calleeName.lastIndexOf('<');
+        if (lastTemplateOpen >= 0)
+            calleeName = calleeName.substr(0, lastTemplateOpen);
 
-            if (calleeName.endsWith(constructorName))
-                return true;
-        } while (false);
+        if (calleeName.endsWith(constructorName))
+            return true;
     }
 
     return false;
@@ -334,7 +378,7 @@ function edgeCanGC(edge)
 
 
 
-function findGCBeforeVariableUse(start_body, start_point, suppressed, variable)
+function findGCBeforeValueUse(start_body, start_point, suppressed, variable)
 {
     
     
@@ -399,6 +443,11 @@ function findGCBeforeVariableUse(start_body, start_point, suppressed, variable)
                         assert(found);
                     }
                 }
+
+                
+                
+                worklist.push({body: body, ppoint: body.Index[1],
+                               gcInfo: gcInfo, why: entry});
             } else if (variable.Kind == "Arg" && gcInfo) {
                 
                 
@@ -474,6 +523,7 @@ function findGCBeforeVariableUse(start_body, start_point, suppressed, variable)
                 
                 
                 
+                
 
                 if (src_gcInfo) {
                     src_preGCLive = true;
@@ -496,6 +546,9 @@ function findGCBeforeVariableUse(start_body, start_point, suppressed, variable)
                     }
                 }
                 assert(found);
+                
+                
+                
                 break;
             }
 
@@ -522,16 +575,33 @@ function variableLiveAcrossGC(suppressed, variable)
         if (!("PEdge" in body))
             continue;
         for (var edge of body.PEdge) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
             var usePoint = edgeUsesVariable(edge, variable, body);
-            
-            
-            
-            
-            
-            
-            if (usePoint && !edgeKillsVariable(edge, variable)) {
-                
-                var call = findGCBeforeVariableUse(body, usePoint, suppressed, variable);
+            if (usePoint) {
+                var call = findGCBeforeValueUse(body, usePoint, suppressed, variable);
                 if (!call)
                     continue;
 
@@ -645,8 +715,12 @@ function printEntryTrace(functionName, entry)
                 var table = {};
                 entry.body.edgeTable = table;
                 for (var line of entry.body.lines) {
-                    if (match = /\((\d+,\d+),/.exec(line))
+                    if (match = /^\w+\((\d+,\d+),/.exec(line))
                         table[match[1]] = line; 
+                }
+                if (entry.body.BlockId.Kind == 'Loop') {
+                    const [startPoint, endPoint] = entry.body.Index;
+                    table[`${endPoint},${startPoint}`] = '(loop to next iteration)';
                 }
             }
 

@@ -22,7 +22,8 @@ assert('<returnvalue>' in hazmap)
 
 
 assert(hazmap['cell2'].function == 'Cell* f()')
-assert(len(set(haz.function for haz in hazards)) == 1)
+print(len(set(haz.function for haz in hazards)))
+assert(len(set(haz.function for haz in hazards)) == 2)
 
 
 
@@ -34,3 +35,13 @@ assert(hazmap['<returnvalue>'].GCFunction == 'void GCInDestructor::~GCInDestruct
 
 assert(hazmap['cell2'].type == 'Cell*')
 assert(hazmap['<returnvalue>'].type == 'Cell*')
+
+
+assert('haz1' not in hazmap);
+assert('haz2' not in hazmap);
+assert('haz3' in hazmap);
+assert('haz4' in hazmap);
+assert('haz5' in hazmap);
+assert('haz6' not in hazmap);
+assert('haz7' not in hazmap);
+assert('haz8' in hazmap);
