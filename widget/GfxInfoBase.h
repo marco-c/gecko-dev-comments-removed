@@ -62,6 +62,7 @@ public:
   NS_IMETHOD GetContentBackend(nsAString & aContentBackend) override;
   NS_IMETHOD GetUsingGPUProcess(bool *aOutValue) override;
   NS_IMETHOD GetWebRenderEnabled(bool* aWebRenderEnabled) override;
+  NS_IMETHOD GetIsHeadless(bool* aIsHeadless) override;
 
   
   
