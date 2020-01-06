@@ -149,12 +149,16 @@ protected:
   };
 
   
-  struct MOZ_STACK_CLASS ServoCSSParsingEnvironment {
+  struct MOZ_STACK_CLASS ServoCSSParsingEnvironment
+  {
     mozilla::URLExtraData* mUrlExtraData;
     nsCompatibility mCompatMode;
 
-    ServoCSSParsingEnvironment(mozilla::URLExtraData* aUrlData, nsCompatibility aCompatMode)
-      : mUrlExtraData(aUrlData), mCompatMode(aCompatMode) {}
+    ServoCSSParsingEnvironment(mozilla::URLExtraData* aUrlData,
+                               nsCompatibility aCompatMode)
+      : mUrlExtraData(aUrlData)
+      , mCompatMode(aCompatMode)
+    {}
   };
 
   
