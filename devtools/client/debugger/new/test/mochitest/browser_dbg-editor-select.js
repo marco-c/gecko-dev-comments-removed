@@ -11,44 +11,44 @@ function isElementVisible(dbg, elementName) {
   return bpLine && isVisibleWithin(cm, bpLine);
 }
 
-add_task(function*() {
+add_task(async function() {
   
   
   
   requestLongerTimeout(2);
 
-  const dbg = yield initDebugger("doc-scripts.html");
+  const dbg = await initDebugger("doc-scripts.html");
   const { selectors: { getSelectedSource }, getState } = dbg;
   const simple1 = findSource(dbg, "simple1.js");
   const simple2 = findSource(dbg, "simple2.js");
 
   
-  yield addBreakpoint(dbg, simple1, 4);
+  await addBreakpoint(dbg, simple1, 4);
   ok(!getSelectedSource(getState()), "No selected source");
 
   
   invokeInTab("main");
-  yield waitForPaused(dbg);
+  await waitForPaused(dbg);
   assertPausedLocation(dbg);
 
   
   
-  yield stepIn(dbg);
+  await stepIn(dbg);
   assertPausedLocation(dbg);
 
   
-  yield stepOut(dbg);
-  yield stepOut(dbg);
+  await stepOut(dbg);
+  await stepOut(dbg);
   assertPausedLocation(dbg);
-  yield resume(dbg);
+  await resume(dbg);
 
   
   
   let longSrc = findSource(dbg, "long.js");
-  yield addBreakpoint(dbg, longSrc, 66);
+  await addBreakpoint(dbg, longSrc, 66);
 
   invokeInTab("testModel");
-  yield waitForPaused(dbg);
+  await waitForPaused(dbg);
   assertPausedLocation(dbg);
   ok(isElementVisible(dbg, "breakpoint"), "Breakpoint is visible");
 });

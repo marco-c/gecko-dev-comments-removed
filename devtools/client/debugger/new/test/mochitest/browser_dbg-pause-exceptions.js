@@ -16,30 +16,30 @@ function caughtException() {
 
 
 
-add_task(function*() {
-  const dbg = yield initDebugger("doc-exceptions.html");
+add_task(async function() {
+  const dbg = await initDebugger("doc-exceptions.html");
 
   
-  yield uncaughtException();
+  await uncaughtException();
   ok(!isPaused(dbg));
 
   
-  yield togglePauseOnExceptions(dbg, true, false);
+  await togglePauseOnExceptions(dbg, true, false);
   uncaughtException();
-  yield waitForPaused(dbg);
+  await waitForPaused(dbg);
   assertPausedLocation(dbg);
-  yield resume(dbg);
+  await resume(dbg);
 
   
   caughtException();
-  yield waitForPaused(dbg);
+  await waitForPaused(dbg);
   assertPausedLocation(dbg);
-  yield resume(dbg);
+  await resume(dbg);
 
   
-  yield togglePauseOnExceptions(dbg, true, true);
+  await togglePauseOnExceptions(dbg, true, true);
   caughtException();
-  yield waitForPaused(dbg);
+  await waitForPaused(dbg);
   assertPausedLocation(dbg);
-  yield resume(dbg);
+  await resume(dbg);
 });

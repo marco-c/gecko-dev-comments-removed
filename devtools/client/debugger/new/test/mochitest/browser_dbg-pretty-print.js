@@ -3,13 +3,13 @@
 
 
 
-add_task(function*() {
-  const dbg = yield initDebugger("doc-minified.html");
+add_task(async function() {
+  const dbg = await initDebugger("doc-minified.html");
 
-  yield selectSource(dbg, "math.min.js", 2);
+  await selectSource(dbg, "math.min.js", 2);
   clickElement(dbg, "prettyPrintButton");
 
-  yield waitForSource(dbg, "math.min.js:formatted");
+  await waitForSource(dbg, "math.min.js:formatted");
   const ppSrc = findSource(dbg, "math.min.js:formatted");
 
   ok(ppSrc, "Pretty-printed source exists");
@@ -17,19 +17,19 @@ add_task(function*() {
   
   
 
-  yield addBreakpoint(dbg, ppSrc, 18);
+  await addBreakpoint(dbg, ppSrc, 18);
 
   invokeInTab("arithmetic");
-  yield waitForPaused(dbg);
+  await waitForPaused(dbg);
   assertPausedLocation(dbg);
-  yield stepOver(dbg);
+  await stepOver(dbg);
   assertPausedLocation(dbg);
-  yield resume(dbg);
+  await resume(dbg);
 
   
   
   ok(!findElement(dbg, "editorFooter"), "Footer is hidden");
 
-  yield selectSource(dbg, "math.min.js");
+  await selectSource(dbg, "math.min.js");
   ok(findElement(dbg, "editorFooter"), "Footer is hidden");
 });

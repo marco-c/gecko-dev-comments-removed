@@ -6,21 +6,21 @@
 
 
 
-add_task(function*() {
-  const dbg = yield initDebugger("doc-iframes.html");
+add_task(async function() {
+  const dbg = await initDebugger("doc-iframes.html");
 
   
-  yield reload(dbg);
-  yield waitForPaused(dbg);
+  await reload(dbg);
+  await waitForPaused(dbg);
   assertPausedLocation(dbg);
 
   
-  yield resume(dbg);
-  yield waitForPaused(dbg);
+  await resume(dbg);
+  await waitForPaused(dbg);
   assertPausedLocation(dbg);
 
   
-  yield resume(dbg);
-  yield waitForPaused(dbg);
+  await resume(dbg);
+  await waitForPaused(dbg);
   assertPausedLocation(dbg);
 });

@@ -9,16 +9,16 @@ async function waitOnToolbox(toolbox, event) {
   return new Promise(resolve => toolbox.on(event, resolve));
 }
 
-add_task(function*() {
+add_task(async function() {
   const url = EXAMPLE_URL + "doc-script-switching.html";
-  const toolbox = yield openNewTabAndToolbox(url, "webconsole");
+  const toolbox = await openNewTabAndToolbox(url, "webconsole");
 
   
   let jsterm = toolbox.getPanel("webconsole").hud.jsterm;
   jsterm.execute("debugger");
 
   
-  yield waitOnToolbox(toolbox, "jsdebugger-selected");
+  await waitOnToolbox(toolbox, "jsdebugger-selected");
   is(toolbox.threadClient.state, "paused");
 
   
@@ -26,7 +26,7 @@ add_task(function*() {
   const { selectors: { getSelectedSource }, getState } = dbg;
 
   
-  yield waitForDispatch(dbg, "LOAD_SOURCE_TEXT");
+  await waitForDispatch(dbg, "LOAD_SOURCE_TEXT");
   is(dbg.win.cm.getValue(), "debugger");
   const source = getSelectedSource(getState()).toJS();
   assertPausedLocation(dbg);

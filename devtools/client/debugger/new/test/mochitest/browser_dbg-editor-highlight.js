@@ -5,8 +5,8 @@
 
 
 
-add_task(function*() {
-  const dbg = yield initDebugger("doc-scripts.html");
+add_task(async function() {
+  const dbg = await initDebugger("doc-scripts.html");
   const { selectors: { getSource }, getState } = dbg;
   const sourceUrl = EXAMPLE_URL + "long.js";
 
@@ -17,19 +17,19 @@ add_task(function*() {
 
   
   
-  yield waitForDispatch(dbg, "LOAD_SOURCE_TEXT");
+  await waitForDispatch(dbg, "LOAD_SOURCE_TEXT");
 
   
   
 
   
-  yield selectSource(dbg, "long.js", 16);
+  await selectSource(dbg, "long.js", 16);
   assertHighlightLocation(dbg, "long.js", 16);
 
   
   
-  yield selectSource(dbg, "long.js", 17);
-  yield selectSource(dbg, "long.js", 18);
+  await selectSource(dbg, "long.js", 17);
+  await selectSource(dbg, "long.js", 18);
   assertHighlightLocation(dbg, "long.js", 18);
   is(
     findAllElements(dbg, "highlightLine").length,
@@ -45,7 +45,7 @@ add_task(function*() {
   
   const simple1 = findSource(dbg, "simple1.js");
   ok(getSource(getState(), simple1.id).get("loadedState"));
-  yield waitForDispatch(dbg, "LOAD_SOURCE_TEXT");
+  await waitForDispatch(dbg, "LOAD_SOURCE_TEXT");
   ok(getSource(getState(), simple1.id).get("text"));
   assertHighlightLocation(dbg, "simple1.js", 6);
 });

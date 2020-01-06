@@ -4,20 +4,20 @@
 
 
 
-add_task(function*() {
+add_task(async function() {
   
   requestLongerTimeout(2);
 
-  const dbg = yield initDebugger("doc-sourcemap-bogus.html");
+  const dbg = await initDebugger("doc-sourcemap-bogus.html");
   const { selectors: { getSources }, getState } = dbg;
 
-  yield selectSource(dbg, "bogus-map.js");
+  await selectSource(dbg, "bogus-map.js");
 
   
   
-  yield addBreakpoint(dbg, "bogus-map.js", 4);
+  await addBreakpoint(dbg, "bogus-map.js", 4);
   invokeInTab("runCode");
-  yield waitForPaused(dbg);
+  await waitForPaused(dbg);
   assertPausedLocation(dbg);
 
   

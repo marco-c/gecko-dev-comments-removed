@@ -2,9 +2,6 @@
 
 
 
-
-
-
 add_task(async function test() {
   Services.prefs.setBoolPref("devtools.debugger.features.async-stepping", true);
   const dbg = await initDebugger("doc-async.html", "async");

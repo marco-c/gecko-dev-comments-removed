@@ -11,18 +11,18 @@ function resultCount(dbg) {
 }
 
 
-add_task(function*() {
-  const dbg = yield initDebugger("doc-script-switching.html", "switching-01");
+add_task(async function() {
+  const dbg = await initDebugger("doc-script-switching.html", "switching-01");
 
-  yield selectSource(dbg, "switching-01");
+  await selectSource(dbg, "switching-01");
 
   
-  yield openFunctionSearch(dbg);
-  is(dbg.selectors.getActiveSearchState(dbg.getState()), "symbol");
+  await openFunctionSearch(dbg);
+  is(dbg.selectors.getActiveSearch(dbg.getState()), "symbol");
   pressKey(dbg, "Escape");
-  is(dbg.selectors.getActiveSearchState(dbg.getState()), null);
+  is(dbg.selectors.getActiveSearch(dbg.getState()), null);
 
-  yield openFunctionSearch(dbg);
+  await openFunctionSearch(dbg);
   is(resultCount(dbg), 1);
 
   type(dbg, "x");

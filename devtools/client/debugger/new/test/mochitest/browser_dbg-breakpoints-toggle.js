@@ -1,6 +1,3 @@
-
-
-
 function toggleBreakpoint(dbg, index) {
   const bp = findElement(dbg, "breakpointItem", index);
   const input = bp.querySelector("input");
@@ -53,8 +50,9 @@ function findBreakpoints(dbg) {
   return getBreakpoints(getState());
 }
 
+
 add_task(async function() {
-  const dbg = await initDebugger("doc-scripts.html");
+  const dbg = await initDebugger("doc-scripts.html", "simple2");
 
   
   await selectSource(dbg, "simple2");
@@ -62,15 +60,28 @@ add_task(async function() {
   await addBreakpoint(dbg, "simple2", 5);
 
   
-  await disableBreakpoint(dbg, 1);
+  await disableBreakpoints(dbg, 2);
   let bp1 = findBreakpoint(dbg, "simple2", 3);
   let bp2 = findBreakpoint(dbg, "simple2", 5);
+
+  if (!bp2) {
+    debugger;
+  }
+
   is(bp1.disabled, true, "first breakpoint is disabled");
+  is(bp2.disabled, true, "second breakpoint is disabled");
+
+  
+  await enableBreakpoints(dbg, 2);
+  bp1 = findBreakpoint(dbg, "simple2", 3);
+  bp2 = findBreakpoint(dbg, "simple2", 5);
+
+  is(bp1.disabled, false, "first breakpoint is enabled");
   is(bp2.disabled, false, "second breakpoint is enabled");
 
   
-  await disableBreakpoint(dbg, 2);
-  await enableBreakpoint(dbg, 2);
-  bp2 = findBreakpoint(dbg, "simple2", 5);
-  is(bp2.disabled, false, "second breakpoint is enabled");
+  await removeBreakpoint(dbg, 1);
+  await removeBreakpoint(dbg, 1);
+  const bps = findBreakpoints(dbg);
+  is(bps.size, 0, "breakpoints are removed");
 });

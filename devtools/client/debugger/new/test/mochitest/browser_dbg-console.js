@@ -25,20 +25,21 @@ function getSplitConsole(dbg) {
   });
 }
 
-add_task(function* () {
+add_task(async function() {
   Services.prefs.setBoolPref("devtools.toolbox.splitconsoleEnabled", true);
-  const dbg = yield initDebugger("doc-script-switching.html");
+  const dbg = await initDebugger("doc-script-switching.html");
 
-  yield selectSource(dbg, "switching-01");
+  await selectSource(dbg, "switching-01");
 
   
-  yield getSplitConsole(dbg);
+  await getSplitConsole(dbg);
   ok(dbg.toolbox.splitConsole, "Split console is shown.");
 
   
-  clickElement(dbg, "codeMirror");
+  await clickElement(dbg, "codeMirror");
   
   pressKey(dbg, "Escape");
+
   
   pressKey(dbg, "Escape");
   ok(!dbg.toolbox.splitConsole, "Split console is hidden.");
