@@ -36,7 +36,7 @@ use style::logical_geometry::{LogicalRect, LogicalSize, WritingMode};
 use style::properties::{longhands, ServoComputedValues};
 use style::servo::restyle_damage::{BUBBLE_ISIZES, REFLOW, REFLOW_OUT_OF_FLOW, REPOSITION, RESOLVE_GENERATED_CONTENT};
 use text;
-use unicode_bidi;
+use unicode_bidi as bidi;
 
 
 
@@ -95,7 +95,7 @@ pub struct Line {
     
     
     
-    pub visual_runs: Option<Vec<(Range<FragmentIndex>, u8)>>,
+    pub visual_runs: Option<Vec<(Range<FragmentIndex>, bidi::Level)>>,
 
     
     
@@ -293,22 +293,25 @@ impl LineBreaker {
         
         
         
-        let levels: Vec<u8> = self.new_fragments.iter().map(|fragment| match fragment.specific {
-            SpecificFragmentInfo::ScannedText(ref info) => info.run.bidi_level,
-            _ => para_level
-        }).collect();
+        let levels: Vec<bidi::Level> = self.new_fragments.iter().map(
+            |fragment| match fragment.specific {
+                SpecificFragmentInfo::ScannedText(ref info) => info.run.bidi_level,
+                _ => para_level
+            }
+        ).collect();
 
         let mut lines = mem::replace(&mut self.lines, Vec::new());
 
         
-        let has_rtl = levels.iter().cloned().any(unicode_bidi::is_rtl);
-
-        if has_rtl {
+        if bidi::level::has_rtl(&levels) {
             
             
             for line in &mut lines {
                 let range = line.range.begin().to_usize()..line.range.end().to_usize();
-                let runs = unicode_bidi::visual_runs(range, &levels);
+                
+                
+                #[allow(deprecated)]
+                let runs = bidi::deprecated::visual_runs(range, &levels);
                 line.visual_runs = Some(runs.iter().map(|run| {
                     let start = FragmentIndex(run.start as isize);
                     let len = FragmentIndex(run.len() as isize);
@@ -957,11 +960,11 @@ impl InlineFlow {
             let (range, level) = match line.visual_runs {
                 Some(ref runs) if is_ltr => runs[run_idx],
                 Some(ref runs) => runs[run_count - run_idx - 1], 
-                None => (line.range, 0)
+                None => (line.range, bidi::Level::ltr())
             };
             
             
-            let reverse = unicode_bidi::is_ltr(level) != is_ltr;
+            let reverse = level.is_ltr() != is_ltr;
             let fragment_indices = if reverse {
                 (range.end().get() - 1..range.begin().get() - 1).step_by(-1)
             } else {
