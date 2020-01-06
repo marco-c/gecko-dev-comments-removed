@@ -136,6 +136,16 @@ ImageContainer::GetImageClient()
 }
 
 void
+ImageContainer::DropImageClient()
+{
+  RecursiveMutexAutoLock mon(mRecursiveMutex);
+  if (mImageClient) {
+    mImageClient->ClearCachedResources();
+    mImageClient = nullptr;
+  }
+}
+
+void
 ImageContainer::EnsureImageClient()
 {
   
