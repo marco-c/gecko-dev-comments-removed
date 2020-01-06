@@ -93,6 +93,8 @@ const BackgroundPageThumbs = {
 
 
 
+
+
   async captureIfMissing(url, options = {}) {
     
     
@@ -105,28 +107,34 @@ const BackgroundPageThumbs = {
       return url;
     }
     let thumbPromise = new Promise((resolve, reject) => {
-      let observer = {
-        observe(subject, topic, data) { 
-          if (data === url) {
-            switch (topic) {
-              case "page-thumbnail:create":
-                resolve();
-                break;
-              case "page-thumbnail:error":
-                reject(new Error("page-thumbnail:error"));
-                break;
-            }
-            Services.obs.removeObserver(observer, "page-thumbnail:create");
-            Services.obs.removeObserver(observer, "page-thumbnail:error");
+      let observe = (subject, topic, data) => {
+        if (data === url) {
+          switch (topic) {
+            case "page-thumbnail:create":
+              resolve();
+              break;
+            case "page-thumbnail:error":
+              reject(new Error("page-thumbnail:error"));
+              break;
           }
-        },
-        QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
-                                               Ci.nsISupportsWeakReference])
+          cleanup();
+        }
       };
+      Services.obs.addObserver(observe, "page-thumbnail:create");
+      Services.obs.addObserver(observe, "page-thumbnail:error");
+
       
       
-      Services.obs.addObserver(observer, "page-thumbnail:create", true);
-      Services.obs.addObserver(observer, "page-thumbnail:error", true);
+      function cleanup() {
+        if (observe) {
+          Services.obs.removeObserver(observe, "page-thumbnail:create");
+          Services.obs.removeObserver(observe, "page-thumbnail:error");
+          observe = null;
+        }
+      }
+      if (options.unloadingPromise) {
+        options.unloadingPromise.then(cleanup);
+      }
     });
     try {
       this.capture(url, options);

@@ -20,7 +20,13 @@ var gPage = {
     gAllPages.register(this);
 
     
-    addEventListener("unload", this, false);
+    
+    this.unloadingPromise = new Promise(resolve => {
+      addEventListener("unload", () => {
+        resolve();
+        this._handleUnloadEvent();
+      });
+    });
 
     
     
@@ -188,9 +194,6 @@ var gPage = {
     switch (aEvent.type) {
       case "load":
         this.onPageVisibleAndLoaded();
-        break;
-      case "unload":
-        this._handleUnloadEvent();
         break;
       case "click":
         let {button, target} = aEvent;
