@@ -2,13 +2,13 @@
 
 
 
-pub use iter::BoundedParallelIterator;
-pub use iter::ExactParallelIterator;
 pub use iter::FromParallelIterator;
 pub use iter::IntoParallelIterator;
 pub use iter::IntoParallelRefIterator;
 pub use iter::IntoParallelRefMutIterator;
 pub use iter::IndexedParallelIterator;
+pub use iter::ParallelExtend;
 pub use iter::ParallelIterator;
 pub use slice::ParallelSlice;
+pub use slice::ParallelSliceMut;
 pub use str::ParallelString;

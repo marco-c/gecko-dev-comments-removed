@@ -35,10 +35,10 @@ use std::error::Error;
 use std::str::FromStr;
 use std::fmt;
 
-extern crate deque;
+extern crate coco;
 #[macro_use]
 extern crate lazy_static;
-#[cfg(feature = "unstable")]
+#[cfg(rayon_unstable)]
 extern crate futures;
 extern crate libc;
 extern crate num_cpus;
@@ -51,26 +51,27 @@ mod latch;
 mod join;
 mod job;
 mod registry;
-#[cfg(feature = "unstable")]
+#[cfg(rayon_unstable)]
 mod future;
 mod scope;
 mod sleep;
-#[cfg(feature = "unstable")]
-mod spawn_async;
+mod spawn;
 mod test;
 mod thread_pool;
 mod unwind;
 mod util;
 
 pub use thread_pool::ThreadPool;
+pub use thread_pool::current_thread_index;
+pub use thread_pool::current_thread_has_pending_tasks;
 pub use join::join;
 pub use scope::{scope, Scope};
-#[cfg(feature = "unstable")]
-pub use spawn_async::spawn_async;
-#[cfg(feature = "unstable")]
-pub use spawn_async::spawn_future_async;
-#[cfg(feature = "unstable")]
+pub use spawn::spawn;
+#[cfg(rayon_unstable)]
+pub use spawn::spawn_future;
+#[cfg(rayon_unstable)]
 pub use future::RayonFuture;
+
 
 
 
@@ -94,6 +95,7 @@ pub fn current_num_threads() -> usize {
 }
 
 
+#[derive(Default)]
 pub struct Configuration {
     
     
@@ -115,6 +117,11 @@ pub struct Configuration {
 
     
     exit_handler: Option<Box<ExitHandler>>,
+
+    
+    
+    
+    breadth_first: bool,
 }
 
 
@@ -134,14 +141,7 @@ type ExitHandler = Fn(usize) + Send + Sync;
 impl Configuration {
     
     pub fn new() -> Configuration {
-        Configuration {
-            num_threads: 0,
-            get_thread_name: None,
-            panic_handler: None,
-            stack_size: None,
-            start_handler: None,
-            exit_handler: None,
-        }
+        Configuration::default()
     }
 
     
@@ -150,6 +150,13 @@ impl Configuration {
         if self.num_threads > 0 {
             self.num_threads
         } else {
+            match env::var("RAYON_NUM_THREADS").ok().and_then(|s| usize::from_str(&s).ok()) {
+                Some(x) if x > 0 => return x,
+                Some(x) if x == 0 => return num_cpus::get(),
+                _ => {},
+            }
+
+            
             match env::var("RAYON_RS_NUM_CPUS").ok().and_then(|s| usize::from_str(&s).ok()) {
                 Some(x) if x > 0 => x,
                 _ => num_cpus::get(),
@@ -170,6 +177,12 @@ impl Configuration {
         self
     }
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -233,10 +246,41 @@ impl Configuration {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn breadth_first(mut self) -> Self {
+        self.breadth_first = true;
+        self
+    }
+
+    fn get_breadth_first(&self) -> bool {
+        self.breadth_first
+    }
+
+    
     fn take_start_handler(&mut self) -> Option<Box<StartHandler>> {
         self.start_handler.take()
     }
 
+    
+    
     
     
     
@@ -253,6 +297,8 @@ impl Configuration {
         self.exit_handler.take()
     }
 
+    
+    
     
     
     
@@ -288,17 +334,12 @@ pub fn initialize(config: Configuration) -> Result<(), Box<Error>> {
     Ok(())
 }
 
-
-
-#[cfg(feature = "unstable")]
-pub fn dump_stats() {
-    dump_stats!();
-}
-
 impl fmt::Debug for Configuration {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let Configuration { ref num_threads, ref get_thread_name, ref panic_handler, ref stack_size,
-                            ref start_handler, ref exit_handler } = *self;
+        let Configuration { ref num_threads, ref get_thread_name,
+                            ref panic_handler, ref stack_size,
+                            ref start_handler, ref exit_handler,
+                            ref breadth_first } = *self;
 
         
         
@@ -317,6 +358,7 @@ impl fmt::Debug for Configuration {
          .field("stack_size", &stack_size)
          .field("start_handler", &start_handler)
          .field("exit_handler", &exit_handler)
+         .field("breadth_first", &breadth_first)
          .finish()
     }
 }

@@ -1,18 +1,22 @@
-use super::{ParallelIterator, ExactParallelIterator, IntoParallelIterator, FromParallelIterator};
+use super::{ParallelIterator, IndexedParallelIterator, IntoParallelIterator, ParallelExtend};
 use std::collections::LinkedList;
 use std::slice;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 mod consumer;
 use self::consumer::CollectConsumer;
+use super::unzip::unzip_indexed;
 
 mod test;
 
 
+
+
 pub fn collect_into<I, T>(mut pi: I, v: &mut Vec<T>)
-    where I: ExactParallelIterator<Item = T>,
+    where I: IndexedParallelIterator<Item = T>,
           T: Send
 {
+    v.truncate(0); 
     let mut collect = Collect::new(v, pi.len());
     pi.drive(collect.as_consumer());
     collect.complete();
@@ -29,13 +33,35 @@ pub fn collect_into<I, T>(mut pi: I, v: &mut Vec<T>)
 
 
 
-fn special_collect_into<I, T>(pi: I, len: usize, v: &mut Vec<T>)
+fn special_extend<I, T>(pi: I, len: usize, v: &mut Vec<T>)
     where I: ParallelIterator<Item = T>,
           T: Send
 {
     let mut collect = Collect::new(v, len);
     pi.drive_unindexed(collect.as_consumer());
     collect.complete();
+}
+
+
+
+
+pub fn unzip_into<I, A, B>(mut pi: I, left: &mut Vec<A>, right: &mut Vec<B>)
+    where I: IndexedParallelIterator<Item = (A, B)>,
+          A: Send,
+          B: Send
+{
+    
+    left.truncate(0);
+    right.truncate(0);
+
+    let len = pi.len();
+    let mut left = Collect::new(left, len);
+    let mut right = Collect::new(right, len);
+
+    unzip_indexed(pi, left.as_consumer(), right.as_consumer());
+
+    left.complete();
+    right.complete();
 }
 
 
@@ -48,9 +74,6 @@ struct Collect<'c, T: Send + 'c> {
 
 impl<'c, T: Send + 'c> Collect<'c, T> {
     fn new(vec: &'c mut Vec<T>, len: usize) -> Self {
-        vec.truncate(0); 
-        vec.reserve(len); 
-
         Collect {
             writes: AtomicUsize::new(0),
             vec: vec,
@@ -61,7 +84,11 @@ impl<'c, T: Send + 'c> Collect<'c, T> {
     
     fn as_consumer(&mut self) -> CollectConsumer<T> {
         
-        let mut slice = self.vec.as_mut_slice();
+        self.vec.reserve(self.len);
+
+        
+        let start = self.vec.len();
+        let mut slice = &mut self.vec[start..];
         slice = unsafe { slice::from_raw_parts_mut(slice.as_mut_ptr(), self.len) };
         CollectConsumer::new(&self.writes, slice)
     }
@@ -81,17 +108,18 @@ impl<'c, T: Send + 'c> Collect<'c, T> {
                     "expected {} total writes, but got {}",
                     self.len,
                     actual_writes);
-            self.vec.set_len(self.len);
+            let new_len = self.vec.len() + self.len;
+            self.vec.set_len(new_len);
         }
     }
 }
 
 
 
-impl<T> FromParallelIterator<T> for Vec<T>
+impl<T> ParallelExtend<T> for Vec<T>
     where T: Send
 {
-    fn from_par_iter<I>(par_iter: I) -> Self
+    fn par_extend<I>(&mut self, par_iter: I)
         where I: IntoParallelIterator<Item = T>
     {
         
@@ -101,24 +129,21 @@ impl<T> FromParallelIterator<T> for Vec<T>
                 
                 
                 
-                let mut vec = vec![];
-                super::collect::special_collect_into(par_iter, len, &mut vec);
-                vec
+                special_extend(par_iter, len, self);
             }
             None => {
                 
-                let list: LinkedList<_> = par_iter.fold(Vec::new, |mut vec, elem| {
+                let list: LinkedList<_> = par_iter
+                    .fold(Vec::new, |mut vec, elem| {
                         vec.push(elem);
                         vec
                     })
                     .collect();
 
-                let len = list.iter().map(Vec::len).sum();
-                let start = Vec::with_capacity(len);
-                list.into_iter().fold(start, |mut vec, mut sub| {
-                    vec.append(&mut sub);
-                    vec
-                })
+                self.reserve(list.iter().map(Vec::len).sum());
+                for mut vec in list {
+                    self.append(&mut vec);
+                }
             }
         }
     }

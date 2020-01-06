@@ -1,6 +1,5 @@
 use ::{Configuration, ExitHandler, PanicHandler, StartHandler};
-use deque;
-use deque::{Worker, Stealer, Stolen};
+use coco::deque::{self, Worker, Stealer};
 use job::{JobRef, StackJob};
 use latch::{LatchProbe, Latch, CountLatch, LockLatch};
 #[allow(unused_imports)]
@@ -113,6 +112,7 @@ impl<'a> Drop for Terminator<'a> {
 impl Registry {
     pub fn new(mut configuration: Configuration) -> Result<Arc<Registry>, Box<Error>> {
         let n_threads = configuration.get_num_threads();
+        let breadth_first = configuration.get_breadth_first();
 
         let (inj_worker, inj_stealer) = deque::new();
         let (workers, stealers): (Vec<_>, Vec<_>) = (0..n_threads).map(|_| deque::new()).unzip();
@@ -142,13 +142,17 @@ impl Registry {
             if let Some(stack_size) = configuration.get_stack_size() {
                 b = b.stack_size(stack_size);
             }
-            try!(b.spawn(move || unsafe { main_loop(worker, registry, index) }));
+            try!(b.spawn(move || unsafe { main_loop(worker, registry, index, breadth_first) }));
         }
 
         
         mem::forget(t1000);
 
         Ok(registry.clone())
+    }
+
+    pub fn global() -> Arc<Registry> {
+        global_registry().clone()
     }
 
     pub fn current() -> Arc<Registry> {
@@ -265,16 +269,11 @@ impl Registry {
     }
 
     fn pop_injected_job(&self, worker_index: usize) -> Option<JobRef> {
-        loop {
-            match self.job_uninjector.steal() {
-                Stolen::Empty => return None,
-                Stolen::Abort => (), 
-                Stolen::Data(v) => {
-                    log!(UninjectedWork { worker: worker_index });
-                    return Some(v);
-                }
-            }
+        let stolen = self.job_uninjector.steal();
+        if stolen.is_some() {
+            log!(UninjectedWork { worker: worker_index });
         }
+        stolen
     }
 
     
@@ -351,8 +350,13 @@ impl ThreadInfo {
 
 
 pub struct WorkerThread {
+    
     worker: Worker<JobRef>,
+
     index: usize,
+
+    
+    breadth_first: bool,
 
     
     rng: UnsafeCell<rand::XorShiftRng>,
@@ -405,11 +409,22 @@ impl WorkerThread {
         self.registry.sleep.tickle(self.index);
     }
 
+    #[inline]
+    pub fn local_deque_is_empty(&self) -> bool {
+        self.worker.len() == 0
+    }
+
+    
+    
     
     
     #[inline]
-    pub unsafe fn pop(&self) -> Option<JobRef> {
-        self.worker.pop()
+    pub unsafe fn take_local_job(&self) -> Option<JobRef> {
+        if !self.breadth_first {
+            self.worker.pop()
+        } else {
+            self.worker.steal()
+        }
     }
 
     
@@ -438,7 +453,7 @@ impl WorkerThread {
             
             
             
-            if let Some(job) = self.pop()
+            if let Some(job) = self.take_local_job()
                                    .or_else(|| self.steal())
                                    .or_else(|| self.registry.pop_injected_job(self.index)) {
                 yields = self.registry.sleep.work_found(self.index, yields);
@@ -496,16 +511,11 @@ impl WorkerThread {
             .filter(|&i| i != self.index)
             .filter_map(|victim_index| {
                 let victim = &self.registry.thread_infos[victim_index];
-                loop {
-                    match victim.stealer.steal() {
-                        Stolen::Empty => return None,
-                        Stolen::Abort => (), 
-                        Stolen::Data(v) => {
-                            log!(StoleWork { worker: self.index, victim: victim_index });
-                            return Some(v);
-                        }
-                    }
+                let stolen = victim.stealer.steal();
+                if stolen.is_some() {
+                    log!(StoleWork { worker: self.index, victim: victim_index });
                 }
+                stolen
             })
             .next()
     }
@@ -513,9 +523,13 @@ impl WorkerThread {
 
 
 
-unsafe fn main_loop(worker: Worker<JobRef>, registry: Arc<Registry>, index: usize) {
+unsafe fn main_loop(worker: Worker<JobRef>,
+                    registry: Arc<Registry>,
+                    index: usize,
+                    breadth_first: bool) {
     let worker_thread = WorkerThread {
         worker: worker,
+        breadth_first: breadth_first,
         index: index,
         rng: UnsafeCell::new(rand::weak_rng()),
         registry: registry.clone(),
@@ -545,7 +559,7 @@ unsafe fn main_loop(worker: Worker<JobRef>, registry: Arc<Registry>, index: usiz
     worker_thread.wait_until(&registry.terminate_latch);
 
     
-    debug_assert!(worker_thread.pop().is_none());
+    debug_assert!(worker_thread.take_local_job().is_none());
 
     
     registry.thread_infos[index].stopped.set();

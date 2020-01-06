@@ -71,13 +71,6 @@ fn count_handler() -> (Arc<AtomicUsize>, Box<::StartHandler>) {
 }
 
 
-fn unwrap_counter(counter: Arc<AtomicUsize>) -> usize {
-    Arc::try_unwrap(counter)
-        .expect("Counter is still shared!")
-        .into_inner()
-}
-
-
 fn wait_for_counter(mut counter: Arc<AtomicUsize>) -> usize {
     use std::{thread, time};
 
@@ -92,17 +85,22 @@ fn wait_for_counter(mut counter: Arc<AtomicUsize>) -> usize {
     }
 
     
-    unwrap_counter(counter)
+    panic!("Counter is still shared!");
 }
 
-
-#[cfg_attr(target_os="macos", ignore)]
 #[test]
 fn failed_thread_stack() {
+    
+    
+    
+    
+    let stack_size = ::std::isize::MAX as usize;
+
     let (start_count, start_handler) = count_handler();
     let (exit_count, exit_handler) = count_handler();
     let config = Configuration::new()
-        .stack_size(::std::usize::MAX)
+        .num_threads(10)
+        .stack_size(stack_size)
         .start_handler(move |i| start_handler(i))
         .exit_handler(move |i| exit_handler(i));
 
@@ -111,8 +109,9 @@ fn failed_thread_stack() {
 
     
     
-    assert_eq!(0, unwrap_counter(start_count));
-    assert_eq!(0, unwrap_counter(exit_count));
+    let start_count = wait_for_counter(start_count);
+    assert!(start_count <= 1);
+    assert_eq!(start_count, wait_for_counter(exit_count));
 }
 
 #[test]

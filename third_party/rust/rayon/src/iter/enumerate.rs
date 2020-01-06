@@ -9,6 +9,7 @@ use std::usize;
 
 
 
+#[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct Enumerate<I: IndexedParallelIterator> {
     base: I,
 }
@@ -38,29 +39,17 @@ impl<I> ParallelIterator for Enumerate<I>
     }
 }
 
-impl<I> BoundedParallelIterator for Enumerate<I>
-    where I: IndexedParallelIterator
-{
-    fn upper_bound(&mut self) -> usize {
-        self.len()
-    }
-
-    fn drive<C: Consumer<Self::Item>>(self, consumer: C) -> C::Result {
-        bridge(self, consumer)
-    }
-}
-
-impl<I> ExactParallelIterator for Enumerate<I>
-    where I: IndexedParallelIterator
-{
-    fn len(&mut self) -> usize {
-        self.base.len()
-    }
-}
-
 impl<I> IndexedParallelIterator for Enumerate<I>
     where I: IndexedParallelIterator
 {
+    fn drive<C: Consumer<Self::Item>>(self, consumer: C) -> C::Result {
+        bridge(self, consumer)
+    }
+
+    fn len(&mut self) -> usize {
+        self.base.len()
+    }
+
     fn with_producer<CB>(self, callback: CB) -> CB::Output
         where CB: ProducerCallback<Self::Item>
     {

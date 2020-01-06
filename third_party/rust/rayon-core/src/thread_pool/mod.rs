@@ -1,17 +1,48 @@
 use Configuration;
-#[cfg(feature = "unstable")]
+#[cfg(rayon_unstable)]
 use future::{Future, RayonFuture};
 use latch::LockLatch;
 #[allow(unused_imports)]
 use log::Event::*;
 use job::StackJob;
-#[cfg(feature = "unstable")]
-use spawn_async;
+use join;
+use {scope, Scope};
+use spawn;
 use std::sync::Arc;
 use std::error::Error;
 use registry::{Registry, WorkerThread};
 
 mod test;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 pub struct ThreadPool {
     registry: Arc<Registry>,
@@ -26,6 +57,45 @@ impl ThreadPool {
         Ok(ThreadPool { registry: registry })
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(rayon_unstable)]
+    pub fn global() -> &'static Arc<ThreadPool> {
+        lazy_static! {
+            static ref DEFAULT_THREAD_POOL: Arc<ThreadPool> =
+                Arc::new(ThreadPool { registry: Registry::global() });
+        }
+
+        &DEFAULT_THREAD_POOL
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -60,6 +130,7 @@ impl ThreadPool {
     
     
     
+    #[inline]
     pub fn current_num_threads(&self) -> usize {
         self.registry.num_threads()
     }
@@ -84,6 +155,7 @@ impl ThreadPool {
     
     
     
+    #[inline]
     pub fn current_thread_index(&self) -> Option<usize> {
         unsafe {
             let curr = WorkerThread::current();
@@ -99,27 +171,173 @@ impl ThreadPool {
 
     
     
-    #[cfg(feature = "unstable")]
-    pub fn spawn_async<OP>(&self, op: OP)
-        where OP: FnOnce() + Send + 'static
-    {
-        
-        unsafe { spawn_async::spawn_async_in(op, &self.registry) }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn current_thread_has_pending_tasks(&self) -> Option<bool> {
+        unsafe {
+            let curr = WorkerThread::current();
+            if curr.is_null() {
+                None
+            } else if (*curr).registry().id() != self.registry.id() {
+                None
+            } else {
+                Some(!(*curr).local_deque_is_empty())
+            }
+        }
     }
 
     
     
-    #[cfg(feature = "unstable")]
-    pub fn spawn_future_async<F>(&self, future: F) -> RayonFuture<F::Item, F::Error>
+    
+    pub fn join<A, B, RA, RB>(&self, oper_a: A, oper_b: B) -> (RA, RB)
+        where A: FnOnce() -> RA + Send,
+              B: FnOnce() -> RB + Send,
+              RA: Send,
+              RB: Send
+    {
+        self.install(|| join(oper_a, oper_b))
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn scope<'scope, OP, R>(&self, op: OP) -> R
+        where OP: for<'s> FnOnce(&'s Scope<'scope>) -> R + 'scope + Send, R: Send
+    {
+        self.install(|| scope(op))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn spawn<OP>(&self, op: OP)
+        where OP: FnOnce() + Send + 'static
+    {
+        
+        unsafe { spawn::spawn_in(op, &self.registry) }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(rayon_unstable)]
+    pub fn spawn_future<F>(&self, future: F) -> RayonFuture<F::Item, F::Error>
         where F: Future + Send + 'static
     {
         
-        unsafe { spawn_async::spawn_future_async_in(future, self.registry.clone()) }
+        unsafe { spawn::spawn_future_in(future, self.registry.clone()) }
     }
 }
 
 impl Drop for ThreadPool {
     fn drop(&mut self) {
         self.registry.terminate();
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn current_thread_index() -> Option<usize> {
+    unsafe {
+        let curr = WorkerThread::current();
+        if curr.is_null() {
+            None
+        } else {
+            Some((*curr).index())
+        }
+    }
+}
+
+
+
+
+
+
+
+#[inline]
+pub fn current_thread_has_pending_tasks() -> Option<bool> {
+    unsafe {
+        let curr = WorkerThread::current();
+        if curr.is_null() {
+            None
+        } else {
+            Some(!(*curr).local_deque_is_empty())
+        }
     }
 }

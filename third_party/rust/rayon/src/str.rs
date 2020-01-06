@@ -4,19 +4,29 @@
 
 
 
+
+
+
+
+
+
+
+
 use iter::*;
 use iter::internal::*;
-use std::cmp::min;
+use split_producer::*;
 
 
 
 
+#[inline]
 fn is_char_boundary(b: u8) -> bool {
     
     (b as i8) >= -0x40
 }
 
 
+#[inline]
 fn find_char_midpoint(chars: &str) -> usize {
     let mid = chars.len() / 2;
 
@@ -34,59 +44,58 @@ fn find_char_midpoint(chars: &str) -> usize {
 
 
 
-
-
 pub trait ParallelString {
-    private_decl!{}
+    
+    
+    fn as_parallel_string(&self) -> &str;
 
     
-    fn par_chars(&self) -> Chars;
-
-    
-    
-    fn par_split<P: Pattern>(&self, P) -> Split<P>;
-
-    
-    
-    
-    
-    fn par_split_terminator<P: Pattern>(&self, P) -> SplitTerminator<P>;
-
-    
-    
-    
-    
-    fn par_lines(&self) -> Lines;
+    fn par_chars(&self) -> Chars {
+        Chars { chars: self.as_parallel_string() }
+    }
 
     
     
     
     
     
-    fn par_split_whitespace(&self) -> SplitWhitespace;
+    fn par_split<P: Pattern>(&self, separator: P) -> Split<P> {
+        Split::new(self.as_parallel_string(), separator)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    fn par_split_terminator<P: Pattern>(&self, terminator: P) -> SplitTerminator<P> {
+        SplitTerminator::new(self.as_parallel_string(), terminator)
+    }
+
+    
+    
+    
+    
+    fn par_lines(&self) -> Lines {
+        Lines(self.as_parallel_string())
+    }
+
+    
+    
+    
+    
+    
+    fn par_split_whitespace(&self) -> SplitWhitespace {
+        SplitWhitespace(self.as_parallel_string())
+    }
 }
 
 impl ParallelString for str {
-    private_impl!{}
-
-    fn par_chars(&self) -> Chars {
-        Chars { chars: self }
-    }
-
-    fn par_split<P: Pattern>(&self, separator: P) -> Split<P> {
-        Split::new(self, separator)
-    }
-
-    fn par_split_terminator<P: Pattern>(&self, terminator: P) -> SplitTerminator<P> {
-        SplitTerminator::new(self, terminator)
-    }
-
-    fn par_lines(&self) -> Lines {
-        Lines(self)
-    }
-
-    fn par_split_whitespace(&self) -> SplitWhitespace {
-        SplitWhitespace(self)
+    #[inline]
+    fn as_parallel_string(&self) -> &str {
+        self
     }
 }
 
@@ -97,25 +106,38 @@ impl ParallelString for str {
 
 
 
-pub trait Pattern: Sized + Sync {
-    private_decl!{}
-    fn find_in(&self, &str) -> Option<usize>;
-    fn rfind_in(&self, &str) -> Option<usize>;
-    fn is_suffix_of(&self, &str) -> bool;
-    fn fold_with<'ch, F>(&self, &'ch str, folder: F, skip_last: bool) -> F where F: Folder<&'ch str>;
+mod private {
+    use iter::internal::Folder;
+
+    
+    
+    
+    
+    pub trait Pattern: Sized + Sync + Send {
+        private_decl!{}
+        fn find_in(&self, &str) -> Option<usize>;
+        fn rfind_in(&self, &str) -> Option<usize>;
+        fn is_suffix_of(&self, &str) -> bool;
+        fn fold_with<'ch, F>(&self, &'ch str, folder: F, skip_last: bool) -> F
+            where F: Folder<&'ch str>;
+    }
 }
+use self::private::Pattern;
 
 impl Pattern for char {
     private_impl!{}
 
+    #[inline]
     fn find_in(&self, chars: &str) -> Option<usize> {
         chars.find(*self)
     }
 
+    #[inline]
     fn rfind_in(&self, chars: &str) -> Option<usize> {
         chars.rfind(*self)
     }
 
+    #[inline]
     fn is_suffix_of(&self, chars: &str) -> bool {
         chars.ends_with(*self)
     }
@@ -131,7 +153,7 @@ impl Pattern for char {
     }
 }
 
-impl<FN: Sync + Fn(char) -> bool> Pattern for FN {
+impl<FN: Sync + Send + Fn(char) -> bool> Pattern for FN {
     private_impl!{}
 
     fn find_in(&self, chars: &str) -> Option<usize> {
@@ -209,63 +231,11 @@ pub struct Split<'ch, P: Pattern> {
     separator: P,
 }
 
-struct SplitProducer<'ch, 'sep, P: Pattern + 'sep> {
-    chars: &'ch str,
-    separator: &'sep P,
-
-    
-    tail: usize,
-}
-
 impl<'ch, P: Pattern> Split<'ch, P> {
     fn new(chars: &'ch str, separator: P) -> Self {
         Split {
             chars: chars,
             separator: separator,
-        }
-    }
-}
-
-impl<'ch, 'sep, P: Pattern + 'sep> SplitProducer<'ch, 'sep, P> {
-    fn new(split: &'sep Split<'ch, P>) -> Self {
-        SplitProducer {
-            chars: split.chars,
-            separator: &split.separator,
-            tail: split.chars.len(),
-        }
-    }
-
-    
-    
-    fn fold_with<F>(self, folder: F, skip_last: bool) -> F
-        where F: Folder<<Self as UnindexedProducer>::Item>
-    {
-        let SplitProducer { chars, separator, tail } = self;
-
-        if tail == chars.len() {
-            
-            separator.fold_with(chars, folder, skip_last)
-
-        } else if let Some(index) = separator.rfind_in(&chars[..tail]) {
-            
-            
-            let (left, right) = chars.split_at(index);
-            let folder = separator.fold_with(left, folder, false);
-            if skip_last || folder.full() {
-                folder
-            } else {
-                let mut right_iter = right.chars();
-                right_iter.next(); 
-                folder.consume(right_iter.as_str())
-            }
-
-        } else {
-            
-            if skip_last {
-                folder
-            } else {
-                folder.consume(chars)
-            }
         }
     }
 }
@@ -276,62 +246,41 @@ impl<'ch, P: Pattern> ParallelIterator for Split<'ch, P> {
     fn drive_unindexed<C>(self, consumer: C) -> C::Result
         where C: UnindexedConsumer<Self::Item>
     {
-        let producer = SplitProducer::new(&self);
+        let producer = SplitProducer::new(self.chars, &self.separator);
         bridge_unindexed(producer, consumer)
     }
 }
 
-impl<'ch, 'sep, P: Pattern + 'sep> UnindexedProducer for SplitProducer<'ch, 'sep, P> {
-    type Item = &'ch str;
 
-    fn split(mut self) -> (Self, Option<Self>) {
-        let SplitProducer { chars, separator, tail } = self;
-
-        
-        let char_index = find_char_midpoint(&chars[..tail]);
-
-        
-        let index = separator.find_in(&chars[char_index..tail])
-            .map(|i| char_index + i)
-            .or_else(|| separator.rfind_in(&chars[..char_index]));
-
-        if let Some(index) = index {
-            let (left, right) = chars.split_at(index);
-
-            
-            self.chars = left;
-            self.tail = min(char_index, index);
-
-            
-            let mut right_iter = right.chars();
-            right_iter.next(); 
-            let right_chars = right_iter.as_str();
-            let right_index = chars.len() - right_chars.len();
-
-            let mut right = SplitProducer {
-                chars: right_chars,
-                separator: separator,
-                tail: tail - right_index,
-            };
-
-            
-            
-            if index < char_index {
-                right.tail = 0;
-            }
-
-            (self, Some(right))
-
-        } else {
-            self.tail = 0;
-            (self, None)
-        }
+impl<'ch, P: Pattern> Fissile<P> for &'ch str {
+    fn length(&self) -> usize {
+        self.len()
     }
 
-    fn fold_with<F>(self, folder: F) -> F
-        where F: Folder<Self::Item>
+    fn midpoint(&self, end: usize) -> usize {
+        
+        find_char_midpoint(&self[..end])
+    }
+
+    fn find(&self, separator: &P, start: usize, end: usize) -> Option<usize> {
+        separator.find_in(&self[start..end])
+    }
+
+    fn rfind(&self, separator: &P, end: usize) -> Option<usize> {
+        separator.rfind_in(&self[..end])
+    }
+
+    fn split_once(self, index: usize) -> (Self, Self) {
+        let (left, right) = self.split_at(index);
+        let mut right_iter = right.chars();
+        right_iter.next(); 
+        (left, right_iter.as_str())
+    }
+
+    fn fold_splits<F>(self, separator: &P, folder: F, skip_last: bool) -> F
+        where F: Folder<Self>
     {
-        self.fold_with(folder, false)
+        separator.fold_with(self, folder, skip_last)
     }
 }
 
@@ -340,25 +289,29 @@ impl<'ch, 'sep, P: Pattern + 'sep> UnindexedProducer for SplitProducer<'ch, 'sep
 
 
 pub struct SplitTerminator<'ch, P: Pattern> {
-    splitter: Split<'ch, P>,
+    chars: &'ch str,
+    terminator: P,
 }
 
 struct SplitTerminatorProducer<'ch, 'sep, P: Pattern + 'sep> {
-    splitter: SplitProducer<'ch, 'sep, P>,
-    endpoint: bool,
+    splitter: SplitProducer<'sep, P, &'ch str>,
+    skip_last: bool,
 }
 
 impl<'ch, P: Pattern> SplitTerminator<'ch, P> {
     fn new(chars: &'ch str, terminator: P) -> Self {
-        SplitTerminator { splitter: Split::new(chars, terminator) }
+        SplitTerminator {
+            chars: chars,
+            terminator: terminator,
+        }
     }
 }
 
 impl<'ch, 'sep, P: Pattern + 'sep> SplitTerminatorProducer<'ch, 'sep, P> {
-    fn new(split: &'sep SplitTerminator<'ch, P>) -> Self {
+    fn new(chars: &'ch str, terminator: &'sep P) -> Self {
         SplitTerminatorProducer {
-            splitter: SplitProducer::new(&split.splitter),
-            endpoint: true,
+            splitter: SplitProducer::new(chars, terminator),
+            skip_last: chars.is_empty() || terminator.is_suffix_of(chars),
         }
     }
 }
@@ -369,7 +322,7 @@ impl<'ch, P: Pattern> ParallelIterator for SplitTerminator<'ch, P> {
     fn drive_unindexed<C>(self, consumer: C) -> C::Result
         where C: UnindexedConsumer<Self::Item>
     {
-        let producer = SplitTerminatorProducer::new(&self);
+        let producer = SplitTerminatorProducer::new(self.chars, &self.terminator);
         bridge_unindexed(producer, consumer)
     }
 }
@@ -381,11 +334,11 @@ impl<'ch, 'sep, P: Pattern + 'sep> UnindexedProducer for SplitTerminatorProducer
         let (left, right) = self.splitter.split();
         self.splitter = left;
         let right = right.map(|right| {
-            let endpoint = self.endpoint;
-            self.endpoint = false;
+            let skip_last = self.skip_last;
+            self.skip_last = false;
             SplitTerminatorProducer {
                 splitter: right,
-                endpoint: endpoint,
+                skip_last: skip_last,
             }
         });
         (self, right)
@@ -394,16 +347,7 @@ impl<'ch, 'sep, P: Pattern + 'sep> UnindexedProducer for SplitTerminatorProducer
     fn fold_with<F>(self, folder: F) -> F
         where F: Folder<Self::Item>
     {
-        
-        let skip_last = if self.endpoint {
-            let chars = self.splitter.chars;
-            let terminator = self.splitter.separator;
-            chars.is_empty() || terminator.is_suffix_of(chars)
-        } else {
-            false
-        };
-
-        self.splitter.fold_with(folder, skip_last)
+        self.splitter.fold_with(folder, self.skip_last)
     }
 }
 

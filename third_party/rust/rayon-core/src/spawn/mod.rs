@@ -1,3 +1,4 @@
+#[cfg(rayon_unstable)]
 use future::{self, Future, RayonFuture};
 #[allow(unused_imports)]
 use latch::{Latch, SpinLatch};
@@ -42,11 +43,20 @@ use unwind;
 
 
 
-pub fn spawn_async<F>(func: F)
+
+
+
+
+
+
+
+
+
+pub fn spawn<F>(func: F)
     where F: FnOnce() + Send + 'static
 {
     
-    unsafe { spawn_async_in(func, &Registry::current()) }
+    unsafe { spawn_in(func, &Registry::current()) }
 }
 
 
@@ -54,7 +64,7 @@ pub fn spawn_async<F>(func: F)
 
 
 
-pub unsafe fn spawn_async_in<F>(func: F, registry: &Arc<Registry>)
+pub unsafe fn spawn_in<F>(func: F, registry: &Arc<Registry>)
     where F: FnOnce() + Send + 'static
 {
     
@@ -93,17 +103,25 @@ pub unsafe fn spawn_async_in<F>(func: F, registry: &Arc<Registry>)
 
 
 
-pub fn spawn_future_async<F>(future: F) -> RayonFuture<F::Item, F::Error>
+
+
+
+
+
+
+#[cfg(rayon_unstable)]
+pub fn spawn_future<F>(future: F) -> RayonFuture<F::Item, F::Error>
     where F: Future + Send + 'static
 {
     
-    unsafe { spawn_future_async_in(future, Registry::current()) }
+    unsafe { spawn_future_in(future, Registry::current()) }
 }
 
 
 
 
-pub unsafe fn spawn_future_async_in<F>(future: F, registry: Arc<Registry>) -> RayonFuture<F::Item, F::Error>
+#[cfg(rayon_unstable)]
+pub unsafe fn spawn_future_in<F>(future: F, registry: Arc<Registry>) -> RayonFuture<F::Item, F::Error>
     where F: Future + Send + 'static
 {
     let scope = StaticFutureScope::new(registry.clone());
@@ -111,10 +129,12 @@ pub unsafe fn spawn_future_async_in<F>(future: F, registry: Arc<Registry>) -> Ra
     future::new_rayon_future(future, scope)
 }
 
+#[cfg(rayon_unstable)]
 struct StaticFutureScope {
     registry: Arc<Registry>
 }
 
+#[cfg(rayon_unstable)]
 impl StaticFutureScope {
     
     unsafe fn new(registry: Arc<Registry>) -> Self {
@@ -134,6 +154,7 @@ impl StaticFutureScope {
 
 
 
+#[cfg(rayon_unstable)]
 unsafe impl future::FutureScope<'static> for StaticFutureScope {
     fn registry(&self) -> Arc<Registry> {
         self.registry.clone()
