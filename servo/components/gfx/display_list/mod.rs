@@ -49,6 +49,16 @@ pub struct DisplayList {
 
 impl DisplayList {
     
+    
+    pub fn bounds(&self) -> Rect<Au> {
+        match self.list.get(0) {
+            Some(&DisplayItem::PushStackingContext(ref item)) => item.stacking_context.bounds,
+            Some(_) => unreachable!("Root element of display list not stacking context."),
+            None => Rect::zero(),
+        }
+    }
+
+    
     pub fn text_index(&self,
                       node: OpaqueNode,
                       client_point: &Point2D<Au>,
