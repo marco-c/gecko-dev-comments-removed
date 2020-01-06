@@ -90,6 +90,12 @@ this.TestRunner = {
     Services.prefs.setIntPref("ui.caretBlinkTime", -1);
 
     let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
+
+    
+    
+    
+    browserWindow.document.getElementById("main-window").removeAttribute("remotecontrol");
+
     let selectedBrowser = browserWindow.gBrowser.selectedBrowser;
     await BrowserTestUtils.loadURI(selectedBrowser, HOME_PAGE);
     await BrowserTestUtils.browserLoaded(selectedBrowser);
