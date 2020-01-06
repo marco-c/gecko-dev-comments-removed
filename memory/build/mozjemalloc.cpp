@@ -1172,8 +1172,8 @@ static size_t	opt_dirty_max = DIRTY_MAX_DEFAULT;
 
 
 
-static void	*chunk_alloc(size_t size, size_t alignment, bool base, bool *zeroed=nullptr);
-static void	chunk_dealloc(void *chunk, size_t size, ChunkType chunk_type);
+static void* chunk_alloc(size_t aSize, size_t aAlignment, bool aBase, bool* aZeroed = nullptr);
+static void chunk_dealloc(void* aChunk, size_t aSize, ChunkType aType);
 static void chunk_ensure_zero(void* aPtr, size_t aSize, bool aZeroed);
 static arena_t	*arenas_extend();
 static void	*huge_malloc(size_t size, bool zero);
@@ -1928,7 +1928,7 @@ pages_purge(void *addr, size_t length, bool force_zero)
 }
 
 static void*
-chunk_recycle(size_t size, size_t alignment, bool* zeroed)
+chunk_recycle(size_t aSize, size_t aAlignment, bool* aZeroed)
 {
   void* ret;
   extent_node_t* node;
@@ -1936,10 +1936,11 @@ chunk_recycle(size_t size, size_t alignment, bool* zeroed)
   size_t alloc_size, leadsize, trailsize;
   ChunkType chunk_type;
 
-  alloc_size = size + alignment - chunksize;
+  alloc_size = aSize + aAlignment - chunksize;
   
-  if (alloc_size < size)
+  if (alloc_size < aSize) {
     return nullptr;
+  }
   key.addr = nullptr;
   key.size = alloc_size;
   chunks_mtx.Lock();
@@ -1949,13 +1950,13 @@ chunk_recycle(size_t size, size_t alignment, bool* zeroed)
     return nullptr;
   }
   leadsize =
-    ALIGNMENT_CEILING((uintptr_t)node->addr, alignment) - (uintptr_t)node->addr;
-  MOZ_ASSERT(node->size >= leadsize + size);
-  trailsize = node->size - leadsize - size;
+    ALIGNMENT_CEILING((uintptr_t)node->addr, aAlignment) - (uintptr_t)node->addr;
+  MOZ_ASSERT(node->size >= leadsize + aSize);
+  trailsize = node->size - leadsize - aSize;
   ret = (void*)((uintptr_t)node->addr + leadsize);
   chunk_type = node->chunk_type;
-  if (zeroed) {
-    *zeroed = (chunk_type == ZEROED_CHUNK);
+  if (aZeroed) {
+    *aZeroed = (chunk_type == ZEROED_CHUNK);
   }
   
   gChunksBySize.Remove(node);
@@ -1980,12 +1981,12 @@ chunk_recycle(size_t size, size_t alignment, bool* zeroed)
       chunks_mtx.Unlock();
       node = base_node_alloc();
       if (!node) {
-        chunk_dealloc(ret, size, chunk_type);
+        chunk_dealloc(ret, aSize, chunk_type);
         return nullptr;
       }
       chunks_mtx.Lock();
     }
-    node->addr = (void*)((uintptr_t)(ret) + size);
+    node->addr = (void*)((uintptr_t)(ret) + aSize);
     node->size = trailsize;
     node->chunk_type = chunk_type;
     gChunksBySize.Insert(node);
@@ -1993,20 +1994,21 @@ chunk_recycle(size_t size, size_t alignment, bool* zeroed)
     node = nullptr;
   }
 
-  recycled_size -= size;
+  recycled_size -= aSize;
 
   chunks_mtx.Unlock();
 
-  if (node)
+  if (node) {
     base_node_dealloc(node);
+  }
 #ifdef MALLOC_DECOMMIT
-  pages_commit(ret, size);
+  pages_commit(ret, aSize);
   
-  if (zeroed) {
-    *zeroed = true;
+  if (aZeroed) {
+    *aZeroed = true;
   }
 #endif
-  return (ret);
+  return ret;
 }
 
 #ifdef XP_WIN
@@ -2029,25 +2031,27 @@ chunk_recycle(size_t size, size_t alignment, bool* zeroed)
 
 
 static void*
-chunk_alloc(size_t size, size_t alignment, bool base, bool* zeroed)
+chunk_alloc(size_t aSize, size_t aAlignment, bool aBase, bool* aZeroed)
 {
   void* ret;
 
-  MOZ_ASSERT(size != 0);
-  MOZ_ASSERT((size & chunksize_mask) == 0);
-  MOZ_ASSERT(alignment != 0);
-  MOZ_ASSERT((alignment & chunksize_mask) == 0);
+  MOZ_ASSERT(aSize != 0);
+  MOZ_ASSERT((aSize & chunksize_mask) == 0);
+  MOZ_ASSERT(aAlignment != 0);
+  MOZ_ASSERT((aAlignment & chunksize_mask) == 0);
 
   
   
-  if (CAN_RECYCLE(size) && !base) {
-    ret = chunk_recycle(size, alignment, zeroed);
-    if (ret)
+  if (CAN_RECYCLE(aSize) && !aBase) {
+    ret = chunk_recycle(aSize, aAlignment, aZeroed);
+    if (ret) {
       goto RETURN;
+    }
   }
-  ret = chunk_alloc_mmap(size, alignment);
-  if (zeroed)
-    *zeroed = true;
+  ret = chunk_alloc_mmap(aSize, aAlignment);
+  if (aZeroed) {
+    *aZeroed = true;
+  }
   if (ret) {
     goto RETURN;
   }
@@ -2056,15 +2060,15 @@ chunk_alloc(size_t size, size_t alignment, bool base, bool* zeroed)
   ret = nullptr;
 RETURN:
 
-  if (ret && base == false) {
+  if (ret && aBase == false) {
     if (!gChunkRTree.Set(ret, ret)) {
-      chunk_dealloc(ret, size, UNKNOWN_CHUNK);
+      chunk_dealloc(ret, aSize, UNKNOWN_CHUNK);
       return nullptr;
     }
   }
 
   MOZ_ASSERT(CHUNK_ADDR2BASE(ret) == ret);
-  return (ret);
+  return ret;
 }
 
 static void
@@ -2086,13 +2090,13 @@ chunk_ensure_zero(void* aPtr, size_t aSize, bool aZeroed)
 }
 
 static void
-chunk_record(void* chunk, size_t size, ChunkType chunk_type)
+chunk_record(void* aChunk, size_t aSize, ChunkType aType)
 {
   extent_node_t *xnode, *node, *prev, *xprev, key;
 
-  if (chunk_type != ZEROED_CHUNK) {
-    if (pages_purge(chunk, size, chunk_type == HUGE_CHUNK)) {
-      chunk_type = ZEROED_CHUNK;
+  if (aType != ZEROED_CHUNK) {
+    if (pages_purge(aChunk, aSize, aType == HUGE_CHUNK)) {
+      aType = ZEROED_CHUNK;
     }
   }
 
@@ -2107,7 +2111,7 @@ chunk_record(void* chunk, size_t size, ChunkType chunk_type)
   xprev = nullptr;
 
   chunks_mtx.Lock();
-  key.addr = (void*)((uintptr_t)chunk + size);
+  key.addr = (void*)((uintptr_t)aChunk + aSize);
   node = gChunksByAddress.SearchOrNext(&key);
   
   if (node && node->addr == key.addr) {
@@ -2117,9 +2121,9 @@ chunk_record(void* chunk, size_t size, ChunkType chunk_type)
 
 
     gChunksBySize.Remove(node);
-    node->addr = chunk;
-    node->size += size;
-    if (node->chunk_type != chunk_type) {
+    node->addr = aChunk;
+    node->size += aSize;
+    if (node->chunk_type != aType) {
       node->chunk_type = RECYCLED_CHUNK;
     }
     gChunksBySize.Insert(node);
@@ -2136,16 +2140,16 @@ chunk_record(void* chunk, size_t size, ChunkType chunk_type)
     }
     node = xnode;
     xnode = nullptr; 
-    node->addr = chunk;
-    node->size = size;
-    node->chunk_type = chunk_type;
+    node->addr = aChunk;
+    node->size = aSize;
+    node->chunk_type = aType;
     gChunksByAddress.Insert(node);
     gChunksBySize.Insert(node);
   }
 
   
   prev = gChunksByAddress.Prev(node);
-  if (prev && (void*)((uintptr_t)prev->addr + prev->size) == chunk) {
+  if (prev && (void*)((uintptr_t)prev->addr + prev->size) == aChunk) {
     
 
 
@@ -2165,7 +2169,7 @@ chunk_record(void* chunk, size_t size, ChunkType chunk_type)
     xprev = prev;
   }
 
-  recycled_size += size;
+  recycled_size += aSize;
 
 label_return:
   chunks_mtx.Unlock();
@@ -2173,42 +2177,43 @@ label_return:
 
 
 
-  if (xnode)
+  if (xnode) {
     base_node_dealloc(xnode);
-  if (xprev)
+  }
+  if (xprev) {
     base_node_dealloc(xprev);
+  }
 }
 
 static void
-chunk_dealloc(void* chunk, size_t size, ChunkType type)
+chunk_dealloc(void* aChunk, size_t aSize, ChunkType aType)
 {
+  MOZ_ASSERT(aChunk);
+  MOZ_ASSERT(CHUNK_ADDR2BASE(aChunk) == aChunk);
+  MOZ_ASSERT(aSize != 0);
+  MOZ_ASSERT((aSize & chunksize_mask) == 0);
 
-  MOZ_ASSERT(chunk);
-  MOZ_ASSERT(CHUNK_ADDR2BASE(chunk) == chunk);
-  MOZ_ASSERT(size != 0);
-  MOZ_ASSERT((size & chunksize_mask) == 0);
+  gChunkRTree.Unset(aChunk);
 
-  gChunkRTree.Unset(chunk);
-
-  if (CAN_RECYCLE(size)) {
+  if (CAN_RECYCLE(aSize)) {
     size_t recycled_so_far = load_acquire_z(&recycled_size);
     
     if (recycled_so_far < recycle_limit) {
       size_t recycle_remaining = recycle_limit - recycled_so_far;
       size_t to_recycle;
-      if (size > recycle_remaining) {
+      if (aSize > recycle_remaining) {
         to_recycle = recycle_remaining;
         
-        pages_trim(chunk, size, 0, to_recycle);
+        pages_trim(aChunk, aSize, 0, to_recycle);
       } else {
-        to_recycle = size;
+        to_recycle = aSize;
       }
-      chunk_record(chunk, to_recycle, type);
+      chunk_record(aChunk, to_recycle, aType);
       return;
     }
   }
 
-  pages_unmap(chunk, size);
+  pages_unmap(aChunk, aSize);
 }
 
 #undef CAN_RECYCLE
