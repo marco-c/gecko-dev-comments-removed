@@ -4018,7 +4018,7 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
     return 0;
   }
 
-#if defined(MOZ_UPDATER) && !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_GONK)
+#if defined(MOZ_UPDATER) && !defined(MOZ_WIDGET_ANDROID)
   
   nsCOMPtr<nsIFile> updRoot;
   bool persistent;
@@ -4211,7 +4211,7 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
 }
 
 #if defined(MOZ_CRASHREPORTER)
-#if defined(MOZ_CONTENT_SANDBOX) && !defined(MOZ_WIDGET_GONK)
+#if defined(MOZ_CONTENT_SANDBOX)
 void AddSandboxAnnotations()
 {
   
@@ -4561,7 +4561,7 @@ XREMain::XRE_mainRun()
   }
 #endif 
 
-#if defined(MOZ_SANDBOX) && defined(XP_LINUX) && !defined(MOZ_WIDGET_GONK)
+#if defined(MOZ_SANDBOX) && defined(XP_LINUX)
   
   
   SandboxInfo sandboxInfo = SandboxInfo::Get();
@@ -4587,7 +4587,7 @@ XREMain::XRE_mainRun()
 #endif 
 
 #if defined(MOZ_CRASHREPORTER)
-#if defined(MOZ_CONTENT_SANDBOX) && !defined(MOZ_WIDGET_GONK)
+#if defined(MOZ_CONTENT_SANDBOX)
   AddSandboxAnnotations();
 #endif 
 #endif 

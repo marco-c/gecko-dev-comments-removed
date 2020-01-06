@@ -490,13 +490,6 @@ nsWindowWatcher::CreateChromeWindow(const nsACString& aFeatures,
     return NS_ERROR_UNEXPECTED;
   }
 
-  
-  
-#ifdef MOZ_WIDGET_GONK
-  int retval = WinHasOption(aFeatures, "mozDisplayId", 0, nullptr);
-  windowCreator2->SetScreenId(retval);
-#endif
-
   bool cancel = false;
   nsCOMPtr<nsIWebBrowserChrome> newWindowChrome;
   nsresult rv =
