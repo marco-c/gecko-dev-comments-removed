@@ -2121,25 +2121,11 @@ private:
                                   nsFrameItems& aFrameItems);
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsIFrame* FindFrameForContentSibling(nsIContent* aContent,
-                                       nsIContent* aTargetContent,
-                                       mozilla::StyleDisplay& aTargetContentDisplay,
-                                       nsContainerFrame* aParentFrame,
-                                       bool aPrevSibling);
+  enum class SiblingDirection
+  {
+    Forward,
+    Backward,
+  };
 
   
 
@@ -2155,29 +2141,32 @@ private:
 
 
 
-  nsIFrame* FindPreviousSibling(mozilla::dom::FlattenedChildIterator aIter,
-                                nsIContent* aTargetContent,
-                                mozilla::StyleDisplay& aTargetContentDisplay,
-                                nsContainerFrame* aParentFrame);
+  template<SiblingDirection>
+  nsIFrame* FindSibling(const mozilla::dom::FlattenedChildIterator& aIter,
+                        mozilla::StyleDisplay& aTargetContentDisplay);
 
   
+  template<SiblingDirection>
+  nsIFrame* FindSiblingInternal(
+    mozilla::dom::FlattenedChildIterator,
+    nsIContent* aTargetContent,
+    mozilla::StyleDisplay& aTargetContentDisplay);
 
+  
+  nsIFrame* FindNextSibling(const mozilla::dom::FlattenedChildIterator& aIter,
+                            mozilla::StyleDisplay& aTargetContentDisplay);
+  
+  nsIFrame* FindPreviousSibling(const mozilla::dom::FlattenedChildIterator& aIter,
+                                mozilla::StyleDisplay& aTargetContentDisplay);
 
-
-
-
-
-
-
-
-
-
-
-
-  nsIFrame* FindNextSibling(mozilla::dom::FlattenedChildIterator aIter,
-                            nsIContent* aTargetContent,
-                            mozilla::StyleDisplay& aTargetContentDisplay,
-                            nsContainerFrame* aParentFrame);
+  
+  
+  
+  
+  nsIFrame* AdjustSiblingFrame(nsIFrame* aSibling,
+                               nsIContent* aTargetContent,
+                               mozilla::StyleDisplay& aTargetContentDisplay,
+                               SiblingDirection aDirection);
 
   
   

@@ -394,23 +394,6 @@ public:
 
   static nsIFrame* GetRealPrimaryFrameFor(const nsIContent* aContent);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static bool IsGeneratedContentFor(nsIContent* aContent, nsIFrame* aFrame,
-                                      nsAtom* aPseudoElement);
-
 #ifdef DEBUG
   
   static bool gPreventAssertInCompareTreePosition;

@@ -6869,115 +6869,147 @@ nsCSSFrameConstructor::IsValidSibling(nsIFrame*              aSibling,
   return true;
 }
 
-nsIFrame*
-nsCSSFrameConstructor::FindFrameForContentSibling(nsIContent* aContent,
-                                                  nsIContent* aTargetContent,
-                                                  StyleDisplay& aTargetContentDisplay,
-                                                  nsContainerFrame* aParentFrame,
-                                                  bool aPrevSibling)
-{
-  nsIFrame* sibling = aContent->GetPrimaryFrame();
-  if (!sibling && GetDisplayContentsStyleFor(aContent)) {
-    
-    sibling = aPrevSibling ? nsLayoutUtils::GetAfterFrame(aContent)
-                           : nsLayoutUtils::GetBeforeFrame(aContent);
-    if (!sibling) {
-      
-      const bool forward = !aPrevSibling;
-      FlattenedChildIterator iter(aContent, forward);
-      sibling = aPrevSibling ?
-        FindPreviousSibling(iter, aTargetContent, aTargetContentDisplay, aParentFrame) :
-        FindNextSibling(iter, aTargetContent, aTargetContentDisplay, aParentFrame);
 
+
+
+template<nsCSSFrameConstructor::SiblingDirection aDirection>
+nsIFrame*
+nsCSSFrameConstructor::FindSiblingInternal(
+  FlattenedChildIterator aIter,
+  nsIContent* aTargetContent,
+  StyleDisplay& aTargetContentDisplay)
+{
+  auto adjust = [&](nsIFrame* aPotentialSiblingFrame) -> nsIFrame* {
+    return AdjustSiblingFrame(
+      aPotentialSiblingFrame, aTargetContent, aTargetContentDisplay,
+      aDirection);
+  };
+
+  auto nextDomSibling = [](FlattenedChildIterator& aIter) -> nsIContent* {
+    return aDirection == SiblingDirection::Forward
+      ? aIter.GetNextChild() : aIter.GetPreviousChild();
+  };
+
+  auto getNearPseudo = [](const nsIContent* aContent) -> nsIFrame* {
+    return aDirection == SiblingDirection::Forward
+      ? nsLayoutUtils::GetBeforeFrame(aContent)
+      : nsLayoutUtils::GetAfterFrame(aContent);
+  };
+
+  auto getFarPseudo = [](const nsIContent* aContent) -> nsIFrame* {
+    return aDirection == SiblingDirection::Forward
+      ? nsLayoutUtils::GetAfterFrame(aContent)
+      : nsLayoutUtils::GetBeforeFrame(aContent);
+  };
+
+  while (nsIContent* sibling = nextDomSibling(aIter)) {
+    if (nsIFrame* primaryFrame = sibling->GetPrimaryFrame()) {
       
       
+      if (primaryFrame->GetContent() == sibling) {
+        if (nsIFrame* frame = adjust(primaryFrame)) {
+          return frame;
+        }
+      }
+    }
+
+    if (GetDisplayContentsStyleFor(sibling)) {
+      if (nsIFrame* frame = adjust(getNearPseudo(sibling))) {
+        return frame;
+      }
+
+      const bool startFromBeginning = aDirection == SiblingDirection::Forward;
+      FlattenedChildIterator iter(sibling, startFromBeginning);
+      nsIFrame* sibling = FindSiblingInternal<aDirection>(
+        iter, aTargetContent, aTargetContentDisplay);
       if (sibling) {
         return sibling;
       }
     }
-    if (!sibling) {
-      
-      sibling = aPrevSibling ? nsLayoutUtils::GetAfterFrame(aContent)
-                             : nsLayoutUtils::GetBeforeFrame(aContent);
-    }
-    if (!sibling) {
-      return nullptr;
-    }
-  } else if (!sibling || sibling->GetContent() != aContent) {
-    
-    
+  }
+
+  return adjust(getFarPseudo(aIter.Parent()));
+}
+
+nsIFrame*
+nsCSSFrameConstructor::AdjustSiblingFrame(
+  nsIFrame* aSibling,
+  nsIContent* aTargetContent,
+  mozilla::StyleDisplay& aTargetContentDisplay,
+  SiblingDirection aDirection)
+{
+  if (!aSibling) {
     return nullptr;
   }
 
-  
-  
-  if (sibling->GetStateBits() & NS_FRAME_OUT_OF_FLOW) {
-    nsIFrame* placeholderFrame = sibling->GetPlaceholderFrame();
-    NS_ASSERTION(placeholderFrame, "no placeholder for out-of-flow frame");
-    sibling = placeholderFrame;
+  if (aSibling->GetStateBits() & NS_FRAME_OUT_OF_FLOW) {
+    aSibling = aSibling->GetPlaceholderFrame();
+    MOZ_ASSERT(aSibling);
   }
 
-  
-  NS_ASSERTION(!sibling->GetPrevContinuation(), "How did that happen?");
-
-  if (aPrevSibling) {
+  MOZ_ASSERT(!aSibling->GetPrevContinuation(), "How?");
+  if (aDirection == SiblingDirection::Backward) {
     
     
-    if (IsFramePartOfIBSplit(sibling)) {
-      sibling = GetLastIBSplitSibling(sibling, true);
+    if (IsFramePartOfIBSplit(aSibling)) {
+      aSibling = GetLastIBSplitSibling(aSibling, true);
     }
 
     
     
-    sibling = sibling->GetTailContinuation();
+    aSibling = aSibling->GetTailContinuation();
   }
 
-  if (aTargetContent &&
-      !IsValidSibling(sibling, aTargetContent, aTargetContentDisplay)) {
-    sibling = nullptr;
+  if (!IsValidSibling(aSibling, aTargetContent, aTargetContentDisplay)) {
+    return nullptr;
   }
 
-  return sibling;
+  return aSibling;
 }
 
 nsIFrame*
-nsCSSFrameConstructor::FindPreviousSibling(FlattenedChildIterator aIter,
-                                           nsIContent* aTargetContent,
-                                           StyleDisplay& aTargetContentDisplay,
-                                           nsContainerFrame* aParentFrame)
+nsCSSFrameConstructor::FindPreviousSibling(const FlattenedChildIterator& aIter,
+                                           StyleDisplay& aTargetContentDisplay)
 {
-  
-  
-  while (nsIContent* sibling = aIter.GetPreviousChild()) {
-    MOZ_ASSERT(sibling != aTargetContent);
-    nsIFrame* prevSibling =
-      FindFrameForContentSibling(sibling, aTargetContent, aTargetContentDisplay,
-                                 aParentFrame, true);
-    if (prevSibling) {
-      
-      return prevSibling;
-    }
-  }
-
-  return nullptr;
+  return FindSibling<SiblingDirection::Backward>(aIter, aTargetContentDisplay);
 }
 
 nsIFrame*
-nsCSSFrameConstructor::FindNextSibling(FlattenedChildIterator aIter,
-                                       nsIContent* aTargetContent,
-                                       StyleDisplay& aTargetContentDisplay,
-                                       nsContainerFrame* aParentFrame)
+nsCSSFrameConstructor::FindNextSibling(const FlattenedChildIterator& aIter,
+                                       StyleDisplay& aTargetContentDisplay)
 {
-  while (nsIContent* sibling = aIter.GetNextChild()) {
-    MOZ_ASSERT(sibling != aTargetContent);
-    nsIFrame* nextSibling =
-      FindFrameForContentSibling(sibling, aTargetContent, aTargetContentDisplay,
-                                 aParentFrame, false);
+  return FindSibling<SiblingDirection::Forward>(aIter, aTargetContentDisplay);
+}
 
-    if (nextSibling) {
-      
-      return nextSibling;
+template<nsCSSFrameConstructor::SiblingDirection aDirection>
+nsIFrame*
+nsCSSFrameConstructor::FindSibling(const FlattenedChildIterator& aIter,
+                                   StyleDisplay& aTargetContentDisplay)
+{
+  nsIContent* targetContent = aIter.Get();
+  nsIFrame* sibling =
+    FindSiblingInternal<aDirection>(aIter, targetContent, aTargetContentDisplay);
+  if (sibling) {
+    return sibling;
+  }
+
+  
+  
+  
+  const nsIContent* current = aIter.Parent();
+  while (GetDisplayContentsStyleFor(current)) {
+    const nsIContent* parent = current->GetFlattenedTreeParent();
+    MOZ_ASSERT(parent, "No display: contents on the root");
+
+    FlattenedChildIterator iter(parent);
+    iter.Seek(current);
+    sibling = FindSiblingInternal<aDirection>(
+        iter, targetContent, aTargetContentDisplay);
+    if (sibling) {
+      return sibling;
     }
+
+    current = parent;
   }
 
   return nullptr;
@@ -7042,8 +7074,7 @@ nsCSSFrameConstructor::GetInsertionPrevSibling(InsertionPoint* aInsertion,
   
   
   StyleDisplay childDisplay = UNSET_DISPLAY;
-  nsIFrame* prevSibling =
-    FindPreviousSibling(iter, iter.Get(), childDisplay, aInsertion->mParentFrame);
+  nsIFrame* prevSibling = FindPreviousSibling(iter, childDisplay);
 
   
   
@@ -7052,36 +7083,13 @@ nsCSSFrameConstructor::GetInsertionPrevSibling(InsertionPoint* aInsertion,
     aInsertion->mParentFrame = prevSibling->GetParent()->GetContentInsertionFrame();
   } else {
     
+    
+    
     if (aEndSkipChild) {
       iter.Seek(aEndSkipChild);
       iter.GetPreviousChild();
     }
-    nsIFrame* nextSibling =
-      FindNextSibling(iter, iter.Get(), childDisplay, aInsertion->mParentFrame);
-    if (GetDisplayContentsStyleFor(aInsertion->mContainer)) {
-      if (!nextSibling) {
-        
-        
-        
-        
-        nsIContent* child = aInsertion->mContainer;
-        nsIContent* parent = child->GetParent();
-        aInsertion->mParentFrame =
-          ::GetAdjustedParentFrame(aInsertion->mParentFrame, parent);
-        InsertionPoint fakeInsertion(aInsertion->mParentFrame, parent);
-        nsIFrame* result = GetInsertionPrevSibling(&fakeInsertion, child, aIsAppend,
-                                                   aIsRangeInsertSafe, nullptr, nullptr);
-        MOZ_ASSERT(aInsertion->mParentFrame->GetContent() ==
-                   fakeInsertion.mParentFrame->GetContent());
-        
-        
-        aInsertion->mParentFrame = fakeInsertion.mParentFrame;
-        return result;
-      }
-
-      prevSibling = nextSibling->GetPrevSibling();
-    }
-
+    nsIFrame* nextSibling = FindNextSibling(iter, childDisplay);
     if (nextSibling) {
       aInsertion->mParentFrame = nextSibling->GetParent()->GetContentInsertionFrame();
     } else {
@@ -8336,22 +8344,6 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 
       container = insertion.mParentFrame->GetContent();
       frameType = insertion.mParentFrame->Type();
-    }
-  }
-
-  if (!prevSibling) {
-    
-    
-    nsIFrame* firstChild = insertion.mParentFrame->PrincipalChildList().FirstChild();
-
-    if (firstChild &&
-        nsLayoutUtils::IsGeneratedContentFor(container, firstChild,
-                                             nsCSSPseudoElements::before)) {
-      
-      prevSibling = firstChild->GetTailContinuation();
-      insertion.mParentFrame = prevSibling->GetParent()->GetContentInsertionFrame();
-      
-      
     }
   }
 

@@ -63,13 +63,13 @@ public:
   
   
   
-  bool Seek(nsIContent* aChildToFind);
+  bool Seek(const nsIContent* aChildToFind);
 
   
   
   
   
-  bool Seek(nsIContent* aChildToFind, nsIContent* aBound)
+  bool Seek(const nsIContent* aChildToFind, nsIContent* aBound)
   {
     
     
@@ -132,18 +132,28 @@ class FlattenedChildIterator : public ExplicitChildIterator
 public:
   explicit FlattenedChildIterator(const nsIContent* aParent,
                                   bool aStartAtBeginning = true)
-    : ExplicitChildIterator(aParent, aStartAtBeginning), mXBLInvolved(false)
+    : ExplicitChildIterator(aParent, aStartAtBeginning)
+    , mXBLInvolved(false)
+    , mOriginalContent(aParent)
   {
     Init(false);
   }
 
   FlattenedChildIterator(FlattenedChildIterator&& aOther)
-    : ExplicitChildIterator(Move(aOther)), mXBLInvolved(aOther.mXBLInvolved) {}
+    : ExplicitChildIterator(Move(aOther))
+    , mXBLInvolved(aOther.mXBLInvolved)
+    , mOriginalContent(aOther.mOriginalContent)
+  {}
 
   FlattenedChildIterator(const FlattenedChildIterator& aOther)
-    : ExplicitChildIterator(aOther), mXBLInvolved(aOther.mXBLInvolved) {}
+    : ExplicitChildIterator(aOther)
+    , mXBLInvolved(aOther.mXBLInvolved)
+    , mOriginalContent(aOther.mOriginalContent)
+  {}
 
   bool XBLInvolved() { return mXBLInvolved; }
+
+  const nsIContent* Parent() const { return mOriginalContent; }
 
 protected:
   
@@ -152,7 +162,9 @@ protected:
 
   FlattenedChildIterator(const nsIContent* aParent, uint32_t aFlags,
                          bool aStartAtBeginning = true)
-    : ExplicitChildIterator(aParent, aStartAtBeginning), mXBLInvolved(false)
+    : ExplicitChildIterator(aParent, aStartAtBeginning)
+    , mXBLInvolved(false)
+    , mOriginalContent(aParent)
   {
     bool ignoreXBL = aFlags & nsIContent::eAllButXBL;
     Init(ignoreXBL);
@@ -163,6 +175,8 @@ protected:
   
   
   bool mXBLInvolved;
+
+  const nsIContent* mOriginalContent;
 };
 
 
@@ -180,12 +194,11 @@ public:
   AllChildrenIterator(const nsIContent* aNode, uint32_t aFlags,
                       bool aStartAtBeginning = true) :
     FlattenedChildIterator(aNode, aFlags, aStartAtBeginning),
-    mOriginalContent(aNode), mAnonKidsIdx(aStartAtBeginning ? UINT32_MAX : 0),
+    mAnonKidsIdx(aStartAtBeginning ? UINT32_MAX : 0),
     mFlags(aFlags), mPhase(aStartAtBeginning ? eAtBegin : eAtEnd) { }
 
   AllChildrenIterator(AllChildrenIterator&& aOther)
     : FlattenedChildIterator(Move(aOther)),
-      mOriginalContent(aOther.mOriginalContent),
       mAnonKids(Move(aOther.mAnonKids)), mAnonKidsIdx(aOther.mAnonKidsIdx),
       mFlags(aOther.mFlags), mPhase(aOther.mPhase)
 #ifdef DEBUG
@@ -204,11 +217,10 @@ public:
   
   
   
-  bool Seek(nsIContent* aChildToFind);
+  bool Seek(const nsIContent* aChildToFind);
 
   nsIContent* GetNextChild();
   nsIContent* GetPreviousChild();
-  const nsIContent* Parent() const { return mOriginalContent; }
 
   enum IteratorPhase
   {
@@ -224,7 +236,6 @@ public:
 private:
   
   void AppendNativeAnonymousChildren();
-  const nsIContent* mOriginalContent;
 
   
   
