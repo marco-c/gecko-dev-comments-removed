@@ -508,7 +508,7 @@ ApplyUpdate(nsIFile *greDir, nsIFile *updateDir, nsIFile *appDir, int appArgc,
     
     
     nsCOMPtr<nsIFile> appFile;
-    XRE_GetBinaryPath(getter_AddRefs(appFile));
+    XRE_GetBinaryPath(appArgv[0], getter_AddRefs(appFile));
     if (!appFile) {
       return;
     }
