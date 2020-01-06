@@ -451,11 +451,11 @@ pub enum TimerSchedulerMsg {
 
 
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct TimerEvent(pub TimerSource, pub TimerEventId);
 
 
-#[derive(Copy, Clone, HeapSizeOf, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug, HeapSizeOf, Deserialize, Serialize)]
 pub enum TimerSource {
     
     FromWindow(PipelineId),
