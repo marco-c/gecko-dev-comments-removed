@@ -3193,9 +3193,13 @@ void
 HTMLEditor::DoContentInserted(nsIDocument* aDocument,
                               nsIContent* aContainer,
                               nsIContent* aChild,
-                              int32_t aIndexInContainer,
+                              int32_t ,
                               InsertedOrAppended aInsertedOrAppended)
 {
+  MOZ_ASSERT(aChild);
+  nsINode* container = NODE_FROM(aContainer, aDocument);
+  MOZ_ASSERT(container);
+
   if (!IsInObservedSubtree(aDocument, aContainer, aChild)) {
     return;
   }
@@ -3213,7 +3217,7 @@ HTMLEditor::DoContentInserted(nsIDocument* aDocument,
                         &HTMLEditor::NotifyRootChanged));
   }
   
-  else if (!mAction && (aContainer ? aContainer->IsEditable() : aDocument->IsEditable())) {
+  else if (!mAction && container->IsEditable()) {
     if (IsMozEditorBogusNode(aChild)) {
       
       return;
@@ -3225,20 +3229,13 @@ HTMLEditor::DoContentInserted(nsIDocument* aDocument,
     
     if (mInlineSpellChecker) {
       RefPtr<nsRange> range = new nsRange(aChild);
-      int32_t endIndex = aIndexInContainer + 1;
+      nsIContent* endContent = aChild;
       if (aInsertedOrAppended == eAppended) {
         
-        nsIContent* sibling = aChild->GetNextSibling();
-        while (sibling) {
-          endIndex++;
-          sibling = sibling->GetNextSibling();
-        }
+        endContent = container->GetLastChild();
       }
-      nsresult rv = range->SetStartAndEnd(aContainer, aIndexInContainer,
-                                          aContainer, endIndex);
-      if (NS_SUCCEEDED(rv)) {
-        mInlineSpellChecker->SpellCheckRange(range);
-      }
+      range->SelectNodesInContainer(container, aChild, endContent);
+      mInlineSpellChecker->SpellCheckRange(range);
     }
   }
 }
