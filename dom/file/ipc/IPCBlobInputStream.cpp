@@ -651,8 +651,6 @@ IPCBlobInputStream::EnsureAsyncRemoteStream()
 
     nsCOMPtr<nsITransport> transport;
     rv = sts->CreateInputTransport(mRemoteStream,
-                                    0,
-                                    -1,
                                     true,
                                    getter_AddRefs(transport));
     if (NS_WARN_IF(NS_FAILED(rv))) {

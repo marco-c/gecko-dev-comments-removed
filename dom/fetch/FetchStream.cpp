@@ -224,8 +224,6 @@ FetchStream::RequestDataCallback(JSContext* aCx,
 
       nsCOMPtr<nsITransport> transport;
       rv = sts->CreateInputTransport(stream->mOriginalInputStream,
-                                      0,
-                                      -1,
                                       true,
                                      getter_AddRefs(transport));
       if (NS_WARN_IF(NS_FAILED(rv))) {

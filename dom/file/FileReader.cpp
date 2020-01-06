@@ -400,8 +400,6 @@ FileReader::ReadFileContent(Blob& aBlob,
 
     nsCOMPtr<nsITransport> transport;
     aRv = sts->CreateInputTransport(stream,
-                                     0,
-                                     -1,
                                      true,
                                     getter_AddRefs(transport));
     if (NS_WARN_IF(aRv.Failed())) {
