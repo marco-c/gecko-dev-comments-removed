@@ -1087,11 +1087,7 @@ pref("security.sandbox.content.level", 3);
 
 
 
-#ifdef NIGHTLY_BUILD
 pref("security.sandbox.content.level", 3);
-#else
-pref("security.sandbox.content.level", 2);
-#endif
 pref("security.sandbox.content.write_path_whitelist", "");
 pref("security.sandbox.content.read_path_whitelist", "");
 pref("security.sandbox.content.syscall_whitelist", "");
