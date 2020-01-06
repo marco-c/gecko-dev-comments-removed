@@ -88,6 +88,11 @@ struct AlternativeCharCode
 
 struct ShortcutKeyCandidate
 {
+  ShortcutKeyCandidate()
+    : mCharCode(0)
+    , mIgnoreShift(0)
+  {
+  }
   ShortcutKeyCandidate(uint32_t aCharCode, bool aIgnoreShift)
     : mCharCode(aCharCode)
     , mIgnoreShift(aIgnoreShift)
@@ -409,7 +414,7 @@ public:
 
 
 
-  void GetShortcutKeyCandidates(ShortcutKeyCandidateArray& aCandidates);
+  void GetShortcutKeyCandidates(ShortcutKeyCandidateArray& aCandidates) const;
 
   
 
@@ -417,7 +422,7 @@ public:
 
 
 
-  void GetAccessKeyCandidates(nsTArray<uint32_t>& aCandidates);
+  void GetAccessKeyCandidates(nsTArray<uint32_t>& aCandidates) const;
 
   static void Shutdown();
 

@@ -40,6 +40,7 @@ enum InputType
   PINCHGESTURE_INPUT,
   TAPGESTURE_INPUT,
   SCROLLWHEEL_INPUT,
+  KEYBOARD_INPUT,
 
   
   SENTINEL_INPUT,
@@ -51,6 +52,7 @@ class PanGestureInput;
 class PinchGestureInput;
 class TapGestureInput;
 class ScrollWheelInput;
+class KeyboardInput;
 
 
 
@@ -93,6 +95,7 @@ public:
   INPUTDATA_AS_CHILD_TYPE(PinchGestureInput, PINCHGESTURE_INPUT)
   INPUTDATA_AS_CHILD_TYPE(TapGestureInput, TAPGESTURE_INPUT)
   INPUTDATA_AS_CHILD_TYPE(ScrollWheelInput, SCROLLWHEEL_INPUT)
+  INPUTDATA_AS_CHILD_TYPE(KeyboardInput, KEYBOARD_INPUT)
 
   virtual ~InputData();
   explicit InputData(InputType aInputType);
@@ -611,6 +614,40 @@ public:
   bool mMayHaveMomentum;
   bool mIsMomentum;
   bool mAllowToOverrideSystemScrollSpeed;
+};
+
+class KeyboardInput : public InputData
+{
+public:
+  enum KeyboardEventType
+  {
+    KEY_DOWN,
+    KEY_PRESS,
+    KEY_UP,
+    
+    KEY_OTHER,
+
+    
+    KEY_SENTINEL,
+  };
+
+  explicit KeyboardInput(const WidgetKeyboardEvent& aEvent);
+
+  
+  
+
+  KeyboardEventType mType;
+  uint32_t mKeyCode;
+  uint32_t mCharCode;
+  nsTArray<ShortcutKeyCandidate> mShortcutCandidates;
+
+  bool mHandledByAPZ;
+
+protected:
+  friend mozilla::layers::PAPZCTreeManagerParent;
+  friend mozilla::layers::APZCTreeManagerChild;
+
+  KeyboardInput();
 };
 
 } 
