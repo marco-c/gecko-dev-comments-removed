@@ -244,6 +244,8 @@ class Module : public JS::WasmModule
 
     size_t bytecodeSerializedSize() const override;
     void bytecodeSerialize(uint8_t* bytecodeBegin, size_t bytecodeSize) const override;
+    bool compilationComplete() const override;
+    bool notifyWhenCompilationComplete(JS::WasmModuleListener* listener) override;
     size_t compiledSerializedSize() const override;
     void compiledSerialize(uint8_t* compiledBegin, size_t compiledSize) const override;
 

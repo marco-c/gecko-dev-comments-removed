@@ -35,6 +35,7 @@
 #include "mozilla/dom/BlobBinding.h"
 #include "mozilla/dom/IDBObjectStoreBinding.h"
 #include "mozilla/dom/MemoryBlobImpl.h"
+#include "mozilla/dom/StreamBlobImpl.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
 #include "mozilla/dom/StructuredCloneTags.h"
 #include "mozilla/dom/indexedDB/PBackgroundIDBSharedTypes.h"
@@ -42,6 +43,8 @@
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "nsCOMPtr.h"
 #include "nsQueryObject.h"
+#include "nsStreamUtils.h"
+#include "nsStringStream.h"
 #include "ProfilerHelpers.h"
 #include "ReportInternalError.h"
 #include "WorkerPrivate.h"
@@ -188,6 +191,288 @@ GenerateRequest(JSContext* aCx, IDBObjectStore* aObjectStore)
 
   return request.forget();
 }
+
+
+
+class WasmCompiledModuleStream final
+  : public nsIAsyncInputStream
+  , public nsICloneableInputStream
+  , private JS::WasmModuleListener
+{
+  nsCOMPtr<nsISerialEventTarget> mOwningThread;
+
+  
+  
+  RefPtr<JS::WasmModule> mModule;
+
+  
+  nsCOMPtr<nsIInputStreamCallback> mCallback;
+
+  
+  
+  
+  nsCOMPtr<nsIInputStream> mStream;
+
+  
+  
+  
+  nsresult mStatus;
+
+public:
+  explicit WasmCompiledModuleStream(JS::WasmModule* aModule)
+    : mOwningThread(GetCurrentThreadSerialEventTarget())
+    , mModule(aModule)
+    , mStatus(NS_OK)
+  {
+    AssertIsOnOwningThread();
+    MOZ_ASSERT(aModule);
+  }
+
+  bool
+  IsOnOwningThread() const
+  {
+    MOZ_ASSERT(mOwningThread);
+
+    bool current;
+    return NS_SUCCEEDED(mOwningThread->IsOnCurrentThread(&current)) && current;
+  }
+
+  void
+  AssertIsOnOwningThread() const
+  {
+    MOZ_ASSERT(IsOnOwningThread());
+  }
+
+private:
+  
+  explicit WasmCompiledModuleStream(const WasmCompiledModuleStream& aOther)
+    : mOwningThread(aOther.mOwningThread)
+    , mModule(aOther.mModule)
+    , mStatus(aOther.mStatus)
+  {
+    AssertIsOnOwningThread();
+
+    if (aOther.mStream) {
+      nsCOMPtr<nsICloneableInputStream> cloneableStream =
+        do_QueryInterface(aOther.mStream);
+      MOZ_ASSERT(cloneableStream);
+
+      MOZ_ALWAYS_SUCCEEDS(cloneableStream->Clone(getter_AddRefs(mStream)));
+    }
+  }
+
+  ~WasmCompiledModuleStream() override
+  {
+    AssertIsOnOwningThread();
+
+    MOZ_ALWAYS_SUCCEEDS(Close());
+  }
+
+  void
+  CallCallback()
+  {
+    AssertIsOnOwningThread();
+    MOZ_ASSERT(mCallback);
+
+    nsCOMPtr<nsIInputStreamCallback> callback;
+    callback.swap(mCallback);
+
+    callback->OnInputStreamReady(this);
+  }
+
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+  
+
+  NS_IMETHOD
+  Close() override
+  {
+    AssertIsOnOwningThread();
+
+    return CloseWithStatus(NS_BASE_STREAM_CLOSED);
+  }
+
+  NS_IMETHOD
+  Available(uint64_t* _retval) override
+  {
+    AssertIsOnOwningThread();
+
+    if (NS_FAILED(mStatus)) {
+      return mStatus;
+    }
+
+    if (!mStream) {
+      *_retval = 0;
+      return NS_OK;
+    }
+
+    return mStream->Available(_retval);
+  }
+
+  NS_IMETHOD
+  Read(char* aBuf, uint32_t aCount, uint32_t* _retval) override
+  {
+    AssertIsOnOwningThread();
+
+    return ReadSegments(NS_CopySegmentToBuffer, aBuf, aCount, _retval);
+  }
+
+  NS_IMETHOD
+  ReadSegments(nsWriteSegmentFun aWriter,
+               void* aClosure,
+               uint32_t aCount,
+               uint32_t* _retval) override
+  {
+    AssertIsOnOwningThread();
+
+    if (NS_FAILED(mStatus)) {
+      *_retval = 0;
+      return NS_OK;
+    }
+
+    if (!mStream) {
+      return NS_BASE_STREAM_WOULD_BLOCK;
+    }
+
+    return mStream->ReadSegments(aWriter, aClosure, aCount, _retval);
+  }
+
+  NS_IMETHOD
+  IsNonBlocking(bool* _retval) override
+  {
+    AssertIsOnOwningThread();
+
+    *_retval = true;
+    return NS_OK;
+  }
+
+  
+
+  NS_IMETHOD
+  CloseWithStatus(nsresult aStatus) override
+  {
+    AssertIsOnOwningThread();
+
+    if (NS_FAILED(mStatus)) {
+      return NS_OK;
+    }
+
+    mModule = nullptr;
+
+    if (mStream) {
+      MOZ_ALWAYS_SUCCEEDS(mStream->Close());
+      mStream = nullptr;
+    }
+
+    mStatus = NS_FAILED(aStatus) ? aStatus : NS_BASE_STREAM_CLOSED;
+
+    if (mCallback) {
+      CallCallback();
+    }
+
+    return NS_OK;
+  }
+
+  NS_IMETHOD
+  AsyncWait(nsIInputStreamCallback* aCallback,
+            uint32_t aFlags,
+            uint32_t aRequestedCount,
+            nsIEventTarget* aEventTarget) override
+  {
+    AssertIsOnOwningThread();
+    MOZ_ASSERT_IF(mCallback, !aCallback);
+
+    if (aFlags) {
+      return NS_ERROR_NOT_IMPLEMENTED;
+    }
+
+    if (!aCallback) {
+      mCallback = nullptr;
+      return NS_OK;
+    }
+
+    if (aEventTarget) {
+      mCallback =
+        NS_NewInputStreamReadyEvent("WasmCompiledModuleStream::AsyncWait",
+                                    aCallback,
+                                    aEventTarget);
+    } else {
+      mCallback = aCallback;
+    }
+
+    if (NS_FAILED(mStatus) || mStream) {
+      CallCallback();
+      return NS_OK;
+    }
+
+    MOZ_ASSERT(mModule);
+    mModule->notifyWhenCompilationComplete(this);
+
+    return NS_OK;
+  }
+
+  
+
+  NS_IMETHOD
+  GetCloneable(bool* aCloneable) override
+  {
+    AssertIsOnOwningThread();
+
+    *aCloneable = true;
+    return NS_OK;
+  }
+
+  NS_IMETHOD
+  Clone(nsIInputStream** _retval) override
+  {
+    AssertIsOnOwningThread();
+
+    nsCOMPtr<nsIInputStream> clone = new WasmCompiledModuleStream(*this);
+
+    clone.forget(_retval);
+    return NS_OK;
+  }
+
+  
+
+  void
+  onCompilationComplete() override
+  {
+    if (!IsOnOwningThread()) {
+      MOZ_ALWAYS_SUCCEEDS(mOwningThread->Dispatch(NewCancelableRunnableMethod(
+        "WasmCompiledModuleStream::onCompilationComplete",
+        this,
+        &WasmCompiledModuleStream::onCompilationComplete)));
+      return;
+    }
+
+    if (NS_FAILED(mStatus) || !mCallback) {
+      return;
+    }
+
+    MOZ_ASSERT(mModule);
+
+    size_t compiledSize = mModule->compiledSerializedSize();
+
+    nsCString compiled;
+    compiled.SetLength(compiledSize);
+
+    mModule->compiledSerialize(
+      reinterpret_cast<uint8_t*>(compiled.BeginWriting()), compiledSize);
+
+    MOZ_ALWAYS_SUCCEEDS(NS_NewCStringInputStream(getter_AddRefs(mStream),
+                                                 compiled));
+
+    mModule = nullptr;
+
+    CallCallback();
+  }
+};
+
+NS_IMPL_ISUPPORTS(WasmCompiledModuleStream,
+                  nsIInputStream,
+                  nsIAsyncInputStream,
+                  nsICloneableInputStream)
 
 bool
 StructuredCloneWriteCallback(JSContext* aCx,
@@ -351,20 +636,26 @@ StructuredCloneWriteCallback(JSContext* aCx,
 
     size_t bytecodeSize = module->bytecodeSerializedSize();
     UniquePtr<uint8_t[]> bytecode(new uint8_t[bytecodeSize]);
-    MOZ_ASSERT(bytecode);
     module->bytecodeSerialize(bytecode.get(), bytecodeSize);
 
     RefPtr<BlobImpl> blobImpl =
       new MemoryBlobImpl(bytecode.release(), bytecodeSize, EmptyString());
+
     RefPtr<Blob> bytecodeBlob = Blob::Create(nullptr, blobImpl);
 
-    size_t compiledSize = module->compiledSerializedSize();
-    UniquePtr<uint8_t[]> compiled(new uint8_t[compiledSize]);
-    MOZ_ASSERT(compiled);
-    module->compiledSerialize(compiled.get(), compiledSize);
+    if (module->compilationComplete()) {
+      size_t compiledSize = module->compiledSerializedSize();
+      UniquePtr<uint8_t[]> compiled(new uint8_t[compiledSize]);
+      module->compiledSerialize(compiled.get(), compiledSize);
 
-    blobImpl =
-      new MemoryBlobImpl(compiled.release(), compiledSize, EmptyString());
+      blobImpl =
+        new MemoryBlobImpl(compiled.release(), compiledSize, EmptyString());
+    } else {
+      nsCOMPtr<nsIInputStream> stream(new WasmCompiledModuleStream(module));
+
+      blobImpl = StreamBlobImpl::Create(stream, EmptyString(), UINT64_MAX);
+    }
+
     RefPtr<Blob> compiledBlob = Blob::Create(nullptr, blobImpl);
 
     if (cloneWriteInfo->mFiles.Length() + 1 > size_t(UINT32_MAX)) {

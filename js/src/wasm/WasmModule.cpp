@@ -338,6 +338,18 @@ Module::bytecodeSerialize(uint8_t* bytecodeBegin, size_t bytecodeSize) const
     MOZ_RELEASE_ASSERT(bytecodeEnd == bytecodeBegin + bytecodeSize);
 }
 
+ bool
+Module::compilationComplete() const
+{
+    return true;
+}
+
+ bool
+Module::notifyWhenCompilationComplete(JS::WasmModuleListener* listener)
+{
+    MOZ_CRASH("unreachable");
+}
+
  size_t
 Module::compiledSerializedSize() const
 {

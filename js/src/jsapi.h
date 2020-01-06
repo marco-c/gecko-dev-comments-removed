@@ -6545,6 +6545,22 @@ SetBuildIdOp(JSContext* cx, BuildIdOp buildIdOp);
 
 
 
+class WasmModuleListener
+{
+  protected:
+    virtual ~WasmModuleListener() {}
+
+  public:
+    
+    
+    
+    
+    virtual MozExternalRefCountType MOZ_XPCOM_ABI AddRef() = 0;
+    virtual MozExternalRefCountType MOZ_XPCOM_ABI Release() = 0;
+
+    virtual void onCompilationComplete() = 0;
+};
+
 struct WasmModule : js::AtomicRefCounted<WasmModule>
 {
     virtual ~WasmModule() {}
@@ -6552,6 +6568,12 @@ struct WasmModule : js::AtomicRefCounted<WasmModule>
     virtual size_t bytecodeSerializedSize() const = 0;
     virtual void bytecodeSerialize(uint8_t* bytecodeBegin, size_t bytecodeSize) const = 0;
 
+    
+    
+    
+    
+    virtual bool compilationComplete() const = 0;
+    virtual bool notifyWhenCompilationComplete(WasmModuleListener* listener) = 0;
     virtual size_t compiledSerializedSize() const = 0;
     virtual void compiledSerialize(uint8_t* compiledBegin, size_t compiledSize) const = 0;
 
