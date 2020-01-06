@@ -113,7 +113,7 @@ nsHTMLButtonControlFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   nsDisplayListCollection set;
 
   
-  if (!isForEventDelivery) {
+  if (!isForEventDelivery || aBuilder->HitTestShouldStopAtFirstOpaque()) {
     DisplayListClipState::AutoSaveRestore clipState(aBuilder);
 
     if (ShouldClipPaintingToBorderBox()) {
