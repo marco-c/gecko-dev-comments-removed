@@ -848,11 +848,6 @@ function CheckLayerAssertions(contentRootElement)
     if (!contentRootElement) {
         return;
     }
-    if (gIsWebRenderEnabled) {
-        
-        
-        return;
-    }
 
     var opaqueLayerElements = getOpaqueLayerElements(contentRootElement);
     for (var i = 0; i < opaqueLayerElements.length; ++i) {
