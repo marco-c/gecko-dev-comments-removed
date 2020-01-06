@@ -17,7 +17,8 @@
 }
 
 button,
-treecol {
+treecol,
+html|option {
   
   -moz-user-select: none;
 }
