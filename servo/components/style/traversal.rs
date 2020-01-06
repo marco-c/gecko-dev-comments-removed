@@ -255,6 +255,7 @@ pub trait DomTraversal<E: TElement> : Sync {
         context: &mut StyleContext<E>,
         parent: E,
         parent_data: &ElementData,
+        is_initial_style: bool,
     ) -> bool {
         debug_assert!(parent.has_current_styles_for_traversal(
             parent_data,
@@ -264,6 +265,21 @@ pub trait DomTraversal<E: TElement> : Sync {
         
         if parent_data.styles.is_display_none() {
             debug!("Parent {:?} is display:none, culling traversal", parent);
+            return true;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        if cfg!(feature = "gecko") &&
+            is_initial_style &&
+            parent_data.styles.primary().has_moz_binding()
+        {
+            debug!("Parent {:?} has XBL binding, deferring traversal", parent);
             return true;
         }
 
@@ -476,7 +492,7 @@ where
 
     traverse_children =
         traverse_children &&
-        !traversal.should_cull_subtree(context, element, &data);
+        !traversal.should_cull_subtree(context, element, &data, is_initial_style);
 
     
     if traverse_children {
