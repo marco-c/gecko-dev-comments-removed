@@ -2580,8 +2580,6 @@ gfxFontGroup::InitScriptRun(DrawTarget* aDrawTarget,
         const gfxTextRange& range = fontRanges[r];
         uint32_t matchedLength = range.Length();
         gfxFont *matchedFont = range.font;
-        bool vertical =
-            range.orientation == ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT;
         
         if (matchedFont && mStyle.noFallbackVariantFeatures) {
             
@@ -2594,7 +2592,7 @@ gfxFontGroup::InitScriptRun(DrawTarget* aDrawTarget,
                                                   aOffset + runStart,
                                                   matchedLength,
                                                   aRunScript,
-                                                  vertical)) {
+                                                  range.orientation)) {
                 
                 matchedFont = nullptr;
             }
@@ -2634,7 +2632,7 @@ gfxFontGroup::InitScriptRun(DrawTarget* aDrawTarget,
                                                        aOffset + runStart,
                                                        matchedLength,
                                                        aRunScript,
-                                                       vertical)) {
+                                                       range.orientation)) {
                     
                     matchedFont = nullptr;
                 }
@@ -2679,7 +2677,7 @@ gfxFontGroup::InitScriptRun(DrawTarget* aDrawTarget,
                                                       aOffset + runStart,
                                                       matchedLength,
                                                       aRunScript,
-                                                      vertical)) {
+                                                      range.orientation)) {
                     
                     matchedFont = nullptr;
                 }

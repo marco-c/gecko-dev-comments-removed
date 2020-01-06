@@ -1826,7 +1826,7 @@ public:
                              uint32_t aRunStart,
                              uint32_t aRunLength,
                              Script aRunScript,
-                             bool aVertical);
+                             mozilla::gfx::ShapedTextFlags aOrientation);
 
     
     
