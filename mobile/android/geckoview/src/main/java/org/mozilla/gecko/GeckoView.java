@@ -95,6 +95,7 @@ public class GeckoView extends LayerView {
      ContentListener mContentListener;
      NavigationListener mNavigationListener;
      ProgressListener mProgressListener;
+     ScrollListener mScrollListener;
     private PromptDelegate mPromptDelegate;
     private InputConnectionListener mInputConnectionListener;
 
@@ -207,6 +208,7 @@ public class GeckoView extends LayerView {
                 "GeckoView:PageStop",
                 "GeckoView:Prompt",
                 "GeckoView:SecurityChanged",
+                "GeckoView:ScrollChanged",
                 null);
         }
 
@@ -252,6 +254,12 @@ public class GeckoView extends LayerView {
                 if (mProgressListener != null) {
                     int state = message.getInt("status") & ProgressListener.STATE_ALL;
                     mProgressListener.onSecurityChange(GeckoView.this, state);
+                }
+            } else if ("GeckoView:ScrollChanged".equals(event)) {
+                if (mScrollListener != null) {
+                    mScrollListener.onScrollChanged(GeckoView.this,
+                                                    message.getInt("scrollX"),
+                                                    message.getInt("scrollY"));
                 }
             }
         }
@@ -682,6 +690,18 @@ public class GeckoView extends LayerView {
 
     public static void setDefaultPromptDelegate(PromptDelegate delegate) {
         sDefaultPromptDelegate = delegate;
+    }
+
+    
+
+
+
+
+    public void setScrollListener(ScrollListener listener) {
+        if (mScrollListener == listener) {
+            return;
+        }
+        mScrollListener = listener;
     }
 
     
@@ -1491,5 +1511,20 @@ public class GeckoView extends LayerView {
 
         void promptForFile(GeckoView view, String title, int type,
                            String[] mimeTypes, FileCallback callback);
+    }
+
+    
+
+
+
+    public interface ScrollListener {
+        
+
+
+
+
+
+
+        public void onScrollChanged(GeckoView view, int scrollX, int scrollY);
     }
 }
