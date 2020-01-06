@@ -17,6 +17,7 @@ use std::fmt;
 use style_traits::{ToCss, StyleParseErrorKind, ParseError};
 use values::CustomIdent;
 use values::computed::{font as computed, Context, Length, NonNegativeLength, ToComputedValue};
+use values::generics::{FontSettings, FontSettingTagFloat};
 use values::specified::{AllowQuirks, LengthOrPercentage, NoCalcLength, Number};
 use values::specified::length::{AU_PER_PT, AU_PER_PX, FontBaseSize};
 
@@ -1032,6 +1033,17 @@ impl Parse for FontLanguageOverride {
 
         let string = input.expect_string()?;
         Ok(FontLanguageOverride::Override(string.as_ref().to_owned().into_boxed_str()))
+    }
+}
+
+
+pub type FontVariantSettings = FontSettings<FontSettingTagFloat>;
+
+impl FontVariantSettings {
+    #[inline]
+    
+    pub fn normal() -> FontVariantSettings {
+        FontSettings::Normal
     }
 }
 

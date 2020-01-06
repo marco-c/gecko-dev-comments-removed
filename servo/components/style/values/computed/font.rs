@@ -15,7 +15,7 @@ use values::specified::font as specified;
 use values::specified::length::{FontBaseSize, NoCalcLength};
 
 pub use values::computed::Length as MozScriptMinSize;
-pub use values::specified::font::{XTextZoom, FontSynthesis};
+pub use values::specified::font::{XTextZoom, FontSynthesis, FontVariantSettings};
 
 
 
