@@ -40,8 +40,8 @@ use webdriver::command::{
     SwitchToFrameParameters, LocatorParameters, JavascriptCommandParameters,
     GetNamedCookieParameters, AddCookieParameters, TimeoutsParameters,
     ActionsParameters, TakeScreenshotParameters};
-use webdriver::response::{Cookie, CookieResponse, ElementRectResponse, NewSessionResponse,
-                          TimeoutsResponse, ValueResponse, WebDriverResponse,
+use webdriver::response::{CloseWindowResponse, Cookie, CookieResponse, ElementRectResponse,
+                          NewSessionResponse, TimeoutsResponse, ValueResponse, WebDriverResponse,
                           WindowRectResponse};
 use webdriver::common::{
     Date, Nullable, WebElement, FrameId, ELEMENT_KEY};
@@ -529,7 +529,7 @@ impl MarionetteSession {
 
         Ok(match msg.command {
             
-            Get(_) | GoBack | GoForward | Refresh | CloseWindow | SetTimeouts(_) |
+            Get(_) | GoBack | GoForward | Refresh | SetTimeouts(_) |
             SetWindowRect(_) | MaximizeWindow | SwitchToWindow(_) | SwitchToFrame(_) |
             SwitchToParentFrame | AddCookie(_) | DeleteCookies | DeleteCookie(_) |
             DismissAlert | AcceptAlert | SendAlertText(_) | ElementClick(_) |
@@ -584,6 +584,20 @@ impl MarionetteSession {
             GetWindowHandles => {
                 WebDriverResponse::Generic(ValueResponse::new(resp.result.clone()))
             },
+            CloseWindow => {
+                let data = try_opt!(resp.result.as_array(),
+                                    ErrorStatus::UnknownError,
+                                    "Failed to interpret value as array");
+                let handles = try!(data.iter()
+                                       .map(|x| {
+                                                Ok(try_opt!(x.as_string(),
+                                                            ErrorStatus::UnknownError,
+                                                            "Failed to interpret window handle as string")
+                                                           .to_owned())
+                                            })
+                                       .collect());
+                WebDriverResponse::CloseWindow(CloseWindowResponse { window_handles: handles })
+            }
             GetWindowRect => {
                 let width = try_opt!(
                     try_opt!(resp.result.find("width"),
