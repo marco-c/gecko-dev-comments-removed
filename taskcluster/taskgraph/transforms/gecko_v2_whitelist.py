@@ -16,6 +16,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 
 JOB_NAME_WHITELIST = set([
+    'android-aarch64-opt',
     'android-api-15-debug',
     'android-api-15-gradle-dependencies-opt',
     'android-api-15-gradle-opt',
