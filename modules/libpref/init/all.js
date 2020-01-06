@@ -1214,6 +1214,14 @@ pref("dom.min_timeout_value", 4);
 pref("dom.min_background_timeout_value", 1000);
 
 
+pref("dom.min_tracking_timeout_value", 4);
+
+
+pref("dom.min_tracking_background_timeout_value", 10000);
+
+pref("dom.timeout.tracking_throttling_delay", 30000);
+
+
 pref("dom.experimental_forms", false);
 
 
@@ -5219,6 +5227,11 @@ pref("urlclassifier.gethash.timeout_ms", 5000);
 pref("urlclassifier.update.response_timeout_ms", 5000);
 
 pref("urlclassifier.update.timeout_ms", 60000);
+
+
+
+
+pref("urlclassifier.max-complete-age", 2700);
 
 
 
