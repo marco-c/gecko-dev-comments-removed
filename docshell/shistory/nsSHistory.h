@@ -83,24 +83,19 @@ private:
   friend class nsSHEnumerator;
   friend class nsSHistoryObserver;
 
-  nsresult GetTransactionAtIndex(int32_t aIndex, nsISHTransaction** aResult);
+  
+  NS_IMETHOD GetTransactionAtIndex(int32_t aIndex, nsISHTransaction** aResult);
   nsresult LoadDifferingEntries(nsISHEntry* aPrevEntry, nsISHEntry* aNextEntry,
                                 nsIDocShell* aRootDocShell, long aLoadType,
                                 bool& aDifferenceFound);
   nsresult InitiateLoad(nsISHEntry* aFrameEntry, nsIDocShell* aFrameDS,
                         long aLoadType);
 
-  nsresult LoadEntry(int32_t aIndex, long aLoadType, uint32_t aHistCmd);
+  NS_IMETHOD LoadEntry(int32_t aIndex, long aLoadType, uint32_t aHistCmd);
 
 #ifdef DEBUG
   nsresult PrintHistory();
 #endif
-
-  
-  
-  nsresult FindTransactionForBFCache(nsIBFCacheEntry* aEntry,
-                                     nsISHTransaction** aResult,
-                                     int32_t* aResultIndex);
 
   
   
