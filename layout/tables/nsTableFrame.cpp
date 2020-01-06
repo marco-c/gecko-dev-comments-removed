@@ -2081,16 +2081,21 @@ nsTableFrame::Reflow(nsPresContext*           aPresContext,
       SetGeometryDirty();
     }
 
-    bool needToInitiateSpecialReflow =
-      HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
-    
-    
-    if (isPaginated && !GetPrevInFlow() && (NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableBSize())) {
-      nscoord tableSpecifiedBSize = CalcBorderBoxBSize(aReflowInput);
-      if ((tableSpecifiedBSize > 0) &&
-          (tableSpecifiedBSize != NS_UNCONSTRAINEDSIZE)) {
-        needToInitiateSpecialReflow = true;
+    bool needToInitiateSpecialReflow = false;
+    if (isPaginated) {
+      
+      
+      if (!GetPrevInFlow() &&
+          NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableBSize()) {
+        nscoord tableSpecifiedBSize = CalcBorderBoxBSize(aReflowInput);
+        if ((tableSpecifiedBSize > 0) &&
+            (tableSpecifiedBSize != NS_UNCONSTRAINEDSIZE)) {
+          needToInitiateSpecialReflow = true;
+        }
       }
+    } else {
+      needToInitiateSpecialReflow =
+        HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
     }
     nsIFrame* lastChildReflowed = nullptr;
 
