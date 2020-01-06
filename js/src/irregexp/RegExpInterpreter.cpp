@@ -133,7 +133,10 @@ irregexp::InterpretCode(JSContext* cx, const uint8_t* byteCode, const CharT* cha
     int32_t numRegisters = Load32Aligned(pc);
     pc += 4;
 
-    Vector<int32_t, 0, SystemAllocPolicy> registers;
+    
+    
+    
+    Vector<int32_t, 8, SystemAllocPolicy> registers;
     if (!registers.growByUninitialized(numRegisters)) {
         ReportOutOfMemory(cx);
         return RegExpRunStatus_Error;
