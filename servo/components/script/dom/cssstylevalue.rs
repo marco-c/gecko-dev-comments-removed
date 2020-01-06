@@ -2,6 +2,8 @@
 
 
 
+use cssparser::Parser;
+use cssparser::ParserInput;
 use dom::bindings::codegen::Bindings::CSSStyleValueBinding::CSSStyleValueMethods;
 use dom::bindings::codegen::Bindings::CSSStyleValueBinding::Wrap;
 use dom::bindings::js::Root;
@@ -10,6 +12,7 @@ use dom::bindings::reflector::reflect_dom_object;
 use dom::bindings::str::DOMString;
 use dom::globalscope::GlobalScope;
 use dom_struct::dom_struct;
+use servo_url::ServoUrl;
 
 #[dom_struct]
 pub struct CSSStyleValue {
@@ -42,5 +45,18 @@ impl CSSStyleValueMethods for CSSStyleValue {
     
     fn CssText(&self) -> DOMString {
         self.Stringifier()
+    }
+}
+
+impl CSSStyleValue {
+    
+    
+    
+    
+    pub fn get_url(&self, base_url: ServoUrl) -> Option<ServoUrl> {
+        let mut input = ParserInput::new(&*self.value);
+        let mut parser = Parser::new(&mut input);
+        parser.expect_url().ok()
+            .and_then(|string| base_url.join(&*string).ok())
     }
 }

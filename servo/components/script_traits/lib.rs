@@ -39,7 +39,6 @@ mod script_msg;
 pub mod webdriver_msg;
 
 use bluetooth_traits::BluetoothRequest;
-use canvas_traits::CanvasData;
 use devtools_traits::{DevtoolScriptControlMsg, ScriptToDevtoolsControlMsg, WorkerId};
 use euclid::{Size2D, Length, Point2D, Vector2D, Rect, ScaleFactor, TypedSize2D};
 use gfx_traits::Epoch;
@@ -52,6 +51,7 @@ use msg::constellation_msg::{BrowsingContextId, TopLevelBrowsingContextId, Frame
 use msg::constellation_msg::{PipelineId, PipelineNamespaceId, TraversalDirection};
 use net_traits::{FetchResponseMsg, ReferrerPolicy, ResourceThreads};
 use net_traits::image::base::Image;
+use net_traits::image::base::PixelFormat;
 use net_traits::image_cache::ImageCache;
 use net_traits::response::HttpsState;
 use net_traits::storage_thread::StorageType;
@@ -69,6 +69,7 @@ use style_traits::CSSPixel;
 use style_traits::DevicePixel;
 use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
 use webrender_api::ClipId;
+use webrender_api::ImageKey;
 use webvr_traits::{WebVREvent, WebVRMsg};
 
 pub use script_msg::{LayoutMsg, ScriptMsg, EventResult, LogEntry};
@@ -823,7 +824,22 @@ pub trait Painter: Sync + Send {
     fn draw_a_paint_image(&self,
                           size: TypedSize2D<f32, CSSPixel>,
                           zoom: ScaleFactor<f32, CSSPixel, DevicePixel>,
-                          properties: Vec<(Atom, String)>,
-                          sender: IpcSender<CanvasData>);
+                          properties: Vec<(Atom, String)>)
+                          -> DrawAPaintImageResult;
 }
 
+
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct DrawAPaintImageResult {
+    
+    pub width: u32,
+    
+    pub height: u32,
+    
+    pub format: PixelFormat,
+    
+    pub image_key: Option<ImageKey>,
+    
+    pub missing_image_urls: Vec<ServoUrl>,
+}
