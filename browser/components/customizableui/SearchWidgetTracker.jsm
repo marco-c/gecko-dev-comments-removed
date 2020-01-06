@@ -36,6 +36,10 @@ const SearchWidgetTracker = {
     CustomizableUI.addListener(this);
     Services.prefs.addObserver(PREF_NAME,
                                () => this.syncWidgetWithPreference());
+
+    
+    
+    this.syncPreferenceWithWidget();
   },
 
   onCustomizeEnd() {

@@ -162,6 +162,11 @@ add_UITour_task(async function test_getConfiguration_selectedSearchEngine() {
 });
 
 add_UITour_task(async function test_setSearchTerm() {
+  
+  await SpecialPowers.pushPrefEnv({ set: [
+    ["browser.search.widget.inNavBar", true],
+  ]});
+
   const TERM = "UITour Search Term";
   await gContentAPI.setSearchTerm(TERM);
 
@@ -169,13 +174,22 @@ add_UITour_task(async function test_setSearchTerm() {
   
   
   await waitForConditionPromise(() => searchbar.value == TERM, "Correct term set");
+
+  await SpecialPowers.popPrefEnv();
 });
 
 add_UITour_task(async function test_clearSearchTerm() {
+  
+  await SpecialPowers.pushPrefEnv({ set: [
+    ["browser.search.widget.inNavBar", true],
+  ]});
+
   await gContentAPI.setSearchTerm("");
 
   let searchbar = document.getElementById("searchbar");
   
   
   await waitForConditionPromise(() => searchbar.value == "", "Search term cleared");
+
+  await SpecialPowers.popPrefEnv();
 });

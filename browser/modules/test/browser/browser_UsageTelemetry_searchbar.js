@@ -64,6 +64,10 @@ function clickSearchbarSuggestion(entryName) {
 }
 
 add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({ set: [
+    ["browser.search.widget.inNavBar", true],
+  ]});
+
   
   
   

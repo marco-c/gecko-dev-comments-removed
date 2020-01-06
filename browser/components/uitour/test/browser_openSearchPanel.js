@@ -13,15 +13,17 @@ function test() {
 
 var tests = [
   function test_openSearchPanel(done) {
-    let searchbar = document.getElementById("searchbar");
-
     
     
+    
+    Services.prefs.setBoolPref("browser.search.widget.inNavBar", true);
     Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
     registerCleanupFunction(() => {
+      Services.prefs.clearUserPref("browser.search.widget.inNavBar");
       Services.prefs.clearUserPref("browser.search.suggest.enabled");
     });
 
+    let searchbar = document.getElementById("searchbar");
     ok(!searchbar.textbox.open, "Popup starts as closed");
     gContentAPI.openSearchPanel(() => {
       ok(searchbar.textbox.open, "Popup was opened");

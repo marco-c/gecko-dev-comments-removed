@@ -1,6 +1,9 @@
 
 
 
+
+const kForceOverflowWidthPx = 200;
+
 registerCleanupFunction(async function() {
   
   await task_resetState();
@@ -27,13 +30,11 @@ add_task(async function test_overflow_anchor() {
   
   
   
-  const kFlexyItems = ["urlbar-container", "search-container"];
+  const kFlexyItems = ["urlbar-container"];
   registerCleanupFunction(() => unlockWidth(kFlexyItems));
   lockWidth(kFlexyItems);
 
-  
-  
-  window.resizeTo(oldWidth / 2, window.outerHeight);
+  window.resizeTo(kForceOverflowWidthPx, window.outerHeight);
   await waitForOverflowed(button, true);
 
   let promise = promisePanelOpened();
