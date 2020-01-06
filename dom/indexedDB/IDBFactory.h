@@ -69,8 +69,6 @@ class IDBFactory final
   
   RefPtr<TabChild> mTabChild;
 
-  nsTArray<nsAutoPtr<PendingRequestInfo>> mPendingRequests;
-
   indexedDB::BackgroundFactoryChild* mBackgroundActor;
 
   
@@ -265,13 +263,6 @@ private:
                bool aDeleting,
                CallerType aCallerType,
                ErrorResult& aRv);
-
-  nsresult
-  BackgroundActorCreated(PBackgroundChild* aBackgroundActor,
-                         const indexedDB::LoggingInfo& aLoggingInfo);
-
-  void
-  BackgroundActorFailed();
 
   nsresult
   InitiateRequest(IDBOpenDBRequest* aRequest,
