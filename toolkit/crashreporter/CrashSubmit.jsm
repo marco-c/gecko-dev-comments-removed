@@ -58,7 +58,12 @@ function getL10nStrings() {
     path.append("crashreporter.ini");
     if (!path.exists()) {
       
-      return null;
+      
+      
+      return {
+        "crashid": "Crash ID: %s",
+        "reporturl": "You can view details of this crash at %s"
+      };
     }
   }
   let crstrings = parseINIStrings(path);
