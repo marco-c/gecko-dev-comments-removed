@@ -33,7 +33,7 @@
 #include "nsCCUncollectableMarker.h"
 #include "mozAutoDocUpdate.h"
 #include "nsTextNode.h"
-
+#include "nsBidiUtils.h"
 #include "PLDHashTable.h"
 #include "mozilla/Sprintf.h"
 #include "nsWrapperCacheInlines.h"
@@ -337,28 +337,35 @@ nsGenericDOMDataNode::SetTextInternal(uint32_t aOffset, uint32_t aCount,
   else {
     
 
+    bool bidi = mText.IsBidi();
+
     
     int32_t newLength = textLength - aCount + aLength;
-    char16_t* to = new char16_t[newLength];
+    
+    
+    nsString to;
+    to.SetCapacity(newLength);
 
     
     if (aOffset) {
-      mText.CopyTo(to, 0, aOffset);
+      mText.AppendTo(to, 0, aOffset);
     }
     if (aLength) {
-      memcpy(to + aOffset, aBuffer, aLength * sizeof(char16_t));
+      to.Append(aBuffer, aLength);
+      if (!bidi && (!document || !document->GetBidiEnabled())) {
+        bidi = HasRTLChars(aBuffer, aLength);
+      }
     }
     if (endOffset != textLength) {
-      mText.CopyTo(to + aOffset + aLength, endOffset, textLength - endOffset);
+      mText.AppendTo(to, endOffset, textLength - endOffset);
     }
 
     
     
-    bool ok =
-      mText.SetTo(to, newLength, !document || !document->GetBidiEnabled(),
-                  HasFlag(NS_MAYBE_MODIFIED_FREQUENTLY));
-
-    delete [] to;
+    
+    bool use2b = HasFlag(NS_MAYBE_MODIFIED_FREQUENTLY) || bidi;
+    bool ok = mText.SetTo(to, false, use2b);
+    mText.SetBidi(bidi);
 
     NS_ENSURE_TRUE(ok, NS_ERROR_OUT_OF_MEMORY);
   }
