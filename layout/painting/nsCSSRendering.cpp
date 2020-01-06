@@ -2153,11 +2153,6 @@ nsCSSRendering::GetImageLayerClip(const nsStyleImageLayers::Layer& aLayer,
                                   bool aWillPaintBorder, nscoord aAppUnitsPerPixel,
                                    ImageLayerClipState* aClipState)
 {
-  aClipState->mHasRoundedCorners = false;
-  aClipState->mHasAdditionalBGClipArea = false;
-  aClipState->mAdditionalBGClipArea.SetEmpty();
-  aClipState->mCustomClip = false;
-
   StyleGeometryBox layerClip = ComputeBoxValue(aForFrame, aLayer.mClip);
   if (IsSVGStyleGeometryBox(layerClip)) {
     MOZ_ASSERT(aForFrame->IsFrameOfType(nsIFrame::eSVG) &&
@@ -2678,15 +2673,18 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
       bool isBottomLayer = (i == layers.mImageCount - 1);
       if (currentBackgroundClip != layer.mClip || isBottomLayer) {
         currentBackgroundClip = layer.mClip;
-        
-        
-        if (!isBottomLayer) {
+        ImageLayerClipState currentLayerClipState;
+        if (isBottomLayer) {
+          currentLayerClipState = clipState;
+        } else {
+          
+          
           GetImageLayerClip(layer, aParams.frame,
                             aBorder, aParams.borderArea, aParams.dirtyRect,
                             (aParams.paintFlags & PAINTBG_WILL_PAINT_BORDER),
-                            appUnitsPerPixel, &clipState);
+                            appUnitsPerPixel, &currentLayerClipState);
         }
-        SetupImageLayerClip(clipState, &aRenderingCtx,
+        SetupImageLayerClip(currentLayerClipState, &aRenderingCtx,
                             appUnitsPerPixel, &autoSR);
         if (!clipBorderArea.IsEqualEdges(aParams.borderArea)) {
           
