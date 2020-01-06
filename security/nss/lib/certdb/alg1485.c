@@ -704,6 +704,11 @@ CERT_GetOidString(const SECItem* oid)
     }
 
     
+    if (oid->len < 2) {
+        return NULL;
+    }
+
+    
     first = (PRUint8*)oid->data;
     
     stop = &first[oid->len];
@@ -728,6 +733,10 @@ CERT_GetOidString(const SECItem* oid)
                 break;
             }
         }
+        
+        if (last == stop) {
+            goto unsupported;
+        }
         bytesBeforeLast = (unsigned int)(last - first);
         if (bytesBeforeLast <= 3U) { 
             PRUint32 n = 0;
@@ -748,12 +757,12 @@ CERT_GetOidString(const SECItem* oid)
                 CASE(2, 0x7f);
                 CASE(1, 0x7f);
                 case 0:
-                    n |=
-                        last[0] & 0x7f;
+                    n |= last[0] & 0x7f;
                     break;
             }
-            if (last[0] & 0x80)
+            if (last[0] & 0x80) {
                 goto unsupported;
+            }
 
             if (!rvString) {
                 

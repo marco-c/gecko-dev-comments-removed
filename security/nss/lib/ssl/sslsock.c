@@ -11,6 +11,7 @@
 #include "cert.h"
 #include "keyhi.h"
 #include "ssl.h"
+#include "sslexp.h"
 #include "sslimpl.h"
 #include "sslproto.h"
 #include "nspr.h"
@@ -80,10 +81,11 @@ static sslOptions ssl_defaults = {
     PR_FALSE,              
     PR_FALSE,              
 #ifdef NSS_ENABLE_TLS13_SHORT_HEADERS
-    PR_TRUE 
+    PR_TRUE, 
 #else
-    PR_FALSE 
+    PR_FALSE, 
 #endif
+    PR_FALSE 
 };
 
 
@@ -3839,4 +3841,49 @@ SSL_CanBypass(CERTCertificate *cert, SECKEYPrivateKey *srvPrivkey,
     }
     *pcanbypass = PR_FALSE;
     return SECSuccess;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define EXP(n)                \
+    {                         \
+        "SSL_" #n, SSLExp_##n \
+    }
+#define PUB(n)             \
+    {                      \
+        "SSL_" #n, SSL_##n \
+    }
+struct {
+    const char *const name;
+    void *function;
+} ssl_experimental_functions[] = {
+#ifndef SSL_DISABLE_EXPERIMENTAL_API
+    EXP(UseAltServerHelloType),
+#endif
+    { "", NULL }
+};
+#undef EXP
+#undef PUB
+
+void *
+SSL_GetExperimentalAPI(const char *name)
+{
+    unsigned int i;
+    for (i = 0; i < PR_ARRAY_SIZE(ssl_experimental_functions); ++i) {
+        if (strcmp(name, ssl_experimental_functions[i].name) == 0) {
+            return ssl_experimental_functions[i].function;
+        }
+    }
+    PORT_SetError(SSL_ERROR_UNSUPPORTED_EXPERIMENTAL_API);
+    return NULL;
 }
