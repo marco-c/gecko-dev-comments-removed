@@ -7,6 +7,7 @@ const { Kinto } = Cu.import("resource://services-common/kinto-offline-client.js"
 const { FirefoxAdapter } = Cu.import("resource://services-common/kinto-storage-adapter.js", {});
 const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
 const { OneCRLBlocklistClient } = Cu.import("resource://services-common/blocklist-clients.js", {});
+const { UptakeTelemetry } = Cu.import("resource://services-common/uptake-telemetry.js", {});
 
 let server;
 
@@ -15,6 +16,9 @@ const PREF_BLOCKLIST_ENFORCE_SIGNING   = "services.blocklist.signing.enforced";
 const PREF_BLOCKLIST_ONECRL_COLLECTION = "services.blocklist.onecrl.collection";
 const PREF_SETTINGS_SERVER             = "services.settings.server";
 const PREF_SIGNATURE_ROOT              = "security.content.signature.root_hash";
+
+
+const TELEMETRY_HISTOGRAM_KEY = OneCRLBlocklistClient.identifier;
 
 const kintoFilename = "kinto.sqlite";
 
@@ -301,10 +305,18 @@ add_task(function* test_check_signatures() {
   
   registerHandlers(emptyCollectionResponses);
 
+  let startHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
+
   
   
   
   yield OneCRLBlocklistClient.maybeSync(1000, startTime, {loadDump: false});
+
+  let endHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
+
+  
+  let expectedIncrements = {[UptakeTelemetry.STATUS.SUCCESS]: 1};
+  checkUptakeTelemetry(startHistogram, endHistogram, expectedIncrements);
 
   
   
@@ -442,7 +454,18 @@ add_task(function* test_check_signatures() {
   };
 
   registerHandlers(badSigGoodSigResponses);
+
+  startHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
+
   yield OneCRLBlocklistClient.maybeSync(5000, startTime);
+
+  endHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
+
+  
+  
+  
+  expectedIncrements = {[UptakeTelemetry.STATUS.SIGNATURE_ERROR]: 1};
+  checkUptakeTelemetry(startHistogram, endHistogram, expectedIncrements);
 
   const badSigGoodOldResponses = {
     
@@ -483,6 +506,7 @@ add_task(function* test_check_signatures() {
       [RESPONSE_COMPLETE_INITIAL_SORTED_BY_ID]
   };
 
+  startHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
   registerHandlers(allBadSigResponses);
   try {
     yield OneCRLBlocklistClient.maybeSync(6000, startTime);
@@ -490,6 +514,11 @@ add_task(function* test_check_signatures() {
   } catch (e) {
     yield checkRecordCount(2);
   }
+
+  
+  endHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
+  expectedIncrements = {[UptakeTelemetry.STATUS.SIGNATURE_RETRY_ERROR]: 1};
+  checkUptakeTelemetry(startHistogram, endHistogram, expectedIncrements);
 });
 
 function run_test() {

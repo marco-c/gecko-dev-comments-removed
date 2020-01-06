@@ -1,4 +1,5 @@
 Cu.import("resource://testing-common/httpd.js");
+const { UptakeTelemetry } = Cu.import("resource://services-common/uptake-telemetry.js", {});
 
 var server;
 
@@ -7,6 +8,9 @@ const PREF_SETTINGS_SERVER_BACKOFF = "services.settings.server.backoff";
 const PREF_LAST_UPDATE = "services.blocklist.last_update_seconds";
 const PREF_LAST_ETAG = "services.blocklist.last_etag";
 const PREF_CLOCK_SKEW_SECONDS = "services.blocklist.clock_skew_seconds";
+
+
+const TELEMETRY_HISTOGRAM_KEY = "settings-changes-monitoring";
 
 
 
@@ -64,6 +68,9 @@ add_task(function* test_check_maybeSync() {
       do_check_eq(serverTime, 2000);
     }
   });
+
+  const startHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
+
   yield updater.checkVersions();
 
   
@@ -102,6 +109,7 @@ add_task(function* test_check_maybeSync() {
     response.setStatusLine(null, 503, "Service Unavailable");
   }
   server.registerPathHandler(changesPath, simulateErrorResponse);
+
   
   let error;
   try {
@@ -109,7 +117,7 @@ add_task(function* test_check_maybeSync() {
   } catch (e) {
     error = e;
   }
-  do_check_eq(error.message, "Polling for changes failed.");
+  do_check_true(/Polling for changes failed/.test(error.message));
   
   do_check_eq(Services.prefs.getIntPref(PREF_LAST_UPDATE), 2);
 
@@ -150,6 +158,25 @@ add_task(function* test_check_maybeSync() {
   yield updater.checkVersions();
   
   do_check_false(Services.prefs.prefHasUserValue(PREF_SETTINGS_SERVER_BACKOFF));
+
+
+  
+  Services.prefs.setCharPref(PREF_SETTINGS_SERVER, "http://localhost:42/v1");
+  try {
+    yield updater.checkVersions();
+  } catch (e) {}
+
+  const endHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
+  
+  const expectedIncrements = {
+    [UptakeTelemetry.STATUS.UP_TO_DATE]: 4,
+    [UptakeTelemetry.STATUS.SUCCESS]: 1,
+    [UptakeTelemetry.STATUS.BACKOFF]: 1,
+    [UptakeTelemetry.STATUS.SERVER_ERROR]: 1,
+    [UptakeTelemetry.STATUS.NETWORK_ERROR]: 1,
+    [UptakeTelemetry.STATUS.UNKNOWN_ERROR]: 0,
+  };
+  checkUptakeTelemetry(startHistogram, endHistogram, expectedIncrements);
 });
 
 function run_test() {

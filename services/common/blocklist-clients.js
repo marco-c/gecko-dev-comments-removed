@@ -27,6 +27,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "FirefoxAdapter",
                                   "resource://services-common/kinto-storage-adapter.js");
 XPCOMUtils.defineLazyModuleGetter(this, "CanonicalJSON",
                                   "resource://gre/modules/CanonicalJSON.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "UptakeTelemetry",
+                                  "resource://services-common/uptake-telemetry.js");
 
 const KEY_APPDIR                             = "XCurProcD";
 const PREF_SETTINGS_SERVER                   = "services.settings.server";
@@ -203,6 +205,7 @@ class BlocklistClient {
     }
 
     let sqliteHandle;
+    let reportStatus = null;
     try {
       
       sqliteHandle = await FirefoxAdapter.openConnection({path: KINTO_STORAGE_PATH});
@@ -233,6 +236,7 @@ class BlocklistClient {
       
       if (lastModified <= collectionLastModified) {
         this.updateLastCheck(serverTime);
+        reportStatus = UptakeTelemetry.STATUS.UP_TO_DATE;
         return;
       }
 
@@ -240,16 +244,25 @@ class BlocklistClient {
       try {
         const {ok} = await collection.sync({remote});
         if (!ok) {
+          
+          reportStatus = UptakeTelemetry.STATUS.CONFLICT_ERROR;
           throw new Error("Sync failed");
         }
       } catch (e) {
         if (e.message == INVALID_SIGNATURE) {
           
+          reportStatus = UptakeTelemetry.STATUS.SIGNATURE_ERROR;
+          
           
           
           
           const payload = await fetchRemoteCollection(remote, collection);
-          await this.validateCollectionSignature(remote, payload, collection, {ignoreLocal: true});
+          try {
+            await this.validateCollectionSignature(remote, payload, collection, {ignoreLocal: true});
+          } catch (e) {
+            reportStatus = UptakeTelemetry.STATUS.SIGNATURE_RETRY_ERROR;
+            throw e;
+          }
           
           
           
@@ -259,18 +272,46 @@ class BlocklistClient {
             await collection.loadDump(payload.data);
           }
         } else {
+          
+          if (/NetworkError/.test(e.message)) {
+            reportStatus = UptakeTelemetry.STATUS.NETWORK_ERROR;
+          } else if (/Backoff/.test(e.message)) {
+            reportStatus = UptakeTelemetry.STATUS.BACKOFF;
+          } else {
+            reportStatus = UptakeTelemetry.STATUS.SYNC_ERROR;
+          }
           throw e;
         }
       }
       
       const {data} = await collection.list();
 
-      await this.processCallback(data);
+      
+      try {
+        await this.processCallback(data);
+      } catch (e) {
+        reportStatus = UptakeTelemetry.STATUS.APPLY_ERROR;
+        throw e;
+      }
 
       
       this.updateLastCheck(serverTime);
+    } catch (e) {
+      
+      if (reportStatus === null) {
+        reportStatus = UptakeTelemetry.STATUS.UNKNOWN_ERROR;
+      }
+      throw e;
     } finally {
-      await sqliteHandle.close();
+      if (sqliteHandle) {
+        await sqliteHandle.close();
+      }
+      
+      if (reportStatus === null) {
+        reportStatus = UptakeTelemetry.STATUS.SUCCESS;
+      }
+      
+      UptakeTelemetry.report(this.identifier, reportStatus);
     }
   }
 

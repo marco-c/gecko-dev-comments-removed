@@ -9,6 +9,8 @@ const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu } = Components;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.importGlobalProperties(["fetch"]);
+XPCOMUtils.defineLazyModuleGetter(this, "UptakeTelemetry",
+                                  "resource://services-common/uptake-telemetry.js");
 
 const PREF_SETTINGS_SERVER              = "services.settings.server";
 const PREF_SETTINGS_SERVER_BACKOFF      = "services.settings.server.backoff";
@@ -16,6 +18,9 @@ const PREF_BLOCKLIST_CHANGES_PATH       = "services.blocklist.changes.path";
 const PREF_BLOCKLIST_LAST_UPDATE        = "services.blocklist.last_update_seconds";
 const PREF_BLOCKLIST_LAST_ETAG          = "services.blocklist.last_etag";
 const PREF_BLOCKLIST_CLOCK_SKEW_SECONDS = "services.blocklist.clock_skew_seconds";
+
+
+const TELEMETRY_HISTOGRAM_KEY = "settings-changes-monitoring";
 
 
 XPCOMUtils.defineLazyGetter(this, "gBlocklistClients", function() {
@@ -33,6 +38,56 @@ XPCOMUtils.defineLazyGetter(this, "gBlocklistClients", function() {
 this.addTestBlocklistClient = (name, client) => { gBlocklistClients[name] = client; }
 
 
+async function pollChanges(url, lastEtag) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  const headers = {};
+  if (lastEtag) {
+    headers["If-None-Match"] = lastEtag;
+  }
+  const response = await fetch(url, {headers});
+
+  let versionInfo = [];
+  
+  if (response.status != 304) {
+    let payload;
+    try {
+      payload = await response.json();
+    } catch (e) {}
+    if (!payload.hasOwnProperty("data")) {
+      
+      
+      throw new Error(`Server error response ${JSON.stringify(payload)}`);
+    }
+    versionInfo = payload.data;
+  }
+  
+  
+  const currentEtag = response.headers.has("ETag") ? response.headers.get("ETag") : undefined;
+  const serverTimeMillis = Date.parse(response.headers.get("Date"));
+
+  
+  let backoffSeconds;
+  if (response.headers.has("Backoff")) {
+    const value = parseInt(response.headers.get("Backoff"), 10);
+    if (!isNaN(value)) {
+      backoffSeconds = value;
+    }
+  }
+
+  return {versionInfo, currentEtag, serverTimeMillis, backoffSeconds};
+}
+
+
 
 
 this.checkVersions = async function() {
@@ -41,6 +96,9 @@ this.checkVersions = async function() {
     const backoffReleaseTime = Services.prefs.getCharPref(PREF_SETTINGS_SERVER_BACKOFF);
     const remainingMilliseconds = parseInt(backoffReleaseTime, 10) - Date.now();
     if (remainingMilliseconds > 0) {
+      
+      UptakeTelemetry.report(TELEMETRY_HISTOGRAM_KEY,
+                             UptakeTelemetry.STATUS.BACKOFF);
       throw new Error(`Server is asking clients to back off; retry in ${Math.ceil(remainingMilliseconds / 1000)}s.`);
     } else {
       Services.prefs.clearUserPref(PREF_SETTINGS_SERVER_BACKOFF);
@@ -48,62 +106,56 @@ this.checkVersions = async function() {
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
   const kintoBase = Services.prefs.getCharPref(PREF_SETTINGS_SERVER);
   const changesEndpoint = kintoBase + Services.prefs.getCharPref(PREF_BLOCKLIST_CHANGES_PATH);
 
-  
-  const headers = {};
+  let lastEtag;
   if (Services.prefs.prefHasUserValue(PREF_BLOCKLIST_LAST_ETAG)) {
-    const lastEtag = Services.prefs.getCharPref(PREF_BLOCKLIST_LAST_ETAG);
-    if (lastEtag) {
-      headers["If-None-Match"] = lastEtag;
+    lastEtag = Services.prefs.getCharPref(PREF_BLOCKLIST_LAST_ETAG);
+  }
+
+  let pollResult;
+  try {
+    pollResult = await pollChanges(changesEndpoint, lastEtag);
+  } catch (e) {
+    
+    let report;
+    if (/Server/.test(e.message)) {
+      report = UptakeTelemetry.STATUS.SERVER_ERROR;
+    } else if (/NetworkError/.test(e.message)) {
+      report = UptakeTelemetry.STATUS.NETWORK_ERROR;
+    } else {
+      report = UptakeTelemetry.STATUS.UNKNOWN_ERROR;
     }
+    UptakeTelemetry.report(TELEMETRY_HISTOGRAM_KEY, report);
+    
+    throw new Error(`Polling for changes failed: ${e.message}.`);
   }
 
-  const response = await fetch(changesEndpoint, {headers});
+  const {serverTimeMillis, versionInfo, currentEtag, backoffSeconds} = pollResult;
 
   
-  if (response.headers.has("Backoff")) {
-    const backoffSeconds = parseInt(response.headers.get("Backoff"), 10);
-    if (!isNaN(backoffSeconds)) {
-      const backoffReleaseTime = Date.now() + backoffSeconds * 1000;
-      Services.prefs.setCharPref(PREF_SETTINGS_SERVER_BACKOFF, backoffReleaseTime);
-    }
-  }
+  const report = versionInfo.length == 0 ? UptakeTelemetry.STATUS.UP_TO_DATE
+                                         : UptakeTelemetry.STATUS.SUCCESS;
+  UptakeTelemetry.report(TELEMETRY_HISTOGRAM_KEY, report);
 
-  let versionInfo;
   
-  if (response.status == 304) {
-    versionInfo = {data: []};
-  } else {
-    versionInfo = await response.json();
+  if (backoffSeconds) {
+    const backoffReleaseTime = Date.now() + backoffSeconds * 1000;
+    Services.prefs.setCharPref(PREF_SETTINGS_SERVER_BACKOFF, backoffReleaseTime);
   }
 
   
-  
-  if (!versionInfo.hasOwnProperty("data")) {
-    throw new Error("Polling for changes failed.");
-  }
-
-  
-  const serverTimeMillis = Date.parse(response.headers.get("Date"));
-
   
   
   const clockDifference = Math.floor((Date.now() - serverTimeMillis) / 1000);
   Services.prefs.setIntPref(PREF_BLOCKLIST_CLOCK_SKEW_SECONDS, clockDifference);
   Services.prefs.setIntPref(PREF_BLOCKLIST_LAST_UPDATE, serverTimeMillis / 1000);
 
+  
+  
   let firstError;
-  for (let collectionInfo of versionInfo.data) {
+  for (const collectionInfo of versionInfo) {
     const {bucket, collection, last_modified: lastModified} = collectionInfo;
     const client = gBlocklistClients[collection];
     if (client && client.bucketName == bucket) {
@@ -122,8 +174,7 @@ this.checkVersions = async function() {
   }
 
   
-  if (response.headers.has("ETag")) {
-    const currentEtag = response.headers.get("ETag");
+  if (currentEtag) {
     Services.prefs.setCharPref(PREF_BLOCKLIST_LAST_ETAG, currentEtag);
   }
 };
