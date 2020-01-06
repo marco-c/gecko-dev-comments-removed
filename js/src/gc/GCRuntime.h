@@ -141,6 +141,10 @@ class GCSchedulingTunables
     UnprotectedData<size_t> gcMaxBytes_;
 
     
+
+
+
+
     ActiveThreadData<size_t> gcMaxNurseryBytes_;
 
     

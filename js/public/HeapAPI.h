@@ -102,6 +102,10 @@ namespace JS {
 struct Zone;
 
 
+
+
+
+
 const uint32_t DefaultNurseryBytes = 16 * js::gc::ChunkSize;
 
 

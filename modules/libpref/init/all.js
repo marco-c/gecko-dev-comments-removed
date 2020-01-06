@@ -444,11 +444,7 @@ pref("media.decoder-doctor.wmf-disabled-is-failure", false);
 pref("media.decoder-doctor.new-issue-endpoint", "https://webcompat.com/issues/new");
 
 
-#ifdef RELEASE
-pref("media.suspend-bkgnd-video.enabled", false);
-#else
 pref("media.suspend-bkgnd-video.enabled", true);
-#endif
 
 
 pref("media.suspend-bkgnd-video.delay-ms", 10000);
@@ -1440,6 +1436,7 @@ pref("javascript.options.discardSystemSource", false);
 
 pref("javascript.options.mem.high_water_mark", 128);
 pref("javascript.options.mem.max", -1);
+pref("javascript.options.mem.nursery.max_kb", -1);
 pref("javascript.options.mem.gc_per_zone", true);
 pref("javascript.options.mem.gc_incremental", true);
 pref("javascript.options.mem.gc_incremental_slice_ms", 5);
