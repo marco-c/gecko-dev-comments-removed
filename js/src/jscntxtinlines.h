@@ -343,11 +343,7 @@ CallJSNativeConstructor(JSContext* cx, Native native, const CallArgs& args)
 
 
 
-
-
-
     MOZ_ASSERT_IF(native != js::proxy_Construct &&
-                  native != js::IteratorConstructor &&
                   (!callee->is<JSFunction>() || callee->as<JSFunction>().native() != obj_construct),
                   args.rval().isObject() && callee != &args.rval().toObject());
 
