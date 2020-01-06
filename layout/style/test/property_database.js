@@ -505,10 +505,22 @@ var basicShapeUnbalancedValues = [
 
 
 let gradientsNewlyRejectedInStylo = [
-    "radial-gradient(circle red, blue)",
+  "radial-gradient(circle red, blue)",
 ];
+
+
+
+let gradientsValidInStyloBrokenInGecko = [
+  "-webkit-linear-gradient(top, red, blue)",
+  "-moz-linear-gradient(top, red, blue)",
+  "-moz-linear-gradient(center 0%, red, blue)",
+  "-moz-linear-gradient(50% top, red, blue)",
+  "-moz-linear-gradient(50% 0%, red, blue)",
+];
+
 if (SpecialPowers.DOMWindowUtils.isStyledByServo) {
   invalidGradientAndElementValues.push(...gradientsNewlyRejectedInStylo);
+  validGradientAndElementValues.push(...gradientsValidInStyloBrokenInGecko);
 } else {
   
   
