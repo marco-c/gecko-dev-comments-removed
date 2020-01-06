@@ -349,45 +349,6 @@ ServoStyleSet::ResolveStyleFor(Element* aElement,
   return ResolveServoStyle(aElement);
 }
 
-
-
-
-
-
-class MOZ_STACK_CLASS AutoClearStaleData
-{
-public:
-  explicit AutoClearStaleData(Element* aElement)
-#ifdef DEBUG
-    : mElement(aElement)
-#endif
-  {
-    aElement->OwnerDoc()->ClearStaleServoDataFromDocument();
-  }
-
-  ~AutoClearStaleData()
-  {
-#ifdef DEBUG
-    
-    
-    if (mElement->OwnerDoc()->HasShellOrBFCacheEntry()) {
-      
-      
-      
-      return;
-    }
-    for (Element* e = mElement; e; e = e->GetParentElement()) {
-      MOZ_ASSERT(!e->HasServoData(), "expected element to be unstyled");
-    }
-#endif
-  }
-
-private:
-#ifdef DEBUG
-  Element* mElement;
-#endif
-};
-
 const ServoElementSnapshotTable&
 ServoStyleSet::Snapshots()
 {
@@ -601,28 +562,10 @@ ServoStyleSet::ResolveStyleLazily(Element* aElement,
                                   CSSPseudoElementType aPseudoType,
                                   StyleRuleInclusion aRuleInclusion)
 {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool ignoreExistingStyles = aElement->OwnerDoc()->GetBFCacheEntry();
-
-  AutoClearStaleData guard(aElement);
   PreTraverseSync();
+
   return ResolveStyleLazilyInternal(aElement, aPseudoType,
-                                    aRuleInclusion,
-                                    ignoreExistingStyles);
+                                    aRuleInclusion);
 }
 
 already_AddRefed<ServoStyleContext>
@@ -1132,12 +1075,6 @@ ServoStyleSet::GetComputedKeyframeValuesFor(
   Element* aElement,
   const ServoStyleContext* aContext)
 {
-  
-  
-  
-  MOZ_RELEASE_ASSERT(!aElement->OwnerDoc()->GetBFCacheEntry());
-
-  AutoClearStaleData guard(aElement);
   nsTArray<ComputedKeyframeValues> result(aKeyframes.Length());
 
   
@@ -1161,9 +1098,6 @@ ServoStyleSet::GetAnimationValues(
   
   
   
-  MOZ_RELEASE_ASSERT(!aElement->OwnerDoc()->GetBFCacheEntry());
-
-  AutoClearStaleData guard(aElement);
   Servo_GetAnimationValues(aDeclarations,
                            aElement,
                            aStyleContext,
@@ -1178,14 +1112,6 @@ ServoStyleSet::GetBaseContextForElement(
   CSSPseudoElementType aPseudoType,
   const ServoStyleContext* aStyle)
 {
-  
-  
-  
-  MOZ_RELEASE_ASSERT(!aElement->OwnerDoc()->GetBFCacheEntry(),
-             "GetBaseContextForElement does not support documents in the "
-             "bfcache");
-
-  AutoClearStaleData guard(aElement);
   return Servo_StyleSet_GetBaseComputedValuesForElement(mRawSet.get(),
                                                         aElement,
                                                         aStyle,
@@ -1199,11 +1125,6 @@ ServoStyleSet::ResolveServoStyleByAddingAnimation(
   const ServoStyleContext* aStyle,
   RawServoAnimationValue* aAnimationValue)
 {
-  MOZ_RELEASE_ASSERT(!aElement->OwnerDoc()->GetBFCacheEntry(),
-                     "ResolveServoStyleByAddingAniamtion does not support "
-                     "documents in the bfcache");
-
-  AutoClearStaleData guard(aElement);
   return Servo_StyleSet_GetComputedValuesByAddingAnimation(
     mRawSet.get(),
     aElement,
@@ -1218,12 +1139,6 @@ ServoStyleSet::ComputeAnimationValue(
   RawServoDeclarationBlock* aDeclarations,
   const ServoStyleContext* aContext)
 {
-  
-  
-  
-  MOZ_RELEASE_ASSERT(!aElement->OwnerDoc()->GetBFCacheEntry());
-
-  AutoClearStaleData guard(aElement);
   return Servo_AnimationValue_Compute(aElement,
                                       aDeclarations,
                                       aContext,
@@ -1307,8 +1222,7 @@ ServoStyleSet::ClearNonInheritingStyleContexts()
 already_AddRefed<ServoStyleContext>
 ServoStyleSet::ResolveStyleLazilyInternal(Element* aElement,
                                           CSSPseudoElementType aPseudoType,
-                                          StyleRuleInclusion aRuleInclusion,
-                                          bool aIgnoreExistingStyles)
+                                          StyleRuleInclusion aRuleInclusion)
 {
   mPresContext->EffectCompositor()->PreTraverse(aElement, aPseudoType);
   MOZ_ASSERT(!StylistNeedsUpdate());
@@ -1346,7 +1260,7 @@ ServoStyleSet::ResolveStyleLazilyInternal(Element* aElement,
                              aRuleInclusion,
                              &Snapshots(),
                              mRawSet.get(),
-                             aIgnoreExistingStyles).Consume();
+                              false).Consume();
 
   if (mPresContext->EffectCompositor()->PreTraverse(aElement, aPseudoType)) {
     computedValues =
@@ -1355,8 +1269,11 @@ ServoStyleSet::ResolveStyleLazilyInternal(Element* aElement,
                                aRuleInclusion,
                                &Snapshots(),
                                mRawSet.get(),
-                               aIgnoreExistingStyles).Consume();
+                                false).Consume();
   }
+
+  MOZ_DIAGNOSTIC_ASSERT(computedValues->PresContext() == mPresContext ||
+                        aElement->OwnerDoc()->GetBFCacheEntry());
 
   return computedValues.forget();
 }
