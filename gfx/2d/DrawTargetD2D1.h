@@ -299,7 +299,7 @@ private:
   uint32_t mDeviceSeq;
 
   
-  void EnsureLuminanceEffect();
+  bool EnsureLuminanceEffect();
   RefPtr<ID2D1Effect> mLuminanceEffect;
 };
 
