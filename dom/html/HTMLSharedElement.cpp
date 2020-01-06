@@ -48,7 +48,7 @@ NS_INTERFACE_MAP_END_INHERITING(nsGenericHTMLElement)
 NS_IMPL_ELEMENT_CLONE(HTMLSharedElement)
 
 
-NS_IMPL_URI_ATTR(HTMLSharedElement, Cite, cite)
+
 
 
 

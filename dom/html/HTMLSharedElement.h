@@ -147,7 +147,11 @@ public:
   }
 
   
-  
+  void GetCite(nsString& aCite)
+  {
+    GetHTMLURIAttr(nsGkAtoms::cite, aCite);
+  }
+
   void SetCite(const nsAString& aValue, ErrorResult& aResult)
   {
     MOZ_ASSERT(mNodeInfo->Equals(nsGkAtoms::q) ||
