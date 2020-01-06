@@ -15,9 +15,9 @@ class nsACString;
 namespace mozilla {
 
 class AbstractMediaDecoder;
+class ChannelMediaDecoder;
 class DecoderDoctorDiagnostics;
 class MediaContainerType;
-class MediaDecoder;
 struct MediaDecoderInit;
 class MediaDecoderOwner;
 class MediaDecoderReader;
@@ -43,9 +43,10 @@ public:
 
   
   
-  static already_AddRefed<MediaDecoder> CreateDecoder(const nsACString& aType,
-                                                      MediaDecoderInit& aInit,
-                                                      DecoderDoctorDiagnostics* aDiagnostics);
+  static already_AddRefed<ChannelMediaDecoder> CreateDecoder(
+    const nsACString& aType,
+    MediaDecoderInit& aInit,
+    DecoderDoctorDiagnostics* aDiagnostics);
 
   
   

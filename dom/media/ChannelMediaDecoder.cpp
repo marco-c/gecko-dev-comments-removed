@@ -1,0 +1,17 @@
+
+
+
+
+
+
+#include "ChannelMediaDecoder.h"
+#include "MediaResource.h"
+
+namespace mozilla {
+
+ChannelMediaDecoder::ChannelMediaDecoder(MediaDecoderInit& aInit)
+  : MediaDecoder(aInit)
+{
+}
+
+} 
