@@ -171,10 +171,6 @@ replace_get_bridge()
 
 
 
-
-
-
-
 void*
 replace_malloc(size_t aSize)
 {
