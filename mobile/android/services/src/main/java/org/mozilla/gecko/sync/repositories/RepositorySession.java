@@ -358,6 +358,7 @@ public abstract class RepositorySession {
     
     
     
+    
     boolean localIsMoreRecent = localRecord.lastModified > remoteRecord.lastModified;
     Logger.debug(LOG_TAG, "Local record is more recent? " + localIsMoreRecent);
     Record donor = localIsMoreRecent ? localRecord : remoteRecord;

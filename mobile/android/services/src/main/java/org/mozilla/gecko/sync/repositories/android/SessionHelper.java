@@ -1,3 +1,7 @@
+
+
+
+
 package org.mozilla.gecko.sync.repositories.android;
 
 import android.database.Cursor;
@@ -43,7 +47,7 @@ import org.mozilla.gecko.sync.repositories.domain.Record;
 
 
  abstract class SessionHelper {
-    private final static String LOG_TAG = "FetchingSessionHelper";
+    private final static String LOG_TAG = "SessionHelper";
 
     protected final StoreTrackingRepositorySession session;
 
@@ -155,6 +159,11 @@ import org.mozilla.gecko.sync.repositories.domain.Record;
         putRecordToGuidMap(buildRecordString(record), record.guid);
     }
 
+    abstract boolean doReplaceRecord(Record toStore, Record existingRecord, RepositorySessionStoreDelegate delegate)
+            throws NoGuidForIdException, NullCursorException, ParentNotFoundException;
+
+    abstract boolean isLocallyModified(Record record);
+
     void checkDatabase() throws ProfileDatabaseException, NullCursorException {
         Logger.debug(LOG_TAG, "BEGIN: checking database.");
         try {
@@ -210,8 +219,6 @@ import org.mozilla.gecko.sync.repositories.domain.Record;
                 
                 
                 
-                
-                
                 long lastLocalRetrieval  = 0;      
                 long lastRemoteRetrieval = 0;      
                 boolean remotelyModified = record.lastModified > lastRemoteRetrieval;
@@ -219,97 +226,116 @@ import org.mozilla.gecko.sync.repositories.domain.Record;
                 Record existingRecord;
                 try {
                     
-                    existingRecord = retrieveByGUIDDuringStore(record.guid);
-                    if (record.deleted) {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    final int maxReconcileAttempts = 10;
+                    int reconcileAttempt = 1;
+                    do {
+                        
+                        existingRecord = retrieveByGUIDDuringStore(record.guid);
+                        if (record.deleted) {
+                            if (existingRecord == null) {
+                                
+                                
+                                trace("Incoming record " + record.guid + " is deleted, and no local version. Bye!");
+                                break;
+                            }
+
+                            if (existingRecord.deleted) {
+                                trace("Local record already deleted. Bye!");
+                                break;
+                            }
+
+                            
+                            if (!remotelyModified) {
+                                trace("Ignoring deleted record from the past.");
+                                break;
+                            }
+
+                            if (!isLocallyModified(existingRecord)) {
+                                trace("Remote modified, local not. Deleting.");
+                                storeRecordDeletion(storeDelegate, record, existingRecord);
+                                break;
+                            }
+
+                            trace("Both local and remote records have been modified.");
+                            if (record.lastModified > existingRecord.lastModified) {
+                                trace("Remote is newer, and deleted. Deleting local.");
+                                storeRecordDeletion(storeDelegate, record, existingRecord);
+                                break;
+                            }
+
+                            trace("Remote is older, local is not deleted. Ignoring.");
+                            break;
+                        }
+                        
+
+                        
+                        
+                        fixupRecord(record);
+
+                        if (existingRecord == null) {
+                            trace("Looking up match for record " + record.guid);
+                            existingRecord = findExistingRecord(record);
+                        }
+
                         if (existingRecord == null) {
                             
-                            
-                            trace("Incoming record " + record.guid + " is deleted, and no local version. Bye!");
-                            return;
-                        }
-
-                        if (existingRecord.deleted) {
-                            trace("Local record already deleted. Bye!");
-                            return;
+                            trace("No match. Inserting.");
+                            insert(storeDelegate, processBeforeInsertion(record));
+                            break;
                         }
 
                         
-                        if (!remotelyModified) {
-                            trace("Ignoring deleted record from the past.");
-                            return;
-                        }
+                        trace("Incoming record " + record.guid + " dupes to local record " + existingRecord.guid);
 
-                        boolean locallyModified = existingRecord.lastModified > lastLocalRetrieval;
-                        if (!locallyModified) {
-                            trace("Remote modified, local not. Deleting.");
-                            storeRecordDeletion(storeDelegate, record, existingRecord);
-                            return;
-                        }
-
-                        trace("Both local and remote records have been modified.");
-                        if (record.lastModified > existingRecord.lastModified) {
-                            trace("Remote is newer, and deleted. Deleting local.");
-                            
-                            
-                            
-                            storeDelegate.onRecordStoreReconciled(record.guid);
-                            storeRecordDeletion(storeDelegate, record, existingRecord);
-                            return;
-                        }
-
-                        trace("Remote is older, local is not deleted. Ignoring.");
-                        return;
-                    }
-                    
-
-                    
-                    
-                    fixupRecord(record);
-
-                    if (existingRecord == null) {
-                        trace("Looking up match for record " + record.guid);
-                        existingRecord = findExistingRecord(record);
-                    }
-
-                    if (existingRecord == null) {
                         
-                        trace("No match. Inserting.");
-                        insert(storeDelegate, processBeforeInsertion(record));
-                        return;
+                        existingRecord = transformRecord(existingRecord);
+
+                        
+                        Record toStore = reconcileRecords(record, existingRecord, lastRemoteRetrieval, lastLocalRetrieval);
+
+                        if (toStore == null) {
+                            Logger.debug(LOG_TAG, "Reconciling returned null. Not inserting a record.");
+                            break;
+                        }
+
+                        Logger.debug(LOG_TAG, "Reconcile attempt #" + reconcileAttempt);
+
+                        
+                        
+                        
+                        
+                        boolean replaceSuccessful = doReplaceRecord(toStore, existingRecord, storeDelegate);
+
+                        
+                        if (replaceSuccessful) {
+                            Logger.debug(LOG_TAG, "Successfully reconciled record on attempt #" + reconcileAttempt);
+                            break;
+                        }
+
+                        
+                        reconcileAttempt += 1;
+
+                    } while (reconcileAttempt <= maxReconcileAttempts);
+
+                    
+                    
+                    if (reconcileAttempt > maxReconcileAttempts) {
+                        Logger.error(LOG_TAG, "Failed to store record within maximum number of allowed attempts: " + record.guid);
+                        storeDelegate.onRecordStoreFailed(
+                                new IllegalStateException("Reached maximum storage attempts for a record"),
+                                record.guid
+                        );
+                    } else {
+                        Logger.info(LOG_TAG, "Stored after reconcile attempt #" + reconcileAttempt);
                     }
-
-                    
-                    trace("Incoming record " + record.guid + " dupes to local record " + existingRecord.guid);
-
-                    
-                    existingRecord = transformRecord(existingRecord);
-                    Record toStore = reconcileRecords(record, existingRecord, lastRemoteRetrieval, lastLocalRetrieval);
-
-                    if (toStore == null) {
-                        Logger.debug(LOG_TAG, "Reconciling returned null. Not inserting a record.");
-                        return;
-                    }
-
-                    
-
-                    
-                    
-                    
-                    
-                    
-                    
-                    Logger.debug(LOG_TAG, "Replacing existing " + existingRecord.guid +
-                            (toStore.deleted ? " with deleted record " : " with record ") +
-                            toStore.guid);
-                    Record replaced = replace(toStore, existingRecord);
-
-                    
-                    
-                    Logger.debug(LOG_TAG, "Calling delegate callback with guid " + replaced.guid +
-                            "(" + replaced.androidID + ")");
-                    storeDelegate.onRecordStoreReconciled(replaced.guid);
-                    storeDelegate.onRecordStoreSucceeded(replaced.guid);
-
                 } catch (MultipleRecordsForGuidException e) {
                     Logger.error(LOG_TAG, "Multiple records returned for given guid: " + record.guid);
                     storeDelegate.onRecordStoreFailed(e, record.guid);
@@ -322,16 +348,6 @@ import org.mozilla.gecko.sync.repositories.domain.Record;
                 }
             }
         };
-    }
-
-    private Record replace(Record newRecord, Record existingRecord) throws NoGuidForIdException, NullCursorException, ParentNotFoundException {
-        Record toStore = prepareRecord(newRecord);
-
-        
-        dbHelper.update(existingRecord.guid, toStore);
-        updateBookkeeping(toStore);
-        Logger.debug(LOG_TAG, "replace() returning record " + toStore.guid);
-        return toStore;
     }
 
     

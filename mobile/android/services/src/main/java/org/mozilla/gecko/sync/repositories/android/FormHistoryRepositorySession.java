@@ -565,7 +565,7 @@ public class FormHistoryRepositorySession extends
               
               
               
-              storeDelegate.onRecordStoreReconciled(record.guid);
+              storeDelegate.onRecordStoreReconciled(record.guid, null);
               storeDelegate.onRecordStoreSucceeded(record.guid);
               return;
             }
@@ -617,7 +617,7 @@ public class FormHistoryRepositorySession extends
             Logger.trace(LOG_TAG, "Remote is newer, and not deleted. Storing.");
             replaceExistingRecordWithRegularRecord(record, existingRecord);
             trackRecord(record);
-            storeDelegate.onRecordStoreReconciled(record.guid);
+            storeDelegate.onRecordStoreReconciled(record.guid, null);
             storeDelegate.onRecordStoreSucceeded(record.guid);
             return;
           }

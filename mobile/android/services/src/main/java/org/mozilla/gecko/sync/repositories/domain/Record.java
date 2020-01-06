@@ -4,6 +4,8 @@
 
 package org.mozilla.gecko.sync.repositories.domain;
 
+import android.support.annotation.Nullable;
+
 import java.io.UnsupportedEncodingException;
 
 import org.json.simple.JSONObject;
@@ -71,6 +73,12 @@ public abstract class Record {
   public long lastModified;
   public boolean deleted;
   public long androidID;
+
+  
+  @Nullable public Integer localVersion;
+  @Nullable public Integer syncVersion;
+  public boolean insertFromSyncAsModified = false;
+
   
 
 

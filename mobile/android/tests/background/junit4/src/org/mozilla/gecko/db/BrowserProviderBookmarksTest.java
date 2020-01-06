@@ -4,6 +4,7 @@
 package org.mozilla.gecko.db;
 
 import android.content.ContentProviderClient;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
@@ -16,6 +17,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mozilla.gecko.background.db.DelegatingTestContentProvider;
 import org.mozilla.gecko.background.testhelpers.TestRunner;
+import org.mozilla.gecko.sync.Utils;
 import org.mozilla.gecko.sync.repositories.android.BrowserContractHelpers;
 import org.robolectric.shadows.ShadowContentResolver;
 
@@ -24,7 +26,9 @@ import org.mozilla.gecko.db.BrowserContract.Bookmarks;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -37,6 +41,7 @@ import static org.mozilla.gecko.db.BrowserProviderGeneralTest.INVALID_TIMESTAMP;
 import static org.mozilla.gecko.db.BrowserProviderGeneralTest.assertVersionsForSelection;
 import static org.mozilla.gecko.db.BrowserProviderGeneralTest.bookmarksTestSyncUri;
 import static org.mozilla.gecko.db.BrowserProviderGeneralTest.bookmarksTestUri;
+import static org.mozilla.gecko.db.BrowserProviderGeneralTest.getBookmarksTestSyncIncrementLocalVersionUri;
 import static org.mozilla.gecko.db.BrowserProviderGeneralTest.getBookmarkIdFromGuid;
 import static org.mozilla.gecko.db.BrowserProviderGeneralTest.insertBookmark;
 import static org.mozilla.gecko.db.BrowserProviderGeneralTest.withDeleted;
@@ -314,6 +319,7 @@ public class BrowserProviderBookmarksTest {
         
         String guid1 = UUID.randomUUID().toString();
         String guid2 = UUID.randomUUID().toString();
+        String guid3 = UUID.randomUUID().toString();
 
         assertEquals(7, getTotalNumberOfBookmarks());
 
@@ -331,7 +337,12 @@ public class BrowserProviderBookmarksTest {
         
         assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 2, 0);
 
-        assertEquals(9, getTotalNumberOfBookmarks());
+        
+        insert("bookmark-3", "https://www.mozilla-3.org", guid3,
+                rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK, true, true);
+        assertVersionsForGuid(guid3, 2, 1);
+
+        assertEquals(10, getTotalNumberOfBookmarks());
 
         
 
@@ -355,42 +366,46 @@ public class BrowserProviderBookmarksTest {
         updateBookmarkTitleByGuid(bookmarksTestSyncUri, guid2, "just title");
         assertVersionsForGuid(guid2, 2, 1);
 
+        
+        updateBookmarkTitleByGuid(getBookmarksTestSyncIncrementLocalVersionUri, guid2, "again, title!");
+        assertVersionsForGuid(guid2, 3, 1);
+
         assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 2, 0);
 
         
         deleteByGuid(bookmarksTestUri, guid1);
         assertEquals(0, getRowCount(Bookmarks.GUID + " = ?", new String[]{guid1}));
 
-        assertEquals(8, getTotalNumberOfBookmarks());
-
-        assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 3, 0);
-
-        
-        String guid3 = UUID.randomUUID().toString();
-        insert("bookmark-3", "https://www.mozilla-3.org", guid3,
-                rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK, true);
-
         assertEquals(9, getTotalNumberOfBookmarks());
 
+        assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 3, 0);
+
+        
+        String guid4 = UUID.randomUUID().toString();
+        insert("bookmark-4", "https://www.mozilla-4.org", guid4,
+                rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK, true);
+
+        assertEquals(10, getTotalNumberOfBookmarks());
+
         
         assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 3, 0);
 
-        assertVersionsForGuid(guid3, 1, 1);
-        deleteByGuid(bookmarksTestUri, guid3);
+        assertVersionsForGuid(guid4, 1, 1);
+        deleteByGuid(bookmarksTestUri, guid4);
 
         
         assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 4, 0);
 
         
-        assertEquals(9, getTotalNumberOfBookmarks());
+        assertEquals(10, getTotalNumberOfBookmarks());
 
         
-        assertEquals(1, getRowCount(Bookmarks.GUID + " = ?", new String[]{guid3}));
-        assertVersionsForGuid(guid3, 2, 1);
+        assertEquals(1, getRowCount(Bookmarks.GUID + " = ?", new String[]{guid4}));
+        assertVersionsForGuid(guid4, 2, 1);
 
         
         deleteByGuid(bookmarksTestSyncUri, guid2);
-        assertEquals(8, getTotalNumberOfBookmarks());
+        assertEquals(9, getTotalNumberOfBookmarks());
         assertEquals(0, getRowCount(Bookmarks.GUID + " = ?", new String[]{guid2}));
 
         
@@ -449,6 +464,73 @@ public class BrowserProviderBookmarksTest {
         assertVersionsForGuid("child-3", 2, 1);
     }
 
+    @Test
+    public void testBulkUpdatingSyncVersions() throws Exception {
+        final long rootId = getIdFromGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID);
+
+        ConcurrentHashMap<String, Integer> guidsToVersionMap = new ConcurrentHashMap<>();
+
+        for (int i = 0; i < 1500; i++) {
+            String guid = UUID.randomUUID().toString();
+            insert("bookmark-" + i, "https://www.mozilla-" + i + ".org", guid,
+                    rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK);
+            assertVersionsForGuid(guid, 1, 0);
+            guidsToVersionMap.put(guid, 1);
+        }
+
+        final Bundle data = new Bundle();
+        data.putSerializable(BrowserContract.METHOD_PARAM_DATA, guidsToVersionMap);
+
+        
+        ShadowContentResolver contentResolver = new ShadowContentResolver();
+        ContentProviderClient client = contentResolver.acquireContentProviderClient(BrowserContractHelpers.HISTORY_CONTENT_URI);
+        try {
+            client.call(
+                    BrowserContract.METHOD_UPDATE_SYNC_VERSIONS,
+                    BrowserContractHelpers.HISTORY_CONTENT_URI.toString(),
+                    data
+            );
+            fail();
+        } catch (IllegalStateException e) {
+        } finally {
+            client.release();
+        }
+
+        
+        try {
+            bookmarksClient.call(
+                    BrowserContract.METHOD_UPDATE_SYNC_VERSIONS,
+                    bookmarksTestUri.toString(),
+                    data
+            );
+            fail();
+        } catch (IllegalStateException e) {
+        }
+
+        final Bundle emptyData = new Bundle();
+        emptyData.putSerializable(BrowserContract.METHOD_PARAM_DATA, new ConcurrentHashMap<String, Integer>());
+
+        Bundle result = bookmarksClient.call(
+                BrowserContract.METHOD_UPDATE_SYNC_VERSIONS,
+                bookmarksTestSyncUri.toString(),
+                emptyData
+        );
+        assertNotNull(result);
+        int changed = (int) result.getSerializable(BrowserContract.METHOD_RESULT);
+        assertEquals(0, changed);
+
+        result = bookmarksClient.call(
+                BrowserContract.METHOD_UPDATE_SYNC_VERSIONS,
+                bookmarksTestSyncUri.toString(),
+                data
+        );
+        assertNotNull(result);
+        changed = (int) result.getSerializable(BrowserContract.METHOD_RESULT);
+        assertEquals(guidsToVersionMap.size(), changed);
+
+        for (String guid : guidsToVersionMap.keySet()) {
+            assertVersionsForGuid(guid, 1, 1);
+        }
     }
 
     @Test
@@ -529,6 +611,73 @@ public class BrowserProviderBookmarksTest {
         assertVersionsForGuid("guid-1", 1, 0);
     }
 
+    @Test
+    public void testBookmarkBulkPositionChange() throws Exception {
+        
+        
+        
+        final int NUMBER_OF_CHILDREN = 1001;
+        final long rootId = getIdFromGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID);
+        long folderId = ContentUris.parseId(insert("FolderFolder", "", "folderfolder",
+                rootId, Bookmarks.TYPE_FOLDER));
+
+        
+        String[] items = new String[NUMBER_OF_CHILDREN];
+
+        for (int i = 0; i < NUMBER_OF_CHILDREN; ++i) {
+            String guid = Utils.generateGuid();
+            items[i] = guid;
+            assertNotNull(insert(
+                    "Test Bookmark" + guid,
+                    "http://example.com" + guid,
+                    guid, folderId, Bookmarks.TYPE_FOLDER, i, false)
+            );
+        }
+
+        assertPositionsForParent(folderId, items);
+
+        
+        Random rand = new Random();
+        for (int i = 0; i < NUMBER_OF_CHILDREN; ++i) {
+            final int newPosition = rand.nextInt(NUMBER_OF_CHILDREN);
+            final String switched = items[newPosition];
+            items[newPosition] = items[i];
+            items[i] = switched;
+        }
+
+        
+        long updated = bookmarksClient.update(BrowserContract.Bookmarks.POSITIONS_CONTENT_URI, null, null, items);
+        
+        assertEquals(NUMBER_OF_CHILDREN, updated);
+        assertPositionsForParent(folderId, items);
+    }
+
+    private void assertPositionsForParent(long parentId, String[] guidPositions) throws RemoteException {
+        Cursor cursor = bookmarksClient.query(
+                bookmarksTestSyncUri,
+                new String[] {Bookmarks.GUID, Bookmarks.POSITION},
+                Bookmarks.PARENT + " = ?",
+                new String[] {String.valueOf(parentId)},
+                null
+        );
+        assertNotNull(cursor);
+        assertEquals(guidPositions.length, cursor.getCount());
+        assertTrue(cursor.moveToFirst());
+        final int guidCol = cursor.getColumnIndexOrThrow(Bookmarks.GUID);
+        final int positionCol = cursor.getColumnIndexOrThrow(Bookmarks.POSITION);
+        try {
+            for (int i = 0; i < guidPositions.length; i++) {
+                
+                
+                assertEquals(guidPositions[i], cursor.getString(guidCol));
+                assertEquals(i, cursor.getInt(positionCol));
+                cursor.moveToNext();
+            }
+        } finally {
+            cursor.close();
+        }
+    }
+
     private void deleteByGuid(Uri uri, String guid) throws RemoteException {
         bookmarksClient.delete(uri,
                 Bookmarks.GUID + " = ?",
@@ -577,15 +726,31 @@ public class BrowserProviderBookmarksTest {
     }
 
     private Uri insert(String title, String url, String guid, long parentId, int type) throws RemoteException {
-        return insert(title, url, guid, parentId, type, false);
+        return insert(title, url, guid, parentId, type, 0, false);
     }
 
     private Uri insert(String title, String url, String guid, long parentId, int type, boolean fromSync) throws RemoteException {
-        return insert(title, url, guid, parentId, type, null, null, fromSync);
+        return insert(title, url, guid, parentId, type, 0, null, null, fromSync);
+    }
+
+    private Uri insert(String title, String url, String guid, long parentId, int type, int position, boolean fromSync) throws RemoteException {
+        return insert(title, url, guid, parentId, type, position, null, null, fromSync);
+    }
+
+    private Uri insert(String title, String url, String guid, long parentId, int type, boolean fromSync, boolean insertAsModified) throws RemoteException {
+        return insert(title, url, guid, parentId, type, 0, null, null, fromSync, insertAsModified);
     }
 
     private Uri insert(String title, String url, String guid, long parentId, int type, Integer localVersion, Integer syncVersion, boolean fromSync) throws RemoteException {
-        return insertBookmark(bookmarksClient, title, url, guid, parentId, type, localVersion, syncVersion, fromSync);
+        return insert(title, url, guid, parentId, type, 0, localVersion, syncVersion, fromSync, false);
+    }
+
+    private Uri insert(String title, String url, String guid, long parentId, int type, int position, Integer localVersion, Integer syncVersion, boolean fromSync) throws RemoteException {
+        return insert(title, url, guid, parentId, type, position, localVersion, syncVersion, fromSync, false);
+    }
+
+    private Uri insert(String title, String url, String guid, long parentId, int type, int position, Integer localVersion, Integer syncVersion, boolean fromSync, boolean insertAsModified) throws RemoteException {
+        return insertBookmark(bookmarksClient, title, url, guid, parentId, type, position, localVersion, syncVersion, fromSync, insertAsModified);
     }
 
     private int getTotalNumberOfBookmarks() throws RemoteException {

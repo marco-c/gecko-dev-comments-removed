@@ -5,6 +5,7 @@
 
 package org.mozilla.gecko.db;
 
+import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.mozilla.gecko.AboutPages;
 import org.mozilla.gecko.GeckoProfile;
@@ -711,7 +713,9 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         int match = URI_MATCHER.match(uri);
         long id = -1;
 
-        if (values.containsKey(BrowserContract.VersionColumns.LOCAL_VERSION) || values.containsKey(BrowserContract.VersionColumns.SYNC_VERSION)) {
+        if (values != null
+                && (values.containsKey(BrowserContract.VersionColumns.LOCAL_VERSION)
+                || values.containsKey(BrowserContract.VersionColumns.SYNC_VERSION))) {
             throw new IllegalArgumentException("Can not manually set record versions.");
         }
 
@@ -793,11 +797,13 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
     @SuppressWarnings("fallthrough")
     @Override
-    public int updateInTransaction(Uri uri, ContentValues values, String selection,
+    public int updateInTransaction(Uri uri, @Nullable ContentValues values, @Nullable String selection,
             String[] selectionArgs) {
         trace("Calling update in transaction on URI: " + uri);
 
-        if (values.containsKey(BrowserContract.VersionColumns.LOCAL_VERSION) || values.containsKey(BrowserContract.VersionColumns.SYNC_VERSION)) {
+        if (values != null
+                && (values.containsKey(BrowserContract.VersionColumns.LOCAL_VERSION)
+                || values.containsKey(BrowserContract.VersionColumns.SYNC_VERSION))) {
             throw new IllegalArgumentException("Can not manually update record versions.");
         }
 
@@ -1643,13 +1649,24 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
         String url = values.getAsString(Bookmarks.URL);
 
-        values.put(Bookmarks.LOCAL_VERSION, 1);
-
         
         
         if (isCallerSync(uri)) {
+            
+            
+            if (values.containsKey(Bookmarks.PARAM_INSERT_FROM_SYNC_AS_MODIFIED)
+                    && values.getAsBoolean(Bookmarks.PARAM_INSERT_FROM_SYNC_AS_MODIFIED)) {
+                values.put(Bookmarks.LOCAL_VERSION, 2);
+            } else {
+                values.put(Bookmarks.LOCAL_VERSION, 1);
+            }
             values.put(Bookmarks.SYNC_VERSION, 1);
+
+            values.remove(Bookmarks.PARAM_INSERT_FROM_SYNC_AS_MODIFIED);
+
+         
         } else {
+            values.put(Bookmarks.LOCAL_VERSION, 1);
             values.put(Bookmarks.SYNC_VERSION, 0);
         }
 
@@ -1731,7 +1748,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
         int updated;
         
-        if (!isCallerSync(uri)) {
+        if (!isCallerSync(uri) || shouldIncrementLocalVersionFromSync(uri)) {
             updated = updateAndIncrementLocalVersion(db, uri, TABLE_BOOKMARKS, values, inClause, null);
         } else {
             updated = db.update(TABLE_BOOKMARKS, values, inClause, null);
@@ -2531,11 +2548,235 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                     result.putSerializable(BrowserContract.METHOD_RESULT, e);
                 }
                 break;
+            case BrowserContract.METHOD_UPDATE_SYNC_VERSIONS:
+                try {
+                    final Uri uri = Uri.parse(uriArg);
+                    final SQLiteDatabase db = getWritableDatabase(uri);
+                    final int changed = bulkUpdateSyncVersions(db, uri, extras);
+                    result.putSerializable(BrowserContract.METHOD_RESULT, changed);
+                    
+                } catch (RuntimeException e) {
+                    throw e;
+                } catch (Exception e) {
+                    Log.e(LOGTAG, "Unexpected error while bulk updating sync versions", e);
+                    result.putSerializable(BrowserContract.METHOD_RESULT, e);
+                }
+                break;
+            case BrowserContract.METHOD_UPDATE_BY_GUID_ASSERTING_LOCAL_VERSION:
+                try {
+                    final Uri uri = Uri.parse(uriArg);
+                    final SQLiteDatabase db = getWritableDatabase(uri);
+                    final boolean didUpdate = updateBookmarkByGuidAssertingLocalVersion(uri, db, extras);
+                    result.putSerializable(BrowserContract.METHOD_RESULT, didUpdate);
+                } catch (RuntimeException e) {
+                    throw e;
+                } catch (Exception e) {
+                    Log.e(LOGTAG, "Unexpected error while resetting record versioning", e);
+                    result.putSerializable(BrowserContract.METHOD_RESULT, e);
+                }
+                break;
+            case BrowserContract.METHOD_RESET_RECORD_VERSIONS:
+                try {
+                    final Uri uri = Uri.parse(uriArg);
+                    final SQLiteDatabase db = getWritableDatabase(uri);
+                    final int changed = bulkResetRecordVersions(uri, db);
+                    result.putSerializable(BrowserContract.METHOD_RESULT, changed);
+                } catch (RuntimeException e) {
+                    throw e;
+                } catch (Exception e) {
+                    Log.e(LOGTAG, "Unexpected error while resetting record versioning", e);
+                    result.putSerializable(BrowserContract.METHOD_RESULT, e);
+                }
+                break;
             default:
                 throw new IllegalArgumentException("Unknown method call: " + method);
         }
 
         return result;
+    }
+
+    private int bulkResetRecordVersions(Uri uri, SQLiteDatabase db) {
+        
+        
+
+        
+        
+        
+        
+
+        
+        
+        
+        
+
+        
+        
+        
+        
+        
+        
+
+        
+        
+
+        
+        
+        if (!isCallerSync(uri)) {
+            throw new IllegalStateException("Attempted resetting sync versions outside of Sync context");
+        }
+
+        
+        
+        final int match = URI_MATCHER.match(uri);
+        if (match != BOOKMARKS
+                && TextUtils.isEmpty(uri.getQueryParameter(BrowserContract.PARAM_RESET_VERSIONS_FOR_ALL_TYPES))) {
+            throw new IllegalStateException("Attempting resetting sync versions for non-versioned record types");
+        }
+
+        final ContentValues resetVersionsValues = new ContentValues();
+
+        if (!TextUtils.isEmpty(uri.getQueryParameter(BrowserContract.PARAM_RESET_VERSIONS_TO_SYNCED))) {
+            resetVersionsValues.put(BrowserContract.VersionColumns.LOCAL_VERSION, 2);
+            resetVersionsValues.put(BrowserContract.VersionColumns.SYNC_VERSION, 1);
+        } else {
+            resetVersionsValues.put(BrowserContract.VersionColumns.LOCAL_VERSION, 1);
+            resetVersionsValues.put(BrowserContract.VersionColumns.SYNC_VERSION, 0);
+        }
+
+        
+        
+        return db.update(TABLE_BOOKMARKS, resetVersionsValues, null, null);
+    }
+
+    private boolean updateBookmarkByGuidAssertingLocalVersion(Uri uri, SQLiteDatabase db, Bundle extras) {
+        final int match = URI_MATCHER.match(uri);
+        switch (match) {
+            case BOOKMARKS:
+                break;
+            default:
+                throw new IllegalStateException("Attempted to update sync versions for a non-versioned repository: " + uri);
+        }
+
+        final String table = TABLE_BOOKMARKS;
+        final String guid = extras.getString(BrowserContract.SyncColumns.GUID);
+        final int expectedLocalVersion = extras.getInt(BrowserContract.VersionColumns.LOCAL_VERSION, -1);
+
+        if (guid == null || expectedLocalVersion == -1) {
+            throw new IllegalArgumentException("Missing guid or expectedLocalVersion.");
+        }
+
+        final ContentValues values = extras.getParcelable(BrowserContract.METHOD_PARAM_DATA);
+        if (values == null) {
+            throw new IllegalArgumentException("Missing update values for a record in " + table);
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        db.beginTransactionNonExclusive();
+        try {
+            final Cursor c = db.query(table, new String[] {BrowserContract.VersionColumns.LOCAL_VERSION}, BrowserContract.SyncColumns.GUID + " = ?", new String[]{guid}, null, null, null);
+            final int localVersionCol = c.getColumnIndexOrThrow(BrowserContract.VersionColumns.LOCAL_VERSION);
+            try {
+                
+                if (!c.moveToFirst()) {
+                    return false;
+                }
+
+                if (c.isNull(localVersionCol)) {
+                    throw new IllegalArgumentException("Missing localVersion for a record in " + table);
+                }
+                final int localVersion = c.getInt(localVersionCol);
+                
+                
+                if (expectedLocalVersion != localVersion) {
+                    return false;
+                }
+
+                if (c.moveToNext()) {
+                    
+                    
+                    throw new IllegalArgumentException("Got more than 1 record matching provided guid in table " + table);
+                }
+            } finally {
+                c.close();
+            }
+
+            
+            final int changed = updateBookmarks(uri, values, Bookmarks.GUID + " = ?", new String[] {guid});
+            if (changed != 1) {
+                
+                
+                
+                
+                throw new IllegalStateException("Expected to modify 1, but modified " + changed + " records in " + table);
+            }
+            db.setTransactionSuccessful();
+            return true;
+        } finally {
+            db.endTransaction();
+        }
+    }
+
+    private int bulkUpdateSyncVersions(SQLiteDatabase db, Uri uri, Bundle data) {
+        if (!isCallerSync(uri)) {
+            throw new IllegalStateException("Attempted updating sync versions outside of Sync");
+        }
+
+        final int match = URI_MATCHER.match(uri);
+        switch (match) {
+            case BOOKMARKS:
+                break;
+            default:
+                throw new IllegalStateException("Attempted to update sync versions for a non-versioned repository: " + uri);
+        }
+
+        final String table = TABLE_BOOKMARKS;
+
+        
+        
+        
+        final ConcurrentHashMap<String, Integer> syncVersionsForGuids = uncheckedCastSerializableToHashMap(
+                data.getSerializable(BrowserContract.METHOD_PARAM_DATA)
+        );
+
+        final String updateSqlStatement = "UPDATE " + table +
+                " SET " + BrowserContract.VersionColumns.SYNC_VERSION +
+                " = ?" +
+                " WHERE " + BrowserContract.SyncColumns.GUID + " = ?";
+        final SQLiteStatement compiledStatement = db.compileStatement(updateSqlStatement);
+
+        beginWrite(db);
+
+        int changed = 0;
+        try {
+            for (String guid : syncVersionsForGuids.keySet()) {
+                final int syncVersion = syncVersionsForGuids.get(guid);
+
+                compiledStatement.clearBindings();
+                compiledStatement.bindLong(1, syncVersion); 
+                compiledStatement.bindString(2, guid);
+                changed += compiledStatement.executeUpdateDelete();
+            }
+
+            markWriteSuccessful(db);
+
+        } finally {
+            endWrite(db);
+        }
+
+        return changed;
     }
 
     private void bulkReplaceRemoteDevices(final Uri uri, @NonNull Bundle dataBundle) {
@@ -2767,6 +3008,11 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         return totalInserted;
     }
 
+    @SuppressWarnings("unchecked")
+    private ConcurrentHashMap<String, Integer> uncheckedCastSerializableToHashMap(Serializable serializable) {
+        return (ConcurrentHashMap<String, Integer>) serializable;
+    }
+
     @Override
     public ContentProviderResult[] applyBatch (ArrayList<ContentProviderOperation> operations)
         throws OperationApplicationException {
@@ -2884,7 +3130,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
     private static int updateAndIncrementLocalVersion(SQLiteDatabase db, Uri uri, String table, ContentValues values, String selection, String[] selectionArgs) {
         
         
-        if (isCallerSync(uri)) {
+        if (isCallerSync(uri) && !shouldIncrementLocalVersionFromSync(uri)) {
             throw new IllegalStateException("Attempted to increment change counter from within a Sync");
         }
 

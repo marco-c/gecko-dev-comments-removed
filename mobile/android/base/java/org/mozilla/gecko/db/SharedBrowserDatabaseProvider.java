@@ -113,7 +113,7 @@ public abstract class SharedBrowserDatabaseProvider extends AbstractPerProfileDa
             cursor.close();
         }
 
-        int deletedExpired = db.delete(tableName, inClause, null);
+        final int deletedExpired = db.delete(tableName, inClause, null);
         Log.d(LOGTAG, "Dropped old deleted records: " + deletedExpired);
 
         
@@ -124,10 +124,10 @@ public abstract class SharedBrowserDatabaseProvider extends AbstractPerProfileDa
         
         
         
-        int deletedNew = db.delete(tableName,
+        final int deletedNew = db.delete(tableName,
                 SyncColumns.IS_DELETED + " = 1 " +
-                " AND " +
-                VersionColumns.SYNC_VERSION + " = 0",
+                        " AND " +
+                        VersionColumns.SYNC_VERSION + " = 0",
                 null
         );
         Log.d(LOGTAG, "Dropped non-synced deleted records: " + deletedNew);

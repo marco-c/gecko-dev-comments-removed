@@ -1,19 +1,27 @@
+
+
+
+
 package org.mozilla.gecko.sync.repositories.android;
 
 import android.content.ContentUris;
 import android.database.Cursor;
 import android.net.Uri;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import org.json.simple.JSONArray;
 import org.mozilla.gecko.background.common.log.Logger;
 import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.sync.Utils;
+import org.mozilla.gecko.sync.repositories.InactiveSessionException;
 import org.mozilla.gecko.sync.repositories.NoGuidForIdException;
 import org.mozilla.gecko.sync.repositories.NullCursorException;
 import org.mozilla.gecko.sync.repositories.ParentNotFoundException;
+import org.mozilla.gecko.sync.repositories.RecordFilter;
 import org.mozilla.gecko.sync.repositories.RepositorySession;
 import org.mozilla.gecko.sync.repositories.StoreTrackingRepositorySession;
+import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionFetchRecordsDelegate;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionStoreDelegate;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionWipeDelegate;
 import org.mozilla.gecko.sync.repositories.domain.BookmarkRecord;
@@ -25,16 +33,18 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
-@VisibleForTesting
-public class BookmarksSessionHelper extends SessionHelper implements BookmarksInsertionManager.BookmarkInserter {
+ class BookmarksSessionHelper extends SessionHelper implements BookmarksInsertionManager.BookmarkInserter {
     private static final String LOG_TAG = "BookmarksSessionHelper";
 
     private final AndroidBrowserBookmarksDataAccessor dbAccessor;
 
     
-    private final HashMap<String, Long> parentGuidToIDMap = new HashMap<>();
-    private final HashMap<Long, String> parentIDToGuidMap = new HashMap<Long, String>();
+    
+    
+    private final ConcurrentHashMap<String, Long> parentGuidToIDMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, String> parentIDToGuidMap = new ConcurrentHashMap<>();
 
     
     private final HashMap<String, JSONArray> parentToChildArray = new HashMap<>();
@@ -121,7 +131,12 @@ public class BookmarksSessionHelper extends SessionHelper implements BookmarksIn
 
     @Override
     protected Record retrieveDuringFetch(Cursor cur) throws NoGuidForIdException, NullCursorException, ParentNotFoundException {
-        return retrieveRecord(cur, true);
+        final Record retrievedRecord = retrieveRecord(cur, true);
+
+        
+        
+        
+        return populateVersionFields(retrievedRecord, cur);
     }
 
     @Override
@@ -164,11 +179,11 @@ public class BookmarksSessionHelper extends SessionHelper implements BookmarksIn
     }
 
     @Override
-    Record retrieveDuringStore(Cursor cursor) throws NoGuidForIdException, NullCursorException, ParentNotFoundException {
+     Record retrieveDuringStore(Cursor cursor) throws NoGuidForIdException, NullCursorException, ParentNotFoundException {
         
         
         
-        return retrieveRecord(cursor, false);
+        return populateVersionFields(retrieveRecord(cursor, false), cursor);
     }
 
     @Override
@@ -206,7 +221,7 @@ public class BookmarksSessionHelper extends SessionHelper implements BookmarksIn
     }
 
     @Override
-    String buildRecordString(Record record) {
+     String buildRecordString(Record record) {
         BookmarkRecord bmk = (BookmarkRecord) record;
         String parent = bmk.parentName + "/";
         if (bmk.isBookmark()) {
@@ -277,6 +292,7 @@ public class BookmarksSessionHelper extends SessionHelper implements BookmarksIn
         if (((BookmarkRecord) toProcess).dateAdded == null) {
             ((BookmarkRecord) toProcess).dateAdded = toProcess.lastModified;
             toProcess.lastModified = RepositorySession.now();
+            toProcess.insertFromSyncAsModified = true;
             return toProcess;
         }
 
@@ -285,6 +301,7 @@ public class BookmarksSessionHelper extends SessionHelper implements BookmarksIn
         if (toProcess.lastModified < ((BookmarkRecord) toProcess).dateAdded) {
             ((BookmarkRecord) toProcess).dateAdded = toProcess.lastModified;
             toProcess.lastModified = RepositorySession.now();
+            toProcess.insertFromSyncAsModified = true;
             return toProcess;
         }
 
@@ -361,7 +378,7 @@ public class BookmarksSessionHelper extends SessionHelper implements BookmarksIn
     }
 
     @Override
-    void doBegin() throws NullCursorException {
+     void doBegin() throws NullCursorException {
         
         
         Cursor cur = dbAccessor.getGuidsIDsForFolders();
@@ -396,12 +413,12 @@ public class BookmarksSessionHelper extends SessionHelper implements BookmarksIn
     }
 
     @Override
-    Record transformRecord(Record record) {
+     Record transformRecord(Record record) {
         return record;
     }
 
     @Override
-    Runnable getStoreDoneRunnable(final RepositorySessionStoreDelegate delegate) {
+     Runnable getStoreDoneRunnable(final RepositorySessionStoreDelegate delegate) {
         return new Runnable() {
             @Override
             public void run() {
@@ -414,7 +431,142 @@ public class BookmarksSessionHelper extends SessionHelper implements BookmarksIn
         };
     }
 
-    void finish() {
+    @Override
+     boolean doReplaceRecord(Record toStore, Record existingRecord, RepositorySessionStoreDelegate delegate) throws NoGuidForIdException, NullCursorException, ParentNotFoundException {
+        
+        
+        
+        
+        boolean shouldIncrementLocalVersion = existingRecord.localVersion > existingRecord.syncVersion;
+        Record replaced = replaceWithAssertion(
+                toStore,
+                existingRecord,
+                shouldIncrementLocalVersion
+        );
+        if (replaced == null) {
+            return false;
+        }
+
+        
+        
+        Logger.debug(LOG_TAG, "Calling delegate callback with guid " + replaced.guid +
+                "(" + replaced.androidID + ")");
+
+        
+        
+        delegate.onRecordStoreReconciled(replaced.guid, replaced.localVersion);
+        delegate.onRecordStoreSucceeded(replaced.guid);
+        return true;
+    }
+
+    @Override
+     boolean isLocallyModified(Record record) {
+        if (record.localVersion == null || record.syncVersion == null) {
+            throw new IllegalArgumentException("Bookmark session helper received non-versioned record");
+        }
+        return record.localVersion > record.syncVersion;
+    }
+
+    @Override
+     void insert(RepositorySessionStoreDelegate delegate, Record record) throws NoGuidForIdException, NullCursorException, ParentNotFoundException {
+        try {
+            insertionManager.enqueueRecord(delegate, (BookmarkRecord) record);
+        } catch (Exception e) {
+            throw new NullCursorException(e);
+        }
+    }
+
+    @Override
+     Record reconcileRecords(Record remoteRecord, Record localRecord, long lastRemoteRetrieval, long lastLocalRetrieval) {
+        
+        
+
+        
+        
+
+        
+        
+        final BookmarkRecord reconciled = (BookmarkRecord) session.reconcileRecords(
+                remoteRecord, localRecord, lastRemoteRetrieval, lastLocalRetrieval);
+
+        final BookmarkRecord remote = (BookmarkRecord) remoteRecord;
+        final BookmarkRecord local = (BookmarkRecord) localRecord;
+
+        
+        
+        reconciled.children = remote.children;
+
+        
+        
+        if (reconciled.isFolder()) {
+            session.trackRecord(reconciled);
+        }
+
+        
+        
+        
+        
+        
+        long lowest = remote.lastModified;
+
+        
+        
+        final long releaseOfNCSAMosaicMillis = 727747200000L;
+
+        if (local.dateAdded != null && local.dateAdded < lowest && local.dateAdded > releaseOfNCSAMosaicMillis) {
+            lowest = local.dateAdded;
+        }
+
+        if (remote.dateAdded != null && remote.dateAdded < lowest && remote.dateAdded > releaseOfNCSAMosaicMillis) {
+            lowest = remote.dateAdded;
+        }
+
+        reconciled.dateAdded = lowest;
+
+        return reconciled;
+    }
+
+    @Override
+     Record prepareRecord(Record record) {
+        if (record.deleted) {
+            Logger.debug(LOG_TAG, "No need to prepare deleted record " + record.guid);
+            return record;
+        }
+
+        BookmarkRecord bmk = (BookmarkRecord) record;
+
+        if (!isSpecialRecord(record)) {
+            
+            handleParenting(bmk);
+        }
+
+        if (Logger.LOG_PERSONAL_INFORMATION) {
+            if (bmk.isFolder()) {
+                Logger.pii(LOG_TAG, "Inserting folder " + bmk.guid + ", " + bmk.title +
+                        " with parent " + bmk.androidParentID +
+                        " (" + bmk.parentID + ", " + bmk.parentName +
+                        ", " + bmk.androidPosition + ")");
+            } else {
+                Logger.pii(LOG_TAG, "Inserting bookmark " + bmk.guid + ", " + bmk.title + ", " +
+                        bmk.bookmarkURI + " with parent " + bmk.androidParentID +
+                        " (" + bmk.parentID + ", " + bmk.parentName +
+                        ", " + bmk.androidPosition + ")");
+            }
+        } else {
+            if (bmk.isFolder()) {
+                Logger.debug(LOG_TAG, "Inserting folder " + bmk.guid +  ", parent " +
+                        bmk.androidParentID +
+                        " (" + bmk.parentID + ", " + bmk.androidPosition + ")");
+            } else {
+                Logger.debug(LOG_TAG, "Inserting bookmark " + bmk.guid + " with parent " +
+                        bmk.androidParentID +
+                        " (" + bmk.parentID + ", " + ", " + bmk.androidPosition + ")");
+            }
+        }
+        return bmk;
+    }
+
+     void finish() {
         
         deletionManager = null;
         insertionManager = null;
@@ -428,6 +580,55 @@ public class BookmarksSessionHelper extends SessionHelper implements BookmarksIn
             
             
         }
+    }
+
+    @Nullable
+    private Record populateVersionFields(@Nullable Record record, Cursor cur) {
+        if (record == null) {
+            return null;
+        }
+        final int localVersionCol = cur.getColumnIndexOrThrow(BrowserContract.VersionColumns.LOCAL_VERSION);
+        final int syncVersionCol = cur.getColumnIndexOrThrow(BrowserContract.VersionColumns.SYNC_VERSION);
+        final int localVersion = cur.getInt(localVersionCol);
+        
+        
+        
+        
+        if (localVersion == 0) {
+            throw new IllegalStateException("Unexpected localVersion value of 0 while fetching bookmark record");
+        }
+        record.localVersion = cur.getInt(localVersionCol);
+        record.syncVersion = cur.getInt(syncVersionCol);
+        return record;
+    }
+
+    @Nullable
+    private Record replaceWithAssertion(Record newRecord, Record existingRecord, boolean shouldIncrementLocalVersion) throws NoGuidForIdException, NullCursorException, ParentNotFoundException {
+        Record toStore = prepareRecord(newRecord);
+
+        if (existingRecord.localVersion == null || existingRecord.syncVersion == null) {
+            throw new IllegalStateException("Missing versions for a versioned bookmark record.");
+        }
+
+        
+        boolean didUpdate = ((AndroidBrowserBookmarksDataAccessor) dbHelper).updateAssertingLocalVersion(
+                existingRecord.guid,
+                existingRecord.localVersion,
+                shouldIncrementLocalVersion,
+                toStore
+        );
+        if (!didUpdate) {
+            return null;
+        }
+        if (shouldIncrementLocalVersion) {
+            
+            toStore.localVersion = existingRecord.localVersion + 1;
+        } else {
+            toStore.localVersion = existingRecord.localVersion;
+        }
+        updateBookkeeping(toStore);
+        Logger.debug(LOG_TAG, "replace() returning record " + toStore.guid);
+        return toStore;
     }
 
     @SuppressWarnings("unchecked")
@@ -562,6 +763,7 @@ public class BookmarksSessionHelper extends SessionHelper implements BookmarksIn
 
 
 
+    @Nullable
     private BookmarkRecord retrieveRecord(Cursor cur, boolean computeAndPersistChildren) throws NoGuidForIdException, NullCursorException, ParentNotFoundException {
         String recordGUID = getGUID(cur);
         Logger.trace(LOG_TAG, "Record from mirror cursor: " + recordGUID);
@@ -939,98 +1141,42 @@ public class BookmarksSessionHelper extends SessionHelper implements BookmarksIn
         return rec;
     }
 
-    @Override
-    void insert(RepositorySessionStoreDelegate delegate, Record record) throws NoGuidForIdException, NullCursorException, ParentNotFoundException {
-        try {
-            insertionManager.enqueueRecord(delegate, (BookmarkRecord) record);
-        } catch (Exception e) {
-            throw new NullCursorException(e);
-        }
-    }
-
-    @Override
-    Record reconcileRecords(Record remoteRecord, Record localRecord, long lastRemoteRetrieval, long lastLocalRetrieval) {
-        BookmarkRecord reconciled = (BookmarkRecord) session.reconcileRecords(
-                remoteRecord, localRecord, lastRemoteRetrieval, lastLocalRetrieval);
-
-        final BookmarkRecord remote = (BookmarkRecord) remoteRecord;
-        final BookmarkRecord local = (BookmarkRecord) localRecord;
-
-        
-        
-        reconciled.children = remote.children;
-
-        
-        
-        if (reconciled.isFolder()) {
-            session.trackRecord(reconciled);
-        }
-
-        
-        
-        
-        
-        
-        long lowest = remote.lastModified;
-
-        
-        
-        final long releaseOfNCSAMosaicMillis = 727747200000L;
-
-        if (local.dateAdded != null && local.dateAdded < lowest && local.dateAdded > releaseOfNCSAMosaicMillis) {
-            lowest = local.dateAdded;
-        }
-
-        if (remote.dateAdded != null && remote.dateAdded < lowest && remote.dateAdded > releaseOfNCSAMosaicMillis) {
-            lowest = remote.dateAdded;
-        }
-
-        reconciled.dateAdded = lowest;
-
-        return reconciled;
-    }
-
-    @Override
-    Record prepareRecord(Record record) {
-        if (record.deleted) {
-            Logger.debug(LOG_TAG, "No need to prepare deleted record " + record.guid);
-            return record;
-        }
-
-        BookmarkRecord bmk = (BookmarkRecord) record;
-
-        if (!isSpecialRecord(record)) {
-            
-            handleParenting(bmk);
-        }
-
-        if (Logger.LOG_PERSONAL_INFORMATION) {
-            if (bmk.isFolder()) {
-                Logger.pii(LOG_TAG, "Inserting folder " + bmk.guid + ", " + bmk.title +
-                        " with parent " + bmk.androidParentID +
-                        " (" + bmk.parentID + ", " + bmk.parentName +
-                        ", " + bmk.androidPosition + ")");
-            } else {
-                Logger.pii(LOG_TAG, "Inserting bookmark " + bmk.guid + ", " + bmk.title + ", " +
-                        bmk.bookmarkURI + " with parent " + bmk.androidParentID +
-                        " (" + bmk.parentID + ", " + bmk.parentName +
-                        ", " + bmk.androidPosition + ")");
-            }
-        } else {
-            if (bmk.isFolder()) {
-                Logger.debug(LOG_TAG, "Inserting folder " + bmk.guid +  ", parent " +
-                        bmk.androidParentID +
-                        " (" + bmk.parentID + ", " + bmk.androidPosition + ")");
-            } else {
-                Logger.debug(LOG_TAG, "Inserting bookmark " + bmk.guid + " with parent " +
-                        bmk.androidParentID +
-                        " (" + bmk.parentID + ", " + ", " + bmk.androidPosition + ")");
-            }
-        }
-        return bmk;
+     Runnable getFetchModifiedRunnable(long end,
+                                      RecordFilter filter,
+                                      RepositorySessionFetchRecordsDelegate delegate) {
+        return new FetchModifiedRunnable(end, filter, delegate);
     }
 
     private boolean isSpecialRecord(Record record) {
         return SPECIAL_GUID_PARENTS.containsKey(record.guid);
+    }
+
+    private class FetchModifiedRunnable extends FetchingRunnable {
+        private final long end;
+        private final RecordFilter filter;
+
+         FetchModifiedRunnable(long end,
+                                                    RecordFilter filter,
+                                                    RepositorySessionFetchRecordsDelegate delegate) {
+            super(delegate);
+            this.end    = end;
+            this.filter = filter;
+        }
+
+        @Override
+        public void run() {
+            if (!session.isActive()) {
+                delegate.onFetchFailed(new InactiveSessionException());
+                return;
+            }
+
+            try {
+                Cursor cursor = ((AndroidBrowserBookmarksDataAccessor) dbHelper).fetchModified();
+                this.fetchFromCursor(cursor, filter, end);
+            } catch (NullCursorException e) {
+                delegate.onFetchFailed(e);
+                return;
+            }
+        }
     }
 }
