@@ -1843,25 +1843,17 @@ class PackageFrontend(MachCommandBase):
 
         
         
-        
-        
-        
-        
         for f in files:
-            if '@' in f:
-                name, task_id = f.rsplit('@', 1)
-                records[name] = DownloadRecord(
-                    get_artifact_url(task_id, name), os.path.basename(name),
-                    None, None, None, unpack=True)
-
-        files = tuple(f for f in files if '@' not in f)
+            if '@' not in f:
+                self.log(logging.ERROR, 'artifact', {},
+                         'Expected a list of files of the form path@task-id')
+                return 1
+            name, task_id = f.rsplit('@', 1)
+            records[name] = DownloadRecord(
+                get_artifact_url(task_id, name), os.path.basename(name),
+                None, None, None, unpack=True)
 
         for record in records.itervalues():
-            if files and not any(record.basename == f or
-                                      record.basename.startswith('%s.' % f)
-                                      for f in files):
-                continue
-
             self.log(logging.INFO, 'artifact', {'name': record.basename},
                      'Downloading {name}')
             valid = False
