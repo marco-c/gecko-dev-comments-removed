@@ -135,6 +135,8 @@ public:
 
   void UpdateDuration(const media::TimeUnit& aDuration);
 
+  virtual void UpdateCompositor(already_AddRefed<layers::KnowsCompositor>) {}
+
   
   
   
