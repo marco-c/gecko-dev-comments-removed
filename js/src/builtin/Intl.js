@@ -427,8 +427,10 @@ function CanonicalizeLanguageTag(locale) {
             
             
             
-            subtag = extlangMappings[subtag].preferred;
-            if (i === 1 && extlangMappings[subtag].prefix === subtags[0]) {
+            
+            
+            
+            if (i === 1 && extlangMappings[subtag] === subtags[0]) {
                 callFunction(std_Array_shift, subtags);
                 i--;
             }
