@@ -101,7 +101,8 @@ public:
                       const nscolor* aBorderColors,
                       const nsBorderColors* aCompositeColors,
                       nscolor aBackgroundColor,
-                      bool aBackfaceIsVisible);
+                      bool aBackfaceIsVisible,
+                      const mozilla::Maybe<Rect>& aClipRect);
 
   
   void DrawBorders();
@@ -165,6 +166,7 @@ private:
   bool mNoBorderRadius;
   bool mAvoidStroke;
   bool mBackfaceIsVisible;
+  mozilla::Maybe<Rect> mLocalClip;
 
   
   
