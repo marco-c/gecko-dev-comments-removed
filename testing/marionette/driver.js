@@ -1481,17 +1481,9 @@ GeckoDriver.prototype.setWindowRect = async function(cmd, resp) {
   let origRect = this.curBrowser.rect;
 
   
-  
-  function optimisedResize(resolve) {
-    return () => Services.tm.idleDispatchToMainThread(() => {
-      win.requestAnimationFrame(resolve);
-    });
-  }
-
-  
   async function exitFullscreen() {
     return new Promise(resolve => {
-      win.addEventListener("sizemodechange", optimisedResize(resolve), {once: true});
+      win.addEventListener("sizemodechange", whenIdle(win, resolve), {once: true});
       win.fullScreen = false;
     });
   }
@@ -1499,7 +1491,7 @@ GeckoDriver.prototype.setWindowRect = async function(cmd, resp) {
   
   async function restoreWindow() {
     return new Promise(resolve => {
-      win.addEventListener("sizemodechange", resolve, {once: true});
+      win.addEventListener("sizemodechange", whenIdle(win, resolve), {once: true});
       win.restore();
     });
   }
@@ -1507,7 +1499,7 @@ GeckoDriver.prototype.setWindowRect = async function(cmd, resp) {
   
   async function resizeWindow(width, height) {
     return new Promise(resolve => {
-      win.addEventListener("resize", optimisedResize(resolve), {once: true});
+      win.addEventListener("resize", whenIdle(win, resolve), {once: true});
       win.resizeTo(width, height);
     });
   }
@@ -3026,7 +3018,7 @@ GeckoDriver.prototype.minimizeWindow = async function(cmd, resp) {
   let state = WindowState.from(win.windowState);
   if (state != WindowState.Minimized) {
     await new Promise(resolve => {
-      win.addEventListener("sizemodechange", resolve, {once: true});
+      win.addEventListener("sizemodechange", whenIdle(win, resolve), {once: true});
       win.minimize();
     });
   }
@@ -3704,4 +3696,24 @@ function getOuterWindowId(win) {
   return win.QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIDOMWindowUtils)
       .outerWindowID;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function whenIdle(window, callback) {
+  return () => Services.tm.idleDispatchToMainThread(() => {
+    window.requestAnimationFrame(callback);
+  });
 }
