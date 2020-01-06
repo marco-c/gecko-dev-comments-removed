@@ -363,8 +363,7 @@ protected:
 
   void DisplayBar(nsDisplayListBuilder* aBuilder,
                   nsIFrame* aFrame, const nsRect& aRect,
-                  const nsDisplayListSet& aLists,
-                  uint32_t aIndex = 0);
+                  const nsDisplayListSet& aLists);
 
   
   nsPresentationData mPresentationData;
