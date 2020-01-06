@@ -3061,17 +3061,18 @@ TabChild::ReinitRenderingForDeviceReset()
   InvalidateLayers();
 
   RefPtr<LayerManager> lm = mPuppetWidget->GetLayerManager();
-  ClientLayerManager* clm = lm->AsClientLayerManager();
-  if (!clm) {
+  if (WebRenderLayerManager* wlm = lm->AsWebRenderLayerManager()) {
+    wlm->DoDestroy( true);
+  } else if (ClientLayerManager* clm = lm->AsClientLayerManager()) {
+    if (ShadowLayerForwarder* fwd = clm->AsShadowForwarder()) {
+      
+      
+      
+      
+      fwd->SynchronouslyShutdown();
+    }
+  } else {
     return;
-  }
-
-  if (ShadowLayerForwarder* fwd = clm->AsShadowForwarder()) {
-    
-    
-    
-    
-    fwd->SynchronouslyShutdown();
   }
 
   

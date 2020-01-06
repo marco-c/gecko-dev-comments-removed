@@ -70,6 +70,12 @@ WebRenderLayerManager::Initialize(PCompositorBridgeChild* aCBChild,
 void
 WebRenderLayerManager::Destroy()
 {
+  DoDestroy( false);
+}
+
+void
+WebRenderLayerManager::DoDestroy(bool aIsSync)
+{
   if (IsDestroyed()) {
     return;
   }
@@ -79,7 +85,7 @@ WebRenderLayerManager::Destroy()
   LayerManager::Destroy();
   DiscardImages();
   DiscardCompositorAnimations();
-  WrBridge()->Destroy();
+  WrBridge()->Destroy(aIsSync);
 
   if (mTransactionIdAllocator) {
     

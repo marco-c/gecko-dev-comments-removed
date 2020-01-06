@@ -32,7 +32,7 @@ WebRenderBridgeChild::WebRenderBridgeChild(const wr::PipelineId& aPipelineId)
 }
 
 void
-WebRenderBridgeChild::Destroy()
+WebRenderBridgeChild::Destroy(bool aIsSync)
 {
   if (!IPCOpen()) {
     return;
@@ -41,7 +41,11 @@ WebRenderBridgeChild::Destroy()
   
   mDestroyed = true;
 
-  SendShutdown();
+  if (aIsSync) {
+    SendShutdownSync();
+  } else {
+    SendShutdown();
+  }
 }
 
 void
