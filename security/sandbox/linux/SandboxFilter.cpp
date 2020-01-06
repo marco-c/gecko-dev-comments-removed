@@ -820,6 +820,11 @@ public:
               .Else(InvalidSyscall()))
         .Case(F_DUPFD_CLOEXEC, Allow())
         
+        .Case(F_SETLK, Allow())
+#ifdef F_SETLK64
+        .Case(F_SETLK64, Allow())
+#endif
+        
         .Case(F_SETLKW, Allow())
 #ifdef F_SETLKW64
         .Case(F_SETLKW64, Allow())
