@@ -131,7 +131,7 @@ var whitelist = [
   
   {file: "chrome://global/content/findUtils.js"},
   
-  {file: "chrome://global/skin/icons/warning-64.png", platforms: ["linux", "win"]},
+  {file: "chrome://global/skin/icons/warning-64.png", platforms: ["linux"]},
   
   {file: "chrome://global/skin/splitter/grip-bottom.gif", platforms: ["linux"]},
   {file: "chrome://global/skin/splitter/grip-left.gif", platforms: ["linux"]},
