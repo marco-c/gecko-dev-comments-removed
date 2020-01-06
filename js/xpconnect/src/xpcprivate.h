@@ -1010,14 +1010,16 @@ public:
 
     nsAutoPtr<JSObject2JSObjectMap> mWaiverWrapperMap;
 
-    bool IsContentXBLScope() { return mIsContentXBLScope; }
+    JSCompartment* Compartment() const { return js::GetObjectCompartment(mGlobalJSObject); }
+
+    bool IsContentXBLScope() { return xpc::IsContentXBLCompartment(Compartment()); }
     bool AllowContentXBLScope();
     bool UseContentXBLScope() { return mUseContentXBLScope; }
     void ClearContentXBLScope() { mContentXBLScope = nullptr; }
 
-    bool IsAddonScope() { return mIsAddonScope; }
+    bool IsAddonScope() { return xpc::IsAddonCompartment(Compartment()); }
 
-    bool HasInterposition() { return mInterposition; }
+    inline bool HasInterposition() { return mInterposition; }
     nsCOMPtr<nsIAddonInterposition> GetInterposition();
 
     static bool SetAddonInterposition(JSContext* cx,
@@ -1076,9 +1078,6 @@ private:
     nsCOMPtr<nsIAddonInterposition>  mInterposition;
 
     JS::WeakMapPtr<JSObject*, JSObject*> mXrayExpandos;
-
-    bool mIsContentXBLScope;
-    bool mIsAddonScope;
 
     
     
@@ -2794,6 +2793,7 @@ public:
         , writeToGlobalPrototype(false)
         , sameZoneAs(cx)
         , freshZone(false)
+        , isContentXBLScope(false)
         , invisibleToDebugger(false)
         , discardSource(false)
         , metadata(cx)
@@ -2815,6 +2815,7 @@ public:
     bool writeToGlobalPrototype;
     JS::RootedObject sameZoneAs;
     bool freshZone;
+    bool isContentXBLScope;
     bool invisibleToDebugger;
     bool discardSource;
     GlobalProperties globalProperties;
@@ -3072,6 +3073,11 @@ public:
     
     
     
+    bool hasInterposition;
+
+    
+    
+    
     bool waiveInterposition;
 
     
@@ -3085,6 +3091,15 @@ public:
     
     
     bool allowCPOWs;
+
+    
+    
+    bool isContentXBLCompartment;
+
+    
+    
+    
+    bool isAddonCompartment;
 
     
     
