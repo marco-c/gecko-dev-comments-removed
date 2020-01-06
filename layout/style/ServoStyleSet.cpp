@@ -825,8 +825,14 @@ ServoStyleSet::HasStateDependentStyle(dom::Element* aElement,
 }
 
 bool
-ServoStyleSet::StyleDocument()
+ServoStyleSet::StyleDocument(TraversalRestyleBehavior aRestyleBehavior)
 {
+  MOZ_ASSERT(
+    aRestyleBehavior == TraversalRestyleBehavior::Normal ||
+    aRestyleBehavior == TraversalRestyleBehavior::ForCSSRuleChanges,
+    "StyleDocument() should be only called for normal traversal or CSS rule "
+    "changes");
+
   PreTraverse();
 
   
@@ -836,7 +842,7 @@ ServoStyleSet::StyleDocument()
   while (Element* root = iter.GetNextStyleRoot()) {
     if (PrepareAndTraverseSubtree(root,
                                   TraversalRootBehavior::Normal,
-                                  TraversalRestyleBehavior::Normal)) {
+                                  aRestyleBehavior)) {
       postTraversalRequired = true;
     }
   }

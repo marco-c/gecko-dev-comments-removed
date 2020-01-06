@@ -232,7 +232,12 @@ public:
 
 
 
-  bool StyleDocument();
+
+
+
+
+
+  bool StyleDocument(TraversalRestyleBehavior aRestyleBehavior);
 
   
 

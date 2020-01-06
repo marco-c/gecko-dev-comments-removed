@@ -59,10 +59,18 @@ enum class TraversalRootBehavior {
 
 
 
+
 enum class TraversalRestyleBehavior {
+  
   Normal,
+  
+  
+  
   ForReconstruct,
+  
   ForAnimationOnly,
+  
+  ForCSSRuleChanges,
 };
 
 
