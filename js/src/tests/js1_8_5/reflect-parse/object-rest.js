@@ -14,17 +14,13 @@ function assertDestrBinding(src, pattern) {
 
 function test() {
     
-    
     assertDestrAssign("{...x}", objPatt([spread(ident("x"))]));
     assertDestrAssign("{...(x)}", objPatt([spread(ident("x"))]));
     assertDestrAssign("{...obj.p}", objPatt([spread(dotExpr(ident("obj"), ident("p")))]));
-    assertDestrAssign("{...{}}", objPatt([spread(objPatt([]))]));
-    assertDestrAssign("{...[]}", objPatt([spread(arrPatt([]))]));
+    assertDestrAssign("{...(obj.p)}", objPatt([spread(dotExpr(ident("obj"), ident("p")))]));
 
     
     assertDestrBinding("{...x}", objPatt([spread(ident("x"))]));
-    assertDestrBinding("{...{}}", objPatt([spread(objPatt([]))]));
-    assertDestrBinding("{...[]}", objPatt([spread(arrPatt([]))]));
 
     
     for (var assertDestr of [assertDestrAssign, assertDestrBinding]) {
