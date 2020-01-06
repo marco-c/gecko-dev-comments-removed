@@ -158,7 +158,6 @@ private:
 
   
   
-  wr::BuiltDisplayList mBuiltDisplayList;
   nsTArray<WebRenderParentCommand> mParentCommands;
 
   
