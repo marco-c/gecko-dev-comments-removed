@@ -40,6 +40,11 @@
 #include "mozilla/X11Util.h"
 #endif
 
+#ifdef MOZ_CONTENT_SANDBOX
+#include "mozilla/SandboxBrokerPolicyFactory.h"
+#include "mozilla/SandboxSettings.h"
+#endif
+
 using namespace mozilla;
 using namespace mozilla::gfx;
 using namespace mozilla::unicode;
@@ -1309,7 +1314,9 @@ gfxFcPlatformFontList::~gfxFcPlatformFontList()
 }
 
 void
-gfxFcPlatformFontList::AddFontSetFamilies(FcFontSet* aFontSet, bool aAppFonts)
+gfxFcPlatformFontList::AddFontSetFamilies(FcFontSet* aFontSet,
+                                          const SandboxPolicy* aPolicy,
+                                          bool aAppFonts)
 {
     
     
@@ -1338,9 +1345,14 @@ gfxFcPlatformFontList::AddFontSetFamilies(FcFontSet* aFontSet, bool aAppFonts)
             continue;
         }
 
+#ifdef MOZ_CONTENT_SANDBOX
         
         
-        
+        if (aPolicy && !(aPolicy->Lookup(reinterpret_cast<const char*>(path)) &
+                         SandboxBroker::Perms::MAY_READ)) {
+            continue;
+        }
+#endif
 
         AddPatternToFontList(pattern, lastFamilyName,
                              familyName, fontFamily, aAppFonts);
@@ -1461,13 +1473,25 @@ gfxFcPlatformFontList::InitFontListForPlatform()
 
     mLastConfig = FcConfigGetCurrent();
 
+    UniquePtr<SandboxPolicy> policy;
+
+#ifdef MOZ_CONTENT_SANDBOX
+    
+    
+    SandboxBrokerPolicyFactory policyFactory;
+    if (GetEffectiveContentSandboxLevel() > 0 &&
+        !PR_GetEnv("MOZ_DISABLE_CONTENT_SANDBOX")) {
+        policy = policyFactory.GetContentPolicy(-1, false);
+    }
+#endif
+
     
     FcFontSet* systemFonts = FcConfigGetFonts(nullptr, FcSetSystem);
-    AddFontSetFamilies(systemFonts,  false);
+    AddFontSetFamilies(systemFonts, policy.get(),  false);
 
 #ifdef MOZ_BUNDLED_FONTS
     FcFontSet* appFonts = FcConfigGetFonts(nullptr, FcSetApplication);
-    AddFontSetFamilies(appFonts,  true);
+    AddFontSetFamilies(appFonts, policy.get(),  true);
 #endif
 
     mOtherFamilyNamesInitialized = true;
