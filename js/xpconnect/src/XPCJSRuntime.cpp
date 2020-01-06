@@ -591,8 +591,7 @@ NukeAllWrappersForCompartment(JSContext* cx, JSCompartment* compartment,
     
     
     
-    js::NukeCrossCompartmentWrappers(cx, js::AllCompartments(),
-                                     js::SingleCompartment(compartment),
+    js::NukeCrossCompartmentWrappers(cx, js::AllCompartments(), compartment,
                                      nukeReferencesToWindow,
                                      js::NukeAllReferences);
 
@@ -2716,9 +2715,6 @@ AccumulateTelemetryCallback(int id, uint32_t sample, const char* key)
         break;
       case JS_TELEMETRY_GC_SLOW_PHASE:
         Telemetry::Accumulate(Telemetry::GC_SLOW_PHASE, sample);
-        break;
-      case JS_TELEMETRY_GC_SLOW_TASK:
-        Telemetry::Accumulate(Telemetry::GC_SLOW_TASK, sample);
         break;
       case JS_TELEMETRY_GC_MMU_50:
         Telemetry::Accumulate(Telemetry::GC_MMU_50, sample);

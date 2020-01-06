@@ -9651,8 +9651,7 @@ public:
                                                                   : js::NukeWindowReferences);
         } else {
           
-          js::NukeCrossCompartmentWrappers(cx, BrowserCompartmentMatcher(),
-                                           js::SingleCompartment(cpt),
+          js::NukeCrossCompartmentWrappers(cx, BrowserCompartmentMatcher(), cpt,
                                            win->IsInnerWindow() ? js::DontNukeWindowReferences
                                                                 : js::NukeWindowReferences,
                                            js::NukeIncomingReferences);

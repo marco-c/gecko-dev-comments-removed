@@ -492,8 +492,8 @@ js::IsCrossCompartmentWrapper(JSObject* obj)
            !!(Wrapper::wrapperHandler(obj)->flags() & Wrapper::CROSS_COMPARTMENT);
 }
 
-static void
-NukeRemovedCrossCompartmentWrapper(JSContext* cx, JSObject* wrapper)
+JS_FRIEND_API(void)
+js::NukeCrossCompartmentWrapper(JSContext* cx, JSObject* wrapper)
 {
     MOZ_ASSERT(wrapper->is<CrossCompartmentWrapperObject>());
 
@@ -502,16 +502,6 @@ NukeRemovedCrossCompartmentWrapper(JSContext* cx, JSObject* wrapper)
     wrapper->as<ProxyObject>().nuke();
 
     MOZ_ASSERT(IsDeadProxyObject(wrapper));
-}
-
-JS_FRIEND_API(void)
-js::NukeCrossCompartmentWrapper(JSContext* cx, JSObject* wrapper)
-{
-    JSCompartment* comp = wrapper->compartment();
-    auto ptr = comp->lookupWrapper(Wrapper::wrappedObject(wrapper));
-    if (ptr)
-        comp->removeWrapper(ptr);
-    NukeRemovedCrossCompartmentWrapper(cx, wrapper);
 }
 
 
@@ -525,7 +515,7 @@ js::NukeCrossCompartmentWrapper(JSContext* cx, JSObject* wrapper)
 JS_FRIEND_API(bool)
 js::NukeCrossCompartmentWrappers(JSContext* cx,
                                  const CompartmentFilter& sourceFilter,
-                                 const CompartmentFilter& targetFilter,
+                                 JSCompartment* target,
                                  js::NukeReferencesToWindow nukeReferencesToWindow,
                                  js::NukeReferencesFromTarget nukeReferencesFromTarget)
 {
@@ -541,18 +531,30 @@ js::NukeCrossCompartmentWrappers(JSContext* cx,
         
         
         bool nukeAll = (nukeReferencesFromTarget == NukeAllReferences &&
-                        targetFilter.match(c));
+                        target == c.get());
 
         
-        for (JSCompartment::WrapperEnum e(c); !e.empty(); e.popFront()) {
+        
+        
+        
+        mozilla::Maybe<JSCompartment::WrapperEnum> e;
+        if (MOZ_LIKELY(!nukeAll))
+            e.emplace(c, target);
+        else
+            e.emplace(c);
+        for (; !e->empty(); e->popFront()) {
             
             
-            const CrossCompartmentKey& k = e.front().key();
+            
+            const CrossCompartmentKey& k = e->front().key();
             if (!k.is<JSObject*>())
                 continue;
 
-            AutoWrapperRooter wobj(cx, WrapperValue(e));
-            JSObject* wrapped = UncheckedUnwrap(wobj);
+            AutoWrapperRooter wobj(cx, WrapperValue(*e));
+
+            
+            
+            JSObject* wrapped = UncheckedUnwrap(k.as<JSObject*>());
 
             
             
@@ -568,11 +570,9 @@ js::NukeCrossCompartmentWrappers(JSContext* cx,
                 continue;
             }
 
-            if (MOZ_UNLIKELY(nukeAll) || targetFilter.match(wrapped->compartment())) {
-                
-                e.removeFront();
-                NukeRemovedCrossCompartmentWrapper(cx, wobj);
-            }
+            
+            e->removeFront();
+            NukeCrossCompartmentWrapper(cx, wobj);
         }
     }
 
