@@ -74,6 +74,12 @@ public:
   
   static bool IsOnPaintThread();
 
+  
+  
+  
+  
+  void BeginLayerTransaction();
+
   void PaintContents(CapturedPaintState* aState,
                      PrepDrawTargetForPaintingCallback aCallback);
 
@@ -98,6 +104,8 @@ public:
   void AddRef();
 
 private:
+  PaintThread();
+
   bool Init();
   void ShutdownOnPaintThread();
   void InitOnPaintThread();
@@ -112,6 +120,8 @@ private:
   static StaticAutoPtr<PaintThread> sSingleton;
   static StaticRefPtr<nsIThread> sThread;
   static PlatformThreadId sThreadId;
+
+  bool mInAsyncPaintGroup;
 
   
   
