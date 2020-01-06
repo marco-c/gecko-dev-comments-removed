@@ -923,6 +923,35 @@ HTMLEditRules::GetAlignment(bool* aMixed,
       
       return NS_OK;
     }
+
+    if (htmlEditor->mCSSEditUtils->IsCSSEditableProperty(nodeToExamine, nullptr,
+                                                         nsGkAtoms::align)) {
+      nsAutoString value;
+      htmlEditor->mCSSEditUtils->GetSpecifiedProperty(*nodeToExamine,
+                                                      *nsGkAtoms::textAlign,
+                                                      value);
+      if (!value.IsEmpty()) {
+        if (value.EqualsLiteral("center")) {
+          *aAlign = nsIHTMLEditor::eCenter;
+          return NS_OK;
+        }
+        if (value.EqualsLiteral("right")) {
+          *aAlign = nsIHTMLEditor::eRight;
+          return NS_OK;
+        }
+        if (value.EqualsLiteral("justify")) {
+          *aAlign = nsIHTMLEditor::eJustify;
+          return NS_OK;
+        }
+        if (value.EqualsLiteral("left")) {
+          *aAlign = nsIHTMLEditor::eLeft;
+          return NS_OK;
+        }
+        
+        
+      }
+    }
+
     if (HTMLEditUtils::SupportsAlignAttr(*nodeToExamine)) {
       
       nsAutoString typeAttrVal;
