@@ -40,6 +40,17 @@ protected:
   wr::WrThreadPool* mThreadPool;
 };
 
+class WebRenderProgramCache {
+public:
+  WebRenderProgramCache();
+
+  ~WebRenderProgramCache();
+
+  wr::WrProgramCache* Raw() { return mProgramCache; }
+
+protected:
+  wr::WrProgramCache* mProgramCache;
+};
 
 
 
@@ -143,6 +154,9 @@ public:
   
   WebRenderThreadPool& ThreadPool() { return mThreadPool; }
 
+  
+  WebRenderProgramCache* ProgramCache();
+
 private:
   explicit RenderThread(base::Thread* aThread);
 
@@ -154,6 +168,7 @@ private:
   base::Thread* const mThread;
 
   WebRenderThreadPool mThreadPool;
+  UniquePtr<WebRenderProgramCache> mProgramCache;
 
   std::map<wr::WindowId, UniquePtr<RendererOGL>> mRenderers;
 
