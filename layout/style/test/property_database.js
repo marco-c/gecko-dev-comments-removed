@@ -501,6 +501,21 @@ var basicShapeUnbalancedValues = [
   "inset(1px 2px 3px 4px round 5px / 6px",
 ];
 
+
+
+
+let gradientsNewlyRejectedInStylo = [
+    "radial-gradient(circle red, blue)",
+];
+if (SpecialPowers.DOMWindowUtils.isStyledByServo) {
+  invalidGradientAndElementValues.push(...gradientsNewlyRejectedInStylo);
+} else {
+  
+  
+  
+  validGradientAndElementValues.push(...gradientsNewlyRejectedInStylo);
+}
+
 if (IsCSSPropertyPrefEnabled("layout.css.prefixes.webkit")) {
   
   validGradientAndElementValues.push(
