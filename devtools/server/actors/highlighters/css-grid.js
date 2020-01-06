@@ -115,6 +115,77 @@ const CANVAS_INFINITY = CANVAS_SIZE << 8;
 
 
 
+
+
+function getPointsFromDiagonal(x1, y1, x2, y2, matrix = identity()) {
+  return [
+    [x1, y1],
+    [x2, y1],
+    [x2, y2],
+    [x1, y2]
+  ].map(point => {
+    let transformedPoint = apply(matrix, point);
+
+    return {x: transformedPoint[0], y: transformedPoint[1]};
+  });
+}
+
+
+
+
+
+
+
+
+
+
+function getBoundsFromPoints(points) {
+  let bounds = {};
+
+  bounds.left = Math.min(points[0].x, points[1].x, points[2].x, points[3].x);
+  bounds.right = Math.max(points[0].x, points[1].x, points[2].x, points[3].x);
+  bounds.top = Math.min(points[0].y, points[1].y, points[2].y, points[3].y);
+  bounds.bottom = Math.max(points[0].y, points[1].y, points[2].y, points[3].y);
+
+  bounds.x = bounds.left;
+  bounds.y = bounds.top;
+  bounds.width = bounds.right - bounds.left;
+  bounds.height = bounds.bottom - bounds.top;
+
+  return bounds;
+}
+
+
+
+
+
+
+
+
+
+function getPathDescriptionFromPoints(points) {
+  return "M" + points[0].x + "," + points[0].y + " " +
+         "L" + points[1].x + "," + points[1].y + " " +
+         "L" + points[2].x + "," + points[2].y + " " +
+         "L" + points[3].x + "," + points[3].y;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function drawLine(ctx, x1, y1, x2, y2, matrix = identity()) {
   let fromPoint = apply(matrix, [x1, y1]);
   let toPoint = apply(matrix, [x2, y2]);
@@ -141,18 +212,13 @@ function drawLine(ctx, x1, y1, x2, y2, matrix = identity()) {
 
 
 function drawRect(ctx, x1, y1, x2, y2, matrix = identity()) {
-  let p = [
-    [x1, y1],
-    [x2, y1],
-    [x2, y2],
-    [x1, y2]
-  ].map(point => apply(matrix, point).map(Math.round));
+  let p = getPointsFromDiagonal(x1, y1, x2, y2, matrix);
 
   ctx.beginPath();
-  ctx.moveTo(p[0][0], p[0][1]);
-  ctx.lineTo(p[1][0], p[1][1]);
-  ctx.lineTo(p[2][0], p[2][1]);
-  ctx.lineTo(p[3][0], p[3][1]);
+  ctx.moveTo(Math.round(p[0].x), Math.round(p[0].y));
+  ctx.lineTo(Math.round(p[1].x), Math.round(p[1].y));
+  ctx.lineTo(Math.round(p[2].x), Math.round(p[2].y));
+  ctx.lineTo(Math.round(p[3].x), Math.round(p[3].y));
   ctx.closePath();
 }
 
@@ -811,15 +877,8 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
 
-
-
-
-
-
-
-  _updateGridAreaInfobar(area, x1, x2, y1, y2) {
-    let width = x2 - x1;
-    let height = y2 - y1;
+  _updateGridAreaInfobar(area, bounds) {
+    let { width, height } = bounds;
     let dim = parseFloat(width.toPrecision(6)) +
               " \u00D7 " +
               parseFloat(height.toPrecision(6));
@@ -828,15 +887,24 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.getElement("area-infobar-dimensions").setTextContent(dim);
 
     let container = this.getElement("area-infobar-container");
-    this._moveInfobar(container, x1, x2, y1, y2, {
+    moveInfobar(container, bounds, this.win, {
       position: "bottom",
       hideIfOffscreen: true
     });
   },
 
-  _updateGridCellInfobar(rowNumber, columnNumber, x1, x2, y1, y2) {
-    let width = x2 - x1;
-    let height = y2 - y1;
+  
+
+
+
+
+
+
+
+
+
+  _updateGridCellInfobar(rowNumber, columnNumber, bounds) {
+    let { width, height } = bounds;
     let dim = parseFloat(width.toPrecision(6)) +
               " \u00D7 " +
               parseFloat(height.toPrecision(6));
@@ -847,7 +915,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.getElement("cell-infobar-dimensions").setTextContent(dim);
 
     let container = this.getElement("cell-infobar-container");
-    this._moveInfobar(container, x1, x2, y1, y2, {
+    moveInfobar(container, bounds, this.win, {
       position: "top",
       hideIfOffscreen: true
     });
@@ -870,34 +938,8 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.getElement("line-infobar-names").setTextContent(gridLineNames);
 
     let container = this.getElement("line-infobar-container");
-    this._moveInfobar(container, x, x, y, y);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  _moveInfobar(container, x1, x2, y1, y2, options) {
-    let bounds = {
-      bottom: y2,
-      height: y2 - y1,
-      left: x1,
-      right: x2,
-      top: y1,
-      width: x2 - x1,
-      x: x1,
-      y: y1,
-    };
-
-    moveInfobar(container, bounds, this.win, options);
+    moveInfobar(container,
+      getBoundsFromPoints([{x, y}, {x, y}, {x, y}, {x, y}]), this.win);
   },
 
   
@@ -1502,11 +1544,11 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
   renderGridArea(areaName) {
     let paths = [];
-    let currentZoom = getCurrentZoom(this.win);
+    let { devicePixelRatio } = this.win;
+    let displayPixelRatio = getDisplayPixelRatio(this.win);
 
     for (let i = 0; i < this.gridData.length; i++) {
       let fragment = this.gridData[i];
-      let {bounds} = this.currentQuads.content[i];
 
       for (let area of fragment.areas) {
         if (areaName && areaName != area.name) {
@@ -1518,23 +1560,33 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
         let columnStart = fragment.cols.lines[area.columnStart - 1];
         let columnEnd = fragment.cols.lines[area.columnEnd - 1];
 
-        let x1 = columnStart.start + columnStart.breadth +
-          (bounds.left / currentZoom);
-        let x2 = columnEnd.start + (bounds.left / currentZoom);
-        let y1 = rowStart.start + rowStart.breadth +
-          (bounds.top / currentZoom);
-        let y2 = rowEnd.start + (bounds.top / currentZoom);
+        let x1 = columnStart.start + columnStart.breadth;
+        let y1 = rowStart.start + rowStart.breadth;
+        let x2 = columnEnd.start;
+        let y2 = rowEnd.start;
 
-        let path = "M" + x1 + "," + y1 + " " +
-                   "L" + x2 + "," + y1 + " " +
-                   "L" + x2 + "," + y2 + " " +
-                   "L" + x1 + "," + y2;
-        paths.push(path);
+        let points = getPointsFromDiagonal(x1, y1, x2, y2, this.currentMatrix);
+
+        
+        
+        let svgPoints = points.map(point => ({
+          x: Math.round(point.x / devicePixelRatio),
+          y: Math.round(point.y / devicePixelRatio)
+        }));
+
+        
+        
+        let bounds = getBoundsFromPoints(points.map(point => ({
+          x: Math.round(point.x / displayPixelRatio),
+          y: Math.round(point.y / displayPixelRatio)
+        })));
+
+        paths.push(getPathDescriptionFromPoints(svgPoints));
 
         
         if (areaName) {
           this._showGridAreaInfoBar();
-          this._updateGridAreaInfobar(area, x1, x2, y1, y2);
+          this._updateGridAreaInfobar(area, bounds);
         }
       }
     }
@@ -1568,23 +1620,34 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       return;
     }
 
-    let currentZoom = getCurrentZoom(this.win);
-    let {bounds} = this.currentQuads.content[gridFragmentIndex];
+    let x1 = column.start;
+    let y1 = row.start;
+    let x2 = column.start + column.breadth;
+    let y2 = row.start + row.breadth;
 
-    let x1 = column.start + (bounds.left / currentZoom);
-    let x2 = column.start + column.breadth + (bounds.left / currentZoom);
-    let y1 = row.start + (bounds.top / currentZoom);
-    let y2 = row.start + row.breadth + (bounds.top / currentZoom);
+    let { devicePixelRatio } = this.win;
+    let displayPixelRatio = getDisplayPixelRatio(this.win);
 
-    let path = "M" + x1 + "," + y1 + " " +
-               "L" + x2 + "," + y1 + " " +
-               "L" + x2 + "," + y2 + " " +
-               "L" + x1 + "," + y2;
+    let points = getPointsFromDiagonal(x1, y1, x2, y2, this.currentMatrix);
+
+    
+    let svgPoints = points.map(point => ({
+      x: Math.round(point.x / devicePixelRatio),
+      y: Math.round(point.y / devicePixelRatio)
+    }));
+
+    
+    
+    let bounds = getBoundsFromPoints(points.map(point => ({
+      x: Math.round(point.x / displayPixelRatio),
+      y: Math.round(point.y / displayPixelRatio)
+    })));
+
     let cells = this.getElement("cells");
-    cells.setAttribute("d", path);
+    cells.setAttribute("d", getPathDescriptionFromPoints(svgPoints));
 
     this._showGridCellInfoBar();
-    this._updateGridCellInfobar(rowNumber, columnNumber, x1, x2, y1, y2);
+    this._updateGridCellInfobar(rowNumber, columnNumber, bounds);
   },
 
   
