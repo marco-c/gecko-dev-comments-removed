@@ -771,13 +771,6 @@ ServoStyleSet::InsertStyleSheetBefore(SheetType aType,
   return NS_OK;
 }
 
-void
-ServoStyleSet::UpdateStyleSheet(ServoStyleSheet* aSheet)
-{
-  MOZ_ASSERT(aSheet);
-  
-}
-
 int32_t
 ServoStyleSet::SheetCount(SheetType aType) const
 {

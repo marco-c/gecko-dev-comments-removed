@@ -238,11 +238,6 @@ public:
                                   ServoStyleSheet* aNewSheet,
                                   ServoStyleSheet* aReferenceSheet);
 
-  
-  
-  
-  void UpdateStyleSheet(ServoStyleSheet* aSheet);
-
   int32_t SheetCount(SheetType aType) const;
   ServoStyleSheet* StyleSheetAt(SheetType aType, int32_t aIndex) const;
 
