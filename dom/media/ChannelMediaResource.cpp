@@ -610,7 +610,11 @@ ChannelMediaResource::CloneData(MediaResourceCallback* aCallback)
   
   
   
-  resource->mCacheStream.InitAsClone(&mCacheStream);
+  nsresult rv = resource->mCacheStream.InitAsClone(&mCacheStream);
+  if (NS_FAILED(rv)) {
+    resource->Close();
+    return nullptr;
+  }
   
   
   resource->mSuspendAgent.Suspend();

@@ -210,7 +210,7 @@ public:
   
   
   
-  void InitAsClone(MediaCacheStream* aOriginal);
+  nsresult InitAsClone(MediaCacheStream* aOriginal);
 
   nsIEventTarget* OwnerThread() const;
 
@@ -223,11 +223,7 @@ public:
   bool IsClosed() const { return mClosed; }
   
   
-  bool IsAvailableForSharing() const
-  {
-    return !mClosed && !mIsPrivateBrowsing &&
-      (!mDidNotifyDataEnded || NS_SUCCEEDED(mNotifyDataEndedStatus));
-  }
+  bool IsAvailableForSharing() const { return !mClosed && !mIsPrivateBrowsing; }
   
   
   nsIPrincipal* GetCurrentPrincipal() { return mPrincipal; }

@@ -2697,12 +2697,18 @@ MediaCacheStream::Init(int64_t aContentLength)
   return NS_OK;
 }
 
-void
+nsresult
 MediaCacheStream::InitAsClone(MediaCacheStream* aOriginal)
 {
   MOZ_ASSERT(aOriginal->IsAvailableForSharing());
   MOZ_ASSERT(!mMediaCache, "Has been initialized.");
   MOZ_ASSERT(aOriginal->mMediaCache, "Don't clone an uninitialized stream.");
+
+  if (aOriginal->mDidNotifyDataEnded &&
+      NS_FAILED(aOriginal->mNotifyDataEndedStatus)) {
+    
+    return NS_ERROR_FAILURE;
+  }
 
   
   mClientSuspended = true;
@@ -2744,6 +2750,8 @@ MediaCacheStream::InitAsClone(MediaCacheStream* aOriginal)
   }
 
   mMediaCache->OpenStream(this, true );
+
+  return NS_OK;
 }
 
 nsIEventTarget*
