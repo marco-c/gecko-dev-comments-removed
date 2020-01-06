@@ -51,9 +51,6 @@ public:
   virtual nsresult Init() = 0;
 
   
-  virtual void Close() = 0;
-
-  
   virtual nsresult WriteBlock(uint32_t aBlockIndex,
                               Span<const uint8_t> aData1,
                               Span<const uint8_t> aData2) = 0;

@@ -42,9 +42,6 @@ public:
   virtual nsresult Init() override;
 
   
-  virtual void Close() override;
-
-  
   virtual nsresult WriteBlock(uint32_t aBlockIndex,
                               Span<const uint8_t> aData1,
                               Span<const uint8_t> aData2) override;

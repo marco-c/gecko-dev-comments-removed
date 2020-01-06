@@ -64,9 +64,6 @@ public:
   nsresult Init() override;
 
   
-  void Close() override;
-
-  
   nsresult WriteBlock(uint32_t aBlockIndex,
                       Span<const uint8_t> aData1,
                       Span<const uint8_t> aData2) override;
@@ -140,6 +137,9 @@ private:
   void SetCacheFile(PRFileDesc* aFD);
 
   
+  void Close();
+
+  
   void PerformBlockIOs();
 
   
@@ -191,8 +191,6 @@ private:
   
   
   bool mIsReading;
-  
-  bool mIsOpen;
   
   
   
