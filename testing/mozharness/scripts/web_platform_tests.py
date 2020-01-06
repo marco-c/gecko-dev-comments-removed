@@ -5,8 +5,6 @@
 
 
 import copy
-import glob
-import json
 import os
 import sys
 
@@ -17,7 +15,7 @@ from mozharness.base.errors import BaseErrorList
 from mozharness.base.script import PreScriptAction
 from mozharness.base.vcs.vcsbase import MercurialScript
 from mozharness.mozilla.blob_upload import BlobUploadMixin, blobupload_config_options
-from mozharness.mozilla.testing.testbase import TestingMixin, testing_config_options, TOOLTOOL_PLATFORM_DIR
+from mozharness.mozilla.testing.testbase import TestingMixin, testing_config_options
 from mozharness.mozilla.testing.codecoverage import (
     CodeCoverageMixin,
     code_coverage_config_options
@@ -26,6 +24,7 @@ from mozharness.mozilla.testing.errors import HarnessErrorList
 
 from mozharness.mozilla.structuredlog import StructuredOutputParser
 from mozharness.base.log import INFO
+
 
 class WebPlatformTest(TestingMixin, MercurialScript, BlobUploadMixin, CodeCoverageMixin):
     config_options = [
@@ -54,7 +53,8 @@ class WebPlatformTest(TestingMixin, MercurialScript, BlobUploadMixin, CodeCovera
             "action": "store_true",
             "dest": "allow_software_gl_layers",
             "default": False,
-            "help": "Permits a software GL implementation (such as LLVMPipe) to use the GL compositor."}
+            "help": "Permits a software GL implementation (such as LLVMPipe) "
+                    "to use the GL compositor."}
          ],
         [["--enable-webrender"], {
             "action": "store_true",
@@ -266,7 +266,8 @@ class WebPlatformTest(TestingMixin, MercurialScript, BlobUploadMixin, CodeCovera
         if not sys.platform.startswith("darwin"):
             font_path = os.path.join(os.path.dirname(self.binary_path), "fonts")
         else:
-            font_path = os.path.join(os.path.dirname(self.binary_path), os.pardir, "Resources", "res", "fonts")
+            font_path = os.path.join(os.path.dirname(self.binary_path), os.pardir,
+                                     "Resources", "res", "fonts")
         if not os.path.exists(font_path):
             os.makedirs(font_path)
         ahem_src = os.path.join(dirs["abs_wpttest_dir"], "tests", "fonts", "Ahem.ttf")
