@@ -179,7 +179,15 @@ class GeckoviewTestRunner:
         try:
             dump_dir = tempfile.mkdtemp()
             remote_dir = posixpath.join(self.remote_profile, 'minidumps')
-            if not self.dm.dirExists(remote_dir):
+            crash_dir_found = False
+            
+            
+            for wait_time in xrange(60):
+                time.sleep(1)
+                if self.dm.dirExists(remote_dir):
+                    crash_dir_found = True
+                    break
+            if not crash_dir_found:
                 
                 
                 
