@@ -768,32 +768,16 @@ const DownloadsView = {
 
 
 
+  onDownloadAdded(download) {
+    DownloadsCommon.log("A new download data item was added");
 
+    this._downloads.unshift(download);
 
-
-
-
-
-  onDownloadAdded(download, aNewest) {
-    DownloadsCommon.log("A new download data item was added - aNewest =",
-                        aNewest);
-
-    if (aNewest) {
-      this._downloads.unshift(download);
-    } else {
-      this._downloads.push(download);
-    }
-
-    let itemsNowOverflow = this._downloads.length > this.kItemCountLimit;
-    if (aNewest || !itemsNowOverflow) {
-      
-      
-      
-      this._addViewItem(download, aNewest);
-    }
-    if (aNewest && itemsNowOverflow) {
-      
-      
+    
+    
+    
+    this._addViewItem(download, true);
+    if (this._downloads.length > this.kItemCountLimit) {
       this._removeViewItem(this._downloads[this.kItemCountLimit]);
     }
 

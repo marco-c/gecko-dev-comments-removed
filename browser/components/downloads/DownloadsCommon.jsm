@@ -725,7 +725,7 @@ DownloadsDataCtor.prototype = {
                                DownloadsCommon.stateOfDownload(download));
 
     for (let view of this._views) {
-      view.onDownloadAdded(download, true);
+      view.onDownloadAdded(download);
     }
   },
 
@@ -841,10 +841,9 @@ DownloadsDataCtor.prototype = {
     aView.onDataLoadStarting();
 
     
-    
-    let downloadsArray = [...this.downloads];
-    downloadsArray.sort((a, b) => b.startTime - a.startTime);
-    downloadsArray.forEach(download => aView.onDownloadAdded(download, false));
+    for (let download of this.downloads) {
+      aView.onDownloadAdded(download);
+    }
 
     
     aView.onDataLoadCompleted();
@@ -1017,13 +1016,7 @@ const DownloadsViewPrototype = {
 
 
 
-
-
-
-
-
-
-  onDownloadAdded(download, newest) {
+  onDownloadAdded(download) {
     throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
   },
 
@@ -1126,7 +1119,7 @@ DownloadsIndicatorDataCtor.prototype = {
     this._updateViews();
   },
 
-  onDownloadAdded(download, newest) {
+  onDownloadAdded(download) {
     this._itemCount++;
     this._updateViews();
   },
@@ -1361,13 +1354,8 @@ DownloadsSummaryData.prototype = {
     this._updateViews();
   },
 
-  onDownloadAdded(download, newest) {
-    if (newest) {
-      this._downloads.unshift(download);
-    } else {
-      this._downloads.push(download);
-    }
-
+  onDownloadAdded(download) {
+    this._downloads.unshift(download);
     this._updateViews();
   },
 

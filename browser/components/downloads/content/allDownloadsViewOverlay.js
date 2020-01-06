@@ -1101,8 +1101,8 @@ DownloadsPlacesView.prototype = {
     this._ensureInitialSelection();
   },
 
-  onDownloadAdded(download, newest) {
-    this._addDownloadData(download, null, newest);
+  onDownloadAdded(download) {
+    this._addDownloadData(download, null, true);
   },
 
   onDownloadStateChanged(download) {
