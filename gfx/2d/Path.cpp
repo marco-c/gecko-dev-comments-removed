@@ -258,6 +258,7 @@ FlattenBezierCurveSegment(const BezierControlPoints &aControlPoints,
   BezierControlPoints currentCP = aControlPoints;
 
   double t = 0;
+  double currentTolerance = aTolerance;
   while (t < 1.0) {
     PointD cp21 = currentCP.mCP2 - currentCP.mCP1;
     PointD cp31 = currentCP.mCP3 - currentCP.mCP1;
@@ -273,7 +274,14 @@ FlattenBezierCurveSegment(const BezierControlPoints &aControlPoints,
     }
 
     double s3inv = h / cp21x31;
-    t = 2 * sqrt(aTolerance * std::abs(s3inv) / 3.);
+    t = 2 * sqrt(currentTolerance * std::abs(s3inv) / 3.);
+    currentTolerance *= 1 + aTolerance;
+    
+    
+    
+    
+    
+    
     if (t >= 1.0) {
       break;
     }
