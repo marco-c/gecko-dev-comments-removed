@@ -279,11 +279,11 @@ nsProgressFrame::ShouldUseNativeStyle() const
   
   
   
-  return StyleDisplay()->UsedAppearance() == NS_THEME_PROGRESSBAR &&
+  return StyleDisplay()->mAppearance == NS_THEME_PROGRESSBAR &&
          !PresContext()->HasAuthorSpecifiedRules(this,
                                                  NS_AUTHOR_SPECIFIED_BORDER | NS_AUTHOR_SPECIFIED_BACKGROUND) &&
          barFrame &&
-         barFrame->StyleDisplay()->UsedAppearance() == NS_THEME_PROGRESSCHUNK &&
+         barFrame->StyleDisplay()->mAppearance == NS_THEME_PROGRESSCHUNK &&
          !PresContext()->HasAuthorSpecifiedRules(barFrame,
                                                  NS_AUTHOR_SPECIFIED_BORDER | NS_AUTHOR_SPECIFIED_BACKGROUND);
 }

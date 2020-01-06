@@ -2855,10 +2855,6 @@ pref("layout.css.contain.enabled", false);
 pref("layout.css.display-flow-root.enabled", true);
 
 
-pref("layout.css.appearance.enabled", true);
-pref("layout.css.moz-appearance.enabled", true);
-
-
 pref("layout.css.box-decoration-break.enabled", true);
 
 
@@ -5078,6 +5074,12 @@ pref("network.activity.blipIntervalMilliseconds", 0);
 
 
 
+
+
+pref("jsloader.reuseGlobal", false);
+
+
+
 pref("dom.browserElement.maxScreenshotDelayMS", 2000);
 
 
@@ -5242,7 +5244,7 @@ pref("urlclassifier.gethashnoise", 4);
 
 pref("urlclassifier.gethash.timeout_ms", 5000);
 
-pref("urlclassifier.update.response_timeout_ms", 15000);
+pref("urlclassifier.update.response_timeout_ms", 5000);
 
 pref("urlclassifier.update.timeout_ms", 60000);
 
@@ -5559,6 +5561,8 @@ pref("narrate.filter-voices", true);
 
 pref("media.gmp.insecure.allow", false);
 #endif
+
+pref("dom.audiochannel.mutedByDefault", false);
 
 
 pref("dom.dialog_element.enabled", false);

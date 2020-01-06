@@ -35,5 +35,5 @@ div.progress-bar {
 }
 
 progress, progress::-moz-progress-bar, div.progress-element, div.progress-bar {
-  -moz-appearance: none; appearance: none;
+  -moz-appearance: none;
 }
