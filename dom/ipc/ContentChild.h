@@ -603,7 +603,7 @@ public:
   RecvSetXPCOMProcessAttributes(const XPCOMInitData& aXPCOMInit,
                                 const StructuredCloneData& aInitialData,
                                 nsTArray<LookAndFeelInt>&& aLookAndFeelIntCache,
-                                nsTArray<FontFamilyListEntry>&& aFontFamilyList) override;
+                                nsTArray<SystemFontListEntry>&& aFontList) override;
 
   virtual mozilla::ipc::IPCResult
   RecvProvideAnonymousTemporaryFile(const uint64_t& aID, const FileDescOrError& aFD) override;
@@ -643,9 +643,9 @@ public:
 
   
   
-  InfallibleTArray<mozilla::dom::FontFamilyListEntry>&
-  SystemFontFamilyList() {
-    return mFontFamilies;
+  InfallibleTArray<mozilla::dom::SystemFontListEntry>&
+  SystemFontList() {
+    return mFontList;
   }
 
   
@@ -752,7 +752,7 @@ private:
   
   
   
-  InfallibleTArray<mozilla::dom::FontFamilyListEntry> mFontFamilies;
+  InfallibleTArray<mozilla::dom::SystemFontListEntry> mFontList;
   
   nsTArray<LookAndFeelInt> mLookAndFeelCache;
 
