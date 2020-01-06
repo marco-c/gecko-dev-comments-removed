@@ -904,7 +904,7 @@ nsEditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher)
 
   
   nsAutoString preferredDict;
-  preferredDict = Preferences::GetLocalizedString("spellchecker.dictionary");
+  Preferences::GetLocalizedString("spellchecker.dictionary", preferredDict);
 
   if (!dictName.IsEmpty()) {
     

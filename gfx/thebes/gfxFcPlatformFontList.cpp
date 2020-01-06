@@ -1698,17 +1698,21 @@ gfxFcPlatformFontList::AddGenericFonts(mozilla::FontFamilyType aGenericType,
     if ((!mAlwaysUseFontconfigGenerics && aLanguage) ||
         aLanguage == nsGkAtoms::x_math) {
         nsIAtom* langGroup = GetLangGroup(aLanguage);
-        nsAdoptingString fontlistValue =
-            Preferences::GetString(NamePref(generic, langGroup).get());
+        nsAutoString fontlistValue;
+        Preferences::GetString(NamePref(generic, langGroup).get(),
+                               fontlistValue);
+        nsresult rv;
         if (fontlistValue.IsEmpty()) {
             
             
             
             
-            fontlistValue =
-                 Preferences::GetString(NameListPref(generic, langGroup).get());
+            rv = Preferences::GetString(NameListPref(generic, langGroup).get(),
+                                        fontlistValue);
+        } else {
+            rv = NS_OK;
         }
-        if (fontlistValue) {
+        if (NS_SUCCEEDED(rv)) {
             if (!fontlistValue.EqualsLiteral("serif") &&
                 !fontlistValue.EqualsLiteral("sans-serif") &&
                 !fontlistValue.EqualsLiteral("monospace")) {

@@ -21,7 +21,6 @@
 #include "mozilla/MemoryReporting.h"
 
 class nsIFile;
-class nsAdoptingString;
 class nsAdoptingCString;
 
 #ifndef have_PrefChangedFunc_typedef
@@ -170,9 +169,7 @@ public:
 
 
   static nsAdoptingCString GetCString(const char* aPref);
-  static nsAdoptingString GetString(const char* aPref);
   static nsAdoptingCString GetLocalizedCString(const char* aPref);
-  static nsAdoptingString GetLocalizedString(const char* aPref);
 
   
 
@@ -387,9 +384,7 @@ public:
 
 
 
-  static nsAdoptingString GetDefaultString(const char* aPref);
   static nsAdoptingCString GetDefaultCString(const char* aPref);
-  static nsAdoptingString GetDefaultLocalizedString(const char* aPref);
   static nsAdoptingCString GetDefaultLocalizedCString(const char* aPref);
 
   static nsresult GetDefaultCString(const char* aPref, nsACString& aResult);

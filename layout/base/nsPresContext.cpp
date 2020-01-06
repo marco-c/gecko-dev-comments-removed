@@ -516,15 +516,14 @@ nsPresContext::GetDocumentColorPreferences()
     mBackgroundColor = LookAndFeel::GetColorUsingStandins(
         LookAndFeel::eColorID_window, NS_RGB(0xff, 0xff, 0xff));
   } else if (usePrefColors) {
-    nsAdoptingString colorStr =
-      Preferences::GetString("browser.display.foreground_color");
-
+    nsAutoString colorStr;
+    Preferences::GetString("browser.display.foreground_color", colorStr);
     if (!colorStr.IsEmpty()) {
       mDefaultColor = MakeColorPref(colorStr);
     }
 
-    colorStr = Preferences::GetString("browser.display.background_color");
-
+    colorStr.Truncate();
+    Preferences::GetString("browser.display.background_color", colorStr);
     if (!colorStr.IsEmpty()) {
       mBackgroundColor = MakeColorPref(colorStr);
     }
@@ -583,20 +582,20 @@ nsPresContext::GetUserPreferences()
   mUnderlineLinks =
     Preferences::GetBool("browser.underline_anchors", mUnderlineLinks);
 
-  nsAdoptingString colorStr = Preferences::GetString("browser.anchor_color");
-
+  nsAutoString colorStr;
+  Preferences::GetString("browser.anchor_color", colorStr);
   if (!colorStr.IsEmpty()) {
     mLinkColor = MakeColorPref(colorStr);
   }
 
-  colorStr = Preferences::GetString("browser.active_color");
-
+  colorStr.Truncate();
+  Preferences::GetString("browser.active_color", colorStr);
   if (!colorStr.IsEmpty()) {
     mActiveLinkColor = MakeColorPref(colorStr);
   }
 
-  colorStr = Preferences::GetString("browser.visited_color");
-
+  colorStr.Truncate();
+  Preferences::GetString("browser.visited_color", colorStr);
   if (!colorStr.IsEmpty()) {
     mVisitedLinkColor = MakeColorPref(colorStr);
   }
@@ -607,14 +606,14 @@ nsPresContext::GetUserPreferences()
   mFocusTextColor = mDefaultColor;
   mFocusBackgroundColor = mBackgroundColor;
 
-  colorStr = Preferences::GetString("browser.display.focus_text_color");
-
+  colorStr.Truncate();
+  Preferences::GetString("browser.display.focus_text_color", colorStr);
   if (!colorStr.IsEmpty()) {
     mFocusTextColor = MakeColorPref(colorStr);
   }
 
-  colorStr = Preferences::GetString("browser.display.focus_background_color");
-
+  colorStr.Truncate();
+  Preferences::GetString("browser.display.focus_background_color", colorStr);
   if (!colorStr.IsEmpty()) {
     mFocusBackgroundColor = MakeColorPref(colorStr);
   }
@@ -2262,9 +2261,9 @@ bool
 nsPresContext::HasAuthorSpecifiedRules(const nsIFrame* aFrame,
                                        uint32_t aRuleTypeMask) const
 {
-  if (auto* geckoStyleContext = aFrame->StyleContext()->GetAsGecko()) {
+  if (mShell->StyleSet()->IsGecko()) {
     return
-      nsRuleNode::HasAuthorSpecifiedRules(geckoStyleContext,
+      nsRuleNode::HasAuthorSpecifiedRules(aFrame->StyleContext(),
                                           aRuleTypeMask,
                                           UseDocumentColors());
   }
