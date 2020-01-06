@@ -3481,7 +3481,8 @@ nsCookieService::CanSetCookie(nsIURI*             aHostURI,
                               bool                aFromHttp,
                               nsIChannel*         aChannel,
                               bool                aLeaveSecureAlone,
-                              bool&               aSetCookie)
+                              bool&               aSetCookie,
+                              mozIThirdPartyUtil* aThirdPartyUtil)
 {
   NS_ASSERTION(aHostURI, "null host!");
 
@@ -3511,6 +3512,26 @@ nsCookieService::CanSetCookie(nsIURI*             aHostURI,
     Telemetry::Accumulate(Telemetry::COOKIE_SCHEME_SECURITY,
                           ((aCookieAttributes.isSecure)? 0x02 : 0x00) |
                           ((isHTTPS)? 0x01 : 0x00));
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aThirdPartyUtil) {
+      bool isThirdParty = true;
+      aThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isThirdParty);
+      Telemetry::Accumulate(Telemetry::COOKIE_SCHEME_HTTPS,
+                            (isThirdParty ? 0x04 : 0x00) |
+                            (isHTTPS ? 0x02 : 0x00) |
+                            (aCookieAttributes.isSecure ? 0x01 : 0x00));
+    }
   }
 
   int64_t currentTimeInUsec = PR_Now();
@@ -3618,7 +3639,8 @@ nsCookieService::SetCookieInternal(nsIURI                        *aHostURI,
   nsCookieAttributes cookieAttributes;
   bool newCookie = CanSetCookie(aHostURI, aKey, cookieAttributes, aRequireHostMatch,
                                 aStatus, aCookieHeader, aServerTime, aFromHttp,
-                                aChannel, mLeaveSecureAlone, canSetCookie);
+                                aChannel, mLeaveSecureAlone, canSetCookie,
+                                mThirdPartyUtil);
 
   if (!canSetCookie) {
     return newCookie;
