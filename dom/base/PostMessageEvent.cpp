@@ -55,11 +55,6 @@ PostMessageEvent::~PostMessageEvent()
 NS_IMETHODIMP
 PostMessageEvent::Run()
 {
-  MOZ_ASSERT(mTargetWindow->IsOuterWindow(),
-             "should have been passed an outer window!");
-  MOZ_ASSERT(!mSource || mSource->IsOuterWindow(),
-             "should have been passed an outer window!");
-
   
   
   
@@ -82,8 +77,6 @@ PostMessageEvent::Run()
       targetWindow->IsClosedOrClosing())
     return NS_OK;
 
-  MOZ_ASSERT(targetWindow->IsInnerWindow(),
-             "we ordered an inner window!");
   JSAutoCompartment ac(cx, targetWindow->GetWrapper());
 
   

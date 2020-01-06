@@ -392,16 +392,6 @@ public:
   
   virtual nsresult FireDelayedDOMEvents() = 0;
 
-  bool IsInnerWindow() const
-  {
-    return true;
-  }
-
-  bool IsOuterWindow() const
-  {
-    return false;
-  }
-
   
 
 
@@ -760,7 +750,6 @@ public:
 
   nsPIDOMWindowInner* EnsureInnerWindow()
   {
-    MOZ_ASSERT(IsOuterWindow());
     
     GetDoc();
     return GetCurrentInnerWindow();
@@ -768,7 +757,6 @@ public:
 
   bool IsRootOuterWindow()
   {
-    MOZ_ASSERT(IsOuterWindow());
     return mIsRootOuterWindow;
   }
 
@@ -922,16 +910,6 @@ public:
   
   
   virtual nsresult FireDelayedDOMEvents() = 0;
-
-  bool IsInnerWindow() const
-  {
-    return false;
-  }
-
-  bool IsOuterWindow() const
-  {
-    return true;
-  }
 
   
 

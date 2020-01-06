@@ -42,8 +42,6 @@ namespace dom {
 Location::Location(nsPIDOMWindowInner* aWindow, nsIDocShell *aDocShell)
   : mInnerWindow(aWindow)
 {
-  MOZ_ASSERT(mInnerWindow->IsInnerWindow());
-
   
   mDocShell = do_GetWeakReference(aDocShell);
 }

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "AudioChannelAgent.h"
 #include "AudioChannelService.h"
 #include "mozilla/Preferences.h"
@@ -77,8 +75,6 @@ AudioChannelAgent::InitWithWeakCallback(mozIDOMWindow* aWindow,
 nsresult
 AudioChannelAgent::FindCorrectWindow(nsPIDOMWindowInner* aWindow)
 {
-  MOZ_ASSERT(aWindow->IsInnerWindow());
-
   mWindow = aWindow->GetScriptableTop();
   if (NS_WARN_IF(!mWindow)) {
     return NS_OK;
@@ -142,7 +138,6 @@ AudioChannelAgent::InitInternal(nsPIDOMWindowInner* aWindow,
     return NS_ERROR_FAILURE;
   }
 
-  MOZ_ASSERT(aWindow->IsInnerWindow());
   mInnerWindowID = aWindow->WindowID();
 
   nsresult rv = FindCorrectWindow(aWindow);

@@ -135,7 +135,6 @@ void
 GamepadManager::AddListener(nsGlobalWindowInner* aWindow)
 {
   MOZ_ASSERT(aWindow);
-  MOZ_ASSERT(aWindow->IsInnerWindow());
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -181,7 +180,6 @@ void
 GamepadManager::RemoveListener(nsGlobalWindowInner* aWindow)
 {
   MOZ_ASSERT(aWindow);
-  MOZ_ASSERT(aWindow->IsInnerWindow());
 
   if (mShuttingDown) {
     
@@ -353,9 +351,6 @@ GamepadManager::NewConnectionEvent(uint32_t aIndex, bool aConnected)
 
   if (aConnected) {
     for (uint32_t i = 0; i < listeners.Length(); i++) {
-
-      MOZ_ASSERT(listeners[i]->IsInnerWindow());
-
       
       if (!listeners[i]->AsInner()->IsCurrentInnerWindow() ||
           listeners[i]->GetOuterWindow()->IsBackground()) {
@@ -492,7 +487,6 @@ GamepadManager::SetWindowHasSeenGamepad(nsGlobalWindowInner* aWindow,
                                         bool aHasSeen)
 {
   MOZ_ASSERT(aWindow);
-  MOZ_ASSERT(aWindow->IsInnerWindow());
 
   if (mListeners.IndexOf(aWindow) == NoIndex) {
     
@@ -549,8 +543,6 @@ GamepadManager::Update(const GamepadChangeEvent& aEvent)
   nsTArray<RefPtr<nsGlobalWindowInner>> listeners(mListeners);
 
   for (uint32_t i = 0; i < listeners.Length(); i++) {
-    MOZ_ASSERT(listeners[i]->IsInnerWindow());
-
     
     if (!listeners[i]->AsInner()->IsCurrentInnerWindow() ||
         listeners[i]->GetOuterWindow()->IsBackground()) {

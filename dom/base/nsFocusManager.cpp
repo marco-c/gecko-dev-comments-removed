@@ -1038,7 +1038,6 @@ nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow)
     
     
     
-    NS_ASSERTION(mFocusedWindow->IsOuterWindow(), "outer window expected");
     if (mActiveWindow == mFocusedWindow || mActiveWindow == window)
       WindowLowered(mActiveWindow);
     else
