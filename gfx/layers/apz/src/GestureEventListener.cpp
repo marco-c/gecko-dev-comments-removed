@@ -285,6 +285,13 @@ nsEventStatus GestureEventListener::HandleInputTouchMove()
       CancelLongTapTimeoutTask();
       CancelMaxTapTimeoutTask();
       mSingleTapSent = Nothing();
+      if (!gfxPrefs::APZOneTouchPinchEnabled()) {
+        
+        
+        SetState(GESTURE_NONE);
+        break;
+      }
+
       SetState(GESTURE_ONE_TOUCH_PINCH);
 
       ParentLayerCoord currentSpan = 1.0f;
