@@ -98,7 +98,20 @@ public:
 
 
 
-  nsIAtom* GetLangGroup(nsIAtom* aLanguage) const;
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsIAtom* GetLangGroup(nsIAtom* aLanguage, bool* aNeedsToCache = nullptr) const;
 
   
 
@@ -120,8 +133,11 @@ public:
 
 
 
+
+
   const LangGroupFontPrefs* GetFontPrefsForLangHelper(nsIAtom* aLanguage,
-                                                      const LangGroupFontPrefs* aPrefs) const;
+                                                      const LangGroupFontPrefs* aPrefs,
+                                                      bool* aNeedsToCache = nullptr) const;
   
 
 
@@ -154,10 +170,10 @@ public:
     MOZ_ASSERT(aLanguage);
     return GetDefaultFontHelper(aFontID, aLanguage, GetFontPrefsForLang(aLanguage));
   }
-  const LangGroupFontPrefs* GetFontPrefsForLang(nsIAtom* aLanguage) const
+  const LangGroupFontPrefs* GetFontPrefsForLang(nsIAtom* aLanguage, bool* aNeedsToCache = nullptr) const
   {
     MOZ_ASSERT(aLanguage);
-    return GetFontPrefsForLangHelper(aLanguage, &mStaticLangGroupFontPrefs);
+    return GetFontPrefsForLangHelper(aLanguage, &mStaticLangGroupFontPrefs, aNeedsToCache);
   }
 
   void ResetCachedFontPrefs() { mStaticLangGroupFontPrefs.Reset(); }

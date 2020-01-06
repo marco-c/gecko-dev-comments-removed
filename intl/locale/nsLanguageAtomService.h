@@ -23,7 +23,23 @@ public:
   nsIAtom* LookupLanguage(const nsACString &aLanguage);
   already_AddRefed<nsIAtom> LookupCharSet(const nsACString& aCharSet);
   nsIAtom* GetLocaleLanguage();
-  nsIAtom* GetLanguageGroup(nsIAtom* aLanguage);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsIAtom* GetLanguageGroup(nsIAtom* aLanguage, bool* aNeedsToCache = nullptr);
   already_AddRefed<nsIAtom> GetUncachedLanguageGroup(nsIAtom* aLanguage) const;
 
 private:
