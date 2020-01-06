@@ -542,6 +542,11 @@ RasterImage::GetFrameAtSize(const IntSize& aSize,
                             uint32_t aWhichFrame,
                             uint32_t aFlags)
 {
+
+#ifdef DEBUG
+  NotifyDrawingObservers();
+#endif
+
   RefPtr<SourceSurface> surf =
     GetFrameInternal(aSize, aWhichFrame, aFlags).second().forget();
   
@@ -663,6 +668,10 @@ RasterImage::GetImageContainer(LayerManager* aManager, uint32_t aFlags)
   if (!image) {
     return nullptr;
   }
+
+#ifdef DEBUG
+  NotifyDrawingObservers();
+#endif
 
   
   
@@ -1397,17 +1406,7 @@ RasterImage::DrawInternal(DrawableSurface&& aSurface,
   bool frameIsFinished = aSurface->IsFinished();
 
 #ifdef DEBUG
-  
-  if (NS_IsMainThread()) {
-    nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
-    NS_WARNING_ASSERTION(obs, "Can't get an observer service handle");
-    if (obs) {
-      nsCOMPtr<nsIURI> imageURI = mURI->ToIURI();
-      nsAutoCString spec;
-      imageURI->GetSpec(spec);
-      obs->NotifyObservers(nullptr, "image-drawing", NS_ConvertUTF8toUTF16(spec).get());
-    }
-  }
+  NotifyDrawingObservers();
 #endif
 
   
@@ -1653,6 +1652,26 @@ RasterImage::GetFramesNotified(uint32_t* aFramesNotified)
   *aFramesNotified = mFramesNotified;
 
   return NS_OK;
+}
+#endif
+
+#ifdef DEBUG
+void
+RasterImage::NotifyDrawingObservers()
+{
+  if (!mURI || !NS_IsMainThread()) {
+    return;
+  }
+
+  
+  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+  NS_WARNING_ASSERTION(obs, "Can't get an observer service handle");
+  if (obs) {
+    nsCOMPtr<nsIURI> imageURI = mURI->ToIURI();
+    nsAutoCString spec;
+    imageURI->GetSpec(spec);
+    obs->NotifyObservers(nullptr, "image-drawing", NS_ConvertUTF8toUTF16(spec).get());
+  }
 }
 #endif
 
