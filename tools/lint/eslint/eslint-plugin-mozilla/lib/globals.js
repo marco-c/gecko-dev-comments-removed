@@ -150,7 +150,8 @@ module.exports = {
     let ast = helpers.getAST(content);
 
     
-    let scopeManager = escope.analyze(ast);
+    
+    let scopeManager = escope.analyze(ast, {});
     let globalScope = scopeManager.acquire(ast);
 
     let globals = Object.keys(globalScope.variables).map(v => ({
