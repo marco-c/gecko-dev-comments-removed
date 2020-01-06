@@ -689,18 +689,39 @@ AsyncGeneratorConstructor(JSContext* cx, unsigned argc, Value* vp);
 
 
 
+
+
 extern JSFunction*
+NewFunctionWithProto(JSContext* cx, JSNative native, unsigned nargs,
+                     JSFunction::Flags flags, HandleObject enclosingEnv, HandleAtom atom,
+                     HandleObject proto, gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
+                     NewObjectKind newKind = GenericObject);
+
+
+
+inline JSFunction*
 NewNativeFunction(JSContext* cx, JSNative native, unsigned nargs, HandleAtom atom,
                   gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
-                  NewObjectKind newKind = SingletonObject);
+                  NewObjectKind newKind = SingletonObject)
+{
+    MOZ_ASSERT(native);
+    return NewFunctionWithProto(cx, native, nargs, JSFunction::NATIVE_FUN,
+                                nullptr, atom, nullptr, allocKind, newKind);
+}
 
 
 
-extern JSFunction*
+inline JSFunction*
 NewNativeConstructor(JSContext* cx, JSNative native, unsigned nargs, HandleAtom atom,
                      gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
                      NewObjectKind newKind = SingletonObject,
-                     JSFunction::Flags flags = JSFunction::NATIVE_CTOR);
+                     JSFunction::Flags flags = JSFunction::NATIVE_CTOR)
+{
+    MOZ_ASSERT(native);
+    MOZ_ASSERT(flags & JSFunction::NATIVE_CTOR);
+    return NewFunctionWithProto(cx, native, nargs, flags, nullptr, atom,
+                                nullptr, allocKind, newKind);
+}
 
 
 
@@ -711,25 +732,6 @@ NewScriptedFunction(JSContext* cx, unsigned nargs, JSFunction::Flags flags,
                     gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
                     NewObjectKind newKind = GenericObject,
                     HandleObject enclosingEnv = nullptr);
-
-
-
-
-
-
-
-
-enum NewFunctionProtoHandling {
-    NewFunctionClassProto,
-    NewFunctionGivenProto
-};
-extern JSFunction*
-NewFunctionWithProto(JSContext* cx, JSNative native, unsigned nargs,
-                     JSFunction::Flags flags, HandleObject enclosingEnv, HandleAtom atom,
-                     HandleObject proto, gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
-                     NewObjectKind newKind = GenericObject,
-                     NewFunctionProtoHandling protoHandling = NewFunctionClassProto);
-
 extern JSAtom*
 IdToFunctionName(JSContext* cx, HandleId id,
                  FunctionPrefixKind prefixKind = FunctionPrefixKind::None);
