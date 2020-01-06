@@ -170,7 +170,10 @@ public:
   NS_IMETHOD GetCellIndexes(int32_t &aRowIndex, int32_t &aColIndex) override;
 
   
-  virtual nsresult GetRowIndex(int32_t &aRowIndex) const override;
+  uint32_t RowIndex() const
+  {
+    return static_cast<nsTableRowFrame*>(GetParent())->GetRowIndex();
+  }
 
   
 
@@ -181,7 +184,17 @@ public:
   int32_t GetColSpan();
 
   
-  virtual nsresult GetColIndex(int32_t &aColIndex) const override;
+  uint32_t ColIndex() const
+  {
+    
+    
+    
+    MOZ_ASSERT(static_cast<nsTableCellFrame*>(FirstContinuation())->mColIndex ==
+               mColIndex,
+               "mColIndex out of sync with first continuation");
+    return mColIndex;
+  }
+    
   void SetColIndex(int32_t aColIndex);
 
   

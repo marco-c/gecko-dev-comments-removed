@@ -17,6 +17,7 @@
 
 
 
+
 class nsITableCellLayout
 {
 public:
@@ -25,12 +26,6 @@ public:
 
   
   NS_IMETHOD GetCellIndexes(int32_t &aRowIndex, int32_t &aColIndex)=0;
-
-  
-  virtual nsresult GetRowIndex(int32_t &aRowIndex) const = 0;
-
-  
-  virtual nsresult GetColIndex(int32_t &aColIndex) const = 0;
 };
 
 #endif
