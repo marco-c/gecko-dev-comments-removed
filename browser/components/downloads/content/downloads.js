@@ -702,12 +702,8 @@ var DownloadsView = {
     let count = this._downloads.length;
     let hiddenCount = count - this.kItemCountLimit;
 
-    if (count > 0) {
-      DownloadsCommon.log("Setting the panel's hasdownloads attribute to true.");
-      DownloadsPanel.panel.setAttribute("hasdownloads", "true");
-    } else {
-      DownloadsCommon.log("Removing the panel's hasdownloads attribute.");
-      DownloadsPanel.panel.removeAttribute("hasdownloads");
+    if (count <= 0) {
+      DownloadsButton.hide();
     }
 
     
@@ -1575,13 +1571,6 @@ var DownloadsBlockedSubview = {
 
 
   toggle(element, title, details) {
-    if (this.view.showingSubView) {
-      this.hide();
-      return;
-    }
-
-    this.element = element;
-    element.setAttribute("showingsubview", "true");
     DownloadsView.subViewOpen = true;
     DownloadsViewController.updateCommands();
 
@@ -1602,32 +1591,25 @@ var DownloadsBlockedSubview = {
     
     
     document.getElementById("downloadsPanel-mainView").style.minWidth =
-      window.getComputedStyle(this.view).width;
+      window.getComputedStyle(this.subview).width;
   },
 
   handleEvent(event) {
     switch (event.type) {
       case "ViewHiding":
         this.subview.removeEventListener(event.type, this);
-        this.element.removeAttribute("showingsubview");
         DownloadsView.subViewOpen = false;
-        delete this.element;
+        
+        
+        if (this.view.current !== this.subview) {
+          DownloadsPanel.showPanel();
+        }
         break;
       default:
         DownloadsCommon.log("Unhandled DownloadsBlockedSubview event: " +
                             event.type);
         break;
     }
-  },
-
-  
-
-
-  hide() {
-    this.view.showMainView();
-    
-    
-    DownloadsPanel.showPanel();
   },
 
   
