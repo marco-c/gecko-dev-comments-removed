@@ -267,6 +267,14 @@ PROFILER_FUNC_VOID(
                                        aCallback,
                                      bool aSampleNative = true))
 
+
+
+
+
+
+
+PROFILER_FUNC_VOID(profiler_initialize_stackwalk());
+
 struct ProfilerBacktraceDestructor
 {
 #ifdef MOZ_GECKO_PROFILER
@@ -586,4 +594,4 @@ protected:
 
 } 
 
-#endif  
+#endif
