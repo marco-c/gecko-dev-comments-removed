@@ -201,7 +201,6 @@ public:
                             const mozilla::TimeStamp& aCompositeEnd) override;
 
   virtual bool AreComponentAlphaLayersEnabled() override;
-  virtual bool SupportsBackdropCopyForComponentAlpha() override;
 
   
   
