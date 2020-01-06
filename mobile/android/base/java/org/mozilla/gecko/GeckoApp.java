@@ -187,7 +187,6 @@ public abstract class GeckoApp extends GeckoActivity
 
     protected RelativeLayout mGeckoLayout;
     private OrientationEventListener mCameraOrientationEventListener;
-    public List<GeckoAppShell.AppStateListener> mAppStateListeners = new LinkedList<GeckoAppShell.AppStateListener>();
     protected MenuPanel mMenuPanel;
     protected Menu mMenu;
     protected boolean mIsRestoringActivity;
@@ -404,16 +403,6 @@ public abstract class GeckoApp extends GeckoActivity
 
     public SharedPreferences getSharedPreferencesForProfile() {
         return GeckoSharedPrefs.forProfile(this);
-    }
-
-    @Override
-    public void addAppStateListener(GeckoAppShell.AppStateListener listener) {
-        mAppStateListeners.add(listener);
-    }
-
-    @Override
-    public void removeAppStateListener(GeckoAppShell.AppStateListener listener) {
-        mAppStateListeners.remove(listener);
     }
 
     @Override
@@ -1842,9 +1831,6 @@ public abstract class GeckoApp extends GeckoActivity
             startActivity(settingsIntent);
         }
 
-        
-        mAppStateListeners = new LinkedList<GeckoAppShell.AppStateListener>();
-
         mPromptService = new PromptService(this);
 
         
@@ -2127,30 +2113,6 @@ public abstract class GeckoApp extends GeckoActivity
     }
 
     @Override
-    public void enableOrientationListener() {
-        
-        mCameraOrientationEventListener = new OrientationEventListener(this) {
-            @Override
-            public void onOrientationChanged(int orientation) {
-                if (mAppStateListeners != null) {
-                    for (GeckoAppShell.AppStateListener listener: mAppStateListeners) {
-                        listener.onOrientationChanged();
-                    }
-                }
-            }
-        };
-        mCameraOrientationEventListener.enable();
-    }
-
-    @Override
-    public void disableOrientationListener() {
-        if (mCameraOrientationEventListener != null) {
-            mCameraOrientationEventListener.disable();
-            mCameraOrientationEventListener = null;
-        }
-    }
-
-    @Override
     protected void onNewIntent(Intent externalIntent) {
         final SafeIntent intent = new SafeIntent(externalIntent);
         final String action = intent.getAction();
@@ -2319,12 +2281,6 @@ public abstract class GeckoApp extends GeckoActivity
             refreshChrome();
         }
 
-        if (mAppStateListeners != null) {
-            for (GeckoAppShell.AppStateListener listener : mAppStateListeners) {
-                listener.onResume();
-            }
-        }
-
         
         
         
@@ -2431,12 +2387,6 @@ public abstract class GeckoApp extends GeckoActivity
                 editor.apply();
             }
         });
-
-        if (mAppStateListeners != null) {
-            for (GeckoAppShell.AppStateListener listener : mAppStateListeners) {
-                listener.onPause();
-            }
-        }
 
         super.onPause();
     }
