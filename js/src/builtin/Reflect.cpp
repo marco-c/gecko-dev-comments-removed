@@ -86,17 +86,20 @@ js::Reflect_isExtensible(JSContext* cx, unsigned argc, Value* vp)
 }
 
 
+
 static bool
 Reflect_ownKeys(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
     
-    if (!NonNullObjectArg(cx, "`target`", "Reflect.ownKeys", args.get(0)))
+    RootedObject target(cx, NonNullObjectArg(cx, "`target`", "Reflect.ownKeys", args.get(0)));
+    if (!target)
         return false;
 
     
-    return GetOwnPropertyKeys(cx, args, JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS);
+    return GetOwnPropertyKeys(cx, target, JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS,
+                              args.rval());
 }
 
 
