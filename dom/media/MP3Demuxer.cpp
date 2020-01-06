@@ -420,7 +420,9 @@ MP3TrackDemuxer::Duration(int64_t aNumFrames) const
 MediaByteRange
 MP3TrackDemuxer::FindFirstFrame()
 {
-  static const int MIN_SUCCESSIVE_FRAMES = 4;
+  
+  
+  static const int MIN_SUCCESSIVE_FRAMES = 3;
 
   MediaByteRange candidateFrame = FindNextFrame();
   int numSuccFrames = candidateFrame.Length() > 0;

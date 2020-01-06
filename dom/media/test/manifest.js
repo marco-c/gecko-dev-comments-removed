@@ -84,6 +84,7 @@ var gPlayedTests = [
   { name:"seek-short.webm", type:"video/webm", duration:0.23 },
   { name:"gizmo-short.mp4", type:"video/mp4", duration:0.27 },
   { name:"owl-short.mp3", type:"audio/mpeg", duration:0.52 },
+  { name:"very-short.mp3", type:"audio/mpeg", duration:0.07 },
   
   
   
