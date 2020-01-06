@@ -565,7 +565,9 @@ WrapperFactory::Rewrap(JSContext* cx, HandleObject existing, HandleObject obj)
             wrapper = SelectAddonWrapper(cx, obj, wrapper);
     }
 
-    if (!targetSubsumesOrigin) {
+    if (!targetSubsumesOrigin &&
+        !originCompartmentPrivate->forcePermissiveCOWs) {
+        
         
         
         if (JSFunction* fun = JS_GetObjectFunction(obj)) {
