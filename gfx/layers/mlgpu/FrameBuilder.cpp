@@ -11,6 +11,8 @@
 #include "MaskOperation.h"
 #include "RenderPassMLGPU.h"
 #include "RenderViewMLGPU.h"
+#include "mozilla/gfx/Polygon.h"
+#include "mozilla/layers/BSPTree.h"
 #include "mozilla/layers/LayersHelpers.h"
 
 namespace mozilla {
@@ -63,7 +65,7 @@ FrameBuilder::Build()
 
   
   {
-    Maybe<Polygon> geometry;
+    Maybe<gfx::Polygon> geometry;
     RenderTargetIntRect clip(0, 0, target->GetSize().width, target->GetSize().height);
 
     AssignLayer(mRoot->GetLayer(), mWidgetRenderView, clip, Move(geometry));
@@ -109,7 +111,7 @@ void
 FrameBuilder::AssignLayer(Layer* aLayer,
                           RenderViewMLGPU* aView,
                           const RenderTargetIntRect& aClipRect,
-                          Maybe<Polygon>&& aGeometry)
+                          Maybe<gfx::Polygon>&& aGeometry)
 {
   LayerMLGPU* layer = aLayer->AsHostLayer()->AsLayerMLGPU();
 
@@ -156,8 +158,8 @@ FrameBuilder::ProcessContainerLayer(ContainerLayer* aContainer,
   
   
   
-  IntRect boundingBox = layer->GetClippedBoundingBox(aView, Nothing());
-  const IntRect& invalidRect = aView->GetInvalidRect();
+  gfx::IntRect boundingBox = layer->GetClippedBoundingBox(aView, Nothing());
+  const gfx::IntRect& invalidRect = aView->GetInvalidRect();
   if (boundingBox.IsEmpty() || !invalidRect.Intersects(boundingBox)) {
     return false;
   }
@@ -191,7 +193,7 @@ void
 FrameBuilder::ProcessChildList(ContainerLayer* aContainer,
                                RenderViewMLGPU* aView,
                                const RenderTargetIntRect& aParentClipRect,
-                               const Maybe<Polygon>& aParentGeometry)
+                               const Maybe<gfx::Polygon>& aParentGeometry)
 {
   nsTArray<LayerPolygon> polygons =
     aContainer->SortChildrenBy3DZOrder(ContainerLayer::SortMode::WITH_GEOMETRY);
@@ -209,7 +211,7 @@ FrameBuilder::ProcessChildList(ContainerLayer* aContainer,
       continue;
     }
 
-    Maybe<Polygon> geometry;
+    Maybe<gfx::Polygon> geometry;
     if (aParentGeometry && entry.geometry) {
       
       geometry = Some(aParentGeometry->ClipPolygon(*entry.geometry));
@@ -243,14 +245,14 @@ FrameBuilder::AddLayerToConstantBuffer(ItemInfo& aItem)
   
   
   Layer* baseLayer = layer->GetLayer();
-  const Matrix4x4& transform = baseLayer->GetEffectiveTransform();
+  const gfx::Matrix4x4& transform = baseLayer->GetEffectiveTransform();
 
   memcpy(&info->transform, &transform._11, 64);
-  info->clipRect = Rect(layer->GetComputedClipRect().ToUnknownRect());
+  info->clipRect = gfx::Rect(layer->GetComputedClipRect().ToUnknownRect());
   info->maskIndex = 0;
   if (MaskOperation* op = layer->GetMask()) {
     
-    Rect rect = op->ComputeMaskRect(baseLayer);
+    gfx::Rect rect = op->ComputeMaskRect(baseLayer);
     AddMaskRect(rect, &info->maskIndex);
   }
 

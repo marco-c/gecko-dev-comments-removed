@@ -6,7 +6,9 @@
 #include "ContainerLayerMLGPU.h"
 #include "gfxPrefs.h"
 #include "LayersLogging.h"
+#include "LayerManagerMLGPU.h"
 #include "MLGDevice.h"
+#include "mozilla/gfx/Types.h"
 
 namespace mozilla {
 namespace layers {
@@ -38,7 +40,7 @@ ContainerLayerMLGPU::OnPrepareToRender(FrameBuilder* aBuilder)
     mRenderTarget = nullptr;
   }
 
-  IntRect viewport(IntPoint(0, 0), mTargetSize);
+  gfx::IntRect viewport(gfx::IntPoint(0, 0), mTargetSize);
   if (!mRenderTarget || !gfxPrefs::AdvancedLayersUseInvalidation()) {
     
     mInvalidRect = viewport;
@@ -70,15 +72,15 @@ ContainerLayerMLGPU::SetInvalidCompositeRect(const gfx::IntRect& aRect)
 {
   
   
-  IntRect bounds = aRect;
+  gfx::IntRect bounds = aRect;
   bounds.MoveBy(-GetTargetOffset());
 
   
   
-  if (Maybe<IntRect> result = mInvalidRect.SafeUnion(bounds)) {
+  if (Maybe<gfx::IntRect> result = mInvalidRect.SafeUnion(bounds)) {
     mInvalidRect = result.value();
   } else {
-    mInvalidRect = IntRect(IntPoint(0, 0), GetTargetSize());
+    mInvalidRect = gfx::IntRect(gfx::IntPoint(0, 0), GetTargetSize());
   }
 }
 
@@ -91,7 +93,7 @@ ContainerLayerMLGPU::ClearCachedResources()
 bool
 ContainerLayerMLGPU::IsContentOpaque()
 {
-  if (GetMixBlendMode() != CompositionOp::OP_OVER) {
+  if (GetMixBlendMode() != gfx::CompositionOp::OP_OVER) {
     
     
     return false;
