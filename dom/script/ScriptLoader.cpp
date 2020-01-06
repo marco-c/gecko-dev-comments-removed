@@ -366,7 +366,7 @@ ScriptLoader::SetModuleFetchFinishedAndResumeWaitingRequests(ModuleLoadRequest* 
   
 
   LOG(("ScriptLoadRequest (%p): Module fetch finished (result == %u)",
-       aRequest, aResult));
+       aRequest, unsigned(aResult)));
 
   MOZ_ASSERT(!aRequest->IsReadyToRun());
 
