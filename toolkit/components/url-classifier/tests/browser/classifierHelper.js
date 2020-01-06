@@ -143,7 +143,7 @@ classifierHelper.removeUrlFromDB = function(updateData) {
 
 
 
-classifierHelper.resetDB = function() {
+classifierHelper.resetDatabase = function() {
   var testUpdate = "";
   for (var update of classifierHelper._updatesToCleanup) {
     if (testUpdate.includes(update.db))
@@ -214,7 +214,7 @@ classifierHelper._cleanup = function() {
     return Promise.resolve();
   }
 
-  return classifierHelper.resetDB();
+  return classifierHelper.resetDatabase();
 };
 
 registerCleanupFunction(classifierHelper._cleanup);
