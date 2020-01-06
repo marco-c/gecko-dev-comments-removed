@@ -302,11 +302,10 @@ BlockingResourceBase::CheckAcquire()
   }
 
   
-  if (maybeImminent) {
-    NS_ERROR(out.get());
-  } else {
-    NS_WARNING(out.get());
-  }
+  
+  
+  
+  NS_ERROR(out.get());
 }
 
 
