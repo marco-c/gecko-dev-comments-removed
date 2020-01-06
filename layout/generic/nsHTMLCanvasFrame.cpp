@@ -182,7 +182,7 @@ nsHTMLCanvasFrame::GetCanvasSize()
 }
 
  nscoord
-nsHTMLCanvasFrame::GetMinISize(gfxContext *aRenderingContext)
+nsHTMLCanvasFrame::GetMinISize(nsRenderingContext *aRenderingContext)
 {
   
   
@@ -194,7 +194,7 @@ nsHTMLCanvasFrame::GetMinISize(gfxContext *aRenderingContext)
 }
 
  nscoord
-nsHTMLCanvasFrame::GetPrefISize(gfxContext *aRenderingContext)
+nsHTMLCanvasFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
 {
   
   
@@ -219,7 +219,7 @@ nsHTMLCanvasFrame::GetIntrinsicRatio()
 
 
 LogicalSize
-nsHTMLCanvasFrame::ComputeSize(gfxContext *aRenderingContext,
+nsHTMLCanvasFrame::ComputeSize(nsRenderingContext *aRenderingContext,
                                WritingMode aWM,
                                const LogicalSize& aCBSize,
                                nscoord aAvailableISize,

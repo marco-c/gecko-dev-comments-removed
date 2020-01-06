@@ -17,7 +17,7 @@
 #include "nsPresContext.h"
 #include "nsIPresShell.h"
 
-class gfxContext;
+class nsRenderingContext;
 namespace mozilla {
 struct ReflowInput;
 } 
@@ -29,7 +29,7 @@ class MOZ_STACK_CLASS nsBoxLayoutState
 
 public:
   explicit nsBoxLayoutState(nsPresContext* aPresContext,
-                            gfxContext* aRenderingContext = nullptr,
+                            nsRenderingContext* aRenderingContext = nullptr,
                             
                             const ReflowInput* aOuterReflowInput = nullptr,
                             uint16_t aReflowDepth = 0);
@@ -49,7 +49,7 @@ public:
   
   
   
-  gfxContext* GetRenderingContext() const { return mRenderingContext; }
+  nsRenderingContext* GetRenderingContext() const { return mRenderingContext; }
 
   struct AutoReflowDepth {
     explicit AutoReflowDepth(nsBoxLayoutState& aState)
@@ -66,7 +66,7 @@ public:
   
 private:
   RefPtr<nsPresContext> mPresContext;
-  gfxContext *mRenderingContext;
+  nsRenderingContext *mRenderingContext;
   const ReflowInput *mOuterReflowInput;
   uint32_t mLayoutFlags;
   uint16_t mReflowDepth; 

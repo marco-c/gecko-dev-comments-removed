@@ -90,9 +90,9 @@ public:
   
   
   
-  virtual void AddInlineMinISize(gfxContext* aRenderingContext,
+  virtual void AddInlineMinISize(nsRenderingContext* aRenderingContext,
                                  InlineMinISizeData* aData) override;
-  virtual void AddInlinePrefISize(gfxContext* aRenderingContext,
+  virtual void AddInlinePrefISize(nsRenderingContext* aRenderingContext,
                                   InlinePrefISizeData* aData) override;
   virtual nsSize GetXULMinSize(nsBoxLayoutState& aBoxLayoutState) override;
   virtual nsSize GetXULPrefSize(nsBoxLayoutState& aBoxLayoutState) override;

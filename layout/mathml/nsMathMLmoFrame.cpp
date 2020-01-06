@@ -3,9 +3,9 @@
 
 
 
-#include "gfxContext.h"
 #include "nsMathMLmoFrame.h"
 #include "nsPresContext.h"
+#include "nsRenderingContext.h"
 #include "nsContentUtils.h"
 #include "nsFrameSelection.h"
 #include "nsMathMLElement.h"
@@ -1027,7 +1027,7 @@ nsMathMLmoFrame::MarkIntrinsicISizesDirty()
 }
 
  void
-nsMathMLmoFrame::GetIntrinsicISizeMetrics(gfxContext* aRenderingContext,
+nsMathMLmoFrame::GetIntrinsicISizeMetrics(nsRenderingContext* aRenderingContext,
                                           ReflowOutput& aDesiredSize)
 {
   ProcessOperatorData();

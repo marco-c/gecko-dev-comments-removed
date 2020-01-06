@@ -105,7 +105,7 @@ nsFirstLetterFrame::GetChildFrameContainingOffset(int32_t inContentOffset,
 
 
  void
-nsFirstLetterFrame::AddInlineMinISize(gfxContext *aRenderingContext,
+nsFirstLetterFrame::AddInlineMinISize(nsRenderingContext *aRenderingContext,
                                       nsIFrame::InlineMinISizeData *aData)
 {
   DoInlineIntrinsicISize(aRenderingContext, aData, nsLayoutUtils::MIN_ISIZE);
@@ -114,7 +114,7 @@ nsFirstLetterFrame::AddInlineMinISize(gfxContext *aRenderingContext,
 
 
  void
-nsFirstLetterFrame::AddInlinePrefISize(gfxContext *aRenderingContext,
+nsFirstLetterFrame::AddInlinePrefISize(nsRenderingContext *aRenderingContext,
                                        nsIFrame::InlinePrefISizeData *aData)
 {
   DoInlineIntrinsicISize(aRenderingContext, aData, nsLayoutUtils::PREF_ISIZE);
@@ -123,21 +123,21 @@ nsFirstLetterFrame::AddInlinePrefISize(gfxContext *aRenderingContext,
 
 
  nscoord
-nsFirstLetterFrame::GetMinISize(gfxContext *aRenderingContext)
+nsFirstLetterFrame::GetMinISize(nsRenderingContext *aRenderingContext)
 {
   return nsLayoutUtils::MinISizeFromInline(this, aRenderingContext);
 }
 
 
  nscoord
-nsFirstLetterFrame::GetPrefISize(gfxContext *aRenderingContext)
+nsFirstLetterFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
 {
   return nsLayoutUtils::PrefISizeFromInline(this, aRenderingContext);
 }
 
 
 LogicalSize
-nsFirstLetterFrame::ComputeSize(gfxContext *aRenderingContext,
+nsFirstLetterFrame::ComputeSize(nsRenderingContext *aRenderingContext,
                                 WritingMode aWM,
                                 const LogicalSize& aCBSize,
                                 nscoord aAvailableISize,

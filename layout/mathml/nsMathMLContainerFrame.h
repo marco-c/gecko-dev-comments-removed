@@ -89,14 +89,14 @@ public:
 
 
 
-  virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
-  virtual nscoord GetPrefISize(gfxContext* aRenderingContext) override;
+  virtual nscoord GetMinISize(nsRenderingContext* aRenderingContext) override;
+  virtual nscoord GetPrefISize(nsRenderingContext* aRenderingContext) override;
 
   
 
 
   virtual void
-  GetIntrinsicISizeMetrics(gfxContext* aRenderingContext,
+  GetIntrinsicISizeMetrics(nsRenderingContext* aRenderingContext,
                            ReflowOutput& aDesiredSize);
 
   virtual void
@@ -380,7 +380,7 @@ protected:
   
 
 
-  void UpdateIntrinsicWidth(gfxContext* aRenderingContext);
+  void UpdateIntrinsicWidth(nsRenderingContext* aRenderingContext);
 
   nscoord mIntrinsicWidth;
 

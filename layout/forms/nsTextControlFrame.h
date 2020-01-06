@@ -44,11 +44,11 @@ public:
     return do_QueryFrame(PrincipalChildList().FirstChild());
   }
 
-  virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
-  virtual nscoord GetPrefISize(gfxContext* aRenderingContext) override;
+  virtual nscoord GetMinISize(nsRenderingContext* aRenderingContext) override;
+  virtual nscoord GetPrefISize(nsRenderingContext* aRenderingContext) override;
 
   virtual mozilla::LogicalSize
-  ComputeAutoSize(gfxContext*                 aRenderingContext,
+  ComputeAutoSize(nsRenderingContext*         aRenderingContext,
                   mozilla::WritingMode        aWM,
                   const mozilla::LogicalSize& aCBSize,
                   nscoord                     aAvailableISize,
@@ -300,7 +300,7 @@ protected:
   
   
   
-  mozilla::LogicalSize CalcIntrinsicSize(gfxContext* aRenderingContext,
+  mozilla::LogicalSize CalcIntrinsicSize(nsRenderingContext* aRenderingContext,
                                          mozilla::WritingMode aWM,
                                          float aFontSizeInflation) const;
 

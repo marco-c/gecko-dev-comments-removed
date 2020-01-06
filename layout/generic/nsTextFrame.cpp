@@ -37,7 +37,7 @@
 #include "nsStyleStructInlines.h"
 #include "SVGTextFrame.h"
 #include "nsCoord.h"
-#include "gfxContext.h"
+#include "nsRenderingContext.h"
 #include "nsIPresShell.h"
 #include "nsTArray.h"
 #include "nsCSSPseudoElements.h"
@@ -4429,9 +4429,9 @@ public:
   nsIFrame* FirstInFlow() const override;
   nsIFrame* FirstContinuation() const override;
 
-  void AddInlineMinISize(gfxContext* aRenderingContext,
+  void AddInlineMinISize(nsRenderingContext* aRenderingContext,
                          InlineMinISizeData* aData) override;
-  void AddInlinePrefISize(gfxContext* aRenderingContext,
+  void AddInlinePrefISize(nsRenderingContext* aRenderingContext,
                           InlinePrefISizeData* aData) override;
 
 protected:
@@ -4577,20 +4577,20 @@ nsContinuingTextFrame::FirstContinuation() const
 
 
  nscoord
-nsTextFrame::GetMinISize(gfxContext *aRenderingContext)
+nsTextFrame::GetMinISize(nsRenderingContext *aRenderingContext)
 {
   return nsLayoutUtils::MinISizeFromInline(this, aRenderingContext);
 }
 
 
  nscoord
-nsTextFrame::GetPrefISize(gfxContext *aRenderingContext)
+nsTextFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
 {
   return nsLayoutUtils::PrefISizeFromInline(this, aRenderingContext);
 }
 
  void
-nsContinuingTextFrame::AddInlineMinISize(gfxContext *aRenderingContext,
+nsContinuingTextFrame::AddInlineMinISize(nsRenderingContext *aRenderingContext,
                                          InlineMinISizeData *aData)
 {
   
@@ -4598,7 +4598,7 @@ nsContinuingTextFrame::AddInlineMinISize(gfxContext *aRenderingContext,
 }
 
  void
-nsContinuingTextFrame::AddInlinePrefISize(gfxContext *aRenderingContext,
+nsContinuingTextFrame::AddInlinePrefISize(nsRenderingContext *aRenderingContext,
                                           InlinePrefISizeData *aData)
 {
   
@@ -4895,7 +4895,7 @@ public:
                                              LayerManager* aManager,
                                              const ContainerLayerParameters& aContainerParameters) override;
   virtual void Paint(nsDisplayListBuilder* aBuilder,
-                     gfxContext* aCtx) override;
+                     nsRenderingContext* aCtx) override;
   NS_DISPLAY_DECL_NAME("Text", TYPE_TEXT)
 
   virtual nsRect GetComponentAlphaBounds(nsDisplayListBuilder* aBuilder) override
@@ -5127,7 +5127,7 @@ nsDisplayText::GetLayerState(nsDisplayListBuilder* aBuilder,
 
 void
 nsDisplayText::Paint(nsDisplayListBuilder* aBuilder,
-                     gfxContext* aCtx) {
+                     nsRenderingContext* aCtx) {
   PROFILER_LABEL("nsDisplayText", "Paint",
     js::ProfileEntry::Category::GRAPHICS);
 
@@ -5135,7 +5135,7 @@ nsDisplayText::Paint(nsDisplayListBuilder* aBuilder,
 
   DrawTargetAutoDisableSubpixelAntialiasing disable(aCtx->GetDrawTarget(),
                                                     mDisableSubpixelAA);
-  RenderToContext(aCtx, aBuilder);
+  RenderToContext(aCtx->ThebesContext(), aBuilder);
 }
 
 already_AddRefed<layers::Layer>
@@ -8419,7 +8419,7 @@ void nsTextFrame::MarkIntrinsicISizesDirty()
 
 
 void
-nsTextFrame::AddInlineMinISizeForFlow(gfxContext *aRenderingContext,
+nsTextFrame::AddInlineMinISizeForFlow(nsRenderingContext *aRenderingContext,
                                       nsIFrame::InlineMinISizeData *aData,
                                       TextRunType aTextRunType)
 {
@@ -8564,7 +8564,7 @@ bool nsTextFrame::IsCurrentFontInflation(float aInflation) const {
 
 
  void
-nsTextFrame::AddInlineMinISize(gfxContext *aRenderingContext,
+nsTextFrame::AddInlineMinISize(nsRenderingContext *aRenderingContext,
                                nsIFrame::InlineMinISizeData *aData)
 {
   float inflation = nsLayoutUtils::FontSizeInflationFor(this);
@@ -8604,7 +8604,7 @@ nsTextFrame::AddInlineMinISize(gfxContext *aRenderingContext,
 
 
 void
-nsTextFrame::AddInlinePrefISizeForFlow(gfxContext *aRenderingContext,
+nsTextFrame::AddInlinePrefISizeForFlow(nsRenderingContext *aRenderingContext,
                                        nsIFrame::InlinePrefISizeData *aData,
                                        TextRunType aTextRunType)
 {
@@ -8715,7 +8715,7 @@ nsTextFrame::AddInlinePrefISizeForFlow(gfxContext *aRenderingContext,
 
 
  void
-nsTextFrame::AddInlinePrefISize(gfxContext *aRenderingContext,
+nsTextFrame::AddInlinePrefISize(nsRenderingContext *aRenderingContext,
                                 nsIFrame::InlinePrefISizeData *aData)
 {
   float inflation = nsLayoutUtils::FontSizeInflationFor(this);
@@ -8754,7 +8754,7 @@ nsTextFrame::AddInlinePrefISize(gfxContext *aRenderingContext,
 
 
 LogicalSize
-nsTextFrame::ComputeSize(gfxContext *aRenderingContext,
+nsTextFrame::ComputeSize(nsRenderingContext *aRenderingContext,
                          WritingMode aWM,
                          const LogicalSize& aCBSize,
                          nscoord aAvailableISize,
@@ -8817,7 +8817,7 @@ nsTextFrame::ComputeTightBounds(DrawTarget* aDrawTarget) const
 }
 
  nsresult
-nsTextFrame::GetPrefWidthTightBounds(gfxContext* aContext,
+nsTextFrame::GetPrefWidthTightBounds(nsRenderingContext* aContext,
                                      nscoord* aX,
                                      nscoord* aXMost)
 {

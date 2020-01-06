@@ -184,7 +184,7 @@ public:
   static void SyncWindowProperties(nsPresContext*       aPresContext,
                                    nsIFrame*            aFrame,
                                    nsView*              aView,
-                                   gfxContext*          aRC,
+                                   nsRenderingContext*  aRC,
                                    uint32_t             aFlags);
 
   
@@ -202,7 +202,7 @@ public:
                                  const nsSize& aMaxSize);
 
   
-  void DoInlineIntrinsicISize(gfxContext *aRenderingContext,
+  void DoInlineIntrinsicISize(nsRenderingContext *aRenderingContext,
                               InlineIntrinsicISizeData *aData,
                               nsLayoutUtils::IntrinsicISizeType aType);
 
@@ -211,7 +211,7 @@ public:
 
 
   virtual mozilla::LogicalSize
-  ComputeAutoSize(gfxContext*                 aRenderingContext,
+  ComputeAutoSize(nsRenderingContext*         aRenderingContext,
                   mozilla::WritingMode        aWM,
                   const mozilla::LogicalSize& aCBSize,
                   nscoord                     aAvailableISize,

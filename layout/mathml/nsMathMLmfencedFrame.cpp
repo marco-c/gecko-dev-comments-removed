@@ -3,8 +3,9 @@
 
 
 
-#include "gfxContext.h"
+
 #include "nsMathMLmfencedFrame.h"
+#include "nsRenderingContext.h"
 #include "nsMathMLChar.h"
 #include <algorithm>
 
@@ -603,7 +604,7 @@ GetMaxCharWidth(nsPresContext*       aPresContext,
 }
 
  void
-nsMathMLmfencedFrame::GetIntrinsicISizeMetrics(gfxContext* aRenderingContext, ReflowOutput& aDesiredSize)
+nsMathMLmfencedFrame::GetIntrinsicISizeMetrics(nsRenderingContext* aRenderingContext, ReflowOutput& aDesiredSize)
 {
   nscoord width = 0;
 

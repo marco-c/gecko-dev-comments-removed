@@ -9,7 +9,6 @@
 #include <ctime>
 
 #include "gfx2DGlue.h"
-#include "gfxContext.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/gfx/2D.h"
@@ -42,6 +41,8 @@
 #include "nsThemeConstants.h"
 #include "nsLayoutUtils.h"
 #include "nsBlockFrame.h"
+#include "gfxContext.h"
+#include "nsRenderingContext.h"
 #include "nsStyleStructInlines.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsCSSProps.h"
@@ -628,7 +629,7 @@ nsCSSRendering::ComputePixelRadii(const nscoord *aAppUnitsRadii,
 
 DrawResult
 nsCSSRendering::PaintBorder(nsPresContext* aPresContext,
-                            gfxContext& aRenderingContext,
+                            nsRenderingContext& aRenderingContext,
                             nsIFrame* aForFrame,
                             const nsRect& aDirtyRect,
                             const nsRect& aBorderArea,
@@ -794,7 +795,7 @@ ConstructBorderRenderer(nsPresContext* aPresContext,
 
 DrawResult
 nsCSSRendering::PaintBorderWithStyleBorder(nsPresContext* aPresContext,
-                                           gfxContext& aRenderingContext,
+                                           nsRenderingContext& aRenderingContext,
                                            nsIFrame* aForFrame,
                                            const nsRect& aDirtyRect,
                                            const nsRect& aBorderArea,
@@ -948,7 +949,7 @@ GetOutlineInnerRect(nsIFrame* aFrame)
 
 Maybe<nsCSSBorderRenderer>
 nsCSSRendering::CreateBorderRendererForOutline(nsPresContext* aPresContext,
-                                               gfxContext* aRenderingContext,
+                                               nsRenderingContext* aRenderingContext,
                                                nsIFrame* aForFrame,
                                                const nsRect& aDirtyRect,
                                                const nsRect& aBorderArea,
@@ -1075,7 +1076,7 @@ nsCSSRendering::CreateBorderRendererForOutline(nsPresContext* aPresContext,
 
 void
 nsCSSRendering::PaintOutline(nsPresContext* aPresContext,
-                             gfxContext& aRenderingContext,
+                             nsRenderingContext& aRenderingContext,
                              nsIFrame* aForFrame,
                              const nsRect& aDirtyRect,
                              const nsRect& aBorderArea,
@@ -1458,7 +1459,7 @@ nsCSSRendering::GetBorderRadii(const nsRect& aFrameRect,
 
 void
 nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
-                                    gfxContext& aRenderingContext,
+                                    nsRenderingContext& aRenderingContext,
                                     nsIFrame* aForFrame,
                                     const nsRect& aFrameArea,
                                     const nsRect& aDirtyRect,
@@ -1513,6 +1514,7 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
         std::max(borderRadii[C_BL].height, borderRadii[C_BR].height), 0));
   }
 
+  gfxContext* renderContext = aRenderingContext.ThebesContext();
 
   for (uint32_t i = shadows->Length(); i > 0; --i) {
     nsCSSShadowItem* shadowItem = shadows->ShadowAt(i - 1);
@@ -1547,8 +1549,8 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
       
       
       gfxContext* shadowContext =
-        blurringArea.Init(shadowRect, shadowItem->mSpread, blurRadius,
-                          twipsPerPixel, &aRenderingContext, aDirtyRect,
+        blurringArea.Init(shadowRect, shadowItem->mSpread,
+                          blurRadius, twipsPerPixel, renderContext, aDirtyRect,
                           useSkipGfxRect ? &skipGfxRect : nullptr,
                           nsContextBoxBlur::FORCE_MASK);
       if (!shadowContext)
@@ -1556,8 +1558,8 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
 
       MOZ_ASSERT(shadowContext == blurringArea.GetContext());
 
-      aRenderingContext.Save();
-      aRenderingContext.SetColor(gfxShadowColor);
+      renderContext->Save();
+      renderContext->SetColor(gfxShadowColor);
 
       
       
@@ -1580,13 +1582,14 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
       nsRect nativeRect = aDirtyRect;
       nativeRect.MoveBy(-nsPoint(shadowItem->mXOffset, shadowItem->mYOffset));
       nativeRect.IntersectRect(frameRect, nativeRect);
-      aPresContext->GetTheme()->DrawWidgetBackground(shadowContext, aForFrame,
+      nsRenderingContext wrapperCtx(shadowContext);
+      aPresContext->GetTheme()->DrawWidgetBackground(&wrapperCtx, aForFrame,
           styleDisplay->mAppearance, aFrameArea, nativeRect);
 
       blurringArea.DoPaint();
-      aRenderingContext.Restore();
+      renderContext->Restore();
     } else {
-      aRenderingContext.Save();
+      renderContext->Save();
 
       {
         Rect innerClipRect = NSRectToRect(frameRect, twipsPerPixel);
@@ -1605,7 +1608,7 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
           AppendRectToPath(builder, innerClipRect);
         }
         RefPtr<Path> path = builder->Finish();
-        aRenderingContext.Clip(path);
+        renderContext->Clip(path);
       }
 
       
@@ -1638,7 +1641,7 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
         }
       }
       fragmentClip = fragmentClip.Intersect(aDirtyRect);
-      aRenderingContext.
+      renderContext->
         Clip(NSRectToSnappedRect(fragmentClip,
                                  aForFrame->PresContext()->AppUnitsPerDevPixel(),
                                  aDrawTarget));
@@ -1658,7 +1661,7 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
             &clipRectRadii);
 
       }
-      nsContextBoxBlur::BlurRectangle(&aRenderingContext,
+      nsContextBoxBlur::BlurRectangle(renderContext,
                                       shadowRect,
                                       twipsPerPixel,
                                       hasBorderRadius ? &clipRectRadii : nullptr,
@@ -1666,7 +1669,7 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
                                       gfxShadowColor,
                                       aDirtyRect,
                                       skipGfxRect);
-      aRenderingContext.Restore();
+      renderContext->Restore();
     }
 
   }
@@ -1742,7 +1745,7 @@ nsCSSRendering::GetShadowInnerRadii(nsIFrame* aFrame,
 
 void
 nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
-                                    gfxContext& aRenderingContext,
+                                    nsRenderingContext& aRenderingContext,
                                     nsIFrame* aForFrame,
                                     const nsRect& aFrameArea)
 {
@@ -1833,7 +1836,8 @@ nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
     
     
     
-    DrawTarget* drawTarget = aRenderingContext.GetDrawTarget();
+    gfxContext* renderContext = aRenderingContext.ThebesContext();
+    DrawTarget* drawTarget = renderContext->GetDrawTarget();
 
     
     
@@ -1842,16 +1846,16 @@ nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
     shadowGfxRect.Round();
 
     Color shadowColor = GetShadowColor(shadowItem, aForFrame, 1.0);
-    aRenderingContext.Save();
+    renderContext->Save();
 
     
     
     if (hasBorderRadius) {
       RefPtr<Path> roundedRect =
         MakePathForRoundedRect(*drawTarget, shadowGfxRect, innerRadii);
-      aRenderingContext.Clip(roundedRect);
+      renderContext->Clip(roundedRect);
     } else {
-      aRenderingContext.Clip(shadowGfxRect);
+      renderContext->Clip(shadowGfxRect);
     }
 
     nsContextBoxBlur insetBoxBlur;
@@ -1859,13 +1863,13 @@ nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
     Point shadowOffset(shadowItem->mXOffset / twipsPerPixel,
                        shadowItem->mYOffset / twipsPerPixel);
 
-    insetBoxBlur.InsetBoxBlur(&aRenderingContext, ToRect(destRect),
+    insetBoxBlur.InsetBoxBlur(renderContext, ToRect(destRect),
                               shadowClipGfxRect, shadowColor,
                               blurRadius, spreadDistanceAppUnits,
                               twipsPerPixel, hasBorderRadius,
                               clipRectRadii, ToRect(skipGfxRect),
                               shadowOffset);
-    aRenderingContext.Restore();
+    renderContext->Restore();
   }
 }
 
@@ -1909,7 +1913,7 @@ nsCSSRendering::PaintBGParams::ForSingleLayer(nsPresContext& aPresCtx,
 
 DrawResult
 nsCSSRendering::PaintStyleImageLayer(const PaintBGParams& aParams,
-                                     gfxContext& aRenderingCtx)
+                                     nsRenderingContext& aRenderingCtx)
 {
   PROFILER_LABEL("nsCSSRendering", "PaintBackground",
     js::ProfileEntry::Category::GRAPHICS);
@@ -2502,7 +2506,7 @@ DetermineCompositionOp(const nsCSSRendering::PaintBGParams& aParams,
 
 DrawResult
 nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
-                                           gfxContext& aRenderingCtx,
+                                           nsRenderingContext& aRenderingCtx,
                                            nsStyleContext *aBackgroundSC,
                                            const nsStyleBorder& aBorder)
 {
@@ -2577,6 +2581,7 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
   
   
   
+  gfxContext* ctx = aRenderingCtx.ThebesContext();
   nscoord appUnitsPerPixel = aParams.presCtx.AppUnitsPerDevPixel();
   ImageLayerClipState clipState;
   if (aParams.bgClipRect) {
@@ -2597,7 +2602,7 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
 
   
   if (drawBackgroundColor && !isCanvasFrame) {
-    aRenderingCtx.SetColor(Color::FromABGR(bgColor));
+    ctx->SetColor(Color::FromABGR(bgColor));
   }
 
   
@@ -2605,7 +2610,7 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
   
   if (!drawBackgroundImage) {
     if (!isCanvasFrame) {
-      DrawBackgroundColor(clipState, &aRenderingCtx, appUnitsPerPixel);
+      DrawBackgroundColor(clipState, ctx, appUnitsPerPixel);
     }
     return DrawResult::SUCCESS;
   }
@@ -2637,7 +2642,7 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
   
   
   if (drawBackgroundColor && !isCanvasFrame) {
-    DrawBackgroundColor(clipState, &aRenderingCtx, appUnitsPerPixel);
+    DrawBackgroundColor(clipState, ctx, appUnitsPerPixel);
   }
 
   if (!drawBackgroundImage) {
@@ -2681,18 +2686,17 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
                             (aParams.paintFlags & PAINTBG_WILL_PAINT_BORDER),
                             appUnitsPerPixel, &clipState);
         }
-        SetupImageLayerClip(clipState, &aRenderingCtx,
-                            appUnitsPerPixel, &autoSR);
+        SetupImageLayerClip(clipState, ctx, appUnitsPerPixel, &autoSR);
         if (!clipBorderArea.IsEqualEdges(aParams.borderArea)) {
           
           
           
           gfxRect clip =
             nsLayoutUtils::RectToGfxRect(aParams.borderArea, appUnitsPerPixel);
-          autoSR.EnsureSaved(&aRenderingCtx);
-          aRenderingCtx.NewPath();
-          aRenderingCtx.SnappedRectangle(clip);
-          aRenderingCtx.Clip();
+          autoSR.EnsureSaved(ctx);
+          ctx->NewPath();
+          ctx->SnappedRectangle(clip);
+          ctx->Clip();
         }
       }
     }
@@ -2716,10 +2720,10 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
     if (!state.mFillArea.IsEmpty()) {
       CompositionOp co = DetermineCompositionOp(aParams, layers, i);
       if (co != CompositionOp::OP_OVER) {
-        NS_ASSERTION(aRenderingCtx.CurrentOp() == CompositionOp::OP_OVER,
+        NS_ASSERTION(ctx->CurrentOp() == CompositionOp::OP_OVER,
                      "It is assumed the initial op is OP_OVER, when it is "
                      "restored later");
-        aRenderingCtx.SetOp(co);
+        ctx->SetOp(co);
       }
 
       result &=
@@ -2731,7 +2735,7 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
                                        state.mRepeatSize, aParams.opacity);
 
       if (co != CompositionOp::OP_OVER) {
-        aRenderingCtx.SetOp(CompositionOp::OP_OVER);
+        ctx->SetOp(CompositionOp::OP_OVER);
       }
     }
   }

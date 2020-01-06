@@ -18,11 +18,11 @@
 #include "nsISupports.h"                
 #include "nscore.h"                     
 
-class gfxContext;
 class gfxUserFontSet;
 class gfxTextPerfMetrics;
 class nsDeviceContext;
 class nsIAtom;
+class nsRenderingContext;
 struct nsBoundingMetrics;
 
 
@@ -200,10 +200,10 @@ public:
     
     void DrawString(const char *aString, uint32_t aLength,
                     nscoord aX, nscoord aY,
-                    gfxContext *aContext);
+                    nsRenderingContext *aContext);
     void DrawString(const char16_t* aString, uint32_t aLength,
                     nscoord aX, nscoord aY,
-                    gfxContext *aContext,
+                    nsRenderingContext *aContext,
                     DrawTarget* aTextRunConstructionDrawTarget);
 
     nsBoundingMetrics GetBoundingMetrics(const char16_t *aString,

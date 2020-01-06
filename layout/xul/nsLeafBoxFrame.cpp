@@ -119,7 +119,7 @@ nsLeafBoxFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 }
 
  nscoord
-nsLeafBoxFrame::GetMinISize(gfxContext *aRenderingContext)
+nsLeafBoxFrame::GetMinISize(nsRenderingContext *aRenderingContext)
 {
   nscoord result;
   DISPLAY_MIN_WIDTH(this, result);
@@ -141,7 +141,7 @@ nsLeafBoxFrame::GetMinISize(gfxContext *aRenderingContext)
 }
 
  nscoord
-nsLeafBoxFrame::GetPrefISize(gfxContext *aRenderingContext)
+nsLeafBoxFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
 {
   nscoord result;
   DISPLAY_PREF_WIDTH(this, result);
@@ -170,7 +170,7 @@ nsLeafBoxFrame::GetIntrinsicISize()
 }
 
 LogicalSize
-nsLeafBoxFrame::ComputeAutoSize(gfxContext*         aRenderingContext,
+nsLeafBoxFrame::ComputeAutoSize(nsRenderingContext* aRenderingContext,
                                 WritingMode         aWM,
                                 const LogicalSize&  aCBSize,
                                 nscoord             aAvailableISize,
