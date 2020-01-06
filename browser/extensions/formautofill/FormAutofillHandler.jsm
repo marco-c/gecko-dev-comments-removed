@@ -19,6 +19,8 @@ Cu.import("resource://formautofill/FormAutofillUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "FormAutofillHeuristics",
                                   "resource://formautofill/FormAutofillHeuristics.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "FormLikeFactory",
+                                  "resource://gre/modules/FormLikeFactory.jsm");
 
 this.log = null;
 FormAutofillUtils.defineLazyLogGetter(this, this.EXPORTED_SYMBOLS[0]);
@@ -28,8 +30,7 @@ FormAutofillUtils.defineLazyLogGetter(this, this.EXPORTED_SYMBOLS[0]);
 
 
 function FormAutofillHandler(form) {
-  this.form = form;
-  this.fieldDetails = [];
+  this._updateForm(form);
   this.winUtils = this.form.rootElement.ownerGlobal.QueryInterface(Ci.nsIInterfaceRequestor)
     .getInterface(Ci.nsIDOMWindowUtils);
 
@@ -67,8 +68,6 @@ FormAutofillHandler.prototype = {
 
 
   form: null,
-
-  _formFieldCount: 0,
 
   
 
@@ -112,14 +111,6 @@ FormAutofillHandler.prototype = {
     PREVIEW: "-moz-autofill-preview",
   },
 
-  get isFormChangedSinceLastCollection() {
-    
-    
-    
-    
-    return this._formFieldCount != this.form.elements.length;
-  },
-
   
 
 
@@ -131,11 +122,70 @@ FormAutofillHandler.prototype = {
 
 
 
+  updateFormIfNeeded(element) {
+    
+    
+    
+    
+    
+    
+    
+
+    let _formLike;
+    let getFormLike = () => {
+      if (!_formLike) {
+        _formLike = FormLikeFactory.createFromField(element);
+      }
+      return _formLike;
+    };
+
+    let currentForm = element.form;
+    if (!currentForm) {
+      currentForm = getFormLike();
+    }
+
+    if (currentForm.elements.length != this.form.elements.length) {
+      log.debug("The count of form elements is changed.");
+      this._updateForm(getFormLike());
+      return true;
+    }
+
+    if (this.form.elements.indexOf(element) === -1) {
+      log.debug("The element can not be found in the current form.");
+      this._updateForm(getFormLike());
+      return true;
+    }
+
+    return false;
+  },
+
+  
+
+
+
+
+  _updateForm(form) {
+    this.form = form;
+    this.fieldDetails = [];
+
+    if (this.address) {
+      this.address.fieldDetails = [];
+    }
+    if (this.creditCard) {
+      this.creditCard.fieldDetails = [];
+    }
+  },
+
+  
+
+
+
+
+
 
 
   collectFormFields(allowDuplicates = false) {
     this._cacheValue.allFieldNames = null;
-    this._formFieldCount = this.form.elements.length;
     let fieldDetails = FormAutofillHeuristics.getFormInfo(this.form, allowDuplicates);
     this.fieldDetails = fieldDetails ? fieldDetails : [];
     log.debug("Collected details on", this.fieldDetails.length, "fields");
@@ -408,9 +458,10 @@ FormAutofillHandler.prototype = {
 
 
   async autofillFormFields(profile, focusedInput) {
-    let focusedDetail = this.fieldDetails.find(
-      detail => detail.elementWeakRef.get() == focusedInput
-    );
+    let focusedDetail = this.getFieldDetailByElement(focusedInput);
+    if (!focusedDetail) {
+      throw new Error("No fieldDetail for the focused input.");
+    }
     let targetSet;
     if (FormAutofillUtils.isCreditCardField(focusedDetail.fieldName)) {
       
