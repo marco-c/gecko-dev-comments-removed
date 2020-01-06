@@ -415,9 +415,7 @@ protected:
   
   
   
-  
-  std::vector<wr::WrClipId> mClipIdStack;
-  std::vector<layers::FrameMetrics::ViewID> mScrollIdStack;
+  std::vector<wr::ScrollOrClipId> mClipStack;
 
   
   
