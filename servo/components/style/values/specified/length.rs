@@ -362,60 +362,6 @@ impl Add<AbsoluteLength> for AbsoluteLength {
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq, ToCss)]
-#[derive(MallocSizeOf)]
-pub enum PhysicalLength {
-    
-    #[css(dimension)]
-    Mozmm(CSSFloat),
-}
-
-impl PhysicalLength {
-    
-    pub fn is_zero(&self) -> bool {
-        match *self {
-            PhysicalLength::Mozmm(v) => v == 0.,
-        }
-    }
-
-    
-    #[cfg(feature = "gecko")]
-    pub fn to_computed_value(&self, context: &Context) -> CSSPixelLength {
-        use gecko_bindings::bindings;
-        use std::f32;
-
-        
-        const INCH_PER_MM: f32 = 1. / 25.4;
-
-        let au_per_physical_inch = unsafe {
-            bindings::Gecko_GetAppUnitsPerPhysicalInch(context.device().pres_context()) as f32
-        };
-
-        let px_per_physical_inch = au_per_physical_inch / AU_PER_PX;
-
-        let mm = match *self {
-            PhysicalLength::Mozmm(v) => v,
-        };
-
-        let pixel = mm * px_per_physical_inch * INCH_PER_MM;
-        CSSPixelLength::new(pixel.min(f32::MAX).max(f32::MIN))
-    }
-}
-
-impl Mul<CSSFloat> for PhysicalLength {
-    type Output = Self ;
-
-    #[inline]
-    fn mul(self, scalar: CSSFloat) -> Self {
-        match self {
-            PhysicalLength::Mozmm(v) => PhysicalLength::Mozmm(v * scalar),
-        }
-    }
-}
-
-
-
-
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
 pub enum NoCalcLength {
     
@@ -439,10 +385,6 @@ pub enum NoCalcLength {
     
     #[css(function)]
     ServoCharacterWidth(CharacterWidth),
-
-    
-    #[cfg(feature = "gecko")]
-    Physical(PhysicalLength),
 }
 
 impl Mul<CSSFloat> for NoCalcLength {
@@ -455,8 +397,6 @@ impl Mul<CSSFloat> for NoCalcLength {
             NoCalcLength::FontRelative(v) => NoCalcLength::FontRelative(v * scalar),
             NoCalcLength::ViewportPercentage(v) => NoCalcLength::ViewportPercentage(v * scalar),
             NoCalcLength::ServoCharacterWidth(_) => panic!("Can't multiply ServoCharacterWidth!"),
-            #[cfg(feature = "gecko")]
-            NoCalcLength::Physical(v) => NoCalcLength::Physical(v * scalar),
         }
     }
 }
@@ -504,8 +444,6 @@ impl NoCalcLength {
                 }
                 Ok(NoCalcLength::ViewportPercentage(ViewportPercentageLength::Vmax(value)))
             },
-            #[cfg(feature = "gecko")]
-            "mozmm" => Ok(NoCalcLength::Physical(PhysicalLength::Mozmm(value))),
             _ => Err(())
         }
     }
@@ -521,8 +459,6 @@ impl NoCalcLength {
     pub fn is_zero(&self) -> bool {
         match *self {
             NoCalcLength::Absolute(length) => length.is_zero(),
-            #[cfg(feature = "gecko")]
-            NoCalcLength::Physical(length) => length.is_zero(),
             _ => false
         }
     }
