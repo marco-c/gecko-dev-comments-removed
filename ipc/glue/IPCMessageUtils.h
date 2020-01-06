@@ -163,6 +163,24 @@ public:
 };
 
 template <typename E,
+          E MinLegal,
+          E MaxLegal>
+class ContiguousEnumValidatorInclusive
+{
+  
+  
+  
+  template <typename T>
+  static bool IsLessThanOrEqual(T a, T b) { return a <= b; }
+
+public:
+  static bool IsLegalValue(E e)
+  {
+    return IsLessThanOrEqual(MinLegal, e) && e <= MaxLegal;
+  }
+};
+
+template <typename E,
           E AllBits>
 struct BitFlagsEnumValidator
 {
@@ -194,6 +212,20 @@ template <typename E,
 struct ContiguousEnumSerializer
   : EnumSerializer<E,
                    ContiguousEnumValidator<E, MinLegal, HighBound>>
+{};
+
+
+
+
+
+
+
+template <typename E,
+          E MinLegal,
+          E MaxLegal>
+struct ContiguousEnumSerializerInclusive
+  : EnumSerializer<E,
+                   ContiguousEnumValidatorInclusive<E, MinLegal, MaxLegal>>
 {};
 
 
