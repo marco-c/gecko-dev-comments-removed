@@ -56,7 +56,7 @@
 #endif
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
-#include "mozilla/SandboxReporter.h"
+#include "mozilla/SandboxLaunch.h"
 #endif
 
 #include "nsTArray.h"
@@ -228,6 +228,10 @@ GeckoChildProcessHost::PrepareLaunch()
   if (CrashReporter::GetEnabled()) {
     CrashReporter::OOPInit();
   }
+#endif
+
+#if defined(XP_LINUX) && defined(MOZ_SANDBOX)
+  SandboxLaunchPrepare(mProcessType, mLaunchOptions.get());
 #endif
 
 #ifdef XP_WIN
@@ -708,27 +712,6 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   FilePath exePath;
   BinaryPathType pathType = GetPathToBinary(exePath, mProcessType);
 
-# if defined(XP_LINUX) && defined(MOZ_SANDBOX)
-  
-  
-  
-  
-  {
-    nsAutoCString preload;
-    
-    
-    preload.AssignLiteral("libmozsandbox.so");
-    if (const char* oldPreload = PR_GetEnv("LD_PRELOAD")) {
-      
-      preload.Append(' ');
-      preload.Append(oldPreload);
-    }
-    
-    
-    mLaunchOptions->environ["LD_PRELOAD"] = std::string(preload.get());
-  }
-# endif 
-
   
   
   int srcChannelFd, dstChannelFd;
@@ -803,15 +786,6 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
 #  elif defined(MOZ_WIDGET_COCOA) 
   childArgv.push_back(CrashReporter::GetChildNotificationPipe());
 #  endif  
-# endif 
-
-# if defined(XP_LINUX) && defined(MOZ_SANDBOX)
-  {
-    int srcFd, dstFd;
-    SandboxReporter::Singleton()
-      ->GetClientFileDescriptorMapping(&srcFd, &dstFd);
-    mLaunchOptions->fds_to_remap.push_back(std::make_pair(srcFd, dstFd));
-  }
 # endif 
 
 # ifdef MOZ_WIDGET_COCOA
