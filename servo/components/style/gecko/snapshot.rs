@@ -56,6 +56,13 @@ impl GeckoElementSnapshot {
     }
 
     
+    
+    #[inline]
+    pub fn has_other_pseudo_class_state(&self) -> bool {
+        self.has_any(Flags::OtherPseudoClassState)
+    }
+
+    
     pub fn attr_matches(&self,
                         ns: &NamespaceConstraint<&Namespace>,
                         local_name: &Atom,

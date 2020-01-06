@@ -206,6 +206,14 @@ impl NonTSPseudoClass {
         }
         apply_non_ts_list!(pseudo_class_geckotype)
     }
+
+    
+    
+    pub fn is_attr_based(&self) -> bool {
+        matches!(*self,
+                 NonTSPseudoClass::MozTableBorderNonzero |
+                 NonTSPseudoClass::MozBrowserFrame)
+    }
 }
 
 
