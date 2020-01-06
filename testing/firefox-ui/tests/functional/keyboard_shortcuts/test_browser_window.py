@@ -37,7 +37,7 @@ class TestBrowserWindowShortcuts(PuppeteerMixin, MarionetteTestCase):
         self.assertNotEqual(current_name, "input")
 
         
-        if self.puppeteer.platform == 'linux':
+        if self.marionette.session_capabilities['platformName'] == 'linux':
             key = 'searchFocusUnix.commandkey'
         else:
             key = 'searchFocus.commandkey'
