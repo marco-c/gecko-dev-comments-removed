@@ -82,6 +82,18 @@ class TextTrackList;
 class AudioTrackList;
 class VideoTrackList;
 
+enum class StreamCaptureType : uint8_t
+{
+  CAPTURE_ALL_TRACKS,
+  CAPTURE_AUDIO
+};
+
+enum class StreamCaptureBehavior : uint8_t
+{
+  CONTINUE_WHEN_ENDED,
+  FINISH_WHEN_ENDED
+};
+
 class HTMLMediaElement : public nsGenericHTMLElement,
                          public nsIDOMHTMLMediaElement,
                          public MediaDecoderOwner,
@@ -941,9 +953,10 @@ protected:
 
 
 
-  already_AddRefed<DOMMediaStream> CaptureStreamInternal(bool aFinishWhenEnded,
-                                                         bool aCaptureAudio,
-                                                         MediaStreamGraph* aGraph);
+  already_AddRefed<DOMMediaStream>
+  CaptureStreamInternal(StreamCaptureBehavior aBehavior,
+                        StreamCaptureType aType,
+                        MediaStreamGraph* aGraph);
 
   
 
@@ -1273,7 +1286,11 @@ protected:
   void UpdateCustomPolicyAfterPlayed();
 
   
-  bool CanBeCaptured(bool aCaptureAudio);
+  
+  StreamCaptureType CaptureTypeForElement();
+
+  
+  bool CanBeCaptured(StreamCaptureType aCaptureType);
 
   class nsAsyncEventRunner;
   class nsNotifyAboutPlayingRunner;
