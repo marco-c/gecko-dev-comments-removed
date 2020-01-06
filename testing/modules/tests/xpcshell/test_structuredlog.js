@@ -1,16 +1,16 @@
 
 
 
-function run_test () {
+function run_test() {
   Components.utils.import("resource://testing-common/StructuredLog.jsm");
 
   let testBuffer = [];
 
-  let appendBuffer = function (msg) {
+  let appendBuffer = function(msg) {
     testBuffer.push(JSON.stringify(msg));
   }
 
-  let assertLastMsg = function (refData) {
+  let assertLastMsg = function(refData) {
     
     
     let lastMsg = JSON.parse(testBuffer.pop());
@@ -23,7 +23,7 @@ function run_test () {
     equal(lastMsg.source_file, "test_structuredlog.js");
   }
 
-  let addFileName = function (data) {
+  let addFileName = function(data) {
     data.source_file = "test_structuredlog.js";
   }
 
@@ -38,7 +38,7 @@ function run_test () {
   });
 
   logger.info("Test message",
-              extra={foo: "bar"});
+              extra = {foo: "bar"});
   assertLastMsg({
     action: "log",
     message: "Test message",
