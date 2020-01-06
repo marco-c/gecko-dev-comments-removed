@@ -5,16 +5,12 @@
 
 
 
-use Atom;
 use context::QuirksMode;
 use dom::{TDocument, TElement, TNode};
 use invalidation::element::invalidator::{Invalidation, InvalidationProcessor, InvalidationVector};
 use selectors::{Element, NthIndexCache, SelectorList};
-use selectors::attr::CaseSensitivity;
 use selectors::matching::{self, MatchingContext, MatchingMode};
-use selectors::parser::{Combinator, Component, LocalName};
 use smallvec::SmallVec;
-use std::borrow::Borrow;
 
 
 pub fn element_matches<E>(
@@ -225,100 +221,10 @@ where
 
 
 
-fn element_is_descendant_of<E>(element: E, root: E::ConcreteNode) -> bool
-where
-    E: TElement,
-{
-    if element.as_node().is_in_document() && root == root.owner_doc().as_node() {
-        return true;
-    }
 
-    let mut current = element.as_node().parent_node();
-    while let Some(n) = current.take() {
-        if n == root {
-            return true;
-        }
-
-        current = n.parent_node();
-    }
-    false
-}
-
-
-
-fn fast_connected_elements_with_id<'a, D>(
-    doc: &'a D,
-    root: D::ConcreteNode,
-    id: &Atom,
-    quirks_mode: QuirksMode,
-) -> Result<&'a [<D::ConcreteNode as TNode>::ConcreteElement], ()>
-where
-    D: TDocument,
-{
-    debug_assert_eq!(root.owner_doc().as_node(), doc.as_node());
-
-    let case_sensitivity = quirks_mode.classes_and_ids_case_sensitivity();
-    if case_sensitivity != CaseSensitivity::CaseSensitive {
-        return Err(());
-    }
-
-    if !root.is_in_document() {
-        return Err(());
-    }
-
-    doc.elements_with_id(id)
-}
-
-
-fn collect_elements_with_id<E, Q, F>(
+fn query_selector_fast<E, Q>(
     root: E::ConcreteNode,
-    id: &Atom,
-    results: &mut Q::Output,
-    quirks_mode: QuirksMode,
-    mut filter: F,
-)
-where
-    E: TElement,
-    Q: SelectorQuery<E>,
-    F: FnMut(E) -> bool,
-{
-    let doc = root.owner_doc();
-    let elements = match fast_connected_elements_with_id(&doc, root, id, quirks_mode) {
-        Ok(elements) => elements,
-        Err(()) => {
-            let case_sensitivity =
-                quirks_mode.classes_and_ids_case_sensitivity();
-
-            collect_all_elements::<E, Q, _>(root, results, |e| {
-                e.has_id(id, case_sensitivity) && filter(e)
-            });
-
-            return;
-        }
-    };
-
-    for element in elements {
-        
-        
-        if !element_is_descendant_of(*element, root) {
-            continue;
-        }
-
-        if !filter(*element) {
-            continue;
-        }
-
-        Q::append_element(results, *element);
-        if Q::should_stop_after_first_match() {
-            break;
-        }
-    }
-}
-
-
-fn query_selector_single_query<E, Q>(
-    root: E::ConcreteNode,
-    component: &Component<E::Impl>,
+    selector_list: &SelectorList<E::Impl>,
     results: &mut Q::Output,
     quirks_mode: QuirksMode,
 ) -> Result<(), ()>
@@ -326,18 +232,36 @@ where
     E: TElement,
     Q: SelectorQuery<E>,
 {
+    use selectors::parser::{Component, LocalName};
+    use std::borrow::Borrow;
+
+    
+    
+    if selector_list.0.len() > 1 {
+        return Err(());
+    }
+
+    let selector = &selector_list.0[0];
+
+    
+    
+    
+    
+    if selector.len() > 1 {
+        return Err(());
+    }
+
+    let component = selector.iter().next().unwrap();
     match *component {
         Component::ExplicitUniversalType => {
             collect_all_elements::<E, Q, _>(root, results, |_| true)
         }
         Component::ID(ref id) => {
-            collect_elements_with_id::<E, Q, _>(
-                root,
-                id,
-                results,
-                quirks_mode,
-                |_| true,
-            );
+            
+            let case_sensitivity = quirks_mode.classes_and_ids_case_sensitivity();
+            collect_all_elements::<E, Q, _>(root, results, |element| {
+                element.has_id(id, case_sensitivity)
+            })
         }
         Component::Class(ref class) => {
             let case_sensitivity = quirks_mode.classes_and_ids_case_sensitivity();
@@ -364,139 +288,6 @@ where
 }
 
 
-
-
-
-fn query_selector_fast<E, Q>(
-    root: E::ConcreteNode,
-    selector_list: &SelectorList<E::Impl>,
-    results: &mut Q::Output,
-    matching_context: &mut MatchingContext<E::Impl>,
-) -> Result<(), ()>
-where
-    E: TElement,
-    Q: SelectorQuery<E>,
-{
-    
-    
-    if selector_list.0.len() > 1 {
-        return Err(());
-    }
-
-    let selector = &selector_list.0[0];
-    let quirks_mode = matching_context.quirks_mode();
-
-    
-    if selector.len() == 1 {
-        return query_selector_single_query::<E, Q>(
-            root,
-            selector.iter().next().unwrap(),
-            results,
-            quirks_mode,
-        );
-    }
-
-    let mut iter = selector.iter();
-    let mut combinator: Option<Combinator> = None;
-
-    loop {
-        debug_assert!(combinator.map_or(true, |c| !c.is_sibling()));
-
-        'component_loop: for component in &mut iter {
-            match *component {
-                Component::ID(ref id) => {
-                    if combinator.is_none() {
-                        
-                        
-                        collect_elements_with_id::<E, Q, _>(
-                            root,
-                            id,
-                            results,
-                            quirks_mode,
-                            |e| {
-                                matching::matches_selector_list(
-                                    selector_list,
-                                    &e,
-                                    matching_context,
-                                )
-                            }
-                        );
-
-                        return Ok(());
-                    }
-
-                    let doc = root.owner_doc();
-                    let elements =
-                        fast_connected_elements_with_id(&doc, root, id, quirks_mode)?;
-
-                    if elements.is_empty() {
-                        return Ok(());
-                    }
-
-                    
-                    
-                    
-                    
-                    if !Q::should_stop_after_first_match() && elements.len() > 1 {
-                        continue;
-                    }
-
-                    for element in elements {
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        if !element_is_descendant_of(*element, root) {
-                            continue 'component_loop;
-                        }
-
-                        query_selector_slow::<E, Q>(
-                            element.as_node(),
-                            selector_list,
-                            results,
-                            matching_context,
-                        );
-
-                        if Q::should_stop_after_first_match() && !Q::is_empty(&results) {
-                            break;
-                        }
-                    }
-
-                    return Ok(());
-                }
-                _ => {},
-            }
-        }
-
-        loop {
-            let next_combinator = match iter.next_sequence() {
-                None => return Err(()),
-                Some(c) => c,
-            };
-
-            
-            
-            
-            if next_combinator.is_sibling() {
-                
-                for _ in &mut iter {}
-                continue;
-            }
-
-            combinator = Some(next_combinator);
-            break;
-        }
-    }
-}
-
-
 fn query_selector_slow<E, Q>(
     root: E::ConcreteNode,
     selector_list: &SelectorList<E::Impl>,
@@ -513,20 +304,10 @@ where
 }
 
 
-#[derive(PartialEq)]
-pub enum MayUseInvalidation {
-    
-    Yes,
-    
-    No,
-}
-
-
 pub fn query_selector<E, Q>(
     root: E::ConcreteNode,
     selector_list: &SelectorList<E::Impl>,
     results: &mut Q::Output,
-    may_use_invalidation: MayUseInvalidation,
 )
 where
     E: TElement,
@@ -535,7 +316,21 @@ where
     use invalidation::element::invalidator::TreeStyleInvalidator;
 
     let quirks_mode = root.owner_doc().quirks_mode();
+    let fast_result = query_selector_fast::<E, Q>(
+        root,
+        selector_list,
+        results,
+        quirks_mode,
+    );
 
+    if fast_result.is_ok() {
+        return;
+    }
+
+    
+    
+    
+    
     let mut nth_index_cache = NthIndexCache::default();
     let mut matching_context = MatchingContext::new(
         MatchingMode::Normal,
@@ -547,32 +342,12 @@ where
     let root_element = root.as_element();
     matching_context.scope_element = root_element.map(|e| e.opaque());
 
-    let fast_result = query_selector_fast::<E, Q>(
-        root,
-        selector_list,
-        results,
-        &mut matching_context,
-    );
-
-    if fast_result.is_ok() {
-        return;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
     
     let invalidation_may_be_useful =
-        may_use_invalidation == MayUseInvalidation::Yes &&
-        selector_list.0.iter().any(|s| s.len() > 2);
+        selector_list.0.iter().any(|s| s.len() > 1);
 
     if root_element.is_some() || !invalidation_may_be_useful {
         query_selector_slow::<E, Q>(

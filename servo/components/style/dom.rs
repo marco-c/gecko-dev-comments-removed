@@ -122,7 +122,6 @@ where
 {
     type Item = N;
 
-    #[inline]
     fn next(&mut self) -> Option<N> {
         let prev = match self.previous.take() {
             None => return None,
@@ -147,18 +146,6 @@ pub trait TDocument : Sized + Copy + Clone {
 
     
     fn quirks_mode(&self) -> QuirksMode;
-
-    
-    
-    
-    
-    
-    fn elements_with_id(
-        &self,
-        _id: &Atom,
-    ) -> Result<&[<Self::ConcreteNode as TNode>::ConcreteElement], ()> {
-        Err(())
-    }
 }
 
 
@@ -194,9 +181,6 @@ pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo + PartialEq {
     }
 
     
-    fn is_in_document(&self) -> bool;
-
-    
     fn dom_descendants(&self) -> DomDescendants<Self> {
         DomDescendants {
             previous: Some(*self),
@@ -206,7 +190,6 @@ pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo + PartialEq {
 
     
     
-    #[inline]
     fn next_in_preorder(&self, scoped_to: Option<Self>) -> Option<Self> {
         if let Some(c) = self.first_child() {
             return Some(c);
