@@ -40,6 +40,7 @@ class nsISSLStatus;
 
 namespace mozilla { namespace net {
 
+class nsChannelClassifier;
 class Http2PushedStream;
 
 class HttpChannelSecurityWarningReporter
@@ -506,6 +507,8 @@ private:
 
     void SetDoNotTrack();
 
+    already_AddRefed<nsChannelClassifier> GetOrCreateChannelClassifier();
+
 private:
     
     
@@ -515,6 +518,13 @@ private:
     nsCOMPtr<nsIURI> mRedirectURI;
     nsCOMPtr<nsIChannel> mRedirectChannel;
     nsCOMPtr<nsIChannel> mPreflightChannel;
+
+    
+    
+    
+    
+    
+    RefPtr<nsChannelClassifier> mChannelClassifier;
 
     
     void ReleaseMainThreadOnlyReferences();
@@ -701,6 +711,10 @@ private:
 
 protected:
     virtual void DoNotifyListenerCleanup() override;
+
+    
+    
+    virtual void ReleaseListeners() override;
 
 private: 
     bool mDidReval;

@@ -375,7 +375,7 @@ protected:
   virtual void DoNotifyListenerCleanup() = 0;
 
   
-  void ReleaseListeners();
+  virtual void ReleaseListeners();
 
   
   
