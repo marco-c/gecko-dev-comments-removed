@@ -558,7 +558,7 @@ pref("media.navigator.audio.full_duplex", true);
 
 pref("media.peerconnection.capture_delay", 50);
 pref("media.getusermedia.playout_delay", 50);
-pref("media.navigator.audio.full_duplex", true);
+pref("media.navigator.audio.full_duplex", false);
 #endif
 
 
