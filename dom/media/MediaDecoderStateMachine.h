@@ -230,12 +230,6 @@ public:
     OwnerThread()->DispatchStateChange(r.forget());
   }
 
-  
-  void BreakCycles() {
-    MOZ_ASSERT(NS_IsMainThread());
-    mResource = nullptr;
-  }
-
   TimedMetadataEventSource& TimedMetadataEvent() {
     return mMetadataManager.TimedMetadataEvent();
   }
@@ -645,9 +639,6 @@ private:
 
   
   const RefPtr<OutputStreamManager> mOutputStreamManager;
-
-  
-  RefPtr<MediaResource> mResource;
 
   
   VideoDecodeMode mVideoDecodeMode;
