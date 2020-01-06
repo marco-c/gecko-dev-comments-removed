@@ -9,7 +9,12 @@
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/inspector/test/head.js", this);
 
+const COMMON_FRAME_SCRIPT_URL = "chrome://devtools/content/shared/frame-script-utils.js";
+const FRAME_SCRIPT_URL = CHROME_URL_ROOT + "doc_frame_script.js";
 const TAB_NAME = "newanimationinspector";
+
+const ANIMATION_L10N =
+  new LocalizationHelper("devtools/client/locales/animationinspector.properties");
 
 
 Services.prefs.setBoolPref("devtools.new-animationinspector.enabled", true);
@@ -29,9 +34,10 @@ registerCleanupFunction(() => {
 
 const openAnimationInspector = async function () {
   const { inspector, toolbox } = await openInspectorSidebarTab(TAB_NAME);
+  await inspector.once("inspector-updated");
   const { animationinspector: animationInspector } = inspector;
   const panel = inspector.panelWin.document.getElementById("animation-container");
-  return { toolbox, inspector, animationInspector, panel };
+  return { animationInspector, toolbox, inspector, panel };
 };
 
 
@@ -42,4 +48,59 @@ const openAnimationInspector = async function () {
 const closeAnimationInspector = async function () {
   const target = TargetFactory.forTab(gBrowser.selectedTab);
   return gDevTools.closeToolbox(target);
+};
+
+
+
+
+
+
+
+const enableAnimationFeatures = function () {
+  return new Promise(resolve => {
+    SpecialPowers.pushPrefEnv({"set": [
+      ["dom.animations-api.core.enabled", true],
+      ["layout.css.frames-timing.enabled", true],
+    ]}, resolve);
+  });
+};
+
+
+
+
+
+
+
+const _addTab = addTab;
+addTab = async function (url) {
+  await enableAnimationFeatures();
+  const tab = await _addTab(url);
+  const browser = tab.linkedBrowser;
+  info("Loading the helper frame script " + FRAME_SCRIPT_URL);
+  browser.messageManager.loadFrameScript(FRAME_SCRIPT_URL, false);
+  info("Loading the helper frame script " + COMMON_FRAME_SCRIPT_URL);
+  browser.messageManager.loadFrameScript(COMMON_FRAME_SCRIPT_URL, false);
+  return tab;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const selectNodeAndWaitForAnimations = async function (data, inspector, reason = "test") {
+  
+  
+  const onUpdated = inspector.once("inspector-updated");
+  await selectNode(data, inspector, reason);
+  await onUpdated;
 };
