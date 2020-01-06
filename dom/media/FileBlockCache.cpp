@@ -20,6 +20,16 @@ LazyLogModule gFileBlockCacheLog("FileBlockCache");
 #define LOG(x, ...) MOZ_LOG(gFileBlockCacheLog, LogLevel::Debug, \
   ("%p " x, this, ##__VA_ARGS__))
 
+static void
+CloseFD(PRFileDesc* aFD)
+{
+  PRStatus prrc;
+  prrc = PR_Close(aFD);
+  if (prrc != PR_SUCCESS) {
+    NS_WARNING("PR_Close() failed.");
+  }
+}
+
 void
 FileBlockCache::SetCacheFile(PRFileDesc* aFD)
 {
@@ -36,17 +46,23 @@ FileBlockCache::SetCacheFile(PRFileDesc* aFD)
   }
   {
     MutexAutoLock lock(mDataMutex);
-    if (!mIsOpen) {
+    if (mIsOpen) {
       
-      
+      mInitialized = true;
+      if (mIsWriteScheduled) {
+        
+        
+        mThread->Dispatch(this, NS_DISPATCH_NORMAL);
+      }
       return;
     }
-    mInitialized = true;
-    if (mIsWriteScheduled) {
-      
-      
-      mThread->Dispatch(this, NS_DISPATCH_NORMAL);
-    }
+  }
+  
+  
+  MutexAutoLock lock(mFileMutex);
+  if (mFD) {
+    CloseFD(mFD);
+    mFD = nullptr;
   }
 }
 
@@ -135,11 +151,7 @@ void FileBlockCache::Close()
   
   nsresult rv = thread->Dispatch(NS_NewRunnableFunction([thread, fd] {
     if (fd) {
-      PRStatus prrc;
-      prrc = PR_Close(fd);
-      if (prrc != PR_SUCCESS) {
-        NS_WARNING("PR_Close() failed.");
-      }
+      CloseFD(fd);
     }
     
     
@@ -289,7 +301,6 @@ nsresult FileBlockCache::Run()
   MutexAutoLock mon(mDataMutex);
   NS_ASSERTION(!mChangeIndexList.empty(), "Only dispatch when there's work to do");
   NS_ASSERTION(mIsWriteScheduled, "Should report write running or scheduled.");
-  MOZ_ASSERT(mFD);
 
   LOG("Run() mFD=%p mIsOpen=%d", mFD, mIsOpen);
 
@@ -318,7 +329,6 @@ nsresult FileBlockCache::Run()
     
     
     int32_t blockIndex = mChangeIndexList.front();
-    mChangeIndexList.pop_front();
     RefPtr<BlockChange> change = mBlockChanges[blockIndex];
     MOZ_ASSERT(change,
                "Change index list should only contain entries for blocks "
@@ -326,12 +336,18 @@ nsresult FileBlockCache::Run()
     {
       MutexAutoUnlock unlock(mDataMutex);
       MutexAutoLock lock(mFileMutex);
+      if (!mFD) {
+        
+        
+        return NS_OK;
+      }
       if (change->IsWrite()) {
         WriteBlockToFile(blockIndex, change->mData.get());
       } else if (change->IsMove()) {
         MoveBlockInFile(change->mSourceBlockIndex, blockIndex);
       }
     }
+    mChangeIndexList.pop_front();
     
     
     
@@ -398,6 +414,10 @@ nsresult FileBlockCache::Read(int64_t aOffset,
       {
         MutexAutoUnlock unlock(mDataMutex);
         MutexAutoLock lock(mFileMutex);
+        if (!mFD) {
+          
+          return NS_ERROR_FAILURE;
+        }
         res = ReadFromFile(BlockIndexToOffset(blockIndex) + start,
                            dst,
                            amount,
