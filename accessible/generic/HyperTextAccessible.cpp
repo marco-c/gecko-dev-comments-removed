@@ -1337,6 +1337,13 @@ HyperTextAccessible::SetSelectionRange(int32_t aStartPos, int32_t aEndPos)
   SetSelectionBoundsAt(0, aStartPos, aEndPos);
 
   
+  domSel->ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION,
+                         nsIPresShell::ScrollAxis(),
+                         nsIPresShell::ScrollAxis(),
+                         dom::Selection::SCROLL_FOR_CARET_MOVE |
+                             dom::Selection::SCROLL_OVERFLOW_HIDDEN);
+
+  
   
   
   if (isFocusable)
