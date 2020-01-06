@@ -48,12 +48,6 @@ const MIN_SUBSESSION_LENGTH_MS = Preferences.get("toolkit.telemetry.minSubsessio
 const LOGGER_NAME = "Toolkit.Telemetry";
 const LOGGER_PREFIX = "TelemetrySession" + (Utils.isContentProcess ? "#content::" : "::");
 
-const PREF_BRANCH = "toolkit.telemetry.";
-const PREF_PREVIOUS_BUILDID = PREF_BRANCH + "previousBuildID";
-const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
-const PREF_UNIFIED = PREF_BRANCH + "unified";
-const PREF_SHUTDOWN_PINGSENDER = PREF_BRANCH + "shutdownPingSender.enabled";
-
 const MESSAGE_TELEMETRY_PAYLOAD = "Telemetry:Payload";
 const MESSAGE_TELEMETRY_THREAD_HANGS = "Telemetry:ChildThreadHangs";
 const MESSAGE_TELEMETRY_GET_CHILD_THREAD_HANGS = "Telemetry:GetChildThreadHangs";
@@ -65,7 +59,7 @@ const ABORTED_SESSION_FILE_NAME = "aborted-session-ping";
 
 
 
-const IS_UNIFIED_TELEMETRY = Preferences.get(PREF_UNIFIED, false);
+const IS_UNIFIED_TELEMETRY = Preferences.get(TelemetryUtils.Preferences.Unified, false);
 
 
 const MAX_NUM_CONTENT_PAYLOADS = 10;
@@ -531,9 +525,6 @@ var TelemetryScheduler = {
 this.EXPORTED_SYMBOLS = ["TelemetrySession"];
 
 this.TelemetrySession = Object.freeze({
-  Constants: Object.freeze({
-    PREF_PREVIOUS_BUILDID,
-  }),
   
 
 
@@ -1516,12 +1507,12 @@ var Impl = {
 
     
     
-    let previousBuildId = Preferences.get(PREF_PREVIOUS_BUILDID, null);
+    let previousBuildId = Preferences.get(TelemetryUtils.Preferences.PreviousBuildID, null);
     let thisBuildID = Services.appinfo.appBuildID;
     
     if (previousBuildId != thisBuildID) {
       this._previousBuildId = previousBuildId;
-      Preferences.set(PREF_PREVIOUS_BUILDID, thisBuildID);
+      Preferences.set(TelemetryUtils.Preferences.PreviousBuildID, thisBuildID);
     }
 
     this.attachEarlyObservers();
@@ -1811,7 +1802,7 @@ var Impl = {
       
       
       
-      let sendWithPingsender = Preferences.get(PREF_SHUTDOWN_PINGSENDER, false) &&
+      let sendWithPingsender = Preferences.get(TelemetryUtils.Preferences.ShutdownPingSender, false) &&
                                !TelemetryReportingPolicy.isFirstRun();
 
       let options = {
