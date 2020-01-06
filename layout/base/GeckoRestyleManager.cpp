@@ -3120,7 +3120,7 @@ ElementRestyler::RestyleUndisplayedNodes(nsRestyleHint      aChildRestyleHint,
 {
   nsIContent* undisplayedParent = aUndisplayedParent;
   UndisplayedNode* undisplayed = aUndisplayed;
-  TreeMatchContext::AutoAncestorPusher pusher(mTreeMatchContext);
+  TreeMatchContext::AutoAncestorPusher pusher(&mTreeMatchContext);
   if (undisplayed) {
     pusher.PushAncestorAndStyleScope(undisplayedParent);
   }
@@ -3140,7 +3140,7 @@ ElementRestyler::RestyleUndisplayedNodes(nsRestyleHint      aChildRestyleHint,
     
     
     nsIContent* parent = undisplayed->mContent->GetParent();
-    TreeMatchContext::AutoAncestorPusher insertionPointPusher(mTreeMatchContext);
+    TreeMatchContext::AutoAncestorPusher insertionPointPusher(&mTreeMatchContext);
     if (parent && nsContentUtils::IsContentInsertionPoint(parent)) {
       insertionPointPusher.PushAncestorAndStyleScope(parent);
     }
@@ -3348,7 +3348,7 @@ ElementRestyler::RestyleContentChildren(nsIFrame* aParent,
   LOG_RESTYLE("RestyleContentChildren");
 
   nsIFrame::ChildListIterator lists(aParent);
-  TreeMatchContext::AutoAncestorPusher ancestorPusher(mTreeMatchContext);
+  TreeMatchContext::AutoAncestorPusher ancestorPusher(&mTreeMatchContext);
   if (!lists.IsDone()) {
     ancestorPusher.PushAncestorAndStyleScope(mContent);
   }
@@ -3366,7 +3366,7 @@ ElementRestyler::RestyleContentChildren(nsIFrame* aParent,
         
         
         nsIContent* parent = child->GetContent() ? child->GetContent()->GetParent() : nullptr;
-        TreeMatchContext::AutoAncestorPusher insertionPointPusher(mTreeMatchContext);
+        TreeMatchContext::AutoAncestorPusher insertionPointPusher(&mTreeMatchContext);
         if (parent && nsContentUtils::IsContentInsertionPoint(parent)) {
           insertionPointPusher.PushAncestorAndStyleScope(parent);
         }
