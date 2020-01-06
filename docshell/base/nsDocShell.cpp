@@ -9367,15 +9367,13 @@ nsDocShell::NewContentViewerObj(const nsACString& aContentType,
 
   
   
-  nsresult rv =
-    docLoaderFactory->CreateInstance("view",
-                                     aOpenedChannel,
-                                     aLoadGroup, aContentType,
-                                     this,
-                                     nullptr,
-                                     nsIDocumentLoaderFactory::STYLE_BACKEND_TYPE_NONE,
-                                     aContentHandler,
-                                     aViewer);
+  nsresult rv = docLoaderFactory->CreateInstance("view",
+                                                 aOpenedChannel,
+                                                 aLoadGroup, aContentType,
+                                                 this,
+                                                 nullptr,
+                                                 aContentHandler,
+                                                 aViewer);
   NS_ENSURE_SUCCESS(rv, rv);
 
   (*aViewer)->SetContainer(this);

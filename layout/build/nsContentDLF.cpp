@@ -22,7 +22,6 @@
 #include "nsIScriptSecurityManager.h"
 #include "nsString.h"
 #include "nsContentCID.h"
-#include "nsLayoutUtils.h"
 #include "nsNetUtil.h"
 #include "nsCRT.h"
 #include "nsIViewSourceChannel.h"
@@ -32,7 +31,6 @@
 #include "nsMimeTypes.h"
 #include "DecoderTraits.h"
 
-using mozilla::StyleBackendType;
 
 
 #include "nsIPluginHost.h"
@@ -142,14 +140,9 @@ nsContentDLF::CreateInstance(const char* aCommand,
                              const nsACString& aContentType,
                              nsIDocShell* aContainer,
                              nsISupports* aExtraInfo,
-                             int16_t aStyleBackendType,
                              nsIStreamListener** aDocListener,
                              nsIContentViewer** aDocViewer)
 {
-  MOZ_ASSERT(aStyleBackendType == nsIDocumentLoaderFactory::STYLE_BACKEND_TYPE_NONE ||
-             aStyleBackendType == nsIDocumentLoaderFactory::STYLE_BACKEND_TYPE_GECKO ||
-             aStyleBackendType == nsIDocumentLoaderFactory::STYLE_BACKEND_TYPE_SERVO);
-
   
   nsAutoCString contentType(aContentType);
 
@@ -193,8 +186,7 @@ nsContentDLF::CreateInstance(const char* aCommand,
     return CreateDocument(aCommand,
                           aChannel, aLoadGroup,
                           aContainer, kHTMLDocumentCID,
-                          aDocListener, aDocViewer,
-                          (StyleBackendType)aStyleBackendType);
+                          aDocListener, aDocViewer);
   }
 
   
@@ -202,8 +194,7 @@ nsContentDLF::CreateInstance(const char* aCommand,
     return CreateDocument(aCommand,
                           aChannel, aLoadGroup,
                           aContainer, kXMLDocumentCID,
-                          aDocListener, aDocViewer,
-                          (StyleBackendType)aStyleBackendType);
+                          aDocListener, aDocViewer);
   }
 
   
@@ -211,8 +202,7 @@ nsContentDLF::CreateInstance(const char* aCommand,
     return CreateDocument(aCommand,
                           aChannel, aLoadGroup,
                           aContainer, kSVGDocumentCID,
-                          aDocListener, aDocViewer,
-                          (StyleBackendType)aStyleBackendType);
+                          aDocListener, aDocViewer);
   }
 
   
@@ -230,8 +220,7 @@ nsContentDLF::CreateInstance(const char* aCommand,
     return CreateDocument(aCommand,
                           aChannel, aLoadGroup,
                           aContainer, kVideoDocumentCID,
-                          aDocListener, aDocViewer,
-                          (StyleBackendType)aStyleBackendType);
+                          aDocListener, aDocViewer);
   }
 
   
@@ -239,8 +228,7 @@ nsContentDLF::CreateInstance(const char* aCommand,
     return CreateDocument(aCommand,
                           aChannel, aLoadGroup,
                           aContainer, kImageDocumentCID,
-                          aDocListener, aDocViewer,
-                          (StyleBackendType)aStyleBackendType);
+                          aDocListener, aDocViewer);
   }
 
   RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
@@ -251,8 +239,7 @@ nsContentDLF::CreateInstance(const char* aCommand,
     return CreateDocument(aCommand,
                           aChannel, aLoadGroup,
                           aContainer, kPluginDocumentCID,
-                          aDocListener, aDocViewer,
-                          (StyleBackendType)aStyleBackendType);
+                          aDocListener, aDocViewer);
   }
 
   
@@ -358,8 +345,7 @@ nsContentDLF::CreateDocument(const char* aCommand,
                              nsIDocShell* aContainer,
                              const nsCID& aDocumentCID,
                              nsIStreamListener** aDocListener,
-                             nsIContentViewer** aContentViewer,
-                             StyleBackendType aStyleBackendType )
+                             nsIContentViewer** aContentViewer)
 {
   nsresult rv = NS_ERROR_FAILURE;
 
@@ -379,17 +365,6 @@ nsContentDLF::CreateDocument(const char* aCommand,
   
   nsCOMPtr<nsIDocument> doc = do_CreateInstance(aDocumentCID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  if (aStyleBackendType != StyleBackendType::None) {
-    
-    
-    
-    doc->SetStyleBackendType(
-        nsLayoutUtils::StyloEnabled() ? aStyleBackendType
-                                      : StyleBackendType::Gecko);
-  }
 
   
   nsCOMPtr<nsIContentViewer> contentViewer = NS_NewContentViewer();
