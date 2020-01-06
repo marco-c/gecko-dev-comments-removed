@@ -67,6 +67,7 @@ class Message : public Pickle {
   
   Message(int32_t routing_id,
           msgid_t type,
+          uint32_t segmentCapacity = 0, 
           NestedLevel nestedLevel = NOT_NESTED,
           PriorityValue priority = NORMAL_PRIORITY,
           MessageCompression compression = COMPRESSION_NONE,

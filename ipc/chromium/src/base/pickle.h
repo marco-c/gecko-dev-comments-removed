@@ -69,7 +69,7 @@ class Pickle {
   
   
   
-  explicit Pickle(uint32_t header_size);
+  explicit Pickle(uint32_t header_size, size_t segment_capacity = 0);
 
   Pickle(uint32_t header_size, const char* data, uint32_t length);
 
