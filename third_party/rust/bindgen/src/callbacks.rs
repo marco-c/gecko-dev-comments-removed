@@ -8,6 +8,7 @@ use std::panic::UnwindSafe;
 
 
 pub trait ParseCallbacks: fmt::Debug + UnwindSafe {
+
     
     fn parsed_macro(&self, _name: &str) {}
 
@@ -20,12 +21,11 @@ pub trait ParseCallbacks: fmt::Debug + UnwindSafe {
     
     
     
-    fn enum_variant_behavior(
-        &self,
-        _enum_name: Option<&str>,
-        _variant_name: &str,
-        _variant_value: EnumVariantValue,
-    ) -> Option<EnumVariantCustomBehavior> {
+    fn enum_variant_behavior(&self,
+                             _enum_name: Option<&str>,
+                             _variant_name: &str,
+                             _variant_value: EnumVariantValue)
+                             -> Option<EnumVariantCustomBehavior> {
         None
     }
 }

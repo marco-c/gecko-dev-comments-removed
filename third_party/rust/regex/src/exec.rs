@@ -210,9 +210,6 @@ impl ExecBuilder {
         let mut prefixes = Some(Literals::empty());
         let mut suffixes = Some(Literals::empty());
         let mut bytes = false;
-        let is_set = self.options.pats.len() > 1;
-        
-        
         for pat in &self.options.pats {
             let parser =
                 ExprBuilder::new()
@@ -230,10 +227,6 @@ impl ExecBuilder {
                 
                 
                 prefixes = None;
-            } else if is_set && expr.is_anchored_start() {
-                
-                
-                prefixes = None;
             }
             prefixes = prefixes.and_then(|mut prefixes| {
                 if !prefixes.union_prefixes(&expr) {
@@ -247,10 +240,6 @@ impl ExecBuilder {
                 
                 
                 suffixes = None;
-            } else if is_set && expr.is_anchored_end() {
-                
-                
-                prefixes = None;
             }
             suffixes = suffixes.and_then(|mut suffixes| {
                 if !suffixes.union_suffixes(&expr) {
@@ -863,10 +852,7 @@ impl<'c> ExecNoSync<'c> {
     ) -> Option<(usize, usize)> {
         
         
-        
-        
-        let e = cmp::min(
-            next_utf8(text, next_utf8(text, match_end)), text.len());
+        let e = cmp::min(next_utf8(text, match_end), text.len());
         self.captures_nfa(slots, &text[..e], match_start)
     }
 

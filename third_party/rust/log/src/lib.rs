@@ -184,30 +184,13 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 #![doc(html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
        html_favicon_url = "https://www.rust-lang.org/favicon.ico",
        html_root_url = "https://doc.rust-lang.org/log/")]
 #![warn(missing_docs)]
-#![deny(missing_debug_implementations)]
 #![cfg_attr(feature = "nightly", feature(panic_handler))]
 
 #![cfg_attr(not(feature = "use_std"), no_std)]
-
-
-
-#![cfg_attr(rustbuild, feature(staged_api, rustc_private))]
-#![cfg_attr(rustbuild, unstable(feature = "rustc_private", issue = "27812"))]
 
 #[cfg(not(feature = "use_std"))]
 extern crate core as std;
@@ -259,11 +242,8 @@ static LOG_LEVEL_NAMES: [&'static str; 6] = ["OFF", "ERROR", "WARN", "INFO",
 
 
 
-
-
-
 #[repr(usize)]
-#[derive(Copy, Eq, Debug, Hash)]
+#[derive(Copy, Eq, Debug)]
 pub enum LogLevel {
     
     
@@ -402,12 +382,8 @@ impl LogLevel {
 
 
 
-
-
-
-
 #[repr(usize)]
-#[derive(Copy, Eq, Debug, Hash)]
+#[derive(Copy, Eq, Debug)]
 pub enum LogLevelFilter {
     
     Off,
@@ -510,11 +486,6 @@ impl LogLevelFilter {
 }
 
 
-
-
-
-
-#[derive(Debug)]
 pub struct LogRecord<'a> {
     metadata: LogMetadata<'a>,
     location: &'a LogLocation,
@@ -549,7 +520,6 @@ impl<'a> LogRecord<'a> {
 }
 
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub struct LogMetadata<'a> {
     level: LogLevel,
     target: &'a str,
@@ -601,7 +571,7 @@ impl Log for NopLogger {
 
 
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Copy, Clone, Debug)]
 pub struct LogLocation {
     #[doc(hidden)]
     pub __module_path: &'static str,
@@ -807,6 +777,9 @@ impl fmt::Display for ShutdownLoggerError {
 impl error::Error for ShutdownLoggerError {
     fn description(&self) -> &str { "shutdown_logger() called without an active logger" }
 }
+
+
+
 
 
 
