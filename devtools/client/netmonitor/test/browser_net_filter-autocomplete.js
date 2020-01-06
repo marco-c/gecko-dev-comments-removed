@@ -3,6 +3,23 @@
 
 "use strict";
 
+
+
+
+const REQUESTS = [
+  { url: "sjs_content-type-test-server.sjs?fmt=html&res=undefined&text=Sample" },
+  { url: "sjs_content-type-test-server.sjs?fmt=html&res=undefined&text=Sample" +
+         "&cookies=1" },
+  { url: "sjs_content-type-test-server.sjs?fmt=css&text=sample" },
+  { url: "sjs_content-type-test-server.sjs?fmt=js&text=sample" },
+  { url: "sjs_content-type-test-server.sjs?fmt=font" },
+  { url: "sjs_content-type-test-server.sjs?fmt=image" },
+  { url: "sjs_content-type-test-server.sjs?fmt=audio" },
+  { url: "sjs_content-type-test-server.sjs?fmt=video" },
+  { url: "sjs_content-type-test-server.sjs?fmt=gzip" },
+  { url: "sjs_status-codes-test-server.sjs?sts=304" },
+];
+
 function testAutocompleteContents(expected, document) {
   expected.forEach(function (item, i) {
     is(
@@ -19,16 +36,27 @@ function testAutocompleteContents(expected, document) {
 
 add_task(async function () {
   let { monitor } = await initNetMonitor(FILTERING_URL);
-  let { document, window } = monitor.panelWin;
+  let { document, store, windowRequire } = monitor.panelWin;
+  let Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
+
+  store.dispatch(Actions.batchEnable(false));
 
   info("Starting test... ");
+
+  
+  
+  let waitNetwork = waitForNetworkEvents(monitor, REQUESTS.length);
+  loadCommonFrameScript();
+  await performRequestsInContent(REQUESTS);
+  await waitNetwork;
 
   EventUtils.synthesizeMouseAtCenter(
     document.querySelector(".devtools-filterinput"), {}, window);
   
   ok(!document.querySelector(".devtools-autocomplete-popup"),
-    "Autocomplete Popup Created");
+    "Autocomplete Popup still hidden");
 
+  document.querySelector(".devtools-filterinput").focus();
   
   EventUtils.synthesizeKey("s", {});
   ok(document.querySelector(".devtools-autocomplete-popup"),
@@ -46,25 +74,42 @@ add_task(async function () {
   testAutocompleteContents(["scheme:"], document);
   EventUtils.synthesizeKey("VK_TAB", {});
   
-  ok(!document.querySelector(".devtools-autocomplete-popup"),
-    "Autocomplete Popup Hidden");
+  ok(document.querySelector(".devtools-autocomplete-popup"),
+    "Autocomplete Popup alive with content values");
+  testAutocompleteContents(["scheme:http"], document);
+
+  EventUtils.synthesizeKey("VK_RETURN", {});
   is(document.querySelector(".devtools-filterinput").value,
-    "scheme:", "Value correctly set after TAB");
-
-  
-  EventUtils.synthesizeKey("https ", {});
-  
+    "scheme:http", "Value correctly set after Enter");
   ok(!document.querySelector(".devtools-autocomplete-popup"),
-    "Autocomplete Popup still hidden");
+    "Autocomplete Popup hidden after keyboard Enter key");
 
   
-  EventUtils.synthesizeKey("p", {});
+  
+  EventUtils.synthesizeKey(" p", {});
   testAutocompleteContents(["protocol:"], document);
 
   
+  
+  EventUtils.synthesizeKey("VK_RETURN", {});
+  
   EventUtils.synthesizeKey("VK_RETURN", {});
   is(document.querySelector(".devtools-filterinput").value,
-    "scheme:https protocol:", "Tokenized click generates correct value in input box");
+    "scheme:http protocol:HTTP/1.1",
+    "Tokenized click generates correct value in input box");
+
+  
+  EventUtils.synthesizeKey(" status-code:", {});
+  testAutocompleteContents(["status-code:200", "status-code:304"], document);
+
+  
+  EventUtils.synthesizeKey("304", {});
+  ok(!document.querySelector(".devtools-autocomplete-popup"),
+    "Typing the exact value closes autocomplete");
+
+  
+  EventUtils.synthesizeKey(" mime-type:au", {});
+  testAutocompleteContents(["mime-type:audio/ogg"], document);
 
   
   EventUtils.synthesizeKey(" -", {});
@@ -88,6 +133,10 @@ add_task(async function () {
     "-transferred-larger-than:",
     "-transferred:",
   ], document);
+
+  
+  EventUtils.synthesizeKey("is:", {});
+  testAutocompleteContents(["-is:cached", "-is:from-cache", "-is:running"], document);
 
   await teardown(monitor);
 });
