@@ -626,7 +626,7 @@ ContainerRender(ContainerT* aContainer,
   
   
   
-  if (gfxPrefs::LayersDrawFPS() && aContainer->IsScrollInfoLayer()) {
+  if (gfxPrefs::LayersDrawFPS() && aContainer->IsScrollableWithoutContent()) {
     
     
     
