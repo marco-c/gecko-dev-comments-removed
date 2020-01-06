@@ -802,10 +802,10 @@ nsTextInputSelectionImpl::CheckVisibilityContent(nsIContent* aNode,
   return shell->CheckVisibilityContent(aNode, aStartOffset, aEndOffset, aRetval);
 }
 
-class nsTextInputListener : public nsISelectionListener,
-                            public nsIDOMEventListener,
-                            public nsIEditorObserver,
-                            public nsSupportsWeakReference
+class nsTextInputListener final : public nsISelectionListener,
+                                  public nsIDOMEventListener,
+                                  public nsIEditorObserver,
+                                  public nsSupportsWeakReference
 {
 public:
   
@@ -819,6 +819,10 @@ public:
 
   void SettingValue(bool aValue) { mSettingValue = aValue; }
   void SetValueChanged(bool aSetValueChanged) { mSetValueChanged = aSetValueChanged; }
+
+  
+  
+  void HandleValueChanged(nsTextControlFrame* aFrame = nullptr);
 
   NS_DECL_ISUPPORTS
 
@@ -1082,18 +1086,29 @@ nsTextInputListener::EditAction()
     return NS_OK;
   }
 
+  HandleValueChanged(frame);
+
+  return NS_OK;
+}
+
+void
+nsTextInputListener::HandleValueChanged(nsTextControlFrame* aFrame)
+{
   
   
   if (mSetValueChanged) {
-    frame->SetValueChanged(true);
+    if (!aFrame) {
+      nsITextControlFrame* frameBase = do_QueryFrame(mFrame);
+      aFrame = static_cast<nsTextControlFrame*> (frameBase);
+      NS_ASSERTION(aFrame, "Where is our frame?");
+    }
+    aFrame->SetValueChanged(true);
   }
 
   if (!mSettingValue) {
     mTxtCtrlElement->OnValueChanged( true,
                                      true);
   }
-
-  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -2684,6 +2699,11 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
             }
 
             textEditor->SetText(newValue);
+
+            
+            
+            
+            mTextListener->HandleValueChanged();
           }
 
           mTextListener->SetValueChanged(true);
