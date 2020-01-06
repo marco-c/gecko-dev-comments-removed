@@ -94,6 +94,11 @@ extern void malloc_zone_unregister(malloc_zone_t *zone);
 
 extern malloc_zone_t *malloc_default_purgeable_zone(void);
 
+extern malloc_zone_t* malloc_zone_from_ptr(const void* ptr);
+
+extern void malloc_zone_free(malloc_zone_t* zone, void* ptr);
+
+extern void* malloc_zone_realloc(malloc_zone_t* zone, void* ptr, size_t size);
 
 
 
@@ -126,7 +131,34 @@ zone_realloc(malloc_zone_t *zone, void *ptr, size_t size)
 {
   if (malloc_usable_size_impl(ptr))
     return realloc_impl(ptr, size);
-  return realloc(ptr, size);
+
+  
+  
+  
+  
+  
+  malloc_zone_t* real_zone = malloc_zone_from_ptr(ptr);
+  
+  
+  MOZ_RELEASE_ASSERT(real_zone);
+  MOZ_RELEASE_ASSERT(real_zone != zone);
+  return malloc_zone_realloc(real_zone, ptr, size);
+}
+
+static void
+other_zone_free(malloc_zone_t* original_zone, void* ptr)
+{
+  
+  
+  
+  
+  
+  malloc_zone_t* zone = malloc_zone_from_ptr(ptr);
+  
+  
+  MOZ_RELEASE_ASSERT(zone);
+  MOZ_RELEASE_ASSERT(zone != original_zone);
+  return malloc_zone_free(zone, ptr);
 }
 
 static void
@@ -136,7 +168,7 @@ zone_free(malloc_zone_t *zone, void *ptr)
     free_impl(ptr);
     return;
   }
-  free(ptr);
+  other_zone_free(zone, ptr);
 }
 
 static void
@@ -148,7 +180,7 @@ zone_free_definite_size(malloc_zone_t *zone, void *ptr, size_t size)
     free_impl(ptr);
     return;
   }
-  free(ptr);
+  other_zone_free(zone, ptr);
 }
 
 static void *
