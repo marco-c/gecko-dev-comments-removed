@@ -232,11 +232,24 @@ AreaOfIntSize(const IntSize& aSize) {
 
 
 
+
+
+
+
+
+
+
+
+
+
 class ImageSurfaceCache
 {
   ~ImageSurfaceCache() { }
 public:
-  ImageSurfaceCache() : mLocked(false) { }
+  ImageSurfaceCache()
+    : mLocked(false)
+    , mFactor2Mode(false)
+  { }
 
   MOZ_DECLARE_REFCOUNTED_TYPENAME(ImageSurfaceCache)
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ImageSurfaceCache)
@@ -351,6 +364,47 @@ public:
     return MakePair(bestMatch.forget(), matchType);
   }
 
+  void MaybeSetFactor2Mode()
+  {
+    MOZ_ASSERT(!mFactor2Mode);
+
+    
+    
+    int32_t thresholdSurfaces = gfxPrefs::ImageCacheFactor2ThresholdSurfaces();
+    if (thresholdSurfaces < 0 ||
+        mSurfaces.Count() <= static_cast<uint32_t>(thresholdSurfaces)) {
+      return;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    auto first = ConstIter();
+    NotNull<CachedSurface*> current = WrapNotNull(first.UserData());
+    Image* image = static_cast<Image*>(current->GetImageKey());
+    size_t nativeSizes = image->GetNativeSizesLength();
+    if (nativeSizes == 0) {
+      return;
+    }
+
+    
+    
+    
+    
+    thresholdSurfaces += nativeSizes;
+    if (mSurfaces.Count() <= static_cast<uint32_t>(thresholdSurfaces)) {
+      return;
+    }
+
+    mFactor2Mode = true;
+  }
+
   bool CompareArea(const IntSize& aIdealSize,
                    const IntSize& aBestSize,
                    const IntSize& aSize) const
@@ -388,8 +442,12 @@ public:
   bool IsLocked() const { return mLocked; }
 
 private:
-  SurfaceTable mSurfaces;
-  bool         mLocked;
+  SurfaceTable      mSurfaces;
+
+  bool              mLocked;
+
+  
+  bool              mFactor2Mode;
 };
 
 
