@@ -4,6 +4,14 @@
 
 "use strict";
 
+const { PropTypes } = require("devtools/client/shared/vendor/react");
+
 exports.flexbox = {
+
+  
+  id: PropTypes.number,
+
+  
+  nodeFront: PropTypes.object,
 
 };

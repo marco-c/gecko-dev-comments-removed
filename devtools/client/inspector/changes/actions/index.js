@@ -9,6 +9,6 @@ const { createEnum } = require("devtools/client/shared/enum");
 createEnum([
 
   
-  "UPDATE_FLEXBOXES",
+  "UPDATE_CHANGES",
 
 ], module.exports);
