@@ -50,6 +50,7 @@
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLTemplateElement.h"
 #include "mozilla/dom/HTMLContentElement.h"
+#include "mozilla/dom/IDTracker.h"
 #include "mozilla/dom/IPCBlobUtils.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -192,7 +193,6 @@
 #include "nsPIDOMWindow.h"
 #include "nsPresContext.h"
 #include "nsPrintfCString.h"
-#include "nsReferencedElement.h"
 #include "nsSandboxFlags.h"
 #include "nsScriptSecurityManager.h"
 #include "nsSerializationHelper.h"
@@ -255,9 +255,9 @@ nsNameSpaceManager *nsContentUtils::sNameSpaceManager;
 nsIIOService *nsContentUtils::sIOService;
 nsIUUIDGenerator *nsContentUtils::sUUIDGenerator;
 nsIConsoleService *nsContentUtils::sConsoleService;
-nsDataHashtable<nsRefPtrHashKey<nsIAtom>, EventNameMapping>* nsContentUtils::sAtomEventTable = nullptr;
+nsDataHashtable<nsISupportsHashKey, EventNameMapping>* nsContentUtils::sAtomEventTable = nullptr;
 nsDataHashtable<nsStringHashKey, EventNameMapping>* nsContentUtils::sStringEventTable = nullptr;
-nsTArray<RefPtr<nsIAtom>>* nsContentUtils::sUserDefinedEvents = nullptr;
+nsCOMArray<nsIAtom>* nsContentUtils::sUserDefinedEvents = nullptr;
 nsIStringBundleService *nsContentUtils::sStringBundleService;
 nsIStringBundle *nsContentUtils::sStringBundles[PropertiesFile_COUNT];
 nsIContentPolicy *nsContentUtils::sContentPolicyService;
@@ -953,11 +953,11 @@ nsContentUtils::InitializeEventTable() {
     { nullptr }
   };
 
-  sAtomEventTable = new nsDataHashtable<nsRefPtrHashKey<nsIAtom>, EventNameMapping>(
+  sAtomEventTable = new nsDataHashtable<nsISupportsHashKey, EventNameMapping>(
       ArrayLength(eventArray));
   sStringEventTable = new nsDataHashtable<nsStringHashKey, EventNameMapping>(
       ArrayLength(eventArray));
-  sUserDefinedEvents = new nsTArray<RefPtr<nsIAtom>>(64);
+  sUserDefinedEvents = new nsCOMArray<nsIAtom>(64);
 
   
   for (uint32_t i = 0; i < ArrayLength(eventArray) - 1; ++i) {
@@ -3416,7 +3416,7 @@ nsContentUtils::GetNodeInfoFromQName(const nsAString& aNamespaceURI,
     const char16_t* end;
     qName.EndReading(end);
 
-    RefPtr<nsIAtom> prefix =
+    nsCOMPtr<nsIAtom> prefix =
       NS_AtomizeMainThread(Substring(qName.get(), colon));
 
     rv = aNodeInfoManager->GetNodeInfo(Substring(colon + 1, end), prefix,
@@ -4386,18 +4386,18 @@ nsContentUtils::GetEventMessageAndAtom(const nsAString& aName,
   }
 
   
-  if (sUserDefinedEvents->Length() > 127) {
-    while (sUserDefinedEvents->Length() > 64) {
-      nsIAtom* first = sUserDefinedEvents->ElementAt(0);
+  if (sUserDefinedEvents->Count() > 127) {
+    while (sUserDefinedEvents->Count() > 64) {
+      nsIAtom* first = sUserDefinedEvents->ObjectAt(0);
       sStringEventTable->Remove(Substring(nsDependentAtomString(first), 2));
-      sUserDefinedEvents->RemoveElementAt(0);
+      sUserDefinedEvents->RemoveObjectAt(0);
     }
   }
 
   *aEventMessage = eUnidentifiedEvent;
-  RefPtr<nsIAtom> atom =
+  nsCOMPtr<nsIAtom> atom =
     NS_AtomizeMainThread(NS_LITERAL_STRING("on") + aName);
-  sUserDefinedEvents->AppendElement(atom);
+  sUserDefinedEvents->AppendObject(atom);
   mapping.mAtom = atom;
   mapping.mMessage = eUnidentifiedEvent;
   mapping.mType = EventNameType_None;
@@ -4424,7 +4424,7 @@ nsContentUtils::GetEventMessageAndAtomForListener(const nsAString& aName,
   
   EventNameMapping mapping;
   EventMessage msg = eUnidentifiedEvent;
-  RefPtr<nsIAtom> atom;
+  nsCOMPtr<nsIAtom> atom;
   if (sStringEventTable->Get(aName, &mapping)) {
     if (mapping.mMaybeSpecialSVGorSMILEvent) {
       
@@ -4630,7 +4630,7 @@ nsContentUtils::MatchElementId(nsIContent *aContent, const nsAString& aId)
   NS_PRECONDITION(!aId.IsEmpty(), "Will match random elements");
 
   
-  RefPtr<nsIAtom> id(NS_Atomize(aId));
+  nsCOMPtr<nsIAtom> id(NS_Atomize(aId));
   if (!id) {
     
     return nullptr;
@@ -5824,7 +5824,7 @@ static void ProcessViewportToken(nsIDocument *aDocument,
 
   
 
-  RefPtr<nsIAtom> key_atom = NS_Atomize(key);
+  nsCOMPtr<nsIAtom> key_atom = NS_Atomize(key);
   if (key_atom == nsGkAtoms::height)
     aDocument->SetHeaderData(nsGkAtoms::viewport_height, value);
   else if (key_atom == nsGkAtoms::width)
