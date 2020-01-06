@@ -607,7 +607,7 @@ nsIFrame::AddXULPrefSize(nsIFrame* aBox, nsSize& aSize, bool &aWidthSet, bool &a
     } else if (width.IsCalcUnit()) {
         if (!width.CalcHasPercent()) {
             
-            aSize.width = nsRuleNode::ComputeComputedCalc(width, 0);
+            aSize.width = width.ComputeComputedCalc(0);
             if (aSize.width < 0)
                 aSize.width = 0;
             aWidthSet = true;
@@ -621,7 +621,7 @@ nsIFrame::AddXULPrefSize(nsIFrame* aBox, nsSize& aSize, bool &aWidthSet, bool &a
     } else if (height.IsCalcUnit()) {
         if (!height.CalcHasPercent()) {
             
-            aSize.height = nsRuleNode::ComputeComputedCalc(height, 0);
+            aSize.height = height.ComputeComputedCalc(0);
             if (aSize.height < 0)
                 aSize.height = 0;
             aHeightSet = true;

@@ -215,6 +215,12 @@ public:
     return static_cast<Calc*>(aValue.mPointer);
   }
 
+  
+  
+  
+  
+  nscoord ComputeComputedCalc(nscoord aPercentageBasis) const;
+
   nscoord     GetCoordValue() const;
   int32_t     GetIntValue() const;
   float       GetPercentValue() const;
