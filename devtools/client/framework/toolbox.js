@@ -60,8 +60,6 @@ loader.lazyRequireGetter(this, "settleAll",
   "devtools/shared/ThreadSafeDevToolsUtils", true);
 loader.lazyRequireGetter(this, "ToolboxButtons",
   "devtools/client/definitions", true);
-loader.lazyRequireGetter(this, "SourceMapService",
-  "devtools/client/framework/source-map-service", true);
 loader.lazyRequireGetter(this, "SourceMapURLService",
   "devtools/client/framework/source-map-url-service", true);
 loader.lazyRequireGetter(this, "HUDService",
@@ -97,14 +95,6 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId) {
 
   this._toolPanels = new Map();
   this._telemetry = new Telemetry();
-
-  
-  
-  
-  
-  if (Services.prefs.getBoolPref("devtools.source-map.locations.enabled")) {
-    this._deprecatedServerSourceMapService = new SourceMapService(this._target);
-  }
 
   this._initInspector = null;
   this._inspector = null;
@@ -2315,11 +2305,6 @@ Toolbox.prototype = {
                                   this._applyServiceWorkersTestingSettings);
 
     this._lastFocusedElement = null;
-
-    if (this._deprecatedServerSourceMapService) {
-      this._deprecatedServerSourceMapService.destroy();
-      this._deprecatedServerSourceMapService = null;
-    }
 
     if (this._sourceMapURLService) {
       this._sourceMapURLService.destroy();

@@ -1463,19 +1463,6 @@ TabClient.prototype = {
   attachWorker: function (workerActor, onResponse) {
     return this.client.attachWorker(workerActor, onResponse);
   },
-
-  
-
-
-
-
-
-
-
-  resolveLocation: DebuggerClient.requester({
-    type: "resolveLocation",
-    location: arg(0)
-  }),
 };
 
 eventSource(TabClient.prototype);

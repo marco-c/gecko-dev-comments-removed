@@ -304,13 +304,6 @@ pref("devtools.webconsole.new-frontend-enabled", false);
 #endif
 
 
-
-
-
-
-pref("devtools.source-map.locations.enabled", false);
-
-
 pref("devtools.source-map.client-service.enabled", true);
 
 
