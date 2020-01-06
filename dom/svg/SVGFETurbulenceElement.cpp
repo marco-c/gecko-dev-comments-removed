@@ -132,7 +132,7 @@ SVGFETurbulenceElement::GetPrimitiveDescription(nsSVGFilterInstance* aInstance,
   uint32_t type = mEnumAttributes[TYPE].GetAnimValue();
   uint16_t stitch = mEnumAttributes[STITCHTILES].GetAnimValue();
 
-  if (fX == 0 || fY == 0) {
+  if (fX == 0 && fY == 0) {
     
     
     if (type == SVG_TURBULENCE_TYPE_TURBULENCE) {
