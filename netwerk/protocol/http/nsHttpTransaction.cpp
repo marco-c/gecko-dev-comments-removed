@@ -383,7 +383,8 @@ nsHttpTransaction::Init(uint32_t caps,
         
         
         nsCOMPtr<nsIInputStream> stream(do_QueryInterface(multi));
-        rv = NS_NewBufferedInputStream(getter_AddRefs(mRequestStream), stream,
+        rv = NS_NewBufferedInputStream(getter_AddRefs(mRequestStream),
+                                       stream.forget(),
                                        nsIOService::gDefaultSegmentSize);
         if (NS_FAILED(rv)) return rv;
     } else {
