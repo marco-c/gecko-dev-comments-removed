@@ -1460,13 +1460,15 @@ impl Fragment {
     
     pub fn is_unscanned_generated_content(&self) -> bool {
         match self.specific {
-            SpecificFragmentInfo::GeneratedContent(box GeneratedContentInfo::Empty) => false,
-            SpecificFragmentInfo::GeneratedContent(..) => true,
+            SpecificFragmentInfo::GeneratedContent(ref content) => match **content {
+                GeneratedContentInfo::Empty => false,
+                _ => true,
+            },
             _ => false,
         }
     }
 
-    /// Returns true if and only if this is a scanned text fragment.
+    
     pub fn is_scanned_text_fragment(&self) -> bool {
         match self.specific {
             SpecificFragmentInfo::ScannedText(..) => true,
@@ -1474,7 +1476,7 @@ impl Fragment {
         }
     }
 
-    /// Computes the intrinsic inline-sizes of this fragment.
+    
     pub fn compute_intrinsic_inline_sizes(&mut self) -> IntrinsicISizesContribution {
         let mut result = self.style_specified_intrinsic_inline_size();
         match self.specific {
@@ -1503,9 +1505,9 @@ impl Fragment {
                 let mut inline_size = match self.style.content_inline_size() {
                     LengthOrPercentageOrAuto::Auto |
                     LengthOrPercentageOrAuto::Percentage(_) => {
-                        // We have to initialize the `border_padding` field first to make
-                        // the size constraints work properly.
-                        // TODO(stshine): Find a cleaner way to do this.
+                        
+                        
+                        
                         let padding = self.style.logical_padding();
                         self.border_padding.inline_start = padding.inline_start.to_used_value(Au(0));
                         self.border_padding.inline_end = padding.inline_end.to_used_value(Au(0));
@@ -1521,8 +1523,8 @@ impl Fragment {
                     }
                     LengthOrPercentageOrAuto::Length(length) => Au::from(length),
                     LengthOrPercentageOrAuto::Calc(calc) => {
-                        // TODO(nox): This is probably wrong, because it accounts neither for
-                        // clamping (not sure if necessary here) nor percentage.
+                        
+                        
                         Au::from(calc.unclamped_length())
                     },
                 };
@@ -1536,42 +1538,46 @@ impl Fragment {
                 });
             }
 
-            SpecificFragmentInfo::TruncatedFragment(box TruncatedFragmentInfo {
-                text_info: Some(ref text_fragment_info),
-                ..
-            }) |
-            SpecificFragmentInfo::ScannedText(box ref text_fragment_info) => {
-                let range = &text_fragment_info.range;
-
-                // See http://dev.w3.org/csswg/css-sizing/#max-content-inline-size.
-                // TODO: Account for soft wrap opportunities.
-                let max_line_inline_size = text_fragment_info.run
-                                                             .metrics_for_range(range)
-                                                             .advance_width;
-
-                let min_line_inline_size = if self.white_space().allow_wrap() {
-                    text_fragment_info.run.min_width_for_range(range)
-                } else {
-                    max_line_inline_size
-                };
-
-                result.union_block(&IntrinsicISizes {
-                    minimum_inline_size: min_line_inline_size,
-                    preferred_inline_size: max_line_inline_size,
-                })
+            SpecificFragmentInfo::TruncatedFragment(ref t) if t.text_info.is_some() => {
+                let text_fragment_info = t.text_info.as_ref().unwrap();
+                handle_text(text_fragment_info, self, &mut result)
+            }
+            SpecificFragmentInfo::ScannedText(ref text_fragment_info) => {
+                handle_text(text_fragment_info, self, &mut result)
             }
 
-            SpecificFragmentInfo::TruncatedFragment(box TruncatedFragmentInfo {
-                text_info: None,
-                ..
-            }) => return IntrinsicISizesContribution::new(),
+            SpecificFragmentInfo::TruncatedFragment(_) => {
+                return IntrinsicISizesContribution::new()
+            }
 
             SpecificFragmentInfo::UnscannedText(..) => {
                 panic!("Unscanned text fragments should have been scanned by now!")
             }
         };
 
-        // Take borders and padding for parent inline fragments into account.
+        fn handle_text(text_fragment_info: &ScannedTextFragmentInfo, self_: &Fragment,
+                       result: &mut IntrinsicISizesContribution) {
+            let range = &text_fragment_info.range;
+
+            
+            
+            let max_line_inline_size = text_fragment_info.run
+                                                         .metrics_for_range(range)
+                                                         .advance_width;
+
+            let min_line_inline_size = if self_.white_space().allow_wrap() {
+                text_fragment_info.run.min_width_for_range(range)
+            } else {
+                max_line_inline_size
+            };
+
+            result.union_block(&IntrinsicISizes {
+                minimum_inline_size: min_line_inline_size,
+                preferred_inline_size: max_line_inline_size,
+            })
+        }
+
+        
         let writing_mode = self.style.writing_mode;
         if let Some(ref context) = self.inline_context {
             for node in &context.nodes {
@@ -1600,37 +1606,37 @@ impl Fragment {
         result
     }
 
-    /// Returns the narrowest inline-size that the first splittable part of this fragment could
-    /// possibly be split to. (In most cases, this returns the inline-size of the first word in
-    /// this fragment.)
+    
+    
+    
     pub fn minimum_splittable_inline_size(&self) -> Au {
         match self.specific {
-            SpecificFragmentInfo::TruncatedFragment(box TruncatedFragmentInfo {
-                text_info: Some(ref text),
-                ..
-            }) |
-            SpecificFragmentInfo::ScannedText(box ref text) => {
+            SpecificFragmentInfo::TruncatedFragment(ref t) if t.text_info.is_some() => {
+                let text = t.text_info.as_ref().unwrap();
+                text.run.minimum_splittable_inline_size(&text.range)
+            }
+            SpecificFragmentInfo::ScannedText(ref text) => {
                 text.run.minimum_splittable_inline_size(&text.range)
             }
             _ => Au(0),
         }
     }
 
-    /// Returns the dimensions of the content box.
-    ///
-    /// This is marked `#[inline]` because it is frequently called when only one or two of the
-    /// values are needed and that will save computation.
+    
+    
+    
+    
     #[inline]
     pub fn content_box(&self) -> LogicalRect<Au> {
         self.border_box - self.border_padding
     }
 
-    /// Attempts to find the split positions of a text fragment so that its inline-size is no more
-    /// than `max_inline_size`.
-    ///
-    /// A return value of `None` indicates that the fragment could not be split. Otherwise the
-    /// information pertaining to the split is returned. The inline-start and inline-end split
-    /// information are both optional due to the possibility of them being whitespace.
+    
+    
+    
+    
+    
+    
     pub fn calculate_split_position(&self, max_inline_size: Au, starts_line: bool)
                                     -> Option<SplitResult> {
         let text_fragment_info = match self.specific {
@@ -1649,7 +1655,7 @@ impl Fragment {
 
         match self.style().get_inheritedtext().word_break {
             word_break::T::normal | word_break::T::keep_all => {
-                // Break at normal word boundaries. keep-all forbids soft wrap opportunities.
+                
                 let natural_word_breaking_strategy =
                     text_fragment_info.run.natural_word_slices_in_range(&text_fragment_info.range);
                 self.calculate_split_position_using_breaking_strategy(
@@ -1658,7 +1664,7 @@ impl Fragment {
                     flags)
             }
             word_break::T::break_all => {
-                // Break at character boundaries.
+                
                 let character_breaking_strategy =
                     text_fragment_info.run.character_slices_in_range(&text_fragment_info.range);
                 flags.remove(RETRY_AT_CHARACTER_BOUNDARIES);
@@ -1670,11 +1676,11 @@ impl Fragment {
         }
     }
 
-    /// Truncates this fragment to the given `max_inline_size`, using a character-based breaking
-    /// strategy. The resulting fragment will have `SpecificFragmentInfo::TruncatedFragment`,
-    /// preserving the original fragment for use in incremental reflow.
-    ///
-    /// This function will panic if self is already truncated.
+    
+    
+    
+    
+    
     pub fn truncate_to_inline_size(self, max_inline_size: Au) -> Fragment {
         if let SpecificFragmentInfo::TruncatedFragment(_) = self.specific {
             panic!("Cannot truncate an already truncated fragment");
@@ -1685,7 +1691,7 @@ impl Fragment {
                 let size = LogicalSize::new(self.style.writing_mode,
                                             inline_size,
                                             self.border_box.size.block);
-                // Preserve the insertion point if it is in this fragment's range or it is at line end.
+                
                 let (flags, insertion_point) = match self.specific {
                     SpecificFragmentInfo::ScannedText(ref info) => {
                         match info.insertion_point {
@@ -1716,8 +1722,8 @@ impl Fragment {
         result
     }
 
-    /// Truncates this fragment to the given `max_inline_size`, using a character-based breaking
-    /// strategy. If no characters could fit, returns `None`.
+    
+    
     fn calculate_truncate_to_inline_size(&self, max_inline_size: Au) -> Option<TruncationResult> {
         let text_fragment_info =
             if let SpecificFragmentInfo::ScannedText(ref text_fragment_info) = self.specific {
@@ -1746,8 +1752,8 @@ impl Fragment {
         }
     }
 
-    /// A helper method that uses the breaking strategy described by `slice_iterator` (at present,
-    /// either natural word breaking or character breaking) to split this fragment.
+    
+    
     fn calculate_split_position_using_breaking_strategy<'a, I>(
             &self,
             slice_iterator: I,
@@ -1779,39 +1785,39 @@ impl Fragment {
                    slice.range,
                    remaining_inline_size);
 
-            // Use the `remaining_inline_size` to find a split point if possible. If not, go around
-            // the loop again with the next slice.
+            
+            
             let metrics = text_fragment_info.run.metrics_for_slice(slice.glyphs, &slice.range);
             let advance = metrics.advance_width;
 
-            // Have we found the split point?
+            
             if advance <= remaining_inline_size || slice.glyphs.is_whitespace() {
-                // Keep going; we haven't found the split point yet.
+                
                 debug!("calculate_split_position_using_breaking_strategy: enlarging span");
                 remaining_inline_size = remaining_inline_size - advance;
                 inline_start_range.extend_by(slice.range.length());
                 continue
             }
 
-            // The advance is more than the remaining inline-size, so split here. First, check to
-            // see if we're going to overflow the line. If so, perform a best-effort split.
+            
+            
             let mut remaining_range = slice.text_run_range();
             let split_is_empty = inline_start_range.is_empty() &&
                     !(self.requires_line_break_afterward_if_wrapping_on_newlines() &&
                       !self.white_space().allow_wrap());
             if split_is_empty {
-                // We're going to overflow the line.
+                
                 overflowing = true;
                 inline_start_range = slice.text_run_range();
                 remaining_range = Range::new(slice.text_run_range().end(), ByteIndex(0));
                 remaining_range.extend_to(text_fragment_info.range.end());
             }
 
-            // Check to see if we need to create an inline-end chunk.
+            
             let slice_begin = remaining_range.begin();
             if slice_begin < text_fragment_info.range.end() {
-                // There still some things left over at the end of the line, so create the
-                // inline-end chunk.
+                
+                
                 let mut inline_end = remaining_range;
                 inline_end.extend_to(text_fragment_info.range.end());
                 inline_end_range = Some(inline_end);
@@ -1819,11 +1825,11 @@ impl Fragment {
                        inline_end);
             }
 
-            // If we failed to find a suitable split point, we're on the verge of overflowing the
-            // line.
+            
+            
             if split_is_empty || overflowing {
-                // If we've been instructed to retry at character boundaries (probably via
-                // `overflow-wrap: break-word`), do so.
+                
+                
                 if flags.contains(RETRY_AT_CHARACTER_BOUNDARIES) {
                     let character_breaking_strategy =
                         text_fragment_info.run
@@ -1836,8 +1842,8 @@ impl Fragment {
                         flags)
                 }
 
-                // We aren't at the start of the line, so don't overflow. Let inline layout wrap to
-                // the next line instead.
+                
+                
                 if !flags.contains(STARTS_LINE) {
                     return None
                 }
@@ -1864,8 +1870,8 @@ impl Fragment {
         })
     }
 
-    /// The opposite of `calculate_split_position_using_breaking_strategy`: merges this fragment
-    /// with the next one.
+    
+    
     pub fn merge_with(&mut self, next_fragment: Fragment) {
         match (&mut self.specific, &next_fragment.specific) {
             (&mut SpecificFragmentInfo::ScannedText(ref mut this_info),
@@ -1888,15 +1894,15 @@ impl Fragment {
         self.meld_with_next_inline_fragment(&next_fragment);
     }
 
-    /// Restore any whitespace that was stripped from a text fragment, and recompute inline metrics
-    /// if necessary.
+    
+    
     pub fn reset_text_range_and_inline_size(&mut self) {
         if let SpecificFragmentInfo::ScannedText(ref mut info) = self.specific {
             if info.run.extra_word_spacing != Au(0) {
                 Arc::make_mut(&mut info.run).extra_word_spacing = Au(0);
             }
 
-            // FIXME (mbrubeck): Do we need to restore leading too?
+            
             let range_end = info.range_end_including_stripped_whitespace;
             if info.range.end() == range_end {
                 return
@@ -1908,16 +1914,13 @@ impl Fragment {
         }
     }
 
-    /// Assigns replaced inline-size, padding, and margins for this fragment only if it is replaced
-    /// content per CSS 2.1 § 10.3.2.
+    
+    
     pub fn assign_replaced_inline_size_if_necessary(&mut self,
                                                     container_inline_size: Au,
                                                     container_block_size: Option<Au>) {
         match self.specific {
-            SpecificFragmentInfo::TruncatedFragment(box TruncatedFragmentInfo {
-                text_info: None,
-                ..
-            }) |
+            SpecificFragmentInfo::TruncatedFragment(ref t) if t.text_info.is_none() => return,
             SpecificFragmentInfo::Generic |
             SpecificFragmentInfo::GeneratedContent(_) |
             SpecificFragmentInfo::Table |
@@ -1944,13 +1947,13 @@ impl Fragment {
         };
 
         match self.specific {
-            // Inline blocks
+            
             SpecificFragmentInfo::InlineAbsoluteHypothetical(ref mut info) => {
                 let block_flow = FlowRef::deref_mut(&mut info.flow_ref).as_mut_block();
                 block_flow.base.position.size.inline =
                     block_flow.base.intrinsic_inline_sizes.preferred_inline_size;
 
-                // This is a hypothetical box, so it takes up no space.
+                
                 self.border_box.size.inline = Au(0);
             }
             SpecificFragmentInfo::InlineBlock(ref mut info) => {
@@ -1970,19 +1973,22 @@ impl Fragment {
                 block_flow.base.block_container_writing_mode = self.style.writing_mode;
             }
 
-            // Text
-            SpecificFragmentInfo::TruncatedFragment(box TruncatedFragmentInfo {
-                text_info: Some(ref info),
-                ..
-            }) |
-            SpecificFragmentInfo::ScannedText(box ref info) => {
-                // Scanned text fragments will have already had their content inline-sizes assigned
-                // by this point.
+            
+            SpecificFragmentInfo::TruncatedFragment(ref t) if t.text_info.is_some() => {
+                let info = t.text_info.as_ref().unwrap();
+                
+                
+                self.border_box.size.inline = info.content_size.inline +
+                    self.border_padding.inline_start_end();
+            }
+            SpecificFragmentInfo::ScannedText(ref info) => {
+                
+                
                 self.border_box.size.inline = info.content_size.inline +
                     self.border_padding.inline_start_end();
             }
 
-            // Replaced elements
+            
             _ if self.is_replaced() => {
                 let (inline_size, block_size) =
                     self.calculate_replaced_sizes(Some(container_inline_size), container_block_size);
@@ -1994,16 +2000,13 @@ impl Fragment {
         }
     }
 
-    /// Assign block-size for this fragment if it is replaced content. The inline-size must have
-    /// been assigned first.
-    ///
-    /// Ideally, this should follow CSS 2.1 § 10.6.2.
+    
+    
+    
+    
     pub fn assign_replaced_block_size_if_necessary(&mut self) {
         match self.specific {
-            SpecificFragmentInfo::TruncatedFragment(box TruncatedFragmentInfo {
-                text_info: None,
-                ..
-            }) |
+            SpecificFragmentInfo::TruncatedFragment(ref t) if t.text_info.is_none() => return,
             SpecificFragmentInfo::Generic |
             SpecificFragmentInfo::GeneratedContent(_) |
             SpecificFragmentInfo::Table |
@@ -2025,53 +2028,53 @@ impl Fragment {
             SpecificFragmentInfo::InlineAbsoluteHypothetical(_) |
             SpecificFragmentInfo::InlineAbsolute(_) |
             SpecificFragmentInfo::ScannedText(_) |
-            SpecificFragmentInfo::TruncatedFragment(box TruncatedFragmentInfo {
-                text_info: Some(_),
-                ..
-            }) |
+            SpecificFragmentInfo::TruncatedFragment(_) |
             SpecificFragmentInfo::Svg(_) => {}
         }
 
         match self.specific {
-            // Text
-            SpecificFragmentInfo::TruncatedFragment(box TruncatedFragmentInfo {
-                text_info: Some(ref info),
-                ..
-            }) |
-            SpecificFragmentInfo::ScannedText(box ref info) => {
-                // Scanned text fragments' content block-sizes are calculated by the text run
-                // scanner during flow construction.
+            
+            SpecificFragmentInfo::TruncatedFragment(ref t) if t.text_info.is_some() => {
+                let info = t.text_info.as_ref().unwrap();
+                
+                
+                self.border_box.size.block = info.content_size.block +
+                    self.border_padding.block_start_end();
+            }
+            SpecificFragmentInfo::ScannedText(ref info) => {
+                
+                
                 self.border_box.size.block = info.content_size.block +
                     self.border_padding.block_start_end();
             }
 
-            // Inline blocks
+            
             SpecificFragmentInfo::InlineBlock(ref mut info) => {
-                // Not the primary fragment, so we do not take the noncontent size into account.
+                
                 let block_flow = FlowRef::deref_mut(&mut info.flow_ref).as_block();
                 self.border_box.size.block = block_flow.base.position.size.block +
                     block_flow.fragment.margin.block_start_end()
             }
             SpecificFragmentInfo::InlineAbsoluteHypothetical(ref mut info) => {
-                // Not the primary fragment, so we do not take the noncontent size into account.
+                
                 let block_flow = FlowRef::deref_mut(&mut info.flow_ref).as_block();
                 self.border_box.size.block = block_flow.base.position.size.block;
             }
             SpecificFragmentInfo::InlineAbsolute(ref mut info) => {
-                // Not the primary fragment, so we do not take the noncontent size into account.
+                
                 let block_flow = FlowRef::deref_mut(&mut info.flow_ref).as_block();
                 self.border_box.size.block = block_flow.base.position.size.block +
                     block_flow.fragment.margin.block_start_end()
             }
 
-            // Replaced elements
+            
             _ if self.is_replaced() => {},
 
             ref unhandled @ _ => panic!("should have been handled above: {:?}", unhandled),
         }
     }
 
-    /// Returns true if this fragment is replaced content.
+    
     pub fn is_replaced(&self) -> bool {
         match self.specific {
             SpecificFragmentInfo::Iframe(_) |
@@ -2082,7 +2085,7 @@ impl Fragment {
         }
     }
 
-    /// Returns true if this fragment is replaced content or an inline-block or false otherwise.
+    
     pub fn is_replaced_or_inline_block(&self) -> bool {
         match self.specific {
             SpecificFragmentInfo::InlineAbsoluteHypothetical(_) |
@@ -2091,19 +2094,19 @@ impl Fragment {
         }
     }
 
-    /// Calculates block-size above baseline, depth below baseline, and ascent for this fragment
-    /// when used in an inline formatting context. See CSS 2.1 § 10.8.1.
-    ///
-    /// This does not take `vertical-align` into account. For that, use `aligned_inline_metrics()`.
+    
+    
+    
+    
     fn content_inline_metrics(&self, layout_context: &LayoutContext) -> InlineMetrics {
-        // CSS 2.1 § 10.8: "The height of each inline-level box in the line box is
-        // calculated. For replaced elements, inline-block elements, and inline-table
-        // elements, this is the height of their margin box."
-        //
-        // FIXME(pcwalton): We have to handle `Generic` and `GeneratedContent` here to avoid
-        // crashing in a couple of `css21_dev/html4/content-` WPTs, but I don't see how those two
-        // fragment types should end up inside inlines. (In the case of `GeneratedContent`, those
-        // fragment types should have been resolved by now…)
+        
+        
+        
+        
+        
+        
+        
+        
         let inline_metrics = match self.specific {
             SpecificFragmentInfo::Canvas(_) | SpecificFragmentInfo::Iframe(_) |
             SpecificFragmentInfo::Image(_) | SpecificFragmentInfo::Svg(_) |
@@ -2115,22 +2118,12 @@ impl Fragment {
                     ascent: ascent,
                 }
             }
-            SpecificFragmentInfo::TruncatedFragment(box TruncatedFragmentInfo {
-                text_info: Some(ref info),
-                ..
-            }) |
-            SpecificFragmentInfo::ScannedText(box ref info) => {
-                // Fragments with no glyphs don't contribute any inline metrics.
-                // TODO: Filter out these fragments during flow construction?
-                if info.insertion_point.is_none() && info.content_size.inline == Au(0) {
-                    return InlineMetrics::new(Au(0), Au(0), Au(0));
-                }
-                // See CSS 2.1 § 10.8.1.
-                let font_metrics = with_thread_local_font_context(layout_context, |font_context| {
-                    text::font_metrics_for_style(font_context, self.style.clone_font())
-                });
-                let line_height = text::line_height_from_style(&*self.style, &font_metrics);
-                InlineMetrics::from_font_metrics(&info.run.font_metrics, line_height)
+            SpecificFragmentInfo::TruncatedFragment(ref t) if t.text_info.is_some() => {
+                let info = t.text_info.as_ref().unwrap();
+                inline_metrics_of_text(info, self, layout_context)
+            }
+            SpecificFragmentInfo::ScannedText(ref info) => {
+                inline_metrics_of_text(info, self, layout_context)
             }
             SpecificFragmentInfo::InlineBlock(ref info) => {
                 inline_metrics_of_block(&info.flow_ref, &*self.style)
@@ -2138,10 +2131,7 @@ impl Fragment {
             SpecificFragmentInfo::InlineAbsoluteHypothetical(ref info) => {
                 inline_metrics_of_block(&info.flow_ref, &*self.style)
             }
-            SpecificFragmentInfo::TruncatedFragment(box TruncatedFragmentInfo {
-                text_info: None,
-                ..
-            }) |
+            SpecificFragmentInfo::TruncatedFragment(..) |
             SpecificFragmentInfo::InlineAbsolute(_) => {
                 InlineMetrics::new(Au(0), Au(0), Au(0))
             }
@@ -2158,44 +2148,59 @@ impl Fragment {
         };
         return inline_metrics;
 
+        fn inline_metrics_of_text(info: &ScannedTextFragmentInfo, self_: &Fragment,
+                                  layout_context: &LayoutContext) -> InlineMetrics {
+            
+            
+            if info.insertion_point.is_none() && info.content_size.inline == Au(0) {
+                return InlineMetrics::new(Au(0), Au(0), Au(0));
+            }
+            
+            let font_metrics = with_thread_local_font_context(layout_context, |font_context| {
+                text::font_metrics_for_style(font_context, self_.style.clone_font())
+            });
+            let line_height = text::line_height_from_style(&*self_.style, &font_metrics);
+            InlineMetrics::from_font_metrics(&info.run.font_metrics, line_height)
+        }
+
         fn inline_metrics_of_block(flow: &FlowRef, style: &ComputedValues) -> InlineMetrics {
-            // CSS 2.1 § 10.8: "The height of each inline-level box in the line box is calculated.
-            // For replaced elements, inline-block elements, and inline-table elements, this is the
-            // height of their margin box."
-            //
-            // CSS 2.1 § 10.8.1: "The baseline of an 'inline-block' is the baseline of its last
-            // line box in the normal flow, unless it has either no in-flow line boxes or if its
-            // 'overflow' property has a computed value other than 'visible', in which case the
-            // baseline is the bottom margin edge."
-            //
-            // NB: We must use `block_flow.fragment.border_box.size.block` here instead of
-            // `block_flow.base.position.size.block` because sometimes the latter is late-computed
-            // and isn't up to date at this point.
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             let block_flow = flow.as_block();
             let start_margin = block_flow.fragment.margin.block_start;
             let end_margin = block_flow.fragment.margin.block_end;
             let border_box_block_size = block_flow.fragment.border_box.size.block;
 
-            //     --------
-            //      margin
-            // top -------- + +
-            //              | |
-            //              | |
-            //  A  ..pogo.. | + baseline_offset_of_last_line_box_in_flow()
-            //              |
-            //     -------- + border_box_block_size
-            //      margin
-            //  B  --------
-            //
-            // § 10.8.1 says that the baseline (and thus ascent, which is the
-            // distance from the baseline to the top) should be A if it has an
-            // in-flow line box and if overflow: visible, and B otherwise.
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             let ascent =
                 match (flow.baseline_offset_of_last_line_box_in_flow(),
                        style.get_box().overflow_y) {
-                // Case A
+                
                 (Some(baseline_offset), overflow_x::T::visible) => baseline_offset,
-                // Case B
+                
                 _ => border_box_block_size + end_margin,
             };
 
@@ -2206,12 +2211,12 @@ impl Fragment {
         }
     }
 
-    /// Calculates the offset from the baseline that applies to this fragment due to
-    /// `vertical-align`. Positive values represent downward displacement.
-    ///
-    /// If `actual_line_metrics` is supplied, then these metrics are used to determine the
-    /// displacement of the fragment when `top` or `bottom` `vertical-align` values are
-    /// encountered. If this is not supplied, then `top` and `bottom` values are ignored.
+    
+    
+    
+    
+    
+    
     fn vertical_alignment_offset(&self,
                                  layout_context: &LayoutContext,
                                  content_inline_metrics: &InlineMetrics,
@@ -2220,11 +2225,11 @@ impl Fragment {
                                  -> Au {
         let mut offset = Au(0);
         for style in self.inline_styles() {
-            // If any of the inline styles say `top` or `bottom`, adjust the vertical align
-            // appropriately.
-            //
-            // FIXME(#5624, pcwalton): This passes our current reftests but isn't the right thing
-            // to do.
+            
+            
+            
+            
+            
             match style.get_box().vertical_align {
                 VerticalAlign::Baseline => {}
                 VerticalAlign::Middle => {
@@ -2277,13 +2282,13 @@ impl Fragment {
         offset
     }
 
-    /// Calculates block-size above baseline, depth below baseline, and ascent for this fragment
-    /// when used in an inline formatting context, taking `vertical-align` (other than `top` or
-    /// `bottom`) into account. See CSS 2.1 § 10.8.1.
-    ///
-    /// If `actual_line_metrics` is supplied, then these metrics are used to determine the
-    /// displacement of the fragment when `top` or `bottom` `vertical-align` values are
-    /// encountered. If this is not supplied, then `top` and `bottom` values are ignored.
+    
+    
+    
+    
+    
+    
+    
     pub fn aligned_inline_metrics(&self,
                                   layout_context: &LayoutContext,
                                   minimum_line_metrics: &LineMetrics,
@@ -2305,7 +2310,7 @@ impl Fragment {
         InlineMetrics::new(space_above_baseline, space_below_baseline, ascent)
     }
 
-    /// Returns true if this fragment is a hypothetical box. See CSS 2.1 § 10.3.7.
+    
     pub fn is_hypothetical(&self) -> bool {
         match self.specific {
             SpecificFragmentInfo::InlineAbsoluteHypothetical(_) => true,
@@ -2313,13 +2318,13 @@ impl Fragment {
         }
     }
 
-    /// Returns true if this fragment can merge with another immediately-following fragment or
-    /// false otherwise.
+    
+    
     pub fn can_merge_with_fragment(&self, other: &Fragment) -> bool {
         match (&self.specific, &other.specific) {
             (&SpecificFragmentInfo::UnscannedText(ref first_unscanned_text),
              &SpecificFragmentInfo::UnscannedText(_)) => {
-                // FIXME: Should probably use a whitelist of styles that can safely differ (#3165)
+                
                 if self.style().get_font() != other.style().get_font() ||
                         self.text_decoration_line() != other.text_decoration_line() ||
                         self.white_space() != other.white_space() ||
@@ -2331,8 +2336,8 @@ impl Fragment {
                     return false
                 }
 
-                // If this node has any styles that have border/padding/margins on the following
-                // side, then we can't merge with the next fragment.
+                
+                
                 if let Some(ref inline_context) = self.inline_context {
                     for inline_context_node in inline_context.nodes.iter() {
                         if !inline_context_node.flags.contains(LAST_FRAGMENT_OF_ELEMENT) {
@@ -2352,8 +2357,8 @@ impl Fragment {
                     }
                 }
 
-                // If the next fragment has any styles that have border/padding/margins on the
-                // preceding side, then it can't merge with us.
+                
+                
                 if let Some(ref inline_context) = other.inline_context {
                     for inline_context_node in inline_context.nodes.iter() {
                         if !inline_context_node.flags.contains(FIRST_FRAGMENT_OF_ELEMENT) {
@@ -2379,15 +2384,15 @@ impl Fragment {
         }
     }
 
-    /// Returns true if and only if this is the *primary fragment* for the fragment's style object
-    /// (conceptually, though style sharing makes this not really true, of course). The primary
-    /// fragment is the one that draws backgrounds, borders, etc., and takes borders, padding and
-    /// margins into account. Every style object has at most one primary fragment.
-    ///
-    /// At present, all fragments are primary fragments except for inline-block and table wrapper
-    /// fragments. Inline-block fragments are not primary fragments because the corresponding block
-    /// flow is the primary fragment, while table wrapper fragments are not primary fragments
-    /// because the corresponding table flow is the primary fragment.
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn is_primary_fragment(&self) -> bool {
         match self.specific {
             SpecificFragmentInfo::InlineBlock(_) |
@@ -2412,9 +2417,9 @@ impl Fragment {
         }
     }
 
-    /// Determines the inline sizes of inline-block fragments. These cannot be fully computed until
-    /// inline size assignment has run for the child flow: thus it is computed "late", during
-    /// block size assignment.
+    
+    
+    
     pub fn update_late_computed_replaced_inline_size_if_necessary(&mut self) {
         if let SpecificFragmentInfo::InlineBlock(ref mut inline_block_info) = self.specific {
             let block_flow = FlowRef::deref_mut(&mut inline_block_info.flow_ref).as_block();
@@ -2442,18 +2447,18 @@ impl Fragment {
         self.style = (*new_style).clone()
     }
 
-    /// Given the stacking-context-relative position of the containing flow, returns the border box
-    /// of this fragment relative to the parent stacking context. This takes `position: relative`
-    /// into account.
-    ///
-    /// If `coordinate_system` is `Parent`, this returns the border box in the parent stacking
-    /// context's coordinate system. Otherwise, if `coordinate_system` is `Own` and this fragment
-    /// establishes a stacking context itself, this returns a border box anchored at (0, 0). (If
-    /// this fragment does not establish a stacking context, then it always belongs to its parent
-    /// stacking context and thus `coordinate_system` is ignored.)
-    ///
-    /// This is the method you should use for display list construction as well as
-    /// `getBoundingClientRect()` and so forth.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn stacking_relative_border_box(&self,
                                         stacking_relative_flow_origin: &Vector2D<Au>,
                                         relative_containing_block_size: &LogicalSize<Au>,
@@ -2467,17 +2472,17 @@ impl Fragment {
             return Rect::new(Point2D::zero(), border_box.size)
         }
 
-        // FIXME(pcwalton): This can double-count relative position sometimes for inlines (e.g.
-        // `<div style="position:relative">x</div>`, because the `position:relative` trickles down
-        // to the inline flow. Possibly we should extend the notion of "primary fragment" to fix
-        // this.
+        
+        
+        
+        
         let relative_position = self.relative_position(relative_containing_block_size);
         border_box.translate_by_size(&relative_position.to_physical(self.style.writing_mode))
                   .translate(&stacking_relative_flow_origin)
     }
 
-    /// Given the stacking-context-relative border box, returns the stacking-context-relative
-    /// content box.
+    
+    
     pub fn stacking_relative_content_box(&self, stacking_relative_border_box: &Rect<Au>)
                                          -> Rect<Au> {
         let border_padding = self.border_padding.to_physical(self.style.writing_mode);
@@ -2487,16 +2492,16 @@ impl Fragment {
                               stacking_relative_border_box.size.height - border_padding.vertical()))
     }
 
-    /// Returns true if this fragment has a filter, transform, or perspective property set.
+    
     pub fn has_filter_transform_or_perspective(&self) -> bool {
            self.style().get_box().transform.0.is_some() ||
            !self.style().get_effects().filter.0.is_empty() ||
            self.style().get_box().perspective != Either::Second(values::None_)
     }
 
-    /// Returns true if this fragment establishes a new stacking context and false otherwise.
+    
     pub fn establishes_stacking_context(&self) -> bool {
-        // Text fragments shouldn't create stacking contexts.
+        
         match self.specific {
             SpecificFragmentInfo::TruncatedFragment(_) |
             SpecificFragmentInfo::ScannedText(_) |
@@ -2521,28 +2526,28 @@ impl Fragment {
             return true
         }
 
-        // Fixed position and sticky position always create stacking contexts.
+        
         if self.style().get_box().position == position::T::fixed ||
            self.style().get_box().position == position::T::sticky  {
             return true
         }
 
-        // Statically positioned fragments don't establish stacking contexts if the previous
-        // conditions are not fulfilled. Furthermore, z-index doesn't apply to statically
-        // positioned fragments.
+        
+        
+        
         if self.style().get_box().position == position::T::static_ {
             return false;
         }
 
-        // For absolutely and relatively positioned fragments we only establish a stacking
-        // context if there is a z-index set.
-        // See https://www.w3.org/TR/CSS2/visuren.html#z-index
+        
+        
+        
         self.style().get_position().z_index != Either::Second(Auto)
     }
 
-    // Get the effective z-index of this fragment. Z-indices only apply to positioned element
-    // per CSS 2 9.9.1 (http://www.w3.org/TR/CSS2/visuren.html#z-index), so this value may differ
-    // from the value specified in the style.
+    
+    
+    
     pub fn effective_z_index(&self) -> i32 {
         match self.style().get_box().position {
             position::T::static_ => {},
@@ -2559,23 +2564,23 @@ impl Fragment {
         }
     }
 
-    /// Computes the overflow rect of this fragment relative to the start of the flow.
+    
     pub fn compute_overflow(&self,
                             flow_size: &Size2D<Au>,
                             relative_containing_block_size: &LogicalSize<Au>)
                             -> Overflow {
         let mut border_box = self.border_box.to_physical(self.style.writing_mode, *flow_size);
 
-        // Relative position can cause us to draw outside our border box.
-        //
-        // FIXME(pcwalton): I'm not a fan of the way this makes us crawl though so many styles all
-        // the time. Can't we handle relative positioning by just adjusting `border_box`?
+        
+        
+        
+        
         let relative_position = self.relative_position(relative_containing_block_size);
         border_box =
             border_box.translate_by_size(&relative_position.to_physical(self.style.writing_mode));
         let mut overflow = Overflow::from_rect(&border_box);
 
-        // Box shadows cause us to draw outside our border box.
+        
         for box_shadow in &self.style().get_effects().box_shadow.0 {
             let offset = Vector2D::new(Au::from(box_shadow.base.horizontal),
                                        Au::from(box_shadow.base.vertical));
@@ -2585,14 +2590,14 @@ impl Fragment {
                                                              .inflate(inflation, inflation))
         }
 
-        // Outlines cause us to draw outside our border box.
+        
         let outline_width = Au::from(self.style.get_outline().outline_width);
         if outline_width != Au(0) {
             overflow.paint = overflow.paint.union(&border_box.inflate(outline_width,
                                                                       outline_width))
         }
 
-        // Include the overflow of the block flow, if any.
+        
         match self.specific {
             SpecificFragmentInfo::InlineBlock(ref info) => {
                 let block_flow = info.flow_ref.as_block();
@@ -2605,19 +2610,19 @@ impl Fragment {
             _ => (),
         }
 
-        // FIXME(pcwalton): Sometimes excessively fancy glyphs can make us draw outside our border
-        // box too.
+        
+        
         overflow
     }
 
     pub fn requires_line_break_afterward_if_wrapping_on_newlines(&self) -> bool {
         match self.specific {
-            SpecificFragmentInfo::TruncatedFragment(box TruncatedFragmentInfo {
-                text_info: Some(ref scanned_text),
-                ..
-            }) |
-            SpecificFragmentInfo::ScannedText(box ref scanned_text) => {
-                scanned_text.requires_line_break_afterward_if_wrapping_on_newlines()
+            SpecificFragmentInfo::TruncatedFragment(ref t) if t.text_info.is_some() => {
+                let text = t.text_info.as_ref().unwrap();
+                text.requires_line_break_afterward_if_wrapping_on_newlines()
+            }
+            SpecificFragmentInfo::ScannedText(ref text) => {
+                text.requires_line_break_afterward_if_wrapping_on_newlines()
             }
             _ => false,
         }
@@ -2628,28 +2633,13 @@ impl Fragment {
             return WhitespaceStrippingResult::RetainFragment
         }
 
-        match self.specific {
-            SpecificFragmentInfo::TruncatedFragment(box TruncatedFragmentInfo {
-                text_info: Some(ref mut scanned_text_fragment_info),
-                ..
-            }) |
-            SpecificFragmentInfo::ScannedText(box ref mut scanned_text_fragment_info) => {
-                let leading_whitespace_byte_count = scanned_text_fragment_info.text()
-                    .find(|c| !char_is_whitespace(c))
-                    .unwrap_or(scanned_text_fragment_info.text().len());
-
-                let whitespace_len = ByteIndex(leading_whitespace_byte_count as isize);
-                let whitespace_range = Range::new(scanned_text_fragment_info.range.begin(),
-                                                  whitespace_len);
-                let text_bounds =
-                    scanned_text_fragment_info.run.metrics_for_range(&whitespace_range).bounding_box;
-                self.border_box.size.inline = self.border_box.size.inline - text_bounds.size.width;
-                scanned_text_fragment_info.content_size.inline =
-                    scanned_text_fragment_info.content_size.inline - text_bounds.size.width;
-
-                scanned_text_fragment_info.range.adjust_by(whitespace_len, -whitespace_len);
-
-                WhitespaceStrippingResult::RetainFragment
+        return match self.specific {
+            SpecificFragmentInfo::TruncatedFragment(ref mut t) if t.text_info.is_some() => {
+                let scanned_text_fragment_info = t.text_info.as_mut().unwrap();
+                scanned_text(scanned_text_fragment_info, &mut self.border_box)
+            }
+            SpecificFragmentInfo::ScannedText(ref mut scanned_text_fragment_info) => {
+                scanned_text(scanned_text_fragment_info, &mut self.border_box)
             }
             SpecificFragmentInfo::UnscannedText(ref mut unscanned_text_fragment_info) => {
                 let mut new_text_string = String::new();
@@ -2663,7 +2653,7 @@ impl Fragment {
                         modified = true;
                         continue
                     }
-                    // Finished processing leading control chars and whitespace.
+                    
                     if modified {
                         new_text_string.push_str(&unscanned_text_fragment_info.text[i..]);
                     }
@@ -2677,41 +2667,43 @@ impl Fragment {
                     &unscanned_text_fragment_info)
             }
             _ => WhitespaceStrippingResult::RetainFragment,
+        };
+
+        fn scanned_text(scanned_text_fragment_info: &mut ScannedTextFragmentInfo,
+                        border_box: &mut LogicalRect<Au>)
+                        -> WhitespaceStrippingResult {
+            let leading_whitespace_byte_count = scanned_text_fragment_info.text()
+                .find(|c| !char_is_whitespace(c))
+                .unwrap_or(scanned_text_fragment_info.text().len());
+
+            let whitespace_len = ByteIndex(leading_whitespace_byte_count as isize);
+            let whitespace_range = Range::new(scanned_text_fragment_info.range.begin(),
+                                              whitespace_len);
+            let text_bounds =
+                scanned_text_fragment_info.run.metrics_for_range(&whitespace_range).bounding_box;
+            border_box.size.inline = border_box.size.inline - text_bounds.size.width;
+            scanned_text_fragment_info.content_size.inline =
+                scanned_text_fragment_info.content_size.inline - text_bounds.size.width;
+
+            scanned_text_fragment_info.range.adjust_by(whitespace_len, -whitespace_len);
+
+            WhitespaceStrippingResult::RetainFragment
         }
     }
 
-    /// Returns true if the entire fragment was stripped.
+    
     pub fn strip_trailing_whitespace_if_necessary(&mut self) -> WhitespaceStrippingResult {
         if self.white_space().preserve_spaces() {
             return WhitespaceStrippingResult::RetainFragment
         }
 
-        match self.specific {
-            SpecificFragmentInfo::TruncatedFragment(box TruncatedFragmentInfo {
-                text_info: Some(ref mut scanned_text_fragment_info),
-                ..
-            }) |
-            SpecificFragmentInfo::ScannedText(box ref mut scanned_text_fragment_info) => {
-                let mut trailing_whitespace_start_byte = 0;
-                for (i, c) in scanned_text_fragment_info.text().char_indices().rev() {
-                    if !char_is_whitespace(c) {
-                        trailing_whitespace_start_byte = i + c.len_utf8();
-                        break;
-                    }
-                }
-                let whitespace_start = ByteIndex(trailing_whitespace_start_byte as isize);
-                let whitespace_len = scanned_text_fragment_info.range.length() - whitespace_start;
-                let mut whitespace_range = Range::new(whitespace_start, whitespace_len);
-                whitespace_range.shift_by(scanned_text_fragment_info.range.begin());
-
-                let text_bounds = scanned_text_fragment_info.run
-                                                        .metrics_for_range(&whitespace_range)
-                                                        .bounding_box;
-                self.border_box.size.inline -= text_bounds.size.width;
-                scanned_text_fragment_info.content_size.inline -= text_bounds.size.width;
-
-                scanned_text_fragment_info.range.extend_by(-whitespace_len);
-                WhitespaceStrippingResult::RetainFragment
+        return match self.specific {
+            SpecificFragmentInfo::TruncatedFragment(ref mut t) if t.text_info.is_some() => {
+                let scanned_text_fragment_info = t.text_info.as_mut().unwrap();
+                scanned_text(scanned_text_fragment_info, &mut self.border_box)
+            }
+            SpecificFragmentInfo::ScannedText(ref mut scanned_text_fragment_info) => {
+                scanned_text(scanned_text_fragment_info, &mut self.border_box)
             }
             SpecificFragmentInfo::UnscannedText(ref mut unscanned_text_fragment_info) => {
                 let mut trailing_bidi_control_characters_to_retain = Vec::new();
@@ -2741,6 +2733,31 @@ impl Fragment {
                     &unscanned_text_fragment_info)
             }
             _ => WhitespaceStrippingResult::RetainFragment,
+        };
+
+        fn scanned_text(scanned_text_fragment_info: &mut ScannedTextFragmentInfo,
+                        border_box: &mut LogicalRect<Au>)
+                        -> WhitespaceStrippingResult {
+                let mut trailing_whitespace_start_byte = 0;
+                for (i, c) in scanned_text_fragment_info.text().char_indices().rev() {
+                    if !char_is_whitespace(c) {
+                        trailing_whitespace_start_byte = i + c.len_utf8();
+                        break;
+                    }
+                }
+                let whitespace_start = ByteIndex(trailing_whitespace_start_byte as isize);
+                let whitespace_len = scanned_text_fragment_info.range.length() - whitespace_start;
+                let mut whitespace_range = Range::new(whitespace_start, whitespace_len);
+                whitespace_range.shift_by(scanned_text_fragment_info.range.begin());
+
+                let text_bounds = scanned_text_fragment_info.run
+                                                        .metrics_for_range(&whitespace_range)
+                                                        .bounding_box;
+                border_box.size.inline -= text_bounds.size.width;
+                scanned_text_fragment_info.content_size.inline -= text_bounds.size.width;
+
+                scanned_text_fragment_info.range.extend_by(-whitespace_len);
+                WhitespaceStrippingResult::RetainFragment
         }
     }
 
@@ -2748,13 +2765,13 @@ impl Fragment {
         InlineStyleIterator::new(self)
     }
 
-    /// Returns the inline-size of this fragment's margin box.
+    
     pub fn margin_box_inline_size(&self) -> Au {
         self.border_box.size.inline + self.margin.inline_start_end()
     }
 
-    /// Returns true if this node *or any of the nodes within its inline fragment context* have
-    /// non-`static` `position`.
+    
+    
     pub fn is_positioned(&self) -> bool {
         if self.style.get_box().position != position::T::static_ {
             return true
@@ -2769,7 +2786,7 @@ impl Fragment {
         false
     }
 
-    /// Returns true if this node is absolutely positioned.
+    
     pub fn is_absolutely_positioned(&self) -> bool {
         self.style.get_box().position == position::T::absolute
     }
@@ -2826,8 +2843,8 @@ impl Fragment {
         }
     }
 
-    /// Returns true if any of the inline styles associated with this fragment have
-    /// `vertical-align` set to `top` or `bottom`.
+    
+    
     pub fn is_vertically_aligned_to_top_or_bottom(&self) -> bool {
         match self.style.get_box().vertical_align {
             VerticalAlign::Top | VerticalAlign::Bottom => return true,
@@ -2868,7 +2885,7 @@ impl Fragment {
         }
     }
 
-    /// Returns the 4D matrix representing this fragment's transform.
+    
     pub fn transform_matrix(&self, stacking_relative_border_box: &Rect<Au>) -> Option<Transform3D<f32>> {
         let list = &self.style.get_box().transform;
         let transform = match list.to_transform_3d_matrix(Some(stacking_relative_border_box)) {
@@ -2897,7 +2914,7 @@ impl Fragment {
         Some(pre_transform.pre_mul(&transform).pre_mul(&post_transform))
     }
 
-    /// Returns the 4D matrix representing this fragment's perspective.
+    
     pub fn perspective_matrix(&self, stacking_relative_border_box: &Rect<Au>) -> Option<Transform3D<f32>> {
         match self.style().get_box().perspective {
             Either::First(length) => {
@@ -2981,23 +2998,23 @@ bitflags! {
     }
 }
 
-/// A top-down fragment border box iteration handler.
+
 pub trait FragmentBorderBoxIterator {
-    /// The operation to perform.
+    
     fn process(&mut self, fragment: &Fragment, level: i32, overflow: &Rect<Au>);
 
-    /// Returns true if this fragment must be processed in-order. If this returns false,
-    /// we skip the operation for this fragment, but continue processing siblings.
+    
+    
     fn should_process(&mut self, fragment: &Fragment) -> bool;
 }
 
-/// The coordinate system used in `stacking_relative_border_box()`. See the documentation of that
-/// method for details.
+
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum CoordinateSystem {
-    /// The border box returned is relative to the fragment's parent stacking context.
+    
     Parent,
-    /// The border box returned is relative to the fragment's own stacking context, if applicable.
+    
     Own,
 }
 
@@ -3058,8 +3075,8 @@ impl WhitespaceStrippingResult {
     }
 }
 
-/// The overflow area. We need two different notions of overflow: paint overflow and scrollable
-/// overflow.
+
+
 #[derive(Clone, Copy, Debug)]
 pub struct Overflow {
     pub scroll: Rect<Au>,
@@ -3104,9 +3121,9 @@ bitflags! {
     }
 }
 
-/// Specified distances from the margin edge of a block to its content in the inline direction.
-/// These are returned by `guess_inline_content_edge_offsets()` and are used in the float placement
-/// speculation logic.
+
+
+
 #[derive(Clone, Copy, Debug)]
 pub struct SpeculatedInlineContentEdgeOffsets {
     pub start: Au,

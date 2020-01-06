@@ -21,7 +21,7 @@ use flow::{BaseFlow, Flow, IS_ABSOLUTELY_POSITIONED};
 use flow_ref::FlowRef;
 use fnv::FnvHashMap;
 use fragment::{CanvasFragmentSource, CoordinateSystem, Fragment, ImageFragmentInfo, ScannedTextFragmentInfo};
-use fragment::{SpecificFragmentInfo, TruncatedFragmentInfo};
+use fragment::SpecificFragmentInfo;
 use gfx::display_list;
 use gfx::display_list::{BLUR_INFLATION_FACTOR, BaseDisplayItem, BorderDetails, BorderDisplayItem};
 use gfx::display_list::{BorderRadii, BoxShadowClipMode, BoxShadowDisplayItem, ClipScrollNode};
@@ -2012,14 +2012,12 @@ impl FragmentDisplayListBuilding for Fragment {
         };
 
         match self.specific {
-            SpecificFragmentInfo::TruncatedFragment(box TruncatedFragmentInfo {
-                text_info: Some(ref text_fragment),
-                ..
-            }) |
-            SpecificFragmentInfo::ScannedText(box ref text_fragment) => {
-                // Create the main text display item.
+            SpecificFragmentInfo::TruncatedFragment(ref truncated_fragment)
+            if truncated_fragment.text_info.is_some() => {
+                let text_fragment = truncated_fragment.text_info.as_ref().unwrap();
+                
                 self.build_display_list_for_text_fragment(state,
-                                                          &*text_fragment,
+                                                          &text_fragment,
                                                           &stacking_relative_content_box,
                                                           &self.style.get_inheritedtext().text_shadow.0,
                                                           clip);
@@ -2029,7 +2027,24 @@ impl FragmentDisplayListBuilding for Fragment {
                                                                    self.style(),
                                                                    stacking_relative_border_box,
                                                                    &stacking_relative_content_box,
-                                                                   &*text_fragment,
+                                                                   &text_fragment,
+                                                                   clip);
+                }
+            }
+            SpecificFragmentInfo::ScannedText(ref text_fragment) => {
+                
+                self.build_display_list_for_text_fragment(state,
+                                                          &text_fragment,
+                                                          &stacking_relative_content_box,
+                                                          &self.style.get_inheritedtext().text_shadow.0,
+                                                          clip);
+
+                if opts::get().show_debug_fragment_borders {
+                    self.build_debug_borders_around_text_fragments(state,
+                                                                   self.style(),
+                                                                   stacking_relative_border_box,
+                                                                   &stacking_relative_content_box,
+                                                                   &text_fragment,
                                                                    clip);
                 }
             }
@@ -2083,7 +2098,7 @@ impl FragmentDisplayListBuilding for Fragment {
                 }
             }
             SpecificFragmentInfo::Image(ref mut image_fragment) => {
-                // Place the image into the display list.
+                
                 if let Some(ref image) = image_fragment.image {
                     let base = state.create_base_display_item(
                         &stacking_relative_content_box,
@@ -2172,14 +2187,14 @@ impl FragmentDisplayListBuilding for Fragment {
                                                base_flow.early_absolute_position_info
                                                           .relative_containing_block_mode,
                                                CoordinateSystem::Parent);
-        // First, compute the offset of our border box (including relative positioning)
-        // from our flow origin, since that is what `BaseFlow::overflow` is relative to.
+        
+        
         let border_box_offset =
             border_box.translate(&-base_flow.stacking_relative_position).origin;
-        // Then, using that, compute our overflow region relative to our border box.
+        
         let overflow = base_flow.overflow.paint.translate(&-border_box_offset.to_vector());
 
-        // Create the filter pipeline.
+        
         let effects = self.style().get_effects();
         let mut filters = effects.filter.0.clone();
         if effects.opacity != 1.0 {
@@ -2206,11 +2221,11 @@ impl FragmentDisplayListBuilding for Fragment {
                                             stacking_relative_content_box: &Rect<Au>,
                                             text_shadows: &[SimpleShadow],
                                             clip: &Rect<Au>) {
-        // NB: The order for painting text components (CSS Text Decoration Module Level 3) is:
-        // shadows, underline, overline, text, text-emphasis, and then line-through.
+        
+        
 
-        // TODO(emilio): Allow changing more properties by ::selection
-        // Paint the text with the color as described in its styling.
+        
+        
         let text_color = if text_fragment.selected() {
             self.selected_style().get_color().color
         } else {
@@ -2218,18 +2233,18 @@ impl FragmentDisplayListBuilding for Fragment {
         };
 
 
-        // Determine the orientation and cursor to use.
+        
         let (orientation, cursor) = if self.style.writing_mode.is_vertical() {
-            // TODO: Distinguish between 'sideways-lr' and 'sideways-rl' writing modes in CSS
-            // Writing Modes Level 4.
+            
+            
             (TextOrientation::SidewaysRight, Cursor::VerticalText)
         } else {
             (TextOrientation::Upright, Cursor::Text)
         };
 
-        // Compute location of the baseline.
-        //
-        // FIXME(pcwalton): Get the real container size.
+        
+        
+        
         let container_size = Size2D::zero();
         let metrics = &text_fragment.run.font_metrics;
         let baseline_origin = stacking_relative_content_box.origin +
@@ -2238,17 +2253,17 @@ impl FragmentDisplayListBuilding for Fragment {
                               metrics.ascent).to_physical(self.style.writing_mode,
                                                           container_size).to_vector();
 
-        // Base item for all text/shadows
+        
         let base = state.create_base_display_item(&stacking_relative_content_box,
                                                   LocalClip::from(clip.to_rectf()),
                                                   self.node,
                                                   self.style().get_cursor(cursor),
                                                   DisplayListSection::Content);
 
-        // NB: According to CSS-BACKGROUNDS, text shadows render in *reverse* order (front
-        // to back).
+        
+        
 
-        // Shadows
+        
         for shadow in text_shadows.iter().rev() {
             state.add_display_item(DisplayItem::PushTextShadow(Box::new(PushTextShadowDisplayItem {
                 base: base.clone(),
@@ -2259,7 +2274,7 @@ impl FragmentDisplayListBuilding for Fragment {
         }
 
 
-        // Create display items for text decorations.
+        
         let text_decorations =
             self.style()
                 .get_inheritedtext()
@@ -2270,7 +2285,7 @@ impl FragmentDisplayListBuilding for Fragment {
                                        *stacking_relative_content_box,
                                        container_size);
 
-        // Underline
+        
         if text_decorations.underline {
             let mut stacking_relative_box = stacking_relative_content_box;
             stacking_relative_box.start.b = stacking_relative_content_box.start.b +
@@ -2284,7 +2299,7 @@ impl FragmentDisplayListBuilding for Fragment {
             );
         }
 
-        // Overline
+        
         if text_decorations.overline {
             let mut stacking_relative_box = stacking_relative_content_box;
             stacking_relative_box.size.block = metrics.underline_size;
@@ -2296,7 +2311,7 @@ impl FragmentDisplayListBuilding for Fragment {
             );
         }
 
-        // Text
+        
         state.add_display_item(DisplayItem::Text(Box::new(TextDisplayItem {
             base: base.clone(),
             text_run: text_fragment.run.clone(),
@@ -2307,11 +2322,11 @@ impl FragmentDisplayListBuilding for Fragment {
         })));
 
 
-        // TODO(#17715): emit text-emphasis marks here.
-        // (just push another TextDisplayItem?)
+        
+        
 
 
-        // Line-Through
+        
         if text_decorations.line_through {
             let mut stacking_relative_box = stacking_relative_content_box;
             stacking_relative_box.start.b = stacking_relative_box.start.b + metrics.ascent -
@@ -2325,7 +2340,7 @@ impl FragmentDisplayListBuilding for Fragment {
             );
         }
 
-        // Pair all the PushTextShadows
+        
         for _ in text_shadows {
             state.add_display_item(DisplayItem::PopTextShadow(Box::new(PopTextShadowDisplayItem {
                 base: base.clone(),
@@ -2338,7 +2353,7 @@ impl FragmentDisplayListBuilding for Fragment {
                                               color: &RGBA,
                                               stacking_relative_box: &LogicalRect<Au>,
                                               clip: &Rect<Au>) {
-        // FIXME(pcwalton, #2795): Get the real container size.
+        
         let container_size = Size2D::zero();
         let stacking_relative_box = stacking_relative_box.to_physical(self.style.writing_mode,
                                                                       container_size);
@@ -2422,11 +2437,11 @@ pub trait BlockFlowDisplayListBuilding {
                                     border_painting_mode: BorderPaintingMode);
 }
 
-/// This structure manages ensuring that modification to StackingContextCollectionState is
-/// only temporary. It's useful for moving recursively down the flow tree and ensuring
-/// that the state is restored for siblings. To use this structure, we must call
-/// SavedStackingContextCollectionState::restore in order to restore the state.
-/// TODO(mrobinson): It would be nice to use RAII here to avoid having to call restore.
+
+
+
+
+
 pub struct SavedStackingContextCollectionState {
     stacking_context_id: StackingContextId,
     real_stacking_context_id: StackingContextId,
@@ -2517,11 +2532,11 @@ impl BlockFlowDisplayListBuilding for BlockFlow {
 
             match transform {
                 Some(transform) if transform.m13 != 0.0 ||  transform.m23 != 0.0 => {
-                    // We cannot properly handle perspective transforms, because there may be a
-                    // situation where an element is transformed from outside the clip into the
-                    // clip region. Here we don't have enough information to detect when that is
-                    // happening. For the moment we just punt on trying to optimize the display
-                    // list for those cases.
+                    
+                    
+                    
+                    
+                    
                     max_rect()
                 }
                 Some(transform) => {
@@ -2569,10 +2584,10 @@ impl BlockFlowDisplayListBuilding for BlockFlow {
             state.current_real_stacking_context_id = self.base.stacking_context_id;
         }
 
-        // We are getting the id of the scroll root that contains us here, not the id of
-        // any scroll root that we create. If we create a scroll root, its id will be
-        // stored in state.current_clip_and_scroll_info. If we create a stacking context,
-        // we don't want it to be contained by its own scroll root.
+        
+        
+        
+        
         let containing_clip_and_scroll_info =
             self.setup_clipping_for_block(state,
                                           &mut preserved_state,
@@ -2608,8 +2623,8 @@ impl BlockFlowDisplayListBuilding for BlockFlow {
                                 stacking_context_type: BlockStackingContextType,
                                 flags: StackingContextCollectionFlags)
                                 -> ClipAndScrollInfo {
-        // If this block is absolutely positioned, we should be clipped and positioned by
-        // the scroll root of our nearest ancestor that establishes a containing block.
+        
+        
         let containing_clip_and_scroll_info = match self.positioning() {
             position::T::absolute => {
                 preserved_state.switch_to_containing_block_clip(state);
@@ -2642,8 +2657,8 @@ impl BlockFlowDisplayListBuilding for BlockFlow {
         }
         self.base.clip = state.clip_stack.last().cloned().unwrap_or_else(max_rect);
 
-        // We keep track of our position so that any stickily positioned elements can
-        // properly determine the extent of their movement relative to scrolling containers.
+        
+        
         if !flags.contains(NEVER_CREATES_CONTAINING_BLOCK) {
             let border_box = if self.fragment.establishes_stacking_context() {
                 stacking_relative_border_box
@@ -2676,17 +2691,17 @@ impl BlockFlowDisplayListBuilding for BlockFlow {
             return;
         }
 
-        // Since position: sticky elements always establish a stacking context, we will
-        // have previously calculated our border box in our own coordinate system. In
-        // order to properly calculate max offsets we need to compare our size and
-        // position in our parent's coordinate system.
+        
+        
+        
+        
         let border_box_in_parent = self.stacking_relative_border_box(CoordinateSystem::Parent);
         let margins = self.fragment.margin.to_physical(
             self.base.early_absolute_position_info.relative_containing_block_mode);
 
-        // Position:sticky elements are always restricted based on the size and position of
-        // their containing block, which for sticky items is like relative and statically
-        // positioned items: just the parent block.
+        
+        
+        
         let constraint_rect = state.parent_stacking_relative_content_box;
 
         let to_max_offset = |constraint_edge: Au, moving_edge: Au| -> f32 {
@@ -2752,9 +2767,9 @@ impl BlockFlowDisplayListBuilding for BlockFlow {
             return;
         }
 
-        // If we already have a scroll root for this flow, just return. This can happen
-        // when fragments map to more than one flow, such as in the case of table
-        // wrappers. We just accept the first scroll root in that case.
+        
+        
+        
         let new_clip_scroll_node_id = ClipId::new(self.fragment.unique_id(IdType::OverflowClip),
                                                   state.pipeline_id.to_webrender());
         if state.has_clip_scroll_node(new_clip_scroll_node_id) {
@@ -2794,20 +2809,20 @@ impl BlockFlowDisplayListBuilding for BlockFlow {
         state.current_clip_and_scroll_info = new_clip_and_scroll_info;
     }
 
-    /// Adds a scroll root for a block to take the `clip` property into account
-    /// per CSS 2.1 § 11.1.2.
+    
+    
     fn setup_clip_scroll_node_for_css_clip(&mut self,
                                            state: &mut StackingContextCollectionState,
                                            preserved_state: &mut SavedStackingContextCollectionState,
                                            stacking_relative_border_box: &Rect<Au>) {
-        // Account for `clip` per CSS 2.1 § 11.1.2.
+        
         let style_clip_rect = match self.fragment.style().get_effects().clip {
             Either::First(style_clip_rect) => style_clip_rect,
             _ => return,
         };
 
-        // CSS `clip` should only apply to position:absolute or positione:fixed elements.
-        // CSS Masking Appendix A: "Applies to: Absolutely positioned elements."
+        
+        
         match self.positioning() {
             position::T::absolute | position::T::fixed => {}
             _ => return,
@@ -2823,16 +2838,16 @@ impl BlockFlowDisplayListBuilding for BlockFlow {
             .unwrap_or(stacking_relative_border_box.size.height);
         let clip_size = Size2D::new(right - clip_origin.x, bottom - clip_origin.y);
 
-        // We use the node id to create scroll roots for overflow properties, so we
-        // use the fragment address to do the same for CSS clipping.
-        // TODO(mrobinson): This should be more resilient while maintaining the space
-        // efficiency of ClipScrollNode.
+        
+        
+        
+        
         let new_clip_scroll_node_id = ClipId::new(self.fragment.unique_id(IdType::CSSClip),
                                                   state.pipeline_id.to_webrender());
 
-        // If we already have a scroll root for this flow, just return. This can happen
-        // when fragments map to more than one flow, such as in the case of table
-        // wrappers. We just accept the first scroll root in that case.
+        
+        
+        
         if state.has_clip_scroll_node(new_clip_scroll_node_id) {
             return;
         }
@@ -2846,7 +2861,7 @@ impl BlockFlowDisplayListBuilding for BlockFlow {
                 id: new_clip_scroll_node_id,
                 parent_id: parent_id,
                 clip: ClippingRegion::from_rect(&clip_rect),
-                content_rect: Rect::zero(), // content_rect isn't important for clips.
+                content_rect: Rect::zero(), 
                 node_type: ClipScrollNodeType::Clip,
             },
         );
@@ -2929,7 +2944,7 @@ impl BlockFlowDisplayListBuilding for BlockFlow {
 
         state.processing_scrolling_overflow_element = self.has_scrolling_overflow();
 
-        // Add the box that starts the block context.
+        
         self.fragment
             .build_display_list(state,
                                 &self.base.stacking_relative_position,
@@ -3012,8 +3027,8 @@ impl InlineFlowDisplayListBuilding for InlineFlow {
     }
 
     fn build_display_list_for_inline(&mut self, state: &mut DisplayListBuildState) {
-        // TODO(#228): Once we form lines and have their cached bounds, we can be smarter and
-        // not recurse on a line if nothing in it can intersect the dirty region.
+        
+        
         debug!("Flow: building display list for {} inline fragments", self.fragments.len());
 
         

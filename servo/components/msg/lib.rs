@@ -2,16 +2,13 @@
 
 
 
-#![feature(const_fn)]
-#![feature(const_nonzero_new)]
-#![feature(nonzero)]
 #![deny(unsafe_code)]
 
 #[macro_use]
 extern crate bitflags;
-extern crate core;
 #[macro_use] extern crate heapsize;
 #[macro_use] extern crate heapsize_derive;
+extern crate nonzero;
 #[macro_use] extern crate serde;
 extern crate webrender_api;
 
