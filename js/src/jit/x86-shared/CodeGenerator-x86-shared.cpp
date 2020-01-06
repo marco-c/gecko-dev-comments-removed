@@ -1871,10 +1871,10 @@ CodeGeneratorX86Shared::emitTableSwitchDispatch(MTableSwitch* mir, Register inde
 
     
     masm.mov(ool->jumpLabel()->patchAt(), base);
-    Operand pointer = Operand(base, index, ScalePointer);
+    BaseIndex pointer(base, index, ScalePointer);
 
     
-    masm.jmp(pointer);
+    masm.branchToComputedAddress(pointer);
 }
 
 void
