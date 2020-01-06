@@ -14,6 +14,8 @@ function Permission(principal, type, capability, capabilityString) {
   this.capabilityString = capabilityString;
 }
 
+const PERMISSION_STATES = [SitePermissions.ALLOW, SitePermissions.BLOCK, SitePermissions.PROMPT];
+
 var gSitePermissionsManager = {
   _type: "",
   _isObserving: false,
@@ -71,7 +73,7 @@ var gSitePermissionsManager = {
     let permission = subject.QueryInterface(Components.interfaces.nsIPermission);
 
     
-    if (permission.type !== this._type)
+    if (permission.type !== this._type || !PERMISSION_STATES.includes(permission.capability))
       return;
 
     if (data == "added") {
@@ -112,7 +114,8 @@ var gSitePermissionsManager = {
   },
 
   _addPermissionToList(perm) {
-    if (perm.type !== this._type)
+    
+    if (perm.type !== this._type || !PERMISSION_STATES.includes(perm.capability))
       return;
     let capabilityString = this._getCapabilityString(perm.capability);
     let p = new Permission(perm.principal, perm.type, perm.capability,
