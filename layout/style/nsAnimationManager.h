@@ -43,7 +43,7 @@ struct AnimationEventInfo {
   AnimationEventInfo(dom::Element* aElement,
                      CSSPseudoElementType aPseudoType,
                      EventMessage aMessage,
-                     const nsAString& aAnimationName,
+                     nsAtom* aAnimationName,
                      const StickyTimeDuration& aElapsedTime,
                      const TimeStamp& aTimeStamp,
                      dom::Animation* aAnimation)
@@ -53,7 +53,7 @@ struct AnimationEventInfo {
     , mTimeStamp(aTimeStamp)
   {
     
-    mEvent.mAnimationName = aAnimationName;
+    aAnimationName->ToString(mEvent.mAnimationName);
     mEvent.mElapsedTime =
       nsRFPService::ReduceTimePrecisionAsSecs(aElapsedTime.ToSeconds());
     mEvent.mPseudoElement =
@@ -78,7 +78,7 @@ class CSSAnimation final : public Animation
 {
 public:
  explicit CSSAnimation(nsIGlobalObject* aGlobal,
-                       const nsAString& aAnimationName)
+                       nsAtom* aAnimationName)
     : dom::Animation(aGlobal)
     , mAnimationName(aAnimationName)
     , mIsStylePaused(false)
@@ -90,7 +90,8 @@ public:
     
     
     
-    MOZ_ASSERT(!mAnimationName.IsEmpty(), "animation-name should not be empty");
+    MOZ_ASSERT(mAnimationName != nsGkAtoms::_empty,
+               "animation-name should not be 'none'");
   }
 
   JSObject* WrapObject(JSContext* aCx,
@@ -100,11 +101,12 @@ public:
   const CSSAnimation* AsCSSAnimation() const override { return this; }
 
   
-  void GetAnimationName(nsString& aRetVal) const { aRetVal = mAnimationName; }
+  void GetAnimationName(nsString& aRetVal) const
+  {
+    mAnimationName->ToString(aRetVal);
+  }
 
-  
-  
-  const nsString& AnimationName() const { return mAnimationName; }
+  nsAtom* AnimationName() const { return mAnimationName; }
 
   
   virtual Promise* GetReady(ErrorResult& aRv) override;
@@ -203,7 +205,7 @@ protected:
            TimeDuration();
   }
 
-  nsString mAnimationName;
+  RefPtr<nsAtom> mAnimationName;
 
   
   

@@ -894,7 +894,8 @@ struct RuleCascadeData {
   nsTArray<nsCSSPageRule*> mPageRules;
   nsTArray<nsCSSCounterStyleRule*> mCounterStyleRules;
 
-  nsDataHashtable<nsStringHashKey, nsCSSKeyframesRule*> mKeyframesRuleTable;
+  nsDataHashtable<nsRefPtrHashKey<const nsAtom>,
+                  nsCSSKeyframesRule*> mKeyframesRuleTable;
   
   
   
@@ -952,17 +953,7 @@ RuleCascadeData::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
   n += mFontFeatureValuesRules.ShallowSizeOfExcludingThis(aMallocSizeOf);
   n += mPageRules.ShallowSizeOfExcludingThis(aMallocSizeOf);
   n += mCounterStyleRules.ShallowSizeOfExcludingThis(aMallocSizeOf);
-
   n += mKeyframesRuleTable.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  for (auto iter = mKeyframesRuleTable.ConstIter(); !iter.Done(); iter.Next()) {
-    
-    
-    
-    
-    
-    
-    n += iter.Key().SizeOfExcludingThisIfUnshared(aMallocSizeOf);
-  }
 
   return n;
 }
@@ -3103,7 +3094,7 @@ nsCSSRuleProcessor::AppendFontFaceRules(
 
 nsCSSKeyframesRule*
 nsCSSRuleProcessor::KeyframesRuleForName(nsPresContext* aPresContext,
-                                         const nsString& aName)
+                                         const nsAtom* aName)
 {
   RuleCascadeData* cascade = GetRuleCascade(aPresContext);
 

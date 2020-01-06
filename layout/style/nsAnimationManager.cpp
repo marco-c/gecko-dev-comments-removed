@@ -334,7 +334,7 @@ NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(nsAnimationManager, Release)
 
 
 static already_AddRefed<CSSAnimation>
-PopExistingAnimation(const nsAString& aName,
+PopExistingAnimation(const nsAtom* aName,
                      nsAnimationManager::CSSAnimationCollection* aCollection)
 {
   if (!aCollection) {
@@ -971,7 +971,7 @@ BuildAnimations(nsPresContext* aPresContext,
     
     
     
-    if (src.GetName().IsEmpty()) {
+    if (src.GetName() == nsGkAtoms::_empty) {
       continue;
     }
 
@@ -1057,7 +1057,7 @@ nsAnimationManager::DoUpdateAnimations(
                                                    aTarget.mPseudoType);
   if (!collection &&
       aStyleDisplay.mAnimationNameCount == 1 &&
-      aStyleDisplay.mAnimations[0].GetName().IsEmpty()) {
+      aStyleDisplay.mAnimations[0].GetName() == nsGkAtoms::_empty) {
     return;
   }
 
