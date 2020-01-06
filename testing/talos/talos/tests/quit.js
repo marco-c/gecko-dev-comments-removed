@@ -79,7 +79,7 @@ function goQuitApplication(waitForSafeBrowsing) {
     
     var event = new CustomEvent("TalosQuitApplication", {bubbles: true, detail: {waitForSafeBrowsing}});
     document.dispatchEvent(event);
-    return;
+    return false;
   }
 
   if (waitForSafeBrowsing) {

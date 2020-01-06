@@ -6,18 +6,15 @@
 
 
 
+
+
+
+
 function createXpiDataUri(base, files, callbacks) {
 
   
   
   function readBinFile(url) {
-    
-    function isFileUri(uri) {
-      var a = document.createElement("a");
-      a.href = uri;
-      return a.href.toLowerCase().indexOf("file://") == 0;
-    }
-
     var r =  new XMLHttpRequest();
     r.open("GET", url, false);
     r.requestType = "arraybuffer";
