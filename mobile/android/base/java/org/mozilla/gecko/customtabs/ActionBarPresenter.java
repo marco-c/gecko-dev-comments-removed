@@ -107,7 +107,7 @@ public class ActionBarPresenter {
 
 
     public void displayUrlOnly(@NonNull final String url) {
-        updateCustomView(null, url, GeckoView.ProgressListener.STATE_IS_INSECURE);
+        updateCustomView(null, url,  false);
     }
 
     
@@ -117,14 +117,14 @@ public class ActionBarPresenter {
 
 
 
-    public void update(final String title, final String url, final int securityStatus) {
+    public void update(final String title, final String url, final boolean isSecure) {
         
         
         mHandler.removeCallbacks(mUpdateAction);
         mUpdateAction = new Runnable() {
             @Override
             public void run() {
-                updateCustomView(title, url, securityStatus);
+                updateCustomView(title, url, isSecure);
             }
         };
         mHandler.postDelayed(mUpdateAction, CUSTOM_VIEW_UPDATE_DELAY);
@@ -218,8 +218,8 @@ public class ActionBarPresenter {
 
 
     @UiThread
-    private void updateCustomView(final String title, final String url, final int securityStatus) {
-        if (securityStatus == GeckoView.ProgressListener.STATE_IS_SECURE) {
+    private void updateCustomView(final String title, final String url, final boolean isSecure) {
+        if (isSecure) {
             mIconView.setVisibility(View.VISIBLE);
             mIconView.setImageLevel(SecurityModeUtil.getImageLevel(SecurityModeUtil.IconType.LOCK_SECURE));
             

@@ -168,9 +168,8 @@ public class GeckoView extends LayerView {
                     listener.onPageStop(GeckoView.this,
                                         message.getBoolean("success"));
                 } else if ("GeckoView:SecurityChanged".equals(event)) {
-                    final int state = message.getInt("status") & ProgressListener.STATE_ALL;
                     final GeckoBundle identity = message.getBundle("identity");
-                    listener.onSecurityChange(GeckoView.this, state, identity);
+                    listener.onSecurityChange(GeckoView.this, new ProgressListener.SecurityInformation(identity));
                 }
             }
         };
@@ -1222,10 +1221,83 @@ public class GeckoView extends LayerView {
     }
 
     public interface ProgressListener {
-        static final int STATE_IS_BROKEN = 1;
-        static final int STATE_IS_SECURE = 2;
-        static final int STATE_IS_INSECURE = 4;
-         final int STATE_ALL = STATE_IS_BROKEN | STATE_IS_SECURE | STATE_IS_INSECURE;
+        
+
+
+        public class SecurityInformation {
+            
+
+
+            public final boolean isSecure;
+            
+
+
+            public final boolean isException;
+            
+
+
+            public final String origin;
+            
+
+
+            public final String host;
+            
+
+
+            public final String organization;
+            
+
+
+            public final String subjectName;
+            
+
+
+            public final String issuerCommonName;
+            
+
+
+            public final String issuerOrganization;
+            
+
+
+
+
+            public final String securityMode;
+            
+
+
+
+            public final String mixedModePassive;
+            
+
+
+
+            public final String mixedModeActive;
+            
+
+
+
+            public final String trackingMode;
+
+             SecurityInformation(GeckoBundle identityData) {
+                final GeckoBundle mode = identityData.getBundle("mode");
+
+                mixedModePassive = mode.getString("mixed_display");
+                mixedModeActive = mode.getString("mixed_active");
+                trackingMode = mode.getString("tracking");
+
+                securityMode = mode.getString("identity");
+
+                isSecure = identityData.getBoolean("secure");
+                isException = identityData.getBoolean("securityException");
+                origin = identityData.getString("origin");
+                host = identityData.getString("host");
+                organization = identityData.getString("organization");
+                subjectName = identityData.getString("subjectName");
+                issuerCommonName = identityData.getString("issuerCommonName");
+                issuerOrganization = identityData.getString("issuerOrganization");
+            }
+        }
 
         
 
@@ -1246,25 +1318,7 @@ public class GeckoView extends LayerView {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        void onSecurityChange(GeckoView view, int status, GeckoBundle identity);
+        void onSecurityChange(GeckoView view, SecurityInformation securityInfo);
     }
 
     public interface ContentListener {
