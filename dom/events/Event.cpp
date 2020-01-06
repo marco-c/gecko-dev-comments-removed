@@ -1148,29 +1148,6 @@ Event::TimeStamp() const
   return nsRFPService::ReduceTimePrecisionAsMSecs(TimeStampImpl());
 }
 
-bool
-Event::GetPreventDefault() const
-{
-  nsCOMPtr<nsPIDOMWindowInner> win(do_QueryInterface(mOwner));
-  if (win) {
-    if (nsIDocument* doc = win->GetExtantDoc()) {
-      doc->WarnOnceAbout(nsIDocument::eGetPreventDefault);
-    }
-  }
-  
-  
-  
-  return DefaultPrevented();
-}
-
-NS_IMETHODIMP
-Event::GetPreventDefault(bool* aReturn)
-{
-  NS_ENSURE_ARG_POINTER(aReturn);
-  *aReturn = GetPreventDefault();
-  return NS_OK;
-}
-
 NS_IMETHODIMP
 Event::GetDefaultPrevented(bool* aReturn)
 {
