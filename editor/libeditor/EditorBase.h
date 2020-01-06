@@ -287,6 +287,7 @@ public:
 
   virtual nsresult InsertTextImpl(const nsAString& aStringToInsert,
                                   nsCOMPtr<nsINode>* aInOutNode,
+                                  nsCOMPtr<nsIContent>* aInOutChildAtOffset,
                                   int32_t* aInOutOffset,
                                   nsIDocument* aDoc);
   nsresult InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
@@ -1223,10 +1224,22 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
   void FindBetterInsertionPoint(nsCOMPtr<nsIDOMNode>& aNode,
                                 int32_t& aOffset);
   void FindBetterInsertionPoint(nsCOMPtr<nsINode>& aNode,
-                                int32_t& aOffset);
+                                int32_t& aOffset,
+                                nsCOMPtr<nsIContent>* aSelChild);
 
   
 
