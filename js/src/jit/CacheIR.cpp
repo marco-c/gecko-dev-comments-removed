@@ -771,13 +771,11 @@ GetPropIRGenerator::tryAttachNative(HandleObject obj, ObjOperandId objId, Handle
         maybeEmitIdGuard(id);
         if (holder) {
             EnsureTrackPropertyTypes(cx_, holder, id);
-            if (obj == holder) {
-                
-                if (IsPreliminaryObject(obj))
-                    preliminaryObjectAction_ = PreliminaryObjectAction::NotePreliminary;
-                else
-                    preliminaryObjectAction_ = PreliminaryObjectAction::Unlink;
-            }
+            
+            if (IsPreliminaryObject(obj))
+                preliminaryObjectAction_ = PreliminaryObjectAction::NotePreliminary;
+            else
+                preliminaryObjectAction_ = PreliminaryObjectAction::Unlink;
         }
         EmitReadSlotResult(writer, obj, holder, shape, objId);
         EmitReadSlotReturn(writer, obj, holder, shape);
