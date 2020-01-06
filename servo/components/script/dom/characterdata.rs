@@ -91,7 +91,7 @@ impl CharacterDataMethods for CharacterData {
         
         
         
-        if let Some(_) = self.downcast::<Text>() {
+        if self.is::<Text>() {
             if let Some(parent_node) = node.GetParentNode() {
                 let mutation = ChildrenMutation::ChangeText;
                 vtable_for(&parent_node).children_changed(&mutation);
