@@ -96,9 +96,7 @@ def make_task_description(config, jobs):
             dep_th_platform, build_platform, build_type
         ))
 
-        
-        
-        treeherder.setdefault('tier', 1 if is_nightly else 3)
+        treeherder.setdefault('tier', 1)
         treeherder.setdefault('kind', 'build')
 
         label = job.get('label', "{}-signing".format(dep_job.label))
