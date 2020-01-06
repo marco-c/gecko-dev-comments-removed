@@ -409,7 +409,11 @@ nsINode::ChildNodes()
 {
   nsSlots* slots = Slots();
   if (!slots->mChildNodes) {
-    slots->mChildNodes = new nsAttrChildContentList(this);
+    
+    
+    slots->mChildNodes = !IsElement() && IsNodeOfType(nsINode::eATTRIBUTE) ?
+                           new nsAttrChildContentList(this) :
+                           new nsParentNodeChildContentList(this);
   }
 
   return slots->mChildNodes;
@@ -1562,8 +1566,9 @@ nsresult
 nsINode::doInsertChildAt(nsIContent* aKid, uint32_t aIndex,
                          bool aNotify, nsAttrAndChildArray& aChildArray)
 {
-  NS_PRECONDITION(!aKid->GetParentNode(),
-                  "Inserting node that already has parent");
+  MOZ_ASSERT(!aKid->GetParentNode(), "Inserting node that already has parent");
+  MOZ_ASSERT(!IsNodeOfType(nsINode::eATTRIBUTE));
+
   nsresult rv;
 
   
@@ -1590,6 +1595,14 @@ nsINode::doInsertChildAt(nsIContent* aKid, uint32_t aIndex,
   NS_ENSURE_SUCCESS(rv, rv);
   if (aIndex == 0) {
     mFirstChild = aKid;
+  }
+
+  
+  nsSlots* slots = GetExistingSlots();
+  if (slots && slots->mChildNodes) {
+    auto childNodes =
+      static_cast<nsParentNodeChildContentList*>(slots->mChildNodes.get());
+    childNodes->InvalidateCache();
   }
 
   nsIContent* parent =
@@ -1897,9 +1910,10 @@ nsINode::doRemoveChildAt(uint32_t aIndex, bool aNotify,
   
   
   
-  NS_PRECONDITION(aKid && aKid->GetParentNode() == this &&
-                  aKid == GetChildAt(aIndex) &&
-                  IndexOf(aKid) == (int32_t)aIndex, "Bogus aKid");
+  MOZ_ASSERT(aKid && aKid->GetParentNode() == this &&
+             aKid == GetChildAt(aIndex) &&
+             IndexOf(aKid) == (int32_t)aIndex, "Bogus aKid");
+  MOZ_ASSERT(!IsNodeOfType(nsINode::eATTRIBUTE));
 
   nsMutationGuard::DidMutate();
   mozAutoDocUpdate updateBatch(GetComposedDoc(), UPDATE_CONTENT_MODEL, aNotify);
@@ -1911,6 +1925,14 @@ nsINode::doRemoveChildAt(uint32_t aIndex, bool aNotify,
   }
 
   aChildArray.RemoveChildAt(aIndex);
+
+  
+  nsSlots* slots = GetExistingSlots();
+  if (slots && slots->mChildNodes) {
+    auto childNodes =
+      static_cast<nsParentNodeChildContentList*>(slots->mChildNodes.get());
+    childNodes->InvalidateCache();
+  }
 
   if (aNotify) {
     nsNodeUtils::ContentRemoved(this, aKid, aIndex, previousSibling);
