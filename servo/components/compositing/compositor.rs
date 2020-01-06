@@ -186,6 +186,13 @@ pub struct IOCompositor<Window: WindowMethods> {
 
     
     gl: Rc<gl::Gl>,
+
+    
+    
+    
+    
+    
+    pending_paint_metrics: HashMap<PipelineId, Epoch>,
 }
 
 #[derive(Copy, Clone)]
@@ -371,6 +378,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             webrender: state.webrender,
             webrender_document: state.webrender_document,
             webrender_api: state.webrender_api,
+            pending_paint_metrics: HashMap::new(),
         }
     }
 
@@ -591,6 +599,10 @@ impl<Window: WindowMethods> IOCompositor<Window> {
 
             (Msg::SetFullscreenState(top_level_browsing_context_id, state), ShutdownState::NotShuttingDown) => {
                 self.window.set_fullscreen_state(top_level_browsing_context_id, state);
+            }
+
+            (Msg::PendingPaintMetric(pipeline_id, epoch), _) => {
+                self.pending_paint_metrics.insert(pipeline_id, epoch);
             }
 
             
@@ -1426,6 +1438,38 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             
             self.webrender.render(self.frame_size);
         });
+
+        
+        
+        
+        
+        if !self.pending_paint_metrics.is_empty() {
+            let paint_time = precise_time_ns() as f64;
+            let mut to_remove = Vec::new();
+            
+            for (id, pending_epoch) in &self.pending_paint_metrics {
+                
+                if let Some(webrender_api::Epoch(epoch)) = self.webrender.current_epoch(id.to_webrender()) {
+                    
+                    let epoch = Epoch(epoch);
+                    if *pending_epoch != epoch {
+                        continue;
+                    }
+                    
+                    to_remove.push(id.clone());
+                    if let Some(pipeline) = self.pipeline(*id) {
+                        
+                        let msg = LayoutControlMsg::PaintMetric(epoch, paint_time);
+                        if let Err(e)  = pipeline.layout_chan.send(msg) {
+                            warn!("Sending PaintMetric message to layout failed ({}).", e);
+                        }
+                    }
+                }
+            }
+            for id in to_remove.iter() {
+                self.pending_paint_metrics.remove(id);
+            }
+        }
 
         let rv = match target {
             CompositeTarget::Window => None,

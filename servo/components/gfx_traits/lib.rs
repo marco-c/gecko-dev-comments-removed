@@ -18,7 +18,7 @@ use range::RangeIndex;
 use std::sync::atomic::{ATOMIC_USIZE_INIT, AtomicUsize, Ordering};
 
 
-#[derive(PartialEq, Eq, Debug, Copy, Clone, PartialOrd, Ord, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone, PartialOrd, Ord, Deserialize, Serialize, Hash)]
 pub struct Epoch(pub u32);
 
 impl Epoch {

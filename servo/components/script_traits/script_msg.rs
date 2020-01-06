@@ -15,6 +15,7 @@ use WorkerScriptLoadOrigin;
 use canvas_traits::canvas::CanvasMsg;
 use devtools_traits::{ScriptToDevtoolsControlMsg, WorkerId};
 use euclid::{Point2D, Size2D, TypedSize2D};
+use gfx_traits::Epoch;
 use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::{BrowsingContextId, FrameType, PipelineId, TraversalDirection};
 use msg::constellation_msg::{Key, KeyModifiers, KeyState};
@@ -35,6 +36,9 @@ pub enum LayoutMsg {
     ChangeRunningAnimationsState(PipelineId, AnimationState),
     
     IFrameSizes(Vec<(BrowsingContextId, TypedSize2D<f32, CSSPixel>)>),
+    
+    
+    PendingPaintMetric(PipelineId, Epoch),
     
     SetCursor(Cursor),
     

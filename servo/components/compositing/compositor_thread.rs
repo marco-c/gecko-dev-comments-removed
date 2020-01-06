@@ -7,6 +7,7 @@
 use SendableFrameTree;
 use compositor::CompositingReason;
 use euclid::{Point2D, Size2D};
+use gfx_traits::Epoch;
 use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::{Key, KeyModifiers, KeyState, PipelineId, TopLevelBrowsingContextId};
 use net_traits::image::base::Image;
@@ -143,6 +144,10 @@ pub enum Msg {
     Dispatch(Box<Fn() + Send>),
     
     SetFullscreenState(TopLevelBrowsingContextId, bool),
+    
+    
+    
+    PendingPaintMetric(PipelineId, Epoch),
 }
 
 impl Debug for Msg {
@@ -176,6 +181,7 @@ impl Debug for Msg {
             Msg::NewScrollFrameReady(..) => write!(f, "NewScrollFrameReady"),
             Msg::Dispatch(..) => write!(f, "Dispatch"),
             Msg::SetFullscreenState(..) => write!(f, "SetFullscreenState"),
+            Msg::PendingPaintMetric(..) => write!(f, "PendingPaintMetric"),
         }
     }
 }

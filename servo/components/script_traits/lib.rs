@@ -124,6 +124,8 @@ pub enum LayoutControlMsg {
     
     
     GetWebFontLoadState(IpcSender<bool>),
+    
+    PaintMetric(Epoch, f64),
 }
 
 
