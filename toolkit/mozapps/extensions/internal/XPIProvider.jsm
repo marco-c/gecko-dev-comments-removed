@@ -2329,7 +2329,7 @@ this.XPIProvider = {
 
 
 
-  shutdown() {
+  async shutdown() {
     logger.debug("shutdown");
 
     
@@ -2371,6 +2371,13 @@ this.XPIProvider = {
       Services.prefs.setBoolPref(PREF_PENDING_OPERATIONS, false);
     }
 
+    
+    
+    
+    if (!XPIDatabase.initialized) {
+      await XPIDatabase.asyncLoadDB();
+    }
+
     this.installs = null;
     this.installLocations = null;
     this.installLocationsByName = null;
@@ -2379,24 +2386,11 @@ this.XPIProvider = {
     this.extensionsActive = false;
     this._addonFileMap.clear();
 
-    if (gLazyObjectsLoaded) {
-      let done = XPIDatabase.shutdown();
-      done.then(
-        ret => {
-          logger.debug("Notifying XPI shutdown observers");
-          Services.obs.notifyObservers(null, "xpi-provider-shutdown");
-        },
-        err => {
-          logger.debug("Notifying XPI shutdown observers");
-          this._shutdownError = err;
-          Services.obs.notifyObservers(null, "xpi-provider-shutdown", err);
-        }
-      );
-      return done;
+    try {
+      await XPIDatabase.shutdown();
+    } catch (err) {
+      this._shutdownError = err;
     }
-    logger.debug("Notifying XPI shutdown observers");
-    Services.obs.notifyObservers(null, "xpi-provider-shutdown");
-    return undefined;
   },
 
   
