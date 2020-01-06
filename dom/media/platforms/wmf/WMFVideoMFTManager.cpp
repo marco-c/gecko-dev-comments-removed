@@ -573,6 +573,15 @@ WMFVideoMFTManager::ValidateVideoInfo()
   static const int32_t MAX_H264_FRAME_WIDTH = Is4KCapable ? 4096 : 1920;
   static const int32_t MAX_H264_FRAME_HEIGHT = Is4KCapable ? 2304 : 1088;
 
+  if (mStreamType == H264 &&
+      (mVideoInfo.mImage.width < MIN_H264_FRAME_DIMENSION ||
+       mVideoInfo.mImage.height < MIN_H264_FRAME_DIMENSION)) {
+    mIsValid = false;
+    return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                       RESULT_DETAIL("Can't decode H.264 stream with width or "
+                                     "height less than 48 pixels."));
+  }
+
   if (mVideoInfo.mImage.width > MAX_H264_FRAME_WIDTH  ||
       mVideoInfo.mImage.height > MAX_H264_FRAME_HEIGHT) {
     mIsValid = false;
