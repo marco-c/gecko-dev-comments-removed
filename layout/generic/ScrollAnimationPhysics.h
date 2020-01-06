@@ -8,88 +8,26 @@
 
 #include "mozilla/TimeStamp.h"
 #include "nsPoint.h"
-#include "nsSMILKeySpline.h"
 
 namespace mozilla {
-
-struct ScrollAnimationPhysicsSettings
-{
-  
-  
-  
-  
-  int32_t mMinMS;
-  int32_t mMaxMS;
-  double mIntervalRatio;
-};
-
-
 
 class ScrollAnimationPhysics
 {
 public:
-  typedef mozilla::TimeStamp TimeStamp;
-  typedef mozilla::TimeDuration TimeDuration;
-
-  explicit ScrollAnimationPhysics(nsPoint aStartPos,
-                                  const ScrollAnimationPhysicsSettings& aSettings);
-
-  void Update(TimeStamp aTime,
-              nsPoint aDestination,
-              const nsSize& aCurrentVelocity);
+  virtual void Update(const TimeStamp& aTime,
+                      const nsPoint& aDestination,
+                      const nsSize& aCurrentVelocity) = 0;
 
   
-  nsSize VelocityAt(TimeStamp aTime);
+  virtual nsSize VelocityAt(const TimeStamp& aTime) = 0;
 
   
   
-  nsPoint PositionAt(TimeStamp aTime);
+  virtual nsPoint PositionAt(const TimeStamp& aTime) = 0;
 
-  bool IsFinished(TimeStamp aTime) {
-    return aTime > mStartTime + mDuration;
-  }
+  virtual bool IsFinished(const TimeStamp& aTime) = 0;
 
-protected:
-  double ProgressAt(TimeStamp aTime) const {
-    return clamped((aTime - mStartTime) / mDuration, 0.0, 1.0);
-  }
-
-  nscoord VelocityComponent(double aTimeProgress,
-                            const nsSMILKeySpline& aTimingFunction,
-                            nscoord aStart, nscoord aDestination) const;
-
-  
-  
-  
-  TimeDuration ComputeDuration(TimeStamp aTime);
-
-  
-  
-  void InitTimingFunction(nsSMILKeySpline& aTimingFunction,
-                          nscoord aCurrentPos, nscoord aCurrentVelocity,
-                          nscoord aDestination);
-
-  
-  void InitializeHistory(TimeStamp aTime);
-
-  
-  ScrollAnimationPhysicsSettings mSettings;
-
-  
-  
-  
-  
-  
-  TimeStamp mPrevEventTime[3];
-
-  TimeStamp mStartTime;
-
-  nsPoint mStartPos;
-  nsPoint mDestination;
-  TimeDuration mDuration;
-  nsSMILKeySpline mTimingFunctionX;
-  nsSMILKeySpline mTimingFunctionY;
-  bool mIsFirstIteration;
+  virtual ~ScrollAnimationPhysics() {}
 };
 
 

@@ -77,6 +77,7 @@
 #include "prsystem.h"                   
 #include "SharedMemoryBasic.h"          
 #include "ScrollSnap.h"                 
+#include "ScrollAnimationPhysics.h"     
 #include "WheelScrollAnimation.h"
 #include "KeyboardScrollAnimation.h"
 #if defined(MOZ_WIDGET_ANDROID)
