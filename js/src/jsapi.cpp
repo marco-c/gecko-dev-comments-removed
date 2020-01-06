@@ -4639,8 +4639,6 @@ JS::CloneAndExecuteScript(JSContext* cx, JS::AutoObjectVector& envChain,
     return ExecuteScript(cx, envChain, script, rval.address());
 }
 
-static const unsigned LARGE_SCRIPT_LENGTH = 500*1024;
-
 static bool
 Evaluate(JSContext* cx, ScopeKind scopeKind, HandleObject env,
          const ReadOnlyCompileOptions& optionsArg,
@@ -4663,17 +4661,6 @@ Evaluate(JSContext* cx, ScopeKind scopeKind, HandleObject env,
 
     bool result = Execute(cx, script, *env,
                           options.noScriptRval ? nullptr : rval.address());
-
-    
-    
-    
-    
-    
-    if (script->length() > LARGE_SCRIPT_LENGTH) {
-        script = nullptr;
-        PrepareZoneForGC(cx->zone());
-        cx->runtime()->gc.gc(GC_NORMAL, JS::gcreason::FINISH_LARGE_EVALUATE);
-    }
 
     return result;
 }
