@@ -17,10 +17,6 @@
 
 namespace mozilla {
 
-namespace Telemetry {
-class ThreadHangStats;
-} 
-
 class BackgroundHangThread;
 class BackgroundHangManager;
 
@@ -125,44 +121,6 @@ public:
     
     
     THREAD_PRIVATE
-  };
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  class ThreadHangStatsIterator : public MonitorAutoLock
-  {
-  private:
-    BackgroundHangThread* mThread;
-
-    ThreadHangStatsIterator(const ThreadHangStatsIterator&);
-    ThreadHangStatsIterator& operator=(const ThreadHangStatsIterator&);
-
-  public:
-    
-
-
-
-    ThreadHangStatsIterator();
-
-    
-
-
-
-    Telemetry::ThreadHangStats* GetNext();
   };
 
   
