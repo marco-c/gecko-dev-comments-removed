@@ -129,12 +129,29 @@ add_task(async function() {
       return [rangeRect.x + 3, rangeRect.y + 3];
     });
 
-    let popupShownPromise = BrowserTestUtils.waitForEvent(contentAreaContextMenu, "popupshown");
-    await BrowserTestUtils.synthesizeMouseAtPoint(menuPosition[0], menuPosition[1],
-          { type: "contextmenu", button: 2 }, gBrowser.selectedBrowser);
+    
+    let sawPopup = false;
+    let popupShownPromise = BrowserTestUtils.waitForEvent(contentAreaContextMenu, "popupshown", false, () => {
+      sawPopup = true;
+      return true;
+    });
+    while (!sawPopup) {
+      await BrowserTestUtils.synthesizeMouseAtPoint(menuPosition[0], menuPosition[1],
+            { type: "contextmenu", button: 2 }, gBrowser.selectedBrowser);
+      if (!sawPopup) {
+        await new Promise(r => setTimeout(r, 100));
+      }
+    }
     await popupShownPromise;
 
     checks[testid]();
+
+    
+    
+    
+    if (contentAreaContextMenu.state === "closed") {
+      continue;
+    }
 
     let popupHiddenPromise = BrowserTestUtils.waitForEvent(contentAreaContextMenu, "popuphidden");
     contentAreaContextMenu.hidePopup();
