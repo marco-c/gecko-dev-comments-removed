@@ -176,7 +176,8 @@ LocalDevice.prototype = {
       
       this.name = sysInfo.get("device");
     } else {
-      this.name = sysInfo.get("host");
+      this.name = Cc["@mozilla.org/network/dns-service;1"].getService(Ci.nsIDNSService)
+                                                          .myHostName;
     }
   },
 
