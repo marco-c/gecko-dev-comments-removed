@@ -74,6 +74,7 @@ private:
   bool IsLiveStream() override final { return !mEnded; }
 
   RefPtr<MediaSourceResource> mResource;
+  RefPtr<nsIPrincipal> mPrincipal;
 
   
   
