@@ -159,7 +159,7 @@ add_task(async function test_url() {
           
           
           
-          if ("about:newtab" === changeInfo.url) {
+          if (changeInfo.url === "about:newtab") {
             return;
           }
           browser.test.assertEq("about:blank", changeInfo.url,
