@@ -3153,7 +3153,7 @@ public:
     
     
     if (tabChild && tabChild->GetInnerManager() && mFrameLoader->GetExistingDocShell()) {
-      nsCOMPtr<nsIXPConnectJSObjectHolder> kungFuDeathGrip(tabChild->GetGlobal());
+      JS::Rooted<JSObject*> kungFuDeathGrip(dom::RootingCx(), tabChild->GetGlobal());
       ReceiveMessage(static_cast<EventTarget*>(tabChild), mFrameLoader,
                      tabChild->GetInnerManager());
     }
