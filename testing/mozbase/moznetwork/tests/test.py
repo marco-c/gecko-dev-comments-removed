@@ -74,7 +74,7 @@ class TestGetIP(unittest.TestCase):
         ip = moznetwork.get_ip()
 
         
-        self.assertTrue(verify_ip_in_list(ip))
+        assert verify_ip_in_list(ip)
 
     def test_get_ip_using_get_interface(self):
         """ Test that the control flow path for get_ip() using
@@ -89,7 +89,7 @@ class TestGetIP(unittest.TestCase):
                 ip = moznetwork.get_ip()
 
                 
-                self.assertTrue(verify_ip_in_list(ip))
+                assert verify_ip_in_list(ip)
 
 
 if __name__ == '__main__':
