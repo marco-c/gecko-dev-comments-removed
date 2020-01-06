@@ -640,6 +640,11 @@ pref("media.decoder.skip-to-next-key-frame.enabled", true);
 
 pref("media.cubeb.logging_level", "");
 
+#ifdef NIGHTLY_BUILD
+
+pref("media.cubeb.sandbox", true);
+#endif
+
 
 pref("media.playback.warnings-as-errors", false);
 
@@ -5801,7 +5806,11 @@ pref("media.block-autoplay-until-in-foreground", true);
 
 #ifdef MOZ_STYLO
 pref("layout.css.stylo-blocklist.enabled", true);
+#ifdef NIGHTLY_BUILD
+pref("layout.css.stylo-blocklist.blocked_domains", "arewestyloyet.rs");
+#else
 pref("layout.css.stylo-blocklist.blocked_domains", "");
+#endif
 #ifdef MOZ_STYLO_ENABLE
 pref("layout.css.servo.enabled", true);
 #else
