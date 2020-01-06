@@ -2747,16 +2747,6 @@ nsCSSFrameConstructor::ConstructRootFrame()
   StyleSetHandle styleSet = mPresShell->StyleSet();
 
   
-  
-  if (styleSet->IsGecko()) {
-    
-    
-    styleSet->AsGecko()->SetBindingManager(mDocument->BindingManager());
-  } else {
-    NS_WARNING("stylo: cannot get ServoStyleSheets from XBL bindings yet. See bug 1290276.");
-  }
-
-  
   RefPtr<nsStyleContext> viewportPseudoStyle =
     styleSet->ResolveInheritingAnonymousBoxStyle(nsCSSAnonBoxes::viewport,
                                                  nullptr);

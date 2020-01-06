@@ -974,6 +974,13 @@ PresShell::Init(nsIDocument* aDocument,
   
   
   
+  if (mStyleSet->IsGecko()) {
+    mStyleSet->AsGecko()->SetBindingManager(mDocument->BindingManager());
+  }
+
+  
+  
+  
   mPresContext->CompatibilityModeChanged();
 
   
