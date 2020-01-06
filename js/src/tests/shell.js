@@ -46,6 +46,7 @@
   }
 
   var evaluate = global.evaluate;
+  var options = global.options;
 
   
 
@@ -88,6 +89,21 @@
 
       ArrayPush(parts, ReflectApply(StringPrototypeSubstring, str, [last, i]));
       last = i + delimiter.length;
+    }
+  }
+
+  function shellOptionsClear() {
+    assertEq(runningInBrowser, false, "Only called when running in the shell.");
+
+    
+    var currentOptions = options();
+    if (currentOptions === "")
+      return;
+
+    
+    var optionNames = StringSplit(currentOptions, ",");
+    for (var i = 0; i < optionNames.length; i++) {
+      options(optionNames[i]);
     }
   }
 
@@ -564,11 +580,8 @@
       return;
     }
 
-    try {
-      optionsClear();
-    } catch(ex) {
-      dump('jsTestDriverEnd ' + ex);
-    }
+    
+    shellOptionsClear();
 
     var testCases = getTestCases();
     for (var i = 0; i < testCases.length; i++) {
@@ -576,27 +589,6 @@
     }
   }
   global.jsTestDriverEnd = jsTestDriverEnd;
-
-  
-  
-  
-  
-  function optionsClear() {
-    
-    var currentOptions = options();
-    if (currentOptions === "")
-      return;
-
-    
-    var optionNames = StringSplit(currentOptions, ",");
-    for (var i = 0; i < optionNames.length; i++) {
-      var optionName = optionNames[i];
-      if (optionName) {
-        options(optionName);
-      }
-    }
-  }
-  global.optionsClear = optionsClear;
 
   
 
@@ -635,7 +627,7 @@
   
   
   if (!runningInBrowser)
-    optionsClear();
+    shellOptionsClear();
 })(this);
 
 var gDelayTestDriverEnd = false;

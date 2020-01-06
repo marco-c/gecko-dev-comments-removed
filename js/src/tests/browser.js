@@ -237,7 +237,6 @@
   
   var dump = global.dump;
   var gczeal = global.gczeal;
-  var optionsClear = global.optionsClear;
   var print = global.print;
   var reportFailure = global.reportFailure;
   var TestCase = global.TestCase;
@@ -290,6 +289,17 @@
   }
 
   
+  var currentOptions;
+
+  
+  function browserOptionsClear() {
+    for (var optionName in currentOptions) {
+      delete currentOptions[optionName];
+      SpecialPowersCu[optionName] = false;
+    }
+  }
+
+  
   
   
   function AddPrintOutput(s) {
@@ -329,9 +339,7 @@
 
   window.onerror = function (msg, page, line, column, error) {
     
-    global.options = options;
-
-    optionsClear();
+    browserOptionsClear();
 
     if (DESCRIPTION === undefined) {
       DESCRIPTION = "Unknown";
@@ -374,7 +382,7 @@
     
 
     var value = "";
-    for (var optionName in options.currvalues) {
+    for (var optionName in currentOptions) {
       if (value)
         value += ",";
       value += optionName;
@@ -388,13 +396,13 @@
         throw "Unsupported JSContext option '" + aOptionName + "'";
       }
 
-      if (aOptionName in options.currvalues) {
+      if (aOptionName in currentOptions) {
         
-        delete options.currvalues[aOptionName];
+        delete currentOptions[aOptionName];
         SpecialPowersCu[aOptionName] = false;
       } else {
         
-        options.currvalues[aOptionName] = true;
+        currentOptions[aOptionName] = true;
         SpecialPowersCu[aOptionName] = true;
       }
     }
@@ -422,8 +430,7 @@
     }
 
     
-    
-    options.currvalues = Object.create(null);
+    currentOptions = Object.create(null);
 
     if (document.location.search.indexOf("?") !== 0) {
       
@@ -615,13 +622,7 @@
     window.onerror = null;
 
     
-    global.options = options;
-
-    try {
-      optionsClear();
-    } catch (ex) {
-      dump("jsTestDriverEnd " + ex);
-    }
+    browserOptionsClear();
 
     if (window.opener && window.opener.runNextTest) {
       if (window.opener.reportCallBack) {
