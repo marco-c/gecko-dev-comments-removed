@@ -10,6 +10,14 @@ function setInput(selector, value) {
   let input = document.querySelector("input" + selector);
   input.value = value;
   input.focus();
+
+  
+  
+  
+  
+  
+  
+  return new Promise(resolve => setTimeout(resolve));
 }
 
 function checkMenuEntries(expectedValues) {
