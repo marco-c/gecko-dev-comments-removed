@@ -1222,7 +1222,7 @@ class Marionette(object):
         else:
             
             
-            self.wait_for_port(timeout=timeout)
+            self.raise_for_port(timeout=timeout)
 
         self.client = transport.TcpTransport(
             self.host,
