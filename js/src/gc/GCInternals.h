@@ -4,6 +4,10 @@
 
 
 
+
+
+
+
 #ifndef gc_GCInternals_h
 #define gc_GCInternals_h
 
@@ -234,6 +238,30 @@ class MOZ_RAII AutoEmptyNursery : public AutoAssertEmptyNursery
   public:
     explicit AutoEmptyNursery(JSContext* cx);
 };
+
+extern void
+DelayCrossCompartmentGrayMarking(JSObject* src);
+
+inline bool
+IsOOMReason(JS::gcreason::Reason reason)
+{
+    return reason == JS::gcreason::LAST_DITCH ||
+           reason == JS::gcreason::MEM_PRESSURE;
+}
+
+inline void
+RelocationOverlay::forwardTo(Cell* cell)
+{
+    MOZ_ASSERT(!isForwarded());
+    
+    
+    static_assert(offsetof(RelocationOverlay, magic_) == offsetof(JSObject, group_) &&
+                  offsetof(RelocationOverlay, magic_) == offsetof(js::Shape, base_) &&
+                  offsetof(RelocationOverlay, magic_) == offsetof(JSString, d.u1.flags),
+                  "RelocationOverlay::magic_ is in the wrong location");
+    magic_ = Relocated;
+    newLocation_ = cell;
+}
 
 } 
 } 
