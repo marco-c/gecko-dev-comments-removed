@@ -24,6 +24,7 @@
 #include "nsStyleConsts.h"
 #include "gfxFontConstants.h"
 #include "WidgetUtils.h"
+#include "nsWindow.h"
 
 #include <dlfcn.h>
 
@@ -1077,10 +1078,11 @@ nsLookAndFeel::EnsureInit()
     g_object_unref(labelWidget);
 
     
-    mCSDAvailable = gtk_check_version(3, 10, 0) == nullptr;
+    mCSDAvailable = (gtk_check_version(3, 10, 0) == nullptr &&
+        nsWindow::GetCSDSupportLevel() != nsWindow::CSD_SUPPORT_NONE);
     if (mCSDAvailable) {
         mCSDAvailable =
-            mozilla::Preferences::GetBool("widget.allow-client-side-decoration",
+            mozilla::Preferences::GetBool("browser.tabs.drawInTitlebar",
                                           false);
     }
 
