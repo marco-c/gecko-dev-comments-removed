@@ -22,12 +22,12 @@ public:
   
 
 
-  static bool IsIA2Off() { return !!(sConsumers & OLDJAWS); }
+  static bool IsJAWS() { return !!(sConsumers & (JAWS | OLDJAWS)); }
 
   
 
 
-  static bool IsJAWS() { return !!(sConsumers & (JAWS | OLDJAWS)); }
+  static bool IsOldJAWS() { return !!(sConsumers & OLDJAWS); }
 
   
 
