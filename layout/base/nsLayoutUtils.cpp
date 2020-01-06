@@ -3618,33 +3618,6 @@ nsLayoutUtils::AddExtraBackgroundItems(nsDisplayListBuilder& aBuilder,
   }
 }
 
-
-
-
-
-
-
-static RetainedDisplayListBuilder*
-GetOrCreateRetainedDisplayListBuilder(nsIFrame* aFrame, bool aRetainingEnabled,
-                                      bool aBuildCaret)
-{
-  RetainedDisplayListBuilder* retainedBuilder =
-    aFrame->GetProperty(RetainedDisplayListBuilder::Cached());
-
-  if (retainedBuilder) {
-    return retainedBuilder;
-  }
-
-  if (aRetainingEnabled) {
-    retainedBuilder =
-      new RetainedDisplayListBuilder(aFrame, nsDisplayListBuilderMode::PAINTING,
-                                     aBuildCaret);
-    aFrame->SetProperty(RetainedDisplayListBuilder::Cached(), retainedBuilder);
-  }
-
-  return retainedBuilder;
-}
-
 nsresult
 nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
                           const nsRegion& aDirtyRegion, nscolor aBackstop,
@@ -3681,28 +3654,31 @@ nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
 
   TimeStamp startBuildDisplayList = TimeStamp::Now();
 
-  const bool buildCaret = !(aFlags & PaintFrameFlags::PAINT_HIDE_CARET);
-  const bool isForPainting = (aFlags & PaintFrameFlags::PAINT_WIDGET_LAYERS) &&
-    aBuilderMode == nsDisplayListBuilderMode::PAINTING;
-
-  
-  const bool retainingEnabled = isForPainting &&
-    gfxPrefs::LayoutRetainDisplayList() && XRE_IsContentProcess();
-
-  RetainedDisplayListBuilder* retainedBuilder =
-    GetOrCreateRetainedDisplayListBuilder(aFrame, retainingEnabled, buildCaret);
-
-  
-  
-  
-  const bool useRetainedBuilder = retainedBuilder && retainingEnabled;
-
   Maybe<nsDisplayListBuilder> nonRetainedBuilder;
   Maybe<nsDisplayList> nonRetainedList;
   nsDisplayListBuilder* builderPtr = nullptr;
   nsDisplayList* listPtr = nullptr;
+  RetainedDisplayListBuilder* retainedBuilder = nullptr;
 
-  if (useRetainedBuilder) {
+  const bool buildCaret = !(aFlags & PaintFrameFlags::PAINT_HIDE_CARET);
+
+  
+  
+  const bool retainDisplayList =
+    gfxPrefs::LayoutRetainDisplayList() && XRE_IsContentProcess();
+
+  if (retainDisplayList &&
+      aBuilderMode == nsDisplayListBuilderMode::PAINTING &&
+      (aFlags & PaintFrameFlags::PAINT_WIDGET_LAYERS)) {
+    retainedBuilder = aFrame->GetProperty(RetainedDisplayListBuilder::Cached());
+
+    if (!retainedBuilder) {
+      retainedBuilder =
+        new RetainedDisplayListBuilder(aFrame, aBuilderMode, buildCaret);
+      aFrame->SetProperty(RetainedDisplayListBuilder::Cached(), retainedBuilder);
+    }
+
+    MOZ_ASSERT(retainedBuilder);
     builderPtr = retainedBuilder->Builder();
     listPtr = retainedBuilder->List();
   } else {
@@ -3711,16 +3687,6 @@ nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
     nonRetainedList.emplace();
     listPtr = nonRetainedList.ptr();
   }
-
-  
-  if (!useRetainedBuilder && retainedBuilder) {
-    
-    retainedBuilder->ClearModifiedFrameProps();
-
-    
-    retainedBuilder->List()->DeleteAll(retainedBuilder->Builder());
-  }
-
   nsDisplayListBuilder& builder = *builderPtr;
   nsDisplayList& list = *listPtr;
 
@@ -3850,12 +3816,14 @@ nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
           builder.IsBuildingLayerEventRegions() &&
           nsLayoutUtils::HasDocumentLevelListenersForApzAwareEvents(presShell));
 
+      const bool paintedPreviously =
+        aFrame->HasProperty(nsIFrame::ModifiedFrameList());
+
       
       
       
       bool merged = false;
-
-      if (useRetainedBuilder) {
+      if (retainedBuilder && paintedPreviously) {
         merged = retainedBuilder->AttemptPartialUpdate(aBackstop);
       }
 
@@ -4089,11 +4057,12 @@ nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
     AUTO_PROFILER_TRACING("Paint", "DisplayListResources");
 
     
-    if (!useRetainedBuilder) {
+    if (!retainedBuilder) {
       list.DeleteAll(&builder);
+      builder.EndFrame();
+    } else {
+      builder.EndFrame();
     }
-
-    builder.EndFrame();
   }
   return NS_OK;
 }
