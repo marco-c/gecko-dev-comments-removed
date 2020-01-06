@@ -70,7 +70,7 @@ public:
         int32_t iter_ = int32_t(size);                                        \
         while (--iter_ >= 0)                                                  \
             freeFunc((array)[iter_]);                                         \
-        NS_Free((array));                                                     \
+        free((array));                                                     \
     } while(0)
 
 
@@ -86,7 +86,7 @@ public:
 
 
 #define NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(size, array)                    \
-    NS_FREE_XPCOM_POINTER_ARRAY((size), (array), NS_Free)
+    NS_FREE_XPCOM_POINTER_ARRAY((size), (array), free)
 
 
 

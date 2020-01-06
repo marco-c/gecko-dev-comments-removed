@@ -178,54 +178,6 @@ nsresult NS_NewNativeLocalFile(const NS_ConvertUTF16toUTF8& aPath,
 
 
 
-
-#ifdef XPCOM_GLUE
-
-
-
-
-
-
-
-
-XPCOM_API(void*) NS_Alloc(size_t aSize);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-XPCOM_API(void*) NS_Realloc(void* aPtr, size_t aSize);
-
-
-
-
-
-
-
-
-
-XPCOM_API(void) NS_Free(void* aPtr);
-#else
-#define NS_Alloc moz_xmalloc
-#define NS_Realloc moz_xrealloc
-#define NS_Free free
-#endif
-
-
-
-
-
 enum
 {
   NS_DEBUG_WARNING = 0,

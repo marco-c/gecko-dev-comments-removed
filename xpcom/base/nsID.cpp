@@ -106,7 +106,7 @@ static const char gIDFormat[] =
 char*
 nsID::ToString() const
 {
-  char* res = (char*)NS_Alloc(NSID_LENGTH);
+  char* res = (char*)moz_xmalloc(NSID_LENGTH);
 
   if (res) {
     snprintf(res, NSID_LENGTH, gIDFormat,
