@@ -382,8 +382,7 @@ struct arena_chunk_t
 
 
 
-#define CACHELINE_2POW 6
-#define CACHELINE ((size_t)(1U << CACHELINE_2POW))
+static const size_t kCacheLineSize = 64;
 
 
 
@@ -539,7 +538,8 @@ static size_t opt_dirty_max = DIRTY_MAX_DEFAULT;
 #define CHUNK_CEILING(s) (((s) + chunksize_mask) & ~chunksize_mask)
 
 
-#define CACHELINE_CEILING(s) (((s) + (CACHELINE - 1)) & ~(CACHELINE - 1))
+#define CACHELINE_CEILING(s)                                                   \
+  (((s) + (kCacheLineSize - 1)) & ~(kCacheLineSize - 1))
 
 
 #define QUANTUM_CEILING(a) (((a) + quantum_mask) & ~quantum_mask)
@@ -760,7 +760,7 @@ class AddressRadixTree
 
 
 #ifdef HAVE_64BIT_BUILD
-  static const size_t kNodeSize2Pow = CACHELINE_2POW;
+  static const size_t kNodeSize2Pow = LOG2(kCacheLineSize);
 #else
   static const size_t kNodeSize2Pow = 14;
 #endif
