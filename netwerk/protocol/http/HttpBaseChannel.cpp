@@ -3739,17 +3739,28 @@ HttpBaseChannel::TimingAllowCheck(nsIPrincipal *aOrigin, bool *_retval)
     return NS_OK;
   }
 
-  if (headerValue == "*") {
-    *_retval = true;
-    return NS_OK;
-  }
-
   nsAutoCString origin;
   nsContentUtils::GetASCIIOrigin(aOrigin, origin);
 
-  if (headerValue == origin) {
-    *_retval = true;
-    return NS_OK;
+  Tokenizer p(headerValue);
+  Tokenizer::Token t;
+
+  p.Record();
+  nsAutoCString headerItem;
+  while (p.Next(t)) {
+    if (t.Type() == Tokenizer::TOKEN_EOF ||
+        t.Equals(Tokenizer::Token::Char(','))) {
+      p.Claim(headerItem);
+      headerItem.StripWhitespace();
+      
+      
+      if (headerItem == origin || headerItem == "*") {
+        *_retval = true;
+        return NS_OK;
+      }
+      
+      p.Record();
+    }
   }
 
   *_retval = false;
