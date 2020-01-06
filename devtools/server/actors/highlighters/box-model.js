@@ -351,6 +351,10 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
 
   _scrollUpdate() {
     this._moveInfobar();
+
+    
+    
+    this._update();
   }
 
   
