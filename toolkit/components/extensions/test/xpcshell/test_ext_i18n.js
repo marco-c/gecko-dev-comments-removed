@@ -2,6 +2,8 @@
 
 Cu.import("resource://gre/modules/Preferences.jsm");
 
+
+
 ExtensionTestUtils.mockAppInfo();
 
 const server = createHttpServer();
