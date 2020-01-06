@@ -3,6 +3,15 @@
 
 Components.utils.import("resource://gre/modules/Promise.jsm");
 
+
+
+
+
+Services.prefs.setBoolPref("browser.preferences.useOldOrganization", false);
+registerCleanupFunction(function() {
+  Services.prefs.clearUserPref("browser.preferences.useOldOrganization");
+});
+
 const kDefaultWait = 2000;
 
 function is_hidden(aElement) {
