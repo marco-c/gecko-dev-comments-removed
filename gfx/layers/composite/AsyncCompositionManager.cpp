@@ -1107,29 +1107,61 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
                                          const LayerMetricsWrapper& aContent,
                                          bool aScrollbarIsDescendant)
 {
-  
-  
-  
-  
-  
-  if (aContent.IsScrollInfoLayer()) {
-    return;
+  AsyncTransformComponentMatrix clipTransform;
+
+  LayerToParentLayerMatrix4x4 transform =
+      AsyncCompositionManager::ComputeTransformForScrollThumb(
+          aScrollbar->GetLocalTransformTyped(),
+          aContent.GetTransform(),
+          aContent.GetApzc(),
+          aContent.Metrics(),
+          aScrollbar->GetScrollThumbData(),
+          aScrollbarIsDescendant,
+          &clipTransform);
+
+  if (aScrollbarIsDescendant) {
+    
+    
+    
+    
+    for (Layer* ancestor = aScrollbar; ancestor != aContent.GetLayer(); ancestor = ancestor->GetParent()) {
+      TransformClipRect(ancestor, clipTransform);
+    }
   }
 
-  const FrameMetrics& metrics = aContent.Metrics();
-  AsyncPanZoomController* apzc = aContent.GetApzc();
-  MOZ_RELEASE_ASSERT(apzc);
+  SetShadowTransform(aScrollbar, transform);
+}
+
+ LayerToParentLayerMatrix4x4
+AsyncCompositionManager::ComputeTransformForScrollThumb(
+    const LayerToParentLayerMatrix4x4& aCurrentTransform,
+    const Matrix4x4& aScrollableContentTransform,
+    AsyncPanZoomController* aApzc,
+    const FrameMetrics& aMetrics,
+    const ScrollThumbData& aThumbData,
+    bool aScrollbarIsDescendant,
+    AsyncTransformComponentMatrix* aOutClipTransform)
+{
+  
+  
+  
+  
+  
+  if (aMetrics.IsScrollInfoLayer()) {
+    return LayerToParentLayerMatrix4x4{};
+  }
+
+  MOZ_RELEASE_ASSERT(aApzc);
 
   AsyncTransformComponentMatrix asyncTransform =
-    apzc->GetCurrentAsyncTransform(AsyncPanZoomController::RESPECT_FORCE_DISABLE);
+    aApzc->GetCurrentAsyncTransform(AsyncPanZoomController::RESPECT_FORCE_DISABLE);
 
   
   
   
   
   AsyncTransformComponentMatrix scrollbarTransform;
-  const ScrollThumbData& thumbData = aScrollbar->GetScrollThumbData();
-  if (thumbData.mDirection == ScrollDirection::VERTICAL) {
+  if (aThumbData.mDirection == ScrollDirection::VERTICAL) {
     const ParentLayerCoord asyncScrollY = asyncTransform._42;
     const float asyncZoomY = asyncTransform._22;
 
@@ -1139,13 +1171,13 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
     const float yScale = 1.f / asyncZoomY;
 
     
-    const CSSToParentLayerScale effectiveZoom(metrics.GetZoom().yScale * asyncZoomY);
+    const CSSToParentLayerScale effectiveZoom(aMetrics.GetZoom().yScale * asyncZoomY);
 
     
     
     
-    const float ratio = thumbData.mThumbRatio /
-        (metrics.GetPresShellResolution() * asyncZoomY);
+    const float ratio = aThumbData.mThumbRatio /
+        (aMetrics.GetPresShellResolution() * asyncZoomY);
     
     
     
@@ -1162,26 +1194,26 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
     
     
     
-    const CSSCoord thumbOrigin = (metrics.GetScrollOffset().y * ratio);
+    const CSSCoord thumbOrigin = (aMetrics.GetScrollOffset().y * ratio);
     const CSSCoord thumbOriginScaled = thumbOrigin * yScale;
     const CSSCoord thumbOriginDelta = thumbOriginScaled - thumbOrigin;
     const ParentLayerCoord thumbOriginDeltaPL = thumbOriginDelta * effectiveZoom;
     yTranslation -= thumbOriginDeltaPL;
 
-    if (metrics.IsRootContent()) {
+    if (aMetrics.IsRootContent()) {
       
       
       
       
       
       
-      yTranslation *= metrics.GetPresShellResolution();
+      yTranslation *= aMetrics.GetPresShellResolution();
     }
 
     scrollbarTransform.PostScale(1.f, yScale, 1.f);
     scrollbarTransform.PostTranslate(0, yTranslation, 0);
   }
-  if (thumbData.mDirection == ScrollDirection::HORIZONTAL) {
+  if (aThumbData.mDirection == ScrollDirection::HORIZONTAL) {
     
 
     const ParentLayerCoord asyncScrollX = asyncTransform._41;
@@ -1189,20 +1221,20 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
 
     const float xScale = 1.f / asyncZoomX;
 
-    const CSSToParentLayerScale effectiveZoom(metrics.GetZoom().xScale * asyncZoomX);
+    const CSSToParentLayerScale effectiveZoom(aMetrics.GetZoom().xScale * asyncZoomX);
 
-    const float ratio = thumbData.mThumbRatio /
-        (metrics.GetPresShellResolution() * asyncZoomX);
+    const float ratio = aThumbData.mThumbRatio /
+        (aMetrics.GetPresShellResolution() * asyncZoomX);
     ParentLayerCoord xTranslation = -asyncScrollX * ratio;
 
-    const CSSCoord thumbOrigin = (metrics.GetScrollOffset().x * ratio);
+    const CSSCoord thumbOrigin = (aMetrics.GetScrollOffset().x * ratio);
     const CSSCoord thumbOriginScaled = thumbOrigin * xScale;
     const CSSCoord thumbOriginDelta = thumbOriginScaled - thumbOrigin;
     const ParentLayerCoord thumbOriginDeltaPL = thumbOriginDelta * effectiveZoom;
     xTranslation -= thumbOriginDeltaPL;
 
-    if (metrics.IsRootContent()) {
-      xTranslation *= metrics.GetPresShellResolution();
+    if (aMetrics.IsRootContent()) {
+      xTranslation *= aMetrics.GetPresShellResolution();
     }
 
     scrollbarTransform.PostScale(xScale, 1.f, 1.f);
@@ -1210,7 +1242,7 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
   }
 
   LayerToParentLayerMatrix4x4 transform =
-      aScrollbar->GetLocalTransformTyped() * scrollbarTransform;
+      aCurrentTransform * scrollbarTransform;
 
   AsyncTransformComponentMatrix compensation;
   
@@ -1218,11 +1250,11 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
   
   
   
-  if (metrics.IsRootContent()) {
+  if (aMetrics.IsRootContent()) {
     compensation =
         AsyncTransformComponentMatrix::Scaling(
-            metrics.GetPresShellResolution(),
-            metrics.GetPresShellResolution(),
+            aMetrics.GetPresShellResolution(),
+            aMetrics.GetPresShellResolution(),
             1.0f).Inverse();
   }
   
@@ -1238,9 +1270,9 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
   
   if (aScrollbarIsDescendant) {
     AsyncTransformComponentMatrix overscroll =
-        apzc->GetOverscrollTransform(AsyncPanZoomController::RESPECT_FORCE_DISABLE);
+        aApzc->GetOverscrollTransform(AsyncPanZoomController::RESPECT_FORCE_DISABLE);
     Matrix4x4 asyncUntransform = (asyncTransform * overscroll).Inverse().ToUnknownMatrix();
-    Matrix4x4 contentTransform = aContent.GetTransform();
+    Matrix4x4 contentTransform = aScrollableContentTransform;
     Matrix4x4 contentUntransform = contentTransform.Inverse();
 
     AsyncTransformComponentMatrix asyncCompensation =
@@ -1253,15 +1285,13 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
 
     
     
-    
-    
-    for (Layer* ancestor = aScrollbar; ancestor != aContent.GetLayer(); ancestor = ancestor->GetParent()) {
-      TransformClipRect(ancestor, asyncCompensation);
+    if (aOutClipTransform) {
+      *aOutClipTransform = asyncCompensation;
     }
   }
   transform = transform * compensation;
 
-  SetShadowTransform(aScrollbar, transform);
+  return transform;
 }
 
 static LayerMetricsWrapper
