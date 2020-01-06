@@ -685,33 +685,31 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     
     
     #[cfg(feature = "gecko")]
-    fn might_need_transitions_update(
-        &self,
-        old_values: Option<&ComputedValues>,
-        new_values: &ComputedValues
-    ) -> bool;
+    fn might_need_transitions_update(&self,
+                                     old_values: Option<&ComputedValues>,
+                                     new_values: &ComputedValues)
+                                     -> bool;
 
     
     
     
     
     #[cfg(feature = "gecko")]
-    fn needs_transitions_update(
-        &self,
-        before_change_style: &ComputedValues,
-        after_change_style: &ComputedValues
-    ) -> bool;
+    fn needs_transitions_update(&self,
+                                before_change_style: &ComputedValues,
+                                after_change_style: &ComputedValues)
+                                -> bool;
 
     
     #[cfg(feature = "gecko")]
-    fn needs_transitions_update_per_property(
-        &self,
-        property: &TransitionProperty,
-        combined_duration: f32,
-        before_change_style: &ComputedValues,
-        after_change_style: &ComputedValues,
-        existing_transitions: &HashMap<TransitionProperty, Arc<AnimationValue>>
-    ) -> bool;
+    fn needs_transitions_update_per_property(&self,
+                                             property: &TransitionProperty,
+                                             combined_duration: f32,
+                                             before_change_style: &ComputedValues,
+                                             after_change_style: &ComputedValues,
+                                             existing_transitions: &HashMap<TransitionProperty,
+                                                                            Arc<AnimationValue>>)
+                                             -> bool;
 
     
     
@@ -722,15 +720,10 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     
     
     
-    fn match_element_lang(
-        &self,
-        override_lang: Option<Option<AttrValue>>,
-        value: &PseudoClassStringArg
-    ) -> bool;
-
-    
-    
-    fn is_html_document_body_element(&self) -> bool;
+    fn match_element_lang(&self,
+                          override_lang: Option<Option<AttrValue>>,
+                          value: &PseudoClassStringArg)
+                          -> bool;
 }
 
 

@@ -547,14 +547,6 @@ impl<'le> TElement for ServoLayoutElement<'le> {
         };
         extended_filtering(&element_lang, &*value)
     }
-
-    fn is_html_document_body_element(&self) -> bool {
-        
-        
-        
-        
-        false
-    }
 }
 
 impl<'le> PartialEq for ServoLayoutElement<'le> {

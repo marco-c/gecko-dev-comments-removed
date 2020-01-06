@@ -93,13 +93,6 @@ impl Device {
     }
 
     
-    
-    
-    pub fn set_body_text_color(&self, _color: RGBA) {
-        
-    }
-
-    
     pub fn used_root_font_size(&self) -> bool {
         self.used_root_font_size.load(Ordering::Relaxed)
     }
