@@ -92,13 +92,6 @@ public:
 
   static bool ObjectIsNativeWrapper(JSContext* cx, JSObject* obj);
 
-  static nsISupports *GetNative(nsIXPConnectWrappedNative *wrapper, JSObject *obj);
-
-  static nsIXPConnect *XPConnect()
-  {
-    return sXPConnect;
-  }
-
 protected:
   friend nsIClassInfo* NS_GetDOMClassInfoInstance(nsDOMClassInfoID aID);
 
@@ -121,27 +114,6 @@ public:
   static jsid sConstructor_id;
   static jsid sWrappedJSObject_id;
 };
-
-
-
-inline
-const nsQueryInterface
-do_QueryWrappedNative(nsIXPConnectWrappedNative *wrapper, JSObject *obj)
-{
-  return nsQueryInterface(nsDOMClassInfo::GetNative(wrapper, obj));
-}
-
-
-
-inline
-const nsQueryInterfaceWithError
-do_QueryWrappedNative(nsIXPConnectWrappedNative *wrapper, JSObject *obj,
-                      nsresult *aError)
-
-{
-  return nsQueryInterfaceWithError(nsDOMClassInfo::GetNative(wrapper, obj),
-                                   aError);
-}
 
 typedef nsDOMClassInfo nsDOMGenericSH;
 
