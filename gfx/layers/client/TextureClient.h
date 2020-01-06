@@ -266,6 +266,7 @@ public:
   virtual void Forget(LayersIPCChannel* aAllocator) {}
 
   virtual bool Serialize(SurfaceDescriptor& aDescriptor) = 0;
+  virtual void GetSubDescriptor(GPUVideoSubDescriptor* aOutDesc) { }
 
   virtual TextureData*
   CreateSimilar(LayersIPCChannel* aAllocator,
@@ -598,6 +599,7 @@ public:
   const TextureData* GetInternalData() const { return mData; }
 
   uint64_t GetSerial() const { return mSerial; }
+  void GPUVideoDesc(SurfaceDescriptorGPUVideo* aOutDesc);
 
   void CancelWaitForRecycle();
 
@@ -642,7 +644,7 @@ public:
 
 private:
   static void TextureClientRecycleCallback(TextureClient* aClient, void* aClosure);
- 
+
   
   
   
@@ -657,7 +659,7 @@ private:
                    BackendSelector aSelector,
                    TextureFlags aTextureFlags,
                    TextureAllocationFlags aAllocFlags = ALLOC_DEFAULT);
-  
+
   static already_AddRefed<TextureClient>
   CreateForRawBufferAccess(LayersIPCChannel* aAllocator,
                            gfx::SurfaceFormat aFormat,
