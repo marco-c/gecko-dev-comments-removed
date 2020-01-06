@@ -20,6 +20,10 @@ photonpanelmultiview .toolbaritem-combined-buttons > label {
   padding-inline-start: 42px; 
 }
 
+#appMenu-mainView > .panel-subview-body > .panel-banner-item {
+  padding-inline-start: 18px;
+}
+
 #appMenu-fxa-container[fxastatus="signedin"] > #appMenu-fxa-status > #appMenu-fxa-label {
   
   padding-inline-start: 34px;
