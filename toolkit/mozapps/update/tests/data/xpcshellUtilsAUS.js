@@ -1037,8 +1037,6 @@ function setDefaultPrefs() {
     
     Services.prefs.setBoolPref(PREF_APP_UPDATE_LOG, false);
   }
-  
-  Services.prefs.setBoolPref(PREF_TOOLKIT_TELEMETRY_ENABLED, false);
 }
 
 
