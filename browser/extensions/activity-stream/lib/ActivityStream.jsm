@@ -4,6 +4,7 @@
 "use strict";
 
 const {utils: Cu} = Components;
+Cu.import("resource://gre/modules/Services.jsm");
 
 
 
@@ -28,7 +29,8 @@ const SECTIONS = new Map([
   ["topstories", {
     feed: TopStoriesFeed,
     prefTitle: "Fetches content recommendations from a configurable content provider",
-    showByDefault: false
+     
+    showByDefault: ["en-US", "en-CA"].includes(Services.locale.getRequestedLocale())
   }]
 ]);
 
@@ -74,13 +76,15 @@ const PREFS_CONFIG = new Map([
     title: "Configuration options for top stories feed",
     value: `{
       "stories_endpoint": "https://getpocket.com/v3/firefox/global-recs?consumer_key=$apiKey",
+      "stories_referrer": "https://getpocket.com/recommendations",
       "topics_endpoint": "https://getpocket.com/v3/firefox/trending-topics?consumer_key=$apiKey",
       "read_more_endpoint": "https://getpocket.com/explore/trending?src=ff_new_tab",
       "learn_more_endpoint": "https://getpocket.com/firefox_learnmore?src=ff_newtab",
       "survey_link": "https://www.surveymonkey.com/r/newtabffx",
       "api_key_pref": "extensions.pocket.oAuthConsumerKey",
       "provider_name": "Pocket",
-      "provider_icon": "pocket"
+      "provider_icon": "pocket",
+      "provider_description": "pocket_feedback_body"
     }`
   }],
   ["migrationExpired", {

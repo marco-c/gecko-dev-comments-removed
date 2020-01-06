@@ -75,6 +75,24 @@ _PerfService.prototype = {
 
 
 
+  absNow: function absNow() {
+    return this.timeOrigin + this._perf.now();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -35,6 +35,41 @@ this.TelemetryFeed = class TelemetryFeed {
     perfService.mark("browser-open-newtab-start");
   }
 
+  setLoadTriggerInfo(port) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    let data_to_save;
+    try {
+      data_to_save = {
+        load_trigger_ts: perfService.getMostRecentAbsMarkStartByName("browser-open-newtab-start"),
+        load_trigger_type: "menu_plus_or_keyboard"
+      };
+    } catch (e) {
+      
+      return;
+    }
+    this.saveSessionPerfData(port, data_to_save);
+  }
+
   
 
 
@@ -58,49 +93,14 @@ this.TelemetryFeed = class TelemetryFeed {
 
 
 
-
-  addSession(id, absVisChangeTime) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let absBrowserOpenTabStart;
-    try {
-      absBrowserOpenTabStart = perfService.getMostRecentAbsMarkStartByName("browser-open-newtab-start");
-    } catch (e) {
-      
-    }
-
-    
-    
-    const triggerType = absBrowserOpenTabStart === undefined ||
-      absVisChangeTime === undefined ? "unexpected" : "menu_plus_or_keyboard";
-
+  addSession(id) {
     const session = {
-      start_time: Components.utils.now(),
       session_id: String(gUUIDGenerator.generateUUID()),
       page: "about:newtab", 
-      perf: {
-        load_trigger_ts: absBrowserOpenTabStart,
-        load_trigger_type: triggerType,
-        visibility_event_rcvd_ts: absVisChangeTime
-      }
+      
+      perf: {load_trigger_type: "unexpected"}
     };
+
     this.sessions.set(id, session);
     return session;
   }
@@ -118,7 +118,10 @@ this.TelemetryFeed = class TelemetryFeed {
       return;
     }
 
-    session.session_duration = Math.round(Components.utils.now() - session.start_time);
+    if (session.perf.visibility_event_rcvd_ts) {
+      session.session_duration = Math.round(perfService.absNow() - session.perf.visibility_event_rcvd_ts);
+    }
+
     this.sendEvent(this.createSessionEndEvent(session));
     this.sessions.delete(portID);
   }
@@ -167,7 +170,7 @@ this.TelemetryFeed = class TelemetryFeed {
 
   async createPerformanceEvent(action) {
     return Object.assign(
-      await this.createPing(au.getPortIdOfSender(action)),
+      await this.createPing(),
       action.data,
       {action: "activity_stream_performance_event"}
     );
@@ -195,12 +198,15 @@ this.TelemetryFeed = class TelemetryFeed {
       case at.INIT:
         this.init();
         break;
-      case at.NEW_TAB_VISIBLE:
-        this.addSession(au.getPortIdOfSender(action),
-          action.data.absVisibilityChangeTime);
+      case at.NEW_TAB_INIT:
+        this.addSession(au.getPortIdOfSender(action));
+        this.setLoadTriggerInfo(au.getPortIdOfSender(action));
         break;
       case at.NEW_TAB_UNLOAD:
         this.endSession(au.getPortIdOfSender(action));
+        break;
+      case at.SAVE_SESSION_PERF_DATA:
+        this.saveSessionPerfData(au.getPortIdOfSender(action), action.data);
         break;
       case at.TELEMETRY_UNDESIRED_EVENT:
         this.sendEvent(this.createUndesiredEvent(action));
@@ -212,6 +218,27 @@ this.TelemetryFeed = class TelemetryFeed {
         this.sendEvent(this.createPerformanceEvent(action));
         break;
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  saveSessionPerfData(port, data) {
+    
+    
+    let session = this.sessions.get(port);
+
+    Object.assign(session.perf, data);
   }
 
   uninit() {
