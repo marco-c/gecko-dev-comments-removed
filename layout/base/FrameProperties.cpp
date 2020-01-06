@@ -98,7 +98,12 @@ FrameProperties::DeleteAll(const nsIFrame* aFrame)
 size_t
 FrameProperties::SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
 {
-  return mProperties.Length() * sizeof(PropertyValue);
+  
+  
+  
+  
+  
+  return mProperties.ShallowSizeOfExcludingThis(aMallocSizeOf);
 }
 
 } 
