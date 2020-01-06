@@ -58,8 +58,8 @@ FormHistoryStartup.prototype = {
     Services.ppmm.loadProcessScript("chrome://satchel/content/formSubmitListener.js", true);
     Services.ppmm.addMessageListener("FormHistory:FormSubmitEntries", this);
 
-    let messageManager = Cc["@mozilla.org/globalmessagemanager;1"].
-                         getService(Ci.nsIMessageListenerManager);
+    let messageManager = Cc["@mozilla.org/globalmessagemanager;1"]
+                         .getService(Ci.nsIMessageListenerManager);
     
     
     
