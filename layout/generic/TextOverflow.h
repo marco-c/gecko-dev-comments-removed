@@ -9,9 +9,7 @@
 
 #include "nsDisplayList.h"
 #include "nsTHashtable.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/WritingModes.h"
 #include <algorithm>
 
@@ -27,16 +25,14 @@ namespace css {
 
 
 
-class MOZ_HEAP_CLASS TextOverflow final {
+class TextOverflow {
  public:
   
 
 
 
-  static UniquePtr<TextOverflow>
-  WillProcessLines(nsDisplayListBuilder* aBuilder,
-                   nsIFrame*             aBlockFrame);
-
+  static TextOverflow* WillProcessLines(nsDisplayListBuilder*   aBuilder,
+                                        nsIFrame*               aBlockFrame);
   
 
 
@@ -59,13 +55,9 @@ class MOZ_HEAP_CLASS TextOverflow final {
 
   static bool CanHaveTextOverflow(nsIFrame* aBlockFrame);
 
-  typedef nsTHashtable<nsPtrHashKey<nsIFrame>> FrameHashtable;
+  typedef nsTHashtable<nsPtrHashKey<nsIFrame> > FrameHashtable;
 
- private:
-  
-  friend mozilla::detail::UniqueSelector<TextOverflow>::SingleObject
-    mozilla::MakeUnique<TextOverflow>(nsDisplayListBuilder*&, nsIFrame*&);
-
+ protected:
   TextOverflow(nsDisplayListBuilder* aBuilder,
                nsIFrame* aBlockFrame);
 
