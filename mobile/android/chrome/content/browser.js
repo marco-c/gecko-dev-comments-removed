@@ -2829,7 +2829,7 @@ var NativeWindow = {
         if (originalURL) {
           return originalURL;
         }
-        return node.currentURI.spec;
+        return node.currentURI.displaySpec;
       } else if (node instanceof Ci.nsIDOMHTMLMediaElement) {
         let srcUrl = node.currentSrc || node.src;
         
@@ -3042,7 +3042,7 @@ var NativeWindow = {
     
     makeURLAbsolute: function makeURLAbsolute(base, url) {
       
-      return this.makeURI(url, null, this.makeURI(base)).spec;
+      return this.makeURI(url, null, this.makeURI(base)).displaySpec;
     },
 
     makeURI: function makeURI(aURL, aOriginCharset, aBaseURI) {
@@ -3077,8 +3077,9 @@ var NativeWindow = {
 
     _getLinkURL: function ch_getLinkURL(aLink) {
       let href = aLink.href;
-      if (href)
-        return href;
+      if (href) {
+        return this.makeURI(href).displaySpec;
+      }
 
       href = aLink.getAttribute("href") ||
              aLink.getAttributeNS(kXLinkNamespace, "href");
