@@ -327,7 +327,6 @@ public:
                                                 nsIObserver* aObserver) override;
 
     void DispatchSizeModeEvent();
-    void DispatchOcclusionEvent();
 
     
     virtual bool DragEvent(unsigned int aMessage, mozilla::gfx::Point aMouseGlobal, UInt16 aKeyModifiers);
