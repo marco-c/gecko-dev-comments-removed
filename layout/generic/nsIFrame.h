@@ -2590,6 +2590,13 @@ public:
   { return false; }
 
   
+
+
+
+  virtual bool OnlySystemGroupDispatch(mozilla::EventMessage aMessage) const
+  { return false; }
+
+  
   
   
   bool HasView() const { return !!(mState & NS_FRAME_HAS_VIEW); }

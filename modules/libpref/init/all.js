@@ -437,11 +437,7 @@ pref("media.decoder-doctor.wmf-disabled-is-failure", false);
 pref("media.decoder-doctor.new-issue-endpoint", "https://webcompat.com/issues/new");
 
 
-#ifdef NIGHTLY_BUILD
 pref("media.suspend-bkgnd-video.enabled", true);
-#else
-pref("media.suspend-bkgnd-video.enabled", false);
-#endif
 
 
 pref("media.suspend-bkgnd-video.delay-ms", 10000);
@@ -875,6 +871,11 @@ pref("gfx.webrender.enabled", false);
 #ifdef XP_WIN
 pref("gfx.webrender.force-angle", true);
 #endif
+
+pref("gfx.webrender.profiler.enabled", false);
+
+
+pref("gfx.webrendest.enabled", false);
 
 pref("accessibility.browsewithcaret", false);
 pref("accessibility.warn_on_browsewithcaret", true);
@@ -3142,7 +3143,9 @@ pref("dom.ipc.plugins.asyncdrawing.enabled", true);
 
 pref("dom.ipc.plugins.forcedirect.enabled", true);
 
-#ifdef RELEASE_OR_BETA
+
+
+#if defined(RELEASE_OR_BETA) && !defined(MOZ_DEV_EDITION)
 pref("dom.ipc.processCount", 1);
 #else
 pref("dom.ipc.processCount", 4);
@@ -5741,9 +5744,6 @@ pref("layers.advanced.solid-color", 2);
 pref("layers.advanced.table", 2);
 pref("layers.advanced.text-layers", 2);
 pref("layers.advanced.filter-layers", 2);
-
-
-pref("gfx.webrendest.enabled", false);
 
 
 pref("dom.xhr.lowercase_header.enabled", true);
