@@ -79,6 +79,12 @@ RestyleManager::ReparentStyleContext(nsIFrame* aFrame)
   MOZ_STYLO_FORWARD(ReparentStyleContext, (aFrame));
 }
 
+void
+RestyleManager::UpdateOnlyAnimationStyles()
+{
+  MOZ_STYLO_FORWARD(UpdateOnlyAnimationStyles, ());
+}
+
 } 
 
 #endif 

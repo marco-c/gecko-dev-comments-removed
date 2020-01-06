@@ -180,6 +180,8 @@ public:
                                const nsAttrValue* aOldValue);
   inline nsresult ReparentStyleContext(nsIFrame* aFrame);
 
+  inline void UpdateOnlyAnimationStyles();
+
   
   
   uint64_t GetAnimationGeneration() const { return mAnimationGeneration; }

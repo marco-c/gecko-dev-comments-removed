@@ -228,17 +228,26 @@ public:
     const AnimationPerformanceWarning& aWarning);
 
   
+  enum class AnimationRestyleType {
+    Throttled, 
+    Full       
+               
+  };
+
   
   
   
-  bool PreTraverse();
+  
+  
+  bool PreTraverse(AnimationRestyleType aRestyleType);
 
   
   bool PreTraverse(dom::Element* aElement, CSSPseudoElementType aPseudoType);
 
   
   
-  bool PreTraverseInSubtree(dom::Element* aElement);
+  bool PreTraverseInSubtree(dom::Element* aElement,
+                            AnimationRestyleType aRestyleType);
 
 private:
   ~EffectCompositor() = default;

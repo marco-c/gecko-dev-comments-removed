@@ -514,7 +514,8 @@ ServoRestyleManager::FrameForPseudoElement(const nsIContent* aContent,
 }
 
 void
-ServoRestyleManager::ProcessPendingRestyles()
+ServoRestyleManager::DoProcessPendingRestyles(TraversalRestyleBehavior
+                                                aRestyleBehavior)
 {
   MOZ_ASSERT(PresContext()->Document(), "No document?  Pshaw!");
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript(), "Missing a script blocker!");
@@ -536,6 +537,8 @@ ServoRestyleManager::ProcessPendingRestyles()
 
   ServoStyleSet* styleSet = StyleSet();
   nsIDocument* doc = PresContext()->Document();
+  bool animationOnly = aRestyleBehavior ==
+                         TraversalRestyleBehavior::ForAnimationOnly;
 
   
   
@@ -546,12 +549,15 @@ ServoRestyleManager::ProcessPendingRestyles()
   
   
   mInStyleRefresh = true;
-  if (mHaveNonAnimationRestyles) {
+  if (mHaveNonAnimationRestyles && !animationOnly) {
     ++mAnimationGeneration;
   }
 
-  while (styleSet->StyleDocument()) {
-    ClearSnapshots();
+  while (animationOnly ? styleSet->StyleDocumentForAnimationOnly()
+                       : styleSet->StyleDocument()) {
+    if (!animationOnly) {
+      ClearSnapshots();
+    }
 
     
     
@@ -582,17 +588,37 @@ ServoRestyleManager::ProcessPendingRestyles()
     IncrementRestyleGeneration();
   }
 
-  ClearSnapshots();
   FlushOverflowChangedTracker();
 
-  mHaveNonAnimationRestyles = false;
+  if (!animationOnly) {
+    ClearSnapshots();
+    styleSet->AssertTreeIsClean();
+    mHaveNonAnimationRestyles = false;
+  }
   mInStyleRefresh = false;
-  styleSet->AssertTreeIsClean();
 
   
   
   MOZ_ASSERT(mAnimationsWithDestroyedFrame);
   mAnimationsWithDestroyedFrame->StopAnimationsForElementsWithoutFrames();
+}
+
+void
+ServoRestyleManager::ProcessPendingRestyles()
+{
+  DoProcessPendingRestyles(TraversalRestyleBehavior::Normal);
+}
+
+void
+ServoRestyleManager::UpdateOnlyAnimationStyles()
+{
+  
+  bool doCSS = PresContext()->EffectCompositor()->HasPendingStyleUpdates();
+  if (!doCSS) {
+    return;
+  }
+
+  DoProcessPendingRestyles(TraversalRestyleBehavior::ForAnimationOnly);
 }
 
 void

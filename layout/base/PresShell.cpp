@@ -6946,10 +6946,7 @@ FlushThrottledStyles(nsIDocument *aDocument, void *aData)
   if (shell && shell->IsVisible()) {
     nsPresContext* presContext = shell->GetPresContext();
     if (presContext) {
-      if (presContext->RestyleManager()->IsGecko()) {
-        
-        presContext->RestyleManager()->AsGecko()->UpdateOnlyAnimationStyles();
-      }
+      presContext->RestyleManager()->UpdateOnlyAnimationStyles();
     }
   }
 
@@ -8008,13 +8005,6 @@ PresShell::HandleEventInternal(WidgetEvent* aEvent,
   if (!NS_EVENT_NEEDS_FRAME(aEvent) || GetCurrentEventFrame() || GetCurrentEventContent()) {
     bool touchIsNew = false;
     bool isHandlingUserInput = false;
-
-    if (mCurrentEventContent && aEvent->IsTargetedAtFocusedWindow()) {
-      nsFocusManager* fm = nsFocusManager::GetFocusManager();
-      if (fm) {
-         fm->FlushBeforeEventHandlingIfNeeded(mCurrentEventContent);
-      }
-    }
 
     
     if (aEvent->IsTrusted()) {

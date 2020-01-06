@@ -957,13 +957,14 @@ EffectCompositor::SetPerformanceWarning(
 }
 
 bool
-EffectCompositor::PreTraverse()
+EffectCompositor::PreTraverse(AnimationRestyleType aRestyleType)
 {
-  return PreTraverseInSubtree(nullptr);
+  return PreTraverseInSubtree(nullptr, aRestyleType);
 }
 
 bool
-EffectCompositor::PreTraverseInSubtree(Element* aRoot)
+EffectCompositor::PreTraverseInSubtree(Element* aRoot,
+                                       AnimationRestyleType aRestyleType)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mPresContext->RestyleManager()->IsServo());
@@ -973,7 +974,11 @@ EffectCompositor::PreTraverseInSubtree(Element* aRoot)
 
   
   
-  bool flushThrottledRestyles = aRoot && aRoot->HasDirtyDescendantsForServo();
+  
+  
+  bool flushThrottledRestyles =
+    (aRoot && aRoot->HasDirtyDescendantsForServo()) ||
+    aRestyleType == AnimationRestyleType::Full;
 
   using ElementsToRestyleIterType =
     nsDataHashtable<PseudoElementHashEntry, bool>::Iterator;
@@ -1092,6 +1097,7 @@ EffectCompositor::PreTraverse(dom::Element* aElement,
 
   PseudoElementHashEntry::KeyType key = { aElement, aPseudoType };
 
+  
   
   
   Element* elementToRestyle = GetElementToRestyle(aElement, aPseudoType);

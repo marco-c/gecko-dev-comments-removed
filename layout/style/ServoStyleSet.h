@@ -7,6 +7,7 @@
 #ifndef mozilla_ServoStyleSet_h
 #define mozilla_ServoStyleSet_h
 
+#include "mozilla/EffectCompositor.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/EventStates.h"
 #include "mozilla/PostTraversalTask.h"
@@ -250,6 +251,15 @@ public:
 
 
 
+
+
+  bool StyleDocumentForAnimationOnly();
+
+  
+
+
+
+
   void StyleNewSubtree(dom::Element* aRoot);
 
   
@@ -422,7 +432,9 @@ private:
 
 
 
-  void PreTraverse(dom::Element* aRoot = nullptr);
+  void PreTraverse(dom::Element* aRoot = nullptr,
+                   EffectCompositor::AnimationRestyleType =
+                     EffectCompositor::AnimationRestyleType::Throttled);
   
   void PreTraverseSync();
 
