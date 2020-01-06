@@ -1175,7 +1175,6 @@ var Impl = {
     b("MEMORY_VSIZE_MAX_CONTIGUOUS", "vsizeMaxContiguous");
     b("MEMORY_RESIDENT_FAST", "residentFast");
     b("MEMORY_UNIQUE", "residentUnique");
-    b("MEMORY_HEAP_ALLOCATED", "heapAllocated");
     p("MEMORY_HEAP_OVERHEAD_FRACTION", "heapOverheadFraction");
     b("MEMORY_JS_GC_HEAP", "JSMainRuntimeGCHeap");
     c("MEMORY_JS_COMPARTMENTS_SYSTEM", "JSMainRuntimeCompartmentsSystem");
@@ -1185,6 +1184,15 @@ var Impl = {
     cc("LOW_MEMORY_EVENTS_VIRTUAL", "lowMemoryEventsVirtual");
     cc("LOW_MEMORY_EVENTS_PHYSICAL", "lowMemoryEventsPhysical");
     cc("PAGE_FAULTS_HARD", "pageFaultsHard");
+
+    try {
+      mgr.getHeapAllocatedAsync(heapAllocated => {
+        boundHandleMemoryReport("MEMORY_HEAP_ALLOCATED",
+                                Ci.nsIMemoryReporter.UNITS_BYTES,
+                                heapAllocated);
+      });
+    } catch (e) {
+    }
 
     if (!Utils.isContentProcess && !this._totalMemoryTimeout) {
       
@@ -1988,7 +1996,7 @@ var Impl = {
         gLastMemoryPoll = now;
 
         this._log.trace("Dispatching idle gatherMemory task");
-        Services.tm.idleDispatchToMainThread(() => {
+        Services.tm.mainThread.idleDispatch(() => {
           this._log.trace("Running idle gatherMemory task");
           this.gatherMemory();
           return true;
