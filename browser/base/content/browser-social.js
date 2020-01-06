@@ -206,7 +206,7 @@ SocialActivationListener = {
         if (provider.postActivationURL) {
           
           
-          let triggeringPrincipal = Utils.deserializePrincipal(aMessage.data.triggeringPrincipal); 
+          let triggeringPrincipal = Utils.deserializePrincipal(aMessage.data.triggeringPrincipal);
           gBrowser.loadOneTab(provider.postActivationURL, {
             inBackground: SocialShare.panel.state == "open",
             triggeringPrincipal,
