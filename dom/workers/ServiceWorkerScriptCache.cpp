@@ -5,6 +5,7 @@
 
 
 #include "ServiceWorkerScriptCache.h"
+#include "mozilla/SystemGroup.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/CacheBinding.h"
 #include "mozilla/dom/cache/CacheStorage.h"
@@ -1136,7 +1137,14 @@ CompareCache::ManageValueResult(JSContext* aCx, JS::Handle<JS::Value> aValue)
   MOZ_ASSERT(inputStream);
 
   MOZ_ASSERT(!mPump);
-  rv = NS_NewInputStreamPump(getter_AddRefs(mPump), inputStream);
+  rv = NS_NewInputStreamPump(getter_AddRefs(mPump),
+                             inputStream,
+                             -1, 
+                             -1, 
+                             0, 
+                             0, 
+                             false, 
+                             SystemGroup::EventTargetFor(TaskCategory::Other));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     Finish(rv, false);
     return;
