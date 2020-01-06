@@ -356,6 +356,35 @@ ClippedImage::GetImageContainer(LayerManager* aManager, uint32_t aFlags)
   return nullptr;
 }
 
+NS_IMETHODIMP_(bool)
+ClippedImage::IsImageContainerAvailableAtSize(LayerManager* aManager,
+                                              const IntSize& aSize,
+                                              uint32_t aFlags)
+{
+  if (!ShouldClip()) {
+    return InnerImage()->IsImageContainerAvailableAtSize(aManager, aSize, aFlags);
+  }
+  return false;
+}
+
+NS_IMETHODIMP_(already_AddRefed<ImageContainer>)
+ClippedImage::GetImageContainerAtSize(LayerManager* aManager,
+                                      const IntSize& aSize,
+                                      uint32_t aFlags)
+{
+  
+  
+  
+  
+  
+
+  if (!ShouldClip()) {
+    return InnerImage()->GetImageContainerAtSize(aManager, aSize, aFlags);
+  }
+
+  return nullptr;
+}
+
 static bool
 MustCreateSurface(gfxContext* aContext,
                   const nsIntSize& aSize,

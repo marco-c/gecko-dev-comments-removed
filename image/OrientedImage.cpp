@@ -173,6 +173,35 @@ OrientedImage::GetImageContainer(LayerManager* aManager, uint32_t aFlags)
   return nullptr;
 }
 
+NS_IMETHODIMP_(bool)
+OrientedImage::IsImageContainerAvailableAtSize(LayerManager* aManager,
+                                               const IntSize& aSize,
+                                               uint32_t aFlags)
+{
+  if (mOrientation.IsIdentity()) {
+    return InnerImage()->IsImageContainerAvailableAtSize(aManager, aSize, aFlags);
+  }
+  return false;
+}
+
+NS_IMETHODIMP_(already_AddRefed<ImageContainer>)
+OrientedImage::GetImageContainerAtSize(LayerManager* aManager,
+                                       const IntSize& aSize,
+                                       uint32_t aFlags)
+{
+  
+  
+  
+  
+  
+
+  if (mOrientation.IsIdentity()) {
+    return InnerImage()->GetImageContainerAtSize(aManager, aSize, aFlags);
+  }
+
+  return nullptr;
+}
+
 struct MatrixBuilder
 {
   explicit MatrixBuilder(bool aInvert) : mInvert(aInvert) { }
