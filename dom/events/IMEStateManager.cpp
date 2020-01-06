@@ -534,6 +534,7 @@ IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
   bool setIMEState = true;
 
   if (newTabParent) {
+    MOZ_ASSERT(XRE_IsParentProcess());
     if (aAction.mFocusChange == InputContextAction::MENU_GOT_PSEUDO_FOCUS ||
         aAction.mFocusChange == InputContextAction::MENU_LOST_PSEUDO_FOCUS) {
       
@@ -559,7 +560,7 @@ IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
            "will get focus actually"));
       }
     } else if (newWidget->GetInputContext().mOrigin !=
-                 InputContext::ORIGIN_CONTENT) {
+                 InputContext::ORIGIN_MAIN) {
       
       
       
