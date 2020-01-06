@@ -7307,7 +7307,7 @@ nsDisplayStickyPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
     stickyScrollContainer->GetScrollRanges(mFrame, &outer, &inner);
 
     nsIFrame* scrollFrame = do_QueryFrame(stickyScrollContainer->ScrollFrame());
-    nsPoint offset = scrollFrame->GetOffsetTo(ReferenceFrame());
+    nsPoint offset = scrollFrame->GetOffsetToCrossDoc(ReferenceFrame());
 
     
     
