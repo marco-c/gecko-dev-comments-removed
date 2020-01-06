@@ -21,8 +21,8 @@ namespace mozilla {
 namespace dom {
 
 class LocalStorage;
+class LocalStorageManager;
 class StorageUsage;
-class StorageManagerBase;
 class StorageDBBridge;
 
 
@@ -103,7 +103,7 @@ protected:
   virtual ~StorageCache();
 
 public:
-  void Init(StorageManagerBase* aManager, bool aPersistent,
+  void Init(LocalStorageManager* aManager, bool aPersistent,
             nsIPrincipal* aPrincipal, const nsACString& aQuotaOriginScope);
 
   
@@ -174,7 +174,7 @@ public:
 private:
   
   
-  friend class StorageManagerBase;
+  friend class LocalStorageManager;
 
   static const uint32_t kUnloadDefault = 1 << 0;
   static const uint32_t kUnloadPrivate = 1 << 1;
@@ -218,7 +218,7 @@ private:
   
   
   
-  RefPtr<StorageManagerBase> mManager;
+  RefPtr<LocalStorageManager> mManager;
 
   
   

@@ -21,7 +21,7 @@ class OriginAttributesPattern;
 
 namespace dom {
 
-class DOMLocalStorageManager;
+class LocalStorageManager;
 
 
 
@@ -33,7 +33,7 @@ class StorageDBChild final : public StorageDBBridge
   virtual ~StorageDBChild();
 
 public:
-  explicit StorageDBChild(DOMLocalStorageManager* aManager);
+  explicit StorageDBChild(LocalStorageManager* aManager);
 
   NS_IMETHOD_(MozExternalRefCountType) AddRef(void);
   NS_IMETHOD_(MozExternalRefCountType) Release(void);
@@ -100,7 +100,7 @@ private:
   NS_DECL_OWNINGTHREAD
 
   
-  RefPtr<DOMLocalStorageManager> mManager;
+  RefPtr<LocalStorageManager> mManager;
 
   
   nsAutoPtr<nsTHashtable<nsCStringHashKey>> mOriginsHavingData;

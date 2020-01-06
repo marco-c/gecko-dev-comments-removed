@@ -25,18 +25,13 @@ class OriginAttributesPattern;
 
 namespace dom {
 
-const LocalStorage::StorageType eSessionStorage = LocalStorage::eSessionStorage;
-const LocalStorage::StorageType eLocalStorage = LocalStorage::eLocalStorage;
-
-class StorageManagerBase : public nsIDOMStorageManager
-                         , public StorageObserverSink
+class LocalStorageManager final : public nsIDOMStorageManager
+                                , public StorageObserverSink
 {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIDOMSTORAGEMANAGER
 
 public:
-  virtual LocalStorage::StorageType Type() { return mType; }
-
   
   static uint32_t GetQuota();
   
@@ -48,15 +43,14 @@ public:
   static nsCString CreateOrigin(const nsACString& aOriginSuffix,
                                 const nsACString& aOriginNoSuffix);
 
-protected:
-  explicit StorageManagerBase(LocalStorage::StorageType aType);
-  virtual ~StorageManagerBase();
-
 private:
+  LocalStorageManager();
+  ~LocalStorageManager();
+
   
-  virtual nsresult Observe(const char* aTopic,
-                           const nsAString& aOriginAttributesPattern,
-                           const nsACString& aOriginScope) override;
+  nsresult Observe(const char* aTopic,
+                   const nsAString& aOriginAttributesPattern,
+                   const nsACString& aOriginScope) override;
 
   
   
@@ -112,8 +106,6 @@ private:
   typedef nsTHashtable<StorageCacheHashKey> CacheOriginHashtable;
   nsClassHashtable<nsCStringHashKey, CacheOriginHashtable> mCaches;
 
-  const LocalStorage::StorageType mType;
-
   
   
   
@@ -124,35 +116,21 @@ private:
                    const OriginAttributesPattern& aPattern,
                    const nsACString& aKeyPrefix);
 
-protected:
+  
+  static LocalStorageManager* Self() { return sSelf; }
+
+  
+  static LocalStorageManager* Ensure();
+
+private:
   
   nsDataHashtable<nsCStringHashKey, RefPtr<StorageUsage> > mUsages;
 
   friend class StorageCache;
   
   virtual void DropCache(StorageCache* aCache);
-};
 
-
-
-
-
-
-
-class DOMLocalStorageManager final : public StorageManagerBase
-{
-public:
-  DOMLocalStorageManager();
-  virtual ~DOMLocalStorageManager();
-
-  
-  static DOMLocalStorageManager* Self() { return sSelf; }
-
-  
-  static DOMLocalStorageManager* Ensure();
-
-private:
-  static DOMLocalStorageManager* sSelf;
+  static LocalStorageManager* sSelf;
 };
 
 } 

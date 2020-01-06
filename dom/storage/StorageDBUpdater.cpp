@@ -4,7 +4,7 @@
 
 
 
-#include "StorageManager.h"
+#include "LocalStorageManager.h"
 
 #include "mozIStorageBindingParamsArray.h"
 #include "mozIStorageBindingParams.h"
