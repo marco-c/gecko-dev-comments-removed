@@ -28,6 +28,11 @@ var SidebarUI = {
     return this._browser = document.getElementById("sidebar");
   },
   POSITION_START_PREF: "sidebar.position_start",
+  DEFAULT_SIDEBAR_ID: "viewBookmarksSidebar",
+
+  
+  
+  lastOpenedId: null,
 
   _box: null,
   
@@ -63,6 +68,7 @@ var SidebarUI = {
     enumerator.getNext();
     if (!enumerator.hasMoreElements()) {
       document.persist("sidebar-box", "sidebarcommand");
+      document.persist("sidebar-box", "checked");
       document.persist("sidebar-box", "width");
       document.persist("sidebar-title", "value");
     }
@@ -257,6 +263,14 @@ var SidebarUI = {
     this._title.value = value;
   },
 
+  getBroadcasterById(id) {
+    let sidebarBroadcaster = document.getElementById(id);
+    if (sidebarBroadcaster && sidebarBroadcaster.localName == "broadcaster") {
+      return sidebarBroadcaster;
+    }
+    return null;
+  },
+
   
 
 
@@ -265,7 +279,14 @@ var SidebarUI = {
 
 
 
-  toggle(commandID = this.currentID) {
+  toggle(commandID = this.lastOpenedId) {
+    
+    
+    
+    if (!commandID || !this.getBroadcasterById(commandID)) {
+      commandID = this.DEFAULT_SIDEBAR_ID;
+    }
+
     if (this.isOpen && commandID == this.currentID) {
       this.hide();
       return Promise.resolve();
@@ -295,8 +316,8 @@ var SidebarUI = {
 
   _show(commandID) {
     return new Promise((resolve, reject) => {
-      let sidebarBroadcaster = document.getElementById(commandID);
-      if (!sidebarBroadcaster || sidebarBroadcaster.localName != "broadcaster") {
+      let sidebarBroadcaster = this.getBroadcasterById(commandID);
+      if (!sidebarBroadcaster) {
         reject(new Error("Invalid sidebar broadcaster specified: " + commandID));
         return;
       }
@@ -319,6 +340,7 @@ var SidebarUI = {
 
       this.hideSwitcherPanel();
 
+      this._box.setAttribute("checked", "true");
       this._box.setAttribute("sidebarcommand", sidebarBroadcaster.id);
       this.lastOpenedId = sidebarBroadcaster.id;
 
@@ -388,6 +410,7 @@ var SidebarUI = {
 
     sidebarBroadcaster.removeAttribute("checked");
     this._box.setAttribute("sidebarcommand", "");
+    this._box.removeAttribute("checked");
     this.title = "";
     this._box.hidden = this._splitter.hidden = true;
 

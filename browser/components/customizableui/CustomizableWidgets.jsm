@@ -596,21 +596,18 @@ const CustomizableWidgets = [
     }
   }, {
     id: "sidebar-button",
-    type: "view",
-    viewId: "PanelUI-sidebar",
     tooltiptext: "sidebar-button.tooltiptext2",
-    onViewShowing(aEvent) {
+    onCommand(aEvent) {
+      let win = aEvent.target.ownerGlobal;
+      win.SidebarUI.toggle();
+    },
+    onCreated(aNode) {
       
-      
-      
-      let doc = aEvent.target.ownerDocument;
-      let menu = doc.getElementById("viewSidebarMenu");
-
-      
-      
-      let sidebarItems = doc.getElementById("PanelUI-sidebarItems");
-      clearSubview(sidebarItems);
-      fillSubviewFromMenuItems([...menu.children], sidebarItems);
+      let doc = aNode.ownerDocument;
+      let obnode = doc.createElementNS(kNSXUL, "observes");
+      obnode.setAttribute("element", "sidebar-box");
+      obnode.setAttribute("attribute", "checked");
+      aNode.appendChild(obnode);
     }
   }, {
     id: "social-share-button",
