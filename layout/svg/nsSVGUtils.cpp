@@ -639,8 +639,8 @@ private:
     }
 
     
-    gfxRect clippedFrameSurfaceRect =
-      mSourceCtx->GetClipExtents(gfxContext::eDeviceSpace);
+    mSourceCtx->SetMatrix(gfxMatrix());
+    gfxRect clippedFrameSurfaceRect = mSourceCtx->GetClipExtents();
     clippedFrameSurfaceRect.RoundOut();
 
     IntRect result;

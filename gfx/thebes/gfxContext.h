@@ -377,16 +377,11 @@ public:
 
     void PopClip();
 
-    enum ClipExtentsSpace {
-        eUserSpace = 0,
-        eDeviceSpace = 1,
-    };
-
     
 
 
 
-    gfxRect GetClipExtents(ClipExtentsSpace aSpace = eUserSpace) const;
+    gfxRect GetClipExtents();
 
     
 
@@ -524,7 +519,7 @@ private:
   void FillAzure(const Pattern& aPattern, mozilla::gfx::Float aOpacity);
   CompositionOp GetOp();
   void ChangeTransform(const mozilla::gfx::Matrix &aNewMatrix, bool aUpdatePatternTransform = true);
-  Rect GetAzureDeviceSpaceClipBounds() const;
+  Rect GetAzureDeviceSpaceClipBounds();
   Matrix GetDeviceTransform() const;
   Matrix GetDTTransform() const;
 
