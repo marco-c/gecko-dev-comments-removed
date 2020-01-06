@@ -695,11 +695,6 @@ nsPluginTag::GetNiceName(nsACString & aResult)
 NS_IMETHODIMP
 nsPluginTag::GetBlocklistState(uint32_t *aResult)
 {
-#if defined(MOZ_WIDGET_ANDROID)
-  *aResult = nsIBlocklistService::STATE_NOT_BLOCKED;
-  return NS_OK;
-#else
-
   
   
   
@@ -725,7 +720,6 @@ nsPluginTag::GetBlocklistState(uint32_t *aResult)
   mCachedBlocklistState = (uint16_t) *aResult;
   mCachedBlocklistStateValid = true;
   return NS_OK;
-#endif 
 }
 
 void
