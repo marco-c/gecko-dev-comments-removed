@@ -701,7 +701,7 @@ impl<T: Parse> Either<Length, T> {
 
 
 
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, HasViewportPercentage, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Percentage(pub CSSFloat);
 

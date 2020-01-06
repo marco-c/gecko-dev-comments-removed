@@ -11,6 +11,7 @@ use std::fmt;
 use style_traits::ToCss;
 use values::computed::LengthOrPercentage;
 use values::generics::position::Position as GenericPosition;
+use values::specified::length::Percentage;
 
 
 pub type Position = GenericPosition<HorizontalPosition, VerticalPosition>;
@@ -25,7 +26,10 @@ impl Position {
     
     #[inline]
     pub fn center() -> Self {
-        Self::new(LengthOrPercentage::Percentage(0.5), LengthOrPercentage::Percentage(0.5))
+        Self::new(
+            LengthOrPercentage::Percentage(Percentage(0.5)),
+            LengthOrPercentage::Percentage(Percentage(0.5)),
+        )
     }
 
     
