@@ -3344,9 +3344,8 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
   
   
   nsCOMPtr<nsIPrincipal> principal = mDoc->NodePrincipal();
-  nsString addonId;
-  principal->GetAddonId(addonId);
-  if (GetDocGroup() && !nsContentUtils::IsSystemPrincipal(principal) && addonId.IsEmpty()) {
+  if (GetDocGroup() && !nsContentUtils::IsSystemPrincipal(principal) &&
+      !BasePrincipal::Cast(principal)->AddonPolicy()) {
     js::SetCompartmentValidAccessPtr(cx, newInnerGlobal,
                                      newInnerWindow->GetDocGroup()->GetValidAccessPtr());
   }
@@ -9827,8 +9826,7 @@ public:
             JSCompartment* cpt = js::GetObjectCompartment(obj);
             nsCOMPtr<nsIPrincipal> pc = nsJSPrincipals::get(JS_GetCompartmentPrincipals(cpt));
 
-            nsAutoString addonId;
-            if (NS_SUCCEEDED(pc->GetAddonId(addonId)) && !addonId.IsEmpty()) {
+            if (BasePrincipal::Cast(pc)->AddonPolicy()) {
               
               xpc::NukeAllWrappersForCompartment(cx, cpt,
                                                  win->IsInnerWindow() ? js::DontNukeWindowReferences
