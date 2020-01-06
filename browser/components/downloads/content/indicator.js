@@ -130,8 +130,23 @@ const DownloadsButton = {
     this._getAnchorInternal();
   },
 
-  unhide() {
+  
+
+
+
+
+
+
+
+
+
+
+
+  unhide(includePalette = false) {
     let button = this._placeholder;
+    if (!button && includePalette) {
+      button = gNavToolbox.palette.querySelector("#downloads-button");
+    }
     if (button && button.hasAttribute("hidden")) {
       button.removeAttribute("hidden");
       if (this._navBar.contains(button)) {
@@ -190,7 +205,7 @@ const DownloadsButton = {
       
       this._customizing = true;
       this._anchorRequested = false;
-      this.unhide();
+      this.unhide(true);
     }
   },
 
@@ -308,7 +323,9 @@ const DownloadsIndicatorView = {
 
         
         
-        if (this._initialized) {
+        
+        
+        if (this._initialized && DownloadsButton._placeholder) {
           DownloadsCommon.getIndicatorData(window).refreshView(this);
         }
 
