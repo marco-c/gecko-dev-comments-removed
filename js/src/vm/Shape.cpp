@@ -1474,7 +1474,7 @@ PropertyTree::inlinedGetChild(JSContext* cx, Shape* parent, Handle<StackShape> c
         if (!zone->isGCSweepingOrCompacting() ||
             !IsAboutToBeFinalizedUnbarriered(&existingShape))
         {
-            if (existingShape->isMarked(gc::GRAY))
+            if (existingShape->isMarkedGray())
                 UnmarkGrayShapeRecursively(existingShape);
             return existingShape;
         }
@@ -1482,7 +1482,7 @@ PropertyTree::inlinedGetChild(JSContext* cx, Shape* parent, Handle<StackShape> c
 
 
 
-        MOZ_ASSERT(parent->isMarked());
+        MOZ_ASSERT(parent->isMarkedAny());
         parent->removeChild(existingShape);
     }
 
@@ -1515,7 +1515,7 @@ Shape::sweep()
 
 
 
-    if (parent && parent->isMarked()) {
+    if (parent && parent->isMarkedAny()) {
         if (inDictionary()) {
             if (parent->listp == &parent)
                 parent->listp = nullptr;

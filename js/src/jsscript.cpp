@@ -3486,7 +3486,7 @@ js::detail::CopyScript(JSContext* cx, HandleScript src, HandleScript dst,
     
 
     
-    MOZ_ASSERT(!src->sourceObject()->asTenured().isMarked(gc::GRAY));
+    MOZ_ASSERT(!src->sourceObject()->asTenured().isMarkedGray());
 
     uint32_t nconsts   = src->hasConsts()   ? src->consts()->length   : 0;
     uint32_t nobjects  = src->hasObjects()  ? src->objects()->length  : 0;

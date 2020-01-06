@@ -367,9 +367,9 @@ BEGIN_TEST(testIncrementalRoots)
     MOZ_ASSERT(JS::IsIncrementalGCInProgress(cx));
 
     
-    MOZ_ASSERT(vec[0]->asTenured().isMarked());
-    MOZ_ASSERT(!leafHandle->asTenured().isMarked());
-    MOZ_ASSERT(!leafOwnerHandle->asTenured().isMarked());
+    MOZ_ASSERT(vec[0]->asTenured().isMarkedAny());
+    MOZ_ASSERT(!leafHandle->asTenured().isMarkedAny());
+    MOZ_ASSERT(!leafOwnerHandle->asTenured().isMarkedAny());
 
 #ifdef DEBUG
     
@@ -387,7 +387,7 @@ BEGIN_TEST(testIncrementalRoots)
     if (!JS_SetProperty(cx, vec[0], "newobj", leafValueHandle))
         return false;
     MOZ_ASSERT(rt->gc.gcNumber() == currentGCNumber);
-    MOZ_ASSERT(leafHandle->asTenured().isMarked());
+    MOZ_ASSERT(leafHandle->asTenured().isMarkedAny());
 
     
     
@@ -403,11 +403,11 @@ BEGIN_TEST(testIncrementalRoots)
         if (!JS_GetProperty(cx, leafOwnerHandle, "leaf2", &leaf2))
             return false;
         MOZ_ASSERT(rt->gc.gcNumber() == currentGCNumber);
-        MOZ_ASSERT(!leaf2.toObject().asTenured().isMarked());
+        MOZ_ASSERT(!leaf2.toObject().asTenured().isMarkedAny());
         if (!JS_SetProperty(cx, vec[0], "leafcopy", leaf2))
             return false;
         MOZ_ASSERT(rt->gc.gcNumber() == currentGCNumber);
-        MOZ_ASSERT(!leaf2.toObject().asTenured().isMarked());
+        MOZ_ASSERT(!leaf2.toObject().asTenured().isMarkedAny());
     }
 
     
