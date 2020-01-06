@@ -53,12 +53,3 @@ NS_NewHTMLElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
 {
   return new mozilla::dom::HTMLElement(aNodeInfo);
 }
-
-
-
-nsGenericHTMLElement*
-NS_NewCustomElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-                    mozilla::dom::FromParser aFromParser)
-{
-  return new mozilla::dom::HTMLElement(aNodeInfo);
-}

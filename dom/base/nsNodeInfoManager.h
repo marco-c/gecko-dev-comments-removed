@@ -109,33 +109,6 @@ public:
     return mBindingManager;
   }
 
-  enum Tri
-  {
-    eTriUnset = 0,
-    eTriFalse,
-    eTriTrue
-  };
-
-  
-
-
-  bool SVGEnabled()
-  {
-    return mSVGEnabled == eTriTrue
-             ? true
-             : mSVGEnabled == eTriFalse ? false : InternalSVGEnabled();
-  }
-
-  
-
-
-  bool MathMLEnabled()
-  {
-    return mMathMLEnabled == eTriTrue
-             ? true
-             : mMathMLEnabled == eTriFalse ? false : InternalMathMLEnabled();
-  }
-
 protected:
   friend class nsDocument;
   friend class nsXULPrototypeDocument;
@@ -157,9 +130,6 @@ private:
   static int DropNodeInfoDocument(PLHashEntry *he, int hashIndex,
                                      void *arg);
 
-  bool InternalSVGEnabled();
-  bool InternalMathMLEnabled();
-
   PLHashTable *mNodeInfoHash;
   nsIDocument * MOZ_NON_OWNING_REF mDocument; 
   uint32_t mNonDocumentNodeInfos;
@@ -170,8 +140,6 @@ private:
   mozilla::dom::NodeInfo * MOZ_NON_OWNING_REF mDocumentNodeInfo; 
   RefPtr<nsBindingManager> mBindingManager;
   mozilla::dom::NodeInfo* mRecentlyUsedNodeInfos[RECENTLY_USED_NODEINFOS_SIZE];
-  Tri mSVGEnabled;
-  Tri mMathMLEnabled;
 };
 
 #endif 

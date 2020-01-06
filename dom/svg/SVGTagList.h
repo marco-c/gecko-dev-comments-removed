@@ -28,13 +28,6 @@
 
 
 
-
-
-
-
-
-
-
 SVG_TAG(a, A)
 SVG_TAG(animate, Animate)
 SVG_TAG(animateMotion, AnimateMotion)

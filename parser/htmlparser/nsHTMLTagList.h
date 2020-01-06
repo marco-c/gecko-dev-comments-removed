@@ -38,12 +38,6 @@
 
 
 
-
-
-
-
-
-
 #define HTML_HTMLELEMENT_TAG(_tag) HTML_TAG(_tag, , )
 
 HTML_TAG(a, Anchor, Anchor)

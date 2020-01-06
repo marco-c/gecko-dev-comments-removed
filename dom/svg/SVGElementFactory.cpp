@@ -22,21 +22,24 @@ static PLHashTable* sTagAtomTable = nullptr;
 
 #define TABLE_VALUE_OFFSET 1
 
-#define SVG_TAG(_tag, _classname)                                              \
-  nsresult NS_NewSVG##_classname##Element(                                     \
-    nsIContent** aResult,                                                      \
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);                     \
-                                                                               \
-  nsresult NS_NewSVG##_classname##Element(                                     \
-    nsIContent** aResult,                                                      \
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,                      \
-    FromParser aFromParser)                                                    \
-  {                                                                            \
-    return NS_NewSVG##_classname##Element(aResult, mozilla::Move(aNodeInfo));  \
-  }
+#define SVG_TAG(_tag, _classname) \
+nsresult \
+NS_NewSVG##_classname##Element(nsIContent** aResult, \
+                               already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo); \
+\
+static inline nsresult \
+Create##_classname##Element(nsIContent** aResult, \
+                            already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo, \
+                            FromParser aFromParser) \
+{ \
+  return NS_NewSVG##_classname##Element(aResult, mozilla::Move(aNodeInfo)); \
+}
 
-#define SVG_FROM_PARSER_TAG(_tag, _classname)
-
+#define SVG_FROM_PARSER_TAG(_tag, _classname) \
+nsresult \
+NS_NewSVG##_classname##Element(nsIContent** aResult, \
+                               already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo, \
+                               FromParser aFromParser);
 #include "SVGTagList.h"
 #undef SVG_TAG
 #undef SVG_FROM_PARSER_TAG
@@ -45,8 +48,13 @@ nsresult
 NS_NewSVGElement(Element** aResult,
                  already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
-static const SVGContentCreatorFunction sSVGContentCreatorFunctions[] = {
-#define SVG_TAG(_tag, _classname) NS_NewSVG##_classname##Element,
+typedef nsresult
+  (*contentCreatorCallback)(nsIContent** aResult,
+                            already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+                            FromParser aFromParser);
+
+static const contentCreatorCallback sContentCreatorCallbacks[] = {
+#define SVG_TAG(_tag, _classname) Create##_classname##Element,
 #define SVG_FROM_PARSER_TAG(_tag, _classname)  NS_NewSVG##_classname##Element,
 #include "SVGTagList.h"
 #undef SVG_TAG
@@ -116,7 +124,7 @@ NS_NewSVGElement(Element** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& a
       MOZ_CRASH();
     }
 
-    SVGContentCreatorFunction cb = sSVGContentCreatorFunctions[index];
+    contentCreatorCallback cb = sContentCreatorCallbacks[index];
 
     nsCOMPtr<nsIContent> content;
     nsresult rv = cb(getter_AddRefs(content), ni.forget(), aFromParser);
@@ -126,16 +134,4 @@ NS_NewSVGElement(Element** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& a
 
   
   return NS_NewSVGElement(aResult, ni.forget());
-}
-
-nsresult
-NS_NewSVGUnknownElement(nsIContent** aResult,
-                        already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-                        FromParser aFromParser)
-{
-  RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfo;
-  nsCOMPtr<Element> element;
-  nsresult rv = NS_NewSVGElement(getter_AddRefs(element), ni.forget());
-  element.forget(aResult);
-  return rv;
 }

@@ -484,18 +484,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
 
     protected final void fatal(Exception e) throws SAXException {
         SAXParseException spe = new SAXParseException(e.getMessage(),
@@ -736,7 +724,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
             contextNode = null;
         } else {
             mode = INITIAL;
-            
             
             
             
@@ -1995,8 +1982,8 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                         attributes.getValue(AttributeName.TYPE))) {
                                     break intableloop;
                                 }
-                                appendVoidInputToCurrent(
-                                        attributes,
+                                appendVoidElementToCurrent(
+                                        name, attributes,
                                         formPointer);
                                 selfClosing = false;
                                 attributes = null; 
@@ -2358,7 +2345,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                             case INPUT:
                                 reconstructTheActiveFormattingElements();
                                 appendVoidElementToCurrentMayFoster(
-                                        elementName, attributes,
+                                        name, attributes,
                                         formPointer);
                                 selfClosing = false;
                                 attributes = null; 
@@ -4766,12 +4753,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                 assert node == listOfActiveFormattingElements[nodeListPos];
                 assert node == stack[nodePos];
                 T clone = createElement("http://www.w3.org/1999/xhtml",
-                        node.name, node.attributes.cloneAttributes(null), commonAncestor.node
-                        
-                        );
+                        node.name, node.attributes.cloneAttributes(null), commonAncestor.node);
                 StackNode<T> newNode = createStackNode(node.getFlags(), node.ns,
                         node.name, clone, node.popName, node.attributes
-                        
                         
                         , node.getLocator()
                         
@@ -4798,14 +4782,11 @@ public abstract class TreeBuilder<T> implements TokenHandler,
             }
             T clone = createElement("http://www.w3.org/1999/xhtml",
                     formattingElt.name,
-                    formattingElt.attributes.cloneAttributes(null), furthestBlock.node
-                    
-                    );
+                    formattingElt.attributes.cloneAttributes(null), furthestBlock.node);
             StackNode<T> formattingClone = createStackNode(
                     formattingElt.getFlags(), formattingElt.ns,
                     formattingElt.name, clone, formattingElt.popName,
                     formattingElt.attributes
-                    
                     
                     , errorHandler == null ? null : new TaintableLocatorImpl(tokenizer)
                     
@@ -4985,21 +4966,16 @@ public abstract class TreeBuilder<T> implements TokenHandler,
             T clone;
             if (currentNode.isFosterParenting()) {
                 clone = createAndInsertFosterParentedElement("http://www.w3.org/1999/xhtml", entry.name,
-                        entry.attributes.cloneAttributes(null)
-                        
-                        );
+                        entry.attributes.cloneAttributes(null));
             } else {
                 clone = createElement("http://www.w3.org/1999/xhtml", entry.name,
-                        entry.attributes.cloneAttributes(null), currentNode.node
-                        
-                        );
+                        entry.attributes.cloneAttributes(null), currentNode.node);
                 appendElement(clone, currentNode.node);
             }
 
             StackNode<T> entryClone = createStackNode(entry.getFlags(),
                     entry.ns, entry.name, clone, entry.popName,
                     entry.attributes
-                    
                     
                     , entry.getLocator()
                     
@@ -5054,13 +5030,11 @@ public abstract class TreeBuilder<T> implements TokenHandler,
     private StackNode<T> createStackNode(int flags, @NsUri String ns, @Local String name, T node,
             @Local String popName, HtmlAttributes attributes
             
-            
             , TaintableLocatorImpl locator
             
     ) {
         StackNode<T> instance = getUnusedStackNode();
         instance.setValues(flags, ns, name, node, popName, attributes
-                
                 
                 , locator
                 
@@ -5153,33 +5127,23 @@ public abstract class TreeBuilder<T> implements TokenHandler,
     }
 
     private T createAndInsertFosterParentedElement(@NsUri String ns, @Local String name,
-            HtmlAttributes attributes
-            
-            ) throws SAXException {
-        return createAndInsertFosterParentedElement(ns, name, attributes, null
-                
-                );
+            HtmlAttributes attributes) throws SAXException {
+        return createAndInsertFosterParentedElement(ns, name, attributes, null);
     }
 
     private T createAndInsertFosterParentedElement(@NsUri String ns, @Local String name,
-            HtmlAttributes attributes, T form
-            
-            ) throws SAXException {
+            HtmlAttributes attributes, T form) throws SAXException {
         int tablePos = findLastOrRoot(TreeBuilder.TABLE);
         int templatePos = findLastOrRoot(TreeBuilder.TEMPLATE);
 
         if (templatePos >= tablePos) {
-            T child = createElement(ns, name, attributes, form, stack[templatePos].node
-                    
-                    );
+            T child = createElement(ns, name, attributes, form, stack[templatePos].node);
             appendElement(child, stack[templatePos].node);
             return child;
         }
 
         StackNode<T> node = stack[tablePos];
-        return createAndInsertFosterParentedElement(ns, name, attributes, form, node.node, stack[tablePos - 1].node
-                
-                );
+        return createAndInsertFosterParentedElement(ns, name, attributes, form, node.node, stack[tablePos - 1].node);
     }
 
     private boolean isInStack(StackNode<T> node) {
@@ -5337,12 +5301,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         checkAttributes(attributes, "http://www.w3.org/1999/xhtml");
         
         T currentNode = stack[currentPtr].node;
-        T elt = createElement("http://www.w3.org/1999/xhtml", "head", attributes, currentNode
-                
-
-
-                
-                );
+        T elt = createElement("http://www.w3.org/1999/xhtml", "head", attributes, currentNode);
         appendElement(elt, currentNode);
         headPointer = elt;
         StackNode<T> node = createStackNode(ElementName.HEAD,
@@ -5374,13 +5333,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         StackNode<T> current = stack[currentPtr];
         if (current.isFosterParenting()) {
             fatal();
-            elt = createAndInsertFosterParentedElement("http://www.w3.org/1999/xhtml", "form", attributes
-                    
-                    );
+            elt = createAndInsertFosterParentedElement("http://www.w3.org/1999/xhtml", "form", attributes);
         } else {
-            elt = createElement("http://www.w3.org/1999/xhtml", "form", attributes, current.node
-                    
-                    );
+            elt = createElement("http://www.w3.org/1999/xhtml", "form", attributes, current.node);
             appendElement(elt, current.node);
         }
 
@@ -5411,13 +5366,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         StackNode<T> current = stack[currentPtr];
         if (current.isFosterParenting()) {
             fatal();
-            elt = createAndInsertFosterParentedElement("http://www.w3.org/1999/xhtml", elementName.getName(), attributes
-                    
-                    );
+            elt = createAndInsertFosterParentedElement("http://www.w3.org/1999/xhtml", elementName.getName(), attributes);
         } else {
-            elt = createElement("http://www.w3.org/1999/xhtml", elementName.getName(), attributes, current.node
-                    
-                    );
+            elt = createElement("http://www.w3.org/1999/xhtml", elementName.getName(), attributes, current.node);
             appendElement(elt, current.node);
         }
         StackNode<T> node = createStackNode(elementName, elt, clone
@@ -5438,9 +5389,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         
         
         T currentNode = stack[currentPtr].node;
-        T elt = createElement("http://www.w3.org/1999/xhtml", elementName.getName(), attributes, currentNode
-                
-                );
+        T elt = createElement("http://www.w3.org/1999/xhtml", elementName.getName(), attributes, currentNode);
         appendElement(elt, currentNode);
         if (ElementName.TEMPLATE == elementName) {
             elt = getDocumentFragmentForTemplate(elt);
@@ -5467,13 +5416,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         StackNode<T> current = stack[currentPtr];
         if (current.isFosterParenting()) {
             fatal();
-            elt = createAndInsertFosterParentedElement("http://www.w3.org/1999/xhtml", popName, attributes
-                    
-                    );
+            elt = createAndInsertFosterParentedElement("http://www.w3.org/1999/xhtml", popName, attributes);
         } else {
-            elt = createElement("http://www.w3.org/1999/xhtml", popName, attributes, current.node
-                    
-                    );
+            elt = createElement("http://www.w3.org/1999/xhtml", popName, attributes, current.node);
             appendElement(elt, current.node);
         }
         StackNode<T> node = createStackNode(elementName, elt, popName
@@ -5505,13 +5450,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         StackNode<T> current = stack[currentPtr];
         if (current.isFosterParenting()) {
             fatal();
-            elt = createAndInsertFosterParentedElement("http://www.w3.org/1998/Math/MathML", popName, attributes
-                    
-                    );
+            elt = createAndInsertFosterParentedElement("http://www.w3.org/1998/Math/MathML", popName, attributes);
         } else {
-            elt  = createElement("http://www.w3.org/1998/Math/MathML", popName, attributes, current.node
-                    
-                    );
+            elt  = createElement("http://www.w3.org/1998/Math/MathML", popName, attributes, current.node);
             appendElement(elt, current.node);
         }
         StackNode<T> node = createStackNode(elementName, elt, popName,
@@ -5558,13 +5499,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         StackNode<T> current = stack[currentPtr];
         if (current.isFosterParenting()) {
             fatal();
-            elt = createAndInsertFosterParentedElement("http://www.w3.org/2000/svg", popName, attributes
-                    
-                    );
+            elt = createAndInsertFosterParentedElement("http://www.w3.org/2000/svg", popName, attributes);
         } else {
-            elt = createElement("http://www.w3.org/2000/svg", popName, attributes, current.node
-                    
-                    );
+            elt = createElement("http://www.w3.org/2000/svg", popName, attributes, current.node);
             appendElement(elt, current.node);
         }
         StackNode<T> node = createStackNode(elementName, popName, elt
@@ -5588,14 +5525,10 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         if (current.isFosterParenting()) {
             fatal();
             elt = createAndInsertFosterParentedElement("http://www.w3.org/1999/xhtml", elementName.getName(),
-                    attributes, formOwner
-                    
-                    );
+                    attributes, formOwner);
         } else {
             elt = createElement("http://www.w3.org/1999/xhtml", elementName.getName(),
-                    attributes, formOwner, current.node
-                    
-                    );
+                    attributes, formOwner, current.node);
             appendElement(elt, current.node);
         }
         StackNode<T> node = createStackNode(elementName, elt
@@ -5607,8 +5540,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
     }
 
     private void appendVoidElementToCurrentMayFoster(
-            ElementName elementName, HtmlAttributes attributes, T form) throws SAXException {
-        @Local String name = elementName.getName();
+            @Local String name, HtmlAttributes attributes, T form) throws SAXException {
         
         checkAttributes(attributes, "http://www.w3.org/1999/xhtml");
         
@@ -5619,14 +5551,10 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         if (current.isFosterParenting()) {
             fatal();
             elt = createAndInsertFosterParentedElement("http://www.w3.org/1999/xhtml", name,
-                    attributes, formOwner
-                    
-                    );
+                    attributes, formOwner);
         } else {
             elt = createElement("http://www.w3.org/1999/xhtml", name,
-                    attributes, formOwner, current.node
-                    
-                    );
+                    attributes, formOwner, current.node);
             appendElement(elt, current.node);
         }
         elementPushed("http://www.w3.org/1999/xhtml", name, elt);
@@ -5647,13 +5575,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         StackNode<T> current = stack[currentPtr];
         if (current.isFosterParenting()) {
             fatal();
-            elt = createAndInsertFosterParentedElement("http://www.w3.org/1999/xhtml", popName, attributes
-                    
-                    );
+            elt = createAndInsertFosterParentedElement("http://www.w3.org/1999/xhtml", popName, attributes);
         } else {
-            elt = createElement("http://www.w3.org/1999/xhtml", popName, attributes, current.node
-                    
-                    );
+            elt = createElement("http://www.w3.org/1999/xhtml", popName, attributes, current.node);
             appendElement(elt, current.node);
         }
         elementPushed("http://www.w3.org/1999/xhtml", popName, elt);
@@ -5674,13 +5598,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         StackNode<T> current = stack[currentPtr];
         if (current.isFosterParenting()) {
             fatal();
-            elt = createAndInsertFosterParentedElement("http://www.w3.org/2000/svg", popName, attributes
-                    
-                    );
+            elt = createAndInsertFosterParentedElement("http://www.w3.org/2000/svg", popName, attributes);
         } else {
-            elt = createElement("http://www.w3.org/2000/svg", popName, attributes, current.node
-                    
-                    );
+            elt = createElement("http://www.w3.org/2000/svg", popName, attributes, current.node);
             appendElement(elt, current.node);
         }
         elementPushed("http://www.w3.org/2000/svg", popName, elt);
@@ -5701,32 +5621,27 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         StackNode<T> current = stack[currentPtr];
         if (current.isFosterParenting()) {
             fatal();
-            elt = createAndInsertFosterParentedElement("http://www.w3.org/1998/Math/MathML", popName, attributes
-                    
-                    );
+            elt = createAndInsertFosterParentedElement("http://www.w3.org/1998/Math/MathML", popName, attributes);
         } else {
-            elt = createElement("http://www.w3.org/1998/Math/MathML", popName, attributes, current.node
-                    
-                    );
+            elt = createElement("http://www.w3.org/1998/Math/MathML", popName, attributes, current.node);
             appendElement(elt, current.node);
         }
         elementPushed("http://www.w3.org/1998/Math/MathML", popName, elt);
         elementPopped("http://www.w3.org/1998/Math/MathML", popName, elt);
     }
 
-    private void appendVoidInputToCurrent(HtmlAttributes attributes, T form) throws SAXException {
+    private void appendVoidElementToCurrent(
+            @Local String name, HtmlAttributes attributes, T form) throws SAXException {
         
         checkAttributes(attributes, "http://www.w3.org/1999/xhtml");
         
         
         T currentNode = stack[currentPtr].node;
-        T elt = createElement("http://www.w3.org/1999/xhtml", "input", attributes,
-                form == null || fragment || isTemplateContents() ? null : form, currentNode
-                        
-                        );
+        T elt = createElement("http://www.w3.org/1999/xhtml", name, attributes,
+                form == null || fragment || isTemplateContents() ? null : form, currentNode);
         appendElement(elt, currentNode);
-        elementPushed("http://www.w3.org/1999/xhtml", "input", elt);
-        elementPopped("http://www.w3.org/1999/xhtml", "input", elt);
+        elementPushed("http://www.w3.org/1999/xhtml", name, elt);
+        elementPopped("http://www.w3.org/1999/xhtml", name, elt);
     }
 
     private void appendVoidFormToCurrent(HtmlAttributes attributes) throws SAXException {
@@ -5735,9 +5650,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         
         T currentNode = stack[currentPtr].node;
         T elt = createElement("http://www.w3.org/1999/xhtml", "form",
-                attributes, currentNode
-                
-                );
+                attributes, currentNode);
         formPointer = elt;
         
         appendElement(elt, currentNode);
@@ -5789,17 +5702,11 @@ public abstract class TreeBuilder<T> implements TokenHandler,
     }
 
     protected abstract T createElement(@NsUri String ns, @Local String name,
-            HtmlAttributes attributes, T intendedParent
-            
-            ) throws SAXException;
+            HtmlAttributes attributes, T intendedParent) throws SAXException;
 
     protected T createElement(@NsUri String ns, @Local String name,
-            HtmlAttributes attributes, T form, T intendedParent
-            
-            ) throws SAXException {
-        return createElement("http://www.w3.org/1999/xhtml", name, attributes, intendedParent
-                
-                );
+            HtmlAttributes attributes, T form, T intendedParent) throws SAXException {
+        return createElement("http://www.w3.org/1999/xhtml", name, attributes, intendedParent);
     }
 
     protected abstract T createHtmlElementSetAsRoot(HtmlAttributes attributes)
@@ -5828,9 +5735,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
     
 
     protected T createAndInsertFosterParentedElement(@NsUri String ns, @Local String name,
-            HtmlAttributes attributes, T form, T table, T stackParent
-            
-            ) throws SAXException {
+            HtmlAttributes attributes, T form, T table, T stackParent) throws SAXException {
         return createAndInsertFosterParentedElement(ns, name, attributes, table, stackParent);
     };
 
@@ -6112,7 +6017,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         node.name, node.node, node.popName,
                         node.attributes.cloneAttributes(null)
                         
-                        
                         , node.getLocator()
                         
                 );
@@ -6130,7 +6034,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                 newNode.setValues(node.getFlags(), node.ns,
                         node.name, node.node, node.popName,
                         null
-                        
                         
                         , node.getLocator()
                         
@@ -6237,7 +6140,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         Portability.newLocalFromLocal(node.popName, interner),
                         node.attributes.cloneAttributes(null)
                         
-                        
                         , node.getLocator()
                 
                 );
@@ -6254,7 +6156,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         Portability.newLocalFromLocal(node.name, interner), node.node,
                         Portability.newLocalFromLocal(node.popName, interner),
                         null
-                        
                         
                         , node.getLocator()
                 

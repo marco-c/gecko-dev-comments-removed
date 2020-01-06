@@ -229,12 +229,9 @@ class nsHtml5Highlighter
 
 
 
-
-    nsIContent** CreateElement(
-      nsIAtom* aName,
-      nsHtml5HtmlAttributes* aAttributes,
-      nsIContent** aIntendedParent,
-      mozilla::dom::HTMLContentCreatorFunction aCreator);
+    nsIContent** CreateElement(nsIAtom* aName,
+                               nsHtml5HtmlAttributes* aAttributes,
+                               nsIContent** aIntendedParent);
 
     
 
@@ -251,10 +248,7 @@ class nsHtml5Highlighter
 
 
 
-
-    void Push(nsIAtom* aName,
-              nsHtml5HtmlAttributes* aAttributes,
-              mozilla::dom::HTMLContentCreatorFunction aCreator);
+    void Push(nsIAtom* aName, nsHtml5HtmlAttributes* aAttributes);
 
     
 
