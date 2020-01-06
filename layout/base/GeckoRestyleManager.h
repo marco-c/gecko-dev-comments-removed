@@ -584,8 +584,6 @@ private:
   
 
 
-  void AddLayerChangesForAnimation();
-
   bool MoveStyleContextsForContentChildren(nsIFrame* aParent,
                                            nsStyleContext* aOldContext,
                                            nsTArray<nsStyleContext*>& aContextsToMove);

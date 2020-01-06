@@ -19,7 +19,6 @@
 #include "AnimationCommon.h" 
 #include "FrameLayerBuilder.h"
 #include "GeckoProfiler.h"
-#include "LayerAnimationInfo.h" 
 #include "nsAutoPtr.h"
 #include "nsStyleChangeList.h"
 #include "nsRuleProcessorData.h"
@@ -50,7 +49,6 @@
 #include "nsSMILAnimationController.h"
 #include "nsCSSRuleProcessor.h"
 #include "ChildIterator.h"
-#include "Layers.h"
 
 #ifdef ACCESSIBILITY
 #include "nsAccessibilityService.h"
@@ -1227,54 +1225,6 @@ ElementRestyler::ElementRestyler(nsPresContext* aPresContext,
 }
 
 void
-ElementRestyler::AddLayerChangesForAnimation()
-{
-  uint64_t frameGeneration =
-    GeckoRestyleManager::GetAnimationGenerationForFrame(mFrame);
-
-  nsChangeHint hint = nsChangeHint(0);
-  for (const LayerAnimationInfo::Record& layerInfo :
-         LayerAnimationInfo::sRecords) {
-    Layer* layer =
-      FrameLayerBuilder::GetDedicatedLayer(mFrame, layerInfo.mLayerType);
-    if (layer && frameGeneration != layer->GetAnimationGeneration()) {
-      
-      
-      
-      
-      
-      
-      
-      if (layerInfo.mLayerType == nsDisplayItem::TYPE_TRANSFORM &&
-          !mFrame->StyleDisplay()->HasTransformStyle()) {
-        continue;
-      }
-      hint |= layerInfo.mChangeHint;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!layer &&
-        nsLayoutUtils::HasEffectiveAnimation(mFrame, layerInfo.mProperty)) {
-      hint |= layerInfo.mChangeHint;
-    }
-  }
-  if (hint) {
-    mChangeList->AppendChange(mFrame, mContent, hint);
-  }
-}
-
-void
 ElementRestyler::CaptureChange(nsStyleContext* aOldContext,
                                nsStyleContext* aNewContext,
                                nsChangeHint aChangeToAssume,
@@ -1887,7 +1837,7 @@ ElementRestyler::Restyle(nsRestyleHint aRestyleHint)
   
   
   
-  AddLayerChangesForAnimation();
+  RestyleManager::AddLayerChangesForAnimation(mFrame, mContent, *mChangeList);
 
   if (haveMoreContinuations && hintToRestore) {
     

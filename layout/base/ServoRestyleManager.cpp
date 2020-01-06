@@ -389,6 +389,17 @@ ServoRestyleManager::ProcessPostTraversal(Element* aElement,
       styleFrame->UpdateStyleOfOwnedAnonBoxes(*aStyleSet, aChangeList, changeHint);
       UpdateFramePseudoElementStyles(styleFrame, *aStyleSet, aChangeList);
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    AddLayerChangesForAnimation(styleFrame, aElement, aChangeList);
   }
 
   const bool descendantsNeedFrames =

@@ -6,9 +6,13 @@
 
 #include "mozilla/RestyleManager.h"
 #include "mozilla/RestyleManagerInlines.h"
+
+#include "Layers.h"
+#include "LayerAnimationInfo.h" 
 #include "mozilla/StyleSetHandleInlines.h"
 #include "nsIFrame.h"
 #include "nsIPresShellInlines.h"
+
 
 namespace mozilla {
 
@@ -1768,6 +1772,62 @@ RestyleManager::IncrementAnimationGeneration()
   if ((IsGecko() && !AsGecko()->IsProcessingRestyles()) ||
       (IsServo() && !mInStyleRefresh)) {
     ++mAnimationGeneration;
+  }
+}
+
+ void
+RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
+                                            nsIContent* aContent,
+                                            nsStyleChangeList&
+                                              aChangeListToProcess)
+{
+  if (!aFrame || !aContent) {
+    return;
+  }
+
+  uint64_t frameGeneration =
+    RestyleManager::GetAnimationGenerationForFrame(aFrame);
+
+  nsChangeHint hint = nsChangeHint(0);
+  for (const LayerAnimationInfo::Record& layerInfo :
+         LayerAnimationInfo::sRecords) {
+    layers::Layer* layer =
+      FrameLayerBuilder::GetDedicatedLayer(aFrame, layerInfo.mLayerType);
+    if (layer && frameGeneration != layer->GetAnimationGeneration()) {
+      
+      
+      
+      
+      
+      
+      
+      if (layerInfo.mLayerType == nsDisplayItem::TYPE_TRANSFORM &&
+          !aFrame->StyleDisplay()->HasTransformStyle()) {
+        continue;
+      }
+      hint |= layerInfo.mChangeHint;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!layer &&
+        nsLayoutUtils::HasEffectiveAnimation(aFrame, layerInfo.mProperty)) {
+      hint |= layerInfo.mChangeHint;
+    }
+  }
+
+  if (hint) {
+    aChangeListToProcess.AppendChange(aFrame, aContent, hint);
   }
 }
 

@@ -194,6 +194,11 @@ public:
   
   void IncrementAnimationGeneration();
 
+  static void AddLayerChangesForAnimation(nsIFrame* aFrame,
+                                          nsIContent* aContent,
+                                          nsStyleChangeList&
+                                            aChangeListToProcess);
+
 protected:
   RestyleManager(StyleBackendType aType, nsPresContext* aPresContext);
 
