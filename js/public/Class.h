@@ -474,6 +474,9 @@ typedef void
 (* JSFinalizeOp)(JSFreeOp* fop, JSObject* obj);
 
 
+
+
+
 struct JSStringFinalizer {
     void (*finalize)(const JSStringFinalizer* fin, char16_t* chars);
 };
