@@ -635,6 +635,7 @@ protected:
 
   
   mozilla::Maybe<mozilla::wr::ImageKey> mTitlebarImageKey;
+  mozilla::gfx::IntSize mTitlebarImageSize;
 
   
   
