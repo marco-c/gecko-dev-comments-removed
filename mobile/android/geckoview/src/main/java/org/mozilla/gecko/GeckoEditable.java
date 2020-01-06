@@ -1305,7 +1305,12 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
 
                 
                 
-                mIgnoreSelectionChange = true;
+                
+                
+                
+                
+                
+                mIgnoreSelectionChange = !resetSelStart || !resetSelEnd;
             }
 
         } else if (geckoIsSameText(start, oldEnd, text)) {
