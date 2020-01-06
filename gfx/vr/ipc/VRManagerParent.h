@@ -8,7 +8,7 @@
 #ifndef MOZILLA_GFX_VR_VRMANAGERPARENT_H
 #define MOZILLA_GFX_VR_VRMANAGERPARENT_H
 
-#include "mozilla/layers/CompositableTransactionParent.h"  
+#include "mozilla/layers/CompositorThread.h" 
 #include "mozilla/gfx/PVRManagerParent.h" 
 #include "mozilla/gfx/PVRLayerParent.h"   
 #include "mozilla/ipc/ProtocolUtils.h"    
@@ -17,7 +17,6 @@
 #include "VRThread.h"                     
 
 namespace mozilla {
-using namespace layers;
 namespace gfx {
 
 class VRManager;
@@ -42,6 +41,7 @@ public:
   bool HaveControllerListener();
   bool SendGamepadUpdate(const GamepadChangeEvent& aGamepadEvent);
   bool SendReplyGamepadVibrateHaptic(const uint32_t& aPromiseID);
+  void StartVRListenerThread();
 
 protected:
   ~VRManagerParent();
@@ -81,14 +81,17 @@ private:
 
   void Bind(Endpoint<PVRManagerParent>&& aEndpoint);
 
-  static void RegisterVRManagerInVRListenerThread(VRManagerParent* aVRManager);
+  static void RegisterVRManagerInCompositorThread(VRManagerParent* aVRManager);
 
   void DeferredDestroy();
+  void RefreshDisplays();
 
   
   
   RefPtr<VRManagerParent> mSelfRef;
-  RefPtr<VRListenerThreadHolder> mVRListenerThreadHolder;
+
+  
+  RefPtr<layers::CompositorThreadHolder> mCompositorThreadHolder;
 
   
   RefPtr<VRManager> mVRManagerHolder;
