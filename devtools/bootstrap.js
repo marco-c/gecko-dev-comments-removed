@@ -10,10 +10,6 @@
 const Cu = Components.utils;
 const {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
 
-XPCOMUtils.defineLazyGetter(this, "DevToolsPreferences", function () {
-  return Cu.import("chrome://devtools/content/preferences/DevToolsPreferences.jsm", {}).DevToolsPreferences;
-});
-
 function unload(reason) {
   
   
@@ -50,10 +46,7 @@ function unload(reason) {
   Cu.unload("resource://devtools/shared/deprecated-sync-thenables.js");
 }
 
-function startup(data) {
-  
-  DevToolsPreferences.loadPrefs();
-}
+function startup(data) {}
 
 function shutdown(data, reason) {
   
