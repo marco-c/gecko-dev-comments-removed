@@ -2092,7 +2092,18 @@ public:
 
 
 
-  static bool IsReallyFixedPos(nsIFrame* aFrame);
+  static bool IsReallyFixedPos(const nsIFrame* aFrame);
+
+  
+
+
+
+
+
+
+
+
+  static bool MayBeReallyFixedPos(const nsIFrame* aFrame);
 
   
 
