@@ -277,6 +277,12 @@ namespace states {
 
 
   const uint64_t PINNED = ((uint64_t) 0x1) << 47;
+
+  
+
+
+  const uint64_t CURRENT = ((uint64_t) 0x1) << 48;
+
 } 
 } 
 } 

@@ -110,5 +110,6 @@ static const AtkStateMap gAtkStateMap[] = {
   { ATK_STATE_SENSITIVE,                      kMapDirectly },   
   { ATK_STATE_EXPANDABLE,                     kMapDirectly },   
   { kNone,                                    kMapDirectly },   
+  { ATK_STATE_ACTIVE,                         kMapDirectly },   
   { kNone,                                    kNoSuchState },   
 };
