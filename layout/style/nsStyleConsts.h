@@ -154,7 +154,8 @@ enum class StyleShapeRadius : uint8_t {
 
 enum class StyleShapeSourceType : uint8_t {
   None,
-  URL,
+  URL,   
+  Image, 
   Shape,
   Box,
 };

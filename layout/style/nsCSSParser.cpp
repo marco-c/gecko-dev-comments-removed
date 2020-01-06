@@ -16443,7 +16443,15 @@ CSSParserImpl::ParseClipPath(nsCSSValue& aValue)
 bool
 CSSParserImpl::ParseShapeOutside(nsCSSValue& aValue)
 {
-  if (ParseSingleTokenVariant(aValue, VARIANT_HUO, nullptr)) {
+  CSSParseResult result =
+    ParseVariant(aValue, VARIANT_IMAGE | VARIANT_INHERIT, nullptr);
+
+  if (result == CSSParseResult::Error) {
+    return false;
+  }
+
+  if (result == CSSParseResult::Ok) {
+    
     
     return true;
   }

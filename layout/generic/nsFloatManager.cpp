@@ -756,30 +756,38 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
 
   const StyleShapeSource& shapeOutside = mFrame->StyleDisplay()->mShapeOutside;
 
-  if (shapeOutside.GetType() == StyleShapeSourceType::None) {
-    return;
-  }
+  switch (shapeOutside.GetType()) {
+    case StyleShapeSourceType::None:
+      
+      return;
 
-  if (shapeOutside.GetType() == StyleShapeSourceType::URL) {
-    
-    
-    
-    return;
-  }
+    case StyleShapeSourceType::URL:
+      MOZ_ASSERT_UNREACHABLE("shape-outside doesn't have URL source type!");
+      return;
 
-  
-  LogicalRect shapeBoxRect =
-    ShapeInfo::ComputeShapeBoxRect(shapeOutside, mFrame, aMarginRect, aWM);
+    case StyleShapeSourceType::Image:
+      
+      
+      return;
 
-  if (shapeOutside.GetType() == StyleShapeSourceType::Box) {
-    mShapeInfo = ShapeInfo::CreateShapeBox(mFrame, shapeBoxRect, aWM,
-                                           aContainerSize);
-  } else if (shapeOutside.GetType() == StyleShapeSourceType::Shape) {
-    const UniquePtr<StyleBasicShape>& basicShape = shapeOutside.GetBasicShape();
-    mShapeInfo = ShapeInfo::CreateBasicShape(basicShape, shapeBoxRect, aWM,
+    case StyleShapeSourceType::Box: {
+      
+      LogicalRect shapeBoxRect =
+        ShapeInfo::ComputeShapeBoxRect(shapeOutside, mFrame, aMarginRect, aWM);
+      mShapeInfo = ShapeInfo::CreateShapeBox(mFrame, shapeBoxRect, aWM,
                                              aContainerSize);
-  } else {
-    MOZ_ASSERT_UNREACHABLE("Unknown StyleShapeSourceType!");
+      break;
+    }
+
+    case StyleShapeSourceType::Shape: {
+      const UniquePtr<StyleBasicShape>& basicShape = shapeOutside.GetBasicShape();
+      
+      LogicalRect shapeBoxRect =
+        ShapeInfo::ComputeShapeBoxRect(shapeOutside, mFrame, aMarginRect, aWM);
+      mShapeInfo = ShapeInfo::CreateBasicShape(basicShape, shapeBoxRect, aWM,
+                                               aContainerSize);
+      break;
+    }
   }
 
   MOZ_ASSERT(mShapeInfo,
