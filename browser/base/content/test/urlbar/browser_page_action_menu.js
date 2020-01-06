@@ -7,13 +7,20 @@ registerCleanupFunction(function() {
   delete window.sinon;
 });
 
-Cu.import("resource://services-sync/UIState.jsm");
-
 const mockRemoteClients = [
   { id: "0", name: "foo", type: "mobile" },
   { id: "1", name: "bar", type: "desktop" },
   { id: "2", name: "baz", type: "mobile" },
 ];
+
+add_task(async function init() {
+  
+  
+  BrowserPageActions._disablePanelAnimations = true;
+  registerCleanupFunction(() => {
+    BrowserPageActions._disablePanelAnimations = false;
+  });
+});
 
 add_task(async function bookmark() {
   
@@ -487,11 +494,6 @@ add_task(async function sendToDevice_inUrlbar() {
     registerCleanupFunction(cleanUp);
 
     
-    
-    
-    BrowserPageActions._disableActivatedActionPanelAnimation = true;
-
-    
     let action = PageActions.actionForID("sendToDevice");
     action.shownInUrlbar = true;
 
@@ -572,7 +574,6 @@ add_task(async function sendToDevice_inUrlbar() {
 
     
     action.shownInUrlbar = false;
-    BrowserPageActions._disableActivatedActionPanelAnimation = false;
 
     cleanUp();
   });

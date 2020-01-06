@@ -199,8 +199,7 @@ var BrowserPageActions = {
     panelNode.setAttribute("tabspecific", "true");
     panelNode.setAttribute("photon", "true");
 
-    
-    if (this._disableActivatedActionPanelAnimation) {
+    if (this._disablePanelAnimations) {
       panelNode.setAttribute("animate", "false");
     }
 
@@ -250,6 +249,19 @@ var BrowserPageActions = {
     }
 
     return panelNode;
+  },
+
+  
+  get _disablePanelAnimations() {
+    return this.__disablePanelAnimations || false;
+  },
+  set _disablePanelAnimations(val) {
+    this.__disablePanelAnimations = val;
+    if (val) {
+      this.panelNode.setAttribute("animate", "false");
+    } else {
+      this.panelNode.removeAttribute("animate");
+    }
   },
 
   
@@ -740,16 +752,16 @@ var BrowserPageActionFeedback = {
 
     this.panelNode.addEventListener("popupshown", () => {
       this.feedbackAnimationBox.setAttribute("animate", "true");
+
+      
+      
+      setTimeout(() => {
+        this.panelNode.hidePopup(true);
+      }, Services.prefs.getIntPref("browser.pageActions.feedbackTimeoutMS", 1120));
     }, {once: true});
     this.panelNode.addEventListener("popuphidden", () => {
       this.feedbackAnimationBox.removeAttribute("animate");
     }, {once: true});
-
-    
-    
-    setTimeout(() => {
-      this.panelNode.hidePopup(true);
-    }, Services.prefs.getIntPref("browser.pageActions.feedbackTimeoutMS", 1120));
   },
 };
 
