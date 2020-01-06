@@ -2,7 +2,10 @@
 
 
 
+use cssparser::{Parser as CssParser, ParserInput as CssParserInput};
+use cssparser::ToCss;
 use dom::bindings::codegen::Bindings::CSSStyleRuleBinding::{self, CSSStyleRuleMethods};
+use dom::bindings::codegen::Bindings::WindowBinding::WindowBinding::WindowMethods;
 use dom::bindings::inheritance::Castable;
 use dom::bindings::js::{JS, MutNullableJS, Root};
 use dom::bindings::reflector::{DomObject, reflect_dom_object};
@@ -12,9 +15,12 @@ use dom::cssstyledeclaration::{CSSModificationAccess, CSSStyleDeclaration, CSSSt
 use dom::cssstylesheet::CSSStyleSheet;
 use dom::window::Window;
 use dom_struct::dom_struct;
+use selectors::parser::SelectorList;
+use std::mem;
+use style::selector_parser::SelectorParser;
 use style::shared_lock::{Locked, ToCssWithGuard};
 use style::stylearc::Arc;
-use style::stylesheets::StyleRule;
+use style::stylesheets::{StyleRule, Origin};
 
 #[dom_struct]
 pub struct CSSStyleRule {
@@ -70,5 +76,34 @@ impl CSSStyleRuleMethods for CSSStyleRule {
                 CSSModificationAccess::ReadWrite
             )
         })
+    }
+
+    
+    fn SelectorText(&self) -> DOMString {
+        let guard = self.cssrule.shared_lock().read();
+        let stylerule = self.stylerule.read_with(&guard);
+        return DOMString::from_string(stylerule.selectors.to_css_string());
+    }
+
+    
+    fn SetSelectorText(&self, value: DOMString) {
+        
+        
+        let namespaces = self.cssrule.parent_stylesheet().style_stylesheet().contents.namespaces.read();
+        let parser = SelectorParser {
+            stylesheet_origin: Origin::Author,
+            namespaces: &namespaces,
+        };
+        let mut css_parser = CssParserInput::new(&*value);
+        let mut css_parser = CssParser::new(&mut css_parser);
+        if let Ok(mut s) = SelectorList::parse(&parser, &mut css_parser) {
+            
+            let mut guard = self.cssrule.shared_lock().write();
+            let mut stylerule = self.stylerule.write_with(&mut guard);
+            mem::swap(&mut stylerule.selectors, &mut s);
+            
+            
+            self.global().as_window().Document().invalidate_stylesheets();
+        }
     }
 }
