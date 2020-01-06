@@ -2474,6 +2474,8 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     
     
     
+    
+    
 
     var internalProps = std_Object_create(null);
 
@@ -2507,6 +2509,12 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     var formatOpt = lazyDateTimeFormatData.formatOpt;
 
     
+    
+    
+    if (r.hc !== null && formatOpt.hour12 === undefined)
+        formatOpt.hourCycle = r.hc;
+
+    
     var pattern;
     if (lazyDateTimeFormatData.mozExtensions) {
         if (lazyDateTimeFormatData.patternOption !== undefined) {
@@ -2529,6 +2537,11 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     }
 
     
+    
+    if (formatOpt.hourCycle !== undefined)
+        pattern = replaceHourRepresentation(pattern, formatOpt.hourCycle);
+
+    
     internalProps.pattern = pattern;
 
     
@@ -2537,6 +2550,47 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     
     
     return internalProps;
+}
+
+
+
+
+
+
+function replaceHourRepresentation(pattern, hourCycle) {
+    var hour;
+    switch (hourCycle) {
+      case "h11":
+        hour = "K";
+        break;
+      case "h12":
+        hour = "h";
+        break;
+      case "h23":
+        hour = "H";
+        break;
+      case "h24":
+        hour = "k";
+        break;
+    }
+    assert(hour !== undefined, "Unexpected hourCycle requested: " + hourCycle);
+
+    
+    
+    
+    var resultPattern = "";
+    var inQuote = false;
+    for (var i = 0; i < pattern.length; i++) {
+        var ch = pattern[i];
+        if (ch === "'") {
+            inQuote = !inQuote;
+        } else if (!inQuote && (ch === "h" || ch === "H" || ch === "k" || ch === "K")) {
+            ch = hour;
+        }
+        resultPattern += ch;
+    }
+
+    return resultPattern;
 }
 
 
@@ -2626,6 +2680,7 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
     
     
     
+    
     var lazyDateTimeFormatData = std_Object_create(null);
 
     
@@ -2645,6 +2700,10 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
         GetOption(options, "localeMatcher", "string", ["lookup", "best fit"],
                   "best fit");
     localeOpt.localeMatcher = localeMatcher;
+
+    
+    var hc = GetOption(options, "hourCycle", "string", ["h11", "h12", "h23", "h24"], undefined);
+    localeOpt.hc = hc;
 
     
     var tz = options.timeZone;
@@ -2810,6 +2869,7 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
 
 
 
+
 function toBestICUPattern(locale, options) {
     
     
@@ -2868,12 +2928,24 @@ function toBestICUPattern(locale, options) {
         skeleton += "d";
         break;
     }
+    
     var hourSkeletonChar = "j";
     if (options.hour12 !== undefined) {
         if (options.hour12)
             hourSkeletonChar = "h";
         else
             hourSkeletonChar = "H";
+    } else {
+        switch (options.hourCycle) {
+        case "h11":
+        case "h12":
+            hourSkeletonChar = "h";
+            break;
+        case "h23":
+        case "h24":
+            hourSkeletonChar = "H";
+            break;
+        }
     }
     switch (options.hour) {
     case "2-digit":
@@ -3010,7 +3082,7 @@ var dateTimeFormatInternalProperties = {
         addSpecialMissingLanguageTags(locales);
         return (this._availableLocales = locales);
     },
-    relevantExtensionKeys: ["ca", "nu"]
+    relevantExtensionKeys: ["ca", "nu", "hc"]
 };
 
 
@@ -3018,9 +3090,15 @@ function dateTimeFormatLocaleData() {
     return {
         ca: intl_availableCalendars,
         nu: getNumberingSystems,
+        hc: () => {
+            return [null, "h11", "h12", "h23", "h24"];
+        },
         default: {
             ca: intl_defaultCalendar,
             nu: intl_numberingSystem,
+            hc: () => {
+                return null;
+            }
         }
     };
 }
@@ -3223,10 +3301,24 @@ function resolveICUPattern(pattern, result) {
             }
             if (hasOwn(c, icuPatternCharToComponent))
                 _DefineDataProperty(result, icuPatternCharToComponent[c], value);
-            if (c === "h" || c === "K")
+            switch (c) {
+            case "h":
+                _DefineDataProperty(result, "hourCycle", "h12");
                 _DefineDataProperty(result, "hour12", true);
-            else if (c === "H" || c === "k")
+                break;
+            case "K":
+                _DefineDataProperty(result, "hourCycle", "h11");
+                _DefineDataProperty(result, "hour12", true);
+                break;
+            case "H":
+                _DefineDataProperty(result, "hourCycle", "h23");
                 _DefineDataProperty(result, "hour12", false);
+                break;
+            case "k":
+                _DefineDataProperty(result, "hourCycle", "h24");
+                _DefineDataProperty(result, "hour12", false);
+                break;
+            }
         }
     }
 }
