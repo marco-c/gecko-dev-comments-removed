@@ -641,8 +641,6 @@ int do_relocation_section(Elf *elf, unsigned int rel_type, unsigned int rel_type
     relhack_entry.r_offset = relhack_entry.r_info = 0;
     relhack->push_back(relhack_entry);
 
-    unsigned int old_end = section->getOffset() + section->getSize();
-
     if (init_array && !init_array_reloc) {
         
         
@@ -754,9 +752,27 @@ int do_relocation_section(Elf *elf, unsigned int rel_type, unsigned int rel_type
     section->shrink(new_rels.size() * section->getEntSize());
 
     ElfRelHackCode_Section *relhackcode = new ElfRelHackCode_Section(relhackcode_section, *elf, *relhack, original_init, mprotect_cb);
-    relhackcode->insertBefore(section);
-    relhack->insertAfter(relhackcode);
-    if (section->getOffset() + section->getSize() >= old_end) {
+    
+    
+    ElfSection *first_executable = nullptr;
+    for (ElfSection *s = elf->getSection(1); s != nullptr;
+         s = s->getNext()) {
+        if (s->getFlags() & SHF_EXECINSTR) {
+            first_executable = s;
+            break;
+        }
+    }
+
+    unsigned int old_exec = first_executable->getOffset();
+
+    relhack->insertBefore(section);
+    relhackcode->insertBefore(first_executable);
+
+    
+    
+    
+    
+    if (relhackcode->getOffset() + relhackcode->getSize() >= old_exec) {
         fprintf(stderr, "No gain. Skipping\n");
         return -1;
     }
