@@ -155,12 +155,12 @@ async function verifyTabPreload(knownTab, expectStorageExists) {
 
 
 
-async function mutateTabStorage(knownTab, mutations) {
+async function mutateTabStorage(knownTab, mutations, sentinelValue) {
   await ContentTask.spawn(
     knownTab.tab.linkedBrowser,
-    { mutations },
+    { mutations, sentinelValue },
     function(args) {
-      return content.wrappedJSObject.mutateStorage(args.mutations);
+      return content.wrappedJSObject.mutateStorage(args);
     });
 }
 
@@ -169,12 +169,12 @@ async function mutateTabStorage(knownTab, mutations) {
 
 
 
-async function recordTabStorageEvents(knownTab) {
+async function recordTabStorageEvents(knownTab, sentinelValue) {
   await ContentTask.spawn(
     knownTab.tab.linkedBrowser,
-    {},
-    function() {
-      return content.wrappedJSObject.listenForStorageEvents();
+    sentinelValue,
+    function(sentinelValue) {
+      return content.wrappedJSObject.listenForStorageEvents(sentinelValue);
     });
 }
 
@@ -182,12 +182,20 @@ async function recordTabStorageEvents(knownTab) {
 
 
 
-async function verifyTabStorageState(knownTab, expectedState) {
+
+
+
+
+
+
+
+
+async function verifyTabStorageState(knownTab, expectedState, maybeSentinel) {
   let actualState = await ContentTask.spawn(
     knownTab.tab.linkedBrowser,
-    {},
-    function() {
-      return content.wrappedJSObject.getStorageState();
+    maybeSentinel,
+    function(maybeSentinel) {
+      return content.wrappedJSObject.getStorageState(maybeSentinel);
     });
 
   for (let [expectedKey, expectedValue] of Object.entries(expectedState)) {
@@ -200,6 +208,9 @@ async function verifyTabStorageState(knownTab, expectedState) {
     }
   }
 }
+
+
+
 
 
 
@@ -318,9 +329,12 @@ add_task(async function() {
   await verifyTabPreload(readerTab, false);
 
   
-  await recordTabStorageEvents(listenerTab);
+  const initialSentinel = 'initial';
+  const noSentinelCheck = null;
+  await recordTabStorageEvents(listenerTab, initialSentinel);
 
   
+  info("initial writes");
   const initialWriteMutations = [
     
     ["getsCleared", "1", null],
@@ -341,14 +355,40 @@ add_task(async function() {
     alsoStays: "6"
   };
 
-  await mutateTabStorage(writerTab, initialWriteMutations);
-
-  await verifyTabStorageState(writerTab, initialWriteState);
-  await verifyTabStorageEvents(listenerTab, initialWriteMutations);
-  await verifyTabStorageState(listenerTab, initialWriteState);
-  await verifyTabStorageState(readerTab, initialWriteState);
+  await mutateTabStorage(writerTab, initialWriteMutations, initialSentinel);
 
   
+  
+  
+  await verifyTabStorageState(writerTab, initialWriteState, noSentinelCheck);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  await verifyTabStorageEvents(
+    listenerTab, initialWriteMutations, initialSentinel);
+  await verifyTabStorageState(
+    listenerTab, initialWriteState, noSentinelCheck);
+  
+  
+  
+  
+  await verifyTabStorageState(readerTab, initialWriteState, noSentinelCheck);
+
+  
+  
+  
+  
+  
+  
+
+  info("late writes");
+  const lateWriteSentinel = 'lateWrite';
   const lateWriteMutations = [
     ["lateStays", "10", null],
     ["lateClobbered", "latePre", null],
@@ -361,15 +401,24 @@ add_task(async function() {
     lateClobbered: "lastPost"
   });
 
-  await mutateTabStorage(lateWriteThenListenTab, lateWriteMutations);
-  await recordTabStorageEvents(lateWriteThenListenTab);
+  await recordTabStorageEvents(listenerTab, lateWriteSentinel);
 
-  await verifyTabStorageState(writerTab, lateWriteState);
-  await verifyTabStorageEvents(listenerTab, lateWriteMutations);
-  await verifyTabStorageState(listenerTab, lateWriteState);
-  await verifyTabStorageState(readerTab, lateWriteState);
+  await mutateTabStorage(
+    lateWriteThenListenTab, lateWriteMutations, lateWriteSentinel);
 
   
+  
+  await verifyTabStorageState(writerTab, lateWriteState, lateWriteSentinel);
+  
+  await verifyTabStorageEvents(
+    listenerTab, lateWriteMutations, lateWriteSentinel);
+  await verifyTabStorageState(listenerTab, lateWriteState, noSentinelCheck);
+  
+  await verifyTabStorageState(readerTab, lateWriteState, lateWriteSentinel);
+
+  
+  info("last set of writes");
+  const lastWriteSentinel = 'lastWrite';
   const lastWriteMutations = [
     ["lastStays", "20", null],
     ["lastDeleted", "21", null],
@@ -382,24 +431,36 @@ add_task(async function() {
     lastClobbered: "lastPost"
   });
 
-  await mutateTabStorage(writerTab, lastWriteMutations);
+  await recordTabStorageEvents(listenerTab, lastWriteSentinel);
+  await recordTabStorageEvents(lateWriteThenListenTab, lastWriteSentinel);
 
-  await verifyTabStorageState(writerTab, lastWriteState);
-  await verifyTabStorageEvents(listenerTab, lastWriteMutations);
-  await verifyTabStorageState(listenerTab, lastWriteState);
-  await verifyTabStorageState(readerTab, lastWriteState);
-  await verifyTabStorageEvents(lateWriteThenListenTab, lastWriteMutations);
-  await verifyTabStorageState(lateWriteThenListenTab, lastWriteState);
+  await mutateTabStorage(writerTab, lastWriteMutations, lastWriteSentinel);
 
   
+  await verifyTabStorageState(writerTab, lastWriteState, noSentinelCheck);
+  
+  await verifyTabStorageEvents(
+    listenerTab, lastWriteMutations, lastWriteSentinel);
+  await verifyTabStorageState(listenerTab, lastWriteState, noSentinelCheck);
+  
+  await verifyTabStorageState(readerTab, lastWriteState, lastWriteSentinel);
+  
+  await verifyTabStorageEvents(
+    lateWriteThenListenTab, lastWriteMutations, lastWriteSentinel);
+  await verifyTabStorageState(
+    lateWriteThenListenTab, lastWriteState, noSentinelCheck);
+
   
   
   
   
   
+  
+  info("flush to make preload check work");
   await triggerAndWaitForLocalStorageFlush();
 
   
+  info("late open preload check");
   const lateOpenSeesPreload =
     await openTestTabInOwnProcess("lateOpenSeesPreload", knownTabs);
   await verifyTabPreload(lateOpenSeesPreload, true);
