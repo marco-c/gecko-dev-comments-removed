@@ -134,13 +134,6 @@ FindAnimationsForCompositor(const nsIFrame* aFrame,
   }
 
   
-  if (aFrame->StyleContext()->StyleSource().IsServoComputedValues()) {
-    NS_WARNING("stylo: return false in FindAnimationsForCompositor because "
-               "haven't supported compositor-driven animations yet");
-    return false;
-  }
-
-  
   
   
   
@@ -288,9 +281,6 @@ EffectCompositor::RequestRestyle(dom::Element* aElement,
   }
 
   if (aRestyleType == RestyleType::Layer) {
-    
-    
-    
     mPresContext->RestyleManager()->IncrementAnimationGeneration();
     EffectSet* effectSet =
       EffectSet::GetEffectSet(aElement, aPseudoType);
