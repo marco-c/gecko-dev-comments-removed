@@ -1238,7 +1238,7 @@ mozJSComponentLoader::ImportInto(const nsACString& aLocation,
 
             JSAutoCompartment target_ac(cx, targetObj);
 
-	    JS_MarkCrossZoneId(cx, symbolId);
+            JS_MarkCrossZoneId(cx, symbolId);
 
             if (!JS_WrapValue(cx, &value) ||
                 !JS_SetPropertyById(cx, targetObj, symbolId, value)) {
