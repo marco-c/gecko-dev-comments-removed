@@ -247,7 +247,7 @@ def target_tasks_mozilla_beta(full_task_graph, parameters):
         if platform in ('macosx64-nightly', 'win64-nightly'):
             
             return False
-        if platform in ('linux64', 'linux', 'macosx64'):
+        if platform in ('linux64', 'linux'):
             if task.attributes['build_type'] == 'opt':
                 return False
         
