@@ -7724,7 +7724,7 @@ nsContentUtils::GenerateUUIDInPlace(nsID& aUUID)
 }
 
 bool
-nsContentUtils::PrefetchEnabled(nsIDocShell* aDocShell)
+nsContentUtils::PrefetchPreloadEnabled(nsIDocShell* aDocShell)
 {
   
   
