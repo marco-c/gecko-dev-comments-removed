@@ -286,7 +286,6 @@ let addonSdkMethods = [
   "closeToolbox",
   "connectDebuggerServer",
   "createDebuggerClient",
-  "getTargetForTab",
   "getToolbox",
   "initBrowserToolboxProcessForAddon",
   "showToolbox",
@@ -299,6 +298,7 @@ let addonSdkMethods = [
 
 
 let webExtensionsMethods = [
+  "getTargetForTab",
   "getTheme",
 ];
 
