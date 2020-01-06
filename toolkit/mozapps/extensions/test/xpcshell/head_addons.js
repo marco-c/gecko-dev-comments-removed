@@ -63,6 +63,10 @@ XPCOMUtils.defineLazyModuleGetter(this, "MockRegistrar",
 XPCOMUtils.defineLazyModuleGetter(this, "MockRegistry",
                                   "resource://testing-common/MockRegistry.jsm");
 
+XPCOMUtils.defineLazyServiceGetter(this, "aomStartup",
+                                   "@mozilla.org/addons/addon-manager-startup;1",
+                                   "amIAddonManagerStartup");
+
 const {
   awaitPromise,
   createAppInfo,
@@ -105,9 +109,9 @@ Object.defineProperty(this, "gAppInfo", {
   },
 });
 
-Object.defineProperty(this, "gExtensionsINI", {
+Object.defineProperty(this, "gAddonStartup", {
   get() {
-    return AddonTestUtils.extensionsINI.clone();
+    return AddonTestUtils.addonStartup.clone();
   },
 });
 
@@ -202,6 +206,8 @@ this.BootstrapMonitor = {
 
   startupPromises: [],
   installPromises: [],
+
+  restartfulIds: new Set(),
 
   init() {
     this.inited = true;
@@ -320,8 +326,12 @@ this.BootstrapMonitor = {
 
     if (info.event == "uninstall") {
       
-      let isRegistered = isManifestRegistered(installPath);
-      do_check_false(isRegistered);
+      
+      if (!this.restartfulIds.has(id)) {
+        
+        let isRegistered = isManifestRegistered(installPath);
+        do_check_false(isRegistered);
+      }
 
       this.installed.delete(id);
       this.uninstalled.set(id, info)
@@ -366,8 +376,7 @@ function do_check_in_crash_annotation(aId, aVersion) {
   }
 
   let addons = gAppInfo.annotations["Add-ons"].split(",");
-  do_check_false(addons.indexOf(encodeURIComponent(aId) + ":" +
-                                encodeURIComponent(aVersion)) < 0);
+  do_check_true(addons.includes(`${encodeURIComponent(aId)}:${encodeURIComponent(aVersion)}`));
 }
 
 
@@ -389,8 +398,7 @@ function do_check_not_in_crash_annotation(aId, aVersion) {
   }
 
   let addons = gAppInfo.annotations["Add-ons"].split(",");
-  do_check_true(addons.indexOf(encodeURIComponent(aId) + ":" +
-                               encodeURIComponent(aVersion)) < 0);
+  do_check_false(addons.includes(`${encodeURIComponent(aId)}:${encodeURIComponent(aVersion)}`));
 }
 
 
