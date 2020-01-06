@@ -9,6 +9,9 @@ var summary =
 
 print(BUGNUMBER + ": " + summary);
 
+if (typeof gczeal !== 'undefined')
+    gczeal(0);
+
 grayRoot().x = Object.create(null);
 addMarkObservers([grayRoot(), grayRoot().x, this, Object.create(null)]);
 gc();
@@ -67,9 +70,6 @@ assertEq(marks[3], 'gray', 'black map, gray key => gray value');
 
 
 
-
-if (typeof gczeal !== 'undefined')
-    gczeal(0);
 
 clearMarkObservers();
 
