@@ -123,7 +123,6 @@ class BasePopup {
 
       if (this.viewNode) {
         this.viewNode.removeEventListener(this.DESTROY_EVENT, this);
-        this.viewNode.style.maxHeight = "";
         delete this.viewNode.customRectGetter;
       }
 
@@ -333,14 +332,7 @@ class BasePopup {
 
       
       
-      
-      
-      
-      height = Math.max(height, this.viewHeight);
-      this.viewNode.style.maxHeight = `${height}px`;
-      
-      
-      this.lastCalculatedInViewHeight = height;
+      this.lastCalculatedInViewHeight = Math.max(height, this.viewHeight);
     } else {
       this.browser.style.width = `${width}px`;
       this.browser.style.minWidth = `${width}px`;
