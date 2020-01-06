@@ -318,7 +318,7 @@ public:
   {
     
     
-    mChannel->StartSynthesizedResponse(EmptyCString());
+    mChannel->StartSynthesizedResponse(nullptr, nullptr, EmptyCString());
     mChannel->FinishSynthesizedResponse();
     return NS_OK;
   }
