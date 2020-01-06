@@ -3,6 +3,9 @@
 
 "use strict";
 
+XPCOMUtils.defineLazyModuleGetter(this, "Prompt",
+                                  "resource://gre/modules/Prompt.jsm");
+
 var InputWidgetHelper = {
   _uiBusy: false,
 
