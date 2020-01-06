@@ -21,8 +21,7 @@ use stylearc::Arc;
 pub fn relations_are_shareable(relations: &StyleRelations) -> bool {
     use selectors::matching::*;
     !relations.intersects(AFFECTED_BY_ID_SELECTOR |
-                          AFFECTED_BY_PSEUDO_ELEMENTS |
-                          AFFECTED_BY_STYLE_ATTRIBUTE)
+                          AFFECTED_BY_PSEUDO_ELEMENTS)
 }
 
 
@@ -45,8 +44,18 @@ pub fn same_computed_values<E>(first: Option<E>, second: Option<E>) -> bool
 }
 
 
-
-
+pub fn have_same_style_attribute<E>(
+    target: &mut StyleSharingTarget<E>,
+    candidate: &mut StyleSharingCandidate<E>
+) -> bool
+    where E: TElement,
+{
+    match (target.style_attribute(), candidate.style_attribute()) {
+        (None, None) => true,
+        (Some(_), None) | (None, Some(_)) => false,
+        (Some(a), Some(b)) => Arc::ptr_eq(a, b)
+    }
+}
 
 
 pub fn have_same_presentational_hints<E>(
