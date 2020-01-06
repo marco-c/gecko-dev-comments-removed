@@ -736,42 +736,66 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
   nsAutoPtr<IPCTabContext> ipcContext;
   TabId openerTabId = TabId(0);
   nsAutoCString features(aFeatures);
+  nsAutoString name(aName);
 
   nsresult rv;
-  if (aTabOpener) {
-    
-    
+
+  MOZ_ASSERT(!aParent || aTabOpener,
+             "If aParent is non-null, we should have an aTabOpener");
+
+  
+  
+  static bool sNoopenerNewProcess = false;
+  static bool sNoopenerNewProcessInited = false;
+  if (!sNoopenerNewProcessInited) {
+    Preferences::AddBoolVarCache(&sNoopenerNewProcess,
+                                 "dom.noopener.newprocess.enabled");
+    sNoopenerNewProcessInited = true;
+  }
+
+  
+  
+  
+  bool loadInDifferentProcess = aForceNoOpener && sNoopenerNewProcess;
+  if (aTabOpener && !loadInDifferentProcess) {
     nsCOMPtr<nsIWebBrowserChrome3> browserChrome3;
     rv = aTabOpener->GetWebBrowserChrome(getter_AddRefs(browserChrome3));
     if (NS_SUCCEEDED(rv) && browserChrome3) {
       bool shouldLoad;
       rv = browserChrome3->ShouldLoadURIInThisProcess(aURI, &shouldLoad);
-      if (NS_SUCCEEDED(rv) && !shouldLoad) {
-        nsAutoCString baseURIString;
-        float fullZoom;
-        rv = GetWindowParamsFromParent(aParent, baseURIString, &fullZoom);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
+      loadInDifferentProcess = NS_SUCCEEDED(rv) && !shouldLoad;
+    }
+  }
 
-        URIParams uriToLoad;
-        SerializeURI(aURI, uriToLoad);
-        Unused << SendCreateWindowInDifferentProcess(aTabOpener,
-                                                     aChromeFlags,
-                                                     aCalledFromJS,
-                                                     aPositionSpecified,
-                                                     aSizeSpecified,
-                                                     uriToLoad,
-                                                     features,
-                                                     baseURIString,
-                                                     fullZoom);
-
-        
-        
-        return NS_ERROR_ABORT;
-      }
+  
+  
+  if (loadInDifferentProcess) {
+    nsAutoCString baseURIString;
+    float fullZoom;
+    rv = GetWindowParamsFromParent(aParent, baseURIString, &fullZoom);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
 
+    URIParams uriToLoad;
+    SerializeURI(aURI, uriToLoad);
+    Unused << SendCreateWindowInDifferentProcess(aTabOpener,
+                                                 aChromeFlags,
+                                                 aCalledFromJS,
+                                                 aPositionSpecified,
+                                                 aSizeSpecified,
+                                                 uriToLoad,
+                                                 features,
+                                                 baseURIString,
+                                                 fullZoom,
+                                                 name);
+
+    
+    
+    return NS_ERROR_ABORT;
+  }
+
+  if (aTabOpener) {
     PopupIPCTabContext context;
     openerTabId = aTabOpener->GetTabId();
     context.opener() = openerTabId;
@@ -819,7 +843,6 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
     tabId, TabId(0), *ipcContext, aChromeFlags,
     GetID(), IsForBrowser());
 
-  nsString name(aName);
   nsTArray<FrameScriptInfo> frameScripts;
   nsCString urlToLoad;
 
