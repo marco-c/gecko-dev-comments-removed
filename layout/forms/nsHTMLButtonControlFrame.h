@@ -99,11 +99,8 @@ public:
   }
 
   
+  void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
 
-
-  void DoUpdateStyleOfOwnedAnonBoxes(mozilla::ServoStyleSet& aStyleSet,
-                                     nsStyleChangeList& aChangeList,
-                                     nsChangeHint aHintForThisFrame) override;
 protected:
   nsHTMLButtonControlFrame(nsStyleContext* aContext, nsIFrame::ClassID aID);
 
