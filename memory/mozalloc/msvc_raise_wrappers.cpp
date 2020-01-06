@@ -5,59 +5,17 @@
 
 
 
-#include <stdio.h>
-
+#include <exception>
 #include "mozalloc_abort.h"
 
-__declspec(noreturn) static void abort_from_exception(const char* const which,
-                                                      const char* const what);
-static void
-abort_from_exception(const char* const which,  const char* const what)
+static void __cdecl
+RaiseHandler(const std::exception& e)
 {
-    fprintf(stderr, "fatal: STL threw %s: ", which);
-    mozalloc_abort(what);
+    mozalloc_abort(e.what());
 }
 
-namespace std {
-
-
-
-
-
-MFBT_API __declspec(noreturn) void
-moz_Xinvalid_argument(const char* what)
-{
-    abort_from_exception("invalid_argument", what);
-}
-
-MFBT_API __declspec(noreturn) void
-moz_Xlength_error(const char* what)
-{
-    abort_from_exception("length_error", what);
-}
-
-MFBT_API __declspec(noreturn) void
-moz_Xout_of_range(const char* what)
-{
-    abort_from_exception("out_of_range", what);
-}
-
-MFBT_API __declspec(noreturn) void
-moz_Xoverflow_error(const char* what)
-{
-    abort_from_exception("overflow_error", what);
-}
-
-MFBT_API __declspec(noreturn) void
-moz_Xruntime_error(const char* what)
-{
-    abort_from_exception("runtime_error", what);
-}
-
-MFBT_API __declspec(noreturn) void
-moz_Xbad_function_call()
-{
-    abort_from_exception("bad_function_call", "bad function call");
-}
-
-} 
+static struct StaticScopeStruct final {
+    StaticScopeStruct() {
+        std::exception::_Set_raise_handler(RaiseHandler);
+    }
+} StaticScopeInvoke;
