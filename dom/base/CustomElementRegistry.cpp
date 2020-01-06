@@ -428,8 +428,7 @@ CustomElementRegistry::GetCustomPrototype(nsIAtom* aAtom,
 }
 
 void
-CustomElementRegistry::UpgradeCandidates(JSContext* aCx,
-                                         nsIAtom* aKey,
+CustomElementRegistry::UpgradeCandidates(nsIAtom* aKey,
                                          CustomElementDefinition* aDefinition,
                                          ErrorResult& aRv)
 {
@@ -740,7 +739,7 @@ CustomElementRegistry::Define(const nsAString& aName,
 
 
   
-  UpgradeCandidates(cx, nameAtom, definition, aRv);
+  UpgradeCandidates(nameAtom, definition, aRv);
 
   
 
