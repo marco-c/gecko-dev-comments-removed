@@ -681,14 +681,23 @@ public:
 
 
 
-  virtual nsIContent *GetBindingParent() const = 0;
+  virtual nsIContent* GetBindingParent() const = 0;
 
   
 
 
 
 
-  virtual nsXBLBinding *GetXBLBinding() const = 0;
+  nsXBLBinding* GetXBLBinding() const
+  {
+    if (!HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
+      return nullptr;
+    }
+
+    return DoGetXBLBinding();
+  }
+
+  virtual nsXBLBinding* DoGetXBLBinding() const = 0;
 
   
 
