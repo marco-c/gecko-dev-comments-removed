@@ -6,7 +6,6 @@
 
 #include "ExtensionProtocolHandler.h"
 
-#include "mozilla/AbstractThread.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/FileUtils.h"
@@ -19,6 +18,7 @@
 #include "FileDescriptor.h"
 #include "FileDescriptorFile.h"
 #include "LoadInfo.h"
+#include "nsContentUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIFile.h"
 #include "nsIFileChannel.h"
@@ -109,6 +109,8 @@ class ExtensionStreamGetter : public RefCounted<ExtensionStreamGetter>
     {
       MOZ_ASSERT(aURI);
       MOZ_ASSERT(aLoadInfo);
+
+      SetupEventTarget();
     }
 
     
@@ -126,9 +128,20 @@ class ExtensionStreamGetter : public RefCounted<ExtensionStreamGetter>
       MOZ_ASSERT(aLoadInfo);
       MOZ_ASSERT(mJarChannel);
       MOZ_ASSERT(aJarFile);
+
+      SetupEventTarget();
     }
 
     ~ExtensionStreamGetter() {}
+
+    void SetupEventTarget()
+    {
+      mMainThreadEventTarget =
+        nsContentUtils::GetEventTargetByLoadInfo(mLoadInfo, TaskCategory::Other);
+      if (!mMainThreadEventTarget) {
+        mMainThreadEventTarget = GetMainThreadSerialEventTarget();
+      }
+    }
 
     
     Result<Ok, nsresult> GetAsync(nsIStreamListener* aListener,
@@ -149,6 +162,7 @@ class ExtensionStreamGetter : public RefCounted<ExtensionStreamGetter>
     nsCOMPtr<nsIFile> mJarFile;
     nsCOMPtr<nsIStreamListener> mListener;
     nsCOMPtr<nsIChannel> mChannel;
+    nsCOMPtr<nsISerialEventTarget> mMainThreadEventTarget;
     bool mIsJarChannel;
 };
 
@@ -225,6 +239,7 @@ ExtensionStreamGetter::GetAsync(nsIStreamListener* aListener,
                                 nsIChannel* aChannel)
 {
   MOZ_ASSERT(IsNeckoChild());
+  MOZ_ASSERT(mMainThreadEventTarget);
 
   mListener = aListener;
   mChannel = aChannel;
@@ -241,7 +256,7 @@ ExtensionStreamGetter::GetAsync(nsIStreamListener* aListener,
   if (mIsJarChannel) {
     
     gNeckoChild->SendGetExtensionFD(uri, loadInfo)->Then(
-      AbstractThread::MainThread(),
+      mMainThreadEventTarget,
       __func__,
       [self] (const FileDescriptor& fd) {
         self->OnFD(fd);
@@ -255,7 +270,7 @@ ExtensionStreamGetter::GetAsync(nsIStreamListener* aListener,
 
   
   gNeckoChild->SendGetExtensionStream(uri, loadInfo)->Then(
-    AbstractThread::MainThread(),
+    mMainThreadEventTarget,
     __func__,
     [self] (const OptionalIPCStream& stream) {
       nsCOMPtr<nsIInputStream> inputStream;
@@ -277,6 +292,7 @@ ExtensionStreamGetter::OnStream(nsIInputStream* aStream)
 {
   MOZ_ASSERT(IsNeckoChild());
   MOZ_ASSERT(mListener);
+  MOZ_ASSERT(mMainThreadEventTarget);
 
   
   
@@ -293,7 +309,8 @@ ExtensionStreamGetter::OnStream(nsIInputStream* aStream)
   }
 
   nsCOMPtr<nsIInputStreamPump> pump;
-  nsresult rv = NS_NewInputStreamPump(getter_AddRefs(pump), aStream);
+  nsresult rv = NS_NewInputStreamPump(getter_AddRefs(pump), aStream, -1, -1, 0,
+                                      0, false, mMainThreadEventTarget);
   if (NS_FAILED(rv)) {
     mChannel->Cancel(NS_BINDING_ABORTED);
     return;
@@ -516,10 +533,16 @@ ExtensionProtocolHandler::DevRepoContains(nsIFile* aRequestedFile,
   *aResult = false;
 
   
+  
   if (!mAlreadyCheckedDevRepo) {
     mAlreadyCheckedDevRepo = true;
     if (mozilla::IsDevelopmentBuild()) {
-      NS_TRY(mozilla::GetRepoDir(getter_AddRefs(mDevRepo)));
+      char *developer_repo_dir = PR_GetEnv("MOZ_DEVELOPER_REPO_DIR");
+      if (developer_repo_dir) {
+        NS_TRY(NS_NewLocalFile(NS_ConvertUTF8toUTF16(developer_repo_dir),
+                               false, getter_AddRefs(mDevRepo)));
+        NS_TRY(mDevRepo->Normalize());
+      }
     }
   }
 
