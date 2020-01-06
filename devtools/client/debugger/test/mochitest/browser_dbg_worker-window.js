@@ -5,6 +5,10 @@
 
 
 
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed("[object Object]");
+
+
+
 Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
 PromiseTestUtils.expectUncaughtRejection(/[object Object]/);
 

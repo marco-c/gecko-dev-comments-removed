@@ -4,6 +4,12 @@
 
 "use strict";
 
+
+
+
+
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed("destroy");
+
 loadHelperScript("helper_edits.js");
 
 

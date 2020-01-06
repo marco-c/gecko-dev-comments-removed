@@ -9,6 +9,8 @@
 
 "use strict";
 
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed("null");
+
 
 
 const TEST_URI = "data:text/html;charset=utf8,test for console output - 01";

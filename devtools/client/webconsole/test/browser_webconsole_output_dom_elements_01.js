@@ -8,6 +8,10 @@
 
 "use strict";
 
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed(null);
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed(
+  "TypeError: this.toolbox is null");
+
 
 
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
