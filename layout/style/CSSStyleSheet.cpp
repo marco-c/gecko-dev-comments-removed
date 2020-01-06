@@ -601,8 +601,8 @@ CSSStyleSheet::List(FILE* out, int32_t aIndent) const
 }
 #endif
 
-void 
-CSSStyleSheet::ClearRuleCascadesInternal()
+void
+CSSStyleSheet::ClearRuleCascades()
 {
   
   
@@ -627,6 +627,10 @@ CSSStyleSheet::ClearRuleCascadesInternal()
       }
       (*iter)->ClearRuleCascades();
     }
+  }
+
+  if (mParent) {
+    static_cast<CSSStyleSheet*>(mParent)->ClearRuleCascades();
   }
 }
 

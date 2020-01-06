@@ -288,9 +288,6 @@ protected:
   
   virtual void TraverseInner(nsCycleCollectionTraversalCallback &);
 
-  void ClearRuleCascades();
-  virtual void ClearRuleCascadesInternal() {}
-
   StyleSheet*           mParent;    
 
   nsString              mTitle;

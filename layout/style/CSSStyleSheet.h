@@ -178,7 +178,7 @@ private:
 protected:
   virtual ~CSSStyleSheet();
 
-  void ClearRuleCascadesInternal() override;
+  void ClearRuleCascades();
 
   
   nsresult RegisterNamespaceRule(css::Rule* aRule);

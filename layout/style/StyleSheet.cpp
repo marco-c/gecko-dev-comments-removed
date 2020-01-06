@@ -127,15 +127,6 @@ StyleSheet::TraverseInner(nsCycleCollectionTraversalCallback &cb)
   }
 }
 
-void
-StyleSheet::ClearRuleCascades()
-{
-  ClearRuleCascadesInternal();
-  if (mParent) {
-    mParent->ClearRuleCascades();
-  }
-}
-
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(StyleSheet)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
@@ -448,7 +439,14 @@ StyleSheet::EnsureUniqueInner()
   mInner = clone;
 
   
-  ClearRuleCascades();
+  
+  
+  
+  
+  
+  if (CSSStyleSheet* geckoSheet = GetAsGecko()) {
+    geckoSheet->ClearRuleCascades();
+  }
 
   
   
