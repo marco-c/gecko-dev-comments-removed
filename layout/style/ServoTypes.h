@@ -150,12 +150,21 @@ struct ServoRuleNode {
   uintptr_t mPtr;
 };
 
+
+class ServoStyleContext;
+
 struct ServoVisitedStyle {
-  uintptr_t mPtr;
+  
+  
+  
+  
+  ServoStyleContext* mPtr;
 };
 
 template <typename T>
 struct ServoRawOffsetArc {
+  
+  
   T* mPtr;
 };
 

@@ -189,8 +189,7 @@ public:
   
   
   
-  nsStyleContext* GetStyleIfVisited() const
-    { return mStyleIfVisited; }
+  inline nsStyleContext* GetStyleIfVisited() const;
 
   
   void SetStyleIfVisited(already_AddRefed<nsStyleContext> aStyleIfVisited);

@@ -226,40 +226,13 @@ ServoStyleSet::GetContext(already_AddRefed<ServoStyleContext> aComputedValues,
   MOZ_ASSERT(result->GetPseudoType() == aPseudoType);
   MOZ_ASSERT(result->GetPseudo() == aPseudoTag);
 
-  RefPtr<ServoStyleContext> resultIfVisited =
-    Servo_ComputedValues_GetVisitedStyle(result->ComputedValues()).Consume();
-
-  
-  
-  
-  
-  
-  
-  nsStyleContext *parentIfVisited =
-    aParentContext ? aParentContext->GetStyleIfVisited() : nullptr;
-  if (!parentIfVisited) {
-    if (resultIfVisited) {
-      parentIfVisited = aParentContext;
-    }
-  }
-
-  ServoStyleContext* parentIfVisitedServo = parentIfVisited ? parentIfVisited->AsServo() : nullptr;
-
   
   
   bool relevantLinkVisited = isLink ? isVisitedLink :
     (aParentContext && aParentContext->RelevantLinkVisited());
 
-  if (resultIfVisited) {
-    RefPtr<ServoStyleContext> visitedContext =
-    Servo_StyleContext_NewContext(resultIfVisited->ComputedValues(), parentIfVisitedServo,
-                                  mPresContext, aPseudoType, aPseudoTag).Consume();
-    visitedContext->SetIsStyleIfVisited();
-    result->SetStyleIfVisited(visitedContext.forget());
-
-    if (relevantLinkVisited) {
-      result->AddStyleBit(NS_STYLE_RELEVANT_LINK_VISITED);
-    }
+  if (relevantLinkVisited && result->GetStyleIfVisited()) {
+    result->AddStyleBit(NS_STYLE_RELEVANT_LINK_VISITED);
   }
 
   
