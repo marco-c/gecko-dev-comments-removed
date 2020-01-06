@@ -375,9 +375,13 @@ fn get_animated_properties(keyframes: &[Arc<Locked<Keyframe>>], guard: &SharedRw
     for keyframe in keyframes {
         let keyframe = keyframe.read_with(&guard);
         let block = keyframe.block.read_with(guard);
-        for (declaration, importance) in block.declaration_importance_iter() {
-            assert!(!importance.important());
-
+        
+        
+        
+        
+        
+        
+        for declaration in block.normal_declaration_iter() {
             if let Some(property) = AnimatableLonghand::from_declaration(declaration) {
                 
                 

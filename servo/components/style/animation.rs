@@ -481,11 +481,13 @@ fn compute_style_for_animation_step(context: &SharedStyleContext,
         KeyframesStepValue::Declarations { block: ref declarations } => {
             let guard = declarations.read_with(context.guards.author);
 
-            
-            debug_assert!(!guard.any_important());
-
             let iter = || {
-                guard.declarations().iter().rev()
+                
+                
+                
+                
+                guard.normal_declaration_iter()
+                     .filter(|declaration| declaration.is_animatable())
                      .map(|decl| (decl, CascadeLevel::Animations))
             };
 

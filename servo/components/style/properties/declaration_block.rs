@@ -113,6 +113,40 @@ impl<'a> DoubleEndedIterator for DeclarationImportanceIterator<'a> {
 }
 
 
+pub struct NormalDeclarationIterator<'a>(DeclarationImportanceIterator<'a>);
+
+impl<'a> NormalDeclarationIterator<'a> {
+    
+    pub fn new(declarations: &'a [PropertyDeclaration], important: &'a SmallBitVec) -> Self {
+        NormalDeclarationIterator(
+            DeclarationImportanceIterator::new(declarations, important)
+        )
+    }
+}
+
+impl<'a> Iterator for NormalDeclarationIterator<'a> {
+    type Item = &'a PropertyDeclaration;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            let next = self.0.iter.next();
+            match next {
+                Some((decl, importance)) => {
+                    if !importance {
+                        return Some(decl);
+                    }
+                },
+                None => return None,
+            }
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.0.iter.size_hint()
+    }
+}
+
+
 pub struct AnimationValueIterator<'a, 'cx, 'cx_a:'cx> {
     iter: DeclarationImportanceIterator<'a>,
     context: &'cx mut Context<'cx_a>,
@@ -206,6 +240,11 @@ impl PropertyDeclarationBlock {
     
     pub fn declaration_importance_iter(&self) -> DeclarationImportanceIterator {
         DeclarationImportanceIterator::new(&self.declarations, &self.declarations_importance)
+    }
+
+    
+    pub fn normal_declaration_iter(&self) -> NormalDeclarationIterator {
+        NormalDeclarationIterator::new(&self.declarations, &self.declarations_importance)
     }
 
     

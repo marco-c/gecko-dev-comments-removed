@@ -3611,8 +3611,7 @@ pub extern "C" fn Servo_StyleSet_GetKeyframesForName(raw_data: RawServoStyleSetB
                 let guard = block.read_with(&guard);
                 
                 let animatable =
-                    guard.declarations()
-                         .iter()
+                    guard.normal_declaration_iter()
                          .filter(|declaration| declaration.is_animatable());
 
                 for declaration in animatable {
