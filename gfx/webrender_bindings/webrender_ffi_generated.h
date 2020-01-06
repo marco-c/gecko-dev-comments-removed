@@ -319,6 +319,17 @@ struct WrOpacityProperty {
   }
 };
 
+
+
+
+
+
+
+
+
+
+
+
 struct TypedTransform3D_f32__LayoutPixel__LayoutPixel {
   float m11;
   float m12;
@@ -400,6 +411,7 @@ struct ColorF {
            a == aOther.a;
   }
 };
+
 
 struct TypedPoint2D_f32__LayerPixel {
   float x;
@@ -570,6 +582,7 @@ struct NinePatchDescriptor {
   }
 };
 
+
 struct TypedVector2D_f32__LayerPixel {
   float x;
   float y;
@@ -649,6 +662,7 @@ struct ByteSlice {
            len == aOther.len;
   }
 };
+
 
 struct TypedPoint2D_u16__Tiles {
   uint16_t x;
@@ -796,10 +810,10 @@ struct FontInstancePlatformOptions {
 
 #if defined(XP_MACOSX)
 struct FontInstancePlatformOptions {
-  uint32_t unused;
+  bool font_smoothing;
 
   bool operator==(const FontInstancePlatformOptions& aOther) const {
-    return unused == aOther.unused;
+    return font_smoothing == aOther.font_smoothing;
   }
 };
 #endif
