@@ -158,7 +158,6 @@ const Toolbar = createClass({
     
     let toggleButtonClassList = [
       "devtools-button",
-      "requests-list-pause-button",
       recording ? "devtools-pause-icon" : "devtools-play-icon",
     ];
 
