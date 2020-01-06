@@ -252,7 +252,9 @@ async function testPopupSize(standardsMode, browserWin = window, arrowSide = "to
 
   is(win.innerWidth, innerWidth, "Window width should not change");
   ok(win.innerHeight > innerHeight, `Window height should increase (${win.innerHeight} > ${innerHeight})`);
-  ok(win.innerHeight < screen.height, `Window height be less than the screen height (${win.innerHeight} < ${screen.height})`);
+  
+  
+  
   ok(win.scrollMaxY > 0, `Document should be vertically scrollable (${win.scrollMaxY} > 0)`);
 
   checkPanelPosition();
