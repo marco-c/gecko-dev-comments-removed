@@ -152,9 +152,6 @@ bool ApplyProcessMitigationsToCurrentProcess(MitigationFlags flags) {
   if (version < base::win::VERSION_WIN10)
     return true;
 
-
-
-#if !defined(MOZ_SANDBOX)
   
   if (flags & MITIGATION_NONSYSTEM_FONT_DISABLE) {
     PROCESS_MITIGATION_FONT_DISABLE_POLICY policy = {};
@@ -185,7 +182,6 @@ bool ApplyProcessMitigationsToCurrentProcess(MitigationFlags flags) {
       return false;
     }
   }
-#endif
 
   return true;
 }
