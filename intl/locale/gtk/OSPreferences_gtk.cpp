@@ -4,6 +4,7 @@
 
 
 
+#include <locale.h>
 #include "OSPreferences.h"
 #include "dlfcn.h"
 #include "glib.h"
