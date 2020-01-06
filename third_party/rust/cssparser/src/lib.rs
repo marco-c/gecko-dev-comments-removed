@@ -68,6 +68,7 @@
 
 #![recursion_limit="200"]  
 
+extern crate dtoa_short;
 #[macro_use] extern crate cssparser_macros;
 #[macro_use] extern crate matches;
 #[macro_use] extern crate procedural_masquerade;
