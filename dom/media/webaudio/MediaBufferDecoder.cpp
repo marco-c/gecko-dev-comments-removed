@@ -197,7 +197,7 @@ MediaDecodeTask::CreateReader()
   
   
 
-  MediaDecoderReaderInit init(mBufferDecoder);
+  MediaFormatReaderInit init(mBufferDecoder);
   init.mResource = resource;
   mDecoderReader = DecoderTraits::CreateReader(mContainerType, init);
 

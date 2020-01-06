@@ -29,20 +29,6 @@ class MediaDecoderReader;
 class TaskQueue;
 class VideoFrameContainer;
 
-struct MOZ_STACK_CLASS MediaDecoderReaderInit
-{
-  AbstractMediaDecoder* const mDecoder;
-  MediaResource* mResource = nullptr;
-  VideoFrameContainer* mVideoFrameContainer = nullptr;
-  already_AddRefed<layers::KnowsCompositor> mKnowsCompositor;
-  already_AddRefed<GMPCrashHelper> mCrashHelper;
-
-  explicit MediaDecoderReaderInit(AbstractMediaDecoder* aDecoder)
-    : mDecoder(aDecoder)
-  {
-  }
-};
-
 
 
 
@@ -56,7 +42,7 @@ public:
 
   
   
-  explicit MediaDecoderReader(MediaDecoderReaderInit& aInit);
+  MediaDecoderReader();
 
 protected:
   virtual ~MediaDecoderReader();

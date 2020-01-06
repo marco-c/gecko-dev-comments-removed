@@ -19,7 +19,7 @@ class ChannelMediaDecoder;
 class DecoderDoctorDiagnostics;
 class MediaContainerType;
 struct MediaDecoderInit;
-struct MediaDecoderReaderInit;
+struct MediaFormatReaderInit;
 class MediaDecoderOwner;
 class MediaFormatReader;
 class MediaResource;
@@ -52,7 +52,7 @@ public:
   
   
   static MediaFormatReader* CreateReader(const MediaContainerType& aType,
-                                         MediaDecoderReaderInit& aInit);
+                                         MediaFormatReaderInit& aInit);
 
   
   
