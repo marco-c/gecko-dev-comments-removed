@@ -494,7 +494,7 @@ private:
   mutable Mutex mMutex;
 
   
-  FallibleTArray<Chunk> mChunks;
+  AutoTArray<Chunk, 1> mChunks;
 
   
   nsTArray<RefPtr<IResumable>> mWaitingConsumers;
