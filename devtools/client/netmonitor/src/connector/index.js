@@ -3,7 +3,6 @@
 
 
 "use strict";
-
 let connector = {};
 
 function onConnect(connection, actions, getState) {
@@ -29,7 +28,8 @@ function onDisconnect() {
 }
 
 function onChromeConnect(connection, actions, getState) {
-  
+  connector = require("./chrome-connector");
+  connector.connect(connection, actions, getState);
 }
 
 function onFirefoxConnect(connection, actions, getState) {
