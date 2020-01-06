@@ -669,6 +669,20 @@ nsUrlClassifierDBServiceWorker::NotifyUpdateObserver(nsresult aUpdateStatus)
                           NS_ERROR_GET_CODE(updateStatus));
   }
 
+  if (!mUpdateObserver) {
+    
+    
+    
+    
+    
+    
+    NS_WARNING("CancelUpdate() is called before we asynchronously call "
+               "NotifyUpdateObserver() in FinishUpdate().");
+
+    
+    return NS_OK;
+  }
+
   
   
   nsCOMPtr<nsIUrlClassifierUpdateObserver> updateObserver = nullptr;
