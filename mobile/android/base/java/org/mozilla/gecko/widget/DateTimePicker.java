@@ -314,7 +314,7 @@ public class DateTimePicker extends FrameLayout {
             });
 
             final int height;
-            if (Versions.preLollipop) {
+            if (Versions.preLollipopMR1) {
                 
                 
                 height =  (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 200, getResources().getDisplayMetrics());;
