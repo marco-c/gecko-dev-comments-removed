@@ -23,14 +23,23 @@ using mozilla::ArrayLength;
 
 
 
+
+
 static bool
 IsCompatiblePropertyDescriptor(JSContext* cx, bool extensible, Handle<PropertyDescriptor> desc,
-                               Handle<PropertyDescriptor> current, bool* bp)
+                               Handle<PropertyDescriptor> current, const char** errorDetails)
 {
+    
+    MOZ_ASSERT(*errorDetails == nullptr);
+
     
     if (!current.object()) {
         
-        *bp = extensible;
+        if (!extensible) {
+            static const char* DETAILS_NOT_EXTENSIBLE =
+                "proxy can't report an extensible object as non-extensible";
+            *errorDetails = DETAILS_NOT_EXTENSIBLE;
+        }
         return true;
     }
 
@@ -39,7 +48,6 @@ IsCompatiblePropertyDescriptor(JSContext* cx, bool extensible, Handle<PropertyDe
         !desc.hasGetterObject() && !desc.hasSetterObject() &&
         !desc.hasEnumerable() && !desc.hasConfigurable())
     {
-        *bp = true;
         return true;
     }
 
@@ -51,44 +59,48 @@ IsCompatiblePropertyDescriptor(JSContext* cx, bool extensible, Handle<PropertyDe
         (!desc.hasEnumerable() || desc.enumerable() == current.enumerable()) &&
         (!desc.hasConfigurable() || desc.configurable() == current.configurable()))
     {
-        if (!desc.hasValue()) {
-            *bp = true;
+        if (!desc.hasValue())
             return true;
-        }
+
         bool same = false;
         if (!SameValue(cx, desc.value(), current.value(), &same))
             return false;
-        if (same) {
-            *bp = true;
+
+        if (same)
             return true;
-        }
     }
 
     
     if (!current.configurable()) {
         
         if (desc.hasConfigurable() && desc.configurable()) {
-            *bp = false;
+            static const char* DETAILS_CANT_REPORT_NC_AS_C =
+                "proxy can't report an existing non-configurable property as configurable";
+            *errorDetails = DETAILS_CANT_REPORT_NC_AS_C;
             return true;
         }
 
         
         if (desc.hasEnumerable() && desc.enumerable() != current.enumerable()) {
-            *bp = false;
+            static const char* DETAILS_ENUM_DIFFERENT =
+                "proxy can't report a different 'enumerable' from target when target is not configurable";
+            *errorDetails = DETAILS_ENUM_DIFFERENT;
             return true;
         }
     }
 
     
-    if (desc.isGenericDescriptor()) {
-        *bp = true;
+    if (desc.isGenericDescriptor())
         return true;
-    }
 
     
     if (current.isDataDescriptor() != desc.isDataDescriptor()) {
         
-        *bp = current.configurable();
+        if (!current.configurable()) {
+            static const char* DETAILS_CURRENT_NC_DIFF_TYPE =
+                "proxy can't report a different descriptor type when target is not configurable";
+            *errorDetails = DETAILS_CURRENT_NC_DIFF_TYPE;
+        }
         return true;
     }
 
@@ -97,7 +109,9 @@ IsCompatiblePropertyDescriptor(JSContext* cx, bool extensible, Handle<PropertyDe
         MOZ_ASSERT(desc.isDataDescriptor()); 
         if (!current.configurable() && !current.writable()) {
             if (desc.hasWritable() && desc.writable()) {
-                *bp = false;
+                static const char* DETAILS_CANT_REPORT_NW_AS_W =
+                    "proxy can't report a non-configurable, non-writable property as writable";
+                *errorDetails = DETAILS_CANT_REPORT_NW_AS_W;
                 return true;
             }
 
@@ -106,22 +120,33 @@ IsCompatiblePropertyDescriptor(JSContext* cx, bool extensible, Handle<PropertyDe
                 if (!SameValue(cx, desc.value(), current.value(), &same))
                     return false;
                 if (!same) {
-                    *bp = false;
+                    static const char* DETAILS_DIFFERENT_VALUE =
+                        "proxy must report the same value for the non-writable, non-configurable property";
+                    *errorDetails = DETAILS_DIFFERENT_VALUE;
                     return true;
                 }
             }
         }
 
-        *bp = true;
         return true;
     }
 
     
     MOZ_ASSERT(current.isAccessorDescriptor()); 
     MOZ_ASSERT(desc.isAccessorDescriptor()); 
-    *bp = (current.configurable() ||
-           ((!desc.hasSetterObject() || desc.setter() == current.setter()) &&
-            (!desc.hasGetterObject() || desc.getter() == current.getter())));
+
+    if (current.configurable())
+        return true;
+    if (desc.hasSetterObject() && (desc.setter() != current.setter())) {
+        static const char* DETAILS_SETTERS_DIFFERENT =
+            "proxy can't report different setters for a currently non-configurable property";
+        *errorDetails = DETAILS_SETTERS_DIFFERENT;
+    }
+    else if (desc.hasGetterObject() && (desc.getter() != current.getter())) {
+        static const char* DETAILS_GETTERS_DIFFERENT =
+            "proxy can't report different getters for a currently non-configurable property";
+        *errorDetails = DETAILS_GETTERS_DIFFERENT;
+    }
     return true;
 }
 
@@ -474,10 +499,8 @@ ScriptedProxyHandler::getOwnPropertyDescriptor(JSContext* cx, HandleObject proxy
         return false;
 
     
-    if (!trapResult.isUndefined() && !trapResult.isObject()) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_PROXY_GETOWN_OBJORUNDEF);
-        return false;
-    }
+    if (!trapResult.isUndefined() && !trapResult.isObject())
+        return js::Throw(cx, id, JSMSG_PROXY_GETOWN_OBJORUNDEF);
 
     
     Rooted<PropertyDescriptor> targetDesc(cx);
@@ -493,10 +516,8 @@ ScriptedProxyHandler::getOwnPropertyDescriptor(JSContext* cx, HandleObject proxy
         }
 
         
-        if (!targetDesc.configurable()) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_REPORT_NC_AS_NE);
-            return false;
-        }
+        if (!targetDesc.configurable())
+            return js::Throw(cx, id, JSMSG_CANT_REPORT_NC_AS_NE);
 
         
         bool extensibleTarget;
@@ -504,10 +525,8 @@ ScriptedProxyHandler::getOwnPropertyDescriptor(JSContext* cx, HandleObject proxy
             return false;
 
         
-        if (!extensibleTarget) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_REPORT_E_AS_NE);
-            return false;
-        }
+        if (!extensibleTarget)
+            return js::Throw(cx, id, JSMSG_CANT_REPORT_E_AS_NE);
 
         
         desc.object().set(nullptr);
@@ -528,27 +547,22 @@ ScriptedProxyHandler::getOwnPropertyDescriptor(JSContext* cx, HandleObject proxy
     CompletePropertyDescriptor(&resultDesc);
 
     
-    bool valid;
-    if (!IsCompatiblePropertyDescriptor(cx, extensibleTarget, resultDesc, targetDesc, &valid))
+    const char* errorDetails = nullptr;
+    if (!IsCompatiblePropertyDescriptor(cx, extensibleTarget, resultDesc, targetDesc,
+                                        &errorDetails))
         return false;
 
     
-    if (!valid) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_REPORT_INVALID);
-        return false;
-    }
+    if (errorDetails)
+        return js::Throw(cx, id, JSMSG_CANT_REPORT_INVALID, errorDetails);
 
     
     if (!resultDesc.configurable()) {
-        if (!targetDesc.object()) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_REPORT_NE_AS_NC);
-            return false;
-        }
+        if (!targetDesc.object())
+            return js::Throw(cx, id, JSMSG_CANT_REPORT_NE_AS_NC);
 
-        if (targetDesc.configurable()) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_REPORT_C_AS_NC);
-            return false;
-        }
+        if (targetDesc.configurable())
+            return js::Throw(cx, id, JSMSG_CANT_REPORT_C_AS_NC);
     }
 
     
@@ -625,25 +639,27 @@ ScriptedProxyHandler::defineProperty(JSContext* cx, HandleObject proxy, HandleId
     
     if (!targetDesc.object()) {
         
-        if (!extensibleTarget) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_DEFINE_NEW);
-            return false;
-        }
+        if (!extensibleTarget)
+            return js::Throw(cx, id, JSMSG_CANT_DEFINE_NEW);
 
         
-        if (settingConfigFalse) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_DEFINE_NE_AS_NC);
-            return false;
-        }
+        if (settingConfigFalse)
+            return js::Throw(cx, id, JSMSG_CANT_DEFINE_NE_AS_NC);
     } else {
         
-        bool valid;
-        if (!IsCompatiblePropertyDescriptor(cx, extensibleTarget, desc, targetDesc, &valid))
+        const char* errorDetails = nullptr;
+        if (!IsCompatiblePropertyDescriptor(cx, extensibleTarget, desc, targetDesc,
+                                            &errorDetails))
             return false;
 
-        if (!valid || (settingConfigFalse && targetDesc.configurable())) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_DEFINE_INVALID);
-            return false;
+        if (errorDetails)
+            return js::Throw(cx, id, JSMSG_CANT_DEFINE_INVALID, errorDetails);
+
+        
+        if (settingConfigFalse && targetDesc.configurable()) {
+            static const char* DETAILS_CANT_REPORT_C_AS_NC =
+                "proxy can't define an existing configurable property as non-configurable";
+            return js::Throw(cx, id, JSMSG_CANT_DEFINE_INVALID, DETAILS_CANT_REPORT_C_AS_NC);
         }
     }
 
@@ -677,7 +693,7 @@ CreateFilteredListFromArrayLike(JSContext* cx, HandleValue v, AutoIdVector& prop
 
         
         if (!next.isString() && !next.isSymbol()) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_ONWKEYS_STR_SYM);
+            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_OWNKEYS_STR_SYM);
             return false;
         }
 
@@ -788,10 +804,8 @@ ScriptedProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy, AutoIdV
         auto ptr = uncheckedResultKeys.lookup(targetNonconfigurableKeys[i]);
 
         
-        if (!ptr) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_SKIP_NC);
-            return false;
-        }
+        if (!ptr)
+            return js::Throw(cx, targetNonconfigurableKeys[i], JSMSG_CANT_SKIP_NC);
 
         
         uncheckedResultKeys.remove(ptr);
@@ -808,20 +822,16 @@ ScriptedProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy, AutoIdV
         auto ptr = uncheckedResultKeys.lookup(targetConfigurableKeys[i]);
 
         
-        if (!ptr) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_REPORT_E_AS_NE);
-            return false;
-        }
+        if (!ptr)
+            return js::Throw(cx, targetConfigurableKeys[i], JSMSG_CANT_REPORT_E_AS_NE);
 
         
         uncheckedResultKeys.remove(ptr);
     }
 
     
-    if (!uncheckedResultKeys.empty()) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_REPORT_NEW);
-        return false;
-    }
+    if (!uncheckedResultKeys.empty())
+        return js::Throw(cx, uncheckedResultKeys.all().front(), JSMSG_CANT_REPORT_NEW);
 
     
     return props.appendAll(trapResult);
@@ -933,10 +943,8 @@ ScriptedProxyHandler::has(JSContext* cx, HandleObject proxy, HandleId id, bool* 
         
         if (desc.object()) {
             
-            if (!desc.configurable()) {
-                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_REPORT_NC_AS_NE);
-                return false;
-            }
+            if (!desc.configurable())
+                return js::Throw(cx, id, JSMSG_CANT_REPORT_NC_AS_NE);
 
             
             bool extensible;
@@ -944,10 +952,8 @@ ScriptedProxyHandler::has(JSContext* cx, HandleObject proxy, HandleId id, bool* 
                 return false;
 
             
-            if (!extensible) {
-                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_REPORT_E_AS_NE);
-                return false;
-            }
+            if (!extensible)
+                return js::Throw(cx, id, JSMSG_CANT_REPORT_E_AS_NE);
         }
     }
 
@@ -1011,18 +1017,17 @@ ScriptedProxyHandler::get(JSContext* cx, HandleObject proxy, HandleValue receive
             bool same;
             if (!SameValue(cx, trapResult, desc.value(), &same))
                 return false;
-            if (!same) {
-                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_MUST_REPORT_SAME_VALUE);
-                return false;
-            }
+            if (!same)
+                return js::Throw(cx, id, JSMSG_MUST_REPORT_SAME_VALUE);
         }
 
         
-        if (desc.isAccessorDescriptor() && !desc.configurable() && desc.getterObject() == nullptr) {
-            if (!trapResult.isUndefined()) {
-                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_MUST_REPORT_UNDEFINED);
-                return false;
-            }
+        if (desc.isAccessorDescriptor() &&
+            !desc.configurable() &&
+            (desc.getterObject() == nullptr) &&
+            !trapResult.isUndefined())
+        {
+            return js::Throw(cx, id, JSMSG_MUST_REPORT_UNDEFINED);
         }
     }
 
@@ -1091,17 +1096,13 @@ ScriptedProxyHandler::set(JSContext* cx, HandleObject proxy, HandleId id, Handle
             bool same;
             if (!SameValue(cx, v, desc.value(), &same))
                 return false;
-            if (!same) {
-                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_SET_NW_NC);
-                return false;
-            }
+            if (!same)
+                return js::Throw(cx, id, JSMSG_CANT_SET_NW_NC);
         }
 
         
-        if (desc.isAccessorDescriptor() && !desc.configurable() && desc.setterObject() == nullptr) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_SET_WO_SETTER);
-            return false;
-        }
+        if (desc.isAccessorDescriptor() && !desc.configurable() && desc.setterObject() == nullptr)
+            return js::Throw(cx, id, JSMSG_CANT_SET_WO_SETTER);
     }
 
     
