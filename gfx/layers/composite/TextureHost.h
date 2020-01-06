@@ -172,6 +172,13 @@ public:
     MOZ_ASSERT(mCompositableCount >= 0);
   }
 
+  
+  
+  virtual RefPtr<TextureSource> ExtractCurrentTile() {
+    NS_WARNING("Implementation does not expose tile sources");
+    return nullptr;
+  }
+
   int NumCompositableRefs() const { return mCompositableCount; }
 
 protected:
