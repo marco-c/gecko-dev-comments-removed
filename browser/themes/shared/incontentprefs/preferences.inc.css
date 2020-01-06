@@ -109,7 +109,11 @@ html|option {
 }
 
 #category-search > .category-icon {
-  list-style-image: url("chrome://browser/skin/preferences/in-content-new/icons.svg#search");
+  list-style-image: url("chrome://browser/skin/preferences/in-content-new/icons.svg#searchResults");
+}
+
+#category-application > .category-icon {
+  list-style-image: url("chrome://browser/skin/preferences/in-content-new/icons.svg#content");
 }
 
 #category-privacy > .category-icon {
@@ -118,6 +122,14 @@ html|option {
 
 #category-sync > .category-icon {
   list-style-image: url("chrome://browser/skin/preferences/in-content-new/icons.svg#sync");
+}
+
+#category-advanced > .category-icon {
+  list-style-image: url("chrome://browser/skin/preferences/in-content-new/icons.svg#advanced");
+}
+
+#category-search-results > .category-icon {
+  list-style-image: url("chrome://browser/skin/preferences/in-content-new/icons.svg#searchResults");
 }
 
 @media (max-width: 800px) {
@@ -406,7 +418,7 @@ groupbox {
   border-radius: 50%;
   list-style-image: url(chrome://browser/skin/fxa/default-avatar.svg);
   margin-inline-end: 15px;
-  image-rendering: -moz-crisp-edges;
+  image-rendering: auto;
   border: 1px solid transparent;
 }
 
