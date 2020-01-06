@@ -14,7 +14,6 @@
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "nsIProgrammingLanguage.h"
 #include "nsPIDOMWindow.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
@@ -317,18 +316,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(JSStackFrame)
   NS_INTERFACE_MAP_ENTRY(nsIStackFrame)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
-
-NS_IMETHODIMP JSStackFrame::GetLanguage(uint32_t* aLanguage)
-{
-  *aLanguage = nsIProgrammingLanguage::JAVASCRIPT;
-  return NS_OK;
-}
-
-NS_IMETHODIMP JSStackFrame::GetLanguageName(nsACString& aLanguageName)
-{
-  aLanguageName.AssignLiteral("JavaScript");
-  return NS_OK;
-}
 
 
 
