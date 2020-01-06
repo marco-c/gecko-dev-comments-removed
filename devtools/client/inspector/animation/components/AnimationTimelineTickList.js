@@ -1,0 +1,20 @@
+
+
+
+
+"use strict";
+
+const { DOM: dom, PureComponent } =
+  require("devtools/client/shared/vendor/react");
+
+class AnimationTimelineTickList extends PureComponent {
+  render() {
+    return dom.div(
+      {
+        className: "animation-timeline-tick-list"
+      }
+    );
+  }
+}
+
+module.exports = AnimationTimelineTickList;

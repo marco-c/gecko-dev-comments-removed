@@ -18,6 +18,17 @@
 }
 
 
+.animation-list-header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.animation-timeline-tick-list {
+  margin-right: 10px;
+  width: calc(100% - 210px);
+}
+
+
 .animation-list {
   list-style-type: none;
   margin-top: 0;
