@@ -5,6 +5,7 @@
 
 
 
+
 "use strict";
 
 const { PromisesFront } = require("devtools/shared/fronts/promises");

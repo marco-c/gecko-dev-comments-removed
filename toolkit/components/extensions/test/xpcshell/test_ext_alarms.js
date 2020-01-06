@@ -1,5 +1,6 @@
 
 
+
 "use strict";
 
 add_task(async function test_alarm_without_permissions() {

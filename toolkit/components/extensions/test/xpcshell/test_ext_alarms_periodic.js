@@ -1,5 +1,6 @@
 
 
+
 "use strict";
 
 add_task(async function test_periodic_alarm_fires() {
