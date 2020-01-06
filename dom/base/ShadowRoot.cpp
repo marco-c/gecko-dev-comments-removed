@@ -508,7 +508,7 @@ ShadowRoot::ContentAppended(nsIDocument* aDocument,
     
     if (nsContentUtils::IsContentInsertionPoint(aContainer)) {
       HTMLContentElement* content = HTMLContentElement::FromContent(aContainer);
-      if (content->MatchedNodes().IsEmpty()) {
+      if (content && content->MatchedNodes().IsEmpty()) {
         currentChild->DestInsertionPoints().AppendElement(aContainer);
       }
     }
@@ -538,7 +538,7 @@ ShadowRoot::ContentInserted(nsIDocument* aDocument,
     
     if (nsContentUtils::IsContentInsertionPoint(aContainer)) {
       HTMLContentElement* content = HTMLContentElement::FromContent(aContainer);
-      if (content->MatchedNodes().IsEmpty()) {
+      if (content && content->MatchedNodes().IsEmpty()) {
         aChild->DestInsertionPoints().AppendElement(aContainer);
       }
     }
@@ -563,7 +563,7 @@ ShadowRoot::ContentRemoved(nsIDocument* aDocument,
   
   if (nsContentUtils::IsContentInsertionPoint(aContainer)) {
     HTMLContentElement* content = HTMLContentElement::FromContent(aContainer);
-    if (content->MatchedNodes().IsEmpty()) {
+    if (content && content->MatchedNodes().IsEmpty()) {
       aChild->DestInsertionPoints().Clear();
     }
   }
