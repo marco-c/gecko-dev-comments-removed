@@ -52,23 +52,18 @@ browser.getBrowserForTab = function(tab) {
 
 
 
-browser.getTabBrowser = function(win) {
+browser.getTabBrowser = function(window) {
   
-  if ("BrowserApp" in win) {
-    return win.BrowserApp;
+  if ("BrowserApp" in window) {
+    return window.BrowserApp;
 
   
-  } else if ("gBrowser" in win) {
-    return win.gBrowser;
+  } else if ("gBrowser" in window) {
+    return window.gBrowser;
   }
 
   return null;
 };
-
-
-
-
-
 
 
 
@@ -84,13 +79,13 @@ browser.Context = class {
 
 
 
-  constructor(win, driver) {
-    this.window = win;
+  constructor(window, driver) {
+    this.window = window;
     this.driver = driver;
 
     
     
-    this.tabBrowser = browser.getTabBrowser(win);
+    this.tabBrowser = browser.getTabBrowser(this.window);
 
     this.knownFrames = [];
 
@@ -307,10 +302,10 @@ browser.Context = class {
 
 
 
-  switchToTab(index, win, focus = true) {
-    if (win) {
-      this.window = win;
-      this.tabBrowser = browser.getTabBrowser(win);
+  switchToTab(index, window = undefined, focus = true) {
+    if (window) {
+      this.window = window;
+      this.tabBrowser = browser.getTabBrowser(this.window);
     }
 
     if (!this.tabBrowser) {

@@ -889,16 +889,17 @@ element.isObscured = function(el) {
 
 
 
-element.getInViewCentrePoint = function(rect, win) {
+
+element.getInViewCentrePoint = function(rect, window) {
   const {max, min} = Math;
 
   let x = {
     left: max(0, min(rect.x, rect.x + rect.width)),
-    right: min(win.innerWidth, max(rect.x, rect.x + rect.width)),
+    right: min(window.innerWidth, max(rect.x, rect.x + rect.width)),
   };
   let y = {
     top: max(0, min(rect.y, rect.y + rect.height)),
-    bottom: min(win.innerHeight, max(rect.y, rect.y + rect.height)),
+    bottom: min(window.innerHeight, max(rect.y, rect.y + rect.height)),
   };
 
   return {

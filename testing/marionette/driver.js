@@ -467,16 +467,16 @@ GeckoDriver.prototype.addFrameCloseListener = function(action) {
 
 
 
-GeckoDriver.prototype.addBrowser = function(win) {
-  let bc = new browser.Context(win, this);
-  let winId = getOuterWindowId(win);
+GeckoDriver.prototype.addBrowser = function(window) {
+  let bc = new browser.Context(window, this);
+  let winId = getOuterWindowId(window);
 
   this.browsers[winId] = bc;
   this.curBrowser = this.browsers[winId];
   if (!this.wins.has(winId)) {
     
     
-    this.wins.set(winId, win);
+    this.wins.set(winId, window);
   }
 };
 
@@ -492,12 +492,12 @@ GeckoDriver.prototype.addBrowser = function(win) {
 
 
 
-GeckoDriver.prototype.startBrowser = function(win, isNewSession = false) {
-  this.mainFrame = win;
+GeckoDriver.prototype.startBrowser = function(window, isNewSession = false) {
+  this.mainFrame = window;
   this.curFrame = null;
-  this.addBrowser(win);
+  this.addBrowser(window);
   this.curBrowser.isNewSession = isNewSession;
-  this.whenBrowserStarted(win, isNewSession);
+  this.whenBrowserStarted(window, isNewSession);
 };
 
 
@@ -509,8 +509,8 @@ GeckoDriver.prototype.startBrowser = function(win, isNewSession = false) {
 
 
 
-GeckoDriver.prototype.whenBrowserStarted = function(win, isNewSession) {
-  let mm = win.window.messageManager;
+GeckoDriver.prototype.whenBrowserStarted = function(window, isNewSession) {
+  let mm = window.messageManager;
   if (mm) {
     if (!isNewSession) {
       
@@ -539,8 +539,7 @@ GeckoDriver.prototype.whenBrowserStarted = function(win, isNewSession) {
       Preferences.set(CONTENT_LISTENER_PREF, true);
     }
   } else {
-    logger.error(
-        `Could not load listener into content for page ${win.location.href}`);
+    logger.error("Unable to load content frame script");
   }
 };
 
@@ -3715,15 +3714,6 @@ function copy(obj) {
   }
   return obj;
 }
-
-
-
-
-
-
-
-
-
 
 function getOuterWindowId(win) {
   return win.QueryInterface(Ci.nsIInterfaceRequestor)
