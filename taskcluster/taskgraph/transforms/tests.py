@@ -188,7 +188,8 @@ test_description_schema = Schema({
     Required('checkout', default=False): bool,
 
     
-    Optional('reboot', default=True): bool,
+    Optional('reboot', default=False):
+        Any(False, 'always', 'on-exception', 'on-failure'),
 
     
     Required('mozharness'): optionally_keyed_by(
@@ -329,7 +330,7 @@ def set_defaults(config, tests):
             test.setdefault('e10s', 'both')
 
         
-        if test['test-platform'].startswith('linux'):
+        if test['test-platform'].startswith('linux') and test['suite'] != 'talos':
             test.setdefault('allow-software-gl-layers', True)
         else:
             test['allow-software-gl-layers'] = False
@@ -352,6 +353,28 @@ def set_defaults(config, tests):
         test.setdefault('max-run-time', 3600)
         test.setdefault('reboot', True)
         test['mozharness'].setdefault('extra-options', [])
+        yield test
+
+
+@transforms.add
+def setup_talos(config, tests):
+    """Add options that are specific to talos jobs (identified by suite=talos)"""
+    for test in tests:
+        if test['suite'] != 'talos':
+            yield test
+            continue
+
+        extra_options = test.setdefault('mozharness', {}).setdefault('extra-options', [])
+        extra_options.append('--add-option')
+        extra_options.append('--webServer,localhost')
+        extra_options.append('--use-talos-json')
+
+        
+        
+        if config.params['project'] == 'try':
+            extra_options.append('--branch-name')
+            extra_options.append('Try')
+
         yield test
 
 
@@ -415,7 +438,10 @@ def set_worker_implementation(config, tests):
             else:
                 test['worker-implementation'] = 'generic-worker'
         elif test.get('suite', '') == 'talos':
-            test['worker-implementation'] = 'buildbot-bridge'
+            if config.config['args'].taskcluster_worker:
+                test['worker-implementation'] = 'native-engine'
+            else:
+                test['worker-implementation'] = 'buildbot-bridge'
         elif test_platform.startswith('win'):
             test['worker-implementation'] = 'generic-worker'
         else:
@@ -801,10 +827,14 @@ def make_job_description(config, tests):
         worker = jobdesc['worker'] = {}
         implementation = worker['implementation'] = test['worker-implementation']
 
+        
         if implementation == 'buildbot-bridge':
             jobdesc['worker-type'] = 'buildbot-bridge/buildbot-bridge'
         elif implementation == 'native-engine':
-            jobdesc['worker-type'] = 'tc-worker-provisioner/gecko-t-osx-10-10'
+            if test['test-platform'].startswith('linux'):
+                jobdesc['worker-type'] = 'releng-hardware/gecko-t-linux-talos'
+            else:
+                jobdesc['worker-type'] = 'tc-worker-provisioner/gecko-t-osx-10-10'
         elif implementation == 'generic-worker':
             test_platform = test['test-platform'].split('/')[0]
             jobdesc['worker-type'] = WORKER_TYPE[test_platform]
