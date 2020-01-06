@@ -7,8 +7,27 @@ Cu.import("resource://services-sync/UIState.jsm");
 
 const UIStateInternal = UIState._internal;
 
-add_task(async function test_isReady() {
+add_task(async function test_isReady_unconfigured() {
   UIState.reset();
+
+  let refreshState = sinon.spy(UIStateInternal, "refreshState");
+
+  
+  
+  ok(!UIState.isReady());
+  ok(!refreshState.called);
+  refreshState.reset();
+
+  
+  ok(UIState.isReady());
+  ok(!refreshState.called);
+
+  refreshState.restore();
+});
+
+add_task(async function test_isReady_signedin() {
+  UIState.reset();
+  Services.prefs.setCharPref("services.sync.username", "foo");
 
   let refreshState = sinon.spy(UIStateInternal, "refreshState");
 
