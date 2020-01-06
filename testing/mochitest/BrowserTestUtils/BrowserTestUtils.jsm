@@ -33,6 +33,30 @@ Cc["@mozilla.org/globalmessagemanager;1"]
 XPCOMUtils.defineLazyModuleGetter(this, "E10SUtils",
   "resource:///modules/E10SUtils.jsm");
 
+const PROCESSSELECTOR_CONTRACTID = "@mozilla.org/ipc/processselector;1";
+const OUR_PROCESSSELECTOR_CID =
+  Components.ID("{f9746211-3d53-4465-9aeb-ca0d96de0253}");
+const EXISTING_JSID = Cc[PROCESSSELECTOR_CONTRACTID];
+const DEFAULT_PROCESSSELECTOR_CID = EXISTING_JSID ?
+  Components.ID(EXISTING_JSID.number) : null;
+
+
+function NewProcessSelector() {
+}
+
+NewProcessSelector.prototype = {
+  classID: OUR_PROCESSSELECTOR_CID,
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIContentProcessProvider]),
+
+  provideProcess() {
+    return Ci.nsIContentProcessProvider.NEW_PROCESS;
+  }
+};
+
+let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
+let selectorFactory = XPCOMUtils._getFactory(NewProcessSelector);
+registrar.registerFactory(OUR_PROCESSSELECTOR_CID, "", null, selectorFactory);
+
 
 
 Cu.permitCPOWsInScope(this);
@@ -77,7 +101,7 @@ this.BrowserTestUtils = {
         url: options
       }
     }
-    let tab = yield BrowserTestUtils.openNewForegroundTab(options.gBrowser, options.url);
+    let tab = yield BrowserTestUtils.openNewForegroundTab(options);
     let originalWindow = tab.ownerGlobal;
     let result = yield taskFn(tab.linkedBrowser);
     let finalWindow = tab.ownerGlobal;
@@ -114,6 +138,8 @@ this.BrowserTestUtils = {
 
 
 
+
+
   openNewForegroundTab(tabbrowser, ...args) {
     let options;
     if (tabbrowser instanceof Ci.nsIDOMXULElement) {
@@ -122,9 +148,10 @@ this.BrowserTestUtils = {
         opening = "about:blank",
         waitForLoad = true,
         waitForStateStop = false,
+        forceNewProcess = false,
       ] = args;
 
-      options = { opening, waitForLoad, waitForStateStop };
+      options = { opening, waitForLoad, waitForStateStop, forceNewProcess };
     } else {
       if ("url" in tabbrowser && !("opening" in tabbrowser)) {
         tabbrowser.opening = tabbrowser.url;
@@ -134,34 +161,54 @@ this.BrowserTestUtils = {
         opening = "about:blank",
         waitForLoad = true,
         waitForStateStop = false,
+        forceNewProcess = false,
       } = tabbrowser;
 
       tabbrowser = tabbrowser.gBrowser;
-      options = { opening, waitForLoad, waitForStateStop };
+      options = { opening, waitForLoad, waitForStateStop, forceNewProcess };
     }
 
-    let { opening: opening, waitForLoad: aWaitForLoad, waitForStateStop: aWaitForStateStop } = options;
+    let { opening: opening,
+          waitForLoad: aWaitForLoad,
+          waitForStateStop: aWaitForStateStop
+    } = options;
 
-    let tab;
-    let promises = [
-      BrowserTestUtils.switchTab(tabbrowser, function () {
-        if (typeof opening == "function") {
-          opening();
-          tab = tabbrowser.selectedTab;
-        }
-        else {
-          tabbrowser.selectedTab = tab = tabbrowser.addTab(opening);
-        }
-      })
-    ];
+    let promises, tab;
+    try {
+      
+      
+      
+      
+      if (options.forceNewProcess && DEFAULT_PROCESSSELECTOR_CID) {
+        registrar.registerFactory(OUR_PROCESSSELECTOR_CID, "",
+                                  PROCESSSELECTOR_CONTRACTID, null);
+      }
 
-    if (aWaitForLoad) {
-      promises.push(BrowserTestUtils.browserLoaded(tab.linkedBrowser));
+      promises = [
+        BrowserTestUtils.switchTab(tabbrowser, function () {
+          if (typeof opening == "function") {
+            opening();
+            tab = tabbrowser.selectedTab;
+          }
+          else {
+            tabbrowser.selectedTab = tab = tabbrowser.addTab(opening);
+          }
+        })
+      ];
+
+      if (aWaitForLoad) {
+        promises.push(BrowserTestUtils.browserLoaded(tab.linkedBrowser));
+      }
+      if (aWaitForStateStop) {
+        promises.push(BrowserTestUtils.browserStopped(tab.linkedBrowser));
+      }
+    } finally {
+      
+      if (options.forceNewProcess && DEFAULT_PROCESSSELECTOR_CID) {
+        registrar.registerFactory(DEFAULT_PROCESSSELECTOR_CID, "",
+                                  PROCESSSELECTOR_CONTRACTID, null);
+      }
     }
-    if (aWaitForStateStop) {
-      promises.push(BrowserTestUtils.browserStopped(tab.linkedBrowser));
-    }
-
     return Promise.all(promises).then(() => tab);
   },
 
