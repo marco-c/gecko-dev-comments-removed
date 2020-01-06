@@ -253,12 +253,7 @@ class PageloaderResults(Results):
         """
         page = page.rstrip('/')
         if '/' in page:
-            if 'base_page' in page or 'ref_page' in page:
-                
-                
-                page = page.split('/')[-1]
-            else:
-                page = page.split('/')[0]
+            page = page.split('/')[0]
         return page
 
 
