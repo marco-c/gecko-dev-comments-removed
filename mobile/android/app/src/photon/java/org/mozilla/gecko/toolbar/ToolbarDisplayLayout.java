@@ -113,19 +113,6 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout {
     private final SiteIdentityPopup mSiteIdentityPopup;
     private int mSecurityImageLevel;
 
-    
-    
-    
-    private static final int LEVEL_DEFAULT_GLOBE = 0;
-    
-    private static final int LEVEL_WARNING_MINOR = 3;
-    private static final int LEVEL_LOCK_DISABLED = 4;
-    
-    private static final int LEVEL_SHIELD_ENABLED = 5;
-    private static final int LEVEL_SHIELD_DISABLED = 6;
-    
-    private static final int LEVEL_SEARCH_ICON = 999;
-
     private final ForegroundColorSpan mUrlColorSpan;
     private final ForegroundColorSpan mPrivateUrlColorSpan;
     private final ForegroundColorSpan mBlockedColorSpan;
