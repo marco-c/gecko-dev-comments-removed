@@ -1046,8 +1046,8 @@ IMContextWrapper::OnStartCompositionNative(GtkIMContext* aContext)
 {
     MOZ_LOG(gGtkIMLog, LogLevel::Info,
         ("0x%p OnStartCompositionNative(aContext=0x%p), "
-         "current context=0x%p",
-         this, aContext, GetCurrentContext()));
+         "current context=0x%p, mComposingContext=0x%p",
+         this, aContext, GetCurrentContext(), mComposingContext));
 
     
     if (GetCurrentContext() != aContext) {
@@ -1058,7 +1058,17 @@ IMContextWrapper::OnStartCompositionNative(GtkIMContext* aContext)
         return;
     }
 
-    mComposingContext = static_cast<GtkIMContext*>(g_object_ref(aContext));
+    if (mComposingContext && aContext != mComposingContext) {
+        
+        MOZ_LOG(gGtkIMLog, LogLevel::Warning,
+            ("0x%p   OnStartCompositionNative(), Warning, "
+             "there is already a composing context but starting new "
+             "composition with different context",
+             this));
+    }
+
+    
+    
 
     if (!DispatchCompositionStart(aContext)) {
         return;
@@ -1079,8 +1089,8 @@ void
 IMContextWrapper::OnEndCompositionNative(GtkIMContext* aContext)
 {
     MOZ_LOG(gGtkIMLog, LogLevel::Info,
-        ("0x%p OnEndCompositionNative(aContext=0x%p)",
-         this, aContext));
+        ("0x%p OnEndCompositionNative(aContext=0x%p), mComposingContext=0x%p",
+         this, aContext, mComposingContext));
 
     
     
@@ -1089,6 +1099,15 @@ IMContextWrapper::OnEndCompositionNative(GtkIMContext* aContext)
         MOZ_LOG(gGtkIMLog, LogLevel::Error,
             ("0x%p    OnEndCompositionNative(), FAILED, "
              "given context doesn't match with any context",
+             this));
+        return;
+    }
+
+    
+    if (aContext != mComposingContext) {
+        MOZ_LOG(gGtkIMLog, LogLevel::Warning,
+            ("0x%p    OnEndCompositionNative(), Warning, "
+             "given context doesn't match with mComposingContext",
              this));
         return;
     }
@@ -1121,8 +1140,9 @@ void
 IMContextWrapper::OnChangeCompositionNative(GtkIMContext* aContext)
 {
     MOZ_LOG(gGtkIMLog, LogLevel::Info,
-        ("0x%p OnChangeCompositionNative(aContext=0x%p)",
-         this, aContext));
+        ("0x%p OnChangeCompositionNative(aContext=0x%p), "
+         "mComposingContext=0x%p",
+         this, aContext, mComposingContext));
 
     
     
@@ -1135,9 +1155,21 @@ IMContextWrapper::OnChangeCompositionNative(GtkIMContext* aContext)
         return;
     }
 
+    if (mComposingContext && aContext != mComposingContext) {
+        
+        MOZ_LOG(gGtkIMLog, LogLevel::Warning,
+            ("0x%p   OnChangeCompositionNative(), Warning, "
+             "given context doesn't match with composing context",
+             this));
+    }
+
     nsAutoString compositionString;
     GetCompositionString(aContext, compositionString);
     if (!IsComposing() && compositionString.IsEmpty()) {
+        MOZ_LOG(gGtkIMLog, LogLevel::Warning,
+            ("0x%p   OnChangeCompositionNative(), Warning, does nothing "
+             "because has not started composition and composing string is "
+             "empty", this));
         mDispatchedCompositionString.Truncate();
         return; 
     }
@@ -1267,6 +1299,10 @@ IMContextWrapper::OnCommitCompositionNative(GtkIMContext* aContext,
     
     
     if (!IsComposingOn(aContext) && !commitString[0]) {
+        MOZ_LOG(gGtkIMLog, LogLevel::Warning,
+            ("0x%p   OnCommitCompositionNative(), Warning, does nothing "
+             "because has not started composition and commit string is empty",
+             this));
         return;
     }
 
@@ -1355,6 +1391,9 @@ IMContextWrapper::DispatchCompositionStart(GtkIMContext* aContext)
         return false;
     }
 
+    mComposingContext = static_cast<GtkIMContext*>(g_object_ref(aContext));
+    MOZ_ASSERT(mComposingContext);
+
     
     RefPtr<nsWindow> lastFocusedWindow(mLastFocusedWindow);
 
@@ -1369,19 +1408,44 @@ IMContextWrapper::DispatchCompositionStart(GtkIMContext* aContext)
         mProcessingKeyEvent->type == GDK_KEY_PRESS) {
         
         
+        
+        
+        
+        
+        
+        GtkIMContext* context = mComposingContext;
+
+        
+        
         bool isCancelled;
         mLastFocusedWindow->DispatchKeyDownEvent(mProcessingKeyEvent,
                                                  &isCancelled);
         MOZ_LOG(gGtkIMLog, LogLevel::Debug,
-            ("0x%p   DispatchCompositionStart(), FAILED, keydown event "
-             "is dispatched",
+            ("0x%p   DispatchCompositionStart(), preceding keydown event is "
+             "dispatched",
              this));
         if (lastFocusedWindow->IsDestroyed() ||
             lastFocusedWindow != mLastFocusedWindow) {
-            MOZ_LOG(gGtkIMLog, LogLevel::Error,
-                ("0x%p   DispatchCompositionStart(), FAILED, the focused "
+            MOZ_LOG(gGtkIMLog, LogLevel::Warning,
+                ("0x%p   DispatchCompositionStart(), Warning, the focused "
                  "widget was destroyed/changed by keydown event",
                  this));
+            return false;
+        }
+
+        
+        
+        if (GetCurrentContext() != context) {
+            MOZ_LOG(gGtkIMLog, LogLevel::Warning,
+                ("0x%p   DispatchCompositionStart(), Warning, the preceding "
+                 "keydown event causes changing active IM context",
+                 this));
+            if (mComposingContext == context) {
+                
+                
+                
+                ResetIME();
+            }
             return false;
         }
     }
