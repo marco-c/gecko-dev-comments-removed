@@ -10193,6 +10193,27 @@ nsContentUtils::GetElementDefinitionIfObservingAttr(Element* aCustomElement,
 }
 
  void
+nsContentUtils::SyncInvokeReactions(nsIDocument::ElementCallbackType aType,
+                                    Element* aElement,
+                                    CustomElementDefinition* aDefinition)
+{
+  MOZ_ASSERT(aElement);
+
+  nsIDocument* doc = aElement->OwnerDoc();
+  nsPIDOMWindowInner* window(doc->GetInnerWindow());
+  if (!window) {
+    return;
+  }
+
+  RefPtr<CustomElementRegistry> registry(window->CustomElements());
+  if (!registry) {
+    return;
+  }
+
+  registry->SyncInvokeReactions(aType, aElement, aDefinition);
+}
+
+ void
 nsContentUtils::EnqueueUpgradeReaction(Element* aElement,
                                        CustomElementDefinition* aDefinition)
 {
