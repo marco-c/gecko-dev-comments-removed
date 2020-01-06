@@ -5,10 +5,21 @@
 
 
 #include "FlacDecoder.h"
+#include "FlacDemuxer.h"
 #include "MediaContainerType.h"
 #include "MediaPrefs.h"
 
 namespace mozilla {
+
+ChannelMediaDecoder*
+FlacDecoder::CloneImpl(MediaDecoderInit& aInit)
+{
+  if (!IsEnabled()) {
+    return nullptr;
+  }
+
+  return new FlacDecoder(aInit);
+}
 
  bool
 FlacDecoder::IsEnabled()

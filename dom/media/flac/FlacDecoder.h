@@ -7,17 +7,28 @@
 #ifndef FLAC_DECODER_H_
 #define FLAC_DECODER_H_
 
+#include "ChannelMediaDecoder.h"
+
 namespace mozilla {
 
 class MediaContainerType;
 
-class FlacDecoder
+class FlacDecoder : public ChannelMediaDecoder
 {
 public:
+  
+  explicit FlacDecoder(MediaDecoderInit& aInit)
+    : ChannelMediaDecoder(aInit)
+  {
+  }
+
   
   
   static bool IsEnabled();
   static bool IsSupportedType(const MediaContainerType& aContainerType);
+
+private:
+  ChannelMediaDecoder* CloneImpl(MediaDecoderInit& aInit) override;
 };
 
 } 

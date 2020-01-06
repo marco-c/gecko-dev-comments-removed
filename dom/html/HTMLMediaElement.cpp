@@ -7153,17 +7153,6 @@ HTMLMediaElement::NextFrameStatus()
   return NEXT_FRAME_UNINITIALIZED;
 }
 
-
-void
-HTMLMediaElement::SetDecoder(MediaDecoder* aDecoder)
-{
-  MOZ_ASSERT(aDecoder); 
-  if (mDecoder) {
-    ShutdownDecoder();
-  }
-  mDecoder = aDecoder;
-}
-
 float
 HTMLMediaElement::ComputedVolume() const
 {

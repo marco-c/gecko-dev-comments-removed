@@ -4,12 +4,28 @@
 
 
 
-#include "OggDecoder.h"
 #include "MediaPrefs.h"
 #include "MediaContainerType.h"
-#include "MediaDecoder.h"
+#include "MediaDecoderStateMachine.h"
+#include "MediaFormatReader.h"
+#include "OggDemuxer.h"
+#include "OggDecoder.h"
 
 namespace mozilla {
+
+MediaDecoderStateMachine* OggDecoder::CreateStateMachine()
+{
+  RefPtr<OggDemuxer> demuxer = new OggDemuxer(mResource);
+  MediaFormatReaderInit init;
+  init.mVideoFrameContainer = GetVideoFrameContainer();
+  init.mKnowsCompositor = GetCompositor();
+  init.mCrashHelper = GetOwner()->CreateGMPCrashHelper();
+  init.mFrameStats = mFrameStats;
+  mReader = new MediaFormatReader(init, demuxer);
+  demuxer->SetChainingEvents(&mReader->TimedMetadataProducer(),
+                             &mReader->MediaNotSeekableProducer());
+  return new MediaDecoderStateMachine(this, mReader);
+}
 
 
 bool
@@ -35,7 +51,7 @@ OggDecoder::IsSupportedType(const MediaContainerType& aContainerType)
   
   
   for (const auto& codec : codecs.Range()) {
-    if ((MediaDecoder::IsOpusEnabled() && codec.EqualsLiteral("opus")) ||
+    if ((IsOpusEnabled() && codec.EqualsLiteral("opus")) ||
         codec.EqualsLiteral("vorbis") ||
         (MediaPrefs::FlacInOgg() && codec.EqualsLiteral("flac"))) {
       continue;

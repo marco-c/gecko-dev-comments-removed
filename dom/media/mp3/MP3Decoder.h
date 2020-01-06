@@ -6,17 +6,28 @@
 #ifndef MP3Decoder_h_
 #define MP3Decoder_h_
 
+#include "ChannelMediaDecoder.h"
+
 namespace mozilla {
 
 class MediaContainerType;
 
-class MP3Decoder
+class MP3Decoder : public ChannelMediaDecoder
 {
 public:
+  
+  explicit MP3Decoder(MediaDecoderInit& aInit)
+    : ChannelMediaDecoder(aInit)
+  {
+  }
+
   
   
   static bool IsEnabled();
   static bool IsSupportedType(const MediaContainerType& aContainerType);
+
+private:
+  ChannelMediaDecoder* CloneImpl(MediaDecoderInit& aInit) override;
 };
 
 } 

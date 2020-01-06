@@ -110,6 +110,10 @@ public:
 
   
   
+  virtual MediaDecoderStateMachine* CreateStateMachine() = 0;
+
+  
+  
   virtual void Shutdown();
 
   
@@ -203,6 +207,7 @@ public:
   
   bool OwnerHasError() const;
 
+public:
   
   
   bool IsMediaSeekable();
@@ -406,7 +411,7 @@ private:
 
   
   
-  virtual void GetMozDebugReaderData(nsACString& aString);
+  virtual void GetMozDebugReaderData(nsACString& aString) { }
 
   virtual void DumpDebugInfo();
 

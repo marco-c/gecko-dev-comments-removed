@@ -4,11 +4,23 @@
 
 
 
+
 #include "MP3Decoder.h"
+
 #include "MediaContainerType.h"
+#include "MP3Demuxer.h"
 #include "PDMFactory.h"
 
 namespace mozilla {
+
+ChannelMediaDecoder*
+MP3Decoder::CloneImpl(MediaDecoderInit& aInit)
+{
+  if (!IsEnabled()) {
+    return nullptr;
+  }
+  return new MP3Decoder(aInit);
+}
 
 
 bool

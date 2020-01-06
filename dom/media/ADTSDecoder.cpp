@@ -5,10 +5,20 @@
 
 
 #include "ADTSDecoder.h"
+#include "ADTSDemuxer.h"
 #include "MediaContainerType.h"
 #include "PDMFactory.h"
 
 namespace mozilla {
+
+ChannelMediaDecoder*
+ADTSDecoder::CloneImpl(MediaDecoderInit& aInit)
+{
+  if (!IsEnabled())
+    return nullptr;
+
+  return new ADTSDecoder(aInit);
+}
 
  bool
 ADTSDecoder::IsEnabled()

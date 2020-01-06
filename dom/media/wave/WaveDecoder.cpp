@@ -4,16 +4,23 @@
 
 
 
-#include "WaveDecoder.h"
+#include "WaveDemuxer.h"
 #include "MediaContainerType.h"
-#include "MediaDecoder.h"
+#include "WaveDecoder.h"
+#include "PDMFactory.h"
 
 namespace mozilla {
+
+ChannelMediaDecoder*
+WaveDecoder::CloneImpl(MediaDecoderInit& aInit)
+{
+  return new WaveDecoder(aInit);
+}
 
  bool
 WaveDecoder::IsSupportedType(const MediaContainerType& aContainerType)
 {
-  if (!MediaDecoder::IsWaveEnabled()) {
+  if (!IsWaveEnabled()) {
     return false;
   }
   if (aContainerType.Type() == MEDIAMIMETYPE("audio/wave")
