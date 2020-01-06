@@ -150,6 +150,9 @@ class PlanarYCbCrImage;
 class TextureClient;
 class KnowsCompositor;
 class NVImage;
+#ifdef XP_WIN
+class D3D11YCbCrRecycleAllocator;
+#endif
 
 struct ImageBackendData
 {
@@ -541,6 +544,11 @@ public:
     return mImageFactory;
   }
 
+#ifdef XP_WIN
+  D3D11YCbCrRecycleAllocator* GetD3D11YCbCrRecycleAllocator(
+    KnowsCompositor* aAllocator);
+#endif
+
   
 
 
@@ -609,6 +617,10 @@ private:
   
   
   ReentrantMonitor mReentrantMonitor;
+
+#ifdef XP_WIN
+  RefPtr<D3D11YCbCrRecycleAllocator> mD3D11YCbCrRecycleAllocator;
+#endif
 
   nsTArray<OwningImage> mCurrentImages;
 
