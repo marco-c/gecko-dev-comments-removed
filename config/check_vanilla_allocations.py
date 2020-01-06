@@ -131,7 +131,7 @@ def main():
 
         
         
-        if "mozalloc" in filename:
+        if "_memory_" in filename:
             continue
 
         fn = m.group(2)
