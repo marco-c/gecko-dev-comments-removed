@@ -92,8 +92,9 @@ ToolSidebar.prototype = {
 
 
 
-  addTab: function (id, title, panel, selected) {
-    this._tabbar.addTab(id, title, selected, panel);
+
+  addTab: function (id, title, panel, selected, index) {
+    this._tabbar.addTab(id, title, selected, panel, null, index);
     this.emit("new-tab-registered", id);
   },
 
@@ -105,7 +106,8 @@ ToolSidebar.prototype = {
 
 
 
-  addExistingTab: function (id, title, selected) {
+
+  addExistingTab: function (id, title, selected, index) {
     let panel = this.InspectorTabPanel({
       id: id,
       idPrefix: this.TABPANEL_ID_PREFIX,
@@ -113,7 +115,7 @@ ToolSidebar.prototype = {
       title: title,
     });
 
-    this.addTab(id, title, panel, selected);
+    this.addTab(id, title, panel, selected, index);
   },
 
   
@@ -126,7 +128,8 @@ ToolSidebar.prototype = {
 
 
 
-  addFrameTab: function (id, title, url, selected) {
+
+  addFrameTab: function (id, title, url, selected, index) {
     let panel = this.InspectorTabPanel({
       id: id,
       idPrefix: this.TABPANEL_ID_PREFIX,
@@ -136,7 +139,7 @@ ToolSidebar.prototype = {
       onMount: this.onSidePanelMounted.bind(this),
     });
 
-    this.addTab(id, title, panel, selected);
+    this.addTab(id, title, panel, selected, index);
   },
 
   onSidePanelMounted: function (content, props) {
