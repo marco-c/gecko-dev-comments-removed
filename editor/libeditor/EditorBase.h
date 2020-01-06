@@ -979,7 +979,7 @@ public:
 
   bool HasIndependentSelection() const
   {
-    return !!mSelectionControllerWeak;
+    return !!mSelectionController;
   }
 
   bool IsModifiable() const
@@ -1104,9 +1104,7 @@ public:
   void HideCaret(bool aHide);
 
 private:
-  
-  
-  CachedWeakPtr<nsISelectionController> mSelectionControllerWeak;
+  nsCOMPtr<nsISelectionController> mSelectionController;
   
   
   CachedWeakPtr<nsIDocument> mDocumentWeak;
