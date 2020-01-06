@@ -135,9 +135,15 @@ CSPService::ShouldLoad(uint32_t aContentType,
   
   
   
+  
   nsCOMPtr<nsINode> node(do_QueryInterface(aRequestContext));
-  nsCOMPtr<nsIPrincipal> principal = node ? node->NodePrincipal()
-                                          : aRequestPrincipal;
+  nsCOMPtr<nsIPrincipal> principal;
+  if (!node || (aRequestPrincipal &&
+                BasePrincipal::Cast(aRequestPrincipal)->OverridesCSP(node->NodePrincipal()))) {
+    principal = aRequestPrincipal;
+  } else  {
+    principal = node->NodePrincipal();
+  }
   if (!principal) {
     
     return NS_OK;

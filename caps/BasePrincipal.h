@@ -125,6 +125,16 @@ public:
   inline bool FastSubsumesConsideringDomain(nsIPrincipal* aOther);
   inline bool FastSubsumesConsideringDomainIgnoringFPD(nsIPrincipal* aOther);
 
+  
+
+
+
+
+  bool OverridesCSP(nsIPrincipal* aDocumentPrincipal)
+  {
+    return mKind == eExpandedPrincipal && FastSubsumes(aDocumentPrincipal);
+  }
+
 protected:
   virtual ~BasePrincipal();
 
