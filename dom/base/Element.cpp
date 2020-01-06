@@ -855,7 +855,15 @@ Element::ScrollTop()
 void
 Element::SetScrollTop(int32_t aScrollTop)
 {
-  nsIScrollableFrame* sf = GetScrollFrame();
+  
+  
+  
+  
+  
+  
+  
+  FlushType flushType = aScrollTop == 0 ? FlushType::Frames : FlushType::Layout;
+  nsIScrollableFrame* sf = GetScrollFrame(nullptr, flushType);
   if (sf) {
     nsIScrollableFrame::ScrollMode scrollMode = nsIScrollableFrame::INSTANT;
     if (sf->GetScrollbarStyles().mScrollBehavior == NS_STYLE_SCROLL_BEHAVIOR_SMOOTH) {
@@ -877,6 +885,9 @@ Element::ScrollLeft()
 void
 Element::SetScrollLeft(int32_t aScrollLeft)
 {
+  
+  
+  
   nsIScrollableFrame* sf = GetScrollFrame();
   if (sf) {
     nsIScrollableFrame::ScrollMode scrollMode = nsIScrollableFrame::INSTANT;
