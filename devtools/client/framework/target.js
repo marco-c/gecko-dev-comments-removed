@@ -404,9 +404,8 @@ TabTarget.prototype = {
     if (this.isLocalTab) {
       
       
-      if (!DebuggerServer.initialized) {
-        DebuggerServer.init();
-      }
+      DebuggerServer.init();
+
       
       
       

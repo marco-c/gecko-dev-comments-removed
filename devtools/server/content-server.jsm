@@ -29,9 +29,7 @@ function setupServer(mm) {
   gLoader.invisibleToDebugger = true;
   let { DebuggerServer } = gLoader.require("devtools/server/main");
 
-  if (!DebuggerServer.initialized) {
-    DebuggerServer.init();
-  }
+  DebuggerServer.init();
   
   
   

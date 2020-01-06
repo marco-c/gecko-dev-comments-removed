@@ -39,9 +39,7 @@ var AboutDebugging = {
       return;
     }
 
-    if (!DebuggerServer.initialized) {
-      DebuggerServer.init();
-    }
+    DebuggerServer.init();
     DebuggerServer.allowChromeProcess = true;
     
     

@@ -188,13 +188,10 @@ HUD_SERVICE.prototype =
     {
       let deferred = defer();
 
-      if (!DebuggerServer.initialized) {
-        DebuggerServer.init();
-      }
-
       
       
       
+      DebuggerServer.init();
       DebuggerServer.registerActors({ root: true, browser: false, tab: true });
 
       DebuggerServer.allowChromeProcess = true;

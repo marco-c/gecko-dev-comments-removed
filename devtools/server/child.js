@@ -18,9 +18,7 @@ try {
     const { dumpn } = DevToolsUtils;
     const { DebuggerServer, ActorPool } = require("devtools/server/main");
 
-    if (!DebuggerServer.initialized) {
-      DebuggerServer.init();
-    }
+    DebuggerServer.init();
     
     
     
