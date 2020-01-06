@@ -304,6 +304,10 @@ HTMLEditor::ShowResizersInner(Element& aResizedElement)
    return NS_ERROR_FAILURE;
   }
 
+  if (NS_WARN_IF(!IsDescendantOfEditorRoot(&aResizedElement))) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
   mResizedObject = &aResizedElement;
 
   
