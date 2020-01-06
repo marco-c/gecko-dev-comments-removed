@@ -9,10 +9,13 @@
 #include "GeckoProfiler.h"              
 #include "client/ClientLayerManager.h"  
 #include "gfxContext.h"                 
+#include "gfx2DGlue.h"
 #include "gfxRect.h"                    
 #include "gfxPrefs.h"                   
 #include "mozilla/Assertions.h"         
 #include "mozilla/gfx/2D.h"             
+#include "mozilla/gfx/DrawEventRecorder.h"
+#include "mozilla/gfx/InlineTranslator.h"
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/Types.h"          
@@ -21,7 +24,7 @@
 #include "nsCOMPtr.h"                   
 #include "nsISupportsImpl.h"            
 #include "nsRect.h"                     
-#include "gfx2DGlue.h"
+#include "PaintThread.h"
 #include "ReadbackProcessor.h"
 
 namespace mozilla {
@@ -29,17 +32,48 @@ namespace layers {
 
 using namespace mozilla::gfx;
 
-void
-ClientPaintedLayer::PaintThebes(nsTArray<ReadbackProcessor::Update>* aReadbackUpdates)
+bool
+ClientPaintedLayer::EnsureContentClient()
 {
-  PROFILER_LABEL("ClientPaintedLayer", "PaintThebes",
-    js::ProfileEntry::Category::GRAPHICS);
+  if (!mContentClient) {
+    mContentClient = ContentClient::CreateContentClient(
+      ClientManager()->AsShadowForwarder());
 
-  NS_ASSERTION(ClientManager()->InDrawing(),
-               "Can only draw in drawing phase");
+    if (!mContentClient) {
+      return false;
+    }
+
+    mContentClient->Connect();
+    ClientManager()->AsShadowForwarder()->Attach(mContentClient, this);
+    MOZ_ASSERT(mContentClient->GetForwarder());
+  }
+
+  return true;
+}
+
+void
+ClientPaintedLayer::UpdateContentClient(PaintState& aState)
+{
+  Mutated();
+
+  mValidRegion.Or(mValidRegion, aState.mRegionToDraw);
+
+  ContentClientRemote *contentClientRemote =
+      static_cast<ContentClientRemote *>(mContentClient.get());
+  MOZ_ASSERT(contentClientRemote->GetIPCHandle());
+
   
-  mContentClient->BeginPaint();
+  
+  
+  ClientManager()->Hold(this);
+  contentClientRemote->Updated(aState.mRegionToDraw,
+                               mVisibleRegion.ToUnknownRegion(),
+                               aState.mDidSelfCopy);
+}
 
+uint32_t
+ClientPaintedLayer::GetPaintFlags()
+{
   uint32_t flags = RotatedContentBuffer::PAINT_CAN_DRAW_ROTATED;
 #ifndef MOZ_IGNORE_PAINT_WILL_RESAMPLE
   if (ClientManager()->CompositorMightResample()) {
@@ -51,22 +85,47 @@ ClientPaintedLayer::PaintThebes(nsTArray<ReadbackProcessor::Update>* aReadbackUp
     }
   }
 #endif
-  PaintState state =
-    mContentClient->BeginPaintBuffer(this, flags);
-  SubtractFromValidRegion(state.mRegionToInvalidate);
+  return flags;
+}
 
-  if (!state.mRegionToDraw.IsEmpty() && !ClientManager()->GetPaintedLayerCallback()) {
+bool
+ClientPaintedLayer::UpdatePaintRegion(PaintState& aState)
+{
+  mValidRegion.Sub(mValidRegion, aState.mRegionToInvalidate);
+
+  if (!aState.mRegionToDraw.IsEmpty() && !ClientManager()->GetPaintedLayerCallback()) {
     ClientManager()->SetTransactionIncomplete();
     mContentClient->EndPaint(nullptr);
-    return;
+    return false;
   }
 
   
   
   
   
-  state.mRegionToInvalidate.And(state.mRegionToInvalidate,
-                                GetLocalVisibleRegion().ToUnknownRegion());
+  aState.mRegionToInvalidate.And(aState.mRegionToInvalidate,
+                                 GetLocalVisibleRegion().ToUnknownRegion());
+  return true;
+}
+
+void
+ClientPaintedLayer::PaintThebes(nsTArray<ReadbackProcessor::Update>* aReadbackUpdates)
+{
+  PROFILER_LABEL("ClientPaintedLayer", "PaintThebes",
+    js::ProfileEntry::Category::GRAPHICS);
+
+  NS_ASSERTION(ClientManager()->InDrawing(),
+               "Can only draw in drawing phase");
+
+  mContentClient->BeginPaint();
+  uint32_t flags = GetPaintFlags();
+
+  PaintState state =
+    mContentClient->BeginPaintBuffer(this, flags);
+
+  if (!UpdatePaintRegion(state)) {
+    return;
+  }
 
   bool didUpdate = false;
   RotatedContentBuffer::DrawIterator iter;
@@ -77,7 +136,7 @@ ClientPaintedLayer::PaintThebes(nsTArray<ReadbackProcessor::Update>* aReadbackUp
       }
       continue;
     }
-    
+
     SetAntialiasingFlags(this, target);
 
     RefPtr<gfxContext> ctx = gfxContext::CreatePreservingTransformOrNull(target);
@@ -99,36 +158,158 @@ ClientPaintedLayer::PaintThebes(nsTArray<ReadbackProcessor::Update>* aReadbackUp
   mContentClient->EndPaint(aReadbackUpdates);
 
   if (didUpdate) {
-    Mutated();
+    UpdateContentClient(state);
+  }
+}
 
-    AddToValidRegion(state.mRegionToDraw);
+bool
+ClientPaintedLayer::CanRecordLayer(ReadbackProcessor* aReadback)
+{
+  
+  
+  if (!PaintThread::Get()) {
+    return false;
+  }
 
-    ContentClientRemote* contentClientRemote = static_cast<ContentClientRemote*>(mContentClient.get());
-    MOZ_ASSERT(contentClientRemote->GetIPCHandle());
+  
+  if (aReadback && UsedForReadback()) {
+    return false;
+  }
+
+  
+  
+  if (GetMaskLayer()) {
+    return false;
+  }
+
+  return GetAncestorMaskLayerCount() == 0;
+}
+
+already_AddRefed<DrawEventRecorderMemory>
+ClientPaintedLayer::RecordPaintedLayer()
+{
+  LayerIntRegion visibleRegion = GetVisibleRegion();
+  LayerIntRect bounds = visibleRegion.GetBounds();
+  LayerIntSize size = bounds.Size();
+
+  if (visibleRegion.IsEmpty()) {
+    if (gfxPrefs::LayersDump()) {
+      printf_stderr("PaintedLayer %p skipping\n", this);
+    }
+    return nullptr;
+  }
+
+  nsIntRegion regionToPaint;
+  regionToPaint.Sub(mVisibleRegion.ToUnknownRegion(), mValidRegion);
+
+  if (regionToPaint.IsEmpty()) {
+    
+    
+    return nullptr;
+  }
+
+  if (!ClientManager()->GetPaintedLayerCallback()) {
+    ClientManager()->SetTransactionIncomplete();
+    return nullptr;
+  }
+
+  
+  
+  
+  IntSize imageSize(size.ToUnknownSize());
+
+  
+  
+  
+  RefPtr<DrawEventRecorderMemory> recorder =
+    MakeAndAddRef<DrawEventRecorderMemory>();
+  RefPtr<DrawTarget> dummyDt =
+    Factory::CreateDrawTarget(gfx::BackendType::SKIA, imageSize, gfx::SurfaceFormat::B8G8R8A8);
+
+  RefPtr<DrawTarget> dt =
+    Factory::CreateRecordingDrawTarget(recorder, dummyDt, imageSize);
+
+  dt->ClearRect(Rect(0, 0, imageSize.width, imageSize.height));
+  dt->SetTransform(Matrix().PreTranslate(-bounds.x, -bounds.y));
+  RefPtr<gfxContext> ctx = gfxContext::CreatePreservingTransformOrNull(dt);
+  MOZ_ASSERT(ctx); 
+
+  ClientManager()->GetPaintedLayerCallback()(this,
+                                             ctx,
+                                             visibleRegion.ToUnknownRegion(),
+                                             visibleRegion.ToUnknownRegion(),
+                                             DrawRegionClip::DRAW,
+                                             nsIntRegion(),
+                                             ClientManager()->GetPaintedLayerCallbackData());
+
+  return recorder.forget();
+}
+
+void
+ClientPaintedLayer::ReplayPaintedLayer(DrawEventRecorderMemory* aRecorder)
+{
+  LayerIntRegion visibleRegion = GetVisibleRegion();
+  mContentClient->BeginPaint();
+
+  uint32_t flags = GetPaintFlags();
+
+  PaintState state =
+    mContentClient->BeginPaintBuffer(this, flags);
+  if (!UpdatePaintRegion(state)) {
+    return;
+  }
+
+  bool didUpdate = false;
+  RotatedContentBuffer::DrawIterator iter;
+  while (DrawTarget* target = mContentClient->BorrowDrawTargetForPainting(state, &iter)) {
+    if (!target || !target->IsValid()) {
+      if (target) {
+        mContentClient->ReturnDrawTargetToBuffer(target);
+      }
+      continue;
+    }
+
+    SetAntialiasingFlags(this, target);
 
     
     
     
-    ClientManager()->Hold(this);
-    contentClientRemote->Updated(state.mRegionToDraw,
-                                 mVisibleRegion.ToUnknownRegion(),
-                                 state.mDidSelfCopy);
+    
+    std::istream& stream = aRecorder->GetInputStream();
+    InlineTranslator translator(target, nullptr);
+    translator.TranslateRecording(stream);
+
+    mContentClient->ReturnDrawTargetToBuffer(target);
+    didUpdate = true;
+  }
+
+  
+  
+  mContentClient->EndPaint(nullptr);
+
+  if (didUpdate) {
+    UpdateContentClient(state);
   }
 }
 
 void
 ClientPaintedLayer::RenderLayerWithReadback(ReadbackProcessor *aReadback)
 {
-  RenderMaskLayers(this);
-  
-  if (!mContentClient) {
-    mContentClient = ContentClient::CreateContentClient(ClientManager()->AsShadowForwarder());
-    if (!mContentClient) {
+  if (CanRecordLayer(aReadback)) {
+    RefPtr<DrawEventRecorderMemory> recorder = RecordPaintedLayer();
+    if (recorder) {
+      if (!EnsureContentClient()) {
+        return;
+      }
+
+      ReplayPaintedLayer(recorder);
       return;
     }
-    mContentClient->Connect();
-    ClientManager()->AsShadowForwarder()->Attach(mContentClient, this);
-    MOZ_ASSERT(mContentClient->GetForwarder());
+  }
+
+  RenderMaskLayers(this);
+  if (!EnsureContentClient()) {
+    return;
   }
 
   nsTArray<ReadbackProcessor::Update> readbackUpdates;
