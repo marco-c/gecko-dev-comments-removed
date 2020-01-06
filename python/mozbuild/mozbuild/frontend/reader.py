@@ -118,9 +118,6 @@ class EmptyConfig(object):
         b'MOZ_APP_NAME': b'empty',
         b'MOZ_CHILD_PROCESS_NAME': b'empty',
         
-        
-        b'NECKO_PROTOCOLS': set(),
-        
         b'JS_STANDALONE': b'1',
     }
 
