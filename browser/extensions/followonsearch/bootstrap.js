@@ -2,6 +2,8 @@
 
 
 
+
+
 "use strict";
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
@@ -59,7 +61,11 @@ function handleSaveTelemetryMsg(message) {
   log(info);
 
   let histogram = Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS");
-  histogram.add(`${info.sap}.${info.type}:unknown:${info.code}`);
+  let payload = `${info.sap}.${info.type}:unknown:${info.code}`;
+  if (info.extra) {
+    payload += `:${info.extra}`
+  }
+  histogram.add(payload);
 }
 
 
@@ -133,16 +139,7 @@ var cohortManager = {
 
 
 function install(data, reason) {
-  try {
-    gLoggingEnabled = Services.prefs.getBoolPref(PREF_LOGGING, false);
-  } catch (e) {
-    
-  }
-
-  cohortManager.init();
-  if (cohortManager.enableForUser) {
-    activateTelemetry();
-  }
+  
 }
 
 
@@ -152,7 +149,7 @@ function install(data, reason) {
 
 
 function uninstall(data, reason) {
-  deactivateTelemetry();
+  
 }
 
 
@@ -187,5 +184,10 @@ function startup(data, reason) {
 
 
 function shutdown(data, reason) {
+  
+  if (reason === APP_SHUTDOWN) {
+    return;
+  }
+
   deactivateTelemetry();
 }

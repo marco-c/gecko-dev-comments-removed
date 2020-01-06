@@ -13,6 +13,7 @@ Cu.importGlobalProperties(["URLSearchParams"]);
 const kExtensionID = "followonsearch@mozilla.com";
 const kSaveTelemetryMsg = `${kExtensionID}:save-telemetry`;
 const kShutdownMsg = `${kExtensionID}:shutdown`;
+const kLastSearchQueueDepth = 10;
 
 
 
@@ -29,7 +30,7 @@ let searchDomains = [{
   "search": "q",
   "prefix": "pc",
   "reportPrefix": "form",
-  "codes": ["MOZI"],
+  "codes": ["MOZI", "MOZD", "MZSL01", "MZSL02", "MZSL03", "MOZ2"],
   "sap": "bing",
 }, {
   
@@ -142,11 +143,17 @@ function log(message) {
 
 
 
-let gLastSearch = null;
+let gLastSearchQueue = [];
+gLastSearchQueue.push = function(...args) {
+  if (this.length >= kLastSearchQueueDepth) {
+    this.shift();
+  }
+  return Array.prototype.push.apply(this, args);
+};
 
 
 
-let gOriginalWindow = null;
+let searchingGoogle = false;
 
 
 
@@ -156,7 +163,7 @@ var webProgressListener = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener, Ci.nsISupportsWeakReference]),
   onLocationChange(aWebProgress, aRequest, aLocation, aFlags)
   {
-    if (aWebProgress.DOMWindow && (aWebProgress.DOMWindow != gOriginalWindow)) {
+    if (aWebProgress.DOMWindow && (aWebProgress.DOMWindow != content)) {
       return;
     }
     try {
@@ -164,35 +171,64 @@ var webProgressListener = {
           
           (!aLocation.schemeIs("http") && !aLocation.schemeIs("https")) ||
           
-          (!aLocation.query && !aLocation.ref) ||
-          
-          aLocation.spec == gLastSearch) {
+          (!aLocation.query && !aLocation.ref)) {
+        searchingGoogle = false;
+        return;
+      }
+      if (gLastSearchQueue.includes(aLocation.spec)) {
+        
+        
+        
         return;
       }
       let domainInfo = getSearchDomainCodes(aLocation.host);
       if (!domainInfo) {
+        searchingGoogle = false;
         return;
       }
 
       let queries = new URLSearchParams(aLocation.query);
       let code = queries.get(domainInfo.prefix);
+      
+      
+      if (domainInfo.sap == "google") {
+        if (aLocation.filePath == "/search") {
+          gLastSearchQueue.push(aLocation.spec);
+          
+          if (queries.get("oe") && queries.get("ie")) {
+            sendSaveTelemetryMsg(code ? code : "none", code ? domainInfo.sap : "google-nocodes", "sap");
+            searchingGoogle = true;
+          } else {
+            
+            
+            let tbm = queries.get("tbm");
+            if (searchingGoogle) {
+              sendSaveTelemetryMsg(code ? code : "none", code ? domainInfo.sap : "google-nocodes", "follow-on", tbm ? `vertical-${tbm}` : null);
+            } else if (code) {
+              
+              sendSaveTelemetryMsg(code, domainInfo.sap, "follow-on", tbm ? `vertical-${tbm}` : null);
+            }
+          }
+        }
+        
+        
+        return;
+      }
+      searchingGoogle = false;
       if (queries.get(domainInfo.search)) {
         if (domainInfo.codes.includes(code)) {
           if (domainInfo.reportPrefix &&
               queries.get(domainInfo.reportPrefix)) {
             code = queries.get(domainInfo.reportPrefix);
           }
-          if (domainInfo.sap == "google" && aLocation.ref) {
-            log(`${aLocation.host} search with code ${code} - Follow on`);
-            sendSaveTelemetryMsg(code, domainInfo.sap, "follow-on");
-          } else if (queries.get(domainInfo.followOnSearch)) {
+          if (queries.get(domainInfo.followOnSearch)) {
             log(`${aLocation.host} search with code ${code} - Follow on`);
             sendSaveTelemetryMsg(code, domainInfo.sap, "follow-on");
           } else {
             log(`${aLocation.host} search with code ${code} - First search via Firefox`);
             sendSaveTelemetryMsg(code, domainInfo.sap, "sap");
           }
-          gLastSearch = aLocation.spec;
+          gLastSearchQueue.push(aLocation.spec);
         }
       }
     } catch (e) {
@@ -236,7 +272,7 @@ function onPageLoad(event) {
       (!uri.schemeIs("http") && !uri.schemeIs("https")) ||
        uri.host != "www.bing.com" ||
       !doc.location.search ||
-      uri.spec == gLastSearch) {
+      gLastSearchQueue.includes(uri.spec)) {
     return;
   }
   var queries = new URLSearchParams(doc.location.search.toLowerCase());
@@ -247,7 +283,7 @@ function onPageLoad(event) {
   if (parseCookies(doc.cookie).SRCHS == "PC=MOZI") {
     log(`${uri.host} search with code MOZI - Follow on`);
     sendSaveTelemetryMsg("MOZI", "bing", "follow-on");
-    gLastSearch = uri.spec;
+    gLastSearchQueue.push(uri.spec);
   }
 }
 
@@ -259,19 +295,19 @@ function onPageLoad(event) {
 
 
 
-function sendSaveTelemetryMsg(code, sap, type) {
+
+function sendSaveTelemetryMsg(code, sap, type, extra) {
   sendAsyncMessage(kSaveTelemetryMsg, {
     code,
     sap,
     type,
+    extra,
   });
 }
 
 addEventListener("DOMContentLoaded", onPageLoad, false);
 docShell.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIWebProgress)
         .addProgressListener(webProgressListener, Ci.nsIWebProgress.NOTIFY_LOCATION);
-
-gOriginalWindow = content;
 
 let gDisabled = false;
 
