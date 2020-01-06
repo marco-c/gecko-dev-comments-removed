@@ -58,7 +58,9 @@ public:
   nsresult BindingAttached(nsIContent* aBoundElement);
   nsresult BindingDetached(nsIContent* aBoundElement);
 
-  bool LoadResources();
+  
+  
+  bool LoadResources(nsIContent* aBoundElement);
   nsresult AddResource(nsIAtom* aResourceType, const nsAString& aSrc);
 
   bool InheritsStyle() const { return mInheritStyle; }
