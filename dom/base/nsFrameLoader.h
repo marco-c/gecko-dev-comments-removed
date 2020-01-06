@@ -375,10 +375,6 @@ private:
   bool mClampScrollPosition : 1;
   bool mObservingOwnerContent : 1;
 
-  
-  
-  
-  bool mVisible : 1;
   bool mFreshProcess : 1;
 };
 

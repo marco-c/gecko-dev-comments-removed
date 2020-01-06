@@ -528,26 +528,6 @@ BrowserElementParent.prototype = {
     }
   },
 
-  setVisible: defineNoReturnMethod(function(visible) {
-    this._sendAsyncMsg('set-visible', {visible: visible});
-    this._frameLoader.visible = visible;
-  }),
-
-  getVisible: defineDOMRequestMethod('get-visible'),
-
-  setActive: defineNoReturnMethod(function(active) {
-    this._frameLoader.visible = active;
-  }),
-
-  getActive: function() {
-    if (!this._isAlive()) {
-      throw Components.Exception("Dead content process",
-                                 Cr.NS_ERROR_DOM_INVALID_STATE_ERR);
-    }
-
-    return this._frameLoader.visible;
-  },
-
   getChildProcessOffset: function() {
     let offset = { x: 0, y: 0 };
     let tabParent = this._frameLoader.tabParent;
@@ -883,11 +863,6 @@ BrowserElementParent.prototype = {
   },
 
   
-
-
-
-
-
 
 
   _childVisibilityChange: function(data) {

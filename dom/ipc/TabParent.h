@@ -118,14 +118,6 @@ public:
 
   void CacheFrameLoader(nsFrameLoader* aFrameLoader);
 
-  
-
-
-
-
-
-  bool IsVisible() const;
-
   nsIBrowserDOMWindow *GetBrowserDOMWindow() const { return mBrowserDOMWindow; }
 
   void SetBrowserDOMWindow(nsIBrowserDOMWindow* aBrowserDOMWindow)

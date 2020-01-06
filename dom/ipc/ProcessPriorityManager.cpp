@@ -261,7 +261,6 @@ public:
 
   void OnRemoteBrowserFrameShown(nsISupports* aSubject);
   void OnTabParentDestroyed(nsISupports* aSubject);
-  void OnFrameloaderVisibleChanged(nsISupports* aSubject);
   void OnActivityOpened(const char16_t* aData);
   void OnActivityClosed(const char16_t* aData);
 
@@ -592,7 +591,6 @@ ParticularProcessPriorityManager::Init()
   if (os) {
     os->AddObserver(this, "remote-browser-shown",  true);
     os->AddObserver(this, "ipc:browser-destroyed",  true);
-    os->AddObserver(this, "frameloader-visible-changed",  true);
     os->AddObserver(this, "activity-opened",  true);
     os->AddObserver(this, "activity-closed",  true);
   }
@@ -666,8 +664,6 @@ ParticularProcessPriorityManager::Observe(nsISupports* aSubject,
     OnRemoteBrowserFrameShown(aSubject);
   } else if (topic.EqualsLiteral("ipc:browser-destroyed")) {
     OnTabParentDestroyed(aSubject);
-  } else if (topic.EqualsLiteral("frameloader-visible-changed")) {
-    OnFrameloaderVisibleChanged(aSubject);
   } else if (topic.EqualsLiteral("activity-opened")) {
     OnActivityOpened(aData);
   } else if (topic.EqualsLiteral("activity-closed")) {
@@ -753,38 +749,6 @@ ParticularProcessPriorityManager::OnTabParentDestroyed(nsISupports* aSubject)
   }
 
   ResetPriority();
-}
-
-void
-ParticularProcessPriorityManager::OnFrameloaderVisibleChanged(nsISupports* aSubject)
-{
-  nsCOMPtr<nsIFrameLoader> fl = do_QueryInterface(aSubject);
-  NS_ENSURE_TRUE_VOID(fl);
-
-  TabParent* tp = TabParent::GetFrom(fl);
-  if (!tp) {
-    return;
-  }
-
-  MOZ_ASSERT(XRE_IsParentProcess());
-  if (tp->Manager() != mContentParent) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  ResetPriorityNow();
 }
 
 void
@@ -899,19 +863,8 @@ ParticularProcessPriorityManager::CurrentPriority()
 ProcessPriority
 ParticularProcessPriorityManager::ComputePriority()
 {
-  bool isVisible = false;
-  const ManagedContainer<PBrowserParent>& browsers =
-    mContentParent->ManagedPBrowserParent();
-  for (auto iter = browsers.ConstIter(); !iter.Done(); iter.Next()) {
-    if (TabParent::GetFrom(iter.Get()->GetKey())->IsVisible()) {
-      isVisible = true;
-      break;
-    }
-  }
-
-  if (isVisible) {
-    return PROCESS_PRIORITY_FOREGROUND;
-  }
+  
+  return PROCESS_PRIORITY_FOREGROUND;
 
   if ((mHoldsCPUWakeLock || mHoldsHighPriorityWakeLock) &&
       IsExpectingSystemMessage()) {
