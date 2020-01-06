@@ -1,10 +1,19 @@
 
 
 
-
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetter(this, "FormHistory", "resource://gre/modules/FormHistory.jsm");
+const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
+
+this.EXPORTED_SYMBOLS = ["FormAssistant"];
+
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  FormHistory: "resource://gre/modules/FormHistory.jsm",
+  GeckoViewUtils: "resource://gre/modules/GeckoViewUtils.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+});
 
 var FormAssistant = {
   

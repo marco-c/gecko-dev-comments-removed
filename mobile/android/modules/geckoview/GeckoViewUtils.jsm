@@ -34,34 +34,29 @@ var GeckoViewUtils = {
 
 
 
-
-  addLazyGetter: function(scope, name, {script, service, module, handler,
+  addLazyGetter: function(scope, name, {service, module, handler,
                                         observers, ppmm, mm, ged, init, once}) {
-    if (script) {
-      XPCOMUtils.defineLazyScriptGetter(scope, name, script);
-    } else {
-      XPCOMUtils.defineLazyGetter(scope, name, _ => {
-        let ret = undefined;
-        if (module) {
-          ret = Cu.import(module, {})[name];
-        } else if (service) {
-          ret = Cc[service].getService(Ci.nsISupports).wrappedJSObject;
-        } else if (typeof handler === "function") {
-          ret = {
-            handleEvent: handler,
-            observe: handler,
-            onEvent: handler,
-            receiveMessage: handler,
-          };
-        } else if (handler) {
-          ret = handler;
-        }
-        if (ret && init) {
-          init.call(scope, ret);
-        }
-        return ret;
-      });
-    }
+    XPCOMUtils.defineLazyGetter(scope, name, _ => {
+      let ret = undefined;
+      if (module) {
+        ret = Cu.import(module, {})[name];
+      } else if (service) {
+        ret = Cc[service].getService(Ci.nsISupports).wrappedJSObject;
+      } else if (typeof handler === "function") {
+        ret = {
+          handleEvent: handler,
+          observe: handler,
+          onEvent: handler,
+          receiveMessage: handler,
+        };
+      } else if (handler) {
+        ret = handler;
+      }
+      if (ret && init) {
+        init.call(scope, ret);
+      }
+      return ret;
+    });
 
     if (observers) {
       let observer = (subject, topic, data) => {

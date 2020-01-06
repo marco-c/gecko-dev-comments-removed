@@ -62,10 +62,10 @@ function startup() {
                     "GeckoViewProgress");
   ModuleManager.add("resource://gre/modules/GeckoViewScroll.jsm",
                     "GeckoViewScroll");
+  ModuleManager.add("resource://gre/modules/GeckoViewTab.jsm",
+                    "GeckoViewTab");
 
   
   
   document.getElementById("content").focus();
-  ModuleManager.add("resource://gre/modules/GeckoViewTab.jsm",
-                    "GeckoViewTab");
 }
