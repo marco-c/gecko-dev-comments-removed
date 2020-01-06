@@ -2,6 +2,9 @@
 
 
 
+#ifndef mozilla_fallback_FallbackScreenConfiguration_h
+#define mozilla_fallback_FallbackScreenConfiguration_h
+
 #include "Hal.h"
 #include "mozilla/dom/ScreenOrientation.h"
 #include "nsIScreenManager.h"
@@ -40,3 +43,5 @@ GetCurrentScreenConfiguration(hal::ScreenConfiguration* aScreenConfiguration)
 
 }
 }
+
+#endif 

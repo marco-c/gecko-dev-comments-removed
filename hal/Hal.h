@@ -111,60 +111,6 @@ void NotifyBatteryChange(const hal::BatteryInformation& aBatteryInfo);
 
 
 
-bool GetScreenEnabled();
-
-
-
-
-
-
-void SetScreenEnabled(bool aEnabled);
-
-
-
-
-bool GetKeyLightEnabled();
-
-
-
-
-void SetKeyLightEnabled(bool aEnabled);
-
-
-
-
-
-
-
-
-double GetScreenBrightness();
-
-
-
-
-
-
-
-
-
-
-
-void SetScreenBrightness(double aBrightness);
-
-
-
-
-bool GetCpuSleepAllowed();
-
-
-
-
-
-void SetCpuSleepAllowed(bool aAllowed);
-
-
-
-
 
 
 
@@ -229,25 +175,6 @@ void NotifyNetworkChange(const hal::NetworkInformation& aNetworkInfo);
 
 
 void AdjustSystemClock(int64_t aDeltaMilliseconds);
-
-
-
-
-
-
-void SetTimezone(const nsCString& aTimezoneSpec);
-
-
-
-
-
-nsCString GetTimezone();
-
-
-
-
-
-int32_t GetTimezoneOffset();
 
 
 
@@ -407,17 +334,6 @@ void NotifySwitchChange(const hal::SwitchEvent& aEvent);
 
 
 
-hal::SwitchState GetCurrentSwitchState(hal::SwitchDevice aDevice);
-
-
-
-
-void NotifySwitchStateFromInputDevice(hal::SwitchDevice aDevice,
-                                      hal::SwitchState aState);
-
-
-
-
 
 bool SetProcessPrioritySupported();
 
@@ -459,33 +375,6 @@ void StartDiskSpaceWatcher();
 
 
 void StopDiskSpaceWatcher();
-
-
-
-
-
-
-uint32_t GetTotalSystemMemory();
-
-
-
-
-bool IsHeadphoneEventFromInputDev();
-
-
-
-
-nsresult StartSystemService(const char* aSvcName, const char* aArgs);
-
-
-
-
-void StopSystemService(const char* aSvcName);
-
-
-
-
-bool SystemServiceIsRunning(const char* aSvcName);
 
 } 
 } 
