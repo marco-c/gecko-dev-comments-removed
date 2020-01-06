@@ -10,18 +10,32 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/TaskCategory.h"
 #include "nsThreadUtils.h"
+#include <functional>
 
 namespace mozilla {
 
 
-typedef bool (*IdleTaskRunnerCallback) (TimeStamp aDeadline, void* aData);
+
+
+
 
 class IdleTaskRunner final : public IdleRunnable
 {
 public:
+  
+  using CallbackType = std::function<bool(TimeStamp aDeadline)>;
+
+  
+  
+  
+  using MayStopProcessingCallbackType = std::function<bool()>;
+
+public:
   static already_AddRefed<IdleTaskRunner>
-  Create(IdleTaskRunnerCallback aCallback, uint32_t aDelay,
-         int64_t aBudget, bool aRepeating, void* aData = nullptr);
+  Create(const CallbackType& aCallback, uint32_t aDelay,
+         int64_t aBudget, bool aRepeating,
+         const MayStopProcessingCallbackType& aMayStopProcessing,
+         TaskCategory aTaskCategory = TaskCategory::Count);
 
   NS_IMETHOD Run() override;
 
@@ -32,22 +46,25 @@ public:
   void Schedule(bool aAllowIdleDispatch);
 
 private:
-  explicit IdleTaskRunner(IdleTaskRunnerCallback aCallback,
+  explicit IdleTaskRunner(const CallbackType& aCallback,
                           uint32_t aDelay, int64_t aBudget,
-                          bool aRepeating, void* aData);
+                          bool aRepeating,
+                          const MayStopProcessingCallbackType& aMayStopProcessing,
+                          TaskCategory aTaskCategory);
   ~IdleTaskRunner();
   void CancelTimer();
   void SetTimerInternal(uint32_t aDelay);
 
   nsCOMPtr<nsITimer> mTimer;
   nsCOMPtr<nsITimer> mScheduleTimer;
-  IdleTaskRunnerCallback mCallback;
+  CallbackType mCallback;
   uint32_t mDelay;
   TimeStamp mDeadline;
   TimeDuration mBudget;
   bool mRepeating;
   bool mTimerActive;
-  void* mData;
+  MayStopProcessingCallbackType mMayStopProcessing;
+  TaskCategory mTaskCategory;
 };
 
 } 
