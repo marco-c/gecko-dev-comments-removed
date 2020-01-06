@@ -151,14 +151,21 @@ nsImageLoadingContent::Notify(imgIRequest* aRequest,
   }
 
   {
-    nsAutoScriptBlocker scriptBlocker;
-
+    
+    
+    AutoTArray<nsCOMPtr<imgINotificationObserver>, 2> observers;
     for (ImageObserver* observer = &mObserverList, *next; observer;
          observer = next) {
       next = observer->mNext;
       if (observer->mObserver) {
-        observer->mObserver->Notify(aRequest, aType, aData);
+        observers.AppendElement(observer->mObserver);
       }
+    }
+
+    nsAutoScriptBlocker scriptBlocker;
+
+    for (auto& observer : observers) {
+        observer->Notify(aRequest, aType, aData);
     }
   }
 
