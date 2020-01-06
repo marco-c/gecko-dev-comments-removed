@@ -43,6 +43,31 @@ struct SelectionFragment {
 
 
 
+struct SelectedTextRunFragment {
+  Maybe<SelectionFragment> selection;
+  nsTArray<wr::TextShadow> shadows;
+  nsTArray<TextRunFragment> text;
+  nsTArray<wr::Line> beforeDecorations;
+  nsTArray<wr::Line> afterDecorations;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -66,6 +91,7 @@ public:
   : mCurrentlyDrawing(Phase::eSelection)
   {
     mCurrentTarget = gfx::Factory::CreateDrawTarget(gfx::BackendType::SKIA, IntSize(1, 1), gfx::SurfaceFormat::B8G8R8A8);
+    SetSelectionIndex(0);
   }
 
   
@@ -74,6 +100,17 @@ public:
 
   
   void StartDrawing(Phase aPhase) { mCurrentlyDrawing = aPhase; }
+
+  void SetSelectionIndex(size_t i) {
+    
+    MOZ_ASSERT(mParts.Length() <= i);
+
+    if (mParts.Length() == i){
+      mParts.AppendElement();
+    }
+
+    mCurrentPart = &mParts[i];
+  }
 
   
   void
@@ -104,14 +141,14 @@ public:
     
     
     TextRunFragment* fragment;
-    if (mText.IsEmpty() ||
-        mText.LastElement().font != aFont ||
-        mText.LastElement().color != colorPat->mColor) {
-      fragment = mText.AppendElement();
+    if (mCurrentPart->text.IsEmpty() ||
+        mCurrentPart->text.LastElement().font != aFont ||
+        mCurrentPart->text.LastElement().color != colorPat->mColor) {
+      fragment = mCurrentPart->text.AppendElement();
       fragment->font = aFont;
       fragment->color = colorPat->mColor;
     } else {
-      fragment = &mText.LastElement();
+      fragment = &mCurrentPart->text.LastElement();
     }
 
     nsTArray<Glyph>& glyphs = fragment->glyphs;
@@ -134,15 +171,18 @@ public:
     }
   }
 
-  void AppendShadow(const wr::TextShadow& aShadow) { mShadows.AppendElement(aShadow); }
+  void
+  AppendShadow(const wr::TextShadow& aShadow) {
+    mCurrentPart->shadows.AppendElement(aShadow);
+  }
 
   void
-  AppendSelection(const LayoutDeviceRect& aRect, const Color& aColor)
+  SetSelectionRect(const LayoutDeviceRect& aRect, const Color& aColor)
   {
     SelectionFragment frag;
     frag.rect = wr::ToLayoutRect(aRect);
     frag.color = wr::ToColorF(aColor);
-    mSelections.AppendElement(frag);
+    mCurrentPart->selection = Some(frag);
   }
 
   void
@@ -158,10 +198,10 @@ public:
     switch (mCurrentlyDrawing) {
       case Phase::eUnderline:
       case Phase::eOverline:
-        decoration = mBeforeDecorations.AppendElement();
+        decoration = mCurrentPart->beforeDecorations.AppendElement();
         break;
       case Phase::eLineThrough:
-        decoration = mAfterDecorations.AppendElement();
+        decoration = mCurrentPart->afterDecorations.AppendElement();
         break;
       default:
         MOZ_CRASH("TextDrawTarget received Decoration in wrong phase");
@@ -208,20 +248,54 @@ public:
 
   }
 
-  const nsTArray<wr::TextShadow>& GetShadows() { return mShadows; }
-  const nsTArray<TextRunFragment>& GetText() { return mText; }
-  const nsTArray<SelectionFragment>& GetSelections() { return mSelections; }
-  const nsTArray<wr::Line>& GetBeforeDecorations() { return mBeforeDecorations; }
-  const nsTArray<wr::Line>& GetAfterDecorations() { return mAfterDecorations; }
+  const nsTArray<SelectedTextRunFragment>& GetParts() { return mParts; }
 
   bool
   CanSerializeFonts()
   {
-    for (const TextRunFragment& frag : GetText()) {
-      if (!frag.font->CanSerialize()) {
-        return false;
+    for (const SelectedTextRunFragment& part : GetParts()) {
+      for (const TextRunFragment& frag : part.text) {
+        if (!frag.font->CanSerialize()) {
+          return false;
+        }
       }
     }
+    return true;
+  }
+
+  
+  
+  bool
+  ContentsAreSimple()
+  {
+
+    ScaledFont* font = nullptr;
+
+    for (const SelectedTextRunFragment& part : GetParts()) {
+      
+      if (part.shadows.Length() > 0 ||
+          part.beforeDecorations.Length() > 0 ||
+          part.afterDecorations.Length() > 0 ||
+          part.selection.isSome()) {
+        return false;
+      }
+
+      
+      for (const mozilla::layout::TextRunFragment& text : part.text) {
+        if (!font) {
+          font = text.font;
+        }
+        if (font != text.font) {
+          return false;
+        }
+      }
+    }
+
+    
+    if (!font) {
+      return false;
+    }
+
     return true;
   }
 
@@ -231,11 +305,10 @@ private:
   Phase mCurrentlyDrawing;
 
   
-  nsTArray<wr::TextShadow> mShadows;
-  nsTArray<TextRunFragment> mText;
-  nsTArray<SelectionFragment> mSelections;
-  nsTArray<wr::Line> mBeforeDecorations;
-  nsTArray<wr::Line> mAfterDecorations;
+  SelectedTextRunFragment* mCurrentPart;
+
+  
+  nsTArray<SelectedTextRunFragment> mParts;
 
   
   RefPtr<DrawTarget> mCurrentTarget;
