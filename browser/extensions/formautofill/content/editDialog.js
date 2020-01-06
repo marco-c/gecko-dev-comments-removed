@@ -34,6 +34,9 @@ class EditDialog {
       await this.loadInitialValues(this._record);
     }
     this.attachEventListeners();
+    
+    
+    window.dispatchEvent(new CustomEvent("FormReady"));
   }
 
   uninit() {

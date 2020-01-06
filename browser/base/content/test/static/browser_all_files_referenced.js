@@ -132,6 +132,8 @@ var whitelist = [
   {file: "chrome://browser/locale/taskbar.properties",
    platforms: ["linux", "macosx"]},
   
+  {file: "chrome://formautofill/content/editCreditCard.xhtml"},
+  
   {file: "chrome://global/content/customizeToolbar.xul"},
   
   {file: "chrome://global/content/findUtils.js"},

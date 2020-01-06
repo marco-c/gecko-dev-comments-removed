@@ -10,6 +10,7 @@
 
 const MANAGE_ADDRESSES_DIALOG_URL = "chrome://formautofill/content/manageAddresses.xhtml";
 const EDIT_ADDRESS_DIALOG_URL = "chrome://formautofill/content/editAddress.xhtml";
+const EDIT_CREDIT_CARD_DIALOG_URL = "chrome://formautofill/content/editCreditCard.xhtml";
 const BASE_URL = "http://mochi.test:8888/browser/browser/extensions/formautofill/test/browser/";
 const FORM_URL = "http://mochi.test:8888/browser/browser/extensions/formautofill/test/browser/autocomplete_basic.html";
 const FTU_PREF = "extensions.formautofill.firstTimeUse";
