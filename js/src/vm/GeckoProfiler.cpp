@@ -101,7 +101,10 @@ GeckoProfiler::enable(bool enabled)
 
 
 
-    ReleaseAllJITCode(rt->defaultFreeOp());
+
+
+
+    ReleaseAllJITCode(rt->defaultFreeOp(),  false);
 
     
     
