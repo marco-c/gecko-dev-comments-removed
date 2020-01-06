@@ -578,6 +578,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                 
             case BOOKMARKS: {
                 trace("Deleting bookmarks: " + uri);
+                
                 deleted = deleteBookmarks(uri, selection, selectionArgs);
                 deleteUnusedImages(uri);
                 break;
@@ -1679,7 +1680,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
         beginWrite(db);
 
-        final int updated = db.update(TABLE_BOOKMARKS, values, inClause, null);
+        int updated = db.update(TABLE_BOOKMARKS, values, inClause, null);
         if (updated == 0) {
             trace("No update on URI: " + uri);
             return updated;
@@ -1702,7 +1703,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         parentValues.put(Bookmarks.DATE_MODIFIED, lastModified);
 
         
-        db.update(TABLE_BOOKMARKS, parentValues,
+        updated += db.update(TABLE_BOOKMARKS, parentValues,
                   Bookmarks._ID + " in (?, ?)",
                   new String[] { String.valueOf(oldParentId), String.valueOf(newParentId) });
 
@@ -2290,27 +2291,26 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         debug("Marking bookmarks as deleted for URI: " + uri);
 
         
+        
+        
+        
+        
+        int changed = 0;
+
+        
+        
+        
+        
         final ContentValues parentValues = new ContentValues();
         parentValues.put(Bookmarks.DATE_MODIFIED, System.currentTimeMillis());
-        updateBookmarkParents(db, parentValues, selection, selectionArgs);
-
-        final ContentValues values = new ContentValues();
-        values.put(Bookmarks.IS_DELETED, 1);
-        values.put(Bookmarks.POSITION, 0);
-        
-        
-        
+        changed += updateBookmarkParents(db, parentValues, selection, selectionArgs);
 
         
         
-        
-        
-        updateBookmarks(uri, values, selection, selectionArgs);
-
         
         
         final List<String> guids = getBookmarkDescendantGUIDs(db, selection, selectionArgs);
-        final int updated = bulkDeleteByBookmarkGUIDs(db, guids, TABLE_BOOKMARKS, Bookmarks.GUID);
+        changed += bulkDeleteByBookmarkGUIDs(db, guids, TABLE_BOOKMARKS, Bookmarks.GUID);
 
         try {
             cleanUpSomeDeletedRecords(uri, TABLE_BOOKMARKS);
@@ -2318,7 +2318,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
             
             Log.e(LOGTAG, "Unable to clean up deleted bookmark records: ", e);
         }
-        return updated;
+        return changed;
     }
 
     
