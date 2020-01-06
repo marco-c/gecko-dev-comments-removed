@@ -421,9 +421,6 @@ gfxHarfBuzzShaper::HBGetGlyphVOrigin(hb_font_t *font, void *font_data,
     const gfxHarfBuzzShaper::FontCallbackData *fcd =
         static_cast<const gfxHarfBuzzShaper::FontCallbackData*>(font_data);
     fcd->mShaper->GetGlyphVOrigin(glyph, x, y);
-    
-    
-    *y = -*y;
     return true;
 }
 
@@ -431,7 +428,7 @@ void
 gfxHarfBuzzShaper::GetGlyphVOrigin(hb_codepoint_t aGlyph,
                                    hb_position_t *aX, hb_position_t *aY) const
 {
-    *aX = -0.5 * GetGlyphHAdvance(aGlyph);
+    *aX = 0.5 * GetGlyphHAdvance(aGlyph);
 
     if (mVORGTable) {
         
@@ -452,11 +449,11 @@ gfxHarfBuzzShaper::GetGlyphVOrigin(hb_codepoint_t aGlyph,
         }
 
         if (lo < limit && uint16_t(lo->glyphIndex) == aGlyph) {
-            *aY = -FloatToFixed(GetFont()->FUnitsToDevUnitsFactor() *
-                                int16_t(lo->vertOriginY));
+            *aY = FloatToFixed(GetFont()->FUnitsToDevUnitsFactor() *
+                               int16_t(lo->vertOriginY));
         } else {
-            *aY = -FloatToFixed(GetFont()->FUnitsToDevUnitsFactor() *
-                                int16_t(vorg->defaultVertOriginY));
+            *aY = FloatToFixed(GetFont()->FUnitsToDevUnitsFactor() *
+                               int16_t(vorg->defaultVertOriginY));
         }
         return;
     }
@@ -484,8 +481,8 @@ gfxHarfBuzzShaper::GetGlyphVOrigin(hb_codepoint_t aGlyph,
                         (&metrics->metrics[mNumLongVMetrics]);
                 lsb = int16_t(sidebearings[aGlyph - mNumLongVMetrics]);
             }
-            *aY = -FloatToFixed(mFont->FUnitsToDevUnitsFactor() *
-                                (lsb + int16_t(glyf->yMax)));
+            *aY = FloatToFixed(mFont->FUnitsToDevUnitsFactor() *
+                               (lsb + int16_t(glyf->yMax)));
             return;
         } else {
             
@@ -508,13 +505,13 @@ gfxHarfBuzzShaper::GetGlyphVOrigin(hb_codepoint_t aGlyph,
             
             int16_t a = int16_t(hhea->ascender);
             int16_t d = int16_t(hhea->descender);
-            *aY = -FloatToFixed(GetFont()->GetAdjustedSize() * a / (a - d));
+            *aY = FloatToFixed(GetFont()->GetAdjustedSize() * a / (a - d));
             return;
         }
     }
 
     NS_NOTREACHED("we shouldn't be here!");
-    *aY = -FloatToFixed(GetFont()->GetAdjustedSize() / 2);
+    *aY = FloatToFixed(GetFont()->GetAdjustedSize() / 2);
 }
 
 static hb_bool_t
@@ -1694,10 +1691,11 @@ gfxHarfBuzzShaper::SetGlyphsFromRun(gfxShapedText  *aShapedText,
         hb_position_t b_offset, b_advance; 
         if (aVertical) {
             
+            
             i_offset = -posInfo[glyphStart].y_offset;
             i_advance = -posInfo[glyphStart].y_advance;
-            b_offset = posInfo[glyphStart].x_offset;
-            b_advance = posInfo[glyphStart].x_advance;
+            b_offset = -posInfo[glyphStart].x_offset;
+            b_advance = -posInfo[glyphStart].x_advance;
         } else {
             i_offset = posInfo[glyphStart].x_offset;
             i_advance = posInfo[glyphStart].x_advance;
@@ -1733,14 +1731,6 @@ gfxHarfBuzzShaper::SetGlyphsFromRun(gfxShapedText  *aShapedText,
             
             
             
-            
-            
-            
-            hb_position_t baseIOffset, baseBOffset;
-            if (aVertical) {
-                baseIOffset = 2 * (i_offset - i_advance);
-                baseBOffset = GetGlyphHAdvance(ginfo[glyphStart].codepoint);
-            }
             while (1) {
                 gfxTextRun::DetailedGlyph* details =
                     detailedGlyphs.AppendElement();
@@ -1763,11 +1753,10 @@ gfxHarfBuzzShaper::SetGlyphsFromRun(gfxShapedText  *aShapedText,
                 }
 
                 if (aVertical) {
-                    
-                    i_offset = baseIOffset + posInfo[glyphStart].y_offset;
+                    i_offset = -posInfo[glyphStart].y_offset;
                     i_advance = -posInfo[glyphStart].y_advance;
-                    b_offset = baseBOffset - posInfo[glyphStart].x_offset;
-                    b_advance = posInfo[glyphStart].x_advance;
+                    b_offset = -posInfo[glyphStart].x_offset;
+                    b_advance = -posInfo[glyphStart].x_advance;
                 } else {
                     i_offset = posInfo[glyphStart].x_offset;
                     i_advance = posInfo[glyphStart].x_advance;
