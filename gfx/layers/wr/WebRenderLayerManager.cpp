@@ -249,7 +249,6 @@ WebRenderLayerManager::EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
   WrBridge()->RemoveExpiredFontKeys();
 
   AUTO_PROFILER_TRACING("Paint", "RenderLayers");
-  mTransactionIncomplete = false;
 
 #if 0
   
@@ -277,15 +276,6 @@ WebRenderLayerManager::EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
 
   mWidget->AddWindowOverlayWebRenderCommands(WrBridge(), builder, resourceUpdates);
   WrBridge()->ClearReadLocks();
-
-  
-  
-  
-  if (mTransactionIncomplete) {
-    DiscardLocalImages();
-    WrBridge()->ProcessWebRenderParentCommands();
-    return;
-  }
 
   if (AsyncPanZoomEnabled()) {
     mScrollData.SetFocusTarget(mFocusTarget);

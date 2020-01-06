@@ -135,8 +135,6 @@ public:
 
   WebRenderBridgeChild* WrBridge() const { return mWrChild; }
 
-  void SetTransactionIncomplete() { mTransactionIncomplete = true; }
-
   
   void LogTestDataForCurrentPaint(FrameMetrics::ViewID aScrollId,
                                   const std::string& aKey,
@@ -192,8 +190,6 @@ private:
   
   
   WebRenderScrollData mScrollData;
-
-  bool mTransactionIncomplete;
 
   bool mNeedsComposite;
   bool mIsFirstPaint;
