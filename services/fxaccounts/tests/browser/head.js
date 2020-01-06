@@ -35,6 +35,18 @@ function waitForDocLoadComplete(aBrowser = gBrowser) {
   });
 }
 
+function setupMockAlertsService() {
+  const alertsService = {
+    showAlertNotification: (image, title, text, clickable, cookie, clickCallback) => {
+      
+      clickCallback(null, "alertclickcallback", null);
+    }
+  };
+  const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"]
+                     .getService(Ci.nsIObserver);
+  gBrowserGlue.observe({wrappedJSObject: alertsService}, "browser-glue-test", "mock-alerts-service");
+}
+
 
 
 waitForDocLoadComplete.listeners = new Set();
