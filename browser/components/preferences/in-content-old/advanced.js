@@ -258,16 +258,8 @@ var gAdvancedPane = {
     return checkbox.checked ? defaultValue : 0;
   },
 
-  
-
-
-
   updateHardwareAcceleration() {
-    if (AppConstants.platform == "win") {
-      var fromPref = document.getElementById("layers.acceleration.disabled");
-      var toPref = document.getElementById("gfx.direct2d.disabled");
-      toPref.value = fromPref.value;
-    }
+    
   },
 
   
