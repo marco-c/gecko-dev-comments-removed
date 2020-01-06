@@ -21,9 +21,9 @@
 #include "nsContentCreatorFunctions.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindow.h"
+#include "nsHTMLTags.h"
 #include "nsIDocShell.h"
 #include "nsIDOMGlobalPropertyInitializer.h"
-#include "nsIParserService.h"
 #include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
 #include "nsIXPConnect.h"
@@ -3627,13 +3627,7 @@ CreateHTMLElement(const GlobalObject& aGlobal, const JS::CallArgs& aCallArgs,
     
     
     
-    nsIParserService* parserService = nsContentUtils::GetParserService();
-    if (!parserService) {
-      aRv.Throw(NS_ERROR_UNEXPECTED);
-      return nullptr;
-    }
-
-    tag = parserService->HTMLCaseSensitiveAtomTagToId(definition->mLocalName);
+    tag = nsHTMLTags::CaseSensitiveAtomTagToId(definition->mLocalName);
     if (tag == eHTMLTag_userdefined) {
       aRv.ThrowTypeError<MSG_ILLEGAL_CONSTRUCTOR>();
       return nullptr;

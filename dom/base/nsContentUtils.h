@@ -85,7 +85,6 @@ class nsIMessageBroadcaster;
 class nsNameSpaceManager;
 class nsIObserver;
 class nsIParser;
-class nsIParserService;
 class nsIPluginTag;
 class nsIPresShell;
 class nsIPrincipal;
@@ -611,8 +610,6 @@ public:
   
   
   static bool InProlog(nsINode *aNode);
-
-  static nsIParserService* GetParserService();
 
   static nsNameSpaceManager* NameSpaceManager()
   {
@@ -3246,8 +3243,6 @@ private:
   static nsIScriptSecurityManager *sSecurityManager;
   static nsIPrincipal *sSystemPrincipal;
   static nsIPrincipal *sNullSubjectPrincipal;
-
-  static nsIParserService *sParserService;
 
   static nsNameSpaceManager *sNameSpaceManager;
 

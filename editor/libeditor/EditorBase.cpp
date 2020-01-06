@@ -106,15 +106,11 @@
 #include "prtime.h"                     
 
 class nsIOutputStream;
-class nsIParserService;
 class nsITransferable;
 
 #ifdef DEBUG
 #include "nsIDOMHTMLDocument.h"         
 #endif
-
-
-extern nsIParserService *sParserService;
 
 namespace mozilla {
 

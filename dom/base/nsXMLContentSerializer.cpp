@@ -20,7 +20,7 @@
 #include "nsIContentInlines.h"
 #include "nsIDocument.h"
 #include "nsIDocumentEncoder.h"
-#include "nsIParserService.h"
+#include "nsElementTable.h"
 #include "nsNameSpaceManager.h"
 #include "nsTextFragment.h"
 #include "nsString.h"
@@ -995,14 +995,9 @@ ElementNeedsSeparateEndTag(Element* aElement, Element* aOriginalElement)
   
   
   
-  bool isHTMLContainer = true; 
-  nsIParserService* parserService = nsContentUtils::GetParserService();
-  if (parserService) {
-    nsIAtom* localName = aElement->NodeInfo()->NameAtom();
-    parserService->IsContainer(
-      parserService->HTMLCaseSensitiveAtomTagToId(localName),
-      isHTMLContainer);
-  }
+  nsIAtom* localName = aElement->NodeInfo()->NameAtom();
+  bool isHTMLContainer =
+    nsHTMLElement::IsContainer(nsHTMLTags::CaseSensitiveAtomTagToId(localName));
   return isHTMLContainer;
 }
 
