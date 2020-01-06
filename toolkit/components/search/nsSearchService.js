@@ -113,6 +113,7 @@ const MAX_ICON_SIZE   = 10000;
 
 
 
+
 const DEFAULT_QUERY_CHARSET = "ISO-8859-1";
 
 const SEARCH_BUNDLE = "chrome://global/locale/search/search.properties";

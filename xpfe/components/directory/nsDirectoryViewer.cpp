@@ -552,7 +552,7 @@ nsHTTPIndex::CommonInit()
     nsresult	rv = NS_OK;
 
     
-    mEncoding = "ISO-8859-1";
+    mEncoding = "windows-1252";
 
     mDirRDF = do_GetService(kRDFServiceCID, &rv);
     NS_ASSERTION(NS_SUCCEEDED(rv), "unable to get RDF service");
@@ -604,7 +604,7 @@ nsHTTPIndex::Init()
 	nsresult	rv;
 
 	
-	mEncoding = "ISO-8859-1";
+	mEncoding = "windows-1252";
 
 	rv = CommonInit();
 	if (NS_FAILED(rv))	return(rv);
