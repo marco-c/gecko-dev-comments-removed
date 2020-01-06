@@ -2774,6 +2774,9 @@ nsContentUtils::ComparePoints(nsINode* aParent1, int32_t aOffset1,
                               bool* aDisconnected)
 {
   if (aParent1 == aParent2) {
+    
+    
+    
     return aOffset1 < aOffset2 ? -1 :
            aOffset1 > aOffset2 ? 1 :
            0;
@@ -2824,10 +2827,14 @@ nsContentUtils::ComparePoints(nsINode* aParent1, int32_t aOffset1,
 
   if (!pos1) {
     nsINode* child2 = parents2.ElementAt(--pos2);
+    
+    
     return aOffset1 <= parent->IndexOf(child2) ? -1 : 1;
   }
 
   nsINode* child1 = parents1.ElementAt(--pos1);
+  
+  
   return parent->IndexOf(child1) < aOffset2 ? -1 : 1;
 }
 

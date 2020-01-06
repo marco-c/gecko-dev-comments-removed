@@ -2927,11 +2927,10 @@ HTMLEditor::GetCellFromRange(nsRange* aRange,
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(startContainer, NS_ERROR_FAILURE);
 
-  int32_t startOffset;
-  rv = aRange->GetStartOffset(&startOffset);
-  NS_ENSURE_SUCCESS(rv, rv);
+  uint32_t startOffset = aRange->StartOffset();
 
-  nsCOMPtr<nsIDOMNode> childNode = GetChildAt(startContainer, startOffset);
+  nsCOMPtr<nsIDOMNode> childNode =
+    GetChildAt(startContainer, static_cast<int32_t>(startOffset));
   
   if (!childNode) {
     return NS_ERROR_FAILURE;
@@ -2942,15 +2941,11 @@ HTMLEditor::GetCellFromRange(nsRange* aRange,
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(startContainer, NS_ERROR_FAILURE);
 
-  int32_t endOffset;
-  rv = aRange->GetEndOffset(&endOffset);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   
   
   
   if (startContainer == endContainer &&
-      endOffset == startOffset+1 &&
+      aRange->EndOffset() == startOffset+1 &&
       HTMLEditUtils::IsTableCell(childNode)) {
     
     

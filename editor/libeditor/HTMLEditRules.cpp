@@ -458,7 +458,7 @@ HTMLEditRules::AfterEditInner(EditAction action,
   NS_ENSURE_STATE(selection);
 
   nsCOMPtr<nsIDOMNode> rangeStartContainer, rangeEndContainer;
-  int32_t rangeStartOffset = 0, rangeEndOffset = 0;
+  uint32_t rangeStartOffset = 0, rangeEndOffset = 0;
   
   bool bDamagedRange = false;
   if (mDocChangeRange) {
@@ -568,8 +568,8 @@ HTMLEditRules::AfterEditInner(EditAction action,
                    action, selection,
                    GetAsDOMNode(mRangeItem->mStartContainer),
                    mRangeItem->mStartOffset,
-                   rangeStartContainer, rangeStartOffset,
-                   rangeEndContainer, rangeEndOffset);
+                   rangeStartContainer, static_cast<int32_t>(rangeStartOffset),
+                   rangeEndContainer, static_cast<int32_t>(rangeEndOffset));
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -5317,9 +5317,8 @@ HTMLEditRules::NormalizeSelection(Selection* inSelection)
   RefPtr<nsRange> range = inSelection->GetRangeAt(0);
   NS_ENSURE_TRUE(range, NS_ERROR_NULL_POINTER);
   nsCOMPtr<nsIDOMNode> startNode, endNode;
-  int32_t startOffset, endOffset;
+  uint32_t startOffset, endOffset;
   nsCOMPtr<nsIDOMNode> newStartNode, newEndNode;
-  int32_t newStartOffset, newEndOffset;
 
   rv = range->GetStartContainer(getter_AddRefs(startNode));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -5332,22 +5331,22 @@ HTMLEditRules::NormalizeSelection(Selection* inSelection)
 
   
   newStartNode = startNode;
-  newStartOffset = startOffset;
+  uint32_t newStartOffset = startOffset;
   newEndNode = endNode;
-  newEndOffset = endOffset;
+  uint32_t newEndOffset = endOffset;
 
   
   nsCOMPtr<nsINode> unused;
-  int32_t offset;
+  int32_t offset = -1;
   WSType wsType;
 
   
-  WSRunObject wsEndObj(mHTMLEditor, endNode, endOffset);
+  WSRunObject wsEndObj(mHTMLEditor, endNode, static_cast<int32_t>(endOffset));
   
   
   nsCOMPtr<nsINode> endNode_(do_QueryInterface(endNode));
-  wsEndObj.PriorVisibleNode(endNode_, endOffset, address_of(unused),
-                            &offset, &wsType);
+  wsEndObj.PriorVisibleNode(endNode_, static_cast<int32_t>(endOffset),
+                            address_of(unused), &offset, &wsType);
   if (wsType != WSType::text && wsType != WSType::normalWS) {
     
     
@@ -5357,36 +5356,44 @@ HTMLEditRules::NormalizeSelection(Selection* inSelection)
         GetAsDOMNode(mHTMLEditor->GetRightmostChild(wsEndObj.mStartReasonNode,
                                                     true));
       if (child) {
-        newEndNode = EditorBase::GetNodeLocation(child, &newEndOffset);
-        ++newEndOffset; 
+        int32_t offset = -1;
+        newEndNode = EditorBase::GetNodeLocation(child, &offset);
+        
+        newEndOffset = static_cast<uint32_t>(offset + 1);
       }
       
     } else if (wsEndObj.mStartReason == WSType::thisBlock) {
       
       nsCOMPtr<nsIDOMNode> child;
       NS_ENSURE_STATE(mHTMLEditor);
-      mHTMLEditor->GetPriorHTMLNode(endNode, endOffset, address_of(child));
+      mHTMLEditor->GetPriorHTMLNode(endNode, static_cast<int32_t>(endOffset),
+                                    address_of(child));
       if (child) {
-        newEndNode = EditorBase::GetNodeLocation(child, &newEndOffset);
-        ++newEndOffset; 
+        int32_t offset = -1;
+        newEndNode = EditorBase::GetNodeLocation(child, &offset);
+        
+        newEndOffset = static_cast<uint32_t>(offset + 1);
       }
       
     } else if (wsEndObj.mStartReason == WSType::br) {
       
+      int32_t offset = -1;
       newEndNode =
         EditorBase::GetNodeLocation(GetAsDOMNode(wsEndObj.mStartReasonNode),
-                                    &newEndOffset);
+                                    &offset);
+      newEndOffset = static_cast<uint32_t>(offset);;
     }
   }
 
 
   
-  WSRunObject wsStartObj(mHTMLEditor, startNode, startOffset);
+  WSRunObject wsStartObj(mHTMLEditor, startNode,
+                         static_cast<int32_t>(startOffset));
   
   
   nsCOMPtr<nsINode> startNode_(do_QueryInterface(startNode));
-  wsStartObj.NextVisibleNode(startNode_, startOffset, address_of(unused),
-                             &offset, &wsType);
+  wsStartObj.NextVisibleNode(startNode_, static_cast<int32_t>(startOffset),
+                             address_of(unused), &offset, &wsType);
   if (wsType != WSType::text && wsType != WSType::normalWS) {
     
     
@@ -5396,24 +5403,31 @@ HTMLEditRules::NormalizeSelection(Selection* inSelection)
         GetAsDOMNode(mHTMLEditor->GetLeftmostChild(wsStartObj.mEndReasonNode,
                                                    true));
       if (child) {
-        newStartNode = EditorBase::GetNodeLocation(child, &newStartOffset);
+        int32_t offset = -1;
+        newStartNode = EditorBase::GetNodeLocation(child, &offset);
+        newStartOffset = static_cast<uint32_t>(offset);
       }
       
     } else if (wsStartObj.mEndReason == WSType::thisBlock) {
       
       nsCOMPtr<nsIDOMNode> child;
       NS_ENSURE_STATE(mHTMLEditor);
-      mHTMLEditor->GetNextHTMLNode(startNode, startOffset, address_of(child));
+      mHTMLEditor->GetNextHTMLNode(startNode, static_cast<int32_t>(startOffset),
+                                   address_of(child));
       if (child) {
-        newStartNode = EditorBase::GetNodeLocation(child, &newStartOffset);
+        int32_t offset = -1;
+        newStartNode = EditorBase::GetNodeLocation(child, &offset);
+        newStartOffset = static_cast<uint32_t>(offset);
       }
       
     } else if (wsStartObj.mEndReason == WSType::br) {
       
+      int32_t offset = -1;
       newStartNode =
         EditorBase::GetNodeLocation(GetAsDOMNode(wsStartObj.mEndReasonNode),
-                                    &newStartOffset);
-      ++newStartOffset; 
+                                    &offset);
+      
+      newStartOffset = static_cast<uint32_t>(offset + 1);
     }
   }
 
@@ -8193,7 +8207,7 @@ HTMLEditRules::UpdateDocChangeRange(nsRange* aRange)
     NS_ENSURE_SUCCESS(rv, rv);
     
     if (result > 0) {
-      int32_t startOffset;
+      uint32_t startOffset;
       rv = aRange->GetStartOffset(&startOffset);
       NS_ENSURE_SUCCESS(rv, rv);
       rv = mDocChangeRange->SetStart(startNode, startOffset);
@@ -8207,9 +8221,9 @@ HTMLEditRules::UpdateDocChangeRange(nsRange* aRange)
     
     if (result < 0) {
       nsCOMPtr<nsIDOMNode> endNode;
-      int32_t endOffset;
       rv = aRange->GetEndContainer(getter_AddRefs(endNode));
       NS_ENSURE_SUCCESS(rv, rv);
+      uint32_t endOffset;
       rv = aRange->GetEndOffset(&endOffset);
       NS_ENSURE_SUCCESS(rv, rv);
       rv = mDocChangeRange->SetEnd(endNode, endOffset);

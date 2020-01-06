@@ -601,7 +601,7 @@ nsFind::NextNode(nsIDOMRange* aSearchRange,
     
     nsCOMPtr<nsIDOMNode> startNode;
     nsCOMPtr<nsIDOMNode> endNode;
-    int32_t startOffset, endOffset;
+    uint32_t startOffset, endOffset;
     if (aContinueOk) {
 #ifdef DEBUG_FIND
       printf("Match in progress: continuing past endpoint\n");
@@ -637,7 +637,8 @@ nsFind::NextNode(nsIDOMRange* aSearchRange,
       }
     }
 
-    rv = InitIterator(startNode, startOffset, endNode, endOffset);
+    rv = InitIterator(startNode, static_cast<int32_t>(startOffset),
+                      endNode, static_cast<int32_t>(endOffset));
     NS_ENSURE_SUCCESS(rv, rv);
     if (!aStartPoint) {
       aStartPoint = aSearchRange;
@@ -657,14 +658,18 @@ nsFind::NextNode(nsIDOMRange* aSearchRange,
       if (mFindBackward) {
         aStartPoint->GetEndContainer(getter_AddRefs(node));
         if (mIterNode.get() == node.get()) {
-          aStartPoint->GetEndOffset(&mIterOffset);
+          uint32_t endOffset;
+          aStartPoint->GetEndOffset(&endOffset);
+          mIterOffset = static_cast<int32_t>(endOffset);
         } else {
           mIterOffset = -1; 
         }
       } else {
         aStartPoint->GetStartContainer(getter_AddRefs(node));
         if (mIterNode.get() == node.get()) {
-          aStartPoint->GetStartOffset(&mIterOffset);
+          uint32_t startOffset;
+          aStartPoint->GetStartOffset(&startOffset);
+          mIterOffset = static_cast<int32_t>(startOffset);
         } else {
           mIterOffset = 0;
         }
@@ -988,7 +993,7 @@ nsFind::Find(const char16_t* aPatText, nsIDOMRange* aSearchRange,
 
   
   nsCOMPtr<nsIDOMNode> endNode;
-  int32_t endOffset;
+  uint32_t endOffset;
   aEndPoint->GetEndContainer(getter_AddRefs(endNode));
   aEndPoint->GetEndOffset(&endOffset);
 
@@ -1123,8 +1128,8 @@ nsFind::Find(const char16_t* aPatText, nsIDOMRange* aSearchRange,
     
     
     if (mIterNode == endNode &&
-        ((mFindBackward && findex < endOffset) ||
-         (!mFindBackward && findex > endOffset))) {
+        ((mFindBackward && findex < static_cast<int32_t>(endOffset)) ||
+         (!mFindBackward && findex > static_cast<int32_t>(endOffset)))) {
       ResetAll();
       return NS_OK;
     }

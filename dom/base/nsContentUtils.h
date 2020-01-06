@@ -405,6 +405,13 @@ public:
 
 
 
+
+
+
+
+
+
+
   static int32_t ComparePoints(nsINode* aParent1, int32_t aOffset1,
                                nsINode* aParent2, int32_t aOffset2,
                                bool* aDisconnected = nullptr);
