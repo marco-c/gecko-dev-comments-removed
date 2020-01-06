@@ -18,6 +18,8 @@ Cu.import("resource://formautofill/FormAutofillUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "FormAutofillHeuristics",
                                   "resource://formautofill/FormAutofillHeuristics.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "MasterPassword",
+                                  "resource://formautofill/MasterPassword.jsm");
 
 this.log = null;
 FormAutofillUtils.defineLazyLogGetter(this, this.EXPORTED_SYMBOLS[0]);
@@ -155,6 +157,19 @@ FormAutofillHandler.prototype = {
     return this.fieldDetails.find(detail => detail.fieldName == fieldName);
   },
 
+  getFieldDetailsByElement(element) {
+    let fieldDetail = this.fieldDetails.find(
+      detail => detail.elementWeakRef.get() == element
+    );
+    if (FormAutofillUtils.isAddressField(fieldDetail.fieldName)) {
+      return this.address.fieldDetails;
+    }
+    if (FormAutofillUtils.isCreditCardField(fieldDetail.fieldName)) {
+      return this.creditCard.fieldDetails;
+    }
+    return [];
+  },
+
   _cacheValue: {
     allFieldNames: null,
     oneLineStreetAddress: null,
@@ -257,12 +272,39 @@ FormAutofillHandler.prototype = {
 
 
 
-  autofillFormFields(profile, focusedInput) {
+
+  async autofillFormFields(profile, focusedInput) {
+    let focusedDetail = this.fieldDetails.find(
+      detail => detail.elementWeakRef.get() == focusedInput
+    );
+    let targetSet;
+    if (FormAutofillUtils.isCreditCardField(focusedDetail.fieldName)) {
+      
+      
+      
+      
+      if (profile["cc-number-encrypted"]) {
+        try {
+          profile["cc-number"] = await MasterPassword.decrypt(profile["cc-number-encrypted"], true);
+        } catch (e) {
+          if (e.result == Cr.NS_ERROR_ABORT) {
+            log.warn("User canceled master password entry");
+            return;
+          }
+          throw e;
+        }
+      }
+      targetSet = this.creditCard;
+    } else if (FormAutofillUtils.isAddressField(focusedDetail.fieldName)) {
+      targetSet = this.address;
+    } else {
+      throw new Error("Unknown form fields");
+    }
+
     log.debug("profile in autofillFormFields:", profile);
 
-    this.address.filledRecordGUID = profile.guid;
-    for (let fieldDetail of this.address.fieldDetails) {
-      
+    targetSet.filledRecordGUID = profile.guid;
+    for (let fieldDetail of targetSet.fieldDetails) {
       
       
       
@@ -273,13 +315,23 @@ FormAutofillHandler.prototype = {
         continue;
       }
 
+      element.previewValue = "";
       let value = profile[fieldDetail.fieldName];
-      if (element instanceof Ci.nsIDOMHTMLInputElement && !element.value && value) {
-        if (element !== focusedInput) {
+
+      if (element instanceof Ci.nsIDOMHTMLInputElement && value) {
+        
+        
+        
+        
+        if (element == focusedInput ||
+            (element != focusedInput && !element.value)) {
           element.setUserInput(value);
+          this.changeFieldState(fieldDetail, "AUTO_FILLED");
+          continue;
         }
-        this.changeFieldState(fieldDetail, "AUTO_FILLED");
-      } else if (element instanceof Ci.nsIDOMHTMLSelectElement) {
+      }
+
+      if (element instanceof Ci.nsIDOMHTMLSelectElement) {
         let cache = this._cacheValue.matchingSelectOption.get(element) || {};
         let option = cache[value] && cache[value].get();
         if (!option) {
@@ -295,23 +347,6 @@ FormAutofillHandler.prototype = {
         
         this.changeFieldState(fieldDetail, "AUTO_FILLED");
       }
-
-      
-      
-      
-      
-      
-      if (element === focusedInput) {
-        const suppressFirstInputHandler = e => {
-          if (e.isTrusted) {
-            e.stopPropagation();
-            element.removeEventListener("input", suppressFirstInputHandler);
-          }
-        };
-
-        element.addEventListener("input", suppressFirstInputHandler);
-      }
-      element.previewValue = "";
     }
 
     
@@ -323,7 +358,7 @@ FormAutofillHandler.prototype = {
         return;
       }
 
-      for (let fieldDetail of this.address.fieldDetails) {
+      for (let fieldDetail of targetSet.fieldDetails) {
         let element = fieldDetail.elementWeakRef.get();
 
         if (!element) {
@@ -341,7 +376,7 @@ FormAutofillHandler.prototype = {
       if (!hasFilledFields) {
         this.form.rootElement.removeEventListener("input", onChangeHandler);
         this.form.rootElement.removeEventListener("reset", onChangeHandler);
-        this.address.filledRecordGUID = null;
+        targetSet.filledRecordGUID = null;
       }
     };
 
@@ -355,10 +390,19 @@ FormAutofillHandler.prototype = {
 
 
 
-  previewFormFields(profile) {
+
+
+  async previewFormFields(profile, focusedInput) {
     log.debug("preview profile in autofillFormFields:", profile);
 
-    for (let fieldDetail of this.address.fieldDetails) {
+    
+    
+    if (profile["cc-number-encrypted"] && !MasterPassword.isEnabled) {
+      profile["cc-number"] = await MasterPassword.decrypt(profile["cc-number-encrypted"], true);
+    }
+
+    let fieldDetails = this.getFieldDetailsByElement(focusedInput);
+    for (let fieldDetail of fieldDetails) {
       let element = fieldDetail.elementWeakRef.get();
       let value = profile[fieldDetail.fieldName] || "";
 
@@ -391,10 +435,14 @@ FormAutofillHandler.prototype = {
   
 
 
-  clearPreviewedFormFields() {
+
+
+
+  clearPreviewedFormFields(focusedInput) {
     log.debug("clear previewed fields in:", this.form);
 
-    for (let fieldDetail of this.address.fieldDetails) {
+    let fieldDetails = this.getFieldDetailsByElement(focusedInput);
+    for (let fieldDetail of fieldDetails) {
       let element = fieldDetail.elementWeakRef.get();
       if (!element) {
         log.warn(fieldDetail.fieldName, "is unreachable");
