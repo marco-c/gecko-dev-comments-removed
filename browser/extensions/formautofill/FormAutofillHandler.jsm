@@ -29,8 +29,6 @@ FormAutofillUtils.defineLazyLogGetter(this, this.EXPORTED_SYMBOLS[0]);
 function FormAutofillHandler(form) {
   this.form = form;
   this.fieldDetails = [];
-  this.winUtils = this.form.rootElement.ownerGlobal.QueryInterface(Ci.nsIInterfaceRequestor)
-    .getInterface(Ci.nsIDOMWindowUtils);
 }
 
 FormAutofillHandler.prototype = {
@@ -62,23 +60,6 @@ FormAutofillHandler.prototype = {
   
 
 
-  winUtils: null,
-
-  
-
-
-  fieldStateEnum: {
-    
-    NORMAL: null,
-    
-    AUTO_FILLED: "-moz-autofill",
-    
-    PREVIEW: "-moz-autofill-preview",
-  },
-
-  
-
-
   collectFormFields() {
     let fieldDetails = FormAutofillHeuristics.getFormInfo(this.form);
     this.fieldDetails = fieldDetails ? fieldDetails : [];
@@ -106,16 +87,16 @@ FormAutofillHandler.prototype = {
       
 
       let element = fieldDetail.elementWeakRef.get();
-      if (!element) {
+      if (!element || element === focusedInput) {
         continue;
       }
 
       let value = profile[fieldDetail.fieldName];
-      if (element instanceof Ci.nsIDOMHTMLInputElement && !element.value && value) {
-        if (element !== focusedInput) {
-          element.setUserInput(value);
+      if (element instanceof Ci.nsIDOMHTMLInputElement && value) {
+        if (element.value) {
+          continue;
         }
-        this.changeFieldState(fieldDetail, "AUTO_FILLED");
+        element.setUserInput(value);
       } else if (element instanceof Ci.nsIDOMHTMLSelectElement) {
         for (let option of element.options) {
           if (value === option.textContent || value === option.value) {
@@ -129,12 +110,10 @@ FormAutofillHandler.prototype = {
             option.selected = true;
             element.dispatchEvent(new Event("input", {"bubbles": true}));
             element.dispatchEvent(new Event("change", {"bubbles": true}));
-            this.changeFieldState(fieldDetail, "AUTO_FILLED");
             break;
           }
         }
       }
-      element.previewValue = "";
     }
   },
 
@@ -146,47 +125,23 @@ FormAutofillHandler.prototype = {
 
   previewFormFields(profile) {
     log.debug("preview profile in autofillFormFields:", profile);
+    
 
-    for (let fieldDetail of this.fieldDetails) {
-      let element = fieldDetail.elementWeakRef.get();
-      let value = profile[fieldDetail.fieldName] || "";
 
-      
-      if (!element || element.value) {
-        continue;
-      }
 
-      element.previewValue = value;
-      this.changeFieldState(fieldDetail, value ? "PREVIEW" : "NORMAL");
-    }
+
+
+
+
+
+
+
+
   },
-
-  
-
 
   clearPreviewedFormFields() {
     log.debug("clear previewed fields in:", this.form);
-
-    for (let fieldDetail of this.fieldDetails) {
-      let element = fieldDetail.elementWeakRef.get();
-      if (!element) {
-        log.warn(fieldDetail.fieldName, "is unreachable");
-        continue;
-      }
-
-      element.previewValue = "";
-
-      
-      
-      if (fieldDetail.state === "AUTO_FILLED") {
-        continue;
-      }
-
-      this.changeFieldState(fieldDetail, "NORMAL");
-    }
-  },
-
-  
+    
 
 
 
@@ -194,33 +149,9 @@ FormAutofillHandler.prototype = {
 
 
 
-  changeFieldState(fieldDetail, nextState) {
-    let element = fieldDetail.elementWeakRef.get();
 
-    if (!element) {
-      log.warn(fieldDetail.fieldName, "is unreachable while changing state");
-      return;
-    }
-    if (!(nextState in this.fieldStateEnum)) {
-      log.warn(fieldDetail.fieldName, "is trying to change to an invalid state");
-      return;
-    }
 
-    for (let [state, mmStateValue] of Object.entries(this.fieldStateEnum)) {
-      
-      
-      if (!mmStateValue) {
-        continue;
-      }
 
-      if (state == nextState) {
-        this.winUtils.addManuallyManagedState(element, mmStateValue);
-      } else {
-        this.winUtils.removeManuallyManagedState(element, mmStateValue);
-      }
-    }
-
-    fieldDetail.state = nextState;
   },
 
   
