@@ -1364,4 +1364,16 @@ this.BrowserTestUtils = {
     }
     Services.ppmm.removeDelayedProcessScript(kAboutPageRegistrationContentScript);
   },
+
+  
+
+
+
+
+  addTab(browser, uri, params = {}) {
+    if (!params.triggeringPrincipal) {
+      params.triggeringPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+    }
+    return browser.addTab(uri, params);
+  }
 };
