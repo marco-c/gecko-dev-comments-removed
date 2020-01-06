@@ -101,12 +101,19 @@ NewConsoleOutputWrapper.prototype = {
       let messageEl = target.closest(".message");
       let clipboardText = messageEl ? messageEl.textContent : null;
 
+      let messageVariable = target.closest(".objectBox");
+      
+      let variableText = (messageVariable
+        && !(messageEl.classList.contains("startGroup"))
+        && !(messageEl.classList.contains("startGroupCollapsed")))
+          ? messageVariable.textContent : null;
+
       
       let actorEl = target.closest("[data-link-actor-id]");
       let actor = actorEl ? actorEl.dataset.linkActorId : null;
 
       let menu = createContextMenu(this.jsterm, this.parentNode,
-        { actor, clipboardText, message, serviceContainer });
+        { actor, clipboardText, variableText, message, serviceContainer });
 
       
       menu.once("open", () => this.emit("menu-open"));

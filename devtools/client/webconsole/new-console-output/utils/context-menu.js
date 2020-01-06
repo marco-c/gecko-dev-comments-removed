@@ -31,9 +31,12 @@ const { l10n } = require("devtools/client/webconsole/new-console-output/utils/me
 
 
 
+
+
 function createContextMenu(jsterm, parentNode, {
   actor,
   clipboardText,
+  variableText,
   message,
   serviceContainer
 }) {
@@ -116,8 +119,8 @@ function createContextMenu(jsterm, parentNode, {
   
   menu.append(new MenuItem({
     id: "console-menu-copy",
-    label: l10n.getStr("webconsole.menu.copy.label"),
-    accesskey: l10n.getStr("webconsole.menu.copy.accesskey"),
+    label: l10n.getStr("webconsole.menu.copyMessage.label"),
+    accesskey: l10n.getStr("webconsole.menu.copyMessage.accesskey"),
     
     disabled: selection.isCollapsed && !clipboardText,
     click: () => {
@@ -127,6 +130,25 @@ function createContextMenu(jsterm, parentNode, {
         clipboardHelper.copyString(clipboardText);
       } else {
         clipboardHelper.copyString(selection.toString());
+      }
+    },
+  }));
+
+  
+  menu.append(new MenuItem({
+    id: "console-menu-copy-object",
+    label: l10n.getStr("webconsole.menu.copyObject.label"),
+    accesskey: l10n.getStr("webconsole.menu.copyObject.accesskey"),
+    
+    disabled: (!actor && !variableText),
+    click: () => {
+      if (actor) {
+        
+        jsterm.copyObject(`_self`, { selectedObjectActor: actor }).then((res) => {
+          clipboardHelper.copyString(res.helperResult.value);
+        });
+      } else {
+        clipboardHelper.copyString(variableText);
       }
     },
   }));
