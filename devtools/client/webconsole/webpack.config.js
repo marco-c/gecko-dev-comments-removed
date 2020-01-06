@@ -26,7 +26,9 @@ let webpackConfig = {
         loader: "file-loader?name=[path][name].[ext]",
       },
       {
-        
+        test: /\.js$/,
+        loaders: [
+          
 
 
 
@@ -34,9 +36,13 @@ let webpackConfig = {
 
 
 
-        test: /\.js/,
-        loader: "rewrite-raw",
-      },
+          "rewrite-raw",
+          
+          "rewrite-browser-require",
+          
+          "rewrite-lazy-require",
+        ],
+      }
     ]
   },
 
@@ -89,7 +95,7 @@ webpackConfig.resolve = {
 
     "devtools/shared/fronts/timeline": path.join(__dirname, "../../client/shared/webpack/shims/fronts-timeline-shim"),
     "devtools/shared/old-event-emitter": "devtools-modules/src/utils/event-emitter",
-    "devtools/shared/client/object-client": path.join(__dirname, "new-console-output/test/fixtures/ObjectClient"),
+    "devtools/shared/client/debugger-client": path.join(__dirname, "new-console-output/test/fixtures/DebuggerClient"),
     "devtools/shared/platform/clipboard": path.join(__dirname, "../../client/shared/webpack/shims/platform-clipboard-stub"),
     "devtools/shared/platform/stack": path.join(__dirname, "../../client/shared/webpack/shims/platform-stack-stub"),
 
