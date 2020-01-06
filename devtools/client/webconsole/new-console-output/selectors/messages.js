@@ -5,40 +5,12 @@
 
 "use strict";
 
-const { l10n } = require("devtools/client/webconsole/new-console-output/utils/messages");
-const { getAllFilters } = require("devtools/client/webconsole/new-console-output/selectors/filters");
-const { getGripPreviewItems } = require("devtools/client/shared/components/reps/reps");
-const { getSourceNames } = require("devtools/client/shared/source-utils");
-const {
-  MESSAGE_TYPE,
-  MESSAGE_SOURCE
-} = require("devtools/client/webconsole/new-console-output/constants");
-
-function getAllMessages(state) {
-  let messages = getAllMessagesById(state);
-  let filters = getAllFilters(state);
-
-  let groups = getAllGroupsById(state);
-  let messagesUI = getAllMessagesUiById(state);
-
-  return messages.filter(message => {
-    return (
-      isInOpenedGroup(message, groups, messagesUI)
-      && (
-        isUnfilterable(message)
-        || (
-          matchLevelFilters(message, filters)
-          && matchCssFilters(message, filters)
-          && matchNetworkFilters(message, filters)
-          && matchSearchFilters(message, filters)
-        )
-      )
-    );
-  });
-}
-
 function getAllMessagesById(state) {
   return state.messages.messagesById;
+}
+
+function getMessage(state, id) {
+  return getAllMessagesById(state).get(id);
 }
 
 function getAllMessagesUiById(state) {
@@ -57,184 +29,16 @@ function getCurrentGroup(state) {
   return state.messages.currentGroup;
 }
 
-function isUnfilterable(message) {
-  return [
-    MESSAGE_TYPE.COMMAND,
-    MESSAGE_TYPE.RESULT,
-    MESSAGE_TYPE.START_GROUP,
-    MESSAGE_TYPE.START_GROUP_COLLAPSED,
-  ].includes(message.type);
+function getVisibleMessages(state) {
+  return state.messages.visibleMessages.map(id => getMessage(state, id));
 }
 
-function isInOpenedGroup(message, groups, messagesUI) {
-  return !message.groupId
-    || (
-      !isGroupClosed(message.groupId, messagesUI)
-      && !hasClosedParentGroup(groups.get(message.groupId), messagesUI)
-    );
-}
-
-function hasClosedParentGroup(group, messagesUI) {
-  return group.some(groupId => isGroupClosed(groupId, messagesUI));
-}
-
-function isGroupClosed(groupId, messagesUI) {
-  return messagesUI.includes(groupId) === false;
-}
-
-function matchLevelFilters(message, filters) {
-  return filters.get(message.level) === true;
-}
-
-function matchNetworkFilters(message, filters) {
-  return (
-    message.source !== MESSAGE_SOURCE.NETWORK
-    || (filters.get("net") === true && message.isXHR === false)
-    || (filters.get("netxhr") === true && message.isXHR === true)
-  );
-}
-
-function matchCssFilters(message, filters) {
-  return (
-    message.source != MESSAGE_SOURCE.CSS
-    || filters.get("css") === true
-  );
-}
-
-function matchSearchFilters(message, filters) {
-  let text = filters.text || "";
-  return (
-    text === ""
-    
-    || isTextInParameters(text, message.parameters)
-    
-    || isTextInFrame(text, message.frame)
-    
-    || isTextInNetEvent(text, message.request)
-    
-    || isTextInStackTrace(text, message.stacktrace)
-    
-    || isTextInMessageText(text, message.messageText)
-    
-    || isTextInNotes(text, message.notes)
-  );
-}
-
-
-
-
-function isTextInFrame(text, frame) {
-  if (!frame) {
-    return false;
-  }
-
-  const { short } = getSourceNames(frame.source);
-  return `${short}:${frame.line}:${frame.column}`
-    .toLocaleLowerCase()
-    .includes(text.toLocaleLowerCase());
-}
-
-
-
-
-function isTextInParameters(text, parameters) {
-  if (!parameters) {
-    return false;
-  }
-
-  text = text.toLocaleLowerCase();
-  return getAllProps(parameters).find(prop =>
-    (prop + "").toLocaleLowerCase().includes(text)
-  );
-}
-
-
-
-
-function isTextInNetEvent(text, request) {
-  if (!request) {
-    return false;
-  }
-
-  text = text.toLocaleLowerCase();
-
-  let method = request.method.toLocaleLowerCase();
-  let url = request.url.toLocaleLowerCase();
-  return method.includes(text) || url.includes(text);
-}
-
-
-
-
-function isTextInStackTrace(text, stacktrace) {
-  if (!Array.isArray(stacktrace)) {
-    return false;
-  }
-
-  
-  
-  return stacktrace.some(frame => isTextInFrame(text, {
-    functionName: frame.functionName || l10n.getStr("stacktrace.anonymousFunction"),
-    filename: frame.filename,
-    lineNumber: frame.lineNumber,
-    columnNumber: frame.columnNumber
-  }));
-}
-
-
-
-
-function isTextInMessageText(text, messageText) {
-  if (!messageText) {
-    return false;
-  }
-
-  return messageText.toLocaleLowerCase().includes(text.toLocaleLowerCase());
-}
-
-
-
-
-function isTextInNotes(text, notes) {
-  if (!Array.isArray(notes)) {
-    return false;
-  }
-
-  return notes.some(note =>
-    
-    isTextInFrame(text, note.frame) ||
-    
-    (note.messageBody &&
-        note.messageBody.toLocaleLowerCase()
-          .includes(text.toLocaleLowerCase()))
-  );
-}
-
-
-
-
-
-
-
-function getAllProps(grips) {
-  let result = grips.reduce((res, grip) => {
-    let previewItems = getGripPreviewItems(grip);
-    let allProps = previewItems.length > 0 ? getAllProps(previewItems) : [];
-    return [...res, grip, grip.class, ...allProps];
-  }, []);
-
-  
-  
-  result = result.filter(grip =>
-    typeof grip != "object" &&
-    typeof grip != "undefined"
-  );
-
-  return [...new Set(result)];
-}
-
-exports.getAllMessages = getAllMessages;
-exports.getAllMessagesUiById = getAllMessagesUiById;
-exports.getAllMessagesTableDataById = getAllMessagesTableDataById;
-exports.getAllGroupsById = getAllGroupsById;
-exports.getCurrentGroup = getCurrentGroup;
+module.exports = {
+  getMessage,
+  getAllMessagesById,
+  getAllMessagesUiById,
+  getAllMessagesTableDataById,
+  getAllGroupsById,
+  getCurrentGroup,
+  getVisibleMessages,
+};
