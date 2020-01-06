@@ -17,6 +17,7 @@ const kSkipSourceNodePref = "browser.uiCustomization.skipSourceNodeCheck";
 const kToolbarVisibilityBtn = "customization-toolbar-visibility-button";
 const kDrawInTitlebarPref = "browser.tabs.drawInTitlebar";
 const kMaxTransitionDurationMs = 2000;
+const kKeepBroadcastAttributes = "keepbroadcastattributeswhencustomizing";
 
 const kPanelItemContextMenu = "customizationPanelItemContextMenu";
 const kPaletteItemContextMenu = "customizationPaletteItemContextMenu";
@@ -774,12 +775,16 @@ CustomizeMode.prototype = {
 
     
     
-    if (aNode.hasAttribute("command")) {
+    
+    
+    if (aNode.hasAttribute("command") &&
+        aNode.getAttribute(kKeepBroadcastAttributes) != "true") {
       wrapper.setAttribute("itemcommand", aNode.getAttribute("command"));
       aNode.removeAttribute("command");
     }
 
-    if (aNode.hasAttribute("observes")) {
+    if (aNode.hasAttribute("observes") &&
+        aNode.getAttribute(kKeepBroadcastAttributes) != "true") {
       wrapper.setAttribute("itemobserves", aNode.getAttribute("observes"));
       aNode.removeAttribute("observes");
     }
