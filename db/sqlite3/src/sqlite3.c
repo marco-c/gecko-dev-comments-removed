@@ -831,13 +831,6 @@ SQLITE_PRIVATE const char **sqlite3CompileOptions(int *pnOpt){
 
 
 
-#if defined(_MSC_VER) && _MSC_VER>=1400
-#  define _CRT_RAND_S
-#endif
-
-
-
-
 
 
 
@@ -43927,9 +43920,6 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   EntropyGatherer e;
   UNUSED_PARAMETER(pVfs);
   memset(zBuf, 0, nBuf);
-#if defined(_MSC_VER) && _MSC_VER>=1400 && !SQLITE_OS_WINCE
-  rand_s((unsigned int*)zBuf); 
-#endif 
   e.a = (unsigned char*)zBuf;
   e.na = nBuf;
   e.nXor = 0;
