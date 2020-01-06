@@ -90,7 +90,12 @@ public class VersioningDelegateHelper {
         
         
         final Bundle data = new Bundle();
-        data.putSerializable(BrowserContract.METHOD_PARAM_DATA, this.localVersionsOfGuids);
+        final int versionMapSizeBeforeUpdate;
+
+        synchronized (this.localVersionsOfGuids) {
+            data.putSerializable(BrowserContract.METHOD_PARAM_DATA, this.localVersionsOfGuids);
+            versionMapSizeBeforeUpdate = this.localVersionsOfGuids.size();
+        }
 
         final Bundle result = context.getContentResolver().call(
                 repositoryContentUri,
@@ -103,11 +108,21 @@ public class VersioningDelegateHelper {
             throw new IllegalStateException("Expected to receive a result after decrementing change counters");
         }
 
-        int changed = (int) result.getSerializable(BrowserContract.METHOD_RESULT);
-        if (changed != this.localVersionsOfGuids.size()) {
-            
-            throw new IllegalStateException("Decremented incorrect number of change counters");
+        final int changed = (int) result.getSerializable(BrowserContract.METHOD_RESULT);
+        final int versionMapSizeAfterUpdate = this.localVersionsOfGuids.size();
 
+        
+        
+        if (versionMapSizeBeforeUpdate != versionMapSizeAfterUpdate) {
+            throw new IllegalStateException("Version/guid map changed during syncVersion update");
+        }
+
+        if (changed < versionMapSizeBeforeUpdate) {
+            throw new IllegalStateException("Updated fewer sync versions than expected");
+        }
+
+        if (changed > versionMapSizeBeforeUpdate) {
+            throw new IllegalStateException("Updated more sync versions than expected");
         }
     }
 

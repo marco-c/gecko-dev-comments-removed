@@ -2767,7 +2767,22 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                 compiledStatement.clearBindings();
                 compiledStatement.bindLong(1, syncVersion); 
                 compiledStatement.bindString(2, guid);
-                changed += compiledStatement.executeUpdateDelete();
+
+                
+                final int didUpdate = compiledStatement.executeUpdateDelete();
+
+                
+                
+                if (didUpdate > 1) {
+                    throw new IllegalStateException("Modified more than a single GUID during syncVersion update");
+                }
+
+                
+                if (didUpdate == 0) {
+                    throw new IllegalStateException("Expected to modify syncVersion for a guid, but did not");
+                }
+
+                changed += didUpdate;
             }
 
             markWriteSuccessful(db);
