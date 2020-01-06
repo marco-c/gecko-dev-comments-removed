@@ -936,10 +936,28 @@ ServoStyleSet::StyleNewSubtree(Element* aRoot)
 {
   MOZ_ASSERT(!aRoot->HasServoData(), "Should have called StyleNewChildren");
   PreTraverseSync();
+  AutoPrepareTraversal guard(this);
 
+  
+  const SnapshotTable& snapshots = Snapshots();
   DebugOnly<bool> postTraversalRequired =
-    PrepareAndTraverseSubtree(aRoot, ServoTraversalFlags::Empty);
+    Servo_TraverseSubtree(aRoot, mRawSet.get(), &snapshots,
+                          ServoTraversalFlags::Empty);
   MOZ_ASSERT(!postTraversalRequired);
+
+  
+  
+  
+  
+  auto type = EffectCompositor::AnimationRestyleType::Throttled;
+  if (mPresContext->EffectCompositor()->PreTraverseInSubtree(aRoot, type)) {
+    postTraversalRequired =
+      Servo_TraverseSubtree(aRoot, mRawSet.get(), &snapshots,
+                            ServoTraversalFlags::AnimationOnly |
+                            ServoTraversalFlags::Forgetful |
+                            ServoTraversalFlags::ClearAnimationOnlyDirtyDescendants);
+    MOZ_ASSERT(!postTraversalRequired);
+  }
 }
 
 void
@@ -947,10 +965,41 @@ ServoStyleSet::StyleNewChildren(Element* aParent)
 {
   MOZ_ASSERT(aParent->HasServoData(), "Should have called StyleNewSubtree");
   PreTraverseSync();
+  AutoPrepareTraversal guard(this);
 
-  PrepareAndTraverseSubtree(aParent, ServoTraversalFlags::UnstyledChildrenOnly);
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  bool hadDirtyDescendants = aParent->HasDirtyDescendantsForServo();
+  aParent->SetHasDirtyDescendantsForServo();
+
+  
+  const SnapshotTable& snapshots = Snapshots();
+  Servo_TraverseSubtree(aParent, mRawSet.get(), &snapshots,
+                        ServoTraversalFlags::UnstyledOnly);
+
+  
+  if (!hadDirtyDescendants) {
+    aParent->UnsetHasDirtyDescendantsForServo();
+  }
 }
 
 void
