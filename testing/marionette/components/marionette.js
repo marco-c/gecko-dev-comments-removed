@@ -195,30 +195,27 @@ MarionetteComponent.prototype.observe = function(subject, topic, data) {
   this.logger.debug(`Received observer notification "${topic}"`);
 
   switch (topic) {
+    case "profile-after-change":
+      Services.obs.addObserver(this, "command-line-startup");
+      Services.obs.addObserver(this, "sessionstore-windows-restored");
+
+      prefs.readFromEnvironment(ENV_PRESERVE_PREFS);
+      break;
+
+    
+    
+    
+    
     case "command-line-startup":
       Services.obs.removeObserver(this, topic);
       this.handle(subject);
 
-    case "profile-after-change":
       
       
-      Services.obs.addObserver(this, "sessionstore-windows-restored");
-
-      
-      
-      
-      
-      Services.obs.addObserver(this, "command-line-startup");
-
-      prefs.readFromEnvironment(ENV_PRESERVE_PREFS);
-
-      if (this.enabled) {
-        
-        
-        if (Services.appinfo.inSafeMode) {
-          Services.obs.addObserver(this, "domwindowopened");
-        }
+      if (this.enabled && Services.appinfo.inSafeMode) {
+        Services.obs.addObserver(this, "domwindowopened");
       }
+
       break;
 
     case "domwindowclosed":
