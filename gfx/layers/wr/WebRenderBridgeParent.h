@@ -116,6 +116,13 @@ public:
   mozilla::ipc::IPCResult RecvClearCachedResources() override;
   mozilla::ipc::IPCResult RecvForceComposite() override;
 
+  mozilla::ipc::IPCResult RecvSetAsyncScrollOffset(const FrameMetrics::ViewID& aScrollId,
+                                                   const float& aX,
+                                                   const float& aY) override;
+  mozilla::ipc::IPCResult RecvSetAsyncZoom(const FrameMetrics::ViewID& aScrollId,
+                                           const float& aZoom) override;
+  mozilla::ipc::IPCResult RecvFlushApzRepaints() override;
+
   void ActorDestroy(ActorDestroyReason aWhy) override;
   void SetWebRenderProfilerEnabled(bool aEnabled);
 
@@ -202,6 +209,10 @@ private:
   
   
   bool PushAPZStateToWR(nsTArray<WrTransformProperty>& aTransformArray);
+
+  
+  
+  already_AddRefed<AsyncPanZoomController> GetTargetAPZC(const FrameMetrics::ViewID& aId);
 
 private:
   struct PendingTransactionId {
