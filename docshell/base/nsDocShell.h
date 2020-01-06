@@ -906,7 +906,7 @@ protected:
 
   
   
-  int32_t mChildOffset;
+  uint32_t mChildOffset;
   uint32_t mBusyFlags;
   uint32_t mAppType;
   uint32_t mLoadType;
