@@ -368,6 +368,22 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
     }
   }
 
+#ifdef DEBUG
+  char *bloatLog = PR_GetEnv("XPCOM_MEM_BLOAT_LOG");
+  
+  
+  
+  
+  if (bloatLog != nullptr) {
+    size_t bloatLen = strlen(bloatLog);
+    if (bloatLen >= 4) {
+      nsAutoCString bloatStr(bloatLog);
+      bloatStr.Truncate(bloatLen - 4);
+      policy->AddPrefix(rdwrcr, bloatStr.get());
+    }
+  }
+#endif
+
   mCommonContentPolicy.reset(policy);
 #endif
 }
