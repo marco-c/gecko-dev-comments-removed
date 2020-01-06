@@ -19,6 +19,12 @@ namespace mozilla {
 namespace dom {
 namespace cache {
 
+enum DirPaddingFile
+{
+  FILE,
+  TMP_FILE
+};
+
 nsresult
 BodyCreateDir(nsIFile* aBaseDir);
 
@@ -77,6 +83,49 @@ RemoveNsIFile(const QuotaInfo& aQuotaInfo, nsIFile* aFile);
 void
 DecreaseUsageForQuotaInfo(const QuotaInfo& aQuotaInfo,
                           const int64_t& aUpdatingSize);
+
+
+
+
+
+bool
+DirectoryPaddingFileExists(nsIFile* aBaseDir, DirPaddingFile aPaddingFileType);
+
+
+
+
+
+
+
+
+
+
+
+nsresult
+LockedDirectoryPaddingGet(nsIFile* aBaseDir, int64_t* aPaddingSizeOut);
+
+nsresult
+LockedDirectoryPaddingInit(nsIFile* aBaseDir);
+
+nsresult
+LockedMaybeUpdateDirectoryPaddingFile(nsIFile* aBaseDir,
+                                      mozIStorageConnection* aConn,
+                                      const int64_t aIncreaseSize,
+                                      const int64_t aDecreaseSize,
+                                      bool* aUpdatedOut);
+
+nsresult
+LockedDirectoryPaddingTemporaryWrite(nsIFile* aBaseDir, int64_t aPaddingSize);
+
+nsresult
+LockedDirectoryPaddingFinalizeWrite(nsIFile* aBaseDir);
+
+nsresult
+LockedDirectoryPaddingRestore(nsIFile* aBaseDir, mozIStorageConnection* aConn);
+
+nsresult
+LockedDirectoryPaddingDeleteFile(nsIFile* aBaseDir,
+                                 DirPaddingFile aPaddingFileType);
 } 
 } 
 } 

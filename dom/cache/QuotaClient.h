@@ -8,6 +8,7 @@
 #define mozilla_dom_cache_QuotaClient_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/dom/cache/Types.h"
 #include "mozilla/dom/quota/Client.h"
 
 namespace mozilla {
@@ -17,6 +18,46 @@ namespace cache {
 already_AddRefed<quota::Client>
 CreateQuotaClient();
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+nsresult
+InitPaddingFile(nsIFile* aBaseDir);
+
+
+
+
+
+
+template<typename Callable>
+nsresult
+MaybeUpdatePaddingFile(nsIFile* aBaseDir,
+                       mozIStorageConnection* aConn,
+                       const int64_t aIncreaseSize,
+                       const int64_t aDecreaseSize,
+                       Callable aCommitHook);
+
+nsresult
+RestorePaddingFile(nsIFile* aBaseDir, mozIStorageConnection* aConn);
+
+nsresult
+WipePaddingFile(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir);
 } 
 } 
 } 
