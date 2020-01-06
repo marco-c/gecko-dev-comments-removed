@@ -3,7 +3,6 @@
 
 
 
-
 #include "TextureHostOGL.h"
 
 #include "EGLUtils.h"
@@ -62,9 +61,7 @@ CreateTextureHostOGL(const SurfaceDescriptor& aDesc,
       result = new SurfaceTextureHost(aFlags,
                                       surfaceTexture,
                                       desc.size(),
-                                      desc.format(),
-                                      desc.continuous(),
-                                      desc.ignoreTransform());
+                                      desc.continuous());
       break;
     }
 #endif
@@ -345,15 +342,13 @@ SurfaceTextureSource::SurfaceTextureSource(TextureSourceProvider* aProvider,
                                            gfx::SurfaceFormat aFormat,
                                            GLenum aTarget,
                                            GLenum aWrapMode,
-                                           gfx::IntSize aSize,
-                                           bool aIgnoreTransform)
+                                           gfx::IntSize aSize)
   : mGL(aProvider->GetGLContext())
   , mSurfTex(aSurfTex)
   , mFormat(aFormat)
   , mTextureTarget(aTarget)
   , mWrapMode(aWrapMode)
   , mSize(aSize)
-  , mIgnoreTransform(aIgnoreTransform)
 {
 }
 
@@ -399,14 +394,8 @@ SurfaceTextureSource::GetTextureTransform()
 
   gfx::Matrix4x4 ret;
 
-  
-  
-  
-  
-  if (!mIgnoreTransform) {
-    const auto& surf = java::sdk::SurfaceTexture::LocalRef(java::sdk::SurfaceTexture::Ref::From(mSurfTex));
-    AndroidSurfaceTexture::GetTransformMatrix(surf, ret);
-  }
+  const auto& surf = java::sdk::SurfaceTexture::LocalRef(java::sdk::SurfaceTexture::Ref::From(mSurfTex));
+  AndroidSurfaceTexture::GetTransformMatrix(surf, ret);
 
   return ret;
 }
@@ -422,15 +411,11 @@ SurfaceTextureSource::DeallocateDeviceData()
 SurfaceTextureHost::SurfaceTextureHost(TextureFlags aFlags,
                                        mozilla::java::GeckoSurfaceTexture::Ref& aSurfTex,
                                        gfx::IntSize aSize,
-                                       gfx::SurfaceFormat aFormat,
-                                       bool aContinuousUpdate,
-                                       bool aIgnoreTransform)
+                                       bool aContinuousUpdate)
   : TextureHost(aFlags)
   , mSurfTex(aSurfTex)
   , mSize(aSize)
-  , mFormat(aFormat)
   , mContinuousUpdate(aContinuousUpdate)
-  , mIgnoreTransform(aIgnoreTransform)
 {
   if (!mSurfTex) {
     return;
@@ -490,15 +475,23 @@ SurfaceTextureHost::Lock()
   }
 
   if (!mTextureSource) {
+    gfx::SurfaceFormat format = gfx::SurfaceFormat::R8G8B8A8;
     GLenum target = LOCAL_GL_TEXTURE_EXTERNAL; 
     GLenum wrapMode = LOCAL_GL_CLAMP_TO_EDGE;
     mTextureSource = new SurfaceTextureSource(mProvider,
                                               mSurfTex,
-                                              mFormat,
+                                              format,
                                               target,
                                               wrapMode,
-                                              mSize,
-                                              mIgnoreTransform);
+                                              mSize);
+  }
+
+  if (!mSurfTex->IsAttachedToGLContext((int64_t)gl)) {
+    GLuint texName;
+    gl->fGenTextures(1, &texName);
+    if (NS_FAILED(mSurfTex->AttachToGLContext((int64_t)gl, texName))) {
+      return false;
+    }
   }
 
   return true;
@@ -533,7 +526,7 @@ SurfaceTextureHost::NotifyNotUsed()
 gfx::SurfaceFormat
 SurfaceTextureHost::GetFormat() const
 {
-  return mFormat;
+  return mTextureSource ? mTextureSource->GetFormat() : gfx::SurfaceFormat::UNKNOWN;
 }
 
 void
