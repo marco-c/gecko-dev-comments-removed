@@ -72,9 +72,9 @@ pref_GrowBuf(PrefParseState* aPS)
 {
   int bufLen, curPos, valPos;
 
-  bufLen = aPS->lbend - aPS->lb;
-  curPos = aPS->lbcur - aPS->lb;
-  valPos = aPS->vb - aPS->lb;
+  bufLen = aPS->mLbEnd - aPS->mLb;
+  curPos = aPS->mLbCur - aPS->mLb;
+  valPos = aPS->mVb - aPS->mLb;
 
   if (bufLen == 0) {
     bufLen = 128; 
@@ -86,14 +86,14 @@ pref_GrowBuf(PrefParseState* aPS)
   fprintf(stderr, ">>> realloc(%d)\n", bufLen);
 #endif
 
-  aPS->lb = (char*)realloc(aPS->lb, bufLen);
-  if (!aPS->lb) {
+  aPS->mLb = (char*)realloc(aPS->mLb, bufLen);
+  if (!aPS->mLb) {
     return false;
   }
 
-  aPS->lbcur = aPS->lb + curPos;
-  aPS->lbend = aPS->lb + bufLen;
-  aPS->vb = aPS->lb + valPos;
+  aPS->mLbCur = aPS->mLb + curPos;
+  aPS->mLbEnd = aPS->mLb + bufLen;
+  aPS->mVb = aPS->mLb + valPos;
 
   return true;
 }
@@ -105,8 +105,8 @@ pref_ReportParseProblem(PrefParseState& aPS,
                         int aLine,
                         bool aError)
 {
-  if (aPS.reporter) {
-    aPS.reporter(aMessage, aLine, aError);
+  if (aPS.mReporter) {
+    aPS.mReporter(aMessage, aLine, aError);
   } else {
     printf_stderr("**** Preference parsing %s (line %d) = %s **\n",
                   (aError ? "error" : "warning"),
@@ -127,34 +127,34 @@ pref_DoCallback(PrefParseState* aPS)
 {
   PrefValue value;
 
-  switch (aPS->vtype) {
+  switch (aPS->mVtype) {
     case PrefType::String:
-      value.stringVal = aPS->vb;
+      value.mStringVal = aPS->mVb;
       break;
 
     case PrefType::Int:
-      if ((aPS->vb[0] == '-' || aPS->vb[0] == '+') && aPS->vb[1] == '\0') {
+      if ((aPS->mVb[0] == '-' || aPS->mVb[0] == '+') && aPS->mVb[1] == '\0') {
         pref_ReportParseProblem(*aPS, "invalid integer value", 0, true);
         NS_WARNING("malformed integer value");
         return false;
       }
-      value.intVal = atoi(aPS->vb);
+      value.mIntVal = atoi(aPS->mVb);
       break;
 
     case PrefType::Bool:
-      value.boolVal = (aPS->vb == kTrue);
+      value.mBoolVal = (aPS->mVb == kTrue);
       break;
 
     default:
       break;
   }
 
-  (*aPS->reader)(aPS->closure,
-                 aPS->lb,
-                 value,
-                 aPS->vtype,
-                 aPS->fdefault,
-                 aPS->fstickydefault);
+  (*aPS->mReader)(aPS->mClosure,
+                  aPS->mLb,
+                  value,
+                  aPS->mVtype,
+                  aPS->mIsDefault,
+                  aPS->mIsStickyDefault);
   return true;
 }
 
@@ -165,16 +165,16 @@ PREF_InitParseState(PrefParseState* aPS,
                     void* aClosure)
 {
   memset(aPS, 0, sizeof(*aPS));
-  aPS->reader = aReader;
-  aPS->closure = aClosure;
-  aPS->reporter = aReporter;
+  aPS->mReader = aReader;
+  aPS->mClosure = aClosure;
+  aPS->mReporter = aReporter;
 }
 
 void
 PREF_FinalizeParseState(PrefParseState* aPS)
 {
-  if (aPS->lb) {
-    free(aPS->lb);
+  if (aPS->mLb) {
+    free(aPS->mLb);
   }
 }
 
@@ -209,7 +209,7 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
   
   int lineNum = 0;
 
-  state = aPS->state;
+  state = aPS->mState;
   for (end = aBuf + aBufLen; aBuf != end; ++aBuf) {
     c = *aBuf;
     if (c == '\r' || c == '\n' || c == 0x1A) {
@@ -219,12 +219,12 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
     switch (state) {
       
       case PREF_PARSE_INIT:
-        if (aPS->lbcur != aPS->lb) { 
-          aPS->lbcur = aPS->lb;
-          aPS->vb = nullptr;
-          aPS->vtype = PrefType::Invalid;
-          aPS->fdefault = false;
-          aPS->fstickydefault = false;
+        if (aPS->mLbCur != aPS->mLb) { 
+          aPS->mLbCur = aPS->mLb;
+          aPS->mVb = nullptr;
+          aPS->mVtype = PrefType::Invalid;
+          aPS->mIsDefault = false;
+          aPS->mIsStickyDefault = false;
         }
         switch (c) {
           case '/': 
@@ -237,14 +237,14 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
           case 's': 
           case 'p': 
             if (c == 'u') {
-              aPS->smatch = kUserPref;
+              aPS->mStrMatch = kUserPref;
             } else if (c == 's') {
-              aPS->smatch = kPrefSticky;
+              aPS->mStrMatch = kPrefSticky;
             } else {
-              aPS->smatch = kPref;
+              aPS->mStrMatch = kPref;
             }
-            aPS->sindex = 1;
-            aPS->nextstate = PREF_PARSE_UNTIL_OPEN_PAREN;
+            aPS->mStrIndex = 1;
+            aPS->mNextState = PREF_PARSE_UNTIL_OPEN_PAREN;
             state = PREF_PARSE_MATCH_STRING;
             break;
             
@@ -253,11 +253,11 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
 
       
       case PREF_PARSE_MATCH_STRING:
-        if (c == aPS->smatch[aPS->sindex++]) {
+        if (c == aPS->mStrMatch[aPS->mStrIndex++]) {
           
-          if (aPS->smatch[aPS->sindex] == '\0') {
-            state = aPS->nextstate;
-            aPS->nextstate = PREF_PARSE_INIT; 
+          if (aPS->mStrMatch[aPS->mStrIndex] == '\0') {
+            state = aPS->mNextState;
+            aPS->mNextState = PREF_PARSE_INIT; 
           }
           
         } else {
@@ -270,30 +270,31 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
       
       case PREF_PARSE_QUOTED_STRING:
         
-        if (aPS->lbcur == aPS->lbend && !pref_GrowBuf(aPS)) {
+        if (aPS->mLbCur == aPS->mLbEnd && !pref_GrowBuf(aPS)) {
           return false; 
         }
         if (c == '\\') {
           state = PREF_PARSE_ESC_SEQUENCE;
-        } else if (c == aPS->quotechar) {
-          *aPS->lbcur++ = '\0';
-          state = aPS->nextstate;
-          aPS->nextstate = PREF_PARSE_INIT; 
+        } else if (c == aPS->mQuoteChar) {
+          *aPS->mLbCur++ = '\0';
+          state = aPS->mNextState;
+          aPS->mNextState = PREF_PARSE_INIT; 
         } else {
-          *aPS->lbcur++ = c;
+          *aPS->mLbCur++ = c;
         }
         break;
 
       
       case PREF_PARSE_UNTIL_NAME:
         if (c == '\"' || c == '\'') {
-          aPS->fdefault = (aPS->smatch == kPref || aPS->smatch == kPrefSticky);
-          aPS->fstickydefault = (aPS->smatch == kPrefSticky);
-          aPS->quotechar = c;
-          aPS->nextstate = PREF_PARSE_UNTIL_COMMA; 
+          aPS->mIsDefault =
+            (aPS->mStrMatch == kPref || aPS->mStrMatch == kPrefSticky);
+          aPS->mIsStickyDefault = (aPS->mStrMatch == kPrefSticky);
+          aPS->mQuoteChar = c;
+          aPS->mNextState = PREF_PARSE_UNTIL_COMMA; 
           state = PREF_PARSE_QUOTED_STRING;
-        } else if (c == '/') {    
-          aPS->nextstate = state; 
+        } else if (c == '/') {     
+          aPS->mNextState = state; 
           state = PREF_PARSE_COMMENT_MAYBE_START;
         } else if (!isspace(c)) {
           pref_ReportParseProblem(
@@ -306,10 +307,10 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
       
       case PREF_PARSE_UNTIL_COMMA:
         if (c == ',') {
-          aPS->vb = aPS->lbcur;
+          aPS->mVb = aPS->mLbCur;
           state = PREF_PARSE_UNTIL_VALUE;
-        } else if (c == '/') {    
-          aPS->nextstate = state; 
+        } else if (c == '/') {     
+          aPS->mNextState = state; 
           state = PREF_PARSE_COMMENT_MAYBE_START;
         } else if (!isspace(c)) {
           pref_ReportParseProblem(
@@ -324,27 +325,27 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
         
         
         if (c == '\"' || c == '\'') {
-          aPS->vtype = PrefType::String;
-          aPS->quotechar = c;
-          aPS->nextstate = PREF_PARSE_UNTIL_CLOSE_PAREN;
+          aPS->mVtype = PrefType::String;
+          aPS->mQuoteChar = c;
+          aPS->mNextState = PREF_PARSE_UNTIL_CLOSE_PAREN;
           state = PREF_PARSE_QUOTED_STRING;
         } else if (c == 't' || c == 'f') {
-          aPS->vb = (char*)(c == 't' ? kTrue : kFalse);
-          aPS->vtype = PrefType::Bool;
-          aPS->smatch = aPS->vb;
-          aPS->sindex = 1;
-          aPS->nextstate = PREF_PARSE_UNTIL_CLOSE_PAREN;
+          aPS->mVb = (char*)(c == 't' ? kTrue : kFalse);
+          aPS->mVtype = PrefType::Bool;
+          aPS->mStrMatch = aPS->mVb;
+          aPS->mStrIndex = 1;
+          aPS->mNextState = PREF_PARSE_UNTIL_CLOSE_PAREN;
           state = PREF_PARSE_MATCH_STRING;
         } else if (isdigit(c) || (c == '-') || (c == '+')) {
-          aPS->vtype = PrefType::Int;
+          aPS->mVtype = PrefType::Int;
           
-          if (aPS->lbcur == aPS->lbend && !pref_GrowBuf(aPS)) {
+          if (aPS->mLbCur == aPS->mLbEnd && !pref_GrowBuf(aPS)) {
             return false; 
           }
-          *aPS->lbcur++ = c;
+          *aPS->mLbCur++ = c;
           state = PREF_PARSE_INT_VALUE;
-        } else if (c == '/') {    
-          aPS->nextstate = state; 
+        } else if (c == '/') {     
+          aPS->mNextState = state; 
           state = PREF_PARSE_COMMENT_MAYBE_START;
         } else if (!isspace(c)) {
           pref_ReportParseProblem(
@@ -356,17 +357,17 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
 
       case PREF_PARSE_INT_VALUE:
         
-        if (aPS->lbcur == aPS->lbend && !pref_GrowBuf(aPS)) {
+        if (aPS->mLbCur == aPS->mLbEnd && !pref_GrowBuf(aPS)) {
           return false; 
         }
         if (isdigit(c)) {
-          *aPS->lbcur++ = c;
+          *aPS->mLbCur++ = c;
         } else {
-          *aPS->lbcur++ = '\0'; 
+          *aPS->mLbCur++ = '\0'; 
           if (c == ')') {
             state = PREF_PARSE_UNTIL_SEMICOLON;
           } else if (c == '/') { 
-            aPS->nextstate = PREF_PARSE_UNTIL_CLOSE_PAREN;
+            aPS->mNextState = PREF_PARSE_UNTIL_CLOSE_PAREN;
             state = PREF_PARSE_COMMENT_MAYBE_START;
           } else if (isspace(c)) {
             state = PREF_PARSE_UNTIL_CLOSE_PAREN;
@@ -406,8 +407,8 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
       case PREF_PARSE_COMMENT_BLOCK_MAYBE_END:
         switch (c) {
           case '/':
-            state = aPS->nextstate;
-            aPS->nextstate = PREF_PARSE_INIT;
+            state = aPS->mNextState;
+            aPS->mNextState = PREF_PARSE_INIT;
             break;
           case '*': 
             break;
@@ -435,10 +436,10 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
             break;
           case 'x': 
           case 'u': 
-            aPS->esctmp[0] = c;
-            aPS->esclen = 1;
-            aPS->utf16[0] = aPS->utf16[1] = 0;
-            aPS->sindex =
+            aPS->mEscTmp[0] = c;
+            aPS->mEscLen = 1;
+            aPS->mUtf16[0] = aPS->mUtf16[1] = 0;
+            aPS->mStrIndex =
               (c == 'x') ? HEX_ESC_NUM_DIGITS : UTF16_ESC_NUM_DIGITS;
             state = PREF_PARSE_HEX_ESCAPE;
             continue;
@@ -448,13 +449,13 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
             NS_WARNING("preserving unexpected JS escape sequence");
             
             
-            if ((aPS->lbcur + 1) == aPS->lbend && !pref_GrowBuf(aPS)) {
+            if ((aPS->mLbCur + 1) == aPS->mLbEnd && !pref_GrowBuf(aPS)) {
               return false; 
             }
-            *aPS->lbcur++ = '\\'; 
+            *aPS->mLbCur++ = '\\'; 
             break;
         }
-        *aPS->lbcur++ = c;
+        *aPS->mLbCur++ = c;
         state = PREF_PARSE_QUOTED_STRING;
         break;
 
@@ -473,12 +474,13 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
                                   lineNum,
                                   false);
           NS_WARNING("preserving invalid or incomplete hex escape");
-          *aPS->lbcur++ = '\\'; 
-          if ((aPS->lbcur + aPS->esclen) >= aPS->lbend && !pref_GrowBuf(aPS)) {
+          *aPS->mLbCur++ = '\\'; 
+          if ((aPS->mLbCur + aPS->mEscLen) >= aPS->mLbEnd &&
+              !pref_GrowBuf(aPS)) {
             return false;
           }
-          for (int i = 0; i < aPS->esclen; ++i) {
-            *aPS->lbcur++ = aPS->esctmp[i];
+          for (int i = 0; i < aPS->mEscLen; ++i) {
+            *aPS->mLbCur++ = aPS->mEscTmp[i];
           }
 
           
@@ -489,58 +491,58 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
         }
 
         
-        aPS->esctmp[aPS->esclen++] = c; 
-        aPS->utf16[1] <<= BITS_PER_HEX_DIGIT;
-        aPS->utf16[1] |= udigit;
-        aPS->sindex--;
-        if (aPS->sindex == 0) {
+        aPS->mEscTmp[aPS->mEscLen++] = c; 
+        aPS->mUtf16[1] <<= BITS_PER_HEX_DIGIT;
+        aPS->mUtf16[1] |= udigit;
+        aPS->mStrIndex--;
+        if (aPS->mStrIndex == 0) {
           
           int utf16len = 0;
-          if (aPS->utf16[0]) {
+          if (aPS->mUtf16[0]) {
             
             utf16len = 2;
-          } else if (0xD800 == (0xFC00 & aPS->utf16[1])) {
+          } else if (0xD800 == (0xFC00 & aPS->mUtf16[1])) {
             
-            aPS->utf16[0] = aPS->utf16[1];
-            aPS->utf16[1] = 0;
+            aPS->mUtf16[0] = aPS->mUtf16[1];
+            aPS->mUtf16[1] = 0;
             state = PREF_PARSE_UTF16_LOW_SURROGATE;
             break;
           } else {
             
-            aPS->utf16[0] = aPS->utf16[1];
+            aPS->mUtf16[0] = aPS->mUtf16[1];
             utf16len = 1;
           }
 
           
           
           
-          if (aPS->lbcur + 6 >= aPS->lbend && !pref_GrowBuf(aPS)) {
+          if (aPS->mLbCur + 6 >= aPS->mLbEnd && !pref_GrowBuf(aPS)) {
             return false;
           }
 
-          ConvertUTF16toUTF8 converter(aPS->lbcur);
-          converter.write(aPS->utf16, utf16len);
-          aPS->lbcur += converter.Size();
+          ConvertUTF16toUTF8 converter(aPS->mLbCur);
+          converter.write(aPS->mUtf16, utf16len);
+          aPS->mLbCur += converter.Size();
           state = PREF_PARSE_QUOTED_STRING;
         }
         break;
 
       
       case PREF_PARSE_UTF16_LOW_SURROGATE:
-        if (aPS->sindex == 0 && c == '\\') {
-          ++aPS->sindex;
-        } else if (aPS->sindex == 1 && c == 'u') {
+        if (aPS->mStrIndex == 0 && c == '\\') {
+          ++aPS->mStrIndex;
+        } else if (aPS->mStrIndex == 1 && c == 'u') {
           
-          aPS->sindex = UTF16_ESC_NUM_DIGITS;
-          aPS->esctmp[0] = 'u';
-          aPS->esclen = 1;
+          aPS->mStrIndex = UTF16_ESC_NUM_DIGITS;
+          aPS->mEscTmp[0] = 'u';
+          aPS->mEscLen = 1;
           state = PREF_PARSE_HEX_ESCAPE;
         } else {
           
           
           
           --aBuf;
-          if (aPS->sindex == 1) {
+          if (aPS->mStrIndex == 1) {
             state = PREF_PARSE_ESC_SEQUENCE;
           } else {
             state = PREF_PARSE_QUOTED_STRING;
@@ -555,7 +557,7 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
         if (c == '(') {
           state = PREF_PARSE_UNTIL_NAME;
         } else if (c == '/') {
-          aPS->nextstate = state; 
+          aPS->mNextState = state; 
           state = PREF_PARSE_COMMENT_MAYBE_START;
         } else if (!isspace(c)) {
           pref_ReportParseProblem(
@@ -570,7 +572,7 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
         if (c == ')') {
           state = PREF_PARSE_UNTIL_SEMICOLON;
         } else if (c == '/') {
-          aPS->nextstate = state; 
+          aPS->mNextState = state; 
           state = PREF_PARSE_COMMENT_MAYBE_START;
         } else if (!isspace(c)) {
           pref_ReportParseProblem(
@@ -589,7 +591,7 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
           }
           state = PREF_PARSE_INIT;
         } else if (c == '/') {
-          aPS->nextstate = state; 
+          aPS->mNextState = state; 
           state = PREF_PARSE_COMMENT_MAYBE_START;
         } else if (!isspace(c)) {
           pref_ReportParseProblem(
@@ -604,13 +606,13 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
         
         
         if (c == '\r' || c == '\n' || c == 0x1A) {
-          state = aPS->nextstate;
-          aPS->nextstate = PREF_PARSE_INIT; 
+          state = aPS->mNextState;
+          aPS->mNextState = PREF_PARSE_INIT; 
         }
         break;
     }
   }
-  aPS->state = state;
+  aPS->mState = state;
   return true;
 }
 
@@ -626,13 +628,13 @@ pref_reader(void* aClosure,
   printf("%spref(\"%s\", ", aDefPref ? "" : "user_", aPref);
   switch (aType) {
     case PREF_STRING:
-      printf("\"%s\");\n", aVal.stringVal);
+      printf("\"%s\");\n", aVal.mStringVal);
       break;
     case PREF_INT:
-      printf("%i);\n", aVal.intVal);
+      printf("%i);\n", aVal.mIntVal);
       break;
     case PREF_BOOL:
-      printf("%s);\n", aVal.boolVal == false ? "false" : "true");
+      printf("%s);\n", aVal.mBoolVal == false ? "false" : "true");
       break;
   }
 }

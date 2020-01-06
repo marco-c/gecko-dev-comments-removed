@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef mozilla_Preferences_h
 #define mozilla_Preferences_h
 
@@ -10,47 +11,54 @@
 #error "This header is only usable from within libxul (MOZILLA_INTERNAL_API)."
 #endif
 
-#include "nsIPrefService.h"
-#include "nsIPrefBranch.h"
-#include "nsIObserver.h"
-#include "nsCOMPtr.h"
-#include "nsTArray.h"
-#include "nsWeakReference.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/MemoryReporting.h"
+#include "nsCOMPtr.h"
+#include "nsIObserver.h"
+#include "nsIPrefBranch.h"
+#include "nsIPrefService.h"
+#include "nsTArray.h"
+#include "nsWeakReference.h"
 
 class nsIFile;
 
 #ifndef have_PrefChangedFunc_typedef
-typedef void (*PrefChangedFunc)(const char *, void *);
+typedef void (*PrefChangedFunc)(const char*, void*);
 #define have_PrefChangedFunc_typedef
 #endif
 
 #ifdef DEBUG
-enum pref_initPhase {
+enum pref_initPhase
+{
   START,
   BEGIN_INIT_PREFS,
   END_INIT_PREFS,
   BEGIN_ALL_PREFS,
   END_ALL_PREFS
 };
-
 #define SET_PREF_PHASE(p) Preferences::SetInitPhase(p)
 #else
-#define SET_PREF_PHASE(p) do { } while (0)
+#define SET_PREF_PHASE(p)                                                      \
+  do {                                                                         \
+  } while (0)
 #endif
 
 namespace mozilla {
+
 struct Ok;
-template <typename V, typename E> class Result;
+
+template<typename V, typename E>
+class Result;
+
 namespace dom {
 class PrefSetting;
 } 
 
-class Preferences final : public nsIPrefService,
-                          public nsIObserver,
-                          public nsIPrefBranch,
-                          public nsSupportsWeakReference
+class Preferences final
+  : public nsIPrefService
+  , public nsIObserver
+  , public nsIPrefBranch
+  , public nsSupportsWeakReference
 {
 public:
   typedef mozilla::dom::PrefSetting PrefSetting;
@@ -65,29 +73,18 @@ public:
   mozilla::Result<Ok, const char*> Init();
 
   
-
-
   static bool IsServiceAvailable();
 
   
-
-
   static void InitializeUserPrefs();
 
   
-
-
   static Preferences* GetInstanceForService();
 
   
-
-
   static void Shutdown();
 
   
-
-
-
   static nsIPrefService* GetService()
   {
     NS_ENSURE_TRUE(InitStaticMembers(), nullptr);
@@ -95,9 +92,6 @@ public:
   }
 
   
-
-
-
   static nsIPrefBranch* GetRootBranch()
   {
     NS_ENSURE_TRUE(InitStaticMembers(), nullptr);
@@ -105,9 +99,6 @@ public:
   }
 
   
-
-
-
   static nsIPrefBranch* GetDefaultRootBranch()
   {
     NS_ENSURE_TRUE(InitStaticMembers(), nullptr);
@@ -115,9 +106,7 @@ public:
   }
 
   
-
-
-
+  
   static bool GetBool(const char* aPref, bool aDefault = false)
   {
     bool result = aDefault;
@@ -147,13 +136,10 @@ public:
   }
 
   
-
-
-
-
-
-
-
+  
+  
+  
+  
   static nsresult GetBool(const char* aPref, bool* aResult);
   static nsresult GetInt(const char* aPref, int32_t* aResult);
   static nsresult GetFloat(const char* aPref, float* aResult);
@@ -168,22 +154,17 @@ public:
   }
 
   
-
-
-
-
-
+  
   static nsresult GetCString(const char* aPref, nsACString& aResult);
   static nsresult GetString(const char* aPref, nsAString& aResult);
   static nsresult GetLocalizedCString(const char* aPref, nsACString& aResult);
   static nsresult GetLocalizedString(const char* aPref, nsAString& aResult);
 
-  static nsresult GetComplex(const char* aPref, const nsIID &aType,
+  static nsresult GetComplex(const char* aPref,
+                             const nsIID& aType,
                              void** aResult);
 
   
-
-
   static nsresult SetBool(const char* aPref, bool aValue);
   static nsresult SetInt(const char* aPref, int32_t aValue);
   static nsresult SetUint(const char* aPref, uint32_t aValue)
@@ -192,64 +173,51 @@ public:
   }
   static nsresult SetFloat(const char* aPref, float aValue);
   static nsresult SetCString(const char* aPref, const char* aValue);
-  static nsresult SetCString(const char* aPref, const nsACString &aValue);
+  static nsresult SetCString(const char* aPref, const nsACString& aValue);
   static nsresult SetString(const char* aPref, const char16ptr_t aValue);
-  static nsresult SetString(const char* aPref, const nsAString &aValue);
+  static nsresult SetString(const char* aPref, const nsAString& aValue);
 
-  static nsresult SetComplex(const char* aPref, const nsIID &aType,
+  static nsresult SetComplex(const char* aPref,
+                             const nsIID& aType,
                              nsISupports* aValue);
 
   
-
-
   static nsresult ClearUser(const char* aPref);
 
   
-
-
   static bool HasUserValue(const char* aPref);
 
   
-
-
   static int32_t GetType(const char* aPref);
 
   
-
-
-
-
-
+  
   static nsresult AddStrongObserver(nsIObserver* aObserver, const char* aPref);
   static nsresult AddWeakObserver(nsIObserver* aObserver, const char* aPref);
   static nsresult RemoveObserver(nsIObserver* aObserver, const char* aPref);
 
   
-
-
-
+  
   static nsresult AddStrongObservers(nsIObserver* aObserver,
                                      const char** aPrefs);
-  static nsresult AddWeakObservers(nsIObserver* aObserver,
-                                   const char** aPrefs);
-  static nsresult RemoveObservers(nsIObserver* aObserver,
-                                  const char** aPrefs);
+  static nsresult AddWeakObservers(nsIObserver* aObserver, const char** aPrefs);
+  static nsresult RemoveObservers(nsIObserver* aObserver, const char** aPrefs);
 
   
-
-
   static nsresult RegisterCallback(PrefChangedFunc aCallback,
                                    const char* aPref,
                                    void* aClosure = nullptr)
   {
     return RegisterCallback(aCallback, aPref, aClosure, ExactMatch);
   }
+
   static nsresult UnregisterCallback(PrefChangedFunc aCallback,
                                      const char* aPref,
                                      void* aClosure = nullptr)
   {
     return UnregisterCallback(aCallback, aPref, aClosure, ExactMatch);
   }
+
   
   
   static nsresult RegisterCallbackAndCall(PrefChangedFunc aCallback,
@@ -260,9 +228,7 @@ public:
   }
 
   
-
-
-
+  
   static nsresult RegisterPrefixCallback(PrefChangedFunc aCallback,
                                          const char* aPref,
                                          void* aClosure = nullptr)
@@ -271,9 +237,7 @@ public:
   }
 
   
-
-
-
+  
   static nsresult RegisterPrefixCallbackAndCall(PrefChangedFunc aCallback,
                                                 const char* aPref,
                                                 void* aClosure = nullptr)
@@ -282,9 +246,7 @@ public:
   }
 
   
-
-
-
+  
   static nsresult UnregisterPrefixCallback(PrefChangedFunc aCallback,
                                            const char* aPref,
                                            void* aClosure = nullptr)
@@ -293,11 +255,9 @@ public:
   }
 
   
-
-
-
-
-
+  
+  
+  
   static nsresult AddBoolVarCache(bool* aVariable,
                                   const char* aPref,
                                   bool aDefault = false);
@@ -307,7 +267,7 @@ public:
   static nsresult AddUintVarCache(uint32_t* aVariable,
                                   const char* aPref,
                                   uint32_t aDefault = 0);
-  template <MemoryOrdering Order>
+  template<MemoryOrdering Order>
   static nsresult AddAtomicUintVarCache(Atomic<uint32_t, Order>* aVariable,
                                         const char* aPref,
                                         uint32_t aDefault = 0);
@@ -316,11 +276,8 @@ public:
                                    float aDefault = 0.0f);
 
   
-
-
-
-
-
+  
+  
   static nsresult GetDefaultBool(const char* aPref, bool* aResult);
   static nsresult GetDefaultInt(const char* aPref, int32_t* aResult);
   static nsresult GetDefaultUint(const char* aPref, uint32_t* aResult)
@@ -329,16 +286,13 @@ public:
   }
 
   
-
-
-
-
-
+  
+  
   static bool GetDefaultBool(const char* aPref, bool aFailedResult)
   {
     bool result;
-    return NS_SUCCEEDED(GetDefaultBool(aPref, &result)) ? result :
-                                                          aFailedResult;
+    return NS_SUCCEEDED(GetDefaultBool(aPref, &result)) ? result
+                                                        : aFailedResult;
   }
   static int32_t GetDefaultInt(const char* aPref, int32_t aFailedResult)
   {
@@ -347,13 +301,11 @@ public:
   }
   static uint32_t GetDefaultUint(const char* aPref, uint32_t aFailedResult)
   {
-   return static_cast<uint32_t>(
-     GetDefaultInt(aPref, static_cast<int32_t>(aFailedResult)));
+    return static_cast<uint32_t>(
+      GetDefaultInt(aPref, static_cast<int32_t>(aFailedResult)));
   }
 
   
-
-
   static nsresult GetDefaultCString(const char* aPref, nsACString& aResult);
   static nsresult GetDefaultString(const char* aPref, nsAString& aResult);
   static nsresult GetDefaultLocalizedCString(const char* aPref,
@@ -361,12 +313,11 @@ public:
   static nsresult GetDefaultLocalizedString(const char* aPref,
                                             nsAString& aResult);
 
-  static nsresult GetDefaultComplex(const char* aPref, const nsIID &aType,
+  static nsresult GetDefaultComplex(const char* aPref,
+                                    const nsIID& aType,
                                     void** aResult);
 
   
-
-
   static int32_t GetDefaultType(const char* aPref);
 
   
@@ -381,7 +332,8 @@ public:
   static pref_initPhase InitPhase();
 #endif
 
-  static int64_t SizeOfIncludingThisAndOtherStuff(mozilla::MallocSizeOf aMallocSizeOf);
+  static int64_t SizeOfIncludingThisAndOtherStuff(
+    mozilla::MallocSizeOf aMallocSizeOf);
 
   static void DirtyCallback();
 
@@ -395,23 +347,20 @@ public:
 protected:
   virtual ~Preferences();
 
-  nsresult NotifyServiceObservers(const char *aSubject);
+  nsresult NotifyServiceObservers(const char* aSubject);
+
   
-
-
-
-
+  
   already_AddRefed<nsIFile> ReadSavedPrefs();
 
   
-
-
   void ReadUserOverridePrefs();
 
-  nsresult MakeBackupPrefFile(nsIFile *aFile);
+  nsresult MakeBackupPrefFile(nsIFile* aFile);
 
   
-  enum class SaveMethod {
+  enum class SaveMethod
+  {
     Blocking,
     Asynchronous
   };
@@ -424,12 +373,11 @@ protected:
   bool AllowOffMainThreadSave();
 
   
-
-
-
+  
 public:
   
-  enum MatchKind {
+  enum MatchKind
+  {
     PrefixMatch,
     ExactMatch,
   };
@@ -449,21 +397,19 @@ protected:
                                           MatchKind aMatchKind);
 
 private:
-  nsCOMPtr<nsIFile>        mCurrentFile;
-  bool                     mDirty = false;
-  bool                     mProfileShutdown = false;
+  nsCOMPtr<nsIFile> mCurrentFile;
+  bool mDirty = false;
+  bool mProfileShutdown = false;
   
   
-  bool                     mSavePending = false;
+  bool mSavePending = false;
 
-  static Preferences*      sPreferences;
-  static nsIPrefBranch*    sRootBranch;
-  static nsIPrefBranch*    sDefaultRootBranch;
-  static bool              sShutdown;
+  static Preferences* sPreferences;
+  static nsIPrefBranch* sRootBranch;
+  static nsIPrefBranch* sDefaultRootBranch;
+  static bool sShutdown;
 
   
-
-
   static bool InitStaticMembers();
 };
 

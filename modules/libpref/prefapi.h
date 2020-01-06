@@ -4,10 +4,8 @@
 
 
 
-
-
-#ifndef PREFAPI_H
-#define PREFAPI_H
+#ifndef prefapi_h
+#define prefapi_h
 
 #include "nscore.h"
 #include "PLDHashTable.h"
@@ -21,36 +19,29 @@ static const uint32_t MAX_PREF_LENGTH = 1 * 1024 * 1024;
 
 static const uint32_t MAX_ADVISABLE_PREF_LENGTH = 4 * 1024;
 
-typedef union
-{
-    char*       stringVal;
-    int32_t     intVal;
-    bool        boolVal;
+typedef union {
+  char* mStringVal;
+  int32_t mIntVal;
+  bool mBoolVal;
 } PrefValue;
 
 
 
+void
+PREF_Init();
+
+
+
+void
+PREF_Cleanup();
+void
+PREF_CleanupPrefs();
 
 
 
 
-void        PREF_Init();
-
-
-
-
-
-void        PREF_Cleanup();
-void        PREF_CleanupPrefs();
-
-
-
-
-
-
-
-
-enum class PrefType {
+enum class PrefType
+{
   Invalid = 0,
   String = 1,
   Int = 2,
@@ -61,9 +52,21 @@ enum class PrefType {
 class PrefTypeFlags
 {
 public:
-  PrefTypeFlags() : mValue(AsInt(PrefType::Invalid)) {}
-  explicit PrefTypeFlags(PrefType aType) : mValue(AsInt(aType)) {}
-  PrefTypeFlags& Reset() { mValue = AsInt(PrefType::Invalid); return *this; }
+  PrefTypeFlags()
+    : mValue(AsInt(PrefType::Invalid))
+  {
+  }
+
+  explicit PrefTypeFlags(PrefType aType)
+    : mValue(AsInt(aType))
+  {
+  }
+
+  PrefTypeFlags& Reset()
+  {
+    mValue = AsInt(PrefType::Invalid);
+    return *this;
+  }
 
   bool IsTypeValid() const { return !IsPrefType(PrefType::Invalid); }
   bool IsTypeString() const { return IsPrefType(PrefType::String); }
@@ -71,39 +74,59 @@ public:
   bool IsTypeBool() const { return IsPrefType(PrefType::Bool); }
   bool IsPrefType(PrefType type) const { return GetPrefType() == type; }
 
-  PrefTypeFlags& SetPrefType(PrefType aType) {
+  PrefTypeFlags& SetPrefType(PrefType aType)
+  {
     mValue = mValue - AsInt(GetPrefType()) + AsInt(aType);
     return *this;
   }
-  PrefType GetPrefType() const {
-    return (PrefType)(mValue & (AsInt(PrefType::String) |
-                                AsInt(PrefType::Int) |
+
+  PrefType GetPrefType() const
+  {
+    return (PrefType)(mValue & (AsInt(PrefType::String) | AsInt(PrefType::Int) |
                                 AsInt(PrefType::Bool)));
   }
 
   bool HasDefault() const { return mValue & PREF_FLAG_HAS_DEFAULT; }
-  PrefTypeFlags& SetHasDefault(bool aSetOrUnset) { return SetFlag(PREF_FLAG_HAS_DEFAULT, aSetOrUnset); }
+
+  PrefTypeFlags& SetHasDefault(bool aSetOrUnset)
+  {
+    return SetFlag(PREF_FLAG_HAS_DEFAULT, aSetOrUnset);
+  }
 
   bool HasStickyDefault() const { return mValue & PREF_FLAG_STICKY_DEFAULT; }
-  PrefTypeFlags& SetHasStickyDefault(bool aSetOrUnset) { return SetFlag(PREF_FLAG_STICKY_DEFAULT, aSetOrUnset); }
+
+  PrefTypeFlags& SetHasStickyDefault(bool aSetOrUnset)
+  {
+    return SetFlag(PREF_FLAG_STICKY_DEFAULT, aSetOrUnset);
+  }
 
   bool IsLocked() const { return mValue & PREF_FLAG_LOCKED; }
-  PrefTypeFlags& SetLocked(bool aSetOrUnset) { return SetFlag(PREF_FLAG_LOCKED, aSetOrUnset); }
+
+  PrefTypeFlags& SetLocked(bool aSetOrUnset)
+  {
+    return SetFlag(PREF_FLAG_LOCKED, aSetOrUnset);
+  }
 
   bool HasUserValue() const { return mValue & PREF_FLAG_USERSET; }
-  PrefTypeFlags& SetHasUserValue(bool aSetOrUnset) { return SetFlag(PREF_FLAG_USERSET, aSetOrUnset); }
+
+  PrefTypeFlags& SetHasUserValue(bool aSetOrUnset)
+  {
+    return SetFlag(PREF_FLAG_USERSET, aSetOrUnset);
+  }
 
 private:
   static uint16_t AsInt(PrefType aType) { return (uint16_t)aType; }
 
-  PrefTypeFlags& SetFlag(uint16_t aFlag, bool aSetOrUnset) {
+  PrefTypeFlags& SetFlag(uint16_t aFlag, bool aSetOrUnset)
+  {
     mValue = aSetOrUnset ? mValue | aFlag : mValue & ~aFlag;
     return *this;
   }
 
   
   
-  enum {
+  enum
+  {
     PREF_FLAG_LOCKED = 4,
     PREF_FLAG_USERSET = 8,
     PREF_FLAG_CONFIG = 16,
@@ -117,10 +140,10 @@ private:
 
 struct PrefHashEntry : PLDHashEntryHdr
 {
-    PrefTypeFlags prefFlags; 
-    const char *key;
-    PrefValue defaultPref;
-    PrefValue userPref;
+  PrefTypeFlags mPrefFlags; 
+  const char* mKey;
+  PrefValue mDefaultPref;
+  PrefValue mUserPref;
 };
 
 
@@ -135,17 +158,15 @@ struct PrefHashEntry : PLDHashEntryHdr
 
 
 
+nsresult
+PREF_SetCharPref(const char* aPref, const char* aVal, bool aSetDefault = false);
+nsresult
+PREF_SetIntPref(const char* aPref, int32_t aVal, bool aSetDefault = false);
+nsresult
+PREF_SetBoolPref(const char* aPref, bool aVal, bool aSetDefault = false);
 
-
-
-
-
-nsresult PREF_SetCharPref(const char *pref,const char* value, bool set_default = false);
-nsresult PREF_SetIntPref(const char *pref,int32_t value, bool set_default = false);
-nsresult PREF_SetBoolPref(const char *pref,bool value, bool set_default = false);
-
-bool     PREF_HasUserPref(const char* pref_name);
-
+bool
+PREF_HasUserPref(const char* aPrefName);
 
 
 
@@ -156,57 +177,41 @@ bool     PREF_HasUserPref(const char* pref_name);
 
 
 
-
-
-
-nsresult PREF_GetIntPref(const char *pref,
-                           int32_t * return_int, bool get_default);
-nsresult PREF_GetBoolPref(const char *pref, bool * return_val, bool get_default);
-
-
+nsresult
+PREF_GetIntPref(const char* aPref, int32_t* aValueOut, bool aGetDefault);
+nsresult
+PREF_GetBoolPref(const char* aPref, bool* aValueOut, bool aGetDefault);
 
 
 
 
-
-nsresult PREF_CopyCharPref(const char *pref, char ** return_buf, bool get_default);
-
-
+nsresult
+PREF_CopyCharPref(const char* aPref, char** aValueOut, bool aGetDefault);
 
 
 
-
-bool PREF_PrefIsLocked(const char *pref_name);
-
-
+bool
+PREF_PrefIsLocked(const char* aPrefName);
 
 
 
+nsresult
+PREF_LockPref(const char* aKey, bool aLockIt);
+
+PrefType
+PREF_GetPrefType(const char* aPrefName);
 
 
-nsresult PREF_LockPref(const char *key, bool lockIt);
-
-PrefType PREF_GetPrefType(const char *pref_name);
-
+nsresult
+PREF_DeleteBranch(const char* aBranchName);
 
 
-
-nsresult PREF_DeleteBranch(const char *branch_name);
-
-
+nsresult
+PREF_ClearUserPref(const char* aPrefName);
 
 
-nsresult PREF_ClearUserPref(const char *pref_name);
-
-
-
-
-nsresult PREF_ClearAllUserPrefs();
-
-
-
-
-
+nsresult
+PREF_ClearAllUserPrefs();
 
 
 
@@ -218,7 +223,7 @@ nsresult PREF_ClearAllUserPrefs();
 
 
 #ifndef have_PrefChangedFunc_typedef
-typedef void (*PrefChangedFunc) (const char *, void *);
+typedef void (*PrefChangedFunc)(const char*, void*);
 #define have_PrefChangedFunc_typedef
 #endif
 
@@ -226,36 +231,34 @@ typedef void (*PrefChangedFunc) (const char *, void *);
 
 
 
+void
+PREF_RegisterPriorityCallback(const char* aPrefNode,
+                              PrefChangedFunc aCallback,
+                              void* aData);
+void
+PREF_RegisterCallback(const char* aPrefNode,
+                      PrefChangedFunc aCallback,
+                      void* aData);
+nsresult
+PREF_UnregisterCallback(const char* aPrefNode,
+                        PrefChangedFunc aCallback,
+                        void* aData);
 
 
+void
+PREF_ReaderCallback(void* aClosure,
+                    const char* aPref,
+                    PrefValue aValue,
+                    PrefType aType,
+                    bool aIsDefault,
+                    bool aIsStickyDefault);
 
 
-void PREF_RegisterPriorityCallback(const char* domain,
-                                   PrefChangedFunc callback,
-                                   void* instance_data );
-void PREF_RegisterCallback(const char* domain,
-                           PrefChangedFunc callback, void* instance_data );
-nsresult PREF_UnregisterCallback(const char* domain,
-                                 PrefChangedFunc callback, void* instance_data );
-
-
-
-
-void PREF_ReaderCallback( void *closure,
-                          const char *pref,
-                          PrefValue   value,
-                          PrefType    type,
-                          bool        isDefault,
-                          bool        isStickyDefault);
-
-
-
-
-
-typedef void (*PrefsDirtyFunc) ();
+typedef void (*PrefsDirtyFunc)();
 void PREF_SetDirtyCallback(PrefsDirtyFunc);
 
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif 

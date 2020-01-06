@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef prefread_h__
 #define prefread_h__
 
@@ -21,47 +23,39 @@ extern "C" {
 
 
 
+typedef void (*PrefReader)(void* aClosure,
+                           const char* aPref,
+                           PrefValue aValue,
+                           PrefType aType,
+                           bool aIsDefault,
+                           bool aIsStickyDefault);
 
 
+typedef void (*PrefParseErrorReporter)(const char* aMessage,
+                                       int aLine,
+                                       bool aError);
 
-
-
-
-
-
-typedef void (*PrefReader)(void       *closure,
-                           const char *pref,
-                           PrefValue   val,
-                           PrefType    type,
-                           bool        defPref,
-                           bool        stickyPref);
-
-
-
-
-typedef void (*PrefParseErrorReporter)(const char* message, int line, bool error);
-
-
-typedef struct PrefParseState {
-    PrefReader  reader;
-    PrefParseErrorReporter reporter;
-    void       *closure;
-    int         state;      
-    int         nextstate;  
-    const char *smatch;     
-    int         sindex;     
-                            
-    char16_t   utf16[2];   
-    int         esclen;     
-    char        esctmp[6];  
-    char        quotechar;  
-    char       *lb;         
-    char       *lbcur;      
-    char       *lbend;      
-    char       *vb;         
-    PrefType    vtype;      
-    bool        fdefault;   
-    bool        fstickydefault; 
+typedef struct PrefParseState
+{
+  PrefReader mReader;
+  PrefParseErrorReporter mReporter;
+  void* mClosure;
+  int mState;            
+  int mNextState;        
+  const char* mStrMatch; 
+  int mStrIndex;         
+                         
+  char16_t mUtf16[2];    
+  int mEscLen;           
+  char mEscTmp[6];       
+  char mQuoteChar;       
+  char* mLb;             
+  char* mLbCur;          
+  char* mLbEnd;          
+  char* mVb;             
+  PrefType mVtype;       
+  bool mIsDefault;       
+  bool mIsStickyDefault; 
 } PrefParseState;
 
 
@@ -73,44 +67,23 @@ typedef struct PrefParseState {
 
 
 
+void
+PREF_InitParseState(PrefParseState* aPS,
+                    PrefReader aReader,
+                    PrefParseErrorReporter aReporter,
+                    void* aClosure);
+
+
+void
+PREF_FinalizeParseState(PrefParseState* aPS);
 
 
 
 
 
 
-
-void PREF_InitParseState(PrefParseState *ps, PrefReader reader,
-			 PrefParseErrorReporter reporter, void *closure);
-
-
-
-
-
-
-
-
-
-void PREF_FinalizeParseState(PrefParseState *ps);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool PREF_ParseBuf(PrefParseState *ps, const char *buf, int bufLen);
+bool
+PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen);
 
 #ifdef __cplusplus
 }
