@@ -67,18 +67,31 @@ this.shooter = (function() {
     
     
     
+    if (Math.floor(selectedPos.left) == Math.floor(selectedPos.right) ||
+        Math.floor(selectedPos.top) == Math.floor(selectedPos.bottom)) {
+        let exc = new Error("Empty selection");
+        exc.popupMessage = "EMPTY_SELECTION";
+        exc.noReport = true;
+        catcher.unhandled(exc);
+        return;
+    }
     const uicontrol = global.uicontrol;
     let deactivateAfterFinish = true;
     if (isSaving) {
       return;
     }
     isSaving = setTimeout(() => {
+      ui.Box.clearSaveDisabled();
       isSaving = null;
     }, 1000);
     selectedPos = selectedPos.asJson();
-    let captureText = util.captureEnclosedText(selectedPos);
+    let captureText = "";
+    if (buildSettings.captureText) {
+      captureText = util.captureEnclosedText(selectedPos);
+    }
     let dataUrl = screenshotPage(selectedPos);
     if (dataUrl) {
+      shot.delAllClips();
       shot.addClip({
         createdDate: Date.now(),
         image: {
