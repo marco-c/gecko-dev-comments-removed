@@ -581,7 +581,7 @@ public:
   {
   }
 
-  virtual void GetStyleName(nsAString& aResult) override;
+  virtual nsIAtom* GetStyleName() const override;
   virtual void GetPrefix(nsAString& aResult) override;
   virtual void GetSuffix(nsAString& aResult) override;
   virtual void GetSpokenCounterText(CounterValue aOrdinal,
@@ -618,14 +618,10 @@ private:
   nsIAtom** const mName;
 };
 
- void
-BuiltinCounterStyle::GetStyleName(nsAString& aResult)
+ nsIAtom*
+BuiltinCounterStyle::GetStyleName() const
 {
-  MOZ_ASSERT(mStyle != NS_STYLE_LIST_STYLE_CUSTOM);
-  const nsCString& str =
-    nsCSSProps::ValueToKeyword(mStyle, nsCSSProps::kListStyleKTable);
-  MOZ_ASSERT(!str.IsEmpty());
-  aResult.Assign(NS_ConvertUTF8toUTF16(str));
+  return *mName;
 }
 
  void
@@ -1066,7 +1062,7 @@ public:
   nsCSSCounterStyleRule* GetRule() const { return mRule; }
   uint32_t GetRuleGeneration() const { return mRuleGeneration; }
 
-  virtual void GetStyleName(nsAString& aResult) override;
+  virtual nsIAtom* GetStyleName() const override;
   virtual void GetPrefix(nsAString& aResult) override;
   virtual void GetSuffix(nsAString& aResult) override;
   virtual void GetSpokenCounterText(CounterValue aOrdinal,
@@ -1223,11 +1219,10 @@ CustomCounterStyle::ResetDependentData()
   }
 }
 
- void
-CustomCounterStyle::GetStyleName(nsAString& aResult)
+ nsIAtom*
+CustomCounterStyle::GetStyleName() const
 {
-  nsDependentAtomString name(mName);
-  aResult.Assign(name);
+  return mName;
 }
 
  void
@@ -1747,10 +1742,10 @@ AnonymousCounterStyle::AnonymousCounterStyle(uint8_t aSystem,
 {
 }
 
- void
-AnonymousCounterStyle::GetStyleName(nsAString& aResult)
+ nsIAtom*
+AnonymousCounterStyle::GetStyleName() const
 {
-  aResult.Truncate();
+  return nullptr;
 }
 
  void
