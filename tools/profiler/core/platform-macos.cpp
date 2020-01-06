@@ -64,52 +64,20 @@ private:
 
 
 
-static void*
-ThreadEntry(void* aArg)
+Sampler::Sampler(PSLockRef aLock)
 {
-  auto thread = static_cast<SamplerThread*>(aArg);
-  thread->Run();
-  return nullptr;
-}
-
-SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
-                             double aIntervalMilliseconds)
-  : mActivityGeneration(aActivityGeneration)
-  , mIntervalMicroseconds(
-      std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5))))
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  pthread_attr_t* attr_ptr = nullptr;
-  if (pthread_create(&mThread, attr_ptr, ThreadEntry, this) != 0) {
-    MOZ_CRASH("pthread_create failed");
-  }
-}
-
-SamplerThread::~SamplerThread()
-{
-  pthread_join(mThread, nullptr);
 }
 
 void
-SamplerThread::Stop(PSLockRef aLock)
+Sampler::Disable(PSLockRef aLock)
 {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 }
 
+template<typename Func>
 void
-SamplerThread::SleepMicro(uint32_t aMicroseconds)
-{
-  usleep(aMicroseconds);
-  
-  
-  
-  
-}
-
-void
-SamplerThread::SuspendAndSampleAndResumeThread(PSLockRef aLock,
-                                               TickSample& aSample)
+Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
+                                         TickSample& aSample,
+                                         const Func& aDoSample)
 {
   thread_act_t samplee_thread = aSample.mPlatformData->ProfiledThread();
 
@@ -134,7 +102,6 @@ SamplerThread::SuspendAndSampleAndResumeThread(PSLockRef aLock,
   
   
 
-#if defined(GP_ARCH_amd64)
   thread_state_flavor_t flavor = x86_THREAD_STATE64;
   x86_thread_state64_t state;
   mach_msg_type_number_t count = x86_THREAD_STATE64_COUNT;
@@ -144,20 +111,6 @@ SamplerThread::SuspendAndSampleAndResumeThread(PSLockRef aLock,
 #  define REGISTER_FIELD(name) r ## name
 # endif  
 
-#elif defined(GP_ARCH_x86)
-  thread_state_flavor_t flavor = i386_THREAD_STATE;
-  i386_thread_state_t state;
-  mach_msg_type_number_t count = i386_THREAD_STATE_COUNT;
-# if __DARWIN_UNIX03
-#  define REGISTER_FIELD(name) __e ## name
-# else
-#  define REGISTER_FIELD(name) e ## name
-# endif  
-
-#else
-# error Unsupported Mac OS X host architecture.
-#endif  
-
   if (thread_get_state(samplee_thread,
                        flavor,
                        reinterpret_cast<natural_t*>(&state),
@@ -166,7 +119,7 @@ SamplerThread::SuspendAndSampleAndResumeThread(PSLockRef aLock,
     aSample.mSP = reinterpret_cast<Address>(state.REGISTER_FIELD(sp));
     aSample.mFP = reinterpret_cast<Address>(state.REGISTER_FIELD(bp));
 
-    Tick(aLock, ActivePS::Buffer(aLock), aSample);
+    aDoSample();
   }
 
 #undef REGISTER_FIELD
@@ -184,6 +137,58 @@ SamplerThread::SuspendAndSampleAndResumeThread(PSLockRef aLock,
 
 
 
+
+
+
+static void*
+ThreadEntry(void* aArg)
+{
+  auto thread = static_cast<SamplerThread*>(aArg);
+  thread->Run();
+  return nullptr;
+}
+
+SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
+                             double aIntervalMilliseconds)
+  : Sampler(aLock)
+  , mActivityGeneration(aActivityGeneration)
+  , mIntervalMicroseconds(
+      std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5))))
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  pthread_attr_t* attr_ptr = nullptr;
+  if (pthread_create(&mThread, attr_ptr, ThreadEntry, this) != 0) {
+    MOZ_CRASH("pthread_create failed");
+  }
+}
+
+SamplerThread::~SamplerThread()
+{
+  pthread_join(mThread, nullptr);
+}
+
+void
+SamplerThread::SleepMicro(uint32_t aMicroseconds)
+{
+  usleep(aMicroseconds);
+  
+  
+  
+  
+}
+
+void
+SamplerThread::Stop(PSLockRef aLock)
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  Sampler::Disable(aLock);
+}
+
+
+
+
 static void
 PlatformInit(PSLockRef aLock)
 {
@@ -195,8 +200,6 @@ TickSample::PopulateContext(void* aContext)
   MOZ_ASSERT(mIsSynchronous);
   MOZ_ASSERT(!aContext);
 
-  
-#if defined(GP_ARCH_amd64)
   asm (
       
       
@@ -207,21 +210,6 @@ TickSample::PopulateContext(void* aContext)
       "=r"(mSP),
       "=r"(mFP)
   );
-#elif defined(GP_ARCH_x86)
-  asm (
-      
-      
-      
-      "leal 0xc(%%ebp), %0\n\t"
-      
-      "movl (%%ebp), %1\n\t"
-      :
-      "=r"(mSP),
-      "=r"(mFP)
-  );
-#else
-# error "Unsupported architecture"
-#endif
   mPC = reinterpret_cast<Address>(__builtin_extract_return_addr(
                                     __builtin_return_address(0)));
 }
