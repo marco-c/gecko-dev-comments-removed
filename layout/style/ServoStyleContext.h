@@ -12,11 +12,10 @@
 namespace mozilla {
 
 namespace dom {
-class Element;
-} 
+  class Element;
+}
 
-class ServoStyleContext final : public nsStyleContext
-{
+class ServoStyleContext final : public nsStyleContext {
 public:
   ServoStyleContext(nsStyleContext* aParent,
                     nsPresContext* aPresContext,
@@ -24,16 +23,23 @@ public:
                     CSSPseudoElementType aPseudoType,
                     ServoComputedValuesForgotten aComputedValues);
 
-  nsPresContext* PresContext() const { return mPresContext; }
-  const ServoComputedValues* ComputedValues() const { return &mSource; }
-
-  void AddRef() { Servo_StyleContext_AddRef(this); }
-  void Release() { Servo_StyleContext_Release(this); }
-
-  ServoStyleContext* GetStyleIfVisited() const
-  {
-    return ComputedValues()->visited_style.mPtr;
+  nsPresContext* PresContext() const {
+    return mPresContext;
   }
+
+  const ServoComputedValues* ComputedValues() const {
+    return &mSource;
+  }
+
+  void AddRef() {
+    Servo_StyleContext_AddRef(this);
+  }
+
+  void Release() {
+    Servo_StyleContext_Release(this);
+  }
+
+  ServoStyleContext* GetStyleIfVisited() const { return ComputedValues()->visited_style.mPtr; }
 
   
   
@@ -43,14 +49,13 @@ public:
 
 
 
-  inline void ResolveSameStructsAs(nsPresContext* aPresContext,
-                                   const ServoStyleContext* aOther);
+  inline void ResolveSameStructsAs(nsPresContext* aPresContext, const ServoStyleContext* aOther);
 
 private:
   nsPresContext* mPresContext;
   ServoComputedValues mSource;
 };
 
-} 
+}
 
 #endif 
