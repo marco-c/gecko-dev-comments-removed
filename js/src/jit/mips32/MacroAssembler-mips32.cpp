@@ -1855,6 +1855,7 @@ MacroAssemblerMIPSCompat::handleFailureWithHandlerTail(void* handler)
     Label finally;
     Label return_;
     Label bailout;
+    Label wasm;
 
     
     load32(Address(StackPointer, offsetof(ResumeFromException, kind)), a0);
@@ -1865,6 +1866,7 @@ MacroAssemblerMIPSCompat::handleFailureWithHandlerTail(void* handler)
     asMasm().branch32(Assembler::Equal, a0, Imm32(ResumeFromException::RESUME_FORCED_RETURN),
                       &return_);
     asMasm().branch32(Assembler::Equal, a0, Imm32(ResumeFromException::RESUME_BAILOUT), &bailout);
+    asMasm().branch32(Assembler::Equal, a0, Imm32(ResumeFromException::RESUME_WASM), &wasm);
 
     breakpoint(); 
 
@@ -1933,6 +1935,14 @@ MacroAssemblerMIPSCompat::handleFailureWithHandlerTail(void* handler)
     ma_li(ReturnReg, Imm32(BAILOUT_RETURN_OK));
     loadPtr(Address(sp, offsetof(ResumeFromException, target)), a1);
     jump(a1);
+
+    
+    
+    
+    bind(&wasm);
+    loadPtr(Address(StackPointer, offsetof(ResumeFromException, framePointer)), FramePointer);
+    loadPtr(Address(StackPointer, offsetof(ResumeFromException, stackPointer)), StackPointer);
+    ret();
 }
 
 template<typename T>
