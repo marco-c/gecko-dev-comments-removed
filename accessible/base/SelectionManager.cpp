@@ -48,24 +48,21 @@ SelectionManager::SelectionManager() :
 void
 SelectionManager::ClearControlSelectionListener()
 {
-  if (!mCurrCtrlFrame)
-    return;
-
-  const nsFrameSelection* frameSel = mCurrCtrlFrame->GetConstFrameSelection();
-  NS_ASSERTION(frameSel, "No frame selection for the element!");
-
-  mCurrCtrlFrame = nullptr;
-  if (!frameSel)
-    return;
 
   
-  Selection* normalSel = frameSel->GetSelection(SelectionType::eNormal);
-  normalSel->RemoveSelectionListener(this);
+  nsCOMPtr<nsISelection> normalSel = do_QueryReferent(mCurrCtrlNormalSel);
+  if (normalSel) {
+    normalSel->AsSelection()->RemoveSelectionListener(this);
+    mCurrCtrlNormalSel = nullptr;
+  }
 
   
   
-  Selection* spellSel = frameSel->GetSelection(SelectionType::eSpellCheck);
-  spellSel->RemoveSelectionListener(this);
+  nsCOMPtr<nsISelection> spellSel = do_QueryReferent(mCurrCtrlSpellSel);
+  if (spellSel) {
+    spellSel->AsSelection()->RemoveSelectionListener(this);
+    mCurrCtrlSpellSel = nullptr;
+  }
 }
 
 void
@@ -76,22 +73,24 @@ SelectionManager::SetControlSelectionListener(dom::Element* aFocusedElm)
   
   ClearControlSelectionListener();
 
-  mCurrCtrlFrame = aFocusedElm->GetPrimaryFrame();
-  if (!mCurrCtrlFrame)
+  nsIFrame* controlFrame = aFocusedElm->GetPrimaryFrame();
+  if (!controlFrame)
     return;
 
-  const nsFrameSelection* frameSel = mCurrCtrlFrame->GetConstFrameSelection();
+  const nsFrameSelection* frameSel = controlFrame->GetConstFrameSelection();
   NS_ASSERTION(frameSel, "No frame selection for focused element!");
   if (!frameSel)
     return;
 
   
-  Selection* normalSel = frameSel->GetSelection(SelectionType::eNormal);
-  normalSel->AddSelectionListener(this);
+  nsCOMPtr<nsISelection> normalSel = frameSel->GetSelection(SelectionType::eNormal);
+  normalSel->AsSelection()->AddSelectionListener(this);
+  mCurrCtrlNormalSel = do_GetWeakReference(normalSel);
 
   
-  Selection* spellSel = frameSel->GetSelection(SelectionType::eSpellCheck);
-  spellSel->AddSelectionListener(this);
+  nsCOMPtr<nsISelection> spellSel = frameSel->GetSelection(SelectionType::eSpellCheck);
+  spellSel->AsSelection()->AddSelectionListener(this);
+  mCurrCtrlSpellSel = do_GetWeakReference(spellSel);
 }
 
 void

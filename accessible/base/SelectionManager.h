@@ -121,9 +121,10 @@ protected:
 
 private:
   
-  WeakFrame mCurrCtrlFrame;
   int32_t mCaretOffset;
   HyperTextAccessible* mAccWithCaret;
+  nsWeakPtr mCurrCtrlNormalSel;
+  nsWeakPtr mCurrCtrlSpellSel;
 };
 
 } 
