@@ -957,10 +957,6 @@ Accessible::Attributes()
   }
 
   
-  if (aria::UniversalStatesFor(mContent->AsElement()) & states::HASPOPUP)
-    nsAccUtils::SetAccAttr(attributes, nsGkAtoms::haspopup, NS_LITERAL_STRING("true"));
-
-  
   
   const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
   if (roleMapEntry) {
