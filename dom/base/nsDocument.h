@@ -1395,9 +1395,6 @@ private:
   void UpdatePossiblyStaleDocumentState();
   static bool CustomElementConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp);
 
-  
-  static bool IsWebComponentsEnabled(nsPIDOMWindowInner* aWindow);
-
 public:
   virtual already_AddRefed<mozilla::dom::CustomElementRegistry>
     GetCustomElementRegistry() override;
