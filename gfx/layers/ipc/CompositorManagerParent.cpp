@@ -5,6 +5,7 @@
 
 
 #include "mozilla/layers/CompositorManagerParent.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorThread.h"
 
 namespace mozilla {
@@ -57,6 +58,15 @@ CompositorManagerParent::Create(Endpoint<PCompositorManagerParent>&& aEndpoint)
     &CompositorManagerParent::Bind,
     Move(aEndpoint));
   CompositorThreadHolder::Loop()->PostTask(runnable.forget());
+}
+
+ already_AddRefed<CompositorBridgeParent>
+CompositorManagerParent::CreateSameProcessWidgetCompositorBridge(CSSToLayoutDeviceScale aScale,
+                                                                 const CompositorOptions& aOptions,
+                                                                 bool aUseExternalSurfaceSize,
+                                                                 const gfx::IntSize& aSurfaceSize)
+{
+  return nullptr;
 }
 
 CompositorManagerParent::CompositorManagerParent()
