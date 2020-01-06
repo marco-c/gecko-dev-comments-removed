@@ -241,8 +241,19 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
             }
           }
         }
-        MOZ_ASSERT(it != aCache.end());
-        ids.second = Some(it->second);
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (it != aCache.end()) {
+          ids.second = Some(it->second);
+        }
       }
     }
     return ids;
