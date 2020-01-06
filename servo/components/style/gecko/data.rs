@@ -164,10 +164,18 @@ impl PerDocumentStyleDataImpl {
     }
 
     
-    pub fn is_private_browsing_enabled(&self) -> bool {
+    fn is_private_browsing_enabled(&self) -> bool {
         let doc =
             self.stylist.device().pres_context().mDocument.raw::<nsIDocument>();
         unsafe { bindings::Gecko_IsPrivateBrowsingEnabled(doc) }
+    }
+
+    
+    fn is_being_used_as_an_image(&self) -> bool {
+        let doc =
+            self.stylist.device().pres_context().mDocument.raw::<nsIDocument>();
+
+        unsafe { (*doc).mIsBeingUsedAsImage() }
     }
 
     
@@ -179,9 +187,22 @@ impl PerDocumentStyleDataImpl {
     fn visited_links_enabled(&self) -> bool {
         unsafe { structs::StylePrefs_sVisitedLinksEnabled }
     }
+
     
     pub fn visited_styles_enabled(&self) -> bool {
-        self.visited_links_enabled() && !self.is_private_browsing_enabled()
+        if !self.visited_links_enabled() {
+            return false;
+        }
+
+        if self.is_private_browsing_enabled() {
+            return false;
+        }
+
+        if self.is_being_used_as_an_image() {
+            return false;
+        }
+
+        true
     }
 
     
