@@ -92,8 +92,15 @@ LazyInstantiator::GetRootAccessible(HWND aHwnd)
 
   
   a11y::Accessible* rootAcc = widget::WinUtils::GetRootAccessibleForHWND(aHwnd);
-  if (!rootAcc || !rootAcc->IsRoot()) {
+  if (!rootAcc) {
     return nullptr;
+  }
+
+  if (!rootAcc->IsRoot()) {
+    
+    
+    rootAcc->GetNativeInterface(getter_AddRefs(result));
+    return result.forget();
   }
 
   
