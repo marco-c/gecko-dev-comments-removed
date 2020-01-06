@@ -105,8 +105,6 @@ this.browserAction = class extends ExtensionAPI {
     this.tabContext = new TabContext(tab => Object.create(this.defaults),
                                      extension);
 
-    EventEmitter.decorate(this);
-
     this.build();
     browserActionMap.set(extension, this);
   }
@@ -137,11 +135,7 @@ this.browserAction = class extends ExtensionAPI {
         view.setAttribute("extension", true);
 
         document.getElementById("PanelUI-multiView").appendChild(view);
-
-        if (this.extension.hasPermission("menus") ||
-            this.extension.hasPermission("contextMenus")) {
-          document.addEventListener("popupshowing", this);
-        }
+        document.addEventListener("popupshowing", this);
       },
 
       onDestroyed: document => {
@@ -332,6 +326,10 @@ this.browserAction = class extends ExtensionAPI {
 
 
       case "popupshowing":
+        if (!global.actionContextMenu) {
+          break;
+        }
+
         const menu = event.target;
         const trigger = menu.triggerNode;
         const node = window.document.getElementById(this.id);

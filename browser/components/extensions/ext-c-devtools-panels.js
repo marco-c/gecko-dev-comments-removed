@@ -5,8 +5,6 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "EventEmitter",
-                                  "resource://gre/modules/EventEmitter.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionChildDevToolsUtils",
                                   "resource://gre/modules/ExtensionChildDevToolsUtils.jsm");
 
@@ -23,7 +21,7 @@ var {
 
 
 
-class ChildDevToolsPanel extends EventEmitter {
+class ChildDevToolsPanel extends ExtensionUtils.EventEmitter {
   constructor(context, {id}) {
     super();
 
