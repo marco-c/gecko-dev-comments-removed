@@ -139,6 +139,12 @@ var ClickEventHandler = {
     if (!this._scrollable)
       return;
 
+    
+    
+    
+    if (!content.performance)
+      return;
+
     let domUtils = content.QueryInterface(Ci.nsIInterfaceRequestor)
                           .getInterface(Ci.nsIDOMWindowUtils);
     let scrollable = this._scrollable;
