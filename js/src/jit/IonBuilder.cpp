@@ -8388,7 +8388,8 @@ IonBuilder::getElemTryArguments(bool* emitted, MDefinition* obj, MDefinition* in
     index = addBoundsCheck(index, length);
 
     
-    MGetFrameArgument* load = MGetFrameArgument::New(alloc(), index, analysis_.hasSetArg());
+    bool modifiesArgs = script()->baselineScript()->modifiesArguments();
+    MGetFrameArgument* load = MGetFrameArgument::New(alloc(), index, modifiesArgs);
     current->add(load);
     current->push(load);
 
@@ -12274,7 +12275,8 @@ IonBuilder::jsop_setarg(uint32_t arg)
     
     
     
-    MOZ_ASSERT(analysis_.hasSetArg());
+    MOZ_ASSERT_IF(script()->hasBaselineScript(),
+                  script()->baselineScript()->modifiesArguments());
     MDefinition* val = current->peek(-1);
 
     
