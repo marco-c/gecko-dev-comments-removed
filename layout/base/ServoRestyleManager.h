@@ -189,7 +189,7 @@ private:
 
 
   bool ProcessPostTraversal(Element* aElement,
-                            nsStyleContext* aParentContext,
+                            ServoStyleContext* aParentContext,
                             ServoRestyleState& aRestyleState,
                             TraversalRestyleBehavior aRestyleBehavior);
 

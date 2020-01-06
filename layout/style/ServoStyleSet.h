@@ -133,7 +133,7 @@ public:
 
   already_AddRefed<nsStyleContext>
   ResolveStyleFor(dom::Element* aElement,
-                  nsStyleContext* aParentContext,
+                  ServoStyleContext* aParentContext,
                   LazyComputeBehavior aMayCompute);
 
   
@@ -145,7 +145,7 @@ public:
   
   already_AddRefed<nsStyleContext>
   ResolveStyleForText(nsIContent* aTextNode,
-                      nsStyleContext* aParentContext);
+                      ServoStyleContext* aParentContext);
 
   
   
@@ -158,7 +158,7 @@ public:
   
   
   already_AddRefed<nsStyleContext>
-  ResolveStyleForFirstLetterContinuation(nsStyleContext* aParentContext);
+  ResolveStyleForFirstLetterContinuation(ServoStyleContext* aParentContext);
 
   
   
@@ -179,7 +179,7 @@ public:
   already_AddRefed<nsStyleContext>
   ResolvePseudoElementStyle(dom::Element* aOriginatingElement,
                             CSSPseudoElementType aType,
-                            nsStyleContext* aParentContext,
+                            ServoStyleContext* aParentContext,
                             dom::Element* aPseudoElement);
 
   
@@ -207,7 +207,7 @@ public:
   
   already_AddRefed<ServoStyleContext>
   ResolveInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag,
-                                     nsStyleContext* aParentContext);
+                                     ServoStyleContext* aParentContext);
 
   
   
@@ -249,7 +249,7 @@ public:
   already_AddRefed<nsStyleContext>
   ProbePseudoElementStyle(dom::Element* aOriginatingElement,
                           mozilla::CSSPseudoElementType aType,
-                          nsStyleContext* aParentContext);
+                          ServoStyleContext* aParentContext);
 
   
   nsRestyleHint HasStateDependentStyle(dom::Element* aElement,
@@ -385,7 +385,7 @@ public:
 
   already_AddRefed<ServoStyleContext>
   GetBaseContextForElement(dom::Element* aElement,
-                           nsStyleContext* aParentContext,
+                           ServoStyleContext* aParentContext,
                            nsPresContext* aPresContext,
                            nsIAtom* aPseudoTag,
                            CSSPseudoElementType aPseudoType,
@@ -479,13 +479,13 @@ private:
   };
 
   already_AddRefed<ServoStyleContext> GetContext(already_AddRefed<ServoStyleContext>,
-                                                 nsStyleContext* aParentContext,
+                                                 ServoStyleContext* aParentContext,
                                                  nsIAtom* aPseudoTag,
                                                  CSSPseudoElementType aPseudoType,
                                                  dom::Element* aElementForAnimation);
 
   already_AddRefed<ServoStyleContext> GetContext(nsIContent* aContent,
-                                                 nsStyleContext* aParentContext,
+                                                 ServoStyleContext* aParentContext,
                                                  nsIAtom* aPseudoTag,
                                                  CSSPseudoElementType aPseudoType,
                                                  LazyComputeBehavior aMayCompute);

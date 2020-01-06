@@ -10225,9 +10225,9 @@ nsIFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
              "Why did the caller bother calling us?");
 
   
-  RefPtr<nsStyleContext> newContext =
+  RefPtr<ServoStyleContext> newContext =
     aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(pseudo,
-                                                                StyleContext());
+                                                                StyleContext()->AsServo());
 
   nsChangeHint childHint =
     UpdateStyleOfOwnedChildFrame(aChildFrame, newContext, aRestyleState);

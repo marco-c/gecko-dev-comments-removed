@@ -5,6 +5,7 @@
 
 #include "mozilla/GeckoStyleContext.h"
 
+#include "CSSVariableImageTable.h"
 #include "nsStyleConsts.h"
 #include "nsStyleStruct.h"
 #include "nsPresContext.h"
@@ -16,6 +17,19 @@
 #include "RubyUtils.h"
 
 using namespace mozilla;
+
+#ifdef DEBUG
+
+static bool sExpensiveStyleStructAssertionsEnabled;
+
+ void
+GeckoStyleContext::Initialize()
+{
+  Preferences::AddBoolVarCache(
+      &sExpensiveStyleStructAssertionsEnabled,
+      "layout.css.expensive-style-struct-assertions.enabled");
+}
+#endif
 
 GeckoStyleContext::GeckoStyleContext(nsStyleContext* aParent,
                                      nsIAtom* aPseudoTag,
@@ -67,6 +81,44 @@ GeckoStyleContext::operator new(size_t sz, nsPresContext* aPresContext)
     AllocateByObjectID(eArenaObjectID_GeckoStyleContext, sz);
 }
 
+GeckoStyleContext::~GeckoStyleContext()
+{
+  nsPresContext *presContext = PresContext();
+#ifdef DEBUG
+  NS_ASSERTION(HasNoChildren(), "destructing context with children");
+  if (sExpensiveStyleStructAssertionsEnabled) {
+    
+    
+    
+    GeckoStyleContext* root = this;
+    while (root->GetParent()) {
+      root = root->GetParent();
+    }
+    root->AssertStructsNotUsedElsewhere(this,
+                                        std::numeric_limits<int32_t>::max());
+  } else {
+    
+    
+    this->AssertStructsNotUsedElsewhere(this, 2);
+  }
+
+  nsStyleSet* geckoStyleSet = presContext->PresShell()->StyleSet()->GetAsGecko();
+  NS_ASSERTION(!geckoStyleSet ||
+               geckoStyleSet->GetRuleTree() == AsGecko()->RuleNode()->RuleTree() ||
+               geckoStyleSet->IsInRuleTreeReconstruct(),
+               "destroying style context from old rule tree too late");
+#endif
+
+  if (mParent) {
+    mParent->AsGecko()->RemoveChild(this);
+  } else {
+    presContext->StyleSet()->RootStyleContextRemoved();
+  }
+
+  
+  DestroyCachedStructs(presContext);
+  CSSVariableImageTable::RemoveAll(this);
+}
 
 void
 GeckoStyleContext::AddChild(GeckoStyleContext* aChild)

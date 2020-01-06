@@ -31,6 +31,13 @@ public:
   void* GetUniqueStyleData(const nsStyleStructID& aSID);
   void* CreateEmptyStyleData(const nsStyleStructID& aSID);
 
+#ifdef DEBUG
+  
+
+
+  static void Initialize();
+#endif
+
   
 
 
@@ -134,9 +141,7 @@ public:
     return;
   }
 
-  ~GeckoStyleContext() {
-    Destructor();
-  }
+  ~GeckoStyleContext();
 
   
 

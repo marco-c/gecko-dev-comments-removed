@@ -271,7 +271,7 @@ ServoRestyleManager::ClearRestyleStateFromSubtree(Element* aElement)
 struct ServoRestyleManager::TextPostTraversalState
 {
 public:
-  TextPostTraversalState(nsStyleContext& aParentContext,
+  TextPostTraversalState(ServoStyleContext& aParentContext,
                          bool aDisplayContentsParentStyleChanged,
                          ServoRestyleState& aParentRestyleState)
     : mParentContext(aParentContext)
@@ -305,7 +305,7 @@ public:
       return;
     }
 
-    nsStyleContext* oldContext = aTextFrame->StyleContext();
+    ServoStyleContext* oldContext = aTextFrame->StyleContext()->AsServo();
     MOZ_ASSERT(oldContext->GetPseudo() == nsCSSAnonBoxes::mozText);
 
     
@@ -331,7 +331,7 @@ public:
   }
 
 private:
-  nsStyleContext& mParentContext;
+  ServoStyleContext& mParentContext;
   ServoRestyleState& mParentRestyleState;
   RefPtr<nsStyleContext> mStyle;
   bool mShouldPostHints;
@@ -393,7 +393,7 @@ UpdateBackdropIfNeeded(nsIFrame* aFrame,
   RefPtr<nsStyleContext> newContext =
     aStyleSet.ResolvePseudoElementStyle(aFrame->GetContent()->AsElement(),
                                         CSSPseudoElementType::backdrop,
-                                        aFrame->StyleContext(),
+                                        aFrame->StyleContext()->AsServo(),
                                          nullptr);
 
   
@@ -455,12 +455,11 @@ NeedsToTraverseElementChildren(const Element& aParent,
 bool
 ServoRestyleManager::ProcessPostTraversal(
   Element* aElement,
-  nsStyleContext* aParentContext,
+  ServoStyleContext* aParentContext,
   ServoRestyleState& aRestyleState,
   TraversalRestyleBehavior aRestyleBehavior)
 {
   nsIFrame* styleFrame = nsLayoutUtils::GetStyleFrame(aElement);
-  ServoStyleContext* parent = aParentContext ? aParentContext->AsServo() : nullptr;
 
   
   
@@ -561,7 +560,7 @@ ServoRestyleManager::ProcessPostTraversal(
 
     
     RefPtr<ServoStyleContext> tempContext =
-      Servo_StyleContext_NewContext(currentContext->ComputedValues(), parent,
+      Servo_StyleContext_NewContext(currentContext->ComputedValues(), aParentContext,
                                     PresContext(), pseudo, pseudoTag).Consume();
     newContext = aRestyleState.StyleSet().GetContext(tempContext.forget(), aParentContext,
                                                      pseudoTag, pseudo, aElement);
@@ -624,7 +623,7 @@ ServoRestyleManager::ProcessPostTraversal(
     wasRestyled || (!forThrottledAnimationFlush && descendantsNeedFrames);
   bool recreatedAnyContext = wasRestyled;
   if (traverseElementChildren || traverseTextChildren) {
-    nsStyleContext* upToDateContext =
+    ServoStyleContext* upToDateContext =
       wasRestyled ? newContext : oldStyleContext;
 
     StyleChildrenIterator it(aElement);

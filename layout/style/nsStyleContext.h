@@ -77,12 +77,8 @@ public:
   }
   nsIPresShell* Arena();
 
-#ifdef DEBUG
-  
-
-
-  static void Initialize();
-#endif
+  void AddChild(nsStyleContext* aChild);
+  void RemoveChild(nsStyleContext* aChild);
 
   inline void AddRef();
   inline void Release();
@@ -344,11 +340,7 @@ public:
 protected:
   
   ~nsStyleContext() {}
-  
-  
-  
-  
-  void Destructor();
+
   
   nsStyleContext(nsStyleContext* aParent,
                  nsIAtom* aPseudoTag,
@@ -356,10 +348,6 @@ protected:
 
   
   void FinishConstruction();
-
-  
-  void AddChild(nsStyleContext* aChild);
-  void RemoveChild(nsStyleContext* aChild);
 
   void SetStyleBits();
 

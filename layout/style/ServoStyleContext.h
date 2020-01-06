@@ -35,10 +35,6 @@ public:
     Servo_StyleContext_Release(this);
   }
 
-  ~ServoStyleContext() {
-    Destructor();
-  }
-
   
 
 
