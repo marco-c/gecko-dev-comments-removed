@@ -315,7 +315,7 @@ public:
 
 
 
-  RefPtr<HitTestingTreeNode> FindScrollNode(const AsyncDragMetrics& aDragMetrics);
+  RefPtr<HitTestingTreeNode> FindScrollThumbNode(const AsyncDragMetrics& aDragMetrics);
 
   
 
