@@ -1057,11 +1057,7 @@ pref("dom.ipc.plugins.sandbox-level.flash", 0);
 
 
 
-#if defined(NIGHTLY_BUILD)
 pref("security.sandbox.content.level", 3);
-#else
-pref("security.sandbox.content.level", 1);
-#endif
 
 
 
@@ -1695,12 +1691,10 @@ pref("browser.crashReports.unsubmittedCheck.chancesUntilSuppress", 4);
 pref("browser.crashReports.unsubmittedCheck.autoSubmit", false);
 
 
-
-
 #ifdef NIGHTLY_BUILD
-pref("extensions.formautofill.available", "on");
+pref("extensions.formautofill.experimental", true);
 #else
-pref("extensions.formautofill.available", "detect");
+pref("extensions.formautofill.experimental", false);
 #endif
 pref("extensions.formautofill.addresses.enabled", true);
 pref("extensions.formautofill.firstTimeUse", true);
