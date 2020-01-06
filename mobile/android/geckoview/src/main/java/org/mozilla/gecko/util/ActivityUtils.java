@@ -36,17 +36,15 @@ public class ActivityUtils {
             } else {
                 newVis |= View.SYSTEM_UI_FLAG_LOW_PROFILE;
             }
-
-            if (AppConstants.Versions.feature23Plus) {
-                
-                
-                final int oldVis = window.getDecorView().getSystemUiVisibility();
-                newVis |= (oldVis & View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
-            }
-
-            window.getDecorView().setSystemUiVisibility(newVis);
         } else {
             newVis = View.SYSTEM_UI_FLAG_VISIBLE;
+        }
+
+        if (AppConstants.Versions.feature23Plus) {
+            
+            
+            final int oldVis = window.getDecorView().getSystemUiVisibility();
+            newVis |= (oldVis & View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
         }
 
         window.getDecorView().setSystemUiVisibility(newVis);
