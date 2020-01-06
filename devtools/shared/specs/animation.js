@@ -9,7 +9,6 @@ const {
   generateActorSpec,
   types
 } = require("devtools/shared/protocol");
-require("devtools/shared/specs/inspector");
 
 
 
