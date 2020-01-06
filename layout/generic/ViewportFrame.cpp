@@ -428,7 +428,7 @@ ViewportFrame::UpdateStyle(ServoRestyleState& aRestyleState)
   
   
   
-  newContext->ResolveSameStructsAs(oldContext);
+  newContext->ResolveSameStructsAs(PresContext(), oldContext);
 
   MOZ_ASSERT(!GetNextContinuation(), "Viewport has continuations?");
   SetStyleContext(newContext);

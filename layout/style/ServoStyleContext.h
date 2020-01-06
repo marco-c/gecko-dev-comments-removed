@@ -43,7 +43,8 @@ public:
 
 
 
-  inline void ResolveSameStructsAs(const ServoStyleContext* aOther);
+  inline void ResolveSameStructsAs(nsPresContext* aPresContext,
+                                   const ServoStyleContext* aOther);
 
 private:
   nsPresContext* mPresContext;
