@@ -288,13 +288,15 @@ public:
                "other context does not have visited data");
     NS_ASSERTION(GetStyleIfVisited()->GetPseudo() == GetPseudo(),
                  "pseudo tag mismatch");
-    if (GetParent() && GetParent()->GetStyleIfVisited()) {
-      NS_ASSERTION(GetStyleIfVisited()->GetParent() ==
-                     GetParent()->GetStyleIfVisited() ||
-                   GetStyleIfVisited()->GetParent() == GetParent(),
+    if (GetParentAllowServo() && GetParentAllowServo()->GetStyleIfVisited()) {
+      NS_ASSERTION(GetStyleIfVisited()->GetParentAllowServo() ==
+                     GetParentAllowServo()->GetStyleIfVisited() ||
+                   GetStyleIfVisited()->GetParentAllowServo() ==
+                     GetParentAllowServo(),
                    "parent mismatch");
     } else {
-      NS_ASSERTION(GetStyleIfVisited()->GetParent() == GetParent(),
+      NS_ASSERTION(GetStyleIfVisited()->GetParentAllowServo() ==
+                     GetParentAllowServo(),
                    "parent mismatch");
     }
   }

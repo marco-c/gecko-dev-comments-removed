@@ -216,10 +216,54 @@ ServoStyleSet::GetContext(already_AddRefed<ServoComputedValues> aComputedValues,
                           CSSPseudoElementType aPseudoType,
                           Element* aElementForAnimation)
 {
+  bool isLink = false;
+  bool isVisitedLink = false;
   
+  
+  if (aElementForAnimation) {
+    isLink = nsCSSRuleProcessor::IsLink(aElementForAnimation);
+    isVisitedLink = nsCSSRuleProcessor::GetContentState(aElementForAnimation)
+                                       .HasState(NS_EVENT_STATE_VISITED);
+  }
 
-  RefPtr<nsStyleContext> result = NS_NewStyleContext(aParentContext, mPresContext, aPseudoTag,
-                                                     aPseudoType, Move(aComputedValues));
+  RefPtr<ServoComputedValues> computedValues = Move(aComputedValues);
+  RefPtr<ServoComputedValues> visitedComputedValues =
+    Servo_ComputedValues_GetVisitedStyle(computedValues).Consume();
+
+  
+  
+  
+  
+  
+  
+  nsStyleContext *parentIfVisited =
+    aParentContext ? aParentContext->GetStyleIfVisited() : nullptr;
+  if (!parentIfVisited) {
+    if (visitedComputedValues) {
+      parentIfVisited = aParentContext;
+    }
+  }
+
+  
+  
+  bool relevantLinkVisited = isLink ? isVisitedLink :
+    (aParentContext && aParentContext->RelevantLinkVisited());
+
+  RefPtr<nsStyleContext> result =
+    NS_NewStyleContext(aParentContext, mPresContext, aPseudoTag, aPseudoType,
+                       computedValues.forget());
+
+  if (visitedComputedValues) {
+    RefPtr<nsStyleContext> resultIfVisited =
+      NS_NewStyleContext(parentIfVisited, mPresContext, aPseudoTag, aPseudoType,
+                         visitedComputedValues.forget());
+    resultIfVisited->SetIsStyleIfVisited();
+    result->SetStyleIfVisited(resultIfVisited.forget());
+
+    if (relevantLinkVisited) {
+      result->AddStyleBit(NS_STYLE_RELEVANT_LINK_VISITED);
+    }
+  }
 
   
   if (aElementForAnimation &&
