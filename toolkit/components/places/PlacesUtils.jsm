@@ -2280,6 +2280,8 @@ var Keywords = {
 
 
 
+
+
   insert(keywordEntry) {
     if (!keywordEntry || typeof keywordEntry != "object")
       throw new Error("Input should be a valid object");
@@ -2292,8 +2294,11 @@ var Keywords = {
       throw new Error("Invalid POST data");
     if (!("url" in keywordEntry))
       throw new Error("undefined is not a valid URL");
-    let { keyword, url,
-          source = Ci.nsINavBookmarksService.SOURCE_DEFAULT } = keywordEntry;
+
+    if (!("source" in keywordEntry)) {
+      keywordEntry.source = PlacesUtils.bookmarks.SOURCES.DEFAULT;
+    }
+    let { keyword, url, source } = keywordEntry;
     keyword = keyword.trim().toLowerCase();
     let postData = keywordEntry.postData || null;
     
@@ -2358,8 +2363,12 @@ var Keywords = {
 
 
   remove(keywordOrEntry) {
-    if (typeof(keywordOrEntry) == "string")
-      keywordOrEntry = { keyword: keywordOrEntry };
+    if (typeof(keywordOrEntry) == "string") {
+      keywordOrEntry = {
+        keyword: keywordOrEntry,
+        source: Ci.nsINavBookmarksService.SOURCE_DEFAULT
+      };
+    }
 
     if (keywordOrEntry === null || typeof(keywordOrEntry) != "object" ||
         !keywordOrEntry.keyword || typeof keywordOrEntry.keyword != "string")
