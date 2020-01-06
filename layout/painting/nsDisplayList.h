@@ -2384,7 +2384,7 @@ public:
   
 
 
-  nsDisplayList(nsDisplayListBuilder* aBuilder)
+  explicit nsDisplayList(nsDisplayListBuilder* aBuilder)
     : mBuilder(aBuilder)
     , mIsOpaque(false)
     , mForceTransparentSurface(false)
@@ -2794,15 +2794,25 @@ protected:
 
 
 struct nsDisplayListCollection : public nsDisplayListSet {
-  nsDisplayListCollection(nsDisplayListBuilder* aBuilder) :
+  explicit nsDisplayListCollection(nsDisplayListBuilder* aBuilder) :
     nsDisplayListSet(&mLists[0], &mLists[1], &mLists[2], &mLists[3], &mLists[4],
                      &mLists[5]),
-    mLists{ aBuilder, aBuilder, aBuilder, aBuilder, aBuilder, aBuilder }
+    mLists{ nsDisplayList(aBuilder),
+            nsDisplayList(aBuilder),
+            nsDisplayList(aBuilder),
+            nsDisplayList(aBuilder),
+            nsDisplayList(aBuilder),
+            nsDisplayList(aBuilder) }
   {}
   explicit nsDisplayListCollection(nsDisplayListBuilder* aBuilder, nsDisplayList* aBorderBackground) :
     nsDisplayListSet(aBorderBackground, &mLists[1], &mLists[2], &mLists[3], &mLists[4],
                      &mLists[5]),
-    mLists{ aBuilder, aBuilder, aBuilder, aBuilder, aBuilder, aBuilder }
+    mLists{ nsDisplayList(aBuilder),
+            nsDisplayList(aBuilder),
+            nsDisplayList(aBuilder),
+            nsDisplayList(aBuilder),
+            nsDisplayList(aBuilder),
+            nsDisplayList(aBuilder) }
   {}
 
   
