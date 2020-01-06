@@ -292,7 +292,11 @@ addMessageListener("Extension:UnblockParser", BrowserListener);
 
 var WebBrowserChrome = {
   onBeforeLinkTraversal(originalTarget, linkURI, linkNode, isAppTab) {
-    return BrowserUtils.onBeforeLinkTraversal(originalTarget, linkURI, linkNode, isAppTab);
+    
+    
+    
+    
+    return BrowserUtils.onBeforeLinkTraversal(originalTarget, linkURI, linkNode, docShell.isAppTab);
   },
 
   shouldLoadURI(docShell, URI, referrer, hasPostData, triggeringPrincipal) {
