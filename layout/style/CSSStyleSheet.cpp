@@ -595,8 +595,8 @@ CSSStyleSheet::EnsureUniqueInner()
   
   
   
-  for (nsStyleSet* styleSet : mStyleSets) {
-    styleSet->SetNeedsRestyleAfterEnsureUniqueInner();
+  for (StyleSetHandle setHandle : mStyleSets) {
+    setHandle->AsGecko()->SetNeedsRestyleAfterEnsureUniqueInner();
   }
 }
 
@@ -651,8 +651,8 @@ CSSStyleSheet::ClearRuleCascades()
   
   
   
-  for (nsStyleSet* styleSet : mStyleSets) {
-    styleSet->ClearSelectors();
+  for (StyleSetHandle setHandle : mStyleSets) {
+    setHandle->AsGecko()->ClearSelectors();
   }
 
   bool removedSheetFromRuleProcessorCache = false;

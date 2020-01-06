@@ -215,6 +215,11 @@ public:
   
   explicit operator bool() const { return !!mPtr.mValue; }
   bool operator!() const { return !mPtr.mValue; }
+  bool operator==(const StyleSetHandle& aOth) const
+  {
+    return mPtr.mValue == aOth.mPtr.mValue;
+  }
+  bool operator!=(const StyleSetHandle& aOth) const { return !(*this == aOth); }
 
   
   Ptr* operator->() { return &mPtr; }
