@@ -7,7 +7,6 @@
 
 
 
-
 var p = Promise.resolve(3);
 
 assert.sameValue(

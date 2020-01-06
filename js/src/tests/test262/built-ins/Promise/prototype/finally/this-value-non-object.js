@@ -8,7 +8,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   Promise.prototype.finally.call(undefined);
 }, 'undefined');
