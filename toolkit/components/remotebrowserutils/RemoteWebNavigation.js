@@ -13,6 +13,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
   "resource://gre/modules/NetUtil.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Utils",
   "resource://gre/modules/sessionstore/Utils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 function makeURI(url) {
   return Services.io.newURI(url);
@@ -72,6 +74,29 @@ RemoteWebNavigation.prototype = {
   },
   loadURIWithOptions(aURI, aLoadFlags, aReferrer, aReferrerPolicy,
                      aPostData, aHeaders, aBaseURI, aTriggeringPrincipal) {
+    
+    
+    
+    
+    if (aURI.startsWith("http")) {
+      let uri = makeURI(aURI);
+      let principal = aTriggeringPrincipal;
+      
+      
+      if (!principal) {
+        let attrs = {
+          userContextId: this._browser.getAttribute("usercontextid") || 0,
+          privateBrowsingId: PrivateBrowsingUtils.isBrowserPrivate(this._browser) ? 1 : 0
+        };
+        principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, attrs);
+      }
+      try {
+        Services.io.speculativeConnect2(uri, principal, null);
+      } catch (ex) {
+        
+        
+      }
+    }
     this._sendMessage("WebNavigation:LoadURI", {
       uri: aURI,
       flags: aLoadFlags,
