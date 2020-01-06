@@ -3724,16 +3724,8 @@ const DOMEventHandler = {
     let loadingPrincipal = aLoadingPrincipal ||
                            Services.scriptSecurityManager.getSystemPrincipal();
     if (aURL) {
-      try {
-        if (!(aURL instanceof Ci.nsIURI)) {
-          aURL = makeURI(aURL);
-        }
-        PlacesUIUtils.loadFavicon(aBrowser, loadingPrincipal, aURL, aRequestContextID);
-      } catch (ex) {
-        Components.utils.reportError(ex);
-      }
+      gBrowser.storeIcon(aBrowser, aURL, loadingPrincipal, aRequestContextID);
     }
-
     if (aCanUseForTab) {
       gBrowser.setIcon(tab, aURL, loadingPrincipal, aRequestContextID);
     }
@@ -5371,23 +5363,8 @@ nsBrowserAccess.prototype = {
     return newWindow;
   },
 
-  createContentWindowInFrame: function browser_createContentWindowInFrame(
-                              aURI, aParams, aWhere, aFlags, aNextTabParentId,
-                              aName) {
-    
-    return this.getContentWindowOrOpenURIInFrame(null, aParams, aWhere, aFlags,
-                                                 aNextTabParentId, aName);
-  },
-
   openURIInFrame: function browser_openURIInFrame(aURI, aParams, aWhere, aFlags,
                                                   aNextTabParentId, aName) {
-    return this.getContentWindowOrOpenURIInFrame(aURI, aParams, aWhere, aFlags,
-                                                 aNextTabParentId, aName);
-  },
-
-  getContentWindowOrOpenURIInFrame: function browser_getContentWindowOrOpenURIInFrame(
-                                    aURI, aParams, aWhere, aFlags,
-                                    aNextTabParentId, aName) {
     if (aWhere != Ci.nsIBrowserDOMWindow.OPEN_NEWTAB) {
       dump("Error: openURIInFrame can only open in new tabs");
       return null;
