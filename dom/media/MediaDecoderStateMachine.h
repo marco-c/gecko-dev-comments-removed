@@ -423,11 +423,6 @@ protected:
   
   void DecodeError(const MediaResult& aError);
 
-  
-  
-  
-  void EnqueueLoadedMetadataEvent();
-
   void EnqueueFirstFrameLoadedEvent();
 
   
@@ -639,10 +634,6 @@ private:
   nsAutoPtr<MetadataTags> mMetadataTags;
 
   mozilla::MediaMetadataManager mMetadataManager;
-
-  
-  
-  bool mSentLoadedMetadataEvent;
 
   
   
