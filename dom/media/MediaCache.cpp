@@ -1320,21 +1320,27 @@ MediaCache::Update()
 
     
     
+    
+    int64_t channelOffset =
+      stream->mSeekTarget != -1 ? stream->mSeekTarget : stream->mChannelOffset;
+
+    
+    
     int64_t dataOffset = stream->GetCachedDataEndInternal(stream->mStreamOffset);
     MOZ_ASSERT(dataOffset >= 0);
 
     
     int64_t desiredOffset = dataOffset;
     if (stream->mIsTransportSeekable) {
-      if (desiredOffset > stream->mChannelOffset &&
-          desiredOffset <= stream->mChannelOffset + SEEK_VS_READ_THRESHOLD) {
+      if (desiredOffset > channelOffset &&
+          desiredOffset <= channelOffset + SEEK_VS_READ_THRESHOLD) {
         
         
-        desiredOffset = stream->mChannelOffset;
+        desiredOffset = channelOffset;
       }
     } else {
       
-      if (stream->mChannelOffset > desiredOffset) {
+      if (channelOffset > desiredOffset) {
         
         
         
@@ -1348,7 +1354,7 @@ MediaCache::Update()
       } else {
         
         
-        desiredOffset = stream->mChannelOffset;
+        desiredOffset = channelOffset;
       }
     }
 
@@ -1366,8 +1372,8 @@ MediaCache::Update()
       
       
       LOG("Stream %p at end of stream", stream);
-      enableReading = !stream->mCacheSuspended &&
-        stream->mStreamLength == stream->mChannelOffset;
+      enableReading =
+        !stream->mCacheSuspended && stream->mStreamLength == channelOffset;
     } else if (desiredOffset < stream->mStreamOffset) {
       
       
@@ -1425,7 +1431,9 @@ MediaCache::Update()
         MediaCacheStream* other = mStreams[j];
         if (other->mResourceID == stream->mResourceID && !other->mClosed &&
             !other->mClient->IsSuspended() &&
-            OffsetToBlockIndexUnchecked(other->mChannelOffset) ==
+            OffsetToBlockIndexUnchecked(other->mSeekTarget != -1
+                                          ? other->mSeekTarget
+                                          : other->mChannelOffset) ==
               OffsetToBlockIndexUnchecked(desiredOffset)) {
           
           
@@ -1439,22 +1447,18 @@ MediaCache::Update()
       }
     }
 
-    if (stream->mChannelOffset != desiredOffset && enableReading) {
+    if (channelOffset != desiredOffset && enableReading) {
       
       NS_ASSERTION(stream->mIsTransportSeekable || desiredOffset == 0,
                    "Trying to seek in a non-seekable stream!");
       
       
       
-      stream->mChannelOffset =
+      stream->mSeekTarget =
         OffsetToBlockIndexUnchecked(desiredOffset) * BLOCK_SIZE;
       actions[i].mTag = StreamAction::SEEK;
       actions[i].mResume = stream->mCacheSuspended;
-      actions[i].mSeekTarget = stream->mChannelOffset;
-      
-      
-      
-      stream->mLoadID = 0;
+      actions[i].mSeekTarget = stream->mSeekTarget;
     } else if (enableReading && stream->mCacheSuspended) {
       actions[i].mTag = StreamAction::RESUME;
     } else if (!enableReading && !stream->mCacheSuspended) {
@@ -1920,7 +1924,7 @@ MediaCacheStream::NotifyDataStarted(uint32_t aLoadID,
   LOG("Stream %p DataStarted: %" PRId64 " aLoadID=%u", this, aOffset, aLoadID);
 
   ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
-  NS_WARNING_ASSERTION(aOffset == mChannelOffset,
+  NS_WARNING_ASSERTION(aOffset == mSeekTarget || aOffset == mChannelOffset,
                        "Server is giving us unexpected offset");
   MOZ_ASSERT(aOffset >= 0);
   mChannelOffset = aOffset;
@@ -1937,6 +1941,10 @@ MediaCacheStream::NotifyDataStarted(uint32_t aLoadID,
   
   
   mMediaCache->QueueUpdate();
+
+  
+  
+  mSeekTarget = -1;
 }
 
 void
