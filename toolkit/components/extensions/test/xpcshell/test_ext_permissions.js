@@ -284,7 +284,7 @@ add_task(async function test_startup() {
 
   
   
-  ExtensionPermissions._uninit();
+  await ExtensionPermissions._uninit();
   await AddonTestUtils.promiseRestartManager();
   await extension1.awaitStartup();
   await extension2.awaitStartup();
