@@ -664,7 +664,8 @@ CodeGeneratorMIPS64::visitWasmTruncateToInt64(LWasmTruncateToInt64* lir)
         
         masm.moveFromDouble(ScratchDoubleReg, output);
         masm.as_cfc1(ScratchRegister, Assembler::FCSR);
-        masm.as_ext(ScratchRegister, ScratchRegister, 16, 1);
+        
+        masm.as_ext(ScratchRegister, ScratchRegister, 6, 1);
         masm.ma_dsrl(SecondScratchReg, output, Imm32(63));
         masm.ma_or(SecondScratchReg, ScratchRegister);
         masm.ma_b(SecondScratchReg, Imm32(0), ool->entry(), Assembler::NotEqual);
@@ -684,7 +685,7 @@ CodeGeneratorMIPS64::visitWasmTruncateToInt64(LWasmTruncateToInt64* lir)
         
         masm.moveFromDouble(ScratchDoubleReg, output);
         masm.as_cfc1(ScratchRegister, Assembler::FCSR);
-        masm.as_ext(ScratchRegister, ScratchRegister, 16, 1);
+        masm.as_ext(ScratchRegister, ScratchRegister, 6, 1);
         masm.ma_dsrl(SecondScratchReg, output, Imm32(63));
         masm.ma_or(SecondScratchReg, ScratchRegister);
         masm.ma_b(SecondScratchReg, Imm32(0), ool->entry(), Assembler::NotEqual);
@@ -705,7 +706,7 @@ CodeGeneratorMIPS64::visitWasmTruncateToInt64(LWasmTruncateToInt64* lir)
 
     
     masm.as_cfc1(output, Assembler::FCSR);
-    masm.as_ext(output, output, 16, 1);
+    masm.as_ext(output, output, 6, 1);
     masm.ma_b(output, Imm32(0), ool->entry(), Assembler::NotEqual);
 
     masm.bind(ool->rejoin());
