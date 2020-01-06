@@ -12,7 +12,6 @@
 #include "mozilla/gfx/gfxVarReceiver.h"
 #include "mozilla/gfx/GPUProcessListener.h"
 #include "mozilla/ipc/CrashReporterHost.h"
-#include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/FileUtils.h"
 #include "mozilla/HalTypes.h"
@@ -22,6 +21,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 
+#include "ContentProcessHost.h"
 #include "nsDataHashtable.h"
 #include "nsPluginTags.h"
 #include "nsFrameMessageManager.h"
@@ -116,7 +116,6 @@ class ContentParent final : public PContentParent
                           , public gfx::GPUProcessListener
                           , public mozilla::MemoryReportingProcess
 {
-  typedef mozilla::ipc::GeckoChildProcessHost GeckoChildProcessHost;
   typedef mozilla::ipc::OptionalURIParams OptionalURIParams;
   typedef mozilla::ipc::PFileDescriptorSetParent PFileDescriptorSetParent;
   typedef mozilla::ipc::TestShellParent TestShellParent;
@@ -124,6 +123,7 @@ class ContentParent final : public PContentParent
   typedef mozilla::ipc::PrincipalInfo PrincipalInfo;
   typedef mozilla::dom::ClonedMessageData ClonedMessageData;
 
+  friend class ContentProcessHost;
   friend class mozilla::PreallocatedProcessManagerImpl;
 
 public:
@@ -375,7 +375,7 @@ public:
     return mJSPluginID != nsFakePluginTag::NOT_JSPLUGIN;
   }
 
-  GeckoChildProcessHost* Process() const
+  ContentProcessHost* Process() const
   {
     return mSubprocess;
   }
@@ -718,9 +718,7 @@ private:
   bool LaunchSubprocess(hal::ProcessPriority aInitialPriority = hal::PROCESS_PRIORITY_FOREGROUND);
 
   
-  void InitInternal(ProcessPriority aPriority,
-                    bool aSetupOffMainThreadCompositing,
-                    bool aSendRegisteredChrome);
+  void InitInternal(ProcessPriority aPriority);
 
   virtual ~ContentParent();
 
@@ -1185,7 +1183,7 @@ private:
   
   
 
-  GeckoChildProcessHost* mSubprocess;
+  ContentProcessHost* mSubprocess;
   const TimeStamp mLaunchTS; 
   TimeStamp mActivateTS;
   ContentParent* mOpener;
