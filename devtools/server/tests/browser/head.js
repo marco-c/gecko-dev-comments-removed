@@ -80,6 +80,22 @@ function* initLayoutFrontForUrl(url) {
   return {inspector, walker, layout, client};
 }
 
+function* initAccessibilityFrontForUrl(url) {
+  const {AccessibilityFront} = require("devtools/shared/fronts/accessibility");
+  const {InspectorFront} = require("devtools/shared/fronts/inspector");
+
+  yield addTab(url);
+
+  initDebuggerServer();
+  let client = new DebuggerClient(DebuggerServer.connectPipe());
+  let form = yield connectDebuggerClient(client);
+  let inspector = InspectorFront(client, form);
+  let walker = yield inspector.getWalker();
+  let accessibility = AccessibilityFront(client, form);
+
+  return {inspector, walker, accessibility, client};
+}
+
 function initDebuggerServer() {
   try {
     
@@ -235,4 +251,54 @@ function waitForMarkerType(front, types, predicate,
 
 function getCookieId(name, domain, path) {
   return `${name}${SEPARATOR_GUID}${domain}${SEPARATOR_GUID}${path}`;
+}
+
+
+
+
+
+
+
+
+async function emitA11yEvent(emitter, name, handler, task) {
+  let promise = emitter.once(name, handler);
+  await task();
+  await promise;
+}
+
+
+
+
+
+
+
+
+function checkA11yFront(front, expected, expectedFront) {
+  ok(front, "The accessibility front is created");
+
+  if (expectedFront) {
+    is(front, expectedFront, "Matching accessibility front");
+  }
+
+  for (let key in expected) {
+    is(front[key], expected[key], `accessibility front has correct ${key}`);
+  }
+}
+
+
+
+
+
+async function waitForA11yShutdown() {
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, () =>
+    new Promise(resolve => {
+      let observe = (subject, topic, data) => {
+        Services.obs.removeObserver(observe, "a11y-init-or-shutdown");
+
+        if (data === "0") {
+          resolve();
+        }
+      };
+      Services.obs.addObserver(observe, "a11y-init-or-shutdown");
+    }));
 }
