@@ -181,6 +181,11 @@ public:
                                 ValidityStateType aType) override;
 
   
+  void GetAutocomplete(DOMString& aValue);
+  void SetAutocomplete(const nsAString& aValue, ErrorResult& aRv)
+  {
+    SetHTMLAttr(nsGkAtoms::autocomplete, aValue, aRv);
+  }
   bool Autofocus()
   {
     return GetBoolAttr(nsGkAtoms::autofocus);
@@ -346,6 +351,8 @@ protected:
   
   bool                     mCanShowValidUI;
   bool                     mIsPreviewEnabled;
+
+  nsContentUtils::AutocompleteAttrState mAutocompleteAttrState;
 
   void FireChangeEventIfNeeded();
 
