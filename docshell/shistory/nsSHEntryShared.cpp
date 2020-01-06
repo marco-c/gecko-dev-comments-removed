@@ -50,7 +50,18 @@ nsSHEntryShared::nsSHEntryShared()
 
 nsSHEntryShared::~nsSHEntryShared()
 {
+  
+  
+  
+  
   RemoveFromExpirationTracker();
+
+  
+  
+  
+  
+  
+  mSHistory = nullptr;
   if (mContentViewer) {
     RemoveFromBFCacheSync();
   }
@@ -168,40 +179,27 @@ nsSHEntryShared::RemoveFromBFCacheSync()
 {
   MOZ_ASSERT(mContentViewer && mDocument, "we're not in the bfcache!");
 
-  nsCOMPtr<nsIContentViewer> viewer = mContentViewer;
-  DropPresentationState();
+  
+  
+  RefPtr<nsSHEntryShared> kungFuDeathGrip = this;
 
   
-  
+  nsCOMPtr<nsIContentViewer> viewer = mContentViewer;
+  DropPresentationState();
 
   if (viewer) {
     viewer->Destroy();
   }
 
+  
+  
+  nsCOMPtr<nsISHistoryInternal> shistory = do_QueryReferent(mSHistory);
+  if (shistory) {
+    shistory->RemoveDynEntriesForBFCacheEntry(this);
+  }
+
   return NS_OK;
 }
-
-class DestroyViewerEvent : public mozilla::Runnable
-{
-public:
-  DestroyViewerEvent(nsIContentViewer* aViewer, nsIDocument* aDocument)
-    : mozilla::Runnable("DestroyViewerEvent")
-    , mViewer(aViewer)
-    , mDocument(aDocument)
-  {
-  }
-
-  NS_IMETHOD Run() override
-  {
-    if (mViewer) {
-      mViewer->Destroy();
-    }
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsIContentViewer> mViewer;
-  nsCOMPtr<nsIDocument> mDocument;
-};
 
 nsresult
 nsSHEntryShared::RemoveFromBFCacheAsync()
@@ -209,24 +207,37 @@ nsSHEntryShared::RemoveFromBFCacheAsync()
   MOZ_ASSERT(mContentViewer && mDocument, "we're not in the bfcache!");
 
   
-  
-
   if (!mDocument) {
     return NS_ERROR_UNEXPECTED;
   }
-  nsCOMPtr<nsIRunnable> evt = new DestroyViewerEvent(mContentViewer, mDocument);
-  nsresult rv = mDocument->Dispatch(mozilla::TaskCategory::Other, evt.forget());
+
+  
+  
+  
+  nsCOMPtr<nsIContentViewer> viewer = mContentViewer;
+  nsCOMPtr<nsIDocument> document = mDocument;
+  RefPtr<nsSHEntryShared> self = this;
+  nsresult rv = mDocument->Dispatch(mozilla::TaskCategory::Other,
+    NS_NewRunnableFunction("nsSHEntryShared::RemoveFromBFCacheAsync",
+    [self, viewer, document]() {
+      if (viewer) {
+        viewer->Destroy();
+      }
+
+      nsCOMPtr<nsISHistoryInternal> shistory = do_QueryReferent(self->mSHistory);
+      if (shistory) {
+        shistory->RemoveDynEntriesForBFCacheEntry(self);
+      }
+    }));
+
   if (NS_FAILED(rv)) {
-    NS_WARNING("failed to dispatch DestroyViewerEvent");
+    NS_WARNING("Failed to dispatch RemoveFromBFCacheAsync runnable.");
   } else {
     
     
     
     DropPresentationState();
   }
-
-  
-  
 
   return NS_OK;
 }
