@@ -34,7 +34,11 @@ public:
   RefPtr<ShutdownPromise> Shutdown() override;
   bool IsHardwareAccelerated(nsACString& aFailureReason) const override;
   void SetSeekThreshold(const media::TimeUnit& aTime) override;
-  nsCString GetDescriptionName() const override;
+
+  nsCString GetDescriptionName() const override
+  {
+    return NS_LITERAL_CSTRING("RemoteVideoDecoder");
+  }
   ConversionRequired NeedsConversion() const override;
 
 private:
@@ -45,9 +49,6 @@ private:
   
   
   RefPtr<VideoDecoderChild> mActor;
-  
-  
-  nsCString mDescription;
 };
 
 
