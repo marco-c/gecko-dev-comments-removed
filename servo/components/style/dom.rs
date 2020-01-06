@@ -64,28 +64,48 @@ pub trait NodeInfo {
     fn is_element(&self) -> bool;
     
     fn is_text_node(&self) -> bool;
-
-    
-    
-    
-    fn needs_layout(&self) -> bool { self.is_element() || self.is_text_node() }
 }
 
 
 pub struct LayoutIterator<T>(pub T);
 
-impl<T, I> Iterator for LayoutIterator<T>
-    where T: Iterator<Item=I>,
-          I: NodeInfo,
+impl<T, N> Iterator for LayoutIterator<T>
+where
+    T: Iterator<Item = N>,
+    N: NodeInfo,
 {
-    type Item = I;
-    fn next(&mut self) -> Option<I> {
+    type Item = N;
+
+    fn next(&mut self) -> Option<N> {
         loop {
-            
-            let n = self.0.next();
-            if n.is_none() || n.as_ref().unwrap().needs_layout() {
-                return n
+            match self.0.next() {
+                Some(n) => {
+                    
+                    if n.is_text_node() || n.is_element() {
+                        return Some(n)
+                    }
+                }
+                None => return None,
             }
+        }
+    }
+}
+
+
+pub struct DomChildren<N>(Option<N>);
+impl<N> Iterator for DomChildren<N>
+where
+    N: TNode
+{
+    type Item = N;
+
+    fn next(&mut self) -> Option<N> {
+        match self.0.take() {
+            Some(n) => {
+                self.0 = n.next_sibling();
+                Some(n)
+            }
+            None => None,
         }
     }
 }
@@ -97,28 +117,33 @@ pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo {
     type ConcreteElement: TElement<ConcreteNode = Self>;
 
     
-    
-    
-    
-    type ConcreteChildrenIterator: Iterator<Item = Self>;
-
-    
     fn parent_node(&self) -> Option<Self>;
 
     
-    fn parent_element(&self) -> Option<Self::ConcreteElement> {
-        self.parent_node().and_then(|n| n.as_element())
-    }
+    fn first_child(&self) -> Option<Self>;
 
     
-    fn children(&self) -> LayoutIterator<Self::ConcreteChildrenIterator>;
+    fn last_child(&self) -> Option<Self>;
+
+    
+    fn prev_sibling(&self) -> Option<Self>;
+
+    
+    fn next_sibling(&self) -> Option<Self>;
+
+    
+    fn dom_children(&self) -> DomChildren<Self> {
+        DomChildren(self.first_child())
+    }
 
     
     
     fn traversal_parent(&self) -> Option<Self::ConcreteElement>;
 
     
-    fn traversal_children(&self) -> LayoutIterator<Self::ConcreteChildrenIterator>;
+    fn parent_element(&self) -> Option<Self::ConcreteElement> {
+        self.parent_node().and_then(|n| n.as_element())
+    }
 
     
     fn opaque(&self) -> OpaqueNode;
@@ -135,10 +160,6 @@ pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo {
 
     
     unsafe fn set_can_be_fragmented(&self, value: bool);
-
-    
-    
-    fn is_in_doc(&self) -> bool;
 }
 
 
@@ -223,9 +244,11 @@ fn fmt_subtree<F, N: TNode>(f: &mut fmt::Formatter, stringify: &F, n: N, indent:
         write!(f, "  ")?;
     }
     stringify(f, n)?;
-    for kid in n.traversal_children() {
-        writeln!(f, "")?;
-        fmt_subtree(f, stringify, kid, indent + 1)?;
+    if let Some(e) = n.as_element() {
+        for kid in e.traversal_children() {
+            writeln!(f, "")?;
+            fmt_subtree(f, stringify, kid, indent + 1)?;
+        }
     }
 
     Ok(())
@@ -255,6 +278,12 @@ pub trait TElement
 {
     
     type ConcreteNode: TNode<ConcreteElement = Self>;
+
+    
+    
+    
+    
+    type TraversalChildrenIterator: Iterator<Item = Self::ConcreteNode>;
 
     
     
@@ -294,6 +323,9 @@ pub trait TElement
     fn traversal_parent(&self) -> Option<Self> {
         self.as_node().traversal_parent()
     }
+
+    
+    fn traversal_children(&self) -> LayoutIterator<Self::TraversalChildrenIterator>;
 
     
     

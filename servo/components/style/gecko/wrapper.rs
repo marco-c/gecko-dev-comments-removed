@@ -158,32 +158,6 @@ impl<'ln> GeckoNode<'ln> {
         unsafe { &*self.node_info().mDocument }
     }
 
-    #[inline]
-    fn first_child(&self) -> Option<GeckoNode<'ln>> {
-        unsafe { self.0.mFirstChild.as_ref().map(GeckoNode::from_content) }
-    }
-
-    #[inline]
-    fn last_child(&self) -> Option<GeckoNode<'ln>> {
-        unsafe { Gecko_GetLastChild(self.0).map(GeckoNode) }
-    }
-
-    #[inline]
-    fn prev_sibling(&self) -> Option<GeckoNode<'ln>> {
-        unsafe { self.0.mPreviousSibling.as_ref().map(GeckoNode::from_content) }
-    }
-
-    #[inline]
-    fn next_sibling(&self) -> Option<GeckoNode<'ln>> {
-        unsafe { self.0.mNextSibling.as_ref().map(GeckoNode::from_content) }
-    }
-
-    
-    
-    fn dom_children(self) -> GeckoChildrenIterator<'ln> {
-        GeckoChildrenIterator::Current(self.first_child())
-    }
-
     
     
     fn flattened_tree_parent_is_parent(&self) -> bool {
@@ -222,11 +196,6 @@ impl<'ln> GeckoNode<'ln> {
     fn contains_non_whitespace_content(&self) -> bool {
         unsafe { Gecko_IsSignificantChild(self.0, true, false) }
     }
-
-    #[inline]
-    fn may_have_anonymous_children(&self) -> bool {
-        self.get_bool_flag(nsINode_BooleanFlag::ElementMayHaveAnonymousChildren)
-    }
 }
 
 impl<'ln> NodeInfo for GeckoNode<'ln> {
@@ -244,38 +213,33 @@ impl<'ln> NodeInfo for GeckoNode<'ln> {
 
 impl<'ln> TNode for GeckoNode<'ln> {
     type ConcreteElement = GeckoElement<'ln>;
-    type ConcreteChildrenIterator = GeckoChildrenIterator<'ln>;
 
     fn parent_node(&self) -> Option<Self> {
         unsafe { self.0.mParent.as_ref().map(GeckoNode) }
     }
 
-    fn children(&self) -> LayoutIterator<GeckoChildrenIterator<'ln>> {
-        LayoutIterator(self.dom_children())
+    #[inline]
+    fn first_child(&self) -> Option<Self> {
+        unsafe { self.0.mFirstChild.as_ref().map(GeckoNode::from_content) }
+    }
+
+    #[inline]
+    fn last_child(&self) -> Option<Self> {
+        unsafe { Gecko_GetLastChild(self.0).map(GeckoNode) }
+    }
+
+    #[inline]
+    fn prev_sibling(&self) -> Option<Self> {
+        unsafe { self.0.mPreviousSibling.as_ref().map(GeckoNode::from_content) }
+    }
+
+    #[inline]
+    fn next_sibling(&self) -> Option<Self> {
+        unsafe { self.0.mNextSibling.as_ref().map(GeckoNode::from_content) }
     }
 
     fn traversal_parent(&self) -> Option<GeckoElement<'ln>> {
         self.flattened_tree_parent().and_then(|n| n.as_element())
-    }
-
-    fn traversal_children(&self) -> LayoutIterator<GeckoChildrenIterator<'ln>> {
-        if let Some(element) = self.as_element() {
-            
-            
-            
-            
-            if element.is_in_anonymous_subtree() ||
-               element.has_xbl_binding_with_content() ||
-               self.may_have_anonymous_children() {
-                unsafe {
-                    let mut iter: structs::StyleChildrenIterator = ::std::mem::zeroed();
-                    Gecko_ConstructStyleChildrenIterator(element.0, &mut iter);
-                    return LayoutIterator(GeckoChildrenIterator::GeckoIterator(iter));
-                }
-            }
-        }
-
-        LayoutIterator(self.dom_children())
     }
 
     fn opaque(&self) -> OpaqueNode {
@@ -305,10 +269,6 @@ impl<'ln> TNode for GeckoNode<'ln> {
     unsafe fn set_can_be_fragmented(&self, _value: bool) {
         
         
-    }
-
-    fn is_in_doc(&self) -> bool {
-        unsafe { bindings::Gecko_IsInDocument(self.0) }
     }
 }
 
@@ -447,6 +407,11 @@ impl<'le> fmt::Debug for GeckoElement<'le> {
 }
 
 impl<'le> GeckoElement<'le> {
+    #[inline]
+    fn may_have_anonymous_children(&self) -> bool {
+        self.as_node().get_bool_flag(nsINode_BooleanFlag::ElementMayHaveAnonymousChildren)
+    }
+
     
     pub fn parse_style_attribute<R>(
         value: &str,
@@ -883,6 +848,7 @@ impl structs::FontSizePrefs {
 impl<'le> TElement for GeckoElement<'le> {
     type ConcreteNode = GeckoNode<'le>;
     type FontMetricsProvider = GeckoFontMetricsProvider;
+    type TraversalChildrenIterator = GeckoChildrenIterator<'le>;
 
     fn inheritance_parent(&self) -> Option<Self> {
         if self.is_native_anonymous() {
@@ -892,6 +858,24 @@ impl<'le> TElement for GeckoElement<'le> {
                 .flattened_tree_parent()
                 .and_then(|n| n.as_element())
         }
+    }
+
+    fn traversal_children(&self) -> LayoutIterator<GeckoChildrenIterator<'le>> {
+        
+        
+        
+        
+        if self.is_in_anonymous_subtree() ||
+           self.has_xbl_binding_with_content() ||
+           self.may_have_anonymous_children() {
+            unsafe {
+                let mut iter: structs::StyleChildrenIterator = ::std::mem::zeroed();
+                Gecko_ConstructStyleChildrenIterator(self.0, &mut iter);
+                return LayoutIterator(GeckoChildrenIterator::GeckoIterator(iter));
+            }
+        }
+
+        LayoutIterator(GeckoChildrenIterator::Current(self.as_node().first_child()))
     }
 
     fn before_pseudo_element(&self) -> Option<Self> {

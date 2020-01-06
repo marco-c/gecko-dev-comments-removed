@@ -100,14 +100,6 @@ pub trait LayoutNode: Debug + GetLayoutData + TNode {
     fn traverse_preorder(self) -> TreeIterator<Self> {
         TreeIterator::new(self)
     }
-
-    fn first_child(&self) -> Option<Self>;
-
-    fn last_child(&self) -> Option<Self>;
-
-    fn prev_sibling(&self) -> Option<Self>;
-
-    fn next_sibling(&self) -> Option<Self>;
 }
 
 pub struct ReverseChildrenIterator<ConcreteNode> where ConcreteNode: LayoutNode {
@@ -171,10 +163,6 @@ pub trait ThreadSafeLayoutNode: Clone + Copy + Debug + GetLayoutData + NodeInfo 
 
     
     
-    fn type_id_without_excluding_pseudo_elements(&self) -> LayoutNodeType;
-
-    
-    
     
     
     
@@ -182,14 +170,6 @@ pub trait ThreadSafeLayoutNode: Clone + Copy + Debug + GetLayoutData + NodeInfo 
     
     
     fn parent_style(&self) -> Arc<ComputedValues>;
-
-    #[inline]
-    fn is_element_or_elements_pseudo(&self) -> bool {
-        match self.type_id_without_excluding_pseudo_elements() {
-            LayoutNodeType::Element(..) => true,
-            _ => false,
-        }
-    }
 
     fn get_before_pseudo(&self) -> Option<Self> {
         self.as_element().and_then(|el| el.get_before_pseudo()).map(|el| el.as_node())
