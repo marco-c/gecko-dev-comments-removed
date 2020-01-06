@@ -2,10 +2,18 @@
 
 
 
+mod mergesort;
+mod quicksort;
+
+mod test;
+
 use iter::*;
 use iter::internal::*;
+use self::mergesort::par_mergesort;
+use self::quicksort::par_quicksort;
 use split_producer::*;
 use std::cmp;
+use std::cmp::Ordering;
 
 
 pub trait ParallelSlice<T: Sync> {
@@ -75,6 +83,178 @@ pub trait ParallelSliceMut<T: Send> {
             chunk_size: chunk_size,
             slice: self.as_parallel_slice_mut(),
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn par_sort(&mut self)
+    where
+        T: Ord,
+    {
+        par_mergesort(self.as_parallel_slice_mut(), |a, b| a.lt(b));
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn par_sort_by<F>(&mut self, compare: F)
+    where
+        F: Fn(&T, &T) -> Ordering + Sync,
+    {
+        par_mergesort(self.as_parallel_slice_mut(), |a, b| compare(a, b) == Ordering::Less);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn par_sort_by_key<B, F>(&mut self, f: F)
+    where
+        B: Ord,
+        F: Fn(&T) -> B + Sync,
+    {
+        par_mergesort(self.as_parallel_slice_mut(), |a, b| f(a).lt(&f(b)));
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn par_sort_unstable(&mut self)
+    where
+        T: Ord,
+    {
+        par_quicksort(self.as_parallel_slice_mut(), |a, b| a.lt(b));
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn par_sort_unstable_by<F>(&mut self, compare: F)
+    where
+        F: Fn(&T, &T) -> Ordering + Sync,
+    {
+        par_quicksort(self.as_parallel_slice_mut(), |a, b| compare(a, b) == Ordering::Less);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn par_sort_unstable_by_key<B, F>(&mut self, f: F)
+    where
+        B: Ord,
+        F: Fn(&T) -> B + Sync,
+    {
+        par_quicksort(self.as_parallel_slice_mut(), |a, b| f(a).lt(&f(b)));
     }
 }
 
