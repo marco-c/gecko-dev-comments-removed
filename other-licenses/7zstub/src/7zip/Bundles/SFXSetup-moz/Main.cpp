@@ -236,6 +236,20 @@ struct AutoLoadSystemDependencies
 {
   AutoLoadSystemDependencies()
   {
+    HMODULE module = ::GetModuleHandleW(L"kernel32.dll");
+    if (module) {
+      
+      
+      
+      typedef BOOL (WINAPI *SetDefaultDllDirectoriesType)(DWORD);
+      SetDefaultDllDirectoriesType setDefaultDllDirectories =
+        (SetDefaultDllDirectoriesType) GetProcAddress(module, "SetDefaultDllDirectories");
+      if (setDefaultDllDirectories) {
+        setDefaultDllDirectories(0x0800  );
+        return;
+      }
+    }
+
     static LPCWSTR delayDLLs[] = { L"dwmapi.dll", L"cryptbase.dll",
                                    L"SHCore.dll", L"uxtheme.dll",
                                    L"oleacc.dll", L"apphelp.dll" };
