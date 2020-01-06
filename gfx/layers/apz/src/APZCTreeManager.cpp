@@ -166,6 +166,35 @@ APZCTreeManager::CheckerboardFlushObserver::Observe(nsISupports* aSubject,
 }
 
 
+
+
+
+
+class MOZ_RAII AutoFocusSequenceNumberSetter
+{
+public:
+  AutoFocusSequenceNumberSetter(FocusState& aFocusState, InputData& aEvent)
+    : mFocusState(aFocusState)
+    , mEvent(aEvent)
+    , mMayChangeFocus(true)
+  { }
+
+  void MarkAsNonFocusChanging() { mMayChangeFocus = false; }
+
+  ~AutoFocusSequenceNumberSetter()
+  {
+    if (mMayChangeFocus) {
+      mFocusState.ReceiveFocusChangingEvent();
+    }
+    mEvent.mFocusSequenceNumber = mFocusState.LastAPZProcessedEvent();
+  }
+
+private:
+  FocusState& mFocusState;
+  InputData& mEvent;
+  bool mMayChangeFocus;
+};
+
  const ScreenMargin
 APZCTreeManager::CalculatePendingDisplayPort(
   const FrameMetrics& aFrameMetrics,
@@ -281,6 +310,8 @@ APZCTreeManager::UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
     uint64_t layersId = aRootLayerTreeId;
     ancestorTransforms.push(Matrix4x4());
 
+    state.mLayersIdsToDestroy.erase(aRootLayerTreeId);
+
     mApzcTreeLog << "[start]\n";
     mTreeLock.AssertCurrentThreadOwns();
 
@@ -297,9 +328,6 @@ APZCTreeManager::UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
           aLayerMetrics.SetApzc(apzc);
 
           mApzcTreeLog << '\n';
-
-          
-          state.mLayersIdsToDestroy.erase(layersId);
 
           
           
@@ -321,7 +349,15 @@ APZCTreeManager::UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
           MOZ_ASSERT(!node->GetFirstChild());
           parent = node;
           next = nullptr;
-          layersId = aLayerMetrics.GetReferentId().valueOr(layersId);
+
+          
+          if (Maybe<uint64_t> newLayersId = aLayerMetrics.GetReferentId()) {
+            layersId = *newLayersId;
+
+            
+            state.mLayersIdsToDestroy.erase(layersId);
+          }
+
           indents.push(gfx::TreeAutoIndent(mApzcTreeLog));
         },
         [&](ScrollNode aLayerMetrics)
@@ -894,6 +930,9 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
 {
   APZThreadUtils::AssertOnControllerThread();
 
+  
+  AutoFocusSequenceNumberSetter focusSetter(mFocusState, aEvent);
+
 #if defined(MOZ_WIDGET_ANDROID)
   MOZ_ASSERT(mToolbarAnimator);
   ScreenPoint scrollOffset;
@@ -1061,7 +1100,6 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
       FlushRepaintsToClearScreenToGeckoTransform();
 
       ScrollWheelInput& wheelInput = aEvent.AsScrollWheelInput();
-
       wheelInput.mHandledByAPZ = WillHandleInput(wheelInput);
       if (!wheelInput.mHandledByAPZ) {
         return result;
@@ -1430,8 +1468,9 @@ APZCTreeManager::UpdateWheelTransaction(LayoutDeviceIntPoint aRefPoint,
 }
 
 void
-APZCTreeManager::TransformEventRefPoint(LayoutDeviceIntPoint* aRefPoint,
-                              ScrollableLayerGuid* aOutTargetGuid)
+APZCTreeManager::ProcessUnhandledEvent(LayoutDeviceIntPoint* aRefPoint,
+                                        ScrollableLayerGuid*  aOutTargetGuid,
+                                        uint64_t*             aOutFocusSequenceNumber)
 {
   
   
@@ -1453,6 +1492,10 @@ APZCTreeManager::TransformEventRefPoint(LayoutDeviceIntPoint* aRefPoint,
         ViewAs<LayoutDevicePixel>(*untransformedRefPoint, LDIsScreen);
     }
   }
+
+  
+  mFocusState.ReceiveFocusChangingEvent();
+  *aOutFocusSequenceNumber = mFocusState.LastAPZProcessedEvent();
 }
 
 void

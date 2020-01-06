@@ -451,9 +451,10 @@ public:
 
   
 
-  void TransformEventRefPoint(
+  void ProcessUnhandledEvent(
       LayoutDeviceIntPoint* aRefPoint,
-      ScrollableLayerGuid* aOutTargetGuid) override;
+      ScrollableLayerGuid*  aOutTargetGuid,
+      uint64_t*             aOutFocusSequenceNumber) override;
 
   void UpdateWheelTransaction(
       LayoutDeviceIntPoint aRefPoint,

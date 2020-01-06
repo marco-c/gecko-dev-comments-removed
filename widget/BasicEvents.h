@@ -354,6 +354,7 @@ protected:
     , mMessage(aMessage)
     , mRefPoint(0, 0)
     , mLastRefPoint(0, 0)
+    , mFocusSequenceNumber(0)
     , mSpecifiedEventType(nullptr)
   {
     MOZ_COUNT_CTOR(WidgetEvent);
@@ -406,6 +407,10 @@ public:
   
   LayoutDeviceIntPoint mLastRefPoint;
   
+  
+  
+  uint64_t mFocusSequenceNumber;
+  
   BaseEventFlags mFlags;
 
   
@@ -435,6 +440,7 @@ public:
     
     mRefPoint = aEvent.mRefPoint;
     
+    mFocusSequenceNumber = aEvent.mFocusSequenceNumber;
     AssignEventTime(aEvent);
     
     mSpecifiedEventType = aEvent.mSpecifiedEventType;

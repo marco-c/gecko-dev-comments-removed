@@ -211,9 +211,10 @@ protected:
 
   
 
-  virtual void TransformEventRefPoint(
+  virtual void ProcessUnhandledEvent(
       LayoutDeviceIntPoint* aRefPoint,
-      ScrollableLayerGuid* aOutTargetGuid) = 0;
+      ScrollableLayerGuid* aOutTargetGuid,
+      uint64_t* aOutFocusSequenceNumber) = 0;
 
   virtual void UpdateWheelTransaction(
       LayoutDeviceIntPoint aRefPoint,

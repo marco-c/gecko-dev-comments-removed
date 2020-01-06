@@ -1906,6 +1906,8 @@ protected:
   uint32_t                  mPresShellId;
 
   
+  uint64_t                  mAPZFocusSequenceNumber;
+  
   FocusTarget               mAPZFocusTarget;
 
   static nsIContent*        gKeyDownTarget;

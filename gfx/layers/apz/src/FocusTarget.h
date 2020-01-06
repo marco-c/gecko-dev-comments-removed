@@ -50,11 +50,15 @@ public:
   
 
 
-  FocusTarget(nsIPresShell* aRootPresShell);
+  FocusTarget(nsIPresShell* aRootPresShell,
+              uint64_t aFocusSequenceNumber);
 
   bool operator==(const FocusTarget& aRhs) const;
 
 public:
+  
+  uint64_t mSequenceNumber;
+
   
   
   bool mFocusHasKeyEventListeners;

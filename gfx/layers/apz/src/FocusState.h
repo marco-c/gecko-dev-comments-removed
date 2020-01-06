@@ -10,6 +10,7 @@
 #include <unordered_set>    
 
 #include "FrameMetrics.h"   
+
 #include "mozilla/layers/FocusTarget.h" 
 
 namespace mozilla {
@@ -75,6 +76,28 @@ public:
 
 
 
+  uint64_t LastAPZProcessedEvent() const { return mLastAPZProcessedEvent; }
+
+  
+
+
+
+
+  bool IsCurrent() const;
+
+  
+
+
+
+
+  void ReceiveFocusChangingEvent();
+
+  
+
+
+
+
+
 
 
 
@@ -95,6 +118,16 @@ public:
 private:
   
   std::unordered_map<uint64_t, FocusTarget> mFocusTree;
+
+  
+  
+  
+  
+  
+  
+  uint64_t mLastAPZProcessedEvent;
+  
+  uint64_t mLastContentProcessedEvent;
 
   
   
