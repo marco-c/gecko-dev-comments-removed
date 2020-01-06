@@ -4660,12 +4660,17 @@ NoteDirtyElement(Element* aElement, uint32_t aBits)
   MOZ_ASSERT(aElement->IsInComposedDoc());
   MOZ_ASSERT(aElement->IsStyledByServo());
 
-  Element* parent = aElement->GetFlattenedTreeParentElementForStyle();
-  if (MOZ_LIKELY(parent)) {
+  nsINode* parent = aElement->GetFlattenedTreeParentNodeForStyle();
+  if (!parent) {
+    
+    return;
+  }
+
+  if (MOZ_LIKELY(parent->IsElement())) {
     
     
     
-    if (!parent->HasServoData()) {
+    if (!parent->AsElement()->HasServoData()) {
       return;
     }
 
@@ -4688,7 +4693,7 @@ NoteDirtyElement(Element* aElement, uint32_t aBits)
     
     
     
-    if (Servo_Element_IsDisplayNone(parent)) {
+    if (Servo_Element_IsDisplayNone(parent->AsElement())) {
       return;
     }
   }
@@ -4697,6 +4702,8 @@ NoteDirtyElement(Element* aElement, uint32_t aBits)
   if (nsIPresShell* shell = doc->GetShell()) {
     shell->EnsureStyleFlush();
   }
+
+  MOZ_ASSERT(parent->IsElement() || parent == doc);
 
   nsINode* existingRoot = doc->GetServoRestyleRoot();
   uint32_t existingBits = existingRoot ? doc->GetServoRestyleRootDirtyBits() : 0;
@@ -4714,7 +4721,9 @@ NoteDirtyElement(Element* aElement, uint32_t aBits)
 
   
   
-  const bool reachedDocRoot = !parent || !PropagateBits(parent, aBits, existingRoot);
+  const bool reachedDocRoot =
+    !parent->IsElement() ||
+    !PropagateBits(parent->AsElement(), aBits, existingRoot);
 
   if (!reachedDocRoot || existingRoot == doc) {
       
@@ -4753,7 +4762,8 @@ NoteDirtyElement(Element* aElement, uint32_t aBits)
                aElement, doc->GetServoRestyleRoot()));
   MOZ_ASSERT(aElement == doc->GetServoRestyleRoot() ||
              !doc->GetServoRestyleRoot()->IsElement() ||
-             BitsArePropagated(parent, aBits, doc->GetServoRestyleRoot()));
+             !parent->IsElement() ||
+             BitsArePropagated(parent->AsElement(), aBits, doc->GetServoRestyleRoot()));
   MOZ_ASSERT(doc->GetServoRestyleRootDirtyBits() & aBits);
 }
 
