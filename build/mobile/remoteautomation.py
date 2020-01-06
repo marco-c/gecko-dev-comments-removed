@@ -165,9 +165,9 @@ class RemoteAutomation(Automation):
 
     def deleteTombstones(self):
         
-        remoteDir = "/data/tombstones"
+        tombstones = "/data/tombstones/*"
         try:
-            self._devicemanager.shellCheckOutput(['rm', '-r', remoteDir], root=True,
+            self._devicemanager.shellCheckOutput(['rm', '-r', tombstones], root=True,
                                                  timeout=DeviceManager.short_timeout)
         except DMError:
             
