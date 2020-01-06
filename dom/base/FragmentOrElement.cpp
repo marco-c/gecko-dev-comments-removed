@@ -192,13 +192,13 @@ nsIContent::GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const
       
       
       
-      return nullptr;
+      return OwnerDoc();
     }
     nsIAnonymousContentCreator* creator = do_QueryFrame(parentFrame);
     if (!creator) {
       
       
-      return nullptr;
+      return OwnerDoc();
     }
     AutoTArray<nsIContent*, 8> elements;
     creator->AppendAnonymousContentTo(elements, 0);
@@ -206,7 +206,7 @@ nsIContent::GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const
       
       
       
-      return nullptr;
+      return OwnerDoc();
     }
   }
 
