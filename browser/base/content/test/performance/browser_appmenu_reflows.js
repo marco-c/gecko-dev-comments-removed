@@ -78,6 +78,23 @@ const EXPECTED_APPMENU_SUBVIEW_REFLOWS = [
   
 
 
+
+
+
+
+
+
+  [
+    "descriptionHeightWorkaround@resource:///modules/PanelMultiView.jsm",
+    "onTransitionEnd@resource:///modules/PanelMultiView.jsm",
+  ],
+  [
+    "descriptionHeightWorkaround@resource:///modules/PanelMultiView.jsm",
+    "onTransitionEnd@resource:///modules/PanelMultiView.jsm",
+  ],
+  
+
+
 ];
 
 add_task(async function() {
@@ -110,8 +127,10 @@ add_task(async function() {
       }
 
       for (let button of navButtons) {
+        info("Click " + button.id);
         button.click();
         await BrowserTestUtils.waitForEvent(PanelUI.panel, "ViewShown");
+        info("Shown " + PanelUI.multiView.instance._currentSubView.id);
         
         
         
