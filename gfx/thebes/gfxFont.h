@@ -1954,23 +1954,41 @@ protected:
 
     
     
-    
-    
-    void DrawOneGlyph(uint32_t             aGlyphID,
-                      float                aAdvance,
-                      mozilla::gfx::Point* aPt,
-                      GlyphBufferAzure&    aBuffer,
-                      bool*                aEmittedGlyphs) const;
+    enum class FontComplexityT {
+        SimpleFont,
+        ComplexFont
+    };
+    enum class SpacingT {
+        NoSpacing,
+        HasSpacing
+    };
 
     
     
     
+    template<FontComplexityT FC, SpacingT S>
     bool DrawGlyphs(const gfxShapedText*     aShapedText,
                     uint32_t                 aOffset, 
                     uint32_t                 aCount, 
                     mozilla::gfx::Point*     aPt,
-                    const TextRunDrawParams& aRunParams,
-                    const FontDrawParams&    aFontParams);
+                    GlyphBufferAzure&        aBuffer);
+
+    
+    
+    
+    
+    template<FontComplexityT FC>
+    void DrawOneGlyph(uint32_t                   aGlyphID,
+                      const mozilla::gfx::Point& aPt,
+                      GlyphBufferAzure&          aBuffer,
+                      bool*                      aEmittedGlyphs) const;
+
+    
+    
+    bool DrawMissingGlyph(const TextRunDrawParams&            aRunParams,
+                          const FontDrawParams&               aFontParams,
+                          const gfxShapedText::DetailedGlyph* aDetails,
+                          const mozilla::gfx::Point&          aPt);
 
     
     
