@@ -376,7 +376,11 @@ this.BrowserUtils = {
 
 
 
-  setToolbarButtonHeightProperty(element) {
+
+
+
+
+  setToolbarButtonHeightProperty(element, options) {
     let window = element.ownerGlobal;
     let dwu = window.getInterface(Ci.nsIDOMWindowUtils);
     let toolbarItem = element;
@@ -390,6 +394,9 @@ this.BrowserUtils = {
       return;
     }
     let bounds = dwu.getBoundsWithoutFlushing(toolbarItem);
+    if (!bounds.height && options.forceLayoutFlushIfNeeded) {
+      bounds = toolbarItem.getBoundingClientRect();
+    }
     if (bounds.height) {
       toolbarItem.style.setProperty("--toolbarbutton-height", bounds.height + "px");
     }
