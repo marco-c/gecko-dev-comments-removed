@@ -1044,7 +1044,7 @@ pref("dom.ipc.plugins.sandbox-level.flash", 0);
 
 
 #if defined(NIGHTLY_BUILD)
-pref("security.sandbox.content.level", 2);
+pref("security.sandbox.content.level", 3);
 #else
 pref("security.sandbox.content.level", 1);
 #endif
@@ -1261,16 +1261,16 @@ pref("browser.newtabpage.enabled", true);
 sticky_pref("browser.newtabpage.enhanced", true);
 
 
-pref("browser.newtabpage.compact", false);
+pref("browser.newtabpage.compact", true);
 
 
 pref("browser.newtabpage.thumbnailPlaceholder", false);
 
 
-pref("browser.newtabpage.rows", 3);
+pref("browser.newtabpage.rows", 2);
 
 
-pref("browser.newtabpage.columns", 5);
+pref("browser.newtabpage.columns", 6);
 
 
 pref("browser.newtabpage.directory.source", "https://tiles.services.mozilla.com/v3/links/fetch/%LOCALE%/%CHANNEL%");
@@ -1704,8 +1704,6 @@ pref("browser.onboarding.hidden", false);
 
 
 pref("browser.onboarding.notification.finished", false);
-pref("browser.onboarding.newtour", "private,addons,customize,search,default,sync");
-pref("browser.onboarding.updatetour", "");
 
 
 
