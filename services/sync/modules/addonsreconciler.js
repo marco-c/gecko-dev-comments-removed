@@ -129,13 +129,6 @@ AddonsReconciler.prototype = {
 
 
 
-  _stateLoaded: false,
-
-  
-
-
-
-
 
 
 
@@ -171,67 +164,14 @@ AddonsReconciler.prototype = {
 
 
   get addons() {
-    this._ensureStateLoaded();
     return this._addons;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  loadState: function loadState(path, callback) {
-    let file = path || DEFAULT_STATE_FILE;
-    Utils.jsonLoad(file, this, function(json) {
-      this._addons = {};
-      this._changes = [];
-
-      if (!json) {
-        this._log.debug("No data seen in loaded file: " + file);
-        if (callback) {
-          callback(null, false);
-        }
-
-        return;
-      }
-
-      let version = json.version;
-      if (!version || version != 1) {
-        this._log.error("Could not load JSON file because version not " +
-                        "supported: " + version);
-        if (callback) {
-          callback(null, false);
-        }
-
-        return;
-      }
-
-      this._addons = json.addons;
-      for (let id in this._addons) {
-        let record = this._addons[id];
-        record.modified = new Date(record.modified);
-      }
-
-      for (let [time, change, id] of json.changes) {
-        this._changes.push([new Date(time), change, id]);
-      }
-
-      if (callback) {
-        callback(null, true);
-      }
-    });
+  async ensureStateLoaded() {
+    if (!this._promiseStateLoaded) {
+      this._promiseStateLoaded = this.loadState();
+    }
+    return this._promiseStateLoaded;
   },
 
   
@@ -244,8 +184,47 @@ AddonsReconciler.prototype = {
 
 
 
-  saveState: function saveState(path, callback) {
-    let file = path || DEFAULT_STATE_FILE;
+
+
+
+  async loadState(file = DEFAULT_STATE_FILE) {
+    let json = await Utils.jsonLoad(file, this);
+    this._addons = {};
+    this._changes = [];
+
+    if (!json) {
+      this._log.debug("No data seen in loaded file: " + file);
+      return false;
+    }
+
+    let version = json.version;
+    if (!version || version != 1) {
+      this._log.error("Could not load JSON file because version not " +
+                      "supported: " + version);
+      return false;
+    }
+
+    this._addons = json.addons;
+    for (let id in this._addons) {
+      let record = this._addons[id];
+      record.modified = new Date(record.modified);
+    }
+
+    for (let [time, change, id] of json.changes) {
+      this._changes.push([new Date(time), change, id]);
+    }
+
+    return true;
+  },
+
+  
+
+
+
+
+
+
+  async saveState(file = DEFAULT_STATE_FILE) {
     let state = {version: 1, addons: {}, changes: []};
 
     for (let [id, record] of Object.entries(this._addons)) {
@@ -264,7 +243,7 @@ AddonsReconciler.prototype = {
     }
 
     this._log.info("Saving reconciler state to file: " + file);
-    Utils.jsonSave(file, this, state, callback);
+    await Utils.jsonSave(file, this, state);
   },
 
   
@@ -341,66 +320,60 @@ AddonsReconciler.prototype = {
   
 
 
-  refreshGlobalState: function refreshGlobalState(callback) {
+  async refreshGlobalState() {
     this._log.info("Refreshing global state from AddonManager.");
-    this._ensureStateLoaded();
 
     let installs;
+    let addons = await AddonManager.getAllAddons();
 
-    AddonManager.getAllAddons(addons => {
-      let ids = {};
+    let ids = {};
 
-      for (let addon of addons) {
-        ids[addon.id] = true;
-        this.rectifyStateFromAddon(addon);
+    for (let addon of addons) {
+      ids[addon.id] = true;
+      this.rectifyStateFromAddon(addon);
+    }
+
+    
+    
+    for (let [id, addon] of Object.entries(this._addons)) {
+      if (id in ids) {
+        continue;
       }
 
       
       
-      for (let [id, addon] of Object.entries(this._addons)) {
-        if (id in ids) {
-          continue;
-        }
-
-        
-        
-        
-
-        if (!installs) {
-          let cb = Async.makeSyncCallback();
-          AddonManager.getAllInstalls(cb);
-          installs = Async.waitForSyncCallback(cb);
-        }
-
-        let installFound = false;
-        for (let install of installs) {
-          if (install.addon && install.addon.id == id &&
-              install.state == AddonManager.STATE_INSTALLED) {
-
-            installFound = true;
-            break;
-          }
-        }
-
-        if (installFound) {
-          continue;
-        }
-
-        if (addon.installed) {
-          addon.installed = false;
-          this._log.debug("Adding change because add-on not present in " +
-                          "Add-on Manager: " + id);
-          this._addChange(new Date(), CHANGE_UNINSTALLED, addon);
-        }
-      }
-
       
-      if (this._shouldPersist) {
-        this.saveState(null, callback);
-      } else {
-        callback();
+
+      if (!installs) {
+        installs = await AddonManager.getAllInstalls();
       }
-    });
+
+      let installFound = false;
+      for (let install of installs) {
+        if (install.addon && install.addon.id == id &&
+            install.state == AddonManager.STATE_INSTALLED) {
+
+          installFound = true;
+          break;
+        }
+      }
+
+      if (installFound) {
+        continue;
+      }
+
+      if (addon.installed) {
+        addon.installed = false;
+        this._log.debug("Adding change because add-on not present in " +
+                        "Add-on Manager: " + id);
+        this._addChange(new Date(), CHANGE_UNINSTALLED, addon);
+      }
+    }
+
+    
+    if (this._shouldPersist) {
+      await this.saveState();
+    }
   },
 
   
@@ -415,9 +388,8 @@ AddonsReconciler.prototype = {
 
 
 
-  rectifyStateFromAddon: function rectifyStateFromAddon(addon) {
+  rectifyStateFromAddon(addon) {
     this._log.debug(`Rectifying state for addon ${addon.name} (version=${addon.version}, id=${addon.id})`);
-    this._ensureStateLoaded();
 
     let id = addon.id;
     let enabled = !addon.userDisabled;
@@ -504,9 +476,7 @@ AddonsReconciler.prototype = {
 
 
 
-  getChangesSinceDate: function getChangesSinceDate(date) {
-    this._ensureStateLoaded();
-
+  getChangesSinceDate(date) {
     let length = this._changes.length;
     for (let i = 0; i < length; i++) {
       if (this._changes[i][0] >= date) {
@@ -523,9 +493,7 @@ AddonsReconciler.prototype = {
 
 
 
-  pruneChangesBeforeDate: function pruneChangesBeforeDate(date) {
-    this._ensureStateLoaded();
-
+  pruneChangesBeforeDate(date) {
     this._changes = this._changes.filter(function test_age(change) {
       return change[0] >= date;
     });
@@ -534,9 +502,7 @@ AddonsReconciler.prototype = {
   
 
 
-
-
-  getAllSyncGUIDs: function getAllSyncGUIDs() {
+  getAllSyncGUIDs() {
     let result = {};
     for (let id in this.addons) {
       result[id] = true;
@@ -553,8 +519,7 @@ AddonsReconciler.prototype = {
 
 
 
-
-  getAddonStateFromSyncGUID: function getAddonStateFromSyncGUID(guid) {
+  getAddonStateFromSyncGUID(guid) {
     for (let id in this.addons) {
       let addon = this.addons[id];
       if (addon.guid == guid) {
@@ -568,24 +533,7 @@ AddonsReconciler.prototype = {
   
 
 
-
-
-
-  _ensureStateLoaded: function _ensureStateLoaded() {
-    if (this._stateLoaded) {
-      return;
-    }
-
-    let cb = Async.makeSpinningCallback();
-    this.loadState(null, cb);
-    cb.wait();
-    this._stateLoaded = true;
-  },
-
-  
-
-
-  _handleListener: function _handlerListener(action, addon, requiresRestart) {
+  _handleListener(action, addon, requiresRestart) {
     
     
     try {
@@ -629,9 +577,7 @@ AddonsReconciler.prototype = {
 
       
       if (this._shouldPersist) {
-        let cb = Async.makeSpinningCallback();
-        this.saveState(null, cb);
-        cb.wait();
+        Async.promiseSpinningly(this.saveState());
       }
     } catch (ex) {
       this._log.warn("Exception", ex);

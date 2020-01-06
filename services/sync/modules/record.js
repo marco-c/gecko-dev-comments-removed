@@ -874,7 +874,7 @@ function PostQueue(poster, timestamp, config, log, postCallback) {
 }
 
 PostQueue.prototype = {
-  enqueue(record) {
+  async enqueue(record) {
     
     
     
@@ -911,7 +911,7 @@ PostQueue.prototype = {
       
       
       if (this.numQueued) {
-        this.flush(batchSizeExceeded || singleRecordTooBig);
+        await this.flush(batchSizeExceeded || singleRecordTooBig);
       }
     }
     
@@ -921,7 +921,7 @@ PostQueue.prototype = {
     return { enqueued: true };
   },
 
-  flush(finalBatchPost) {
+  async flush(finalBatchPost) {
     if (!this.queued) {
       
       
@@ -957,14 +957,13 @@ PostQueue.prototype = {
     }
     this.queued = "";
     this.numQueued = 0;
-    let response = Async.promiseSpinningly(
-                    this.poster(queued, headers, batch, !!(finalBatchPost && this.batchID !== null)));
+    let response = await this.poster(queued, headers, batch, !!(finalBatchPost && this.batchID !== null));
 
     if (!response.success) {
       this.log.trace("Server error response during a batch", response);
       
       
-      this.postCallback(response, !finalBatchPost);
+      await this.postCallback(response, !finalBatchPost);
       return;
     }
 
@@ -972,7 +971,7 @@ PostQueue.prototype = {
       this.log.trace("Committed batch", this.batchID);
       this.batchID = undefined; 
       this.lastModified = response.headers["x-last-modified"];
-      this.postCallback(response, false);
+      await this.postCallback(response, false);
       return;
     }
 
@@ -982,7 +981,7 @@ PostQueue.prototype = {
       }
       this.batchID = null; 
       this.lastModified = response.headers["x-last-modified"];
-      this.postCallback(response, false);
+      await this.postCallback(response, false);
       return;
     }
 
@@ -1009,6 +1008,6 @@ PostQueue.prototype = {
       throw new Error(`Invalid client/server batch state - client has ${this.batchID}, server has ${responseBatchID}`);
     }
 
-    this.postCallback(response, true);
+    await this.postCallback(response, true);
   },
 }

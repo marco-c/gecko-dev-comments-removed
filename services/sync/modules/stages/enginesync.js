@@ -28,16 +28,10 @@ this.EngineSynchronizer = function EngineSynchronizer(service) {
   this._log.level = Log.Level[Svc.Prefs.get("log.logger.synchronizer")];
 
   this.service = service;
-
-  this.onComplete = null;
 }
 
 EngineSynchronizer.prototype = {
-  sync: function sync(engineNamesToSync) {
-    if (!this.onComplete) {
-      throw new Error("onComplete handler not installed.");
-    }
-
+  async sync(engineNamesToSync) {
     let startTime = Date.now();
 
     this.service.status.resetSync();
@@ -52,15 +46,13 @@ EngineSynchronizer.prototype = {
       
       
       reason = "Can't sync: " + reason;
-      this.onComplete(new Error("Can't sync: " + reason));
-      return;
+      throw new Error(reason);
     }
 
     
     if (!this.service.clusterURL && !this.service._clusterManager.setCluster()) {
       this.service.status.sync = NO_SYNC_NODE_FOUND;
       this._log.info("No cluster URL found. Cannot sync.");
-      this.onComplete(null);
       return;
     }
 
@@ -76,25 +68,23 @@ EngineSynchronizer.prototype = {
     let engineManager = this.service.engineManager;
 
     
-    let info = this.service._fetchInfo(infoURL);
+    let info = await this.service._fetchInfo(infoURL);
 
     
     for (let engine of [this.service.clientsEngine].concat(engineManager.getAll())) {
       engine.lastModified = info.obj[engine.name] || 0;
     }
 
-    if (!(this.service._remoteSetup(info))) {
-      this.onComplete(new Error("Aborting sync, remote setup failed"));
-      return;
+    if (!(await this.service._remoteSetup(info))) {
+      throw new Error("Aborting sync, remote setup failed");
     }
 
     
     this._log.debug("Refreshing client list.");
-    if (!this._syncEngine(this.service.clientsEngine)) {
+    if (!(await this._syncEngine(this.service.clientsEngine))) {
       
       
       this._log.warn("Client engine sync failed. Aborting.");
-      this.onComplete(null);
       return;
     }
 
@@ -104,13 +94,13 @@ EngineSynchronizer.prototype = {
     
     switch (Svc.Prefs.get("firstSync")) {
       case "resetClient":
-        this.service.resetClient(engineManager.enabledEngineNames);
+        await this.service.resetClient(engineManager.enabledEngineNames);
         break;
       case "wipeClient":
-        this.service.wipeClient(engineManager.enabledEngineNames);
+        await this.service.wipeClient(engineManager.enabledEngineNames);
         break;
       case "wipeRemote":
-        this.service.wipeRemote(engineManager.enabledEngineNames);
+        await this.service.wipeRemote(engineManager.enabledEngineNames);
         break;
       default:
         allowEnginesHint = true;
@@ -119,34 +109,31 @@ EngineSynchronizer.prototype = {
 
     if (this.service.clientsEngine.localCommands) {
       try {
-        if (!(this.service.clientsEngine.processIncomingCommands())) {
+        if (!(await this.service.clientsEngine.processIncomingCommands())) {
           this.service.status.sync = ABORT_SYNC_COMMAND;
-          this.onComplete(new Error("Processed command aborted sync."));
-          return;
+          throw new Error("Processed command aborted sync.");
         }
 
         
-        if (!(this.service._remoteSetup(info))) {
-          this.onComplete(new Error("Remote setup failed after processing commands."));
-          return;
+        if (!(await this.service._remoteSetup(info))) {
+          throw new Error("Remote setup failed after processing commands.");
         }
       } finally {
         
         
         
         
-        this._syncEngine(this.service.clientsEngine);
+        await this._syncEngine(this.service.clientsEngine);
       }
     }
 
     
     try {
-      this._updateEnabledEngines();
+      await this._updateEnabledEngines();
     } catch (ex) {
       this._log.debug("Updating enabled engines failed", ex);
       this.service.errorHandler.checkServerError(ex);
-      this.onComplete(ex);
-      return;
+      throw ex;
     }
 
     
@@ -163,7 +150,7 @@ EngineSynchronizer.prototype = {
       let enginesToValidate = [];
       for (let engine of enginesToSync) {
         
-        if (!(this._syncEngine(engine)) || this.service.status.enforceBackoff) {
+        if (!(await this._syncEngine(engine)) || this.service.status.enforceBackoff) {
           this._log.info("Aborting sync for failure in " + engine.name);
           break;
         }
@@ -176,16 +163,15 @@ EngineSynchronizer.prototype = {
       if (!this.service.clusterURL) {
         this._log.debug("Aborting sync, no cluster URL: " +
                         "not uploading new meta/global.");
-        this.onComplete(null);
         return;
       }
 
       
-      let meta = Async.promiseSpinningly(this.service.recordManager.get(this.service.metaURL));
+      let meta = await this.service.recordManager.get(this.service.metaURL);
       if (meta.isNew || meta.changed) {
         this._log.info("meta/global changed locally: reuploading.");
         try {
-          this.service.uploadMetaGlobal(meta);
+          await this.service.uploadMetaGlobal(meta);
           delete meta.isNew;
           delete meta.changed;
         } catch (error) {
@@ -193,7 +179,7 @@ EngineSynchronizer.prototype = {
         }
       }
 
-      Async.promiseSpinningly(Doctor.consult(enginesToValidate));
+      await Doctor.consult(enginesToValidate);
 
       
       if (this.service.status.service != SYNC_FAILED_PARTIAL) {
@@ -208,15 +194,13 @@ EngineSynchronizer.prototype = {
       this._log.info("Sync completed at " + dateStr
                      + " after " + syncTime + " secs.");
     }
-
-    this.onComplete(null);
   },
 
   
   
-  _syncEngine: function _syncEngine(engine) {
+  async _syncEngine(engine) {
     try {
-      engine.sync();
+      await engine.sync();
     } catch (e) {
       if (e.status == 401) {
         
@@ -238,7 +222,7 @@ EngineSynchronizer.prototype = {
     return true;
   },
 
-  _updateEnabledFromMeta(meta, numClients, engineManager = this.service.engineManager) {
+  async _updateEnabledFromMeta(meta, numClients, engineManager = this.service.engineManager) {
     this._log.info("Updating enabled engines: " +
                     numClients + " clients.");
 
@@ -307,7 +291,7 @@ EngineSynchronizer.prototype = {
       
       if (!engine.enabled) {
         this._log.trace("Wiping data for " + engineName + " engine.");
-        engine.wipeServer();
+        await engine.wipeServer();
         delete meta.payload.engines[engineName];
         meta.changed = true; 
         
@@ -342,12 +326,12 @@ EngineSynchronizer.prototype = {
     this.service._ignorePrefObserver = false;
   },
 
-  _updateEnabledEngines() {
-    let meta = Async.promiseSpinningly(this.service.recordManager.get(this.service.metaURL));
+  async _updateEnabledEngines() {
+    let meta = await this.service.recordManager.get(this.service.metaURL);
     let numClients = this.service.scheduler.numClients;
     let engineManager = this.service.engineManager;
 
-    this._updateEnabledFromMeta(meta, numClients, engineManager);
+    await this._updateEnabledFromMeta(meta, numClients, engineManager);
   },
 };
 Object.freeze(EngineSynchronizer.prototype);

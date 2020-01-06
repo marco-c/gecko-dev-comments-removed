@@ -158,38 +158,37 @@ AddonUtilsInternal.prototype = {
 
 
 
+  async uninstallAddon(addon) {
+    return new Promise(res => {
+      let listener = {
+        onUninstalling(uninstalling, needsRestart) {
+          if (addon.id != uninstalling.id) {
+            return;
+          }
 
+          
+          
+          if (!needsRestart) {
+            return;
+          }
 
+          
+          
+          AddonManager.removeAddonListener(listener);
+          res(addon);
+        },
+        onUninstalled(uninstalled) {
+          if (addon.id != uninstalled.id) {
+            return;
+          }
 
-  uninstallAddon: function uninstallAddon(addon, cb) {
-    let listener = {
-      onUninstalling(uninstalling, needsRestart) {
-        if (addon.id != uninstalling.id) {
-          return;
+          AddonManager.removeAddonListener(listener);
+          res(addon);
         }
-
-        
-        
-        if (!needsRestart) {
-          return;
-        }
-
-        
-        
-        AddonManager.removeAddonListener(listener);
-        cb(null, addon);
-      },
-      onUninstalled(uninstalled) {
-        if (addon.id != uninstalled.id) {
-          return;
-        }
-
-        AddonManager.removeAddonListener(listener);
-        cb(null, addon);
-      }
-    };
-    AddonManager.addAddonListener(listener);
-    addon.uninstall();
+      };
+      AddonManager.addAddonListener(listener);
+      addon.uninstall();
+    });
   },
 
   

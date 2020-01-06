@@ -128,10 +128,15 @@ AddonsEngine.prototype = {
 
   _reconciler:            null,
 
+  async initialize() {
+    await SyncEngine.prototype.initialize.call(this);
+    await this._reconciler.ensureStateLoaded();
+  },
+
   
 
 
-  _findDupe: function _findDupe(item) {
+  async _findDupe(item) {
     let id = item.addonID;
 
     
@@ -153,7 +158,7 @@ AddonsEngine.prototype = {
 
 
 
-  getChangedIDs: function getChangedIDs() {
+  async getChangedIDs() {
     let changes = {};
     for (let [id, modified] of Object.entries(this._tracker.changedIDs)) {
       changes[id] = modified;
@@ -201,13 +206,12 @@ AddonsEngine.prototype = {
 
 
 
-  _syncStartup: function _syncStartup() {
+  async _syncStartup() {
     
     
     
-    this._refreshReconcilerState();
-
-    SyncEngine.prototype._syncStartup.call(this);
+    await this._refreshReconcilerState();
+    return SyncEngine.prototype._syncStartup.call(this);
   },
 
   
@@ -218,11 +222,10 @@ AddonsEngine.prototype = {
 
 
 
-  _syncCleanup: function _syncCleanup() {
+  async _syncCleanup() {
     let ms = 1000 * this.lastSync - PRUNE_ADDON_CHANGES_THRESHOLD;
     this._reconciler.pruneChangesBeforeDate(new Date(ms));
-
-    SyncEngine.prototype._syncCleanup.call(this);
+    return SyncEngine.prototype._syncCleanup.call(this);
   },
 
   
@@ -231,11 +234,9 @@ AddonsEngine.prototype = {
 
 
 
-  _refreshReconcilerState: function _refreshReconcilerState() {
+  async _refreshReconcilerState() {
     this._log.debug("Refreshing reconciler state");
-    let cb = Async.makeSpinningCallback();
-    this._reconciler.refreshGlobalState(cb);
-    cb.wait();
+    return this._reconciler.refreshGlobalState();
   },
 
   isAddonSyncable(addon, ignoreRepoCheck) {
@@ -267,7 +268,7 @@ AddonsStore.prototype = {
   
 
 
-  applyIncoming: function applyIncoming(record) {
+  async applyIncoming(record) {
     
     if (!record.deleted) {
       
@@ -295,14 +296,14 @@ AddonsStore.prototype = {
       return;
     }
 
-    Store.prototype.applyIncoming.call(this, record);
+    await Store.prototype.applyIncoming.call(this, record);
   },
 
 
   
 
 
-  create: function create(record) {
+  async create(record) {
     let cb = Async.makeSpinningCallback();
     AddonUtils.installAddons([{
       id:               record.addonID,
@@ -342,9 +343,9 @@ AddonsStore.prototype = {
   
 
 
-  remove: function remove(record) {
+  async remove(record) {
     
-    let addon = this.getAddonByGUID(record.id);
+    let addon = await this.getAddonByGUID(record.id);
     if (!addon) {
       
       
@@ -353,16 +354,14 @@ AddonsStore.prototype = {
     }
 
     this._log.info("Uninstalling add-on: " + addon.id);
-    let cb = Async.makeSpinningCallback();
-    AddonUtils.uninstallAddon(addon, cb);
-    cb.wait();
+    await AddonUtils.uninstallAddon(addon);
   },
 
   
 
 
-  update: function update(record) {
-    let addon = this.getAddonByID(record.addonID);
+  async update(record) {
+    let addon = await this.getAddonByID(record.addonID);
 
     
     
@@ -391,7 +390,7 @@ AddonsStore.prototype = {
   
 
 
-  itemExists: function itemExists(guid) {
+  async itemExists(guid) {
     let addon = this.reconciler.getAddonStateFromSyncGUID(guid);
 
     return !!addon;
@@ -407,7 +406,7 @@ AddonsStore.prototype = {
 
 
 
-  createRecord: function createRecord(guid, collection) {
+  async createRecord(guid, collection) {
     let record = new AddonRecord(collection, guid);
     record.applicationID = Services.appinfo.ID;
 
@@ -436,18 +435,16 @@ AddonsStore.prototype = {
 
 
 
-  changeItemID: function changeItemID(oldID, newID) {
+  async changeItemID(oldID, newID) {
     
     
     let state = this.reconciler.getAddonStateFromSyncGUID(oldID);
     if (state) {
       state.guid = newID;
-      let cb = Async.makeSpinningCallback();
-      this.reconciler.saveState(null, cb);
-      cb.wait();
+      await this.reconciler.saveState();
     }
 
-    let addon = this.getAddonByGUID(oldID);
+    let addon = await this.getAddonByGUID(oldID);
     if (!addon) {
       this._log.debug("Cannot change item ID (" + oldID + ") in Add-on " +
                       "Manager because old add-on not present: " + oldID);
@@ -462,7 +459,7 @@ AddonsStore.prototype = {
 
 
 
-  getAllIDs: function getAllIDs() {
+  async getAllIDs() {
     let ids = {};
 
     let addons = this.reconciler.addons;
@@ -482,15 +479,16 @@ AddonsStore.prototype = {
 
 
 
-  wipe: function wipe() {
+  async wipe() {
     this._log.info("Processing wipe.");
 
-    this.engine._refreshReconcilerState();
+    await this.engine._refreshReconcilerState();
 
     
     
-    for (let guid in this.getAllIDs()) {
-      let addon = this.getAddonByGUID(guid);
+    let ids = await this.getAllIDs();
+    for (let guid in ids) {
+      let addon = await this.getAddonByGUID(guid);
       if (!addon) {
         this._log.debug("Ignoring add-on because it couldn't be obtained: " +
                         guid);
@@ -498,7 +496,7 @@ AddonsStore.prototype = {
       }
 
       this._log.info("Uninstalling add-on as part of wipe: " + addon.id);
-      Utils.catch.call(this, () => addon.uninstall())();
+      await Utils.catch.call(this, () => addon.uninstall())();
     }
   },
 
@@ -513,10 +511,8 @@ AddonsStore.prototype = {
 
 
 
-  getAddonByID: function getAddonByID(id) {
-    let cb = Async.makeSyncCallback();
-    AddonManager.getAddonByID(id, cb);
-    return Async.waitForSyncCallback(cb);
+  async getAddonByID(id) {
+    return AddonManager.getAddonByID(id);
   },
 
   
@@ -526,10 +522,8 @@ AddonsStore.prototype = {
 
 
 
-  getAddonByGUID: function getAddonByGUID(guid) {
-    let cb = Async.makeSyncCallback();
-    AddonManager.getAddonBySyncGUID(guid, cb);
-    return Async.waitForSyncCallback(cb);
+  async getAddonByGUID(guid) {
+    return AddonManager.getAddonBySyncGUID(guid);
   },
 
   
@@ -757,20 +751,17 @@ class AddonValidator extends CollectionValidator {
     this.engine = engine;
   }
 
-  getClientItems() {
-    return Promise.all([
-      AddonManager.getAllAddons(),
-      AddonManager.getAddonsWithOperationsByTypes(["extension", "theme"]),
-    ]).then(([installed, addonsWithPendingOperation]) => {
-      
-      
-      let all = new Map(installed.map(addon => [addon.id, addon]));
-      for (let addon of addonsWithPendingOperation) {
-        all.set(addon.id, addon);
-      }
-      
-      return [...all.values()];
-    });
+  async getClientItems() {
+    const installed = await AddonManager.getAllAddons();
+    const addonsWithPendingOperation = await AddonManager.getAddonsWithOperationsByTypes(["extension", "theme"]);
+    
+    
+    let all = new Map(installed.map(addon => [addon.id, addon]));
+    for (let addon of addonsWithPendingOperation) {
+      all.set(addon.id, addon);
+    }
+    
+    return [...all.values()];
   }
 
   normalizeClientItem(item) {
@@ -790,8 +781,8 @@ class AddonValidator extends CollectionValidator {
     };
   }
 
-  normalizeServerItem(item) {
-    let guid = this.engine._findDupe(item);
+  async normalizeServerItem(item) {
+    let guid = await this.engine._findDupe(item);
     if (guid) {
       item.id = guid;
     }

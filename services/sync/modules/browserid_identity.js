@@ -282,9 +282,9 @@ this.BrowserIDManager.prototype = {
         
         this.whenReadyToAuthenticate.promise.then(() => {
           Services.obs.notifyObservers(null, "weave:service:setup-complete");
-          return new Promise(resolve => { Weave.Utils.nextTick(resolve, null); })
+          return Async.promiseYield();
         }).then(() => {
-          Weave.Service.sync();
+          return Weave.Service.sync();
         }).catch(e => {
           this._log.warn("Failed to trigger setup complete notification", e);
         });
@@ -292,7 +292,7 @@ this.BrowserIDManager.prototype = {
     } break;
 
     case fxAccountsCommon.ONLOGOUT_NOTIFICATION:
-      Weave.Service.startOver();
+      Async.promiseSpinningly(Weave.Service.startOver());
       
       
       break;

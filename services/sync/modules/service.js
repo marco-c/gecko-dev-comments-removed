@@ -110,7 +110,7 @@ Sync11Service.prototype = {
   
   
   
-  _catch: function _catch(func) {
+  _catch(func) {
     function lockExceptions(ex) {
       if (Utils.isLockException(ex)) {
         
@@ -191,7 +191,7 @@ Sync11Service.prototype = {
   
 
 
-  handleHMACEvent: function handleHMACEvent() {
+  async handleHMACEvent() {
     let now = Date.now();
 
     
@@ -208,7 +208,7 @@ Sync11Service.prototype = {
     
     let cryptoKeys = new CryptoWrapper(CRYPTO_COLLECTION, KEYS_WBO);
     try {
-      let cryptoResp = Async.promiseSpinningly(cryptoKeys.fetch(this.resource(this.cryptoKeysURL))).response;
+      let cryptoResp = (await cryptoKeys.fetch(this.resource(this.cryptoKeysURL))).response;
 
       
       
@@ -219,8 +219,8 @@ Sync11Service.prototype = {
         return false;
       }
 
-      let keysChanged = this.handleFetchedKeys(this.identity.syncKeyBundle,
-                                               cryptoKeys, true);
+      let keysChanged = await this.handleFetchedKeys(this.identity.syncKeyBundle,
+                                                     cryptoKeys, true);
       if (keysChanged) {
         
         this._log.info("Suggesting retry.");
@@ -231,7 +231,7 @@ Sync11Service.prototype = {
       cryptoKeys.ciphertext = cipherText;
       cryptoKeys.cleartext  = null;
 
-      let uploadResp = this._uploadCryptoKeys(cryptoKeys, cryptoResp.obj.modified);
+      let uploadResp = await this._uploadCryptoKeys(cryptoKeys, cryptoResp.obj.modified);
       if (uploadResp.success) {
         this._log.info("Successfully re-uploaded keys. Continuing sync.");
       } else {
@@ -248,7 +248,7 @@ Sync11Service.prototype = {
     }
   },
 
-  handleFetchedKeys: function handleFetchedKeys(syncKey, cryptoKeys, skipReset) {
+  async handleFetchedKeys(syncKey, cryptoKeys, skipReset) {
     
     let wasBlank = this.collectionKeys.isClear;
     let keysChanged = this.collectionKeys.updateContents(syncKey, cryptoKeys);
@@ -261,10 +261,10 @@ Sync11Service.prototype = {
 
         if (keysChanged.length) {
           
-          this.resetClient(keysChanged);
+          await this.resetClient(keysChanged);
         } else {
           
-          this.resetClient();
+          await this.resetClient();
         }
 
         this._log.info("Downloaded new keys, client reset. Proceeding.");
@@ -277,7 +277,7 @@ Sync11Service.prototype = {
   
 
 
-  onStartup: function onStartup() {
+  async onStartup() {
     this.status = Status;
     this.identity = Status._authManager;
     this.collectionKeys = new CollectionKeyManager();
@@ -295,7 +295,7 @@ Sync11Service.prototype = {
 
     this.enabled = true;
 
-    this._registerEngines();
+    await this._registerEngines();
 
     let ua = Cc["@mozilla.org/network/protocol;1?name=http"].
       getService(Ci.nsIHttpProtocolHandler).userAgent;
@@ -352,7 +352,7 @@ Sync11Service.prototype = {
   
 
 
-  _registerEngines: function _registerEngines() {
+  async _registerEngines() {
     this.engineManager = new EngineManager(this);
 
     let engines = [];
@@ -372,7 +372,11 @@ Sync11Service.prototype = {
       declined = pref.split(",");
     }
 
-    this.clientsEngine = new ClientEngine(this);
+    let clientsEngine = new ClientEngine(this);
+    
+    
+    await clientsEngine.initialize();
+    this.clientsEngine = clientsEngine;
 
     for (let name of engines) {
       if (!(name in ENGINE_MODULES)) {
@@ -391,7 +395,7 @@ Sync11Service.prototype = {
           continue;
         }
 
-        this.engineManager.register(ns[symbol]);
+        await this.engineManager.register(ns[symbol]);
       } catch (ex) {
         this._log.warn("Could not register engine " + name, ex);
       }
@@ -414,13 +418,18 @@ Sync11Service.prototype = {
         
         
         if (data.includes("clients") && !Svc.Prefs.get("testing.tps", false)) {
-          this.sync([]); 
+          
+          
+          
+          this.sync([]).catch(e => {
+            this._log.error(e);
+          });
         }
         break;
       case "fxaccounts:device_disconnected":
         data = JSON.parse(data);
         if (!data.isLocalDevice) {
-          this.clientsEngine.updateKnownStaleClients();
+          Async.promiseSpinningly(this.clientsEngine.updateKnownStaleClients());
         }
         break;
       case "weave:service:setup-complete":
@@ -472,13 +481,13 @@ Sync11Service.prototype = {
 
 
 
-  _fetchInfo(url) {
+  async _fetchInfo(url) {
     let infoURL = url || this.infoURL;
 
     this._log.trace("In _fetchInfo: " + infoURL);
     let info;
     try {
-      info = Async.promiseSpinningly(this.resource(infoURL).get());
+      info = await this.resource(infoURL).get();
     } catch (ex) {
       this.errorHandler.checkServerError(ex);
       throw ex;
@@ -493,7 +502,7 @@ Sync11Service.prototype = {
     return info;
   },
 
-  verifyAndFetchSymmetricKeys: function verifyAndFetchSymmetricKeys(infoResponse) {
+  async verifyAndFetchSymmetricKeys(infoResponse) {
 
     this._log.debug("Fetching and verifying -- or generating -- symmetric keys.");
 
@@ -506,7 +515,7 @@ Sync11Service.prototype = {
 
     try {
       if (!infoResponse)
-        infoResponse = this._fetchInfo();    
+        infoResponse = await this._fetchInfo(); 
 
       
       if (infoResponse.status != 200) {
@@ -531,10 +540,10 @@ Sync11Service.prototype = {
         if (infoCollections && (CRYPTO_COLLECTION in infoCollections)) {
           try {
             cryptoKeys = new CryptoWrapper(CRYPTO_COLLECTION, KEYS_WBO);
-            let cryptoResp = Async.promiseSpinningly(cryptoKeys.fetch(this.resource(this.cryptoKeysURL))).response;
+            let cryptoResp = (await cryptoKeys.fetch(this.resource(this.cryptoKeysURL))).response;
 
             if (cryptoResp.success) {
-              this.handleFetchedKeys(syncKeyBundle, cryptoKeys);
+              await this.handleFetchedKeys(syncKeyBundle, cryptoKeys);
               return true;
             } else if (cryptoResp.status == 404) {
               
@@ -574,7 +583,7 @@ Sync11Service.prototype = {
           
           
           
-          this._freshStart();
+          await this._freshStart();
           return true;
         }
 
@@ -591,7 +600,7 @@ Sync11Service.prototype = {
     }
   },
 
-  verifyLogin: function verifyLogin(allow40XRecovery = true) {
+  async verifyLogin(allow40XRecovery = true) {
     if (!this.identity.username) {
       this._log.warn("No username in verifyLogin.");
       this.status.login = LOGIN_FAILED_NO_USERNAME;
@@ -604,12 +613,7 @@ Sync11Service.prototype = {
     
     
     
-    let cb = Async.makeSpinningCallback();
-    this.identity.unlockAndVerifyAuthState().then(
-      result => cb(null, result),
-      cb
-    );
-    let unlockedState = cb.wait();
+    let unlockedState = await this.identity.unlockAndVerifyAuthState();
     this._log.debug("Fetching unlocked auth state returned " + unlockedState);
     if (unlockedState != STATUS_OK) {
       this.status.login = unlockedState;
@@ -626,7 +630,7 @@ Sync11Service.prototype = {
       }
 
       
-      let test = Async.promiseSpinningly(this.resource(this.infoURL).get());
+      let test = await this.resource(this.infoURL).get();
 
       switch (test.status) {
         case 200:
@@ -643,7 +647,7 @@ Sync11Service.prototype = {
 
           
           
-          if (this._remoteSetup(test)) {
+          if ((await this._remoteSetup(test))) {
             
             this.status.login = LOGIN_SUCCEEDED;
             return true;
@@ -660,7 +664,7 @@ Sync11Service.prototype = {
         case 404:
           
           if (allow40XRecovery && this._clusterManager.setCluster()) {
-            return this.verifyLogin(false);
+            return await this.verifyLogin(false);
           }
 
           
@@ -686,13 +690,13 @@ Sync11Service.prototype = {
     }
   },
 
-  generateNewSymmetricKeys: function generateNewSymmetricKeys() {
+  async generateNewSymmetricKeys() {
     this._log.info("Generating new keys WBO...");
     let wbo = this.collectionKeys.generateNewKeysWBO();
     this._log.info("Encrypting new key bundle.");
     wbo.encrypt(this.identity.syncKeyBundle);
 
-    let uploadRes = this._uploadCryptoKeys(wbo, 0);
+    let uploadRes = await this._uploadCryptoKeys(wbo, 0);
     if (uploadRes.status != 200) {
       this._log.warn("Got status " + uploadRes.status + " uploading new keys. What to do? Throw!");
       this.errorHandler.checkServerError(uploadRes);
@@ -704,7 +708,7 @@ Sync11Service.prototype = {
 
     
     this._log.debug("Verifying server collection records.");
-    let info = this._fetchInfo();
+    let info = await this._fetchInfo();
     this._log.debug("info/collections is: " + info);
 
     if (info.status != 200) {
@@ -730,19 +734,19 @@ Sync11Service.prototype = {
 
     
     let cryptoKeys = new CryptoWrapper(CRYPTO_COLLECTION, KEYS_WBO);
-    let cryptoResp = Async.promiseSpinningly(cryptoKeys.fetch(this.resource(this.cryptoKeysURL))).response;
+    let cryptoResp = (await cryptoKeys.fetch(this.resource(this.cryptoKeysURL))).response;
     if (cryptoResp.status != 200) {
       this._log.warn("Failed to download keys.");
       throw new Error("Symmetric key download failed.");
     }
-    let keysChanged = this.handleFetchedKeys(this.identity.syncKeyBundle,
-                                             cryptoKeys, true);
+    let keysChanged = await this.handleFetchedKeys(this.identity.syncKeyBundle,
+                                                   cryptoKeys, true);
     if (keysChanged) {
       this._log.info("Downloaded keys differed, as expected.");
     }
   },
 
-  startOver: function startOver() {
+  async startOver() {
     this._log.trace("Invoking Service.startOver.");
     Svc.Obs.notify("weave:engine:stop-tracking");
     this.status.resetSync();
@@ -752,11 +756,7 @@ Sync11Service.prototype = {
       
       for (let engine of [this.clientsEngine].concat(this.engineManager.getAll())) {
         try {
-          
-          
-          
-          
-          Async.promiseSpinningly(Promise.resolve().then(() => engine.removeClientData()));
+          await engine.removeClientData();
         } catch (ex) {
           this._log.warn(`Deleting client data for ${engine.name} failed`, ex);
         }
@@ -776,7 +776,7 @@ Sync11Service.prototype = {
     Svc.Obs.notify("weave:service:start-over");
 
     
-    this.resetClient();
+    await this.resetClient();
     this.collectionKeys.clear();
     this.status.resetBackoff();
 
@@ -804,8 +804,8 @@ Sync11Service.prototype = {
     }
   },
 
-  login: function login() {
-    function onNotify() {
+  async login() {
+    async function onNotify() {
       this._loggedIn = false;
       if (Services.io.offline) {
         this.status.login = LOGIN_FAILED_NETWORK_ERROR;
@@ -815,7 +815,7 @@ Sync11Service.prototype = {
       this._log.info("Logging in the user.");
       
       try {
-        Async.promiseSpinningly(this.identity.ensureLoggedIn());
+        await this.identity.ensureLoggedIn();
       } finally {
         this._checkSetup(); 
       }
@@ -823,7 +823,7 @@ Sync11Service.prototype = {
       this._updateCachedURLs();
 
       this._log.info("User logged in successfully - verifying login.");
-      if (!this.verifyLogin()) {
+      if (!(await this.verifyLogin())) {
         
         throw "Login failed: " + this.status.login;
       }
@@ -850,14 +850,14 @@ Sync11Service.prototype = {
 
   
   
-  _fetchServerConfiguration() {
+  async _fetchServerConfiguration() {
     
 
     let infoURL = this.userBaseURL + "info/configuration";
     this._log.debug("Fetching server configuration", infoURL);
     let configResponse;
     try {
-      configResponse = Async.promiseSpinningly(this.resource(infoURL).get());
+      configResponse = await this.resource(infoURL).get();
     } catch (ex) {
       
       this._log.warn("Failed to fetch info/configuration", ex);
@@ -881,13 +881,13 @@ Sync11Service.prototype = {
 
   
   
-  _remoteSetup: function _remoteSetup(infoResponse) {
-    if (!this._fetchServerConfiguration()) {
+  async _remoteSetup(infoResponse) {
+    if (!(await this._fetchServerConfiguration())) {
       return false;
     }
 
     this._log.debug("Fetching global metadata record");
-    let meta = Async.promiseSpinningly(this.recordManager.get(this.metaURL));
+    let meta = await this.recordManager.get(this.metaURL);
 
     
     if (infoResponse &&
@@ -902,7 +902,7 @@ Sync11Service.prototype = {
       this.recordManager.del(this.metaURL);
 
       
-      let newMeta = Async.promiseSpinningly(this.recordManager.get(this.metaURL));
+      let newMeta = await this.recordManager.get(this.metaURL);
 
       
       
@@ -915,7 +915,7 @@ Sync11Service.prototype = {
       if (this.recordManager.response.status == 404) {
         this._log.debug("No meta/global record on the server. Creating one.");
         try {
-          this._uploadNewMetaGlobal();
+          await this._uploadNewMetaGlobal();
         } catch (uploadRes) {
           this._log.warn("Unable to upload new meta/global. Failing remote setup.");
           this.errorHandler.checkServerError(uploadRes);
@@ -965,7 +965,7 @@ Sync11Service.prototype = {
         this._log.warn("No sync id, server wipe needed");
 
       this._log.info("Wiping server data");
-      this._freshStart();
+      await this._freshStart();
 
       if (status == 404)
         this._log.info("Metadata record not found, server was wiped to ensure " +
@@ -981,18 +981,18 @@ Sync11Service.prototype = {
     } else if (meta.payload.syncID != this.syncID) {
 
       this._log.info("Sync IDs differ. Local is " + this.syncID + ", remote is " + meta.payload.syncID);
-      this.resetClient();
+      await this.resetClient();
       this.collectionKeys.clear();
       this.syncID = meta.payload.syncID;
       this._log.debug("Clear cached values and take syncId: " + this.syncID);
 
-      if (!this.verifyAndFetchSymmetricKeys(infoResponse)) {
+      if (!(await this.verifyAndFetchSymmetricKeys(infoResponse))) {
         this._log.warn("Failed to fetch symmetric keys. Failing remote setup.");
         return false;
       }
 
       
-      if (!this.verifyLogin()) {
+      if (!(await this.verifyLogin())) {
         this.status.sync = CREDENTIALS_CHANGED;
         this._log.info("Credentials have changed, aborting sync and forcing re-login.");
         return false;
@@ -1000,7 +1000,7 @@ Sync11Service.prototype = {
 
       return true;
     }
-    if (!this.verifyAndFetchSymmetricKeys(infoResponse)) {
+    if (!(await this.verifyAndFetchSymmetricKeys(infoResponse))) {
       this._log.warn("Failed to fetch symmetric keys. Failing remote setup.");
       return false;
     }
@@ -1049,43 +1049,37 @@ Sync11Service.prototype = {
     return reason;
   },
 
-  sync: function sync(engineNamesToSync) {
+  async sync(engineNamesToSync) {
     let dateStr = Utils.formatTimestamp(new Date());
     this._log.debug("User-Agent: " + Utils.userAgent);
     this._log.info(`Starting sync at ${dateStr} in browser session ${browserSessionID}`);
-    this._catch(function() {
+    return this._catch(async function() {
       
       if (this._shouldLogin()) {
         this._log.debug("In sync: should login.");
-        if (!this.login()) {
+        if (!(await this.login())) {
           this._log.debug("Not syncing: login returned false.");
           return;
         }
       } else {
         this._log.trace("In sync: no need to login.");
       }
-      this._lockedSync(engineNamesToSync);
+      await this._lockedSync(engineNamesToSync);
     })();
   },
 
   
 
 
-  _lockedSync: function _lockedSync(engineNamesToSync) {
+  async _lockedSync(engineNamesToSync) {
     return this._lock("service.js: sync",
-                      this._notify("sync", "", function onNotify() {
+                      this._notify("sync", "", async function onNotify() {
 
       let histogram = Services.telemetry.getHistogramById("WEAVE_START_COUNT");
       histogram.add(1);
 
       let synchronizer = new EngineSynchronizer(this);
-      let cb = Async.makeSpinningCallback();
-      synchronizer.onComplete = cb;
-
-      synchronizer.sync(engineNamesToSync);
-      
-      
-      cb.wait();
+      await synchronizer.sync(engineNamesToSync); 
 
       histogram = Services.telemetry.getHistogramById("WEAVE_COMPLETE_SUCCESS_COUNT");
       histogram.add(1);
@@ -1102,7 +1096,7 @@ Sync11Service.prototype = {
       
       
       if (this.metaURL) {
-        let meta = Async.promiseSpinningly(this.recordManager.get(this.metaURL));
+        let meta = await this.recordManager.get(this.metaURL);
         if (!meta) {
           this._log.warn("No meta/global; can't update declined state.");
           return;
@@ -1115,7 +1109,7 @@ Sync11Service.prototype = {
           return;
         }
 
-        this.uploadMetaGlobal(meta);
+        await this.uploadMetaGlobal(meta);
       }
     }))();
   },
@@ -1124,7 +1118,7 @@ Sync11Service.prototype = {
 
 
 
-  _uploadNewMetaGlobal() {
+  async _uploadNewMetaGlobal() {
     let meta = new WBORecord("meta", "global");
     meta.payload.syncID = this.syncID;
     meta.payload.storageVersion = STORAGE_VERSION;
@@ -1132,7 +1126,7 @@ Sync11Service.prototype = {
     meta.modified = 0;
     meta.isNew = true;
 
-    this.uploadMetaGlobal(meta);
+    await this.uploadMetaGlobal(meta);
   },
 
   
@@ -1140,11 +1134,11 @@ Sync11Service.prototype = {
 
 
 
-  uploadMetaGlobal(meta) {
+  async uploadMetaGlobal(meta) {
     this._log.debug("Uploading meta/global", meta);
     let res = this.resource(this.metaURL);
     res.setHeader("X-If-Unmodified-Since", meta.modified);
-    let response = Async.promiseSpinningly(res.put(meta));
+    let response = await res.put(meta);
     if (!response.success) {
       throw response;
     }
@@ -1160,34 +1154,34 @@ Sync11Service.prototype = {
 
 
 
-  _uploadCryptoKeys(cryptoKeys, lastModified) {
+  async _uploadCryptoKeys(cryptoKeys, lastModified) {
     this._log.debug(`Uploading crypto/keys (lastModified: ${lastModified})`);
     let res = this.resource(this.cryptoKeysURL);
     res.setHeader("X-If-Unmodified-Since", lastModified);
-    return Async.promiseSpinningly(res.put(cryptoKeys));
+    return res.put(cryptoKeys);
   },
 
-  _freshStart: function _freshStart() {
+  async _freshStart() {
     this._log.info("Fresh start. Resetting client.");
-    this.resetClient();
+    await this.resetClient();
     this.collectionKeys.clear();
 
     
-    this.wipeServer();
+    await this.wipeServer();
 
     
     
     
     
     
-    this._uploadNewMetaGlobal();
+    await this._uploadNewMetaGlobal();
 
     
     
 
     
     
-    this.generateNewSymmetricKeys();
+    await this.generateNewSymmetricKeys();
   },
 
   
@@ -1199,7 +1193,7 @@ Sync11Service.prototype = {
 
 
 
-  wipeServer: function wipeServer(collections) {
+  async wipeServer(collections) {
     let response;
     let histogram = Services.telemetry.getHistogramById("WEAVE_WIPE_SERVER_SUCCEEDED");
     if (!collections) {
@@ -1207,7 +1201,7 @@ Sync11Service.prototype = {
       let res = this.resource(this.storageURL.slice(0, -1));
       res.setHeader("X-Confirm-Delete", "1");
       try {
-        response = Async.promiseSpinningly(res.delete());
+        response = await res.delete();
       } catch (ex) {
         this._log.debug("Failed to wipe server", ex);
         histogram.add(false);
@@ -1227,7 +1221,7 @@ Sync11Service.prototype = {
     for (let name of collections) {
       let url = this.storageURL + name;
       try {
-        response = Async.promiseSpinningly(this.resource(url).delete());
+        response = await this.resource(url).delete();
       } catch (ex) {
         this._log.debug("Failed to wipe '" + name + "' collection", ex);
         histogram.add(false);
@@ -1255,11 +1249,11 @@ Sync11Service.prototype = {
 
 
 
-  wipeClient: function wipeClient(engines) {
+  async wipeClient(engines) {
     
     if (!engines) {
       
-      this.resetService();
+      await this.resetService();
 
       engines = [this.clientsEngine].concat(this.engineManager.getAll());
     } else {
@@ -1269,8 +1263,8 @@ Sync11Service.prototype = {
 
     
     for (let engine of engines) {
-      if (engine.canDecrypt()) {
-        engine.wipeClient();
+      if ((await engine.canDecrypt())) {
+        await engine.wipeClient();
       }
     }
   },
@@ -1282,27 +1276,27 @@ Sync11Service.prototype = {
 
 
 
-  wipeRemote: function wipeRemote(engines) {
+  async wipeRemote(engines) {
     try {
       
-      this.resetClient(engines);
+      await this.resetClient(engines);
 
       
-      this.wipeServer(engines);
+      await this.wipeServer(engines);
 
       
       let extra = { reason: "wipe-remote" };
       if (engines) {
-        engines.forEach(function(e) {
-            this.clientsEngine.sendCommand("wipeEngine", [e], null, extra);
-          }, this);
+        for (const e of engines) {
+          await this.clientsEngine.sendCommand("wipeEngine", [e], null, extra);
+        }
       } else {
         
-        this.clientsEngine.sendCommand("wipeAll", [], null, extra);
+        await this.clientsEngine.sendCommand("wipeAll", [], null, extra);
       }
 
       
-      this.clientsEngine.sync();
+      await this.clientsEngine.sync();
     } catch (ex) {
       this.errorHandler.checkServerError(ex);
       throw ex;
@@ -1312,8 +1306,8 @@ Sync11Service.prototype = {
   
 
 
-  resetService: function resetService() {
-    this._catch(function reset() {
+  async resetService() {
+    return this._catch(async function reset() {
       this._log.info("Service reset.");
 
       
@@ -1328,12 +1322,12 @@ Sync11Service.prototype = {
 
 
 
-  resetClient: function resetClient(engines) {
-    this._catch(function doResetClient() {
+  async resetClient(engines) {
+    return this._catch(async function doResetClient() {
       
       if (!engines) {
         
-        this.resetService();
+        await this.resetService();
 
         engines = [this.clientsEngine].concat(this.engineManager.getAll());
       } else {
@@ -1343,7 +1337,7 @@ Sync11Service.prototype = {
 
       
       for (let engine of engines) {
-        engine.resetClient();
+        await engine.resetClient();
       }
     })();
   },
@@ -1401,4 +1395,6 @@ Sync11Service.prototype = {
 };
 
 this.Service = new Sync11Service();
-this.Service.onStartup();
+this.Service.promiseInitialized = new Promise(resolve => {
+  this.Service.onStartup().then(resolve);
+});

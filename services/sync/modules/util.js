@@ -84,11 +84,11 @@ this.Utils = {
 
 
 
-  catch: function Utils_catch(func, exceptionCallback) {
+  catch(func, exceptionCallback) {
     let thisArg = this;
-    return function WrappedCatch() {
+    return async function WrappedCatch() {
       try {
-        return func.call(thisArg);
+        return await func.call(thisArg);
       } catch (ex) {
         thisArg._log.debug("Exception calling " + (func.name || "anonymous function"), ex);
         if (exceptionCallback) {
@@ -105,15 +105,16 @@ this.Utils = {
 
 
 
-  lock: function lock(label, func) {
+
+  lock(label, func) {
     let thisArg = this;
-    return function WrappedLock() {
+    return async function WrappedLock() {
       if (!thisArg.lock()) {
         throw "Could not acquire lock. Label: \"" + label + "\".";
       }
 
       try {
-        return func.call(thisArg);
+        return await func.call(thisArg);
       } finally {
         thisArg.unlock();
       }
@@ -145,7 +146,7 @@ this.Utils = {
 
 
 
-  notify: function Utils_notify(prefix) {
+  notify(prefix) {
     return function NotifyMaker(name, data, func) {
       let thisArg = this;
       let notify = function(state, subject) {
@@ -154,10 +155,10 @@ this.Utils = {
         Observers.notify(mesg, subject, data);
       };
 
-      return function WrappedNotify() {
+      return async function WrappedNotify() {
+        notify("start", null);
         try {
-          notify("start", null);
-          let ret = func.call(thisArg);
+          let ret = await func.call(thisArg);
           notify("finish", ret);
           return ret;
         } catch (ex) {
@@ -304,30 +305,23 @@ this.Utils = {
 
 
 
-  async jsonLoad(filePath, that, callback) {
+  async jsonLoad(filePath, that) {
     let path = Utils.jsonFilePath(filePath);
 
-    if (that._log) {
+    if (that._log && that._log.trace) {
       that._log.trace("Loading json from disk: " + filePath);
     }
 
-    let json;
-
     try {
-      json = await CommonUtils.readJSON(path);
+      return await CommonUtils.readJSON(path);
     } catch (e) {
-      if (e instanceof OS.File.Error && e.becauseNoSuchFile) {
-        
-        json = null;
-      } else if (that._log) {
+      if (!(e instanceof OS.File.Error && e.becauseNoSuchFile)) {
+        if (that._log) {
           that._log.debug("Failed to load json", e);
         }
+      }
+      return null;
     }
-
-    if (callback) {
-      callback.call(that, json);
-    }
-    return json;
   },
 
   
@@ -345,30 +339,20 @@ this.Utils = {
 
 
 
-
-  async jsonSave(filePath, that, obj, callback) {
+  async jsonSave(filePath, that, obj) {
     let path = OS.Path.join(OS.Constants.Path.profileDir, "weave",
                             ...(filePath + ".json").split("/"));
     let dir = OS.Path.dirname(path);
-    let error = null;
 
-    try {
-      await OS.File.makeDir(dir, { from: OS.Constants.Path.profileDir });
+    await OS.File.makeDir(dir, { from: OS.Constants.Path.profileDir });
 
-      if (that._log) {
-        that._log.trace("Saving json to disk: " + path);
-      }
-
-      let json = typeof obj == "function" ? obj.call(that) : obj;
-
-      await CommonUtils.writeJSON(json, path);
-    } catch (e) {
-      error = e
+    if (that._log) {
+      that._log.trace("Saving json to disk: " + path);
     }
 
-    if (typeof callback == "function") {
-      callback.call(that, error);
-    }
+    let json = typeof obj == "function" ? obj.call(that) : obj;
+
+    return CommonUtils.writeJSON(json, path);
   },
 
   

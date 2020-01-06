@@ -92,7 +92,7 @@ class CollectionRepairRequestor {
 
 
 
-  startRepairs(validationInfo, flowID) {
+  async startRepairs(validationInfo, flowID) {
     throw new Error("not implemented");
   }
 
@@ -106,7 +106,7 @@ class CollectionRepairRequestor {
 
 
 
-  continueRepairs(responseInfo = null) {
+  async continueRepairs(responseInfo = null) {
     throw new Error("not implemented");
   }
 }

@@ -117,7 +117,7 @@ this.Async = {
     
     Services.obs.addObserver(function onQuitApplication() {
       Services.obs.removeObserver(onQuitApplication, "quit-application");
-      Async.checkAppReady = function() {
+      Async.checkAppReady = Async.promiseYield = function() {
         let exception = Components.Exception("App. Quitting", Cr.NS_ERROR_ABORT);
         exception.appIsShuttingDown = true;
         throw exception;
@@ -231,4 +231,32 @@ this.Async = {
     });
     return cb.wait();
   },
+
+  
+
+
+
+
+
+
+
+
+
+  promiseYield() {
+    return new Promise(resolve => {
+      Services.tm.currentThread.dispatch(resolve, Ci.nsIThread.DISPATCH_NORMAL);
+    });
+  },
+
+  
+  
+  jankYielder(yieldEvery = 50) {
+    let iterations = 0;
+    return async () => {
+      Async.checkAppReady(); 
+      if (++iterations % yieldEvery === 0) {
+        await Async.promiseYield();
+      }
+    }
+  }
 };
