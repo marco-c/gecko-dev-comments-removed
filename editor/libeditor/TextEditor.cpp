@@ -467,6 +467,9 @@ TextEditor::CreateBRImpl(nsCOMPtr<nsIDOMNode>* aInOutParent,
       Unused << newLeftNode;
     }
     
+    
+    Unused << pointToInsertBrNode.Offset();
+    
     brNode = CreateNode(nsGkAtoms::br, pointToInsertBrNode);
     if (NS_WARN_IF(!brNode)) {
       return NS_ERROR_FAILURE;
