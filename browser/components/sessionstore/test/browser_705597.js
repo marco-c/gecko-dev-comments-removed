@@ -43,7 +43,7 @@ function test() {
         });
 
         
-        browser.reload();
+        browser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE);
       });
 
       
