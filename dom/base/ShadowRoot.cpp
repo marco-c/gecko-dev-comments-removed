@@ -245,8 +245,9 @@ ShadowRoot::RemoveDestInsertionPoint(nsIContent* aInsertionPoint,
 
   
   
+  
   if (index >= 0) {
-    aDestInsertionPoints.SetLength(index);
+    aDestInsertionPoints.RemoveElementAt(index);
   }
 }
 
