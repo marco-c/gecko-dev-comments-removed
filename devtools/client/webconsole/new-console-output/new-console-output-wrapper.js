@@ -152,7 +152,7 @@ NewConsoleOutputWrapper.prototype = {
     
     
     if (waitForResponse && action.message) {
-      let messageId = action.message.get("id");
+      let messageId = action.message.id;
       return new Promise(resolve => {
         let jsterm = this.jsterm;
         jsterm.hud.on("new-messages", function onThisMessage(e, messages) {
