@@ -92,6 +92,13 @@ var _document = _window.document;
 var _navigator = _window.navigator;
 
 
+function keepOriginalCallback(original, callback) {
+    return isFunction(callback) ?
+    function (data) { return callback(data, original) } :
+    callback;
+}
+
+
 
 
 function Raven() {
@@ -156,7 +163,7 @@ Raven.prototype = {
     
     
     
-    VERSION: '3.15.0',
+    VERSION: '3.17.0',
 
     debug: false,
 
@@ -638,10 +645,8 @@ Raven.prototype = {
 
     setDataCallback: function(callback) {
         var original = this._globalOptions.dataCallback;
-        this._globalOptions.dataCallback = isFunction(callback)
-          ? function (data) { return callback(data, original); }
-          : callback;
-
+        this._globalOptions.dataCallback =
+          keepOriginalCallback(original, callback);
         return this;
     },
 
@@ -654,10 +659,8 @@ Raven.prototype = {
 
     setBreadcrumbCallback: function(callback) {
         var original = this._globalOptions.breadcrumbCallback;
-        this._globalOptions.breadcrumbCallback = isFunction(callback)
-          ? function (data) { return callback(data, original); }
-          : callback;
-
+        this._globalOptions.breadcrumbCallback =
+          keepOriginalCallback(original, callback);
         return this;
     },
 
@@ -670,10 +673,8 @@ Raven.prototype = {
 
     setShouldSendCallback: function(callback) {
         var original = this._globalOptions.shouldSendCallback;
-        this._globalOptions.shouldSendCallback = isFunction(callback)
-            ? function (data) { return callback(data, original); }
-            : callback;
-
+        this._globalOptions.shouldSendCallback =
+          keepOriginalCallback(original, callback);
         return this;
     },
 
@@ -1449,16 +1450,17 @@ Raven.prototype = {
 
         for (var i = 0; i < breadcrumbs.values.length; ++i) {
             crumb = breadcrumbs.values[i];
-            if (!crumb.hasOwnProperty('data') || !isObject(crumb.data))
+            if (!crumb.hasOwnProperty('data') || !isObject(crumb.data) || objectFrozen(crumb.data))
                 continue;
 
-            data = crumb.data;
+            data = objectMerge({}, crumb.data);
             for (var j = 0; j < urlProps.length; ++j) {
                 urlProp = urlProps[j];
                 if (data.hasOwnProperty(urlProp)) {
                     data[urlProp] = truncate(data[urlProp], this._globalOptions.maxUrlLength);
                 }
             }
+            breadcrumbs.values[i].data = data;
         }
     },
 
@@ -1843,6 +1845,21 @@ function objectMerge(obj1, obj2) {
     return obj1;
 }
 
+
+
+
+
+
+
+
+
+function objectFrozen(obj) {
+    if (!Object.isFrozen) {
+        return false;
+    }
+    return Object.isFrozen(obj);
+}
+
 function truncate(str, max) {
     return !max || str.length <= max ? str : str.substr(0, max) + '\u2026';
 }
@@ -2168,9 +2185,22 @@ function isError(value) {
   }
 }
 
+function wrappedCallback(callback) {
+    function dataCallback(data, original) {
+      var normalizedData = callback(data) || data;
+      if (original) {
+          return original(normalizedData) || normalizedData;
+      }
+      return normalizedData;
+    }
+
+    return dataCallback;
+}
+
 module.exports = {
     isObject: isObject,
-    isError: isError
+    isError: isError,
+    wrappedCallback: wrappedCallback
 };
 
 },{}],6:[function(_dereq_,module,exports){
@@ -2547,7 +2577,7 @@ TraceKit.computeStackTrace = (function computeStackTraceWrapper() {
         if (typeof ex.stack === 'undefined' || !ex.stack) return;
 
         var chrome = /^\s*at (.*?) ?\(((?:file|https?|blob|chrome-extension|native|eval|webpack|<anonymous>|\/).*?)(?::(\d+))?(?::(\d+))?\)?\s*$/i,
-            gecko = /^\s*(.*?)(?:\((.*?)\))?(?:^|@)((?:file|https?|blob|chrome|webpack|resource|\[native).*?)(?::(\d+))?(?::(\d+))?\s*$/i,
+            gecko = /^\s*(.*?)(?:\((.*?)\))?(?:^|@)((?:file|https?|blob|chrome|webpack|resource|\[native).*?|[^@]*bundle)(?::(\d+))?(?::(\d+))?\s*$/i,
             winjs = /^\s*at (?:((?:\[object object\])?.+) )?\(?((?:file|ms-appx|https?|webpack|blob):.*?):(\d+)(?::(\d+))?\)?\s*$/i,
 
             

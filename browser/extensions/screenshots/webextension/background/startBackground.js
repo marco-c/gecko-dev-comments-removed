@@ -7,7 +7,10 @@
 
 
 
+
 this.startBackground = (function() {
+  let exports = {};
+
   const backgroundScripts = [
     "log.js",
     "makeUuid.js",
@@ -52,11 +55,22 @@ this.startBackground = (function() {
 
   
   
+  let iconPath = null;
   browser.storage.local.get(["hasSeenOnboarding"]).then((result) => {
     let hasSeenOnboarding = !!result.hasSeenOnboarding;
     if (!hasSeenOnboarding) {
       let path = "icons/icon-starred-32-v2.svg";
-      browser.browserAction.setIcon({path});
+      if (!usePhotonPageAction) {
+        browser.browserAction.setIcon({path});
+      } else {
+        iconPath = path;
+        if (photonPageActionPort) {
+          photonPageActionPort.postMessage({
+            type: "setProperties",
+            iconPath
+          });
+        }
+      }
     }
   }).catch((error) => {
     console.error("Error loading Screenshots onboarding flag:", error);
@@ -70,6 +84,10 @@ this.startBackground = (function() {
     });
     return true;
   });
+
+  let usePhotonPageAction = false;
+  let photonPageActionPort = null;
+  initPhotonPageAction();
 
   
   
@@ -122,4 +140,50 @@ this.startBackground = (function() {
     return loadedPromise;
   }
 
+  function initPhotonPageAction() {
+    
+    
+    
+    photonPageActionPort = browser.runtime.connect({ name: "photonPageActionPort" });
+    photonPageActionPort.onMessage.addListener((message) => {
+      switch (message.type) {
+      case "setUsePhotonPageAction":
+        usePhotonPageAction = message.value;
+        break;
+      case "click":
+        loadIfNecessary().then(() => {
+          main.onClicked(message.tab);
+        }).catch((error) => {
+          console.error("Error loading Screenshots:", error);
+        });
+        break;
+      default:
+        console.error("Unrecognized message:", message);
+        break;
+      }
+    });
+    photonPageActionPort.postMessage({
+      type: "setProperties",
+      title: browser.i18n.getMessage("contextMenuLabel"),
+      iconPath
+    });
+
+    
+    Object.defineProperties(exports, {
+      "photonPageActionPort": {
+        enumerable: true,
+        get() {
+          return photonPageActionPort;
+        }
+      },
+      "usePhotonPageAction": {
+        enumerable: true,
+        get() {
+          return usePhotonPageAction;
+        }
+      }
+    });
+  }
+
+  return exports;
 })();
