@@ -1505,6 +1505,7 @@ PK11_FindGenericObjects(PK11SlotInfo *slot, CK_OBJECT_CLASS objClass)
         
         obj->slot = PK11_ReferenceSlot(slot);
         obj->objectID = objectIDs[i];
+        obj->owner = PR_FALSE;
         obj->next = NULL;
         obj->prev = NULL;
 
@@ -1585,6 +1586,9 @@ PK11_DestroyGenericObject(PK11GenericObject *object)
 
     PK11_UnlinkGenericObject(object);
     if (object->slot) {
+        if (object->owner) {
+            PK11_DestroyObject(object->slot, object->objectID);
+        }
         PK11_FreeSlot(object->slot);
     }
     PORT_Free(object);
@@ -1626,8 +1630,9 @@ PK11_DestroyGenericObjects(PK11GenericObject *objects)
 
 
 PK11GenericObject *
-PK11_CreateGenericObject(PK11SlotInfo *slot, const CK_ATTRIBUTE *pTemplate,
-                         int count, PRBool token)
+pk11_CreateGenericObjectHelper(PK11SlotInfo *slot,
+                               const CK_ATTRIBUTE *pTemplate,
+                               int count, PRBool token, PRBool owner)
 {
     CK_OBJECT_HANDLE objectID;
     PK11GenericObject *obj;
@@ -1651,9 +1656,38 @@ PK11_CreateGenericObject(PK11SlotInfo *slot, const CK_ATTRIBUTE *pTemplate,
     
     obj->slot = PK11_ReferenceSlot(slot);
     obj->objectID = objectID;
+    obj->owner = owner;
     obj->next = NULL;
     obj->prev = NULL;
     return obj;
+}
+
+
+
+
+
+
+
+
+
+PK11GenericObject *
+PK11_CreateGenericObject(PK11SlotInfo *slot, const CK_ATTRIBUTE *pTemplate,
+                         int count, PRBool token)
+{
+    return pk11_CreateGenericObjectHelper(slot, pTemplate, count, token,
+                                          PR_FALSE);
+}
+
+
+
+
+
+PK11GenericObject *
+PK11_CreateManagedGenericObject(PK11SlotInfo *slot,
+                                const CK_ATTRIBUTE *pTemplate, int count, PRBool token)
+{
+    return pk11_CreateGenericObjectHelper(slot, pTemplate, count, token,
+                                          !token);
 }
 
 

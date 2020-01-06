@@ -8,17 +8,9 @@
 #define databuffer_h__
 
 #include <algorithm>
-#include <cassert>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
-#if defined(WIN32) || defined(WIN64)
-#include <winsock2.h>
-#else
-#include <arpa/inet.h>
-#endif
-
-extern bool g_ssl_gtest_verbose;
 
 namespace nss_test {
 
@@ -50,69 +42,22 @@ class DataBuffer {
 
   void Assign(const DataBuffer& other) { Assign(other.data(), other.len()); }
 
-  void Assign(const uint8_t* data, size_t len) {
-    if (data) {
-      Allocate(len);
-      memcpy(static_cast<void*>(data_), static_cast<const void*>(data), len);
-    } else {
-      assert(len == 0);
-      data_ = nullptr;
-      len_ = 0;
-    }
-  }
+  void Assign(const uint8_t* data, size_t len);
 
   
   
-  size_t Write(size_t index, const uint8_t* val, size_t count) {
-    assert(val);
-    if (index + count > len_) {
-      size_t newlen = index + count;
-      uint8_t* tmp = new uint8_t[newlen];  
-      if (data_) {
-        memcpy(static_cast<void*>(tmp), static_cast<const void*>(data_), len_);
-      }
-      if (index > len_) {
-        memset(static_cast<void*>(tmp + len_), 0, index - len_);
-      }
-      delete[] data_;
-      data_ = tmp;
-      len_ = newlen;
-    }
-    if (data_) {
-      memcpy(static_cast<void*>(data_ + index), static_cast<const void*>(val),
-             count);
-    }
-    return index + count;
-  }
-
+  size_t Write(size_t index, const uint8_t* val, size_t count);
   size_t Write(size_t index, const DataBuffer& buf) {
     return Write(index, buf.data(), buf.len());
   }
 
   
   
-  size_t Write(size_t index, uint32_t val, size_t count) {
-    assert(count <= sizeof(uint32_t));
-    uint32_t nvalue = htonl(val);
-    auto* addr = reinterpret_cast<const uint8_t*>(&nvalue);
-    return Write(index, addr + sizeof(uint32_t) - count, count);
-  }
+  size_t Write(size_t index, uint32_t val, size_t count);
 
   
   
-  bool Read(size_t index, size_t count, uint32_t* val) const {
-    assert(count < sizeof(uint32_t));
-    assert(val);
-    if ((index > len()) || (count > (len() - index))) {
-      return false;
-    }
-    *val = 0;
-    for (size_t i = 0; i < count; ++i) {
-      *val = (*val << 8) | data()[index + i];
-    }
-    return true;
-  }
-
+  bool Read(size_t index, size_t count, uint32_t* val) const;
   
   
   void Splice(const DataBuffer& buf, size_t index, size_t remove = 0) {
@@ -120,35 +65,7 @@ class DataBuffer {
   }
 
   void Splice(const uint8_t* ins, size_t ins_len, size_t index,
-              size_t remove = 0) {
-    assert(ins);
-    uint8_t* old_value = data_;
-    size_t old_len = len_;
-
-    
-    size_t tail_len = old_len - (std::min)(old_len, index + remove);
-    
-    len_ = index + ins_len + tail_len;
-    data_ = new uint8_t[len_ ? len_ : 1];
-
-    
-    if (old_value) {
-      Write(0, old_value, (std::min)(old_len, index));
-    }
-    
-    if (old_value && index > old_len) {
-      memset(old_value + index, 0, index - old_len);
-    }
-    
-    Write(index, ins, ins_len);
-    
-    if (tail_len > 0) {
-      Write(index + ins_len, old_value + index + remove, tail_len);
-    }
-
-    delete[] old_value;
-  }
-
+              size_t remove = 0);
   void Append(const DataBuffer& buf) { Splice(buf, len_); }
 
   const uint8_t* data() const { return data_; }
@@ -156,17 +73,19 @@ class DataBuffer {
   size_t len() const { return len_; }
   bool empty() const { return len_ == 0; }
 
+  static void SetLogLimit(size_t limit);
+  friend std::ostream& operator<<(std::ostream& stream, const DataBuffer& buf);
+
  private:
+  static size_t logging_limit;
   uint8_t* data_;
   size_t len_;
 };
 
-static const size_t kMaxBufferPrint = 32;
-
 inline std::ostream& operator<<(std::ostream& stream, const DataBuffer& buf) {
   stream << "[" << buf.len() << "] ";
   for (size_t i = 0; i < buf.len(); ++i) {
-    if (!g_ssl_gtest_verbose && i >= kMaxBufferPrint) {
+    if (i >= DataBuffer::logging_limit) {
       stream << "...";
       break;
     }

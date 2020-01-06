@@ -64,6 +64,14 @@ extern SGNContext *SGN_NewContext(SECOidTag alg, SECKEYPrivateKey *privKey);
 
 
 
+extern SGNContext *SGN_NewContextWithAlgorithmID(SECAlgorithmID *alg,
+                                                 SECKEYPrivateKey *privKey);
+
+
+
+
+
+
 extern void SGN_DestroyContext(SGNContext *cx, PRBool freeit);
 
 
@@ -113,6 +121,21 @@ extern SECStatus SEC_SignData(SECItem *result,
 
 
 
+
+
+extern SECStatus SEC_SignDataWithAlgorithmID(SECItem *result,
+                                             const unsigned char *buf, int len,
+                                             SECKEYPrivateKey *pk,
+                                             SECAlgorithmID *algid);
+
+
+
+
+
+
+
+
+
 extern SECStatus SGN_Digest(SECKEYPrivateKey *privKey,
                             SECOidTag algtag, SECItem *result, SECItem *digest);
 
@@ -136,6 +159,27 @@ extern SECStatus SEC_DerSignData(PLArenaPool *arena, SECItem *result,
 
 
 
+
+
+
+
+
+
+
+
+
+extern SECStatus SEC_DerSignDataWithAlgorithmID(PLArenaPool *arena,
+                                                SECItem *result,
+                                                const unsigned char *buf,
+                                                int len,
+                                                SECKEYPrivateKey *pk,
+                                                SECAlgorithmID *algid);
+
+
+
+
+
+
 extern void SEC_DestroySignedData(CERTSignedData *sd, PRBool freeit);
 
 
@@ -145,6 +189,23 @@ extern void SEC_DestroySignedData(CERTSignedData *sd, PRBool freeit);
 
 extern SECOidTag SEC_GetSignatureAlgorithmOidTag(KeyType keyType,
                                                  SECOidTag hashAlgTag);
+
+
+
+
+
+
+
+
+
+
+
+extern SECItem *SEC_CreateSignatureAlgorithmParameters(PLArenaPool *arena,
+                                                       SECItem *result,
+                                                       SECOidTag signAlgTag,
+                                                       SECOidTag hashAlgTag,
+                                                       const SECItem *params,
+                                                       const SECKEYPrivateKey *key);
 
 
 

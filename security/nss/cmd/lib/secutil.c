@@ -1312,15 +1312,12 @@ SECU_PrintAlgorithmID(FILE *out, SECAlgorithmID *a, char *m, int level)
         return;
     }
 
-    if (algtag == SEC_OID_PKCS1_RSA_PSS_SIGNATURE) {
-        secu_PrintRSAPSSParams(out, &a->parameters, "Parameters", level + 1);
-        return;
-    }
-
     if (a->parameters.len == 0 ||
         (a->parameters.len == 2 &&
          PORT_Memcmp(a->parameters.data, "\005\000", 2) == 0)) {
         
+    } else if (algtag == SEC_OID_PKCS1_RSA_PSS_SIGNATURE) {
+        secu_PrintRSAPSSParams(out, &a->parameters, "Parameters", level + 1);
     } else {
         
         SECU_PrintAsHex(out, &a->parameters, "Args", level + 1);
