@@ -205,16 +205,6 @@ ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
 
 
 
-
-
-
-
-
-
-
-
-
-
 class nsGlobalWindowInner : public mozilla::dom::EventTarget,
                             public nsPIDOMWindowInner,
                             private nsIDOMWindow,

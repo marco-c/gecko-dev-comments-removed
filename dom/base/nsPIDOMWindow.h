@@ -128,8 +128,6 @@ enum class LargeAllocStatus : uint8_t
   { 0x769693d4, 0xb009, 0x4fe2, \
   { 0xaf, 0x18, 0x7d, 0xc8, 0xdf, 0x74, 0x96, 0xdf } }
 
-
-
 class nsPIDOMWindowInner : public mozIDOMWindow
 {
 protected:
@@ -716,8 +714,6 @@ protected:
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowInner, NS_PIDOMWINDOWINNER_IID)
-
-
 
 class nsPIDOMWindowOuter : public mozIDOMWindowProxy
 {

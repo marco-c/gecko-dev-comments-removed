@@ -46,7 +46,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/GuardObjects.h"
 #include "mozilla/LinkedList.h"
-#include "mozilla/TimeStamp.h"
 #include "nsWrapperCacheInlines.h"
 #include "nsIIdleObserver.h"
 #include "nsIDocument.h"
@@ -164,16 +163,6 @@ extern const js::Class OuterWindowProxyClass;
 
 
 
-
-
-
-
-
-
-
-
-
-
 class nsGlobalWindowOuter : public mozilla::dom::EventTarget,
                             public nsPIDOMWindowOuter,
                             private nsIDOMWindow,
@@ -187,9 +176,6 @@ class nsGlobalWindowOuter : public mozilla::dom::EventTarget,
                             public PRCListStr
 {
 public:
-  typedef mozilla::TimeStamp TimeStamp;
-  typedef mozilla::TimeDuration TimeDuration;
-
   typedef nsDataHashtable<nsUint64HashKey, nsGlobalWindowOuter*> OuterWindowByIdTable;
 
   static void
