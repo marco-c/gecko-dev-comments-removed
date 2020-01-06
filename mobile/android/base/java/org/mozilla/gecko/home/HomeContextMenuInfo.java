@@ -22,34 +22,18 @@ public class HomeContextMenuInfo extends AdapterContextMenuInfo {
 
     public String url;
     public String title;
-    public boolean isFolder;
-    public int historyId = -1;
+     boolean isFolder;
+     int historyId = -1;
     public int bookmarkId = -1;
     public RemoveItemType itemType = null;
 
     
-    public static enum RemoveItemType {
+     enum RemoveItemType {
         BOOKMARKS, COMBINED, HISTORY
     }
 
     public HomeContextMenuInfo(View targetView, int position, long id) {
         super(targetView, position, id);
-    }
-
-    public boolean hasBookmarkId() {
-        return bookmarkId > -1;
-    }
-
-    public boolean hasHistoryId() {
-        return historyId > -1;
-    }
-
-    public boolean hasPartnerBookmarkId() {
-        return bookmarkId <= BrowserContract.Bookmarks.FAKE_PARTNER_BOOKMARKS_START;
-    }
-
-    public boolean canRemove() {
-        return hasBookmarkId() || hasHistoryId() || hasPartnerBookmarkId();
     }
 
     public String getDisplayTitle() {
@@ -59,24 +43,40 @@ public class HomeContextMenuInfo extends AdapterContextMenuInfo {
         return StringUtils.stripCommonSubdomains(StringUtils.stripScheme(url, StringUtils.UrlFlags.STRIP_HTTPS));
     }
 
+     boolean hasBookmarkId() {
+        return bookmarkId > -1;
+    }
+
+     boolean hasPartnerBookmarkId() {
+        return bookmarkId <= BrowserContract.Bookmarks.FAKE_PARTNER_BOOKMARKS_START;
+    }
+
+     boolean canRemove() {
+        return hasBookmarkId() || hasHistoryId() || hasPartnerBookmarkId();
+    }
+
+    private boolean hasHistoryId() {
+        return historyId > -1;
+    }
+
     
 
 
     public interface Factory {
-        public HomeContextMenuInfo makeInfoForCursor(View view, int position, long id, Cursor cursor);
+        HomeContextMenuInfo makeInfoForCursor(View view, int position, long id, Cursor cursor);
     }
 
     
 
 
-    public interface ListFactory extends Factory {
-        public HomeContextMenuInfo makeInfoForAdapter(View view, int position, long id, ListAdapter adapter);
+     interface ListFactory extends Factory {
+        HomeContextMenuInfo makeInfoForAdapter(View view, int position, long id, ListAdapter adapter);
     }
 
     
 
 
-    public interface ExpandableFactory {
-        public HomeContextMenuInfo makeInfoForAdapter(View view, int position, long id, ExpandableListAdapter adapter);
+     interface ExpandableFactory {
+        HomeContextMenuInfo makeInfoForAdapter(View view, int position, long id, ExpandableListAdapter adapter);
     }
 }
