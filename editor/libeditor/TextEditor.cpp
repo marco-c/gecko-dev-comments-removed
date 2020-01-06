@@ -444,35 +444,38 @@ TextEditor::CreateBRImpl(nsCOMPtr<nsIDOMNode>* aInOutParent,
   int32_t theOffset = *aInOutOffset;
   RefPtr<Element> brNode;
   if (IsTextNode(node)) {
-    EditorRawDOMPoint atNode(node);
-    if (NS_WARN_IF(!atNode.IsSetAndValid())) {
+    EditorRawDOMPoint pointToInsertBrNode(node);
+    if (NS_WARN_IF(!pointToInsertBrNode.IsSetAndValid())) {
       return NS_ERROR_FAILURE;
     }
     if (!theOffset) {
       
     } else if (theOffset == static_cast<int32_t>(node->Length())) {
       
-      atNode.AdvanceOffset();
+      pointToInsertBrNode.AdvanceOffset();
     } else {
+      MOZ_DIAGNOSTIC_ASSERT(theOffset < static_cast<int32_t>(node->Length()));
       
-      ErrorResult rv;
-      SplitNode(*node->AsContent(), theOffset, rv);
-      if (NS_WARN_IF(rv.Failed())) {
-        return rv.StealNSResult();
+      EditorRawDOMPoint atStartOfNewLine(node, theOffset);
+      ErrorResult error;
+      nsCOMPtr<nsIContent> newLeftNode = SplitNode(atStartOfNewLine, error);
+      if (NS_WARN_IF(error.Failed())) {
+        return error.StealNSResult();
       }
-      atNode.Clear();
-      atNode.Set(node);
+      
+      pointToInsertBrNode.Set(node);
+      Unused << newLeftNode;
     }
     
-    brNode = CreateNode(nsGkAtoms::br, atNode);
+    brNode = CreateNode(nsGkAtoms::br, pointToInsertBrNode);
     if (NS_WARN_IF(!brNode)) {
       return NS_ERROR_FAILURE;
     }
-    *aInOutParent = GetAsDOMNode(atNode.Container());
-    *aInOutOffset = atNode.Offset() + 1;
+    *aInOutParent = GetAsDOMNode(pointToInsertBrNode.Container());
+    *aInOutOffset = pointToInsertBrNode.Offset() + 1;
   } else {
-    EditorRawDOMPoint atTheOffset(node, theOffset);
-    brNode = CreateNode(nsGkAtoms::br, atTheOffset);
+    EditorRawDOMPoint pointToInsertBrNode(node, theOffset);
+    brNode = CreateNode(nsGkAtoms::br, pointToInsertBrNode);
     if (NS_WARN_IF(!brNode)) {
       return NS_ERROR_FAILURE;
     }

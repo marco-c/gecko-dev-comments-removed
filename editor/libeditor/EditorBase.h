@@ -345,8 +345,23 @@ public:
                                                  nsAtom* aAttribute = nullptr,
                                                  const nsAString* aValue =
                                                  nullptr);
-  nsIContent* SplitNode(nsIContent& aNode, int32_t aOffset,
-                        ErrorResult& aResult);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<nsIContent>
+  SplitNode(const EditorRawDOMPoint& aStartOfRightNode,
+            ErrorResult& aResult);
+
   nsresult JoinNodes(nsINode& aLeftNode, nsINode& aRightNode);
   nsresult MoveNode(nsIContent* aNode, nsINode* aParent, int32_t aOffset);
 
@@ -538,8 +553,20 @@ protected:
     CreateTxnForDeleteCharacter(nsGenericDOMDataNode& aData, uint32_t aOffset,
                                 EDirection aDirection);
 
+  
+
+
+
+
+
+
+
+
+
+
+
   already_AddRefed<SplitNodeTransaction>
-    CreateTxnForSplitNode(nsIContent& aNode, uint32_t aOffset);
+    CreateTxnForSplitNode(const EditorRawDOMPoint& aStartOfRightNode);
 
   already_AddRefed<JoinNodeTransaction>
     CreateTxnForJoinNode(nsINode& aLeftNode, nsINode& aRightNode);

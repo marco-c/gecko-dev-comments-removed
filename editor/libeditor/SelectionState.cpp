@@ -303,42 +303,47 @@ RangeUpdater::SelAdjDeleteNode(nsINode* aNode)
 }
 
 nsresult
-RangeUpdater::SelAdjSplitNode(nsIContent& aOldRightNode,
-                              int32_t aOffset,
+RangeUpdater::SelAdjSplitNode(nsIContent& aRightNode,
                               nsIContent* aNewLeftNode)
 {
   if (mLock) {
     
     return NS_OK;
   }
-  NS_ENSURE_TRUE(aNewLeftNode, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!aNewLeftNode)) {
+    return NS_ERROR_FAILURE;
+  }
+
   size_t count = mArray.Length();
   if (!count) {
     return NS_OK;
   }
 
-  nsCOMPtr<nsINode> parent = aOldRightNode.GetParentNode();
-  int32_t offset = parent ? parent->IndexOf(&aOldRightNode) : -1;
+  EditorRawDOMPoint atLeftNode(aNewLeftNode);
+  nsresult rv = SelAdjInsertNode(atLeftNode.Container(), atLeftNode.Offset());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
-  nsresult rv = SelAdjInsertNode(parent, offset - 1);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   
-  for (size_t i = 0; i < count; i++) {
-    RangeItem* item = mArray[i];
-    NS_ENSURE_TRUE(item, NS_ERROR_NULL_POINTER);
+  
+  int32_t lengthOfLeftNode = aNewLeftNode->Length();
+  for (RefPtr<RangeItem>& item : mArray) {
+    if (NS_WARN_IF(!item)) {
+      return NS_ERROR_FAILURE;
+    }
 
-    if (item->mStartContainer == &aOldRightNode) {
-      if (item->mStartOffset > aOffset) {
-        item->mStartOffset -= aOffset;
+    if (item->mStartContainer == &aRightNode) {
+      if (item->mStartOffset > lengthOfLeftNode) {
+        item->mStartOffset -= lengthOfLeftNode;
       } else {
         item->mStartContainer = aNewLeftNode;
       }
     }
-    if (item->mEndContainer == &aOldRightNode) {
-      if (item->mEndOffset > aOffset) {
-        item->mEndOffset -= aOffset;
+    if (item->mEndContainer == &aRightNode) {
+      if (item->mEndOffset > lengthOfLeftNode) {
+        item->mEndOffset -= lengthOfLeftNode;
       } else {
         item->mEndContainer = aNewLeftNode;
       }

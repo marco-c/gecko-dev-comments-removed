@@ -286,36 +286,48 @@ HTMLEditor::SetInlinePropertyOnTextNode(Text& aText,
   }
 
   
-  ErrorResult rv;
-  nsCOMPtr<nsIContent> text = &aText;
-  if (uint32_t(aEndOffset) != aText.Length()) {
-    
-    text = SplitNode(*text, aEndOffset, rv);
-    NS_ENSURE_TRUE(!rv.Failed(), rv.StealNSResult());
-  }
+  nsCOMPtr<nsIContent> textNodeForTheRange = &aText;
 
-  if (aStartOffset) {
+  
+  EditorRawDOMPoint atEnd(textNodeForTheRange, aEndOffset);
+  if (!atEnd.IsEndOfContainer()) {
     
-    SplitNode(*text, aStartOffset, rv);
-    NS_ENSURE_TRUE(!rv.Failed(), rv.StealNSResult());
-  }
-
-  if (aAttribute) {
-    
-    nsIContent* sibling = GetPriorHTMLSibling(text);
-    if (IsSimpleModifiableNode(sibling, &aProperty, aAttribute, &aValue)) {
-      
-      return MoveNode(text, sibling, -1);
-    }
-    sibling = GetNextHTMLSibling(text);
-    if (IsSimpleModifiableNode(sibling, &aProperty, aAttribute, &aValue)) {
-      
-      return MoveNode(text, sibling, 0);
+    ErrorResult error;
+    textNodeForTheRange = SplitNode(atEnd, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
     }
   }
 
   
-  return SetInlinePropertyOnNode(*text, aProperty, aAttribute, aValue);
+  EditorRawDOMPoint atStart(textNodeForTheRange, aStartOffset);
+  if (!atStart.IsStartOfContainer()) {
+    
+    ErrorResult error;
+    nsCOMPtr<nsIContent> newLeftNode = SplitNode(atStart, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
+    Unused << newLeftNode;
+  }
+
+  if (aAttribute) {
+    
+    nsIContent* sibling = GetPriorHTMLSibling(textNodeForTheRange);
+    if (IsSimpleModifiableNode(sibling, &aProperty, aAttribute, &aValue)) {
+      
+      return MoveNode(textNodeForTheRange, sibling, -1);
+    }
+    sibling = GetNextHTMLSibling(textNodeForTheRange);
+    if (IsSimpleModifiableNode(sibling, &aProperty, aAttribute, &aValue)) {
+      
+      return MoveNode(textNodeForTheRange, sibling, 0);
+    }
+  }
+
+  
+  return SetInlinePropertyOnNode(*textNodeForTheRange,
+                                 aProperty, aAttribute, aValue);
 }
 
 nsresult
@@ -1436,47 +1448,58 @@ HTMLEditor::RelativeFontChangeOnTextNode(FontSize aDir,
     return NS_OK;
   }
 
-  OwningNonNull<nsIContent> node = aTextNode;
-
-  
-
   
   if (aEndOffset == -1) {
     aEndOffset = aTextNode.Length();
   }
 
-  ErrorResult rv;
-  if ((uint32_t)aEndOffset != aTextNode.Length()) {
+  
+  nsCOMPtr<nsIContent> textNodeForTheRange = &aTextNode;
+
+  
+  EditorRawDOMPoint atEnd(textNodeForTheRange, aEndOffset);
+  if (!atEnd.IsEndOfContainer()) {
     
-    node = SplitNode(node, aEndOffset, rv);
-    NS_ENSURE_TRUE(!rv.Failed(), rv.StealNSResult());
+    ErrorResult error;
+    textNodeForTheRange = SplitNode(atEnd, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
   }
-  if (aStartOffset) {
+
+  
+  EditorRawDOMPoint atStart(textNodeForTheRange, aStartOffset);
+  if (!atStart.IsStartOfContainer()) {
     
-    SplitNode(node, aStartOffset, rv);
-    NS_ENSURE_TRUE(!rv.Failed(), rv.StealNSResult());
+    ErrorResult error;
+    nsCOMPtr<nsIContent> newLeftNode = SplitNode(atStart, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
+    Unused << newLeftNode;
   }
 
   
   nsAtom* nodeType = aDir == FontSize::incr ? nsGkAtoms::big
                                              : nsGkAtoms::small;
-  nsCOMPtr<nsIContent> sibling = GetPriorHTMLSibling(node);
+  nsCOMPtr<nsIContent> sibling = GetPriorHTMLSibling(textNodeForTheRange);
   if (sibling && sibling->IsHTMLElement(nodeType)) {
     
-    nsresult rv = MoveNode(node, sibling, -1);
+    nsresult rv = MoveNode(textNodeForTheRange, sibling, -1);
     NS_ENSURE_SUCCESS(rv, rv);
     return NS_OK;
   }
-  sibling = GetNextHTMLSibling(node);
+  sibling = GetNextHTMLSibling(textNodeForTheRange);
   if (sibling && sibling->IsHTMLElement(nodeType)) {
     
-    nsresult rv = MoveNode(node, sibling, 0);
+    nsresult rv = MoveNode(textNodeForTheRange, sibling, 0);
     NS_ENSURE_SUCCESS(rv, rv);
     return NS_OK;
   }
 
   
-  nsCOMPtr<Element> newElement = InsertContainerAbove(node, nodeType);
+  nsCOMPtr<Element> newElement =
+    InsertContainerAbove(textNodeForTheRange, nodeType);
   NS_ENSURE_STATE(newElement);
 
   return NS_OK;
