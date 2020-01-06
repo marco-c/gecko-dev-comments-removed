@@ -971,11 +971,9 @@ AccessibleHandler::get_attribute(BSTR name, VARIANT* attribute)
 {
   
   
-  HRESULT hr = ResolveIA2();
-  if (FAILED(hr)) {
-    return hr;
-  }
-  return mIA2PassThru->get_attribute(name, attribute);
+  
+  
+  return E_NOTIMPL;
 }
 
 HRESULT
