@@ -639,6 +639,9 @@ struct AnimationValue
 
   
   static AnimationValue Opacity(StyleBackendType aBackendType, float aOpacity);
+  
+  static AnimationValue Transform(StyleBackendType aBackendType,
+                                  nsCSSValueSharedList& aList);
 
   
   
