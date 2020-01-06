@@ -36,8 +36,6 @@ use servo_arc::{Arc, ArcBorrow};
 use shared_lock::{Locked, SharedRwLockReadGuard, StylesheetGuards};
 use smallvec::VecLike;
 use std::fmt::Debug;
-#[cfg(feature = "servo")]
-use std::marker::PhantomData;
 use style_traits::viewport::ViewportConstraints;
 #[cfg(feature = "gecko")]
 use stylesheets::{CounterStyleRule, FontFaceRule};
@@ -115,15 +113,59 @@ pub struct Stylist {
 
 
 #[cfg(feature = "gecko")]
-pub struct ExtraStyleData<'a> {
+#[derive(Default)]
+pub struct ExtraStyleData {
     
-    pub font_faces: &'a mut Vec<(Arc<Locked<FontFaceRule>>, Origin)>,
+    user_agent: PerOriginExtraStyleData,
     
-    pub counter_styles: &'a mut PrecomputedHashMap<Atom, Arc<Locked<CounterStyleRule>>>,
+    author: PerOriginExtraStyleData,
+    
+    user: PerOriginExtraStyleData,
+}
+
+
+
+#[cfg(feature = "gecko")]
+#[derive(Default)]
+pub struct PerOriginExtraStyleData {
+    
+    pub font_faces: Vec<Arc<Locked<FontFaceRule>>>,
+    
+    pub counter_styles: PrecomputedHashMap<Atom, Arc<Locked<CounterStyleRule>>>,
 }
 
 #[cfg(feature = "gecko")]
-impl<'a> ExtraStyleData<'a> {
+impl ExtraStyleData {
+    
+    pub fn clear(&mut self) {
+        self.user_agent.clear();
+        self.author.clear();
+        self.user.clear();
+    }
+
+    
+    
+    #[inline]
+    pub fn borrow_mut_for_origin(&mut self, origin: &Origin) -> &mut PerOriginExtraStyleData {
+        match *origin {
+            Origin::UserAgent => &mut self.user_agent,
+            Origin::Author => &mut self.author,
+            Origin::User => &mut self.user,
+        }
+    }
+
+    
+    
+    pub fn iter_origins(&self) -> ExtraStyleDataIter {
+        ExtraStyleDataIter {
+            extra_style_data: &self,
+            cur: 0,
+        }
+    }
+}
+
+#[cfg(feature = "gecko")]
+impl PerOriginExtraStyleData {
     
     fn clear(&mut self) {
         self.font_faces.clear();
@@ -131,8 +173,8 @@ impl<'a> ExtraStyleData<'a> {
     }
 
     
-    fn add_font_face(&mut self, rule: &Arc<Locked<FontFaceRule>>, origin: Origin) {
-        self.font_faces.push((rule.clone(), origin));
+    fn add_font_face(&mut self, rule: &Arc<Locked<FontFaceRule>>) {
+        self.font_faces.push(rule.clone());
     }
 
     
@@ -145,12 +187,10 @@ impl<'a> ExtraStyleData<'a> {
 
 #[allow(missing_docs)]
 #[cfg(feature = "servo")]
-pub struct ExtraStyleData<'a> {
-    pub marker: PhantomData<&'a usize>,
-}
+pub struct ExtraStyleData;
 
 #[cfg(feature = "servo")]
-impl<'a> ExtraStyleData<'a> {
+impl ExtraStyleData {
     fn clear(&mut self) {}
 }
 
@@ -277,17 +317,17 @@ impl Stylist {
     
     
     
-    pub fn rebuild<'a, 'b, I, S>(
+    pub fn rebuild<'a, I, S>(
         &mut self,
         doc_stylesheets: I,
         guards: &StylesheetGuards,
         ua_stylesheets: Option<&UserAgentStylesheets>,
         stylesheets_changed: bool,
         author_style_disabled: bool,
-        extra_data: &mut ExtraStyleData<'a>
+        extra_data: &mut ExtraStyleData
     ) -> bool
     where
-        I: Iterator<Item = &'b S> + Clone,
+        I: Iterator<Item = &'a S> + Clone,
         S: StylesheetInDocument + ToMediaListKey + 'static,
     {
         debug_assert!(!self.is_cleared || self.is_device_dirty);
@@ -357,17 +397,17 @@ impl Stylist {
 
     
     
-    pub fn update<'a, 'b, I, S>(
+    pub fn update<'a, I, S>(
         &mut self,
         doc_stylesheets: I,
         guards: &StylesheetGuards,
         ua_stylesheets: Option<&UserAgentStylesheets>,
         stylesheets_changed: bool,
         author_style_disabled: bool,
-        extra_data: &mut ExtraStyleData<'a>
+        extra_data: &mut ExtraStyleData
     ) -> bool
     where
-        I: Iterator<Item = &'b S> + Clone,
+        I: Iterator<Item = &'a S> + Clone,
         S: StylesheetInDocument + ToMediaListKey + 'static,
     {
         debug_assert!(!self.is_cleared || self.is_device_dirty);
@@ -382,11 +422,11 @@ impl Stylist {
                      author_style_disabled, extra_data)
     }
 
-    fn add_stylesheet<'a, S>(
+    fn add_stylesheet<S>(
         &mut self,
         stylesheet: &S,
         guard: &SharedRwLockReadGuard,
-        _extra_data: &mut ExtraStyleData<'a>
+        _extra_data: &mut ExtraStyleData
     )
     where
         S: StylesheetInDocument + ToMediaListKey + 'static,
@@ -506,11 +546,15 @@ impl Stylist {
                 }
                 #[cfg(feature = "gecko")]
                 CssRule::FontFace(ref rule) => {
-                    _extra_data.add_font_face(&rule, origin);
+                    _extra_data
+                        .borrow_mut_for_origin(&origin)
+                        .add_font_face(&rule);
                 }
                 #[cfg(feature = "gecko")]
                 CssRule::CounterStyle(ref rule) => {
-                    _extra_data.add_counter_style(guard, &rule);
+                    _extra_data
+                        .borrow_mut_for_origin(&origin)
+                        .add_counter_style(guard, &rule);
                 }
                 
                 _ => {}
@@ -1621,6 +1665,33 @@ impl<'a> Iterator for CascadeDataIter<'a> {
             0 => &self.cascade_data.user,
             1 => &self.cascade_data.author,
             2 => &self.cascade_data.user_agent,
+            _ => return None,
+        };
+        self.cur += 1;
+        Some(result)
+    }
+}
+
+
+
+
+
+
+#[cfg(feature = "gecko")]
+pub struct ExtraStyleDataIter<'a> {
+    extra_style_data: &'a ExtraStyleData,
+    cur: usize,
+}
+
+#[cfg(feature = "gecko")]
+impl<'a> Iterator for ExtraStyleDataIter<'a> {
+    type Item = (&'a PerOriginExtraStyleData, Origin);
+
+    fn next(&mut self) -> Option<(&'a PerOriginExtraStyleData, Origin)> {
+        let result = match self.cur {
+            0 => (&self.extra_style_data.user, Origin::User),
+            1 => (&self.extra_style_data.author, Origin::Author),
+            2 => (&self.extra_style_data.user_agent, Origin::UserAgent),
             _ => return None,
         };
         self.cur += 1;
