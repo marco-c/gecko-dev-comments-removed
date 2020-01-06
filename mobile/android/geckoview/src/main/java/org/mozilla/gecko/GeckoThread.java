@@ -109,6 +109,8 @@ public class GeckoThread extends Thread {
     private static final ClassLoader clsLoader = GeckoThread.class.getClassLoader();
     @WrapForJNI
     private static MessageQueue msgQueue;
+    @WrapForJNI
+    private static int uiThreadId;
 
     private boolean mInitialized;
     private String[] mArgs;
@@ -135,6 +137,7 @@ public class GeckoThread extends Thread {
                                       final String extraArgs, final boolean debugging,
                                       final int crashFd, final int ipcFd) {
         ThreadUtils.assertOnUiThread();
+        uiThreadId = android.os.Process.myTid();
 
         if (mInitialized) {
             return false;
@@ -362,14 +365,6 @@ public class GeckoThread extends Thread {
         initGeckoEnvironment();
 
         
-        
-        ThreadUtils.postToUiThread(new Runnable() {
-            @Override public void run() {
-                registerUiThread();
-            }
-        });
-
-        
         synchronized (this) {
             while (!mInitialized) {
                 try {
@@ -532,9 +527,6 @@ public class GeckoThread extends Thread {
                                  String.class, category, String.class, data);
         }
     }
-
-    
-     static native void registerUiThread();
 
     @WrapForJNI(calledFrom = "ui")
      static native long runUiThreadCallback();
