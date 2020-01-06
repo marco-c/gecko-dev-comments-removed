@@ -6,7 +6,7 @@
 
 #include "ResourceStream.h"
 
-namespace mp4_demuxer {
+namespace mozilla {
 
 ResourceStream::ResourceStream(mozilla::MediaResource* aResource)
   : mResource(aResource)

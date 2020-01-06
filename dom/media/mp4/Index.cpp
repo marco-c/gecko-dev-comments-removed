@@ -4,7 +4,7 @@
 
 #include "BufferReader.h"
 #include "Index.h"
-#include "Interval.h"
+#include "MP4Interval.h"
 #include "MP4Metadata.h"
 #include "SinfParser.h"
 #include "nsAutoPtr.h"
@@ -13,10 +13,9 @@
 #include <algorithm>
 #include <limits>
 
-using namespace mozilla;
 using namespace mozilla::media;
 
-namespace mp4_demuxer
+namespace mozilla
 {
 
 class MOZ_STACK_CLASS RangeFinder
@@ -324,7 +323,7 @@ SampleIterator::GetNextKeyframeTime()
 }
 
 Index::Index(const IndiceWrapper& aIndices,
-             Stream* aSource,
+             ByteStream* aSource,
              uint32_t aTrackId,
              bool aIsAudio)
   : mSource(aSource)
@@ -358,8 +357,8 @@ Index::Index(const IndiceWrapper& aIndices,
       Sample sample;
       sample.mByteRange = MediaByteRange(indice.start_offset,
                                          indice.end_offset);
-      sample.mCompositionRange = Interval<Microseconds>(indice.start_composition,
-                                                        indice.end_composition);
+      sample.mCompositionRange = MP4Interval<Microseconds>(indice.start_composition,
+                                                           indice.end_composition);
       sample.mDecodeTime = indice.start_decode;
       sample.mSync = indice.sync || mIsAudio;
       
@@ -400,7 +399,7 @@ Index::Index(const IndiceWrapper& aIndices,
       }
       auto& last = mDataOffset.LastElement();
       last.mEndOffset = indice.end_offset;
-      last.mTime = Interval<int64_t>(intervalTime.GetStart(), intervalTime.GetEnd());
+      last.mTime = MP4Interval<int64_t>(intervalTime.GetStart(), intervalTime.GetEnd());
     } else {
       mDataOffset.Clear();
     }
@@ -524,7 +523,7 @@ Index::ConvertByteRangesToTimeRanges(const MediaByteRangeSet& aByteRanges)
   }
 
   RangeFinder rangeFinder(aByteRanges);
-  nsTArray<Interval<Microseconds>> timeRanges;
+  nsTArray<MP4Interval<Microseconds>> timeRanges;
   nsTArray<FallibleTArray<Sample>*> indexes;
   if (mMoofParser) {
     
@@ -536,7 +535,7 @@ Index::ConvertByteRangesToTimeRanges(const MediaByteRangeSet& aByteRanges)
       
       if (rangeFinder.Contains(moof.mRange)) {
         if (rangeFinder.Contains(moof.mMdatRange)) {
-          Interval<Microseconds>::SemiNormalAppend(timeRanges, moof.mTimeRange);
+          MP4Interval<Microseconds>::SemiNormalAppend(timeRanges, moof.mTimeRange);
         } else {
           indexes.AppendElement(&moof.mIndex);
         }
@@ -563,14 +562,14 @@ Index::ConvertByteRangesToTimeRanges(const MediaByteRangeSet& aByteRanges)
         continue;
       }
 
-      Interval<Microseconds>::SemiNormalAppend(timeRanges,
+      MP4Interval<Microseconds>::SemiNormalAppend(timeRanges,
                                                sample.mCompositionRange);
     }
   }
 
   
-  nsTArray<Interval<Microseconds>> timeRangesNormalized;
-  Interval<Microseconds>::Normalize(timeRanges, &timeRangesNormalized);
+  nsTArray<MP4Interval<Microseconds>> timeRangesNormalized;
+  MP4Interval<Microseconds>::Normalize(timeRanges, &timeRangesNormalized);
   
   media::TimeIntervals ranges;
   for (size_t i = 0; i < timeRangesNormalized.Length(); i++) {
