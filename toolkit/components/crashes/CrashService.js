@@ -6,6 +6,7 @@
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
+Cu.import("resource://gre/modules/AppConstants.jsm", this);
 Cu.import("resource://gre/modules/AsyncShutdown.jsm", this);
 Cu.import("resource://gre/modules/KeyValueParser.jsm");
 Cu.import("resource://gre/modules/osfile.jsm", this);
@@ -22,32 +23,64 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 
 
 
-function computeMinidumpHash(id) {
-  let cr = Cc["@mozilla.org/toolkit/crash-reporter;1"]
-             .getService(Components.interfaces.nsICrashReporter);
+function runMinidumpAnalyzer(minidumpPath) {
+  return new Promise((resolve, reject) => {
+    const binSuffix = AppConstants.platform === "win" ? ".exe" : "";
+    const exeName = "minidump-analyzer" + binSuffix;
 
-  return (async function() {
-    try {
-      let minidumpFile = cr.getMinidumpForID(id);
-      let minidumpData = await OS.File.read(minidumpFile.path);
-      let hasher = Cc["@mozilla.org/security/hash;1"]
-                     .createInstance(Ci.nsICryptoHash);
-      hasher.init(hasher.SHA256);
-      hasher.update(minidumpData, minidumpData.length);
+    let exe = Services.dirsvc.get("GreBinD", Ci.nsIFile);
 
-      let hashBin = hasher.finish(false);
-      let hash = "";
-
-      for (let i = 0; i < hashBin.length; i++) {
-        
-        hash += ("0" + hashBin.charCodeAt(i).toString(16)).slice(-2);
-      }
-
-      return hash;
-    } catch (e) {
-      Cu.reportError(e);
-      return null;
+    if (AppConstants.platform === "macosx") {
+        exe.append("crashreporter.app");
+        exe.append("Contents");
+        exe.append("MacOS");
     }
+
+    exe.append(exeName);
+
+    let args = [ minidumpPath ];
+    let process = Cc["@mozilla.org/process/util;1"]
+                    .createInstance(Ci.nsIProcess);
+    process.init(exe);
+    process.startHidden = true;
+    process.runAsync(args, args.length, (subject, topic, data) => {
+      switch (topic) {
+        case "process-finished":
+          resolve();
+          break;
+        default:
+          reject(topic);
+          break;
+      }
+    });
+  });
+}
+
+
+
+
+
+
+
+
+
+function computeMinidumpHash(minidumpPath) {
+  return (async function() {
+    let minidumpData = await OS.File.read(minidumpPath);
+    let hasher = Cc["@mozilla.org/security/hash;1"]
+                   .createInstance(Ci.nsICryptoHash);
+    hasher.init(hasher.SHA256);
+    hasher.update(minidumpData, minidumpData.length);
+
+    let hashBin = hasher.finish(false);
+    let hash = "";
+
+    for (let i = 0; i < hashBin.length; i++) {
+      
+      hash += ("0" + hashBin.charCodeAt(i).toString(16)).slice(-2);
+    }
+
+    return hash;
   })();
 }
 
@@ -60,21 +93,12 @@ function computeMinidumpHash(id) {
 
 
 
-function processExtraFile(id) {
-  let cr = Cc["@mozilla.org/toolkit/crash-reporter;1"]
-             .getService(Components.interfaces.nsICrashReporter);
-
+function processExtraFile(extraPath) {
   return (async function() {
-    try {
-      let extraFile = cr.getExtraFileForID(id);
-      let decoder = new TextDecoder();
-      let extraData = await OS.File.read(extraFile.path);
+    let decoder = new TextDecoder();
+    let extraData = await OS.File.read(extraPath);
 
-      return parseKeyValuePairs(decoder.decode(extraData));
-    } catch (e) {
-      Cu.reportError(e);
-      return {};
-    }
+    return parseKeyValuePairs(decoder.decode(extraData));
   })();
 }
 
@@ -125,8 +149,21 @@ CrashService.prototype = Object.freeze({
     }
 
     let blocker = (async function() {
-      let metadata = await processExtraFile(id);
-      let hash = await computeMinidumpHash(id);
+      let metadata = {};
+      let hash = null;
+
+      try {
+        let cr = Cc["@mozilla.org/toolkit/crash-reporter;1"]
+                   .getService(Components.interfaces.nsICrashReporter);
+        let minidumpPath = cr.getMinidumpForID(id).path;
+        let extraPath = cr.getExtraFileForID(id).path;
+
+        await runMinidumpAnalyzer(minidumpPath);
+        metadata = await processExtraFile(extraPath);
+        hash = await computeMinidumpHash(minidumpPath);
+      } catch (e) {
+        Cu.reportError(e);
+      }
 
       if (hash) {
         metadata.MinidumpSha256Hash = hash;
@@ -141,6 +178,8 @@ CrashService.prototype = Object.freeze({
     );
 
     blocker.then(AsyncShutdown.profileBeforeChange.removeBlocker(blocker));
+
+    return blocker;
   },
 
   observe(subject, topic, data) {

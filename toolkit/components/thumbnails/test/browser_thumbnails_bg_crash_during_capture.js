@@ -2,16 +2,11 @@
 
 
 function* runTests() {
-  let crashObserver = bgAddCrashObserver();
-
   
   let goodUrl = bgTestPageURL();
   yield bgCapture(goodUrl);
   ok(thumbnailExists(goodUrl), "Thumbnail should be cached after capture");
   removeThumbnail(goodUrl);
-
-  
-  let mm = bgInjectCrashContentScript();
 
   
   
@@ -26,7 +21,6 @@ function* runTests() {
     ok(thumbnailExists(goodUrl), "We should have recovered and completed the 2nd capture after the crash");
     removeThumbnail(goodUrl);
     
-    ok(crashObserver.crashed, "Saw a crash from this test");
     next();
   }});
   let crashPromise = new Promise(resolve => {
@@ -43,7 +37,9 @@ function* runTests() {
   });
 
   info("Crashing the thumbnail content process.");
-  mm.sendAsyncMessage("thumbnails-test:crash");
+  let crash = yield BrowserTestUtils.crashBrowser(BackgroundPageThumbs._thumbBrowser, false);
+  ok(crash.CrashTime, "Saw a crash from this test");
+
   yield crashPromise;
   yield capturePromise;
 }

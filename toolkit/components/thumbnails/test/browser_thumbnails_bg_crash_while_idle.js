@@ -2,8 +2,6 @@
 
 
 function* runTests() {
-  let crashObserver = bgAddCrashObserver();
-
   
   let goodUrl = bgTestPageURL();
   yield bgCapture(goodUrl);
@@ -11,28 +9,17 @@ function* runTests() {
   removeThumbnail(goodUrl);
 
   
-  let mm = bgInjectCrashContentScript();
-
-  
-  
-  
-  Services.obs.addObserver(function onCrash() {
-    Services.obs.removeObserver(onCrash, "oop-frameloader-crashed");
-    
-    executeSoon(function() {
-      
-      bgCapture(goodUrl, { onDone: () => {
-        ok(thumbnailExists(goodUrl), "We should have recovered and handled new capture requests");
-        removeThumbnail(goodUrl);
-        
-        ok(crashObserver.crashed, "Saw a crash from this test");
-        next();
-      }});
-    });
-  }, "oop-frameloader-crashed");
-
-  
   info("Crashing the thumbnail content process.");
-  mm.sendAsyncMessage("thumbnails-test:crash");
+  let crash = yield BrowserTestUtils.crashBrowser(BackgroundPageThumbs._thumbBrowser, false);
+  ok(crash.CrashTime, "Saw a crash from this test");
+
+  
+  bgCapture(goodUrl, { onDone: () => {
+    ok(thumbnailExists(goodUrl), "We should have recovered and handled new capture requests");
+    removeThumbnail(goodUrl);
+    
+    next();
+  }});
+
   yield true;
 }

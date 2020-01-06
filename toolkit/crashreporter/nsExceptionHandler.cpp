@@ -197,11 +197,8 @@ static google_breakpad::ExceptionHandler* gExceptionHandler = nullptr;
 static XP_CHAR* pendingDirectory;
 static XP_CHAR* crashReporterPath;
 static XP_CHAR* memoryReportPath;
-#if !defined(MOZ_WIDGET_ANDROID)
-static XP_CHAR* minidumpAnalyzerPath;
 #ifdef XP_MACOSX
 static XP_CHAR* libraryPath; 
-#endif 
 #endif 
 
 
@@ -820,10 +817,8 @@ WriteGlobalMemoryStatus(PlatformWriter* apiData, PlatformWriter* eventFile)
 
 
 
-
 static bool
-LaunchProgram(const XP_CHAR* aProgramPath, const XP_CHAR* aMinidumpPath,
-              bool aWait = false)
+LaunchProgram(const XP_CHAR* aProgramPath, const XP_CHAR* aMinidumpPath)
 {
 #ifdef XP_WIN
   XP_CHAR cmdLine[CMDLINE_SIZE];
@@ -844,10 +839,6 @@ LaunchProgram(const XP_CHAR* aProgramPath, const XP_CHAR* aMinidumpPath,
   if (CreateProcess(nullptr, (LPWSTR)cmdLine, nullptr, nullptr, FALSE,
                     NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW,
                     nullptr, nullptr, &si, &pi)) {
-    if (aWait) {
-      WaitForSingleObject(pi.hProcess, INFINITE);
-    }
-
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
   }
@@ -868,10 +859,6 @@ LaunchProgram(const XP_CHAR* aProgramPath, const XP_CHAR* aMinidumpPath,
     Unused << execl(aProgramPath,
                     aProgramPath, aMinidumpPath, (char*)0);
     _exit(1);
-  } else {
-    if (aWait) {
-      waitpid(pid, nullptr, 0);
-    }
   }
 #endif 
 
@@ -1697,22 +1684,11 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory,
     }
 #endif 
 
-    nsAutoString minidumpAnalyzerPath_temp;
-    rv = LocateExecutable(aXREDirectory,
-                          NS_LITERAL_CSTRING(MINIDUMP_ANALYZER_FILENAME),
-                          minidumpAnalyzerPath_temp);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
 #ifdef XP_WIN32
   crashReporterPath =
     reinterpret_cast<wchar_t*>(ToNewUnicode(crashReporterPath_temp));
-  minidumpAnalyzerPath =
-    reinterpret_cast<wchar_t*>(ToNewUnicode(minidumpAnalyzerPath_temp));
 #else
   crashReporterPath = ToNewCString(crashReporterPath_temp);
-  minidumpAnalyzerPath = ToNewCString(minidumpAnalyzerPath_temp);
 #ifdef XP_MACOSX
   libraryPath = ToNewCString(libraryPath_temp);
 #endif
@@ -2207,17 +2183,11 @@ nsresult UnsetExceptionHandler()
     crashReporterPath = nullptr;
   }
 
-#if !defined(MOZ_WIDGET_ANDROID)
-  if (minidumpAnalyzerPath) {
-    free(minidumpAnalyzerPath);
-    minidumpAnalyzerPath = nullptr;
-  }
 #ifdef XP_MACOSX
   if (libraryPath) {
     free(libraryPath);
     libraryPath = nullptr;
   }
-#endif 
 #endif 
 
   if (eventsDirectory) {
@@ -3129,34 +3099,6 @@ AppendExtraData(const nsAString& id, const AnnotationTable& data)
   if (!GetExtraFileForID(id, getter_AddRefs(extraFile)))
     return false;
   return AppendExtraData(extraFile, data);
-}
-
-
-
-
-
-
-
-
-
-void
-RunMinidumpAnalyzer(const nsAString& id)
-{
-#if !defined(MOZ_WIDGET_ANDROID)
-  nsCOMPtr<nsIFile> file;
-
-  if (CrashReporter::GetMinidumpForID(id, getter_AddRefs(file))) {
-#ifdef XP_WIN
-    nsAutoString path;
-    file->GetPath(path);
-#else
-    nsAutoCString path;
-    file->GetNativePath(path);
-#endif
-
-    LaunchProgram(minidumpAnalyzerPath, path.get(),  true);
-  }
-#endif 
 }
 
 
