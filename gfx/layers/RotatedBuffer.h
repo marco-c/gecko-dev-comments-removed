@@ -162,6 +162,11 @@ protected:
   
   RefPtr<gfx::DrawTarget> mLoanedDrawTarget;
   gfx::Matrix mLoanedTransform;
+
+  
+  
+  
+  bool mSetTransform;
 };
 
 
@@ -303,7 +308,8 @@ public:
 
 
   RefPtr<CapturedPaintState> BorrowDrawTargetForRecording(PaintState& aPaintState,
-                                                          DrawIterator* aIter);
+                                                          DrawIterator* aIter,
+                                                          bool aSetTransform = false);
 
   nsIntRegion ExpandDrawRegion(PaintState& aPaintState,
                                DrawIterator* aIter,
@@ -374,6 +380,7 @@ protected:
   }
 
   
+
 
 
 
