@@ -9,6 +9,7 @@ extern crate deny_public_fields;
 
 #[derive(DenyPublicFields)]
 
+
 struct Foo {
     pub v1: i32,
     v2: i32
