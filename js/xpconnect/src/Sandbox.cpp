@@ -1726,8 +1726,7 @@ AssembleSandboxMemoryReporterName(JSContext* cx, nsCString& sandboxName)
     NS_ENSURE_TRUE(cc, NS_ERROR_INVALID_ARG);
 
     
-    nsCOMPtr<nsIStackFrame> frame;
-    nsXPConnect::XPConnect()->GetCurrentJSStack(getter_AddRefs(frame));
+    nsCOMPtr<nsIStackFrame> frame = dom::GetCurrentJSStack();
 
     
     if (frame) {
