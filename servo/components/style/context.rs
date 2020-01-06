@@ -5,7 +5,7 @@
 
 
 #[cfg(feature = "servo")] use animation::Animation;
-use animation::PropertyAnimation;
+#[cfg(feature = "servo")] use animation::PropertyAnimation;
 use app_units::Au;
 use bloom::StyleBloom;
 use cache::LRUCache;
@@ -293,6 +293,7 @@ pub struct CurrentElementInfo {
     is_initial_style: bool,
     
     #[allow(dead_code)]
+    #[cfg(feature = "servo")]
     pub possibly_expired_animations: Vec<PropertyAnimation>,
 }
 
@@ -668,6 +669,17 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
         }
     }
 
+    #[cfg(feature = "gecko")]
+    
+    pub fn begin_element(&mut self, element: E, data: &ElementData) {
+        debug_assert!(self.current_element_info.is_none());
+        self.current_element_info = Some(CurrentElementInfo {
+            element: element.as_node().opaque(),
+            is_initial_style: !data.has_styles(),
+        });
+    }
+
+    #[cfg(feature = "servo")]
     
     pub fn begin_element(&mut self, element: E, data: &ElementData) {
         debug_assert!(self.current_element_info.is_none());
