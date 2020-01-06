@@ -43,6 +43,15 @@ public:
                         gfx::Matrix4x4* aTransformPtr,
                         const nsTArray<WrFilterOp>& aFilters = nsTArray<WrFilterOp>());
   
+  StackingContextHelper(const StackingContextHelper& aParentSC,
+                        wr::DisplayListBuilder& aBuilder,
+                        LayerRect aBoundForSC,
+                        LayerPoint aOrigin,
+                        uint64_t aAnimationsId,
+                        float* aOpacityPtr,
+                        gfx::Matrix4x4* aTransformPtr,
+                        const nsTArray<WrFilterOp>& aFilters = nsTArray<WrFilterOp>());
+  
   
   
   
