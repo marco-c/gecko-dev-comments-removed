@@ -17,7 +17,13 @@ server.registerPathHandler("/image.png", imageHandler);
 server.registerPathHandler("/file.html", fileHandler);
 server.start(-1);
 
+
+let rcwnEnabled = Preferences.get("network.http.rcwn.enabled");
+Preferences.set("network.http.rcwn.enabled", false);
+
 registerCleanupFunction(() => {
+  Preferences.set("network.http.rcwn.enabled", rcwnEnabled);
+
   server.stop(() => {
     server = null;
   });
