@@ -492,12 +492,6 @@ class Onboarding {
         this.gotoPage(tourId);
         this._removeTourFromNotificationQueue(tourId);
         break;
-      
-      case "onboarding-tour-default-browser":
-      case "onboarding-tour-sync":
-      case "onboarding-tour-performance":
-        this.setToursCompleted([ evt.target.id ]);
-        break;
     }
     let classList = evt.target.classList;
     if (classList.contains("onboarding-tour-item")) {
@@ -556,6 +550,15 @@ class Onboarding {
       } else {
         li.classList.remove("onboarding-active");
       }
+    }
+
+    switch (tourId) {
+      
+      case "onboarding-tour-default-browser":
+      case "onboarding-tour-sync":
+      case "onboarding-tour-performance":
+        this.setToursCompleted([tourId]);
+        break;
     }
   }
 
