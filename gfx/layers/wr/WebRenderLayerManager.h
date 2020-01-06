@@ -222,6 +222,8 @@ public:
     return res.forget();
   }
 
+  bool ShouldNotifyInvalidation() const { return mShouldNotifyInvalidation; }
+
 private:
   
 
@@ -319,6 +321,10 @@ private:
   typedef nsTHashtable<nsRefPtrHashKey<WebRenderCanvasData>> CanvasDataSet;
   
   CanvasDataSet mLastCanvasDatas;
+
+  
+  
+  bool mShouldNotifyInvalidation;
 };
 
 } 
