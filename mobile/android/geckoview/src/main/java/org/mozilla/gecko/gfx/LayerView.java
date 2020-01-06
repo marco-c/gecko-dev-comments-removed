@@ -54,24 +54,14 @@ public class LayerView extends FrameLayout {
     private DynamicToolbarAnimator mToolbarAnimator;
     private FullScreenState mFullScreenState;
 
-    private SurfaceView mSurfaceView;
-    private TextureView mTextureView;
-
     private Listener mListener;
 
     
     private final Overscroll mOverscroll;
 
-    private boolean mServerSurfaceValid;
-    private int mWidth, mHeight;
-
     private int mDefaultClearColor = Color.WHITE;
      GetPixelsResult mGetPixelsResult;
     private final List<DrawListener> mDrawListeners;
-
-    
-     volatile boolean mCompositorCreated;
-     volatile boolean mCompositorControllerOpen;
 
     
     
@@ -90,7 +80,6 @@ public class LayerView extends FrameLayout {
      final static int LAYERS_UPDATED                   = 10; 
      final static int TOOLBAR_SNAPSHOT_FAILED          = 11; 
      final static int COMPOSITOR_CONTROLLER_OPEN       = 20; 
-     final static int IS_COMPOSITOR_CONTROLLER_OPEN    = 21; 
 
     private void postCompositorMessage(final int message) {
         ThreadUtils.postToUiThread(new Runnable() {
@@ -101,106 +90,9 @@ public class LayerView extends FrameLayout {
         });
     }
 
-    @WrapForJNI(calledFrom = "ui")
      boolean isCompositorReady() {
         ThreadUtils.assertOnUiThread();
-        return mCompositorCreated && mCompositorControllerOpen;
-    }
-
-     class Compositor extends JNIObject {
-        public Compositor() {
-        }
-
-         boolean isReady() {
-            return isCompositorReady();
-        }
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
-        @Override protected native void disposeNative();
-
-        
-        @WrapForJNI(calledFrom = "any", dispatchTo = "gecko")
-         native void attachToJava(GeckoLayerClient layerClient,
-                                               NativePanZoomController npzc);
-
-        @WrapForJNI(calledFrom = "any", dispatchTo = "gecko")
-         native void onSizeChanged(int windowWidth, int windowHeight);
-
-        
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "proxy")
-         native void createCompositor(int width, int height, Object surface);
-
-        
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-         native void syncPauseCompositor();
-
-        
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-         native void syncResumeResizeCompositor(int width, int height, Object surface);
-
-        @WrapForJNI(calledFrom = "any", dispatchTo = "current")
-         native void syncInvalidateAndScheduleComposite();
-
-        @WrapForJNI(calledFrom = "any", dispatchTo = "current")
-         native void setMaxToolbarHeight(int height);
-
-        @WrapForJNI(calledFrom = "any", dispatchTo = "current")
-         native void setPinned(boolean pinned, int reason);
-
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-         native void sendToolbarAnimatorMessage(int message);
-
-        @WrapForJNI(calledFrom = "ui")
-         void recvToolbarAnimatorMessage(int message) {
-            handleToolbarAnimatorMessage(message);
-        }
-
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-         native void setDefaultClearColor(int color);
-
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-         native void requestScreenPixels();
-
-        @WrapForJNI(calledFrom = "ui")
-         void recvScreenPixels(int width, int height, int[] pixels) {
-            if (mGetPixelsResult != null) {
-                mGetPixelsResult.onPixelsResult(width, height, IntBuffer.wrap(pixels));
-                mGetPixelsResult = null;
-            }
-        }
-
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-         native void enableLayerUpdateNotifications(boolean enable);
-
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-         native void sendToolbarPixelsToCompositor(final int width, final int height, final int[] pixels);
-
-        @WrapForJNI(calledFrom = "gecko")
-        private void reattach() {
-            ThreadUtils.postToUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    updateCompositor();
-                }
-            });
-        }
-
-        @WrapForJNI(calledFrom = "gecko")
-        private void destroy() {
-            
-            LayerView.this.mCompositorCreated = false;
-            LayerView.this.mCompositorControllerOpen = false;
-
-            LayerView.this.mLayerClient.setGeckoReady(false);
-
-            
-            ThreadUtils.postToUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    LayerView.this.mDrawListeners.clear();
-                    disposeNative();
-                }
-            });
-        }
+        return mCompositor != null && mCompositor.isReady();
     }
 
      void handleToolbarAnimatorMessage(int message) {
@@ -243,19 +135,12 @@ public class LayerView extends FrameLayout {
                 }
                 break;
             case COMPOSITOR_CONTROLLER_OPEN:
-                
-                if (mCompositorControllerOpen) {
-                    break;
-                }
-                mCompositorControllerOpen = true;
-                
                 ThreadUtils.postToUiThread(new Runnable() {
                     @Override
                     public void run() {
                         mCompositor.setDefaultClearColor(mDefaultClearColor);
                         mCompositor.enableLayerUpdateNotifications(!mDrawListeners.isEmpty());
                         mToolbarAnimator.updateCompositor();
-                        updateCompositor();
                     }
                 });
                 break;
@@ -265,30 +150,7 @@ public class LayerView extends FrameLayout {
         }
     }
 
-    private final Compositor mCompositor = new Compositor();
-
-    public boolean shouldUseTextureView() {
-        
-        
-        
-        return false;
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    }
+    private LayerSession.Compositor mCompositor;
 
     public LayerView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -311,10 +173,6 @@ public class LayerView extends FrameLayout {
 
         mPanZoomController = mLayerClient.getPanZoomController();
         mToolbarAnimator = mLayerClient.getDynamicToolbarAnimator();
-        mToolbarAnimator.notifyCompositorCreated(mCompositor);
-
-        setFocusable(true);
-        setFocusableInTouchMode(true);
     }
 
     
@@ -335,16 +193,6 @@ public class LayerView extends FrameLayout {
     private static Point getEventRadius(MotionEvent event) {
         return new Point((int)event.getToolMajor() / 2,
                          (int)event.getToolMinor() / 2);
-    }
-
-    public void showSurface() {
-        
-        mSurfaceView.setVisibility(View.VISIBLE);
-    }
-
-    public void hideSurface() {
-        
-        mSurfaceView.setVisibility(View.INVISIBLE);
     }
 
     public void destroy() {
@@ -369,7 +217,7 @@ public class LayerView extends FrameLayout {
             requestFocus();
         }
 
-        if (!mLayerClient.isGeckoReady()) {
+        if (!isCompositorReady()) {
             
             
             return true;
@@ -398,7 +246,7 @@ public class LayerView extends FrameLayout {
             return false;
         }
 
-        if (!mLayerClient.isGeckoReady()) {
+        if (!isCompositorReady()) {
             
             
             return true;
@@ -414,7 +262,7 @@ public class LayerView extends FrameLayout {
         if (AndroidGamepadManager.handleMotionEvent(event)) {
             return true;
         }
-        if (!mLayerClient.isGeckoReady()) {
+        if (!isCompositorReady()) {
             
             
             return true;
@@ -425,50 +273,8 @@ public class LayerView extends FrameLayout {
         return false;
     }
 
-    @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-
-        
-        
-        setDescendantFocusability(FOCUS_BLOCK_DESCENDANTS);
-
-        
-        
-        
-        
-        if (shouldUseTextureView()) {
-            mTextureView = new TextureView(getContext());
-            mTextureView.setSurfaceTextureListener(new SurfaceTextureListener());
-
-            
-            
-            
-            
-            mTextureView.setBackgroundColor(Color.WHITE);
-            addView(mTextureView, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        } else {
-            
-            
-            setWillNotCacheDrawing(false);
-
-            mSurfaceView = new LayerSurfaceView(getContext(), this);
-            mSurfaceView.setBackgroundColor(Color.WHITE);
-            addView(mSurfaceView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
-            SurfaceHolder holder = mSurfaceView.getHolder();
-            holder.addCallback(new SurfaceListener());
-        }
-
-        attachCompositor();
-    }
-
     
     GeckoLayerClient getLayerClient() { return mLayerClient; }
-
-     boolean isGeckoReady() {
-        return mLayerClient.isGeckoReady();
-    }
 
     public PanZoomController getPanZoomController() { return mPanZoomController; }
     public DynamicToolbarAnimator getDynamicToolbarAnimator() { return mToolbarAnimator; }
@@ -482,15 +288,6 @@ public class LayerView extends FrameLayout {
     }
 
     public void setSurfaceBackgroundColor(int newColor) {
-        if (mSurfaceView != null) {
-            mSurfaceView.setBackgroundColor(newColor);
-        }
-    }
-
-    public void requestRender() {
-        if (isCompositorReady()) {
-            mCompositor.syncInvalidateAndScheduleComposite();
-        }
     }
 
     public interface GetPixelsResult {
@@ -517,6 +314,13 @@ public class LayerView extends FrameLayout {
         }
     }
 
+     void recvScreenPixels(int width, int height, int[] pixels) {
+        if (mGetPixelsResult != null) {
+            mGetPixelsResult.onPixelsResult(width, height, IntBuffer.wrap(pixels));
+            mGetPixelsResult = null;
+        }
+    }
+
     public void setListener(Listener listener) {
         mListener = listener;
     }
@@ -525,7 +329,12 @@ public class LayerView extends FrameLayout {
         return mListener;
     }
 
-    private void attachCompositor() {
+    protected void attachCompositor(final LayerSession session) {
+        mCompositor = session.mCompositor;
+        mCompositor.layerView = this;
+
+        mToolbarAnimator.notifyCompositorCreated(mCompositor);
+
         final NativePanZoomController npzc = (NativePanZoomController) mPanZoomController;
 
         if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
@@ -539,89 +348,11 @@ public class LayerView extends FrameLayout {
     }
 
     @WrapForJNI(calledFrom = "ui")
-    protected Object getCompositor() {
-        return mCompositor;
+    private Object getCompositor() {
+        return isCompositorReady() ? mCompositor : null;
     }
 
-    void serverSurfaceChanged(int newWidth, int newHeight) {
-        ThreadUtils.assertOnUiThread();
-
-        mWidth = newWidth;
-        mHeight = newHeight;
-        mServerSurfaceValid = true;
-
-        updateCompositor();
-    }
-
-    void updateCompositor() {
-        ThreadUtils.assertOnUiThread();
-
-        if (isCompositorReady()) {
-            
-            
-            
-            if (!mServerSurfaceValid) {
-                return;
-            }
-            
-            
-            
-            
-            
-            
-            mCompositor.syncResumeResizeCompositor(mWidth, mHeight, getSurface());
-            return;
-        }
-
-        
-        
-        
-        if (!mCompositorCreated && mServerSurfaceValid && getLayerClient().isGeckoReady()) {
-            mCompositorCreated = true;
-            mCompositor.createCompositor(mWidth, mHeight, getSurface());
-        }
-
-        if (mCompositorCreated && !mCompositorControllerOpen) {
-            mCompositor.sendToolbarAnimatorMessage(IS_COMPOSITOR_CONTROLLER_OPEN);
-        }
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    private void onSizeChanged(int width, int height) {
-        if (!mServerSurfaceValid || mSurfaceView == null) {
-            surfaceChanged(width, height);
-            return;
-        }
-
-        if (isCompositorReady()) {
-            mCompositor.syncResumeResizeCompositor(width, height, getSurface());
-        }
-
-        if (mOverscroll != null) {
-            mOverscroll.setSize(width, height);
-        }
-    }
-
-    private void surfaceChanged(int width, int height) {
-        serverSurfaceChanged(width, height);
-
+     void onSizeChanged(int width, int height) {
         if (mListener != null) {
             mListener.surfaceChanged();
         }
@@ -631,110 +362,8 @@ public class LayerView extends FrameLayout {
         }
     }
 
-    void notifySizeChanged(int windowWidth, int windowHeight) {
-        mCompositor.onSizeChanged(windowWidth, windowHeight);
-    }
-
-    void serverSurfaceDestroyed() {
-        ThreadUtils.assertOnUiThread();
-
-        
-        
-        
-        
-        
-        
-        
-        
-        if (isCompositorReady()) {
-            mCompositor.syncPauseCompositor();
-        }
-
-        mServerSurfaceValid = false;
-    }
-
-    private void onDestroyed() {
-        serverSurfaceDestroyed();
-    }
-
-    public Object getNativeWindow() {
-        if (mSurfaceView != null)
-            return mSurfaceView.getHolder();
-
-        return mTextureView.getSurfaceTexture();
-    }
-
-    public Object getSurface() {
-      if (mSurfaceView != null) {
-        return mSurfaceView.getHolder().getSurface();
-      }
-      return null;
-    }
-
     public interface Listener {
         void surfaceChanged();
-    }
-
-    private class SurfaceListener implements SurfaceHolder.Callback {
-        @Override
-        public void surfaceChanged(SurfaceHolder holder, int format, int width,
-                                                int height) {
-            onSizeChanged(width, height);
-        }
-
-        @Override
-        public void surfaceCreated(SurfaceHolder holder) {
-        }
-
-        @Override
-        public void surfaceDestroyed(SurfaceHolder holder) {
-            onDestroyed();
-        }
-    }
-
-    
-
-
-    private class LayerSurfaceView extends SurfaceView {
-        private LayerView mParent;
-
-        public LayerSurfaceView(Context context, LayerView parent) {
-            super(context);
-            mParent = parent;
-        }
-
-        @Override
-        protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-            super.onLayout(changed, left, top, right, bottom);
-            if (changed && mParent.mServerSurfaceValid) {
-                mParent.surfaceChanged(right - left, bottom - top);
-            }
-        }
-    }
-
-    private class SurfaceTextureListener implements TextureView.SurfaceTextureListener {
-        @Override
-        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-            
-            
-            onSizeChanged(width, height);
-        }
-
-        @Override
-        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-            onDestroyed();
-            return true; 
-        }
-
-        @Override
-        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-            onSizeChanged(width, height);
-        }
-
-        @Override
-        public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-
-        }
     }
 
     @RobocopTarget
@@ -773,6 +402,10 @@ public class LayerView extends FrameLayout {
         if (isCompositorReady() && notEmpty && mDrawListeners.isEmpty()) {
             mCompositor.enableLayerUpdateNotifications(false);
         }
+    }
+
+     void clearDrawListeners() {
+        mDrawListeners.clear();
     }
 
     @RobocopTarget

@@ -854,10 +854,6 @@ public abstract class GeckoApp extends GeckoActivity
         return inSampleSize;
     }
 
-    public void requestRender() {
-        mLayerView.requestRender();
-    }
-
     @Override 
     public void onTitleChange(final GeckoSession session, final String title) {
     }

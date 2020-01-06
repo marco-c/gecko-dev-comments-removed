@@ -44,8 +44,6 @@ class GeckoLayerClient implements LayerView.Listener
 
     private volatile ImmutableViewportMetrics mViewportMetrics;
 
-    private volatile boolean mGeckoIsReady;
-
     private final PanZoomController mPanZoomController;
     private final DynamicToolbarAnimator mToolbarAnimator;
     private final LayerView mView;
@@ -81,37 +79,8 @@ class GeckoLayerClient implements LayerView.Listener
         mPanZoomController.setOverscrollHandler(listener);
     }
 
-    public void setGeckoReady(boolean ready) {
-        mGeckoIsReady = ready;
-    }
-
-    public boolean isGeckoReady() {
-        return mGeckoIsReady;
-    }
-
-    
-    @WrapForJNI(calledFrom = "gecko")
-    private void onGeckoReady() {
-        mGeckoIsReady = true;
-
-        sendResizeEventIfNecessary(true);
-
-        
-        
-        
-        
-        
-        mView.post(new Runnable() {
-            @Override
-            public void run() {
-                getView().updateCompositor();
-            }
-        });
-    }
-
     public void destroy() {
         mPanZoomController.destroy();
-        mGeckoIsReady = false;
     }
 
     public LayerView getView() {
@@ -137,12 +106,7 @@ class GeckoLayerClient implements LayerView.Listener
         }
         mViewportMetrics = mViewportMetrics.setViewportSize(width, height);
 
-        if (mGeckoIsReady) {
-            
-            
-            
-            sendResizeEventIfNecessary(true);
-
+        if (mView.isCompositorReady()) {
             
             
             
@@ -163,28 +127,6 @@ class GeckoLayerClient implements LayerView.Listener
 
     DynamicToolbarAnimator getDynamicToolbarAnimator() {
         return mToolbarAnimator;
-    }
-
-    
-    private void sendResizeEventIfNecessary(boolean force) {
-        IntSize newWindowSize = new IntSize(mViewportMetrics.viewportRectWidth,
-                                            mViewportMetrics.viewportRectHeight);
-
-        boolean windowSizeChanged = !mWindowSize.equals(newWindowSize);
-
-        if (!force && !windowSizeChanged) {
-            return;
-        }
-
-        mWindowSize = newWindowSize;
-
-        if (windowSizeChanged) {
-            Log.d(LOGTAG, "Window-size changed to " + mWindowSize);
-        }
-
-        if (mView != null) {
-            mView.notifySizeChanged(mWindowSize.width, mWindowSize.height);
-        }
     }
 
     @WrapForJNI(calledFrom = "gecko")
@@ -211,7 +153,7 @@ class GeckoLayerClient implements LayerView.Listener
         mContentDocumentIsDisplayed = true;
     }
 
-    class PointerInfo {
+    private static class PointerInfo {
         
         
         
@@ -235,7 +177,7 @@ class GeckoLayerClient implements LayerView.Listener
         }
     }
 
-    class SynthesizedEventState {
+    private static class SynthesizedEventState {
         public final ArrayList<PointerInfo> pointers;
         public long downTime;
 
@@ -309,6 +251,11 @@ class GeckoLayerClient implements LayerView.Listener
     {
         Log.d(LOGTAG, "Synthesizing pointer from " + source + " id " + pointerId + " at " + screenX + ", " + screenY);
 
+        final int[] origin = new int[2];
+        mView.getLocationOnScreen(origin);
+        screenX -= origin[0];
+        screenY -= origin[1];
+
         if (mPointerState == null) {
             mPointerState = new SynthesizedEventState();
         }
@@ -366,9 +313,6 @@ class GeckoLayerClient implements LayerView.Listener
         PointerInfo info = mPointerState.pointers.get(pointerIndex);
         info.screenX = screenX;
         info.screenY = screenY;
-        if (mView != null) {
-            info.screenY += mView.getCurrentToolbarHeight();
-        }
         info.pressure = pressure;
         info.orientation = orientation;
 
@@ -445,7 +389,7 @@ class GeckoLayerClient implements LayerView.Listener
     }
 
     Matrix getMatrixForLayerRectToViewRect() {
-        if (!mGeckoIsReady) {
+        if (!mView.isCompositorReady()) {
             return null;
         }
 
