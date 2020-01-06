@@ -21,8 +21,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "TelemetryStopwatch",
                                   "resource://gre/modules/TelemetryStopwatch.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "console",
                                   "resource://gre/modules/Console.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
-                                  "resource://gre/modules/Preferences.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "setTimeout",
                                   "resource://gre/modules/Timer.jsm");
 
@@ -110,8 +108,8 @@ Sanitizer.prototype = {
 
     
     
-    Preferences.set(Sanitizer.PREF_SANITIZE_IN_PROGRESS,
-                    JSON.stringify(itemsToClear));
+    Services.prefs.setStringPref(Sanitizer.PREF_SANITIZE_IN_PROGRESS,
+                                 JSON.stringify(itemsToClear));
 
     
     for (let k of itemsToClear) {
@@ -177,7 +175,7 @@ Sanitizer.prototype = {
     TelemetryStopwatch.finish("FX_SANITIZE_TOTAL", refObj);
     
     
-    Preferences.reset(Sanitizer.PREF_SANITIZE_IN_PROGRESS);
+    Services.prefs.clearUserPref(Sanitizer.PREF_SANITIZE_IN_PROGRESS);
     progress = {};
     if (seenError) {
       throw new Error("Error sanitizing");
@@ -807,14 +805,14 @@ Sanitizer.sanitize = function(aParentWindow) {
 Sanitizer.onStartup = async function() {
   
   let shutownSanitizationWasInterrupted =
-    Preferences.get(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN, false) &&
-    !Preferences.has(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN);
+    Services.prefs.getBoolPref(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN, false) &&
+    Services.prefs.getPrefType(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN) == Ci.nsIPrefBranch.PREF_INVALID;
 
-  if (Preferences.has(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN)) {
+  if (Services.prefs.prefHasUserValue(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN)) {
     
     
     
-    Preferences.reset(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN);
+    Services.prefs.clearUserPref(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN);
     Services.prefs.savePrefFile(null);
   }
 
@@ -837,7 +835,7 @@ Sanitizer.onStartup = async function() {
   );
 
   
-  let lastInterruptedSanitization = Preferences.get(Sanitizer.PREF_SANITIZE_IN_PROGRESS, "");
+  let lastInterruptedSanitization = Services.prefs.getStringPref(Sanitizer.PREF_SANITIZE_IN_PROGRESS, "");
   if (lastInterruptedSanitization) {
     let s = new Sanitizer();
     
@@ -852,7 +850,7 @@ Sanitizer.onStartup = async function() {
 };
 
 var sanitizeOnShutdown = async function(options = {}) {
-  if (!Preferences.get(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN)) {
+  if (!Services.prefs.getBoolPref(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN)) {
     return;
   }
   
@@ -861,6 +859,6 @@ var sanitizeOnShutdown = async function(options = {}) {
   await s.sanitize(null, options);
   
   
-  Preferences.set(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN, true);
+  Services.prefs.setBoolPref(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN, true);
   Services.prefs.savePrefFile(null);
 };

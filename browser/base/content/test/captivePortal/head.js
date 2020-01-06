@@ -64,7 +64,7 @@ async function focusWindowAndWaitForPortalUI(aLongRecheck, win) {
   
   
   
-  Preferences.set("captivedetect.portalRecheckDelayMS", aLongRecheck ? -1 : 1000000);
+  Services.prefs.setIntPref("captivedetect.portalRecheckDelayMS", aLongRecheck ? -1 : 1000000);
 
   if (!win) {
     win = await BrowserTestUtils.openNewBrowserWindow();

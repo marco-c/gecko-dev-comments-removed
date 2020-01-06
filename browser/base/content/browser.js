@@ -69,10 +69,8 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "gPhotonStructure",
   ["Log", "resource://gre/modules/Log.jsm"],
   ["LoginManagerParent", "resource://gre/modules/LoginManagerParent.jsm"],
   ["NewTabUtils", "resource://gre/modules/NewTabUtils.jsm"],
-  ["PageActions", "resource:///modules/PageActions.jsm"],
   ["PageThumbs", "resource://gre/modules/PageThumbs.jsm"],
   ["PluralForm", "resource://gre/modules/PluralForm.jsm"],
-  ["Preferences", "resource://gre/modules/Preferences.jsm"],
   ["PrivateBrowsingUtils", "resource://gre/modules/PrivateBrowsingUtils.jsm"],
   ["ProcessHangMonitor", "resource:///modules/ProcessHangMonitor.jsm"],
   ["PromiseUtils", "resource://gre/modules/PromiseUtils.jsm"],
@@ -586,7 +584,7 @@ const gStoragePressureObserver = {
           
           
           let win = gBrowser.ownerGlobal;
-          if (Preferences.get("browser.preferences.useOldOrganization")) {
+          if (Services.prefs.getBoolPref("browser.preferences.useOldOrganization")) {
             win.openAdvancedPreferences("networkTab", {origin: "storagePressure"});
           } else {
             win.openPreferences("panePrivacy", {origin: "storagePressure"});
@@ -1391,7 +1389,6 @@ var gBrowserInit = {
     TabletModeUpdater.init();
     CombinedStopReload.init();
     gPrivateBrowsingUI.init();
-    BrowserPageActions.init();
 
     if (window.matchMedia("(-moz-os-version: windows-win8)").matches &&
         window.matchMedia("(-moz-windows-default-theme)").matches) {
@@ -6517,7 +6514,7 @@ var OfflineApps = {
   manage() {
     
     
-    if (Preferences.get("browser.preferences.useOldOrganization")) {
+    if (Services.prefs.getBoolPref("browser.preferences.useOldOrganization")) {
       openAdvancedPreferences("networkTab", {origin: "offlineApps"});
     } else {
       openPreferences("panePrivacy", {origin: "offlineApps"});
@@ -7984,6 +7981,106 @@ var gIdentityHandler = {
 
     return container;
   }
+};
+
+var gPageActionButton = {
+  get button() {
+    delete this.button;
+    return this.button = document.getElementById("urlbar-page-action-button");
+  },
+
+  get panel() {
+    delete this.panel;
+    return this.panel = document.getElementById("page-action-panel");
+  },
+
+  get sendToDeviceBody() {
+    delete this.sendToDeviceBody;
+    return this.sendToDeviceBody = document.getElementById("page-action-sendToDeviceView-body");
+  },
+
+  onEvent(event) {
+    event.stopPropagation();
+
+    if ((event.type == "click" && event.button != 0) ||
+        (event.type == "keypress" && event.charCode != KeyEvent.DOM_VK_SPACE &&
+         event.keyCode != KeyEvent.DOM_VK_RETURN)) {
+      return; 
+    }
+
+    this._preparePanelToBeShown();
+    this.panel.hidden = false;
+    this.panel.openPopup(this.button, {
+      position: "bottomcenter topright",
+      triggerEvent: event,
+    });
+  },
+
+  _preparePanelToBeShown() {
+    
+    BookmarkingUI.updateBookmarkPageMenuItem();
+
+    
+    let browser = gBrowser.selectedBrowser;
+    let url = browser.currentURI.spec;
+    let sendToDeviceItem =
+      document.getElementById("page-action-send-to-device-button");
+    sendToDeviceItem.disabled = !gSync.isSendableURI(url);
+  },
+
+  copyURL() {
+    this.panel.hidePopup();
+    Cc["@mozilla.org/widget/clipboardhelper;1"]
+      .getService(Ci.nsIClipboardHelper)
+      .copyString(gBrowser.selectedBrowser.currentURI.spec);
+  },
+
+  emailLink() {
+    this.panel.hidePopup();
+    MailIntegration.sendLinkForBrowser(gBrowser.selectedBrowser);
+  },
+
+  showSendToDeviceView(subviewButton) {
+    this.setupSendToDeviceView();
+    PanelUI.showSubView("page-action-sendToDeviceView", subviewButton);
+  },
+
+  setupSendToDeviceView() {
+    let browser = gBrowser.selectedBrowser;
+    let url = browser.currentURI.spec;
+    let title = browser.contentTitle;
+    let body = this.sendToDeviceBody;
+
+    
+    gSync.populateSendTabToDevicesMenu(body, url, title, (clientId, name, clientType) => {
+      if (!name) {
+        return document.createElement("toolbarseparator");
+      }
+      let item = document.createElement("toolbarbutton");
+      item.classList.add("page-action-sendToDevice-device", "subviewbutton");
+      if (clientId) {
+        item.classList.add("subviewbutton-iconic");
+      }
+      item.setAttribute("tooltiptext", name);
+      return item;
+    });
+
+    body.removeAttribute("state");
+    
+    
+    if (gSync.syncConfiguredAndLoading) {
+      body.setAttribute("state", "notready");
+      
+      Services.tm.dispatchToMainThread(async () => {
+        await Weave.Service.sync([]);  
+        
+        
+        if (!window.closed && !gSync.syncConfiguredAndLoading) {
+          this.setupSendToDeviceView();
+        }
+      });
+    }
+  },
 };
 
 
