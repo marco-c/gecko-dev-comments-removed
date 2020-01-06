@@ -31,6 +31,7 @@
 
 #include "../../mfbt/RefPtr.h"
 #include "../../mfbt/UniquePtr.h"
+#include "../../mfbt/ThreadLocal.h"
 
 #include "GLDefs.h"
 #include "GLLibraryLoader.h"
@@ -196,6 +197,7 @@ class GLContext
 {
 public:
     MOZ_DECLARE_WEAKREFERENCE_TYPENAME(GLContext)
+    static MOZ_THREAD_LOCAL(GLContext*) sCurrentContext;
 
 
 
@@ -307,6 +309,7 @@ public:
 protected:
     bool mIsOffscreen;
     bool mContextLost;
+    const bool mUseTLSIsCurrent;
 
     
 
@@ -3158,7 +3161,7 @@ public:
 protected:
     explicit GLContext(CreateContextFlags flags, const SurfaceCaps& caps,
                        GLContext* sharedContext = nullptr,
-                       bool isOffscreen = false);
+                       bool isOffscreen = false, bool canUseTLSIsCurrent = false);
 
 
 
@@ -3184,26 +3187,7 @@ public:
     }
 #endif
 
-    bool MakeCurrent(bool aForce = false) {
-        if (IsDestroyed()) {
-            return false;
-        }
-#ifdef MOZ_GL_DEBUG
-    PR_SetThreadPrivate(sCurrentGLContextTLS, this);
-
-    
-    
-#if 0
-        
-        
-        
-        
-        NS_ASSERTION(IsOwningThreadCurrent(),
-                     "MakeCurrent() called on different thread than this context was created on!");
-#endif
-#endif
-        return MakeCurrentImpl(aForce);
-    }
+    bool MakeCurrent(bool aForce = false);
 
     virtual bool Init() = 0;
 
