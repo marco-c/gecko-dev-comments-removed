@@ -583,8 +583,8 @@ impl<'a, 'b, 'i> DeclarationParser<'i> for KeyframeDeclarationParser<'a, 'b> {
         let property_context = PropertyParserContext::new(self.context);
 
         let id = PropertyId::parse(&name, Some(&property_context))
-            .map_err(|()| PropertyDeclarationParseError::UnknownProperty(name))?;
-        match PropertyDeclaration::parse_into(self.declarations, id, self.context, input) {
+            .map_err(|()| PropertyDeclarationParseError::UnknownProperty(name.clone()))?;
+        match PropertyDeclaration::parse_into(self.declarations, id, name, self.context, input) {
             Ok(()) => {
                 
                 input.expect_exhausted().map_err(|e| e.into())
