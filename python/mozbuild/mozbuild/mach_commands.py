@@ -484,9 +484,14 @@ class Build(MachCommandBase):
                                                 "tools",
                                                "rewriting",
                                                "ThirdPartyPaths.txt")
-                with open(pathToThirdparty) as f:
+
+                if os.path.exists(pathToThirdparty):
+                    with open(pathToThirdparty) as f:
+                        
+                        LOCAL_SUPPRESS_DIRS = tuple(d.rstrip('/') for d in f.read().splitlines())
+                else:
                     
-                    LOCAL_SUPPRESS_DIRS = tuple(d.rstrip('/') for d in f.read().splitlines())
+                    LOCAL_SUPPRESS_DIRS = ()
 
                 suppressed_by_dir = collections.Counter()
 
