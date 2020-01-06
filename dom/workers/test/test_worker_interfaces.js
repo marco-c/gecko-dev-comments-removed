@@ -80,9 +80,9 @@ var ecmaGlobals =
 var interfaceNamesInGlobalScope =
   [
 
-    "AbortController",
+    { name: "AbortController", nightly: true },
 
-    "AbortSignal",
+    { name: "AbortSignal", nightly: true },
 
     "Blob",
 
