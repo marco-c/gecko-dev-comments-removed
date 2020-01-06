@@ -194,9 +194,10 @@ public:
         
         
         
-        nsIPrefService* prefs = Preferences::GetService();
+        Preferences* prefs = static_cast<Preferences *>(Preferences::GetService());
         if (prefs) {
-            prefs->SavePrefFile(nullptr);
+            
+            prefs->SavePrefFileBlocking();
         }
     }
 

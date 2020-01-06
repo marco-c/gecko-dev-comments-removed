@@ -20,6 +20,8 @@
 
 
 
+pref("preferences.allow.omt-write", true);
+
 pref("keyword.enabled", false);
 pref("general.useragent.locale", "chrome://global/locale/intl.properties");
 pref("general.useragent.compatMode.firefox", false);

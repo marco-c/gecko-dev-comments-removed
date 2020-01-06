@@ -774,6 +774,9 @@ CreateContentProcessSandboxTempDir()
     if (!prefsvc || NS_FAILED((rv = prefsvc->SavePrefFile(nullptr)))) {
       
       
+      
+      
+      
       NS_WARNING("Failed to save pref file, cannot create temp dir.");
       return nullptr;
     }
