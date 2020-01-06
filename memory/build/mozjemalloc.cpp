@@ -902,6 +902,21 @@ struct arena_bin_t
   
   static constexpr long double kRunOverhead = 1.6_percent;
   static constexpr long double kRunRelaxedOverhead = 2.4_percent;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  inline void Init(SizeClass aSizeClass);
 };
 
 struct arena_t
@@ -2951,34 +2966,26 @@ arena_t::MallocBinHard(arena_bin_t* aBin)
   return MallocBinEasy(aBin, aBin->mCurrentRun);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static void
-arena_bin_run_size_calc(arena_bin_t* bin)
+void
+arena_bin_t::Init(SizeClass aSizeClass)
 {
   size_t try_run_size;
   unsigned try_nregs, try_mask_nelms, try_reg0_offset;
   
   static const size_t kFixedHeaderSize = offsetof(arena_run_t, regs_mask);
 
+  MOZ_ASSERT(aSizeClass.Size() <= gMaxBinClass);
+
   try_run_size = gPageSize;
+
+  mCurrentRun = nullptr;
+  mNonFullRuns.Init();
+  mSizeClass = aSizeClass.Size();
+  mNumRuns = 0;
 
   
   while (true) {
-    try_nregs = ((try_run_size - kFixedHeaderSize) / bin->mSizeClass) +
+    try_nregs = ((try_run_size - kFixedHeaderSize) / mSizeClass) +
                 1; 
 
     
@@ -2990,7 +2997,7 @@ arena_bin_run_size_calc(arena_bin_t* bin)
       try_mask_nelms =
         (try_nregs >> (LOG2(sizeof(int)) + 3)) +
         ((try_nregs & ((1U << (LOG2(sizeof(int)) + 3)) - 1)) ? 1 : 0);
-      try_reg0_offset = try_run_size - (try_nregs * bin->mSizeClass);
+      try_reg0_offset = try_run_size - (try_nregs * mSizeClass);
     } while (kFixedHeaderSize + (sizeof(unsigned) * try_mask_nelms) >
              try_reg0_offset);
 
@@ -3000,15 +3007,15 @@ arena_bin_run_size_calc(arena_bin_t* bin)
     }
 
     
-    if (Fraction(try_reg0_offset, try_run_size) <= arena_bin_t::kRunOverhead) {
+    if (Fraction(try_reg0_offset, try_run_size) <= kRunOverhead) {
       break;
     }
 
     
     
     
-    if (try_reg0_offset > bin->mSizeClass) {
-      if (Fraction(try_reg0_offset, try_run_size) <= arena_bin_t::kRunRelaxedOverhead) {
+    if (try_reg0_offset > mSizeClass) {
+      if (Fraction(try_reg0_offset, try_run_size) <= kRunRelaxedOverhead) {
         break;
       }
     }
@@ -3034,10 +3041,10 @@ arena_bin_run_size_calc(arena_bin_t* bin)
   MOZ_ASSERT((try_mask_nelms << (LOG2(sizeof(int)) + 3)) >= try_nregs);
 
   
-  bin->mRunSize = try_run_size;
-  bin->mRunNumRegions = try_nregs;
-  bin->mRunNumRegionsMask = try_mask_nelms;
-  bin->mRunFirstRegionOffset = try_reg0_offset;
+  mRunSize = try_run_size;
+  mRunNumRegions = try_nregs;
+  mRunNumRegionsMask = try_mask_nelms;
+  mRunFirstRegionOffset = try_reg0_offset;
 }
 
 void*
@@ -3804,7 +3811,6 @@ iralloc(void* aPtr, size_t aSize, arena_t* aArena)
 arena_t::arena_t()
 {
   unsigned i;
-  arena_bin_t* bin;
 
   MOZ_RELEASE_ASSERT(mLock.Init());
 
@@ -3829,15 +3835,8 @@ arena_t::arena_t()
   SizeClass sizeClass(1);
 
   for (i = 0;; i++) {
-    bin = &mBins[i];
-    bin->mCurrentRun = nullptr;
-    bin->mNonFullRuns.Init();
-
-    bin->mSizeClass = sizeClass.Size();
-
-    arena_bin_run_size_calc(bin);
-
-    bin->mNumRuns = 0;
+    arena_bin_t& bin = mBins[i];
+    bin.Init(sizeClass);
 
     
     if (sizeClass.Size() == gMaxSubPageClass) {
