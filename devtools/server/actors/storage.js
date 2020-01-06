@@ -22,6 +22,14 @@ loader.lazyRequireGetter(this, "naturalSortCaseInsensitive",
 
 
 
+const COOKIE_SAMESITE = {
+  LAX: "Lax",
+  STRICT: "Strict",
+  UNSET: "Unset"
+};
+
+
+
 
 
 const SEPARATOR_GUID = "{9d414cc5-8319-0a04-0586-c0a6ae01670a}";
@@ -540,8 +548,20 @@ StorageActors.createActor({
       value: new LongStringActor(this.conn, cookie.value || ""),
       isDomain: cookie.isDomain,
       isSecure: cookie.isSecure,
-      isHttpOnly: cookie.isHttpOnly
+      isHttpOnly: cookie.isHttpOnly,
+      sameSite: this.getSameSiteStringFromCookie(cookie)
     };
+  },
+
+  getSameSiteStringFromCookie(cookie) {
+    switch (cookie.sameSite) {
+      case cookie.SAMESITE_LAX:
+        return COOKIE_SAMESITE.LAX;
+      case cookie.SAMESITE_STRICT:
+        return COOKIE_SAMESITE.STRICT;
+    }
+    
+    return COOKIE_SAMESITE.UNSET;
   },
 
   populateStoresForHost(host) {
@@ -653,7 +673,8 @@ StorageActors.createActor({
       { name: "value", editable: true, hidden: false },
       { name: "isDomain", editable: false, hidden: true },
       { name: "isSecure", editable: true, hidden: true },
-      { name: "isHttpOnly", editable: true, hidden: false }
+      { name: "isHttpOnly", editable: true, hidden: false },
+      { name: "sameSite", editable: false, hidden: false }
     ];
   }),
 
