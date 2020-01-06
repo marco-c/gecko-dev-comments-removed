@@ -412,8 +412,8 @@ const ExpectComparisonTo = {
 
 
 
-const isServo = SpecialPowers.getBoolPref("layout.css.servo.enabled", false);
-const toleranceForServoBackend = isServo ? 0.5 / 60.0 : 0.0;
+const isStylo = SpecialPowers.DOMWindowUtils.isStyledByServo;
+const toleranceForServoBackend = isStylo ? 0.5 / 60.0 : 0.0;
 
 (function() {
   window.omta_todo_is = function(elem, property, expected, runningOn, desc,
