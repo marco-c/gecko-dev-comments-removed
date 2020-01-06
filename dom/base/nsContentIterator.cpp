@@ -344,20 +344,20 @@ nsContentIterator::Init(nsINode* aStartContainer, uint32_t aStartOffset,
 
 
 nsresult
-nsContentIterator::InitInternal(nsINode* startNode, uint32_t startIndx,
+nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t startIndx,
                                 nsINode* endNode, uint32_t endIndx)
 {
   
   mCommonParent =
-    nsContentUtils::GetCommonAncestor(startNode, endNode);
+    nsContentUtils::GetCommonAncestor(aStartContainer, endNode);
   if (NS_WARN_IF(!mCommonParent)) {
     return NS_ERROR_FAILURE;
   }
 
-  bool startIsData = startNode->IsNodeOfType(nsINode::eDATA_NODE);
+  bool startIsData = aStartContainer->IsNodeOfType(nsINode::eDATA_NODE);
 
   
-  if (startNode == endNode) {
+  if (aStartContainer == endNode) {
     
     
     
@@ -372,7 +372,7 @@ nsContentIterator::InitInternal(nsINode* startNode, uint32_t startIndx,
 
     if (startIsData) {
       
-      mFirst   = startNode->AsContent();
+      mFirst   = aStartContainer->AsContent();
       mLast    = mFirst;
       mCurNode = mFirst;
 
@@ -388,8 +388,8 @@ nsContentIterator::InitInternal(nsINode* startNode, uint32_t startIndx,
 
   
   
-  if (!startIsData && uint32_t(startIndx) < startNode->GetChildCount()) {
-    cChild = startNode->GetChildAt(startIndx);
+  if (!startIsData && uint32_t(startIndx) < aStartContainer->GetChildCount()) {
+    cChild = aStartContainer->GetChildAt(startIndx);
     NS_WARNING_ASSERTION(cChild, "GetChildAt returned null");
   }
 
@@ -406,33 +406,33 @@ nsContentIterator::InitInternal(nsINode* startNode, uint32_t startIndx,
       
       
       bool startIsContainer = true;
-      if (startNode->IsHTMLElement()) {
+      if (aStartContainer->IsHTMLElement()) {
         if (nsIParserService* ps = nsContentUtils::GetParserService()) {
-          nsIAtom* name = startNode->NodeInfo()->NameAtom();
+          nsIAtom* name = aStartContainer->NodeInfo()->NameAtom();
           ps->IsContainer(ps->HTMLAtomTagToId(name), startIsContainer);
         }
       }
       if (!startIsData && (startIsContainer || startIndx)) {
-        mFirst = GetNextSibling(startNode);
+        mFirst = GetNextSibling(aStartContainer);
         NS_WARNING_ASSERTION(mFirst, "GetNextSibling returned null");
 
         
         
         if (mFirst &&
-            NS_WARN_IF(!NodeIsInTraversalRange(mFirst, mPre, startNode,
+            NS_WARN_IF(!NodeIsInTraversalRange(mFirst, mPre, aStartContainer,
                                                startIndx, endNode, endIndx))) {
           mFirst = nullptr;
         }
       } else {
-        mFirst = startNode->AsContent();
+        mFirst = aStartContainer->AsContent();
       }
     } else {
       
-      if (NS_WARN_IF(!startNode->IsContent())) {
+      if (NS_WARN_IF(!aStartContainer->IsContent())) {
         
         mFirst = nullptr;
       } else {
-        mFirst = startNode->AsContent();
+        mFirst = aStartContainer->AsContent();
       }
     }
   } else {
@@ -447,7 +447,7 @@ nsContentIterator::InitInternal(nsINode* startNode, uint32_t startIndx,
       
 
       if (mFirst &&
-          !NodeIsInTraversalRange(mFirst, mPre, startNode, startIndx,
+          !NodeIsInTraversalRange(mFirst, mPre, aStartContainer, startIndx,
                                   endNode, endIndx)) {
         mFirst = nullptr;
       }
@@ -499,7 +499,7 @@ nsContentIterator::InitInternal(nsINode* startNode, uint32_t startIndx,
         NS_WARNING_ASSERTION(mLast, "GetPrevSibling returned null");
 
         if (!NodeIsInTraversalRange(mLast, mPre,
-                                    startNode, startIndx,
+                                    aStartContainer, startIndx,
                                     endNode, endIndx)) {
           mLast = nullptr;
         }
@@ -523,7 +523,7 @@ nsContentIterator::InitInternal(nsINode* startNode, uint32_t startIndx,
       NS_WARNING_ASSERTION(mLast, "GetDeepLastChild returned null");
 
       if (NS_WARN_IF(!NodeIsInTraversalRange(mLast, mPre,
-                                             startNode, startIndx,
+                                             aStartContainer, startIndx,
                                              endNode, endIndx))) {
         mLast = nullptr;
       }
