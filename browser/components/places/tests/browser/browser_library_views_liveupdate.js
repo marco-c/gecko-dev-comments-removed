@@ -6,144 +6,105 @@
 
 
 
-var gLibrary = null;
+let gLibrary = null;
 
-function test() {
-  waitForExplicitFinish();
+async function testInFolder(folderGuid, prefix) {
+  let addedBookmarks = [];
+  let item = await PlacesUtils.bookmarks.insert({
+    parentGuid: folderGuid,
+    title: `${prefix}1`,
+    url: `http://${prefix}1.mozilla.org/`,
+  });
+  item.title = `${prefix}1_edited`;
+  await PlacesUtils.bookmarks.update(item);
+  addedBookmarks.push(item);
+
+  item = await PlacesUtils.bookmarks.insert({
+    parentGuid: folderGuid,
+    title: `${prefix}2`,
+    url: "place:",
+  });
+
+  item.title = `${prefix}2_edited`;
+  await PlacesUtils.bookmarks.update(item);
+  addedBookmarks.push(item);
+
+  item = await PlacesUtils.bookmarks.insert({
+    parentGuid: folderGuid,
+    type: PlacesUtils.bookmarks.TYPE_SEPARATOR,
+  });
+  addedBookmarks.push(item);
+
+  item = await PlacesUtils.bookmarks.insert({
+    parentGuid: folderGuid,
+    title: `${prefix}f`,
+    type: PlacesUtils.bookmarks.TYPE_FOLDER,
+  });
+
+  item.title = `${prefix}f_edited`;
+  await PlacesUtils.bookmarks.update(item);
+  addedBookmarks.push(item);
+
+  item = await PlacesUtils.bookmarks.insert({
+    parentGuid: item.guid,
+    title: `${prefix}f1`,
+    url: `http://${prefix}f1.mozilla.org/`,
+  });
+  addedBookmarks.push(item);
+
+  item.index = 0;
+  await PlacesUtils.bookmarks.update(item);
+
+  return addedBookmarks;
+}
+
+add_task(async function test() {
   
   
   
   requestLongerTimeout(2);
 
   
-  openLibrary(function(library) {
-    gLibrary = library;
-    startTest();
-  });
-}
+  gLibrary = await promiseLibrary();
 
-
-
-
-function startTest() {
-  var bs = PlacesUtils.bookmarks;
   
-  bs.addObserver(bookmarksObserver);
+  PlacesUtils.bookmarks.addObserver(bookmarksObserver);
   PlacesUtils.annotations.addObserver(bookmarksObserver);
-  var addedBookmarks = [];
+  let addedBookmarks = [];
 
   
   ok(true, "*** Acting on menu bookmarks");
-  var id = bs.insertBookmark(bs.bookmarksMenuFolder,
-                             PlacesUtils._uri("http://bm1.mozilla.org/"),
-                             bs.DEFAULT_INDEX,
-                             "bm1");
-  addedBookmarks.push(id);
-  id = bs.insertBookmark(bs.bookmarksMenuFolder,
-                         PlacesUtils._uri("place:"),
-                         bs.DEFAULT_INDEX,
-                         "bm2");
-  bs.setItemTitle(id, "bm2_edited");
-  addedBookmarks.push(id);
-  id = bs.insertSeparator(bs.bookmarksMenuFolder, bs.DEFAULT_INDEX);
-  addedBookmarks.push(id);
-  id = bs.createFolder(bs.bookmarksMenuFolder,
-                       "bmf",
-                       bs.DEFAULT_INDEX);
-  bs.setItemTitle(id, "bmf_edited");
-  addedBookmarks.push(id);
-  id = bs.insertBookmark(id,
-                         PlacesUtils._uri("http://bmf1.mozilla.org/"),
-                         bs.DEFAULT_INDEX,
-                         "bmf1");
-  addedBookmarks.push(id);
-  bs.moveItem(id, bs.bookmarksMenuFolder, 0);
+  addedBookmarks = addedBookmarks.concat(await testInFolder(PlacesUtils.bookmarks.menuGuid, "bm"));
 
   
   ok(true, "*** Acting on toolbar bookmarks");
-  id = bs.insertBookmark(bs.toolbarFolder,
-                         PlacesUtils._uri("http://tb1.mozilla.org/"),
-                         bs.DEFAULT_INDEX,
-                         "tb1");
-  bs.setItemTitle(id, "tb1_edited");
-  addedBookmarks.push(id);
-  id = bs.insertBookmark(bs.toolbarFolder,
-                         PlacesUtils._uri("place:"),
-                         bs.DEFAULT_INDEX,
-                         "tb2");
-  bs.setItemTitle(id, "tb2_edited");
-  addedBookmarks.push(id);
-  id = bs.insertSeparator(bs.toolbarFolder, bs.DEFAULT_INDEX);
-  addedBookmarks.push(id);
-  id = bs.createFolder(bs.toolbarFolder,
-                       "tbf",
-                       bs.DEFAULT_INDEX);
-  bs.setItemTitle(id, "tbf_edited");
-  addedBookmarks.push(id);
-  id = bs.insertBookmark(id,
-                         PlacesUtils._uri("http://tbf1.mozilla.org/"),
-                         bs.DEFAULT_INDEX,
-                         "bmf1");
-  addedBookmarks.push(id);
-  bs.moveItem(id, bs.toolbarFolder, 0);
+  addedBookmarks = addedBookmarks.concat(await testInFolder(PlacesUtils.bookmarks.toolbarGuid, "tb"));
 
   
   ok(true, "*** Acting on unsorted bookmarks");
-  id = bs.insertBookmark(bs.unfiledBookmarksFolder,
-                         PlacesUtils._uri("http://ub1.mozilla.org/"),
-                         bs.DEFAULT_INDEX,
-                         "ub1");
-  bs.setItemTitle(id, "ub1_edited");
-  addedBookmarks.push(id);
-  id = bs.insertBookmark(bs.unfiledBookmarksFolder,
-                         PlacesUtils._uri("place:"),
-                         bs.DEFAULT_INDEX,
-                         "ub2");
-  bs.setItemTitle(id, "ub2_edited");
-  addedBookmarks.push(id);
-  id = bs.insertSeparator(bs.unfiledBookmarksFolder, bs.DEFAULT_INDEX);
-  addedBookmarks.push(id);
-  id = bs.createFolder(bs.unfiledBookmarksFolder,
-                       "ubf",
-                       bs.DEFAULT_INDEX);
-  bs.setItemTitle(id, "ubf_edited");
-  addedBookmarks.push(id);
-  id = bs.insertBookmark(id,
-                         PlacesUtils._uri("http://ubf1.mozilla.org/"),
-                         bs.DEFAULT_INDEX,
-                         "ubf1");
-  addedBookmarks.push(id);
-  bs.moveItem(id, bs.unfiledBookmarksFolder, 0);
+  addedBookmarks = addedBookmarks.concat(await testInFolder(PlacesUtils.bookmarks.unfiledGuid, "ub"));
 
   
-  addedBookmarks.forEach(function(aItem) {
+  for (let i = 0; i < addedBookmarks.length; i++) {
     
     
     try {
-      bs.removeItem(aItem);
+      await PlacesUtils.bookmarks.remove(addedBookmarks[i]);
     } catch (ex) {}
-  });
+  }
 
   
-  bs.removeObserver(bookmarksObserver);
+  PlacesUtils.bookmarks.removeObserver(bookmarksObserver);
   PlacesUtils.annotations.removeObserver(bookmarksObserver);
-  finishTest();
-}
 
-
-
-
-function finishTest() {
-  
-  gLibrary.close();
-  finish();
-}
+  await promiseLibraryClosed(gLibrary);
+});
 
 
 
 
 
-var bookmarksObserver = {
+let bookmarksObserver = {
   QueryInterface: XPCOMUtils.generateQI([
     Ci.nsINavBookmarkObserver,
     Ci.nsIAnnotationObserver
@@ -158,14 +119,14 @@ var bookmarksObserver = {
   
   onItemAdded: function PSB_onItemAdded(aItemId, aFolderId, aIndex, aItemType,
                                         aURI) {
-    var node = null;
-    var index = null;
+    let node = null;
+    let index = null;
     [node, index] = getNodeForTreeItem(aItemId, gLibrary.PlacesOrganizer._places);
     
     switch (aItemType) {
       case PlacesUtils.bookmarks.TYPE_BOOKMARK:
-        var uriString = aURI.spec;
-        var isQuery = uriString.substr(0, 6) == "place:";
+        let uriString = aURI.spec;
+        let isQuery = uriString.substr(0, 6) == "place:";
         if (isQuery) {
           isnot(node, null, "Found new Places node in left pane");
           ok(index >= 0, "Node is at index " + index);
@@ -182,7 +143,7 @@ var bookmarksObserver = {
   },
 
   onItemRemoved: function PSB_onItemRemoved(aItemId, aFolder, aIndex) {
-    var node = null;
+    let node = null;
     [node, ] = getNodeForTreeItem(aItemId, gLibrary.PlacesOrganizer._places);
     is(node, null, "Places node not found in left pane");
   },
@@ -190,14 +151,14 @@ var bookmarksObserver = {
   onItemMoved(aItemId,
                         aOldFolderId, aOldIndex,
                         aNewFolderId, aNewIndex, aItemType) {
-    var node = null;
-    var index = null;
+    let node = null;
+    let index = null;
     [node, index] = getNodeForTreeItem(aItemId, gLibrary.PlacesOrganizer._places);
     
     switch (aItemType) {
       case PlacesUtils.bookmarks.TYPE_BOOKMARK:
-        var uriString = PlacesUtils.bookmarks.getBookmarkURI(aItemId).spec;
-        var isQuery = uriString.substr(0, 6) == "place:";
+        let uriString = PlacesUtils.bookmarks.getBookmarkURI(aItemId).spec;
+        let isQuery = uriString.substr(0, 6) == "place:";
         if (isQuery) {
           isnot(node, null, "Found new Places node in left pane");
           ok(index >= 0, "Node is at index " + index);
@@ -252,8 +213,8 @@ function getNodeForTreeItem(aItemId, aTree, aValidator) {
 
     
     
-    for (var i = aContainerIndex + 1; i < aTree.view.rowCount; i++) {
-      var node = aTree.view.nodeForTreeIndex(i);
+    for (let i = aContainerIndex + 1; i < aTree.view.rowCount; i++) {
+      let node = aTree.view.nodeForTreeIndex(i);
 
       if (node.itemId == aItemId) {
         
@@ -265,7 +226,7 @@ function getNodeForTreeItem(aItemId, aTree, aValidator) {
         
         aTree.view.toggleOpenState(i);
         
-        var foundNode = findNode(i);
+        let foundNode = findNode(i);
         
         aTree.view.toggleOpenState(i);
         
@@ -281,11 +242,11 @@ function getNodeForTreeItem(aItemId, aTree, aValidator) {
   }
 
   
-  for (var i = 0; i < aTree.view.rowCount; i++) {
+  for (let i = 0; i < aTree.view.rowCount; i++) {
     
     aTree.view.toggleOpenState(i);
     
-    var foundNode = findNode(i);
+    let foundNode = findNode(i);
     
     aTree.view.toggleOpenState(i);
     

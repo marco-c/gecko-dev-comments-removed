@@ -9,32 +9,6 @@
 var toolbar = document.getElementById("PersonalToolbar");
 var wasCollapsed = toolbar.collapsed;
 
-function test() {
-  waitForExplicitFinish();
-
-  
-  if (wasCollapsed) {
-    promiseSetToolbarVisibility(toolbar, true).then(openBookmarksSidebar);
-  } else {
-    openBookmarksSidebar();
-  }
-}
-
-function openBookmarksSidebar() {
-  
-  var popup = document.getElementById("bookmarksMenuPopup");
-  ok(popup, "Menu popup element exists");
-  fakeOpenPopup(popup);
-
-  
-  var sidebar = document.getElementById("sidebar");
-  sidebar.addEventListener("load", function() {
-    
-    executeSoon(startTest);
-  }, {capture: true, once: true});
-  SidebarUI.show("viewBookmarksSidebar");
-}
-
 
 
 
@@ -47,134 +21,106 @@ function fakeOpenPopup(aPopup) {
   aPopup.dispatchEvent(popupEvent);
 }
 
+async function testInFolder(folderGuid, prefix) {
+  let addedBookmarks = [];
+  let item = await PlacesUtils.bookmarks.insert({
+    parentGuid: folderGuid,
+    title: `${prefix}1`,
+    url: `http://${prefix}1.mozilla.org/`,
+  });
+  item.title = `${prefix}1_edited`;
+  await PlacesUtils.bookmarks.update(item);
+  addedBookmarks.push(item);
 
+  item = await PlacesUtils.bookmarks.insert({
+    parentGuid: folderGuid,
+    title: `${prefix}2`,
+    url: "place:",
+  });
 
+  item.title = `${prefix}2_edited`;
+  await PlacesUtils.bookmarks.update(item);
+  addedBookmarks.push(item);
 
-function startTest() {
-  var bs = PlacesUtils.bookmarks;
+  item = await PlacesUtils.bookmarks.insert({
+    parentGuid: folderGuid,
+    type: PlacesUtils.bookmarks.TYPE_SEPARATOR,
+  });
+  addedBookmarks.push(item);
+
+  item = await PlacesUtils.bookmarks.insert({
+    parentGuid: folderGuid,
+    title: `${prefix}f`,
+    type: PlacesUtils.bookmarks.TYPE_FOLDER,
+  });
+
+  item.title = `${prefix}f_edited`;
+  await PlacesUtils.bookmarks.update(item);
+  addedBookmarks.push(item);
+
+  item = await PlacesUtils.bookmarks.insert({
+    parentGuid: item.guid,
+    title: `${prefix}f1`,
+    url: `http://${prefix}f1.mozilla.org/`,
+  });
+  addedBookmarks.push(item);
+
+  item.index = 0;
+  item.parentGuid = folderGuid;
+  await PlacesUtils.bookmarks.update(item);
+
+  return addedBookmarks;
+}
+
+add_task(async function test() {
   
-  bs.addObserver(bookmarksObserver);
-  PlacesUtils.annotations.addObserver(bookmarksObserver);
-  var addedBookmarks = [];
-
-  
-  info("*** Acting on menu bookmarks");
-  var id = bs.insertBookmark(bs.bookmarksMenuFolder,
-                             PlacesUtils._uri("http://bm1.mozilla.org/"),
-                             bs.DEFAULT_INDEX,
-                             "bm1");
-  bs.setItemTitle(id, "bm1_edited");
-  addedBookmarks.push(id);
-  id = bs.insertBookmark(bs.bookmarksMenuFolder,
-                         PlacesUtils._uri("place:"),
-                         bs.DEFAULT_INDEX,
-                         "bm2");
-  bs.setItemTitle(id, "");
-  addedBookmarks.push(id);
-  id = bs.insertSeparator(bs.bookmarksMenuFolder, bs.DEFAULT_INDEX);
-  addedBookmarks.push(id);
-  id = bs.createFolder(bs.bookmarksMenuFolder,
-                       "bmf",
-                       bs.DEFAULT_INDEX);
-  bs.setItemTitle(id, "bmf_edited");
-  addedBookmarks.push(id);
-  id = bs.insertBookmark(id,
-                         PlacesUtils._uri("http://bmf1.mozilla.org/"),
-                         bs.DEFAULT_INDEX,
-                         "bmf1");
-  bs.setItemTitle(id, "bmf1_edited");
-  addedBookmarks.push(id);
-  bs.moveItem(id, bs.bookmarksMenuFolder, 0);
-
-  
-  info("*** Acting on toolbar bookmarks");
-  id = bs.insertBookmark(bs.toolbarFolder,
-                         PlacesUtils._uri("http://tb1.mozilla.org/"),
-                         bs.DEFAULT_INDEX,
-                         "tb1");
-  bs.setItemTitle(id, "tb1_edited");
-  addedBookmarks.push(id);
-  
-  bs.setItemTitle(id, "tb1_edited");
-  id = bs.insertBookmark(bs.toolbarFolder,
-                         PlacesUtils._uri("place:"),
-                         bs.DEFAULT_INDEX,
-                         "tb2");
-  bs.setItemTitle(id, "");
-  addedBookmarks.push(id);
-  id = bs.insertSeparator(bs.toolbarFolder, bs.DEFAULT_INDEX);
-  addedBookmarks.push(id);
-  id = bs.createFolder(bs.toolbarFolder,
-                       "tbf",
-                       bs.DEFAULT_INDEX);
-  bs.setItemTitle(id, "tbf_edited");
-  addedBookmarks.push(id);
-  id = bs.insertBookmark(id,
-                         PlacesUtils._uri("http://tbf1.mozilla.org/"),
-                         bs.DEFAULT_INDEX,
-                         "tbf1");
-  bs.setItemTitle(id, "tbf1_edited");
-  addedBookmarks.push(id);
-  bs.moveItem(id, bs.toolbarFolder, 0);
+  if (wasCollapsed) {
+    await promiseSetToolbarVisibility(toolbar, true);
+  }
 
   
-  info("*** Acting on unsorted bookmarks");
-  id = bs.insertBookmark(bs.unfiledBookmarksFolder,
-                         PlacesUtils._uri("http://ub1.mozilla.org/"),
-                         bs.DEFAULT_INDEX,
-                         "ub1");
-  bs.setItemTitle(id, "ub1_edited");
-  addedBookmarks.push(id);
-  id = bs.insertBookmark(bs.unfiledBookmarksFolder,
-                         PlacesUtils._uri("place:"),
-                         bs.DEFAULT_INDEX,
-                         "ub2");
-  bs.setItemTitle(id, "ub2_edited");
-  addedBookmarks.push(id);
-  id = bs.insertSeparator(bs.unfiledBookmarksFolder, bs.DEFAULT_INDEX);
-  addedBookmarks.push(id);
-  id = bs.createFolder(bs.unfiledBookmarksFolder,
-                       "ubf",
-                       bs.DEFAULT_INDEX);
-  bs.setItemTitle(id, "ubf_edited");
-  addedBookmarks.push(id);
-  id = bs.insertBookmark(id,
-                         PlacesUtils._uri("http://ubf1.mozilla.org/"),
-                         bs.DEFAULT_INDEX,
-                         "bubf1");
-  bs.setItemTitle(id, "bubf1_edited");
-  addedBookmarks.push(id);
-  bs.moveItem(id, bs.unfiledBookmarksFolder, 0);
+  var popup = document.getElementById("bookmarksMenuPopup");
+  ok(popup, "Menu popup element exists");
+  fakeOpenPopup(popup);
 
   
-  addedBookmarks.forEach(function(aItem) {
+  await withSidebarTree("bookmarks", async () => {
     
+    PlacesUtils.bookmarks.addObserver(bookmarksObserver);
+    PlacesUtils.annotations.addObserver(bookmarksObserver);
+    var addedBookmarks = [];
+
     
-    try {
-      bs.removeItem(aItem);
-    } catch (ex) {}
+    info("*** Acting on menu bookmarks");
+    addedBookmarks = addedBookmarks.concat(await testInFolder(PlacesUtils.bookmarks.menuGuid, "bm"));
+
+    
+    info("*** Acting on toolbar bookmarks");
+    addedBookmarks = addedBookmarks.concat(await testInFolder(PlacesUtils.bookmarks.toolbarGuid, "tb"));
+
+    
+    info("*** Acting on unsorted bookmarks");
+    addedBookmarks = addedBookmarks.concat(await testInFolder(PlacesUtils.bookmarks.unfiledGuid, "ub"));
+
+    
+    for (let bm of addedBookmarks) {
+      
+      
+      try {
+        await PlacesUtils.bookmarks.remove(bm);
+      } catch (ex) {}
+    }
+
+    
+    PlacesUtils.bookmarks.removeObserver(bookmarksObserver);
+    PlacesUtils.annotations.removeObserver(bookmarksObserver);
   });
 
   
-  bs.removeObserver(bookmarksObserver);
-  PlacesUtils.annotations.removeObserver(bookmarksObserver);
-  finishTest();
-}
-
-
-
-
-function finishTest() {
-  
-  SidebarUI.hide();
-
-  
   if (wasCollapsed) {
-    promiseSetToolbarVisibility(toolbar, false).then(finish);
-  } else {
-    finish();
+    await promiseSetToolbarVisibility(toolbar, false);
   }
-}
+});
 
 
 
@@ -207,14 +153,14 @@ var bookmarksObserver = {
   },
 
   onItemRemoved: function PSB_onItemRemoved(aItemId, aFolderId, aIndex,
-                                            aItemType) {
+                                            aItemType, url, aGuid) {
     var views = getViewsForFolder(aFolderId);
     ok(views.length > 0, "Found affected views (" + views.length + "): " + views);
     
     for (var i = 0; i < views.length; i++) {
       var node = null;
       [node, ] = searchItemInView(aItemId, views[i]);
-      is(node, null, "Places node not found in " + views[i]);
+      is(node, null, "Places node should not be found in " + views[i]);
     }
   },
 
