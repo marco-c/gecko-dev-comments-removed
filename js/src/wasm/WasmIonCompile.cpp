@@ -779,24 +779,6 @@ class FunctionCompiler
     {
         
         
-        
-        if ((*base)->isConstant()) {
-            uint32_t basePtr = (*base)->toConstant()->toInt32();
-            uint32_t offset = access->offset();
-
-            static_assert(OffsetGuardLimit < UINT32_MAX,
-                          "checking for overflow against OffsetGuardLimit is enough.");
-
-            if (offset < OffsetGuardLimit && basePtr < OffsetGuardLimit - offset) {
-                auto* ins = MConstant::New(alloc(), Int32Value(0), MIRType::Int32);
-                curBlock_->add(ins);
-                *base = ins;
-                access->setOffset(access->offset() + basePtr);
-            }
-        }
-
-        
-        
         if (access->offset() >= OffsetGuardLimit || !JitOptions.wasmFoldOffsets) {
             auto* ins = MWasmAddOffset::New(alloc(), *base, access->offset(), bytecodeOffset());
             curBlock_->add(ins);
