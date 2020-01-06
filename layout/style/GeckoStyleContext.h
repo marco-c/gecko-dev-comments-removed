@@ -31,6 +31,11 @@ public:
   void* GetUniqueStyleData(const nsStyleStructID& aSID);
   void* CreateEmptyStyleData(const nsStyleStructID& aSID);
 
+  
+
+
+
+  void EnsureSameStructsCached(nsStyleContext* aOldContext);
 
   
 

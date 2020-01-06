@@ -974,7 +974,7 @@ GeckoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
       
       
       if (!copyFromContinuation) {
-        newContext->EnsureSameStructsCached(oldContext);
+        newContext->AsGecko()->EnsureSameStructsCached(oldContext);
       }
 
       aFrame->SetStyleContext(newContext);
@@ -1027,7 +1027,7 @@ GeckoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
           if (newExtraContext != oldExtraContext) {
             
             
-            newContext->EnsureSameStructsCached(oldContext);
+            newContext->AsGecko()->EnsureSameStructsCached(oldContext);
           }
 
           aFrame->SetAdditionalStyleContext(contextIndex, newExtraContext);

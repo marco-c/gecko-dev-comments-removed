@@ -347,12 +347,6 @@ public:
 
 
 
-  void EnsureSameStructsCached(nsStyleContext* aOldContext);
-
-  
-
-
-
 
 
 
