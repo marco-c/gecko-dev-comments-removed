@@ -76,7 +76,6 @@ public:
              ErrorResult& aRv) override;
 
   bool IsPrivate() const { return mIsPrivate; }
-  bool IsSessionOnly() const override { return mIsSessionOnly; }
 
   
   
@@ -99,16 +98,6 @@ public:
   void
   ApplyEvent(StorageEvent* aStorageEvent);
 
-protected:
-  
-  
-  
-  
-  
-  
-  
-  bool CanUseStorage(nsIPrincipal& aSubjectPrincipal);
-
 private:
   ~LocalStorage();
 
@@ -125,11 +114,6 @@ private:
 
   
   bool mIsPrivate : 1;
-
-  
-  
-  
-  bool mIsSessionOnly : 1;
 
   void BroadcastChangeNotification(const nsSubstring& aKey,
                                    const nsSubstring& aOldValue,

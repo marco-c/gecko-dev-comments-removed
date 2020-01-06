@@ -167,27 +167,6 @@ SessionStorage::Clear(nsIPrincipal& aSubjectPrincipal,
   BroadcastChangeNotification(NullString(), NullString(), NullString());
 }
 
-bool
-SessionStorage::CanUseStorage(nsIPrincipal& aSubjectPrincipal)
-{
-  
-  
-  
-
-  if (!mozilla::Preferences::GetBool("dom.storage.enabled")) {
-    return false;
-  }
-
-  nsContentUtils::StorageAccess access =
-    nsContentUtils::StorageAllowedForPrincipal(Principal());
-
-  if (access == nsContentUtils::StorageAccess::eDeny) {
-    return false;
-  }
-
-  return CanAccess(&aSubjectPrincipal);
-}
-
 void
 SessionStorage::BroadcastChangeNotification(const nsAString& aKey,
                                             const nsAString& aOldValue,

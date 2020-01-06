@@ -43,8 +43,6 @@ public:
 
   virtual int64_t GetOriginQuotaUsage() const = 0;
 
-  virtual bool CanAccess(nsIPrincipal* aPrincipal);
-
   nsIPrincipal*
   Principal() const
   {
@@ -109,7 +107,7 @@ public:
   virtual void
   Clear(nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv) = 0;
 
-  virtual bool IsSessionOnly() const = 0;
+  bool IsSessionOnly() const { return mIsSessionOnly; }
 
   static void
   NotifyChange(Storage* aStorage, nsIPrincipal* aPrincipal,
@@ -121,9 +119,23 @@ public:
 protected:
   virtual ~Storage();
 
+  
+  
+  
+  
+  
+  
+  
+  bool CanUseStorage(nsIPrincipal& aSubjectPrincipal);
+
 private:
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   nsCOMPtr<nsIPrincipal> mPrincipal;
+
+  
+  
+  
+  bool mIsSessionOnly : 1;
 };
 
 } 

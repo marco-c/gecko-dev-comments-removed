@@ -54,7 +54,6 @@ LocalStorage::LocalStorage(nsPIDOMWindowInner* aWindow,
   , mCache(aCache)
   , mDocumentURI(aDocumentURI)
   , mIsPrivate(aIsPrivate)
-  , mIsSessionOnly(false)
 {
   mCache->Preload();
 }
@@ -248,28 +247,6 @@ LocalStorage::ApplyEvent(StorageEvent* aStorageEvent)
 
 static const char kPermissionType[] = "cookie";
 static const char kStorageEnabled[] = "dom.storage.enabled";
-
-bool
-LocalStorage::CanUseStorage(nsIPrincipal& aSubjectPrincipal)
-{
-  
-  
-  
-
-  if (!mozilla::Preferences::GetBool(kStorageEnabled)) {
-    return false;
-  }
-
-  nsContentUtils::StorageAccess access =
-    nsContentUtils::StorageAllowedForPrincipal(Principal());
-
-  if (access == nsContentUtils::StorageAccess::eDeny) {
-    return false;
-  }
-
-  mIsSessionOnly = access <= nsContentUtils::StorageAccess::eSessionScoped;
-  return CanAccess(&aSubjectPrincipal);
-}
 
 bool
 LocalStorage::PrincipalEquals(nsIPrincipal* aPrincipal)
