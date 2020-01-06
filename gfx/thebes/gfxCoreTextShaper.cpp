@@ -81,7 +81,8 @@ IsBuggyIndicScript(unicode::Script aScript)
 {
     return aScript == unicode::Script::BENGALI ||
            aScript == unicode::Script::KANNADA ||
-           aScript == unicode::Script::ORIYA;
+           aScript == unicode::Script::ORIYA ||
+           aScript == unicode::Script::KHMER;
 }
 
 bool
