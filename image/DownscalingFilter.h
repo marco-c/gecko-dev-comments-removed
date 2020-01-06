@@ -177,7 +177,7 @@ public:
     
     
     bool anyAllocationFailed = false;
-    const uint32_t windowRowSizeInBytes = PaddedWidthInBytes(outputSize.width);
+    const size_t windowRowSizeInBytes = PaddedWidthInBytes(outputSize.width);
     for (int32_t i = 0; i < mWindowCapacity; ++i) {
       mWindow[i] = new (fallible) uint8_t[windowRowSizeInBytes];
       anyAllocationFailed = anyAllocationFailed || mWindow[i] == nullptr;
@@ -261,11 +261,11 @@ protected:
 private:
   uint8_t* GetRowPointer() const { return mRowBuffer.get(); }
 
-  static uint32_t PaddedWidthInBytes(uint32_t aLogicalWidth)
+  static size_t PaddedWidthInBytes(size_t aLogicalWidth)
   {
     
     
-    return aLogicalWidth * sizeof(uint32_t) + 15;
+    return gfx::ConvolutionFilter::PadBytesForSIMD(aLogicalWidth * sizeof(uint32_t));
   }
 
   void DownscaleInputRow()
