@@ -242,6 +242,13 @@ pref("general.autoScroll", true);
 pref("browser.uidensity", 0);
 
 
+#ifdef MOZ_PHOTON_THEME
+pref("browser.touchmode.auto", true);
+#else
+pref("browser.touchmode.auto", false);
+#endif
+
+
 pref("browser.shell.checkDefaultBrowser", true);
 pref("browser.shell.shortcutFavicons",true);
 pref("browser.shell.mostRecentDateSetAsDefault", "");
