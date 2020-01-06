@@ -184,18 +184,17 @@ gfxFontCache::gfxFontCache(nsIEventTarget* aEventTarget)
 #ifndef RELEASE_OR_BETA
     
     
-    mWordCacheExpirationTimer = do_CreateInstance("@mozilla.org/timer;1");
-    if (mWordCacheExpirationTimer) {
-        if (XRE_IsContentProcess() && NS_IsMainThread()) {
-            mWordCacheExpirationTimer->SetTarget(aEventTarget);
-        }
-        mWordCacheExpirationTimer->InitWithNamedFuncCallback(
-          WordCacheExpirationTimerCallback,
-          this,
-          SHAPED_WORD_TIMEOUT_SECONDS * 1000,
-          nsITimer::TYPE_REPEATING_SLACK,
-          "gfxFontCache::gfxFontCache");
+    nsIEventTarget* target = nullptr;
+    if (XRE_IsContentProcess() && NS_IsMainThread()) {
+      target = aEventTarget;
     }
+    NS_NewTimerWithFuncCallback(getter_AddRefs(mWordCacheExpirationTimer),
+                                WordCacheExpirationTimerCallback,
+                                this,
+                                SHAPED_WORD_TIMEOUT_SECONDS * 1000,
+                                nsITimer::TYPE_REPEATING_SLACK,
+                                "gfxFontCache::gfxFontCache",
+                                target);
 #endif
 }
 
