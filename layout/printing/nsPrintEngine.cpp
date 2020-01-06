@@ -1948,6 +1948,18 @@ nsPrintEngine::InitPrintDocConstruction(bool aHandleError)
 nsresult
 nsPrintEngine::AfterNetworkPrint(bool aHandleError)
 {
+  
+  
+  
+  
+  
+  
+  if (!mPrt ||
+      NS_WARN_IF(!mPrt->mPrintObject) ||
+      NS_WARN_IF(!mPrt->mPrintObject->mDocShell)) {
+    return NS_ERROR_FAILURE;
+  }
+
   nsCOMPtr<nsIWebProgress> webProgress = do_QueryInterface(mPrt->mPrintObject->mDocShell);
 
   webProgress->RemoveProgressListener(
