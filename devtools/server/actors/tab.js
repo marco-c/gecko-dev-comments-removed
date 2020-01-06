@@ -1169,12 +1169,6 @@ TabActor.prototype = {
 
     DevToolsUtils.executeSoon(() => {
       
-      
-      if (!this.attached) {
-        return;
-      }
-
-      
       this._windowReady(window, true);
       DevToolsUtils.executeSoon(() => {
         this._navigate(window, true);
