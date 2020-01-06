@@ -1557,17 +1557,33 @@ HTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement,
 
 
 
+
+
+
 nsresult
 HTMLEditor::InsertNodeAtPoint(nsIDOMNode* aNode,
                               nsCOMPtr<nsIDOMNode>* ioParent,
                               int32_t* ioOffset,
-                              bool aNoEmptyNodes)
+                              bool aNoEmptyNodes,
+                              nsCOMPtr<nsIDOMNode>* ioChildAtOffset)
 {
   nsCOMPtr<nsIContent> node = do_QueryInterface(aNode);
   NS_ENSURE_TRUE(node, NS_ERROR_NULL_POINTER);
   NS_ENSURE_TRUE(ioParent, NS_ERROR_NULL_POINTER);
   NS_ENSURE_TRUE(*ioParent, NS_ERROR_NULL_POINTER);
   NS_ENSURE_TRUE(ioOffset, NS_ERROR_NULL_POINTER);
+  bool isDocumentFragment = false;
+  if (ioChildAtOffset) {
+    *ioChildAtOffset = aNode;
+    uint16_t nodeType = 0;
+    if (NS_SUCCEEDED(aNode->GetNodeType(&nodeType)) &&
+        nodeType == nsIDOMNode::DOCUMENT_FRAGMENT_NODE) {
+      
+      
+      
+      isDocumentFragment = true;
+    }
+  }
 
   nsCOMPtr<nsIContent> parent = do_QueryInterface(*ioParent);
   NS_ENSURE_TRUE(parent, NS_ERROR_NULL_POINTER);
@@ -1598,13 +1614,18 @@ HTMLEditor::InsertNodeAtPoint(nsIDOMNode* aNode,
     
     int32_t offset = SplitNodeDeep(*topChild, *origParent, *ioOffset,
                                    aNoEmptyNodes ? EmptyContainers::no
-                                                 : EmptyContainers::yes);
+                                                 : EmptyContainers::yes,
+                                   nullptr, nullptr, ioChildAtOffset);
     NS_ENSURE_STATE(offset != -1);
     *ioParent = GetAsDOMNode(parent);
     *ioOffset = offset;
   }
   
-  return InsertNode(*node, *parent, *ioOffset);
+  nsresult rv = InsertNode(*node, *parent, *ioOffset);
+  if (isDocumentFragment) {
+    *ioChildAtOffset = do_QueryInterface(parent->GetChildAt(*ioOffset));
+  }
+  return rv;
 }
 
 NS_IMETHODIMP
