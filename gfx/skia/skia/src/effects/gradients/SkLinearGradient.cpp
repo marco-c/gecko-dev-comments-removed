@@ -719,7 +719,13 @@ template <bool apply_alpha> SkPMColor trunc_from_255(const Sk4f& x, const Sk4f& 
     Sk4f c4f255 = x;
     if (apply_alpha) {
         const float scale = x[SkPM4f::A] * (1 / 255.f);
-        c4f255 *= Sk4f(scale, scale, scale, 1);
+        
+        
+        
+        
+        
+        
+        c4f255 *= Sk4f(scale, scale, scale, 1.000001f);
     }
     SkNx_cast<uint8_t>(post_bias<apply_alpha>(c4f255, bias)).store(&c);
 
