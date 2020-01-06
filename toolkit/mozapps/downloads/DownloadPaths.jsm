@@ -45,7 +45,7 @@ this.DownloadPaths = {
 
   createNiceUniqueFile: function DP_createNiceUniqueFile(aTemplateFile) {
     
-    var curFile = aTemplateFile.clone().QueryInterface(Ci.nsILocalFile);
+    var curFile = aTemplateFile.clone().QueryInterface(Ci.nsIFile);
     var [base, ext] = DownloadPaths.splitBaseNameAndExtension(curFile.leafName);
     
     

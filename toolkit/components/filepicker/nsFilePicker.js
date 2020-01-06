@@ -27,7 +27,7 @@ const APPSHELL_SERV_CONTRACTID  = "@mozilla.org/appshell/appShellService;1";
 const STRBUNDLE_SERV_CONTRACTID = "@mozilla.org/intl/stringbundle;1";
 
 const nsIAppShellService    = Components.interfaces.nsIAppShellService;
-const nsILocalFile          = Components.interfaces.nsILocalFile;
+const nsIFile          = Components.interfaces.nsIFile;
 const nsIFileURL            = Components.interfaces.nsIFileURL;
 const nsISupports           = Components.interfaces.nsISupports;
 const nsIFactory            = Components.interfaces.nsIFactory;
@@ -58,7 +58,7 @@ function nsFilePicker() {
   this.mDisplaySpecialDirectory = null;
   if (lastDirectory) {
     try {
-      var dir = Components.classes[LOCAL_FILE_CONTRACTID].createInstance(nsILocalFile);
+      var dir = Components.classes[LOCAL_FILE_CONTRACTID].createInstance(nsIFile);
       dir.initWithPath(lastDirectory);
       this.mDisplayDirectory = dir;
     } catch (e) {}
@@ -80,12 +80,12 @@ nsFilePicker.prototype = {
   
   set displayDirectory(a) {
     this.mDisplayDirectory = a &&
-      a.clone().QueryInterface(nsILocalFile);
+      a.clone().QueryInterface(nsIFile);
   },
   get displayDirectory() {
     return this.mDisplayDirectory &&
            this.mDisplayDirectory.clone()
-               .QueryInterface(nsILocalFile);
+               .QueryInterface(nsIFile);
   },
 
   

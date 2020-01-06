@@ -38,13 +38,13 @@ function do_crash(setup, callback, canReturnZero) {
   
   let ds = Components.classes["@mozilla.org/file/directory_service;1"]
     .getService(Components.interfaces.nsIProperties);
-  let bin = ds.get("XREExeF", Components.interfaces.nsILocalFile);
+  let bin = ds.get("XREExeF", Components.interfaces.nsIFile);
   if (!bin.exists()) {
     
     do_throw("Can't find xpcshell binary!");
   }
   
-  let greD = ds.get("GreD", Components.interfaces.nsILocalFile);
+  let greD = ds.get("GreD", Components.interfaces.nsIFile);
   let headfile = do_get_file("crasher_subprocess_head.js");
   let tailfile = do_get_file("crasher_subprocess_tail.js");
   
@@ -91,7 +91,7 @@ function do_crash(setup, callback, canReturnZero) {
 function getMinidump() {
   let en = do_get_tempdir().directoryEntries;
   while (en.hasMoreElements()) {
-    let f = en.getNext().QueryInterface(Components.interfaces.nsILocalFile);
+    let f = en.getNext().QueryInterface(Components.interfaces.nsIFile);
     if (f.leafName.substr(-4) == ".dmp") {
       return f;
     }

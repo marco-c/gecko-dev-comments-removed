@@ -91,7 +91,7 @@ var ContentPrefTest = {
     
     let profd = env.get("XPCSHELL_TEST_PROFILE_DIR");
     let file = Components.classes["@mozilla.org/file/local;1"]
-                         .createInstance(Components.interfaces.nsILocalFile);
+                         .createInstance(Components.interfaces.nsIFile);
     file.initWithPath(profd);
     return file;
   },

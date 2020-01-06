@@ -1212,7 +1212,7 @@ function Engine(aLocation, aIsReadOnly) {
   let file, uri;
   if (typeof aLocation == "string") {
     this._shortName = aLocation;
-  } else if (aLocation instanceof Ci.nsILocalFile) {
+  } else if (aLocation instanceof Ci.nsIFile) {
     if (!aIsReadOnly) {
       
       
@@ -3465,7 +3465,7 @@ SearchService.prototype = {
 
       let addedEngine = null;
       try {
-        let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+        let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
         file.initWithPath(osfile.path);
         addedEngine = new Engine(file, !isInProfile);
         await checkForSyncCompletion(addedEngine._asyncInitFromFile(file));
@@ -4097,7 +4097,7 @@ SearchService.prototype = {
     } else {
       
       if (engineToRemove._filePath) {
-        let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+        let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
         file.persistentDescriptor = engineToRemove._filePath;
         if (file.exists()) {
           file.remove(false);

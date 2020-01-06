@@ -348,7 +348,7 @@ var FeedHandler = {
           }
 
           if (fp.file.leafName != appName) {
-            Services.prefs.setComplexValue(prefName, Ci.nsILocalFile, selectedApp);
+            Services.prefs.setComplexValue(prefName, Ci.nsIFile, selectedApp);
             aBrowser.messageManager.sendAsyncMessage("FeedWriter:SetApplicationLauncherMenuItem",
                                                     { name: this._getFileDisplayName(selectedApp),
                                                       type: "SelectedAppMenuItem" });
@@ -369,7 +369,7 @@ var FeedHandler = {
                     .getService(Ci.nsIShellService)
                     .defaultFeedReader;
     } else {
-      clientApp = Services.prefs.getComplexValue(aFeedHandler, Ci.nsILocalFile);
+      clientApp = Services.prefs.getComplexValue(aFeedHandler, Ci.nsIFile);
     }
 
     
@@ -497,7 +497,7 @@ var FeedHandler = {
     let selectedClientApp;
     const feedTypePref = getPrefAppForType(feedType);
     try {
-      selectedClientApp = Services.prefs.getComplexValue(feedTypePref, Ci.nsILocalFile);
+      selectedClientApp = Services.prefs.getComplexValue(feedTypePref, Ci.nsIFile);
     } catch (ex) {
       
     }

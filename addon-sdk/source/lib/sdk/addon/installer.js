@@ -34,7 +34,7 @@ exports.install = function install(xpiPath) {
   let { promise, resolve, reject } = defer();
 
   
-  let file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
+  let file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);
   try {
     file.initWithPath(xpiPath);
   }

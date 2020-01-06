@@ -626,7 +626,7 @@ HandlerService.prototype = {
 
 
   _getFileWithPath: function HS__getFileWithPath(aPath) {
-    var file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+    var file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
 
     try {
       file.initWithPath(aPath);

@@ -93,7 +93,7 @@ function test() {
       
       
 
-      gPrefService.setComplexValue(kPrefName, Ci.nsILocalFile, dir1);
+      gPrefService.setComplexValue(kPrefName, Ci.nsIFile, dir1);
       is(nonPrivateWindow.gLastOpenDirectory.path.path, dir1.path,
          "The pref set from last session should take effect outside the private browsing mode");
 
@@ -103,7 +103,7 @@ function test() {
       
       
 
-      gPrefService.setComplexValue(kPrefName, Ci.nsILocalFile, dir1);
+      gPrefService.setComplexValue(kPrefName, Ci.nsIFile, dir1);
       
       is(privateWindow.gLastOpenDirectory.path.path, dir1.path,
          "The pref set from last session should take effect inside the private browsing mode");

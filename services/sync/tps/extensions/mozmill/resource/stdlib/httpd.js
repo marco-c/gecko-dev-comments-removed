@@ -5327,7 +5327,7 @@ function server(port, basePath)
   if (basePath)
   {
     var lp = Cc["@mozilla.org/file/local;1"]
-               .createInstance(Ci.nsILocalFile);
+               .createInstance(Ci.nsIFile);
     lp.initWithPath(basePath);
   }
 

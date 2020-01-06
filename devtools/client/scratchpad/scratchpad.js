@@ -1234,7 +1234,7 @@ var Scratchpad = {
             file = aFile;
           } else {
             file = Components.classes["@mozilla.org/file/local;1"].
-                   createInstance(Components.interfaces.nsILocalFile);
+                   createInstance(Components.interfaces.nsIFile);
             let filePath = this.getRecentFiles()[aIndex];
             file.initWithPath(filePath);
           }
@@ -1454,7 +1454,7 @@ var Scratchpad = {
       return this.saveFileAs(aCallback);
     }
 
-    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
     file.initWithPath(this.filename);
 
     this.exportToFile(file, true, false, aStatus => {
@@ -1509,7 +1509,7 @@ var Scratchpad = {
 
   revertFile: function SP_revertFile(aCallback)
   {
-    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
     file.initWithPath(this.filename);
 
     if (!file.exists()) {

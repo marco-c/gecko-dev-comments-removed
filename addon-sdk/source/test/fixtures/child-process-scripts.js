@@ -64,8 +64,8 @@ function createFile (name, data) {
 
 function makeExecutable (name) {
   let { CC } = require('chrome');
-  let nsILocalFile = CC('@mozilla.org/file/local;1', 'nsILocalFile', 'initWithPath');
-  let file = nsILocalFile(name);
+  let nsIFile = CC('@mozilla.org/file/local;1', 'nsIFile', 'initWithPath');
+  let file = nsIFile(name);
   file.permissions = 0o777;
 }
 

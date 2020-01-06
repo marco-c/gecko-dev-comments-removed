@@ -81,7 +81,7 @@ add_task(async function setup() {
   gBookmarksFileOld = do_get_file("bookmarks.preplaces.html");
 
   
-  gBookmarksFileNew = Services.dirsvc.get("ProfD", Ci.nsILocalFile);
+  gBookmarksFileNew = Services.dirsvc.get("ProfD", Ci.nsIFile);
   gBookmarksFileNew.append("bookmarks.exported.html");
   if (gBookmarksFileNew.exists()) {
     gBookmarksFileNew.remove(false);

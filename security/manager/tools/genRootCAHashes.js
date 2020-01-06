@@ -219,7 +219,7 @@ if (arguments.length != 1) {
 
 var trustAnchorsFile = FileUtils.getFile("CurWorkD", [FILENAME_TRUST_ANCHORS]);
 
-var rootHashesFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+var rootHashesFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
 rootHashesFile.initWithPath(arguments[0]);
 
 

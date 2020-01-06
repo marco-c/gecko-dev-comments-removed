@@ -54,7 +54,7 @@ function getChromeDir(resolvedURI) {
   var fileHandler = Components.classes["@mozilla.org/network/protocol;1?name=file"].
                     getService(Components.interfaces.nsIFileProtocolHandler);
   var chromeDir = fileHandler.getFileFromURLSpec(resolvedURI.spec);
-  return chromeDir.parent.QueryInterface(Components.interfaces.nsILocalFile);
+  return chromeDir.parent.QueryInterface(Components.interfaces.nsIFile);
 }
 
 
@@ -109,7 +109,7 @@ function getJar(uri) {
 function extractJarToTmp(jar) {
   var tmpdir = Components.classes["@mozilla.org/file/directory_service;1"]
                       .getService(Components.interfaces.nsIProperties)
-                      .get("ProfD", Components.interfaces.nsILocalFile);
+                      .get("ProfD", Components.interfaces.nsIFile);
   tmpdir.append("mochikit.tmp");
   
   
@@ -207,7 +207,7 @@ function buildRelativePath(jarentryname, destdir, basepath)
   var parts = jarentryname.split('/');
 
   var targetFile = Components.classes["@mozilla.org/file/local;1"]
-                   .createInstance(Components.interfaces.nsILocalFile);
+                   .createInstance(Components.interfaces.nsIFile);
   targetFile.initWithFile(destdir);
 
   for (var i = baseParts.length; i < parts.length; i++) {

@@ -354,7 +354,7 @@ function _register_modules_protocol_handler() {
        .QueryInterface(Components.interfaces.nsIResProtocolHandler);
 
   let modulesFile = Components.classes["@mozilla.org/file/local;1"].
-                    createInstance(Components.interfaces.nsILocalFile);
+                    createInstance(Components.interfaces.nsIFile);
   modulesFile.initWithPath(_TESTING_MODULES_DIR);
 
   if (!modulesFile.exists()) {
@@ -1019,7 +1019,7 @@ function do_get_file(path, allowNonexistent) {
   try {
     let lf = Components.classes["@mozilla.org/file/directory_service;1"]
       .getService(Components.interfaces.nsIProperties)
-      .get("CurWorkD", Components.interfaces.nsILocalFile);
+      .get("CurWorkD", Components.interfaces.nsIFile);
 
     let bits = path.split("/");
     for (let i = 0; i < bits.length; i++) {
@@ -1121,7 +1121,7 @@ function do_get_tempdir() {
   
   let path = env.get("XPCSHELL_TEST_TEMP_DIR");
   let file = Components.classes["@mozilla.org/file/local;1"]
-                       .createInstance(Components.interfaces.nsILocalFile);
+                       .createInstance(Components.interfaces.nsIFile);
   file.initWithPath(path);
   return file;
 }
@@ -1138,7 +1138,7 @@ function do_get_minidumpdir() {
   let path = env.get("XPCSHELL_MINIDUMP_DIR");
   if (path) {
     let file = Components.classes["@mozilla.org/file/local;1"]
-                         .createInstance(Components.interfaces.nsILocalFile);
+                         .createInstance(Components.interfaces.nsIFile);
     file.initWithPath(path);
     return file;
   }
@@ -1163,7 +1163,7 @@ function do_get_profile(notifyProfileAfterChange = false) {
   
   let profd = env.get("XPCSHELL_TEST_PROFILE_DIR");
   let file = Components.classes["@mozilla.org/file/local;1"]
-                       .createInstance(Components.interfaces.nsILocalFile);
+                       .createInstance(Components.interfaces.nsIFile);
   file.initWithPath(profd);
 
   let dirSvc = Components.classes["@mozilla.org/file/directory_service;1"]

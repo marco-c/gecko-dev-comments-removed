@@ -1929,7 +1929,7 @@ function defaultIndexHandler(metadata, response)
 <h1>' + path + '</h1>\
 <ol style="list-style-type: none">';
 
-  var directory = metadata.getProperty("directory").QueryInterface(Ci.nsILocalFile);
+  var directory = metadata.getProperty("directory").QueryInterface(Ci.nsIFile);
   NS_ASSERT(directory && directory.isDirectory());
 
   var fileList = [];
@@ -5162,7 +5162,7 @@ function server(port, basePath)
   if (basePath)
   {
     var lp = Cc["@mozilla.org/file/local;1"]
-               .createInstance(Ci.nsILocalFile);
+               .createInstance(Ci.nsIFile);
     lp.initWithPath(basePath);
   }
 
@@ -5187,7 +5187,7 @@ function startServerAsync(port, basePath)
   if (basePath)
   {
     var lp = Cc["@mozilla.org/file/local;1"]
-               .createInstance(Ci.nsILocalFile);
+               .createInstance(Ci.nsIFile);
     lp.initWithPath(basePath);
   }
 

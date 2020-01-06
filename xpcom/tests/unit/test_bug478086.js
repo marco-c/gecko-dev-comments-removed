@@ -2,9 +2,9 @@
 
 
 function run_test() {
-  var nsILocalFile = Components.interfaces.nsILocalFile;
+  var nsIFile = Components.interfaces.nsIFile;
   var root = Components.classes["@mozilla.org/file/local;1"].
-              createInstance(nsILocalFile);
+              createInstance(nsIFile);
 
   
   
@@ -18,7 +18,7 @@ function run_test() {
   var drives = root.directoryEntries;
   do_check_true(drives.hasMoreElements());
   while (drives.hasMoreElements()) {
-    var newPath = drives.getNext().QueryInterface(nsILocalFile).path;
+    var newPath = drives.getNext().QueryInterface(nsIFile).path;
     do_check_eq(newPath.indexOf("\0"), -1);
   }
 }

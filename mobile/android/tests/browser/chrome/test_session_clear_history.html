@@ -79,7 +79,7 @@
     // around checking on them.
     ss.setLoadState(STATE_QUITTING);
 
-    let sessionFile = Services.dirsvc.get("ProfD", Ci.nsILocalFile);
+    let sessionFile = Services.dirsvc.get("ProfD", Ci.nsIFile);
     let sessionFileBackup = sessionFile.clone();
     let sessionFilePrevious = sessionFile.clone();
     let sessionFileTemp = sessionFile.clone();

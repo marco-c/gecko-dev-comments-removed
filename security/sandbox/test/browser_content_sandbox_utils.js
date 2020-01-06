@@ -28,7 +28,7 @@ function uuid() {
 
 function fileInHomeDir() {
   
-  let homeDir = Services.dirsvc.get("Home", Ci.nsILocalFile);
+  let homeDir = Services.dirsvc.get("Home", Ci.nsIFile);
   Assert.ok(homeDir.exists(), "Home dir exists");
   Assert.ok(homeDir.isDirectory(), "Home dir is a directory");
 
@@ -48,7 +48,7 @@ function fileInTempDir() {
   }
 
   
-  let ctmp = Services.dirsvc.get(contentTempKey, Ci.nsILocalFile);
+  let ctmp = Services.dirsvc.get(contentTempKey, Ci.nsIFile);
   Assert.ok(ctmp.exists(), "Content temp dir exists");
   Assert.ok(ctmp.isDirectory(), "Content temp dir is a directory");
 
@@ -61,13 +61,13 @@ function fileInTempDir() {
 
 function GetProfileDir() {
   
-  let profileDir = Services.dirsvc.get("ProfD", Ci.nsILocalFile);
+  let profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
   return (profileDir);
 }
 
 function GetHomeDir() {
   
-  let homeDir = Services.dirsvc.get("Home", Ci.nsILocalFile);
+  let homeDir = Services.dirsvc.get("Home", Ci.nsIFile);
   return (homeDir);
 }
 
@@ -80,7 +80,7 @@ function GetProfileEntry(name) {
 }
 
 function GetDir(path) {
-  let dir = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+  let dir = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
   dir.initWithPath(path);
   Assert.ok(dir.isDirectory(), `${path} is a directory`);
   return (dir);

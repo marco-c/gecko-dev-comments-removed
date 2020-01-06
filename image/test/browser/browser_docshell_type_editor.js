@@ -12,7 +12,7 @@ const SIMPLE_HTML = "data:text/html,<html><head></head><body></body></html>";
 function getManifestDir() {
   let path = getTestFilePath("browser_docshell_type_editor");
   let file = Components.classes["@mozilla.org/file/local;1"]
-                       .createInstance(Components.interfaces.nsILocalFile);
+                       .createInstance(Components.interfaces.nsIFile);
   file.initWithPath(path);
   return file;
 }

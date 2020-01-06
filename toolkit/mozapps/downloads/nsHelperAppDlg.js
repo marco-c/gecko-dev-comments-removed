@@ -341,7 +341,7 @@ nsUnknownContentTypeDialog.prototype = {
               
             }
 
-            var newDir = result.parent.QueryInterface(Components.interfaces.nsILocalFile);
+            var newDir = result.parent.QueryInterface(Components.interfaces.nsIFile);
 
             
             gDownloadLastDir.setFile(aLauncher.source, newDir);

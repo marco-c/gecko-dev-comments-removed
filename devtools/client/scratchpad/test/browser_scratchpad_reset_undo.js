@@ -46,12 +46,12 @@ function runTests()
   
   let foutA = Cc["@mozilla.org/network/file-output-stream;1"].
              createInstance(Ci.nsIFileOutputStream);
-  foutA.init(gFileA.QueryInterface(Ci.nsILocalFile), 0x02 | 0x08 | 0x20,
+  foutA.init(gFileA.QueryInterface(Ci.nsIFile), 0x02 | 0x08 | 0x20,
             0o644, foutA.DEFER_OPEN);
 
   let foutB = Cc["@mozilla.org/network/file-output-stream;1"].
              createInstance(Ci.nsIFileOutputStream);
-  foutB.init(gFileB.QueryInterface(Ci.nsILocalFile), 0x02 | 0x08 | 0x20,
+  foutB.init(gFileB.QueryInterface(Ci.nsIFile), 0x02 | 0x08 | 0x20,
             0o644, foutB.DEFER_OPEN);
 
   let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].
@@ -80,7 +80,7 @@ function tempFileSaved(aStatus)
   {
     ok((gFirstFileSaved && success), "Both files loaded");
     
-    gScratchpad.importFromFile(gFileA.QueryInterface(Ci.nsILocalFile), true,
+    gScratchpad.importFromFile(gFileA.QueryInterface(Ci.nsIFile), true,
                               fileAImported);
   }
   gFirstFileSaved = success;
@@ -105,7 +105,7 @@ function fileAImported(aStatus, aFileContent)
   is(gScratchpad.getText(), gFileAContent + "new text", "redo works");
 
   
-  gScratchpad.importFromFile(gFileB.QueryInterface(Ci.nsILocalFile), true,
+  gScratchpad.importFromFile(gFileB.QueryInterface(Ci.nsIFile), true,
                             fileBImported);
 }
 

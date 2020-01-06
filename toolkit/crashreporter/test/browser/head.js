@@ -17,7 +17,7 @@ function make_fake_appdir() {
   
   let dirSvc = Cc["@mozilla.org/file/directory_service;1"]
                .getService(Ci.nsIProperties);
-  let profD = dirSvc.get("ProfD", Ci.nsILocalFile);
+  let profD = dirSvc.get("ProfD", Ci.nsIFile);
   
   let appD = create_subdir(profD, "UAppData");
 
