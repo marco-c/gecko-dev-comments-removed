@@ -26,7 +26,9 @@ public:
 
 
 
-  virtual uint64_t GetTransactionId() = 0;
+
+
+  virtual uint64_t GetTransactionId(bool aThrottle) = 0;
 
   
 
