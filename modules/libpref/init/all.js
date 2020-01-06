@@ -286,15 +286,12 @@ pref("browser.display.focus_ring_on_anything", false);
 
 pref("browser.display.focus_ring_style", 1);
 
-pref("browser.helperApps.alwaysAsk.force",  false);
 pref("browser.helperApps.neverAsk.saveToDisk", "");
 pref("browser.helperApps.neverAsk.openFile", "");
 pref("browser.helperApps.deleteTempFileOnExit", false);
 
 
 pref("browser.chrome.toolbar_tips",         true);
-
-pref("browser.chrome.toolbar_style",        2);
 
 
 pref("browser.chrome.image_icons.max_size", 1024);
@@ -1126,9 +1123,6 @@ pref("layout.framevisibility.numscrollportheights", 1);
 pref("slider.snapMultiplier", 0);
 
 
-pref("application.use_ns_plugin_finder", false);
-
-
 pref("browser.fixup.alternate.enabled", true);
 pref("browser.fixup.alternate.prefix", "www.");
 pref("browser.fixup.alternate.suffix", ".com");
@@ -1324,12 +1318,6 @@ pref("dom.input.dirpicker", false);
 
 
 pref("dom.input.skip_cursor_move_for_same_value_set", true);
-
-
-pref("dom.sysmsg.enabled", false);
-
-
-pref("dom.webapps.useCurrentProfile", false);
 
 pref("dom.cycle_collector.incremental", true);
 
@@ -2625,14 +2613,12 @@ pref("ui.key.chromeAccess", 4);
 pref("ui.key.contentAccess", 5);
 
 pref("ui.key.menuAccessKeyFocuses", false); 
-pref("ui.key.saveLink.shift", true); 
 
 
 pref("ui.use_activity_cursor", false);
 
 
 pref("middlemouse.paste", false);
-pref("middlemouse.openNewWindow", true);
 pref("middlemouse.contentLoadURL", false);
 pref("middlemouse.scrollbarPosition", false);
 
@@ -2779,8 +2765,6 @@ pref("general.smoothScroll.msdPhysics.regularSpringConstant", 1000);
 
 
 pref("profile.manage_only_at_launch", false);
-
-pref("prefs.converted-to-utf8",false);
 
 
 
@@ -3124,14 +3108,6 @@ pref("capability.policy.default.SOAPCall.invokeVerifySourceHeader", "allAccess")
 
 
 pref("plugin.override_internal_types", false);
-
-
-
-pref("browser.popups.showPopupBlocker", true);
-
-
-
-pref("viewmanager.do_doublebuffering", true);
 
 
 pref("gestures.enable_single_finger_input", true);
@@ -4212,10 +4188,6 @@ pref("browser.urlbar.clickSelectsAll", false);
 
 
 
-pref("autocomplete.grab_during_popup", true);
-pref("autocomplete.ungrab_during_mode_switch", true);
-
-
 
 pref("ui.allow_platform_file_picker", true);
 
@@ -4269,10 +4241,6 @@ pref("browser.urlbar.clickSelectsAll", false);
 
 
 
-
-
-pref("autocomplete.grab_during_popup", true);
-pref("autocomplete.ungrab_during_mode_switch", true);
 
 
 
@@ -4995,9 +4963,6 @@ pref("full-screen-api.warning.delay", 500);
 pref("pointer-lock-api.warning.timeout", 3000);
 
 
-pref("dom.idle-observers-api.enabled", true);
-
-
 
 pref("dom.event.handling-user-input-time-limit", 1000);
 
@@ -5460,10 +5425,6 @@ pref("dom.wakelock.enabled", false);
 pref("identity.fxaccounts.auth.uri", "https://api.accounts.firefox.com/v1");
 
 pref("beacon.enabled", true);
-
-
-pref("camera.control.face_detection.enabled", true);
-
 
 
 pref("dom.caches.enabled", true);
