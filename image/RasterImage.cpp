@@ -1193,12 +1193,16 @@ LaunchDecodingTask(IDecodingTask* aTask,
 
     
     if (aFlags & imgIContainer::FLAG_SYNC_DECODE) {
-      DecodePool::Singleton()->SyncRunIfPossible(aTask, uri);
+      PROFILER_LABEL_DYNAMIC("DecodePool", "SyncRunIfPossible",
+        js::ProfileEntry::Category::GRAPHICS, uri.get());
+      DecodePool::Singleton()->SyncRunIfPossible(aTask);
       return true;
     }
 
     if (aFlags & imgIContainer::FLAG_SYNC_DECODE_IF_FAST) {
-      return DecodePool::Singleton()->SyncRunIfPreferred(aTask, uri);
+      PROFILER_LABEL_DYNAMIC("DecodePool", "SyncRunIfPreferred",
+        js::ProfileEntry::Category::GRAPHICS, uri.get());
+      return DecodePool::Singleton()->SyncRunIfPreferred(aTask);
     }
   }
 
@@ -1394,6 +1398,19 @@ RasterImage::DrawInternal(DrawableSurface&& aSurface,
   gfxContextMatrixAutoSaveRestore saveMatrix(aContext);
   ImageRegion region(aRegion);
   bool frameIsFinished = aSurface->IsFinished();
+
+#ifdef DEBUG
+  
+  if (NS_IsMainThread()) {
+    nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+    if (NS_WARN_IF(obs)) {
+      nsCOMPtr<nsIURI> imageURI = mURI->ToIURI();
+      nsAutoCString spec;
+      imageURI->GetSpec(spec);
+      obs->NotifyObservers(nullptr, "image-drawing", NS_ConvertUTF8toUTF16(spec).get());
+    }
+  }
+#endif
 
   
   
