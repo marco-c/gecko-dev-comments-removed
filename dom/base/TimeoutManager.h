@@ -78,6 +78,10 @@ public:
   void Thaw();
 
   
+  
+  void UpdateBackgroundState();
+
+  
   static void Initialize();
 
   
