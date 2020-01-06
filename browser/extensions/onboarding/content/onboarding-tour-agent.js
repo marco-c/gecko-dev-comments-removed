@@ -2,21 +2,21 @@
 
 
 
- 
 
+
+(function() {
 "use strict";
 
-document.addEventListener("Agent:CanSetDefaultBrowserInBackground", () => {
+let onCanSetDefaultBrowserInBackground = () => {
   Mozilla.UITour.getConfiguration("appinfo", config => {
     let canSetInBackGround = config.canSetDefaultBrowserInBackground;
     let btn = document.getElementById("onboarding-tour-default-browser-button");
     btn.setAttribute("data-cansetbg", canSetInBackGround);
     btn.textContent = canSetInBackGround ? btn.getAttribute("data-bg") : btn.getAttribute("data-panel");
   });
-});
+};
 
-document.getElementById("onboarding-overlay")
-  .addEventListener("click", evt => {
+let onClick = evt => {
   switch (evt.target.id) {
     case "onboarding-tour-addons-button":
       Mozilla.UITour.showHighlight("addons");
@@ -63,13 +63,27 @@ document.getElementById("onboarding-overlay")
       Mozilla.UITour.hideHighlight();
       break;
   }
+  let classList = evt.target.classList;
   
-  if (evt.target.classList.contains("onboarding-tour-item")) {
-    Mozilla.UITour.hideHighlight();
+  
+  if (classList.contains("onboarding-tour-item") || classList.contains("onboarding-tour-item-container")) {
+    Mozilla.UITour.hideHighlight(); 
+  }
+};
+
+let overlay = document.getElementById("onboarding-overlay");
+overlay.addEventListener("click", onClick);
+overlay.addEventListener("keypress", e => {
+  let { target, key } = e;
+  let classList = target.classList;
+  if ((key == " " || key == "Enter") &&
+      
+      
+      (classList.contains("onboarding-tour-item") || classList.contains("onboarding-tour-item-container"))) {
+    Mozilla.UITour.hideHighlight(); 
   }
 });
+document.getElementById("onboarding-overlay-button").addEventListener("Agent:Destroy", () => Mozilla.UITour.hideHighlight());
+document.addEventListener("Agent:CanSetDefaultBrowserInBackground", onCanSetDefaultBrowserInBackground);
 
-document.getElementById("onboarding-overlay-button").addEventListener("Agent:Destroy", () => {
-  Mozilla.UITour.hideHighlight();
-  Mozilla.UITour.hideMenu("urlbar");
-});
+})();
