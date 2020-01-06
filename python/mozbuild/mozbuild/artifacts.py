@@ -472,9 +472,9 @@ class WinArtifactJob(ArtifactJob):
 
 
 JOB_DETAILS = {
-    'android-api-15-opt': (AndroidArtifactJob, (r'(public/build/fennec-(.*)\.android-arm.apk|public/build/target\.apk)',
+    'android-api-16-opt': (AndroidArtifactJob, (r'(public/build/fennec-(.*)\.android-arm.apk|public/build/target\.apk)',
                                                 r'public/build/fennec-(.*)\.common\.tests\.zip|public/build/target\.common\.tests\.zip')),
-    'android-api-15-debug': (AndroidArtifactJob, (r'public/build/target\.apk',
+    'android-api-16-debug': (AndroidArtifactJob, (r'public/build/target\.apk',
                                                   r'public/build/target\.common\.tests\.zip')),
     'android-x86-opt': (AndroidArtifactJob, (r'public/build/target\.apk',
                                              r'public/build/target\.common\.tests\.zip')),
@@ -893,7 +893,7 @@ class Artifacts(object):
         if self._substs.get('MOZ_BUILD_APP', '') == 'mobile/android':
             if self._substs['ANDROID_CPU_ARCH'] == 'x86':
                 return 'android-x86-opt'
-            return 'android-api-15' + target_suffix
+            return 'android-api-16' + target_suffix
 
         target_64bit = False
         if self._substs['target_cpu'] == 'x86_64':
