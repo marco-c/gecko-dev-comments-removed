@@ -396,8 +396,7 @@ HTMLImageElement::BeforeSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
 
 nsresult
 HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
-                               const nsAttrValue* aValue,
-                               const nsAttrValue* aOldValue, bool aNotify)
+                               const nsAttrValue* aValue, bool aNotify)
 {
   if (aNameSpaceID == kNameSpaceID_None && mForm &&
       (aName == nsGkAtoms::name || aName == nsGkAtoms::id) &&
@@ -451,7 +450,7 @@ HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
   }
 
   return nsGenericHTMLElement::AfterSetAttr(aNameSpaceID, aName,
-                                            aValue, aOldValue, aNotify);
+                                            aValue, aNotify);
 }
 
 nsresult
@@ -535,7 +534,7 @@ HTMLImageElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
         mResponsiveSelector->SetDefaultSource(aValue);
       }
       QueueImageLoadTask(true);
-    } else if (aNotify) {
+    } else if (aNotify && OwnerDoc()->IsCurrentActiveDocument()) {
       
       
       
@@ -594,7 +593,7 @@ HTMLImageElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
       
       
       QueueImageLoadTask(true);
-    } else {
+    } else if (OwnerDoc()->IsCurrentActiveDocument()) {
       
       
       
@@ -660,7 +659,8 @@ HTMLImageElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     
     
     
-    if (LoadingEnabled()) {
+    if (LoadingEnabled() &&
+        OwnerDoc()->IsCurrentActiveDocument()) {
       nsContentUtils::AddScriptRunner(
           NewRunnableMethod(this, &HTMLImageElement::MaybeLoadImage));
     }
@@ -865,7 +865,8 @@ HTMLImageElement::CopyInnerTo(Element* aDest, bool aPreallocateChildren)
     
     
     if (!dest->InResponsiveMode() &&
-        dest->HasAttr(kNameSpaceID_None, nsGkAtoms::src)) {
+        dest->HasAttr(kNameSpaceID_None, nsGkAtoms::src) &&
+        dest->OwnerDoc()->IsCurrentActiveDocument()) {
       
       
       mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
