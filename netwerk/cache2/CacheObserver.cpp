@@ -186,8 +186,9 @@ CacheObserver::AttachToPreferences()
   
   
   
-  sHalfLifeExperiment = mozilla::Preferences::GetDefaultInt(
-    "browser.cache.frecency_experiment", kDefaultHalfLifeExperiment);
+  sHalfLifeExperiment = mozilla::Preferences::GetInt(
+    "browser.cache.frecency_experiment", kDefaultHalfLifeExperiment,
+    PrefValueKind::Default);
 
   if (sHalfLifeExperiment == 0) {
     

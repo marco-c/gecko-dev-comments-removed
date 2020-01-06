@@ -335,7 +335,7 @@ nsSHistory::Startup()
   
   
   int32_t defaultHistoryMaxSize =
-    Preferences::GetDefaultInt(PREF_SHISTORY_SIZE, 50);
+    Preferences::GetInt(PREF_SHISTORY_SIZE, 50, PrefValueKind::Default);
   if (gHistoryMaxSize < defaultHistoryMaxSize) {
     gHistoryMaxSize = defaultHistoryMaxSize;
   }
