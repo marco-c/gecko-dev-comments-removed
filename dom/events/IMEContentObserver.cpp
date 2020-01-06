@@ -1376,7 +1376,10 @@ IMEContentObserver::BeginDocumentUpdate()
      "HasAddedNodesDuringDocumentChange()=%s",
      this, ToChar(HasAddedNodesDuringDocumentChange())));
 
-  MOZ_ASSERT(!HasAddedNodesDuringDocumentChange());
+  
+  
+  
+  MaybeNotifyIMEOfAddedTextDuringDocumentChange();
 }
 
 void
