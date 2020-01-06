@@ -428,13 +428,36 @@ this.PageActions = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function Action(options) {
   setProperties(this, options, {
     id: true,
     title: !options._isSeparator,
+    anchorIDOverride: false,
     iconURL: false,
     nodeAttributes: false,
+    onBeforePlacedInWindow: false,
     onCommand: false,
+    onIframeHiding: false,
+    onIframeHidden: false,
     onIframeShown: false,
     onPlacedInPanel: false,
     onPlacedInUrlbar: false,
@@ -534,6 +557,13 @@ Action.prototype = {
   
 
 
+  get anchorIDOverride() {
+    return this._anchorIDOverride;
+  },
+
+  
+
+
   get urlbarIDOverride() {
     return this._urlbarIDOverride;
   },
@@ -558,11 +588,51 @@ Action.prototype = {
 
 
 
+  onBeforePlacedInWindow(window) {
+    if (this._onBeforePlacedInWindow) {
+      this._onBeforePlacedInWindow(window);
+    }
+  },
+
+  
+
+
+
+
+
 
 
   onCommand(event, buttonNode) {
     if (this._onCommand) {
       this._onCommand(event, buttonNode);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  onIframeHiding(iframeNode, parentPanelNode) {
+    if (this._onIframeHiding) {
+      this._onIframeHiding(iframeNode, parentPanelNode);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  onIframeHidden(iframeNode, parentPanelNode) {
+    if (this._onIframeHidden) {
+      this._onIframeHidden(iframeNode, parentPanelNode);
     }
   },
 
