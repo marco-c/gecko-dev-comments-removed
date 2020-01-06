@@ -674,7 +674,7 @@ pref("plugins.testmode", false);
 pref("plugins.show_infobar", true);
 
 
-pref("plugins.remember_infobar_dismissal", false);
+pref("plugins.remember_infobar_dismissal", true);
 
 pref("plugin.default.state", 1);
 
@@ -686,18 +686,24 @@ pref("plugin.state.java", 1);
 
 
 
+
 #ifdef NIGHTLY_BUILD
-pref("plugins.flashBlock.enabled", true);
 pref("plugin.state.flash", 1);
+#else
+pref("plugin.state.flash", 2);
+#endif
+
+
+pref("plugins.flashBlock.enabled", true);
+
+
 
 
 
 
 pref("plugins.favorfallback.mode", "follow-ctp");
 pref("plugins.favorfallback.rules", "nosrc,video");
-#else
-pref("plugin.state.flash", 2);
-#endif
+
 
 #ifdef XP_WIN
 pref("browser.preferences.instantApply", false);
