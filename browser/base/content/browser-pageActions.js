@@ -719,6 +719,15 @@ var BrowserPageActions = {
       }
     }
   },
+
+  
+
+
+  onLocationChange() {
+    for (let action of PageActions.actions) {
+      action.onLocationChange(window);
+    }
+  },
 };
 
 var BrowserPageActionFeedback = {

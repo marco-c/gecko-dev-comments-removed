@@ -4693,6 +4693,8 @@ var XULBrowserWindow = {
 
       gIdentityHandler.onLocationChange();
 
+      BrowserPageActions.onLocationChange();
+
       gTabletModePageCounter.inc();
 
       

@@ -553,6 +553,12 @@ this.PageActions = {
 
 
 
+
+
+
+
+
+
 function Action(options) {
   setProperties(this, options, {
     id: true,
@@ -566,6 +572,7 @@ function Action(options) {
     onIframeHiding: false,
     onIframeHidden: false,
     onIframeShown: false,
+    onLocationChange: false,
     onPlacedInPanel: false,
     onPlacedInUrlbar: false,
     onShowingInPanel: false,
@@ -770,6 +777,18 @@ Action.prototype = {
   onIframeShown(iframeNode, parentPanelNode) {
     if (this._onIframeShown) {
       this._onIframeShown(iframeNode, parentPanelNode);
+    }
+  },
+
+  
+
+
+
+
+
+  onLocationChange(browserWindow) {
+    if (this._onLocationChange) {
+      this._onLocationChange(browserWindow);
     }
   },
 

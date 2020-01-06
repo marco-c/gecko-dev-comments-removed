@@ -159,11 +159,10 @@ var PocketPageAction = {
           if (Services.prefs.getBoolPref("toolkit.cosmeticAnimations.enabled")) {
             PocketPageAction.urlbarNode.setAttribute("animate", "true");
           }
-        },
-        onIframeHiding(iframe, panel) {
-          if (iframe.getAttribute("itemAdded") == "true") {
-            iframe.ownerGlobal.LibraryUI.triggerLibraryAnimation("pocket");
-          }
+
+          let browser = panel.ownerGlobal.gBrowser.selectedBrowser;
+          PocketPageAction.pocketedBrowser = browser;
+          PocketPageAction.pocketedBrowserInnerWindowID = browser.innerWindowID;
         },
         onIframeHidden(iframe, panel) {
           if (!PocketPageAction.urlbarNode) {
@@ -171,11 +170,65 @@ var PocketPageAction = {
           }
           PocketPageAction.urlbarNode.removeAttribute("animate");
           PocketPageAction.urlbarNode.removeAttribute("open");
-          PocketPageAction.urlbarNode = null;
+          delete PocketPageAction.urlbarNode;
+
+          if (iframe.getAttribute("itemAdded") == "true") {
+            iframe.ownerGlobal.LibraryUI.triggerLibraryAnimation("pocket");
+            PocketPageAction.innerWindowIDsByBrowser.set(
+              PocketPageAction.pocketedBrowser,
+              PocketPageAction.pocketedBrowserInnerWindowID
+            );
+          } else {
+            PocketPageAction.innerWindowIDsByBrowser.delete(
+              PocketPageAction.pocketedBrowser
+            );
+          }
+          PocketPageAction.updateUrlbarNodeState(panel.ownerGlobal);
+          delete PocketPageAction.pocketedBrowser;
+          delete PocketPageAction.pocketedBrowserInnerWindowID;
+        },
+        onLocationChange(browserWindow) {
+          PocketPageAction.updateUrlbarNodeState(browserWindow);
         },
       }));
     }
     Pocket.pageAction = this.pageAction;
+  },
+
+  
+  
+  
+  
+  
+  
+  
+  get innerWindowIDsByBrowser() {
+    delete this.innerWindowIDsByBrowser;
+    return this.innerWindowIDsByBrowser = new WeakMap();
+  },
+
+  
+  
+  updateUrlbarNodeState(browserWindow) {
+    if (!this.pageAction) {
+      return;
+    }
+    let {BrowserPageActions} = browserWindow;
+    let urlbarNode = browserWindow.document.getElementById(
+      BrowserPageActions._urlbarButtonNodeIDForActionID(this.pageAction.id)
+    );
+    if (!urlbarNode) {
+      return;
+    }
+    let browser = browserWindow.gBrowser.selectedBrowser;
+    let pocketedInnerWindowID = this.innerWindowIDsByBrowser.get(browser);
+    if (pocketedInnerWindowID == browser.innerWindowID) {
+      
+      urlbarNode.setAttribute("pocketed", "true");
+    } else {
+      
+      urlbarNode.removeAttribute("pocketed");
+    }
   },
 
   shutdown() {
