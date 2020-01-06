@@ -16,6 +16,7 @@
 
 namespace gl
 {
+class Context;
 class Framebuffer;
 class Texture;
 struct Extents;
@@ -37,24 +38,33 @@ class Blit9 : angle::NonCopyable
 
     
     
-    gl::Error copy2D(const gl::Framebuffer *framebuffer, const RECT &sourceRect, GLenum destFormat, const gl::Offset &destOffset, TextureStorage *storage, GLint level);
-    gl::Error copyCube(const gl::Framebuffer *framebuffer,
+    gl::Error copy2D(const gl::Context *context,
+                     const gl::Framebuffer *framebuffer,
+                     const RECT &sourceRect,
+                     GLenum destFormat,
+                     const gl::Offset &destOffset,
+                     TextureStorage *storage,
+                     GLint level);
+    gl::Error copyCube(const gl::Context *context,
+                       const gl::Framebuffer *framebuffer,
                        const RECT &sourceRect,
                        GLenum destFormat,
                        const gl::Offset &destOffset,
                        TextureStorage *storage,
                        GLenum target,
                        GLint level);
-    gl::Error copyTexture2D(const gl::Texture *source,
-                            GLint sourceLevel,
-                            const RECT &sourceRect,
-                            GLenum destFormat,
-                            const gl::Offset &destOffset,
-                            TextureStorage *storage,
-                            GLint destLevel,
-                            bool flipY,
-                            bool premultiplyAlpha,
-                            bool unmultiplyAlpha);
+    gl::Error copyTexture(const gl::Context *context,
+                          const gl::Texture *source,
+                          GLint sourceLevel,
+                          const RECT &sourceRect,
+                          GLenum destFormat,
+                          const gl::Offset &destOffset,
+                          TextureStorage *storage,
+                          GLenum destTarget,
+                          GLint destLevel,
+                          bool flipY,
+                          bool premultiplyAlpha,
+                          bool unmultiplyAlpha);
 
     
     
@@ -99,7 +109,7 @@ class Blit9 : angle::NonCopyable
                                    IDirect3DBaseTexture9 **outTexture);
     void setViewportAndShaderConstants(const RECT &sourceRect,
                                        const gl::Extents &sourceSize,
-                                       const gl::Offset &offset,
+                                       const RECT &destRect,
                                        bool flipY);
     void setCommonBlitState();
     RECT getSurfaceRect(IDirect3DSurface9 *surface) const;

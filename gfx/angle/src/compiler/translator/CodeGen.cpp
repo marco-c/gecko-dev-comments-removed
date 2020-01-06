@@ -16,6 +16,12 @@
 #include "compiler/translator/TranslatorHLSL.h"
 #endif  
 
+#ifdef ANGLE_ENABLE_VULKAN
+#include "compiler/translator/TranslatorVulkan.h"
+#endif  
+
+#include "compiler/translator/util.h"
+
 namespace sh
 {
 
@@ -26,51 +32,36 @@ namespace sh
 
 TCompiler *ConstructCompiler(sh::GLenum type, ShShaderSpec spec, ShShaderOutput output)
 {
-    switch (output)
-    {
-        case SH_ESSL_OUTPUT:
 #ifdef ANGLE_ENABLE_ESSL
-            return new TranslatorESSL(type, spec);
-#else
-            
-            
-            return nullptr;
-#endif  
-
-        case SH_GLSL_130_OUTPUT:
-        case SH_GLSL_140_OUTPUT:
-        case SH_GLSL_150_CORE_OUTPUT:
-        case SH_GLSL_330_CORE_OUTPUT:
-        case SH_GLSL_400_CORE_OUTPUT:
-        case SH_GLSL_410_CORE_OUTPUT:
-        case SH_GLSL_420_CORE_OUTPUT:
-        case SH_GLSL_430_CORE_OUTPUT:
-        case SH_GLSL_440_CORE_OUTPUT:
-        case SH_GLSL_450_CORE_OUTPUT:
-        case SH_GLSL_COMPATIBILITY_OUTPUT:
-#ifdef ANGLE_ENABLE_GLSL
-            return new TranslatorGLSL(type, spec, output);
-#else
-            
-            
-            return nullptr;
-#endif  
-
-        case SH_HLSL_3_0_OUTPUT:
-        case SH_HLSL_4_1_OUTPUT:
-        case SH_HLSL_4_0_FL9_3_OUTPUT:
-#ifdef ANGLE_ENABLE_HLSL
-            return new TranslatorHLSL(type, spec, output);
-#else
-            
-            
-            return nullptr;
-#endif  
-
-        default:
-            
-            return nullptr;
+    if (IsOutputESSL(output))
+    {
+        return new TranslatorESSL(type, spec);
     }
+#endif  
+
+#ifdef ANGLE_ENABLE_GLSL
+    if (IsOutputGLSL(output))
+    {
+        return new TranslatorGLSL(type, spec, output);
+    }
+#endif  
+
+#ifdef ANGLE_ENABLE_HLSL
+    if (IsOutputHLSL(output))
+    {
+        return new TranslatorHLSL(type, spec, output);
+    }
+#endif  
+
+#ifdef ANGLE_ENABLE_VULKAN
+    if (IsOutputVulkan(output))
+    {
+        return new TranslatorVulkan(type, spec);
+    }
+#endif  
+
+    
+    return nullptr;
 }
 
 

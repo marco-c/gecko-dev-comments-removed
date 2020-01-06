@@ -161,6 +161,12 @@ struct Extensions
     bool textureCompressionDXT5;
 
     
+    
+    
+    
+    bool textureCompressionS3TCsRGB;
+
+    
     bool textureCompressionASTCHDR;
 
     
@@ -213,6 +219,9 @@ struct Extensions
     bool robustness;
 
     
+    bool robustBufferAccessBehavior;
+
+    
     bool blendMinMax;
 
     
@@ -244,6 +253,10 @@ struct Extensions
 
     
     bool fragDepth;
+
+    
+    bool multiview;
+    GLuint maxViews;
 
     
     bool textureUsage;
@@ -325,6 +338,12 @@ struct Extensions
     bool sRGBWriteControl;
 
     
+    bool colorBufferFloatRGB;
+
+    
+    bool colorBufferFloatRGBA;
+
+    
 
     
     bool colorBufferFloat;
@@ -342,6 +361,21 @@ struct Extensions
 
     
     bool pathRendering;
+
+    
+    bool surfacelessContext;
+
+    
+    bool clientArrays;
+
+    
+    bool robustResourceInitialization;
+
+    
+    bool programCacheControl;
+
+    
+    bool textureRectangle;
 };
 
 struct ExtensionInfo
@@ -404,6 +438,7 @@ struct Caps
     GLuint64 maxElementIndex;
     GLuint max3DTextureSize;
     GLuint max2DTextureSize;
+    GLuint maxRectangleTextureSize;
     GLuint maxArrayTextureLayers;
     GLfloat maxLODBias;
     GLuint maxCubeMapTextureSize;
@@ -429,7 +464,7 @@ struct Caps
 
     
     GLint maxVertexAttribRelativeOffset;
-    GLint maxVertexAttribBindings;
+    GLuint maxVertexAttribBindings;
     GLint maxVertexAttribStride;
     GLuint maxElementsIndices;
     GLuint maxElementsVertices;
@@ -630,7 +665,25 @@ struct DisplayExtensions
     bool createContextBindGeneratesResource;
 
     
+    bool getSyncValues;
+
+    
     bool swapBuffersWithDamage;
+
+    
+    bool pixelFormatFloat;
+
+    
+    bool surfacelessContext;
+
+    
+    bool displayTextureShareGroup;
+
+    
+    bool createContextClientArrays;
+
+    
+    bool programCacheControl;
 };
 
 struct DeviceExtensions
@@ -673,6 +726,9 @@ struct ClientExtensions
     bool platformANGLENULL;
 
     
+    bool platformANGLEVulkan;
+
+    
     bool deviceCreation;
 
     
@@ -686,8 +742,11 @@ struct ClientExtensions
 
     
     bool clientGetAllProcAddresses;
+
+    
+    bool displayRobustResourceInitialization;
 };
 
-}
+}  
 
 #endif 

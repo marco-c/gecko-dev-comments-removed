@@ -14,8 +14,6 @@
 
 #include "angle_gl.h"
 
-#include <stack>
-
 namespace gl
 {
 
@@ -34,6 +32,7 @@ class HandleAllocator final : angle::NonCopyable
     GLuint allocate();
     void release(GLuint handle);
     void reserve(GLuint handle);
+    void reset();
 
   private:
     GLuint mBaseValue;

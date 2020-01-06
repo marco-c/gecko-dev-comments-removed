@@ -15,7 +15,7 @@ TIntermBlock *RemoveSwitchFallThrough::removeFallThrough(TIntermBlock *statement
     ASSERT(statementList);
     statementList->traverse(&rm);
     bool lastStatementWasBreak = rm.mLastStatementWasBreak;
-    rm.mLastStatementWasBreak = true;
+    rm.mLastStatementWasBreak  = true;
     rm.handlePreviousCase();
     if (!lastStatementWasBreak)
     {
@@ -117,16 +117,16 @@ void RemoveSwitchFallThrough::handlePreviousCase()
                 
                 for (size_t j = i; j < mCasesSharingBreak.size(); ++j)
                 {
-                    size_t startIndex = j > i ? 1 : 0; 
+                    size_t startIndex =
+                        j > i ? 1 : 0;  
                     outputSequence(mCasesSharingBreak.at(j)->getSequence(), startIndex);
-
                 }
             }
         }
         mCasesSharingBreak.clear();
     }
     mLastStatementWasBreak = false;
-    mPreviousCase = nullptr;
+    mPreviousCase          = nullptr;
 }
 
 bool RemoveSwitchFallThrough::visitCase(Visit, TIntermCase *node)

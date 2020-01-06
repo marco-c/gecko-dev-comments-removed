@@ -13,6 +13,7 @@
 #include "libANGLE/Fence.h"
 #include "libANGLE/Path.h"
 #include "libANGLE/Program.h"
+#include "libANGLE/ProgramPipeline.h"
 #include "libANGLE/Renderbuffer.h"
 #include "libANGLE/Sampler.h"
 #include "libANGLE/Shader.h"
@@ -21,542 +22,451 @@
 
 namespace gl
 {
-ResourceManager::ResourceManager() : mRefCount(1)
+
+namespace
+{
+
+template <typename ResourceType>
+GLuint AllocateEmptyObject(HandleAllocator *handleAllocator, ResourceMap<ResourceType> *objectMap)
+{
+    GLuint handle = handleAllocator->allocate();
+    objectMap->assign(handle, nullptr);
+    return handle;
+}
+
+}  
+
+template <typename HandleAllocatorType>
+ResourceManagerBase<HandleAllocatorType>::ResourceManagerBase() : mRefCount(1)
 {
 }
 
-ResourceManager::~ResourceManager()
-{
-    while (!mBufferMap.empty())
-    {
-        deleteBuffer(mBufferMap.begin()->first);
-    }
-
-    while (!mProgramMap.empty())
-    {
-        deleteProgram(mProgramMap.begin()->first);
-    }
-
-    while (!mShaderMap.empty())
-    {
-        deleteShader(mShaderMap.begin()->first);
-    }
-
-    while (!mRenderbufferMap.empty())
-    {
-        deleteRenderbuffer(mRenderbufferMap.begin()->first);
-    }
-
-    while (!mTextureMap.empty())
-    {
-        deleteTexture(mTextureMap.begin()->first);
-    }
-
-    while (!mSamplerMap.empty())
-    {
-        deleteSampler(mSamplerMap.begin()->first);
-    }
-
-    while (!mFenceSyncMap.empty())
-    {
-        deleteFenceSync(mFenceSyncMap.begin()->first);
-    }
-
-    for (auto it = mPathMap.begin(); it != mPathMap.end(); ++it)
-    {
-        const auto *p = it->second;
-        delete p;
-    }
-}
-
-void ResourceManager::addRef()
+template <typename HandleAllocatorType>
+void ResourceManagerBase<HandleAllocatorType>::addRef()
 {
     mRefCount++;
 }
 
-void ResourceManager::release()
+template <typename HandleAllocatorType>
+void ResourceManagerBase<HandleAllocatorType>::release(const Context *context)
 {
     if (--mRefCount == 0)
     {
+        reset(context);
         delete this;
     }
 }
 
-
-GLuint ResourceManager::createBuffer()
+template <typename ResourceType, typename HandleAllocatorType, typename ImplT>
+TypedResourceManager<ResourceType, HandleAllocatorType, ImplT>::~TypedResourceManager()
 {
-    GLuint handle = mBufferHandleAllocator.allocate();
+    ASSERT(mObjectMap.empty());
+}
 
-    mBufferMap[handle] = nullptr;
+template <typename ResourceType, typename HandleAllocatorType, typename ImplT>
+void TypedResourceManager<ResourceType, HandleAllocatorType, ImplT>::reset(const Context *context)
+{
+    this->mHandleAllocator.reset();
+    for (const auto &resource : mObjectMap)
+    {
+        if (resource.second)
+        {
+            ImplT::DeleteObject(context, resource.second);
+        }
+    }
+    mObjectMap.clear();
+}
 
-    return handle;
+template <typename ResourceType, typename HandleAllocatorType, typename ImplT>
+void TypedResourceManager<ResourceType, HandleAllocatorType, ImplT>::deleteObject(
+    const Context *context,
+    GLuint handle)
+{
+    ResourceType *resource = nullptr;
+    if (!mObjectMap.erase(handle, &resource))
+    {
+        return;
+    }
+
+    
+    this->mHandleAllocator.release(handle);
+
+    if (resource)
+    {
+        ImplT::DeleteObject(context, resource);
+    }
+}
+
+template class ResourceManagerBase<HandleAllocator>;
+template class ResourceManagerBase<HandleRangeAllocator>;
+template class TypedResourceManager<Buffer, HandleAllocator, BufferManager>;
+template class TypedResourceManager<Texture, HandleAllocator, TextureManager>;
+template class TypedResourceManager<Renderbuffer, HandleAllocator, RenderbufferManager>;
+template class TypedResourceManager<Sampler, HandleAllocator, SamplerManager>;
+template class TypedResourceManager<Sync, HandleAllocator, SyncManager>;
+template class TypedResourceManager<Framebuffer, HandleAllocator, FramebufferManager>;
+template class TypedResourceManager<ProgramPipeline, HandleAllocator, ProgramPipelineManager>;
+
+
+
+
+Buffer *BufferManager::AllocateNewObject(rx::GLImplFactory *factory, GLuint handle)
+{
+    Buffer *buffer = new Buffer(factory, handle);
+    buffer->addRef();
+    return buffer;
 }
 
 
-GLuint ResourceManager::createShader(rx::GLImplFactory *factory,
-                                     const gl::Limitations &rendererLimitations,
-                                     GLenum type)
+void BufferManager::DeleteObject(const Context *context, Buffer *buffer)
+{
+    buffer->release(context);
+}
+
+GLuint BufferManager::createBuffer()
+{
+    return AllocateEmptyObject(&mHandleAllocator, &mObjectMap);
+}
+
+Buffer *BufferManager::getBuffer(GLuint handle) const
+{
+    return mObjectMap.query(handle);
+}
+
+
+
+ShaderProgramManager::~ShaderProgramManager()
+{
+    ASSERT(mPrograms.empty());
+    ASSERT(mShaders.empty());
+}
+
+void ShaderProgramManager::reset(const Context *context)
+{
+    while (!mPrograms.empty())
+    {
+        deleteProgram(context, mPrograms.begin()->first);
+    }
+    mPrograms.clear();
+    while (!mShaders.empty())
+    {
+        deleteShader(context, mShaders.begin()->first);
+    }
+    mShaders.clear();
+}
+
+GLuint ShaderProgramManager::createShader(rx::GLImplFactory *factory,
+                                          const gl::Limitations &rendererLimitations,
+                                          GLenum type)
 {
     ASSERT(type == GL_VERTEX_SHADER || type == GL_FRAGMENT_SHADER || type == GL_COMPUTE_SHADER);
-    GLuint handle = mProgramShaderHandleAllocator.allocate();
-
-    mShaderMap[handle] = new Shader(this, factory, rendererLimitations, type, handle);
-
+    GLuint handle    = mHandleAllocator.allocate();
+    mShaders.assign(handle, new Shader(this, factory, rendererLimitations, type, handle));
     return handle;
 }
 
-
-GLuint ResourceManager::createProgram(rx::GLImplFactory *factory)
+void ShaderProgramManager::deleteShader(const Context *context, GLuint shader)
 {
-    GLuint handle = mProgramShaderHandleAllocator.allocate();
-
-    mProgramMap[handle] = new Program(factory, this, handle);
-
-    return handle;
+    deleteObject(context, &mShaders, shader);
 }
 
-
-GLuint ResourceManager::createTexture()
+Shader *ShaderProgramManager::getShader(GLuint handle) const
 {
-    GLuint handle = mTextureHandleAllocator.allocate();
-
-    mTextureMap[handle] = nullptr;
-
-    return handle;
+    return mShaders.query(handle);
 }
 
-
-GLuint ResourceManager::createRenderbuffer()
+GLuint ShaderProgramManager::createProgram(rx::GLImplFactory *factory)
 {
-    GLuint handle = mRenderbufferHandleAllocator.allocate();
-
-    mRenderbufferMap[handle] = nullptr;
-
+    GLuint handle = mHandleAllocator.allocate();
+    mPrograms.assign(handle, new Program(factory, this, handle));
     return handle;
 }
 
-
-GLuint ResourceManager::createSampler()
+void ShaderProgramManager::deleteProgram(const gl::Context *context, GLuint program)
 {
-    GLuint handle = mSamplerHandleAllocator.allocate();
-
-    mSamplerMap[handle] = nullptr;
-
-    return handle;
+    deleteObject(context, &mPrograms, program);
 }
 
-
-GLuint ResourceManager::createFenceSync(rx::GLImplFactory *factory)
+Program *ShaderProgramManager::getProgram(GLuint handle) const
 {
-    GLuint handle = mFenceSyncHandleAllocator.allocate();
+    return mPrograms.query(handle);
+}
 
-    FenceSync *fenceSync = new FenceSync(factory->createFenceSync(), handle);
-    fenceSync->addRef();
-    mFenceSyncMap[handle] = fenceSync;
+template <typename ObjectType>
+void ShaderProgramManager::deleteObject(const Context *context,
+                                        ResourceMap<ObjectType> *objectMap,
+                                        GLuint id)
+{
+    ObjectType *object = objectMap->query(id);
+    if (!object)
+    {
+        return;
+    }
 
+    if (object->getRefCount() == 0)
+    {
+        mHandleAllocator.release(id);
+        object->onDestroy(context);
+        objectMap->erase(id, &object);
+    }
+    else
+    {
+        object->flagForDeletion();
+    }
+}
+
+
+
+
+Texture *TextureManager::AllocateNewObject(rx::GLImplFactory *factory, GLuint handle, GLenum target)
+{
+    Texture *texture = new Texture(factory, handle, target);
+    texture->addRef();
+    return texture;
+}
+
+
+void TextureManager::DeleteObject(const Context *context, Texture *texture)
+{
+    texture->release(context);
+}
+
+GLuint TextureManager::createTexture()
+{
+    return AllocateEmptyObject(&mHandleAllocator, &mObjectMap);
+}
+
+Texture *TextureManager::getTexture(GLuint handle) const
+{
+    ASSERT(mObjectMap.query(0) == nullptr);
+    return mObjectMap.query(handle);
+}
+
+void TextureManager::signalAllTexturesDirty() const
+{
+    for (const auto &texture : mObjectMap)
+    {
+        if (texture.second)
+        {
+            texture.second->signalDirty();
+        }
+    }
+}
+
+
+
+
+Renderbuffer *RenderbufferManager::AllocateNewObject(rx::GLImplFactory *factory, GLuint handle)
+{
+    Renderbuffer *renderbuffer = new Renderbuffer(factory->createRenderbuffer(), handle);
+    renderbuffer->addRef();
+    return renderbuffer;
+}
+
+
+void RenderbufferManager::DeleteObject(const Context *context, Renderbuffer *renderbuffer)
+{
+    renderbuffer->release(context);
+}
+
+GLuint RenderbufferManager::createRenderbuffer()
+{
+    return AllocateEmptyObject(&mHandleAllocator, &mObjectMap);
+}
+
+Renderbuffer *RenderbufferManager::getRenderbuffer(GLuint handle) const
+{
+    return mObjectMap.query(handle);
+}
+
+
+
+
+Sampler *SamplerManager::AllocateNewObject(rx::GLImplFactory *factory, GLuint handle)
+{
+    Sampler *sampler = new Sampler(factory, handle);
+    sampler->addRef();
+    return sampler;
+}
+
+
+void SamplerManager::DeleteObject(const Context *context, Sampler *sampler)
+{
+    sampler->release(context);
+}
+
+GLuint SamplerManager::createSampler()
+{
+    return AllocateEmptyObject(&mHandleAllocator, &mObjectMap);
+}
+
+Sampler *SamplerManager::getSampler(GLuint handle) const
+{
+    return mObjectMap.query(handle);
+}
+
+bool SamplerManager::isSampler(GLuint sampler) const
+{
+    return mObjectMap.contains(sampler);
+}
+
+
+
+
+void SyncManager::DeleteObject(const Context *context, Sync *sync)
+{
+    sync->release(context);
+}
+
+GLuint SyncManager::createSync(rx::GLImplFactory *factory)
+{
+    GLuint handle = mHandleAllocator.allocate();
+    Sync *sync    = new Sync(factory->createSync(), handle);
+    sync->addRef();
+    mObjectMap.assign(handle, sync);
     return handle;
 }
 
-ErrorOrResult<GLuint> ResourceManager::createPaths(rx::GLImplFactory *factory, GLsizei range)
+Sync *SyncManager::getSync(GLuint handle) const
+{
+    return mObjectMap.query(handle);
+}
+
+
+
+ErrorOrResult<GLuint> PathManager::createPaths(rx::GLImplFactory *factory, GLsizei range)
 {
     
-    const GLuint client = mPathHandleAllocator.allocateRange(static_cast<GLuint>(range));
+    const GLuint client = mHandleAllocator.allocateRange(static_cast<GLuint>(range));
     if (client == HandleRangeAllocator::kInvalidHandle)
-        return gl::Error(GL_OUT_OF_MEMORY, "Failed to allocate path handle range.");
+        return OutOfMemory() << "Failed to allocate path handle range.";
 
     const auto &paths = factory->createPaths(range);
     if (paths.empty())
     {
-        mPathHandleAllocator.releaseRange(client, range);
-        return gl::Error(GL_OUT_OF_MEMORY, "Failed to allocate path objects.");
+        mHandleAllocator.releaseRange(client, range);
+        return OutOfMemory() << "Failed to allocate path objects.";
     }
-
-    auto hint = mPathMap.begin();
 
     for (GLsizei i = 0; i < range; ++i)
     {
         const auto impl = paths[static_cast<unsigned>(i)];
         const auto id   = client + i;
-        hint            = mPathMap.insert(hint, std::make_pair(id, new Path(impl)));
+        mPaths.assign(id, new Path(impl));
     }
     return client;
 }
 
-void ResourceManager::deleteBuffer(GLuint buffer)
-{
-    auto bufferObject = mBufferMap.find(buffer);
-
-    if (bufferObject != mBufferMap.end())
-    {
-        mBufferHandleAllocator.release(bufferObject->first);
-        if (bufferObject->second) bufferObject->second->release();
-        mBufferMap.erase(bufferObject);
-    }
-}
-
-void ResourceManager::deleteShader(GLuint shader)
-{
-    auto shaderObject = mShaderMap.find(shader);
-
-    if (shaderObject != mShaderMap.end())
-    {
-        if (shaderObject->second->getRefCount() == 0)
-        {
-            mProgramShaderHandleAllocator.release(shaderObject->first);
-            delete shaderObject->second;
-            mShaderMap.erase(shaderObject);
-        }
-        else
-        {
-            shaderObject->second->flagForDeletion();
-        }
-    }
-}
-
-void ResourceManager::deleteProgram(GLuint program)
-{
-    auto programObject = mProgramMap.find(program);
-
-    if (programObject != mProgramMap.end())
-    {
-        if (programObject->second->getRefCount() == 0)
-        {
-            mProgramShaderHandleAllocator.release(programObject->first);
-            delete programObject->second;
-            mProgramMap.erase(programObject);
-        }
-        else
-        {
-            programObject->second->flagForDeletion();
-        }
-    }
-}
-
-void ResourceManager::deleteTexture(GLuint texture)
-{
-    auto textureObject = mTextureMap.find(texture);
-
-    if (textureObject != mTextureMap.end())
-    {
-        mTextureHandleAllocator.release(textureObject->first);
-        if (textureObject->second) textureObject->second->release();
-        mTextureMap.erase(textureObject);
-    }
-}
-
-void ResourceManager::deleteRenderbuffer(GLuint renderbuffer)
-{
-    auto renderbufferObject = mRenderbufferMap.find(renderbuffer);
-
-    if (renderbufferObject != mRenderbufferMap.end())
-    {
-        mRenderbufferHandleAllocator.release(renderbufferObject->first);
-        if (renderbufferObject->second) renderbufferObject->second->release();
-        mRenderbufferMap.erase(renderbufferObject);
-    }
-}
-
-void ResourceManager::deleteSampler(GLuint sampler)
-{
-    auto samplerObject = mSamplerMap.find(sampler);
-
-    if (samplerObject != mSamplerMap.end())
-    {
-        mSamplerHandleAllocator.release(samplerObject->first);
-        if (samplerObject->second) samplerObject->second->release();
-        mSamplerMap.erase(samplerObject);
-    }
-}
-
-void ResourceManager::deleteFenceSync(GLuint fenceSync)
-{
-    auto fenceObjectIt = mFenceSyncMap.find(fenceSync);
-
-    if (fenceObjectIt != mFenceSyncMap.end())
-    {
-        mFenceSyncHandleAllocator.release(fenceObjectIt->first);
-        if (fenceObjectIt->second) fenceObjectIt->second->release();
-        mFenceSyncMap.erase(fenceObjectIt);
-    }
-}
-
-void ResourceManager::deletePaths(GLuint first, GLsizei range)
+void PathManager::deletePaths(GLuint first, GLsizei range)
 {
     for (GLsizei i = 0; i < range; ++i)
     {
         const auto id = first + i;
-        const auto it = mPathMap.find(id);
-        if (it == mPathMap.end())
+        Path *p       = nullptr;
+        if (!mPaths.erase(id, &p))
             continue;
-        Path *p = it->second;
         delete p;
-        mPathMap.erase(it);
     }
-    mPathHandleAllocator.releaseRange(first, static_cast<GLuint>(range));
+    mHandleAllocator.releaseRange(first, static_cast<GLuint>(range));
 }
 
-Buffer *ResourceManager::getBuffer(unsigned int handle)
+Path *PathManager::getPath(GLuint handle) const
 {
-    auto buffer = mBufferMap.find(handle);
-
-    if (buffer == mBufferMap.end())
-    {
-        return nullptr;
-    }
-    else
-    {
-        return buffer->second;
-    }
+    return mPaths.query(handle);
 }
 
-Shader *ResourceManager::getShader(unsigned int handle) const
+bool PathManager::hasPath(GLuint handle) const
 {
-    auto shader = mShaderMap.find(handle);
-
-    if (shader == mShaderMap.end())
-    {
-        return nullptr;
-    }
-    else
-    {
-        return shader->second;
-    }
+    return mHandleAllocator.isUsed(handle);
 }
 
-Texture *ResourceManager::getTexture(unsigned int handle)
+PathManager::~PathManager()
 {
-    if (handle == 0)
-        return nullptr;
-
-    auto texture = mTextureMap.find(handle);
-
-    if (texture == mTextureMap.end())
-    {
-        return nullptr;
-    }
-    else
-    {
-        return texture->second;
-    }
+    ASSERT(mPaths.empty());
 }
 
-Program *ResourceManager::getProgram(unsigned int handle) const
+void PathManager::reset(const Context *context)
 {
-    auto program = mProgramMap.find(handle);
-
-    if (program == mProgramMap.end())
+    for (auto path : mPaths)
     {
-        return nullptr;
+        SafeDelete(path.second);
     }
-    else
-    {
-        return program->second;
-    }
+    mPaths.clear();
 }
 
-Renderbuffer *ResourceManager::getRenderbuffer(unsigned int handle)
+
+
+
+Framebuffer *FramebufferManager::AllocateNewObject(rx::GLImplFactory *factory,
+                                                   GLuint handle,
+                                                   const Caps &caps)
 {
-    auto renderbuffer = mRenderbufferMap.find(handle);
-
-    if (renderbuffer == mRenderbufferMap.end())
-    {
-        return nullptr;
-    }
-    else
-    {
-        return renderbuffer->second;
-    }
+    return new Framebuffer(caps, factory, handle);
 }
 
-Sampler *ResourceManager::getSampler(unsigned int handle)
-{
-    auto sampler = mSamplerMap.find(handle);
 
-    if (sampler == mSamplerMap.end())
-    {
-        return nullptr;
-    }
-    else
-    {
-        return sampler->second;
-    }
-}
-
-FenceSync *ResourceManager::getFenceSync(unsigned int handle)
-{
-    auto fenceObjectIt = mFenceSyncMap.find(handle);
-
-    if (fenceObjectIt == mFenceSyncMap.end())
-    {
-        return nullptr;
-    }
-    else
-    {
-        return fenceObjectIt->second;
-    }
-}
-
-const Path *ResourceManager::getPath(GLuint handle) const
-{
-    auto it = mPathMap.find(handle);
-    if (it == std::end(mPathMap))
-        return nullptr;
-    return it->second;
-}
-
-Path *ResourceManager::getPath(GLuint handle)
-{
-    auto it = mPathMap.find(handle);
-    if (it == std::end(mPathMap))
-        return nullptr;
-
-    return it->second;
-}
-
-bool ResourceManager::hasPath(GLuint handle) const
-{
-    return mPathHandleAllocator.isUsed(handle);
-}
-
-void ResourceManager::setRenderbuffer(GLuint handle, Renderbuffer *buffer)
-{
-    mRenderbufferMap[handle] = buffer;
-}
-
-Buffer *ResourceManager::checkBufferAllocation(rx::GLImplFactory *factory, GLuint handle)
-{
-    if (handle == 0)
-    {
-        return nullptr;
-    }
-
-    auto bufferMapIt     = mBufferMap.find(handle);
-    bool handleAllocated = (bufferMapIt != mBufferMap.end());
-
-    if (handleAllocated && bufferMapIt->second != nullptr)
-    {
-        return bufferMapIt->second;
-    }
-
-    Buffer *buffer = new Buffer(factory, handle);
-    buffer->addRef();
-
-    if (handleAllocated)
-    {
-        bufferMapIt->second = buffer;
-    }
-    else
-    {
-        mBufferHandleAllocator.reserve(handle);
-        mBufferMap[handle] = buffer;
-    }
-
-    return buffer;
-}
-
-Texture *ResourceManager::checkTextureAllocation(rx::GLImplFactory *factory,
-                                                 GLuint handle,
-                                                 GLenum type)
-{
-    if (handle == 0)
-    {
-        return nullptr;
-    }
-
-    auto textureMapIt    = mTextureMap.find(handle);
-    bool handleAllocated = (textureMapIt != mTextureMap.end());
-
-    if (handleAllocated && textureMapIt->second != nullptr)
-    {
-        return textureMapIt->second;
-    }
-
-    Texture *texture = new Texture(factory, handle, type);
-    texture->addRef();
-
-    if (handleAllocated)
-    {
-        textureMapIt->second = texture;
-    }
-    else
-    {
-        mTextureHandleAllocator.reserve(handle);
-        mTextureMap[handle] = texture;
-    }
-
-    return texture;
-}
-
-Renderbuffer *ResourceManager::checkRenderbufferAllocation(rx::GLImplFactory *factory,
-                                                           GLuint handle)
-{
-    if (handle == 0)
-    {
-        return nullptr;
-    }
-
-    auto renderbufferMapIt = mRenderbufferMap.find(handle);
-    bool handleAllocated   = (renderbufferMapIt != mRenderbufferMap.end());
-
-    if (handleAllocated && renderbufferMapIt->second != nullptr)
-    {
-        return renderbufferMapIt->second;
-    }
-
-    Renderbuffer *renderbuffer = new Renderbuffer(factory->createRenderbuffer(), handle);
-    renderbuffer->addRef();
-
-    if (handleAllocated)
-    {
-        renderbufferMapIt->second = renderbuffer;
-    }
-    else
-    {
-        mRenderbufferHandleAllocator.reserve(handle);
-        mRenderbufferMap[handle] = renderbuffer;
-    }
-
-    return renderbuffer;
-}
-
-Sampler *ResourceManager::checkSamplerAllocation(rx::GLImplFactory *factory, GLuint samplerHandle)
+void FramebufferManager::DeleteObject(const Context *context, Framebuffer *framebuffer)
 {
     
-    if (samplerHandle == 0)
+    if (framebuffer->id() != 0)
     {
-        return nullptr;
+        framebuffer->onDestroy(context);
+        delete framebuffer;
     }
+}
 
-    Sampler *sampler = getSampler(samplerHandle);
+GLuint FramebufferManager::createFramebuffer()
+{
+    return AllocateEmptyObject(&mHandleAllocator, &mObjectMap);
+}
 
-    if (!sampler)
+Framebuffer *FramebufferManager::getFramebuffer(GLuint handle) const
+{
+    return mObjectMap.query(handle);
+}
+
+void FramebufferManager::setDefaultFramebuffer(Framebuffer *framebuffer)
+{
+    ASSERT(framebuffer == nullptr || framebuffer->id() == 0);
+    mObjectMap.assign(0, framebuffer);
+}
+
+void FramebufferManager::invalidateFramebufferComplenessCache() const
+{
+    for (const auto &framebuffer : mObjectMap)
     {
-        sampler                    = new Sampler(factory, samplerHandle);
-        mSamplerMap[samplerHandle] = sampler;
-        sampler->addRef();
+        if (framebuffer.second)
+        {
+            framebuffer.second->invalidateCompletenessCache();
+        }
     }
-
-    return sampler;
 }
 
-bool ResourceManager::isSampler(GLuint sampler)
+
+
+
+ProgramPipeline *ProgramPipelineManager::AllocateNewObject(rx::GLImplFactory *factory,
+                                                           GLuint handle)
 {
-    return mSamplerMap.find(sampler) != mSamplerMap.end();
+    ProgramPipeline *pipeline = new ProgramPipeline(factory, handle);
+    pipeline->addRef();
+    return pipeline;
 }
 
-bool ResourceManager::isTextureGenerated(GLuint texture) const
+
+void ProgramPipelineManager::DeleteObject(const Context *context, ProgramPipeline *pipeline)
 {
-    return texture == 0 || mTextureMap.find(texture) != mTextureMap.end();
+    pipeline->release(context);
 }
 
-bool ResourceManager::isBufferGenerated(GLuint buffer) const
+GLuint ProgramPipelineManager::createProgramPipeline()
 {
-    return buffer == 0 || mBufferMap.find(buffer) != mBufferMap.end();
+    return AllocateEmptyObject(&mHandleAllocator, &mObjectMap);
 }
 
-bool ResourceManager::isRenderbufferGenerated(GLuint renderbuffer) const
+ProgramPipeline *ProgramPipelineManager::getProgramPipeline(GLuint handle) const
 {
-    return renderbuffer == 0 || mRenderbufferMap.find(renderbuffer) != mRenderbufferMap.end();
+    return mObjectMap.query(handle);
 }
 
 }  

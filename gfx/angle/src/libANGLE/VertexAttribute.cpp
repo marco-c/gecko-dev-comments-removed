@@ -11,16 +11,70 @@
 namespace gl
 {
 
-VertexAttribute::VertexAttribute()
+
+
+VertexBinding::VertexBinding() : mStride(16u), mDivisor(0), mOffset(0)
+{
+}
+
+VertexBinding::VertexBinding(VertexBinding &&binding)
+{
+    *this = std::move(binding);
+}
+
+VertexBinding &VertexBinding::operator=(VertexBinding &&binding)
+{
+    if (this != &binding)
+    {
+        mStride  = binding.mStride;
+        mDivisor = binding.mDivisor;
+        mOffset  = binding.mOffset;
+        std::swap(binding.mBuffer, mBuffer);
+    }
+    return *this;
+}
+
+VertexAttribute::VertexAttribute(GLuint bindingIndex)
     : enabled(false),
       type(GL_FLOAT),
-      size(4),
+      size(4u),
       normalized(false),
       pureInteger(false),
-      stride(0),
-      pointer(NULL),
-      divisor(0)
+      pointer(nullptr),
+      relativeOffset(0),
+      vertexAttribArrayStride(0),
+      bindingIndex(bindingIndex)
 {
+}
+
+VertexAttribute::VertexAttribute(VertexAttribute &&attrib)
+    : enabled(attrib.enabled),
+      type(attrib.type),
+      size(attrib.size),
+      normalized(attrib.normalized),
+      pureInteger(attrib.pureInteger),
+      pointer(attrib.pointer),
+      relativeOffset(attrib.relativeOffset),
+      vertexAttribArrayStride(attrib.vertexAttribArrayStride),
+      bindingIndex(attrib.bindingIndex)
+{
+}
+
+VertexAttribute &VertexAttribute::operator=(VertexAttribute &&attrib)
+{
+    if (this != &attrib)
+    {
+        enabled                 = attrib.enabled;
+        type                    = attrib.type;
+        size                    = attrib.size;
+        normalized              = attrib.normalized;
+        pureInteger             = attrib.pureInteger;
+        pointer                 = attrib.pointer;
+        relativeOffset          = attrib.relativeOffset;
+        vertexAttribArrayStride = attrib.vertexAttribArrayStride;
+        bindingIndex            = attrib.bindingIndex;
+    }
+    return *this;
 }
 
 size_t ComputeVertexAttributeTypeSize(const VertexAttribute& attrib)
@@ -43,32 +97,62 @@ size_t ComputeVertexAttributeTypeSize(const VertexAttribute& attrib)
     }
 }
 
-size_t ComputeVertexAttributeStride(const VertexAttribute& attrib)
+size_t ComputeVertexAttributeStride(const VertexAttribute &attrib, const VertexBinding &binding)
 {
-    if (!attrib.enabled)
-    {
-        return 16;
-    }
-    return attrib.stride ? attrib.stride : ComputeVertexAttributeTypeSize(attrib);
+    
+    
+    return attrib.enabled ? binding.getStride() : 16u;
 }
 
-size_t ComputeVertexAttributeElementCount(const VertexAttribute &attrib,
-                                          size_t drawCount,
-                                          size_t instanceCount)
+
+GLintptr ComputeVertexAttributeOffset(const VertexAttribute &attrib, const VertexBinding &binding)
+{
+    return attrib.relativeOffset + binding.getOffset();
+}
+
+size_t ComputeVertexBindingElementCount(GLuint divisor, size_t drawCount, size_t instanceCount)
 {
     
     
     
     
     
-    if (instanceCount > 0 && attrib.divisor > 0)
+    if (instanceCount > 0 && divisor > 0)
     {
         
         
         
-        return (instanceCount + attrib.divisor - 1u) / attrib.divisor;
+        return (instanceCount + divisor - 1u) / divisor;
     }
 
     return drawCount;
 }
+
+GLenum GetVertexAttributeBaseType(const VertexAttribute &attrib)
+{
+    if (attrib.pureInteger)
+    {
+        switch (attrib.type)
+        {
+            case GL_BYTE:
+            case GL_SHORT:
+            case GL_INT:
+                return GL_INT;
+
+            case GL_UNSIGNED_BYTE:
+            case GL_UNSIGNED_SHORT:
+            case GL_UNSIGNED_INT:
+                return GL_UNSIGNED_INT;
+
+            default:
+                UNREACHABLE();
+                return GL_NONE;
+        }
+    }
+    else
+    {
+        return GL_FLOAT;
+    }
 }
+
+}  

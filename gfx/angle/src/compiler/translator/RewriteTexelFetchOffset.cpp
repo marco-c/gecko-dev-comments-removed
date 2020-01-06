@@ -9,7 +9,8 @@
 #include "compiler/translator/RewriteTexelFetchOffset.h"
 
 #include "common/angleutils.h"
-#include "compiler/translator/IntermNode.h"
+#include "compiler/translator/IntermNode_util.h"
+#include "compiler/translator/IntermTraverse.h"
 #include "compiler/translator/SymbolTable.h"
 
 namespace sh
@@ -21,9 +22,7 @@ namespace
 class Traverser : public TIntermTraverser
 {
   public:
-    static void Apply(TIntermNode *root,
-                      const TSymbolTable &symbolTable,
-                      int shaderVersion);
+    static void Apply(TIntermNode *root, const TSymbolTable &symbolTable, int shaderVersion);
 
   private:
     Traverser(const TSymbolTable &symbolTable, int shaderVersion);
@@ -41,9 +40,7 @@ Traverser::Traverser(const TSymbolTable &symbolTable, int shaderVersion)
 }
 
 
-void Traverser::Apply(TIntermNode *root,
-                      const TSymbolTable &symbolTable,
-                      int shaderVersion)
+void Traverser::Apply(TIntermNode *root, const TSymbolTable &symbolTable, int shaderVersion)
 {
     Traverser traverser(symbolTable, shaderVersion);
     do
@@ -70,12 +67,12 @@ bool Traverser::visitAggregate(Visit visit, TIntermAggregate *node)
     }
 
     
-    if (node->getOp() != EOpFunctionCall || node->isUserDefined())
+    if (node->getOp() != EOpCallBuiltInFunction)
     {
         return true;
     }
 
-    if (node->getFunctionSymbolInfo()->getName().compare(0, 16, "texelFetchOffset") != 0)
+    if (node->getFunctionSymbolInfo()->getName() != "texelFetchOffset")
     {
         return true;
     }
@@ -85,27 +82,17 @@ bool Traverser::visitAggregate(Visit visit, TIntermAggregate *node)
     ASSERT(sequence->size() == 4u);
 
     
-    bool is2DArray = node->getFunctionSymbolInfo()->getName().find("s2a1") != TString::npos;
+    
+    bool is2DArray = sequence->at(1)->getAsTyped()->getNominalSize() == 3 &&
+                     sequence->at(3)->getAsTyped()->getNominalSize() == 2;
 
     
     
-    TString newArgs = node->getFunctionSymbolInfo()->getName().substr(
-        16, node->getFunctionSymbolInfo()->getName().length() - 20);
-    TString newName           = "texelFetch" + newArgs;
-    TSymbol *texelFetchSymbol = symbolTable->findBuiltIn(newName, shaderVersion);
-    ASSERT(texelFetchSymbol);
-    int uniqueId = texelFetchSymbol->getUniqueId();
+
+    TIntermSequence *texelFetchArguments = new TIntermSequence();
 
     
-    
-    TIntermAggregate *texelFetchNode = new TIntermAggregate(EOpFunctionCall);
-    texelFetchNode->getFunctionSymbolInfo()->setName(newName);
-    texelFetchNode->getFunctionSymbolInfo()->setId(uniqueId);
-    texelFetchNode->setType(node->getType());
-    texelFetchNode->setLine(node->getLine());
-
-    
-    texelFetchNode->getSequence()->push_back(sequence->at(0));
+    texelFetchArguments->push_back(sequence->at(0));
 
     
     TIntermTyped *texCoordNode = sequence->at(1)->getAsTyped();
@@ -118,20 +105,15 @@ bool Traverser::visitAggregate(Visit visit, TIntermAggregate *node)
     {
         
         
-        TIntermAggregate *constructIVec3Node = new TIntermAggregate(EOpConstructIVec3);
-        constructIVec3Node->setLine(texCoordNode->getLine());
-        constructIVec3Node->setType(texCoordNode->getType());
+        TIntermSequence *constructOffsetIvecArguments = new TIntermSequence();
+        constructOffsetIvecArguments->push_back(sequence->at(3)->getAsTyped());
 
-        constructIVec3Node->getSequence()->push_back(sequence->at(3)->getAsTyped());
+        TIntermTyped *zeroNode = CreateZeroNode(TType(EbtInt));
+        constructOffsetIvecArguments->push_back(zeroNode);
 
-        TConstantUnion *zero = new TConstantUnion();
-        zero->setIConst(0);
-        TType *intType = new TType(EbtInt);
-
-        TIntermConstantUnion *zeroNode = new TIntermConstantUnion(zero, *intType);
-        constructIVec3Node->getSequence()->push_back(zeroNode);
-
-        offsetNode = constructIVec3Node;
+        offsetNode = TIntermAggregate::CreateConstructor(texCoordNode->getType(),
+                                                         constructOffsetIvecArguments);
+        offsetNode->setLine(texCoordNode->getLine());
     }
     else
     {
@@ -141,24 +123,26 @@ bool Traverser::visitAggregate(Visit visit, TIntermAggregate *node)
     
     TIntermBinary *add = new TIntermBinary(EOpAdd, texCoordNode, offsetNode);
     add->setLine(texCoordNode->getLine());
-    texelFetchNode->getSequence()->push_back(add);
+    texelFetchArguments->push_back(add);
 
     
-    texelFetchNode->getSequence()->push_back(sequence->at(2));
+    texelFetchArguments->push_back(sequence->at(2));
 
-    ASSERT(texelFetchNode->getSequence()->size() == 3u);
+    ASSERT(texelFetchArguments->size() == 3u);
+
+    TIntermTyped *texelFetchNode = CreateBuiltInFunctionCallNode("texelFetch", texelFetchArguments,
+                                                                 *symbolTable, shaderVersion);
+    texelFetchNode->setLine(node->getLine());
 
     
-    queueReplacement(node, texelFetchNode, OriginalNode::IS_DROPPED);
+    queueReplacement(texelFetchNode, OriginalNode::IS_DROPPED);
     mFound = true;
     return false;
 }
 
 }  
 
-void RewriteTexelFetchOffset(TIntermNode *root,
-                             const TSymbolTable &symbolTable,
-                             int shaderVersion)
+void RewriteTexelFetchOffset(TIntermNode *root, const TSymbolTable &symbolTable, int shaderVersion)
 {
     
     if (shaderVersion < 300)

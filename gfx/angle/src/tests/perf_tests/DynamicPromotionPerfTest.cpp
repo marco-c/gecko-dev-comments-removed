@@ -1,13 +1,13 @@
-
-
-
-
-
-
-
-
-
-
+//
+// Copyright 2016 The ANGLE Project Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+//
+// DynamicPromotionPerfTest:
+//   Tests that ANGLE will promote buffer specfied with DYNAMIC usage to static after a number of
+//   iterations without changing the data. It specifically affects the D3D back-end, which treats
+//   dynamic and static buffers quite differently.
+//
 
 #include "ANGLEPerfTest.h"
 #include "common/vector_utils.h"
@@ -120,7 +120,7 @@ void DynamicPromotionPerfTest::initializeBenchmark()
     GLsizeiptr positionArraySize = sizeof(Vector2) * vertexCount;
     GLsizeiptr colorArraySize    = sizeof(Vector3) * vertexCount;
 
-    
+    // The DYNAMIC_DRAW usage is the key to the test.
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, elementArraySize, indexData.data(), GL_DYNAMIC_DRAW);
     glBufferData(GL_ARRAY_BUFFER, positionArraySize + colorArraySize, nullptr, GL_DYNAMIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, positionArraySize, positionData.data());
@@ -134,7 +134,7 @@ void DynamicPromotionPerfTest::initializeBenchmark()
 
     glVertexAttribPointer(positionLocation, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
     glVertexAttribPointer(colorLocation, 3, GL_FLOAT, GL_FALSE, 0,
-                          reinterpret_cast<const GLvoid *>(positionArraySize));
+                          reinterpret_cast<const void *>(positionArraySize));
 
     glEnableVertexAttribArray(positionLocation);
     glEnableVertexAttribArray(colorLocation);
@@ -186,4 +186,4 @@ ANGLE_INSTANTIATE_TEST(DynamicPromotionPerfTest,
                        DynamicPromotionD3D11Params(),
                        DynamicPromotionD3D9Params());
 
-}  
+}  // anonymous namespace

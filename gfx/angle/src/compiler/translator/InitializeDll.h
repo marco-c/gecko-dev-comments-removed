@@ -12,5 +12,4 @@ bool InitProcess();
 void DetachProcess();
 }  
 
-#endif 
-
+#endif  

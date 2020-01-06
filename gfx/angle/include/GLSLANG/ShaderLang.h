@@ -25,7 +25,7 @@
 
 
 
-#define ANGLE_SH_VERSION 168
+#define ANGLE_SH_VERSION 182
 
 enum ShShaderSpec
 {
@@ -61,7 +61,10 @@ enum ShShaderOutput
     
     SH_HLSL_3_0_OUTPUT       = 0x8B48,  
     SH_HLSL_4_1_OUTPUT       = 0x8B49,  
-    SH_HLSL_4_0_FL9_3_OUTPUT = 0x8B4A   
+    SH_HLSL_4_0_FL9_3_OUTPUT = 0x8B4A,  
+
+    
+    SH_GLSL_VULKAN_OUTPUT = 0x8B4B,
 };
 
 
@@ -204,6 +207,45 @@ const ShCompileOptions SH_EMULATE_ISNAN_FLOAT_FUNCTION = UINT64_C(1) << 27;
 const ShCompileOptions SH_USE_UNUSED_STANDARD_SHARED_BLOCKS = UINT64_C(1) << 28;
 
 
+
+const ShCompileOptions SH_REWRITE_FLOAT_UNARY_MINUS_OPERATOR = UINT64_C(1) << 29;
+
+
+
+const ShCompileOptions SH_EMULATE_ATAN2_FLOAT_FUNCTION = UINT64_C(1) << 30;
+
+
+
+const ShCompileOptions SH_TRANSLATE_VIEWID_OVR_TO_UNIFORM = UINT64_C(1) << 31;
+
+
+
+const ShCompileOptions SH_INITIALIZE_UNINITIALIZED_LOCALS = UINT64_C(1) << 32;
+
+
+
+
+
+
+
+
+const ShCompileOptions SH_INITIALIZE_BUILTINS_FOR_INSTANCED_MULTIVIEW = UINT64_C(1) << 33;
+
+
+
+
+
+
+
+
+
+const ShCompileOptions SH_SELECT_VIEW_IN_NV_GLSL_VERTEX_SHADER = UINT64_C(1) << 34;
+
+
+
+const ShCompileOptions SH_CLAMP_POINT_SIZE = UINT64_C(1) << 35;
+
+
 enum ShArrayIndexClampingStrategy
 {
     
@@ -248,6 +290,9 @@ struct ShBuiltInResources
     int EXT_shader_framebuffer_fetch;
     int NV_shader_framebuffer_fetch;
     int ARM_shader_framebuffer_fetch;
+    int OVR_multiview;
+    int EXT_YUV_target;
+    int OES_geometry_shader;
 
     
     
@@ -275,6 +320,9 @@ struct ShBuiltInResources
     int MaxDualSourceDrawBuffers;
 
     
+    int MaxViewsOVR;
+
+    
     
     
     ShHashFunction64 HashFunction;
@@ -296,6 +344,10 @@ struct ShBuiltInResources
     
 
     
+    int MinProgramTextureGatherOffset;
+    int MaxProgramTextureGatherOffset;
+
+    
     int MaxImageUnits;
 
     
@@ -309,6 +361,9 @@ struct ShBuiltInResources
 
     
     int MaxCombinedImageUniforms;
+
+    
+    int MaxUniformLocations;
 
     
     int MaxCombinedShaderOutputResources;
@@ -353,6 +408,29 @@ struct ShBuiltInResources
 
     
     int MaxAtomicCounterBufferSize;
+
+    
+    int MaxUniformBufferBindings;
+
+    
+    int MaxShaderStorageBufferBindings;
+
+    
+    float MaxPointSize;
+
+    
+    int MaxGeometryUniformComponents;
+    int MaxGeometryUniformBlocks;
+    int MaxGeometryInputComponents;
+    int MaxGeometryOutputComponents;
+    int MaxGeometryOutputVertices;
+    int MaxGeometryTotalOutputComponents;
+    int MaxGeometryTextureImageUnits;
+    int MaxGeometryAtomicCounterBuffers;
+    int MaxGeometryAtomicCounters;
+    int MaxGeometryShaderStorageBlocks;
+    int MaxGeometryShaderInvocations;
+    int MaxGeometryImageUniforms;
 };
 
 
@@ -363,149 +441,6 @@ struct ShBuiltInResources
 
 
 using ShHandle = void *;
-
-
-
-
-
-
-bool ShInitialize();
-
-
-
-
-bool ShFinalize();
-
-
-
-
-
-
-void ShInitBuiltInResources(ShBuiltInResources *resources);
-
-
-
-
-
-
-
-const std::string &ShGetBuiltInResourcesString(const ShHandle handle);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ShHandle ShConstructCompiler(sh::GLenum type,
-                             ShShaderSpec spec,
-                             ShShaderOutput output,
-                             const ShBuiltInResources *resources);
-void ShDestruct(ShHandle handle);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool ShCompile(const ShHandle handle,
-               const char *const shaderStrings[],
-               size_t numStrings,
-               ShCompileOptions compileOptions);
-
-
-void ShClearResults(const ShHandle handle);
-
-
-int ShGetShaderVersion(const ShHandle handle);
-
-
-ShShaderOutput ShGetShaderOutputType(const ShHandle handle);
-
-
-
-
-const std::string &ShGetInfoLog(const ShHandle handle);
-
-
-
-
-const std::string &ShGetObjectCode(const ShHandle handle);
-
-
-
-
-
-
-const std::map<std::string, std::string> *ShGetNameHashingMap(const ShHandle handle);
-
-
-
-
-
-
-
-const std::vector<sh::Uniform> *ShGetUniforms(const ShHandle handle);
-const std::vector<sh::Varying> *ShGetVaryings(const ShHandle handle);
-const std::vector<sh::Attribute> *ShGetAttributes(const ShHandle handle);
-const std::vector<sh::OutputVariable> *ShGetOutputVariables(const ShHandle handle);
-const std::vector<sh::InterfaceBlock> *ShGetInterfaceBlocks(const ShHandle handle);
-sh::WorkGroupSize ShGetComputeShaderLocalGroupSize(const ShHandle handle);
-
-
-
-
-
-
-
-
-bool ShCheckVariablesWithinPackingLimits(int maxVectors,
-                                         const std::vector<sh::ShaderVariable> &variables);
-
-
-
-
-
-
-
-
-bool ShGetInterfaceBlockRegister(const ShHandle handle,
-                                 const std::string &interfaceBlockName,
-                                 unsigned int *indexOut);
-
-
-
-
-const std::map<std::string, unsigned int> *ShGetUniformRegisterMap(const ShHandle handle);
-
-
-
 
 namespace sh
 {
@@ -614,10 +549,17 @@ const std::map<std::string, std::string> *GetNameHashingMap(const ShHandle handl
 
 const std::vector<sh::Uniform> *GetUniforms(const ShHandle handle);
 const std::vector<sh::Varying> *GetVaryings(const ShHandle handle);
+const std::vector<sh::Varying> *GetInputVaryings(const ShHandle handle);
+const std::vector<sh::Varying> *GetOutputVaryings(const ShHandle handle);
 const std::vector<sh::Attribute> *GetAttributes(const ShHandle handle);
 const std::vector<sh::OutputVariable> *GetOutputVariables(const ShHandle handle);
 const std::vector<sh::InterfaceBlock> *GetInterfaceBlocks(const ShHandle handle);
+const std::vector<sh::InterfaceBlock> *GetUniformBlocks(const ShHandle handle);
+const std::vector<sh::InterfaceBlock> *GetShaderStorageBlocks(const ShHandle handle);
 sh::WorkGroupSize GetComputeShaderLocalGroupSize(const ShHandle handle);
+
+
+int GetVertexShaderNumViews(const ShHandle handle);
 
 
 
@@ -636,9 +578,9 @@ bool CheckVariablesWithinPackingLimits(int maxVectors,
 
 
 
-bool GetInterfaceBlockRegister(const ShHandle handle,
-                               const std::string &interfaceBlockName,
-                               unsigned int *indexOut);
+bool GetUniformBlockRegister(const ShHandle handle,
+                             const std::string &uniformBlockName,
+                             unsigned int *indexOut);
 
 
 

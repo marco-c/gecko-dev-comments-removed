@@ -33,20 +33,27 @@ class HLSLBlockEncoder : public BlockLayoutEncoder
         ENCODE_LOOSE
     };
 
-    HLSLBlockEncoder(HLSLBlockEncoderStrategy strategy);
+    HLSLBlockEncoder(HLSLBlockEncoderStrategy strategy, bool transposeMatrices);
 
     virtual void enterAggregateType();
     virtual void exitAggregateType();
     void skipRegisters(unsigned int numRegisters);
 
     bool isPacked() const { return mEncoderStrategy == ENCODE_PACKED; }
-    void setTransposeMatrices(bool enabled) { mTransposeMatrices = enabled; }
 
     static HLSLBlockEncoderStrategy GetStrategyFor(ShShaderOutput outputType);
 
   protected:
-    virtual void getBlockLayoutInfo(GLenum type, unsigned int arraySize, bool isRowMajorMatrix, int *arrayStrideOut, int *matrixStrideOut);
-    virtual void advanceOffset(GLenum type, unsigned int arraySize, bool isRowMajorMatrix, int arrayStride, int matrixStride);
+    virtual void getBlockLayoutInfo(GLenum type,
+                                    unsigned int arraySize,
+                                    bool isRowMajorMatrix,
+                                    int *arrayStrideOut,
+                                    int *matrixStrideOut);
+    virtual void advanceOffset(GLenum type,
+                               unsigned int arraySize,
+                               bool isRowMajorMatrix,
+                               int arrayStride,
+                               int matrixStride);
 
     HLSLBlockEncoderStrategy mEncoderStrategy;
     bool mTransposeMatrices;
@@ -54,8 +61,8 @@ class HLSLBlockEncoder : public BlockLayoutEncoder
 
 
 
-unsigned int HLSLVariableRegisterCount(const Varying &variable, bool transposeMatrices);
+
 unsigned int HLSLVariableRegisterCount(const Uniform &variable, ShShaderOutput outputType);
 }
 
-#endif 
+#endif  

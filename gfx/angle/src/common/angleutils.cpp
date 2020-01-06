@@ -20,33 +20,25 @@ const uintptr_t DirtyPointer = std::numeric_limits<uintptr_t>::max();
 size_t FormatStringIntoVector(const char *fmt, va_list vararg, std::vector<char>& outBuffer)
 {
     
-    int len = vsnprintf(&(outBuffer.front()), outBuffer.size(), fmt, vararg);
+    
+    va_list varargCopy;
+    va_copy(varargCopy, vararg);
+
+    
+    int len = vsnprintf(&(outBuffer.front()), outBuffer.size(), fmt, varargCopy);
+    va_end(varargCopy);
+
     if (len < 0 || static_cast<size_t>(len) >= outBuffer.size())
     {
         
-        len = vsnprintf(NULL, 0, fmt, vararg);
+        len = vsnprintf(nullptr, 0, fmt, vararg);
         outBuffer.resize(len + 1);
 
         
-        len = vsnprintf(&(outBuffer.front()), outBuffer.size(), fmt, vararg);
+        va_copy(varargCopy, vararg);
+        len = vsnprintf(&(outBuffer.front()), outBuffer.size(), fmt, varargCopy);
+        va_end(varargCopy);
     }
     ASSERT(len >= 0);
     return static_cast<size_t>(len);
-}
-
-std::string FormatString(const char *fmt, va_list vararg)
-{
-    static std::vector<char> buffer(512);
-
-    size_t len = FormatStringIntoVector(fmt, vararg, buffer);
-    return std::string(&buffer[0], len);
-}
-
-std::string FormatString(const char *fmt, ...)
-{
-    va_list vararg;
-    va_start(vararg, fmt);
-    std::string result = FormatString(fmt, vararg);
-    va_end(vararg);
-    return result;
 }

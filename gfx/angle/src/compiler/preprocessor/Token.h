@@ -19,7 +19,9 @@ struct Token
 {
     enum Type
     {
-        LAST = 0,  
+        
+        GOT_ERROR = -1,
+        LAST  = 0,  
 
         IDENTIFIER = 258,
 
@@ -62,33 +64,20 @@ struct Token
         EXPANSION_DISABLED = 1 << 2
     };
 
-    Token()
-        : type(0),
-          flags(0)
-    {
-    }
+    Token() : type(0), flags(0) {}
 
     void reset();
     bool equals(const Token &other) const;
 
     
     
-    bool atStartOfLine() const
-    {
-        return (flags & AT_START_OF_LINE) != 0;
-    }
+    bool atStartOfLine() const { return (flags & AT_START_OF_LINE) != 0; }
     void setAtStartOfLine(bool start);
 
-    bool hasLeadingSpace() const
-    {
-        return (flags & HAS_LEADING_SPACE) != 0;
-    }
+    bool hasLeadingSpace() const { return (flags & HAS_LEADING_SPACE) != 0; }
     void setHasLeadingSpace(bool space);
 
-    bool expansionDisabled() const
-    {
-        return (flags & EXPANSION_DISABLED) != 0;
-    }
+    bool expansionDisabled() const { return (flags & EXPANSION_DISABLED) != 0; }
     void setExpansionDisabled(bool disable);
 
     

@@ -4,7 +4,8 @@
 
 
 
-#include "compiler/translator/IntermNode.h"
+#include "compiler/translator/IntermTraverse.h"
+
 #include "compiler/translator/InfoSink.h"
 #include "compiler/translator/SymbolTable.h"
 
@@ -71,9 +72,19 @@ void TIntermBlock::traverse(TIntermTraverser *it)
     it->traverseBlock(this);
 }
 
+void TIntermInvariantDeclaration::traverse(TIntermTraverser *it)
+{
+    it->traverseInvariantDeclaration(this);
+}
+
 void TIntermDeclaration::traverse(TIntermTraverser *it)
 {
     it->traverseDeclaration(this);
+}
+
+void TIntermFunctionPrototype::traverse(TIntermTraverser *it)
+{
+    it->traverseFunctionPrototype(this);
 }
 
 void TIntermAggregate::traverse(TIntermTraverser *it)
@@ -91,14 +102,18 @@ void TIntermBranch::traverse(TIntermTraverser *it)
     it->traverseBranch(this);
 }
 
-TIntermTraverser::TIntermTraverser(bool preVisit, bool inVisit, bool postVisit)
+TIntermTraverser::TIntermTraverser(bool preVisit,
+                                   bool inVisit,
+                                   bool postVisit,
+                                   TSymbolTable *symbolTable)
     : preVisit(preVisit),
       inVisit(inVisit),
       postVisit(postVisit),
-      mDepth(0),
+      mDepth(-1),
       mMaxDepth(0),
       mInGlobalScope(true),
-      mTemporaryIndex(nullptr)
+      mSymbolTable(symbolTable),
+      mTemporaryId(nullptr)
 {
 }
 
@@ -132,8 +147,16 @@ void TIntermTraverser::insertStatementsInParentBlock(const TIntermSequence &inse
                                                      const TIntermSequence &insertionsAfter)
 {
     ASSERT(!mParentBlockStack.empty());
-    NodeInsertMultipleEntry insert(mParentBlockStack.back().node, mParentBlockStack.back().pos,
-                                   insertionsBefore, insertionsAfter);
+    ParentBlock &parentBlock = mParentBlockStack.back();
+    if (mPath.back() == parentBlock.node)
+    {
+        ASSERT(mParentBlockStack.size() >= 2u);
+        
+        
+        parentBlock = mParentBlockStack.at(mParentBlockStack.size() - 2u);
+    }
+    NodeInsertMultipleEntry insert(parentBlock.node, parentBlock.pos, insertionsBefore,
+                                   insertionsAfter);
     mInsertions.push_back(insert);
 }
 
@@ -147,12 +170,13 @@ void TIntermTraverser::insertStatementInParentBlock(TIntermNode *statement)
 TIntermSymbol *TIntermTraverser::createTempSymbol(const TType &type, TQualifier qualifier)
 {
     
+    
     TInfoSinkBase symbolNameOut;
-    ASSERT(mTemporaryIndex != nullptr);
-    symbolNameOut << "s" << (*mTemporaryIndex);
+    ASSERT(mTemporaryId != nullptr);
+    symbolNameOut << "s" << (mTemporaryId->get());
     TString symbolName = symbolNameOut.c_str();
 
-    TIntermSymbol *node = new TIntermSymbol(0, symbolName, type);
+    TIntermSymbol *node = new TIntermSymbol(mTemporaryId->get(), symbolName, type);
     node->setInternal(true);
 
     ASSERT(qualifier == EvqTemporary || qualifier == EvqConst || qualifier == EvqGlobal);
@@ -178,9 +202,9 @@ TIntermDeclaration *TIntermTraverser::createTempInitDeclaration(TIntermTyped *in
                                                                 TQualifier qualifier)
 {
     ASSERT(initializer != nullptr);
-    TIntermSymbol *tempSymbol = createTempSymbol(initializer->getType(), qualifier);
+    TIntermSymbol *tempSymbol           = createTempSymbol(initializer->getType(), qualifier);
     TIntermDeclaration *tempDeclaration = new TIntermDeclaration();
-    TIntermBinary *tempInit           = new TIntermBinary(EOpInitialize, tempSymbol, initializer);
+    TIntermBinary *tempInit             = new TIntermBinary(EOpInitialize, tempSymbol, initializer);
     tempDeclaration->appendDeclarator(tempInit);
     return tempDeclaration;
 }
@@ -198,33 +222,34 @@ TIntermBinary *TIntermTraverser::createTempAssignment(TIntermTyped *rightNode)
     return assignment;
 }
 
-void TIntermTraverser::useTemporaryIndex(unsigned int *temporaryIndex)
+void TIntermTraverser::nextTemporaryId()
 {
-    mTemporaryIndex = temporaryIndex;
+    ASSERT(mSymbolTable);
+    if (!mTemporaryId)
+    {
+        mTemporaryId = new TSymbolUniqueId(mSymbolTable);
+        return;
+    }
+    *mTemporaryId = TSymbolUniqueId(mSymbolTable);
 }
 
-void TIntermTraverser::nextTemporaryIndex()
+void TLValueTrackingTraverser::addToFunctionMap(const TSymbolUniqueId &id,
+                                                TIntermSequence *paramSequence)
 {
-    ASSERT(mTemporaryIndex != nullptr);
-    ++(*mTemporaryIndex);
-}
-
-void TLValueTrackingTraverser::addToFunctionMap(const TName &name, TIntermSequence *paramSequence)
-{
-    mFunctionMap[name] = paramSequence;
+    mFunctionMap[id.get()] = paramSequence;
 }
 
 bool TLValueTrackingTraverser::isInFunctionMap(const TIntermAggregate *callNode) const
 {
-    ASSERT(callNode->getOp() == EOpFunctionCall);
-    return (mFunctionMap.find(callNode->getFunctionSymbolInfo()->getNameObj()) !=
+    ASSERT(callNode->getOp() == EOpCallFunctionInAST);
+    return (mFunctionMap.find(callNode->getFunctionSymbolInfo()->getId().get()) !=
             mFunctionMap.end());
 }
 
 TIntermSequence *TLValueTrackingTraverser::getFunctionParameters(const TIntermAggregate *callNode)
 {
     ASSERT(isInFunctionMap(callNode));
-    return mFunctionMap[callNode->getFunctionSymbolInfo()->getNameObj()];
+    return mFunctionMap[callNode->getFunctionSymbolInfo()->getId().get()];
 }
 
 void TLValueTrackingTraverser::setInFunctionCallOutParameter(bool inOutParameter)
@@ -253,16 +278,20 @@ bool TLValueTrackingTraverser::isInFunctionCallOutParameter() const
 
 void TIntermTraverser::traverseSymbol(TIntermSymbol *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
     visitSymbol(node);
 }
 
 void TIntermTraverser::traverseConstantUnion(TIntermConstantUnion *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
     visitConstantUnion(node);
 }
 
 void TIntermTraverser::traverseSwizzle(TIntermSwizzle *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
+
     bool visit = true;
 
     if (preVisit)
@@ -270,11 +299,7 @@ void TIntermTraverser::traverseSwizzle(TIntermSwizzle *node)
 
     if (visit)
     {
-        incrementDepth(node);
-
         node->getOperand()->traverse(this);
-
-        decrementDepth();
     }
 
     if (visit && postVisit)
@@ -286,6 +311,8 @@ void TIntermTraverser::traverseSwizzle(TIntermSwizzle *node)
 
 void TIntermTraverser::traverseBinary(TIntermBinary *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
+
     bool visit = true;
 
     
@@ -299,8 +326,6 @@ void TIntermTraverser::traverseBinary(TIntermBinary *node)
     
     if (visit)
     {
-        incrementDepth(node);
-
         if (node->getLeft())
             node->getLeft()->traverse(this);
 
@@ -309,8 +334,6 @@ void TIntermTraverser::traverseBinary(TIntermBinary *node)
 
         if (visit && node->getRight())
             node->getRight()->traverse(this);
-
-        decrementDepth();
     }
 
     
@@ -323,6 +346,8 @@ void TIntermTraverser::traverseBinary(TIntermBinary *node)
 
 void TLValueTrackingTraverser::traverseBinary(TIntermBinary *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
+
     bool visit = true;
 
     
@@ -336,8 +361,6 @@ void TLValueTrackingTraverser::traverseBinary(TIntermBinary *node)
     
     if (visit)
     {
-        incrementDepth(node);
-
         
         
         bool parentOperatorRequiresLValue     = operatorRequiresLValue();
@@ -372,8 +395,6 @@ void TLValueTrackingTraverser::traverseBinary(TIntermBinary *node)
 
         setOperatorRequiresLValue(parentOperatorRequiresLValue);
         setInFunctionCallOutParameter(parentInFunctionCallOutParameter);
-
-        decrementDepth();
     }
 
     
@@ -389,6 +410,8 @@ void TLValueTrackingTraverser::traverseBinary(TIntermBinary *node)
 
 void TIntermTraverser::traverseUnary(TIntermUnary *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
+
     bool visit = true;
 
     if (preVisit)
@@ -396,11 +419,7 @@ void TIntermTraverser::traverseUnary(TIntermUnary *node)
 
     if (visit)
     {
-        incrementDepth(node);
-
         node->getOperand()->traverse(this);
-
-        decrementDepth();
     }
 
     if (visit && postVisit)
@@ -409,6 +428,8 @@ void TIntermTraverser::traverseUnary(TIntermUnary *node)
 
 void TLValueTrackingTraverser::traverseUnary(TIntermUnary *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
+
     bool visit = true;
 
     if (preVisit)
@@ -416,8 +437,6 @@ void TLValueTrackingTraverser::traverseUnary(TIntermUnary *node)
 
     if (visit)
     {
-        incrementDepth(node);
-
         ASSERT(!operatorRequiresLValue());
         switch (node->getOp())
         {
@@ -434,8 +453,6 @@ void TLValueTrackingTraverser::traverseUnary(TIntermUnary *node)
         node->getOperand()->traverse(this);
 
         setOperatorRequiresLValue(false);
-
-        decrementDepth();
     }
 
     if (visit && postVisit)
@@ -445,6 +462,8 @@ void TLValueTrackingTraverser::traverseUnary(TIntermUnary *node)
 
 void TIntermTraverser::traverseFunctionDefinition(TIntermFunctionDefinition *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
+
     bool visit = true;
 
     if (preVisit)
@@ -452,16 +471,14 @@ void TIntermTraverser::traverseFunctionDefinition(TIntermFunctionDefinition *nod
 
     if (visit)
     {
-        incrementDepth(node);
         mInGlobalScope = false;
 
-        node->getFunctionParameters()->traverse(this);
+        node->getFunctionPrototype()->traverse(this);
         if (inVisit)
             visit = visitFunctionDefinition(InVisit, node);
         node->getBody()->traverse(this);
 
         mInGlobalScope = true;
-        decrementDepth();
     }
 
     if (visit && postVisit)
@@ -471,6 +488,9 @@ void TIntermTraverser::traverseFunctionDefinition(TIntermFunctionDefinition *nod
 
 void TIntermTraverser::traverseBlock(TIntermBlock *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
+    pushParentBlock(node);
+
     bool visit = true;
 
     TIntermSequence *sequence = node->getSequence();
@@ -480,9 +500,6 @@ void TIntermTraverser::traverseBlock(TIntermBlock *node)
 
     if (visit)
     {
-        incrementDepth(node);
-        pushParentBlock(node);
-
         for (auto *child : *sequence)
         {
             child->traverse(this);
@@ -494,18 +511,40 @@ void TIntermTraverser::traverseBlock(TIntermBlock *node)
 
             incrementParentBlockPos();
         }
-
-        popParentBlock();
-        decrementDepth();
     }
 
     if (visit && postVisit)
         visitBlock(PostVisit, node);
+
+    popParentBlock();
+}
+
+void TIntermTraverser::traverseInvariantDeclaration(TIntermInvariantDeclaration *node)
+{
+    ScopedNodeInTraversalPath addToPath(this, node);
+
+    bool visit = true;
+
+    if (preVisit)
+    {
+        visit = visitInvariantDeclaration(PreVisit, node);
+    }
+
+    if (visit)
+    {
+        node->getSymbol()->traverse(this);
+        if (postVisit)
+        {
+            visitInvariantDeclaration(PostVisit, node);
+        }
+    }
 }
 
 
 void TIntermTraverser::traverseDeclaration(TIntermDeclaration *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
+
     bool visit = true;
 
     TIntermSequence *sequence = node->getSequence();
@@ -515,8 +554,6 @@ void TIntermTraverser::traverseDeclaration(TIntermDeclaration *node)
 
     if (visit)
     {
-        incrementDepth(node);
-
         for (auto *child : *sequence)
         {
             child->traverse(this);
@@ -526,17 +563,45 @@ void TIntermTraverser::traverseDeclaration(TIntermDeclaration *node)
                     visit = visitDeclaration(InVisit, node);
             }
         }
-
-        decrementDepth();
     }
 
     if (visit && postVisit)
         visitDeclaration(PostVisit, node);
 }
 
+void TIntermTraverser::traverseFunctionPrototype(TIntermFunctionPrototype *node)
+{
+    ScopedNodeInTraversalPath addToPath(this, node);
+
+    bool visit = true;
+
+    TIntermSequence *sequence = node->getSequence();
+
+    if (preVisit)
+        visit = visitFunctionPrototype(PreVisit, node);
+
+    if (visit)
+    {
+        for (auto *child : *sequence)
+        {
+            child->traverse(this);
+            if (visit && inVisit)
+            {
+                if (child != sequence->back())
+                    visit = visitFunctionPrototype(InVisit, node);
+            }
+        }
+    }
+
+    if (visit && postVisit)
+        visitFunctionPrototype(PostVisit, node);
+}
+
 
 void TIntermTraverser::traverseAggregate(TIntermAggregate *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
+
     bool visit = true;
 
     TIntermSequence *sequence = node->getSequence();
@@ -546,8 +611,6 @@ void TIntermTraverser::traverseAggregate(TIntermAggregate *node)
 
     if (visit)
     {
-        incrementDepth(node);
-
         for (auto *child : *sequence)
         {
             child->traverse(this);
@@ -557,71 +620,174 @@ void TIntermTraverser::traverseAggregate(TIntermAggregate *node)
                     visit = visitAggregate(InVisit, node);
             }
         }
-
-        decrementDepth();
     }
 
     if (visit && postVisit)
         visitAggregate(PostVisit, node);
 }
 
-void TLValueTrackingTraverser::traverseFunctionDefinition(TIntermFunctionDefinition *node)
+bool TIntermTraverser::CompareInsertion(const NodeInsertMultipleEntry &a,
+                                        const NodeInsertMultipleEntry &b)
 {
-    TIntermAggregate *params = node->getFunctionParameters();
-    ASSERT(params != nullptr);
-    ASSERT(params->getOp() == EOpParameters);
-    addToFunctionMap(node->getFunctionSymbolInfo()->getNameObj(), params->getSequence());
+    if (a.parent != b.parent)
+    {
+        return a.parent > b.parent;
+    }
+    return a.position > b.position;
+}
 
-    TIntermTraverser::traverseFunctionDefinition(node);
+void TIntermTraverser::updateTree()
+{
+    
+    
+    std::sort(mInsertions.begin(), mInsertions.end(), CompareInsertion);
+    for (size_t ii = 0; ii < mInsertions.size(); ++ii)
+    {
+        
+        
+        ASSERT(ii == 0 || mInsertions[ii].position != mInsertions[ii - 1].position ||
+               mInsertions[ii].parent != mInsertions[ii - 1].parent);
+        const NodeInsertMultipleEntry &insertion = mInsertions[ii];
+        ASSERT(insertion.parent);
+        if (!insertion.insertionsAfter.empty())
+        {
+            bool inserted = insertion.parent->insertChildNodes(insertion.position + 1,
+                                                               insertion.insertionsAfter);
+            ASSERT(inserted);
+        }
+        if (!insertion.insertionsBefore.empty())
+        {
+            bool inserted =
+                insertion.parent->insertChildNodes(insertion.position, insertion.insertionsBefore);
+            ASSERT(inserted);
+        }
+    }
+    for (size_t ii = 0; ii < mReplacements.size(); ++ii)
+    {
+        const NodeUpdateEntry &replacement = mReplacements[ii];
+        ASSERT(replacement.parent);
+        bool replaced =
+            replacement.parent->replaceChildNode(replacement.original, replacement.replacement);
+        ASSERT(replaced);
+
+        if (!replacement.originalBecomesChildOfReplacement)
+        {
+            
+            
+            
+            
+            for (size_t jj = ii + 1; jj < mReplacements.size(); ++jj)
+            {
+                NodeUpdateEntry &replacement2 = mReplacements[jj];
+                if (replacement2.parent == replacement.original)
+                    replacement2.parent = replacement.replacement;
+            }
+        }
+    }
+    for (size_t ii = 0; ii < mMultiReplacements.size(); ++ii)
+    {
+        const NodeReplaceWithMultipleEntry &replacement = mMultiReplacements[ii];
+        ASSERT(replacement.parent);
+        bool replaced = replacement.parent->replaceChildNodeWithMultiple(replacement.original,
+                                                                         replacement.replacements);
+        ASSERT(replaced);
+    }
+
+    clearReplacementQueue();
+}
+
+void TIntermTraverser::clearReplacementQueue()
+{
+    mReplacements.clear();
+    mMultiReplacements.clear();
+    mInsertions.clear();
+}
+
+void TIntermTraverser::queueReplacement(TIntermNode *replacement, OriginalNode originalStatus)
+{
+    queueReplacementWithParent(getParentNode(), mPath.back(), replacement, originalStatus);
+}
+
+void TIntermTraverser::queueReplacementWithParent(TIntermNode *parent,
+                                                  TIntermNode *original,
+                                                  TIntermNode *replacement,
+                                                  OriginalNode originalStatus)
+{
+    bool originalBecomesChild = (originalStatus == OriginalNode::BECOMES_CHILD);
+    mReplacements.push_back(NodeUpdateEntry(parent, original, replacement, originalBecomesChild));
+}
+
+TLValueTrackingTraverser::TLValueTrackingTraverser(bool preVisit,
+                                                   bool inVisit,
+                                                   bool postVisit,
+                                                   TSymbolTable *symbolTable,
+                                                   int shaderVersion)
+    : TIntermTraverser(preVisit, inVisit, postVisit, symbolTable),
+      mOperatorRequiresLValue(false),
+      mInFunctionCallOutParameter(false),
+      mShaderVersion(shaderVersion)
+{
+    ASSERT(symbolTable);
+}
+
+void TLValueTrackingTraverser::traverseFunctionPrototype(TIntermFunctionPrototype *node)
+{
+    TIntermSequence *sequence = node->getSequence();
+    addToFunctionMap(node->getFunctionSymbolInfo()->getId(), sequence);
+
+    TIntermTraverser::traverseFunctionPrototype(node);
 }
 
 void TLValueTrackingTraverser::traverseAggregate(TIntermAggregate *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
+
     bool visit = true;
 
     TIntermSequence *sequence = node->getSequence();
-    if (node->getOp() == EOpPrototype)
-    {
-        addToFunctionMap(node->getFunctionSymbolInfo()->getNameObj(), sequence);
-    }
 
     if (preVisit)
         visit = visitAggregate(PreVisit, node);
 
     if (visit)
     {
-        bool inFunctionMap = false;
-        if (node->getOp() == EOpFunctionCall)
+        if (node->getOp() == EOpCallFunctionInAST)
         {
-            inFunctionMap = isInFunctionMap(node);
-            if (!inFunctionMap)
+            if (isInFunctionMap(node))
             {
+                TIntermSequence *params             = getFunctionParameters(node);
+                TIntermSequence::iterator paramIter = params->begin();
+                for (auto *child : *sequence)
+                {
+                    ASSERT(paramIter != params->end());
+                    TQualifier qualifier = (*paramIter)->getAsTyped()->getQualifier();
+                    setInFunctionCallOutParameter(qualifier == EvqOut || qualifier == EvqInOut);
+
+                    child->traverse(this);
+                    if (visit && inVisit)
+                    {
+                        if (child != sequence->back())
+                            visit = visitAggregate(InVisit, node);
+                    }
+
+                    ++paramIter;
+                }
+            }
+            else
+            {
+                
                 
                 
                 setInFunctionCallOutParameter(false);
-            }
-        }
-
-        incrementDepth(node);
-
-        if (inFunctionMap)
-        {
-            TIntermSequence *params             = getFunctionParameters(node);
-            TIntermSequence::iterator paramIter = params->begin();
-            for (auto *child : *sequence)
-            {
-                ASSERT(paramIter != params->end());
-                TQualifier qualifier = (*paramIter)->getAsTyped()->getQualifier();
-                setInFunctionCallOutParameter(qualifier == EvqOut || qualifier == EvqInOut);
-
-                child->traverse(this);
-                if (visit && inVisit)
+                for (auto *child : *sequence)
                 {
-                    if (child != sequence->back())
-                        visit = visitAggregate(InVisit, node);
+                    child->traverse(this);
+                    if (visit && inVisit)
+                    {
+                        if (child != sequence->back())
+                            visit = visitAggregate(InVisit, node);
+                    }
                 }
-
-                ++paramIter;
             }
 
             setInFunctionCallOutParameter(false);
@@ -631,32 +797,18 @@ void TLValueTrackingTraverser::traverseAggregate(TIntermAggregate *node)
             
             
             TFunction *builtInFunc = nullptr;
-            TString opString = GetOperatorString(node->getOp());
-            if (!node->isConstructor() && !opString.empty())
+            if (!node->isFunctionCall() && !node->isConstructor())
             {
-                
-                
-                TType dummyReturnType;
-                TFunction call(&opString, &dummyReturnType, node->getOp());
-                for (auto *child : *sequence)
-                {
-                    TType *paramType = child->getAsTyped()->getTypePointer();
-                    TConstParameter p(paramType);
-                    call.addParameter(p);
-                }
-
-                TSymbol *sym = mSymbolTable.findBuiltIn(call.getMangledName(), mShaderVersion);
-                if (sym != nullptr && sym->isFunction())
-                {
-                    builtInFunc = static_cast<TFunction *>(sym);
-                    ASSERT(builtInFunc->getParamCount() == sequence->size());
-                }
+                builtInFunc = static_cast<TFunction *>(
+                    mSymbolTable->findBuiltIn(node->getSymbolTableMangledName(), mShaderVersion));
             }
 
             size_t paramIndex = 0;
 
             for (auto *child : *sequence)
             {
+                
+                
                 TQualifier qualifier = EvqIn;
                 if (builtInFunc != nullptr)
                     qualifier = builtInFunc->getParam(paramIndex).type->getQualifier();
@@ -674,8 +826,6 @@ void TLValueTrackingTraverser::traverseAggregate(TIntermAggregate *node)
 
             setInFunctionCallOutParameter(false);
         }
-
-        decrementDepth();
     }
 
     if (visit && postVisit)
@@ -687,6 +837,8 @@ void TLValueTrackingTraverser::traverseAggregate(TIntermAggregate *node)
 
 void TIntermTraverser::traverseTernary(TIntermTernary *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
+
     bool visit = true;
 
     if (preVisit)
@@ -694,13 +846,11 @@ void TIntermTraverser::traverseTernary(TIntermTernary *node)
 
     if (visit)
     {
-        incrementDepth(node);
         node->getCondition()->traverse(this);
         if (node->getTrueExpression())
             node->getTrueExpression()->traverse(this);
         if (node->getFalseExpression())
             node->getFalseExpression()->traverse(this);
-        decrementDepth();
     }
 
     if (visit && postVisit)
@@ -710,6 +860,8 @@ void TIntermTraverser::traverseTernary(TIntermTernary *node)
 
 void TIntermTraverser::traverseIfElse(TIntermIfElse *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
+
     bool visit = true;
 
     if (preVisit)
@@ -717,13 +869,11 @@ void TIntermTraverser::traverseIfElse(TIntermIfElse *node)
 
     if (visit)
     {
-        incrementDepth(node);
         node->getCondition()->traverse(this);
         if (node->getTrueBlock())
             node->getTrueBlock()->traverse(this);
         if (node->getFalseBlock())
             node->getFalseBlock()->traverse(this);
-        decrementDepth();
     }
 
     if (visit && postVisit)
@@ -735,6 +885,8 @@ void TIntermTraverser::traverseIfElse(TIntermIfElse *node)
 
 void TIntermTraverser::traverseSwitch(TIntermSwitch *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
+
     bool visit = true;
 
     if (preVisit)
@@ -742,13 +894,11 @@ void TIntermTraverser::traverseSwitch(TIntermSwitch *node)
 
     if (visit)
     {
-        incrementDepth(node);
         node->getInit()->traverse(this);
         if (inVisit)
             visit = visitSwitch(InVisit, node);
         if (visit && node->getStatementList())
             node->getStatementList()->traverse(this);
-        decrementDepth();
     }
 
     if (visit && postVisit)
@@ -760,6 +910,8 @@ void TIntermTraverser::traverseSwitch(TIntermSwitch *node)
 
 void TIntermTraverser::traverseCase(TIntermCase *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
+
     bool visit = true;
 
     if (preVisit)
@@ -767,9 +919,7 @@ void TIntermTraverser::traverseCase(TIntermCase *node)
 
     if (visit && node->getCondition())
     {
-        incrementDepth(node);
         node->getCondition()->traverse(this);
-        decrementDepth();
     }
 
     if (visit && postVisit)
@@ -781,6 +931,8 @@ void TIntermTraverser::traverseCase(TIntermCase *node)
 
 void TIntermTraverser::traverseLoop(TIntermLoop *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
+
     bool visit = true;
 
     if (preVisit)
@@ -788,8 +940,6 @@ void TIntermTraverser::traverseLoop(TIntermLoop *node)
 
     if (visit)
     {
-        incrementDepth(node);
-
         if (node->getInit())
             node->getInit()->traverse(this);
 
@@ -801,8 +951,6 @@ void TIntermTraverser::traverseLoop(TIntermLoop *node)
 
         if (node->getExpression())
             node->getExpression()->traverse(this);
-
-        decrementDepth();
     }
 
     if (visit && postVisit)
@@ -814,6 +962,8 @@ void TIntermTraverser::traverseLoop(TIntermLoop *node)
 
 void TIntermTraverser::traverseBranch(TIntermBranch *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
+
     bool visit = true;
 
     if (preVisit)
@@ -821,9 +971,7 @@ void TIntermTraverser::traverseBranch(TIntermBranch *node)
 
     if (visit && node->getExpression())
     {
-        incrementDepth(node);
         node->getExpression()->traverse(this);
-        decrementDepth();
     }
 
     if (visit && postVisit)
@@ -832,6 +980,7 @@ void TIntermTraverser::traverseBranch(TIntermBranch *node)
 
 void TIntermTraverser::traverseRaw(TIntermRaw *node)
 {
+    ScopedNodeInTraversalPath addToPath(this, node);
     visitRaw(node);
 }
 

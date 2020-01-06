@@ -5,6 +5,7 @@
 
 
 #include "test_utils/ANGLETest.h"
+#include "test_utils/gl_raii.h"
 
 namespace angle
 {
@@ -296,6 +297,36 @@ TEST_P(CopyTexImageTest, SubImageRGBToL)
         127, 127, 127, 255,
     };
     verifyResults(tex, expected1, 7, 7);
+}
+
+
+TEST_P(CopyTexImageTest, DefaultFramebuffer)
+{
+    
+    
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    const GLint w = getWindowWidth(), h = getWindowHeight();
+    GLTexture tex;
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, w, h, 0);
+    EXPECT_GL_NO_ERROR();
+}
+
+
+TEST_P(CopyTexImageTest, SubDefaultFramebuffer)
+{
+    
+    
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    const GLint w = getWindowWidth(), h = getWindowHeight();
+    GLTexture tex;
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, w, h);
+    EXPECT_GL_NO_ERROR();
 }
 
 

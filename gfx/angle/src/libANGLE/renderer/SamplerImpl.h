@@ -11,15 +11,29 @@
 
 #include "common/angleutils.h"
 
+namespace gl
+{
+class Context;
+struct SamplerState;
+}  
+
 namespace rx
 {
 
-class SamplerImpl : public angle::NonCopyable
+class SamplerImpl : angle::NonCopyable
 {
   public:
-    SamplerImpl() {}
+    SamplerImpl(const gl::SamplerState &state) : mState(state) {}
     virtual ~SamplerImpl() {}
+
+    virtual void syncState(const gl::Context *context)
+    {
+        
+    }
+
+  protected:
+    const gl::SamplerState &mState;
 };
-}
+}  
 
 #endif  

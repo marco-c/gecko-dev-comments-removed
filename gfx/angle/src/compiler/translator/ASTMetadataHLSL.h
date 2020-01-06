@@ -40,13 +40,13 @@ struct ASTMetadataHLSL
 
     
     
-    std::set<TIntermNode*> mControlFlowsContainingGradient;
+    std::set<TIntermNode *> mControlFlowsContainingGradient;
 
     
     
     bool mCalledInDiscontinuousLoop;
     bool mHasGradientLoopInCallGraph;
-    std::set<TIntermLoop*> mDiscontinuousLoops;
+    std::set<TIntermLoop *> mDiscontinuousLoops;
     std::set<TIntermIfElse *> mIfsContainingGradientLoop;
 
     
@@ -60,4 +60,4 @@ MetadataList CreateASTMetadataHLSL(TIntermNode *root, const CallDAG &callDag);
 
 }  
 
-#endif 
+#endif  
