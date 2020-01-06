@@ -261,6 +261,8 @@ public:
   NS_IMETHOD GetConnectionInfoHashKey(nsACString& aConnectionInfoHashKey) override;
   NS_IMETHOD GetIntegrityMetadata(nsAString& aIntegrityMetadata) override;
   NS_IMETHOD SetIntegrityMetadata(const nsAString& aIntegrityMetadata) override;
+  NS_IMETHOD GetLastRedirectFlags(uint32_t *aValue) override;
+  NS_IMETHOD SetLastRedirectFlags(uint32_t aValue) override;
 
   inline void CleanRedirectCacheChainIfNecessary()
   {
@@ -630,6 +632,11 @@ protected:
   bool mIsTrackingResource;
 
   uint64_t mChannelId;
+
+  
+  
+  
+  uint32_t mLastRedirectFlags;
 
   nsString mIntegrityMetadata;
 
