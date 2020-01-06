@@ -57,7 +57,7 @@ public:
 
 
 
-    static nsresult PushSyncStreamToListener(nsIInputStream* aIn,
+    static nsresult PushSyncStreamToListener(already_AddRefed<nsIInputStream> aIn,
                                              nsIStreamListener* aListener,
                                              nsIChannel* aChannel);
 };

@@ -511,19 +511,15 @@ nsresult NS_NewLocalFileStream(nsIFileStream **result,
                                int32_t         behaviorFlags = 0);
 
 MOZ_MUST_USE nsresult
-NS_NewBufferedInputStream(nsIInputStream **result,
-                          nsIInputStream  *str,
-                          uint32_t         bufferSize);
+NS_NewBufferedInputStream(nsIInputStream** aResult,
+                          already_AddRefed<nsIInputStream> aInputStream,
+                          uint32_t aBufferSize);
 
 
 
 nsresult NS_NewBufferedOutputStream(nsIOutputStream** aResult,
                                     already_AddRefed<nsIOutputStream> aOutputStream,
                                     uint32_t aBufferSize);
-
-already_AddRefed<nsIInputStream>
-NS_BufferInputStream(nsIInputStream *aInputStream,
-                      uint32_t aBufferSize);
 
 
 nsresult NS_NewPostDataStream(nsIInputStream  **result,
