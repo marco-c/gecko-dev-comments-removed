@@ -472,7 +472,7 @@ public:
 
 
 
-  static bool ResolveMovedUsersFolder(std::wstring& aPath);
+  static bool ResolveJunctionPointsAndSymLinks(std::wstring& aPath);
 
   static void Initialize();
 

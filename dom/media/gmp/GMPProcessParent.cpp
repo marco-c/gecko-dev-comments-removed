@@ -11,6 +11,7 @@
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
 #include "WinUtils.h"
 #endif
+#include "GMPLog.h"
 
 #include "base/string_util.h"
 #include "base/process_util.h"
@@ -51,10 +52,13 @@ GMPProcessParent::Launch(int32_t aTimeoutMs)
   
   
   
-  if (!widget::WinUtils::ResolveMovedUsersFolder(wGMPPath)) {
-    NS_WARNING("ResolveMovedUsersFolder failed for GMP path.");
+  if (!widget::WinUtils::ResolveJunctionPointsAndSymLinks(wGMPPath)) {
+    GMP_LOG("ResolveJunctionPointsAndSymLinks failed for GMP path=%S",
+            wGMPPath.c_str());
+    NS_WARNING("ResolveJunctionPointsAndSymLinks failed for GMP path.");
     return false;
   }
+  GMP_LOG("GMPProcessParent::Launch() resolved path to %S", wGMPPath.c_str());
 
   
   
