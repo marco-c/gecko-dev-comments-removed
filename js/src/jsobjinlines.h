@@ -27,8 +27,8 @@
 
 #include "jsatominlines.h"
 #include "jscompartmentinlines.h"
-#include "jsgcinlines.h"
 
+#include "gc/Marking-inl.h"
 #include "gc/ObjectKind-inl.h"
 #include "vm/ShapedObject-inl.h"
 #include "vm/TypeInference-inl.h"
@@ -151,6 +151,13 @@ js::NativeObject::updateDictionaryListPointerAfterMinorGC(NativeObject* old)
     
     if (shape_->listp == &old->shape_)
         shape_->listp = &shape_;
+}
+
+inline void
+js::gc::MakeAccessibleAfterMovingGC(JSObject* obj)
+{
+    if (obj->isNative())
+        obj->as<NativeObject>().updateShapeAfterMovingGC();
 }
 
  inline bool
