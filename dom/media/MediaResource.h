@@ -493,7 +493,6 @@ public:
     
     
     
-    
     size_t size = BaseMediaResource::SizeOfExcludingThis(aMallocSizeOf);
     size += mCacheStream.SizeOfExcludingThis(aMallocSizeOf);
 
@@ -557,8 +556,6 @@ protected:
                                    int64_t& aRangeEnd,
                                    int64_t& aRangeTotal);
 
-  void DoNotifyDataReceived();
-
   static nsresult CopySegmentToCache(nsIInputStream* aInStream,
                                      void* aClosure,
                                      const char* aFromSegment,
@@ -574,9 +571,6 @@ protected:
   
   int64_t            mOffset;
   RefPtr<Listener> mListener;
-  
-  
-  nsRevocableEventPtr<nsRunnableMethod<ChannelMediaResource, void, false> > mDataReceivedEvent;
   
   
   bool               mReopenOnError;
