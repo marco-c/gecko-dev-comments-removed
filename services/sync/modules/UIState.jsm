@@ -72,6 +72,9 @@ const UIStateInternal = {
 
   init() {
     this._initialized = true;
+    if (!Services.prefs.prefHasUserValue("services.sync.username")) {
+      return;
+    }
     
     this.refreshState().catch(e => {
       Cu.reportError(e);
