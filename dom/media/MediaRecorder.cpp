@@ -9,7 +9,6 @@
 #include "AudioNodeEngine.h"
 #include "AudioNodeStream.h"
 #include "DOMMediaStream.h"
-#include "EncodedBufferCache.h"
 #include "GeckoProfiler.h"
 #include "MediaDecoder.h"
 #include "MediaEncoder.h"
@@ -19,6 +18,7 @@
 #include "mozilla/dom/BlobEvent.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/MediaRecorderErrorEvent.h"
+#include "mozilla/dom/MutableBlobStorage.h"
 #include "mozilla/dom/VideoStreamTrack.h"
 #include "mozilla/media/MediaUtils.h"
 #include "mozilla/MemoryReporting.h"
@@ -201,11 +201,17 @@ class MediaRecorder::Session: public PrincipalChangeObserver<MediaStreamTrack>,
   
   
   class PushBlobRunnable : public Runnable
+                         , public MutableBlobStorageCallback
   {
   public:
-    explicit PushBlobRunnable(Session* aSession)
+    NS_DECL_ISUPPORTS_INHERITED
+
+    
+    
+    PushBlobRunnable(Session* aSession, Runnable* aDestroyRunnable)
       : Runnable("dom::MediaRecorder::Session::PushBlobRunnable")
       , mSession(aSession)
+      , mDestroyRunnable(aDestroyRunnable)
     { }
 
     NS_IMETHOD Run() override
@@ -213,21 +219,72 @@ class MediaRecorder::Session: public PrincipalChangeObserver<MediaStreamTrack>,
       LOG(LogLevel::Debug, ("Session.PushBlobRunnable s=(%p)", mSession.get()));
       MOZ_ASSERT(NS_IsMainThread());
 
+      mSession->GetBlobWhenReady(this);
+      return NS_OK;
+    }
+
+    void
+    BlobStoreCompleted(MutableBlobStorage* aBlobStorage, Blob* aBlob,
+                       nsresult aRv) override
+    {
       RefPtr<MediaRecorder> recorder = mSession->mRecorder;
       if (!recorder) {
-        return NS_OK;
+        return;
       }
 
-      nsresult rv = recorder->CreateAndDispatchBlobEvent(mSession->GetEncodedData());
+      if (NS_FAILED(aRv)) {
+        recorder->NotifyError(aRv);
+        return;
+      }
+
+      nsresult rv = recorder->CreateAndDispatchBlobEvent(aBlob);
       if (NS_FAILED(rv)) {
-        recorder->NotifyError(rv);
+        recorder->NotifyError(aRv);
+      }
+
+      if (mDestroyRunnable &&
+          NS_FAILED(NS_DispatchToMainThread(mDestroyRunnable.forget()))) {
+        MOZ_ASSERT(false, "NS_DispatchToMainThread failed");
+      }
+    }
+
+  private:
+    ~PushBlobRunnable() = default;
+
+    RefPtr<Session> mSession;
+
+    
+    
+    
+    RefPtr<Runnable> mDestroyRunnable;
+  };
+
+  class StoreEncodedBufferRunnable final : public Runnable
+  {
+    RefPtr<Session> mSession;
+    nsTArray<nsTArray<uint8_t>> mBuffer;
+
+  public:
+    StoreEncodedBufferRunnable(Session* aSession,
+                               nsTArray<nsTArray<uint8_t>>&& aBuffer)
+      : Runnable("StoreEncodedBufferRunnable")
+      , mSession(aSession)
+      , mBuffer(Move(aBuffer))
+    {}
+
+    NS_IMETHOD
+    Run() override
+    {
+      mSession->MaybeCreateMutableBlobStorage();
+      for (uint32_t i = 0; i < mBuffer.Length(); i++) {
+        if (!mBuffer[i].IsEmpty()) {
+          mSession->mMutableBlobStorage->Append(mBuffer[i].Elements(),
+                                                mBuffer[i].Length());
+        }
       }
 
       return NS_OK;
     }
-
-  private:
-    RefPtr<Session> mSession;
   };
 
   
@@ -433,9 +490,8 @@ public:
   {
     MOZ_ASSERT(NS_IsMainThread());
 
-    uint32_t maxMem = Preferences::GetUint("media.recorder.max_memory",
-                                           MAX_ALLOW_MEMORY_BUFFER);
-    mEncodedBufferCache = new EncodedBufferCache(maxMem);
+    mMaxMemory = Preferences::GetUint("media.recorder.max_memory",
+                                      MAX_ALLOW_MEMORY_BUFFER);
     mLastBlobTimeStamp = TimeStamp::Now();
   }
 
@@ -551,7 +607,7 @@ public:
     LOG(LogLevel::Debug, ("Session.RequestData"));
     MOZ_ASSERT(NS_IsMainThread());
 
-    if (NS_FAILED(NS_DispatchToMainThread(new PushBlobRunnable(this)))) {
+    if (NS_FAILED(NS_DispatchToMainThread(new PushBlobRunnable(this, nullptr)))) {
       MOZ_ASSERT(false, "RequestData NS_DispatchToMainThread failed");
       return NS_ERROR_FAILURE;
     }
@@ -559,19 +615,35 @@ public:
     return NS_OK;
   }
 
-  already_AddRefed<nsIDOMBlob> GetEncodedData()
+  void
+  MaybeCreateMutableBlobStorage()
+  {
+    if (!mMutableBlobStorage) {
+      mMutableBlobStorage =
+        new MutableBlobStorage(MutableBlobStorage::eCouldBeInTemporaryFile,
+                               nullptr, mMaxMemory);
+    }
+  }
+
+  void
+  GetBlobWhenReady(MutableBlobStorageCallback* aCallback)
   {
     MOZ_ASSERT(NS_IsMainThread());
-    return mEncodedBufferCache->ExtractBlob(mRecorder->GetParentObject(),
-                                            mMimeType);
+
+    MaybeCreateMutableBlobStorage();
+    mMutableBlobStorage->GetBlobWhenReady(mRecorder->GetParentObject(),
+                                          NS_ConvertUTF16toUTF8(mMimeType),
+                                          aCallback);
+    mMutableBlobStorage = nullptr;
   }
 
   RefPtr<SizeOfPromise>
   SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf)
   {
     MOZ_ASSERT(NS_IsMainThread());
-    size_t encodedBufferSize =
-      mEncodedBufferCache->SizeOfExcludingThis(aMallocSizeOf);
+    size_t encodedBufferSize = mMutableBlobStorage
+                                 ? mMutableBlobStorage->SizeOfCurrentMemoryBuffer()
+                                 : 0;
 
     if (!mEncoder) {
       return SizeOfPromise::CreateAndResolve(encodedBufferSize, __func__);
@@ -597,7 +669,7 @@ private:
   
   
   
-  void Extract(bool aForceFlush)
+  void Extract(bool aForceFlush, Runnable* aDestroyRunnable)
   {
     MOZ_ASSERT(mEncoderThread->IsCurrentThreadIn());
 
@@ -615,11 +687,8 @@ private:
     }
 
     
-    for (uint32_t i = 0; i < encodedBuf.Length(); i++) {
-      if (!encodedBuf[i].IsEmpty()) {
-        mEncodedBufferCache->AppendBuffer(encodedBuf[i]);
-      }
-    }
+    NS_DispatchToMainThread(new StoreEncodedBufferRunnable(this,
+                                                           Move(encodedBuf)));
 
     
     
@@ -630,10 +699,14 @@ private:
       pushBlob = true;
     }
     if (pushBlob) {
-      if (NS_FAILED(NS_DispatchToMainThread(new PushBlobRunnable(this)))) {
+      if (NS_FAILED(NS_DispatchToMainThread(new PushBlobRunnable(this, aDestroyRunnable)))) {
         MOZ_ASSERT(false, "NS_DispatchToMainThread PushBlobRunnable failed");
       } else {
         mLastBlobTimeStamp = TimeStamp::Now();
+      }
+    } else if (aDestroyRunnable) {
+      if (NS_FAILED(NS_DispatchToMainThread(aDestroyRunnable))) {
+        MOZ_ASSERT(false, "NS_DispatchToMainThread DestroyRunnable failed");
       }
     }
   }
@@ -894,15 +967,20 @@ private:
                                     &MediaRecorder::NotifyError,
                                     rv));
     }
+
+    RefPtr<Runnable> destroyRunnable = new DestroyRunnable(this);
+
     if (rv != NS_ERROR_DOM_SECURITY_ERR) {
       
-      if (NS_FAILED(NS_DispatchToMainThread(new PushBlobRunnable(this)))) {
+      if (NS_FAILED(NS_DispatchToMainThread(new PushBlobRunnable(this, destroyRunnable)))) {
         MOZ_ASSERT(false, "NS_DispatchToMainThread PushBlobRunnable failed");
       }
+    } else {
+      if (NS_FAILED(NS_DispatchToMainThread(destroyRunnable))) {
+        MOZ_ASSERT(false, "NS_DispatchToMainThread DestroyRunnable failed");
+      }
     }
-    if (NS_FAILED(NS_DispatchToMainThread(new DestroyRunnable(this)))) {
-      MOZ_ASSERT(false, "NS_DispatchToMainThread DestroyRunnable failed");
-    }
+
     mNeedSessionEndTask = false;
   }
 
@@ -919,11 +997,8 @@ private:
     }
 
     
-    for (uint32_t i = 0; i < encodedBuf.Length(); i++) {
-      if (!encodedBuf[i].IsEmpty()) {
-        mEncodedBufferCache->AppendBuffer(encodedBuf[i]);
-      }
-    }
+    NS_DispatchToMainThread(new StoreEncodedBufferRunnable(this,
+                                                           Move(encodedBuf)));
   }
 
   void MediaEncoderDataAvailable()
@@ -936,7 +1011,7 @@ private:
       mIsStartEventFired = true;
     }
 
-    Extract(false);
+    Extract(false, nullptr);
   }
 
   void MediaEncoderError()
@@ -954,13 +1029,10 @@ private:
     MOZ_ASSERT(mEncoder->IsShutdown());
 
     
-    Extract(true);
+    RefPtr<Runnable> destroyRunnable = new DestroyRunnable(this);
 
     
-    if (NS_FAILED(NS_DispatchToMainThread(
-                  new DestroyRunnable(this)))) {
-      MOZ_ASSERT(false, "NS_DispatchToMainThread DestroyRunnable failed");
-    }
+    Extract(true, destroyRunnable);
 
     
     mEncoderListener->Forget();
@@ -1065,7 +1137,9 @@ private:
   
   RefPtr<ShutdownPromise> mShutdownPromise;
   
-  nsAutoPtr<EncodedBufferCache> mEncodedBufferCache;
+  RefPtr<MutableBlobStorage> mMutableBlobStorage;
+  
+  uint64_t mMaxMemory;
   
   nsString mMimeType;
   
@@ -1084,6 +1158,8 @@ private:
   
   bool mNeedSessionEndTask;
 };
+
+NS_IMPL_ISUPPORTS_INHERITED0(MediaRecorder::Session::PushBlobRunnable, Runnable)
 
 MediaRecorder::~MediaRecorder()
 {
@@ -1448,16 +1524,14 @@ MediaRecorder::IsTypeSupported(const nsAString& aMIMEType)
 }
 
 nsresult
-MediaRecorder::CreateAndDispatchBlobEvent(already_AddRefed<nsIDOMBlob>&& aBlob)
+MediaRecorder::CreateAndDispatchBlobEvent(Blob* aBlob)
 {
   MOZ_ASSERT(NS_IsMainThread(), "Not running on main thread");
 
   BlobEventInit init;
   init.mBubbles = false;
   init.mCancelable = false;
-
-  nsCOMPtr<nsIDOMBlob> blob = aBlob;
-  init.mData = static_cast<Blob*>(blob.get());
+  init.mData = aBlob;
 
   RefPtr<BlobEvent> event =
     BlobEvent::Constructor(this,

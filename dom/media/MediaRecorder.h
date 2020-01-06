@@ -26,6 +26,7 @@ class GlobalObject;
 namespace dom {
 
 class AudioNode;
+class Blob;
 class DOMException;
 
 
@@ -121,7 +122,7 @@ protected:
 
   MediaRecorder& operator = (const MediaRecorder& x) = delete;
   
-  nsresult CreateAndDispatchBlobEvent(already_AddRefed<nsIDOMBlob>&& aBlob);
+  nsresult CreateAndDispatchBlobEvent(Blob* aBlob);
   
   void DispatchSimpleEvent(const nsAString & aStr);
   
