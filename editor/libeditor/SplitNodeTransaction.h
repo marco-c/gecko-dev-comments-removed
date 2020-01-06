@@ -6,6 +6,7 @@
 #ifndef SplitNodeTransaction_h
 #define SplitNodeTransaction_h
 
+#include "mozilla/EditorDOMPoint.h"      
 #include "mozilla/EditTransactionBase.h" 
 #include "nsCOMPtr.h"                   
 #include "nsCycleCollectionParticipant.h"
@@ -33,8 +34,8 @@ public:
 
 
 
-  SplitNodeTransaction(EditorBase& aEditorBase, nsIContent& aNode,
-                       int32_t aOffset);
+  SplitNodeTransaction(EditorBase& aEditorBase,
+                       const EditorRawDOMPoint& aStartOfRightNode);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SplitNodeTransaction,
@@ -52,12 +53,8 @@ protected:
   RefPtr<EditorBase> mEditorBase;
 
   
-  nsCOMPtr<nsIContent> mExistingRightNode;
-
   
-  
-  
-  int32_t mOffset;
+  RangeBoundary mStartOfRightNode;
 
   
   nsCOMPtr<nsIContent> mNewLeftNode;
