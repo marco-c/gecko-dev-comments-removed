@@ -1981,9 +1981,6 @@ function show(selected) {
   });
   selected_section.classList.add("active");
 
-  
-  document.getSelection().empty();
-
   adjustHeaderState();
   displayProcessesSelector(selectedValue);
   adjustSearchState();
@@ -2008,7 +2005,6 @@ function showSubSection(selected) {
   let title = selected.parentElement.querySelector(".category-name").textContent;
   let subsection = selected.textContent;
   document.getElementById("sectionTitle").textContent = title + " - " + subsection;
-  document.getSelection().empty(); 
   changeUrlPath(subsection, true);
 }
 
