@@ -34,7 +34,7 @@
 #include "nsWeakReference.h"
 
 #ifdef MOZ_WIDGET_ANDROID
-#include "AndroidBridge.h"
+#include "FennecJNIWrappers.h"
 #endif
 
 using namespace mozilla;
@@ -554,7 +554,9 @@ public:
 #ifdef MOZ_WIDGET_ANDROID
     
     
-    java::GeckoAppShell::LaunchOrBringToFront();
+    if (jni::IsFennec()) {
+      java::GeckoApp::LaunchOrBringToFront();
+    }
 #endif
 
     nsCOMPtr<nsPIDOMWindowOuter> window;
@@ -596,7 +598,7 @@ public:
       return NS_OK;
     }
 #ifdef MOZ_WIDGET_ANDROID
-    else if (rv == NS_ERROR_NOT_AVAILABLE) {
+    else if (rv == NS_ERROR_NOT_AVAILABLE && jni::IsFennec()) {
       
       
       

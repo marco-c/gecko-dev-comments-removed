@@ -82,9 +82,4 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
         
         return "chrome://geckoview/content/geckoview.xul";
     }
-
-    @Override
-    public boolean isForegrounded() {
-        return false;
-    }
 }
