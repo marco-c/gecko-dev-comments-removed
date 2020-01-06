@@ -77,7 +77,8 @@ NS_IMETHODIMP nsPrintProgress::OpenProgressDialog(mozIDOMWindowProxy *parent,
     
     
     
-    auto* pParentWindow = nsPIDOMWindowOuter::From(parent);
+    nsCOMPtr<nsPIDOMWindowOuter> pParentWindow = nsPIDOMWindowOuter::From(parent);
+    NS_ENSURE_STATE(pParentWindow);
     nsCOMPtr<nsIDocShell> docShell = pParentWindow->GetDocShell();
     NS_ENSURE_STATE(docShell);
 
