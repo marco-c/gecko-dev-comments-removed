@@ -182,12 +182,6 @@ async function testPopupSize(standardsMode, browserWin = window, arrowSide = "to
 
   await awaitBrowserLoaded(browser);
 
-  let panelview = browser.closest("panelview");
-  
-  
-  
-  await BrowserTestUtils.waitForCondition(() => (!panel.hasAttribute("width") && (!panelview || !panelview.style.borderInlineStart)));
-  await promiseAnimationFrame(browserWin);
   
   
   await delay(100);
