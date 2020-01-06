@@ -617,6 +617,9 @@ pref("media.encoder.webm.enabled", true);
 #endif
 
 
+pref("media.recorder.audio_node.enabled", false);
+
+
 pref("media.autoplay.enabled", true);
 
 
