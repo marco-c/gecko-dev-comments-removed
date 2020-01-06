@@ -105,15 +105,23 @@ public class BatchingUploader {
     
     private volatile boolean aborted = false;
 
+    
+    
+    
+    
+    @VisibleForTesting
+    protected final boolean shouldFailBatchOnFailure;
+
     public BatchingUploader(
             final RepositorySession repositorySession, final ExecutorService workQueue,
             final RepositorySessionStoreDelegate sessionStoreDelegate, final Uri baseCollectionUri,
             final Long localCollectionLastModified, final InfoConfiguration infoConfiguration,
-            final AuthHeaderProvider authHeaderProvider) {
+            final AuthHeaderProvider authHeaderProvider, final boolean shouldAbortOnFailure) {
         this.repositorySession = repositorySession;
         this.sessionStoreDelegate = sessionStoreDelegate;
         this.collectionUri = baseCollectionUri;
         this.authHeaderProvider = authHeaderProvider;
+        this.shouldFailBatchOnFailure = shouldAbortOnFailure;
 
         this.uploaderMeta = new UploaderMeta(
                 payloadLock, infoConfiguration.maxTotalBytes, infoConfiguration.maxTotalRecords);
@@ -233,12 +241,6 @@ public class BatchingUploader {
         });
     }
 
-    
-    
-    @VisibleForTesting
-     boolean shouldFailBatchOnFailure(Record record) {
-        return record instanceof BookmarkRecord;
-    }
 
      void setLastStoreTimestamp(AtomicLong lastModifiedTimestamp) {
         repositorySession.setLastStoreTimestamp(lastModifiedTimestamp.get());
@@ -258,7 +260,7 @@ public class BatchingUploader {
         
         
         
-        if (shouldFailBatchOnFailure(record)) {
+        if (shouldFailBatchOnFailure) {
             
             Logger.debug(LOG_TAG, "Batch failed with exception: " + e.toString());
             

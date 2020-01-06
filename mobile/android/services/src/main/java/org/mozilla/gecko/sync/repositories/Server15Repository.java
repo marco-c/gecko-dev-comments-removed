@@ -115,6 +115,10 @@ public class Server15Repository extends Repository {
     return false;
   }
 
+  public boolean getAbortOnStoreFailure() {
+    return false;
+  }
+
   
 
 

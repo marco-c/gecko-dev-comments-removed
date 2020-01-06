@@ -116,7 +116,8 @@ public class ValidateBookmarksSyncStage extends ServerSyncStage {
                 getAllowedMultipleBatches(),
                 getAllowedToUseHighWaterMark(),
                 getRepositoryStateProvider(),
-                true
+                true,
+                false 
         );
     }
 
