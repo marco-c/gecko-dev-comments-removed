@@ -47,6 +47,8 @@ const PREF_PRELOADED_SITES_EXPIRE_DAYS = [ "usepreloadedtopurls.expire_days",  1
 
 const PREF_MATCH_BUCKETS = [ "matchBuckets", "general:5,suggestion:Infinity" ];
 
+const PREF_MATCH_BUCKETS_SEARCH = [ "matchBucketsSearch", "" ];
+
 
 
 const QUERYTYPE_FILTERED            = 0;
@@ -117,6 +119,8 @@ const MATCHTYPE = {
   SUGGESTION: "suggestion",
   EXTENSION: "extension"
 };
+
+
 
 
 
@@ -510,14 +514,28 @@ XPCOMUtils.defineLazyGetter(this, "Prefs", () => {
     store.matchBuckets = prefs.get(...PREF_MATCH_BUCKETS);
     
     try {
-      store.matchBuckets = convertBucketsCharPrefToArray(store.matchBuckets)
+      store.matchBuckets = convertBucketsCharPrefToArray(store.matchBuckets);
     } catch (ex) {
       store.matchBuckets = convertBucketsCharPrefToArray(PREF_MATCH_BUCKETS[1]);
     }
-    
     store.matchBuckets = [ ...DEFAULT_BUCKETS_BEFORE,
                            ...store.matchBuckets,
                            ...DEFAULT_BUCKETS_AFTER ];
+    store.matchBucketsSearch = prefs.get(...PREF_MATCH_BUCKETS_SEARCH);
+    
+    if (!store.matchBucketsSearch) {
+      store.matchBucketsSearch = store.matchBuckets;
+    } else {
+      
+      try {
+        store.matchBucketsSearch = convertBucketsCharPrefToArray(store.matchBucketsSearch);
+        store.matchBucketsSearch = [ ...DEFAULT_BUCKETS_BEFORE,
+                                     ...store.matchBucketsSearch,
+                                     ...DEFAULT_BUCKETS_AFTER ];
+      } catch (ex) {
+        store.matchBucketsSearch = store.matchBuckets;
+      }
+    }
     store.keywordEnabled = Services.prefs.getBoolPref("keyword.enabled", true);
 
     
@@ -814,14 +832,6 @@ function Search(searchString, searchParam, autocompleteListener,
 
   
   this._allMatchesPromises = [];
-
-  
-  this._buckets = Prefs.matchBuckets
-                       .map(([type, available]) => ({
-                         type,
-                         available,
-                         count: 0
-                       }));
 
   
   this._counts = Object.values(MATCHTYPE)
@@ -1824,6 +1834,17 @@ Search.prototype = {
 
   _getInsertIndexForMatch(match) {
     let index = 0;
+    
+    
+    if (!this._buckets) {
+      
+      let buckets = match.style.includes("searchengine") ? Prefs.matchBucketsSearch
+                                                         : Prefs.matchBuckets;
+      this._buckets = buckets.map(([type, available]) => ({ type,
+                                                            available,
+                                                            count: 0,
+                                                          }));
+    }
     for (let bucket of this._buckets) {
       
       
