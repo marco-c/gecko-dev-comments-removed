@@ -13,7 +13,7 @@
   bottom: 0;
   
 
-  z-index: 999;
+  z-index: 20999;
   color: #4d4d4d;
   background: rgb(54, 57, 89, 0.8); 
   display: none;
@@ -338,7 +338,7 @@
 
 #onboarding-notification-bar {
   position: fixed;
-  z-index: 998; 
+  z-index: 20998; 
   left: 0;
   bottom: 0;
   width: 100%;
