@@ -25,6 +25,9 @@ loader.lazyRequireGetter(this, "DebuggerClient", "devtools/shared/client/main", 
 loader.lazyRequireGetter(this, "BrowserMenus", "devtools/client/framework/browser-menus");
 loader.lazyRequireGetter(this, "appendStyleSheet", "devtools/client/shared/stylesheet-utils", true);
 loader.lazyRequireGetter(this, "DeveloperToolbar", "devtools/client/shared/developer-toolbar", true);
+loader.lazyImporter(this, "BrowserToolboxProcess", "resource://devtools/client/framework/ToolboxProcess.jsm");
+loader.lazyImporter(this, "ResponsiveUIManager", "resource://devtools/client/responsivedesign/responsivedesign.jsm");
+loader.lazyImporter(this, "ScratchpadManager", "resource://devtools/client/scratchpad/scratchpad-manager.jsm");
 
 loader.lazyImporter(this, "CustomizableUI", "resource:///modules/CustomizableUI.jsm");
 loader.lazyImporter(this, "CustomizableWidgets", "resource:///modules/CustomizableWidgets.jsm");
@@ -271,6 +274,53 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
         newToolbox.fireCustomKey(toolId);
         gDevTools.emit("select-tool-command", toolId);
       });
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  onKeyShortcut(window, key) {
+    
+    if (key.toolId) {
+      gDevToolsBrowser.selectToolCommand(window.gBrowser, key.toolId);
+      return;
+    }
+    
+    switch (key.id) {
+      case "toggleToolbox":
+      case "toggleToolboxF12":
+        gDevToolsBrowser.toggleToolboxCommand(window.gBrowser);
+        break;
+      case "toggleToolbar":
+        window.DeveloperToolbar.focusToggle();
+        break;
+      case "webide":
+        gDevToolsBrowser.openWebIDE();
+        break;
+      case "browserToolbox":
+        BrowserToolboxProcess.init();
+        break;
+      case "browserConsole":
+        let HUDService = require("devtools/client/webconsole/hudservice");
+        HUDService.openBrowserConsoleOrFocus();
+        break;
+      case "responsiveDesignMode":
+        ResponsiveUIManager.toggle(window, window.gBrowser.selectedTab);
+        break;
+      case "scratchpad":
+        ScratchpadManager.openScratchpad();
+        break;
     }
   },
 

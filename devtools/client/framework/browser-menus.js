@@ -43,49 +43,6 @@ function l10n(key) {
 
 
 
-
-
-function createKey({ doc, id, shortcut, keytext, modifiers, oncommand }) {
-  let k = doc.createElement("key");
-  k.id = "key_" + id;
-
-  if (shortcut.startsWith("VK_")) {
-    k.setAttribute("keycode", shortcut);
-    if (keytext) {
-      k.setAttribute("keytext", keytext);
-    }
-  } else {
-    k.setAttribute("key", shortcut);
-  }
-
-  if (modifiers) {
-    k.setAttribute("modifiers", modifiers);
-  }
-
-  
-  k.setAttribute("oncommand", ";");
-  k.addEventListener("command", oncommand);
-
-  return k;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function createMenuItem({ doc, id, label, accesskey, isCheckbox }) {
   let menuitem = doc.createElement("menuitem");
   menuitem.id = id;
@@ -98,29 +55,6 @@ function createMenuItem({ doc, id, label, accesskey, isCheckbox }) {
     menuitem.setAttribute("autocheck", "false");
   }
   return menuitem;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function attachKeybindingsToBrowser(doc, keys) {
-  let devtoolsKeyset = doc.getElementById("devtoolsKeyset");
-
-  if (!devtoolsKeyset) {
-    devtoolsKeyset = doc.createElement("keyset");
-    devtoolsKeyset.setAttribute("id", "devtoolsKeyset");
-  }
-  devtoolsKeyset.appendChild(keys);
-  let mainKeyset = doc.getElementById("mainKeyset");
-  mainKeyset.parentNode.insertBefore(devtoolsKeyset, mainKeyset);
 }
 
 
@@ -145,31 +79,18 @@ function createToolMenuElements(toolDefinition, doc) {
     gDevToolsBrowser.selectToolCommand(window.gBrowser, id);
   }.bind(null, id);
 
-  let key = null;
-  if (toolDefinition.key) {
-    key = createKey({
-      doc,
-      id,
-      shortcut: toolDefinition.key,
-      modifiers: toolDefinition.modifiers,
-      oncommand: oncommand
-    });
-  }
-
   let menuitem = createMenuItem({
     doc,
     id: "menuitem_" + id,
     label: toolDefinition.menuLabel || toolDefinition.label,
     accesskey: toolDefinition.accesskey
   });
-  if (key) {
-    
-    menuitem.setAttribute("key", key.id);
-  }
+  
+  
+  menuitem.setAttribute("key", "key_" + id);
   menuitem.addEventListener("command", oncommand);
 
   return {
-    key,
     menuitem
   };
 }
@@ -186,11 +107,7 @@ function createToolMenuElements(toolDefinition, doc) {
 
 
 function insertToolMenuElements(doc, toolDefinition, prevDef) {
-  let { key, menuitem } = createToolMenuElements(toolDefinition, doc);
-
-  if (key) {
-    attachKeybindingsToBrowser(doc, key);
-  }
+  let { menuitem } = createToolMenuElements(toolDefinition, doc);
 
   let ref;
   if (prevDef) {
@@ -254,8 +171,6 @@ function addAllToolsToMenu(doc) {
     fragMenuItems.appendChild(elements.menuitem);
   }
 
-  attachKeybindingsToBrowser(doc, fragKeys);
-
   let mps = doc.getElementById("menu_devtools_separator");
   if (mps) {
     mps.parentNode.insertBefore(fragMenuItems, mps);
@@ -269,7 +184,6 @@ function addAllToolsToMenu(doc) {
 
 
 function addTopLevelItems(doc) {
-  let keys = doc.createDocumentFragment();
   let menuItems = doc.createDocumentFragment();
 
   let { menuitems } = require("../menus");
@@ -292,50 +206,18 @@ function addTopLevelItems(doc) {
       menuitem.addEventListener("command", item.oncommand);
       menuItems.appendChild(menuitem);
 
-      if (item.key && l10nKey) {
-        
-        let shortcut = l10n(l10nKey + ".key");
-        let key = createKey({
-          doc,
-          id: item.key.id,
-          shortcut: shortcut,
-          keytext: shortcut.startsWith("VK_") ? l10n(l10nKey + ".keytext") : null,
-          modifiers: item.key.modifiers,
-          oncommand: item.oncommand
-        });
-        
-        menuitem.setAttribute("key", key.id);
-        keys.appendChild(key);
-      }
-      if (item.additionalKeys) {
-        
-        for (let key of item.additionalKeys) {
-          let shortcut = l10n(key.l10nKey + ".key");
-          let node = createKey({
-            doc,
-            id: key.id,
-            shortcut: shortcut,
-            keytext: shortcut.startsWith("VK_") ? l10n(key.l10nKey + ".keytext") : null,
-            modifiers: key.modifiers,
-            oncommand: item.oncommand
-          });
-          keys.appendChild(node);
-        }
+      if (item.keyId) {
+        menuitem.setAttribute("key", "key_" + item.keyId);
       }
     }
   }
 
   
   let nodes = [];
-  for (let node of keys.children) {
-    nodes.push(node);
-  }
   for (let node of menuItems.children) {
     nodes.push(node);
   }
   FragmentsCache.set(doc, nodes);
-
-  attachKeybindingsToBrowser(doc, keys);
 
   let menu = doc.getElementById("menuWebDeveloperPopup");
   menu.appendChild(menuItems);
