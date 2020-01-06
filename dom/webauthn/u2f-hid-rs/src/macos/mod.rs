@@ -107,7 +107,7 @@ impl PlatformManager {
                     u2f_is_keyhandle_valid(dev, &challenge, &application, key_handle)
                         .unwrap_or(false) 
                 })
-                .collect::<Vec<&Vec<u8>>>();
+                .collect::<Vec<_>>();
 
             while alive() {
                 
