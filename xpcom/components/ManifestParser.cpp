@@ -123,7 +123,7 @@ static const ManifestDirective kParsingTable[] = {
     nullptr, &nsChromeRegistry::ManifestOverride, nullptr
   },
   {
-    "resource",         2, false, true, true, true, true,
+    "resource",         2, false, true, true, true, false,
     nullptr, &nsChromeRegistry::ManifestResource, nullptr
   }
 };

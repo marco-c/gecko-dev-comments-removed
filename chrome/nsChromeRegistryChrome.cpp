@@ -927,15 +927,7 @@ nsChromeRegistryChrome::ManifestResource(ManifestProcessingContext& cx, int line
     return;
   }
 
-  
-  
-  bool contentAccessible = (flags & nsChromeRegistry::CONTENT_ACCESSIBLE);
-
-  uint32_t substitutionFlags = 0;
-  if (contentAccessible) {
-    substitutionFlags |= nsIResProtocolHandler::ALLOW_CONTENT_ACCESS;
-  }
-  rv = rph->SetSubstitutionWithFlags(host, resolved, substitutionFlags);
+  rv = rph->SetSubstitution(host, resolved);
   if (NS_FAILED(rv)) {
     LogMessageWithContext(cx.GetManifestURI(), lineno, nsIScriptError::warningFlag,
                           "Warning: cannot set substitution for '%s'.",
