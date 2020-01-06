@@ -150,8 +150,18 @@ public:
   CounterStylePtr(const CounterStylePtr& aOther)
     : mRaw(aOther.mRaw)
   {
-    if (IsAnonymous()) {
-      AsAnonymous()->AddRef();
+    switch (GetType()) {
+      case eCounterStyle:
+        break;
+      case eAnonymousCounterStyle:
+        AsAnonymous()->AddRef();
+        break;
+      case eUnresolvedAtom:
+        AsAtom()->AddRef();
+        break;
+      case eMask:
+        MOZ_ASSERT_UNREACHABLE("Unknown type");
+        break;
     }
   }
   CounterStylePtr(CounterStylePtr&& aOther)
@@ -169,9 +179,27 @@ public:
     }
     return *this;
   }
+  CounterStylePtr& operator=(CounterStylePtr&& aOther)
+  {
+    if (this != &aOther) {
+      Reset();
+      mRaw = aOther.mRaw;
+      aOther.mRaw = 0;
+    }
+    return *this;
+  }
   CounterStylePtr& operator=(decltype(nullptr))
   {
     Reset();
+    return *this;
+  }
+  CounterStylePtr& operator=(already_AddRefed<nsIAtom> aAtom)
+  {
+    Reset();
+    if (nsIAtom* raw = aAtom.take()) {
+      AssertPointerAligned(raw);
+      mRaw = reinterpret_cast<uintptr_t>(raw) | eUnresolvedAtom;
+    }
     return *this;
   }
   CounterStylePtr& operator=(AnonymousCounterStyle* aCounterStyle)
@@ -180,7 +208,7 @@ public:
     if (aCounterStyle) {
       CounterStyle* raw = do_AddRef(aCounterStyle).take();
       AssertPointerAligned(raw);
-      mRaw = reinterpret_cast<uintptr_t>(raw) | kAnonymousFlag;
+      mRaw = reinterpret_cast<uintptr_t>(raw) | eAnonymousCounterStyle;
     }
     return *this;
   }
@@ -190,7 +218,7 @@ public:
     if (aCounterStyle) {
       MOZ_ASSERT(!aCounterStyle->AsAnonymous());
       AssertPointerAligned(aCounterStyle);
-      mRaw = reinterpret_cast<uintptr_t>(aCounterStyle);
+      mRaw = reinterpret_cast<uintptr_t>(aCounterStyle) | eCounterStyle;
     }
     return *this;
   }
@@ -205,33 +233,63 @@ public:
   bool operator!=(const CounterStylePtr& aOther) const
     { return mRaw != aOther.mRaw; }
 
+  bool IsResolved() const { return !IsUnresolved(); }
+  inline void Resolve(CounterStyleManager* aManager);
+
 private:
   CounterStyle* Get() const
   {
-    return reinterpret_cast<CounterStyle*>(mRaw & ~kAnonymousFlag);
+    MOZ_ASSERT(IsResolved());
+    return reinterpret_cast<CounterStyle*>(mRaw & ~eMask);
   }
-  void AssertPointerAligned(CounterStyle* aPointer)
+  template<typename T>
+  void AssertPointerAligned(T* aPointer)
   {
     
     
     
     
     
-    MOZ_ASSERT(!(reinterpret_cast<uintptr_t>(aPointer) & kAnonymousFlag));
+    
+    MOZ_ASSERT(!(reinterpret_cast<uintptr_t>(aPointer) & eMask));
   }
 
-  bool IsAnonymous() const { return !!(mRaw & kAnonymousFlag); }
+  enum Type : uintptr_t {
+    eCounterStyle = 0,
+    eAnonymousCounterStyle = 1,
+    eUnresolvedAtom = 2,
+    eMask = 3,
+  };
+
+  Type GetType() const { return static_cast<Type>(mRaw & eMask); }
+  bool IsUnresolved() const { return GetType() == eUnresolvedAtom; }
+  bool IsAnonymous() const { return GetType() == eAnonymousCounterStyle; }
+  nsIAtom* AsAtom()
+  {
+    MOZ_ASSERT(IsUnresolved());
+    return reinterpret_cast<nsIAtom*>(mRaw & ~eMask);
+  }
   AnonymousCounterStyle* AsAnonymous()
   {
     MOZ_ASSERT(IsAnonymous());
     return static_cast<AnonymousCounterStyle*>(
-      reinterpret_cast<CounterStyle*>(mRaw & ~kAnonymousFlag));
+      reinterpret_cast<CounterStyle*>(mRaw & ~eMask));
   }
 
   void Reset()
   {
-    if (IsAnonymous()) {
-      AsAnonymous()->Release();
+    switch (GetType()) {
+      case eCounterStyle:
+        break;
+      case eAnonymousCounterStyle:
+        AsAnonymous()->Release();
+        break;
+      case eUnresolvedAtom:
+        AsAtom()->Release();
+        break;
+      case eMask:
+        MOZ_ASSERT_UNREACHABLE("Unknown type");
+        break;
     }
     mRaw = 0;
   }
@@ -240,7 +298,10 @@ private:
   
   
   
-  static const uintptr_t kAnonymousFlag = 1;
+  
+  
+  
+  
   uintptr_t mRaw;
 };
 
@@ -294,6 +355,14 @@ private:
   nsDataHashtable<nsRefPtrHashKey<nsIAtom>, CounterStyle*> mStyles;
   nsTArray<CounterStyle*> mRetiredStyles;
 };
+
+void
+CounterStylePtr::Resolve(CounterStyleManager* aManager)
+{
+  if (IsUnresolved()) {
+    *this = aManager->BuildCounterStyle(AsAtom());
+  }
+}
 
 } 
 

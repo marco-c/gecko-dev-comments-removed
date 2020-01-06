@@ -274,8 +274,10 @@ void Gecko_CopyImageOrientationFrom(nsStyleVisibility* aDst,
                                     const nsStyleVisibility* aSrc);
 
 
-void Gecko_SetListStyleType(nsStyleList* style_struct, nsIAtom* name);
-void Gecko_CopyListStyleTypeFrom(nsStyleList* dst, const nsStyleList* src);
+
+void Gecko_SetCounterStyleToName(mozilla::CounterStylePtr* ptr, nsIAtom* name);
+void Gecko_CopyCounterStyle(mozilla::CounterStylePtr* dst,
+                            const mozilla::CounterStylePtr* src);
 
 
 void Gecko_SetNullImageValue(nsStyleImage* image);

@@ -1468,19 +1468,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList
 
   already_AddRefed<nsIURI> GetListStyleImageURI() const;
 
-  
-  
-  void SetListStyleType(nsIAtom* aType)
-  {
-    mListStyleType = aType;
-    mCounterStyle = nullptr;
-  }
-  void CopyListStyleTypeFrom(const nsStyleList& aOther)
-  {
-    mListStyleType = aOther.mListStyleType;
-    mCounterStyle = aOther.mCounterStyle;
-  }
-
   const nsStyleQuoteValues::QuotePairArray& GetQuotePairs() const;
 
   void SetQuotesInherit(const nsStyleList* aOther);
@@ -1491,12 +1478,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList
   uint8_t mListStylePosition;                  
   RefPtr<nsStyleImageRequest> mListStyleImage; 
 
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIAtom> mListStyleType;
   mozilla::CounterStylePtr mCounterStyle;      
 
 private:
@@ -3048,10 +3029,7 @@ public:
     nsString mIdent;
     
     nsString mSeparator;
-    
-    
     mozilla::CounterStylePtr mCounterStyle;
-    nsCOMPtr<nsIAtom> mCounterStyleName;
 
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CounterFunction)
 
@@ -3067,7 +3045,7 @@ public:
   {
     MOZ_ASSERT(mType == eStyleContentType_Counter ||
                mType == eStyleContentType_Counters);
-    MOZ_ASSERT(mContent.mCounters->mCounterStyle,
+    MOZ_ASSERT(mContent.mCounters->mCounterStyle.IsResolved(),
                "Counter style should have been resolved");
     return mContent.mCounters;
   }
