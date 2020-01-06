@@ -26,10 +26,6 @@ AboutURL.prototype = {
   newChannel: function (aURI, aLoadInfo) {
     let chan = Services.io.newChannelFromURIWithLoadInfo(this.uri, aLoadInfo);
     chan.owner = Services.scriptSecurityManager.getSystemPrincipal();
-
-    
-    
-    aLoadInfo.resultPrincipalURI = aURI;
     return chan;
   },
 
