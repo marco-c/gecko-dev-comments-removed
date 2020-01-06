@@ -21,6 +21,8 @@ class InputData;
 
 namespace layers {
 
+class KeyboardMap;
+
 enum AllowedTouchBehavior {
   NONE =               0,
   VERTICAL_PAN =       1 << 0,
@@ -103,6 +105,11 @@ public:
       WidgetInputEvent& aEvent,
       ScrollableLayerGuid* aOutTargetGuid,
       uint64_t* aOutInputBlockId);
+
+  
+
+
+  virtual void SetKeyboardMap(const KeyboardMap& aKeyboardMap) = 0;
 
   
 

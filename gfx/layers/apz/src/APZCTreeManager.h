@@ -14,6 +14,7 @@
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/layers/TouchCounter.h"
 #include "mozilla/layers/IAPZCTreeManager.h" 
+#include "mozilla/layers/Keyboard.h"    
 #include "mozilla/Mutex.h"              
 #include "mozilla/RefPtr.h"             
 #include "mozilla/TimeStamp.h"          
@@ -210,6 +211,11 @@ public:
       InputData& aEvent,
       ScrollableLayerGuid* aOutTargetGuid,
       uint64_t* aOutInputBlockId) override;
+
+  
+
+
+  void SetKeyboardMap(const KeyboardMap& aKeyboardMap) override;
 
   
 
@@ -550,6 +556,10 @@ private:
   
 
   std::unordered_map<ScrollableLayerGuid, ZoomConstraints, ScrollableLayerGuidHash> mZoomConstraints;
+  
+
+
+  KeyboardMap mKeyboardMap;
   
 
 
