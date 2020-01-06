@@ -9967,7 +9967,8 @@ nsDocShell::InternalLoad(nsIURI* aURI,
         aURI,
         contentType,
         aTriggeringPrincipal,
-        (aLoadType == LOAD_NORMAL_EXTERNAL))) {
+        (aLoadType == LOAD_NORMAL_EXTERNAL),
+        !aFileName.IsVoid())) {
     
     return NS_OK;
   }
