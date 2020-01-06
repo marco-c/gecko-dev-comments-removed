@@ -29,7 +29,7 @@ public:
 
 
   InsertNodeTransaction(nsIContent& aNode, nsINode& aParent, int32_t aOffset,
-                        EditorBase& aEditorBase);
+                        EditorBase& aEditorBase, nsIContent* aChildAtOffset);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InsertNodeTransaction,
@@ -51,6 +51,10 @@ protected:
 
   
   RefPtr<EditorBase> mEditorBase;
+
+  
+  
+  nsCOMPtr<nsIContent> mRefNode;
 };
 
 } 
