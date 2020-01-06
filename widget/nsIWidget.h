@@ -1119,6 +1119,14 @@ class nsIWidget : public nsISupports
 
 
 
+    virtual void SetWindowTransform(const mozilla::gfx::Matrix& aTransform) {}
+
+    
+
+
+
+
+
     virtual void SetShowsToolbarButton(bool aShow) = 0;
 
     
