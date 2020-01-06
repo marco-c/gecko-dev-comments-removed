@@ -122,8 +122,7 @@ var whitelist = [
   {file: "resource://gre/modules/IndexedDB.jsm"},
 
   
-  {file: "resource://gre/modules/MessageContext.jsm"},
-  {file: "resource://gre/modules/L10nRegistry.jsm"},
+  {file: "resource://gre/modules/Localization.jsm"},
 
   
   
