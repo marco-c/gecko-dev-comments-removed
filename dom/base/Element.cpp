@@ -1759,8 +1759,13 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     
     
     CustomElementData* data = GetCustomElementData();
-    if (data && data->mState == CustomElementData::State::eCustom) {
-      nsContentUtils::EnqueueLifecycleCallback(nsIDocument::eConnected, this);
+    if (data) {
+      if (data->mState == CustomElementData::State::eCustom) {
+        nsContentUtils::EnqueueLifecycleCallback(nsIDocument::eConnected, this);
+      } else {
+        
+        nsContentUtils::TryToUpgradeElement(this);
+      }
     }
   }
 
@@ -2088,9 +2093,16 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
      
     if (CustomElementRegistry::IsCustomElementEnabled()) {
       CustomElementData* data  = GetCustomElementData();
-      if (data && data->mState == CustomElementData::State::eCustom) {
-        nsContentUtils::EnqueueLifecycleCallback(nsIDocument::eDisconnected,
-                                                 this);
+      if (data) {
+        if (data->mState == CustomElementData::State::eCustom) {
+          nsContentUtils::EnqueueLifecycleCallback(nsIDocument::eDisconnected,
+                                                   this);
+        } else {
+          
+          
+          
+          nsContentUtils::UnregisterUnresolvedElement(this);
+        }
       }
     }
   }

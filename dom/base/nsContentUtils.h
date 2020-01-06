@@ -3033,12 +3033,20 @@ public:
 
 
 
+  static void TryToUpgradeElement(Element* aElement);
+
+  
+
+
+
   static mozilla::dom::CustomElementDefinition*
     LookupCustomElementDefinition(nsIDocument* aDoc,
                                   const nsAString& aLocalName,
                                   uint32_t aNameSpaceID,
                                   nsAtom* aTypeAtom);
 
+  static void RegisterUnresolvedElement(Element* aElement, nsAtom* aTypeName);
+  static void UnregisterUnresolvedElement(Element* aElement);
 
   static mozilla::dom::CustomElementDefinition*
   GetElementDefinitionIfObservingAttr(Element* aCustomElement,

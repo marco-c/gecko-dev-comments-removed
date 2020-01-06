@@ -324,6 +324,24 @@ CustomElementRegistry::RegisterUnresolvedElement(Element* aElement, nsAtom* aTyp
   aElement->AddStates(NS_EVENT_STATE_UNRESOLVED);
 }
 
+void
+CustomElementRegistry::UnregisterUnresolvedElement(Element* aElement,
+                                                   nsAtom* aTypeName)
+{
+  nsTArray<nsWeakPtr>* candidates;
+  if (mCandidatesMap.Get(aTypeName, &candidates)) {
+    MOZ_ASSERT(candidates);
+    
+    
+    for (size_t i = 0; i < candidates->Length(); ++i) {
+      nsCOMPtr<Element> elem = do_QueryReferent(candidates->ElementAt(i));
+      if (elem && elem.get() == aElement) {
+        candidates->RemoveElementAt(i);
+      }
+    }
+  }
+}
+
  UniquePtr<CustomElementCallback>
 CustomElementRegistry::CreateCustomElementCallback(
   nsIDocument::ElementCallbackType aType, Element* aCustomElement,

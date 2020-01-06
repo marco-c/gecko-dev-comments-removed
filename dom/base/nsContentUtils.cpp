@@ -240,6 +240,7 @@ extern "C" int MOZ_XMLCheckQName(const char* ptr, const char* end,
                                  int ns_aware, const char** colon);
 
 class imgLoader;
+class nsAtom;
 
 using namespace mozilla::dom;
 using namespace mozilla::ipc;
@@ -10119,6 +10120,27 @@ nsContentUtils::HttpsStateIsModern(nsIDocument* aDocument)
   return false;
 }
 
+ void
+nsContentUtils::TryToUpgradeElement(Element* aElement)
+{
+  NodeInfo* nodeInfo = aElement->NodeInfo();
+  RefPtr<nsAtom> typeAtom =
+    aElement->GetCustomElementData()->GetCustomElementType();
+  CustomElementDefinition* definition =
+    nsContentUtils::LookupCustomElementDefinition(nodeInfo->GetDocument(),
+                                                  nodeInfo->LocalName(),
+                                                  nodeInfo->NamespaceID(),
+                                                  typeAtom);
+  if (definition) {
+    nsContentUtils::EnqueueUpgradeReaction(aElement, definition);
+  } else {
+    
+    
+    
+    nsContentUtils::RegisterUnresolvedElement(aElement, typeAtom);
+  }
+}
+
  CustomElementDefinition*
 nsContentUtils::LookupCustomElementDefinition(nsIDocument* aDoc,
                                               const nsAString& aLocalName,
@@ -10143,6 +10165,46 @@ nsContentUtils::LookupCustomElementDefinition(nsIDocument* aDoc,
   }
 
   return registry->LookupCustomElementDefinition(aLocalName, aTypeAtom);
+}
+
+ void
+nsContentUtils::RegisterUnresolvedElement(Element* aElement, nsAtom* aTypeName)
+{
+  MOZ_ASSERT(aElement);
+
+  nsIDocument* doc = aElement->OwnerDoc();
+  nsPIDOMWindowInner* window(doc->GetInnerWindow());
+  if (!window) {
+    return;
+  }
+
+  RefPtr<CustomElementRegistry> registry(window->CustomElements());
+  if (!registry) {
+    return;
+  }
+
+  registry->RegisterUnresolvedElement(aElement, aTypeName);
+}
+
+ void
+nsContentUtils::UnregisterUnresolvedElement(Element* aElement)
+{
+  MOZ_ASSERT(aElement);
+
+  RefPtr<nsAtom> typeAtom =
+    aElement->GetCustomElementData()->GetCustomElementType();
+  nsIDocument* doc = aElement->OwnerDoc();
+  nsPIDOMWindowInner* window(doc->GetInnerWindow());
+  if (!window) {
+    return;
+  }
+
+  RefPtr<CustomElementRegistry> registry(window->CustomElements());
+  if (!registry) {
+    return;
+  }
+
+  registry->UnregisterUnresolvedElement(aElement, typeAtom);
 }
 
  CustomElementDefinition*
