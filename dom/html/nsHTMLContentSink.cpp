@@ -1091,7 +1091,7 @@ HTMLContentSink::NotifyInsert(nsIContent* aContent,
     
     MOZ_AUTO_DOC_UPDATE(mDocument, UPDATE_CONTENT_MODEL, !mBeganUpdate);
     nsNodeUtils::ContentInserted(NODE_FROM(aContent, mDocument),
-                                 aChildContent, aIndexInContainer);
+                                 aChildContent);
     mLastNotificationTime = PR_Now();
   }
 

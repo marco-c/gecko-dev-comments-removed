@@ -182,9 +182,8 @@ protected:
   
   
   
-  
   void HandleChildInsertion(nsIContent* aContainer, nsIContent* aChild,
-                            uint32_t aIndexInContainer, bool aAppend);
+                            bool aAppend);
 
   
   

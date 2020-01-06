@@ -94,10 +94,8 @@ public:
 
 
 
-
   static void ContentAppended(nsIContent* aContainer,
-                              nsIContent* aFirstNewContent,
-                              int32_t aNewIndexInContainer);
+                              nsIContent* aFirstNewContent);
 
   
 
@@ -114,10 +112,8 @@ public:
 
 
 
-
   static void ContentInserted(nsINode* aContainer,
-                              nsIContent* aChild,
-                              int32_t aIndexInContainer);
+                              nsIContent* aChild);
   
 
 
@@ -127,7 +123,6 @@ public:
 
   static void ContentRemoved(nsINode* aContainer,
                              nsIContent* aChild,
-                             int32_t aIndexInContainer,
                              nsIContent* aPreviousSibling);
   
 

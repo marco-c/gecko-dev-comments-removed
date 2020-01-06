@@ -743,8 +743,7 @@ nsContentList::AttributeChanged(nsIDocument *aDocument, Element* aElement,
 
 void
 nsContentList::ContentAppended(nsIDocument* aDocument, nsIContent* aContainer,
-                               nsIContent* aFirstNewContent,
-                               int32_t aNewIndexInContainer)
+                               nsIContent* aFirstNewContent)
 {
   NS_PRECONDITION(aContainer, "Can't get at the new content if no container!");
 
@@ -847,8 +846,7 @@ nsContentList::ContentAppended(nsIDocument* aDocument, nsIContent* aContainer,
 void
 nsContentList::ContentInserted(nsIDocument *aDocument,
                                nsIContent* aContainer,
-                               nsIContent* aChild,
-                               int32_t aIndexInContainer)
+                               nsIContent* aChild)
 {
   
   
@@ -867,7 +865,6 @@ void
 nsContentList::ContentRemoved(nsIDocument *aDocument,
                               nsIContent* aContainer,
                               nsIContent* aChild,
-                              int32_t aIndexInContainer,
                               nsIContent* aPreviousSibling)
 {
   
@@ -1201,8 +1198,7 @@ nsLabelsNodeList::AttributeChanged(nsIDocument* aDocument, Element* aElement,
 void
 nsLabelsNodeList::ContentAppended(nsIDocument* aDocument,
                                   nsIContent* aContainer,
-                                  nsIContent* aFirstNewContent,
-                                  int32_t aNewIndexInContainer)
+                                  nsIContent* aFirstNewContent)
 {
   
   
@@ -1217,8 +1213,7 @@ nsLabelsNodeList::ContentAppended(nsIDocument* aDocument,
 void
 nsLabelsNodeList::ContentInserted(nsIDocument* aDocument,
                                   nsIContent* aContainer,
-                                  nsIContent* aChild,
-                                  int32_t aIndexInContainer)
+                                  nsIContent* aChild)
 {
   
   
@@ -1234,7 +1229,6 @@ void
 nsLabelsNodeList::ContentRemoved(nsIDocument* aDocument,
                                  nsIContent* aContainer,
                                  nsIContent* aChild,
-                                 int32_t aIndexInContainer,
                                  nsIContent* aPreviousSibling)
 {
   

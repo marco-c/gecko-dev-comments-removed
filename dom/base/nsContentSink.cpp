@@ -1310,8 +1310,7 @@ nsContentSink::NotifyAppend(nsIContent* aContainer, uint32_t aStartIndex)
     
     MOZ_AUTO_DOC_UPDATE(mDocument, UPDATE_CONTENT_MODEL, !mBeganUpdate);
     nsNodeUtils::ContentAppended(aContainer,
-                                 aContainer->GetChildAt(aStartIndex),
-                                 aStartIndex);
+                                 aContainer->GetChildAt(aStartIndex));
     mLastNotificationTime = PR_Now();
   }
 

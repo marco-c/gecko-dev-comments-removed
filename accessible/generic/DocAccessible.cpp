@@ -1096,8 +1096,7 @@ DocAccessible::ARIAActiveDescendantChanged(Accessible* aAccessible)
 void
 DocAccessible::ContentAppended(nsIDocument* aDocument,
                                nsIContent* aContainer,
-                               nsIContent* aFirstNewContent,
-                               int32_t )
+                               nsIContent* aFirstNewContent)
 {
 }
 
@@ -1163,14 +1162,14 @@ DocAccessible::CharacterDataChanged(nsIDocument* aDocument,
 
 void
 DocAccessible::ContentInserted(nsIDocument* aDocument, nsIContent* aContainer,
-                               nsIContent* aChild, int32_t )
+                               nsIContent* aChild)
 {
 }
 
 void
 DocAccessible::ContentRemoved(nsIDocument* aDocument,
                               nsIContent* aContainerNode,
-                              nsIContent* aChildNode, int32_t ,
+                              nsIContent* aChildNode,
                               nsIContent* aPreviousSiblingNode)
 {
 #ifdef A11Y_LOG
