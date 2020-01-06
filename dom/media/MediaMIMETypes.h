@@ -132,8 +132,13 @@ public:
     return RangeType(mCodecs);
   };
 
+  
   bool Contains(const nsAString& aCodec) const;
+  
   bool ContainsAll(const MediaCodecs& aCodecs) const;
+
+  
+  bool ContainsPrefix(const nsAString& aCodecPrefix) const;
 
   template <size_t N>
   bool operator==(const char (&aType)[N]) const
