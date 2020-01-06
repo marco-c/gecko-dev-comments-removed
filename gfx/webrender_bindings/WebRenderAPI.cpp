@@ -235,18 +235,26 @@ WebRenderAPI::SetDisplayList(gfx::Color aBgColor,
                              const LayoutSize& content_size,
                              wr::BuiltDisplayListDescriptor dl_descriptor,
                              uint8_t *dl_data,
-                             size_t dl_size)
+                             size_t dl_size,
+                             ResourceUpdateQueue* aResources)
 {
-    wr_api_set_display_list(mDocHandle,
-                            ToColorF(aBgColor),
-                            aEpoch,
-                            aViewportSize.width, aViewportSize.height,
-                            pipeline_id,
-                            content_size,
-                            dl_descriptor,
-                            dl_data,
-                            dl_size,
-                            mResources.Raw());
+  ResourceUpdateQueue* resources = aResources ? aResources : &mResources;
+  if (aResources) {
+    
+    
+    
+    UpdateResources(mResources);
+  }
+  wr_api_set_display_list(mDocHandle,
+                          ToColorF(aBgColor),
+                          aEpoch,
+                          aViewportSize.width, aViewportSize.height,
+                          pipeline_id,
+                          content_size,
+                          dl_descriptor,
+                          dl_data,
+                          dl_size,
+                          resources->Raw());
 }
 
 void
@@ -454,6 +462,24 @@ ResourceUpdateQueue::~ResourceUpdateQueue()
   if (mUpdates) {
     wr_resource_updates_delete(mUpdates);
   }
+}
+
+ByteBuffer
+ResourceUpdateQueue::Serialize()
+{
+  VecU8 data;
+  wr_resource_updates_serialize(mUpdates, &data);
+  ByteBuffer result(Move(data));
+  return result;
+}
+
+
+ResourceUpdateQueue
+ResourceUpdateQueue::Deserialize(Range<uint8_t> aData)
+{
+  auto slice = wr::RangeToByteSlice(aData);
+  ResourceUpdateQueue result(wr_resource_updates_deserialize(slice));
+  return result;
 }
 
 void
