@@ -1572,7 +1572,7 @@ nsSOCKSIOLayerAddToSocket(int32_t family,
     {
         
         LOGERROR(("Failed to create nsSOCKSSocketInfo()."));
-        PR_DELETE(layer);
+        PR_Free(layer); 
         return NS_ERROR_FAILURE;
     }
 
@@ -1593,7 +1593,7 @@ nsSOCKSIOLayerAddToSocket(int32_t family,
     if (rv == PR_FAILURE) {
         LOGERROR(("PR_PushIOLayer() failed. rv = %x.", rv));
         NS_RELEASE(infoObject);
-        PR_DELETE(layer);
+        PR_Free(layer); 
         return NS_ERROR_FAILURE;
     }
 

@@ -1908,7 +1908,7 @@ nsLocalFile::SetPersistentDescriptor(const nsACString& aPersistentDescriptor)
   AliasRecord aliasHeader = *(AliasPtr)decodedData;
   int32_t aliasSize = ::GetAliasSizeFromPtr(&aliasHeader);
   if (aliasSize > ((int32_t)dataSize * 3) / 4) { 
-    PR_Free(decodedData);
+    PR_Free(decodedData); 
     return NS_ERROR_FAILURE;
   }
 
@@ -1920,7 +1920,7 @@ nsLocalFile::SetPersistentDescriptor(const nsACString& aPersistentDescriptor)
   if (::PtrToHand(decodedData, &newHandle, aliasSize) != noErr) {
     rv = NS_ERROR_OUT_OF_MEMORY;
   }
-  PR_Free(decodedData);
+  PR_Free(decodedData); 
   if (NS_FAILED(rv)) {
     return rv;
   }

@@ -323,6 +323,8 @@ FileReader::DoReadData(uint64_t aCount)
     
     if (!size.isValid() ||
         
+        
+        
         size.value() > UINT32_MAX ||
         size.value() > mTotal) {
       return NS_ERROR_OUT_OF_MEMORY;

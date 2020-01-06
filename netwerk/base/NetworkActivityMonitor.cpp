@@ -269,7 +269,7 @@ NetworkActivityMonitor::AttachIOLayer(PRFileDesc *fd)
   status = PR_PushIOLayer(fd, PR_NSPR_IO_LAYER, layer);
 
   if (status == PR_FAILURE) {
-    PR_DELETE(layer);
+    PR_Free(layer); 
     return NS_ERROR_FAILURE;
   }
 

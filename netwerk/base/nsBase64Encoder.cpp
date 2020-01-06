@@ -60,7 +60,7 @@ nsBase64Encoder::Finish(nsACString& result)
     return NS_ERROR_OUT_OF_MEMORY;
 
   result.Assign(b64);
-  PR_Free(b64);
+  PR_Free(b64); 
   
   mData.Truncate();
   return NS_OK;

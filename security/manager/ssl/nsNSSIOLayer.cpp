@@ -1874,7 +1874,7 @@ nsConvertCANamesToStrings(const UniquePLArenaPool& arena, char** caNameStrings,
             
             
             if (dername->len <= 127) {
-                newitem.data = (unsigned char*) PR_Malloc(dername->len + 2);
+                newitem.data = (unsigned char*) malloc(dername->len + 2);
                 if (!newitem.data) {
                     goto loser;
                 }
@@ -1882,7 +1882,7 @@ nsConvertCANamesToStrings(const UniquePLArenaPool& arena, char** caNameStrings,
                 newitem.data[1] = (unsigned char) dername->len;
                 (void) memcpy(&newitem.data[2], dername->data, dername->len);
             } else if (dername->len <= 255) {
-                newitem.data = (unsigned char*) PR_Malloc(dername->len + 3);
+                newitem.data = (unsigned char*) malloc(dername->len + 3);
                 if (!newitem.data) {
                     goto loser;
                 }
@@ -1892,7 +1892,7 @@ nsConvertCANamesToStrings(const UniquePLArenaPool& arena, char** caNameStrings,
                 (void) memcpy(&newitem.data[3], dername->data, dername->len);
             } else {
                 
-                newitem.data = (unsigned char*) PR_Malloc(dername->len + 4);
+                newitem.data = (unsigned char*) malloc(dername->len + 4);
                 if (!newitem.data) {
                     goto loser;
                 }
@@ -1911,21 +1911,21 @@ nsConvertCANamesToStrings(const UniquePLArenaPool& arena, char** caNameStrings,
             caNameStrings[n] = const_cast<char*>("");
         } else {
             caNameStrings[n] = PORT_ArenaStrdup(arena.get(), namestring);
-            PR_Free(namestring);
+            PR_Free(namestring); 
             if (!caNameStrings[n]) {
                 goto loser;
             }
         }
 
         if (newitem.data) {
-            PR_Free(newitem.data);
+            free(newitem.data);
         }
     }
 
     return SECSuccess;
 loser:
     if (newitem.data) {
-        PR_Free(newitem.data);
+        free(newitem.data);
     }
     return SECFailure;
 }

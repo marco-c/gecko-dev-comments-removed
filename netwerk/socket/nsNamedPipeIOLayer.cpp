@@ -711,7 +711,7 @@ nsNamedPipeClose(PRFileDesc* aFd)
   }
 
   MOZ_ASSERT(!aFd->lower);
-  PR_DELETE(aFd);
+  PR_Free(aFd); 
 
   return PR_SUCCESS;
 }

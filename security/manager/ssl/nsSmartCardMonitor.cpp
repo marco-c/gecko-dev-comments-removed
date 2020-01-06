@@ -243,7 +243,7 @@ SmartCardMonitoringThread::SetTokenName(CK_SLOT_ID slotid,
     if (tokenName) {
       int len = strlen(tokenName) + 1;
       
-
+      
       char* entry = (char*)PR_Malloc(len + sizeof(uint32_t));
 
       if (entry) {
