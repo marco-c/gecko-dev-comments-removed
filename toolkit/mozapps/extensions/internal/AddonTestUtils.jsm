@@ -243,6 +243,9 @@ var AddonTestUtils = {
     Services.prefs.setIntPref("extensions.autoDisableScopes", 0);
 
     
+    Services.prefs.setIntPref("extensions.startupScanScopes", 15);
+
+    
     Services.prefs.setBoolPref("extensions.getAddons.cache.enabled", false);
 
     

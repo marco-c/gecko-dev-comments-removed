@@ -115,6 +115,7 @@ const PREF_EM_UPDATE_BACKGROUND_URL   = "extensions.update.background.url";
 const PREF_EM_ENABLED_ADDONS          = "extensions.enabledAddons";
 const PREF_EM_EXTENSION_FORMAT        = "extensions.";
 const PREF_EM_ENABLED_SCOPES          = "extensions.enabledScopes";
+const PREF_EM_STARTUP_SCAN_SCOPES     = "extensions.startupScanScopes";
 const PREF_EM_SHOW_MISMATCH_UI        = "extensions.showMismatchUI";
 const PREF_XPI_ENABLED                = "xpinstall.enabled";
 const PREF_XPI_WHITELIST_REQUIRED     = "xpinstall.whitelist.required";
@@ -324,6 +325,9 @@ const LAZY_OBJECTS = ["XPIDatabase", "XPIDatabaseReconcile"];
 
 
 var gLazyObjectsLoaded = false;
+
+XPCOMUtils.defineLazyPreferenceGetter(this, "gStartupScanScopes",
+                                      PREF_EM_STARTUP_SCAN_SCOPES, 0);
 
 function loadLazyObjects() {
   let uri = "resource://gre/modules/addons/XPIProviderUtils.js";
@@ -2322,16 +2326,35 @@ this.XPIStates = {
 
 
 
-  getInstallState() {
+
+
+
+
+
+  getInstallState(ignoreSideloads = true) {
     let oldState = this.loadExtensionState();
     let changed = false;
     this.db = new SerializableMap();
 
     for (let location of XPIProvider.installLocations) {
       
-      let addons = location.getAddonLocations();
-      
       let foundAddons = new SerializableMap();
+
+      
+      if (ignoreSideloads && !(location.scope & gStartupScanScopes)) {
+        if (location.name in oldState) {
+          for (let [id, state] of Object.entries(oldState[location.name])) {
+            foundAddons.set(id, new XPIState(state));
+          }
+
+          this.db.set(location.name, foundAddons);
+          delete oldState[location.name];
+        }
+        continue;
+      }
+
+      
+      let addons = location.getAddonLocations(!ignoreSideloads);
 
       
       let locState = {};
@@ -3760,8 +3783,7 @@ this.XPIProvider = {
 
 
 
-  checkForChanges(aAppChanged, aOldAppVersion,
-                                                aOldPlatformVersion) {
+  checkForChanges(aAppChanged, aOldAppVersion, aOldPlatformVersion) {
     logger.debug("checkForChanges");
 
     
@@ -3808,7 +3830,7 @@ this.XPIProvider = {
 
     
     let telemetryCaptureTime = Cu.now();
-    let installChanged = XPIStates.getInstallState();
+    let installChanged = XPIStates.getInstallState(aAppChanged === false);
     let telemetry = Services.telemetry;
     telemetry.getHistogramById("CHECK_ADDONS_MODIFIED_MS").add(Math.round(Cu.now() - telemetryCaptureTime));
     if (installChanged) {
@@ -8071,7 +8093,7 @@ class DirectoryInstallLocation {
     if (!aDirectory.isDirectory())
       throw new Error("Location must be a directory.");
 
-    this._readAddons();
+    this.initialized = false;
   }
 
   
@@ -8135,7 +8157,12 @@ class DirectoryInstallLocation {
   
 
 
-  _readAddons() {
+  _readAddons(rescan = false) {
+    if ((this.initialized && !rescan) || !this._directory) {
+      return;
+    }
+    this.initialized = true;
+
     
     
     
@@ -8198,7 +8225,9 @@ class DirectoryInstallLocation {
   
 
 
-  getAddonLocations() {
+  getAddonLocations(rescan = false) {
+    this._readAddons(rescan);
+
     let locations = new Map();
     for (let id in this._IDToFileMap) {
       locations.set(id, this._IDToFileMap[id].clone());
@@ -8215,6 +8244,9 @@ class DirectoryInstallLocation {
 
 
   getLocationForID(aId) {
+    if (!(aId in this._IDToFileMap))
+      this._readAddons();
+
     if (aId in this._IDToFileMap)
       return this._IDToFileMap[aId].clone();
     throw new Error("Unknown add-on ID " + aId);
