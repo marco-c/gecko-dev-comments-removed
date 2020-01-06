@@ -9,6 +9,7 @@
 
 #include "mozilla/EventStates.h"
 #include "mozilla/RestyleManager.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/ServoElementSnapshot.h"
 #include "mozilla/ServoElementSnapshotTable.h"
 #include "nsChangeHint.h"
@@ -31,6 +32,7 @@ namespace mozilla {
 
 
 
+
 class ServoRestyleState
 {
 public:
@@ -40,21 +42,62 @@ public:
     , mChangesHandled(nsChangeHint(0))
   {}
 
-  ServoRestyleState(ServoRestyleState& aParentState,
-                    nsChangeHint aHintForThisFrame)
+  
+  
+  
+  
+  enum class Type
+  {
+    InFlow,
+    OutOfFlow,
+  };
+
+  ServoRestyleState(const nsIFrame& aOwner,
+                    ServoRestyleState& aParentState,
+                    nsChangeHint aHintForThisFrame,
+                    Type aType)
     : mStyleSet(aParentState.mStyleSet)
     , mChangeList(aParentState.mChangeList)
-    , mChangesHandled(aParentState.mChangesHandled | aHintForThisFrame)
-  {}
+    , mChangesHandled(
+        aType == Type::InFlow
+          ? aParentState.mChangesHandled | aHintForThisFrame
+          : aHintForThisFrame)
+#ifdef DEBUG
+    , mOwner(&aOwner)
+#endif
+  {
+    if (aType == Type::InFlow) {
+      AssertOwner(aParentState);
+    }
+  }
 
-  nsChangeHint ChangesHandled() const { return mChangesHandled; }
   nsStyleChangeList& ChangeList() { return mChangeList; }
   ServoStyleSet& StyleSet() { return mStyleSet; }
+
+#ifdef DEBUG
+  void AssertOwner(const ServoRestyleState& aParentState) const;
+  nsChangeHint ChangesHandledFor(const nsIFrame&) const;
+#else
+  void AssertOwner(const ServoRestyleState&) const {}
+  nsChangeHint ChangesHandledFor(const nsIFrame&) const
+  {
+    return mChangesHandled;
+  }
+#endif
 
 private:
   ServoStyleSet& mStyleSet;
   nsStyleChangeList& mChangeList;
   const nsChangeHint mChangesHandled;
+
+  
+  
+  
+  
+  
+#ifdef DEBUG
+  const nsIFrame* mOwner { nullptr };
+#endif
 };
 
 

@@ -15,6 +15,7 @@
 #include "mozilla/dom/ElementInlines.h"
 #include "nsBlockFrame.h"
 #include "nsBulletFrame.h"
+#include "nsFirstLetterFrame.h"
 #include "nsPlaceholderFrame.h"
 #include "nsContentUtils.h"
 #include "nsCSSFrameConstructor.h"
@@ -25,6 +26,89 @@
 using namespace mozilla::dom;
 
 namespace mozilla {
+
+#ifdef DEBUG
+static bool
+IsAnonBox(const nsIFrame& aFrame)
+{
+  return aFrame.StyleContext()->IsAnonBox();
+}
+
+static const nsIFrame*
+FirstContinuationOrPartOfIBSplit(const nsIFrame* aFrame)
+{
+  if (!aFrame) {
+    return nullptr;
+  }
+
+  return nsLayoutUtils::FirstContinuationOrIBSplitSibling(aFrame);
+}
+
+static const nsIFrame*
+ExpectedOwnerForChild(const nsIFrame& aFrame)
+{
+  if (IsAnonBox(aFrame)) {
+    return aFrame.GetParent()->IsViewportFrame() ? nullptr : aFrame.GetParent();
+  }
+
+  if (aFrame.IsBulletFrame()) {
+    return aFrame.GetParent();
+  }
+
+  const nsIFrame* parent = FirstContinuationOrPartOfIBSplit(aFrame.GetParent());
+  if (nsFirstLetterFrame* fl = do_QueryFrame(const_cast<nsIFrame*>(&aFrame))) {
+    Unused << fl;
+    while (!parent->IsFrameOfType(nsIFrame::eBlockFrame)) {
+      parent = FirstContinuationOrPartOfIBSplit(parent->GetParent());
+    }
+    return parent;
+  }
+
+  if (aFrame.IsTableFrame()) {
+    MOZ_ASSERT(parent->IsTableWrapperFrame());
+    parent = FirstContinuationOrPartOfIBSplit(parent->GetParent());
+  }
+
+  
+  
+  
+  while (parent && (IsAnonBox(*parent) || parent->IsLineFrame())) {
+    auto* pseudo = parent->StyleContext()->GetPseudo();
+    if (pseudo == nsCSSAnonBoxes::tableWrapper) {
+      const nsIFrame* tableFrame = parent->PrincipalChildList().FirstChild();
+      MOZ_ASSERT(tableFrame->IsTableFrame());
+      
+      parent = IsAnonBox(*tableFrame) ? parent->GetParent() : tableFrame;
+    } else {
+      parent = parent->GetParent();
+    }
+    parent = FirstContinuationOrPartOfIBSplit(parent);
+  }
+
+  return parent;
+}
+
+void
+ServoRestyleState::AssertOwner(const ServoRestyleState& aParent) const
+{
+  MOZ_ASSERT(mOwner);
+  MOZ_ASSERT(!mOwner->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW));
+  MOZ_ASSERT(ExpectedOwnerForChild(*mOwner) == aParent.mOwner);
+}
+
+nsChangeHint
+ServoRestyleState::ChangesHandledFor(const nsIFrame& aFrame) const
+{
+  if (!mOwner) {
+    MOZ_ASSERT(!mChangesHandled);
+    return mChangesHandled;
+  }
+
+  MOZ_ASSERT(mOwner == ExpectedOwnerForChild(aFrame),
+             "Missed some frame in the hierarchy?");
+  return mChangesHandled;
+}
+#endif
 
 ServoRestyleManager::ServoRestyleManager(nsPresContext* aPresContext)
   : RestyleManager(StyleBackendType::Servo, aPresContext)
@@ -232,7 +316,7 @@ public:
                                         &equalStructs,
                                         &samePointerStructs);
       mComputedHint = NS_RemoveSubsumedHints(
-        mComputedHint, mParentRestyleState.ChangesHandled());
+        mComputedHint, mParentRestyleState.ChangesHandledFor(*aTextFrame));
     }
 
     if (mComputedHint) {
@@ -334,18 +418,31 @@ ServoRestyleManager::ProcessPostTraversal(Element* aElement,
   nsIFrame* styleFrame = nsLayoutUtils::GetStyleFrame(aElement);
 
   
+  
+  const bool isOutOfFlow =
+    aElement->GetPrimaryFrame() &&
+    aElement->GetPrimaryFrame()->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
+
+  
   nsChangeHint changeHint = Servo_TakeChangeHint(aElement);
-  changeHint =
-    NS_RemoveSubsumedHints(changeHint, aRestyleState.ChangesHandled());
+
+  
+  
+  if (styleFrame && styleFrame->GetContent() != aElement) {
+    MOZ_ASSERT(styleFrame->IsImageFrame());
+    styleFrame = nullptr;
+  }
 
   
   
   if (aElement->HasFlag(NODE_NEEDS_FRAME)) {
     changeHint |= nsChangeHint_ReconstructFrame;
-    
-    
-    MOZ_ASSERT(!styleFrame || styleFrame->IsImageFrame());
-    styleFrame = nullptr;
+    MOZ_ASSERT(!styleFrame);
+  }
+
+  if (styleFrame && !isOutOfFlow) {
+    changeHint = NS_RemoveSubsumedHints(
+      changeHint, aRestyleState.ChangesHandledFor(*styleFrame));
   }
 
   
@@ -402,7 +499,19 @@ ServoRestyleManager::ProcessPostTraversal(Element* aElement,
   const bool recreateContext = oldStyleContext &&
     oldStyleContext->ComputedValues() != computedValues;
 
-  ServoRestyleState childrenRestyleState(aRestyleState, changeHint);
+  Maybe<ServoRestyleState> thisFrameRestyleState;
+  if (styleFrame) {
+    auto type = isOutOfFlow
+      ? ServoRestyleState::Type::OutOfFlow
+      : ServoRestyleState::Type::InFlow;
+
+    thisFrameRestyleState.emplace(*styleFrame, aRestyleState, changeHint, type);
+  }
+
+  
+  
+  ServoRestyleState& childrenRestyleState =
+    thisFrameRestyleState ? *thisFrameRestyleState : aRestyleState;
 
   RefPtr<nsStyleContext> newContext = nullptr;
   if (recreateContext) {
@@ -445,7 +554,8 @@ ServoRestyleManager::ProcessPostTraversal(Element* aElement,
       ViewportFrame* viewport =
         do_QueryFrame(mPresContext->PresShell()->GetRootFrame());
       if (viewport) {
-        viewport->UpdateStyle(childrenRestyleState);
+        
+        viewport->UpdateStyle(aRestyleState);
       }
     }
 

@@ -10229,7 +10229,8 @@ nsIFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
 
   
   
-  ServoRestyleState childrenState(aRestyleState, childHint);
+  ServoRestyleState childrenState(
+      *aChildFrame, aRestyleState, childHint, ServoRestyleState::Type::InFlow);
   aChildFrame->UpdateStyleOfOwnedAnonBoxes(childrenState);
 
   
@@ -10266,7 +10267,8 @@ nsIFrame::UpdateStyleOfOwnedChildFrame(
     aNewStyleContext,
     &equalStructs,
     &samePointerStructs);
-  childHint = NS_RemoveSubsumedHints(childHint, aRestyleState.ChangesHandled());
+  childHint = NS_RemoveSubsumedHints(
+    childHint, aRestyleState.ChangesHandledFor(*aChildFrame));
   if (childHint) {
     if (childHint & nsChangeHint_ReconstructFrame) {
       
