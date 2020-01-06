@@ -37,7 +37,7 @@ import android.widget.ListView;
 
 
 
-class PinSiteDialog extends DialogFragment {
+public class PinSiteDialog extends DialogFragment {
     
     public static interface OnSiteSelectedListener {
         public void onSiteSelected(String url, String title);
