@@ -7,6 +7,7 @@
 #define ThreadResponsiveness_h
 
 #include "nsISupports.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
 
@@ -21,16 +22,20 @@ public:
 
   void Update();
 
-  mozilla::TimeDuration GetUnresponsiveDuration(const mozilla::TimeStamp& now) const {
-    return now - mLastTracerTime;
+  
+  
+  double GetUnresponsiveDuration(double aStartToNow_ms) const {
+    return aStartToNow_ms - *mStartToPrevTracer_ms;
   }
 
   bool HasData() const {
-    return !mLastTracerTime.IsNull();
+    return mStartToPrevTracer_ms.isSome();
   }
 private:
   RefPtr<CheckResponsivenessTask> mActiveTracerEvent;
-  mozilla::TimeStamp mLastTracerTime;
+  
+  
+  mozilla::Maybe<double> mStartToPrevTracer_ms;
 };
 
 #endif

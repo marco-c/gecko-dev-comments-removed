@@ -4,30 +4,23 @@
 
 
 #include "ThreadResponsiveness.h"
-#include "platform.h"
-#include "nsComponentManagerUtils.h"
-#include "nsThreadUtils.h"
-#include "nsITimer.h"
-#include "mozilla/Mutex.h"
-#include "mozilla/RefPtr.h"
+
+#include "mozilla/Atomics.h"
 #include "mozilla/SystemGroup.h"
 
-using mozilla::Mutex;
-using mozilla::MutexAutoLock;
-using mozilla::SystemGroup;
-using mozilla::TaskCategory;
-using mozilla::TimeStamp;
+#include "nsITimer.h"
+#include "platform.h"
 
-class CheckResponsivenessTask : public mozilla::Runnable,
+using namespace mozilla;
+
+class CheckResponsivenessTask : public Runnable,
                                 public nsITimerCallback {
 public:
   CheckResponsivenessTask()
-    : mozilla::Runnable("CheckResponsivenessTask")
-    , mLastTracerTime(TimeStamp::Now())
-    , mMutex("CheckResponsivenessTask")
-    , mTimer(nullptr)
-    , mHasEverBeenSuccessfullyDispatched(false)
+    : Runnable("CheckResponsivenessTask")
+    , mStartToPrevTracer_us(uint64_t(profiler_time() * 1000.0))
     , mStop(false)
+    , mHasEverBeenSuccessfullyDispatched(false)
   {
   }
 
@@ -59,25 +52,20 @@ public:
   
   NS_IMETHOD Run() override
   {
-    MutexAutoLock mon(mMutex);
-    if (mStop)
-      return NS_OK;
+    mStartToPrevTracer_us = uint64_t(profiler_time() * 1000.0);
 
-    
-    
-    
-    
-    
-    mLastTracerTime = TimeStamp::Now();
-    if (!mTimer) {
-      mTimer = do_CreateInstance("@mozilla.org/timer;1");
-      mTimer->SetTarget(SystemGroup::EventTargetFor(TaskCategory::Other));
+    if (!mStop) {
+      if (!mTimer) {
+        mTimer = do_CreateInstance("@mozilla.org/timer;1");
+        mTimer->SetTarget(SystemGroup::EventTargetFor(TaskCategory::Other));
+      }
+      mTimer->InitWithCallback(this, 16, nsITimer::TYPE_ONE_SHOT);
     }
-    mTimer->InitWithCallback(this, 16, nsITimer::TYPE_ONE_SHOT);
 
     return NS_OK;
   }
 
+  
   NS_IMETHOD Notify(nsITimer* aTimer) final
   {
     SystemGroup::Dispatch(TaskCategory::Other,
@@ -85,23 +73,37 @@ public:
     return NS_OK;
   }
 
+  
   void Terminate() {
-    MutexAutoLock mon(mMutex);
     mStop = true;
   }
 
-  const TimeStamp& GetLastTracerTime() const {
-    return mLastTracerTime;
+  
+  double GetStartToPrevTracer_ms() const {
+    return mStartToPrevTracer_us / 1000.0;
   }
 
   NS_DECL_ISUPPORTS_INHERITED
 
 private:
-  TimeStamp mLastTracerTime;
-  Mutex mMutex;
+  
+  
   nsCOMPtr<nsITimer> mTimer;
-  bool mHasEverBeenSuccessfullyDispatched; 
-  bool mStop;
+
+  
+  
+  
+  
+  
+  Atomic<uint64_t> mStartToPrevTracer_us;
+
+  
+  
+  
+  Atomic<bool> mStop;
+
+  
+  bool mHasEverBeenSuccessfullyDispatched;
 };
 
 NS_IMPL_ISUPPORTS_INHERITED(CheckResponsivenessTask, mozilla::Runnable,
@@ -123,6 +125,6 @@ void
 ThreadResponsiveness::Update()
 {
   mActiveTracerEvent->DoFirstDispatchIfNeeded();
-  mLastTracerTime = mActiveTracerEvent->GetLastTracerTime();
+  mStartToPrevTracer_ms = Some(mActiveTracerEvent->GetStartToPrevTracer_ms());
 }
 
