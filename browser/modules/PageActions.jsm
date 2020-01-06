@@ -447,6 +447,9 @@ this.PageActions = {
 
 
 
+
+
+
 function Action(options) {
   setProperties(this, options, {
     id: true,
@@ -588,9 +591,21 @@ Action.prototype = {
 
 
 
-  onBeforePlacedInWindow(window) {
+
+
+  doCommand(browserWindow) {
+    browserPageActions(browserWindow).doCommandForAction(this);
+  },
+
+  
+
+
+
+
+
+  onBeforePlacedInWindow(browserWindow) {
     if (this._onBeforePlacedInWindow) {
-      this._onBeforePlacedInWindow(window);
+      this._onBeforePlacedInWindow(browserWindow);
     }
   },
 
@@ -700,6 +715,7 @@ Action.prototype = {
 };
 
 this.PageActions.Action = Action;
+
 
 
 

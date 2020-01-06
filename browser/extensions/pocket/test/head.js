@@ -12,19 +12,10 @@ function promisePocketEnabled() {
     enabledOnStartup = true;
     return Promise.resolve(true);
   }
-  info( "pocket is not enabled");
-  return new Promise((resolve, reject) => {
-    let listener = {
-      onWidgetAfterCreation(widgetid) {
-        if (widgetid == "pocket-button") {
-          info("pocket-button created");
-          CustomizableUI.removeListener(listener);
-          resolve(false);
-        }
-      }
-    }
-    CustomizableUI.addListener(listener);
-    Services.prefs.setBoolPref("extensions.pocket.enabled", true);
+  info("pocket is not enabled");
+  Services.prefs.setBoolPref("extensions.pocket.enabled", true);
+  return BrowserTestUtils.waitForCondition(() => {
+    return PageActions.actionForID("pocket");
   });
 }
 
@@ -34,26 +25,17 @@ function promisePocketDisabled() {
     info("pocket-button already disabled");
     return Promise.resolve(true);
   }
-  return new Promise((resolve, reject) => {
-    let listener = {
-      onWidgetDestroyed(widgetid) {
-        if (widgetid == "pocket-button") {
-          CustomizableUI.removeListener(listener);
-          info( "pocket-button destroyed");
-          
-          BrowserTestUtils.waitForCondition(() => {
-            return !window.hasOwnProperty("pktUI");
-          }, "pocket properties removed from window").then(() => {
-            resolve(false);
-          })
-        }
-      }
-    }
-    CustomizableUI.addListener(listener);
-    info("reset pocket enabled pref");
+  info("reset pocket enabled pref");
+  
+  
+  Services.prefs.setBoolPref("extensions.pocket.enabled", false);
+  return BrowserTestUtils.waitForCondition(() => {
+    return !PageActions.actionForID("pocket");
+  }).then(() => {
     
-    
-    Services.prefs.setBoolPref("extensions.pocket.enabled", false);
+    return BrowserTestUtils.waitForCondition(() => {
+      return !window.hasOwnProperty("pktUI");
+    });
   });
 }
 

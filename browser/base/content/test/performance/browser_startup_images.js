@@ -37,6 +37,10 @@ const whitelist = [
     file: "chrome://browser/skin/page-action.svg",
     platforms: ["linux", "win", "macosx"],
   },
+  {
+    file: "chrome://pocket-shared/skin/pocket.svg",
+    platforms: ["linux", "win", "macosx"],
+  },
 
   
   {
@@ -62,6 +66,10 @@ const whitelist = [
   },
   {
     file: "chrome://browser/skin/tracking-protection-16.svg#enabled",
+    platforms: ["linux", "win", "macosx"],
+  },
+  {
+    file: "chrome://global/skin/icons/autoscroll.png",
     platforms: ["linux", "win", "macosx"],
   },
 

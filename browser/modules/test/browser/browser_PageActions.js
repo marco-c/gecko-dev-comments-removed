@@ -350,7 +350,7 @@ add_task(async function withSubview() {
   onSubviewPlacedExpectedPanelViewID = panelViewIDUrlbar;
   onSubviewShowingExpectedPanelViewID = panelViewIDUrlbar;
   EventUtils.synthesizeMouseAtCenter(urlbarButtonNode, {});
-  await promisePanelShown(BrowserPageActions._tempPanelID);
+  await promisePanelShown(BrowserPageActions._activatedActionPanelID);
   Assert.equal(onSubviewPlacedCount, 2,
                "onSubviewPlacedCount should be inc'ed");
   Assert.equal(onSubviewShowingCount, 2,
@@ -360,7 +360,7 @@ add_task(async function withSubview() {
   Assert.notEqual(panelViewButtonNodeUrlbar, null, "panelViewButtonNodeUrlbar");
   onButtonCommandExpectedButtonID = panelViewButtonIDUrlbar;
   EventUtils.synthesizeMouseAtCenter(panelViewButtonNodeUrlbar, {});
-  await promisePanelHidden(BrowserPageActions._tempPanelID);
+  await promisePanelHidden(BrowserPageActions._activatedActionPanelID);
   Assert.equal(onButtonCommandCallCount, 2,
                "onButtonCommandCallCount should be inc'ed");
 
@@ -403,7 +403,7 @@ add_task(async function withIframe() {
       Assert.ok(iframeNode, "iframeNode should be non-null: " + iframeNode);
       Assert.equal(iframeNode.localName, "iframe", "iframe localName");
       Assert.ok(panelNode, "panelNode should be non-null: " + panelNode);
-      Assert.equal(panelNode.id, BrowserPageActions._tempPanelID,
+      Assert.equal(panelNode.id, BrowserPageActions._activatedActionPanelID,
                    "panelNode.id");
     },
     onPlacedInPanel(buttonNode) {
@@ -442,32 +442,32 @@ add_task(async function withIframe() {
   await promisePageActionPanelOpen();
   Assert.equal(onIframeShownCount, 0, "onIframeShownCount should remain 0");
   EventUtils.synthesizeMouseAtCenter(panelButtonNode, {});
-  await promisePanelShown(BrowserPageActions._tempPanelID);
+  await promisePanelShown(BrowserPageActions._activatedActionPanelID);
   Assert.equal(onCommandCallCount, 0, "onCommandCallCount should remain 0");
   Assert.equal(onIframeShownCount, 1, "onIframeShownCount should be inc'ed");
 
   
-  let tempPanel = document.getElementById(BrowserPageActions._tempPanelID);
-  Assert.notEqual(tempPanel, null, "tempPanel");
-  Assert.equal(tempPanel.anchorNode.id, urlbarButtonID,
-               "tempPanel.anchorNode.id");
+  
+  let aaPanel =
+    document.getElementById(BrowserPageActions._activatedActionPanelID);
+  Assert.notEqual(aaPanel, null, "activated-action panel");
+  Assert.equal(aaPanel.anchorNode.id, urlbarButtonID, "aaPanel.anchorNode.id");
   EventUtils.synthesizeMouseAtCenter(urlbarButtonNode, {});
-  await promisePanelHidden(BrowserPageActions._tempPanelID);
+  await promisePanelHidden(BrowserPageActions._activatedActionPanelID);
 
   
   EventUtils.synthesizeMouseAtCenter(urlbarButtonNode, {});
-  await promisePanelShown(BrowserPageActions._tempPanelID);
+  await promisePanelShown(BrowserPageActions._activatedActionPanelID);
   Assert.equal(onCommandCallCount, 0, "onCommandCallCount should remain 0");
   Assert.equal(onIframeShownCount, 2, "onIframeShownCount should be inc'ed");
 
   
   
-  tempPanel = document.getElementById(BrowserPageActions._tempPanelID);
-  Assert.notEqual(tempPanel, null, "tempPanel");
-  Assert.equal(tempPanel.anchorNode.id, urlbarButtonID,
-               "tempPanel.anchorNode.id");
+  aaPanel = document.getElementById(BrowserPageActions._activatedActionPanelID);
+  Assert.notEqual(aaPanel, null, "aaPanel");
+  Assert.equal(aaPanel.anchorNode.id, urlbarButtonID, "aaPanel.anchorNode.id");
   EventUtils.synthesizeMouseAtCenter(urlbarButtonNode, {});
-  await promisePanelHidden(BrowserPageActions._tempPanelID);
+  await promisePanelHidden(BrowserPageActions._activatedActionPanelID);
 
   
   action.shownInUrlbar = false;
@@ -477,18 +477,18 @@ add_task(async function withIframe() {
   
   await promisePageActionPanelOpen();
   EventUtils.synthesizeMouseAtCenter(panelButtonNode, {});
-  await promisePanelShown(BrowserPageActions._tempPanelID);
+  await promisePanelShown(BrowserPageActions._activatedActionPanelID);
   Assert.equal(onCommandCallCount, 0, "onCommandCallCount should remain 0");
   Assert.equal(onIframeShownCount, 3, "onIframeShownCount should be inc'ed");
 
   
   
-  tempPanel = document.getElementById(BrowserPageActions._tempPanelID);
-  Assert.notEqual(tempPanel, null, "tempPanel");
-  Assert.equal(tempPanel.anchorNode.id, BrowserPageActions.mainButtonNode.id,
-               "tempPanel.anchorNode.id");
+  aaPanel = document.getElementById(BrowserPageActions._activatedActionPanelID);
+  Assert.notEqual(aaPanel, null, "aaPanel");
+  Assert.equal(aaPanel.anchorNode.id, BrowserPageActions.mainButtonNode.id,
+               "aaPanel.anchorNode.id");
   EventUtils.synthesizeMouseAtCenter(BrowserPageActions.mainButtonNode, {});
-  await promisePanelHidden(BrowserPageActions._tempPanelID);
+  await promisePanelHidden(BrowserPageActions._activatedActionPanelID);
 
   
   action.remove();
