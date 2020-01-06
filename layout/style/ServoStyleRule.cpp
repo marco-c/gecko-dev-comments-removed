@@ -269,7 +269,7 @@ ServoStyleRule::GetSelectorText(uint32_t aSelectorIndex, nsAString& aText)
 nsresult
 ServoStyleRule::GetSpecificity(uint32_t aSelectorIndex, uint64_t* aSpecificity)
 {
-  
+  Servo_StyleRule_GetSpecificityAtIndex(mRawRule, aSelectorIndex, aSpecificity);
   return NS_OK;
 }
 
