@@ -41,8 +41,11 @@ struct TreeMatchContext;
 
 namespace mozilla {
 class CSSStyleSheet;
-class EventStates;
 enum class CSSPseudoElementType : uint8_t;
+class EventStates;
+namespace dom {
+class ShadowRoot;
+} 
 } 
 
 class nsEmptyStyleRule final : public nsIStyleRule
@@ -330,6 +333,19 @@ class nsStyleSet final
   void Shutdown();
 
   
+  void RecordStyleSheetChange(mozilla::CSSStyleSheet* aStyleSheet);
+
+  
+  void RecordShadowStyleChange(mozilla::dom::ShadowRoot* aShadowRoot);
+
+  bool StyleSheetsHaveChanged() const
+  {
+    return mStylesHaveChanged || !mChangedScopeStyleRoots.IsEmpty();
+  }
+
+  void InvalidateStyleForCSSRuleChanges();
+
+  
   
   
   
@@ -603,8 +619,21 @@ private:
                                 
                                 
 
+  
+  
+  
+  
+  
+  
+  
+  AutoTArray<RefPtr<mozilla::dom::Element>,1> mChangedScopeStyleRoots;
+
   uint16_t mBatching;
 
+  
+  
+  
+  unsigned mStylesHaveChanged : 1;
   unsigned mInShutdown : 1;
   unsigned mInGC : 1;
   unsigned mAuthorStyleDisabled: 1;

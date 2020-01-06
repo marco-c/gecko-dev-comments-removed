@@ -220,6 +220,31 @@ StyleSetHandle::Ptr::AddDocStyleSheet(StyleSheet* aSheet,
                                      (aSheet->AsServo(), aDocument));
 }
 
+void
+StyleSetHandle::Ptr::RecordStyleSheetChange(StyleSheet* aSheet)
+{
+  FORWARD_CONCRETE(RecordStyleSheetChange, (aSheet->AsGecko()),
+                                           (aSheet->AsServo()));
+}
+
+void
+StyleSetHandle::Ptr::RecordShadowStyleChange(mozilla::dom::ShadowRoot* aShadowRoot)
+{
+  FORWARD(RecordShadowStyleChange, (aShadowRoot));
+}
+
+bool
+StyleSetHandle::Ptr::StyleSheetsHaveChanged() const
+{
+  FORWARD(StyleSheetsHaveChanged, ());
+}
+
+void
+StyleSetHandle::Ptr::InvalidateStyleForCSSRuleChanges()
+{
+  FORWARD(InvalidateStyleForCSSRuleChanges, ());
+}
+
 
 already_AddRefed<nsStyleContext>
 StyleSetHandle::Ptr::ProbePseudoElementStyle(dom::Element* aParentElement,
