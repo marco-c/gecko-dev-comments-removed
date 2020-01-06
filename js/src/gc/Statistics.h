@@ -56,6 +56,9 @@ struct ZoneGCStats
     int collectedZoneCount;
 
     
+    int collectableZoneCount;
+
+    
     int zoneCount;
 
     
@@ -70,12 +73,13 @@ struct ZoneGCStats
     
     int sweptCompartmentCount;
 
-    bool isCollectingAllZones() const { return collectedZoneCount == zoneCount; }
+    bool isFullCollection() const {
+        return collectedZoneCount == collectableZoneCount;
+    }
 
-    ZoneGCStats()
-      : collectedZoneCount(0), zoneCount(0), sweptZoneCount(0),
-        collectedCompartmentCount(0), compartmentCount(0), sweptCompartmentCount(0)
-    {}
+    ZoneGCStats() {
+        mozilla::PodZero(this);
+    }
 };
 
 #define FOR_EACH_GC_PROFILE_TIME(_)                                           \
