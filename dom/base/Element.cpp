@@ -4149,9 +4149,9 @@ Element::ClearServoData(nsIDocument* aDoc) {
   MOZ_ASSERT(IsStyledByServo());
 #ifdef MOZ_STYLO
   Servo_Element_ClearData(this);
-  UnsetFlags(ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO |
-             ELEMENT_HAS_ANIMATION_ONLY_DIRTY_DESCENDANTS_FOR_SERVO);
-
+  
+  
+  
   
   
   
