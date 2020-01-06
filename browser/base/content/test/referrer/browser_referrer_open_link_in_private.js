@@ -1,11 +1,6 @@
 
 
 
-
-
-
-getReferrerTest = getRemovedReferrerTest;
-
 function startNewPrivateWindowTestCase(aTestNumber) {
   info("browser_referrer_open_link_in_private: " +
        getReferrerTestDescription(aTestNumber));

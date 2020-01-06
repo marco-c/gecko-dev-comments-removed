@@ -289,12 +289,6 @@ function openLinkIn(url, where, params) {
 
   if (!w || where == "window") {
     
-    
-    if (aIsPrivate) {
-      aNoReferrer = true;
-    }
-
-    
     var sa = Cc["@mozilla.org/array;1"].
              createInstance(Ci.nsIMutableArray);
 
