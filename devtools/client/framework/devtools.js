@@ -18,11 +18,6 @@ loader.lazyRequireGetter(this, "gDevToolsBrowser", "devtools/client/framework/de
 loader.lazyRequireGetter(this, "HUDService", "devtools/client/webconsole/hudservice", true);
 loader.lazyImporter(this, "ScratchpadManager", "resource://devtools/client/scratchpad/scratchpad-manager.jsm");
 
-
-loader.lazyRequireGetter(this, "DebuggerServer", "devtools/server/main", true);
-loader.lazyRequireGetter(this, "DebuggerClient", "devtools/shared/client/main", true);
-loader.lazyImporter(this, "BrowserToolboxProcess", "resource://devtools/client/framework/ToolboxProcess.jsm");
-
 loader.lazyRequireGetter(this, "WebExtensionInspectedWindowFront",
       "devtools/shared/fronts/webextension-inspected-window", true);
 
@@ -545,42 +540,6 @@ DevTools.prototype = {
 
   getTargetForTab: function (tab) {
     return TargetFactory.forTab(tab);
-  },
-
-  
-
-
-
-
-
-
-  connectDebuggerServer: function () {
-    if (!DebuggerServer.initialized) {
-      DebuggerServer.init();
-      DebuggerServer.addBrowserActors();
-    }
-
-    return DebuggerServer.connectPipe();
-  },
-
-  
-
-
-
-
-
-  createDebuggerClient: function () {
-    let transport = this.connectDebuggerServer();
-    return new DebuggerClient(transport);
-  },
-
-  
-
-
-
-
-  initBrowserToolboxProcessForAddon: function (addonID) {
-    BrowserToolboxProcess.init({ addonID });
   },
 
   

@@ -39,12 +39,9 @@ function removeItem(array, callback) {
 
 
 
-
 this.DevToolsShim = {
   _gDevTools: null,
   listeners: [],
-  tools: [],
-  themes: [],
 
   
 
@@ -115,10 +112,6 @@ this.DevToolsShim = {
 
 
 
-
-
-
-
   
 
 
@@ -141,54 +134,6 @@ this.DevToolsShim = {
       this._gDevTools.off(event, listener);
     } else {
       removeItem(this.listeners, ([e, l]) => e === event && l === listener);
-    }
-  },
-
-  
-
-
-
-  registerTool: function (tool) {
-    if (this.isInitialized()) {
-      this._gDevTools.registerTool(tool);
-    } else {
-      this.tools.push(tool);
-    }
-  },
-
-  
-
-
-
-  unregisterTool: function (tool) {
-    if (this.isInitialized()) {
-      this._gDevTools.unregisterTool(tool);
-    } else {
-      removeItem(this.tools, t => t === tool);
-    }
-  },
-
-  
-
-
-
-  registerTheme: function (theme) {
-    if (this.isInitialized()) {
-      this._gDevTools.registerTheme(theme);
-    } else {
-      this.themes.push(theme);
-    }
-  },
-
-  
-
-
-
-  unregisterTheme: function (theme) {
-    if (this.isInitialized()) {
-      this._gDevTools.unregisterTheme(theme);
-    } else {
-      removeItem(this.themes, t => t === theme);
     }
   },
 
@@ -261,35 +206,9 @@ this.DevToolsShim = {
       this._gDevTools.on(event, listener);
     }
 
-    for (let tool of this.tools) {
-      this._gDevTools.registerTool(tool);
-    }
-
-    for (let theme of this.themes) {
-      this._gDevTools.registerTheme(theme);
-    }
-
     this.listeners = [];
-    this.tools = [];
-    this.themes = [];
   },
 };
-
-
-
-
-
-
-
-
-let addonSdkMethods = [
-  "closeToolbox",
-  "connectDebuggerServer",
-  "createDebuggerClient",
-  "getToolbox",
-  "initBrowserToolboxProcessForAddon",
-  "showToolbox",
-];
 
 
 
@@ -305,7 +224,7 @@ let webExtensionsMethods = [
   "openBrowserConsole",
 ];
 
-for (let method of [...addonSdkMethods, ...webExtensionsMethods]) {
+for (let method of webExtensionsMethods) {
   this.DevToolsShim[method] = function () {
     return this.gDevTools[method].apply(this.gDevTools, arguments);
   };

@@ -532,6 +532,7 @@ TabActor.prototype = {
       return true;
     }
 
+    
     let global = unwrapDebuggerObjectGlobal(wrappedGlobal);
     if (!global) {
       return false;
