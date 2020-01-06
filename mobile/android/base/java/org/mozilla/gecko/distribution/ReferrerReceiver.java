@@ -43,7 +43,7 @@ public class ReferrerReceiver extends BroadcastReceiver {
 
 
 
-    private static final String MOZILLA_ADJUST_SOURCE = "xodfft";
+    private static final String MOZILLA_ADJUST_SOURCE = "adjust_store";
 
     
 
