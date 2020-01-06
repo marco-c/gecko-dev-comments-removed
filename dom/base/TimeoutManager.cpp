@@ -177,9 +177,12 @@ TimeoutManager::IsInvalidFiringId(uint32_t aFiringId) const
   
   
   if (aFiringId == InvalidFiringId ||
-      mFiringIdStack.IsEmpty() ||
-      (mFiringIdStack.Length() == 1 && mFiringIdStack[0] != aFiringId)) {
+      mFiringIdStack.IsEmpty()) {
     return true;
+  }
+
+  if (mFiringIdStack.Length() == 1) {
+    return mFiringIdStack[0] != aFiringId;
   }
 
   
