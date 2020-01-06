@@ -179,7 +179,7 @@ public:
     return mImpl.canAppendWithoutRealloc(aNeeded);
   }
   void infallibleAppend(Frame aEntry) { mImpl.infallibleAppend(aEntry); }
-  bool reserve(size_t aRequest) { return mImpl.reserve(aRequest); }
+  MOZ_MUST_USE bool reserve(size_t aRequest) { return mImpl.reserve(aRequest); }
   Frame* begin() { return mImpl.begin(); }
   Frame const* begin() const { return mImpl.begin(); }
   Frame* end() { return mImpl.end(); }
@@ -231,7 +231,7 @@ public:
     return mBuffer.capacity() - mBuffer.length();
   }
 
-  bool EnsureBufferCapacity(size_t aCapacity) {
+  MOZ_MUST_USE bool EnsureBufferCapacity(size_t aCapacity) {
     
     
     return mBuffer.reserve(aCapacity) &&
