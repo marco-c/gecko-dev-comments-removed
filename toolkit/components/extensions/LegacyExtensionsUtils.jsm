@@ -145,6 +145,8 @@ class EmbeddedExtension {
         version: this.version,
       });
 
+      this.extension.isEmbedded = true;
+
       
       
       
