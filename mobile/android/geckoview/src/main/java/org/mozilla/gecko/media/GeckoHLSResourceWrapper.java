@@ -9,16 +9,16 @@ import android.util.Log;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.JNIObject;
 
-public class GeckoHlsResourceWrapper {
-    private static final String LOGTAG = "GeckoHlsResourceWrapper";
+public class GeckoHLSResourceWrapper {
+    private static final String LOGTAG = "GeckoHLSResourceWrapper";
     private static final boolean DEBUG = false;
     private GeckoHlsPlayer mPlayer = null;
     private boolean mDestroy = false;
 
-    public static class HlsResourceCallbacks extends JNIObject
+    public static class Callbacks extends JNIObject
     implements GeckoHlsPlayer.ResourceCallbacks {
         @WrapForJNI(calledFrom = "gecko")
-        HlsResourceCallbacks() {}
+        Callbacks() {}
 
         @Override
         @WrapForJNI(dispatchTo = "gecko")
@@ -34,9 +34,9 @@ public class GeckoHlsResourceWrapper {
         }
     } 
 
-    private GeckoHlsResourceWrapper(String url,
+    private GeckoHLSResourceWrapper(String url,
                                     GeckoHlsPlayer.ResourceCallbacks callback) {
-        if (DEBUG) Log.d(LOGTAG, "GeckoHlsResourceWrapper created with url = " + url);
+        if (DEBUG) Log.d(LOGTAG, "GeckoHLSResourceWrapper created with url = " + url);
         assertTrue(callback != null);
 
         mPlayer = new GeckoHlsPlayer();
@@ -45,9 +45,9 @@ public class GeckoHlsResourceWrapper {
     }
 
     @WrapForJNI(calledFrom = "gecko")
-    public static GeckoHlsResourceWrapper create(String url,
+    public static GeckoHLSResourceWrapper create(String url,
                                                  GeckoHlsPlayer.ResourceCallbacks callback) {
-        return new GeckoHlsResourceWrapper(url, callback);
+        return new GeckoHLSResourceWrapper(url, callback);
     }
 
     @WrapForJNI(calledFrom = "gecko")
