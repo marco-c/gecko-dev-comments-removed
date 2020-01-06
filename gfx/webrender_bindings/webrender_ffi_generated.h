@@ -529,13 +529,20 @@ struct WrImageMask {
   }
 };
 
-struct StickySideConstraint {
-  float margin;
-  float max_offset;
 
-  bool operator==(const StickySideConstraint& aOther) const {
-    return margin == aOther.margin &&
-           max_offset == aOther.max_offset;
+struct StickyOffsetBounds {
+  
+  
+  
+  float min;
+  
+  
+  
+  float max;
+
+  bool operator==(const StickyOffsetBounds& aOther) const {
+    return min == aOther.min &&
+           max == aOther.max;
   }
 };
 
@@ -1040,10 +1047,12 @@ WR_FUNC;
 WR_INLINE
 uint64_t wr_dp_define_sticky_frame(WrState *aState,
                                    LayoutRect aContentRect,
-                                   const StickySideConstraint *aTopRange,
-                                   const StickySideConstraint *aRightRange,
-                                   const StickySideConstraint *aBottomRange,
-                                   const StickySideConstraint *aLeftRange)
+                                   const float *aTopMargin,
+                                   const float *aRightMargin,
+                                   const float *aBottomMargin,
+                                   const float *aLeftMargin,
+                                   StickyOffsetBounds aVerticalBounds,
+                                   StickyOffsetBounds aHorizontalBounds)
 WR_FUNC;
 
 WR_INLINE
