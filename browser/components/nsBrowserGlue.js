@@ -1709,7 +1709,7 @@ BrowserGlue.prototype = {
 
   
   _migrateUI: function BG__migrateUI() {
-    const UI_VERSION = 46;
+    const UI_VERSION = 47;
     const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
 
     let currentUIVersion;
@@ -2012,17 +2012,28 @@ BrowserGlue.prototype = {
       }
     }
 
-    if (currentUIVersion < 46) {
+    
+    if (currentUIVersion < 47) {
       
       
       
       
       
       try {
-        Services.prefs.setBoolPref(
-          "browser.urlbar.suggest.searches",
-          Services.prefs.getBoolPref("browser.urlbar.searchSuggestionsChoice")
-        );
+        if (Services.prefs.prefHasUserValue("browser.urlbar.searchSuggestionsChoice")) {
+          Services.prefs.setBoolPref(
+            "browser.urlbar.suggest.searches",
+            Services.prefs.getBoolPref("browser.urlbar.searchSuggestionsChoice")
+          );
+        } else if (Services.prefs.getBoolPref("browser.urlbar.userMadeSearchSuggestionsChoice")) {
+          
+          
+          
+          
+          
+          
+          Services.prefs.setBoolPref("browser.urlbar.suggest.searches", false);
+        }
       } catch (ex) {
         
       }
