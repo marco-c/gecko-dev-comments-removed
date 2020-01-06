@@ -45,14 +45,16 @@ public:
 
   
   
-  bool SetCandidatesFromSourceSet(const nsAString & aSrcSet);
+  bool SetCandidatesFromSourceSet(const nsAString & aSrcSet,
+                                  nsIPrincipal* aTriggeringPrincipal = nullptr);
 
   
   
   bool SetSizesFromDescriptor(const nsAString & aSizesDescriptor);
 
   
-  void SetDefaultSource(const nsAString& aURLString);
+  void SetDefaultSource(const nsAString& aURLString,
+                        nsIPrincipal* aPrincipal = nullptr);
 
   uint32_t NumCandidates(bool aIncludeDefault = true);
 
@@ -70,6 +72,7 @@ public:
   
   bool GetSelectedImageURLSpec(nsAString& aResult);
   double GetSelectedImageDensity();
+  nsIPrincipal* GetSelectedImageTriggeringPrincipal();
 
   
   
@@ -108,6 +111,7 @@ private:
   nsCOMPtr<nsINode> mOwnerNode;
   
   nsString mDefaultSourceURL;
+  nsCOMPtr<nsIPrincipal> mDefaultSourceTriggeringPrincipal;
   
   
   nsTArray<ResponsiveImageCandidate> mCandidates;
@@ -123,9 +127,11 @@ private:
 class ResponsiveImageCandidate {
 public:
   ResponsiveImageCandidate();
-  ResponsiveImageCandidate(const nsAString& aURLString, double aDensity);
+  ResponsiveImageCandidate(const nsAString& aURLString, double aDensity,
+                           nsIPrincipal* aTriggeringPrincipal = nullptr);
 
   void SetURLSpec(const nsAString& aURLString);
+  void SetTriggeringPrincipal(nsIPrincipal* aPrincipal);
   
   
   
@@ -148,6 +154,7 @@ public:
   bool HasSameParameter(const ResponsiveImageCandidate & aOther) const;
 
   const nsAString& URLString() const;
+  nsIPrincipal* TriggeringPrincipal() const;
 
   
   double Density(ResponsiveImageSelector *aSelector) const;
@@ -172,6 +179,7 @@ public:
 private:
 
   nsString mURLString;
+  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   eCandidateType mType;
   union {
     double mDensity;
