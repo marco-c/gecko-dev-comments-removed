@@ -68,9 +68,9 @@ const startupPhases = {
       "nsSearchService.js",
     ]),
     modules: new Set([
-      "chrome://webcompat-reporter/content/TabListener.jsm",
       "resource:///modules/AboutNewTab.jsm",
       "resource:///modules/DirectoryLinksProvider.jsm",
+      "resource:///modules/RecentWindow.jsm",
       "resource://gre/modules/BookmarkHTMLUtils.jsm",
       "resource://gre/modules/Bookmarks.jsm",
       "resource://gre/modules/ContextualIdentityService.jsm",
@@ -93,8 +93,6 @@ const startupPhases = {
   
   "before handling user events": {blacklist: {
     modules: new Set([
-      "resource://gre/modules/FxAccounts.jsm",
-      "resource://gre/modules/FxAccountsStorage.jsm",
       "resource://gre/modules/LoginManagerContextMenu.jsm",
       "resource://gre/modules/Task.jsm",
     ]),

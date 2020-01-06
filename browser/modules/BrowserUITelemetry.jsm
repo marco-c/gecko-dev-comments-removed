@@ -305,17 +305,14 @@ this.BrowserUITelemetry = {
     
     
     
-    let win = RecentWindow.getMostRecentBrowserWindow({
-      private: false,
-      allowPopups: false,
-    });
-
     Services.search.init(rv => {
+      let win = RecentWindow.getMostRecentBrowserWindow({
+        private: false,
+        allowPopups: false,
+      });
       
-      
-      let hasWindow = win && !win.closed;
-      this._firstWindowMeasurements = hasWindow ? this._getWindowMeasurements(win, rv)
-                                                : {};
+      this._firstWindowMeasurements = win ? this._getWindowMeasurements(win, rv)
+                                          : {};
     });
   },
 
