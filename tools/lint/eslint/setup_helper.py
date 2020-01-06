@@ -244,34 +244,32 @@ def get_possible_node_paths_win():
 
 
 def simple_which(filename, path=None):
-    try:
-        return which.which(filename, path)
-    except which.WhichError:
-        return None
+    exts = [".cmd", ".exe", ""] if platform.system() == "Windows" else [""]
+
+    for ext in exts:
+        try:
+            return which.which(filename + ext, path)
+        except which.WhichError:
+            pass
+
+    
+    
+    return None
 
 
 def which_path(filename):
     """
     Return the nodejs or npm path.
     """
-    if platform.system() == "Windows":
-        for ext in [".cmd", ".exe", ""]:
-            
-            filepath = simple_which(filename + ext)
-            if filepath is None:
-                
-                filepath = simple_which(filename + ext, get_possible_node_paths_win())
-
-            if filepath is not None:
-                return filepath
-
-        
-        
-        return None
-
     
     path = simple_which(filename)
-    if path is None and filename == "node":
+    if path is not None:
+        return path
+
+    if platform.system() == "Windows":
+        
+        path = simple_which(filename, get_possible_node_paths_win())
+    elif filename == "node":
         path = simple_which("nodejs")
 
     return path
