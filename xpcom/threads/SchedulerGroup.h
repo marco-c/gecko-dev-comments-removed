@@ -58,18 +58,9 @@ public:
   };
 
   
-  
-  
-  
-  bool IsSafeToRun()
-  {
-    return !sRunningDispatcher || mAccessValid;
-  }
-
-  
   void ValidateAccess() const
   {
-    MOZ_ASSERT(IsSafeToRun());
+    MOZ_ASSERT(!sRunningDispatcher || mAccessValid);
   }
 
   class Runnable final : public mozilla::Runnable
