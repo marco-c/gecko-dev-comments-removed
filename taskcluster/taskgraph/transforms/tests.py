@@ -169,6 +169,9 @@ test_description_schema = Schema({
     Optional('attributes'): {basestring: object},
 
     
+    Optional('job-from'): basestring,
+
+    
     
     
     
