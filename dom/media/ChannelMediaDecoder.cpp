@@ -295,21 +295,17 @@ ChannelMediaDecoder::NotifyDownloadEnded(nsresult aStatus)
   LOG("NotifyDownloadEnded, status=%" PRIx32, static_cast<uint32_t>(aStatus));
 
   MediaDecoderOwner* owner = GetOwner();
-  if (aStatus == NS_BINDING_ABORTED) {
-    
-    owner->LoadAborted();
-    return;
-  }
-
-  UpdatePlaybackRate();
-
-  if (NS_SUCCEEDED(aStatus)) {
+  if (NS_SUCCEEDED(aStatus) || aStatus == NS_BASE_STREAM_CLOSED) {
+    UpdatePlaybackRate();
     owner->DownloadSuspended();
     
     
     
     owner->NotifySuspendedByCache(true);
-  } else if (aStatus != NS_BASE_STREAM_CLOSED) {
+  } else if (aStatus == NS_BINDING_ABORTED) {
+    
+    owner->LoadAborted();
+  } else {
     NetworkError();
   }
 }
