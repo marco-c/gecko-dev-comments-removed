@@ -25,8 +25,6 @@ public:
   
   static bool IsSupportedType(const MediaContainerType& aContainerType);
 
-  void GetMozDebugReaderData(nsACString& aString) override;
-
 private:
   ChannelMediaDecoder* CloneImpl(MediaDecoderInit& aInit) override
   {

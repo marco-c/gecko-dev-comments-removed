@@ -406,7 +406,7 @@ private:
 
   
   
-  virtual void GetMozDebugReaderData(nsACString& aString) { }
+  virtual void GetMozDebugReaderData(nsACString& aString);
 
   virtual void DumpDebugInfo();
 
