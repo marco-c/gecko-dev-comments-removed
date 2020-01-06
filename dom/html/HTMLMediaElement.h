@@ -227,7 +227,7 @@ public:
 
   
   
-  virtual void NotifySuspendedByCache(bool aIsSuspended) final override;
+  virtual void NotifySuspendedByCache(bool aSuspendedByCache) final override;
 
   virtual bool IsActive() const final override;
 

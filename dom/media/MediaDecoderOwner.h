@@ -117,7 +117,7 @@ public:
 
   
   
-  virtual void NotifySuspendedByCache(bool aIsSuspended) = 0;
+  virtual void NotifySuspendedByCache(bool aSuspendedByCache) = 0;
 
   
   virtual void NotifyDecoderPrincipalChanged() = 0;

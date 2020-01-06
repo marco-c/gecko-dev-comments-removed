@@ -535,12 +535,6 @@ protected:
 
   
   
-  
-  
-  void NotifySuspendedStatusChanged();
-
-  
-  
   void NotifyPrincipalChanged();
 
   MozPromiseRequestHolder<SeekPromise> mSeekRequest;
