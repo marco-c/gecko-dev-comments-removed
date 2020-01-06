@@ -60,6 +60,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "gPhotonStructure",
   ["ContextualIdentityService", "resource://gre/modules/ContextualIdentityService.jsm"],
   ["CustomizableUI", "resource:///modules/CustomizableUI.jsm"],
   ["Deprecated", "resource://gre/modules/Deprecated.jsm"],
+  ["DownloadsCommon", "resource:///modules/DownloadsCommon.jsm"],
   ["E10SUtils", "resource:///modules/E10SUtils.jsm"],
   ["ExtensionsUI", "resource:///modules/ExtensionsUI.jsm"],
   ["FormValidationHandler", "resource:///modules/FormValidationHandler.jsm"],
@@ -139,6 +140,16 @@ XPCOMUtils.defineLazyScriptGetter(this, "gBrowserThumbnails",
 XPCOMUtils.defineLazyScriptGetter(this, ["setContextMenuContentData",
                                          "openContextMenu", "nsContextMenu"],
                                   "chrome://browser/content/nsContextMenu.js");
+XPCOMUtils.defineLazyScriptGetter(this, ["DownloadsPanel",
+                                         "DownloadsOverlayLoader",
+                                         "DownloadsView", "DownloadsViewUI",
+                                         "DownloadsViewController",
+                                         "DownloadsSummary", "DownloadsFooter",
+                                         "DownloadsBlockedSubview"],
+                                  "chrome://browser/content/downloads/downloads.js");
+XPCOMUtils.defineLazyScriptGetter(this, ["DownloadsButton",
+                                         "DownloadsIndicatorView"],
+                                  "chrome://browser/content/downloads/indicator.js");
 
 
 
@@ -1622,8 +1633,7 @@ var gBrowserInit = {
     
     setTimeout(function() {
       try {
-        Cu.import("resource:///modules/DownloadsCommon.jsm", {})
-          .DownloadsCommon.initializeAllDataLinks();
+        DownloadsCommon.initializeAllDataLinks();
         Cu.import("resource:///modules/DownloadsTaskbar.jsm", {})
           .DownloadsTaskbar.registerIndicator(window);
       } catch (ex) {

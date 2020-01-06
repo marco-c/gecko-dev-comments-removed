@@ -66,8 +66,6 @@ var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "DownloadsCommon",
-                                  "resource:///modules/DownloadsCommon.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "DownloadsViewUI",
                                   "resource:///modules/DownloadsViewUI.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
@@ -84,7 +82,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Services",
 
 
 
-const DownloadsPanel = {
+var DownloadsPanel = {
   
 
   
@@ -577,7 +575,7 @@ XPCOMUtils.defineConstant(this, "DownloadsPanel", DownloadsPanel);
 
 
 
-const DownloadsOverlayLoader = {
+var DownloadsOverlayLoader = {
   
 
 
@@ -657,7 +655,7 @@ XPCOMUtils.defineConstant(this, "DownloadsOverlayLoader", DownloadsOverlayLoader
 
 
 
-const DownloadsView = {
+var DownloadsView = {
   
 
   
@@ -1189,7 +1187,7 @@ DownloadsViewItem.prototype = {
 
 
 
-const DownloadsViewController = {
+var DownloadsViewController = {
   
 
   initialize() {
@@ -1292,7 +1290,7 @@ XPCOMUtils.defineConstant(this, "DownloadsViewController", DownloadsViewControll
 
 
 
-const DownloadsSummary = {
+var DownloadsSummary = {
 
   
 
@@ -1476,7 +1474,7 @@ XPCOMUtils.defineConstant(this, "DownloadsSummary", DownloadsSummary);
 
 
 
-const DownloadsFooter = {
+var DownloadsFooter = {
 
   
 
@@ -1530,7 +1528,7 @@ XPCOMUtils.defineConstant(this, "DownloadsFooter", DownloadsFooter);
 
 
 
-const DownloadsBlockedSubview = {
+var DownloadsBlockedSubview = {
 
   get subview() {
     let subview = document.getElementById("downloadsPanel-blockedSubview");
