@@ -199,6 +199,37 @@ public:
 
   
   
+  void EnterMicroTask()
+  {
+    ++mMicroTaskLevel;
+  }
+
+  void LeaveMicroTask()
+  {
+    if (--mMicroTaskLevel == 0) {
+      PerformMainThreadMicroTaskCheckpoint();
+    }
+  }
+
+  bool IsInMicroTask()
+  {
+    return mMicroTaskLevel != 0;
+  }
+
+  uint32_t MicroTaskLevel()
+  {
+    return mMicroTaskLevel;
+  }
+
+  void SetMicroTaskLevel(uint32_t aLevel)
+  {
+    mMicroTaskLevel = aLevel;
+  }
+
+  void PerformMainThreadMicroTaskCheckpoint();
+
+  
+  
   
   
   
@@ -237,6 +268,27 @@ private:
   bool mDoingStableStates;
 
   bool mDisableMicroTaskCheckpoint;
+
+  uint32_t mMicroTaskLevel;
+};
+
+class MOZ_STACK_CLASS nsAutoMicroTask
+{
+public:
+  nsAutoMicroTask()
+  {
+    CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
+    if (ccjs) {
+      ccjs->EnterMicroTask();
+    }
+  }
+  ~nsAutoMicroTask()
+  {
+    CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
+    if (ccjs) {
+      ccjs->LeaveMicroTask();
+    }
+  }
 };
 
 } 

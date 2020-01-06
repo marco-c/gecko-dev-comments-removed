@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/CallbackObject.h"
+#include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "jsfriendapi.h"
 #include "nsIScriptGlobalObject.h"
@@ -140,7 +141,10 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
   , mIsMainThread(NS_IsMainThread())
 {
   if (mIsMainThread) {
-    nsContentUtils::EnterMicroTask();
+    CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
+    if (ccjs) {
+      ccjs->EnterMicroTask();
+    }
   }
 
   
@@ -349,7 +353,10 @@ CallbackObject::CallSetup::~CallSetup()
   
   
   if (mIsMainThread) {
-    nsContentUtils::LeaveMicroTask();
+    CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
+    if (ccjs) {
+      ccjs->LeaveMicroTask();
+    }
   }
 }
 

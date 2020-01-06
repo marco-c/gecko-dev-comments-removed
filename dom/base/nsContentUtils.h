@@ -1949,17 +1949,6 @@ public:
   static nsISerialEventTarget* GetStableStateEventTarget();
 
   
-  
-  static void EnterMicroTask();
-  static void LeaveMicroTask();
-
-  static bool IsInMicroTask();
-  static uint32_t MicroTaskLevel();
-  static void SetMicroTaskLevel(uint32_t aLevel);
-
-  static void PerformMainThreadMicroTaskCheckpoint();
-
-  
 
 
 
@@ -3331,7 +3320,7 @@ private:
   static bool sInitialized;
   static uint32_t sScriptBlockerCount;
   static uint32_t sDOMNodeRemovedSuppressCount;
-  static uint32_t sMicroTaskLevel;
+
   
   static AutoTArray<nsCOMPtr<nsIRunnable>, 8>* sBlockedScriptRunners;
   static uint32_t sRunnersCountAtFirstBlocker;
@@ -3490,19 +3479,6 @@ public:
   }
   ~nsAutoScriptBlockerSuppressNodeRemoved() {
     --nsContentUtils::sDOMNodeRemovedSuppressCount;
-  }
-};
-
-class MOZ_STACK_CLASS nsAutoMicroTask
-{
-public:
-  nsAutoMicroTask()
-  {
-    nsContentUtils::EnterMicroTask();
-  }
-  ~nsAutoMicroTask()
-  {
-    nsContentUtils::LeaveMicroTask();
   }
 };
 

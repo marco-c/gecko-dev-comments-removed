@@ -44,6 +44,7 @@
 #include "nsIWritablePropertyBag2.h"
 #include "nsIContentSecurityPolicy.h"
 #include "nsSandboxFlags.h"
+#include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "nsILoadInfo.h"
 #include "nsContentSecurityManager.h"
@@ -234,7 +235,7 @@ nsresult nsJSThunk::EvaluateScript(nsIChannel *aChannel,
 
     
     
-    nsAutoMicroTask mt;
+    mozilla::nsAutoMicroTask mt;
     AutoEntryScript aes(innerGlobal, "javascript: URI", true);
     JSContext* cx = aes.cx();
     JS::Rooted<JSObject*> globalJSObject(cx, innerGlobal->GetGlobalJSObject());
