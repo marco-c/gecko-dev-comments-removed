@@ -365,6 +365,19 @@ public:
   bool contains(const T& aElm) {
     return find(aElm) != Iterator();
   }
+
+  
+
+
+
+
+
+  bool ElementProbablyInList(T* aElm) {
+    if (isEmpty()) {
+      return false;
+    }
+    return !ElementNotInList(aElm);
+  }
 };
 
 } 
