@@ -1192,14 +1192,10 @@ PuppetWidget::GetNativeData(uint32_t aDataType)
 {
   switch (aDataType) {
   case NS_NATIVE_SHAREABLE_WINDOW: {
-    
-    
-    if (!mTabChild) {
-      NS_WARNING("Need TabChild to get the nativeWindow from!");
-    }
+    MOZ_ASSERT(mTabChild, "Need TabChild to get the nativeWindow from!");
     mozilla::WindowsHandle nativeData = 0;
     if (mTabChild) {
-      nativeData = mTabChild->WidgetNativeData();
+      mTabChild->SendGetWidgetNativeData(&nativeData);
     }
     return (void*)nativeData;
   }
