@@ -197,7 +197,8 @@ Link::LinkState() const
 
   
   
-  if (!mRegistered && mNeedsRegistration && element->IsInComposedDoc()) {
+  if (!mRegistered && mNeedsRegistration && element->IsInComposedDoc() &&
+      !HasPendingLinkUpdate()) {
     
     self->mNeedsRegistration = false;
 

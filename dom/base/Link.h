@@ -90,7 +90,7 @@ public:
 
 
   void ResetLinkState(bool aNotify, bool aHasHref);
-
+  
   
   Element* GetElement() const { return mElement; }
 
@@ -98,7 +98,7 @@ public:
 
 
   virtual void OnDNSPrefetchDeferred() {  }
-
+  
   
 
 
@@ -126,7 +126,7 @@ public:
   void TryDNSPrefetchPreconnectOrPrefetchOrPrerender();
   void CancelPrefetch();
 
-  bool HasPendingLinkUpdate() { return mHasPendingLinkUpdate; }
+  bool HasPendingLinkUpdate() const { return mHasPendingLinkUpdate; }
   void SetHasPendingLinkUpdate() { mHasPendingLinkUpdate = true; }
   void ClearHasPendingLinkUpdate() { mHasPendingLinkUpdate = false; }
 
