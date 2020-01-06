@@ -8,7 +8,11 @@
 
 
 
-#include <stdint.h>
+
+
+
+#include <cstdint>
+#include <cstdlib>
 
 extern "C" {
 
@@ -530,6 +534,9 @@ struct WrExternalImageHandler {
 
 
 
+
+
+
 WR_INLINE
 void wr_api_add_blob_image(WrAPI *aApi,
                            WrImageKey aImageKey,
@@ -893,7 +900,7 @@ void wr_renderer_delete(WrRenderer *aRenderer)
 WR_DESTRUCTOR_SAFE_FUNC;
 
 WR_INLINE
-WrRenderedEpochs* wr_renderer_flush_rendered_epochs(WrRenderer *aRenderer)
+WrRenderedEpochs *wr_renderer_flush_rendered_epochs(WrRenderer *aRenderer)
 WR_FUNC;
 
 WR_INLINE
@@ -936,7 +943,7 @@ void wr_state_delete(WrState *aState)
 WR_DESTRUCTOR_SAFE_FUNC;
 
 WR_INLINE
-WrState* wr_state_new(WrPipelineId aPipelineId,
+WrState *wr_state_new(WrPipelineId aPipelineId,
                       WrSize aContentSize)
 WR_FUNC;
 
@@ -945,7 +952,7 @@ void wr_thread_pool_delete(WrThreadPool *aThreadPool)
 WR_DESTRUCTOR_SAFE_FUNC;
 
 WR_INLINE
-WrThreadPool* wr_thread_pool_new()
+WrThreadPool *wr_thread_pool_new()
 WR_FUNC;
 
 WR_INLINE
@@ -964,6 +971,9 @@ bool wr_window_new(WrWindowId aWindowId,
 WR_FUNC;
 
 } 
+
+
+
 
 
 
