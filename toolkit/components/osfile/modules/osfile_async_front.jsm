@@ -221,6 +221,12 @@ var Scheduler = this.Scheduler = {
 
 
 
+  hasRecentActivity: false,
+
+  
+
+
+
 
 
 
@@ -232,6 +238,20 @@ var Scheduler = this.Scheduler = {
       this._worker = new BasePromiseWorker("resource://gre/modules/osfile/osfile_async_worker.js");
       this._worker.log = LOG;
       this._worker.ExceptionHandlers["OS.File.Error"] = OSError.fromMsg;
+
+      let delay = Services.prefs.getIntPref("osfile.reset_worker_delay", 0);
+      if (delay) {
+        this.resetTimer = setInterval(
+          () => {
+            if (this.hasRecentActivity) {
+              this.hasRecentActivity = false;
+              return;
+            }
+            clearInterval(this.resetTimer);
+            Scheduler.kill({reset: true, shutdown: false});
+          },
+          delay);
+      }
     }
     return this._worker;
   },
@@ -242,20 +262,7 @@ var Scheduler = this.Scheduler = {
 
 
   restartTimer: function(arg) {
-    let delay = Services.prefs.getIntPref("osfile.reset_worker_delay", 0);
-
-    if (!delay) {
-      
-      return;
-    }
-
-    if (this.resetTimer) {
-      clearTimeout(this.resetTimer);
-    }
-    this.resetTimer = setTimeout(
-      () => Scheduler.kill({reset: true, shutdown: false}),
-      delay
-    );
+    this.hasRecentActivity = true;
   },
 
   
