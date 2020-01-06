@@ -250,13 +250,6 @@ global.WindowEventManager = class extends EventManager {
 };
 
 class TabTracker extends TabTrackerBase {
-  constructor() {
-    super();
-
-    
-    this._extensionPopupTabWeak = null;
-  }
-
   init() {
     if (this.initialized) {
       return;
@@ -265,59 +258,6 @@ class TabTracker extends TabTrackerBase {
 
     windowTracker.addListener("TabClose", this);
     windowTracker.addListener("TabOpen", this);
-
-    
-    
-    
-    GlobalEventDispatcher.registerListener(this, [
-      "Tab:Selected",
-    ]);
-  }
-
-  
-
-
-  get extensionPopupTab() {
-    if (this._extensionPopupTabWeak) {
-      const tab = this._extensionPopupTabWeak.get();
-
-      
-      if (tab.browser) {
-        return tab;
-      }
-
-      
-      this._extensionPopupTabWeak = null;
-    }
-
-    return undefined;
-  }
-
-  
-
-
-
-
-
-
-
-
-  openExtensionPopupTab(popup) {
-    let win = windowTracker.topWindow;
-    if (!win) {
-      throw new ExtensionError(`Unable to open a popup without an active window`);
-    }
-
-    if (this.extensionPopupTab) {
-      win.BrowserApp.closeTab(this.extensionPopupTab);
-    }
-
-    this.init();
-
-    this._extensionPopupTabWeak = Cu.getWeakReference(win.BrowserApp.addTab(popup, {
-      selected: true,
-      parentId: win.BrowserApp.selectedTab.id,
-    }));
   }
 
   getId(nativeTab) {
@@ -348,7 +288,7 @@ class TabTracker extends TabTrackerBase {
 
   handleEvent(event) {
     const {BrowserApp} = event.target.ownerGlobal;
-    const nativeTab = BrowserApp.getTabForBrowser(event.target);
+    let nativeTab = BrowserApp.getTabForBrowser(event.target);
 
     switch (event.type) {
       case "TabOpen":
@@ -358,31 +298,6 @@ class TabTracker extends TabTrackerBase {
       case "TabClose":
         this.emitRemoved(nativeTab, false);
         break;
-    }
-  }
-
-  
-
-
-
-
-
-  onEvent(event, data) {
-    const {BrowserApp} = windowTracker.topWindow;
-
-    switch (event) {
-      case "Tab:Selected": {
-        
-        
-        const nativeTab = BrowserApp.getTabForId(data.id);
-
-        const popupTab = tabTracker.extensionPopupTab;
-        if (popupTab && popupTab !== nativeTab) {
-          BrowserApp.closeTab(popupTab);
-        }
-
-        break;
-      }
     }
   }
 
@@ -411,17 +326,6 @@ class TabTracker extends TabTrackerBase {
     let windowId = windowTracker.getId(nativeTab.browser.ownerGlobal);
     let tabId = this.getId(nativeTab);
 
-    if (this.extensionPopupTab && this.extensionPopupTab === nativeTab) {
-      this._extensionPopupTabWeak = null;
-
-      
-      const {BrowserApp} = windowTracker.topWindow;
-      const popupParentTab = BrowserApp.getTabForId(nativeTab.parentId);
-      if (popupParentTab) {
-        BrowserApp.selectTab(popupParentTab);
-      }
-    }
-
     Services.tm.dispatchToMainThread(() => {
       this.emit("tab-removed", {nativeTab, tabId, windowId, isWindowClosing});
     });
@@ -447,19 +351,10 @@ class TabTracker extends TabTrackerBase {
   }
 
   get activeTab() {
-    let win = windowTracker.topWindow;
-    if (win && win.BrowserApp) {
-      const selectedTab = win.BrowserApp.selectedTab;
-
-      
-      
-      if (selectedTab === this.extensionPopupTab) {
-        return win.BrowserApp.getTabForId(selectedTab.parentId);
-      }
-
-      return selectedTab;
+    let window = windowTracker.topWindow;
+    if (window && window.BrowserApp) {
+      return window.BrowserApp.selectedTab;
     }
-
     return null;
   }
 }
@@ -480,6 +375,10 @@ class Tab extends TabBase {
 
   get browser() {
     return this.nativeTab.browser;
+  }
+
+  get discarded() {
+    return this.browser.getAttribute("pending") === "true";
   }
 
   get cookieStoreId() {
@@ -511,23 +410,6 @@ class Tab extends TabBase {
   }
 
   get active() {
-    
-    
-    
-    
-    if (tabTracker.extensionPopupTab) {
-      if (tabTracker.extensionPopupTab.getActive() &&
-          this.nativeTab.id === tabTracker.extensionPopupTab.parentId) {
-        return true;
-      }
-
-      
-      
-      
-      if (tabTracker.extensionPopupTab === this.nativeTab) {
-        return false;
-      }
-    }
     return this.nativeTab.getActive();
   }
 
@@ -556,13 +438,13 @@ class Tab extends TabBase {
 }
 
 
-class TabContext extends EventEmitter {
+class TabContext {
   constructor(getDefaults, extension) {
-    super();
-
     this.extension = extension;
     this.getDefaults = getDefaults;
     this.tabData = new Map();
+
+    EventEmitter.decorate(this);
 
     GlobalEventDispatcher.registerListener(this, [
       "Tab:Selected",
