@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 from __future__ import absolute_import, print_function
 
 import ConfigParser
@@ -146,7 +146,7 @@ class WorkEnv(object):
         self.download_martools()
 
     def download_unwrap(self):
-        # unwrap_full_update.pl is not too sensitive to the revision
+        
         url = "https://hg.mozilla.org/mozilla-central/raw-file/default/" \
             "tools/update-packaging/unwrap_full_update.pl"
         download(url, dest=os.path.join(self.workdir, "unwrap_full_update.pl"),
@@ -160,7 +160,7 @@ class WorkEnv(object):
             download(url, dest=os.path.join(self.workdir, f), mode=0o755)
 
     def download_martools(self):
-        # TODO: check if the tools have to be branch specific
+        
         prefix = "https://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/" \
             "latest-mozilla-central/mar-tools/linux64"
         for f in ("mar", "mbsdiff"):
@@ -205,7 +205,7 @@ def main():
     logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s",
                         level=args.log_level)
     task = json.load(args.task_definition)
-    # TODO: verify task["extra"]["funsize"]["partials"] with jsonschema
+    
 
     signing_certs = {
         'sha1': open(args.sha1_signing_cert, 'rb').read(),
@@ -231,7 +231,7 @@ def main():
             verify_allowed_url(mar)
 
         work_env = WorkEnv()
-        # TODO: run setup once
+        
         work_env.setup()
         complete_mars = {}
         use_old_format = False
@@ -264,7 +264,7 @@ def main():
                                        section="App", option="BuildID"),
             "appName": get_option(from_path, filename="application.ini",
                                   section="App", option="Name"),
-            # Use Gecko repo and rev from platform.ini, not application.ini
+            
             "repo": get_option(path, filename="platform.ini", section="Build",
                                option="SourceRepository"),
             "revision": get_option(path, filename="platform.ini",
@@ -274,7 +274,7 @@ def main():
             "platform": e["platform"],
             "locale": e["locale"],
         }
-        # Override ACCEPTED_MAR_CHANNEL_IDS if needed
+        
         if "ACCEPTED_MAR_CHANNEL_IDS" in os.environ:
             mar_data["ACCEPTED_MAR_CHANNEL_IDS"] = os.environ["ACCEPTED_MAR_CHANNEL_IDS"]
         for field in ("update_number", "previousVersion",
@@ -283,13 +283,13 @@ def main():
             if field in e:
                 mar_data[field] = e[field]
         mar_data.update(complete_mars)
-        # if branch not set explicitly use repo-name
+        
         mar_data["branch"] = e.get("branch",
                                    mar_data["repo"].rstrip("/").split("/")[-1])
         mar_name = args.filename_template.format(**mar_data)
         mar_data["mar"] = mar_name
         dest_mar = os.path.join(work_env.workdir, mar_name)
-        # TODO: download these once
+        
         work_env.download_buildsystem_bits(repo=mar_data["repo"],
                                            revision=mar_data["revision"])
         generate_partial(work_env, from_path, path, dest_mar,
