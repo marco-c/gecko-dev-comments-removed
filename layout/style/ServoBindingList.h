@@ -469,16 +469,16 @@ SERVO_BINDING_FUNC(Servo_ComputedValues_GetVisitedStyle,
                    ServoComputedValuesBorrowed values)
 
 
+
+SERVO_BINDING_FUNC(Servo_ComputedValues_GetStyleRuleList, void,
+                   ServoComputedValuesBorrowed values,
+                   RawGeckoServoStyleRuleListBorrowedMut rules)
+
+
 SERVO_BINDING_FUNC(Servo_Initialize, void,
                    RawGeckoURLExtraData* dummy_url_data)
 
 SERVO_BINDING_FUNC(Servo_Shutdown, void)
-
-
-
-SERVO_BINDING_FUNC(Servo_Element_GetStyleRuleList, void,
-                   RawGeckoElementBorrowed element,
-                   RawGeckoServoStyleRuleListBorrowedMut rules)
 
 
 SERVO_BINDING_FUNC(Servo_NoteExplicitHints, void, RawGeckoElementBorrowed element,
