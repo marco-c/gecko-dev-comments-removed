@@ -13,9 +13,7 @@ const {
   PropTypes
 } = require("devtools/client/shared/vendor/react");
 const Message = createFactory(require("devtools/client/webconsole/new-console-output/components/message"));
-const actions = require("devtools/client/webconsole/new-console-output/actions/index");
 const { l10n } = require("devtools/client/webconsole/new-console-output/utils/messages");
-const TabboxPanel = createFactory(require("devtools/client/netmonitor/src/components/tabbox-panel"));
 
 NetworkEventMessage.displayName = "NetworkEventMessage";
 
@@ -28,30 +26,14 @@ NetworkEventMessage.propTypes = {
   networkMessageUpdate: PropTypes.object.isRequired,
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 function NetworkEventMessage({
   message = {},
   serviceContainer,
   timestampsVisible,
   networkMessageUpdate = {},
-  networkMessageActiveTabId,
-  dispatch,
-  open,
 }) {
   const {
-    id,
+    actor,
     indent,
     source,
     type,
@@ -79,50 +61,27 @@ function NetworkEventMessage({
     statusInfo = `[${httpVersion} ${status} ${statusText} ${totalTime}ms]`;
   }
 
-  const toggle = () => {
-    if (open) {
-      dispatch(actions.messageClose(id));
-    } else {
-      dispatch(actions.messageOpen(id));
-    }
-  };
+  const openNetworkMonitor = serviceContainer.openNetworkPanel
+    ? () => serviceContainer.openNetworkPanel(actor)
+    : null;
 
-  
   const method = dom.span({className: "method" }, request.method);
   const xhr = isXHR
     ? dom.span({ className: "xhr" }, l10n.getStr("webConsoleXhrIndicator"))
     : null;
-  const url = dom.a({ className: "url", title: request.url, onClick: toggle },
+  const url = dom.a({ className: "url", title: request.url, onClick: openNetworkMonitor },
     request.url.replace(/\?.+/, ""));
   const statusBody = statusInfo
-    ? dom.a({ className: "status", onClick: toggle }, statusInfo)
+    ? dom.a({ className: "status", onClick: openNetworkMonitor }, statusInfo)
     : null;
 
   const messageBody = [method, xhr, url, statusBody];
 
-  
-  
-  const attachment = open && dom.div({className: "network-info devtools-monospace"},
-    TabboxPanel({
-      activeTabId: networkMessageActiveTabId,
-      request: networkMessageUpdate,
-      sourceMapService: serviceContainer.sourceMapService,
-      selectTab: (tabId) => {
-        dispatch(actions.selectNetworkMessageTab(tabId));
-      },
-    })
-  );
-
   return Message({
-    dispatch,
-    messageId: id,
     source,
     type,
     level,
     indent,
-    collapsible: true,
-    open,
-    attachment,
     topLevelClasses,
     timeStamp,
     messageBody,

@@ -154,11 +154,10 @@ function findMessages(hud, text, selector = ".message") {
 
 
 
-
-async function openContextMenu(hud, element) {
+function* openContextMenu(hud, element) {
   let onConsoleMenuOpened = hud.ui.newConsoleOutput.once("menu-open");
   synthesizeContextMenuEvent(element);
-  await onConsoleMenuOpened;
+  yield onConsoleMenuOpened;
   return hud.ui.newConsoleOutput.toolbox.doc.getElementById("webconsole-menu");
 }
 
