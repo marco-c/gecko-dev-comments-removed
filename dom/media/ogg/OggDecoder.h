@@ -19,6 +19,8 @@ public:
     : ChannelMediaDecoder(aInit)
   {}
 
+  MediaDecoderStateMachine* CreateStateMachine() override;
+
   
   
   
