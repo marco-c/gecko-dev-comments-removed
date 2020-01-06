@@ -66,8 +66,8 @@ class DownloadItem {
     
     if (this.download.hasProgress && this.download.speed > 0) {
       let sizeLeft = this.download.totalBytes - this.download.currentBytes;
-      let rawTimeLeft = sizeLeft / this.download.speed;
-      return new Date(Date.now() + rawTimeLeft);
+      let timeLeftInSeconds  = sizeLeft / this.download.speed;
+      return new Date(Date.now() + (timeLeftInSeconds * 1000));
     }
   }
   get state() {
