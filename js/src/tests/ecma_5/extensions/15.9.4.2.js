@@ -45,7 +45,6 @@ function TZInMonth(month){
 
 function test()
 {
-  enterFunc ('test');
   printBugNumber(BUGNUMBER);
 
   JanTZ = TZInMonth(1);
@@ -54,6 +53,4 @@ function test()
 
   
   check("2009-07-23T00:53:21.001-0700", dd(2009,7,23,7,53,21,1));
-
-  exitFunc ('test');
 }

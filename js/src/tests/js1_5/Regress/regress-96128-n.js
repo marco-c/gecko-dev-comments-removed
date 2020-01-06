@@ -40,12 +40,9 @@ test();
 
 function test()
 {
-  enterFunc ('test');
   printBugNumber(BUGNUMBER);
   printStatus (summary);
 
   
   var obj = new objRecurse();
-
-  exitFunc ('test');
 }

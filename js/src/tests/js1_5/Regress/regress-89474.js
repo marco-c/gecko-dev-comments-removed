@@ -25,15 +25,12 @@ test();
 
 function test()
 {
-  enterFunc ('test');
   printBugNumber(BUGNUMBER);
   printStatus (summary);
 
   tryThis(cnTest); 
 
   reportCompare('No Crash', 'No Crash', '');
-
-  exitFunc ('test');
 }
 
 

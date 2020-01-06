@@ -64,7 +64,6 @@ test();
 
 function test()
 {
-  enterFunc ('test');
   printBugNumber(BUGNUMBER);
   printStatus (summary);
 
@@ -177,6 +176,4 @@ function test()
   actual = 'abc'.replace('', 'Z');
   expect = 'Zabc';  
   reportCompare(expect, actual, status);
-
-  exitFunc ('test');
 }

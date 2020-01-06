@@ -13,7 +13,6 @@ var expect = '0,0,1,1,2,2,3,3';
 
 
 
-enterFunc ('test');
 printBugNumber(BUGNUMBER);
 printStatus (summary);
 
@@ -33,6 +32,5 @@ let f = function() {
 actual = '' + a;
 
 reportCompare(expect, actual, summary);
-exitFunc ('test');
 
 
