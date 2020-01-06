@@ -35,6 +35,8 @@
 #include "nsIXULRuntime.h"
 #include "GeckoProfiler.h"
 
+#include "base/histogram.h"
+
 #ifdef ANDROID
 #include <android/log.h>
 #endif
@@ -1223,6 +1225,11 @@ XRE_XPCShellMain(int argc, char** argv, char** envp,
 
     mozilla::LogModule::Init();
 
+    
+    
+    auto telStats =
+       mozilla::MakeUnique<base::StatisticsRecorder>();
+
     char aLocal;
     profiler_init(&aLocal);
 
@@ -1551,6 +1558,8 @@ XRE_XPCShellMain(int argc, char** argv, char** envp,
     
     rv = NS_ShutdownXPCOM( nullptr );
     MOZ_ASSERT(NS_SUCCEEDED(rv), "NS_ShutdownXPCOM failed");
+
+    telStats = nullptr;
 
 #ifdef MOZ_CRASHREPORTER
     

@@ -504,6 +504,8 @@ class Histogram {
   SampleSet sample_;
 
  private:
+  friend class StatisticsRecorder;  
+
   
   void Initialize();
 
@@ -709,6 +711,68 @@ class CustomHistogram : public Histogram {
   virtual double GetBucketSize(Count current, size_t i) const;
 
   DISALLOW_COPY_AND_ASSIGN(CustomHistogram);
+};
+
+
+
+
+
+
+class StatisticsRecorder {
+ public:
+  typedef std::vector<Histogram*> Histograms;
+
+  StatisticsRecorder();
+
+  ~StatisticsRecorder();
+
+  
+  static bool IsActive();
+
+  
+  
+  
+  
+  static Histogram* RegisterOrDeleteDuplicate(Histogram* histogram);
+
+  
+  
+  
+  static void WriteHTMLGraph(const std::string& query, std::string* output);
+  static void WriteGraph(const std::string& query, std::string* output);
+
+  
+  static void GetHistograms(Histograms* output);
+
+  
+  
+  
+  static bool FindHistogram(const std::string& query, Histogram** histogram);
+
+  static bool dump_on_exit() { return dump_on_exit_; }
+
+  static void set_dump_on_exit(bool enable) { dump_on_exit_ = enable; }
+
+  
+  
+  
+  
+  static void GetSnapshot(const std::string& query, Histograms* snapshot);
+
+
+ private:
+  
+  typedef std::map<std::string, Histogram*> HistogramMap;
+
+  static HistogramMap* histograms_;
+
+  
+  static Lock* lock_;
+
+  
+  static bool dump_on_exit_;
+
+  DISALLOW_COPY_AND_ASSIGN(StatisticsRecorder);
 };
 
 }  

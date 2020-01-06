@@ -28,6 +28,7 @@
 #include "base/histogram.h"
 
 using base::Histogram;
+using base::StatisticsRecorder;
 using base::BooleanHistogram;
 using base::CountHistogram;
 using base::FlagHistogram;
@@ -147,6 +148,8 @@ enum reflectStatus {
   REFLECT_FAILURE
 };
 
+typedef StatisticsRecorder::Histograms::iterator HistogramIterator;
+
 } 
 
 
@@ -171,6 +174,9 @@ bool gCorruptHistograms[mozilla::Telemetry::HistogramCount];
 
 
 #include "TelemetryHistogramData.inc"
+
+
+base::StatisticsRecorder* gStatisticsRecorder = nullptr;
 
 } 
 
@@ -1803,6 +1809,24 @@ internal_WrapAndReturnKeyedHistogram(KeyedHistogram *h, JSContext *cx,
 
 
 
+
+
+void TelemetryHistogram::CreateStatisticsRecorder()
+{
+  StaticMutexAutoLock locker(gTelemetryHistogramMutex);
+  MOZ_ASSERT(!gStatisticsRecorder);
+  gStatisticsRecorder = new base::StatisticsRecorder();
+}
+
+void TelemetryHistogram::DestroyStatisticsRecorder()
+{
+  StaticMutexAutoLock locker(gTelemetryHistogramMutex);
+  MOZ_ASSERT(gStatisticsRecorder);
+  if (gStatisticsRecorder) {
+    delete gStatisticsRecorder;
+    gStatisticsRecorder = nullptr;
+  }
+}
 
 void TelemetryHistogram::InitializeGlobalState(bool canRecordBase,
                                                bool canRecordExtended)
