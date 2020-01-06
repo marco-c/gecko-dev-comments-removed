@@ -90,7 +90,7 @@ public:
     if (!existingBackgroundChild) {
       LOG(("No existingBackgroundChild"));
       existingBackgroundChild =
-        ipc::BackgroundChild::SynchronouslyCreateForCurrentThread();
+        ipc::BackgroundChild::GetOrCreateForCurrentThread();
       LOG(("BackgroundChild: %p", existingBackgroundChild));
       if (!existingBackgroundChild) {
         return NS_ERROR_FAILURE;

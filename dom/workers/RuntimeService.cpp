@@ -2852,7 +2852,7 @@ WorkerThreadPrimaryRunnable::Run()
   
   
   
-  if (NS_WARN_IF(!BackgroundChild::SynchronouslyCreateForCurrentThread())) {
+  if (NS_WARN_IF(!BackgroundChild::GetOrCreateForCurrentThread())) {
     
     
     

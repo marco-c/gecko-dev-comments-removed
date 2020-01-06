@@ -49,6 +49,8 @@ class PBackgroundChild;
 
 
 
+
+
 class BackgroundChild final
 {
   friend class mozilla::dom::ContentChild;
@@ -68,7 +70,7 @@ public:
 
   
   static PBackgroundChild*
-  SynchronouslyCreateForCurrentThread();
+  GetOrCreateForCurrentThread();
 
   
   static void
