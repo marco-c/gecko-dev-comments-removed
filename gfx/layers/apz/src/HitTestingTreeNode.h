@@ -97,7 +97,7 @@ public:
   void SetScrollbarData(FrameMetrics::ViewID aScrollViewId,
                         const uint64_t& aScrollbarAnimationId,
                         const ScrollThumbData& aThumbData,
-                        bool aIsScrollContainer);
+                        const Maybe<ScrollDirection>& aScrollContainerDirection);
   bool MatchesScrollDragMetrics(const AsyncDragMetrics& aDragMetrics) const;
   bool IsScrollbarNode() const;  
   bool IsScrollThumbNode() const;  
@@ -151,7 +151,7 @@ private:
   ScrollThumbData mScrollThumbData;
 
   
-  bool mIsScrollbarContainer;
+  Maybe<ScrollDirection> mScrollbarContainerDirection;
 
   FrameMetrics::ViewID mFixedPosTarget;
 
