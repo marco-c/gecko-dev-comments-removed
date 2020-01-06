@@ -14,6 +14,10 @@ use properties::longhands::overflow_x::computed_value::T as overflow;
 use properties::longhands::position::computed_value::T as position;
 
 
+
+
+
+
 pub struct StyleAdjuster<'a, 'b: 'a> {
     style: &'a mut StyleBuilder<'b>,
 }
@@ -50,9 +54,11 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
 
     
     
-    fn blockify_if_necessary(&mut self,
-                             layout_parent_style: &ComputedValues,
-                             flags: CascadeFlags) {
+    fn blockify_if_necessary(
+        &mut self,
+        layout_parent_style: &ComputedValues,
+        flags: CascadeFlags,
+    ) {
         let mut blockify = false;
         macro_rules! blockify_if {
             ($if_what:expr) => {
@@ -80,8 +86,10 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         let blockified_display =
             display.equivalent_block_display(flags.contains(IS_ROOT_ELEMENT));
         if display != blockified_display {
-            self.style.mutate_box().set_adjusted_display(blockified_display,
-                                                         is_item_or_root);
+            self.style.mutate_box().set_adjusted_display(
+                blockified_display,
+                is_item_or_root,
+            );
         }
     }
 
@@ -165,10 +173,14 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     
     
     
-    fn adjust_for_writing_mode(&mut self,
-                               layout_parent_style: &ComputedValues) {
-        let our_writing_mode = self.style.get_inheritedbox().clone_writing_mode();
-        let parent_writing_mode = layout_parent_style.get_inheritedbox().clone_writing_mode();
+    fn adjust_for_writing_mode(
+        &mut self,
+        layout_parent_style: &ComputedValues,
+    ) {
+        let our_writing_mode =
+            self.style.get_inheritedbox().clone_writing_mode();
+        let parent_writing_mode =
+            layout_parent_style.get_inheritedbox().clone_writing_mode();
 
         if our_writing_mode != parent_writing_mode &&
            self.style.get_box().clone_display() == display::inline {
@@ -323,10 +335,16 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
 
     
     
+    
+    
+    
+    
     #[cfg(feature = "gecko")]
-    fn adjust_for_fieldset_content(&mut self,
-                                   layout_parent_style: &ComputedValues,
-                                   flags: CascadeFlags) {
+    fn adjust_for_fieldset_content(
+        &mut self,
+        layout_parent_style: &ComputedValues,
+        flags: CascadeFlags,
+    ) {
         use properties::IS_FIELDSET_CONTENT;
         if !flags.contains(IS_FIELDSET_CONTENT) {
             return;
@@ -337,8 +355,10 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         
         let parent_display = layout_parent_style.get_box().clone_display();
         let new_display = match parent_display {
-            display::flex | display::inline_flex => Some(display::flex),
-            display::grid | display::inline_grid => Some(display::grid),
+            display::flex |
+            display::inline_flex => Some(display::flex),
+            display::grid |
+            display::inline_grid => Some(display::grid),
             _ => None,
         };
         if let Some(new_display) = new_display {
@@ -355,22 +375,25 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     #[cfg(feature = "gecko")]
     fn adjust_for_table_text_align(&mut self) {
         use properties::longhands::text_align::computed_value::T as text_align;
-       if self.style.get_box().clone_display() != display::table {
-           return;
-       }
+        if self.style.get_box().clone_display() != display::table {
+            return;
+        }
 
-       match self.style.get_inheritedtext().clone_text_align() {
-           text_align::_moz_left |
-           text_align::_moz_center |
-           text_align::_moz_right => {}
-           _ => return,
-       }
+        match self.style.get_inheritedtext().clone_text_align() {
+            text_align::_moz_left |
+            text_align::_moz_center |
+            text_align::_moz_right => {},
+            _ => return,
+        }
 
-       self.style.mutate_inheritedtext().set_text_align(text_align::start);
+        self.style.mutate_inheritedtext().set_text_align(text_align::start)
     }
 
     
-    fn adjust_for_text_decoration_lines(&mut self, layout_parent_style: &ComputedValues) {
+    fn adjust_for_text_decoration_lines(
+        &mut self,
+        layout_parent_style: &ComputedValues,
+    ) {
         use properties::computed_value_flags::HAS_TEXT_DECORATION_LINES;
         if layout_parent_style.flags.contains(HAS_TEXT_DECORATION_LINES) ||
            !self.style.get_text().clone_text_decoration_line().is_empty() {
@@ -379,7 +402,10 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     }
 
     #[cfg(feature = "gecko")]
-    fn should_suppress_linebreak(&self, layout_parent_style: &ComputedValues) -> bool {
+    fn should_suppress_linebreak(
+        &self,
+        layout_parent_style: &ComputedValues,
+    ) -> bool {
         use properties::computed_value_flags::SHOULD_SUPPRESS_LINEBREAK;
         
         if self.style.floated() || self.style.out_of_flow_positioned() {
@@ -395,13 +421,15 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         }
         match self.style.get_box().clone_display() {
             
-            display::ruby_base | display::ruby_text => true,
+            display::ruby_base |
+            display::ruby_text => true,
             
             
             
             
             
-            display::ruby_base_container | display::ruby_text_container => false,
+            display::ruby_base_container |
+            display::ruby_text_container => false,
             
             
             
@@ -415,9 +443,11 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     
     
     #[cfg(feature = "gecko")]
-    fn adjust_for_ruby(&mut self,
-                       layout_parent_style: &ComputedValues,
-                       flags: CascadeFlags) {
+    fn adjust_for_ruby(
+        &mut self,
+        layout_parent_style: &ComputedValues,
+        flags: CascadeFlags,
+    ) {
         use properties::SKIP_ROOT_AND_ITEM_BASED_DISPLAY_FIXUP;
         use properties::computed_value_flags::SHOULD_SUPPRESS_LINEBREAK;
         use properties::longhands::unicode_bidi::computed_value::T as unicode_bidi;
@@ -447,7 +477,8 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         
         if self_display.is_ruby_type() {
             let new_value = match self.style.get_text().clone_unicode_bidi() {
-                unicode_bidi::normal | unicode_bidi::embed => Some(unicode_bidi::isolate),
+                unicode_bidi::normal |
+                unicode_bidi::embed => Some(unicode_bidi::isolate),
                 unicode_bidi::bidi_override => Some(unicode_bidi::isolate_override),
                 _ => None,
             };
@@ -521,9 +552,11 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     
     
     
-    pub fn adjust(&mut self,
-                  layout_parent_style: &ComputedValues,
-                  flags: CascadeFlags) {
+    pub fn adjust(
+        &mut self,
+        layout_parent_style: &ComputedValues,
+        flags: CascadeFlags,
+    ) {
         self.adjust_for_visited(flags);
         #[cfg(feature = "gecko")]
         {

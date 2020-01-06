@@ -43,26 +43,25 @@ impl GeckoRestyleDamage {
 
     
     
-    
-    
-    
-    
-    
-    
     pub fn compute_style_difference(
         old_style: &ComputedValues,
         new_style: &ComputedValues,
     ) -> StyleDifference {
-        let mut any_style_changed: bool = false;
+        let mut any_style_changed = false;
+        let mut reset_only = false;
         let hint = unsafe {
             bindings::Gecko_CalcStyleDifference(
                 old_style,
                 new_style,
-                structs::NS_STYLE_INHERIT_MASK as u64,
-                &mut any_style_changed
+                &mut any_style_changed,
+                &mut reset_only,
             )
         };
-        let change = if any_style_changed { StyleChange::Changed } else { StyleChange::Unchanged };
+        let change = if any_style_changed {
+            StyleChange::Changed { reset_only }
+        } else {
+            StyleChange::Unchanged
+        };
         StyleDifference::new(GeckoRestyleDamage(nsChangeHint(hint)), change)
     }
 

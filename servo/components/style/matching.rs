@@ -21,6 +21,7 @@ use servo_arc::{Arc, ArcBorrow};
 use traversal_flags;
 
 
+#[derive(Debug)]
 pub struct StyleDifference {
     
     pub damage: RestyleDamage,
@@ -40,12 +41,15 @@ impl StyleDifference {
 }
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum StyleChange {
     
     Unchanged,
     
-    Changed,
+    Changed {
+        
+        reset_only: bool,
+    },
 }
 
 
@@ -58,17 +62,21 @@ pub enum ChildCascadeRequirement {
     CanSkipCascade = 0,
     
     
+    MustCascadeChildrenIfInheritResetStyle = 1,
+    
+    
+    MustCascadeChildren = 2,
     
     
     
+    MustCascadeDescendants = 3,
+}
+
+impl ChildCascadeRequirement {
     
-    
-    
-    MustCascadeChildren = 1,
-    
-    
-    
-    MustCascadeDescendants = 2,
+    pub fn can_skip_cascade(&self) -> bool {
+        matches!(*self, ChildCascadeRequirement::CanSkipCascade)
+    }
 }
 
 bitflags! {
@@ -341,16 +349,19 @@ trait PrivateMatchMethods: TElement {
 
 
     
-    #[cfg(feature = "gecko")]
-    fn accumulate_damage_for(&self,
-                             shared_context: &SharedStyleContext,
-                             restyle: &mut RestyleData,
-                             old_values: &ComputedValues,
-                             new_values: &ComputedValues,
-                             pseudo: Option<&PseudoElement>)
-                             -> ChildCascadeRequirement {
+    fn accumulate_damage_for(
+        &self,
+        shared_context: &SharedStyleContext,
+        restyle: &mut RestyleData,
+        old_values: &ComputedValues,
+        new_values: &ComputedValues,
+        pseudo: Option<&PseudoElement>
+    ) -> ChildCascadeRequirement {
+        debug!("accumulate_damage_for: {:?}", self);
+
         
         if shared_context.traversal_flags.contains(traversal_flags::Forgetful) {
+            debug!(" > forgetful traversal");
             return ChildCascadeRequirement::MustCascadeChildren;
         }
 
@@ -362,7 +373,7 @@ trait PrivateMatchMethods: TElement {
         
         
         let skip_applying_damage =
-            restyle.reconstructed_self_or_ancestor();
+            cfg!(feature = "gecko") && restyle.reconstructed_self_or_ancestor();
 
         let difference =
             self.compute_style_difference(old_values, new_values, pseudo);
@@ -371,37 +382,77 @@ trait PrivateMatchMethods: TElement {
             restyle.damage |= difference.damage;
         }
 
-        
-        
-        
-        
-        
+        debug!(" > style difference: {:?}", difference);
+
         
         
         if old_values.flags != new_values.flags {
+            debug!(" > flags changed: {:?} != {:?}", old_values.flags, new_values.flags);
             return ChildCascadeRequirement::MustCascadeChildren;
         }
 
         match difference.change {
             StyleChange::Unchanged => ChildCascadeRequirement::CanSkipCascade,
-            StyleChange::Changed => ChildCascadeRequirement::MustCascadeChildren,
-        }
-    }
+            StyleChange::Changed { reset_only } => {
+                
+                
+                if !reset_only {
+                    return ChildCascadeRequirement::MustCascadeChildren
+                }
 
-    
-    #[cfg(feature = "servo")]
-    fn accumulate_damage_for(&self,
-                             _shared_context: &SharedStyleContext,
-                             restyle: &mut RestyleData,
-                             old_values: &ComputedValues,
-                             new_values: &ComputedValues,
-                             pseudo: Option<&PseudoElement>)
-                             -> ChildCascadeRequirement {
-        let difference = self.compute_style_difference(old_values, new_values, pseudo);
-        restyle.damage |= difference.damage;
-        match difference.change {
-            StyleChange::Changed => ChildCascadeRequirement::MustCascadeChildren,
-            StyleChange::Unchanged => ChildCascadeRequirement::CanSkipCascade,
+                let old_display = old_values.get_box().clone_display();
+                let new_display = new_values.get_box().clone_display();
+
+                
+                
+                
+                if old_display.is_item_container() != new_display.is_item_container() {
+                    return ChildCascadeRequirement::MustCascadeChildren
+                }
+
+                
+                
+                #[cfg(feature = "gecko")]
+                {
+                    if old_display.is_ruby_type() != new_display.is_ruby_type() {
+                        return ChildCascadeRequirement::MustCascadeChildren
+                    }
+                }
+
+                
+                
+                
+                
+                
+                #[cfg(feature = "gecko")]
+                {
+                    use values::specified::align;
+
+                    let old_justify_items =
+                        old_values.get_position().clone_justify_items();
+                    let new_justify_items =
+                        new_values.get_position().clone_justify_items();
+
+                    let was_legacy_justify_items =
+                        old_justify_items.computed.0.contains(align::ALIGN_LEGACY);
+
+                    let is_legacy_justify_items =
+                        new_justify_items.computed.0.contains(align::ALIGN_LEGACY);
+
+                    if is_legacy_justify_items != was_legacy_justify_items {
+                        return ChildCascadeRequirement::MustCascadeChildren;
+                    }
+
+                    if was_legacy_justify_items &&
+                        old_justify_items.computed != new_justify_items.computed {
+                        return ChildCascadeRequirement::MustCascadeChildren;
+                    }
+                }
+
+                
+                
+                ChildCascadeRequirement::MustCascadeChildrenIfInheritResetStyle
+            }
         }
     }
 
