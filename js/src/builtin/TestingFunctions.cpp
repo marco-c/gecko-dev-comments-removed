@@ -2472,6 +2472,13 @@ testingFunc_inIon(JSContext* cx, unsigned argc, Value* vp)
         return true;
     }
 
+    if (cx->activation()->hasWasmExitFP()) {
+        
+        
+        args.rval().setBoolean(false);
+        return true;
+    }
+
     ScriptFrameIter iter(cx);
     if (!iter.done() && iter.isIon()) {
         
