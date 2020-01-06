@@ -1061,6 +1061,8 @@ PlacesToolbar.prototype = {
           this._insertNewItem(this._resultNode.getChild(i), fragment);
         }
         this._rootElt.appendChild(fragment);
+
+        this.updateNodesVisibility();
       });
     }
 
@@ -1158,7 +1160,7 @@ PlacesToolbar.prototype = {
         
         
         if (aEvent.target == aEvent.currentTarget) {
-          this.updateChevron();
+          this.updateNodesVisibility();
         }
         break;
       case "overflow":
@@ -1173,7 +1175,7 @@ PlacesToolbar.prototype = {
         break;
       case "TabOpen":
       case "TabClose":
-        this.updateChevron();
+        this.updateNodesVisibility();
         break;
       case "dragstart":
         this._onDragStart(aEvent);
@@ -1210,14 +1212,6 @@ PlacesToolbar.prototype = {
     }
   },
 
-  updateOverflowStatus() {
-    if (this._rootElt.scrollLeftMin != this._rootElt.scrollLeftMax) {
-      this._onOverflow();
-    } else {
-      this._onUnderflow();
-    }
-  },
-
   _isOverflowStateEventRelevant: function PT_isOverflowStateEventRelevant(aEvent) {
     
     return aEvent.target == aEvent.currentTarget && aEvent.detail > 0;
@@ -1231,28 +1225,24 @@ PlacesToolbar.prototype = {
       this._chevronPopup.setAttribute("type", "places");
     }
     this._chevron.collapsed = false;
-    this.updateChevron();
+    this.updateNodesVisibility();
   },
 
   _onUnderflow: function PT_onUnderflow() {
-    this.updateChevron();
+    this.updateNodesVisibility();
     this._chevron.collapsed = true;
   },
 
-  updateChevron: function PT_updateChevron() {
+  updateNodesVisibility: function PT_updateNodesVisibility() {
     
-    if (this._chevron.collapsed)
-      return;
+    
+    if (this._updateNodesVisibilityTimer)
+      this._updateNodesVisibilityTimer.cancel();
 
-    
-    
-    if (this._updateChevronTimer)
-      this._updateChevronTimer.cancel();
-
-    this._updateChevronTimer = this._setTimer(100);
+    this._updateNodesVisibilityTimer = this._setTimer(100);
   },
 
-  _updateChevronTimerCallback: function PT__updateChevronTimerCallback() {
+  _updateNodesVisibilityTimerCallback: function PT__updateNodesVisibilityTimerCallback() {
     let scrollRect = this._rootElt.getBoundingClientRect();
     let childOverflowed = false;
     for (let child of this._rootElt.childNodes) {
@@ -1276,7 +1266,7 @@ PlacesToolbar.prototype = {
 
     
     
-    if (this._chevron.open)
+    if (!this._chevron.collapsed && this._chevron.open)
       this._updateChevronPopupNodesVisibility();
     let event = new CustomEvent("BookmarksToolbarVisibilityUpdated", {bubbles: true});
     this._viewElt.dispatchEvent(event);
@@ -1314,7 +1304,7 @@ PlacesToolbar.prototype = {
         let icon = aPlacesNode.icon;
         if (icon)
           button.setAttribute("image", icon);
-        this.updateChevron();
+        this.updateNodesVisibility();
       }
       return;
     }
@@ -1343,7 +1333,7 @@ PlacesToolbar.prototype = {
                             this._rootElt);
       }
       if (!overflowed)
-        this.updateChevron();
+        this.updateNodesVisibility();
       return;
     }
 
@@ -1396,7 +1386,7 @@ PlacesToolbar.prototype = {
       
       
 
-      this.updateChevron();
+      this.updateNodesVisibility();
       return;
     }
 
@@ -1446,7 +1436,7 @@ PlacesToolbar.prototype = {
 
     if (elt.parentNode == this._rootElt) { 
       if (elt.style.visibility != "hidden")
-        this.updateChevron();
+        this.updateNodesVisibility();
     }
   },
 
@@ -1605,13 +1595,13 @@ PlacesToolbar.prototype = {
   },
 
   notify: function PT_notify(aTimer) {
-    if (aTimer == this._updateChevronTimer) {
-      this._updateChevronTimer = null;
+    if (aTimer == this._updateNodesVisibilityTimer) {
+      this._updateNodesVisibilityTimer = null;
       
       
       
       
-      window.requestAnimationFrame(this._updateChevronTimerCallback.bind(this));
+      window.requestAnimationFrame(this._updateNodesVisibilityTimerCallback.bind(this));
     } else if (aTimer == this._ibTimer) {
       
       this._dropIndicator.collapsed = true;
