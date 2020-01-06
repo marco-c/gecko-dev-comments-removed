@@ -287,14 +287,32 @@ function isDefunct(accessible) {
 
 
 
-function findAccessibleChildByID(accessible, id) {
+
+
+function findAccessibleChildByID(accessible, id, interfaces) {
   if (getAccessibleDOMNodeID(accessible) === id) {
-    return accessible;
+    return queryInterfaces(accessible, interfaces);
   }
   for (let i = 0; i < accessible.children.length; ++i) {
     let found = findAccessibleChildByID(accessible.getChildAt(i), id);
     if (found) {
-      return found;
+      return queryInterfaces(found, interfaces);
     }
   }
+}
+
+function queryInterfaces(accessible, interfaces) {
+  if (!interfaces) {
+    return accessible;
+  }
+
+  for (let iface of interfaces.filter(i => !(accessible instanceof i))) {
+    try {
+      accessible.QueryInterface(iface);
+    } catch (e) {
+      ok(false, "Can't query " + iface);
+    }
+  }
+
+  return accessible;
 }
