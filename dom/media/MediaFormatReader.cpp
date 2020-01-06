@@ -1539,14 +1539,15 @@ MediaFormatReader::GetDecoderData(TrackType aTrack)
 }
 
 bool
-MediaFormatReader::ShouldSkip(bool aSkipToNextKeyframe,
-                              TimeUnit aTimeThreshold)
+MediaFormatReader::ShouldSkip(TimeUnit aTimeThreshold)
 {
   MOZ_ASSERT(HasVideo());
   TimeUnit nextKeyframe;
   nsresult rv = mVideo.mTrackDemuxer->GetNextRandomAccessPoint(&nextKeyframe);
   if (NS_FAILED(rv)) {
-    return aSkipToNextKeyframe;
+    
+    
+    return false;
   }
   return (nextKeyframe < aTimeThreshold
           || (mVideo.mTimeThreshold
@@ -1589,8 +1590,7 @@ MediaFormatReader::RequestVideoData(bool aSkipToNextKeyframe,
 
   
   
-  if (!mVideo.HasInternalSeekPending()
-      && ShouldSkip(aSkipToNextKeyframe, aTimeThreshold)) {
+  if (!mVideo.HasInternalSeekPending() && ShouldSkip(aTimeThreshold)) {
     RefPtr<VideoDataPromise> p = mVideo.EnsurePromise(__func__);
     SkipVideoDemuxToNextKeyFrame(aTimeThreshold);
     return p;
