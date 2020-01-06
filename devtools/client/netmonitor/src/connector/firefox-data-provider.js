@@ -66,6 +66,12 @@ class FirefoxDataProvider {
         url,
         isXHR,
         cause,
+
+        
+        
+        
+        stacktrace: cause.stacktrace,
+
         fromCache,
         fromServiceWorker},
         true,
@@ -659,6 +665,19 @@ class FirefoxDataProvider {
       eventTimings: response
     }).then(() => {
       emit(EVENTS.RECEIVED_EVENT_TIMINGS, response.from);
+    });
+  }
+
+  
+
+
+
+
+  onStackTrace(response) {
+    return this.updateRequest(response.from, {
+      stacktrace: response.stacktrace
+    }).then(() => {
+      emit(EVENTS.RECEIVED_EVENT_STACKTRACE, response.from);
     });
   }
 }

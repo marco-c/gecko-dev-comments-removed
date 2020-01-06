@@ -94,6 +94,9 @@ const EVENTS = {
   RECEIVED_RESPONSE_CONTENT: "NetMonitor:NetworkEventUpdated:ResponseContent",
 
   
+  RECEIVED_EVENT_STACKTRACE: "NetMonitor:NetworkEventUpdated:StackTrace",
+
+  
   CONNECTED: "connected",
 
   
@@ -126,6 +129,7 @@ const UPDATE_PROPS = [
   "responseContent",
   "responseContentAvailable",
   "formDataSections",
+  "stacktrace",
 ];
 
 const PANELS = {

@@ -1936,6 +1936,7 @@ function NetworkEventActor(webConsoleActor) {
   };
 
   this._timings = {};
+  this._stackTrace = {};
 
   
   this._longStringActors = new Set();
@@ -2007,6 +2008,14 @@ NetworkEventActor.prototype =
     this._cause = networkEvent.cause;
     this._fromCache = networkEvent.fromCache;
     this._fromServiceWorker = networkEvent.fromServiceWorker;
+
+    
+    
+    
+    this._stackTrace = networkEvent.cause.stacktrace;
+    delete networkEvent.cause.stacktrace;
+    networkEvent.cause.stacktraceAvailable =
+      !!(this._stackTrace && this._stackTrace.length);
 
     for (let prop of ["method", "url", "httpVersion", "headersSize"]) {
       this._request[prop] = networkEvent[prop];
@@ -2126,6 +2135,19 @@ NetworkEventActor.prototype =
       timings: this._timings,
       totalTime: this._totalTime,
       offsets: this._offsets
+    };
+  },
+
+  
+
+
+
+
+
+  onGetStackTrace: function () {
+    return {
+      from: this.actorID,
+      stacktrace: this._stackTrace,
     };
   },
 
@@ -2377,4 +2399,5 @@ NetworkEventActor.prototype.requestTypes =
   "getResponseContent": NetworkEventActor.prototype.onGetResponseContent,
   "getEventTimings": NetworkEventActor.prototype.onGetEventTimings,
   "getSecurityInfo": NetworkEventActor.prototype.onGetSecurityInfo,
+  "getStackTrace": NetworkEventActor.prototype.onGetStackTrace,
 };

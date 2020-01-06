@@ -576,6 +576,24 @@ WebConsoleClient.prototype = {
 
 
 
+  getStackTrace: function (actor, onResponse) {
+    let packet = {
+      to: actor,
+      type: "getStackTrace",
+    };
+    return this._client.request(packet, onResponse);
+  },
+
+  
+
+
+
+
+
+
+
+
+
   sendHTTPRequest: function (data, onResponse) {
     let packet = {
       to: this._actor,
