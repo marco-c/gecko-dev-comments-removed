@@ -216,24 +216,30 @@ richlistitem.download button {
 
 
 
-
-
-
-.subviewbutton.download:hover:-moz-any([openLabel],[retryLabel][buttonover]) > .toolbarbutton-text > .status-full,
-
-
-.subviewbutton.download:-moz-any(:not(:hover),[buttonover]) > .toolbarbutton-text > .status-open,
-
-
-
-.subviewbutton.download:-moz-any(:not(:hover),:hover:not([buttonover]),:not([retryLabel])) > .toolbarbutton-text > .status-retry,
-
-
-
-.subviewbutton.download:-moz-any(:not(:hover),:hover:not([buttonover]),:not([exists])) > .toolbarbutton-text > .status-show,
+.subviewbutton.download > .toolbarbutton-text > .status-text,
 
 .subviewbutton.download:not(:hover) > .action-button,
 
 .subviewbutton.download > .action-button > .toolbarbutton-text {
   display: none;
+}
+
+
+.subviewbutton.download:not(:hover) > .toolbarbutton-text > .status-full,
+
+
+.subviewbutton.download:hover:not([openLabel]):not([exists]):not([retryLabel]) > .toolbarbutton-text > .status-full,
+
+
+.subviewbutton.download:hover[retryLabel]:not([buttonover]) > .toolbarbutton-text > .status-full,
+
+
+.subviewbutton.download:hover[openLabel][exists]:not([buttonover]) > .toolbarbutton-text > .status-open,
+
+
+.subviewbutton.download:hover[retryLabel][buttonover] > .toolbarbutton-text > .status-retry,
+
+
+.subviewbutton.download:hover[openLabel][exists][buttonover] > .toolbarbutton-text > .status-show {
+  display: inline;
 }
