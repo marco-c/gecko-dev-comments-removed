@@ -36,7 +36,7 @@
 #endif
 
 class nsAttrAndChildArray;
-class nsAttrChildContentList;
+class nsChildContentList;
 struct nsCSSSelectorList;
 class nsDOMAttributeMap;
 class nsIAnimationObserver;
@@ -1114,7 +1114,7 @@ public:
 
 
 
-    RefPtr<nsAttrChildContentList> mChildNodes;
+    RefPtr<nsChildContentList> mChildNodes;
 
     
 
