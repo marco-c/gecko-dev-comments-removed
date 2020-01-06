@@ -565,6 +565,7 @@ SandboxEarlyInit(GeckoProcessType aType)
   case GeckoProcessType_Default:
     MOZ_ASSERT(false, "SandboxEarlyInit in parent process");
     return;
+
 #ifdef MOZ_GMP_SANDBOX
   case GeckoProcessType_GMPlugin:
     if (!info.Test(SandboxInfo::kEnabledForMedia)) {
@@ -576,8 +577,18 @@ SandboxEarlyInit(GeckoProcessType aType)
     canChroot = info.Test(SandboxInfo::kHasSeccompBPF);
     break;
 #endif
-    
-    
+
+#ifdef MOZ_CONTENT_SANDBOX
+  case GeckoProcessType_Content:
+    if (!info.Test(SandboxInfo::kEnabledForContent)) {
+      break;
+    }
+#ifndef MOZ_ALSA
+    canUnshareIPC = true;
+#endif
+    break;
+#endif
+
   default:
     
     break;
