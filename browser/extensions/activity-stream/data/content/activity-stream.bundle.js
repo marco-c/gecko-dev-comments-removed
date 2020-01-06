@@ -60,7 +60,7 @@
  	__webpack_require__.p = "";
 
  	
- 	return __webpack_require__(__webpack_require__.s = 11);
+ 	return __webpack_require__(__webpack_require__.s = 12);
  })
 
  ([
@@ -351,12 +351,15 @@ module.exports = {
 
 
 const { actionTypes: at } = __webpack_require__(0);
+const { Dedupe } = __webpack_require__(20);
 
 
 const RTL_LIST = ["ar", "he", "fa", "ur"];
 
 const TOP_SITES_DEFAULT_LENGTH = 6;
 const TOP_SITES_SHOWMORE_LENGTH = 12;
+
+const dedupe = new Dedupe(site => site && site.url);
 
 const INITIAL_STATE = {
   App: {
@@ -580,7 +583,7 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
       }
       return newState;
     case at.SECTION_UPDATE:
-      return prevState.map(section => {
+      newState = prevState.map(section => {
         if (section && section.id === action.data.id) {
           
           
@@ -589,6 +592,28 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
         }
         return section;
       });
+
+      if (!action.data.dedupeConfigurations) {
+        return newState;
+      }
+
+      action.data.dedupeConfigurations.forEach(dedupeConf => {
+        newState = newState.map(section => {
+          if (section.id === dedupeConf.id) {
+            const dedupedRows = dedupeConf.dedupeFrom.reduce((rows, dedupeSectionId) => {
+              const dedupeSection = newState.find(s => s.id === dedupeSectionId);
+              const [, newRows] = dedupe.group(dedupeSection.rows, rows);
+              return newRows;
+            }, section.rows);
+
+            return Object.assign({}, section, { rows: dedupedRows });
+          }
+
+          return section;
+        });
+      });
+
+      return newState;
     case at.SECTION_UPDATE_CARD:
       return prevState.map(section => {
         if (section && section.id === action.data.id && section.rows) {
@@ -611,10 +636,12 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
           
           if (item.url === action.data.url) {
             const { bookmarkGuid, bookmarkTitle, dateAdded } = action.data;
-            Object.assign(item, { bookmarkGuid, bookmarkTitle, bookmarkDateCreated: dateAdded });
-            if (!item.type || item.type === "history") {
-              item.type = "bookmark";
-            }
+            return Object.assign({}, item, {
+              bookmarkGuid,
+              bookmarkTitle,
+              bookmarkDateCreated: dateAdded,
+              type: "bookmark"
+            });
           }
           return item;
         })
@@ -683,148 +710,12 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
-"use strict";
-
-
-
-
-
-
-
-if (typeof Window === "undefined" && typeof Components !== "undefined" && Components.utils) {
-  Components.utils.import("resource://gre/modules/Services.jsm");
-}
-
-let usablePerfObj;
-
-
-
-if (typeof Services !== "undefined") {
-  
-  usablePerfObj = Services.appShell.hiddenDOMWindow.performance;
-} else if (typeof performance !== "undefined") {
-  
-  usablePerfObj = performance;
-} else {
-  
-  
-  usablePerfObj = {
-    now() {},
-    mark() {}
-  };
-}
-
-var _PerfService = function _PerfService(options) {
-  
-  
-  if (options && options.performanceObj) {
-    this._perf = options.performanceObj;
-  } else {
-    this._perf = usablePerfObj;
-  }
-};
-
-_PerfService.prototype = {
-  
-
-
-
-
-
-
-
-  mark: function mark(str) {
-    this._perf.mark(str);
-  },
-
-  
-
-
-
-
-
-
-
-  getEntriesByName: function getEntriesByName(name, type) {
-    return this._perf.getEntriesByName(name, type);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  get timeOrigin() {
-    return this._perf.timeOrigin;
-  },
-
-  
-
-
-
-
-
-
-  absNow: function absNow() {
-    return this.timeOrigin + this._perf.now();
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getMostRecentAbsMarkStartByName(name) {
-    let entries = this.getEntriesByName(name, "mark");
-
-    if (!entries.length) {
-      throw new Error(`No marks with the name ${name}`);
-    }
-
-    let mostRecentEntry = entries[entries.length - 1];
-    return this._perf.timeOrigin + mostRecentEntry.startTime;
-  }
-};
-
-var perfService = new _PerfService();
-module.exports = {
-  _PerfService,
-  perfService
-};
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 const React = __webpack_require__(1);
 const { actionCreators: ac, actionTypes: at } = __webpack_require__(0);
 
-const LinkMenu = __webpack_require__(9);
+const LinkMenu = __webpack_require__(8);
 
 const { TOP_SITES_SOURCE, TOP_SITES_CONTEXT_MENU_OPTIONS, MIN_RICH_FAVICON_SIZE, MIN_CORNER_FAVICON_SIZE } = __webpack_require__(5);
 
@@ -1284,14 +1175,324 @@ module.exports.InfoIntl = InfoIntl;
 
  (function(module, exports, __webpack_require__) {
 
+const React = __webpack_require__(1);
+const { actionCreators: ac, actionTypes: at } = __webpack_require__(0);
+const { perfService: perfSvc } = __webpack_require__(11);
+
+
+
+const RECORDED_SECTIONS = ["highlights", "topsites"];
+
+class ComponentPerfTimer extends React.Component {
+  constructor(props) {
+    super(props);
+    
+    this.perfSvc = this.props.perfSvc || perfSvc;
+
+    this._sendBadStateEvent = this._sendBadStateEvent.bind(this);
+    this._sendPaintedEvent = this._sendPaintedEvent.bind(this);
+    this._reportMissingData = false;
+    this._timestampHandled = false;
+    this._recordedFirstRender = false;
+  }
+
+  componentDidMount() {
+    if (!RECORDED_SECTIONS.includes(this.props.id)) {
+      return;
+    }
+
+    this._maybeSendPaintedEvent();
+  }
+
+  componentDidUpdate() {
+    if (!RECORDED_SECTIONS.includes(this.props.id)) {
+      return;
+    }
+
+    this._maybeSendPaintedEvent();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _afterFramePaint(callback) {
+    requestAnimationFrame(() => setTimeout(callback, 0));
+  }
+
+  _maybeSendBadStateEvent() {
+    
+    
+    
+    if (!this.props.initialized) {
+      
+      this._reportMissingData = true;
+    } else if (this._reportMissingData) {
+      this._reportMissingData = false;
+      
+      this._sendBadStateEvent();
+    }
+  }
+
+  _maybeSendPaintedEvent() {
+    
+    if (this._timestampHandled || !this.props.initialized) {
+      return;
+    }
+
+    
+    
+    
+    
+    
+    this._timestampHandled = true;
+    this._afterFramePaint(this._sendPaintedEvent);
+  }
+
+  
+
+
+
+  _ensureFirstRenderTsRecorded() {
+    
+    if (!this._recordedFirstRender) {
+      this._recordedFirstRender = true;
+      
+      const key = `${this.props.id}_first_render_ts`;
+      this.perfSvc.mark(key);
+    }
+  }
+
+  
+
+
+
+
+
+  _sendBadStateEvent() {
+    
+    const dataReadyKey = `${this.props.id}_data_ready_ts`;
+    this.perfSvc.mark(dataReadyKey);
+
+    try {
+      const firstRenderKey = `${this.props.id}_first_render_ts`;
+      
+      const value = parseInt(this.perfSvc.getMostRecentAbsMarkStartByName(dataReadyKey) - this.perfSvc.getMostRecentAbsMarkStartByName(firstRenderKey), 10);
+      this.props.dispatch(ac.SendToMain({
+        type: at.TELEMETRY_UNDESIRED_EVENT,
+        data: {
+          source: this.props.id.toUpperCase(),
+          
+          event: `${this.props.id}_data_late_by_ms`,
+          value
+        }
+      }));
+    } catch (ex) {
+      
+      
+    }
+  }
+
+  _sendPaintedEvent() {
+    
+    if (this.props.id !== "topsites") {
+      return;
+    }
+
+    
+    const key = `${this.props.id}_first_painted_ts`;
+    this.perfSvc.mark(key);
+
+    try {
+      const data = {};
+      data[key] = this.perfSvc.getMostRecentAbsMarkStartByName(key);
+
+      this.props.dispatch(ac.SendToMain({
+        type: at.SAVE_SESSION_PERF_DATA,
+        data
+      }));
+    } catch (ex) {
+      
+      
+      
+    }
+  }
+
+  render() {
+    if (RECORDED_SECTIONS.includes(this.props.id)) {
+      this._ensureFirstRenderTsRecorded();
+      this._maybeSendBadStateEvent();
+    }
+    return this.props.children;
+  }
+}
+
+module.exports = ComponentPerfTimer;
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+
+
+
+
+
+if (typeof Window === "undefined" && typeof Components !== "undefined" && Components.utils) {
+  Components.utils.import("resource://gre/modules/Services.jsm");
+}
+
+let usablePerfObj;
+
+
+
+if (typeof Services !== "undefined") {
+  
+  usablePerfObj = Services.appShell.hiddenDOMWindow.performance;
+} else if (typeof performance !== "undefined") {
+  
+  usablePerfObj = performance;
+} else {
+  
+  
+  usablePerfObj = {
+    now() {},
+    mark() {}
+  };
+}
+
+var _PerfService = function _PerfService(options) {
+  
+  
+  if (options && options.performanceObj) {
+    this._perf = options.performanceObj;
+  } else {
+    this._perf = usablePerfObj;
+  }
+};
+
+_PerfService.prototype = {
+  
+
+
+
+
+
+
+
+  mark: function mark(str) {
+    this._perf.mark(str);
+  },
+
+  
+
+
+
+
+
+
+
+  getEntriesByName: function getEntriesByName(name, type) {
+    return this._perf.getEntriesByName(name, type);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  get timeOrigin() {
+    return this._perf.timeOrigin;
+  },
+
+  
+
+
+
+
+
+
+  absNow: function absNow() {
+    return this.timeOrigin + this._perf.now();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getMostRecentAbsMarkStartByName(name) {
+    let entries = this.getEntriesByName(name, "mark");
+
+    if (!entries.length) {
+      throw new Error(`No marks with the name ${name}`);
+    }
+
+    let mostRecentEntry = entries[entries.length - 1];
+    return this._perf.timeOrigin + mostRecentEntry.startTime;
+  }
+};
+
+var perfService = new _PerfService();
+module.exports = {
+  _PerfService,
+  perfService
+};
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
 (function(global) {const React = __webpack_require__(1);
-const ReactDOM = __webpack_require__(12);
-const Base = __webpack_require__(13);
+const ReactDOM = __webpack_require__(13);
+const Base = __webpack_require__(14);
 const { Provider } = __webpack_require__(3);
-const initStore = __webpack_require__(30);
+const initStore = __webpack_require__(31);
 const { reducers } = __webpack_require__(6);
-const DetectUserSessionStart = __webpack_require__(32);
-const { addSnippetsSubscriber } = __webpack_require__(33);
+const DetectUserSessionStart = __webpack_require__(33);
+const { addSnippetsSubscriber } = __webpack_require__(34);
 const { actionTypes: at, actionCreators: ac } = __webpack_require__(0);
 
 new DetectUserSessionStart().sendEventOrAddListener();
@@ -1327,14 +1528,14 @@ module.exports = ReactDOM;
 const React = __webpack_require__(1);
 const { connect } = __webpack_require__(3);
 const { addLocaleData, IntlProvider } = __webpack_require__(2);
-const TopSites = __webpack_require__(14);
-const Search = __webpack_require__(20);
-const ConfirmDialog = __webpack_require__(22);
-const ManualMigration = __webpack_require__(23);
-const PreferencesPane = __webpack_require__(24);
-const Sections = __webpack_require__(25);
+const TopSites = __webpack_require__(15);
+const Search = __webpack_require__(21);
+const ConfirmDialog = __webpack_require__(23);
+const ManualMigration = __webpack_require__(24);
+const PreferencesPane = __webpack_require__(25);
+const Sections = __webpack_require__(26);
 const { actionTypes: at, actionCreators: ac } = __webpack_require__(0);
-const { PrerenderData } = __webpack_require__(29);
+const { PrerenderData } = __webpack_require__(30);
 
 
 
@@ -1443,10 +1644,10 @@ const React = __webpack_require__(1);
 const { connect } = __webpack_require__(3);
 const { FormattedMessage } = __webpack_require__(2);
 
-const TopSitesPerfTimer = __webpack_require__(15);
 const TopSitesEdit = __webpack_require__(16);
-const { TopSite, TopSitePlaceholder } = __webpack_require__(8);
-const CollapsibleSection = __webpack_require__(10);
+const { TopSite, TopSitePlaceholder } = __webpack_require__(7);
+const CollapsibleSection = __webpack_require__(9);
+const ComponentPerfTimer = __webpack_require__(10);
 
 const TopSites = props => {
   const realTopSites = props.TopSites.rows.slice(0, props.TopSitesCount);
@@ -1456,8 +1657,8 @@ const TopSites = props => {
     body: { id: "settings_pane_topsites_body" }
   };
   return React.createElement(
-    TopSitesPerfTimer,
-    null,
+    ComponentPerfTimer,
+    { id: "topsites", initialized: props.TopSites.initialized, dispatch: props.dispatch },
     React.createElement(
       CollapsibleSection,
       { className: "top-sites", icon: "topsites", title: React.createElement(FormattedMessage, { id: "header_top_sites" }), infoOption: infoOption, prefName: "collapseTopSites", Prefs: props.Prefs, dispatch: props.dispatch },
@@ -1485,130 +1686,11 @@ module.exports._unconnected = TopSites;
  (function(module, exports, __webpack_require__) {
 
 const React = __webpack_require__(1);
-const { connect } = __webpack_require__(3);
-const { actionCreators: ac, actionTypes: at } = __webpack_require__(0);
-const { perfService: perfSvc } = __webpack_require__(7);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class TopSitesPerfTimer extends React.PureComponent {
-  constructor(props) {
-    super(props);
-    
-    this.perfSvc = this.props.perfSvc || perfSvc;
-
-    this._sendPaintedEvent = this._sendPaintedEvent.bind(this);
-    this._timestampHandled = false;
-  }
-
-  componentDidMount() {
-    this._maybeSendPaintedEvent();
-  }
-
-  componentDidUpdate() {
-    this._maybeSendPaintedEvent();
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _afterFramePaint(callback) {
-    requestAnimationFrame(() => setTimeout(callback, 0));
-  }
-
-  _maybeSendPaintedEvent() {
-    
-    
-    
-    
-    if (!this.props.TopSites.initialized) {
-      
-      return;
-    }
-
-    
-    if (this._timestampHandled) {
-      return;
-    }
-
-    
-    
-    
-    
-    
-    this._timestampHandled = true;
-
-    this._afterFramePaint(this._sendPaintedEvent);
-  }
-
-  _sendPaintedEvent() {
-    this.perfSvc.mark("topsites_first_painted_ts");
-
-    try {
-      let topsites_first_painted_ts = this.perfSvc.getMostRecentAbsMarkStartByName("topsites_first_painted_ts");
-
-      this.props.dispatch(ac.SendToMain({
-        type: at.SAVE_SESSION_PERF_DATA,
-        data: { topsites_first_painted_ts }
-      }));
-    } catch (ex) {
-      
-      
-      
-    }
-  }
-
-  render() {
-    return this.props.children;
-  }
-}
-
-module.exports = connect(state => ({ TopSites: state.TopSites }))(TopSitesPerfTimer);
-module.exports._unconnected = TopSitesPerfTimer;
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-const React = __webpack_require__(1);
 const { FormattedMessage, injectIntl } = __webpack_require__(2);
 const { actionCreators: ac, actionTypes: at } = __webpack_require__(0);
 
 const TopSiteForm = __webpack_require__(17);
-const { TopSite, TopSitePlaceholder } = __webpack_require__(8);
+const { TopSite, TopSitePlaceholder } = __webpack_require__(7);
 
 const { TOP_SITES_DEFAULT_LENGTH, TOP_SITES_SHOWMORE_LENGTH } = __webpack_require__(6);
 const { TOP_SITES_SOURCE } = __webpack_require__(5);
@@ -2181,6 +2263,46 @@ module.exports.CheckPinTopSite = (site, index) => site.isPinned ? module.exports
 
  }),
 
+ (function(module, exports) {
+
+var Dedupe = class Dedupe {
+  constructor(createKey) {
+    this.createKey = createKey || this.defaultCreateKey;
+  }
+
+  defaultCreateKey(item) {
+    return item;
+  }
+
+  
+
+
+
+
+
+  group(...groups) {
+    const globalKeys = new Set();
+    const result = [];
+    for (const values of groups) {
+      const valueMap = new Map();
+      for (const value of values) {
+        const key = this.createKey(value);
+        if (!globalKeys.has(key) && !valueMap.has(key)) {
+          valueMap.set(key, value);
+        }
+      }
+      result.push(valueMap);
+      valueMap.forEach((value, key) => globalKeys.add(key));
+    }
+    return result.map(m => Array.from(m.values()));
+  }
+};
+module.exports = {
+  Dedupe
+};
+
+ }),
+
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2191,7 +2313,7 @@ const React = __webpack_require__(1);
 const { connect } = __webpack_require__(3);
 const { FormattedMessage, injectIntl } = __webpack_require__(2);
 const { actionCreators: ac } = __webpack_require__(0);
-const { IS_NEWTAB } = __webpack_require__(21);
+const { IS_NEWTAB } = __webpack_require__(22);
 
 class Search extends React.PureComponent {
   constructor(props) {
@@ -2675,11 +2797,12 @@ module.exports.PreferencesInput = PreferencesInput;
 const React = __webpack_require__(1);
 const { connect } = __webpack_require__(3);
 const { injectIntl, FormattedMessage } = __webpack_require__(2);
-const Card = __webpack_require__(26);
+const Card = __webpack_require__(27);
 const { PlaceholderCard } = Card;
-const Topics = __webpack_require__(28);
+const Topics = __webpack_require__(29);
 const { actionCreators: ac } = __webpack_require__(0);
-const CollapsibleSection = __webpack_require__(10);
+const CollapsibleSection = __webpack_require__(9);
+const ComponentPerfTimer = __webpack_require__(10);
 
 const VISIBLE = "visible";
 const VISIBILITY_CHANGE_EVENT = "visibilitychange";
@@ -2816,30 +2939,34 @@ class Section extends React.PureComponent {
     
     
     return React.createElement(
-      CollapsibleSection,
-      { className: "section", icon: icon, title: getFormattedMessage(title), infoOption: infoOption, prefName: `section.${id}.collapsed`, Prefs: this.props.Prefs, dispatch: this.props.dispatch },
-      !shouldShowEmptyState && React.createElement(
-        "ul",
-        { className: "section-list", style: { padding: 0 } },
-        realRows.map((link, index) => link && React.createElement(Card, { key: index, index: index, dispatch: dispatch, link: link, contextMenuOptions: contextMenuOptions,
-          eventSource: eventSource, shouldSendImpressionStats: this.props.shouldSendImpressionStats })),
-        placeholders > 0 && [...new Array(placeholders)].map((_, i) => React.createElement(PlaceholderCard, { key: i }))
-      ),
-      shouldShowEmptyState && React.createElement(
-        "div",
-        { className: "section-empty-state" },
-        React.createElement(
+      ComponentPerfTimer,
+      this.props,
+      React.createElement(
+        CollapsibleSection,
+        { className: "section", icon: icon, title: getFormattedMessage(title), infoOption: infoOption, prefName: `section.${id}.collapsed`, Prefs: this.props.Prefs, dispatch: this.props.dispatch },
+        !shouldShowEmptyState && React.createElement(
+          "ul",
+          { className: "section-list", style: { padding: 0 } },
+          realRows.map((link, index) => link && React.createElement(Card, { key: index, index: index, dispatch: dispatch, link: link, contextMenuOptions: contextMenuOptions,
+            eventSource: eventSource, shouldSendImpressionStats: this.props.shouldSendImpressionStats })),
+          placeholders > 0 && [...new Array(placeholders)].map((_, i) => React.createElement(PlaceholderCard, { key: i }))
+        ),
+        shouldShowEmptyState && React.createElement(
           "div",
-          { className: "empty-state" },
-          emptyState.icon && emptyState.icon.startsWith("moz-extension://") ? React.createElement("img", { className: "empty-state-icon icon", style: { "background-image": `url('${emptyState.icon}')` } }) : React.createElement("img", { className: `empty-state-icon icon icon-${emptyState.icon}` }),
+          { className: "section-empty-state" },
           React.createElement(
-            "p",
-            { className: "empty-state-message" },
-            getFormattedMessage(emptyState.message)
+            "div",
+            { className: "empty-state" },
+            emptyState.icon && emptyState.icon.startsWith("moz-extension://") ? React.createElement("img", { className: "empty-state-icon icon", style: { "background-image": `url('${emptyState.icon}')` } }) : React.createElement("img", { className: `empty-state-icon icon icon-${emptyState.icon}` }),
+            React.createElement(
+              "p",
+              { className: "empty-state-message" },
+              getFormattedMessage(emptyState.message)
+            )
           )
-        )
-      ),
-      shouldShowTopics && React.createElement(Topics, { topics: this.props.topics, read_more_endpoint: this.props.read_more_endpoint })
+        ),
+        shouldShowTopics && React.createElement(Topics, { topics: this.props.topics, read_more_endpoint: this.props.read_more_endpoint })
+      )
     );
   }
 }
@@ -2875,9 +3002,9 @@ module.exports._unconnectedSection = Section;
  (function(module, exports, __webpack_require__) {
 
 const React = __webpack_require__(1);
-const LinkMenu = __webpack_require__(9);
+const LinkMenu = __webpack_require__(8);
 const { FormattedMessage } = __webpack_require__(2);
-const cardContextTypes = __webpack_require__(27);
+const cardContextTypes = __webpack_require__(28);
 const { actionCreators: ac, actionTypes: at } = __webpack_require__(0);
 
 
@@ -3242,7 +3369,7 @@ module.exports = {
 
 (function(global) {
 
-const { createStore, combineReducers, applyMiddleware } = __webpack_require__(31);
+const { createStore, combineReducers, applyMiddleware } = __webpack_require__(32);
 const { actionTypes: at, actionCreators: ac, actionUtils: au } = __webpack_require__(0);
 
 const MERGE_STORE_ACTION = "NEW_TAB_INITIAL_STATE";
@@ -3362,7 +3489,7 @@ module.exports = Redux;
  (function(module, exports, __webpack_require__) {
 
 (function(global) {const { actionTypes: at } = __webpack_require__(0);
-const { perfService: perfSvc } = __webpack_require__(7);
+const { perfService: perfSvc } = __webpack_require__(11);
 
 const VISIBLE = "visible";
 const VISIBILITY_CHANGE_EVENT = "visibilitychange";
