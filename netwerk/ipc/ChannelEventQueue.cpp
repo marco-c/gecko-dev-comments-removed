@@ -144,8 +144,31 @@ ChannelEventQueue::ResumeInternal()
     }
 
     
-    RefPtr<Runnable> event =
-      NewCancelableRunnableMethod(this, &ChannelEventQueue::CompleteResume);
+    
+    class CompleteResumeRunnable : public CancelableRunnable
+    {
+    public:
+      explicit CompleteResumeRunnable(ChannelEventQueue* aQueue, nsISupports* aOwner)
+        : mQueue(aQueue)
+        , mOwner(aOwner)
+      {
+      }
+
+      NS_IMETHOD Run() override
+      {
+        mQueue->CompleteResume();
+        return NS_OK;
+      }
+
+    private:
+      virtual ~CompleteResumeRunnable() {}
+
+      RefPtr<ChannelEventQueue> mQueue;
+      nsCOMPtr<nsISupports> mOwner;
+    };
+
+    
+    RefPtr<Runnable> event = new CompleteResumeRunnable(this, mOwner);
 
     nsCOMPtr<nsIEventTarget> target;
       target = mEventQueue[0]->GetEventTarget();
