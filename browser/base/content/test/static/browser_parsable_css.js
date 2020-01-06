@@ -28,6 +28,9 @@ let whitelist = [
    errorMessage: /Unknown property.*appearance/i,
    isFromDevTools: false},
   
+  {sourceName: /aboutaccounts\/(main|normalize)\.css$/i,
+   isFromDevTools: false},
+  
   {sourceName: /highlighters\.css$/i,
    errorMessage: /Unknown pseudo-class.*moz-native-anonymous/i,
    isFromDevTools: true},

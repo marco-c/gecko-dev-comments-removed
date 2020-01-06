@@ -13,8 +13,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "ShellService",
   "resource:///modules/ShellService.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ProfileAge",
   "resource://gre/modules/ProfileAge.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "fxAccounts",
-  "resource://gre/modules/FxAccounts.jsm");
 
 
 const SNIPPETS_URL_PREF = "browser.aboutHomeSnippets.updateUrl";
@@ -126,10 +124,9 @@ this.SnippetsFeed = class SnippetsFeed {
     this.store.dispatch(ac.BroadcastToContent({type: at.SNIPPETS_RESET}));
   }
 
-  async showFirefoxAccounts(browser) {
-    const url = await fxAccounts.promiseAccountsSignUpURI("snippets");
+  showFirefoxAccounts(browser) {
     
-    browser.loadURI(url);
+    browser.loadURI("about:accounts?action=signup&entrypoint=snippets");
   }
 
   onAction(action) {

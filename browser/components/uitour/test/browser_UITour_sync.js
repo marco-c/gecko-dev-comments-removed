@@ -5,19 +5,10 @@ var gContentAPI;
 var gContentWindow;
 
 registerCleanupFunction(function() {
-  Services.prefs.clearUserPref("identity.fxaccounts.remote.signup.uri");
-  Services.prefs.clearUserPref("identity.fxaccounts.remote.email.uri");
   Services.prefs.clearUserPref("services.sync.username");
 });
 
 add_task(setup_UITourTest);
-
-add_task(async function setup() {
-  Services.prefs.setCharPref("identity.fxaccounts.remote.signup.uri",
-                             "https://example.com/signup");
-  Services.prefs.setCharPref("identity.fxaccounts.remote.email.uri",
-                             "https://example.com/?action=email");
-})
 
 add_UITour_task(async function test_checkSyncSetup_disabled() {
   let result = await getConfigurationPromise("sync");
@@ -60,25 +51,25 @@ add_UITour_task(async function test_checkSyncCounts() {
 
 
 add_UITour_task(async function test_firefoxAccountsNoParams() {
-  info("Load https://accounts.firefox.com");
+  info("Load about:accounts containing an iframe to https://accounts.firefox.com");
   await gContentAPI.showFirefoxAccounts();
   await BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false,
-                                       "https://example.com/signup?entrypoint=uitour");
+                                       "about:accounts?action=signup&entrypoint=uitour");
 });
 
 
 add_UITour_task(async function test_firefoxAccountsValidParams() {
-  info("Load https://accounts.firefox.com");
+  info("Load about:accounts containing an iframe to https://accounts.firefox.com");
   await gContentAPI.showFirefoxAccounts({ utm_foo: "foo", utm_bar: "bar" });
   await BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false,
-                                       "https://example.com/signup?entrypoint=uitour&utm_foo=foo&utm_bar=bar");
+                                       "about:accounts?action=signup&entrypoint=uitour&utm_foo=foo&utm_bar=bar");
 });
 
 add_UITour_task(async function test_firefoxAccountsWithEmail() {
-  info("Load https://accounts.firefox.com");
+  info("Load about:accounts containing an iframe to https://accounts.firefox.com");
   await gContentAPI.showFirefoxAccounts(null, "foo@bar.com");
   await BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false,
-                                       "https://example.com/?action=email&email=foo%40bar.com&entrypoint=uitour");
+                                       "about:accounts?action=email&entrypoint=uitour&email=foo%40bar.com");
 });
 
 add_UITour_task(async function test_firefoxAccountsNonAlphaValue() {
@@ -88,38 +79,38 @@ add_UITour_task(async function test_firefoxAccountsNonAlphaValue() {
   let value = "foo& /=?:\\\xa9";
   
   let expected = encodeURIComponent(value).replace(/%20/g, "+");
-  info("Load https://accounts.firefox.com");
+  info("Load about:accounts containing an iframe to https://accounts.firefox.com");
   await gContentAPI.showFirefoxAccounts({ utm_foo: value });
   await BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false,
-                                       "https://example.com/signup?entrypoint=uitour&utm_foo=" + expected);
+                                       "about:accounts?action=signup&entrypoint=uitour&utm_foo=" + expected);
 });
 
 
-async function checkFxANotLoaded() {
+async function checkAboutAccountsNotLoaded() {
   try {
     await waitForConditionPromise(() => {
-      return gBrowser.selectedBrowser.currentURI.spec.startsWith("https://example.com");
-    }, "Check if FxA opened");
-    ok(false, "No FxA tab should have opened");
+      return gBrowser.selectedBrowser.currentURI.spec.startsWith("about:accounts");
+    }, "Check if about:accounts opened");
+    ok(false, "No about:accounts tab should have opened");
   } catch (ex) {
-    ok(true, "No FxA tab opened");
+    ok(true, "No about:accounts tab opened");
   }
 }
 
 add_UITour_task(async function test_firefoxAccountsNonObject() {
   
   await gContentAPI.showFirefoxAccounts(99);
-  await checkFxANotLoaded();
+  await checkAboutAccountsNotLoaded();
 });
 
 add_UITour_task(async function test_firefoxAccountsNonUtmPrefix() {
   
   await gContentAPI.showFirefoxAccounts({ utm_foo: "foo", bar: "bar" });
-  await checkFxANotLoaded();
+  await checkAboutAccountsNotLoaded();
 });
 
 add_UITour_task(async function test_firefoxAccountsNonAlphaName() {
   
   await gContentAPI.showFirefoxAccounts({ utm_foo: "foo", "utm_bar=": "bar" });
-  await checkFxANotLoaded();
+  await checkAboutAccountsNotLoaded();
 });
