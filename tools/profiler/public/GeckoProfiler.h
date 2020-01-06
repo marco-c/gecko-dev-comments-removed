@@ -25,6 +25,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/GuardObjects.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/UniquePtr.h"
@@ -267,9 +268,50 @@ typedef void ProfilerStackCallback(void** aPCs, size_t aCount, bool aIsMainThrea
 
 
 
+
+
 PROFILER_FUNC_VOID(
   profiler_suspend_and_sample_thread(int aThreadId,
                                      const std::function<ProfilerStackCallback>& aCallback,
+                                     bool aSampleNative = true))
+
+
+
+class ProfilerStackCollector
+{
+public:
+  
+  
+  
+  virtual mozilla::Maybe<uint32_t> Generation() { return mozilla::Nothing(); }
+
+  
+  
+  virtual void SetIsMainThread() {}
+
+  
+  
+  
+  
+
+  virtual void CollectNativeLeafAddr(void* aAddr) = 0;
+
+  virtual void CollectJitReturnAddr(void* aAddr) = 0;
+
+  
+  virtual void CollectCodeLocation(
+    const char* aLabel, const char* aStr, int aLineNumber,
+    const mozilla::Maybe<js::ProfileEntry::Category>& aCategory) = 0;
+};
+
+
+
+
+
+PROFILER_FUNC_VOID(
+  profiler_suspend_and_sample_thread(int aThreadId,
+                                     uint32_t aFeatures,
+                                     ProfilerStackCollector& aCollector,
                                      bool aSampleNative = true))
 
 struct ProfilerBacktraceDestructor
