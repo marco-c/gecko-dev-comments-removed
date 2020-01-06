@@ -1224,7 +1224,7 @@ nsDocumentViewer::PermitUnloadInternal(bool *aShouldPrompt,
     
     nsGlobalWindowOuter* globalWindow = nsGlobalWindowOuter::Cast(window);
     dialogsAreEnabled = globalWindow->AreDialogsEnabled();
-    nsGlobalWindow::TemporarilyDisableDialogs disableDialogs(globalWindow);
+    nsGlobalWindowOuter::TemporarilyDisableDialogs disableDialogs(globalWindow);
 
     nsIDocument::PageUnloadingEventTimeStamp timestamp(mDocument);
 

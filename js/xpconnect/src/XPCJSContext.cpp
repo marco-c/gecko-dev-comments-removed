@@ -711,13 +711,13 @@ XPCJSContext::InterruptCallback(JSContext* cx)
     }
 
     
-    nsGlobalWindow::SlowScriptResponse response = win->ShowSlowScriptDialog(addonId);
-    if (response == nsGlobalWindow::KillSlowScript) {
+    nsGlobalWindowInner::SlowScriptResponse response = win->ShowSlowScriptDialog(addonId);
+    if (response == nsGlobalWindowInner::KillSlowScript) {
         if (Preferences::GetBool("dom.global_stop_script", true))
             xpc::Scriptability::Get(global).Block();
         return false;
     }
-    if (response == nsGlobalWindow::KillScriptGlobal) {
+    if (response == nsGlobalWindowInner::KillScriptGlobal) {
         nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
 
         if (!IsSandbox(global) || !obs)
@@ -742,10 +742,10 @@ XPCJSContext::InterruptCallback(JSContext* cx)
 
     
     
-    if (response != nsGlobalWindow::ContinueSlowScriptAndKeepNotifying)
+    if (response != nsGlobalWindowInner::ContinueSlowScriptAndKeepNotifying)
         self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
 
-    if (response == nsGlobalWindow::AlwaysContinueSlowScript)
+    if (response == nsGlobalWindowInner::AlwaysContinueSlowScript)
         Preferences::SetInt(prefName, 0);
 
     return true;
