@@ -6,7 +6,7 @@
 
 var search = window.location.href.match(/^.*\?(.*)$/);
 var searchParams = new URLSearchParams(search ? search[1] : "");
-var storage = searchParams.get("storage");
+var storage = searchParams.get("storage") || "";
 var cacheContext = searchParams.get("context");
 
 
