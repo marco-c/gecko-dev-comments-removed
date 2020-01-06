@@ -204,7 +204,7 @@ ClientPaintedLayer::PaintThebes(nsTArray<ReadbackProcessor::Update>* aReadbackUp
 
 
 
-bool
+void
 ClientPaintedLayer::PaintOffMainThread()
 {
   uint32_t flags = GetPaintFlags();
@@ -218,7 +218,10 @@ ClientPaintedLayer::PaintOffMainThread()
   }
 
   if (!UpdatePaintRegion(state)) {
-    return false;
+    if (didUpdate) {
+      ClientManager()->SetQueuedAsyncPaints();
+    }
+    return;
   }
 
   RotatedBuffer::DrawIterator iter;
@@ -272,7 +275,7 @@ ClientPaintedLayer::PaintOffMainThread()
     UpdateContentClient(state);
     ClientManager()->SetQueuedAsyncPaints();
   }
-  return true;
+  return;
 }
 
 void
@@ -285,9 +288,8 @@ ClientPaintedLayer::RenderLayerWithReadback(ReadbackProcessor *aReadback)
   }
 
   if (CanRecordLayer(aReadback)) {
-    if (PaintOffMainThread()) {
-      return;
-    }
+    PaintOffMainThread();
+    return;
   }
 
   nsTArray<ReadbackProcessor::Update> readbackUpdates;
