@@ -390,15 +390,6 @@ pub trait TElement
 
     
     
-    
-    
-    
-    fn style_scope(&self) -> Self::ConcreteNode {
-        self.as_node().owner_doc().as_node()
-    }
-
-    
-    
     fn traversal_parent(&self) -> Option<Self> {
         self.as_node().traversal_parent()
     }
@@ -748,15 +739,13 @@ pub trait TElement
     }
 
     
-    
-    
-    
-    
-    
     fn rule_hash_target(&self) -> Self {
         let is_implemented_pseudo =
             self.implemented_pseudo_element().is_some();
 
+        
+        
+        
         if is_implemented_pseudo {
             self.closest_non_native_anonymous_ancestor().unwrap()
         } else {
