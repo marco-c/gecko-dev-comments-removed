@@ -57,23 +57,31 @@ add_task(async function simple_navigation() {
   });
 });
 
+
+
+
+async function testNewTab(browser) {
+  let targetURL = browser.currentURI.spec;
+  let dialogAppeared = promiseHelperAppDialog();
+  let tabOpened = BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "TabOpen").then((event) => {
+    return [ event.target, BrowserTestUtils.tabRemoved(event.target) ];
+  });
+
+  await BrowserTestUtils.synthesizeMouseAtCenter("#target_blank", {}, browser);
+
+  let windowContext = await dialogAppeared;
+  is(windowContext.gBrowser.selectedBrowser.currentURI.spec, targetURL,
+     "got the right windowContext");
+  let [ tab, closed ] = await tabOpened;
+  await closed;
+  is(tab.linkedBrowser, null, "tab was opened and closed");
+}
+
 add_task(async function target_blank() {
   
   
   await BrowserTestUtils.withNewTab({ gBrowser, url: URL }, async function(browser) {
-    let dialogAppeared = promiseHelperAppDialog();
-    let tabOpened = BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "TabOpen").then((event) => {
-      return [ event.target, BrowserTestUtils.tabRemoved(event.target) ];
-    });
-
-    await BrowserTestUtils.synthesizeMouseAtCenter("#target_blank", {}, browser);
-
-    let windowContext = await dialogAppeared;
-    is(windowContext.gBrowser.selectedBrowser.currentURI.spec, URL,
-       "got the right windowContext");
-    let [ tab, closed ] = await tabOpened;
-    await closed;
-    is(tab.linkedBrowser, null, "tab was opened and closed");
+    await testNewTab(browser);
   });
 });
 
@@ -96,6 +104,25 @@ add_task(async function new_window() {
     
     await BrowserTestUtils.domWindowClosed(win);
     ok(win.closed, "window was opened and closed");
+  });
+});
+
+add_task(async function nested_window_opens() {
+  
+  
+  await BrowserTestUtils.withNewTab({ gBrowser, url: URL }, async function(outerBrowser) {
+    BrowserTestUtils.synthesizeMouseAtCenter("#open_in_new_tab", {}, outerBrowser);
+    let secondTab = await BrowserTestUtils.waitForNewTab(gBrowser, null, true);
+    let nestedBrowser = secondTab.linkedBrowser;
+
+    await ContentTask.spawn(nestedBrowser, null, function() {
+      ok(content.opener, "this window has an opener");
+    });
+
+    await testNewTab(nestedBrowser);
+
+    isnot(secondTab.linkedBrowser, null, "the page that triggered the download is still open");
+    await BrowserTestUtils.removeTab(secondTab);
   });
 });
 
