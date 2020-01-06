@@ -202,6 +202,55 @@ private:
 
 MOZ_THREAD_LOCAL(SavedCallFrame*) SavedCallFrame::tlsFrame;
 
+class MOZ_RAII LogEvent final
+{
+public:
+  LogEvent()
+    : mCallStart(mozilla::TimeStamp::Now())
+  {
+  }
+
+  ~LogEvent()
+  {
+    if (mCapturedFrame.IsEmpty()) {
+      return;
+    }
+
+    mozilla::TimeStamp callEnd(TimeStamp::Now());
+    mozilla::TimeDuration totalTime(callEnd - mCallStart);
+    mozilla::TimeDuration overhead(totalTime - mGeckoDuration - mCaptureDuration);
+
+    mozilla::mscom::InterceptorLog::Event(mCapturedFrame, overhead,
+                                          mGeckoDuration);
+  }
+
+  void CaptureFrame(ICallFrame* aFrame, IUnknown* aTarget,
+                    const mozilla::TimeDuration& aGeckoDuration)
+  {
+    mozilla::TimeStamp captureStart(TimeStamp::Now());
+
+    mozilla::mscom::InterceptorLog::CaptureFrame(aFrame, aTarget, mCapturedFrame);
+    mGeckoDuration = aGeckoDuration;
+
+    mozilla::TimeStamp captureEnd(TimeStamp::Now());
+
+    
+    
+    mCaptureDuration = captureEnd - captureStart;
+  }
+
+  LogEvent(const LogEvent&) = delete;
+  LogEvent(LogEvent&&) = delete;
+  LogEvent& operator=(const LogEvent&) = delete;
+  LogEvent& operator=(LogEvent&&) = delete;
+
+private:
+  mozilla::TimeStamp    mCallStart;
+  mozilla::TimeDuration mGeckoDuration;
+  mozilla::TimeDuration mCaptureDuration;
+  nsAutoCString         mCapturedFrame;
+};
+
 } 
 
 namespace mozilla {
@@ -311,7 +360,7 @@ MainThreadHandoff::FixIServiceProvider(ICallFrame* aFrame)
 HRESULT
 MainThreadHandoff::OnCall(ICallFrame* aFrame)
 {
-  TimeStamp callStart(TimeStamp::Now());
+  LogEvent logEvent;
 
   
   HRESULT hr;
@@ -349,14 +398,9 @@ MainThreadHandoff::OnCall(ICallFrame* aFrame)
     return hr;
   }
 
-  TimeStamp callEnd(TimeStamp::Now());
-  TimeDuration totalTime(callEnd - callStart);
-  TimeDuration overhead(totalTime - invoker.GetDuration());
-
   
   
-  InterceptorLog::Event(aFrame, targetInterface.get(), overhead,
-                        invoker.GetDuration());
+  logEvent.CaptureFrame(aFrame, targetInterface.get(), invoker.GetDuration());
 
   
   
