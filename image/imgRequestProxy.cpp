@@ -13,6 +13,8 @@
 #include "nsError.h"
 #include "nsCRTGlue.h"
 #include "imgINotificationObserver.h"
+#include "mozilla/dom/TabGroup.h"       
+#include "mozilla/dom/DocGroup.h"       
 
 using namespace mozilla::image;
 
@@ -154,6 +156,7 @@ imgRequestProxy::~imgRequestProxy()
 nsresult
 imgRequestProxy::Init(imgRequest* aOwner,
                       nsILoadGroup* aLoadGroup,
+                      nsIDocument* aLoadingDocument,
                       ImageURL* aURI,
                       imgINotificationObserver* aObserver)
 {
@@ -178,9 +181,7 @@ imgRequestProxy::Init(imgRequest* aOwner,
   mURI = aURI;
 
   
-  if (GetOwner()) {
-    GetOwner()->AddProxy(this);
-  }
+  AddToOwner(aLoadingDocument);
 
   return NS_OK;
 }
@@ -224,7 +225,7 @@ imgRequestProxy::ChangeOwner(imgRequest* aNewOwner)
     IncrementAnimationConsumers();
   }
 
-  GetOwner()->AddProxy(this);
+  AddToOwner(nullptr);
 
   
   
@@ -233,6 +234,85 @@ imgRequestProxy::ChangeOwner(imgRequest* aNewOwner)
   }
 
   return NS_OK;
+}
+
+bool
+imgRequestProxy::IsOnEventTarget() const
+{
+  
+  
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mTabGroup) {
+    MOZ_ASSERT(mEventTarget);
+    return mTabGroup->IsSafeToRun();
+  }
+
+  if (mListener) {
+    
+    
+    MOZ_ASSERT(mEventTarget);
+    return mozilla::SchedulerGroup::IsSafeToRunUnlabeled();
+  }
+
+  
+  return true;
+}
+
+already_AddRefed<nsIEventTarget>
+imgRequestProxy::GetEventTarget() const
+{
+  nsCOMPtr<nsIEventTarget> target(mEventTarget);
+  return target.forget();
+}
+
+void
+imgRequestProxy::Dispatch(already_AddRefed<nsIRunnable> aEvent)
+{
+  LOG_FUNC(gImgLog, "imgRequestProxy::Dispatch");
+
+  MOZ_ASSERT(mListener);
+  MOZ_ASSERT(mEventTarget);
+
+  mEventTarget->Dispatch(Move(aEvent), NS_DISPATCH_NORMAL);
+}
+
+void
+imgRequestProxy::AddToOwner(nsIDocument* aLoadingDocument)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aLoadingDocument) {
+    RefPtr<dom::DocGroup> docGroup = aLoadingDocument->GetDocGroup();
+    if (docGroup) {
+      mTabGroup = docGroup->GetTabGroup();
+      MOZ_ASSERT(mTabGroup);
+
+      mEventTarget = mTabGroup->EventTargetFor(mozilla::TaskCategory::Other);
+      MOZ_ASSERT(mEventTarget);
+    }
+  }
+
+  if (mListener && !mEventTarget) {
+    mEventTarget = do_GetMainThread();
+  }
+
+  if (!GetOwner()) {
+    return;
+  }
+
+  GetOwner()->AddProxy(this);
 }
 
 void
@@ -627,19 +707,21 @@ imgRequestProxy::Clone(imgINotificationObserver* aObserver,
 {
   nsresult result;
   imgRequestProxy* proxy;
-  result = Clone(aObserver, &proxy);
+  result = Clone(aObserver, nullptr, &proxy);
   *aClone = proxy;
   return result;
 }
 
 nsresult imgRequestProxy::Clone(imgINotificationObserver* aObserver,
+                                nsIDocument* aLoadingDocument,
                                 imgRequestProxy** aClone)
 {
-  return PerformClone(aObserver, NewProxy, aClone);
+  return PerformClone(aObserver, aLoadingDocument, NewProxy, aClone);
 }
 
 nsresult
 imgRequestProxy::PerformClone(imgINotificationObserver* aObserver,
+                              nsIDocument* aLoadingDocument,
                               imgRequestProxy* (aAllocFn)(imgRequestProxy*),
                               imgRequestProxy** aClone)
 {
@@ -658,7 +740,7 @@ imgRequestProxy::PerformClone(imgINotificationObserver* aObserver,
   
   clone->SetLoadFlags(mLoadFlags);
   nsresult rv = clone->Init(mBehaviour->GetOwner(), mLoadGroup,
-                            mURI, aObserver);
+                            aLoadingDocument, mURI, aObserver);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -811,6 +893,23 @@ imgRequestProxy::Notify(int32_t aType, const mozilla::gfx::IntRect* aRect)
     return;
   }
 
+  if (!IsOnEventTarget()) {
+    RefPtr<imgRequestProxy> self(this);
+    if (aRect) {
+      const mozilla::gfx::IntRect rect = *aRect;
+      Dispatch(NS_NewRunnableFunction("imgRequestProxy::Notify",
+                                      [self, rect, aType]() -> void {
+        self->Notify(aType, &rect);
+      }));
+    } else {
+      Dispatch(NS_NewRunnableFunction("imgRequestProxy::Notify",
+                                      [self, aType]() -> void {
+        self->Notify(aType, nullptr);
+      }));
+    }
+    return;
+  }
+
   
   nsCOMPtr<imgINotificationObserver> listener(mListener);
 
@@ -830,7 +929,15 @@ imgRequestProxy::OnLoadComplete(bool aLastPart)
   
   
   
-  nsCOMPtr<imgIRequest> kungFuDeathGrip(this);
+  RefPtr<imgRequestProxy> self(this);
+
+  if (!IsOnEventTarget()) {
+    Dispatch(NS_NewRunnableFunction("imgRequestProxy::OnLoadComplete",
+                                    [self, aLastPart]() -> void {
+      self->OnLoadComplete(aLastPart);
+    }));
+    return;
+  }
 
   if (mListener && !mCanceled) {
     
@@ -874,9 +981,20 @@ imgRequestProxy::BlockOnload()
   }
 
   nsCOMPtr<imgIOnloadBlocker> blocker = do_QueryInterface(mListener);
-  if (blocker) {
-    blocker->BlockOnload(this);
+  if (!blocker) {
+    return;
   }
+
+  if (!IsOnEventTarget()) {
+    RefPtr<imgRequestProxy> self(this);
+    Dispatch(NS_NewRunnableFunction("imgRequestProxy::BlockOnload",
+                                    [self]() -> void {
+      self->BlockOnload();
+    }));
+    return;
+  }
+
+  blocker->BlockOnload(this);
 }
 
 void
@@ -890,9 +1008,20 @@ imgRequestProxy::UnblockOnload()
   }
 
   nsCOMPtr<imgIOnloadBlocker> blocker = do_QueryInterface(mListener);
-  if (blocker) {
-    blocker->UnblockOnload(this);
+  if (!blocker) {
+    return;
   }
+
+  if (!IsOnEventTarget()) {
+    RefPtr<imgRequestProxy> self(this);
+    Dispatch(NS_NewRunnableFunction("imgRequestProxy::UnblockOnload",
+                                    [self]() -> void {
+      self->UnblockOnload();
+    }));
+    return;
+  }
+
+  blocker->UnblockOnload(this);
 }
 
 void
@@ -911,19 +1040,25 @@ imgRequestProxy::NullOutListener()
   } else {
     mListener = nullptr;
   }
+
+  
+  
+  
+  mTabGroup = nullptr;
 }
 
 NS_IMETHODIMP
 imgRequestProxy::GetStaticRequest(imgIRequest** aReturn)
 {
   imgRequestProxy* proxy;
-  nsresult result = GetStaticRequest(&proxy);
+  nsresult result = GetStaticRequest(nullptr, &proxy);
   *aReturn = proxy;
   return result;
 }
 
 nsresult
-imgRequestProxy::GetStaticRequest(imgRequestProxy** aReturn)
+imgRequestProxy::GetStaticRequest(nsIDocument* aLoadingDocument,
+                                  imgRequestProxy** aReturn)
 {
   *aReturn = nullptr;
   RefPtr<Image> image = GetImage();
@@ -950,7 +1085,7 @@ imgRequestProxy::GetStaticRequest(imgRequestProxy** aReturn)
   GetImagePrincipal(getter_AddRefs(currentPrincipal));
   RefPtr<imgRequestProxy> req = new imgRequestProxyStatic(frozenImage,
                                                             currentPrincipal);
-  req->Init(nullptr, nullptr, mURI, nullptr);
+  req->Init(nullptr, nullptr, aLoadingDocument, mURI, nullptr);
 
   NS_ADDREF(*aReturn = req);
 
@@ -1105,7 +1240,8 @@ imgRequestProxyStatic::GetImagePrincipal(nsIPrincipal** aPrincipal)
 
 nsresult
 imgRequestProxyStatic::Clone(imgINotificationObserver* aObserver,
+                             nsIDocument* aLoadingDocument,
                              imgRequestProxy** aClone)
 {
-  return PerformClone(aObserver, NewStaticProxy, aClone);
+  return PerformClone(aObserver, aLoadingDocument, NewStaticProxy, aClone);
 }
