@@ -320,6 +320,11 @@ ObjectActor.prototype = {
     let level = 0, i = 0;
 
     
+    if (obj.isProxy) {
+      return safeGetterValues;
+    }
+
+    
     
     
     
@@ -329,7 +334,8 @@ ObjectActor.prototype = {
       level++;
     }
 
-    while (obj) {
+    
+    while (obj && !obj.isProxy) {
       let getters = this._findSafeGetters(obj);
       for (let name of getters) {
         
