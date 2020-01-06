@@ -95,7 +95,7 @@
        if (this._closeResult) {
          throw this._closeResult;
        }
-
+       return;
      };
 
      
@@ -374,7 +374,7 @@
          access = options.winAccess;
          disposition = options.winDisposition;
        } else if (("winAccess" in options && !("winDisposition" in options))
-                 || (!("winAccess" in options) && "winDisposition" in options)) {
+                 ||(!("winAccess" in options) && "winDisposition" in options)) {
          throw new TypeError("OS.File.open requires either both options " +
            "winAccess and winDisposition or neither");
        } else {
@@ -538,7 +538,7 @@
        
        
        
-       if ( splitPath.components[splitPath.components.length - 1].length === 0 ) {
+       if( splitPath.components[splitPath.components.length - 1].length === 0 ) {
          splitPath.components.pop();
        }
        
@@ -810,15 +810,15 @@
 
        if (WinFile.FindNextFile(this._handle, this._findDataPtr)) {
          return this._findData;
-       }
+       } else {
          let error = ctypes.winLastError;
          this.close();
          if (error == Const.ERROR_NO_MORE_FILES) {
             return null;
-         }
+         } else {
             throw new File.Error("iter (FindNextFile)", error, this._path);
-
-
+         }
+       }
      },
 
      

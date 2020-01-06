@@ -156,21 +156,21 @@ var stringifyArg = function stringifyArg(arg) {
     if (argToString === "[object Object]") {
       return JSON.stringify(arg, function(key, value) {
         if (isTypedArray(value)) {
-          return "[" + value.constructor.name + " " + value.byteOffset + " " + value.byteLength + "]";
+          return "["+ value.constructor.name + " " + value.byteOffset + " " + value.byteLength + "]";
         }
         if (isArrayBuffer(arg)) {
           return "[" + value.constructor.name + " " + value.byteLength + "]";
         }
         return value;
       });
-    }
+    } else {
       return argToString;
-
+    }
   }
   return arg;
 };
 
-var LOG = function(...args) {
+var LOG = function (...args) {
   if (!Config.DEBUG) {
     
     return;
@@ -204,7 +204,7 @@ exports.LOG = LOG;
 
 
 
-var clone = function(object, refs = []) {
+var clone = function (object, refs = []) {
   let result = {};
   
   let refer = function refer(result, key, object) {
@@ -251,7 +251,7 @@ function Type(name, implementation) {
                         + name);
   }
   if (!(implementation instanceof ctypes.CType)) {
-    throw new TypeError("Type expects as second argument a ctypes.CType" +
+    throw new TypeError("Type expects as second argument a ctypes.CType"+
                         ", got: " + implementation);
   }
   Object.defineProperty(this, "name", { value: name });
@@ -431,7 +431,7 @@ exports.isArrayBuffer = isArrayBuffer;
 
 function PtrType(name, implementation, targetType) {
   Type.call(this, name, implementation);
-  if (targetType == null || !(targetType instanceof Type)) {
+  if (targetType == null || !targetType instanceof Type) {
     throw new TypeError("targetType must be an instance of Type");
   }
   
@@ -534,7 +534,7 @@ var projectValue = function projectValue(x) {
 
 function projector(type, signed) {
   LOG("Determining best projection for", type,
-    "(size: ", type.size, ")", signed ? "signed" : "unsigned");
+    "(size: ", type.size, ")", signed?"signed":"unsigned");
   if (type instanceof Type) {
     type = type.implementation;
   }
@@ -554,14 +554,14 @@ function projector(type, signed) {
     if (signed) {
       LOG("Projected as a large signed integer");
       return projectLargeInt;
-    }
+    } else {
       LOG("Projected as a large unsigned integer");
       return projectLargeUInt;
-
+    }
   }
   LOG("Projected as a regular number");
   return projectValue;
-}
+};
 exports.projectValue = projectValue;
 
 
@@ -645,7 +645,7 @@ function IntType(name, implementation, signed) {
   Type.call(this, name, implementation);
   this.importFromC = projector(implementation, signed);
   this.project = this.importFromC;
-}
+};
 IntType.prototype = Object.create(Type.prototype);
 IntType.prototype.toMsg = function toMsg(value) {
   if (typeof value == "number") {
@@ -862,7 +862,7 @@ HollowStructure.prototype = {
                       " at offset " + offset +
                       " without exceeding its size of " + this.size);
     }
-    let field = {name: name, type: type};
+    let field = {name: name, type:type};
     this.offset_to_field_info[offset] = field;
   },
 
@@ -960,7 +960,7 @@ exports.HollowStructure = HollowStructure;
 function Library(name, ...candidates) {
   this.name = name;
   this._candidates = candidates;
-}
+};
 Library.prototype = Object.freeze({
   
 
@@ -1242,7 +1242,7 @@ function normalizeBufferArgs(candidate, bytes) {
                         "bytes");
   }
   return bytes;
-}
+};
 exports.normalizeBufferArgs = normalizeBufferArgs;
 
 

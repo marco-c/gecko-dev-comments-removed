@@ -77,7 +77,7 @@
        if (this._closeResult) {
          throw this._closeResult;
        }
-
+       return;
      };
 
      
@@ -98,7 +98,7 @@
      File.prototype._read = function _read(buffer, nbytes, options = {}) {
       
       
-       if (typeof(UnixFile.posix_fadvise) === "function" &&
+       if (typeof(UnixFile.posix_fadvise) === 'function' &&
            (options.sequential || !("sequential" in options))) {
          UnixFile.posix_fadvise(this.fd, 0, nbytes,
           OS.Constants.libc.POSIX_FADV_SEQUENTIAL);
@@ -338,9 +338,9 @@
      File.exists = function Unix_exists(path) {
        if (UnixFile.access(path, Const.F_OK) == -1) {
          return false;
-       }
+       } else {
          return true;
-
+       }
      };
 
      
@@ -396,7 +396,7 @@
        let fileSystemInfo = new Type.statvfs.implementation();
        let fileSystemInfoPtr = fileSystemInfo.address();
 
-       throw_on_negative("statvfs", (UnixFile.statvfs || UnixFile.statfs)(sourcePath, fileSystemInfoPtr));
+       throw_on_negative("statvfs",  (UnixFile.statvfs || UnixFile.statfs)(sourcePath, fileSystemInfoPtr));
 
        let bytes = new Type.uint64_t.implementation(
                         fileSystemInfo.f_frsize * fileSystemInfo.f_bavail);
@@ -602,7 +602,7 @@
                  "pump",
                  UnixFile.splice(pipe_read, null,
                    dest_fd, null, bytes_read,
-                     (bytes_read == chunk_size) ? Const.SPLICE_F_MORE : 0
+                     (bytes_read == chunk_size)?Const.SPLICE_F_MORE:0
                ));
                if (!bytes_written) {
                  
@@ -649,9 +649,9 @@
            
            
            if (options.noOverwrite) {
-             dest = File.open(destPath, {create: true, append: false});
+             dest = File.open(destPath, {create:true, append:false});
            } else {
-             dest = File.open(destPath, {trunc: true, append: false});
+             dest = File.open(destPath, {trunc:true, append:false});
            }
            if (options.unixUserland) {
              result = pump_userland(source, dest, options);
@@ -1163,7 +1163,7 @@
                              "|Date| instance or number");
        }
        return date;
-     }
+     };
 
      
 

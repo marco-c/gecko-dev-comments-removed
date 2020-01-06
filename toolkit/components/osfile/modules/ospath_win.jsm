@@ -94,18 +94,19 @@ var dirname = function(path, options) {
     if (!noDrive) {
       
       return this.winGetDrive(path) || ".";
+    } else {
+      
+      return ".";
     }
-    
-    return ".";
   }
 
   if (index == 1 && path.charAt(0) == "\\") {
     
     if (noDrive) {
       return ".";
+    } else {
+      return path;
     }
-    return path;
-
   }
 
   
@@ -246,7 +247,7 @@ var normalize = function(path) {
   
   path.split("\\").forEach(function loop(v) {
     switch (v) {
-    case "": case ".": 
+    case "":  case ".": 
       break;
     case "..":
       if (stack.length == 0) {
@@ -255,11 +256,13 @@ var normalize = function(path) {
         } else {
          stack.push("..");
         }
-      } else if (stack[stack.length - 1] == "..") {
+      } else {
+        if (stack[stack.length - 1] == "..") {
           stack.push("..");
         } else {
           stack.pop();
         }
+      }
       break;
     default:
       stack.push(v);
@@ -303,12 +306,12 @@ exports.split = split;
 
 
 
-var toFileURIExtraEncodings = {";": "%3b", "?": "%3F", "#": "%23"};
+var toFileURIExtraEncodings = {';': '%3b', '?': '%3F', '#': '%23'};
 var toFileURI = function toFileURI(path) {
   
-  path = this.normalize(path).replace(/[\\\/]/g, m => (m == "\\") ? "/" : "%2F");
+  path = this.normalize(path).replace(/[\\\/]/g, m => (m=='\\')? '/' : '%2F');
   
-  let dontNeedEscaping = {"%5B": "[", "%5D": "]"};
+  let dontNeedEscaping = {'%5B': '[', '%5D': ']'};
   let uri = encodeURI(path).replace(/%(5B|5D)/gi,
     match => dontNeedEscaping[match]);
 
@@ -318,7 +321,7 @@ var toFileURI = function toFileURI(path) {
   uri = prefix + uri.replace(/[;?#]/g, match => toFileURIExtraEncodings[match]);
 
   
-  if (uri.charAt(uri.length - 1) === ":") {
+  if (uri.charAt(uri.length - 1) === ':') {
     uri += "/"
   }
 
@@ -331,7 +334,7 @@ exports.toFileURI = toFileURI;
 
 var fromFileURI = function fromFileURI(uri) {
   let url = new URL(uri);
-  if (url.protocol != "file:") {
+  if (url.protocol != 'file:') {
     throw new Error("fromFileURI expects a file URI");
   }
 
@@ -358,7 +361,7 @@ exports.fromFileURI = fromFileURI;
 
 
 var trimBackslashes = function trimBackslashes(string) {
-  return string.replace(/^\\+|\\+$/g, "");
+  return string.replace(/^\\+|\\+$/g,'');
 };
 
 
