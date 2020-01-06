@@ -235,11 +235,6 @@ browser.Context = class {
   }
 
   
-  startSession(newSession, win, callback) {
-    callback(win, newSession);
-  }
-
-  
 
 
 
