@@ -30,10 +30,10 @@ function debug(aMsg) {
 
 
 
-
 class GeckoViewNavigation extends GeckoViewModule {
   init() {
     this.window.QueryInterface(Ci.nsIDOMChromeWindow).browserDOMWindow = this;
+    this.browser.docShell.loadURIDelegate = this;
 
     this.eventDispatcher.registerListener(this, [
       "GeckoView:GoBack",
@@ -72,14 +72,13 @@ class GeckoViewNavigation extends GeckoViewModule {
     debug("receiveMessage " + aMsg.name);
   }
 
-  
-  createContentWindow(aUri, aOpener, aWhere, aFlags, aTriggeringPrincipal) {
-    debug("createContentWindow: aUri=" + (aUri && aUri.spec) +
+  handleLoadUri(aUri, aOpener, aWhere, aFlags, aTriggeringPrincipal) {
+    debug("handleOpenURI: aUri=" + (aUri && aUri.spec) +
           " aWhere=" + aWhere +
           " aFlags=" + aFlags);
 
     if (!aUri) {
-      throw Cr.NS_ERROR_ABORT;
+      return false;
     }
 
     let message = {
@@ -97,6 +96,29 @@ class GeckoViewNavigation extends GeckoViewModule {
     });
     Services.tm.spinEventLoopUntil(() => handled !== undefined);
 
+    return handled;
+  }
+
+  
+  loadURI(aUri, aWhere, aFlags, aTriggeringPrincipal) {
+    debug("loadURI " + aUri + " " + aWhere + " " + aFlags + " " +
+          aTriggeringPrincipal);
+
+    let handled = this.handleLoadUri(aUri, null, aWhere, aFlags,
+                                     aTriggeringPrincipal);
+    if (!handled) {
+      throw Cr.NS_ERROR_ABORT;
+    }
+  }
+
+  
+  createContentWindow(aUri, aOpener, aWhere, aFlags, aTriggeringPrincipal) {
+    debug("createContentWindow: aUri=" + (aUri && aUri.spec) +
+          " aWhere=" + aWhere +
+          " aFlags=" + aFlags);
+
+    let handled = this.handleLoadUri(aUri, aOpener, aWhere, aFlags,
+                                     aTriggeringPrincipal);
     if (!handled &&
         (aWhere === Ci.nsIBrowserDOMWindow.OPEN_DEFAULTWINDOW ||
          aWhere === Ci.nsIBrowserDOMWindow.OPEN_CURRENTWINDOW)) {
