@@ -1,15 +1,12 @@
-var {utils: Cu, classes: Cc, interfaces: Ci} = Components;
+var {utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/osfile.jsm");
 Cu.import("resource://gre/modules/Services.jsm", this);
 Cu.import("resource://testing-common/AppData.jsm", this);
-Cu.import("resource://gre/modules/AppConstants.jsm");
 
 function getEventDir() {
   return OS.Path.join(do_get_tempdir().path, "crash-events");
 }
-
-
 
 
 
@@ -103,31 +100,6 @@ function getMinidump() {
   return null;
 }
 
-function runMinidumpAnalyzer(dumpFile, additionalArgs) {
-  if (AppConstants.platform !== "win") {
-    return;
-  }
-
-  
-  let ds = Cc["@mozilla.org/file/directory_service;1"]
-             .getService(Ci.nsIProperties);
-  let bin = ds.get("XREExeF", Ci.nsILocalFile);
-  ok(bin && bin.exists());
-  bin = bin.parent;
-  ok(bin && bin.exists());
-  bin.append("minidump-analyzer.exe");
-  ok(bin.exists());
-
-  let process = Cc["@mozilla.org/process/util;1"]
-                  .createInstance(Ci.nsIProcess);
-  process.init(bin);
-  let args = [dumpFile.path];
-  if (additionalArgs) {
-    args = args.concat(additionalArgs);
-  }
-  process.run(true , args, args.length);
-}
-
 function handleMinidump(callback) {
   
   let minidump = getMinidump();
@@ -159,7 +131,7 @@ function handleMinidump(callback) {
   let extra = parseKeyValuePairsFromFile(extrafile);
 
   if (callback) {
-    callback(minidump, extra, extrafile);
+    callback(minidump, extra);
   }
 
   if (minidump.exists()) {
