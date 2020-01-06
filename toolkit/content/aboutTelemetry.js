@@ -728,8 +728,8 @@ var TelLog = {
   
 
 
-  render(aPing) {
-    let entries = aPing.payload.log;
+  render(payload) {
+    let entries = payload.log;
     const hasData = entries && entries.length > 0;
     setHasData("telemetry-log-section", hasData);
     if (!hasData) {
@@ -1074,8 +1074,8 @@ var ChromeHangs = {
   
 
 
-  render: function ChromeHangs_render(aPing) {
-    let hangs = aPing.payload.chromeHangs;
+  render: function ChromeHangs_render(payload) {
+    let hangs = payload.chromeHangs;
     setHasData("chrome-hangs-section", !!hangs);
     if (!hangs) {
       return;
@@ -2324,38 +2324,12 @@ function displayRichPingData(ping, updatePayloadList) {
   }
 
   
-  TelLog.render(ping);
-
-  
   SlowSQL.render(ping);
-
-  
-  ChromeHangs.render(ping);
 
   
   AddonDetails.render(ping);
 
-  
-  let payloadSelect = document.getElementById("choose-payload");
-  let payloadOption = payloadSelect.selectedOptions.item(0);
-  let payloadIndex = payloadOption.getAttribute("value");
-
   let payload = ping.payload;
-  if (payloadIndex > 0) {
-    payload = ping.payload.childPayloads[payloadIndex - 1];
-  }
-
-  
-  ThreadHangStats.render(payload);
-
-  
-  CapturedStacks.render(payload);
-
-  
-  SimpleMeasurements.render(payload);
-
-  LateWritesSingleton.renderLateWrites(payload.lateWrites);
-
   
   SessionInformation.render(payload);
 
@@ -2371,6 +2345,35 @@ function displayRichPingData(ping, updatePayloadList) {
 
   
   Events.render(payload);
+
+  
+  CapturedStacks.render(payload);
+
+  LateWritesSingleton.renderLateWrites(payload.lateWrites);
+
+  
+  let payloadSelect = document.getElementById("choose-payload");
+  let payloadOption = payloadSelect.selectedOptions.item(0);
+  let payloadIndex = payloadOption.getAttribute("value");
+
+  if (payloadIndex > 0) {
+    payload = ping.payload.childPayloads[payloadIndex - 1];
+  }
+
+  console.log(payload);
+
+  
+  ChromeHangs.render(payload);
+
+  
+  TelLog.render(payload);
+
+  
+  ThreadHangStats.render(payload);
+
+  
+  SimpleMeasurements.render(payload);
+
 }
 
 window.addEventListener("load", onLoad);
