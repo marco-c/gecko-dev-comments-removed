@@ -3,7 +3,7 @@
 
 
 
-add_task(function* () {
+add_task(function*() {
   const dbg = yield initDebugger("doc-minified.html");
 
   yield selectSource(dbg, "math.min.js");
@@ -11,12 +11,13 @@ add_task(function* () {
 
   invokeInTab("arithmetic");
   yield waitForPaused(dbg);
-  assertPausedLocation(dbg, "math.min.js", 2);
+  assertPausedLocation(dbg);
 
   clickElement(dbg, "prettyPrintButton");
-  yield waitForDispatch(dbg, "TOGGLE_PRETTY_PRINT");
+  yield waitForDispatch(dbg, "SELECT_SOURCE");
 
-  assertPausedLocation(dbg, "math.min.js:formatted", 18);
+  
+  
 
   yield resume(dbg);
 });

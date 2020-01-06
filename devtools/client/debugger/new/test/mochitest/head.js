@@ -147,6 +147,10 @@ function waitForThreadEvents(dbg, eventName) {
 
 function waitForState(dbg, predicate) {
   return new Promise(resolve => {
+    if (predicate(dbg.store.getState())) {
+      return resolve();
+    }
+
     const unsubscribe = dbg.store.subscribe(() => {
       if (predicate(dbg.store.getState())) {
         unsubscribe();
@@ -187,14 +191,35 @@ function waitForSources(dbg, ...sources) {
   );
 }
 
+
+
+
+
+
+
+
+
+
+function waitForSource(dbg, url) {
+  return waitForState(dbg, state => {
+    const sources = dbg.selectors.getSources(state);
+    return sources.find(s => (s.get("url") || "").includes(url));
+  });
+}
+
 function waitForElement(dbg, selector) {
   return waitUntil(() => findElementWithSelector(dbg, selector));
 }
 
-function waitForSelectedSource(dbg) {
+function waitForSelectedSource(dbg, sourceId) {
   return waitForState(dbg, state => {
     const source = dbg.selectors.getSelectedSource(state);
-    return source && source.has("loading") && !source.get("loading");
+    const isLoaded = source && source.has("loading") && !source.get("loading");
+    if (sourceId) {
+      return isLoaded && sourceId == source.get("id");
+    }
+
+    return isLoaded;
   });
 }
 
@@ -207,22 +232,17 @@ function waitForSelectedSource(dbg) {
 
 
 
-function assertPausedLocation(dbg, source, line) {
+function assertPausedLocation(dbg) {
   const { selectors: { getSelectedSource, getPause }, getState } = dbg;
-  source = findSource(dbg, source);
 
-  
-  is(getSelectedSource(getState()).get("id"), source.id);
+  ok(isTopFrameSelected(dbg, getState()), "top frame's source is selected");
 
   
   const pause = getPause(getState());
-  const location = pause && pause.frame && pause.frame.location;
-
-  is(location.sourceId, source.id);
-  is(location.line, line);
+  const pauseLine = pause && pause.frame && pause.frame.location.line;
 
   
-  const lineInfo = getCM(dbg).lineInfo(line - 1);
+  const lineInfo = getCM(dbg).lineInfo(pauseLine - 1);
   ok(
     lineInfo.wrapClass.includes("debug-line"),
     "Line is highlighted as paused"
@@ -286,24 +306,37 @@ function isPaused(dbg) {
 
 
 
-function waitForPaused(dbg) {
-  return Task.spawn(function*() {
-    
-    
-    
-    yield waitForThreadEvents(dbg, "paused"), yield waitForState(dbg, state => {
-      const pause = dbg.selectors.getPause(state);
-      
-      if (!pause) {
-        return false;
-      }
-      
-      
-      const sourceId = pause && pause.frame && pause.frame.location.sourceId;
-      const source = dbg.selectors.getSource(dbg.getState(), sourceId);
-      return source && source.has("loading") && !source.get("loading");
-    });
-  });
+async function waitForPaused(dbg) {
+  
+  
+  
+  await waitForThreadEvents(dbg, "paused");
+  await waitForState(dbg, state => isTopFrameSelected(dbg, state));
+}
+
+function isTopFrameSelected(dbg, state) {
+  const pause = dbg.selectors.getPause(state);
+
+  
+  if (!pause) {
+    return false;
+  }
+
+  
+  
+  const sourceId = pause.frame && pause.frame.location.sourceId;
+  const source = dbg.selectors.getSelectedSource(state);
+
+  if (!source) {
+    return false;
+  }
+
+  const isLoaded = source.has("loading") && !source.get("loading");
+  if (!isLoaded) {
+    return false;
+  }
+
+  return source.get("id") == sourceId;
 }
 
 function createDebuggerContext(toolbox) {
@@ -464,7 +497,7 @@ function resume(dbg) {
 }
 
 function deleteExpression(dbg, input) {
-  info("Resuming");
+  info(`Delete expression "${input}"`);
   return dbg.actions.deleteExpression({ input });
 }
 
@@ -587,6 +620,10 @@ const shiftOrAlt = isMac
   ? { accelKey: true, shiftKey: true }
   : { accelKey: true, altKey: true };
 
+const cmdShift = isMac
+  ? { accelKey: true, shiftKey: true, metaKey: true }
+  : { accelKey: true, altKey: true, ctrlKey: true };
+
 
 
 
@@ -602,7 +639,9 @@ const keyMappings = {
   inspector: { code: "c", modifiers: shiftOrAlt },
   sourceSearch: { code: "p", modifiers: cmdOrCtrl },
   fileSearch: { code: "f", modifiers: cmdOrCtrl },
+  functionSearch: { code: "o", modifiers: cmdShift },
   Enter: { code: "VK_RETURN" },
+  ShiftEnter: { code: "VK_RETURN", modifiers: shiftOrAlt },
   Up: { code: "VK_UP" },
   Down: { code: "VK_DOWN" },
   Right: { code: "VK_RIGHT" },
@@ -611,6 +650,7 @@ const keyMappings = {
   Start: startKey,
   Tab: { code: "VK_TAB" },
   Escape: { code: "VK_ESCAPE" },
+  Delete: { code: "VK_DELETE" },
   pauseKey: { code: "VK_F8" },
   resumeKey: { code: "VK_F8" },
   stepOverKey: { code: "VK_F10" },
@@ -631,16 +671,14 @@ const keyMappings = {
 
 
 function pressKey(dbg, keyName) {
-  let keyEvent = keyMappings[keyName];
+  const keyEvent = keyMappings[keyName];
 
   const { code, modifiers } = keyEvent;
   return EventUtils.synthesizeKey(code, modifiers || {}, dbg.win);
 }
 
 function type(dbg, string) {
-  string.split("").forEach(char => {
-    EventUtils.synthesizeKey(char, {}, dbg.win);
-  });
+  string.split("").forEach(char => EventUtils.synthesizeKey(char, {}, dbg.win));
 }
 
 function isVisibleWithin(outerEl, innerEl) {
@@ -655,14 +693,15 @@ const selectors = {
   expressionNode: i =>
     `.expressions-list .expression-container:nth-child(${i}) .object-label`,
   expressionValue: i =>
-    `.expressions-list .expression-container:nth-child(${i}) .object-value`,
+    `.expressions-list .expression-container:nth-child(${i}) .object-delimiter + *`,
   expressionClose: i =>
     `.expressions-list .expression-container:nth-child(${i}) .close`,
   expressionNodes: ".expressions-list .tree-node",
   scopesHeader: ".scopes-pane ._header",
   breakpointItem: i => `.breakpoints-list .breakpoint:nth-child(${i})`,
   scopeNode: i => `.scopes-list .tree-node:nth-child(${i}) .object-label`,
-  scopeValue: i => `.scopes-list .tree-node:nth-child(${i}) .object-value`,
+  scopeValue: i =>
+    `.scopes-list .tree-node:nth-child(${i}) .object-delimiter + *`,
   frame: i => `.frames ul li:nth-child(${i})`,
   frames: ".frames ul li",
   gutter: i => `.CodeMirror-code *:nth-child(${i}) .CodeMirror-linenumber`,
@@ -682,7 +721,8 @@ const selectors = {
   editorFooter: ".editor-pane .source-footer",
   sourceNode: i => `.sources-list .tree-node:nth-child(${i})`,
   sourceNodes: ".sources-list .tree-node",
-  sourceArrow: i => `.sources-list .tree-node:nth-child(${i}) .arrow`
+  sourceArrow: i => `.sources-list .tree-node:nth-child(${i}) .arrow`,
+  resultItems: `.result-list .result-item`
 };
 
 function getSelector(elementName, ...args) {

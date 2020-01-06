@@ -2,8 +2,14 @@
 
 
 
-add_task(function* () {
+add_task(function*() {
   const dbg = yield initDebugger("doc-script-switching.html");
+
+  
+  pressKey(dbg, "sourceSearch");
+  is(dbg.selectors.getActiveSearchState(dbg.getState()), "source");
+  pressKey(dbg, "Escape");
+  is(dbg.selectors.getActiveSearchState(dbg.getState()), null);
 
   pressKey(dbg, "sourceSearch");
   yield waitForElement(dbg, "input");

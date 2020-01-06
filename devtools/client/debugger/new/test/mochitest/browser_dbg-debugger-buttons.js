@@ -24,31 +24,31 @@ function clickStepOut(dbg) {
 
 
 
-add_task(function* () {
+add_task(function*() {
   const dbg = yield initDebugger("doc-debugger-statements.html");
 
   yield reload(dbg);
   yield waitForPaused(dbg);
-  assertPausedLocation(dbg, "debugger-statements.html", 8);
+  assertPausedLocation(dbg);
 
   
   clickElement(dbg, "resume");
   yield waitForPaused(dbg);
-  assertPausedLocation(dbg, "debugger-statements.html", 12);
+  assertPausedLocation(dbg);
 
   
   yield clickStepOver(dbg);
-  assertPausedLocation(dbg, "debugger-statements.html", 13);
+  assertPausedLocation(dbg);
 
   
   yield clickStepIn(dbg);
-  assertPausedLocation(dbg, "debugger-statements.html", 18);
+  assertPausedLocation(dbg);
 
   
   yield clickStepOver(dbg);
-  assertPausedLocation(dbg, "debugger-statements.html", 20);
+  assertPausedLocation(dbg);
 
   
   yield clickStepOut(dbg);
-  assertPausedLocation(dbg, "debugger-statements.html", 20);
+  assertPausedLocation(dbg);
 });

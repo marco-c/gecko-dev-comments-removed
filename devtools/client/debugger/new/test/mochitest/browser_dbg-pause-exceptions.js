@@ -16,7 +16,7 @@ function caughtException() {
 
 
 
-add_task(function* () {
+add_task(function*() {
   const dbg = yield initDebugger("doc-exceptions.html");
 
   
@@ -27,19 +27,19 @@ add_task(function* () {
   yield togglePauseOnExceptions(dbg, true, false);
   uncaughtException();
   yield waitForPaused(dbg);
-  assertPausedLocation(dbg, "exceptions.js", 2);
+  assertPausedLocation(dbg);
   yield resume(dbg);
 
   
   caughtException();
   yield waitForPaused(dbg);
-  assertPausedLocation(dbg, "exceptions.js", 15);
+  assertPausedLocation(dbg);
   yield resume(dbg);
 
   
   yield togglePauseOnExceptions(dbg, true, true);
   caughtException();
   yield waitForPaused(dbg);
-  assertPausedLocation(dbg, "exceptions.js", 17);
+  assertPausedLocation(dbg);
   yield resume(dbg);
 });
