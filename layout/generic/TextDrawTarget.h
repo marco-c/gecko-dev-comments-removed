@@ -49,7 +49,7 @@ struct SelectionFragment {
 
 struct SelectedTextRunFragment {
   Maybe<SelectionFragment> selection;
-  nsTArray<wr::TextShadow> shadows;
+  nsTArray<wr::Shadow> shadows;
   nsTArray<TextRunFragment> text;
   nsTArray<wr::Line> beforeDecorations;
   nsTArray<wr::Line> afterDecorations;
@@ -163,7 +163,7 @@ public:
   }
 
   void
-  AppendShadow(const wr::TextShadow& aShadow) {
+  AppendShadow(const wr::Shadow& aShadow) {
     mCurrentPart->shadows.AppendElement(aShadow);
   }
 
@@ -338,8 +338,8 @@ public:
   for (auto& part : GetParts()) {
     
     
-    for (const wr::TextShadow& shadow : part.shadows) {
-      aBuilder.PushTextShadow(wrBoundsRect, wrClipRect, backfaceVisible, shadow);
+    for (const wr::Shadow& shadow : part.shadows) {
+      aBuilder.PushShadow(wrBoundsRect, wrClipRect, backfaceVisible, shadow);
     }
 
     for (const wr::Line& decoration : part.beforeDecorations) {
@@ -357,7 +357,7 @@ public:
     }
 
     for (size_t i = 0; i < part.shadows.Length(); ++i) {
-      aBuilder.PopTextShadow();
+      aBuilder.PopShadow();
     }
   }
 }

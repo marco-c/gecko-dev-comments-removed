@@ -1528,8 +1528,6 @@ nsLayoutUtils::GetChildListNameFor(nsIFrame* aChildFrame)
 {
   nsIFrame::ChildListID id = nsIFrame::kPrincipalList;
 
-  MOZ_DIAGNOSTIC_ASSERT(!(aChildFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW));
-
   if (aChildFrame->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER) {
     nsIFrame* pif = aChildFrame->GetPrevInFlow();
     if (pif->GetParent() == aChildFrame->GetParent()) {
@@ -1538,6 +1536,35 @@ nsLayoutUtils::GetChildListNameFor(nsIFrame* aChildFrame)
     else {
       id = nsIFrame::kOverflowContainersList;
     }
+  }
+  
+  else if (aChildFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) {
+    
+    const nsStyleDisplay* disp = aChildFrame->StyleDisplay();
+
+    if (NS_STYLE_POSITION_ABSOLUTE == disp->mPosition) {
+      id = nsIFrame::kAbsoluteList;
+    } else if (NS_STYLE_POSITION_FIXED == disp->mPosition) {
+      if (nsLayoutUtils::IsReallyFixedPos(aChildFrame)) {
+        id = nsIFrame::kFixedList;
+      } else {
+        id = nsIFrame::kAbsoluteList;
+      }
+#ifdef MOZ_XUL
+    } else if (StyleDisplay::MozPopup == disp->mDisplay) {
+      
+#ifdef DEBUG
+      nsIFrame* parent = aChildFrame->GetParent();
+      NS_ASSERTION(parent && parent->IsPopupSetFrame(), "Unexpected parent");
+#endif 
+
+      id = nsIFrame::kPopupList;
+#endif
+    } else {
+      NS_ASSERTION(aChildFrame->IsFloating(), "not a floated frame");
+      id = nsIFrame::kFloatList;
+    }
+
   } else {
     LayoutFrameType childType = aChildFrame->Type();
     if (LayoutFrameType::MenuPopup == childType) {
@@ -1572,8 +1599,19 @@ nsLayoutUtils::GetChildListNameFor(nsIFrame* aChildFrame)
   nsContainerFrame* parent = aChildFrame->GetParent();
   bool found = parent->GetChildList(id).ContainsFrame(aChildFrame);
   if (!found) {
-    found = parent->GetChildList(nsIFrame::kOverflowList)
-              .ContainsFrame(aChildFrame);
+    if (!(aChildFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW)) {
+      found = parent->GetChildList(nsIFrame::kOverflowList)
+                .ContainsFrame(aChildFrame);
+    }
+    else if (aChildFrame->IsFloating()) {
+      found = parent->GetChildList(nsIFrame::kOverflowOutOfFlowList)
+                .ContainsFrame(aChildFrame);
+      if (!found) {
+        found = parent->GetChildList(nsIFrame::kPushedFloatsList)
+                  .ContainsFrame(aChildFrame);
+      }
+    }
+    
     NS_POSTCONDITION(found, "not in child list");
   }
 #endif
@@ -6144,7 +6182,7 @@ nsLayoutUtils::PaintTextShadow(const nsIFrame* aFrame,
 
     
     if (auto* textDrawer = aContext->GetTextDrawer()) {
-      wr::TextShadow wrShadow;
+      wr::Shadow wrShadow;
 
       wrShadow.offset = {
         presCtx->AppUnitsToFloatDevPixels(shadowDetails->mXOffset),
@@ -7388,19 +7426,14 @@ nsLayoutUtils::GetDeviceContextForScreenInfo(nsPIDOMWindowOuter* aWindow)
 }
 
  bool
-nsLayoutUtils::IsReallyFixedPos(const nsIFrame* aFrame)
+nsLayoutUtils::IsReallyFixedPos(nsIFrame* aFrame)
 {
-  MOZ_ASSERT(aFrame->StyleDisplay()->mPosition == NS_STYLE_POSITION_FIXED,
-             "IsReallyFixedPos called on non-'position:fixed' frame");
-  return MayBeReallyFixedPos(aFrame);
-}
+  NS_PRECONDITION(aFrame->GetParent(),
+                  "IsReallyFixedPos called on frame not in tree");
+  NS_PRECONDITION(aFrame->StyleDisplay()->mPosition ==
+                    NS_STYLE_POSITION_FIXED,
+                  "IsReallyFixedPos called on non-'position:fixed' frame");
 
-
- bool
-nsLayoutUtils::MayBeReallyFixedPos(const nsIFrame* aFrame)
-{
-  MOZ_ASSERT(aFrame->GetParent(),
-             "MayBeReallyFixedPos called on frame not in tree");
   LayoutFrameType parentType = aFrame->GetParent()->Type();
   return parentType == LayoutFrameType::Viewport ||
          parentType == LayoutFrameType::PageContent;
