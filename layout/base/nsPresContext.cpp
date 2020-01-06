@@ -842,6 +842,19 @@ nsPresContext::Init(nsDeviceContext* aDeviceContext)
 
   mDeviceContext = aDeviceContext;
 
+  
+  
+  
+  
+  
+  
+  if (mDocument->IsStyledByServo()) {
+    Element* root = mDocument->GetRootElement();
+    if (root && root->HasServoData()) {
+      ServoRestyleManager::ClearServoDataFromSubtree(root);
+    }
+  }
+
   if (mDeviceContext->SetFullZoom(mFullZoom))
     mDeviceContext->FlushFontCache();
   mCurAppUnitsPerDevPixel = AppUnitsPerDevPixel();
