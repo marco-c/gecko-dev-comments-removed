@@ -92,15 +92,7 @@ namespace detail {
 
 static constexpr auto RESUME_VIDEO_PREMIUM = TimeUnit::FromMicroseconds(125000);
 
-
-
-
-
-static constexpr auto LOW_AUDIO_THRESHOLD = TimeUnit::FromMicroseconds(300000);
-
 static const int64_t AMPLE_AUDIO_USECS = 2000000;
-
-
 
 
 
@@ -121,12 +113,6 @@ static constexpr auto LOW_VIDEO_THRESHOLD = TimeUnit::FromMicroseconds(60000);
 
 
 static const int AUDIO_DURATION_USECS = 40000;
-
-
-
-
-
-static const int THRESHOLD_FACTOR = 2;
 
 namespace detail {
 
@@ -731,7 +717,6 @@ public:
     mMaster->PushVideo(aVideo);
     DispatchDecodeTasksIfNeeded();
     MaybeStopPrerolling();
-    CheckSlowDecoding(aDecodeStart);
   }
 
   void HandleAudioCanceled() override
@@ -814,37 +799,6 @@ private:
   void EnsureAudioDecodeTaskQueued();
   void EnsureVideoDecodeTaskQueued();
   void MaybeStartBuffering();
-
-  void CheckSlowDecoding(TimeStamp aDecodeStart)
-  {
-    
-    
-    
-    
-    
-    if (Reader()->IsAsync()) {
-      return;
-    }
-
-    TimeDuration decodeTime = TimeStamp::Now() - aDecodeStart;
-    auto adjusted = TimeUnit::FromTimeDuration(decodeTime * THRESHOLD_FACTOR);
-    if (adjusted > mMaster->mLowAudioThreshold
-        && !mMaster->HasLowBufferedData())
-    {
-      mMaster->mLowAudioThreshold = std::min(
-        adjusted, mMaster->mAmpleAudioThreshold);
-
-      mMaster->mAmpleAudioThreshold = std::max(
-        mMaster->mLowAudioThreshold * THRESHOLD_FACTOR,
-        mMaster->mAmpleAudioThreshold);
-
-      SLOG("Slow video decode, set "
-           "mLowAudioThreshold=%" PRId64
-           " mAmpleAudioThreshold=%" PRId64,
-           mMaster->mLowAudioThreshold.ToMicroseconds(),
-           mMaster->mAmpleAudioThreshold.ToMicroseconds());
-    }
-  }
 
   
   
@@ -2771,7 +2725,6 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   INIT_WATCHABLE(mObservedDuration, TimeUnit()),
   mReader(new MediaDecoderReaderWrapper(mTaskQueue, aReader)),
   mPlaybackRate(1.0),
-  mLowAudioThreshold(detail::LOW_AUDIO_THRESHOLD),
   mAmpleAudioThreshold(detail::AMPLE_AUDIO_THRESHOLD),
   mAudioCaptured(false),
   mMinimizePreroll(aDecoder->GetMinimizePreroll()),
