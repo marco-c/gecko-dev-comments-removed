@@ -563,11 +563,12 @@ protected:
 
 
 
-class MOZ_NON_MEMMOVABLE nsTAutoString_CharT : public nsTFixedString_CharT
+template<size_t N>
+class MOZ_NON_MEMMOVABLE nsTAutoStringN_CharT : public nsTFixedString_CharT
 {
 public:
 
-  typedef nsTAutoString_CharT self_type;
+  typedef nsTAutoStringN_CharT<N> self_type;
 
 public:
 
@@ -575,48 +576,49 @@ public:
 
 
 
-  nsTAutoString_CharT()
-    : fixed_string_type(mStorage, kDefaultStorageSize, 0)
+  nsTAutoStringN_CharT()
+    : fixed_string_type(mStorage, N, 0)
   {
   }
 
   explicit
-  nsTAutoString_CharT(char_type aChar)
-    : fixed_string_type(mStorage, kDefaultStorageSize, 0)
+  nsTAutoStringN_CharT(char_type aChar)
+    : fixed_string_type(mStorage, N, 0)
   {
     Assign(aChar);
   }
 
   explicit
-  nsTAutoString_CharT(const char_type* aData, size_type aLength = size_type(-1))
-    : fixed_string_type(mStorage, kDefaultStorageSize, 0)
+  nsTAutoStringN_CharT(const char_type* aData,
+                       size_type aLength = size_type(-1))
+    : fixed_string_type(mStorage, N, 0)
   {
     Assign(aData, aLength);
   }
 
 #if defined(CharT_is_PRUnichar) && defined(MOZ_USE_CHAR16_WRAPPER)
   explicit
-  nsTAutoString_CharT(char16ptr_t aData, size_type aLength = size_type(-1))
-    : nsTAutoString_CharT(static_cast<const char16_t*>(aData), aLength)
+  nsTAutoStringN_CharT(char16ptr_t aData, size_type aLength = size_type(-1))
+    : nsTAutoStringN_CharT(static_cast<const char16_t*>(aData), aLength)
   {
   }
 #endif
 
-  nsTAutoString_CharT(const self_type& aStr)
-    : fixed_string_type(mStorage, kDefaultStorageSize, 0)
+  nsTAutoStringN_CharT(const self_type& aStr)
+    : fixed_string_type(mStorage, N, 0)
   {
     Assign(aStr);
   }
 
   explicit
-  nsTAutoString_CharT(const substring_type& aStr)
-    : fixed_string_type(mStorage, kDefaultStorageSize, 0)
+  nsTAutoStringN_CharT(const substring_type& aStr)
+    : fixed_string_type(mStorage, N, 0)
   {
     Assign(aStr);
   }
 
-  MOZ_IMPLICIT nsTAutoString_CharT(const substring_tuple_type& aTuple)
-    : fixed_string_type(mStorage, kDefaultStorageSize, 0)
+  MOZ_IMPLICIT nsTAutoStringN_CharT(const substring_tuple_type& aTuple)
+    : fixed_string_type(mStorage, N, 0)
   {
     Assign(aTuple);
   }
@@ -655,16 +657,16 @@ public:
     return *this;
   }
 
-  enum
-  {
-    kDefaultStorageSize = 64
-  };
+  static const size_t kStorageSize = N;
 
 private:
 
-  char_type mStorage[kDefaultStorageSize];
+  char_type mStorage[N];
 };
 
+
+
+using nsTAutoString_CharT = nsTAutoStringN_CharT<AutoStringDefaultStorageSize>;
 
 
 
