@@ -3,6 +3,9 @@
 
 
 
+
+
+
 var testGenerator = testSteps();
 
 
@@ -188,7 +191,7 @@ function* testHarnessSteps() {
   } else if (testScriptFilename) {
     todo(false,
          "Skipping test in a worker because it is explicitly disabled: " +
-         disableWorkerTest);
+         window.disableWorkerTest);
   } else {
     todo(false,
          "Skipping test in a worker because it's not structured properly");
