@@ -204,7 +204,7 @@ impl<T: NumCast + Copy, Unit> TypedSize2D<T, Unit> {
     
     
     
-    pub fn to_uint(&self) -> TypedSize2D<usize, Unit> {
+    pub fn to_usize(&self) -> TypedSize2D<usize, Unit> {
         self.cast().unwrap()
     }
 

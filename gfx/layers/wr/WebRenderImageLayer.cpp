@@ -223,7 +223,7 @@ WebRenderImageLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
     if (gfx::gfxVars::CanUseHardwareVideoDecoding()) {
       
       MOZ_ASSERT(mVideoKeys.Length() == 1);
-      aBuilder.PushYCbCrInterleavedImage(sc.ToRelativeWrRect(rect), clip, mVideoKeys[0], WrYuvColorSpace::Rec601);
+      aBuilder.PushYCbCrInterleavedImage(sc.ToRelativeWrRect(rect), clip, mVideoKeys[0], WrYuvColorSpace::Rec601, filter);
     } else {
       
       MOZ_ASSERT(mVideoKeys.Length() == 1);

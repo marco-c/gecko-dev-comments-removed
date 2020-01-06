@@ -404,7 +404,7 @@ impl<T: NumCast + Copy, Unit> TypedRect<T, Unit> {
     
     
     
-    pub fn to_uint(&self) -> TypedRect<usize, Unit> {
+    pub fn to_usize(&self) -> TypedRect<usize, Unit> {
         self.cast().unwrap()
     }
 
