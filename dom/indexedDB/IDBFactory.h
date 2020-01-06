@@ -73,7 +73,6 @@ class IDBFactory final
 
   
   
-  
   nsCOMPtr<nsIEventTarget> mEventTarget;
 
   uint64_t mInnerWindowID;
