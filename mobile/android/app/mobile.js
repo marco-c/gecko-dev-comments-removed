@@ -181,7 +181,8 @@ pref("browser.formfill.enable", true);
 pref("layout.spellcheckDefault", 0);
 
 
-pref("dom.experimental_forms", true);
+pref("dom.forms.datetime", true);
+pref("dom.forms.datetime.others", true);
 pref("dom.forms.number", true);
 
 
