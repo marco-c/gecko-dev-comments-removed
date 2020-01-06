@@ -237,6 +237,8 @@ const BOOKMARKS_BACKUP_MAX_INTERVAL_DAYS = 3;
 
 const LATE_TASKS_IDLE_TIME_SEC = 20;
 
+const STARTUP_CRASHES_END_DELAY_MS = 30 * 1000;
+
 
 const BrowserGlueServiceFactory = {
   _instance: null,
@@ -1163,6 +1165,13 @@ BrowserGlue.prototype = {
 
     Services.tm.idleDispatchToMainThread(() => {
       this._checkForDefaultBrowser();
+    });
+
+    Services.tm.idleDispatchToMainThread(() => {
+      let {setTimeout} = Cu.import("resource://gre/modules/Timer.jsm", {});
+      setTimeout(function() {
+        Services.tm.idleDispatchToMainThread(Services.startup.trackStartupCrashEnd);
+      }, STARTUP_CRASHES_END_DELAY_MS);
     });
   },
 

@@ -1675,15 +1675,6 @@ var gBrowserInit = {
     gNavToolbox.addEventListener("customizationstarting", CustomizationHandler);
     gNavToolbox.addEventListener("customizationending", CustomizationHandler);
 
-    
-    
-    try {
-      const startupCrashEndDelay = 30 * 1000;
-      setTimeout(Services.startup.trackStartupCrashEnd, startupCrashEndDelay);
-    } catch (ex) {
-      Cu.reportError("Could not end startup crash tracking: " + ex);
-    }
-
     SessionStore.promiseInitialized.then(() => {
       
       if (window.closed) {
