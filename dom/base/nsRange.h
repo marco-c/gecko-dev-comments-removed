@@ -599,8 +599,14 @@ protected:
     template<typename A, typename B>
     RangeBoundaryBase& operator=(const RangeBoundaryBase<A,B>& aOther)
     {
-      mParent = aOther.mParent;
-      mRef = aOther.mRef;
+      
+      
+      if (mParent != aOther.mParent) {
+        mParent = aOther.mParent;
+      }
+      if (mRef != aOther.mRef) {
+        mRef = aOther.mRef;
+      }
       mOffset = aOther.mOffset;
       return *this;
     }
