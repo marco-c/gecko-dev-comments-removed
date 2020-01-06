@@ -164,6 +164,14 @@ const RECOMMENDED_PREFS = new Map([
 
   
   
+  ["browser.urlbar.suggest.searches", false],
+
+  
+  
+  ["browser.urlbar.userMadeSearchSuggestionsChoice", true],
+
+  
+  
   [
     "datareporting.healthreport.about.reportUrl",
     "http://%(server)s/dummy/abouthealthreport/",

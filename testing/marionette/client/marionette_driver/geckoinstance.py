@@ -476,6 +476,14 @@ class DesktopInstance(GeckoInstance):
         "browser.uitour.enabled": False,
 
         
+        
+        "browser.urlbar.suggest.searches": False,
+
+        
+        
+        "browser.urlbar.userMadeSearchSuggestionsChoice": True,
+
+        
         "startup.homepage_welcome_url": "about:blank",
         "startup.homepage_welcome_url.additional": "",
     }
