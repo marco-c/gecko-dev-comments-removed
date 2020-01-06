@@ -120,6 +120,12 @@ add_task(async function tests() {
   let engine = Services.search.getEngineByName("Google");
   ok(engine, "Google");
 
+  
+  
+  await SpecialPowers.pushPrefEnv({ set: [
+    ["browser.search.widget.inNavBar", true],
+  ]});
+
   let base = "https://www.google.com/search?q=foo&ie=utf-8&oe=utf-8";
 
   let url;
