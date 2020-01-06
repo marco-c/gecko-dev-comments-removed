@@ -46,8 +46,13 @@ class SigningMixin(BaseSigningMixin):
         token = os.path.join(dirs['base_work_dir'], 'token')
         nonce = os.path.join(dirs['base_work_dir'], 'nonce')
         host_cert = os.path.join(signing_dir, 'host.cert')
+        python = sys.executable
+        
+        
+        if 'mock_target' in self.config:
+            python = 'python2.7'
         cmd = [
-            sys.executable,
+            python,
             os.path.join(signing_dir, 'signtool.py'),
             '--cachedir', cache_dir,
             '-t', token,
