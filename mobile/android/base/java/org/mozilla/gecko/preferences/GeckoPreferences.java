@@ -214,7 +214,6 @@ public class GeckoPreferences
 
 
     private Locale lastLocale = Locale.getDefault();
-    private boolean localeSwitchingIsEnabled;
 
     private void startActivityForResultChoosingTransition(final Intent intent, final int requestCode) {
         startActivityForResult(intent, requestCode);
@@ -355,10 +354,6 @@ public class GeckoPreferences
     protected void onCreate(Bundle savedInstanceState) {
         
         checkLocale();
-
-        
-        
-        localeSwitchingIsEnabled = BrowserLocaleManager.getInstance().isEnabled();
 
         
         
@@ -663,17 +658,6 @@ public class GeckoPreferences
     private void setupPreferences(PreferenceGroup preferences, ArrayList<String> prefs) {
         for (int i = 0; i < preferences.getPreferenceCount(); i++) {
             final Preference pref = preferences.getPreference(i);
-
-            
-            
-            
-            if (!localeSwitchingIsEnabled &&
-                "preferences_locale".equals(pref.getExtras().getString("resource"))) {
-                preferences.removePreference(pref);
-                i--;
-                continue;
-            }
-
             String key = pref.getKey();
             if (pref instanceof PreferenceGroup) {
                 
