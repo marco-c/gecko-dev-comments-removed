@@ -29,8 +29,7 @@ public class testVkbOverlap extends PixelTest {
 
         
         Actions.RepeatedEventExpecter paintExpecter = mActions.expectPaint();
-        MotionEventHelper meh = new MotionEventHelper(getInstrumentation(), mSolo,
-                                                      mDriver.getGeckoLeft(), mDriver.getGeckoTop());
+        MotionEventHelper meh = new MotionEventHelper(getInstrumentation(), mDriver.getGeckoLeft(), mDriver.getGeckoTop());
         meh.dragSync(10, 150, 10, 50);
 
         

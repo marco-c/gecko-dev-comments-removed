@@ -356,8 +356,7 @@ abstract class BaseTest extends BaseRobocopTest {
 
             
             
-            MotionEventHelper meh = new MotionEventHelper(getInstrumentation(), mSolo,
-                                                          mDriver.getGeckoLeft(), mDriver.getGeckoTop());
+            MotionEventHelper meh = new MotionEventHelper(getInstrumentation(), mDriver.getGeckoLeft(), mDriver.getGeckoTop());
             meh.dragSync(mScreenMidWidth, mScreenMidHeight+100, mScreenMidWidth, mScreenMidHeight-100);
 
             foundText = mSolo.waitForText(txt);
