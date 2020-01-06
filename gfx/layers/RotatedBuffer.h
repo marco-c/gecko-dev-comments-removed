@@ -118,7 +118,7 @@ public:
 
 
   void UpdateDestinationFrom(const RotatedBuffer& aSource,
-                             const nsIntRegion& aUpdateRegion);
+                             const gfx::IntRect& aUpdateRect);
 
   
 
