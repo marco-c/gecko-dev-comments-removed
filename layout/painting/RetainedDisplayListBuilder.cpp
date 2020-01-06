@@ -792,9 +792,21 @@ ClearFrameProps(nsTArray<nsIFrame*>& aFrames)
   }
 }
 
+void
+RetainedDisplayListBuilder::ClearModifiedFrameProps()
+{
+  nsTArray<nsIFrame*> modifiedFrames =
+    GetModifiedFrames(mBuilder.RootReferenceFrame());
+
+  ClearFrameProps(modifiedFrames);
+}
+
 bool
 RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop)
 {
+  const bool hasInvalidations =
+    mBuilder.RootReferenceFrame()->HasProperty(nsIFrame::ModifiedFrameList());
+
   mBuilder.RemoveModifiedWindowDraggingRegion();
   if (mBuilder.ShouldSyncDecodeImages()) {
     MarkFramesWithItemsAndImagesModified(&mList);
@@ -808,7 +820,7 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop)
   
   
   const bool shouldBuildPartial =
-    !mList.IsEmpty() && ShouldBuildPartial(modifiedFrames);
+    hasInvalidations && !mList.IsEmpty() && ShouldBuildPartial(modifiedFrames);
 
   if (mPreviousCaret != mBuilder.GetCaretFrame()) {
     if (mPreviousCaret) {
