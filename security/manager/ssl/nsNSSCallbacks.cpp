@@ -852,6 +852,9 @@ getKeaGroupName(uint32_t aKeaGroup)
     case ssl_grp_none:
       groupName = NS_LITERAL_CSTRING("none");
       break;
+    case ssl_grp_ffdhe_custom:
+      groupName = NS_LITERAL_CSTRING("custom");
+      break;
     
     
     default:
