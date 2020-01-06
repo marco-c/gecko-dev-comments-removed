@@ -51,35 +51,32 @@ use std::sync::atomic::AtomicIsize;
 use style::data::ElementData;
 
 #[repr(C)]
-pub struct PartialPersistentLayoutData {
+pub struct StyleData {
     
     
     
     
-    pub style_data: ElementData,
+    pub element_data: AtomicRefCell<ElementData>,
 
     
     pub parallel: DomParallelInfo,
-
-    
-    _align: [u64; 0]
 }
 
-impl PartialPersistentLayoutData {
+impl StyleData {
     pub fn new() -> Self {
-        PartialPersistentLayoutData {
-            style_data: ElementData::new(None),
+        Self {
+            element_data: AtomicRefCell::new(ElementData::new(None)),
             parallel: DomParallelInfo::new(),
-            _align: [],
         }
     }
 }
 
 #[derive(Copy, Clone, HeapSizeOf)]
 pub struct OpaqueStyleAndLayoutData {
+    
     #[ignore_heap_size_of = "TODO(#6910) Box value that should be counted but \
                              the type lives in layout"]
-    pub ptr: NonZero<*mut AtomicRefCell<PartialPersistentLayoutData>>
+    pub ptr: NonZero<*mut StyleData>
 }
 
 #[allow(unsafe_code)]

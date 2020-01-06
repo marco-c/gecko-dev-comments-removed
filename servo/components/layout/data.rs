@@ -2,16 +2,32 @@
 
 
 
+use atomic_refcell::AtomicRefCell;
 use construct::ConstructionResult;
-use script_layout_interface::PartialPersistentLayoutData;
+use script_layout_interface::StyleData;
+
+#[repr(C)]
+pub struct StyleAndLayoutData {
+    
+    
+    pub style_data: StyleData,
+    
+    pub layout_data: AtomicRefCell<LayoutData>,
+}
+
+impl StyleAndLayoutData {
+    pub fn new() -> Self {
+        Self {
+            style_data: StyleData::new(),
+            layout_data: AtomicRefCell::new(LayoutData::new()),
+        }
+    }
+}
+
 
 
 #[repr(C)]
-pub struct PersistentLayoutData {
-    
-    
-    pub base: PartialPersistentLayoutData,
-
+pub struct LayoutData {
     
     
     
@@ -29,11 +45,10 @@ pub struct PersistentLayoutData {
     pub flags: LayoutDataFlags,
 }
 
-impl PersistentLayoutData {
+impl LayoutData {
     
-    pub fn new() -> PersistentLayoutData {
-        PersistentLayoutData {
-            base: PartialPersistentLayoutData::new(),
+    pub fn new() -> LayoutData {
+        Self {
             flow_construction_result: ConstructionResult::None,
             before_flow_construction_result: ConstructionResult::None,
             after_flow_construction_result: ConstructionResult::None,
