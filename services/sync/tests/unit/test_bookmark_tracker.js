@@ -28,6 +28,7 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 
 async function verifyTrackerEmpty() {
+  await PlacesTestUtils.promiseAsyncUpdates();
   let changes = await tracker.promiseChangedIDs();
   deepEqual(changes, {});
   equal(tracker.score, 0);
@@ -58,6 +59,7 @@ async function stopTracking() {
 }
 
 async function verifyTrackedItems(tracked) {
+  await PlacesTestUtils.promiseAsyncUpdates();
   let changedIDs = await tracker.promiseChangedIDs();
   let trackedIDs = new Set(Object.keys(changedIDs));
   for (let guid of tracked) {
@@ -71,6 +73,7 @@ async function verifyTrackedItems(tracked) {
 }
 
 async function verifyTrackedCount(expected) {
+  await PlacesTestUtils.promiseAsyncUpdates();
   let changedIDs = await tracker.promiseChangedIDs();
   do_check_attribute_count(changedIDs, expected);
 }
@@ -188,6 +191,7 @@ add_task(async function test_leftPaneFolder() {
     _(`Left pane root ID: ${leftPaneId}`);
 
     {
+      await PlacesTestUtils.promiseAsyncUpdates();
       let changes = await tracker.promiseChangedIDs();
       deepEqual(changes, {}, "New left pane queries should not be tracked");
       do_check_eq(tracker.score, SCORE_INCREMENT_XLARGE);
@@ -197,6 +201,7 @@ add_task(async function test_leftPaneFolder() {
     await PlacesSyncUtils.bookmarks.reset();
 
     {
+      await PlacesTestUtils.promiseAsyncUpdates();
       let changes = await tracker.promiseChangedIDs();
       deepEqual(Object.keys(changes).sort(), ["menu", "mobile", "toolbar", "unfiled"],
         "Left pane queries should not be tracked after reset");
@@ -222,6 +227,7 @@ add_task(async function test_leftPaneFolder() {
       leftPaneId = PlacesUIUtils.maybeRebuildLeftPane();
       _(`Left pane root ID after deleting unrelated folder: ${leftPaneId}`);
 
+      await PlacesTestUtils.promiseAsyncUpdates();
       let changes = await tracker.promiseChangedIDs();
       deepEqual(changes, {},
         "Should not track left pane items after deleting unrelated folder");
@@ -235,6 +241,7 @@ add_task(async function test_leftPaneFolder() {
       leftPaneId = PlacesUIUtils.maybeRebuildLeftPane();
       _(`Left pane root ID after restoring version: ${leftPaneId}`);
 
+      await PlacesTestUtils.promiseAsyncUpdates();
       let changes = await tracker.promiseChangedIDs();
       deepEqual(changes, {},
         "Should not track left pane items after restoring version");
@@ -248,6 +255,7 @@ add_task(async function test_leftPaneFolder() {
       leftPaneId = PlacesUIUtils.maybeRebuildLeftPane();
       _(`Left pane root ID after detecting nonexistent item: ${leftPaneId}`);
 
+      await PlacesTestUtils.promiseAsyncUpdates();
       let changes = await tracker.promiseChangedIDs();
       deepEqual(changes, {},
         "Should not track left pane items after detecting nonexistent item");
@@ -266,6 +274,7 @@ add_task(async function test_leftPaneFolder() {
       leftPaneId = PlacesUIUtils.maybeRebuildLeftPane();
       _(`Left pane root ID after restoring moved query: ${leftPaneId}`);
 
+      await PlacesTestUtils.promiseAsyncUpdates();
       let changes = await tracker.promiseChangedIDs();
       deepEqual(changes, {},
         "Should not track left pane items after restoring moved query");
@@ -285,6 +294,7 @@ add_task(async function test_leftPaneFolder() {
       leftPaneId = PlacesUIUtils.maybeRebuildLeftPane();
       _(`Left pane root ID after removing dupe query: ${leftPaneId}`);
 
+      await PlacesTestUtils.promiseAsyncUpdates();
       let changes = await tracker.promiseChangedIDs();
       deepEqual(changes, {},
         "Should not track left pane items after removing dupe query");
@@ -349,12 +359,14 @@ add_task(async function test_batch_tracking() {
         "Test Folder", PlacesUtils.bookmarks.DEFAULT_INDEX);
       
       
-      Async.promiseSpinningly(verifyTrackedCount(2));
       
+      
+      Async.promiseSpinningly(verifyTrackedCount(0));
       do_check_eq(tracker.score, 0);
     }
   }, null);
 
+  
   
   await verifyTrackedCount(2);
   do_check_eq(tracker.score, SCORE_INCREMENT_XLARGE);
@@ -374,19 +386,18 @@ add_task(async function test_nested_batch_tracking() {
           PlacesUtils.bookmarks.createFolder(
             PlacesUtils.bookmarks.bookmarksMenuFolder,
             "Test Folder", PlacesUtils.bookmarks.DEFAULT_INDEX);
-          
-          
-          Async.promiseSpinningly(verifyTrackedCount(2));
-          
+          Async.promiseSpinningly(verifyTrackedCount(0));
           do_check_eq(tracker.score, 0);
         }
       }, null);
       _("inner batch complete.");
       
+      Async.promiseSpinningly(verifyTrackedCount(0));
       do_check_eq(tracker.score, 0);
     }
   }, null);
 
+  
   
   await verifyTrackedCount(2);
   do_check_eq(tracker.score, SCORE_INCREMENT_XLARGE);

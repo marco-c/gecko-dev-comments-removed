@@ -330,11 +330,25 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
+  async pullChanges() {
+    let db = await PlacesUtils.promiseDBConnection();
+    return pullSyncChanges(db);
+  },
+
+  
 
 
-  pullChanges() {
-    return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: pullChanges",
-      db => pullSyncChanges(db));
+
+
+
+
+
+
+  markChangesAsSyncing(changeRecords) {
+    return PlacesUtils.withConnectionWrapper(
+      "BookmarkSyncUtils: markChangesAsSyncing",
+      db => markChangesAsSyncing(db, changeRecords)
+    );
   },
 
   
@@ -469,8 +483,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
     
     
     
-    return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: remove",
-      db => pullSyncChanges(db));
+    let db = await PlacesUtils.promiseDBConnection();
+    return pullSyncChanges(db);
   },
 
   
@@ -1747,8 +1761,6 @@ var pullSyncChanges = async function(db) {
     FROM moz_bookmarks_deleted`,
     { deletedSyncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NORMAL },
     row => addRowToChangeRecords(row, changeRecords));
-
-  await markChangesAsSyncing(db, changeRecords);
 
   return changeRecords;
 };
