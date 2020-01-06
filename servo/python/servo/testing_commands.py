@@ -232,6 +232,15 @@ class MachCommands(CommandBase):
                 test_patterns.append(test)
 
         in_crate_packages = []
+
+        
+        
+        try:
+            packages.remove('selectors')
+            in_crate_packages += ["selectors"]
+        except KeyError:
+            pass
+
         if not packages:
             packages = set(os.listdir(path.join(self.context.topdir, "tests", "unit"))) - set(['.DS_Store'])
             in_crate_packages += ["selectors"]

@@ -2,7 +2,7 @@
 
 
 
-use properties::parse;
+use properties::{parse, parse_input};
 use style::computed_values::display::T::inline_block;
 use style::properties::{PropertyDeclaration, Importance, PropertyId};
 use style::properties::parse_property_declaration_list;

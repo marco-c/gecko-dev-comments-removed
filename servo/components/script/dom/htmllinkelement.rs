@@ -2,7 +2,7 @@
 
 
 
-use cssparser::Parser as CssParser;
+use cssparser::{Parser as CssParser, ParserInput};
 use dom::attr::Attr;
 use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::DOMTokenListBinding::DOMTokenListBinding::DOMTokenListMethods;
@@ -278,7 +278,8 @@ impl HTMLLinkElement {
             None => "",
         };
 
-        let mut css_parser = CssParser::new(&mq_str);
+        let mut input = ParserInput::new(&mq_str);
+        let mut css_parser = CssParser::new(&mut input);
         let win = document.window();
         let doc_url = document.url();
         let context = CssParserContext::new_for_cssom(&doc_url, win.css_error_reporter(), Some(CssRuleType::Media),

@@ -717,7 +717,7 @@ impl Node {
         
         match SelectorParser::parse_author_origin_no_namespace(&selectors) {
             
-            Err(()) => Err(Error::Syntax),
+            Err(_) => Err(Error::Syntax),
             
             Ok(selectors) => {
                 let mut ctx = MatchingContext::new(MatchingMode::Normal, None);
@@ -737,7 +737,7 @@ impl Node {
         
         match SelectorParser::parse_author_origin_no_namespace(&selectors) {
             
-            Err(()) => Err(Error::Syntax),
+            Err(_) => Err(Error::Syntax),
             
             Ok(selectors) => {
                 let mut descendants = self.traverse_preorder();

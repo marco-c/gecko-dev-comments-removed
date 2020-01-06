@@ -18,7 +18,11 @@ extern crate app_units;
 extern crate euclid;
 #[cfg(feature = "servo")] extern crate heapsize;
 #[cfg(feature = "servo")] #[macro_use] extern crate heapsize_derive;
+extern crate selectors;
 #[cfg(feature = "servo")] #[macro_use] extern crate serde_derive;
+
+use selectors::parser::SelectorParseError;
+use std::borrow::Cow;
 
 
 
@@ -68,3 +72,71 @@ pub mod viewport;
 
 pub use values::{ToCss, OneOrMoreCommaSeparated};
 pub use viewport::HasViewportPercentage;
+
+
+pub type ParseError<'i> = cssparser::ParseError<'i, SelectorParseError<'i, StyleParseError<'i>>>;
+
+#[derive(Clone, Debug, PartialEq)]
+
+pub enum StyleParseError<'i> {
+    
+    BadUrlInDeclarationValueBlock,
+    
+    BadStringInDeclarationValueBlock,
+    
+    UnbalancedCloseParenthesisInDeclarationValueBlock,
+    
+    UnbalancedCloseSquareBracketInDeclarationValueBlock,
+    
+    UnbalancedCloseCurlyBracketInDeclarationValueBlock,
+    
+    PropertyDeclaration(PropertyDeclarationParseError),
+    
+    PropertyDeclarationValueNotExhausted,
+    
+    UnexpectedDimension(Cow<'i, str>),
+    
+    RangedExpressionWithNoValue,
+    
+    UnexpectedFunction(Cow<'i, str>),
+    
+    UnexpectedNamespaceRule,
+    
+    UnexpectedImportRule,
+    
+    UnexpectedCharsetRule,
+    
+    UnsupportedAtRule(Cow<'i, str>),
+    
+    UnspecifiedError,
+}
+
+
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+pub enum PropertyDeclarationParseError {
+    
+    UnknownProperty,
+    
+    ExperimentalProperty,
+    
+    InvalidValue,
+    
+    
+    
+    
+    AnimationPropertyInKeyframeBlock,
+    
+    NotAllowedInPageRule,
+}
+
+impl<'a> From<StyleParseError<'a>> for ParseError<'a> {
+    fn from(this: StyleParseError<'a>) -> Self {
+        cssparser::ParseError::Custom(SelectorParseError::Custom(this))
+    }
+}
+
+impl<'a> From<PropertyDeclarationParseError> for ParseError<'a> {
+    fn from(this: PropertyDeclarationParseError) -> Self {
+        cssparser::ParseError::Custom(SelectorParseError::Custom(StyleParseError::PropertyDeclaration(this)))
+    }
+}

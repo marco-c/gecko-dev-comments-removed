@@ -2,7 +2,6 @@
 
 
 
-use parsing::parse;
 use style::parser::Parse;
 use style::values::specified::image::*;
 use style_traits::ToCss;

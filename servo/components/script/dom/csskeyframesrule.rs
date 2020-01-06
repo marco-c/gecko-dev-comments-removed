@@ -2,7 +2,7 @@
 
 
 
-use cssparser::Parser;
+use cssparser::{Parser, ParserInput};
 use dom::bindings::codegen::Bindings::CSSKeyframesRuleBinding;
 use dom::bindings::codegen::Bindings::CSSKeyframesRuleBinding::CSSKeyframesRuleMethods;
 use dom::bindings::error::ErrorResult;
@@ -58,7 +58,8 @@ impl CSSKeyframesRule {
 
     
     fn find_rule(&self, selector: &str) -> Option<usize> {
-        let mut input = Parser::new(selector);
+        let mut input = ParserInput::new(selector);
+        let mut input = Parser::new(&mut input);
         if let Ok(sel) = KeyframeSelector::parse(&mut input) {
             let guard = self.cssrule.shared_lock().read();
             

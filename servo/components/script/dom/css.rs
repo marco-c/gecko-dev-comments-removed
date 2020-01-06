@@ -2,7 +2,7 @@
 
 
 
-use cssparser::{Parser, serialize_identifier};
+use cssparser::{Parser, ParserInput, serialize_identifier};
 use dom::bindings::codegen::Bindings::WindowBinding::WindowBinding::WindowMethods;
 use dom::bindings::error::Fallible;
 use dom::bindings::reflector::Reflector;
@@ -39,7 +39,8 @@ impl CSS {
 
     
     pub fn Supports_(win: &Window, condition: DOMString) -> bool {
-        let mut input = Parser::new(&condition);
+        let mut input = ParserInput::new(&condition);
+        let mut input = Parser::new(&mut input);
         let cond = parse_condition_or_declaration(&mut input);
         if let Ok(cond) = cond {
             let url = win.Document().url();

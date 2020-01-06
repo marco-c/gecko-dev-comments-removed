@@ -2,7 +2,7 @@
 
 
 
-use cssparser::Parser;
+use cssparser::{Parser, ParserInput};
 use dom::bindings::codegen::Bindings::MediaListBinding;
 use dom::bindings::codegen::Bindings::MediaListBinding::MediaListMethods;
 use dom::bindings::codegen::Bindings::WindowBinding::WindowBinding::WindowMethods;
@@ -71,7 +71,8 @@ impl MediaListMethods for MediaList {
             return;
         }
         
-        let mut parser = Parser::new(&value);
+        let mut input = ParserInput::new(&value);
+        let mut parser = Parser::new(&mut input);
         let global = self.global();
         let win = global.as_window();
         let url = win.get_url();
@@ -107,7 +108,8 @@ impl MediaListMethods for MediaList {
     
     fn AppendMedium(&self, medium: DOMString) {
         
-        let mut parser = Parser::new(&medium);
+        let mut input = ParserInput::new(&medium);
+        let mut parser = Parser::new(&mut input);
         let global = self.global();
         let win = global.as_window();
         let url = win.get_url();
@@ -135,7 +137,8 @@ impl MediaListMethods for MediaList {
     
     fn DeleteMedium(&self, medium: DOMString) {
         
-        let mut parser = Parser::new(&medium);
+        let mut input = ParserInput::new(&medium);
+        let mut parser = Parser::new(&mut input);
         let global = self.global();
         let win = global.as_window();
         let url = win.get_url();

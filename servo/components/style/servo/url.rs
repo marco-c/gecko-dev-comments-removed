@@ -13,7 +13,7 @@ use std::fmt::{self, Write};
 
 
 use std::sync::Arc;
-use style_traits::ToCss;
+use style_traits::{ToCss, ParseError};
 
 
 
@@ -43,7 +43,7 @@ impl SpecifiedUrl {
     
     pub fn parse_from_string<'a>(url: Cow<'a, str>,
                                  context: &ParserContext)
-                                 -> Result<Self, ()> {
+                                 -> Result<Self, ParseError<'a>> {
         let serialization = Arc::new(url.into_owned());
         let resolved = context.url_data.join(&serialization).ok();
         Ok(SpecifiedUrl {

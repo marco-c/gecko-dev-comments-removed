@@ -2,7 +2,7 @@
 
 
 
-use cssparser::Parser;
+use cssparser::{Parser, ParserInput};
 use style::stylesheets::supports_rule::SupportsCondition;
 use style_traits::ToCss;
 

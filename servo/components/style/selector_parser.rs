@@ -6,10 +6,11 @@
 
 #![deny(missing_docs)]
 
-use cssparser::Parser as CssParser;
+use cssparser::{Parser as CssParser, ParserInput};
 use selectors::Element;
 use selectors::parser::SelectorList;
 use std::fmt::Debug;
+use style_traits::ParseError;
 use stylesheets::{Origin, Namespaces};
 
 
@@ -59,13 +60,14 @@ impl<'a> SelectorParser<'a> {
     
     
     pub fn parse_author_origin_no_namespace(input: &str)
-                                            -> Result<SelectorList<SelectorImpl>, ()> {
+                                            -> Result<SelectorList<SelectorImpl>, ParseError> {
         let namespaces = Namespaces::default();
         let parser = SelectorParser {
             stylesheet_origin: Origin::Author,
             namespaces: &namespaces,
         };
-        SelectorList::parse(&parser, &mut CssParser::new(input))
+        let mut input = ParserInput::new(input);
+        SelectorList::parse(&parser, &mut CssParser::new(&mut input))
     }
 
     

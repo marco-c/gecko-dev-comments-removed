@@ -2,7 +2,7 @@
 
 
 
-use cssparser::Parser as CssParser;
+use cssparser::{Parser as CssParser, ParserInput};
 use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::HTMLStyleElementBinding;
 use dom::bindings::codegen::Bindings::HTMLStyleElementBinding::HTMLStyleElementMethods;
@@ -91,8 +91,9 @@ impl HTMLStyleElement {
                                                       PARSING_MODE_DEFAULT,
                                                       doc.quirks_mode());
         let shared_lock = node.owner_doc().style_shared_lock().clone();
+        let mut input = ParserInput::new(&mq_str);
         let mq = Arc::new(shared_lock.wrap(
-                    parse_media_query_list(&context, &mut CssParser::new(&mq_str))));
+                    parse_media_query_list(&context, &mut CssParser::new(&mut input))));
         let loader = StylesheetLoader::for_element(self.upcast());
         let sheet = Stylesheet::from_str(&data, win.get_url(), Origin::Author, mq,
                                          shared_lock, Some(&loader),
