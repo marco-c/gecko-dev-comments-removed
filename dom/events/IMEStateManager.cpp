@@ -197,9 +197,14 @@ IMEStateManager::Shutdown()
 void
 IMEStateManager::OnTabParentDestroying(TabParent* aTabParent)
 {
+  if (sFocusedIMETabParent == aTabParent) {
+    NotifyIMEOfBlurForChildProcess();
+  }
+
   if (sActiveTabParent != aTabParent) {
     return;
   }
+
   MOZ_LOG(sISMLog, LogLevel::Info,
     ("OnTabParentDestroying(aTabParent=0x%p), "
      "The active TabParent is being destroyed", aTabParent));
@@ -207,7 +212,6 @@ IMEStateManager::OnTabParentDestroying(TabParent* aTabParent)
   
   sActiveTabParent = nullptr;
 
-  
   
 }
 
@@ -219,6 +223,7 @@ IMEStateManager::WidgetDestroyed(nsIWidget* aWidget)
     sWidget = nullptr;
   }
   if (sFocusedIMEWidget == aWidget) {
+    NotifyIMEOfBlurForChildProcess();
     sFocusedIMEWidget = nullptr;
   }
   if (sActiveInputContextWidget == aWidget) {
@@ -244,6 +249,27 @@ IMEStateManager::StopIMEStateManagement()
   sContent = nullptr;
   sActiveTabParent = nullptr;
   DestroyIMEContentObserver();
+}
+
+
+void
+IMEStateManager::NotifyIMEOfBlurForChildProcess()
+{
+  MOZ_LOG(sISMLog, LogLevel::Debug,
+    ("NotifyIMEOfBlurForChildProcess(), sFocusedIMETabParent=0x%p, "
+     "sFocusedIMEWidget=0x%p",
+     sFocusedIMETabParent.get(), sFocusedIMEWidget));
+
+  if (!sFocusedIMETabParent) {
+    MOZ_ASSERT(!sFocusedIMEWidget);
+    return;
+  }
+
+  MOZ_ASSERT(sFocusedIMEWidget);
+  NotifyIME(NOTIFY_IME_OF_BLUR, sFocusedIMEWidget, sFocusedIMETabParent);
+
+  MOZ_ASSERT(!sFocusedIMETabParent);
+  MOZ_ASSERT(!sFocusedIMEWidget);
 }
 
 
@@ -488,13 +514,19 @@ IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
     
     
     
-    if (sFocusedIMETabParent &&
+    
+    
+    
+    if (sFocusedIMETabParent && sFocusedIMEWidget &&
+        (aPresContext ||
+         !sFocusedIMEWidget->IMENotificationRequestsRef().
+           WantDuringDeactive()) &&
         !IsSameProcess(sFocusedIMETabParent, newTabParent)) {
       MOZ_LOG(sISMLog, LogLevel::Info,
         ("  OnChangeFocusInternal(), notifying IME of blur of previous focused "
          "remote process because it may be too late actual notification to "
          "reach this process"));
-      NotifyIME(NOTIFY_IME_OF_BLUR, sFocusedIMEWidget, sFocusedIMETabParent);
+      NotifyIMEOfBlurForChildProcess();
     }
   }
 

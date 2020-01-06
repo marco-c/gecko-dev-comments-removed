@@ -274,6 +274,12 @@ protected:
   static void CreateIMEContentObserver(EditorBase* aEditorBase);
   static void DestroyIMEContentObserver();
 
+  
+
+
+
+  static void NotifyIMEOfBlurForChildProcess();
+
   static bool IsEditable(nsINode* node);
 
   static bool IsIMEObserverNeeded(const IMEState& aState);
