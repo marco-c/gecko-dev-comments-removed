@@ -87,7 +87,6 @@ pub fn find_tool(target: &str, tool: &str) -> Option<Tool> {
 }
 
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum VsVers {
     
     Vs12,

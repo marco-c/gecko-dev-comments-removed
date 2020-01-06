@@ -578,7 +578,63 @@ pub const EWOULDBLOCK: ::c_int = EAGAIN;
 pub const SCM_RIGHTS: ::c_int = 0x01;
 pub const SCM_CREDENTIALS: ::c_int = 0x02;
 
+
+
+
+
+
+pub const IPPROTO_HOPOPTS: ::c_int = 0;
+
+
+pub const IPPROTO_IGMP: ::c_int = 2;
+
+pub const IPPROTO_IPIP: ::c_int = 4;
+
+
+pub const IPPROTO_EGP: ::c_int = 8;
+
+pub const IPPROTO_PUP: ::c_int = 12;
+
+
+pub const IPPROTO_IDP: ::c_int = 22;
+
+pub const IPPROTO_TP: ::c_int = 29;
+
+pub const IPPROTO_DCCP: ::c_int = 33;
+
+
+pub const IPPROTO_ROUTING: ::c_int = 43;
+
+pub const IPPROTO_FRAGMENT: ::c_int = 44;
+
+pub const IPPROTO_RSVP: ::c_int = 46;
+
+pub const IPPROTO_GRE: ::c_int = 47;
+
+pub const IPPROTO_ESP: ::c_int = 50;
+
+pub const IPPROTO_AH: ::c_int = 51;
+
+
+pub const IPPROTO_NONE: ::c_int = 59;
+
+pub const IPPROTO_DSTOPTS: ::c_int = 60;
+pub const IPPROTO_MTP: ::c_int = 92;
+pub const IPPROTO_BEETPH: ::c_int = 94;
+
+pub const IPPROTO_ENCAP: ::c_int = 98;
+
+pub const IPPROTO_PIM: ::c_int = 103;
+
+pub const IPPROTO_COMP: ::c_int = 108;
+
+pub const IPPROTO_SCTP: ::c_int = 132;
+pub const IPPROTO_MH: ::c_int = 135;
+pub const IPPROTO_UDPLITE: ::c_int = 136;
+pub const IPPROTO_MPLS: ::c_int = 137;
+
 pub const IPPROTO_RAW: ::c_int = 255;
+pub const IPPROTO_MAX: ::c_int = 256;
 
 pub const PROT_GROWSDOWN: ::c_int = 0x1000000;
 pub const PROT_GROWSUP: ::c_int = 0x2000000;
@@ -872,6 +928,7 @@ pub const SPLICE_F_MORE: ::c_uint = 0x04;
 pub const SPLICE_F_GIFT: ::c_uint = 0x08;
 
 pub const RTLD_LOCAL: ::c_int = 0;
+pub const RTLD_LAZY: ::c_int = 1;
 
 pub const POSIX_FADV_NORMAL: ::c_int = 0;
 pub const POSIX_FADV_RANDOM: ::c_int = 1;
@@ -887,6 +944,13 @@ pub const LOG_CRON: ::c_int = 9 << 3;
 pub const LOG_AUTHPRIV: ::c_int = 10 << 3;
 pub const LOG_FTP: ::c_int = 11 << 3;
 pub const LOG_PERROR: ::c_int = 0x20;
+
+pub const POLLIN: ::c_short = 0x1;
+pub const POLLPRI: ::c_short = 0x2;
+pub const POLLOUT: ::c_short = 0x4;
+pub const POLLERR: ::c_short = 0x8;
+pub const POLLHUP: ::c_short = 0x10;
+pub const POLLNVAL: ::c_short = 0x20;
 
 pub const PIPE_BUF: usize = 4096;
 
@@ -1419,6 +1483,10 @@ f! {
     pub fn CPU_EQUAL(set1: &cpu_set_t, set2: &cpu_set_t) -> bool {
         set1.bits == set2.bits
     }
+
+    pub fn QCMD(cmd: ::c_int, type_: ::c_int) -> ::c_int {
+        (cmd << 8) | (type_ & 0x00ff)
+    }
 }
 
 extern {
@@ -1805,6 +1873,10 @@ extern {
     pub fn pthread_atfork(prepare: Option<unsafe extern fn()>,
                           parent: Option<unsafe extern fn()>,
                           child: Option<unsafe extern fn()>) -> ::c_int;
+    pub fn pthread_create(native: *mut ::pthread_t,
+                          attr: *const ::pthread_attr_t,
+                          f: extern fn(*mut ::c_void) -> *mut ::c_void,
+                          value: *mut ::c_void) -> ::c_int;
     pub fn getgrgid(gid: ::gid_t) -> *mut ::group;
     #[cfg_attr(all(target_os = "macos", target_arch = "x86"),
                link_name = "popen$UNIX2003")]
@@ -1823,3 +1895,4 @@ cfg_if! {
         pub use unsupported_target;
     }
 }
+
