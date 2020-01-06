@@ -1961,11 +1961,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         this.unsafeSynchronize(sourceActorsCreated);
       }
 
-      for (let _actor of bpActors) {
-        
-        
-        let actor = _actor;
-
+      for (const actor of bpActors) {
         if (actor.isPending) {
           promises.push(actor.originalLocation.originalSourceActor._setBreakpoint(actor));
         } else {
