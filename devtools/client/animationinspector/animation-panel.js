@@ -260,7 +260,7 @@ var AnimationsPanel = {
 
 
 
-  onRateChanged: function (e, rate) {
+  onRateChanged: function (rate) {
     AnimationsController.setPlaybackRateAll(rate)
                         .then(() => this.refreshAnimationsStateAndUI())
                         .catch(console.error);
@@ -270,7 +270,7 @@ var AnimationsPanel = {
     this.toggleAllButtonEl.classList.remove("paused");
   },
 
-  onTimelineDataChanged: function (e, data) {
+  onTimelineDataChanged: function (data) {
     this.timelineData = data;
     let {isMoving, isUserDrag, time} = data;
 
