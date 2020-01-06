@@ -332,7 +332,7 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
     }
 
     
-    void boxDouble(FloatRegister src, const ValueOperand& dest);
+    void boxDouble(FloatRegister src, const ValueOperand& dest, FloatRegister);
     void boxNonDouble(JSValueType type, Register src, const ValueOperand& dest);
 
     
