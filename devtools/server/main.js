@@ -443,14 +443,6 @@ var DebuggerServer = {
       constructor: "HeapSnapshotFileActor",
       type: { global: true }
     });
-    
-    
-    
-    this.registerModule("devtools/server/actors/perf", {
-      prefix: "perf",
-      constructor: "PerfActor",
-      type: { global: true }
-    });
   },
 
   
@@ -542,8 +534,7 @@ var DebuggerServer = {
       constructor: "TimelineActor",
       type: { tab: true }
     });
-    if ("nsIProfiler" in Ci &&
-        !Services.prefs.getBoolPref("devtools.performance.new-panel-enabled")) {
+    if ("nsIProfiler" in Ci) {
       this.registerModule("devtools/server/actors/performance", {
         prefix: "performance",
         constructor: "PerformanceActor",
