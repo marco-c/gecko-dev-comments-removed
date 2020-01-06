@@ -3735,7 +3735,12 @@ Selection::NotifySelectionListeners()
           do_QueryInterface(newEditingHost->AsDOMNode());
         
         
-        fm->SetFocus(domElementToFocus, nsIFocusManager::FLAG_NOSWITCHFRAME);
+        
+        uint32_t flags = nsIFocusManager::FLAG_NOSWITCHFRAME;
+        if (focusedWindow != fm->GetFocusedWindow()) {
+          flags |= nsIFocusManager::FLAG_NOSCROLL;
+        }
+        fm->SetFocus(domElementToFocus, flags);
       }
     }
   }
