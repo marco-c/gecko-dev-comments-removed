@@ -579,7 +579,11 @@ SourceBuffer::HighestEndTime()
 NS_IMPL_CYCLE_COLLECTION_CLASS(SourceBuffer)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(SourceBuffer)
-  tmp->Detach();
+  
+  TrackBuffersManager* manager = tmp->mTrackBuffersManager;
+  if (manager) {
+    manager->Detach();
+  }
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mMediaSource)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mBuffered)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END_INHERITED(DOMEventTargetHelper)
