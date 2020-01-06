@@ -206,6 +206,25 @@ add_task(async function setup() {
   
   
   UnsubmittedCrashHandler.uninit();
+
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.crashReports.unsubmittedCheck.enabled", false],
+    ],
+  });
+
+  await createPendingCrashReports(1);
+
+  notification =
+    await UnsubmittedCrashHandler.checkForUnsubmittedCrashReports();
+  Assert.ok(!notification, "There should not be a notification");
+
+  clearPendingCrashReports();
+  await SpecialPowers.popPrefEnv();
+
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.crashReports.unsubmittedCheck.enabled", true],
