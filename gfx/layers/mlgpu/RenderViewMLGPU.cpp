@@ -400,7 +400,7 @@ RenderViewMLGPU::ExecuteRendering()
 
   
   
-  DrawClear();
+  mDevice->DrawClearRegion(mClear);
 
   
   for (auto iter = mBackToFront.begin(); iter != mBackToFront.end(); iter++) {
@@ -498,51 +498,16 @@ RenderViewMLGPU::PrepareClear()
     region.SubOut(mOccludedRegion);
     region.SimplifyOutward(kMaxClearViewRects);
   }
-  for (auto iter = region.RectIter(); !iter.Done(); iter.Next()) {
-    mClearRects.AppendElement(iter.Get().ToUnknownRect());
+
+  Maybe<int32_t> sortIndex;
+  if (mUseDepthBuffer) {
+    
+    
+    sortIndex = Some(mNextSortIndex++);
   }
 
-  
-  
-  if (mClearRects.IsEmpty() || (mDevice->CanUseClearView() && !mUseDepthBuffer)) {
-    return;
-  }
-
-  
-  mDevice->GetSharedVertexBuffer()->Allocate(
-    &mClearInput,
-    mClearRects.Length(),
-    sizeof(IntRect),
-    mClearRects.Elements());
-  mClearRects.Clear();
-
-  
-  
-  ClearConstants consts(mNextSortIndex++);
-  mDevice->GetSharedVSBuffer()->Allocate(&mClearConstants, consts);
-}
-
-void
-RenderViewMLGPU::DrawClear()
-{
-  
-  if (mClearInput.IsValid()) {
-    mDevice->SetTopology(MLGPrimitiveTopology::UnitQuad);
-    mDevice->SetVertexShader(VertexShaderID::Clear);
-    mDevice->SetVertexBuffer(1, &mClearInput);
-    mDevice->SetVSConstantBuffer(kClearConstantBufferSlot, &mClearConstants);
-    mDevice->SetBlendState(MLGBlendState::Copy);
-    mDevice->SetPixelShader(PixelShaderID::Clear);
-    mDevice->DrawInstanced(4, mClearInput.NumVertices(), 0, 0);
-    return;
-  }
-
-  
-  
-  if (!mClearRects.IsEmpty()) {
-    Color color(0.0, 0.0, 0.0, 0.0);
-    mDevice->ClearView(mTarget, color, mClearRects.Elements(), mClearRects.Length());
-  }
+  nsTArray<IntRect> rects = ToRectArray(region);
+  mDevice->PrepareClearRegion(&mClear, Move(rects), sortIndex);
 }
 
 } 

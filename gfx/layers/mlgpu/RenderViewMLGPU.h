@@ -7,6 +7,7 @@
 #define mozilla_gfx_layers_mlgpu_RenderViewMLGPU_h
 
 #include "LayerManagerMLGPU.h"
+#include "ClearRegionHelper.h"
 #include "RenderPassMLGPU.h"
 #include "Units.h"
 #include <deque>
@@ -91,11 +92,7 @@ private:
   ConstantBufferSection mWorldConstants;
 
   
-  nsTArray<gfx::IntRect> mClearRects;
-
-  
-  VertexBufferSection mClearInput;
-  ConstantBufferSection mClearConstants;
+  ClearRegionHelper mClear;
 
   
   RefPtr<MLGRenderTarget> mTarget;
