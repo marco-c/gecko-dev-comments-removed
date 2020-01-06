@@ -215,7 +215,7 @@ ContentClient::BeginPaintBuffer(PaintedLayer* aLayer,
   
   if (newBuffer) {
     if (mBuffer) {
-      newBuffer->UpdateDestinationFrom(*mBuffer, nsIntRegion(newBuffer->BufferRect()));
+      newBuffer->UpdateDestinationFrom(*mBuffer, newBuffer->BufferRect());
     }
 
     
@@ -932,7 +932,7 @@ ContentClientDoubleBuffered::FinalizeFrame(const nsIntRegion& aRegionToDraw)
   }
 
   if (mFrontBuffer->Lock(OpenMode::OPEN_READ_ONLY)) {
-    mBuffer->UpdateDestinationFrom(*mFrontBuffer, updateRegion);
+    mBuffer->UpdateDestinationFrom(*mFrontBuffer, updateRegion.GetBounds());
     mFrontBuffer->Unlock();
   }
 }
