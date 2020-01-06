@@ -12,6 +12,9 @@
 #include "nsDisplayList.h"
 #include "UnitTransforms.h"
 
+#define SLH_LOG(...)
+
+
 namespace mozilla {
 namespace layers {
 
@@ -55,12 +58,15 @@ void
 ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
                                  const StackingContextHelper& aStackingContext)
 {
+  SLH_LOG("processing item %p\n", aItem);
+
   ItemClips clips(aItem->GetActiveScrolledRoot(), aItem->GetClipChain());
   MOZ_ASSERT(!mItemClipStack.empty());
   if (clips.HasSameInputs(mItemClipStack.back())) {
     
     
     
+    SLH_LOG("early-exit for %p\n", aItem);
     return;
   }
   mItemClipStack.back().Unapply(mBuilder);
@@ -130,6 +136,8 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
 
   clips.Apply(mBuilder);
   mItemClipStack.push_back(clips);
+
+  SLH_LOG("done setup for %p\n", aItem);
 }
 
 std::pair<Maybe<FrameMetrics::ViewID>, Maybe<wr::WrClipId>>
