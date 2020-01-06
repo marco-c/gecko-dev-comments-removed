@@ -28,10 +28,17 @@ XPCOMUtils.defineLazyGetter(this, "console", getConsole);
 const appinfo = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime);
 
 let nextId = 0;
-const uniqueProcessID = String(appinfo.uniqueProcessID);
+const uniqueProcessID = appinfo.uniqueProcessID;
+
+
+
+
+const processIDMask = (uniqueProcessID & 0xffff) * (2 ** 37);
 
 function getUniqueId() {
-  return `${nextId++}-${uniqueProcessID}`;
+  
+  
+  return processIDMask + nextId++;
 }
 
 
