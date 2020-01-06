@@ -256,6 +256,12 @@ const CustomizableWidgets = [
     TABS_PER_PAGE: 25,
     NEXT_PAGE_MIN_TABS: 5, 
     onCreated(aNode) {
+      this._initialize(aNode);
+    },
+    _initialize(aNode) {
+      if (this._initialized) {
+        return;
+      }
       
       
       
@@ -300,8 +306,10 @@ const CustomizableWidgets = [
         doc.defaultView.openUILinkIn(link, "tab");
         CustomizableUI.hidePanelForNode(e.target);
       });
+      this._initialized = true;
     },
     onViewShowing(aEvent) {
+      this._initialize(aEvent.target);
       let doc = aEvent.target.ownerDocument;
       this._tabsList = doc.getElementById("PanelUI-remotetabs-tabslist");
       Services.obs.addObserver(this, SyncedTabs.TOPIC_TABS_CHANGED);
