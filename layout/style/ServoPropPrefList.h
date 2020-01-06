@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_ServoPropPrefList_h
 #define mozilla_ServoPropPrefList_h
@@ -20,6 +20,13 @@ namespace mozilla {
 #undef CSS_PROP
 #undef CSS_PROP_SHORTHAND
 
+#define CSS_PROP_ALIAS(aliasname_, aliasid_, id_, method_, pref_)  \
+    const bool SERVO_PREF_ENABLED_##aliasid_ = !(sizeof(pref_) == 1);
+#define CSS_PROP_ALIAS_LIST_INCLUDE_LOGICAL
+#include "nsCSSPropAliasList.h"
+#undef CSS_PROP_ALIAS_LIST_INCLUDE_LOGICAL
+#undef CSS_PROP_ALIAS
+
 }
 
-#endif 
+#endif // mozilla_ServoPropPrefList_h
