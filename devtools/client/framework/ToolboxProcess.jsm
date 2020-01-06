@@ -249,18 +249,22 @@ BrowserToolboxProcess.prototype = {
 
     let command = Services.dirsvc.get("XREExeF", Ci.nsIFile).path;
 
-    let xulURI = `${DBG_XUL}?port=${this.port}`;
-    if (this._options.addonID) {
-      xulURI += `&addonID=${this._options.addonID}`;
-    }
-
     dumpn("Running chrome debugging process.");
     let args = [
       "-no-remote",
       "-foreground",
       "-profile", this._dbgProfilePath,
-      "-chrome", xulURI
+      "-chrome", DBG_XUL
     ];
+    let environment = {
+      
+      
+      MOZ_DISABLE_SAFE_MODE_KEY: "1",
+      MOZ_BROWSER_TOOLBOX_PORT: String(this.port),
+    };
+    if (this._options.addonID) {
+      environment.MOZ_BROWSER_TOOLBOX_ADDONID = String(this._options.addonID);
+    }
 
     
     
@@ -278,11 +282,7 @@ BrowserToolboxProcess.prototype = {
       arguments: args,
       environmentAppend: true,
       stderr: "stdout",
-      environment: {
-        
-        
-        MOZ_DISABLE_SAFE_MODE_KEY: "1",
-      },
+      environment,
     }).then(proc => {
       this._dbgProcess = proc;
 
