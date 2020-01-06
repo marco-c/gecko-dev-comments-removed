@@ -33,7 +33,7 @@ class ArrayObject : public NativeObject
 
     void setNonWritableLength(JSContext* cx) {
         if (getElementsHeader()->numShiftedElements() > 0)
-            unshiftElements();
+            moveShiftedElements();
 
         
         

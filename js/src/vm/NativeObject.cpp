@@ -115,7 +115,7 @@ ObjectElements::FreezeElements(JSContext* cx, HandleNativeObject obj)
         return true;
 
     if (obj->getElementsHeader()->numShiftedElements() > 0)
-        obj->unshiftElements();
+        obj->moveShiftedElements();
 
     ObjectElements* header = obj->getElementsHeader();
 
@@ -707,7 +707,7 @@ NativeObject::maybeDensifySparseElements(JSContext* cx, HandleNativeObject obj)
 }
 
 void
-NativeObject::unshiftElements()
+NativeObject::moveShiftedElements()
 {
     ObjectElements* header = getElementsHeader();
     uint32_t numShifted = header->numShiftedElements();
@@ -739,14 +739,14 @@ NativeObject::unshiftElements()
 }
 
 void
-NativeObject::maybeUnshiftElements()
+NativeObject::maybeMoveShiftedElements()
 {
     ObjectElements* header = getElementsHeader();
     MOZ_ASSERT(header->numShiftedElements() > 0);
 
     
     if (header->capacity < header->numAllocatedElements() / 3)
-        unshiftElements();
+        moveShiftedElements();
 }
 
 
@@ -852,7 +852,16 @@ NativeObject::growElements(JSContext* cx, uint32_t reqCapacity)
     
     uint32_t numShifted = getElementsHeader()->numShiftedElements();
     if (numShifted > 0) {
-        maybeUnshiftElements();
+        
+        
+        
+        
+        static const size_t MaxElementsToMoveEagerly = 20;
+
+        if (getElementsHeader()->initializedLength <= MaxElementsToMoveEagerly)
+            moveShiftedElements();
+        else
+            maybeMoveShiftedElements();
         if (getDenseCapacity() >= reqCapacity)
             return true;
         numShifted = getElementsHeader()->numShiftedElements();
@@ -862,7 +871,7 @@ NativeObject::growElements(JSContext* cx, uint32_t reqCapacity)
         CheckedInt<uint32_t> checkedReqCapacity(reqCapacity);
         checkedReqCapacity += numShifted;
         if (MOZ_UNLIKELY(!checkedReqCapacity.isValid())) {
-            unshiftElements();
+            moveShiftedElements();
             numShifted = 0;
         }
     }
@@ -935,7 +944,7 @@ NativeObject::shrinkElements(JSContext* cx, uint32_t reqCapacity)
     
     uint32_t numShifted = getElementsHeader()->numShiftedElements();
     if (numShifted > 0) {
-        maybeUnshiftElements();
+        maybeMoveShiftedElements();
         numShifted = getElementsHeader()->numShiftedElements();
     }
 

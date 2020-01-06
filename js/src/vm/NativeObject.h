@@ -1075,10 +1075,11 @@ class NativeObject : public ShapedObject
     inline bool tryShiftDenseElements(uint32_t count);
 
     
-    void unshiftElements();
+    
+    void moveShiftedElements();
 
     
-    void maybeUnshiftElements();
+    void maybeMoveShiftedElements();
 
     static bool goodElementsAllocationAmount(JSContext* cx, uint32_t reqAllocated,
                                              uint32_t length, uint32_t* goodAmount);
