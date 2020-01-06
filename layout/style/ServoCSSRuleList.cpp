@@ -8,6 +8,7 @@
 
 #include "mozilla/ServoCSSRuleList.h"
 
+#include "mozilla/IntegerRange.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoDocumentRule.h"
 #include "mozilla/ServoImportRule.h"
@@ -16,6 +17,7 @@
 #include "mozilla/ServoNamespaceRule.h"
 #include "mozilla/ServoPageRule.h"
 #include "mozilla/ServoStyleRule.h"
+#include "mozilla/ServoStyleSheet.h"
 #include "mozilla/ServoSupportsRule.h"
 #include "nsCSSCounterStyleRule.h"
 #include "nsCSSFontFaceRule.h"
@@ -29,8 +31,32 @@ ServoCSSRuleList::ServoCSSRuleList(already_AddRefed<ServoCssRules> aRawRules,
 {
   Servo_CssRules_ListTypes(mRawRules, &mRules);
   
-  
-  
+  if (aDirectOwnerStyleSheet) {
+    nsDataHashtable<nsPtrHashKey<const RawServoStyleSheet>,
+                    ServoStyleSheet*> stylesheets;
+    aDirectOwnerStyleSheet->EnumerateChildSheets(
+      [&stylesheets](StyleSheet* child) {
+        ServoStyleSheet* servoSheet = child->AsServo();
+        const RawServoStyleSheet* rawSheet = servoSheet->RawSheet();
+        MOZ_ASSERT(!stylesheets.Get(rawSheet, nullptr),
+                   "Multiple child sheets with same raw sheet?");
+        stylesheets.Put(rawSheet, servoSheet);
+      });
+    for (auto i : IntegerRange(mRules.Length())) {
+      if (mRules[i] != nsIDOMCSSRule::IMPORT_RULE) {
+        
+        
+        
+        break;
+      }
+      ConstructImportRule(i, [&stylesheets](const RawServoStyleSheet* raw) {
+        
+        
+        
+        return stylesheets.GetAndRemove(raw).valueOr(nullptr);
+      });
+    }
+  }
 }
 
 
@@ -101,7 +127,6 @@ ServoCSSRuleList::GetRule(uint32_t aIndex)
         break;                                                              \
       }
       CASE_RULE(STYLE, Style)
-      CASE_RULE(IMPORT, Import)
       CASE_RULE(KEYFRAMES, Keyframes)
       CASE_RULE(MEDIA, Media)
       CASE_RULE(NAMESPACE, Namespace)
@@ -121,6 +146,12 @@ ServoCSSRuleList::GetRule(uint32_t aIndex)
         ruleObj = Servo_CssRules_GetCounterStyleRuleAt(mRawRules, aIndex);
         break;
       }
+      case nsIDOMCSSRule::IMPORT_RULE:
+        
+        
+        
+        NS_WARNING("stylo: this @import rule was not constructed");
+        return nullptr;
       case nsIDOMCSSRule::KEYFRAME_RULE:
         MOZ_ASSERT_UNREACHABLE("keyframe rule cannot be here");
         return nullptr;
@@ -184,6 +215,36 @@ ServoCSSRuleList::DropReference()
   DropAllRules();
 }
 
+template<typename ChildSheetGetter>
+void
+ServoCSSRuleList::ConstructImportRule(uint32_t aIndex, ChildSheetGetter aGetter)
+{
+  MOZ_ASSERT(mRules[aIndex] == nsIDOMCSSRule::IMPORT_RULE);
+
+  uint32_t line, column;
+  RefPtr<RawServoImportRule> rawRule =
+    Servo_CssRules_GetImportRuleAt(mRawRules, aIndex,
+                                   &line, &column).Consume();
+  const RawServoStyleSheet*
+    rawChildSheet = Servo_ImportRule_GetSheet(rawRule);
+  ServoStyleSheet* childSheet = aGetter(rawChildSheet);
+  if (!childSheet) {
+    
+    
+    
+    NS_WARNING("stylo: fail to get child sheet for @import rule");
+    return;
+  }
+  RefPtr<ServoImportRule>
+    ruleObj = new ServoImportRule(Move(rawRule), childSheet, line, column);
+  MOZ_ASSERT(!childSheet->GetOwnerRule(),
+             "Child sheet is already owned by another rule?");
+  MOZ_ASSERT(childSheet->GetParentSheet() == mStyleSheet,
+             "Not a child sheet of the owner of the rule?");
+  childSheet->SetOwnerRule(ruleObj);
+  mRules[aIndex] = CastToUint(ruleObj.forget().take());
+}
+
 nsresult
 ServoCSSRuleList::InsertRule(const nsAString& aRule, uint32_t aIndex)
 {
@@ -199,8 +260,27 @@ ServoCSSRuleList::InsertRule(const nsAString& aRule, uint32_t aIndex)
   nsresult rv = Servo_CssRules_InsertRule(mRawRules, mStyleSheet->RawSheet(),
                                           &rule, aIndex, nested,
                                           loader, mStyleSheet, &type);
-  if (!NS_FAILED(rv)) {
-    mRules.InsertElementAt(aIndex, type);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  mRules.InsertElementAt(aIndex, type);
+  if (type == nsIDOMCSSRule::IMPORT_RULE) {
+    MOZ_ASSERT(!nested, "@import rule cannot be nested");
+    ConstructImportRule(aIndex, [this](const RawServoStyleSheet* raw) {
+      StyleSheet* sheet = mStyleSheet->GetMostRecentlyAddedChildSheet();
+      MOZ_ASSERT(sheet, "Should have at least one "
+                 "child stylesheet after inserting @import rule");
+      ServoStyleSheet* servoSheet = sheet->AsServo();
+      
+      
+      
+      
+      if (servoSheet->RawSheet() == raw) {
+        NS_WARNING("New child sheet should always be prepended to the list");
+        return static_cast<ServoStyleSheet*>(nullptr);
+      }
+      return servoSheet;
+    });
   }
   return rv;
 }
