@@ -147,6 +147,9 @@ module.exports = {
     "no-cond-assign": "error",
 
     
+    "no-control-regex": "error",
+
+    
     "no-debugger": "error",
 
     

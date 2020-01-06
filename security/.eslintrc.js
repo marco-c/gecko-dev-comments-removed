@@ -52,9 +52,6 @@ module.exports = {
     "no-constant-condition": ["error", { "checkLoops": false }],
 
     
-    "no-control-regex": "error",
-
-    
     "no-dupe-class-members": "error",
 
     

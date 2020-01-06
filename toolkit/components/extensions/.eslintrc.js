@@ -204,9 +204,6 @@ module.exports = {
     "no-continue": "off",
 
     
-    "no-control-regex": "error",
-
-    
     "no-div-regex": "off",
 
     

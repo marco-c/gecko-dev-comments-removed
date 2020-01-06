@@ -99,9 +99,6 @@ module.exports = {
     "no-console": "error",
 
     
-    "no-control-regex": "error",
-
-    
     "no-fallthrough": "error",
 
     
