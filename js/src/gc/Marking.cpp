@@ -2976,15 +2976,10 @@ js::TenuringTracer::moveObjectToTenured(JSObject* dst, JSObject* src, AllocKind 
         
     }
 
-    if (src->is<InlineTypedObject>()) {
-        InlineTypedObject::objectMovedDuringMinorGC(this, dst, src);
-    } else if (src->is<TypedArrayObject>()) {
-        tenuredSize += TypedArrayObject::objectMovedDuringMinorGC(this, dst, src, dstKind);
-    } else if (src->is<UnboxedArrayObject>()) {
-        tenuredSize += UnboxedArrayObject::objectMovedDuringMinorGC(this, dst, src, dstKind);
-    } else if (src->is<ArgumentsObject>()) {
-        tenuredSize += ArgumentsObject::objectMovedDuringMinorGC(this, dst, src);
-    } else if (src->is<ProxyObject>()) {
+    if (src->is<ProxyObject>()) {
+        
+        
+
         
         
         MOZ_ASSERT(src->as<ProxyObject>().usingInlineValueArray());
