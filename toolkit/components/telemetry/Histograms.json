@@ -11381,6 +11381,16 @@
     "description": "720p VP9 decode benchmark measurement in frames per second",
     "releaseChannelCollection": "opt-out"
   },
+  "VIDEO_CDM_CREATED": {
+    "record_in_processes": ["main", "content"],
+    "alert_emails": ["cpearce@mozilla.com"],
+    "expires_in_version": "58",
+    "bug_numbers": [1304207],
+    "kind": "enumerated",
+    "n_values": 6,
+    "description": "Note the type of CDM (0=ClearKey, 1=Primetime, 2=Widevine, 3=unknown) every time we successfully instantiate an EME MediaKeys object.",
+    "releaseChannelCollection": "opt-out"
+  },
   "MEDIA_CODEC_USED": {
     "record_in_processes": ["main", "content"],
     "alert_emails": ["cpearce@mozilla.com"],
@@ -12580,15 +12590,16 @@
     "cpp_guard": "XP_LINUX",
     "description": "System calls blocked by a seccomp-bpf sandbox policy; limited to syscalls where we would crash on Nightly.  The key is generally the architecture and syscall ID but in some cases we include non-personally-identifying information from the syscall arguments; see the function SubmitToTelemetry in security/sandbox/linux/reporter/SandboxReporter.cpp for details."
   },
-  "SANDBOX_FAILED_LAUNCH": {
+  "SANDBOX_FAILED_LAUNCH_KEYED": {
     "record_in_processes": ["main"],
     "alert_emails": ["bowen@mozilla.com"],
-    "expires_in_version": "60",
+    "expires_in_version": "never",
     "kind": "enumerated",
+    "keyed": true,
     "n_values": 50,
     "bug_numbers": [1368600],
     "cpp_guard": "XP_WIN",
-    "description": "Error code when a Windows sandboxed process fails to launch. See https://dxr.mozilla.org/mozilla-central/search?q=ResultCode++path%3Asandbox_types.h&redirect=true for definitions of the error codes."
+    "description": "Error code when a Windows sandboxed process fails to launch, keyed by process type and Windows error code. See https://dxr.mozilla.org/mozilla-central/search?q=ResultCode++path%3Asandbox_types.h&redirect=true for definitions of the error codes."
   },
   "SYNC_WORKER_OPERATION": {
     "record_in_processes": ["main", "content"],
