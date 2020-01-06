@@ -455,7 +455,8 @@ FormAutoComplete.prototype = {
     
     
     
-    let {FormAutoCompleteResult} = Cu.import("resource://gre/modules/nsFormAutoCompleteResult.jsm", {});
+    let {FormAutoCompleteResult} = Cu.import("resource://gre/modules/nsFormAutoCompleteResult.jsm",
+                                             {});
     return new FormAutoCompleteResult(datalistResult.searchString,
                                       Ci.nsIAutoCompleteResult.RESULT_SUCCESS,
                                       0,

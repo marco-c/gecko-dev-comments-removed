@@ -2,7 +2,7 @@
 
 
 
-var FormHistory = (Components.utils.import("resource://gre/modules/FormHistory.jsm", {})).FormHistory;
+var {FormHistory} = (Components.utils.import("resource://gre/modules/FormHistory.jsm", {}));
 
 
 add_task(async function test() {

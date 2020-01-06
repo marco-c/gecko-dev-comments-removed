@@ -276,7 +276,8 @@ function makeSearchStatement(aSearchData, aSelectTerms) {
 }
 
 function makeAddStatement(aNewData, aNow, aBindingArrays) {
-  let query = "INSERT INTO moz_formhistory (fieldname, value, timesUsed, firstUsed, lastUsed, guid) " +
+  let query = "INSERT INTO moz_formhistory " +
+              "(fieldname, value, timesUsed, firstUsed, lastUsed, guid) " +
               "VALUES (:fieldname, :value, :timesUsed, :firstUsed, :lastUsed, :guid)";
 
   aNewData.timesUsed = aNewData.timesUsed || 1;
@@ -286,7 +287,8 @@ function makeAddStatement(aNewData, aNow, aBindingArrays) {
 }
 
 function makeBumpStatement(aGuid, aNow, aBindingArrays) {
-  let query = "UPDATE moz_formhistory SET timesUsed = timesUsed + 1, lastUsed = :lastUsed WHERE guid = :guid";
+  let query = "UPDATE moz_formhistory " +
+              "SET timesUsed = timesUsed + 1, lastUsed = :lastUsed WHERE guid = :guid";
   let queryParams = {
     lastUsed: aNow,
     guid: aGuid,
@@ -701,7 +703,11 @@ function updateFormHistoryWrite(aChanges, aCallbacks) {
       }
 
       if (aCallbacks && aCallbacks.handleCompletion) {
-        aCallbacks.handleCompletion(aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED ? 0 : 1);
+        aCallbacks.handleCompletion(
+          aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED ?
+            0 :
+            1
+        );
       }
     },
     handleError(aError) {
@@ -808,7 +814,11 @@ this.FormHistory = {
 
       handleCompletion(aReason) {
         if (aCallbacks && aCallbacks.handleCompletion) {
-          aCallbacks.handleCompletion(aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED ? 0 : 1);
+          aCallbacks.handleCompletion(
+            aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED ?
+              0 :
+              1
+          );
         }
       }
     };
@@ -836,7 +846,11 @@ this.FormHistory = {
 
       handleCompletion(aReason) {
         if (aCallbacks && aCallbacks.handleCompletion) {
-          aCallbacks.handleCompletion(aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED ? 0 : 1);
+          aCallbacks.handleCompletion(
+            aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED ?
+              0 :
+              1
+          );
         }
       }
     };
@@ -852,6 +866,7 @@ this.FormHistory = {
     let searchFailed = false;
 
     function validIdentifier(change) {
+      
       
       return Boolean(change.guid) != Boolean(change.fieldname && change.value);
     }
@@ -1076,7 +1091,11 @@ this.FormHistory = {
 
       handleCompletion(aReason) {
         if (aCallbacks && aCallbacks.handleCompletion) {
-          aCallbacks.handleCompletion(aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED ? 0 : 1);
+          aCallbacks.handleCompletion(
+            aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED ?
+              0 :
+              1
+          );
         }
       }
     });
