@@ -72,6 +72,13 @@ pref("devtools.fontinspector.enabled", true);
 pref("devtools.layoutview.enabled", false);
 
 
+
+pref("devtools.promote.layoutview", 1);
+
+
+pref("devtools.promote.layoutview.showPromoteBar", true);
+
+
 pref("devtools.gridinspector.showGridAreas", false);
 pref("devtools.gridinspector.showGridLineNumbers", false);
 pref("devtools.gridinspector.showGridOutline", false);
