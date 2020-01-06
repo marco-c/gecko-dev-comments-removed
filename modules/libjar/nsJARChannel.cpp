@@ -600,7 +600,7 @@ nsJARChannel::GetContentType(nsACString &result)
     
     
     if (!mOpened) {
-      result.Assign(UNKNOWN_CONTENT_TYPE);
+      result.AssignLiteral(UNKNOWN_CONTENT_TYPE);
       return NS_OK;
     }
 
