@@ -202,8 +202,6 @@ public:
   
   
   virtual already_AddRefed<MediaResource> CloneData(MediaResourceCallback* aCallback) = 0;
-  
-  virtual void RecordStatisticsTo(MediaChannelStatistics *aStatistics) { }
 
   
   
@@ -582,15 +580,6 @@ public:
   bool     IsClosed() const { return mCacheStream.IsClosed(); }
   bool     CanClone() override;
   already_AddRefed<MediaResource> CloneData(MediaResourceCallback* aDecoder) override;
-  
-  
-  void RecordStatisticsTo(MediaChannelStatistics *aStatistics) override {
-    NS_ASSERTION(aStatistics, "Statistics param cannot be null!");
-    MutexAutoLock lock(mLock);
-    if (!mChannelStatistics) {
-      mChannelStatistics = aStatistics;
-    }
-  }
   nsresult ReadFromCache(char* aBuffer, int64_t aOffset, uint32_t aCount) override;
   void     EnsureCacheUpToDate() override;
 
@@ -615,7 +604,6 @@ public:
   bool    IsTransportSeekable() override;
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override {
-    
     
     
     
