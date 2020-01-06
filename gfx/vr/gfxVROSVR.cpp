@@ -550,49 +550,23 @@ VRSystemManagerOSVR::Shutdown()
   osvr_ClientShutdown(m_ctx);
 }
 
-void
-VRSystemManagerOSVR::NotifyVSync()
-{
-  VRSystemManager::NotifyVSync();
-
-  
-}
-
-void
-VRSystemManagerOSVR::Enumerate()
+bool
+VRSystemManagerOSVR::GetHMDs(nsTArray<RefPtr<VRDisplayHost>>& aHMDResult)
 {
   
   CheckOSVRStatus();
 
   if (!Init()) {
-    return;
+    return false;
   }
 
   mHMDInfo = new VRDisplayOSVR(&m_ctx, &m_iface, &m_display);
-}
 
-bool
-VRSystemManagerOSVR::ShouldInhibitEnumeration()
-{
-  if (VRSystemManager::ShouldInhibitEnumeration()) {
-    return true;
-  }
   if (mHMDInfo) {
-    
-    
-    
-    
+    aHMDResult.AppendElement(mHMDInfo);
     return true;
   }
   return false;
-}
-
-void
-VRSystemManagerOSVR::GetHMDs(nsTArray<RefPtr<VRDisplayHost>>& aHMDResult)
-{
-  if (mHMDInfo) {
-    aHMDResult.AppendElement(mHMDInfo);
-  }
 }
 
 bool

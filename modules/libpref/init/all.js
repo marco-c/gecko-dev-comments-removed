@@ -5160,20 +5160,6 @@ pref("dom.vr.openvr.enabled", false);
 
 
 
-pref("dom.vr.controller.enumerate.interval", 1000);
-
-
-
-
-pref("dom.vr.display.enumerate.interval", 5000);
-
-
-
-
-pref("dom.vr.inactive.timeout", 5000);
-
-
-
 pref("dom.vr.poseprediction.enabled", true);
 
 

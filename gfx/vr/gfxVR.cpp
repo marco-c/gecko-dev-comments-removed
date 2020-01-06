@@ -9,7 +9,6 @@
 #include "gfxVR.h"
 #include "mozilla/dom/GamepadEventTypes.h"
 #include "mozilla/dom/GamepadBinding.h"
-#include "VRDisplayHost.h"
 
 #ifndef M_PI
 # define M_PI 3.14159265358979323846
@@ -31,58 +30,6 @@ VRSystemManager::AllocateDisplayID()
 VRSystemManager::AllocateControllerID()
 {
   return ++sControllerBase;
-}
-
-
-
-
-
-
-
-
-void
-VRSystemManager::NotifyVSync()
-{
-  
-  
-  nsTArray<RefPtr<VRDisplayHost>> displays;
-  GetHMDs(displays);
-  for (const auto& display : displays) {
-    display->NotifyVSync();
-  }
-
-  
-  
-  if (!GetIsPresenting()) {
-    HandleInput();
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool
-VRSystemManager::ShouldInhibitEnumeration()
-{
-  return false;
 }
 
 Matrix4x4
