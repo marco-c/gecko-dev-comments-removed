@@ -796,6 +796,20 @@ const stylesheetMap = new DefaultMap(url => {
 
 
 
+function extensionStylesheets() {
+  let stylesheets = ["chrome://browser/content/extension.css"];
+
+  if (AppConstants.platform === "macosx") {
+    stylesheets.push("chrome://browser/content/extension-mac.css");
+  }
+
+  return stylesheets;
+}
+
+
+
+
+
 
 
 
@@ -1089,4 +1103,5 @@ this.ExtensionUtils = {
   StartupCache,
 };
 
+XPCOMUtils.defineLazyGetter(this.ExtensionUtils, "extensionStylesheets", extensionStylesheets);
 XPCOMUtils.defineLazyGetter(this.ExtensionUtils, "PlatformInfo", PlatformInfo);
