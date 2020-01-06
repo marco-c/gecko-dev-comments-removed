@@ -529,6 +529,9 @@ private:
   bool mAttemptingEarlyData;
   
   nsTArray<WeakPtr<Http2Stream>> m0RTTStreams;
+  
+  
+  nsTArray<WeakPtr<Http2Stream>> mCannotDo0RTTStreams;
 
   bool RealJoinConnection(const nsACString &hostname, int32_t port, bool jk);
   bool TestOriginFrame(const nsACString &name, int32_t port);
