@@ -1631,7 +1631,7 @@ var gBrowserInit = {
     PointerLock.init();
 
     if (AppConstants.isPlatformAndVersionAtLeast("win", "10")) {
-      ContextMenuTouchModeObserver.init();
+      MenuTouchModeObserver.init();
     }
 
     
@@ -1846,7 +1846,7 @@ var gBrowserInit = {
       }
 
       if (AppConstants.isPlatformAndVersionAtLeast("win", "10")) {
-        ContextMenuTouchModeObserver.uninit();
+        MenuTouchModeObserver.uninit();
       }
       BrowserOffline.uninit();
       IndexedDBPromptHelper.uninit();
@@ -7960,7 +7960,10 @@ var gPageActionButton = {
 
     this._preparePanelToBeShown();
     this.panel.hidden = false;
-    this.panel.openPopup(this.button, "bottomcenter topright");
+    this.panel.openPopup(this.button, {
+      position: "bottomcenter topright",
+      triggerEvent: event,
+    });
   },
 
   _preparePanelToBeShown() {
@@ -8330,14 +8333,15 @@ function restoreLastSession() {
 
 
 
-var ContextMenuTouchModeObserver = {
+var MenuTouchModeObserver = {
   init() {
     window.addEventListener("popupshowing", this, true);
   },
 
   handleEvent(event) {
     let target = event.originalTarget;
-    if (target.localName != "menupopup") {
+    
+    if (target.localName != "menupopup" && !gPhotonStructure) {
       return;
     }
 

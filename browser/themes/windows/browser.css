@@ -1962,10 +1962,17 @@ notification.pluginVulnerable > .notification-inner > .messageCloseButton {
 %include ../shared/contextmenu.inc.css
 
 
+panel[touchmode] .PanelUI-subView .subviewbutton,
 menupopup[touchmode] menu,
 menupopup[touchmode] menuitem {
   padding-top: 12px;
   padding-bottom: 12px;
+}
+
+panel[touchmode] .PanelUI-subView #appMenu-edit-controls > .subviewbutton,
+panel[touchmode] .PanelUI-subView #appMenu-zoom-controls > .subviewbutton-iconic {
+  padding-inline-start: 12px;
+  padding-inline-end: 12px;
 }
 
 #contentAreaContextMenu[touchmode] > #context-navigation > menuitem {
