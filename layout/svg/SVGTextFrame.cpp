@@ -1392,8 +1392,13 @@ private:
  void
 TextNodeCorrespondenceRecorder::RecordCorrespondence(SVGTextFrame* aRoot)
 {
-  TextNodeCorrespondenceRecorder recorder(aRoot);
-  recorder.Record(aRoot);
+  if (aRoot->GetStateBits() & NS_STATE_SVG_TEXT_CORRESPONDENCE_DIRTY) {
+    
+    aRoot->MaybeResolveBidiForAnonymousBlockChild();
+    TextNodeCorrespondenceRecorder recorder(aRoot);
+    recorder.Record(aRoot);
+    aRoot->RemoveStateBits(NS_STATE_SVG_TEXT_CORRESPONDENCE_DIRTY);
+  }
 }
 
 void
@@ -1728,9 +1733,9 @@ private:
 uint32_t
 TextFrameIterator::UndisplayedCharacters() const
 {
-  MOZ_ASSERT(!(mRootFrame->PrincipalChildList().FirstChild() &&
-               NS_SUBTREE_DIRTY(mRootFrame->PrincipalChildList().FirstChild())),
-             "should have already reflowed the anonymous block child");
+  MOZ_ASSERT(!(mRootFrame->GetStateBits() &
+               NS_STATE_SVG_TEXT_CORRESPONDENCE_DIRTY),
+             "Text correspondence must be up to date");
 
   if (!mCurrentFrame) {
     return mRootFrame->mTrailingUndisplayedCharacters;
@@ -2431,7 +2436,7 @@ CharIterator::CharIterator(SVGTextFrame* aSVGTextFrame,
                            nsIContent* aSubtree,
                            bool aPostReflow)
   : mFilter(aFilter),
-    mFrameIterator(FrameIfAnonymousChildReflowed(aSVGTextFrame), aSubtree),
+    mFrameIterator(aSVGTextFrame, aSubtree),
     mFrameForTrimCheck(nullptr),
     mTrimmedOffset(0),
     mTrimmedLength(0),
@@ -3779,7 +3784,9 @@ SVGTextFrame::ReflowSVG()
              "ReflowSVG mechanism not designed for this");
 
   if (!nsSVGUtils::NeedsReflowSVG(this)) {
-    NS_ASSERTION(!(mState & NS_STATE_SVG_POSITIONING_DIRTY), "How did this happen?");
+    MOZ_ASSERT(!HasAnyStateBits(NS_STATE_SVG_TEXT_CORRESPONDENCE_DIRTY |
+                                NS_STATE_SVG_POSITIONING_DIRTY),
+               "How did this happen?");
     return;
   }
 
@@ -5037,6 +5044,10 @@ SVGTextFrame::DoGlyphPositioning()
   }
 
   
+  
+  TextNodeCorrespondenceRecorder::RecordCorrespondence(this);
+
+  
   nsTArray<nsPoint> charPositions;
   DetermineCharPositions(charPositions);
 
@@ -5222,7 +5233,11 @@ SVGTextFrame::ScheduleReflowSVG()
 void
 SVGTextFrame::NotifyGlyphMetricsChange()
 {
-  AddStateBits(NS_STATE_SVG_POSITIONING_DIRTY);
+  
+  
+  
+  AddStateBits(NS_STATE_SVG_TEXT_CORRESPONDENCE_DIRTY |
+               NS_STATE_SVG_POSITIONING_DIRTY);
   nsLayoutUtils::PostRestyleEvent(
     mContent->AsElement(), nsRestyleHint(0),
     nsChangeHint_InvalidateRenderingObservers);
@@ -5274,6 +5289,9 @@ SVGTextFrame::MaybeReflowAnonymousBlockChild()
       
       kid->AddStateBits(NS_FRAME_IS_DIRTY);
     }
+
+    TextNodeCorrespondenceRecorder::RecordCorrespondence(this);
+
     MOZ_ASSERT(nsSVGUtils::AnyOuterSVGIsCallingReflowSVG(this),
                "should be under ReflowSVG");
     nsPresContext::InterruptPreventer noInterrupts(PresContext());
@@ -5286,7 +5304,12 @@ SVGTextFrame::DoReflow()
 {
   
   
-  AddStateBits(NS_STATE_SVG_POSITIONING_DIRTY);
+  
+  
+  
+  
+  AddStateBits(NS_STATE_SVG_TEXT_CORRESPONDENCE_DIRTY |
+               NS_STATE_SVG_POSITIONING_DIRTY);
 
   if (mState & NS_FRAME_IS_NONDISPLAY) {
     
@@ -5336,8 +5359,6 @@ SVGTextFrame::DoReflow()
   kid->SetSize(wm, desiredSize.Size(wm));
 
   RemoveStateBits(NS_STATE_SVG_TEXT_IN_REFLOW);
-
-  TextNodeCorrespondenceRecorder::RecordCorrespondence(this);
 }
 
 
