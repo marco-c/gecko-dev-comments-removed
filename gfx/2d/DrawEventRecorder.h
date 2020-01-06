@@ -14,6 +14,7 @@
 
 #include <unordered_set>
 #include <unordered_map>
+#include <functional>
 
 namespace mozilla {
 namespace gfx {
@@ -26,7 +27,9 @@ public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DrawEventRecorderPrivate)
   DrawEventRecorderPrivate();
   virtual ~DrawEventRecorderPrivate() { }
-  virtual void Finish() {
+  virtual void Finish() { ClearResources(); }
+  virtual void FlushItem(IntRect) { }
+  void DetatchResources() {
     
     
     for (auto font = mStoredFonts.begin(); font != mStoredFonts.end(); ) {
@@ -37,7 +40,15 @@ public:
       auto oldSurface = surface++;
       (*oldSurface)->RemoveUserData(reinterpret_cast<UserDataKey*>(this));
     }
+    mStoredFonts.clear();
+    mStoredSurfaces.clear();
+  }
 
+  void ClearResources() {
+    mUnscaledFonts.clear();
+    mStoredObjects.clear();
+    mStoredFontData.clear();
+    mUnscaledFontMap.clear();
   }
 
   template<class S>
@@ -148,6 +159,8 @@ private:
   std::ofstream mOutputStream;
 };
 
+typedef std::function<void(MemStream &aStream, std::vector<RefPtr<UnscaledFont>> &aUnscaledFonts)> SerializeResourcesFn;
+
 
 
 class DrawEventRecorderMemory final : public DrawEventRecorderPrivate
@@ -159,6 +172,7 @@ public:
 
 
   DrawEventRecorderMemory();
+  explicit DrawEventRecorderMemory(const SerializeResourcesFn &aSerialize);
 
   void RecordEvent(const RecordedEvent &aEvent) override;
 
@@ -173,9 +187,19 @@ public:
 
 
   void WipeRecording();
+  void Finish() override;
+  void FlushItem(IntRect) override;
 
   MemStream mOutputStream;
+  
+
+
+
+
+
+  MemStream mIndex;
 private:
+  SerializeResourcesFn mSerializeCallback;
   ~DrawEventRecorderMemory() {};
 
   void Flush() override;
