@@ -1285,5 +1285,14 @@ WebRenderLayerManager::CreateDisplayItemLayer()
   return MakeAndAddRef<WebRenderDisplayItemLayer>(this);
 }
 
+bool
+WebRenderLayerManager::SetPendingScrollUpdateForNextTransaction(FrameMetrics::ViewID aScrollId,
+                                                                const ScrollUpdateInfo& aUpdateInfo)
+{
+  
+  
+  return false;
+}
+
 } 
 } 
