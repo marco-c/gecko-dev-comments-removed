@@ -990,22 +990,43 @@ nsIFrame::MarkNeedsDisplayItemRebuild()
     return;
   }
 
-  nsIFrame* viewport = nsLayoutUtils::GetViewportFrame(this);
-  MOZ_ASSERT(viewport);
+  nsIFrame* rootFrame = PresContext()->PresShell()->GetRootFrame();
+  MOZ_ASSERT(rootFrame);
+
+  if (rootFrame->IsFrameModified()) {
+    return;
+  }
 
   std::vector<WeakFrame>* modifiedFrames =
-    viewport->GetProperty(nsIFrame::ModifiedFrameList());
+    rootFrame->GetProperty(nsIFrame::ModifiedFrameList());
 
   if (!modifiedFrames) {
     modifiedFrames = new std::vector<WeakFrame>();
-    viewport->SetProperty(nsIFrame::ModifiedFrameList(), modifiedFrames);
+    rootFrame->SetProperty(nsIFrame::ModifiedFrameList(), modifiedFrames);
+  }
+
+  if (this == rootFrame) {
+    
+    
+    
+    for (nsIFrame* f : *modifiedFrames) {
+      if (f) {
+        f->SetFrameIsModified(false);
+      }
+    }
+    modifiedFrames->clear();
+  } else if (modifiedFrames->size() > gfxPrefs::LayoutRebuildFrameLimit()) {
+    
+    
+    rootFrame->MarkNeedsDisplayItemRebuild();
+    return;
   }
 
   modifiedFrames->emplace_back(this);
 
   
   
-  if (displayRoot != viewport &&
+  if (displayRoot != rootFrame &&
       !displayRoot->HasProperty(nsIFrame::ModifiedFrameList())) {
     displayRoot->SetProperty(nsIFrame::ModifiedFrameList(),
                              new std::vector<WeakFrame>());
