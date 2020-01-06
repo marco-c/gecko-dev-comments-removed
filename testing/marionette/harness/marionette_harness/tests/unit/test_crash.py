@@ -5,11 +5,13 @@
 import glob
 import shutil
 
-from marionette_driver.errors import MarionetteException
-
-from mozrunner.base import runner
+from marionette_driver import Wait
+from marionette_driver.errors import MarionetteException, NoSuchWindowException
 
 from marionette_harness import MarionetteTestCase, expectedFailure, run_if_e10s
+
+
+from mozrunner.base import runner
 
 
 class MockMozCrash(object):
@@ -107,8 +109,23 @@ class TestCrash(BaseCrashTestCase):
     def test_crash_content_process(self):
         self.marionette.navigate(self.remote_uri)
 
-        self.assertRaisesRegexp(IOError, 'Content process crashed',
-                                self.crash, chrome=False)
+        
+        
+        
+        
+        
+        self.crash(chrome=False)
+        with self.assertRaises(IOError):
+            Wait(self.marionette, timeout=self.socket_timeout,
+                 ignored_exceptions=NoSuchWindowException).until(
+                lambda _: self.marionette.get_url(),
+                message="Expected IOError exception for content crash not raised."
+            )
+
+        
+        
+        self.assertEqual(self.marionette.instance.runner.returncode, 0)
+
         self.assertEqual(self.marionette.crashed, 1)
         self.assertIsNone(self.marionette.session)
         self.assertRaisesRegexp(MarionetteException, 'Please start a session',
