@@ -446,9 +446,9 @@ for (let i = FirstInvalidOpcode; i <= LastInvalidOpcode; i++) {
 
 for (let prefix of [AtomicPrefix, MozPrefix]) {
     for (let i = 0; i <= 255; i++) {
-	let binary = moduleWithSections([v2vSigSection, declSection([0]), bodySection([funcBody({locals:[], body:[prefix, i]})])]);
-	assertErrorMessage(() => wasmEval(binary), CompileError, /unrecognized opcode/);
-	assertEq(WebAssembly.validate(binary), false);
+        let binary = moduleWithSections([v2vSigSection, declSection([0]), bodySection([funcBody({locals:[], body:[prefix, i]})])]);
+        assertErrorMessage(() => wasmEval(binary), CompileError, /unrecognized opcode/);
+        assertEq(WebAssembly.validate(binary), false);
     }
 
     
@@ -498,3 +498,15 @@ runStackTraceTest(null, [{name:'blah'}, {name:'test', index: 2}], 'wasm-function
 runStackTraceTest(null, [{name:'blah'}, {name:'test', index: 100000}], 'wasm-function[1]'); 
 runStackTraceTest(null, [{name:'blah'}, {name:'test', nameLen: 100}], 'wasm-function[1]'); 
 runStackTraceTest(null, [{name:'blah'}, {name:''}], 'wasm-function[1]'); 
+
+
+
+enableGeckoProfiling();
+disableGeckoProfiling();
+
+function testValidNameSectionWithProfiling() {
+    enableGeckoProfiling();
+    wasmEval(moduleWithSections([v2vSigSection, declSec, bodySec, nameSec]));
+    disableGeckoProfiling();
+}
+testValidNameSectionWithProfiling();
