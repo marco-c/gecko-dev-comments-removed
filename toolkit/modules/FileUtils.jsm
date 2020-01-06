@@ -39,7 +39,8 @@ this.FileUtils = {
 
 
   getFile: function FileUtils_getFile(key, pathArray, followLinks) {
-    var file = this.getDir(key, pathArray.slice(0, -1), true, followLinks);
+    var file = this.getDir(key, pathArray.slice(0, -1), pathArray.length > 1,
+                           followLinks);
     file.append(pathArray[pathArray.length - 1]);
     return file;
   },
