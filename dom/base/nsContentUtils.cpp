@@ -10162,45 +10162,30 @@ nsContentUtils::EnqueueUpgradeReaction(Element* aElement,
   MOZ_ASSERT(aElement);
 
   nsIDocument* doc = aElement->OwnerDoc();
-  nsPIDOMWindowInner* window(doc->GetInnerWindow());
-  if (!window) {
-    return;
-  }
 
-  RefPtr<CustomElementRegistry> registry(window->CustomElements());
-  if (!registry) {
+  
+  if (!doc->GetDocGroup()) {
     return;
   }
 
   CustomElementReactionsStack* stack =
     doc->GetDocGroup()->CustomElementReactionsStack();
-  stack->EnqueueUpgradeReaction(registry, aElement, aDefinition);
+  stack->EnqueueUpgradeReaction(aElement, aDefinition);
 }
 
  void
-nsContentUtils::EnqueueLifecycleCallback(nsIDocument* aDoc,
-                                         nsIDocument::ElementCallbackType aType,
+nsContentUtils::EnqueueLifecycleCallback(nsIDocument::ElementCallbackType aType,
                                          Element* aCustomElement,
                                          LifecycleCallbackArgs* aArgs,
                                          CustomElementDefinition* aDefinition)
 {
-  MOZ_ASSERT(aDoc);
-
-  if (!aDoc->GetDocShell()) {
+  
+  if (!aCustomElement->OwnerDoc()->GetDocGroup()) {
     return;
   }
 
-  nsCOMPtr<nsPIDOMWindowInner> window(aDoc->GetInnerWindow());
-  if (!window) {
-    return;
-  }
-
-  RefPtr<CustomElementRegistry> registry(window->CustomElements());
-  if (!registry) {
-    return;
-  }
-
-  registry->EnqueueLifecycleCallback(aType, aCustomElement, aArgs, aDefinition);
+  CustomElementRegistry::EnqueueLifecycleCallback(aType, aCustomElement, aArgs,
+                                                  aDefinition);
 }
 
  void
