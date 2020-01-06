@@ -55,6 +55,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.jsm",
   SimpleServiceDiscovery: "resource://gre/modules/SimpleServiceDiscovery.jsm",
   SitePermissions: "resource:///modules/SitePermissions.jsm",
+  Social: "resource:///modules/Social.jsm",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
   TelemetryStopwatch: "resource://gre/modules/TelemetryStopwatch.jsm",
   Translation: "resource:///modules/translation/Translation.jsm",
@@ -99,6 +100,10 @@ XPCOMUtils.defineLazyScriptGetter(this, ["gGestureSupport", "gHistorySwipeAnimat
                                   "chrome://browser/content/browser-gestureSupport.js");
 XPCOMUtils.defineLazyScriptGetter(this, "gSafeBrowsing",
                                   "chrome://browser/content/browser-safebrowsing.js");
+XPCOMUtils.defineLazyScriptGetter(this, ["SocialUI",
+                                         "SocialShare",
+                                         "SocialActivationListener"],
+                                  "chrome://browser/content/browser-social.js");
 XPCOMUtils.defineLazyScriptGetter(this, "gSync",
                                   "chrome://browser/content/browser-sync.js");
 XPCOMUtils.defineLazyScriptGetter(this, "gBrowserThumbnails",
@@ -1083,6 +1088,14 @@ function _loadURIWithFlags(browser, uri, params) {
   }
 
   let mustChangeProcess = requiredRemoteType != currentRemoteType;
+  let newFrameloader = false;
+  if (browser.getAttribute("isPreloadBrowser") == "true" && uri != "about:newtab") {
+    
+    
+    mustChangeProcess = true;
+    newFrameloader = true;
+    browser.removeAttribute("isPreloadBrowser");
+  }
 
   
   if (!requiredRemoteType) {
@@ -1117,7 +1130,8 @@ function _loadURIWithFlags(browser, uri, params) {
         referrer: referrer ? referrer.spec : null,
         referrerPolicy,
         remoteType: requiredRemoteType,
-        postData
+        postData,
+        newFrameloader,
       }
 
       if (params.userContextId) {
@@ -1162,6 +1176,11 @@ function LoadInOtherProcess(browser, loadOptions, historyIndex = -1) {
 
 
 function RedirectLoad({ target: browser, data }) {
+  if (browser.getAttribute("isPreloadBrowser") == "true") {
+    browser.removeAttribute("isPreloadBrowser");
+    data.loadOptions.newFrameloader = true;
+  }
+
   if (data.loadOptions.reloadInFreshProcess) {
     
     
@@ -1648,6 +1667,7 @@ var gBrowserInit = {
       RestoreLastSessionObserver.init();
 
       SidebarUI.startDelayedLoad();
+      SocialUI.init();
 
       PanicButtonNotifier.init();
     });
@@ -1824,6 +1844,7 @@ var gBrowserInit = {
 
       gPrefService.removeObserver(ctrlTab.prefName, ctrlTab);
       ctrlTab.uninit();
+      SocialUI.uninit();
       gBrowserThumbnails.uninit();
       FullZoom.destroy();
 
@@ -4495,7 +4516,9 @@ var XULBrowserWindow = {
 
   
   onBeforeLinkTraversal(originalTarget, linkURI, linkNode, isAppTab) {
-    return BrowserUtils.onBeforeLinkTraversal(originalTarget, linkURI, linkNode, isAppTab);
+    let target = BrowserUtils.onBeforeLinkTraversal(originalTarget, linkURI, linkNode, isAppTab);
+    SocialUI.closeSocialPanelForLinkTraversal(target, linkNode);
+    return target;
   },
 
   
@@ -4676,6 +4699,8 @@ var XULBrowserWindow = {
       BookmarkingUI.onLocationChange();
 
       gIdentityHandler.onLocationChange();
+
+      SocialUI.updateState();
 
       gTabletModePageCounter.inc();
 
@@ -4980,8 +5005,7 @@ var CombinedStopReload = {
   onTabSwitch() {
     
     
-    
-    this.timeWhenSwitchedToStop = window.performance.now();
+    this.timeWhenSwitchedToStop = 0;
   },
 
   switchToStop(aRequest, aWebProgress) {
@@ -4992,11 +5016,11 @@ var CombinedStopReload = {
     
     
     
-    if (aRequest instanceof Ci.nsIRequest) {
+    if (aRequest) {
       this.timeWhenSwitchedToStop = window.performance.now();
     }
 
-    let shouldAnimate = aRequest instanceof Ci.nsIRequest &&
+    let shouldAnimate = aRequest &&
                         aWebProgress.isTopLevel &&
                         aWebProgress.isLoadingDocument &&
                         !gBrowser.tabAnimationsInProgress &&
@@ -5019,7 +5043,7 @@ var CombinedStopReload = {
       return;
     }
 
-    let shouldAnimate = aRequest instanceof Ci.nsIRequest &&
+    let shouldAnimate = aRequest &&
                         aWebProgress.isTopLevel &&
                         !aWebProgress.isLoadingDocument &&
                         !gBrowser.tabAnimationsInProgress &&
@@ -5063,7 +5087,7 @@ var CombinedStopReload = {
     
     
     
-    return this.timeWhenSwitchedToStop &&
+    return !this.timeWhenSwitchedToStop ||
            window.performance.now() - this.timeWhenSwitchedToStop > 150;
   },
 
