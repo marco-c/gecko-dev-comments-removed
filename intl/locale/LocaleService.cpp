@@ -7,13 +7,15 @@
 
 #include <algorithm>  
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/Services.h"
+#include "mozilla/Omnijar.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/Services.h"
 #include "mozilla/intl/OSPreferences.h"
 #include "nsIObserverService.h"
-#include "nsStringEnumerator.h"
 #include "nsIToolkitChromeRegistry.h"
+#include "nsStringEnumerator.h"
 #include "nsXULAppAPI.h"
+#include "nsZipArchive.h"
 
 #include "unicode/uloc.h"
 
@@ -565,7 +567,34 @@ CreateOutArray(const nsTArray<nsCString>& aArray)
 NS_IMETHODIMP
 LocaleService::GetDefaultLocale(nsACString& aRetVal)
 {
-  aRetVal.AssignLiteral("en-US");
+  
+  
+  if (mDefaultLocale.IsEmpty()) {
+    
+    
+    
+    
+    
+    
+    RefPtr<nsZipArchive> zip = Omnijar::GetReader(Omnijar::GRE);
+    if (zip) {
+      nsZipItemPtr<char> item(zip, "update.locale");
+      size_t len = item.Length();
+      
+      while (len > 0 && item.Buffer()[len - 1] <= ' ') {
+        len--;
+      }
+      mDefaultLocale.Assign(item.Buffer(), len);
+    }
+    
+    
+    
+    if (mDefaultLocale.IsEmpty()) {
+      mDefaultLocale.AssignLiteral("en-US");
+    }
+  }
+
+  aRetVal = mDefaultLocale;
   return NS_OK;
 }
 
