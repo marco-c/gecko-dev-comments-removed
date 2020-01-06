@@ -260,6 +260,7 @@ impl WebRenderDisplayItemConverter for DisplayItem {
             
             is_backface_visible: true,
             tag: tag,
+            edge_aa_segment_mask: webrender_api::EdgeAaSegmentMask::empty(),
         }
     }
 
