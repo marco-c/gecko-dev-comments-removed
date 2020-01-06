@@ -478,6 +478,12 @@ impl<E: TElement> StyleSharingCache<E> {
     }
 
     
+
+    
+    
+    
+    
+    #[inline(never)]
     pub fn new() -> Self {
         assert_eq!(mem::size_of::<SharingCache<E>>(), mem::size_of::<TypelessSharingCache>());
         assert_eq!(mem::align_of::<SharingCache<E>>(), mem::align_of::<TypelessSharingCache>());

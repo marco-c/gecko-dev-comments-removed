@@ -121,6 +121,12 @@ impl<E: TElement> StyleBloom<E> {
     
     
     
+
+    
+    
+    
+    
+    #[inline(never)]
     pub fn new() -> Self {
         let bloom_arc = BLOOM_KEY.with(|b| b.clone());
         let filter = OwningHandle::new_with_fn(bloom_arc, |x| unsafe { x.as_ref() }.unwrap().borrow_mut());
