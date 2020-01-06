@@ -46,12 +46,20 @@ registerCleanupFunction(function* () {
 
 
 
-var openNewTabAndConsole = Task.async(function* (url) {
-  let toolbox = yield openNewTabAndToolbox(url, "webconsole");
+
+
+async function openNewTabAndConsole(url, clearJstermHistory = true) {
+  let toolbox = await openNewTabAndToolbox(url, "webconsole");
   let hud = toolbox.getCurrentPanel().hud;
   hud.jsterm._lazyVariablesView = false;
+
+  if (clearJstermHistory) {
+    
+    await hud.jsterm.clearHistory();
+  }
+
   return hud;
-});
+}
 
 
 
@@ -220,18 +228,18 @@ function waitForNodeMutation(node, observeConfig = {}) {
 
 
 
-function* testOpenInDebugger(hud, toolbox, text) {
+async function testOpenInDebugger(hud, toolbox, text) {
   info(`Finding message for open-in-debugger test; text is "${text}"`);
-  let messageNode = yield waitFor(() => findMessage(hud, text));
+  let messageNode = await waitFor(() => findMessage(hud, text));
   let frameLinkNode = messageNode.querySelector(".message-location .frame-link");
   ok(frameLinkNode, "The message does have a location link");
-  yield checkClickOnNode(hud, toolbox, frameLinkNode);
+  await checkClickOnNode(hud, toolbox, frameLinkNode);
 }
 
 
 
 
-function* checkClickOnNode(hud, toolbox, frameLinkNode) {
+async function checkClickOnNode(hud, toolbox, frameLinkNode) {
   info("checking click on node location");
 
   let url = frameLinkNode.getAttribute("data-url");
@@ -245,7 +253,7 @@ function* checkClickOnNode(hud, toolbox, frameLinkNode) {
   EventUtils.sendMouseEvent({ type: "click" },
     frameLinkNode.querySelector(".frame-link-filename"));
 
-  yield onSourceInDebuggerOpened;
+  await onSourceInDebuggerOpened;
 
   let dbg = toolbox.getPanel("jsdebugger");
   is(

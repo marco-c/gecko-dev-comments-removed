@@ -28,9 +28,6 @@ add_task(async function () {
   let { jsterm } = await openNewTabAndConsole(TEST_URI);
   info("web console opened");
 
-  
-  await jsterm.clearHistory();
-
   const {
     autocompletePopup: popup,
     completeNode,
@@ -109,7 +106,4 @@ add_task(async function () {
   is(jsterm.getInputValue(), "window.foo.item3",
      "completion was successful after VK_TAB");
   ok(!completeNode.value, "completeNode is empty");
-
-  
-  await jsterm.clearHistory();
 });

@@ -31,9 +31,6 @@ add_task(async function () {
   Services.prefs.setBoolPref(PREF_AUTO_MULTILINE, false);
 
   let { jsterm } = await openNewTabAndConsole(TEST_URI);
-  
-  await jsterm.clearHistory();
-
   const {
     autocompletePopup: popup,
     completeNode,
@@ -80,7 +77,5 @@ add_task(async function () {
     "completion was successful after VK_RETURN");
   ok(!completeNode.value, "completeNode is empty");
 
-  
-  await jsterm.clearHistory();
   Services.prefs.clearUserPref(PREF_AUTO_MULTILINE);
 });

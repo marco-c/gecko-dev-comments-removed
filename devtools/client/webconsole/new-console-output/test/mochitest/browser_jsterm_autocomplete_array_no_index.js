@@ -18,9 +18,6 @@ const TEST_URI = `data:text/html;charset=utf-8,
 add_task(async function () {
   let { jsterm } = await openNewTabAndConsole(TEST_URI);
 
-  
-  await jsterm.clearHistory();
-
   const {
     autocompletePopup: popup,
     completeNode,
@@ -43,7 +40,4 @@ add_task(async function () {
   EventUtils.synthesizeKey("VK_ESCAPE", {});
 
   await onPopupClose;
-
-  
-  await jsterm.clearHistory();
 });
