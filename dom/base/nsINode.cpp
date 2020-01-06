@@ -2694,6 +2694,7 @@ nsINode::ParseServoSelectorList(
         NS_LITERAL_CSTRING("'") + NS_ConvertUTF16toUTF8(aSelectorString) +
         NS_LITERAL_CSTRING("' is not a valid selector")
       );
+      return nullptr;
     }
 
     
@@ -2732,6 +2733,7 @@ nsINode::ParseSelectorList(const nsAString& aSelectorString,
         NS_LITERAL_CSTRING("'") + NS_ConvertUTF16toUTF8(aSelectorString) +
         NS_LITERAL_CSTRING("' is not a valid selector")
       );
+      return nullptr;
     }
 
     
