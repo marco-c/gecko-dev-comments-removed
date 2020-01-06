@@ -866,6 +866,18 @@ protected:
         } else if (origBytes[nOrigBytes] == 0x05) {
           
           COPY_CODES(1);
+        } else if (origBytes[nOrigBytes] == 0x10 ||
+                   origBytes[nOrigBytes] == 0x11) {
+          
+          
+          COPY_CODES(1);
+          int nModRmSibBytes = CountModRmSib(&origBytes[nOrigBytes]);
+          if (nModRmSibBytes < 0) {
+            MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
+            return;
+          } else {
+            COPY_CODES(nModRmSibBytes);
+          }
         } else if (origBytes[nOrigBytes] == 0x84) {
           
           JumpPatch jump(nTrampBytes - 1,  
