@@ -251,6 +251,10 @@ var gPage = {
 
   onPageVisibleAndLoaded() {
     
-    sendAsyncMessage("NewTab:MaybeShowMigrateMessage");
+    this.maybeShowAutoMigrationUndoNotification();
+  },
+
+  maybeShowAutoMigrationUndoNotification() {
+    sendAsyncMessage("NewTab:MaybeShowAutoMigrationUndoNotification");
   },
 };
