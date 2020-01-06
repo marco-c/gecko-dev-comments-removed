@@ -87,6 +87,8 @@ RootAccessibleWrap::GetInternalUnknown()
 void
 RootAccessibleWrap::DocumentActivated(DocAccessible* aDocument)
 {
+  
+  
   if (Compatibility::IsDolphin() &&
       nsCoreUtils::IsTabDocument(aDocument->DocumentNode())) {
     uint32_t count = mChildDocuments.Length();
