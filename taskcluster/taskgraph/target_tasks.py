@@ -269,12 +269,21 @@ def target_tasks_mozilla_beta(full_task_graph, parameters):
                 return False
         
         if task.kind in [
-            'balrog', 'beetmover', 'beetmover-checksums', 'beetmover-l10n',
-            'checksums-signing', 'nightly-l10n', 'nightly-l10n-signing',
-            'push-apk', 'push-apk-breakpoint', 'beetmover-repackage',
-            'beetmover-repackage-signing',
+            'balrog',
+            'beetmover', 'beetmover-checksums', 'beetmover-l10n',
+            'beetmover-repackage', 'beetmover-repackage-signing',
+            'checksums-signing',
+            'nightly-l10n', 'nightly-l10n-signing',
+            'push-apk', 'push-apk-breakpoint',
+            'repackage-l10n',
         ]:
             return False
+
+        
+        
+        if task.attributes.get('locale', '') != '':
+            return False
+
         return True
 
     return [l for l, t in full_task_graph.tasks.iteritems() if filter(t)]
