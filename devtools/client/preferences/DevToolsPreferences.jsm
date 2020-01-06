@@ -39,7 +39,7 @@ function cleanupPreferencesFileContent(content) {
   let newLines = [];
   let continuation = false;
   for (let line of lines) {
-    let isPrefLine = /^ *pref\("([^"]+)"/.test(line);
+    let isPrefLine = /^ *(sticky_)?pref\("([^"]+)"/.test(line);
     if (continuation || isPrefLine) {
       newLines.push(line);
       

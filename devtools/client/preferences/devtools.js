@@ -232,6 +232,13 @@ pref("devtools.dom.enabled", false);
 pref("devtools.webaudioeditor.inspectorWidth", 300);
 
 
+#ifdef MOZ_DEV_EDITION
+sticky_pref("devtools.theme", "dark");
+#else
+sticky_pref("devtools.theme", "light");
+#endif
+
+
 pref("devtools.webconsole.filter.error", true);
 pref("devtools.webconsole.filter.warn", true);
 pref("devtools.webconsole.filter.info", true);
