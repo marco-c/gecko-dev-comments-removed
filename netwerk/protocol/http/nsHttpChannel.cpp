@@ -9023,9 +9023,32 @@ nsHttpChannel::ResumeInternal()
                                ToMilliseconds();
 
         if (mCallOnResume) {
-            nsresult rv = AsyncCall(mCallOnResume);
+            
+            
+            RefPtr<nsRunnableMethod<nsHttpChannel>> callOnResume=
+                NewRunnableMethod("CallOnResume", this, mCallOnResume);
+            
+            RefPtr<nsInputStreamPump> transactionPump = mTransactionPump;
+            RefPtr<nsInputStreamPump> cachePump = mCachePump;
+
+            nsresult rv =
+                NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+                    "nsHttpChannel::CallOnResume",
+                    [callOnResume, transactionPump, cachePump]() {
+                        callOnResume->Run();
+
+                        if (transactionPump) {
+                            transactionPump->Resume();
+                        }
+
+                        if (cachePump) {
+                            cachePump->Resume();
+                        }
+                    })
+                );
             mCallOnResume = nullptr;
             NS_ENSURE_SUCCESS(rv, rv);
+            return rv;
         }
     }
 
