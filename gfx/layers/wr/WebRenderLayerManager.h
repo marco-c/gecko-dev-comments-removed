@@ -8,6 +8,7 @@
 
 #include "Layers.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/layers/APZTestData.h"
 #include "mozilla/layers/TransactionIdAllocator.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 
@@ -126,6 +127,16 @@ public:
   void SetTransactionIncomplete() { mTransactionIncomplete = true; }
   bool IsMutatedLayer(Layer* aLayer);
 
+  
+  void LogTestDataForCurrentPaint(FrameMetrics::ViewID aScrollId,
+                                  const std::string& aKey,
+                                  const std::string& aValue) {
+    mApzTestData.LogTestDataForPaint(mPaintSequenceNumber, aScrollId, aKey, aValue);
+  }
+  
+  const APZTestData& GetAPZTestData() const
+  { return mApzTestData; }
+
 private:
   
 
@@ -178,6 +189,11 @@ private:
  
  
  RefPtr<gfxContext> mTarget;
+
+  
+  uint32_t mPaintSequenceNumber;
+  
+  APZTestData mApzTestData;
 };
 
 } 
