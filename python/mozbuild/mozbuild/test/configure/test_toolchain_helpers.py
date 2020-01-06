@@ -61,6 +61,20 @@ class CompilerPreprocessor(Preprocessor):
         finally:
             self.context = context
 
+    def do_include(self, args, filters=True):
+        
+        
+        
+
+        
+        if type(args) in (str, unicode) and '<' in args:
+            if args in ('<stddef.h>', '<cstddef>'):
+                return
+            raise Preprocessor.Error(self, 'INVALID_INCLUDE_FILE', args)
+
+        
+        Preprocessor.do_include(self, args, filters)
+
     class Context(dict):
         def __missing__(self, key):
             return None
