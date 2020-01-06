@@ -4,7 +4,6 @@
 
 
 #include "D3D11Checks.h"
-#include "DXVA2Manager.h"
 #include "gfxConfig.h"
 #include "GfxDriverInfo.h"
 #include "gfxPrefs.h"
@@ -408,22 +407,6 @@ D3D11Checks::DoesRemotePresentWork(IDXGIAdapter* adapter)
   RefPtr<IDXGIAdapter2> check;
   HRESULT hr = adapter->QueryInterface(__uuidof(IDXGIAdapter2), getter_AddRefs(check));
   return SUCCEEDED(hr) && check;
-}
-
- bool
-D3D11Checks::DoesNV12Work(ID3D11Device* device)
-{
-  DXGI_ADAPTER_DESC desc;
-  PodZero(&desc);
-  if (!GetDxgiDesc(device, &desc)) {
-    
-    return true;
-  }
-
-  nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
-  nsString version;
-  gfxInfo->GetAdapterDriverVersion(version);
-  return DXVA2Manager::IsNV12Supported(desc.VendorId, desc.DeviceId, version);
 }
 
 } 
