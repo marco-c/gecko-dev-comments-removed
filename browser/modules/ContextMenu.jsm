@@ -659,7 +659,7 @@ class ContextMenu {
       contentType: context.target.ownerDocument.contentType,
 
       
-      isPrivate: context.target.ownerDocument.isPrivate,
+      isPrivate: PrivateBrowsingUtils.isBrowserPrivate(context.target.ownerDocument),
     };
 
     
