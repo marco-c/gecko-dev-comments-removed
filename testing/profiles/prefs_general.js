@@ -196,9 +196,6 @@ user_pref("layout.css.text-justify.enabled", true);
 user_pref("layout.spammy_warnings.enabled", false);
 
 
-user_pref("layout.interruptible-reflow.enabled", false);
-
-
 user_pref("media.mediasource.mp4.enabled", true);
 user_pref("media.mediasource.webm.enabled", true);
 
