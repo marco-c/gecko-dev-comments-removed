@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 import fileinput
 import glob
 import os
@@ -246,6 +244,10 @@ def verify_android_device(build_obj, install=False, xre=False, debugger=False, v
             os.environ['PATH'] = "%s:%s" % (bin_path, os.environ['PATH'])
 
     return device_verified
+
+
+def get_adb_path(build_obj):
+    return _find_sdk_exe(build_obj.substs, 'adb', False)
 
 
 def run_firefox_for_android(build_obj, params):
@@ -686,15 +688,15 @@ def _find_sdk_exe(substs, exe, tools):
 
 def _log_debug(text):
     if verbose_logging:
-        print("DEBUG: %s" % text)
+        print "DEBUG: %s" % text
 
 
 def _log_warning(text):
-    print("WARNING: %s" % text)
+    print "WARNING: %s" % text
 
 
 def _log_info(text):
-    print("%s" % text)
+    print "%s" % text
 
 
 def _download_file(url, filename, path):
@@ -703,7 +705,7 @@ def _download_file(url, filename, path):
     if not os.path.isdir(path):
         try:
             os.makedirs(path)
-        except Exception as e:
+        except Exception, e:
             _log_warning(str(e))
             return False
     local_file = open(os.path.join(path, filename), 'wb')
@@ -717,7 +719,7 @@ def _get_tooltool_manifest(substs, src_path, dst_path, filename):
     if not os.path.isdir(dst_path):
         try:
             os.makedirs(dst_path)
-        except Exception as e:
+        except Exception, e:
             _log_warning(str(e))
     copied = False
     if substs and 'top_srcdir' in substs:
