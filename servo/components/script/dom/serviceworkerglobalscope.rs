@@ -219,7 +219,7 @@ impl ServiceWorkerGlobalScope {
                         break;
                     }
                     
-                    global.upcast::<WorkerGlobalScope>().perform_a_microtask_checkpoint();
+                    global.upcast::<GlobalScope>().perform_a_microtask_checkpoint();
                 }
             }, reporter_name, scope.script_chan(), CommonScriptMsg::CollectReports);
         }).expect("Thread spawning failed");
