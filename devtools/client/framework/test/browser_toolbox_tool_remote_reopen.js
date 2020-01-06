@@ -6,7 +6,7 @@
 "use strict";
 
 const { DebuggerServer } = require("devtools/server/main");
-const { DebuggerClient } = require("devtools/shared/client/main");
+const { DebuggerClient } = require("devtools/shared/client/debugger-client");
 
 
 requestLongerTimeout(2);

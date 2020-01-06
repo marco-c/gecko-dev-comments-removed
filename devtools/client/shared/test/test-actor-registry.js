@@ -62,7 +62,7 @@
   
   exports.getTestActorWithoutToolbox = Task.async(function* (tab) {
     let { DebuggerServer } = require("devtools/server/main");
-    let { DebuggerClient } = require("devtools/shared/client/main");
+    let { DebuggerClient } = require("devtools/shared/client/debugger-client");
 
     
     
