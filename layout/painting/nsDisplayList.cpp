@@ -9299,8 +9299,7 @@ bool nsDisplayMask::ComputeVisibility(nsDisplayListBuilder* aBuilder,
   
   
   nsRegion childrenVisible(mVisibleRect);
-  nsRect r = mVisibleRect.Intersect(
-    mList.GetClippedBoundsWithRespectToASR(aBuilder, mActiveScrolledRoot));
+  nsRect r = mVisibleRect.Intersect(mList.GetBounds(aBuilder));
   mList.ComputeVisibilityForSublist(aBuilder, &childrenVisible, r);
   return true;
 }
