@@ -8,6 +8,8 @@
 
 
 
+const isServoEnabled = SpecialPowers.DOMWindowUtils.isStyledByServo;
+
 
 var _fromByTestLists =
 {
@@ -24,6 +26,19 @@ var _fromByTestLists =
                            { midComp: "rgba(45, 48, 52, 0.6)",
                              
                              toComp:  "rgb(52, 54, 56)"}),
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -32,9 +47,9 @@ var _fromByTestLists =
     
     
     new AnimTestcaseFromBy("rgba(100, 100, 100, 0.6)", "rgba(240, 240, 240, 1)",
-                             
-                           { midComp: "rgba(197, 197, 197, 0.8)",
-                             
+                           { midComp:
+                             isServoEnabled ? "rgba(225, 225, 225, 0.8)"
+                                            : "rgba(197, 197, 197, 0.8)",
                              toComp:  "rgb(255, 255, 255)"}),
   ],
   lengthNoUnits: [
