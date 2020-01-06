@@ -341,6 +341,12 @@ public:
     }
   }
 
+  
+
+
+
+  void MaybeGCRuleTree();
+
 #ifdef DEBUG
   void AssertTreeIsClean();
 #else

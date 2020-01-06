@@ -682,6 +682,10 @@ ServoRestyleManager::DoProcessPendingRestyles(TraversalRestyleBehavior
 
   
   
+  styleSet->MaybeGCRuleTree();
+
+  
+  
   MOZ_ASSERT(mAnimationsWithDestroyedFrame);
   mAnimationsWithDestroyedFrame->StopAnimationsForElementsWithoutFrames();
 }

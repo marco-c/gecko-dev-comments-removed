@@ -519,6 +519,10 @@ SERVO_BINDING_FUNC(Servo_TraverseSubtree,
 SERVO_BINDING_FUNC(Servo_AssertTreeIsClean, void, RawGeckoElementBorrowed root)
 
 
+
+SERVO_BINDING_FUNC(Servo_MaybeGCRuleTree, void, RawServoStyleSetBorrowed set)
+
+
 SERVO_BINDING_FUNC(Servo_StyleSet_GetBaseComputedValuesForElement,
                    ServoComputedValuesStrong,
                    RawServoStyleSetBorrowed set,
