@@ -1,0 +1,13 @@
+
+
+
+
+package org.mozilla.gecko.sync;
+
+public class SessionCreateException extends SyncException {
+    private static final long serialVersionUID = -3852991560658529574L;
+
+    public SessionCreateException(Exception e) {
+        super(e);
+    }
+}
