@@ -928,6 +928,10 @@ class CanOfAPIs {
 
 
 
+
+
+
+
 class SchemaAPIManager extends EventEmitter {
   
 
@@ -1218,6 +1222,10 @@ class SchemaAPIManager extends EventEmitter {
 
   _checkGetAPI(name, extension, scope = null) {
     let module = this.modules.get(name);
+
+    if (module.permissions && !module.permissions.some(perm => extension.hasPermission(perm))) {
+      return false;
+    }
 
     if (!scope) {
       return true;
