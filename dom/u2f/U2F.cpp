@@ -534,7 +534,8 @@ U2FRegisterRunnable::U2FRegisterRunnable(const nsAString& aOrigin,
   , mAuthenticators(aAuthenticators)
   
   
-  , mCallback(new nsMainThreadPtrHolder<U2FRegisterCallback>(aCallback))
+  , mCallback(new nsMainThreadPtrHolder<U2FRegisterCallback>(
+      "U2FRegisterRunnable::mCallback", aCallback))
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -768,7 +769,8 @@ U2FSignRunnable::U2FSignRunnable(const nsAString& aOrigin,
   , mAuthenticators(aAuthenticators)
   
   
-  , mCallback(new nsMainThreadPtrHolder<U2FSignCallback>(aCallback))
+  , mCallback(new nsMainThreadPtrHolder<U2FSignCallback>(
+      "U2FSignRunnable::mCallback", aCallback))
 {
   MOZ_ASSERT(NS_IsMainThread());
 

@@ -1479,7 +1479,8 @@ WorkerNotificationObserver::Observe(nsISupports* aSubject, const char* aTopic,
     
     
     nsMainThreadPtrHandle<nsPIDOMWindowInner> windowHandle(
-      new nsMainThreadPtrHolder<nsPIDOMWindowInner>(window));
+      new nsMainThreadPtrHolder<nsPIDOMWindowInner>(
+        "WorkerNotificationObserver::Observe::nsPIDOMWindowInner", window));
 
     r = new NotificationClickWorkerRunnable(notification, windowHandle);
   } else if (!strcmp("alertfinished", aTopic)) {

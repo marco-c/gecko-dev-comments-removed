@@ -205,7 +205,8 @@ public:
   {
     mStatementCache.FinalizeStatements();
     
-    NS_ProxyRelease(mCallingThread, mOwner.forget());
+    NS_ProxyRelease("FinalizeStatementCacheProxy::mOwner",
+      mCallingThread, mOwner.forget());
     return NS_OK;
   }
 

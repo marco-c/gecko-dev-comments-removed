@@ -221,7 +221,8 @@ MainThreadHandoff::Release()
       
       
       RefPtr<MainThreadHandoff> self = this;
-      NS_ReleaseOnMainThread(self.forget());
+      NS_ReleaseOnMainThread(
+        "MainThreadHandoff", self.forget());
     }
   }
   return newRefCnt;

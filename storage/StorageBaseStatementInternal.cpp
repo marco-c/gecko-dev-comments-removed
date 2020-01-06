@@ -50,7 +50,8 @@ public:
     }
 
     nsCOMPtr<nsIThread> targetThread(mConnection->threadOpenedOn);
-    NS_ProxyRelease(targetThread, mStatement.forget());
+    NS_ProxyRelease(
+      "AsyncStatementFinalizer::mStatement", targetThread, mStatement.forget());
     return NS_OK;
   }
 private:
@@ -94,7 +95,9 @@ public:
     mAsyncStatement = nullptr;
 
     nsCOMPtr<nsIThread> target(mConnection->threadOpenedOn);
-    (void)::NS_ProxyRelease(target, mConnection.forget());
+    (void)::NS_ProxyRelease(
+      "LastDitchSqliteStatementFinalizer::mConnection",
+      target, mConnection.forget());
     return NS_OK;
   }
 private:
@@ -136,26 +139,24 @@ StorageBaseStatementInternal::destructorAsyncFinalize()
   if (!mAsyncStatement)
     return;
 
-  bool isOwningThread = false;
-  (void)mDBConnection->threadOpenedOn->IsOnCurrentThread(&isOwningThread);
-  if (isOwningThread) {
+  
+  
+  
+  nsIEventTarget *target = mDBConnection->getAsyncExecutionTarget();
+  if (target) {
     
     
-    
-    nsIEventTarget *target = mDBConnection->getAsyncExecutionTarget();
-    if (target) {
-      nsCOMPtr<nsIRunnable> event =
-        new LastDitchSqliteStatementFinalizer(mDBConnection, mAsyncStatement);
-      (void)target->Dispatch(event, NS_DISPATCH_NORMAL);
-    }
-  } else {
-    
-    
+    bool isAsyncThread = false;
+    (void)target->IsOnCurrentThread(&isAsyncThread);
+
     nsCOMPtr<nsIRunnable> event =
       new LastDitchSqliteStatementFinalizer(mDBConnection, mAsyncStatement);
-    (void)event->Run();
+    if (isAsyncThread) {
+      (void)event->Run();
+    } else {
+      (void)target->Dispatch(event, NS_DISPATCH_NORMAL);
+    }
   }
-
 
   
   

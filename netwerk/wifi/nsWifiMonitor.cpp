@@ -91,7 +91,9 @@ NS_IMETHODIMP nsWifiMonitor::StartWatching(nsIWifiListener *aListener)
   }
 
 
-  mListeners.AppendElement(nsWifiListener(new nsMainThreadPtrHolder<nsIWifiListener>(aListener)));
+  mListeners.AppendElement(
+    nsWifiListener(new nsMainThreadPtrHolder<nsIWifiListener>(
+      "nsIWifiListener", aListener)));
 
   
   mon.Notify();

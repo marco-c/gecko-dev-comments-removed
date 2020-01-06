@@ -777,7 +777,8 @@ Context::ThreadsafeHandle::~ThreadsafeHandle()
 
   
   
-  NS_ProxyRelease(mOwningEventTarget, mStrongRef.forget());
+  NS_ProxyRelease(
+    "Context::ThreadsafeHandle::mStrongRef", mOwningEventTarget, mStrongRef.forget());
 }
 
 void

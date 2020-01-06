@@ -28,7 +28,8 @@ public:
     
     
     
-    : mListener(new nsMainThreadPtrHolder<nsIDNSListener>(aListener, false))
+    : mListener(new nsMainThreadPtrHolder<nsIDNSListener>(
+        "DNSListenerProxy::mListener", aListener, false))
     , mTargetThread(aTargetThread)
   { }
 

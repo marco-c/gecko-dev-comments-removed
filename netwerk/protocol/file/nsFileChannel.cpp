@@ -129,7 +129,8 @@ nsFileCopyEvent::DoCopy()
 
     
     
-    NS_ProxyRelease(mCallbackTarget, mCallback.forget());
+    NS_ProxyRelease(
+      "nsFileCopyEvent::mCallback", mCallbackTarget, mCallback.forget());
   }
 }
 

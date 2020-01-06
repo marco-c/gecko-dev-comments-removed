@@ -320,7 +320,8 @@ nsConsoleService::LogMessageWithMode(nsIConsoleMessage* aMessage,
     
     
     
-    NS_ReleaseOnMainThread(retiredMessage.forget());
+    NS_ReleaseOnMainThread(
+      "nsConsoleService::retiredMessage", retiredMessage.forget());
   }
 
   if (r) {

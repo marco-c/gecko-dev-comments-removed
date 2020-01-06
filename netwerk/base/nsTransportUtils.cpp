@@ -37,7 +37,8 @@ private:
     {
         
         
-        NS_ProxyRelease(mTarget, dont_AddRef(mSink));
+        NS_ProxyRelease(
+          "nsTransportEventSinkProxy::mSink", mTarget, dont_AddRef(mSink));
     }
 
 public:

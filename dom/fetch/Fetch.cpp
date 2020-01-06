@@ -124,7 +124,9 @@ public:
 private:
   ~FetchSignalProxy()
   {
-    NS_ProxyRelease(mMainThreadEventTarget, mSignalMainThread.forget());
+    NS_ProxyRelease(
+      "FetchSignalProxy::mSignalMainThread",
+      mMainThreadEventTarget, mSignalMainThread.forget());
   }
 };
 
@@ -1304,7 +1306,8 @@ FetchBody<Derived>::BeginConsumeBodyMainThread()
   
   
   mConsumeBodyPump =
-    new nsMainThreadPtrHolder<nsIInputStreamPump>(pump, mMainThreadEventTarget);
+    new nsMainThreadPtrHolder<nsIInputStreamPump>(
+      "FetchBody::mConsumeBodyPump", pump, mMainThreadEventTarget);
   
   autoReject.DontFail();
 

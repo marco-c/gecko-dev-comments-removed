@@ -482,7 +482,8 @@ WebrtcGlobalInformation::GetAllStats(
   
   
   StatsRequestCallback callbackHandle(
-    new nsMainThreadPtrHolder<WebrtcGlobalStatisticsCallback>(&aStatsCallback));
+    new nsMainThreadPtrHolder<WebrtcGlobalStatisticsCallback>(
+      "WebrtcGlobalStatisticsCallback", &aStatsCallback));
 
   nsString filter;
   if (pcIdFilter.WasPassed()) {
@@ -624,7 +625,8 @@ WebrtcGlobalInformation::GetLogging(
   
   
   LogRequestCallback callbackHandle(
-    new nsMainThreadPtrHolder<WebrtcGlobalLoggingCallback>(&aLoggingCallback));
+    new nsMainThreadPtrHolder<WebrtcGlobalLoggingCallback>(
+      "WebrtcGlobalLoggingCallback", &aLoggingCallback));
 
   nsAutoCString pattern;
   CopyUTF16toUTF8(aPattern, pattern);

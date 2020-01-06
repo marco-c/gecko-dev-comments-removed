@@ -578,7 +578,7 @@ nsDOMDataChannel::UpdateMustKeepAlive()
 
   if (mSelfRef && !shouldKeepAlive) {
     
-    NS_ReleaseOnMainThread(mSelfRef.forget(), true);
+    NS_ReleaseOnMainThread("nsDOMDataChannel::mSelfRef", mSelfRef.forget(), true);
   } else if (!mSelfRef && shouldKeepAlive) {
     mSelfRef = this;
   }
@@ -591,7 +591,7 @@ nsDOMDataChannel::DontKeepAliveAnyMore()
 
   if (mSelfRef) {
     
-    NS_ReleaseOnMainThread(mSelfRef.forget(), true);
+    NS_ReleaseOnMainThread("nsDOMDataChannel::mSelfRef", mSelfRef.forget(), true);
   }
 
   mCheckMustKeepAlive = false;

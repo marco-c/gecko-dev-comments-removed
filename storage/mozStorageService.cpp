@@ -320,7 +320,8 @@ Service::unregisterConnection(Connection *aConnection)
         
         
         
-        NS_ProxyRelease(thread, mConnections[i].forget());
+        NS_ProxyRelease(
+          "storage::Service::mConnections", thread, mConnections[i].forget());
 
         mConnections.RemoveElementAt(i);
         return;
@@ -365,14 +366,8 @@ Service::minimizeMemory()
       MOZ_ASSERT(NS_SUCCEEDED(rv), "Should have purged sqlite caches");
     } else if (NS_SUCCEEDED(conn->threadOpenedOn->IsOnCurrentThread(&onOpenedThread)) &&
                onOpenedThread) {
-      if (conn->isAsyncExecutionThreadAvailable()) {
-        nsCOMPtr<mozIStoragePendingStatement> ps;
-        DebugOnly<nsresult> rv =
-          conn->ExecuteSimpleSQLAsync(shrinkPragma, nullptr, getter_AddRefs(ps));
-        MOZ_ASSERT(NS_SUCCEEDED(rv), "Should have purged sqlite caches");
-      } else {
-        conn->ExecuteSimpleSQL(shrinkPragma);
-      }
+      
+      conn->ExecuteSimpleSQL(shrinkPragma);
     } else {
       
       
@@ -713,13 +708,16 @@ private:
 
   ~AsyncInitDatabase()
   {
-    NS_ReleaseOnMainThread(mStorageFile.forget());
-    NS_ReleaseOnMainThread(mConnection.forget());
+    NS_ReleaseOnMainThread(
+      "AsyncInitDatabase::mStorageFile", mStorageFile.forget());
+    NS_ReleaseOnMainThread(
+      "AsyncInitDatabase::mConnection", mConnection.forget());
 
     
     
     
-    NS_ReleaseOnMainThread(mCallback.forget());
+    NS_ReleaseOnMainThread(
+      "AsyncInitDatabase::mCallback", mCallback.forget());
   }
 
   RefPtr<Connection> mConnection;

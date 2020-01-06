@@ -42,7 +42,8 @@ nsStreamListenerTee::OnStopRequest(nsIRequest *request,
 
     
     if (mEventTarget) {
-      NS_ProxyRelease(mEventTarget, mSink.forget());
+      NS_ProxyRelease(
+        "nsStreamListenerTee::mSink", mEventTarget, mSink.forget());
     }
     else {
         mSink = nullptr;

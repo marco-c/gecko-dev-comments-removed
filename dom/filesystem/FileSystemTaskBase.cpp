@@ -251,8 +251,12 @@ FileSystemTaskParentBase::~FileSystemTaskParentBase()
 {
   
   
-  NS_ProxyRelease(mBackgroundEventTarget, mFileSystem.forget());
-  NS_ProxyRelease(mBackgroundEventTarget, mRequestParent.forget());
+  NS_ProxyRelease(
+    "FileSystemTaskParentBase::mFileSystem",
+    mBackgroundEventTarget, mFileSystem.forget());
+  NS_ProxyRelease(
+    "FileSystemTaskParentBase::mRequestParent",
+    mBackgroundEventTarget, mRequestParent.forget());
 }
 
 void

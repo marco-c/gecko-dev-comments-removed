@@ -416,8 +416,10 @@ public:
   }
 
   ~AsyncCloseConnection() override {
-    NS_ReleaseOnMainThread(mConnection.forget());
-    NS_ReleaseOnMainThread(mCallbackEvent.forget());
+    NS_ReleaseOnMainThread(
+      "AsyncCloseConnection::mConnection", mConnection.forget());
+    NS_ReleaseOnMainThread(
+      "AsyncCloseConnection::mCallbackEvent", mCallbackEvent.forget());
   }
 private:
   RefPtr<Connection> mConnection;
@@ -456,7 +458,8 @@ public:
   }
 
   NS_IMETHOD Run() override {
-    MOZ_ASSERT(!NS_IsMainThread());
+    MOZ_ASSERT (NS_GetCurrentThread() == mConnection->getAsyncExecutionTarget());
+
     nsresult rv = mConnection->initializeClone(mClone, mReadOnly);
     if (NS_FAILED(rv)) {
       return Dispatch(rv, nullptr);
@@ -479,13 +482,16 @@ private:
     MOZ_ASSERT(NS_SUCCEEDED(rv));
 
     
-    NS_ProxyRelease(thread, mConnection.forget());
-    NS_ProxyRelease(thread, mClone.forget());
+    NS_ProxyRelease(
+      "AsyncInitializeClone::mConnection", thread, mConnection.forget());
+    NS_ProxyRelease(
+        "AsyncInitializeClone::mClone", thread, mClone.forget());
 
     
     
     
-    NS_ProxyRelease(thread, mCallback.forget());
+    NS_ProxyRelease(
+      "AsyncInitializeClone::mCallback", thread, mCallback.forget());
   }
 
   RefPtr<Connection> mConnection;
@@ -581,7 +587,7 @@ Connection::getSqliteRuntimeStatus(int32_t aStatusOption, int32_t* aMaxValue)
 nsIEventTarget *
 Connection::getAsyncExecutionTarget()
 {
-  NS_ENSURE_TRUE(NS_IsMainThread(), nullptr);
+  MutexAutoLock lockedScope(sharedAsyncExecutionMutex);
 
   
   
@@ -940,13 +946,6 @@ Connection::isClosed()
   return mConnectionClosed;
 }
 
-bool
-Connection::isAsyncExecutionThreadAvailable()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  return !!mAsyncExecutionThread;
-}
-
 void
 Connection::shutdownAsyncThread(nsIThread *aThread) {
   MOZ_ASSERT(!mAsyncExecutionThread);
@@ -1222,21 +1221,14 @@ Connection::Close()
   if (!mDBConn)
     return NS_ERROR_NOT_INITIALIZED;
 
-#ifdef DEBUG
-  
-  
-  
-  bool onOpenerThread = false;
-  (void)threadOpenedOn->IsOnCurrentThread(&onOpenerThread);
-  MOZ_ASSERT(onOpenerThread);
-#endif 
-
-  
-  
-  
-  
-  bool asyncCloseWasCalled = !mAsyncExecutionThread;
-  NS_ENSURE_TRUE(asyncCloseWasCalled, NS_ERROR_UNEXPECTED);
+  { 
+    
+    
+    
+    MutexAutoLock lockedScope(sharedAsyncExecutionMutex);
+    bool asyncCloseWasCalled = !mAsyncExecutionThread;
+    NS_ENSURE_TRUE(asyncCloseWasCalled, NS_ERROR_UNEXPECTED);
+  }
 
   
   
@@ -1250,7 +1242,9 @@ Connection::Close()
 NS_IMETHODIMP
 Connection::AsyncClose(mozIStorageCompletionCallback *aCallback)
 {
-  NS_ENSURE_TRUE(NS_IsMainThread(), NS_ERROR_NOT_SAME_THREAD);
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
 
   
   
@@ -1332,10 +1326,15 @@ Connection::AsyncClose(mozIStorageCompletionCallback *aCallback)
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  nsCOMPtr<nsIRunnable> closeEvent = new AsyncCloseConnection(this,
-                                                              nativeConn,
-                                                              completeEvent,
-                                                              mAsyncExecutionThread.forget());
+  nsCOMPtr<nsIRunnable> closeEvent;
+  {
+    
+    MutexAutoLock lockedScope(sharedAsyncExecutionMutex);
+    closeEvent = new AsyncCloseConnection(this,
+                                          nativeConn,
+                                          completeEvent,
+                                          mAsyncExecutionThread.forget());
+  }
 
   rv = asyncThread->Dispatch(closeEvent, NS_DISPATCH_NORMAL);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -1350,7 +1349,9 @@ Connection::AsyncClone(bool aReadOnly,
   PROFILER_LABEL("mozStorageConnection", "AsyncClone",
     js::ProfileEntry::Category::STORAGE);
 
-  NS_ENSURE_TRUE(NS_IsMainThread(), NS_ERROR_NOT_SAME_THREAD);
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
   if (!mDBConn)
     return NS_ERROR_NOT_INITIALIZED;
   if (!mDatabaseFile)
@@ -1683,7 +1684,9 @@ Connection::ExecuteSimpleSQLAsync(const nsACString &aSQLStatement,
                                   mozIStorageStatementCallback *aCallback,
                                   mozIStoragePendingStatement **_handle)
 {
-  NS_ENSURE_TRUE(NS_IsMainThread(), NS_ERROR_NOT_SAME_THREAD);
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
 
   nsCOMPtr<mozIStorageAsyncStatement> stmt;
   nsresult rv = CreateAsyncStatement(aSQLStatement, getter_AddRefs(stmt));

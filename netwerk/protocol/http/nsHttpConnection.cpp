@@ -153,7 +153,8 @@ nsHttpConnection::Init(nsHttpConnectionInfo *info,
     mSocketOut = outstream;
 
     
-    mCallbacks = new nsMainThreadPtrHolder<nsIInterfaceRequestor>(callbacks, false);
+    mCallbacks = new nsMainThreadPtrHolder<nsIInterfaceRequestor>(
+      "nsHttpConnection::mCallbacks", callbacks, false);
 
     mSocketTransport->SetEventSink(this, nullptr);
     mSocketTransport->SetSecurityCallbacks(this);
@@ -1368,7 +1369,8 @@ nsHttpConnection::SetSecurityCallbacks(nsIInterfaceRequestor* aCallbacks)
     
     
     
-    mCallbacks = new nsMainThreadPtrHolder<nsIInterfaceRequestor>(aCallbacks, false);
+    mCallbacks = new nsMainThreadPtrHolder<nsIInterfaceRequestor>(
+      "nsHttpConnection::mCallbacks", aCallbacks, false);
 }
 
 nsresult

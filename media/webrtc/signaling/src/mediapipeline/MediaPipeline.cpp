@@ -545,7 +545,8 @@ protected:
     
     
     
-    NS_ReleaseOnMainThread(mConduit.forget());
+    NS_ReleaseOnMainThread(
+      "AudioProxyThread::mConduit", mConduit.forget());
     MOZ_COUNT_DTOR(AudioProxyThread);
   }
 
