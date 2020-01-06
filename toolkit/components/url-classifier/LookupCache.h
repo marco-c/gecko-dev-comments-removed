@@ -200,11 +200,14 @@ public:
   void InvalidateExpiredCacheEntries();
 
   
+  void CopyFullHashCache(const LookupCache* aSource);
+
+  
   void ClearCache();
 
   
   
-  bool IsInCache(uint32_t key) { return mCache.Get(key); };
+  bool IsInCache(uint32_t key) { return mFullHashCache.Get(key); };
 
 #if DEBUG
   void DumpCache();
@@ -255,7 +258,7 @@ protected:
   friend class PerProviderDirectoryTestUtils;
 
   
-  FullHashResponseMap mCache;
+  FullHashResponseMap mFullHashCache;
 };
 
 class LookupCacheV2 final : public LookupCache
