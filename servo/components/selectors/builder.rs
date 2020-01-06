@@ -92,6 +92,12 @@ impl<Impl: SelectorImpl> SelectorBuilder<Impl> {
 
     
     #[inline(always)]
+    pub fn has_combinators(&self) -> bool {
+        !self.combinators.is_empty()
+    }
+
+    
+    #[inline(always)]
     pub fn build(&mut self, parsed_pseudo: bool) -> ThinArc<SpecificityAndFlags, Component<Impl>> {
         
         let mut spec = SpecificityAndFlags(specificity(self.simple_selectors.iter()));
