@@ -109,6 +109,7 @@ private:
   bool mCreating;
   bool mRegistered;
   bool mAbortedByScript;
+  bool mNotedActiveTransaction;
 
 #ifdef DEBUG
   bool mSentCommitOrAbort;
@@ -152,6 +153,10 @@ public:
     } else {
       mBackgroundActor.mNormalBackgroundActor = nullptr;
     }
+
+    
+    
+    MaybeNoteInactiveTransaction();
   }
 
   indexedDB::BackgroundRequestChild*
@@ -330,6 +335,12 @@ private:
 
   void
   SendAbort(nsresult aResultCode);
+
+  void
+  NoteActiveTransaction();
+
+  void
+  MaybeNoteInactiveTransaction();
 
   void
   OnNewRequest();
