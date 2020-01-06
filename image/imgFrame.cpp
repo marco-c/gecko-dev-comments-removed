@@ -324,9 +324,7 @@ imgFrame::InitWithDrawable(gfxDrawable* aDrawable,
 
   RefPtr<DrawTarget> target;
 
-  bool canUseDataSurface =
-    gfxPlatform::GetPlatform()->CanRenderContentToDataSurface();
-
+  bool canUseDataSurface = Factory::DoesBackendSupportDataDrawtarget(aBackend);
   if (canUseDataSurface) {
     
     
