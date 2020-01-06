@@ -1016,7 +1016,17 @@ BaselineCompiler::emitBody()
             return Method_Error;
 
         switch (op) {
-          default:
+          
+          case JSOP_FORCEINTERPRETER:
+            
+          case JSOP_SETINTRINSIC:
+            
+          case JSOP_UNUSED222:
+          case JSOP_UNUSED223:
+          case JSOP_LIMIT:
+            
+            
+            
             JitSpew(JitSpew_BaselineAbort, "Unhandled op: %s", CodeName[op]);
             return Method_CantCompile;
 
