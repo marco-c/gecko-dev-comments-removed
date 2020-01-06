@@ -350,15 +350,6 @@ public:
 
 
 
-  gfxRect TransformFrameRectToTextChild(const gfxRect& aRect,
-                                        nsIFrame* aChildFrame);
-
-  
-
-
-
-
-
   gfxRect TransformFrameRectFromTextChild(const nsRect& aRect,
                                           nsIFrame* aChildFrame);
 

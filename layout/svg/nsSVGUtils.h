@@ -202,12 +202,6 @@ public:
 
 
 
-  static nsIFrame* GetNearestSVGViewport(nsIFrame *aFrame);
-
-  
-
-
-
 
   static nsRect GetPostFilterVisualOverflowRect(nsIFrame *aFrame,
                                                 const nsRect &aUnfilteredRect);
