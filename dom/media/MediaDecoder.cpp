@@ -1036,6 +1036,7 @@ MediaDecoder::DownloadProgressed()
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
+  AbstractThread::AutoEnter context(AbstractMainThread());
   UpdatePlaybackRate();
   GetOwner()->DownloadProgressed();
   GetResource()->ThrottleReadahead(ShouldThrottleDownload());
@@ -1227,7 +1228,7 @@ MediaDecoder::GetCompositor()
   RefPtr<LayerManager> layerManager =
     ownerDoc ? nsContentUtils::LayerManagerForDocument(ownerDoc) : nullptr;
   RefPtr<KnowsCompositor> knows =
-    layerManager ? layerManager->AsKnowsCompositor() : nullptr;
+    layerManager ? layerManager->AsShadowForwarder() : nullptr;
   return knows.forget();
 }
 
