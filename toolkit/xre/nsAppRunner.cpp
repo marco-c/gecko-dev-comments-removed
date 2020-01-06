@@ -3990,6 +3990,12 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
   }
 #endif
 
+  
+  if (CheckArg("test-launch-without-hang")) {
+    *aExitFlag = true;
+    return 0;
+  }
+
 #if defined(MOZ_UPDATER) && !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_GONK)
   
   nsCOMPtr<nsIFile> updRoot;
