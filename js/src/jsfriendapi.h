@@ -3122,13 +3122,6 @@ SetCooperativeYieldCallback(JSContext* cx, YieldCallback callback);
 extern JS_FRIEND_API(bool)
 SystemZoneAvailable(JSContext* cx);
 
-
-
-extern JS_FRIEND_API(void)
-ProtectBuffer(void* buffer, size_t size);
-extern JS_FRIEND_API(void)
-UnprotectBuffer(void* buffer, size_t size);
-
 } 
 
 #endif 
