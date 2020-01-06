@@ -186,10 +186,9 @@ CamerasParent::DispatchToVideoCaptureThread(Runnable* event)
   
   
   
+  MonitorAutoLock lock(*sThreadMonitor);
   MOZ_ASSERT(!sVideoCaptureThread ||
              sVideoCaptureThread->thread_id() != PlatformThread::CurrentId());
-
-  MonitorAutoLock lock(*sThreadMonitor);
 
   while(mChildIsAlive && mWebRTCAlive &&
         (!sVideoCaptureThread || !sVideoCaptureThread->IsRunning())) {
@@ -339,7 +338,6 @@ bool
 CamerasParent::SetupEngine(CaptureEngine aCapEngine)
 {
   LOG((__PRETTY_FUNCTION__));
-  MOZ_ASSERT(sVideoCaptureThread->thread_id() == PlatformThread::CurrentId());
   RefPtr<mozilla::camera::VideoEngine>* engine = &sEngines[aCapEngine];
 
   if (!engine->get()) {
