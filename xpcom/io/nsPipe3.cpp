@@ -832,10 +832,20 @@ nsPipe::DrainInputStream(nsPipeReadState& aReadState, nsPipeEvents& aEvents)
 
   
   
-  
   aReadState.mAvailable = 0;
   aReadState.mReadCursor = nullptr;
   aReadState.mReadLimit = nullptr;
+
+  
+  
+  
+  DebugOnly<uint32_t> numRemoved = 0;
+  mInputList.RemoveElementsBy([&](nsPipeInputStream* aEntry) {
+    bool result = &aReadState == &aEntry->ReadState();
+    numRemoved += result ? 1 : 0;
+    return result;
+  });
+  MOZ_ASSERT(numRemoved == 1);
 
   
   
@@ -978,7 +988,6 @@ nsPipe::OnInputStreamException(nsPipeInputStream* aStream, nsresult aReason)
 
       MonitorAction action = mInputList[i]->OnInputException(aReason, events,
                                                              mon);
-      mInputList.RemoveElementAt(i);
 
       
       if (action == NotifyMonitor) {
@@ -1009,21 +1018,20 @@ nsPipe::OnPipeException(nsresult aReason, bool aOutputOnly)
 
     bool needNotify = false;
 
-    nsTArray<nsPipeInputStream*> tmpInputList;
-    for (uint32_t i = 0; i < mInputList.Length(); ++i) {
+    
+    
+    nsTArray<nsPipeInputStream*> list(mInputList);
+    for (uint32_t i = 0; i < list.Length(); ++i) {
       
       
-      if (aOutputOnly && mInputList[i]->Available()) {
-        tmpInputList.AppendElement(mInputList[i]);
+      if (aOutputOnly && list[i]->Available()) {
         continue;
       }
 
-      if (mInputList[i]->OnInputException(aReason, events, mon)
-          == NotifyMonitor) {
+      if (list[i]->OnInputException(aReason, events, mon) == NotifyMonitor) {
         needNotify = true;
       }
     }
-    mInputList = tmpInputList;
 
     if (mOutput.OnOutputException(aReason, events) == NotifyMonitor) {
       needNotify = true;
