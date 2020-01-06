@@ -8805,7 +8805,10 @@ nsDocument::BlockOnload()
 
   
   
-  if (mOnloadBlockCount == 0 && mScriptGlobalObject) {
+  
+  
+  if (mOnloadBlockCount == 0 && mScriptGlobalObject &&
+      GetReadyStateEnum() != READYSTATE_COMPLETE) {
     if (!nsContentUtils::IsSafeToRunScript()) {
       
       
