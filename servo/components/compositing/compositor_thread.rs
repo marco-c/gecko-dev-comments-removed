@@ -24,30 +24,44 @@ use webrender_traits;
 
 
 
-
-pub trait CompositorProxy : 'static + Send {
-    
-    fn send(&self, msg: Msg);
-    
-    fn clone_compositor_proxy(&self) -> Box<CompositorProxy + 'static + Send>;
+pub trait EventLoopWaker : 'static + Send {
+    fn clone(&self) -> Box<EventLoopWaker + Send>;
+    fn wake(&self);
 }
 
 
-
-pub trait CompositorReceiver : 'static {
-    
-    fn try_recv_compositor_msg(&mut self) -> Option<Msg>;
-    
-    fn recv_compositor_msg(&mut self) -> Msg;
+pub struct CompositorProxy {
+    pub sender: Sender<Msg>,
+    pub event_loop_waker: Box<EventLoopWaker>,
 }
 
-
-impl CompositorReceiver for Receiver<Msg> {
-    fn try_recv_compositor_msg(&mut self) -> Option<Msg> {
-        self.try_recv().ok()
+impl CompositorProxy {
+    pub fn send(&self, msg: Msg) {
+        
+        if let Err(err) = self.sender.send(msg) {
+            warn!("Failed to send response ({}).", err);
+        }
+        self.event_loop_waker.wake();
     }
-    fn recv_compositor_msg(&mut self) -> Msg {
-        self.recv().unwrap()
+    pub fn clone_compositor_proxy(&self) -> CompositorProxy {
+        CompositorProxy {
+            sender: self.sender.clone(),
+            event_loop_waker: self.event_loop_waker.clone(),
+        }
+    }
+}
+
+
+pub struct CompositorReceiver {
+    pub receiver: Receiver<Msg>
+}
+
+impl CompositorReceiver {
+    pub fn try_recv_compositor_msg(&mut self) -> Option<Msg> {
+        self.receiver.try_recv().ok()
+    }
+    pub fn recv_compositor_msg(&mut self) -> Msg {
+        self.receiver.recv().unwrap()
     }
 }
 
@@ -55,7 +69,7 @@ pub trait RenderListener {
     fn recomposite(&mut self, reason: CompositingReason);
 }
 
-impl RenderListener for Box<CompositorProxy + 'static> {
+impl RenderListener for CompositorProxy {
     fn recomposite(&mut self, reason: CompositingReason) {
         self.send(Msg::Recomposite(reason));
     }
@@ -173,9 +187,9 @@ impl Debug for Msg {
 
 pub struct InitialCompositorState {
     
-    pub sender: Box<CompositorProxy + Send>,
+    pub sender: CompositorProxy,
     
-    pub receiver: Box<CompositorReceiver>,
+    pub receiver: CompositorReceiver,
     
     pub constellation_chan: Sender<ConstellationMsg>,
     

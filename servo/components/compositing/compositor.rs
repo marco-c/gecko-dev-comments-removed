@@ -103,7 +103,7 @@ pub struct IOCompositor<Window: WindowMethods> {
     window: Rc<Window>,
 
     
-    port: Box<CompositorReceiver>,
+    port: CompositorReceiver,
 
     
     root_pipeline: Option<CompositionPipeline>,
@@ -133,7 +133,7 @@ pub struct IOCompositor<Window: WindowMethods> {
     
     scale_factor: ScaleFactor<f32, DeviceIndependentPixel, DevicePixel>,
 
-    channel_to_self: Box<CompositorProxy + Send>,
+    channel_to_self: CompositorProxy,
 
     
     delayed_composition_timer: DelayedCompositionTimerProxy,
@@ -312,11 +312,11 @@ fn initialize_png(gl: &gl::Gl, width: usize, height: usize) -> RenderTargetInfo 
 }
 
 struct RenderNotifier {
-    compositor_proxy: Box<CompositorProxy>,
+    compositor_proxy: CompositorProxy,
 }
 
 impl RenderNotifier {
-    fn new(compositor_proxy: Box<CompositorProxy>,
+    fn new(compositor_proxy: CompositorProxy,
            _: Sender<ConstellationMsg>) -> RenderNotifier {
         RenderNotifier {
             compositor_proxy: compositor_proxy,
@@ -336,7 +336,7 @@ impl webrender_traits::RenderNotifier for RenderNotifier {
 
 
 struct CompositorThreadDispatcher {
-    compositor_proxy: Box<CompositorProxy>
+    compositor_proxy: CompositorProxy
 }
 
 impl webrender_traits::RenderDispatcher for CompositorThreadDispatcher {

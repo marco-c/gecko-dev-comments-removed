@@ -69,7 +69,7 @@ pub struct Pipeline {
     pub layout_chan: IpcSender<LayoutControlMsg>,
 
     
-    pub compositor_proxy: Box<CompositorProxy + 'static + Send>,
+    pub compositor_proxy: CompositorProxy,
 
     
     
@@ -123,7 +123,7 @@ pub struct InitialPipelineState {
     pub scheduler_chan: IpcSender<TimerSchedulerMsg>,
 
     
-    pub compositor_proxy: Box<CompositorProxy + 'static + Send>,
+    pub compositor_proxy: CompositorProxy,
 
     
     pub devtools_chan: Option<Sender<DevtoolsControlMsg>>,
@@ -303,7 +303,7 @@ impl Pipeline {
                parent_info: Option<(PipelineId, FrameType)>,
                event_loop: Rc<EventLoop>,
                layout_chan: IpcSender<LayoutControlMsg>,
-               compositor_proxy: Box<CompositorProxy + 'static + Send>,
+               compositor_proxy: CompositorProxy,
                is_private: bool,
                url: ServoUrl,
                visible: bool)

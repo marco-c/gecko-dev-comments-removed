@@ -172,7 +172,7 @@ pub struct Constellation<Message, LTF, STF> {
 
     
     
-    compositor_proxy: Box<CompositorProxy>,
+    compositor_proxy: CompositorProxy,
 
     
     
@@ -302,7 +302,7 @@ pub struct Constellation<Message, LTF, STF> {
 
 pub struct InitialConstellationState {
     
-    pub compositor_proxy: Box<CompositorProxy + Send>,
+    pub compositor_proxy: CompositorProxy,
 
     
     pub debugger_chan: Option<debugger::Sender>,

@@ -4,7 +4,7 @@
 
 
 
-use compositor_thread::{CompositorProxy, CompositorReceiver};
+use compositor_thread::EventLoopWaker;
 use euclid::{Point2D, Size2D};
 use euclid::point::TypedPoint2D;
 use euclid::rect::TypedRect;
@@ -145,11 +145,7 @@ pub trait WindowMethods {
     fn hidpi_factor(&self) -> ScaleFactor<f32, DeviceIndependentPixel, DevicePixel>;
 
     
-    
-    
-    
-    
-    fn create_compositor_channel(&self) -> (Box<CompositorProxy + Send>, Box<CompositorReceiver>);
+    fn create_event_loop_waker(&self) -> Box<EventLoopWaker>;
 
     
     
