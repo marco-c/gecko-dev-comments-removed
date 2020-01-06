@@ -182,7 +182,7 @@ pub struct GapThenFull<K, V, M> {
 
 
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, Debug)]
 pub struct SafeHash {
     hash: HashUint,
 }
@@ -814,6 +814,12 @@ impl<K, V> RawTable<K, V> {
                 _marker: marker::PhantomData,
             }
         }
+    }
+
+    
+    #[inline]
+    pub fn raw_buffer(&self) -> *const u8 {
+        self.hashes.ptr() as *const u8
     }
 
     

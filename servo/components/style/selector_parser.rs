@@ -160,6 +160,15 @@ impl<T> PerPseudoElementMap<T> {
     }
 
     
+    pub fn for_each<F: FnMut(&mut T)>(&mut self, mut f: F) {
+        for entry in self.entries.iter_mut() {
+            if entry.is_some() {
+                f(entry.as_mut().unwrap());
+            }
+        }
+    }
+
+    
     
     
     pub fn set(&mut self, pseudo: &PseudoElement, value: T) -> Result<(), ()> {
