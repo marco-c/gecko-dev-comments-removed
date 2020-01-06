@@ -1263,6 +1263,20 @@ nsDisplayListBuilder::EnterPresShell(nsIFrame* aReferenceFrame,
   state->mCaretFrame = nullptr;
   state->mFirstFrameMarkedForDisplay = mFramesMarkedForDisplay.Length();
 
+  nsIScrollableFrame* sf = state->mPresShell->GetRootScrollFrameAsScrollable();
+  if (sf) {
+    
+    
+    
+    
+    
+    
+    nsCanvasFrame* canvasFrame = do_QueryFrame(sf->GetScrolledFrame());
+    if (canvasFrame) {
+      MarkFrameForDisplayIfVisible(canvasFrame);
+    }
+  }
+
 #ifdef DEBUG
   state->mAutoLayoutPhase.emplace(aReferenceFrame->PresContext(), eLayoutPhase_DisplayListBuilding);
 #endif
