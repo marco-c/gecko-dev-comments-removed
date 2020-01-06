@@ -993,7 +993,7 @@ class CodeRange
   public:
     enum Kind {
         Function,          
-        InterpEntry,       
+        Entry,             
         ImportJitExit,     
         ImportInterpExit,  
         BuiltinThunk,      
@@ -1021,8 +1021,8 @@ class CodeRange
                     uint8_t beginToTierEntry_;
                 } func;
                 struct {
-                    uint8_t beginToUntrustedFPStart_;
-                    uint8_t beginToUntrustedFPEnd_;
+                    uint16_t beginToUntrustedFPStart_;
+                    uint16_t beginToUntrustedFPEnd_;
                 } jitExit;
             };
         };
@@ -1097,7 +1097,7 @@ class CodeRange
     
 
     bool hasFuncIndex() const {
-        return isFunction() || isImportExit() || kind() == InterpEntry;
+        return isFunction() || isImportExit() || kind() == Entry;
     }
     uint32_t funcIndex() const {
         MOZ_ASSERT(hasFuncIndex());
