@@ -125,6 +125,11 @@ int32_t nsIWidget::sPointerIdCounter = 0;
  uint64_t AutoObserverNotifier::sObserverId = 0;
  nsDataHashtable<nsUint64HashKey, nsCOMPtr<nsIObserver>> AutoObserverNotifier::sSavedObservers;
 
+
+
+
+const uint32_t kAsyncDragDropTimeout = 1000;
+
 namespace mozilla {
 namespace widget {
 
@@ -2227,6 +2232,18 @@ nsBaseWidget::UnregisterPluginWindowForRemoteUpdates()
   MOZ_ASSERT(sPluginWidgetList);
   sPluginWidgetList->Remove(id);
 #endif
+}
+
+nsresult
+nsBaseWidget::AsyncEnableDragDrop(bool aEnable)
+{
+  RefPtr<nsBaseWidget> kungFuDeathGrip = this;
+  return NS_IdleDispatchToCurrentThread(
+    NS_NewRunnableFunction("AsyncEnableDragDropFn",
+                           [this, aEnable, kungFuDeathGrip]() {
+                             EnableDragDrop(aEnable);
+                           }),
+    kAsyncDragDropTimeout);
 }
 
 

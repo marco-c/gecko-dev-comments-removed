@@ -1415,6 +1415,7 @@ class nsIWidget : public nsISupports
 
 
     virtual void EnableDragDrop(bool aEnable) = 0;
+    virtual nsresult AsyncEnableDragDrop(bool aEnable) = 0;
 
     
 

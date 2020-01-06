@@ -3772,7 +3772,10 @@ nsWindow::ClientToWindowSize(const LayoutDeviceIntSize& aClientSize)
 void
 nsWindow::EnableDragDrop(bool aEnable)
 {
-  NS_ASSERTION(mWnd, "nsWindow::EnableDragDrop() called after Destroy()");
+  if (!mWnd) {
+    
+    return;
+  }
 
   if (aEnable) {
     if (!mNativeDragTarget) {
