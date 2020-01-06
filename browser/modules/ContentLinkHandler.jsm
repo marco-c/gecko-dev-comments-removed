@@ -114,9 +114,7 @@ function setIconForLink(aIconInfo, aChromeGlobal) {
     "Link:SetIcon",
     { url: aIconInfo.iconUri.spec,
       loadingPrincipal: aIconInfo.loadingPrincipal,
-      requestContextID: aIconInfo.requestContextID,
-      canUseForTab: !aIconInfo.isRichIcon,
-    });
+      requestContextID: aIconInfo.requestContextID });
 }
 
 
@@ -151,9 +149,7 @@ function faviconTimeoutCallback(aFaviconLoads, aPageUrl, aChromeGlobal) {
       continue;
     }
 
-    
-    
-    if (icon.isRichIcon || icon.width >= FAVICON_RICH_ICON_MIN_WIDTH) {
+    if (icon.isRichIcon) {
       if (!largestRichIcon || largestRichIcon.width < icon.width) {
         largestRichIcon = icon;
       }
@@ -165,17 +161,15 @@ function faviconTimeoutCallback(aFaviconLoads, aPageUrl, aChromeGlobal) {
   
   
   
-  
-  
-  if (largestRichIcon) {
-    setIconForLink(largestRichIcon, aChromeGlobal);
-  }
   if (preferredIcon) {
     setIconForLink(preferredIcon, aChromeGlobal);
   } else if (defaultIcon) {
     setIconForLink(defaultIcon, aChromeGlobal);
   }
 
+  if (largestRichIcon) {
+    setIconForLink(largestRichIcon, aChromeGlobal);
+  }
   load.timer = null;
   aFaviconLoads.delete(aPageUrl);
 }
@@ -211,7 +205,11 @@ function handleFaviconLink(aLink, aIsRichIcon, aChromeGlobal, aFaviconLoads) {
     return false;
 
   
+  
   let width = extractIconSize(aLink.sizes);
+  if (width >= FAVICON_RICH_ICON_MIN_WIDTH)
+    aIsRichIcon = true;
+
   let iconInfo = {
     iconUri,
     width,
