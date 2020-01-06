@@ -982,7 +982,25 @@ enum Role {
 
   SUMMARY = 168,
 
-  LAST_ROLE = SUMMARY
+  
+
+
+  LANDMARK = 169,
+
+  
+
+
+
+
+
+  NAVIGATION = 170,
+
+  
+
+
+  FOOTNOTE = 171,
+
+  LAST_ROLE = FOOTNOTE
 };
 
 } 

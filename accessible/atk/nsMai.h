@@ -75,17 +75,19 @@ mozilla::a11y::AccessibleOrProxy GetInternalObj(AtkObject* aObj);
 AtkObject* GetWrapperFor(mozilla::a11y::ProxyAccessible* aProxy);
 AtkObject* GetWrapperFor(mozilla::a11y::AccessibleOrProxy aObj);
 
-extern int atkMajorVersion, atkMinorVersion;
+extern int atkMajorVersion, atkMinorVersion, atkMicroVersion;
 
 
 
 
 
 static inline bool
-IsAtkVersionAtLeast(int aMajor, int aMinor)
+IsAtkVersionAtLeast(int aMajor, int aMinor, int aMicro=0)
 {
   return aMajor < atkMajorVersion ||
-         (aMajor == atkMajorVersion && aMinor <= atkMinorVersion);
+         (aMajor == atkMajorVersion &&
+          (aMinor < atkMinorVersion ||
+           (aMinor == atkMinorVersion && aMicro <= atkMicroVersion)));
 }
 
 

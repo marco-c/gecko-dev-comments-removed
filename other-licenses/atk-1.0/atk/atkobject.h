@@ -231,6 +231,11 @@ extern "C" {
 
 
 
+
+
+
+
+
 typedef enum
 {
   ATK_ROLE_INVALID = 0,
@@ -353,6 +358,9 @@ typedef enum
   ATK_ROLE_STATIC,
   ATK_ROLE_MATH_FRACTION,
   ATK_ROLE_MATH_ROOT,
+  ATK_ROLE_SUBSCRIPT,
+  ATK_ROLE_SUPERSCRIPT,
+  ATK_ROLE_FOOTNOTE,
   ATK_ROLE_LAST_DEFINED
 } AtkRole;
 
