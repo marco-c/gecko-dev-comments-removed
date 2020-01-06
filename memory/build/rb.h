@@ -64,22 +64,31 @@
 
 
 
+
+
+
+
+
+
+
 #ifndef RB_H_
 #define	RB_H_
 
 
-#define	rb_node(a_type)							\
-struct {								\
-    a_type *rbn_left;							\
-    a_type *rbn_right_red;						\
-}
+template <typename T>
+struct RedBlackTreeNode
+{
+  T* rbn_left;
+  T* rbn_right_red;
+};
 
 
-#define	rb_tree(a_type)							\
-struct {								\
-    a_type *rbt_root;							\
-    a_type rbt_nil;							\
-}
+template <typename T>
+struct RedBlackTree
+{
+  T* rbt_root;
+  T rbt_nil;
+};
 
 
 #define	rbp_left_get(a_type, a_field, a_node)				\

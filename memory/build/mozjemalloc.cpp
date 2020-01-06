@@ -469,10 +469,10 @@ enum ChunkType {
 
 struct extent_node_t {
 	
-	rb_node(extent_node_t) link_szad;
+	RedBlackTreeNode<extent_node_t> link_szad;
 
 	
-	rb_node(extent_node_t) link_ad;
+	RedBlackTreeNode<extent_node_t> link_ad;
 
 	
 	void	*addr;
@@ -483,7 +483,7 @@ struct extent_node_t {
 	
 	ChunkType chunk_type;
 };
-typedef rb_tree(extent_node_t) extent_tree_t;
+typedef RedBlackTree<extent_node_t> extent_tree_t;
 
 
 
@@ -524,7 +524,7 @@ struct arena_chunk_map_t {
 
 
 
-	rb_node(arena_chunk_map_t)	link;
+	RedBlackTreeNode<arena_chunk_map_t>	link;
 
 	
 
@@ -595,8 +595,8 @@ struct arena_chunk_map_t {
 #define	CHUNK_MAP_LARGE		((size_t)0x02U)
 #define	CHUNK_MAP_ALLOCATED	((size_t)0x01U)
 };
-typedef rb_tree(arena_chunk_map_t) arena_avail_tree_t;
-typedef rb_tree(arena_chunk_map_t) arena_run_tree_t;
+typedef RedBlackTree<arena_chunk_map_t> arena_avail_tree_t;
+typedef RedBlackTree<arena_chunk_map_t> arena_run_tree_t;
 
 
 struct arena_chunk_t {
@@ -604,7 +604,7 @@ struct arena_chunk_t {
 	arena_t		*arena;
 
 	
-	rb_node(arena_chunk_t) link_dirty;
+	RedBlackTreeNode<arena_chunk_t> link_dirty;
 
 #ifdef MALLOC_DOUBLE_PURGE
 	
@@ -622,7 +622,7 @@ struct arena_chunk_t {
 	
 	arena_chunk_map_t map[1]; 
 };
-typedef rb_tree(arena_chunk_t) arena_chunk_tree_t;
+typedef RedBlackTree<arena_chunk_t> arena_chunk_tree_t;
 
 #ifdef MALLOC_DOUBLE_PURGE
 namespace mozilla {
@@ -701,7 +701,7 @@ struct arena_t {
 
   arena_id_t mId;
   
-  rb_node(arena_t) mLink;
+  RedBlackTreeNode<arena_t> mLink;
 
   
   malloc_spinlock_t mLock;
@@ -823,7 +823,7 @@ public:
   void HardPurge();
 };
 
-typedef rb_tree(arena_t) arena_tree_t;
+typedef RedBlackTree<arena_t> arena_tree_t;
 
 
 
