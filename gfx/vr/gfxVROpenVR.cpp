@@ -231,7 +231,7 @@ VRDisplayOpenVR::GetSensorState()
   
   mVRCompositor->WaitGetPoses(nullptr, 0, poses, posesSize);
 
-  VRHMDSensorState result{};
+  VRHMDSensorState result;
 
   ::vr::Compositor_FrameTiming timing;
   timing.m_nSize = sizeof(::vr::Compositor_FrameTiming);
