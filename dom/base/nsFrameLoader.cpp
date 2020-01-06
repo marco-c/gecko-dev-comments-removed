@@ -2412,6 +2412,10 @@ nsFrameLoader::MaybeCreateDocShell()
   mIsTopLevelContent =
     AddTreeItemToTreeOwner(mDocShell, parentTreeOwner, parentType, docShell);
 
+  if (mIsTopLevelContent) {
+    mDocShell->SetCreatedDynamically(false);
+  }
+
   
   
   nsCOMPtr<nsIDOMEventTarget> chromeEventHandler;
@@ -2661,7 +2665,7 @@ nsFrameLoader::CheckForRecursiveLoad(nsIURI* aURI)
   nsAutoCString buffer;
   rv = aURI->GetScheme(buffer);
   if (NS_SUCCEEDED(rv) && buffer.EqualsLiteral("about")) {
-    rv = aURI->GetPathQueryRef(buffer);
+    rv = aURI->GetPath(buffer);
     if (NS_SUCCEEDED(rv) && buffer.EqualsLiteral("srcdoc")) {
       
       return NS_OK;

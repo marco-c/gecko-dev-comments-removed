@@ -79,8 +79,13 @@ add_task(async function test_pageshow() {
   await promiseBrowserLoaded(browser);
 
   
+  let pageShowPromise = ContentTask.spawn(browser, null, async () => {
+    return ContentTaskUtils.waitForEvent(this, "pageshow", true);
+  });
+
+  
   browser.goBack();
-  await promiseContentMessage(browser, "ss-test:onFrameTreeCollected");
+  await pageShowPromise;
   is(browser.currentURI.spec, URL, "correct url after going back");
 
   

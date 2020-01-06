@@ -101,6 +101,10 @@ this.FormData = Object.freeze({
     return FormDataInternal.collect(frame);
   },
 
+  restore(frame, data) {
+    return FormDataInternal.restore(frame, data);
+  },
+
   restoreTree(root, data) {
     FormDataInternal.restoreTree(root, data);
   }
@@ -286,10 +290,14 @@ var FormDataInternal = {
 
 
   restore({document: doc}, data) {
+    if (!data.url) {
+      return true;
+    }
+
     
     
-    if (!data.url || data.url != getDocumentURI(doc)) {
-      return;
+    if (data.url != getDocumentURI(doc)) {
+      return false;
     }
 
     
@@ -316,6 +324,8 @@ var FormDataInternal = {
         this.fireInputEvent(doc.body);
       }
     }
+
+    return true;
   },
 
   
@@ -443,12 +453,9 @@ var FormDataInternal = {
   restoreTree(root, data) {
     
     
-    if (data.url && data.url != getDocumentURI(root.document)) {
+    
+    if (this.restore(root, data) === false) {
       return;
-    }
-
-    if (data.url) {
-      this.restore(root, data);
     }
 
     if (!data.hasOwnProperty("children")) {
