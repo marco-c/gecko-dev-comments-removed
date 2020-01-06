@@ -188,6 +188,15 @@ nsTableColGroupFrame::AppendFrames(ChildListID     aListID,
     col = nextCol;
   }
 
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!col || col->GetColType() == eColContent,
+             "What's going on with our columns?");
+  RemoveStateBits(NS_FRAME_OWNS_ANON_BOXES);
+
   const nsFrameList::Slice& newFrames =
     mFrames.AppendFrames(this, aFrameList);
   InsertColsReflow(GetStartColumnIndex() + mColCount, newFrames);
@@ -220,6 +229,15 @@ nsTableColGroupFrame::InsertFrames(ChildListID     aListID,
     RemoveFrame(kPrincipalList, col);
     col = nextCol;
   }
+
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!col || col->GetColType() == eColContent,
+             "What's going on with our columns?");
+  RemoveStateBits(NS_FRAME_OWNS_ANON_BOXES);
 
   NS_ASSERTION(!aPrevFrame || aPrevFrame == aPrevFrame->LastContinuation(),
                "Prev frame should be last in continuation chain");
@@ -482,6 +500,30 @@ nsTableColGroupFrame::InvalidateFrameWithRect(const nsRect& aRect,
   
   
   GetParent()->InvalidateFrameWithRect(aRect + GetPosition(), aDisplayItemKey);
+}
+
+void
+nsTableColGroupFrame::AppendDirectlyOwnedAnonBoxes(
+  nsTArray<OwnedAnonBox>& aResult)
+{
+  nsTableColFrame* col = GetFirstColumn();
+  if (!col) {
+    
+    return;
+  }
+
+  if (col->GetColType() == eColContent) {
+    
+    return;
+  }
+
+  for ( ; col; col = col->GetNextCol()) {
+    MOZ_ASSERT(col->GetColType() != eColContent,
+               "We should not have any real columns after anonymous ones");
+    MOZ_ASSERT(col->GetColType() != eColAnonymousCol,
+               "We shouldn't have spanning anonymous columns");
+    aResult.AppendElement(OwnedAnonBox(col));
+  }
 }
 
 #ifdef DEBUG_FRAME_DUMP
