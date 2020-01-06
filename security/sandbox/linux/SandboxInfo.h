@@ -26,7 +26,6 @@ public:
     
     kHasSeccompBPF     = 1 << 0,
     
-    
     kEnabledForContent = 1 << 1,
     
     kEnabledForMedia   = 1 << 2,

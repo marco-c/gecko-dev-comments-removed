@@ -11,11 +11,7 @@ namespace mozilla {
 
 
 
-
 int GetEffectiveContentSandboxLevel();
-
-
-bool IsContentSandboxEnabled();
 
 }
 #endif 

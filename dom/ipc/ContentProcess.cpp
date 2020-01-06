@@ -28,6 +28,14 @@ namespace mozilla {
 namespace dom {
 
 #if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
+static bool
+IsSandboxTempDirRequired()
+{
+  
+  
+  return GetEffectiveContentSandboxLevel() >= 1;
+}
+
 static void
 SetTmpEnvironmentVariable(nsIFile* aValue)
 {
@@ -47,6 +55,13 @@ SetTmpEnvironmentVariable(nsIFile* aValue)
 #endif
 
 #if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+static bool
+IsSandboxTempDirRequired()
+{
+  
+  return (GetEffectiveContentSandboxLevel() >= 1);
+}
+
 static void
 SetTmpEnvironmentVariable(nsIFile* aValue)
 {
@@ -66,9 +81,7 @@ SetUpSandboxEnvironment()
   MOZ_ASSERT(nsDirectoryService::gService,
     "SetUpSandboxEnvironment relies on nsDirectoryService being initialized");
 
-  
-  
-  if (!IsContentSandboxEnabled()) {
+  if (!IsSandboxTempDirRequired()) {
     return;
   }
 

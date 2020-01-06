@@ -950,7 +950,8 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   switch (mProcessType) {
     case GeckoProcessType_Content:
 #  if defined(MOZ_CONTENT_SANDBOX)
-      if (IsContentSandboxEnabled()) {
+      if (mSandboxLevel > 0 &&
+          !PR_GetEnv("MOZ_DISABLE_CONTENT_SANDBOX")) {
         
         
         

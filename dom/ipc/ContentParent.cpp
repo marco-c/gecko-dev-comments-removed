@@ -2386,7 +2386,8 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
   
   
   
-  shouldSandbox = IsContentSandboxEnabled();
+  shouldSandbox = (GetEffectiveContentSandboxLevel() > 0) &&
+    !PR_GetEnv("MOZ_DISABLE_CONTENT_SANDBOX");
 
 #ifdef XP_LINUX
   if (shouldSandbox) {
