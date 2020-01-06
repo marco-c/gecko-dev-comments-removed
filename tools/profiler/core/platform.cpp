@@ -1603,6 +1603,10 @@ locked_profiler_stream_json_for_this_process(PSLockRef aLock,
 
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
+  double collectionStart = profiler_time();
+
+  ProfileBuffer& buffer = ActivePS::Buffer(aLock);
+
   
   aWriter.StartArrayProperty("libs");
   AppendSharedLibraries(aWriter);
@@ -1635,7 +1639,7 @@ locked_profiler_stream_json_for_this_process(PSLockRef aLock,
         continue;
       }
       double thisThreadFirstSampleTime =
-        info->StreamJSON(ActivePS::Buffer(aLock), aWriter,
+        info->StreamJSON(buffer, aWriter,
                          CorePS::ProcessStartTime(), aSinceTime);
       firstSampleTime = std::min(thisThreadFirstSampleTime, firstSampleTime);
     }
@@ -1645,8 +1649,8 @@ locked_profiler_stream_json_for_this_process(PSLockRef aLock,
       ThreadInfo* info = deadThreads.at(i);
       MOZ_ASSERT(info->IsBeingProfiled());
       double thisThreadFirstSampleTime =
-        info->StreamJSON(ActivePS::Buffer(aLock), aWriter,
-                        CorePS::ProcessStartTime(), aSinceTime);
+        info->StreamJSON(buffer, aWriter,
+                         CorePS::ProcessStartTime(), aSinceTime);
       firstSampleTime = std::min(thisThreadFirstSampleTime, firstSampleTime);
     }
 
@@ -1665,6 +1669,23 @@ locked_profiler_stream_json_for_this_process(PSLockRef aLock,
 #endif
   }
   aWriter.EndArray();
+
+  aWriter.StartArrayProperty("pausedRanges",
+                             SpliceableJSONWriter::SingleLineStyle);
+  {
+    buffer.StreamPausedRangesToJSON(aWriter, aSinceTime);
+  }
+  aWriter.EndArray();
+
+  double collectionEnd = profiler_time();
+
+  
+  
+  
+  
+  
+  buffer.AddEntry(ProfileBufferEntry::CollectionStart(collectionStart));
+  buffer.AddEntry(ProfileBufferEntry::CollectionEnd(collectionEnd));
 
   if (firstSampleTime != INFINITY) {
     return CorePS::ProcessStartTime() +
@@ -2899,6 +2920,7 @@ profiler_pause()
     }
 
     ActivePS::SetIsPaused(lock, true);
+    ActivePS::Buffer(lock).AddEntry(ProfileBufferEntry::Pause(profiler_time()));
   }
 
   
@@ -2920,6 +2942,7 @@ profiler_resume()
       return;
     }
 
+    ActivePS::Buffer(lock).AddEntry(ProfileBufferEntry::Resume(profiler_time()));
     ActivePS::SetIsPaused(lock, false);
   }
 
