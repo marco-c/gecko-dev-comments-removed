@@ -4,77 +4,66 @@ from support.inline import inline
 from support.fixtures import create_dialog
 from support.asserts import assert_error, assert_dialog_handled, assert_success
 
+
 alert_doc = inline("<script>window.alert()</script>")
 
 
+def set_window_rect(session, rect):
+    return session.transport.send("POST", "session/%s/window/rect" % session.session_id, rect)
 
-def test_set_window_rect_prompt_accept(new_session):
-    
-    _, session = new_session({"alwaysMatch": {"unhandledPromptBehavior": "accept"}})
+
+
+
+
+def test_prompt_accept(new_session):
+    _, session = new_session(
+        {"alwaysMatch": {"unhandledPromptBehavior": "accept"}})
     session.url = inline("<title>WD doc title</title>")
+    original = session.window.rect
 
-    get_response = session.transport.send("GET", "session/%s/window/rect" % session.session_id)
-    original = get_response.body["value"]
-
+    
     create_dialog(session)("alert", text="dismiss #1", result_var="dismiss1")
-    result = session.transport.send("POST",
-                                    "session/%s/window/rect" % session.session_id,
-                                    {"x": int(original["y"]),
-                                     "y": int(original["y"])})
+    result = set_window_rect(session, {"x": int(original["x"]),
+                                       "y": int(original["y"])})
     assert result.status == 200
     assert_dialog_handled(session, "dismiss #1")
 
     create_dialog(session)("confirm", text="dismiss #2", result_var="dismiss2")
-    result = session.transport.send("POST",
-                                    "session/%s/window/rect" % session.session_id,
-                                    {"x": int(original["y"]),
-                                     "y": int(original["y"])})
+    result = set_window_rect(session, {"x": int(original["x"]),
+                                       "y": int(original["y"])})
     assert result.status == 200
     assert_dialog_handled(session, "dismiss #2")
 
     create_dialog(session)("prompt", text="dismiss #3", result_var="dismiss3")
-    result = session.transport.send("POST",
-                                    "session/%s/window/rect" % session.session_id,
-                                    {"x": int(original["y"]),
-                                     "y": int(original["y"])})
-    assert result.status == 200
+    result = set_window_rect(session, {"x": int(original["x"]),
+                                       "y": int(original["y"])})
+    assert_success(result)
     assert_dialog_handled(session, "dismiss #3")
 
 
-def test_set_window_rect_handle_prompt_missing_value(session, create_dialog):
-    
-    get_response = session.transport.send("GET",
-                                          "session/%s/window/rect" % session.session_id)
-    original = get_response.body["value"]
+def test_handle_prompt_missing_value(session, create_dialog):
+    original = session.window.rect
 
+    
     session.url = inline("<title>WD doc title</title>")
     create_dialog("alert", text="dismiss #1", result_var="dismiss1")
 
-    result = session.transport.send("POST",
-                                    "session/%s/window/rect" % session.session_id,
-                                    {"x": int(original["y"]),
-                                     "y": int(original["y"])})
-
+    result = set_window_rect(session, {"x": int(original["x"]),
+                                       "y": int(original["y"])})
     assert_error(result, "unexpected alert open")
     assert_dialog_handled(session, "dismiss #1")
 
     create_dialog("confirm", text="dismiss #2", result_var="dismiss2")
 
-    result = session.transport.send("POST",
-                                    "session/%s/window/rect" % session.session_id,
-                                    {"x": int(original["y"]),
-                                     "y": int(original["y"])})
-
+    result = set_window_rect(session, {"x": int(original["x"]),
+                                       "y": int(original["y"])})
     assert_error(result, "unexpected alert open")
     assert_dialog_handled(session, "dismiss #2")
 
     create_dialog("prompt", text="dismiss #3", result_var="dismiss3")
 
-    result = session.transport.send("POST",
-                                    "session/%s/window/rect" % session.session_id,
-                                    {"x": int(original["y"]),
-                                     "y": int(original["y"])})
-
+    result = set_window_rect(session, {"x": int(original["x"]),
+                                       "y": int(original["y"])})
     assert_error(result, "unexpected alert open")
     assert_dialog_handled(session, "dismiss #3")
 
@@ -92,134 +81,118 @@ def test_set_window_rect_handle_prompt_missing_value(session, create_dialog):
     {"height": {}, "width": {}, "x": None, "y": None},
     {"height": None, "width": None, "x": {}, "y": {}},
 ])
-def test_set_window_rect_invalid_params(session, data):
+def test_invalid_params(session, data):
     
-    result = session.transport.send("POST",
-                                    "session/%s/window/rect" % session.session_id,
-                                    data)
-
-    assert_error(result, "invalid argument")
+    response = set_window_rect(session, data)
+    assert_error(response, "invalid argument")
 
 
-def test_set_window_fullscreen(session):
+def test_fullscreened(session):
     original = session.window.rect
 
     
     session.window.fullscreen()
     assert session.window.state == "fullscreen"
-    result = session.transport.send("POST",
-                                    "session/%s/window/rect" % session.session_id,
-                                    {"width": 400, "height": 400})
-    assert_success(result, {"x": original["x"],
-                            "y": original["y"],
-                            "width": 400.0,
-                            "height": 400.0,
-                            "state": "normal"})
+    response = set_window_rect(session, {"width": 400, "height": 400})
+    assert_success(response, {"x": original["x"],
+                              "y": original["y"],
+                              "width": 400.0,
+                              "height": 400.0,
+                              "state": "normal"})
 
 
-def test_set_window_rect_window_minimized(session):
+def test_minimized(session):
     
     session.window.minimize()
     assert session.window.state == "minimized"
 
-    result = session.transport.send("POST",
-                                    "session/%s/window/rect" % session.session_id,
-                                    {"width": 400, "height": 400})
-    assert not session.execute_script("return document.hidden")
-    rect = assert_success(result)
+    response = set_window_rect(session, {"width": 400, "height": 400})
+    assert session.window.state != "minimized"
+    rect = assert_success(response)
     assert rect["width"] == 400
     assert rect["height"] == 400
     assert rect["state"] == "normal"
 
 
-def test_set_window_height_width(session):
+def test_height_width(session):
     original = session.window.rect
-
-    
     max = session.execute_script("""
         return {
           width: window.screen.availWidth,
           height: window.screen.availHeight,
         }""")
-    result = session.transport.send("POST",
-                                    "session/%s/window/rect" % session.session_id,
-                                    {"width": max["width"] - 100,
-                                     "height": max["height"] - 100})
 
     
-    assert_success(result, {"x": original["x"],
-                            "y": original["y"],
-                            "width": max["width"] - 100,
-                            "height": max["height"] - 100,
-                            "state": "normal"})
+    response = set_window_rect(session, {"width": max["width"] - 100,
+                                         "height": max["height"] - 100})
 
-
-def test_set_window_height_width_larger_than_max(session):
     
+    assert_success(response, {"x": original["x"],
+                              "y": original["y"],
+                              "width": max["width"] - 100,
+                              "height": max["height"] - 100,
+                              "state": "normal"})
+
+
+def test_height_width_larger_than_max(session):
     max = session.execute_script("""
         return {
           width: window.screen.availWidth,
           height: window.screen.availHeight,
         }""")
-    result = session.transport.send("POST",
-                                    "session/%s/window/rect" % session.session_id,
-                                    {"width": max["width"] + 100,
-                                     "height": max["width"] + 100})
 
     
-    assert result.status == 200
-    rect = result.body["value"]
+    response = set_window_rect(session, {"width": max["width"] + 100,
+                                         "height": max["height"] + 100})
+
+    
+    rect = assert_success(response)
     assert rect["width"] >= max["width"]
     assert rect["height"] >= max["height"]
     assert rect["state"] == "normal"
 
 
-def test_set_window_height_width_as_current(session):
-    
-    original = session.window.rect
-    result = session.transport.send("POST",
-                                    "session/%s/window/rect" % session.session_id,
-                                    {"width": int(original["width"]),
-                                     "height": int(original["height"])})
-
-    
-    assert_success(result, {"x": original["x"],
-                            "y": original["y"],
-                            "width": original["width"],
-                            "height": original["height"],
-                            "state": original["state"]})
-
-
-def test_set_window_rect_x_y(session):
-    
-    original = session.window.rect
-    result = session.transport.send("POST",
-                                    "session/%s/window/rect" % session.session_id,
-                                    {"x": int(original["x"]) + 10,
-                                     "y": int(original["y"]) + 10})
-    
-    assert_success(result, {"x": original["x"] + 10,
-                            "y": original["y"] + 10,
-                            "width": original["width"],
-                            "height": original["height"],
-                            "state": original["state"]})
-
-
-def test_set_window_rect_negative_x_y(session):
+def test_height_width_as_current(session):
     original = session.window.rect
 
     
-    result = session.transport.send("POST",
-                                    "session/%s/window/rect" % session.session_id,
-                                    {"x": - 8,
-                                     "y": - 8})
+    response = set_window_rect(session, {"width": int(original["width"]),
+                                         "height": int(original["height"])})
 
     
+    assert_success(response, {"x": original["x"],
+                              "y": original["y"],
+                              "width": original["width"],
+                              "height": original["height"],
+                              "state": original["state"]})
 
+
+def test_x_y(session):
+    original = session.window.rect
+
+    
+    response = set_window_rect(session, {"x": int(original["x"]) + 10,
+                                         "y": int(original["y"]) + 10})
+
+    
+    assert_success(response, {"x": original["x"] + 10,
+                              "y": original["y"] + 10,
+                              "width": original["width"],
+                              "height": original["height"],
+                              "state": original["state"]})
+
+
+def test_negative_x_y(session):
+    original = session.window.rect
+
+    
+    response = set_window_rect(session, {"x": - 8, "y": - 8})
+
+    
     os = session.capabilities["platformName"]
     
     if os == "linux":
-        rect = assert_success(result)
+        rect = assert_success(response)
         assert rect["x"] <= 0
         assert rect["y"] <= 0
         assert rect["width"] == original["width"]
@@ -230,46 +203,44 @@ def test_set_window_rect_negative_x_y(session):
     
     
     elif os == "darwin":
-        assert_success(result, {"x": -8,
-                                "y": 23,
-                                "width": original["width"],
-                                "height": original["height"],
-                                "state": original["state"]})
+        assert_success(response, {"x": -8,
+                                  "y": 23,
+                                  "width": original["width"],
+                                  "height": original["height"],
+                                  "state": original["state"]})
 
     
     
     elif os == "windows_nt":
-        assert_success(result, {"x": -8,
-                                "y": -8,
-                                "width": original["width"],
-                                "height": original["height"],
-                                "state": original["state"]})
+        assert_success(response, {"x": -8,
+                                  "y": -8,
+                                  "width": original["width"],
+                                  "height": original["height"],
+                                  "state": original["state"]})
 
 
-def test_set_window_x_y_as_current(session):
-    
+def test_x_y_as_current(session):
     original = session.window.rect
-    result = session.transport.send("POST",
-                                    "session/%s/window/rect" % session.session_id,
-                                    {"x": int(original["x"]),
-                                     "y": int(original["y"])})
-    
-    assert_success(result, {"x": original["x"],
-                            "y": original["y"],
-                            "width": original["width"],
-                            "height": original["height"],
-                            "state": original["state"]})
 
-def test_set_window_rect_payload(session):
     
-    result = session.transport.send("POST",
-                                    "session/%s/window/rect" % session.session_id,
-                                    {"x": 400,
-                                     "y": 400})
+    response = set_window_rect(session, {"x": int(original["x"]),
+                                         "y": int(original["y"])})
 
-    assert result.status == 200
-    assert isinstance(result.body["value"], dict)
-    rect = result.body["value"]
+    
+    assert_success(response, {"x": original["x"],
+                              "y": original["y"],
+                              "width": original["width"],
+                              "height": original["height"],
+                              "state": original["state"]})
+
+
+def test_payload(session):
+    
+    response = set_window_rect(session, {"x": 400, "y": 400})
+
+    assert response.status == 200
+    assert isinstance(response.body["value"], dict)
+    rect = response.body["value"]
     assert "width" in rect
     assert "height" in rect
     assert "x" in rect
