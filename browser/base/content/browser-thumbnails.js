@@ -44,6 +44,7 @@ var gBrowserThumbnails = {
   _tabEvents: ["TabClose", "TabSelect"],
 
   init: function Thumbnails_init() {
+    PageThumbs.addExpirationFilter(this);
     gBrowser.addTabsProgressListener(this);
     Services.prefs.addObserver(this.PREF_DISK_CACHE_SSL, this);
     Services.prefs.addObserver(this.PREF_ACTIVITY_STREAM_ENABLED, this);
@@ -61,6 +62,7 @@ var gBrowserThumbnails = {
   },
 
   uninit: function Thumbnails_uninit() {
+    PageThumbs.removeExpirationFilter(this);
     gBrowser.removeTabsProgressListener(this);
     Services.prefs.removeObserver(this.PREF_DISK_CACHE_SSL, this);
     Services.prefs.removeObserver(this.PREF_ACTIVITY_STREAM_ENABLED, this);
@@ -102,10 +104,15 @@ var gBrowserThumbnails = {
         this._activityStreamEnabled =
           Services.prefs.getBoolPref(this.PREF_ACTIVITY_STREAM_ENABLED);
         
-        this.clearTopSiteURLCache();
+        XPCOMUtils.defineLazyGetter(this, "_topSiteURLs", getTopSiteURLs);
         break;
     }
   },
+
+  
+
+
+
 
   clearTopSiteURLCache: function Thumbnails_clearTopSiteURLCache() {
     if (this._topSiteURLsRefreshTimer) {
@@ -120,6 +127,11 @@ var gBrowserThumbnails = {
   notify: function Thumbnails_notify(timer) {
     gBrowserThumbnails._topSiteURLsRefreshTimer = null;
     gBrowserThumbnails.clearTopSiteURLCache();
+  },
+
+  async filterForThumbnailExpiration(aCallback) {
+    const topSites = await this._topSiteURLs;
+    aCallback(topSites);
   },
 
   
@@ -200,23 +212,18 @@ var gBrowserThumbnails = {
 };
 
 async function getTopSiteURLs() {
-  
-  
-  
-  gBrowserThumbnails._topSiteURLsRefreshTimer =
-    Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-  gBrowserThumbnails._topSiteURLsRefreshTimer.initWithCallback(gBrowserThumbnails,
-                                                               60 * 1000,
-                                                               Ci.nsITimer.TYPE_ONE_SHOT);
   let sites = [];
   if (gBrowserThumbnails._activityStreamEnabled) {
-    
-    
-    
-    let topSites = await NewTabUtils.activityStreamLinks.getTopSites();
-    sites.push(...topSites.filter(link => !(link.faviconSize >= 96)));
-    sites.push(...NewTabUtils.pinnedLinks.links);
+    sites = await NewTabUtils.activityStreamLinks.getTopSites();
   } else {
+    
+    
+    
+    gBrowserThumbnails._topSiteURLsRefreshTimer =
+      Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+    gBrowserThumbnails._topSiteURLsRefreshTimer.initWithCallback(gBrowserThumbnails,
+                                                                 60 * 1000,
+                                                                 Ci.nsITimer.TYPE_ONE_SHOT);
     sites = NewTabUtils.links.getLinks();
   }
   return sites.reduce((urls, link) => {
