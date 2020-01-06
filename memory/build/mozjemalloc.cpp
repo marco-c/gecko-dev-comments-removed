@@ -174,6 +174,18 @@ using namespace mozilla;
 #define MALLOC_DECOMMIT
 #endif
 
+
+
+
+
+
+#ifndef MOZ_DEBUG
+#if !defined(__ia64__) && !defined(__sparc__) && !defined(__mips__) &&         \
+  !defined(__aarch64__)
+#define MALLOC_STATIC_PAGESIZE 1
+#endif
+#endif
+
 #ifdef XP_WIN
 #define STDERR_FILENO 2
 
@@ -389,18 +401,6 @@ struct arena_chunk_t
 #define SMALL_MAX_DEFAULT (1U << SMALL_MAX_2POW_DEFAULT)
 
 
-
-
-
-
-#ifndef MOZ_DEBUG
-#if !defined(__ia64__) && !defined(__sparc__) && !defined(__mips__) &&         \
-  !defined(__aarch64__)
-#define MALLOC_STATIC_PAGESIZE 1
-#endif
-#endif
-
-
 #define QUANTUM_DEFAULT (size_t(1) << QUANTUM_2POW_MIN)
 static const size_t quantum = QUANTUM_DEFAULT;
 static const size_t quantum_mask = QUANTUM_DEFAULT - 1;
@@ -415,8 +415,11 @@ static const unsigned ntbins = unsigned(QUANTUM_2POW_MIN - TINY_MIN_2POW);
 
 static const unsigned nqbins = unsigned(SMALL_MAX_DEFAULT >> QUANTUM_2POW_MIN);
 
-#ifdef MALLOC_STATIC_PAGESIZE
+#define CHUNKSIZE_DEFAULT ((size_t)1 << CHUNK_2POW_DEFAULT)
+static const size_t chunksize = CHUNKSIZE_DEFAULT;
+static const size_t chunksize_mask = CHUNKSIZE_DEFAULT - 1;
 
+#ifdef MALLOC_STATIC_PAGESIZE
 
 
 
@@ -428,58 +431,76 @@ static const size_t pagesize = 64_KiB;
 #else
 static const size_t pagesize = 4_KiB;
 #endif
-#define pagesize_2pow LOG2(pagesize)
-#define pagesize_mask (pagesize - 1)
 
-
-static const size_t bin_maxclass = pagesize >> 1;
-
-
-static const unsigned nsbins =
-  unsigned(pagesize_2pow - SMALL_MAX_2POW_DEFAULT - 1);
-
-#else 
-
-
+#else
 static size_t pagesize;
-static size_t pagesize_mask;
-static size_t pagesize_2pow;
-
-
-static size_t bin_maxclass; 
-static unsigned nsbins;     
 #endif
-
-
-
-
-
-
-
-#define calculate_arena_header_size()                                          \
-  (sizeof(arena_chunk_t) + sizeof(arena_chunk_map_t) * (chunk_npages - 1))
-
-#define calculate_arena_header_pages()                                         \
-  ((calculate_arena_header_size() >> pagesize_2pow) +                          \
-   ((calculate_arena_header_size() & pagesize_mask) ? 1 : 0))
-
-
-#define calculate_arena_maxclass()                                             \
-  (chunksize - (arena_chunk_header_npages << pagesize_2pow))
-
-#define CHUNKSIZE_DEFAULT ((size_t)1 << CHUNK_2POW_DEFAULT)
-static const size_t chunksize = CHUNKSIZE_DEFAULT;
-static const size_t chunksize_mask = CHUNKSIZE_DEFAULT - 1;
 
 #ifdef MALLOC_STATIC_PAGESIZE
-static const size_t chunk_npages = CHUNKSIZE_DEFAULT >> pagesize_2pow;
-#define arena_chunk_header_npages calculate_arena_header_pages()
-#define arena_maxclass calculate_arena_maxclass()
+#define DECLARE_GLOBAL(type, name)
+#define DEFINE_GLOBALS
+#define END_GLOBALS
+#define DEFINE_GLOBAL(type) static const type
+#define GLOBAL_LOG2 LOG2
+#define GLOBAL_ASSERT_HELPER1(x) static_assert(x, #x)
+#define GLOBAL_ASSERT_HELPER2(x, y) static_assert(x, y)
+#define GLOBAL_ASSERT(...)                                                     \
+  MACRO_CALL(                                                                  \
+    MOZ_PASTE_PREFIX_AND_ARG_COUNT(GLOBAL_ASSERT_HELPER, __VA_ARGS__),         \
+    (__VA_ARGS__))
 #else
-static size_t chunk_npages;
-static size_t arena_chunk_header_npages;
-static size_t arena_maxclass; 
+#define DECLARE_GLOBAL(type, name) static type name;
+#define DEFINE_GLOBALS                                                         \
+  static void DefineGlobals()                                                  \
+  {
+#define END_GLOBALS }
+#define DEFINE_GLOBAL(type)
+#define GLOBAL_LOG2 FloorLog2
+#define GLOBAL_ASSERT MOZ_RELEASE_ASSERT
 #endif
+
+DECLARE_GLOBAL(size_t, pagesize_mask)
+DECLARE_GLOBAL(uint8_t, pagesize_2pow)
+DECLARE_GLOBAL(uint8_t, nsbins)
+DECLARE_GLOBAL(size_t, bin_maxclass)
+DECLARE_GLOBAL(size_t, chunk_npages)
+DECLARE_GLOBAL(size_t, arena_chunk_header_npages)
+DECLARE_GLOBAL(size_t, arena_maxclass)
+
+DEFINE_GLOBALS
+DEFINE_GLOBAL(size_t) pagesize_mask = pagesize - 1;
+DEFINE_GLOBAL(uint8_t) pagesize_2pow = GLOBAL_LOG2(pagesize);
+
+
+DEFINE_GLOBAL(uint8_t)
+nsbins = pagesize_2pow - SMALL_MAX_2POW_DEFAULT - 1;
+
+
+DEFINE_GLOBAL(size_t) bin_maxclass = pagesize >> 1;
+
+
+DEFINE_GLOBAL(size_t) chunk_npages = chunksize >> pagesize_2pow;
+
+
+DEFINE_GLOBAL(size_t)
+arena_chunk_header_npages =
+  ((sizeof(arena_chunk_t) + sizeof(arena_chunk_map_t) * (chunk_npages - 1) +
+    pagesize_mask) &
+   ~pagesize_mask) >>
+  pagesize_2pow;
+
+
+DEFINE_GLOBAL(size_t)
+arena_maxclass = chunksize - (arena_chunk_header_npages << pagesize_2pow);
+
+
+GLOBAL_ASSERT(1ULL << pagesize_2pow == pagesize,
+              "Page size is not a power of two");
+GLOBAL_ASSERT(quantum >= sizeof(void*));
+GLOBAL_ASSERT(quantum <= pagesize);
+GLOBAL_ASSERT(chunksize >= pagesize);
+GLOBAL_ASSERT(quantum * 4 <= chunksize);
+END_GLOBALS
 
 
 
@@ -4117,10 +4138,7 @@ static
   }
 #else
   pagesize = (size_t)result;
-  pagesize_mask = (size_t)result - 1;
-  pagesize_2pow = FloorLog2(result);
-  MOZ_RELEASE_ASSERT(1ULL << pagesize_2pow == pagesize,
-                     "Page size is not a power of two");
+  DefineGlobals();
 #endif
 
   
@@ -4198,24 +4216,7 @@ static
     }
   }
 
-#ifndef MALLOC_STATIC_PAGESIZE
-  
-  bin_maxclass = (pagesize >> 1);
-  nsbins = pagesize_2pow - SMALL_MAX_2POW_DEFAULT - 1;
-
-  chunk_npages = (chunksize >> pagesize_2pow);
-
-  arena_chunk_header_npages = calculate_arena_header_pages();
-  arena_maxclass = calculate_arena_maxclass();
-#endif
-
   gRecycledSize = 0;
-
-  
-  MOZ_ASSERT(quantum >= sizeof(void*));
-  MOZ_ASSERT(quantum <= pagesize);
-  MOZ_ASSERT(chunksize >= pagesize);
-  MOZ_ASSERT(quantum * 4 <= chunksize);
 
   
   chunks_mtx.Init();
