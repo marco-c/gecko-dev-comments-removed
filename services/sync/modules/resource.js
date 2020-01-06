@@ -2,15 +2,9 @@
 
 
 
-this.EXPORTED_SYMBOLS = [
-  "AsyncResource",
-  "Resource"
-];
+this.EXPORTED_SYMBOLS = ["Resource"];
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cr = Components.results;
-var Cu = Components.utils;
+const {classes: Cc, interfaces: Ci, results: Cr, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/NetUtil.jsm");
@@ -50,7 +44,7 @@ const DEFAULT_LOAD_FLAGS =
 
 
 
-this.AsyncResource = function AsyncResource(uri) {
+this.Resource = function Resource(uri) {
   this._log = Log.repository.getLogger(this._logName);
   this._log.level =
     Log.Level[Svc.Prefs.get("log.logger.network.resources")];
@@ -58,8 +52,8 @@ this.AsyncResource = function AsyncResource(uri) {
   this._headers = {};
   this._onComplete = Utils.bind2(this, this._onComplete);
 };
-AsyncResource.prototype = {
-  _logName: "Sync.AsyncResource",
+Resource.prototype = {
+  _logName: "Sync.Resource",
 
   
   
@@ -350,10 +344,6 @@ AsyncResource.prototype = {
 
 
 
-this.Resource = AsyncResource;
-
-
-
 
 
 function ChannelListener(onComplete, onProgress, logger, timeout) {
@@ -378,7 +368,7 @@ ChannelListener.prototype = {
 
     
     try {
-      AsyncResource.serverTime = channel.getResponseHeader("X-Weave-Timestamp") - 0;
+      Resource.serverTime = channel.getResponseHeader("X-Weave-Timestamp") - 0;
     } catch (ex) {}
 
     this._log.trace("onStartRequest: " + channel.requestMethod + " " +

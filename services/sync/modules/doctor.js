@@ -247,7 +247,7 @@ this.Doctor = {
   
   _now() {
     
-    return AsyncResource.serverTime;
+    return Resource.serverTime;
   },
 
   _getRepairRequestor(name) {
