@@ -30,6 +30,7 @@
 #include "nsContentUtils.h"
 #include "nsError.h"
 #include "mozAutoDocUpdate.h"
+#include "nsRuleProcessorData.h"
 
 class nsIDOMCSSStyleDeclaration;
 class nsIDOMCSSStyleSheet;
@@ -228,12 +229,12 @@ nsAttrSelector::nsAttrSelector(int32_t aNameSpace, const nsString& aAttr)
 
   nsAutoString lowercase;
   nsContentUtils::ASCIIToLower(aAttr, lowercase);
-  
+
   mCasedAttr = NS_Atomize(aAttr);
   mLowercaseAttr = NS_Atomize(lowercase);
 }
 
-nsAttrSelector::nsAttrSelector(int32_t aNameSpace, const nsString& aAttr, uint8_t aFunction, 
+nsAttrSelector::nsAttrSelector(int32_t aNameSpace, const nsString& aAttr, uint8_t aFunction,
                                const nsString& aValue,
                                ValueCaseSensitivity aValueCaseSensitivity)
   : mValue(aValue),
@@ -248,13 +249,13 @@ nsAttrSelector::nsAttrSelector(int32_t aNameSpace, const nsString& aAttr, uint8_
 
   nsAutoString lowercase;
   nsContentUtils::ASCIIToLower(aAttr, lowercase);
-  
+
   mCasedAttr = NS_Atomize(aAttr);
   mLowercaseAttr = NS_Atomize(lowercase);
 }
 
 nsAttrSelector::nsAttrSelector(int32_t aNameSpace,  nsIAtom* aLowercaseAttr,
-                               nsIAtom* aCasedAttr, uint8_t aFunction, 
+                               nsIAtom* aCasedAttr, uint8_t aFunction,
                                const nsString& aValue,
                                ValueCaseSensitivity aValueCaseSensitivity)
   : mValue(aValue),
@@ -272,7 +273,7 @@ nsAttrSelector*
 nsAttrSelector::Clone(bool aDeep) const
 {
   nsAttrSelector *result =
-    new nsAttrSelector(mNameSpace, mLowercaseAttr, mCasedAttr, 
+    new nsAttrSelector(mNameSpace, mLowercaseAttr, mCasedAttr,
                        mFunction, mValue, mValueCaseSensitivity);
 
   if (aDeep)
@@ -354,7 +355,7 @@ nsCSSSelector::Clone(bool aDeepNext, bool aDeepNegations) const
   return result;
 }
 
-nsCSSSelector::~nsCSSSelector(void)  
+nsCSSSelector::~nsCSSSelector(void)
 {
   MOZ_COUNT_DTOR(nsCSSSelector);
   Reset();
@@ -393,7 +394,7 @@ void nsCSSSelector::SetTag(const nsString& aTag)
   }
 
   mCasedTag = NS_Atomize(aTag);
- 
+
   nsAutoString lowercase;
   nsContentUtils::ASCIIToLower(aTag, lowercase);
   mLowercaseTag = NS_Atomize(lowercase);
@@ -465,7 +466,7 @@ void nsCSSSelector::AddAttribute(int32_t aNameSpace, const nsString& aAttr)
   }
 }
 
-void nsCSSSelector::AddAttribute(int32_t aNameSpace, const nsString& aAttr, uint8_t aFunc, 
+void nsCSSSelector::AddAttribute(int32_t aNameSpace, const nsString& aAttr, uint8_t aFunc,
                                  const nsString& aValue,
                                  nsAttrSelector::ValueCaseSensitivity aCaseSensitivity)
 {
@@ -743,7 +744,7 @@ nsCSSSelector::AppendToStringWithoutCombinatorsOrNegations
       }
     }
   }
-      
+
   if (!mLowercaseTag) {
     
     
@@ -863,7 +864,7 @@ nsCSSSelector::AppendToStringWithoutCombinatorsOrNegations
           aString.Append(char16_t('*'));
 
         aString.Append(char16_t('='));
-      
+
         
         nsStyleUtil::AppendEscapedCSSString(list->mValue, aString);
 
@@ -874,7 +875,7 @@ nsCSSSelector::AppendToStringWithoutCombinatorsOrNegations
       }
 
       aString.Append(char16_t(']'));
-      
+
       list = list->mNext;
     }
   }
@@ -1196,7 +1197,7 @@ StyleRule::Style()
 }
 
 NS_IMETHODIMP
-StyleRule::GetCSSStyleRule(StyleRule **aResult)
+StyleRule::GetCSSStyleRule(BindingStyleRule **aResult)
 {
   *aResult = this;
   NS_ADDREF(*aResult);
@@ -1405,6 +1406,108 @@ StyleRule::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
   
 
   return n;
+}
+
+nsCSSSelectorList*
+StyleRule::GetSelectorAtIndex(uint32_t aIndex, ErrorResult& rv)
+{
+
+  for (nsCSSSelectorList* sel = mSelector; sel;
+       sel = sel->mNext, --aIndex) {
+    if (aIndex == 0) {
+      return sel;
+    }
+  }
+
+  
+  rv.Throw(NS_ERROR_INVALID_ARG);
+  return nullptr;
+}
+
+uint32_t
+StyleRule::GetSelectorCount()
+{
+  uint32_t count = 0;
+  for (nsCSSSelectorList* sel = mSelector; sel; sel = sel->mNext) {
+    ++count;
+  }
+  return count;
+}
+
+nsresult
+StyleRule::GetSelectorText(uint32_t aSelectorIndex, nsAString& aText)
+{
+  ErrorResult rv;
+  nsCSSSelectorList* sel = GetSelectorAtIndex(aSelectorIndex, rv);
+  if (rv.Failed()) {
+    return rv.StealNSResult();
+  }
+
+  sel->mSelectors->ToString(aText, GetStyleSheet(), false);
+
+  return NS_OK;
+}
+
+nsresult
+StyleRule::GetSpecificity(uint32_t aSelectorIndex, uint64_t* aSpecificity)
+{
+  ErrorResult rv;
+  nsCSSSelectorList* sel = GetSelectorAtIndex(aSelectorIndex, rv);
+  if (rv.Failed()) {
+    return rv.StealNSResult();
+  }
+
+  *aSpecificity = sel->mWeight;
+  return NS_OK;
+}
+
+nsresult
+StyleRule::SelectorMatchesElement(Element* aElement,
+                                  uint32_t aSelectorIndex,
+                                  const nsAString& aPseudo,
+                                  bool* aMatches)
+{
+  ErrorResult rv;
+  nsCSSSelectorList* tail = GetSelectorAtIndex(aSelectorIndex, rv);
+  if (rv.Failed()) {
+    return rv.StealNSResult();
+  }
+
+  
+  nsAutoPtr<nsCSSSelectorList> sel(tail->Clone(false));
+
+  
+  
+  if (aPseudo.IsEmpty() == sel->mSelectors->IsPseudoElement()) {
+    *aMatches = false;
+    return NS_OK;
+  }
+
+  if (!aPseudo.IsEmpty()) {
+    
+    
+    nsCOMPtr<nsIAtom> pseudoElt = NS_Atomize(aPseudo);
+    if (sel->mSelectors->PseudoType() != nsCSSPseudoElements::
+          GetPseudoType(pseudoElt, CSSEnabledState::eIgnoreEnabledState)) {
+      *aMatches = false;
+      return NS_OK;
+    }
+
+    
+    
+    
+    sel->RemoveRightmostSelector();
+  }
+
+  
+  
+  TreeMatchContext matchingContext(false,
+                                   nsRuleWalker::eRelevantLinkUnvisited,
+                                   aElement->OwnerDoc(),
+                                   TreeMatchContext::eNeverMatchVisited);
+  *aMatches = nsCSSRuleProcessor::SelectorListMatches(aElement, matchingContext,
+                                                      sel);
+  return NS_OK;
 }
 
 } 
