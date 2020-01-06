@@ -313,12 +313,115 @@ class StatisticsProxy : public RtcpStatisticsCallback,
   void SetSSRC(uint32_t ssrc) {
     rtc::CritScope cs(&stats_lock_);
     ssrc_ = ssrc;
+    mReceiverReportDerivedStats.clear();
+    mInitialSequenceNumber.reset();
   }
 
   ChannelStatistics GetStats() {
     rtc::CritScope cs(&stats_lock_);
     return stats_;
   }
+
+  
+  
+  class ReceiverReportDerivedStats {
+  public:
+    
+    void UpdateWithReceiverReport(const RTCPReportBlock& aReceiverReport,
+                                  rtc::Optional<uint32_t> initialSequenceNum,
+                                  int64_t aRoundTripTime,
+                                  uint32_t aEncoderFrequencyHz,
+                                  int64_t aReceptionTime)
+    {
+      if (!mFirstExtendedSequenceNumber && initialSequenceNum) {
+        mFirstExtendedSequenceNumber = *initialSequenceNum;
+      }
+      
+      if (!mFirstExtendedSequenceNumber) {
+        WEBRTC_TRACE(kTraceWarning, kTraceVoice, -1,
+                     "ReceiverReportDerivedStats::UpdateWithReceiverReport()"
+                     " called before a first sequence number is known to the"
+                     " StatisticsProxy");
+        
+        
+        mFirstExtendedSequenceNumber = static_cast<uint32_t>(
+            std::max<int64_t>(0, aReceiverReport.extendedHighSeqNum -
+                                 aReceiverReport.cumulativeLost));
+      }
+      mReceiverSsrc = aReceiverReport.remoteSSRC;
+      mSenderSsrc = aReceiverReport.sourceSSRC;
+      mLatestHighExtendedSequenceNumber = aReceiverReport.extendedHighSeqNum;
+      mLatestReceiverReportReceptionTime = aReceptionTime;
+      mFractionOfPacketsLostInQ8 = aReceiverReport.fractionLost;
+      mJitterInSamples = aReceiverReport.jitter;
+      mEncoderFrequencyHz = aEncoderFrequencyHz;
+      mCumulativePacketsLost = aReceiverReport.cumulativeLost;
+      mLastSenderReportTimestamp = aReceiverReport.lastSR;
+      mDelaySinceLastSenderReport = aReceiverReport.delaySinceLastSR;
+      mRoundTripTime = aRoundTripTime;
+    }
+    bool HasReceivedReport() { return mFirstReceiverReportReceptionTime; }
+    
+    
+    uint32_t mReceiverSsrc = 0;
+    
+    
+    uint32_t mSenderSsrc = 0;
+    
+    
+    int64_t mLatestReceiverReportReceptionTime = 0;
+    
+    
+    int64_t mFirstReceiverReportReceptionTime = 0;
+    
+    uint32_t mCumulativePacketsLost = 0;
+    
+    
+    uint32_t mFirstExtendedSequenceNumber = 0;
+    
+    
+    uint32_t mLatestHighExtendedSequenceNumber = 0;
+    int64_t mRoundTripTime = 0;
+    
+    
+    
+    double JitterMs() const {
+      if (!mEncoderFrequencyHz) {
+        if (!mHasWarnedAboutNoFrequency) {
+          mHasWarnedAboutNoFrequency = true;
+          WEBRTC_TRACE(kTraceWarning, kTraceVoice, -1,
+                       "ReceiverReportDerivedStats::JitterMs() called before"
+                       " the playout frequency is known.");
+        }
+        return 0;
+      }
+      return (mJitterInSamples * 1000) / mEncoderFrequencyHz;
+    }
+    
+    double FractionOfPacketsLost() const {
+      return (double) mFractionOfPacketsLostInQ8 / 256;
+    }
+    uint32_t PacketsReceived() const {
+      return static_cast<uint32_t>(std::max<int64_t>(0,
+        (int64_t) mLatestHighExtendedSequenceNumber -
+             (mFirstExtendedSequenceNumber + mCumulativePacketsLost)));
+    }
+  private:
+    
+    
+    uint8_t mFractionOfPacketsLostInQ8 = 0;
+    
+    
+    uint32_t mJitterInSamples = 0;
+    
+    uint32_t mEncoderFrequencyHz = 0;
+    
+    uint32_t mLastSenderReportTimestamp = 0;
+    
+    uint32_t mDelaySinceLastSenderReport = 0;
+    
+    mutable bool mHasWarnedAboutNoFrequency = false;
+  };
 
   void RtcpPacketTypesCounterUpdated(uint32_t ssrc,
       const RtcpPacketTypeCounter& packet_counter) override {
@@ -329,7 +432,46 @@ class StatisticsProxy : public RtcpStatisticsCallback,
     packet_counter_ = packet_counter;
  };
 
- void GetPacketTypeCounter(RtcpPacketTypeCounter& aPacketTypeCounter) {
+ 
+ void OnIncomingReceiverReports(const ReportBlockList & mReceiverReports,
+                                const int64_t aRoundTripTime,
+                                const int64_t aReceptionTime) {
+    if (!mReceiverReports.empty()) { 
+      rtc::CritScope cs(&stats_lock_);
+      for(const auto& report : mReceiverReports) {
+        
+        ReceiverReportDerivedStats newStats;
+        mReceiverReportDerivedStats.emplace(report.sourceSSRC, newStats)
+          .first->second.UpdateWithReceiverReport(report,
+                                                  mInitialSequenceNumber,
+                                                  aRoundTripTime,
+                                                  mPlayoutFrequency,
+                                                  aReceptionTime);
+      }
+    }
+  }
+
+  void OnSendCodecFrequencyChanged(uint32_t aFrequency) {
+    rtc::CritScope cs(&stats_lock_);
+    mPlayoutFrequency = aFrequency;
+  }
+
+  void OnInitialSequenceNumberSet(uint32_t aSequenceNumber) {
+    rtc::CritScope cs(&stats_lock_);
+    mInitialSequenceNumber.emplace(aSequenceNumber);
+    mReceiverReportDerivedStats.clear();
+  }
+
+  const rtc::Optional<ReceiverReportDerivedStats>
+  GetReceiverReportDerivedStats(const uint32_t receiverSsrc) const {
+    rtc::CritScope cs(&stats_lock_);
+    const auto& it = mReceiverReportDerivedStats.find(receiverSsrc);
+    if (it != mReceiverReportDerivedStats.end()) {
+      return rtc::Optional<ReceiverReportDerivedStats>(it->second);
+    }
+    return rtc::Optional<ReceiverReportDerivedStats>();
+  }
+  void GetPacketTypeCounter(RtcpPacketTypeCounter& aPacketTypeCounter) {
     rtc::CritScope cs(&stats_lock_);
     aPacketTypeCounter = packet_counter_;
  }
@@ -342,6 +484,12 @@ class StatisticsProxy : public RtcpStatisticsCallback,
   uint32_t ssrc_;
   ChannelStatistics stats_;
   RtcpPacketTypeCounter packet_counter_;
+
+  
+  std::map<uint32_t, ReceiverReportDerivedStats> mReceiverReportDerivedStats;
+  
+  rtc::Optional<uint32_t> mInitialSequenceNumber;
+  uint32_t mPlayoutFrequency;
 };
 
 class VoERtcpObserver : public RtcpBandwidthObserver {
@@ -391,6 +539,7 @@ class VoERtcpObserver : public RtcpBandwidthObserver {
           total_number_of_packets;
     }
     owner_->OnIncomingFractionLoss(weighted_fraction_lost);
+    owner_->OnIncomingReceiverReports(report_blocks, rtt, now_ms);
   }
 
  private:
@@ -398,6 +547,54 @@ class VoERtcpObserver : public RtcpBandwidthObserver {
   
   std::map<uint32_t, uint32_t> extended_max_sequence_number_;
 };
+
+void Channel::OnIncomingReceiverReports(const ReportBlockList& aReportBlocks,
+                                        const int64_t aRoundTripTime,
+                                        const int64_t aReceptionTime) {
+  statistics_proxy_->OnIncomingReceiverReports(aReportBlocks,
+                                               aRoundTripTime,
+                                               aReceptionTime);
+}
+
+bool Channel::GetRTCPReceiverStatistics(int64_t* timestamp,
+                                        uint32_t* jitterMs,
+                                        uint32_t* cumulativeLost,
+                                        uint32_t* packetsReceived,
+                                        uint64_t* bytesReceived,
+                                        double* packetsFractionLost,
+                                        int64_t* rtt) const {
+  uint32_t ssrc = _rtpRtcpModule->SSRC();
+  const auto& stats = statistics_proxy_->GetReceiverReportDerivedStats(ssrc);
+  if (!stats || !stats->PacketsReceived()) {
+    return false;
+  }
+  *timestamp = stats->mLatestReceiverReportReceptionTime;
+  *jitterMs = stats->JitterMs();
+  *cumulativeLost = stats->mCumulativePacketsLost;
+  *packetsReceived = stats->PacketsReceived();
+  *packetsFractionLost = stats->FractionOfPacketsLost();
+  *rtt = stats->mRoundTripTime;
+
+  
+  
+  
+  
+  
+  
+  *bytesReceived = 0;
+  if (*packetsReceived) {
+    
+    StreamDataCounters rtpCounters;
+    StreamDataCounters rtxCounters; 
+    _rtpRtcpModule->GetSendStreamDataCounters(&rtpCounters, &rtxCounters);
+    uint64_t sentPackets = rtpCounters.transmitted.packets;
+    if (sentPackets) {
+      uint64_t sentBytes = rtpCounters.MediaPayloadBytes();
+      *bytesReceived = sentBytes * (*packetsReceived) / sentPackets;
+    }
+  }
+  return true;
+}
 
 int32_t Channel::SendData(FrameType frameType,
                           uint8_t payloadType,
@@ -977,15 +1174,14 @@ Channel::Channel(int32_t channelId,
   configuration.retransmission_rate_limiter =
       retransmission_rate_limiter_.get();
 
-  configuration.rtcp_packet_type_counter_observer = statistics_proxy_.get();
-  
   _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
   _rtpRtcpModule->SetSendingMediaStatus(false);
 
   statistics_proxy_.reset(new StatisticsProxy(_rtpRtcpModule->SSRC()));
   rtp_receive_statistics_->RegisterRtcpStatisticsCallback(
-      statistics_proxy_.get());
-}
+    statistics_proxy_.get());
+  configuration.rtcp_packet_type_counter_observer = statistics_proxy_.get();
+ }
 
 Channel::~Channel() {
   rtp_receive_statistics_->RegisterRtcpStatisticsCallback(NULL);
@@ -1348,7 +1544,7 @@ int32_t Channel::SetSendCodec(const CodecInst& codec) {
       return -1;
     }
   }
-
+  statistics_proxy_->OnSendCodecFrequencyChanged(codec.plfreq);
   return 0;
 }
 
@@ -3082,6 +3278,7 @@ int Channel::SetInitSequenceNumber(short sequenceNumber) {
     return -1;
   }
   _rtpRtcpModule->SetSequenceNumber(sequenceNumber);
+  statistics_proxy_->OnInitialSequenceNumberSet(sequenceNumber);
   return 0;
 }
 

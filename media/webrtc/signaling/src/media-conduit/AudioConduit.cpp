@@ -213,28 +213,19 @@ bool WebrtcAudioConduit::GetRTCPReceiverReport(DOMHighResTimeStamp* timestamp,
                                                uint64_t* bytesReceived,
                                                uint32_t* cumulativeLost,
                                                int32_t* rttMs) {
-
-  
-  
-  
-  
-  webrtc::CallStatistics call_stats = mChannelProxy->GetRTCPStatistics();
-  *bytesReceived = call_stats.bytesReceived;
-  *packetsReceived = call_stats.packetsReceived;
-  *cumulativeLost = call_stats.cumulativeLost;
-  *rttMs = call_stats.rttMs;
-
-  unsigned int averageJitterMs;
-  unsigned int maxJitterMs;
-  unsigned int discardedPackets;
-  unsigned int cumulative;
-  mChannelProxy->GetRTPStatistics(averageJitterMs, maxJitterMs, discardedPackets, cumulative);
-  *jitterMs = averageJitterMs;
-
-  
-  
-  *timestamp = webrtc::Clock::GetRealTimeClock()->TimeInMilliseconds();
-  return true;
+  double fractionLost;
+  int64_t timestampTmp;
+  int64_t rttMsTmp;
+  bool res = mChannelProxy->GetRTCPReceiverStatistics(&timestampTmp,
+                                                      jitterMs,
+                                                      cumulativeLost,
+                                                      packetsReceived,
+                                                      bytesReceived,
+                                                      &fractionLost,
+                                                      &rttMsTmp);
+  *timestamp = static_cast<double>(timestampTmp);
+  *rttMs = static_cast<uint32_t>(rttMsTmp);
+  return res;
 }
 
 bool WebrtcAudioConduit::GetRTCPSenderReport(DOMHighResTimeStamp* timestamp,
