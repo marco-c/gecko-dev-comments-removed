@@ -324,6 +324,13 @@ public:
     return mStyles.Count() == 2;
   }
 
+  
+  
+  CounterStyle* GetCounterStyle(nsIAtom* aName) const {
+    return mStyles.Get(aName);
+  }
+  
+  
   CounterStyle* BuildCounterStyle(nsIAtom* aName);
 
   static CounterStyle* GetBuiltinStyle(int32_t aStyle);
