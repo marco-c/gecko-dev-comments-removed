@@ -862,16 +862,16 @@ PR_QueueJob_Connect(PRThreadPool *tpool, PRJobIoDesc *iod,
 	if ((rv == PR_FAILURE) && ((err = PR_GetError()) == PR_IN_PROGRESS_ERROR)){
 		
 		return(queue_io_job(tpool, iod, fn, arg, joinable, JOB_IO_CONNECT));
-	} else {
-		
-
-
-		if (rv == PR_FAILURE)
-			iod->error = err;
-		else
-			iod->error = 0;
-		return(PR_QueueJob(tpool, fn, arg, joinable));
 	}
+    
+
+
+    if (rv == PR_FAILURE)
+      iod->error = err;
+    else
+      iod->error = 0;
+    return(PR_QueueJob(tpool, fn, arg, joinable));
+
 }
 
 

@@ -279,8 +279,7 @@ static int IsLeapYear(PRInt16 year)
 {
     if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0)
         return 1;
-    else
-        return 0;
+    return 0;
 }
 
 
@@ -1236,7 +1235,7 @@ PR_ParseTimeStringToExplodedTime(
                                 if ((end - rest) > 2)
                                   
                                   break;
-                                else if ((end - rest) == 2)
+                                if ((end - rest) == 2)
                                   tmp_hour = ((rest[0]-'0')*10 +
                                                           (rest[1]-'0'));
                                 else
@@ -1251,12 +1250,12 @@ PR_ParseTimeStringToExplodedTime(
                                 if (end == rest)
                                   
                                   break;
-                                else if ((end - rest) > 2)
+                                if ((end - rest) > 2)
                                   
                                   break;
-                                else if ((end - rest) == 2)
+                                if ((end - rest) == 2)
                                   tmp_min = ((rest[0]-'0')*10 +
-                                                         (rest[1]-'0'));
+                                             (rest[1]-'0'));
                                 else
                                   tmp_min = (rest[0]-'0');
 
@@ -1274,7 +1273,7 @@ PR_ParseTimeStringToExplodedTime(
                                 else if ((end - rest) > 2)
                                   
                                   break;
-                                else if ((end - rest) == 2)
+                                if ((end - rest) == 2)
                                   tmp_sec = ((rest[0]-'0')*10 +
                                                          (rest[1]-'0'));
                                 else
@@ -1308,7 +1307,7 @@ PR_ParseTimeStringToExplodedTime(
                                 rest = end;
                                 break;
                           }
-                        else if ((*end == '/' || *end == '-') &&
+                        if ((*end == '/' || *end == '-') &&
                                          end[1] >= '0' && end[1] <= '9')
                           {
                                 
@@ -2014,24 +2013,22 @@ pr_WeekOfYear(const PRExplodedTime* time, unsigned int firstDayOfWeek)
   dayOfWeek = time->tm_wday - firstDayOfWeek;
   if (dayOfWeek < 0)
     dayOfWeek += 7;
-  
-  dayOfYear = time->tm_yday - dayOfWeek;
 
+  dayOfYear = time->tm_yday - dayOfWeek;
 
   if( dayOfYear <= 0 )
   {
      
      return 0;
   }
-  else
-  {
-     
+
+  
 
 
 
 
 
-     return (dayOfYear / 7) + ( (dayOfYear % 7) == 0 ? 0 : 1 );
-  }
+  return (dayOfYear / 7) + ( (dayOfYear % 7) == 0 ? 0 : 1 );
+
 }
 

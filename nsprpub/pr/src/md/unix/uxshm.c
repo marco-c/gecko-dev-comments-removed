@@ -76,8 +76,8 @@ extern PRSharedMemory * _MD_OpenSharedMemory(
 
     
     strcpy( shm->ipcname, ipcname );
-    shm->size = size; 
-    shm->mode = mode; 
+    shm->size = size;
+    shm->mode = mode;
     shm->flags = flags;
     shm->ident = _PR_SHM_IDENT;
 
@@ -500,30 +500,32 @@ extern PRFileMap* _md_OpenAnonFileMap(
                 ("_md_OpenAnonFileMap(): PR_snprintf(): failed, generating filename"));
             goto Finished;
         }
+
         
-        
-        osfd = open( genName, (O_CREAT | O_EXCL | O_RDWR), mode );
-        if ( -1 == osfd ) {
-            if ( EEXIST == errno )  {
-                PR_smprintf_free( genName );
-                continue; 
-            } else {
-                _PR_MD_MAP_OPEN_ERROR( errno );
-                PR_LOG( _pr_shma_lm, PR_LOG_DEBUG,
-                    ("_md_OpenAnonFileMap(): open(): failed, filename: %s, errno: %d", 
-                        genName, PR_GetOSError()));
-                PR_smprintf_free( genName );
-                goto Finished;
-            }
+        osfd = open(genName, (O_CREAT | O_EXCL | O_RDWR), mode);
+        if (-1 == osfd) {
+          if (EEXIST == errno) {
+            PR_smprintf_free(genName);
+            continue; 
+          }
+          _PR_MD_MAP_OPEN_ERROR(errno);
+          PR_LOG(
+            _pr_shma_lm,
+            PR_LOG_DEBUG,
+            ("_md_OpenAnonFileMap(): open(): failed, filename: %s, errno: %d",
+             genName,
+             PR_GetOSError()));
+          PR_smprintf_free(genName);
+          goto Finished;
         }
         break; 
     } 
 
-    if ( incr == maxTries ) {
-        PR_ASSERT( -1 == osfd );
-        PR_ASSERT( EEXIST == errno );
-        _PR_MD_MAP_OPEN_ERROR( errno );
-        goto Finished;
+    if (incr == maxTries) {
+      PR_ASSERT(-1 == osfd);
+      PR_ASSERT(EEXIST == errno);
+      _PR_MD_MAP_OPEN_ERROR(errno);
+      goto Finished;
     }
 
     urc = unlink( genName );
