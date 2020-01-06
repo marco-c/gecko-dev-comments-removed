@@ -171,6 +171,7 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function () {
 
 function DevToolsStartup() {
   this.onEnabledPrefChanged = this.onEnabledPrefChanged.bind(this);
+  this.onWindowReady = this.onWindowReady.bind(this);
 }
 
 DevToolsStartup.prototype = {
@@ -197,8 +198,21 @@ DevToolsStartup.prototype = {
     let debuggerFlag = cmdLine.handleFlag("jsdebugger", false);
     let devtoolsFlag = cmdLine.handleFlag("devtools", false);
 
-    let hasDevToolsFlag = consoleFlag || devtoolsFlag || debuggerFlag;
-    this.setupEnabledPref(hasDevToolsFlag);
+    
+    let isInitialLaunch = cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH;
+    if (isInitialLaunch) {
+      
+      let hasDevToolsFlag = consoleFlag || devtoolsFlag || debuggerFlag;
+      this.setupEnabledPref(hasDevToolsFlag);
+
+      
+      this.devtoolsFlag = devtoolsFlag;
+      
+      Services.obs.addObserver(this.onWindowReady, "browser-delayed-startup-finished");
+
+      
+      Services.prefs.addObserver(DEVTOOLS_ENABLED_PREF, this.onEnabledPrefChanged);
+    }
 
     if (consoleFlag) {
       this.handleConsoleFlag(cmdLine);
@@ -206,6 +220,7 @@ DevToolsStartup.prototype = {
     if (debuggerFlag) {
       this.handleDebuggerFlag(cmdLine);
     }
+
     let debuggerServerFlag;
     try {
       debuggerServerFlag =
@@ -218,28 +233,29 @@ DevToolsStartup.prototype = {
     if (debuggerServerFlag) {
       this.handleDebuggerServerFlag(cmdLine, debuggerServerFlag);
     }
+  },
 
-    
-    let onWindowReady = window => {
-      this.hookWindow(window);
+  
 
-      if (Services.prefs.getBoolPref(TOOLBAR_VISIBLE_PREF, false)) {
-        
-        
-        this.initDevTools();
-      }
 
-      if (devtoolsFlag) {
-        this.handleDevToolsFlag(window);
-        
-        
-        devtoolsFlag = false;
-      }
-      JsonView.initialize();
-    };
-    Services.obs.addObserver(onWindowReady, "browser-delayed-startup-finished");
 
-    Services.prefs.addObserver(DEVTOOLS_ENABLED_PREF, this.onEnabledPrefChanged);
+  onWindowReady(window) {
+    this.hookWindow(window);
+
+    if (Services.prefs.getBoolPref(TOOLBAR_VISIBLE_PREF, false)) {
+      
+      
+      this.initDevTools();
+    }
+
+    if (this.devtoolsFlag) {
+      this.handleDevToolsFlag(window);
+      
+      
+      this.devtoolsFlag = false;
+    }
+
+    JsonView.initialize();
   },
 
   
