@@ -294,7 +294,23 @@ protected:
   nsAtom& DefaultParagraphSeparator();
   nsresult ReturnInHeader(Selection& aSelection, Element& aHeader,
                           nsINode& aNode, int32_t aOffset);
-  EditActionResult ReturnInParagraph(Selection* aSelection, nsINode* aHeader,
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  EditActionResult ReturnInParagraph(Selection& aSelection,
+                                     nsINode& aParentDivOrP,
                                      nsINode* aTextNode, int32_t aOffset,
                                      nsIContent* aChildAtOffset);
 
