@@ -352,7 +352,7 @@ fn main_fetch(url: ServoUrl,
         
 
         
-        basic_fetch(&url, origin, &mut headers, http_state)
+        scheme_fetch(&url, origin, &mut headers, http_state)
     });
 
     
@@ -387,7 +387,7 @@ fn main_fetch(url: ServoUrl,
 }
 
 
-fn basic_fetch(url: &ServoUrl,
+fn scheme_fetch(url: &ServoUrl,
                origin: String,
                headers: &mut Headers,
                http_state: &HttpState)

@@ -9,7 +9,8 @@ use cookie_storage::CookieStorage;
 use devtools_traits::{ChromeToDevtoolsControlMsg, DevtoolsControlMsg, HttpRequest as DevtoolsHttpRequest};
 use devtools_traits::{HttpResponse as DevtoolsHttpResponse, NetworkEvent};
 use fetch::cors_cache::CorsCache;
-use fetch::methods::{Data, DoneChannel, FetchContext, Target, is_simple_header, is_simple_method, main_fetch};
+use fetch::methods::{Data, DoneChannel, FetchContext, Target};
+use fetch::methods::{is_cors_safelisted_request_header, is_cors_safelisted_method, main_fetch};
 use flate2::read::{DeflateDecoder, GzDecoder};
 use hsts::HstsList;
 use hyper::Error as HttpError;
@@ -38,6 +39,7 @@ use net_traits::request::{ResponseTainting, ServiceWorkersMode, Type};
 use net_traits::response::{HttpsState, Response, ResponseBody, ResponseType};
 use resource_thread::AuthCache;
 use servo_url::{ImmutableOrigin, ServoUrl};
+use std::ascii::AsciiExt;
 use std::collections::HashSet;
 use std::error::Error;
 use std::io::{self, Read, Write};
@@ -529,7 +531,7 @@ pub fn http_fetch(request: &mut Request,
 
         
         if response.is_none() && request.is_subresource_request() && match request.origin {
-            Origin::Origin(ref origin) if *origin == request.url().origin() => true,
+            Origin::Origin(ref origin) => *origin == request.url().origin(),
             _ => false,
         } {
             
@@ -559,24 +561,16 @@ pub fn http_fetch(request: &mut Request,
     }
 
     
-    let credentials = match request.credentials_mode {
-        CredentialsMode::Include => true,
-        CredentialsMode::CredentialsSameOrigin if request.response_tainting == ResponseTainting::Basic
-            => true,
-        _ => false
-    };
-
-    
     if response.is_none() {
         
         if cors_preflight_flag {
             let method_cache_match = cache.match_method(&*request,
                                                         request.method.clone());
 
-            let method_mismatch = !method_cache_match && (!is_simple_method(&request.method) ||
+            let method_mismatch = !method_cache_match && (!is_cors_safelisted_method(&request.method) ||
                                                           request.use_cors_preflight);
             let header_mismatch = request.headers.iter().any(|view|
-                !cache.match_header(&*request, view.name()) && !is_simple_header(&view)
+                !cache.match_header(&*request, view.name()) && !is_cors_safelisted_request_header(&view)
             );
 
             
@@ -611,78 +605,34 @@ pub fn http_fetch(request: &mut Request,
     let mut response = response.unwrap();
 
     
-    match response.actual_response().status {
+    if response.actual_response().status.map_or(false, is_redirect_status) {
         
-        status if status.map_or(false, is_redirect_status) => {
-            response = match request.redirect_mode {
-                RedirectMode::Error => Response::network_error(NetworkError::Internal("Redirect mode error".into())),
-                RedirectMode::Manual => {
-                    response.to_filtered(ResponseType::OpaqueRedirect)
-                },
-                RedirectMode::Follow => {
-                    
-                    response.return_internal = true;
-                    http_redirect_fetch(request, cache, response,
-                                        cors_flag, target, done_chan, context)
-                }
-            }
-        },
-
-        
-        Some(StatusCode::Unauthorized) => {
+        if response.actual_response().status.map_or(true, |s| s != StatusCode::SeeOther) {
             
-            
-            if cors_flag || !credentials {
-                return response;
-            }
-
-            
-            
-
-            
-            if !request.use_url_credentials || authentication_fetch_flag {
-                
-                
-                
-                
-                return response;
-            }
-
-            
-            return http_fetch(request, cache, cors_flag, cors_preflight_flag,
-                              true, target, done_chan, context);
         }
 
         
-        Some(StatusCode::ProxyAuthenticationRequired) => {
-            
-            
+        let location = response.actual_response().headers.get::<Location>().map(
+            |l| ServoUrl::parse_with_base(response.actual_response().url(), l)
+                .map_err(|err| err.description().into()));
 
-            
-            
-
-            
-            
-            
-            
-            
-            return response;
-
-            
-            
-            
-            
-            
-        }
-
-        _ => { }
-    }
-
-    
-    if authentication_fetch_flag {
         
-    }
+        response.actual_response_mut().location_url = location;
 
+        
+        response = match request.redirect_mode {
+            RedirectMode::Error => Response::network_error(NetworkError::Internal("Redirect mode error".into())),
+            RedirectMode::Manual => {
+                response.to_filtered(ResponseType::OpaqueRedirect)
+            },
+            RedirectMode::Follow => {
+                
+                response.return_internal = true;
+                http_redirect_fetch(request, cache, response,
+                                    cors_flag, target, done_chan, context)
+            }
+        };
+    }
     
     response.return_internal = true;
     
@@ -701,28 +651,19 @@ pub fn http_redirect_fetch(request: &mut Request,
     
     assert!(response.return_internal);
 
-    
-    if !response.actual_response().headers.has::<Location>() {
-        return response;
-    }
-
-    
-    let location = match response.actual_response().headers.get::<Location>() {
-        Some(&Location(ref location)) => location.clone(),
-        _ => return Response::network_error(NetworkError::Internal("Location header parsing failure".into()))
-    };
-    let response_url = response.actual_response().url().unwrap();
-    let location_url = response_url.join(&*location);
+    let location_url = response.actual_response().location_url.clone();
     let location_url = match location_url {
-        Ok(url) => url,
-        _ => return Response::network_error(NetworkError::Internal("Location URL parsing failure".into()))
+        
+        None => return response,
+        
+        Some(Err(err)) =>
+            return Response::network_error(
+                NetworkError::Internal("Location URL parse failure: ".to_owned() + &err)),
+        
+        Some(Ok(ref url)) if !matches!(url.scheme(), "http" | "https") =>
+            return Response::network_error(NetworkError::Internal("Location URL not an HTTP(S) scheme".into())),
+        Some(Ok(url)) => url,
     };
-
-    
-    match location_url.scheme() {
-        "http" | "https" => { },
-        _ => return Response::network_error(NetworkError::Internal("Not an HTTP(S) Scheme".into()))
-    }
 
     
     if request.redirect_count >= 20 {
@@ -733,7 +674,8 @@ pub fn http_redirect_fetch(request: &mut Request,
     request.redirect_count += 1;
 
     
-    let same_origin = location_url.origin()== request.current_url().origin();
+    
+    let same_origin = location_url.origin() == request.current_url().origin();
     let has_credentials = has_credentials(&location_url);
 
     if request.mode == RequestMode::CorsMode && !same_origin && has_credentials {
@@ -746,17 +688,27 @@ pub fn http_redirect_fetch(request: &mut Request,
     }
 
     
+    if response.actual_response().status.map_or(true, |s| s != StatusCode::SeeOther) &&
+       request.body.as_ref().map_or(false, |b| b.is_empty()) {
+        return Response::network_error(NetworkError::Internal("Request body is not done".into()));
+    }
+
+    
     if cors_flag && !same_origin {
         request.origin = Origin::Origin(ImmutableOrigin::new_opaque());
     }
 
     
-    let status_code = response.actual_response().status.unwrap();
-    if ((status_code == StatusCode::MovedPermanently || status_code == StatusCode::Found) &&
-        request.method == Method::Post) ||
-        status_code == StatusCode::SeeOther {
+    if response.actual_response().status.map_or(false, |code|
+        ((code == StatusCode::MovedPermanently || code == StatusCode::Found) && request.method == Method::Post) ||
+        code == StatusCode::SeeOther) {
         request.method = Method::Get;
         request.body = None;
+    }
+
+    
+    if let Some(_) = request.body {
+        
     }
 
     
@@ -765,9 +717,9 @@ pub fn http_redirect_fetch(request: &mut Request,
     
     
 
+    
     let recursive_flag = request.redirect_mode != RedirectMode::Manual;
 
-    
     main_fetch(request, cache, cors_flag, recursive_flag, target, done_chan, context)
 }
 
@@ -826,9 +778,11 @@ fn http_network_or_cache_fetch(request: &mut Request,
     
     if let Some(content_length_value) = content_length_value {
         http_request.headers.set(ContentLength(content_length_value));
+        if http_request.keep_alive {
+            
+        }
     }
 
-    
 
     
     match http_request.referrer {
@@ -940,7 +894,7 @@ fn http_network_or_cache_fetch(request: &mut Request,
     let mut response: Option<Response> = None;
 
     
-    let mut revalidation_needed = false;
+    let mut revalidating_flag = false;
 
     
     
@@ -952,7 +906,7 @@ fn http_network_or_cache_fetch(request: &mut Request,
 
         
         if let Some(ref response) = response {
-            revalidation_needed = response_needs_revalidation(&response);
+            revalidating_flag = response_needs_revalidation(&response);
         };
 
         
@@ -962,7 +916,7 @@ fn http_network_or_cache_fetch(request: &mut Request,
             
         }
 
-        if revalidation_needed {
+        if revalidating_flag {
             
             
             
@@ -984,82 +938,76 @@ fn http_network_or_cache_fetch(request: &mut Request,
         
         let forward_response = http_network_fetch(http_request, credentials_flag,
                                                   done_chan, context);
-        match forward_response.raw_status {
+        
+        if let Some((200...399, _)) = forward_response.raw_status {
+            if !http_request.method.safe() {
+                
+            }
+        }
+        
+        if revalidating_flag && forward_response.status.map_or(false, |s| s == StatusCode::NotModified) {
             
-            Some((200...303, _)) |
-            Some((305...399, _)) => {
-                if !http_request.method.safe() {
-                    
-                }
-            },
-            
-            Some((304, _)) => {
-                if revalidation_needed {
-                    
-                    
-                }
-            },
-            _ => {}
         }
 
         
         if response.is_none() {
+            
             response = Some(forward_response);
+            
+            
         }
     }
 
-    let response = response.unwrap();
+    let mut response = response.unwrap();
 
-    match response.status {
-        Some(StatusCode::Unauthorized) => {
-            
-            
-            if cors_flag && !credentials_flag {
-                return response;
-            }
+    
+    
+    if let (Some(StatusCode::Unauthorized), false, true) = (response.status, cors_flag, credentials_flag) {
+        
+        
 
+        
+        if http_request.body.is_some() {
             
-            
+        }
 
-            
-            if http_request.body.is_some() {
-                
-            }
-
-            
-            if !http_request.use_url_credentials || authentication_fetch_flag {
-                
-                
-                
-                
-                return response;
-            }
-
-            
-            return http_network_or_cache_fetch(http_request,
-                                               true ,
-                                               cors_flag, done_chan, context);
-        },
-        Some(StatusCode::ProxyAuthenticationRequired) => {
-            
-            
+        
+        if !http_request.use_url_credentials || authentication_fetch_flag {
             
 
-            
-            
-
-            
-            
             
             
             
             return response;
+        }
 
-            
-            
-            
-        },
-        _ => {}
+        
+        response = http_network_or_cache_fetch(http_request,
+                                               true ,
+                                               cors_flag, done_chan, context);
+    }
+
+    
+    if let Some(StatusCode::ProxyAuthenticationRequired) = response.status {
+        
+        if request_has_no_window {
+            return Response::network_error(NetworkError::Internal("Can't find Window object".into()));
+        }
+
+        
+        
+
+        
+        
+
+        
+        
+        
+        return response;
+
+        
+        
+        
     }
 
     
@@ -1077,6 +1025,7 @@ fn http_network_fetch(request: &Request,
                       done_chan: &mut DoneChannel,
                       context: &FetchContext)
                       -> Response {
+    
     
 
     
@@ -1222,13 +1171,11 @@ fn http_network_fetch(request: &Request,
     
 
     
-    if response.is_network_error() && request.cache_mode == CacheMode::NoStore {
+    if !response.is_network_error() && request.cache_mode != CacheMode::NoStore {
         
     }
 
     
-    
-
     
     if credentials_flag {
         set_cookies_from_headers(&url, &response.headers, &context.state.cookie_jar);
@@ -1259,6 +1206,7 @@ fn cors_preflight_fetch(request: &Request,
     preflight.initiator = request.initiator.clone();
     preflight.type_ = request.type_.clone();
     preflight.destination = request.destination.clone();
+    preflight.origin = request.origin.clone();
     preflight.referrer = request.referrer.clone();
     preflight.referrer_policy = request.referrer_policy;
 
@@ -1267,16 +1215,17 @@ fn cors_preflight_fetch(request: &Request,
         AccessControlRequestMethod(request.method.clone()));
 
     
-    let mut value = request.headers
+    let mut headers = request.headers
         .iter()
-        .filter(|view| !is_simple_header(view))
-        .map(|view| UniCase(view.name().to_owned()))
+        .filter(|view| !is_cors_safelisted_request_header(view))
+        .map(|view| UniCase(view.name().to_ascii_lowercase().to_owned()))
         .collect::<Vec<UniCase<String>>>();
-    value.sort();
+    headers.sort();
 
     
-    preflight.headers.set::<AccessControlRequestHeaders>(
-        AccessControlRequestHeaders(value));
+    if !headers.is_empty() {
+        preflight.headers.set::<AccessControlRequestHeaders>(AccessControlRequestHeaders(headers));
+    }
 
     
     let response = http_network_or_cache_fetch(&mut preflight, false, false, &mut None, context);
@@ -1307,6 +1256,14 @@ fn cors_preflight_fetch(request: &Request,
         };
 
         
+        if (methods.iter().any(|m| m.as_ref() == "*") ||
+            header_names.iter().any(|hn| &**hn == "*")) &&
+           request.credentials_mode == CredentialsMode::Include {
+            return Response::network_error(
+                NetworkError::Internal("CORS ACAH/ACAM and request credentials mode mismatch".into()));
+        }
+
+        
         if methods.is_empty() && request.use_cors_preflight {
             methods = vec![request.method.clone()];
         }
@@ -1315,19 +1272,31 @@ fn cors_preflight_fetch(request: &Request,
         debug!("CORS check: Allowed methods: {:?}, current method: {:?}",
                 methods, request.method);
         if methods.iter().all(|method| *method != request.method) &&
-            !is_simple_method(&request.method) {
+            !is_cors_safelisted_method(&request.method) &&
+            methods.iter().all(|m| m.as_ref() != "*") {
             return Response::network_error(NetworkError::Internal("CORS method check failed".into()));
+        }
+
+        
+        if request.headers.iter().any(
+            |header| header.name() == "authorization" &&
+                     header_names.iter().all(|hn| *hn != UniCase(header.name()))) {
+            return Response::network_error(NetworkError::Internal("CORS authorization check failed".into()));
         }
 
         
         debug!("CORS check: Allowed headers: {:?}, current headers: {:?}", header_names, request.headers);
         let set: HashSet<&UniCase<String>> = HashSet::from_iter(header_names.iter());
-        if request.headers.iter().any(|ref hv| !set.contains(&UniCase(hv.name().to_owned())) && !is_simple_header(hv)) {
+        if request.headers.iter().any(
+            |ref hv| !set.contains(&UniCase(hv.name().to_owned())) && !is_cors_safelisted_request_header(hv)) {
             return Response::network_error(NetworkError::Internal("CORS headers check failed".into()));
         }
 
         
         let max_age = response.headers.get::<AccessControlMaxAge>().map(|acma| acma.0).unwrap_or(0);
+
+        
+        
 
         
 
