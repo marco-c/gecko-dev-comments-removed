@@ -27,7 +27,7 @@ WebRenderTextLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
         return;
     }
 
-    ScrollingLayersHelper scroller(this, aBuilder, aResources, aSc);
+    ScrollingLayersHelper scroller(this, aBuilder, aSc);
 
     LayerRect rect = LayerRect::FromUnknownRect(
         
