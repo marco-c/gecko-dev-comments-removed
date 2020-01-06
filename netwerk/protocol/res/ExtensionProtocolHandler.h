@@ -144,7 +144,23 @@ private:
                                                   nsACString& aResolvedSpec,
                                                   nsIChannel** aRetVal);
 
-#if !defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
+  
+
+
+
+
+
+
+
+
+
+
+
+  Result<Ok, nsresult> AllowExternalResource(nsIFile* aExtensionDir,
+                                             nsIFile* aRequestedFile,
+                                             bool* aResult);
+
+#if defined(XP_MACOSX)
   
 
 
@@ -158,7 +174,8 @@ private:
 
 
 
-  Result<Ok, nsresult> DevRepoContains(nsIFile* aRequestedFile, bool *aResult);
+
+  Result<Ok, nsresult> DevRepoContains(nsIFile* aRequestedFile, bool* aResult);
 
   
   nsCOMPtr<nsIFile> mDevRepo;
@@ -166,6 +183,33 @@ private:
   
   
   bool mAlreadyCheckedDevRepo;
+#endif 
+
+#if !defined(XP_WIN)
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Result<Ok, nsresult> AppDirContains(nsIFile* aExtensionDir, bool* aResult);
+
+  
+  nsCOMPtr<nsIFile> mAppDir;
+
+  
+  
+  bool mAlreadyCheckedAppDir;
 #endif 
 
   
