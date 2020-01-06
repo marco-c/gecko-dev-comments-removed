@@ -13,7 +13,9 @@ module.exports = {
     "MatchGlob": false,
     "MatchPattern": true,
     "MatchPatternSet": false,
+    "WebExtensionContentScript": false,
     "WebExtensionPolicy": false,
+
     
     "AppConstants": true,
     "Extension": true,

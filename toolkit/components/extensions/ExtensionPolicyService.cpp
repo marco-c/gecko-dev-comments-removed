@@ -4,6 +4,7 @@
 
 
 #include "mozilla/ExtensionPolicyService.h"
+#include "mozilla/extensions/WebExtensionContentScript.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
 
 #include "mozilla/ClearOnShutdown.h"
