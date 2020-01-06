@@ -188,6 +188,11 @@ public class TabsPanel extends LinearLayout
 
     public void showMenu() {
         final Menu menu = mPopupMenu.getMenu();
+        
+        
+        
+        
+        mPopupMenu.setAnchor(mMenuButton);
 
         
         menu.findItem(R.id.new_tab).setVisible(mCurrentPanel != Panel.NORMAL_TABS);
@@ -384,12 +389,16 @@ public class TabsPanel extends LinearLayout
         mAddTab.setVisibility(View.VISIBLE);
 
         mMenuButton.setEnabled(true);
-        
-        
-        
-        ThreadUtils.postToUiThread(new Runnable() {
+        mMenuButton.addOnLayoutChangeListener(new OnLayoutChangeListener() {
             @Override
-            public void run() {
+            public void onLayoutChange(View v, int left, int top, int right, int bottom,
+                                       int oldLeft,
+                                       int oldTop, int oldRight, int oldBottom) {
+                
+                
+                
+                
+                
                 mPopupMenu.setAnchor(mMenuButton);
             }
         });
