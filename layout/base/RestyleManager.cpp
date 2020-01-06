@@ -1397,7 +1397,12 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
             
             
             
-            data.mHint |= nsChangeHint_AllReflowHints;
+            
+            
+            
+            
+            data.mHint |= (nsChangeHint_ReflowHintsForISizeChange |
+                           nsChangeHint_ReflowHintsForBSizeChange);
             doReconstruct = false;
           }
         }
