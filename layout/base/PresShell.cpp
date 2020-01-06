@@ -1896,7 +1896,8 @@ PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight, nscoord a
   
   
   nsIFrame* rootFrame = mFrameConstructor->GetRootFrame();
-  if (!rootFrame && aHeight == NS_UNCONSTRAINEDSIZE) {
+  if (!rootFrame &&
+      (aHeight == NS_UNCONSTRAINEDSIZE || aWidth == NS_UNCONSTRAINEDSIZE)) {
     
     
     return NS_ERROR_NOT_AVAILABLE;
