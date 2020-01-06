@@ -170,6 +170,8 @@ class AutofillRecords {
 
 
 
+
+
   add(record) {
     this.log.debug("add:", record);
 
@@ -194,6 +196,7 @@ class AutofillRecords {
     this._store.saveSoon();
 
     Services.obs.notifyObservers(null, "formautofill-storage-changed", "add");
+    return recordToSave.guid;
   }
 
   
@@ -280,7 +283,7 @@ class AutofillRecords {
 
     let recordFound = this._findByGUID(guid);
     if (!recordFound) {
-      throw new Error("No matching record.");
+      return null;
     }
 
     
