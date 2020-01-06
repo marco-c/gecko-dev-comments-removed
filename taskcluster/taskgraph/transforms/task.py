@@ -154,6 +154,7 @@ task_description_schema = Schema({
     
     'worker': Any({
         Required('implementation'): Any('docker-worker', 'docker-engine'),
+        Required('os'): 'linux',
 
         
         
@@ -215,9 +216,10 @@ task_description_schema = Schema({
         Optional('retry-exit-status'): int,
 
     }, {
-        
-        
         Required('implementation'): 'generic-worker',
+        Required('os'): Any('windows', 'macosx'),
+        
+        
 
         
         
@@ -308,6 +310,7 @@ task_description_schema = Schema({
         },
     }, {
         Required('implementation'): 'native-engine',
+        Required('os'): Any('macosx', 'linux'),
 
         
         Optional('context'): basestring,
@@ -395,6 +398,12 @@ task_description_schema = Schema({
     }, {
         Required('implementation'): 'push-apk-breakpoint',
         Required('payload'): object,
+
+    }, {
+        Required('implementation'): 'invalid',
+        
+        
+        Extra: object,
 
     }, {
         Required('implementation'): 'push-apk',
@@ -739,6 +748,11 @@ def build_push_apk_payload(config, task, task_def):
 @payload_builder('push-apk-breakpoint')
 def build_push_apk_breakpoint_payload(config, task, task_def):
     task_def['payload'] = task['worker']['payload']
+
+
+@payload_builder('invalid')
+def build_invalid_payload(config, task, task_def):
+    task_def['payload'] = 'invalid task - should never be created'
 
 
 @payload_builder('native-engine')
