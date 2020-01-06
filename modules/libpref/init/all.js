@@ -5856,3 +5856,6 @@ pref("toolkit.crashreporter.include_context_heap", true);
 
 
 pref("dom.noopener.newprocess.enabled", true);
+
+pref("layers.omtp.enabled", false);
+pref("layers.omtp.force-sync", false);
