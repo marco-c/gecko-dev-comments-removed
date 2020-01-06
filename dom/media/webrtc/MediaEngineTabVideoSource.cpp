@@ -89,7 +89,7 @@ nsresult
 MediaEngineTabVideoSource::InitRunnable::Run()
 {
   if (mVideoSource->mWindowId != -1) {
-    nsGlobalWindow* globalWindow =
+    nsGlobalWindowOuter* globalWindow =
       nsGlobalWindow::GetOuterWindowWithId(mVideoSource->mWindowId);
     if (!globalWindow) {
       

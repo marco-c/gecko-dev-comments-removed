@@ -106,7 +106,7 @@ WindowNamedPropertiesHandler::getOwnPropDescriptor(JSContext* aCx,
 
   
   JS::Rooted<JSObject*> global(aCx, JS_GetGlobalForObject(aCx, aProxy));
-  nsGlobalWindow* win = xpc::WindowOrNull(global);
+  nsGlobalWindowInner* win = xpc::WindowOrNull(global);
   if (win->Length() > 0) {
     nsCOMPtr<nsPIDOMWindowOuter> childWin = win->GetChildWindow(str);
     if (childWin && ShouldExposeChildWindow(str, childWin)) {
@@ -178,10 +178,10 @@ WindowNamedPropertiesHandler::ownPropNames(JSContext* aCx,
   }
 
   
-  nsGlobalWindow* win = xpc::WindowOrNull(JS_GetGlobalForObject(aCx, aProxy));
+  nsGlobalWindowInner* win = xpc::WindowOrNull(JS_GetGlobalForObject(aCx, aProxy));
   nsTArray<nsString> names;
   
-  nsGlobalWindow* outer = win->GetOuterWindowInternal();
+  nsGlobalWindowOuter* outer = win->GetOuterWindowInternal();
   if (outer) {
     nsDOMWindowList* childWindows = outer->GetWindowList();
     if (childWindows) {

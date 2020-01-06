@@ -668,7 +668,7 @@ XPCJSContext::InterruptCallback(JSContext* cx)
     
     
     RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
-    RefPtr<nsGlobalWindow> win = WindowOrNull(global);
+    RefPtr<nsGlobalWindowInner> win = WindowOrNull(global);
     if (!win && IsSandbox(global)) {
         
         

@@ -244,7 +244,7 @@ VRManagerChild::RecvUpdateDisplayInfo(nsTArray<VRDisplayInfo>&& aDisplayUpdates)
 
 
 
-    nsGlobalWindow* window = nsGlobalWindow::GetInnerWindowWithId(windowId);
+    nsGlobalWindowInner* window = nsGlobalWindow::GetInnerWindowWithId(windowId);
     if (!window) {
       continue;
     }

@@ -1478,7 +1478,7 @@ nsHTMLDocument::Open(JSContext* ,
     rv.Throw(NS_ERROR_NOT_INITIALIZED);
     return nullptr;
   }
-  RefPtr<nsGlobalWindow> win = nsGlobalWindow::Cast(outer);
+  RefPtr<nsGlobalWindowOuter> win = nsGlobalWindowOuter::Cast(outer);
   nsCOMPtr<nsPIDOMWindowOuter> newWindow;
   
   rv = win->OpenJS(aURL, aName, aFeatures, getter_AddRefs(newWindow));

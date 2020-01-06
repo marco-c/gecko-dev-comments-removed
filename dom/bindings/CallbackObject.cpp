@@ -182,7 +182,7 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
 
     
     
-    nsGlobalWindow* win = mIsMainThread && !aIsJSImplementedWebIDL
+    nsGlobalWindowInner* win = mIsMainThread && !aIsJSImplementedWebIDL
                             ? xpc::WindowGlobalOrNull(realCallback)
                             : nullptr;
     if (win) {

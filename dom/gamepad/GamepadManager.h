@@ -12,7 +12,7 @@
 #include "mozilla/dom/GamepadBinding.h"
 #include "mozilla/dom/GamepadServiceType.h"
 
-class nsGlobalWindow;
+class nsGlobalWindowInner;
 
 namespace mozilla {
 namespace gfx {
@@ -42,9 +42,9 @@ class GamepadManager final : public nsIObserver
   void StopMonitoring();
 
   
-  void AddListener(nsGlobalWindow* aWindow);
+  void AddListener(nsGlobalWindowInner* aWindow);
   
-  void RemoveListener(nsGlobalWindow* aWindow);
+  void RemoveListener(nsGlobalWindowInner* aWindow);
 
   
   void AddGamepad(uint32_t aIndex, const nsAString& aID, GamepadMappingType aMapping,
@@ -116,18 +116,19 @@ class GamepadManager final : public nsIObserver
   nsresult Init();
 
   void MaybeConvertToNonstandardGamepadEvent(const GamepadChangeEvent& aEvent,
-                                             nsGlobalWindow* aWindow);
+                                             nsGlobalWindowInner* aWindow);
 
-  bool SetGamepadByEvent(const GamepadChangeEvent& aEvent, nsGlobalWindow* aWindow = nullptr);
+  bool SetGamepadByEvent(const GamepadChangeEvent& aEvent,
+                         nsGlobalWindowInner* aWindow = nullptr);
 
-  bool MaybeWindowHasSeenGamepad(nsGlobalWindow* aWindow, uint32_t aIndex);
+  bool MaybeWindowHasSeenGamepad(nsGlobalWindowInner* aWindow, uint32_t aIndex);
   
   
   
   
-  bool WindowHasSeenGamepad(nsGlobalWindow* aWindow, uint32_t aIndex) const;
+  bool WindowHasSeenGamepad(nsGlobalWindowInner* aWindow, uint32_t aIndex) const;
   
-  void SetWindowHasSeenGamepad(nsGlobalWindow* aWindow, uint32_t aIndex,
+  void SetWindowHasSeenGamepad(nsGlobalWindowInner* aWindow, uint32_t aIndex,
                                bool aHasSeen = true);
   
   
@@ -138,7 +139,7 @@ class GamepadManager final : public nsIObserver
   nsRefPtrHashtable<nsUint32HashKey, Gamepad> mGamepads;
   
   
-  nsTArray<RefPtr<nsGlobalWindow>> mListeners;
+  nsTArray<RefPtr<nsGlobalWindowInner>> mListeners;
   uint32_t mPromiseID;
 };
 

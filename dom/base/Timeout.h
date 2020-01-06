@@ -69,7 +69,7 @@ public:
   
 
   
-  RefPtr<nsGlobalWindow> mWindow;
+  RefPtr<nsGlobalWindowInner> mWindow;
 
   
   nsCOMPtr<nsITimeoutHandler> mScriptHandler;

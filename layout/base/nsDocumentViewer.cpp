@@ -1222,7 +1222,7 @@ nsDocumentViewer::PermitUnloadInternal(bool *aShouldPrompt,
     nsAutoPopupStatePusher popupStatePusher(openAbused, true);
 
     
-    nsGlobalWindow* globalWindow = nsGlobalWindow::Cast(window);
+    nsGlobalWindowOuter* globalWindow = nsGlobalWindowOuter::Cast(window);
     dialogsAreEnabled = globalWindow->AreDialogsEnabled();
     nsGlobalWindow::TemporarilyDisableDialogs disableDialogs(globalWindow);
 

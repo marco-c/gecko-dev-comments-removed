@@ -12,7 +12,7 @@
 
 class nsIEventTarget;
 class nsITimeoutHandler;
-class nsGlobalWindow;
+class nsGlobalWindowInner;
 
 namespace mozilla {
 namespace dom {
@@ -24,7 +24,7 @@ class TimeoutExecutor;
 class TimeoutManager final
 {
 public:
-  explicit TimeoutManager(nsGlobalWindow& aWindow);
+  explicit TimeoutManager(nsGlobalWindowInner& aWindow);
   ~TimeoutManager();
   TimeoutManager(const TimeoutManager& rhs) = delete;
   void operator=(const TimeoutManager& rhs) = delete;
@@ -217,7 +217,7 @@ private:
 
   
   
-  nsGlobalWindow&             mWindow;
+  nsGlobalWindowInner&             mWindow;
   
   
   

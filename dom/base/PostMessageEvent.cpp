@@ -29,9 +29,9 @@
 namespace mozilla {
 namespace dom {
 
-PostMessageEvent::PostMessageEvent(nsGlobalWindow* aSource,
+PostMessageEvent::PostMessageEvent(nsGlobalWindowOuter* aSource,
                                    const nsAString& aCallerOrigin,
-                                   nsGlobalWindow* aTargetWindow,
+                                   nsGlobalWindowOuter* aTargetWindow,
                                    nsIPrincipal* aProvidedPrincipal,
                                    nsIDocument* aSourceDocument,
                                    bool aTrustedCaller)
@@ -76,7 +76,7 @@ PostMessageEvent::Run()
   
   
 
-  RefPtr<nsGlobalWindow> targetWindow;
+  RefPtr<nsGlobalWindowInner> targetWindow;
   if (mTargetWindow->IsClosedOrClosing() ||
       !(targetWindow = mTargetWindow->GetCurrentInnerWindowInternal()) ||
       targetWindow->IsClosedOrClosing())
@@ -176,7 +176,7 @@ PostMessageEvent::Run()
 }
 
 void
-PostMessageEvent::DispatchError(JSContext* aCx, nsGlobalWindow* aTargetWindow,
+PostMessageEvent::DispatchError(JSContext* aCx, nsGlobalWindowInner* aTargetWindow,
                                 mozilla::dom::EventTarget* aEventTarget)
 {
   RootedDictionary<MessageEventInit> init(aCx);
@@ -195,7 +195,7 @@ PostMessageEvent::DispatchError(JSContext* aCx, nsGlobalWindow* aTargetWindow,
 }
 
 void
-PostMessageEvent::Dispatch(nsGlobalWindow* aTargetWindow, Event* aEvent)
+PostMessageEvent::Dispatch(nsGlobalWindowInner* aTargetWindow, Event* aEvent)
 {
   
   

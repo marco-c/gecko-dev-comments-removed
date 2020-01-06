@@ -18,7 +18,7 @@ using namespace mozilla::dom;
 
 
 WindowOrientationObserver::WindowOrientationObserver(
-  nsGlobalWindow* aGlobalWindow)
+  nsGlobalWindowInner* aGlobalWindow)
   : mWindow(aGlobalWindow)
 {
   MOZ_ASSERT(aGlobalWindow && aGlobalWindow->IsInnerWindow());

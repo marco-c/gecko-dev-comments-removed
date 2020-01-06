@@ -963,7 +963,8 @@ nsNativeAppSupportWin::HandleDDENotification( UINT uType,
                         }
 
                         
-                        nsCOMPtr<nsPIDOMWindowOuter> internalContent = nsGlobalWindow::Cast(piNavWin)->GetContent();
+                        nsCOMPtr<nsPIDOMWindowOuter> internalContent =
+                            nsGlobalWindowOuter::Cast(piNavWin)->GetContent();
                         if ( !internalContent ) {
                             break;
                         }

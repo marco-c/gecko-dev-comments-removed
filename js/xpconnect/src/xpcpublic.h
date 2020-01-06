@@ -27,7 +27,7 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/Preferences.h"
 
-class nsGlobalWindow;
+class nsGlobalWindowInner;
 class nsIPrincipal;
 class nsScriptNameSpaceManager;
 class nsIHandleReportCallback;
@@ -483,14 +483,14 @@ NativeGlobal(JSObject* aObj);
 
 
 
-nsGlobalWindow*
+nsGlobalWindowInner*
 WindowOrNull(JSObject* aObj);
 
 
 
 
 
-nsGlobalWindow*
+nsGlobalWindowInner*
 WindowGlobalOrNull(JSObject* aObj);
 
 
@@ -498,14 +498,14 @@ WindowGlobalOrNull(JSObject* aObj);
 
 
 
-nsGlobalWindow*
+nsGlobalWindowInner*
 AddonWindowOrNull(JSObject* aObj);
 
 
 
 
 
-nsGlobalWindow*
+nsGlobalWindowInner*
 CurrentWindowOrNull(JSContext* cx);
 
 void

@@ -325,7 +325,7 @@ public:
   
   
   nsresult Initialize(PeerConnectionObserver& aObserver,
-                      nsGlobalWindow* aWindow,
+                      nsGlobalWindowInner* aWindow,
                       const PeerConnectionConfiguration& aConfiguration,
                       nsISupports* aThread);
 
