@@ -5,6 +5,7 @@
 
 
 #include "FetchStream.h"
+#include "mozilla/dom/DOMError.h"
 #include "nsITransport.h"
 #include "nsIStreamTransportService.h"
 #include "nsProxyRelease.h"
@@ -339,6 +340,18 @@ FetchStream::ErroredCallback(JSContext* aCx, JS::HandleObject aStream,
 {
   MOZ_DIAGNOSTIC_ASSERT(aUnderlyingSource);
   MOZ_DIAGNOSTIC_ASSERT(aFlags == FETCH_STREAM_FLAG);
+
+  
+  
+  
+  
+  FetchStream* stream = static_cast<FetchStream*>(aUnderlyingSource);
+
+  if (stream->mInputStream) {
+    stream->mInputStream->CloseWithStatus(NS_BASE_STREAM_CLOSED);
+  }
+
+  stream->ReleaseObjects();
 }
 
 void
