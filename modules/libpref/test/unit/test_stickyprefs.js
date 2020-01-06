@@ -7,14 +7,6 @@ Components.utils.import("resource://gre/modules/Services.jsm");
 const ps = Services.prefs;
 
 
-
-
-
-
-do_get_profile();
-do_register_cleanup(saveAndReload);
-
-
 function resetAndLoad(filenames) {
   ps.resetPrefs();
   for (let filename of filenames) {
