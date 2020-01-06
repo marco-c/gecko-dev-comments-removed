@@ -13,6 +13,7 @@ import android.support.annotation.CallSuper;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.switchboard.SwitchBoard;
 
 import org.json.JSONException;
@@ -133,6 +134,11 @@ public class AddToHomeScreenPromotion extends TabsTrayVisibilityAwareDelegate im
         if (isTabsTrayVisible()) {
             
             
+            return;
+        }
+
+        
+        if (AppConstants.Versions.feature26Plus) {
             return;
         }
 
