@@ -28,7 +28,7 @@ test();
 
 function test()
 {
-  enterFunc ('test');
+
   printBugNumber(BUGNUMBER);
   printStatus (summary);
 
@@ -38,7 +38,7 @@ function test()
   test3();
   test4();
 
-  exitFunc('test');
+
 }
 
 
@@ -53,7 +53,7 @@ function normalize(filename)
 function testRealError()
 {
   
-  enterFunc ("testRealError");
+
 
   try
   {
@@ -68,14 +68,14 @@ function testRealError()
 		  "lineNumber property returned unexpected value.");
   }
 
-  exitFunc ("testRealError");
+
 }
 
 
 function test1()
 {
   
-  enterFunc ("test1");
+
 
   var e = new InternalError ("msg", "file", 2);
   reportCompare ("(new InternalError(\"msg\", \"file\", 2))",
@@ -86,14 +86,14 @@ function test1()
   reportCompare (2, e.lineNumber,
 		 "lineNumber property returned unexpected value.");
 
-  exitFunc ("test1");
+
 }
 
 
 function test2()
 {
   
-  enterFunc ("test2");
+
 
   
 
@@ -116,7 +116,7 @@ function test2()
   reportCompare (expectedLine, e.lineNumber,
 		 "lineNumber property returned unexpected value.");
 
-  exitFunc ("test2");
+
 }
 
 
@@ -129,7 +129,7 @@ function test3()
 
 
 
-  enterFunc ("test3");
+
 
   var expectedFileName = 'js1_5/extensions/regress-50447-1.js';
   if (typeof document != "undefined") {
@@ -149,14 +149,14 @@ function test3()
   reportCompare (10, e.lineNumber,
 		 "lineNumber property returned unexpected value.");
 
-  exitFunc ("test3");
+
 }
 
 
 function test4()
 {
   
-  enterFunc ("test4");
+
 
   var expectedLine = 163;
 
@@ -169,5 +169,5 @@ function test4()
   reportCompare (expectedLine, e.lineNumber,
 		 "lineNumber property returned unexpected value.");
 
-  exitFunc ("test4");
+
 }
