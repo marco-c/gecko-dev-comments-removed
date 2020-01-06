@@ -273,7 +273,11 @@ def parse_chrome_manifest(path, base_path, chrome_entries):
 
 
 
-def create_webmanifest(locstr, min_app_ver, max_app_ver, defines, chrome_entries):
+
+
+
+def create_webmanifest(locstr, min_app_ver, max_app_ver, app_name,
+                       defines, chrome_entries):
     locales = map(lambda loc: loc.strip(), locstr.split(','))
     main_locale = locales[0]
 
@@ -293,7 +297,7 @@ def create_webmanifest(locstr, min_app_ver, max_app_ver, defines, chrome_entries
             }
         },
         'name': '{0} Language Pack'.format(defines['MOZ_LANG_TITLE']),
-        'description': 'Language pack for Firefox for {0}'.format(main_locale),
+        'description': 'Language pack for {0} for {1}'.format(app_name, main_locale),
         'version': min_app_ver,
         'languages': {},
         'sources': {
@@ -336,6 +340,8 @@ def main(args):
                         help='Min version of the application the langpack is for')
     parser.add_argument('--max-app-ver',
                         help='Max version of the application the langpack is for')
+    parser.add_argument('--app-name',
+                        help='Name of the application the langpack is for')
     parser.add_argument('--defines', default=[], nargs='+',
                         help='List of defines files to load data from')
     parser.add_argument('--input',
@@ -353,6 +359,7 @@ def main(args):
         args.locales,
         args.min_app_ver,
         args.max_app_ver,
+        args.app_name,
         defines,
         chrome_entries
     )
