@@ -417,7 +417,10 @@ class MochitestServer(object):
         
         env = test_environment(xrePath=self._xrePath, log=self._log)
         env["XPCOM_DEBUG_BREAK"] = "warn"
-        env["LD_LIBRARY_PATH"] = self._xrePath
+        if "LD_LIBRARY_PATH" not in env or env["LD_LIBRARY_PATH"] is None:
+            env["LD_LIBRARY_PATH"] = self._xrePath
+        else:
+            env["LD_LIBRARY_PATH"] = ":".join([self._xrePath, env["LD_LIBRARY_PATH"]])
 
         
         
