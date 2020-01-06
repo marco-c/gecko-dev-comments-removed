@@ -604,6 +604,12 @@ public:
   }
 
   float GetFullZoom() { return mFullZoom; }
+  
+
+
+
+
+  float GetDeviceFullZoom();
   void SetFullZoom(float aZoom);
 
   float GetOverrideDPPX() { return mOverrideDPPX; }
