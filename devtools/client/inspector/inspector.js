@@ -646,10 +646,37 @@ Inspector.prototype = {
               this.browserRequire("devtools/client/inspector/layout/layout");
             this.layoutview = new LayoutView(this, this.panelWin);
           }
+
           return this.layoutview.provider;
         }
       },
       defaultTab == layoutId);
+
+    if (Services.prefs.getBoolPref("devtools.changesview.enabled")) {
+      
+      
+      let changesId = "changesview";
+      let changesTitle = INSPECTOR_L10N.getStr("inspector.sidebar.changesViewTitle");
+      this.sidebar.addTab(
+        changesId,
+        changesTitle,
+        {
+          props: {
+            id: changesId,
+            title: changesTitle
+          },
+          panel: () => {
+            if (!this.changesview) {
+              const ChangesView =
+                this.browserRequire("devtools/client/inspector/changes/changes");
+              this.changesview = new ChangesView(this, this.panelWin);
+            }
+
+            return this.changesview.provider;
+          }
+        },
+        defaultTab == changesId);
+    }
 
     if (this.target.form.animationsActor) {
       this.sidebar.addFrameTab(
@@ -678,6 +705,7 @@ Inspector.prototype = {
                 this.browserRequire("devtools/client/inspector/fonts/fonts");
               this.fontinspector = new FontInspector(this, this.panelWin);
             }
+
             return this.fontinspector.provider;
           }
         },
@@ -848,9 +876,6 @@ Inspector.prototype = {
 
 
   onNewRoot: function () {
-    
-    this._newRootStart = this.panelWin.performance.now();
-
     this._defaultNode = null;
     this.selection.setNodeFront(null);
     this._destroyMarkup();
@@ -886,7 +911,7 @@ Inspector.prototype = {
       return;
     }
 
-    let onExpand = this.markup.expandNode(this.selection.nodeFront);
+    this.markup.expandNode(this.selection.nodeFront);
 
     
     yield Promise.all([
@@ -895,26 +920,6 @@ Inspector.prototype = {
     ]);
 
     this.emit("new-root");
-
-    
-    
-    
-    
-    yield onExpand;
-
-    this.emit("reloaded");
-
-    
-    if (this._newRootStart) {
-      
-      if (this.toolbox && this.toolbox.currentToolId == "inspector") {
-        let delay = this.panelWin.performance.now() - this._newRootStart;
-        let telemetryKey = "DEVTOOLS_INSPECTOR_NEW_ROOT_TO_RELOAD_DELAY_MS";
-        let histogram = Services.telemetry.getHistogramById(telemetryKey);
-        histogram.add(delay);
-      }
-      delete this._newRootStart;
-    }
   }),
 
   _selectionCssSelector: null,
