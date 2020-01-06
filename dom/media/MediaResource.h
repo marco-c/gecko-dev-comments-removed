@@ -816,15 +816,13 @@ public:
   
   
   
+  
+  
+  
   nsresult ReadAt(int64_t aOffset,
                   char* aBuffer,
                   uint32_t aCount,
                   uint32_t* aBytes);
-
-  nsresult CachedReadAt(int64_t aOffset,
-                        char* aBuffer,
-                        uint32_t aCount,
-                        uint32_t* aBytes);
 
   
   
