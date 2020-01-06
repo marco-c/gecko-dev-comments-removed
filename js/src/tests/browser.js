@@ -288,17 +288,14 @@ window.onerror = function (msg, page, line, column, error) {
   if (typeof DESCRIPTION == 'undefined') {
     DESCRIPTION = 'Unknown';
   }
-  if (typeof EXPECTED == 'undefined') {
-    EXPECTED = 'Unknown';
-  }
 
-  var reason = page + ':' + line + ': ' + msg;
-  var testcase = new TestCase(DESCRIPTION, EXPECTED, "error", reason);
+  var actual = "error";
+  var expected;
 
   var href = document.location.href;
   if (href.indexOf('-n.js') !== -1) {
     
-    testcase.passed = true;
+    expected = "error";
   } else if (href.indexOf('error=') !== -1) {
     
     var startIndex = href.indexOf('error=');
@@ -309,11 +306,18 @@ window.onerror = function (msg, page, line, column, error) {
 
     
     if (Error.prototype.isPrototypeOf(error)) {
-      testcase.passed = error.constructor.name === errorType;
+      actual = error.constructor.name;
+      expected = errorType;
     } else {
-      testcase.passed = true;
+      expected = "error";
     }
+  } else {
+    
+    expected = "Unknown";
   }
+
+  var reason = page + ':' + line + ': ' + msg;
+  new TestCase(DESCRIPTION, expected, actual, reason);
 
   reportFailure(msg);
 
