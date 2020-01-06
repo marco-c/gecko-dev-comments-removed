@@ -76,7 +76,10 @@ Symbol::for_(JSContext* cx, HandleString description)
     Symbol* sym;
     {
         AutoAtomsCompartment ac(cx, lock);
-        sym = newInternal(cx, SymbolCode::InSymbolRegistry, atom->hash(), atom, lock);
+        
+        
+        HashNumber hash = mozilla::HashGeneric(atom->hash());
+        sym = newInternal(cx, SymbolCode::InSymbolRegistry, hash, atom, lock);
         if (!sym)
             return nullptr;
 
