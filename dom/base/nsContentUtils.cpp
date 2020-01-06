@@ -2405,16 +2405,7 @@ nsContentUtils::ShouldResistFingerprinting(nsIDocShell* aDocShell)
   if (!aDocShell) {
     return false;
   }
-  return ShouldResistFingerprinting(aDocShell->GetDocument());
-}
-
-
-bool
-nsContentUtils::ShouldResistFingerprinting(nsIDocument* aDoc) {
-  if (!aDoc) {
-    return false;
-  }
-  bool isChrome = nsContentUtils::IsChromeDoc(aDoc);
+  bool isChrome = nsContentUtils::IsChromeDoc(aDocShell->GetDocument());
   return !isChrome && ShouldResistFingerprinting();
 }
 
@@ -9038,6 +9029,25 @@ nsContentUtils::PushEnabled(JSContext* aCx, JSObject* aObj)
   }
 
   return workerPrivate->PushEnabled();
+}
+
+
+bool
+nsContentUtils::StreamsEnabled(JSContext* aCx, JSObject* aObj)
+{
+  if (NS_IsMainThread()) {
+    return Preferences::GetBool("dom.streams.enabled", false);
+  }
+
+  using namespace workers;
+
+  
+  WorkerPrivate* workerPrivate = GetWorkerPrivateFromContext(aCx);
+  if (!workerPrivate) {
+    return false;
+  }
+
+  return workerPrivate->StreamsEnabled();
 }
 
 

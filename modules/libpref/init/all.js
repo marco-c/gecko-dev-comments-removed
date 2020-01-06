@@ -4966,6 +4966,9 @@ pref("dom.vibrator.max_vibrate_list_len", 128);
 pref("dom.battery.enabled", true);
 
 
+pref("dom.streams.enabled", false);
+
+
 
 pref("dom.push.enabled", false);
 
