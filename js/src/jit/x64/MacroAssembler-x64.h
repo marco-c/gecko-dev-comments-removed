@@ -947,7 +947,7 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared
     inline void ensureDouble(const ValueOperand& source, FloatRegister dest, Label* failure);
 
   public:
-    void handleFailureWithHandlerTail(void* handler);
+    void handleFailureWithHandlerTail(void* handler, Label* profilerExitTail);
 
     
     void profilerEnterFrame(Register framePtr, Register scratch);

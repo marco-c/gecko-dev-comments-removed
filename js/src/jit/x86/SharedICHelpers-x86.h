@@ -71,7 +71,7 @@ EmitChangeICReturnAddress(MacroAssembler& masm, Register reg)
 }
 
 inline void
-EmitBaselineTailCallVM(uint8_t* target, MacroAssembler& masm, uint32_t argSize)
+EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm, uint32_t argSize)
 {
     
 
@@ -89,11 +89,11 @@ EmitBaselineTailCallVM(uint8_t* target, MacroAssembler& masm, uint32_t argSize)
     masm.makeFrameDescriptor(eax, JitFrame_BaselineJS, ExitFrameLayout::Size());
     masm.push(eax);
     masm.push(ICTailCallReg);
-    masm.jmp(ImmPtr(target));
+    masm.jump(target);
 }
 
 inline void
-EmitIonTailCallVM(uint8_t* target, MacroAssembler& masm, uint32_t stackSize)
+EmitIonTailCallVM(TrampolinePtr target, MacroAssembler& masm, uint32_t stackSize)
 {
     
     
@@ -108,7 +108,7 @@ EmitIonTailCallVM(uint8_t* target, MacroAssembler& masm, uint32_t stackSize)
     masm.makeFrameDescriptor(eax, JitFrame_IonJS, ExitFrameLayout::Size());
     masm.push(eax);
     masm.push(ICTailCallReg);
-    masm.jmp(ImmPtr(target));
+    masm.jump(target);
 }
 
 inline void
@@ -124,11 +124,11 @@ EmitBaselineCreateStubFrameDescriptor(MacroAssembler& masm, Register reg, uint32
 }
 
 inline void
-EmitBaselineCallVM(uint8_t* target, MacroAssembler& masm)
+EmitBaselineCallVM(TrampolinePtr target, MacroAssembler& masm)
 {
     EmitBaselineCreateStubFrameDescriptor(masm, eax, ExitFrameLayout::Size());
     masm.push(eax);
-    masm.call(ImmPtr(target));
+    masm.call(target);
 }
 
 

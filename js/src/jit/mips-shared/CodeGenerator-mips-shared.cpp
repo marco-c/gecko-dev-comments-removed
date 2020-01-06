@@ -207,9 +207,8 @@ CodeGeneratorMIPSShared::generateOutOfLineCode()
         
         masm.move32(Imm32(frameSize()), ra);
 
-        JitCode* handler = gen->jitRuntime()->getGenericBailoutHandler();
-
-        masm.branch(handler);
+        TrampolinePtr handler = gen->jitRuntime()->getGenericBailoutHandler();
+        masm.jump(handler);
     }
 
     return !masm.oom();
@@ -1843,9 +1842,9 @@ CodeGeneratorMIPSShared::generateInvalidateEpilogue()
     
     
     invalidateEpilogueData_ = masm.pushWithPatch(ImmWord(uintptr_t(-1)));
-    JitCode* thunk = gen->jitRuntime()->getInvalidationThunk();
+    TrampolinePtr thunk = gen->jitRuntime()->getInvalidationThunk();
 
-    masm.branch(thunk);
+    masm.jump(thunk);
 
     
     

@@ -512,6 +512,8 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     void call(JitCode* c) PER_SHARED_ARCH;
 
+    inline void call(TrampolinePtr code);
+
     inline void call(const wasm::CallSiteDesc& desc, const Register reg);
     inline void call(const wasm::CallSiteDesc& desc, uint32_t funcDefIndex);
     inline void call(const wasm::CallSiteDesc& desc, wasm::Trap trap);
@@ -651,7 +653,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline uint32_t callJitNoProfiler(Register callee);
     inline uint32_t callJit(Register callee);
     inline uint32_t callJit(JitCode* code);
-    inline uint32_t callJit(ImmPtr code);
+    inline uint32_t callJit(TrampolinePtr code);
 
     
     
@@ -701,17 +703,6 @@ class MacroAssembler : public MacroAssemblerSpecific
     
 
     
-    
-    
-    
-    
-    inline void PushStubCode();
-
-    
-    
-    inline bool hasSelfReference() const;
-
-    
     inline void enterExitFrame(Register cxreg, Register scratch, const VMFunction* f);
 
     
@@ -728,14 +719,6 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     void linkExitFrame(Register cxreg, Register scratch);
-
-    
-    void linkSelfReference(JitCode* code);
-
-    
-    
-    
-    CodeOffset selfReferencePatch_;
 
   public:
     
@@ -1699,7 +1682,7 @@ class MacroAssembler : public MacroAssemblerSpecific
         computeEffectiveAddress(address, PreBarrierReg);
 
         const JitRuntime* rt = GetJitContext()->runtime->jitRuntime();
-        JitCode* preBarrier = rt->preBarrier(type);
+        TrampolinePtr preBarrier = rt->preBarrier(type);
 
         call(preBarrier);
         Pop(PreBarrierReg);
@@ -1947,6 +1930,12 @@ class MacroAssembler : public MacroAssemblerSpecific
     void PushBaselineFramePtr(Register framePtr, Register scratch) {
         loadBaselineFramePtr(framePtr, scratch);
         Push(scratch);
+    }
+
+    using MacroAssemblerSpecific::movePtr;
+
+    void movePtr(TrampolinePtr ptr, Register dest) {
+        movePtr(ImmPtr(ptr.value), dest);
     }
 
   private:

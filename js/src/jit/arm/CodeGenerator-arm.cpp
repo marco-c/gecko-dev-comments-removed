@@ -138,8 +138,8 @@ CodeGeneratorARM::generateOutOfLineCode()
         
         masm.ma_mov(Imm32(frameSize()), lr);
 
-        JitCode* handler = gen->jitRuntime()->getGenericBailoutHandler();
-        masm.branch(handler);
+        TrampolinePtr handler = gen->jitRuntime()->getGenericBailoutHandler();
+        masm.jump(handler);
     }
 
     return !masm.oom();
@@ -157,7 +157,7 @@ CodeGeneratorARM::bailoutIf(Assembler::Condition condition, LSnapshot* snapshot)
                   frameClass_.frameSize() == masm.framePushed());
 
     if (assignBailoutId(snapshot)) {
-        uint8_t* bailoutTable = Assembler::BailoutTableStart(deoptTable_->raw());
+        uint8_t* bailoutTable = Assembler::BailoutTableStart(deoptTable_->value);
         uint8_t* code = bailoutTable + snapshot->bailoutId() * BAILOUT_TABLE_ENTRY_SIZE;
         masm.ma_b(code, condition);
         return;
@@ -1786,9 +1786,9 @@ CodeGeneratorARM::generateInvalidateEpilogue()
 
     
     invalidateEpilogueData_ = masm.pushWithPatch(ImmWord(uintptr_t(-1)));
-    JitCode* thunk = gen->jitRuntime()->getInvalidationThunk();
 
-    masm.branch(thunk);
+    TrampolinePtr thunk = gen->jitRuntime()->getInvalidationThunk();
+    masm.jump(thunk);
 
     
     

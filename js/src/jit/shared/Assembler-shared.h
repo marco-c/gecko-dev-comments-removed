@@ -255,6 +255,22 @@ class ImmGCPtr
 
 
 
+struct TrampolinePtr
+{
+    uint8_t* value;
+
+    TrampolinePtr()
+      : value(nullptr)
+    { }
+    explicit TrampolinePtr(uint8_t* value)
+      : value(value)
+    {
+        MOZ_ASSERT(value);
+    }
+};
+
+
+
 struct AbsoluteAddress
 {
     void* addr;
