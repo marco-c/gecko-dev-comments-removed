@@ -21,7 +21,6 @@ ScrollingLayersHelper::ScrollingLayersHelper(WebRenderLayer* aLayer,
   : mLayer(aLayer)
   , mBuilder(&aBuilder)
   , mPushedLayerLocalClip(false)
-  , mClipsPushed(0)
 {
   if (!mLayer->WrManager()->AsyncPanZoomEnabled()) {
     
@@ -93,7 +92,6 @@ ScrollingLayersHelper::ScrollingLayersHelper(nsDisplayItem* aItem,
   : mLayer(nullptr)
   , mBuilder(&aBuilder)
   , mPushedLayerLocalClip(false)
-  , mClipsPushed(0)
 {
   DefineAndPushChain(aItem->GetClipChain(), aBuilder, aStackingContext,
       aItem->Frame()->PresContext()->AppUnitsPerDevPixel(), aCache);
@@ -138,7 +136,7 @@ ScrollingLayersHelper::DefineAndPushChain(const DisplayItemClipChain* aChain,
   
   MOZ_ASSERT(clipId);
   aBuilder.PushClip(clipId.value());
-  mClipsPushed++;
+  mPushedClips.push_back(wr::ScrollOrClipId(clipId.value()));
 }
 
 bool
@@ -214,9 +212,11 @@ ScrollingLayersHelper::~ScrollingLayersHelper()
 {
   if (!mLayer) {
     
-    while (mClipsPushed > 0) {
+    while (!mPushedClips.empty()) {
+      wr::ScrollOrClipId id = mPushedClips.back();
+      MOZ_ASSERT(id.is<wr::WrClipId>());
       mBuilder->PopClip();
-      mClipsPushed--;
+      mPushedClips.pop_back();
     }
     return;
   }
