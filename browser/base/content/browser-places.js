@@ -1963,7 +1963,7 @@ var BookmarkingUI = {
 
   onStarCommand(aEvent) {
     
-    if (!this._pendingUpdate && aEvent.button == 0) {
+    if (!this._pendingUpdate) {
       let isBookmarked = this._itemGuids.size > 0;
       
       if (!isBookmarked && !AppConstants.MOZ_PHOTON_THEME)
