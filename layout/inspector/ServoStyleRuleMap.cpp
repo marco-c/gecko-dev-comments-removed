@@ -11,6 +11,7 @@
 #include "mozilla/ServoStyleRule.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/ServoImportRule.h"
+#include "mozilla/StyleSheetInlines.h"
 
 #include "nsDocument.h"
 #include "nsStyleSheetService.h"
@@ -175,7 +176,19 @@ void
 ServoStyleRuleMap::FillTableFromStyleSheet(ServoStyleSheet* aSheet)
 {
   if (aSheet->IsComplete()) {
-    FillTableFromRuleList(aSheet->GetCssRulesInternal());
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(aSheet->HasUniqueInner() || mStyleSet->IsForXBL(),
+               "Non-XBL stylesheets should be made unique before "
+               "initializing ServoStyleRuleMap");
+    FillTableFromRuleList(
+      aSheet->GetCssRulesInternal( false));
   }
 }
 

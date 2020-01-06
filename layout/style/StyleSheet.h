@@ -138,6 +138,7 @@ public:
 
   bool IsModified() const { return mDirty; }
 
+  inline bool HasUniqueInner() const;
   void EnsureUniqueInner();
 
   
