@@ -1033,6 +1033,8 @@ CustomElementReactionsStack::InvokeBackupQueue()
     
     InvokeReactions(&mBackupQueue, nullptr);
   }
+  MOZ_ASSERT(mBackupQueue.IsEmpty(),
+             "There are still some reactions in BackupQueue not being consumed!?!");
 }
 
 void
@@ -1048,16 +1050,14 @@ CustomElementReactionsStack::InvokeReactions(ElementQueue* aElementQueue,
   
   for (uint32_t i = 0; i < aElementQueue->Length(); ++i) {
     Element* element = aElementQueue->ElementAt(i);
-
-    if (!element) {
-      continue;
-    }
+    
+    MOZ_ASSERT(element);
 
     RefPtr<CustomElementData> elementData = element->GetCustomElementData();
     if (!elementData) {
       
       
-      return;
+      continue;
     }
 
     auto& reactions = elementData->mReactionQueue;
