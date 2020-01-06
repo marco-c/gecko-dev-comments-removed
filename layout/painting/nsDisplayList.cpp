@@ -2136,6 +2136,11 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
       TriggerPendingAnimations(document, layerManager->GetAnimationReadyTime());
     }
 
+    
+    if (view && presContext->IsChrome()) {
+      presContext->NotifyInvalidation(layerManager->GetLastTransactionId(), nsIntRect());
+    }
+
     return layerManager.forget();
   }
 
