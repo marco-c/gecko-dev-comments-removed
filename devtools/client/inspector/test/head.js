@@ -651,19 +651,6 @@ function synthesizeKeys(input, win) {
 
 
 
-function focusAndSendKey(win, key) {
-  win.document.documentElement.focus();
-  EventUtils.sendKey(key, win);
-}
-
-
-
-
-
-
-
-
-
 
 
 

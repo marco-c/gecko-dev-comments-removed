@@ -502,6 +502,16 @@ function* clickSelectorIcon(icon, view) {
 
 
 
+function focusAndSendKey(win, key) {
+  win.document.documentElement.focus();
+  EventUtils.sendKey(key, win);
+}
+
+
+
+
+
+
 
 function* toggleClassPanelCheckBox(view, name) {
   info(`Clicking on checkbox for class ${name}`);
