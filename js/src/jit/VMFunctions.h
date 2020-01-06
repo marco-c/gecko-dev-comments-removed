@@ -27,7 +27,7 @@ class TypedArrayObject;
 
 namespace jit {
 
-enum DataType {
+enum DataType : uint8_t {
     Type_Void,
     Type_Bool,
     Type_Int32,
@@ -40,14 +40,14 @@ enum DataType {
 
 struct PopValues
 {
-    uint32_t numValues;
+    uint8_t numValues;
 
-    explicit PopValues(uint32_t numValues)
+    explicit constexpr PopValues(uint8_t numValues)
       : numValues(numValues)
     { }
 };
 
-enum MaybeTailCall {
+enum MaybeTailCall : bool {
     TailCall,
     NonTailCall
 };
@@ -72,11 +72,24 @@ struct VMFunction
     
     void* wrapped;
 
+#ifdef JS_TRACE_LOGGING
     const char* name_;
+#endif
+
+    
+    enum RootType : uint8_t {
+        RootNone = 0,
+        RootObject,
+        RootString,
+        RootId,
+        RootFunction,
+        RootValue,
+        RootCell
+    };
 
     
     
-    uint32_t explicitArgs;
+    uint64_t argumentRootTypes;
 
     enum ArgProperties {
         WordByValue = 0,
@@ -98,6 +111,13 @@ struct VMFunction
 
     
     
+    uint8_t explicitArgs;
+
+    
+    RootType outParamRootType;
+
+    
+    
     
     DataType outParam;
 
@@ -111,27 +131,9 @@ struct VMFunction
     DataType returnType;
 
     
-    enum RootType {
-        RootNone = 0,
-        RootObject,
-        RootString,
-        RootId,
-        RootFunction,
-        RootValue,
-        RootCell
-    };
-
     
     
-    uint64_t argumentRootTypes;
-
-    
-    RootType outParamRootType;
-
-    
-    
-    
-    uint32_t extraValuesToPop;
+    uint8_t extraValuesToPop;
 
     
     
@@ -159,9 +161,11 @@ struct VMFunction
         return ((argumentPassedInFloatRegs >> explicitArg) & 1) == 1;
     }
 
+#ifdef JS_TRACE_LOGGING
     const char* name() const {
         return name_;
     }
+#endif
 
     
     size_t explicitStackSlots() const {
@@ -233,17 +237,19 @@ struct VMFunction
     VMFunction(void* wrapped, const char* name, uint32_t explicitArgs, uint32_t argumentProperties,
                uint32_t argumentPassedInFloatRegs, uint64_t argRootTypes,
                DataType outParam, RootType outParamRootType, DataType returnType,
-               uint32_t extraValuesToPop = 0, MaybeTailCall expectTailCall = NonTailCall)
+               uint8_t extraValuesToPop = 0, MaybeTailCall expectTailCall = NonTailCall)
       : next(nullptr),
         wrapped(wrapped),
+#ifdef JS_TRACE_LOGGING
         name_(name),
-        explicitArgs(explicitArgs),
+#endif
+        argumentRootTypes(argRootTypes),
         argumentProperties(argumentProperties),
         argumentPassedInFloatRegs(argumentPassedInFloatRegs),
+        explicitArgs(explicitArgs),
+        outParamRootType(outParamRootType),
         outParam(outParam),
         returnType(returnType),
-        argumentRootTypes(argRootTypes),
-        outParamRootType(outParamRootType),
         extraValuesToPop(extraValuesToPop),
         expectTailCall(expectTailCall)
     { }
@@ -251,14 +257,16 @@ struct VMFunction
     VMFunction(const VMFunction& o)
       : next(nullptr),
         wrapped(o.wrapped),
+#ifdef JS_TRACE_LOGGING
         name_(o.name_),
-        explicitArgs(o.explicitArgs),
+#endif
+        argumentRootTypes(o.argumentRootTypes),
         argumentProperties(o.argumentProperties),
         argumentPassedInFloatRegs(o.argumentPassedInFloatRegs),
+        explicitArgs(o.explicitArgs),
+        outParamRootType(o.outParamRootType),
         outParam(o.outParam),
         returnType(o.returnType),
-        argumentRootTypes(o.argumentRootTypes),
-        outParamRootType(o.outParamRootType),
         extraValuesToPop(o.extraValuesToPop),
         expectTailCall(o.expectTailCall)
     {
