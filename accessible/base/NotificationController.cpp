@@ -731,12 +731,19 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
   mContentInsertions.Clear();
 
   
+  
+  
   uint32_t hangingDocCnt = mHangingChildDocuments.Length();
   nsTArray<RefPtr<DocAccessible>> newChildDocs;
   for (uint32_t idx = 0; idx < hangingDocCnt; idx++) {
     DocAccessible* childDoc = mHangingChildDocuments[idx];
     if (childDoc->IsDefunct())
       continue;
+
+    if (IPCAccessibilityActive() && !mDocument->IPCDoc()) {
+      childDoc->Shutdown();
+      continue;
+    }
 
     nsIContent* ownerContent = mDocument->DocumentNode()->
       FindContentForSubDocument(childDoc->DocumentNode());
@@ -755,6 +762,8 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
       childDoc->Shutdown();
     }
   }
+
+  
   mHangingChildDocuments.Clear();
   MOZ_ASSERT(mDocument, "Illicit document shutdown");
   if (!mDocument) {
