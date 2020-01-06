@@ -191,28 +191,11 @@ gfxGDIFont::Initialize()
 
     LOGFONTW logFont;
 
-    
-    GDIFontEntry* fe = static_cast<GDIFontEntry*>(GetFontEntry());
-    bool wantFakeItalic = mStyle.style != NS_FONT_STYLE_NORMAL &&
-                          fe->IsUpright() && mStyle.allowSyntheticStyle;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool useCairoFakeItalic = wantFakeItalic && fe->mFamilyHasItalicFace;
-
     if (mAdjustedSize == 0.0) {
         mAdjustedSize = mStyle.size;
         if (mStyle.sizeAdjust > 0.0 && mAdjustedSize > 0.0) {
             
-            FillLogFont(logFont, mAdjustedSize,
-                        wantFakeItalic && !useCairoFakeItalic);
+            FillLogFont(logFont, mAdjustedSize);
             mFont = ::CreateFontIndirectW(&logFont);
 
             
@@ -245,7 +228,7 @@ gfxGDIFont::Initialize()
 
     
     mAdjustedSize = ROUND(mAdjustedSize);
-    FillLogFont(logFont, mAdjustedSize, wantFakeItalic && !useCairoFakeItalic);
+    FillLogFont(logFont, mAdjustedSize);
     mFont = ::CreateFontIndirectW(&logFont);
 
     mMetrics = new gfxFont::Metrics;
@@ -458,8 +441,7 @@ gfxGDIFont::Initialize()
 }
 
 void
-gfxGDIFont::FillLogFont(LOGFONTW& aLogFont, gfxFloat aSize,
-                        bool aUseGDIFakeItalic)
+gfxGDIFont::FillLogFont(LOGFONTW& aLogFont, gfxFloat aSize)
 {
     GDIFontEntry *fe = static_cast<GDIFontEntry*>(GetFontEntry());
 
@@ -480,11 +462,6 @@ gfxGDIFont::FillLogFont(LOGFONTW& aLogFont, gfxFloat aSize,
     }
 
     fe->FillLogFont(&aLogFont, weight, aSize);
-
-    
-    if (aUseGDIFakeItalic) {
-        aLogFont.lfItalic = 1;
-    }
 }
 
 uint32_t

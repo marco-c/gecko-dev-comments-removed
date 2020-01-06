@@ -165,8 +165,7 @@ public:
                                          gfxWindowsFontType aFontType,
                                          uint8_t aStyle,
                                          uint16_t aWeight, int16_t aStretch,
-                                         gfxUserFontData* aUserFontData,
-                                         bool aFamilyHasItalicFace);
+                                         gfxUserFontData* aUserFontData);
 
     
     static GDIFontEntry* LoadLocalFont(const nsAString& aFontName,
@@ -175,13 +174,7 @@ public:
                                        uint8_t aStyle);
 
     gfxWindowsFontType mFontType;
-    bool mForceGDI    : 1;
-
-    
-    
-    
-    
-    bool mFamilyHasItalicFace : 1;
+    bool mForceGDI;
 
     gfxSparseBitSet mUnicodeRanges;
 
@@ -190,7 +183,7 @@ protected:
 
     GDIFontEntry(const nsAString& aFaceName, gfxWindowsFontType aFontType,
                  uint8_t aStyle, uint16_t aWeight, int16_t aStretch,
-                 gfxUserFontData *aUserFontData, bool aFamilyHasItalicFace);
+                 gfxUserFontData *aUserFontData);
 
     void InitLogFont(const nsAString& aName, gfxWindowsFontType aFontType);
 

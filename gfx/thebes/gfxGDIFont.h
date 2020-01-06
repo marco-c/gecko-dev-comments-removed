@@ -90,7 +90,8 @@ protected:
     
     
     
-    void FillLogFont(LOGFONTW& aLogFont, gfxFloat aSize, bool aUseGDIFakeItalic);
+    
+    void FillLogFont(LOGFONTW& aLogFont, gfxFloat aSize);
 
     HFONT                 mFont;
     cairo_font_face_t    *mFontFace;
