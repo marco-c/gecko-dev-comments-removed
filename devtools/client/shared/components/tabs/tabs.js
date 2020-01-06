@@ -334,13 +334,6 @@ define(function (require, exports, module) {
             width: selected ? "100%" : "0",
           };
 
-          
-          
-          if (typeof tab.panel == "function" && selected) {
-            tab.panel = tab.panel(tab);
-          }
-          let panel = tab.panel || tab;
-
           return (
             DOM.div({
               id: id ? id + "-panel" : "panel-" + index,
@@ -350,7 +343,7 @@ define(function (require, exports, module) {
               role: "tabpanel",
               "aria-labelledby": id ? id + "-tab" : "tab-" + index,
             },
-              (selected || this.state.created[index]) ? panel : null
+              (selected || this.state.created[index]) ? tab : null
             )
           );
         });

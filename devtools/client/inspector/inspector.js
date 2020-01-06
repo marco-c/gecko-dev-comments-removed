@@ -631,28 +631,8 @@ Inspector.prototype = {
     
     this.gridInspector = new GridInspector(this, this.panelWin);
 
-    
-    
-    let layoutId = "layoutview";
-    let layoutTitle = INSPECTOR_L10N.getStr("inspector.sidebar.layoutViewTitle2");
-    this.sidebar.addTab(
-      layoutId,
-      layoutTitle,
-      {
-        props: {
-          id: layoutId,
-          title: layoutTitle
-        },
-        panel: () => {
-          if (!this.layoutview) {
-            const LayoutView =
-              this.browserRequire("devtools/client/inspector/layout/layout");
-            this.layoutview = new LayoutView(this, this.panelWin);
-          }
-          return this.layoutview.provider;
-        }
-      },
-      defaultTab == layoutId);
+    const LayoutView = this.browserRequire("devtools/client/inspector/layout/layout");
+    this.layoutview = new LayoutView(this, this.panelWin);
 
     if (this.target.form.animationsActor) {
       this.sidebar.addFrameTab(
