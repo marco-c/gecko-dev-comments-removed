@@ -95,7 +95,7 @@
     margin-inline-start: 0;
 
     
-    cursor: n-resize;
+    cursor: ns-resize;
   }
 
   .devtools-responsive-container > .devtools-sidebar-tabs:not(.pane-collapsed) {
