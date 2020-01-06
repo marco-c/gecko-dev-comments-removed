@@ -81,7 +81,6 @@ GenB.name = "B"
 
 
 DESCRIPTION = "Identifier is not a function";
-EXPECTED = "error";
 
 InstanceOf( true, true, "error" );
 

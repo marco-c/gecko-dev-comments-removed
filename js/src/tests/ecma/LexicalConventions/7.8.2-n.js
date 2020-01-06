@@ -22,7 +22,6 @@ writeHeaderToLog(SECTION+" "+"Examples of Semicolon Insertion");
 
 
 DESCRIPTION = "{ 1 2 } 3";
-EXPECTED = "error";
 
 new TestCase( "7.8.2",  "{ 1 2 } 3",         "error",   eval("{1 2 } 3")     );
 

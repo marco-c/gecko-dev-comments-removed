@@ -53,7 +53,6 @@ catch(e)
 }
 
 DESCRIPTION = "var super = true"
-  EXPECTED = "error";
 
 
 if (actual == 'error')

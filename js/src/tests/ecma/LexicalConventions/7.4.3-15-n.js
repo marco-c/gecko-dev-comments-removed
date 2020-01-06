@@ -47,7 +47,6 @@ catch(e)
 }
 
 DESCRIPTION = "var import = true";
-EXPECTED = "error";
 
 
 if (actual == 'error')

@@ -53,7 +53,6 @@ catch(e)
 }
 
 DESCRIPTION = "var extends = true";
-EXPECTED = "error";
 
 
 if (actual == 'error')

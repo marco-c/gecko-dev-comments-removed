@@ -53,7 +53,6 @@ catch(e)
 }
 
 DESCRIPTION = "var enum = true";
-EXPECTED = "error";
 
 
 if (actual == 'error')
