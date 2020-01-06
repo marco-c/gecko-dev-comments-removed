@@ -326,6 +326,9 @@ class BarrieredBase
     explicit BarrieredBase(const T& v) : value(v) {}
 
     
+    BarrieredBase(const BarrieredBase<T>& other) = default;
+
+    
     
     
     
