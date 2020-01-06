@@ -28,6 +28,10 @@ const {OS} = Cu.import("resource://gre/modules/osfile.jsm", {});
 
 XPCOMUtils.defineLazyModuleGetter(this, "Extension",
                                   "resource://gre/modules/Extension.jsm");
+XPCOMUtils.defineLazyGetter(this, "Management", () => {
+  let {Management} = Cu.import("resource://gre/modules/Extension.jsm", {});
+  return Management;
+});
 
 XPCOMUtils.defineLazyServiceGetter(this, "aomStartup",
                                    "@mozilla.org/addons/addon-manager-startup;1",
@@ -1245,6 +1249,26 @@ var AddonTestUtils = {
     } finally {
       Services.console.unregisterListener(listener);
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+  promiseWebExtensionStartup(id) {
+    return new Promise(resolve => {
+      Management.on("ready", function listener(event, extension) {
+        if (!id || extension.id == id) {
+          Management.off("ready", listener);
+          resolve(extension);
+        }
+      });
+    });
   },
 };
 
