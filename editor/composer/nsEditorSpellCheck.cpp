@@ -661,11 +661,17 @@ nsEditorSpellCheck::SetCurrentDictionary(const nsAString& aDictionary)
       
       
       
-      Preferences::SetString("spellchecker.dictionary", aDictionary);
+      
+      
+      
+      
+      if (XRE_IsParentProcess()) {
+        Preferences::SetString("spellchecker.dictionary", aDictionary);
 #ifdef DEBUG_DICT
-      printf("***** Storing spellchecker.dictionary |%s|\n",
-             NS_ConvertUTF16toUTF8(aDictionary).get());
+        printf("***** Possibly storing spellchecker.dictionary |%s|\n",
+               NS_ConvertUTF16toUTF8(aDictionary).get());
 #endif
+      }
     }
   }
   return mSpellChecker->SetCurrentDictionary(aDictionary);
