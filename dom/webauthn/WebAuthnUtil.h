@@ -17,9 +17,23 @@
 namespace mozilla {
 namespace dom {
 nsresult
-U2FAssembleAuthenticatorData( CryptoBuffer& aAuthenticatorData,
-                             const CryptoBuffer& aRpIdHash,
-                             const CryptoBuffer& aSignatureData);
+AssembleAuthenticatorData(const CryptoBuffer& rpIdHashBuf,
+                          const uint8_t flags,
+                          const CryptoBuffer& counterBuf,
+                          const CryptoBuffer& attestationDataBuf,
+                           CryptoBuffer& authDataBuf);
+
+nsresult
+AssembleAttestationData(const CryptoBuffer& aaguidBuf,
+                        const CryptoBuffer& keyHandleBuf,
+                        const CryptoBuffer& pubKeyObj,
+                         CryptoBuffer& attestationDataBuf);
+
+nsresult
+U2FDecomposeSignResponse(const CryptoBuffer& aResponse,
+                          uint8_t& aFlags,
+                          CryptoBuffer& aCounterBuf,
+                          CryptoBuffer& aSignatureBuf);
 
 nsresult
 U2FDecomposeRegistrationResponse(const CryptoBuffer& aResponse,

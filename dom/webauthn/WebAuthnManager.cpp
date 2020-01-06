@@ -785,14 +785,6 @@ WebAuthnManager::FinishMakeCredential(nsTArray<uint8_t>& aRegBuffer)
     return;
   }
 
-  CryptoBuffer authenticatorDataBuf;
-  rv = U2FAssembleAuthenticatorData(authenticatorDataBuf, rpIdHashBuf,
-                                    signatureBuf);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    Cancel(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
-
   
   CryptoBuffer pubKeyObj;
   rv = CBOREncodePublicKeyObj(pubKeyBuf, pubKeyObj);
@@ -803,39 +795,35 @@ WebAuthnManager::FinishMakeCredential(nsTArray<uint8_t>& aRegBuffer)
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-
-  mozilla::dom::CryptoBuffer authDataBuf;
-  if (NS_WARN_IF(!authDataBuf.SetCapacity(32 + 1 + 4 + aaguidBuf.Length() + 2 +
-                                          keyHandleBuf.Length() +
-                                          pubKeyObj.Length(),
-                                          mozilla::fallible))) {
+  mozilla::dom::CryptoBuffer counterBuf;
+  if (NS_WARN_IF(!counterBuf.SetCapacity(4, mozilla::fallible))) {
     Cancel(NS_ERROR_OUT_OF_MEMORY);
     return;
   }
+  counterBuf.AppendElement(0x00, mozilla::fallible);
+  counterBuf.AppendElement(0x00, mozilla::fallible);
+  counterBuf.AppendElement(0x00, mozilla::fallible);
+  counterBuf.AppendElement(0x00, mozilla::fallible);
 
-  authDataBuf.AppendElements(rpIdHashBuf, mozilla::fallible);
-  authDataBuf.AppendElement(FLAG_TUP | FLAG_AT, mozilla::fallible);
   
   
-  authDataBuf.AppendElement(0x00, mozilla::fallible);
-  authDataBuf.AppendElement(0x00, mozilla::fallible);
-  authDataBuf.AppendElement(0x00, mozilla::fallible);
-  authDataBuf.AppendElement(0x00, mozilla::fallible);
+  CryptoBuffer attDataBuf;
+  rv = AssembleAttestationData(aaguidBuf, keyHandleBuf, pubKeyObj, attDataBuf);
+  if (NS_FAILED(rv)) {
+    Cancel(rv);
+    return;
+  }
 
-  authDataBuf.AppendElements(aaguidBuf, mozilla::fallible);
-  authDataBuf.AppendElement((keyHandleBuf.Length() >> 8) & 0xFF, mozilla::fallible);
-  authDataBuf.AppendElement((keyHandleBuf.Length() >> 0) & 0xFF, mozilla::fallible);
-  authDataBuf.AppendElements(keyHandleBuf, mozilla::fallible);
-  authDataBuf.AppendElements(pubKeyObj, mozilla::fallible);
+  mozilla::dom::CryptoBuffer authDataBuf;
+  rv = AssembleAuthenticatorData(rpIdHashBuf, FLAG_TUP, counterBuf, attDataBuf,
+                                 authDataBuf);
+  if (NS_FAILED(rv)) {
+    Cancel(rv);
+    return;
+  }
 
+  
+  
   CryptoBuffer attObj;
   rv = CBOREncodeAttestationObj(authDataBuf, attestationCertBuf, signatureBuf,
                                 attObj);
@@ -869,8 +857,9 @@ WebAuthnManager::FinishGetAssertion(nsTArray<uint8_t>& aCredentialId,
   MOZ_ASSERT(mTransactionPromise);
   MOZ_ASSERT(mInfo.isSome());
 
-  CryptoBuffer signatureData;
-  if (NS_WARN_IF(!signatureData.Assign(aSigBuffer.Elements(), aSigBuffer.Length()))) {
+  CryptoBuffer tokenSignatureData;
+  if (NS_WARN_IF(!tokenSignatureData.Assign(aSigBuffer.Elements(),
+                                            aSigBuffer.Length()))) {
     Cancel(NS_ERROR_OUT_OF_MEMORY);
     return;
   }
@@ -887,9 +876,21 @@ WebAuthnManager::FinishGetAssertion(nsTArray<uint8_t>& aCredentialId,
     return;
   }
 
+  CryptoBuffer signatureBuf;
+  CryptoBuffer counterBuf;
+  uint8_t flags = 0;
+  nsresult rv = U2FDecomposeSignResponse(tokenSignatureData, flags, counterBuf,
+                                         signatureBuf);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    Cancel(rv);
+    return;
+  }
+
+  CryptoBuffer attestationDataBuf;
   CryptoBuffer authenticatorDataBuf;
-  nsresult rv = U2FAssembleAuthenticatorData(authenticatorDataBuf, rpIdHashBuf,
-                                             signatureData);
+  rv = AssembleAuthenticatorData(rpIdHashBuf, FLAG_TUP, counterBuf,
+                                  attestationDataBuf,
+                                 authenticatorDataBuf);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     Cancel(rv);
     return;
@@ -917,7 +918,7 @@ WebAuthnManager::FinishGetAssertion(nsTArray<uint8_t>& aCredentialId,
     new AuthenticatorAssertionResponse(mCurrentParent);
   assertion->SetClientDataJSON(clientDataBuf);
   assertion->SetAuthenticatorData(authenticatorDataBuf);
-  assertion->SetSignature(signatureData);
+  assertion->SetSignature(signatureBuf);
 
   RefPtr<PublicKeyCredential> credential =
     new PublicKeyCredential(mCurrentParent);
