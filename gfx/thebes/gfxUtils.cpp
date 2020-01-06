@@ -652,13 +652,13 @@ gfxUtils::ClipToRegion(DrawTarget* aTarget, const nsIntRegion& aRegion)
   }
 }
 
- gfxFloat
-gfxUtils::ClampToScaleFactor(gfxFloat aVal, bool aRoundDown)
+ float
+gfxUtils::ClampToScaleFactor(float aVal, bool aRoundDown)
 {
   
   
   
-  static const gfxFloat kScaleResolution = 2;
+  static const float kScaleResolution = 2;
 
   
   
@@ -672,7 +672,7 @@ gfxUtils::ClampToScaleFactor(gfxFloat aVal, bool aRoundDown)
     aVal = 1 / aVal;
   }
 
-  gfxFloat power = log(aVal)/log(kScaleResolution);
+  float power = logf(aVal)/logf(kScaleResolution);
 
   
   
@@ -689,7 +689,7 @@ gfxUtils::ClampToScaleFactor(gfxFloat aVal, bool aRoundDown)
     power = ceil(power);
   }
 
-  gfxFloat scale = pow(kScaleResolution, power);
+  float scale = powf(kScaleResolution, power);
 
   if (inverse) {
     scale = 1 / scale;

@@ -5343,12 +5343,7 @@ ContainerState::Finish(uint32_t* aTextContentFlags,
   *aTextContentFlags = textContentFlags;
 }
 
-static inline gfxSize RoundToFloatPrecision(const gfxSize& aSize)
-{
-  return gfxSize(float(aSize.width), float(aSize.height));
-}
-
-static void RestrictScaleToMaxLayerSize(gfxSize& aScale,
+static void RestrictScaleToMaxLayerSize(Size& aScale,
                                         const nsRect& aVisibleRect,
                                         nsIFrame* aContainerFrame,
                                         Layer* aContainerLayer)
@@ -5444,7 +5439,7 @@ ChooseScaleAndSetTransform(FrameLayerBuilder* aLayerBuilder,
   }
 
   bool canDraw2D = transform.CanDraw2D(&transform2d);
-  gfxSize scale;
+  Size scale;
   
   if (canDraw2D &&
       !aContainerFrame->Combines3DTransformWithAncestors() &&
@@ -5468,7 +5463,7 @@ ChooseScaleAndSetTransform(FrameLayerBuilder* aLayerBuilder,
       scale.height *= incomingScale;
     } else {
       
-      scale = RoundToFloatPrecision(ThebesMatrix(transform2d).ScaleFactors(true));
+      scale = transform2d.ScaleFactors(true);
       
       
       
@@ -5499,7 +5494,7 @@ ChooseScaleAndSetTransform(FrameLayerBuilder* aLayerBuilder,
     
     
     if (fabs(scale.width) < 1e-8 || fabs(scale.height) < 1e-8) {
-      scale = gfxSize(1.0, 1.0);
+      scale = Size(1.0, 1.0);
     }
     
     
@@ -5510,13 +5505,13 @@ ChooseScaleAndSetTransform(FrameLayerBuilder* aLayerBuilder,
       RestrictScaleToMaxLayerSize(scale, aVisibleRect, aContainerFrame, aLayer);
     }
   } else {
-    scale = gfxSize(1.0, 1.0);
+    scale = Size(1.0, 1.0);
   }
 
   
   aLayer->SetBaseTransform(transform);
-  aLayer->SetPreScale(1.0f/float(scale.width),
-                      1.0f/float(scale.height));
+  aLayer->SetPreScale(1.0f/scale.width,
+                      1.0f/scale.height);
   aLayer->SetInheritedScale(aIncomingScale.mXScale,
                             aIncomingScale.mYScale);
 
