@@ -166,8 +166,8 @@ FocusTarget::FocusTarget(nsIPresShell* aRootPresShell,
   
   if (focusedContent) {
     FT_LOG("Creating nil target with seq=%" PRIu64 ", kl=%d (disabling for focusing an element)\n",
-           mFocusHasKeyEventListeners,
-           aFocusSequenceNumber);
+           aFocusSequenceNumber,
+           mFocusHasKeyEventListeners);
 
     mType = FocusTarget::eNone;
     return;
