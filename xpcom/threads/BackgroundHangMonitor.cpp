@@ -14,6 +14,7 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/ThreadHangStats.h"
 #include "mozilla/ThreadLocal.h"
+#include "mozilla/SystemGroup.h"
 
 #include "prinrval.h"
 #include "prthread.h"
@@ -24,6 +25,7 @@
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 #include "GeckoProfiler.h"
+#include "nsNetCID.h"
 
 #include <algorithm>
 
@@ -45,6 +47,8 @@ bool StackScriptEntriesCollapser(const char* aStackEntry, const char *aAnotherSt
 }
 
 namespace mozilla {
+
+class ProcessHangRunnable;
 
 
 
@@ -88,6 +92,10 @@ public:
   PRIntervalTime mIntervalNow;
   
   LinkedList<BackgroundHangThread> mHangThreads;
+  
+  
+  
+  nsCOMPtr<nsIEventTarget> mSTS;
 
   void Shutdown()
   {
@@ -188,6 +196,9 @@ public:
   UniquePtr<HangMonitor::HangAnnotations> mAnnotations;
   
   HangMonitor::Observer::Annotators mAnnotators;
+  
+  
+  LinkedList<RefPtr<ProcessHangRunnable>> mProcessHangRunnables;
 
   BackgroundHangThread(const char* aName,
                        uint32_t aTimeoutMs,
@@ -195,7 +206,8 @@ public:
                        BackgroundHangMonitor::ThreadType aThreadType = BackgroundHangMonitor::THREAD_SHARED);
 
   
-  Telemetry::HangHistogram& ReportHang(PRIntervalTime aHangTime);
+  
+  void ReportHang(PRIntervalTime aHangTime);
   
   void ReportPermaHang();
   
@@ -235,9 +247,11 @@ BackgroundHangManager::BackgroundHangManager()
   : mShutdown(false)
   , mLock("BackgroundHangManager")
   , mIntervalNow(0)
+  , mSTS(do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID))
 {
   
   MonitorAutoLock autoLock(mLock);
+
   mHangMonitorThread = PR_CreateThread(
     PR_USER_THREAD, MonitorThread, this,
     PR_PRIORITY_LOW, PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
@@ -417,6 +431,93 @@ BackgroundHangThread::BackgroundHangThread(const char* aName,
   autoLock.Notify();
 }
 
+
+
+
+
+
+
+class ProcessHangRunnable final
+  : public CancelableRunnable
+  , public LinkedListElement<RefPtr<ProcessHangRunnable>>
+{
+public:
+  ProcessHangRunnable(BackgroundHangManager* aManager,
+                      BackgroundHangThread* aThread,
+                      Telemetry::HangHistogram&& aHistogram,
+                      Telemetry::NativeHangStack&& aNativeStack)
+    : mManager(aManager)
+    , mNativeStack(mozilla::Move(aNativeStack))
+    , mThread(aThread)
+    , mHistogram(mozilla::Move(aHistogram))
+  {
+    MOZ_ASSERT(mThread);
+  }
+
+  NS_IMETHOD
+  Run() override
+  {
+    
+    
+    
+    Telemetry::ProcessedStack processed;
+    if (!mNativeStack.empty()) {
+       processed = Telemetry::GetStackAndModules(mNativeStack);
+    }
+
+    
+    {
+      MonitorAutoLock autoLock(mManager->mLock);
+      if (NS_WARN_IF(!mThread)) {
+        return NS_OK;
+      }
+
+      
+      
+      if (!mNativeStack.empty() &&
+          mThread->mStats.mCombinedStacks.GetStackCount() < Telemetry::kMaximumNativeHangStacks) {
+        mHistogram.SetNativeStackIndex(mThread->mStats.mCombinedStacks.AddStack(processed));
+      }
+
+      
+      
+      MOZ_ALWAYS_TRUE(mThread->mStats.mHangs.append(Move(mHistogram)));
+      remove();
+      mThread = nullptr;
+    }
+
+    return NS_OK;
+  }
+
+  
+  nsresult
+  Cancel() override
+  {
+    mManager->mLock.AssertCurrentThreadOwns();
+    if (NS_WARN_IF(!mThread)) {
+      return NS_OK;
+    }
+
+    
+    
+    MOZ_ALWAYS_TRUE(mThread->mStats.mHangs.append(Move(mHistogram)));
+    if (isInList()) {
+      remove();
+    }
+    mThread = nullptr;
+    return NS_OK;
+  }
+
+private:
+  
+  
+  RefPtr<BackgroundHangManager> mManager;
+  const Telemetry::NativeHangStack mNativeStack;
+  
+  BackgroundHangThread* MOZ_NON_OWNING_REF mThread; 
+  Telemetry::HangHistogram mHistogram;
+};
+
 BackgroundHangThread::~BackgroundHangThread()
 {
   
@@ -432,10 +533,17 @@ BackgroundHangThread::~BackgroundHangThread()
   }
 
   
-  Telemetry::RecordThreadHangStats(mStats);
+  
+  while (RefPtr<ProcessHangRunnable> runnable = mProcessHangRunnables.popFirst()) {
+    runnable->Cancel();
+  }
+
+  
+  
+  Telemetry::RecordThreadHangStats(Move(mStats));
 }
 
-Telemetry::HangHistogram&
+void
 BackgroundHangThread::ReportHang(PRIntervalTime aHangTime)
 {
   
@@ -465,21 +573,30 @@ BackgroundHangThread::ReportHang(PRIntervalTime aHangTime)
     mHangStack.erase(mHangStack.begin() + 1, mHangStack.begin() + elementsToRemove);
   }
 
-  Telemetry::HangHistogram newHistogram(Move(mHangStack), Move(mNativeHangStack));
+  Telemetry::HangHistogram newHistogram(Move(mHangStack));
   for (Telemetry::HangHistogram* oldHistogram = mStats.mHangs.begin();
        oldHistogram != mStats.mHangs.end(); oldHistogram++) {
     if (newHistogram == *oldHistogram) {
       
       oldHistogram->Add(aHangTime, Move(mAnnotations));
-      return *oldHistogram;
+      return;
     }
   }
-  
   newHistogram.Add(aHangTime, Move(mAnnotations));
-  if (!mStats.mHangs.append(Move(newHistogram))) {
-    MOZ_CRASH();
+
+  
+  
+  
+  RefPtr<ProcessHangRunnable> processHang =
+    new ProcessHangRunnable(mManager, this, Move(newHistogram), Move(mNativeHangStack));
+  mProcessHangRunnables.insertFront(processHang);
+
+  
+  
+  if (!mManager->mSTS || NS_FAILED(mManager->mSTS->Dispatch(processHang.forget()))) {
+    RefPtr<ProcessHangRunnable> runnable = mProcessHangRunnables.popFirst();
+    runnable->Cancel();
   }
-  return mStats.mHangs.back();
 }
 
 void
@@ -488,14 +605,13 @@ BackgroundHangThread::ReportPermaHang()
   
   
 
-  Telemetry::HangHistogram& hang = ReportHang(mMaxTimeout);
-  Telemetry::NativeHangStack& stack = hang.GetNativeStack();
-  if (stack.empty()) {
-    mStats.mNativeStackCnt += 1;
-    if (mStats.mNativeStackCnt <= Telemetry::kMaximumNativeHangStacks) {
-      mStackHelper.GetNativeStack(stack);
-    }
-  }
+  
+  
+  
+  
+  
+  
+  ReportHang(mMaxTimeout);
 }
 
 MOZ_ALWAYS_INLINE void
@@ -587,6 +703,7 @@ BackgroundHangMonitor::DisableOnBeta() {
 void
 BackgroundHangMonitor::Startup()
 {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 #ifdef MOZ_ENABLE_BACKGROUND_HANG_MONITOR
   MOZ_ASSERT(!BackgroundHangManager::sInstance, "Already initialized");
 

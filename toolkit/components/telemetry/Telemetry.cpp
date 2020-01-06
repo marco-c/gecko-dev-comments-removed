@@ -413,7 +413,7 @@ public:
 #if defined(MOZ_GECKO_PROFILER)
   static void DoStackCapture(const nsACString& aKey);
 #endif
-  static void RecordThreadHangStats(Telemetry::ThreadHangStats& aStats);
+  static void RecordThreadHangStats(Telemetry::ThreadHangStats&& aStats);
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
   struct Stat {
     uint32_t hitCount;
@@ -1480,11 +1480,6 @@ CreateJSThreadHangStats(JSContext* cx, const Telemetry::ThreadHangStats& thread)
   }
 
   
-  
-  
-  CombinedStacks combinedStacks(Telemetry::kMaximumNativeHangStacks);
-
-  
   JS::RootedObject hangs(cx, JS_NewArrayObject(cx, 0));
   if (!hangs) {
     return nullptr;
@@ -1496,12 +1491,8 @@ CreateJSThreadHangStats(JSContext* cx, const Telemetry::ThreadHangStats& thread)
     }
 
     
-    
-    const Telemetry::NativeHangStack& stack = thread.mHangs[i].GetNativeStack();
-    if (!stack.empty() &&
-        combinedStacks.GetStackCount() < Telemetry::kMaximumNativeHangStacks) {
-      Telemetry::ProcessedStack processed = Telemetry::GetStackAndModules(stack);
-      uint32_t index = combinedStacks.AddStack(processed);
+    uint32_t index = thread.mHangs[i].GetNativeStackIndex();
+    if (index != Telemetry::HangHistogram::NO_NATIVE_STACK_INDEX) {
       if (!JS_DefineProperty(cx, obj, "nativeStack", index, JSPROP_ENUMERATE)) {
         return nullptr;
       }
@@ -1515,7 +1506,9 @@ CreateJSThreadHangStats(JSContext* cx, const Telemetry::ThreadHangStats& thread)
     return nullptr;
   }
 
-  JS::RootedObject fullReportObj(cx, CreateJSStackObject(cx, combinedStacks));
+  
+  
+  JS::RootedObject fullReportObj(cx, CreateJSStackObject(cx, thread.mCombinedStacks));
   if (!fullReportObj) {
     return nullptr;
   }
@@ -2095,7 +2088,7 @@ TelemetryImpl::CaptureStack(const nsACString& aKey) {
 }
 
 void
-TelemetryImpl::RecordThreadHangStats(Telemetry::ThreadHangStats& aStats)
+TelemetryImpl::RecordThreadHangStats(Telemetry::ThreadHangStats&& aStats)
 {
   if (!sTelemetry || !TelemetryHistogram::CanRecordExtended())
     return;
@@ -2791,9 +2784,9 @@ void CaptureStack(const nsACString& aKey)
 }
 #endif
 
-void RecordThreadHangStats(ThreadHangStats& aStats)
+void RecordThreadHangStats(ThreadHangStats&& aStats)
 {
-  TelemetryImpl::RecordThreadHangStats(aStats);
+  TelemetryImpl::RecordThreadHangStats(Move(aStats));
 }
 
 

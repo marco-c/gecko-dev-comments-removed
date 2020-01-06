@@ -343,7 +343,7 @@ class ThreadHangStats;
 
 
 
-void RecordThreadHangStats(ThreadHangStats& aStats);
+void RecordThreadHangStats(ThreadHangStats&& aStats);
 
 
 
