@@ -375,10 +375,12 @@ private:
 
   struct ImageContainerEntry {
     ImageContainerEntry(const gfx::IntSize& aSize,
-                        layers::ImageContainer* aContainer)
+                        layers::ImageContainer* aContainer,
+                        uint32_t aFlags)
       : mSize(aSize)
       , mContainer(aContainer)
       , mLastDrawResult(DrawResult::NOT_READY)
+      , mFlags(aFlags)
     { }
 
     gfx::IntSize                        mSize;
@@ -388,6 +390,9 @@ private:
     
     
     DrawResult                          mLastDrawResult;
+    
+    
+    uint32_t                            mFlags;
   };
 
   AutoTArray<ImageContainerEntry, 1> mImageContainers;
