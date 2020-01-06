@@ -164,6 +164,10 @@ SwatchColorPickerTooltip.prototype = extend(SwatchBasedEditorTooltip.prototype, 
   _openEyeDropper: function () {
     let {inspector, toolbox, telemetry} = this.inspector;
     telemetry.toolOpened("pickereyedropper");
+
+    
+    toolbox.highlighterUtils.cancelPicker();
+
     inspector.pickColorFromPage(toolbox, {copyOnSelect: false}).then(() => {
       this.eyedropperOpen = true;
 
