@@ -183,6 +183,8 @@ function fillInPluginPermissionTemplate(aPluginName, aPermissionString) {
     [ ".permPluginTemplateRadioDefault", "id", aPermissionString + "#0" ],
     [ ".permPluginTemplateRadioAsk", "id", aPermissionString + "#3" ],
     [ ".permPluginTemplateRadioAllow", "id", aPermissionString + "#1" ],
+    
+    [ ".permPluginTemplateRadioHide", "id", aPermissionString + "#8"],
     [ ".permPluginTemplateRadioBlock", "id", aPermissionString + "#2" ]
   ];
 
