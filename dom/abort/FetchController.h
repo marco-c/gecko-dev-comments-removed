@@ -4,32 +4,32 @@
 
 
 
-#ifndef mozilla_dom_AbortController_h
-#define mozilla_dom_AbortController_h
+#ifndef mozilla_dom_FetchController_h
+#define mozilla_dom_FetchController_h
 
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/AbortSignal.h"
+#include "mozilla/dom/FetchSignal.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
 
 namespace mozilla {
 namespace dom {
 
-class AbortController final : public nsISupports
+class FetchController final : public nsISupports
                             , public nsWrapperCache
-                            , public AbortSignal::Follower
+                            , public FetchSignal::Follower
 {
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(AbortController)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(FetchController)
 
   static bool
   IsEnabled(JSContext* aCx, JSObject* aGlobal);
 
-  static already_AddRefed<AbortController>
+  static already_AddRefed<FetchController>
   Constructor(const GlobalObject& aGlobal, ErrorResult& aRv);
 
-  explicit AbortController(nsIGlobalObject* aGlobal);
+  explicit FetchController(nsIGlobalObject* aGlobal);
 
   JSObject*
   WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
@@ -37,19 +37,19 @@ public:
   nsIGlobalObject*
   GetParentObject() const;
 
-  AbortSignal*
+  FetchSignal*
   Signal();
 
   void
   Abort();
 
   void
-  Follow(AbortSignal& aSignal);
+  Follow(FetchSignal& aSignal);
 
   void
-  Unfollow(AbortSignal& aSignal);
+  Unfollow(FetchSignal& aSignal);
 
-  AbortSignal*
+  FetchSignal*
   Following() const;
 
   
@@ -57,10 +57,10 @@ public:
   void Aborted() override;
 
 private:
-  ~AbortController() = default;
+  ~FetchController() = default;
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
-  RefPtr<AbortSignal> mSignal;
+  RefPtr<FetchSignal> mSignal;
 
   bool mAborted;
 };
