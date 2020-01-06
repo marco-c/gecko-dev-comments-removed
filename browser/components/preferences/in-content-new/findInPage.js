@@ -18,6 +18,19 @@ var gSearchResultsPane = {
     if (!this.searchInput.hidden) {
       this.searchInput.addEventListener("command", this);
       this.searchInput.addEventListener("focus", this);
+
+      
+      let callbackId;
+      window.addEventListener("resize", () => {
+        if (!callbackId) {
+          callbackId = window.requestAnimationFrame(() => {
+            this.listSearchTooltips.forEach((anchorNode) => {
+              this.calculateTooltipPosition(anchorNode);
+            });
+            callbackId = null;
+          });
+        }
+      });
     }
   },
 
@@ -397,6 +410,12 @@ var gSearchResultsPane = {
     anchorNode.setAttribute("data-has-tooltip", "true");
     anchorNode.parentElement.classList.add("search-tooltip-parent");
     anchorNode.parentElement.appendChild(searchTooltip);
+
+    this.calculateTooltipPosition(anchorNode);
+  },
+
+  calculateTooltipPosition(anchorNode) {
+    let searchTooltip = anchorNode.parentElement.querySelector(":scope > .search-tooltip");
 
     
     
