@@ -3623,6 +3623,15 @@ HttpChannelChild::OverrideWithSynthesizedResponse(nsAutoPtr<nsHttpResponseHead>&
   }
 
   if (nsHttpChannel::WillRedirect(mResponseHead)) {
+    
+    
+    
+    rv = CheckRedirectLimit(nsIChannelEventSink::REDIRECT_TEMPORARY);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      Cancel(rv);
+      return;
+    }
+
     mShouldInterceptSubsequentRedirect = true;
     if (mInterceptListener) {
       mInterceptListener->Cleanup();

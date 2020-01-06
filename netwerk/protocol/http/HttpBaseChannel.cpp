@@ -4349,6 +4349,35 @@ HttpBaseChannel::SetLastRedirectFlags(uint32_t aValue)
   return NS_OK;
 }
 
+nsresult
+HttpBaseChannel::CheckRedirectLimit(uint32_t aRedirectFlags) const
+{
+  if (aRedirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL) {
+    
+    
+    
+    
+    static const int8_t kMinInternalRedirects = 5;
+
+    if (mInternalRedirectCount >= (mRedirectionLimit + kMinInternalRedirects)) {
+      LOG(("internal redirection limit reached!\n"));
+      return NS_ERROR_REDIRECT_LOOP;
+    }
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(aRedirectFlags & (nsIChannelEventSink::REDIRECT_TEMPORARY |
+                               nsIChannelEventSink::REDIRECT_PERMANENT |
+                               nsIChannelEventSink::REDIRECT_STS_UPGRADE));
+
+  if (mRedirectCount >= mRedirectionLimit) {
+    LOG(("redirection limit reached!\n"));
+    return NS_ERROR_REDIRECT_LOOP;
+  }
+
+  return NS_OK;
+}
+
 
 
  void
