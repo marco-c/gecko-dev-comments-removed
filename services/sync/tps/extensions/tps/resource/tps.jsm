@@ -315,30 +315,14 @@ var TPS = {
     Logger.logPass("executing action " + action.toUpperCase() + " on windows");
   },
 
-  HandleTabs(tabs, action) {
-    this._tabsAdded = tabs.length;
-    this._tabsFinished = 0;
+  async HandleTabs(tabs, action) {
     for (let tab of tabs) {
       Logger.logInfo("executing action " + action.toUpperCase() +
                      " on tab " + JSON.stringify(tab));
       switch (action) {
         case ACTION_ADD:
-          
-          
-          
-          let taburi = tab.uri;
-          BrowserTabs.Add(tab.uri, () => {
-            this._tabsFinished++;
-            Logger.logInfo("tab for " + taburi + " finished loading");
-            if (this._tabsFinished == this._tabsAdded) {
-              Logger.logInfo("all tabs loaded, continuing...");
-
-              
-              
-              CommonUtils.namedTimer(() => {
-                this.FinishAsyncOperation();
-              }, 2500, this, "postTabsOpening");
-            }
+          await new Promise(resolve => {
+            BrowserTabs.Add(tab.uri, resolve);
           });
           break;
         case ACTION_VERIFY:
@@ -357,6 +341,14 @@ var TPS = {
         default:
           Logger.AssertTrue(false, "invalid action: " + action);
       }
+    }
+    if (action === ACTION_ADD) {
+      
+      
+      
+      
+      
+      await new Promise(resolve => setTimeout(resolve, 2500));
     }
     Logger.logPass("executing action " + action.toUpperCase() + " on tabs");
   },
@@ -1312,15 +1304,14 @@ var Prefs = {
 };
 
 var Tabs = {
-  add: function Tabs__add(tabs) {
-    TPS.StartAsyncOperation();
-    TPS.HandleTabs(tabs, ACTION_ADD);
+  async add(tabs) {
+    await TPS.HandleTabs(tabs, ACTION_ADD);
   },
-  verify: function Tabs__verify(tabs) {
-    TPS.HandleTabs(tabs, ACTION_VERIFY);
+  async verify(tabs) {
+    await TPS.HandleTabs(tabs, ACTION_VERIFY);
   },
-  verifyNot: function Tabs__verifyNot(tabs) {
-    TPS.HandleTabs(tabs, ACTION_VERIFY_NOT);
+  async verifyNot(tabs) {
+    await TPS.HandleTabs(tabs, ACTION_VERIFY_NOT);
   }
 };
 
