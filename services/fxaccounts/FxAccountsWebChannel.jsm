@@ -41,6 +41,11 @@ const PREF_LAST_FXA_USER           = "identity.fxaccounts.lastSignedInUserHash";
 
 
 
+const EXTRA_ENGINES = ["addresses", "creditcards"];
+
+
+
+
 
 
 function getErrorDetails(error) {
@@ -280,6 +285,17 @@ this.FxAccountsWebChannelHelpers.prototype = {
     
     delete accountData.customizeSync;
 
+    if (accountData.offeredSyncEngines) {
+      EXTRA_ENGINES.forEach(engine => {
+        if (accountData.offeredSyncEngines.includes(engine) &&
+            !accountData.declinedSyncEngines.includes(engine)) {
+          
+          Services.prefs.setBoolPref(`services.sync.engine.${engine}`, true);
+        }
+      });
+      delete accountData.offeredSyncEngines;
+    }
+
     if (accountData.declinedSyncEngines) {
       let declinedSyncEngines = accountData.declinedSyncEngines;
       log.debug("Received declined engines", declinedSyncEngines);
@@ -384,8 +400,21 @@ this.FxAccountsWebChannelHelpers.prototype = {
     }
 
     return {
-      signedInUser
+      signedInUser,
+      capabilities: {
+        engines: this._getAvailableExtraEngines()
+      }
     };
+  },
+
+  _getAvailableExtraEngines() {
+    return EXTRA_ENGINES.filter(engineName => {
+      try {
+        return Services.prefs.getBoolPref(`services.sync.engine.${engineName}.available`);
+      } catch (e) {
+        return false;
+      }
+    });
   },
 
   changePassword(credentials) {
