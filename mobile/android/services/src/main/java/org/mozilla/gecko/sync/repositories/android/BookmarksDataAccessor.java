@@ -115,6 +115,11 @@ public class BookmarksDataAccessor extends DataAccessor {
 
    boolean updateAssertingLocalVersion(String guid, int expectedLocalVersion, boolean shouldIncrementLocalVersion, Record newRecord) {
     final ContentValues cv = getContentValues(newRecord);
+
+    
+    
+    cv.remove(BrowserContract.Bookmarks.PARAM_INSERT_FROM_SYNC_AS_MODIFIED);
+
     final Bundle data = new Bundle();
     data.putString(BrowserContract.SyncColumns.GUID, guid);
     data.putInt(BrowserContract.VersionColumns.LOCAL_VERSION, expectedLocalVersion);
