@@ -5,13 +5,10 @@
 
 const {utils: Cu} = Components;
 
-const {redux} = Cu.import("resource://activity-stream/vendor/Redux.jsm", {});
-const {reducers} = Cu.import("resource://activity-stream/common/Reducers.jsm", {});
 const {ActivityStreamMessageChannel} = Cu.import("resource://activity-stream/lib/ActivityStreamMessageChannel.jsm", {});
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-
-XPCOMUtils.defineLazyModuleGetter(this, "Prefs",
-  "resource://activity-stream/lib/ActivityStreamPrefs.jsm");
+const {Prefs} = Cu.import("resource://activity-stream/lib/ActivityStreamPrefs.jsm", {});
+const {reducers} = Cu.import("resource://activity-stream/common/Reducers.jsm", {});
+const {redux} = Cu.import("resource://activity-stream/vendor/Redux.jsm", {});
 
 
 
@@ -30,15 +27,11 @@ this.Store = class Store {
     this._middleware = this._middleware.bind(this);
     
     
-    ["dispatch", "getState", "subscribe"].forEach(method => {
-      this[method] = (...args) => {
-        return this._store[method](...args);
-      };
-    });
+    for (const method of ["dispatch", "getState", "subscribe"]) {
+      this[method] = (...args) => this._store[method](...args);
+    }
     this.feeds = new Map();
-    this._feedFactories = null;
     this._prefs = new Prefs();
-    this._prefHandlers = new Map();
     this._messageChannel = new ActivityStreamMessageChannel({dispatch: this.dispatch});
     this._store = redux.createStore(
       redux.combineReducers(reducers),
@@ -51,10 +44,14 @@ this.Store = class Store {
 
 
 
-  _middleware(store) {
+  _middleware() {
     return next => action => {
       next(action);
-      this.feeds.forEach(s => s.onAction && s.onAction(action));
+      for (const store of this.feeds.values()) {
+        if (store.onAction) {
+          store.onAction(action);
+        }
+      }
     };
   }
 
@@ -65,7 +62,7 @@ this.Store = class Store {
 
 
   initFeed(feedName) {
-    const feed = this._feedFactories[feedName]();
+    const feed = this._feedFactories.get(feedName)();
     feed.store = this;
     this.feeds.set(feedName, feed);
   }
@@ -90,22 +87,13 @@ this.Store = class Store {
   
 
 
-
-
-
-
-
-  maybeStartFeedAndListenForPrefChanges(prefName) {
-    
-    
-    const onPrefChanged = isEnabled => (isEnabled ? this.initFeed(prefName) : this.uninitFeed(prefName));
-    this._prefHandlers.set(prefName, onPrefChanged);
-    this._prefs.observe(prefName, onPrefChanged);
-
-    
-    
-    if (this._prefs.get(prefName)) {
-      this.initFeed(prefName);
+  onPrefChanged(name, value) {
+    if (this._feedFactories.has(name)) {
+      if (value) {
+        this.initFeed(name);
+      } else {
+        this.uninitFeed(name);
+      }
     }
   }
 
@@ -116,13 +104,15 @@ this.Store = class Store {
 
 
 
-  init(feedConstructors) {
-    if (feedConstructors) {
-      this._feedFactories = feedConstructors;
-      for (const pref of Object.keys(feedConstructors)) {
-        this.maybeStartFeedAndListenForPrefChanges(pref);
+  init(feedFactories) {
+    this._feedFactories = feedFactories;
+    for (const pref of feedFactories.keys()) {
+      if (this._prefs.get(pref)) {
+        this.initFeed(pref);
       }
     }
+
+    this._prefs.observeBranch(this);
     this._messageChannel.createChannel();
   }
 
@@ -133,11 +123,10 @@ this.Store = class Store {
 
 
   uninit() {
+    this._prefs.ignoreBranch(this);
     this.feeds.forEach(feed => this.uninitFeed(feed));
-    this._prefHandlers.forEach((handler, pref) => this._prefs.ignore(pref, handler));
-    this._prefHandlers.clear();
-    this._feedFactories = null;
     this.feeds.clear();
+    this._feedFactories = null;
     this._messageChannel.destroyChannel();
   }
 };
