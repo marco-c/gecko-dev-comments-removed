@@ -149,6 +149,8 @@
 #include <string.h>
 #include <algorithm>
 
+using namespace mozilla;
+
 #ifdef XP_WIN
 
 
@@ -462,7 +464,7 @@ static size_t arena_maxclass;
 static const size_t gRecycleLimit = CHUNK_RECYCLE_LIMIT * CHUNKSIZE_DEFAULT;
 
 
-static mozilla::Atomic<size_t, mozilla::ReleaseAcquire> gRecycledSize;
+static Atomic<size_t, ReleaseAcquire> gRecycledSize;
 
 
 
@@ -507,7 +509,7 @@ private:
 };
 
 
-static mozilla::Atomic<bool> malloc_initialized(false);
+static Atomic<bool> malloc_initialized(false);
 
 #if defined(XP_WIN)
 
@@ -806,7 +808,7 @@ struct arena_chunk_t
   
   
   
-  mozilla::DoublyLinkedListElement<arena_chunk_t> chunks_madvised_elem;
+  DoublyLinkedListElement<arena_chunk_t> chunks_madvised_elem;
 #endif
 
   
@@ -920,7 +922,7 @@ private:
 #ifdef MALLOC_DOUBLE_PURGE
   
   
-  mozilla::DoublyLinkedList<arena_chunk_t> mChunksMAdvised;
+  DoublyLinkedList<arena_chunk_t> mChunksMAdvised;
 #endif
 
   
@@ -1112,8 +1114,7 @@ static Mutex arenas_lock;
 #if !defined(XP_DARWIN)
 static MOZ_THREAD_LOCAL(arena_t*) thread_arena;
 #else
-static mozilla::detail::ThreadLocal<arena_t*,
-                                    mozilla::detail::ThreadLocalKeyStorage>
+static detail::ThreadLocal<arena_t*, detail::ThreadLocalKeyStorage>
   thread_arena;
 #endif
 
@@ -1517,7 +1518,7 @@ struct BaseNodeFreePolicy
   void operator()(extent_node_t* aPtr) { base_node_dealloc(aPtr); }
 };
 
-using UniqueBaseNode = mozilla::UniquePtr<extent_node_t, BaseNodeFreePolicy>;
+using UniqueBaseNode = UniquePtr<extent_node_t, BaseNodeFreePolicy>;
 
 
 
@@ -2521,8 +2522,7 @@ arena_t::InitChunk(arena_chunk_t* aChunk, bool aZeroed)
   mRunsAvail.Insert(&aChunk->map[arena_chunk_header_npages]);
 
 #ifdef MALLOC_DOUBLE_PURGE
-  new (&aChunk->chunks_madvised_elem)
-    mozilla::DoublyLinkedListElement<arena_chunk_t>();
+  new (&aChunk->chunks_madvised_elem) DoublyLinkedListElement<arena_chunk_t>();
 #endif
 }
 
@@ -3784,7 +3784,7 @@ arena_t::Init()
   
   mChunksDirty.Init();
 #ifdef MALLOC_DOUBLE_PURGE
-  new (&mChunksMAdvised) mozilla::DoublyLinkedList<arena_chunk_t>();
+  new (&mChunksMAdvised) DoublyLinkedList<arena_chunk_t>();
 #endif
   mSpare = nullptr;
 
@@ -4706,8 +4706,8 @@ hard_purge_chunk(arena_chunk_t* aChunk)
     if (npages > 0) {
       pages_decommit(((char*)aChunk) + (i << pagesize_2pow),
                      npages << pagesize_2pow);
-      mozilla::Unused << pages_commit(((char*)aChunk) + (i << pagesize_2pow),
-                                      npages << pagesize_2pow);
+      Unused << pages_commit(((char*)aChunk) + (i << pagesize_2pow),
+                             npages << pagesize_2pow);
     }
     i += npages;
   }
