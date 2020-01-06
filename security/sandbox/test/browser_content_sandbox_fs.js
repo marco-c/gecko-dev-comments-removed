@@ -158,8 +158,6 @@ function minHomeReadSandboxLevel(level) {
 
 
 
-
-
 add_task(async function() {
   
   if (!gMultiProcessBrowser) {
@@ -171,9 +169,6 @@ add_task(async function() {
   let level = 0;
   let prefExists = true;
 
-  
-  
-  
   
   
   try {
@@ -368,15 +363,13 @@ async function testFileAccess() {
   
   
   let profileDir = GetProfileDir();
-  if (!isLinux()) {
-    tests.push({
-      desc:     "profile dir",                
-      ok:       false,                        
-      browser:  webBrowser,                   
-      file:     profileDir,                   
-      minLevel: minProfileReadSandboxLevel(), 
-    });
-  }
+  tests.push({
+    desc:     "profile dir",                
+    ok:       false,                        
+    browser:  webBrowser,                   
+    file:     profileDir,                   
+    minLevel: minProfileReadSandboxLevel(), 
+  });
   if (fileContentProcessEnabled) {
     tests.push({
       desc:     "profile dir",
@@ -561,17 +554,13 @@ async function testFileAccess() {
 
   let cookiesFile = GetProfileEntry("cookies.sqlite");
   if (cookiesFile.exists() && !cookiesFile.isDirectory()) {
-    
-    
-    if (!isLinux()) {
-      tests.push({
-        desc:     "cookies file",
-        ok:       false,
-        browser:  webBrowser,
-        file:     cookiesFile,
-        minLevel: minProfileReadSandboxLevel(),
-      });
-    }
+    tests.push({
+      desc:     "cookies file",
+      ok:       false,
+      browser:  webBrowser,
+      file:     cookiesFile,
+      minLevel: minProfileReadSandboxLevel(),
+    });
     if (fileContentProcessEnabled) {
       tests.push({
         desc:     "cookies file",
