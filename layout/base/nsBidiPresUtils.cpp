@@ -1318,6 +1318,14 @@ nsBidiPresUtils::ChildListMayRequireBidi(nsIFrame*    aFirstChild,
       if (frame->IsTextFrame()) {
         
         
+        
+        
+        if (frame->Properties().Has(nsIFrame::BidiDataProperty())) {
+          return true;
+        }
+
+        
+        
         nsIContent* content = frame->GetContent();
         if (content != *aCurrContent) {
           *aCurrContent = content;
