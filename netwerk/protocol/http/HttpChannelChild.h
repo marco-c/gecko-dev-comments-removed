@@ -319,31 +319,9 @@ private:
 
   
   Atomic<bool, ReleaseAcquire> mDivertingToParent;
-
-  enum FlushedForDiversionEnum {
-    
-    eNotFlushed,
-
-    
-    
-    
-    eReadyToBeFlushed,
-
-    
-    
-    
-    ePendingToBeFlushed,
-
-    
-    
-    
-    eFlushed,
-  };
-
   
   
-  Atomic<FlushedForDiversionEnum, ReleaseAcquire> mFlushedForDiversion;
-
+  Atomic<bool, ReleaseAcquire> mFlushedForDiversion;
   
   
   bool mSuspendSent;
@@ -464,11 +442,6 @@ private:
 
   
   
-  
-  void MaybeSendDivertComplete();
-
-  
-  
   LABELS_HTTP_CHILD_OMT_STATS mOMTResult = LABELS_HTTP_CHILD_OMT_STATS::notRequested;
 
   friend class AssociateApplicationCacheEvent;
@@ -479,7 +452,6 @@ private:
   friend class MaybeDivertOnStopHttpEvent;
   friend class ProgressEvent;
   friend class StatusEvent;
-  friend class SyntheticDiversionListener;
   friend class FailedAsyncOpenEvent;
   friend class Redirect1Event;
   friend class Redirect3Event;
