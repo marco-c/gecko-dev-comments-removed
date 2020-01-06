@@ -435,10 +435,13 @@ public:
 
   MediaError* GetError() const;
 
-  
-  void SetSrc(const nsAString& aSrc, ErrorResult& aRv)
+  void GetSrc(nsString& aSrc, nsIPrincipal&)
   {
-    SetHTMLAttr(nsGkAtoms::src, aSrc, aRv);
+    GetSrc(aSrc);
+  }
+  void SetSrc(const nsAString& aSrc, nsIPrincipal& aTriggeringPrincipal, ErrorResult& aRv)
+  {
+    SetHTMLAttr(nsGkAtoms::src, aSrc, aTriggeringPrincipal, aRv);
   }
 
   
@@ -1365,6 +1368,9 @@ protected:
   RefPtr<DOMMediaStream> mSrcAttrStream;
 
   
+  nsCOMPtr<nsIPrincipal> mSrcAttrTriggeringPrincipal;
+
+  
   
   
   RefPtr<DOMMediaStream> mSrcStream;
@@ -1474,6 +1480,9 @@ protected:
   
   
   nsCOMPtr<nsIURI> mLoadingSrc;
+
+  
+  nsCOMPtr<nsIPrincipal> mLoadingSrcTriggeringPrincipal;
 
   
   

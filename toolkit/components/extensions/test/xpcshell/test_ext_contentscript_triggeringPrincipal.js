@@ -433,6 +433,10 @@ add_task(async function test_contentscript_triggeringPrincipals() {
 
 
   const TESTS = [
+    {
+      element: ["audio", {}],
+      src: "audio.webm",
+    },
     
     {
       element: ["iframe", {}],
@@ -451,6 +455,10 @@ add_task(async function test_contentscript_triggeringPrincipals() {
       element: ["script", {}],
       src: "script.js",
       liveSrc: false,
+    },
+    {
+      element: ["video", {}],
+      src: "video.webm",
     },
   ];
 
