@@ -11,33 +11,59 @@
 #include "txExprResult.h"
 #include "txExpandedNameMap.h"
 
-class txVariableMap {
-public:
-    txVariableMap();
-    ~txVariableMap();
 
+
+
+
+class txVariableMapBase {
+public:
     nsresult bindVariable(const txExpandedName& aName, txAExprResult* aValue);
 
     void getVariable(const txExpandedName& aName, txAExprResult** aResult);
 
     void removeVariable(const txExpandedName& aName);
 
-private:
+protected:
+    txVariableMapBase()
+    {}
+    ~txVariableMapBase();
+
     txExpandedNameMap<txAExprResult> mMap;
 };
 
 
-inline
-txVariableMap::txVariableMap()
-{
-    MOZ_COUNT_CTOR(txVariableMap);
-}
+
+
+
+class txVariableMap : public txVariableMapBase {
+public:
+    txVariableMap()
+      : txVariableMapBase()
+    {
+        MOZ_COUNT_CTOR(txVariableMap);
+    }
+    ~txVariableMap()
+    {
+        MOZ_COUNT_DTOR(txVariableMap);
+    }
+};
+
+
+
+
+
+class txParameterMap : public txVariableMapBase {
+public:
+    NS_INLINE_DECL_REFCOUNTING(txParameterMap)
+
+private:
+    ~txParameterMap()
+    {}
+};
 
 inline
-txVariableMap::~txVariableMap()
+txVariableMapBase::~txVariableMapBase()
 {
-    MOZ_COUNT_DTOR(txVariableMap);
-
     txExpandedNameMap<txAExprResult>::iterator iter(mMap);
     while (iter.next()) {
         txAExprResult* res = iter.value();
@@ -46,7 +72,7 @@ txVariableMap::~txVariableMap()
 }
 
 inline nsresult
-txVariableMap::bindVariable(const txExpandedName& aName, txAExprResult* aValue)
+txVariableMapBase::bindVariable(const txExpandedName& aName, txAExprResult* aValue)
 {
     NS_ASSERTION(aValue, "can't add null-variables to a txVariableMap");
     nsresult rv = mMap.add(aName, aValue);
@@ -60,7 +86,7 @@ txVariableMap::bindVariable(const txExpandedName& aName, txAExprResult* aValue)
 }
 
 inline void
-txVariableMap::getVariable(const txExpandedName& aName, txAExprResult** aResult)
+txVariableMapBase::getVariable(const txExpandedName& aName, txAExprResult** aResult)
 {
     *aResult = mMap.get(aName);
     if (*aResult) {
@@ -69,7 +95,7 @@ txVariableMap::getVariable(const txExpandedName& aName, txAExprResult** aResult)
 }
 
 inline void
-txVariableMap::removeVariable(const txExpandedName& aName)
+txVariableMapBase::removeVariable(const txExpandedName& aName)
 {
     txAExprResult* var = mMap.remove(aName);
     NS_IF_RELEASE(var);
