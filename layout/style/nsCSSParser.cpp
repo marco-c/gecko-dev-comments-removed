@@ -6695,6 +6695,33 @@ GetEnumColorValue(nsCSSKeyword aKeyword, bool aIsChrome)
   return Some(value);
 }
 
+
+
+static uint32_t
+CountNumbersForHashlessColor(uint32_t number) {
+  
+  
+  if (number < 10) {
+    return 1;
+  } else if (number < 100) {
+    return 2;
+  } else if (number < 1000) {
+    return 3;
+  } else if (number < 10000) {
+    return 4;
+  } else if (number < 100000) {
+    return 5;
+  } else if (number < 1000000) {
+    return 6;
+  } else {
+    
+    
+    
+    return 100;
+  }
+}
+
+
 CSSParseResult
 CSSParserImpl::ParseColor(nsCSSValue& aValue)
 {
@@ -6817,6 +6844,10 @@ CSSParserImpl::ParseColor(nsCSSValue& aValue)
     
     
     
+    
+    
+    
+    
     nsAutoString str;
     char buffer[20];
     switch (tk->mType) {
@@ -6825,15 +6856,17 @@ CSSParserImpl::ParseColor(nsCSSValue& aValue)
         break;
 
       case eCSSToken_Number:
-        if (tk->mIntegerValid) {
+        if (tk->mIntegerValid && tk->mInteger < 1000000 && tk->mInteger >= 0) {
           SprintfLiteral(buffer, "%06d", tk->mInteger);
           str.AssignWithConversion(buffer);
         }
         break;
 
       case eCSSToken_Dimension:
-        if (tk->mIdent.Length() <= 6) {
-          SprintfLiteral(buffer, "%06.0f", tk->mNumber);
+        if (tk->mIntegerValid &&
+            tk->mIdent.Length() + CountNumbersForHashlessColor(tk->mInteger) <= 6 &&
+            tk->mInteger >= 0) {
+          SprintfLiteral(buffer, "%06d", tk->mInteger);
           nsAutoString temp;
           temp.AssignWithConversion(buffer);
           temp.Right(str, 6 - tk->mIdent.Length());
