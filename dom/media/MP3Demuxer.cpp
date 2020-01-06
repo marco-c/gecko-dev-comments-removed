@@ -422,6 +422,8 @@ MP3TrackDemuxer::FindFirstFrame()
 {
   
   
+  
+  
   static const int MIN_SUCCESSIVE_FRAMES = 3;
 
   MediaByteRange candidateFrame = FindNextFrame();
@@ -462,7 +464,7 @@ MP3TrackDemuxer::FindFirstFrame()
 
   if (numSuccFrames >= MIN_SUCCESSIVE_FRAMES) {
     MP3LOG("FindFirst() accepting candidate frame: "
-            "successiveFrames=%d", numSuccFrames);
+           "successiveFrames=%d", numSuccFrames);
   } else {
     MP3LOG("FindFirst() no suitable first frame found");
   }
