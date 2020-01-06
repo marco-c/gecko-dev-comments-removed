@@ -3551,9 +3551,8 @@ nsGlobalWindow::DetachFromDocShell()
     inner->FreeInnerObjects();
   }
 
-  if (auto* reporter = nsWindowMemoryReporter::Get()) {
-    reporter->ObserveDOMWindowDetached(this);
-  }
+  
+  
 
   NotifyWindowIDDestroyed("outer-window-destroyed");
 
