@@ -118,12 +118,9 @@ function ok_targets(actualData, expectedTargets) {
   
   
   
-  let selectedTabIcon =
-    document.getAnonymousElementByAttribute(gBrowser.selectedTab,
-                                            "anonid",
-                                            "tab-icon-image");
-  if (selectedTabIcon && UITour.isElementVisible(selectedTabIcon))
-    expectedTargets.push("selectedTabIcon");
+  let index = actualData.targets.indexOf("selectedTabIcon");
+  if (index != -1)
+    actualData.targets.splice(index, 1);
 
   ok(Array.isArray(actualData.targets), "data.targets should be an array");
   is(actualData.targets.sort().toString(), expectedTargets.sort().toString(),
