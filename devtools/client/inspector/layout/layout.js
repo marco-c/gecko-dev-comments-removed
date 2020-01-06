@@ -15,8 +15,6 @@ const { LocalizationHelper } = require("devtools/shared/l10n");
 const INSPECTOR_L10N =
   new LocalizationHelper("devtools/client/locales/inspector.properties");
 
-const SHOW_GRID_OUTLINE_PREF = "devtools.gridinspector.showGridOutline";
-
 function LayoutView(inspector, window) {
   this.document = window.document;
   this.inspector = inspector;
@@ -64,12 +62,6 @@ LayoutView.prototype = {
 
 
       showBoxModelProperties: true,
-
-      
-
-
-
-      showGridOutline: Services.prefs.getBoolPref(SHOW_GRID_OUTLINE_PREF),
 
       onHideBoxModelHighlighter,
       onSetGridOverlayColor,
