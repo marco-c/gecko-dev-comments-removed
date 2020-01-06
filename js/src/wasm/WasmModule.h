@@ -139,7 +139,7 @@ class Module : public JS::WasmModule
     
     
 
-    mutable mozilla::Atomic<bool> codeIsBusy_;
+    mutable Atomic<bool>    codeIsBusy_;
 
     
     
@@ -166,9 +166,10 @@ class Module : public JS::WasmModule
                       HandleWasmMemoryObject memory,
                       const ValVector& globalImports) const;
 
+    class Tier2GeneratorTaskImpl;
+
   public:
-    Module(CompileMode mode,
-           Assumptions&& assumptions,
+    Module(Assumptions&& assumptions,
            const Code& code,
            UniqueConstBytes unlinkedCodeForDebugging,
            LinkData&& linkData,
@@ -188,7 +189,7 @@ class Module : public JS::WasmModule
         bytecode_(&bytecode),
         codeIsBusy_(false),
         tier2Lock_(js::mutexid::WasmTier2GeneratorComplete),
-        mode_(mode)
+        mode_(CompileMode::Once)
     {
         MOZ_ASSERT_IF(metadata().debugEnabled, unlinkedCodeForDebugging_);
     }
@@ -216,11 +217,12 @@ class Module : public JS::WasmModule
                      MutableHandleWasmInstanceObject instanceObj) const;
 
     
+    
+    
+    
+    
 
-    
-    
-    
-
+    void startTier2(const CompileArgs& args);
     void finishTier2(UniqueLinkDataTier linkData2, UniqueMetadataTier metadata2,
                      UniqueConstCodeSegment code2, UniqueModuleEnvironment env2);
 

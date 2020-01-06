@@ -67,7 +67,13 @@ typedef RefPtr<const CompileArgs> SharedCompileArgs;
 
 
 SharedModule
-Compile(const ShareableBytes& bytecode, const CompileArgs& args, UniqueChars* error);
+CompileInitialTier(const ShareableBytes& bytecode, const CompileArgs& args, UniqueChars* error);
+
+
+
+
+bool
+CompileTier2(Module& module, const CompileArgs& args, Atomic<bool>* cancelled);
 
 
 

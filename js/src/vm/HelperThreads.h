@@ -43,12 +43,7 @@ namespace jit {
   class IonBuilder;
 } 
 namespace wasm {
-  class FuncIR;
-  class FunctionCompileResults;
-  class CompileTask;
   struct Tier2GeneratorTask;
-  typedef Vector<CompileTask*, 0, SystemAllocPolicy> CompileTaskPtrVector;
-  typedef Vector<Tier2GeneratorTask*, 0, SystemAllocPolicy> Tier2GeneratorTaskPtrVector;
 } 
 
 enum class ParseTaskKind
@@ -58,6 +53,23 @@ enum class ParseTaskKind
     ScriptDecode,
     MultiScriptsDecode
 };
+
+namespace wasm {
+
+class CompileTask;
+typedef Vector<CompileTask*, 0, SystemAllocPolicy> CompileTaskPtrVector;
+
+struct Tier2GeneratorTask
+{
+    virtual ~Tier2GeneratorTask() = default;
+    virtual void cancel() = 0;
+    virtual void execute() = 0;
+};
+
+typedef UniquePtr<Tier2GeneratorTask> UniqueTier2GeneratorTask;
+typedef Vector<Tier2GeneratorTask*, 0, SystemAllocPolicy> Tier2GeneratorTaskPtrVector;
+
+}  
 
 
 class GlobalHelperThreadState
@@ -587,29 +599,21 @@ PauseCurrentHelperThread();
 bool
 StartOffThreadWasmCompile(wasm::CompileTask* task, wasm::CompileMode mode);
 
-
-bool
-StartOffThreadWasmTier2Generator(wasm::Tier2GeneratorTask* task);
-
-
-void
-CancelOffThreadWasmTier2Generator();
-
 namespace wasm {
 
 
 MOZ_MUST_USE bool
 CompileFunction(CompileTask* task, UniqueChars* error);
 
-MOZ_MUST_USE bool
-GenerateTier2(Tier2GeneratorTask* task);
-
-void
-CancelTier2GeneratorTask(Tier2GeneratorTask* task);
-
-void
-DeleteTier2GeneratorTask(Tier2GeneratorTask* task);
 }
+
+
+void
+StartOffThreadWasmTier2Generator(wasm::UniqueTier2GeneratorTask task);
+
+
+void
+CancelOffThreadWasmTier2Generator();
 
 
 

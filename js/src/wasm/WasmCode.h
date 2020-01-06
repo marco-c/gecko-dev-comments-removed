@@ -371,9 +371,9 @@ typedef UniquePtr<MetadataTier> UniqueMetadataTier;
 
 class Metadata : public ShareableBase<Metadata>, public MetadataCacheablePod
 {
-    UniqueMetadataTier            metadata1_;
-    mutable UniqueMetadataTier    metadata2_;     
-    mutable mozilla::Atomic<bool> hasTier2_;
+    UniqueMetadataTier         metadata1_;
+    mutable UniqueMetadataTier metadata2_;  
+    mutable Atomic<bool>       hasTier2_;
 
   public:
     explicit Metadata(UniqueMetadataTier tier, ModuleKind kind = ModuleKind::Wasm)
