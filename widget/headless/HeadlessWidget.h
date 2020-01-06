@@ -47,6 +47,8 @@ public:
                       double aHeight,
                       bool   aRepaint) override;
   virtual void SetSizeMode(nsSizeMode aMode) override;
+  virtual nsresult MakeFullScreen(bool aFullScreen,
+                                  nsIScreen* aTargetScreen = nullptr) override;
   virtual void Enable(bool aState) override;
   virtual bool IsEnabled() const override;
   virtual nsresult SetFocus(bool aRaise) override { return NS_OK; }
@@ -86,6 +88,8 @@ private:
   ~HeadlessWidget() {}
   bool mEnabled;
   bool mVisible;
+  
+  nsSizeMode mLastSizeMode;
   InputContext mInputContext;
   
   
