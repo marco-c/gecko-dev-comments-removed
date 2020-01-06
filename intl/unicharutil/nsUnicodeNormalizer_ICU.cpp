@@ -28,7 +28,7 @@ DoNormalization(const UNormalizer2* aNorm, const nsAString& aSrc,
   const UChar* src = reinterpret_cast<const UChar*>(aSrc.BeginReading());
   
   int32_t capacity = length + (length >> 8) + 8;
-  do {
+  while (true) {
     aDest.SetLength(capacity);
     UChar* dest = reinterpret_cast<UChar*>(aDest.BeginWriting());
     int32_t len = unorm2_normalize(aNorm, src, aSrc.Length(), dest, capacity,
@@ -37,13 +37,14 @@ DoNormalization(const UNormalizer2* aNorm, const nsAString& aSrc,
       aDest.SetLength(len);
       break;
     }
-    if (errorCode == U_BUFFER_OVERFLOW_ERROR) {
+    if (errorCode != U_BUFFER_OVERFLOW_ERROR) {
       
-      capacity = len;
-      errorCode = U_ZERO_ERROR;
-      continue;
+      break;
     }
-  } while (false);
+    
+    capacity = len;
+    errorCode = U_ZERO_ERROR;
+  }
   return ICUUtils::UErrorToNsResult(errorCode);
 }
 
