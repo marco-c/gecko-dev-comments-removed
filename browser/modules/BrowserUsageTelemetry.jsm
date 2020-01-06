@@ -112,7 +112,12 @@ function getSearchEngineId(engine) {
     if (engine.identifier) {
       return engine.identifier;
     }
-    if (engine.name) {
+    
+    
+    const extendedTelemetry = Services.prefs.getBoolPref("toolkit.telemetry.enabled");
+    if (engine.name && extendedTelemetry) {
+      
+      
       return "other-" + engine.name;
     }
   }
