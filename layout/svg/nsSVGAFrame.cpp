@@ -103,7 +103,7 @@ nsSVGAFrame::AttributeChanged(int32_t         aNameSpaceID,
       (aNameSpaceID == kNameSpaceID_None ||
        aNameSpaceID == kNameSpaceID_XLink)) {
 
-    dom::SVGAElement* content = static_cast<dom::SVGAElement*>(mContent);
+    dom::SVGAElement* content = static_cast<dom::SVGAElement*>(GetContent());
 
     
     
@@ -140,7 +140,7 @@ nsSVGAFrame::GetCanvasTM()
     NS_ASSERTION(GetParent(), "null parent");
 
     nsSVGContainerFrame *parent = static_cast<nsSVGContainerFrame*>(GetParent());
-    dom::SVGAElement *content = static_cast<dom::SVGAElement*>(mContent);
+    dom::SVGAElement *content = static_cast<dom::SVGAElement*>(GetContent());
 
     gfxMatrix tm = content->PrependLocalTransformsTo(parent->GetCanvasTM());
 

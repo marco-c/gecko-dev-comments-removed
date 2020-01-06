@@ -704,7 +704,7 @@ nsMenuFrame::GetAnchor()
   }
 
   
-  return anchor && anchor->GetPrimaryFrame() ? anchor : mContent;
+  return anchor && anchor->GetPrimaryFrame() ? anchor : GetContent();
 }
 
 void
