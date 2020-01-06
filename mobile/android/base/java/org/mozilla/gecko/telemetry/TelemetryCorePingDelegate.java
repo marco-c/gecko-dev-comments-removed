@@ -15,6 +15,7 @@ import org.mozilla.gecko.BrowserApp;
 import org.mozilla.gecko.GeckoApp;
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.GeckoSharedPrefs;
+import org.mozilla.gecko.GeckoThread;
 import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.adjust.AttributionHelperListener;
@@ -45,7 +46,7 @@ public class TelemetryCorePingDelegate extends BrowserAppDelegateWithReference
 
     @Override
     public void onStart(final BrowserApp browserApp) {
-        TelemetryPreferences.initPreferenceObserver(browserApp, browserApp.getProfile().getName());
+        TelemetryPreferences.initPreferenceObserver(browserApp, GeckoThread.getActiveProfile().getName());
 
         
         
@@ -104,7 +105,7 @@ public class TelemetryCorePingDelegate extends BrowserAppDelegateWithReference
     @WorkerThread 
     private TelemetryDispatcher getTelemetryDispatcher(final BrowserApp browserApp) {
         if (telemetryDispatcher == null) {
-            final GeckoProfile profile = browserApp.getProfile();
+            final GeckoProfile profile = GeckoThread.getActiveProfile();
             final String profilePath = profile.getDir().getAbsolutePath();
             final String profileName = profile.getName();
             telemetryDispatcher = new TelemetryDispatcher(profilePath, profileName);
@@ -113,7 +114,7 @@ public class TelemetryCorePingDelegate extends BrowserAppDelegateWithReference
     }
 
     private SharedPreferences getSharedPreferences(final BrowserApp activity) {
-        return GeckoSharedPrefs.forProfileName(activity, activity.getProfile().getName());
+        return GeckoSharedPrefs.forProfileName(activity, GeckoThread.getActiveProfile().getName());
     }
 
     
@@ -137,7 +138,7 @@ public class TelemetryCorePingDelegate extends BrowserAppDelegateWithReference
                     return;
                 }
 
-                final GeckoProfile profile = activity.getProfile();
+                final GeckoProfile profile = GeckoThread.getActiveProfile();
                 if (!TelemetryUploadService.isUploadEnabledByProfileConfig(activity, profile)) {
                     Log.d(LOGTAG, "Core ping upload disabled by profile config. Returning.");
                     return;
