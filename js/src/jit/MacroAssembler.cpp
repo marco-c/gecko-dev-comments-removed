@@ -1486,18 +1486,19 @@ MacroAssembler::typeOfObject(Register obj, Register scratch, Label* slow,
 void
 MacroAssembler::loadJSContext(Register dest)
 {
-    CompileCompartment* compartment = GetJitContext()->compartment;
+    JitContext* jcx = GetJitContext();
+    CompileCompartment* compartment = jcx->compartment;
     if (compartment->zone()->isAtomsZone()) {
         
         
         
         
         
-        loadPtr(AbsoluteAddress(GetJitContext()->runtime->addressOfActiveJSContext()), dest);
+        loadPtr(AbsoluteAddress(jcx->runtime->addressOfActiveJSContext()), dest);
     } else {
         
         
-        loadPtr(AbsoluteAddress(GetJitContext()->compartment->zone()->addressOfJSContext()), dest);
+        loadPtr(AbsoluteAddress(compartment->zone()->addressOfJSContext()), dest);
     }
 }
 
