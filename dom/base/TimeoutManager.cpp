@@ -652,6 +652,10 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
   
   
   if (!nextDeadline.IsNull()) {
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(!mWindow.IsSuspended());
     MOZ_ALWAYS_SUCCEEDS(mExecutor->MaybeSchedule(nextDeadline));
   }
 
@@ -771,9 +775,13 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
       if (elapsed >= totalTimeLimit) {
         
         
-        RefPtr<Timeout> timeout = runIter.Next();
-        if (timeout) {
-          MOZ_ALWAYS_SUCCEEDS(mExecutor->MaybeSchedule(timeout->When()));
+        
+        
+        if (!mWindow.IsSuspended()) {
+          RefPtr<Timeout> timeout = runIter.Next();
+          if (timeout) {
+            MOZ_ALWAYS_SUCCEEDS(mExecutor->MaybeSchedule(timeout->When()));
+          }
         }
         break;
       }
