@@ -39,6 +39,7 @@
 #include "nsIURI.h"
 #include "nsIDocument.h"
 #include <algorithm>
+#include "ImageLoader.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -572,8 +573,7 @@ nsStyleOutline::CalcDifference(const nsStyleOutline& aNewData) const
       (mActualOutlineWidth > 0 &&
        mOutlineOffset != aNewData.mOutlineOffset)) {
     return nsChangeHint_UpdateOverflow |
-           nsChangeHint_SchedulePaint |
-           nsChangeHint_RepaintFrame;
+           nsChangeHint_SchedulePaint;
   }
 
   if (mOutlineStyle != aNewData.mOutlineStyle ||
@@ -2015,6 +2015,15 @@ nsStyleImageRequest::nsStyleImageRequest(
     const nsAString& aURL,
     already_AddRefed<URLExtraData> aExtraData)
   : mImageValue(new css::ImageValue(aURL, Move(aExtraData)))
+  , mModeFlags(aModeFlags)
+  , mResolved(false)
+{
+}
+
+nsStyleImageRequest::nsStyleImageRequest(
+    Mode aModeFlags,
+    mozilla::css::ImageValue* aImageValue)
+  : mImageValue(aImageValue)
   , mModeFlags(aModeFlags)
   , mResolved(false)
 {

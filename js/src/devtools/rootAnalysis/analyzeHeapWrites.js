@@ -166,11 +166,14 @@ function treatAsSafeArgument(entry, varName, csuName)
         ["Gecko_SetImageOrientationAsFromImage", "aVisibility", null],
         ["Gecko_CopyImageOrientationFrom", "aDst", null],
         ["Gecko_SetImageElement", "aImage", null],
+        ["Gecko_SetLayerImageImageValue", "aImage", null],
         ["Gecko_SetUrlImageValue", "aImage", null],
         ["Gecko_CopyImageValueFrom", "aImage", null],
         ["Gecko_SetCursorArrayLength", "aStyleUI", null],
         ["Gecko_CopyCursorArrayFrom", "aDest", null],
+        ["Gecko_SetCursorImageValue", "aCursor", null],
         ["Gecko_SetCursorImage", "aCursor", null],
+        ["Gecko_SetListStyleImageImageValue", "aList", null],
         ["Gecko_SetListStyleImageNone", "aList", null],
         ["Gecko_SetListStyleImage", "aList", null],
         ["Gecko_CopyListStyleImageFrom", "aList", null],
@@ -190,11 +193,10 @@ function treatAsSafeArgument(entry, varName, csuName)
         ["Gecko_ClearAndResizeStyleContents", "aContent", null],
         [/Gecko_ClearAndResizeCounter/, "aContent", null],
         [/Gecko_CopyCounter.*?From/, "aContent", null],
+        [/Gecko_SetContentDataImageValue/, "aList", null],
         [/Gecko_SetContentData/, "aContent", null],
         [/Gecko_EnsureStyle.*?ArrayLength/, "aArray", null],
-        ["Gecko_GetOrCreateKeyframeAtStart", "aKeyframes", null],
-        ["Gecko_GetOrCreateInitialKeyframe", "aKeyframes", null],
-        ["Gecko_GetOrCreateFinalKeyframe", "aKeyframes", null],
+        ["Gecko_AnimationAppendKeyframe", "aKeyframes", null],
         ["Gecko_SetStyleCoordCalcValue", null, null],
         ["Gecko_StyleClipPath_SetURLValue", "aClip", null],
         ["Gecko_nsStyleFilter_SetURLValue", "aEffects", null],
@@ -375,9 +377,7 @@ function ignoreContents(entry)
 
         
         
-        "Gecko_GetOrCreateKeyframeAtStart",
-        "Gecko_GetOrCreateInitialKeyframe",
-        "Gecko_GetOrCreateFinalKeyframe",
+        "Gecko_AnimationAppendKeyframe",
         "Gecko_NewStyleQuoteValues",
         "Gecko_NewCSSValueSharedList",
         "Gecko_NewGridTemplateAreasValue",
@@ -390,6 +390,7 @@ function ignoreContents(entry)
         "Gecko_AppendMozBorderColors",
         "Gecko_CopyMozBorderColors",
         "Gecko_SetJemallocThreadLocalArena",
+        "Gecko_SetNullImageValue",
 
         
         /UndisplayedMap::GetEntryFor/,
