@@ -403,6 +403,14 @@ public:
   
   bool CanScroll(ScrollDirection aDirection) const;
 
+  
+
+
+
+
+  CSSCoord ConvertScrollbarPoint(const ParentLayerPoint& aScrollbarPoint,
+                                 const ScrollThumbData& aThumbData) const;
+
   void NotifyMozMouseScrollEvent(const nsString& aString) const;
 
 protected:
