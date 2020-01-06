@@ -11,6 +11,7 @@
 #include "SandboxInfo.h"
 #include "SandboxInternal.h"
 #include "SandboxLogging.h"
+#include "mozilla/PodOperations.h"
 #include "mozilla/UniquePtr.h"
 
 #include <errno.h>
@@ -23,6 +24,7 @@
 #include <sys/mman.h>
 #include <sys/socket.h>
 #include <sys/syscall.h>
+#include <sys/utsname.h>
 #include <time.h>
 #include <unistd.h>
 #include <vector>
@@ -949,6 +951,18 @@ class GMPSandboxPolicy : public SandboxPolicyCommon {
     return BlockedSyscallTrap(aArgs, nullptr);
   }
 
+  static intptr_t UnameTrap(const sandbox::arch_seccomp_data& aArgs,
+                            void* aux)
+  {
+    const auto buf = reinterpret_cast<struct utsname*>(aArgs.args[0]);
+    PodZero(buf);
+    
+    
+    strcpy(buf->sysname, "Linux");
+    strcpy(buf->version, "3");
+    return 0;
+  };
+
   SandboxOpenedFile* mPlugin;
 public:
   explicit GMPSandboxPolicy(SandboxOpenedFile* aPlugin)
@@ -998,6 +1012,10 @@ public:
     
     case __NR_times:
       return Allow();
+
+    
+    case __NR_uname:
+      return Trap(UnameTrap, nullptr);
 
     default:
       return SandboxPolicyCommon::EvaluateSyscall(sysno);
