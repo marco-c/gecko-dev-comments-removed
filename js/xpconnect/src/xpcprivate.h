@@ -76,7 +76,6 @@
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/DefineEnum.h"
 #include "mozilla/GuardObjects.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
@@ -339,12 +338,14 @@ private:
 
 class WatchdogManager;
 
-MOZ_DEFINE_ENUM(WatchdogTimestampCategory, (
+enum WatchdogTimestampCategory
+{
+    TimestampContextStateChange = 0,
     TimestampWatchdogWakeup,
     TimestampWatchdogHibernateStart,
     TimestampWatchdogHibernateStop,
-    TimestampContextStateChange
-));
+    TimestampCount
+};
 
 class AsyncFreeSnowWhite;
 
@@ -395,7 +396,6 @@ private:
 };
 
 class XPCJSContext final : public mozilla::CycleCollectedJSContext
-                         , public mozilla::LinkedListElement<XPCJSContext>
 {
 public:
     static void InitTLS();
@@ -492,12 +492,7 @@ private:
     AutoMarkingPtr*          mAutoRoots;
     jsid                     mResolveName;
     XPCWrappedNative*        mResolvingWrapper;
-    WatchdogManager*         mWatchdogManager;
-
-    
-    static uint32_t         sInstanceCount;
-    static mozilla::StaticRefPtr<WatchdogManager> sWatchdogInstance;
-    static WatchdogManager* GetWatchdogManager();
+    RefPtr<WatchdogManager>  mWatchdogManager;
 
     
     
@@ -525,13 +520,8 @@ private:
     
     nsresult mPendingResult;
 
-    
-    enum { CONTEXT_ACTIVE, CONTEXT_INACTIVE } mActive;
-    PRTime mLastStateChange;
-
     friend class XPCJSRuntime;
     friend class Watchdog;
-    friend class WatchdogManager;
     friend class AutoLockWatchdog;
 };
 

@@ -79,13 +79,10 @@ using mozilla::dom::AutoEntryScript;
 static void WatchdogMain(void* arg);
 class Watchdog;
 class WatchdogManager;
-class MOZ_RAII AutoLockWatchdog final
-{
-    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+class AutoLockWatchdog {
     Watchdog* const mWatchdog;
-
   public:
-    explicit AutoLockWatchdog(Watchdog* aWatchdog MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+    explicit AutoLockWatchdog(Watchdog* aWatchdog);
     ~AutoLockWatchdog();
 };
 
@@ -235,10 +232,15 @@ class WatchdogManager : public nsIObserver
   public:
 
     NS_DECL_ISUPPORTS
-    explicit WatchdogManager()
+    explicit WatchdogManager(XPCJSContext* aContext) : mContext(aContext)
+                                                     , mContextState(CONTEXT_INACTIVE)
     {
         
         PodArrayZero(mTimestamps);
+        mTimestamps[TimestampContextStateChange] = PR_Now();
+
+        
+        RefreshWatchdog();
 
         
         mozilla::Preferences::AddStrongObserver(this, "dom.use_watchdog");
@@ -274,97 +276,53 @@ class WatchdogManager : public nsIObserver
         return NS_OK;
     }
 
+    
+    
+    
     void
-    RegisterContext(XPCJSContext* aContext)
-    {
-        MOZ_ASSERT(NS_IsMainThread());
-        AutoLockWatchdog lock(mWatchdog);
-
-        if (aContext->mActive == XPCJSContext::CONTEXT_ACTIVE) {
-            mActiveContexts.insertBack(aContext);
-        } else {
-            mInactiveContexts.insertBack(aContext);
-        }
-
-        
-        RefreshWatchdog();
-    }
-
-    void
-    UnregisterContext(XPCJSContext* aContext)
-    {
-        MOZ_ASSERT(NS_IsMainThread());
-        AutoLockWatchdog lock(mWatchdog);
-
-        
-        aContext->LinkedListElement<XPCJSContext>::remove();
-    }
-
-    
-    
-    
-    void RecordContextActivity(XPCJSContext* aContext, bool active)
+    RecordContextActivity(bool active)
     {
         
         MOZ_ASSERT(NS_IsMainThread());
-        AutoLockWatchdog lock(mWatchdog);
+        Maybe<AutoLockWatchdog> lock;
+        if (mWatchdog)
+            lock.emplace(mWatchdog);
 
         
-        aContext->mLastStateChange = PR_Now();
-        aContext->mActive = active ? XPCJSContext::CONTEXT_ACTIVE :
-            XPCJSContext::CONTEXT_INACTIVE;
-        UpdateContextLists(aContext);
+        mTimestamps[TimestampContextStateChange] = PR_Now();
+        mContextState = active ? CONTEXT_ACTIVE : CONTEXT_INACTIVE;
 
         
         
         if (active && mWatchdog && mWatchdog->Hibernating())
             mWatchdog->WakeUp();
     }
-
-    bool IsAnyContextActive()
+    bool IsContextActive() { return mContextState == CONTEXT_ACTIVE; }
+    PRTime TimeSinceLastContextStateChange()
     {
-        return !mActiveContexts.isEmpty();
-    }
-    PRTime TimeSinceLastActiveContext()
-    {
-        
-        MOZ_ASSERT(!NS_IsMainThread());
-        if (mWatchdog)
-            PR_ASSERT_CURRENT_THREAD_OWNS_LOCK(mWatchdog->GetLock());
-        MOZ_ASSERT(mActiveContexts.isEmpty());
-        MOZ_ASSERT(!mInactiveContexts.isEmpty());
-
-        
-        
-        return PR_Now() - mInactiveContexts.getLast()->mLastStateChange;
+        return PR_Now() - GetTimestamp(TimestampContextStateChange);
     }
 
+    
+    
     void RecordTimestamp(WatchdogTimestampCategory aCategory)
     {
         
-        MOZ_ASSERT(!NS_IsMainThread());
-        if (mWatchdog)
-            PR_ASSERT_CURRENT_THREAD_OWNS_LOCK(mWatchdog->GetLock());
-        MOZ_ASSERT(aCategory != TimestampContextStateChange,
-                   "Use RecordContextActivity to update this");
-
+        Maybe<AutoLockWatchdog> maybeLock;
+        if (NS_IsMainThread() && mWatchdog)
+            maybeLock.emplace(mWatchdog);
         mTimestamps[aCategory] = PR_Now();
     }
-
-    PRTime GetContextTimestamp(XPCJSContext* aContext,
-                               const AutoLockWatchdog& aProofOfLock)
+    PRTime GetTimestamp(WatchdogTimestampCategory aCategory)
     {
-        return aContext->mLastStateChange;
-    }
-
-    PRTime GetTimestamp(WatchdogTimestampCategory aCategory,
-                        const AutoLockWatchdog& aProofOfLock)
-    {
-        MOZ_ASSERT(aCategory != TimestampContextStateChange,
-                   "Use GetContextTimestamp to retrieve this");
+        
+        Maybe<AutoLockWatchdog> maybeLock;
+        if (NS_IsMainThread() && mWatchdog)
+            maybeLock.emplace(mWatchdog);
         return mTimestamps[aCategory];
     }
 
+    XPCJSContext* Context() { return mContext; }
     Watchdog* GetWatchdog() { return mWatchdog; }
 
     void RefreshWatchdog()
@@ -405,62 +363,24 @@ class WatchdogManager : public nsIObserver
         mWatchdog = nullptr;
     }
 
-    template<class Callback>
-    void ForAllActiveContexts(Callback&& aCallback)
-    {
-        
-        MOZ_ASSERT(!NS_IsMainThread());
-        if (mWatchdog)
-            PR_ASSERT_CURRENT_THREAD_OWNS_LOCK(mWatchdog->GetLock());
-
-        for (auto* context = mActiveContexts.getFirst(); context;
-             context = context->LinkedListElement<XPCJSContext>::getNext()) {
-            if (!aCallback(context)) {
-                return;
-            }
-        }
-    }
-
   private:
-    void UpdateContextLists(XPCJSContext* aContext)
-    {
-        
-        
-        aContext->LinkedListElement<XPCJSContext>::remove();
-        auto& list = aContext->mActive == XPCJSContext::CONTEXT_ACTIVE ?
-            mActiveContexts : mInactiveContexts;
-
-        
-        
-        MOZ_ASSERT_IF(!list.isEmpty(),
-                      list.getLast()->mLastStateChange < aContext->mLastStateChange);
-        list.insertBack(aContext);
-    }
-
-    LinkedList<XPCJSContext> mActiveContexts;
-    LinkedList<XPCJSContext> mInactiveContexts;
+    XPCJSContext* mContext;
     nsAutoPtr<Watchdog> mWatchdog;
 
-    
-    PRTime mTimestamps[kWatchdogTimestampCategoryCount - 1];
+    enum { CONTEXT_ACTIVE, CONTEXT_INACTIVE } mContextState;
+    PRTime mTimestamps[TimestampCount];
 };
 
 NS_IMPL_ISUPPORTS(WatchdogManager, nsIObserver)
 
-AutoLockWatchdog::AutoLockWatchdog(Watchdog* aWatchdog MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IMPL)
-  : mWatchdog(aWatchdog)
+AutoLockWatchdog::AutoLockWatchdog(Watchdog* aWatchdog) : mWatchdog(aWatchdog)
 {
-    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    if (mWatchdog) {
-        PR_Lock(mWatchdog->GetLock());
-    }
+    PR_Lock(mWatchdog->GetLock());
 }
 
 AutoLockWatchdog::~AutoLockWatchdog()
 {
-    if (mWatchdog) {
-        PR_Unlock(mWatchdog->GetLock());
-    }
+    PR_Unlock(mWatchdog->GetLock());
 }
 
 static void
@@ -479,8 +399,8 @@ WatchdogMain(void* arg)
     MOZ_ASSERT(!self->ShuttingDown());
     while (!self->ShuttingDown()) {
         
-        if (manager->IsAnyContextActive() ||
-            manager->TimeSinceLastActiveContext() <= PRTime(2*PR_USEC_PER_SEC))
+        if (manager->IsContextActive() ||
+            manager->TimeSinceLastContextStateChange() <= PRTime(2*PR_USEC_PER_SEC))
         {
             self->Sleep(PR_TicksPerSecond());
         } else {
@@ -506,25 +426,16 @@ WatchdogMain(void* arg)
         
         
         
-        if (manager->IsAnyContextActive()) {
+        PRTime usecs = self->MinScriptRunTimeSeconds() * PR_USEC_PER_SEC / 2;
+        if (manager->IsContextActive() &&
+            manager->TimeSinceLastContextStateChange() >= usecs)
+        {
             bool debuggerAttached = false;
             nsCOMPtr<nsIDebug2> dbg = do_GetService("@mozilla.org/xpcom/debug;1");
             if (dbg)
                 dbg->GetIsDebuggerAttached(&debuggerAttached);
-            if (debuggerAttached) {
-                
-                continue;
-            }
-
-            PRTime usecs = self->MinScriptRunTimeSeconds() * PR_USEC_PER_SEC / 2;
-            manager->ForAllActiveContexts([usecs, manager, &lock](XPCJSContext* aContext) -> bool {
-                auto timediff = PR_Now() - manager->GetContextTimestamp(aContext, lock);
-                if (timediff > usecs) {
-                    JS_RequestInterruptCallback(aContext->Context());
-                    return true;
-                }
-                return false;
-            });
+            if (!debuggerAttached)
+                JS_RequestInterruptCallback(manager->Context()->Context());
         }
     }
 
@@ -535,10 +446,7 @@ WatchdogMain(void* arg)
 PRTime
 XPCJSContext::GetWatchdogTimestamp(WatchdogTimestampCategory aCategory)
 {
-    AutoLockWatchdog lock(mWatchdogManager->GetWatchdog());
-    return aCategory == TimestampContextStateChange ?
-        mWatchdogManager->GetContextTimestamp(this, lock) :
-        mWatchdogManager->GetTimestamp(aCategory, lock);
+    return mWatchdogManager->GetTimestamp(aCategory);
 }
 
 void
@@ -556,7 +464,7 @@ XPCJSContext::ActivityCallback(void* arg, bool active)
     }
 
     XPCJSContext* self = static_cast<XPCJSContext*>(arg);
-    self->mWatchdogManager->RecordContextActivity(self, active);
+    self->mWatchdogManager->RecordContextActivity(active);
 }
 
 static inline bool
@@ -880,14 +788,9 @@ XPCJSContext::~XPCJSContext()
 
     xpc_DelocalizeContext(Context());
 
-    
-    mWatchdogManager->UnregisterContext(this);
-    if (--sInstanceCount == 0) {
-        if (mWatchdogManager->GetWatchdog())
-            mWatchdogManager->StopWatchdog();
-        mWatchdogManager->Shutdown();
-        sWatchdogInstance = nullptr;
-    }
+    if (mWatchdogManager->GetWatchdog())
+        mWatchdogManager->StopWatchdog();
+    mWatchdogManager->Shutdown();
 
     if (mCallContext)
         mCallContext->SystemIsBeingShutDown();
@@ -906,18 +809,13 @@ XPCJSContext::XPCJSContext()
    mAutoRoots(nullptr),
    mResolveName(JSID_VOID),
    mResolvingWrapper(nullptr),
-   mWatchdogManager(GetWatchdogManager()),
+   mWatchdogManager(new WatchdogManager(this)),
    mSlowScriptSecondHalf(false),
    mTimeoutAccumulated(false),
-   mPendingResult(NS_OK),
-   mActive(CONTEXT_INACTIVE),
-   mLastStateChange(PR_Now())
+   mPendingResult(NS_OK)
 {
     MOZ_COUNT_CTOR_INHERITED(XPCJSContext, CycleCollectedJSContext);
     MOZ_RELEASE_ASSERT(!gTlsContext.get());
-    MOZ_ASSERT(mWatchdogManager);
-    ++sInstanceCount;
-    mWatchdogManager->RegisterContext(this);
     gTlsContext.set(this);
 }
 
@@ -1105,27 +1003,6 @@ XPCJSContext::Initialize(XPCJSContext* aPrimaryContext)
 #endif
 
     return NS_OK;
-}
-
-
-uint32_t
-XPCJSContext::sInstanceCount;
-
-
-StaticRefPtr<WatchdogManager>
-XPCJSContext::sWatchdogInstance;
-
-
-WatchdogManager*
-XPCJSContext::GetWatchdogManager()
-{
-    if (sWatchdogInstance) {
-        return sWatchdogInstance;
-    }
-
-    MOZ_ASSERT(sInstanceCount == 0);
-    sWatchdogInstance = new WatchdogManager();
-    return sWatchdogInstance;
 }
 
 
