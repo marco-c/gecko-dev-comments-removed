@@ -7,6 +7,7 @@
 #ifndef mozilla_LabeledEventQueue_h
 #define mozilla_LabeledEventQueue_h
 
+#include <stdint.h>
 #include "mozilla/AbstractEventQueue.h"
 #include "mozilla/Queue.h"
 #include "nsClassHashtable.h"
@@ -131,10 +132,19 @@ private:
   using LabeledMap = nsClassHashtable<nsRefPtrHashKey<SchedulerGroup>, RunnableEpochQueue>;
   using EpochQueue = Queue<Epoch, 8>;
 
+  
+  LinkedList<SchedulerGroup> mSchedulerGroups;
+
   LabeledMap mLabeled;
   RunnableEpochQueue mUnlabeled;
   EpochQueue mEpochs;
   size_t mNumEvents = 0;
+
+  
+  
+  
+  
+  int64_t mAvoidActiveTabCount = 0;
 };
 
 } 

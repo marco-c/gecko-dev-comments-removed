@@ -5,9 +5,13 @@
 
 
 #include "LabeledEventQueue.h"
+#include "mozilla/dom/TabChild.h"
+#include "mozilla/dom/TabGroup.h"
 #include "mozilla/Scheduler.h"
 #include "mozilla/SchedulerGroup.h"
 #include "nsQueryObject.h"
+
+using namespace mozilla::dom;
 
 LabeledEventQueue::LabeledEventQueue()
 {
@@ -89,6 +93,10 @@ LabeledEventQueue::PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
 
   RunnableEpochQueue* queue = isLabeled ? mLabeled.LookupOrAdd(group) : &mUnlabeled;
   queue->Push(QueueEntry(event.forget(), epoch->mEpochNumber));
+
+  if (group && !group->isInList()) {
+    mSchedulerGroups.insertBack(group);
+  }
 }
 
 void
@@ -125,26 +133,56 @@ LabeledEventQueue::GetEvent(EventPriority* aPriority,
     }
   }
 
-  for (auto iter = mLabeled.Iter(); !iter.Done(); iter.Next()) {
-    SchedulerGroup* key = iter.Key();
-    RunnableEpochQueue* queue = iter.Data();
+  
+  
+  
+  if (TabChild::HasActiveTabs() && mAvoidActiveTabCount <= 0) {
+    for (TabChild* tabChild : TabChild::GetActiveTabs()) {
+      SchedulerGroup* group = tabChild->TabGroup();
+      if (!group->isInList() || group == mSchedulerGroups.getFirst()) {
+        continue;
+      }
+
+      
+      
+      
+      mAvoidActiveTabCount += 2;
+
+      group->removeFrom(mSchedulerGroups);
+      mSchedulerGroups.insertFront(group);
+    }
+  }
+
+  
+  
+  
+  
+  SchedulerGroup* firstGroup = mSchedulerGroups.getFirst();
+  SchedulerGroup* group = firstGroup;
+  do {
+    RunnableEpochQueue* queue = mLabeled.Get(group);
+    MOZ_ASSERT(queue);
     MOZ_ASSERT(!queue->IsEmpty());
 
-    QueueEntry entry = queue->FirstElement();
-    if (entry.mEpochNumber != epoch.mEpochNumber) {
-      continue;
-    }
+    mAvoidActiveTabCount--;
+    SchedulerGroup* next = group->removeAndGetNext();
+    mSchedulerGroups.insertBack(group);
 
-    if (IsReadyToRun(entry.mRunnable, key)) {
+    QueueEntry entry = queue->FirstElement();
+    if (entry.mEpochNumber == epoch.mEpochNumber &&
+        IsReadyToRun(entry.mRunnable, group)) {
       PopEpoch();
 
       queue->Pop();
       if (queue->IsEmpty()) {
-        iter.Remove();
+        mLabeled.Remove(group);
+        group->removeFrom(mSchedulerGroups);
       }
       return entry.mRunnable.forget();
     }
-  }
+
+    group = next;
+  } while (group != firstGroup);
 
   return nullptr;
 }
