@@ -228,7 +228,7 @@ SchedulerGroup::Dispatch(const char* aName,
   return LabeledDispatch(aName, aCategory, Move(aRunnable));
 }
 
-nsIEventTarget*
+nsISerialEventTarget*
 SchedulerGroup::EventTargetFor(TaskCategory aCategory) const
 {
   MOZ_ASSERT(aCategory != TaskCategory::Count);
@@ -268,7 +268,7 @@ SchedulerGroup::CreateEventTargets(bool aNeedValidation)
       
       
       
-      mEventTargets[i] = do_GetMainThread();
+      mEventTargets[i] = GetMainThreadSerialEventTarget();
     } else {
       mEventTargets[i] = CreateEventTargetFor(category);
     }
@@ -283,12 +283,12 @@ SchedulerGroup::Shutdown(bool aXPCOMShutdown)
   
   
   for (size_t i = 0; i < size_t(TaskCategory::Count); i++) {
-    mEventTargets[i] = aXPCOMShutdown ? nullptr : do_GetMainThread();
+    mEventTargets[i] = aXPCOMShutdown ? nullptr : GetMainThreadSerialEventTarget();
     mAbstractThreads[i] = nullptr;
   }
 }
 
-already_AddRefed<nsIEventTarget>
+already_AddRefed<nsISerialEventTarget>
 SchedulerGroup::CreateEventTargetFor(TaskCategory aCategory)
 {
   RefPtr<SchedulerEventTarget> target =

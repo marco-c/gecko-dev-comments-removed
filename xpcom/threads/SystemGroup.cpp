@@ -92,7 +92,7 @@ SystemGroup::Dispatch(const char* aName,
   return SystemGroupImpl::Get()->Dispatch(aName, aCategory, Move(aRunnable));
 }
 
- nsIEventTarget*
+ nsISerialEventTarget*
 SystemGroup::EventTargetFor(TaskCategory aCategory)
 {
   return SystemGroupImpl::Get()->EventTargetFor(aCategory);

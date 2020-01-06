@@ -26,7 +26,7 @@ class SystemGroup
                            already_AddRefed<nsIRunnable>&& aRunnable);
 
   
-  static nsIEventTarget* EventTargetFor(TaskCategory aCategory);
+  static nsISerialEventTarget* EventTargetFor(TaskCategory aCategory);
 
   
   

@@ -10,8 +10,8 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/TaskCategory.h"
 
-class nsIEventTarget;
 class nsIRunnable;
+class nsISerialEventTarget;
 
 namespace mozilla {
 class AbstractThread;
@@ -33,7 +33,7 @@ public:
   
   
   
-  virtual nsIEventTarget* EventTargetFor(TaskCategory aCategory) const;
+  virtual nsISerialEventTarget* EventTargetFor(TaskCategory aCategory) const;
 
   
   

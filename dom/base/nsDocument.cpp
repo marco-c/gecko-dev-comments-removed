@@ -3045,7 +3045,7 @@ nsIDocument::Dispatch(const char* aName,
   return DispatcherTrait::Dispatch(aName, aCategory, Move(aRunnable));
 }
 
-nsIEventTarget*
+nsISerialEventTarget*
 nsIDocument::EventTargetFor(TaskCategory aCategory) const
 {
   if (mDocGroup) {
@@ -6051,53 +6051,32 @@ nsDocument::IsWebComponentsEnabled(JSContext* aCx, JSObject* aObject)
 {
   JS::Rooted<JSObject*> obj(aCx, aObject);
 
+  if (nsContentUtils::IsWebComponentsEnabled()) {
+    return true;
+  }
+
+  
   JSAutoCompartment ac(aCx, obj);
   JS::Rooted<JSObject*> global(aCx, JS_GetGlobalForObject(aCx, obj));
   nsCOMPtr<nsPIDOMWindowInner> window =
     do_QueryInterface(nsJSUtils::GetStaticScriptGlobal(global));
 
-  bool enabled =
-    nsContentUtils::IsWebComponentsEnabled() ||
-    
-    IsWebComponentsEnabled(window);
-
-  if (!enabled) {
-    return false;
-  }
-
-  nsIDocument* doc = window ? window->GetExtantDoc() : nullptr;
-  if (doc && doc->IsStyledByServo()) {
-    NS_WARNING("stylo: Web Components not supported yet");
-    return false;
-  }
-
-  return true;
+  return IsWebComponentsEnabled(window);
 }
 
 bool
 nsDocument::IsWebComponentsEnabled(dom::NodeInfo* aNodeInfo)
 {
+  if (nsContentUtils::IsWebComponentsEnabled()) {
+    return true;
+  }
+
   nsIDocument* doc = aNodeInfo->GetDocument();
-
-  bool enabled = nsContentUtils::IsWebComponentsEnabled();
-  if (!enabled) {
-    
-    
-    nsCOMPtr<nsPIDOMWindowInner> window =
-      do_QueryInterface(doc->GetScopeObject());
-    enabled = IsWebComponentsEnabled(window);
-  }
-
-  if (!enabled) {
-    return false;
-  }
-
-  if (doc->IsStyledByServo()) {
-    NS_WARNING("stylo: Web Components not supported yet");
-    return false;
-  }
-
-  return true;
+  
+  
+  nsCOMPtr<nsPIDOMWindowInner> window =
+    do_QueryInterface(doc->GetScopeObject());
+  return IsWebComponentsEnabled(window);
 }
 
 bool

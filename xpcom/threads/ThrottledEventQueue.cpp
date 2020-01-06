@@ -91,7 +91,7 @@ class ThrottledEventQueue::Inner final : public nsIObserver
   nsEventQueue mEventQueue;
 
   
-  nsCOMPtr<nsIEventTarget> mBaseTarget;
+  nsCOMPtr<nsISerialEventTarget> mBaseTarget;
 
   
   nsCOMPtr<nsIRunnable> mExecutor;
@@ -99,7 +99,7 @@ class ThrottledEventQueue::Inner final : public nsIObserver
   
   bool mShutdownStarted;
 
-  explicit Inner(nsIEventTarget* aBaseTarget)
+  explicit Inner(nsISerialEventTarget* aBaseTarget)
     : mMutex("ThrottledEventQueue")
     , mIdleCondVar(mMutex, "ThrottledEventQueue:Idle")
     , mEventsAvailable(mMutex, "[ThrottledEventQueue::Inner.mEventsAvailable]")
@@ -210,7 +210,7 @@ class ThrottledEventQueue::Inner final : public nsIObserver
 
 public:
   static already_AddRefed<Inner>
-  Create(nsIEventTarget* aBaseTarget)
+  Create(nsISerialEventTarget* aBaseTarget)
   {
     MOZ_ASSERT(NS_IsMainThread());
 
@@ -376,7 +376,8 @@ NS_IMPL_ISUPPORTS(ThrottledEventQueue::Inner, nsIObserver);
 
 NS_IMPL_ISUPPORTS(ThrottledEventQueue,
                   ThrottledEventQueue,
-                  nsIEventTarget);
+                  nsIEventTarget,
+                  nsISerialEventTarget);
 
 ThrottledEventQueue::ThrottledEventQueue(already_AddRefed<Inner> aInner)
   : mInner(aInner)
@@ -396,7 +397,7 @@ ThrottledEventQueue::MaybeStartShutdown()
 }
 
 already_AddRefed<ThrottledEventQueue>
-ThrottledEventQueue::Create(nsIEventTarget* aBaseTarget)
+ThrottledEventQueue::Create(nsISerialEventTarget* aBaseTarget)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aBaseTarget);

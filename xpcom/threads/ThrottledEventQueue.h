@@ -9,7 +9,7 @@
 #ifndef mozilla_ThrottledEventQueue_h
 #define mozilla_ThrottledEventQueue_h
 
-#include "nsIEventTarget.h"
+#include "nsISerialEventTarget.h"
 
 #define NS_THROTTLEDEVENTQUEUE_IID \
 { 0x8f3cf7dc, 0xfc14, 0x4ad5, \
@@ -58,7 +58,7 @@ namespace mozilla {
 
 
 
-class ThrottledEventQueue final : public nsIEventTarget
+class ThrottledEventQueue final : public nsISerialEventTarget
 {
   class Inner;
   RefPtr<Inner> mInner;
@@ -77,7 +77,7 @@ public:
   
   
   static already_AddRefed<ThrottledEventQueue>
-  Create(nsIEventTarget* aBaseTarget);
+  Create(nsISerialEventTarget* aBaseTarget);
 
   
   bool IsEmpty() const;

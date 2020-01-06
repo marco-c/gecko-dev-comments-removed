@@ -119,7 +119,7 @@ public:
 
   
   
-  nsIEventTarget* EventTargetFor(TaskCategory aCategory) const override;
+  nsISerialEventTarget* EventTargetFor(TaskCategory aCategory) const override;
 
   void WindowChangedBackgroundStatus(bool aIsNowBackground);
 
