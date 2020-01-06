@@ -72,7 +72,7 @@ impl Reflector {
 }
 
 
-pub trait DomObject {
+pub trait DomObject: 'static {
     
     fn reflector(&self) -> &Reflector;
 
