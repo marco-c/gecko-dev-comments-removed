@@ -554,6 +554,10 @@ this.PageActions = {
 
 
 
+
+
+
+
 function Action(options) {
   setProperties(this, options, {
     id: true,
@@ -571,6 +575,7 @@ function Action(options) {
     onLocationChange: false,
     onPlacedInPanel: false,
     onPlacedInUrlbar: false,
+    onRemovedFromWindow: false,
     onShowingInPanel: false,
     shownInUrlbar: false,
     subview: false,
@@ -921,6 +926,19 @@ Action.prototype = {
   onPlacedInUrlbar(buttonNode) {
     if (this._onPlacedInUrlbar) {
       this._onPlacedInUrlbar(buttonNode);
+    }
+  },
+
+  
+
+
+
+
+
+
+  onRemovedFromWindow(browserWindow) {
+    if (this._onRemovedFromWindow) {
+      this._onRemovedFromWindow(browserWindow);
     }
   },
 
