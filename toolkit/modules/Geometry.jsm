@@ -330,17 +330,5 @@ Rect.prototype = {
     this.top -= yAdj;
     this.bottom += yAdj;
     return this;
-  },
-
-  
-
-
-
-  inflateFixed: function inflateFixed(fixed) {
-    this.left -= fixed;
-    this.right += fixed;
-    this.top -= fixed;
-    this.bottom += fixed;
-    return this;
   }
 };
