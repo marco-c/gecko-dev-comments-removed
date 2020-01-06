@@ -1,3 +1,9 @@
+
+
+
+
+
+
 #ifndef frontend_ParseContext_h
 #define frontend_ParseContext_h
 
@@ -622,11 +628,13 @@ class ParseContext : public Nestable<ParseContext>
 
     
     GeneratorKind generatorKind() const {
-        return sc_->isFunctionBox() ? sc_->asFunctionBox()->generatorKind() : NotGenerator;
+        return sc_->isFunctionBox()
+               ? sc_->asFunctionBox()->generatorKind()
+               : GeneratorKind::NotGenerator;
     }
 
-    bool isStarGenerator() const {
-        return generatorKind() == StarGenerator;
+    bool isGenerator() const {
+        return generatorKind() == GeneratorKind::Generator;
     }
 
     bool isAsync() const {
@@ -634,7 +642,7 @@ class ParseContext : public Nestable<ParseContext>
     }
 
     bool needsDotGeneratorName() const {
-        return isStarGenerator() || isAsync();
+        return isGenerator() || isAsync();
     }
 
     FunctionAsyncKind asyncKind() const {

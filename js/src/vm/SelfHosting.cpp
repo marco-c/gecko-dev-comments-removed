@@ -3126,7 +3126,7 @@ JSRuntime::cloneSelfHostedFunctionScript(JSContext* cx, HandlePropertyName name,
         return false;
     
     
-    MOZ_ASSERT(!sourceFun->isStarGenerator() && !sourceFun->isAsync());
+    MOZ_ASSERT(!sourceFun->isGenerator() && !sourceFun->isAsync());
     MOZ_ASSERT(targetFun->isExtended());
     MOZ_ASSERT(targetFun->isInterpretedLazy());
     MOZ_ASSERT(targetFun->isSelfHostedBuiltin());
