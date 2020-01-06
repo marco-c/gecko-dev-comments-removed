@@ -205,6 +205,13 @@ TabStore.prototype = {
     return allTabs;
   },
 
+  getMaxRecordPayloadSize() {
+    
+    
+    
+    return Math.min(512 * 1024, this.engine.service.getMaxRecordPayloadSize());
+  },
+
   async createRecord(id, collection) {
     let record = new TabSetRecord(collection, id);
     record.clientName = this.engine.service.clientsEngine.localName;
@@ -213,12 +220,12 @@ TabStore.prototype = {
     let tabs = this.getAllTabs(true).sort(function(a, b) {
       return b.lastUsed - a.lastUsed;
     });
-
+    let encoder = new TextEncoder("utf-8");
     
     
-    let size = new TextEncoder("utf-8").encode(JSON.stringify(tabs)).byteLength;
+    let size = encoder.encode(JSON.stringify(tabs)).byteLength;
     let origLength = tabs.length;
-    const maxPayloadSize = this.engine.service.getMaxRecordPayloadSize();
+    const maxPayloadSize = this.getMaxRecordPayloadSize();
     
     const MAX_TAB_SIZE = maxPayloadSize / 4 * 3 - 1500;
     if (size > MAX_TAB_SIZE) {
@@ -227,7 +234,7 @@ TabStore.prototype = {
       tabs = tabs.slice(0, cutoff + 1);
 
       
-      while (JSON.stringify(tabs).length > MAX_TAB_SIZE)
+      while (encoder.encode(JSON.stringify(tabs)).byteLength > MAX_TAB_SIZE)
         tabs.pop();
     }
 
