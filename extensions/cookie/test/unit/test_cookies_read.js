@@ -27,8 +27,7 @@ function* do_run_test() {
   Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);
 
   
-  
-  Services.cookiemgr.sessionEnumerator;
+  Services.cookies;
 
   
   
