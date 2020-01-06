@@ -320,12 +320,12 @@ OptionsPanel.prototype = {
     
     let prefDefinitions = [{
       pref: "devtools.webconsole.new-frontend-enabled",
-      label: "Enable new console frontend",
+      label: L10N.getStr("toolbox.options.enableNewConsole.label"),
       id: "devtools-new-webconsole",
       parentId: "webconsole-options"
     }, {
       pref: "devtools.debugger.new-debugger-frontend",
-      label: "Enable new debugger frontend",
+      label: L10N.getStr("toolbox.options.enableNewDebugger.label"),
       id: "devtools-new-debugger",
       parentId: "debugger-options"
     }];
