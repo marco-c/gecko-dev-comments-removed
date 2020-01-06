@@ -1634,28 +1634,39 @@ var PlacesControllerDragHelper = {
       for (let unwrapped of nodes) {
         let index = await insertionPoint.getIndex();
 
-        
-        
-        
         if (index != -1 && unwrapped.itemGuid) {
           
           
           
           let existingBookmark = await PlacesUtils.bookmarks.fetch(unwrapped.itemGuid);
-          let dragginUp = parentGuid == existingBookmark.parentGuid &&
-                          index < existingBookmark.index;
 
-          if (dragginUp) {
-            index += movedCount++;
-          } else if (PlacesUIUtils.useAsyncTransactions) {
-            if (index == existingBookmark.index) {
+          
+          
+          if (existingBookmark && parentGuid == existingBookmark.parentGuid) {
+            if (PlacesUIUtils.useAsyncTransactions) {
+              if (index < existingBookmark.index) {
+                
+                
+                
+                index += movedCount++;
+              } else if (index > existingBookmark.index) {
+                
+                
+                
+                index--;
+              } else {
+                
+                continue;
+              }
+            } else {
               
-              continue;
+              
+              
+              
+              if (index < existingBookmark.index) { 
+                index += movedCount++;
+              }
             }
-            
-            
-            
-            index--;
           }
         }
 
