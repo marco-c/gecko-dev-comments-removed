@@ -23,13 +23,13 @@ add_task(function* () {
   ok(msgWithText && msgWithObj && msgNested, "Three messages should have appeared");
 
   let text = msgWithText.querySelector(".objectBox-string");
-  let objInMsgWithObj = msgWithObj.querySelector(".cm-variable");
+  let objInMsgWithObj = msgWithObj.querySelector(".objectBox-object");
   let textInMsgWithObj = msgWithObj.querySelector(".objectBox-string");
 
   
   
-  let topObjInMsg = msgNested.querySelector(".objectBox-array > .cm-variable");
-  let nestedObjInMsg = msgNested.querySelector(".objectBox-object > .cm-variable");
+  let topObjInMsg = msgNested.querySelector(".objectBox-array");
+  let nestedObjInMsg = msgNested.querySelector(".objectBox-object");
 
   info("Check store as global variable is disabled for text only messages");
   let menuPopup = yield openContextMenu(hud, text);
