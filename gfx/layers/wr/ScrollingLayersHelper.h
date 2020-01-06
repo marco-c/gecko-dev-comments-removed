@@ -7,12 +7,10 @@
 #define GFX_SCROLLINGLAYERSHELPER_H
 
 #include "mozilla/Attributes.h"
-
-class nsDisplayItem;
+#include "mozilla/layers/WebRenderCommandBuilder.h"
 
 namespace mozilla {
 
-struct ActiveScrolledRoot;
 struct DisplayItemClipChain;
 
 namespace wr {
@@ -24,17 +22,14 @@ namespace layers {
 struct FrameMetrics;
 class StackingContextHelper;
 
-class ScrollingLayersHelper
+class MOZ_RAII ScrollingLayersHelper
 {
 public:
-  ScrollingLayersHelper();
-
-  void BeginBuild(wr::DisplayListBuilder& aBuilder);
-  void EndBuild();
-
-  void BeginItem(nsDisplayItem* aItem,
-                 const StackingContextHelper& aStackingContext);
-  void EndItem(nsDisplayItem* aItem);
+  ScrollingLayersHelper(nsDisplayItem* aItem,
+                        wr::DisplayListBuilder& aBuilder,
+                        const StackingContextHelper& aStackingContext,
+                        WebRenderCommandBuilder::ClipIdMap& aCache,
+                        bool aApzEnabled);
   ~ScrollingLayersHelper();
 
 private:
@@ -59,20 +54,8 @@ private:
                       int32_t aAppUnitsPerDevPixel,
                       const StackingContextHelper& aSc);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  typedef std::unordered_map<const DisplayItemClipChain*, wr::WrClipId> ClipIdMap;
-
   wr::DisplayListBuilder* mBuilder;
-  ClipIdMap mCache;
+  WebRenderCommandBuilder::ClipIdMap& mCache;
 
   struct ItemClips {
     Maybe<FrameMetrics::ViewID> mScrollId;
@@ -83,7 +66,7 @@ private:
     void Unapply(wr::DisplayListBuilder* aBuilder);
   };
 
-  std::vector<ItemClips> mItemClipStack;
+  ItemClips mItemClips;
 };
 
 } 

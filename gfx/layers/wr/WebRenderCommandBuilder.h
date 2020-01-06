@@ -7,7 +7,6 @@
 #define GFX_WEBRENDERCOMMANDBUILDER_H
 
 #include "mozilla/webrender/WebRenderAPI.h"
-#include "mozilla/layers/ScrollingLayersHelper.h"
 #include "mozilla/layers/WebRenderMessages.h"
 #include "mozilla/layers/WebRenderScrollData.h"
 #include "mozilla/layers/WebRenderUserData.h"
@@ -146,9 +145,22 @@ public:
     return res.forget();
   }
 
+public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  typedef std::unordered_map<const DisplayItemClipChain*, wr::WrClipId> ClipIdMap;
+
 private:
   WebRenderLayerManager* mManager;
-  ScrollingLayersHelper mScrollingHelper;
+  ClipIdMap mClipIdCache;
 
   
   
