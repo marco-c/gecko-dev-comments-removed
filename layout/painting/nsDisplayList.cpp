@@ -785,14 +785,8 @@ GenerateAndPushTextMask(nsIFrame* aFrame, gfxContext* aContext,
   }
 
   
-  IntRect drawRect;
-  {
-    gfxContextMatrixAutoSaveRestore matRestore(sourceCtx);
-
-    sourceCtx->SetMatrix(gfxMatrix());
-    gfxRect clipRect = sourceCtx->GetClipExtents();
-    drawRect = RoundedOut(ToRect(clipRect));
-  }
+  IntRect drawRect =
+    RoundedOut(ToRect(sourceCtx->GetClipExtents(gfxContext::eDeviceSpace)));
 
   
   RefPtr<DrawTarget> sourceTarget = sourceCtx->GetDrawTarget();
@@ -8602,11 +8596,9 @@ bool nsDisplaySVGEffects::ValidateSVGFrame()
 static IntRect
 ComputeClipExtsInDeviceSpace(gfxContext& aCtx)
 {
-  gfxContextMatrixAutoSaveRestore matRestore(&aCtx);
-
   
-  aCtx.SetMatrix(gfxMatrix());
-  gfxRect clippedFrameSurfaceRect = aCtx.GetClipExtents();
+  gfxRect clippedFrameSurfaceRect =
+    aCtx.GetClipExtents(gfxContext::eDeviceSpace);
   clippedFrameSurfaceRect.RoundOut();
 
   IntRect result;
