@@ -106,11 +106,10 @@ SVGGeometryElement::GetOrBuildPath(const DrawTarget& aDrawTarget,
   
   
   
-  if (cacheable && mCachedPath) {
-    if (aDrawTarget.GetBackendType() == mCachedPath->GetBackendType()) {
-      RefPtr<Path> path(mCachedPath);
-      return path.forget();
-    }
+  if (cacheable && mCachedPath && mCachedPath->GetFillRule() == aFillRule &&
+      aDrawTarget.GetBackendType() == mCachedPath->GetBackendType()) {
+    RefPtr<Path> path(mCachedPath);
+    return path.forget();
   }
   RefPtr<PathBuilder> builder = aDrawTarget.CreatePathBuilder(aFillRule);
   RefPtr<Path> path = BuildPath(builder);
