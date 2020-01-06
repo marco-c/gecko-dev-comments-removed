@@ -1139,6 +1139,7 @@ MediaCache::Update()
     } mTag = NONE;
     
     bool mResume = false;
+    int64_t mSeekTarget = -1;
   };
 
   
@@ -1401,6 +1402,7 @@ MediaCache::Update()
           OffsetToBlockIndexUnchecked(desiredOffset) * BLOCK_SIZE;
         actions[i].mTag = StreamAction::SEEK;
         actions[i].mResume = stream->mCacheSuspended;
+        actions[i].mSeekTarget = stream->mChannelOffset;
         
         
         
@@ -1452,9 +1454,9 @@ MediaCache::Update()
       case StreamAction::SEEK:
         LOG("Stream %p CacheSeek to %" PRId64 " (resume=%d)",
             stream,
-            stream->mChannelOffset,
+            actions[i].mSeekTarget,
             actions[i].mResume);
-        rv = stream->mClient->CacheClientSeek(stream->mChannelOffset,
+        rv = stream->mClient->CacheClientSeek(actions[i].mSeekTarget,
                                               actions[i].mResume);
         break;
       case StreamAction::RESUME:
