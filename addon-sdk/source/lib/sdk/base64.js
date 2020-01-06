@@ -10,10 +10,7 @@ module.metadata = {
 
 const { Cu } = require("chrome");
 
-
-
-
-var { atob, btoa } = Cu.import("resource://gre/modules/Services.jsm", {});
+Cu.importGlobalProperties(["atob", "btoa"]);
 
 function isUTF8(charset) {
   let type = typeof charset;

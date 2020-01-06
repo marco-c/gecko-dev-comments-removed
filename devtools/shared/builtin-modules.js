@@ -19,7 +19,7 @@ const jsmScope = Cu.import("resource://gre/modules/Services.jsm", {});
 const { Services } = jsmScope;
 
 const { PromiseDebugging, ChromeUtils, ThreadSafeChromeUtils, HeapSnapshot,
-        atob, btoa, TextEncoder, TextDecoder } = jsmScope;
+        atob, btoa, TextEncoder, TextDecoder } = Cu.getGlobalForObject(jsmScope);
 
 
 
