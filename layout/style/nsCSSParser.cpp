@@ -1330,9 +1330,6 @@ protected:
   nsXMLNameSpaceMap *mNameSpaceMap;  
 
   
-  dom::CallerType mDomCallerType = dom::CallerType::NonSystem;
-
-  
   
   bool mHavePushBack : 1;
 
@@ -1566,7 +1563,9 @@ CSSParserImpl::InitScanner(nsCSSScanner& aScanner,
   mSheetURI = aSheetURI;
   mSheetPrincipal = aSheetPrincipal;
   mHavePushBack = false;
-  mDomCallerType = aCallerType;
+  mIsChrome =
+    aCallerType == dom::CallerType::System ||
+    (aSheetURI && dom::IsChromeURI(aSheetURI));
 }
 
 void
@@ -1577,7 +1576,7 @@ CSSParserImpl::ReleaseScanner()
   mBaseURI = nullptr;
   mSheetURI = nullptr;
   mSheetPrincipal = nullptr;
-  mDomCallerType = dom::CallerType::NonSystem;
+  mIsChrome = false;
 }
 
 nsresult
@@ -1632,7 +1631,6 @@ CSSParserImpl::ParseSheet(const nsAString& aInput,
   }
 
   mParsingMode = mSheet->ParsingMode();
-  mIsChrome = dom::IsChromeURI(aSheetURI);
   mReusableSheets = aReusableSheets;
 
   nsCSSToken* tk = &mToken;
@@ -1660,7 +1658,6 @@ CSSParserImpl::ParseSheet(const nsAString& aInput,
   ReleaseScanner();
 
   mParsingMode = css::eAuthorSheetFeatures;
-  mIsChrome = false;
   mReusableSheets = nullptr;
 
   return NS_OK;
