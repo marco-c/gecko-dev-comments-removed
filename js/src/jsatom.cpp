@@ -345,6 +345,11 @@ AtomizeAndCopyChars(JSContext* cx, const CharT* tbchars, size_t length, PinningB
         }
     }
 
+    
+    
+    if (MOZ_UNLIKELY(!JSString::validateLength(cx, length)))
+        return nullptr;
+
     AutoLockForExclusiveAccess lock(cx);
 
     AtomSet& atoms = cx->atoms(lock);
@@ -357,9 +362,6 @@ AtomizeAndCopyChars(JSContext* cx, const CharT* tbchars, size_t length, PinningB
             mozilla::Unused << zone->atomCache().add(*zonePtr, AtomStateEntry(atom, false));
         return atom;
     }
-
-    if (!JSString::validateLength(cx, length))
-        return nullptr;
 
     JSAtom* atom;
     {
