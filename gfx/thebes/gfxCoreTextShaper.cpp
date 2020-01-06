@@ -80,7 +80,8 @@ static bool
 IsBuggyIndicScript(unicode::Script aScript)
 {
     return aScript == unicode::Script::BENGALI ||
-           aScript == unicode::Script::KANNADA;
+           aScript == unicode::Script::KANNADA ||
+           aScript == unicode::Script::ORIYA;
 }
 
 bool
@@ -113,6 +114,7 @@ gfxCoreTextShaper::ShapeText(DrawTarget      *aDrawTarget,
 
     CTFontRef tempCTFont = nullptr;
     if (IsBuggyIndicScript(aScript)) {
+        
         
         
         
