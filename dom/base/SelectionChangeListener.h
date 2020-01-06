@@ -34,7 +34,7 @@ public:
     
     
     nsCOMPtr<nsINode> mStartContainer;
-    nsCOMPtr<nsINode> mEndParent;
+    nsCOMPtr<nsINode> mEndContainer;
 
     
     

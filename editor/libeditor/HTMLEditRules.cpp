@@ -352,10 +352,10 @@ HTMLEditRules::BeforeEdit(EditAction action,
     }
     mRangeItem->mStartContainer = selection->GetRangeAt(0)->GetStartContainer();
     mRangeItem->mStartOffset = selection->GetRangeAt(0)->StartOffset();
-    mRangeItem->endNode = selection->GetRangeAt(0)->GetEndContainer();
-    mRangeItem->endOffset = selection->GetRangeAt(0)->EndOffset();
+    mRangeItem->mEndContainer = selection->GetRangeAt(0)->GetEndContainer();
+    mRangeItem->mEndOffset = selection->GetRangeAt(0)->EndOffset();
     nsCOMPtr<nsINode> selStartNode = mRangeItem->mStartContainer;
-    nsCOMPtr<nsINode> selEndNode = mRangeItem->endNode;
+    nsCOMPtr<nsINode> selEndNode = mRangeItem->mEndContainer;
 
     
     htmlEditor->mRangeUpdater.RegisterRangeItem(mRangeItem);
@@ -518,15 +518,15 @@ HTMLEditRules::AfterEditInner(EditAction action,
       
       NS_ENSURE_STATE(mHTMLEditor);
       NS_ENSURE_STATE(mRangeItem->mStartContainer);
-      NS_ENSURE_STATE(mRangeItem->endNode);
+      NS_ENSURE_STATE(mRangeItem->mEndContainer);
       WSRunObject(mHTMLEditor, mRangeItem->mStartContainer,
                   mRangeItem->mStartOffset).AdjustWhitespace();
       
-      if (mRangeItem->mStartContainer != mRangeItem->endNode ||
-          mRangeItem->mStartOffset != mRangeItem->endOffset) {
+      if (mRangeItem->mStartContainer != mRangeItem->mEndContainer ||
+          mRangeItem->mStartOffset != mRangeItem->mEndOffset) {
         NS_ENSURE_STATE(mHTMLEditor);
-        WSRunObject(mHTMLEditor, mRangeItem->endNode,
-                    mRangeItem->endOffset).AdjustWhitespace();
+        WSRunObject(mHTMLEditor, mRangeItem->mEndContainer,
+                    mRangeItem->mEndOffset).AdjustWhitespace();
       }
     }
 
@@ -6115,10 +6115,10 @@ HTMLEditRules::GetParagraphFormatNodes(
 nsresult
 HTMLEditRules::BustUpInlinesAtRangeEndpoints(RangeItem& item)
 {
-  bool isCollapsed = item.mStartContainer == item.endNode &&
-                     item.mStartOffset == item.endOffset;
+  bool isCollapsed = item.mStartContainer == item.mEndContainer &&
+                     item.mStartOffset == item.mEndOffset;
 
-  nsCOMPtr<nsIContent> endInline = GetHighestInlineParent(*item.endNode);
+  nsCOMPtr<nsIContent> endInline = GetHighestInlineParent(*item.mEndContainer);
 
   
   if (endInline && !isCollapsed) {
@@ -6126,13 +6126,13 @@ HTMLEditRules::BustUpInlinesAtRangeEndpoints(RangeItem& item)
     NS_ENSURE_STATE(mHTMLEditor);
     
     int32_t resultEndOffset =
-      mHTMLEditor->SplitNodeDeep(*endInline, *item.endNode->AsContent(),
-                                 item.endOffset,
+      mHTMLEditor->SplitNodeDeep(*endInline, *item.mEndContainer->AsContent(),
+                                 item.mEndOffset,
                                  EditorBase::EmptyContainers::no);
     NS_ENSURE_TRUE(resultEndOffset != -1, NS_ERROR_FAILURE);
     
-    item.endNode = resultEndNode;
-    item.endOffset = resultEndOffset;
+    item.mEndContainer = resultEndNode;
+    item.mEndOffset = resultEndOffset;
   }
 
   nsCOMPtr<nsIContent> startInline =
