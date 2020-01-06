@@ -137,16 +137,16 @@ public:
   AppendShadow(const wr::Shadow& aShadow)
   {
     mBuilder.PushShadow(mBoundsRect, mClipRect, mBackfaceVisible, aShadow);
-    mShadowCount++;
+    mHasShadows = true;
   }
 
   void
   TerminateShadows()
   {
-    for (size_t i = 0; i < mShadowCount; ++i) {
-      mBuilder.PopShadow();
+    if (mHasShadows) {
+      mBuilder.PopAllShadows();
+      mHasShadows = false;
     }
-    mShadowCount = 0;
   }
 
   void
@@ -221,7 +221,7 @@ private:
   bool mHasUnsupportedFeatures = false;
 
   
-  size_t mShadowCount = 0;
+  bool mHasShadows = false;
 
   
   wr::DisplayListBuilder& mBuilder;
