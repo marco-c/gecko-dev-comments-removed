@@ -117,18 +117,20 @@ public:
       return;
 
     
+    bool ready = false;
+    nsXBLService::GetInstance()->BindingReady(mBoundElement, mBindingURI, &ready);
+    if (!ready)
+      return;
+
+    
+    
+    
     nsIContent* destroyedFramesFor = nullptr;
     nsIPresShell* shell = doc->GetShell();
     if (shell) {
       shell->DestroyFramesFor(mBoundElement, &destroyedFramesFor);
     }
     MOZ_ASSERT(!mBoundElement->GetPrimaryFrame());
-
-    
-    bool ready = false;
-    nsXBLService::GetInstance()->BindingReady(mBoundElement, mBindingURI, &ready);
-    if (!ready)
-      return;
 
     
     
