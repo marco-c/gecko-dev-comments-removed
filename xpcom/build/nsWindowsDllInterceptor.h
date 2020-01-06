@@ -334,6 +334,26 @@ private:
   {
     
     
+    if (aOriginalFunction[0] == 0xeb) {
+      int8_t offset = (int8_t)(aOriginalFunction[1]);
+      if (offset <= 0) {
+        
+        
+        return aOriginalFunction;
+      }
+
+      for (int8_t i = 0; i < offset; i++) {
+        if (aOriginalFunction[2 + i] != 0x90) {
+          
+          return aOriginalFunction;
+        }
+      }
+
+      return aOriginalFunction + 2 + offset;
+    }
+
+    
+    
     if (aOriginalFunction[0] == 0xff && aOriginalFunction[1] == 0x25) {
       return (byteptr_t)(**((uint32_t**) (aOriginalFunction + 2)));
     }
@@ -1224,6 +1244,26 @@ protected:
 
   static void* ResolveRedirectedAddress(const byteptr_t aOriginalFunction)
   {
+    
+    
+    if (aOriginalFunction[0] == 0xeb) {
+      int8_t offset = (int8_t)(aOriginalFunction[1]);
+      if (offset <= 0) {
+        
+        
+        return aOriginalFunction;
+      }
+
+      for (int8_t i = 0; i < offset; i++) {
+        if (aOriginalFunction[2 + i] != 0x90) {
+          
+          return aOriginalFunction;
+        }
+      }
+
+      return aOriginalFunction + 2 + offset;
+    }
+
 #if defined(_M_IX86)
     
     
