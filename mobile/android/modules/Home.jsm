@@ -61,7 +61,7 @@ function BannerMessage(options) {
 
 var HomeBannerMessageHandlers;
 
-var HomeBanner = (function () {
+var HomeBanner = (function() {
   
   let _pendingRequest = false;
 
@@ -190,7 +190,7 @@ var HomeBanner = (function () {
 
 var HomePanelsMessageHandlers;
 
-var HomePanels = (function () {
+var HomePanels = (function() {
   
   HomePanelsMessageHandlers = {
 
@@ -472,7 +472,7 @@ this.Home = Object.freeze({
   panels: HomePanels,
 
   
-  onEvent: function (event, data, callback) {
+  onEvent: function(event, data, callback) {
     if (event in HomeBannerMessageHandlers) {
       HomeBannerMessageHandlers[event](data);
     } else if (event in HomePanelsMessageHandlers) {

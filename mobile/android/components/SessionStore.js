@@ -1480,7 +1480,7 @@ SessionStore.prototype = {
     }
 
     
-    closedTabs.find(function (tabData, i) {
+    closedTabs.find(function(tabData, i) {
       if (tabData == aCloseTabData) {
         closedTabs.splice(i, 1);
         return true;
@@ -1554,7 +1554,7 @@ SessionStore.prototype = {
 
     let tabs = closedTabs
       .filter(tab => tab.isPrivate == isPrivate)
-      .map(function (tab) {
+      .map(function(tab) {
         
         let entry = tab.entries[tab.index - 1];
         return {

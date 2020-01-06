@@ -74,7 +74,7 @@ Linkifier.prototype = {
       this._linkifyTimer = null;
     }
 
-    let filterNode = function (node) {
+    let filterNode = function(node) {
       if (node.parentNode.tagName != 'A' &&
          node.parentNode.tagName != 'SCRIPT' &&
          node.parentNode.tagName != 'NOSCRIPT' &&

@@ -52,7 +52,7 @@ HelperAppLauncherDialog.prototype = {
 
 
 
-  _canDownload: function (url, alreadyResolved=false) {
+  _canDownload: function(url, alreadyResolved = false) {
     
     if (url.schemeIs("http") ||
         url.schemeIs("https") ||
@@ -89,7 +89,7 @@ HelperAppLauncherDialog.prototype = {
 
 
 
-  _shouldPrompt: function (launcher) {
+  _shouldPrompt: function(launcher) {
     let mimeType = this._getMimeTypeFromLauncher(launcher);
 
     
@@ -290,7 +290,7 @@ HelperAppLauncherDialog.prototype = {
     return "browser.download.preferred." + mimetype.replace("\\", ".");
   },
 
-  _getMimeTypeFromLauncher: function (launcher) {
+  _getMimeTypeFromLauncher: function(launcher) {
     let mime = launcher.MIMEInfo.MIMEType;
     if (!mime)
       mime = ContentAreaUtils.getMIMETypeForURI(launcher.source) || "";
@@ -321,7 +321,7 @@ HelperAppLauncherDialog.prototype = {
       Services.prefs.clearUserPref(this._getPrefName(mime));
   },
 
-  promptForSaveToFileAsync: function (aLauncher, aContext, aDefaultFile,
+  promptForSaveToFileAsync: function(aLauncher, aContext, aDefaultFile,
                                       aSuggestedFileExt, aForcePrompt) {
     Task.spawn(function* () {
       let file = null;
@@ -377,7 +377,7 @@ HelperAppLauncherDialog.prototype = {
         }
         else {
           
-          aLocalFile.leafName = aLocalFile.leafName.replace(/^(.*\()\d+\)/, "$1" + (collisionCount+1) + ")");
+          aLocalFile.leafName = aLocalFile.leafName.replace(/^(.*\()\d+\)/, "$1" + (collisionCount + 1) + ")");
         }
       }
       aLocalFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, 0o600);

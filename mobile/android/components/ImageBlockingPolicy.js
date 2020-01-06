@@ -95,7 +95,7 @@ ImageBlockingPolicy.prototype = {
     return Services.prefs.getIntPref(PREF_IMAGEBLOCKING);
   },
 
-  observe: function (subject, topic, data) {
+  observe: function(subject, topic, data) {
     if (topic == TOPIC_GATHER_TELEMETRY) {
       Services.telemetry.getHistogramById(TELEMETRY_TAP_TO_LOAD_ENABLED).add(this._enabled());
     }
@@ -105,7 +105,7 @@ ImageBlockingPolicy.prototype = {
 function sendImageSizeTelemetry(imageURL) {
   let xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].createInstance(Ci.nsIXMLHttpRequest);
   xhr.open("HEAD", imageURL, true);
-  xhr.onreadystatechange = function (e) {
+  xhr.onreadystatechange = function(e) {
     if (xhr.readyState != 4) {
       return;
     }

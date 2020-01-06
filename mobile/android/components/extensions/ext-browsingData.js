@@ -24,7 +24,7 @@ let clearCookies = async function(options) {
 
   if (options.since) {
     
-    let since =  options.since*1000;
+    let since =  options.since * 1000;
     
     let cookiesEnum = cookieMgr.enumerator;
     while (cookiesEnum.hasMoreElements()) {
@@ -66,7 +66,7 @@ this.browsingData = class extends ExtensionAPI {
           for (let item of PREF_LIST) {
             
             
-            switch (item){
+            switch (item) {
               case "formdata":
                 name = "formData";
                 break;

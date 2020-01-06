@@ -391,7 +391,7 @@ InternalPrompt.prototype = {
 
   
 
-  nsIAuthPrompt_prompt: function (title, text, passwordRealm, savePassword, defaultText, result) {
+  nsIAuthPrompt_prompt: function(title, text, passwordRealm, savePassword, defaultText, result) {
     
     if (defaultText)
       result.value = defaultText;
@@ -811,7 +811,7 @@ var PromptUtils = {
     return [username, password];
   },
 
-  setAuthInfo: function (aAuthInfo, username, password) {
+  setAuthInfo: function(aAuthInfo, username, password) {
     var flags = aAuthInfo.flags;
     if (flags & Ci.nsIAuthInformation.NEED_DOMAIN) {
       
@@ -820,7 +820,7 @@ var PromptUtils = {
         aAuthInfo.username = username;
       } else {
         aAuthInfo.domain   =  username.substring(0, idx);
-        aAuthInfo.username =  username.substring(idx+1);
+        aAuthInfo.username =  username.substring(idx + 1);
       }
     } else {
       aAuthInfo.username = username;
@@ -850,11 +850,11 @@ var PromptUtils = {
   }
 };
 
-XPCOMUtils.defineLazyGetter(PromptUtils, "passwdBundle", function () {
+XPCOMUtils.defineLazyGetter(PromptUtils, "passwdBundle", function() {
   return Services.strings.createBundle("chrome://passwordmgr/locale/passwordmgr.properties");
 });
 
-XPCOMUtils.defineLazyGetter(PromptUtils, "bundle", function () {
+XPCOMUtils.defineLazyGetter(PromptUtils, "bundle", function() {
   return Services.strings.createBundle("chrome://global/locale/commonDialogs.properties");
 });
 

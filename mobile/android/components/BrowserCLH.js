@@ -17,7 +17,7 @@ BrowserCLH.prototype = {
 
 
 
-  setResourceSubstitutions: function () {
+  setResourceSubstitutions: function() {
     let registry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIChromeRegistry);
     
     let url = registry.convertChromeURL(Services.io.newURI("chrome://browser/content/aboutHome.xhtml")).spec;
@@ -28,7 +28,7 @@ BrowserCLH.prototype = {
     protocolHandler.setSubstitution("android", Services.io.newURI(url));
   },
 
-  observe: function (subject, topic, data) {
+  observe: function(subject, topic, data) {
     switch (topic) {
       case "app-startup":
         this.setResourceSubstitutions();

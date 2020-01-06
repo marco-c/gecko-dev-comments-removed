@@ -33,25 +33,25 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 
 var Accounts = Object.freeze({
-  _accountsExist: function (kind) {
+  _accountsExist: function(kind) {
     return EventDispatcher.instance.sendRequestForResult({
       type: "Accounts:Exist",
       kind: kind
     }).then(data => data.exists);
   },
 
-  firefoxAccountsExist: function () {
+  firefoxAccountsExist: function() {
     return this._accountsExist("fxa");
   },
 
-  syncAccountsExist: function () {
+  syncAccountsExist: function() {
     Deprecated.warning("The legacy Sync account type has been removed from Firefox for Android. " +
                        "Please use `firefoxAccountsExist` instead.",
                        "https://developer.mozilla.org/en-US/Add-ons/Firefox_for_Android/API/Accounts.jsm");
     return Promise.resolve(false);
   },
 
-  anySyncAccountsExist: function () {
+  anySyncAccountsExist: function() {
     return this._accountsExist("any");
   },
 
@@ -65,14 +65,14 @@ var Accounts = Object.freeze({
 
 
 
-  launchSetup: function (extras) {
+  launchSetup: function(extras) {
     EventDispatcher.instance.sendRequest({
       type: "Accounts:Create",
       extras: extras
     });
   },
 
-  _addDefaultEndpoints: function (json) {
+  _addDefaultEndpoints: function(json) {
     let newData = Cu.cloneInto(json, {}, { cloneFunctions: false });
     let associations = {
       authServerEndpoint: 'identity.fxaccounts.auth.uri',
@@ -94,7 +94,7 @@ var Accounts = Object.freeze({
 
 
 
-  createFirefoxAccountFromJSON: function (json) {
+  createFirefoxAccountFromJSON: function(json) {
     return EventDispatcher.instance.sendRequestForResult({
       type: "Accounts:CreateFirefoxAccountFromJSON",
       json: this._addDefaultEndpoints(json)
@@ -111,7 +111,7 @@ var Accounts = Object.freeze({
 
 
 
-  updateFirefoxAccountFromJSON: function (json) {
+  updateFirefoxAccountFromJSON: function(json) {
     return EventDispatcher.instance.sendRequestForResult({
       type: "Accounts:UpdateFirefoxAccountFromJSON",
       json: this._addDefaultEndpoints(json)
@@ -126,7 +126,7 @@ var Accounts = Object.freeze({
 
 
 
-  notifyFirefoxAccountProfileChanged: function () {
+  notifyFirefoxAccountProfileChanged: function() {
     EventDispatcher.instance.sendRequest({
       type: "Accounts:ProfileUpdated",
     });
@@ -138,7 +138,7 @@ var Accounts = Object.freeze({
 
 
 
-  getFirefoxAccount: function () {
+  getFirefoxAccount: function() {
     return EventDispatcher.instance.sendRequestForResult({
       type: "Accounts:Exist",
       kind: "fxa",
@@ -158,13 +158,13 @@ var Accounts = Object.freeze({
 
 
 
-  deleteFirefoxAccount: function () {
+  deleteFirefoxAccount: function() {
     return EventDispatcher.instance.sendRequestForResult({
       type: "Accounts:DeleteFirefoxAccount",
     });
   },
 
-  showSyncPreferences: function () {
+  showSyncPreferences: function() {
     
     return Accounts.getFirefoxAccount().then(account => {
       if (!account) {

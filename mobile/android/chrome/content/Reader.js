@@ -203,7 +203,7 @@ var Reader = {
 
   _sendMmaEvent: function(event) {
       WindowEventDispatcher.sendRequest({
-          type: "Mma:"+event,
+          type: "Mma:" + event,
       });
   },
 

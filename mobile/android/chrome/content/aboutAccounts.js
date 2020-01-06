@@ -88,7 +88,7 @@ var wrapper = {
 
   url: null,
 
-  init: function (url) {
+  init: function(url) {
     this.url = url;
     deferTransitionToRemoteAfterLoaded();
 
@@ -107,7 +107,7 @@ var wrapper = {
     webNav.loadURI(url, Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY, null, null, null);
   },
 
-  retry: function () {
+  retry: function() {
     deferTransitionToRemoteAfterLoaded();
 
     let webNav = this.iframe.frameLoader.docShell.QueryInterface(Ci.nsIWebNavigation);

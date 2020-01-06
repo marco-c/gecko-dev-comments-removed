@@ -58,7 +58,7 @@ function testOneFile(uri) {
 
   
   
-  testScope.dump = function (str) {
+  testScope.dump = function(str) {
     let message = { type: "Robocop:Java",
                     innerType: "progress",
                     message: str,

@@ -86,12 +86,12 @@ var ContextMenus = {
     this.target = null;
   },
 
-  disable: function (event) {
+  disable: function(event) {
     Addons.setEnabled(false, this.target.addon);
     this.target = null;
   },
 
-  uninstall: function (event) {
+  uninstall: function(event) {
     Addons.uninstall(this.target.addon);
     this.target = null;
   }
@@ -284,7 +284,7 @@ var Addons = {
       aAddons.sort(function(a, b) {
         return a.name.localeCompare(b.name);
       });
-      for (let i=0; i<aAddons.length; i++) {
+      for (let i = 0; i < aAddons.length; i++) {
         
         if (aAddons[i].isSystem)
           continue;

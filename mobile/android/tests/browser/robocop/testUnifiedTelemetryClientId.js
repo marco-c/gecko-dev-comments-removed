@@ -15,7 +15,7 @@ var isResetDone;
 
 function getAsyncClientId() {
     isClientIDSet = false;
-    ClientID.getClientID().then(function (retClientID) {
+    ClientID.getClientID().then(function(retClientID) {
         
         
         
@@ -23,7 +23,7 @@ function getAsyncClientId() {
         
         clientID = retClientID;
         isClientIDSet = true;
-    }, function (fail) {
+    }, function(fail) {
         
         
         do_throw('Could not retrieve client ID: ' + fail);
@@ -36,7 +36,7 @@ function pollGetAsyncClientId() {
 
 function getAsyncReset() {
     isResetDone = false;
-    ClientID._reset().then(function () {
+    ClientID._reset().then(function() {
         isResetDone = true;
     });
 }

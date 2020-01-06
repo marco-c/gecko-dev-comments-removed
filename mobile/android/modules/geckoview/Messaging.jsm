@@ -43,7 +43,7 @@ DispatcherDelegate.prototype = {
 
 
 
-  registerListener: function (listener, events) {
+  registerListener: function(listener, events) {
     if (!this._dispatcher) {
       throw new Error("Can only listen in parent process");
     }
@@ -56,7 +56,7 @@ DispatcherDelegate.prototype = {
 
 
 
-  unregisterListener: function (listener, events) {
+  unregisterListener: function(listener, events) {
     if (!this._dispatcher) {
       throw new Error("Can only listen in parent process");
     }
@@ -72,7 +72,7 @@ DispatcherDelegate.prototype = {
 
 
 
-  dispatch: function (event, data, callback) {
+  dispatch: function(event, data, callback) {
     if (this._dispatcher) {
       this._dispatcher.dispatch(event, data, callback);
       return;
@@ -113,7 +113,7 @@ DispatcherDelegate.prototype = {
 
 
 
-  sendRequest: function (msg) {
+  sendRequest: function(msg) {
     let type = msg.type;
     msg.type = undefined;
     this.dispatch(type, msg);
@@ -125,7 +125,7 @@ DispatcherDelegate.prototype = {
 
 
 
-  sendRequestForResult: function (msg) {
+  sendRequestForResult: function(msg) {
     return new Promise((resolve, reject) => {
       let type = msg.type;
       msg.type = undefined;
@@ -167,7 +167,7 @@ DispatcherDelegate.prototype = {
 
 
 
-  addListener: function (listener, event) {
+  addListener: function(listener, event) {
     if (this._requestHandler.listeners[event]) {
       throw new Error("Error in addListener: A listener already exists for event " + event);
     }
@@ -184,7 +184,7 @@ DispatcherDelegate.prototype = {
 
 
 
-  removeListener: function (event) {
+  removeListener: function(event) {
     if (!this._requestHandler.listeners[event]) {
       throw new Error("Error in removeListener: There is no listener for event " + event);
     }
@@ -216,7 +216,7 @@ DispatcherDelegate.prototype = {
 var EventDispatcher = {
   instance: new DispatcherDelegate(IS_PARENT_PROCESS ? Services.androidBridge : undefined),
 
-  for: function (aWindow) {
+  for: function(aWindow) {
     let view = aWindow && aWindow.arguments && aWindow.arguments[0] &&
                aWindow.arguments[0].QueryInterface(Ci.nsIAndroidView);
 
@@ -232,11 +232,11 @@ var EventDispatcher = {
     return new DispatcherDelegate(view);
   },
 
-  forMessageManager: function (aMessageManager) {
+  forMessageManager: function(aMessageManager) {
     return new DispatcherDelegate(null, aMessageManager);
   },
 
-  receiveMessage: function (aMsg) {
+  receiveMessage: function(aMsg) {
     
     let callback;
     if (aMsg.data.uuid) {

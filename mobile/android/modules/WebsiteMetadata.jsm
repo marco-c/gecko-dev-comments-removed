@@ -210,7 +210,7 @@ function best(iterable, by, isBetter) {
     let bestSoFar, bestKeySoFar;
     let isFirst = true;
     forEach(
-        function (item) {
+        function(item) {
             const key = by(item);
             if (isBetter(key, bestKeySoFar) || isFirst) {
                 bestSoFar = item;
@@ -261,7 +261,7 @@ function ruleset(...rules) {
         
         
         
-        score: function (tree) {
+        score: function(tree) {
             const kb = knowledgebase();
 
             
@@ -354,7 +354,7 @@ function knowledgebase() {
     return {
         
         
-        nodeForElement: function (element) {
+        nodeForElement: function(element) {
             return getDefault(nodesByElement,
                               element,
                               () => ({element,
@@ -364,17 +364,17 @@ function knowledgebase() {
 
         
         
-        max: function (flavor) {
+        max: function(flavor) {
             const nodes = nodesByFlavor.get(flavor);
             return nodes === undefined ? undefined : max(nodes, node => node.score);
         },
 
         
-        indexNodeByFlavor: function (node, flavor) {
+        indexNodeByFlavor: function(node, flavor) {
             getDefault(nodesByFlavor, flavor, () => []).push(node);
         },
 
-        nodesOfFlavor: function (flavor) {
+        nodesOfFlavor: function(flavor) {
             return getDefault(nodesByFlavor, flavor, () => []);
         }
     };
