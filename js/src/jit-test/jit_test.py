@@ -240,20 +240,20 @@ def main(argv):
     
     if os.getenv('GCOV_PREFIX') is not None:
         
-        options.exclude += ['asm.js/testSIMD.js']               
+        options.exclude += [os.path.join('asm.js', 'testSIMD.js')]               
 
         
-        options.exclude += ['basic/functionnames.js']           
-        options.exclude += ['debug/Debugger-findScripts-23.js']
-        options.exclude += ['debug/bug1160182.js']
-        options.exclude += ['xdr/incremental-encoder.js']
-        options.exclude += ['xdr/bug1186973.js']                
-        options.exclude += ['xdr/relazify.js']
-        options.exclude += ['basic/werror.js']
+        options.exclude += [os.path.join('basic', 'functionnames.js')]           
+        options.exclude += [os.path.join('debug', 'Debugger-findScripts-23.js')]
+        options.exclude += [os.path.join('debug', 'bug1160182.js')]
+        options.exclude += [os.path.join('xdr', 'incremental-encoder.js')]
+        options.exclude += [os.path.join('xdr', 'bug1186973.js')]                
+        options.exclude += [os.path.join('xdr', 'relazify.js')]
+        options.exclude += [os.path.join('basic', 'werror.js')]
 
         
         
-        options.exclude += ['debug/Script-getOffsetsCoverage-02.js']
+        options.exclude += [os.path.join('debug', 'Script-getOffsetsCoverage-02.js')]
 
     if options.exclude_from:
         with open(options.exclude_from) as fh:
