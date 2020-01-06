@@ -66,13 +66,7 @@ ClientPaintedLayer::CanRecordLayer(ReadbackProcessor* aReadback)
     return false;
   }
 
-  
-  
-  if (GetMaskLayer()) {
-    return false;
-  }
-
-  return GetAncestorMaskLayerCount() == 0;
+  return true;
 }
 
 void
