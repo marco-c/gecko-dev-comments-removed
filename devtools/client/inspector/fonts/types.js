@@ -1,0 +1,36 @@
+
+
+
+
+"use strict";
+
+const { PropTypes } = require("devtools/client/shared/vendor/react");
+
+
+
+
+exports.font = {
+
+  
+  CSSFamilyName: PropTypes.string,
+
+  
+  format: PropTypes.string,
+
+  
+  name: PropTypes.string,
+
+  
+  previewUrl: PropTypes.string,
+
+  
+  rule: PropTypes.object,
+
+  
+  ruleText: PropTypes.string,
+
+  
+  URI: PropTypes.string,
+
+};
+
