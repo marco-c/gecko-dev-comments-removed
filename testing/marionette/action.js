@@ -9,10 +9,7 @@
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("chrome://marionette/content/assert.js");
-const {
-  element,
-  WebElement,
-} = Cu.import("chrome://marionette/content/element.js", {});
+const {element} = Cu.import("chrome://marionette/content/element.js", {});
 const {
   InvalidArgumentError,
   MoveTargetOutOfBoundsError,
@@ -365,9 +362,10 @@ action.PointerOrigin.get = function(obj) {
     let name = capitalize(obj);
     assert.in(name, this, pprint`Unknown pointer-move origin: ${obj}`);
     origin = this[name];
-  } else if (!WebElement.isReference(obj)) {
-    throw new InvalidArgumentError("Expected 'origin' to be a string or a " +
-      pprint`web element reference, got ${obj}`);
+  } else if (!element.isDOMElement(obj)) {
+    throw new InvalidArgumentError("Expected 'origin' to be undefined, " +
+        '"viewport", "pointer", ' +
+        pprint`or an element, got: ${obj}`);
   }
   return origin;
 };
@@ -978,15 +976,12 @@ action.Mouse = class {
 
 
 
-
-
-action.dispatch = function(chain, seenEls, window) {
+action.dispatch = function(chain, window) {
   let chainEvents = (async () => {
     for (let tickActions of chain) {
       await action.dispatchTickActions(
           tickActions,
           action.computeTickDuration(tickActions),
-          seenEls,
           window);
     }
   })();
@@ -1014,12 +1009,9 @@ action.dispatch = function(chain, seenEls, window) {
 
 
 
-
-
 action.dispatchTickActions = function(
-    tickActions, tickDuration, seenEls, window) {
-  let pendingEvents = tickActions.map(
-      toEvents(tickDuration, seenEls, window));
+    tickActions, tickDuration, window) {
+  let pendingEvents = tickActions.map(toEvents(tickDuration, window));
   return Promise.all(pendingEvents).then(
       () => interaction.flushEventLoop(window));
 };
@@ -1092,9 +1084,7 @@ action.computePointerDestination = function(
 
 
 
-
-
-function toEvents(tickDuration, seenEls, window) {
+function toEvents(tickDuration, window) {
   return a => {
     let inputState = action.inputStateMap.get(a.id);
 
@@ -1113,7 +1103,7 @@ function toEvents(tickDuration, seenEls, window) {
 
       case action.PointerMove:
         return dispatchPointerMove(
-            a, inputState, tickDuration, seenEls, window);
+            a, inputState, tickDuration, window);
 
       case action.PointerCancel:
         throw new UnsupportedOperationError();
@@ -1312,9 +1302,7 @@ function dispatchPointerUp(a, inputState, window) {
 
 
 
-
-
-function dispatchPointerMove(a, inputState, tickDuration, seenEls, window) {
+function dispatchPointerMove(a, inputState, tickDuration, window) {
   const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
   
   const fps60 = 17;
