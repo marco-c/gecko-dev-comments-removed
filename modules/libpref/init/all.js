@@ -3092,6 +3092,9 @@ pref("layout.css.column-span.enabled", false);
 pref("layout.css.style-attr-with-xml-base.disabled", true);
 
 
+pref("layout.css.ruby.intercharacter.enabled", false);
+
+
 
 
 
