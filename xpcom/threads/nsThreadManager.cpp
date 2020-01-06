@@ -105,6 +105,13 @@ NS_IMPL_CI_INTERFACE_GETTER(nsThreadManager, nsIThreadManager)
 
 
 
+ nsThreadManager&
+nsThreadManager::get()
+{
+  static nsThreadManager sInstance;
+  return sInstance;
+}
+
 nsresult
 nsThreadManager::Init()
 {
