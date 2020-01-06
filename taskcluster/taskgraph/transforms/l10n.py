@@ -219,7 +219,7 @@ def setup_nightly_dependency(config, jobs):
             
             job['dependencies'].update({
                 'signed-build': 'signing-{}'.format(job['name']),
-                'repackage-signed': 'repackage-signing-repackage-{}'.format(job['name'])
+                'repackage-signed': 'repackage-signing-{}'.format(job['name'])
             })
         yield job
 
