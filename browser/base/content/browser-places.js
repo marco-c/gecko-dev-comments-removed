@@ -1988,10 +1988,6 @@ var BookmarkingUI = {
       "&sort=" + Ci.nsINavHistoryQueryOptions.SORT_BY_DATEADDED_DESCENDING +
       "&maxResults=42&excludeQueries=1";
 
-    
-    
-    
-    PlacesPanelview;
     this._panelMenuView = new PlacesPanelview(document.getElementById("panelMenu_bookmarksMenu"),
       panelview, query);
     panelview.removeEventListener("ViewShowing", this);
