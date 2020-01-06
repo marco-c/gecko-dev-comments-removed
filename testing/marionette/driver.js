@@ -3032,25 +3032,23 @@ GeckoDriver.prototype.setScreenOrientation = function(cmd, resp) {
 
 
 
-
-
 GeckoDriver.prototype.minimizeWindow = async function(cmd, resp) {
   assert.firefox();
   const win = assert.window(this.getCurrentWindow());
   assert.noUserPrompt(this.dialog);
 
-  let state = WindowState.from(win.windowState);
-  if (state != WindowState.Minimized) {
-    await new Promise(resolve => {
-      win.addEventListener("sizemodechange", resolve, {once: true});
+  await new Promise(resolve => {
+    win.addEventListener("sizemodechange", resolve, {once: true});
+
+    if (win.windowState == win.STATE_MINIMIZED) {
+      win.restore();
+    } else {
       win.minimize();
-    });
-  }
+    }
+  });
 
   return this.curBrowser.rect;
 };
-
-
 
 
 
@@ -3094,35 +3092,40 @@ GeckoDriver.prototype.maximizeWindow = async function(cmd, resp) {
     });
   }
 
-  let state = WindowState.from(win.windowState);
-  if (state != WindowState.Maximized) {
-    await new TimedPromise(resolve => {
-      win.addEventListener("sizemodechange", resolve, {once: true});
-      win.maximize();
-    }, {throws: null});
+  let modeChangeEv;
+  await new TimedPromise(resolve => {
+    modeChangeEv = resolve;
+    win.addEventListener("sizemodechange", modeChangeEv, {once: true});
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    await windowSizeChange();
-  }
+    if (win.windowState == win.STATE_MAXIMIZED) {
+      win.restore();
+    } else {
+      win.maximize();
+    }
+  }, {throws: null});
+  win.removeEventListener("sizemodechange", modeChangeEv);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  await windowSizeChange();
 
   return this.curBrowser.rect;
 };
@@ -3144,19 +3147,15 @@ GeckoDriver.prototype.maximizeWindow = async function(cmd, resp) {
 
 
 
-
-GeckoDriver.prototype.fullscreenWindow = async function(cmd, resp) {
+GeckoDriver.prototype.fullscreen = async function(cmd, resp) {
   assert.firefox();
   const win = assert.window(this.getCurrentWindow());
   assert.noUserPrompt(this.dialog);
 
-  let state = WindowState.from(win.windowState);
-  if (state != WindowState.Fullscreen) {
-    await new Promise(resolve => {
-      win.addEventListener("sizemodechange", resolve, {once: true});
-      win.fullScreen = true;
-    });
-  }
+  await new Promise(resolve => {
+    win.addEventListener("sizemodechange", resolve, {once: true});
+    win.fullScreen = !win.fullScreen;
+  });
 
   return this.curBrowser.rect;
 };
@@ -3594,7 +3593,7 @@ GeckoDriver.prototype.commands = {
   "WebDriver:FindElement": GeckoDriver.prototype.findElement,
   "WebDriver:FindElements": GeckoDriver.prototype.findElements,
   "WebDriver:Forward": GeckoDriver.prototype.goForward,
-  "WebDriver:FullscreenWindow": GeckoDriver.prototype.fullscreenWindow,
+  "WebDriver:FullscreenWindow": GeckoDriver.prototype.fullscreen,
   "WebDriver:GetActiveElement": GeckoDriver.prototype.getActiveElement,
   "WebDriver:GetActiveFrame": GeckoDriver.prototype.getActiveFrame,
   "WebDriver:GetAlertText": GeckoDriver.prototype.getTextFromDialog,
@@ -3654,7 +3653,7 @@ GeckoDriver.prototype.commands = {
   "executeScript": GeckoDriver.prototype.executeScript,
   "findElement": GeckoDriver.prototype.findElement,
   "findElements": GeckoDriver.prototype.findElements,
-  "fullscreen": GeckoDriver.prototype.fullscreenWindow,
+  "fullscreen": GeckoDriver.prototype.fullscreen,
   "getActiveElement": GeckoDriver.prototype.getActiveElement,
   "getActiveFrame": GeckoDriver.prototype.getActiveFrame,
   "getChromeWindowHandle": GeckoDriver.prototype.getChromeWindowHandle,
