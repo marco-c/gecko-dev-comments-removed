@@ -6023,14 +6023,13 @@ nsTextFrame::ComputeDescentLimitForSelectionUnderline(
 }
 
 
-
-static const RawSelectionType kRawSelectionTypesWithDecorations =
-  nsISelectionController::SELECTION_SPELLCHECK |
-  nsISelectionController::SELECTION_URLSTRIKEOUT |
-  nsISelectionController::SELECTION_IME_RAWINPUT |
-  nsISelectionController::SELECTION_IME_SELECTEDRAWTEXT |
-  nsISelectionController::SELECTION_IME_CONVERTEDTEXT |
-  nsISelectionController::SELECTION_IME_SELECTEDCONVERTEDTEXT;
+static const SelectionTypeMask kSelectionTypesWithDecorations =
+  ToSelectionTypeMask(SelectionType::eSpellCheck) |
+  ToSelectionTypeMask(SelectionType::eURLStrikeout) |
+  ToSelectionTypeMask(SelectionType::eIMERawClause) |
+  ToSelectionTypeMask(SelectionType::eIMESelectedRawClause) |
+  ToSelectionTypeMask(SelectionType::eIMEConvertedClause) |
+  ToSelectionTypeMask(SelectionType::eIMESelectedClause);
 
 
 gfxFloat
@@ -6557,7 +6556,7 @@ bool
 nsTextFrame::PaintTextWithSelectionColors(
     const PaintTextSelectionParams& aParams,
     const UniquePtr<SelectionDetails>& aDetails,
-    RawSelectionType* aAllRawSelectionTypes,
+    SelectionTypeMask* aAllSelectionTypeMask,
     const nsCharClipDisplayItem::ClipEdges& aClipEdges)
 {
   const gfxTextRun::Range& contentRange = aParams.contentRange;
@@ -6573,7 +6572,7 @@ nsTextFrame::PaintTextWithSelectionColors(
     return false;
   }
 
-  RawSelectionType allRawSelectionTypes = 0;
+  SelectionTypeMask allSelectionTypeMask = 0;
   for (uint32_t i = 0; i < contentRange.Length(); ++i) {
     prevailingSelections[i] = nullptr;
   }
@@ -6585,7 +6584,7 @@ nsTextFrame::PaintTextWithSelectionColors(
                            sdptr->mEnd - int32_t(contentRange.start));
     SelectionType selectionType = sdptr->mSelectionType;
     if (start < end) {
-      allRawSelectionTypes |= ToRawSelectionType(selectionType);
+      allSelectionTypeMask |= ToSelectionTypeMask(selectionType);
       
       nscolor foreground, background;
       if (GetSelectionTextColors(selectionType, *aParams.textPaintStyle,
@@ -6604,9 +6603,9 @@ nsTextFrame::PaintTextWithSelectionColors(
       }
     }
   }
-  *aAllRawSelectionTypes = allRawSelectionTypes;
+  *aAllSelectionTypeMask = allSelectionTypeMask;
 
-  if (!allRawSelectionTypes) {
+  if (!allSelectionTypeMask) {
     
     return false;
   }
@@ -6835,8 +6834,8 @@ nsTextFrame::PaintTextWithSelection(
     return false;
   }
 
-  RawSelectionType allRawSelectionTypes;
-  if (!PaintTextWithSelectionColors(aParams, details, &allRawSelectionTypes,
+  SelectionTypeMask allSelectionTypeMask;
+  if (!PaintTextWithSelectionColors(aParams, details, &allSelectionTypeMask,
                                     aClipEdges)) {
     return false;
   }
@@ -6844,10 +6843,13 @@ nsTextFrame::PaintTextWithSelection(
   
   
   
-  allRawSelectionTypes &= kRawSelectionTypesWithDecorations;
-  for (size_t i = kSelectionTypeCount - 1; i >= 1; --i) {
-    SelectionType selectionType = ToSelectionType(1 << (i - 1));
-    if (selectionType & allRawSelectionTypes) {
+  allSelectionTypeMask &= kSelectionTypesWithDecorations;
+  MOZ_ASSERT(kPresentSelectionTypes[0] == SelectionType::eNormal,
+             "The following for loop assumes that the first item of "
+             "kPresentSelectionTypes is SelectionType::eNormal");
+  for (size_t i = ArrayLength(kPresentSelectionTypes) - 1; i >= 1; --i) {
+    SelectionType selectionType = kPresentSelectionTypes[i];
+    if (ToSelectionTypeMask(selectionType) & allSelectionTypeMask) {
       
       
       
@@ -7738,7 +7740,9 @@ nsTextFrame::CombineSelectionUnderlineRect(nsPresContext* aPresContext,
   UniquePtr<SelectionDetails> details = GetSelectionDetails();
   for (SelectionDetails* sd = details.get(); sd; sd = sd->mNext.get()) {
     if (sd->mStart == sd->mEnd ||
-        !(sd->mSelectionType & kRawSelectionTypesWithDecorations) ||
+        sd->mSelectionType == SelectionType::eInvalid ||
+        !(ToSelectionTypeMask(sd->mSelectionType) &
+            kSelectionTypesWithDecorations) ||
         
         sd->mSelectionType == SelectionType::eURLStrikeout) {
       continue;
@@ -7816,7 +7820,7 @@ nsTextFrame::SetSelectedRange(uint32_t aStart, uint32_t aEnd, bool aSelected,
     
     
     
-    if (aSelectionType & kRawSelectionTypesWithDecorations) {
+    if (ToSelectionTypeMask(aSelectionType) & kSelectionTypesWithDecorations) {
       bool didHaveOverflowingSelection =
         (f->GetStateBits() & TEXT_SELECTION_UNDERLINE_OVERFLOWED) != 0;
       nsRect r(nsPoint(0, 0), GetSize());

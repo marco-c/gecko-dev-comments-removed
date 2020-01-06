@@ -42,7 +42,7 @@ class SVGContextPaint;
 class nsTextFrame : public nsFrame
 {
   typedef mozilla::LayoutDeviceRect LayoutDeviceRect;
-  typedef mozilla::RawSelectionType RawSelectionType;
+  typedef mozilla::SelectionTypeMask SelectionTypeMask;
   typedef mozilla::SelectionType SelectionType;
   typedef mozilla::TextRangeStyle TextRangeStyle;
   typedef mozilla::gfx::DrawTarget DrawTarget;
@@ -530,7 +530,7 @@ public:
   bool PaintTextWithSelectionColors(
     const PaintTextSelectionParams& aParams,
     const mozilla::UniquePtr<SelectionDetails>& aDetails,
-    RawSelectionType* aAllRawSelectionTypes,
+    SelectionTypeMask* aAllSelectionTypeMask,
     const nsCharClipDisplayItem::ClipEdges& aClipEdges);
   
   void PaintTextSelectionDecorations(const PaintTextSelectionParams& aParams,
