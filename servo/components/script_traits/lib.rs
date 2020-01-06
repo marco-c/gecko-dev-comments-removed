@@ -748,9 +748,6 @@ pub enum ConstellationMsg {
     
     GetFocusTopLevelBrowsingContext(IpcSender<Option<TopLevelBrowsingContextId>>),
     
-    
-    GetPipelineTitle(PipelineId),
-    
     InitLoadUrl(ServoUrl),
     
     IsReadyToSaveImage(HashMap<PipelineId, Epoch>),
