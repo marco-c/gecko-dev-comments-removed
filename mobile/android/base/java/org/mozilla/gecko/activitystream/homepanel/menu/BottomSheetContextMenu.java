@@ -6,6 +6,7 @@ package org.mozilla.gecko.activitystream.homepanel.menu;
 
 import android.app.Activity;
 import android.content.Context;
+import android.net.Uri;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.BottomSheetDialog;
 import android.support.design.widget.NavigationView;
@@ -16,6 +17,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.accessibility.AccessibilityEvent;
 import android.widget.TextView;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.activitystream.ActivityStreamTelemetry;
@@ -40,6 +42,9 @@ import java.net.URISyntaxException;
 
     private final View content;
     private final View activityView;
+
+    
+    private String[] pageDomainTextReference = new String[] { "" };
 
     public BottomSheetContextMenu(final Context context,
                                   final ActivityStreamTelemetry.Extras.Builder telemetryExtraBuilder,
@@ -68,20 +73,23 @@ import java.net.URISyntaxException;
 
         final String pageTitle = item.getTitle();
         final String sheetPageTitle = !TextUtils.isEmpty(pageTitle) ? pageTitle : item.getUrl();
-        ((TextView) content.findViewById(R.id.title)).setText(sheetPageTitle);
+        final TextView titleView = (TextView) content.findViewById(R.id.title);
+        titleView.setText(sheetPageTitle);
 
         final TextView pageDomainView = (TextView) content.findViewById(R.id.url);
         final URI itemURI;
         try {
             itemURI = new URI(item.getUrl());
             final UpdatePageDomainAsyncTask updateDomainAsyncTask = new UpdatePageDomainAsyncTask(context, pageDomainView,
-                    itemURI);
+                    itemURI, pageDomainTextReference);
             updateDomainAsyncTask.execute();
         } catch (final URISyntaxException e) {
             
             
             pageDomainView.setText("");
         }
+
+        overrideInitialAccessibilityAnnouncement(pageDomainView, titleView, sheetPageTitle, item.getUrl());
 
         
         final StreamOverridablePageIconLayout pageIconLayout =
@@ -99,6 +107,56 @@ import java.net.URISyntaxException;
         navigationView.setNavigationItemSelectedListener(this);
 
         super.postInit();
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    private void overrideInitialAccessibilityAnnouncement(final View pageDomainView, final View pageTitleView,
+            final String pageTitle, final String urlStr) {
+        final View.AccessibilityDelegate initialAnnouncementDelegate = new View.AccessibilityDelegate() {
+            @Override
+            public void onPopulateAccessibilityEvent(final View hostView, final AccessibilityEvent event) {
+                
+                final String shortenedHost = pageDomainTextReference[0];
+
+                final String finalHost;
+                if (!TextUtils.isEmpty(shortenedHost)) {
+                    finalHost = shortenedHost;
+                } else if (TextUtils.isEmpty(urlStr)) {
+                    
+                    finalHost = "";
+                } else {
+                    
+                    final Uri uri = Uri.parse(urlStr);
+                    final String host = uri.getHost();
+                    finalHost = !TextUtils.isEmpty(host) ? host : urlStr;
+                }
+
+                final String announcementText = finalHost + ", " + pageTitle;
+                event.getText().add(announcementText);
+                super.onPopulateAccessibilityEvent(hostView, event);
+            }
+        };
+
+        
+        
+        
+        pageDomainView.setAccessibilityDelegate(initialAnnouncementDelegate);
+        pageTitleView.setAccessibilityDelegate(initialAnnouncementDelegate);
     }
 
     @Override
@@ -169,10 +227,13 @@ import java.net.URISyntaxException;
     
     private static class UpdatePageDomainAsyncTask extends URIUtils.GetFormattedDomainAsyncTask {
         private final WeakReference<TextView> pageDomainViewWeakReference;
+        private final String[] pageDomainTextReference;
 
-        private UpdatePageDomainAsyncTask(final Context context, final TextView pageDomainView, final URI uri) {
+        private UpdatePageDomainAsyncTask(final Context context, final TextView pageDomainView, final URI uri,
+                final String[] pageDomainTextReference) {
             super(context, uri, true, 0); 
             this.pageDomainViewWeakReference = new WeakReference<>(pageDomainView);
+            this.pageDomainTextReference = pageDomainTextReference;
         }
 
         @Override
@@ -195,6 +256,7 @@ import java.net.URISyntaxException;
                 updateText = !TextUtils.isEmpty(normalizedHost) ? normalizedHost : "";
             }
 
+            pageDomainTextReference[0] = updateText;
             pageDomainView.setText(updateText);
         }
     }
