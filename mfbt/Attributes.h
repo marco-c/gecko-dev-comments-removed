@@ -595,8 +595,13 @@
 
 
 
+
+
+
+
 #ifdef MOZ_CLANG_PLUGIN
 #  define MOZ_CAN_RUN_SCRIPT __attribute__((annotate("moz_can_run_script")))
+#  define MOZ_CAN_RUN_SCRIPT_BOUNDARY __attribute__((annotate("moz_can_run_script_boundary")))
 #  define MOZ_MUST_OVERRIDE __attribute__((annotate("moz_must_override")))
 #  define MOZ_STACK_CLASS __attribute__((annotate("moz_stack_class")))
 #  define MOZ_NONHEAP_CLASS __attribute__((annotate("moz_nonheap_class")))
@@ -652,6 +657,7 @@
     _Pragma("clang diagnostic pop")
 #else
 #  define MOZ_CAN_RUN_SCRIPT
+#  define MOZ_CAN_RUN_SCRIPT_BOUNDARY
 #  define MOZ_MUST_OVERRIDE
 #  define MOZ_STACK_CLASS
 #  define MOZ_NONHEAP_CLASS

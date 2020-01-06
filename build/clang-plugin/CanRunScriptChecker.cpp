@@ -181,7 +181,15 @@ void CanRunScriptChecker::check(const MatchFinder::MatchResult &Result) {
       Result.Nodes.getNodeAs<FunctionDecl>("nonCanRunScriptParentFunction");
   
   
-  if (ParentFunction && CanRunScriptFuncs.count(ParentFunction)) {
+  
+  
+  
+  
+  
+  
+  if (ParentFunction &&
+      (CanRunScriptFuncs.count(ParentFunction) ||
+       hasCustomAnnotation(ParentFunction, "moz_can_run_script_boundary"))) {
     ParentFunction = nullptr;
   }
 
