@@ -69,6 +69,26 @@ GetRealmPrivate(Realm* realm);
 extern JS_PUBLIC_API(void)
 SetRealmPrivate(Realm* realm, void* data);
 
+typedef void
+(* DestroyRealmCallback)(JSFreeOp* fop, Realm* realm);
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(void)
+SetDestroyRealmCallback(JSContext* cx, DestroyRealmCallback callback);
+
+typedef void
+(* RealmNameCallback)(JSContext* cx, Handle<Realm*> realm, char* buf, size_t bufsize);
+
+
+
+extern JS_PUBLIC_API(void)
+SetRealmNameCallback(JSContext* cx, RealmNameCallback callback);
+
 extern JS_PUBLIC_API(JSObject*)
 GetRealmObjectPrototype(JSContext* cx);
 

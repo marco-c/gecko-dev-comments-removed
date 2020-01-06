@@ -502,7 +502,10 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     js::ActiveThreadData<JSCompartmentNameCallback> compartmentNameCallback;
 
     
-    js::ActiveThreadData<JSRealmNameCallback> realmNameCallback;
+    js::ActiveThreadData<JS::DestroyRealmCallback> destroyRealmCallback;
+
+    
+    js::ActiveThreadData<JS::RealmNameCallback> realmNameCallback;
 
     
     js::ActiveThreadData<JSExternalStringSizeofCallback> externalStringSizeofCallback;
