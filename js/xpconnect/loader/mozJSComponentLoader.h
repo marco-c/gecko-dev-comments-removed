@@ -20,11 +20,17 @@
 #include "jsapi.h"
 
 #include "xpcIJSGetFactory.h"
+#include "xpcpublic.h"
 
 class nsIFile;
 class nsIPrincipal;
 class nsIXPConnectJSObjectHolder;
 class ComponentLoaderInfo;
+
+namespace mozilla {
+    class ScriptPreloader;
+} 
+
 
 
 
@@ -71,11 +77,27 @@ class mozJSComponentLoader : public mozilla::ModuleLoader,
     void UnloadModules();
 
     void CreateLoaderGlobal(JSContext* aCx,
-                            nsACString& aLocation,
+                            const nsACString& aLocation,
                             JSAddonId* aAddonID,
                             JS::MutableHandleObject aGlobal);
 
     bool ReuseGlobal(bool aIsAddon, nsIURI* aComponent);
+
+    friend class mozilla::ScriptPreloader;
+
+    JSObject* CompilationScope(JSContext* aCx)
+    {
+        if (mLoaderGlobal)
+            return mLoaderGlobal;
+        if ((mInitialized || NS_SUCCEEDED(ReallyInit())) &&
+            mShareLoaderGlobal)
+        {
+            return GetSharedGlobal(aCx);
+        }
+        return xpc::CompilationScope();
+    }
+
+    JSObject* GetSharedGlobal(JSContext* aCx);
 
     JSObject* PrepareObjectForLocation(JSContext* aCx,
                                        nsIFile* aComponentFile,
