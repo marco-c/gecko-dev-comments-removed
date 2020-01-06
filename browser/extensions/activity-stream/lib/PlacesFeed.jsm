@@ -55,6 +55,16 @@ class HistoryObserver extends Observer {
   onClearHistory() {
     this.dispatch({type: at.PLACES_HISTORY_CLEARED});
   }
+
+  
+  onBeginUpdateBatch() {}
+  onEndUpdateBatch() {}
+  onVisit() {}
+  onTitleChanged() {}
+  onFrecencyChanged() {}
+  onManyFrecenciesChanged() {}
+  onPageChanged() {}
+  onDeleteVisits() {}
 }
 
 
@@ -127,22 +137,39 @@ class BookmarksObserver extends Observer {
 
 
   async onItemChanged(...args) {
-    const property = args[1];
-    const type = args[5];
-    const guid = args[7];
 
     
-    if (type !== PlacesUtils.bookmarks.TYPE_BOOKMARK || !["uri", "title"].includes(property)) {
-      return;
-    }
-    try {
-      
-      const bookmark = await NewTabUtils.activityStreamProvider.getBookmark(guid);
-      this.dispatch({type: at.PLACES_BOOKMARK_CHANGED, data: bookmark});
-    } catch (e) {
-      Cu.reportError(e);
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   }
+
+  
+  onBeginUpdateBatch() {}
+  onEndUpdateBatch() {}
+  onItemVisited() {}
+  onItemMoved() {}
 }
 
 class PlacesFeed {

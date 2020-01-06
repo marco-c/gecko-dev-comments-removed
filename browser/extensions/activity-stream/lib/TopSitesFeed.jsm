@@ -38,10 +38,12 @@ this.TopSitesFeed = class TopSitesFeed {
     
     if (sites) {
       for (const url of sites.split(",")) {
-        DEFAULT_TOP_SITES.push({
+        const site = {
           isDefault: true,
           url
-        });
+        };
+        site.hostname = shortURL(site);
+        DEFAULT_TOP_SITES.push(site);
       }
     }
   }
@@ -65,18 +67,16 @@ this.TopSitesFeed = class TopSitesFeed {
     } else {
       
       frecent = frecent.filter(link => link && link.type !== "affiliate" &&
-        link.frecency > FRECENCY_THRESHOLD);
+        link.frecency > FRECENCY_THRESHOLD).map(site => {
+          site.hostname = shortURL(site);
+          return site;
+        });
     }
 
     
-    let topsitesGroup = [];
-    for (const group of [pinned, frecent, notBlockedDefaultSites]) {
-      topsitesGroup.push(group.filter(site => site).map(site => Object.assign({}, site, {hostname: shortURL(site)})));
-    }
-
-    const dedupedGroups = this.dedupe.group(topsitesGroup);
     
-    pinned = insertPinned([...dedupedGroups[1], ...dedupedGroups[2]], pinned);
+    const deduped = this.dedupe.group(pinned, frecent, notBlockedDefaultSites);
+    pinned = insertPinned([...deduped[1], ...deduped[2]], pinned);
 
     return pinned.slice(0, TOP_SITES_SHOWMORE_LENGTH);
   }
@@ -177,7 +177,9 @@ this.TopSitesFeed = class TopSitesFeed {
           this.refresh(action.meta.fromTarget);
         }
         break;
-      case at.PLACES_HISTORY_CLEARED: 
+      
+      case at.MIGRATION_COMPLETED:
+      case at.PLACES_HISTORY_CLEARED:
       case at.PLACES_LINK_DELETED:
       case at.PLACES_LINK_BLOCKED:
         this.refresh();

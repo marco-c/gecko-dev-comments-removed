@@ -9,7 +9,6 @@ const {ActivityStreamMessageChannel} = Cu.import("resource://activity-stream/lib
 const {Prefs} = Cu.import("resource://activity-stream/lib/ActivityStreamPrefs.jsm", {});
 const {reducers} = Cu.import("resource://activity-stream/common/Reducers.jsm", {});
 const {redux} = Cu.import("resource://activity-stream/vendor/Redux.jsm", {});
-const {actionTypes: at} = Cu.import("resource://activity-stream/common/Actions.jsm", {});
 
 
 
@@ -62,10 +61,14 @@ this.Store = class Store {
 
 
 
-  initFeed(feedName) {
+
+  initFeed(feedName, initAction) {
     const feed = this._feedFactories.get(feedName)();
     feed.store = this;
     this.feeds.set(feedName, feed);
+    if (initAction && feed.onAction) {
+      feed.onAction(initAction);
+    }
   }
 
   
@@ -74,13 +77,14 @@ this.Store = class Store {
 
 
 
-  uninitFeed(feedName) {
+
+  uninitFeed(feedName, uninitAction) {
     const feed = this.feeds.get(feedName);
     if (!feed) {
       return;
     }
-    if (feed.uninit) {
-      feed.uninit();
+    if (uninitAction && feed.onAction) {
+      feed.onAction(uninitAction);
     }
     this.feeds.delete(feedName);
   }
@@ -91,10 +95,9 @@ this.Store = class Store {
   onPrefChanged(name, value) {
     if (this._feedFactories.has(name)) {
       if (value) {
-        this.initFeed(name);
-        this.dispatch({type: at.FEED_INIT, data: name});
+        this.initFeed(name, this._initAction);
       } else {
-        this.uninitFeed(name);
+        this.uninitFeed(name, this._uninitAction);
       }
     }
   }
@@ -106,8 +109,14 @@ this.Store = class Store {
 
 
 
-  init(feedFactories) {
+
+
+
+  init(feedFactories, initAction, uninitAction) {
     this._feedFactories = feedFactories;
+    this._initAction = initAction;
+    this._uninitAction = uninitAction;
+
     for (const pref of feedFactories.keys()) {
       if (this._prefs.get(pref)) {
         this.initFeed(pref);
@@ -116,6 +125,11 @@ this.Store = class Store {
 
     this._prefs.observeBranch(this);
     this._messageChannel.createChannel();
+
+    
+    if (initAction) {
+      this.dispatch(initAction);
+    }
   }
 
   
@@ -125,8 +139,10 @@ this.Store = class Store {
 
 
   uninit() {
+    if (this._uninitAction) {
+      this.dispatch(this._uninitAction);
+    }
     this._prefs.ignoreBranch(this);
-    this.feeds.forEach(feed => this.uninitFeed(feed));
     this.feeds.clear();
     this._feedFactories = null;
     this._messageChannel.destroyChannel();

@@ -18,8 +18,7 @@ this.Dedupe = class Dedupe {
 
 
 
-
-  group(groups) {
+  group(...groups) {
     const globalKeys = new Set();
     const result = [];
     for (const values of groups) {

@@ -44,24 +44,19 @@ this.getETLD = getETLD;
 
 
 
-
-
-
-
-
-
 this.shortURL = function shortURL(link) {
-  if (!link.url && !link.hostname) {
+  if (!link.url) {
     return "";
   }
-  const eTLD = link.eTLD || getETLD(link.url);
-  const hostname = (link.hostname || new URL(link.url).hostname).replace(/^www\./i, "");
 
   
-  const eTLDLength = (eTLD || "").length;
-  const eTLDExtra = eTLDLength > 0 ? -(eTLDLength + 1) : Infinity;
+  const eTLD = getETLD(link.url);
+  const eTLDExtra = eTLD.length > 0 ? -(eTLD.length + 1) : Infinity;
+
   
-  return handleIDNHost(hostname.slice(0, eTLDExtra).toLowerCase() || hostname) || link.title || link.url;
+  const hostname = (new URL(link.url).hostname).replace(/^www\./i, "");
+  return handleIDNHost(hostname.slice(0, eTLDExtra).toLowerCase()) ||
+    link.title || link.url;
 };
 
 this.EXPORTED_SYMBOLS = ["shortURL", "getETLD"];
