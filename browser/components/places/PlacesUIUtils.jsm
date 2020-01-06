@@ -529,9 +529,7 @@ this.PlacesUIUtils = {
 
 
 
-
-
-  getTransactionForData(aData, aType, aNewParentGuid, aIndex, aCopy) {
+  getTransactionForData(aData, aNewParentGuid, aIndex, aCopy) {
     if (!this.SUPPORTED_FLAVORS.includes(aData.type))
       throw new Error(`Unsupported '${aData.type}' data type`);
 

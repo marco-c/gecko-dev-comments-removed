@@ -1322,7 +1322,7 @@ PlacesController.prototype = {
 
         let insertionIndex = await ip.getIndex();
         let doCopy = action == "copy";
-        let newTransactions = await getTransactionsForTransferItems(type,
+        let newTransactions = await getTransactionsForTransferItems(
           items, insertionIndex, ip.guid, doCopy);
         if (newTransactions.length) {
           transactions = [...transactions, ...newTransactions];
@@ -1669,7 +1669,7 @@ var PlacesControllerDragHelper = {
           transactions.push(PlacesTransactions.Tag({ urls, tag: tagName }));
         } else {
           let insertionIndex = await insertionPoint.getIndex();
-          let newTransactions = await getTransactionsForTransferItems(flavor,
+          let newTransactions = await getTransactionsForTransferItems(
             nodes, insertionIndex, parentGuid, doCopy);
           if (newTransactions.length) {
             transactions = [...transactions, ...newTransactions];
@@ -1851,8 +1851,7 @@ function getResultForBatching(viewOrElement) {
 
 
 
-
-async function getTransactionsForTransferItems(dataFlavor, items, insertionIndex,
+async function getTransactionsForTransferItems(items, insertionIndex,
                                                insertionParentGuid, doCopy) {
   let transactions = [];
   let index = insertionIndex;
@@ -1888,7 +1887,6 @@ async function getTransactionsForTransferItems(dataFlavor, items, insertionIndex
     }
     transactions.push(
       PlacesUIUtils.getTransactionForData(item,
-                                          dataFlavor,
                                           insertionParentGuid,
                                           index,
                                           doCopy));
