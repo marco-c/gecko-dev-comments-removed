@@ -264,6 +264,11 @@ impl PaintRenderingContext2DMethods for PaintRenderingContext2D {
     }
 
     
+    fn Ellipse(&self, x: f64, y: f64, rx: f64, ry: f64, rotation: f64, start: f64, end: f64, ccw: bool) -> ErrorResult {
+        self.context.Ellipse(x, y, rx, ry, rotation, start, end, ccw)
+    }
+
+    
     fn ImageSmoothingEnabled(&self) -> bool {
         self.context.ImageSmoothingEnabled()
     }
