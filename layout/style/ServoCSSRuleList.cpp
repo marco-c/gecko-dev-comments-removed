@@ -51,8 +51,6 @@ ServoCSSRuleList::ServoCSSRuleList(already_AddRefed<ServoCssRules> aRawRules,
       }
       ConstructImportRule(i, [&stylesheets](const RawServoStyleSheet* raw) {
         
-        
-        
         return stylesheets.GetAndRemove(raw).valueOr(nullptr);
       });
     }
@@ -147,10 +145,7 @@ ServoCSSRuleList::GetRule(uint32_t aIndex)
         break;
       }
       case nsIDOMCSSRule::IMPORT_RULE:
-        
-        
-        
-        NS_WARNING("stylo: this @import rule was not constructed");
+        MOZ_ASSERT_UNREACHABLE("import rules are eagerly constructed");
         return nullptr;
       case nsIDOMCSSRule::KEYFRAME_RULE:
         MOZ_ASSERT_UNREACHABLE("keyframe rule cannot be here");
@@ -228,20 +223,21 @@ ServoCSSRuleList::ConstructImportRule(uint32_t aIndex, ChildSheetGetter aGetter)
   const RawServoStyleSheet*
     rawChildSheet = Servo_ImportRule_GetSheet(rawRule);
   ServoStyleSheet* childSheet = aGetter(rawChildSheet);
-  if (!childSheet) {
-    
-    
-    
-    NS_WARNING("stylo: fail to get child sheet for @import rule");
-    return;
-  }
+  
+  
+  
+  
+  NS_WARNING_ASSERTION(childSheet,
+                       "stylo: failed to get child sheet for @import rule");
   RefPtr<ServoImportRule>
     ruleObj = new ServoImportRule(Move(rawRule), childSheet, line, column);
-  MOZ_ASSERT(!childSheet->GetOwnerRule(),
-             "Child sheet is already owned by another rule?");
-  MOZ_ASSERT(childSheet->GetParentSheet() == mStyleSheet,
-             "Not a child sheet of the owner of the rule?");
-  childSheet->SetOwnerRule(ruleObj);
+  if (childSheet) {
+    MOZ_ASSERT(!childSheet->GetOwnerRule(),
+               "Child sheet is already owned by another rule?");
+    MOZ_ASSERT(childSheet->GetParentSheet() == mStyleSheet,
+               "Not a child sheet of the owner of the rule?");
+    childSheet->SetOwnerRule(ruleObj);
+  }
   mRules[aIndex] = CastToUint(ruleObj.forget().take());
 }
 
