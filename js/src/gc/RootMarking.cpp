@@ -481,8 +481,6 @@ js::gc::GCRuntime::bufferGrayRoots()
     for (GCZonesIter zone(rt); !zone.done(); zone.next())
         MOZ_ASSERT(zone->gcGrayRoots().empty());
 
-    gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::BUFFER_GRAY_ROOTS);
-
     BufferGrayRootsTracer grayBufferer(rt);
     if (JSTraceDataOp op = grayRootTracer.op)
         (*op)(&grayBufferer, grayRootTracer.data);
@@ -513,8 +511,10 @@ BufferGrayRootsTracer::onChild(const JS::GCCellPtr& thing)
 
     gc::TenuredCell* tenured = gc::TenuredCell::fromPointer(thing.asCell());
 
-    Zone* zone = tenured->zone();
-    if (zone->isCollecting()) {
+    
+    
+    Zone* zone = tenured->zoneFromAnyThread();
+    if (zone->isCollectingFromAnyThread()) {
         
         
         

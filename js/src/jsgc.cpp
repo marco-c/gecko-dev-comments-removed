@@ -3623,6 +3623,34 @@ ArenaLists::checkEmptyArenaList(AllocKind kind)
     return num_live == 0;
 }
 
+class MOZ_RAII js::gc::AutoRunParallelTask : public GCParallelTask
+{
+    using Func = void (*)(JSRuntime*);
+
+    Func func_;
+    gcstats::PhaseKind phase_;
+    AutoLockHelperThreadState& lock_;
+
+  public:
+    AutoRunParallelTask(JSRuntime* rt, Func func, gcstats::PhaseKind phase,
+                        AutoLockHelperThreadState& lock)
+      : GCParallelTask(rt),
+        func_(func),
+        phase_(phase),
+        lock_(lock)
+    {
+        runtime()->gc.startTask(*this, phase_, lock_);
+    }
+
+    ~AutoRunParallelTask() {
+        runtime()->gc.joinTask(*this, phase_, lock_);
+    }
+
+    void run() override {
+        func_(runtime());
+    }
+};
+
 void
 GCRuntime::purgeRuntime(AutoLockForExclusiveAccess& lock)
 {
@@ -3926,8 +3954,6 @@ PurgeShapeTablesForShrinkingGC(JSRuntime* rt)
 static void
 UnmarkCollectedZones(JSRuntime* rt)
 {
-    gcstats::AutoPhase ap(rt->gc.stats(), gcstats::PhaseKind::UNMARK);
-
     for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
         
         zone->arenas.unmarkAll();
@@ -3937,6 +3963,12 @@ UnmarkCollectedZones(JSRuntime* rt)
         
         WeakMapBase::unmarkZone(zone);
     }
+}
+
+static void
+BufferGrayRoots(JSRuntime* rt)
+{
+    rt->gc.bufferGrayRoots();
 }
 
 bool
@@ -3963,53 +3995,76 @@ GCRuntime::beginMarkPhase(JS::gcreason::Reason reason, AutoLockForExclusiveAcces
     marker.start();
     GCMarker* gcmarker = &marker;
 
-    
-    if (isIncremental)
-        DiscardJITCodeForIncrementalGC(rt);
+    {
+        gcstats::AutoPhase ap1(stats(), gcstats::PhaseKind::PREPARE);
+        AutoLockHelperThreadState helperLock;
 
-    
-
-
+        
 
 
 
 
+        AutoRunParallelTask
+            unmarkCollectedZones(rt, UnmarkCollectedZones, gcstats::PhaseKind::UNMARK, helperLock);
 
-    if (invocationKind == GC_SHRINK) {
-        RelazifyFunctionsForShrinkingGC(rt);
-        PurgeShapeTablesForShrinkingGC(rt);
+        
+
+
+
+
+        Maybe<AutoRunParallelTask> bufferGrayRoots;
+        if (isIncremental)
+            bufferGrayRoots.emplace(rt, BufferGrayRoots, gcstats::PhaseKind::BUFFER_GRAY_ROOTS, helperLock);
+        AutoUnlockHelperThreadState unlock(helperLock);
+
+        
+
+
+
+        if (isIncremental)
+            DiscardJITCodeForIncrementalGC(rt);
+
+        
+
+
+
+
+
+
+
+        if (invocationKind == GC_SHRINK) {
+            RelazifyFunctionsForShrinkingGC(rt);
+            PurgeShapeTablesForShrinkingGC(rt);
+        }
+
+        
+
+
+
+
+
+
+
+
+        purgeRuntime(lock);
     }
 
     
+
+
+    gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK);
+    traceRuntimeForMajorGC(gcmarker, lock);
+
+    if (isIncremental)
+        markCompartments();
+
+    
+
+
+
     {
         AutoLockHelperThreadState helperLock;
         HelperThreadState().startHandlingCompressionTasks(helperLock);
-    }
-
-    
-
-
-
-
-
-
-
-
-    purgeRuntime(lock);
-
-    
-
-
-    gcstats::AutoPhase ap1(stats(), gcstats::PhaseKind::MARK);
-
-    UnmarkCollectedZones(rt);
-    traceRuntimeForMajorGC(gcmarker, lock);
-
-    gcstats::AutoPhase ap2(stats(), gcstats::PhaseKind::MARK_ROOTS);
-
-    if (isIncremental) {
-        bufferGrayRoots();
-        markCompartments();
     }
 
     return true;
@@ -4018,7 +4073,8 @@ GCRuntime::beginMarkPhase(JS::gcreason::Reason reason, AutoLockForExclusiveAcces
 void
 GCRuntime::markCompartments()
 {
-    gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_COMPARTMENTS);
+    gcstats::AutoPhase ap1(stats(), gcstats::PhaseKind::MARK_ROOTS);
+    gcstats::AutoPhase ap2(stats(), gcstats::PhaseKind::MARK_COMPARTMENTS);
 
     
 
@@ -4284,7 +4340,7 @@ js::gc::MarkingValidator::nonIncrementalMark(AutoLockForExclusiveAccess& lock)
     gc->incrementalState = State::MarkRoots;
 
     {
-        gcstats::AutoPhase ap(gc->stats(), gcstats::PhaseKind::MARK);
+        gcstats::AutoPhase ap(gc->stats(), gcstats::PhaseKind::PREPARE);
 
         {
             gcstats::AutoPhase ap(gc->stats(), gcstats::PhaseKind::UNMARK);
@@ -4298,6 +4354,10 @@ js::gc::MarkingValidator::nonIncrementalMark(AutoLockForExclusiveAccess& lock)
             for (auto chunk = gc->allNonEmptyChunks(); !chunk.done(); chunk.next())
                 chunk->bitmap.clear();
         }
+    }
+
+    {
+        gcstats::AutoPhase ap(gc->stats(), gcstats::PhaseKind::MARK);
 
         gc->traceRuntimeForMajorGC(gcmarker, lock);
 
@@ -5188,34 +5248,6 @@ PrepareWeakCacheTasks(JSRuntime* rt)
 
     return tasks;
 }
-
-class MOZ_RAII js::gc::AutoRunParallelTask : public GCParallelTask
-{
-    using Func = void (*)(JSRuntime*);
-
-    Func func_;
-    gcstats::PhaseKind phase_;
-    AutoLockHelperThreadState& lock_;
-
-  public:
-    AutoRunParallelTask(JSRuntime* rt, Func func, gcstats::PhaseKind phase,
-                        AutoLockHelperThreadState& lock)
-      : GCParallelTask(rt),
-        func_(func),
-        phase_(phase),
-        lock_(lock)
-    {
-        runtime()->gc.startTask(*this, phase_, lock_);
-    }
-
-    ~AutoRunParallelTask() {
-        runtime()->gc.joinTask(*this, phase_, lock_);
-    }
-
-    void run() override {
-        func_(runtime());
-    }
-};
 
 void
 GCRuntime::beginSweepingSweepGroup()
