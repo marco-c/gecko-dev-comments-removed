@@ -1068,9 +1068,7 @@ nsUnknownContentTypeDialog.prototype = {
         
         this.chosenApp = params.handlerApp;
       }
-    }
-    else {
-#if MOZ_WIDGET_GTK == 3
+    } else if ("@mozilla.org/applicationchooser;1" in Components.classes) {
       var nsIApplicationChooser = Components.interfaces.nsIApplicationChooser;
       var appChooser = Components.classes["@mozilla.org/applicationchooser;1"]
                                  .createInstance(nsIApplicationChooser);
@@ -1085,7 +1083,7 @@ nsUnknownContentTypeDialog.prototype = {
       appChooser.open(this.mLauncher.MIMEInfo.MIMEType, appChooserCallback);
       
       return;
-#else
+    } else {
       var nsIFilePicker = Components.interfaces.nsIFilePicker;
       var fp = Components.classes["@mozilla.org/filepicker;1"]
                          .createInstance(nsIFilePicker);
@@ -1103,8 +1101,8 @@ nsUnknownContentTypeDialog.prototype = {
         localHandlerApp.executable = fp.file;
         this.chosenApp = localHandlerApp;
       }
-#endif // MOZ_WIDGET_GTK == 3
     }
+
     this.finishChooseApp();
   },
 
