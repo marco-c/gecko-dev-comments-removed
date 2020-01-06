@@ -740,9 +740,18 @@ public:
 
 
 
-  nsresult SplitNodeImpl(nsIContent& aExistingRightNode,
-                         int32_t aOffset,
-                         nsIContent& aNewLeftNode);
+
+
+
+
+
+
+
+
+
+  void SplitNodeImpl(const EditorDOMPoint& aStartOfRightNode,
+                     nsIContent& aNewLeftNode,
+                     ErrorResult& aError);
 
   
 
