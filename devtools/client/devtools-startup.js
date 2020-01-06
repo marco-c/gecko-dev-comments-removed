@@ -184,6 +184,7 @@ DevToolsStartup.prototype = {
       this.handleDebuggerServerFlag(cmdLine, debuggerServerFlag);
     }
 
+    
     let onWindowReady = window => {
       this.hookWindow(window);
 
@@ -510,6 +511,15 @@ DevToolsStartup.prototype = {
     if (cmdLine.state == Ci.nsICommandLine.STATE_REMOTE_AUTO) {
       cmdLine.preventDefault = true;
     }
+  },
+
+  
+  
+  get KeyShortcuts() {
+    return KeyShortcuts;
+  },
+  get wrappedJSObject() {
+    return this;
   },
 
   
