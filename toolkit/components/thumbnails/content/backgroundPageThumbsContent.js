@@ -4,13 +4,17 @@
 
 
 
-var { classes: Cc, interfaces: Ci, utils: Cu } = Components;
+var { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 
 Cu.importGlobalProperties(["Blob", "FileReader"]);
 
 Cu.import("resource://gre/modules/PageThumbUtils.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
+
+
+
+const SETTLE_WAIT_TIME = 2500;
 
 const STATE_LOADING = 1;
 const STATE_CAPTURING = 2;
@@ -122,10 +126,23 @@ const backgroundPageThumbsContent = {
           this._startNextCapture();
         }
       } else if (this._state == STATE_LOADING &&
-               Components.isSuccessCode(status)) {
+                 (Components.isSuccessCode(status) ||
+                  status === Cr.NS_BINDING_ABORTED)) {
         
-        this._state = STATE_CAPTURING;
-        this._captureCurrentPage();
+        
+        if (this._captureTimer) {
+          
+          this._captureTimer.delay = SETTLE_WAIT_TIME;
+        } else {
+          
+          this._captureTimer =
+            Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+          this._captureTimer.init(() => {
+            this._state = STATE_CAPTURING;
+            this._captureCurrentPage();
+            delete this._captureTimer;
+          }, SETTLE_WAIT_TIME, Ci.nsITimer.TYPE_ONE_SHOT);
+        }
       } else if (this._state != STATE_CANCELED) {
         
         
