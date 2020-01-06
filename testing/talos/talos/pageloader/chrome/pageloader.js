@@ -51,6 +51,7 @@ var scrollTest = false;
 var gDisableE10S = false;
 var gUseE10S = false;
 var profilingInfo = false;
+var baseVsRef = false;
 
 var isIdleCallbackPending = false;
 
@@ -202,7 +203,6 @@ function plInit() {
     pages = pages.slice(startIndex, endIndex + 1);
     pageUrls = pages.map(function(p) { return p.url.spec.toString(); });
     report = new Report();
-
     if (doRenderTest)
       renderReport = new Report();
 
@@ -400,9 +400,7 @@ function plLoadPage() {
       mm.removeMessageListener("PageLoader:FNBPaintError", ContentListener);
     }
   };
-
   failTimeout.register(loadFail, timeout);
-
   
   TalosParentProfiler.mark("Opening " + pages[pageIndex].url.pathQueryRef);
 
@@ -565,7 +563,15 @@ function plRecordTime(time) {
   }
   var nextName = pages[i].url.spec;
   if (!recordedName) {
-    recordedName = pageUrls[pageIndex];
+    
+    
+    
+    
+    if (baseVsRef) {
+      recordedName = pages[pageIndex].pre + pageUrls[pageIndex];
+    } else {
+      recordedName = pageUrls[pageIndex];
+    }
   }
   if (typeof(time) == "string") {
     var times = time.split(",");
@@ -893,10 +899,11 @@ function plLoadURLsFromURI(manifestUri) {
 
   var lstream = fstream.QueryInterface(Ci.nsILineInputStream);
 
-  var d = [];
+  var url_array = [];
 
   var lineNo = 0;
   var line = {value: null};
+  var baseVsRefIndex = 0;
   var more;
   do {
     lineNo++;
@@ -914,6 +921,7 @@ function plLoadURLsFromURI(manifestUri) {
 
     var flags = 0;
     var urlspec = s;
+    baseVsRefIndex += 1;
 
     
     var items = s.split(/\s+/);
@@ -932,7 +940,7 @@ function plLoadURLsFromURI(manifestUri) {
       var subItems = plLoadURLsFromURI(subManifest);
       if (subItems == null)
         return null;
-      d = d.concat(subItems);
+      url_array = url_array.concat(subItems);
     } else {
       
       
@@ -952,22 +960,58 @@ function plLoadURLsFromURI(manifestUri) {
           flags |= TEST_DOES_OWN_TIMING;
 
         urlspec = items[1];
+      } else if (items.length == 3) {
+        
+        
+        
+        
+        
+        if (items[0].indexOf("&") != -1) {
+          baseVsRef = true;
+          flags |= TEST_DOES_OWN_TIMING;
+          
+          var urlspecBase = items[1].slice(0, -1);
+          var urlspecRef = items[2];
+        } else {
+          dumpLine("tp: Error on line " + lineNo + " in " + manifestUri.spec + ": unknown manifest format!");
+          return null;
+        }
       } else if (items.length != 1) {
         dumpLine("tp: Error on line " + lineNo + " in " + manifestUri.spec + ": whitespace must be %-escaped!");
         return null;
       }
 
-      var url = gIOS.newURI(urlspec, null, manifestUri);
+      var url;
 
-      if (pageFilterRegexp && !pageFilterRegexp.test(url.spec))
-        continue;
+      if (!baseVsRef) {
+        url = gIOS.newURI(urlspec, null, manifestUri);
 
-      d.push({   url,
-               flags });
+        if (pageFilterRegexp && !pageFilterRegexp.test(url.spec))
+          continue;
+
+        url_array.push({ url, flags });
+      } else {
+        
+        
+        
+        
+        
+        url = gIOS.newURI(urlspecBase, null, manifestUri);
+        if (pageFilterRegexp && !pageFilterRegexp.test(url.spec))
+          continue;
+        var pre = "base_page_" + baseVsRefIndex + "_";
+        url_array.push({ url, flags, pre });
+
+        url = gIOS.newURI(urlspecRef, null, manifestUri);
+        if (pageFilterRegexp && !pageFilterRegexp.test(url.spec))
+          continue;
+        pre = "ref_page_" + baseVsRefIndex + "_";
+        url_array.push({ url, flags, pre });
+      }
     }
   } while (more);
 
-  return d;
+  return url_array;
 }
 
 function dumpLine(str) {

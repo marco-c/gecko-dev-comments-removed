@@ -342,28 +342,44 @@ def make_comparison_result(base_and_reference_results):
     "bloom_basic", "alertThreshold": 5.0}]}
     '''
     
-    base_result_runs = base_and_reference_results.results[0].results[0]['runs']
-    ref_result_runs = base_and_reference_results.results[0].results[1]['runs']
-
-    
     comparison_result = copy.deepcopy(base_and_reference_results)
 
     
     comparison_result.results[0].results = []
+    comp_results = comparison_result.results[0].results
 
     
-    comparison_result.results[0].results.append({'index': 0,
-                                                 'runs': [],
-                                                 'page': '',
-                                                 'base_runs': base_result_runs,
-                                                 'ref_runs': ref_result_runs})
+    subtest_index = 0
 
     
-    _index = 0
-    for next_ref in comparison_result.results[0].results[0]['ref_runs']:
-        diff = abs(next_ref - comparison_result.results[0].results[0]['base_runs'][_index])
-        comparison_result.results[0].results[0]['runs'].append(round(diff, 3))
-        _index += 1
+    
+    for x in range(0, len(base_and_reference_results.results[0].results), 2):
+
+        
+        results = base_and_reference_results.results[0].results
+        base_result_runs = results[x]['runs']
+        ref_result_runs = results[x + 1]['runs']
+
+        
+        
+        sub_test_name = base_and_reference_results.results[0].results[x]['page']
+
+        
+        comp_results.append({'index': 0,
+                             'runs': [],
+                             'page': sub_test_name,
+                             'base_runs': base_result_runs,
+                             'ref_runs': ref_result_runs})
+
+        
+        _index = 0
+        for next_ref in comp_results[subtest_index]['ref_runs']:
+            diff = abs(next_ref - comp_results[subtest_index]['base_runs'][_index])
+            comp_results[subtest_index]['runs'].append(round(diff, 3))
+            _index += 1
+
+        
+        subtest_index += 1
 
     return comparison_result
 
