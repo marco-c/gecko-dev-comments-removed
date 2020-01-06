@@ -89,8 +89,8 @@ public:
   void CreateAsyncImageWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
                                          ImageContainer* aContainer,
                                          const StackingContextHelper& aSc,
-                                         const LayerRect& aBounds,
-                                         const LayerRect& aSCBounds,
+                                         const LayoutDeviceRect& aBounds,
+                                         const LayoutDeviceRect& aSCBounds,
                                          const gfx::Matrix4x4& aSCTransform,
                                          const gfx::MaybeIntSize& aScaleToSize,
                                          const wr::ImageRendering& aFilter,
@@ -159,7 +159,9 @@ public:
   virtual UserDataType GetType() override { return UserDataType::eCanvas; }
   static UserDataType Type() { return UserDataType::eCanvas; }
 
+  void ClearCanvasRenderer();
   WebRenderCanvasRendererAsync* GetCanvasRenderer();
+  WebRenderCanvasRendererAsync* CreateCanvasRenderer();
   void ClearCachedResources() override;
 protected:
   UniquePtr<WebRenderCanvasRendererAsync> mCanvasRenderer;

@@ -137,8 +137,8 @@ void
 WebRenderImageData::CreateAsyncImageWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
                                                       ImageContainer* aContainer,
                                                       const StackingContextHelper& aSc,
-                                                      const LayerRect& aBounds,
-                                                      const LayerRect& aSCBounds,
+                                                      const LayoutDeviceRect& aBounds,
+                                                      const LayoutDeviceRect& aSCBounds,
                                                       const gfx::Matrix4x4& aSCTransform,
                                                       const gfx::MaybeIntSize& aScaleToSize,
                                                       const wr::ImageRendering& aFilter,
@@ -255,13 +255,22 @@ WebRenderCanvasData::ClearCachedResources()
   }
 }
 
+void
+WebRenderCanvasData::ClearCanvasRenderer()
+{
+  mCanvasRenderer = nullptr;
+}
+
 WebRenderCanvasRendererAsync*
 WebRenderCanvasData::GetCanvasRenderer()
 {
-  if (!mCanvasRenderer) {
-    mCanvasRenderer = MakeUnique<WebRenderCanvasRendererAsync>(mWRManager);
-  }
+  return mCanvasRenderer.get();
+}
 
+WebRenderCanvasRendererAsync*
+WebRenderCanvasData::CreateCanvasRenderer()
+{
+  mCanvasRenderer = MakeUnique<WebRenderCanvasRendererAsync>(mWRManager);
   return mCanvasRenderer.get();
 }
 

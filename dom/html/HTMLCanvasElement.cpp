@@ -1220,6 +1220,37 @@ HTMLCanvasElement::GetCanvasLayer(nsDisplayListBuilder* aBuilder,
 }
 
 bool
+HTMLCanvasElement::UpdateWebRenderCanvasData(nsDisplayListBuilder* aBuilder,
+                                             WebRenderCanvasData* aCanvasData)
+{
+  if (mCurrentContext) {
+    return mCurrentContext->UpdateWebRenderCanvasData(aBuilder, aCanvasData);
+  }
+  if (mOffscreenCanvas) {
+    CanvasRenderer* renderer = aCanvasData->GetCanvasRenderer();
+
+    if(!mResetLayer && renderer) {
+      return true;
+    }
+
+    renderer = aCanvasData->CreateCanvasRenderer();
+    if (!InitializeCanvasRenderer(aBuilder, renderer)) {
+      
+      aCanvasData->ClearCanvasRenderer();
+      return false;
+    }
+
+    MOZ_ASSERT(renderer);
+    mResetLayer = false;
+    return true;
+  }
+
+  
+  aCanvasData->ClearCanvasRenderer();
+  return false;
+}
+
+bool
 HTMLCanvasElement::InitializeCanvasRenderer(nsDisplayListBuilder* aBuilder,
                                             CanvasRenderer* aRenderer)
 {
@@ -1235,7 +1266,7 @@ HTMLCanvasElement::InitializeCanvasRenderer(nsDisplayListBuilder* aBuilder,
     return true;
   }
 
-  return true;
+  return false;
 }
 
 bool
