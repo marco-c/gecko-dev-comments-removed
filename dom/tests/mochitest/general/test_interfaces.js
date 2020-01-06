@@ -1285,8 +1285,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "XULTreeBuilder", xbl: true},
 
-    {name: "XULTreeBuilderObserver", xbl: true},
-
   ];
 
 
