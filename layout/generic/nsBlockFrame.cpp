@@ -1532,12 +1532,10 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
     
     
     
-    
-    
     const nsStylePosition* stylePosition = reflowInput->mStylePosition;
     if (!IsStyleNormalOrAuto(stylePosition->mJustifyContent) ||
         !IsStyleNormalOrAuto(stylePosition->mAlignContent) ||
-        !IsStyleNormalOrAuto(stylePosition->ComputedJustifyItems(nullptr))) {
+        !IsStyleNormalOrAuto(stylePosition->mJustifyItems)) {
       Telemetry::Accumulate(Telemetry::BOX_ALIGN_PROPS_IN_BLOCKS_FLAG, true);
     } else {
       

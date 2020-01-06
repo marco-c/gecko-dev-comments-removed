@@ -1682,12 +1682,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
 
 
 
-  uint8_t ComputedJustifyItems(nsStyleContext* aParent) const;
-
-  
-
-
-
   uint8_t UsedJustifySelf(nsStyleContext* aParent) const;
 
   mozilla::Position mObjectPosition;    
@@ -1710,14 +1704,17 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
   uint8_t       mAlignItems;            
   uint8_t       mAlignSelf;             
   uint16_t      mJustifyContent;        
-private:
-  friend class nsRuleNode;
-
   
   
   
+  
+  
+  
+  
+  
+  
+  uint8_t       mSpecifiedJustifyItems; 
   uint8_t       mJustifyItems;          
-public:
   uint8_t       mJustifySelf;           
   uint8_t       mFlexDirection;         
   uint8_t       mFlexWrap;              

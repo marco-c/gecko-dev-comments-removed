@@ -397,6 +397,7 @@ GeckoStyleContext::GetUniqueStyleData(const nsStyleStructID& aSID)
 
   UNIQUE_CASE(Font)
   UNIQUE_CASE(Display)
+  UNIQUE_CASE(Position)
   UNIQUE_CASE(Text)
   UNIQUE_CASE(TextReset)
   UNIQUE_CASE(Visibility)
@@ -863,6 +864,23 @@ GeckoStyleContext::ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup)
       nsStyleText* uniqueText = GET_UNIQUE_STYLE_DATA(Text);
       uniqueText->mTextAlign = NS_STYLE_TEXT_ALIGN_START;
     }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mParent &&
+      mParent->StylePosition()->mJustifyItems & NS_STYLE_JUSTIFY_LEGACY &&
+      StylePosition()->mSpecifiedJustifyItems == NS_STYLE_JUSTIFY_AUTO &&
+      StylePosition()->mJustifyItems != mParent->StylePosition()->mJustifyItems) {
+    nsStylePosition* uniquePosition = GET_UNIQUE_STYLE_DATA(Position);
+    uniquePosition->mJustifyItems = mParent->StylePosition()->mJustifyItems;
   }
 
   
