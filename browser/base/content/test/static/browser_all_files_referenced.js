@@ -235,8 +235,8 @@ if (!isDevtools) {
 }
 
 const gInterestingCategories = new Set([
-  "agent-style-sheets", "addon-provider-module", "webextension-scripts",
-  "webextension-schemas", "webextension-scripts-addon",
+  "agent-style-sheets", "addon-provider-module", "webextension-modules",
+  "webextension-scripts", "webextension-schemas", "webextension-scripts-addon",
   "webextension-scripts-content", "webextension-scripts-devtools"
 ]);
 
@@ -503,13 +503,13 @@ add_task(async function checkAllTheFiles() {
   findChromeUrlsFromArray(uint16, "chrome://");
   findChromeUrlsFromArray(uint16, "resource://");
 
-  const kCodeExtensions = [".xul", ".xml", ".xsl", ".js", ".jsm", ".html", ".xhtml"];
+  const kCodeExtensions = [".xul", ".xml", ".xsl", ".js", ".jsm", ".json", ".html", ".xhtml"];
 
   let appDir = Services.dirsvc.get("GreD", Ci.nsIFile);
   
   
   
-  let uris = await generateURIsFromDirTree(appDir, [".css", ".manifest", ".json", ".jpg", ".png", ".gif", ".svg",  ".dtd", ".properties"].concat(kCodeExtensions));
+  let uris = await generateURIsFromDirTree(appDir, [".css", ".manifest", ".jpg", ".png", ".gif", ".svg",  ".dtd", ".properties"].concat(kCodeExtensions));
 
   
   
