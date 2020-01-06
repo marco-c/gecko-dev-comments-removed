@@ -89,6 +89,15 @@ add_task(async function test_frametree_dynamic() {
   is(await enumerateIndexes(browser), "0,1", "correct indexes 0 and 1");
 
   
+  await ContentTask.spawn(browser, URL, async ([url]) => {
+    
+    content.document.body.removeChild(content.document.getElementsByTagName("iframe")[0]);
+  });
+
+  is(await countNonDynamicFrames(browser), 1, "one non-dynamic child frame");
+  is(await enumerateIndexes(browser), "1", "correct index 1");
+
+  
   await promiseRemoveTab(tab);
 });
 
