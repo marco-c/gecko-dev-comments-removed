@@ -337,6 +337,13 @@ JSTracer::asCallbackTracer()
     return static_cast<JS::CallbackTracer*>(this);
 }
 
+namespace js {
+namespace gc {
+template <typename T>
+JS_PUBLIC_API(void) TraceExternalEdge(JSTracer* trc, T* thingp, const char* name);
+} 
+} 
+
 namespace JS {
 
 
@@ -353,12 +360,26 @@ namespace JS {
 
 
 
-template <typename T>
-extern JS_PUBLIC_API(void)
-TraceEdge(JSTracer* trc, JS::Heap<T>* edgep, const char* name);
 
-extern JS_PUBLIC_API(void)
-TraceEdge(JSTracer* trc, JS::TenuredHeap<JSObject*>* edgep, const char* name);
+template <typename T>
+inline void
+TraceEdge(JSTracer* trc, JS::Heap<T>* thingp, const char* name)
+{
+    MOZ_ASSERT(thingp);
+    if (*thingp)
+        js::gc::TraceExternalEdge(trc, thingp->unsafeGet(), name);
+}
+
+template <typename T>
+inline void
+TraceEdge(JSTracer* trc, JS::TenuredHeap<T>* thingp, const char* name)
+{
+    MOZ_ASSERT(thingp);
+    if (T ptr = thingp->unbarrieredGetPtr()) {
+        js::gc::TraceExternalEdge(trc, &ptr, name);
+        thingp->setPtr(ptr);
+    }
+}
 
 
 
