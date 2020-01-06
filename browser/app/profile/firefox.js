@@ -1050,7 +1050,7 @@ pref("dom.ipc.plugins.sandbox-level.flash", 0);
 
 
 
-pref("security.sandbox.content.level", 3);
+pref("security.sandbox.content.level", 4);
 
 
 
