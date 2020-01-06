@@ -90,6 +90,8 @@ SessionStartup.prototype = {
   
   _previousSessionCrashed: null,
 
+  _resumeSessionEnabled: null,
+
 
 
   
@@ -105,6 +107,10 @@ SessionStartup.prototype = {
       gOnceInitializedDeferred.resolve();
       return;
     }
+
+    this._resumeSessionEnabled =
+      Services.prefs.getBoolPref("browser.sessionstore.resume_session_once") ||
+      Services.prefs.getIntPref("browser.startup.page") == BROWSER_STARTUP_RESUME_SESSION;
 
     SessionFile.read().then(
       this._onSessionFileRead.bind(this),
@@ -166,12 +172,8 @@ SessionStartup.prototype = {
       Services.telemetry.scalarSet("browser.engagement.restored_pinned_tabs_count", pinnedTabCount);
     }, 60000);
 
-    let shouldResumeSessionOnce = Services.prefs.getBoolPref("browser.sessionstore.resume_session_once");
-    let shouldResumeSession = shouldResumeSessionOnce ||
-          Services.prefs.getIntPref("browser.startup.page") == BROWSER_STARTUP_RESUME_SESSION;
-
     
-    if (!shouldResumeSessionOnce && this._initialState) {
+    if (!this._resumeSessionEnabled && this._initialState) {
       delete this._initialState.lastSessionState;
     }
 
@@ -216,7 +218,7 @@ SessionStartup.prototype = {
       
       if (this._previousSessionCrashed && resumeFromCrash)
         this._sessionType = Ci.nsISessionStartup.RECOVER_SESSION;
-      else if (!this._previousSessionCrashed && shouldResumeSession)
+      else if (!this._previousSessionCrashed && this._resumeSessionEnabled)
         this._sessionType = Ci.nsISessionStartup.RESUME_SESSION;
       else if (this._initialState)
         this._sessionType = Ci.nsISessionStartup.DEFER_SESSION;
@@ -318,30 +320,25 @@ SessionStartup.prototype = {
 
 
 
-
-
-
-
-
-  get willOverrideHomepage() {
-    if (this._initialState && this._willRestore()) {
-      let windows = this._initialState.windows || null;
-      
-      
-      return windows && windows.some(w => w.tabs.some(t => !t.pinned));
-    }
-    return false;
-  },
-
-  
-
-
-
-
-
   get willOverrideHomepagePromise() {
+    
+    
+    
+    
+    
+    if (!this._initialState && !this._resumeSessionEnabled) {
+      return Promise.resolve(false);
+    }
+
     return new Promise(resolve => {
-      resolve(this.willOverrideHomepage);
+      this.onceInitialized.then(() => {
+        
+        
+        resolve(this._willRestore() &&
+                this._initialState &&
+                this._initialState.windows &&
+                this._initialState.windows.some(w => w.tabs.some(t => !t.pinned)));
+      });
     });
   },
 
