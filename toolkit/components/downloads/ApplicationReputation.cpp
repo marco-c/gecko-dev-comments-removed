@@ -556,6 +556,8 @@ static const char16_t* const kBinaryFileExtensions[] = {
     u".hlp", 
     u".hqx", 
     u".hta", 
+    u".htm",
+    u".html",
     u".htt", 
     u".img", 
     u".imgpart", 
