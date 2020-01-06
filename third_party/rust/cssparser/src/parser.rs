@@ -26,11 +26,11 @@ pub enum BasicParseError<'a> {
     
     UnexpectedToken(Token<'a>),
     
+    ExpectedToken(Token<'a>),
+    
     EndOfInput,
     
-    AtRuleInvalid(CompactCowStr<'a>),
-    
-    AtRuleBodyInvalid,
+    AtRuleInvalid,
     
     QualifiedRuleInvalid,
 }
@@ -186,11 +186,6 @@ impl<'i: 't, 't> Parser<'i, 't> {
             at_start_of: None,
             stop_before: Delimiter::None,
         }
-    }
-
-    
-    pub fn current_line(&self) -> &'i str {
-        self.tokenizer.0.current_source_line()
     }
 
     
@@ -362,9 +357,9 @@ impl<'i: 't, 't> Parser<'i, 't> {
     #[inline]
     pub fn parse_entirely<F, T, E>(&mut self, parse: F) -> Result<T, ParseError<'i, E>>
     where F: FnOnce(&mut Parser<'i, 't>) -> Result<T, ParseError<'i, E>> {
-        let result = parse(self)?;
+        let result = parse(self);
         self.expect_exhausted()?;
-        Ok(result)
+        result
     }
 
     
@@ -487,7 +482,8 @@ impl<'i: 't, 't> Parser<'i, 't> {
         match self.next()? {
             Token::UnquotedUrl(value) => Ok(value),
             Token::Function(ref name) if name.eq_ignore_ascii_case("url") => {
-                self.parse_nested_block(|input| input.expect_string().map_err(ParseError::Basic))
+                self.parse_nested_block(|input| input.expect_string()
+                                        .map_err(|e| ParseError::Basic(e)))
                     .map_err(ParseError::<()>::basic)
             },
             t => Err(BasicParseError::UnexpectedToken(t))
@@ -501,7 +497,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
             Token::UnquotedUrl(value) => Ok(value),
             Token::QuotedString(value) => Ok(value),
             Token::Function(ref name) if name.eq_ignore_ascii_case("url") => {
-                self.parse_nested_block(|input| input.expect_string().map_err(ParseError::Basic))
+                self.parse_nested_block(|input| input.expect_string().map_err(|e| ParseError::Basic(e)))
                     .map_err(ParseError::<()>::basic)
             },
             t => Err(BasicParseError::UnexpectedToken(t))
