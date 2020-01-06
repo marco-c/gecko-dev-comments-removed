@@ -1538,8 +1538,14 @@ HTMLEditor::RelativeFontChangeHelper(int32_t aSizeChange,
   if (aNode->IsHTMLElement(nsGkAtoms::font) &&
       aNode->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::size)) {
     
-    for (uint32_t i = aNode->GetChildCount(); i--; ) {
-      nsresult rv = RelativeFontChangeOnNode(aSizeChange, aNode->GetChildAt(i));
+    AutoTArray<nsCOMPtr<nsIContent>, 10> childList;
+    for (nsIContent* child = aNode->GetFirstChild();
+         child; child = child->GetNextSibling()) {
+      childList.AppendElement(child);
+    }
+
+    for (const auto& child: childList) {
+      nsresult rv = RelativeFontChangeOnNode(aSizeChange, child);
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
@@ -1549,8 +1555,14 @@ HTMLEditor::RelativeFontChangeHelper(int32_t aSizeChange,
   }
 
   
-  for (uint32_t i = aNode->GetChildCount(); i--; ) {
-    nsresult rv = RelativeFontChangeHelper(aSizeChange, aNode->GetChildAt(i));
+  AutoTArray<nsCOMPtr<nsIContent>, 10> childList;
+  for (nsIContent* child = aNode->GetFirstChild();
+       child; child = child->GetNextSibling()) {
+    childList.AppendElement(child);
+  }
+
+  for (const auto& child: childList) {
+    nsresult rv = RelativeFontChangeHelper(aSizeChange, child);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -1616,8 +1628,14 @@ HTMLEditor::RelativeFontChangeOnNode(int32_t aSizeChange,
   
   
   
-  for (uint32_t i = aNode->GetChildCount(); i--; ) {
-    nsresult rv = RelativeFontChangeOnNode(aSizeChange, aNode->GetChildAt(i));
+  AutoTArray<nsCOMPtr<nsIContent>, 10> childList;
+  for (nsIContent* child = aNode->GetFirstChild();
+       child; child = child->GetNextSibling()) {
+    childList.AppendElement(child);
+  }
+
+  for (const auto& child: childList) {
+    nsresult rv = RelativeFontChangeOnNode(aSizeChange, child);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
