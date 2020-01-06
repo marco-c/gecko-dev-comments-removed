@@ -10,10 +10,12 @@ import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.BottomSheetDialog;
 import android.support.design.widget.NavigationView;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.TextView;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.activitystream.ActivityStreamTelemetry;
@@ -30,6 +32,7 @@ import java.net.URISyntaxException;
  class BottomSheetContextMenu
         extends ActivityStreamContextMenu {
 
+    private static final String LOGTAG = "GeckoASBottomSheet";
 
     private final BottomSheetDialog bottomSheetDialog;
 
@@ -118,7 +121,36 @@ import java.net.URISyntaxException;
             bsBehaviour.setPeekHeight(peekHeight);
         }
 
+        overrideBottomSheetDialogAccessibility();
         bottomSheetDialog.show();
+    }
+
+    
+
+
+
+    private void overrideBottomSheetDialogAccessibility() {
+        boolean isSuccess = true;
+        final Window window = bottomSheetDialog.getWindow();
+        if (window != null) {
+            
+            
+            
+            
+            
+            
+            
+            final View tapToDismissView = window.findViewById(android.support.design.R.id.touch_outside);
+            if (tapToDismissView != null) {
+                tapToDismissView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            } else {
+                isSuccess = false;
+            }
+        }
+
+        if (!isSuccess) {
+            Log.w(LOGTAG, "Unable to fully override Activity Stream bottom sheet accessibility behavior.");
+        }
     }
 
     public void dismiss() {
