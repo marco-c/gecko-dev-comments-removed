@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "Location.h"
 #include "nsIScriptSecurityManager.h"
@@ -42,9 +42,9 @@ namespace dom {
 Location::Location(nsPIDOMWindowInner* aWindow, nsIDocShell *aDocShell)
   : mInnerWindow(aWindow)
 {
-  MOZ_ASSERT(aDocShell);
   MOZ_ASSERT(mInnerWindow->IsInnerWindow());
 
+  
   mDocShell = do_GetWeakReference(aDocShell);
 }
 
@@ -52,7 +52,7 @@ Location::~Location()
 {
 }
 
-// QueryInterface implementation for Location
+
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(Location)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsISupports)
@@ -76,34 +76,34 @@ Location::CheckURL(nsIURI* aURI, nsIDocShellLoadInfo** aLoadInfo)
   net::ReferrerPolicy referrerPolicy = net::RP_Unset;
 
   if (JSContext *cx = nsContentUtils::GetCurrentJSContext()) {
-    // No cx means that there's no JS running, or at least no JS that
-    // was run through code that properly pushed a context onto the
-    // context stack (as all code that runs JS off of web pages
-    // does). We won't bother with security checks in this case, but
-    // we need to create the loadinfo etc.
+    
+    
+    
+    
+    
 
-    // Get security manager.
+    
     nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
     NS_ENSURE_STATE(ssm);
 
-    // Check to see if URI is allowed.
+    
     nsresult rv = ssm->CheckLoadURIFromScript(cx, aURI);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    // Make the load's referrer reflect changes to the document's URI caused by
-    // push/replaceState, if possible.  First, get the document corresponding to
-    // fp.  If the document's original URI (i.e. its URI before
-    // push/replaceState) matches the principal's URI, use the document's
-    // current URI as the referrer.  If they don't match, use the principal's
-    // URI.
-    //
-    // The triggering principal for this load should be the principal of the
-    // incumbent document (which matches where the referrer information is
-    // coming from) when there is an incumbent document, and the subject
-    // principal otherwise.  Note that the URI in the triggering principal
-    // may not match the referrer URI in various cases, notably including
-    // the cases when the incumbent document's document URI was modified
-    // after the document was loaded.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     nsCOMPtr<nsPIDOMWindowInner> incumbent =
       do_QueryInterface(mozilla::dom::GetIncumbentGlobal());
@@ -127,11 +127,11 @@ Location::CheckURL(nsIURI* aURI, nsIDocShellLoadInfo** aLoadInfo)
         sourceURI = docCurrentURI;
       }
       else {
-        // Use principalURI as long as it is not an NullPrincipalURI.  We
-        // could add a method such as GetReferrerURI to principals to make this
-        // cleaner, but given that we need to start using Source Browsing
-        // Context for referrer (see Bug 960639) this may be wasted effort at
-        // this stage.
+        
+        
+        
+        
+        
         if (principalURI) {
           bool isNullPrincipalScheme;
           rv = principalURI->SchemeIs(NS_NULLPRINCIPAL_SCHEME,
@@ -143,15 +143,15 @@ Location::CheckURL(nsIURI* aURI, nsIDocShellLoadInfo** aLoadInfo)
       }
     }
     else {
-      // No document; determine triggeringPrincipal by quering the
-      // subjectPrincipal, wich is the principal of the current JS
-      // compartment, or a null principal in case there is no
-      // compartment yet.
+      
+      
+      
+      
       triggeringPrincipal = nsContentUtils::SubjectPrincipal();
     }
   }
 
-  // Create load info
+  
   nsCOMPtr<nsIDocShellLoadInfo> loadInfo;
   docShell->CreateLoadInfo(getter_AddRefs(loadInfo));
   NS_ENSURE_TRUE(loadInfo, NS_ERROR_FAILURE);
@@ -188,8 +188,8 @@ Location::GetURI(nsIURI** aURI, bool aGetInnermostURI)
   rv = webNav->GetCurrentURI(getter_AddRefs(uri));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // It is valid for docshell to return a null URI. Don't try to fixup
-  // if this happens.
+  
+  
   if (!uri) {
     return NS_OK;
   }
@@ -245,7 +245,7 @@ Location::SetURI(nsIURI* aURI, bool aReplace)
       loadInfo->SetLoadType(nsIDocShellLoadInfo::loadStopContent);
     }
 
-    // Get the incumbent script's browsing context to set as source.
+    
     nsCOMPtr<nsPIDOMWindowInner> sourceWindow =
       do_QueryInterface(mozilla::dom::GetIncumbentGlobal());
     if (sourceWindow) {
@@ -291,9 +291,9 @@ Location::GetHash(nsAString& aHash,
   }
 
   if (aHash == mCachedHash) {
-    // Work around ShareThis stupidly polling location.hash every
-    // 5ms all the time by handing out the same exact string buffer
-    // we handed out last time.
+    
+    
+    
     aHash = mCachedHash;
   } else {
     mCachedHash = aHash;
@@ -475,7 +475,7 @@ Location::SetHrefWithContext(JSContext* cx, const nsAString& aHref,
 {
   nsCOMPtr<nsIURI> base;
 
-  // Get the source of the caller
+  
   nsresult result = GetSourceBaseURL(cx, getter_AddRefs(base));
 
   if (NS_FAILED(result)) {
@@ -502,15 +502,15 @@ Location::SetHrefWithBase(const nsAString& aHref, nsIURI* aBase,
   }
 
   if (newUri) {
-    /* Check with the scriptContext if it is currently processing a script tag.
-     * If so, this must be a <script> tag with a location.href in it.
-     * we want to do a replace load, in such a situation.
-     * In other cases, for example if a event handler or a JS timer
-     * had a location.href in it, we want to do a normal load,
-     * so that the new url will be appended to Session History.
-     * This solution is tricky. Hopefully it isn't going to bite
-     * anywhere else. This is part of solution for bug # 39938, 72197
-     */
+    
+
+
+
+
+
+
+
+
     bool inScriptTag = false;
     nsIScriptContext* scriptContext = nullptr;
     nsCOMPtr<nsPIDOMWindowInner> win = do_QueryInterface(GetEntryGlobal());
@@ -520,9 +520,9 @@ Location::SetHrefWithBase(const nsAString& aHref, nsIURI* aBase,
 
     if (scriptContext) {
       if (scriptContext->GetProcessingScriptTag()) {
-        // Now check to make sure that the script is running in our window,
-        // since we only want to replace if the location is set by a
-        // <script> tag in the same window.  See bug 178729.
+        
+        
+        
         nsCOMPtr<nsIScriptGlobalObject> ourGlobal =
           docShell ? docShell->GetScriptGlobalObject() : nullptr;
         inScriptTag = (ourGlobal == scriptContext->GetGlobalObject());
@@ -632,7 +632,7 @@ Location::GetPort(nsAString& aPort,
   int32_t port;
   nsresult result = uri->GetPort(&port);
 
-  // Don't propagate this exception to caller
+  
   if (NS_SUCCEEDED(result) && -1 != port) {
     nsAutoString portStr;
     portStr.AppendInt(port);
@@ -656,7 +656,7 @@ Location::SetPort(const nsAString& aPort,
     return;
   }
 
-  // perhaps use nsReadingIterators at some point?
+  
   NS_ConvertUTF16toUTF8 portStr(aPort);
   const char *buf = portStr.get();
   int32_t port = -1;
@@ -731,8 +731,8 @@ Location::SetProtocol(const nsAString& aProtocol,
 
   nsresult rv = uri->SetScheme(NS_ConvertUTF16toUTF8(Substring(start, iter)));
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    // Oh, I wish nsStandardURL returned NS_ERROR_MALFORMED_URI for _all_ the
-    // malformed cases, not just some of them!
+    
+    
     aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
     return;
   }
@@ -742,7 +742,7 @@ Location::SetProtocol(const nsAString& aProtocol,
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
-  // We may want a new URI class for the new URI, so recreate it:
+  
   rv = NS_NewURI(getter_AddRefs(uri), newSpec);
   if (NS_FAILED(rv)) {
     if (rv == NS_ERROR_MALFORMED_URI) {
@@ -766,7 +766,7 @@ Location::SetProtocol(const nsAString& aProtocol,
   }
 
   if (!isHttp && !isHttps) {
-    // No-op, per spec.
+    
     return;
   }
 
@@ -843,12 +843,12 @@ Location::Reload(bool aForceget)
                                                  : nullptr;
 
   if (window && window->IsHandlingResizeEvent()) {
-    // location.reload() was called on a window that is handling a
-    // resize event. Sites do this since Netscape 4.x needed it, but
-    // we don't, and it's a horrible experience for nothing. In stead
-    // of reloading the page, just clear style data and reflow the
-    // page since some sites may use this trick to work around gecko
-    // reflow bugs, and this should have the same effect.
+    
+    
+    
+    
+    
+    
 
     nsCOMPtr<nsIDocument> doc = window->GetExtantDoc();
 
@@ -874,9 +874,9 @@ Location::Reload(bool aForceget)
 
   nsresult rv = webNav->Reload(reloadFlags);
   if (rv == NS_BINDING_ABORTED) {
-    // This happens when we attempt to reload a POST result and the user says
-    // no at the "do you want to reload?" prompt.  Don't propagate this one
-    // back to callers.
+    
+    
+    
     rv = NS_OK;
   }
 
@@ -946,12 +946,12 @@ Location::GetSourceBaseURL(JSContext* cx, nsIURI** sourceURL)
 {
   *sourceURL = nullptr;
   nsIDocument* doc = GetEntryDocument();
-  // If there's no entry document, we either have no Script Entry Point or one
-  // that isn't a DOM Window.  This doesn't generally happen with the DOM, but
-  // can sometimes happen with extension code in certain IPC configurations.  If
-  // this happens, try falling back on the current document associated with the
-  // docshell. If that fails, just return null and hope that the caller passed
-  // an absolute URI.
+  
+  
+  
+  
+  
+  
   nsCOMPtr<nsIDocShell> docShell(do_QueryReferent(mDocShell));
   if (!doc && docShell) {
     nsCOMPtr<nsPIDOMWindowOuter> docShellWin =
@@ -970,11 +970,11 @@ Location::CallerSubsumes(nsIPrincipal* aSubjectPrincipal)
 {
   MOZ_ASSERT(aSubjectPrincipal);
 
-  // Get the principal associated with the location object.  Note that this is
-  // the principal of the page which will actually be navigated, not the
-  // principal of the Location object itself.  This is why we need this check
-  // even though we only allow limited cross-origin access to Location objects
-  // in general.
+  
+  
+  
+  
+  
   nsCOMPtr<nsPIDOMWindowOuter> outer = mInnerWindow->GetOuterWindow();
   if (MOZ_UNLIKELY(!outer))
     return false;
@@ -993,5 +993,5 @@ Location::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
   return LocationBinding::Wrap(aCx, this, aGivenProto);
 }
 
-} // dom namespace
-} // mozilla namespace
+} 
+} 
