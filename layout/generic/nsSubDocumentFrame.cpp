@@ -554,7 +554,7 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   if (needsOwnLayer) {
     
     nsDisplaySubDocument* layerItem = new (aBuilder) nsDisplaySubDocument(
-      aBuilder, subdocRootFrame ? subdocRootFrame : this,
+      aBuilder, subdocRootFrame ? subdocRootFrame : this, this,
       &childItems, flags);
     childItems.AppendToTop(layerItem);
   }
