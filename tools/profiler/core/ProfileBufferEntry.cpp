@@ -693,12 +693,6 @@ private:
 
 
 
-
-
-
-
-
-
 void
 ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                                    double aSinceTime,
@@ -711,47 +705,42 @@ ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
   
   
   
-  #define ERROR_AND_CONTINUE(msg) \
-    { \
+  #define ERROR_AND_SKIP_TO_NEXT_SAMPLE(msg) \
+    do { \
       fprintf(stderr, "ProfileBuffer parse error: %s", msg); \
       MOZ_ASSERT(false, msg); \
-      continue; \
-    }
+      goto skip_to_next_sample; \
+    } while (0)
 
   EntryGetter e(*this);
   bool seenFirstSample = false;
 
-  for (;;) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    while (e.Has()) {
-      if (e.Get().IsThreadId()) {
-        break;
-      } else {
-        e.Next();
-      }
-    }
-
-    if (!e.Has()) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+skip_to_next_sample:
+  while (e.Has()) {
+    if (e.Get().IsThreadId()) {
       break;
+    } else {
+      e.Next();
     }
+  }
 
+  while (e.Has()) {
     if (e.Get().IsThreadId()) {
       int threadId = e.Get().u.mInt;
       e.Next();
 
       
       if (threadId != aThreadId) {
-        continue;
+        goto skip_to_next_sample;
       }
     } else {
       
@@ -767,7 +756,7 @@ ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
 
       
       if (sample.mTime < aSinceTime) {
-        continue;
+        goto skip_to_next_sample;
       }
 
       if (!seenFirstSample) {
@@ -777,7 +766,7 @@ ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
         seenFirstSample = true;
       }
     } else {
-      ERROR_AND_CONTINUE("expected a Time entry");
+      ERROR_AND_SKIP_TO_NEXT_SAMPLE("expected a Time entry");
     }
 
     UniqueStacks::Stack stack =
@@ -873,7 +862,7 @@ ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
     }
 
     if (numFrames == 0) {
-      ERROR_AND_CONTINUE("expected one or more frame entries");
+      ERROR_AND_SKIP_TO_NEXT_SAMPLE("expected one or more frame entries");
     }
 
     sample.mStack = stack.GetOrAddIndex();
@@ -905,7 +894,7 @@ ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
     WriteSample(aWriter, sample);
   }
 
-  #undef ERROR_AND_CONTINUE
+  #undef ERROR_AND_SKIP_TO_NEXT_SAMPLE
 }
 
 void
@@ -931,61 +920,6 @@ ProfileBuffer::StreamMarkersToJSON(SpliceableJSONWriter& aWriter,
       }
     }
     e.Next();
-  }
-}
-
-static void
-AddPausedRange(SpliceableJSONWriter& aWriter, const char* aReason,
-               const Maybe<double> aStartTime, const Maybe<double> aEndTime)
-{
-  aWriter.Start(SpliceableJSONWriter::SingleLineStyle);
-  if (aStartTime) {
-    aWriter.DoubleProperty("startTime", *aStartTime);
-  } else {
-    aWriter.NullProperty("startTime");
-  }
-  if (aEndTime) {
-    aWriter.DoubleProperty("endTime", *aEndTime);
-  } else {
-    aWriter.NullProperty("endTime");
-  }
-  aWriter.StringProperty("reason", aReason);
-  aWriter.End();
-}
-
-void
-ProfileBuffer::StreamPausedRangesToJSON(SpliceableJSONWriter& aWriter,
-                                        double aSinceTime) const
-{
-  EntryGetter e(*this);
-
-  Maybe<double> currentPauseStartTime;
-  Maybe<double> currentCollectionStartTime;
-
-  while (e.Has()) {
-    if (e.Get().IsPause()) {
-      currentPauseStartTime = Some(e.Get().u.mDouble);
-    } else if (e.Get().IsResume()) {
-      AddPausedRange(aWriter, "profiler-paused",
-                     currentPauseStartTime, Some(e.Get().u.mDouble));
-      currentPauseStartTime = Nothing();
-    } else if (e.Get().IsCollectionStart()) {
-      currentCollectionStartTime = Some(e.Get().u.mDouble);
-    } else if (e.Get().IsCollectionEnd()) {
-      AddPausedRange(aWriter, "collecting",
-                     currentCollectionStartTime, Some(e.Get().u.mDouble));
-      currentCollectionStartTime = Nothing();
-    }
-    e.Next();
-  }
-
-  if (currentPauseStartTime) {
-    AddPausedRange(aWriter, "profiler-paused",
-                   currentPauseStartTime, Nothing());
-  }
-  if (currentCollectionStartTime) {
-    AddPausedRange(aWriter, "collecting",
-                   currentCollectionStartTime, Nothing());
   }
 }
 
@@ -1041,10 +975,6 @@ ProfileBuffer::DuplicateLastSample(int aThreadId,
        readPos != mWritePos;
        readPos = (readPos + 1) % mEntrySize) {
     switch (mEntries[readPos].GetKind()) {
-      case ProfileBufferEntry::Kind::Pause:
-      case ProfileBufferEntry::Kind::Resume:
-      case ProfileBufferEntry::Kind::CollectionStart:
-      case ProfileBufferEntry::Kind::CollectionEnd:
       case ProfileBufferEntry::Kind::ThreadId:
         
         return true;
