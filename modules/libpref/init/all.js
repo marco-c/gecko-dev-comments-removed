@@ -4828,6 +4828,7 @@ pref("layers.force-active", false);
 pref("layers.gralloc.disable", false);
 
 pref("webrender.highlight-painted-layers", false);
+pref("gfx.webrender.layers-free", false);
 
 
 pref("geo.enabled", true);

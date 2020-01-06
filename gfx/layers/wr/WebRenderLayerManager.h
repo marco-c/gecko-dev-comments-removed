@@ -10,10 +10,13 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/layers/APZTestData.h"
 #include "mozilla/layers/FocusTarget.h"
+#include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/TransactionIdAllocator.h"
+#include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 
 class nsIWidget;
+class nsDisplayList;
 
 namespace mozilla {
 namespace layers {
@@ -22,6 +25,7 @@ class CompositorBridgeChild;
 class KnowsCompositor;
 class PCompositorBridgeChild;
 class WebRenderBridgeChild;
+class WebRenderParentCommand;
 
 class WebRenderLayerManager final : public LayerManager
 {
@@ -48,6 +52,13 @@ public:
   virtual bool BeginTransactionWithTarget(gfxContext* aTarget) override;
   virtual bool BeginTransaction() override;
   virtual bool EndEmptyTransaction(EndTransactionFlags aFlags = END_DEFAULT) override;
+  void CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDisplayList,
+                                              nsDisplayListBuilder* aDisplayListBuilder,
+                                              StackingContextHelper& aSc,
+                                              wr::DisplayListBuilder& aBuilder);
+  void EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
+                                  nsDisplayListBuilder* aDisplayListBuilder);
+  bool IsLayersFreeTransaction() { return mEndTransactionWithoutLayers; }
   virtual void EndTransaction(DrawPaintedLayerCallback aCallback,
                               void* aCallbackData,
                               EndTransactionFlags aFlags = END_DEFAULT) override;
@@ -152,8 +163,9 @@ private:
 
   bool EndTransactionInternal(DrawPaintedLayerCallback aCallback,
                               void* aCallbackData,
-                              EndTransactionFlags aFlags);
-
+                              EndTransactionFlags aFlags,
+                              nsDisplayList* aDisplayList = nullptr,
+                              nsDisplayListBuilder* aDisplayListBuilder = nullptr);
 
 private:
   nsIWidget* MOZ_NON_OWNING_REF mWidget;
@@ -176,6 +188,11 @@ private:
 
   
   
+  wr::BuiltDisplayList mBuiltDisplayList;
+  nsTArray<WebRenderParentCommand> mParentCommands;
+
+  
+  
   
   void AddMutatedLayer(Layer* aLayer);
   void ClearMutatedLayers();
@@ -185,6 +202,7 @@ private:
   bool mNeedsComposite;
   bool mIsFirstPaint;
   FocusTarget mFocusTarget;
+  bool mEndTransactionWithoutLayers;
 
  
  
