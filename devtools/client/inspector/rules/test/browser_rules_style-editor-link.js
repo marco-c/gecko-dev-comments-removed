@@ -6,10 +6,6 @@
 
 
 
-thisTestLeaksUncaughtRejectionsAndShouldBeFixed("Error: Unknown sheet source");
-
-
-
 const STYLESHEET_URL = "data:text/css," + encodeURIComponent(
   ["#first {",
    "color: blue",

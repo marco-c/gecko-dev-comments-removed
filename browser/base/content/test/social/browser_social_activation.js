@@ -2,13 +2,6 @@
 
 
 
-
-
-
-
-thisTestLeaksUncaughtRejectionsAndShouldBeFixed("TypeError: Assert is null");
-
-
 var SocialService = Cu.import("resource:///modules/SocialService.jsm", {}).SocialService;
 
 var tabsToRemove = [];

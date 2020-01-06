@@ -5,10 +5,6 @@
 
 
 
-thisTestLeaksUncaughtRejectionsAndShouldBeFixed("[object Object]");
-
-
-
 
 
 
