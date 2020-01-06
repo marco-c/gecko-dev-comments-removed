@@ -528,6 +528,9 @@ BrowserGlue.prototype = {
 
     this._flashHangCount = 0;
     this._firstWindowReady = new Promise(resolve => this._firstWindowLoaded = resolve);
+    if (AppConstants.platform == "win") {
+      JawsScreenReaderVersionCheck.init();
+    }
   },
 
   
@@ -917,7 +920,7 @@ BrowserGlue.prototype = {
   },
 
   _sendMediaTelemetry() {
-    let win = Services.appShell.hiddenDOMWindow;
+    let win = RecentWindow.getMostRecentBrowserWindow();
     let v = win.document.createElementNS("http://www.w3.org/1999/xhtml", "video");
     v.reportCanPlayTelemetry();
   },
@@ -1099,6 +1102,12 @@ BrowserGlue.prototype = {
                            getService(Ci.nsIHandlerService);
       handlerService.asyncInit();
     });
+
+    if (AppConstants.platform == "win") {
+      Services.tm.idleDispatchToMainThread(() => {
+        JawsScreenReaderVersionCheck.onWindowsRestored();
+      });
+    }
   },
 
   
@@ -2787,6 +2796,83 @@ var DefaultBrowserCheck = {
       popup.remove();
       delete this._notification;
     }
+  },
+};
+
+
+
+
+
+
+var JawsScreenReaderVersionCheck = {
+  _prompted: false,
+
+  init() {
+    Services.obs.addObserver(this, "a11y-init-or-shutdown", true);
+  },
+
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver, Ci.nsISupportsWeakReference]),
+
+  observe(subject, topic, data) {
+    if (topic == "a11y-init-or-shutdown" && data == "1") {
+      Services.tm.dispatchToMainThread(() => this._checkVersionAndPrompt());
+    }
+  },
+
+  onWindowsRestored() {
+    Services.tm.dispatchToMainThread(() => this._checkVersionAndPrompt());
+  },
+
+  _checkVersionAndPrompt() {
+    
+    if (!Services.appinfo.shouldBlockIncompatJaws) {
+      return;
+    }
+
+    let win = RecentWindow.getMostRecentBrowserWindow();
+    if (!win || !win.gBrowser || !win.gBrowser.selectedBrowser) {
+      Services.console.logStringMessage(
+          "Content access support for older versions of JAWS is disabled " +
+          "due to compatibility issues with this version of Firefox.");
+      this._prompted = false;
+      return;
+    }
+
+    
+    if (this._prompted) {
+      return;
+    }
+    this._prompted = true;
+
+    let browser = win.gBrowser.selectedBrowser;
+
+    
+    let promptMessage = win.gNavigatorBundle.getFormattedString(
+                          "e10s.accessibilityNotice.jawsMessage",
+                          [gBrandBundle.GetStringFromName("brandShortName")]
+                        );
+    let notification;
+    
+    let mainAction = {
+      label: win.gNavigatorBundle.getString("e10s.accessibilityNotice.acceptButton.label"),
+      accessKey: win.gNavigatorBundle.getString("e10s.accessibilityNotice.acceptButton.accesskey"),
+      callback() {
+        
+        
+        notification.remove();
+      }
+    };
+    let options = {
+      popupIconURL: "chrome://browser/skin/e10s-64@2x.png",
+      persistWhileVisible: true,
+      persistent: true,
+      persistence: 100
+    };
+
+    notification =
+      win.PopupNotifications.show(browser, "e10s_enabled_with_incompat_jaws",
+                                  promptMessage, null, mainAction,
+                                  null, options);
   },
 };
 
