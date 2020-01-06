@@ -204,7 +204,6 @@ var FormDataInternal = {
 
     
     if ((doc.designMode || "") == "on" && doc.body) {
-      
       ret.innerHTML = doc.body.innerHTML;
     }
 
@@ -262,7 +261,6 @@ var FormDataInternal = {
 
     if ("innerHTML" in data) {
       if (doc.body && doc.designMode == "on") {
-      
         doc.body.innerHTML = data.innerHTML;
         this.fireEvent(doc.body, "input");
       }

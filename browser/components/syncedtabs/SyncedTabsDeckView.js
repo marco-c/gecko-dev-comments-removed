@@ -75,7 +75,6 @@ SyncedTabsDeckView.prototype = {
     });
     
     let contents = bundle.getFormattedString("appMenuRemoteTabs.mobilePromo.text2", formatArgs);
-    
     this.container.querySelector(".device-promo").innerHTML = contents;
   },
 

@@ -100,8 +100,6 @@ function doneTest(dispResult) {
 
       dispStats += "<hr/><b>Individual animations</b>:<br/>";
     }
-
-    
     $("run-results").innerHTML = "<hr/><br/>Results <button onclick='toClipboard(lastResults)'>[ Copy to clipboard as JSON ]</button>:<br/>" + dispStats + dispResult.join("<br/>");
   }
 }

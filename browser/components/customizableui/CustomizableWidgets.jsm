@@ -331,7 +331,6 @@ const CustomizableWidgets = [
       let promoParentElt = doc.getElementById("PanelUI-remotetabs-mobile-promo");
       
       let contents = bundle.getFormattedString("appMenuRemoteTabs.mobilePromo.text2", formatArgs);
-      
       promoParentElt.innerHTML = contents;
       
       

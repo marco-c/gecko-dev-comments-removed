@@ -266,8 +266,6 @@ var Settings = {
     let parameters = [fhrEnabled, extendedEnabled].map(this.convertStringToLink);
 
     let explanation = bundle.formatStringFromName("homeExplanation", parameters, 2);
-
-    
     homeExplanation.innerHTML = explanation;
     this.attachObservers()
   },
@@ -337,8 +335,6 @@ var PingPicker = {
 
     let explanation = bundle.formatStringFromName("pingExplanation", [pingLink, pingName], 2);
     let pingExplanation = document.getElementById("ping-explanation");
-
-    
     pingExplanation.innerHTML = explanation;
     GenericSubsection.deleteAllSubSections();
   },

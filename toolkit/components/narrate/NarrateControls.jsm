@@ -42,7 +42,6 @@ function NarrateControls(mm, win, languagePromise) {
   dropdown.id = "narrate-dropdown";
   
   
-  
   dropdown.innerHTML =
     localize`<style scoped>
       @import url("chrome://global/skin/narrateControls.css");

@@ -140,7 +140,6 @@ Control.prototype = {
     this.ctrl.textContent = this._label;
 
     if (this._message) {
-      
       this.msg.innerHTML =
         `<span class="info-label">${this._messageHeader}:</span> ${this._message}`;
     } else {
@@ -306,7 +305,6 @@ var AboutWebRTC = {
       msg.textContent = getString("cannot_retrieve_log");
       parent.appendChild(msg);
       msg = document.createElement("p");
-      
       msg.innerHTML = `${data.error.name}: ${data.error.message}`;
       parent.appendChild(msg);
       return;

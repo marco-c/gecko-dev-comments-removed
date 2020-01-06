@@ -388,7 +388,6 @@ AutocompletePopup.prototype = {
     }
 
     
-    
     this._listClone.innerHTML = this._list.innerHTML;
 
     this._activeElement.setAttribute("aria-activedescendant", id);

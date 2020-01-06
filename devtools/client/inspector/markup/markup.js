@@ -1388,7 +1388,6 @@ MarkupView.prototype = {
 
     let injectedNodes = [];
     container.undo.do(() => {
-      
       this.walker.insertAdjacentHTML(node, position, value).then(nodeArray => {
         injectedNodes = nodeArray.nodes;
         return nodeArray;

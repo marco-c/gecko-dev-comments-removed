@@ -106,7 +106,6 @@ function setImageTooltip(tooltip, doc, imageUrl, options) {
         <span class="theme-comment devtools-tooltip-caption">${label}</span>
       </div>`;
   }
-  
   div.innerHTML = html;
 
   
