@@ -865,6 +865,25 @@ nsLayoutUtils::FindScrollableFrameFor(ViewID aId)
   return scrollFrame ? scrollFrame->GetScrollTargetFrame() : nullptr;
 }
 
+ViewID
+nsLayoutUtils::FindIDForScrollableFrame(nsIScrollableFrame* aScrollable)
+{
+  if (!aScrollable) {
+    return FrameMetrics::NULL_SCROLL_ID;
+  }
+
+  nsIFrame* scrollFrame = do_QueryFrame(aScrollable);
+  nsIContent* scrollContent = scrollFrame->GetContent();
+
+  FrameMetrics::ViewID scrollId;
+  if (scrollContent &&
+      nsLayoutUtils::FindIDFor(scrollContent, &scrollId)) {
+    return scrollId;
+  }
+
+  return FrameMetrics::NULL_SCROLL_ID;
+}
+
 static nsRect
 ApplyRectMultiplier(nsRect aRect, float aMultiplier)
 {
@@ -4497,12 +4516,15 @@ nsLayoutUtils::GetNextContinuationOrIBSplitSibling(nsIFrame *aFrame)
 }
 
 nsIFrame*
-nsLayoutUtils::FirstContinuationOrIBSplitSibling(const nsIFrame* aFrame)
+nsLayoutUtils::FirstContinuationOrIBSplitSibling(nsIFrame *aFrame)
 {
-  nsIFrame* result = aFrame->FirstContinuation();
-
+  nsIFrame *result = aFrame->FirstContinuation();
   if (result->GetStateBits() & NS_FRAME_PART_OF_IBSPLIT) {
-    while (auto* f = result->GetProperty(nsIFrame::IBSplitPrevSibling())) {
+    while (true) {
+      nsIFrame* f =
+        result->GetProperty(nsIFrame::IBSplitPrevSibling());
+      if (!f)
+        break;
       result = f;
     }
   }
@@ -4511,17 +4533,22 @@ nsLayoutUtils::FirstContinuationOrIBSplitSibling(const nsIFrame* aFrame)
 }
 
 nsIFrame*
-nsLayoutUtils::LastContinuationOrIBSplitSibling(const nsIFrame* aFrame)
+nsLayoutUtils::LastContinuationOrIBSplitSibling(nsIFrame *aFrame)
 {
-  nsIFrame* result = aFrame->FirstContinuation();
-
+  nsIFrame *result = aFrame->FirstContinuation();
   if (result->GetStateBits() & NS_FRAME_PART_OF_IBSPLIT) {
-    while (auto* f = result->GetProperty(nsIFrame::IBSplitSibling())) {
+    while (true) {
+      nsIFrame* f = result->GetProperty(nsIFrame::IBSplitSibling());
+      if (!f) {
+        break;
+      }
       result = f;
     }
   }
 
-  return result->LastContinuation();
+  result = result->LastContinuation();
+
+  return result;
 }
 
 bool

@@ -432,11 +432,27 @@ public:
 
 
 
+  already_AddRefed<nsIContent> GetContentForScrolling() const;
+
+  
+
+
 
 
 
   enum ScrollDirection { eHorizontal, eVertical, eEither };
-  nsIScrollableFrame* GetFrameToScrollAsScrollable(ScrollDirection aDirection);
+  nsIScrollableFrame* GetScrollableFrameToScrollForContent(
+                         nsIContent* aContent,
+                         ScrollDirection aDirection);
+
+  
+
+
+
+
+
+
+  nsIScrollableFrame* GetScrollableFrameToScroll(ScrollDirection aDirection);
 
   
 
@@ -1419,6 +1435,12 @@ public:
 
 
   virtual already_AddRefed<nsPIDOMWindowOuter> GetRootWindow() = 0;
+
+  
+
+
+
+  virtual already_AddRefed<nsPIDOMWindowOuter> GetFocusedDOMWindowInOurWindow() = 0;
 
   
 

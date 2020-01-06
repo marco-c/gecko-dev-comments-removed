@@ -4,6 +4,7 @@
 
 
 #include <stack>
+#include <unordered_set>
 #include "APZCTreeManager.h"
 #include "AsyncPanZoomController.h"
 #include "Compositor.h"                 
@@ -21,6 +22,7 @@
 #include "mozilla/layers/AsyncCompositionManager.h" 
 #include "mozilla/layers/AsyncDragMetrics.h" 
 #include "mozilla/layers/CompositorBridgeParent.h" 
+#include "mozilla/layers/FocusState.h"  
 #include "mozilla/layers/LayerMetricsWrapper.h"
 #include "mozilla/layers/WebRenderScrollDataWrapper.h"
 #include "mozilla/MouseEvents.h"
@@ -82,6 +84,11 @@ struct APZCTreeManager::TreeBuildingState {
   
   
   nsTArray<RefPtr<HitTestingTreeNode>> mNodesToDestroy;
+  
+  
+  
+  
+  std::unordered_set<uint64_t> mLayersIdsToDestroy;
 
   
   
@@ -263,6 +270,7 @@ APZCTreeManager::UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
       {
         state.mNodesToDestroy.AppendElement(aNode);
       });
+  state.mLayersIdsToDestroy = mFocusState.GetFocusTargetLayerIds();
   mRootNode = nullptr;
 
   if (aRoot) {
@@ -289,6 +297,9 @@ APZCTreeManager::UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
           aLayerMetrics.SetApzc(apzc);
 
           mApzcTreeLog << '\n';
+
+          
+          state.mLayersIdsToDestroy.erase(layersId);
 
           
           
@@ -335,11 +346,26 @@ APZCTreeManager::UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
     state.mNodesToDestroy[i]->Destroy();
   }
 
+  
+  for (auto layersId : state.mLayersIdsToDestroy) {
+    mFocusState.RemoveFocusTarget(layersId);
+  }
+
 #if ENABLE_APZCTM_LOGGING
   
   printf_stderr("APZCTreeManager (%p)\n", this);
   mRootNode->Dump("  ");
 #endif
+}
+
+void
+APZCTreeManager::UpdateFocusState(uint64_t aRootLayerTreeId,
+                                  uint64_t aOriginatingLayersId,
+                                  const FocusTarget& aFocusTarget)
+{
+  mFocusState.Update(aRootLayerTreeId,
+                     aOriginatingLayersId,
+                     aFocusTarget);
 }
 
 void

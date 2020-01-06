@@ -15,6 +15,7 @@
 #include "mozilla/layers/TouchCounter.h"
 #include "mozilla/layers/IAPZCTreeManager.h" 
 #include "mozilla/layers/Keyboard.h"    
+#include "mozilla/layers/FocusState.h"  
 #include "mozilla/Mutex.h"              
 #include "mozilla/RefPtr.h"             
 #include "mozilla/TimeStamp.h"          
@@ -41,6 +42,7 @@ class APZCTreeManagerParent;
 class CompositorBridgeParent;
 class OverscrollHandoffChain;
 struct OverscrollHandoffState;
+class FocusTarget;
 struct FlingHandoffState;
 struct ScrollableLayerGuidHash;
 class LayerMetricsWrapper;
@@ -111,6 +113,19 @@ public:
 
 
   static void InitializeGlobalState();
+
+  
+
+
+
+
+
+
+
+
+  void UpdateFocusState(uint64_t aRootLayerTreeId,
+                        uint64_t aOriginatingLayersId,
+                        const FocusTarget& aFocusTarget);
 
   
 
@@ -560,6 +575,10 @@ private:
 
 
   KeyboardMap mKeyboardMap;
+  
+
+
+  FocusState mFocusState;
   
 
 

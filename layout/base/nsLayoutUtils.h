@@ -191,6 +191,11 @@ public:
   
 
 
+  static ViewID FindIDForScrollableFrame(nsIScrollableFrame* aScrollable);
+
+  
+
+
 
   static bool GetDisplayPort(nsIContent* aContent, nsRect *aResult,
     RelativeTo aRelativeTo = RelativeTo::ScrollPort);
@@ -1345,14 +1350,14 @@ public:
 
 
   static nsIFrame*
-  FirstContinuationOrIBSplitSibling(const nsIFrame *aFrame);
+  FirstContinuationOrIBSplitSibling(nsIFrame *aFrame);
 
   
 
 
 
   static nsIFrame*
-  LastContinuationOrIBSplitSibling(const nsIFrame *aFrame);
+  LastContinuationOrIBSplitSibling(nsIFrame *aFrame);
 
   
 

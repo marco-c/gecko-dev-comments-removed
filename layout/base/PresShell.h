@@ -210,6 +210,8 @@ public:
 
   virtual already_AddRefed<nsPIDOMWindowOuter> GetRootWindow() override;
 
+  virtual already_AddRefed<nsPIDOMWindowOuter> GetFocusedDOMWindowInOurWindow() override;
+
   virtual LayerManager* GetLayerManager() override;
 
   virtual bool AsyncPanZoomEnabled() override;
@@ -688,9 +690,6 @@ protected:
   nsresult HandlePositionedEvent(nsIFrame* aTargetFrame,
                                  mozilla::WidgetGUIEvent* aEvent,
                                  nsEventStatus* aEventStatus);
-  
-  
-  already_AddRefed<nsPIDOMWindowOuter> GetFocusedDOMWindowInOurWindow();
 
   
 
