@@ -766,6 +766,9 @@ DrainJobQueue(JSContext* cx, unsigned argc, Value* vp)
 
     js::RunJobs(cx);
 
+    if (GetShellContext(cx)->quitting)
+        return false;
+
     args.rval().setUndefined();
     return true;
 }
