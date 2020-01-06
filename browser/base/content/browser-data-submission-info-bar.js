@@ -63,13 +63,7 @@ var gDataNotificationInfoBar = {
       popup: null,
       callback: () => {
         this._actionTaken = true;
-        
-        
-        if (Services.prefs.getBoolPref("browser.preferences.useOldOrganization")) {
-          window.openAdvancedPreferences("dataChoicesTab", {origin: "dataReporting"});
-        } else {
-          window.openPreferences("privacy-reports", {origin: "dataReporting"});
-        }
+        window.openPreferences("privacy-reports", {origin: "dataReporting"});
       },
     }];
 

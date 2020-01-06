@@ -151,7 +151,7 @@ function getMainWindow() {
 
 function getMainWindowWithPreferencesPane() {
   let mainWindow = getMainWindow();
-  if (mainWindow && "openAdvancedPreferences" in mainWindow) {
+  if (mainWindow && "openPreferences" in mainWindow) {
     return mainWindow;
   }
   return null;
@@ -241,13 +241,7 @@ var Settings = {
         } else {
           
           let mainWindow = getMainWindowWithPreferencesPane();
-          
-          
-          if (Preferences.get("browser.preferences.useOldOrganization")) {
-            mainWindow.openAdvancedPreferences("dataChoicesTab", {origin: "aboutTelemetry"});
-          } else {
-            mainWindow.openPreferences("privacy-reports", {origin: "aboutTelemetry"});
-          }
+          mainWindow.openPreferences("privacy-reports", { origin: "aboutTelemetry" });
         }
       });
     }

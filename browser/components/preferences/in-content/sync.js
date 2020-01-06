@@ -40,8 +40,8 @@ var gSyncPane = {
 
     
     let xps = Components.classes["@mozilla.org/weave/service;1"]
-                                .getService(Components.interfaces.nsISupports)
-                                .wrappedJSObject;
+      .getService(Components.interfaces.nsISupports)
+      .wrappedJSObject;
 
     if (xps.ready) {
       this._init();
@@ -56,7 +56,7 @@ var gSyncPane = {
       window.removeEventListener("unload", onUnload);
       try {
         Services.obs.removeObserver(onReady, "weave:service:ready");
-      } catch (e) {}
+      } catch (e) { }
     };
 
     let onReady = () => {
@@ -106,22 +106,22 @@ var gSyncPane = {
 
     
     let cachedComputerName = Services.prefs.getCharPref("services.sync.client.name", "");
-    document.getElementById("fxaEmailAddress1").textContent = username;
+    document.querySelector(".fxaEmailAddress").value = username;
     this._populateComputerName(cachedComputerName);
     this.page = FXA_PAGE_LOGGED_IN;
   },
 
   _init() {
     let topics = ["weave:service:login:error",
-                  "weave:service:login:finish",
-                  "weave:service:start-over:finish",
-                  "weave:service:setup-complete",
-                  "weave:service:logout:finish",
-                  FxAccountsCommon.ONVERIFIED_NOTIFICATION,
-                  FxAccountsCommon.ONLOGIN_NOTIFICATION,
-                  FxAccountsCommon.ON_ACCOUNT_STATE_CHANGE_NOTIFICATION,
-                  FxAccountsCommon.ON_PROFILE_CHANGE_NOTIFICATION,
-                  ];
+      "weave:service:login:finish",
+      "weave:service:start-over:finish",
+      "weave:service:setup-complete",
+      "weave:service:logout:finish",
+      FxAccountsCommon.ONVERIFIED_NOTIFICATION,
+      FxAccountsCommon.ONLOGIN_NOTIFICATION,
+      FxAccountsCommon.ON_ACCOUNT_STATE_CHANGE_NOTIFICATION,
+      FxAccountsCommon.ON_PROFILE_CHANGE_NOTIFICATION,
+    ];
     
     
     
@@ -154,6 +154,11 @@ var gSyncPane = {
     });
 
     this.updateWeavePrefs();
+
+    
+    Components.classes["@mozilla.org/observer-service;1"]
+      .getService(Components.interfaces.nsIObserverService)
+      .notifyObservers(window, "sync-pane-loaded");
   },
 
   _toggleComputerNameControls(editMode) {
@@ -178,8 +183,8 @@ var gSyncPane = {
   _focusAfterComputerNameTextbox() {
     
     Services.focus.moveFocus(window,
-                             document.getElementById("fxaSyncComputerName"),
-                             Services.focus.MOVEFOCUS_FORWARD, 0);
+      document.getElementById("fxaSyncComputerName"),
+      Services.focus.MOVEFOCUS_FORWARD, 0);
   },
 
   _updateComputerNameValue(save) {
@@ -193,7 +198,7 @@ var gSyncPane = {
   _setupEventListeners() {
     function setEventListener(aId, aEventType, aCallback) {
       document.getElementById(aId)
-              .addEventListener(aEventType, aCallback.bind(gSyncPane));
+        .addEventListener(aEventType, aCallback.bind(gSyncPane));
     }
 
     setEventListener("fxaChangeDeviceName", "command", function() {
@@ -216,10 +221,6 @@ var gSyncPane = {
       this._toggleComputerNameControls(false);
       this._updateComputerNameValue(true);
       this._focusAfterComputerNameTextbox();
-    });
-    setEventListener("noFxaSignUp", "command", function() {
-      gSyncPane.signUp();
-      return false;
     });
     setEventListener("noFxaSignIn", "command", function() {
       gSyncPane.signIn();
@@ -250,12 +251,11 @@ var gSyncPane = {
 
   updateWeavePrefs() {
     let service = Components.classes["@mozilla.org/weave/service;1"]
-                  .getService(Components.interfaces.nsISupports)
-                  .wrappedJSObject;
+      .getService(Components.interfaces.nsISupports)
+      .wrappedJSObject;
 
     let displayNameLabel = document.getElementById("fxaDisplayName");
-    let fxaEmailAddress1Label = document.getElementById("fxaEmailAddress1");
-    fxaEmailAddress1Label.hidden = false;
+    let fxaEmailAddressLabels = document.querySelectorAll(".fxaEmailAddress");
     displayNameLabel.hidden = true;
 
     
@@ -275,24 +275,24 @@ var gSyncPane = {
       if (!data.verified) {
         fxaLoginStatus.selectedIndex = FXA_LOGIN_UNVERIFIED;
         syncReady = false;
-      
-      
-      
-      
-      
-      
+        
+        
+        
+        
+        
+        
       } else if (Weave.Status.login == Weave.LOGIN_FAILED_LOGIN_REJECTED) {
         fxaLoginStatus.selectedIndex = FXA_LOGIN_FAILED;
         syncReady = false;
-      
-      
+        
+        
       } else {
         fxaLoginStatus.selectedIndex = FXA_LOGIN_VERIFIED;
         syncReady = true;
       }
-      fxaEmailAddress1Label.textContent = data.email;
-      document.getElementById("fxaEmailAddress2").textContent = data.email;
-      document.getElementById("fxaEmailAddress3").textContent = data.email;
+      fxaEmailAddressLabels.forEach((label) => {
+        label.value = data.email;
+      });
       this._populateComputerName(Weave.Service.clientsEngine.localName);
       let engines = document.getElementById("fxaSyncEngines")
       for (let checkbox of engines.querySelectorAll("checkbox")) {
@@ -301,7 +301,7 @@ var gSyncPane = {
       document.getElementById("fxaChangeDeviceName").disabled = !syncReady;
 
       
-      document.getElementById("fxaProfileImage").style.removeProperty("list-style-image");
+      document.querySelector("#fxaLoginVerified > .fxaProfileImage").style.removeProperty("list-style-image");
 
       
       
@@ -317,9 +317,9 @@ var gSyncPane = {
         if (data.email) {
           
           
-          fxaEmailAddress1Label.textContent = data.email;
-          document.getElementById("fxaEmailAddress2").textContent = data.email;
-          document.getElementById("fxaEmailAddress3").textContent = data.email;
+          fxaEmailAddressLabels.forEach((label) => {
+            label.value = data.email;
+          });
         }
         if (data.displayName) {
           fxaLoginStatus.setAttribute("hasName", true);
@@ -330,7 +330,7 @@ var gSyncPane = {
         }
         if (data.avatar) {
           let bgImage = "url(\"" + data.avatar + "\")";
-          let profileImageElement = document.getElementById("fxaProfileImage");
+          let profileImageElement = document.querySelector("#fxaLoginVerified > .fxaProfileImage");
           profileImageElement.style.listStyleImage = bgImage;
 
           let img = new Image();
@@ -383,9 +383,9 @@ var gSyncPane = {
   replaceTabWithUrl(url) {
     
     let browser = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                        .getInterface(Ci.nsIWebNavigation)
-                        .QueryInterface(Ci.nsIDocShell)
-                        .chromeEventHandler;
+      .getInterface(Ci.nsIWebNavigation)
+      .QueryInterface(Ci.nsIDocShell)
+      .chromeEventHandler;
     
     browser.loadURI(url);
   },
@@ -407,19 +407,19 @@ var gSyncPane = {
     
     
     return ((event.type == "click" && event.button == 0) ||
-            (event.type == "keypress" &&
-             (event.charCode == KeyEvent.DOM_VK_SPACE || event.keyCode == KeyEvent.DOM_VK_RETURN)));
+      (event.type == "keypress" &&
+        (event.charCode == KeyEvent.DOM_VK_SPACE || event.keyCode == KeyEvent.DOM_VK_RETURN)));
   },
 
   openChangeProfileImage(event) {
     if (this.clickOrSpaceOrEnterPressed(event)) {
       fxAccounts.promiseAccountsChangeProfileURI(this._getEntryPoint(), "avatar")
-          .then(url => {
-        this.openContentInBrowser(url, {
-          replaceQueryString: true,
-          triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+        .then(url => {
+          this.openContentInBrowser(url, {
+            replaceQueryString: true,
+            triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+          });
         });
-      });
       
       event.preventDefault();
     }
@@ -478,21 +478,21 @@ var gSyncPane = {
       let disconnectLabel = sb.GetStringFromName("disconnect.label");
       let title = sb.GetStringFromName("disconnect.verify.title");
       let body = sb.GetStringFromName("disconnect.verify.bodyHeading") +
-                 "\n\n" +
-                 sb.GetStringFromName("disconnect.verify.bodyText");
+        "\n\n" +
+        sb.GetStringFromName("disconnect.verify.bodyText");
       let ps = Services.prompt;
       let buttonFlags = (ps.BUTTON_POS_0 * ps.BUTTON_TITLE_IS_STRING) +
-                        (ps.BUTTON_POS_1 * ps.BUTTON_TITLE_CANCEL) +
-                        ps.BUTTON_POS_1_DEFAULT;
+        (ps.BUTTON_POS_1 * ps.BUTTON_TITLE_CANCEL) +
+        ps.BUTTON_POS_1_DEFAULT;
 
       let factory = Cc["@mozilla.org/prompter;1"]
-                      .getService(Ci.nsIPromptFactory);
+        .getService(Ci.nsIPromptFactory);
       let prompt = factory.getPrompt(window, Ci.nsIPrompt);
       let bag = prompt.QueryInterface(Ci.nsIWritablePropertyBag2);
       bag.setPropertyAsBool("allowTabModal", true);
 
       let pressed = prompt.confirmEx(title, body, buttonFlags,
-                                     disconnectLabel, null, null, null, {});
+        disconnectLabel, null, null, null, {});
 
       if (pressed != 0) { 
         return;
@@ -507,7 +507,7 @@ var gSyncPane = {
     let textbox = document.getElementById("fxaSyncComputerName");
     if (!textbox.hasAttribute("placeholder")) {
       textbox.setAttribute("placeholder",
-                           Weave.Utils.getDefaultDeviceName());
+        Weave.Utils.getDefaultDeviceName());
     }
     textbox.value = value;
   },
