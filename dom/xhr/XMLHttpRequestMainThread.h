@@ -261,7 +261,7 @@ public:
 
   
   nsresult CreateChannel();
-  nsresult InitiateFetch(already_AddRefed<nsIInputStream> aUploadStream,
+  nsresult InitiateFetch(nsIInputStream* aUploadStream,
                          int64_t aUploadLength,
                          nsACString& aUploadContentType);
 

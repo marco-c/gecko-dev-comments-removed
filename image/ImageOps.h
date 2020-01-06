@@ -96,9 +96,8 @@ public:
 
 
 
-
   static already_AddRefed<ImageBuffer>
-  CreateImageBuffer(already_AddRefed<nsIInputStream> aInputStream);
+  CreateImageBuffer(nsIInputStream* aInputStream);
 
   
 
@@ -109,9 +108,8 @@ public:
 
 
 
-
   static nsresult
-  DecodeMetadata(already_AddRefed<nsIInputStream> aInputStream,
+  DecodeMetadata(nsIInputStream* aInputStream,
                  const nsACString& aMimeType,
                  ImageMetadata& aMetadata);
 
@@ -135,9 +133,8 @@ public:
 
 
 
-
   static already_AddRefed<gfx::SourceSurface>
-  DecodeToSurface(already_AddRefed<nsIInputStream> aInputStream,
+  DecodeToSurface(nsIInputStream* aInputStream,
                   const nsACString& aMimeType,
                   uint32_t aFlags,
                   const Maybe<gfx::IntSize>& aSize = Nothing());

@@ -1404,7 +1404,7 @@ Loader::LoadSheet(SheetLoadData* aLoadData,
     
     
     
-    return nsSyncLoadService::PushSyncStreamToListener(stream.forget(),
+    return nsSyncLoadService::PushSyncStreamToListener(stream,
                                                        streamLoader,
                                                        channel);
   }

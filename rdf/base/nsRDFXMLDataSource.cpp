@@ -497,7 +497,7 @@ RDFXMLDataSourceImpl::BlockingParse(nsIURI* aURL, nsIStreamListener* aConsumer)
     
     
     nsCOMPtr<nsIInputStream> bufStream;
-    rv = NS_NewBufferedInputStream(getter_AddRefs(bufStream), in.forget(),
+    rv = NS_NewBufferedInputStream(getter_AddRefs(bufStream), in,
                                    4096 );
     if (NS_FAILED(rv)) return rv;
 
