@@ -1,5 +1,7 @@
 "use strict";
 
+
+
 Cu.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "LightweightThemeManager",
@@ -37,7 +39,15 @@ class Theme {
 
 
 
-  load(details) {
+
+
+  load(details, targetWindow) {
+    if (targetWindow) {
+      this.lwtStyles.window = targetWindow
+        .QueryInterface(Ci.nsIInterfaceRequestor)
+        .getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
+    }
+
     if (details.colors) {
       this.loadColors(details.colors);
     }
@@ -273,7 +283,7 @@ this.theme = class extends ExtensionAPI {
 
     return {
       theme: {
-        update: (details) => {
+        update: (windowId, details) => {
           if (!gThemesEnabled) {
             
             return;
@@ -286,7 +296,11 @@ this.theme = class extends ExtensionAPI {
             this.theme = new Theme(extension.baseURI, extension.logger);
           }
 
-          this.theme.load(details);
+          let browserWindow;
+          if (windowId !== null) {
+            browserWindow = windowTracker.getWindow(windowId, context);
+          }
+          this.theme.load(details, browserWindow);
         },
         reset: () => {
           if (!gThemesEnabled) {
