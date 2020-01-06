@@ -23,7 +23,10 @@ module.exports = envConfig => {
       publicPath: "/"
     },
     module: {
-      noParse: /(debugger\/new)|netmonitor\/panel\.js/i,
+      noParse: [
+        /netmonitor\/panel\.js/i,
+        /debugger\/new\/panel\.js/i
+      ],
 
       
       unknownContextRegExp: /$^/,
@@ -42,10 +45,30 @@ module.exports = envConfig => {
           exclude: /node_modules/,
           loaders: [path.join(__dirname, "./webpack/rewrite-event-emitter")],
         }, {
-          
-          
           test: /client(\/|\\)inspector(\/|\\).*\.js$/,
-          loaders: [path.join(__dirname, "./webpack/rewrite-browser-require")],
+          loaders: [
+            
+            path.join(__dirname, "./webpack/rewrite-browser-require"),
+            
+            path.join(__dirname, "./webpack/rewrite-lazy-require"),
+          ],
+        }, {
+          test: /shared(\/|\\)inspector(\/|\\)css-logic\.js$/,
+          loaders: [
+            
+            
+            path.join(__dirname, "./webpack/rewrite-css-logic-importer"),
+          ],
+        }, {
+          test: /react-redux\.js$/,
+          loaders: [
+            
+            path.join(__dirname, "./webpack/rewrite-react-redux"),
+          ],
+        }, {
+          
+          test: /sdk(\/|\\).*\.js$/,
+          loaders: [path.join(__dirname, "./webpack/rewrite-sdk-lazy-require")],
         }
       ]
     },
@@ -57,6 +80,9 @@ module.exports = envConfig => {
     },
     resolve: {
       alias: {
+        "react": "devtools/client/shared/vendor/react",
+        "redux": "devtools/client/shared/vendor/redux",
+        "react-dom": "devtools/client/shared/vendor/react-dom",
         "acorn/util/walk": path.join(__dirname, "../../shared/acorn/walk"),
         "acorn": path.join(__dirname, "../../shared/acorn"),
         "devtools/client/framework/about-devtools-toolbox":
@@ -79,12 +105,12 @@ module.exports = envConfig => {
         "method": path.join(__dirname, "../../../addon-sdk/source/lib/method"),
         "modules/libpref/init/all":
           path.join(__dirname, "../../../modules/libpref/init/all.js"),
+        "sdk/util/uuid":
+          path.join(__dirname, "./webpack/uuid-sham.js"),
         "sdk": path.join(__dirname, "../../../addon-sdk/source/lib/sdk"),
         "Services": path.join(__dirname, "../shared/shim/Services.js"),
         "toolkit/locales":
           path.join(__dirname, "../../../toolkit/locales/en-US/chrome/global"),
-        "react": "devtools/client/shared/vendor/react",
-        "react-dom": "devtools/client/shared/vendor/react-dom",
       },
     },
 
