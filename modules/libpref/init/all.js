@@ -1279,7 +1279,11 @@ pref("dom.min_timeout_value", 4);
 pref("dom.min_background_timeout_value", 1000);
 
 
+#ifdef NIGHTLY_BUILD
+pref("dom.min_tracking_timeout_value", 10000);
+#else
 pref("dom.min_tracking_timeout_value", 4);
+#endif
 
 
 pref("dom.min_tracking_background_timeout_value", 10000);
@@ -5237,12 +5241,7 @@ pref("dom.vr.controller_trigger_threshold", "0.1");
 
 pref("dom.vr.navigation.timeout", 5000);
 
-#if defined(HAVE_64BIT_BUILD)
-
 pref("dom.vr.oculus.enabled", true);
-#else
-pref("dom.vr.oculus.enabled", false);
-#endif
 
 
 
@@ -5262,8 +5261,7 @@ pref("dom.vr.oculus.quit.timeout", 30000);
 
 pref("dom.vr.osvr.enabled", false);
 
-#if defined(XP_WIN) && defined(HAVE_64BIT_BUILD)
-
+#ifdef XP_WIN
 pref("dom.vr.openvr.enabled", true);
 #else
 
