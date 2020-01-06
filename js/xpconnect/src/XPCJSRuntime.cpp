@@ -324,24 +324,24 @@ PrincipalImmuneToScriptPolicy(nsIPrincipal* aPrincipal)
     if (nsXPConnect::SecurityManager()->IsSystemPrincipal(aPrincipal))
         return true;
 
-    auto principal = BasePrincipal::Cast(aPrincipal);
-
     
-    if (principal->Is<ExpandedPrincipal>()) {
+    nsCOMPtr<nsIExpandedPrincipal> ep = do_QueryInterface(aPrincipal);
+    if (ep)
         return true;
-    }
-
-    
-    nsString addonId;
-    if (IsWebExtensionPrincipal(principal, addonId)) {
-        return true;
-    }
 
     
     
     nsCOMPtr<nsIURI> principalURI;
     aPrincipal->GetURI(getter_AddRefs(principalURI));
     MOZ_ASSERT(principalURI);
+
+    
+    nsString addonId;
+    aPrincipal->GetAddonId(addonId);
+    bool isWebExtension = !addonId.IsEmpty();
+    if (isWebExtension) {
+        return true;
+    }
 
     bool isAbout;
     nsresult rv = principalURI->SchemeIs("about", &isAbout);
