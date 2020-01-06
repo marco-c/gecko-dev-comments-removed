@@ -97,7 +97,7 @@ async function doAllTests() {
 
 
 
-requestLongerTimeout(15);
+requestLongerTimeout(25);
 
 add_task(async function newtab_sameproc() {
   await SpecialPowers.pushPrefEnv({set: [[OPEN_NEWWINDOW_PREF, OPEN_NEWTAB],
