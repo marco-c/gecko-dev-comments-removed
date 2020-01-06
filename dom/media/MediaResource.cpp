@@ -254,25 +254,13 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest)
     Unused << hc->GetResponseHeader(NS_LITERAL_CSTRING("Accept-Ranges"),
                                     ranges);
     bool acceptsRanges = ranges.EqualsLiteral("bytes");
-    
-    bool dataIsBounded = false;
 
     int64_t contentLength = -1;
     const bool isCompressed = IsPayloadCompressed(hc);
     if (!isCompressed) {
       hc->GetContentLength(&contentLength);
     }
-    if (contentLength >= 0 &&
-        (responseStatus == HTTP_OK_CODE ||
-         responseStatus == HTTP_PARTIAL_RESPONSE_CODE)) {
-      
-      
-      dataIsBounded = true;
-    }
 
-    
-    
-    bool boundedSeekLimit = true;
     
     
     
@@ -291,9 +279,7 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest)
         
         
         
-        if (rangeTotal == -1) {
-          boundedSeekLimit = false;
-        } else {
+        if (rangeTotal != -1) {
           contentLength = std::max(contentLength, rangeTotal);
         }
         
@@ -327,13 +313,6 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest)
     
     
     seekable = !isCompressed && acceptsRanges;
-    if (seekable && boundedSeekLimit) {
-      
-      
-      dataIsBounded = true;
-    }
-
-    mCallback->SetInfinite(!dataIsBounded);
   }
   mCacheStream.SetTransportSeekable(seekable);
 

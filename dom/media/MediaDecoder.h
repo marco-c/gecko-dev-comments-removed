@@ -568,16 +568,6 @@ protected:
   
   
   
-  
-  
-  
-  
-  void SetInfinite(bool aInfinite);
-
-  
-  
-  
-  
   void NotifySuspendedStatusChanged();
 
   
@@ -601,9 +591,6 @@ protected:
   
   
   bool mIgnoreProgressData;
-
-  
-  bool mInfiniteStream;
 
   
   void PinForSeek();

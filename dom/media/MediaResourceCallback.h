@@ -32,9 +32,6 @@ public:
   virtual MediaDecoderOwner* GetMediaOwner() const { return nullptr; }
 
   
-  virtual void SetInfinite(bool aInfinite) {}
-
-  
   virtual void NotifyNetworkError() {}
 
   
