@@ -5,7 +5,6 @@
 
 const { Cu, Ci } = require("chrome");
 const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
-const { SelfSupportBackend } = Cu.import("resource:///modules/SelfSupportBackend.jsm", {});
 const Startup = Cu.import("resource://gre/modules/sdk/system/Startup.js", {}).exports;
 
 
@@ -37,11 +36,6 @@ function gc() {
 
 
 exports.asyncWindowLeakTest = function*(assert, asyncTestFunc) {
-
-  
-  
-  if (SelfSupportBackend._log)
-    SelfSupportBackend.uninit();
 
   
   yield Startup.onceInitialized;

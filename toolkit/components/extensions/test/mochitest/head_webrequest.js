@@ -1,12 +1,5 @@
 "use strict";
 
-
-
-
-SpecialPowers.pushPrefEnv({
-  set: [["browser.selfsupport.url", ""]],
-});
-
 let commonEvents = {
   "onBeforeRequest":     [{urls: ["<all_urls>"]}, ["blocking"]],
   "onBeforeSendHeaders": [{urls: ["<all_urls>"]}, ["blocking", "requestHeaders"]],
