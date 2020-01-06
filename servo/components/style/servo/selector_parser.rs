@@ -133,7 +133,19 @@ impl PseudoElement {
     
     #[inline]
     pub fn is_before_or_after(&self) -> bool {
-        matches!(*self, PseudoElement::After | PseudoElement::Before)
+        self.is_before() || self.is_after()
+    }
+
+    
+    #[inline]
+    pub fn is_before(&self) -> bool {
+        *self == PseudoElement::Before
+    }
+
+    
+    #[inline]
+    pub fn is_after(&self) -> bool {
+        *self == PseudoElement::After
     }
 
     

@@ -14,7 +14,6 @@ use invalidation::element::restyle_hints::{RESTYLE_CSS_ANIMATIONS, RESTYLE_CSS_T
 use invalidation::element::restyle_hints::{RESTYLE_SMIL, RESTYLE_STYLE_ATTRIBUTE};
 use invalidation::element::restyle_hints::RestyleHint;
 use properties::ComputedValues;
-use properties::longhands::display::computed_value as display;
 use rule_tree::{CascadeLevel, StrongRuleNode};
 use selector_parser::{PseudoElement, RestyleDamage};
 use selectors::matching::ElementSelectorFlags;
@@ -152,14 +151,16 @@ trait PrivateMatchMethods: TElement {
     }
 
     #[cfg(feature = "gecko")]
-    fn needs_animations_update(&self,
-                               context: &mut StyleContext<Self>,
-                               old_values: Option<&Arc<ComputedValues>>,
-                               new_values: &ComputedValues)
-                               -> bool {
+    fn needs_animations_update(
+        &self,
+        context: &mut StyleContext<Self>,
+        old_values: Option<&Arc<ComputedValues>>,
+        new_values: &ComputedValues,
+    ) -> bool {
+        use properties::longhands::display::computed_value as display;
+
         let new_box_style = new_values.get_box();
-        let has_new_animation_style = new_box_style.animation_name_count() >= 1 &&
-                                      new_box_style.animation_name_at(0).0.is_some();
+        let has_new_animation_style = new_box_style.specifies_animations();
         let has_animations = self.has_css_animations();
 
         old_values.map_or(has_new_animation_style, |old| {
@@ -175,7 +176,7 @@ trait PrivateMatchMethods: TElement {
             
             (context.shared.traversal_flags.contains(traversal_flags::ForCSSRuleChanges) &&
              has_new_animation_style) ||
-            !old_box_style.animations_equals(&new_box_style) ||
+            !old_box_style.animations_equals(new_box_style) ||
              (old_display_style == display::T::none &&
               new_display_style != display::T::none &&
               has_new_animation_style) ||
@@ -188,14 +189,17 @@ trait PrivateMatchMethods: TElement {
     
     
     #[cfg(feature = "gecko")]
-    fn handle_display_change_for_smil_if_needed(&self,
-                                                context: &mut StyleContext<Self>,
-                                                old_values: Option<&ComputedValues>,
-                                                new_values: &ComputedValues,
-                                                restyle_hints: RestyleHint) {
+    fn handle_display_change_for_smil_if_needed(
+        &self,
+        context: &mut StyleContext<Self>,
+        old_values: Option<&ComputedValues>,
+        new_values: &ComputedValues,
+        restyle_hints: RestyleHint
+    ) {
         use context::DISPLAY_CHANGED_FROM_NONE_FOR_SMIL;
+        use properties::longhands::display::computed_value as display;
 
-        let display_changed_from_none = old_values.as_ref().map_or(false, |old| {
+        let display_changed_from_none = old_values.map_or(false, |old| {
             let old_display_style = old.get_box().clone_display();
             let new_display_style = new_values.get_box().clone_display();
             old_display_style == display::T::none &&
@@ -669,19 +673,22 @@ pub trait MatchMethods : TElement {
         
         let is_existing_before_or_after =
             cfg!(feature = "gecko") &&
-            pseudo.map_or(false, |p| p.is_before_or_after()) &&
-            self.existing_style_for_restyle_damage(old_values, pseudo)
-                .is_some();
+            pseudo.map_or(false, |p| {
+                (p.is_before() && self.before_pseudo_element().is_some()) ||
+                (p.is_after() && self.after_pseudo_element().is_some())
+            });
 
         if is_existing_before_or_after {
             return ChildCascadeRequirement::CanSkipCascade;
         }
 
-        self.accumulate_damage_for(shared_context,
-                                   restyle,
-                                   old_values,
-                                   new_values,
-                                   pseudo)
+        self.accumulate_damage_for(
+            shared_context,
+            restyle,
+            old_values,
+            new_values,
+            pseudo
+        )
     }
 
     
@@ -821,81 +828,7 @@ pub trait MatchMethods : TElement {
         pseudo: Option<&PseudoElement>
     ) -> StyleDifference {
         debug_assert!(pseudo.map_or(true, |p| p.is_eager()));
-        if let Some(source) = self.existing_style_for_restyle_damage(old_values, pseudo) {
-            return RestyleDamage::compute_style_difference(source, old_values, new_values)
-        }
-
-        let new_display = new_values.get_box().clone_display();
-        let old_display = old_values.get_box().clone_display();
-
-        let new_style_is_display_none = new_display == display::T::none;
-        let old_style_is_display_none = old_display == display::T::none;
-
-        
-        
-        
-        
-        
-        if new_style_is_display_none && old_style_is_display_none {
-            
-            
-            
-            
-            return RestyleDamage::compute_undisplayed_style_difference(old_values, new_values);
-        }
-
-        if pseudo.map_or(false, |p| p.is_before_or_after()) {
-            
-            
-            
-            let old_style_generates_no_pseudo =
-                old_style_is_display_none ||
-                old_values.ineffective_content_property();
-
-            let new_style_generates_no_pseudo =
-                new_style_is_display_none ||
-                new_values.ineffective_content_property();
-
-            if old_style_generates_no_pseudo != new_style_generates_no_pseudo {
-                return StyleDifference::new(RestyleDamage::reconstruct(), StyleChange::Changed)
-            }
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            return StyleDifference::new(RestyleDamage::empty(), StyleChange::Unchanged)
-        }
-
-        if pseudo.map_or(false, |p| p.is_first_letter() || p.is_first_line()) {
-            
-            
-            
-            return StyleDifference::new(RestyleDamage::empty(),
-                                        StyleChange::Unchanged)
-        }
-
-        
-        
-        
-        
-        let needs_reconstruction = new_display != old_display;
-        let damage = if needs_reconstruction {
-            RestyleDamage::reconstruct()
-        } else {
-            RestyleDamage::empty()
-        };
-        
-        
-        
-        StyleDifference::new(damage, StyleChange::Changed)
+        RestyleDamage::compute_style_difference(old_values, new_values)
     }
 }
 

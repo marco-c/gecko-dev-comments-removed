@@ -60,24 +60,13 @@ impl HeapSizeOf for ServoRestyleDamage {
 impl ServoRestyleDamage {
     
     
-    pub fn compute_style_difference(_source: &ComputedValues,
-                                    old: &ComputedValues,
-                                    new: &ComputedValues)
-                                    -> StyleDifference {
+    pub fn compute_style_difference(
+        old: &ComputedValues,
+        new: &ComputedValues,
+    ) -> StyleDifference {
         let damage = compute_damage(old, new);
         let change = if damage.is_empty() { StyleChange::Unchanged } else { StyleChange::Changed };
         StyleDifference::new(damage, change)
-    }
-
-    
-    
-    
-    
-    pub fn compute_undisplayed_style_difference(
-        _old_style: &ComputedValues,
-        _new_style: &ComputedValues,
-    ) -> StyleDifference {
-        StyleDifference::new(Self::empty(), StyleChange::Unchanged)
     }
 
     

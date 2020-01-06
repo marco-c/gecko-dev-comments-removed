@@ -36,16 +36,6 @@ pub use servo::restyle_damage::ServoRestyleDamage as RestyleDamage;
 pub use gecko::restyle_damage::GeckoRestyleDamage as RestyleDamage;
 
 
-
-#[cfg(feature = "servo")]
-pub type PreExistingComputedValues = ::properties::ComputedValues;
-
-
-
-#[cfg(feature = "gecko")]
-pub type PreExistingComputedValues = ::gecko_bindings::structs::nsStyleContext;
-
-
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct SelectorParser<'a> {
     

@@ -20,7 +20,7 @@ use properties::{AnimationRules, ComputedValues, PropertyDeclarationBlock};
 #[cfg(feature = "gecko")] use properties::animated_properties::AnimationValue;
 #[cfg(feature = "gecko")] use properties::animated_properties::TransitionProperty;
 use rule_tree::CascadeLevel;
-use selector_parser::{AttrValue, ElementExt, PreExistingComputedValues};
+use selector_parser::{AttrValue, ElementExt};
 use selector_parser::{PseudoClassStringArg, PseudoElement};
 use selectors::matching::{ElementSelectorFlags, VisitedHandlingMode};
 use selectors::sink::Push;
@@ -377,18 +377,6 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
 
     
     fn each_class<F>(&self, callback: F) where F: FnMut(&Atom);
-
-    
-    
-    
-    
-    
-    
-    
-    fn existing_style_for_restyle_damage<'a>(&'a self,
-                                             current_computed_values: &'a ComputedValues,
-                                             pseudo: Option<&PseudoElement>)
-                                             -> Option<&'a PreExistingComputedValues>;
 
     
     
