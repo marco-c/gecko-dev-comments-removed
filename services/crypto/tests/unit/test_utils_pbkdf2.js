@@ -1,8 +1,6 @@
 
 
 
-
-Cu.importGlobalProperties(["btoa"]);
 Cu.import("resource://services-crypto/utils.js");
 Cu.import("resource://services-common/utils.js");
 
