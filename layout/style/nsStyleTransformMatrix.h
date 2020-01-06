@@ -206,6 +206,14 @@ namespace nsStyleTransformMatrix {
                                          bool* aContains3dTransform);
 
   
+
+
+
+  mozilla::gfx::Point Convert2DPosition(nsStyleCoord const (&aValue)[2],
+                                        TransformReferenceBox& aRefBox,
+                                        int32_t aAppUnitsPerDevPixel);
+
+  
   enum class ShearType {
     XYSHEAR,
     XZSHEAR,
