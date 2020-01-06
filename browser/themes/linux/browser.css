@@ -169,6 +169,10 @@ menuitem.bookmark-item {
   border-color: Highlight;
 }
 
+.urlbar-textbox-container {
+  -moz-box-align: stretch;
+}
+
 
 @keyframes urlbar-zoom-reset-pulse {
   0% {
