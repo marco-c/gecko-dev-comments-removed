@@ -415,13 +415,13 @@ var TelemetryScheduler = {
       case "active":
         
         this._isUserIdle = false;
-        return this._onSchedulerTick();
+        return this._onSchedulerTick(true);
       case "wake_notification":
         
         
         
         
-        return this._onSchedulerTick();
+        return this._onSchedulerTick(true);
     }
     return undefined;
   },
@@ -431,7 +431,9 @@ var TelemetryScheduler = {
 
 
 
-  _onSchedulerTick() {
+
+
+  _onSchedulerTick(dispatchOnIdle = false) {
     
     
     this._clearTimeout();
@@ -443,7 +445,12 @@ var TelemetryScheduler = {
 
     let promise = Promise.resolve();
     try {
-      promise = this._schedulerTickLogic();
+      if (dispatchOnIdle) {
+        promise = new Promise((resolve, reject) =>
+          Services.tm.mainThread.idleDispatch(() => this._schedulerTickLogic().then(resolve, reject)));
+      } else {
+        promise = this._schedulerTickLogic();
+      }
     } catch (e) {
       Telemetry.getHistogramById("TELEMETRY_SCHEDULER_TICK_EXCEPTION").add(1);
       this._log.error("_onSchedulerTick - There was an exception", e);
