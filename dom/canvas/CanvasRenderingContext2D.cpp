@@ -2844,7 +2844,7 @@ CreateFontDeclarationForServo(const nsAString& aFont,
   return CreateDeclarationForServo(eCSSProperty_font, aFont, aDocument);
 }
 
-static already_AddRefed<ServoStyleContext>
+static already_AddRefed<ServoComputedValues>
 GetFontStyleForServo(Element* aElement, const nsAString& aFont,
                      nsIPresShell* aPresShell,
                      nsAString& aOutUsedFont,
@@ -2869,7 +2869,7 @@ GetFontStyleForServo(Element* aElement, const nsAString& aFont,
 
   ServoStyleSet* styleSet = aPresShell->StyleSet()->AsServo();
 
-  RefPtr<ServoStyleContext> parentStyle;
+  RefPtr<ServoComputedValues> parentStyle;
   
   
   if (aElement && aElement->IsInUncomposedDoc()) {
@@ -2880,8 +2880,7 @@ GetFontStyleForServo(Element* aElement, const nsAString& aFont,
     
     parentStyle =
       styleSet->ResolveTransientServoStyle(aElement,
-                                           CSSPseudoElementType::NotPseudo,
-                                           nullptr);
+                                           CSSPseudoElementType::NotPseudo);
   } else {
     RefPtr<RawServoDeclarationBlock> declarations =
       CreateFontDeclarationForServo(NS_LITERAL_STRING("10px sans-serif"),
@@ -2897,7 +2896,7 @@ GetFontStyleForServo(Element* aElement, const nsAString& aFont,
   MOZ_ASSERT(!aPresShell->IsDestroying(),
              "GetFontParentStyleContext should have returned an error if the presshell is being destroyed.");
 
-  RefPtr<ServoStyleContext> sc =
+  RefPtr<ServoComputedValues> sc =
     styleSet->ResolveForDeclarations(parentStyle, declarations);
 
   
@@ -2961,9 +2960,9 @@ CreateFilterDeclarationForServo(const nsAString& aFilter,
   return CreateDeclarationForServo(eCSSProperty_filter, aFilter, aDocument);
 }
 
-static already_AddRefed<ServoStyleContext>
+static already_AddRefed<ServoComputedValues>
 ResolveFilterStyleForServo(const nsAString& aFilterString,
-                           const ServoStyleContext* aParentStyle,
+                           const ServoComputedValues* aParentStyle,
                            nsIPresShell* aPresShell,
                            ErrorResult& aError)
 {
@@ -2984,7 +2983,7 @@ ResolveFilterStyleForServo(const nsAString& aFilterString,
   }
 
   ServoStyleSet* styleSet = aPresShell->StyleSet()->AsServo();
-  RefPtr<ServoStyleContext> computedValues =
+  RefPtr<ServoComputedValues> computedValues =
     styleSet->ResolveForDeclarations(aParentStyle, declarations);
 
   return computedValues.forget();
@@ -3029,7 +3028,7 @@ CanvasRenderingContext2D::ParseFilter(const nsAString& aString,
   
   MOZ_ASSERT(presShell->StyleSet()->IsServo());
 
-  RefPtr<ServoStyleContext> parentStyle =
+  RefPtr<ServoComputedValues> parentStyle =
     GetFontStyleForServo(mCanvasElement,
                          GetFont(),
                          presShell,
@@ -3039,7 +3038,7 @@ CanvasRenderingContext2D::ParseFilter(const nsAString& aString,
     return false;
   }
 
-  RefPtr<ServoStyleContext> computedValues =
+  RefPtr<ServoComputedValues> computedValues =
     ResolveFilterStyleForServo(aString,
                                parentStyle,
                                presShell,
@@ -3048,7 +3047,7 @@ CanvasRenderingContext2D::ParseFilter(const nsAString& aString,
      return false;
   }
 
-  const nsStyleEffects* effects = computedValues->ComputedValues()->GetStyleEffects();
+  const nsStyleEffects* effects = Servo_GetStyleEffects(computedValues);
   
   aFilterChain = effects->mFilters;
   return true;
@@ -3956,7 +3955,7 @@ CanvasRenderingContext2D::SetFontInternal(const nsAString& aFont,
   }
 
   RefPtr<nsStyleContext> sc;
-  RefPtr<ServoStyleContext> computedValues;
+  RefPtr<ServoComputedValues> computedValues;
   nsString usedFont;
   const nsStyleFont* fontStyle;
   if (presShell->StyleSet()->IsServo()) {
@@ -3968,7 +3967,7 @@ CanvasRenderingContext2D::SetFontInternal(const nsAString& aFont,
     if (!computedValues) {
       return false;
     }
-    fontStyle = computedValues->ComputedValues()->GetStyleFont();
+    fontStyle = Servo_GetStyleFont(computedValues);
   } else {
     sc = GetFontStyleContext(mCanvasElement,
                              aFont,
@@ -5362,10 +5361,18 @@ CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
     return;
   }
 
+  
+  
+  
+  
+  
+  auto scale = mTarget->GetTransform().ScaleFactors(true);
+  bool isDownScale = aDw * Abs(scale.width) < aSw && aDh * Abs(scale.height) < aSh;
+
   SamplingFilter samplingFilter;
   AntialiasMode antialiasMode;
 
-  if (CurrentState().imageSmoothingEnabled) {
+  if (CurrentState().imageSmoothingEnabled || isDownScale) {
     samplingFilter = gfx::SamplingFilter::LINEAR;
     antialiasMode = AntialiasMode::DEFAULT;
   } else {
