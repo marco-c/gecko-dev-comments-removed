@@ -828,10 +828,16 @@ ServiceWorkerManager::Register(mozIDOMWindow* aWindow,
   }
 
   auto* window = nsPIDOMWindowInner::From(aWindow);
-  nsCOMPtr<nsIDocument> doc = window->GetExtantDoc();
-  if (!doc) {
-    return NS_ERROR_FAILURE;
+
+  
+  
+  auto storageAllowed = nsContentUtils::StorageAllowedForWindow(window);
+  if (storageAllowed != nsContentUtils::StorageAccess::eAllow) {
+    return NS_ERROR_DOM_SECURITY_ERR;
   }
+
+  nsCOMPtr<nsIDocument> doc = window->GetExtantDoc();
+  MOZ_ASSERT(doc);
 
   
   if (NS_WARN_IF(nsContentUtils::IsSystemPrincipal(doc->NodePrincipal()))) {
