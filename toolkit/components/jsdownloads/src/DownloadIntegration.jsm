@@ -28,6 +28,8 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
                                   "resource://gre/modules/AsyncShutdown.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
+                                  "resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "DeferredTask",
                                   "resource://gre/modules/DeferredTask.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Downloads",
@@ -635,20 +637,6 @@ this.DownloadIntegration = {
   async launchDownload(aDownload) {
     let file = new FileUtils.File(aDownload.target.path);
 
-#ifndef XP_WIN
-    
-    
-    
-    
-    
-    
-    
-    if (file.isExecutable() &&
-        !(await this.confirmLaunchExecutable(file.path))) {
-      return;
-    }
-#endif
-
     
     
     
@@ -656,6 +644,21 @@ this.DownloadIntegration = {
     let match = file.leafName.match(/\.([^.]+)$/);
     if (match) {
       fileExtension = match[1];
+    }
+
+    let isWindowsExe = AppConstants.platform == "win" &&
+      fileExtension.toLowerCase() == "exe";
+
+    
+    
+    
+    
+    
+    
+    
+    if (file.isExecutable() && !isWindowsExe &&
+        !(await this.confirmLaunchExecutable(file.path))) {
+      return;
     }
 
     try {
