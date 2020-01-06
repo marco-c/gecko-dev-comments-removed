@@ -625,6 +625,20 @@ int do_relocation_section(Elf *elf, unsigned int rel_type, unsigned int rel_type
             new_rels.push_back(*i);
         } else {
             
+            
+            
+            
+            
+            
+            Elf_Addr addr(loc.getBuffer(), entry_sz, elf->getClass(), elf->getData());
+            unsigned int addend = get_addend(&*i, elf);
+            if (addr.value == 0) {
+                addr.value = addend;
+                addr.serialize(const_cast<char*>(loc.getBuffer()), entry_sz, elf->getClass(), elf->getData());
+            } else if (addr.value != addend) {
+                fprintf(stderr, "Relocation addend inconsistent with content. Skipping\n");
+                return -1;
+            }
             if (i->r_offset == relhack_entry.r_offset + relhack_entry.r_info * entry_sz) {
                 relhack_entry.r_info++;
             } else {
