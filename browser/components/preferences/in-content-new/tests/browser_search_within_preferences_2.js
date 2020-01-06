@@ -50,7 +50,7 @@ add_task(async function() {
 
   
   let unlinkFxaAccount = weavePrefsDeck.childNodes[1].querySelector("#unverifiedUnlinkFxaAccount");
-  is(unlinkFxaAccount.label, "Forget this Email", "The Forget this Email button should exist");
+  is(unlinkFxaAccount.label, "Forget this email", "The Forget this email button should exist");
 
   
   searchInput.focus();
