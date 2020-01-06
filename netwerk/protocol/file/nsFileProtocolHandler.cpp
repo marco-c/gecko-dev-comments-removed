@@ -190,6 +190,8 @@ nsFileProtocolHandler::NewChannel2(nsIURI* uri,
                                    nsILoadInfo* aLoadInfo,
                                    nsIChannel** result)
 {
+    nsresult rv;
+
     nsFileChannel *chan;
     if (IsNeckoChild()) {
         chan = new mozilla::net::FileChannelChild(uri);
@@ -200,14 +202,16 @@ nsFileProtocolHandler::NewChannel2(nsIURI* uri,
         return NS_ERROR_OUT_OF_MEMORY;
     NS_ADDREF(chan);
 
-    nsresult rv = chan->Init();
+    
+    
+    
+    rv = chan->SetLoadInfo(aLoadInfo);
     if (NS_FAILED(rv)) {
         NS_RELEASE(chan);
         return rv;
     }
 
-    
-    rv = chan->SetLoadInfo(aLoadInfo);
+    rv = chan->Init();
     if (NS_FAILED(rv)) {
         NS_RELEASE(chan);
         return rv;

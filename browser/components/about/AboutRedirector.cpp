@@ -132,6 +132,8 @@ AboutRedirector::NewChannel(nsIURI* aURI,
                             nsIChannel** result)
 {
   NS_ENSURE_ARG_POINTER(aURI);
+  NS_ENSURE_ARG_POINTER(aLoadInfo);
+
   NS_ASSERTION(result, "must not be null");
 
   nsAutoCString path = GetAboutModuleName(aURI);
@@ -180,18 +182,14 @@ AboutRedirector::NewChannel(nsIURI* aURI,
                                &isUIResource);
       NS_ENSURE_SUCCESS(rv, rv);
 
-      nsLoadFlags loadFlags = isUIResource
-                    ? static_cast<nsLoadFlags>(nsIChannel::LOAD_NORMAL)
-                    : static_cast<nsLoadFlags>(nsIChannel::LOAD_REPLACE);
-
       rv = NS_NewChannelInternal(getter_AddRefs(tempChannel),
                                  tempURI,
-                                 aLoadInfo,
-                                 nullptr, 
-                                 nullptr, 
-                                 loadFlags);
+                                 aLoadInfo);
       NS_ENSURE_SUCCESS(rv, rv);
 
+      if (!isUIResource) {
+        aLoadInfo->SetResultPrincipalURI(tempURI);
+      }
       tempChannel->SetOriginalURI(aURI);
 
       NS_ADDREF(*result = tempChannel);

@@ -188,11 +188,17 @@ NS_NewChannelInternal(nsIChannel           **outChannel,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
+#ifdef DEBUG
+  nsLoadFlags channelLoadFlags = 0;
+  channel->GetLoadFlags(&channelLoadFlags);
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(!(channelLoadFlags & nsIChannel::LOAD_REPLACE));
+#endif
+
   if (aLoadFlags != nsIRequest::LOAD_NORMAL) {
-    
-    nsLoadFlags normalLoadFlags = 0;
-    channel->GetLoadFlags(&normalLoadFlags);
-    rv = channel->SetLoadFlags(aLoadFlags | (normalLoadFlags & nsIChannel::LOAD_REPLACE));
+    rv = channel->SetLoadFlags(aLoadFlags);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -267,11 +273,17 @@ NS_NewChannelInternal(nsIChannel           **outChannel,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
+#ifdef DEBUG
+  nsLoadFlags channelLoadFlags = 0;
+  channel->GetLoadFlags(&channelLoadFlags);
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(!(channelLoadFlags & nsIChannel::LOAD_REPLACE));
+#endif
+
   if (aLoadFlags != nsIRequest::LOAD_NORMAL) {
-    
-    nsLoadFlags normalLoadFlags = 0;
-    channel->GetLoadFlags(&normalLoadFlags);
-    rv = channel->SetLoadFlags(aLoadFlags | (normalLoadFlags & nsIChannel::LOAD_REPLACE));
+    rv = channel->SetLoadFlags(aLoadFlags);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -1885,12 +1897,15 @@ nsresult
 NS_GetFinalChannelURI(nsIChannel *channel, nsIURI **uri)
 {
     *uri = nullptr;
-    nsLoadFlags loadFlags = 0;
-    nsresult rv = channel->GetLoadFlags(&loadFlags);
-    NS_ENSURE_SUCCESS(rv, rv);
 
-    if (loadFlags & nsIChannel::LOAD_REPLACE) {
-        return channel->GetURI(uri);
+    nsCOMPtr<nsILoadInfo> loadInfo = channel->GetLoadInfo();
+    if (loadInfo) {
+        nsCOMPtr<nsIURI> resultPrincipalURI;
+        loadInfo->GetResultPrincipalURI(getter_AddRefs(resultPrincipalURI));
+        if (resultPrincipalURI) {
+            resultPrincipalURI.forget(uri);
+            return NS_OK;
+        }
     }
 
     return channel->GetOriginalURI(uri);
