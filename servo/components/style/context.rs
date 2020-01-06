@@ -33,6 +33,8 @@ use time;
 use timer::Timer;
 use traversal::{DomTraversal, TraversalFlags};
 
+pub use selectors::matching::QuirksMode;
+
 
 #[cfg(feature = "servo")]
 pub struct ThreadLocalStyleContextCreationInfo {
@@ -47,20 +49,6 @@ impl ThreadLocalStyleContextCreationInfo {
             new_animations_sender: animations_sender,
         }
     }
-}
-
-
-
-
-#[derive(PartialEq, Eq, Copy, Clone, Hash, Debug)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub enum QuirksMode {
-    
-    Quirks,
-    
-    LimitedQuirks,
-    
-    NoQuirks,
 }
 
 

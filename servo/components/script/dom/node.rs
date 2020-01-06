@@ -347,11 +347,11 @@ impl<'a> Iterator for QuerySelectorIterator {
     fn next(&mut self) -> Option<Root<Node>> {
         let selectors = &self.selectors;
 
-        
-        
-        let mut ctx = MatchingContext::new(MatchingMode::Normal, None);
-
         self.iterator.by_ref().filter_map(|node| {
+            
+            
+            let mut ctx = MatchingContext::new(MatchingMode::Normal, None,
+                node.owner_doc().quirks_mode());
             if let Some(element) = Root::downcast(node) {
                 if matches_selector_list(selectors, &element, &mut ctx) {
                     return Some(Root::upcast(element));
@@ -720,7 +720,8 @@ impl Node {
             Err(_) => Err(Error::Syntax),
             
             Ok(selectors) => {
-                let mut ctx = MatchingContext::new(MatchingMode::Normal, None);
+                let mut ctx = MatchingContext::new(MatchingMode::Normal, None,
+                                                   self.owner_doc().quirks_mode());
                 Ok(self.traverse_preorder().filter_map(Root::downcast).find(|element| {
                     matches_selector_list(&selectors, element, &mut ctx)
                 }))
