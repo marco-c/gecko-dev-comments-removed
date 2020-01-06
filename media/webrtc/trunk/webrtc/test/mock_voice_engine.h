@@ -63,6 +63,11 @@ class MockVoiceEngine : public VoiceEngineImpl {
     
     --_ref_count;
   }
+
+  int Release() {
+    return 0;
+  }
+
   
   MOCK_METHOD1(ChannelProxyFactory, voe::ChannelProxy*(int channel_id));
 

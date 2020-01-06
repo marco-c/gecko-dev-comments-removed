@@ -40,7 +40,6 @@
 #include "CamerasChild.h"
 
 
-#include "webrtc/common.h"
 
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
@@ -641,11 +640,8 @@ private:
   
   Mutex mMutex;
   webrtc::VoiceEngine* mVoiceEngine;
-  webrtc::Config mConfig;
   RefPtr<mozilla::AudioInput> mAudioInput;
   bool mFullDuplex;
-  bool mExtendedFilter;
-  bool mDelayAgnostic;
   bool mHasTabVideoSource;
 
   

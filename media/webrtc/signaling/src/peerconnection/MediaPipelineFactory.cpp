@@ -736,7 +736,8 @@ MediaPipelineFactory::GetOrCreateAudioConduit(
         && configs.values.back()->mName == "telephone-event") {
       
       
-      conduit->SetDtmfPayloadType(configs.values.back()->mType);
+      conduit->SetDtmfPayloadType(configs.values.back()->mType,
+                                  configs.values.back()->mFreq);
     }
 
     auto error = conduit->ConfigureSendMediaCodec(configs.values[0]);

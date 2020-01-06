@@ -152,22 +152,18 @@ class WEBRTC_DLLEXPORT VoERTP_RTCP {
   virtual int GetRemoteRTCP_CNAME(int channel, char cName[256]) = 0;
 
   
-  virtual int GetRemoteRTCPData(int channel,
-                                unsigned int& NTPHigh,
-                                unsigned int& NTPLow,
-                                unsigned int& timestamp,
-                                unsigned int& playoutTimestamp,
-                                unsigned int* jitter = NULL,
-                                unsigned short* fractionLost = NULL) = 0;
-
-  
   virtual int GetRTPStatistics(int channel,
                                unsigned int& averageJitterMs,
                                unsigned int& maxJitterMs,
-                               unsigned int& discardedPackets) = 0;
+                               unsigned int& discardedPackets,
+                               unsigned int& cumulativeLost) = 0;
 
   
   virtual int GetRTCPStatistics(int channel, CallStatistics& stats) = 0;
+
+  
+  virtual int GetRTCPPacketTypeCounters(int channel,
+                                        RtcpPacketTypeCounter& stats) = 0;
 
   
   

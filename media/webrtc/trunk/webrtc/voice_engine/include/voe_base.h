@@ -91,6 +91,14 @@ class WEBRTC_DLLEXPORT VoiceEngine {
  protected:
   VoiceEngine() {}
   ~VoiceEngine() {}
+
+ private:
+  
+  
+  
+
+  
+  virtual void DummyVS2015BugFix() {};
 };
 
 

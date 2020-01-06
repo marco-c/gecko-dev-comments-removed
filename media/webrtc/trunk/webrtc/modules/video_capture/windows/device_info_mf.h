@@ -19,7 +19,7 @@ namespace videocapturemodule {
 
 class DeviceInfoMF : public DeviceInfoImpl {
  public:
-  DeviceInfoMF();
+  explicit DeviceInfoMF();
   virtual ~DeviceInfoMF();
 
   int32_t Init();

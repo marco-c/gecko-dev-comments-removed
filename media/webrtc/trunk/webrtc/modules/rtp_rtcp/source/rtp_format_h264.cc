@@ -550,8 +550,22 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
       case H264::NaluType::kEndOfStream:
       case H264::NaluType::kFiller:
         break;
+
+      
+      
+      
       case H264::NaluType::kSei:
-        parsed_payload->frame_type = kVideoFrameKey;
+        if (nalu.size <= 1) {
+          LOG(LS_ERROR) << "KSei packet with incorrect packet length";
+          return false; 
+        }
+        if (payload_data[start_offset + 1] != H264::SeiType::kSeiRecPt) {
+          
+          parsed_payload->frame_type = kVideoFrameDelta;
+        } else {
+          
+          parsed_payload->frame_type = kVideoFrameKey;
+        }
         break;
       case H264::NaluType::kStapA:
       case H264::NaluType::kFuA:

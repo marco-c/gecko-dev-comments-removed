@@ -25,6 +25,14 @@ namespace webrtc {
 
 class VideoFrame {
  public:
+  VideoFrame() {
+    video_frame_buffer_ = nullptr;
+    timestamp_rtp_ = 0;
+    timestamp_us_ = 0;
+    ntp_time_ms_ = 0;
+    rotation_ = kVideoRotation_0;
+  }
+
   
   
   

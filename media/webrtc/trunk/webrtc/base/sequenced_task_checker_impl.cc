@@ -30,8 +30,16 @@ bool SequencedTaskCheckerImpl::CalledSequentially() const {
 #if defined(WEBRTC_MAC)
   
   
-  if (current_queue == nullptr)
+  if (current_queue == nullptr) {
+#ifdef DISPATCH_CURRENT_QUEUE_LABEL
+    
     current_queue = dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL);
+#else
+    
+    dispatch_queue_t currentQueue = dispatch_get_current_queue();
+    current_queue = dispatch_queue_get_label(currentQueue);
+#endif
+  }
 #endif
   CritScope scoped_lock(&lock_);
   if (!attached_) {  

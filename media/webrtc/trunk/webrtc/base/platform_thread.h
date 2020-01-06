@@ -71,7 +71,7 @@ class PlatformThread {
   PlatformThreadRef GetThreadRef() const;
 
   
-  void Stop();
+  virtual void Stop();
 
   
   bool SetPriority(ThreadPriority priority);
@@ -82,8 +82,7 @@ class PlatformThread {
   bool QueueAPC(PAPCFUNC apc_function, ULONG_PTR data);
 #endif
 
- private:
-  void Run();
+  virtual void Run();
 
   ThreadRunFunction const run_function_;
   void* const obj_;
@@ -106,6 +105,44 @@ class PlatformThread {
 #endif  
   RTC_DISALLOW_COPY_AND_ASSIGN(PlatformThread);
 };
+
+#if defined(WEBRTC_WIN)
+class PlatformUIThread : public PlatformThread {
+ public:
+  PlatformUIThread(ThreadRunFunction func, void* obj,
+		  const char* thread_name) :
+  PlatformThread(func, obj, thread_name),
+  hwnd_(nullptr),
+  timerid_(0),
+  timeout_(0) {
+ }
+ virtual ~PlatformUIThread() {}
+
+ virtual void Stop() override;
+
+ 
+
+
+ void RequestCallback();
+
+ 
+
+
+ bool RequestCallbackTimer(unsigned int milliseconds);
+
+ protected:
+  virtual void Run() override;
+
+ private:
+  static LRESULT CALLBACK EventWindowProc(HWND, UINT, WPARAM, LPARAM);
+  void NativeEventCallback();
+  bool InternalInit();
+
+  HWND hwnd_;
+  UINT_PTR timerid_;
+  unsigned int timeout_;
+};
+#endif
 
 }  
 

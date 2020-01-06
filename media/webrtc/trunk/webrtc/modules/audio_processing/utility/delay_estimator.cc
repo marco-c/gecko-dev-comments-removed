@@ -440,11 +440,11 @@ BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(
 
 int WebRtc_AllocateHistoryBufferMemory(BinaryDelayEstimator* self,
                                        int history_size) {
-  BinaryDelayEstimatorFarend* far = self->farend;
+  BinaryDelayEstimatorFarend* farend = self->farend;
   
-  if (history_size != far->history_size) {
+  if (history_size != farend->history_size) {
     
-    history_size = WebRtc_AllocateFarendBufferMemory(far, history_size);
+    history_size = WebRtc_AllocateFarendBufferMemory(farend, history_size);
   }
   
   

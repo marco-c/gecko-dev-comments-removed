@@ -15,6 +15,10 @@
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
 
+#ifdef XP_WIN
+typedef int pid_t;
+#endif
+
 namespace webrtc
 {
 
@@ -82,6 +86,19 @@ public:
                                   int64_t captureTime = 0) = 0;
 protected:
     ~VideoCaptureExternal() {}
+};
+
+
+
+class VideoCaptureDataCallback
+{
+public:
+    virtual void OnIncomingCapturedFrame(const int32_t id,
+                                         const VideoFrame& videoFrame) = 0;
+    virtual void OnCaptureDelayChanged(const int32_t id,
+                                       const int32_t delay) = 0;
+protected:
+    virtual ~VideoCaptureDataCallback(){}
 };
 
 }  

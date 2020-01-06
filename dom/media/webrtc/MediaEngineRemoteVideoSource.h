@@ -33,9 +33,6 @@
 #include "mozilla/dom/MediaStreamTrackBinding.h"
 
 
-#include "webrtc/common.h"
-
-
 #include "CamerasChild.h"
 
 #include "NullTransport.h"

@@ -31,6 +31,8 @@ const size_t kVideoRotationLength = 2;
 const size_t kTransportSequenceNumberLength = 3;
 const size_t kPlayoutDelayLength = 4;
 
+const size_t kRtpStreamIdLength = 4; 
+
 
 
 

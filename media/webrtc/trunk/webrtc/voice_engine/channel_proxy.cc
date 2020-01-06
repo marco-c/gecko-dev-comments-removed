@@ -93,11 +93,34 @@ void ChannelProxy::ResetCongestionControlObjects() {
 }
 
 CallStatistics ChannelProxy::GetRTCPStatistics() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  
+  
+  
+  
+  
+
+  
   CallStatistics stats = {0};
   int error = channel()->GetRTPStatistics(stats);
   RTC_DCHECK_EQ(0, error);
   return stats;
+}
+
+int ChannelProxy::GetRTPStatistics(unsigned int& averageJitterMs,
+                                   unsigned int& maxJitterMs,
+                                   unsigned int& discardedPackets,
+                                   unsigned int& cumulativeLost) const {
+  
+  
+  
+  
+  
+  
+
+  return channel()->GetRTPStatistics(averageJitterMs,
+                                     maxJitterMs,
+                                     discardedPackets,
+                                     cumulativeLost);
 }
 
 std::vector<ReportBlock> ChannelProxy::GetRemoteRTCPReportBlocks() const {

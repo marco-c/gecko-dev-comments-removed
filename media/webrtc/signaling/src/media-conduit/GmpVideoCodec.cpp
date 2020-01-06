@@ -2,6 +2,8 @@
 
 
 
+#include "plarena.h"
+
 #include "WebrtcGmpVideoCodec.h"
 #include "GmpVideoCodec.h"
 

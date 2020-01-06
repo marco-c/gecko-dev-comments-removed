@@ -58,18 +58,6 @@ GMPVideoEncoderParent::GMPVideoEncoderParent(GMPContentParent *aPlugin)
   mPluginId(aPlugin->GetPluginId())
 {
   MOZ_ASSERT(mPlugin);
-
-  nsresult rv = NS_NewNamedThread("GMPEncoded", getter_AddRefs(mEncodedThread));
-  if (NS_FAILED(rv)) {
-    MOZ_CRASH();
-  }
-}
-
-GMPVideoEncoderParent::~GMPVideoEncoderParent()
-{
-  if (mEncodedThread) {
-    mEncodedThread->Shutdown();
-  }
 }
 
 GMPVideoHostImpl&
@@ -87,6 +75,7 @@ GMPVideoEncoderParent::Close()
   
   
   mCallback = nullptr;
+
   
 
   
@@ -109,6 +98,7 @@ GMPVideoEncoderParent::InitEncode(const GMPVideoCodec& aCodecSettings,
   }
 
   MOZ_ASSERT(mPlugin->GMPEventTarget()->IsOnCurrentThread());
+  MOZ_ASSERT(!mCallback);
 
   if (!aCallback) {
     return GMPGenericErr;
@@ -238,12 +228,6 @@ GMPVideoEncoderParent::Shutdown()
   }
 }
 
-static void
-ShutdownEncodedThread(nsCOMPtr<nsIThread>& aThread)
-{
-  aThread->Shutdown();
-}
-
 
 void
 GMPVideoEncoderParent::ActorDestroy(ActorDestroyReason aWhy)
@@ -256,14 +240,6 @@ GMPVideoEncoderParent::ActorDestroy(ActorDestroyReason aWhy)
     mCallback->Terminated();
     mCallback = nullptr;
   }
-  
-  
-  if (mEncodedThread) {
-    nsCOMPtr<nsIRunnable> r = WrapRunnableNM(
-      &ShutdownEncodedThread, nsCOMPtr<nsIThread>(mEncodedThread));
-    SystemGroup::Dispatch("ShutdownEncodedThread", TaskCategory::Other, r.forget());
-    mEncodedThread = nullptr;
-  }
   if (mPlugin) {
     
     mPlugin->VideoEncoderDestroyed(this);
@@ -271,21 +247,6 @@ GMPVideoEncoderParent::ActorDestroy(ActorDestroyReason aWhy)
   }
   mVideoHost.ActorDestroyed(); 
   MaybeDisconnect(aWhy == AbnormalShutdown);
-}
-
-static void
-EncodedCallback(GMPVideoEncoderCallbackProxy* aCallback,
-                GMPVideoEncodedFrame* aEncodedFrame,
-                nsTArray<uint8_t>* aCodecSpecificInfo,
-                nsCOMPtr<nsIThread> aThread)
-{
-  aCallback->Encoded(aEncodedFrame, *aCodecSpecificInfo);
-  delete aCodecSpecificInfo;
-  
-  
-  aThread->Dispatch(WrapRunnable(aEncodedFrame,
-                                &GMPVideoEncodedFrame::Destroy),
-                   NS_DISPATCH_NORMAL);
 }
 
 mozilla::ipc::IPCResult
@@ -297,14 +258,10 @@ GMPVideoEncoderParent::RecvEncoded(const GMPVideoEncodedFrameData& aEncodedFrame
   }
 
   auto f = new GMPVideoEncodedFrameImpl(aEncodedFrame, &mVideoHost);
-  nsTArray<uint8_t> *codecSpecificInfo = new nsTArray<uint8_t>;
-  codecSpecificInfo->AppendElements((uint8_t*)aCodecSpecificInfo.Elements(), aCodecSpecificInfo.Length());
-  nsCOMPtr<nsIThread> thread = NS_GetCurrentThread();
-
-  mEncodedThread->Dispatch(WrapRunnableNM(&EncodedCallback,
-                                          mCallback, f, codecSpecificInfo, thread),
-                           NS_DISPATCH_NORMAL);
-
+  
+  
+  mCallback->Encoded(f, aCodecSpecificInfo);
+  f->Destroy();
   return IPC_OK();
 }
 

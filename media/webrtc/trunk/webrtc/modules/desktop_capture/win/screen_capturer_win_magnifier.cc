@@ -40,19 +40,7 @@ ScreenCapturerWinMagnifier::ScreenCapturerWinMagnifier(
     : fallback_capturer_(std::move(fallback_capturer)) {}
 
 ScreenCapturerWinMagnifier::~ScreenCapturerWinMagnifier() {
-  
-  
-  if (host_window_)
-    DestroyWindow(host_window_);
-
-  if (magnifier_initialized_)
-    mag_uninitialize_func_();
-
-  if (mag_lib_handle_)
-    FreeLibrary(mag_lib_handle_);
-
-  if (desktop_dc_)
-    ReleaseDC(NULL, desktop_dc_);
+  Stop();
 }
 
 void ScreenCapturerWinMagnifier::Start(Callback* callback) {
@@ -64,6 +52,32 @@ void ScreenCapturerWinMagnifier::Start(Callback* callback) {
     LOG_F(LS_WARNING) << "Switching to fallback screen capturer becuase "
                          "magnifier initialization failed.";
     StartFallbackCapturer();
+  }
+}
+
+void ScreenCapturerWinMagnifier::Stop() {
+  callback_ = NULL;
+
+  
+  
+  if (host_window_) {
+    DestroyWindow(host_window_);
+    host_window_ = NULL;
+  }
+
+  if (magnifier_initialized_) {
+    mag_uninitialize_func_();
+    magnifier_initialized_ = false;
+  }
+
+  if (mag_lib_handle_) {
+    FreeLibrary(mag_lib_handle_);
+    mag_lib_handle_ = NULL;
+  }
+
+  if (desktop_dc_) {
+    ReleaseDC(NULL, desktop_dc_);
+    desktop_dc_ = NULL;
   }
 }
 

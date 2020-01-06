@@ -22,6 +22,7 @@
 #include <libkern/OSAtomic.h>  
 #include <mach/mach.h>         
 #include <sys/sysctl.h>        
+#include <OSXRunLoopSingleton.h>
 
 namespace webrtc {
 
@@ -301,20 +302,7 @@ AudioDeviceGeneric::InitStatus AudioDeviceMac::Init() {
   AudioObjectPropertyAddress propertyAddress = {
       kAudioHardwarePropertyRunLoop, kAudioObjectPropertyScopeGlobal,
       kAudioObjectPropertyElementMaster};
-  CFRunLoopRef runLoop = NULL;
-  UInt32 size = sizeof(CFRunLoopRef);
-  int aoerr = AudioObjectSetPropertyData(
-      kAudioObjectSystemObject, &propertyAddress, 0, NULL, size, &runLoop);
-  if (aoerr != noErr) {
-    LOG(LS_ERROR) << "Error in AudioObjectSetPropertyData: "
-                  << (const char*)&aoerr;
-    return InitStatus::OTHER_ERROR;
-  }
-
-  
-  propertyAddress.mSelector = kAudioHardwarePropertyDevices;
-  WEBRTC_CA_LOG_ERR(AudioObjectAddPropertyListener(
-      kAudioObjectSystemObject, &propertyAddress, &objectListenerProc, this));
+  mozilla_set_coreaudio_notification_runloop_if_needed();
 
   
   _macBookPro = false;

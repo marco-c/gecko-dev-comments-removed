@@ -19,11 +19,7 @@
 
 
 #undef FF
-#include "webrtc/common.h"
-#include "webrtc/video_renderer.h"
 #include "webrtc/modules/video_capture/video_capture_defines.h"
-
-
 
 namespace mozilla {
 

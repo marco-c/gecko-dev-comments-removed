@@ -167,6 +167,8 @@ class VideoSendStream {
 
       
       std::string c_name;
+
+      std::vector<std::string> rids;
     } rtp;
 
     
@@ -223,6 +225,10 @@ class VideoSendStream {
   virtual void SetSource(
       rtc::VideoSourceInterface<webrtc::VideoFrame>* source,
       const DegradationPreference& degradation_preference) = 0;
+
+  
+  
+  virtual CPULoadStateObserver* LoadStateObserver() = 0;
 
   
   

@@ -132,10 +132,6 @@ void ConfigWebRtcLog(mozilla::LogLevel level, uint32_t trace_mask,
   aLogFile.Assign(default_log_name);
 #else
 
-  
-  if (!sSink) {
-    sSink = new LogSinkImpl();
-  }
   rtc::LoggingSeverity log_level;
   switch (level) {
     case mozilla::LogLevel::Verbose:
@@ -158,17 +154,32 @@ void ConfigWebRtcLog(mozilla::LogLevel level, uint32_t trace_mask,
       MOZ_ASSERT(false);
       break;
   }
-  rtc::LogMessage::AddLogToStream(sSink, log_level);
+  rtc::LogMessage::LogToDebug(log_level);
+  if (level != mozilla::LogLevel::Disabled) {
+    
+    if (!sSink) {
+      sSink = new LogSinkImpl();
+      rtc::LogMessage::AddLogToStream(sSink, log_level);
+      
+    }
+  } else if (sSink) {
+    rtc::LogMessage::RemoveLogToStream(sSink);
+    sSink = nullptr;
+  }
 
   webrtc::Trace::set_level_filter(trace_mask);
   if (trace_mask != 0) {
     
     
-    if (aLogFile.EqualsLiteral("nspr")) {
+    if (aLogFile.EqualsLiteral("nspr") || aLogFile.EqualsLiteral("moz_log")) {
+      rtc::LogMessage::SetLogToStderr(false);
       webrtc::Trace::SetTraceCallback(&gWebRtcCallback);
     } else {
+      rtc::LogMessage::SetLogToStderr(true);
       webrtc::Trace::SetTraceFile(aLogFile.get(), multi_log);
     }
+  } else {
+    rtc::LogMessage::SetLogToStderr(false);
   }
 
   if (aLogFile.IsEmpty()) {
@@ -235,6 +246,8 @@ void EnableWebRtcLog()
   ConfigWebRtcLog(level, trace_mask, log_file, aec_log_dir, multi_log);
   return;
 }
+
+
 
 void StopWebRtcLog()
 {

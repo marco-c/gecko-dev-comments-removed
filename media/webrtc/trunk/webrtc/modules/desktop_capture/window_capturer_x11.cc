@@ -26,60 +26,11 @@
 #include "webrtc/modules/desktop_capture/x11/x_error_trap.h"
 #include "webrtc/modules/desktop_capture/x11/x_server_pixel_buffer.h"
 #include "webrtc/system_wrappers/include/logging.h"
+#include "webrtc/modules/desktop_capture/x11/shared_x_util.h"
 
 namespace webrtc {
 
 namespace {
-
-
-template <class PropertyType>
-class XWindowProperty {
- public:
-  XWindowProperty(Display* display, Window window, Atom property) {
-    const int kBitsPerByte = 8;
-    Atom actual_type;
-    int actual_format;
-    unsigned long bytes_after;  
-    int status = XGetWindowProperty(display, window, property, 0L, ~0L, False,
-                                    AnyPropertyType, &actual_type,
-                                    &actual_format, &size_,
-                                    &bytes_after, &data_);
-    if (status != Success) {
-      data_ = nullptr;
-      return;
-    }
-    if (sizeof(PropertyType) * kBitsPerByte != actual_format) {
-      size_ = 0;
-      return;
-    }
-
-    is_valid_ = true;
-  }
-
-  ~XWindowProperty() {
-    if (data_)
-      XFree(data_);
-  }
-
-  
-  bool is_valid() const { return is_valid_; }
-
-  
-  size_t size() const { return size_; }
-  const PropertyType* data() const {
-    return reinterpret_cast<PropertyType*>(data_);
-  }
-  PropertyType* data() {
-    return reinterpret_cast<PropertyType*>(data_);
-  }
-
- private:
-  bool is_valid_ = false;
-  unsigned long size_ = 0;  
-  unsigned char* data_ = nullptr;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(XWindowProperty);
-};
 
 class WindowCapturerLinux : public DesktopCapturer,
                             public SharedXDisplay::XEventHandler {
@@ -89,6 +40,7 @@ class WindowCapturerLinux : public DesktopCapturer,
 
   
   void Start(Callback* callback) override;
+  void Stop() override;
   void CaptureFrame() override;
   bool GetSourceList(SourceList* sources) override;
   bool SelectSource(SourceId id) override;
@@ -110,6 +62,9 @@ class WindowCapturerLinux : public DesktopCapturer,
 
   
   bool GetWindowTitle(::Window window, std::string* title);
+
+  
+  int GetWindowProcessID(::Window window);
 
   Callback* callback_ = nullptr;
 
@@ -177,6 +132,19 @@ bool WindowCapturerLinux::GetSourceList(SourceList* sources) {
       if (app_window && !IsDesktopElement(app_window)) {
         Source w;
         w.id = app_window;
+
+        unsigned int processId = GetWindowProcessID(app_window);
+        w.pid = (pid_t)processId;
+
+        XWindowAttributes window_attr;
+        if(!XGetWindowAttributes(display(),w.id,&window_attr)){
+          LOG(LS_ERROR)<<"Bad request for attributes for window ID:"<<w.id;
+          continue;
+        }
+        if((window_attr.width <= 0) || (window_attr.height <=0)){
+          continue;
+        }
+
         if (GetWindowTitle(app_window, &w.title))
           result.push_back(w);
       }
@@ -268,14 +236,18 @@ void WindowCapturerLinux::Start(Callback* callback) {
   callback_ = callback;
 }
 
+void WindowCapturerLinux::Stop() {
+  callback_ = NULL;
+}
+
 void WindowCapturerLinux::CaptureFrame() {
+  x_display_->ProcessPendingXEvents();
+
   if (!x_server_pixel_buffer_.IsWindowValid()) {
     LOG(LS_INFO) << "The window is no longer valid.";
     callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
     return;
   }
-
-  x_display_->ProcessPendingXEvents();
 
   if (!has_composite_extension_) {
     
@@ -419,6 +391,14 @@ bool WindowCapturerLinux::GetWindowTitle(::Window window, std::string* title) {
 }
 
 }  
+
+int WindowCapturerLinux::GetWindowProcessID(::Window window) {
+  
+  Atom process_atom = XInternAtom(display(), "_NET_WM_PID", True);
+  XWindowProperty<uint32_t> process_id(display(), window, process_atom);
+
+  return process_id.is_valid() ? *process_id.data() : 0;
+}
 
 
 std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawWindowCapturer(

@@ -15,6 +15,8 @@
 
 #include <string>
 #include <vector>
+#include <string.h>
+#include <algorithm>
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/optional.h"
@@ -96,6 +98,9 @@ struct RtpExtension {
   static const char* kPlayoutDelayUri;
   static const int kPlayoutDelayDefaultId;
 
+  static const char* kRtpStreamIdUri;
+  static const int kRtpStreamIdDefaultId;
+
   std::string uri;
   int id;
 };
@@ -115,6 +120,19 @@ struct VideoStream {
 
   int max_qp;
 
+  char rid[kRIDSize+1];
+
+  const std::string Rid() const {
+    return std::string(rid);
+  }
+
+  void SetRid(const std::string & aRid) {
+    static_assert(sizeof(rid) > kRIDSize,
+      "mRid must be large enought to hold a RID + null termination");
+    auto len = std::min((size_t)kRIDSize-1, aRid.length());
+    strncpy(&rid[0], aRid.c_str(), len);
+    rid[len] = 0;
+  }
   
   
   
@@ -211,6 +229,7 @@ class VideoEncoderConfig {
   std::vector<SpatialLayer> spatial_layers;
   ContentType content_type;
   rtc::scoped_refptr<const EncoderSpecificSettings> encoder_specific_settings;
+  unsigned char resolution_divisor;
 
   
   

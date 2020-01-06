@@ -15,13 +15,13 @@
 #include "mozilla/ShmemPool.h"
 #include "mozilla/Atomics.h"
 #include "webrtc/modules/video_capture/video_capture.h"
-#include "webrtc/modules/video_render/video_render_impl.h"
 #include "webrtc/modules/video_capture/video_capture_defines.h"
 #include "webrtc/common_video/include/incoming_video_stream.h"
+#include "webrtc/media/base/videosinkinterface.h"
 
 
 #undef FF
-#include "webrtc/common.h"
+#include "webrtc/common_types.h"
 
 #include "CamerasChild.h"
 
@@ -38,8 +38,7 @@ namespace camera {
 class CamerasParent;
 
 class CallbackHelper :
-  public webrtc::VideoRenderCallback,
-  public webrtc::VideoCaptureDataCallback
+  public rtc::VideoSinkInterface<webrtc::VideoFrame>
 {
 public:
   CallbackHelper(CaptureEngine aCapEng, uint32_t aStreamId, CamerasParent *aParent)
@@ -47,16 +46,7 @@ public:
 
   
   
-  virtual int32_t RenderFrame(const uint32_t aStreamId, const webrtc::VideoFrame& video_frame) override;
-
-  
-  virtual void OnIncomingCapturedFrame(const int32_t id, const webrtc::VideoFrame& videoFrame) override;
-  virtual void OnCaptureDelayChanged(const int32_t id, const int32_t delay) override;
-
-	
-	
-	
-	
+  virtual void OnFrame(const webrtc::VideoFrame& videoFrame) override;
 
   friend CamerasParent;
 

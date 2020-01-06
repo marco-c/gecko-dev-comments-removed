@@ -83,9 +83,9 @@
 
 
 
+#ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES
-
-#include "webrtc/common_audio/resampler/sinc_resampler.h"
+#endif
 
 #include <math.h>
 #include <string.h>
@@ -93,10 +93,9 @@
 #include <limits>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/common_audio/resampler/sinc_resampler.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 #include "webrtc/typedefs.h"
-
-namespace webrtc {
 
 namespace {
 
@@ -117,6 +116,8 @@ double SincScaleFactor(double io_ratio) {
 }
 
 }  
+
+namespace webrtc {
 
 const size_t SincResampler::kKernelSize;
 

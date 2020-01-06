@@ -154,6 +154,17 @@ class VCMPacketRequestCallback {
   virtual ~VCMPacketRequestCallback() {}
 };
 
+
+
+class VCMReceiveStateCallback {
+ public:
+  virtual void ReceiveStateChange(VideoReceiveState state) = 0;
+
+ protected:
+  virtual ~VCMReceiveStateCallback() {
+  }
+};
+
 class NackSender {
  public:
   virtual void SendNack(const std::vector<uint16_t>& sequence_numbers) = 0;

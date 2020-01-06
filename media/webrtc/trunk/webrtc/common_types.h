@@ -426,7 +426,7 @@ enum NsModes {
   kNsLowSuppression,  
   kNsModerateSuppression,
   kNsHighSuppression,
-  kNsVeryHighSuppression,  
+  kNsVeryHighSuppression  
 };
 
 
@@ -450,7 +450,7 @@ enum EcModes {
   kEcDefault,        
   kEcConference,     
   kEcAec,            
-  kEcAecm,           
+  kEcAecm            
 };
 
 
@@ -478,7 +478,8 @@ enum AudioLayers {
   kAudioWindowsWave = 1,
   kAudioWindowsCore = 2,
   kAudioLinuxAlsa = 3,
-  kAudioLinuxPulse = 4
+  kAudioLinuxPulse = 4,
+  kAudioSndio = 5
 };
 
 
@@ -504,12 +505,23 @@ enum RawVideoType {
   kVideoUnknown = 99
 };
 
+enum VideoReceiveState
+{
+  kReceiveStateInitial,            
+  kReceiveStateNormal,
+  kReceiveStatePreemptiveNACK,     
+  kReceiveStateWaitingKey,         
+  kReceiveStateDecodingWithErrors, 
+  kReceiveStateNoIncoming          
+};
+
 
 enum { kConfigParameterSize = 128 };
 enum { kPayloadNameSize = 32 };
 enum { kMaxSimulcastStreams = 4 };
 enum { kMaxSpatialLayers = 5 };
 enum { kMaxTemporalStreams = 4 };
+enum { kRIDSize = 32};
 
 enum VideoCodecComplexity {
   kComplexityNormal = 0,
@@ -576,12 +588,14 @@ enum Profile {
 struct VideoCodecH264 {
   bool frameDroppingOn;
   int keyFrameInterval;
+  double         scaleDownBy;
   
   const uint8_t* spsData;
   size_t spsLen;
   const uint8_t* ppsData;
   size_t ppsLen;
   H264::Profile profile;
+  uint8_t       packetizationMode; 
 };
 
 
@@ -617,6 +631,22 @@ struct SimulcastStream {
   unsigned int targetBitrate;  
   unsigned int minBitrate;     
   unsigned int qpMax;          
+  char         rid[kRIDSize];
+  unsigned int jsMaxBitrate;   
+  double       jsScaleDownBy;  
+
+  bool operator==(const SimulcastStream& other) const {
+    return width == other.width &&
+           height == other.height &&
+           numberOfTemporalLayers == other.numberOfTemporalLayers &&
+           maxBitrate == other.maxBitrate &&
+           targetBitrate == other.targetBitrate &&
+           minBitrate == other.minBitrate &&
+           qpMax == other.qpMax &&
+           strcmp(rid, other.rid) == 0 &&
+           jsMaxBitrate == other.jsMaxBitrate &&
+           jsScaleDownBy == other.jsScaleDownBy;
+  };
 };
 
 struct SpatialLayer {
@@ -640,6 +670,8 @@ class VideoCodec {
 
   unsigned short width;
   unsigned short height;
+  
+  unsigned char resolution_divisor;
 
   unsigned int startBitrate;   
   unsigned int maxBitrate;     
@@ -650,6 +682,7 @@ class VideoCodec {
 
   unsigned int qpMax;
   unsigned char numberOfSimulcastStreams;
+  unsigned char ridId;
   SimulcastStream simulcastStream[kMaxSimulcastStreams];
   SpatialLayer spatialLayers[kMaxSpatialLayers];
 
@@ -733,6 +766,26 @@ struct OverUseDetectorOptions {
   double initial_var_noise;
 };
 
+enum CPULoadState {
+  kLoadRelaxed = 0,
+  kLoadNormal,
+  kLoadStressed,
+  kLoadLast,
+};
+
+class CPULoadStateObserver {
+public:
+  virtual void onLoadStateChanged(CPULoadState aNewState) = 0;
+  virtual ~CPULoadStateObserver() {};
+};
+
+class CPULoadStateCallbackInvoker {
+public:
+    virtual void AddObserver(CPULoadStateObserver* aObserver) = 0;
+    virtual void RemoveObserver(CPULoadStateObserver* aObserver) = 0;
+    virtual ~CPULoadStateCallbackInvoker() {};
+};
+
 
 
 struct PacketTime {
@@ -768,6 +821,8 @@ struct PlayoutDelay {
 
 struct RTPHeaderExtension {
   RTPHeaderExtension();
+  RTPHeaderExtension(const RTPHeaderExtension& rhs);
+  RTPHeaderExtension& operator=(const RTPHeaderExtension& rhs);
 
   bool hasTransmissionTimeOffset;
   int32_t transmissionTimeOffset;
@@ -789,6 +844,10 @@ struct RTPHeaderExtension {
   VideoRotation videoRotation;
 
   PlayoutDelay playout_delay = {-1, -1};
+
+  
+  bool hasRID;
+  std::unique_ptr<char[]> rid; 
 };
 
 struct RTPHeader {

@@ -31,18 +31,22 @@ const size_t kNaluShortStartSequenceSize = 3;
 
 const size_t kNaluTypeSize = 1;
 
-enum NaluType : uint8_t {
-  kSlice = 1,
-  kIdr = 5,
-  kSei = 6,
-  kSps = 7,
-  kPps = 8,
+enum NaluType : uint8_t { 
+  kSlice = 1, 
+  kIdr = 5, 
+  kSei = 6, 
+  kSps = 7, 
+  kPps = 8, 
   kAud = 9,
   kEndOfSequence = 10,
   kEndOfStream = 11,
   kFiller = 12,
-  kStapA = 24,
-  kFuA = 28
+  kPrefix = 14, 
+  kStapA = 24, 
+  kFuA = 28 
+};
+enum SeiType : uint8_t {
+  kSeiRecPt = 6, 
 };
 
 enum SliceType : uint8_t { kP = 0, kB = 1, kI = 2, kSp = 3, kSi = 4 };

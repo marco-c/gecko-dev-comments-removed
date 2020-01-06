@@ -10,7 +10,7 @@
 
 package org.webrtc.voiceengine;
 
-import org.webrtc.Logging;
+import android.util.Log;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -66,18 +66,18 @@ public final class WebRtcAudioUtils {
   }
   public static synchronized void setWebRtcBasedAutomaticGainControl(boolean enable) {
     
-    Logging.w(TAG, "setWebRtcBasedAutomaticGainControl() is deprecated");
+    Log.w(TAG, "setWebRtcBasedAutomaticGainControl() is deprecated");
   }
 
   public static synchronized boolean useWebRtcBasedAcousticEchoCanceler() {
     if (useWebRtcBasedAcousticEchoCanceler) {
-      Logging.w(TAG, "Overriding default behavior; now using WebRTC AEC!");
+      Log.w(TAG, "Overriding default behavior; now using WebRTC AEC!");
     }
     return useWebRtcBasedAcousticEchoCanceler;
   }
   public static synchronized boolean useWebRtcBasedNoiseSuppressor() {
     if (useWebRtcBasedNoiseSuppressor) {
-      Logging.w(TAG, "Overriding default behavior; now using WebRTC NS!");
+      Log.w(TAG, "Overriding default behavior; now using WebRTC NS!");
     }
     return useWebRtcBasedNoiseSuppressor;
   }
@@ -161,7 +161,10 @@ public final class WebRtcAudioUtils {
 
   public static boolean runningOnNougatOrHigher() {
     
-    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N;
+
+
+
+    return false;
   }
 
   
@@ -183,7 +186,7 @@ public final class WebRtcAudioUtils {
 
   
   public static void logDeviceInfo(String tag) {
-    Logging.d(tag, "Android SDK: " + Build.VERSION.SDK_INT + ", "
+    Log.d(tag, "Android SDK: " + Build.VERSION.SDK_INT + ", "
             + "Release: " + Build.VERSION.RELEASE + ", "
             + "Brand: " + Build.BRAND + ", "
             + "Device: " + Build.DEVICE + ", "

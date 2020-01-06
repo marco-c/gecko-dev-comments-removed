@@ -30,7 +30,7 @@ bool VectorDifference(const uint8_t* image1, const uint8_t* image2) {
   static bool (*diff_proc)(const uint8_t*, const uint8_t*) = nullptr;
 
   if (!diff_proc) {
-#if defined(WEBRTC_ARCH_ARM_FAMILY) || defined(WEBRTC_ARCH_MIPS_FAMILY)
+#if !defined(WEBRTC_ARCH_X86_FAMILY)
     
     
     diff_proc = &VectorDifference_C;
