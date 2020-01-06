@@ -1555,7 +1555,6 @@ var LibraryUI = {
       animatableBox.removeAttribute("brighttext");
     }
     animatableBox.removeAttribute("fade");
-    gNavToolbox.setAttribute("animate", animation);
     libraryButton.setAttribute("animate", animation);
     animatableBox.setAttribute("animate", animation);
     if (!this._libraryButtonAnimationEndListeners[animation]) {
@@ -1578,7 +1577,6 @@ var LibraryUI = {
       let libraryButton = document.getElementById("library-button");
       
       libraryButton.removeAttribute("animate");
-      gNavToolbox.removeAttribute("animate");
     }
   },
 };
