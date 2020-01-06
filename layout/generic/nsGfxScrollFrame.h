@@ -117,19 +117,13 @@ public:
 
 
 
-
-
-
-  class ScrollEvent : public nsARefreshObserver {
+  class ScrollEvent : public Runnable {
   public:
-    NS_INLINE_DECL_REFCOUNTING(ScrollEvent, override)
-    explicit ScrollEvent(ScrollFrameHelper *helper);
-    void WillRefresh(mozilla::TimeStamp aTime) override;
-  protected:
-    virtual ~ScrollEvent();
+    NS_DECL_NSIRUNNABLE
+    explicit ScrollEvent(ScrollFrameHelper* aHelper);
+    void Revoke() { mHelper = nullptr; }
   private:
-    ScrollFrameHelper *mHelper;
-    RefPtr<nsRefreshDriver> mDriver;
+    ScrollFrameHelper* mHelper;
   };
 
   class AsyncScrollPortEvent : public Runnable {
