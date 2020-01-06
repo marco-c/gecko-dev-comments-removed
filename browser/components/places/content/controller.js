@@ -1010,7 +1010,7 @@ PlacesController.prototype = {
   _removeHistoryContainer: function PC__removeHistoryContainer(aContainerNode) {
     if (PlacesUtils.nodeIsHost(aContainerNode)) {
       
-      PlacesUtils.bhistory.removePagesFromHost(aContainerNode.title, true);
+      PlacesUtils.history.removePagesFromHost(aContainerNode.title, true);
     } else if (PlacesUtils.nodeIsDay(aContainerNode)) {
       
       let query = aContainerNode.getQueries()[0];
@@ -1022,7 +1022,7 @@ PlacesController.prototype = {
       
       
       
-      PlacesUtils.bhistory.removePagesByTimeframe(beginTime + 1, endTime);
+      PlacesUtils.history.removePagesByTimeframe(beginTime + 1, endTime);
     }
   },
 

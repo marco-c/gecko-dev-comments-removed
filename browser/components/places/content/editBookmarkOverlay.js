@@ -22,7 +22,6 @@ var gEditItemOverlay = {
       throw new Error("Neither node nor uris set for pane info");
 
     
-    
     let node = "node" in aInitInfo ? aInitInfo.node : null;
 
     
