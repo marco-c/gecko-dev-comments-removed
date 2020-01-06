@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 Cu.import("resource:///modules/SitePermissions.jsm", this);

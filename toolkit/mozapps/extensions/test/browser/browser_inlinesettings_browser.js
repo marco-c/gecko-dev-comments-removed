@@ -4,7 +4,6 @@
 
 
 
-
 var {Extension} = Components.utils.import("resource://gre/modules/Extension.jsm", {});
 
 Components.utils.import("resource://testing-common/ContentTask.jsm", {});

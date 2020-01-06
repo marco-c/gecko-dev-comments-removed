@@ -1,4 +1,3 @@
-
 const PAGE = "https://example.com/browser/toolkit/content/tests/browser/file_multipleAudio.html";
 
 var SuspendedType = {

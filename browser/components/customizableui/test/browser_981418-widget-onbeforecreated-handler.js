@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 const kWidgetId = "test-981418-widget-onbeforecreated";
 

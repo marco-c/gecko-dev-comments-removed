@@ -1,4 +1,3 @@
-
 const {AddonManagerPrivate} = Cu.import("resource://gre/modules/AddonManager.jsm", {});
 
 const {AddonTestUtils} = Cu.import("resource://testing-common/AddonTestUtils.jsm", {});

@@ -6,7 +6,6 @@
 
 
 
-
 add_task(async function() {
   const PAGE_URI = NetUtil.newURI("http://places.test/");
   const ICON_URI = NetUtil.newURI("http://mochi.test:8888/browser/browser/components/places/tests/browser/favicon-normal16.png");

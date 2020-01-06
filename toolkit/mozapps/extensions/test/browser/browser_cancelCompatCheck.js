@@ -6,7 +6,6 @@
 
 
 
-
 const URI_EXTENSION_UPDATE_DIALOG = "chrome://mozapps/content/extensions/update.xul";
 
 const PREF_GETADDONS_BYIDS            = "extensions.getAddons.get.url";

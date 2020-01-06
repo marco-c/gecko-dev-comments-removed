@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 const TESTCASE_URI_HTML = TEST_BASE_HTTP + "sourcemaps-watching.html";

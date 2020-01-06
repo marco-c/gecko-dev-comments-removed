@@ -5,7 +5,6 @@
 
 
 
-
 add_task(async function test() {
   let notificationValue = "Protocol Registration: testprotocol";
   let testURI = "http://example.com/browser/" +

@@ -3,7 +3,6 @@
 
 
 
-
 const kTestPage = "http://example.org/browser/browser/base/content/test/general/dummy_page.html";
 
 function promiseNewTabSwitched() {
