@@ -3720,8 +3720,10 @@ this.XPIProvider = {
           
           
           
-          resolve(addons.filter(addon => addon.isActive ||
-                                       (addon.type == "experiment" && !addon.appDisabled)));
+          resolve({addons: addons.filter(addon => addon.isActive ||
+                                       (addon.type == "experiment" && !addon.appDisabled)),
+                   fullData: true
+          });
         });
       });
     }
@@ -3754,7 +3756,7 @@ this.XPIProvider = {
       });
     }
 
-    return Promise.resolve(result);
+    return Promise.resolve({addons: result, fullData: false});
   },
 
 
