@@ -141,6 +141,8 @@ RootActor.prototype = {
     
     
     debuggerSourceActors: true,
+    
+    wasmBinarySource: true,
     bulk: true,
     
     

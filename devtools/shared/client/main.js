@@ -2306,6 +2306,37 @@ ThreadClient.prototype = {
 
 
 
+
+
+
+
+  _arrayBuffer: function (grip, gripCacheName) {
+    if (grip.actor in this[gripCacheName]) {
+      return this[gripCacheName][grip.actor];
+    }
+
+    let client = new ArrayBufferClient(this.client, grip);
+    this[gripCacheName][grip.actor] = client;
+    return client;
+  },
+
+  
+
+
+
+
+
+
+  threadArrayBuffer: function (grip) {
+    return this._arrayBuffer(grip, "_threadGrips");
+  },
+
+  
+
+
+
+
+
   _clearObjectClients: function (gripCacheName) {
     for (let id in this[gripCacheName]) {
       this[gripCacheName][id].valid = false;
@@ -2814,6 +2845,38 @@ PropertyIteratorClient.prototype = {
 
 
 
+function ArrayBufferClient(client, grip) {
+  this._grip = grip;
+  this._client = client;
+  this.request = this._client.request;
+}
+ArrayBufferClient.prototype = {
+  get actor() {
+    return this._grip.actor;
+  },
+  get length() {
+    return this._grip.length;
+  },
+  get _transport() {
+    return this._client._transport;
+  },
+
+  valid: true,
+
+  slice: DebuggerClient.requester({
+    type: "slice"
+  }),
+};
+
+
+
+
+
+
+
+
+
+
 function LongStringClient(client, grip) {
   this._grip = grip;
   this._client = client;
@@ -3010,6 +3073,28 @@ SourceClient.prototype = {
     }
 
     let { contentType, source } = response;
+    if (source.type === "arrayBuffer") {
+      let arrayBuffer = this._activeThread.threadArrayBuffer(source);
+      return arrayBuffer.slice(0, arrayBuffer.length).then(function (resp) {
+        if (resp.error) {
+          callback(resp);
+          return resp;
+        }
+        
+        
+        const str = atob(resp.encoded);
+        let newResponse = {
+          source: {
+            binary: str,
+            toString: () => "[wasm]",
+          },
+          contentType,
+        };
+        callback(newResponse);
+        return newResponse;
+      });
+    }
+
     let longString = this._activeThread.threadLongString(source);
     return longString.substring(0, longString.length).then(function (resp) {
       if (resp.error) {
