@@ -61,7 +61,7 @@ impl VREyeParametersMethods for VREyeParameters {
     #[allow(unsafe_code)]
     
     unsafe fn Offset(&self, _cx: *mut JSContext) -> NonZero<*mut JSObject> {
-        NonZero::new(self.offset.get())
+        NonZero::new_unchecked(self.offset.get())
     }
 
     
