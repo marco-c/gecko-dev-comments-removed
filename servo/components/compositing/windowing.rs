@@ -29,6 +29,14 @@ pub enum MouseWindowEvent {
 
 
 #[derive(Clone)]
+pub enum WebRenderDebugOption {
+    Profiler,
+    TextureCacheDebug,
+    RenderTargetDebug,
+}
+
+
+#[derive(Clone)]
 pub enum WindowEvent {
     
     
@@ -68,14 +76,14 @@ pub enum WindowEvent {
     
     KeyEvent(Option<char>, Key, KeyState, KeyModifiers),
     
-    
-    ToggleWebRenderProfiler,
     Reload(TopLevelBrowsingContextId),
     
     NewBrowser(ServoUrl, IpcSender<TopLevelBrowsingContextId>),
     
     
     SelectBrowser(TopLevelBrowsingContextId),
+    
+    ToggleWebRenderDebug(WebRenderDebugOption),
 }
 
 impl Debug for WindowEvent {
@@ -96,10 +104,10 @@ impl Debug for WindowEvent {
             WindowEvent::ResetZoom => write!(f, "ResetZoom"),
             WindowEvent::Navigation(..) => write!(f, "Navigation"),
             WindowEvent::Quit => write!(f, "Quit"),
-            WindowEvent::ToggleWebRenderProfiler => write!(f, "ToggleWebRenderProfiler"),
             WindowEvent::Reload(..) => write!(f, "Reload"),
             WindowEvent::NewBrowser(..) => write!(f, "NewBrowser"),
             WindowEvent::SelectBrowser(..) => write!(f, "SelectBrowser"),
+            WindowEvent::ToggleWebRenderDebug(..) => write!(f, "ToggleWebRenderDebug"),
         }
     }
 }
