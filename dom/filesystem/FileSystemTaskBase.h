@@ -10,7 +10,6 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/FileSystemRequestParent.h"
 #include "mozilla/dom/PFileSystemRequestChild.h"
-#include "nsIIPCBackgroundChildCreateCallback.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -99,11 +98,9 @@ class FileSystemParams;
 
 
 class FileSystemTaskChildBase : public PFileSystemRequestChild
-                              , public nsIIPCBackgroundChildCreateCallback
 {
 public:
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIIPCBACKGROUNDCHILDCREATECALLBACK
+  NS_INLINE_DECL_REFCOUNTING(FileSystemTaskChildBase)
 
   
 
