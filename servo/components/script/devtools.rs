@@ -2,9 +2,9 @@
 
 
 
-use devtools_traits::{AutoMargins, CachedConsoleMessage, CachedConsoleMessageTypes};
+use devtools_traits::{AutoMargins, CONSOLE_API, CachedConsoleMessage, CachedConsoleMessageTypes};
 use devtools_traits::{ComputedNodeLayout, ConsoleAPI, PageError};
-use devtools_traits::{EvaluateJSReply, Modification, NodeInfo, TimelineMarker};
+use devtools_traits::{EvaluateJSReply, Modification, NodeInfo, PAGE_ERROR, TimelineMarker};
 use devtools_traits::TimelineMarkerType;
 use dom::bindings::codegen::Bindings::CSSStyleDeclarationBinding::CSSStyleDeclarationMethods;
 use dom::bindings::codegen::Bindings::DOMRectBinding::DOMRectMethods;
@@ -168,7 +168,7 @@ pub fn handle_get_cached_messages(_pipeline_id: PipelineId,
                                   reply: IpcSender<Vec<CachedConsoleMessage>>) {
     
     let mut messages = Vec::new();
-    if message_types.contains(CachedConsoleMessageTypes::PAGE_ERROR) {
+    if message_types.contains(PAGE_ERROR) {
         
         
         let msg = PageError {
@@ -188,7 +188,7 @@ pub fn handle_get_cached_messages(_pipeline_id: PipelineId,
         };
         messages.push(CachedConsoleMessage::PageError(msg));
     }
-    if message_types.contains(CachedConsoleMessageTypes::CONSOLE_API) {
+    if message_types.contains(CONSOLE_API) {
         
         let msg = ConsoleAPI {
             type_: "ConsoleAPI".to_owned(),

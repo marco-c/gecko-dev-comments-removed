@@ -140,7 +140,7 @@ impl<T: ThreadSafeLayoutNode> ThreadSafeLayoutNodeHelpers for T {
         let damage = {
             let data = node.get_raw_data().unwrap();
 
-            if !data.layout_data.borrow().flags.contains(::data::LayoutDataFlags::HAS_BEEN_TRAVERSED) {
+            if !data.layout_data.borrow().flags.contains(::data::HAS_BEEN_TRAVERSED) {
                 
                 
                 

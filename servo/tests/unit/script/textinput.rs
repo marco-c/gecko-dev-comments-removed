@@ -7,7 +7,9 @@
 
 
 
-use msg::constellation_msg::{Key, KeyModifiers};
+#[cfg(target_os = "macos")]
+use msg::constellation_msg::{ALT, SUPER};
+use msg::constellation_msg::{Key, KeyModifiers, CONTROL};
 use script::clipboard_provider::DummyClipboardContext;
 use script::test::DOMString;
 use script::textinput::{TextInput, TextPoint, Selection, Lines, Direction, SelectionDirection};
@@ -428,29 +430,29 @@ fn test_navigation_keyboard_shortcuts() {
     let mut textinput = text_input(Lines::Multiple, "hello áéc");
 
     
-    textinput.handle_keydown_aux(None, Key::Right, KeyModifiers::SUPER);
+    textinput.handle_keydown_aux(None, Key::Right, SUPER);
     assert_eq!(textinput.edit_point.index, 11);
     
-    textinput.handle_keydown_aux(None, Key::Left, KeyModifiers::SUPER);
+    textinput.handle_keydown_aux(None, Key::Left, SUPER);
     assert_eq!(textinput.edit_point.index, 0);
     
-    textinput.handle_keydown_aux(None, Key::E, KeyModifiers::CONTROL | KeyModifiers::ALT);
+    textinput.handle_keydown_aux(None, Key::E, CONTROL | ALT);
     assert_eq!(textinput.edit_point.index, 11);
     
-    textinput.handle_keydown_aux(None, Key::A, KeyModifiers::CONTROL | KeyModifiers::ALT);
+    textinput.handle_keydown_aux(None, Key::A, CONTROL | ALT);
     assert_eq!(textinput.edit_point.index, 0);
 
     
-    textinput.handle_keydown_aux(None, Key::Right, KeyModifiers::ALT);
+    textinput.handle_keydown_aux(None, Key::Right, ALT);
     assert_eq!(textinput.edit_point.index, 5);
     
-    textinput.handle_keydown_aux(None, Key::F, KeyModifiers::CONTROL | KeyModifiers::ALT);
+    textinput.handle_keydown_aux(None, Key::F, CONTROL | ALT);
     assert_eq!(textinput.edit_point.index, 11);
     
-    textinput.handle_keydown_aux(None, Key::Left, KeyModifiers::ALT);
+    textinput.handle_keydown_aux(None, Key::Left, ALT);
     assert_eq!(textinput.edit_point.index, 6);
     
-    textinput.handle_keydown_aux(None, Key::B, KeyModifiers::CONTROL | KeyModifiers::ALT);
+    textinput.handle_keydown_aux(None, Key::B, CONTROL | ALT);
     assert_eq!(textinput.edit_point.index, 0);
 }
 
@@ -509,9 +511,9 @@ fn test_textinput_set_content() {
 #[test]
 fn test_clipboard_paste() {
     #[cfg(target_os = "macos")]
-    const MODIFIERS: KeyModifiers = KeyModifiers::SUPER;
+    const MODIFIERS: KeyModifiers = SUPER;
     #[cfg(not(target_os = "macos"))]
-    const MODIFIERS: KeyModifiers = KeyModifiers::CONTROL;
+    const MODIFIERS: KeyModifiers = CONTROL;
 
     let mut textinput = TextInput::new(Lines::Single,
                                        DOMString::from("defg"),
