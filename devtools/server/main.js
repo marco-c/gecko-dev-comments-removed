@@ -1387,21 +1387,18 @@ var DebuggerServer = {
 
 
 
-  removeContentServerScript() {
-    Services.ppmm.removeDelayedProcessScript(CONTENT_PROCESS_DBG_SERVER_SCRIPT);
-    try {
-      Services.ppmm.broadcastAsyncMessage("debug:close-content-server");
-    } catch (e) {
-      
-    }
-  },
-
-  
 
 
 
 
-  _searchAllConnectionsForActor(actorID) {
+
+  searchAllConnectionsForActor(actorID) {
+    
+    
+    
+    
+    
+    
     for (let connID of Object.getOwnPropertyNames(this._connections)) {
       let actor = this._connections[connID].getActor(actorID);
       if (actor) {

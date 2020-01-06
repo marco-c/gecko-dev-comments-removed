@@ -36,6 +36,14 @@ types.addDictType("webExtensionEvalOptions", {
   frameURL: "nullable:string",
   contextSecurityOrigin: "nullable:string",
   useContentScriptContext: "nullable:boolean",
+
+  
+  
+  toolboxSelectedNodeActorID: "nullable:string",
+
+  
+  
+  toolboxConsoleActorID: "nullable:string",
 });
 
 

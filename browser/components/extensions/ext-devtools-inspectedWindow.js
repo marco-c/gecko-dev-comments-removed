@@ -25,6 +25,23 @@ this.devtools_inspectedWindow = class extends ExtensionAPI {
       return new WebExtensionInspectedWindowFront(clonedTarget.client, clonedTarget.form);
     }
 
+    function getToolboxOptions() {
+      const options = {};
+      const toolbox = context.devToolsToolbox;
+      const selectedNode = toolbox.selection;
+
+      if (selectedNode && selectedNode.nodeFront) {
+        
+        
+        options.toolboxSelectedNodeActorID = selectedNode.nodeFront.actorID;
+      }
+
+      
+      options.toolboxConsoleActorID = toolbox.target.form.consoleActor;
+
+      return options;
+    }
+
     
     
     const callerInfo = {
@@ -41,11 +58,14 @@ this.devtools_inspectedWindow = class extends ExtensionAPI {
             }
 
             const front = await waitForInspectedWindowFront;
-            return front.eval(callerInfo, expression, options || {}).then(evalResult => {
-              
-              
-              return new SpreadArgs([evalResult.value, evalResult.exceptionInfo]);
-            });
+
+            const evalOptions = Object.assign({}, options, getToolboxOptions());
+
+            const evalResult = await front.eval(callerInfo, expression, evalOptions);
+
+            
+            
+            return new SpreadArgs([evalResult.value, evalResult.exceptionInfo]);
           },
           async reload(options) {
             const {ignoreCache, userAgent, injectedScript} = options || {};

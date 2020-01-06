@@ -8,7 +8,10 @@ const protocol = require("devtools/shared/protocol");
 
 const {Ci, Cu, Cr} = require("chrome");
 
+const {DebuggerServer} = require("devtools/server/main");
 const Services = require("Services");
+
+loader.lazyGetter(this, "NodeActor", () => require("devtools/server/actors/inspector").NodeActor, true);
 
 const {
   XPCOMUtils,
@@ -197,6 +200,7 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
 
     destroy(conn) {
       protocol.Actor.prototype.destroy.call(this, conn);
+
       if (this.customizedReload) {
         this.customizedReload.stop(
           new Error("WebExtensionInspectedWindowActor destroyed")
@@ -230,6 +234,58 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
 
     get webNavigation() {
       return this.tabActor.webNavigation;
+    },
+
+    createEvalBindings(dbgWindow, options) {
+      const bindings = Object.create(null);
+
+      let selectedDOMNode;
+
+      if (options.toolboxSelectedNodeActorID) {
+        let actor = DebuggerServer.searchAllConnectionsForActor(
+          options.toolboxSelectedNodeActorID
+        );
+        if (actor && actor instanceof NodeActor) {
+          selectedDOMNode = actor.rawNode;
+        }
+      }
+
+      Object.defineProperty(bindings, "$0", {
+        enumerable: true,
+        configurable: true,
+        get: () => {
+          if (selectedDOMNode && !Cu.isDeadWrapper(selectedDOMNode)) {
+            return dbgWindow.makeDebuggeeValue(selectedDOMNode);
+          }
+
+          return undefined;
+        },
+      });
+
+      
+      
+      
+      Object.defineProperty(bindings, "inspect", {
+        enumerable: true,
+        configurable: true,
+        value: dbgWindow.makeDebuggeeValue((object) => {
+          const dbgObj = dbgWindow.makeDebuggeeValue(object);
+
+          let consoleActor = DebuggerServer.searchAllConnectionsForActor(
+            options.toolboxConsoleActorID
+          );
+          if (consoleActor) {
+            consoleActor.inspectObject(dbgObj,
+                                       "webextension-devtools-inspectedWindow-eval");
+          } else {
+            
+            
+            console.error("Toolbox Console RDP Actor not found");
+          }
+        }),
+      });
+
+      return bindings;
     },
 
     
@@ -290,7 +346,7 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
                 })
                 .catch(err => {
                   delete this.customizedReload;
-                  throw err;
+                  console.error(err);
                 });
           } catch (err) {
             
@@ -351,19 +407,7 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
 
     eval(callerInfo, expression, options, customTargetWindow) {
       const window = customTargetWindow || this.window;
-
-      if (Object.keys(options).length > 0) {
-        return {
-          exceptionInfo: {
-            isError: true,
-            code: "E_PROTOCOLERROR",
-            description: "Inspector protocol error: %s",
-            details: [
-              "The inspectedWindow.eval options are currently not supported",
-            ],
-          },
-        };
-      }
+      options = options || {};
 
       if (!window) {
         return {
@@ -394,14 +438,31 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
         };
       }
 
+      
+      if (options.frameURL || options.contextSecurityOrigin ||
+          options.useContentScriptContext) {
+        return {
+          exceptionInfo: {
+            isError: true,
+            code: "E_PROTOCOLERROR",
+            description: "Inspector protocol error: %s",
+            details: [
+              "The inspectedWindow.eval options are currently not supported",
+            ],
+          },
+        };
+      }
+
       const dbgWindow = this.dbg.makeGlobalObjectReference(window);
 
       let evalCalledFrom = callerInfo.url;
       if (callerInfo.lineNumber) {
         evalCalledFrom += `:${callerInfo.lineNumber}`;
       }
-      
-      const result = dbgWindow.executeInGlobalWithBindings(expression, {}, {
+
+      const bindings = this.createEvalBindings(dbgWindow, options);
+
+      const result = dbgWindow.executeInGlobalWithBindings(expression, bindings, {
         url: `debugger eval called from ${evalCalledFrom} - eval code`,
       });
 

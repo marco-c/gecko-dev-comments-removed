@@ -542,6 +542,17 @@ WebConsoleActor.prototype =
 
   
 
+
+
+  inspectObject(dbgObj, inspectFromAnnotation) {
+    this.conn.sendActorEvent(this.actorID, "inspectObject", {
+      objectActor: this.createValueGrip(dbgObj),
+      inspectFromAnnotation,
+    });
+  },
+
+  
+
   
 
 

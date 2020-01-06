@@ -432,7 +432,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
       return null;
     }
     const { DebuggerServer } = require("devtools/server/main");
-    let actor = DebuggerServer._searchAllConnectionsForActor(this.actorID);
+    let actor = DebuggerServer.searchAllConnectionsForActor(this.actorID);
     if (!actor) {
       
       
@@ -907,7 +907,7 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
       return null;
     }
     const { DebuggerServer } = require("devtools/server/main");
-    let walkerActor = DebuggerServer._searchAllConnectionsForActor(this.actorID);
+    let walkerActor = DebuggerServer.searchAllConnectionsForActor(this.actorID);
     if (!walkerActor) {
       throw Error("Could not find client side for actor " + this.actorID);
     }
@@ -927,7 +927,7 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
       
       this._orphaned.add(top);
       walkerActor._orphaned
-        .add(DebuggerServer._searchAllConnectionsForActor(top.actorID));
+        .add(DebuggerServer.searchAllConnectionsForActor(top.actorID));
     }
     return returnNode;
   },
