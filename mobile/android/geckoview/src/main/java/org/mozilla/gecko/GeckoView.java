@@ -602,6 +602,13 @@ public class GeckoView extends LayerView {
     
 
 
+    public void exitFullScreen() {
+        mEventDispatcher.dispatch("GeckoViewContent:ExitFullScreen", null);
+    }
+
+    
+
+
 
 
     public void setContentListener(ContentListener content) {
