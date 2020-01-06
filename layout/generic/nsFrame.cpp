@@ -10715,6 +10715,15 @@ nsIFrame::AddSizeOfExcludingThisForTree(nsWindowSizes& aSizes) const
       sc->AddSizeOfIncludingThis(aSizes,
                                  &aSizes.mLayoutComputedValuesNonDom);
     }
+
+    
+    int32_t index = 0;
+    while (auto* extra = GetAdditionalStyleContext(index++)) {
+      if (!aSizes.mState.HaveSeenPtr(extra)) {
+        extra->AsServo()->AddSizeOfIncludingThis(aSizes,
+                                                 &aSizes.mLayoutComputedValuesNonDom);
+      }
+    }
   }
 
   FrameChildListIterator iter(this);
