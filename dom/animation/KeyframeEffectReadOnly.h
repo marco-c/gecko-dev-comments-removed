@@ -420,6 +420,11 @@ protected:
   
   
   
+  bool mInEffectSet = false;
+
+  
+  
+  
   bool mRecordedContentTooLarge = false;
   
   
