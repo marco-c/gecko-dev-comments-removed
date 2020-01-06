@@ -1144,15 +1144,14 @@ nsDocumentViewer::GetIsStopped(bool* aOutIsStopped)
 }
 
 NS_IMETHODIMP
-nsDocumentViewer::PermitUnload(bool *aPermitUnload)
+nsDocumentViewer::PermitUnload(uint32_t aPermitUnloadFlags, bool *aPermitUnload)
 {
-  bool shouldPrompt = true;
-  return PermitUnloadInternal(&shouldPrompt, aPermitUnload);
+  return PermitUnloadInternal(&aPermitUnloadFlags, aPermitUnload);
 }
 
 
 nsresult
-nsDocumentViewer::PermitUnloadInternal(bool *aShouldPrompt,
+nsDocumentViewer::PermitUnloadInternal(uint32_t *aPermitUnloadFlags,
                                        bool *aPermitUnload)
 {
   AutoDontWarnAboutSyncXHR disableSyncXHRWarning;
@@ -1238,12 +1237,23 @@ nsDocumentViewer::PermitUnloadInternal(bool *aShouldPrompt,
   nsAutoString text;
   event->GetReturnValue(text);
 
+  if (sIsBeforeUnloadDisabled) {
+    *aPermitUnloadFlags = eDontPromptAndUnload;
+  }
+
   
   
-  if (!sIsBeforeUnloadDisabled && *aShouldPrompt && dialogsAreEnabled &&
+  if (*aPermitUnloadFlags != eDontPromptAndUnload && dialogsAreEnabled &&
       mDocument && !(mDocument->GetSandboxFlags() & SANDBOXED_MODALS) &&
       (!sBeforeUnloadRequiresInteraction || mDocument->UserHasInteracted()) &&
       (event->WidgetEventPtr()->DefaultPrevented() || !text.IsEmpty())) {
+    
+    
+    if (*aPermitUnloadFlags == eDontPromptAndDontUnload) {
+      *aPermitUnload = false;
+      return NS_OK;
+    }
+
     
 
     nsCOMPtr<nsIPrompt> prompt = do_GetInterface(docShell);
@@ -1322,7 +1332,7 @@ nsDocumentViewer::PermitUnloadInternal(bool *aShouldPrompt,
       
       
       if (*aPermitUnload) {
-        *aShouldPrompt = false;
+        *aPermitUnloadFlags = eDontPromptAndUnload;
       }
     }
   }
@@ -1342,7 +1352,7 @@ nsDocumentViewer::PermitUnloadInternal(bool *aShouldPrompt,
         docShell->GetContentViewer(getter_AddRefs(cv));
 
         if (cv) {
-          cv->PermitUnloadInternal(aShouldPrompt, aPermitUnload);
+          cv->PermitUnloadInternal(aPermitUnloadFlags, aPermitUnload);
         }
       }
     }

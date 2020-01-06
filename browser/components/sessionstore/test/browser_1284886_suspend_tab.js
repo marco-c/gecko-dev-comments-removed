@@ -2,6 +2,12 @@
 
 
 add_task(async function test() {
+  await SpecialPowers.pushPrefEnv({
+    "set": [
+      ["dom.require_user_interaction_for_beforeunload", false],
+    ]
+  });
+
   let url = "about:robots";
   let tab0 = gBrowser.tabs[0];
   let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
@@ -25,12 +31,29 @@ add_task(async function test() {
 
   
   url = "http://example.com/browser/browser/components/sessionstore/test/browser_1284886_suspend_tab.html";
-
   tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+  let browser1 = tab1.linkedBrowser;
   await BrowserTestUtils.switchTab(gBrowser, tab0);
 
-  gBrowser.discardBrowser(tab1.linkedBrowser);
-  ok(tab1.linkedPanel, "cannot suspend a tab with beforeunload handler");
+  
+  gBrowser.discardBrowser(browser1);
+  ok(tab1.linkedPanel, "cannot suspend a tab with beforeunload handler which would show a prompt");
+
+  
+  gBrowser.discardBrowser(browser1, true);
+  ok(!tab1.linkedPanel, "force suspending a tab with beforeunload handler which would show a prompt");
+
+  await promiseRemoveTab(tab1);
+
+  
+  url = "http://example.com/browser/browser/components/sessionstore/test/browser_1284886_suspend_tab_2.html";
+  tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+  browser1 = tab1.linkedBrowser;
+  await BrowserTestUtils.switchTab(gBrowser, tab0);
+
+  
+  gBrowser.discardBrowser(browser1);
+  ok(!tab1.linkedPanel, "can suspend a tab with beforeunload handler which would not show a prompt");
 
   await promiseRemoveTab(tab1);
 
