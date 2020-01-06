@@ -178,6 +178,10 @@ public:
     
     
     eSetValue_MoveCursorToEndIfValueChanged = 1 << 3,
+    
+    
+    
+    eSetValue_ForXUL                = 1 << 4,
   };
   MOZ_MUST_USE bool SetValue(const nsAString& aValue,
                              const nsAString* aOldValue,
