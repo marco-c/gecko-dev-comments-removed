@@ -1461,20 +1461,24 @@ AsyncDeleteAllFaviconsFromDisk::
   
   
   mIcoNoDeleteSeconds = FaviconHelper::GetICOCacheSecondsTimeout() + 600;
+
+  
+  
+  Unused << NS_GetSpecialDirectory("ProfLDS",
+    getter_AddRefs(mJumpListCacheDir));
 }
 
 NS_IMETHODIMP AsyncDeleteAllFaviconsFromDisk::Run()
 {
+  if (!mJumpListCacheDir) {
+    return NS_ERROR_FAILURE;
+  }
   
-  nsCOMPtr<nsIFile> jumpListCacheDir;
-  nsresult rv = NS_GetSpecialDirectory("ProfLDS", 
-    getter_AddRefs(jumpListCacheDir));
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = jumpListCacheDir->AppendNative(
+  nsresult rv = mJumpListCacheDir->AppendNative(
       nsDependentCString(FaviconHelper::kJumpListCacheDir));
   NS_ENSURE_SUCCESS(rv, rv);
   nsCOMPtr<nsISimpleEnumerator> entries;
-  rv = jumpListCacheDir->GetDirectoryEntries(getter_AddRefs(entries));
+  rv = mJumpListCacheDir->GetDirectoryEntries(getter_AddRefs(entries));
   NS_ENSURE_SUCCESS(rv, rv);
 
   
