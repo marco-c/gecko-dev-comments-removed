@@ -261,6 +261,9 @@ class Simulator {
     inline double readD(uint32_t addr, SimInstruction* instr);
     inline void writeD(uint32_t addr, double value, SimInstruction* instr);
 
+    inline int32_t loadLinkedW(uint32_t addr, SimInstruction* instr);
+    inline int32_t storeConditionalW(uint32_t addr, int32_t value, SimInstruction* instr);
+
     
     void decodeTypeRegister(SimInstruction* instr);
 
@@ -335,6 +338,10 @@ class Simulator {
     int32_t FPUregisters_[kNumFPURegisters];
     
     uint32_t FCSR_;
+
+    bool LLBit_;
+    uint32_t LLAddr_;
+    int32_t lastLLValue_;
 
     
     char* stack_;
