@@ -172,7 +172,14 @@ public:
 
 
   void UpdateSystemCaretFor(Accessible* aAccessible);
+  static void UpdateSystemCaretFor(ProxyAccessible* aProxy,
+                                   const LayoutDeviceIntRect& aCaretRect);
 
+private:
+  static void UpdateSystemCaretFor(HWND aCaretWnd,
+                                   const LayoutDeviceIntRect& aCaretRect);
+
+public:
   
 
 

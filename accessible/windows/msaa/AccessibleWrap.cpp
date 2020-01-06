@@ -1559,19 +1559,43 @@ AccessibleWrap::UpdateSystemCaretFor(Accessible* aAccessible)
 
   nsIWidget* widget = nullptr;
   LayoutDeviceIntRect caretRect = text->GetCaretRect(&widget);
-  HWND caretWnd;
-  if (caretRect.IsEmpty() || !(caretWnd = (HWND)widget->GetNativeData(NS_NATIVE_WINDOW))) {
+
+  if (!widget) {
+    return;
+  }
+
+  HWND caretWnd = reinterpret_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
+  UpdateSystemCaretFor(caretWnd, caretRect);
+}
+
+ void
+AccessibleWrap::UpdateSystemCaretFor(ProxyAccessible* aProxy,
+                                     const LayoutDeviceIntRect& aCaretRect)
+{
+  ::DestroyCaret();
+
+  
+  
+  Accessible* outerDoc = aProxy->OuterDocOfRemoteBrowser();
+  UpdateSystemCaretFor(GetHWNDFor(outerDoc), aCaretRect);
+}
+
+ void
+AccessibleWrap::UpdateSystemCaretFor(HWND aCaretWnd,
+                                     const LayoutDeviceIntRect& aCaretRect)
+{
+  if (!aCaretWnd || aCaretRect.IsEmpty()) {
     return;
   }
 
   
   
-  nsAutoBitmap caretBitMap(CreateBitmap(1, caretRect.height, 1, 1, nullptr));
-  if (::CreateCaret(caretWnd, caretBitMap, 1, caretRect.height)) {  
-    ::ShowCaret(caretWnd);
+  nsAutoBitmap caretBitMap(CreateBitmap(1, aCaretRect.height, 1, 1, nullptr));
+  if (::CreateCaret(aCaretWnd, caretBitMap, 1, aCaretRect.height)) {  
+    ::ShowCaret(aCaretWnd);
     RECT windowRect;
-    ::GetWindowRect(caretWnd, &windowRect);
-    ::SetCaretPos(caretRect.x - windowRect.left, caretRect.y - windowRect.top);
+    ::GetWindowRect(aCaretWnd, &windowRect);
+    ::SetCaretPos(aCaretRect.x - windowRect.left, aCaretRect.y - windowRect.top);
   }
 }
 
