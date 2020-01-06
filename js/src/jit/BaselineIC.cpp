@@ -277,61 +277,58 @@ DoTypeUpdateFallback(JSContext* cx, BaselineFrame* frame, ICUpdatedStub* stub, H
     FallbackICSpew(cx, stub->getChainFallback(), "TypeUpdate(%s)",
                    ICStub::KindString(stub->kind()));
 
+    MOZ_ASSERT(stub->isCacheIR_Updated());
+
     RootedScript script(cx, frame->script());
     RootedObject obj(cx, &objval.toObject());
-    RootedId id(cx);
 
-    switch (stub->kind()) {
-      case ICStub::CacheIR_Updated: {
-        id = stub->toCacheIR_Updated()->updateStubId();
-        MOZ_ASSERT(id != JSID_EMPTY);
+    RootedId id(cx, stub->toCacheIR_Updated()->updateStubId());
+    MOZ_ASSERT(id != JSID_EMPTY);
 
-        
-        
-        
-        RootedObjectGroup group(cx, stub->toCacheIR_Updated()->updateStubGroup());
+    
+    
+    
+    RootedObjectGroup group(cx, stub->toCacheIR_Updated()->updateStubGroup());
 #ifdef DEBUG
-        if (obj->is<UnboxedExpandoObject>())
-            MOZ_ASSERT(group->clasp() == &UnboxedPlainObject::class_);
-        else
-            MOZ_ASSERT(obj->group() == group);
+    if (obj->is<UnboxedExpandoObject>())
+        MOZ_ASSERT(group->clasp() == &UnboxedPlainObject::class_);
+    else
+        MOZ_ASSERT(obj->group() == group);
 #endif
 
-        
-        
-        if (MOZ_UNLIKELY(obj->is<TypedObject>()) && value.isNullOrUndefined()) {
-            StructTypeDescr* structDescr = &obj->as<TypedObject>().typeDescr().as<StructTypeDescr>();
-            size_t fieldIndex;
-            MOZ_ALWAYS_TRUE(structDescr->fieldIndex(id, &fieldIndex));
+    
+    
+    bool addType = true;
+    if (MOZ_UNLIKELY(obj->is<TypedObject>()) && value.isNullOrUndefined()) {
+        StructTypeDescr* structDescr = &obj->as<TypedObject>().typeDescr().as<StructTypeDescr>();
+        size_t fieldIndex;
+        MOZ_ALWAYS_TRUE(structDescr->fieldIndex(id, &fieldIndex));
 
-            TypeDescr* fieldDescr = &structDescr->fieldDescr(fieldIndex);
-            ReferenceTypeDescr::Type type = fieldDescr->as<ReferenceTypeDescr>().type();
-            if (type == ReferenceTypeDescr::TYPE_ANY) {
-                
-                
-                if (value.isUndefined())
-                    break;
-            } else {
-                MOZ_ASSERT(type == ReferenceTypeDescr::TYPE_OBJECT);
+        TypeDescr* fieldDescr = &structDescr->fieldDescr(fieldIndex);
+        ReferenceTypeDescr::Type type = fieldDescr->as<ReferenceTypeDescr>().type();
+        if (type == ReferenceTypeDescr::TYPE_ANY) {
+            
+            
+            if (value.isUndefined())
+                addType = false;
+        } else {
+            MOZ_ASSERT(type == ReferenceTypeDescr::TYPE_OBJECT);
 
-                
-                
-                
-                
-                if (value.isNull())
-                    break;
-            }
+            
+            
+            
+            
+            if (value.isNull())
+                addType = false;
         }
-
-        JSObject* maybeSingleton = obj->isSingleton() ? obj.get() : nullptr;
-        AddTypePropertyId(cx, group, maybeSingleton, id, value);
-        break;
-      }
-      default:
-        MOZ_CRASH("Invalid stub");
     }
 
-    if (!stub->addUpdateStubForValue(cx, script , obj, id, value)) {
+    if (MOZ_LIKELY(addType)) {
+        JSObject* maybeSingleton = obj->isSingleton() ? obj.get() : nullptr;
+        AddTypePropertyId(cx, group, maybeSingleton, id, value);
+    }
+
+    if (MOZ_UNLIKELY(!stub->addUpdateStubForValue(cx, script, obj, id, value))) {
         
         
         
