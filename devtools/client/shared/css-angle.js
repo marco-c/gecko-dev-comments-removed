@@ -4,7 +4,8 @@
 
 "use strict";
 
-const {CSS_ANGLEUNIT} = require("devtools/shared/css/properties-db");
+loader.lazyRequireGetter(this, "CSS_ANGLEUNIT",
+  "devtools/shared/css/properties-db", true);
 
 const SPECIALVALUES = new Set([
   "initial",
@@ -41,9 +42,12 @@ module.exports.angleUtils = {
   classifyAngle: classifyAngle
 };
 
-CssAngle.ANGLEUNIT = CSS_ANGLEUNIT;
-
 CssAngle.prototype = {
+  
+  get ANGLEUNIT() {
+    return CSS_ANGLEUNIT;
+  },
+
   _angleUnit: null,
   _angleUnitUppercase: false,
 
@@ -69,7 +73,7 @@ CssAngle.prototype = {
       return false;
     }
     return (token.tokenType === "dimension"
-      && token.text.toLowerCase() in CssAngle.ANGLEUNIT);
+      && token.text.toLowerCase() in this.ANGLEUNIT);
   },
 
   get specialValue() {
@@ -83,28 +87,28 @@ CssAngle.prototype = {
     }
 
     let angleUnit = classifyAngle(this.authored);
-    if (angleUnit === CssAngle.ANGLEUNIT.deg) {
+    if (angleUnit === this.ANGLEUNIT.deg) {
       
       return this.authored;
     }
 
     let degValue;
-    if (angleUnit === CssAngle.ANGLEUNIT.rad) {
+    if (angleUnit === this.ANGLEUNIT.rad) {
       
       degValue = this.authoredAngleValue / (Math.PI / 180);
     }
 
-    if (angleUnit === CssAngle.ANGLEUNIT.grad) {
+    if (angleUnit === this.ANGLEUNIT.grad) {
       
       degValue = this.authoredAngleValue * 0.9;
     }
 
-    if (angleUnit === CssAngle.ANGLEUNIT.turn) {
+    if (angleUnit === this.ANGLEUNIT.turn) {
       
       degValue = this.authoredAngleValue * 360;
     }
 
-    let unitStr = CssAngle.ANGLEUNIT.deg;
+    let unitStr = this.ANGLEUNIT.deg;
     if (this._angleUnitUppercase === true) {
       unitStr = unitStr.toUpperCase();
     }
@@ -118,28 +122,28 @@ CssAngle.prototype = {
     }
 
     let unit = classifyAngle(this.authored);
-    if (unit === CssAngle.ANGLEUNIT.rad) {
+    if (unit === this.ANGLEUNIT.rad) {
       
       return this.authored;
     }
 
     let radValue;
-    if (unit === CssAngle.ANGLEUNIT.deg) {
+    if (unit === this.ANGLEUNIT.deg) {
       
       radValue = this.authoredAngleValue * (Math.PI / 180);
     }
 
-    if (unit === CssAngle.ANGLEUNIT.grad) {
+    if (unit === this.ANGLEUNIT.grad) {
       
       radValue = this.authoredAngleValue * 0.9 * (Math.PI / 180);
     }
 
-    if (unit === CssAngle.ANGLEUNIT.turn) {
+    if (unit === this.ANGLEUNIT.turn) {
       
       radValue = this.authoredAngleValue * 360 * (Math.PI / 180);
     }
 
-    let unitStr = CssAngle.ANGLEUNIT.rad;
+    let unitStr = this.ANGLEUNIT.rad;
     if (this._angleUnitUppercase === true) {
       unitStr = unitStr.toUpperCase();
     }
@@ -153,28 +157,28 @@ CssAngle.prototype = {
     }
 
     let unit = classifyAngle(this.authored);
-    if (unit === CssAngle.ANGLEUNIT.grad) {
+    if (unit === this.ANGLEUNIT.grad) {
       
       return this.authored;
     }
 
     let gradValue;
-    if (unit === CssAngle.ANGLEUNIT.deg) {
+    if (unit === this.ANGLEUNIT.deg) {
       
       gradValue = this.authoredAngleValue / 0.9;
     }
 
-    if (unit === CssAngle.ANGLEUNIT.rad) {
+    if (unit === this.ANGLEUNIT.rad) {
       
       gradValue = this.authoredAngleValue / 0.9 / (Math.PI / 180);
     }
 
-    if (unit === CssAngle.ANGLEUNIT.turn) {
+    if (unit === this.ANGLEUNIT.turn) {
       
       gradValue = this.authoredAngleValue * 400;
     }
 
-    let unitStr = CssAngle.ANGLEUNIT.grad;
+    let unitStr = this.ANGLEUNIT.grad;
     if (this._angleUnitUppercase === true) {
       unitStr = unitStr.toUpperCase();
     }
@@ -188,28 +192,28 @@ CssAngle.prototype = {
     }
 
     let unit = classifyAngle(this.authored);
-    if (unit === CssAngle.ANGLEUNIT.turn) {
+    if (unit === this.ANGLEUNIT.turn) {
       
       return this.authored;
     }
 
     let turnValue;
-    if (unit === CssAngle.ANGLEUNIT.deg) {
+    if (unit === this.ANGLEUNIT.deg) {
       
       turnValue = this.authoredAngleValue / 360;
     }
 
-    if (unit === CssAngle.ANGLEUNIT.rad) {
+    if (unit === this.ANGLEUNIT.rad) {
       
       turnValue = (this.authoredAngleValue / (Math.PI / 180)) / 360;
     }
 
-    if (unit === CssAngle.ANGLEUNIT.grad) {
+    if (unit === this.ANGLEUNIT.grad) {
       
       turnValue = this.authoredAngleValue / 400;
     }
 
-    let unitStr = CssAngle.ANGLEUNIT.turn;
+    let unitStr = this.ANGLEUNIT.turn;
     if (this._angleUnitUppercase === true) {
       unitStr = unitStr.toUpperCase();
     }
@@ -252,7 +256,7 @@ CssAngle.prototype = {
     this.authored = angle;
 
     let reg = new RegExp(
-      `(${Object.keys(CssAngle.ANGLEUNIT).join("|")})$`, "i");
+      `(${Object.keys(this.ANGLEUNIT).join("|")})$`, "i");
     let unitStartIdx = angle.search(reg);
     this.authoredAngleValue = angle.substring(0, unitStartIdx);
     this.authoredAngleUnit = angle.substring(unitStartIdx, angle.length);
@@ -263,14 +267,14 @@ CssAngle.prototype = {
   nextAngleUnit: function () {
     
     
-    let formats = Object.keys(CssAngle.ANGLEUNIT);
+    let formats = Object.keys(this.ANGLEUNIT);
     let putOnEnd = formats.splice(0, formats.indexOf(this.angleUnit));
     formats = formats.concat(putOnEnd);
     let currentDisplayedValue = this[formats[0]];
 
     for (let format of formats) {
       if (this[format].toLowerCase() !== currentDisplayedValue.toLowerCase()) {
-        this.angleUnit = CssAngle.ANGLEUNIT[format];
+        this.angleUnit = this.ANGLEUNIT[format];
         break;
       }
     }
@@ -284,16 +288,16 @@ CssAngle.prototype = {
     let angle;
 
     switch (this.angleUnit) {
-      case CssAngle.ANGLEUNIT.deg:
+      case this.ANGLEUNIT.deg:
         angle = this.deg;
         break;
-      case CssAngle.ANGLEUNIT.rad:
+      case this.ANGLEUNIT.rad:
         angle = this.rad;
         break;
-      case CssAngle.ANGLEUNIT.grad:
+      case this.ANGLEUNIT.grad:
         angle = this.grad;
         break;
-      case CssAngle.ANGLEUNIT.turn:
+      case this.ANGLEUNIT.turn:
         angle = this.turn;
         break;
       default:
@@ -301,7 +305,7 @@ CssAngle.prototype = {
     }
 
     if (this._angleUnitUppercase &&
-        this.angleUnit != CssAngle.ANGLEUNIT.authored) {
+        this.angleUnit != this.ANGLEUNIT.authored) {
       angle = angle.toUpperCase();
     }
     return angle;
@@ -327,19 +331,19 @@ CssAngle.prototype = {
 function classifyAngle(value) {
   value = value.toLowerCase();
   if (value.endsWith("deg")) {
-    return CssAngle.ANGLEUNIT.deg;
+    return CSS_ANGLEUNIT.deg;
   }
 
   if (value.endsWith("grad")) {
-    return CssAngle.ANGLEUNIT.grad;
+    return CSS_ANGLEUNIT.grad;
   }
 
   if (value.endsWith("rad")) {
-    return CssAngle.ANGLEUNIT.rad;
+    return CSS_ANGLEUNIT.rad;
   }
   if (value.endsWith("turn")) {
-    return CssAngle.ANGLEUNIT.turn;
+    return CSS_ANGLEUNIT.turn;
   }
 
-  return CssAngle.ANGLEUNIT.deg;
+  return CSS_ANGLEUNIT.deg;
 }

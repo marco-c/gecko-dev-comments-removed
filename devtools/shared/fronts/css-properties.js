@@ -3,10 +3,12 @@
 
 "use strict";
 
+loader.lazyRequireGetter(this, "CSS_PROPERTIES_DB",
+  "devtools/shared/css/properties-db", true);
+
 const { FrontClassWithSpec, Front } = require("devtools/shared/protocol");
 const { cssPropertiesSpec } = require("devtools/shared/specs/css-properties");
 const { Task } = require("devtools/shared/task");
-const { CSS_PROPERTIES_DB } = require("devtools/shared/css/properties-db");
 const { cssColors } = require("devtools/shared/css/color-db");
 
 
@@ -280,7 +282,10 @@ function getClientCssProperties() {
 
 
 function normalizeCssData(db) {
-  if (db !== CSS_PROPERTIES_DB) {
+  
+  
+  
+  if (typeof (db.from) == "string") {
     
     
     if (!db.properties) {
@@ -290,29 +295,36 @@ function normalizeCssData(db) {
     let missingSupports = !db.properties.color.supports;
     let missingValues = !db.properties.color.values;
     let missingSubproperties = !db.properties.background.subproperties;
+    let missingIsInherited = !db.properties.font.isInherited;
 
-    for (let name in db.properties) {
-      
-      if (typeof CSS_PROPERTIES_DB.properties[name] !== "object") {
-        continue;
-      }
+    let missingSomething = missingSupports || missingValues || missingSubproperties ||
+      missingIsInherited;
 
-      
-      if (missingSupports) {
-        db.properties[name].supports = CSS_PROPERTIES_DB.properties[name].supports;
-      }
-      
-      if (missingValues) {
-        db.properties[name].values = CSS_PROPERTIES_DB.properties[name].values;
-      }
-      
-      if (missingSubproperties) {
-        db.properties[name].subproperties =
-          CSS_PROPERTIES_DB.properties[name].subproperties;
-      }
-      
-      if (db.properties.font.isInherited) {
-        db.properties[name].isInherited = CSS_PROPERTIES_DB.properties[name].isInherited;
+    if (missingSomething) {
+      for (let name in db.properties) {
+        
+        if (typeof CSS_PROPERTIES_DB.properties[name] !== "object") {
+          continue;
+        }
+
+        
+        if (missingSupports) {
+          db.properties[name].supports = CSS_PROPERTIES_DB.properties[name].supports;
+        }
+        
+        if (missingValues) {
+          db.properties[name].values = CSS_PROPERTIES_DB.properties[name].values;
+        }
+        
+        if (missingSubproperties) {
+          db.properties[name].subproperties =
+            CSS_PROPERTIES_DB.properties[name].subproperties;
+        }
+        
+        if (missingIsInherited) {
+          db.properties[name].isInherited =
+            CSS_PROPERTIES_DB.properties[name].isInherited;
+        }
       }
     }
   }
