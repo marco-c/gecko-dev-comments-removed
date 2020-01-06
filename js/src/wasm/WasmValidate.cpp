@@ -60,7 +60,7 @@ Decoder::fail(size_t errorOffset, const char* msg)
 
 bool
 Decoder::startSection(SectionId id, ModuleEnvironment* env, uint32_t* sectionStart,
-                      uint32_t* sectionSize, const char* sectionName)
+                      uint32_t* sectionSize, const char* sectionName, bool peeking)
 {
     
     
@@ -85,8 +85,11 @@ Decoder::startSection(SectionId id, ModuleEnvironment* env, uint32_t* sectionSta
         
         
         cur_ = currentSectionStart;
-        if (!skipCustomSection(env))
+        if (!skipCustomSection(env)) {
+            if (peeking)
+                goto rewind;
             return false;
+        }
 
         
         
@@ -97,20 +100,37 @@ Decoder::startSection(SectionId id, ModuleEnvironment* env, uint32_t* sectionSta
 
     
 
-    if (!readVarU32(sectionSize) || bytesRemain() < *sectionSize)
+    if (!readVarU32(sectionSize) || bytesRemain() < *sectionSize) {
+        if (peeking)
+            goto rewind;
         goto fail;
+    }
 
     *sectionStart = cur_ - beg_;
+    if (peeking)
+        goto rewind_peeking;
     return true;
 
   rewind:
+    peeking = false;
+  rewind_peeking:
     cur_ = initialCur;
     env->customSections.shrinkTo(initialCustomSectionsLength);
-    *sectionStart = NotStarted;
+    if (!peeking)
+        *sectionStart = NotStarted;
     return true;
 
   fail:
     return failf("failed to start %s section", sectionName);
+}
+
+bool
+Decoder::peekSectionSize(SectionId id, ModuleEnvironment* env, const char* sectionName, uint32_t* sectionSize)
+{
+    uint32_t sectionStart;
+    if (!startSection(id, env, &sectionStart, sectionSize, sectionName, true))
+        return false;
+    return sectionStart != NotStarted;
 }
 
 bool

@@ -619,6 +619,13 @@ js::jit::ReleaseProcessExecutableMemory()
     execMemory.release();
 }
 
+size_t
+js::jit::LikelyAvailableExecutableMemory()
+{
+    
+    return MaxCodeBytesPerProcess - AlignBytes(execMemory.bytesAllocated(), 0x100000U);
+}
+
 bool
 js::jit::CanLikelyAllocateMoreExecutableMemory()
 {
