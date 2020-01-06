@@ -290,37 +290,6 @@ FireOnGarbageCollectionHookRequired(JSContext* cx);
 JS_PUBLIC_API(bool)
 FireOnGarbageCollectionHook(JSContext* cx, GarbageCollectionEvent::Ptr&& data);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JS_PUBLIC_API(void)
-onNewPromise(JSContext* cx, HandleObject promise);
-
-
-
-
-
-
-
-
-
-
-JS_PUBLIC_API(void)
-onPromiseSettled(JSContext* cx, HandleObject promise);
-
-
 
 
 JS_PUBLIC_API(bool)
