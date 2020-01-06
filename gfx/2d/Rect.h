@@ -316,9 +316,9 @@ RectTyped<units> IntRectToRect(const IntRectTyped<units>& aRect)
 }
 
 
-template <typename T>
-Maybe<T>
-IntersectMaybeRects(const Maybe<T>& a, const Maybe<T>& b)
+template <typename Rect>
+Maybe<Rect>
+IntersectMaybeRects(const Maybe<Rect>& a, const Maybe<Rect>& b)
 {
   if (!a) {
     return b;
@@ -326,6 +326,18 @@ IntersectMaybeRects(const Maybe<T>& a, const Maybe<T>& b)
     return a;
   } else {
     return Some(a->Intersect(*b));
+  }
+}
+template <typename Rect>
+Maybe<Rect>
+UnionMaybeRects(const Maybe<Rect>& a, const Maybe<Rect>& b)
+{
+  if (!a) {
+    return b;
+  } else if (!b) {
+    return a;
+  } else {
+    return Some(a->Union(*b));
   }
 }
 
