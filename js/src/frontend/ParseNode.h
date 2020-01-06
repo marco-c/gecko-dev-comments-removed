@@ -614,7 +614,7 @@ class ParseNode
 
 
     static ParseNode*
-    appendOrCreateList(ParseNodeKind kind, JSOp op, ParseNode* left, ParseNode* right,
+    appendOrCreateList(ParseNodeKind kind, ParseNode* left, ParseNode* right,
                        FullParseHandler* handler, ParseContext* pc);
 
     inline PropertyName* name() const;
