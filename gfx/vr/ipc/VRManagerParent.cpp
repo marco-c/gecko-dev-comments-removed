@@ -279,18 +279,19 @@ VRManagerParent::RecvSetHaveEventListener(const bool& aHaveEventListener)
 mozilla::ipc::IPCResult
 VRManagerParent::RecvControllerListenerAdded()
 {
-  VRManager* vm = VRManager::Get();
-  mHaveControllerListener = true;
   
-  vm->ScanForControllers();
+  
+  VRManager* vm = VRManager::Get();
+  vm->RemoveControllers();
+  mHaveControllerListener = true;
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult
 VRManagerParent::RecvControllerListenerRemoved()
 {
-  VRManager* vm = VRManager::Get();
   mHaveControllerListener = false;
+  VRManager* vm = VRManager::Get();
   vm->RemoveControllers();
   return IPC_OK();
 }
