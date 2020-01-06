@@ -9,7 +9,6 @@
 
 #include <time.h>
 #include "gtest/MozGtestFriend.h"
-#include "nsIScriptableDateFormat.h"
 #include "nsStringGlue.h"
 #include "prtime.h"
 #ifdef ENABLE_INTL_API
@@ -17,6 +16,25 @@
 #endif
 
 namespace mozilla {
+
+enum nsDateFormatSelector : long
+{
+  
+  kDateFormatNone = 0,            
+  kDateFormatLong,                
+  kDateFormatShort,               
+  kDateFormatYearMonth,           
+  kDateFormatWeekday,             
+  kDateFormatYearMonthLong,       
+  kDateFormatMonthLong            
+};
+
+enum nsTimeFormatSelector : long
+{
+  kTimeFormatNone = 0,            
+  kTimeFormatSeconds,             
+  kTimeFormatNoSeconds            
+};
 
 class DateTimeFormat {
 public:
