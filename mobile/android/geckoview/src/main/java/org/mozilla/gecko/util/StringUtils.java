@@ -5,6 +5,8 @@
 
 package org.mozilla.gecko.util;
 
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
@@ -300,5 +302,20 @@ public class StringUtils {
 
     public static boolean caseInsensitiveStartsWith(String text, String prefix, int start) {
         return text.regionMatches(true, start, prefix, 0, prefix.length());
+    }
+
+    
+
+
+
+
+
+
+
+
+    public static int getTextWidth(final String text, final int start, final int end, final Paint textPaint) {
+        final Rect bounds = new Rect();
+        textPaint.getTextBounds(text, start, end, bounds);
+        return bounds.width();
     }
 }
