@@ -305,7 +305,6 @@ Interceptor::MapEntry*
 Interceptor::Lookup(REFIID aIid)
 {
   mMutex.AssertCurrentThreadOwns();
-
   for (uint32_t index = 0, len = mInterceptorMap.Length(); index < len; ++index) {
     if (mInterceptorMap[index].mIID == aIid) {
       return &mInterceptorMap[index];
@@ -368,56 +367,14 @@ Interceptor::CreateInterceptor(REFIID aIid, IUnknown* aOuter, IUnknown** aOutput
 }
 
 HRESULT
-Interceptor::PublishTarget(detail::LiveSetAutoLock& aLiveSetLock,
-                           RefPtr<IUnknown> aInterceptor,
-                           REFIID aTargetIid,
-                           STAUniquePtr<IUnknown> aTarget)
-{
-  RefPtr<IWeakReference> weakRef;
-  HRESULT hr = GetWeakReference(getter_AddRefs(weakRef));
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  
-  
-  
-  mTarget = ToInterceptorTargetPtr(aTarget);
-  GetLiveSet().Put(mTarget.get(), weakRef.forget());
-
-  
-  mInterceptorMap.AppendElement(MapEntry(aTargetIid,
-                                         aInterceptor,
-                                         aTarget.release()));
-
-  
-  
-  aLiveSetLock.Unlock();
-  return S_OK;
-}
-
-HRESULT
-Interceptor::GetInitialInterceptorForIID(detail::LiveSetAutoLock& aLiveSetLock,
+Interceptor::GetInitialInterceptorForIID(detail::LiveSetAutoLock& aLock,
                                          REFIID aTargetIid,
                                          STAUniquePtr<IUnknown> aTarget,
                                          void** aOutInterceptor)
 {
   MOZ_ASSERT(aOutInterceptor);
-  MOZ_ASSERT(aTargetIid != IID_IMarshal);
+  MOZ_ASSERT(aTargetIid != IID_IUnknown && aTargetIid != IID_IMarshal);
   MOZ_ASSERT(!IsProxy(aTarget.get()));
-
-  if (aTargetIid == IID_IUnknown) {
-    
-    
-    AutoLock lock(*this);
-
-    HRESULT hr = PublishTarget(aLiveSetLock, nullptr, aTargetIid, Move(aTarget));
-    if (FAILED(hr)) {
-      return hr;
-    }
-
-    return QueryInterface(aTargetIid, aOutInterceptor);
-  }
 
   
   RefPtr<IUnknown> kungFuDeathGrip(static_cast<IUnknown*>(
@@ -442,14 +399,26 @@ Interceptor::GetInitialInterceptorForIID(detail::LiveSetAutoLock& aLiveSetLock,
     return hr;
   }
 
-  
-  
-  AutoLock lock(*this);
-
-  hr = PublishTarget(aLiveSetLock, unkInterceptor, aTargetIid, Move(aTarget));
+  RefPtr<IWeakReference> weakRef;
+  hr = GetWeakReference(getter_AddRefs(weakRef));
   if (FAILED(hr)) {
     return hr;
   }
+
+  
+  
+  
+  mTarget = ToInterceptorTargetPtr(aTarget);
+  GetLiveSet().Put(mTarget.get(), weakRef.forget());
+
+  
+  
+  aLock.Unlock();
+
+  
+  mInterceptorMap.AppendElement(MapEntry(aTargetIid,
+                                         unkInterceptor,
+                                         aTarget.release()));
 
   if (mEventSink->MarshalAs(aTargetIid) == aTargetIid) {
     return unkInterceptor->QueryInterface(aTargetIid, aOutInterceptor);
