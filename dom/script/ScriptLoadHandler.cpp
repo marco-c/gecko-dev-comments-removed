@@ -228,8 +228,7 @@ ScriptLoadHandler::EnsureDecoder(nsIIncrementalStreamLoader* aLoader,
 
   
   if (mScriptLoader->mDocument) {
-    encoding =
-      Encoding::ForName(mScriptLoader->mDocument->GetDocumentCharacterSet());
+    encoding = mScriptLoader->mDocument->GetDocumentCharacterSet();
     mDecoder = encoding->NewDecoderWithoutBOMHandling();
     encoding->Name(oCharset);
     return true;

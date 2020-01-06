@@ -428,7 +428,8 @@ public:
 
 
 
-  virtual void SetDocumentCharacterSet(const nsACString& aCharSetID) override;
+  virtual void
+    SetDocumentCharacterSet(NotNull<const Encoding*> aEncoding) override;
 
   
 
@@ -1049,7 +1050,7 @@ protected:
 
   void TryChannelCharset(nsIChannel *aChannel,
                          int32_t& aCharsetSource,
-                         nsACString& aCharset,
+                         NotNull<const Encoding*>& aEncoding,
                          nsHtml5TreeOpExecutor* aExecutor);
 
   

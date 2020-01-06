@@ -761,8 +761,8 @@ SheetLoadData::OnDetermineCharset(nsIUnicharStreamLoader* aLoader,
 
   if (mLoader->mDocument) {
     
-    aCharset = mLoader->mDocument->GetDocumentCharacterSet();
-    MOZ_ASSERT(!aCharset.IsEmpty());
+    auto encoding = mLoader->mDocument->GetDocumentCharacterSet();
+    encoding->Name(aCharset);
     mCharset.Assign(aCharset);
     LOG(("  Setting from document to: %s", PromiseFlatCString(aCharset).get()));
     return NS_OK;

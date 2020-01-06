@@ -126,6 +126,7 @@ public:
 
 
 nsParser::nsParser()
+  : mCharset(WINDOWS_1252_ENCODING)
 {
   Initialize(true);
 }
@@ -150,7 +151,7 @@ nsParser::Initialize(bool aConstructor)
 
   mContinueEvent = nullptr;
   mCharsetSource = kCharsetUninitialized;
-  mCharset.AssignLiteral("windows-1252");
+  mCharset = WINDOWS_1252_ENCODING;
   mInternalState = NS_OK;
   mStreamStatus = NS_OK;
   mCommand = eViewNormal;
@@ -283,8 +284,9 @@ nsParser::SetCommand(eParserCommands aParserCommand)
 
 
 
-NS_IMETHODIMP_(void)
-nsParser::SetDocumentCharset(const nsACString& aCharset, int32_t aCharsetSource)
+void
+nsParser::SetDocumentCharset(NotNull<const Encoding*> aCharset,
+                             int32_t aCharsetSource)
 {
   mCharset = aCharset;
   mCharsetSource = aCharsetSource;
@@ -294,7 +296,7 @@ nsParser::SetDocumentCharset(const nsACString& aCharset, int32_t aCharsetSource)
 }
 
 void
-nsParser::SetSinkCharset(nsACString& aCharset)
+nsParser::SetSinkCharset(NotNull<const Encoding*> aCharset)
 {
   if (mSink) {
     mSink->SetDocumentCharset(aCharset);
@@ -1331,8 +1333,7 @@ ParserWriteFunc(nsIInputStream* in,
   if (pws->mNeedCharsetCheck) {
     pws->mNeedCharsetCheck = false;
     int32_t source;
-    nsAutoCString preferred;
-    pws->mParser->GetDocumentCharset(preferred, source);
+    auto preferred = pws->mParser->GetDocumentCharset(source);
 
     
     
@@ -1344,7 +1345,7 @@ ParserWriteFunc(nsIInputStream* in,
       
       
       
-      encoding->Name(preferred);
+      preferred = WrapNotNull(encoding);
       source = kCharsetFromByteOrderMark;
     } else if (source < kCharsetFromChannel) {
       nsAutoCString declCharset;
@@ -1352,7 +1353,7 @@ ParserWriteFunc(nsIInputStream* in,
       if (ExtractCharsetFromXmlDeclaration(buf, count, declCharset)) {
         encoding = Encoding::ForLabel(declCharset);
         if (encoding) {
-          encoding->Name(preferred);
+          preferred = WrapNotNull(encoding);
           source = kCharsetFromMetaTag;
         }
       }
