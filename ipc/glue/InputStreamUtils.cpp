@@ -99,25 +99,6 @@ InputStreamHelper::DeserializeInputStream(const InputStreamParams& aParams,
       serializable = do_CreateInstance(kMultiplexInputStreamCID);
       break;
 
-    
-    
-    case InputStreamParams::TRemoteInputStreamParams:
-      
-      return nullptr;
-
-    case InputStreamParams::TSameProcessInputStreamParams: {
-      MOZ_ASSERT(aFileDescriptors.IsEmpty());
-
-      const SameProcessInputStreamParams& params =
-        aParams.get_SameProcessInputStreamParams();
-
-      stream = dont_AddRef(
-        reinterpret_cast<nsIInputStream*>(params.addRefedInputStream()));
-      MOZ_ASSERT(stream);
-
-      return stream.forget();
-    }
-
     case InputStreamParams::TSlicedInputStreamParams:
       serializable = new SlicedInputStream();
       break;
