@@ -1949,7 +1949,15 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   _addSource: function (source) {
-    if (!this.sources.allowSource(source) || this._debuggerSourcesSeen.has(source)) {
+    if (!this.sources.allowSource(source)) {
+      return false;
+    }
+
+    
+    
+    
+    
+    if (this._debuggerSourcesSeen.has(source) && this.sources.hasSourceActor(source)) {
       return false;
     }
 
