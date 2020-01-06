@@ -441,7 +441,7 @@ public:
     if (aData->Length() < 8) {
       return NS_ERROR_NOT_AVAILABLE;
     }
-    AtomParser parser(mType, aData);
+    AtomParser parser(mType, aData, AtomParser::StopAt::eInitSegment);
     if (!parser.IsValid()) {
       return MediaResult(
         NS_ERROR_FAILURE,
@@ -455,7 +455,7 @@ public:
     if (aData->Length() < 8) {
       return NS_ERROR_NOT_AVAILABLE;
     }
-    AtomParser parser(mType, aData);
+    AtomParser parser(mType, aData, AtomParser::StopAt::eMediaSegment);
     if (!parser.IsValid()) {
       return MediaResult(
         NS_ERROR_FAILURE,
@@ -465,14 +465,24 @@ public:
   }
 
 private:
-  class AtomParser {
+  class AtomParser
+  {
   public:
-    AtomParser(const MediaContainerType& aType, const MediaByteBuffer* aData)
+    enum class StopAt
+    {
+      eInitSegment,
+      eMediaSegment,
+      eEnd
+    };
+
+    AtomParser(const MediaContainerType& aType, const MediaByteBuffer* aData,
+               StopAt aStop = StopAt::eEnd)
     {
       const MediaContainerType mType(aType); 
       mp4_demuxer::ByteReader reader(aData);
       mp4_demuxer::AtomType initAtom("moov");
       mp4_demuxer::AtomType mediaAtom("moof");
+      mp4_demuxer::AtomType dataAtom("mdat");
 
       
       static const mp4_demuxer::AtomType validBoxes[] = {
@@ -511,9 +521,9 @@ private:
             mp4_demuxer::AtomType(type) == mediaAtom) {
           mMediaOffset = Some(reader.Offset());
         }
-        if (mInitOffset.isSome() && mMediaOffset.isSome()) {
-          
-          break;
+        if (mDataOffset.isNothing() &&
+            mp4_demuxer::AtomType(type) == dataAtom) {
+          mDataOffset = Some(reader.Offset());
         }
         if (size == 1) {
           
@@ -531,6 +541,20 @@ private:
           break;
         }
         reader.Read(size - 8);
+
+        if (aStop == StopAt::eInitSegment && (mInitOffset || mMediaOffset)) {
+          
+          
+          
+          break;
+        }
+        if (aStop == StopAt::eMediaSegment &&
+            (mInitOffset || (mMediaOffset && mDataOffset))) {
+          
+          
+          
+          break;
+        }
       }
     }
 
@@ -549,6 +573,7 @@ private:
   private:
     Maybe<size_t> mInitOffset;
     Maybe<size_t> mMediaOffset;
+    Maybe<size_t> mDataOffset;
     bool mValid = true;
     char mLastInvalidBox[5];
   };
