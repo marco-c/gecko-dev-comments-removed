@@ -670,6 +670,11 @@ void HTMLMediaElement::ReportLoadError(const char* aMsg,
                                   aParamCount);
 }
 
+static bool IsAutoplayEnabled()
+{
+  return Preferences::GetBool("media.autoplay.enabled");
+}
+
 class HTMLMediaElement::AudioChannelAgentCallback final :
   public nsIAudioChannelAgentCallback
 {
@@ -2429,8 +2434,7 @@ void HTMLMediaElement::UpdatePreloadAction()
   PreloadAction nextAction = PRELOAD_UNDEFINED;
   
   
-  if ((AutoplayPolicy::IsMediaElementAllowedToPlay(WrapNotNull(this)) &&
-       HasAttr(kNameSpaceID_None, nsGkAtoms::autoplay)) ||
+  if ((IsAutoplayEnabled() && HasAttr(kNameSpaceID_None, nsGkAtoms::autoplay)) ||
       !mPaused)
   {
     nextAction = HTMLMediaElement::PRELOAD_ENOUGH;
@@ -6174,7 +6178,7 @@ bool HTMLMediaElement::CanActivateAutoplay()
   
   
 
-  if (!AutoplayPolicy::IsMediaElementAllowedToPlay(WrapNotNull(this))) {
+  if (!IsAutoplayEnabled()) {
     return false;
   }
 
