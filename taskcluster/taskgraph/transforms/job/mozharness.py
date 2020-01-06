@@ -92,10 +92,6 @@ mozharness_run_schema = Schema({
     
     
     Required('use-magic-mh-args', default=True): bool,
-
-    
-    
-    Required('comm-checkout', default=False): bool,
 })
 
 
@@ -190,18 +186,12 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
         '--chown-recursive', '/home/worker/tooltool-cache',
         '--vcs-checkout', '/home/worker/workspace/build/src',
         '--tools-checkout', '/home/worker/workspace/build/tools',
-    ]
-
-    if run['comm-checkout']:
-        command.append('--comm-checkout=/home/worker/workspace/build/src/comm')
-
-    command += [
         '--',
-        "/home/worker/workspace/build/src/{}".format(
-            run.get('job-script',
-                    "taskcluster/scripts/builder/build-linux.sh"
-                    )),
     ]
+    command.append("/home/worker/workspace/build/src/{}".format(
+        run.get('job-script',
+                "taskcluster/scripts/builder/build-linux.sh"
+                )))
 
     worker['command'] = command
 
