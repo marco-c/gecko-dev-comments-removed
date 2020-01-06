@@ -3,8 +3,6 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["RemoteController"];
-
 const Ci = Components.interfaces;
 const Cc = Components.classes;
 const Cu = Components.utils;
