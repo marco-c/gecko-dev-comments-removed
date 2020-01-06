@@ -125,6 +125,14 @@ add_task(async function testInvalid() {
   await BrowserTestUtils.closeWindow(win);
 });
 
+add_task(async function testLongOID() {
+  
+  
+  let cert = await readCertificate("longOID.pem", ",,");
+  let win = await displayCertificate(cert);
+  await BrowserTestUtils.closeWindow(win);
+});
+
 
 
 
