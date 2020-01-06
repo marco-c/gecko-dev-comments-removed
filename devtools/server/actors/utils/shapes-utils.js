@@ -103,8 +103,45 @@ const clickedOnPoint = (x, y, pointX, pointY, radiusX, radiusY) => {
          y >= pointY - radiusY && y <= pointY + radiusY;
 };
 
+const roundTo = (value, exp) => {
+  
+  if (typeof exp === "undefined" || +exp === 0) {
+    return Math.round(value);
+  }
+  value = +value;
+  exp = +exp;
+  
+  if (isNaN(value) || !(typeof exp === "number" && exp % 1 === 0)) {
+    return NaN;
+  }
+  
+  value = value.toString().split("e");
+  value = Math.round(+(value[0] + "e" + (value[1] ? (+value[1] - exp) : -exp)));
+  
+  value = value.toString().split("e");
+  return +(value[0] + "e" + (value[1] ? (+value[1] + exp) : exp));
+};
+
+
+
+
+
+
+
+
+
+
+
+const scalePoint = (x, y, transX, transY, scale) => {
+  let newX = (x - transX) * scale + transX;
+  let newY = (y - transY) * scale + transY;
+  return [newX, newY];
+};
+
 exports.getDistance = getDistance;
 exports.clickedOnEllipseEdge = clickedOnEllipseEdge;
 exports.distanceToLine = distanceToLine;
 exports.projection = projection;
 exports.clickedOnPoint = clickedOnPoint;
+exports.roundTo = roundTo;
+exports.scalePoint = scalePoint;

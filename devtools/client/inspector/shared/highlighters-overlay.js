@@ -117,10 +117,16 @@ HighlightersOverlay.prototype = {
 
 
   toggleShapesHighlighter: Task.async(function* (node, options = {}) {
+    options.transformMode = options.ctrlOrMetaPressed;
     if (node == this.shapesHighlighterShown &&
         options.mode === this.state.shapes.options.mode) {
-      yield this.hideShapesHighlighter(node);
-      return;
+      
+      if (!options.ctrlOrMetaPressed) {
+        yield this.hideShapesHighlighter(node);
+        return;
+      }
+      
+      options.transformMode = !this.state.shapes.options.transformMode;
     }
 
     yield this.showShapesHighlighter(node, options);
@@ -605,7 +611,8 @@ HighlightersOverlay.prototype = {
     let isEnabled = nodeInfo.value.enabled &&
                     !nodeInfo.value.overridden &&
                     !nodeInfo.value.pseudoElement;
-    return this.isRuleView && isShape && isEnabled && nodeInfo.value.toggleActive;
+    return this.isRuleView && isShape && isEnabled && nodeInfo.value.toggleActive &&
+           !this.state.shapes.options.transformMode;
   },
 
   onClick: function (event) {
@@ -623,7 +630,10 @@ HighlightersOverlay.prototype = {
     } else if (this._isRuleViewShape(event.target)) {
       event.stopPropagation();
 
-      let settings = { mode: event.target.dataset.mode };
+      let settings = {
+        mode: event.target.dataset.mode,
+        ctrlOrMetaPressed: event.metaKey || event.ctrlKey
+      };
       this.toggleShapesHighlighter(this.inspector.selection.nodeFront, settings);
     }
   },
