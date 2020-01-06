@@ -15,9 +15,6 @@
 #include "js/ProfilingStack.h"
 
 
-void ProfilerJSEventMarker(const char* aEvent);
-
-
 
 
 
@@ -283,8 +280,7 @@ public:
       if (mJSSampling == ACTIVE_REQUESTED) {
         mJSSampling = ACTIVE;
         js::EnableContextProfilingStack(mContext, true);
-        js::RegisterContextProfilingEventMarker(mContext,
-                                                &ProfilerJSEventMarker);
+        js::RegisterContextProfilingEventMarker(mContext, profiler_add_marker);
 
       } else if (mJSSampling == INACTIVE_REQUESTED) {
         mJSSampling = INACTIVE;
