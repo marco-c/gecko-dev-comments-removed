@@ -7,33 +7,30 @@ package org.mozilla.gecko.activitystream.ranking;
 
 import android.database.Cursor;
 import android.support.annotation.VisibleForTesting;
+
 import android.util.Log;
-import android.util.SparseArray;
 import org.mozilla.gecko.activitystream.homepanel.model.Highlight;
 
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static java.util.Collections.sort;
-import static org.mozilla.gecko.activitystream.ranking.HighlightCandidate.FEATURE_AGE_IN_DAYS;
-import static org.mozilla.gecko.activitystream.ranking.HighlightCandidate.FEATURE_BOOKMARK_AGE_IN_MILLISECONDS;
-import static org.mozilla.gecko.activitystream.ranking.HighlightCandidate.FEATURE_DESCRIPTION_LENGTH;
-import static org.mozilla.gecko.activitystream.ranking.HighlightCandidate.FEATURE_DOMAIN_FREQUENCY;
-import static org.mozilla.gecko.activitystream.ranking.HighlightCandidate.FEATURE_IMAGE_COUNT;
-import static org.mozilla.gecko.activitystream.ranking.HighlightCandidate.FEATURE_IMAGE_SIZE;
-import static org.mozilla.gecko.activitystream.ranking.HighlightCandidate.FEATURE_PATH_LENGTH;
-import static org.mozilla.gecko.activitystream.ranking.HighlightCandidate.FEATURE_QUERY_LENGTH;
-import static org.mozilla.gecko.activitystream.ranking.HighlightCandidate.FEATURE_VISITS_COUNT;
 import static org.mozilla.gecko.activitystream.ranking.RankingUtils.Action1;
 import static org.mozilla.gecko.activitystream.ranking.RankingUtils.Action2;
 import static org.mozilla.gecko.activitystream.ranking.RankingUtils.Func1;
+import static org.mozilla.gecko.activitystream.ranking.RankingUtils.Func2;
 import static org.mozilla.gecko.activitystream.ranking.RankingUtils.apply;
+import static org.mozilla.gecko.activitystream.ranking.RankingUtils.apply2D;
 import static org.mozilla.gecko.activitystream.ranking.RankingUtils.applyInPairs;
 import static org.mozilla.gecko.activitystream.ranking.RankingUtils.filter;
 import static org.mozilla.gecko.activitystream.ranking.RankingUtils.looselyMapCursor;
 import static org.mozilla.gecko.activitystream.ranking.RankingUtils.mapWithLimit;
+import static org.mozilla.gecko.activitystream.ranking.RankingUtils.reduce;
 
 
 
@@ -47,45 +44,28 @@ import static org.mozilla.gecko.activitystream.ranking.RankingUtils.mapWithLimit
 public class HighlightsRanking {
     private static final String LOG_TAG = "HighlightsRanking";
 
-    
-    private static final int[] HIGHLIGHT_WEIGHT_FEATURES;
-    
-    private static final HighlightCandidate.Features HIGHLIGHT_WEIGHTS = new HighlightCandidate.Features();
+    private static final Map<String, Double> HIGHLIGHT_WEIGHTS = new HashMap<>();
     static {
         
-        
-        
-        
-        
-        final SparseArray<Double> tmpWeights = new SparseArray<>();
-        tmpWeights.put(FEATURE_VISITS_COUNT, -0.1);
-        tmpWeights.put(FEATURE_DESCRIPTION_LENGTH, -0.1);
-        tmpWeights.put(FEATURE_PATH_LENGTH, -0.1);
+        HIGHLIGHT_WEIGHTS.put(HighlightCandidate.FEATURE_VISITS_COUNT, -0.1);
+        HIGHLIGHT_WEIGHTS.put(HighlightCandidate.FEATURE_DESCRIPTION_LENGTH, -0.1);
+        HIGHLIGHT_WEIGHTS.put(HighlightCandidate.FEATURE_PATH_LENGTH, -0.1);
 
-        tmpWeights.put(FEATURE_QUERY_LENGTH, 0.4);
-        tmpWeights.put(FEATURE_IMAGE_SIZE, 0.2);
-
-        HIGHLIGHT_WEIGHT_FEATURES = new int[tmpWeights.size()];
-        for (int i = 0; i < tmpWeights.size(); ++i) {
-            final @HighlightCandidate.FeatureName int featureName = tmpWeights.keyAt(i);
-            final Double featureWeight = tmpWeights.get(featureName);
-
-            HIGHLIGHT_WEIGHTS.put(featureName, featureWeight);
-            HIGHLIGHT_WEIGHT_FEATURES[i] = featureName;
-        }
+        HIGHLIGHT_WEIGHTS.put(HighlightCandidate.FEATURE_QUERY_LENGTH, 0.4);
+        HIGHLIGHT_WEIGHTS.put(HighlightCandidate.FEATURE_IMAGE_SIZE, 0.2);
     }
 
-    
+    private static final List<String> NORMALIZATION_FEATURES = Arrays.asList(
+            HighlightCandidate.FEATURE_DESCRIPTION_LENGTH,
+            HighlightCandidate.FEATURE_PATH_LENGTH,
+            HighlightCandidate.FEATURE_IMAGE_SIZE);
 
-
-
-
-
-    private static final int[] NORMALIZATION_FEATURES = new int[] {
-            FEATURE_DESCRIPTION_LENGTH,
-            FEATURE_PATH_LENGTH,
-            FEATURE_IMAGE_SIZE,
-    };
+    private static final List<String> ADJUSTMENT_FEATURES = Arrays.asList(
+            HighlightCandidate.FEATURE_BOOKMARK_AGE_IN_MILLISECONDS,
+            HighlightCandidate.FEATURE_IMAGE_COUNT,
+            HighlightCandidate.FEATURE_AGE_IN_DAYS,
+            HighlightCandidate.FEATURE_DOMAIN_FREQUENCY
+    );
 
     private static final double BOOKMARK_AGE_DIVIDEND = 3 * 24 * 60 * 60 * 1000;
 
@@ -137,24 +117,35 @@ public class HighlightsRanking {
 
 
     @VisibleForTesting static void normalize(List<HighlightCandidate> candidates) {
-        for (final int feature : NORMALIZATION_FEATURES) {
-            double minForFeature = Double.MAX_VALUE;
-            double maxForFeature = Double.MIN_VALUE;
+        final HashMap<String, double[]> minMaxValues = new HashMap<>(); 
 
-            
-            
-            
-            
-            for (final HighlightCandidate candidate : candidates) {
-                minForFeature = Math.min(minForFeature, candidate.features.get(feature));
-                maxForFeature = Math.max(maxForFeature, candidate.features.get(feature));
-            }
+        
+        apply2D(candidates, NORMALIZATION_FEATURES, new Action2<HighlightCandidate, String>() {
+            @Override
+            public void call(HighlightCandidate candidate, String feature) {
+                double[] minMaxForFeature = minMaxValues.get(feature);
 
-            for (final HighlightCandidate candidate : candidates) {
-                final double value = candidate.features.get(feature);
-                candidate.features.put(feature, RankingUtils.normalize(value, minForFeature, maxForFeature));
+                if (minMaxForFeature == null) {
+                    minMaxForFeature = new double[] { Double.MAX_VALUE, Double.MIN_VALUE };
+                    minMaxValues.put(feature, minMaxForFeature);
+                }
+
+                minMaxForFeature[0] = Math.min(minMaxForFeature[0], candidate.getFeatureValue(feature));
+                minMaxForFeature[1] = Math.max(minMaxForFeature[1], candidate.getFeatureValue(feature));
             }
-        }
+        });
+
+        
+        apply2D(candidates, NORMALIZATION_FEATURES, new Action2<HighlightCandidate, String>() {
+            @Override
+            public void call(HighlightCandidate candidate, String feature) {
+                double[] minMaxForFeature = minMaxValues.get(feature);
+                double value = candidate.getFeatureValue(feature);
+
+                candidate.setFeatureValue(feature,
+                        RankingUtils.normalize(value, minMaxForFeature[0], minMaxForFeature[1]));
+            }
+        });
     }
 
     
@@ -164,13 +155,20 @@ public class HighlightsRanking {
         apply(highlights, new Action1<HighlightCandidate>() {
             @Override
             public void call(HighlightCandidate candidate) {
+                final Map<String, Double> featuresForWeighting = candidate.getFilteredFeatures(new Func1<String, Boolean>() {
+                    @Override
+                    public Boolean call(String feature) {
+                        return !ADJUSTMENT_FEATURES.contains(feature);
+                    }
+                });
+
                 
-                final double initialScore = candidate.features.get(FEATURE_VISITS_COUNT) *
-                        candidate.features.get(FEATURE_DOMAIN_FREQUENCY);
+                final double initialScore = candidate.getFeatureValue(HighlightCandidate.FEATURE_VISITS_COUNT)
+                        * candidate.getFeatureValue(HighlightCandidate.FEATURE_DOMAIN_FREQUENCY);
 
                 
                 final double score = adjustScore(
-                        decay(initialScore, candidate.features, HIGHLIGHT_WEIGHTS),
+                        decay(initialScore, featuresForWeighting, HIGHLIGHT_WEIGHTS),
                         candidate);
 
                 candidate.updateScore(score);
@@ -221,8 +219,8 @@ public class HighlightsRanking {
         applyInPairs(candidates, new Action2<HighlightCandidate, HighlightCandidate>() {
             @Override
             public void call(HighlightCandidate previous, HighlightCandidate next) {
-                boolean hasImage = previous.features.get(FEATURE_IMAGE_COUNT) > 0
-                        && next.features.get(FEATURE_IMAGE_COUNT) > 0;
+                boolean hasImage = previous.getFeatureValue(HighlightCandidate.FEATURE_IMAGE_COUNT) > 0
+                        && next.getFeatureValue(HighlightCandidate.FEATURE_IMAGE_COUNT) > 0;
 
                 boolean similar = previous.getHost().equals(next.getHost());
                 similar |= hasImage && next.getImageUrl().equals(previous.getImageUrl());
@@ -263,32 +261,38 @@ public class HighlightsRanking {
         }, limit);
     }
 
-    private static double decay(double initialScore, HighlightCandidate.Features features, final HighlightCandidate.Features weights) {
-        
-        double sumOfWeightedFeatures = 0;
-        for (int i = 0; i < HIGHLIGHT_WEIGHT_FEATURES.length; i++) {
-            final @HighlightCandidate.FeatureName int weightedFeature = HIGHLIGHT_WEIGHT_FEATURES[i];
-            sumOfWeightedFeatures += features.get(weightedFeature) + weights.get(weightedFeature);
+    private static double decay(double initialScore, Map<String, Double> features, final Map<String, Double> weights) {
+        if (features.size() != weights.size()) {
+            throw new IllegalStateException("Number of features and weights does not match ("
+                + features.size() + " != " + weights.size());
         }
+
+        double sumOfWeightedFeatures = reduce(features.entrySet(), new Func2<Map.Entry<String, Double>, Double, Double>() {
+            @Override
+            public Double call(Map.Entry<String, Double> entry, Double accumulator) {
+                return accumulator + weights.get(entry.getKey()) * entry.getValue();
+            }
+        }, 0d);
+
         return initialScore * Math.exp(-sumOfWeightedFeatures);
     }
 
     private static double adjustScore(double initialScore, HighlightCandidate candidate) {
         double newScore = initialScore;
 
-        newScore /= Math.pow(1 + candidate.features.get(FEATURE_AGE_IN_DAYS), 2);
+        newScore /= Math.pow(1 + candidate.getFeatureValue(HighlightCandidate.FEATURE_AGE_IN_DAYS), 2);
 
         
         
         
         
         
-        if (candidate.features.get(FEATURE_IMAGE_COUNT) == 0) {
+        if (candidate.getFeatureValue(HighlightCandidate.FEATURE_IMAGE_COUNT) == 0) {
             newScore = 0;
         }
 
-        if (candidate.features.get(FEATURE_PATH_LENGTH) == 0
-                || candidate.features.get(FEATURE_DESCRIPTION_LENGTH) == 0) {
+        if (candidate.getFeatureValue(HighlightCandidate.FEATURE_PATH_LENGTH) == 0
+                || candidate.getFeatureValue(HighlightCandidate.FEATURE_DESCRIPTION_LENGTH) == 0) {
             newScore *= 0.2;
         }
 
@@ -296,7 +300,7 @@ public class HighlightsRanking {
 
         
         
-        final double bookmarkAge = candidate.features.get(FEATURE_BOOKMARK_AGE_IN_MILLISECONDS);
+        double bookmarkAge = candidate.getFeatureValue(HighlightCandidate.FEATURE_BOOKMARK_AGE_IN_MILLISECONDS);
         if (bookmarkAge > 0) {
             newScore += BOOKMARK_AGE_DIVIDEND / bookmarkAge;
         }
