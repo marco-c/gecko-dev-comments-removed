@@ -2198,6 +2198,15 @@ public:
                         uint32_t time_stamp,
                         int64_t render_time)
   {
+    if (buffer.native_handle()) {
+      
+      
+      RefPtr<Image> image = static_cast<Image*>(buffer.native_handle());
+      MutexAutoLock lock(mutex_);
+      image_ = image;
+      return;
+    }
+
     MOZ_ASSERT(buffer.DataY());
     
     RefPtr<PlanarYCbCrImage> yuvImage =
