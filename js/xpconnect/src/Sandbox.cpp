@@ -1706,6 +1706,12 @@ AssembleSandboxMemoryReporterName(JSContext* cx, nsCString& sandboxName)
     
     if (sandboxName.IsEmpty())
         sandboxName = NS_LITERAL_CSTRING("[anonymous sandbox]");
+#ifndef DEBUG
+    
+    
+    else
+        return NS_OK;
+#endif
 
     
     XPCCallContext* cc = XPCJSContext::Get()->GetCallContext();
