@@ -44,7 +44,9 @@ pub enum ContextualParseError<'a> {
     
     InvalidCounterStyleExtendsWithSymbols,
     
-    InvalidCounterStyleExtendsWithAdditiveSymbols
+    InvalidCounterStyleExtendsWithAdditiveSymbols,
+    
+    InvalidMediaRule(&'a str, ParseError<'a>),
 }
 
 impl<'a> fmt::Display for ContextualParseError<'a> {
@@ -167,6 +169,10 @@ impl<'a> fmt::Display for ContextualParseError<'a> {
             }
             ContextualParseError::InvalidCounterStyleExtendsWithAdditiveSymbols => {
                 write!(f, "Invalid @counter-style rule: 'system: extends …' with 'additive-symbols'")
+            }
+            ContextualParseError::InvalidMediaRule(media_rule, ref err) => {
+                write!(f, "Invalid media rule: {}, ", media_rule)?;
+                parse_error_to_str(err, f)
             }
         }
     }

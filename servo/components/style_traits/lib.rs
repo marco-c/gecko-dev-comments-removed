@@ -108,6 +108,12 @@ pub enum StyleParseError<'i> {
     
     UnexpectedDimension(CowRcStr<'i>),
     
+    ExpectedIdentifier(Token<'i>),
+    
+    MediaQueryExpectedFeatureName(CowRcStr<'i>),
+    
+    MediaQueryExpectedFeatureValue,
+    
     RangedExpressionWithNoValue,
     
     UnexpectedFunction(CowRcStr<'i>),
