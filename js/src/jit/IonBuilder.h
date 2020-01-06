@@ -181,9 +181,6 @@ class IonBuilder
     
     MDefinition* ensureDefiniteType(MDefinition* def, MIRType definiteType);
 
-    
-    MDefinition* ensureDefiniteTypeSet(MDefinition* def, TemporaryTypeSet* types);
-
     void maybeMarkEmpty(MDefinition* ins);
 
     JSObject* getSingletonPrototype(JSFunction* target);
