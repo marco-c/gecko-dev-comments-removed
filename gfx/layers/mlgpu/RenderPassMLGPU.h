@@ -159,9 +159,6 @@ public:
   ShaderRenderPass(FrameBuilder* aBuilder, const ItemInfo& aItem);
 
   
-  VertexStagingBuffer* GetVertices() {
-    return &mVertices;
-  }
   VertexStagingBuffer* GetInstances() {
     return &mInstances;
   }
@@ -209,11 +206,6 @@ protected:
   bool PrepareItemBuffer();
 
   
-  
-  bool PrepareVertexBuffer();
-  bool PrepareInstanceBuffer();
-
-  
   bool SetupPSBuffer0(float aOpacity);
 
   bool HasMask() const {
@@ -227,9 +219,6 @@ protected:
   GeometryMode mGeometry;
   RefPtr<MaskOperation> mMask;
   bool mHasRectTransformAndClip;
-
-  VertexStagingBuffer mVertices;
-  VertexBufferSection mVertexBuffer;
 
   VertexStagingBuffer mInstances;
   VertexBufferSection mInstanceBuffer;
@@ -261,7 +250,6 @@ protected:
   public:
     explicit Txn(BatchRenderPass* aPass)
      : mPass(aPass),
-       mPrevVertexPos(aPass->mVertices.GetPosition()),
        mPrevItemPos(aPass->mItems.GetPosition()),
        mPrevInstancePos(aPass->mInstances.GetPosition())
     {}
@@ -316,7 +304,6 @@ protected:
 
     ~Txn() {
       if (!mStatus.isSome() || !mStatus.value()) {
-        mPass->mVertices.RestorePosition(mPrevVertexPos);
         mPass->mInstances.RestorePosition(mPrevInstancePos);
         mPass->mItems.RestorePosition(mPrevItemPos);
       }
