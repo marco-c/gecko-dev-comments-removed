@@ -15,7 +15,7 @@ const {
   projection,
   clickedOnPoint
 } = require("devtools/server/actors/utils/shapes-geometry-utils");
-const EventEmitter = require("devtools/shared/event-emitter");
+const EventEmitter = require("devtools/shared/old-event-emitter");
 
 const BASE_MARKER_SIZE = 10;
 
