@@ -117,8 +117,15 @@ class DoublyLinkedList final
     return (mHead != nullptr) == (mTail != nullptr);
   }
 
-  static bool ElementNotInList(T* aElm) {
-    return !SiblingAccess::GetNext(aElm) && !SiblingAccess::GetPrev(aElm);
+  bool ElementNotInList(T* aElm) {
+    if (!SiblingAccess::GetNext(aElm) && !SiblingAccess::GetPrev(aElm)) {
+      
+      
+      
+      
+      return mHead != aElm;
+    }
+    return false;
   }
 
 public:
