@@ -704,4 +704,17 @@
 #define MOZ_FORMAT_PRINTF(stringIndex, firstToCheck)
 #endif
 
+
+
+
+
+
+
+
+#if defined(XP_WIN)
+#  define MOZ_XPCOM_ABI         __stdcall
+#else
+#  define MOZ_XPCOM_ABI
+#endif
+
 #endif 
