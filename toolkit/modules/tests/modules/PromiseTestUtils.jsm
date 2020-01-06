@@ -6,9 +6,6 @@
 
 
 
-
-
-
 "use strict";
 
 this.EXPORTED_SYMBOLS = [
@@ -18,12 +15,10 @@ this.EXPORTED_SYMBOLS = [
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/Services.jsm", this);
+Cu.import("resource://testing-common/Assert.jsm", this);
 
 
 let JSMPromise = Cu.import("resource://gre/modules/Promise.jsm", {}).Promise;
-
-
-let Assert = null;
 
 this.PromiseTestUtils = {
   
@@ -134,13 +129,6 @@ this.PromiseTestUtils = {
 
   thisTestLeaksUncaughtRejectionsAndShouldBeFixed() {
     this.uninit();
-  },
-
-  
-
-
-  set Assert(assert) {
-    Assert = assert;
   },
 
   

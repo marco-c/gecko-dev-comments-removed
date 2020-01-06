@@ -29,10 +29,20 @@ XPCOMUtils.defineLazyModuleGetter(this, "Promise",
 
 
 
-var Assert = this.Assert = function(reporterFunc) {
+
+
+
+
+
+var Assert = this.Assert = function(reporterFunc, isDefault) {
   if (reporterFunc)
     this.setReporter(reporterFunc);
+  if (isDefault)
+    Assert.setReporter(reporterFunc);
 };
+
+
+Object.setPrototypeOf(Assert, Assert.prototype);
 
 function instanceOf(object, type) {
   return Object.prototype.toString.call(object) == "[object " + type + "]";

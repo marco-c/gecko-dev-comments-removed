@@ -16,20 +16,14 @@ const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
+Cu.import("resource://testing-common/Assert.jsm");
 Cu.import("resource://testing-common/TestUtils.jsm");
 
 const LoginInfo =
       Components.Constructor("@mozilla.org/login-manager/loginInfo;1",
                              "nsILoginInfo", "init");
 
-
-var Assert = null;
-
 this.LoginTestUtils = {
-  set Assert(assert) {
-    Assert = assert; 
-  },
-
   
 
 
