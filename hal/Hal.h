@@ -437,9 +437,7 @@ void NotifySwitchStateFromInputDevice(hal::SwitchDevice aDevice,
 
 
 
-void SetProcessPriority(int aPid,
-                        hal::ProcessPriority aPriority,
-                        uint32_t aLRU = 0);
+void SetProcessPriority(int aPid, hal::ProcessPriority aPriority);
 
 
 
