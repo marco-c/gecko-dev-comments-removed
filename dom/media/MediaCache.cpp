@@ -1447,7 +1447,7 @@ MediaCache::Update()
       for (uint32_t j = 0; j < i; ++j) {
         MediaCacheStream* other = mStreams[j];
         if (other->mResourceID == stream->mResourceID && !other->mClosed &&
-            !other->mClientSuspended &&
+            !other->mClientSuspended && !other->mChannelEnded &&
             OffsetToBlockIndexUnchecked(other->mSeekTarget != -1
                                           ? other->mSeekTarget
                                           : other->mChannelOffset) ==
@@ -2160,25 +2160,29 @@ MediaCacheStream::NotifyDataEndedInternal(uint32_t aLoadID,
     
   }
 
+  
+  
+  mChannelEnded = true;
+  mMediaCache->QueueUpdate();
+
   if (NS_FAILED(aStatus)) {
     
+    mDidNotifyDataEnded = true;
+    mNotifyDataEndedStatus = aStatus;
+    mClient->CacheClientNotifyDataEnded(aStatus);
     
-    
-    mResourceID = mMediaCache->AllocateResourceID();
+    mon.NotifyAll();
+    return;
   }
 
   
   
   FlushPartialBlockInternal(true, mon);
-  mChannelEnded = true;
-  mMediaCache->QueueUpdate();
 
   MediaCache::ResourceStreamIterator iter(mMediaCache, mResourceID);
   while (MediaCacheStream* stream = iter.Next()) {
-    if (NS_SUCCEEDED(aStatus)) {
-      
-      stream->mStreamLength = mChannelOffset;
-    }
+    
+    stream->mStreamLength = mChannelOffset;
     if (!stream->mDidNotifyDataEnded) {
       stream->mDidNotifyDataEnded = true;
       stream->mNotifyDataEndedStatus = aStatus;
@@ -2580,6 +2584,11 @@ MediaCacheStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes)
   while (!buffer.IsEmpty()) {
     if (mClosed) {
       return NS_ERROR_ABORT;
+    }
+
+    if (mDidNotifyDataEnded && NS_FAILED(mNotifyDataEndedStatus)) {
+      
+      return NS_ERROR_FAILURE;
     }
 
     if (!IsOffsetAllowed(streamOffset)) {
