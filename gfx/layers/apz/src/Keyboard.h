@@ -6,9 +6,15 @@
 #ifndef mozilla_layers_Keyboard_h
 #define mozilla_layers_Keyboard_h
 
+#include <stdint.h> 
+
+#include "InputData.h"          
 #include "nsIScrollableFrame.h" 
 
 namespace mozilla {
+
+struct IgnoreModifierState;
+
 namespace layers {
 
 
@@ -38,6 +44,67 @@ public:
   KeyboardScrollActionType mType;
   
   bool mForward;
+};
+
+
+
+
+class KeyboardShortcut final
+{
+public:
+  KeyboardShortcut();
+
+  
+
+
+
+  KeyboardShortcut(KeyboardInput::KeyboardEventType aEventType,
+                   uint32_t aKeyCode,
+                   uint32_t aCharCode,
+                   Modifiers aModifiers,
+                   Modifiers aModifiersMask,
+                   const KeyboardScrollAction& aAction);
+
+  
+
+
+
+  KeyboardShortcut(KeyboardInput::KeyboardEventType aEventType,
+                   uint32_t aKeyCode,
+                   uint32_t aCharCode,
+                   Modifiers aModifiers,
+                   Modifiers aModifiersMask);
+
+  bool Matches(const KeyboardInput& aInput,
+               const IgnoreModifierState& aIgnore,
+               uint32_t aOverrideCharCode = 0) const;
+
+private:
+  bool MatchesKey(const KeyboardInput& aInput,
+                  uint32_t aOverrideCharCode) const;
+  bool MatchesModifiers(const KeyboardInput& aInput,
+                        const IgnoreModifierState& aIgnore) const;
+
+public:
+  
+  
+  KeyboardScrollAction mAction;
+
+  
+  
+  uint32_t mKeyCode;
+  uint32_t mCharCode;
+
+  
+  Modifiers mModifiers;
+  
+  Modifiers mModifiersMask;
+
+  
+  KeyboardInput::KeyboardEventType mEventType;
+
+  
+  bool mDispatchToContent;
 };
 
 } 

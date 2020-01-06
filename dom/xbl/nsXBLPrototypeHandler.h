@@ -7,6 +7,7 @@
 #ifndef nsXBLPrototypeHandler_h__
 #define nsXBLPrototypeHandler_h__
 
+#include "mozilla/EventForwards.h"
 #include "nsIAtom.h"
 #include "nsString.h"
 #include "nsCOMPtr.h"
@@ -27,10 +28,18 @@ class nsIObjectOutputStream;
 class nsXBLPrototypeBinding;
 
 namespace mozilla {
+
+struct IgnoreModifierState;
+
 namespace dom {
 class AutoJSAPI;
 class EventTarget;
 } 
+
+namespace layers {
+class KeyboardShortcut;
+} 
+
 } 
 
 #define NS_HANDLER_TYPE_XBL_JS              (1 << 0)
@@ -46,29 +55,11 @@ class EventTarget;
 #define NS_PHASE_TARGET             2
 #define NS_PHASE_BUBBLING           3
 
-namespace mozilla {
-namespace dom {
-
-struct IgnoreModifierState
-{
-  
-  bool mShift;
-  
-  bool mOS;
-
-  IgnoreModifierState()
-    : mShift(false)
-    , mOS(false)
-  {
-  }
-};
-
-} 
-} 
-
 class nsXBLPrototypeHandler
 {
-  typedef mozilla::dom::IgnoreModifierState IgnoreModifierState;
+  typedef mozilla::IgnoreModifierState IgnoreModifierState;
+  typedef mozilla::layers::KeyboardShortcut KeyboardShortcut;
+  typedef mozilla::Modifiers Modifiers;
 
 public:
   
@@ -89,6 +80,17 @@ public:
   explicit nsXBLPrototypeHandler(nsXBLPrototypeBinding* aBinding);
 
   ~nsXBLPrototypeHandler();
+
+  
+
+
+
+
+
+
+
+  bool TryConvertToKeyboardShortcut(
+          KeyboardShortcut* aOut) const;
 
   bool EventTypeEquals(nsIAtom* aEventType) const
   {
@@ -186,6 +188,10 @@ protected:
   nsresult DispatchXULKeyCommand(nsIDOMEvent* aEvent);
   nsresult EnsureEventHandler(mozilla::dom::AutoJSAPI& jsapi, nsIAtom* aName,
                               JS::MutableHandle<JSObject*> aHandler);
+
+  Modifiers GetModifiers() const;
+  Modifiers GetModifiersMask() const;
+
   static int32_t KeyToMask(int32_t key);
   static int32_t AccelKeyMask();
 

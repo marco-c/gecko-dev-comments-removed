@@ -109,6 +109,27 @@ struct ShortcutKeyCandidate
 
 
 
+
+
+
+struct IgnoreModifierState
+{
+  
+  bool mShift;
+  
+  bool mOS;
+
+  IgnoreModifierState()
+    : mShift(false)
+    , mOS(false)
+  {
+  }
+};
+
+
+
+
+
 class WidgetKeyboardEvent : public WidgetInputEvent
 {
 private:
