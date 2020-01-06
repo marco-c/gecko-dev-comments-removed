@@ -542,6 +542,10 @@ protected:
 
   
   
+  uint32_t                          mAddedAsNonTailRequest : 1;
+
+  
+  
   
   uint32_t                          mTlsFlags;
 
@@ -615,6 +619,14 @@ protected:
 
   uint64_t mRequestContextID;
   bool EnsureRequestContextID();
+  nsCOMPtr<nsIRequestContext> mRequestContext;
+  bool EnsureRequestContext();
+
+  
+  
+  
+  void AddAsNonTailRequest();
+  void RemoveAsNonTailRequest();
 
   
   

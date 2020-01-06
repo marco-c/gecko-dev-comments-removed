@@ -14,8 +14,11 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Services.h"
+#include "mozilla/TimeStamp.h"
 
 #include "mozilla/net/PSpdyPush.h"
+
+#include "../protocol/http/nsHttpHandler.h"
 
 namespace mozilla {
 namespace net {
@@ -26,34 +29,110 @@ LazyLogModule gRequestContextLog("RequestContext");
 
 
 class RequestContext final : public nsIRequestContext
+                           , public nsITimerCallback
 {
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIREQUESTCONTEXT
+  NS_DECL_NSITIMERCALLBACK
 
   explicit RequestContext(const uint64_t id);
 private:
   virtual ~RequestContext();
 
+  void ProcessTailQueue(nsresult aResult);
+  
+  void ScheduleUnblock();
+  
+  void RescheduleUntailTimer(TimeStamp const& now);
+
   uint64_t mID;
   Atomic<uint32_t>       mBlockingTransactionCount;
   nsAutoPtr<SpdyPushCache> mSpdyCache;
   nsCString mUserAgentOverride;
+
+  typedef nsCOMPtr<nsIRequestTailUnblockCallback> PendingTailRequest;
+  
+  uint32_t mNonTailRequests;
+  
+  
+  nsTArray<PendingTailRequest> mTailQueue;
+  
+  
+  nsCOMPtr<nsITimer> mUntailTimer;
+  
+  
+  TimeStamp mTimerScheduledAt;
+  
+  
+  
+  TimeStamp mUntailAt;
+
+  
+  
+  
+  bool mAfterDOMContentLoaded;
 };
 
-NS_IMPL_ISUPPORTS(RequestContext, nsIRequestContext)
+NS_IMPL_ISUPPORTS(RequestContext, nsIRequestContext, nsITimerCallback)
 
 RequestContext::RequestContext(const uint64_t aID)
   : mID(aID)
   , mBlockingTransactionCount(0)
+  , mNonTailRequests(0)
+  , mAfterDOMContentLoaded(false)
 {
   LOG(("RequestContext::RequestContext this=%p id=%" PRIx64, this, mID));
 }
 
 RequestContext::~RequestContext()
 {
+  MOZ_ASSERT(mTailQueue.Length() == 0);
+
   LOG(("RequestContext::~RequestContext this=%p blockers=%u",
        this, static_cast<uint32_t>(mBlockingTransactionCount)));
+}
+
+NS_IMETHODIMP
+RequestContext::BeginLoad()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  LOG(("RequestContext::BeginLoad %p", this));
+
+  if (IsNeckoChild() && gNeckoChild) {
+    
+    gNeckoChild->SendRequestContextLoadBegin(mID);
+    return NS_OK;
+  }
+
+  mAfterDOMContentLoaded = false;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RequestContext::DOMContentLoaded()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  LOG(("RequestContext::DOMContentLoaded %p", this));
+
+  if (IsNeckoChild() && gNeckoChild) {
+    
+    gNeckoChild->SendRequestContextAfterDOMContentLoaded(mID);
+    return NS_OK;
+  }
+
+  if (mAfterDOMContentLoaded) {
+    
+    return NS_OK;
+  }
+
+  mAfterDOMContentLoaded = true;
+
+  
+  ScheduleUnblock();
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -120,6 +199,217 @@ RequestContext::SetUserAgentOverride(const nsACString& aUserAgentOverride)
   return NS_OK;
 }
 
+NS_IMETHODIMP
+RequestContext::AddNonTailRequest()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  ++mNonTailRequests;
+  LOG(("RequestContext::AddNonTailRequest this=%p, cnt=%u",
+       this, mNonTailRequests));
+
+  ScheduleUnblock();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RequestContext::RemoveNonTailRequest()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mNonTailRequests > 0);
+
+  LOG(("RequestContext::RemoveNonTailRequest this=%p, cnt=%u",
+       this, mNonTailRequests - 1));
+
+  --mNonTailRequests;
+
+  ScheduleUnblock();
+  return NS_OK;
+}
+
+void
+RequestContext::ScheduleUnblock()
+{
+  MOZ_ASSERT(!IsNeckoChild());
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!gHttpHandler) {
+    return;
+  }
+
+  uint32_t quantum = gHttpHandler->TailBlockingDelayQuantum(mAfterDOMContentLoaded);
+  uint32_t delayMax = gHttpHandler->TailBlockingDelayMax();
+
+  CheckedInt<uint32_t> delay = quantum * mNonTailRequests;
+
+  if (!mAfterDOMContentLoaded) {
+    
+    
+    
+    delay += quantum;
+  }
+
+  if (!delay.isValid() || delay.value() > delayMax) {
+    delay = delayMax;
+  }
+
+  LOG(("RequestContext::ScheduleUnblock this=%p non-tails=%u tail-queue=%zu delay=%u after-DCL=%d",
+       this, mNonTailRequests, mTailQueue.Length(), delay.value(), mAfterDOMContentLoaded));
+
+  TimeStamp now = TimeStamp::NowLoRes();
+  mUntailAt = now + TimeDuration::FromMilliseconds(delay.value());
+
+  if (mTimerScheduledAt.IsNull() || mUntailAt < mTimerScheduledAt) {
+    LOG(("RequestContext %p timer would fire too late, rescheduling", this));
+    RescheduleUntailTimer(now);
+  }
+}
+
+void
+RequestContext::RescheduleUntailTimer(TimeStamp const& now)
+{
+  MOZ_ASSERT(mUntailAt >= now);
+
+  if (mUntailTimer) {
+    mUntailTimer->Cancel();
+  }
+
+  if (!mTailQueue.Length()) {
+    mUntailTimer = nullptr;
+    mTimerScheduledAt = TimeStamp();
+    return;
+  }
+
+  TimeDuration interval = mUntailAt - now;
+  if (!mTimerScheduledAt.IsNull() && mUntailAt < mTimerScheduledAt) {
+    
+    
+    
+    
+    interval = interval / int64_t(2);
+    mTimerScheduledAt = mUntailAt - interval;
+  } else {
+    mTimerScheduledAt = mUntailAt;
+  }
+
+  uint32_t delay = interval.ToMilliseconds();
+  mUntailTimer = do_CreateInstance("@mozilla.org/timer;1");
+  mUntailTimer->InitWithCallback(this, delay, nsITimer::TYPE_ONE_SHOT);
+
+  LOG(("RequestContext::RescheduleUntailTimer %p in %d", this, delay));
+}
+
+NS_IMETHODIMP
+RequestContext::Notify(nsITimer *timer)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(timer == mUntailTimer);
+  MOZ_ASSERT(!mTimerScheduledAt.IsNull());
+  MOZ_ASSERT(mTailQueue.Length());
+
+  mUntailTimer = nullptr;
+
+  TimeStamp now = TimeStamp::NowLoRes();
+  if (mUntailAt > mTimerScheduledAt && mUntailAt > now) {
+    LOG(("RequestContext %p timer fired too soon, rescheduling", this));
+    RescheduleUntailTimer(now);
+    return NS_OK;
+  }
+
+  
+  mTimerScheduledAt = TimeStamp();
+
+  ProcessTailQueue(NS_OK);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RequestContext::IsContextTailBlocked(nsIRequestTailUnblockCallback * aRequest,
+                                     bool *aBlocked)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  LOG(("RequestContext::IsContextTailBlocked this=%p, request=%p, queued=%zu",
+       this, aRequest, mTailQueue.Length()));
+
+  *aBlocked = false;
+
+  if (mUntailAt.IsNull() || mUntailAt <= TimeStamp::NowLoRes()) {
+    LOG(("  untail time passed"));
+    
+    mUntailAt = TimeStamp();
+    return NS_OK;
+  }
+
+  if (mAfterDOMContentLoaded && !mNonTailRequests) {
+    LOG(("  after DOMContentLoaded and no untailed requests"));
+    return NS_OK;
+  }
+
+  if (!gHttpHandler) {
+    
+    LOG(("  missing gHttpHandler?"));
+    return NS_OK;
+  }
+
+  *aBlocked = true;
+  mTailQueue.AppendElement(aRequest);
+
+  LOG(("  request queued"));
+
+  if (!mUntailTimer) {
+    ScheduleUnblock();
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RequestContext::CancelTailedRequest(nsIRequestTailUnblockCallback * aRequest)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  bool removed = mTailQueue.RemoveElement(aRequest);
+
+  LOG(("RequestContext::CancelTailedRequest %p req=%p removed=%d",
+       this, aRequest, removed));
+
+  return NS_OK;
+}
+
+void
+RequestContext::ProcessTailQueue(nsresult aResult)
+{
+  LOG(("RequestContext::ProcessTailQueue this=%p, queued=%zu, rv=%" PRIx32,
+       this, mTailQueue.Length(), static_cast<uint32_t>(aResult)));
+
+  if (mUntailTimer) {
+    mUntailTimer->Cancel();
+    mUntailTimer = nullptr;
+  }
+
+  
+  mUntailAt = TimeStamp();
+
+  nsTArray<PendingTailRequest> queue;
+  queue.SwapElements(mTailQueue);
+
+  for (auto request : queue) {
+    LOG(("  untailing %p", request.get()));
+    request->OnTailUnblock(aResult);
+  }
+}
+
+NS_IMETHODIMP
+RequestContext::CancelTailPendingRequests(nsresult aResult)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(NS_FAILED(aResult));
+
+  ProcessTailQueue(aResult);
+  return NS_OK;
+}
 
 
 RequestContextService *RequestContextService::sSelf = nullptr;
@@ -147,13 +437,24 @@ RequestContextService::~RequestContextService()
 nsresult
 RequestContextService::Init()
 {
+  nsresult rv;
+
   MOZ_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   if (!obs) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  return obs->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
+  rv = obs->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  obs->AddObserver(this, "content-document-interactive", false);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  return NS_OK;
 }
 
 void
@@ -195,6 +496,20 @@ RequestContextService::GetRequestContext(const uint64_t rcID, nsIRequestContext 
 }
 
 NS_IMETHODIMP
+RequestContextService::GetRequestContextFromLoadGroup(nsILoadGroup *aLoadGroup, nsIRequestContext **rc)
+{
+  nsresult rv;
+
+  uint64_t rcID;
+  rv = aLoadGroup->GetRequestContextID(&rcID);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  return GetRequestContext(rcID, rc);
+}
+
+NS_IMETHODIMP
 RequestContextService::NewRequestContext(nsIRequestContext **rc)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -213,6 +528,10 @@ RequestContextService::NewRequestContext(nsIRequestContext **rc)
 NS_IMETHODIMP
 RequestContextService::RemoveRequestContext(const uint64_t rcID)
 {
+  if (IsNeckoChild() && gNeckoChild) {
+    gNeckoChild->SendRemoveRequestContext(rcID);
+  }
+
   MOZ_ASSERT(NS_IsMainThread());
   mTable.Remove(rcID);
   return NS_OK;
@@ -225,8 +544,41 @@ RequestContextService::Observe(nsISupports *subject, const char *topic,
   MOZ_ASSERT(NS_IsMainThread());
   if (!strcmp(NS_XPCOM_SHUTDOWN_OBSERVER_ID, topic)) {
     Shutdown();
+    return NS_OK;
   }
 
+  if (!strcmp("content-document-interactive", topic)) {
+    nsCOMPtr<nsIDocument> document(do_QueryInterface(subject));
+    MOZ_ASSERT(document);
+    
+    
+    if (!document) {
+      return NS_OK;
+    }
+    nsIDocShell* ds = document->GetDocShell();
+    
+    if (!ds) {
+      return NS_OK;
+    }
+    nsCOMPtr<nsIDocumentLoader> dl(do_QueryInterface(ds));
+    if (!dl) {
+      return NS_OK;
+    }
+    nsCOMPtr<nsILoadGroup> lg;
+    dl->GetLoadGroup(getter_AddRefs(lg));
+    if (!lg) {
+      return NS_OK;
+    }
+    nsCOMPtr<nsIRequestContext> rc;
+    GetRequestContextFromLoadGroup(lg, getter_AddRefs(rc));
+    if (rc) {
+      rc->DOMContentLoaded();
+    }
+
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(false, "Unexpected observer topic");
   return NS_OK;
 }
 

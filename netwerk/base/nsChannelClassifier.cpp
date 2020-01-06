@@ -206,20 +206,29 @@ LowerPriorityHelper(nsIChannel* aChannel)
 {
   MOZ_ASSERT(aChannel);
 
-  nsCOMPtr<nsISupportsPriority> p = do_QueryInterface(aChannel);
-  if (p) {
-    p->SetPriority(nsISupportsPriority::PRIORITY_LOWEST);
-  }
-}
-
-static void
-SetThrottleableHelper(nsIChannel* aChannel)
-{
-  MOZ_ASSERT(aChannel);
+  bool isBlockingResource = false;
 
   nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(aChannel));
   if (cos) {
-    cos->AddClassFlags(nsIClassOfService::Throttleable);
+    uint32_t cosFlags = 0;
+    cos->GetClassFlags(&cosFlags);
+    isBlockingResource = cosFlags & (nsIClassOfService::UrgentStart |
+                                     nsIClassOfService::Leader |
+                                     nsIClassOfService::Unblocked);
+
+    
+    
+    
+    if (!(cosFlags & nsIClassOfService::TailForbidden)) {
+      cos->AddClassFlags(nsIClassOfService::Throttleable);
+    }
+  }
+
+  if (!isBlockingResource) {
+    nsCOMPtr<nsISupportsPriority> p = do_QueryInterface(aChannel);
+    if (p) {
+      p->SetPriority(nsISupportsPriority::PRIORITY_LOWEST);
+    }
   }
 }
 
@@ -1025,7 +1034,6 @@ IsTrackerBlacklistedCallback::OnClassifyComplete(nsresult aErrorCode,
     if (CachedPrefs::GetInstance()->IsLowerNetworkPriority()) {
       LowerPriorityHelper(channel);
     }
-    SetThrottleableHelper(channel);
 
     
     
@@ -1072,7 +1080,6 @@ IsTrackerBlacklistedCallback::OnClassifyCompleteInternal(nsresult aErrorCode,
   if (CachedPrefs::GetInstance()->IsLowerNetworkPriority()) {
     LowerPriorityHelper(channel);
   }
-  SetThrottleableHelper(channel);
 
   return mChannelCallback->OnClassifyComplete(
       NS_OK, aLists, aProvider, aPrefix);

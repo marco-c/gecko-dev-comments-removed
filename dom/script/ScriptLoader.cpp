@@ -137,10 +137,13 @@ ScriptLoader::ScriptLoader(nsIDocument *aDocument)
     mGiveUpEncoding(false),
     mReporter(new ConsoleReportCollector())
 {
+  LOG(("ScriptLoader::ScriptLoader %p", this));
 }
 
 ScriptLoader::~ScriptLoader()
 {
+  LOG(("ScriptLoader::~ScriptLoader %p", this));
+
   mObservers.Clear();
 
   if (mParserBlockingRequest) {
@@ -1055,15 +1058,32 @@ ScriptLoader::StartLoad(ScriptLoadRequest* aRequest)
   bool async = script ? script->GetScriptAsync() : aRequest->mPreloadAsAsync;
   bool defer = script ? script->GetScriptDeferred() : aRequest->mPreloadAsDefer;
 
+  LOG(("ScriptLoadRequest (%p): async=%d defer=%d tracking=%d",
+       aRequest, async, defer, aRequest->IsTracking()));
+
   nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(channel));
   if (cos) {
     if (aRequest->mScriptFromHead && !async && !defer) {
       
       
       cos->AddClassFlags(nsIClassOfService::Leader);
-    } else if (!defer) {
+    } else if (defer && !async) {
+      
+      
+      cos->AddClassFlags(nsIClassOfService::TailForbidden);
+    } else {
+      
       
       cos->AddClassFlags(nsIClassOfService::Unblocked);
+
+      if (async) {
+        
+        
+        
+        
+        
+        cos->AddClassFlags(nsIClassOfService::TailAllowed);
+      }
     }
   }
 
@@ -1206,8 +1226,11 @@ ScriptLoader::CreateLoadRequest(ScriptKind aKind,
                                 const SRIMetadata& aIntegrity)
 {
   if (aKind == ScriptKind::Classic) {
-    return new ScriptLoadRequest(aKind, aElement, aVersion, aCORSMode,
+    ScriptLoadRequest* slr = new ScriptLoadRequest(aKind, aElement, aVersion, aCORSMode,
                                  aIntegrity);
+
+    LOG(("ScriptLoader %p creates ScriptLoadRequest %p", this, slr));
+    return slr;
   }
 
   MOZ_ASSERT(aKind == ScriptKind::Module);

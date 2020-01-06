@@ -85,6 +85,7 @@ class nsHttpChannel final : public HttpBaseChannel
                           , public nsIChannelWithDivertableParentListener
                           , public nsIHstsPrimingCallback
                           , public nsIRaceCacheWithNetwork
+                          , public nsIRequestTailUnblockCallback
                           , public nsITimerCallback
 {
 public:
@@ -109,6 +110,7 @@ public:
     NS_DECLARE_STATIC_IID_ACCESSOR(NS_HTTPCHANNEL_IID)
     NS_DECL_NSIRACECACHEWITHNETWORK
     NS_DECL_NSITIMERCALLBACK
+    NS_DECL_NSIREQUESTTAILUNBLOCKCALLBACK
 
     
     
@@ -325,7 +327,6 @@ private:
     MOZ_MUST_USE nsresult Connect();
     void     SpeculativeConnect();
     MOZ_MUST_USE nsresult SetupTransaction();
-    void     SetupTransactionRequestContext();
     MOZ_MUST_USE nsresult CallOnStartRequest();
     MOZ_MUST_USE nsresult ProcessResponse();
     void                  AsyncContinueProcessResponse();
@@ -672,6 +673,25 @@ private:
     MOZ_MUST_USE nsresult WaitForRedirectCallback();
     void PushRedirectAsyncFunc(nsContinueRedirectionFunc func);
     void PopRedirectAsyncFunc(nsContinueRedirectionFunc func);
+
+    
+    
+    
+    bool EligibleForTailing();
+
+    
+    
+    
+    
+    bool WaitingForTailUnblock();
+
+    
+    
+    nsresult (nsHttpChannel::*mOnTailUnblock)();
+    
+    nsresult AsyncOpenOnTailUnblock();
+    
+    nsresult ConnectOnTailUnblock();
 
     nsCString mUsername;
 

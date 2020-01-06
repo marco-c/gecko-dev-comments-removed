@@ -99,6 +99,7 @@
 #include "nsIWebNavigation.h"
 #include "nsIScriptError.h"
 #include "nsISimpleEnumerator.h"
+#include "nsIRequestContext.h"
 #include "nsStyleSheetService.h"
 
 #include "nsNetUtil.h"     
@@ -2330,6 +2331,18 @@ nsDocument::ResetToURI(nsIURI *aURI, nsILoadGroup *aLoadGroup,
 
     
     
+
+    
+    
+    nsCOMPtr<nsIRequestContextService> rcsvc =
+      do_GetService("@mozilla.org/network/request-context-service;1");
+    if (rcsvc) {
+      nsCOMPtr<nsIRequestContext> rc;
+      rcsvc->GetRequestContextFromLoadGroup(aLoadGroup, getter_AddRefs(rc));
+      if (rc) {
+        rc->BeginLoad();
+      }
+    }
   }
 
   mLastModified.Truncate();
