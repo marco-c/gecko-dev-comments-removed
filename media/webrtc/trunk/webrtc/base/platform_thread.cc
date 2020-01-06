@@ -144,6 +144,7 @@ PlatformThread::~PlatformThread() {
 bool PlatformUIThread::InternalInit() {
   
   
+  CritScope scoped_lock(&cs_);
   if (hwnd_ == NULL) {
     WNDCLASSW wc;
     HMODULE hModule = GetModuleHandle(NULL);
@@ -175,8 +176,13 @@ void PlatformUIThread::RequestCallback() {
 }
 
 bool PlatformUIThread::RequestCallbackTimer(unsigned int milliseconds) {
+  CritScope scoped_lock(&cs_);
   if (!hwnd_) {
-    RTC_DCHECK(!thread_);
+    
+    
+    
+    
+
     
   } else {
     if (timerid_) {

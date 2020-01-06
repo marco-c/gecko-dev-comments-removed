@@ -135,7 +135,14 @@ protected:
   
   nsresult DispatchToVideoCaptureThread(Runnable* event);
 
-  RefPtr<VideoEngine> mEngines[CaptureEngine::MaxEngine];
+  
+  
+  
+  
+  
+  static RefPtr<VideoEngine> sEngines[CaptureEngine::MaxEngine];
+  static int32_t sNumOfOpenCamerasParentEngines;
+  static int32_t sNumOfCamerasParents;
   nsTArray<CallbackHelper*> mCallbacks;
 
   
@@ -144,11 +151,11 @@ protected:
   
   nsCOMPtr<nsISerialEventTarget> mPBackgroundEventTarget;
 
-  
-  Monitor mThreadMonitor;
+  static StaticMutex sMutex;
+  static Monitor* sThreadMonitor;
 
   
-  base::Thread* mVideoCaptureThread;
+  static base::Thread* sVideoCaptureThread;
 
   
   bool mChildIsAlive;
@@ -156,7 +163,7 @@ protected:
   
   
   mozilla::Atomic<bool> mWebRTCAlive;
-  nsTArray<RefPtr<InputObserver>> mObservers;
+  RefPtr<InputObserver> mCameraObserver;
 };
 
 PCamerasParent* CreateCamerasParent();
