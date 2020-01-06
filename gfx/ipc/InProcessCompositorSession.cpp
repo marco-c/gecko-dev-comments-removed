@@ -92,16 +92,16 @@ InProcessCompositorSession::Shutdown()
   
   
   
-  mCompositorBridgeChild->Destroy();
-  mCompositorBridgeChild = nullptr;
-  mCompositorBridgeParent = nullptr;
-  mCompositorWidget = nullptr;
 #if defined(MOZ_WIDGET_ANDROID)
   if (mUiCompositorControllerChild) {
     mUiCompositorControllerChild->Destroy();
     mUiCompositorControllerChild = nullptr;
   }
 #endif 
+  mCompositorBridgeChild->Destroy();
+  mCompositorBridgeChild = nullptr;
+  mCompositorBridgeParent = nullptr;
+  mCompositorWidget = nullptr;
   GPUProcessManager::Get()->UnregisterInProcessSession(this);
 }
 
