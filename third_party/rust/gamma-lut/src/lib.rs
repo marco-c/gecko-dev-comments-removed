@@ -5,69 +5,67 @@
 
 
 
-extern crate lazy_static;
+#[macro_use]
+extern crate log;
 
-pub trait ColorSpaceLuminance {
-	fn to_luma(&self, gamma: f32, luminance: f32) -> f32;
-	fn from_luma(&self, gamma: f32, luma: f32) -> f32;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum LuminanceColorSpace {
+    
+    Linear,
+    
+    Gamma(f32),
+    
+    Srgb,
 }
 
-pub struct SRGBColorSpaceLuminance
-{
-}
-
-pub struct LinearColorSpaceLuminance
-{
-}
-
-pub struct GammaColorSpaceLuminance
-{}
-
-impl ColorSpaceLuminance for LinearColorSpaceLuminance {
-	fn to_luma(&self, gamma: f32, luminance: f32) -> f32 {
-        assert!(gamma == 1.);
-		luminance
-	}
-	fn from_luma(&self, gamma: f32, luma: f32) -> f32 {
-        assert!(gamma == 1.);
-		luma
-	}
-}
-
-impl ColorSpaceLuminance for GammaColorSpaceLuminance {
-	fn to_luma(&self, gamma: f32, luminance: f32) -> f32 {
-		luminance.powf(gamma)
-	}
-	fn from_luma(&self, gamma: f32, luma: f32) -> f32 {
-		luma.powf(1./gamma)
-	}
-}
-
-impl ColorSpaceLuminance for SRGBColorSpaceLuminance {
-	fn to_luma(&self, gamma: f32, luminance: f32) -> f32 {
-        assert!(gamma == 0.);
-        
-        
-		if luminance <= 0.04045 {
-			return luminance / 12.92;
-		}
-		return ((luminance + 0.055) / 1.055).powf(2.4);
-	}
-	fn from_luma(&self, gamma: f32, luma: f32) -> f32 {
-        assert!(gamma == 0.);
-        
-        
-        if luma <= 0.0031308 {
-            return luma * 12.92;
+impl LuminanceColorSpace {
+    pub fn new(gamma: f32) -> LuminanceColorSpace {
+        match gamma {
+            1.0 => LuminanceColorSpace::Linear,
+            0.0 => LuminanceColorSpace::Srgb,
+            _ => LuminanceColorSpace::Gamma(gamma),
         }
-        return 1.055 * luma.powf(1./2.4)
-               - 0.055;
-	}
+    }
+
+    pub fn to_luma(&self, luminance: f32) -> f32 {
+        match *self {
+            LuminanceColorSpace::Linear => luminance,
+            LuminanceColorSpace::Gamma(gamma) => luminance.powf(gamma),
+            LuminanceColorSpace::Srgb => {
+                
+                
+                if luminance <= 0.04045 {
+                    luminance / 12.92
+                } else {
+                    ((luminance + 0.055) / 1.055).powf(2.4)
+                }
+            }
+        }
+    }
+
+    pub fn from_luma(&self, luma: f32) -> f32 {
+        match *self {
+            LuminanceColorSpace::Linear => luma,
+            LuminanceColorSpace::Gamma(gamma) => luma.powf(1. / gamma),
+            LuminanceColorSpace::Srgb => {
+                
+                
+                if luma <= 0.0031308 {
+                    luma * 12.92
+                } else {
+                    1.055 * luma.powf(1./2.4) - 0.055
+                }
+            }
+        }
+    }
 }
+
 
 fn round_to_u8(x : f32) -> u8 {
-    assert!((x + 0.5).floor() < 256.0);
-    (x + 0.5).floor() as u8
+    let v = (x + 0.5).floor() as i32;
+    assert!(0 <= v && v < 0x100);
+    v as u8
 }
 
 
@@ -75,7 +73,8 @@ fn round_to_u8(x : f32) -> u8 {
 
 
 
-fn scale255(n: u8, mut base : u8) -> u8 {
+
+fn scale255(n: u8, mut base: u8) -> u8 {
     base <<= 8 - n;
     let mut lum = base;
     let mut i = n;
@@ -85,16 +84,15 @@ fn scale255(n: u8, mut base : u8) -> u8 {
         i += n;
     }
 
-    return lum;
+    lum
 }
 
 #[derive(Copy, Clone)]
-#[allow(dead_code)]
 pub struct Color {
     r: u8,
     g: u8,
     b: u8,
-    a: u8,
+    _a: u8,
 }
 
 impl Color {
@@ -103,7 +101,7 @@ impl Color {
             r: r,
             g: g,
             b: b,
-            a: a,
+            _a: a,
         }
     }
 }
@@ -112,16 +110,16 @@ impl Color {
 
 
 
+#[cfg(target_os="macos")]
 fn get_inverse_gamma_table_coregraphics_smoothing() -> [u8; 256] {
-	let mut table : [u8; 256] = [0; 256];
+    let mut table = [0u8; 256];
 
-	for i in 0..256 {
-		let x = i as f32 / 255.0;
-		let value = round_to_u8(x * x * 255.0);
-		table[i] = value;
-	}
+    for (i, v) in table.iter_mut().enumerate() {
+        let x = i as f32 / 255.0;
+        *v = round_to_u8(x * x * 255.0);
+    }
 
-	table
+    table
 }
 
 
@@ -136,17 +134,17 @@ fn apply_contrast(srca: f32, contrast: f32) -> f32 {
 
 
 pub fn build_gamma_correcting_lut(table: &mut [u8; 256], src: u8, contrast: f32,
-                                  src_space: &ColorSpaceLuminance, src_gamma: f32,
-                                  dst_convert: &ColorSpaceLuminance, dst_gamma: f32) {
+                                  src_space: LuminanceColorSpace,
+                                  dst_convert: LuminanceColorSpace) {
 
     let src = src as f32 / 255.0;
-    let lin_src = src_space.to_luma(src_gamma, src);
+    let lin_src = src_space.to_luma(src);
     
     
     
     
     let dst = 1.0 - src;
-    let lin_dst = dst_convert.to_luma(dst_gamma, dst);
+    let lin_dst = dst_convert.to_luma(dst);
 
     
     let adjusted_contrast = contrast * lin_dst;
@@ -155,17 +153,17 @@ pub fn build_gamma_correcting_lut(table: &mut [u8; 256], src: u8, contrast: f32,
     
     if (src - dst).abs() < (1.0 / 256.0) {
         let mut ii : f32 = 0.0;
-        for i in 0..256 {
+        for v in table.iter_mut() {
             let raw_srca = ii / 255.0;
             let srca = apply_contrast(raw_srca, adjusted_contrast);
 
-            table[i] = round_to_u8(255.0 * srca);
+            *v = round_to_u8(255.0 * srca);
             ii += 1.0;
         }
     } else {
         
         let mut ii : f32 = 0.0;
-        for i in 0..256 {
+        for v in table.iter_mut() {
             
             
             
@@ -178,46 +176,38 @@ pub fn build_gamma_correcting_lut(table: &mut [u8; 256], src: u8, contrast: f32,
             
             let lin_out = lin_src * srca + dsta * lin_dst;
             assert!(lin_out <= 1.0);
-            let out = dst_convert.from_luma(dst_gamma, lin_out);
+            let out = dst_convert.from_luma(lin_out);
 
             
             
             
             let result = (out - dst) / (src - dst);
 
-            
-            table[i] = round_to_u8(255.0 * result);
+            *v = round_to_u8(255.0 * result);
+            debug!("Setting {:?} to {:?}", ii as u8, *v);
 
             ii += 1.0;
         }
     }
 }
 
-fn fetch_color_space(gamma: f32) -> Box<ColorSpaceLuminance> {
-    if 0.0 == gamma {
-        return Box::new( SRGBColorSpaceLuminance{} );
-    } else if 1.0 == gamma {
-        return Box::new( LinearColorSpaceLuminance{} );
-    } else {
-        return Box::new( GammaColorSpaceLuminance{} );
-    }
-}
-
 
 
 fn compute_luminance(r: u8, g: u8, b: u8) -> u8 {
-	
-	
-	
-	let val : u32 = r as u32 * 54 + g as u32 * 183 + b as u32 * 19;
-	return (val >> 8) as u8;
+    
+    
+    
+    let val: u32 = r as u32 * 54 + g as u32 * 183 + b as u32 * 19;
+    assert!(val < 0x10000);
+    (val >> 8) as u8
 }
 
 
-pub const LUM_BITS :u8 = 3;
-#[allow(dead_code)]
+pub const LUM_BITS: u8 = 3;
+
 pub struct GammaLut {
-    tables: [[u8; 256 ]; 1 << LUM_BITS],
+    tables: [[u8; 256]; 1 << LUM_BITS],
+    #[cfg(target_os="macos")]
     cg_inverse_gamma: [u8; 256],
 }
 
@@ -225,40 +215,36 @@ impl GammaLut {
     
     
     fn generate_tables(&mut self, contrast: f32, paint_gamma: f32, device_gamma: f32) {
-        let paint_color_space = fetch_color_space(paint_gamma);
-        let device_color_space = fetch_color_space(device_gamma);
+        let paint_color_space = LuminanceColorSpace::new(paint_gamma);
+        let device_color_space = LuminanceColorSpace::new(device_gamma);
 
-        for i in 0..(1 << LUM_BITS) {
-            let luminance = scale255(LUM_BITS, i);
-            build_gamma_correcting_lut(&mut self.tables[i as usize],
+        for (i, entry) in self.tables.iter_mut().enumerate() {
+            let luminance = scale255(LUM_BITS, i as u8);
+            build_gamma_correcting_lut(entry,
                                        luminance,
                                        contrast,
-                                       &*paint_color_space,
-                                       paint_gamma,
-                                       &*device_color_space,
-                                       device_gamma);
+                                       paint_color_space,
+                                       device_color_space);
         }
     }
 
-    #[allow(dead_code)]
-    fn table_count() -> usize {
-        return 1 << LUM_BITS;
+    pub fn table_count(&self) -> usize {
+        self.tables.len()
     }
 
-    pub fn print_values(&self, table: usize) {
-        for x in 0..256 {
-            println!("[{:?}] = {:?}", x, self.tables[table][x])
-        }
-    }
-
-    pub fn get_table(&self, color: u8) -> [u8; 256] {
-        return self.tables[(color >> (8 - LUM_BITS)) as usize];
+    pub fn get_table(&self, color: u8) -> &[u8; 256] {
+        &self.tables[(color >> (8 - LUM_BITS)) as usize]
     }
 
     pub fn new(contrast: f32, paint_gamma: f32, device_gamma: f32) -> GammaLut {
+        #[cfg(target_os="macos")]
         let mut table = GammaLut {
             tables: [[0; 256]; 1 << LUM_BITS],
             cg_inverse_gamma: get_inverse_gamma_table_coregraphics_smoothing(),
+        };
+        #[cfg(not(target_os="macos"))]
+        let mut table = GammaLut {
+            tables: [[0; 256]; 1 << LUM_BITS],
         };
 
         table.generate_tables(contrast, paint_gamma, device_gamma);
@@ -268,18 +254,18 @@ impl GammaLut {
 
     
     
-    pub fn preblend_default_colors_bgra(&self, pixels: &mut Vec<u8>, width: usize, height: usize) {
+    pub fn preblend_default_colors_bgra(&self, pixels: &mut [u8], width: usize, height: usize) {
         let preblend_color = Color {
             r: 0x7f,
             g: 0x80,
             b: 0x7f,
-            a: 0xff,
+            _a: 0xff,
         };
         self.preblend_bgra(pixels, width, height, preblend_color);
     }
 
-    fn replace_pixels_bgra(&self, pixels: &mut Vec<u8>, width: usize, height: usize,
-                           table_r: [u8; 256], table_g: [u8; 256], table_b: [u8; 256]) {
+    fn replace_pixels_bgra(&self, pixels: &mut [u8], width: usize, height: usize,
+                           table_r: &[u8; 256], table_g: &[u8; 256], table_b: &[u8; 256]) {
          for y in 0..height {
             let current_height = y * width * 4;
 
@@ -293,8 +279,8 @@ impl GammaLut {
     }
 
     
-    fn replace_pixels_rgb(&self, pixels: &mut Vec<u8>, width: usize, height: usize,
-                          table_r: [u8; 256], table_g: [u8; 256], table_b: [u8; 256]) {
+    fn replace_pixels_rgb(&self, pixels: &mut [u8], width: usize, height: usize,
+                          table_r: &[u8; 256], table_g: &[u8; 256], table_b: &[u8; 256]) {
          for y in 0..height {
             let current_height = y * width * 3;
 
@@ -307,7 +293,7 @@ impl GammaLut {
     }
 
     
-    pub fn preblend_bgra(&self, pixels: &mut Vec<u8>, width: usize, height: usize, color: Color) {
+    pub fn preblend_bgra(&self, pixels: &mut [u8], width: usize, height: usize, color: Color) {
         let table_r = self.get_table(color.r);
         let table_g = self.get_table(color.g);
         let table_b = self.get_table(color.b);
@@ -317,7 +303,7 @@ impl GammaLut {
 
     
     
-    pub fn preblend_rgb(&self, pixels: &mut Vec<u8>, width: usize, height: usize, color: Color) {
+    pub fn preblend_rgb(&self, pixels: &mut [u8], width: usize, height: usize, color: Color) {
         let table_r = self.get_table(color.r);
         let table_g = self.get_table(color.g);
         let table_b = self.get_table(color.b);
@@ -326,15 +312,15 @@ impl GammaLut {
     }
 
     #[cfg(target_os="macos")]
-    pub fn coregraphics_convert_to_linear_bgra(&self, pixels: &mut Vec<u8>, width: usize, height: usize) {
+    pub fn coregraphics_convert_to_linear_bgra(&self, pixels: &mut [u8], width: usize, height: usize) {
         self.replace_pixels_bgra(pixels, width, height,
-                                 self.cg_inverse_gamma,
-                                 self.cg_inverse_gamma,
-                                 self.cg_inverse_gamma);
+                                 &self.cg_inverse_gamma,
+                                 &self.cg_inverse_gamma,
+                                 &self.cg_inverse_gamma);
     }
 
     
-    pub fn preblend_grayscale_bgra(&self, pixels: &mut Vec<u8>, width: usize, height: usize, color: Color) {
+    pub fn preblend_grayscale_bgra(&self, pixels: &mut [u8], width: usize, height: usize, color: Color) {
         let table_g = self.get_table(color.g);
 
          for y in 0..height {
@@ -347,7 +333,7 @@ impl GammaLut {
                 pixel[2] = table_g[luminance as usize];
                 
             }
-		}
+        }
     }
 
 } 
@@ -355,7 +341,7 @@ impl GammaLut {
 #[cfg(test)]
 mod tests {
     use std::cmp;
-    use std::mem;
+    use super::*;
 
     fn over(dst: u32, src: u32, alpha: u32) -> u32 {
         (src * alpha + dst * (255 - alpha))/255
@@ -372,12 +358,12 @@ mod tests {
 
     #[test]
     fn gamma() {
-        let mut table: [u8; 256] = unsafe{ mem::uninitialized() } ;
-        let space = ::GammaColorSpaceLuminance{};
-        let g : f32 = 2.;
+        let mut table = [0u8; 256];
+        let g = 2.0;
+        let space = LuminanceColorSpace::Gamma(g);
         let mut src : u32 = 131;
         while src < 256 {
-            ::build_gamma_correcting_lut(&mut table, src as u8, 0., &space, g, &space, g);
+            build_gamma_correcting_lut(&mut table, src as u8, 0., space, space);
             let mut max_diff = 0;
             let mut dst = 0;
             while dst < 256 {

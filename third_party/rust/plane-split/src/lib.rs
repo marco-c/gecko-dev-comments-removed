@@ -29,6 +29,19 @@ pub use self::bsp::BspSplitter;
 pub use self::naive::NaiveSplitter;
 
 
+fn is_zero<T>(value: T) -> bool where
+    T: Copy + Zero + ApproxEq<T> + ops::Mul<T, Output=T> {
+    
+    (value * value).approx_eq(&T::zero())
+}
+
+fn is_zero_vec<T, U>(vec: TypedPoint3D<T, U>) -> bool where
+   T: Copy + Zero + ApproxEq<T> +
+      ops::Add<T, Output=T> + ops::Sub<T, Output=T> + ops::Mul<T, Output=T> {
+    vec.dot(vec).approx_eq(&T::zero())
+}
+
+
 #[derive(Debug)]
 pub struct Line<T, U> {
     
@@ -37,21 +50,19 @@ pub struct Line<T, U> {
     pub dir: TypedPoint3D<T, U>,
 }
 
-impl<
-    T: Copy + One + Zero + PartialEq + ApproxEq<T> +
-       ops::Add<T, Output=T> + ops::Sub<T, Output=T> + ops::Mul<T, Output=T>,
-    U,
-> Line<T, U> {
+impl<T, U> Line<T, U> where
+    T: Copy + One + Zero + ApproxEq<T> +
+       ops::Add<T, Output=T> + ops::Sub<T, Output=T> + ops::Mul<T, Output=T>
+{
     
     pub fn is_valid(&self) -> bool {
-        self.dir.dot(self.dir).approx_eq(&T::one())
+        is_zero(self.dir.dot(self.dir) - T::one())
     }
     
     pub fn matches(&self, other: &Self) -> bool {
         let diff = self.origin - other.origin;
-        let zero = TypedPoint3D::zero();
-        self.dir.cross(other.dir).approx_eq(&zero) &&
-        self.dir.cross(diff).approx_eq(&zero)
+        is_zero_vec(self.dir.cross(other.dir)) &&
+        is_zero_vec(self.dir.cross(diff))
     }
 }
 
@@ -91,10 +102,13 @@ pub struct LineProjection<T> {
     pub markers: [T; 4],
 }
 
-impl<T: Copy + PartialOrd + ops::Sub<T, Output=T> + ops::Add<T, Output=T>> LineProjection<T> {
+impl<T> LineProjection<T> where
+    T : Copy + PartialOrd + ops::Sub<T, Output=T> + ops::Add<T, Output=T>
+{
     
     pub fn get_bounds(&self) -> (T, T) {
         let (mut a, mut b, mut c, mut d) = (self.markers[0], self.markers[1], self.markers[2], self.markers[3]);
+        
         
         
         if a > c {
@@ -156,12 +170,13 @@ impl<T> Intersection<T> {
     }
 }
 
-impl<T: Copy + fmt::Debug + PartialOrd + ApproxEq<T> +
+impl<T, U> Polygon<T, U> where
+    T: Copy + fmt::Debug + ApproxEq<T> +
         ops::Sub<T, Output=T> + ops::Add<T, Output=T> +
         ops::Mul<T, Output=T> + ops::Div<T, Output=T> +
         Zero + One + Float,
-     U> Polygon<T, U> {
-
+    U: fmt::Debug,
+{
     
     pub fn from_transformed_rect<V>(rect: TypedRect<T, V>,
                                     transform: TypedMatrix4D<T, V, U>,
@@ -237,10 +252,9 @@ impl<T: Copy + fmt::Debug + PartialOrd + ApproxEq<T> +
 
     
     
-    
-    pub fn is_valid_eps(&self, eps: T) -> bool {
+    pub fn is_valid(&self) -> bool {
         let is_planar = self.points.iter()
-                                   .all(|p| self.signed_distance_to(p).approx_eq_eps(&T::zero(), &eps));
+                                   .all(|p| is_zero(self.signed_distance_to(p)));
         let edges = [self.points[1] - self.points[0],
                      self.points[2] - self.points[1],
                      self.points[3] - self.points[2],
@@ -250,11 +264,6 @@ impl<T: Copy + fmt::Debug + PartialOrd + ApproxEq<T> +
                               .zip(edges[1..].iter())
                               .all(|(a, &b)| a.cross(b).dot(anchor) >= T::zero());
         is_planar && is_winding
-    }
-
-    
-    pub fn is_valid(&self) -> bool {
-        self.is_valid_eps(T::approx_epsilon())
     }
 
     
@@ -289,17 +298,20 @@ impl<T: Copy + fmt::Debug + PartialOrd + ApproxEq<T> +
     pub fn intersect(&self, other: &Self) -> Intersection<Line<T, U>> {
         if self.are_outside(&other.points) || other.are_outside(&self.points) {
             
+            debug!("\t\toutside");
             return Intersection::Outside
         }
         let cross_dir = self.normal.cross(other.normal);
         if cross_dir.dot(cross_dir) < T::approx_epsilon() {
             
+            debug!("\t\tcoplanar");
             return Intersection::Coplanar
         }
         let self_proj = self.project_on(&cross_dir);
         let other_proj = other.project_on(&cross_dir);
         if !self_proj.intersect(&other_proj) {
             
+            debug!("\t\tprojection outside");
             return Intersection::Outside
         }
         
@@ -321,9 +333,12 @@ impl<T: Copy + fmt::Debug + PartialOrd + ApproxEq<T> +
     
     pub fn split(&mut self, line: &Line<T, U>)
                  -> (Option<Polygon<T, U>>, Option<Polygon<T, U>>) {
+        debug!("\tSplitting");
         
-        if !self.normal.dot(line.dir).approx_eq(&T::zero()) ||
-           !self.signed_distance_to(&line.origin).approx_eq(&T::zero()) {
+        if !is_zero(self.normal.dot(line.dir)) ||
+           !is_zero(self.signed_distance_to(&line.origin)) {
+            debug!("\t\tDoes not belong to the plane, normal dot={:?}, origin distance={:?}",
+                self.normal.dot(line.dir), self.signed_distance_to(&line.origin));
             return (None, None)
         }
         
@@ -357,6 +372,8 @@ impl<T: Copy + fmt::Debug + PartialOrd + ApproxEq<T> +
             Some(pos) => first + 1 + pos,
             None => return (None, None),
         };
+        debug!("\t\tReached complex case [{}, {}]", first, second);
+        
         
         let (a, b) = (cuts[first].unwrap(), cuts[second].unwrap());
         match second-first {

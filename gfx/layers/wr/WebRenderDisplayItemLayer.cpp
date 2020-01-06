@@ -67,11 +67,12 @@ WebRenderDisplayItemLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
   aBuilder.PushClip(aSc.ToRelativeWrRect(clipInParentLayerSpace), imageMask);
 
   if (mItem) {
-    wr::DisplayListBuilder builder(WrBridge()->GetPipeline());
+    WrSize contentSize; 
+    wr::DisplayListBuilder builder(WrBridge()->GetPipeline(), contentSize);
     
     mParentCommands.Clear();
     mItem->CreateWebRenderCommands(builder, aSc, mParentCommands, this);
-    mBuiltDisplayList = builder.Finalize();
+    builder.Finalize(contentSize, mBuiltDisplayList);
   } else {
     
     

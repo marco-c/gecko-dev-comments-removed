@@ -13,6 +13,7 @@ use std::cmp;
 
 
 
+#[derive(Debug)]
 pub enum PlaneCut<T> {
     
     Sibling(T),
@@ -51,6 +52,7 @@ fn add_side<T: Plane>(side: &mut Option<Box<BspNode<T>>>, mut planes: Vec<T>) {
 
 
 
+#[derive(Clone, Debug)]
 pub struct BspNode<T> {
     values: Vec<T>,
     front: Option<Box<BspNode<T>>>,
@@ -112,8 +114,8 @@ impl<T: Plane> BspNode<T> {
     pub fn order(&self, base: &T, out: &mut Vec<T>) {
         let (former, latter) = match self.values.first() {
             None => return,
-            Some(ref first) if base.is_aligned(first) => (&self.back, &self.front),
-            Some(_) => (&self.front, &self.back),
+            Some(ref first) if base.is_aligned(first) => (&self.front, &self.back),
+            Some(_) => (&self.back, &self.front),
         };
 
         if let Some(ref node) = *former {
@@ -212,7 +214,7 @@ mod tests {
 
         node.order(&Plane1D(0, true), &mut out);
         let mut out2 = out.clone();
-        out2.sort_by_key(|p| p.0);
+        out2.sort_by_key(|p| -p.0);
         assert_eq!(out, out2);
     }
 }

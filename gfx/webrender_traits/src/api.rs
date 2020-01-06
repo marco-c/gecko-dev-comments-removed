@@ -8,10 +8,10 @@ use offscreen_gl_context::{GLContextAttributes, GLLimits};
 use std::cell::Cell;
 use std::fmt;
 use std::marker::PhantomData;
-use {BuiltDisplayList, BuiltDisplayListDescriptor};
-use {ClipId, ColorF, DeviceIntPoint, DeviceIntSize, DeviceUintRect, DeviceUintSize, FontKey};
-use {GlyphDimensions, GlyphKey, ImageData, ImageDescriptor, ImageKey, LayoutPoint, LayoutSize};
-use {LayoutTransform, NativeFontHandle, WorldPoint};
+use {BuiltDisplayList, BuiltDisplayListDescriptor, ClipId, ColorF, DeviceIntPoint, DeviceIntSize};
+use {DeviceUintRect, DeviceUintSize, FontKey, GlyphDimensions, GlyphKey};
+use {ImageData, ImageDescriptor, ImageKey, LayoutPoint, LayoutSize, LayoutTransform};
+use {NativeFontHandle, WorldPoint};
 #[cfg(feature = "webgl")]
 use {WebGLCommand, WebGLContextId};
 
@@ -34,10 +34,12 @@ pub enum ApiMsg {
     
     
     
+    
     SetDisplayList(Option<ColorF>,
                    Epoch,
                    PipelineId,
-                   LayoutSize,
+                   LayoutSize, 
+                   LayoutSize, 
                    BuiltDisplayListDescriptor,
                    bool),
     SetPageZoom(ZoomFactor),
@@ -46,7 +48,7 @@ pub enum ApiMsg {
     SetRootPipeline(PipelineId),
     SetWindowParameters(DeviceUintSize, DeviceUintRect),
     Scroll(ScrollLocation, WorldPoint, ScrollEventPhase),
-    ScrollNodeWithId(LayoutPoint, ClipId),
+    ScrollNodeWithId(LayoutPoint, ClipId, ScrollClamping),
     TickScrollingBounce,
     TranslatePointToLayerSpace(WorldPoint, MsgSender<(LayoutPoint, PipelineId)>),
     GetScrollNodeState(MsgSender<Vec<ScrollLayerState>>),
@@ -145,6 +147,11 @@ impl ExternalEvent {
     pub fn unwrap(self) -> usize { self.raw }
 }
 
+#[derive(Clone, Deserialize, Serialize)]
+pub enum ScrollClamping {
+    ToContentBounds,
+    NoClamping,
+}
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct RenderApiSender {
@@ -297,25 +304,27 @@ impl RenderApi {
     
     
     
+    
     pub fn set_display_list(&self,
                             background_color: Option<ColorF>,
                             epoch: Epoch,
                             viewport_size: LayoutSize,
-                            (pipeline_id, display_list): (PipelineId, BuiltDisplayList),
+                            (pipeline_id, content_size, display_list): (PipelineId, LayoutSize, BuiltDisplayList),
                             preserve_frame_state: bool) {
-        let (dl_data, dl_desc) = display_list.into_data();
+        let (display_list_data, display_list_descriptor) = display_list.into_data();
         let msg = ApiMsg::SetDisplayList(background_color,
-                                             epoch,
-                                             pipeline_id,
-                                             viewport_size,
-                                             dl_desc,
-                                             preserve_frame_state);
+                                         epoch,
+                                         pipeline_id,
+                                         viewport_size,
+                                         content_size,
+                                         display_list_descriptor,
+                                         preserve_frame_state);
         self.api_sender.send(msg).unwrap();
 
         self.payload_sender.send_payload(Payload {
             epoch: epoch,
             pipeline_id: pipeline_id,
-            display_list_data: dl_data,
+            display_list_data: display_list_data,
         }).unwrap();
     }
 
@@ -328,8 +337,8 @@ impl RenderApi {
         self.api_sender.send(msg).unwrap();
     }
 
-    pub fn scroll_node_with_id(&self, new_scroll_origin: LayoutPoint, id: ClipId) {
-        let msg = ApiMsg::ScrollNodeWithId(new_scroll_origin, id);
+    pub fn scroll_node_with_id(&self, origin: LayoutPoint, id: ClipId, clamp: ScrollClamping) {
+        let msg = ApiMsg::ScrollNodeWithId(origin, id, clamp);
         self.api_sender.send(msg).unwrap();
     }
 
