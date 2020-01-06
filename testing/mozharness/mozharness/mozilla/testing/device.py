@@ -440,6 +440,7 @@ device_config_options = [[
 ], [
     ["--device-protocol"],
     {"action": "store",
+     "type": "choice",
      "dest": "device_protocol",
      "choices": DEVICE_PROTOCOL_DICT.keys(),
      "help": "Specify the device communication protocol."
@@ -449,6 +450,7 @@ device_config_options = [[
     
     
     {"action": "store",
+     "type": "choice",
      "choices": ["non-tegra", "tegra250"],
      "default": "non-tegra",
      "dest": "device_type",
