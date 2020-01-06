@@ -130,6 +130,12 @@ import java.util.concurrent.Future;
         
         
         
+        title.setMaxLines(isSiteSuggestedFromDistribution ? 2 : 1);
+
+        
+        
+        
+        
         
         
         
