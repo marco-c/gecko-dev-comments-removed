@@ -32,7 +32,7 @@ function* getVariablesView(hud) {
     deferred.resolve(vview._variablesView);
   }
 
-  let deferred = promise.defer();
+  let deferred = defer();
 
   
   hud.ui.filterBox.value = "browser_console_hide_jsterm_test";

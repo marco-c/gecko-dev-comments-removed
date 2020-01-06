@@ -426,7 +426,7 @@ var ShadersEditorsView = {
       return this._editorPromises.get(type);
     }
 
-    let deferred = promise.defer();
+    let deferred = defer();
     this._editorPromises.set(type, deferred.promise);
 
     

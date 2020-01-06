@@ -24,7 +24,7 @@ add_task(function* () {
 function consoleOpened(hud) {
   HUD = hud;
 
-  let deferred = promise.defer();
+  let deferred = defer();
 
   
   outputNode = HUD.outputNode;
@@ -77,7 +77,7 @@ function consoleOpened(hud) {
 
 
 function testContextMenuCopy() {
-  let deferred = promise.defer();
+  let deferred = defer();
 
   let contextMenuId = HUD.ui.outputWrapper.getAttribute("context");
   let contextMenu = HUD.ui.document.getElementById(contextMenuId);

@@ -743,7 +743,7 @@ BrowserTabActor.prototype = {
     
     
     if (!this.exited) {
-      this._deferredUpdate = promise.defer();
+      this._deferredUpdate = defer();
       let onFormUpdate = msg => {
         
         if (this._form.actor != msg.json.actor) {
@@ -830,7 +830,7 @@ function BrowserAddonList(connection) {
 }
 
 BrowserAddonList.prototype.getList = function () {
-  let deferred = promise.defer();
+  let deferred = defer();
   AddonManager.getAllAddons((addons) => {
     for (let addon of addons) {
       let actor = this._actorByAddonId.get(addon.id);

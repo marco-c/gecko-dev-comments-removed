@@ -434,7 +434,7 @@ JSTerm.prototype = {
 
 
   execute: function (executeString, callback) {
-    let deferred = promise.defer();
+    let deferred = defer();
     let resultCallback;
     if (this.hud.NEW_CONSOLE_OUTPUT_ENABLED) {
       resultCallback = (msg) => deferred.resolve(msg);
@@ -523,7 +523,7 @@ JSTerm.prototype = {
 
 
   requestEvaluation: function (str, options = {}) {
-    let deferred = promise.defer();
+    let deferred = defer();
 
     function onResult(response) {
       if (!response.error) {
@@ -627,7 +627,7 @@ JSTerm.prototype = {
 
     let openPromise;
     if (options.targetElement) {
-      let deferred = promise.defer();
+      let deferred = defer();
       openPromise = deferred.promise;
       let document = options.targetElement.ownerDocument;
       let iframe = document.createElementNS(XHTML_NS, "iframe");
@@ -672,7 +672,7 @@ JSTerm.prototype = {
 
 
   _addVariablesViewSidebarTab: function () {
-    let deferred = promise.defer();
+    let deferred = defer();
 
     let onTabReady = () => {
       let window = this.sidebar.getWindowForTab("variablesview");

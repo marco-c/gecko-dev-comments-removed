@@ -69,7 +69,7 @@ function loadFrameScripts() {
 function addTab(aUrl, aWindow) {
   info("Adding tab: " + aUrl);
 
-  let deferred = promise.defer();
+  let deferred = defer();
   let targetWindow = aWindow || window;
   let targetBrowser = targetWindow.gBrowser;
 
@@ -88,7 +88,7 @@ function addTab(aUrl, aWindow) {
 function removeTab(aTab, aWindow) {
   info("Removing tab.");
 
-  let deferred = promise.defer();
+  let deferred = defer();
   let targetWindow = aWindow || window;
   let targetBrowser = targetWindow.gBrowser;
   let tabContainer = targetBrowser.tabContainer;
@@ -129,7 +129,7 @@ function createCanvas() {
 function once(aTarget, aEventName, aUseCapture = false) {
   info("Waiting for event: '" + aEventName + "' on " + aTarget + ".");
 
-  let deferred = promise.defer();
+  let deferred = defer();
 
   for (let [add, remove] of [
     ["on", "off"], 
@@ -153,7 +153,7 @@ function once(aTarget, aEventName, aUseCapture = false) {
 
 
 function onceSpread(aTarget, aEvent) {
-  let deferred = promise.defer();
+  let deferred = defer();
   aTarget.once(aEvent, (...args) => deferred.resolve(args));
   return deferred.promise;
 }
@@ -161,7 +161,7 @@ function onceSpread(aTarget, aEvent) {
 function observe(aNotificationName, aOwnsWeak = false) {
   info("Waiting for observer notification: '" + aNotificationName + ".");
 
-  let deferred = promise.defer();
+  let deferred = defer();
 
   Services.obs.addObserver(function onNotification(...aArgs) {
     Services.obs.removeObserver(onNotification, aNotificationName);
@@ -277,7 +277,7 @@ function teardown(aPanel) {
 
 function getPrograms(front, count, onAdd) {
   let actors = [];
-  let deferred = promise.defer();
+  let deferred = defer();
   front.on("program-linked", function onLink(actor) {
     if (actors.length !== count) {
       actors.push(actor);

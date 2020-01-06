@@ -57,7 +57,7 @@ var RootActor = protocol.ActorClassWithSpec(rootSpec, {
 
   promiseReturn: function (toWait) {
     
-    let deferred = promise.defer();
+    let deferred = defer();
     let sequence = this.sequence++;
 
     
@@ -80,7 +80,7 @@ var RootActor = protocol.ActorClassWithSpec(rootSpec, {
 
   promiseThrow: function () {
     
-    let deferred = promise.defer();
+    let deferred = defer();
     let sequence = this.sequence++;
     
     do_timeout(150, () => {
@@ -148,7 +148,7 @@ function run_test() {
     
     
     
-    let deferAfterRejection = promise.defer();
+    let deferAfterRejection = defer();
 
     calls.push(rootClient.promiseThrow().then(() => {
       do_check_true(false, "promiseThrow shouldn't succeed!");

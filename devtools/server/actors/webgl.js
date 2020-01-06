@@ -259,7 +259,7 @@ exports.WebGLActor = protocol.ActorClassWithSpec(webGLSpec, {
 
 
   waitForFrame: function () {
-    let deferred = promise.defer();
+    let deferred = defer();
     this.tabActor.window.requestAnimationFrame(deferred.resolve);
     return deferred.promise;
   },

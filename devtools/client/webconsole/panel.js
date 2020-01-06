@@ -46,7 +46,7 @@ WebConsolePanel.prototype = {
     let iframe = parentDoc.getElementById("toolbox-panel-iframe-webconsole");
 
     
-    let deferredIframe = promise.defer();
+    let deferredIframe = defer();
     let win, doc;
     if ((win = iframe.contentWindow) &&
         (doc = win.document) &&

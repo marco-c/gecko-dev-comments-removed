@@ -21,7 +21,7 @@ add_task(function* () {
 
 
 function testTextNodeInsertion(hud) {
-  let deferred = promise.defer();
+  let deferred = defer();
   let outputNode = hud.outputNode;
 
   let label = document.createElementNS(

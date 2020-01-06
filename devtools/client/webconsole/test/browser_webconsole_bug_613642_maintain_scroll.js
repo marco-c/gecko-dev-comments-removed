@@ -37,7 +37,7 @@ add_task(function* () {
   
   outputNode.focus();
 
-  let scrolled = promise.defer();
+  let scrolled = defer();
 
   scrollBox.onscroll = () => {
     info("onscroll top " + scrollBox.scrollTop);
@@ -66,7 +66,7 @@ add_task(function* () {
     }],
   });
 
-  scrolled = promise.defer();
+  scrolled = defer();
   scrollBox.onscroll = () => {
     if (scrollBox.scrollTop != 0) {
       
@@ -86,7 +86,7 @@ add_task(function* () {
   
   outputNode.lastChild.focus();
 
-  scrolled = promise.defer();
+  scrolled = defer();
   scrollBox.onscroll = () => {
     if (scrollBox.scrollTop == 0) {
       
@@ -104,7 +104,7 @@ add_task(function* () {
   ContentTask.spawn(gBrowser.selectedBrowser, null,
     "() => content.console.log('test message 151')");
 
-  scrolled = promise.defer();
+  scrolled = defer();
   scrollBox.onscroll = () => {
     if (scrollBox.scrollTop == oldScrollTop) {
       

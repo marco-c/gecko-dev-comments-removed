@@ -35,7 +35,7 @@ add_task(function* () {
   hud.setFilterState("exception", true);
 
   
-  let deferred = promise.defer();
+  let deferred = defer();
   executeSoon(() => closeConsole().then(() => deferred.resolve(null)));
   yield deferred.promise;
 
