@@ -600,7 +600,8 @@ nsXULContentBuilder::BuildContentFromTemplate(nsIContent *aTemplateNode,
             
             
             
-            nsAutoString attrValue;
+            char16_t attrbuf[128];
+            nsFixedString attrValue(attrbuf, ArrayLength(attrbuf), 0);
             tmplKid->GetAttr(kNameSpaceID_None, nsGkAtoms::value, attrValue);
             if (!attrValue.IsEmpty()) {
                 nsAutoString value;
@@ -736,7 +737,11 @@ nsXULContentBuilder::CopyAttributesToElement(nsIContent* aTemplateNode,
 
         
         if (attribName != nsGkAtoms::id && attribName != nsGkAtoms::uri) {
-            nsAutoString attribValue;
+            
+            
+            
+            char16_t attrbuf[128];
+            nsFixedString attribValue(attrbuf, ArrayLength(attrbuf), 0);
             aTemplateNode->GetAttr(attribNameSpaceID, attribName, attribValue);
             if (!attribValue.IsEmpty()) {
                 nsAutoString value;
@@ -873,7 +878,8 @@ nsXULContentBuilder::SynchronizeUsingTemplate(nsIContent* aTemplateNode,
         
         if (tmplKid->NodeInfo()->Equals(nsGkAtoms::textnode,
                                         kNameSpaceID_XUL)) {
-            nsAutoString attrValue;
+            char16_t attrbuf[128];
+            nsFixedString attrValue(attrbuf, ArrayLength(attrbuf), 0);
             tmplKid->GetAttr(kNameSpaceID_None, nsGkAtoms::value, attrValue);
             if (!attrValue.IsEmpty()) {
                 nsAutoString value;
