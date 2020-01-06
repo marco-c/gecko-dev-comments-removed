@@ -47,20 +47,42 @@ const startupPhases = {
   
 
   
-  "before opening first browser window": {},
+  "before opening first browser window": {blacklist: {
+    components: new Set([
+      "nsAsyncShutdown.js",
+    ]),
+    modules: new Set([
+      "resource://gre/modules/PlacesBackups.jsm",
+      "resource://gre/modules/PlacesUtils.jsm",
+    ])
+  }},
 
   
   
   
   "before first paint": {blacklist: {
     components: new Set([
-      "nsSearchService.js",
+      "PageIconProtocolHandler.js",
+      "PlacesCategoriesStarter.js",
       "UnifiedComplete.js",
+      "nsPlacesExpiration.js",
+      "nsSearchService.js",
     ]),
     modules: new Set([
-     "resource://gre/modules/ContextualIdentityService.jsm"
+      "resource:///modules/AboutNewTab.jsm",
+      "resource:///modules/DirectoryLinksProvider.jsm",
+      "resource://gre/modules/BookmarkHTMLUtils.jsm",
+      "resource://gre/modules/Bookmarks.jsm",
+      "resource://gre/modules/ContextualIdentityService.jsm",
+      "resource://gre/modules/NewTabUtils.jsm",
+      "resource://gre/modules/PageThumbs.jsm",
+      "resource://gre/modules/PlacesSyncUtils.jsm",
+      "resource://gre/modules/Sqlite.jsm",
     ]),
     services: new Set([
+      "@mozilla.org/browser/annotation-service;1",
+      "@mozilla.org/browser/favicon-service;1",
+      "@mozilla.org/browser/nav-bookmarks-service;1",
       "@mozilla.org/browser/search-service;1",
     ])
   }},
