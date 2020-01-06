@@ -1046,25 +1046,7 @@ ServoRestyleManager::SnapshotFor(Element* aElement)
   aElement->SetFlags(ELEMENT_HAS_SNAPSHOT);
 
   
-  
-  
-  
-  
-  if (aElement->GetNextElementSibling()) {
-    Element* parent = aElement->GetFlattenedTreeParentElementForStyle();
-    MOZ_ASSERT(parent);
-    
-    
-    
-    
-    if (parent->IsInComposedDoc()) {
-      parent->NoteDirtyForServo();
-      parent->SetHasDirtyDescendantsForServo();
-    }
-  } else {
-    aElement->NoteDirtyForServo();
-  }
-
+  aElement->NoteDirtyForServo();
   return *snapshot;
 }
 

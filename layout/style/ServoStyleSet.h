@@ -333,7 +333,7 @@ public:
 
 
 
-  bool MayTraverseFrom(dom::Element* aElement);
+  static bool MayTraverseFrom(const dom::Element* aElement);
 
 #ifdef DEBUG
   void AssertTreeIsClean();
