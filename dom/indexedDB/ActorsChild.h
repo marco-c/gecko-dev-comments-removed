@@ -253,6 +253,20 @@ class BackgroundFactoryRequestChild final
   friend class PermissionRequestParent;
 
   RefPtr<IDBFactory> mFactory;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  BackgroundDatabaseChild* mDatabaseActor;
+
   const uint64_t mRequestedVersion;
   const bool mIsDeleteOp;
 
@@ -269,6 +283,9 @@ private:
 
   
   ~BackgroundFactoryRequestChild();
+
+  void
+  SetDatabaseActor(BackgroundDatabaseChild* aActor);
 
   bool
   HandleResponse(nsresult aResponse);
