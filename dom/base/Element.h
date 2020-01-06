@@ -1541,6 +1541,28 @@ protected:
 
 
 
+
+
+
+
+
+
+
+
+
+  
+  
+  virtual nsresult OnAttrSetButNotChanged(int32_t aNamespaceID, nsIAtom* aName,
+                                          const nsAttrValueOrString& aValue,
+                                          bool aNotify)
+  {
+    return NS_OK;
+  }
+
+  
+
+
+
   virtual EventListenerManager*
     GetEventListenerManagerForAttr(nsIAtom* aAttrName, bool* aDefer);
 

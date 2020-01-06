@@ -75,17 +75,6 @@ public:
 
   bool IsHTMLFocusable(bool aWithMouse, bool *aIsFocusable, int32_t *aTabIndex) override;
 
-  
-  
-  nsresult SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
-                   const nsAString& aValue, bool aNotify)
-  {
-    return SetAttr(aNameSpaceID, aName, nullptr, aValue, aNotify);
-  }
-  virtual nsresult SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
-                           nsIAtom* aPrefix, const nsAString& aValue,
-                           bool aNotify) override;
-
   virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                               nsIContent* aBindingParent,
                               bool aCompileEventHandlers) override;
@@ -352,6 +341,9 @@ protected:
                                 const nsAttrValue* aValue,
                                 const nsAttrValue* aOldValue,
                                 bool aNotify) override;
+  virtual nsresult OnAttrSetButNotChanged(int32_t aNamespaceID, nsIAtom* aName,
+                                          const nsAttrValueOrString& aValue,
+                                          bool aNotify) override;
 
   
   nsIContent* AsContent() override { return this; }
@@ -368,6 +360,35 @@ private:
 
   static void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
                                     GenericSpecifiedValues* aGenericData);
+  
+
+
+
+
+
+
+
+
+
+  void BeforeMaybeChangeAttr(int32_t aNamespaceID, nsIAtom* aName,
+                             const nsAttrValueOrString& aValue,
+                             bool aNotify);
+  
+
+
+
+
+
+
+
+  void AfterMaybeChangeAttr(int32_t aNamespaceID, nsIAtom* aName,
+                            bool aNotify);
+  
+
+
+
+
+  bool mForceReload;
 
   bool mInDocResponsiveContent;
   RefPtr<ImageLoadTask> mPendingImageLoadTask;
