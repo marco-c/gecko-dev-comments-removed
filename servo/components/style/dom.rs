@@ -330,6 +330,11 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     fn style_attribute(&self) -> Option<&Arc<Locked<PropertyDeclarationBlock>>>;
 
     
+    
+    fn unset_dirty_style_attribute(&self) {
+    }
+
+    
     fn get_smil_override(&self) -> Option<&Arc<Locked<PropertyDeclarationBlock>>> {
         None
     }
