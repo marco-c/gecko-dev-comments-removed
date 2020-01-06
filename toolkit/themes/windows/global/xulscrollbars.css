@@ -44,7 +44,7 @@ slider[orient="vertical"] {
 
 
 
-thumb {
+thumb[orient="vertical"] {
   -moz-appearance: scrollbarthumb-vertical;
   min-height: 8px;
 }
