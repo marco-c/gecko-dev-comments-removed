@@ -503,6 +503,22 @@ IMEHandler::AssociateIMEContext(nsWindowBase* aWindowBase, bool aEnable)
 void
 IMEHandler::InitInputContext(nsWindow* aWindow, InputContext& aInputContext)
 {
+  MOZ_ASSERT(aWindow);
+  MOZ_ASSERT(aWindow->GetWindowHandle(),
+             "IMEHandler::SetInputContext() requires non-nullptr HWND");
+
+  static bool sInitialized = false;
+  if (!sInitialized) {
+    sInitialized = true;
+    
+    
+    
+    
+    
+    
+    Initialize();
+  }
+
   
   aInputContext.mIMEState.mEnabled = IMEState::ENABLED;
 
