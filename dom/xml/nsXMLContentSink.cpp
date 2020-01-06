@@ -1465,7 +1465,7 @@ nsXMLContentSink::FlushPendingNotifications(FlushType aType)
         FlushText(false);
       }
     }
-    if (aType >= FlushType::InterruptibleLayout) {
+    if (aType >= FlushType::EnsurePresShellInitAndFrames) {
       
       
       MaybeStartLayout(true);
