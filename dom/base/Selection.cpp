@@ -59,7 +59,7 @@
 #include "nsCopySupport.h"
 #include "nsIClipboard.h"
 #include "nsIFrameInlines.h"
-
+#include "nsRefreshDriver.h"
 #include "nsIBidiKeyboard.h"
 
 #include "nsError.h"
@@ -3490,25 +3490,17 @@ Selection::PostScrollSelectionIntoViewEvent(
   
   
   mScrollEvent.Revoke();
+  nsPresContext* presContext = GetPresContext();
+  NS_ENSURE_STATE(presContext);
+  nsRefreshDriver* refreshDriver = presContext->RefreshDriver();
+  NS_ENSURE_STATE(refreshDriver);
 
   RefPtr<ScrollSelectionIntoViewEvent> ev =
     new ScrollSelectionIntoViewEvent(this, aRegion, aVertical, aHorizontal,
                                      aFlags);
   mScrollEvent = ev;
-  nsresult rv;
-  nsIDocument* doc = GetParentObject();
-  if (doc) {
-    rv = doc->Dispatch("ScrollSelectionIntoViewEvent",
-                       TaskCategory::Other,
-                       ev.forget());
-  } else {
-    rv = NS_DispatchToCurrentThread(ev);
-  }
-
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    mScrollEvent = nullptr; 
-  }
-  return rv;
+  refreshDriver->AddPendingSelectionScroll(ev);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
