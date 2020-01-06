@@ -113,7 +113,9 @@ class CMS(object):
             raise pykey.UnknownHashAlgorithmError(pykeyHash)
         algorithmIdentifier = rfc2459.AlgorithmIdentifier()
         algorithmIdentifier['algorithm'] = univ.ObjectIdentifier(oidString)
-        algorithmIdentifier['parameters'] = univ.Null()
+        
+        nullEncapsulated = encoder.encode(univ.Null())
+        algorithmIdentifier['parameters'] = univ.Any(nullEncapsulated)
         return algorithmIdentifier
 
     def buildSignerInfo(self, certificate, pykeyHash, digestValue):
