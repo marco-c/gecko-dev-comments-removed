@@ -25,7 +25,8 @@ pub use ::webgl_channel::WebGLChan;
 #[derive(Clone, Deserialize, Serialize)]
 pub enum WebGLMsg {
     
-    CreateContext(Size2D<i32>, GLContextAttributes, WebGLSender<Result<(WebGLCreateContextResult), String>>),
+    CreateContext(WebGLVersion, Size2D<i32>, GLContextAttributes,
+                  WebGLSender<Result<(WebGLCreateContextResult), String>>),
     
     ResizeContext(WebGLContextId, Size2D<i32>, WebGLSender<Result<(), String>>),
     
@@ -70,6 +71,17 @@ pub enum WebGLContextShareMode {
     SharedTexture,
     
     Readback,
+}
+
+
+#[derive(Clone, Copy, Deserialize, MallocSizeOf, Serialize)]
+pub enum WebGLVersion {
+    
+    
+    WebGL1,
+    
+    
+    WebGL2,
 }
 
 
