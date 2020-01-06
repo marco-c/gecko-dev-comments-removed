@@ -1113,6 +1113,14 @@ nsSVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
     return gfxRect();
   }
 
+  
+  
+  aFlags &= ~eIncludeOnlyCurrentFrameForNonSVGElement;
+  aFlags &= ~eUseFrameBoundsForOuterSVG;
+  if (!aFrame->IsSVGUseFrame()) {
+    aFlags &= ~eUseUserSpaceOfUseElement;
+  }
+
   if (aFlags == eBBoxIncludeFillGeometry &&
       
       !aToBoundsSpace) {
@@ -1128,8 +1136,7 @@ nsSVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
   }
 
   if (aFrame->IsSVGForeignObjectFrame() ||
-      (aFrame->IsSVGUseFrame() &&
-       (aFlags & nsSVGUtils::eUseUserSpaceOfUseElement))) {
+      aFlags & nsSVGUtils::eUseUserSpaceOfUseElement) {
     
     
     
