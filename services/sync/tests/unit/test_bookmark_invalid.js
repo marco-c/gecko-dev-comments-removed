@@ -19,18 +19,19 @@ add_task(async function test_ignore_invalid_uri() {
   _("Ensure that we don't die with invalid bookmarks.");
 
   
-  let bmid = PlacesUtils.bookmarks.insertBookmark(PlacesUtils.unfiledBookmarksFolderId,
-                                                  Services.io.newURI("http://example.com/"),
-                                                  PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                                  "the title");
+  let bmInfo = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: "http://example.com/",
+    title: "the title",
+  });
 
   
   await PlacesUtils.withConnectionWrapper("test_ignore_invalid_uri", async function(db) {
     await db.execute(
       `UPDATE moz_places SET url = :url, url_hash = hash(:url)
        WHERE id = (SELECT b.fk FROM moz_bookmarks b
-       WHERE b.id = :id LIMIT 1)`,
-      { id: bmid, url: "<invalid url>" });
+                   WHERE b.guid = :guid)`,
+      { guid: bmInfo.guid, url: "<invalid url>" });
   });
 
   
@@ -42,17 +43,18 @@ add_task(async function test_ignore_missing_uri() {
   _("Ensure that we don't die with a bookmark referencing an invalid bookmark id.");
 
   
-  let bmid = PlacesUtils.bookmarks.insertBookmark(PlacesUtils.unfiledBookmarksFolderId,
-                                                  Services.io.newURI("http://example.com/"),
-                                                  PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                                  "the title");
+  let bmInfo = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: "http://example.com/",
+    title: "the title",
+  });
 
   
   await PlacesUtils.withConnectionWrapper("test_ignore_missing_uri", async function(db) {
     await db.execute(
       `UPDATE moz_bookmarks SET fk = 999999
-       WHERE id = :id`
-      , { id: bmid });
+       WHERE guid = :guid`
+      , { guid: bmInfo.guid });
   });
 
   

@@ -1,7 +1,6 @@
 
 
 
-Cu.import("resource://gre/modules/PlacesSyncUtils.jsm");
 Cu.import("resource://services-common/async.js");
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://services-sync/engines.js");
@@ -551,8 +550,8 @@ add_task(async function test_dupe_reparented_to_future_arriving_parent_bookmark(
 
     
     
-    equal(PlacesUtils.annotations.getItemAnnotation((await store.idForGUID(newGUID)), "sync/parent"),
-          newParentGUID);
+    equal(PlacesUtils.annotations.getItemAnnotation((await store.idForGUID(newGUID)),
+      PlacesSyncUtils.bookmarks.SYNC_PARENT_ANNO), newParentGUID);
 
     
     
