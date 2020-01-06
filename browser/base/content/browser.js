@@ -4097,8 +4097,10 @@ function FillHistoryMenu(aParent) {
       item.setAttribute("historyindex", j - index);
 
       if (j != index) {
-        item.setAttribute("image",
-                          PlacesUtils.urlWithSizeRef(window, "page-icon:" + uri, 16));
+        
+        
+        item.style.listStyleImage =
+          "url(" + PlacesUtils.urlWithSizeRef(window, "page-icon:" + uri, 16) + ")";
       }
 
       if (j < index) {
