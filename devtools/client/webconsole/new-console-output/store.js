@@ -14,13 +14,16 @@ const {
 } = require("devtools/client/shared/vendor/redux");
 const { thunk } = require("devtools/client/shared/redux/middleware/thunk");
 const {
+  MESSAGE_ADD,
+  MESSAGES_CLEAR,
+  REMOVED_MESSAGES_CLEAR,
   BATCH_ACTIONS,
   PREFS,
 } = require("devtools/client/webconsole/new-console-output/constants");
 const { reducers } = require("./reducers/index");
 const Services = require("Services");
 
-function configureStore() {
+function configureStore(hud) {
   const initialState = {
     prefs: new PrefState({
       logLimit: Math.max(Services.prefs.getIntPref("devtools.hud.loglimit"), 1),
@@ -43,7 +46,7 @@ function configureStore() {
   return createStore(
     combineReducers(reducers),
     initialState,
-    compose(applyMiddleware(thunk), enableBatching())
+    compose(applyMiddleware(thunk), enableActorReleaser(hud), enableBatching())
   );
 }
 
@@ -68,6 +71,52 @@ function enableBatching() {
 
     return next(batchingReducer, initialState, enhancer);
   };
+}
+
+
+
+
+
+
+function enableActorReleaser(hud) {
+  return next => (reducer, initialState, enhancer) => {
+    function releaseActorsEnhancer(state, action) {
+      state = reducer(state, action);
+
+      let type = action.type;
+      let proxy = hud ? hud.proxy : null;
+      if (proxy && (type == MESSAGE_ADD || type == MESSAGES_CLEAR)) {
+        releaseActors(state.messages.removedMessages, proxy);
+
+        
+        state = reducer(state, {
+          type: REMOVED_MESSAGES_CLEAR
+        });
+      }
+
+      return state;
+    }
+
+    return next(releaseActorsEnhancer, initialState, enhancer);
+  };
+}
+
+
+
+
+function releaseActors(removedMessages, proxy) {
+  if (!proxy) {
+    return;
+  }
+
+  removedMessages.forEach(msg => {
+    for (let i = 0; i < msg.parameters.length; i++) {
+      let param = msg.parameters[i];
+      if (param && param.actor) {
+        proxy.releaseActor(param.actor);
+      }
+    }
+  });
 }
 
 

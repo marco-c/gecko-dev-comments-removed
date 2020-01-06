@@ -25,6 +25,9 @@ const MessageState = Immutable.Record({
   groupsById: Immutable.Map(),
   
   currentGroup: null,
+  
+  
+  removedMessages: [],
 });
 
 function messages(state = new MessageState(), action) {
@@ -88,16 +91,17 @@ function messages(state = new MessageState(), action) {
 
         
         
-        let topLevelCount = getToplevelMessageCount(record);
-        while (topLevelCount > logLimit) {
-          let removedMessage = removeFirstMessage(record);
-          if (!removedMessage.groupId) {
-            topLevelCount--;
-          }
-        }
+        limitTopLevelMessageCount(state, record);
       });
     case constants.MESSAGES_CLEAR:
       return state.withMutations(function (record) {
+        
+        
+        
+        record.set("removedMessages",
+          record.messagesById.filter(msg => msg.parameters).toArray());
+
+        
         record.set("messagesById", Immutable.List());
         record.set("messagesUiById", Immutable.List());
         record.set("groupsById", Immutable.Map());
@@ -116,6 +120,8 @@ function messages(state = new MessageState(), action) {
       return state.set("messagesById", messagesById.map((message) =>
         (message.id === updateMessage.id) ? updateMessage : message
       ));
+    case constants.REMOVED_MESSAGES_CLEAR:
+      return state.set("removedMessages", []);
   }
 
   return state;
@@ -154,6 +160,40 @@ function getParentGroups(currentGroup, groupsById) {
 
 
 
+
+function limitTopLevelMessageCount(state, record) {
+  let tempRecord = {
+    messagesById: record.messagesById,
+    messagesUiById: record.messagesUiById,
+    messagesTableDataById: record.messagesTableDataById,
+    groupsById: record.groupsById,
+  };
+
+  let removedMessages = state.removedMessages;
+
+  
+  let topLevelCount = getToplevelMessageCount(tempRecord);
+  while (topLevelCount > logLimit) {
+    removedMessages.push(...removeFirstMessage(tempRecord));
+    topLevelCount--;
+  }
+
+  
+  
+  removedMessages = state.removedMessages.filter(msg => msg.parameters);
+
+  
+  record.set("messagesById", tempRecord.messagesById);
+  record.set("messagesUiById", tempRecord.messagesUiById);
+  record.set("messagesTableDataById", tempRecord.messagesTableDataById);
+  record.set("groupsById", tempRecord.groupsById);
+  record.set("removedMessages", removedMessages);
+}
+
+
+
+
+
 function getToplevelMessageCount(record) {
   return [...record.messagesById].filter(message => !message.groupId).length;
 }
@@ -162,36 +202,41 @@ function getToplevelMessageCount(record) {
 
 
 
+
+
 function removeFirstMessage(record) {
   let firstMessage = record.messagesById.first();
-  record.set("messagesById", record.messagesById.shift());
+  record.messagesById = record.messagesById.shift();
 
   
   let uiIndex = record.messagesUiById.indexOf(firstMessage);
   if (uiIndex >= 0) {
-    record.set("messagesUiById", record.messagesUiById.delete(uiIndex));
+    record.messagesUiById = record.messagesUiById.delete(uiIndex);
   }
 
   
   if (record.messagesTableDataById.has(firstMessage.id)) {
-    record.set("messagesTableDataById", record.messagesTableDataById.delete(firstMessage.id));
+    record.messagesTableDataById = record.messagesTableDataById.delete(firstMessage.id);
   }
 
   
   if (record.groupsById.has(firstMessage.id)) {
-    record.set("groupsById", record.groupsById.delete(firstMessage.id));
+    record.groupsById = record.groupsById.delete(firstMessage.id);
   }
+
+  let removedMessages = [firstMessage];
 
   
   
   
   let message = record.messagesById.first();
   while (message.groupId == firstMessage.id) {
-    removeFirstMessage(record);
+    removedMessages.push(...removeFirstMessage(record));
     message = record.messagesById.first();
   }
 
-  return firstMessage;
+  
+  return removedMessages;
 }
 
 exports.messages = messages;
