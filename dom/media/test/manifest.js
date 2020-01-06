@@ -1694,7 +1694,8 @@ function MediaTestManager() {
       this.finished(token);
     };
     
-    this.timers[token] = setTimeout(onTimeout, 180000);
+    
+    this.timers[token] = SimpleTest._originalSetTimeout.call(window, onTimeout, 180000);
 
     is(this.numTestsRunning, this.tokens.length,
        "[started " + token + " t=" + elapsedTime(this.startTime) + "] Length of array should match number of running tests");
