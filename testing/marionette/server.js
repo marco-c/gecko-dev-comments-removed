@@ -326,7 +326,7 @@ server.TCPListener = class {
 
   driverFactory() {
     Preferences.set(PREF_CONTENT_LISTENER, false);
-    return new GeckoDriver(Services.appinfo.name, this);
+    return new GeckoDriver(Services.appinfo.ID, this);
   }
 
   set acceptConnections(value) {

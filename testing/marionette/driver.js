@@ -56,6 +56,8 @@ Cu.importGlobalProperties(["URL"]);
 
 this.EXPORTED_SYMBOLS = ["GeckoDriver", "Context"];
 
+const APP_ID_FIREFOX = "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}";
+
 const FRAME_SCRIPT = "chrome://marionette/content/listener.js";
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
@@ -136,8 +138,8 @@ function* enumeratorIterator(enumerator) {
 
 
 
-this.GeckoDriver = function(appName, server) {
-  this.appName = appName;
+this.GeckoDriver = function(appId, server) {
+  this.appId = appId;
   this._server = server;
 
   this.sessionID = null;
@@ -588,7 +590,7 @@ GeckoDriver.prototype.registerBrowser = function(id, be) {
   
   
   
-  if (this.appName != "Firefox" || be.namespaceURI != XUL_NS ||
+  if (this.appId != APP_ID_FIREFOX || be.namespaceURI != XUL_NS ||
       be.nodeName != "browser" || be.getTabBrowser()) {
     
     this.curBrowser.register(id, be);
@@ -817,7 +819,7 @@ GeckoDriver.prototype.newSession = async function(cmd) {
 
   if (!Preferences.get(CONTENT_LISTENER_PREF)) {
     waitForWindow.call(this);
-  } else if (this.appName != "Firefox" && this.curBrowser === null) {
+  } else if (this.appId != APP_ID_FIREFOX && this.curBrowser === null) {
     
     let win = this.getCurrentWindow();
     this.addBrowser(win);
