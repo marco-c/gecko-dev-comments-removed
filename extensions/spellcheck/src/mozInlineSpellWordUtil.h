@@ -90,7 +90,7 @@ public:
 
   
   
-  static void NormalizeWord(nsSubstring& aWord);
+  static void NormalizeWord(nsAString& aWord);
 
   nsIDOMDocument* GetDOMDocument() const { return mDOMDocument; }
   nsIDocument* GetDocument() const { return mDocument; }

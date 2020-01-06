@@ -162,7 +162,7 @@ public:
 
 
 
-  void ParseMediaList(const nsSubstring& aBuffer,
+  void ParseMediaList(const nsAString& aBuffer,
                       nsIURI*            aURL,
                       uint32_t           aLineNumber,
                       nsMediaList*       aMediaList);
@@ -189,7 +189,7 @@ public:
 
 
 
-  bool ParseFontFamilyListString(const nsSubstring& aBuffer,
+  bool ParseFontFamilyListString(const nsAString& aBuffer,
                                  nsIURI*            aURL,
                                  uint32_t           aLineNumber,
                                  nsCSSValue&        aValue);
@@ -200,7 +200,7 @@ public:
 
 
 
-  bool ParseColorString(const nsSubstring& aBuffer,
+  bool ParseColorString(const nsAString& aBuffer,
                         nsIURI*            aURL,
                         uint32_t           aLineNumber,
                         nsCSSValue&        aValue,
@@ -212,7 +212,7 @@ public:
 
 
 
-  bool ParseMarginString(const nsSubstring& aBuffer,
+  bool ParseMarginString(const nsAString& aBuffer,
                          nsIURI*            aURL,
                          uint32_t           aLineNumber,
                          nsCSSValue&        aValue,
@@ -222,7 +222,7 @@ public:
 
 
 
-  nsresult ParseSelectorString(const nsSubstring&  aSelectorString,
+  nsresult ParseSelectorString(const nsAString&  aSelectorString,
                                nsIURI*             aURL,
                                uint32_t            aLineNumber,
                                nsCSSSelectorList** aSelectorList);
@@ -232,7 +232,7 @@ public:
 
 
   already_AddRefed<nsCSSKeyframeRule>
-  ParseKeyframeRule(const nsSubstring& aBuffer,
+  ParseKeyframeRule(const nsAString& aBuffer,
                     nsIURI*            aURL,
                     uint32_t           aLineNumber);
 
@@ -240,7 +240,7 @@ public:
 
 
 
-  bool ParseKeyframeSelectorString(const nsSubstring& aSelectorString,
+  bool ParseKeyframeSelectorString(const nsAString& aSelectorString,
                                    nsIURI*            aURL,
                                    uint32_t           aLineNumber,
                                    InfallibleTArray<float>& aSelectorList);

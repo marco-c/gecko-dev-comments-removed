@@ -115,9 +115,9 @@ private:
   
   bool mIsPrivate : 1;
 
-  void BroadcastChangeNotification(const nsSubstring& aKey,
-                                   const nsSubstring& aOldValue,
-                                   const nsSubstring& aNewValue);
+  void BroadcastChangeNotification(const nsAString& aKey,
+                                   const nsAString& aOldValue,
+                                   const nsAString& aNewValue);
 };
 
 } 

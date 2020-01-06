@@ -346,7 +346,7 @@ nsContentBlocker::TestPermission(nsIURI *aCurrentURI,
 
     
     
-    const nsCSubstring &tail =
+    const nsACString& tail =
       Substring(currentHost, dot, currentHost.Length() - dot);
 
     nsAutoCString firstHost;
@@ -360,7 +360,7 @@ nsContentBlocker::TestPermission(nsIURI *aCurrentURI,
     }
     
     
-    const nsCSubstring &firstTail = 
+    const nsACString& firstTail =
       Substring(firstHost, firstHost.Length() - tail.Length(), tail.Length());
 
     

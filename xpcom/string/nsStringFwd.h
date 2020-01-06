@@ -25,9 +25,6 @@ class nsCStringRepr;
 } 
 
 
-
-
-
 class nsAString;
 class nsSubstringTuple;
 class nsString;
@@ -40,10 +37,6 @@ class nsDefaultStringComparator;
 class nsXPIDLString;
 
 
-
-
-
-
 class nsACString;
 class nsCSubstringTuple;
 class nsCString;
@@ -54,13 +47,5 @@ class nsPromiseFlatCString;
 class nsCStringComparator;
 class nsDefaultCStringComparator;
 class nsXPIDLCString;
-
-
-
-
-
-
-typedef nsAString             nsSubstring;
-typedef nsACString            nsCSubstring;
 
 #endif 

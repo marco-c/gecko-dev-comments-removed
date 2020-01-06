@@ -1132,7 +1132,7 @@ nsCORSPreflightListener::AddResultToCache(nsIRequest *aRequest)
   
   
   uint32_t age = 0;
-  nsCSubstring::const_char_iterator iter, end;
+  nsACString::const_char_iterator iter, end;
   headerVal.BeginReading(iter);
   headerVal.EndReading(end);
   while (iter != end) {

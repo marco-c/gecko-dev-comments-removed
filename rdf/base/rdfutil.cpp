@@ -37,7 +37,7 @@
 
 
 nsresult
-rdf_MakeRelativeRef(const nsCSubstring& aBaseURI, nsCString& aURI)
+rdf_MakeRelativeRef(const nsACString& aBaseURI, nsCString& aURI)
 {
     
     

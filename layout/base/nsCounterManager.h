@@ -212,7 +212,7 @@ public:
 
     
     
-    nsCounterList* CounterListFor(const nsSubstring& aCounterName);
+    nsCounterList* CounterListFor(const nsAString& aCounterName);
 
     
     void RecalcAll();

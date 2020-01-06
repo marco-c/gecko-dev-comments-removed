@@ -300,7 +300,7 @@ txRootPattern::toString(nsAString& aDest)
 
 
 
-txIdPattern::txIdPattern(const nsSubstring& aString)
+txIdPattern::txIdPattern(const nsAString& aString)
 {
     nsWhitespaceTokenizer tokenizer(aString);
     while (tokenizer.hasMoreTokens()) {

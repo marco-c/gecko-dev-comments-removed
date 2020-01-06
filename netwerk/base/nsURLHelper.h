@@ -228,7 +228,7 @@ inline char *net_RFindCharNotInSet(const char *str, const char *set)
 
 
 
-bool net_IsValidHostName(const nsCSubstring &host);
+bool net_IsValidHostName(const nsACString& host);
 
 
 

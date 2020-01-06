@@ -194,7 +194,7 @@ public:
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SingletonThreadHolder)
 
-  explicit SingletonThreadHolder(const nsCSubstring& aName)
+  explicit SingletonThreadHolder(const nsACString& aName)
     : mName(aName)
   {
     mParentThread = NS_GetCurrentThread();

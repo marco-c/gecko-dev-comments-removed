@@ -299,7 +299,7 @@ public:
 
 
 
-  static bool IsWhitespaceString(const nsSubstring& aString);
+  static bool IsWhitespaceString(const nsAString& aString);
 
   
 

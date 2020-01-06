@@ -152,8 +152,8 @@ NS_UnescapeURL(char* aStr)
 
 
 
-inline const nsCSubstring&
-NS_EscapeURL(const nsCSubstring& aStr, uint32_t aFlags, nsCSubstring& aResult)
+inline const nsACString&
+NS_EscapeURL(const nsACString& aStr, uint32_t aFlags, nsACString& aResult)
 {
   if (NS_EscapeURL(aStr.Data(), aStr.Length(), aFlags, aResult)) {
     return aResult;
@@ -166,19 +166,19 @@ NS_EscapeURL(const nsCSubstring& aStr, uint32_t aFlags, nsCSubstring& aResult)
 
 
 nsresult
-NS_EscapeURL(const nsCSubstring& aStr, uint32_t aFlags, nsCSubstring& aResult,
+NS_EscapeURL(const nsACString& aStr, uint32_t aFlags, nsACString& aResult,
              const mozilla::fallible_t&);
 
-inline const nsCSubstring&
-NS_UnescapeURL(const nsCSubstring& aStr, uint32_t aFlags, nsCSubstring& aResult)
+inline const nsACString&
+NS_UnescapeURL(const nsACString& aStr, uint32_t aFlags, nsACString& aResult)
 {
   if (NS_UnescapeURL(aStr.Data(), aStr.Length(), aFlags, aResult)) {
     return aResult;
   }
   return aStr;
 }
-const nsSubstring&
-NS_EscapeURL(const nsSubstring& aStr, uint32_t aFlags, nsSubstring& aResult);
+const nsAString&
+NS_EscapeURL(const nsAString& aStr, uint32_t aFlags, nsAString& aResult);
 
 
 
@@ -189,9 +189,9 @@ NS_EscapeURL(const nsSubstring& aStr, uint32_t aFlags, nsSubstring& aResult);
 
 
 
-const nsSubstring&
+const nsAString&
 NS_EscapeURL(const nsString& aStr, const nsTArray<char16_t>& aForbidden,
-             nsSubstring& aResult);
+             nsAString& aResult);
 
 
 

@@ -37,7 +37,7 @@ public:
   
   
 
-  QueryKeyValuePair(const nsCSubstring& aSource, int32_t aKeyBegin,
+  QueryKeyValuePair(const nsACString& aSource, int32_t aKeyBegin,
                     int32_t aEquals, int32_t aPastEnd)
   {
     if (aEquals == aKeyBegin)

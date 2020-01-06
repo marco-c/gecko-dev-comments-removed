@@ -239,7 +239,7 @@ FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
   
   nsCharSeparatedTokenizer tokenizer(xfoHeaderValue, ',');
   while (tokenizer.hasMoreTokens()) {
-    const nsSubstring& tok = tokenizer.nextToken();
+    const nsAString& tok = tokenizer.nextToken();
     if (!CheckOneFrameOptionsPolicy(httpChannel, tok, aDocShell)) {
       
       httpChannel->Cancel(NS_BINDING_ABORTED);

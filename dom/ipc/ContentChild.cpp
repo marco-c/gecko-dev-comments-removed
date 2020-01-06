@@ -536,7 +536,7 @@ ContentChild::RecvSetXPCOMProcessAttributes(const XPCOMInitData& aXPCOMInit,
 {
   mLookAndFeelCache = aLookAndFeelIntCache;
   InitXPCOM(aXPCOMInit, aInitialData);
-  InitGraphicsDeviceData(aXPCOMInit.contentDeviceData());
+  InitGraphicsDeviceData();
 
 #ifdef NS_PRINTING
   
@@ -998,11 +998,11 @@ ContentChild::AppendProcessId(nsACString& aName)
 }
 
 void
-ContentChild::InitGraphicsDeviceData(const ContentDeviceData& aData)
+ContentChild::InitGraphicsDeviceData()
 {
   
   
-  gfxPlatform::InitChild(aData);
+  gfxPlatform::GetPlatform();
 }
 
 void
@@ -1519,7 +1519,7 @@ ContentChild::RecvSetProcessSandbox(const MaybeFileDesc& aBroker)
     nsAdoptingCString extraSyscalls =
       Preferences::GetCString("security.sandbox.content.syscall_whitelist");
     if (extraSyscalls) {
-      for (const nsCSubstring& callNrString : extraSyscalls.Split(',')) {
+      for (const nsACString& callNrString : extraSyscalls.Split(',')) {
         nsresult rv;
         int callNr = PromiseFlatCString(callNrString).ToInteger(&rv);
         if (NS_SUCCEEDED(rv)) {

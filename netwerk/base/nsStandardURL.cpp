@@ -431,7 +431,7 @@ nsStandardURL::InvalidateCache(bool invalidateCachedFile)
 
 
 inline int32_t
-ValidateIPv4Number(const nsCSubstring& host,
+ValidateIPv4Number(const nsACString& host,
                    int32_t bases[4], int32_t dotIndex[3],
                    bool& onlyBase10, int32_t& length)
 {
@@ -510,7 +510,7 @@ ValidateIPv4Number(const nsCSubstring& host,
 }
 
 inline nsresult
-ParseIPv4Number10(const nsCSubstring& input, uint32_t& number, uint32_t maxNumber)
+ParseIPv4Number10(const nsACString& input, uint32_t& number, uint32_t maxNumber)
 {
     uint64_t value = 0;
     const char* current = input.BeginReading();
@@ -532,7 +532,7 @@ ParseIPv4Number10(const nsCSubstring& input, uint32_t& number, uint32_t maxNumbe
 }
 
 inline nsresult
-ParseIPv4Number(const nsCSubstring& input, int32_t base, uint32_t& number, uint32_t maxNumber)
+ParseIPv4Number(const nsACString& input, int32_t base, uint32_t& number, uint32_t maxNumber)
 {
     
     uint64_t value = 0;
@@ -576,7 +576,7 @@ ParseIPv4Number(const nsCSubstring& input, int32_t base, uint32_t& number, uint3
 
 
  nsresult
-nsStandardURL::NormalizeIPv4(const nsCSubstring& host, nsCString& result)
+nsStandardURL::NormalizeIPv4(const nsACString& host, nsCString& result)
 {
     int32_t bases[4] = {10,10,10,10};
     bool onlyBase10 = true;           
@@ -633,7 +633,7 @@ nsStandardURL::NormalizeIPv4(const nsCSubstring& host, nsCString& result)
 }
 
 nsresult
-nsStandardURL::NormalizeIDN(const nsCSubstring &host, nsCString &result)
+nsStandardURL::NormalizeIDN(const nsACString& host, nsCString& result)
 {
     
     
@@ -3818,7 +3818,7 @@ nsStandardURL::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
 
 
 nsresult
-Test_NormalizeIPv4(const nsCSubstring& host, nsCString& result)
+Test_NormalizeIPv4(const nsACString& host, nsCString& result)
 {
     return nsStandardURL::NormalizeIPv4(host, result);
 }

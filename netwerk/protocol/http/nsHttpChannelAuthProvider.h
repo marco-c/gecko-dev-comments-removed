@@ -97,16 +97,16 @@ private:
 
 
     MOZ_MUST_USE nsresult
-    GetAuthorizationMembers(bool proxyAuth, nsCSubstring& scheme,
+    GetAuthorizationMembers(bool proxyAuth, nsACString& scheme,
                             const char*& host, int32_t& port,
-                            nsCSubstring& path, nsHttpAuthIdentity*& ident,
+                            nsACString& path, nsHttpAuthIdentity*& ident,
                             nsISupports**& continuationState);
     
 
 
 
 
-    MOZ_MUST_USE nsresult ContinueOnAuthAvailable(const nsCSubstring& creds);
+    MOZ_MUST_USE nsresult ContinueOnAuthAvailable(const nsACString& creds);
 
     MOZ_MUST_USE nsresult DoRedirectChannelToHttps();
 

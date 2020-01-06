@@ -237,7 +237,7 @@ public:
 
 
 
-  nsExternalAppHandler(nsIMIMEInfo * aMIMEInfo, const nsCSubstring& aFileExtension,
+  nsExternalAppHandler(nsIMIMEInfo * aMIMEInfo, const nsACString& aFileExtension,
                        nsIInterfaceRequestor * aContentContext,
                        nsIInterfaceRequestor * aWindowContext,
                        nsExternalHelperAppService * aExtProtSvc,

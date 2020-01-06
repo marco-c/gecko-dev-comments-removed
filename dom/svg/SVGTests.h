@@ -46,7 +46,7 @@ public:
 
 
 
-  int32_t GetBestLanguagePreferenceRank(const nsSubstring& aAcceptLangs) const;
+  int32_t GetBestLanguagePreferenceRank(const nsAString& aAcceptLangs) const;
 
   
 

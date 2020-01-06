@@ -145,7 +145,7 @@ public:
     };
     friend class nsSegmentEncoder;
 
-    static nsresult NormalizeIPv4(const nsCSubstring &host, nsCString &result);
+    static nsresult NormalizeIPv4(const nsACString& host, nsCString& result);
 
 protected:
     
@@ -188,7 +188,7 @@ private:
 
     bool     ValidIPv6orHostname(const char *host, uint32_t aLen);
     static bool     IsValidOfBase(unsigned char c, const uint32_t base);
-    nsresult NormalizeIDN(const nsCSubstring &host, nsCString &result);
+    nsresult NormalizeIDN(const nsACString& host, nsCString& result);
     void     CoalescePath(netCoalesceFlags coalesceFlag, char *path);
 
     uint32_t AppendSegmentToBuf(char *, uint32_t, const char *,
