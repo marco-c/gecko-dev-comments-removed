@@ -662,7 +662,8 @@ nsXMLContentSink::ProcessStyleLink(nsIContent* aElement,
                                    bool aAlternate,
                                    const nsAString& aTitle,
                                    const nsAString& aType,
-                                   const nsAString& aMedia)
+                                   const nsAString& aMedia,
+                                   const nsAString& aReferrerPolicy)
 {
   nsresult rv = NS_OK;
   mPrettyPrintXML = false;
@@ -720,7 +721,7 @@ nsXMLContentSink::ProcessStyleLink(nsIContent* aElement,
 
   
   rv = nsContentSink::ProcessStyleLink(aElement, aHref, aAlternate,
-                                       aTitle, aType, aMedia);
+                                       aTitle, aType, aMedia, aReferrerPolicy);
 
   
   
@@ -1258,7 +1259,9 @@ nsXMLContentSink::HandleProcessingInstruction(const char16_t *aTarget,
       return DidProcessATokenImpl();
   }
 
-  rv = ProcessStyleLink(node, href, isAlternate, title, type, media);
+  
+  
+  rv = ProcessStyleLink(node, href, isAlternate, title, type, media, EmptyString());
   return NS_SUCCEEDED(rv) ? DidProcessATokenImpl() : rv;
 }
 

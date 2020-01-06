@@ -1986,6 +1986,7 @@ Loader::LoadInlineStyle(nsIContent* aElement,
                         uint32_t aLineNumber,
                         const nsAString& aTitle,
                         const nsAString& aMedia,
+                        ReferrerPolicy aReferrerPolicy,
                         Element* aScopeElement,
                         nsICSSLoaderObserver* aObserver,
                         bool* aCompleted,
@@ -2009,10 +2010,11 @@ Loader::LoadInlineStyle(nsIContent* aElement,
   
   
   
+
   StyleSheetState state;
   RefPtr<StyleSheet> sheet;
   nsresult rv = CreateSheet(nullptr, aElement, nullptr, eAuthorSheetFeatures,
-                            CORS_NONE, mDocument->GetReferrerPolicy(),
+                            CORS_NONE, aReferrerPolicy,
                             EmptyString(), 
                             false, false, aTitle, state, aIsAlternate,
                             &sheet);

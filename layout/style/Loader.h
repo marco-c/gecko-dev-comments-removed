@@ -235,11 +235,13 @@ public:
 
 
 
+
   nsresult LoadInlineStyle(nsIContent* aElement,
                            const nsAString& aBuffer,
                            uint32_t aLineNumber,
                            const nsAString& aTitle,
                            const nsAString& aMedia,
+                           ReferrerPolicy aReferrerPolicy,
                            mozilla::dom::Element* aScopeElement,
                            nsICSSLoaderObserver* aObserver,
                            bool* aCompleted,
