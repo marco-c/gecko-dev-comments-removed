@@ -417,10 +417,7 @@ class MochitestServer(object):
         
         env = test_environment(xrePath=self._xrePath, log=self._log)
         env["XPCOM_DEBUG_BREAK"] = "warn"
-        if "LD_LIBRARY_PATH" not in env or env["LD_LIBRARY_PATH"] is None:
-            env["LD_LIBRARY_PATH"] = self._xrePath
-        else:
-            env["LD_LIBRARY_PATH"] = ":".join([self._xrePath, env["LD_LIBRARY_PATH"]])
+        env["LD_LIBRARY_PATH"] = self._xrePath
 
         
         
@@ -1662,9 +1659,9 @@ toolbar#nav-bar {
 
         return browserEnv
 
-    def killNamedOrphans(self, pname):
-        """ Kill orphan processes matching the given command name """
-        self.log.info("Checking for orphan %s processes..." % pname)
+    def killNamedProc(self, pname):
+        """ Kill processes matching the given command name """
+        self.log.info("Checking for %s processes..." % pname)
 
         def _psInfo(line):
             if pname in line:
@@ -1679,8 +1676,8 @@ toolbar#nav-bar {
             parts = line.split()
             if len(parts) == 3 and parts[0].isdigit():
                 pid = int(parts[0])
-                if parts[2] == pname and parts[1] == '1':
-                    self.log.info("killing %s orphan with pid %d" % (pname, pid))
+                if parts[2] == pname:
+                    self.log.info("killing %s with pid %d" % (pname, pid))
                     killPid(pid, self.log)
         process = mozprocess.ProcessHandler(['ps', '-o', 'pid,ppid,comm'],
                                             processOutputLine=_psKill)
@@ -2421,8 +2418,8 @@ toolbar#nav-bar {
         
         
         
-        self.killNamedOrphans('ssltunnel')
-        self.killNamedOrphans('xpcshell')
+        self.killNamedProc('ssltunnel')
+        self.killNamedProc('xpcshell')
 
         if options.cleanupCrashes:
             mozcrash.cleanup_pending_crash_reports()

@@ -85,8 +85,8 @@ class RobocopTestRunner(MochitestDesktop):
         
         
         
-        self.killNamedOrphans('ssltunnel')
-        self.killNamedOrphans('xpcshell')
+        self.killNamedProc('ssltunnel')
+        self.killNamedProc('xpcshell')
         self.auto.deleteANRs()
         self.auto.deleteTombstones()
         procName = self.options.app.split('/')[-1]
