@@ -502,10 +502,19 @@ ContentClient::CalculateBufferForPaint(PaintedLayer* aLayer,
     
     
     bool needsComponentAlpha = (mode == SurfaceMode::SURFACE_COMPONENT_ALPHA);
-    bool changedSurfaceOrContent = frontBuffer &&
-                                   (contentType != frontBuffer->GetContentType() ||
-                                    needsComponentAlpha != frontBuffer->HaveBufferOnWhite());
-    if (canKeepBufferContents && changedSurfaceOrContent) {
+    bool backBufferChangedSurface = mBuffer &&
+                                    (contentType != mBuffer->GetContentType() ||
+                                     needsComponentAlpha != mBuffer->HaveBufferOnWhite());
+    if (canKeepBufferContents && backBufferChangedSurface) {
+      
+      
+      
+      canReuseBuffer = false;
+    }
+    bool frontBufferChangedSurface = frontBuffer &&
+                                     (contentType != frontBuffer->GetContentType() ||
+                                      needsComponentAlpha != frontBuffer->HaveBufferOnWhite());
+    if (canKeepBufferContents && frontBufferChangedSurface) {
       
       
       canReuseBuffer = false;
