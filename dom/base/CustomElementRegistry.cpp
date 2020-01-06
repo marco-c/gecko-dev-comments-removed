@@ -1051,8 +1051,12 @@ CustomElementReactionsStack::PopAndInvokeElementQueue()
     
     
     
+    
+    
+    
+    
+    
     nsIGlobalObject* global = GetEntryGlobal();
-    MOZ_ASSERT(global, "Should always have a entry global here!");
     InvokeReactions(elementQueue, global);
   }
 

@@ -24,6 +24,7 @@ namespace mozilla {
 namespace dom {
 class Element;
 class NodeInfo;
+struct CustomElementDefinition;
 } 
 } 
 
@@ -41,7 +42,8 @@ nsresult
 NS_NewHTMLElement(mozilla::dom::Element** aResult,
                   already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
                   mozilla::dom::FromParser aFromParser,
-                  const nsAString* aIs = nullptr);
+                  const nsAString* aIs = nullptr,
+                  mozilla::dom::CustomElementDefinition* aDefinition = nullptr);
 
 
 

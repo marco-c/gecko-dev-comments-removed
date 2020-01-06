@@ -251,7 +251,8 @@ DoCustomElementCreate(Element** aElement, nsIDocument* aDoc, nsAtom* aLocalName,
 
 nsresult
 NS_NewHTMLElement(Element** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-                  FromParser aFromParser, const nsAString* aIs)
+                  FromParser aFromParser, const nsAString* aIs,
+                  mozilla::dom::CustomElementDefinition* aDefinition)
 {
   *aResult = nullptr;
 
@@ -268,8 +269,8 @@ NS_NewHTMLElement(Element** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& 
   
   
   
-  CustomElementDefinition* definition = nullptr;
-  if (CustomElementRegistry::IsCustomElementEnabled()) {
+  CustomElementDefinition* definition = aDefinition;
+  if (!definition && CustomElementRegistry::IsCustomElementEnabled()) {
     definition =
       nsContentUtils::LookupCustomElementDefinition(nodeInfo->GetDocument(),
                                                     nodeInfo->LocalName(),
@@ -295,8 +296,19 @@ NS_NewHTMLElement(Element** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& 
                                      aFromParser == dom::NOT_FROM_PARSER;
     
     
-    nsIGlobalObject* global = GetEntryGlobal();
-    MOZ_ASSERT(global);
+    
+    nsIGlobalObject* global;
+    if (aFromParser == dom::NOT_FROM_PARSER) {
+      global = GetEntryGlobal();
+    } else {
+      global = nodeInfo->GetDocument()->GetScopeObject();
+    }
+    if (!global) {
+      
+      
+      return NS_ERROR_FAILURE;
+    }
+
     AutoEntryScript aes(global, "create custom elements");
     JSContext* cx = aes.cx();
     ErrorResult rv;
@@ -336,6 +348,7 @@ NS_NewHTMLElement(Element** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& 
 
     
     NS_IF_ADDREF(*aResult = NS_NewHTMLElement(nodeInfo.forget(), aFromParser));
+    (*aResult)->SetCustomElementData(new CustomElementData(definition->mType));
     nsContentUtils::EnqueueUpgradeReaction(*aResult, definition);
     return NS_OK;
   }
