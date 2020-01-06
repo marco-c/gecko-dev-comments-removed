@@ -4535,7 +4535,15 @@ FrameLayerBuilder::ComputeGeometryChangeForItem(DisplayItemData* aData)
     return;
   }
 
+  
+  
+  
+  
   nsAutoPtr<nsDisplayItemGeometry> geometry;
+  if (item->IsReused() && aData->mGeometry) {
+    aData->EndUpdate(geometry);
+    return;
+  }
 
   PaintedDisplayItemLayerUserData* layerData =
     static_cast<PaintedDisplayItemLayerUserData*>(aData->mLayer->GetUserData(&gPaintedDisplayItemLayerUserData));
