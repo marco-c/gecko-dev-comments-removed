@@ -23,13 +23,15 @@
 
 
 
-
 var _quit = false;
 var _passed = true;
 var _tests_pending = 0;
 var _cleanupFunctions = [];
 var _pendingTimers = [];
 var _profileInitialized = false;
+
+
+var _XPCSHELL_PROCESS;
 
 
 
@@ -50,7 +52,6 @@ var Assert = new AssertCls(function(err, message, stack) {
     do_report_result(true, message, stack);
   }
 });
-
 
 var _add_params = function(params) {
   if (typeof _XPCSHELL_PROCESS != "undefined") {
@@ -1251,7 +1252,7 @@ function do_load_child_test_harness() {
       + "const _TEST_NAME=" + uneval(_TEST_NAME) + "; "
       
       + "const _JSDEBUGGER_PORT=0; "
-      + "const _XPCSHELL_PROCESS='child';";
+      + "_XPCSHELL_PROCESS='child';";
 
   if (typeof _JSCOV_DIR === "string") {
     command += " const _JSCOV_DIR=" + uneval(_JSCOV_DIR) + ";";
