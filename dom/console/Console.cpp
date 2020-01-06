@@ -583,7 +583,7 @@ private:
         innerID = NS_LITERAL_STRING("ServiceWorker");
         
         
-        id.AssignWithConversion(mWorkerPrivate->ServiceWorkerScope());
+        CopyASCIItoUTF16(mWorkerPrivate->ServiceWorkerScope(), id);
       } else {
         innerID = NS_LITERAL_STRING("Worker");
       }

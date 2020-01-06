@@ -585,7 +585,7 @@ XRE_InitChildProcess(int aArgc,
     
     if (*appModelUserId != '-') {
       nsString appId;
-      appId.AssignWithConversion(nsDependentCString(appModelUserId));
+      CopyASCIItoUTF16(nsDependentCString(appModelUserId), appId);
       
       appId.Trim("\"");
       

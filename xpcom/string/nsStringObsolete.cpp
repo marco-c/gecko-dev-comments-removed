@@ -1031,21 +1031,4 @@ nsString::ToDouble(nsresult* aErrorCode) const
   return NS_LossyConvertUTF16toASCII(*this).ToDouble(aErrorCode);
 }
 
-
-
-
-
-
-void
-nsCString::AssignWithConversion( const nsAString& aData )
-{
-  LossyCopyUTF16toASCII(aData, *this);
-}
-
-void
-nsString::AssignWithConversion( const nsACString& aData )
-{
-  CopyASCIItoUTF16(aData, *this);
-}
-
 #endif 

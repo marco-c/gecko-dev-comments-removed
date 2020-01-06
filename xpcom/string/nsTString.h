@@ -430,15 +430,6 @@ public:
   void CompressWhitespace(bool aEliminateLeading = true,
                           bool aEliminateTrailing = true);
 
-
-  
-
-
-
-  void AssignWithConversion(const nsTAString_IncompatibleCharT& aString);
-  void AssignWithConversion(const incompatible_char_type* aData,
-                            int32_t aLength = -1);
-
 #endif 
 
   
