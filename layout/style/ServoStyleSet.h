@@ -59,6 +59,16 @@ enum class StylistState : uint8_t {
 };
 
 
+enum class OriginFlags : uint8_t {
+  UserAgent = 0x01,
+  User      = 0x02,
+  Author    = 0x04,
+  All       = 0x07,
+};
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(OriginFlags)
+
+
 
 
 
