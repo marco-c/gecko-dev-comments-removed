@@ -7840,7 +7840,6 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
             
             
             Rooted<JSScript*> parent(cx, script);
-            MOZ_ASSERT(parent->getVersion() == parser.options().version);
             MOZ_ASSERT(parent->mutedErrors() == parser.options().mutedErrors());
             const TransitiveCompileOptions& transitiveOptions = parser.options();
             CompileOptions options(cx, transitiveOptions);
