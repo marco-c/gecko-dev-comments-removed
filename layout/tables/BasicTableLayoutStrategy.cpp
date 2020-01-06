@@ -41,7 +41,7 @@ BasicTableLayoutStrategy::~BasicTableLayoutStrategy()
 }
 
  nscoord
-BasicTableLayoutStrategy::GetMinISize(nsRenderingContext* aRenderingContext)
+BasicTableLayoutStrategy::GetMinISize(gfxContext* aRenderingContext)
 {
     DISPLAY_MIN_WIDTH(mTableFrame, mMinISize);
     if (mMinISize == NS_INTRINSIC_WIDTH_UNKNOWN) {
@@ -51,7 +51,7 @@ BasicTableLayoutStrategy::GetMinISize(nsRenderingContext* aRenderingContext)
 }
 
  nscoord
-BasicTableLayoutStrategy::GetPrefISize(nsRenderingContext* aRenderingContext,
+BasicTableLayoutStrategy::GetPrefISize(gfxContext* aRenderingContext,
                                        bool aComputingSize)
 {
     DISPLAY_PREF_WIDTH(mTableFrame, mPrefISize);
@@ -83,7 +83,7 @@ struct CellISizeInfo {
 
 
 static CellISizeInfo
-GetISizeInfo(nsRenderingContext *aRenderingContext,
+GetISizeInfo(gfxContext *aRenderingContext,
              nsIFrame *aFrame, WritingMode aWM, bool aIsCell)
 {
     nscoord minCoord, prefCoord;
@@ -237,14 +237,14 @@ GetISizeInfo(nsRenderingContext *aRenderingContext,
 }
 
 static inline CellISizeInfo
-GetCellISizeInfo(nsRenderingContext *aRenderingContext,
+GetCellISizeInfo(gfxContext *aRenderingContext,
                  nsTableCellFrame *aCellFrame, WritingMode aWM)
 {
     return GetISizeInfo(aRenderingContext, aCellFrame, aWM, true);
 }
 
 static inline CellISizeInfo
-GetColISizeInfo(nsRenderingContext *aRenderingContext,
+GetColISizeInfo(gfxContext *aRenderingContext,
                 nsIFrame *aFrame, WritingMode aWM)
 {
     return GetISizeInfo(aRenderingContext, aFrame, aWM, false);
@@ -258,7 +258,7 @@ GetColISizeInfo(nsRenderingContext *aRenderingContext,
 
 
 void
-BasicTableLayoutStrategy::ComputeColumnIntrinsicISizes(nsRenderingContext* aRenderingContext)
+BasicTableLayoutStrategy::ComputeColumnIntrinsicISizes(gfxContext* aRenderingContext)
 {
     nsTableFrame *tableFrame = mTableFrame;
     nsTableCellMap *cellMap = tableFrame->GetCellMap();
@@ -423,7 +423,7 @@ BasicTableLayoutStrategy::ComputeColumnIntrinsicISizes(nsRenderingContext* aRend
 }
 
 void
-BasicTableLayoutStrategy::ComputeIntrinsicISizes(nsRenderingContext* aRenderingContext)
+BasicTableLayoutStrategy::ComputeIntrinsicISizes(gfxContext* aRenderingContext)
 {
     ComputeColumnIntrinsicISizes(aRenderingContext);
 

@@ -5,6 +5,7 @@
 
 
 
+#include "gfxContext.h"
 #include "nsInlineFrame.h"
 #include "nsLineLayout.h"
 #include "nsBlockFrame.h"
@@ -12,7 +13,6 @@
 #include "nsGkAtoms.h"
 #include "nsStyleContext.h"
 #include "nsPresContext.h"
-#include "nsRenderingContext.h"
 #include "nsCSSAnonBoxes.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/RestyleManagerInlines.h"
@@ -256,14 +256,14 @@ nsInlineFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
 
  void
-nsInlineFrame::AddInlineMinISize(nsRenderingContext *aRenderingContext,
+nsInlineFrame::AddInlineMinISize(gfxContext *aRenderingContext,
                                  nsIFrame::InlineMinISizeData *aData)
 {
   DoInlineIntrinsicISize(aRenderingContext, aData, nsLayoutUtils::MIN_ISIZE);
 }
 
  void
-nsInlineFrame::AddInlinePrefISize(nsRenderingContext *aRenderingContext,
+nsInlineFrame::AddInlinePrefISize(gfxContext *aRenderingContext,
                                   nsIFrame::InlinePrefISizeData *aData)
 {
   DoInlineIntrinsicISize(aRenderingContext, aData, nsLayoutUtils::PREF_ISIZE);
@@ -272,7 +272,7 @@ nsInlineFrame::AddInlinePrefISize(nsRenderingContext *aRenderingContext,
 
 
 LogicalSize
-nsInlineFrame::ComputeSize(nsRenderingContext *aRenderingContext,
+nsInlineFrame::ComputeSize(gfxContext *aRenderingContext,
                            WritingMode aWM,
                            const LogicalSize& aCBSize,
                            nscoord aAvailableISize,
