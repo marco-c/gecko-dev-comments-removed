@@ -14,7 +14,6 @@
 #include "MemoryBlockCache.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/ErrorNames.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ReentrantMonitor.h"
@@ -36,11 +35,9 @@ namespace mozilla {
 
 #undef LOG
 #undef LOGI
-#undef LOGE
 LazyLogModule gMediaCacheLog("MediaCache");
 #define LOG(...) MOZ_LOG(gMediaCacheLog, LogLevel::Debug, (__VA_ARGS__))
 #define LOGI(...) MOZ_LOG(gMediaCacheLog, LogLevel::Info, (__VA_ARGS__))
-#define LOGE(...) NS_DebugBreak(NS_DEBUG_WARNING, nsPrintfCString(__VA_ARGS__).get(), nullptr, __FILE__, __LINE__)
 
 
 
@@ -2018,9 +2015,6 @@ MediaCacheStream::NotifyDataReceived(uint32_t aLoadID,
     return;
   }
 
-  
-  bool cacheUpdated = false;
-
   auto source = MakeSpan<const uint8_t>(aData, aCount);
 
   
@@ -2048,7 +2042,6 @@ MediaCacheStream::NotifyDataReceived(uint32_t aLoadID,
         source.First(remaining));
       source = source.From(remaining);
       mChannelOffset += remaining;
-      cacheUpdated = true;
     } else {
       
       auto buf = MakeSpan<uint8_t>(mPartialBlockBuffer.get() + partial.Length(),
@@ -2070,10 +2063,8 @@ MediaCacheStream::NotifyDataReceived(uint32_t aLoadID,
 
   
   
-  if (cacheUpdated) {
-    
-    mon.NotifyAll();
-  }
+  
+  mon.NotifyAll();
 }
 
 void
@@ -2550,6 +2541,8 @@ MediaCacheStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes)
   NS_ASSERTION(!NS_IsMainThread(), "Don't call on main thread");
 
   ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
+  if (mClosed)
+    return NS_ERROR_FAILURE;
 
   
   
@@ -2558,16 +2551,10 @@ MediaCacheStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes)
   uint32_t count = 0;
   
   while (count < aCount) {
-    if (mClosed) {
-      return NS_ERROR_ABORT;
-    }
-
     int32_t streamBlock = OffsetToBlockIndex(streamOffset);
     if (streamBlock < 0) {
-      LOGE("Stream %p invalid offset=%" PRId64, this, streamOffset);
-      return NS_ERROR_ILLEGAL_VALUE;
+      break;
     }
-
     uint32_t offsetInStreamBlock = uint32_t(streamOffset - streamBlock*BLOCK_SIZE);
     int64_t size = std::min<int64_t>(aCount - count, BLOCK_SIZE - offsetInStreamBlock);
 
@@ -2588,6 +2575,12 @@ MediaCacheStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes)
     if (cacheBlock < 0) {
       
 
+      if (count > 0) {
+        
+        
+        break;
+      }
+
       
       
       
@@ -2597,8 +2590,7 @@ MediaCacheStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes)
       while (MediaCacheStream* stream = iter.Next()) {
         if (OffsetToBlockIndexUnchecked(stream->mChannelOffset) ==
               streamBlock &&
-            streamOffset < stream->mChannelOffset &&
-            stream->mChannelOffset == stream->mStreamLength) {
+            streamOffset < stream->mChannelOffset) {
           streamWithPartialBlock = stream;
           break;
         }
@@ -2611,16 +2603,13 @@ MediaCacheStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes)
         
         bytes = std::min(bytes, int64_t(INT32_MAX));
         MOZ_ASSERT(bytes >= 0 && bytes <= aCount, "Bytes out of range.");
-        memcpy(aBuffer + count,
-               streamWithPartialBlock->mPartialBlockBuffer.get() +
-                 offsetInStreamBlock,
-               bytes);
+        memcpy(aBuffer,
+          streamWithPartialBlock->mPartialBlockBuffer.get() + offsetInStreamBlock, bytes);
         if (mCurrentMode == MODE_METADATA) {
           streamWithPartialBlock->mMetadataInPartialBlockBuffer = true;
         }
         streamOffset += bytes;
-        count += bytes;
-        
+        count = bytes;
         break;
       }
 
@@ -2633,6 +2622,11 @@ MediaCacheStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes)
 
       
       mon.Wait();
+      if (mClosed) {
+        
+        
+        return NS_ERROR_FAILURE;
+      }
       continue;
     }
 
@@ -2645,25 +2639,22 @@ MediaCacheStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes)
     nsresult rv = mMediaCache->ReadCacheFile(
       offset, aBuffer + count, int32_t(size), &bytes);
     if (NS_FAILED(rv)) {
-      nsCString name;
-      GetErrorName(rv, name);
-      LOGE("Stream %p ReadCacheFile failed, rv=%s", this, name.Data());
-      return rv;
+      if (count == 0)
+        return rv;
+      
+      break;
     }
     streamOffset += bytes;
     count += bytes;
   }
 
-  *aBytes = count;
-  if (count == 0) {
-    return NS_OK;
+  if (count > 0) {
+    
+    
+    mMediaCache->QueueUpdate();
   }
-
-  
-  
-  mMediaCache->QueueUpdate();
-
   LOG("Stream %p Read at %" PRId64 " count=%d", this, streamOffset-count, count);
+  *aBytes = count;
   mStreamOffset = streamOffset;
   return NS_OK;
 }
