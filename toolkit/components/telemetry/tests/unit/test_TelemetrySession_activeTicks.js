@@ -13,7 +13,7 @@ add_task(async function test_setup() {
   
   await setEmptyPrefWatchlist();
 
-  Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
+  Services.prefs.setBoolPref(TelemetryUtils.Preferences.TelemetryEnabled, true);
 });
 
 add_task(async function test_record_activeTicks() {

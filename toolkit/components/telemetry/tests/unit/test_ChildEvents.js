@@ -66,7 +66,7 @@ add_task(async function() {
   
   do_get_profile(true);
   loadAddonManager(APP_ID, APP_NAME, APP_VERSION, PLATFORM_VERSION);
-  Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
+  Services.prefs.setBoolPref(TelemetryUtils.Preferences.TelemetryEnabled, true);
   await TelemetryController.testSetup();
   
   await setEmptyPrefWatchlist();

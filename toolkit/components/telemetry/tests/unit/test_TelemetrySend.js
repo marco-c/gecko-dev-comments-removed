@@ -16,8 +16,6 @@ Cu.import("resource://gre/modules/Services.jsm", this);
 Cu.import("resource://gre/modules/Preferences.jsm", this);
 Cu.import("resource://gre/modules/osfile.jsm", this);
 
-const PREF_TELEMETRY_SERVER = "toolkit.telemetry.server";
-
 const MS_IN_A_MINUTE = 60 * 1000;
 
 function countPingTypes(pings) {
@@ -80,7 +78,7 @@ add_task(async function test_setup() {
   do_get_profile(true);
   
   await setEmptyPrefWatchlist();
-  Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
+  Services.prefs.setBoolPref(TelemetryUtils.Preferences.TelemetryEnabled, true);
 });
 
 
@@ -138,7 +136,7 @@ add_task(async function test_sendPendingPings() {
   
   now = fakeNow(futureDate(now, MS_IN_A_MINUTE));
   PingServer.start();
-  Preferences.set(PREF_TELEMETRY_SERVER, "http://localhost:" + PingServer.port);
+  Preferences.set(TelemetryUtils.Preferences.Server, "http://localhost:" + PingServer.port);
 
   let timerPromise = waitForTimer();
   await TelemetryController.testReset();
@@ -426,7 +424,6 @@ add_task(async function test_persistCurrentPingsOnShutdown() {
 
 add_task(async function test_sendCheckOverride() {
   const TEST_PING_TYPE = "test-sendCheckOverride";
-  const PREF_OVERRIDE_OFFICIAL_CHECK = "toolkit.telemetry.send.overrideOfficialCheck";
 
   
   await TelemetryController.testShutdown();
@@ -434,7 +431,7 @@ add_task(async function test_sendCheckOverride() {
 
   
   PingServer.start();
-  Preferences.set(PREF_TELEMETRY_SERVER, "http://localhost:" + PingServer.port);
+  Preferences.set(TelemetryUtils.Preferences.Server, "http://localhost:" + PingServer.port);
 
   
   
@@ -451,7 +448,7 @@ add_task(async function test_sendCheckOverride() {
   }
 
   
-  Preferences.set(PREF_OVERRIDE_OFFICIAL_CHECK, true);
+  Preferences.set(TelemetryUtils.Preferences.OverrideOfficialCheck, true);
   PingServer.resetPingHandler();
   await TelemetrySend.reset();
   await TelemetryController.submitExternalPing(TEST_PING_TYPE, { test: "test" });
@@ -462,7 +459,7 @@ add_task(async function test_sendCheckOverride() {
 
   
   TelemetrySend.setTestModeEnabled(true);
-  Preferences.reset(PREF_OVERRIDE_OFFICIAL_CHECK);
+  Preferences.reset(TelemetryUtils.Preferences.OverrideOfficialCheck);
 });
 
 add_task(async function test_measurePingsSize() {

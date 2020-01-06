@@ -117,7 +117,7 @@ add_task(async function setup() {
 
   
   PingServer.start();
-  Preferences.set("toolkit.telemetry.server", "http://localhost:" + PingServer.port);
+  Preferences.set(TelemetryUtils.Preferences.Server, "http://localhost:" + PingServer.port);
 });
 
 do_register_cleanup(function() {
