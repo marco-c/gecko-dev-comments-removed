@@ -22,6 +22,8 @@
 
 
 
+
+
 const Cu = typeof Components != "undefined" ? Components.utils : undefined;
 const Ci = typeof Components != "undefined" ? Components.interfaces : undefined;
 const Cc = typeof Components != "undefined" ? Components.classes : undefined;
@@ -87,6 +89,7 @@ exports.Config = Config;
 
 
 if (typeof Components != "undefined") {
+  
   
   
   Cu.import("resource://gre/modules/ctypes.jsm");
