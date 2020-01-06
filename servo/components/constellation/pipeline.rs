@@ -76,9 +76,6 @@ pub struct Pipeline {
     pub url: ServoUrl,
 
     
-    pub title: Option<String>,
-
-    
     
     pub running_animations: bool,
 
@@ -316,7 +313,6 @@ impl Pipeline {
             layout_chan: layout_chan,
             compositor_proxy: compositor_proxy,
             url: url,
-            title: None,
             children: vec!(),
             running_animations: false,
             visible: visible,
