@@ -1133,6 +1133,11 @@ protected:
     mPageUnloadingEventTimeStamp = mozilla::TimeStamp();
   }
 
+  
+
+
+  void ClearStaleServoData();
+
 private:
   class SelectorCacheKey
   {
@@ -1861,18 +1866,6 @@ public:
   {
     mIsContentDocument = aIsContentDocument;
   }
-
-  
-
-
-
-  void ClearStaleServoDataFromDocument();
-
-  
-
-
-
-  bool MightHaveStaleServoData() const { return mMightHaveStaleServoData; }
 
   
 
@@ -3589,10 +3582,6 @@ protected:
   bool mIsTopLevelContentDocument : 1;
 
   bool mIsContentDocument : 1;
-
-  
-  
-  bool mMightHaveStaleServoData : 1;
 
   
   bool mDidCallBeginLoad : 1;
