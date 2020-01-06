@@ -310,12 +310,14 @@ impl RuleTree {
                                 level: CascadeLevel,
                                 pdb: Option<ArcBorrow<Locked<PropertyDeclarationBlock>>>,
                                 path: &StrongRuleNode,
-                                guards: &StylesheetGuards)
+                                guards: &StylesheetGuards,
+                                important_rules_changed: &mut bool)
                                 -> Option<StrongRuleNode> {
         debug_assert!(level.is_unique_per_element());
         
         
         let mut current = path.clone();
+        *important_rules_changed = false;
 
         
         let mut children = SmallVec::<[_; 10]>::new();
@@ -335,6 +337,8 @@ impl RuleTree {
         
         
         if current.get().level == level {
+            *important_rules_changed |= level.is_important();
+
             if let Some(pdb) = pdb {
                 
                 
