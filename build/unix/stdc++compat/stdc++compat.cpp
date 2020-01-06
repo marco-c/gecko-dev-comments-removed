@@ -160,3 +160,12 @@ namespace std {
 #endif
 }
 #endif
+
+#if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 21)
+namespace std
+{
+  
+
+  template basic_ios<char, char_traits<char> >::operator bool() const;
+}
+#endif
