@@ -10,7 +10,6 @@
 #include "mozilla/a11y/Accessible.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/mscom/MainThreadRuntime.h"
-#include "mozilla/mscom/Ptr.h"
 #include "mozilla/mscom/Registration.h"
 #include "mozilla/UniquePtr.h"
 #include "nsAccessibilityService.h"
@@ -264,9 +263,11 @@ LazyInstantiator::ShouldInstantiate(const DWORD aClientTid)
     
     
     nsCOMPtr<nsIRunnable> runnable(
-        NewRunnableMethod<nsCOMPtr<nsIFile>>(this,
+        NewRunnableMethod<nsCOMPtr<nsIFile>, RefPtr<AccumulateRunnable>>(
+                                             this,
                                              &LazyInstantiator::GatherTelemetry,
-                                             clientExe));
+                                             clientExe,
+                                             new AccumulateRunnable(this)));
     NS_NewThread(getter_AddRefs(mTelemetryThread), runnable);
   }
 #endif 
@@ -328,7 +329,8 @@ LazyInstantiator::AppendVersionInfo(nsIFile* aClientExe,
 }
 
 void
-LazyInstantiator::GatherTelemetry(nsIFile* aClientExe)
+LazyInstantiator::GatherTelemetry(nsIFile* aClientExe,
+                                  AccumulateRunnable* aRunnable)
 {
   MOZ_ASSERT(!NS_IsMainThread());
 
@@ -338,10 +340,11 @@ LazyInstantiator::GatherTelemetry(nsIFile* aClientExe)
     AppendVersionInfo(aClientExe, value);
   }
 
+  aRunnable->SetData(value);
+
   
   
-  NS_DispatchToMainThread(NewNonOwningRunnableMethod<nsString>(this,
-        &LazyInstantiator::AccumulateTelemetry, value));
+  NS_DispatchToMainThread(aRunnable);
 }
 
 void
