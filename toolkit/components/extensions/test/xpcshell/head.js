@@ -23,6 +23,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 Services.prefs.setBoolPref("extensions.webextensions.remote", false);
+const testEnv = {
+  expectRemote: false, 
+};
 
 ExtensionTestUtils.init(this);
 
