@@ -933,8 +933,9 @@ class GCRuntime
     const ChunkPool& availableChunks(const AutoLockGC& lock) const { return availableChunks_.ref(); }
     const ChunkPool& emptyChunks(const AutoLockGC& lock) const { return emptyChunks_.ref(); }
     typedef ChainedIter<Chunk*, ChunkPool::Iter, ChunkPool::Iter> NonEmptyChunksIter;
-    NonEmptyChunksIter allNonEmptyChunks() {
-        return NonEmptyChunksIter(ChunkPool::Iter(availableChunks_.ref()), ChunkPool::Iter(fullChunks_.ref()));
+    NonEmptyChunksIter allNonEmptyChunks(const AutoLockGC& lock) {
+        return NonEmptyChunksIter(ChunkPool::Iter(availableChunks(lock)),
+                                  ChunkPool::Iter(fullChunks(lock)));
     }
 
     Chunk* getOrAllocChunk(const AutoLockGC& lock,
@@ -1186,11 +1187,11 @@ class GCRuntime
     
     
     
-    UnprotectedData<ChunkPool> availableChunks_;
+    GCLockData<ChunkPool> availableChunks_;
 
     
     
-    UnprotectedData<ChunkPool> fullChunks_;
+    GCLockData<ChunkPool> fullChunks_;
 
     ActiveThreadData<RootedValueMap> rootsHash;
 
