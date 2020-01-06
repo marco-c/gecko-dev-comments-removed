@@ -5,6 +5,7 @@
 "use strict";
 
 const { Cu } = require("chrome");
+const Services = require("Services");
 const promise = Cu.import("resource://devtools/shared/deprecated-sync-thenables.js", {}).Promise;
 
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
@@ -19,6 +20,8 @@ const {
 loader.lazyRequireGetter(this, "Authentication", "devtools/shared/security/auth");
 loader.lazyRequireGetter(this, "DebuggerSocket", "devtools/shared/security/socket", true);
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
+loader.lazyRequireGetter(this, "getDeviceFront", "devtools/shared/fronts/device", true);
+
 loader.lazyRequireGetter(this, "WebConsoleClient", "devtools/shared/webconsole/client", true);
 loader.lazyRequireGetter(this, "AddonClient", "devtools/shared/client/addon-client");
 loader.lazyRequireGetter(this, "RootClient", "devtools/shared/client/root-client");
@@ -28,6 +31,12 @@ loader.lazyRequireGetter(this, "TraceClient", "devtools/shared/client/trace-clie
 loader.lazyRequireGetter(this, "WorkerClient", "devtools/shared/client/worker-client");
 
 const noop = () => {};
+
+
+
+
+const MIN_SUPPORTED_PLATFORM_VERSION = "52.0a1";
+const MS_PER_DAY = 86400000;
 
 
 
@@ -181,6 +190,66 @@ DebuggerClient.prototype = {
 
     this._transport.ready();
     return deferred.promise;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async checkRuntimeVersion(listTabsForm) {
+    let incompatible = null;
+
+    
+    
+    let deviceFront = await getDeviceFront(this, listTabsForm);
+    let desc = await deviceFront.getDescription();
+
+    
+    
+    
+    
+    let runtimeID = desc.appbuildid.substr(0, 8);
+    let localID = Services.appinfo.appBuildID.substr(0, 8);
+    function buildIDToDate(buildID) {
+      let fields = buildID.match(/(\d{4})(\d{2})(\d{2})/);
+      
+      return new Date(fields[1], Number.parseInt(fields[2], 10) - 1, fields[3]);
+    }
+    let runtimeDate = buildIDToDate(runtimeID);
+    let localDate = buildIDToDate(localID);
+    
+    
+    
+    if (runtimeDate - localDate > 7 * MS_PER_DAY) {
+      incompatible = "too-recent";
+    }
+
+    
+    let platformversion = desc.platformversion;
+    if (Services.vc.compare(platformversion, MIN_SUPPORTED_PLATFORM_VERSION) < 0) {
+      incompatible = "too-old";
+    }
+
+    return {
+      incompatible,
+      minVersion: MIN_SUPPORTED_PLATFORM_VERSION,
+      runtimeVersion: platformversion,
+      localID,
+      runtimeID,
+    };
   },
 
   
