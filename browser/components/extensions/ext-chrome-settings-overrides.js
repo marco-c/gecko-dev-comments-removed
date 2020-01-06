@@ -15,6 +15,11 @@ XPCOMUtils.defineLazyModuleGetter(this, "ExtensionSettingsStore",
 
 const DEFAULT_SEARCH_STORE_TYPE = "default_search";
 const DEFAULT_SEARCH_SETTING_NAME = "defaultSearch";
+const ENGINE_ADDED_SETTING_NAME = "engineAdded";
+
+
+
+
 
 const searchInitialized = () => {
   if (Services.search.isInitialized) {
@@ -34,8 +39,8 @@ const searchInitialized = () => {
 };
 
 this.chrome_settings_overrides = class extends ExtensionAPI {
-  processDefaultSearchSetting(action) {
-    let {extension} = this;
+  static async processDefaultSearchSetting(action, id) {
+    await ExtensionSettingsStore.initialize();
     let item = ExtensionSettingsStore.getSetting(DEFAULT_SEARCH_STORE_TYPE, DEFAULT_SEARCH_SETTING_NAME);
     if (!item) {
       return;
@@ -45,10 +50,10 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
       
       
       
-      ExtensionSettingsStore.removeSetting(extension.id, DEFAULT_SEARCH_STORE_TYPE, DEFAULT_SEARCH_SETTING_NAME);
+      ExtensionSettingsStore.removeSetting(id, DEFAULT_SEARCH_STORE_TYPE, DEFAULT_SEARCH_SETTING_NAME);
       return;
     }
-    item = ExtensionSettingsStore[action](extension.id, DEFAULT_SEARCH_STORE_TYPE, DEFAULT_SEARCH_SETTING_NAME);
+    item = ExtensionSettingsStore[action](id, DEFAULT_SEARCH_STORE_TYPE, DEFAULT_SEARCH_SETTING_NAME);
     if (item) {
       try {
         let engine = Services.search.getEngineByName(item.value || item.initialValue);
@@ -58,6 +63,48 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
       } catch (e) {
         Components.utils.reportError(e);
       }
+    }
+  }
+
+  static async removeEngine(id) {
+    await ExtensionSettingsStore.initialize();
+    let item = await ExtensionSettingsStore.getSetting(
+      DEFAULT_SEARCH_STORE_TYPE, ENGINE_ADDED_SETTING_NAME, id);
+    if (item) {
+      ExtensionSettingsStore.removeSetting(
+        id, DEFAULT_SEARCH_STORE_TYPE, ENGINE_ADDED_SETTING_NAME);
+      await searchInitialized();
+      let engine = Services.search.getEngineByName(item.value);
+      try {
+        Services.search.removeEngine(engine);
+      } catch (e) {
+        Components.utils.reportError(e);
+      }
+    }
+  }
+
+  static removeSearchSettings(id) {
+    this.processDefaultSearchSetting("removeSetting", id);
+    this.removeEngine(id);
+  }
+
+  static onUninstall(id) {
+    
+    
+    this.removeSearchSettings(id);
+  }
+
+  static onUpdate(id, manifest) {
+    let haveHomepage = manifest && manifest.chrome_settings_overrides &&
+                       manifest.chrome_settings_overrides.homepage;
+    if (!haveHomepage) {
+      ExtensionPreferencesManager.removeSetting(id, "homepage_override");
+    }
+
+    let haveSearchProvider = manifest && manifest.chrome_settings_overrides &&
+                             manifest.chrome_settings_overrides.search_provider;
+    if (!haveSearchProvider) {
+      this.removeSearchSettings(id);
     }
   }
 
@@ -74,27 +121,9 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
       await searchInitialized();
       extension.callOnClose({
         close: () => {
-          if (extension.shutdownReason == "ADDON_DISABLE" ||
-              extension.shutdownReason == "ADDON_UNINSTALL") {
-            switch (extension.shutdownReason) {
-              case "ADDON_DISABLE":
-                this.processDefaultSearchSetting("disable");
-                break;
-
-              case "ADDON_UNINSTALL":
-                this.processDefaultSearchSetting("removeSetting");
-                break;
-            }
-            
-            
-            let engines = Services.search.getEnginesByExtensionID(extension.id);
-            for (let engine of engines) {
-              try {
-                Services.search.removeEngine(engine);
-              } catch (e) {
-                Components.utils.reportError(e);
-              }
-            }
+          if (extension.shutdownReason == "ADDON_DISABLE") {
+            chrome_settings_overrides.processDefaultSearchSetting("disable", extension.id);
+            chrome_settings_overrides.removeEngine(extension.id);
           }
         },
       });
@@ -111,7 +140,7 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
           return;
         }
       }
-      this.addSearchEngine(searchProvider);
+      await this.addSearchEngine(searchProvider);
       if (searchProvider.is_default) {
         if (extension.startupReason === "ADDON_INSTALL") {
           
@@ -144,8 +173,7 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
       } else if (ExtensionSettingsStore.hasSetting(
                 extension.id, DEFAULT_SEARCH_STORE_TYPE, DEFAULT_SEARCH_SETTING_NAME)) {
         
-        
-        this.processDefaultSearchSetting("removeSetting");
+        chrome_settings_overrides.processDefaultSearchSetting("removeSetting", extension.id);
       }
     }
   }
@@ -159,11 +187,11 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
         });
       Services.search.currentEngine = Services.search.getEngineByName(item.value);
     } else if (extension.startupReason === "ADDON_ENABLE") {
-      this.processDefaultSearchSetting("enable");
+      chrome_settings_overrides.processDefaultSearchSetting("enable", extension.id);
     }
   }
 
-  addSearchEngine(searchProvider) {
+  async addSearchEngine(searchProvider) {
     let {extension} = this;
     let isCurrent = false;
     let index = -1;
@@ -187,6 +215,9 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
         queryCharset: "UTF-8",
       };
       Services.search.addEngineWithDetails(searchProvider.name.trim(), params);
+      await ExtensionSettingsStore.addSetting(
+        extension.id, DEFAULT_SEARCH_STORE_TYPE, ENGINE_ADDED_SETTING_NAME,
+        searchProvider.name.trim());
       if (extension.startupReason === "ADDON_UPGRADE") {
         let engine = Services.search.getEngineByName(searchProvider.name.trim());
         if (isCurrent) {

@@ -112,12 +112,35 @@ function ensureType(type) {
 
 
 
-function getTopItem(type, key) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getItem(type, key, id) {
   ensureType(type);
 
   let keyInfo = _store.data[type][key];
   if (!keyInfo) {
     return null;
+  }
+
+  if (id) {
+    
+    let item = keyInfo.precedenceList.find(item => item.id === id);
+    return item ? {key, value: item.value, id} : null;
   }
 
   
@@ -205,7 +228,7 @@ function alterSetting(id, type, key, action) {
   }
 
   if (foundIndex === 0) {
-    returnItem = getTopItem(type, key);
+    returnItem = getItem(type, key);
   }
 
   if (action === "remove" && keyInfo.precedenceList.length === 0) {
@@ -256,7 +279,7 @@ this.ExtensionSettingsStore = {
 
 
 
-  async addSetting(id, type, key, value, initialValueCallback, callbackArgument = key) {
+  async addSetting(id, type, key, value, initialValueCallback = () => undefined, callbackArgument = key) {
     if (typeof initialValueCallback != "function") {
       throw new Error("initialValueCallback must be a function.");
     }
@@ -410,8 +433,11 @@ this.ExtensionSettingsStore = {
 
 
 
-  getSetting(type, key) {
-    return getTopItem(type, key);
+
+
+
+  getSetting(type, key, id) {
+    return getItem(type, key, id);
   },
 
   

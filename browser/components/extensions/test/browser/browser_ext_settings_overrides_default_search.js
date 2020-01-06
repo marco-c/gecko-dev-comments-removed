@@ -29,10 +29,16 @@ function awaitEvent(eventName, id) {
   });
 }
 
+let defaultEngineName = Services.search.currentEngine.name;
+
+function restoreDefaultEngine() {
+  let engine = Services.search.getEngineByName(defaultEngineName);
+  Services.search.currentEngine = engine;
+}
+registerCleanupFunction(restoreDefaultEngine);
+
 
 add_task(async function test_extension_setting_default_engine() {
-  let defaultEngineName = Services.search.currentEngine.name;
-
   let ext1 = ExtensionTestUtils.loadExtension({
     manifest: {
       "chrome_settings_overrides": {
@@ -58,7 +64,6 @@ add_task(async function test_extension_setting_default_engine() {
 
 
 add_task(async function test_extension_setting_multiple_default_engine() {
-  let defaultEngineName = Services.search.currentEngine.name;
   let ext1 = ExtensionTestUtils.loadExtension({
     manifest: {
       "chrome_settings_overrides": {
@@ -105,7 +110,6 @@ add_task(async function test_extension_setting_multiple_default_engine() {
 
 
 add_task(async function test_extension_setting_multiple_default_engine_reversed() {
-  let defaultEngineName = Services.search.currentEngine.name;
   let ext1 = ExtensionTestUtils.loadExtension({
     manifest: {
       "chrome_settings_overrides": {
@@ -175,6 +179,7 @@ add_task(async function test_user_changing_default_engine() {
   await ext1.unload();
 
   is(Services.search.currentEngine.name, "Twitter", "Default engine is Twitter");
+  restoreDefaultEngine();
 });
 
 
@@ -220,13 +225,13 @@ add_task(async function test_user_change_with_disabling() {
 
   is(Services.search.currentEngine.name, "Twitter", "Default engine is Twitter");
   await ext1.unload();
+  restoreDefaultEngine();
 });
 
 
 
 
 add_task(async function test_two_addons_with_first_disabled_before_second() {
-  let defaultEngineName = Services.search.currentEngine.name;
   let ext1 = ExtensionTestUtils.loadExtension({
     manifest: {
       applications: {
@@ -295,7 +300,6 @@ add_task(async function test_two_addons_with_first_disabled_before_second() {
 
 
 add_task(async function test_two_addons_with_first_disabled() {
-  let defaultEngineName = Services.search.currentEngine.name;
   let ext1 = ExtensionTestUtils.loadExtension({
     manifest: {
       applications: {
@@ -364,7 +368,6 @@ add_task(async function test_two_addons_with_first_disabled() {
 
 
 add_task(async function test_two_addons_with_second_disabled() {
-  let defaultEngineName = Services.search.currentEngine.name;
   let ext1 = ExtensionTestUtils.loadExtension({
     manifest: {
       applications: {
