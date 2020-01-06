@@ -874,9 +874,6 @@ TextEditRules::WillSetText(Selection& aSelection,
   }
 
   
-  AutoTransactionsConserveSelection dontChangeMySelection(textEditor);
-
-  
   
   nsresult rv = textEditor->SetTextImpl(aSelection, tString,
                                         *curNode->GetAsText());
