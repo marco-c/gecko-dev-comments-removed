@@ -465,7 +465,7 @@ KeyframeUtils::GetKeyframesFromObject(JSContext* aCx,
 }
 
  void
-KeyframeUtils::ApplyDistributeSpacing(nsTArray<Keyframe>& aKeyframes)
+KeyframeUtils::DistributeKeyframes(nsTArray<Keyframe>& aKeyframes)
 {
   if (aKeyframes.IsEmpty()) {
     return;

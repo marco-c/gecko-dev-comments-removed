@@ -99,7 +99,7 @@ public:
 
 
 
-  static void ApplyDistributeSpacing(nsTArray<Keyframe>& aKeyframes);
+  static void DistributeKeyframes(nsTArray<Keyframe>& aKeyframes);
 
   
 
