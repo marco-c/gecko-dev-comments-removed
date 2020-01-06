@@ -22,9 +22,6 @@ loader.lazyRequireGetter(this, "DebuggerServer", "devtools/server/main", true);
 loader.lazyRequireGetter(this, "DebuggerClient", "devtools/shared/client/main", true);
 loader.lazyImporter(this, "BrowserToolboxProcess", "resource://devtools/client/framework/ToolboxProcess.jsm");
 
-loader.lazyRequireGetter(this, "WebExtensionInspectedWindowFront",
-      "devtools/shared/fronts/webextension-inspected-window", true);
-
 const {defaultTools: DefaultTools, defaultThemes: DefaultThemes} =
   require("devtools/client/definitions");
 const EventEmitter = require("devtools/shared/old-event-emitter");
@@ -580,23 +577,6 @@ DevTools.prototype = {
 
   initBrowserToolboxProcessForAddon: function (addonID) {
     BrowserToolboxProcess.init({ addonID });
-  },
-
-  
-
-
-
-  createWebExtensionInspectedWindowFront: function (tabTarget) {
-    return new WebExtensionInspectedWindowFront(tabTarget.client, tabTarget.form);
-  },
-
-  
-
-
-
-  openBrowserConsole: function () {
-    let {HUDService} = require("devtools/client/webconsole/hudservice");
-    HUDService.openBrowserConsoleOrFocus();
   },
 
   
