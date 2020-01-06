@@ -67,6 +67,10 @@ public:
   static uint64_t
   GetChildID(PBackgroundParent* aBackgroundActor);
 
+  static bool
+  GetLiveActorArray(PBackgroundParent* aBackgroundActor,
+                    nsTArray<PBackgroundParent*>& aLiveActorArray);
+
 private:
   
   static bool
