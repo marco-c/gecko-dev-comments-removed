@@ -10,6 +10,7 @@
 #include "nsListControlFrame.h"
 #include "nsCheckboxRadioFrame.h" 
 #include "nsGkAtoms.h"
+#include "nsIDOMHTMLSelectElement.h"
 #include "nsIDOMHTMLOptionElement.h"
 #include "nsComboboxControlFrame.h"
 #include "nsIPresShell.h"
@@ -1053,9 +1054,10 @@ nsListControlFrame::ResetList(bool aAllowScrolling)
     
     int32_t indexToSelect = kNothingSelected;
 
-    HTMLSelectElement* selectElement = HTMLSelectElement::FromContent(mContent);
+    nsCOMPtr<nsIDOMHTMLSelectElement> selectElement(do_QueryInterface(mContent));
+    NS_ASSERTION(selectElement, "No select element!");
     if (selectElement) {
-      indexToSelect = selectElement->SelectedIndex();
+      selectElement->GetSelectedIndex(&indexToSelect);
       AutoWeakFrame weakFrame(this);
       ScrollToIndex(indexToSelect);
       if (!weakFrame.IsAlive()) {
@@ -1982,7 +1984,7 @@ nsListControlFrame::ScrollToFrame(dom::HTMLOptionElement& aOptElement)
   
   nsIFrame* childFrame = aOptElement.GetPrimaryFrame();
   if (childFrame) {
-    PresContext()->PresShell()->
+    PresShell()->
       ScrollFrameRectIntoView(childFrame,
                               nsRect(nsPoint(0, 0), childFrame->GetSize()),
                               nsIPresShell::ScrollAxis(), nsIPresShell::ScrollAxis(),

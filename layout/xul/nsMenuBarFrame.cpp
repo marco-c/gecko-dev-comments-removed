@@ -162,7 +162,7 @@ nsMenuBarFrame::FindMenuWithShortcut(nsIDOMKeyEvent* aKeyEvent)
     return nullptr; 
 
   
-  auto insertion = PresContext()->PresShell()->FrameConstructor()->
+  auto insertion = PresShell()->FrameConstructor()->
     GetInsertionPoint(GetContent(), nullptr);
   nsContainerFrame* immediateParent = insertion.mParentFrame;
   if (!immediateParent)

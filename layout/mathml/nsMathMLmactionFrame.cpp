@@ -226,7 +226,7 @@ nsMathMLmactionFrame::AttributeChanged(int32_t  aNameSpaceID,
   }
 
   if (needsReflow) {
-    PresContext()->PresShell()->
+    PresShell()->
       FrameNeedsReflow(this, nsIPresShell::eTreeChange, NS_FRAME_IS_DIRTY);
   }
 
@@ -333,7 +333,7 @@ nsMathMLmactionFrame::MouseClick()
       mContent->SetAttr(kNameSpaceID_None, nsGkAtoms::selection_, value, notify);
 
       
-      PresContext()->PresShell()->
+      PresShell()->
         FrameNeedsReflow(mSelectedFrame, nsIPresShell::eTreeChange,
                          NS_FRAME_IS_DIRTY);
     }

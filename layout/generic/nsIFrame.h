@@ -641,6 +641,10 @@ public:
     return StyleContext()->PresContext();
   }
 
+  nsIPresShell* PresShell() const {
+    return PresContext()->PresShell();
+  }
+
   
 
 

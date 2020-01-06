@@ -542,7 +542,7 @@ nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(nsIFrame  *aFrame,
 
       
       
-      if (cursorFrame && cursorFrame->PresContext()->PresShell() == mShell)
+      if (cursorFrame && cursorFrame->PresShell() == mShell)
       {
         nsIContent* cursorContent = cursorFrame->GetContent();
         NS_ENSURE_TRUE(cursorContent, NS_ERROR_FAILURE);

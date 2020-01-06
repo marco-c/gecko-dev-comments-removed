@@ -807,7 +807,7 @@ RecomputePosition(nsIFrame* aFrame)
   
   
   RefPtr<gfxContext> rc =
-    aFrame->PresContext()->PresShell()->CreateReferenceRenderingContext();
+    aFrame->PresShell()->CreateReferenceRenderingContext();
 
   
   
@@ -1245,7 +1245,7 @@ StyleChangeReflow(nsIFrame* aFrame, nsChangeHint aHint)
   }
 
   do {
-    aFrame->PresContext()->PresShell()->FrameNeedsReflow(
+    aFrame->PresShell()->FrameNeedsReflow(
       aFrame, dirtyType, dirtyBits, rootHandling);
     aFrame = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(aFrame);
   } while (aFrame);

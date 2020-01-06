@@ -1030,7 +1030,7 @@ nsBoxFrame::RemoveFrame(ChildListID     aListID,
   aOldFrame->Destroy();
 
   
-  PresContext()->PresShell()->
+  PresShell()->
     FrameNeedsReflow(this, nsIPresShell::eTreeChange,
                      NS_FRAME_HAS_DIRTY_CHILDREN);
 }
@@ -1067,7 +1067,7 @@ nsBoxFrame::InsertFrames(ChildListID     aListID,
        SetDebugOnChildList(state, mFrames.FirstChild(), true);
 #endif
 
-   PresContext()->PresShell()->
+   PresShell()->
      FrameNeedsReflow(this, nsIPresShell::eTreeChange,
                       NS_FRAME_HAS_DIRTY_CHILDREN);
 }
@@ -1101,7 +1101,7 @@ nsBoxFrame::AppendFrames(ChildListID     aListID,
 
    
    if (!(GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
-     PresContext()->PresShell()->
+     PresShell()->
        FrameNeedsReflow(this, nsIPresShell::eTreeChange,
                         NS_FRAME_HAS_DIRTY_CHILDREN);
    }
@@ -1228,7 +1228,7 @@ nsBoxFrame::AttributeChanged(int32_t aNameSpaceID,
       UpdateMouseThrough();
     }
 
-    PresContext()->PresShell()->
+    PresShell()->
       FrameNeedsReflow(this, nsIPresShell::eStyleChange, NS_FRAME_IS_DIRTY);
   }
   else if (aAttribute == nsGkAtoms::ordinal) {
@@ -1242,7 +1242,7 @@ nsBoxFrame::AttributeChanged(int32_t aNameSpaceID,
         StyleDisplay()->mDisplay != mozilla::StyleDisplay::MozPopup) {
       parent->XULRelayoutChildAtOrdinal(this);
       
-      PresContext()->PresShell()->
+      PresShell()->
         FrameNeedsReflow(parent, nsIPresShell::eStyleChange,
                          NS_FRAME_IS_DIRTY);
     }
@@ -1256,7 +1256,7 @@ nsBoxFrame::AttributeChanged(int32_t aNameSpaceID,
            mContent->IsXULElement(nsGkAtoms::tree)) {
     
     
-    PresContext()->PresShell()->
+    PresShell()->
       FrameNeedsReflow(this, nsIPresShell::eStyleChange, NS_FRAME_IS_DIRTY);
   }
 

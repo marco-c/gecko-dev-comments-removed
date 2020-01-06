@@ -204,7 +204,7 @@ nsFontInflationData::UpdateISize(const ReflowInput &aReflowInput)
 
   
   
-  nsIPresShell* presShell = bfc->PresContext()->PresShell();
+  nsIPresShell* presShell = bfc->PresShell();
   uint32_t lineThreshold = presShell->FontSizeInflationLineThreshold();
   nscoord newTextThreshold = (newNCAISize * lineThreshold) / 100;
 

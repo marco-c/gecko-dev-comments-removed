@@ -440,7 +440,7 @@ nsSVGForeignObjectFrame::NotifySVGChanged(uint32_t aFlags)
   
   
   
-  if (needReflow && !PresContext()->PresShell()->IsReflowLocked()) {
+  if (needReflow && !PresShell()->IsReflowLocked()) {
     RequestReflow(nsIPresShell::eResize);
   }
 
@@ -503,7 +503,7 @@ void nsSVGForeignObjectFrame::RequestReflow(nsIPresShell::IntrinsicDirty aType)
   if (!kid)
     return;
 
-  PresContext()->PresShell()->FrameNeedsReflow(kid, aType, NS_FRAME_IS_DIRTY);
+  PresShell()->FrameNeedsReflow(kid, aType, NS_FRAME_IS_DIRTY);
 }
 
 void

@@ -110,7 +110,7 @@ nsFontFaceUtils::MarkDirtyForFontChange(nsIFrame* aSubtreeRoot,
   AutoTArray<nsIFrame*, 4> subtrees;
   subtrees.AppendElement(aSubtreeRoot);
 
-  nsIPresShell* ps = aSubtreeRoot->PresContext()->PresShell();
+  nsIPresShell* ps = aSubtreeRoot->PresShell();
 
   
   
