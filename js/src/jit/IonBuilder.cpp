@@ -12478,7 +12478,8 @@ AbortReasonOr<Ok>
 IonBuilder::jsop_toid()
 {
     
-    if (current->peek(-1)->type() == MIRType::Int32)
+    MIRType type = current->peek(-1)->type();
+    if (type == MIRType::Int32 || type == MIRType::String || type == MIRType::Symbol)
         return Ok();
 
     MDefinition* index = current->pop();
