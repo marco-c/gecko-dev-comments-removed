@@ -445,7 +445,6 @@ public:
     mWriteParams(aWriteParams),
     mState(eInitial),
     mResult(JS::AsmJSCache_InternalError),
-    mDeleteReceived(false),
     mActorDestroyed(false),
     mOpened(false)
   {
@@ -493,12 +492,17 @@ private:
   {
     AssertIsOnOwningThread();
     MOZ_ASSERT(mState == eOpened);
+    MOZ_ASSERT(mResult == JS::AsmJSCache_Success);
 
     mState = eFinished;
 
     MOZ_ASSERT(mOpened);
 
     FinishOnOwningThread();
+
+    if (!mActorDestroyed) {
+      Unused << Send__delete__(this, mResult);
+    }
   }
 
   
@@ -508,6 +512,7 @@ private:
   {
     AssertIsOnOwningThread();
     MOZ_ASSERT(mState != eFinished);
+    MOZ_ASSERT(mResult != JS::AsmJSCache_Success);
 
     mState = eFinished;
 
@@ -515,7 +520,7 @@ private:
 
     FinishOnOwningThread();
 
-    if (!mDeleteReceived && !mActorDestroyed) {
+    if (!mActorDestroyed) {
       Unused << Send__delete__(this, mResult);
     }
   }
@@ -579,26 +584,6 @@ private:
   DirectoryLockFailed() override;
 
   
-  mozilla::ipc::IPCResult
-  Recv__delete__(const JS::AsmJSCacheResult& aResult) override
-  {
-    AssertIsOnOwningThread();
-    MOZ_ASSERT(mState != eFinished);
-    MOZ_ASSERT(!mDeleteReceived);
-
-    mDeleteReceived = true;
-
-    if (mOpened) {
-      Close();
-    } else {
-      Fail();
-    }
-
-    MOZ_ASSERT(mState == eFinished);
-
-    return IPC_OK();
-  }
-
   void
   ActorDestroy(ActorDestroyReason why) override
   {
@@ -624,17 +609,59 @@ private:
   }
 
   mozilla::ipc::IPCResult
-  RecvSelectCacheFileToRead(const uint32_t& aModuleIndex) override
+  RecvSelectCacheFileToRead(const OpenMetadataForReadResponse& aResponse)
+                            override
   {
     AssertIsOnOwningThread();
     MOZ_ASSERT(mState == eWaitingToOpenCacheFileForRead);
     MOZ_ASSERT(mOpenMode == eOpenForRead);
+    MOZ_ASSERT(!mOpened);
+
+    switch (aResponse.type()) {
+      case OpenMetadataForReadResponse::TAsmJSCacheResult: {
+        MOZ_ASSERT(aResponse.get_AsmJSCacheResult() != JS::AsmJSCache_Success);
+
+        mResult = aResponse.get_AsmJSCacheResult();
+
+        
+        
+        RefPtr<ParentRunnable> kungFuDeathGrip = this;
+
+        Fail();
+
+        break;
+      }
+
+      case OpenMetadataForReadResponse::Tuint32_t:
+        
+        mModuleIndex = aResponse.get_uint32_t();
+
+        mState = eReadyToOpenCacheFileForRead;
+
+        DispatchToIOThread();
+
+        break;
+
+      default:
+        MOZ_CRASH("Should never get here!");
+    }
+
+    return IPC_OK();
+  }
+
+  mozilla::ipc::IPCResult
+  RecvClose() override
+  {
+    AssertIsOnOwningThread();
+    MOZ_ASSERT(mState == eOpened);
 
     
+    
+    RefPtr<ParentRunnable> kungFuDeathGrip = this;
 
-    mModuleIndex = aModuleIndex;
-    mState = eReadyToOpenCacheFileForRead;
-    DispatchToIOThread();
+    Close();
+
+    MOZ_ASSERT(mState == eFinished);
 
     return IPC_OK();
   }
@@ -675,7 +702,6 @@ private:
   State mState;
   JS::AsmJSCacheResult mResult;
 
-  bool mDeleteReceived;
   bool mActorDestroyed;
   bool mOpened;
 };
@@ -1021,16 +1047,18 @@ ParentRunnable::Run()
 
       mState = eOpened;
 
-      
-      MOZ_ASSERT(!mOpened);
-      mOpened = true;
-
       FileDescriptor::PlatformHandleType handle =
         FileDescriptor::PlatformHandleType(PR_FileDesc2NativeHandle(mFileDesc));
       if (!SendOnOpenCacheFile(mFileSize, FileDescriptor(handle))) {
         Fail();
         return NS_OK;
       }
+
+      
+      MOZ_ASSERT(!mOpened);
+      mOpened = true;
+
+      mResult = JS::AsmJSCache_Success;
 
       return NS_OK;
     }
@@ -1291,15 +1319,16 @@ private:
     MOZ_ASSERT(mState == eOpening);
 
     uint32_t moduleIndex;
-    if (!FindHashMatch(aMetadata, mReadParams, &moduleIndex)) {
-      Fail(JS::AsmJSCache_InternalError);
-      Send__delete__(this, JS::AsmJSCache_InternalError);
-      return IPC_OK();
+    bool ok;
+    if (FindHashMatch(aMetadata, mReadParams, &moduleIndex)) {
+      ok = SendSelectCacheFileToRead(moduleIndex);
+    } else {
+      ok = SendSelectCacheFileToRead(JS::AsmJSCache_InternalError);
     }
-
-    if (!SendSelectCacheFileToRead(moduleIndex)) {
+    if (!ok) {
       return IPC_FAIL_NO_REASON(this);
     }
+
     return IPC_OK();
   }
 
@@ -1327,9 +1356,20 @@ private:
   Recv__delete__(const JS::AsmJSCacheResult& aResult) override
   {
     MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(mState == eOpening);
+    MOZ_ASSERT(mState == eOpening || mState == eFinishing);
+    MOZ_ASSERT_IF(mState == eOpening, aResult != JS::AsmJSCache_Success);
+    MOZ_ASSERT_IF(mState == eFinishing, aResult == JS::AsmJSCache_Success);
 
-    Fail(aResult);
+    if (mState == eOpening) {
+      Fail(aResult);
+    } else {
+      
+      
+      
+      Release();
+
+      mState = eFinished;
+    }
     return IPC_OK();
   }
 
@@ -1395,6 +1435,7 @@ private:
     eOpening, 
     eOpened, 
     eClosing, 
+    eFinishing, 
     eFinished 
   };
   State mState;
@@ -1460,21 +1501,25 @@ ChildRunnable::Run()
       MOZ_ASSERT(mOpened);
       mOpened = false;
 
-      
-      
-      
-      Release();
+      if (mActorDestroyed) {
+        
+        
+        
+        Release();
 
-      if (!mActorDestroyed) {
-        Unused << Send__delete__(this, JS::AsmJSCache_Success);
+        mState = eFinished;
+      } else {
+        Unused << SendClose();
+
+        mState = eFinishing;
       }
 
-      mState = eFinished;
       return NS_OK;
     }
 
     case eOpening:
     case eOpened:
+    case eFinishing:
     case eFinished: {
       MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Shouldn't Run() in this state");
     }
