@@ -280,7 +280,13 @@ const DownloadsIndicatorView = {
   
 
 
-  _notificationTimeout: null,
+  _currentNotificationType: null,
+
+  
+
+
+
+  _nextNotificationType: null,
 
   
 
@@ -300,7 +306,6 @@ const DownloadsIndicatorView = {
 
 
 
-
   showEventNotification(aType) {
     if (!this._initialized) {
       return;
@@ -310,6 +315,25 @@ const DownloadsIndicatorView = {
       return;
     }
 
+    
+    if (this._currentNotificationType) {
+      
+      if (this._currentNotificationType != aType) {
+        this._nextNotificationType = aType;
+      }
+    } else {
+      this._showNotification(aType);
+    }
+  },
+
+  
+
+
+
+
+
+
+  _showNotification(aType) {
     
     if (DownloadsPanel.isPanelShowing) {
       return;
@@ -332,10 +356,6 @@ const DownloadsIndicatorView = {
     if (!anchor || !isElementVisible(anchor.parentNode)) {
       
       return;
-    }
-
-    if (this._notificationTimeout) {
-      clearTimeout(this._notificationTimeout);
     }
 
     
@@ -371,11 +391,24 @@ const DownloadsIndicatorView = {
     
     animationDuration = aType == "start" ? 760 : 850;
 
-    this._notificationTimeout = setTimeout(() => {
-      notifier.setAttribute("hidden", "true");
-      notifier.removeAttribute("notification");
-      notifier.style.transform = "";
-      anchor.removeAttribute("notification");
+    this._currentNotificationType = aType;
+
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        notifier.setAttribute("hidden", "true");
+        notifier.removeAttribute("notification");
+        notifier.style.transform = "";
+        anchor.removeAttribute("notification");
+
+        requestAnimationFrame(() =>{
+          let nextType = this._nextNotificationType;
+          this._currentNotificationType = null;
+          this._nextNotificationType = null;
+          if (nextType) {
+            this._showNotification(nextType);
+          }
+        });
+      });
     }, animationDuration);
   },
 
