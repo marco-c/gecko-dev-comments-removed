@@ -1055,12 +1055,16 @@ pub extern "C" fn Servo_StyleSheet_SizeOfIncludingThis(
 #[no_mangle]
 pub extern "C" fn Servo_StyleSheet_GetOrigin(
     sheet: RawServoStyleSheetContentsBorrowed
-) -> OriginFlags {
-    match StylesheetContents::as_arc(&sheet).origin {
+) -> u8 {
+    let origin = match StylesheetContents::as_arc(&sheet).origin {
         Origin::UserAgent => OriginFlags_UserAgent,
         Origin::User => OriginFlags_User,
         Origin::Author => OriginFlags_Author,
-    }
+    };
+    
+    
+    
+    origin.0
 }
 
 #[no_mangle]
