@@ -1257,6 +1257,23 @@ public:
     return mStyleBackendType;
   }
 
+  
+
+
+
+
+  void SetStyleBackendType(mozilla::StyleBackendType aStyleBackendType) {
+    
+    
+    
+    MOZ_ASSERT(aStyleBackendType != mozilla::StyleBackendType::None,
+               "The StyleBackendType should be set to either Gecko or Servo!");
+    mStyleBackendType = aStyleBackendType;
+  }
+
+  
+
+
   void UpdateStyleBackendType();
 
   bool IsStyledByServo() const {

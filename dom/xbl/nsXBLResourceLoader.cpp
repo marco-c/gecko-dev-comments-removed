@@ -180,7 +180,9 @@ nsXBLResourceLoader::StyleSheetLoaded(StyleSheet* aSheet,
 
   if (mPendingSheets == 0) {
     
-    mResources->GatherRuleProcessor();
+    if (aSheet->IsGecko()) {
+      mResources->GatherRuleProcessor();
+    }
 
     
     if (!mInLoadResourcesFunc)
