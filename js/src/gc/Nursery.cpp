@@ -474,15 +474,24 @@ js::Nursery::calcPromotionRate(bool *validForTenuring) const {
     float used = float(previousGC.nurseryUsedBytes);
     float capacity = float(previousGC.nurseryCapacity);
     float tenured = float(previousGC.tenuredBytes);
+    float rate;
 
-    if (validForTenuring) {
-        
+    if (previousGC.nurseryUsedBytes > 0) {
+        if (validForTenuring) {
+            
 
 
 
-        *validForTenuring = used > capacity * 0.9f;
+            *validForTenuring = used > capacity * 0.9f;
+        }
+        rate = tenured / used;
+    } else {
+        if (validForTenuring)
+            *validForTenuring = false;
+        rate = 0.0f;
     }
-    return tenured / used;
+
+    return rate;
 }
 
 void
