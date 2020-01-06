@@ -257,6 +257,11 @@ struct BitFlagsEnumSerializer
 
 
 
+
+
+
+
+
 template <typename T>
 struct PlainOldDataSerializer
 {
