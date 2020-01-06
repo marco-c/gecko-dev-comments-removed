@@ -607,13 +607,13 @@ UpdateParser.prototype = {
       CertUtils.checkCert(request.channel, !requireBuiltIn);
     } catch (e) {
       logger.warn("Request failed: " + this.url + " - " + e);
-      this.notifyError(AddonUpdateChecker.ERROR_DOWNLOAD_ERROR);
+      this.notifyError(AddonManager.ERROR_DOWNLOAD_ERROR);
       return;
     }
 
     if (!Components.isSuccessCode(request.status)) {
       logger.warn("Request failed: " + this.url + " - " + request.status);
-      this.notifyError(AddonUpdateChecker.ERROR_DOWNLOAD_ERROR);
+      this.notifyError(AddonManager.ERROR_DOWNLOAD_ERROR);
       return;
     }
 
@@ -621,7 +621,7 @@ UpdateParser.prototype = {
     if (channel instanceof Ci.nsIHttpChannel && !channel.requestSucceeded) {
       logger.warn("Request failed: " + this.url + " - " + channel.responseStatus +
            ": " + channel.responseStatusText);
-      this.notifyError(AddonUpdateChecker.ERROR_DOWNLOAD_ERROR);
+      this.notifyError(AddonManager.ERROR_DOWNLOAD_ERROR);
       return;
     }
 
@@ -646,7 +646,7 @@ UpdateParser.prototype = {
       }
     } catch (e) {
       logger.warn("onUpdateCheckComplete failed to determine manifest type");
-      this.notifyError(AddonUpdateChecker.ERROR_UNKNOWN_FORMAT);
+      this.notifyError(AddonManager.ERROR_UNKNOWN_FORMAT);
       return;
     }
 
@@ -655,7 +655,7 @@ UpdateParser.prototype = {
       results = parser();
     } catch (e) {
       logger.warn("onUpdateCheckComplete failed to parse update manifest", e);
-      this.notifyError(AddonUpdateChecker.ERROR_PARSE_ERROR);
+      this.notifyError(AddonManager.ERROR_PARSE_ERROR);
       return;
     }
 
@@ -677,7 +677,7 @@ UpdateParser.prototype = {
     this.request = null;
     this._doneAt = new Error("Timed out");
     logger.warn("Request for " + this.url + " timed out");
-    this.notifyError(AddonUpdateChecker.ERROR_TIMEOUT);
+    this.notifyError(AddonManager.ERROR_TIMEOUT);
   },
 
   
@@ -703,7 +703,7 @@ UpdateParser.prototype = {
     this.request = null;
     this._doneAt = new Error("UP_onError");
 
-    this.notifyError(AddonUpdateChecker.ERROR_DOWNLOAD_ERROR);
+    this.notifyError(AddonManager.ERROR_DOWNLOAD_ERROR);
   },
 
   
@@ -730,7 +730,7 @@ UpdateParser.prototype = {
     this.request.abort();
     this.request = null;
     this._doneAt = new Error("UP_cancel");
-    this.notifyError(AddonUpdateChecker.ERROR_CANCELLED);
+    this.notifyError(AddonManager.ERROR_CANCELLED);
   }
 };
 
@@ -781,20 +781,6 @@ function matchesVersions(aUpdate, aAppVersion, aPlatformVersion,
 }
 
 this.AddonUpdateChecker = {
-  
-  
-  ERROR_TIMEOUT: -1,
-  
-  ERROR_DOWNLOAD_ERROR: -2,
-  
-  ERROR_PARSE_ERROR: -3,
-  
-  ERROR_UNKNOWN_FORMAT: -4,
-  
-  ERROR_SECURITY_ERROR: -5,
-  
-  ERROR_CANCELLED: -6,
-
   
 
 

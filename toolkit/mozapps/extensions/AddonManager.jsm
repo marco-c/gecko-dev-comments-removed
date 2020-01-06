@@ -3341,7 +3341,18 @@ this.AddonManager = {
     
     ["ERROR_INCORRECT_ID", -7],
   ]),
-
+  
+  ERROR_TIMEOUT: -1,
+  
+  ERROR_DOWNLOAD_ERROR: -2,
+  
+  ERROR_PARSE_ERROR: -3,
+  
+  ERROR_UNKNOWN_FORMAT: -4,
+  
+  ERROR_SECURITY_ERROR: -5,
+  
+  ERROR_CANCELLED: -6,
   
   
   UPDATE_STATUS_NO_ERROR: 0,
@@ -3357,7 +3368,6 @@ this.AddonManager = {
   UPDATE_STATUS_SECURITY_ERROR: -5,
   
   UPDATE_STATUS_CANCELLED: -6,
-
   
   
   UPDATE_WHEN_USER_REQUESTED: 1,
