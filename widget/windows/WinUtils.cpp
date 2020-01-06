@@ -62,9 +62,6 @@
 
 mozilla::LazyLogModule gWindowsLog("Widget");
 
-#define LOG_E(...) MOZ_LOG(gWindowsLog, LogLevel::Error, (__VA_ARGS__))
-#define LOG_D(...) MOZ_LOG(gWindowsLog, LogLevel::Debug, (__VA_ARGS__))
-
 using namespace mozilla::gfx;
 
 namespace mozilla {
@@ -688,15 +685,6 @@ WinUtils::MonitorFromRect(const gfx::Rect& rect)
 #define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
 #endif
 
-static Atomic<bool> sAPCPending;
-
-
-void
-WinUtils::SetAPCPending()
-{
-  sAPCPending = true;
-}
-
 
 a11y::Accessible*
 WinUtils::GetRootAccessibleForHWND(HWND aHwnd)
@@ -715,11 +703,6 @@ bool
 WinUtils::PeekMessage(LPMSG aMsg, HWND aWnd, UINT aFirstMessage,
                       UINT aLastMessage, UINT aOption)
 {
-#ifdef ACCESSIBILITY
-  if (NS_IsMainThread() && sAPCPending.exchange(false)) {
-    while (sNtTestAlert() != STATUS_SUCCESS) ;
-  }
-#endif
 #ifdef NS_ENABLE_TSF
   RefPtr<ITfMessagePump> msgPump = TSFTextStore::GetMessagePump();
   if (msgPump) {
@@ -791,10 +774,6 @@ WinUtils::WaitForMessage(DWORD aTimeoutMs)
 #if defined(ACCESSIBILITY)
     if (result == WAIT_IO_COMPLETION) {
       if (NS_IsMainThread()) {
-        if (sAPCPending.exchange(false)) {
-          
-          while (sNtTestAlert() != STATUS_SUCCESS) ;
-        }
         
         
         
@@ -1295,7 +1274,8 @@ AsyncFaviconDataReady::OnComplete(nsIURI *aFaviconURI,
   
   nsCOMPtr<imgIContainer> container;
   nsCOMPtr<imgITools> imgtool = do_CreateInstance("@mozilla.org/image/tools;1");
-  rv = imgtool->DecodeImage(stream, aMimeType, getter_AddRefs(container));
+  rv = imgtool->DecodeImageData(stream, aMimeType,
+                                getter_AddRefs(container));
   NS_ENSURE_SUCCESS(rv, rv);
 
   RefPtr<SourceSurface> surface =
@@ -1839,8 +1819,6 @@ WinUtils::GetMaxTouchPoints()
 bool
 WinUtils::ResolveJunctionPointsAndSymLinks(std::wstring& aPath)
 {
-  LOG_D("ResolveJunctionPointsAndSymLinks: Resolving path: %S", aPath.c_str());
-
   wchar_t path[MAX_PATH] = { 0 };
 
   nsAutoHandle handle(
@@ -1853,15 +1831,12 @@ WinUtils::ResolveJunctionPointsAndSymLinks(std::wstring& aPath)
                   nullptr));
 
   if (handle == INVALID_HANDLE_VALUE) {
-    LOG_E("Failed to open file handle to resolve path. GetLastError=%d",
-          GetLastError());
     return false;
   }
 
   DWORD pathLen = GetFinalPathNameByHandleW(
     handle, path, MAX_PATH, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
   if (pathLen == 0 || pathLen >= MAX_PATH) {
-    LOG_E("GetFinalPathNameByHandleW failed. GetLastError=%d", GetLastError());
     return false;
   }
   aPath = path;
@@ -1875,7 +1850,6 @@ WinUtils::ResolveJunctionPointsAndSymLinks(std::wstring& aPath)
     aPath.erase(0, 4);
   }
 
-  LOG_D("ResolveJunctionPointsAndSymLinks: Resolved path to: %S", aPath.c_str());
   return true;
 }
 

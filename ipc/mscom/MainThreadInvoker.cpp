@@ -26,22 +26,27 @@ namespace {
 
 
 
-class MOZ_RAII SyncRunnable
+class SyncRunnable : public mozilla::Runnable
 {
 public:
-  explicit SyncRunnable(already_AddRefed<nsIRunnable>&& aRunnable)
-    : mRunnable(aRunnable)
-  {
-    MOZ_ASSERT(mRunnable);
-  }
+  explicit SyncRunnable(already_AddRefed<nsIRunnable> aRunnable)
+    : mozilla::Runnable("MainThreadInvoker")
+    , mRunnable(aRunnable)
+  {}
 
   ~SyncRunnable() = default;
 
-  void Run()
+  NS_IMETHOD Run()
   {
+    if (mHasRun) {
+      return NS_OK;
+    }
+    mHasRun = true;
+
     mRunnable->Run();
 
     mEvent.Signal();
+    return NS_OK;
   }
 
   bool WaitUntilComplete()
@@ -50,6 +55,7 @@ public:
   }
 
 private:
+  bool                      mHasRun = false;
   nsCOMPtr<nsIRunnable>     mRunnable;
   mozilla::mscom::SpinEvent mEvent;
 };
@@ -101,20 +107,21 @@ MainThreadInvoker::Invoke(already_AddRefed<nsIRunnable>&& aRunnable)
     return true;
   }
 
-  SyncRunnable syncRunnable(runnable.forget());
+  RefPtr<SyncRunnable> syncRunnable = new SyncRunnable(runnable.forget());
 
-  if (!::QueueUserAPC(&MainThreadAPC, sMainThread,
-                      reinterpret_cast<UINT_PTR>(&syncRunnable))) {
+  if (NS_FAILED(NS_DispatchToMainThread(syncRunnable, nsIEventTarget::DISPATCH_NORMAL))) {
     return false;
   }
 
   
-  
-  
-  
-  widget::WinUtils::SetAPCPending();
+  SyncRunnable* syncRunnableRef = syncRunnable.get();
+  NS_ADDREF(syncRunnableRef);
+  if (!::QueueUserAPC(&MainThreadAPC, sMainThread,
+                      reinterpret_cast<UINT_PTR>(syncRunnableRef))) {
+    return false;
+  }
 
-  return syncRunnable.WaitUntilComplete();
+  return syncRunnable->WaitUntilComplete();
 }
 
  VOID CALLBACK
@@ -125,6 +132,7 @@ MainThreadInvoker::MainThreadAPC(ULONG_PTR aParam)
   MOZ_ASSERT(NS_IsMainThread());
   auto runnable = reinterpret_cast<SyncRunnable*>(aParam);
   runnable->Run();
+  NS_RELEASE(runnable);
 }
 
 } 
