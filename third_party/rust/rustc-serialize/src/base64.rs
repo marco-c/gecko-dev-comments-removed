@@ -351,6 +351,7 @@ impl<'a, T: ?Sized + FromBase64> FromBase64 for &'a T {
 
 
 
+
 const DECODE_TABLE: [u8; 256] = [
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD, 0xFF, 0xFF, 0xFD, 0xFF, 0xFF,
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -391,7 +392,7 @@ mod tests {
 
     #[test]
     fn test_to_base64_crlf_line_break() {
-        assert!(![08; 1000].to_base64(Config {line_length: None, ..STANDARD})
+        assert!(![0; 1000].to_base64(Config {line_length: None, ..STANDARD})
                               .contains("\r\n"));
         assert_eq!(b"foobar".to_base64(Config {line_length: Some(4),
                                                ..STANDARD}),
@@ -400,7 +401,7 @@ mod tests {
 
     #[test]
     fn test_to_base64_lf_line_break() {
-        assert!(![08; 1000].to_base64(Config {line_length: None,
+        assert!(![0; 1000].to_base64(Config {line_length: None,
                                                  newline: Newline::LF,
                                                  ..STANDARD})
                               .contains("\n"));

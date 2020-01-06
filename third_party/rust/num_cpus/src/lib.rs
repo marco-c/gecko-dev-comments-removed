@@ -1,10 +1,23 @@
 
+
+
+
+
+
+
+
+
+
 #![cfg_attr(test, deny(warnings))]
 #![deny(missing_docs)]
 #![allow(non_snake_case)]
 
 #[cfg(not(windows))]
 extern crate libc;
+
+
+
+
 
 
 #[inline]
@@ -15,17 +28,101 @@ pub fn get() -> usize {
 
 
 
+
 #[inline]
 pub fn get_physical() -> usize {
     get_num_physical_cpus()
 }
 
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(any(target_os = "linux", target_os = "windows")))]
 #[inline]
 fn get_num_physical_cpus() -> usize {
     
     get_num_cpus()
+}
+
+#[cfg(target_os = "windows")]
+fn get_num_physical_cpus() -> usize {
+    match get_num_physical_cpus_windows() {
+        Some(num) => num,
+        None => get_num_cpus()
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn get_num_physical_cpus_windows() -> Option<usize> {
+    
+
+    use std::ptr;
+    use std::mem;
+
+    #[allow(non_upper_case_globals)]
+    const RelationProcessorCore: u32 = 0;
+
+    #[repr(C)]
+    #[allow(non_camel_case_types)]
+    struct SYSTEM_LOGICAL_PROCESSOR_INFORMATION {
+        mask: usize,
+        relationship: u32,
+        _unused: [u64; 2]
+    }
+
+    extern "system" {
+        fn GetLogicalProcessorInformation(
+            info: *mut SYSTEM_LOGICAL_PROCESSOR_INFORMATION,
+            length: &mut u32
+        ) -> u32;
+    }
+
+    
+
+    
+    let mut needed_size = 0;
+
+    unsafe {
+        GetLogicalProcessorInformation(ptr::null_mut(), &mut needed_size);
+    }
+
+    let struct_size = mem::size_of::<SYSTEM_LOGICAL_PROCESSOR_INFORMATION>() as u32;
+
+    
+    if needed_size == 0 || needed_size < struct_size || needed_size % struct_size != 0 {
+        return None;
+    }
+
+    let count = needed_size / struct_size;
+
+    
+    let mut buf = Vec::with_capacity(count as usize);
+
+    let result;
+
+    unsafe {
+        result = GetLogicalProcessorInformation(buf.as_mut_ptr(), &mut needed_size);
+    }
+
+    
+    if result == 0 {
+        return None;
+    }
+
+    let count = needed_size / struct_size;
+
+    unsafe {
+        buf.set_len(count as usize);
+    }
+
+    let phys_proc_count = buf.iter()
+        
+        .filter(|proc_info| proc_info.relationship == RelationProcessorCore)
+        .count();
+
+    if phys_proc_count == 0 {
+        None
+    } else {
+        Some(phys_proc_count)
+    }
 }
 
 #[cfg(target_os = "linux")]
@@ -146,36 +243,74 @@ fn get_num_cpus() -> usize {
     cpus as usize
 }
 
-#[cfg(
-    any(
-        target_os = "linux",
-        target_os = "nacl",
-        target_os = "macos",
-        target_os = "ios",
-        target_os = "android",
-        target_os = "solaris",
-        target_os = "fuchsia",
-    )
-)]
+#[cfg(target_os = "linux")]
 fn get_num_cpus() -> usize {
-    unsafe {
-        libc::sysconf(libc::_SC_NPROCESSORS_ONLN) as usize
+    let mut set:  libc::cpu_set_t = unsafe { std::mem::zeroed() };
+    if unsafe { libc::sched_getaffinity(0, std::mem::size_of::<libc::cpu_set_t>(), &mut set) } == 0 {
+        let mut count: u32 = 0;
+        for i in 0..libc::CPU_SETSIZE as usize {
+            if unsafe { libc::CPU_ISSET(i, &set) } {
+                count += 1
+            }
+        }
+        count as usize
+    } else {
+        let cpus = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) };
+        if cpus < 1 {
+            1
+        } else {
+            cpus as usize
+        }
     }
 }
-#[cfg(target_os = "emscripten")]
+
+#[cfg(any(
+    target_os = "nacl",
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "android",
+    target_os = "solaris",
+    target_os = "fuchsia")
+)]
+fn get_num_cpus() -> usize {
+    let cpus = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) };
+    if cpus < 1 {
+        1
+    } else {
+        cpus as usize
+    }
+}
+
+#[cfg(any(target_os = "emscripten", target_os = "redox", target_os = "haiku"))]
 fn get_num_cpus() -> usize {
     1
 }
 
-#[test]
-fn lower_bound() {
-    assert!(get() > 0);
-    assert!(get_physical() > 0);
-}
+#[cfg(test)]
+mod tests {
+    fn env_var(name: &'static str) -> Option<usize> {
+        ::std::env::var(name).ok().map(|val| val.parse().unwrap())
+    }
 
+    #[test]
+    fn test_get() {
+        let num = super::get();
+        if let Some(n) = env_var("NUM_CPUS_TEST_GET") {
+            assert_eq!(num, n);
+        } else {
+            assert!(num > 0);
+            assert!(num < 236_451);
+        }
+    }
 
-#[test]
-fn upper_bound() {
-    assert!(get() < 236_451);
-    assert!(get_physical() < 236_451);
+    #[test]
+    fn test_get_physical() {
+        let num = super::get_physical();
+        if let Some(n) = env_var("NUM_CPUS_TEST_GET_PHYSICAL") {
+            assert_eq!(num, n);
+        } else {
+            assert!(num > 0);
+            assert!(num < 236_451);
+        }
+    }
 }

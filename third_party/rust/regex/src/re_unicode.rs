@@ -515,6 +515,24 @@ impl Regex {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn replace<'t, R: Replacer>(
         &self,
         text: &'t str,
@@ -913,6 +931,22 @@ pub struct Captures<'t> {
 }
 
 impl<'t> Captures<'t> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
