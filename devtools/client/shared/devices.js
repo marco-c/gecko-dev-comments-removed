@@ -60,14 +60,24 @@ async function loadLocalDevices() {
 
 
 
+
 async function addDevice(device, type = "phones") {
   await loadLocalDevices();
   let list = localDevices[type];
   if (!list) {
     list = localDevices[type] = [];
   }
+
+  
+  let exists = list.some(entry => entry.name == device.name);
+  if (exists) {
+    return false;
+  }
+
   list.push(Object.assign({}, device));
   await asyncStorage.setItem(LOCAL_DEVICES, JSON.stringify(localDevices));
+
+  return true;
 }
 
 
@@ -81,9 +91,8 @@ async function removeDevice(device, type = "phones") {
     return false;
   }
 
-  let index = list.findIndex(item => device);
-
-  if (index === -1) {
+  let index = list.findIndex(entry => entry.name == device.name);
+  if (index == -1) {
     return false;
   }
 
