@@ -136,6 +136,11 @@ toolbar[brighttext] {
   border-bottom-color: rgba(0,0,0,.3);
 }
 
+%ifdef MOZ_PHOTON_THEME
+#navigator-toolbox > toolbar:not(#toolbar-menubar):not(#TabsToolbar):not(:-moz-lwtheme) {
+  background-color: var(--toolbar-background-color);
+}
+%else
 #navigator-toolbox > toolbar:not(#toolbar-menubar):not(#TabsToolbar) {
   background-clip: padding-box;
   background-image: linear-gradient(@toolbarHighlight@, @toolbarHighlight@);
@@ -154,6 +159,7 @@ toolbar[brighttext] {
 #navigator-toolbox > toolbar:not(#toolbar-menubar):not(#TabsToolbar):not(:-moz-lwtheme) {
   background-color: -moz-Dialog;
 }
+%endif
 
 #navigator-toolbox > toolbar:not(#toolbar-menubar):not(#TabsToolbar):not(#nav-bar):not(#addon-bar) {
   overflow: -moz-hidden-unscrollable;
@@ -1838,7 +1844,6 @@ notification.pluginVulnerable > .notification-inner > .messageCloseButton {
   transform: perspective(0.01px);
 }
 
-%ifndef MOZ_PHOTON_THEME
 #main-window[customize-entered] > #tab-view-deck {
   background-image: url("chrome://browser/skin/customizableui/customizeMode-gridTexture.png");
   background-attachment: fixed;
@@ -1861,7 +1866,6 @@ notification.pluginVulnerable > .notification-inner > .messageCloseButton {
 #main-window[customize-entered] #browser-bottombox {
   border-bottom: 1px solid @toolbarShadowColor@;
 }
-%endif
 
 #customization-tipPanel > .panel-arrowcontainer > .panel-arrowbox > .panel-arrow[side="left"] {
   margin-right: -2px;
