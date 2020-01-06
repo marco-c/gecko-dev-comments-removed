@@ -17,6 +17,8 @@ import android.util.Log;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Arrays;
 
 
 
@@ -141,6 +143,9 @@ public final class SharedPreferencesHelper
                 editor.putInt(name, pref.getInt("value"));
             } else if ("string".equals(type)) {
                 editor.putString(name, pref.getString("value"));
+            } else if ("set".equals(type)) {
+                HashSet<String> mySet = new HashSet<String>(Arrays.asList(pref.getStringArray("value")));
+                editor.putStringSet(name, mySet);
             } else {
                 Log.w(LOGTAG, "Unknown pref value type [" + type + "] for pref [" + name + "]");
             }
@@ -176,6 +181,8 @@ public final class SharedPreferencesHelper
                     bundleValue.putInt("value", prefs.getInt(name, 0));
                 } else if ("string".equals(type)) {
                     bundleValue.putString("value", prefs.getString(name, ""));
+                } else if ("set".equals(type)) {
+                    bundleValue.putStringArray("value", prefs.getStringSet(name, new HashSet<String>()));
                 } else {
                     Log.w(LOGTAG, "Unknown pref value type [" + type + "] for pref [" + name + "]");
                 }

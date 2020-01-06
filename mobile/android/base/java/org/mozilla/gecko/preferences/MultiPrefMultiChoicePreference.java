@@ -54,7 +54,7 @@ class MultiPrefMultiChoicePreference extends MultiChoicePreference {
         super.loadPersistedValues();
 
         
-        final SharedPreferences prefs = GeckoSharedPrefs.forApp(getContext());
+        final SharedPreferences prefs = GeckoSharedPrefs.forProfile(getContext());
         final boolean imported = getPersistedBoolean(prefs, getKey() + IMPORT_SUFFIX, false);
         if (imported) {
             return;
