@@ -102,7 +102,7 @@ void AudioInputCubeb::UpdateDeviceList()
   StaticMutexAutoLock lock(sMutex);
   
   if (mDevices) {
-    cubeb_device_collection_destroy(mDevices);
+    cubeb_device_collection_destroy(cubebContext, mDevices);
   }
   mDevices = devices;
 }

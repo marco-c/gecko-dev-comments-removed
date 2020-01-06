@@ -181,7 +181,7 @@ public:
   {
     if (mDevices) {
       
-      cubeb_device_collection_destroy(mDevices);
+      cubeb_device_collection_destroy(CubebUtils::GetCubebContext(), mDevices);
       mDevices = nullptr;
     }
     delete mDeviceIndexes;
