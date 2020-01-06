@@ -81,7 +81,7 @@
 #include "mozAutoDocUpdate.h"
 #include "nsHtml5Module.h"
 #include "nsITextControlElement.h"
-#include "mozilla/dom/Element.h"
+#include "mozilla/dom/ElementInlines.h"
 #include "HTMLFieldSetElement.h"
 #include "nsTextNode.h"
 #include "HTMLBRElement.h"
@@ -2978,8 +2978,10 @@ nsGenericHTMLElement::NewURIFromString(const nsAString& aURISpec,
 static bool
 IsOrHasAncestorWithDisplayNone(Element* aElement, nsIPresShell* aPresShell)
 {
-  nsTArray<Element*> elementsToCheck;
-  for (Element* e = aElement; e; e = e->GetParentElement()) {
+  AutoTArray<Element*, 10> elementsToCheck;
+  
+  
+  for (Element* e = aElement; e; e = e->GetFlattenedTreeParentElement()) {
     if (e->GetPrimaryFrame()) {
       
       
@@ -2992,14 +2994,13 @@ IsOrHasAncestorWithDisplayNone(Element* aElement, nsIPresShell* aPresShell)
     return false;
   }
 
-  
   StyleSetHandle styleSet = aPresShell->StyleSet();
   RefPtr<nsStyleContext> sc;
-  for (int32_t i = elementsToCheck.Length() - 1; i >= 0; --i) {
+  for (auto* element : Reversed(elementsToCheck)) {
     if (sc) {
-      sc = styleSet->ResolveStyleFor(elementsToCheck[i], sc, LazyComputeBehavior::Assert);
+      sc = styleSet->ResolveStyleFor(element, sc, LazyComputeBehavior::Assert);
     } else {
-      sc = nsComputedDOMStyle::GetStyleContextNoFlush(elementsToCheck[i],
+      sc = nsComputedDOMStyle::GetStyleContextNoFlush(element,
                                                       nullptr, aPresShell);
     }
     if (sc->StyleDisplay()->mDisplay == StyleDisplay::None) {
