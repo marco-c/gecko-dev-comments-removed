@@ -90,6 +90,7 @@
 #include "nsPIWindowRoot.h"
 #include "nsLayoutUtils.h"
 #include "nsPrintfCString.h"
+#include "nsThreadManager.h"
 #include "nsThreadUtils.h"
 #include "nsViewManager.h"
 #include "nsWeakReference.h"
@@ -321,7 +322,19 @@ private:
     {
         MOZ_ASSERT(NS_IsMainThread());
         MOZ_ASSERT(mTabChild);
-
+        
+        
+        
+        
+        
+        nsThread* thread = nsThreadManager::get().GetCurrentThread();
+        MOZ_ASSERT(thread);
+        bool eventPrioritizationEnabled = false;
+        thread->IsEventPrioritizationEnabled(&eventPrioritizationEnabled);
+        if (eventPrioritizationEnabled && thread->HasPendingInputEvents()) {
+          MOZ_ALWAYS_SUCCEEDS(NS_DispatchToCurrentThread(this));
+          return NS_OK;
+        }
         
         if (mTabChild->IPCOpen()) {
             Unused << PBrowserChild::Send__delete__(mTabChild);
