@@ -484,10 +484,13 @@ public final class IntentHelper implements BundleEventListener {
 
     private void openNoHandler(final GeckoBundle msg, final EventCallback callback) {
         final String uri = msg.getString("uri");
+        final GeckoBundle errorResponse = new GeckoBundle();
 
         if (TextUtils.isEmpty(uri)) {
             Log.w(LOGTAG, "Received empty URL - loading about:neterror");
-            callback.sendError(getUnknownProtocolErrorPageUri(""));
+            errorResponse.putString("uri", getUnknownProtocolErrorPageUri(""));
+            errorResponse.putBoolean("isFallback", false);
+            callback.sendError(errorResponse);
             return;
         }
 
@@ -505,7 +508,9 @@ public final class IntentHelper implements BundleEventListener {
 
             
             Log.w(LOGTAG, "Unable to parse Intent URI - loading about:neterror");
-            callback.sendError(errorUri);
+            errorResponse.putString("uri", errorUri);
+            errorResponse.putBoolean("isFallback", false);
+            callback.sendError(errorResponse);
             return;
         }
 
@@ -513,9 +518,10 @@ public final class IntentHelper implements BundleEventListener {
         
         final String fallbackUrl = intent.getStringExtra(EXTRA_BROWSER_FALLBACK_URL);
         if (isFallbackUrlValid(fallbackUrl)) {
+            errorResponse.putString("uri", fallbackUrl);
+            errorResponse.putBoolean("isFallback", true);
             
-            callback.sendError(fallbackUrl);
-
+            callback.sendError(errorResponse);
         } else if (intent.getPackage() != null) {
             
             
@@ -552,7 +558,9 @@ public final class IntentHelper implements BundleEventListener {
             
             
             Log.w(LOGTAG, "Unable to open URI, maybe showing neterror");
-            callback.sendError(getUnknownProtocolErrorPageUri(intent.getData().toString()));
+            errorResponse.putString("uri", getUnknownProtocolErrorPageUri(intent.getData().toString()));
+            errorResponse.putBoolean("isFallback", false);
+            callback.sendError(errorResponse);
         }
     }
 

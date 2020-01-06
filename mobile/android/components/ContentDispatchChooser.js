@@ -65,15 +65,20 @@ ContentDispatchChooser.prototype =
 
       EventDispatcher.instance.sendRequestForResult(msg).then(() => {
         
-      }, (uri) => {
-        
-        
-        
+      }, (data) => {
+        if (data.isFallback) {
+          
+          window.location.href = data.uri;
+          return;
+        }
 
+        
+        
+        
         let dwu = window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
         let millis = dwu.millisSinceLastUserInput;
         if (millis > 0 && millis >= 1000) {
-          window.location.href = uri;
+          window.location.href = data.uri;
         }
       });
     }
