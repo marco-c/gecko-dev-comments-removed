@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/TextTrackRegion.h"
+#include "mozilla/dom/VTTRegionBinding.h"
 
 namespace mozilla {
 namespace dom {
@@ -44,7 +45,6 @@ TextTrackRegion::TextTrackRegion(nsISupports* aGlobal)
   , mRegionAnchorY(100)
   , mViewportAnchorX(0)
   , mViewportAnchorY(100)
-  , mScroll(ScrollSetting::_empty)
 {
 }
 
