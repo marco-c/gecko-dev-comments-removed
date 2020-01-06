@@ -8,7 +8,6 @@
 
 #include "gfxFont.h"
 #include "gfxFontFamilyList.h"
-#include "gfxFontSrcURI.h"
 #include "nsRefPtrHashtable.h"
 #include "nsCOMPtr.h"
 #include "nsIURI.h"
@@ -56,7 +55,7 @@ struct gfxFontFaceSrc {
     uint32_t               mFormatFlags;
 
     nsString               mLocalName;     
-    RefPtr<gfxFontSrcURI>  mURI;           
+    nsCOMPtr<nsIURI>       mURI;           
     nsCOMPtr<nsIURI>       mReferrer;      
     mozilla::net::ReferrerPolicy mReferrerPolicy;
     nsCOMPtr<nsIPrincipal> mOriginPrincipal; 
@@ -67,9 +66,6 @@ struct gfxFontFaceSrc {
 inline bool
 operator==(const gfxFontFaceSrc& a, const gfxFontFaceSrc& b)
 {
-    
-    MOZ_ASSERT(NS_IsMainThread());
-
     if (a.mSourceType != b.mSourceType) {
         return false;
     }
@@ -80,7 +76,7 @@ operator==(const gfxFontFaceSrc& a, const gfxFontFaceSrc& b)
             bool equals;
             return a.mUseOriginPrincipal == b.mUseOriginPrincipal &&
                    a.mFormatFlags == b.mFormatFlags &&
-                   (a.mURI == b.mURI || a.mURI->Equals(b.mURI)) &&
+                   NS_SUCCEEDED(a.mURI->Equals(b.mURI, &equals)) && equals &&
                    NS_SUCCEEDED(a.mReferrer->Equals(b.mReferrer, &equals)) &&
                      equals &&
                    a.mReferrerPolicy == b.mReferrerPolicy &&
@@ -111,7 +107,7 @@ public:
     size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
     nsTArray<uint8_t> mMetadata;  
-    RefPtr<gfxFontSrcURI>  mURI;       
+    nsCOMPtr<nsIURI>  mURI;       
     nsCOMPtr<nsIPrincipal> mPrincipal; 
     nsString          mLocalName; 
     nsString          mRealName;  
@@ -302,7 +298,7 @@ public:
         
         
         
-        static gfxFontEntry* GetFont(gfxFontSrcURI* aSrcURI,
+        static gfxFontEntry* GetFont(nsIURI* aSrcURI,
                                      nsIPrincipal* aPrincipal,
                                      gfxUserFontEntry* aUserFontEntry,
                                      bool              aPrivate);
@@ -368,14 +364,14 @@ public:
         
         
         struct Key {
-            RefPtr<gfxFontSrcURI>   mURI;
+            nsCOMPtr<nsIURI>        mURI;
             nsCOMPtr<nsIPrincipal>  mPrincipal; 
             
             
             gfxFontEntry* MOZ_NON_OWNING_REF mFontEntry;
             bool                    mPrivate;
 
-            Key(gfxFontSrcURI* aURI, nsIPrincipal* aPrincipal,
+            Key(nsIURI* aURI, nsIPrincipal* aPrincipal,
                 gfxFontEntry* aFontEntry, bool aPrivate)
                 : mURI(aURI),
                   mPrincipal(aPrincipal),
@@ -415,7 +411,7 @@ public:
                     aKey->mPrincipal->GetHashValue(&principalHash);
                 }
                 return mozilla::HashGeneric(principalHash + int(aKey->mPrivate),
-                                            aKey->mURI->Hash(),
+                                            nsURIHashKey::HashKey(aKey->mURI),
                                             HashFeatures(aKey->mFontEntry->mFeatureSettings),
                                             mozilla::HashString(aKey->mFontEntry->mFamilyName),
                                             (aKey->mFontEntry->mStyle |
@@ -426,7 +422,7 @@ public:
 
             enum { ALLOW_MEMMOVE = false };
 
-            gfxFontSrcURI* GetURI() const { return mURI; }
+            nsIURI* GetURI() const { return mURI; }
             nsIPrincipal* GetPrincipal() const { return mPrincipal; }
             gfxFontEntry* GetFontEntry() const { return mFontEntry; }
             bool IsPrivate() const { return mPrivate; }
@@ -464,7 +460,7 @@ public:
             
             nsDataHashtable<nsPtrHashKey<gfxUserFontSet>, bool> mAllowedFontSets;
 
-            RefPtr<gfxFontSrcURI>  mURI;
+            nsCOMPtr<nsIURI>       mURI;
             nsCOMPtr<nsIPrincipal> mPrincipal; 
 
             
