@@ -262,12 +262,30 @@ var BookmarkPropertiesPanel = {
 
 
 
-  async onDialogLoad() {
+  onDialogLoad() {
     this._determineItemInfo();
 
     document.title = this._getDialogTitle();
-    var acceptButton = document.documentElement.getButton("accept");
+
+    
+    let acceptButton = document.documentElement.getButton("accept");
+    acceptButton.disabled = true;
+
+    
+    
+    this._initDialog().catch(ex => {
+      Components.utils.reportError(`Failed to initialize dialog: ${ex}`);
+    });
+  },
+
+  
+
+
+
+  async _initDialog() {
+    let acceptButton = document.documentElement.getButton("accept");
     acceptButton.label = this._getAcceptLabel();
+    let acceptButtonDisabled = false;
 
     
     
@@ -313,7 +331,7 @@ var BookmarkPropertiesPanel = {
         gEditItemOverlay.initPanel({ node: this._node,
                                      hiddenRows: this._hiddenRows,
                                      focusedElement: "first" });
-        acceptButton.disabled = gEditItemOverlay.readOnly;
+        acceptButtonDisabled = gEditItemOverlay.readOnly;
         break;
       case ACTION_ADD:
         this._node = await this._promiseNewItem();
@@ -333,7 +351,7 @@ var BookmarkPropertiesPanel = {
         
         
         if (this._itemType == BOOKMARK_ITEM)
-          acceptButton.disabled = !this._inputIsValid();
+          acceptButtonDisabled = !this._inputIsValid();
         break;
     }
 
@@ -348,6 +366,8 @@ var BookmarkPropertiesPanel = {
         }
       }
     }
+    
+    acceptButton.disabled = acceptButtonDisabled;
   },
 
   
