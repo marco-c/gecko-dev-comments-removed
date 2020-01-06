@@ -564,12 +564,17 @@ return  (function(modules) {
 	    try {
 	      const response = publicInterface[method].apply(undefined, args);
 	      if (response instanceof Promise) {
-	        response.then(val => self.postMessage({ id, response: val }), err => self.postMessage({ id, error: err }));
+	        response.then(val => self.postMessage({ id, response: val }),
+	        
+	        
+	        err => self.postMessage({ id, error: err.toString() }));
 	      } else {
 	        self.postMessage({ id, response });
 	      }
 	    } catch (error) {
-	      self.postMessage({ id, error });
+	      
+	      
+	      self.postMessage({ id, error: error.toString() });
 	    }
 	  };
 	}
