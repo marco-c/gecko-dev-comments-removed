@@ -349,3 +349,18 @@ async function openDebugger(options = {}) {
   await panel.panelWin.DebuggerController.waitForSourcesLoaded();
   return {target, toolbox, panel};
 }
+
+
+
+
+
+
+
+
+
+
+async function openConsole(tab) {
+  let target = TargetFactory.forTab(tab || gBrowser.selectedTab);
+  const toolbox = await gDevTools.showToolbox(target, "webconsole");
+  return toolbox.getCurrentPanel().hud;
+};
