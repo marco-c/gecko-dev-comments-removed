@@ -2,7 +2,8 @@ use std::borrow::Cow;
 
 use time::{Tm, Duration};
 
-use ::{Cookie, SameSite};
+use ::Cookie;
+
 
 
 
@@ -178,52 +179,6 @@ impl CookieBuilder {
     #[inline]
     pub fn http_only(mut self, value: bool) -> CookieBuilder {
         self.cookie.set_http_only(value);
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn same_site(mut self, value: SameSite) -> CookieBuilder {
-        self.cookie.set_same_site(value);
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn permanent(mut self) -> CookieBuilder {
-        self.cookie.make_permanent();
         self
     }
 
