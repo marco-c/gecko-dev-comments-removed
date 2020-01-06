@@ -182,8 +182,6 @@ public:
   AddHeadersToChannel(const char *aHeadersData, uint32_t aHeadersDataLen,
                       nsIChannel *aGenericChannel);
 
-  static nsresult GetPluginTempDir(nsIFile **aDir);
-
   
   
   static bool IsTypeWhitelisted(const char *aType);
