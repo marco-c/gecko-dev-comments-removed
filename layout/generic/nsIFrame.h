@@ -2736,8 +2736,7 @@ public:
 
 
   Matrix4x4 GetTransformMatrix(const nsIFrame* aStopAtAncestor,
-                               nsIFrame **aOutAncestor,
-                               bool aInCSSUnits = false);
+                               nsIFrame **aOutAncestor);
 
   
 
@@ -3460,6 +3459,9 @@ public:
       mProperties->DeleteAll(this);
     }
   }
+
+  
+  size_t SizeOfFramePropertiesForTree(mozilla::MallocSizeOf aMallocSizeOf) const;
 
   
 
