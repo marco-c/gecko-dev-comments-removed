@@ -58,7 +58,7 @@ const kSubviewEvents = [
 
 
 
-var kVersion = 10;
+var kVersion = 11;
 
 
 
@@ -318,7 +318,7 @@ var CustomizableUIInternal = {
       CustomizableUI.removeWidgetFromArea("loop-button-throttled");
     }
 
-    if (currentVersion < 7 && gSavedState && gSavedState.placements &&
+    if (currentVersion < 7 && gSavedState.placements &&
         gSavedState.placements[CustomizableUI.AREA_NAVBAR]) {
       let placements = gSavedState.placements[CustomizableUI.AREA_NAVBAR];
       let newPlacements = ["back-button", "forward-button", "stop-reload-button", "home-button"];
@@ -408,12 +408,43 @@ var CustomizableUIInternal = {
       }
     }
 
-    if (currentVersion < 10 && gSavedState && gSavedState.placements) {
+    if (currentVersion < 10 && gSavedState.placements) {
       for (let placements of Object.values(gSavedState.placements)) {
         if (placements.includes("webcompat-reporter-button")) {
           placements.splice(placements.indexOf("webcompat-reporter-button"), 1);
           break;
         }
+      }
+    }
+
+    
+    
+    if (currentVersion < 11 && gSavedState.placements) {
+      let navbarPlacements = gSavedState.placements[CustomizableUI.AREA_NAVBAR];
+      
+      for (let placements of Object.values(gSavedState.placements)) {
+        let existingIndex = placements.indexOf("downloads-button");
+        if (existingIndex != -1) {
+          placements.splice(existingIndex, 1);
+          break; 
+        }
+      }
+
+      
+      if (navbarPlacements) {
+        let insertionPoint = navbarPlacements.indexOf("urlbar-container");
+        
+        
+        while (++insertionPoint < navbarPlacements.length) {
+          let widget = navbarPlacements[insertionPoint];
+          
+          if (widget != "search-container" && !this.matchingSpecials(widget, "spring")) {
+            break;
+          }
+        }
+        
+        
+        navbarPlacements.splice(insertionPoint, 0, "downloads-button");
       }
     }
   },
