@@ -64,6 +64,9 @@ class WidgetRenderingContext;
 
 - (EventRef)_eventRef;
 
+
+@property (readonly) NSInteger stage;
+
 @end
 
 @interface NSView (Undocumented)
@@ -204,6 +207,9 @@ class WidgetRenderingContext;
   
   
   CGImageRef mTopLeftCornerMask;
+
+  
+  NSInteger mLastPressureStage;
 }
 
 
