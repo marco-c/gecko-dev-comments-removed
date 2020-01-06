@@ -1331,7 +1331,7 @@ pref("dom.forms.datetime.others", false);
 pref("dom.forms.datetime.timepicker", false);
 
 
-pref("dom.forms.autocomplete.experimental", false);
+pref("dom.forms.autocomplete.formautofill", false);
 
 
 pref("dom.forms.selectSearch", false);
@@ -3122,6 +3122,26 @@ pref("dom.idle_period.throttled_length", 10000);
 
 
 pref("idle_queue.long_period", 50);
+
+
+#ifdef NIGHTLY_BUILD
+pref("prioritized_input_events.enabled", true);
+#else
+pref("prioritized_input_events.enabled", false);
+#endif
+
+
+
+pref("prioritized_input_events.duration.max", 8);
+pref("prioritized_input_events.duration.min", 1);
+
+
+
+pref("prioritized_input_events.default_duration_per_event", 1);
+
+
+
+pref("prioritized_input_events.count_for_prediction", 9);
 
 
 
