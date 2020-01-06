@@ -224,7 +224,7 @@ class BlocklistClient {
       if (!collectionLastModified && loadDump) {
         try {
           const initialData = await this.loadDumpFile();
-          await collection.db.loadDump(initialData.data);
+          await collection.loadDump(initialData.data);
           collectionLastModified = await collection.db.getLastModified();
         } catch (e) {
           
@@ -242,7 +242,9 @@ class BlocklistClient {
 
       
       try {
-        const {ok} = await collection.sync({remote});
+        
+        const strategy = Kinto.syncStrategy.SERVER_WINS;
+        const {ok} = await collection.sync({remote, strategy});
         if (!ok) {
           
           reportStatus = UptakeTelemetry.STATUS.CONFLICT_ERROR;
