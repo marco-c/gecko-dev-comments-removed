@@ -35,6 +35,7 @@ namespace dom {
 class ContentParent;
 class BlobImpl;
 class nsIContentParent;
+class PBlobStreamParent;
 
 class BlobParent final
   : public PBlobParent
@@ -43,6 +44,9 @@ class BlobParent final
 
   class IDTableEntry;
   typedef nsDataHashtable<nsIDHashKey, IDTableEntry*> IDTable;
+
+  class OpenStreamRunnable;
+  friend class OpenStreamRunnable;
 
   class RemoteBlobImpl;
 
@@ -59,6 +63,15 @@ class BlobParent final
   nsCOMPtr<nsIContentParent> mContentManager;
 
   nsCOMPtr<nsIEventTarget> mEventTarget;
+
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<nsRevocableEventPtr<OpenStreamRunnable>> mOpenStreamRunnables;
 
   RefPtr<IDTableEntry> mIDTableEntry;
 
@@ -176,6 +189,9 @@ private:
   void
   NoteDyingRemoteBlobImpl();
 
+  void
+  NoteRunnableCompleted(OpenStreamRunnable* aRunnable);
+
   nsIEventTarget*
   EventTarget() const
   {
@@ -189,8 +205,26 @@ private:
   virtual void
   ActorDestroy(ActorDestroyReason aWhy) override;
 
+  virtual PBlobStreamParent*
+  AllocPBlobStreamParent(const uint64_t& aStart,
+                         const uint64_t& aLength) override;
+
+  virtual mozilla::ipc::IPCResult
+  RecvPBlobStreamConstructor(PBlobStreamParent* aActor,
+                             const uint64_t& aStart,
+                             const uint64_t& aLength) override;
+
+  virtual bool
+  DeallocPBlobStreamParent(PBlobStreamParent* aActor) override;
+
   virtual mozilla::ipc::IPCResult
   RecvResolveMystery(const ResolveMysteryParams& aParams) override;
+
+  virtual mozilla::ipc::IPCResult
+  RecvBlobStreamSync(const uint64_t& aStart,
+                     const uint64_t& aLength,
+                     InputStreamParams* aParams,
+                     OptionalFileDescriptorSet* aFDs) override;
 
   virtual mozilla::ipc::IPCResult
   RecvWaitForSliceCreation() override;
