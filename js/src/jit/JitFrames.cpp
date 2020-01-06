@@ -1131,23 +1131,6 @@ TraceJitExitFrame(JSTracer* trc, const JSJitFrameIter& frame)
         return;
     }
 
-    if (frame.isExitFrameLayout<IonOOLPropertyOpExitFrameLayout>() ||
-        frame.isExitFrameLayout<IonOOLSetterOpExitFrameLayout>())
-    {
-        
-        
-        
-        IonOOLPropertyOpExitFrameLayout* oolgetter =
-            frame.isExitFrameLayout<IonOOLPropertyOpExitFrameLayout>()
-            ? frame.exitFrame()->as<IonOOLPropertyOpExitFrameLayout>()
-            : frame.exitFrame()->as<IonOOLSetterOpExitFrameLayout>();
-        TraceRoot(trc, oolgetter->stubCode(), "ion-ool-property-op-code");
-        TraceRoot(trc, oolgetter->vp(), "ion-ool-property-op-vp");
-        TraceRoot(trc, oolgetter->id(), "ion-ool-property-op-id");
-        TraceRoot(trc, oolgetter->obj(), "ion-ool-property-op-obj");
-        return;
-    }
-
     if (frame.isExitFrameLayout<IonOOLProxyExitFrameLayout>()) {
         IonOOLProxyExitFrameLayout* oolproxy = frame.exitFrame()->as<IonOOLProxyExitFrameLayout>();
         TraceRoot(trc, oolproxy->stubCode(), "ion-ool-proxy-code");
