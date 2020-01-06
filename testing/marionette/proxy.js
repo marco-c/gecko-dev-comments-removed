@@ -67,6 +67,7 @@ proxy.toListener = function(mmFn, sendAsyncFn, browserFn) {
 
 
 
+
 proxy.AsyncMessageChannel = class {
   constructor(mmFn, sendAsyncFn, browserFn) {
     this.mmFn_ = mmFn;
@@ -90,6 +91,8 @@ proxy.AsyncMessageChannel = class {
   }
 
   
+
+
 
 
 
@@ -409,10 +412,14 @@ class AsyncChromeSender {
 
 
 
+
+
 proxy.toChrome = function(sendSyncMessageFn) {
   let sender = new proxy.SyncChromeSender(sendSyncMessageFn);
   return new Proxy(sender, ownPriorityGetterTrap);
 };
+
+
 
 
 
