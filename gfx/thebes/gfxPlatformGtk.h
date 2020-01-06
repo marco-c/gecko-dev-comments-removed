@@ -86,12 +86,6 @@ public:
     
 
 
-
-    virtual bool IsFontFormatSupported(uint32_t aFormatFlags) override;
-
-    
-
-
     virtual void FlushContentDrawing() override;
 
     FT_Library GetFTLibrary() override;
@@ -102,8 +96,8 @@ public:
     static GdkDrawable *GetGdkDrawable(cairo_surface_t *target);
 #endif
 
-    static int32_t GetFontScaleDPI();
-    static double  GetFontScaleFactor();
+    static int32_t GetDPI();
+    static double  GetDPIScale();
 
 #ifdef MOZ_X11
     virtual void GetAzureBackendInfo(mozilla::widget::InfoObject &aObj) override {

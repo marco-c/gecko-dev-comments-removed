@@ -154,23 +154,17 @@ gfxPlatformMac::CreateFontGroup(const FontFamilyList& aFontFamilyList,
 bool
 gfxPlatformMac::IsFontFormatSupported(uint32_t aFormatFlags)
 {
-    
-    NS_ASSERTION(!(aFormatFlags & gfxUserFontSet::FLAG_FORMAT_NOT_USED),
-                 "strange font format hint set");
-
-    
-    if (aFormatFlags & (gfxUserFontSet::FLAG_FORMATS_COMMON |
-                        gfxUserFontSet::FLAG_FORMAT_TRUETYPE_AAT)) {
+    if (gfxPlatform::IsFontFormatSupported(aFormatFlags)) {
         return true;
     }
 
     
-    if (aFormatFlags != 0) {
-        return false;
+    
+    if (aFormatFlags & gfxUserFontSet::FLAG_FORMAT_TRUETYPE_AAT) {
+        return true;
     }
 
-    
-    return true;
+    return false;
 }
 
 static const char kFontArialUnicodeMS[] = "Arial Unicode MS";

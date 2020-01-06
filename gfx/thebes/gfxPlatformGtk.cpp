@@ -310,34 +310,10 @@ gfxPlatformGtk::GetFTLibrary()
     return gfxFcPlatformFontList::GetFTLibrary();
 }
 
-bool
-gfxPlatformGtk::IsFontFormatSupported(uint32_t aFormatFlags)
-{
-    
-    NS_ASSERTION(!(aFormatFlags & gfxUserFontSet::FLAG_FORMAT_NOT_USED),
-                 "strange font format hint set");
-
-    
-    
-    
-    
-    if (aFormatFlags & gfxUserFontSet::FLAG_FORMATS_COMMON) {
-        return true;
-    }
-
-    
-    if (aFormatFlags != 0) {
-        return false;
-    }
-
-    
-    return true;
-}
-
 static int32_t sDPI = 0;
 
 int32_t
-gfxPlatformGtk::GetFontScaleDPI()
+gfxPlatformGtk::GetDPI()
 {
     if (!sDPI) {
         
@@ -353,14 +329,14 @@ gfxPlatformGtk::GetFontScaleDPI()
 }
 
 double
-gfxPlatformGtk::GetFontScaleFactor()
+gfxPlatformGtk::GetDPIScale()
 {
     
     
     
     
     
-    int32_t dpi = GetFontScaleDPI();
+    int32_t dpi = GetDPI();
     if (dpi < 132) {
         return 1.0;
     }

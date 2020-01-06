@@ -25,6 +25,7 @@
 #include "gfxPrefs.h"
 #include "gfxEnv.h"
 #include "gfxTextRun.h"
+#include "gfxUserFontSet.h"
 #include "gfxConfig.h"
 #include "MediaPrefs.h"
 
@@ -1696,6 +1697,27 @@ gfxPlatform::UseGraphiteShaping()
     }
 
     return mGraphiteShapingEnabled;
+}
+
+bool
+gfxPlatform::IsFontFormatSupported(uint32_t aFormatFlags)
+{
+    
+    MOZ_ASSERT(!(aFormatFlags & gfxUserFontSet::FLAG_FORMAT_NOT_USED),
+               "strange font format hint set");
+
+    
+    if (aFormatFlags & gfxUserFontSet::FLAG_FORMATS_COMMON) {
+        return true;
+    }
+
+    
+    if (aFormatFlags != 0) {
+        return false;
+    }
+
+    
+    return true;
 }
 
 gfxFontEntry*

@@ -245,27 +245,6 @@ gfxAndroidPlatform::CreatePlatformFontList()
     return nullptr;
 }
 
-bool
-gfxAndroidPlatform::IsFontFormatSupported(uint32_t aFormatFlags)
-{
-    
-    NS_ASSERTION(!(aFormatFlags & gfxUserFontSet::FLAG_FORMAT_NOT_USED),
-                 "strange font format hint set");
-
-    
-    if (aFormatFlags & gfxUserFontSet::FLAG_FORMATS_COMMON) {
-        return true;
-    }
-
-    
-    if (aFormatFlags != 0) {
-        return false;
-    }
-
-    
-    return true;
-}
-
 gfxFontGroup *
 gfxAndroidPlatform::CreateFontGroup(const FontFamilyList& aFontFamilyList,
                                     const gfxFontStyle* aStyle,
