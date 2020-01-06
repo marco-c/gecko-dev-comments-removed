@@ -346,7 +346,7 @@ const DownloadsIndicatorView = {
     
     let notifier = this.notifier;
 
-    if (aType == "start" || !AppConstants.MOZ_PHOTON_ANIMATIONS) {
+    if (aType == "start") {
       
       
       
@@ -369,11 +369,7 @@ const DownloadsIndicatorView = {
 
     let animationDuration;
     
-    if (AppConstants.MOZ_PHOTON_ANIMATIONS) {
-      animationDuration = aType == "start" ? 760 : 850;
-    } else {
-      animationDuration = 2000;
-    }
+    animationDuration = aType == "start" ? 760 : 850;
 
     this._notificationTimeout = setTimeout(() => {
       notifier.setAttribute("hidden", "true");
