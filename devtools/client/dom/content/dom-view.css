@@ -98,6 +98,12 @@ body {
 
 
 
+#dom-refresh-button::before {
+  background-image: url("chrome://devtools/skin/images/reload.svg");
+}
+
+
+
 .devtools-searchbox {
   margin-inline-start: auto; 
   flex: none; 
