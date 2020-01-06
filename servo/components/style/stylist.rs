@@ -1369,21 +1369,6 @@ impl Stylist {
     }
 }
 
-impl Drop for Stylist {
-    fn drop(&mut self) {
-        
-        
-        
-        
-        
-        
-        unsafe { self.rule_tree.gc(); }
-
-        
-        debug_assert!(self.rule_tree.is_empty());
-    }
-}
-
 
 
 struct AttributeAndStateDependencyVisitor<'a> {

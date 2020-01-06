@@ -47,6 +47,21 @@ pub struct RuleTree {
     root: StrongRuleNode,
 }
 
+impl Drop for RuleTree {
+    fn drop(&mut self) {
+        
+        unsafe { self.gc(); }
+
+        
+        debug_assert!(self.root.get().next_free.load(Ordering::Relaxed) == FREE_LIST_SENTINEL);
+
+        
+        
+        
+        self.root.get().next_free.store(ptr::null_mut(), Ordering::Relaxed);
+    }
+}
+
 
 
 
@@ -122,6 +137,10 @@ impl StyleSource {
 
 const FREE_LIST_SENTINEL: *mut RuleNode = 0x01 as *mut RuleNode;
 
+
+
+const FREE_LIST_LOCKED: *mut RuleNode = 0x02 as *mut RuleNode;
+
 impl RuleTree {
     
     pub fn new() -> Self {
@@ -133,11 +152,6 @@ impl RuleTree {
     
     pub fn root(&self) -> StrongRuleNode {
         self.root.clone()
-    }
-
-    
-    pub fn is_empty(&self) -> bool {
-        self.root.get().first_child.load(Ordering::Relaxed).is_null()
     }
 
     fn dump<W: Write>(&self, guards: &StylesheetGuards, writer: &mut W) {
@@ -565,11 +579,63 @@ pub struct RuleNode {
     prev_sibling_or_free_count: PrevSiblingOrFreeCount,
 
     
+    
+    
+    
+    
+    
     next_free: AtomicPtr<RuleNode>,
 }
 
 unsafe impl Sync for RuleTree {}
 unsafe impl Send for RuleTree {}
+
+
+#[cfg(feature = "gecko")]
+#[cfg(debug_assertions)]
+mod gecko_leak_checking {
+use std::mem::size_of;
+use std::os::raw::{c_char, c_void};
+use super::RuleNode;
+
+extern "C" {
+    pub fn NS_LogCtor(aPtr: *const c_void, aTypeName: *const c_char, aSize: u32);
+    pub fn NS_LogDtor(aPtr: *const c_void, aTypeName: *const c_char, aSize: u32);
+}
+
+static NAME: &'static [u8] = b"RuleNode\0";
+
+
+pub fn log_ctor(ptr: *const RuleNode) {
+    let s = NAME as *const [u8] as *const u8 as *const c_char;
+    unsafe {
+        NS_LogCtor(ptr as *const c_void, s, size_of::<RuleNode>() as u32);
+    }
+}
+
+
+pub fn log_dtor(ptr: *const RuleNode) {
+    let s = NAME as *const [u8] as *const u8 as *const c_char;
+    unsafe {
+        NS_LogDtor(ptr as *const c_void, s, size_of::<RuleNode>() as u32);
+    }
+}
+
+}
+
+#[inline(always)]
+fn log_new(_ptr: *const RuleNode) {
+    #[cfg(feature = "gecko")]
+    #[cfg(debug_assertions)]
+    gecko_leak_checking::log_ctor(_ptr);
+}
+
+#[inline(always)]
+fn log_drop(_ptr: *const RuleNode) {
+    #[cfg(feature = "gecko")]
+    #[cfg(debug_assertions)]
+    gecko_leak_checking::log_dtor(_ptr);
+}
 
 impl RuleNode {
     fn new(root: WeakRuleNode,
@@ -730,6 +796,7 @@ impl StrongRuleNode {
         debug_assert!(n.parent.is_none() == !n.source.is_some());
 
         let ptr = Box::into_raw(n);
+        log_new(ptr);
 
         debug!("Creating rule node: {:p}", ptr);
 
@@ -948,6 +1015,7 @@ impl StrongRuleNode {
 
             debug!("GC'ing {:?}", weak.ptr());
             node.remove_from_child_list();
+            log_drop(weak.ptr());
             let _ = Box::from_raw(weak.ptr());
         }
 
@@ -1330,15 +1398,28 @@ impl Drop for StrongRuleNode {
         if node.parent.is_none() {
             debug!("Dropping root node!");
             
-            
-            
-            unsafe { self.gc() };
+            debug_assert!(node.next_free.load(Ordering::Relaxed).is_null());
+            log_drop(self.ptr());
             let _ = unsafe { Box::from_raw(self.ptr()) };
             return;
         }
 
         let root = unsafe { &*node.root.as_ref().unwrap().ptr() };
         let free_list = &root.next_free;
+        let mut old_head = free_list.load(Ordering::Relaxed);
+
+        
+        
+        
+        if old_head.is_null() {
+            debug_assert!(!thread_state::get().is_worker() &&
+                          (thread_state::get().is_layout() ||
+                           thread_state::get().is_script()));
+            unsafe { node.remove_from_child_list(); }
+            log_drop(self.ptr());
+            let _ = unsafe { Box::from_raw(self.ptr()) };
+            return;
+        }
 
         
         
@@ -1353,14 +1434,13 @@ impl Drop for StrongRuleNode {
         
         
         
-        let mut old_head = free_list.load(Ordering::Relaxed);
         loop {
             match free_list.compare_exchange_weak(old_head,
-                                                  ptr::null_mut(),
+                                                  FREE_LIST_LOCKED,
                                                   Ordering::Acquire,
                                                   Ordering::Relaxed) {
                 Ok(..) => {
-                    if !old_head.is_null() {
+                    if old_head != FREE_LIST_LOCKED {
                         break;
                     }
                 },
