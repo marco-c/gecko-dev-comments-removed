@@ -763,6 +763,11 @@ MediaDecoder::MetadataLoaded(UniquePtr<MediaInfo> aInfo,
   Invalidate();
 
   EnsureTelemetryReported();
+
+  
+  if (mInfo->mMetadataDuration && IsInfinite()) {
+    SetInfinite(false);
+  }
 }
 
 void
