@@ -124,14 +124,22 @@ const nsIFile = Components.Constructor("@mozilla.org/file/local;1", "nsIFile",
 
 
 function getFile(path, base = null) {
-  if (base) {
-    let file = base.clone();
-    try {
-      file.appendRelativePath(path);
-      return file;
-    } catch (e) {}
+  
+  
+  
+  
+  try {
+    return new nsIFile(path);
+  } catch (e) {
+    
+    
+    
   }
-  return new nsIFile(path);
+
+  
+  let file = base.clone();
+  file.appendRelativePath(path);
+  return file;
 }
 
 

@@ -385,15 +385,19 @@ private:
 already_AddRefed<nsIFile>
 Addon::FullPath()
 {
-  nsString path = mLocation.Path();
+  nsString path = Path();
 
+  
   nsCOMPtr<nsIFile> file;
-  NS_NewLocalFile(path, false, getter_AddRefs(file));
+  if (NS_SUCCEEDED(NS_NewLocalFile(path, false, getter_AddRefs(file)))) {
+    return file.forget();
+  }
+
+  
+  NS_NewLocalFile(mLocation.Path(), false, getter_AddRefs(file));
   MOZ_RELEASE_ASSERT(file);
 
-  path = Path();
   file->AppendRelativePath(path);
-
   return file.forget();
 }
 
