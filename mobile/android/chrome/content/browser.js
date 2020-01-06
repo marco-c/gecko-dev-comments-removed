@@ -4498,7 +4498,13 @@ Tab.prototype = {
         
         
       }
-      if (originHost != aLocationURI.host) {
+      let locationHost = "";
+      try {
+        locationHost = aLocationURI.host;
+      } catch (e if (e.result == Cr.NS_ERROR_FAILURE)) {
+        
+      }
+      if (originHost != locationHost || originHost == "") {
         
         ss.deleteTabValue(this, "appOrigin");
       }
