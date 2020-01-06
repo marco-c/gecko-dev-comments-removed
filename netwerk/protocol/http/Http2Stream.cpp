@@ -958,7 +958,7 @@ Http2Stream::TransmitFrame(const char *buf,
   }
 
   if (!mAttempting0RTT) {
-    mSession->MaybeFlushOutputQueue();
+    mSession->FlushOutputQueue();
   }
 
   
@@ -966,6 +966,7 @@ Http2Stream::TransmitFrame(const char *buf,
 
   mTxInlineFrameUsed = 0;
   mTxStreamFrameSize = 0;
+
   return NS_OK;
 }
 
