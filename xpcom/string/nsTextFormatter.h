@@ -67,14 +67,6 @@ public:
                             va_list aAp);
   static char16_t* vsmprintf(const char16_t* aFmt, va_list aAp);
   static uint32_t vssprintf(nsAString& aOut, const char16_t* aFmt, va_list aAp);
-
-  
-
-
-
-
-  static void smprintf_free(char16_t* aMem);
-
 };
 
 #endif 
