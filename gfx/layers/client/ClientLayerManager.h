@@ -14,6 +14,7 @@
 #include "mozilla/WidgetUtils.h"        
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/layers/CompositorTypes.h"
+#include "mozilla/layers/FocusTarget.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/ShadowLayers.h"  
 #include "mozilla/layers/APZTestData.h" 
@@ -132,6 +133,8 @@ public:
   virtual bool HasShadowManagerInternal() const override { return HasShadowManager(); }
 
   virtual void SetIsFirstPaint() override;
+
+  virtual void SetFocusTarget(const FocusTarget& aFocusTarget) override;
 
   
 

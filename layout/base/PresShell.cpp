@@ -191,6 +191,7 @@
 #include "nsLayoutStylesheetCache.h"
 #include "mozilla/layers/InputAPZContext.h"
 #include "mozilla/layers/ScrollInputMethods.h"
+#include "mozilla/layers/FocusTarget.h"
 #include "nsStyleSet.h"
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSetHandleInlines.h"
@@ -6335,6 +6336,11 @@ PresShell::Paint(nsView*         aViewToPaint,
   if (!mIsActive) {
     return;
   }
+
+  
+  
+  
+  mAPZFocusTarget = FocusTarget(this);
 
   nsPresContext* presContext = GetPresContext();
   AUTO_LAYOUT_PHASE_ENTRY_POINT(presContext, Paint);

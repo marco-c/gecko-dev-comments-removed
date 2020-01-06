@@ -52,6 +52,8 @@ public:
 
   FocusTarget(nsIPresShell* aRootPresShell);
 
+  bool operator==(const FocusTarget& aRhs) const;
+
 public:
   
   

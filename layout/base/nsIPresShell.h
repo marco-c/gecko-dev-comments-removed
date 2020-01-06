@@ -23,6 +23,7 @@
 #include "mozilla/ArenaObjectID.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/FlushType.h"
+#include "mozilla/layers/FocusTarget.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/StyleSetHandle.h"
@@ -180,6 +181,7 @@ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IPRESSHELL_IID)
 
 protected:
+  typedef mozilla::layers::FocusTarget FocusTarget;
   typedef mozilla::layers::LayerManager LayerManager;
   typedef mozilla::gfx::SourceSurface SourceSurface;
 
@@ -1529,6 +1531,11 @@ public:
   
 
 
+  const FocusTarget& GetAPZFocusTarget() const { return mAPZFocusTarget; }
+
+  
+
+
 
 
   virtual void SynthesizeMouseMove(bool aFromScroll) = 0;
@@ -1836,7 +1843,6 @@ protected:
   nsTHashtable<nsPtrHashKey<void>> mAllocatedPointers;
 #endif
 
-
   
   uint64_t                  mPaintCount;
 
@@ -1898,6 +1904,9 @@ protected:
   bool mNeedThrottledAnimationFlush : 1;
 
   uint32_t                  mPresShellId;
+
+  
+  FocusTarget               mAPZFocusTarget;
 
   static nsIContent*        gKeyDownTarget;
 

@@ -97,6 +97,7 @@ class ReadbackLayer;
 class ReadbackProcessor;
 class RefLayer;
 class HostLayer;
+class FocusTarget;
 class KnowsCompositor;
 class ShadowableLayer;
 class ShadowLayerForwarder;
@@ -598,6 +599,11 @@ public:
 
 
   virtual void SetIsFirstPaint() {}
+
+  
+
+
+  virtual void SetFocusTarget(const FocusTarget& aFocusTarget) {}
 
   
 
