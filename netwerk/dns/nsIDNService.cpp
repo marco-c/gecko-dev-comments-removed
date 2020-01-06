@@ -812,11 +812,8 @@ bool nsIDNService::isLabelSafe(const nsAString &label)
       ch = SURROGATE_TO_UCS4(ch, *current++);
     }
 
-    
-    
-    
     IdentifierType idType = GetIdentifierType(ch);
-    if (idType == IDTYPE_RESTRICTED || idType == IDTYPE_ASPIRATIONAL) {
+    if (idType == IDTYPE_RESTRICTED) {
       return false;
     }
     MOZ_ASSERT(idType == IDTYPE_ALLOWED);
