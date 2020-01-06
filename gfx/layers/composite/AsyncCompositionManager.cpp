@@ -1374,9 +1374,8 @@ AsyncCompositionManager::TransformShadowTree(TimeStamp aCurrentFrame,
     return false;
   }
 
-  
   CompositorAnimationStorage* storage =
-    mCompositorBridge->GetAnimationStorage(0);
+    mCompositorBridge->GetAnimationStorage();
   
   
   
