@@ -264,7 +264,6 @@ double Gecko_GetPositionInSegment(
   RawGeckoAnimationPropertySegmentBorrowed aSegment,
   double aProgress,
   mozilla::ComputedTimingFunction::BeforeFlag aBeforeFlag);
-bool Gecko_IsFramesTimingEnabled();
 
 
 
