@@ -377,6 +377,9 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     fn has_attr(&self, namespace: &Namespace, attr: &LocalName) -> bool;
 
     
+    fn get_id(&self) -> Option<Atom>;
+
+    
     fn each_class<F>(&self, callback: F) where F: FnMut(&Atom);
 
     

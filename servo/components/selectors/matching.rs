@@ -9,25 +9,12 @@ use parser::{Selector, SelectorImpl, SelectorIter, SelectorList};
 use std::borrow::Borrow;
 use tree::Element;
 
+pub use context::*;
+
 
 
 
 pub static RECOMMENDED_SELECTOR_BLOOM_FILTER_SIZE: usize = 4096;
-
-bitflags! {
-    /// Set of flags that determine the different kind of elements affected by
-    /// the selector matching process.
-    ///
-    /// This is used to implement efficient sharing.
-    #[derive(Default)]
-    pub flags StyleRelations: usize {
-        /// Whether this element is affected by presentational hints. This is
-        /// computed externally (that is, in Servo).
-        const AFFECTED_BY_PRESENTATIONAL_HINTS = 1 << 0,
-        /// Whether this element has pseudo-element styles. Computed externally.
-        const AFFECTED_BY_PSEUDO_ELEMENTS = 1 << 1,
-    }
-}
 
 bitflags! {
     /// Set of flags that are set on either the element or its parent (depending
@@ -63,111 +50,6 @@ impl ElementSelectorFlags {
     
     pub fn for_parent(self) -> ElementSelectorFlags {
         self & (HAS_SLOW_SELECTOR | HAS_SLOW_SELECTOR_LATER_SIBLINGS | HAS_EDGE_CHILD_SELECTOR)
-    }
-}
-
-
-
-
-
-#[derive(Debug, PartialEq, Copy, Clone)]
-pub enum MatchingMode {
-    
-    Normal,
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    ForStatelessPseudoElement,
-}
-
-
-#[derive(PartialEq, Eq, Copy, Clone, Debug)]
-pub enum VisitedHandlingMode {
-    
-    AllLinksUnvisited,
-    
-    
-    
-    RelevantLinkVisited,
-}
-
-
-
-
-#[derive(PartialEq, Eq, Copy, Clone, Hash, Debug)]
-pub enum QuirksMode {
-    
-    Quirks,
-    
-    LimitedQuirks,
-    
-    NoQuirks,
-}
-
-
-
-
-#[derive(Clone)]
-pub struct MatchingContext<'a> {
-    
-    
-    pub relations: StyleRelations,
-    
-    pub matching_mode: MatchingMode,
-    
-    pub bloom_filter: Option<&'a BloomFilter>,
-    
-    pub visited_handling: VisitedHandlingMode,
-    
-    
-    
-    
-    pub relevant_link_found: bool,
-    
-    pub quirks_mode: QuirksMode,
-}
-
-impl<'a> MatchingContext<'a> {
-    
-    pub fn new(matching_mode: MatchingMode,
-               bloom_filter: Option<&'a BloomFilter>,
-               quirks_mode: QuirksMode)
-               -> Self
-    {
-        Self {
-            relations: StyleRelations::empty(),
-            matching_mode: matching_mode,
-            bloom_filter: bloom_filter,
-            visited_handling: VisitedHandlingMode::AllLinksUnvisited,
-            relevant_link_found: false,
-            quirks_mode: quirks_mode,
-        }
-    }
-
-    
-    pub fn new_for_visited(matching_mode: MatchingMode,
-                           bloom_filter: Option<&'a BloomFilter>,
-                           visited_handling: VisitedHandlingMode,
-                           quirks_mode: QuirksMode)
-                           -> Self
-    {
-        Self {
-            relations: StyleRelations::empty(),
-            matching_mode: matching_mode,
-            bloom_filter: bloom_filter,
-            visited_handling: visited_handling,
-            relevant_link_found: false,
-            quirks_mode: quirks_mode,
-        }
     }
 }
 
@@ -208,7 +90,7 @@ impl<'a, 'b, Impl> LocalMatchingContext<'a, 'b, Impl>
     
     
     pub fn note_next_sequence(&mut self, selector_iter: &SelectorIter<Impl>) {
-        if let QuirksMode::Quirks = self.shared.quirks_mode {
+        if let QuirksMode::Quirks = self.shared.quirks_mode() {
             self.offset = self.selector.len() - selector_iter.selector_length();
         }
     }
@@ -216,7 +98,7 @@ impl<'a, 'b, Impl> LocalMatchingContext<'a, 'b, Impl>
     
     
     pub fn active_hover_quirk_matches(&mut self) -> bool {
-        if self.shared.quirks_mode != QuirksMode::Quirks ||
+        if self.shared.quirks_mode() != QuirksMode::Quirks ||
            self.within_functional_pseudo_class_argument {
             return false;
         }
@@ -666,12 +548,11 @@ fn matches_simple_selector<E, F>(
             let ns = ::parser::namespace_empty_string::<E::Impl>();
             element.get_namespace() == ns.borrow()
         }
-        
         Component::ID(ref id) => {
-            element.get_id().map_or(false, |attr| attr == *id)
+            element.has_id(id, context.shared.classes_and_ids_case_sensitivity())
         }
         Component::Class(ref class) => {
-            element.has_class(class)
+            element.has_class(class, context.shared.classes_and_ids_case_sensitivity())
         }
         Component::AttributeInNoNamespaceExists { ref local_name, ref local_name_lower } => {
             let is_html = element.is_html_element_in_html_document();
