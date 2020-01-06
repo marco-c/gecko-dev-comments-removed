@@ -299,7 +299,7 @@ impl CSSStyleDeclarationMethods for CSSStyleDeclaration {
 
     
     fn GetPropertyValue(&self, property: DOMString) -> DOMString {
-        let id = if let Ok(id) = PropertyId::parse(&property, None) {
+        let id = if let Ok(id) = PropertyId::parse(&property) {
             id
         } else {
             
@@ -310,7 +310,7 @@ impl CSSStyleDeclarationMethods for CSSStyleDeclaration {
 
     
     fn GetPropertyPriority(&self, property: DOMString) -> DOMString {
-        let id = if let Ok(id) = PropertyId::parse(&property, None) {
+        let id = if let Ok(id) = PropertyId::parse(&property) {
             id
         } else {
             
@@ -334,7 +334,7 @@ impl CSSStyleDeclarationMethods for CSSStyleDeclaration {
                    priority: DOMString)
                    -> ErrorResult {
         
-        let id = if let Ok(id) = PropertyId::parse(&property, None) {
+        let id = if let Ok(id) = PropertyId::parse(&property) {
             id
         } else {
             
@@ -351,7 +351,7 @@ impl CSSStyleDeclarationMethods for CSSStyleDeclaration {
         }
 
         
-        let id = match PropertyId::parse(&property, None) {
+        let id = match PropertyId::parse(&property) {
             Ok(id) => id,
             Err(..) => return Ok(()), 
         };
@@ -383,7 +383,7 @@ impl CSSStyleDeclarationMethods for CSSStyleDeclaration {
             return Err(Error::NoModificationAllowed);
         }
 
-        let id = if let Ok(id) = PropertyId::parse(&property, None) {
+        let id = if let Ok(id) = PropertyId::parse(&property) {
             id
         } else {
             
