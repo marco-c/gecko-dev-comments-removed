@@ -6,6 +6,46 @@
 
 
 
+const OPTIMAL_TIME_INTERVAL_MAX_ITERS = 100;
+
+const OPTIMAL_TIME_INTERVAL_MULTIPLES = [1, 2.5, 5];
+
+
+
+
+
+
+
+
+
+function findOptimalTimeInterval(minTimeInterval) {
+  if (!minTimeInterval) {
+    return 0;
+  }
+
+  let numIters = 0;
+  let multiplier = 1;
+  let interval;
+
+  while (true) {
+    for (let i = 0; i < OPTIMAL_TIME_INTERVAL_MULTIPLES.length; i++) {
+      interval = OPTIMAL_TIME_INTERVAL_MULTIPLES[i] * multiplier;
+
+      if (minTimeInterval <= interval) {
+        return interval;
+      }
+    }
+
+    if (++numIters > OPTIMAL_TIME_INTERVAL_MAX_ITERS) {
+      return interval;
+    }
+
+    multiplier *= 10;
+  }
+}
+
+
+
 
 
 
@@ -21,6 +61,7 @@ function isAllTimingEffectEqual(animationsA, animationsB) {
       return false;
     }
   }
+
   return true;
 }
 
@@ -42,5 +83,6 @@ function isTimingEffectEqual(stateA, stateB) {
          stateA.iterationStart === stateB.iterationStart;
 }
 
-module.exports.isAllTimingEffectEqual = isAllTimingEffectEqual;
-module.exports.isTimingEffectEqual = isTimingEffectEqual;
+exports.findOptimalTimeInterval = findOptimalTimeInterval;
+exports.isAllTimingEffectEqual = isAllTimingEffectEqual;
+exports.isTimingEffectEqual = isTimingEffectEqual;

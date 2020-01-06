@@ -5,12 +5,12 @@
 
 
 :root {
-  --animation-even-background-color: rgba(0,0,0,0.05);
+  --animation-even-background-color: rgba(0, 0, 0, 0.05);
   --command-pick-image: url(chrome://devtools/skin/images/command-pick.svg);
 }
 
 :root.theme-dark {
-  --animation-even-background-color: rgba(255,255,255,0.05);
+  --animation-even-background-color: rgba(255, 255, 255, 0.05);
 }
 
 :root.theme-firebug {
@@ -21,11 +21,20 @@
 .animation-list-header {
   display: flex;
   justify-content: flex-end;
+  padding: 0;
 }
+
 
 .animation-timeline-tick-list {
   margin-right: 10px;
+  position: relative;
   width: calc(100% - 210px);
+}
+
+.animation-timeline-tick-item {
+  border-left: 0.5px solid rgba(128, 136, 144, .5);
+  height: 100vh;
+  position: absolute;
 }
 
 

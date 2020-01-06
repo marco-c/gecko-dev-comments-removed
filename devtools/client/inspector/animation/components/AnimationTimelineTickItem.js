@@ -1,0 +1,31 @@
+
+
+
+
+"use strict";
+
+const { DOM: dom, PropTypes, PureComponent } =
+  require("devtools/client/shared/vendor/react");
+
+class AnimationTimeTickItem extends PureComponent {
+  static get propTypes() {
+    return {
+      position: PropTypes.number.isRequired,
+      timeTickLabel: PropTypes.string.isRequired,
+    };
+  }
+
+  render() {
+    const { position, timeTickLabel } = this.props;
+
+    return dom.div(
+      {
+        className: "animation-timeline-tick-item",
+        style: { left: `${ position }%` }
+      },
+      timeTickLabel
+    );
+  }
+}
+
+module.exports = AnimationTimeTickItem;
