@@ -311,8 +311,11 @@ add_task(async function test_update() {
   let guid = addresses[1].guid;
   let timeLastModified = addresses[1].timeLastModified;
 
-  let onChanged = TestUtils.topicObserved("formautofill-storage-changed",
-                                          (subject, data) => data == "update");
+  let onChanged = TestUtils.topicObserved(
+    "formautofill-storage-changed",
+    (subject, data) =>
+      data == "update" && subject.QueryInterface(Ci.nsISupportsString).data == guid
+  );
 
   do_check_neq(addresses[1].country, undefined);
 
@@ -415,31 +418,49 @@ MERGE_TESTCASES.forEach((testcase) => {
     let profileStorage = await initProfileStorage(TEST_STORE_FILE_NAME,
                                                   [testcase.addressInStorage]);
     let addresses = profileStorage.addresses.getAll();
+    let guid = addresses[0].guid;
+    let timeLastModified = addresses[0].timeLastModified;
+
     
     let onMerged = TestUtils.topicObserved(
       "formautofill-storage-changed",
       (subject, data) =>
-        data == "merge" && subject.QueryInterface(Ci.nsISupportsString).data == addresses[0].guid
+        data == "update" && subject.QueryInterface(Ci.nsISupportsString).data == guid
     );
-    let timeLastModified = addresses[0].timeLastModified;
-    Assert.equal(
-      profileStorage.addresses.mergeIfPossible(addresses[0].guid, testcase.addressToMerge),
-      true);
+
+    
+    profileStorage.addresses.pullSyncChanges();
+    do_check_eq(getSyncChangeCounter(profileStorage.addresses, guid), 1);
+
+    Assert.ok(profileStorage.addresses.mergeIfPossible(guid, testcase.addressToMerge));
     await onMerged;
+
     addresses = profileStorage.addresses.getAll();
     Assert.equal(addresses.length, 1);
     Assert.notEqual(addresses[0].timeLastModified, timeLastModified);
     do_check_record_matches(addresses[0], testcase.expectedAddress);
+
+    
+    do_check_eq(getSyncChangeCounter(profileStorage.addresses, guid), 2);
   });
 });
 
 add_task(async function test_merge_same_address() {
   let profileStorage = await initProfileStorage(TEST_STORE_FILE_NAME, [TEST_ADDRESS_1]);
   let addresses = profileStorage.addresses.getAll();
+  let guid = addresses[0].guid;
   let timeLastModified = addresses[0].timeLastModified;
+
   
-  Assert.equal(profileStorage.addresses.mergeIfPossible(addresses[0].guid, TEST_ADDRESS_1), true);
+  profileStorage.addresses.pullSyncChanges();
+  do_check_eq(getSyncChangeCounter(profileStorage.addresses, guid), 1);
+
+  
+  Assert.ok(profileStorage.addresses.mergeIfPossible(guid, TEST_ADDRESS_1));
   Assert.equal(addresses[0].timeLastModified, timeLastModified);
+
+  
+  do_check_eq(getSyncChangeCounter(profileStorage.addresses, guid), 1);
 });
 
 add_task(async function test_merge_unable_merge() {
@@ -447,11 +468,20 @@ add_task(async function test_merge_unable_merge() {
                                                 [TEST_ADDRESS_1, TEST_ADDRESS_2]);
 
   let addresses = profileStorage.addresses.getAll();
-  
-  do_check_eq(profileStorage.addresses.mergeIfPossible(addresses[1].guid, TEST_ADDRESS_3), false);
+  let guid = addresses[1].guid;
 
   
-  do_check_eq(profileStorage.addresses.mergeIfPossible(addresses[1].guid, TEST_ADDRESS_4), false);
+  profileStorage.addresses.pullSyncChanges();
+  do_check_eq(getSyncChangeCounter(profileStorage.addresses, guid), 1);
+
+  
+  do_check_eq(profileStorage.addresses.mergeIfPossible(guid, TEST_ADDRESS_3), false);
+
+  
+  do_check_eq(profileStorage.addresses.mergeIfPossible(guid, TEST_ADDRESS_4), false);
+
+  
+  do_check_eq(getSyncChangeCounter(profileStorage.addresses, guid), 1);
 });
 
 add_task(async function test_mergeToStorage() {

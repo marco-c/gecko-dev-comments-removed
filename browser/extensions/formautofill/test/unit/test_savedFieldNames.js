@@ -25,7 +25,7 @@ add_task(async function test_profileSavedFieldNames_observe() {
   await formAutofillParent.init();
 
   
-  ["add", "update", "remove", "reconcile", "merge"].forEach(event => {
+  ["add", "update", "remove", "reconcile"].forEach(event => {
     formAutofillParent.observe(null, "formautofill-storage-changed", "add");
     do_check_eq(formAutofillParent._updateSavedFieldNames.called, true);
   });
