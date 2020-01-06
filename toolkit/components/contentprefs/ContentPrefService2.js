@@ -2,35 +2,14 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var EXPORTED_SYMBOLS = [
-  "ContentPrefService2",
-];
-
 const { interfaces: Ci, classes: Cc, results: Cr, utils: Cu } = Components;
 
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/ContentPrefUtils.jsm");
 Cu.import("resource://gre/modules/ContentPrefStore.jsm");
+
+const CACHE_MAX_GROUP_ENTRIES = 100;
 
 const GROUP_CLAUSE = `
   SELECT id
@@ -39,13 +18,97 @@ const GROUP_CLAUSE = `
         (:includeSubdomains AND name LIKE :pattern ESCAPE '/')
 `;
 
-function ContentPrefService2(cps) {
-  this._cps = cps;
-  this._cache = cps._cache;
-  this._pbStore = cps._privModeStorage;
+function ContentPrefService2() {
+  if (Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_CONTENT) {
+    return Cu.import("resource://gre/modules/ContentPrefServiceChild.jsm")
+             .ContentPrefServiceChild;
+  }
+
+  
+  
+  
+  
+  this._dbInit();
+
+  this._observerSvc.addObserver(this, "last-pb-context-exited");
+
+  
+  this._observerSvc.addObserver(this, "xpcom-shutdown");
 }
 
+const cache = new ContentPrefStore();
+cache.set = function CPS_cache_set(group, name, val) {
+  Object.getPrototypeOf(this).set.apply(this, arguments);
+  let groupCount = this._groups.size;
+  if (groupCount >= CACHE_MAX_GROUP_ENTRIES) {
+    
+    for (let [group, name, ] of this) {
+      this.remove(group, name);
+      groupCount--;
+      if (groupCount < CACHE_MAX_GROUP_ENTRIES / 2)
+        break;
+    }
+  }
+};
+
+const privModeStorage = new ContentPrefStore();
+
 ContentPrefService2.prototype = {
+  
+
+  classID: Components.ID("{e3f772f3-023f-4b32-b074-36cf0fd5d414}"),
+
+  
+
+  
+  __observerSvc: null,
+  get _observerSvc() {
+    if (!this.__observerSvc)
+      this.__observerSvc = Cc["@mozilla.org/observer-service;1"].
+                           getService(Ci.nsIObserverService);
+    return this.__observerSvc;
+  },
+
+  
+  __prefSvc: null,
+  get _prefSvc() {
+    if (!this.__prefSvc)
+      this.__prefSvc = Cc["@mozilla.org/preferences-service;1"].
+                       getService(Ci.nsIPrefBranch);
+    return this.__prefSvc;
+  },
+
+
+  
+
+  _destroy: function ContentPrefService__destroy() {
+    this._observerSvc.removeObserver(this, "xpcom-shutdown");
+    this._observerSvc.removeObserver(this, "last-pb-context-exited");
+
+    this.destroy();
+
+    this._dbConnection.asyncClose(() => {
+      Services.obs.notifyObservers(null, "content-prefs-db-closed");
+    });
+
+    
+    
+    
+    
+    delete this._observers;
+    delete this._genericObservers;
+    delete this.__grouper;
+    delete this.__observerSvc;
+    delete this.__prefSvc;
+  },
+
+
+  
+
+  _cache: cache,
+  _pbStore: privModeStorage,
+
+  
 
   getByName: function CPS2_getByName(name, context, callback) {
     checkNameArg(name);
@@ -254,7 +317,7 @@ ContentPrefService2.prototype = {
       this._pbStore.set(group, name, value);
       this._schedule(function() {
         cbHandleCompletion(callback, Ci.nsIContentPrefCallback2.COMPLETE_OK);
-        this._cps._notifyPrefSet(group, name, value, context.usePrivateBrowsing);
+        this._notifyPrefSet(group, name, value, context.usePrivateBrowsing);
       });
       return;
     }
@@ -326,7 +389,7 @@ ContentPrefService2.prototype = {
           this._cache.setWithCast(group, name, value);
         cbHandleCompletion(callback, reason);
         if (ok)
-          this._cps._notifyPrefSet(group, name, value, context && context.usePrivateBrowsing);
+          this._notifyPrefSet(group, name, value, context && context.usePrivateBrowsing);
       },
       onError: function onError(nsresult) {
         cbHandleError(callback, nsresult);
@@ -406,7 +469,7 @@ ContentPrefService2.prototype = {
         cbHandleCompletion(callback, reason);
         if (ok) {
           for (let [sgroup, , ] of prefs) {
-            this._cps._notifyPrefRemoved(sgroup, name, isPrivate);
+            this._notifyPrefRemoved(sgroup, name, isPrivate);
           }
         }
       },
@@ -519,7 +582,7 @@ ContentPrefService2.prototype = {
         cbHandleCompletion(callback, reason);
         if (ok) {
           for (let [sgroup, sname, ] of prefs) {
-            this._cps._notifyPrefRemoved(sgroup, sname, isPrivate);
+            this._notifyPrefRemoved(sgroup, sname, isPrivate);
           }
         }
       },
@@ -585,7 +648,7 @@ ContentPrefService2.prototype = {
         cbHandleCompletion(callback, reason);
         if (ok) {
           for (let [sgroup, sname, ] of prefs) {
-            this._cps._notifyPrefRemoved(sgroup, sname, isPrivate);
+            this._notifyPrefRemoved(sgroup, sname, isPrivate);
           }
         }
       },
@@ -674,7 +737,7 @@ ContentPrefService2.prototype = {
         cbHandleCompletion(callback, reason);
         if (ok) {
           for (let [sgroup, , ] of prefs) {
-            this._cps._notifyPrefRemoved(sgroup, name, isPrivate);
+            this._notifyPrefRemoved(sgroup, name, isPrivate);
           }
         }
       },
@@ -704,7 +767,7 @@ ContentPrefService2.prototype = {
     if (!this._statements)
       this._statements = {};
     if (!this._statements[sql])
-      this._statements[sql] = this._cps._dbConnection.createAsyncStatement(sql);
+      this._statements[sql] = this._dbConnection.createAsyncStatement(sql);
     return this._statements[sql];
   },
 
@@ -728,7 +791,7 @@ ContentPrefService2.prototype = {
   _execStmts: function CPS2__execStmts(stmts, callbacks) {
     let self = this;
     let gotRow = false;
-    this._cps._dbConnection.executeAsync(stmts, stmts.length, {
+    this._dbConnection.executeAsync(stmts, stmts.length, {
       handleResult: function handleResult(results) {
         try {
           let row = null;
@@ -763,6 +826,14 @@ ContentPrefService2.prototype = {
     });
   },
 
+  __grouper: null,
+  get _grouper() {
+    if (!this.__grouper)
+      this.__grouper = Cc["@mozilla.org/content-pref/hostname-grouper;1"].
+                       getService(Ci.nsIContentURIGrouper);
+    return this.__grouper;
+  },
+
   
 
 
@@ -780,19 +851,86 @@ ContentPrefService2.prototype = {
     } catch (err) {
       return groupStr;
     }
-    return this._cps._grouper.group(groupURI);
+    return this._grouper.group(groupURI);
   },
 
   _schedule: function CPS2__schedule(fn) {
     Services.tm.dispatchToMainThread(fn.bind(this));
   },
 
-  addObserverForName: function CPS2_addObserverForName(name, observer) {
-    this._cps._addObserver(name, observer);
+  
+  _observers: {},
+
+  
+  _genericObservers: [],
+
+  addObserverForName: function CPS2_addObserverForName(aName, aObserver) {
+    var observers;
+    if (aName) {
+      if (!this._observers[aName])
+        this._observers[aName] = [];
+      observers = this._observers[aName];
+    } else
+      observers = this._genericObservers;
+
+    if (observers.indexOf(aObserver) == -1)
+      observers.push(aObserver);
   },
 
-  removeObserverForName: function CPS2_removeObserverForName(name, observer) {
-    this._cps._removeObserver(name, observer);
+  removeObserverForName: function CPS2_removeObserverForName(aName, aObserver) {
+    var observers;
+    if (aName) {
+      if (!this._observers[aName])
+        return;
+      observers = this._observers[aName];
+    } else
+      observers = this._genericObservers;
+
+    if (observers.indexOf(aObserver) != -1)
+      observers.splice(observers.indexOf(aObserver), 1);
+  },
+
+  
+
+
+
+
+
+
+  _getObservers: function ContentPrefService__getObservers(aName) {
+    var observers = [];
+
+    if (aName && this._observers[aName])
+      observers = observers.concat(this._observers[aName]);
+    observers = observers.concat(this._genericObservers);
+
+    return observers;
+  },
+
+  
+
+
+  _notifyPrefRemoved: function ContentPrefService__notifyPrefRemoved(aGroup, aName, aIsPrivate) {
+    for (var observer of this._getObservers(aName)) {
+      try {
+        observer.onContentPrefRemoved(aGroup, aName, aIsPrivate);
+      } catch (ex) {
+        Cu.reportError(ex);
+      }
+    }
+  },
+
+  
+
+
+  _notifyPrefSet: function ContentPrefService__notifyPrefSet(aGroup, aName, aValue, aIsPrivate) {
+    for (var observer of this._getObservers(aName)) {
+      try {
+        observer.onContentPrefSet(aGroup, aName, aValue, aIsPrivate);
+      } catch (ex) {
+        Cu.reportError(ex);
+      }
+    }
   },
 
   extractDomain: function CPS2_extractDomain(str) {
@@ -808,13 +946,19 @@ ContentPrefService2.prototype = {
 
   observe: function CPS2_observe(subj, topic, data) {
     switch (topic) {
+    case "xpcom-shutdown":
+      this._destroy();
+      break;
+    case "last-pb-context-exited":
+      this._pbStore.removeAll();
+      break;
     case "test:reset":
       let fn = subj.QueryInterface(Ci.xpcIJSWeakReference).get();
       this._reset(fn);
       break;
     case "test:db":
       let obj = subj.QueryInterface(Ci.xpcIJSWeakReference).get();
-      obj.value = this._cps._dbConnection;
+      obj.value = this._dbConnection;
       break;
     }
   },
@@ -828,9 +972,8 @@ ContentPrefService2.prototype = {
     this._pbStore.removeAll();
     this._cache.removeAll();
 
-    let cps = this._cps;
-    cps._observers = {};
-    cps._genericObservers = [];
+    this._observers = {};
+    this._genericObservers = [];
 
     let tables = ["prefs", "groups", "settings"];
     let stmts = tables.map(t => this._stmt(`DELETE FROM ${t}`));
@@ -845,9 +988,230 @@ ContentPrefService2.prototype = {
     ];
     if (supportedIIDs.some(i => iid.equals(i)))
       return this;
-    if (iid.equals(Ci.nsIContentPrefService))
-      return this._cps;
     throw Cr.NS_ERROR_NO_INTERFACE;
+  },
+
+
+  
+
+  _dbVersion: 4,
+
+  _dbSchema: {
+    tables: {
+      groups:     "id           INTEGER PRIMARY KEY, \
+                   name         TEXT NOT NULL",
+
+      settings:   "id           INTEGER PRIMARY KEY, \
+                   name         TEXT NOT NULL",
+
+      prefs:      "id           INTEGER PRIMARY KEY, \
+                   groupID      INTEGER REFERENCES groups(id), \
+                   settingID    INTEGER NOT NULL REFERENCES settings(id), \
+                   value        BLOB, \
+                   timestamp    INTEGER NOT NULL DEFAULT 0" 
+    },
+    indices: {
+      groups_idx: {
+        table: "groups",
+        columns: ["name"]
+      },
+      settings_idx: {
+        table: "settings",
+        columns: ["name"]
+      },
+      prefs_idx: {
+        table: "prefs",
+        columns: ["timestamp", "groupID", "settingID"]
+      }
+    }
+  },
+
+  _dbConnection: null,
+
+  
+  
+  
+  
+
+  _dbInit: function ContentPrefService__dbInit() {
+    var dirService = Cc["@mozilla.org/file/directory_service;1"].
+                     getService(Ci.nsIProperties);
+    var dbFile = dirService.get("ProfD", Ci.nsIFile);
+    dbFile.append("content-prefs.sqlite");
+
+    var dbService = Cc["@mozilla.org/storage/service;1"].
+                    getService(Ci.mozIStorageService);
+
+    var dbConnection;
+
+    if (!dbFile.exists())
+      dbConnection = this._dbCreate(dbService, dbFile);
+    else {
+      try {
+        dbConnection = dbService.openDatabase(dbFile);
+      } catch (e) {
+        
+        
+        if (e.result != Cr.NS_ERROR_FILE_CORRUPTED)
+          throw e;
+        dbConnection = this._dbBackUpAndRecreate(dbService, dbFile,
+                                                 dbConnection);
+      }
+
+      
+      var version = dbConnection.schemaVersion;
+
+      
+      
+      if (version != this._dbVersion) {
+        try {
+          this._dbMigrate(dbConnection, version, this._dbVersion);
+        } catch (ex) {
+          Cu.reportError("error migrating DB: " + ex + "; backing up and recreating");
+          dbConnection = this._dbBackUpAndRecreate(dbService, dbFile, dbConnection);
+        }
+      }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!this._prefSvc.prefHasUserValue("toolkit.storage.synchronous"))
+      dbConnection.executeSimpleSQL("PRAGMA synchronous = OFF");
+
+    this._dbConnection = dbConnection;
+  },
+
+  _dbCreate: function ContentPrefService__dbCreate(aDBService, aDBFile) {
+    var dbConnection = aDBService.openDatabase(aDBFile);
+
+    try {
+      this._dbCreateSchema(dbConnection);
+      dbConnection.schemaVersion = this._dbVersion;
+    } catch (ex) {
+      
+      
+      
+      dbConnection.close();
+      aDBFile.remove(false);
+      throw ex;
+    }
+
+    return dbConnection;
+  },
+
+  _dbCreateSchema: function ContentPrefService__dbCreateSchema(aDBConnection) {
+    this._dbCreateTables(aDBConnection);
+    this._dbCreateIndices(aDBConnection);
+  },
+
+  _dbCreateTables: function ContentPrefService__dbCreateTables(aDBConnection) {
+    for (let name in this._dbSchema.tables)
+      aDBConnection.createTable(name, this._dbSchema.tables[name]);
+  },
+
+  _dbCreateIndices: function ContentPrefService__dbCreateIndices(aDBConnection) {
+    for (let name in this._dbSchema.indices) {
+      let index = this._dbSchema.indices[name];
+      let statement = `
+        CREATE INDEX IF NOT EXISTS ${name} ON ${index.table}
+        (${index.columns.join(", ")})
+      `;
+      aDBConnection.executeSimpleSQL(statement);
+    }
+  },
+
+  _dbBackUpAndRecreate: function ContentPrefService__dbBackUpAndRecreate(aDBService,
+                                                                         aDBFile,
+                                                                         aDBConnection) {
+    aDBService.backupDatabaseFile(aDBFile, "content-prefs.sqlite.corrupt");
+
+    
+    
+    
+    try { aDBConnection.close() } catch (ex) {}
+
+    aDBFile.remove(false);
+
+    let dbConnection = this._dbCreate(aDBService, aDBFile);
+
+    return dbConnection;
+  },
+
+  _dbMigrate: function ContentPrefService__dbMigrate(aDBConnection, aOldVersion, aNewVersion) {
+    
+
+
+
+
+
+
+    aDBConnection.beginTransaction();
+
+    try {
+       
+
+
+
+
+
+
+      if (aOldVersion == 0) {
+        this._dbCreateSchema(aDBConnection);
+      } else {
+        for (let i = aOldVersion; i < aNewVersion; i++) {
+          let migrationName = "_dbMigrate" + i + "To" + (i + 1);
+          if (typeof this[migrationName] != "function") {
+            throw ("no migrator function from version " + aOldVersion + " to version " + aNewVersion);
+          }
+          this[migrationName](aDBConnection);
+        }
+      }
+      aDBConnection.schemaVersion = aNewVersion;
+      aDBConnection.commitTransaction();
+    } catch (ex) {
+      aDBConnection.rollbackTransaction();
+      throw ex;
+    }
+  },
+
+  _dbMigrate1To2: function ContentPrefService___dbMigrate1To2(aDBConnection) {
+    aDBConnection.executeSimpleSQL("ALTER TABLE groups RENAME TO groupsOld");
+    aDBConnection.createTable("groups", this._dbSchema.tables.groups);
+    aDBConnection.executeSimpleSQL(`
+      INSERT INTO groups (id, name)
+      SELECT id, name FROM groupsOld
+    `);
+
+    aDBConnection.executeSimpleSQL("DROP TABLE groupers");
+    aDBConnection.executeSimpleSQL("DROP TABLE groupsOld");
+  },
+
+  _dbMigrate2To3: function ContentPrefService__dbMigrate2To3(aDBConnection) {
+    this._dbCreateIndices(aDBConnection);
+  },
+
+  _dbMigrate3To4: function ContentPrefService__dbMigrate3To4(aDBConnection) {
+    
+    try {
+      let stmt = aDBConnection.createStatement("SELECT timestamp FROM prefs");
+      stmt.finalize();
+    } catch (e) {
+      aDBConnection.executeSimpleSQL("ALTER TABLE prefs ADD COLUMN timestamp INTEGER NOT NULL DEFAULT 0");
+    }
+
+    
+    aDBConnection.executeSimpleSQL("DROP INDEX IF EXISTS prefs_idx");
+    this._dbCreateIndices(aDBConnection);
   },
 };
 
@@ -876,3 +1240,56 @@ function checkCallbackArg(callback, required) {
 function invalidArg(msg) {
   return Components.Exception(msg, Cr.NS_ERROR_INVALID_ARG);
 }
+
+
+function HostnameGrouper() {}
+
+HostnameGrouper.prototype = {
+  
+
+  classID:          Components.ID("{8df290ae-dcaa-4c11-98a5-2429a4dc97bb}"),
+  QueryInterface:   XPCOMUtils.generateQI([Ci.nsIContentURIGrouper]),
+
+  
+
+  group: function HostnameGrouper_group(aURI) {
+    var group;
+
+    try {
+      
+      
+      
+      
+
+      group = aURI.host;
+      if (!group)
+        throw ("can't derive group from host; no host in URI");
+    } catch (ex) {
+      
+      
+      
+      
+
+      
+      
+      
+      
+
+      
+
+      try {
+        var url = aURI.QueryInterface(Ci.nsIURL);
+        group = aURI.prePath + url.filePath;
+      } catch (ex) {
+        group = aURI.spec;
+      }
+    }
+
+    return group;
+  }
+};
+
+
+
+var components = [ContentPrefService2, HostnameGrouper];
+this.NSGetFactory = XPCOMUtils.generateNSGetFactory(components);
