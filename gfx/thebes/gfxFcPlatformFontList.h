@@ -21,16 +21,6 @@
 #include <cairo.h>
 #include <cairo-ft.h>
 
-#ifdef MOZ_CONTENT_SANDBOX
-#include "mozilla/SandboxBroker.h"
-#endif
-
-namespace mozilla {
-    namespace dom {
-        class SystemFontListEntry;
-    };
-};
-
 template <>
 class nsAutoRefTraits<FcPattern> : public nsPointerRefTraits<FcPattern>
 {
@@ -192,9 +182,6 @@ public:
         mForceScalable(false)
     { }
 
-    template<typename Func>
-    void AddFacesToFontList(Func aAddPatternFunc);
-
     void FindStyleVariations(FontInfoData *aFontInfoData = nullptr) override;
 
     
@@ -267,8 +254,6 @@ public:
                      const nsACString& aGenericFamily,
                      nsTArray<nsString>& aListOfFonts) override;
 
-    void ReadSystemFontList(
-        InfallibleTArray<mozilla::dom::SystemFontListEntry>* retValue);
 
     gfxFontEntry*
     LookupLocalFont(const nsAString& aFontName, uint16_t aWeight,
@@ -309,23 +294,9 @@ public:
 protected:
     virtual ~gfxFcPlatformFontList();
 
-#ifdef MOZ_CONTENT_SANDBOX
-    typedef mozilla::SandboxBroker::Policy SandboxPolicy;
-#else
-    
-    struct SandboxPolicy {};
-#endif
-
     
     
-    void AddFontSetFamilies(FcFontSet* aFontSet, const SandboxPolicy* aPolicy,
-                            bool aAppFonts);
-
-    
-    void AddPatternToFontList(FcPattern* aFont, FcChar8*& aLastFamilyName,
-                              nsAString& aFamilyName,
-                              RefPtr<gfxFontconfigFontFamily>& aFontFamily,
-                              bool aAppFonts);
+    void AddFontSetFamilies(FcFontSet* aFontSet, bool aAppFonts);
 
     
     

@@ -171,7 +171,6 @@
 #include "nsDocShell.h"
 #include "nsOpenURIInFrameParams.h"
 #include "mozilla/net/NeckoMessageUtils.h"
-#include "gfxPlatform.h"
 #include "gfxPrefs.h"
 #include "prio.h"
 #include "private/pprio.h"
@@ -2226,9 +2225,8 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
     }
   }
   
-  
-  nsTArray<SystemFontListEntry> fontList;
-  gfxPlatform::GetPlatform()->ReadSystemFontList(&fontList);
+  nsTArray<FontFamilyListEntry> fontFamilies;
+  gfxPlatform::GetPlatform()->GetSystemFontFamilyList(&fontFamilies);
   nsTArray<LookAndFeelInt> lnfCache = LookAndFeel::GetIntCache();
 
   
@@ -2271,7 +2269,7 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
   screenManager.CopyScreensToRemote(this);
 
   Unused << SendSetXPCOMProcessAttributes(xpcomInit, initialData, lnfCache,
-                                          fontList);
+                                          fontFamilies);
 
   if (aSendRegisteredChrome) {
     nsCOMPtr<nsIChromeRegistry> registrySvc = nsChromeRegistry::GetService();
@@ -4262,17 +4260,6 @@ ContentParent::NotifyUpdatedDictionaries()
 
   for (auto* cp : AllProcesses(eLive)) {
     Unused << cp->SendUpdateDictionaryList(dictionaries);
-  }
-}
-
-void
-ContentParent::NotifyUpdatedFonts()
-{
-  InfallibleTArray<SystemFontListEntry> fontList;
-  gfxPlatform::GetPlatform()->ReadSystemFontList(&fontList);
-
-  for (auto* cp : AllProcesses(eLive)) {
-    Unused << cp->SendUpdateFontList(fontList);
   }
 }
 

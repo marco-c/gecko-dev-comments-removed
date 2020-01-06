@@ -269,8 +269,6 @@ public:
 
   static void NotifyUpdatedDictionaries();
 
-  static void NotifyUpdatedFonts();
-
 #if defined(XP_WIN)
   
 

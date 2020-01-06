@@ -283,7 +283,9 @@ public:
     
     bool IsFontFamilyWhitelistActive();
 
-    static void FontWhitelistPrefChanged(const char *aPref, void *aClosure);
+    static void FontWhitelistPrefChanged(const char *aPref, void *aClosure) {
+        gfxPlatformFontList::PlatformFontList()->UpdateFontList();
+    }
 
     bool AddWithLegacyFamilyName(const nsAString& aLegacyName,
                                  gfxFontEntry* aFontEntry);
