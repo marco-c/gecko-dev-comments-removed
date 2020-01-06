@@ -310,11 +310,11 @@ class RefTest(object):
                 sandbox_whitelist_paths.append(options.workPath)
         except AttributeError:
             pass
-        if platform.system() == "Linux":
+        if (platform.system() == "Linux" or
+            platform.system() in ("Windows", "Microsoft")):
             
-            for idx, path in enumerate(sandbox_whitelist_paths):
-                if not path.endswith("/"):
-                    sandbox_whitelist_paths[idx] = path + "/"
+            sandbox_whitelist_paths = map(lambda p: os.path.join(p, ""),
+                                          sandbox_whitelist_paths)
 
         
         
