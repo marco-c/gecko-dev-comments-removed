@@ -813,8 +813,9 @@ this.XPIDatabase = {
       
       
       
-      logger.warn("Synchronous load of XPI database due to getAddonsByType([" +
-        aTypes.join(", ") + "])");
+      logger.warn(`Synchronous load of XPI database due to ` +
+                  `getAddonsByType([${aTypes.join(", ")}]) ` +
+                  `Stack: ${Error().stack}`);
       AddonManagerPrivate.recordSimpleMeasure("XPIDB_lateOpen_byType", XPIProvider.runPhase);
       this.syncLoadDB(true);
     }
@@ -832,7 +833,8 @@ this.XPIDatabase = {
   getVisibleAddonForInternalName(aInternalName) {
     if (!this.addonDB) {
       
-      logger.warn("Synchronous load of XPI database due to getVisibleAddonForInternalName");
+      logger.warn(`Synchronous load of XPI database due to ` +
+                  `getVisibleAddonForInternalName. Stack: ${Error().stack}`);
       AddonManagerPrivate.recordSimpleMeasure("XPIDB_lateOpen_forInternalName",
           XPIProvider.runPhase);
       this.syncLoadDB(true);
