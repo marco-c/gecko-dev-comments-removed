@@ -12,8 +12,8 @@ use std::ascii::AsciiExt;
 use style_traits::{HasViewportPercentage, ParseError, StyleParseError};
 use values::{CSSFloat, CustomIdent, Either};
 use values::computed::{self, Context, ToComputedValue};
-use values::generics::grid::{RepeatCount, TrackBreadth, TrackKeyword, TrackRepeat};
-use values::generics::grid::{TrackSize, TrackList, TrackListType};
+use values::generics::grid::{GridTemplateComponent, RepeatCount, TrackBreadth, TrackKeyword, TrackRepeat};
+use values::generics::grid::{LineNameList, TrackSize, TrackList, TrackListType};
 use values::specified::LengthOrPercentage;
 
 
@@ -81,16 +81,13 @@ impl Parse for TrackSize<LengthOrPercentage> {
 
 
 
-pub fn parse_line_names<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Vec<String>, ParseError<'i>> {
+pub fn parse_line_names<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Vec<CustomIdent>, ParseError<'i>> {
     input.expect_square_bracket_block()?;
     input.parse_nested_block(|input| {
         let mut values = vec![];
         while let Ok(ident) = input.try(|i| i.expect_ident()) {
-            if CustomIdent::from_ident((&*ident).into(), &["span"]).is_err() {
-                return Err(StyleParseError::UnspecifiedError.into())
-            }
-
-            values.push(ident.into_owned());
+            let ident = CustomIdent::from_ident(ident, &["span"])?;
+            values.push(ident);
         }
 
         Ok(values)
@@ -113,8 +110,7 @@ enum RepeatType {
 
 impl TrackRepeat<LengthOrPercentage> {
     fn parse_with_repeat_type<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>)
-                                      -> Result<(TrackRepeat<LengthOrPercentage>, RepeatType),
-                                                ParseError<'i>> {
+                                      -> Result<(TrackRepeat<LengthOrPercentage>, RepeatType), ParseError<'i>> {
         input.try(|i| i.expect_function_matching("repeat").map_err(|e| e.into())).and_then(|_| {
             input.parse_nested_block(|input| {
                 let count = RepeatCount::parse(context, input)?;
@@ -147,6 +143,16 @@ impl TrackRepeat<LengthOrPercentage> {
 
                         values.push(track_size);
                         names.push(current_names);
+                        if is_auto {
+                            
+                            
+                            
+                            
+                            
+                            
+                            names.push(input.try(parse_line_names).unwrap_or(vec![]));
+                            break
+                        }
                     } else {
                         if values.is_empty() {
                             
@@ -350,6 +356,62 @@ impl ToComputedValue for TrackList<TrackSizeOrRepeat> {
             values: values,
             line_names: computed.line_names.clone(),
             auto_repeat: None,
+        }
+    }
+}
+
+impl Parse for GridTemplateComponent<TrackSizeOrRepeat> {   
+    fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
+        if input.try(|i| i.expect_ident_matching("none")).is_ok() {
+            return Ok(GridTemplateComponent::None)
+        }
+
+        Self::parse_without_none(context, input)
+    }
+}
+
+impl GridTemplateComponent<TrackSizeOrRepeat> {
+    
+    pub fn parse_without_none<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>)
+                                      -> Result<Self, ParseError<'i>> {
+        if let Ok(t) = input.try(|i| TrackList::parse(context, i)) {
+            return Ok(GridTemplateComponent::TrackList(t))
+        }
+
+        LineNameList::parse(context, input).map(GridTemplateComponent::Subgrid)
+    }
+}
+
+impl HasViewportPercentage for GridTemplateComponent<TrackSizeOrRepeat> {
+    #[inline]
+    fn has_viewport_percentage(&self) -> bool {
+        match *self {
+            GridTemplateComponent::TrackList(ref l) => l.has_viewport_percentage(),
+            _ => false,
+        }
+    }
+}
+
+impl ToComputedValue for GridTemplateComponent<TrackSizeOrRepeat> {
+    type ComputedValue = GridTemplateComponent<TrackSize<computed::LengthOrPercentage>>;
+
+    #[inline]
+    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
+        match *self {
+            GridTemplateComponent::None => GridTemplateComponent::None,
+            GridTemplateComponent::TrackList(ref l) => GridTemplateComponent::TrackList(l.to_computed_value(context)),
+            GridTemplateComponent::Subgrid(ref n) => GridTemplateComponent::Subgrid(n.to_computed_value(context)),
+        }
+    }
+
+    #[inline]
+    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
+        match *computed {
+            GridTemplateComponent::None => GridTemplateComponent::None,
+            GridTemplateComponent::TrackList(ref l) =>
+                GridTemplateComponent::TrackList(ToComputedValue::from_computed_value(l)),
+            GridTemplateComponent::Subgrid(ref n) =>
+                GridTemplateComponent::Subgrid(ToComputedValue::from_computed_value(n)),
         }
     }
 }

@@ -18,6 +18,7 @@ use std::fmt;
 use style_traits::ToCss;
 use super::{CSSFloat, CSSInteger, RGBA};
 use super::generics::grid::{TrackBreadth as GenericTrackBreadth, TrackSize as GenericTrackSize};
+use super::generics::grid::GridTemplateComponent as GenericGridTemplateComponent;
 use super::generics::grid::TrackList as GenericTrackList;
 use super::specified;
 
@@ -551,7 +552,7 @@ pub type TrackSize = GenericTrackSize<LengthOrPercentage>;
 pub type TrackList = GenericTrackList<TrackSize>;
 
 
-pub type TrackListOrNone = Either<TrackList, None_>;
+pub type GridTemplateComponent = GenericGridTemplateComponent<TrackSize>;
 
 impl ClipRectOrAuto {
     

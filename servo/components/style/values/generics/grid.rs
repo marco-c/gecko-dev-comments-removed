@@ -5,13 +5,14 @@
 
 
 
-use cssparser::{Parser, serialize_identifier};
+use cssparser::Parser;
 use parser::{Parse, ParserContext};
 use std::{fmt, mem, usize};
 use style_traits::{ToCss, ParseError, StyleParseError};
 use values::{CSSFloat, CustomIdent};
 use values::computed::{self, ComputedValueAsSpecified, Context, ToComputedValue};
 use values::specified::Integer;
+use values::specified::grid::parse_line_names;
 
 #[derive(PartialEq, Clone, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
@@ -251,6 +252,13 @@ impl<L> Default for TrackSize<L> {
     }
 }
 
+impl<L: PartialEq> TrackSize<L> {
+    
+    pub fn is_default(&self) -> bool {
+        *self == TrackSize::default()
+    }
+}
+
 impl<L: ToCss> ToCss for TrackSize<L> {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
         match *self {
@@ -307,15 +315,15 @@ impl<L: ToComputedValue> ToComputedValue for TrackSize<L> {
 
 
 pub fn concat_serialize_idents<W>(prefix: &str, suffix: &str,
-                                  slice: &[String], sep: &str, dest: &mut W) -> fmt::Result
+                                  slice: &[CustomIdent], sep: &str, dest: &mut W) -> fmt::Result
     where W: fmt::Write
 {
     if let Some((ref first, rest)) = slice.split_first() {
         dest.write_str(prefix)?;
-        serialize_identifier(first, dest)?;
+        first.to_css(dest)?;
         for thing in rest {
             dest.write_str(sep)?;
-            serialize_identifier(thing, dest)?;
+            thing.to_css(dest)?;
         }
 
         dest.write_str(suffix)?;
@@ -372,33 +380,52 @@ pub struct TrackRepeat<L> {
     
     
     
-    pub line_names: Vec<Vec<String>>,
+    pub line_names: Vec<Vec<CustomIdent>>,
     
     pub track_sizes: Vec<TrackSize<L>>,
 }
 
 impl<L: ToCss> ToCss for TrackRepeat<L> {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
-        dest.write_str("repeat(")?;
-        self.count.to_css(dest)?;
-        dest.write_str(", ")?;
+        
+        
+        let repeat_count = match self.count {
+            RepeatCount::Number(integer) => integer.value(),
+            _ => {
+                dest.write_str("repeat(")?;
+                self.count.to_css(dest)?;
+                dest.write_str(", ")?;
+                1
+            },
+        };
 
-        let mut line_names_iter = self.line_names.iter();
-        for (i, (ref size, ref names)) in self.track_sizes.iter()
-                                              .zip(&mut line_names_iter).enumerate() {
-            if i > 0 {
+        for i in 0..repeat_count {
+            if i != 0 {
                 dest.write_str(" ")?;
             }
 
-            concat_serialize_idents("[", "] ", names, " ", dest)?;
-            size.to_css(dest)?;
+            let mut line_names_iter = self.line_names.iter();
+            for (i, (ref size, ref names)) in self.track_sizes.iter()
+                                                  .zip(&mut line_names_iter).enumerate() {
+                if i > 0 {
+                    dest.write_str(" ")?;
+                }
+
+                concat_serialize_idents("[", "] ", names, " ", dest)?;
+                size.to_css(dest)?;
+            }
+
+            if let Some(line_names_last) = line_names_iter.next() {
+                concat_serialize_idents(" [", "]", line_names_last, " ", dest)?;
+            }
         }
 
-        if let Some(line_names_last) = line_names_iter.next() {
-            concat_serialize_idents(" [", "]", line_names_last, " ", dest)?;
+        match self.count {
+            RepeatCount::AutoFill | RepeatCount::AutoFit => {
+                dest.write_str(")")?;
+            },
+            _ => {},
         }
-
-        dest.write_str(")")?;
         Ok(())
     }
 }
@@ -502,7 +529,7 @@ pub struct TrackList<T> {
     
     
     
-    pub line_names: Vec<Vec<String>>,
+    pub line_names: Vec<Vec<CustomIdent>>,
     
     
     
@@ -550,4 +577,116 @@ impl<T: ToCss> ToCss for TrackList<T> {
 
         Ok(())
     }
+}
+
+
+
+
+
+#[derive(Clone, PartialEq, Debug, Default)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+pub struct LineNameList {
+    
+    pub names: Vec<Vec<CustomIdent>>,
+    
+    pub fill_idx: Option<u32>,
+}
+
+impl Parse for LineNameList {
+    fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
+        input.expect_ident_matching("subgrid")?;
+        let mut line_names = vec![];
+        let mut fill_idx = None;
+
+        loop {
+            let repeat_parse_result = input.try(|input| {
+                input.expect_function_matching("repeat")?;
+                input.parse_nested_block(|input| {
+                    let count = RepeatCount::parse(context, input)?;
+                    input.expect_comma()?;
+                    let mut names_list = vec![];
+                    names_list.push(parse_line_names(input)?);      
+                    while let Ok(names) = input.try(parse_line_names) {
+                        names_list.push(names);
+                    }
+
+                    Ok((names_list, count))
+                })
+            });
+
+            if let Ok((mut names_list, count)) = repeat_parse_result {
+                match count {
+                    RepeatCount::Number(num) =>
+                        line_names.extend(names_list.iter().cloned().cycle()
+                                  .take(num.value() as usize * names_list.len())),
+                    RepeatCount::AutoFill if fill_idx.is_none() => {
+                        
+                        if names_list.len() > 1 {
+                            return Err(StyleParseError::UnspecifiedError.into());
+                        }
+                        let names = names_list.pop().expect("expected one name list for auto-fill");
+
+                        line_names.push(names);
+                        fill_idx = Some(line_names.len() as u32 - 1);
+                    },
+                    _ => return Err(StyleParseError::UnspecifiedError.into()),
+                }
+            } else if let Ok(names) = input.try(parse_line_names) {
+                line_names.push(names);
+            } else {
+                break
+            }
+        }
+
+        Ok(LineNameList {
+            names: line_names,
+            fill_idx: fill_idx,
+        })
+    }
+}
+
+impl ToCss for LineNameList {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+        dest.write_str("subgrid")?;
+        let fill_idx = self.fill_idx.map(|v| v as usize).unwrap_or(usize::MAX);
+        for (i, names) in self.names.iter().enumerate() {
+            if i == fill_idx {
+                dest.write_str(" repeat(auto-fill,")?;
+            }
+
+            dest.write_str(" [")?;
+
+            if let Some((ref first, rest)) = names.split_first() {
+                first.to_css(dest)?;
+                for name in rest {
+                    dest.write_str(" ")?;
+                    name.to_css(dest)?;
+                }
+            }
+
+            dest.write_str("]")?;
+            if i == fill_idx {
+                dest.write_str(")")?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl ComputedValueAsSpecified for LineNameList {}
+no_viewport_percentage!(LineNameList);
+
+
+
+
+#[derive(Clone, PartialEq, Debug, ToCss)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+pub enum GridTemplateComponent<L> {
+    
+    None,
+    
+    TrackList(TrackList<L>),
+    
+    Subgrid(LineNameList),
 }
