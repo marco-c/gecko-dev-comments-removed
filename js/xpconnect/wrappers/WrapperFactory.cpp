@@ -689,7 +689,7 @@ TransplantObjectRetainingXrayExpandos(JSContext* cx, JS::HandleObject origobj,
     
     
     
-    RootedObject expandoChain(cx, GetXrayTraits(origobj)->getExpandoChain(origobj));
+    RootedObject expandoChain(cx, GetXrayTraits(origobj)->detachExpandoChain(origobj));
 
     RootedObject newIdentity(cx, TransplantObject(cx, origobj, target));
 
