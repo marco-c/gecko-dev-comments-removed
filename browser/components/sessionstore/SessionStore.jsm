@@ -2626,11 +2626,9 @@ var SessionStoreInternal = {
 
 
 
-  updateTabLabelAndIcon(tab, tabData = null) {
-    if (tab.hasAttribute("customizemode")) {
-      return;
-    }
 
+
+  updateTabLabelAndIcon(tab, tabData = null) {
     let browser = tab.linkedBrowser;
     let win = browser.ownerGlobal;
 
@@ -2650,6 +2648,8 @@ var SessionStoreInternal = {
       } else if (activePageData.url != "about:blank") {
         win.gBrowser.setInitialTabTitle(tab, activePageData.url);
       }
+    } else if (tab.hasAttribute("customizemode")) {
+      win.gCustomizeMode.setTab(tab);
     }
 
     
@@ -3690,10 +3690,6 @@ var SessionStoreInternal = {
         userTypedValue: tabData.userTypedValue || "",
         userTypedClear: tabData.userTypedClear || 0
       };
-    }
-
-    if (tab.hasAttribute("customizemode")) {
-      win.gCustomizeMode.setTab(tab);
     }
 
     
