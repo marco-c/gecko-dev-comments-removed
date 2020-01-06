@@ -342,6 +342,10 @@ pref("browser.urlbar.oneOffSearches", true);
 
 pref("browser.urlbar.decodeURLsOnCopy", false);
 
+
+
+pref("browser.urlbar.switchTabs.adoptIntoActiveWindow", false);
+
 pref("browser.altClickSave", false);
 
 
