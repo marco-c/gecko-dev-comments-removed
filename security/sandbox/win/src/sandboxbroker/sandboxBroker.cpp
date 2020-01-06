@@ -35,6 +35,7 @@ const std::vector<std::wstring> kDllsToUnload = {
   
   L"ffm64.dll",
   L"ffm.dll",
+  L"prntm64.dll",
 
   
   L"hmpalert.dll",
@@ -45,6 +46,9 @@ const std::vector<std::wstring> kDllsToUnload = {
 
   
   L"wrusr.dll",
+
+  
+  L"guard32.dll",
 };
 
 namespace mozilla
