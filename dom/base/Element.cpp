@@ -4194,10 +4194,7 @@ Element::ClearServoData(nsIDocument* aDoc) {
   
   
   
-  
-  
-  
-  if (aDoc && aDoc->GetServoRestyleRoot() == this) {
+  if (aDoc->GetServoRestyleRoot() == this) {
     aDoc->ClearServoRestyleRoot();
   }
 #else
