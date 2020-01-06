@@ -1093,6 +1093,14 @@ ReflowInput::ApplyRelativePositioning(nsIFrame* aFrame,
   }
 }
 
+
+
+static bool
+IsXULCollapsedXULFrame(nsIFrame* aFrame)
+{
+  return aFrame && aFrame->IsXULBoxFrame() && aFrame->IsXULCollapsed();
+}
+
 nsIFrame*
 ReflowInput::GetHypotheticalBoxContainer(nsIFrame*    aFrame,
                                                nscoord&     aCBIStartEdge,
@@ -1128,9 +1136,23 @@ ReflowInput::GetHypotheticalBoxContainer(nsIFrame*    aFrame,
     NS_ASSERTION(!(aFrame->GetStateBits() & NS_FRAME_IN_REFLOW),
                  "aFrame shouldn't be in reflow; we'll lie if it is");
     WritingMode wm = aFrame->GetWritingMode();
-    LogicalMargin borderPadding = aFrame->GetLogicalUsedBorderAndPadding(wm);
-    aCBIStartEdge = borderPadding.IStart(wm);
-    aCBSize = aFrame->GetLogicalSize(wm) - borderPadding.Size(wm);
+    
+    
+    
+    
+    
+    
+    
+    aCBIStartEdge = 0;
+    aCBSize = aFrame->GetLogicalSize(wm);
+    if (!aCBSize.IsAllZero() ||
+        (!IsXULCollapsedXULFrame(aFrame->GetParent()))) {
+      
+      
+      LogicalMargin borderPadding = aFrame->GetLogicalUsedBorderAndPadding(wm);
+      aCBIStartEdge += borderPadding.IStart(wm);
+      aCBSize -= borderPadding.Size(wm);
+    }
   }
 
   return aFrame;
