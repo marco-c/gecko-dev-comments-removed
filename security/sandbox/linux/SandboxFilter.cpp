@@ -108,7 +108,7 @@ private:
   }
 
 public:
-  virtual ResultExpr InvalidSyscall() const override {
+  ResultExpr InvalidSyscall() const override {
     return Trap(BlockedSyscallTrap, nullptr);
   }
 
@@ -155,7 +155,7 @@ public:
       .Default(InvalidSyscall());
   }
 
-  virtual Maybe<ResultExpr> EvaluateSocketCall(int aCall) const override {
+  Maybe<ResultExpr> EvaluateSocketCall(int aCall) const override {
     switch (aCall) {
     case SYS_RECVMSG:
     case SYS_SENDMSG:
@@ -165,7 +165,7 @@ public:
     }
   }
 
-  virtual ResultExpr EvaluateSyscall(int sysno) const override {
+  ResultExpr EvaluateSyscall(int sysno) const override {
     switch (sysno) {
       
     case __NR_clock_gettime: {
@@ -520,13 +520,13 @@ public:
                                 const std::vector<int>& aSyscallWhitelist)
     : mBroker(aBroker),
       mSyscallWhitelist(aSyscallWhitelist) {}
-  virtual ~ContentSandboxPolicy() { }
-  virtual ResultExpr PrctlPolicy() const override {
+  ~ContentSandboxPolicy() override = default;
+  ResultExpr PrctlPolicy() const override {
     
     
     return Allow();
   }
-  virtual Maybe<ResultExpr> EvaluateSocketCall(int aCall) const override {
+  Maybe<ResultExpr> EvaluateSocketCall(int aCall) const override {
     switch(aCall) {
     case SYS_RECVFROM:
     case SYS_SENDTO:
@@ -570,7 +570,7 @@ public:
   }
 
 #ifdef DESKTOP
-  virtual Maybe<ResultExpr> EvaluateIpcCall(int aCall) const override {
+  Maybe<ResultExpr> EvaluateIpcCall(int aCall) const override {
     switch(aCall) {
       
       
@@ -591,7 +591,7 @@ public:
   }
 #endif
 
-  virtual ResultExpr EvaluateSyscall(int sysno) const override {
+  ResultExpr EvaluateSyscall(int sysno) const override {
     
     if (std::find(mSyscallWhitelist.begin(), mSyscallWhitelist.end(), sysno)
         != mSyscallWhitelist.end()) {
@@ -957,9 +957,9 @@ public:
     MOZ_ASSERT(aPlugin->mPath[0] == '/', "plugin path should be absolute");
   }
 
-  virtual ~GMPSandboxPolicy() { }
+  ~GMPSandboxPolicy() override = default;
 
-  virtual ResultExpr EvaluateSyscall(int sysno) const override {
+  ResultExpr EvaluateSyscall(int sysno) const override {
     switch (sysno) {
       
 #ifdef __NR_open

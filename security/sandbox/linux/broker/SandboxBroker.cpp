@@ -92,8 +92,8 @@ SandboxBroker::~SandboxBroker() {
   
 }
 
-SandboxBroker::Policy::Policy() { }
-SandboxBroker::Policy::~Policy() { }
+SandboxBroker::Policy::Policy() = default;
+SandboxBroker::Policy::~Policy() = default;
 
 SandboxBroker::Policy::Policy(const Policy& aOther) {
   for (auto iter = aOther.mMap.ConstIter(); !iter.Done(); iter.Next()) {
