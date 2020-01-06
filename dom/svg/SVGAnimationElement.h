@@ -99,10 +99,19 @@ public:
                         const nsAString& aHrefStr);
   void AnimationTargetChanged();
 
-  class TargetReference : public mozilla::dom::IDTracker {
+  
+
+
+
+
+
+
+
+  class HrefTargetTracker final : public IDTracker {
   public:
-    explicit TargetReference(SVGAnimationElement* aAnimationElement) :
-      mAnimationElement(aAnimationElement) {}
+    explicit HrefTargetTracker(SVGAnimationElement* aAnimationElement)
+      : mAnimationElement(aAnimationElement)
+    {}
   protected:
     
     
@@ -119,7 +128,7 @@ public:
     SVGAnimationElement* const mAnimationElement;
   };
 
-  TargetReference      mHrefTarget;
+  HrefTargetTracker    mHrefTarget;
   nsSMILTimedElement   mTimedElement;
 };
 
