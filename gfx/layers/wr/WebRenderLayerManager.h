@@ -174,6 +174,9 @@ public:
   
   
   void AddCompositorAnimationsIdForDiscard(uint64_t aId);
+  
+  
+  void KeepCompositorAnimationsIdAlive(uint64_t aId);
   void DiscardCompositorAnimations();
 
   WebRenderBridgeChild* WrBridge() const { return mWrChild; }
