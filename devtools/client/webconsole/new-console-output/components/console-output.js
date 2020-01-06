@@ -22,6 +22,9 @@ const {
   getAllRepeatById,
 } = require("devtools/client/webconsole/new-console-output/selectors/messages");
 const MessageContainer = createFactory(require("devtools/client/webconsole/new-console-output/components/message-container").MessageContainer);
+const {
+  MESSAGE_TYPE,
+} = require("devtools/client/webconsole/new-console-output/constants");
 
 const ConsoleOutput = createClass({
 
@@ -60,11 +63,20 @@ const ConsoleOutput = createClass({
       return;
     }
 
-    
-    
     const lastChild = outputNode.lastChild;
-    const delta = nextProps.visibleMessages.length - this.props.visibleMessages.length;
-    this.shouldScrollBottom = delta > 0 && isScrolledToBottom(lastChild, outputNode);
+    const visibleMessagesDelta =
+      nextProps.visibleMessages.length - this.props.visibleMessages.length;
+    const messagesDelta =
+      nextProps.messages.length - this.props.messages.length;
+
+    
+    
+    
+    
+    
+    this.shouldScrollBottom =
+      (messagesDelta > 0 && nextProps.messages.last().type === MESSAGE_TYPE.RESULT) ||
+      (visibleMessagesDelta > 0 && isScrolledToBottom(lastChild, outputNode));
   },
 
   componentDidUpdate() {
