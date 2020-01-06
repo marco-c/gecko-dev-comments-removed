@@ -5,6 +5,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
+import collections
 import errno
 import itertools
 import json
@@ -475,12 +476,41 @@ class Build(MachCommandBase):
             
             
             if not status:
+                
+                
+                
+                
+                LOCAL_SUPPRESS_DIRS = (
+                    'gfx/angle',
+                    'gfx/cairo',
+                    'intl/icu/source',
+                    'js/src/ctypes/libffi',
+                    'media/libtheora',
+                    'media/mtransport/third_party/nICEr',
+                    'media/mtransport/third_party/nrappkit',
+                    'media/webrtc/trunk/webrtc',
+                    'netwerk/sctp/src/netinet',
+                    'nsprpub',
+                    'security/nss',
+                )
+
+                suppressed_by_dir = collections.Counter()
+
                 for warning in sorted(monitor.instance_warnings):
                     path = mozpath.normsep(warning['filename'])
                     if path.startswith(self.topsrcdir):
                         path = path[len(self.topsrcdir) + 1:]
 
                     warning['normpath'] = path
+
+                    if (path.startswith(LOCAL_SUPPRESS_DIRS) and
+                            'MOZ_AUTOMATION' not in os.environ):
+                        for d in LOCAL_SUPPRESS_DIRS:
+                            if path.startswith(d):
+                                suppressed_by_dir[d] += 1
+                                break
+
+                        continue
 
                     if warning['column'] is not None:
                         self.log(logging.WARNING, 'compiler_warning', warning,
@@ -489,6 +519,11 @@ class Build(MachCommandBase):
                     else:
                         self.log(logging.WARNING, 'compiler_warning', warning,
                                  'warning: {normpath}:{line} [{flag}] {message}')
+
+                for d, count in sorted(suppressed_by_dir.items()):
+                    self.log(logging.WARNING, 'suppressed_warning',
+                             {'dir': d, 'count': count},
+                             '(suppressed {count} warnings in {dir})')
 
             monitor.finish(record_usage=status==0)
 
