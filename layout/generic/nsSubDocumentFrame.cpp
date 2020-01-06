@@ -576,13 +576,13 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     childItems.AppendToTop(resolutionItem);
     needsOwnLayer = false;
   }
-
-  
-  nsDisplaySubDocument* layerItem = new (aBuilder) nsDisplaySubDocument(
-    aBuilder, subdocRootFrame ? subdocRootFrame : this, this,
-    &childItems, flags);
-  childItems.AppendToTop(layerItem);
-  layerItem->SetShouldFlattenAway(!needsOwnLayer);
+  if (needsOwnLayer) {
+    
+    nsDisplaySubDocument* layerItem = new (aBuilder) nsDisplaySubDocument(
+      aBuilder, subdocRootFrame ? subdocRootFrame : this, this,
+      &childItems, flags);
+    childItems.AppendToTop(layerItem);
+  }
 
   
   
