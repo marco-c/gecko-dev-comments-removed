@@ -18,7 +18,6 @@
 #include "nsPresContext.h"
 #include "mozilla/Keyframe.h" 
 #include "mozilla/ServoBindings.h"
-#include "mozilla/ServoComputedValuesWithParent.h"
 #include "mozilla/StyleAnimationValue.h" 
 #include "mozilla/StyleSetHandleInlines.h"
 #include "mozilla/dom/Element.h"
@@ -491,14 +490,6 @@ ValueFromStringHelper(nsCSSPropertyID aPropID,
   
   const ServoComputedValues* currentStyle =
     aStyleContext->StyleSource().AsServoComputedValues();
-  
-  const ServoComputedValues* parentStyle =
-    aStyleContext->GetParentAllowServo()
-    ? aStyleContext->GetParentAllowServo()->StyleSource()
-      .AsServoComputedValues()
-    : nullptr;
-  const ServoComputedValuesWithParent servoStyles =
-    { currentStyle, parentStyle };
 
   
   PropertyValuePair propValuePair;
@@ -508,7 +499,7 @@ ValueFromStringHelper(nsCSSPropertyID aPropID,
   keyframes.AppendElement()->mPropertyValues.AppendElement(Move(propValuePair));
   nsTArray<ComputedKeyframeValues> computedValues =
     aPresContext->StyleSet()->AsServo()
-      ->GetComputedKeyframeValuesFor(keyframes, aTargetElement, servoStyles);
+      ->GetComputedKeyframeValuesFor(keyframes, aTargetElement, currentStyle);
 
   
   if (computedValues.IsEmpty() || computedValues[0].IsEmpty()) {

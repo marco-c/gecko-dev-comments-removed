@@ -43,7 +43,6 @@ class AnimValuesStyleRule;
 enum class CSSPseudoElementType : uint8_t;
 class ErrorResult;
 struct AnimationRule;
-struct ServoComputedValuesWithParent;
 struct TimingParams;
 class EffectSet;
 
@@ -171,7 +170,7 @@ public:
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
                     nsStyleContext* aStyleContext);
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
-                    const ServoComputedValuesWithParent& aServoValues);
+                    const ServoComputedValues* aComputedValues);
 
   
   
@@ -200,7 +199,7 @@ public:
   
   void UpdateProperties(nsStyleContext* aStyleContext);
   
-  void UpdateProperties(const ServoComputedValuesWithParent& aServoValues);
+  void UpdateProperties(const ServoComputedValues* aComputedValues);
 
   
   
@@ -239,8 +238,7 @@ public:
   
   
   bool ShouldBlockAsyncTransformAnimations(
-    const nsIFrame* aFrame,
-    AnimationPerformanceWarning::Type& aPerformanceWarning) const;
+    const nsIFrame* aFrame, AnimationPerformanceWarning::Type& aPerformanceWarning) const;
   bool HasGeometricProperties() const;
   bool AffectsGeometry() const override
   {
@@ -264,8 +262,7 @@ public:
   
   
   void CalculateCumulativeChangeHint(nsStyleContext* aStyleContext);
-  void CalculateCumulativeChangeHint(
-    const ServoComputedValuesWithParent& aServoValues)
+  void CalculateCumulativeChangeHint(const ServoComputedValues* aComputedValues)
   {
   }
 
@@ -324,7 +321,7 @@ protected:
   
   
   template<typename StyleType>
-  nsTArray<AnimationProperty> BuildProperties(StyleType&& aStyle);
+  nsTArray<AnimationProperty> BuildProperties(StyleType* aStyle);
 
   
   
@@ -375,7 +372,7 @@ protected:
   
   void EnsureBaseStyles(nsStyleContext* aStyleContext,
                         const nsTArray<AnimationProperty>& aProperties);
-  void EnsureBaseStyles(const ServoComputedValuesWithParent& aServoValues,
+  void EnsureBaseStyles(const ServoComputedValues* aComputedValues,
                         const nsTArray<AnimationProperty>& aProperties);
 
   
@@ -437,10 +434,10 @@ private:
   nsChangeHint mCumulativeChangeHint;
 
   template<typename StyleType>
-  void DoSetKeyframes(nsTArray<Keyframe>&& aKeyframes, StyleType&& aStyle);
+  void DoSetKeyframes(nsTArray<Keyframe>&& aKeyframes, StyleType* aStyle);
 
   template<typename StyleType>
-  void DoUpdateProperties(StyleType&& aStyle);
+  void DoUpdateProperties(StyleType* aStyle);
 
   void ComposeStyleRule(RefPtr<AnimValuesStyleRule>& aStyleRule,
                         const AnimationProperty& aProperty,

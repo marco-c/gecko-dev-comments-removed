@@ -121,7 +121,7 @@ public:
   
   
   template<typename StyleType>
-  void UpdateEffectProperties(StyleType&& aStyleType,
+  void UpdateEffectProperties(StyleType* aStyleType,
                               dom::Element* aElement,
                               CSSPseudoElementType aPseudoType);
 
