@@ -436,7 +436,6 @@ MozMillController.prototype.startUserShutdown = function (timeout, restart, next
 
 
 
-
 MozMillController.prototype.restartApplication = function (aNext, aFlags) {
   var flags = Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart;
 
@@ -454,7 +453,6 @@ MozMillController.prototype.restartApplication = function (aNext, aFlags) {
   
   throw new errors.ApplicationQuitError();
 }
-
 
 
 

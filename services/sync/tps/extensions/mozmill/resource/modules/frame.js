@@ -49,7 +49,6 @@ var timers = [];
 
 
 
-
 function shutdownApplication(aFlags) {
   var flags = Ci.nsIAppStartup.eForceQuit;
 
