@@ -801,7 +801,7 @@ class FunctionCompiler
         
         
         
-        if (!access->isAtomic() && !isAsmJS() && 
+        if (!access->isAtomic() && !env_.isAsmJS() && 
             (*base)->isConstant())
         {
             uint32_t basePtr = (*base)->toConstant()->toInt32();
