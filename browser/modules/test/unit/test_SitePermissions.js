@@ -66,6 +66,14 @@ add_task(async function testGetAvailableStates() {
                      SitePermissions.ALLOW,
                      SitePermissions.BLOCK ]);
 
+  
+  Services.prefs.setIntPref("permissions.default.camera", SitePermissions.ALLOW);
+  Assert.deepEqual(SitePermissions.getAvailableStates("camera"),
+                   [ SitePermissions.PROMPT,
+                     SitePermissions.ALLOW,
+                     SitePermissions.BLOCK ]);
+  Services.prefs.clearUserPref("permissions.default.camera");
+
   Assert.deepEqual(SitePermissions.getAvailableStates("cookie"),
                    [ SitePermissions.ALLOW,
                      SitePermissions.ALLOW_COOKIES_FOR_SESSION,
@@ -96,21 +104,75 @@ add_task(async function testExactHostMatch() {
 
     if (exactHostMatched.includes(permission)) {
       
-      Assert.equal(SitePermissions.get(subUri, permission).state, SitePermissions.UNKNOWN);
+      Assert.equal(SitePermissions.get(subUri, permission).state, SitePermissions.UNKNOWN,
+        `${permission} should exact-host match`);
     } else if (nonExactHostMatched.includes(permission)) {
       
-      Assert.equal(SitePermissions.get(subUri, permission).state, SitePermissions.ALLOW);
+      Assert.equal(SitePermissions.get(subUri, permission).state, SitePermissions.ALLOW,
+        `${permission} should not exact-host match`);
     } else {
       Assert.ok(false, `Found an unknown permission ${permission} in exact host match test.` +
                        "Please add new permissions from SitePermissions.jsm to this test.");
     }
 
     
-    SitePermissions.set(subUri, permission, SitePermissions.BLOCK);
-    Assert.equal(SitePermissions.get(subUri, permission).state, SitePermissions.BLOCK);
+    SitePermissions.set(subUri, permission, SitePermissions.PROMPT);
+    Assert.equal(SitePermissions.get(subUri, permission).state, SitePermissions.PROMPT);
     Assert.equal(SitePermissions.get(uri, permission).state, SitePermissions.ALLOW);
 
     SitePermissions.remove(subUri, permission);
     SitePermissions.remove(uri, permission);
   }
 });
+
+add_task(function* testDefaultPrefs() {
+  let uri = Services.io.newURI("https://example.com")
+
+  
+  Assert.deepEqual(SitePermissions.get(uri, "camera"), {
+    state: SitePermissions.UNKNOWN,
+    scope: SitePermissions.SCOPE_PERSISTENT,
+  });
+
+  
+  Services.prefs.setIntPref("permissions.default.camera", SitePermissions.BLOCK);
+  Assert.deepEqual(SitePermissions.get(uri, "camera"), {
+    state: SitePermissions.BLOCK,
+    scope: SitePermissions.SCOPE_PERSISTENT,
+  });
+
+  
+  Assert.deepEqual(SitePermissions.get(uri, "microphone"), {
+    state: SitePermissions.UNKNOWN,
+    scope: SitePermissions.SCOPE_PERSISTENT,
+  });
+
+  
+  Services.prefs.setIntPref("permissions.default.camera", SitePermissions.ALLOW);
+  Assert.deepEqual(SitePermissions.get(uri, "camera"), {
+    state: SitePermissions.ALLOW,
+    scope: SitePermissions.SCOPE_PERSISTENT,
+  });
+
+  
+  SitePermissions.set(uri, "camera", SitePermissions.BLOCK);
+  Assert.deepEqual(SitePermissions.get(uri, "camera"), {
+    state: SitePermissions.BLOCK,
+    scope: SitePermissions.SCOPE_PERSISTENT,
+  });
+
+  
+  SitePermissions.remove(uri, "camera");
+  Assert.deepEqual(SitePermissions.get(uri, "camera"), {
+    state: SitePermissions.ALLOW,
+    scope: SitePermissions.SCOPE_PERSISTENT,
+  });
+
+  
+  Services.prefs.clearUserPref("permissions.default.camera");
+  Assert.deepEqual(SitePermissions.get(uri, "camera"), {
+    state: SitePermissions.UNKNOWN,
+    scope: SitePermissions.SCOPE_PERSISTENT,
+  });
+});
+

@@ -160,8 +160,15 @@ var gSitePermissionsManager = {
     menulist.appendChild(menupopup);
     let states = SitePermissions.getAvailableStates(permission.type);
     for (let state of states) {
-      if (state == SitePermissions.UNKNOWN)
+      
+      
+      
+      if (state == SitePermissions.UNKNOWN &&
+          permission.capability == SitePermissions.PROMPT) {
+        state = SitePermissions.PROMPT;
+      } else if (state == SitePermissions.UNKNOWN) {
         continue;
+      }
       let m = document.createElement("menuitem");
       m.setAttribute("label", this._getCapabilityString(state));
       m.setAttribute("value", state);
