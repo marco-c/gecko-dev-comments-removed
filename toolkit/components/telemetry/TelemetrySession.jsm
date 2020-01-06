@@ -94,6 +94,10 @@ const SCHEDULER_MIDNIGHT_TOLERANCE_MS = 15 * 60 * 1000;
 
 
 
+const SCHEDULER_TICK_MAX_IDLE_DELAY_MS = 60 * 1000;
+
+
+
 
 const IDLE_TIMEOUT_SECONDS = Preferences.get("toolkit.telemetry.idleTimeout", 5 * 60);
 
@@ -414,13 +418,13 @@ var TelemetryScheduler = {
       case "active":
         
         this._isUserIdle = false;
-        return this._onSchedulerTick();
+        return this._onSchedulerTick(true);
       case "wake_notification":
         
         
         
         
-        return this._onSchedulerTick();
+        return this._onSchedulerTick(true);
     }
     return undefined;
   },
@@ -430,7 +434,9 @@ var TelemetryScheduler = {
 
 
 
-  _onSchedulerTick() {
+
+
+  _onSchedulerTick(dispatchOnIdle = false) {
     
     
     this._clearTimeout();
@@ -442,7 +448,13 @@ var TelemetryScheduler = {
 
     let promise = Promise.resolve();
     try {
-      promise = this._schedulerTickLogic();
+      if (dispatchOnIdle) {
+        promise = new Promise((resolve, reject) =>
+          Services.tm.idleDispatchToMainThread(() => this._schedulerTickLogic().then(resolve, reject)),
+                                               SCHEDULER_TICK_MAX_IDLE_DELAY_MS);
+      } else {
+        promise = this._schedulerTickLogic();
+      }
     } catch (e) {
       Telemetry.getHistogramById("TELEMETRY_SCHEDULER_TICK_EXCEPTION").add(1);
       this._log.error("_onSchedulerTick - There was an exception", e);
