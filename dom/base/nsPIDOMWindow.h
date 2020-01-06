@@ -388,6 +388,7 @@ public:
   virtual nsresult SetFullscreenInternal(
     FullscreenReason aReason, bool aIsFullscreen) = 0;
 
+  virtual void FullscreenWillChange(bool aIsFullscreen) = 0;
   
 
 

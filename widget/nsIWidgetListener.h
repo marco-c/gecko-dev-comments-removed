@@ -99,6 +99,11 @@ public:
   
 
 
+  virtual void FullscreenWillChange(bool aInFullscreen);
+
+  
+
+
   virtual void FullscreenChanged(bool aInFullscreen);
 
   

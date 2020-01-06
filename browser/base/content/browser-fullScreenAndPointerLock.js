@@ -256,6 +256,8 @@ var FullScreen = {
   init() {
     
     window.addEventListener("fullscreen", this, true);
+    window.addEventListener("willenterfullscreen", this, true);
+    window.addEventListener("willexitfullscreen", this, true);
     window.addEventListener("MozDOMFullscreen:Entered", this,
                              true,
                              false);
@@ -275,6 +277,14 @@ var FullScreen = {
       window.messageManager.removeMessageListener(type, this);
     }
     this.cleanup();
+  },
+
+  willToggle(aWillEnterFullscreen) {
+    if (aWillEnterFullscreen) {
+      document.documentElement.setAttribute("inFullscreen", true);
+    } else {
+      document.documentElement.removeAttribute("inFullscreen");
+    }
   },
 
   toggle() {
@@ -348,6 +358,12 @@ var FullScreen = {
 
   handleEvent(event) {
     switch (event.type) {
+      case "willenterfullscreen":
+        this.willToggle(true);
+        break;
+      case "willexitfullscreen":
+        this.willToggle(false);
+        break;
       case "fullscreen":
         this.toggle();
         break;
