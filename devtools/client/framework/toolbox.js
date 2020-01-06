@@ -1990,7 +1990,7 @@ Toolbox.prototype = {
   async _onWillNavigate() {
     let toolId = this.currentToolId;
     
-    if (toolId != "inspector") {
+    if (toolId != "inspector" && toolId != "webconsole") {
       return;
     }
 

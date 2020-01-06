@@ -81,6 +81,11 @@ WebConsolePanel.prototype = {
       })
       .then((webConsole) => {
         this.hud = webConsole;
+        
+        
+        this.hud.ui.on("reloaded", () => {
+          this.emit("reloaded");
+        });
         this._isReady = true;
         this.emit("ready");
         return this;

@@ -298,7 +298,7 @@ NewWebConsoleFrame.prototype = {
 
 
 
-  handleTabNavigated: function (event, packet) {
+  handleTabNavigated: async function (event, packet) {
     if (event == "will-navigate") {
       if (this.persistLog) {
         
@@ -315,6 +315,13 @@ NewWebConsoleFrame.prototype = {
 
     if (event == "navigate" && !packet.nativeConsoleAPI) {
       this.logWarningAboutReplacedAPI();
+    }
+
+    if (event == "navigate") {
+      
+      
+      await this.newConsoleOutput.waitAsyncDispatches();
+      this.emit("reloaded");
     }
   },
 
