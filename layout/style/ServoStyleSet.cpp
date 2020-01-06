@@ -986,10 +986,12 @@ ServoStyleSet::StyleDocument(ServoTraversalFlags aFlags)
         
         
         
+        uint32_t existingBits = doc->GetServoRestyleRootDirtyBits();
+        
+        parent->SetFlags(existingBits);
         doc->SetServoRestyleRoot(
             parent,
-            doc->GetServoRestyleRootDirtyBits() |
-            ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
+            existingBits | ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
         postTraversalRequired = true;
       }
     }
