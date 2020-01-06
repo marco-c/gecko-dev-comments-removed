@@ -644,8 +644,8 @@ impl StackLimitChecker {
         
         
         
-        debug_assert!(curr_sp - self.lower_limit
-                      <= STYLE_THREAD_STACK_SIZE_KB * 1024);
+        
+        
 
         
         curr_sp <= self.lower_limit
