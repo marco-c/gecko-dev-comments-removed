@@ -422,13 +422,6 @@ WebRenderBridgeParent::HandleDPEnd(const gfx::IntSize& aSize,
 
   mScrollData = aScrollData;
   UpdateAPZ();
-
-  if (mIdNameSpace != aIdNameSpace) {
-    
-    
-    TimeStamp now = TimeStamp::Now();
-    mCompositorBridge->DidComposite(wr::AsUint64(mPipelineId), now, now);
-  }
 }
 
 CompositorBridgeParent*
