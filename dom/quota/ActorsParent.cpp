@@ -7650,6 +7650,7 @@ PersistOp::DoDirectoryWork(QuotaManager* aQuotaManager)
   AUTO_PROFILER_LABEL("PersistOp::DoDirectoryWork", OTHER);
 
   
+  
   nsCOMPtr<nsIFile> directory;
   nsresult rv = aQuotaManager->GetDirectoryForOrigin(mPersistenceType.Value(),
                                                      mOriginScope.GetOrigin(),
@@ -7665,14 +7666,26 @@ PersistOp::DoDirectoryWork(QuotaManager* aQuotaManager)
   }
 
   if (created) {
+    int64_t timestamp;
     rv = CreateDirectoryMetadataFiles(directory,
                                        true,
                                       mSuffix,
                                       mGroup,
                                       mOriginScope.GetOrigin(),
-                                       nullptr);
+                                      &timestamp);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
+    }
+
+    
+    
+    if (aQuotaManager->IsTemporaryStorageInitialized()) {
+      aQuotaManager->InitQuotaForOrigin(mPersistenceType.Value(),
+                                        mGroup,
+                                        mOriginScope.GetOrigin(),
+                                         0,
+                                        timestamp,
+                                         true);
     }
   } else {
     
@@ -7718,11 +7731,13 @@ PersistOp::DoDirectoryWork(QuotaManager* aQuotaManager)
         return rv;
       }
     }
-  }
 
-  
-  
-  aQuotaManager->PersistOrigin(mGroup, mOriginScope.GetOrigin());
+    
+    
+    if (aQuotaManager->IsTemporaryStorageInitialized()) {
+      aQuotaManager->PersistOrigin(mGroup, mOriginScope.GetOrigin());
+    }
+  }
 
   return NS_OK;
 }
