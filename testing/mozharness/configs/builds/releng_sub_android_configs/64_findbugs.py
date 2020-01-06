@@ -7,9 +7,8 @@ config = {
     
     'disable_package_metrics': True,
     'postflight_build_mach_commands': [
-        ['gradle',
-         'app:findbugsOfficialAustralisDebug',
-         'app:findbugsOfficialPhotonDebug',
+        ['android',
+         'findbugs',
         ],
     ],
     'artifact_flag_build_variant_in_try': None, 
