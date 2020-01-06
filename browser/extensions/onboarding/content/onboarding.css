@@ -34,6 +34,14 @@
   background: none;
 }
 
+
+#onboarding-overlay-button:-moz-focusring {
+  outline: solid 2px rgba(0, 0, 0, 0.1);
+  -moz-outline-radius: 5px;
+  outline-offset: 5px;
+  transition: outline-offset 150ms;
+}
+
 #onboarding-overlay-button-icon {
   width: 36px;
   vertical-align: top;
@@ -68,31 +76,34 @@
 }
 
 .onboarding-close-btn {
-  position: absolute;
-  top: 15px;
-  offset-inline-end: 15px;
-  cursor: pointer;
-  width: 20px;
-  height: 20px;
-  border: none;
-  background: none;
-  padding: 0;
+   position: absolute;
+   top: 15px;
+   offset-inline-end: 15px;
+   cursor: pointer;
+   width: 16px;
+   height: 16px;
+   padding: 12px;
+   border: none;
+   background: var(--onboarding-overlay-dialog-background-color);
  }
 
 .onboarding-close-btn::before {
-  content: url(chrome://global/skin/icons/close.svg);
-  -moz-context-properties: fill, fill-opacity;
-  fill-opacity: 0;
+  content: url(chrome://browser/skin/sidebar/close.svg);
+  display: block;
+  margin-top: -8px;
+  margin-inline-start: -8px;
 }
 
-.onboarding-close-btn:hover::before {
-  fill-opacity: 0.1;
+.onboarding-close-btn:hover,
+#onboarding-notification-close-btn:hover {
+  background-color: rgba(204, 204, 204, 0.6);
 }
 
 #onboarding-overlay.onboarding-opened > #onboarding-overlay-dialog {
+  --onboarding-overlay-dialog-background-color: #f5f5f7;
   width: 960px;
   height: 510px;
-  background: #f5f5f7;
+  background: var(--onboarding-overlay-dialog-background-color);
   border: 1px solid rgba(9, 6, 13, 0.1); 
   border-radius: 3px;
   position: relative;
@@ -308,7 +319,8 @@
 }
 
 
-.onboarding-tour-action-button::-moz-focus-inner {
+.onboarding-tour-action-button::-moz-focus-inner,
+#onboarding-overlay-button::-moz-focus-inner {
   border: 0;
 }
 
@@ -492,6 +504,7 @@
 }
 
 #onboarding-notification-close-btn {
+  background: var(--onboarding-notification-bar-background-color);
   position: absolute;
   offset-block-start: 50%;
   offset-inline-end: 34px;
