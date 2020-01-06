@@ -1189,13 +1189,16 @@ LayerManagerComposite::RenderToolbar()
     AndroidDynamicToolbarAnimator* animator = bridge->GetAPZCTreeManager()->GetAndroidDynamicToolbarAnimator();
     MOZ_RELEASE_ASSERT(animator);
 
+    animator->UpdateToolbarSnapshotTexture(mCompositor->AsCompositorOGL());
+
     int32_t toolbarHeight = animator->GetCurrentToolbarHeight();
     if (toolbarHeight == 0) {
       return;
     }
 
     EffectChain effects;
-    effects.mPrimaryEffect = animator->GetToolbarEffect(mCompositor->AsCompositorOGL());
+    effects.mPrimaryEffect = animator->GetToolbarEffect();
+
     
     
     

@@ -105,7 +105,10 @@ public:
   
   void AdoptToolbarPixels(mozilla::ipc::Shmem&& aMem, const ScreenIntSize& aSize);
   
-  Effect* GetToolbarEffect(CompositorOGL* gl);
+  
+  void UpdateToolbarSnapshotTexture(CompositorOGL* gl);
+  
+  Effect* GetToolbarEffect();
   void Shutdown();
 
 protected:
