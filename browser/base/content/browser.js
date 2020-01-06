@@ -1088,6 +1088,14 @@ function _loadURIWithFlags(browser, uri, params) {
   }
 
   let mustChangeProcess = requiredRemoteType != currentRemoteType;
+  let newFrameloader = false;
+  if (browser.getAttribute("isPreloadBrowser") == "true" && uri != "about:newtab") {
+    
+    
+    mustChangeProcess = true;
+    newFrameloader = true;
+    browser.removeAttribute("isPreloadBrowser");
+  }
 
   
   if (!requiredRemoteType) {
@@ -1122,7 +1130,8 @@ function _loadURIWithFlags(browser, uri, params) {
         referrer: referrer ? referrer.spec : null,
         referrerPolicy,
         remoteType: requiredRemoteType,
-        postData
+        postData,
+        newFrameloader,
       }
 
       if (params.userContextId) {
@@ -1167,6 +1176,11 @@ function LoadInOtherProcess(browser, loadOptions, historyIndex = -1) {
 
 
 function RedirectLoad({ target: browser, data }) {
+  if (browser.getAttribute("isPreloadBrowser") == "true") {
+    browser.removeAttribute("isPreloadBrowser");
+    data.loadOptions.newFrameloader = true;
+  }
+
   if (data.loadOptions.reloadInFreshProcess) {
     
     
@@ -4991,7 +5005,8 @@ var CombinedStopReload = {
   onTabSwitch() {
     
     
-    this.timeWhenSwitchedToStop = 0;
+    
+    this.timeWhenSwitchedToStop = window.performance.now();
   },
 
   switchToStop(aRequest, aWebProgress) {
@@ -5002,11 +5017,11 @@ var CombinedStopReload = {
     
     
     
-    if (aRequest) {
+    if (aRequest instanceof Ci.nsIRequest) {
       this.timeWhenSwitchedToStop = window.performance.now();
     }
 
-    let shouldAnimate = aRequest &&
+    let shouldAnimate = aRequest instanceof Ci.nsIRequest &&
                         aWebProgress.isTopLevel &&
                         aWebProgress.isLoadingDocument &&
                         !gBrowser.tabAnimationsInProgress &&
@@ -5029,7 +5044,7 @@ var CombinedStopReload = {
       return;
     }
 
-    let shouldAnimate = aRequest &&
+    let shouldAnimate = aRequest instanceof Ci.nsIRequest &&
                         aWebProgress.isTopLevel &&
                         !aWebProgress.isLoadingDocument &&
                         !gBrowser.tabAnimationsInProgress &&
@@ -5073,7 +5088,7 @@ var CombinedStopReload = {
     
     
     
-    return !this.timeWhenSwitchedToStop ||
+    return this.timeWhenSwitchedToStop &&
            window.performance.now() - this.timeWhenSwitchedToStop > 150;
   },
 
