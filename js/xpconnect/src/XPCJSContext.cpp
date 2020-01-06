@@ -874,8 +874,6 @@ XPCJSContext::~XPCJSContext()
     
     SetPendingException(nullptr);
 
-    xpc_DelocalizeContext(Context());
-
     
     mWatchdogManager->UnregisterContext(this);
     if (--sInstanceCount == 0) {
@@ -1080,12 +1078,6 @@ XPCJSContext::Initialize(XPCJSContext* aPrimaryContext)
 
     js::SetActivityCallback(cx, ActivityCallback, this);
     JS_AddInterruptCallback(cx, InterruptCallback);
-
-    
-    
-    
-    if (!xpc_LocalizeContext(cx))
-        NS_RUNTIMEABORT("xpc_LocalizeContext failed.");
 
     if (!aPrimaryContext) {
         Runtime()->Initialize(cx);

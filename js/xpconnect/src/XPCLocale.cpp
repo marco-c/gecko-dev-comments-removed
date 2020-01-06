@@ -52,8 +52,8 @@ NS_IMETHODIMP
 XPCLocaleObserver::Observe(nsISupports* aSubject, const char* aTopic, const char16_t* aData)
 {
   if (!strcmp(aTopic, "intl:app-locales-changed")) {
-    JSContext* cx = CycleCollectedJSContext::Get()->Context();
-    if (!xpc_LocalizeContext(cx)) {
+    JSRuntime* rt = CycleCollectedJSRuntime::Get()->Runtime();
+    if (!xpc_LocalizeRuntime(rt)) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
     return NS_OK;
@@ -96,13 +96,22 @@ struct XPCLocaleCallbacks : public JSLocaleCallbacks
   
 
 
-
   static XPCLocaleCallbacks*
   This(JSContext* cx)
   {
+    return This(JS_GetRuntime(cx));
+  }
+
+  
+
+
+
+  static XPCLocaleCallbacks*
+  This(JSRuntime* rt)
+  {
     
     
-    const JSLocaleCallbacks* lc = JS_GetLocaleCallbacks(cx);
+    const JSLocaleCallbacks* lc = JS_GetLocaleCallbacks(rt);
     MOZ_ASSERT(lc);
     MOZ_ASSERT(lc->localeToUpperCase == nullptr);
     MOZ_ASSERT(lc->localeToLowerCase == nullptr);
@@ -197,15 +206,15 @@ private:
 };
 
 bool
-xpc_LocalizeContext(JSContext* cx)
+xpc_LocalizeRuntime(JSRuntime* rt)
 {
   
   
   
   
-  const JSLocaleCallbacks* lc = JS_GetLocaleCallbacks(cx);
+  const JSLocaleCallbacks* lc = JS_GetLocaleCallbacks(rt);
   if (!lc) {
-    JS_SetLocaleCallbacks(cx, new XPCLocaleCallbacks());
+    JS_SetLocaleCallbacks(rt, new XPCLocaleCallbacks());
   }
 
   
@@ -213,7 +222,7 @@ xpc_LocalizeContext(JSContext* cx)
   
   
   if (Preferences::GetBool("javascript.use_us_english_locale", false)) {
-    return JS_SetDefaultLocale(cx, "en-US");
+    return JS_SetDefaultLocale(rt, "en-US");
   }
 
   
@@ -221,13 +230,13 @@ xpc_LocalizeContext(JSContext* cx)
   nsAutoCString appLocaleStr;
   LocaleService::GetInstance()->GetAppLocaleAsBCP47(appLocaleStr);
 
-  return JS_SetDefaultLocale(cx, appLocaleStr.get());
+  return JS_SetDefaultLocale(rt, appLocaleStr.get());
 }
 
 void
-xpc_DelocalizeContext(JSContext* cx)
+xpc_DelocalizeRuntime(JSRuntime* rt)
 {
-  const XPCLocaleCallbacks* lc = XPCLocaleCallbacks::This(cx);
-  JS_SetLocaleCallbacks(cx, nullptr);
+  const XPCLocaleCallbacks* lc = XPCLocaleCallbacks::This(rt);
+  JS_SetLocaleCallbacks(rt, nullptr);
   delete lc;
 }
