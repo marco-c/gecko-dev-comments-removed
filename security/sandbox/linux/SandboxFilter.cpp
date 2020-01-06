@@ -129,21 +129,15 @@ public:
     
     
     
-    static const int flags_common = CLONE_VM | CLONE_FS | CLONE_FILES |
-      CLONE_SIGHAND | CLONE_THREAD | CLONE_SYSVSEM;
-    static const int flags_modern = flags_common | CLONE_SETTLS |
+    
+    
+    static const int flags_required = CLONE_VM | CLONE_FS | CLONE_FILES |
+      CLONE_SIGHAND | CLONE_THREAD | CLONE_SYSVSEM | CLONE_SETTLS |
       CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID;
+    static const int flags_optional = CLONE_DETACHED;
 
-    
-    
-    
-    return Switch(flags)
-#ifdef ANDROID
-      .Case(flags_common | CLONE_DETACHED, Allow()) 
-      .Case(flags_common, Allow()) 
-#endif
-      .Case(flags_modern, Allow()) 
-      .Default(failPolicy);
+    return If((flags & ~flags_optional) == flags_required, Allow())
+      .Else(failPolicy);
   }
 
   virtual ResultExpr PrctlPolicy() const {
