@@ -3656,7 +3656,11 @@ nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
   RetainedDisplayListBuilder* retainedBuilder = nullptr;
 
   const bool buildCaret = !(aFlags & PaintFrameFlags::PAINT_HIDE_CARET);
-  const bool retainDisplayList = gfxPrefs::LayoutRetainDisplayList();
+
+  
+  
+  const bool retainDisplayList =
+    gfxPrefs::LayoutRetainDisplayList() && XRE_IsContentProcess();
 
   if (retainDisplayList &&
       aBuilderMode == nsDisplayListBuilderMode::PAINTING &&
