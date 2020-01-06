@@ -1592,34 +1592,6 @@ JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx, HandleFuncti
             return true;
         }
 
-        
-        
-        
-        
-        
-        
-        
-        
-        if (canRelazify && !JS::IsIncrementalGCInProgress(cx)) {
-            LazyScriptCache::Lookup lookup(cx, lazy);
-            cx->caches().lazyScriptCache.lookup(lookup, script.address());
-        }
-
-        if (script) {
-            RootedScope enclosingScope(cx, lazy->enclosingScope());
-            RootedScript clonedScript(cx, CloneScriptIntoFunction(cx, enclosingScope, fun, script));
-            if (!clonedScript)
-                return false;
-
-            clonedScript->setSourceObject(lazy->sourceObject());
-
-            fun->initAtom(script->functionNonDelazifying()->displayAtom());
-
-            if (!lazy->maybeScript())
-                lazy->initScript(clonedScript);
-            return true;
-        }
-
         MOZ_ASSERT(lazy->scriptSource()->hasSourceData());
 
         
@@ -1653,9 +1625,6 @@ JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx, HandleFuncti
             
             
             script->setColumn(lazy->column());
-
-            LazyScriptCache::Lookup lookup(cx, lazy);
-            cx->caches().lazyScriptCache.insert(lookup, script);
 
             
             
