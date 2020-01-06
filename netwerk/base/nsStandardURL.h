@@ -298,7 +298,7 @@ private:
     
     
     static nsIIDNService               *gIDN;
-    static const char                   gHostLimitDigits[];
+    static char                         gHostLimitDigits[];
     static bool                         gInitialized;
 
 public:
@@ -307,7 +307,7 @@ public:
 #endif
 
 #ifdef MOZ_RUST_URLPARSE
-    static Atomic<bool>                gRustEnabled;
+    static bool                        gRustEnabled;
     RefPtr<RustURL>                    mRustURL;
 #endif
 };

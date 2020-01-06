@@ -23,7 +23,6 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ipc/URIUtils.h"
 #include <algorithm>
-#include "mozilla/SyncRunnable.h"
 #include "nsContentUtils.h"
 #include "prprf.h"
 #include "nsReadableUtils.h"
@@ -43,9 +42,7 @@ static LazyLogModule gStandardURLLog("nsStandardURL");
 #ifdef MOZ_RUST_URLPARSE
 
 #include "RustURL.h"
-
-
-Atomic<bool> nsStandardURL::gRustEnabled(false);
+bool nsStandardURL::gRustEnabled = false;
 
 
 #define MOZ_RUST_URLPARSE_FALLBACK
@@ -140,16 +137,9 @@ namespace net {
 static NS_DEFINE_CID(kThisImplCID, NS_THIS_STANDARDURL_IMPL_CID);
 static NS_DEFINE_CID(kStandardURLCID, NS_STANDARDURL_CID);
 
-
-
 nsIIDNService *nsStandardURL::gIDN = nullptr;
-
-
-
-
 bool nsStandardURL::gInitialized = false;
-
-const char nsStandardURL::gHostLimitDigits[] = { '/', '\\', '?', '#', 0 };
+char nsStandardURL::gHostLimitDigits[] = { '/', '\\', '?', '#', 0 };
 
 
 
@@ -193,8 +183,6 @@ nsPrefObserver::Observe(nsISupports *subject,
                         const char *topic,
                         const char16_t *data)
 {
-    MOZ_ASSERT(NS_IsMainThread());
-
     if (!strcmp(topic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID)) {
         nsCOMPtr<nsIPrefBranch> prefBranch( do_QueryInterface(subject) );
         if (prefBranch) {
@@ -313,10 +301,8 @@ nsStandardURL::nsStandardURL(bool aSupportsFileURL, bool aTrackURL)
 {
     LOG(("Creating nsStandardURL @%p\n", this));
 
-    
-    
-    
     if (!gInitialized) {
+        gInitialized = true;
         InitGlobalObjects();
     }
 
@@ -369,21 +355,6 @@ DumpLeakedURLs::~DumpLeakedURLs()
 void
 nsStandardURL::InitGlobalObjects()
 {
-    if (!NS_IsMainThread()) {
-        RefPtr<Runnable> r =
-            NS_NewRunnableFunction("nsStandardURL::InitGlobalObjects",
-                                   &nsStandardURL::InitGlobalObjects);
-        SyncRunnable::DispatchToThread(GetMainThreadEventTarget(), r, false);
-        return;
-    }
-
-    if (gInitialized) {
-        return;
-    }
-
-    MOZ_ASSERT(NS_IsMainThread());
-    gInitialized = true;
-
     nsCOMPtr<nsIPrefBranch> prefBranch( do_GetService(NS_PREFSERVICE_CONTRACTID) );
     if (prefBranch) {
         nsCOMPtr<nsIObserver> obs( new nsPrefObserver() );
@@ -392,18 +363,11 @@ nsStandardURL::InitGlobalObjects()
 #endif
         PrefsChanged(prefBranch, nullptr);
     }
-
-    nsCOMPtr<nsIIDNService> serv(do_GetService(NS_IDNSERVICE_CONTRACTID));
-    if (serv) {
-        NS_ADDREF(gIDN = serv.get());
-        MOZ_ASSERT(gIDN);
-    }
 }
 
 void
 nsStandardURL::ShutdownGlobalObjects()
 {
-    MOZ_ASSERT(NS_IsMainThread());
     NS_IF_RELEASE(gIDN);
 
 #ifdef DEBUG_DUMP_URLS_AT_SHUTDOWN
@@ -685,6 +649,13 @@ nsStandardURL::NormalizeIDN(const nsACString& host, nsCString& result)
     NS_ASSERTION(mHostEncoding == eEncoding_ASCII, "unexpected default encoding");
 
     bool isASCII;
+    if (!gIDN) {
+        nsCOMPtr<nsIIDNService> serv(do_GetService(NS_IDNSERVICE_CONTRACTID));
+        if (serv) {
+            NS_ADDREF(gIDN = serv.get());
+        }
+    }
+
     result.Truncate();
     nsresult rv = NS_ERROR_UNEXPECTED;
     if (gIDN) {
@@ -1278,8 +1249,6 @@ nsStandardURL::WriteSegment(nsIBinaryOutputStream *stream, const URLSegment &seg
  void
 nsStandardURL::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
 {
-    MOZ_ASSERT(NS_IsMainThread());
-
     LOG(("nsStandardURL::PrefsChanged [pref=%s]\n", pref));
 
 #define PREF_CHANGED(p) ((pref == nullptr) || !strcmp(pref, p))
