@@ -517,9 +517,7 @@ class TabTracker extends TabTrackerBase {
     if (browser.ownerDocument.documentURI === "about:addons") {
       
       
-      browser = browser.ownerGlobal.QueryInterface(Ci.nsIInterfaceRequestor)
-                       .getInterface(Ci.nsIDocShell)
-                       .chromeEventHandler;
+      browser = browser.ownerDocument.docShell.chromeEventHandler;
     }
 
     let result = {

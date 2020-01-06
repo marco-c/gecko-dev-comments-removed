@@ -734,9 +734,7 @@ this.tabs = class extends ExtensionAPI {
             
             
             if (browser instanceof Ci.nsIDOMDocument) {
-              browser = browser.defaultView.QueryInterface(Ci.nsIInterfaceRequestor)
-                               .getInterface(Ci.nsIDocShell)
-                               .chromeEventHandler;
+              browser = browser.docShell.chromeEventHandler;
             }
 
             let {gBrowser} = browser.ownerGlobal;
