@@ -33,6 +33,7 @@ class ServoRestyleManager;
 class ServoStyleSheet;
 struct Keyframe;
 class ServoElementSnapshotTable;
+class ServoStyleContext;
 class ServoStyleRuleMap;
 } 
 class nsCSSCounterStyleRule;
@@ -226,7 +227,7 @@ public:
   
   
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<ServoStyleContext>
   ResolveInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag,
                                      nsStyleContext* aParentContext);
 
@@ -492,17 +493,17 @@ private:
     ServoStyleSet* mSet;
   };
 
-  already_AddRefed<nsStyleContext> GetContext(already_AddRefed<ServoComputedValues>,
-                                              nsStyleContext* aParentContext,
-                                              nsIAtom* aPseudoTag,
-                                              CSSPseudoElementType aPseudoType,
-                                              dom::Element* aElementForAnimation);
+  already_AddRefed<ServoStyleContext> GetContext(already_AddRefed<ServoComputedValues>,
+                                                 nsStyleContext* aParentContext,
+                                                 nsIAtom* aPseudoTag,
+                                                 CSSPseudoElementType aPseudoType,
+                                                 dom::Element* aElementForAnimation);
 
-  already_AddRefed<nsStyleContext> GetContext(nsIContent* aContent,
-                                              nsStyleContext* aParentContext,
-                                              nsIAtom* aPseudoTag,
-                                              CSSPseudoElementType aPseudoType,
-                                              LazyComputeBehavior aMayCompute);
+  already_AddRefed<ServoStyleContext> GetContext(nsIContent* aContent,
+                                                 nsStyleContext* aParentContext,
+                                                 nsIAtom* aPseudoTag,
+                                                 CSSPseudoElementType aPseudoType,
+                                                 LazyComputeBehavior aMayCompute);
 
   
 

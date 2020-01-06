@@ -469,8 +469,8 @@ ServoRestyleManager::ProcessPostTraversal(Element* aElement,
   
   
   
-  RefPtr<nsStyleContext> oldStyleContext =
-    styleFrame ? styleFrame->StyleContext() : nullptr;
+  RefPtr<ServoStyleContext> oldStyleContext =
+    styleFrame ? styleFrame->StyleContext()->AsServo() : nullptr;
 
   UndisplayedNode* displayContentsNode = nullptr;
   
@@ -479,7 +479,7 @@ ServoRestyleManager::ProcessPostTraversal(Element* aElement,
     displayContentsNode =
       PresContext()->FrameConstructor()->GetDisplayContentsNodeFor(aElement);
     if (displayContentsNode) {
-      oldStyleContext = displayContentsNode->mStyle;
+      oldStyleContext = displayContentsNode->mStyle->AsServo();
     }
   }
 
@@ -513,7 +513,7 @@ ServoRestyleManager::ProcessPostTraversal(Element* aElement,
   ServoRestyleState& childrenRestyleState =
     thisFrameRestyleState ? *thisFrameRestyleState : aRestyleState;
 
-  RefPtr<nsStyleContext> newContext = nullptr;
+  RefPtr<ServoStyleContext> newContext = nullptr;
   if (recreateContext) {
     MOZ_ASSERT(styleFrame || displayContentsNode);
 

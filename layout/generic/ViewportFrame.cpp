@@ -418,9 +418,9 @@ ViewportFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas)
 void
 ViewportFrame::UpdateStyle(ServoRestyleState& aRestyleState)
 {
-  nsStyleContext* oldContext = StyleContext();
+  ServoStyleContext* oldContext = StyleContext()->AsServo();
   nsIAtom* pseudo = oldContext->GetPseudo();
-  RefPtr<nsStyleContext> newContext =
+  RefPtr<ServoStyleContext> newContext =
     aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(pseudo, nullptr);
 
   
