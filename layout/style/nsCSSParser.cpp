@@ -4496,11 +4496,6 @@ CSSParserImpl::ParseSupportsConditionNegation(bool& aConditionMet)
     return false;
   }
 
-  if (!RequireWhitespace()) {
-    REPORT_UNEXPECTED(PESupportsWhitespaceRequired);
-    return false;
-  }
-
   if (ParseSupportsConditionInParens(aConditionMet)) {
     aConditionMet = !aConditionMet;
     return true;
@@ -4669,7 +4664,7 @@ CSSParserImpl::ParseSupportsConditionInParensInsideParens(bool& aConditionMet)
 bool
 CSSParserImpl::ParseSupportsConditionTerms(bool& aConditionMet)
 {
-  if (!RequireWhitespace() || !GetToken(false)) {
+  if (!GetToken(true)) {
     return true;
   }
 
@@ -4698,11 +4693,6 @@ CSSParserImpl::ParseSupportsConditionTermsAfterOperator(
                          bool& aConditionMet,
                          CSSParserImpl::SupportsConditionTermOperator aOperator)
 {
-  if (!RequireWhitespace()) {
-    REPORT_UNEXPECTED(PESupportsWhitespaceRequired);
-    return false;
-  }
-
   const char* token = aOperator == eAnd ? "and" : "or";
   for (;;) {
     bool termConditionMet = false;
