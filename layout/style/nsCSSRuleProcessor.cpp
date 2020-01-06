@@ -1068,6 +1068,12 @@ nsCSSRuleProcessor::Startup()
                                true);
 }
 
+ bool
+nsCSSRuleProcessor::VisitedLinksEnabled()
+{
+  return gSupportVisitedPseudo;
+}
+
  void
 nsCSSRuleProcessor::InitSystemMetrics()
 {
@@ -1240,7 +1246,8 @@ nsCSSRuleProcessor::GetWindowsThemeIdentifier()
 
 
 EventStates
-nsCSSRuleProcessor::GetContentState(Element* aElement, bool aUsingPrivateBrowsing)
+nsCSSRuleProcessor::GetContentState(const Element* aElement,
+                                    bool aUsingPrivateBrowsing)
 {
   EventStates state = aElement->StyleState();
 
@@ -1260,7 +1267,8 @@ nsCSSRuleProcessor::GetContentState(Element* aElement, bool aUsingPrivateBrowsin
 
 
 EventStates
-nsCSSRuleProcessor::GetContentState(Element* aElement, const TreeMatchContext& aTreeMatchContext)
+nsCSSRuleProcessor::GetContentState(const Element* aElement,
+                                    const TreeMatchContext& aTreeMatchContext)
 {
   return nsCSSRuleProcessor::GetContentState(
     aElement,
@@ -1270,7 +1278,7 @@ nsCSSRuleProcessor::GetContentState(Element* aElement, const TreeMatchContext& a
 
 
 EventStates
-nsCSSRuleProcessor::GetContentState(Element* aElement)
+nsCSSRuleProcessor::GetContentState(const Element* aElement)
 {
   nsILoadContext* loadContext = aElement->OwnerDoc()->GetLoadContext();
   bool usingPrivateBrowsing = loadContext && loadContext->UsePrivateBrowsing();
@@ -1288,7 +1296,7 @@ nsCSSRuleProcessor::IsLink(const Element* aElement)
 
 EventStates
 nsCSSRuleProcessor::GetContentStateForVisitedHandling(
-                     Element* aElement,
+                     const Element* aElement,
                      nsRuleWalker::VisitedHandlingType aVisitedHandling,
                      bool aIsRelevantLink)
 {

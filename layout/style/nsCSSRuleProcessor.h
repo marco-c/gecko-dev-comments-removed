@@ -81,6 +81,7 @@ public:
 public:
   nsresult ClearRuleCascades();
 
+  static bool VisitedLinksEnabled();
   static void Startup();
   static void InitSystemMetrics();
   static void Shutdown();
@@ -103,19 +104,19 @@ public:
 
 
   static mozilla::EventStates GetContentState(
-                                mozilla::dom::Element* aElement,
+                                const mozilla::dom::Element* aElement,
                                 bool aUsingPrivateBrowsing);
   static mozilla::EventStates GetContentState(
-                                mozilla::dom::Element* aElement,
+                                const mozilla::dom::Element* aElement,
                                 const TreeMatchContext& aTreeMatchContext);
   static mozilla::EventStates GetContentState(
-                                mozilla::dom::Element* aElement);
+                                const mozilla::dom::Element* aElement);
 
   
 
 
   static mozilla::EventStates GetContentStateForVisitedHandling(
-             mozilla::dom::Element* aElement,
+             const mozilla::dom::Element* aElement,
              nsRuleWalker::VisitedHandlingType aVisitedHandling,
              bool aIsRelevantLink);
 
