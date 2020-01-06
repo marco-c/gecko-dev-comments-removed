@@ -20,19 +20,20 @@ class nsINode;
 
 
 
-class nsChildContentList final : public nsINodeList
+class nsAttrChildContentList final : public nsINodeList
 {
 public:
-  explicit nsChildContentList(nsINode* aNode)
+  explicit nsAttrChildContentList(nsINode* aNode)
     : mNode(aNode)
   {
   }
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SKIPPABLE_SCRIPT_HOLDER_CLASS(nsChildContentList)
+  NS_DECL_CYCLE_COLLECTION_SKIPPABLE_SCRIPT_HOLDER_CLASS(nsAttrChildContentList)
 
   
-  virtual JSObject* WrapObject(JSContext *cx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext *cx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
   
   NS_DECL_NSIDOMNODELIST
@@ -52,7 +53,7 @@ public:
   }
 
 private:
-  ~nsChildContentList() {}
+  ~nsAttrChildContentList() {}
 
   
   
