@@ -1013,7 +1013,6 @@ nsPIDOMWindow<T>::nsPIDOMWindow(nsPIDOMWindowOuter *aOuterWindow)
   mWindowID(NextWindowID()), mHasNotifiedGlobalCreated(false),
   mMarkedCCGeneration(0), mServiceWorkersTestingEnabled(false),
   mLargeAllocStatus(LargeAllocStatus::NONE),
-  mShouldResumeOnFirstActiveMediaComponent(false),
   mHasTriedToCacheTopInnerWindow(false),
   mNumOfIndexedDBDatabases(0)
 {
@@ -4492,41 +4491,13 @@ nsPIDOMWindowInner::HasActiveIndexedDBDatabases()
 }
 
 void
-nsPIDOMWindowOuter::NotifyCreatedNewMediaComponent()
-{
-  
-  mShouldResumeOnFirstActiveMediaComponent = true;
-
-  
-  
-  
-  
-  
-  MaybeActiveMediaComponents();
-}
-
-void
 nsPIDOMWindowOuter::MaybeActiveMediaComponents()
 {
   if (IsInnerWindow()) {
     return mOuterWindow->MaybeActiveMediaComponents();
   }
 
-  
-  
-  if (!mShouldResumeOnFirstActiveMediaComponent ||
-      mMediaSuspend != nsISuspendedTypes::SUSPENDED_BLOCK) {
-    return;
-  }
-
-  nsCOMPtr<nsPIDOMWindowInner> inner = GetCurrentInnerWindow();
-  if (!inner) {
-    return;
-  }
-
-  
-  nsCOMPtr<nsIDocument> doc = inner->GetExtantDoc();
-  if (!doc || doc->Hidden()) {
+  if (mMediaSuspend != nsISuspendedTypes::SUSPENDED_BLOCK) {
     return;
   }
 
