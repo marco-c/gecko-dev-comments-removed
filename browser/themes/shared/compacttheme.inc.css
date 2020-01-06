@@ -32,14 +32,6 @@
   
   --url-and-searchbar-background-color: rgb(71, 71, 73);
   --urlbar-separator-color: #5F6670;
-  --urlbar-dropmarker-url: url("chrome://browser/skin/compacttheme/urlbar-history-dropmarker.svg");
-  --urlbar-dropmarker-region: rect(0px, 11px, 14px, 0px);
-  --urlbar-dropmarker-hover-region: rect(0, 22px, 14px, 11px);
-  --urlbar-dropmarker-active-region: rect(0px, 33px, 14px, 22px);
-  --urlbar-dropmarker-2x-url: url("chrome://browser/skin/compacttheme/urlbar-history-dropmarker.svg");
-  --urlbar-dropmarker-2x-region: rect(0px, 11px, 14px, 0px);
-  --urlbar-dropmarker-hover-2x-region: rect(0, 22px, 14px, 11px);
-  --urlbar-dropmarker-active-2x-region: rect(0px, 33px, 14px, 22px);
 }
 
 :root:-moz-lwtheme-darktext {
@@ -111,11 +103,8 @@ toolbar[brighttext] .toolbarbutton-1 {
   background-color: var(--url-and-searchbar-background-color) !important;
   background-image: none !important;
   color: inherit !important;
-}
-
-#urlbar:not([focused="true"]),
-.searchbar-textbox:not([focused="true"]) {
-  border-color: var(--chrome-nav-bar-controls-border-color);
+  border: 1px solid var(--chrome-nav-bar-controls-border-color) !important;
+  box-shadow: none !important;
 }
 
 #urlbar[pageproxystate="valid"] > #identity-box.verifiedIdentity > #identity-icon-labels:-moz-lwtheme-brighttext {
