@@ -124,6 +124,12 @@ statusbarpanel {
 
 
 
+sidebarheader {
+  background-color: -moz-Dialog;
+  color: -moz-dialogText;
+  text-shadow: none;
+}
+
 :root:-moz-lwtheme {
   -moz-appearance: none;
 }
