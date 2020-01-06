@@ -2930,6 +2930,17 @@ public:
 
 
 
+
+
+
+
+  static StorageAccess StorageAllowedForDocument(nsIDocument* aDoc);
+
+  
+
+
+
+
   static StorageAccess StorageAllowedForPrincipal(nsIPrincipal* aPrincipal);
 
   
