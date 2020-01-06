@@ -589,7 +589,7 @@ private:
 
   
   
-  void NotifyDownloadProgressed();
+  void DownloadProgressed();
 
   nsCString GetDebugInfo();
 
