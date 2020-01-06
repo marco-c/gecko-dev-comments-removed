@@ -2245,14 +2245,36 @@ nsCookieService::NotifyThirdParty(nsIURI *aHostURI, bool aIsAccepted, nsIChannel
 
 void
 nsCookieService::NotifyChanged(nsISupports     *aSubject,
-                               const char16_t *aData)
+                               const char16_t *aData,
+                               bool aOldCookieIsSession)
 {
   const char* topic = mDBState == mPrivateDBState ?
       "private-cookie-changed" : "cookie-changed";
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  if (os) {
-    os->NotifyObservers(aSubject, topic, aData);
+  if (!os) {
+    return;
   }
+  
+  os->NotifyObservers(aSubject, topic, aData);
+
+  
+  
+  
+  if (mDBState == mPrivateDBState) {
+    return;
+  }
+  
+  if (NS_LITERAL_STRING("changed").Equals(aData) ||
+      NS_LITERAL_STRING("deleted").Equals(aData) ||
+      NS_LITERAL_STRING("added").Equals(aData)) {
+    nsCOMPtr<nsICookie> xpcCookie = do_QueryInterface(aSubject);
+    MOZ_ASSERT(xpcCookie);
+    auto cookie = static_cast<nsCookie*>(xpcCookie.get());
+    if (!cookie->IsSession() && !aOldCookieIsSession) {
+      return;
+    }
+  }
+  os->NotifyObservers(aSubject, "session-cookie-changed", aData);
 }
 
 already_AddRefed<nsIArray>
@@ -3606,6 +3628,7 @@ nsCookieService::AddInternal(const nsCookieKey             &aKey,
   foundCookie = FindCookie(aKey, aCookie->Host(),
                            aCookie->Name(), aCookie->Path(), exactIter);
   bool foundSecureExact = foundCookie && exactIter.Cookie()->IsSecure();
+  bool oldCookieIsSession = false;
   if (mLeaveSecureAlone) {
     
     
@@ -3647,6 +3670,7 @@ nsCookieService::AddInternal(const nsCookieKey             &aKey,
   nsCOMPtr<nsIArray> purgedList;
   if (foundCookie) {
     oldCookie = exactIter.Cookie();
+    oldCookieIsSession = oldCookie->IsSession();
 
     
     
@@ -3780,7 +3804,7 @@ nsCookieService::AddInternal(const nsCookieKey             &aKey,
     NotifyChanged(purgedList, u"batch-deleted");
   }
 
-  NotifyChanged(aCookie, foundCookie ? u"changed" : u"added");
+  NotifyChanged(aCookie, foundCookie ? u"changed" : u"added", oldCookieIsSession);
 }
 
 
