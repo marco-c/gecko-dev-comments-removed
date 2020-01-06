@@ -1,12 +1,4 @@
-# -*- coding: utf-8 -*-
-
-
-
-
-
-from __future__ import absolute_import, print_function, unicode_literals
-
-from .registry import register_task_action
+from registry import register_task_action
 
 
 @register_task_action(
