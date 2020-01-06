@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
  class BookmarksSessionHelper extends SessionHelper implements BookmarksInsertionManager.BookmarkInserter {
     private static final String LOG_TAG = "BookmarksSessionHelper";
 
-    private final AndroidBrowserBookmarksDataAccessor dbAccessor;
+    private final BookmarksDataAccessor dbAccessor;
 
     
     
@@ -124,7 +124,7 @@ import java.util.concurrent.ConcurrentHashMap;
         SPECIAL_GUID_PARENTS = Collections.unmodifiableMap(m);
     }
 
-     BookmarksSessionHelper(StoreTrackingRepositorySession session, AndroidBrowserBookmarksDataAccessor dbAccessor) {
+     BookmarksSessionHelper(StoreTrackingRepositorySession session, BookmarksDataAccessor dbAccessor) {
         super(session, dbAccessor);
         this.dbAccessor = dbAccessor;
     }
@@ -188,7 +188,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
     @Override
     protected void storeRecordDeletion(RepositorySessionStoreDelegate storeDelegate, final Record record, final Record existingRecord) {
-        if (AndroidBrowserBookmarksRepositorySession.SPECIAL_GUIDS_MAP.containsKey(record.guid)) {
+        if (BookmarksRepositorySession.SPECIAL_GUIDS_MAP.containsKey(record.guid)) {
             Logger.debug(LOG_TAG, "Told to delete record " + record.guid + ". Ignoring.");
             return;
         }
@@ -210,7 +210,7 @@ import java.util.concurrent.ConcurrentHashMap;
     @Override
     protected void fixupRecord(Record record) {
         final BookmarkRecord r = (BookmarkRecord) record;
-        final String parentName = AndroidBrowserBookmarksRepositorySession.SPECIAL_GUIDS_MAP.get(r.parentID);
+        final String parentName = BookmarksRepositorySession.SPECIAL_GUIDS_MAP.get(r.parentID);
         if (parentName == null) {
             return;
         }
@@ -611,7 +611,7 @@ import java.util.concurrent.ConcurrentHashMap;
         }
 
         
-        boolean didUpdate = ((AndroidBrowserBookmarksDataAccessor) dbHelper).updateAssertingLocalVersion(
+        boolean didUpdate = ((BookmarksDataAccessor) dbHelper).updateAssertingLocalVersion(
                 existingRecord.guid,
                 existingRecord.localVersion,
                 shouldIncrementLocalVersion,
@@ -840,8 +840,8 @@ import java.util.concurrent.ConcurrentHashMap;
         if (parentGUID == null) {
             return "";
         }
-        if (AndroidBrowserBookmarksRepositorySession.SPECIAL_GUIDS_MAP.containsKey(parentGUID)) {
-            return AndroidBrowserBookmarksRepositorySession.SPECIAL_GUIDS_MAP.get(parentGUID);
+        if (BookmarksRepositorySession.SPECIAL_GUIDS_MAP.containsKey(parentGUID)) {
+            return BookmarksRepositorySession.SPECIAL_GUIDS_MAP.get(parentGUID);
         }
 
         
@@ -984,7 +984,7 @@ import java.util.concurrent.ConcurrentHashMap;
         }
 
         
-        String parentName = AndroidBrowserBookmarksRepositorySession.SPECIAL_GUIDS_MAP.get(realParent);
+        String parentName = BookmarksRepositorySession.SPECIAL_GUIDS_MAP.get(realParent);
         if (parentName == null) {
             parentName = suggestedParentName;
         }
@@ -1171,7 +1171,7 @@ import java.util.concurrent.ConcurrentHashMap;
             }
 
             try {
-                Cursor cursor = ((AndroidBrowserBookmarksDataAccessor) dbHelper).fetchModified();
+                Cursor cursor = ((BookmarksDataAccessor) dbHelper).fetchModified();
                 this.fetchFromCursor(cursor, filter, end);
             } catch (NullCursorException e) {
                 delegate.onFetchFailed(e);

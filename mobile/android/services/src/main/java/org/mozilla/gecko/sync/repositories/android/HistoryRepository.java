@@ -1,0 +1,24 @@
+
+
+
+
+package org.mozilla.gecko.sync.repositories.android;
+
+import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionCreationDelegate;
+
+import android.content.Context;
+
+public class HistoryRepository extends ThreadedRepository implements org.mozilla.gecko.sync.repositories.HistoryRepository {
+
+  @Override
+  protected void sessionCreator(RepositorySessionCreationDelegate delegate, Context context) {
+    HistoryRepositorySession session = new HistoryRepositorySession(HistoryRepository.this, context);
+    delegate.onSessionCreated(session);
+  }
+
+  @Override
+  protected DataAccessor getDataAccessor(Context context) {
+    return new HistoryDataAccessor(context);
+  }
+
+}

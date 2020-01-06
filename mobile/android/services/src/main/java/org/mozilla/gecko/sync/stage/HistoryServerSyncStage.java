@@ -4,50 +4,62 @@
 
 package org.mozilla.gecko.sync.stage;
 
-import android.net.Uri;
-
 import java.net.URISyntaxException;
 
 import org.mozilla.gecko.sync.MetaGlobalException;
-import org.mozilla.gecko.sync.middleware.BufferingMiddlewareRepository;
-import org.mozilla.gecko.sync.middleware.storage.MemoryBufferStorage;
 import org.mozilla.gecko.sync.repositories.ConfigurableServer15Repository;
+import org.mozilla.gecko.sync.repositories.PersistentRepositoryStateProvider;
 import org.mozilla.gecko.sync.repositories.RecordFactory;
 import org.mozilla.gecko.sync.repositories.Repository;
-import org.mozilla.gecko.sync.repositories.android.AndroidBrowserBookmarksRepository;
-import org.mozilla.gecko.sync.repositories.android.BrowserContractHelpers;
-import org.mozilla.gecko.sync.repositories.domain.BookmarkRecordFactory;
+import org.mozilla.gecko.sync.repositories.RepositoryStateProvider;
+import org.mozilla.gecko.sync.repositories.android.HistoryRepository;
+import org.mozilla.gecko.sync.repositories.domain.HistoryRecordFactory;
 import org.mozilla.gecko.sync.repositories.domain.VersionConstants;
 
-public class AndroidBrowserBookmarksServerSyncStage extends VersionedServerSyncStage {
-  protected static final String LOG_TAG = "BookmarksStage";
+public class HistoryServerSyncStage extends ServerSyncStage {
+  protected static final String LOG_TAG = "HistoryStage";
 
   
   
-  private static final String BOOKMARKS_SORT = "oldest";
-  private static final long BOOKMARKS_BATCH_LIMIT = 5000;
+  private static final String HISTORY_SORT = "oldest";
+  private static final long HISTORY_BATCH_LIMIT = 500;
 
   @Override
   protected String getCollection() {
-    return "bookmarks";
+    return "history";
   }
 
   @Override
   protected String getEngineName() {
-    return "bookmarks";
+    return "history";
   }
 
   @Override
   public Integer getStorageVersion() {
-    return VersionConstants.BOOKMARKS_ENGINE_VERSION;
+    return VersionConstants.HISTORY_ENGINE_VERSION;
   }
 
   @Override
-   Uri getLocalDataUri() {
-    return BrowserContractHelpers.BOOKMARKS_CONTENT_URI;
+  protected Repository getLocalRepository() {
+    return new HistoryRepository();
   }
 
   
+
+
+
+
+
+
+  @Override
+  protected RepositoryStateProvider getRepositoryStateProvider() {
+    return new PersistentRepositoryStateProvider(
+            session.config.getBranch(statePreferencesPrefix())
+    );
+  }
+
+  
+
 
 
 
@@ -55,7 +67,7 @@ public class AndroidBrowserBookmarksServerSyncStage extends VersionedServerSyncS
 
   @Override
   protected HighWaterMark getAllowedToUseHighWaterMark() {
-    return HighWaterMark.Disabled;
+    return HighWaterMark.Enabled;
   }
 
   
@@ -77,8 +89,8 @@ public class AndroidBrowserBookmarksServerSyncStage extends VersionedServerSyncS
             session.getAuthHeaderProvider(),
             session.config.infoCollections,
             session.config.infoConfiguration,
-            BOOKMARKS_BATCH_LIMIT,
-            BOOKMARKS_SORT,
+            HISTORY_BATCH_LIMIT,
+            HISTORY_SORT,
             getAllowedMultipleBatches(),
             getAllowedToUseHighWaterMark(),
             getRepositoryStateProvider()
@@ -86,17 +98,8 @@ public class AndroidBrowserBookmarksServerSyncStage extends VersionedServerSyncS
   }
 
   @Override
-  protected Repository getLocalRepository() {
-    return new BufferingMiddlewareRepository(
-            session.getSyncDeadline(),
-            new MemoryBufferStorage(),
-            new AndroidBrowserBookmarksRepository()
-    );
-  }
-
-  @Override
   protected RecordFactory getRecordFactory() {
-    return new BookmarkRecordFactory();
+    return new HistoryRecordFactory();
   }
 
   @Override

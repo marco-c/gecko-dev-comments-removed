@@ -27,7 +27,7 @@ import org.mozilla.gecko.sync.repositories.domain.Record;
 
 import android.content.Context;
 
-public class AndroidBrowserBookmarksRepositorySession extends StoreTrackingRepositorySession {
+public class BookmarksRepositorySession extends StoreTrackingRepositorySession {
 
   private static final String LOG_TAG = "AndroidBrowserBookmarksRepositorySession";
 
@@ -86,7 +86,7 @@ public class AndroidBrowserBookmarksRepositorySession extends StoreTrackingRepos
 
 
 
-  private final AndroidBrowserBookmarksDataAccessor dataAccessor;
+  private final BookmarksDataAccessor dataAccessor;
 
   private final BookmarksSessionHelper sessionHelper;
 
@@ -96,12 +96,12 @@ public class AndroidBrowserBookmarksRepositorySession extends StoreTrackingRepos
 
 
   public static final String[] SPECIAL_GUIDS = new String[] {
-          
-          "places",
-          "mobile",
-          "toolbar",
-          "menu",
-          "unfiled"
+    
+    "places",
+    "mobile",
+    "toolbar",
+    "menu",
+    "unfiled"
   };
 
 
@@ -133,7 +133,7 @@ public class AndroidBrowserBookmarksRepositorySession extends StoreTrackingRepos
       SPECIAL_GUIDS_MAP = Collections.unmodifiableMap(m);
     }
 
-    dataAccessor = new AndroidBrowserBookmarksDataAccessor(context);
+    dataAccessor = new BookmarksDataAccessor(context);
     sessionHelper = new BookmarksSessionHelper(this, dataAccessor);
     versioningDelegateHelper = new VersioningDelegateHelper(context, BrowserContractHelpers.BOOKMARKS_CONTENT_URI);
   }
