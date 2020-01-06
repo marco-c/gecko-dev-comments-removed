@@ -848,7 +848,7 @@ nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
     
     if (clipboardData) {
       clipboardData->ClearAll();
-      clipboardData->SetReadOnly();
+      clipboardData->SetMode(DataTransfer::Mode::Protected);
     }
 
     if (aActionTaken) {

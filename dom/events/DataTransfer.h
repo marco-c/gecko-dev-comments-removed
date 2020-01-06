@@ -61,6 +61,14 @@ public:
     return static_cast<DataTransfer*>(aArg);
   }
 
+  
+  
+  enum class Mode : uint8_t {
+    ReadWrite,
+    ReadOnly,
+    Protected,
+  };
+
 protected:
 
   
@@ -216,11 +224,23 @@ public:
 
   
   
-  bool IsReadOnly() const {
-    return mReadOnly;
+  
+  Mode GetMode() const {
+    return mMode;
   }
-  void SetReadOnly() {
-    mReadOnly = true;
+  void SetMode(Mode aMode) {
+    mMode = aMode;
+  }
+
+  
+  
+  bool IsReadOnly() const {
+    return mMode != Mode::ReadWrite;
+  }
+  
+  
+  bool IsProtected() const {
+    return mMode == Mode::Protected;
   }
 
   int32_t ClipboardType() const {
@@ -344,8 +364,7 @@ protected:
   bool mCursorState;
 
   
-  
-  bool mReadOnly;
+  Mode mMode;
 
   
   
