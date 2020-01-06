@@ -193,7 +193,9 @@ class Simulator
     T get_pc_as() const { return reinterpret_cast<T>(get_pc()); }
 
     void trigger_wasm_interrupt() {
-        MOZ_ASSERT(!wasm_interrupt_);
+        
+        
+        
         wasm_interrupt_ = true;
     }
 
