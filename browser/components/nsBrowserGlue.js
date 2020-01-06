@@ -583,21 +583,6 @@ BrowserGlue.prototype = {
     
     this._migrateUI();
 
-    
-    
-    
-    
-    
-    
-    try {
-      let urlbarPrefs = Services.prefs.getBranch("browser.urlbar.");
-      if (!urlbarPrefs.prefHasUserValue("searchSuggestionsChoice") &&
-          urlbarPrefs.getBoolPref("userMadeSearchSuggestionsChoice")) {
-        urlbarPrefs.setBoolPref("searchSuggestionsChoice",
-                                urlbarPrefs.getBoolPref("suggest.searches"));
-      }
-    } catch (ex) {  }
-
     listeners.init();
 
     PageThumbs.init();
@@ -1693,7 +1678,7 @@ BrowserGlue.prototype = {
 
   
   _migrateUI: function BG__migrateUI() {
-    const UI_VERSION = 45;
+    const UI_VERSION = 46;
     const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
 
     let currentUIVersion;
@@ -1993,6 +1978,22 @@ BrowserGlue.prototype = {
         Services.prefs.setBoolPref("browser.shell.didSkipDefaultBrowserCheckOnFirstRun",
                                    !Services.prefs.getBoolPref(LEGACY_PREF));
         Services.prefs.clearUserPref(LEGACY_PREF);
+      }
+    }
+
+    if (currentUIVersion < 46) {
+      
+      
+      
+      
+      
+      try {
+        Services.prefs.setBoolPref(
+          "browser.urlbar.suggest.searches",
+          Services.prefs.getBoolPref("browser.urlbar.searchSuggestionsChoice")
+        );
+      } catch (ex) {
+        
       }
     }
 

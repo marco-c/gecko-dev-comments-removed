@@ -318,7 +318,7 @@ pref("browser.urlbar.match.url", "@");
 pref("browser.urlbar.suggest.history",              true);
 pref("browser.urlbar.suggest.bookmark",             true);
 pref("browser.urlbar.suggest.openpage",             true);
-pref("browser.urlbar.suggest.searches",             false);
+pref("browser.urlbar.suggest.searches",             true);
 pref("browser.urlbar.userMadeSearchSuggestionsChoice", false);
 
 pref("browser.urlbar.daysBeforeHidingSuggestionsPrompt", 4);
