@@ -50,6 +50,12 @@ gfxQuartzNativeDrawing::BeginNativeDrawing()
   } else {
     
     
+    
+    Matrix transform = dt->GetTransform();
+
+    Rect deviceRect = transform.TransformBounds(mNativeRect);
+    deviceRect.RoundOut();
+    mNativeRect = transform.Inverse().TransformBounds(deviceRect);
     mDrawTarget->PushClipRect(mNativeRect);
   }
 
