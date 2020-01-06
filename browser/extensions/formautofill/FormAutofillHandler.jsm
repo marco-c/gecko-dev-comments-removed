@@ -481,6 +481,22 @@ FormAutofillHandler.prototype = {
         let element = detail.elementWeakRef.get();
         
         let value = element && element.value.trim();
+
+        
+        if (type == "address" &&
+            detail.fieldName == "address-level1" &&
+            element instanceof Ci.nsIDOMHTMLSelectElement) {
+          
+          
+          
+          if (!value || element.selectedOptions.length != 1) {
+            return;
+          }
+
+          let text = element.selectedOptions[0].text.trim();
+          value = FormAutofillUtils.getAbbreviatedStateName([value, text]) || text;
+        }
+
         if (!value) {
           return;
         }
