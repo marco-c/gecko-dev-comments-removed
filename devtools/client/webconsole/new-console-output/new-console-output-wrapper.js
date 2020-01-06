@@ -184,11 +184,10 @@ NewConsoleOutputWrapper.prototype = {
   },
 
   dispatchMessageUpdate: function (message, res) {
-    batchedMessageAdd(actions.networkMessageUpdate(message));
-
     
     
     if (res.packet.updateType === "eventTimings") {
+      batchedMessageAdd(actions.networkMessageUpdate(message));
       this.jsterm.hud.emit("network-message-updated", res);
     }
   },
