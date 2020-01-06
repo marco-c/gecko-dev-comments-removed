@@ -1996,10 +1996,6 @@ pref("network.standard-url.max-length", 1048576);
 pref("network.standard-url.enable-rust", false);
 
 
-
-pref("network.standard-url.punycode-host", false);
-
-
 pref("network.ftp.idleConnectionTimeout", 300);
 
 
@@ -2136,10 +2132,6 @@ pref("network.http.throttle.resume-for", 100);
 
 
 pref("network.http.throttle.resume-background-in", 1000);
-
-
-
-pref("network.http.on_click_priority", true);
 
 pref("permissions.default.image",           1); 
 
@@ -4719,7 +4711,7 @@ pref("network.tcp.keepalive.retry_interval", 1);
 pref("network.tcp.keepalive.probe_count", 4);
 #endif
 
-pref("network.tcp.tcp_fastopen_enable", false);
+pref("network.tcp.tcp_fastopen_enable", true);
 pref("network.tcp.tcp_fastopen_consecutive_failure_limit", 5);
 
 
@@ -5182,22 +5174,6 @@ pref("dom.vr.controller_trigger_threshold", "0.1");
 pref("dom.vr.navigation.timeout", 5000);
 
 pref("dom.vr.oculus.enabled", true);
-
-
-
-
-
-
-
-
-pref("dom.vr.oculus.present.timeout", 10000);
-
-
-
-
-
-
-pref("dom.vr.oculus.quit.timeout", 30000);
 
 pref("dom.vr.osvr.enabled", false);
 

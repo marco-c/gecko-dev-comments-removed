@@ -4261,17 +4261,14 @@ nsHalfOpenSocket::SetFastOpenConnected(nsresult aError, bool aWillRetry)
         mStreamOut = nullptr;
         mStreamIn = nullptr;
 
-        
-        
-        if (mBackupTransport) {
-            mEnt->mHalfOpens.AppendElement(this);
-            gHttpHandler->ConnMgr()->mNumHalfOpenConns++;
-        }
+        Abandon();
     }
 
     mFastOpenInProgress = false;
     mConnectionNegotiatingFastOpen = nullptr;
-    mEnt->mDoNotDestroy = false;
+    if (mEnt) {
+        mEnt->mDoNotDestroy = false;
+    }
 }
 
 void
