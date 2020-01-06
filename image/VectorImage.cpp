@@ -742,7 +742,12 @@ VectorImage::GetFrameAtSize(const IntSize& aSize,
                             uint32_t aFlags)
 {
   auto result = GetFrameInternal(aSize, aWhichFrame, aFlags);
-  return Get<2>(result).forget();
+  RefPtr<SourceSurface> surf = Get<2>(result).forget();
+
+  
+  
+  MarkSurfaceShared(surf);
+  return surf.forget();
 }
 
 Tuple<DrawResult, IntSize, RefPtr<SourceSurface>>
@@ -798,9 +803,17 @@ VectorImage::GetFrameInternal(const IntSize& aSize,
                               mSVGDocumentWrapper->GetCurrentTime(),
                               aFlags, 1.0);
 
-  DrawInternal(params, false);
-  RefPtr<SourceSurface> sourceSurface = dt->Snapshot();
-  return MakeTuple(DrawResult::SUCCESS, aSize, Move(sourceSurface));
+  
+  
+  
+  
+  
+  RefPtr<SourceSurface> surface = DrawInternal(params, false);
+  if (!surface) {
+    surface = dt->Snapshot();
+  }
+
+  return MakeTuple(DrawResult::SUCCESS, aSize, Move(surface));
 }
 
 
@@ -954,11 +967,16 @@ VectorImage::Draw(gfxContext* aContext,
     return DrawResult::TEMPORARY_ERROR;
   }
 
-  DrawInternal(params, haveContextPaint && !blockContextPaint);
+  RefPtr<SourceSurface> surface =
+    DrawInternal(params, haveContextPaint && !blockContextPaint);
+
+  
+  
+  MarkSurfaceShared(surface);
   return DrawResult::SUCCESS;
 }
 
-void
+already_AddRefed<SourceSurface>
 VectorImage::DrawInternal(const SVGDrawingParameters& aParams,
                           bool aContextPaint)
 {
@@ -985,7 +1003,7 @@ VectorImage::DrawInternal(const SVGDrawingParameters& aParams,
 
   
   BackendType backend = aParams.context->GetDrawTarget()->GetBackendType();
-  CreateSurfaceAndShow(aParams, backend);
+  return CreateSurfaceAndShow(aParams, backend);
 }
 
 already_AddRefed<SourceSurface>
@@ -1024,7 +1042,7 @@ VectorImage::LookupCachedSurface(const IntSize& aSize,
   return sourceSurface.forget();
 }
 
-void
+already_AddRefed<SourceSurface>
 VectorImage::CreateSurfaceAndShow(const SVGDrawingParameters& aParams, BackendType aBackend)
 {
   mSVGDocumentWrapper->UpdateViewportBounds(aParams.viewportSize);
@@ -1046,7 +1064,8 @@ VectorImage::CreateSurfaceAndShow(const SVGDrawingParameters& aParams, BackendTy
                      
                      !SurfaceCache::CanHold(aParams.size);
   if (bypassCache) {
-    return Show(svgDrawable, aParams);
+    Show(svgDrawable, aParams);
+    return nullptr;
   }
 
   
@@ -1070,14 +1089,16 @@ VectorImage::CreateSurfaceAndShow(const SVGDrawingParameters& aParams, BackendTy
   
   
   if (NS_FAILED(rv)) {
-    return Show(svgDrawable, aParams);
+    Show(svgDrawable, aParams);
+    return nullptr;
   }
 
   
   
   RefPtr<SourceSurface> surface = frame->GetSourceSurface();
   if (!surface) {
-    return Show(svgDrawable, aParams);
+    Show(svgDrawable, aParams);
+    return nullptr;
   }
 
   
@@ -1108,6 +1129,8 @@ VectorImage::CreateSurfaceAndShow(const SVGDrawingParameters& aParams, BackendTy
       }
     }));
   }
+
+  return surface.forget();
 }
 
 
