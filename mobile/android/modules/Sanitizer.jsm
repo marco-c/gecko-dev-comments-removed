@@ -41,16 +41,16 @@ Sanitizer.prototype = {
         
         
         case "downloadHistory":
-          this._clear("downloadFiles", { startTime, deleteFiles: false });
+          return this._clear("downloadFiles", { startTime, deleteFiles: false });
           break;
         case "formdata":
-          this._clear(aItemName, { startTime });
+          return this._clear(aItemName, { startTime });
           break;
         default:
           return Promise.reject({message: `Invalid argument: ${aItemName} does not support startTime argument.`});
       }
     } else {
-      this._clear(aItemName);
+      return this._clear(aItemName);
     }
   },
 
