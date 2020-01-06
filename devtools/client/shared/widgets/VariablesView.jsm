@@ -3907,8 +3907,16 @@ var generateId = (function () {
 
 
 
+
+
+
 function escapeString(aString) {
-  return JSON.stringify(aString) || "";
+  if (typeof aString !== "string") {
+    return "";
+  }
+  
+  return JSON.stringify(aString).replace(/\u2028/g, '\\u2028')
+                                .replace(/\u2029/g, '\\u2029');
 }
 
 
