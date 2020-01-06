@@ -8,6 +8,7 @@
 
 #include "imgIContainer.h"              
 #include "mozilla/FlushType.h"          
+#include "mozilla/HTMLEditor.h"         
 #include "mozilla/mozalloc.h"           
 #include "nsAString.h"
 #include "nsComponentManagerUtils.h"    
@@ -54,6 +55,9 @@
 
 class nsISupports;
 class nsIURI;
+
+using namespace mozilla;
+using namespace mozilla::dom;
 
 
 
@@ -348,7 +352,6 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow)
   }
   bool needHTMLController = false;
 
-  const char *classString = "@mozilla.org/editor/htmleditor;1";
   if (mEditorType.EqualsLiteral("textmail")) {
     mEditorFlags = nsIPlaintextEditor::eEditorPlaintextMask |
                    nsIPlaintextEditor::eEditorEnableWrapHackMask |
@@ -408,33 +411,36 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow)
   
   RefPtr<nsFrameSelection> fs = presShell->FrameSelection();
   NS_ENSURE_TRUE(fs, NS_ERROR_FAILURE);
-  mozilla::dom::AutoHideSelectionChanges hideSelectionChanges(fs);
+  AutoHideSelectionChanges hideSelectionChanges(fs);
 
   
   
   nsCOMPtr<nsIEditor> editor = do_QueryReferent(mExistingEditor);
-  if (editor) {
-    editor->PreDestroy(false);
+  RefPtr<HTMLEditor> htmlEditor = editor ? editor->AsHTMLEditor() : nullptr;
+  MOZ_ASSERT(!editor || htmlEditor);
+  if (htmlEditor) {
+    htmlEditor->PreDestroy(false);
   } else {
-    editor = do_CreateInstance(classString, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-    mExistingEditor = do_GetWeakReference(editor);
+    htmlEditor = new HTMLEditor();
+    mExistingEditor =
+      do_GetWeakReference(static_cast<nsIEditor*>(htmlEditor.get()));
   }
   
-  rv = docShell->SetEditor(editor);
+  rv = docShell->SetHTMLEditor(htmlEditor);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
   if (needHTMLController) {
     
     rv = SetupEditorCommandController("@mozilla.org/editor/htmleditorcontroller;1",
-                                      aWindow, editor,
+                                      aWindow,
+                                      static_cast<nsIEditor*>(htmlEditor),
                                       &mHTMLCommandControllerId);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
   
-  rv = editor->SetContentsMIMEType(mimeCType.get());
+  rv = htmlEditor->SetContentsMIMEType(mimeCType.get());
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIContentViewer> contentViewer;
@@ -449,59 +455,58 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow)
 
   
   
-  rv = editor->AddDocumentStateListener(mStateMaintainer);
+  rv = htmlEditor->AddDocumentStateListener(mStateMaintainer);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = editor->Init(domDoc, nullptr ,
-                    nullptr, mEditorFlags, EmptyString());
+  rv = htmlEditor->Init(domDoc, nullptr ,
+                        nullptr, mEditorFlags, EmptyString());
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsCOMPtr<nsISelection> selection;
-  editor->GetSelection(getter_AddRefs(selection));
-  nsCOMPtr<nsISelectionPrivate> selPriv = do_QueryInterface(selection);
-  NS_ENSURE_TRUE(selPriv, NS_ERROR_FAILURE);
+  RefPtr<Selection> selection = htmlEditor->GetSelection();
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
 
-  rv = selPriv->AddSelectionListener(mStateMaintainer);
+  rv = selection->AddSelectionListener(mStateMaintainer);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
   nsCOMPtr<nsITransactionManager> txnMgr;
-  editor->GetTransactionManager(getter_AddRefs(txnMgr));
+  htmlEditor->GetTransactionManager(getter_AddRefs(txnMgr));
   if (txnMgr) {
     txnMgr->AddListener(mStateMaintainer);
   }
 
   
-  rv = SetEditorOnControllers(aWindow, editor);
+  rv = SetEditorOnControllers(aWindow, htmlEditor);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
   mEditorStatus = eEditorOK;
 
   
-  return editor->PostCreate();
+  return htmlEditor->PostCreate();
 }
 
 
 void
 nsEditingSession::RemoveListenersAndControllers(nsPIDOMWindowOuter* aWindow,
-                                                nsIEditor *aEditor)
+                                                HTMLEditor* aHTMLEditor)
 {
-  if (!mStateMaintainer || !aEditor) {
+  if (!mStateMaintainer || !aHTMLEditor) {
     return;
   }
 
   
-  nsCOMPtr<nsISelection> selection;
-  aEditor->GetSelection(getter_AddRefs(selection));
-  nsCOMPtr<nsISelectionPrivate> selPriv = do_QueryInterface(selection);
-  if (selPriv)
-    selPriv->RemoveSelectionListener(mStateMaintainer);
+  RefPtr<Selection> selection = aHTMLEditor->GetSelection();
+  if (selection) {
+    selection->RemoveSelectionListener(mStateMaintainer);
+  }
 
-  aEditor->RemoveDocumentStateListener(mStateMaintainer);
+  aHTMLEditor->RemoveDocumentStateListener(mStateMaintainer);
 
   nsCOMPtr<nsITransactionManager> txnMgr;
-  aEditor->GetTransactionManager(getter_AddRefs(txnMgr));
+  aHTMLEditor->GetTransactionManager(getter_AddRefs(txnMgr));
   if (txnMgr) {
     txnMgr->RemoveListener(mStateMaintainer);
   }
@@ -526,8 +531,6 @@ nsEditingSession::TearDownEditorOnWindow(mozIDOMWindowProxy *aWindow)
 
   NS_ENSURE_TRUE(aWindow, NS_ERROR_NULL_POINTER);
 
-  nsresult rv;
-
   
   if (mLoadBlankDocTimer) {
     mLoadBlankDocTimer->Cancel();
@@ -549,15 +552,12 @@ nsEditingSession::TearDownEditorOnWindow(mozIDOMWindowProxy *aWindow)
   nsCOMPtr<nsIDocShell> docShell = window->GetDocShell();
   NS_ENSURE_STATE(docShell);
 
-  nsCOMPtr<nsIEditor> editor;
-  rv = docShell->GetEditor(getter_AddRefs(editor));
-  NS_ENSURE_SUCCESS(rv, rv);
-
+  RefPtr<HTMLEditor> htmlEditor = docShell->GetHTMLEditor();
   if (stopEditing) {
-    htmlDoc->TearingDownEditor(editor);
+    htmlDoc->TearingDownEditor(htmlEditor);
   }
 
-  if (mStateMaintainer && editor) {
+  if (mStateMaintainer && htmlEditor) {
     
     
     SetEditorOnControllers(aWindow, nullptr);
@@ -567,7 +567,7 @@ nsEditingSession::TearDownEditorOnWindow(mozIDOMWindowProxy *aWindow)
   
   docShell->SetEditor(nullptr);
 
-  RemoveListenersAndControllers(window, editor);
+  RemoveListenersAndControllers(window, htmlEditor);
 
   if (stopEditing) {
     
@@ -583,7 +583,7 @@ nsEditingSession::TearDownEditorOnWindow(mozIDOMWindowProxy *aWindow)
     }
   }
 
-  return rv;
+  return NS_OK;
 }
 
 
@@ -953,11 +953,7 @@ nsEditingSession::EndDocumentLoad(nsIWebProgress *aWebProgress,
         needsSetup = true;
       } else {
         
-        nsCOMPtr<nsIEditor> editor;
-        rv = docShell->GetEditor(getter_AddRefs(editor));
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        needsSetup = !editor;
+        needsSetup = !docShell->GetHTMLEditor();
       }
 
       if (needsSetup) {
@@ -1170,7 +1166,7 @@ nsEditingSession::SetEditorOnControllers(mozIDOMWindowProxy* aWindow,
   nsresult rv = piWindow->GetControllers(getter_AddRefs(controllers));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsCOMPtr<nsISupports> editorAsISupports = do_QueryInterface(aEditor);
+  nsCOMPtr<nsISupports> editorAsISupports = static_cast<nsISupports*>(aEditor);
   if (mBaseCommandControllerId) {
     rv = SetContextOnControllerById(controllers, editorAsISupports,
                                     mBaseCommandControllerId);
@@ -1359,9 +1355,10 @@ nsEditingSession::ReattachToWindow(mozIDOMWindowProxy* aWindow)
   }
 
   
-  nsCOMPtr<nsIEditor> editor;
-  rv = GetEditorForWindow(aWindow, getter_AddRefs(editor));
-  NS_ENSURE_TRUE(editor, NS_ERROR_FAILURE);
+  RefPtr<HTMLEditor> htmlEditor = GetHTMLEditorForWindow(aWindow);
+  if (NS_WARN_IF(!htmlEditor)) {
+    return NS_ERROR_FAILURE;
+  }
 
   if (!mInteractive) {
     
@@ -1376,12 +1373,13 @@ nsEditingSession::ReattachToWindow(mozIDOMWindowProxy* aWindow)
 
   
   rv = SetupEditorCommandController("@mozilla.org/editor/htmleditorcontroller;1",
-                                    aWindow, editor,
+                                    aWindow,
+                                    static_cast<nsIEditor*>(htmlEditor.get()),
                                     &mHTMLCommandControllerId);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  rv = SetEditorOnControllers(aWindow, editor);
+  rv = SetEditorOnControllers(aWindow, htmlEditor);
   NS_ENSURE_SUCCESS(rv, rv);
 
 #ifdef DEBUG
