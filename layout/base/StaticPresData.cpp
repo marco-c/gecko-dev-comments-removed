@@ -88,9 +88,6 @@ LangGroupFontPrefs::Initialize(nsAtom* aLangGroupAtom)
 
 
 
-
-
-
   nsAutoCString langGroup;
   aLangGroupAtom->ToUTF8String(langGroup);
 
@@ -100,38 +97,11 @@ LangGroupFontPrefs::Initialize(nsAtom* aLangGroupAtom)
   nsAutoCString pref;
 
   
-  enum {eUnit_unknown = -1, eUnit_px, eUnit_pt};
-  int32_t unit = eUnit_px;
-
-  nsAutoCString cvalue;
-  Preferences::GetCString("font.size.unit", cvalue);
-
-  if (!cvalue.IsEmpty()) {
-    if (cvalue.EqualsLiteral("px")) {
-      unit = eUnit_px;
-    }
-    else if (cvalue.EqualsLiteral("pt")) {
-      unit = eUnit_pt;
-    }
-    else {
-      
-      
-      NS_WARNING("unexpected font-size unit -- expected: 'px' or 'pt'");
-      unit = eUnit_unknown;
-    }
-  }
-
-  
 
   MAKE_FONT_PREF_KEY(pref, "font.minimum-size.", langGroup);
 
   int32_t size = Preferences::GetInt(pref.get());
-  if (unit == eUnit_px) {
-    mMinimumFontSize = nsPresContext::CSSPixelsToAppUnits(size);
-  }
-  else if (unit == eUnit_pt) {
-    mMinimumFontSize = nsPresContext::CSSPointsToAppUnits(size);
-  }
+  mMinimumFontSize = nsPresContext::CSSPixelsToAppUnits(size);
 
   nsFont* fontTypes[] = {
     &mDefaultVariableFont,
@@ -219,18 +189,13 @@ LangGroupFontPrefs::Initialize(nsAtom* aLangGroupAtom)
     MAKE_FONT_PREF_KEY(pref, "font.size", generic_dot_langGroup);
     size = Preferences::GetInt(pref.get());
     if (size > 0) {
-      if (unit == eUnit_px) {
-        font->size = nsPresContext::CSSPixelsToAppUnits(size);
-      }
-      else if (unit == eUnit_pt) {
-        font->size = nsPresContext::CSSPointsToAppUnits(size);
-      }
+      font->size = nsPresContext::CSSPixelsToAppUnits(size);
     }
 
     
     
     MAKE_FONT_PREF_KEY(pref, "font.size-adjust", generic_dot_langGroup);
-    cvalue.Truncate();
+    nsAutoCString cvalue;
     Preferences::GetCString(pref.get(), cvalue);
     if (!cvalue.IsEmpty()) {
       font->sizeAdjust = (float)atof(cvalue.get());
