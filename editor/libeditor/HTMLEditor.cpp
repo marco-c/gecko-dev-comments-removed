@@ -1683,17 +1683,18 @@ HTMLEditor::SelectElement(nsIDOMElement* aElement)
 
   RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
-  nsCOMPtr<nsIDOMNode>parent;
-  nsresult rv = aElement->GetParentNode(getter_AddRefs(parent));
-  if (NS_SUCCEEDED(rv) && parent) {
-    int32_t offsetInParent = GetChildOffset(aElement, parent);
+  nsINode* parent = element->GetParentNode();
+  if (NS_WARN_IF(!parent)) {
+    return NS_ERROR_FAILURE;
+  }
 
+  int32_t offsetInParent = parent->IndexOf(element);
+
+  
+  nsresult rv = selection->Collapse(parent, offsetInParent);
+  if (NS_SUCCEEDED(rv)) {
     
-    rv = selection->Collapse(parent, offsetInParent);
-    if (NS_SUCCEEDED(rv)) {
-      
-      rv = selection->Extend(parent, offsetInParent + 1);
-    }
+    rv = selection->Extend(parent, offsetInParent + 1);
   }
   return rv;
 }
