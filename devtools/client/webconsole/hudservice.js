@@ -48,6 +48,14 @@ HUD_SERVICE.prototype =
 
   consoles: null,
 
+  _browerConsoleSessionState: false,
+  storeBrowserConsoleSessionState() {
+    this._browerConsoleSessionState = !!this.getBrowserConsole();
+  },
+  getBrowserConsoleSessionState() {
+    return this._browerConsoleSessionState;
+  },
+
   
 
 
@@ -637,6 +645,9 @@ BrowserConsole.prototype = extend(WebConsole.prototype, {
       return this._bc_init;
     }
 
+    
+    ShutdownObserver.init();
+
     this.ui._filterPrefsPrefix = BROWSER_CONSOLE_FILTER_PREFS_PREFIX;
 
     let window = this.iframeWindow;
@@ -694,3 +705,31 @@ BrowserConsole.prototype = extend(WebConsole.prototype, {
 
 const HUDService = new HUD_SERVICE();
 exports.HUDService = HUDService;
+
+
+
+
+
+var ShutdownObserver = {
+  _initialized: false,
+  init() {
+    if (this._initialized) {
+      return;
+    }
+
+    Services.obs.addObserver(this, "quit-application-granted");
+
+    this._initialized = true;
+  },
+
+  observe(message, topic) {
+    if (topic == "quit-application-granted") {
+      HUDService.storeBrowserConsoleSessionState();
+      this.uninit();
+    }
+  },
+
+  uninit() {
+    Services.obs.removeObserver(this, "quit-application-granted");
+  }
+};

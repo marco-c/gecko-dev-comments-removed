@@ -14,6 +14,7 @@ loader.lazyRequireGetter(this, "TargetFactory", "devtools/client/framework/targe
 loader.lazyRequireGetter(this, "Toolbox", "devtools/client/framework/toolbox", true);
 loader.lazyRequireGetter(this, "ToolboxHostManager", "devtools/client/framework/toolbox-host-manager", true);
 loader.lazyRequireGetter(this, "gDevToolsBrowser", "devtools/client/framework/devtools-browser", true);
+loader.lazyRequireGetter(this, "HUDService", "devtools/client/webconsole/hudservice", true);
 loader.lazyImporter(this, "ScratchpadManager", "resource://devtools/client/scratchpad/scratchpad-manager.jsm");
 
 
@@ -23,7 +24,7 @@ loader.lazyImporter(this, "BrowserToolboxProcess", "resource://devtools/client/f
 
 const {defaultTools: DefaultTools, defaultThemes: DefaultThemes} =
   require("devtools/client/definitions");
-const EventEmitter = require("devtools/shared/old-event-emitter");
+const EventEmitter = require("devtools/shared/event-emitter");
 const AboutDevTools = require("devtools/client/framework/about-devtools-toolbox");
 const {Task} = require("devtools/shared/task");
 const {getTheme, setTheme, addThemeObserver, removeThemeObserver} =
@@ -402,19 +403,27 @@ DevTools.prototype = {
 
 
 
-  getOpenedScratchpads: function () {
+  saveDevToolsSession: function (state) {
+    state.browserConsole = HUDService.getBrowserConsoleSessionState();
+
     
-    if (!Cu.isModuleLoaded("resource://devtools/client/scratchpad/scratchpad-manager.jsm")) {
-      return [];
+    state.scratchpads = [];
+    if (Cu.isModuleLoaded("resource://devtools/client/scratchpad/scratchpad-manager.jsm")) {
+      state.scratchpads = ScratchpadManager.getSessionState();
     }
-    return ScratchpadManager.getSessionState();
   },
 
   
 
 
-  restoreScratchpadSession: function (scratchpads) {
-    ScratchpadManager.restoreSession(scratchpads);
+  restoreDevToolsSession: function ({scratchpads, browserConsole}) {
+    if (scratchpads) {
+      ScratchpadManager.restoreSession(scratchpads);
+    }
+
+    if (browserConsole && !HUDService.getBrowserConsole()) {
+      HUDService.toggleBrowserConsole();
+    }
   },
 
   

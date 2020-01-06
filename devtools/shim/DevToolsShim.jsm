@@ -198,24 +198,23 @@ this.DevToolsShim = {
 
 
 
-  getOpenedScratchpads: function () {
+  saveDevToolsSession: function (state) {
     if (!this.isInitialized()) {
-      return [];
+      return;
     }
-
-    return this._gDevTools.getOpenedScratchpads();
+    this._gDevTools.saveDevToolsSession(state);
   },
 
   
 
 
 
-  restoreScratchpadSession: function (scratchpads) {
+  restoreDevToolsSession: function (session) {
     if (!this.isInstalled()) {
       return;
     }
 
-    this.gDevTools.restoreScratchpadSession(scratchpads);
+    this.gDevTools.restoreDevToolsSession(session);
   },
 
   

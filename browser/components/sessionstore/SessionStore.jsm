@@ -2769,9 +2769,7 @@ var SessionStoreInternal = {
       this._closedObjectsChanged = true;
     }
 
-    if (lastSessionState.scratchpads) {
-      DevToolsShim.restoreScratchpadSession(lastSessionState.scratchpads);
-    }
+    DevToolsShim.restoreDevToolsSession(lastSessionState);
 
     
     this._recentCrashes = lastSessionState.session &&
@@ -3138,10 +3136,7 @@ var SessionStoreInternal = {
     
     state.cookies = SessionCookies.collect();
 
-    let scratchpads = DevToolsShim.getOpenedScratchpads();
-    if (scratchpads && scratchpads.length) {
-      state.scratchpads = scratchpads;
-    }
+    DevToolsShim.saveDevToolsSession(state);
 
     
     if (LastSession.canRestore) {
@@ -3534,9 +3529,7 @@ var SessionStoreInternal = {
 
     this.restoreWindow(aWindow, root.windows[0], aOptions);
 
-    if (aState.scratchpads) {
-      DevToolsShim.restoreScratchpadSession(aState.scratchpads);
-    }
+    DevToolsShim.restoreDevToolsSession(aState);
   },
 
   
