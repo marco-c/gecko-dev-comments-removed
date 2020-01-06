@@ -122,27 +122,9 @@ const roundTo = (value, exp) => {
   return +(value[0] + "e" + (value[1] ? (+value[1] + exp) : exp));
 };
 
-
-
-
-
-
-
-
-
-
-
-
-const scalePoint = (x, y, transX, transY, scale, axis = "xy") => {
-  let newX = (axis === "y") ? x : (x - transX) * scale + transX;
-  let newY = (axis === "x") ? y : (y - transY) * scale + transY;
-  return [newX, newY];
-};
-
 exports.getDistance = getDistance;
 exports.clickedOnEllipseEdge = clickedOnEllipseEdge;
 exports.distanceToLine = distanceToLine;
 exports.projection = projection;
 exports.clickedOnPoint = clickedOnPoint;
 exports.roundTo = roundTo;
-exports.scalePoint = scalePoint;
