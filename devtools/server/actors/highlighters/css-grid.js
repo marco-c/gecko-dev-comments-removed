@@ -1331,6 +1331,9 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
               startPos) {
     let lineStartPos = startPos;
 
+    
+    let stackedLines = [];
+
     for (let i = 0; i < gridDimension.lines.length; i++) {
       let line = gridDimension.lines[i];
       let linePos = line.start;
@@ -1345,6 +1348,21 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
       
       if (line.number === 0) {
         continue;
+      }
+
+      
+      
+      const gridLine = gridDimension.tracks[line.number - 1];
+      if (gridLine) {
+        const { breadth }  = gridLine;
+        if (breadth === 0) {
+          stackedLines.push(gridDimension.lines[i].number);
+          if (stackedLines.length > 0) {
+            this.renderGridLineNumber(line.number, linePos, lineStartPos, line.breadth,
+              dimensionType, 1);
+          }
+          continue;
+        }
       }
 
       this.renderGridLineNumber(line.number, linePos, lineStartPos, line.breadth,
@@ -1426,7 +1444,10 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
 
 
 
-  renderGridLineNumber(lineNumber, linePos, startPos, breadth, dimensionType) {
+
+
+  renderGridLineNumber(lineNumber, linePos, startPos, breadth, dimensionType,
+    stackedLineIndex) {
     let displayPixelRatio = getDisplayPixelRatio(this.win);
     let { devicePixelRatio } = this.win;
     let offset = (displayPixelRatio / 2) % 1;
@@ -1476,6 +1497,15 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
     x -= boxWidth / 2;
     y -= boxHeight / 2;
 
+    if (stackedLineIndex) {
+      
+      const xOffset = boxWidth / 4;
+      const yOffset = boxHeight / 4;
+
+      x += xOffset;
+      y += yOffset;
+    }
+
     if (!this.hasNodeTransformations) {
       x = Math.max(x, padding);
       y = Math.max(y, padding);
@@ -1491,7 +1521,8 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
 
     
     this.ctx.fillStyle = "black";
-    this.ctx.fillText(lineNumber, x + padding, y + textHeight + padding);
+    const numberText = stackedLineIndex ? "" : lineNumber;
+    this.ctx.fillText(numberText, x + padding, y + textHeight + padding);
 
     this.ctx.restore();
   }
