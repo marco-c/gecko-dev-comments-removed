@@ -137,13 +137,10 @@ ProxyObject::nuke()
 {
     
     
-    const BaseProxyHandler* handler = SelectDeadProxyHandler(this);
+    setSameCompartmentPrivate(DeadProxyTargetValue(this));
 
     
-    setSameCompartmentPrivate(NullValue());
-
-    
-    setHandler(handler);
+    setHandler(&DeadObjectProxy::singleton);
 
     
     
