@@ -4,192 +4,250 @@
 
 "use strict";
 
-const Services = require("Services");
-const defer = require("devtools/shared/defer");
-const { describeNthCaller } = require("devtools/shared/platform/stack");
-let loggingEnabled = true;
-
-if (!isWorker) {
-  loggingEnabled = Services.prefs.getBoolPref("devtools.dump.emit");
-  Services.prefs.addObserver("devtools.dump.emit", {
-    observe: () => {
-      loggingEnabled = Services.prefs.getBoolPref("devtools.dump.emit");
-    }
-  });
-}
-
-let EventEmitter = this.EventEmitter = function () {};
-module.exports = EventEmitter;
-
-
-
-
-
-
-
-
-
-EventEmitter.decorate = function (objectToDecorate) {
-  let emitter = new EventEmitter();
-  objectToDecorate.on = emitter.on.bind(emitter);
-  objectToDecorate.off = emitter.off.bind(emitter);
-  objectToDecorate.once = emitter.once.bind(emitter);
-  objectToDecorate.emit = emitter.emit.bind(emitter);
-
-  return objectToDecorate;
-};
-
-EventEmitter.prototype = {
+(function (factory) {
   
-
-
-
-
-
-
-
-  on(event, listener) {
-    if (!this._eventEmitterListeners) {
-      this._eventEmitterListeners = new Map();
-    }
-    if (!this._eventEmitterListeners.has(event)) {
-      this._eventEmitterListeners.set(event, []);
-    }
-    this._eventEmitterListeners.get(event).push(listener);
-  },
-
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-  once(event, listener) {
-    let deferred = defer();
-
-    let handler = (_, first, ...rest) => {
-      this.off(event, handler);
-      if (listener) {
-        listener(event, first, ...rest);
-      }
-      deferred.resolve(first);
-    };
-
-    handler._originalListener = listener;
-    this.on(event, handler);
-
-    return deferred.promise;
-  },
-
   
-
-
-
-
-
-
-
-
-  off(event, listener) {
-    if (!this._eventEmitterListeners) {
-      return;
-    }
-    let listeners = this._eventEmitterListeners.get(event);
-    if (listeners) {
-      this._eventEmitterListeners.set(event, listeners.filter(l => {
-        return l !== listener && l._originalListener !== listener;
-      }));
-    }
-  },
-
   
-
-
-
-  emit(event) {
-    this.logEvent(event, arguments);
-
-    if (!this._eventEmitterListeners || !this._eventEmitterListeners.has(event)) {
-      return;
+  
+  
+  
+  
+  
+  
+  
+  if (this.module && module.id.indexOf("event-emitter") >= 0) {
+    let console;
+    if (isWorker) {
+      console = {
+        error: () => {}
+      };
+    } else {
+      console = this.console;
     }
-
-    let originalListeners = this._eventEmitterListeners.get(event);
-    for (let listener of this._eventEmitterListeners.get(event)) {
-      
-      
-      if (!this._eventEmitterListeners) {
-        break;
-      }
-
-      
-      
-      if (originalListeners === this._eventEmitterListeners.get(event) ||
-        this._eventEmitterListeners.get(event).some(l => l === listener)) {
-        try {
-          listener.apply(null, arguments);
-        } catch (ex) {
-          
-          let msg = ex + ": " + ex.stack;
-          console.error(msg);
-          dump(msg + "\n");
+    
+    factory.call(this, require, exports, module, console);
+  } else {
+    
+    
+    
+    
+    
+    this.isWorker = false;
+    const Cu = Components.utils;
+    let console = Cu.import("resource://gre/modules/Console.jsm", {}).console;
+    
+    
+    
+    let require = function (module) {
+      switch (module) {
+        case "devtools/shared/defer":
+          return Cu.import("resource://gre/modules/Promise.jsm", {}).Promise.defer;
+        case "Services":
+          return Cu.import("resource://gre/modules/Services.jsm", {}).Services;
+        case "devtools/shared/platform/stack": {
+          let obj = {};
+          Cu.import("resource://devtools/shared/platform/chrome/stack.js", obj);
+          return obj;
         }
       }
-    }
-  },
+      return null;
+    };
+    factory.call(this, require, this, { exports: this }, console);
+    this.EXPORTED_SYMBOLS = ["EventEmitter"];
+  }
+}).call(this, function (require, exports, module, console) {
+  
+  
+  
+  let EventEmitter = this.EventEmitter = function () {};
+  module.exports = EventEmitter;
 
-  logEvent(event, args) {
-    if (!loggingEnabled) {
-      return;
-    }
+  
+  const Services = require("Services");
+  const defer = require("devtools/shared/defer");
+  const { describeNthCaller } = require("devtools/shared/platform/stack");
+  let loggingEnabled = true;
 
-    let description = describeNthCaller(2);
+  if (!isWorker) {
+    loggingEnabled = Services.prefs.getBoolPref("devtools.dump.emit");
+    Services.prefs.addObserver("devtools.dump.emit", {
+      observe: () => {
+        loggingEnabled = Services.prefs.getBoolPref("devtools.dump.emit");
+      }
+    });
+  }
 
-    let argOut = "(";
-    if (args.length === 1) {
-      argOut += event;
-    }
+  
 
-    let out = "EMITTING: ";
+
+
+
+
+
+
+  EventEmitter.decorate = function (objectToDecorate) {
+    let emitter = new EventEmitter();
+    objectToDecorate.on = emitter.on.bind(emitter);
+    objectToDecorate.off = emitter.off.bind(emitter);
+    objectToDecorate.once = emitter.once.bind(emitter);
+    objectToDecorate.emit = emitter.emit.bind(emitter);
+
+    return objectToDecorate;
+  };
+
+  EventEmitter.prototype = {
+    
+
+
+
+
+
+
+
+    on(event, listener) {
+      if (!this._eventEmitterListeners) {
+        this._eventEmitterListeners = new Map();
+      }
+      if (!this._eventEmitterListeners.has(event)) {
+        this._eventEmitterListeners.set(event, []);
+      }
+      this._eventEmitterListeners.get(event).push(listener);
+    },
 
     
-    try {
-      for (let i = 1; i < args.length; i++) {
-        if (i === 1) {
-          argOut = "(" + event + ", ";
-        } else {
-          argOut += ", ";
+
+
+
+
+
+
+
+
+
+
+
+
+
+    once(event, listener) {
+      let deferred = defer();
+
+      let handler = (_, first, ...rest) => {
+        this.off(event, handler);
+        if (listener) {
+          listener(event, first, ...rest);
+        }
+        deferred.resolve(first);
+      };
+
+      handler._originalListener = listener;
+      this.on(event, handler);
+
+      return deferred.promise;
+    },
+
+    
+
+
+
+
+
+
+
+
+    off(event, listener) {
+      if (!this._eventEmitterListeners) {
+        return;
+      }
+      let listeners = this._eventEmitterListeners.get(event);
+      if (listeners) {
+        this._eventEmitterListeners.set(event, listeners.filter(l => {
+          return l !== listener && l._originalListener !== listener;
+        }));
+      }
+    },
+
+    
+
+
+
+    emit(event) {
+      this.logEvent(event, arguments);
+
+      if (!this._eventEmitterListeners || !this._eventEmitterListeners.has(event)) {
+        return;
+      }
+
+      let originalListeners = this._eventEmitterListeners.get(event);
+      for (let listener of this._eventEmitterListeners.get(event)) {
+        
+        
+        if (!this._eventEmitterListeners) {
+          break;
         }
 
-        let arg = args[i];
-        argOut += arg;
-
-        if (arg && arg.nodeName) {
-          argOut += " (" + arg.nodeName;
-          if (arg.id) {
-            argOut += "#" + arg.id;
+        
+        
+        if (originalListeners === this._eventEmitterListeners.get(event) ||
+          this._eventEmitterListeners.get(event).some(l => l === listener)) {
+          try {
+            listener.apply(null, arguments);
+          } catch (ex) {
+            
+            let msg = ex + ": " + ex.stack;
+            console.error(msg);
+            dump(msg + "\n");
           }
-          if (arg.className) {
-            argOut += "." + arg.className;
-          }
-          argOut += ")";
         }
       }
-    } catch (e) {
-      
-      
-    }
+    },
 
-    argOut += ")";
-    out += "emit" + argOut + " from " + description + "\n";
+    logEvent(event, args) {
+      if (!loggingEnabled) {
+        return;
+      }
 
-    dump(out);
-  },
-};
+      let description = describeNthCaller(2);
+
+      let argOut = "(";
+      if (args.length === 1) {
+        argOut += event;
+      }
+
+      let out = "EMITTING: ";
+
+      
+      try {
+        for (let i = 1; i < args.length; i++) {
+          if (i === 1) {
+            argOut = "(" + event + ", ";
+          } else {
+            argOut += ", ";
+          }
+
+          let arg = args[i];
+          argOut += arg;
+
+          if (arg && arg.nodeName) {
+            argOut += " (" + arg.nodeName;
+            if (arg.id) {
+              argOut += "#" + arg.id;
+            }
+            if (arg.className) {
+              argOut += "." + arg.className;
+            }
+            argOut += ")";
+          }
+        }
+      } catch (e) {
+        
+        
+      }
+
+      argOut += ")";
+      out += "emit" + argOut + " from " + description + "\n";
+
+      dump(out);
+    },
+  };
+});
