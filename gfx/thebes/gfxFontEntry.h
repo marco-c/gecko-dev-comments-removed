@@ -753,16 +753,15 @@ public:
         mSkipDefaultFeatureSpaceCheck = aSkipCheck;
     }
 
-    virtual bool MatchesGenericFamily(const nsACString& aGeneric) const {
+    
+    
+    
+    
+    
+    
+    virtual bool FilterForFontList(nsIAtom* aLangGroup,
+                                   const nsACString& aGeneric) const {
         return true;
-    }
-
-    virtual bool SupportsLangGroup(nsIAtom *aLangGroup) const {
-        return true;
-    }
-
-    virtual bool IsSymbolFontFamily() const {
-        return false;
     }
 
 protected:
