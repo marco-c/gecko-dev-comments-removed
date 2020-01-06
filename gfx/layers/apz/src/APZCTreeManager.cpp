@@ -979,6 +979,13 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
                                 + ((thumbData.mDirection == ScrollDirection::HORIZONTAL)
                                    ? thumbTransform._41 : thumbTransform._42);
             dragStart -= thumbStart;
+
+            
+            
+            
+            
+            dragBlock->SetContentResponse(false);
+
             mInputQueue->ConfirmDragBlock(
                 dragBlockId, apzc,
                 AsyncDragMetrics(apzc->GetGuid().mScrollId,
@@ -986,9 +993,6 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
                                  dragBlockId,
                                  dragStart,
                                  thumbData.mDirection));
-            
-            
-            dragBlock->SetContentResponse(false);
           }
         }
 
