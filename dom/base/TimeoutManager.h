@@ -199,7 +199,7 @@ private:
     friend class OrderedTimeoutIterator;
 
   private:
-    typedef mozilla::LinkedList<mozilla::dom::Timeout> TimeoutList;
+    typedef mozilla::LinkedList<RefPtr<Timeout>> TimeoutList;
 
     
     

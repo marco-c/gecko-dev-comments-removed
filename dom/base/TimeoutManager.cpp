@@ -480,16 +480,11 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
       return rv;
     }
 
-    RefPtr<Timeout> copy = timeout;
-
     rv = timeout->InitTimer(mWindow.EventTargetFor(TaskCategory::Timer),
                             realInterval);
     if (NS_FAILED(rv)) {
       return rv;
     }
-
-    
-    Unused << copy.forget();
   }
 
   if (!aIsInterval) {
@@ -565,14 +560,8 @@ TimeoutManager::ClearTimeout(int32_t aTimerId, Timeout::Reason aReason)
       }
       else {
         
+        aTimeout->MaybeCancelTimer();
         aTimeout->remove();
-
-        if (aTimeout->mTimer) {
-          aTimeout->mTimer->Cancel();
-          aTimeout->mTimer = nullptr;
-          aTimeout->Release();
-        }
-        aTimeout->Release();
       }
       return true; 
     }
@@ -717,9 +706,6 @@ TimeoutManager::RunTimeout(const TimeStamp& aTargetDeadline)
     last_expired_tracking_timeout->setNext(dummy_tracking_timeout);
   }
 
-  RefPtr<Timeout> timeoutExtraRef1(dummy_normal_timeout);
-  RefPtr<Timeout> timeoutExtraRef2(dummy_tracking_timeout);
-
   
   
 
@@ -755,7 +741,7 @@ TimeoutManager::RunTimeout(const TimeStamp& aTargetDeadline)
                                      last_expired_tracking_timeout->getNext() :
                                      nullptr);
     while (true) {
-      Timeout* timeout = runIter.Next();
+      RefPtr<Timeout> timeout = runIter.Next();
       MOZ_ASSERT(timeout != dummy_normal_timeout &&
                  timeout != dummy_tracking_timeout,
                  "We should have stopped iterating before getting to the dummy timeout");
@@ -788,7 +774,6 @@ TimeoutManager::RunTimeout(const TimeStamp& aTargetDeadline)
         
         
         timeout->remove();
-        timeout->Release();
         continue;
       }
 
@@ -796,31 +781,13 @@ TimeoutManager::RunTimeout(const TimeStamp& aTargetDeadline)
       bool timeout_was_cleared = mWindow.RunTimeoutHandler(timeout, scx);
       MOZ_LOG(gLog, LogLevel::Debug,
               ("Run%s(TimeoutManager=%p, timeout=%p, tracking=%d) returned %d\n", timeout->mIsInterval ? "Interval" : "Timeout",
-               this, timeout,
+               this, timeout.get(),
                int(timeout->mIsTracking),
                !!timeout_was_cleared));
 
       if (timeout_was_cleared) {
         
         runIter.Clear();
-
-        
-        
-        
-        
-        
-        
-        
-        
-        if (last_expired_timeout_is_normal) {
-          MOZ_ASSERT(dummy_normal_timeout->HasRefCnt(1), "dummy_normal_timeout may leak");
-          MOZ_ASSERT(dummy_tracking_timeout->HasRefCnt(2), "dummy_tracking_timeout may leak");
-          Unused << timeoutExtraRef1.forget().take();
-        } else {
-          MOZ_ASSERT(dummy_normal_timeout->HasRefCnt(2), "dummy_normal_timeout may leak");
-          MOZ_ASSERT(dummy_tracking_timeout->HasRefCnt(1), "dummy_tracking_timeout may leak");
-          Unused << timeoutExtraRef2.forget().take();
-        }
 
         mNormalTimeouts.SetInsertionPoint(last_normal_insertion_point);
         mTrackingTimeouts.SetInsertionPoint(last_tracking_insertion_point);
@@ -856,9 +823,6 @@ TimeoutManager::RunTimeout(const TimeStamp& aTargetDeadline)
       }
 
       
-      timeout->Release();
-
-      
       
       TimeDuration elapsed = TimeStamp::Now() - start;
       if (elapsed >= totalTimeLimit) {
@@ -871,13 +835,9 @@ TimeoutManager::RunTimeout(const TimeStamp& aTargetDeadline)
   if (dummy_normal_timeout->isInList()) {
     dummy_normal_timeout->remove();
   }
-  timeoutExtraRef1 = nullptr;
-  MOZ_ASSERT(dummy_normal_timeout->HasRefCnt(1), "dummy_normal_timeout may leak");
   if (dummy_tracking_timeout->isInList()) {
     dummy_tracking_timeout->remove();
   }
-  timeoutExtraRef2 = nullptr;
-  MOZ_ASSERT(dummy_tracking_timeout->HasRefCnt(1), "dummy_tracking_timeout may leak");
 
   mNormalTimeouts.SetInsertionPoint(last_normal_insertion_point);
   mTrackingTimeouts.SetInsertionPoint(last_tracking_insertion_point);
@@ -1000,14 +960,10 @@ bool
 TimeoutManager::RescheduleTimeout(Timeout* aTimeout, const TimeStamp& now)
 {
   if (!aTimeout->mIsInterval) {
-    if (aTimeout->mTimer) {
-      
-      
-      
-      aTimeout->mTimer->Cancel();
-      aTimeout->mTimer = nullptr;
-      aTimeout->Release();
-    }
+    
+    
+    
+    aTimeout->MaybeCancelTimer();
     return false;
   }
 
@@ -1051,12 +1007,7 @@ TimeoutManager::RescheduleTimeout(Timeout* aTimeout, const TimeStamp& now)
     
     
     
-    aTimeout->mTimer->Cancel();
-    aTimeout->mTimer = nullptr;
-
-    
-    
-    aTimeout->Release();
+    aTimeout->MaybeCancelTimer();
 
     return false;
   }
@@ -1112,7 +1063,7 @@ TimeoutManager::Timeouts::ResetTimersForThrottleReduction(int32_t aPreviousThrot
   
   
   
-  for (Timeout* timeout = InsertionPoint() ?
+  for (RefPtr<Timeout> timeout = InsertionPoint() ?
          InsertionPoint()->getNext() : GetFirst();
        timeout; ) {
     
@@ -1177,11 +1128,9 @@ TimeoutManager::Timeouts::ResetTimersForThrottleReduction(int32_t aPreviousThrot
                      timeout->When() < nextTimeout->When(), "How did that happen?");
         timeout->remove();
         
-        
         uint32_t firingId = timeout->mFiringId;
         Insert(timeout, aSortBy);
         timeout->mFiringId = firingId;
-        timeout->Release();
       }
 
       nsresult rv = timeout->InitTimer(aQueue, delay.ToMilliseconds());
@@ -1223,21 +1172,11 @@ TimeoutManager::ClearAllTimeouts()
       seenRunningTimeout = true;
     }
 
-    if (aTimeout->mTimer) {
-      aTimeout->mTimer->Cancel();
-      aTimeout->mTimer = nullptr;
-
-      
-      
-      aTimeout->Release();
-    }
+    aTimeout->MaybeCancelTimer();
 
     
     
     aTimeout->mCleared = true;
-
-    
-    aTimeout->Release();
   });
 
   if (seenRunningTimeout) {
@@ -1253,6 +1192,7 @@ TimeoutManager::ClearAllTimeouts()
 void
 TimeoutManager::Timeouts::Insert(Timeout* aTimeout, SortBy aSortBy)
 {
+
   
   
   Timeout* prevSibling;
@@ -1275,10 +1215,6 @@ TimeoutManager::Timeouts::Insert(Timeout* aTimeout, SortBy aSortBy)
   }
 
   aTimeout->mFiringId = InvalidFiringId;
-
-  
-  
-  aTimeout->AddRef();
 }
 
 Timeout*
@@ -1351,14 +1287,7 @@ TimeoutManager::Suspend()
     
 
     
-    if (aTimeout->mTimer) {
-      aTimeout->mTimer->Cancel();
-      aTimeout->mTimer = nullptr;
-
-      
-      
-      aTimeout->Release();
-    }
+    aTimeout->MaybeCancelTimer();
   });
 }
 
@@ -1415,9 +1344,6 @@ TimeoutManager::Resume()
       aTimeout->remove();
       return;
     }
-
-    
-    aTimeout->AddRef();
   });
 }
 

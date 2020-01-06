@@ -28,7 +28,7 @@ namespace dom {
 
 
 class Timeout final
-  : public LinkedListElement<Timeout>
+  : public LinkedListElement<RefPtr<Timeout>>
 {
 public:
   Timeout();
@@ -41,15 +41,13 @@ public:
   
   nsresult InitTimer(nsIEventTarget* aTarget, uint32_t aDelay);
 
+  void MaybeCancelTimer();
+
   enum class Reason
   {
     eTimeoutOrInterval,
     eIdleCallbackTimeout,
   };
-
-#ifdef DEBUG
-  bool HasRefCnt(uint32_t aCount) const;
-#endif 
 
   void SetWhenOrTimeRemaining(const TimeStamp& aBaseTime,
                               const TimeDuration& aDelay);
@@ -102,6 +100,8 @@ public:
 
   
   nsCOMPtr<nsITimeoutHandler> mScriptHandler;
+
+  RefPtr<Timeout> mClosureSelfRef;
 
 private:
   
