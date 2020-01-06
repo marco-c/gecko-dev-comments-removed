@@ -30,7 +30,7 @@ pub trait Generator {
 
 pub fn gen_struct_name(api: Api) -> &'static str {
     match api {
-        Api::Gl  => "Gl",
+        Api::Gl => "Gl",
         Api::Glx => "Glx",
         Api::Wgl => "Wgl",
         Api::Egl => "Egl",
@@ -41,7 +41,9 @@ pub fn gen_struct_name(api: Api) -> &'static str {
 }
 
 
-pub fn gen_enum_item<W>(enm: &Enum, types_prefix: &str, dest: &mut W) -> io::Result<()> where W: io::Write {
+pub fn gen_enum_item<W>(enm: &Enum, types_prefix: &str, dest: &mut W) -> io::Result<()>
+    where W: io::Write
+{
     writeln!(dest,
         "#[allow(dead_code, non_upper_case_globals)] pub const {ident}: {types_prefix}{ty} = {value}{cast_suffix};",
         ident = enm.ident,
@@ -59,14 +61,16 @@ pub fn gen_enum_item<W>(enm: &Enum, types_prefix: &str, dest: &mut W) -> io::Res
 
 
 
-pub fn gen_types<W>(api: Api, dest: &mut W) -> io::Result<()> where W: io::Write {
+pub fn gen_types<W>(api: Api, dest: &mut W) -> io::Result<()>
+    where W: io::Write
+{
     try!(writeln!(dest, "{}", include_str!("templates/types/gl.rs")));
 
     match api {
         Api::Glx => try!(writeln!(dest, "{}", include_str!("templates/types/glx.rs"))),
         Api::Wgl => try!(writeln!(dest, "{}", include_str!("templates/types/wgl.rs"))),
         Api::Egl => try!(writeln!(dest, "{}", include_str!("templates/types/egl.rs"))),
-        _ => {},
+        _ => {}
     }
 
     Ok(())
@@ -74,7 +78,8 @@ pub fn gen_types<W>(api: Api, dest: &mut W) -> io::Result<()> where W: io::Write
 
 
 pub fn gen_parameters(cmd: &Cmd, with_idents: bool, with_types: bool) -> Vec<String> {
-    cmd.params.iter()
+    cmd.params
+        .iter()
         .map(|binding| {
             
             if with_idents && with_types {

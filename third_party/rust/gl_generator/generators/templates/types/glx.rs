@@ -39,28 +39,28 @@ pub struct XVisualInfo {
 
 #[repr(C)]
 pub struct GLXPbufferClobberEvent {
-    pub event_type: super::__gl_imports::raw::c_int,          
-    pub draw_type: super::__gl_imports::raw::c_int,           
-    pub serial: super::__gl_imports::raw::c_ulong,            
-    pub send_event: Bool,                                     
-    pub display: *const Display,                              
-    pub drawable: GLXDrawable,                                
-    pub buffer_mask: super::__gl_imports::raw::c_uint,        
-    pub aux_buffer: super::__gl_imports::raw::c_uint,         
+    pub event_type: super::__gl_imports::raw::c_int, 
+    pub draw_type: super::__gl_imports::raw::c_int, 
+    pub serial: super::__gl_imports::raw::c_ulong, 
+    pub send_event: Bool, 
+    pub display: *const Display, 
+    pub drawable: GLXDrawable, 
+    pub buffer_mask: super::__gl_imports::raw::c_uint, 
+    pub aux_buffer: super::__gl_imports::raw::c_uint, 
     pub x: super::__gl_imports::raw::c_int,
     pub y: super::__gl_imports::raw::c_int,
     pub width: super::__gl_imports::raw::c_int,
     pub height: super::__gl_imports::raw::c_int,
-    pub count: super::__gl_imports::raw::c_int,               
+    pub count: super::__gl_imports::raw::c_int, 
 }
 
 #[repr(C)]
 pub struct GLXBufferSwapComplete {
     pub type_: super::__gl_imports::raw::c_int,
-    pub serial: super::__gl_imports::raw::c_ulong,            
-    pub send_event: Bool,                                     
-    pub display: *const Display,                              
-    pub drawable: GLXDrawable,                                
+    pub serial: super::__gl_imports::raw::c_ulong, 
+    pub send_event: Bool, 
+    pub display: *const Display, 
+    pub drawable: GLXDrawable, 
     pub event_type: super::__gl_imports::raw::c_int,
     pub ust: i64,
     pub msc: i64,
@@ -76,29 +76,29 @@ pub struct GLXBufferSwapComplete {
 #[repr(C)]
 pub struct GLXBufferClobberEventSGIX {
     pub type_: super::__gl_imports::raw::c_int,
-    pub serial: super::__gl_imports::raw::c_ulong,            
-    pub send_event: Bool,                                     
-    pub display: *const Display,                              
-    pub drawable: GLXDrawable,                                
-    pub event_type: super::__gl_imports::raw::c_int,          
-    pub draw_type: super::__gl_imports::raw::c_int,           
-    pub mask: super::__gl_imports::raw::c_uint,               
+    pub serial: super::__gl_imports::raw::c_ulong, 
+    pub send_event: Bool, 
+    pub display: *const Display, 
+    pub drawable: GLXDrawable, 
+    pub event_type: super::__gl_imports::raw::c_int, 
+    pub draw_type: super::__gl_imports::raw::c_int, 
+    pub mask: super::__gl_imports::raw::c_uint, 
     pub x: super::__gl_imports::raw::c_int,
     pub y: super::__gl_imports::raw::c_int,
     pub width: super::__gl_imports::raw::c_int,
     pub height: super::__gl_imports::raw::c_int,
-    pub count: super::__gl_imports::raw::c_int,               
+    pub count: super::__gl_imports::raw::c_int, 
 }
 
 #[repr(C)]
 pub struct GLXHyperpipeNetworkSGIX {
-    pub pipeName: [super::__gl_imports::raw::c_char; 80],   
+    pub pipeName: [super::__gl_imports::raw::c_char; 80], 
     pub networkId: super::__gl_imports::raw::c_int,
 }
 
 #[repr(C)]
 pub struct GLXHyperpipeConfigSGIX {
-    pub pipeName: [super::__gl_imports::raw::c_char; 80],   
+    pub pipeName: [super::__gl_imports::raw::c_char; 80], 
     pub channel: super::__gl_imports::raw::c_int,
     pub participationType: super::__gl_imports::raw::c_uint,
     pub timeSlice: super::__gl_imports::raw::c_int,
@@ -106,7 +106,7 @@ pub struct GLXHyperpipeConfigSGIX {
 
 #[repr(C)]
 pub struct GLXPipeRect {
-    pub pipeName: [super::__gl_imports::raw::c_char; 80],   
+    pub pipeName: [super::__gl_imports::raw::c_char; 80], 
     pub srcXOrigin: super::__gl_imports::raw::c_int,
     pub srcYOrigin: super::__gl_imports::raw::c_int,
     pub srcWidth: super::__gl_imports::raw::c_int,
@@ -119,7 +119,7 @@ pub struct GLXPipeRect {
 
 #[repr(C)]
 pub struct GLXPipeRectLimits {
-    pub pipeName: [super::__gl_imports::raw::c_char; 80],   
+    pub pipeName: [super::__gl_imports::raw::c_char; 80], 
     pub XOrigin: super::__gl_imports::raw::c_int,
     pub YOrigin: super::__gl_imports::raw::c_int,
     pub maxHeight: super::__gl_imports::raw::c_int,
