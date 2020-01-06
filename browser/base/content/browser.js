@@ -1153,14 +1153,44 @@ addEventListener("DOMContentLoaded", function onDCL() {
   
   
   
+  
+  let isRemote = gMultiProcessBrowser;
+  let remoteType;
+  let sameProcessAsFrameLoader;
   if (window.arguments) {
-    let tabToOpen = window.arguments[0];
-    if (tabToOpen instanceof XULElement && tabToOpen.hasAttribute("usercontextid")) {
-      initBrowser.setAttribute("usercontextid", tabToOpen.getAttribute("usercontextid"));
+    let argToLoad = window.arguments[0];
+    if (argToLoad instanceof XULElement) {
+      
+      
+      
+      if (argToLoad.hasAttribute("usercontextid")) {
+        initBrowser.setAttribute("usercontextid",
+                                 argToLoad.getAttribute("usercontextid"));
+      }
+
+      let linkedBrowser = argToLoad.linkedBrowser;
+      if (linkedBrowser) {
+        remoteType = linkedBrowser.remoteType;
+        isRemote = remoteType != E10SUtils.NOT_REMOTE;
+        sameProcessAsFrameLoader = linkedBrowser.frameLoader;
+      }
+    } else if (argToLoad instanceof String) {
+      
+      remoteType = E10SUtils.getRemoteTypeForURI(argToLoad, gMultiProcessBrowser);
+      isRemote = remoteType != E10SUtils.NOT_REMOTE;
+    } else if (argToLoad instanceof Ci.nsIArray) {
+      
+      
+      let urisstring = argToLoad.queryElementAt(0, Ci.nsISupportsString);
+      remoteType = E10SUtils.getRemoteTypeForURI(urisstring.data,
+                                                 gMultiProcessBrowser);
+      isRemote = remoteType != E10SUtils.NOT_REMOTE;
     }
   }
 
-  gBrowser.updateBrowserRemoteness(initBrowser, gMultiProcessBrowser);
+  gBrowser.updateBrowserRemoteness(initBrowser, isRemote, {
+    remoteType, sameProcessAsFrameLoader
+  });
 });
 
 let _resolveDelayedStartup;
