@@ -469,7 +469,12 @@ TexturedRenderPass::AddItem(Txn& aTxn,
 
   const Matrix4x4& fullTransform = aInfo.layer->GetLayer()->GetEffectiveTransformForBuffer();
   Matrix transform = fullTransform.As2D();
-  Matrix inverse = transform.Inverse();
+  Matrix inverse = transform;
+  if (!inverse.Invert()) {
+    
+    
+    return true;
+  }
   MOZ_ASSERT(inverse.IsRectilinear());
 
   
