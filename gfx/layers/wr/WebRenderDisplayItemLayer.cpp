@@ -38,9 +38,8 @@ WebRenderDisplayItemLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
     wr::LayoutSize contentSize; 
     wr::DisplayListBuilder builder(WrBridge()->GetPipeline(), contentSize);
     
-    mParentCommands.Clear();
 
-    mItem->CreateWebRenderCommands(builder, aResources, aSc, mParentCommands, WrManager(),
+    mItem->CreateWebRenderCommands(builder, aResources, aSc, WrManager(),
                                    GetDisplayListBuilder());
     builder.Finalize(contentSize, mBuiltDisplayList);
   } else {
@@ -58,7 +57,6 @@ WebRenderDisplayItemLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
   }
 
   aBuilder.PushBuiltDisplayList(mBuiltDisplayList);
-  WrBridge()->AddWebRenderParentCommands(mParentCommands);
 }
 
 } 
