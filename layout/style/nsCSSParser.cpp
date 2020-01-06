@@ -15078,15 +15078,12 @@ CSSParserImpl::ParseFontRanges(nsCSSValue& aValue)
 
     
     
-    
-    
-    if (low <= 0x10FFFF && low <= high) {
-      if (high > 0x10FFFF)
-        high = 0x10FFFF;
-
-      ranges.AppendElement(low);
-      ranges.AppendElement(high);
+    if (low > high || high > 0x10FFFF) {
+      return false;
     }
+    ranges.AppendElement(low);
+    ranges.AppendElement(high);
+
     if (!ExpectSymbol(',', true))
       break;
   }
