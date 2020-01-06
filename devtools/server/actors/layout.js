@@ -58,6 +58,13 @@ var GridActor = ActorClassWithSpec(gridSpec, {
       gridFragments: this.gridFragments
     };
 
+    
+    
+    
+    if (this.walker.hasNode(this.containerEl)) {
+      form.containerNodeActorID = this.walker.getNode(this.containerEl).actorID;
+    }
+
     return form;
   },
 });

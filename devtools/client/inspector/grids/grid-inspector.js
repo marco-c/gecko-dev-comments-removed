@@ -8,6 +8,8 @@ const Services = require("Services");
 const { Task } = require("devtools/shared/task");
 
 const SwatchColorPickerTooltip = require("devtools/client/shared/widgets/tooltip/SwatchColorPickerTooltip");
+const { throttle } = require("devtools/client/inspector/shared/utils");
+const { compareFragmentsGeometry } = require("devtools/client/inspector/grids/utils/utils");
 
 const {
   updateGridColor,
@@ -51,9 +53,9 @@ function GridInspector(inspector, window) {
   this.getSwatchColorPickerTooltip = this.getSwatchColorPickerTooltip.bind(this);
   this.updateGridPanel = this.updateGridPanel.bind(this);
 
-  this.onGridLayoutChange = this.onGridLayoutChange.bind(this);
+  this.onNavigate = this.onNavigate.bind(this);
   this.onHighlighterChange = this.onHighlighterChange.bind(this);
-  this.onReflow = this.onReflow.bind(this);
+  this.onReflow = throttle(this.onReflow, 500, this);
   this.onSetGridOverlayColor = this.onSetGridOverlayColor.bind(this);
   this.onShowGridAreaHighlight = this.onShowGridAreaHighlight.bind(this);
   this.onShowGridCellHighlight = this.onShowGridCellHighlight.bind(this);
@@ -94,7 +96,7 @@ GridInspector.prototype = {
     this.highlighters.on("grid-highlighter-hidden", this.onHighlighterChange);
     this.highlighters.on("grid-highlighter-shown", this.onHighlighterChange);
     this.inspector.sidebar.on("select", this.onSidebarSelect);
-    this.inspector.target.on("navigate", this.onGridLayoutChange);
+    this.inspector.on("new-root", this.onNavigate);
 
     this.onSidebarSelect();
   }),
@@ -107,7 +109,7 @@ GridInspector.prototype = {
     this.highlighters.off("grid-highlighter-hidden", this.onHighlighterChange);
     this.highlighters.off("grid-highlighter-shown", this.onHighlighterChange);
     this.inspector.sidebar.off("select", this.onSidebarSelect);
-    this.inspector.target.off("navigate", this.onGridLayoutChange);
+    this.inspector.off("new-root", this.onNavigate);
 
     this.inspector.reflowTracker.untrackReflows(this, this.onReflow);
 
@@ -211,7 +213,7 @@ GridInspector.prototype = {
 
 
   isPanelVisible() {
-    return this.inspector.toolbox && this.inspector.sidebar &&
+    return this.inspector && this.inspector.toolbox && this.inspector.sidebar &&
            this.inspector.toolbox.currentToolId === "inspector" &&
            this.inspector.sidebar.getCurrentTabID() === "layoutview";
   },
@@ -278,13 +280,19 @@ GridInspector.prototype = {
     for (let i = 0; i < gridFronts.length; i++) {
       let grid = gridFronts[i];
 
-      let nodeFront;
-      try {
-        nodeFront = yield this.walker.getNodeFromActor(grid.actorID, ["containerEl"]);
-      } catch (e) {
-        
-        
-        return;
+      let nodeFront = grid.containerNodeFront;
+
+      
+      
+      
+      if (!nodeFront) {
+        try {
+          nodeFront = yield this.walker.getNodeFromActor(grid.actorID, ["containerEl"]);
+        } catch (e) {
+          
+          
+          return;
+        }
       }
 
       let fallbackColor = GRID_COLORS[i % GRID_COLORS.length];
@@ -305,7 +313,8 @@ GridInspector.prototype = {
   
 
 
-  onGridLayoutChange() {
+
+  onNavigate() {
     if (this.isPanelVisible()) {
       this.updateGridPanel();
     }
@@ -348,11 +357,77 @@ GridInspector.prototype = {
 
 
 
-  onReflow() {
-    if (this.isPanelVisible()) {
-      this.updateGridPanel();
+
+
+
+
+  haveCurrentFragmentsChanged(newGridFronts) {
+    const currentNode = this.highlighters.gridHighlighterShown;
+    if (!currentNode) {
+      return false;
     }
+
+    const newGridFront = newGridFronts.find(g => g.containerNodeFront === currentNode);
+    if (!newGridFront) {
+      return false;
+    }
+
+    const { grids } = this.store.getState();
+    const oldFragments = grids.find(g => g.nodeFront === currentNode).gridFragments;
+    const newFragments = newGridFront.gridFragments;
+
+    return !compareFragmentsGeometry(oldFragments, newFragments);
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  onReflow: Task.async(function* () {
+    if (!this.isPanelVisible()) {
+      return;
+    }
+
+    
+    const { grids } = this.store.getState();
+
+    
+    let newGridFronts;
+    try {
+      newGridFronts = yield this.layoutInspector.getAllGrids(this.walker.rootNode);
+    } catch (e) {
+      
+      
+      return;
+    }
+
+    
+    const oldNodeFronts = grids.map(grid => grid.nodeFront.actorID);
+    const newNodeFronts = newGridFronts.filter(grid => grid.containerNodeFront)
+                                       .map(grid => grid.containerNodeFront.actorID);
+    if (grids.length === newGridFronts.length &&
+        oldNodeFronts.sort().join(",") == newNodeFronts.sort().join(",")) {
+      
+      
+      if (!this.highlighters.gridHighlighterShown ||
+          (this.highlighters.gridHighlighterShown &&
+           !this.haveCurrentFragmentsChanged(newGridFronts))) {
+        return;
+      }
+    }
+
+    
+    this.updateGridPanel(newGridFronts);
+  }),
 
   
 
