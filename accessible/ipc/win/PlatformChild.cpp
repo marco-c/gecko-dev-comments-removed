@@ -4,10 +4,10 @@
 
 
 
+#include "mozilla/a11y/Compatibility.h"
 #include "mozilla/a11y/PlatformChild.h"
 #include "mozilla/mscom/EnsureMTA.h"
 #include "mozilla/mscom/InterceptorLog.h"
-#include "mozilla/WindowsVersion.h"
 
 #include "Accessible2.h"
 #include "Accessible2_2.h"
@@ -49,20 +49,7 @@ PlatformChild::PlatformChild()
   , mMiscTypelib(mozilla::mscom::RegisterTypelib(L"Accessible.tlb"))
   , mSdnTypelib(mozilla::mscom::RegisterTypelib(L"AccessibleMarshal.dll"))
 {
-  
-  
-  
-  
-  WORD actCtxResourceId;
-#if defined(HAVE_64BIT_BUILD)
-  actCtxResourceId = 64;
-#else
-  if (IsWin10CreatorsUpdateOrLater()) {
-    actCtxResourceId = 64;
-  } else {
-    actCtxResourceId = 32;
-  }
-#endif
+  WORD actCtxResourceId = Compatibility::GetActCtxResourceId();
 
   mozilla::mscom::MTADeletePtr<mozilla::mscom::ActivationContextRegion> tmpActCtxMTA;
   mozilla::mscom::EnsureMTA([actCtxResourceId, &tmpActCtxMTA]() -> void {

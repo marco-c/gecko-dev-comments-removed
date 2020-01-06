@@ -39,6 +39,12 @@ public:
 
   static bool IsDolphin() { return !!(sConsumers & DOLPHIN); }
 
+  
+
+
+
+  static uint16_t GetActCtxResourceId();
+
 private:
   Compatibility();
   Compatibility(const Compatibility&);
