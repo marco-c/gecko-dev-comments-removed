@@ -491,6 +491,21 @@ const FrameMetrics& Axis::GetFrameMetrics() const {
   return mAsyncPanZoomController->GetFrameMetrics();
 }
 
+const ScrollMetadata& Axis::GetScrollMetadata() const {
+  return mAsyncPanZoomController->GetScrollMetadata();
+}
+
+bool Axis::OverscrollBehaviorAllowsHandoff() const {
+  
+  
+  return GetOverscrollBehavior() == OverscrollBehavior::Auto;
+}
+
+bool Axis::OverscrollBehaviorAllowsOverscrollEffect() const {
+  
+  
+  return GetOverscrollBehavior() != OverscrollBehavior::None;
+}
 
 AxisX::AxisX(AsyncPanZoomController* aAsyncPanZoomController)
   : Axis(aAsyncPanZoomController)
@@ -528,6 +543,11 @@ const char* AxisX::Name() const
   return "X";
 }
 
+OverscrollBehavior AxisX::GetOverscrollBehavior() const
+{
+  return GetScrollMetadata().GetOverscrollBehavior().mBehaviorX;
+}
+
 AxisY::AxisY(AsyncPanZoomController* aAsyncPanZoomController)
   : Axis(aAsyncPanZoomController)
 {
@@ -562,6 +582,11 @@ ScreenPoint AxisY::MakePoint(ScreenCoord aCoord) const
 const char* AxisY::Name() const
 {
   return "Y";
+}
+
+OverscrollBehavior AxisY::GetOverscrollBehavior() const
+{
+  return GetScrollMetadata().GetOverscrollBehavior().mBehaviorY;
 }
 
 } 

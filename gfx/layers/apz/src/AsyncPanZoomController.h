@@ -672,6 +672,12 @@ protected:
 
 
 
+  const ScrollMetadata& GetScrollMetadata() const;
+
+  
+
+
+
 
   APZCTreeManager* GetApzcTreeManager() const;
 
