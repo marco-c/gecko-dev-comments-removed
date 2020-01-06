@@ -60,7 +60,7 @@ public class GeckoHlsPlayer implements BaseHlsPlayer, ExoPlayer.EventListener {
 
 
     private final int mPlayerId;
-
+    private volatile boolean mSuspended = false;
     private DataSource.Factory mMediaDataSourceFactory;
 
     private Handler mMainHandler;
@@ -321,7 +321,7 @@ public class GeckoHlsPlayer implements BaseHlsPlayer, ExoPlayer.EventListener {
     @Override
     public synchronized void onPlayerStateChanged(boolean playWhenReady, int state) {
         if (DEBUG) { Log.d(LOGTAG, "state [" + playWhenReady + ", " + getStateString(state) + "]"); }
-        if (state == ExoPlayer.STATE_READY) {
+        if (state == ExoPlayer.STATE_READY && !mSuspended) {
             mPlayer.setPlayWhenReady(true);
         }
     }
@@ -717,6 +717,32 @@ public class GeckoHlsPlayer implements BaseHlsPlayer, ExoPlayer.EventListener {
             ? mVRenderer.getNextKeyFrameTime()
             : Long.MAX_VALUE;
         return nextKeyFrameTime;
+    }
+
+    
+    @Override
+    public void suspend() {
+        if (mSuspended) {
+            return;
+        }
+        if (DEBUG) { Log.d(LOGTAG, "suspend player id : " + mPlayerId); }
+        mSuspended = true;
+        if (mPlayer != null) {
+            mPlayer.setPlayWhenReady(false);
+        }
+    }
+
+    
+    @Override
+    public void resume() {
+        if (!mSuspended) {
+          return;
+        }
+        if (DEBUG) { Log.d(LOGTAG, "resume player id : " + mPlayerId); }
+        mSuspended = false;
+        if (mPlayer != null) {
+            mPlayer.setPlayWhenReady(true);
+        }
     }
 
     
