@@ -60,6 +60,10 @@ add_task(async function() {
   
 
   
+  extension1.sendMessage(null);
+  await checkLocalMessage(null);
+
+  
   extension1.sendMessage("message");
   await checkLocalMessage("message");
 
@@ -75,7 +79,19 @@ add_task(async function() {
   await checkLocalMessage("message");
 
   
+  extension1.sendMessage("message", undefined);
+  await checkLocalMessage("message");
+
+  
   extension1.sendMessage(ID2, "message", {});
+  await checkRemoteMessage("message");
+
+  
+  extension1.sendMessage(ID2, "message", undefined);
+  await checkRemoteMessage("message");
+
+  
+  extension1.sendMessage(ID2, "message", {}, null);
   await checkRemoteMessage("message");
 
   await Promise.all([extension1.unload(), extension2.unload()]);

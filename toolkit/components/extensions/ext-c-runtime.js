@@ -24,6 +24,7 @@ this.runtime = class extends ExtensionAPI {
 
         sendMessage(...args) {
           let extensionId, message, options, responseCallback;
+
           if (typeof args[args.length - 1] === "function") {
             responseCallback = args.pop();
           }
@@ -61,12 +62,12 @@ this.runtime = class extends ExtensionAPI {
             
             
             let [validOpts] = checkOptions(args[1]);
-            if (validOpts) {
+            if (validOpts || args[1] == null) {
               [message, options] = args;
             } else {
               [extensionId, message] = args;
             }
-          } else if (args.length === 3) {
+          } else if (args.length === 3 || (args.length === 4 && args[3] == null)) {
             [extensionId, message, options] = args;
           } else if (args.length === 4 && !responseCallback) {
             return Promise.reject({message: "runtime.sendMessage's last argument is not a function"});
