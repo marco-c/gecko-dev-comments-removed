@@ -2244,14 +2244,9 @@ imgLoader::LoadImage(nsIURI* aURI,
 
     nsCOMPtr<nsILoadGroup> channelLoadGroup;
     newChannel->GetLoadGroup(getter_AddRefs(channelLoadGroup));
-    
-    
-    
     rv = request->Init(aURI, aURI,  false,
                        channelLoadGroup, newChannel, entry, aLoadingDocument,
-                       aLoadingPrincipal, corsmode, aReferrerPolicy,
-                       aLoadingDocument ? aLoadingDocument->GetStyleBackendType()
-                                        : StyleBackendType::None);
+                       aLoadingPrincipal, corsmode, aReferrerPolicy);
     if (NS_FAILED(rv)) {
       return NS_ERROR_FAILURE;
     }
