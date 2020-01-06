@@ -9,7 +9,7 @@
 #include "nsHttp.h"
 #include "nsHttpHeaderArray.h"
 #include "nsString.h"
-#include "mozilla/ReentrantMonitor.h"
+#include "mozilla/RecursiveMutex.h"
 
 class nsIHttpHeaderVisitor;
 
@@ -30,8 +30,8 @@ public:
     
     
     const nsHttpHeaderArray &Headers() const;
-    void Enter() { mReentrantMonitor.Enter(); }
-    void Exit() { mReentrantMonitor.Exit(); }
+    void Enter() { mRecursiveMutex.Lock(); }
+    void Exit() { mRecursiveMutex.Unlock(); }
 
     void SetHeaders(const nsHttpHeaderArray& aHeaders);
 
@@ -121,7 +121,7 @@ private:
 
     
     
-    ReentrantMonitor  mReentrantMonitor;
+    RecursiveMutex  mRecursiveMutex;
 
     
     bool mInVisitHeaders;
