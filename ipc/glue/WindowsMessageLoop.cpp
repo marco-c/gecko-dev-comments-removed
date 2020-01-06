@@ -23,6 +23,7 @@
 using namespace mozilla;
 using namespace mozilla::ipc;
 using namespace mozilla::ipc::windows;
+using namespace mozilla::widget;
 
 
 
@@ -819,7 +820,7 @@ MessageChannel::SpinInternalEventLoop()
     }
 
     
-    if (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
+    if (WinUtils::PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
       
       
       if (msg.message == WM_QUIT) {
@@ -909,12 +910,12 @@ NeuteredWindowRegion::PumpOnce()
 
   MSG msg = {0};
   
-  if (gCOMWindow && ::PeekMessageW(&msg, gCOMWindow, 0, 0, PM_REMOVE)) {
+  if (gCOMWindow && WinUtils::PeekMessage(&msg, gCOMWindow, 0, 0, PM_REMOVE)) {
       ::TranslateMessage(&msg);
       ::DispatchMessageW(&msg);
   }
   
-  ::PeekMessageW(&msg, nullptr, 0, 0, PM_NOREMOVE);
+  WinUtils::PeekMessage(&msg, nullptr, 0, 0, PM_NOREMOVE);
 }
 
 DeneuteredWindowRegion::DeneuteredWindowRegion(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM_IN_IMPL)
@@ -1135,7 +1136,7 @@ MessageChannel::WaitForSyncNotify(bool aHandleWindowsMessages)
       
       
       if (gCOMWindow) {
-        if (PeekMessageW(&msg, gCOMWindow, 0, 0, PM_REMOVE)) {
+        if (WinUtils::PeekMessage(&msg, gCOMWindow, 0, 0, PM_REMOVE)) {
           TranslateMessage(&msg);
           ::DispatchMessageW(&msg);
         }
@@ -1146,7 +1147,7 @@ MessageChannel::WaitForSyncNotify(bool aHandleWindowsMessages)
       
       
       
-      if (!PeekMessageW(&msg, nullptr, 0, 0, PM_NOREMOVE) &&
+      if (!WinUtils::PeekMessage(&msg, nullptr, 0, 0, PM_NOREMOVE) &&
           !haveSentMessagesPending) {
         
         SwitchToThread();
@@ -1262,7 +1263,7 @@ MessageChannel::WaitForInterruptNotify()
 
     
     if (gCOMWindow) {
-        if (PeekMessageW(&msg, gCOMWindow, 0, 0, PM_REMOVE)) {
+        if (WinUtils::PeekMessage(&msg, gCOMWindow, 0, 0, PM_REMOVE)) {
             TranslateMessage(&msg);
             ::DispatchMessageW(&msg);
         }
@@ -1270,7 +1271,7 @@ MessageChannel::WaitForInterruptNotify()
 
     
     
-    if (!PeekMessageW(&msg, nullptr, 0, 0, PM_NOREMOVE) &&
+    if (!WinUtils::PeekMessage(&msg, nullptr, 0, 0, PM_NOREMOVE) &&
         !haveSentMessagesPending) {
       
       SwitchToThread();

@@ -611,6 +611,9 @@ WalkStackThread(void* aData)
 
   
   
+
+  
+  
   ::PeekMessage(&msg, nullptr, WM_USER, WM_USER, PM_NOREMOVE);
 
   
