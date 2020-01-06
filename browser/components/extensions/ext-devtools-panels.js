@@ -216,14 +216,79 @@ class ParentDevToolsPanel {
   }
 }
 
+class DevToolsSelectionObserver extends EventEmitter {
+  constructor(context) {
+    if (!context.devToolsToolbox) {
+      
+      
+      throw Error("Missing mandatory toolbox");
+    }
+
+    super();
+    context.callOnClose(this);
+
+    this.toolbox = context.devToolsToolbox;
+    this.onSelected = this.onSelected.bind(this);
+    this.initialized = false;
+  }
+
+  on(...args) {
+    this.lazyInit();
+    super.on.apply(this, args);
+  }
+
+  once(...args) {
+    this.lazyInit();
+    super.once.apply(this, args);
+  }
+
+  async lazyInit() {
+    if (!this.initialized) {
+      this.initialized = true;
+      this.toolbox.on("selection-changed", this.onSelected);
+    }
+  }
+
+  close() {
+    if (this.destroyed) {
+      throw new Error("Unable to close a destroyed DevToolsSelectionObserver");
+    }
+
+    if (this.initialized) {
+      this.toolbox.off("selection-changed", this.onSelected);
+    }
+
+    this.toolbox = null;
+    this.destroyed = true;
+  }
+
+  onSelected(event) {
+    this.emit("selectionChanged");
+  }
+}
+
 this.devtools_panels = class extends ExtensionAPI {
   getAPI(context) {
     
     let nextPanelId = 0;
 
+    const toolboxSelectionObserver = new DevToolsSelectionObserver(context);
+
     return {
       devtools: {
         panels: {
+          elements: {
+            onSelectionChanged: new EventManager(
+              context, "devtools.panels.elements.onSelectionChanged", fire => {
+                const listener = (eventName) => {
+                  fire.async();
+                };
+                toolboxSelectionObserver.on("selectionChanged", listener);
+                return () => {
+                  toolboxSelectionObserver.off("selectionChanged", listener);
+                };
+              }).api(),
+          },
           create(title, icon, url) {
             
             if (icon === "" && context.extension.manifest.icons) {
