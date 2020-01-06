@@ -413,6 +413,16 @@ public:
   static already_AddRefed<mozilla::MediaByteBuffer> DecodeNALUnit(
     const mozilla::MediaByteBuffer* aNAL);
 
+  static bool HasSPS(const mozilla::MediaRawData* aSample);
+  static bool HasSPS(const mozilla::MediaByteBuffer* aExtraData);
+  
+  
+  static already_AddRefed<mozilla::MediaByteBuffer> ExtractExtraData(
+    const mozilla::MediaRawData* aSample);
+  
+  static bool CompareExtraData(const mozilla::MediaByteBuffer* aExtraData1,
+                               const mozilla::MediaByteBuffer* aExtraData2);
+
   
   
   static bool EnsureSPSIsSane(SPSData& aSPS);
