@@ -116,13 +116,9 @@ UNITTEST_ALIASES = {
 
 
 
-
-
-
-
 UNITTEST_PLATFORM_PRETTY_NAMES = {
-    'Ubuntu': ['linux32', 'linux64', 'linux64-asan', 'linux64-stylo', 'linux64-stylo-sequential'],
-    'x64': ['linux64', 'linux64-asan', 'linux64-stylo', 'linux64-stylo-sequential'],
+    'Ubuntu': ['linux32', 'linux64', 'linux64-asan'],
+    'x64': ['linux64', 'linux64-asan'],
     'Android 4.3': ['android-4.3-arm7-api-15'],
     '10.10': ['macosx64'],
     
@@ -607,7 +603,7 @@ class TryOptionSyntax(object):
                 if self.platforms is None or attr('build_platform') in self.platforms:
                     return True
                 return False
-            return True
+            return check_run_on_projects()
         elif attr('kind') == 'test':
             return match_test(self.unittests, 'unittest_try_name') \
                  or match_test(self.talos, 'talos_try_name')
