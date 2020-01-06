@@ -443,6 +443,10 @@ JSCompartment::getOrCreateWrapper(JSContext* cx, HandleObject existing, MutableH
     }
 
     
+    
+    ExposeObjectToActiveJS(obj);
+
+    
     auto wrap = cx->runtime()->wrapObjectCallbacks->wrap;
     RootedObject wrapper(cx, wrap(cx, existing, obj));
     if (!wrapper)
