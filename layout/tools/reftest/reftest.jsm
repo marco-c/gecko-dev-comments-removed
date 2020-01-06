@@ -1172,10 +1172,14 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults)
 function LoadFailed(why)
 {
     ++g.testResults.FailedLoad;
-    
-    
     if (!why) {
-        logger.error("load failed with unknown reason");
+        
+        
+        
+        
+        
+        
+        logger.error("load failed with unknown reason (we should always have a reason!)");
     }
     logger.testStatus(g.urls[0].identifier, "load failed: " + why, "FAIL", "PASS");
     FlushTestBuffer();
