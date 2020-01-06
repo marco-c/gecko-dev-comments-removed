@@ -14,8 +14,6 @@ const EDIT_ADDRESS_DIALOG_URL = "chrome://formautofill/content/editAddress.xhtml
 const EDIT_CREDIT_CARD_DIALOG_URL = "chrome://formautofill/content/editCreditCard.xhtml";
 const BASE_URL = "http://mochi.test:8888/browser/browser/extensions/formautofill/test/browser/";
 const FORM_URL = "http://mochi.test:8888/browser/browser/extensions/formautofill/test/browser/autocomplete_basic.html";
-const CREDITCARD_FORM_URL =
-  "http://mochi.test:8888/browser/browser/extensions/formautofill/test/browser/autocomplete_creditcard_basic.html";
 const FTU_PREF = "extensions.formautofill.firstTimeUse";
 const ENABLED_AUTOFILL_ADDRESSES_PREF = "extensions.formautofill.addresses.enabled";
 const ENABLED_AUTOFILL_CREDITCARDS_PREF = "extensions.formautofill.creditCards.enabled";
@@ -62,6 +60,7 @@ const TEST_ADDRESS_5 = {
 const TEST_CREDIT_CARD_1 = {
   "cc-name": "John Doe",
   "cc-number": "1234567812345678",
+  
   "cc-exp-month": 4,
   "cc-exp-year": 2017,
 };
@@ -79,9 +78,8 @@ const TEST_CREDIT_CARD_3 = {
   "cc-exp-year": 2000,
 };
 
-const MAIN_BUTTON = "button";
-const SECONDARY_BUTTON = "secondaryButton";
-const MENU_BUTTON = "menubutton";
+const MAIN_BUTTON_INDEX = 0;
+const SECONDARY_BUTTON_INDEX = 1;
 
 function getDisplayedPopupItems(browser, selector = ".autocomplete-richlistitem") {
   const {autoCompletePopup: {richlistbox: itemsBox}} = browser;
@@ -193,25 +191,22 @@ function removeCreditCards(guids) {
 
 
 
-async function clickDoorhangerButton(button, index) {
+async function clickDoorhangerButton(buttonIndex) {
   let popuphidden = BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popuphidden");
   let notifications = PopupNotifications.panel.childNodes;
   ok(notifications.length > 0, "at least one notification displayed");
   ok(true, notifications.length + " notification(s)");
   let notification = notifications[0];
 
-  if (button == MAIN_BUTTON || button == SECONDARY_BUTTON) {
-    EventUtils.synthesizeMouseAtCenter(notification[button], {});
-  } else if (button == MENU_BUTTON) {
-    
-    let dropdownPromise =
-      BrowserTestUtils.waitForEvent(notification.menupopup, "popupshown");
-    await EventUtils.synthesizeMouseAtCenter(notification.menubutton, {});
-    ok(true, "notification menupopup displayed");
-    await dropdownPromise;
-
-    let actionMenuItem = notification.querySelectorAll("menuitem")[index];
-    await EventUtils.synthesizeMouseAtCenter(actionMenuItem, {});
+  if (buttonIndex == MAIN_BUTTON_INDEX) {
+    ok(true, "Triggering main action");
+    EventUtils.synthesizeMouseAtCenter(notification.button, {});
+  } else if (buttonIndex == SECONDARY_BUTTON_INDEX) {
+    ok(true, "Triggering secondary action");
+    EventUtils.synthesizeMouseAtCenter(notification.secondaryButton, {});
+  } else if (notification.childNodes[buttonIndex - 1]) {
+    ok(true, "Triggering secondary action with index " + buttonIndex);
+    EventUtils.synthesizeMouseAtCenter(notification.childNodes[buttonIndex - 1], {});
   }
   await popuphidden;
 }
