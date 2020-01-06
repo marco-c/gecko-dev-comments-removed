@@ -307,6 +307,23 @@ public:
   
 
 
+  bool HasDirAuto() const
+  {
+    return State().HasState(NS_EVENT_STATE_DIR_ATTR_LIKE_AUTO);
+  }
+
+  
+
+
+  bool HasFixedDir() const
+  {
+    return State().HasAtLeastOneOfStates(NS_EVENT_STATE_DIR_ATTR_LTR |
+                                         NS_EVENT_STATE_DIR_ATTR_RTL);
+  }
+
+  
+
+
   DeclarationBlock* GetInlineStyleDeclaration() const;
 
   
@@ -446,15 +463,6 @@ public:
   }
 
   bool GetBindingURL(nsIDocument* aDocument, css::URLValue **aResult);
-
-  
-  
-  
-  
-  inline bool HasDirAuto() const {
-    return (!HasFixedDir() &&
-            (HasValidDir() || IsHTMLElement(nsGkAtoms::bdi)));
-  }
 
   Directionality GetComputedDirectionality() const;
 
