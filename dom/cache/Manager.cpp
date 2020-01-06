@@ -495,6 +495,13 @@ public:
   virtual void
   CompleteOnInitiatingThread(nsresult aRv) override
   {
+    
+    
+    if (NS_FAILED(aRv)) {
+      mDeletedBodyIdList.Clear();
+      mDeletedPaddingSize = 0;
+    }
+
     mManager->NoteOrphanedBodyIdList(mDeletedBodyIdList);
 
     if (mDeletedPaddingSize > 0) {
@@ -867,6 +874,13 @@ private:
       mList[i].mResponseStream = nullptr;
     }
 
+    
+    
+    if (NS_FAILED(aRv)) {
+      mDeletedBodyIdList.Clear();
+      mDeletedPaddingSize = 0;
+    }
+
     mManager->NoteOrphanedBodyIdList(mDeletedBodyIdList);
 
     if (mDeletedPaddingSize > 0) {
@@ -1107,6 +1121,13 @@ public:
   virtual void
   Complete(Listener* aListener, ErrorResult&& aRv) override
   {
+    
+    
+    if (aRv.Failed()) {
+      mDeletedBodyIdList.Clear();
+      mDeletedPaddingSize = 0;
+    }
+
     mManager->NoteOrphanedBodyIdList(mDeletedBodyIdList);
 
     if (mDeletedPaddingSize > 0) {
