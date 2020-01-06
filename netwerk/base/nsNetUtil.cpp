@@ -2657,6 +2657,7 @@ NS_CompareLoadInfoAndLoadContext(nsIChannel *aChannel)
   
   
   
+  
   bool isAboutPage = false;
   nsINode* node = loadInfo->LoadingNode();
   if (node) {
