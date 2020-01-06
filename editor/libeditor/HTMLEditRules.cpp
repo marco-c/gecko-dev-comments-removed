@@ -5150,7 +5150,12 @@ HTMLEditRules::CheckForInvisibleBR(Element& aBlock,
 
     testNode = rightmostNode->GetParentNode();
     
-    testOffset = testNode->IndexOf(rightmostNode) + 1;
+    
+    
+    testOffset = testNode->GetChildCount();
+
+    
+    MOZ_ASSERT(testNode->IndexOf(rightmostNode) + 1 == testOffset);
   } else if (aOffset) {
     testNode = &aBlock;
     
