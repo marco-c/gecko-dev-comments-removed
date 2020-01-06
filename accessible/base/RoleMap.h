@@ -384,6 +384,7 @@ ROLE(RADIOBUTTON,
      ROLE_SYSTEM_RADIOBUTTON,
      eNameFromSubtreeRule)
 
+
 ROLE(COMBOBOX,
      "combobox",
      ATK_ROLE_COMBO_BOX,
@@ -1407,3 +1408,13 @@ ROLE(REGION,
      USE_ROLE_STRING,
      IA2_ROLE_LANDMARK,
      eNoNameRule)
+
+
+
+ROLE(EDITCOMBOBOX,
+     "editcombobox",
+     ATK_ROLE_COMBO_BOX,
+     NSAccessibilityComboBoxRole,
+     ROLE_SYSTEM_COMBOBOX,
+     ROLE_SYSTEM_COMBOBOX,
+     eNameFromValueRule)

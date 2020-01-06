@@ -1015,7 +1015,13 @@ enum Role {
 
   REGION = 173,
 
-  LAST_ROLE = REGION
+  
+
+
+
+  EDITCOMBOBOX = 174,
+
+  LAST_ROLE = EDITCOMBOBOX
 };
 
 } 
