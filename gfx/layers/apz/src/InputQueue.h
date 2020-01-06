@@ -24,6 +24,7 @@ class ScrollWheelInput;
 namespace layers {
 
 class AsyncPanZoomController;
+class InputBlockState;
 class CancelableBlockState;
 class TouchBlockState;
 class WheelBlockState;
@@ -93,7 +94,7 @@ public:
 
 
 
-  CancelableBlockState* GetCurrentBlock() const;
+  InputBlockState* GetCurrentBlock() const;
   
 
 
@@ -143,7 +144,7 @@ private:
 
 
 
-  void CancelAnimationsForNewBlock(CancelableBlockState* aBlock,
+  void CancelAnimationsForNewBlock(InputBlockState* aBlock,
                                    CancelAnimationFlags aExtraFlags = Default);
 
   
@@ -178,13 +179,13 @@ private:
 
 
 
-  CancelableBlockState* FindBlockForId(uint64_t aInputBlockId,
-                                       InputData** aOutFirstInput);
+  InputBlockState* FindBlockForId(uint64_t aInputBlockId,
+                                  InputData** aOutFirstInput);
   void ScheduleMainThreadTimeout(const RefPtr<AsyncPanZoomController>& aTarget,
                                  CancelableBlockState* aBlock);
   void MainThreadTimeout(uint64_t aInputBlockId);
   void ProcessQueue();
-  bool CanDiscardBlock(CancelableBlockState* aBlock);
+  bool CanDiscardBlock(InputBlockState* aBlock);
   void UpdateActiveApzc(const RefPtr<AsyncPanZoomController>& aNewActive);
 
 private:

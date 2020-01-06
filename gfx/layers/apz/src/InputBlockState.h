@@ -53,6 +53,22 @@ public:
   virtual ~InputBlockState()
   {}
 
+  virtual CancelableBlockState* AsCancelableBlock() {
+    return nullptr;
+  }
+  virtual TouchBlockState* AsTouchBlock() {
+    return nullptr;
+  }
+  virtual WheelBlockState* AsWheelBlock() {
+    return nullptr;
+  }
+  virtual DragBlockState* AsDragBlock() {
+    return nullptr;
+  }
+  virtual PanGestureBlockState* AsPanGestureBlock() {
+    return nullptr;
+  }
+
   virtual bool SetConfirmedTargetApzc(const RefPtr<AsyncPanZoomController>& aTargetApzc,
                                       TargetConfirmationState aState,
                                       InputData* aFirstInput);
@@ -66,6 +82,18 @@ public:
   void SetScrolledApzc(AsyncPanZoomController* aApzc);
   AsyncPanZoomController* GetScrolledApzc() const;
   bool IsDownchainOfScrolledApzc(AsyncPanZoomController* aApzc) const;
+
+  
+
+
+
+  virtual void DispatchEvent(const InputData& aEvent) const;
+
+  
+
+
+
+  virtual bool MustStayActive() = 0;
 
 protected:
   virtual void UpdateTargetApzc(const RefPtr<AsyncPanZoomController>& aTargetApzc);
@@ -113,17 +141,8 @@ public:
   CancelableBlockState(const RefPtr<AsyncPanZoomController>& aTargetApzc,
                        bool aTargetConfirmed);
 
-  virtual TouchBlockState *AsTouchBlock() {
-    return nullptr;
-  }
-  virtual WheelBlockState *AsWheelBlock() {
-    return nullptr;
-  }
-  virtual DragBlockState *AsDragBlock() {
-    return nullptr;
-  }
-  virtual PanGestureBlockState *AsPanGestureBlock() {
-    return nullptr;
+  CancelableBlockState* AsCancelableBlock() override {
+    return this;
   }
 
   
@@ -168,12 +187,6 @@ public:
 
 
 
-  virtual void DispatchEvent(const InputData& aEvent) const;
-
-  
-
-
-
   virtual bool HasReceivedAllContentNotifications() const;
 
   
@@ -181,12 +194,6 @@ public:
 
 
   virtual bool IsReadyForHandling() const;
-
-  
-
-
-
-  virtual bool MustStayActive() = 0;
 
   
 

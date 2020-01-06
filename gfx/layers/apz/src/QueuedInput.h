@@ -20,7 +20,7 @@ class PanGestureInput;
 
 namespace layers {
 
-class CancelableBlockState;
+class InputBlockState;
 class TouchBlockState;
 class WheelBlockState;
 class DragBlockState;
@@ -40,7 +40,7 @@ public:
   QueuedInput(const PanGestureInput& aInput, PanGestureBlockState& aBlock);
 
   InputData* Input();
-  CancelableBlockState* Block();
+  InputBlockState* Block();
 
 private:
   
@@ -49,7 +49,7 @@ private:
   UniquePtr<InputData> mInput;
   
   
-  RefPtr<CancelableBlockState> mBlock;
+  RefPtr<InputBlockState> mBlock;
 };
 
 } 
