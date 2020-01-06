@@ -407,6 +407,21 @@ StyleSheet::WillDirty()
 }
 
 void
+StyleSheet::AddStyleSet(StyleSetHandle aStyleSet)
+{
+  NS_ASSERTION(!mStyleSets.Contains(aStyleSet),
+               "style set already registered");
+  mStyleSets.AppendElement(aStyleSet);
+}
+
+void
+StyleSheet::DropStyleSet(StyleSetHandle aStyleSet)
+{
+  DebugOnly<bool> found = mStyleSets.RemoveElement(aStyleSet);
+  NS_ASSERTION(found, "didn't find style set");
+}
+
+void
 StyleSheet::EnsureUniqueInner()
 {
   MOZ_ASSERT(mInner->mSheets.Length() != 0,
@@ -671,6 +686,7 @@ StyleSheet::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
   while (s) {
     n += aMallocSizeOf(s);
 
+    
     
     
     

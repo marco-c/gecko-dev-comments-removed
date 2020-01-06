@@ -196,7 +196,6 @@ CSSStyleSheet::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
     
     
     
-    
 
     s = s->mNext ? s->mNext->AsGecko() : nullptr;
   }
@@ -480,21 +479,6 @@ CSSStyleSheet::DropRuleProcessor(nsCSSRuleProcessor* aProcessor)
   return mRuleProcessors->RemoveElement(aProcessor)
            ? NS_OK
            : NS_ERROR_FAILURE;
-}
-
-void
-CSSStyleSheet::AddStyleSet(nsStyleSet* aStyleSet)
-{
-  NS_ASSERTION(!mStyleSets.Contains(aStyleSet),
-               "style set already registered");
-  mStyleSets.AppendElement(aStyleSet);
-}
-
-void
-CSSStyleSheet::DropStyleSet(nsStyleSet* aStyleSet)
-{
-  DebugOnly<bool> found = mStyleSets.RemoveElement(aStyleSet);
-  NS_ASSERTION(found, "didn't find style set");
 }
 
 bool
