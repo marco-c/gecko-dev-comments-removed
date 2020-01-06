@@ -1,8 +1,6 @@
 
 
 
-
-
 importScripts("worker_test_osfile_shared.js");
 
 self.onmessage = function(msg) {

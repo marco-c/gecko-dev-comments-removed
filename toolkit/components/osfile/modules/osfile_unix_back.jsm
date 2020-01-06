@@ -2,9 +2,6 @@
 
 
 
-
-
-
 {
   if (typeof Components != "undefined") {
     
