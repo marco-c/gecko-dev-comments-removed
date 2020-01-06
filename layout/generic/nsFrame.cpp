@@ -1514,31 +1514,27 @@ nsIFrame::GetMarginRectRelativeToSelf() const
 }
 
 bool
-nsIFrame::IsTransformed(const nsStyleDisplay* aStyleDisplay,
-                        EffectSet* aEffectSet) const
+nsIFrame::IsTransformed(const nsStyleDisplay* aStyleDisplay) const
 {
-  return IsCSSTransformed(aStyleDisplay, aEffectSet) ||
+  return IsCSSTransformed(aStyleDisplay) ||
          IsSVGTransformed();
 }
 
 bool
-nsIFrame::IsCSSTransformed(const nsStyleDisplay* aStyleDisplay,
-                           EffectSet* aEffectSet) const
+nsIFrame::IsCSSTransformed(const nsStyleDisplay* aStyleDisplay) const
 {
   MOZ_ASSERT(aStyleDisplay == StyleDisplay());
   return ((mState & NS_FRAME_MAY_BE_TRANSFORMED) &&
           (aStyleDisplay->HasTransform(this) ||
-           HasAnimationOfTransform(aEffectSet)));
+           HasAnimationOfTransform()));
 }
 
 bool
-nsIFrame::HasAnimationOfTransform(EffectSet* aEffectSet) const
+nsIFrame::HasAnimationOfTransform() const
 {
-  EffectSet* effects =
-    aEffectSet ? aEffectSet : EffectSet::GetEffectSet(this);
 
   return IsPrimaryFrame() &&
-    nsLayoutUtils::HasAnimationOfProperty(effects, eCSSProperty_transform) &&
+    nsLayoutUtils::HasAnimationOfProperty(this, eCSSProperty_transform) &&
     IsFrameOfType(eSupportsCSSTransforms);
 }
 
@@ -1596,33 +1592,32 @@ nsIFrame::Extend3DContext(const nsStyleDisplay* aStyleDisplay, mozilla::EffectSe
 }
 
 bool
-nsIFrame::Combines3DTransformWithAncestors(const nsStyleDisplay* aStyleDisplay,
-                                           EffectSet* aEffectSet) const
+nsIFrame::Combines3DTransformWithAncestors(const nsStyleDisplay* aStyleDisplay) const
 {
   MOZ_ASSERT(aStyleDisplay == StyleDisplay());
   nsIFrame* parent = GetFlattenedTreeParentPrimaryFrame();
   if (!parent || !parent->Extend3DContext()) {
     return false;
   }
-  return IsCSSTransformed(aStyleDisplay, aEffectSet) ||
+  return IsCSSTransformed(aStyleDisplay) ||
          BackfaceIsHidden(aStyleDisplay);
 }
 
 bool
-nsIFrame::In3DContextAndBackfaceIsHidden(EffectSet* aEffectSet) const
+nsIFrame::In3DContextAndBackfaceIsHidden() const
 {
   
   
   const nsStyleDisplay* disp = StyleDisplay();
   return BackfaceIsHidden(disp) &&
-         Combines3DTransformWithAncestors(disp, aEffectSet);
+         Combines3DTransformWithAncestors(disp);
 }
 
 bool
-nsIFrame::HasPerspective(const nsStyleDisplay* aStyleDisplay, EffectSet* aEffectSet) const
+nsIFrame::HasPerspective(const nsStyleDisplay* aStyleDisplay) const
 {
   MOZ_ASSERT(aStyleDisplay == StyleDisplay());
-  if (!IsTransformed(aStyleDisplay, aEffectSet)) {
+  if (!IsTransformed(aStyleDisplay)) {
     return false;
   }
   nsIFrame* containingBlock = GetContainingBlock(SKIP_SCROLLED_FRAME, aStyleDisplay);
@@ -2762,8 +2757,8 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   nsRect dirtyRect = aBuilder->GetDirtyRect();
 
   bool inTransform = aBuilder->IsInTransform();
-  bool isTransformed = IsTransformed(disp, effectSet);
-  bool hasPerspective = HasPerspective(effectSet);
+  bool isTransformed = IsTransformed(disp);
+  bool hasPerspective = HasPerspective(disp);
   
   
   
@@ -9372,7 +9367,7 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
 
   const nsStyleDisplay* disp = StyleDisplayWithOptionalParam(aStyleDisplay);
   EffectSet* effectSet = EffectSet::GetEffectSet(this);
-  bool hasTransform = IsTransformed(disp, effectSet);
+  bool hasTransform = IsTransformed(disp);
 
   nsRect bounds(nsPoint(0, 0), aNewSize);
   
@@ -9490,7 +9485,7 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
   
   if (ChildrenHavePerspective(disp) && sizeChanged) {
     nsRect newBounds(nsPoint(0, 0), aNewSize);
-    RecomputePerspectiveChildrenOverflow(this, effectSet);
+    RecomputePerspectiveChildrenOverflow(this);
   }
 
   if (hasTransform) {
@@ -9540,8 +9535,7 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
 }
 
 void
-nsIFrame::RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame,
-                                               EffectSet* aEffectSet)
+nsIFrame::RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame)
 {
   nsIFrame::ChildListIterator lists(this);
   for (; !lists.IsDone(); lists.Next()) {
@@ -9551,7 +9545,7 @@ nsIFrame::RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame,
       if (!child->FrameMaintainsOverflow()) {
         continue; 
       }
-      if (child->HasPerspective(aEffectSet)) {
+      if (child->HasPerspective()) {
         nsOverflowAreas* overflow =
           child->GetProperty(nsIFrame::InitialOverflowProperty());
         nsRect bounds(nsPoint(0, 0), child->GetSize());
@@ -9569,7 +9563,7 @@ nsIFrame::RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame,
         
         
         
-        child->RecomputePerspectiveChildrenOverflow(aStartFrame, aEffectSet);
+        child->RecomputePerspectiveChildrenOverflow(aStartFrame);
       }
     }
   }

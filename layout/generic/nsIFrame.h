@@ -1766,28 +1766,22 @@ public:
 
 
 
-
-
-
-  bool IsTransformed(const nsStyleDisplay* aStyleDisplay, mozilla::EffectSet* aEffectSet = nullptr) const;
-  bool IsTransformed(mozilla::EffectSet* aEffectSet = nullptr) const {
-    return IsTransformed(StyleDisplay(), aEffectSet);
+  bool IsTransformed(const nsStyleDisplay* aStyleDisplay) const;
+  bool IsTransformed() const {
+    return IsTransformed(StyleDisplay());
   }
 
   
 
 
 
-  bool IsCSSTransformed(const nsStyleDisplay* aStyleDisplay, mozilla::EffectSet* aEffectSet = nullptr) const;
+  bool IsCSSTransformed(const nsStyleDisplay* aStyleDisplay) const;
 
   
 
 
 
-
-
-
-  bool HasAnimationOfTransform(mozilla::EffectSet* aEffectSet = nullptr) const;
+  bool HasAnimationOfTransform() const;
 
   
 
@@ -1859,13 +1853,9 @@ public:
 
 
 
-
-
-
-  bool Combines3DTransformWithAncestors(const nsStyleDisplay* aStyleDisplay,
-                                        mozilla::EffectSet* aEffectSet = nullptr) const;
-  bool Combines3DTransformWithAncestors(mozilla::EffectSet* aEffectSet = nullptr) const {
-    return Combines3DTransformWithAncestors(StyleDisplay(), aEffectSet);
+  bool Combines3DTransformWithAncestors(const nsStyleDisplay* aStyleDisplay) const;
+  bool Combines3DTransformWithAncestors() const {
+    return Combines3DTransformWithAncestors(StyleDisplay());
   }
 
   
@@ -1874,10 +1864,7 @@ public:
 
 
 
-
-
-
-  bool In3DContextAndBackfaceIsHidden(mozilla::EffectSet* aEffectSet = nullptr) const;
+  bool In3DContextAndBackfaceIsHidden() const;
 
   bool IsPreserve3DLeaf(const nsStyleDisplay* aStyleDisplay,
                         mozilla::EffectSet* aEffectSet = nullptr) const {
@@ -1888,10 +1875,9 @@ public:
     return IsPreserve3DLeaf(StyleDisplay(), aEffectSet);
   }
 
-  bool HasPerspective(const nsStyleDisplay* aStyleDisplay,
-                      mozilla::EffectSet* aEffectSet = nullptr) const;
-  bool HasPerspective(mozilla::EffectSet* aEffectSet = nullptr) const {
-    return HasPerspective(StyleDisplay(), aEffectSet);
+  bool HasPerspective(const nsStyleDisplay* aStyleDisplay) const;
+  bool HasPerspective() const {
+    return HasPerspective(StyleDisplay());
   }
 
   bool ChildrenHavePerspective(const nsStyleDisplay* aStyleDisplay) const {
@@ -1908,8 +1894,7 @@ public:
 
   void ComputePreserve3DChildrenOverflow(nsOverflowAreas& aOverflowAreas);
 
-  void RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame,
-                                            mozilla::EffectSet* aEffectSet = nullptr);
+  void RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame);
 
   
 
