@@ -47,7 +47,8 @@ public final class HardwareCodecCapabilityUtils {
     "GT-I9505",         
     "GT-I9515",         
     "SGH-I337",         
-    "SAMSUNG-SGH-I337"  
+    "SAMSUNG-SGH-I337", 
+    "LG-D605"           
   };
 
   @WrapForJNI
