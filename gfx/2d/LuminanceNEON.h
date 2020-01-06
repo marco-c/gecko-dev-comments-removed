@@ -3,8 +3,8 @@
 
 
 
-#ifndef __NS_SVGMASKFRAMENEON_H__
-#define __NS_SVGMASKFRAMENEON_H__
+#ifndef __LUMINANCENEON_H__
+#define __LUMINANCENEON_H__
 
 #include "mozilla/gfx/Point.h"
 
