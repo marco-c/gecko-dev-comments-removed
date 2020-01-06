@@ -10959,21 +10959,25 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   MOZ_ASSERT(aTriggeringPrincipal, "Need a valid triggeringPrincipal");
 
   bool isSandBoxed = mSandboxFlags & SANDBOXED_ORIGIN;
+
   
-  bool inherit = false;
+  
+  
+  
+  bool inheritAttrs = false, inheritPrincipal = false;
 
   if (aPrincipalToInherit) {
+    inheritAttrs = nsContentUtils::ChannelShouldInheritPrincipal(
+      aPrincipalToInherit,
+      aURI,
+      true, 
+      isSrcdoc);
+
     bool isData;
     bool isURIUniqueOrigin = nsIOService::IsDataURIUniqueOpaqueOrigin() &&
                              NS_SUCCEEDED(aURI->SchemeIs("data", &isData)) &&
                              isData;
-    
-    
-    inherit = nsContentUtils::ChannelShouldInheritPrincipal(
-      aPrincipalToInherit,
-      aURI,
-      true, 
-      isSrcdoc) && !isURIUniqueOrigin ;
+    inheritPrincipal = inheritAttrs && !isURIUniqueOrigin;
   }
 
   nsLoadFlags loadFlags = mDefaultLoadFlags;
@@ -10991,7 +10995,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
     securityFlags |= nsILoadInfo::SEC_LOAD_ERROR_PAGE;
   }
 
-  if (inherit) {
+  if (inheritPrincipal) {
     securityFlags |= nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
   }
   if (isSandBoxed) {
@@ -11042,12 +11046,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
 
   
   
-  
-  
-  
-  
-  
-  if (inherit) {
+  if (inheritAttrs) {
     MOZ_ASSERT(aPrincipalToInherit, "We should have aPrincipalToInherit here.");
     attrs = aPrincipalToInherit->OriginAttributesRef();
     
