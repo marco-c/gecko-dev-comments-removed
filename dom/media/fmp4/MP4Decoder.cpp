@@ -58,11 +58,11 @@ MP4Decoder::IsSupportedType(const MediaContainerType& aType,
   
   
   
-  const bool isAudio = aType.Type() == MEDIAMIMETYPE("audio/mp4")
-                       || aType.Type() == MEDIAMIMETYPE("audio/x-m4a");
-  const bool isVideo = aType.Type() == MEDIAMIMETYPE("video/mp4")
-                       || aType.Type() == MEDIAMIMETYPE("video/quicktime")
-                       || aType.Type() == MEDIAMIMETYPE("video/x-m4v");
+  const bool isAudio = aType.Type() == MEDIAMIMETYPE("audio/mp4") ||
+                       aType.Type() == MEDIAMIMETYPE("audio/x-m4a");
+  const bool isVideo = aType.Type() == MEDIAMIMETYPE("video/mp4") ||
+                       aType.Type() == MEDIAMIMETYPE("video/quicktime") ||
+                       aType.Type() == MEDIAMIMETYPE("video/x-m4v");
 
   if (!isAudio && !isVideo) {
     return false;

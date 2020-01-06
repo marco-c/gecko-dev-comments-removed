@@ -56,15 +56,17 @@ void VideoFrameUtils::CopyVideoFrameBuffers(uint8_t* aDestBuffer,
   MOZ_ASSERT(aDestBufferSize >= aggregateSize);
 
   
-  if ((aFrame.video_frame_buffer()->DataY() != nullptr)
+  if ((aFrame.video_frame_buffer()->DataY() != nullptr) &&
       
-      && (aFrame.video_frame_buffer()->DataY() < aFrame.video_frame_buffer()->DataU())
-      && (aFrame.video_frame_buffer()->DataU() < aFrame.video_frame_buffer()->DataV())
+      (aFrame.video_frame_buffer()->DataY()
+       < aFrame.video_frame_buffer()->DataU()) &&
+      (aFrame.video_frame_buffer()->DataU()
+       < aFrame.video_frame_buffer()->DataV()) &&
       
-      && (&aFrame.video_frame_buffer()->DataY()[aggregateSize] ==
-          &aFrame.video_frame_buffer()->DataV()[((aFrame.video_frame_buffer()->height()+1)/2) *
-                                                aFrame.video_frame_buffer()->StrideV()]))
-  {
+      (&aFrame.video_frame_buffer()->DataY()[aggregateSize] ==
+       &aFrame.video_frame_buffer()
+          ->DataV()[((aFrame.video_frame_buffer()->height() + 1) / 2)
+                    * aFrame.video_frame_buffer()->StrideV()])) {
     memcpy(aDestBuffer, aFrame.video_frame_buffer()->DataY(), aggregateSize);
     return;
   }

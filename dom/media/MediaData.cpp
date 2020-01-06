@@ -104,10 +104,10 @@ AudioData::TransferAndUpdateTimestampAndDuration(AudioData* aOther,
 static bool
 ValidatePlane(const VideoData::YCbCrBuffer::Plane& aPlane)
 {
-  return aPlane.mWidth <= PlanarYCbCrImage::MAX_DIMENSION
-         && aPlane.mHeight <= PlanarYCbCrImage::MAX_DIMENSION
-         && aPlane.mWidth * aPlane.mHeight < MAX_VIDEO_WIDTH * MAX_VIDEO_HEIGHT
-         && aPlane.mStride > 0;
+  return aPlane.mWidth <= PlanarYCbCrImage::MAX_DIMENSION &&
+         aPlane.mHeight <= PlanarYCbCrImage::MAX_DIMENSION &&
+         aPlane.mWidth * aPlane.mHeight < MAX_VIDEO_WIDTH * MAX_VIDEO_HEIGHT &&
+         aPlane.mStride > 0;
 }
 
 static bool ValidateBufferAndPicture(const VideoData::YCbCrBuffer& aBuffer,
@@ -115,8 +115,8 @@ static bool ValidateBufferAndPicture(const VideoData::YCbCrBuffer& aBuffer,
 {
   
   
-  if (aBuffer.mPlanes[1].mWidth != aBuffer.mPlanes[2].mWidth
-      || aBuffer.mPlanes[1].mHeight != aBuffer.mPlanes[2].mHeight) {
+  if (aBuffer.mPlanes[1].mWidth != aBuffer.mPlanes[2].mWidth ||
+      aBuffer.mPlanes[1].mHeight != aBuffer.mPlanes[2].mHeight) {
     NS_ERROR("C planes with different sizes");
     return false;
   }
@@ -127,9 +127,9 @@ static bool ValidateBufferAndPicture(const VideoData::YCbCrBuffer& aBuffer,
     MOZ_ASSERT(false, "Empty picture rect");
     return false;
   }
-  if (!ValidatePlane(aBuffer.mPlanes[0])
-      || !ValidatePlane(aBuffer.mPlanes[1])
-      || !ValidatePlane(aBuffer.mPlanes[2])) {
+  if (!ValidatePlane(aBuffer.mPlanes[0]) ||
+      !ValidatePlane(aBuffer.mPlanes[1]) ||
+      !ValidatePlane(aBuffer.mPlanes[2])) {
     NS_WARNING("Invalid plane size");
     return false;
   }
@@ -138,11 +138,8 @@ static bool ValidateBufferAndPicture(const VideoData::YCbCrBuffer& aBuffer,
   
   CheckedUint32 xLimit = aPicture.x + CheckedUint32(aPicture.width);
   CheckedUint32 yLimit = aPicture.y + CheckedUint32(aPicture.height);
-  if (!xLimit.isValid()
-      || xLimit.value() > aBuffer.mPlanes[0].mStride
-      || !yLimit.isValid()
-      || yLimit.value() > aBuffer.mPlanes[0].mHeight)
-  {
+  if (!xLimit.isValid() || xLimit.value() > aBuffer.mPlanes[0].mStride ||
+      !yLimit.isValid() || yLimit.value() > aBuffer.mPlanes[0].mHeight) {
     
     
     NS_WARNING("Overflowing picture rect");

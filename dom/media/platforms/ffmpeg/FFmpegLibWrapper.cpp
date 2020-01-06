@@ -43,8 +43,8 @@ FFmpegLibWrapper::Link()
       return LinkResult::CannotUseLibAV57;
     }
 #ifdef MOZ_FFMPEG
-    if (version < (54u << 16 | 35u << 8 | 1u)
-        && !MediaPrefs::LibavcodecAllowObsolete()) {
+    if (version < (54u << 16 | 35u << 8 | 1u) &&
+        !MediaPrefs::LibavcodecAllowObsolete()) {
       
       
       Unlink();

@@ -449,11 +449,10 @@ private:
       
       
       aResource.Seek(SEEK_CUR, mNextFrame.Header().Size());
-      if (mFrame.IsValid()
-          && mNextFrame.Offset() - mFrame.Offset() < FLAC_MAX_FRAME_SIZE
-          && !CheckCRC16AtOffset(mFrame.Offset(),
-                                 mNextFrame.Offset(),
-                                 aResource)) {
+      if (mFrame.IsValid() &&
+          mNextFrame.Offset() - mFrame.Offset() < FLAC_MAX_FRAME_SIZE &&
+          !CheckCRC16AtOffset(
+            mFrame.Offset(), mNextFrame.Offset(), aResource)) {
         
         continue;
       }
@@ -465,8 +464,8 @@ private:
 
   bool CheckFrameData()
   {
-    if (mNextFrame.Header().Info().mRate == 0
-        || mNextFrame.Header().Info().mBitDepth == 0) {
+    if (mNextFrame.Header().Info().mRate == 0 ||
+        mNextFrame.Header().Info().mBitDepth == 0) {
       if (!Info().IsValid()) {
         
         mNextFrame.SetInvalid();
@@ -491,9 +490,8 @@ private:
     }
     UniquePtr<char[]> buffer(new char[size]);
     uint32_t read = 0;
-    if (NS_FAILED(aResource.ReadAt(aStart, buffer.get(),
-                                   size, &read))
-        || read != size) {
+    if (NS_FAILED(aResource.ReadAt(aStart, buffer.get(), size, &read)) ||
+        read != size) {
       NS_WARNING("Couldn't read frame content");
       return false;
     }
@@ -784,8 +782,8 @@ FlacTrackDemuxer::FastSeek(const TimeUnit& aTime)
     if (frame.Time() == aTime) {
       break;
     }
-    if (aTime > frame.Time()
-        && aTime - frame.Time() <= TimeUnit::FromSeconds(GAP_THRESHOLD)) {
+    if (aTime > frame.Time() &&
+        aTime - frame.Time() <= TimeUnit::FromSeconds(GAP_THRESHOLD)) {
       
       
       break;
@@ -813,10 +811,10 @@ FlacTrackDemuxer::ScanUntil(const TimeUnit& aTime)
       aTime.ToSeconds(), AverageFrameLength(),
       mParsedFramesDuration.ToSeconds(), mParser->CurrentFrame().Offset());
 
-   if (!mParser->FirstFrame().IsValid()
-       || aTime <= mParser->FirstFrame().Time()) {
-     return FastSeek(aTime);
-   }
+  if (!mParser->FirstFrame().IsValid() ||
+      aTime <= mParser->FirstFrame().Time()) {
+    return FastSeek(aTime);
+  }
 
   int64_t previousOffset = 0;
   TimeUnit previousTime;

@@ -478,15 +478,15 @@ VerifyFrameConsistency(const FrameParser::Frame& aFrame1,
   const auto& h1 = aFrame1.Header();
   const auto& h2 = aFrame2.Header();
 
-  return h1.IsValid()
-         && h2.IsValid()
-         && h1.Layer() == h2.Layer()
-         && h1.SlotSize() == h2.SlotSize()
-         && h1.SamplesPerFrame() == h2.SamplesPerFrame()
-         && h1.Channels() == h2.Channels()
-         && h1.SampleRate() == h2.SampleRate()
-         && h1.RawVersion() == h2.RawVersion()
-         && h1.RawProtection() == h2.RawProtection();
+  return h1.IsValid() &&
+         h2.IsValid() &&
+         h1.Layer() == h2.Layer() &&
+         h1.SlotSize() == h2.SlotSize() &&
+         h1.SamplesPerFrame() == h2.SamplesPerFrame() &&
+         h1.Channels() == h2.Channels() &&
+         h1.SampleRate() == h2.SampleRate() &&
+         h1.RawVersion() == h2.RawVersion() &&
+         h1.RawProtection() == h2.RawProtection();
 }
 
 MediaByteRange
@@ -537,8 +537,8 @@ MP3TrackDemuxer::FindNextFrame()
       maxSkippableBytes = std::numeric_limits<uint32_t>::max();
     }
 
-    if ((mOffset - startOffset > maxSkippableBytes)
-        || (read = Read(buffer, mOffset, BUFFER_SIZE)) == 0) {
+    if ((mOffset - startOffset > maxSkippableBytes) ||
+        (read = Read(buffer, mOffset, BUFFER_SIZE)) == 0) {
       MP3LOG("FindNext() EOS or exceeded maxSkippeableBytes without a frame");
       
       break;
@@ -554,9 +554,8 @@ MP3TrackDemuxer::FindNextFrame()
     
     MOZ_ASSERT(foundFrame || bytesToSkip || !reader.Remaining());
 
-    if (foundFrame && mParser.FirstFrame().Length()
-        && !VerifyFrameConsistency(mParser.FirstFrame(),
-                                   mParser.CurrentFrame())) {
+    if (foundFrame && mParser.FirstFrame().Length() &&
+        !VerifyFrameConsistency(mParser.FirstFrame(), mParser.CurrentFrame())) {
       
       
       foundFrame = false;

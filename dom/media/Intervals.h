@@ -146,8 +146,8 @@ public:
 
   bool Contains(const SelfType& aOther) const
   {
-    return (mStart - mFuzz <= aOther.mStart + aOther.mFuzz)
-           && (aOther.mEnd - aOther.mFuzz <= mEnd + mFuzz);
+    return (mStart - mFuzz <= aOther.mStart + aOther.mFuzz) &&
+           (aOther.mEnd - aOther.mFuzz <= mEnd + mFuzz);
   }
 
   bool ContainsStrict(const SelfType& aOther) const
@@ -157,14 +157,14 @@ public:
 
   bool ContainsWithStrictEnd(const SelfType& aOther) const
   {
-    return (mStart - mFuzz <= aOther.mStart + aOther.mFuzz)
-           && aOther.mEnd <= mEnd;
+    return (mStart - mFuzz <= aOther.mStart + aOther.mFuzz) &&
+           aOther.mEnd <= mEnd;
   }
 
   bool Intersects(const SelfType& aOther) const
   {
-    return (mStart - mFuzz < aOther.mEnd + aOther.mFuzz)
-           && (aOther.mStart - aOther.mFuzz < mEnd + mFuzz);
+    return (mStart - mFuzz < aOther.mEnd + aOther.mFuzz) &&
+           (aOther.mStart - aOther.mFuzz < mEnd + mFuzz);
   }
 
   bool IntersectsStrict(const SelfType& aOther) const
@@ -175,8 +175,8 @@ public:
   
   bool Touches(const SelfType& aOther) const
   {
-    return (mStart - mFuzz <= aOther.mEnd + aOther.mFuzz)
-           && (aOther.mStart - aOther.mFuzz <= mEnd + mFuzz);
+    return (mStart - mFuzz <= aOther.mEnd + aOther.mFuzz) &&
+           (aOther.mStart - aOther.mFuzz <= mEnd + mFuzz);
   }
 
   
@@ -245,9 +245,9 @@ public:
   
   bool TouchesOnRight(const SelfType& aOther) const
   {
-    return aOther.mStart <= mStart
-           && (mStart - mFuzz <= aOther.mEnd + aOther.mFuzz)
-           && (aOther.mStart - aOther.mFuzz <= mEnd + mFuzz);
+    return aOther.mStart <= mStart &&
+           (mStart - mFuzz <= aOther.mEnd + aOther.mFuzz) &&
+           (aOther.mStart - aOther.mFuzz <= mEnd + mFuzz);
   }
 
   T mStart;

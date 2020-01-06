@@ -139,25 +139,25 @@ AndroidDecoderModule::SupportsMimeType(
   
   
   
-  if (aMimeType.EqualsLiteral("audio/x-wav")
-      || aMimeType.EqualsLiteral("audio/wave; codecs=1")
-      || aMimeType.EqualsLiteral("audio/wave; codecs=6")
-      || aMimeType.EqualsLiteral("audio/wave; codecs=7")
-      || aMimeType.EqualsLiteral("audio/wave; codecs=65534")) {
+  if (aMimeType.EqualsLiteral("audio/x-wav") ||
+      aMimeType.EqualsLiteral("audio/wave; codecs=1") ||
+      aMimeType.EqualsLiteral("audio/wave; codecs=6") ||
+      aMimeType.EqualsLiteral("audio/wave; codecs=7") ||
+      aMimeType.EqualsLiteral("audio/wave; codecs=65534")) {
     return false;
   }
 
-  if ((VPXDecoder::IsVPX(aMimeType, VPXDecoder::VP8)
-       && !GetFeatureStatus(nsIGfxInfo::FEATURE_VP8_HW_DECODE))
-      || (VPXDecoder::IsVPX(aMimeType, VPXDecoder::VP9)
-          && !GetFeatureStatus(nsIGfxInfo::FEATURE_VP9_HW_DECODE))) {
+  if ((VPXDecoder::IsVPX(aMimeType, VPXDecoder::VP8) &&
+       !GetFeatureStatus(nsIGfxInfo::FEATURE_VP8_HW_DECODE)) ||
+      (VPXDecoder::IsVPX(aMimeType, VPXDecoder::VP9) &&
+       !GetFeatureStatus(nsIGfxInfo::FEATURE_VP9_HW_DECODE))) {
     return false;
   }
 
   
   
-  if (OpusDataDecoder::IsOpus(aMimeType)
-      || VorbisDataDecoder::IsVorbis(aMimeType)) {
+  if (OpusDataDecoder::IsOpus(aMimeType) ||
+      VorbisDataDecoder::IsVorbis(aMimeType)) {
     LOG("Rejecting audio of type %s", aMimeType.Data());
     return false;
   }

@@ -343,8 +343,8 @@ uint32_t PreferredChannelMap(uint32_t aChannels)
 {
   
   
-  if (!InitPreferredChannelLayout()
-      || kLayoutInfos[sPreferredChannelLayout].channels != aChannels) {
+  if (!InitPreferredChannelLayout() ||
+      kLayoutInfos[sPreferredChannelLayout].channels != aChannels) {
     AudioConfig::ChannelLayout smpteLayout(aChannels);
     return smpteLayout.Map();
   }

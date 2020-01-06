@@ -331,9 +331,9 @@ FindDXVABlacklistedDLL(
       auto infoData = MakeUnique<unsigned char[]>(infoSize);
       VS_FIXEDFILEINFO *vInfo;
       UINT vInfoLen;
-      if (!GetFileVersionInfoW(dllPath, 0, infoSize, infoData.get())
-          || !VerQueryValueW(infoData.get(), L"\\", (LPVOID*)&vInfo, &vInfoLen)
-          || !vInfo) {
+      if (!GetFileVersionInfoW(dllPath, 0, infoSize, infoData.get()) ||
+          !VerQueryValueW(infoData.get(), L"\\", (LPVOID*)&vInfo, &vInfoLen) ||
+          !vInfo) {
         
         continue;
       }
@@ -372,8 +372,8 @@ FindDXVABlacklistedDLL(
           continue;
         }
 
-        if (vInfo->dwFileVersionMS == ((numbers[0] << 16) | numbers[1])
-            && vInfo->dwFileVersionLS == ((numbers[2] << 16) | numbers[3])) {
+        if (vInfo->dwFileVersionMS == ((numbers[0] << 16) | numbers[1]) &&
+            vInfo->dwFileVersionLS == ((numbers[2] << 16) | numbers[3])) {
           
           aDLLBlacklistingCache->mBlacklistedDLL.SetLength(0);
           aDLLBlacklistingCache->mBlacklistedDLL.AppendPrintf(
@@ -532,9 +532,9 @@ WMFVideoMFTManager::ValidateVideoInfo()
   
   
   static const int32_t MIN_H264_FRAME_DIMENSION = 48;
-  if (mStreamType == H264
-      && (mVideoInfo.mImage.width < MIN_H264_FRAME_DIMENSION
-          || mVideoInfo.mImage.height < MIN_H264_FRAME_DIMENSION)) {
+  if (mStreamType == H264 &&
+      (mVideoInfo.mImage.width < MIN_H264_FRAME_DIMENSION ||
+       mVideoInfo.mImage.height < MIN_H264_FRAME_DIMENSION)) {
     LogToBrowserConsole(NS_LITERAL_STRING(
       "Can't decode H.264 stream with width or height less than 48 pixels."));
     mIsValid = false;

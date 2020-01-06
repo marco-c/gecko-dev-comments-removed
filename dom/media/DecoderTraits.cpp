@@ -50,11 +50,11 @@ DecoderTraits::IsHttpLiveStreamingType(const MediaContainerType& aType)
   const auto& mimeType = aType.Type();
   return 
          
-         mimeType == MEDIAMIMETYPE("application/vnd.apple.mpegurl")
-         
-         || mimeType == MEDIAMIMETYPE("application/x-mpegurl")
-         || mimeType == MEDIAMIMETYPE("audio/mpegurl")
-         || mimeType == MEDIAMIMETYPE("audio/x-mpegurl");
+    mimeType == MEDIAMIMETYPE("application/vnd.apple.mpegurl") ||
+    
+    mimeType == MEDIAMIMETYPE("application/x-mpegurl") ||
+    mimeType == MEDIAMIMETYPE("audio/mpegurl") ||
+    mimeType == MEDIAMIMETYPE("audio/x-mpegurl");
 }
 
  bool

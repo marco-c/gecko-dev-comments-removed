@@ -124,9 +124,9 @@ public:
           
           
           
-          if (mp4_demuxer::H264::DecodeSPSFromExtraData(extraData, spsdata)
-              && (spsdata.profile_idc == 244 
-                  || spsdata.chroma_format_idc == PDMFactory::kYUV444)) {
+          if (mp4_demuxer::H264::DecodeSPSFromExtraData(extraData, spsdata) &&
+              (spsdata.profile_idc == 244  ||
+               spsdata.chroma_format_idc == PDMFactory::kYUV444)) {
             return CheckResult(
               SupportChecker::Reason::kVideoFormatNotSupported,
               MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,

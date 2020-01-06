@@ -468,8 +468,8 @@ private:
       if (mError.ref() == NS_ERROR_DOM_MEDIA_DECODE_ERR) {
         
         
-        return mNumOfConsecutiveError > mMaxConsecutiveError
-               || MediaPrefs::MediaWarningsAsErrors();
+        return mNumOfConsecutiveError > mMaxConsecutiveError ||
+               MediaPrefs::MediaWarningsAsErrors();
       } else if (mError.ref() == NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER) {
         
         

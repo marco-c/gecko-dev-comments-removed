@@ -118,19 +118,20 @@ ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
 
         stageOffset += stageSize;
 
-        if (hasRealtimeConstraint && !isBackgroundStage
-            && fftSize > MaxRealtimeFFTSize) {
-            fftSize = MaxRealtimeFFTSize;
-            
-            
-            
-            
-            
-            
-            
-            const uint32_t phaseLookup[] = { 14, 0, 10, 4 };
-            stagePhase = WEBAUDIO_BLOCK_SIZE *
-                phaseLookup[m_stages.Length() % ArrayLength(phaseLookup)];
+        if (hasRealtimeConstraint && !isBackgroundStage &&
+            fftSize > MaxRealtimeFFTSize) {
+          fftSize = MaxRealtimeFFTSize;
+          
+          
+          
+          
+          
+          
+          
+          const uint32_t phaseLookup[] = { 14, 0, 10, 4 };
+          stagePhase =
+            WEBAUDIO_BLOCK_SIZE *
+            phaseLookup[m_stages.Length() % ArrayLength(phaseLookup)];
         } else if (fftSize > maxFFTSize) {
             fftSize = maxFFTSize;
             

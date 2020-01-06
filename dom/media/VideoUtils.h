@@ -352,22 +352,22 @@ constexpr bool
 StartsWithMIMETypeMajor(const char* aString,
                         const char* aMajor, size_t aMajorRemaining)
 {
-  return (aMajorRemaining == 0 && *aString == '/')
-         || (*aString == *aMajor
-             && StartsWithMIMETypeMajor(aString + 1,
-                                        aMajor + 1, aMajorRemaining - 1));
+  return (aMajorRemaining == 0 && *aString == '/') ||
+         (*aString == *aMajor && StartsWithMIMETypeMajor(aString + 1,
+                                                         aMajor + 1,
+                                                         aMajorRemaining - 1));
 }
 
 
 constexpr bool
 EndsWithMIMESubtype(const char* aString, size_t aRemaining)
 {
-  return aRemaining == 0
-         || (((*aString >= 'a' && *aString <= 'z')
-              || (*aString >= '0' && *aString <= '9')
-              || *aString == '-'
-              || *aString == '.')
-             && EndsWithMIMESubtype(aString + 1, aRemaining - 1));
+  return aRemaining == 0 ||
+         (((*aString >= 'a' && *aString <= 'z') ||
+           (*aString >= '0' && *aString <= '9') ||
+           *aString == '-' ||
+           *aString == '.') &&
+          EndsWithMIMESubtype(aString + 1, aRemaining - 1));
 }
 
 
@@ -377,10 +377,10 @@ constexpr bool
 IsMIMETypeWithMajor(const char* aString, size_t aLength,
                     const char (&aMajor)[MajorLengthPlus1])
 {
-  return aLength > MajorLengthPlus1 
-         && StartsWithMIMETypeMajor(aString, aMajor, MajorLengthPlus1 - 1)
-         && EndsWithMIMESubtype(aString + MajorLengthPlus1,
-                                aLength - MajorLengthPlus1);
+  return aLength > MajorLengthPlus1 && 
+         StartsWithMIMETypeMajor(aString, aMajor, MajorLengthPlus1 - 1) &&
+         EndsWithMIMESubtype(aString + MajorLengthPlus1,
+                             aLength - MajorLengthPlus1);
 }
 
 } 
@@ -391,9 +391,9 @@ IsMIMETypeWithMajor(const char* aString, size_t aLength,
 constexpr bool
 IsMediaMIMEType(const char* aString, size_t aLength)
 {
-  return detail::IsMIMETypeWithMajor(aString, aLength, "application")
-         || detail::IsMIMETypeWithMajor(aString, aLength, "audio")
-         || detail::IsMIMETypeWithMajor(aString, aLength, "video");
+  return detail::IsMIMETypeWithMajor(aString, aLength, "application") ||
+         detail::IsMIMETypeWithMajor(aString, aLength, "audio") ||
+         detail::IsMIMETypeWithMajor(aString, aLength, "video");
 }
 
 
@@ -524,10 +524,13 @@ public:
   explicit StringListRange(const String& aList) : mList(aList) {}
   Iterator begin() const
   {
-    return Iterator(mList.Data()
-                    + ((empties == StringListRangeEmptyItems::ProcessEmptyItems
-                        && mList.Length() == 0) ? 1 : 0),
-                    mList.Length());
+    return Iterator(
+      mList.Data()
+      + ((empties == StringListRangeEmptyItems::ProcessEmptyItems &&
+          mList.Length() == 0)
+          ? 1
+          : 0),
+      mList.Length());
   }
   Iterator end() const
   {
