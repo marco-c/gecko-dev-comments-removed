@@ -69,6 +69,20 @@ static const uint32_t GRAY = 1;
 
 
 
+
+
+
+
+enum class ColorBit : uint32_t
+{
+    BlackBit = 0,
+    GrayOrBlackBit = 1
+};
+
+
+
+
+
 enum class ChunkLocation : uint32_t
 {
     Invalid = 0,
@@ -301,11 +315,12 @@ GetGCThingMarkBitmap(const uintptr_t addr)
 }
 
 static MOZ_ALWAYS_INLINE void
-GetGCThingMarkWordAndMask(const uintptr_t addr, uint32_t color,
+GetGCThingMarkWordAndMask(const uintptr_t addr, ColorBit colorBit,
                           uintptr_t** wordp, uintptr_t* maskp)
 {
     MOZ_ASSERT(addr);
-    const size_t bit = (addr & js::gc::ChunkMask) / js::gc::CellBytesPerMarkBit + color;
+    const size_t bit = (addr & js::gc::ChunkMask) / js::gc::CellBytesPerMarkBit +
+                       static_cast<uint32_t>(colorBit);
     MOZ_ASSERT(bit < js::gc::ChunkMarkBitmapBits);
     uintptr_t* bitmap = GetGCThingMarkBitmap(addr);
     const uintptr_t nbits = sizeof(*bitmap) * CHAR_BIT;
@@ -325,12 +340,20 @@ GetGCThingZone(const uintptr_t addr)
 static MOZ_ALWAYS_INLINE bool
 TenuredCellIsMarkedGray(const Cell* cell)
 {
+    
     MOZ_ASSERT(cell);
     MOZ_ASSERT(!js::gc::IsInsideNursery(cell));
 
-    uintptr_t* word, mask;
-    js::gc::detail::GetGCThingMarkWordAndMask(uintptr_t(cell), js::gc::GRAY, &word, &mask);
-    return *word & mask;
+    uintptr_t* grayWord, grayMask;
+    js::gc::detail::GetGCThingMarkWordAndMask(uintptr_t(cell), js::gc::ColorBit::GrayOrBlackBit,
+                                              &grayWord, &grayMask);
+    if (!(*grayWord & grayMask))
+        return false;
+
+    uintptr_t* blackWord, blackMask;
+    js::gc::detail::GetGCThingMarkWordAndMask(uintptr_t(cell), js::gc::ColorBit::BlackBit,
+                                              &blackWord, &blackMask);
+    return !(*blackWord & blackMask);
 }
 
 static MOZ_ALWAYS_INLINE bool
