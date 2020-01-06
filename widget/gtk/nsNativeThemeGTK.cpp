@@ -988,19 +988,11 @@ DrawThemeWithCairo(gfxContext* aContext, DrawTarget* aDrawTarget,
       dataSurface->Unmap();
 
       if (cr) {
-        if (!aSnapped || aTransparency != nsITheme::eOpaque) {
-          
-          aDrawTarget->DrawSurface(dataSurface,
-                                   Rect(aSnapped ? drawOffset - aDrawTarget->GetTransform().GetTranslation() : drawOffset,
-                                        Size(aDrawSize)),
-                                   Rect(0, 0, aDrawSize.width, aDrawSize.height));
-        } else {
-          
-          aDrawTarget->CopySurface(dataSurface,
-                                   IntRect(0, 0, aDrawSize.width, aDrawSize.height),
-                                   TruncatedToInt(drawOffset));
-        }
-
+        
+        aDrawTarget->DrawSurface(dataSurface,
+                                 Rect(aSnapped ? drawOffset - aDrawTarget->GetTransform().GetTranslation() : drawOffset,
+                                      Size(aDrawSize)),
+                                 Rect(0, 0, aDrawSize.width, aDrawSize.height));
         cairo_destroy(cr);
       }
 
