@@ -380,6 +380,14 @@ var StarUI = {
   }
 };
 
+
+function isVisible(element) {
+  let windowUtils = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                          .getInterface(Ci.nsIDOMWindowUtils);
+  let bounds = windowUtils.getBoundsWithoutFlushing(element);
+  return bounds.height > 0 && bounds.width > 0;
+}
+
 var PlacesCommandHook = {
   
 
@@ -448,14 +456,14 @@ var PlacesCommandHook = {
     
     
     
-    if (BookmarkingUI.anchor) {
+    if (BookmarkingUI.anchor && isVisible(BookmarkingUI.anchor)) {
       StarUI.showEditBookmarkPopup(itemId, BookmarkingUI.anchor,
                                    "bottomcenter topright", isNewBookmark);
       return;
     }
 
     let identityIcon = document.getElementById("identity-icon");
-    if (isElementVisible(identityIcon)) {
+    if (isVisible(identityIcon)) {
       StarUI.showEditBookmarkPopup(itemId, identityIcon,
                                    "bottomcenter topright", isNewBookmark);
     } else {
@@ -523,14 +531,14 @@ var PlacesCommandHook = {
     
     
     
-    if (BookmarkingUI.anchor) {
+    if (BookmarkingUI.anchor && isVisible(BookmarkingUI.anchor)) {
       StarUI.showEditBookmarkPopup(node, BookmarkingUI.anchor,
                                    "bottomcenter topright", isNewBookmark);
       return;
     }
 
     let identityIcon = document.getElementById("identity-icon");
-    if (isElementVisible(identityIcon)) {
+    if (isVisible(identityIcon)) {
       StarUI.showEditBookmarkPopup(node, identityIcon,
                                    "bottomcenter topright", isNewBookmark);
     } else {
