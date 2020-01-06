@@ -7,7 +7,7 @@
 const { CanvasFrameAnonymousContentHelper,
         createSVGNode, createNode, getComputedStyle } = require("./utils/markup");
 const { setIgnoreLayoutChanges, getCurrentZoom,
-        getAdjustedQuads } = require("devtools/shared/layout/utils");
+        getAdjustedQuads, getFrameOffsets } = require("devtools/shared/layout/utils");
 const { AutoRefreshHighlighter } = require("./auto-refresh");
 const {
   getDistance,
@@ -205,7 +205,20 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       return;
     }
 
-    const { target, type, pageX, pageY } = event;
+    let { target, type, pageX, pageY } = event;
+
+    
+    
+    
+    if (target.ownerDocument !== this.currentNode.ownerDocument) {
+      let [xOffset, yOffset] = getFrameOffsets(target.ownerGlobal, this.currentNode);
+      
+      
+      let viewportLeft = pageX - event.clientX;
+      let viewportTop = pageY - event.clientY;
+      pageX -= viewportLeft + xOffset;
+      pageY -= viewportTop + yOffset;
+    }
 
     switch (type) {
       case "pagehide":
