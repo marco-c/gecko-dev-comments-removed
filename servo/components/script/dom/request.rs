@@ -340,6 +340,9 @@ impl Request {
         }
 
         
+        r.request.borrow_mut().headers = r.Headers().get_headers_list();
+
+        
         let mut input_body = if let RequestInfo::Request(ref input_request) = input {
             let input_request_request = input_request.request.borrow();
             input_request_request.body.clone()
@@ -459,17 +462,7 @@ fn normalize_method(m: &str) -> HttpMethod {
 
 
 fn is_method(m: &ByteString) -> bool {
-    match m.to_lower().as_str() {
-        Some("get") => true,
-        Some("head") => true,
-        Some("post") => true,
-        Some("put") => true,
-        Some("delete") => true,
-        Some("connect") => true,
-        Some("options") => true,
-        Some("trace") => true,
-        _ => false,
-    }
+    m.as_str().is_some()
 }
 
 

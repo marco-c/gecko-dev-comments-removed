@@ -13,6 +13,7 @@ use fetch::methods::{Data, DoneChannel, FetchContext, Target};
 use fetch::methods::{is_cors_safelisted_request_header, is_cors_safelisted_method, main_fetch};
 use flate2::read::{DeflateDecoder, GzDecoder};
 use hsts::HstsList;
+use http_cache::HttpCache;
 use hyper::Error as HttpError;
 use hyper::LanguageTag;
 use hyper::client::{Pool, Request as HyperRequest, Response as HyperResponse};
@@ -22,7 +23,7 @@ use hyper::header::{AccessControlMaxAge, AccessControlRequestHeaders};
 use hyper::header::{AccessControlRequestMethod, AcceptEncoding, AcceptLanguage};
 use hyper::header::{Authorization, Basic, CacheControl, CacheDirective};
 use hyper::header::{ContentEncoding, ContentLength, Encoding, Header, Headers};
-use hyper::header::{Host, Origin as HyperOrigin, IfMatch, IfRange};
+use hyper::header::{Host, HttpDate, Origin as HyperOrigin, IfMatch, IfRange};
 use hyper::header::{IfUnmodifiedSince, IfModifiedSince, IfNoneMatch, Location};
 use hyper::header::{Pragma, Quality, QualityItem, Referer, SetCookie};
 use hyper::header::{UserAgent, q, qitem};
@@ -45,6 +46,7 @@ use std::io::{self, Read, Write};
 use std::iter::FromIterator;
 use std::mem;
 use std::ops::Deref;
+use std::str::FromStr;
 use std::sync::RwLock;
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
@@ -69,6 +71,7 @@ fn read_block<R: Read>(reader: &mut R) -> Result<Data, ()> {
 pub struct HttpState {
     pub hsts_list: RwLock<HstsList>,
     pub cookie_jar: RwLock<CookieStorage>,
+    pub http_cache: RwLock<HttpCache>,
     pub auth_cache: RwLock<AuthCache>,
     pub ssl_client: OpensslClient,
     pub connector: Pool<Connector>,
@@ -80,6 +83,7 @@ impl HttpState {
             hsts_list: RwLock::new(HstsList::new()),
             cookie_jar: RwLock::new(CookieStorage::new(150)),
             auth_cache: RwLock::new(AuthCache::new()),
+            http_cache: RwLock::new(HttpCache::new()),
             ssl_client: ssl_client.clone(),
             connector: create_http_connector(ssl_client),
         }
@@ -895,34 +899,35 @@ fn http_network_or_cache_fetch(request: &mut Request,
     let mut revalidating_flag = false;
 
     
-    
-    let complete_http_response_from_cache: Option<Response> = None;
-    if http_request.cache_mode != CacheMode::NoStore &&
-       http_request.cache_mode != CacheMode::Reload &&
-       complete_http_response_from_cache.is_some() {
-        
+    if let Ok(http_cache) = context.state.http_cache.read() {
+        if let Some(response_from_cache) = http_cache.construct_response(&http_request) {
+            let response_headers = response_from_cache.response.headers.clone();
+            
+            let (cached_response, needs_revalidation) = match (http_request.cache_mode, &http_request.mode) {
+                (CacheMode::ForceCache, _) => (Some(response_from_cache.response), false),
+                (CacheMode::OnlyIfCached, &RequestMode::SameOrigin) => (Some(response_from_cache.response), false),
+                (CacheMode::OnlyIfCached, _) | (CacheMode::NoStore, _) | (CacheMode::Reload, _) => (None, false),
+                (_, _) => (Some(response_from_cache.response), response_from_cache.needs_validation)
+            };
+            if needs_revalidation {
+                revalidating_flag = true;
+                
+                
+                if let Some(date_slice) = response_headers.get_raw("Last-Modified") {
+                    let date_string = String::from_utf8_lossy(&date_slice[0]);
+                    if let Ok(http_date) = HttpDate::from_str(&date_string) {
+                        http_request.headers.set(IfModifiedSince(http_date));
+                    }
+                }
+                if let Some(entity_tag) =
+                    response_headers.get_raw("ETag") {
+                    http_request.headers.set_raw("If-None-Match", entity_tag.to_vec());
 
-        
-        if let Some(ref response) = response {
-            revalidating_flag = response_needs_revalidation(&response);
-        };
-
-        
-        if http_request.cache_mode == CacheMode::ForceCache ||
-           http_request.cache_mode == CacheMode::OnlyIfCached {
-            
-            
-        }
-
-        if revalidating_flag {
-            
-            
-            
-        } else {
-            
-            
-            
-            
+                }
+            } else {
+                
+                response = cached_response;
+            }
         }
     }
 
@@ -933,26 +938,37 @@ fn http_network_or_cache_fetch(request: &mut Request,
             return Response::network_error(
                 NetworkError::Internal("Couldn't find response in cache".into()))
         }
+    }
+    
+    if response.is_none() {
         
         let forward_response = http_network_fetch(http_request, credentials_flag,
                                                   done_chan, context);
         
         if let Some((200...399, _)) = forward_response.raw_status {
             if !http_request.method.safe() {
-                
+                if let Ok(mut http_cache) = context.state.http_cache.write() {
+                    http_cache.invalidate(&http_request, &forward_response);
+                }
             }
         }
         
         if revalidating_flag && forward_response.status.map_or(false, |s| s == StatusCode::NotModified) {
-            
+            if let Ok(mut http_cache) = context.state.http_cache.write() {
+                response = http_cache.refresh(&http_request, forward_response.clone(), done_chan);
+            }
         }
 
         
         if response.is_none() {
+            if http_request.cache_mode != CacheMode::NoStore {
+                
+                if let Ok(mut http_cache) = context.state.http_cache.write() {
+                    http_cache.store(&http_request, &forward_response);
+                }
+            }
             
             response = Some(forward_response);
-            
-            
         }
     }
 
@@ -1170,7 +1186,9 @@ fn http_network_fetch(request: &Request,
 
     
     if !response.is_network_error() && request.cache_mode != CacheMode::NoStore {
-        
+        if let Ok(mut http_cache) = context.state.http_cache.write() {
+            http_cache.store(&request, &response);
+        }
     }
 
     
@@ -1366,11 +1384,6 @@ fn is_no_store_cache(headers: &Headers) -> bool {
     headers.has::<IfModifiedSince>() | headers.has::<IfNoneMatch>() |
     headers.has::<IfUnmodifiedSince>() | headers.has::<IfMatch>() |
     headers.has::<IfRange>()
-}
-
-fn response_needs_revalidation(_response: &Response) -> bool {
-    
-    false
 }
 
 
