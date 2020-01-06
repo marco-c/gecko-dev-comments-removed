@@ -1,3 +1,8 @@
+"use strict";
+
+XPCOMUtils.defineLazyModuleGetter(this, "PlacesTestUtils",
+  "resource://testing-common/PlacesTestUtils.jsm");
+
 
 
 
@@ -89,6 +94,12 @@ async function withReflowObserver(testFn, expectedReflows = [], win = window) {
       
       
       if (path === "") {
+        return;
+      }
+
+      
+      
+      if (path.startsWith("synthesizeKey@chrome://mochikit/content/tests/SimpleTest/EventUtils.js")) {
         return;
       }
 
@@ -223,4 +234,26 @@ async function removeAllButFirstTab() {
   gBrowser.removeAllTabsBut(gBrowser.tabs[0]);
   await BrowserTestUtils.waitForCondition(() => gBrowser.tabs.length == 1);
   await SpecialPowers.popPrefEnv();
+}
+
+
+
+
+
+async function addDummyHistoryEntries() {
+  const NUM_VISITS = 10;
+  let visits = [];
+
+  for (let i = 0; i < NUM_VISITS; ++i) {
+    visits.push({
+      uri: `http://example.com/urlbar-reflows-${i}`,
+      title: `Reflow test for URL bar entry #${i}`,
+    });
+  }
+
+  await PlacesTestUtils.addVisits(visits);
+
+  registerCleanupFunction(async function() {
+    await PlacesTestUtils.clearHistory();
+  });
 }

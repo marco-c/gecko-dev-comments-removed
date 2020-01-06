@@ -55,7 +55,7 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
       "adjustHeight@chrome://global/content/bindings/autocomplete.xml",
       "_invalidate/this._adjustHeightTimeout<@chrome://global/content/bindings/autocomplete.xml",
     ],
-    times: 3, 
+    times: 36, 
   },
 
   {
@@ -67,7 +67,17 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
       "_invalidate@chrome://global/content/bindings/autocomplete.xml",
       "invalidate@chrome://global/content/bindings/autocomplete.xml"
     ],
-    times: 390, 
+    times: 1584, 
+  },
+
+  {
+    stack: [
+      "_handleOverflow@chrome://global/content/bindings/autocomplete.xml",
+      "handleOverUnderflow@chrome://global/content/bindings/autocomplete.xml",
+      "_onChanged@chrome://global/content/bindings/autocomplete.xml",
+      "_appendCurrentResult/<@chrome://global/content/bindings/autocomplete.xml",
+    ],
+    times: 6,
   },
 
   {
@@ -93,64 +103,35 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
 ];
 
 
-const EXPECTED_REFLOWS_SECOND_OPEN = [
-  {
-    stack: [
-      "adjustHeight@chrome://global/content/bindings/autocomplete.xml",
-      "onxblpopupshown@chrome://global/content/bindings/autocomplete.xml"
-    ],
-    times: 3, 
-  },
 
-  {
-    stack: [
-      "adjustHeight@chrome://global/content/bindings/autocomplete.xml",
-      "_invalidate/this._adjustHeightTimeout<@chrome://global/content/bindings/autocomplete.xml",
-    ],
-    times: 3, 
-  },
 
-  {
-    stack: [
-      "_handleOverflow@chrome://global/content/bindings/autocomplete.xml",
-      "handleOverUnderflow@chrome://global/content/bindings/autocomplete.xml",
-      "_reuseAcItem@chrome://global/content/bindings/autocomplete.xml",
-      "_appendCurrentResult@chrome://global/content/bindings/autocomplete.xml",
-      "_invalidate@chrome://global/content/bindings/autocomplete.xml",
-      "invalidate@chrome://global/content/bindings/autocomplete.xml"
-    ],
-    times: 444, 
-  },
+
+
+
+
+
+async function promiseSearchComplete(win) {
+  let URLBar = win.gURLBar;
+  if (URLBar.popup.state != "open") {
+    await BrowserTestUtils.waitForEvent(URLBar.popup, "popupshown");
+  }
+  await BrowserTestUtils.waitForCondition(() => {
+    return URLBar.controller.searchStatus >=
+      Ci.nsIAutoCompleteController.STATUS_COMPLETE_NO_MATCH;
+  });
 
   
-  {
-    stack: [
-      "_openAutocompletePopup@chrome://browser/content/urlbarBindings.xml",
-      "openAutocompletePopup@chrome://browser/content/urlbarBindings.xml",
-      "openPopup@chrome://global/content/bindings/autocomplete.xml",
-      "set_popupOpen@chrome://global/content/bindings/autocomplete.xml",
-    ],
-    times: 3, 
-  },
-
   
-  {
-    stack: [
-      "openPopup@chrome://global/content/bindings/popup.xml",
-      "_openAutocompletePopup@chrome://browser/content/urlbarBindings.xml",
-      "openAutocompletePopup@chrome://browser/content/urlbarBindings.xml",
-      "openPopup@chrome://global/content/bindings/autocomplete.xml",
-      "set_popupOpen@chrome://global/content/bindings/autocomplete.xml",
-    ],
-  },
-];
-
-const SEARCH_TERM = "urlbar-reflows";
+  
+  
+  
+  
+  await new Promise(resolve => win.requestIdleCallback(resolve, { timeout: 1000 }));
+}
 
 add_task(async function setup() {
   await addDummyHistoryEntries();
 });
-
 
 
 
@@ -164,8 +145,9 @@ add_task(async function() {
   let popup = URLBar.popup;
 
   URLBar.focus();
-  URLBar.value = SEARCH_TERM;
-  let testFn = async function(dirtyFrameFn) {
+  URLBar.value = "";
+
+  await withReflowObserver(async function(dirtyFrameFn) {
     let oldInvalidate = popup.invalidate.bind(popup);
     let oldResultsAdded = popup.onResultsAdded.bind(popup);
 
@@ -183,34 +165,19 @@ add_task(async function() {
       oldResultsAdded();
     };
 
-    URLBar.controller.startSearch(URLBar.value);
-    await BrowserTestUtils.waitForEvent(URLBar.popup, "popupshown");
-    await BrowserTestUtils.waitForCondition(() => {
-      return URLBar.controller.searchStatus >=
-        Ci.nsIAutoCompleteController.STATUS_COMPLETE_NO_MATCH;
-    });
-    let matchCount = URLBar.popup._matchCount;
-    await BrowserTestUtils.waitForCondition(() => {
-      return URLBar.popup.richlistbox.childNodes.length == matchCount;
-    });
-
-    URLBar.controller.stopSearch();
     
     
-    
-    
-    
-    
-    await new Promise(resolve => win.requestIdleCallback(resolve, { timeout: 1000 }));
+    const SEARCH_TERM = "ows-10";
+    for (let i = 0; i < SEARCH_TERM.length; ++i) {
+      let char = SEARCH_TERM[i];
+      EventUtils.synthesizeKey(char, {}, win);
+      await promiseSearchComplete(win);
+    }
 
     let hiddenPromise = BrowserTestUtils.waitForEvent(URLBar.popup, "popuphidden");
     EventUtils.synthesizeKey("VK_ESCAPE", {}, win);
     await hiddenPromise;
-  };
-
-  await withReflowObserver(testFn, EXPECTED_REFLOWS_FIRST_OPEN, win);
-
-  await withReflowObserver(testFn, EXPECTED_REFLOWS_SECOND_OPEN, win);
+  }, EXPECTED_REFLOWS_FIRST_OPEN, win);
 
   await BrowserTestUtils.closeWindow(win);
 });
