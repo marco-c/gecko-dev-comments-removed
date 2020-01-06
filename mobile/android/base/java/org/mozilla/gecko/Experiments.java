@@ -61,6 +61,9 @@ public class Experiments {
     public static final String LEANPLUM = "leanplum-start";
 
     
+    public static final String LEANPLUM_DEBUG = "leanplum-debug";
+
+    
     public static final String ENABLE_PROCESSING_BACKGROUND_TELEMETRY = "process-background-telemetry";
 
     
