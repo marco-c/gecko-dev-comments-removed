@@ -8,6 +8,7 @@ use api::{DeviceIntRect, DeviceUintSize};
 use euclid::Transform3D;
 use gleam::gl;
 use internal_types::RenderTargetMode;
+use internal_types::FastHashMap;
 use std::fs::File;
 use std::io::Read;
 use std::iter::repeat;
@@ -485,6 +486,61 @@ pub struct VBOId(gl::GLuint);
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
 struct IBOId(gl::GLuint);
 
+#[derive(PartialEq, Eq, Hash, Debug)]
+struct ProgramSources {
+    renderer_name: String,
+    vs_source: String,
+    fs_source: String,
+}
+
+impl ProgramSources {
+    fn new(renderer_name: String, vs_source: String, fs_source: String) -> Self {
+        ProgramSources {
+            renderer_name,
+            vs_source,
+            fs_source,
+        }
+    }
+}
+
+struct ProgramBinary {
+    binary: Vec<u8>,
+    format: gl::GLenum,
+}
+
+impl ProgramBinary {
+    fn new(binary: Vec<u8>, format: gl::GLenum) -> Self {
+        ProgramBinary {
+            binary,
+            format
+        }
+    }
+}
+
+pub struct ProgramCache {
+    binaries: FastHashMap<ProgramSources, ProgramBinary>,
+}
+
+impl ProgramCache {
+    pub fn new() -> Self {
+        ProgramCache {
+            binaries: FastHashMap::default(),
+        }
+    }
+
+    fn get(&self, sources: &ProgramSources) -> Option<&ProgramBinary> {
+      self.binaries.get(&sources)
+    }
+
+    fn contains(&self, sources: &ProgramSources) -> bool {
+      self.binaries.contains_key(&sources)
+    }
+
+    fn insert(&mut self, sources: ProgramSources, binary: ProgramBinary) {
+      self.binaries.insert(sources, binary);
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
 pub enum VertexUsageHint {
     Static,
@@ -521,7 +577,7 @@ pub enum ShaderError {
     Link(String, String),        
 }
 
-pub struct Device {
+pub struct Device<'a> {
     gl: Rc<gl::Gl>,
     
     bound_textures: [gl::GLuint; 16],
@@ -544,19 +600,23 @@ pub struct Device {
     resource_override_path: Option<PathBuf>,
 
     max_texture_size: u32,
+    renderer_name: String,
+    cached_programs: Option<&'a mut ProgramCache>,
 
     
     
     frame_id: FrameId,
 }
 
-impl Device {
+impl<'a> Device<'a> {
     pub fn new(
         gl: Rc<gl::Gl>,
         resource_override_path: Option<PathBuf>,
         _file_changed_handler: Box<FileWatcherHandler>,
+        cached_programs: Option<&mut ProgramCache>,
     ) -> Device {
         let max_texture_size = gl.get_integer_v(gl::MAX_TEXTURE_SIZE) as u32;
+        let renderer_name = gl.get_string(gl::RENDERER);
 
         Device {
             gl,
@@ -580,6 +640,8 @@ impl Device {
             default_draw_fbo: 0,
 
             max_texture_size,
+            renderer_name,
+            cached_programs,
             frame_id: FrameId(0),
         }
     }
@@ -590,6 +652,10 @@ impl Device {
 
     pub fn rc_gl(&self) -> &Rc<gl::Gl> {
         &self.gl
+    }
+
+    pub fn update_program_cache(&mut self, cached_programs: &'a mut ProgramCache) {
+        self.cached_programs = Some(cached_programs);
     }
 
     pub fn max_texture_size(&self) -> u32 {
@@ -612,7 +678,7 @@ impl Device {
         gl: &gl::Gl,
         name: &str,
         shader_type: gl::GLenum,
-        source: String,
+        source: &String,
     ) -> Result<gl::GLuint, ShaderError> {
         debug!("compile {:?}", name);
         let id = gl.create_shader(shader_type);
@@ -1086,59 +1152,99 @@ impl Device {
             &self.resource_override_path,
         );
 
-        
-        let vs_id =
-            match Device::compile_shader(&*self.gl, base_filename, gl::VERTEX_SHADER, vs_source) {
-                Ok(vs_id) => vs_id,
-                Err(err) => return Err(err),
-            };
-
-        
-        let fs_id =
-            match Device::compile_shader(&*self.gl, base_filename, gl::FRAGMENT_SHADER, fs_source) {
-                Ok(fs_id) => fs_id,
-                Err(err) => {
-                    self.gl.delete_shader(vs_id);
-                    return Err(err);
-                }
-            };
+        let sources = ProgramSources::new(self.renderer_name.clone(), vs_source, fs_source);
 
         
         let pid = self.gl.create_program();
-        self.gl.attach_shader(pid, vs_id);
-        self.gl.attach_shader(pid, fs_id);
 
-        
-        for (i, attr) in descriptor
-            .vertex_attributes
-            .iter()
-            .chain(descriptor.instance_attributes.iter())
-            .enumerate()
-        {
-            self.gl
-                .bind_attrib_location(pid, i as gl::GLuint, attr.name);
+        let mut loaded = false;
+
+        if let Some(ref cached_programs) = self.cached_programs {
+            if let Some(binary) = cached_programs.get(&sources)
+            {
+                self.gl.program_binary(pid, binary.format, &binary.binary);
+
+                if self.gl.get_program_iv(pid, gl::LINK_STATUS) == (0 as gl::GLint) {
+                    let error_log = self.gl.get_program_info_log(pid);
+                    println!(
+                      "Failed to load a program object with a program binary: {:?} renderer {}\n{}",
+                      base_filename,
+                      self.renderer_name,
+                      error_log
+                    );
+                } else {
+                    loaded = true;
+                }
+            }
         }
 
-        
-        self.gl.link_program(pid);
+        if loaded == false {
+            
+            let vs_id =
+                match Device::compile_shader(&*self.gl, base_filename, gl::VERTEX_SHADER, &sources.vs_source) {
+                    Ok(vs_id) => vs_id,
+                    Err(err) => return Err(err),
+                };
 
-        
-        
-        
-        self.gl.detach_shader(pid, vs_id);
-        self.gl.detach_shader(pid, fs_id);
-        self.gl.delete_shader(vs_id);
-        self.gl.delete_shader(fs_id);
+            
+            let fs_id =
+                match Device::compile_shader(&*self.gl, base_filename, gl::FRAGMENT_SHADER, &sources.fs_source) {
+                    Ok(fs_id) => fs_id,
+                    Err(err) => {
+                        self.gl.delete_shader(vs_id);
+                        return Err(err);
+                    }
+                };
 
-        if self.gl.get_program_iv(pid, gl::LINK_STATUS) == (0 as gl::GLint) {
-            let error_log = self.gl.get_program_info_log(pid);
-            println!(
-                "Failed to link shader program: {:?}\n{}",
-                base_filename,
-                error_log
-            );
-            self.gl.delete_program(pid);
-            return Err(ShaderError::Link(base_filename.to_string(), error_log));
+            
+            self.gl.attach_shader(pid, vs_id);
+            self.gl.attach_shader(pid, fs_id);
+
+            
+            for (i, attr) in descriptor
+                .vertex_attributes
+                .iter()
+                .chain(descriptor.instance_attributes.iter())
+                .enumerate()
+            {
+                self.gl
+                    .bind_attrib_location(pid, i as gl::GLuint, attr.name);
+            }
+
+            if self.cached_programs.is_some() {
+                self.gl.program_parameter_i(pid, gl::PROGRAM_BINARY_RETRIEVABLE_HINT, gl::TRUE as gl::GLint);
+            }
+
+            
+            self.gl.link_program(pid);
+
+            
+            
+            
+            self.gl.detach_shader(pid, vs_id);
+            self.gl.detach_shader(pid, fs_id);
+            self.gl.delete_shader(vs_id);
+            self.gl.delete_shader(fs_id);
+
+            if self.gl.get_program_iv(pid, gl::LINK_STATUS) == (0 as gl::GLint) {
+                let error_log = self.gl.get_program_info_log(pid);
+                println!(
+                    "Failed to link shader program: {:?}\n{}",
+                    base_filename,
+                    error_log
+                );
+                self.gl.delete_program(pid);
+                return Err(ShaderError::Link(base_filename.to_string(), error_log));
+            }
+        }
+
+        if let Some(ref mut cached_programs) = self.cached_programs {
+            if !cached_programs.contains(&sources) {
+                let (buffer, format) = self.gl.get_program_binary(pid);
+                if buffer.len() > 0 {
+                  cached_programs.insert(sources, ProgramBinary::new(buffer, format));
+                }
+            }
         }
 
         let u_transform = self.gl.get_uniform_location(pid, "uTransform");

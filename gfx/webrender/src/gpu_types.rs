@@ -142,11 +142,6 @@ impl From<CompositePrimitiveInstance> for PrimitiveInstance {
 
 
 
-pub const BRUSH_FLAG_USES_PICTURE: i32 = (1 << 0);
-
-
-
-
 
 
 
