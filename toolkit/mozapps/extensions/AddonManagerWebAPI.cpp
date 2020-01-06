@@ -22,6 +22,12 @@ static bool
 IsValidHost(const nsACString& host) {
   
   
+  if (Preferences::GetBool("privacy.resistFingerprinting.block_mozAddonManager")) {
+    return false;
+  }
+
+  
+  
   nsCOMPtr<nsIPrefService> prefService (do_GetService(NS_PREFSERVICE_CONTRACTID));
   nsCOMPtr<nsIPrefBranch> prefs;
   if (prefService) {
