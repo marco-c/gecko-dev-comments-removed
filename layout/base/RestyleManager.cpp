@@ -728,6 +728,16 @@ RecomputePosition(nsIFrame* aFrame)
     return false;
   }
 
+  
+  
+  if (aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+    nsIFrame* ph = aFrame->GetPlaceholderFrame();
+    if (ph && ph->HasAnyStateBits(PLACEHOLDER_STATICPOS_NEEDS_CSSALIGN)) {
+      StyleChangeReflow(aFrame, nsChangeHint_NeedReflow);
+      return false;
+    }
+  }
+
   aFrame->SchedulePaint();
 
   
