@@ -155,10 +155,13 @@ add_task(async function test_url() {
     
     browser.tabs.create({}, function(tab) {
       browser.tabs.onUpdated.addListener(function onUpdated(tabId, changeInfo) {
-        
-        browser.test.assertEq(tabId, tab.id, "Check tab id");
-        browser.test.log("onUpdate: " + JSON.stringify(changeInfo));
         if ("url" in changeInfo) {
+          
+          
+          
+          if ("about:newtab" === changeInfo.url) {
+            return;
+          }
           browser.test.assertEq("about:blank", changeInfo.url,
                                 "Check changeInfo.url");
           browser.tabs.onUpdated.removeListener(onUpdated);
@@ -166,6 +169,9 @@ add_task(async function test_url() {
           browser.tabs.remove(tabId);
           browser.test.notifyPass("finish");
         }
+        
+        browser.test.assertEq(tabId, tab.id, "Check tab id");
+        browser.test.log("onUpdate: " + JSON.stringify(changeInfo));
       });
       browser.tabs.update(tab.id, {url: "about:blank"});
     });
