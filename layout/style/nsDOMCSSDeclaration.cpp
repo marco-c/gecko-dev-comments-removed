@@ -317,7 +317,17 @@ nsDOMCSSDeclaration::ModifyDeclaration(GeckoFunc aGeckoFunc,
   
   
   mozAutoDocConditionalContentUpdateBatch autoUpdate(DocToUpdate(), true);
-  RefPtr<DeclarationBlock> decl = olddecl->EnsureMutable();
+  RefPtr<DeclarationBlock> decl;
+  if (olddecl->IsServo() && !olddecl->IsDirty()) {
+    
+    
+    
+    
+    
+    decl = olddecl->Clone();
+  } else {
+    decl = olddecl->EnsureMutable();
+  }
 
   bool changed;
   if (decl->IsGecko()) {
