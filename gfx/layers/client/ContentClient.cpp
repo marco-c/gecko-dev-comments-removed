@@ -149,22 +149,6 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
   OpenMode lockMode = aFlags & PAINT_ASYNC ? OpenMode::OPEN_READ_ASYNC_WRITE
                                            : OpenMode::OPEN_READ_WRITE;
 
-  if (mBuffer) {
-    if (mBuffer->Lock(lockMode)) {
-      
-      
-      FinalizeFrame(result.mRegionToDraw);
-    } else {
-      
-      
-      
-      
-      result.mRegionToDraw = dest.mNeededRegion;
-      dest.mCanReuseBuffer = false;
-      Clear();
-    }
-  }
-
   
   
   
@@ -177,10 +161,20 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
   if (dest.mCanReuseBuffer) {
     MOZ_ASSERT(mBuffer);
 
-    if (!mBuffer->AdjustTo(dest.mBufferRect,
-                           drawBounds,
-                           canHaveRotation,
-                           canDrawRotated)) {
+    if (mBuffer->Lock(lockMode)) {
+      
+      
+      FinalizeFrame(result.mRegionToDraw);
+
+      if (!mBuffer->AdjustTo(dest.mBufferRect,
+                             drawBounds,
+                             canHaveRotation,
+                             canDrawRotated)) {
+        dest.mBufferRect = ComputeBufferRect(dest.mNeededRegion.GetBounds());
+        dest.mCanReuseBuffer = false;
+        mBuffer->Unlock();
+      }
+    } else {
       dest.mBufferRect = ComputeBufferRect(dest.mNeededRegion.GetBounds());
       dest.mCanReuseBuffer = false;
     }
@@ -189,6 +183,7 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
   NS_ASSERTION(!(aFlags & PAINT_WILL_RESAMPLE) || dest.mBufferRect == dest.mNeededRegion.GetBounds(),
                "If we're resampling, we need to validate the entire buffer");
 
+  
   
   
   if (!dest.mCanReuseBuffer) {
@@ -209,23 +204,23 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
                         << dest.mBufferRect.Width() << ", "
                         << dest.mBufferRect.Height();
       }
-      Clear();
       return result;
     }
 
     if (!newBuffer->Lock(lockMode)) {
       gfxCriticalNote << "Failed to lock new back buffer.";
-      Clear();
       return result;
     }
 
     
-    if (mBuffer) {
-      newBuffer->UpdateDestinationFrom(*mBuffer, newBuffer->BufferRect());
-
-      
-      
-      mBuffer->Unlock();
+    if (RefPtr<RotatedBuffer> frontBuffer = GetFrontBuffer()) {
+      if (frontBuffer->Lock(OpenMode::OPEN_READ_ONLY)) {
+        newBuffer->UpdateDestinationFrom(*frontBuffer, newBuffer->BufferRect());
+        frontBuffer->Unlock();
+      } else {
+        gfxCriticalNote << "Failed to copy front buffer to back buffer.";
+        return result;
+      }
     }
 
     
@@ -433,11 +428,12 @@ ContentClient::CalculateBufferForPaint(PaintedLayer* aLayer,
 
     
     
-    if (canKeepBufferContents &&
-        mBuffer &&
-        (contentType != mBuffer->GetContentType() ||
-        (mode == SurfaceMode::SURFACE_COMPONENT_ALPHA) != mBuffer->HaveBufferOnWhite()))
-    {
+    RefPtr<RotatedBuffer> frontBuffer = GetFrontBuffer();
+    bool needsComponentAlpha = (mode == SurfaceMode::SURFACE_COMPONENT_ALPHA);
+    bool changedSurfaceOrContent = frontBuffer &&
+                                   (contentType != frontBuffer->GetContentType() ||
+                                    needsComponentAlpha != frontBuffer->HaveBufferOnWhite());
+    if (canKeepBufferContents && changedSurfaceOrContent) {
       
       
       canReuseBuffer = false;
@@ -471,6 +467,12 @@ ContentClient::ValidBufferSize(BufferSizePolicy aPolicy,
   return (aVisibleBoundsSize == aBufferSize ||
           (SizedToVisibleBounds != aPolicy &&
            aVisibleBoundsSize < aBufferSize));
+}
+
+RefPtr<RotatedBuffer>
+ContentClient::GetFrontBuffer() const
+{
+  return mBuffer;
 }
 
 void
@@ -831,8 +833,6 @@ ContentClient::PaintState
 ContentClientDoubleBuffered::BeginPaint(PaintedLayer* aLayer,
                                         uint32_t aFlags)
 {
-  EnsureBackBufferIfFrontBuffer();
-
   mIsNewBuffer = false;
 
   if (!mFrontBuffer || !mBuffer) {
@@ -857,6 +857,12 @@ ContentClientDoubleBuffered::BeginPaint(PaintedLayer* aLayer,
   }
 
   return ContentClient::BeginPaint(aLayer, aFlags);
+}
+
+RefPtr<RotatedBuffer>
+ContentClientDoubleBuffered::GetFrontBuffer() const
+{
+  return mFrontBuffer;
 }
 
 
@@ -904,17 +910,6 @@ ContentClientDoubleBuffered::FinalizeFrame(const nsIntRegion& aRegionToDraw)
   if (mFrontBuffer->Lock(OpenMode::OPEN_READ_ONLY)) {
     mBuffer->UpdateDestinationFrom(*mFrontBuffer, updateRegion.GetBounds());
     mFrontBuffer->Unlock();
-  }
-}
-
-void
-ContentClientDoubleBuffered::EnsureBackBufferIfFrontBuffer()
-{
-  if (!mBuffer && mFrontBuffer) {
-    mBuffer = CreateBufferInternal(mFrontBuffer->BufferRect(),
-                                   mFrontBuffer->GetFormat(),
-                                   mTextureFlags);
-    MOZ_ASSERT(mBuffer);
   }
 }
 

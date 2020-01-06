@@ -207,6 +207,8 @@ protected:
                               const gfx::IntSize& aBufferSize,
                               const gfx::IntSize& aVisibleBoundsSize);
 
+  virtual RefPtr<RotatedBuffer> GetFrontBuffer() const;
+
   
 
 
@@ -357,6 +359,8 @@ public:
 
   virtual PaintState BeginPaint(PaintedLayer* aLayer, uint32_t aFlags) override;
 
+  virtual RefPtr<RotatedBuffer> GetFrontBuffer() const override;
+
   virtual void FinalizeFrame(const nsIntRegion& aRegionToDraw) override;
 
   virtual TextureInfo GetTextureInfo() const override
@@ -365,8 +369,6 @@ public:
   }
 
 private:
-  void EnsureBackBufferIfFrontBuffer();
-
   RefPtr<RemoteRotatedBuffer> mFrontBuffer;
   nsIntRegion mFrontUpdatedRegion;
   bool mFrontAndBackBufferDiffer;
