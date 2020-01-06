@@ -73,6 +73,10 @@ AccessibleHandler::AccessibleHandler(IUnknown* aOuter, HRESULT* aResult)
   , mIAHypertextPassThru(nullptr)
   , mCachedData()
   , mCacheGen(0)
+  , mCachedHyperlinks(nullptr)
+  , mCachedNHyperlinks(-1)
+  , mCachedTextAttribRuns(nullptr)
+  , mCachedNTextAttribRuns(-1)
 {
   RefPtr<AccessibleHandlerControl> ctl(gControlFactory.GetOrCreateSingleton());
   MOZ_ASSERT(ctl);
@@ -91,6 +95,7 @@ AccessibleHandler::~AccessibleHandler()
   if (mCachedData.mGeckoBackChannel) {
     mCachedData.mGeckoBackChannel->Release();
   }
+  ClearTextCache();
 }
 
 HRESULT
@@ -202,6 +207,48 @@ AccessibleHandler::MaybeUpdateCachedData()
   }
 
   return mCachedData.mGeckoBackChannel->Refresh(&mCachedData.mDynamicData);
+}
+
+HRESULT
+AccessibleHandler::GetAllTextInfo(BSTR* aText)
+{
+  MOZ_ASSERT(mCachedData.mGeckoBackChannel);
+
+  ClearTextCache();
+
+  return mCachedData.mGeckoBackChannel->get_AllTextInfo(aText,
+    &mCachedHyperlinks, &mCachedNHyperlinks,
+    &mCachedTextAttribRuns, &mCachedNTextAttribRuns);
+}
+
+void
+AccessibleHandler::ClearTextCache()
+{
+  if (mCachedNHyperlinks >= 0) {
+    
+    for (long index = 0; index < mCachedNHyperlinks; ++index) {
+      mCachedHyperlinks[index]->Release();
+    }
+    
+    if (mCachedHyperlinks) {
+      ::CoTaskMemFree(mCachedHyperlinks);
+      mCachedHyperlinks = nullptr;
+    }
+    mCachedNHyperlinks = -1;
+  }
+
+  if (mCachedTextAttribRuns) {
+    for (long index = 0; index < mCachedNTextAttribRuns; ++index) {
+      if (mCachedTextAttribRuns[index].text) {
+        
+        ::SysFreeString(mCachedTextAttribRuns[index].text);
+      }
+    }
+    
+    ::CoTaskMemFree(mCachedTextAttribRuns);
+    mCachedTextAttribRuns = nullptr;
+    mCachedNTextAttribRuns = -1;
+  }
 }
 
 HRESULT
@@ -1577,6 +1624,28 @@ HRESULT
 AccessibleHandler::get_attributes(long offset, long *startOffset,
                                   long *endOffset, BSTR *textAttributes)
 {
+  if (!startOffset || !endOffset || !textAttributes) {
+    return E_INVALIDARG;
+  }
+
+  if (mCachedNTextAttribRuns >= 0) {
+    
+    for (long index = 0; index < mCachedNTextAttribRuns; ++index) {
+      auto& attribRun = mCachedTextAttribRuns[index];
+      if (attribRun.start <= offset && offset < attribRun.end) {
+        *startOffset = attribRun.start;
+        *endOffset = attribRun.end;
+        *textAttributes = attribRun.text;
+        
+        
+        attribRun.text = nullptr;
+        
+        attribRun.end = 0;
+        return S_OK;
+      }
+    }
+  }
+
   HRESULT hr = ResolveIAHypertext();
   if (FAILED(hr)) {
     return hr;
@@ -1652,7 +1721,23 @@ AccessibleHandler::get_selection(long selectionIndex, long *startOffset,
 HRESULT
 AccessibleHandler::get_text(long startOffset, long endOffset, BSTR *text)
 {
-  HRESULT hr = ResolveIAHypertext();
+  if (!text) {
+    return E_INVALIDARG;
+  }
+
+  HRESULT hr;
+  if (mCachedData.mGeckoBackChannel &&
+      startOffset == 0 && endOffset == IA2_TEXT_OFFSET_LENGTH) {
+    
+    
+    hr = GetAllTextInfo(text);
+    if (SUCCEEDED(hr)) {
+      return hr;
+    }
+    
+  }
+
+  hr = ResolveIAHypertext();
   if (FAILED(hr)) {
     return hr;
   }
@@ -1866,6 +1951,20 @@ HRESULT
 AccessibleHandler::get_hyperlinks(IAccessibleHyperlink*** hyperlinks,
                                   long* nHyperlinks)
 {
+  if (!hyperlinks || !nHyperlinks) {
+    return E_INVALIDARG;
+  }
+
+  if (mCachedNHyperlinks >= 0) {
+    
+    *hyperlinks = mCachedHyperlinks;
+    *nHyperlinks = mCachedNHyperlinks;
+    
+    mCachedHyperlinks = nullptr;
+    mCachedNHyperlinks = -1;
+    return mCachedNHyperlinks == 0 ? S_FALSE : S_OK;
+  }
+
   HRESULT hr = ResolveIAHypertext();
   if (FAILED(hr)) {
     return hr;
