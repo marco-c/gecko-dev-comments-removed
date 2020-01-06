@@ -24,6 +24,9 @@ var gExceptionPaths = [
   "resource://shield-recipe-client/test/",
 
   
+  "resource://activity-stream/data/content/tippytop/images/",
+
+  
   "resource://pdf.js/web/images/",
 ];
 
