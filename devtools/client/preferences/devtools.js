@@ -315,7 +315,7 @@ pref("devtools.webconsole.new-frontend-enabled", false);
 pref("devtools.source-map.client-service.enabled", true);
 
 
-pref("devtools.hud.loglimit", 1000);
+pref("devtools.hud.loglimit", 10000);
 
 
 
