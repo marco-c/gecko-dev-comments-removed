@@ -7896,11 +7896,23 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
     PullOutCaptionFrames(frameItems, captionItems);
   }
 
+  bool dealtWithFirstLine = false;
   if (haveFirstLineStyle && parentFrame == containingBlock) {
     
     
     AppendFirstLineFrames(state, containingBlock->GetContent(),
                           containingBlock, frameItems);
+    
+    
+    dealtWithFirstLine = true;
+  }
+
+  if (!dealtWithFirstLine &&
+      parentFrame->StyleContext()->HasPseudoElementData()) {
+    
+    
+    CheckForFirstLineInsertion(parentFrame, frameItems);
+    CheckForFirstLineInsertion(parentFrame, captionItems);
   }
 
   
@@ -8496,6 +8508,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     prevSibling = ::FindAppendPrevSibling(insertion.mParentFrame, appendAfterFrame);
   }
 
+  bool dealtWithFirstLine = false;
   if (haveFirstLineStyle && insertion.mParentFrame == containingBlock) {
     
     
@@ -8503,8 +8516,13 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
       
       AppendFirstLineFrames(state, containingBlock->GetContent(),
                             containingBlock, frameItems);
+      
+      
+      dealtWithFirstLine = true;
     }
     else {
+      
+      
       
       
       
@@ -8512,6 +8530,12 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
       InsertFirstLineFrames(state, container, containingBlock, &insertion.mParentFrame,
                             prevSibling, frameItems);
     }
+  }
+
+  if (!dealtWithFirstLine &&
+      insertion.mParentFrame->StyleContext()->HasPseudoElementData()) {
+    CheckForFirstLineInsertion(insertion.mParentFrame, frameItems);
+    CheckForFirstLineInsertion(insertion.mParentFrame, captionItems);
   }
 
   
@@ -11707,6 +11731,56 @@ nsCSSFrameConstructor::InsertFirstLineFrames(
   }
 
 #endif
+}
+
+void
+nsCSSFrameConstructor::CheckForFirstLineInsertion(nsIFrame* aParentFrame,
+                                                  nsFrameItems& aFrameItems)
+{
+  MOZ_ASSERT(aParentFrame->StyleContext()->HasPseudoElementData(),
+             "Why were we called?");
+
+  if (aFrameItems.IsEmpty()) {
+    
+    
+    return;
+  }
+
+  class RestyleManager* restyleManager = RestyleManager();
+  if (!restyleManager->IsServo()) {
+    
+    
+    return;
+  }
+
+  
+  
+  
+  
+  nsIFrame* ancestor = aParentFrame;
+  while (ancestor) {
+    if (!ancestor->StyleContext()->HasPseudoElementData()) {
+      
+      return;
+    }
+
+    if (!ancestor->IsLineFrame()) {
+      ancestor = ancestor->GetParent();
+      continue;
+    }
+
+    if (!ancestor->StyleContext()->IsPseudoElement()) {
+      
+      
+      return;
+    }
+
+    
+    for (nsIFrame* f : aFrameItems) {
+      restyleManager->ReparentStyleContext(f);
+    }
+    return;
+  }
 }
 
 
