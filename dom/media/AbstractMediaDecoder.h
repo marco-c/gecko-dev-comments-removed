@@ -49,16 +49,6 @@ public:
   
   
   
-  
-  virtual MediaEventSource<RefPtr<layers::KnowsCompositor>>*
-  CompositorUpdatedEvent()
-  {
-    return nullptr;
-  }
-
-  
-  
-  
   virtual void NotifyWaitingForKey() { }
 
   

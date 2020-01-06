@@ -544,9 +544,6 @@ private:
   
   void NotifyCompositor();
 
-  MediaEventSource<RefPtr<layers::KnowsCompositor>>*
-  CompositorUpdatedEvent() override { return &mCompositorUpdatedEvent; }
-
   void OnPlaybackEvent(MediaEventType aEvent);
   void OnPlaybackErrorEvent(const MediaResult& aError);
 
@@ -561,8 +558,6 @@ private:
 
   void ConnectMirrors(MediaDecoderStateMachine* aObject);
   void DisconnectMirrors();
-
-  MediaEventProducer<RefPtr<layers::KnowsCompositor>> mCompositorUpdatedEvent;
 
   
   
