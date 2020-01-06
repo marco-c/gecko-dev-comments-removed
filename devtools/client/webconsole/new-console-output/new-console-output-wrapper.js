@@ -186,7 +186,9 @@ NewConsoleOutputWrapper.prototype = {
   dispatchMessageUpdate: function (message, res) {
     
     
-    if (res.packet.updateType === "eventTimings") {
+    
+    const NUMBER_OF_NETWORK_UPDATE = 8;
+    if (res.networkInfo.updates.length === NUMBER_OF_NETWORK_UPDATE) {
       batchedMessageAdd(actions.networkMessageUpdate(message));
       this.jsterm.hud.emit("network-message-updated", res);
     }
