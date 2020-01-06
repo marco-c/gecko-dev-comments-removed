@@ -728,9 +728,13 @@ protected:
 
 
 
+
+
+
   void FirePopupShowingEvent(nsIContent* aPopup,
                              bool aIsContextMenu,
-                             bool aSelectFirstItem);
+                             bool aSelectFirstItem,
+                             nsIDOMEvent* aTriggerEvent);
 
   
 
