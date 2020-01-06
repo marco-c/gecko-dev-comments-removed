@@ -19,6 +19,7 @@ import org.mozilla.gecko.activitystream.Utils;
 import org.mozilla.gecko.activitystream.homepanel.StreamHighlightItemRowContextMenuListener;
 import org.mozilla.gecko.activitystream.homepanel.model.WebpageRowModel;
 import org.mozilla.gecko.util.DrawableUtil;
+import org.mozilla.gecko.util.StringUtils;
 import org.mozilla.gecko.util.TouchTargetUtil;
 import org.mozilla.gecko.util.URIUtils;
 import org.mozilla.gecko.util.ViewUtil;
@@ -144,7 +145,7 @@ public class WebpageItemRow extends StreamViewHolder {
         private final UUID viewTagAtStart;
 
         UpdatePageDomainAsyncTask(final Context contextReference, final URI uri, final TextView pageDomainView) {
-            super(contextReference, uri, false, 0); 
+            super(contextReference, uri, false, 1); 
             this.pageDomainViewWeakReference = new WeakReference<>(pageDomainView);
 
             
@@ -153,8 +154,8 @@ public class WebpageItemRow extends StreamViewHolder {
         }
 
         @Override
-        protected void onPostExecute(final String hostSLD) {
-            super.onPostExecute(hostSLD);
+        protected void onPostExecute(final String domainTitle) {
+            super.onPostExecute(domainTitle);
             final TextView viewToUpdate = pageDomainViewWeakReference.get();
 
             if (viewToUpdate == null || !isTagSameAsStartTag(viewToUpdate)) {
@@ -163,7 +164,7 @@ public class WebpageItemRow extends StreamViewHolder {
 
             
             
-            viewToUpdate.setText(hostSLD);
+            viewToUpdate.setText(StringUtils.stripCommonSubdomains(domainTitle));
         }
 
         
