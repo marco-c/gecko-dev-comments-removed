@@ -283,7 +283,7 @@ window.onerror = function (msg, page, line, column, error) {
   
   options = jstestsOptions;
 
-  optionsPush();
+  optionsClear();
 
   if (typeof DESCRIPTION == 'undefined') {
     DESCRIPTION = 'Unknown';
@@ -387,10 +387,6 @@ function optionsInit() {
   
   
   options.initvalues = {};
-
-  
-  
-  options.stackvalues = [];
 
   for (var optionName in options.currvalues)
   {
