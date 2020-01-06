@@ -11,6 +11,7 @@ const Cu = Components.utils;
 const Ci = Components.interfaces;
 const {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
 const {NetUtil} = Cu.import("resource://gre/modules/NetUtil.jsm", {});
+const {AppConstants} = Cu.import("resource://gre/modules/AppConstants.jsm", {});
 
 
 let listener;
@@ -42,8 +43,54 @@ function readURI(uri) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+function interpretPreprocessingInstructions(content) {
+  const ifMap = {
+    "#if MOZ_UPDATE_CHANNEL == beta": AppConstants.MOZ_UPDATE_CHANNEL === "beta",
+    "#if defined(NIGHTLY_BUILD)": AppConstants.NIGHTLY_BUILD,
+    "#ifdef MOZ_DEV_EDITION": AppConstants.MOZ_DEV_EDITION,
+    "#ifdef RELEASE_OR_BETA": AppConstants.RELEASE_OR_BETA,
+  };
+
+  let lines = content.split("\n");
+  let ignoring = false;
+  let newLines = [];
+  let continuation = false;
+  for (let line of lines) {
+    if (line.startsWith("#if")) {
+      if (!(line in ifMap)) {
+        throw new Error("missing line in ifMap: " + line);
+      }
+      ignoring = !ifMap[line];
+    } else if (line.startsWith("#else")) {
+      ignoring = !ignoring;
+    }
+
+    let isPrefLine = /^ *pref\("([^"]+)"/.test(line);
+    if (continuation || (!ignoring && isPrefLine)) {
+      newLines.push(line);
+
+      
+      continuation = !/\);/.test(line);
+    }
+  }
+  return newLines.join("\n");
+}
+
+
+
 function processPrefFile(url) {
   let content = readURI(url);
+  content = interpretPreprocessingInstructions(content);
   content.match(/pref\("[^"]+",\s*.+\s*\)/g).forEach(item => {
     let m = item.match(/pref\("([^"]+)",\s*(.+)\s*\)/);
     let name = m[1];
