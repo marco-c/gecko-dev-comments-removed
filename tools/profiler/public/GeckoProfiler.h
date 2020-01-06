@@ -116,16 +116,6 @@ using UniqueProfilerBacktrace =
 
 
 
-#define PROFILER_MARKER(marker_name) profiler_add_marker(marker_name)
-
-
-#define PROFILER_MARKER_PAYLOAD(marker_name, payload) \
-  profiler_add_marker(marker_name, payload)
-
-
-
-
-
 
 #define PROFILER_FOR_EACH_FEATURE(macro)
  \
@@ -375,6 +365,9 @@ PROFILER_FUNC(int profiler_current_thread_id(), 0)
 PROFILER_FUNC_VOID(profiler_suspend_and_sample_thread(int aThreadId,
                                                       const std::function<void(void**, size_t)>& aCallback,
                                                       bool aSampleNative = true))
+
+
+
 
 
 
