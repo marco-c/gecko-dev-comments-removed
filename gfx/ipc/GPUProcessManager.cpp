@@ -179,6 +179,13 @@ GPUProcessManager::DisableGPUProcess(const char* aMessage)
 
   DestroyProcess();
   ShutdownVsyncIOThread();
+
+  
+  
+  
+  
+  
+  EnsureProtocolsReady();
 }
 
 bool
@@ -198,6 +205,14 @@ GPUProcessManager::EnsureGPUReady()
   }
 
   return false;
+}
+
+void
+GPUProcessManager::EnsureProtocolsReady()
+{
+  EnsureCompositorManagerChild();
+  EnsureImageBridgeChild();
+  EnsureVRManager();
 }
 
 void
@@ -641,9 +656,7 @@ GPUProcessManager::CreateTopLevelCompositor(nsBaseWidget* aWidget,
 {
   uint64_t layerTreeId = AllocateLayerTreeId();
 
-  EnsureCompositorManagerChild();
-  EnsureImageBridgeChild();
-  EnsureVRManager();
+  EnsureProtocolsReady();
 
   RefPtr<CompositorSession> session;
 
