@@ -825,8 +825,8 @@ nsFaviconService::OptimizeIconSizes(IconData& aIcon)
 
   
   nsCOMPtr<imgIContainer> container;
-  rv = GetImgTools()->DecodeImageData(stream, payload.mimeType,
-                                      getter_AddRefs(container));
+  rv = GetImgTools()->DecodeImage(stream, payload.mimeType,
+                                  getter_AddRefs(container));
   NS_ENSURE_SUCCESS(rv, rv);
 
   

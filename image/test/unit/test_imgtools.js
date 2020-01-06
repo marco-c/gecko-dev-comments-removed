@@ -145,11 +145,7 @@ var imgFile = do_get_file(imgName);
 var istream = getFileInputStream(imgFile);
 do_check_eq(istream.available(), 8415);
 
-
-
-var outParam = { value: null };
-imgTools.decodeImageData(istream, inMimeType, outParam);
-var container = outParam.value;
+var container = imgTools.decodeImage(istream, inMimeType);
 
 
 
