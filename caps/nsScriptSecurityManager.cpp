@@ -763,6 +763,21 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
     }
 
     
+    rv = NS_URIChainHasFlags(aTargetURI,
+                             nsIProtocolHandler::URI_LOADABLE_BY_EXTENSIONS,
+                             &hasFlags);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (hasFlags) {
+      nsString addonId;
+      aPrincipal->GetAddonId(addonId);
+
+      if (!addonId.IsEmpty()) {
+        return NS_OK;
+      }
+    }
+
+    
     nsCaseInsensitiveCStringComparator stringComparator;
     nsCOMPtr<nsIURI> currentURI = sourceURI;
     nsCOMPtr<nsIURI> currentOtherURI = aTargetURI;
