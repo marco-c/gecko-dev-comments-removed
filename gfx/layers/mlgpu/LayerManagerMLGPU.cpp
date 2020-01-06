@@ -263,7 +263,8 @@ LayerManagerMLGPU::EndTransaction(const TimeStamp& aTimeStamp, EndTransactionFla
     }
   }
 
-  mDrawDiagnostics = gfxPrefs::LayersDrawFPS();
+  
+  mDrawDiagnostics = gfxPrefs::LayersDrawFPS() && !mTarget;
   mUsingInvalidation = gfxPrefs::AdvancedLayersUseInvalidation();
 
   
