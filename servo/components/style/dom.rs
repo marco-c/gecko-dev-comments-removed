@@ -333,6 +333,23 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     }
 
     
+    fn before_pseudo_element(&self) -> Option<Self> {
+        None
+    }
+
+    
+    fn after_pseudo_element(&self) -> Option<Self> {
+        None
+    }
+
+    
+    
+    fn each_anonymous_content_child<F>(&self, _f: F)
+    where
+        F: FnMut(Self),
+    {}
+
+    
     
     fn closest_non_native_anonymous_ancestor(&self) -> Option<Self> {
         unreachable!("Servo doesn't know about NAC");
@@ -568,6 +585,14 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
             None => return false,
         };
         return data.restyle.hint.has_animation_hint()
+    }
+
+    
+    
+    
+    
+    fn xbl_binding_anonymous_content(&self) -> Option<Self::ConcreteNode> {
+        None
     }
 
     
