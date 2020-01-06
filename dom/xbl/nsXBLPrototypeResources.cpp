@@ -47,13 +47,14 @@ nsXBLPrototypeResources::AddResource(nsIAtom* aResourceType, const nsAString& aS
     mLoader->AddResource(aResourceType, aSrc);
 }
 
-void
-nsXBLPrototypeResources::LoadResources(bool* aResult)
+bool
+nsXBLPrototypeResources::LoadResources()
 {
-  if (mLoader)
-    mLoader->LoadResources(aResult);
-  else
-    *aResult = true; 
+  if (mLoader) {
+    return mLoader->LoadResources();
+  }
+
+  return true; 
 }
 
 void
