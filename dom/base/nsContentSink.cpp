@@ -697,7 +697,7 @@ nsContentSink::ProcessLink(const nsSubstring& aAnchor, const nsSubstring& aHref,
                            const nsSubstring& aCrossOrigin)
 {
   uint32_t linkTypes =
-    nsStyleLinkElement::ParseLinkTypes(aRel, mDocument->NodePrincipal());
+    nsStyleLinkElement::ParseLinkTypes(aRel);
 
   
   

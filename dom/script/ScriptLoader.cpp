@@ -54,7 +54,6 @@
 #include "nsSandboxFlags.h"
 #include "nsContentTypeParser.h"
 #include "nsINetworkPredictor.h"
-#include "ImportManager.h"
 #include "mozilla/dom/EncodingUtils.h"
 #include "mozilla/ConsoleReportCollector.h"
 
@@ -402,12 +401,6 @@ ScriptLoader::CreateModuleScript(ModuleLoadRequest* aRequest)
   {
     
     AutoCurrentScriptUpdater scriptUpdater(this, aRequest->mElement);
-    Maybe<AutoCurrentScriptUpdater> masterScriptUpdater;
-    nsCOMPtr<nsIDocument> master = mDocument->MasterDocument();
-    if (master != mDocument) {
-      masterScriptUpdater.emplace(master->ScriptLoader(),
-                                  aRequest->mElement);
-    }
 
     JSContext* cx = aes.cx();
     JS::Rooted<JSObject*> module(cx);
@@ -864,7 +857,7 @@ ScriptLoader::StartLoad(ScriptLoadRequest* aRequest)
   }
 
   nsCOMPtr<nsILoadGroup> loadGroup = mDocument->GetDocumentLoadGroup();
-  nsCOMPtr<nsPIDOMWindowOuter> window = mDocument->MasterDocument()->GetWindow();
+  nsCOMPtr<nsPIDOMWindowOuter> window = mDocument->GetWindow();
   NS_ENSURE_TRUE(window, NS_ERROR_NULL_POINTER);
   nsIDocShell* docshell = window->GetDocShell();
   nsCOMPtr<nsIInterfaceRequestor> prompter(do_QueryInterface(docshell));
@@ -1696,13 +1689,13 @@ ScriptLoader::ProcessRequest(ScriptLoadRequest* aRequest)
 
   
   
-  nsCOMPtr<nsIDocument> master = mDocument->MasterDocument();
+
   {
     
     nsAutoMicroTask mt;
   }
 
-  nsPIDOMWindowInner* pwin = master->GetInnerWindow();
+  nsPIDOMWindowInner* pwin = mDocument->GetInnerWindow();
   bool runScript = !!pwin;
   if (runScript) {
     nsContentUtils::DispatchTrustedEvent(scriptElem->OwnerDoc(),
@@ -1712,7 +1705,7 @@ ScriptLoader::ProcessRequest(ScriptLoadRequest* aRequest)
   }
 
   
-  pwin = master->GetInnerWindow();
+  pwin = mDocument->GetInnerWindow();
   if (!pwin) {
     runScript = false;
   }
@@ -1787,8 +1780,7 @@ ScriptLoader::FireScriptEvaluated(nsresult aResult,
 already_AddRefed<nsIScriptGlobalObject>
 ScriptLoader::GetScriptGlobalObject()
 {
-  nsCOMPtr<nsIDocument> master = mDocument->MasterDocument();
-  nsPIDOMWindowInner* pwin = master->GetInnerWindow();
+  nsPIDOMWindowInner* pwin = mDocument->GetInnerWindow();
   if (!pwin) {
     return nullptr;
   }
@@ -2056,17 +2048,6 @@ ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest)
   {
     
     AutoCurrentScriptUpdater scriptUpdater(this, aRequest->mElement);
-    Maybe<AutoCurrentScriptUpdater> masterScriptUpdater;
-    nsCOMPtr<nsIDocument> master = mDocument->MasterDocument();
-    if (master != mDocument) {
-      
-      
-      
-      
-      
-      masterScriptUpdater.emplace(master->ScriptLoader(),
-                                  aRequest->mElement);
-    }
 
     if (aRequest->IsModuleRequest()) {
       
@@ -2442,42 +2423,6 @@ ScriptLoader::ReadyToExecuteParserBlockingScripts()
     if (!ancestor->SelfReadyToExecuteParserBlockingScripts() &&
         ancestor->AddPendingChildLoader(this)) {
       AddParserBlockingScriptExecutionBlocker();
-      return false;
-    }
-  }
-
-  if (mDocument && !mDocument->IsMasterDocument()) {
-    RefPtr<ImportManager> im = mDocument->ImportManager();
-    RefPtr<ImportLoader> loader = im->Find(mDocument);
-    MOZ_ASSERT(loader, "How can we have an import document without a loader?");
-
-    
-    
-    nsCOMPtr<nsINode> referrer = loader->GetMainReferrer();
-    MOZ_ASSERT(referrer, "There has to be a main referring link for each imports");
-
-    
-    
-    
-    
-    RefPtr<ImportLoader> lastPred = im->GetNearestPredecessor(referrer);
-    if (!lastPred) {
-      
-      return true;
-    }
-
-    nsCOMPtr<nsIDocument> doc = lastPred->GetDocument();
-    if (lastPred->IsBlocking() || !doc ||
-        !doc->ScriptLoader()->SelfReadyToExecuteParserBlockingScripts()) {
-      
-      
-      
-      
-      
-      lastPred->AddBlockedScriptLoader(this);
-      
-      
-      loader->SetBlockingPredecessor(lastPred);
       return false;
     }
   }
