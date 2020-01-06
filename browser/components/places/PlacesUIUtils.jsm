@@ -40,6 +40,8 @@ const FAVICON_REQUEST_TIMEOUT = 60 * 1000;
 
 let gFaviconLoadDataMap = new Map();
 
+const ITEM_CHANGED_BATCH_NOTIFICATION_THRESHOLD = 10;
+
 
 const TAB_DROP_TYPE = "application/x-moz-tabbrowser-tab";
 const PREF_LOAD_BOOKMARKS_IN_BACKGROUND = "browser.tabs.loadBookmarksInBackground";
@@ -1539,7 +1541,41 @@ this.PlacesUIUtils = {
     if (!info)
       return null;
     return this.promiseNodeLikeFromFetchInfo(info);
-  }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  async batchUpdatesForNode(resultNode, itemsBeingChanged, functionToWrap) {
+    if (!resultNode) {
+      await functionToWrap();
+      return;
+    }
+
+    resultNode = resultNode.QueryInterface(Ci.nsINavBookmarkObserver);
+
+    if (itemsBeingChanged > ITEM_CHANGED_BATCH_NOTIFICATION_THRESHOLD) {
+      resultNode.onBeginUpdateBatch();
+    }
+
+    try {
+      await functionToWrap();
+    } finally {
+      if (itemsBeingChanged > ITEM_CHANGED_BATCH_NOTIFICATION_THRESHOLD) {
+        resultNode.onEndUpdateBatch();
+      }
+    }
+  },
 };
 
 
