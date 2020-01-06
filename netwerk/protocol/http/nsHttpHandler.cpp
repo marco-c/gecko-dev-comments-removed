@@ -462,15 +462,11 @@ nsHttpHandler::Init()
     }
 
     
-    
-    
-    
-    uint32_t spoofedVersion = mAppVersion.ToInteger(&rv);
-    if (NS_SUCCEEDED(rv)) {
-        spoofedVersion = spoofedVersion - (spoofedVersion % 10);
-        mSpoofedUserAgent.Assign(nsPrintfCString(
-            "Mozilla/5.0 (%s; rv:%d.0) Gecko/%s Firefox/%d.0",
-            SPOOFED_OSCPU, spoofedVersion, LEGACY_BUILD_ID, spoofedVersion));
+    rv = nsRFPService::GetSpoofedUserAgent(mSpoofedUserAgent);
+    if (NS_FAILED(rv)) {
+      
+      
+      mSpoofedUserAgent.Truncate();
     }
 
     mSessionStartTime = NowInSeconds();

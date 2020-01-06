@@ -18,10 +18,13 @@
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
 #include "nsXULAppAPI.h"
+#include "nsPrintfCString.h"
 
 #include "nsIObserverService.h"
 #include "nsIPrefBranch.h"
 #include "nsIPrefService.h"
+#include "nsIXULAppInfo.h"
+#include "nsIXULRuntime.h"
 #include "nsJSUtils.h"
 
 #include "prenv.h"
@@ -160,6 +163,59 @@ nsRFPService::GetSpoofedPresentedFrames(double aTime, uint32_t aWidth, uint32_t 
   uint32_t boundedDroppedRatio = min(sVideoDroppedRatio, 100u);
 
   return NSToIntFloor(time * sVideoFramesPerSec * ((100 - boundedDroppedRatio) / 100.0));
+}
+
+
+nsresult
+nsRFPService::GetSpoofedUserAgent(nsACString &userAgent)
+{
+  
+  
+  
+  
+  
+  
+
+  nsresult rv;
+  nsCOMPtr<nsIXULAppInfo> appInfo =
+    do_GetService("@mozilla.org/xre/app-info;1", &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoCString appVersion;
+  rv = appInfo->GetVersion(appVersion);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
+  uint32_t firefoxVersion = appVersion.ToInteger(&rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
+  nsCOMPtr<nsIXULRuntime> runtime =
+    do_GetService("@mozilla.org/xre/runtime;1", &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoCString updateChannel;
+  rv = runtime->GetDefaultUpdateChannel(updateChannel);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
+  if (updateChannel.Equals("esr")) {
+    MOZ_ASSERT(((firefoxVersion % 7) == 3),
+      "Please udpate ESR version formula in nsRFPService.cpp");
+  }
+
+  uint32_t spoofedVersion = firefoxVersion - ((firefoxVersion - 3) % 7);
+  userAgent.Assign(nsPrintfCString(
+    "Mozilla/5.0 (%s; rv:%d.0) Gecko/%s Firefox/%d.0",
+    SPOOFED_OSCPU, spoofedVersion, LEGACY_BUILD_ID, spoofedVersion));
+
+  return rv;
 }
 
 nsresult
