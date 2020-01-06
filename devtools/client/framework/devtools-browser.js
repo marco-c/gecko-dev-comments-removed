@@ -363,13 +363,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     return deferred.promise;
   },
 
-  
-
-
-
-
-
-
+   
   openContentProcessToolbox(gBrowser) {
     let { childCount } = Services.ppmm;
     
@@ -383,17 +377,16 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       }
     }
     if (processId) {
-      return this._getContentProcessTarget(processId)
+      this._getContentProcessTarget(processId)
           .then(target => {
             
             return gDevTools.showToolbox(target, "jsdebugger",
                                          Toolbox.HostType.WINDOW);
           });
+    } else {
+      let msg = L10N.getStr("toolbox.noContentProcessForTab.message");
+      Services.prompt.alert(null, "", msg);
     }
-
-    let msg = L10N.getStr("toolbox.noContentProcessForTab.message");
-    Services.prompt.alert(null, "", msg);
-    return Promise.reject(msg);
   },
 
   
