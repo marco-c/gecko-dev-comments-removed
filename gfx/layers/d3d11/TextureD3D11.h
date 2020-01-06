@@ -239,7 +239,7 @@ public:
   virtual ID3D11ShaderResourceView* GetShaderResourceView() override;
 
   
-  virtual DataTextureSource* AsDataTextureSource() override { return mAllowTextureUploads ? this : false; }
+  virtual DataTextureSource* AsDataTextureSource() override { return mAllowTextureUploads ? this : nullptr; }
 
   virtual void DeallocateDeviceData() override { mTexture = nullptr; }
 
