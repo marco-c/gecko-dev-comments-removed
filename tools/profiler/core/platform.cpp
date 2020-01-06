@@ -481,6 +481,52 @@ static PSMutex gPSMutex;
 
 
 
+
+
+class RacyFeatures
+{
+public:
+  static void SetActive(uint32_t aFeatures)
+  {
+    sActiveAndFeatures = Active | aFeatures;
+  }
+
+  static void SetInactive() { sActiveAndFeatures = 0; }
+
+  static bool IsActive() { return uint32_t(sActiveAndFeatures) & Active; }
+
+  static bool IsActiveWithFeature(uint32_t aFeature)
+  {
+    uint32_t af = sActiveAndFeatures;  
+    return (af & Active) && (af & aFeature);
+  }
+
+  static bool IsActiveWithoutPrivacy()
+  {
+    uint32_t af = sActiveAndFeatures;  
+    return (af & Active) && !(af & ProfilerFeature::Privacy);
+  }
+
+private:
+  static const uint32_t Active = 1u << 31;
+
+  
+  #define NO_OVERLAP(n_, str_, Name_) \
+    static_assert(ProfilerFeature::Name_ != Active, "bad Active value");
+
+  PROFILER_FOR_EACH_FEATURE(NO_OVERLAP);
+
+  #undef NO_OVERLAP
+
+  
+  
+  static Atomic<uint32_t> sActiveAndFeatures;
+};
+
+Atomic<uint32_t> RacyFeatures::sActiveAndFeatures(0);
+
+
+
 class TLSInfo
 {
 public:
@@ -2411,6 +2457,9 @@ locked_profiler_start(PSLockRef aLock, int aEntries, double aInterval,
     mozilla::java::GeckoJavaSampler::Start(javaInterval, 1000);
   }
 #endif
+
+  
+  RacyFeatures::SetActive(ActivePS::Features(aLock));
 }
 
 void
@@ -2456,6 +2505,9 @@ locked_profiler_stop(PSLockRef aLock)
 
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
+
+  
+  RacyFeatures::SetInactive();
 
 #ifdef MOZ_TASK_TRACER
   if (ActivePS::FeatureTaskTracer(aLock)) {
@@ -2599,13 +2651,8 @@ profiler_feature_active(uint32_t aFeature)
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
-  PSAutoLock lock(gPSMutex);
-
-  if (!ActivePS::Exists(lock)) {
-    return false;
-  }
-
-  return !!(ActivePS::Features(lock) & aFeature);
+  
+  return RacyFeatures::IsActiveWithFeature(aFeature);
 }
 
 bool
@@ -2615,9 +2662,8 @@ profiler_is_active()
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
-  PSAutoLock lock(gPSMutex);
-
-  return ActivePS::Exists(lock);
+  
+  return RacyFeatures::IsActive();
 }
 
 void
@@ -2857,14 +2903,19 @@ profiler_get_backtrace_noalloc(char *output, size_t outputSize)
 }
 
 static void
-locked_profiler_add_marker(PSLockRef aLock, const char* aMarkerName,
-                           ProfilerMarkerPayload* aPayload)
+racy_profiler_add_marker(const char* aMarkerName,
+                         ProfilerMarkerPayload* aPayload)
 {
   
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
-  MOZ_RELEASE_ASSERT(ActivePS::Exists(aLock) &&
-                     !ActivePS::FeaturePrivacy(aLock));
+
+  
+  
+  
+  
+  
+  
 
   
   mozilla::UniquePtr<ProfilerMarkerPayload> payload(aPayload);
@@ -2889,16 +2940,15 @@ profiler_add_marker(const char* aMarkerName, ProfilerMarkerPayload* aPayload)
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
-  PSAutoLock lock(gPSMutex);
-
   
   mozilla::UniquePtr<ProfilerMarkerPayload> payload(aPayload);
 
-  if (!ActivePS::Exists(lock) || ActivePS::FeaturePrivacy(lock)) {
+  
+  if (RacyFeatures::IsActiveWithoutPrivacy()) {
     return;
   }
 
-  locked_profiler_add_marker(lock, aMarkerName, payload.release());
+  racy_profiler_add_marker(aMarkerName, payload.release());
 }
 
 void
@@ -2909,14 +2959,13 @@ profiler_tracing(const char* aCategory, const char* aMarkerName,
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
-  PSAutoLock lock(gPSMutex);
-
-  if (!ActivePS::Exists(lock) || ActivePS::FeaturePrivacy(lock)) {
+  
+  if (RacyFeatures::IsActiveWithoutPrivacy()) {
     return;
   }
 
   auto payload = new ProfilerMarkerTracing(aCategory, aKind);
-  locked_profiler_add_marker(lock, aMarkerName, payload);
+  racy_profiler_add_marker(aMarkerName, payload);
 }
 
 void
@@ -2927,15 +2976,14 @@ profiler_tracing(const char* aCategory, const char* aMarkerName,
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
-  PSAutoLock lock(gPSMutex);
-
-  if (!ActivePS::Exists(lock) || ActivePS::FeaturePrivacy(lock)) {
+  
+  if (RacyFeatures::IsActiveWithoutPrivacy()) {
     return;
   }
 
   auto payload =
     new ProfilerMarkerTracing(aCategory, aKind, mozilla::Move(aCause));
-  locked_profiler_add_marker(lock, aMarkerName, payload);
+  racy_profiler_add_marker(aMarkerName, payload);
 }
 
 void
