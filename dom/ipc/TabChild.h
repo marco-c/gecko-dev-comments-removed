@@ -676,7 +676,7 @@ public:
   DeallocPPaymentRequestChild(PPaymentRequestChild* aActor) override;
 
   LayoutDeviceIntPoint GetClientOffset() const { return mClientOffset; }
-  LayoutDeviceIntPoint GetChromeDisplacement() const { return mChromeDisp; };
+  LayoutDeviceIntPoint GetChromeOffset() const { return mChromeOffset; };
 
   bool IPCOpen() const { return mIPCOpen; }
 
@@ -931,7 +931,7 @@ private:
   
   LayoutDeviceIntPoint mClientOffset;
   
-  LayoutDeviceIntPoint mChromeDisp;
+  LayoutDeviceIntPoint mChromeOffset;
   TabId mUniqueId;
 
   

@@ -140,7 +140,7 @@ public:
   { return NS_ERROR_UNEXPECTED; }
 
   virtual LayoutDeviceIntPoint WidgetToScreenOffset() override
-  { return LayoutDeviceIntPoint::FromUnknownPoint(GetWindowPosition() + GetChromeDimensions()); }
+  { return GetWindowPosition() + GetChromeOffset(); }
 
   int32_t RoundsWidgetCoordinatesTo() override;
 
@@ -236,10 +236,10 @@ public:
   nsIntSize GetScreenDimensions();
 
   
-  nsIntPoint GetChromeDimensions();
+  LayoutDeviceIntPoint GetChromeOffset();
 
   
-  nsIntPoint GetWindowPosition();
+  LayoutDeviceIntPoint GetWindowPosition();
 
   virtual LayoutDeviceIntRect GetScreenBounds() override;
 
