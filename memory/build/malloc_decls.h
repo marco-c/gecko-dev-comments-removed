@@ -106,10 +106,13 @@ MALLOC_DECL(jemalloc_ptr_info, void, const void*, jemalloc_ptr_info_t*)
 MALLOC_DECL(moz_create_arena, arena_id_t)
 
 
+
+
 MALLOC_DECL(moz_dispose_arena, void, arena_id_t)
 #endif
 
 #if MALLOC_FUNCS & MALLOC_FUNCS_ARENA_ALLOC
+
 
 
 
