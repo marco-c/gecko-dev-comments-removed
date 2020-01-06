@@ -381,8 +381,16 @@ class TokenStreamAnyChars: public ErrorReporter
     void addModifierException(ModifierException modifierException) {
 #ifdef DEBUG
         const Token& next = nextToken();
-        if (next.modifierException == NoneIsOperand)
-        {
+
+        
+        
+        
+        
+        
+        if (next.modifierException == modifierException)
+            return;
+
+        if (next.modifierException == NoneIsOperand) {
             
             
             MOZ_ASSERT(modifierException == OperandIsNone);
@@ -885,7 +893,15 @@ class MOZ_STACK_CLASS TokenStream final : public TokenStreamAnyChars
         TokenKind tt;
         if (!peekToken(&tt))
             return false;
+
         *endsExpr = isExprEnding[tt];
+        if (*endsExpr) {
+            
+            
+            
+            
+            addModifierException(OperandIsNone);
+        }
         return true;
     }
 
