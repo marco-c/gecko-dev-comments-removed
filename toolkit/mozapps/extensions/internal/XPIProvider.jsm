@@ -2273,17 +2273,38 @@ this.XPIProvider = {
       
       
       
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       if (!this.isDBLoaded) {
-        Services.obs.addObserver({
+        const EVENTS = [ "sessionstore-windows-restored", "xul-window-visible", "test-load-xpi-database" ];
+        let observer = {
           observe(subject, topic, data) {
-            Services.obs.removeObserver(this, "sessionstore-windows-restored");
+            if (topic == "xul-window-visible" &&
+                !Services.wm.getMostRecentWindow("devtools:toolbox")) {
+              return;
+            }
+
+            for (let event of EVENTS) {
+              Services.obs.removeObserver(observer, event);
+            }
 
             
             
             
             XPIDatabase.asyncLoadDB();
           },
-        }, "sessionstore-windows-restored");
+        };
+        for (let event of EVENTS) {
+          Services.obs.addObserver(observer, event);
+        }
       }
 
       AddonManagerPrivate.recordTimestamp("XPI_startup_end");
