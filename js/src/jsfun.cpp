@@ -2450,14 +2450,6 @@ JSFunction*
 js::DefineFunction(JSContext* cx, HandleObject obj, HandleId id, Native native,
                    unsigned nargs, unsigned flags, AllocKind allocKind )
 {
-    
-
-
-
-
-
-    flags &= ~JSFUN_STUB_GSOPS;
-
     RootedAtom atom(cx, IdToFunctionName(cx, id));
     if (!atom)
         return nullptr;

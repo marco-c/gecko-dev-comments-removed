@@ -884,14 +884,10 @@ static const uint8_t JSPROP_SHARED =           0x40;
 static const uint8_t JSPROP_INTERNAL_USE_BIT = 0x80;
 
 
-
-static const unsigned JSFUN_STUB_GSOPS =      0x200;
-
-
 static const unsigned JSFUN_CONSTRUCTOR =     0x400;
 
 
-static const unsigned JSFUN_FLAGS_MASK =      0x600;
+static const unsigned JSFUN_FLAGS_MASK =      0x400;
 
 
 
@@ -2334,7 +2330,7 @@ struct JSFunctionSpec {
 
 
 
-#define JS_FS_END JS_FS(nullptr,nullptr,0,0)
+#define JS_FS_END JS_FN(nullptr,nullptr,0,0)
 
 
 
@@ -2347,16 +2343,12 @@ struct JSFunctionSpec {
 
 
 
-
-
-#define JS_FS(name,call,nargs,flags)                                          \
-    JS_FNSPEC(name, call, nullptr, nargs, flags, nullptr)
 #define JS_FN(name,call,nargs,flags)                                          \
-    JS_FNSPEC(name, call, nullptr, nargs, (flags) | JSFUN_STUB_GSOPS, nullptr)
+    JS_FNSPEC(name, call, nullptr, nargs, flags, nullptr)
 #define JS_INLINABLE_FN(name,call,nargs,flags,native)                         \
-    JS_FNSPEC(name, call, &js::jit::JitInfo_##native, nargs, (flags) | JSFUN_STUB_GSOPS, nullptr)
+    JS_FNSPEC(name, call, &js::jit::JitInfo_##native, nargs, flags, nullptr)
 #define JS_SYM_FN(symbol,call,nargs,flags)                                    \
-    JS_SYM_FNSPEC(symbol, call, nullptr, nargs, (flags) | JSFUN_STUB_GSOPS, nullptr)
+    JS_SYM_FNSPEC(symbol, call, nullptr, nargs, flags, nullptr)
 #define JS_FNINFO(name,call,info,nargs,flags)                                 \
     JS_FNSPEC(name, call, info, nargs, flags, nullptr)
 #define JS_SELF_HOSTED_FN(name,selfHostedName,nargs,flags)                    \

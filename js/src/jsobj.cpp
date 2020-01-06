@@ -2977,10 +2977,6 @@ static bool
 DefineFunctionFromSpec(JSContext* cx, HandleObject obj, const JSFunctionSpec* fs, unsigned flags,
                        DefineAsIntrinsic intrinsic)
 {
-    
-    
-    flags &= ~JSFUN_STUB_GSOPS;
-
     RootedId id(cx);
     if (!PropertySpecNameToId(cx, fs->name, &id))
         return false;
