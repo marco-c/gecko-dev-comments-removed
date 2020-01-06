@@ -5,6 +5,7 @@
 
 
 #include "PendingIPCBlobParent.h"
+#include "mozilla/ipc/PBackgroundParent.h"
 
 namespace mozilla {
 
