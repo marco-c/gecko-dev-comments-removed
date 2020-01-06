@@ -496,6 +496,27 @@ trait PrivateMatchMethods: TElement {
                         primary_style: &ComputedStyle,
                         eager_pseudo_style: Option<&ComputedStyle>)
                         -> Arc<ComputedValues> {
+        if let Some(pseudo) = self.implemented_pseudo_element() {
+            debug_assert!(eager_pseudo_style.is_none());
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if pseudo.is_eager() && self.get_animation_rules().is_empty() {
+                let parent = self.parent_element().unwrap();
+                let parent_data = parent.borrow_data().unwrap();
+                let pseudo_style =
+                    parent_data.styles().pseudos.get(&pseudo).unwrap();
+                return pseudo_style.values().clone()
+            }
+        }
+
         
         let rule_node = &eager_pseudo_style.unwrap_or(primary_style).rules;
         let inherit_mode = if eager_pseudo_style.is_some() {
@@ -513,96 +534,65 @@ trait PrivateMatchMethods: TElement {
 
     
     
-    fn cascade_primary_or_pseudo(&self,
-                                 context: &mut StyleContext<Self>,
-                                 data: &mut ElementData,
-                                 pseudo: Option<&PseudoElement>) {
-        debug_assert!(pseudo.is_none() || self.implemented_pseudo_element().is_none(),
-                      "Pseudo-element-implementing elements can't have pseudos!");
+    fn cascade_primary(&self,
+                       context: &mut StyleContext<Self>,
+                       data: &mut ElementData) {
         
         let (mut styles, restyle) = data.styles_and_restyle_mut();
         let mut primary_style = &mut styles.primary;
-        let pseudos = &mut styles.pseudos;
-        let mut pseudo_style = match pseudo {
-            Some(p) => {
-                let style = pseudos.get_mut(p);
-                debug_assert!(style.is_some());
-                style
-            }
-            None => None,
-        };
-
-        let mut old_values = match pseudo_style {
-            Some(ref mut s) => s.values.take(),
-            None => primary_style.values.take(),
-        };
+        let mut old_values = primary_style.values.take();
 
         
-        let mut new_values = match self.implemented_pseudo_element() {
-            Some(ref pseudo) => {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                if pseudo.is_eager() &&
-                   self.get_animation_rules().is_empty() {
-                    let parent = self.parent_element().unwrap();
-
-                    let parent_data = parent.borrow_data().unwrap();
-                    let pseudo_style =
-                        parent_data.styles().pseudos.get(pseudo).unwrap();
-                    pseudo_style.values().clone()
-                } else {
-                    self.cascade_internal(context,
-                                          primary_style,
-                                          None)
-                }
-            }
-            None => {
-                
-                
-                self.cascade_internal(context,
-                                      primary_style,
-                                      pseudo_style.as_ref().map(|s| &**s))
-            }
-        };
+        let mut new_values = self.cascade_internal(context, primary_style, None);
 
         
         
-        if pseudo.is_none() &&
-           !context.shared.traversal_flags.for_animation_only() {
+        if !context.shared.traversal_flags.for_animation_only() {
             self.process_animations(context,
                                     &mut old_values,
                                     &mut new_values,
                                     primary_style);
         }
 
+        if let Some(old) = old_values {
+            self.accumulate_damage(&context.shared,
+                                   restyle.unwrap(),
+                                   &old,
+                                   &new_values,
+                                   None);
+        }
+
         
+        primary_style.values = Some(new_values);
+    }
+
+    fn cascade_eager_pseudo(&self,
+                            context: &mut StyleContext<Self>,
+                            data: &mut ElementData,
+                            pseudo: &PseudoElement) {
+        debug_assert!(pseudo.is_eager());
+        let (mut styles, restyle) = data.styles_and_restyle_mut();
+        let mut pseudo_style = styles.pseudos.get_mut(pseudo).unwrap();
+        let old_values = pseudo_style.values.take();
+
+        let new_values =
+            self.cascade_internal(context, &styles.primary, Some(pseudo_style));
+
         if let Some(old) = old_values {
             
             
-            
-            
-            
-            if cfg!(feature = "servo") ||
-               pseudo.map_or(true, |p| !p.is_before_or_after()) {
+            if cfg!(feature = "servo") || !pseudo.is_before_or_after() {
                 self.accumulate_damage(&context.shared,
                                        restyle.unwrap(),
                                        &old,
                                        &new_values,
-                                       pseudo);
+                                       Some(pseudo));
             }
         }
 
-        
-        let mut relevant_style = pseudo_style.unwrap_or(primary_style);
-        relevant_style.values = Some(new_values);
+        pseudo_style.values = Some(new_values)
     }
+
 
     
     
@@ -753,15 +743,11 @@ trait PrivateMatchMethods: TElement {
     }
 
     
-    
-    
-    
-    
     #[cfg(feature = "gecko")]
     fn accumulate_damage(&self,
                          shared_context: &SharedStyleContext,
                          restyle: &mut RestyleData,
-                         old_values: &Arc<ComputedValues>,
+                         old_values: &ComputedValues,
                          new_values: &Arc<ComputedValues>,
                          pseudo: Option<&PseudoElement>) {
         
@@ -797,12 +783,12 @@ trait PrivateMatchMethods: TElement {
     fn accumulate_damage(&self,
                          _shared_context: &SharedStyleContext,
                          restyle: &mut RestyleData,
-                         old_values: &Arc<ComputedValues>,
+                         old_values: &ComputedValues,
                          new_values: &Arc<ComputedValues>,
                          pseudo: Option<&PseudoElement>) {
         if restyle.damage != RestyleDamage::rebuild_and_reflow() {
-            let d = self.compute_restyle_damage(&old_values, &new_values, pseudo);
-            restyle.damage |= d;
+            restyle.damage |=
+                self.compute_restyle_damage(&old_values, &new_values, pseudo);
         }
     }
 
@@ -1394,7 +1380,7 @@ pub trait MatchMethods : TElement {
     
     
     fn compute_restyle_damage(&self,
-                              old_values: &Arc<ComputedValues>,
+                              old_values: &ComputedValues,
                               new_values: &Arc<ComputedValues>,
                               pseudo: Option<&PseudoElement>)
                               -> RestyleDamage
@@ -1419,14 +1405,6 @@ pub trait MatchMethods : TElement {
     }
 
     
-    fn cascade_primary(&self,
-                       context: &mut StyleContext<Self>,
-                       mut data: &mut ElementData)
-    {
-        self.cascade_primary_or_pseudo(context, &mut data, None);
-    }
-
-    
     fn cascade_pseudos(&self,
                        context: &mut StyleContext<Self>,
                        mut data: &mut ElementData)
@@ -1438,7 +1416,7 @@ pub trait MatchMethods : TElement {
         
         let matched_pseudos = data.styles().pseudos.keys();
         for pseudo in matched_pseudos {
-            self.cascade_primary_or_pseudo(context, data, Some(&pseudo));
+            self.cascade_eager_pseudo(context, data, &pseudo);
         }
     }
 

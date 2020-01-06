@@ -11,7 +11,6 @@ use computed_values::display;
 use heapsize::HeapSizeOf;
 use properties::ServoComputedValues;
 use std::fmt;
-use stylearc::Arc;
 
 bitflags! {
     #[doc = "Individual layout actions that may be necessary after restyling."]
@@ -60,8 +59,9 @@ impl HeapSizeOf for ServoRestyleDamage {
 impl ServoRestyleDamage {
     
     
-    pub fn compute(old: &Arc<ServoComputedValues>,
-                   new: &Arc<ServoComputedValues>) -> ServoRestyleDamage {
+    pub fn compute(old: &ServoComputedValues,
+                   new: &ServoComputedValues)
+                   -> ServoRestyleDamage {
         compute_damage(old, new)
     }
 
