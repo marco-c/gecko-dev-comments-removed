@@ -646,6 +646,18 @@ struct ExtentTreeBoundsTrait : public ExtentTreeTrait
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+template <size_t Bits>
 class AddressRadixTree {
  
  
@@ -654,14 +666,18 @@ class AddressRadixTree {
 #else
   static const size_t kNodeSize2Pow = CACHELINE_2POW;
 #endif
+  static const size_t kBitsPerLevel = kNodeSize2Pow - SIZEOF_PTR_2POW;
+  static const size_t kBitsAtLevel1 =
+    (Bits % kBitsPerLevel) ? Bits % kBitsPerLevel : kBitsPerLevel;
+  static const size_t kHeight = (Bits + kBitsPerLevel - 1) / kBitsPerLevel;
+  static_assert(kBitsAtLevel1 + (kHeight - 1) * kBitsPerLevel == Bits,
+                "AddressRadixTree parameters don't work out");
 
   malloc_spinlock_t mLock;
   void** mRoot;
-  unsigned mHeight;
-  unsigned mLevel2Bits[2];
 
 public:
-  static AddressRadixTree* Create(unsigned aBits);
+  static AddressRadixTree<Bits>* Create();
 
   inline void* Get(void* aAddr);
 
@@ -1053,7 +1069,7 @@ struct ArenaTreeTrait
 
 
 
-static AddressRadixTree* gChunkRTree;
+static AddressRadixTree<(SIZEOF_PTR << 3) - CHUNK_2POW_DEFAULT>* gChunkRTree;
 
 
 static malloc_mutex_t	chunks_mtx;
@@ -1733,30 +1749,20 @@ pages_copy(void *dest, const void *src, size_t n)
 }
 #endif
 
-AddressRadixTree*
-AddressRadixTree::Create(unsigned aBits)
+template <size_t Bits>
+AddressRadixTree<Bits>*
+AddressRadixTree<Bits>::Create()
 {
-  AddressRadixTree* ret;
-  unsigned bits_per_level, height;
+  AddressRadixTree<Bits>* ret;
 
-  bits_per_level = AddressRadixTree::kNodeSize2Pow - SIZEOF_PTR_2POW;
-  height = (aBits + bits_per_level - 1) / bits_per_level;
-
-  ret = (AddressRadixTree*)base_calloc(1, sizeof(AddressRadixTree));
+  ret = (AddressRadixTree<Bits>*)base_calloc(1, sizeof(AddressRadixTree<Bits>));
   if (!ret) {
     return nullptr;
   }
 
   malloc_spin_init(&ret->mLock);
-  ret->mHeight = height;
-  if (bits_per_level * height > aBits) {
-    ret->mLevel2Bits[0] = aBits % bits_per_level;
-  } else {
-    ret->mLevel2Bits[0] = bits_per_level;
-  }
-  ret->mLevel2Bits[1] = bits_per_level;
 
-  ret->mRoot = (void**)base_calloc(1 << ret->mLevel2Bits[0], sizeof(void*));
+  ret->mRoot = (void**)base_calloc(1 << kBitsAtLevel1, sizeof(void*));
   if (!ret->mRoot) {
     
     return nullptr;
@@ -1765,8 +1771,9 @@ AddressRadixTree::Create(unsigned aBits)
   return ret;
 }
 
+template <size_t Bits>
 void**
-AddressRadixTree::GetSlot(void* aKey, bool aCreate)
+AddressRadixTree<Bits>::GetSlot(void* aKey, bool aCreate)
 {
   uintptr_t key = reinterpret_cast<uintptr_t>(aKey);
   uintptr_t subkey;
@@ -1774,14 +1781,14 @@ AddressRadixTree::GetSlot(void* aKey, bool aCreate)
   void** node;
   void** child;
 
-  for (i = lshift = 0, height = mHeight, node = mRoot;
+  for (i = lshift = 0, height = kHeight, node = mRoot;
        i < height - 1;
        i++, lshift += bits, node = child) {
-    bits = mLevel2Bits[i ? 1 : 0];
+    bits = i ? kBitsPerLevel : kBitsAtLevel1;
     subkey = (key << lshift) >> ((SIZEOF_PTR << 3) - bits);
     child = (void**) node[subkey];
     if (!child && aCreate) {
-      child = (void**) base_calloc(1 << mLevel2Bits[1], sizeof(void*));
+      child = (void**) base_calloc(1 << kBitsPerLevel, sizeof(void*));
       if (child) {
         node[subkey] = child;
       }
@@ -1795,13 +1802,14 @@ AddressRadixTree::GetSlot(void* aKey, bool aCreate)
 
 
 
-  bits = mLevel2Bits[i ? 1 : 0];
+  bits = i ? kBitsPerLevel : kBitsAtLevel1;
   subkey = (key << lshift) >> ((SIZEOF_PTR << 3) - bits);
   return &node[subkey];
 }
 
+template <size_t Bits>
 void*
-AddressRadixTree::Get(void* aKey)
+AddressRadixTree<Bits>::Get(void* aKey)
 {
   void* ret = nullptr;
 
@@ -1837,8 +1845,9 @@ AddressRadixTree::Get(void* aKey)
   return ret;
 }
 
+template <size_t Bits>
 bool
-AddressRadixTree::Set(void* aKey, void* aValue)
+AddressRadixTree<Bits>::Set(void* aKey, void* aValue)
 {
   malloc_spin_lock(&mLock);
   void** slot = GetSlot(aKey,  true);
@@ -4499,7 +4508,7 @@ MALLOC_OUT:
 
   thread_arena.set(gMainArena);
 
-  gChunkRTree = AddressRadixTree::Create((SIZEOF_PTR << 3) - CHUNK_2POW_DEFAULT);
+  gChunkRTree = AddressRadixTree<(SIZEOF_PTR << 3) - CHUNK_2POW_DEFAULT>::Create();
   if (!gChunkRTree) {
     return true;
   }
