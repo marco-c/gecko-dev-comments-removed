@@ -28,147 +28,96 @@ const PREF_ACTIVE = "security.mixed_content.block_active_content";
 const HTTPS_TEST_ROOT_1 = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "https://test1.example.com");
 const HTTPS_TEST_ROOT_2 = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "https://test2.example.com");
 
-var origBlockActive;
-var gTestBrowser = null;
-
-registerCleanupFunction(function() {
-  
-  Services.prefs.setBoolPref(PREF_ACTIVE, origBlockActive);
+add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({set: [[PREF_ACTIVE, true]]});
 });
 
-function cleanUpAfterTests() {
-  gBrowser.removeCurrentTab();
-  window.focus();
-  finish();
-}
+add_task(async function test1() {
+  let url = HTTPS_TEST_ROOT_1 + "file_bug902156_1.html";
+  await BrowserTestUtils.withNewTab(url, async function(browser) {
+    await assertMixedContentBlockingState(browser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
+
+    
+    let browserLoaded = BrowserTestUtils.browserLoaded(browser, false, url);
+    let {gIdentityHandler} = browser.ownerGlobal;
+    gIdentityHandler.disableMixedContentProtection();
+    await browserLoaded;
+
+    await ContentTask.spawn(browser, null, async function() {
+      let expected = "Mixed Content Blocker disabled";
+      await ContentTaskUtils.waitForCondition(
+        () => content.document.getElementById("mctestdiv").innerHTML == expected,
+        "Error: Waited too long for mixed script to run in Test 1");
+
+      let actual = content.document.getElementById("mctestdiv").innerHTML;
+      is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 1");
+    });
+
+    
+    
+    url = HTTPS_TEST_ROOT_1 + "file_bug902156_2.html";
+    browserLoaded = BrowserTestUtils.browserLoaded(browser, false, url);
+    BrowserTestUtils.loadURI(browser, url);
+    await browserLoaded;
+
+    
+    
+    await assertMixedContentBlockingState(browser, {activeLoaded: true, activeBlocked: false, passiveLoaded: false});
+    await ContentTask.spawn(browser, null, function() {
+      let actual = content.document.getElementById("mctestdiv").innerHTML;
+      is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 1");
+    });
+  });
+});
 
 
 
-async function test1A() {
-  BrowserTestUtils.browserLoaded(gTestBrowser).then(test1B);
+add_task(async function test2() {
+  let url = HTTPS_TEST_ROOT_2 + "file_bug902156_2.html";
+  await BrowserTestUtils.withNewTab(url, async function(browser) {
+    await assertMixedContentBlockingState(browser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
 
-  await assertMixedContentBlockingState(gTestBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
+    
+    let browserLoaded = BrowserTestUtils.browserLoaded(browser, false, url);
+    let {gIdentityHandler} = browser.ownerGlobal;
+    gIdentityHandler.disableMixedContentProtection();
+    await browserLoaded;
 
-  
-  let {gIdentityHandler} = gTestBrowser.ownerGlobal;
-  gIdentityHandler.disableMixedContentProtection();
-}
+    await ContentTask.spawn(browser, null, async function() {
+      let expected = "Mixed Content Blocker disabled";
+      await ContentTaskUtils.waitForCondition(
+        () => content.document.getElementById("mctestdiv").innerHTML == expected,
+        "Error: Waited too long for mixed script to run in Test 2");
 
-function test1B() {
-  var expected = "Mixed Content Blocker disabled";
-  BrowserTestUtils.waitForCondition(
-    () => content.document.getElementById("mctestdiv").innerHTML == expected,
-    "Error: Waited too long for mixed script to run in Test 1B").then(test1C);
-}
+      let actual = content.document.getElementById("mctestdiv").innerHTML;
+      is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 2");
+    });
 
-function test1C() {
-  var actual = content.document.getElementById("mctestdiv").innerHTML;
-  is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 1C");
+    
+    
+    url = HTTPS_TEST_ROOT_2 + "file_bug902156_1.html";
+    browserLoaded = BrowserTestUtils.browserLoaded(browser, false, url);
+    
+    await ContentTask.spawn(browser, null, function() {
+      let mctestlink = content.document.getElementById("mctestlink");
+      mctestlink.click();
+    });
+    await browserLoaded;
 
-  
-  
-  BrowserTestUtils.browserLoaded(gTestBrowser).then(test1D);
+    
+    
+    await assertMixedContentBlockingState(browser, {activeLoaded: true, activeBlocked: false, passiveLoaded: false});
 
-  var url = HTTPS_TEST_ROOT_1 + "file_bug902156_2.html";
-  gTestBrowser.loadURI(url);
-}
+    await ContentTask.spawn(browser, null, function() {
+      let actual = content.document.getElementById("mctestdiv").innerHTML;
+      is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 2");
+    });
+  });
+});
 
-async function test1D() {
-  
-  
-  await assertMixedContentBlockingState(gTestBrowser, {activeLoaded: true, activeBlocked: false, passiveLoaded: false});
-
-  var actual = content.document.getElementById("mctestdiv").innerHTML;
-  is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 1D");
-
-  
-  test2();
-}
-
-
-
-function test2() {
-  BrowserTestUtils.browserLoaded(gTestBrowser).then(test2A);
-  var url = HTTPS_TEST_ROOT_2 + "file_bug902156_2.html";
-  gTestBrowser.loadURI(url);
-}
-
-async function test2A() {
-  BrowserTestUtils.browserLoaded(gTestBrowser).then(test2B);
-
-  await assertMixedContentBlockingState(gTestBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
-
-  
-  let {gIdentityHandler} = gTestBrowser.ownerGlobal;
-  gIdentityHandler.disableMixedContentProtection();
-}
-
-function test2B() {
-  var expected = "Mixed Content Blocker disabled";
-  BrowserTestUtils.waitForCondition(
-    () => content.document.getElementById("mctestdiv").innerHTML == expected,
-    "Error: Waited too long for mixed script to run in Test 2B").then(test2C);
-}
-
-function test2C() {
-  var actual = content.document.getElementById("mctestdiv").innerHTML;
-  is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 2C");
-
-  
-  
-  BrowserTestUtils.browserLoaded(gTestBrowser).then(test2D);
-
-  
-  var mctestlink = content.document.getElementById("mctestlink");
-  mctestlink.click();
-}
-
-async function test2D() {
-  
-  
-  await assertMixedContentBlockingState(gTestBrowser, {activeLoaded: true, activeBlocked: false, passiveLoaded: false});
-
-  var actual = content.document.getElementById("mctestdiv").innerHTML;
-  is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 2D");
-
-  
-  test3();
-}
-
-
-
-function test3() {
-  BrowserTestUtils.browserLoaded(gTestBrowser).then(test3A);
-  var url = HTTPS_TEST_ROOT_1 + "file_bug902156_3.html";
-  gTestBrowser.loadURI(url);
-}
-
-async function test3A() {
-  await assertMixedContentBlockingState(gTestBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
-
-  
-  cleanUpAfterTests();
-}
-
-
-
-function test() {
-  
-  waitForExplicitFinish();
-
-  
-  origBlockActive = Services.prefs.getBoolPref(PREF_ACTIVE);
-
-  Services.prefs.setBoolPref(PREF_ACTIVE, true);
-
-  
-  var newTab = BrowserTestUtils.addTab(gBrowser);
-  gBrowser.selectedTab = newTab;
-  gTestBrowser = gBrowser.selectedBrowser;
-  newTab.linkedBrowser.stop()
-
-  
-  BrowserTestUtils.browserLoaded(gTestBrowser).then(test1A);
-  var url = HTTPS_TEST_ROOT_1 + "file_bug902156_1.html";
-  gTestBrowser.loadURI(url);
-}
+add_task(async function test3() {
+  let url = HTTPS_TEST_ROOT_1 + "file_bug902156_3.html";
+  await BrowserTestUtils.withNewTab(url, async function(browser) {
+    await assertMixedContentBlockingState(browser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
+  });
+});
