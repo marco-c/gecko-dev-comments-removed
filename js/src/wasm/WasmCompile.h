@@ -41,12 +41,14 @@ struct CompileArgs
     ScriptedCaller scriptedCaller;
     bool baselineEnabled;
     bool debugEnabled;
+    bool ionEnabled;
 
     CompileArgs(Assumptions&& assumptions, ScriptedCaller&& scriptedCaller)
       : assumptions(Move(assumptions)),
         scriptedCaller(Move(scriptedCaller)),
         baselineEnabled(false),
-        debugEnabled(false)
+        debugEnabled(false),
+        ionEnabled(false)
     {}
 
     
@@ -63,6 +65,30 @@ struct CompileArgs
 
 SharedModule
 Compile(const ShareableBytes& bytecode, const CompileArgs& args, UniqueChars* error);
+
+
+
+
+
+
+bool
+GetDebugEnabled(const CompileArgs& args, ModuleKind kind = ModuleKind::Wasm);
+
+
+
+
+
+
+
+CompileMode
+GetInitialCompileMode(const CompileArgs& args, ModuleKind kind = ModuleKind::Wasm);
+
+
+
+
+
+Tier
+GetTier(const CompileArgs& args, CompileMode compileMode, ModuleKind kind = ModuleKind::Wasm);
 
 }  
 }  
