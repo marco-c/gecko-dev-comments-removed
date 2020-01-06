@@ -11182,12 +11182,6 @@ nsDocShell::DoURILoad(nsIURI* aURI,
 
   if (aOriginalURI) {
     channel->SetOriginalURI(aOriginalURI);
-    
-    
-    
-    
-    
-    
     if (aLoadReplace) {
       uint32_t loadFlags;
       channel->GetLoadFlags(&loadFlags);

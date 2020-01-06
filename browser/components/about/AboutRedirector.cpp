@@ -181,14 +181,18 @@ AboutRedirector::NewChannel(nsIURI* aURI,
                                &isUIResource);
       NS_ENSURE_SUCCESS(rv, rv);
 
+      nsLoadFlags loadFlags = isUIResource
+                    ? static_cast<nsLoadFlags>(nsIChannel::LOAD_NORMAL)
+                    : static_cast<nsLoadFlags>(nsIChannel::LOAD_REPLACE);
+
       rv = NS_NewChannelInternal(getter_AddRefs(tempChannel),
                                  tempURI,
-                                 aLoadInfo);
+                                 aLoadInfo,
+                                 nullptr, 
+                                 nullptr, 
+                                 loadFlags);
       NS_ENSURE_SUCCESS(rv, rv);
 
-      if (isUIResource) {
-        aLoadInfo->SetResultPrincipalURI(aURI);
-      }
       tempChannel->SetOriginalURI(aURI);
 
       NS_ADDREF(*result = tempChannel);

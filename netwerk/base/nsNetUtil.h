@@ -785,6 +785,8 @@ already_AddRefed<nsIURI> NS_GetInnermostURI(nsIURI *aURI);
 
 
 
+
+
 nsresult NS_GetFinalChannelURI(nsIChannel *channel, nsIURI **uri);
 
 
