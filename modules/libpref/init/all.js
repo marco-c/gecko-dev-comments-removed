@@ -3032,6 +3032,13 @@ pref("layout.css.column-span.enabled", false);
 pref("layout.css.ruby.intercharacter.enabled", false);
 
 
+#ifdef RELEASE_OR_BETA
+pref("layout.css.overscroll-behavior.enabled", false);
+#else
+pref("layout.css.overscroll-behavior.enabled", true);
+#endif
+
+
 
 
 
