@@ -26,6 +26,10 @@ for (let [key, val] of Object.entries({
                          
 
   
+  URL_TARGET_TYPE_TEST: 0,      
+  URL_TARGET_TYPE_REFERENCE: 1, 
+
+  
   
   
   
@@ -102,8 +106,8 @@ for (let [key, val] of Object.entries({
       Slow: 0,
     },
     totalTests: 0,
-    state: undefined,
     currentURL: undefined,
+    currentURLTargetType: undefined,
     testLog: [],
     logLevel: undefined,
     logFile: null,
