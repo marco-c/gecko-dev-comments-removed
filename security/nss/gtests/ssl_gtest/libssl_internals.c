@@ -41,11 +41,11 @@ SECStatus SSLInt_UpdateSSLv2ClientRandom(PRFileDesc *fd, uint8_t *rnd,
   rnd_len = PR_MIN(SSL3_RANDOM_LENGTH, rnd_len);
 
   
-  PORT_Memset(&ss->ssl3.hs.client_random, 0, SSL3_RANDOM_LENGTH);
+  PORT_Memset(ss->ssl3.hs.client_random, 0, SSL3_RANDOM_LENGTH);
 
   
   size_t offset = SSL3_RANDOM_LENGTH - rnd_len;
-  PORT_Memcpy(&ss->ssl3.hs.client_random.rand[offset], rnd, rnd_len);
+  PORT_Memcpy(ss->ssl3.hs.client_random + offset, rnd, rnd_len);
 
   
   return ssl3_UpdateHandshakeHashes(ss, msg, msg_len);
