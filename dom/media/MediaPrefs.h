@@ -207,6 +207,11 @@ private:
 
   
   DECL_MEDIA_PREF("media.resume-bkgnd-video-on-tabhover",     ResumeVideoDecodingOnTabHover, bool, false);
+
+#ifdef MOZ_CUBEB_REMOTING
+  DECL_MEDIA_PREF("media.cubeb.sandbox",                      CubebSandbox, bool, false);
+#endif 
+
 public:
   
   static MediaPrefs& GetSingleton();
