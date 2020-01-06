@@ -7,9 +7,7 @@
 "use strict";
 
 const {Ci} = require("chrome");
-const {Class} = require("sdk/core/heritage");
 const Services = require("Services");
-
 const {DebuggerServer} = require("devtools/server/main");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
@@ -36,31 +34,27 @@ const acceptableHeaders = ["x-chromelogger-data"];
 
 
 
-var ServerLoggingListener = Class({
-  
 
 
 
 
 
 
+function ServerLoggingListener(win, owner) {
+  trace.log("ServerLoggingListener.initialize; ", owner.actorID,
+    ", child process: ", DebuggerServer.isInChildProcess);
 
+  this.owner = owner;
+  this.window = win;
 
+  this.onExamineResponse = this.onExamineResponse.bind(this);
+  this.onExamineHeaders = this.onExamineHeaders.bind(this);
+  this.onParentMessage = this.onParentMessage.bind(this);
 
-  initialize: function (win, owner) {
-    trace.log("ServerLoggingListener.initialize; ", owner.actorID,
-      ", child process: ", DebuggerServer.isInChildProcess);
+  this.attach();
+}
 
-    this.owner = owner;
-    this.window = win;
-
-    this.onExamineResponse = this.onExamineResponse.bind(this);
-    this.onExamineHeaders = this.onExamineHeaders.bind(this);
-    this.onParentMessage = this.onParentMessage.bind(this);
-
-    this.attach();
-  },
-
+ServerLoggingListener.prototype = {
   
 
 
@@ -377,7 +371,7 @@ var ServerLoggingListener = Class({
 
     this.owner.onServerLogCall(message);
   },
-});
+};
 
 
 
