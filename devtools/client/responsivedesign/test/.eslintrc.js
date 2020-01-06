@@ -1,0 +1,10 @@
+"use strict";
+
+module.exports = {
+  
+  "extends": "../../../.eslintrc.mochitests.js",
+  "globals": {
+    "ResponsiveUI": true,
+    "helpers": true
+  }
+};

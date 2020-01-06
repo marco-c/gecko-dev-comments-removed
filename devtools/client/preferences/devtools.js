@@ -101,6 +101,9 @@ pref("devtools.markup.collapseAttributeLength", 120);
 pref("devtools.defaultColorUnit", "authored");
 
 
+pref("devtools.responsiveUI.no-reload-notification", false);
+
+
 pref("devtools.memory.enabled", true);
 
 pref("devtools.memory.custom-census-displays", "{}");
