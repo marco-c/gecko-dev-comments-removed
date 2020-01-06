@@ -458,8 +458,6 @@ TestRunner.runNextTest = function() {
             indicator.style.backgroundColor = "red";
         }
 
-        SpecialPowers.unregisterProcessCrashObservers();
-
         let e10sMode = SpecialPowers.isMainProcess() ? "non-e10s" : "e10s";
 
         TestRunner.structuredLogger.info("TEST-START | Shutdown");
@@ -470,7 +468,9 @@ TestRunner.runNextTest = function() {
         TestRunner.structuredLogger.info("Slowest: " + TestRunner.slowestTestTime + 'ms - ' + TestRunner.slowestTestURL);
 
         
+        
         if (TestRunner.repeat === 0) {
+          SpecialPowers.unregisterProcessCrashObservers();
           TestRunner.structuredLogger.info("SimpleTest FINISHED");
         }
 
