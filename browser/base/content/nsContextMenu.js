@@ -4,7 +4,6 @@
 
 
 
-Components.utils.import("resource://gre/modules/ContextualIdentityService.jsm");
 Components.utils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 Components.utils.import("resource://gre/modules/InlineSpellChecker.jsm");
 Components.utils.import("resource://gre/modules/LoginManagerContextMenu.jsm");
@@ -17,6 +16,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "LoginHelper",
   "resource://gre/modules/LoginHelper.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "WebNavigationFrames",
   "resource://gre/modules/WebNavigationFrames.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ContextualIdentityService",
+  "resource://gre/modules/ContextualIdentityService.jsm");
 
 var gContextMenuContentData = null;
 
