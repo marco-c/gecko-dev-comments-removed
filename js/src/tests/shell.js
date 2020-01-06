@@ -583,6 +583,27 @@
   global.jsTestDriverEnd = jsTestDriverEnd;
 
   
+  
+  
+  
+  function optionsClear() {
+    
+    var currentOptions = options();
+    if (currentOptions === "")
+      return;
+
+    
+    var optionNames = currentOptions.split(',');
+    for (var i = 0; i < optionNames.length; i++) {
+      var optionName = optionNames[i];
+      if (optionName) {
+        options(optionName);
+      }
+    }
+  }
+  global.optionsClear = optionsClear;
+
+  
 
 
 
@@ -611,6 +632,13 @@
     assertDeepEq(getPromiseResult(promise), expected);
   };
   global.assertEventuallyDeepEq = assertEventuallyDeepEq;
+
+  
+
+
+
+  if (typeof options === 'function')
+    optionsClear();
 })(this);
 
 var gDelayTestDriverEnd = false;
@@ -618,22 +646,3 @@ var gFailureExpected = false;
 
 var DESCRIPTION;
 var EXPECTED;
-
-function optionsClear() {
-
-  
-  
-  var optionNames = options().split(',');
-  for (var i = 0; i < optionNames.length; i++)
-  {
-    var optionName = optionNames[i];
-    if (optionName && optionName !== "ion") {
-      options(optionName);
-    }
-  }
-}
-
-if (typeof options == 'function')
-{
-  optionsClear();
-}
