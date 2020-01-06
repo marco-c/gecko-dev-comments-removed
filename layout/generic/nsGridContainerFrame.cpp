@@ -4749,6 +4749,7 @@ nsGridContainerFrame::Tracks::AlignJustifyContent(
     default:
       MOZ_ASSERT_UNREACHABLE("unknown align-/justify-content value");
       between = 0; 
+      roundingError = 0; 
   }
   between += mGridGap;
   for (TrackSize& sz : mSizes) {
