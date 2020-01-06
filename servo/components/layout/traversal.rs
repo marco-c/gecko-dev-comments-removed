@@ -4,7 +4,6 @@
 
 
 
-use atomic_refcell::AtomicRefCell;
 use construct::FlowConstructor;
 use context::LayoutContext;
 use display_list_builder::DisplayListBuildState;
@@ -13,13 +12,12 @@ use flow::{CAN_BE_FRAGMENTED, Flow, ImmutableFlowUtils, PostorderFlowTraversal};
 use script_layout_interface::wrapper_traits::{LayoutNode, ThreadSafeLayoutNode};
 use servo_config::opts;
 use style::context::{SharedStyleContext, StyleContext};
-use style::data::ElementData;
 use style::dom::{NodeInfo, TElement, TNode};
 use style::selector_parser::RestyleDamage;
 use style::servo::restyle_damage::{BUBBLE_ISIZES, REFLOW, REFLOW_OUT_OF_FLOW, REPAINT};
 use style::traversal::{DomTraversal, TraversalDriver, recalc_style_at};
 use style::traversal::PerLevelTraversalData;
-use wrapper::{GetRawData, LayoutNodeHelpers, LayoutNodeLayoutData};
+use wrapper::{GetRawData, LayoutNodeLayoutData};
 use wrapper::ThreadSafeLayoutNodeHelpers;
 
 pub struct RecalcStyleAndConstructFlows<'a> {
@@ -59,7 +57,7 @@ impl<'a, E> DomTraversal<E> for RecalcStyleAndConstructFlows<'a>
                         context: &mut StyleContext<E>, node: E::ConcreteNode) {
         
         
-        node.initialize_data();
+        unsafe { node.initialize_data() };
 
         if !node.is_text_node() {
             let el = node.as_element().unwrap();
@@ -79,15 +77,6 @@ impl<'a, E> DomTraversal<E> for RecalcStyleAndConstructFlows<'a>
         
         node.get_raw_data().is_none() ||
         node.parent_node().unwrap().to_threadsafe().restyle_damage() != RestyleDamage::empty()
-    }
-
-    unsafe fn ensure_element_data(element: &E) -> &AtomicRefCell<ElementData> {
-        element.as_node().initialize_data();
-        element.get_data().unwrap()
-    }
-
-    unsafe fn clear_element_data(element: &E) {
-        element.as_node().clear_data();
     }
 
     fn shared_context(&self) -> &SharedStyleContext {

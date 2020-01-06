@@ -551,6 +551,17 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     fn did_process_child(&self) -> isize;
 
     
+    
+    
+    
+    unsafe fn ensure_data(&self) -> AtomicRefMut<ElementData>;
+
+    
+    
+    
+    unsafe fn clear_data(&self);
+
+    
     fn get_data(&self) -> Option<&AtomicRefCell<ElementData>>;
 
     

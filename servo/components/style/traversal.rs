@@ -4,7 +4,6 @@
 
 
 
-use atomic_refcell::AtomicRefCell;
 use context::{ElementCascadeInputs, StyleContext, SharedStyleContext};
 use data::{ElementData, ElementStyles};
 use dom::{NodeInfo, OpaqueNode, TElement, TNode};
@@ -490,20 +489,6 @@ pub trait DomTraversal<E: TElement> : Sync {
     }
 
     
-    
-    
-    
-    
-    
-    unsafe fn ensure_element_data(element: &E) -> &AtomicRefCell<ElementData>;
-
-    
-    
-    
-    
-    unsafe fn clear_element_data(element: &E);
-
-    
     fn shared_context(&self) -> &SharedStyleContext;
 
     
@@ -647,7 +632,7 @@ where
         if data.styles.is_display_none() {
             debug!("{:?} style is display:none - clearing data from descendants.",
                    element);
-            clear_descendant_data(element, &|e| unsafe { D::clear_element_data(&e) });
+            clear_descendant_data(element)
         }
     }
 
@@ -855,8 +840,7 @@ where
             continue;
         }
 
-        let mut child_data =
-            unsafe { D::ensure_element_data(&child).borrow_mut() };
+        let mut child_data = unsafe { child.ensure_data() };
 
         trace!(" > {:?} -> {:?} + {:?}, pseudo: {:?}",
                child,
@@ -880,13 +864,9 @@ where
 }
 
 
-pub fn clear_descendant_data<E, F>(
-    el: E,
-    clear_data: &F
-)
+pub fn clear_descendant_data<E>(el: E)
 where
     E: TElement,
-    F: Fn(E),
 {
     for kid in el.as_node().traversal_children() {
         if let Some(kid) = kid.as_element() {
@@ -896,8 +876,8 @@ where
             
             
             if kid.get_data().is_some() {
-                clear_data(kid);
-                clear_descendant_data(kid, clear_data);
+                unsafe { kid.clear_data() };
+                clear_descendant_data(kid);
             }
         }
     }
