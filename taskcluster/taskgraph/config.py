@@ -11,7 +11,14 @@ graph_config_schema = Schema({
     Required('treeherder'): {
         
         Required('group-names'): {basestring: basestring}
-    }
+    },
+    Required('try'): {
+        
+        
+        
+        
+        Required('ridealong-builds', default={}): {basestring: [basestring]},
+    },
 })
 
 
