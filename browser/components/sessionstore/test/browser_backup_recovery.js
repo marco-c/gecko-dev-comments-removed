@@ -31,6 +31,9 @@ add_task(async function init() {
 
 add_task(async function test_creation() {
   
+  SessionSaver.cancel();
+
+  
   let OLD_BACKUP = Path.join(Constants.Path.profileDir, "sessionstore.baklz4");
   let OLD_UPGRADE_BACKUP = Path.join(Constants.Path.profileDir, "sessionstore.baklz4-0000000");
 
