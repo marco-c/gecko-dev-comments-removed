@@ -746,7 +746,7 @@ protected:
     
     
     nsFontFaceLoader* MOZ_NON_OWNING_REF mLoader; 
-    gfxUserFontSet*          mFontSet; 
+    gfxUserFontSet*   MOZ_NON_OWNING_REF mFontSet; 
     RefPtr<gfxFontSrcPrincipal> mPrincipal;
 };
 

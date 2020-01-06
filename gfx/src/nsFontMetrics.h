@@ -250,7 +250,9 @@ private:
     nsFont mFont;
     RefPtr<gfxFontGroup> mFontGroup;
     nsCOMPtr<nsIAtom> mLanguage;
-    nsDeviceContext* mDeviceContext;
+    
+    
+    nsDeviceContext* MOZ_NON_OWNING_REF mDeviceContext;
     int32_t mP2A;
 
     

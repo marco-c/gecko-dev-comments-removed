@@ -45,8 +45,12 @@ protected:
     gr_font *mGrFont; 
 
     struct CallbackData {
-        gfxFont* mFont;
-        mozilla::gfx::DrawTarget* mDrawTarget;
+        
+        
+        gfxFont* MOZ_NON_OWNING_REF mFont;
+        
+        
+        mozilla::gfx::DrawTarget* MOZ_NON_OWNING_REF mDrawTarget;
     };
 
     CallbackData mCallbackData;

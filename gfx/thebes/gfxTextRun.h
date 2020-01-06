@@ -813,8 +813,12 @@ private:
     }
 
     void             *mUserData;
-    gfxFontGroup     *mFontGroup; 
-                                  
+
+    
+    
+    
+    gfxFontGroup* MOZ_OWNING_REF mFontGroup;
+
     gfxSkipChars      mSkipChars;
 
     nsTextFrameUtils::Flags mFlags2; 
@@ -1129,8 +1133,10 @@ protected:
         RefPtr<gfxFontFamily> mFamily;
         
         union {
-            gfxFont*            mFont;
-            gfxFontEntry*       mFontEntry;
+            
+            
+            gfxFont* MOZ_OWNING_REF      mFont;
+            gfxFontEntry* MOZ_OWNING_REF mFontEntry;
         };
         bool                    mNeedsBold   : 1;
         bool                    mFontCreated : 1;

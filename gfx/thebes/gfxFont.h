@@ -367,7 +367,11 @@ protected:
         }
         enum { ALLOW_MEMMOVE = true };
 
-        gfxFont* mFont;
+        
+        
+        
+        
+        gfxFont* MOZ_UNSAFE_REF("tracking for deferred deletion") mFont;
     };
 
     nsTHashtable<HashEntry> mFonts;

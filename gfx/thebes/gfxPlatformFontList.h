@@ -67,7 +67,9 @@ public:
     enum { ALLOW_MEMMOVE = true };
 
 protected:
-    gfxCharacterMap *mCharMap;
+    
+    
+    gfxCharacterMap* MOZ_NON_OWNING_REF mCharMap;
 };
 
 

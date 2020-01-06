@@ -23,7 +23,9 @@ public:
 
     struct FontCallbackData {
         gfxHarfBuzzShaper* mShaper;
-        mozilla::gfx::DrawTarget* mDrawTarget;
+        
+        
+        mozilla::gfx::DrawTarget* MOZ_NON_OWNING_REF mDrawTarget;
     };
 
     bool Initialize();
