@@ -3,11 +3,30 @@ const { Constructor: CC } = Components;
 Cu.import("resource://testing-common/httpd.js");
 
 const { OneCRLBlocklistClient } = Cu.import("resource://services-common/blocklist-clients.js", {});
+const { Kinto } = Cu.import("resource://services-common/kinto-offline-client.js", {});
+const { FirefoxAdapter } = Cu.import("resource://services-common/kinto-storage-adapter.js", {});
 
 const BinaryInputStream = CC("@mozilla.org/binaryinputstream;1",
   "nsIBinaryInputStream", "setInputStream");
 
 let server;
+
+
+let sqliteHandle;
+const KINTO_FILENAME = "kinto.sqlite";
+
+function do_get_kinto_collection(collectionName) {
+  let config = {
+    
+    
+    remote: "https://firefox.settings.services.mozilla.com/v1/",
+    
+    adapter: FirefoxAdapter,
+    adapterOptions: {sqliteHandle},
+    bucket: "blocklists"
+  };
+  return new Kinto(config).collection(collectionName);
+}
 
 
 
@@ -48,13 +67,14 @@ add_task(async function test_something() {
   
   await OneCRLBlocklistClient.maybeSync(2000, Date.now());
 
-  await OneCRLBlocklistClient.openCollection(async (collection) => {
-    
-    const list = await collection.list();
-    
-    
-    do_check_true(list.data.length >= 363);
-  });
+  sqliteHandle = await FirefoxAdapter.openConnection({path: KINTO_FILENAME});
+  const collection = do_get_kinto_collection("certificates");
+
+  
+  let list = await collection.list();
+  
+  
+  do_check_true(list.data.length >= 363);
 
   
   Services.prefs.clearUserPref("services.settings.server");
@@ -66,34 +86,26 @@ add_task(async function test_something() {
 
   
   Services.prefs.setCharPref("services.settings.server", dummyServerURL);
-
-  await OneCRLBlocklistClient.openCollection(async (collection) => {
-    
-    
-    await collection.clear();
-    
-    
-    await collection.db.saveLastModified(1000);
-  });
-
+  
+  
+  await collection.clear();
+  
+  
+  await collection.db.saveLastModified(1000);
   await OneCRLBlocklistClient.maybeSync(2000, Date.now());
 
-  await OneCRLBlocklistClient.openCollection(async (collection) => {
-    
-    
-    const list = await collection.list();
-    do_check_eq(list.data.length, 1);
-  });
+  
+  
+  list = await collection.list();
+  do_check_eq(list.data.length, 1);
 
   
   await OneCRLBlocklistClient.maybeSync(4000, Date.now());
 
-  await OneCRLBlocklistClient.openCollection(async (collection) => {
-    
-    
-    const list = await collection.list();
-    do_check_eq(list.data.length, 3);
-  });
+  
+  
+  list = await collection.list();
+  do_check_eq(list.data.length, 3);
 
   
   
@@ -131,6 +143,7 @@ function run_test() {
 
   do_register_cleanup(function() {
     server.stop(() => { });
+    return sqliteHandle.close();
   });
 }
 
