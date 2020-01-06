@@ -2409,12 +2409,21 @@ ScriptSource::setSourceMapURL(JSContext* cx, const char16_t* sourceMapURL)
 
 
 
+
+
+
+
+
+
+
+
+
 SharedScriptData*
 js::SharedScriptData::new_(JSContext* cx, uint32_t codeLength,
                            uint32_t srcnotesLength, uint32_t natoms)
 {
-    uint32_t dataLength = natoms * sizeof(GCPtrAtom) + codeLength + srcnotesLength;
-    uint32_t allocLength = offsetof(SharedScriptData, data_) + dataLength;
+    size_t dataLength = natoms * sizeof(GCPtrAtom) + codeLength + srcnotesLength;
+    size_t allocLength = offsetof(SharedScriptData, data_) + dataLength;
     auto entry = reinterpret_cast<SharedScriptData*>(cx->zone()->pod_malloc<uint8_t>(allocLength));
     if (!entry) {
         ReportOutOfMemory(cx);
@@ -2426,18 +2435,22 @@ js::SharedScriptData::new_(JSContext* cx, uint32_t codeLength,
     MOZ_DIAGNOSTIC_ASSERT(codeLength > 0);
 
     entry->refCount_ = 0;
-    entry->dataLength_ = dataLength;
     entry->natoms_ = natoms;
     entry->codeLength_ = codeLength;
+    entry->noteLength_ = srcnotesLength;
+
 
     
 
 
 
+    static_assert(offsetof(SharedScriptData, data_) % sizeof(GCPtrAtom) == 0);
     GCPtrAtom* atoms = entry->atoms();
-    MOZ_ASSERT(reinterpret_cast<uintptr_t>(atoms) % sizeof(GCPtrAtom*) == 0);
     for (unsigned i = 0; i < natoms; ++i)
         new (&atoms[i]) GCPtrAtom();
+
+    
+    MOZ_ASSERT(entry->dataLength() == dataLength);
 
     return entry;
 }
@@ -2546,20 +2559,6 @@ js::FreeScriptData(JSRuntime* rt, AutoLockForExclusiveAccess& lock)
 
     table.clear();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -3145,20 +3144,6 @@ size_t
 JSScript::sizeOfTypeScript(mozilla::MallocSizeOf mallocSizeOf) const
 {
     return types_ ? types_->sizeOfIncludingThis(mallocSizeOf) : 0;
-}
-
-
-
-
-
-uint32_t
-JSScript::numNotes()
-{
-    jssrcnote* sn;
-    jssrcnote* notes_ = notes();
-    for (sn = notes_; !SN_IS_TERMINATOR(sn); sn = SN_NEXT(sn))
-        continue;
-    return sn - notes_ + 1;    
 }
 
 js::GlobalObject&
