@@ -2801,11 +2801,7 @@ pref("layout.css.prefixes.box-sizing", true);
 pref("layout.css.prefixes.font-features", true);
 
 
-#ifdef NIGHTLY_BUILD
-pref("layout.css.prefixes.gradients", false);
-#else
 pref("layout.css.prefixes.gradients", true);
-#endif
 
 
 pref("layout.css.prefixes.webkit", true);

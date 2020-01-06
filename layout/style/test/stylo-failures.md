@@ -42,7 +42,15 @@ to mochitest command.
   * inserting keyframes rule doesn't trigger restyle bug 1364799:
     * test_rule_insertion.html `@keyframes` [36]
   * OMTA
-    * test_animations_omta.html: bug 1361938, bug 1361663 [88]
+    * test_animations_effect_timing_duration.html [1]
+    * test_animations_effect_timing_enddelay.html [1]
+    * test_animations_effect_timing_iterations.html [1]
+    * test_animations_iterationstart.html [1]
+    * test_animations_omta.html [1]
+    * test_animations_omta_start.html [1]
+    * test_animations_pausing.html [1]
+    * test_animations_playbackrate.html [1]
+    * test_animations_reverse.html [1]
   * SMIL Animation
     * test_restyles_in_smil_animation.html [2]
 * CSSOM support:
@@ -55,12 +63,12 @@ to mochitest command.
   * test_parser_diagnostics_unprintables.html [550]
 * Transition support:
   * test_transitions.html: pseudo elements [12]
-  * test_transitions_and_reframes.html `pseudo-element`: bug 1366422 [4]
   * Events:
     * test_animations_event_order.html [2]
 * test_computed_style.html `gradient`: -webkit-prefixed gradient values [13]
 * test_bug829816.html: counter-{reset,increment} serialization difference bug 1363968 [8]
 * dynamic change on \@counter-style rule bug 1363590
+  * test_counter_style.html [11]
   * test_counter_style.html asserts [11]
   * test_counter_descriptor_storage.html asserts [110]
 * symbols() function and string value on list-style-type bug 1363596
@@ -95,6 +103,10 @@ to mochitest command.
     * test_value_storage.html `font-variant` [167]
     * test_specified_value_serialization.html `bug-721136` [1]
 * Unsupported prefixed values
+  * moz-prefixed gradient functions bug 1337655
+    * test_value_storage.html `-moz-linear-gradient` [322]
+    * ... `-moz-radial-gradient` [309]
+    * ... `-moz-repeating-` [298]
   * serialization of prefixed gradient functions bug 1358710
     * test_specified_value_serialization.html `-webkit-radial-gradient` [1]
   * moz-prefixed intrinsic width values bug 1355402
