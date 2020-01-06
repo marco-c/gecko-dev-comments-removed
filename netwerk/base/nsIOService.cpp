@@ -1360,10 +1360,10 @@ nsIOService::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
 void
 nsIOService::ParsePortList(nsIPrefBranch *prefBranch, const char *pref, bool remove)
 {
-    nsCString portList;
+    nsAutoCString portList;
 
     
-    prefBranch->GetCharPref(pref, getter_Copies(portList));
+    prefBranch->GetCharPref(pref, portList);
     if (!portList.IsVoid()) {
         nsTArray<nsCString> portListArray;
         ParseString(portList, ',', portListArray);
