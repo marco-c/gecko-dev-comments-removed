@@ -58,25 +58,6 @@ const DISABLED_ATTRIBUTE_SUPPORTED_XUL = new Set([
 ]);
 
 
-const CHECKED_PROPERTY_SUPPORTED_XUL = new Set([
-  "BUTTON",
-  "CHECKBOX",
-  "LISTITEM",
-  "TOOLBARBUTTON",
-]);
-
-
-const SELECTED_PROPERTY_SUPPORTED_XUL = new Set([
-  "LISTITEM",
-  "MENU",
-  "MENUITEM",
-  "MENUSEPARATOR",
-  "RADIO",
-  "RICHLISTITEM",
-  "TAB",
-]);
-
-
 
 
 
@@ -491,21 +472,12 @@ interaction.isElementEnabled = function(el, strict = false) {
 
 
 
-interaction.isElementSelected = function(el, strict = false) {
-  let selected = true;
-  let win = getWindow(el);
 
-  if (element.isXULElement(el)) {
-    let tagName = el.tagName.toUpperCase();
-    if (CHECKED_PROPERTY_SUPPORTED_XUL.has(tagName)) {
-      selected = el.checked;
-    }
-    if (SELECTED_PROPERTY_SUPPORTED_XUL.has(tagName)) {
-      selected = el.selected;
-    }
-  } else {
-    selected = atom.isElementSelected(el, win);
-  }
+
+
+
+interaction.isElementSelected = function(el, strict = false) {
+  let selected = element.isSelected(el);
 
   let a11y = accessibility.get(strict);
   return a11y.getAccessible(el).then(acc => {

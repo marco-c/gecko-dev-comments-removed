@@ -22,6 +22,25 @@ this.EXPORTED_SYMBOLS = ["element"];
 const XMLNS = "http://www.w3.org/1999/xhtml";
 const XULNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
+
+const XUL_CHECKED_ELS = new Set([
+  "button",
+  "checkbox",
+  "listitem",
+  "toolbarbutton",
+]);
+
+
+const XUL_SELECTED_ELS = new Set([
+  "listitem",
+  "menu",
+  "menuitem",
+  "menuseparator",
+  "radio",
+  "richlistitem",
+  "tab",
+]);
+
 const uuidGen = Cc["@mozilla.org/uuid-generator;1"]
     .getService(Ci.nsIUUIDGenerator);
 
@@ -666,6 +685,46 @@ element.isStale = function(el, window = undefined) {
   }
 
   return !el.isConnected;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+element.isSelected = function(el) {
+  if (!el) {
+    return false;
+  }
+
+  if (element.isXULElement(el)) {
+    if (XUL_CHECKED_ELS.has(el.tagName)) {
+      return el.checked;
+    } else if (XUL_SELECTED_ELS.has(el.tagName)) {
+      return el.selected;
+    }
+
+  
+  } else if (typeof el == "object" &&
+      "nodeType" in el &&
+      el.nodeType == el.ELEMENT_NODE) {
+    if (el.localName == "input" && ["checkbox", "radio"].includes(el.type)) {
+      return el.checked;
+    } else if (el.localName == "option") {
+      return el.selected;
+    }
+  }
+
+  return false;
 };
 
 
