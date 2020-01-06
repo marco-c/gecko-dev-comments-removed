@@ -2,11 +2,20 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 "use strict";
 
 const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
-
-const DIALOG_URL = "chrome://payments/content/paymentDialog.xhtml";
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -35,12 +44,15 @@ function PaymentUIService() {
 PaymentUIService.prototype = {
   classID: Components.ID("{01f8bd55-9017-438b-85ec-7c15d2b35cdc}"),
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIPaymentUIService]),
+  DIALOG_URL: "chrome://payments/content/paymentDialog.xhtml",
   REQUEST_ID_PREFIX: "paymentRequest-",
 
+  
+
   showPayment(requestId) {
-    this.log.debug("showPayment");
+    this.log.debug(`showPayment: ${requestId}`);
     let chromeWindow = Services.wm.getMostRecentWindow("navigator:browser");
-    chromeWindow.openDialog(DIALOG_URL,
+    chromeWindow.openDialog(this.DIALOG_URL,
                             `${this.REQUEST_ID_PREFIX}${requestId}`,
                             "modal,dialog,centerscreen",
                             {requestId});
@@ -72,6 +84,7 @@ PaymentUIService.prototype = {
   },
 
   completePayment(requestId) {
+    this.log.debug(`completePayment: ${requestId}`);
     let completeResponse = Cc["@mozilla.org/dom/payments/payment-complete-action-response;1"]
                              .createInstance(Ci.nsIPaymentCompleteActionResponse);
     completeResponse.init(requestId, Ci.nsIPaymentActionResponse.COMPLTETE_SUCCEEDED);
@@ -79,6 +92,7 @@ PaymentUIService.prototype = {
   },
 
   updatePayment(requestId) {
+    this.log.debug(`updatePayment: ${requestId}`);
   },
 
   

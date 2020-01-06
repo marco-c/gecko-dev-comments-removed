@@ -2,6 +2,19 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 "use strict";
 
 
@@ -18,15 +31,7 @@ let PaymentFrameScript = {
   },
 
   handleEvent(event) {
-    switch (event.type) {
-      case "paymentContentToChrome": {
-        this.sendToChrome(event);
-        break;
-      }
-      default: {
-        throw new Error("Unexpected event type");
-      }
-    }
+    this.sendToChrome(event);
   },
 
   receiveMessage({data: {messageType, data}}) {

@@ -2,6 +2,12 @@
 
 
 
+
+
+
+
+
+
 "use strict";
 
 let PaymentRequest = {
