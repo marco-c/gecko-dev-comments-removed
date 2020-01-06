@@ -3221,7 +3221,7 @@ nsFrameSelection::SelectCellElement(nsIContent *aCellElement)
 }
 
 nsresult
-Selection::getTableCellLocationFromRange(nsRange* aRange,
+Selection::GetTableCellLocationFromRange(nsRange* aRange,
                                          int32_t* aSelectionType,
                                          int32_t* aRow, int32_t* aCol)
 {
@@ -3284,7 +3284,7 @@ Selection::addTableCellRange(nsRange* aRange, bool* aDidAddRange,
 
   
   int32_t newRow, newCol, tableMode;
-  result = getTableCellLocationFromRange(aRange, &tableMode, &newRow, &newCol);
+  result = GetTableCellLocationFromRange(aRange, &tableMode, &newRow, &newCol);
   if (NS_FAILED(result)) return result;
   
   
