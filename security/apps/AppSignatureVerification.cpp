@@ -47,6 +47,35 @@ extern mozilla::LazyLogModule gPIPNSSLog;
 namespace {
 
 
+
+struct DigestWithAlgorithm
+{
+  nsresult ValidateLength() const
+  {
+    size_t hashLen;
+    switch (mAlgorithm) {
+      case SEC_OID_SHA256:
+        hashLen = SHA256_LENGTH;
+        break;
+      case SEC_OID_SHA1:
+        hashLen = SHA1_LENGTH;
+        break;
+      default:
+        MOZ_ASSERT_UNREACHABLE(
+          "unsupported hash type in DigestWithAlgorithm::ValidateLength");
+        return NS_ERROR_FAILURE;
+    }
+    if (mDigest.Length() != hashLen) {
+      return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
+    }
+    return NS_OK;
+  }
+
+  nsAutoCString mDigest;
+  SECOidTag mAlgorithm;
+};
+
+
 inline nsDependentCSubstring
 DigestToDependentString(const Digest& digest)
 {
@@ -113,12 +142,14 @@ ReadStream(const nsCOMPtr<nsIInputStream>& stream,  SECItem& buf)
 
 
 
+
 nsresult
-FindAndLoadOneEntry(nsIZipReader * zip,
-                    const nsACString & searchPattern,
-                     nsACString & filename,
-                     SECItem & buf,
-                     Digest * bufDigest)
+FindAndLoadOneEntry(nsIZipReader* zip,
+                    const nsACString& searchPattern,
+                     nsACString& filename,
+                     SECItem& buf,
+                     SECOidTag digestAlgorithm = SEC_OID_SHA1,
+                     Digest* bufDigest = nullptr)
 {
   nsCOMPtr<nsIUTF8StringEnumerator> files;
   nsresult rv = zip->FindEntries(searchPattern, getter_AddRefs(files));
@@ -153,7 +184,7 @@ FindAndLoadOneEntry(nsIZipReader * zip,
   }
 
   if (bufDigest) {
-    rv = bufDigest->DigestBuf(SEC_OID_SHA1, buf.data, buf.len - 1);
+    rv = bufDigest->DigestBuf(digestAlgorithm, buf.data, buf.len - 1);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -173,14 +204,15 @@ FindAndLoadOneEntry(nsIZipReader * zip,
 
 nsresult
 VerifyStreamContentDigest(nsIInputStream* stream,
-                          const nsCString& digestFromManifest, SECItem& buf)
+                          const DigestWithAlgorithm& digestFromManifest,
+                          SECItem& buf)
 {
   MOZ_ASSERT(buf.len > 0);
-  if (digestFromManifest.Length() != SHA1_LENGTH) {
-    return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
+  nsresult rv = digestFromManifest.ValidateLength();
+  if (NS_FAILED(rv)) {
+    return rv;
   }
 
-  nsresult rv;
   uint64_t len64;
   rv = stream->Available(&len64);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -188,7 +220,8 @@ VerifyStreamContentDigest(nsIInputStream* stream,
     return NS_ERROR_SIGNED_JAR_ENTRY_TOO_LARGE;
   }
 
-  UniquePK11Context digestContext(PK11_CreateDigestContext(SEC_OID_SHA1));
+  UniquePK11Context digestContext(
+    PK11_CreateDigestContext(digestFromManifest.mAlgorithm));
   if (!digestContext) {
     return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
   }
@@ -224,11 +257,11 @@ VerifyStreamContentDigest(nsIInputStream* stream,
 
   
   Digest digest;
-  rv = digest.End(SEC_OID_SHA1, digestContext);
+  rv = digest.End(digestFromManifest.mAlgorithm, digestContext);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsDependentCSubstring digestStr(DigestToDependentString(digest));
-  if (!digestStr.Equals(digestFromManifest)) {
+  if (!digestStr.Equals(digestFromManifest.mDigest)) {
     return NS_ERROR_SIGNED_JAR_MODIFIED_ENTRY;
   }
 
@@ -237,7 +270,8 @@ VerifyStreamContentDigest(nsIInputStream* stream,
 
 nsresult
 VerifyEntryContentDigest(nsIZipReader* zip, const nsACString& aFilename,
-                         const nsCString& digestFromManifest, SECItem& buf)
+                         const DigestWithAlgorithm& digestFromManifest,
+                         SECItem& buf)
 {
   nsCOMPtr<nsIInputStream> stream;
   nsresult rv = zip->GetInputStream(aFilename, getter_AddRefs(stream));
@@ -255,7 +289,8 @@ VerifyEntryContentDigest(nsIZipReader* zip, const nsACString& aFilename,
 
 nsresult
 VerifyFileContentDigest(nsIFile* aDir, const nsAString& aFilename,
-                        const nsCString& digestFromManifest, SECItem& buf)
+                        const DigestWithAlgorithm& digestFromManifest,
+                        SECItem& buf)
 {
   
   nsCOMPtr<nsIFile> file;
@@ -447,11 +482,8 @@ CheckManifestVersion(const char* & nextLineStart,
 
 
 
-
-
-
 nsresult
-ParseSF(const char* filebuf,  nsCString& mfDigest)
+ParseSF(const char* filebuf,  DigestWithAlgorithm& mfDigest)
 {
   const char* nextLineStart = filebuf;
   nsresult rv = CheckManifestVersion(nextLineStart,
@@ -460,6 +492,8 @@ ParseSF(const char* filebuf,  nsCString& mfDigest)
     return rv;
   }
 
+  nsAutoCString savedSHA1Digest;
+  
   
   for (;;) {
     nsAutoCString curLine;
@@ -471,6 +505,11 @@ ParseSF(const char* filebuf,  nsCString& mfDigest)
     if (curLine.Length() == 0) {
       
       
+      if (!savedSHA1Digest.IsEmpty()) {
+        mfDigest.mDigest.Assign(savedSHA1Digest);
+        mfDigest.mAlgorithm = SEC_OID_SHA1;
+        return NS_OK;
+      }
       return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
     }
 
@@ -481,11 +520,12 @@ ParseSF(const char* filebuf,  nsCString& mfDigest)
       return rv;
     }
 
-    if (attrName.LowerCaseEqualsLiteral("sha1-digest-manifest")) {
-      rv = Base64Decode(attrValue, mfDigest);
+    if (attrName.LowerCaseEqualsLiteral("sha256-digest-manifest")) {
+      rv = Base64Decode(attrValue, mfDigest.mDigest);
       if (NS_FAILED(rv)) {
         return rv;
       }
+      mfDigest.mAlgorithm = SEC_OID_SHA256;
 
       
       
@@ -495,7 +535,15 @@ ParseSF(const char* filebuf,  nsCString& mfDigest)
       
       
       
-      break;
+      return NS_OK;
+    }
+
+    if (attrName.LowerCaseEqualsLiteral("sha1-digest-manifest") &&
+        savedSHA1Digest.IsEmpty()) {
+      rv = Base64Decode(attrValue, savedSHA1Digest);
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
     }
 
     
@@ -507,16 +555,30 @@ ParseSF(const char* filebuf,  nsCString& mfDigest)
 
 
 
+
+
+
+
 nsresult
-ParseMF(const char* filebuf, nsIZipReader * zip,
-         nsTHashtable<nsCStringHashKey> & mfItems,
-        ScopedAutoSECItem & buf)
+ParseMF(const char* filebuf, nsIZipReader* zip, SECOidTag digestAlgorithm,
+         nsTHashtable<nsCStringHashKey>& mfItems, ScopedAutoSECItem& buf)
 {
-  nsresult rv;
+  const char* digestNameToFind = nullptr;
+  switch (digestAlgorithm) {
+    case SEC_OID_SHA256:
+      digestNameToFind = "sha256-digest";
+      break;
+    case SEC_OID_SHA1:
+      digestNameToFind = "sha1-digest";
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("bad argument to ParseMF");
+      return NS_ERROR_FAILURE;
+  }
 
   const char* nextLineStart = filebuf;
-
-  rv = CheckManifestVersion(nextLineStart, NS_LITERAL_CSTRING(JAR_MF_HEADER));
+  nsresult rv = CheckManifestVersion(nextLineStart,
+                                     NS_LITERAL_CSTRING(JAR_MF_HEADER));
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -543,7 +605,9 @@ ParseMF(const char* filebuf, nsIZipReader * zip,
   for (;;) {
     nsAutoCString curLine;
     rv = ReadLine(nextLineStart, curLine);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
 
     if (curLine.Length() == 0) {
       
@@ -567,14 +631,18 @@ ParseMF(const char* filebuf, nsIZipReader * zip,
 
       
       
-      rv = VerifyEntryContentDigest(zip, curItemName, digest, buf);
-      if (NS_FAILED(rv))
+      DigestWithAlgorithm digestWithAlgorithm = { digest, digestAlgorithm };
+      rv = VerifyEntryContentDigest(zip, curItemName, digestWithAlgorithm, buf);
+      if (NS_FAILED(rv)) {
         return rv;
+      }
 
       mfItems.PutEntry(curItemName);
 
-      if (*nextLineStart == '\0') 
+      if (*nextLineStart == '\0') {
+        
         break;
+      }
 
       
       
@@ -594,8 +662,7 @@ ParseMF(const char* filebuf, nsIZipReader * zip,
     
 
     
-    if (attrName.LowerCaseEqualsLiteral("sha1-digest"))
-    {
+    if (attrName.EqualsIgnoreCase(digestNameToFind)) {
       if (!digest.IsEmpty()) { 
         return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
       }
@@ -609,8 +676,7 @@ ParseMF(const char* filebuf, nsIZipReader * zip,
     }
 
     
-    if (attrName.LowerCaseEqualsLiteral("name"))
-    {
+    if (attrName.LowerCaseEqualsLiteral("name")) {
       if (MOZ_UNLIKELY(curItemName.Length() > 0)) 
         return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
 
@@ -716,7 +782,7 @@ VerifySignature(AppTrustedRoot trustedRoot, const SECItem& buffer,
                                                         locker);
 }
 
-NS_IMETHODIMP
+nsresult
 OpenSignedAppFile(AppTrustedRoot aTrustedRoot, nsIFile* aJarFile,
                    nsIZipReader** aZipReader,
                    nsIX509Cert** aSignerCert)
@@ -744,7 +810,7 @@ OpenSignedAppFile(AppTrustedRoot aTrustedRoot, nsIFile* aJarFile,
   nsAutoCString sigFilename;
   ScopedAutoSECItem sigBuffer;
   rv = FindAndLoadOneEntry(zip, nsLiteralCString(JAR_RSA_SEARCH_STRING),
-                           sigFilename, sigBuffer, nullptr);
+                           sigFilename, sigBuffer);
   if (NS_FAILED(rv)) {
     return NS_ERROR_SIGNED_JAR_NOT_SIGNED;
   }
@@ -754,7 +820,8 @@ OpenSignedAppFile(AppTrustedRoot aTrustedRoot, nsIFile* aJarFile,
   ScopedAutoSECItem sfBuffer;
   Digest sfCalculatedDigest;
   rv = FindAndLoadOneEntry(zip, NS_LITERAL_CSTRING(JAR_SF_SEARCH_STRING),
-                           sfFilename, sfBuffer, &sfCalculatedDigest);
+                           sfFilename, sfBuffer, SEC_OID_SHA1,
+                           &sfCalculatedDigest);
   if (NS_FAILED(rv)) {
     return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
   }
@@ -767,7 +834,7 @@ OpenSignedAppFile(AppTrustedRoot aTrustedRoot, nsIFile* aJarFile,
     return rv;
   }
 
-  nsAutoCString mfDigest;
+  DigestWithAlgorithm mfDigest;
   rv = ParseSF(BitwiseCast<char*, unsigned char*>(sfBuffer.data), mfDigest);
   if (NS_FAILED(rv)) {
     return rv;
@@ -778,14 +845,15 @@ OpenSignedAppFile(AppTrustedRoot aTrustedRoot, nsIFile* aJarFile,
   ScopedAutoSECItem manifestBuffer;
   Digest mfCalculatedDigest;
   rv = FindAndLoadOneEntry(zip, NS_LITERAL_CSTRING(JAR_MF_SEARCH_STRING),
-                           mfFilename, manifestBuffer, &mfCalculatedDigest);
+                           mfFilename, manifestBuffer, mfDigest.mAlgorithm,
+                           &mfCalculatedDigest);
   if (NS_FAILED(rv)) {
     return rv;
   }
 
   nsDependentCSubstring calculatedDigest(
     DigestToDependentString(mfCalculatedDigest));
-  if (!mfDigest.Equals(calculatedDigest)) {
+  if (!mfDigest.mDigest.Equals(calculatedDigest)) {
     return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
   }
 
@@ -797,7 +865,7 @@ OpenSignedAppFile(AppTrustedRoot aTrustedRoot, nsIFile* aJarFile,
   nsTHashtable<nsCStringHashKey> items;
 
   rv = ParseMF(BitwiseCast<char*, unsigned char*>(manifestBuffer.data), zip,
-               items, buf);
+               mfDigest.mAlgorithm, items, buf);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -994,11 +1062,13 @@ FindSignatureFilename(nsIFile* aMetaDir,
 
 
 
+
 nsresult
 LoadOneMetafile(nsIFile* aMetaDir,
                 const nsAString& aFilename,
                  SECItem& aBuf,
-                 Digest* aBufDigest)
+                 SECOidTag aDigestAlgorithm = SEC_OID_SHA1,
+                 Digest* aBufDigest = nullptr)
 {
   nsCOMPtr<nsIFile> metafile;
   nsresult rv = aMetaDir->Clone(getter_AddRefs(metafile));
@@ -1024,7 +1094,7 @@ LoadOneMetafile(nsIFile* aMetaDir,
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (aBufDigest) {
-    rv = aBufDigest->DigestBuf(SEC_OID_SHA1, aBuf.data, aBuf.len - 1);
+    rv = aBufDigest->DigestBuf(aDigestAlgorithm, aBuf.data, aBuf.len - 1);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -1036,15 +1106,26 @@ LoadOneMetafile(nsIFile* aMetaDir,
 
 
 nsresult
-ParseMFUnpacked(const char* aFilebuf, nsIFile* aDir,
+ParseMFUnpacked(const char* aFilebuf, nsIFile* aDir, SECOidTag aDigestAlgorithm,
                  nsTHashtable<nsStringHashKey>& aMfItems,
                 ScopedAutoSECItem& aBuf)
 {
-  nsresult rv;
+  const char* digestNameToFind = nullptr;
+  switch (aDigestAlgorithm) {
+    case SEC_OID_SHA256:
+      digestNameToFind = "sha256-digest";
+      break;
+    case SEC_OID_SHA1:
+      digestNameToFind = "sha1-digest";
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("bad argument to ParseMF");
+      return NS_ERROR_FAILURE;
+  }
 
   const char* nextLineStart = aFilebuf;
-
-  rv = CheckManifestVersion(nextLineStart, NS_LITERAL_CSTRING(JAR_MF_HEADER));
+  nsresult rv = CheckManifestVersion(nextLineStart,
+                                     NS_LITERAL_CSTRING(JAR_MF_HEADER));
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -1097,7 +1178,9 @@ ParseMFUnpacked(const char* aFilebuf, nsIFile* aDir,
 
       
       
-      rv = VerifyFileContentDigest(aDir, curItemName, digest, aBuf);
+      DigestWithAlgorithm digestWithAlgorithm = { digest, aDigestAlgorithm };
+      rv = VerifyFileContentDigest(aDir, curItemName, digestWithAlgorithm,
+                                   aBuf);
       if (NS_FAILED(rv)) {
         return rv;
       }
@@ -1127,7 +1210,7 @@ ParseMFUnpacked(const char* aFilebuf, nsIFile* aDir,
     
 
     
-    if (attrName.LowerCaseEqualsLiteral("sha1-digest")) {
+    if (attrName.EqualsIgnoreCase(digestNameToFind)) {
       if (!digest.IsEmpty()) {
         
         return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
@@ -1298,7 +1381,7 @@ VerifySignedDirectory(AppTrustedRoot aTrustedRoot,
   }
 
   ScopedAutoSECItem sigBuffer;
-  rv = LoadOneMetafile(metaDir, sigFilename, sigBuffer, nullptr);
+  rv = LoadOneMetafile(metaDir, sigFilename, sigBuffer);
   if (NS_FAILED(rv)) {
     return NS_ERROR_SIGNED_JAR_NOT_SIGNED;
   }
@@ -1311,7 +1394,8 @@ VerifySignedDirectory(AppTrustedRoot aTrustedRoot,
 
   ScopedAutoSECItem sfBuffer;
   Digest sfCalculatedDigest;
-  rv = LoadOneMetafile(metaDir, sfFilename, sfBuffer, &sfCalculatedDigest);
+  rv = LoadOneMetafile(metaDir, sfFilename, sfBuffer, SEC_OID_SHA1,
+                       &sfCalculatedDigest);
   if (NS_FAILED(rv)) {
     return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
   }
@@ -1326,7 +1410,7 @@ VerifySignedDirectory(AppTrustedRoot aTrustedRoot,
 
   
 
-  nsAutoCString mfDigest;
+  DigestWithAlgorithm mfDigest;
   rv = ParseSF(BitwiseCast<char*, unsigned char*>(sfBuffer.data), mfDigest);
   if (NS_FAILED(rv)) {
     return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
@@ -1337,14 +1421,15 @@ VerifySignedDirectory(AppTrustedRoot aTrustedRoot,
   nsAutoString mfFilename(NS_LITERAL_STRING("manifest.mf"));
   ScopedAutoSECItem manifestBuffer;
   Digest mfCalculatedDigest;
-  rv = LoadOneMetafile(metaDir, mfFilename, manifestBuffer, &mfCalculatedDigest);
+  rv = LoadOneMetafile(metaDir, mfFilename, manifestBuffer, mfDigest.mAlgorithm,
+                       &mfCalculatedDigest);
   if (NS_FAILED(rv)) {
     return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
   }
 
   nsDependentCSubstring calculatedDigest(
     DigestToDependentString(mfCalculatedDigest));
-  if (!mfDigest.Equals(calculatedDigest)) {
+  if (!mfDigest.mDigest.Equals(calculatedDigest)) {
     return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
   }
 
@@ -1357,7 +1442,7 @@ VerifySignedDirectory(AppTrustedRoot aTrustedRoot,
 
   nsTHashtable<nsStringHashKey> items;
   rv = ParseMFUnpacked(BitwiseCast<char*, unsigned char*>(manifestBuffer.data),
-                       aDirectory, items, buf);
+                       aDirectory, mfDigest.mAlgorithm, items, buf);
   if (NS_FAILED(rv)){
     return rv;
   }
