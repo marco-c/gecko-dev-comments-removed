@@ -83,6 +83,9 @@ public:
   }
 
   
+  using AbstractThread::Dispatch;
+
+  
   
   
   

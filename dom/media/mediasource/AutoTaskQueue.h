@@ -43,6 +43,9 @@ public:
   }
 
   
+  using AbstractThread::Dispatch;
+
+  
   void AwaitIdle() { mTaskQueue->AwaitIdle(); }
 
   bool IsEmpty() { return mTaskQueue->IsEmpty(); }

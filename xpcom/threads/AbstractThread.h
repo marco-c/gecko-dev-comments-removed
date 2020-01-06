@@ -7,13 +7,13 @@
 #if !defined(AbstractThread_h_)
 #define AbstractThread_h_
 
+#include "mozilla/RefPtr.h"
+#include "mozilla/ThreadLocal.h"
 #include "nscore.h"
 #include "nsIRunnable.h"
+#include "nsISerialEventTarget.h"
 #include "nsISupportsImpl.h"
 #include "nsIThread.h"
-#include "mozilla/RefPtr.h"
-
-#include "mozilla/ThreadLocal.h"
 
 namespace mozilla {
 
@@ -34,7 +34,7 @@ class TaskDispatcher;
 
 
 
-class AbstractThread
+class AbstractThread : public nsISerialEventTarget
 {
 public:
   
@@ -51,7 +51,16 @@ public:
   static already_AddRefed<AbstractThread>
   CreateEventTargetWrapper(nsIEventTarget* aEventTarget, bool aRequireTailDispatch);
 
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AbstractThread);
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+  
+  
+  
+  NS_IMETHOD_(bool) IsOnCurrentThreadInfallible(void) override;
+  NS_IMETHOD IsOnCurrentThread(bool *_retval) override;
+  NS_IMETHOD Dispatch(already_AddRefed<nsIRunnable> event, uint32_t flags) override;
+  NS_IMETHOD DispatchFromScript(nsIRunnable *event, uint32_t flags) override;
+  NS_IMETHOD DelayedDispatch(already_AddRefed<nsIRunnable> event, uint32_t delay) override;
 
   enum DispatchFailureHandling { AssertDispatchSuccess, DontAssertDispatchSuccess };
   enum DispatchReason { NormalDispatch, TailDispatch };
