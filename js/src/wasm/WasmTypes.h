@@ -354,6 +354,53 @@ ToCString(ValType type)
 
 
 
+enum class Tier
+{
+    Baseline,
+    Debug = Baseline,
+    Ion,
+    Serialized = Ion,
+
+    TBD      
+};
+
+
+
+class Tiers
+{
+    Tier t_[2];
+    uint32_t n_;
+
+  public:
+    explicit Tiers() {
+        n_ = 0;
+    }
+    explicit Tiers(Tier t) {
+        t_[0] = t;
+        n_ = 1;
+    }
+    explicit Tiers(Tier t, Tier u) {
+        MOZ_ASSERT(t != u);
+        t_[0] = t;
+        t_[1] = u;
+        n_ = 2;
+    }
+
+    Tier* begin() {
+        return t_;
+    }
+    Tier* end() {
+        return t_ + n_;
+    }
+};
+
+
+
+
+
+
+
+
 class Val
 {
     ValType type_;
@@ -682,20 +729,61 @@ typedef Vector<GlobalDesc, 0, SystemAllocPolicy> GlobalDescVector;
 
 
 
+
+
+
 struct ElemSegment
 {
     uint32_t tableIndex;
     InitExpr offset;
     Uint32Vector elemFuncIndices;
-    Uint32Vector elemCodeRangeIndices;
+    Uint32Vector elemCodeRangeIndices1_;
+    mutable Uint32Vector elemCodeRangeIndices2_;
 
     ElemSegment() = default;
     ElemSegment(uint32_t tableIndex, InitExpr offset, Uint32Vector&& elemFuncIndices)
       : tableIndex(tableIndex), offset(offset), elemFuncIndices(Move(elemFuncIndices))
     {}
 
+    Uint32Vector& elemCodeRangeIndices(Tier t) {
+        switch (t) {
+          case Tier::TBD:
+            if (elemCodeRangeIndices1_.length() > 0)
+                return elemCodeRangeIndices1_;
+            return elemCodeRangeIndices2_;
+          case Tier::Baseline:
+            return elemCodeRangeIndices1_;
+          case Tier::Ion:
+            return elemCodeRangeIndices2_;
+          default:
+            MOZ_CRASH("No such tier");
+        }
+    }
+
+    const Uint32Vector& elemCodeRangeIndices(Tier t) const {
+        switch (t) {
+          case Tier::TBD:
+            if (elemCodeRangeIndices1_.length() > 0)
+                return elemCodeRangeIndices1_;
+            return elemCodeRangeIndices2_;
+          case Tier::Baseline:
+            return elemCodeRangeIndices1_;
+          case Tier::Ion:
+            return elemCodeRangeIndices2_;
+          default:
+            MOZ_CRASH("No such tier");
+        }
+    }
+
+    void setTier2(Uint32Vector&& elemCodeRangeIndices) const {
+        MOZ_ASSERT(elemCodeRangeIndices2_.length() == 0);
+        elemCodeRangeIndices2_ = Move(elemCodeRangeIndices);
+    }
+
     WASM_DECLARE_SERIALIZABLE(ElemSegment)
 };
+
+
 
 typedef Vector<ElemSegment, 0, SystemAllocPolicy> ElemSegmentVector;
 
@@ -1176,53 +1264,6 @@ enum ModuleKind
 {
     Wasm,
     AsmJS
-};
-
-
-
-
-
-
-
-
-enum class Tier
-{
-    Baseline,
-    Debug = Baseline,
-    Ion,
-    Serialized = Ion,
-
-    TBD      
-};
-
-
-
-class Tiers
-{
-    Tier t_[2];
-    uint32_t n_;
-
-  public:
-    explicit Tiers() {
-        n_ = 0;
-    }
-    explicit Tiers(Tier t) {
-        t_[0] = t;
-        n_ = 1;
-    }
-    explicit Tiers(Tier t, Tier u) {
-        MOZ_ASSERT(t != u);
-        t_[0] = t;
-        t_[1] = u;
-        n_ = 2;
-    }
-
-    Tier* begin() {
-        return t_;
-    }
-    Tier* end() {
-        return t_ + n_;
-    }
 };
 
 
