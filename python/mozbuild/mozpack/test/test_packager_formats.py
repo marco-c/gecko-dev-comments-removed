@@ -20,6 +20,10 @@ from mozpack.chrome.manifest import (
     ManifestResource,
     ManifestBinaryComponent,
 )
+from mozpack.errors import (
+    errors,
+    ErrorMessage,
+)
 from mozpack.test.test_files import (
     MockDest,
     foo_xpt,
@@ -423,6 +427,46 @@ class TestFormatters(unittest.TestCase):
             self.assertTrue(is_resource(base, 'chrome/foo/bar/dummy_'))
             self.assertFalse(is_resource(base, 'chrome/foo/bar/dummy'))
 
+    def test_chrome_override(self):
+        registry = FileRegistry()
+        f = FlatFormatter(registry)
+        f.add_base('')
+        f.add_manifest(ManifestContent('chrome', 'foo', 'foo/unix'))
+        
+        
+        f.add_manifest(ManifestContent('chrome', 'foo', 'foo/win', 'os=WINNT'))
+        f.add_manifest(ManifestContent('chrome', 'foo', 'foo/osx', 'os=Darwin'))
+
+        
+        with self.assertRaises(ErrorMessage) as e:
+            f.add_manifest(ManifestContent('chrome', 'foo', 'foo/'))
+
+        self.assertEqual(e.exception.message,
+            'Error: "content foo foo/" overrides '
+            '"content foo foo/unix"')
+
+        
+        
+        with self.assertRaises(ErrorMessage) as e:
+            f.add_manifest(ManifestContent('chrome', 'foo', 'foo/', 'os=WINNT'))
+
+        self.assertEqual(e.exception.message,
+            'Error: "content foo foo/ os=WINNT" overrides '
+            '"content foo foo/win os=WINNT"')
+
+        
+        f.add_manifest(ManifestContent('chrome', 'bar', 'bar/win', 'os=WINNT'))
+        
+        with self.assertRaises(ErrorMessage) as e:
+            f.add_manifest(ManifestContent('chrome', 'bar', 'bar/unix'))
+
+        self.assertEqual(e.exception.message,
+            'Error: "content bar bar/unix" overrides '
+            '"content bar bar/win os=WINNT"')
+
+        
+        f.add_manifest(ManifestContent('chrome', 'bar', 'bar/win',
+                                       'os=WINNT osversion>=7.0'))
 
 if __name__ == '__main__':
     mozunit.main()
