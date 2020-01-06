@@ -22,10 +22,6 @@ var expect= '';
 var expectedvalues = [];
 
 
-
-var JS_VER = [100, 110, 120, 130, 140, 150];
-
-
 var i = 999;
 var j = 999;
 var k = 999;
@@ -41,20 +37,9 @@ function test()
   printBugNumber(BUGNUMBER);
   printStatus (summary);
 
-  
-  for (var n=0; n!=JS_VER.length; n++)
-  {
-    testA(JS_VER[n]);
-  }
-  for (var n=0; n!=JS_VER.length; n++)
-  {
-    testB(JS_VER[n]);
-  }
-  for (var n=0; n!=JS_VER.length; n++)
-  {
-    testC(JS_VER[n]);
-  }
-
+  testA();
+  testB();
+  testC();
 
   
   for (var i=0; i<UBound; i++)
@@ -64,19 +49,13 @@ function test()
 }
 
 
-function testA(ver)
+function testA()
 {
-  
-  if (typeof version == 'function')
-  {
-    version(ver);
-  }
-
   
   var sTestScript = "";
 
   
-  sTestScript += "status = 'Section A of test; JS ' + ver/100;";
+  sTestScript += "status = 'Section A of test';";
   sTestScript += "var i=1;";
   sTestScript += "actual = eval('i');";
   sTestScript += "expect = 1;";
@@ -86,19 +65,13 @@ function testA(ver)
 }
 
 
-function testB(ver)
+function testB()
 {
-  
-  if (typeof version == 'function')
-  {
-    version(ver);
-  }
-
   
   var sTestScript = "";
 
   
-  sTestScript += "status = 'Section B of test; JS ' + ver/100;";
+  sTestScript += "status = 'Section B of test';";
   sTestScript += "for(var j=1; j<2; j++)";
   sTestScript += "{";
   sTestScript += "  actual = eval('j');";
@@ -110,19 +83,13 @@ function testB(ver)
 }
 
 
-function testC(ver)
+function testC()
 {
-  
-  if (typeof version == 'function')
-  {
-    version(ver);
-  }
-
   
   var sTestScript = "";
 
   
-  sTestScript += "status = 'Section C of test; JS ' + ver/100;";
+  sTestScript += "status = 'Section C of test';";
   sTestScript += "try";
   sTestScript += "{";
   sTestScript += "  var k=1;";

@@ -445,50 +445,7 @@
         properties[fields[i]] = true;
       } else {
         properties[propertycaptures[1]] = decodeURIComponent(propertycaptures[2]);
-        if (propertycaptures[1] === "language") {
-          
-          properties.mimetype = fields[i + 1];
-        }
       }
-    }
-
-    if (properties.language !== "type") {
-      var mimetypeVersion = /javascript([.0-9]+)/.exec(properties.mimetype);
-      if (mimetypeVersion !== null) {
-        properties.version = mimetypeVersion[1];
-      }
-    }
-
-    if (!properties.version && navigator.userAgent.indexOf("Gecko/") !== -1) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      var versions = [
-         { path: "js1_6", version: "1.6" },
-         { path: "js1_7", version: "1.7" },
-         { path: "js1_8", version: "1.8" },
-      ];
-      for (var {path, version} of versions) {
-        if (properties.test.startsWith(path)) {
-          properties.version = version;
-          break;
-        }
-      }
-    }
-
-    
-    
-    if (!properties.language) {
-      properties.language = "type";
-      properties.mimetype = "text/javascript";
     }
 
     global.gTestPath = properties.test;
@@ -538,24 +495,9 @@
     scripts.push({src: "js-test-driver-end.js", module: false});
 
     if (!moduleTest) {
-      var key, value;
-      if (properties.language !== "type") {
-        key = "language";
-        value = "javascript";
-        if (properties.version) {
-          value += properties.version;
-        }
-      } else {
-        key = "type";
-        value = properties.mimetype;
-        if (properties.version) {
-          value += ";version=" + properties.version;
-        }
-      }
-
       for (var i = 0; i < scripts.length; i++) {
         var src = scripts[i].src;
-        document.write(`<script src="${src}" charset="utf-8" ${key}="${value}"><\/script>`);
+        document.write(`<script src="${src}" charset="utf-8"><\/script>`);
       }
     } else {
       
