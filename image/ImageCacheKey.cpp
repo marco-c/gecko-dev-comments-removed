@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "ImageCacheKey.h"
 
@@ -103,22 +103,22 @@ ImageCacheKey::ImageCacheKey(ImageCacheKey&& aOther)
 bool
 ImageCacheKey::operator==(const ImageCacheKey& aOther) const
 {
-  // Don't share the image cache between a controlled document and anything else.
+  
   if (mControlledDocument != aOther.mControlledDocument) {
     return false;
   }
-  // The origin attributes always have to match.
+  
   if (mOriginAttributes != aOther.mOriginAttributes) {
     return false;
   }
   if (mBlobSerial || aOther.mBlobSerial) {
-    // If at least one of us has a blob serial, just compare the blob serial and
-    // the ref portion of the URIs.
+    
+    
     return mBlobSerial == aOther.mBlobSerial &&
            mURI->HasSameRef(*aOther.mURI);
   }
 
-  // For non-blob URIs, compare the URIs.
+  
   return *mURI == *aOther.mURI;
 }
 
@@ -128,14 +128,14 @@ ImageCacheKey::Spec() const
   return mURI->Spec();
 }
 
-/* static */ uint32_t
+ PLDHashNumber
 ImageCacheKey::ComputeHash(ImageURL* aURI,
                            const Maybe<uint64_t>& aBlobSerial,
                            const OriginAttributes& aAttrs,
                            void* aControlledDocument)
 {
-  // Since we frequently call Hash() several times in a row on the same
-  // ImageCacheKey, as an optimization we compute our hash once and store it.
+  
+  
 
   nsPrintfCString ptr("%p", aControlledDocument);
   nsAutoCString suffix;
@@ -145,12 +145,12 @@ ImageCacheKey::ComputeHash(ImageURL* aURI,
                    HashString(suffix), HashString(ptr));
 }
 
-/* static */ void*
+ void*
 ImageCacheKey::GetControlledDocumentToken(nsIDocument* aDocument)
 {
-  // For non-controlled documents, we just return null.  For controlled
-  // documents, we cast the pointer into a void* to avoid dereferencing
-  // it (since we only use it for comparisons), and return it.
+  
+  
+  
   void* pointer = nullptr;
   using dom::workers::ServiceWorkerManager;
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
@@ -163,5 +163,5 @@ ImageCacheKey::GetControlledDocumentToken(nsIDocument* aDocument)
   return pointer;
 }
 
-} // namespace image
-} // namespace mozilla
+} 
+} 

@@ -118,7 +118,7 @@ public:
 private:
   friend class ImageCacheKey;
 
-  uint32_t ComputeHash(const Maybe<uint64_t>& aBlobSerial) const
+  PLDHashNumber ComputeHash(const Maybe<uint64_t>& aBlobSerial) const
   {
     if (aBlobSerial) {
       
