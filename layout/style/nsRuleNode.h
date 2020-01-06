@@ -1059,11 +1059,8 @@ public:
 
   
   
-  static void FillAllBackgroundLists(nsStyleImageLayers& aLayers,
-                                     uint32_t aMaxItemCount);
-
-  static void FillAllMaskLists(nsStyleImageLayers& aLayers,
-                               uint32_t aMaxItemCount);
+  static void FillAllImageLayers(nsStyleImageLayers& aLayers,
+                                 uint32_t aMaxItemCount);
 
 private:
 #ifdef DEBUG
