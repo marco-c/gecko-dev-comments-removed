@@ -184,31 +184,7 @@ var BrowserPageActions = {
 
     
     
-    
-    let anchorNode = null;
-    let potentialAnchorNodeIDs = [
-      action.anchorIDOverride || null,
-      this._urlbarButtonNodeIDForActionID(action.id),
-      this.mainButtonNode.id,
-      "identity-icon",
-    ];
-    let dwu = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                    .getInterface(Ci.nsIDOMWindowUtils);
-    for (let id of potentialAnchorNodeIDs) {
-      if (id) {
-        let node = document.getElementById(id);
-        if (node && !node.hidden) {
-          let bounds = dwu.getBoundsWithoutFlushing(node);
-          if (bounds.height > 0 && bounds.width > 0) {
-            anchorNode = node;
-            break;
-          }
-        }
-      }
-    }
-    if (!anchorNode) {
-      throw new Error(`PageActions: No anchor node for '${action.id}'`);
-    }
+    let anchorNode = this.panelAnchorNodeForAction(action);
 
     panelNode = document.createElement("panel");
     panelNode.id = this._activatedActionPanelID;
@@ -270,6 +246,30 @@ var BrowserPageActions = {
     }
 
     return panelNode;
+  },
+
+  panelAnchorNodeForAction(action) {
+    
+    let potentialAnchorNodeIDs = [
+      action.anchorIDOverride || null,
+      this._urlbarButtonNodeIDForActionID(action.id),
+      this.mainButtonNode.id,
+      "identity-icon",
+    ];
+    let dwu = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                    .getInterface(Ci.nsIDOMWindowUtils);
+    for (let id of potentialAnchorNodeIDs) {
+      if (id) {
+        let node = document.getElementById(id);
+        if (node && !node.hidden) {
+          let bounds = dwu.getBoundsWithoutFlushing(node);
+          if (bounds.height > 0 && bounds.width > 0) {
+            return node;
+          }
+        }
+      }
+    }
+    throw new Error(`PageActions: No anchor node for '${action.id}'`);
   },
 
   get activatedActionPanelNode() {
@@ -700,18 +700,10 @@ var BrowserPageActionFeedback = {
   },
 
   show(action, event) {
-    this.feedbackLabel.textContent = this.panelNode.getAttribute(action + "Feedback");
+    this.feedbackLabel.textContent = this.panelNode.getAttribute(action.id + "Feedback");
     this.panelNode.hidden = false;
 
-    let anchor = BrowserPageActions.mainButtonNode;
-    if (event.target.classList.contains("urlbar-icon")) {
-      let id = BrowserPageActions._urlbarButtonNodeIDForActionID(action);
-      let node = document.getElementById(id);
-      if (node) {
-        anchor = node;
-      }
-    }
-
+    let anchor = BrowserPageActions.panelAnchorNodeForAction(action);
     this.panelNode.openPopup(anchor, {
       position: "bottomcenter topright",
       triggerEvent: event,
@@ -765,7 +757,8 @@ BrowserPageActions.copyURL = {
     Cc["@mozilla.org/widget/clipboardhelper;1"]
       .getService(Ci.nsIClipboardHelper)
       .copyString(gURLBar.makeURIReadable(gBrowser.selectedBrowser.currentURI).displaySpec);
-    BrowserPageActionFeedback.show("copyURL", event);
+    let action = PageActions.actionForID("copyURL");
+    BrowserPageActionFeedback.show(action, event);
   },
 };
 
@@ -832,7 +825,8 @@ BrowserPageActions.sendToDevice = {
         
         
         if (event.target.classList.contains("sendtab-target")) {
-          BrowserPageActionFeedback.show("sendToDevice", event);
+          let action = PageActions.actionForID("sendToDevice");
+          BrowserPageActionFeedback.show(action, event);
         }
       });
       return item;
