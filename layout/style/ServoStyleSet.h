@@ -384,7 +384,8 @@ public:
 
   already_AddRefed<ServoComputedValues>
   GetBaseComputedValuesForElement(dom::Element* aElement,
-                                  CSSPseudoElementType aPseudoType);
+                                  CSSPseudoElementType aPseudoType,
+                                  ServoComputedValuesBorrowed aStyle);
 
   
 
