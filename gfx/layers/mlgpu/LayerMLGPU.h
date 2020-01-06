@@ -77,16 +77,10 @@ public:
   
   
   
-  const LayerIntRegion& GetRenderRegion() const {
-    return mRenderRegion;
-  }
-
   
   
   
-  
-  
-  virtual void SetRenderRegion(LayerIntRegion&& aRegion);
+  virtual void SetRegionToRender(LayerIntRegion&& aRegion);
 
   virtual void AssignToView(FrameBuilder* aBuilder,
                             RenderViewMLGPU* aView,
@@ -130,7 +124,6 @@ protected:
   uint64_t mFrameKey;
   float mComputedOpacity;
   bool mPrepared;
-  LayerIntRegion mRenderRegion;
 };
 
 class RefLayerMLGPU final : public RefLayer
