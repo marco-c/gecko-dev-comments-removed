@@ -474,13 +474,6 @@ MediaEngineWebRTCMicrophoneSource::Start(SourceMediaStream *aStream,
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  
-  if (!mSources.IsEmpty() && aStream->Graph() != mSources[0]->Graph()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
   {
     MonitorAutoLock lock(mMonitor);
     mSources.AppendElement(aStream);
