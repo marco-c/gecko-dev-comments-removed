@@ -94,6 +94,9 @@ nsNSSSocketInfo::nsNSSSocketInfo(SharedSSLState& aState, uint32_t providerFlags,
     mSentClientCert(false),
     mNotedTimeUntilReady(false),
     mFailedVerification(false),
+    mIsShortWritePending(false),
+    mShortWritePendingByte(0),
+    mShortWriteOriginalAmount(-1),
     mKEAUsed(nsISSLSocketControl::KEY_EXCHANGE_UNKNOWN),
     mKEAKeyBits(0),
     mSSLVersionUsed(nsISSLSocketControl::SSL_VERSION_UNKNOWN),
@@ -1479,8 +1482,68 @@ PSMSend(PRFileDesc* fd, const void* buf, int32_t amount, int flags,
   DEBUG_DUMP_BUFFER((unsigned char*) buf, amount);
 #endif
 
+  if (socketInfo->IsShortWritePending() && amount > 0) {
+    
+#ifdef DEBUG
+    socketInfo->CheckShortWrittenBuffer(static_cast<const unsigned char*>(buf), amount);
+#endif
+
+    buf = socketInfo->GetShortWritePendingByteRef();
+    amount = 1;
+
+    MOZ_LOG(gPIPNSSLog, LogLevel::Verbose,
+            ("[%p] pushing 1 byte after SSL short write", fd));
+  }
+
   int32_t bytesWritten = fd->lower->methods->send(fd->lower, buf, amount,
                                                   flags, timeout);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  static const int32_t kShortWrite16k = 16383;
+
+  if ((amount > 1 && bytesWritten == (amount - 1)) ||
+      (amount > kShortWrite16k && bytesWritten == kShortWrite16k)) {
+    
+    socketInfo->SetShortWritePending(
+      bytesWritten + 1, 
+      *(static_cast<const unsigned char*>(buf) + bytesWritten));
+
+    MOZ_LOG(gPIPNSSLog, LogLevel::Verbose,
+            ("[%p] indicated SSL short write for %d bytes (written just %d bytes)",
+            fd, amount, bytesWritten));
+
+    bytesWritten = -1;
+    PR_SetError(PR_WOULD_BLOCK_ERROR, 0);
+
+#ifdef DEBUG
+    socketInfo->RememberShortWrittenBuffer(static_cast<const unsigned char*>(buf));
+#endif
+
+  } else if (socketInfo->IsShortWritePending() && bytesWritten == 1) {
+    
+    
+    
+    MOZ_LOG(gPIPNSSLog, LogLevel::Verbose, ("[%p] finished SSL short write", fd));
+
+    bytesWritten = socketInfo->ResetShortWritePending();
+  }
 
   MOZ_LOG(gPIPNSSLog, LogLevel::Verbose,
           ("[%p] wrote %d bytes\n", fd, bytesWritten));

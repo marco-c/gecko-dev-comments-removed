@@ -10,6 +10,7 @@
 #include "TransportSecurityInfo.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsDataHashtable.h"
 #include "nsIClientAuthDialogs.h"
@@ -120,6 +121,49 @@ public:
 
   void SetMACAlgorithmUsed(int16_t mac) { mMACAlgorithmUsed = mac; }
 
+  void SetShortWritePending(int32_t amount, unsigned char data)
+  {
+    mIsShortWritePending = true;
+    mShortWriteOriginalAmount = amount;
+    mShortWritePendingByte = data;
+  }
+
+  bool IsShortWritePending()
+  {
+    return mIsShortWritePending;
+  }
+
+  unsigned char const* GetShortWritePendingByteRef()
+  {
+    return &mShortWritePendingByte;
+  }
+
+  int32_t ResetShortWritePending()
+  {
+    mIsShortWritePending = false;
+    return mShortWriteOriginalAmount;
+  }
+
+#ifdef DEBUG
+  
+  
+  
+  void RememberShortWrittenBuffer(const unsigned char *data)
+  {
+    mShortWriteBufferCheck = mozilla::MakeUnique<char[]>(mShortWriteOriginalAmount);
+    memcpy(mShortWriteBufferCheck.get(), data, mShortWriteOriginalAmount);
+  }
+  void CheckShortWrittenBuffer(const unsigned char *data, int32_t amount)
+  {
+    if (!mShortWriteBufferCheck) return;
+    MOZ_ASSERT(amount >= mShortWriteOriginalAmount,
+               "unexpected amount length after short write");
+    MOZ_ASSERT(!memcmp(mShortWriteBufferCheck.get(), data, mShortWriteOriginalAmount),
+               "unexpected buffer content after short write");
+    mShortWriteBufferCheck = nullptr;
+  }
+#endif
+
 protected:
   virtual ~nsNSSSocketInfo();
 
@@ -148,6 +192,24 @@ private:
   bool      mSentClientCert;
   bool      mNotedTimeUntilReady;
   bool      mFailedVerification;
+
+  
+  
+  bool      mIsShortWritePending;
+
+  
+  
+  
+  
+  unsigned char mShortWritePendingByte;
+
+  
+  
+  int32_t   mShortWriteOriginalAmount;
+
+#ifdef DEBUG
+  mozilla::UniquePtr<char[]> mShortWriteBufferCheck;
+#endif
 
   
   
