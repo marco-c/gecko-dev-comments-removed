@@ -1238,7 +1238,6 @@ TimeoutManager::BudgetThrottlingEnabled(bool aIsBackground) const
   
   
   
-  
 
   
   
@@ -1254,11 +1253,6 @@ TimeoutManager::BudgetThrottlingEnabled(bool aIsBackground) const
 
   
   if (mWindow.AsInner()->HasActiveIndexedDBDatabases()) {
-    return false;
-  }
-
-  
-  if (mWindow.AsInner()->HasActiveUserMedia()) {
     return false;
   }
 

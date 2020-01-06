@@ -751,9 +751,6 @@ protected:
 
   
   uint32_t mNumOfOpenWebSockets;
-
-  
-  uint32_t mNumOfActiveUserMedia;
 };
 
 #define NS_PIDOMWINDOWINNER_IID \
@@ -941,12 +938,6 @@ public:
   
   
   bool HasOpenWebSockets() const;
-
-  
-  void UpdateUserMediaCount(int32_t aDelta);
-
-  
-  bool HasActiveUserMedia() const;
 
 protected:
   void CreatePerformanceObjectIfNeeded();
