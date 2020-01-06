@@ -837,6 +837,11 @@ class nsIWidget : public nsISupports
     
 
 
+    virtual void SuppressAnimation(bool aSuppress) {}
+
+    
+
+
 
     virtual nsSizeMode SizeMode() = 0;
 
