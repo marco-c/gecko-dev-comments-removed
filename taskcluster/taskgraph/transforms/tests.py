@@ -35,8 +35,6 @@ from voluptuous import (
 
 import copy
 import logging
-import requests
-from collections import defaultdict
 
 
 LINUX_WORKER_TYPES = {
@@ -720,33 +718,6 @@ def set_worker_type(config, tests):
 
 
 @transforms.add
-def allocate_to_bbb(config, tests):
-    """Make the load balancing between taskcluster and buildbot"""
-    j = get_load_balacing_settings()
-
-    tests_set = defaultdict(list)
-    for test in tests:
-        tests_set[test['test-platform']].append(test)
-
-    
-    for test_platform, t in tests_set.iteritems():
-        
-        t.sort(key=lambda x: (x['test-name'], x.get('this_chunk', 1)))
-        
-        
-        
-        
-        n = j.get(test_platform, 1.0)
-        if not (test_platform.startswith('mac')
-                and config.config['args'].taskcluster_worker):
-            for i in range(int(n * len(t)), len(t)):
-                t[i]['worker-type'] = 'buildbot-bridge/buildbot-bridge'
-
-        for y in t:
-            yield y
-
-
-@transforms.add
 def make_job_description(config, tests):
     """Convert *test* descriptions to *job* descriptions (input to
     taskgraph.transforms.job)"""
@@ -834,11 +805,3 @@ def normpath(path):
 def get_firefox_version():
     with open('browser/config/version.txt', 'r') as f:
         return f.readline().strip()
-
-
-def get_load_balacing_settings():
-    url = "https://s3.amazonaws.com/taskcluster-graph-scheduling/tests-load.json"
-    try:
-        return requests.get(url).json()
-    except Exception:
-        return {}
