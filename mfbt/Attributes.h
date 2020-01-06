@@ -562,6 +562,14 @@
 
 
 
+
+
+
+
+
+
+
+
 #ifdef MOZ_CLANG_PLUGIN
 #  define MOZ_MUST_OVERRIDE __attribute__((annotate("moz_must_override")))
 #  define MOZ_STACK_CLASS __attribute__((annotate("moz_stack_class")))
@@ -587,6 +595,7 @@
 #  define MOZ_NON_MEMMOVABLE __attribute__((annotate("moz_non_memmovable")))
 #  define MOZ_NEEDS_MEMMOVABLE_TYPE __attribute__((annotate("moz_needs_memmovable_type")))
 #  define MOZ_NEEDS_MEMMOVABLE_MEMBERS __attribute__((annotate("moz_needs_memmovable_members")))
+#  define MOZ_NO_DANGLING_ON_TEMPORARIES __attribute__((annotate("moz_no_dangling_on_temporaries")))
 #  define MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS \
     __attribute__((annotate("moz_inherit_type_annotations_from_template_args")))
 #  define MOZ_NON_AUTOABLE __attribute__((annotate("moz_non_autoable")))
@@ -632,6 +641,7 @@
 #  define MOZ_NON_MEMMOVABLE
 #  define MOZ_NEEDS_MEMMOVABLE_TYPE
 #  define MOZ_NEEDS_MEMMOVABLE_MEMBERS
+#  define MOZ_NO_DANGLING_ON_TEMPORARIES
 #  define MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS
 #  define MOZ_INIT_OUTSIDE_CTOR
 #  define MOZ_IS_CLASS_INIT

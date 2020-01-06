@@ -308,6 +308,13 @@ inline bool typeIsRefPtr(QualType Q) {
 }
 
 
+inline bool IsTrivial(const Stmt *s) {
+  return s && (isa<ExprWithCleanups>(s) || isa<MaterializeTemporaryExpr>(s) ||
+               isa<CXXBindTemporaryExpr>(s) || isa<ImplicitCastExpr>(s) ||
+               isa<ParenExpr>(s));
+}
+
+
 
 
 inline const Stmt *IgnoreTrivials(const Stmt *s) {
@@ -329,11 +336,35 @@ inline const Stmt *IgnoreTrivials(const Stmt *s) {
     }
   }
 
+  assert(!IsTrivial(s));
   return s;
 }
 
 inline const Expr *IgnoreTrivials(const Expr *e) {
   return cast<Expr>(IgnoreTrivials(static_cast<const Stmt *>(e)));
+}
+
+
+
+template <typename T>
+inline ast_type_traits::DynTypedNode IgnoreParentTrivials(const T &Node,
+                                                          ASTContext *Context) {
+  
+  auto CurrentNode = ast_type_traits::DynTypedNode::create(Node);
+  do {
+    
+    auto Parents = Context->getParents(CurrentNode);
+
+    
+    
+    if (Parents.size() != 1) {
+      break;
+    }
+
+    CurrentNode = Parents[0];
+  } while (IsTrivial(CurrentNode.template get<Stmt>()));
+
+  return CurrentNode;
 }
 
 const FieldDecl *getBaseRefCntMember(QualType T);
