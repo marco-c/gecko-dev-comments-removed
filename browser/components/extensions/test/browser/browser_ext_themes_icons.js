@@ -140,12 +140,14 @@ async function runTestWithIcons(icons) {
     ["forget", "#panic-button", "panic-button"],
     ["pocket", "#pocket-button", "pocket-button"],
   ];
+  
+  
   if (AppConstants.MOZ_PHOTON_THEME) {
-    ICON_INFO.push(["bookmark_star", "#star-button"]);
-    ICON_INFO.push(["bookmark_menu", "#bookmarks-menu-button", "bookmarks-menu-button"]);
+    ICON_INFO.unshift(["bookmark_star", "#star-button"]);
+    ICON_INFO.unshift(["bookmark_menu", "#bookmarks-menu-button", "bookmarks-menu-button"]);
   } else {
-    ICON_INFO.push(["bookmark_star", "#bookmarks-menu-button", "bookmarks-menu-button"]);
-    ICON_INFO.push(["bookmark_menu", "#bookmarks-menu-button > .toolbarbutton-menubutton-dropmarker > .dropmarker-icon"]);
+    ICON_INFO.unshift(["bookmark_star", "#bookmarks-menu-button", "bookmarks-menu-button"]);
+    ICON_INFO.unshift(["bookmark_menu", "#bookmarks-menu-button > .toolbarbutton-menubutton-dropmarker > .dropmarker-icon"]);
   }
 
   window.maximize();
