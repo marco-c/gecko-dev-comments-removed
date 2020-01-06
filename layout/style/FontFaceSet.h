@@ -265,7 +265,6 @@ private:
                          nsIPrincipal** aPrincipal,
                          bool* aBypassCache);
   bool IsFontLoadAllowed(nsIURI* aFontLocation, nsIPrincipal* aPrincipal);
-  bool GetPrivateBrowsing();
   nsresult SyncLoadFontData(gfxUserFontEntry* aFontToLoad,
                             const gfxFontFaceSrc* aFontFaceSrc,
                             uint8_t*& aBuffer,
@@ -359,6 +358,10 @@ private:
   
   
   bool mBypassCache;
+
+  
+  
+  bool mPrivateBrowsing;
 };
 
 } 
