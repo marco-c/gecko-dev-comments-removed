@@ -211,6 +211,16 @@ pref("dom.compartment_per_addon", true);
 
 
 
+
+
+pref("dom.script_loader.bytecode_cache.enabled", false); 
+
+
+
+pref("dom.script_loader.bytecode_cache.eager", false);
+
+
+
 pref("browser.sessionhistory.max_total_viewers", -1);
 
 pref("ui.use_native_colors", true);
@@ -3143,7 +3153,7 @@ pref("browser.tabs.remote.separateFileUriProcess", false);
 
 
 
-pref("browser.tabs.remote.allowLinkedWebInFileUriProcess", false);
+pref("browser.tabs.remote.allowLinkedWebInFileUriProcess", true);
 
 
 pref("svg.path-caching.enabled", true);
