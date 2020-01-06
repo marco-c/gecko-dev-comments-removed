@@ -82,6 +82,7 @@
 }
 
 #main-window:not([tabsintitlebar]) > #titlebar {
+  -moz-appearance: -moz-window-titlebar;
   height: 22px; 
 }
 
