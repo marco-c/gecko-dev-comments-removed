@@ -38,17 +38,13 @@ MOZ_END_STD_NAMESPACE
 #include <stdio.h>
 
 
-namespace {
 
 
 
 
 
-uint32_t min_buffered_audio_frame(uint32_t sample_rate)
-{
-  return sample_rate / 20;
-}
-}
+
+uint32_t min_buffered_audio_frame(uint32_t sample_rate);
 
 int to_speex_quality(cubeb_resampler_quality q);
 
