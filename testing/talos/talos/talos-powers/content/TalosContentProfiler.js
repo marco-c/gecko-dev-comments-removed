@@ -9,6 +9,9 @@
 
 
 
+
+
+
 var TalosContentProfiler;
 
 (function() {
@@ -51,6 +54,23 @@ var TalosContentProfiler;
 
 
   function sendEventAndWait(name, data = {}) {
+    
+    
+    
+    if (typeof(sendAsyncMessage) !== "undefined") {
+      return new Promise(resolve => {
+        sendAsyncMessage("TalosContentProfiler:Command", { name, data });
+        addMessageListener("TalosContentProfiler:Response", function onMsg(msg) {
+          if (msg.data.name != name) {
+            return;
+          }
+
+          removeMessageListener("TalosContentProfiler:Response", onMsg);
+          resolve(msg.data);
+        });
+      });
+    }
+
     return new Promise((resolve) => {
       var event = new CustomEvent("TalosContentProfilerCommand", {
         bubbles: true,
@@ -261,4 +281,11 @@ var TalosContentProfiler;
       Services.profiler.AddMarker(marker);
     },
   };
+
+  
+  
+  
+  if (typeof(sendAsyncMessage) !== "undefined") {
+    content.wrappedJSObject.TalosContentProfiler = TalosContentProfiler;
+  }
 })();
