@@ -37,6 +37,7 @@ class EventChainPreVisitor;
 class EventChainVisitor;
 class EventListenerManager;
 class EventStates;
+class TextEditor;
 namespace dom {
 class HTMLFormElement;
 class HTMLMenuElement;
@@ -811,11 +812,6 @@ public:
 
 
   static bool InNavQuirksMode(nsIDocument* aDoc);
-
-  
-
-
-  nsresult GetEditor(nsIEditor** aEditor);
 
   
 

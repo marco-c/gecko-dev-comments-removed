@@ -11,7 +11,6 @@
 #include "nsCOMPtr.h"
 class nsIContent;
 class nsAString;
-class nsIEditor;
 class nsISelectionController;
 class nsFrameSelection;
 class nsTextControlFrame;
@@ -19,6 +18,7 @@ class nsTextControlFrame;
 namespace mozilla {
 
 class ErrorResult;
+class TextEditor;
 
 namespace dom {
 class Element;
@@ -109,7 +109,7 @@ public:
 
 
 
-  NS_IMETHOD_(nsIEditor*) GetTextEditor() = 0;
+  NS_IMETHOD_(mozilla::TextEditor*) GetTextEditor() = 0;
 
   
 

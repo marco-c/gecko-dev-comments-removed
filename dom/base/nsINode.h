@@ -41,7 +41,6 @@ class nsIContent;
 class nsIDocument;
 class nsIDOMElement;
 class nsIDOMNodeList;
-class nsIEditor;
 class nsIFrame;
 class nsIMutationObserver;
 class nsINode;
@@ -55,6 +54,7 @@ class nsDOMMutationObserver;
 
 namespace mozilla {
 class EventListenerManager;
+class TextEditor;
 namespace dom {
 
 
@@ -1242,7 +1242,8 @@ public:
 
 
 
-  nsIContent* GetTextEditorRootContent(nsIEditor** aEditor = nullptr);
+  nsIContent* GetTextEditorRootContent(
+                mozilla::TextEditor** aTextEditor = nullptr);
 
   
 

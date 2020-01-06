@@ -62,6 +62,7 @@ class nsDOMStringMap;
 
 namespace mozilla {
 class DeclarationBlock;
+class TextEditor;
 namespace dom {
   struct AnimationFilter;
   struct ScrollIntoViewOptions;
@@ -1267,7 +1268,7 @@ public:
   
 
 
-  nsIEditor* GetEditorInternal();
+  mozilla::TextEditor* GetTextEditorInternal();
 
   
 
