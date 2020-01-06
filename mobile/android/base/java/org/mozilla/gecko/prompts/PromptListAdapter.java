@@ -121,12 +121,9 @@ public class PromptListAdapter extends ArrayAdapter<PromptListItem> {
             if (icon instanceof BitmapDrawable) {
                 Bitmap bitmap = ((BitmapDrawable) icon).getBitmap();
                 d = new BitmapDrawable(res, Bitmap.createScaledBitmap(bitmap, mIconSize, mIconSize, true));
-            } else if (icon instanceof VectorDrawable) {
-                
-                d = icon;
             } else {
                 
-                d = getBlankDrawable(res);
+                d = icon;
             }
 
         } else if (item.inGroup) {
