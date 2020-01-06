@@ -153,50 +153,6 @@ static const TimeDuration MAX_TIMEOUT_INTERVAL = TimeDuration::FromSeconds(1800.
 
 #define SHARED_MEMORY_DEFAULT 1
 
-
-#ifdef MOZ_CODE_COVERAGE
-#if defined(__GNUC__) && !defined(__clang__)
-extern "C" void __gcov_dump();
-extern "C" void __gcov_reset();
-
-void counters_dump(int) {
-    __gcov_dump();
-}
-
-void counters_reset(int) {
-    __gcov_reset();
-}
-#else
-void counters_dump(int) {
-    
-}
-
-void counters_reset(int) {
-    
-}
-#endif
-
-static void
-InstallCoverageSignalHandlers()
-{
-    fprintf(stderr, "[CodeCoverage] Setting handlers for process %d.\n", getpid());
-
-    struct sigaction dump_sa;
-    dump_sa.sa_handler = counters_dump;
-    dump_sa.sa_flags = SA_RESTART;
-    sigemptyset(&dump_sa.sa_mask);
-    mozilla::DebugOnly<int> r1 = sigaction(SIGUSR1, &dump_sa, nullptr);
-    MOZ_ASSERT(r1 == 0, "Failed to install GCOV SIGUSR1 handler");
-
-    struct sigaction reset_sa;
-    reset_sa.sa_handler = counters_reset;
-    reset_sa.sa_flags = SA_RESTART;
-    sigemptyset(&reset_sa.sa_mask);
-    mozilla::DebugOnly<int> r2 = sigaction(SIGUSR2, &reset_sa, nullptr);
-    MOZ_ASSERT(r2 == 0, "Failed to install GCOV SIGUSR2 handler");
-}
-#endif
-
 bool
 OffThreadState::startIfIdle(JSContext* cx, ScriptKind kind, ScopedJSFreePtr<char16_t>& newSource)
 {
@@ -5116,6 +5072,23 @@ NukeCCW(JSContext* cx, unsigned argc, Value* vp)
 }
 
 static bool
+NukeAllCCWs(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+
+    if (args.length() != 0) {
+        JS_ReportErrorNumberASCII(cx, my_GetErrorMessage, nullptr, JSSMSG_INVALID_ARGS,
+                                  "nukeAllCCWs");
+        return false;
+    }
+
+    NukeCrossCompartmentWrappers(cx, AllCompartments(), cx->compartment(),
+                                 NukeWindowReferences, NukeAllReferences);
+    args.rval().setUndefined();
+    return true;
+}
+
+static bool
 GetMaxArgs(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
@@ -6621,6 +6594,10 @@ static const JSFunctionSpecWithHelp shell_functions[] = {
     JS_FN_HELP("nukeCCW", NukeCCW, 1, 0,
 "nukeCCW(wrapper)",
 "  Nuke a CrossCompartmentWrapper, which turns it into a DeadProxyObject."),
+
+    JS_FN_HELP("nukeAllCCWs", NukeAllCCWs, 0, 0,
+"nukeAllCCWs()",
+"  Like nukeCCW, but for all CrossCompartmentWrappers targeting the current compartment."),
 
     JS_FN_HELP("createMappedArrayBuffer", CreateMappedArrayBuffer, 1, 0,
 "createMappedArrayBuffer(filename, [offset, [size]])",
@@ -8274,10 +8251,6 @@ SetWorkerContextOptions(JSContext* cx)
 static int
 Shell(JSContext* cx, OptionParser* op, char** envp)
 {
-#ifdef MOZ_CODE_COVERAGE
-    InstallCoverageSignalHandlers();
-#endif
-
     Maybe<JS::AutoDisableGenerationalGC> noggc;
     if (op->getBoolOption("no-ggc"))
         noggc.emplace(cx);
