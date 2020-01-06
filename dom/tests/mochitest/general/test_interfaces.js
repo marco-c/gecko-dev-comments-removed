@@ -1189,7 +1189,7 @@ var interfaceNamesInGlobalScope =
 
     "VTTCue",
 
-    {name: "VTTRegion", disabled: true},
+    "VTTRegion",
 
     "WaveShaperNode",
 
