@@ -216,7 +216,7 @@ protected:
   };
 
   uint32_t mLineNumber;  
-  
+
   
   uint8_t mPhase;            
   uint8_t mType;             
@@ -231,7 +231,7 @@ protected:
 
   int32_t mKeyMask;          
                              
- 
+
   
   int32_t mDetail;           
                              

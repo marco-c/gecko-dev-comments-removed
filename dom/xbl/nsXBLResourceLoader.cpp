@@ -156,7 +156,7 @@ nsXBLResourceLoader::LoadResources(bool* aResult)
 
   *aResult = (mPendingSheets == 0);
   mInLoadResourcesFunc = false;
-  
+
   
   delete mResourceList;
   mResourceList = nullptr;
@@ -172,12 +172,12 @@ nsXBLResourceLoader::StyleSheetLoaded(StyleSheet* aSheet,
     
     return NS_OK;
   }
-   
+
   mResources->AppendStyleSheet(aSheet);
 
   if (!mInLoadResourcesFunc)
     mPendingSheets--;
-  
+
   if (mPendingSheets == 0) {
     
     mResources->GatherRuleProcessor();
@@ -189,7 +189,7 @@ nsXBLResourceLoader::StyleSheetLoaded(StyleSheet* aSheet,
   return NS_OK;
 }
 
-void 
+void
 nsXBLResourceLoader::AddResource(nsIAtom* aResourceType, const nsAString& aSrc)
 {
   nsXBLResource* res = new nsXBLResource(aResourceType, aSrc);
@@ -202,7 +202,7 @@ nsXBLResourceLoader::AddResource(nsIAtom* aResourceType, const nsAString& aSrc)
 }
 
 void
-nsXBLResourceLoader::AddResourceListener(nsIContent* aBoundElement) 
+nsXBLResourceLoader::AddResourceListener(nsIContent* aBoundElement)
 {
   if (aBoundElement) {
     mBoundElements.AppendObject(aBoundElement);

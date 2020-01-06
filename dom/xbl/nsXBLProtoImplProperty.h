@@ -19,13 +19,13 @@ class nsXBLProtoImplProperty: public nsXBLProtoImplMember
 {
 public:
   nsXBLProtoImplProperty(const char16_t* aName,
-                         const char16_t* aGetter, 
+                         const char16_t* aGetter,
                          const char16_t* aSetter,
                          const char16_t* aReadOnly,
                          uint32_t aLineNumber);
 
   nsXBLProtoImplProperty(const char16_t* aName, const bool aIsReadOnly);
- 
+
   virtual ~nsXBLProtoImplProperty();
 
   void AppendGetterText(const nsAString& aGetter);
@@ -55,7 +55,7 @@ protected:
 
   
   PropertyOp mSetter;
-  
+
   unsigned mJSAttributes;  
 
 #ifdef DEBUG

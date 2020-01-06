@@ -108,7 +108,7 @@ void nsXBLSpecialDocInfo::LoadDocInfo()
   xblService->LoadBindingDocumentInfo(nullptr, nullptr,
                                       bindingURI,
                                       nullptr,
-                                      true, 
+                                      true,
                                       getter_AddRefs(mHTMLBindings));
 
   const nsAdoptingCString& userHTMLBindingStr =
@@ -122,7 +122,7 @@ void nsXBLSpecialDocInfo::LoadDocInfo()
     xblService->LoadBindingDocumentInfo(nullptr, nullptr,
                                         bindingURI,
                                         nullptr,
-                                        true, 
+                                        true,
                                         getter_AddRefs(mUserHTMLBindings));
   }
 }
@@ -137,7 +137,7 @@ nsXBLSpecialDocInfo::GetHandlers(nsXBLDocumentInfo* aInfo,
                                  nsXBLPrototypeHandler** aResult)
 {
   nsXBLPrototypeBinding* binding = aInfo->GetPrototypeBinding(aRef);
-  
+
   NS_ASSERTION(binding, "No binding found for the XBL window key handler.");
   if (!binding)
     return;
@@ -602,7 +602,7 @@ nsXBLWindowKeyHandler::IsHTMLEditableFieldFocused()
 
 bool
 nsXBLWindowKeyHandler::WalkHandlersInternal(nsIDOMKeyEvent* aKeyEvent,
-                                            nsIAtom* aEventType, 
+                                            nsIAtom* aEventType,
                                             nsXBLPrototypeHandler* aHandler,
                                             bool aExecute,
                                             bool* aOutReservedForChrome)

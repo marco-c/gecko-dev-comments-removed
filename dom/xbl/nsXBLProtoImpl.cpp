@@ -178,9 +178,9 @@ nsXBLProtoImpl::InstallImplementation(nsXBLPrototypeBinding* aPrototypeBinding,
   return NS_OK;
 }
 
-nsresult 
+nsresult
 nsXBLProtoImpl::InitTargetObjects(nsXBLPrototypeBinding* aBinding,
-                                  nsIContent* aBoundElement, 
+                                  nsIContent* aBoundElement,
                                   JS::MutableHandle<JSObject*> aTargetClassObject,
                                   bool* aTargetIsNew)
 {
@@ -514,8 +514,8 @@ nsXBLProtoImpl::Write(nsIObjectOutputStream* aStream,
 }
 
 void
-NS_NewXBLProtoImpl(nsXBLPrototypeBinding* aBinding, 
-                   const char16_t* aClassName, 
+NS_NewXBLProtoImpl(nsXBLPrototypeBinding* aBinding,
+                   const char16_t* aClassName,
                    nsXBLProtoImpl** aResult)
 {
   nsXBLProtoImpl* impl = new nsXBLProtoImpl();

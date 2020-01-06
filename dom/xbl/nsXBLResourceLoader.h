@@ -51,7 +51,7 @@ public:
                                        
                                        
                                        
-  
+
   nsXBLResource* mResourceList; 
   nsXBLResource* mLastResource;
 
