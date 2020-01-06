@@ -9,6 +9,7 @@
 #include "nsIPKCS11.h"
 
 #include "nsNSSShutDown.h"
+#include "nsString.h"
 
 namespace mozilla { namespace psm {
 
@@ -30,6 +31,9 @@ protected:
 private:
   virtual void virtualDestroyNSSReference() override {}
 };
+
+void GetModuleNameForTelemetry( const SECMODModule* module,
+                               nsString& result);
 
 } } 
 

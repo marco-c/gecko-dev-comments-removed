@@ -7,6 +7,8 @@
 #include "PKCS11.h"
 
 #include "ScopedNSSTypes.h"
+#include "mozilla/Telemetry.h"
+#include "nsCRTGlue.h"
 #include "nsNSSComponent.h"
 #include "nsNativeCharsetUtils.h"
 #include "nsServiceManagerUtils.h"
@@ -73,6 +75,34 @@ PKCS11::DeleteModule(const nsAString& aModuleName)
 }
 
 
+
+
+
+
+
+
+
+
+void
+GetModuleNameForTelemetry( const SECMODModule* module,
+                          nsString& result)
+{
+  result.Truncate();
+  if (module->dllName) {
+    result.AssignWithConversion(module->dllName);
+    int32_t separatorIndex = result.RFind(FILE_PATH_SEPARATOR);
+    if (separatorIndex != kNotFound) {
+      result = Substring(result, separatorIndex + 1);
+    }
+  } else {
+    result.AssignWithConversion(module->commonName);
+  }
+  if (result.Length() >= 70) {
+    result.Truncate(69);
+  }
+}
+
+
 NS_IMETHODIMP
 PKCS11::AddModule(const nsAString& aModuleName,
                   const nsAString& aLibraryFullPath,
@@ -100,16 +130,28 @@ PKCS11::AddModule(const nsAString& aModuleName,
     return NS_ERROR_FAILURE;
   }
 
-#ifndef MOZ_NO_SMART_CARDS
   UniqueSECMODModule module(SECMOD_FindModule(moduleName.get()));
   if (!module) {
     return NS_ERROR_FAILURE;
   }
+
+#ifndef MOZ_NO_SMART_CARDS
   nsCOMPtr<nsINSSComponent> nssComponent(
     do_GetService(PSM_COMPONENT_CONTRACTID));
   nssComponent->LaunchSmartCardThread(module.get());
 #endif
 
+  nsAutoString scalarKey;
+  GetModuleNameForTelemetry(module.get(), scalarKey);
+  
+  
+  
+  
+  
+  if (scalarKey.Length() > 0) {
+    Telemetry::ScalarSet(Telemetry::ScalarID::SECURITY_PKCS11_MODULES_LOADED,
+                         scalarKey, true);
+  }
   return NS_OK;
 }
 
