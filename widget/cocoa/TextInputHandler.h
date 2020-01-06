@@ -917,14 +917,6 @@ public:
   bool IsASCIICapableOnly() { return mIsASCIICapableOnly; }
   bool IgnoreIMECommit() { return mIgnoreIMECommit; }
 
-  bool IgnoreIMEComposition()
-  {
-    
-    
-    return (mPendingMethods & kDiscardIMEComposition) &&
-           (mIsInFocusProcessing || !IsFocused());
-  }
-
   void CommitIMEComposition();
   void CancelIMEComposition();
 
@@ -951,8 +943,7 @@ protected:
   nsCOMPtr<nsITimer> mTimer;
   enum {
     kNotifyIMEOfFocusChangeInGecko = 1,
-    kDiscardIMEComposition         = 2,
-    kSyncASCIICapableOnly          = 4
+    kSyncASCIICapableOnly          = 2
   };
   uint32_t mPendingMethods;
 
@@ -990,11 +981,6 @@ private:
   bool mIsIMEEnabled;
   bool mIsASCIICapableOnly;
   bool mIgnoreIMECommit;
-  
-  
-  
-  
-  bool mIsInFocusProcessing;
   bool mIMEHasFocus;
 
   void KillIMEComposition();
@@ -1003,7 +989,6 @@ private:
 
   
   void NotifyIMEOfFocusChangeInGecko();
-  void DiscardIMEComposition();
   void SyncASCIICapableOnly();
 
   static bool sStaticMembersInitialized;
