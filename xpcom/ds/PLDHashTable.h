@@ -15,7 +15,7 @@
 #include "mozilla/Types.h"
 #include "nscore.h"
 
-typedef uint32_t PLDHashNumber;
+typedef size_t PLDHashNumber;
 
 class PLDHashTable;
 struct PLDHashTableOps;
@@ -492,8 +492,13 @@ public:
 private:
   
   
-  static const uint32_t kHashBits = 32;
+  static const uint32_t kHashBits = sizeof(size_t) * 8;
+#ifdef HAVE_64BIT_BUILD
+  
+  static const uint64_t kGoldenRatio = 0X9E3779B97F4A7C13ULL;
+#else
   static const uint32_t kGoldenRatio = 0x9E3779B9U;
+#endif
 
   static uint32_t HashShift(uint32_t aEntrySize, uint32_t aLength);
 
@@ -522,10 +527,10 @@ private:
   }
 
   PLDHashNumber Hash1(PLDHashNumber aHash0);
-  void Hash2(PLDHashNumber aHash, uint32_t& aHash2Out, uint32_t& aSizeMaskOut);
+  void Hash2(PLDHashNumber aHash, size_t& aHash2Out, size_t& aSizeMaskOut);
 
   static bool MatchEntryKeyhash(PLDHashEntryHdr* aEntry, PLDHashNumber aHash);
-  PLDHashEntryHdr* AddressEntry(uint32_t aIndex);
+  PLDHashEntryHdr* AddressEntry(size_t aIndex);
 
   
   
