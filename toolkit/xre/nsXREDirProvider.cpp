@@ -389,38 +389,22 @@ nsXREDirProvider::GetFile(const char* aProperty, bool* aPersistent,
     rv = GetUserAppDataDirectory(getter_AddRefs(file));
   }
 #if defined(XP_UNIX) || defined(XP_MACOSX)
-  else if (!strcmp(aProperty, XRE_SYS_NATIVE_MESSAGING_MANIFESTS)) {
+  else if (!strcmp(aProperty, XRE_SYS_NATIVE_MANIFESTS)) {
     nsCOMPtr<nsIFile> localDir;
 
     rv = ::GetSystemParentDirectory(getter_AddRefs(localDir));
     if (NS_SUCCEEDED(rv)) {
-      NS_NAMED_LITERAL_CSTRING(dirname,
-#if defined(XP_MACOSX)
-                               "NativeMessagingHosts"
-#else
-                               "native-messaging-hosts"
-#endif
-                               );
-      rv = localDir->AppendNative(dirname);
-      if (NS_SUCCEEDED(rv)) {
-        localDir.swap(file);
-      }
+      localDir.swap(file);
     }
   }
-  else if (!strcmp(aProperty, XRE_USER_NATIVE_MESSAGING_MANIFESTS)) {
+  else if (!strcmp(aProperty, XRE_USER_NATIVE_MANIFESTS)) {
     nsCOMPtr<nsIFile> localDir;
     rv = GetUserDataDirectoryHome(getter_AddRefs(localDir), false);
     if (NS_SUCCEEDED(rv)) {
 #if defined(XP_MACOSX)
       rv = localDir->AppendNative(NS_LITERAL_CSTRING("Mozilla"));
-      if (NS_SUCCEEDED(rv)) {
-        rv = localDir->AppendNative(NS_LITERAL_CSTRING("NativeMessagingHosts"));
-      }
 #else
       rv = localDir->AppendNative(NS_LITERAL_CSTRING(".mozilla"));
-      if (NS_SUCCEEDED(rv)) {
-        rv = localDir->AppendNative(NS_LITERAL_CSTRING("native-messaging-hosts"));
-      }
 #endif
     }
     if (NS_SUCCEEDED(rv)) {

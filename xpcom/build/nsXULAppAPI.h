@@ -118,8 +118,8 @@
 
 
 
-#define XRE_SYS_NATIVE_MESSAGING_MANIFESTS "XRESysNativeMessaging"
-#define XRE_USER_NATIVE_MESSAGING_MANIFESTS "XREUserNativeMessaging"
+#define XRE_SYS_NATIVE_MANIFESTS "XRESysNativeManifests"
+#define XRE_USER_NATIVE_MANIFESTS "XREUserNativeManifests"
 #endif
 
 
