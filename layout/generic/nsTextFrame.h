@@ -829,6 +829,7 @@ protected:
 
 
   void DrawSelectionDecorations(gfxContext* aContext,
+                                TextDrawTarget* aTextDrawer,
                                 const LayoutDeviceRect& aDirtyRect,
                                 mozilla::SelectionType aSelectionType,
                                 nsTextPaintStyle& aTextPaintStyle,
