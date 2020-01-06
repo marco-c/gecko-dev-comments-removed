@@ -33,7 +33,7 @@
 
 #include "hb-font-private.hh"
 #include "hb-buffer-private.hh"
-#include "hb-set-private.hh"
+#include "hb-set-digest-private.hh"
 #include "hb-open-type-private.hh"
 
 
@@ -236,6 +236,8 @@ _next_syllable (hb_buffer_t *buffer, unsigned int start)
 
 
 
+
+
 enum hb_unicode_props_flags_t {
   UPROPS_MASK_GEN_CAT	= 0x001Fu,
   UPROPS_MASK_IGNORABLE	= 0x0020u,
@@ -264,7 +266,7 @@ _hb_glyph_info_set_unicode_props (hb_glyph_info_t *info, hb_buffer_t *buffer)
       buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_DEFAULT_IGNORABLES;
       props |=  UPROPS_MASK_IGNORABLE;
       if (u == 0x200Cu) props |= UPROPS_MASK_Cf_ZWNJ;
-      if (u == 0x200Du) props |= UPROPS_MASK_Cf_ZWJ;
+      else if (u == 0x200Du) props |= UPROPS_MASK_Cf_ZWJ;
       
 
 
@@ -272,12 +274,13 @@ _hb_glyph_info_set_unicode_props (hb_glyph_info_t *info, hb_buffer_t *buffer)
 
 
 
-
-      if (unlikely (hb_in_range (u, 0x180Bu, 0x180Du))) props |= UPROPS_MASK_HIDDEN;
+      else if (unlikely (hb_in_range (u, 0x180Bu, 0x180Du))) props |= UPROPS_MASK_HIDDEN;
       
 
+      else if (unlikely (hb_in_range (u, 0xE0020u, 0xE007Fu))) props |= UPROPS_MASK_HIDDEN;
+      
 
-      if (unlikely (hb_in_range (u, 0xE0020u, 0xE007Fu))) props |= UPROPS_MASK_HIDDEN;
+      else if (unlikely (u == 0x034Fu)) props |= UPROPS_MASK_HIDDEN;
     }
     else if (unlikely (HB_UNICODE_GENERAL_CATEGORY_IS_NON_ENCLOSING_MARK_OR_MODIFIER_SYMBOL (gen_cat)))
     {

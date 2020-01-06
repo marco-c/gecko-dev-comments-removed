@@ -103,7 +103,7 @@ collect_features_myanmar (hb_ot_shape_planner_t *plan)
   for (unsigned int i = 0; i < ARRAY_LENGTH (basic_features); i++)
   {
     map->add_feature (basic_features[i], 1, F_GLOBAL | F_MANUAL_ZWJ);
-    map->add_gsub_pause (NULL);
+    map->add_gsub_pause (nullptr);
   }
   map->add_gsub_pause (final_reordering);
   for (unsigned int i = 0; i < ARRAY_LENGTH (other_features); i++)
@@ -154,7 +154,7 @@ is_one_of (const hb_glyph_info_t &info, unsigned int flags)
 {
   
   if (_hb_glyph_info_ligated (&info)) return false;
-  return !!(FLAG_SAFE (info.myanmar_category()) & flags);
+  return !!(FLAG_UNSAFE (info.myanmar_category()) & flags);
 }
 
 static inline bool
@@ -513,18 +513,18 @@ final_reordering (const hb_ot_shape_plan_t *plan,
 const hb_ot_complex_shaper_t _hb_ot_complex_shaper_myanmar_old =
 {
   "default",
-  NULL, 
-  NULL, 
-  NULL, 
-  NULL, 
-  NULL, 
-  NULL, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
   HB_OT_SHAPE_NORMALIZATION_MODE_DEFAULT,
-  NULL, 
-  NULL, 
-  NULL, 
-  NULL, 
-  NULL, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_LATE,
   true, 
 };
@@ -534,16 +534,16 @@ const hb_ot_complex_shaper_t _hb_ot_complex_shaper_myanmar =
   "myanmar",
   collect_features_myanmar,
   override_features_myanmar,
-  NULL, 
-  NULL, 
-  NULL, 
-  NULL, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
   HB_OT_SHAPE_NORMALIZATION_MODE_COMPOSED_DIACRITICS_NO_SHORT_CIRCUIT,
-  NULL, 
-  NULL, 
+  nullptr, 
+  nullptr, 
   setup_masks_myanmar,
-  NULL, 
-  NULL, 
+  nullptr, 
+  nullptr, 
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_EARLY,
   false, 
 };

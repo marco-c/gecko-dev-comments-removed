@@ -286,7 +286,7 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
 					      planner->map.script_index[0],
 					      planner->map.language_index[0],
 					      HB_TAG ('p','r','e','f'),
-					      NULL))
+					      nullptr))
 	return &_hb_ot_complex_shaper_indic;
       else
 	return &_hb_ot_complex_shaper_default;

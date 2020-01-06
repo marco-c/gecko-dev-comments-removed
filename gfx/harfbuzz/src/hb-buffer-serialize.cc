@@ -30,7 +30,7 @@
 static const char *serialize_formats[] = {
   "text",
   "json",
-  NULL
+  nullptr
 };
 
 
@@ -90,7 +90,7 @@ hb_buffer_serialize_format_to_string (hb_buffer_serialize_format_t format)
     case HB_BUFFER_SERIALIZE_FORMAT_TEXT:	return serialize_formats[0];
     case HB_BUFFER_SERIALIZE_FORMAT_JSON:	return serialize_formats[1];
     default:
-    case HB_BUFFER_SERIALIZE_FORMAT_INVALID:	return NULL;
+    case HB_BUFFER_SERIALIZE_FORMAT_INVALID:	return nullptr;
   }
 }
 
@@ -104,9 +104,9 @@ _hb_buffer_serialize_glyphs_json (hb_buffer_t *buffer,
 				  hb_font_t *font,
 				  hb_buffer_serialize_flags_t flags)
 {
-  hb_glyph_info_t *info = hb_buffer_get_glyph_infos (buffer, NULL);
+  hb_glyph_info_t *info = hb_buffer_get_glyph_infos (buffer, nullptr);
   hb_glyph_position_t *pos = (flags & HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS) ?
-			     NULL : hb_buffer_get_glyph_positions (buffer, NULL);
+			     nullptr : hb_buffer_get_glyph_positions (buffer, nullptr);
 
   *buf_consumed = 0;
   for (unsigned int i = start; i < end; i++)
@@ -194,9 +194,9 @@ _hb_buffer_serialize_glyphs_text (hb_buffer_t *buffer,
 				  hb_font_t *font,
 				  hb_buffer_serialize_flags_t flags)
 {
-  hb_glyph_info_t *info = hb_buffer_get_glyph_infos (buffer, NULL);
+  hb_glyph_info_t *info = hb_buffer_get_glyph_infos (buffer, nullptr);
   hb_glyph_position_t *pos = (flags & HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS) ?
-			     NULL : hb_buffer_get_glyph_positions (buffer, NULL);
+			     nullptr : hb_buffer_get_glyph_positions (buffer, nullptr);
 
   *buf_consumed = 0;
   for (unsigned int i = start; i < end; i++)
