@@ -297,8 +297,7 @@ PDMFactory::CreateDecoderWithPDM(PlatformDecoderModule* aPDM,
       
       
       m = h.forget();
-    }
-    if (NS_FAILED(result) && aParams.mError) {
+    } else if (aParams.mError) {
       *aParams.mError = result;
     }
   } else {
