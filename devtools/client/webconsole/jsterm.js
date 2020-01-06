@@ -556,6 +556,21 @@ JSTerm.prototype = {
 
 
 
+
+
+  copyObject: function (evalString, evalOptions) {
+    return this.webConsoleClient.evaluateJSAsync(`copy(${evalString})`,
+      null, evalOptions);
+  },
+
+  
+
+
+
+
+
+
+
   getFrameActor: function (frame) {
     let state = this.hud.owner.getDebuggerFrames();
     if (!state) {

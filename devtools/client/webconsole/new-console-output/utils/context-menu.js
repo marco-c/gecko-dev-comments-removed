@@ -31,9 +31,12 @@ const { l10n } = require("devtools/client/webconsole/new-console-output/utils/me
 
 
 
+
+
 function createContextMenu(jsterm, parentNode, {
   actor,
   clipboardText,
+  variableText,
   message,
   serviceContainer
 }) {
@@ -127,6 +130,25 @@ function createContextMenu(jsterm, parentNode, {
         clipboardHelper.copyString(clipboardText);
       } else {
         clipboardHelper.copyString(selection.toString());
+      }
+    },
+  }));
+
+  
+  menu.append(new MenuItem({
+    id: "console-menu-copy-object",
+    label: l10n.getStr("webconsole.menu.copy.object.label"),
+    accesskey: l10n.getStr("webconsole.menu.copy.object.accesskey"),
+    
+    disabled: (!actor && !variableText),
+    click: () => {
+      if (actor) {
+        
+        jsterm.copyObject(`_self`, { selectedObjectActor: actor }).then((res) => {
+          clipboardHelper.copyString(res.helperResult.value);
+        });
+      } else {
+        clipboardHelper.copyString(variableText);
       }
     },
   }));
