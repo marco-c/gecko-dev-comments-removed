@@ -196,14 +196,12 @@ ServoStyleSheet::LoadFailed()
 nsresult
 ServoStyleSheet::ReparseSheet(const nsAString& aInput)
 {
-  
-  
-  
-
   if (!mInner->mComplete) {
     return NS_ERROR_DOM_INVALID_ACCESS_ERR;
   }
 
+  
+  
   RefPtr<css::Loader> loader;
   if (mDocument) {
     loader = mDocument->CSSLoader();
@@ -211,6 +209,10 @@ ServoStyleSheet::ReparseSheet(const nsAString& aInput)
   } else {
     loader = new css::Loader(StyleBackendType::Servo, nullptr);
   }
+
+  mozAutoDocUpdate updateBatch(mDocument, UPDATE_STYLE, true);
+
+  WillDirty();
 
   
   css::LoaderReusableStyleSheets reusableSheets;
@@ -238,10 +240,63 @@ ServoStyleSheet::ReparseSheet(const nsAString& aInput)
     }
   }
 
+  
+  if (mDocument) {
+    
+    ServoCSSRuleList* ruleList = GetCssRulesInternal();
+    MOZ_ASSERT(ruleList);
+
+    uint32_t ruleCount = ruleList->Length();
+    for (uint32_t i = 0; i < ruleCount; ++i) {
+      css::Rule* rule = ruleList->GetRule(i);
+      MOZ_ASSERT(rule);
+      if (rule->GetType() == css::Rule::IMPORT_RULE &&
+          RuleHasPendingChildSheet(rule)) {
+        continue; 
+      }
+      mDocument->StyleRuleRemoved(this, rule);
+
+      
+      if (!mDocument) {
+        
+        break;
+      }
+    }
+  }
+
+  DropRuleList();
+
   nsresult rv = ParseSheet(loader, aInput, mInner->mSheetURI, mInner->mBaseURI,
                            mInner->mPrincipal, lineNumber,
                            eCompatibility_FullStandards, &reusableSheets);
+  DidDirty();
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  if (mDocument) {
+    
+    ServoCSSRuleList* ruleList = GetCssRulesInternal();
+    MOZ_ASSERT(ruleList);
+
+    uint32_t ruleCount = ruleList->Length();
+    for (uint32_t i = 0; i < ruleCount; ++i) {
+      css::Rule* rule = ruleList->GetRule(i);
+      MOZ_ASSERT(rule);
+      if (rule->GetType() == css::Rule::IMPORT_RULE &&
+          RuleHasPendingChildSheet(rule)) {
+        continue; 
+      }
+
+      mDocument->StyleRuleAdded(this, rule);
+
+      
+      if (!mDocument) {
+        
+        break;
+      }
+    }
+  }
+
   return NS_OK;
 }
 
