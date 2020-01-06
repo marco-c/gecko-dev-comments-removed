@@ -251,10 +251,6 @@ SkScalerContext* DWriteFontTypeface::onCreateScalerContext(const SkScalerContext
     return new SkScalerContext_DW(sk_ref_sp(const_cast<DWriteFontTypeface*>(this)), effects, desc);
 }
 
-#ifdef MOZ_SKIA
-IDWriteRenderingParams* GetDwriteRenderingParams(bool aGDI);
-#endif
-
 void DWriteFontTypeface::onFilterRec(SkScalerContext::Rec* rec) const {
     if (rec->fFlags & SkScalerContext::kLCD_Vertical_Flag) {
         rec->fMaskFormat = SkMask::kA8_Format;
@@ -288,13 +284,11 @@ void DWriteFontTypeface::onFilterRec(SkScalerContext::Rec* rec) const {
         }
     }
 #elif defined(MOZ_SKIA)
-    IDWriteRenderingParams* params = GetDwriteRenderingParams(ForceGDI());
-    SkASSERT(params);
-    rec->setContrast(params->GetEnhancedContrast());
+    rec->setContrast(fContrast);
 
     
     
-    float gamma = ForceGDI() ? 2.3f : params->GetGamma();
+    float gamma = ForceGDI() ? 2.3f : fGamma;
     rec->setDeviceGamma(gamma);
     rec->setPaintGamma(gamma);
 #endif
