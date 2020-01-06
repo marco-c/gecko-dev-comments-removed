@@ -373,7 +373,10 @@ ServoStyleSet::PreTraverse(ServoTraversalFlags aFlags, Element* aRoot)
   
   
   nsSMILAnimationController* smilController =
-    mPresContext->Document()->GetAnimationController();
+    mPresContext->Document()->HasAnimationController()
+    ? mPresContext->Document()->GetAnimationController()
+    : nullptr;
+
   if (aRoot) {
     mPresContext->EffectCompositor()
                 ->PreTraverseInSubtree(aFlags, aRoot);
