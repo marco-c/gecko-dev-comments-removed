@@ -785,39 +785,6 @@ pref_SetPref(const char* aPrefName,
 }
 
 
-
-static void
-PREF_RegisterCallback(const char* aPrefNode,
-                      PrefChangedFunc aCallback,
-                      void* aData,
-                      Preferences::MatchKind aMatchKind,
-                      bool aIsPriority)
-{
-  NS_PRECONDITION(aPrefNode, "aPrefNode must not be nullptr");
-  NS_PRECONDITION(aCallback, "aCallback must not be nullptr");
-
-  auto node = new CallbackNode(aPrefNode, aCallback, aData, aMatchKind);
-
-  if (aIsPriority) {
-    
-    node->mNext = gFirstCallback;
-    gFirstCallback = node;
-    if (!gLastPriorityNode) {
-      gLastPriorityNode = node;
-    }
-  } else {
-    
-    if (gLastPriorityNode) {
-      node->mNext = gLastPriorityNode->mNext;
-      gLastPriorityNode->mNext = node;
-    } else {
-      node->mNext = gFirstCallback;
-      gFirstCallback = node;
-    }
-  }
-}
-
-
 static CallbackNode*
 pref_RemoveCallbackNode(CallbackNode* aNode, CallbackNode* aPrevNode)
 {
@@ -2499,11 +2466,11 @@ nsPrefBranch::AddObserver(const char* aDomain,
   
   
   const PrefName& pref = GetPrefName(aDomain);
-  PREF_RegisterCallback(pref.get(),
-                        NotifyObserver,
-                        pCallback,
-                        Preferences::PrefixMatch,
-                         false);
+  Preferences::RegisterCallback(NotifyObserver,
+                                pref.get(),
+                                pCallback,
+                                Preferences::PrefixMatch,
+                                 false);
 
   return NS_OK;
 }
@@ -4669,31 +4636,37 @@ Preferences::RemoveObservers(nsIObserver* aObserver, const char** aPrefs)
   return NS_OK;
 }
 
-
-
-
-static void
-RegisterVarCacheCallback(PrefChangedFunc aCallback,
-                         const char* aPref,
-                         void* aClosure)
-{
-  MOZ_ASSERT(Preferences::IsServiceAvailable());
-
-  PREF_RegisterCallback(
-    aPref, aCallback, aClosure, Preferences::ExactMatch,  true);
-}
-
  nsresult
 Preferences::RegisterCallback(PrefChangedFunc aCallback,
-                              const char* aPref,
-                              void* aClosure,
-                              MatchKind aMatchKind)
+                              const char* aPrefNode,
+                              void* aData,
+                              MatchKind aMatchKind,
+                              bool aIsPriority)
 {
-  MOZ_ASSERT(aCallback);
+  NS_ENSURE_ARG(aPrefNode);
+  NS_ENSURE_ARG(aCallback);
+
   NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
-  PREF_RegisterCallback(
-    aPref, aCallback, aClosure, aMatchKind,  false);
+  auto node = new CallbackNode(aPrefNode, aCallback, aData, aMatchKind);
+
+  if (aIsPriority) {
+    
+    node->mNext = gFirstCallback;
+    gFirstCallback = node;
+    if (!gLastPriorityNode) {
+      gLastPriorityNode = node;
+    }
+  } else {
+    
+    if (gLastPriorityNode) {
+      node->mNext = gLastPriorityNode->mNext;
+      gLastPriorityNode->mNext = node;
+    } else {
+      node->mNext = gFirstCallback;
+      gFirstCallback = node;
+    }
+  }
 
   return NS_OK;
 }
@@ -4785,7 +4758,11 @@ Preferences::AddBoolVarCache(bool* aCache, const char* aPref, bool aDefault)
   data->mCacheLocation = aCache;
   data->mDefaultValueBool = aDefault;
   CacheDataAppendElement(data);
-  RegisterVarCacheCallback(BoolVarChanged, aPref, data);
+  Preferences::RegisterCallback(BoolVarChanged,
+                                aPref,
+                                data,
+                                Preferences::ExactMatch,
+                                 true);
   return NS_OK;
 }
 
@@ -4800,7 +4777,9 @@ AtomicBoolVarChanged(const char* aPref, void* aClosure)
 
 template<MemoryOrdering Order>
  nsresult
-Preferences::AddAtomicBoolVarCache(Atomic<bool, Order>* aCache, const char* aPref, bool aDefault)
+Preferences::AddAtomicBoolVarCache(Atomic<bool, Order>* aCache,
+                                   const char* aPref,
+                                   bool aDefault)
 {
   NS_ASSERTION(aCache, "aCache must not be NULL");
 #ifdef DEBUG
@@ -4814,7 +4793,11 @@ Preferences::AddAtomicBoolVarCache(Atomic<bool, Order>* aCache, const char* aPre
   data->mCacheLocation = aCache;
   data->mDefaultValueBool = aDefault;
   CacheDataAppendElement(data);
-  RegisterVarCacheCallback(AtomicBoolVarChanged<Order>, aPref, data);
+  Preferences::RegisterCallback(AtomicBoolVarChanged<Order>,
+                                aPref,
+                                data,
+                                Preferences::ExactMatch,
+                                 true);
   return NS_OK;
 }
 
@@ -4843,7 +4826,8 @@ Preferences::AddIntVarCache(int32_t* aCache,
   data->mCacheLocation = aCache;
   data->mDefaultValueInt = aDefault;
   CacheDataAppendElement(data);
-  RegisterVarCacheCallback(IntVarChanged, aPref, data);
+  Preferences::RegisterCallback(
+    IntVarChanged, aPref, data, Preferences::ExactMatch,  true);
   return NS_OK;
 }
 
@@ -4874,7 +4858,11 @@ Preferences::AddAtomicIntVarCache(Atomic<int32_t, Order>* aCache,
   data->mCacheLocation = aCache;
   data->mDefaultValueUint = aDefault;
   CacheDataAppendElement(data);
-  RegisterVarCacheCallback(AtomicIntVarChanged<Order>, aPref, data);
+  Preferences::RegisterCallback(AtomicIntVarChanged<Order>,
+                                aPref,
+                                data,
+                                Preferences::ExactMatch,
+                                 true);
   return NS_OK;
 }
 
@@ -4903,7 +4891,11 @@ Preferences::AddUintVarCache(uint32_t* aCache,
   data->mCacheLocation = aCache;
   data->mDefaultValueUint = aDefault;
   CacheDataAppendElement(data);
-  RegisterVarCacheCallback(UintVarChanged, aPref, data);
+  Preferences::RegisterCallback(UintVarChanged,
+                                aPref,
+                                data,
+                                Preferences::ExactMatch,
+                                 true);
   return NS_OK;
 }
 
@@ -4934,7 +4926,11 @@ Preferences::AddAtomicUintVarCache(Atomic<uint32_t, Order>* aCache,
   data->mCacheLocation = aCache;
   data->mDefaultValueUint = aDefault;
   CacheDataAppendElement(data);
-  RegisterVarCacheCallback(AtomicUintVarChanged<Order>, aPref, data);
+  Preferences::RegisterCallback(AtomicUintVarChanged<Order>,
+                                aPref,
+                                data,
+                                Preferences::ExactMatch,
+                                 true);
   return NS_OK;
 }
 
@@ -4942,9 +4938,7 @@ Preferences::AddAtomicUintVarCache(Atomic<uint32_t, Order>* aCache,
 
 
 template nsresult
-Preferences::AddAtomicBoolVarCache(Atomic<bool, Relaxed>*,
-                                   const char*,
-                                   bool);
+Preferences::AddAtomicBoolVarCache(Atomic<bool, Relaxed>*, const char*, bool);
 
 template nsresult
 Preferences::AddAtomicIntVarCache(Atomic<int32_t, Relaxed>*,
@@ -4979,7 +4973,11 @@ Preferences::AddFloatVarCache(float* aCache, const char* aPref, float aDefault)
   data->mCacheLocation = aCache;
   data->mDefaultValueFloat = aDefault;
   CacheDataAppendElement(data);
-  RegisterVarCacheCallback(FloatVarChanged, aPref, data);
+  Preferences::RegisterCallback(FloatVarChanged,
+                                aPref,
+                                data,
+                                Preferences::ExactMatch,
+                                 true);
   return NS_OK;
 }
 
