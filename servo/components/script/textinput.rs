@@ -770,7 +770,11 @@ impl<T: ClipboardProvider> TextInput<T> {
     
     pub fn set_content(&mut self, content: DOMString) {
         self.lines = if self.multiline {
-            content.split('\n').map(DOMString::from).collect()
+            
+            content.replace("\r\n", "\n")
+                   .split(|c| c == '\n' || c == '\r')
+                   .map(DOMString::from)
+                   .collect()
         } else {
             vec!(content)
         };

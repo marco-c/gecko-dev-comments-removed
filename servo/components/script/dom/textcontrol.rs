@@ -21,7 +21,16 @@ pub trait TextControl: DerivedFrom<EventTarget> + DerivedFrom<Node> {
 
     
     fn set_dom_selection_start(&self, start: u32) {
-        self.set_selection_range(start, self.dom_selection_end(), self.selection_direction());
+        
+        let mut end = self.dom_selection_end();
+
+        
+        if end < start {
+            end = start;
+        }
+
+        
+        self.set_selection_range(start, end, self.selection_direction());
     }
 
     

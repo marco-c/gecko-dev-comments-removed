@@ -34,7 +34,7 @@ use std::default::Default;
 use std::ops::Range;
 use style::attr::AttrValue;
 use style::element_state::ElementState;
-use textinput::{KeyReaction, Lines, SelectionDirection, TextInput};
+use textinput::{Direction, KeyReaction, Lines, Selection, SelectionDirection, TextInput};
 
 #[dom_struct]
 pub struct HTMLTextAreaElement {
@@ -232,9 +232,24 @@ impl HTMLTextAreaElementMethods for HTMLTextAreaElement {
 
     
     fn SetValue(&self, value: DOMString) {
+        let mut textinput = self.textinput.borrow_mut();
+
         
-        self.textinput.borrow_mut().set_content(value);
+        let old_value = textinput.get_content();
+        let old_selection = textinput.selection_begin;
+
+        
+        textinput.set_content(value);
+
+        
         self.value_changed.set(true);
+
+        if old_value != textinput.get_content() {
+            
+            textinput.adjust_horizontal_to_limit(Direction::Forward, Selection::NotSelected);
+        } else {
+            textinput.selection_begin = old_selection;
+        }
 
         self.upcast::<Node>().dirty(NodeDamage::OtherNodeDamage);
     }
