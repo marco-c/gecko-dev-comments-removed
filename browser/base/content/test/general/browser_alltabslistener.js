@@ -96,8 +96,8 @@ function test() {
   
   
   let promises = [
-    waitForDocLoadComplete(gBackgroundBrowser),
-    waitForDocLoadComplete(gForegroundBrowser)
+    BrowserTestUtils.browserStopped(gBackgroundBrowser, kBasePage),
+    BrowserTestUtils.browserStopped(gForegroundBrowser, kBasePage)
   ];
   gBackgroundBrowser.loadURI(kBasePage);
   gForegroundBrowser.loadURI(kBasePage);
