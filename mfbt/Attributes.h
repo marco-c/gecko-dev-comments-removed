@@ -156,6 +156,21 @@
 
 
 
+#if defined(__GNUC__) || defined(__clang__)
+#  define MOZ_NONNULL_RETURN __attribute__ ((returns_nonnull))
+#else
+#  define MOZ_NONNULL_RETURN
+#endif
+
+
+
+
+
+
+
+
+
+
 
 
 
