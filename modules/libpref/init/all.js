@@ -332,6 +332,10 @@ pref("media.cache_readahead_limit", 60);
 pref("media.memory_cache_max_size", 8192);
 
 
+pref("media.memory_caches_combined_limit_kb", 524288);
+pref("media.memory_caches_combined_limit_pc_sysmem", 5);
+
+
 
 pref("media.cache.resource-index", 8192);
 
