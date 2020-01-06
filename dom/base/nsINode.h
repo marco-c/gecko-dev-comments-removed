@@ -19,6 +19,7 @@
 #include "nsTObserverArray.h"       
 #include "nsWindowSizes.h"          
 #include "mozilla/ErrorResult.h"
+#include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/EventTarget.h" 
 #include "js/TypeDecls.h"     
@@ -1135,7 +1136,9 @@ public:
 
 
 
-    mozilla::UniquePtr<nsTHashtable<nsPtrHashKey<nsRange>>> mCommonAncestorRanges;
+
+
+    mozilla::UniquePtr<mozilla::LinkedList<nsRange>> mCommonAncestorRanges;
 
     
 
@@ -1943,23 +1946,23 @@ public:
                                                   CallerType aCallerType,
                                                   ErrorResult& aRv);
 
-  const nsTHashtable<nsPtrHashKey<nsRange>>* GetExistingCommonAncestorRanges() const
+  const mozilla::LinkedList<nsRange>* GetExistingCommonAncestorRanges() const
   {
     if (!HasSlots()) {
       return nullptr;
     }
-    mozilla::UniquePtr<nsTHashtable<nsPtrHashKey<nsRange>>>& ranges =
-      GetExistingSlots()->mCommonAncestorRanges;
-    return ranges.get();
+    return GetExistingSlots()->mCommonAncestorRanges.get();
   }
 
-  nsTHashtable<nsPtrHashKey<nsRange>>* GetExistingCommonAncestorRanges()
+  mozilla::LinkedList<nsRange>* GetExistingCommonAncestorRanges()
   {
-    nsINode::nsSlots* slots = GetExistingSlots();
-    return slots ? slots->mCommonAncestorRanges.get() : nullptr;
+    if (!HasSlots()) {
+      return nullptr;
+    }
+    return GetExistingSlots()->mCommonAncestorRanges.get();
   }
 
-  mozilla::UniquePtr<nsTHashtable<nsPtrHashKey<nsRange>>>& GetCommonAncestorRangesPtr()
+  mozilla::UniquePtr<mozilla::LinkedList<nsRange>>& GetCommonAncestorRangesPtr()
   {
     return Slots()->mCommonAncestorRanges;
   }
