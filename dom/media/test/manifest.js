@@ -547,6 +547,13 @@ if (manifestNavigator().userAgent.includes("Windows") &&
 }
 
 
+
+var gDurationTests = [
+  { name:"bug603918.webm", duration:6.076 },
+  { name:"bug604067.webm", duration:6.076 }
+]
+
+
 var gSeekTests = [
   { name:"r11025_s16_c1.wav", type:"audio/x-wav", duration:1.0 },
   { name:"audio.wav", type:"audio/x-wav", duration:0.031247 },
