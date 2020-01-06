@@ -29,6 +29,7 @@ public:
 
   
   using dom::CSSImportRule::GetStyleSheet;
+  using dom::CSSImportRule::GetMedia;
 
 #ifdef DEBUG
   void List(FILE* out = stdout, int32_t aIndent = 0) const final;
@@ -41,7 +42,7 @@ public:
 
   
   void GetCssTextImpl(nsAString& aCssText) const override;
-  dom::MediaList* Media() const final;
+  dom::MediaList* GetMedia() const final;
   StyleSheet* GetStyleSheet() const final;
 
 private:

@@ -63,9 +63,10 @@ ServoImportRule::List(FILE* out, int32_t aIndent) const
 #endif
 
 dom::MediaList*
-ServoImportRule::Media() const
+ServoImportRule::GetMedia() const
 {
-  return mChildSheet->Media();
+  
+  return mChildSheet ? mChildSheet->Media() : nullptr;
 }
 
 StyleSheet*
