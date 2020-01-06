@@ -732,12 +732,13 @@ MediaPipelineFactory::GetOrCreateAudioConduit(
 
     conduit->SetLocalCNAME(aTrack.GetCNAME().c_str());
 
-    if (configs.values.size() > 1
-        && configs.values.back()->mName == "telephone-event") {
-      
-      
-      conduit->SetDtmfPayloadType(configs.values.back()->mType,
-                                  configs.values.back()->mFreq);
+    for (auto value: configs.values) {
+      if (value->mName == "telephone-event") {
+        
+        
+        conduit->SetDtmfPayloadType(value->mType, value->mFreq);
+        break;
+      }
     }
 
     auto error = conduit->ConfigureSendMediaCodec(configs.values[0]);
