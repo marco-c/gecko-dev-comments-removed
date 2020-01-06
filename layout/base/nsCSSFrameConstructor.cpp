@@ -9959,6 +9959,21 @@ nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(
 }
 
 void
+nsCSSFrameConstructor::UpdateTableCellSpans(nsIContent* aContent)
+{
+  nsTableCellFrame* cellFrame = do_QueryFrame(aContent->GetPrimaryFrame());
+
+  
+  
+  
+  NS_WARNING_ASSERTION(cellFrame, "Hint should only be posted on table cells!");
+
+  if (cellFrame) {
+    cellFrame->GetTableFrame()->RowOrColSpanChanged(cellFrame);
+  }
+}
+
+void
 nsCSSFrameConstructor::RecreateFramesForContent(nsIContent* aContent,
                                                 InsertionKind aInsertionKind,
                                                 RemoveFlags aFlags)

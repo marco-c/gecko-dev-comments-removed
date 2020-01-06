@@ -1804,6 +1804,11 @@ private:
                                 RemoveFlags   aFlags);
 
   
+
+
+  void UpdateTableCellSpans(nsIContent* aContent);
+
+  
   
   
   

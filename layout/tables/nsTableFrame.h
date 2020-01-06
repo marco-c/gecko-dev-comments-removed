@@ -180,12 +180,12 @@ public:
                                             nsIFrame* aDestructRoot);
 
   nsPoint GetFirstSectionOrigin(const ReflowInput& aReflowInput) const;
+
   
 
 
-  void AttributeChangedFor(nsIFrame*       aFrame,
-                           nsIContent*     aContent,
-                           nsIAtom*        aAttribute);
+
+  void RowOrColSpanChanged(nsTableCellFrame* aCellFrame);
 
   
   virtual void DestroyFrom(nsIFrame* aDestructRoot) override;
