@@ -953,7 +953,11 @@ this.PlacesUIUtils = {
     
     
     
-    browserWindow.gBrowser.loadTabs(urls, loadInBackground, false);
+    browserWindow.gBrowser.loadTabs(urls, {
+      inBackground: loadInBackground,
+      replace: false,
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    });
   },
 
   openLiveMarkNodesInTabs:
