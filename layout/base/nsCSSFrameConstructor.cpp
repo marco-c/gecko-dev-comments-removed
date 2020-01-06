@@ -1984,7 +1984,11 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
     if (hasServoAnimations) {
       
       
+      
       mPresShell->StyleSet()->AsServo()->StyleNewSubtree(container);
+      pseudoStyleContext =
+        styleSet->AsServo()->ResolveServoStyle(container,
+                                               ServoTraversalFlags::Empty);
     } else if (createdChildElement) {
       
       
