@@ -246,29 +246,6 @@ public:
       mFrameArena.FreeByObjectID(aID, aPtr);
   }
 
-  
-
-
-
-
-
-
-
-
-  void* AllocateMisc(size_t aSize)
-  {
-    void* result = mFrameArena.AllocateBySize(aSize);
-    RecordAlloc(result);
-    return result;
-  }
-
-  void FreeMisc(size_t aSize, void* aPtr)
-  {
-    RecordFree(aPtr);
-    if (!mIsDestroying)
-      mFrameArena.FreeBySize(aSize, aPtr);
-  }
-
   template<typename T>
   void RegisterArenaRefPtr(mozilla::ArenaRefPtr<T>* aPtr)
   {

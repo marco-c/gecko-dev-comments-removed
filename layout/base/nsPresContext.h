@@ -345,20 +345,6 @@ public:
 
   void StopEmulatingMedium();
 
-  void* AllocateFromShell(size_t aSize)
-  {
-    if (mShell)
-      return mShell->AllocateMisc(aSize);
-    return nullptr;
-  }
-
-  void FreeToShell(size_t aSize, void* aFreeChunk)
-  {
-    NS_ASSERTION(mShell, "freeing after shutdown");
-    if (mShell)
-      mShell->FreeMisc(aSize, aFreeChunk);
-  }
-
   
 
 

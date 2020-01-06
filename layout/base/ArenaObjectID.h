@@ -20,15 +20,7 @@ enum ArenaObjectID {
 #include "nsPresArenaObjectList.h"
 #undef PRES_ARENA_OBJECT
 
-  
-
-
-
-
-
-
-
-  eArenaObjectID_NON_OBJECT_MARKER = 0x40000000
+  eArenaObjectID_COUNT
 };
 
 };
