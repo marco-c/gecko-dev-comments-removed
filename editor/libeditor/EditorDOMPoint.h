@@ -16,29 +16,78 @@
 
 namespace mozilla {
 
-template<typename ParentType, typename RefType>
+template<typename ParentType, typename ChildType>
 class EditorDOMPointBase;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 typedef EditorDOMPointBase<nsCOMPtr<nsINode>,
                            nsCOMPtr<nsIContent>> EditorDOMPoint;
 typedef EditorDOMPointBase<nsINode*, nsIContent*> EditorRawDOMPoint;
 
-template<typename ParentType, typename RefType>
+template<typename ParentType, typename ChildType>
 class MOZ_STACK_CLASS EditorDOMPointBase final
 {
+  typedef EditorDOMPointBase<ParentType, ChildType> SelfType;
+
 public:
   EditorDOMPointBase()
     : mParent(nullptr)
-    , mRef(nullptr)
+    , mChild(nullptr)
+    , mIsChildInitialized(false)
   {
   }
 
   EditorDOMPointBase(nsINode* aContainer,
                      int32_t aOffset)
     : mParent(aContainer)
-    , mRef(nullptr)
+    , mChild(nullptr)
     , mOffset(mozilla::Some(aOffset))
+    , mIsChildInitialized(false)
   {
+    NS_WARNING_ASSERTION(!mParent || mOffset.value() <= mParent->Length(),
+      "The offset is larger than the length of aContainer or negative");
     if (!mParent) {
       mOffset.reset();
     }
@@ -46,6 +95,7 @@ public:
 
   EditorDOMPointBase(nsIDOMNode* aDOMContainer,
                      int32_t aOffset)
+    : mIsChildInitialized(false)
   {
     nsCOMPtr<nsINode> container = do_QueryInterface(aDOMContainer);
     this->Set(container, aOffset);
@@ -55,66 +105,58 @@ public:
 
 
 
-
-
   explicit EditorDOMPointBase(nsINode* aPointedNode)
     : mParent(aPointedNode && aPointedNode->IsContent() ?
                 aPointedNode->GetParentNode() : nullptr)
-    , mRef(aPointedNode && aPointedNode->IsContent() ?
-             GetRef(aPointedNode->GetParentNode(),
-                    aPointedNode->AsContent()) : nullptr)
+    , mChild(aPointedNode && aPointedNode->IsContent() ?
+                aPointedNode->AsContent() : nullptr)
+    , mIsChildInitialized(false)
   {
-    if (!mRef) {
-      mOffset = mozilla::Some(0);
-    } else {
-      NS_WARNING_ASSERTION(mRef->GetParentNode() == mParent,
-                           "Initializing RangeBoundary with invalid value");
-      mOffset.reset();
-    }
+    NS_WARNING_ASSERTION(IsSet(),
+      "The child is nullptr or doesn't have its parent");
+    NS_WARNING_ASSERTION(mChild && mChild->GetParentNode() == mParent,
+      "Initializing RangeBoundary with invalid value");
+    mIsChildInitialized = aPointedNode && mChild;
   }
 
   EditorDOMPointBase(nsINode* aContainer,
                      nsIContent* aPointedNode,
                      int32_t aOffset)
     : mParent(aContainer)
-    , mRef(GetRef(aContainer, aPointedNode))
+    , mChild(aPointedNode)
     , mOffset(mozilla::Some(aOffset))
+    , mIsChildInitialized(true)
   {
     MOZ_RELEASE_ASSERT(aContainer,
       "This constructor shouldn't be used when pointing nowhere");
-    if (!mRef) {
-      MOZ_ASSERT(!mParent->IsContainerNode() || mOffset.value() == 0);
-      return;
-    }
-    MOZ_ASSERT(mOffset.value() > 0);
-    MOZ_ASSERT(mParent == mRef->GetParentNode());
-    MOZ_ASSERT(mParent->GetChildAt(mOffset.value() - 1) == mRef);
+    MOZ_ASSERT(mOffset.value() <= mParent->Length());
+    MOZ_ASSERT(mChild || mParent->Length() == mOffset.value());
+    MOZ_ASSERT(!mChild || mParent == mChild->GetParentNode());
+    MOZ_ASSERT(mParent->GetChildAt(mOffset.value()) == mChild);
   }
 
-  template<typename PT, typename RT>
-  explicit EditorDOMPointBase(const RangeBoundaryBase<PT, RT>& aOther)
+  template<typename PT, typename CT>
+  explicit EditorDOMPointBase(const RangeBoundaryBase<PT, CT>& aOther)
     : mParent(aOther.mParent)
-    , mRef(aOther.mRef)
+    , mChild(aOther.mRef ? aOther.mRef->GetNextSibling() :
+                           (aOther.mParent ? aOther.mParent->GetFirstChild() :
+                                             nullptr))
     , mOffset(aOther.mOffset)
+    , mIsChildInitialized(aOther.mRef ||
+                          (aOther.mOffset.isSome() && !aOther.mOffset.value()))
   {
   }
 
-  template<typename PT, typename RT>
-  explicit EditorDOMPointBase(const EditorDOMPointBase<PT, RT>& aOther)
+  template<typename PT, typename CT>
+  explicit EditorDOMPointBase(const EditorDOMPointBase<PT, CT>& aOther)
     : mParent(aOther.mParent)
-    , mRef(aOther.mRef)
+    , mChild(aOther.mChild)
     , mOffset(aOther.mOffset)
+    , mIsChildInitialized(aOther.mIsChildInitialized)
   {
   }
 
   
-
-  nsIContent*
-  Ref() const
-  {
-    EnsureRef();
-    return mRef;
-  }
 
   nsINode*
   Container() const
@@ -128,13 +170,12 @@ public:
     if (!mParent || !mParent->IsContainerNode()) {
       return nullptr;
     }
-    EnsureRef();
-    if (!mRef) {
-      MOZ_ASSERT(Offset() == 0, "invalid RangeBoundary");
-      return mParent->GetFirstChild();
+    if (mIsChildInitialized) {
+      return mChild;
     }
-    MOZ_ASSERT(mParent->GetChildAt(Offset()) == mRef->GetNextSibling());
-    return mRef->GetNextSibling();
+    
+    const_cast<SelfType*>(this)->EnsureChild();
+    return mChild;
   }
 
   
@@ -148,12 +189,18 @@ public:
     if (NS_WARN_IF(!mParent) || NS_WARN_IF(!mParent->IsContainerNode())) {
       return nullptr;
     }
-    EnsureRef();
-    if (NS_WARN_IF(!mRef->GetNextSibling())) {
+    if (mIsChildInitialized) {
+      return mChild ? mChild->GetNextSibling() : nullptr;
+    }
+    MOZ_ASSERT(mOffset.isSome());
+    if (NS_WARN_IF(mOffset.value() > mParent->Length())) {
+      
       
       return nullptr;
     }
-    return mRef->GetNextSibling()->GetNextSibling();
+    
+    const_cast<SelfType*>(this)->EnsureChild();
+    return mChild ? mChild->GetNextSibling() : nullptr;
   }
 
   
@@ -167,38 +214,46 @@ public:
     if (NS_WARN_IF(!mParent) || NS_WARN_IF(!mParent->IsContainerNode())) {
       return nullptr;
     }
-    EnsureRef();
-    if (NS_WARN_IF(!mRef)) {
+    if (mIsChildInitialized) {
+      return mChild ? mChild->GetPreviousSibling() : mParent->GetLastChild();
+    }
+    MOZ_ASSERT(mOffset.isSome());
+    if (NS_WARN_IF(mOffset.value() > mParent->Length())) {
+      
       
       return nullptr;
     }
-    return mRef;
+    
+    const_cast<SelfType*>(this)->EnsureChild();
+    return mChild ? mChild->GetPreviousSibling() : mParent->GetLastChild();
   }
 
   uint32_t
   Offset() const
   {
     if (mOffset.isSome()) {
+      MOZ_ASSERT(mOffset.isSome());
       return mOffset.value();
     }
     if (!mParent) {
-      MOZ_ASSERT(!mRef);
+      MOZ_ASSERT(!mChild);
       return 0;
     }
     MOZ_ASSERT(mParent->IsContainerNode(),
       "If the container cannot have children, mOffset.isSome() should be true");
-    MOZ_ASSERT(mRef);
-    MOZ_ASSERT(mRef->GetParentNode() == mParent);
-    if (!mRef->GetPreviousSibling()) {
-      mOffset = mozilla::Some(1);
+    if (!mChild) {
+      
+      const_cast<SelfType*>(this)->mOffset = mozilla::Some(mParent->Length());
       return mOffset.value();
     }
-    if (!mRef->GetNextSibling()) {
-      mOffset = mozilla::Some(mParent->GetChildCount());
-      return mOffset.value();
-    }
+    MOZ_ASSERT(mChild->GetParentNode() == mParent);
     
-    mOffset = mozilla::Some(mParent->IndexOf(mRef) + 1);
+    if (mChild == mParent->GetFirstChild()) {
+      const_cast<SelfType*>(this)->mOffset = mozilla::Some(0);
+    } else {
+      const_cast<SelfType*>(this)->mOffset =
+        mozilla::Some(mParent->IndexOf(mChild));
+    }
     return mOffset.value();
   }
 
@@ -211,24 +266,24 @@ public:
   Set(nsINode* aContainer, int32_t aOffset)
   {
     mParent = aContainer;
-    mRef = nullptr;
+    mChild = nullptr;
     mOffset = mozilla::Some(aOffset);
+    mIsChildInitialized = false;
+    NS_WARNING_ASSERTION(!mParent || mOffset.value() <= mParent->Length(),
+      "The offset is out of bounds");
   }
   void
   Set(const nsINode* aChild)
   {
     MOZ_ASSERT(aChild);
-    if (!aChild->IsContent()) {
+    if (NS_WARN_IF(!aChild->IsContent())) {
       Clear();
       return;
     }
     mParent = aChild->GetParentNode();
-    mRef = aChild->GetPreviousSibling();
-    if (!mRef) {
-      mOffset = mozilla::Some(0);
-    } else {
-      mOffset.reset();
-    }
+    mChild = const_cast<nsIContent*>(aChild->AsContent());
+    mOffset.reset();
+    mIsChildInitialized = true;
   }
 
   
@@ -238,12 +293,12 @@ public:
   Clear()
   {
     mParent = nullptr;
-    mRef = nullptr;
+    mChild = nullptr;
     mOffset.reset();
+    mIsChildInitialized = false;
   }
 
   
-
 
 
 
@@ -258,43 +313,37 @@ public:
     if (NS_WARN_IF(!mParent)) {
       return false;
     }
-    EnsureRef();
-    if (!mRef) {
-      if (!mParent->IsContainerNode()) {
+    
+    if ((mOffset.isSome() && !mIsChildInitialized) ||
+        !mParent->IsContainerNode()) {
+      MOZ_ASSERT(mOffset.isSome());
+      MOZ_ASSERT(!mChild);
+      if (NS_WARN_IF(mOffset.value() >= mParent->Length())) {
         
-        MOZ_ASSERT(mOffset.isSome());
-        if (NS_WARN_IF(mOffset.value() == mParent->Length())) {
-          
-          return false;
-        }
-        mOffset = mozilla::Some(mOffset.value() + 1);
-        return true;
-      }
-      mRef = mParent->GetFirstChild();
-      if (NS_WARN_IF(!mRef)) {
-        
-        mOffset = mozilla::Some(0);
         return false;
       }
-      mOffset = mozilla::Some(1);
+      mOffset = mozilla::Some(mOffset.value() + 1);
       return true;
     }
 
-    nsIContent* nextSibling = mRef->GetNextSibling();
-    if (NS_WARN_IF(!nextSibling)) {
+    MOZ_ASSERT(mIsChildInitialized);
+    MOZ_ASSERT(!mOffset.isSome() || mOffset.isSome());
+    if (NS_WARN_IF(!mParent->HasChildren()) ||
+        NS_WARN_IF(!mChild) ||
+        NS_WARN_IF(mOffset.isSome() && mOffset.value() >= mParent->Length())) {
       
       return false;
     }
-    mRef = nextSibling;
+
     if (mOffset.isSome()) {
+      MOZ_ASSERT(mOffset.isSome());
       mOffset = mozilla::Some(mOffset.value() + 1);
     }
+    mChild = mChild->GetNextSibling();
     return true;
   }
 
   
-
-
 
 
 
@@ -308,16 +357,13 @@ public:
     if (NS_WARN_IF(!mParent)) {
       return false;
     }
-    EnsureRef();
-    if (!mRef) {
-      if (NS_WARN_IF(mParent->IsContainerNode())) {
-        
-        mOffset = mozilla::Some(0);
-        return false;
-      }
-      
+    
+    if ((mOffset.isSome() && !mIsChildInitialized) ||
+        !mParent->IsContainerNode()) {
       MOZ_ASSERT(mOffset.isSome());
-      if (NS_WARN_IF(mOffset.value() == 0)) {
+      MOZ_ASSERT(!mChild);
+      if (NS_WARN_IF(!mOffset.value()) ||
+          NS_WARN_IF(mOffset.value() >= mParent->Length())) {
         
         return false;
       }
@@ -325,29 +371,34 @@ public:
       return true;
     }
 
-    mRef = mRef->GetPreviousSibling();
+    MOZ_ASSERT(mIsChildInitialized);
+    MOZ_ASSERT(!mOffset.isSome() || mOffset.isSome());
+    if (NS_WARN_IF(!mParent->HasChildren()) ||
+        NS_WARN_IF(mChild && !mChild->GetPreviousSibling()) ||
+        NS_WARN_IF(mOffset.isSome() && !mOffset.value())) {
+      
+      
+      return false;
+    }
+
+    nsIContent* previousSibling =
+        mChild ? mChild->GetPreviousSibling() : mParent->GetLastChild();
+    if (NS_WARN_IF(!previousSibling)) {
+      
+      return false;
+    }
+
     if (mOffset.isSome()) {
       mOffset = mozilla::Some(mOffset.value() - 1);
     }
+    mChild = previousSibling;
     return true;
-  }
-
-  void
-  SetAfterRef(nsINode* aParent, nsIContent* aRef)
-  {
-    mParent = aParent;
-    mRef = aRef;
-    if (!mRef) {
-      mOffset = mozilla::Some(0);
-    } else {
-      mOffset.reset();
-    }
   }
 
   bool
   IsSet() const
   {
-    return mParent && (mRef || mOffset.isSome());
+    return mParent && (mIsChildInitialized || mOffset.isSome());
   }
 
   bool
@@ -357,7 +408,7 @@ public:
       return false;
     }
 
-    if (mRef && mRef->GetParentNode() != mParent) {
+    if (mChild && mChild->GetParentNode() != mParent) {
       return false;
     }
     if (mOffset.isSome() && mOffset.value() > mParent->Length()) {
@@ -372,7 +423,20 @@ public:
     
     
     
-    return !Ref() && mOffset.value() == 0;
+    
+    if (NS_WARN_IF(!mParent)) {
+      return false;
+    }
+    if (!mParent->IsContainerNode()) {
+      return !mOffset.value();
+    }
+    if (mIsChildInitialized) {
+      NS_WARNING_ASSERTION(!mOffset.isSome() || !mOffset.value(),
+        "If offset was initialized, mOffset should be 0");
+      return mParent->GetFirstChild() == mChild;
+    }
+    MOZ_ASSERT(mOffset.isSome());
+    return !mOffset.value();
   }
 
   bool
@@ -382,9 +446,19 @@ public:
     
     
     
-    return Ref()
-      ? !Ref()->GetNextSibling()
-      : mOffset.value() == Container()->Length();
+    
+    
+    if (NS_WARN_IF(!mParent)) {
+      return false;
+    }
+    if (mIsChildInitialized) {
+      NS_WARNING_ASSERTION(!mOffset.isSome() ||
+                           mOffset.value() == mParent->Length(),
+        "If offset was initialized, mOffset should be length of the container");
+      return !mChild;
+    }
+    MOZ_ASSERT(mOffset.isSome());
+    return mOffset.value() == mParent->Length();
   }
 
   
@@ -399,8 +473,15 @@ public:
   EditorDOMPointBase& operator=(const RangeBoundaryBase<A,B>& aOther)
   {
     mParent = aOther.mParent;
-    mRef = aOther.mRef;
+    mChild =
+      aOther.mRef ? aOther.mRef->GetNextSibling() :
+                    (aOther.mParent && aOther.mParent->IsContainerNode() ?
+                       aOther.mParent->GetFirstChild() : nullptr);
     mOffset = aOther.mOffset;
+    mIsChildInitialized =
+      aOther.mRef ||
+      (aOther.mParent && !aOther.mParent->IsContainerNode()) ||
+      (aOther.mOffset.isSome() && !aOther.mOffset.value());
     return *this;
   }
 
@@ -408,8 +489,9 @@ public:
   EditorDOMPointBase& operator=(const EditorDOMPointBase<A, B>& aOther)
   {
     mParent = aOther.mParent;
-    mRef = aOther.mRef;
+    mChild = aOther.mChild;
     mOffset = aOther.mOffset;
+    mIsChildInitialized = aOther.mIsChildInitialized;
     return *this;
   }
 
@@ -427,10 +509,10 @@ public:
       if (mOffset != aOther.mOffset) {
         return false;
       }
-      if (mRef == aOther.mRef) {
+      if (mChild == aOther.mChild) {
         return true;
       }
-      if (NS_WARN_IF(mRef && aOther.mRef)) {
+      if (NS_WARN_IF(mIsChildInitialized && aOther.mIsChildInitialized)) {
         
         
         
@@ -443,27 +525,29 @@ public:
       return true;
     }
 
-    if (mOffset.isSome() && !mRef &&
-        !aOther.mOffset.isSome() && aOther.mRef) {
+    MOZ_ASSERT(mIsChildInitialized || aOther.mIsChildInitialized);
+
+    if (mOffset.isSome() && !mIsChildInitialized &&
+        !aOther.mOffset.isSome() && aOther.mIsChildInitialized) {
       
       
-      EnsureRef();
-      return mRef == aOther.mRef;
+      const_cast<SelfType*>(this)->EnsureChild();
+      return mChild == aOther.mChild;
     }
 
-    if (!mOffset.isSome() && mRef &&
-        aOther.mOffset.isSome() && !aOther.mRef) {
+    if (!mOffset.isSome() && mIsChildInitialized &&
+        aOther.mOffset.isSome() && !aOther.mIsChildInitialized) {
       
       
-      aOther.EnsureRef();
-      return mRef == aOther.mRef;
+      const_cast<EditorDOMPointBase<A, B>&>(aOther).EnsureChild();
+      return mChild == aOther.mChild;
     }
 
     
     
     
     
-    return mRef == aOther.mRef;
+    return mChild == aOther.mChild;
   }
 
   template<typename A, typename B>
@@ -475,54 +559,43 @@ public:
   template<typename A, typename B>
   operator const RangeBoundaryBase<A, B>() const
   {
-    if (mOffset.isSome()) {
-      if (mRef || !mOffset.value()) {
-        return RangeBoundaryBase<A, B>(mParent, mRef, mOffset.value());
-      }
+    if (!IsSet() ||
+        NS_WARN_IF(!mIsChildInitialized && !mOffset.isSome())) {
+      return RangeBoundaryBase<A, B>();
+    }
+    if (!mParent->IsContainerNode()) {
+      
+      
+      
       return RangeBoundaryBase<A, B>(mParent, mOffset.value());
     }
-    return RangeBoundaryBase<A, B>(mParent, mRef);
+    if (mIsChildInitialized && mOffset.isSome()) {
+      
+      
+      
+      if (mChild) {
+        return RangeBoundaryBase<A, B>(mParent, mChild->GetPreviousSibling(),
+                                       mOffset.value());
+      }
+      return RangeBoundaryBase<A, B>(mParent, mParent->GetLastChild(),
+                                     mOffset.value());
+    }
+    
+    
+    if (mOffset.isSome()) {
+      return RangeBoundaryBase<A, B>(mParent, mOffset.value());
+    }
+    if (mChild) {
+      return RangeBoundaryBase<A, B>(mParent, mChild->GetPreviousSibling());
+    }
+    return RangeBoundaryBase<A, B>(mParent, mParent->GetLastChild());
   }
 
 private:
-  static nsIContent* GetRef(nsINode* aContainerNode, nsIContent* aPointedNode)
-  {
-    
-    
-    if (aPointedNode) {
-      return aPointedNode->GetPreviousSibling();
-    }
-    
-    if (aContainerNode && aContainerNode->IsContainerNode()) {
-      return aContainerNode->GetLastChild();
-    }
-    return nullptr;
-  }
-
-  
-
-
-
-
   void
-  InvalidateOffset()
+  EnsureChild()
   {
-    MOZ_ASSERT(mParent);
-    MOZ_ASSERT(mParent->IsContainerNode(),
-               "Range is positioned on a text node!");
-    MOZ_ASSERT(mRef || (mOffset.isSome() && mOffset.value() == 0),
-               "mRef should be computed before a call of InvalidateOffset()");
-
-    if (!mRef) {
-      return;
-    }
-    mOffset.reset();
-  }
-
-  void
-  EnsureRef() const
-  {
-    if (mRef) {
+    if (mIsChildInitialized) {
       return;
     }
     if (!mParent) {
@@ -531,20 +604,22 @@ private:
     }
     MOZ_ASSERT(mOffset.isSome());
     MOZ_ASSERT(mOffset.value() <= mParent->Length());
-    if (!mParent->IsContainerNode() ||
-        mOffset.value() == 0) {
+    mIsChildInitialized = true;
+    if (!mParent->IsContainerNode()) {
       return;
     }
-    mRef = mParent->GetChildAt(mOffset.value() - 1);
-    MOZ_ASSERT(mRef);
+    mChild = mParent->GetChildAt(mOffset.value());
+    MOZ_ASSERT(mChild || mOffset.value() == mParent->Length());
   }
 
   ParentType mParent;
-  mutable RefType mRef;
+  ChildType mChild;
 
-  mutable mozilla::Maybe<uint32_t> mOffset;
+  mozilla::Maybe<uint32_t> mOffset;
 
-  template<typename PT, typename RT>
+  bool mIsChildInitialized;
+
+  template<typename PT, typename CT>
   friend class EditorDOMPointBase;
 };
 
