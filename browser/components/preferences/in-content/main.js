@@ -1186,12 +1186,28 @@ var gMainPane = {
       let processCountPref = document.getElementById("dom.ipc.processCount");
       let defaultProcessCount = processCountPref.defaultValue;
       let bundlePreferences = document.getElementById("bundlePreferences");
-      let label = bundlePreferences.getFormattedString("defaultContentProcessCount",
-        [defaultProcessCount]);
+
       let contentProcessCount =
         document.querySelector(`#contentProcessCount > menupopup >
                                 menuitem[value="${defaultProcessCount}"]`);
-      contentProcessCount.label = label;
+
+      
+      
+      
+      
+      
+      
+      
+      if (Services.prefs.getBoolPref("intl.l10n.fluent.disabled", false)) {
+        let label = bundlePreferences.getFormattedString("defaultContentProcessCount",
+          [defaultProcessCount]);
+        contentProcessCount.label = label;
+      } else {
+        document.l10n.setAttributes(
+          contentProcessCount,
+          "default-content-process-count",
+          { num: defaultProcessCount });
+      }
 
       document.getElementById("limitContentProcess").disabled = false;
       document.getElementById("contentProcessCount").disabled = false;

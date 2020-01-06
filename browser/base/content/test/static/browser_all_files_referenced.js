@@ -123,9 +123,6 @@ var whitelist = [
   {file: "resource://shield-recipe-client-content/shield-content-process.js"},
 
   
-  {file: "chrome://global/content/l10n.js"},
-
-  
   
   {file: "chrome://browser/locale/taskbar.properties",
    platforms: ["linux", "macosx"]},
