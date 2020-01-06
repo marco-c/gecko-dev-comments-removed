@@ -329,7 +329,10 @@ def process_test262(test262Dir, test262OutDir, strictTests):
         relPath = os.path.relpath(dirPath, testDir)
         if relPath == ".":
             continue
-        os.makedirs(os.path.join(test262OutDir, relPath))
+
+        
+        if relPath != "prs" or not os.path.exists(os.path.join(test262OutDir, relPath)):
+            os.makedirs(os.path.join(test262OutDir, relPath))
 
         includeSet = set()
         includesMap[relPath] = includeSet
@@ -360,18 +363,27 @@ def process_test262(test262Dir, test262OutDir, strictTests):
 
 def update_test262(args):
     import subprocess
+    import requests
+    import json
 
     url = args.url
     branch = args.branch
     revision = args.revision
     outDir = args.out
+    prNumber = args.pull
+
     if not os.path.isabs(outDir):
         outDir = os.path.join(os.getcwd(), outDir)
+
     strictTests = args.strict
-    localTestsOutDir = os.path.join(outDir, "local");
+    localTestsOutDir = os.path.join(outDir, "local")
+    prsTestsOutDir = os.path.join(outDir, "prs")
 
     
     with TemporaryDirectory() as inDir:
+        restoreLocalTestsDir = False
+        restorePrsTestsDir = False
+
         if revision == "HEAD":
             subprocess.check_call(["git", "clone", "--depth=1", "--branch=%s" % branch, url, inDir])
         else:
@@ -380,22 +392,82 @@ def update_test262(args):
 
         
         
-        restoreLocalTestsDir = False
-        if os.path.isdir(localTestsOutDir):
-            shutil.move(localTestsOutDir, inDir)
-            restoreLocalTestsDir = True
-
         
-        if os.path.isdir(outDir):
-            shutil.rmtree(outDir)
-        os.makedirs(outDir)
+        if prNumber:
+            prTestsOutDir = os.path.join(prsTestsOutDir, prNumber)
+            if os.path.isdir(prTestsOutDir):
+                print("Removing folder %s" % prTestsOutDir)
+                shutil.rmtree(prTestsOutDir)
 
-        
-        shutil.copyfile(os.path.join(inDir, "LICENSE"), os.path.join(outDir, "LICENSE"))
+            
+            
+            shutil.rmtree(os.path.join(inDir, "test"))
 
+            prRequest = requests.get("https://api.github.com/repos/tc39/test262/pulls/%s" % prNumber)
+            prRequest.raise_for_status()
+
+            pr = prRequest.json()
+
+            if (pr["state"] != "open"):
+                
+                print("PR %s is closed" % prNumber)
+            else:
+                files = requests.get("https://api.github.com/repos/tc39/test262/pulls/%s/files" % prNumber)
+                files.raise_for_status()
+
+                for item in files.json():
+                    if not item["filename"].startswith("test/"):
+                        continue
+
+                    filename = item["filename"]
+                    fileStatus = item["status"]
+
+                    print("%s %s" % (fileStatus, filename))
+
+                    
+                    if fileStatus == "removed":
+                        continue
+
+                    contents = requests.get(item["raw_url"])
+                    contents.raise_for_status()
+
+                    fileText = contents.text
+
+                    
+                    prsTestsDir = "test/prs/%s" % prNumber
+                    filePathDirs = os.path.join(inDir, prsTestsDir, *filename.split("/")[1:-1])
+
+                    if not os.path.isdir(filePathDirs):
+                        os.makedirs(filePathDirs)
+
+                    filenameInDir = os.path.join(inDir, prsTestsDir, *filename.split("/")[1:])
+
+                    with open(filenameInDir, "wb") as output_file:
+                        output_file.write(fileText)
         
-        with io.open(os.path.join(outDir, "GIT-INFO"), "wb") as info:
-            subprocess.check_call(["git", "-C", inDir, "log", "-1"], stdout=info)
+        else:
+            
+            
+            
+            if os.path.isdir(localTestsOutDir):
+                shutil.move(localTestsOutDir, inDir)
+                restoreLocalTestsDir = True
+
+            if os.path.isdir(prsTestsOutDir):
+                shutil.move(prsTestsOutDir, inDir)
+                restorePrsTestsDir = True
+
+            
+            if os.path.isdir(outDir):
+                shutil.rmtree(outDir)
+            os.makedirs(outDir)
+
+            
+            shutil.copyfile(os.path.join(inDir, "LICENSE"), os.path.join(outDir, "LICENSE"))
+
+            
+            with io.open(os.path.join(outDir, "GIT-INFO"), "wb") as info:
+                subprocess.check_call(["git", "-C", inDir, "log", "-1"], stdout=info)
 
         
         process_test262(inDir, outDir, strictTests)
@@ -403,6 +475,10 @@ def update_test262(args):
         
         if restoreLocalTestsDir:
             shutil.move(os.path.join(inDir, "local"), outDir)
+
+        
+        if restorePrsTestsDir:
+            shutil.move(os.path.join(inDir, "prs"), outDir)
 
 if __name__ == "__main__":
     import argparse
@@ -420,6 +496,7 @@ if __name__ == "__main__":
                         help="Git revision (default: %(default)s)")
     parser.add_argument("--out", default="test262",
                         help="Output directory. Any existing directory will be removed! (default: %(default)s)")
+    parser.add_argument("--pull", help="Import contents from a Pull Request specified by its number")
     parser.add_argument("--strict", default=False, action="store_true",
                         help="Generate additional strict mode tests. Not enabled by default.")
     parser.set_defaults(func=update_test262)
