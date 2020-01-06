@@ -53,9 +53,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "_idle",
 XPCOMUtils.defineLazyServiceGetter(this, "_taskbarService",
                                    "@mozilla.org/windows-taskbar;1",
                                    "nsIWinTaskbar");
-XPCOMUtils.defineLazyServiceGetter(this, "_winShellService",
-                                   "@mozilla.org/browser/shell-service;1",
-                                   "nsIWindowsShellService");
 
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
   "resource://gre/modules/PlacesUtils.jsm");
@@ -137,15 +134,6 @@ this.WinTaskbarJumpList =
       return;
 
     
-    
-    
-    try {
-      
-      this._shortcutMaintenance();
-    } catch (ex) {
-    }
-
-    
     this._tasks = tasksCfg;
 
     
@@ -178,10 +166,6 @@ this.WinTaskbarJumpList =
     }
 
     this._free();
-  },
-
-  _shortcutMaintenance: function WTBJL__maintenace() {
-    _winShellService.shortcutMaintenance();
   },
 
   
