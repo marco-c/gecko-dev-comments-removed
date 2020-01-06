@@ -195,13 +195,11 @@ cfg_if! {{
 '''
 
 RULE_TEMPLATE = ('("{atom}") =>\n  '
-                 '{{ '
-                 
-                 
-                 
+                 '{{{{ '
+                 '#[allow(unsafe_code)] #[allow(unused_unsafe)]'
                  'unsafe {{ $crate::string_cache::atom_macro::atom_from_static'
                  '($crate::string_cache::atom_macro::{name} as *mut _) }}'
-                 ' }};')
+                 ' }}}};')
 
 MACRO = '''
 #[macro_export]

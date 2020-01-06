@@ -226,9 +226,7 @@ impl nsCSSValue {
     
     
     pub fn get_angle(&self) -> Angle {
-        unsafe {
-            Angle::from_gecko_values(self.float_unchecked(), self.mUnit)
-        }
+        Angle::from_gecko_values(self.float_unchecked(), self.mUnit)
     }
 
     
