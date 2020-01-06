@@ -1806,7 +1806,7 @@ public:
 
 
 
-  virtual void ClearInvalidRect() { mInvalidRegion.SetEmpty(); }
+  virtual void ClearInvalidRegion() { mInvalidRegion.SetEmpty(); }
 
   
   
@@ -2044,7 +2044,7 @@ public:
     mValidRegionIsCurrent = false;
   }
 
-  void ClearInvalidRect() override
+  void ClearInvalidRegion() override
   {
     
     
@@ -2335,6 +2335,8 @@ public:
   }
 
   nsTArray<CSSFilter>& GetFilterChain() { return mFilterChain; }
+  
+  virtual void SetInvalidCompositeRect(const gfx::IntRect& aRect) {}
 
 protected:
   friend class ReadbackProcessor;
