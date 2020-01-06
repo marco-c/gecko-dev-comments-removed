@@ -9808,11 +9808,7 @@ nsDocument::MaybePreLoadImage(nsIURI* uri, const nsAString &aCrossOriginAttr,
   
   
   
-  int16_t blockingStatus;
-  if (nsContentUtils::IsImageInCache(uri, static_cast<nsIDocument *>(this)) ||
-      !nsContentUtils::CanLoadImage(uri, static_cast<nsIDocument *>(this),
-                                    this, NodePrincipal(), &blockingStatus,
-                                    nsIContentPolicy::TYPE_INTERNAL_IMAGE_PRELOAD)) {
+  if (nsContentUtils::IsImageInCache(uri, static_cast<nsIDocument *>(this))) {
     return;
   }
 
