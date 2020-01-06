@@ -379,7 +379,7 @@ var gCSSProperties = {
   'column-gap': {
     
     types: [ 'length',
-	     {  type: 'discrete', options: [ [ 'normal', '200px' ] ] }
+            {  type: 'discrete', options: [ [ 'normal', '200px' ] ] }
     ]
   },
   'column-rule-color': {
