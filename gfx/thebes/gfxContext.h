@@ -24,6 +24,9 @@ namespace mozilla {
 namespace gfx {
 struct RectCornerRadii;
 } 
+namespace layout {
+class TextDrawTarget;
+} 
 } 
 
 class ClipExporter;
@@ -78,6 +81,11 @@ public:
         CreatePreservingTransformOrNull(mozilla::gfx::DrawTarget* aTarget);
 
     mozilla::gfx::DrawTarget *GetDrawTarget() { return mDT; }
+
+    
+
+
+    mozilla::layout::TextDrawTarget* GetTextDrawer();
 
     
 

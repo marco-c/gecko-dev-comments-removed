@@ -141,6 +141,7 @@ enum class BackendType : int8_t {
   SKIA,
   RECORDING,
   DIRECT2D1_1,
+  WEBRENDER_TEXT,
 
   
   BACKEND_LAST

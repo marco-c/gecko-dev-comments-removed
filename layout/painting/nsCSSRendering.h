@@ -19,7 +19,6 @@
 #include "nsIFrame.h"
 #include "nsImageRenderer.h"
 #include "nsCSSRenderingBorders.h"
-#include "TextDrawTarget.h"
 
 class gfxContext;
 class nsStyleContext;
@@ -600,7 +599,6 @@ struct nsCSSRendering {
     
     
     Float icoordInFrame = 0.0f;
-    mozilla::layout::TextDrawTarget* textDrawer = nullptr;
   };
 
   

@@ -7,6 +7,7 @@
 #define TextDrawTarget_h
 
 #include "mozilla/gfx/2D.h"
+#include "mozilla/webrender/WebRenderApi.h"
 
 namespace mozilla {
 namespace layout {
@@ -316,11 +317,11 @@ private:
   
 public:
   DrawTargetType GetType() const override {
-    return mCurrentTarget->GetType();
+    return DrawTargetType::SOFTWARE_RASTER;
   }
 
   BackendType GetBackendType() const override {
-    return mCurrentTarget->GetBackendType();
+    return BackendType::WEBRENDER_TEXT;
   }
 
   bool IsRecording() const override { return true; }
