@@ -52,7 +52,6 @@ function HighlightersOverlay(inspector) {
   this.onMouseMove = this.onMouseMove.bind(this);
   this.onMouseOut = this.onMouseOut.bind(this);
   this.onWillNavigate = this.onWillNavigate.bind(this);
-  this.onNavigate = this.onNavigate.bind(this);
   this.showGridHighlighter = this.showGridHighlighter.bind(this);
   this.showShapesHighlighter = this.showShapesHighlighter.bind(this);
   this._handleRejection = this._handleRejection.bind(this);
@@ -60,7 +59,6 @@ function HighlightersOverlay(inspector) {
 
   
   this.inspector.on("markupmutation", this.onMarkupMutation);
-  this.inspector.target.on("navigate", this.onNavigate);
   this.inspector.target.on("will-navigate", this.onWillNavigate);
 
   EventEmitter.decorate(this);
@@ -389,6 +387,30 @@ HighlightersOverlay.prototype = {
   
 
 
+  restoreGridState: Task.async(function* () {
+    try {
+      yield this.restoreState("grid", this.state.grid, this.showGridHighlighter);
+    } catch (e) {
+      this._handleRejection(e);
+    }
+  }),
+
+  
+
+
+  restoreShapeState: Task.async(function* () {
+    try {
+      yield this.restoreState("shapes", this.state.shapes, this.showShapesHighlighter);
+    } catch (e) {
+      this._handleRejection(e);
+    }
+  }),
+
+  
+
+
+
+
 
 
 
@@ -399,14 +421,12 @@ HighlightersOverlay.prototype = {
 
   restoreState: Task.async(function* (name, state, showFunction) {
     let { selector, options, url } = state;
+
     if (!selector || url !== this.inspector.target.url) {
       
       this.emit(`${name}-state-restored`, { restored: false });
       return;
     }
-
-    
-    yield this.onInspectorNewRoot;
 
     let walker = this.inspector.walker;
     let rootNode = yield walker.getRootNode();
@@ -716,27 +736,12 @@ HighlightersOverlay.prototype = {
   
 
 
-  onNavigate: Task.async(function* () {
-    try {
-      yield this.restoreState("grid", this.state.grid, this.showGridHighlighter);
-      yield this.restoreState("shapes", this.state.shapes, this.showShapesHighlighter);
-    } catch (e) {
-      this._handleRejection(e);
-    }
-  }),
-
-  
-
-
   onWillNavigate: function () {
     this.geometryEditorHighlighterShown = null;
     this.gridHighlighterShown = null;
     this.hoveredHighlighterShown = null;
     this.selectorHighlighterShown = null;
     this.shapesHighlighterShown = null;
-
-    
-    this.onInspectorNewRoot = this.inspector.once("new-root");
   },
 
   
@@ -756,7 +761,6 @@ HighlightersOverlay.prototype = {
 
     
     this.inspector.off("markupmutation", this.onMarkupMutation);
-    this.inspector.target.off("navigate", this.onNavigate);
     this.inspector.target.off("will-navigate", this.onWillNavigate);
 
     this._lastHovered = null;

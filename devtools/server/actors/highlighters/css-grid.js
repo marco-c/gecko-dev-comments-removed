@@ -352,11 +352,9 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
     this.markup = new CanvasFrameAnonymousContentHelper(this.highlighterEnv,
       this._buildMarkup.bind(this));
 
-    this.onNavigate = this.onNavigate.bind(this);
     this.onPageHide = this.onPageHide.bind(this);
     this.onWillNavigate = this.onWillNavigate.bind(this);
 
-    this.highlighterEnv.on("navigate", this.onNavigate);
     this.highlighterEnv.on("will-navigate", this.onWillNavigate);
 
     let { pageListenerTarget } = highlighterEnv;
@@ -590,7 +588,6 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
 
   destroy() {
     let { highlighterEnv } = this;
-    highlighterEnv.off("navigate", this.onNavigate);
     highlighterEnv.off("will-navigate", this.onWillNavigate);
 
     let { pageListenerTarget } = highlighterEnv;
@@ -677,14 +674,6 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
     return pattern;
   }
 
-  
-
-
-
-  onNavigate() {
-    this._clearCache();
-  }
-
   onPageHide({ target }) {
     
     
@@ -693,7 +682,14 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
     }
   }
 
+  
+
+
+
+
   onWillNavigate({ isTopLevel }) {
+    this._clearCache();
+
     if (isTopLevel) {
       this.hide();
     }
