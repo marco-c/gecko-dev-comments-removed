@@ -328,7 +328,7 @@ WebRenderLayerManager::CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDi
     }
 
     { 
-      ScrollingLayersHelper clip(item, aBuilder, aSc, mClipIdCache);
+      ScrollingLayersHelper clip(item, aBuilder, aSc, mClipIdCache, AsyncPanZoomEnabled());
 
       
       

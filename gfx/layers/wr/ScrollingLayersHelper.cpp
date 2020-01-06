@@ -89,13 +89,22 @@ ScrollingLayersHelper::ScrollingLayersHelper(WebRenderLayer* aLayer,
 ScrollingLayersHelper::ScrollingLayersHelper(nsDisplayItem* aItem,
                                              wr::DisplayListBuilder& aBuilder,
                                              const StackingContextHelper& aStackingContext,
-                                             WebRenderLayerManager::ClipIdMap& aCache)
+                                             WebRenderLayerManager::ClipIdMap& aCache,
+                                             bool aApzEnabled)
   : mLayer(nullptr)
   , mBuilder(&aBuilder)
   , mPushedLayerLocalClip(false)
   , mPushedClipAndScroll(false)
 {
   int32_t auPerDevPixel = aItem->Frame()->PresContext()->AppUnitsPerDevPixel();
+
+  if (!aApzEnabled) {
+    
+    
+    DefineAndPushChain(aItem->GetClipChain(), aBuilder, aStackingContext,
+        auPerDevPixel, aCache);
+    return;
+  }
 
   
   
