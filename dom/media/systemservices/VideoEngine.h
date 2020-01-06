@@ -26,6 +26,10 @@ class VideoEngine
 {
 private:
   virtual ~VideoEngine (){};
+  
+  
+  
+  static const int64_t kCacheExpiryPeriodMs = 1000;
 
 public:
   VideoEngine (){};
@@ -43,6 +47,8 @@ public:
   static void Delete(VideoEngine * engine) { }
 
   
+
+
 
 
 
@@ -88,7 +94,8 @@ private:
   std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo> mDeviceInfo;
   UniquePtr<const webrtc::Config> mConfig;
   std::map<int32_t, CaptureEntry> mCaps;
-
+  
+  int64_t mExpiryTimeInMs = 0;
   int32_t GenerateId();
   static int32_t sId;
 };
