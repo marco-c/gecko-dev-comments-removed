@@ -218,6 +218,34 @@ struct MARChannelStringTable {
 
 
 
+#ifdef XP_MACOSX
+
+
+
+class UmaskContext
+{
+public:
+  explicit UmaskContext(mode_t umaskToSet);
+  ~UmaskContext();
+
+private:
+  mode_t mPreviousUmask;
+};
+
+UmaskContext::UmaskContext(mode_t umaskToSet)
+{
+  mPreviousUmask = umask(umaskToSet);
+}
+
+UmaskContext::~UmaskContext()
+{
+  umask(mPreviousUmask);
+}
+
+#endif
+
+
+
 typedef void (* ThreadFunc)(void *param);
 
 #ifdef XP_WIN
@@ -2671,6 +2699,11 @@ int NS_main(int argc, NS_tchar **argv)
   const int callbackIndex = 6;
 
 #ifdef XP_MACOSX
+  
+  
+  
+  UmaskContext umaskContext(0);
+
   bool isElevated =
     strstr(argv[0], "/Library/PrivilegedHelperTools/org.mozilla.updater") != 0;
   if (isElevated) {
