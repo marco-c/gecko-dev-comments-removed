@@ -30,7 +30,16 @@ struct OpenTypeKERNFormat0 {
 
 
 
-struct OpenTypeKERN {
+class OpenTypeKERN : public Table {
+ public:
+  explicit OpenTypeKERN(Font *font, uint32_t tag)
+      : Table(font, tag, tag) { }
+
+  bool Parse(const uint8_t *data, size_t length);
+  bool Serialize(OTSStream *out);
+  bool ShouldSerialize();
+
+ private:
   uint16_t version;
   std::vector<OpenTypeKERNFormat0> subtables;
 };

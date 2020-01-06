@@ -254,9 +254,15 @@ class TableTest : public ::testing::Test {
  protected:
 
   virtual void SetUp() {
-    ots::OpenTypeFile *file = new ots::OpenTypeFile();
+    ots::FontFile *file = new ots::FontFile();
     file->context = new ots::OTSContext();
     font = new ots::Font(file);
+  }
+
+  virtual void TearDown() {
+    delete font->file->context;
+    delete font->file;
+    delete font;
   }
 
   TestStream out;

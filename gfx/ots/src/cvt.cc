@@ -7,59 +7,40 @@
 
 
 
-#define TABLE_NAME "cvt"
-
 namespace ots {
 
-bool ots_cvt_parse(Font *font, const uint8_t *data, size_t length) {
+bool OpenTypeCVT::Parse(const uint8_t *data, size_t length) {
   Buffer table(data, length);
 
-  OpenTypeCVT *cvt = new OpenTypeCVT;
-  font->cvt = cvt;
-
   if (length >= 128 * 1024u) {
-    return OTS_FAILURE_MSG("Length (%d) > 120K");  
+    return Error("Length (%d) > 120K");  
   }
 
   if (length % 2 != 0) {
-    return OTS_FAILURE_MSG("Uneven cvt length (%d)", length);
+    return Error("Uneven table length (%d)", length);
   }
 
   if (!table.Skip(length)) {
-    return OTS_FAILURE_MSG("Length too high");
+    return Error("Table length too high");
   }
 
-  cvt->data = data;
-  cvt->length = length;
+  this->data = data;
+  this->length = length;
   return true;
 }
 
-bool ots_cvt_should_serialise(Font *font) {
-  if (!font->glyf) {
-    return false;  
-  }
-  return font->cvt != NULL;
-}
-
-bool ots_cvt_serialise(OTSStream *out, Font *font) {
-  const OpenTypeCVT *cvt = font->cvt;
-
-  if (!out->Write(cvt->data, cvt->length)) {
-    return OTS_FAILURE_MSG("Failed to write CVT table");
+bool OpenTypeCVT::Serialize(OTSStream *out) {
+  if (!out->Write(this->data, this->length)) {
+    return Error("Failed to write cvt table");
   }
 
   return true;
 }
 
-void ots_cvt_reuse(Font *font, Font *other) {
-  font->cvt = other->cvt;
-  font->cvt_reused = true;
-}
-
-void ots_cvt_free(Font *font) {
-  delete font->cvt;
+bool OpenTypeCVT::ShouldSerialize() {
+  return Table::ShouldSerialize() &&
+         
+         GetFont()->GetTable(OTS_TAG_GLYF) != NULL;
 }
 
 }  
-
-#undef TABLE_NAME
