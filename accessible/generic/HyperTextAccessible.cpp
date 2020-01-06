@@ -1175,6 +1175,13 @@ HyperTextAccessible::LandmarkRole() const
     return nsGkAtoms::main;
   }
 
+  
+  if (mContent->IsHTMLElement(nsGkAtoms::section)) {
+    nsAutoString name;
+    const_cast<HyperTextAccessible*>(this)->Name(name);
+    return name.IsEmpty() ? nullptr : nsGkAtoms::region;
+  }
+
   return nullptr;
 }
 
