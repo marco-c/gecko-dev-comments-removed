@@ -137,6 +137,20 @@ public class TelemetryCollectorTest {
     }
 
     @Test
+    public void testRestarted() throws Exception {
+        collector.setStarted(5L);
+        collector.setFinished(10L);
+
+        Bundle data = collector.build();
+        assertFalse(data.getBoolean("restarted"));
+        assertFalse(data.containsKey("restarted"));
+
+        collector.setRestarted();
+
+        assertTrue(collector.build().getBoolean("restarted"));
+    }
+
+    @Test
     public void testCollectorFor() throws Exception {
         
         TelemetryStageCollector stageCollector = collector.collectorFor("test");
