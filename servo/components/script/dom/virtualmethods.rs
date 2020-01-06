@@ -72,6 +72,15 @@ pub trait VirtualMethods {
 
     
     
+    fn attribute_is_mapped(&self, attr: &Attr) -> bool {
+        match self.super_type() {
+            Some(s) => s.attribute_is_mapped(attr),
+            None => false
+        }
+    }
+
+    
+    
     fn parse_plain_attribute(&self, name: &LocalName, value: DOMString) -> AttrValue {
         match self.super_type() {
             Some(ref s) => s.parse_plain_attribute(name, value),
