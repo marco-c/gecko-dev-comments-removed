@@ -36,7 +36,21 @@ public:
 private:
   ~PaymentRequestService() = default;
 
+  nsresult
+  SetActionCallback(const nsAString& aRequestId,
+                    nsIPaymentActionCallback* aCallback);
+  nsresult
+  RemoveActionCallback(const nsAString& aRequestId);
+
+  
+  nsresult
+  CallTestingUIAction(const nsAString& aRequestId, uint32_t aActionType);
+
   FallibleTArray<nsCOMPtr<nsIPaymentRequest>> mRequestQueue;
+
+  nsInterfaceHashtable<nsStringHashKey, nsIPaymentActionCallback> mCallbackHashtable;
+
+  nsCOMPtr<nsIPaymentUIService> mTestingUIService;
 };
 
 } 
