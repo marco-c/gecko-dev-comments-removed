@@ -9,19 +9,15 @@
 #include "mozilla/layers/WebRenderBridgeChild.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/WebRenderMessages.h"
+#include "mozilla/layers/IpcResourceUpdateQueue.h"
 #include "nsDisplayListInvalidation.h"
 #include "WebRenderCanvasRenderer.h"
 
 namespace mozilla {
 namespace layers {
 
-WebRenderUserData::WebRenderUserData(WebRenderLayerManager* aWRManager, nsDisplayItem* aItem,
-                                     WebRenderUserDataRefTable* aTable)
+WebRenderUserData::WebRenderUserData(WebRenderLayerManager* aWRManager)
   : mWRManager(aWRManager)
-  , mFrame(aItem->Frame())
-  , mDisplayItemKey(aItem->GetPerFrameKey())
-  , mTable(aTable)
-  , mUsed(false)
 {
 }
 
@@ -35,21 +31,14 @@ WebRenderUserData::IsDataValid(WebRenderLayerManager* aManager)
   return aManager == mWRManager;
 }
 
-void
-WebRenderUserData::RemoveFromTable()
-{
-  mTable->RemoveEntry(this);
-}
-
 WebRenderBridgeChild*
 WebRenderUserData::WrBridge() const
 {
   return mWRManager->WrBridge();
 }
 
-WebRenderImageData::WebRenderImageData(WebRenderLayerManager* aWRManager, nsDisplayItem* aItem,
-                                       WebRenderUserDataRefTable* aTable)
-  : WebRenderUserData(aWRManager, aItem, aTable)
+WebRenderImageData::WebRenderImageData(WebRenderLayerManager* aWRManager)
+  : WebRenderUserData(aWRManager)
 {
 }
 
@@ -69,7 +58,9 @@ WebRenderImageData::~WebRenderImageData()
 }
 
 Maybe<wr::ImageKey>
-WebRenderImageData::UpdateImageKey(ImageContainer* aContainer, bool aForceUpdate)
+WebRenderImageData::UpdateImageKey(ImageContainer* aContainer,
+                                   wr::IpcResourceUpdateQueue& aResources,
+                                   bool aForceUpdate)
 {
   CreateImageClientIfNeeded();
   CreateExternalImageIfNeeded();
@@ -104,12 +95,13 @@ WebRenderImageData::UpdateImageKey(ImageContainer* aContainer, bool aForceUpdate
   }
 
   
+  
   if (mKey) {
     mWRManager->AddImageKeyForDiscard(mKey.value());
   }
 
   wr::WrImageKey key = WrBridge()->GetNextImageKey();
-  mWRManager->WrBridge()->AddWebRenderParentCommand(OpAddExternalImage(mExternalImageId.value(), key));
+  aResources.AddExternalImage(mExternalImageId.value(), key);
   mKey = Some(key);
 
   return mKey;
@@ -185,9 +177,8 @@ WebRenderImageData::CreateExternalImageIfNeeded()
   }
 }
 
-WebRenderFallbackData::WebRenderFallbackData(WebRenderLayerManager* aWRManager, nsDisplayItem* aItem,
-                                             WebRenderUserDataRefTable* aTable)
-  : WebRenderImageData(aWRManager, aItem, aTable)
+WebRenderFallbackData::WebRenderFallbackData(WebRenderLayerManager* aWRManager)
+  : WebRenderImageData(aWRManager)
   , mInvalid(false)
 {
 }
@@ -208,16 +199,14 @@ WebRenderFallbackData::SetGeometry(nsAutoPtr<nsDisplayItemGeometry> aGeometry)
   mGeometry = aGeometry;
 }
 
-WebRenderAnimationData::WebRenderAnimationData(WebRenderLayerManager* aWRManager, nsDisplayItem* aItem,
-                                               WebRenderUserDataRefTable* aTable)
-  : WebRenderUserData(aWRManager, aItem, aTable)
-  , mAnimationInfo(aWRManager)
+WebRenderAnimationData::WebRenderAnimationData(WebRenderLayerManager* aWRManager)
+  : WebRenderUserData(aWRManager),
+    mAnimationInfo(aWRManager)
 {
 }
 
-WebRenderCanvasData::WebRenderCanvasData(WebRenderLayerManager* aWRManager, nsDisplayItem* aItem,
-                                         WebRenderUserDataRefTable* aTable)
-  : WebRenderUserData(aWRManager, aItem, aTable)
+WebRenderCanvasData::WebRenderCanvasData(WebRenderLayerManager* aWRManager)
+  : WebRenderUserData(aWRManager)
 {
 }
 

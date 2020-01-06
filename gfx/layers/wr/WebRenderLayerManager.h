@@ -39,7 +39,6 @@ class WebRenderParentCommand;
 class WebRenderLayerManager final : public LayerManager
 {
   typedef nsTArray<RefPtr<Layer> > LayerRefArray;
-  typedef nsTHashtable<nsRefPtrHashKey<WebRenderUserData>> WebRenderUserDataRefTable;
 
 public:
   explicit WebRenderLayerManager(nsIWidget* aWidget);
@@ -65,11 +64,13 @@ public:
   Maybe<wr::ImageKey> CreateImageKey(nsDisplayItem* aItem,
                                      ImageContainer* aContainer,
                                      mozilla::wr::DisplayListBuilder& aBuilder,
+                                     mozilla::wr::IpcResourceUpdateQueue& aResources,
                                      const StackingContextHelper& aSc,
                                      gfx::IntSize& aSize);
   bool PushImage(nsDisplayItem* aItem,
                  ImageContainer* aContainer,
                  mozilla::wr::DisplayListBuilder& aBuilder,
+                 mozilla::wr::IpcResourceUpdateQueue& aResources,
                  const StackingContextHelper& aSc,
                  const LayerRect& aRect);
 
@@ -216,12 +217,7 @@ public:
       frame->GetProperty(nsIFrame::WebRenderUserDataProperty());
     RefPtr<WebRenderUserData>& data = userDataTable->GetOrInsert(aItem->GetPerFrameKey());
     if (!data || (data->GetType() != T::Type()) || !data->IsDataValid(this)) {
-      
-      if (data) {
-        data->RemoveFromTable();
-      }
-      data = new T(this, aItem, &mWebRenderUserDatas);
-      mWebRenderUserDatas.PutEntry(data);
+      data = new T(this);
       if (aOutIsRecycled) {
         *aOutIsRecycled = false;
       }
@@ -229,10 +225,6 @@ public:
 
     MOZ_ASSERT(data);
     MOZ_ASSERT(data->GetType() == T::Type());
-
-    
-    data->SetUsed(true);
-
     if (T::Type() == WebRenderUserData::UserDataType::eCanvas) {
       mLastCanvasDatas.PutEntry(data->AsCanvasData());
     }
@@ -256,31 +248,6 @@ private:
                               EndTransactionFlags aFlags,
                               nsDisplayList* aDisplayList = nullptr,
                               nsDisplayListBuilder* aDisplayListBuilder = nullptr);
-
-  void RemoveUnusedAndResetWebRenderUserData()
-  {
-    for (auto iter = mWebRenderUserDatas.Iter(); !iter.Done(); iter.Next()) {
-      WebRenderUserData* data = iter.Get()->GetKey();
-      if (!data->IsUsed()) {
-        nsIFrame* frame = data->GetFrame();
-
-        MOZ_ASSERT(frame->HasProperty(nsIFrame::WebRenderUserDataProperty()));
-
-        nsIFrame::WebRenderUserDataTable* userDataTable =
-          frame->GetProperty(nsIFrame::WebRenderUserDataProperty());
-
-        MOZ_ASSERT(userDataTable->Count());
-
-        userDataTable->Remove(data->GetDisplayItemKey());
-
-        if (!userDataTable->Count()) {
-          frame->RemoveProperty(nsIFrame::WebRenderUserDataProperty());
-        }
-        iter.Remove();
-      }
-      data->SetUsed(false);
-    }
-  }
 
 private:
   nsIWidget* MOZ_NON_OWNING_REF mWidget;
@@ -373,8 +340,6 @@ private:
   
   
   bool mShouldNotifyInvalidation;
-
-  WebRenderUserDataRefTable mWebRenderUserDatas;
 };
 
 } 

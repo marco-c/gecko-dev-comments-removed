@@ -110,7 +110,6 @@ WebRenderLayerManager::DoDestroy(bool aIsSync)
   }
 
   mLastCanvasDatas.Clear();
-  RemoveUnusedAndResetWebRenderUserData();
 
   if (mTransactionIdAllocator) {
     
@@ -391,6 +390,7 @@ Maybe<wr::ImageKey>
 WebRenderLayerManager::CreateImageKey(nsDisplayItem* aItem,
                                       ImageContainer* aContainer,
                                       mozilla::wr::DisplayListBuilder& aBuilder,
+                                      mozilla::wr::IpcResourceUpdateQueue& aResources,
                                       const StackingContextHelper& aSc,
                                       gfx::IntSize& aSize)
 {
@@ -409,6 +409,9 @@ WebRenderLayerManager::CreateImageKey(nsDisplayItem* aItem,
     if (!aContainer->GetScaleHint().IsEmpty()) {
       scaleToSize = Some(aContainer->GetScaleHint());
     }
+    
+    
+    
     imageData->CreateAsyncImageWebRenderCommands(aBuilder,
                                                  aContainer,
                                                  aSc,
@@ -428,18 +431,21 @@ WebRenderLayerManager::CreateImageKey(nsDisplayItem* aItem,
   mozilla::layers::Image* image = autoLock.GetImage();
   aSize = image->GetSize();
 
-  return imageData->UpdateImageKey(aContainer);
+  return imageData->UpdateImageKey(aContainer, aResources);
 }
 
 bool
 WebRenderLayerManager::PushImage(nsDisplayItem* aItem,
                                  ImageContainer* aContainer,
                                  mozilla::wr::DisplayListBuilder& aBuilder,
+                                 mozilla::wr::IpcResourceUpdateQueue& aResources,
                                  const StackingContextHelper& aSc,
                                  const LayerRect& aRect)
 {
   gfx::IntSize size;
-  Maybe<wr::ImageKey> key = CreateImageKey(aItem, aContainer, aBuilder, aSc, size);
+  Maybe<wr::ImageKey> key = CreateImageKey(aItem, aContainer,
+                                          aBuilder, aResources,
+                                          aSc, size);
   if (aContainer->IsAsync()) {
     
     MOZ_ASSERT(key.isNothing());
@@ -615,7 +621,7 @@ WebRenderLayerManager::GenerateFallbackData(nsDisplayItem* aItem,
       
       
       
-      if (!fallbackData->UpdateImageKey(imageContainer, true)) {
+      if (!fallbackData->UpdateImageKey(imageContainer, aResources, true)) {
         return nullptr;
       }
     }
@@ -765,10 +771,6 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
       }
       mLayerScrollData.clear();
       mClipIdCache.clear();
-
-      
-      
-      RemoveUnusedAndResetWebRenderUserData();
     } else {
       for (auto iter = mLastCanvasDatas.Iter(); !iter.Done(); iter.Next()) {
         RefPtr<WebRenderCanvasData> canvasData = iter.Get()->GetKey();
