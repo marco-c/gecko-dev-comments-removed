@@ -5745,6 +5745,29 @@ class MToString :
 };
 
 
+class MToObject :
+  public MUnaryInstruction,
+  public BoxInputsPolicy::Data
+{
+    explicit MToObject(MDefinition* def)
+      : MUnaryInstruction(def)
+    {
+        setResultType(MIRType::Object);
+        setGuard(); 
+    }
+
+  public:
+    INSTRUCTION_HEADER(ToObject)
+    TRIVIAL_NEW_WRAPPERS
+
+    AliasSet getAliasSet() const override {
+        return AliasSet::None();
+    }
+
+    ALLOW_CLONE(MToObject)
+};
+
+
 class MToObjectOrNull :
   public MUnaryInstruction,
   public BoxInputsPolicy::Data

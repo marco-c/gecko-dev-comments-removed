@@ -4532,6 +4532,19 @@ class LValueToString : public LInstructionHelper<1, BOX_PIECES, 1>
 };
 
 
+class LValueToObject : public LInstructionHelper<1, BOX_PIECES, 0>
+{
+  public:
+    LIR_HEADER(ValueToObject)
+
+    explicit LValueToObject(const LBoxAllocation& input) {
+        setBoxOperand(Input, input);
+    }
+
+    static const size_t Input = 0;
+};
+
+
 class LValueToObjectOrNull : public LInstructionHelper<1, BOX_PIECES, 0>
 {
   public:
