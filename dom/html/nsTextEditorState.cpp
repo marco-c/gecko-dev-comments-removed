@@ -2695,6 +2695,11 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
 
           mTextListener->SetValueChanged(true);
           mTextListener->SettingValue(false);
+
+          if (!notifyValueChanged) {
+            
+            ValueWasChanged(true);
+          }
         }
 
         if (!weakFrame.IsAlive()) {
@@ -2757,11 +2762,11 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
         props.SetIsDirty();
       }
     }
-  }
 
-  
-  
-  ValueWasChanged(!!mRootNode);
+    
+    
+    ValueWasChanged(!!mRootNode);
+  }
 
   mTextCtrlElement->OnValueChanged( !!mRootNode,
                                     false);
