@@ -1282,7 +1282,6 @@ public:
   
   
   uint16_t WindowState();
-  bool IsFullyOccluded();
   nsIBrowserDOMWindow* GetBrowserDOMWindowOuter();
   nsIBrowserDOMWindow* GetBrowserDOMWindow(mozilla::ErrorResult& aError);
   void SetBrowserDOMWindowOuter(nsIBrowserDOMWindow* aBrowserWindow);
