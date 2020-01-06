@@ -709,14 +709,16 @@ nsTableCellFrame::GetCellBaseline() const
          borderPadding;
 }
 
-int32_t nsTableCellFrame::GetRowSpan()
+int32_t
+nsTableCellFrame::GetRowSpan()
 {
   int32_t rowSpan=1;
-  nsGenericHTMLElement *hc = nsGenericHTMLElement::FromContent(mContent);
 
   
-  if (hc && !StyleContext()->GetPseudo()) {
-    const nsAttrValue* attr = hc->GetParsedAttr(nsGkAtoms::rowspan);
+  if (!StyleContext()->GetPseudo()) {
+    dom::Element* elem = mContent->AsElement();
+    const nsAttrValue* attr = elem->GetParsedAttr(nsGkAtoms::rowspan);
+    
     
     
     if (attr && attr->Type() == nsAttrValue::eInteger) {
@@ -726,14 +728,18 @@ int32_t nsTableCellFrame::GetRowSpan()
   return rowSpan;
 }
 
-int32_t nsTableCellFrame::GetColSpan()
+int32_t
+nsTableCellFrame::GetColSpan()
 {
   int32_t colSpan=1;
-  nsGenericHTMLElement *hc = nsGenericHTMLElement::FromContent(mContent);
 
   
-  if (hc && !StyleContext()->GetPseudo()) {
-    const nsAttrValue* attr = hc->GetParsedAttr(nsGkAtoms::colspan);
+  if (!StyleContext()->GetPseudo()) {
+    dom::Element* elem = mContent->AsElement();
+    const nsAttrValue* attr = elem->GetParsedAttr(
+      MOZ_UNLIKELY(elem->IsMathMLElement()) ? nsGkAtoms::columnspan_
+                                            : nsGkAtoms::colspan);
+    
     
     
     if (attr && attr->Type() == nsAttrValue::eInteger) {
@@ -1065,12 +1071,14 @@ nsTableCellFrame::GetBorderWidth(WritingMode aWM) const
 }
 
 void
-nsTableCellFrame::AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult)
+nsTableCellFrame::DoUpdateStyleOfOwnedAnonBoxes(ServoStyleSet& aStyleSet,
+                                                nsStyleChangeList& aChangeList,
+                                                nsChangeHint aHintForThisFrame)
 {
   nsIFrame* kid = mFrames.FirstChild();
   MOZ_ASSERT(kid && !kid->GetNextSibling(),
              "Table cells should have just one child");
-  aResult.AppendElement(OwnedAnonBox(kid));
+  UpdateStyleOfChildAnonBox(kid, aStyleSet, aChangeList, aHintForThisFrame);
 }
 
 #ifdef DEBUG_FRAME_DUMP

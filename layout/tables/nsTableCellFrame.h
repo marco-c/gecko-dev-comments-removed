@@ -154,12 +154,15 @@ public:
 
 
 
-  virtual int32_t GetRowSpan();
+  int32_t GetRowSpan();
 
   
 
   
-  void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
+  virtual void DoUpdateStyleOfOwnedAnonBoxes(
+    mozilla::ServoStyleSet& aStyleSet,
+    nsStyleChangeList& aChangeList,
+    nsChangeHint aHintForThisFrame) override;
 
   
 
@@ -179,7 +182,7 @@ public:
 
 
 
-  virtual int32_t GetColSpan();
+  int32_t GetColSpan();
 
   
   virtual nsresult GetColIndex(int32_t &aColIndex) const override;
