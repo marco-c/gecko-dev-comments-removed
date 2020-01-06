@@ -69,8 +69,6 @@
 
 
 
-
-
 #ifndef RB_H_
 #define	RB_H_
 
@@ -172,17 +170,6 @@ struct RedBlackTree
     rbp_black_set(a_type, a_field, &(a_tree)->rbt_nil);			\
 } while (0)
 
-
-#define	rbp_black_height(a_type, a_field, a_tree, r_height) do {	\
-    a_type *rbp_bh_t;							\
-    for (rbp_bh_t = (a_tree)->rbt_root, (r_height) = 0;			\
-      rbp_bh_t != &(a_tree)->rbt_nil;					\
-      rbp_bh_t = rbp_left_get(a_type, a_field, rbp_bh_t)) {		\
-	if (rbp_red_get(a_type, a_field, rbp_bh_t) == false) {		\
-	    (r_height)++;						\
-	}								\
-    }									\
-} while (0)
 
 #define	rbp_first(a_type, a_field, a_tree, a_root, r_node) do {		\
     for ((r_node) = (a_root);						\
@@ -783,8 +770,6 @@ a_prefix##remove(a_tree_type *tree, a_type *node) {			\
 
 
 
-#ifdef RB_NO_C99_VARARRAYS
-   
 
 
 
@@ -800,18 +785,9 @@ a_prefix##remove(a_tree_type *tree, a_type *node) {			\
 
 
 
-#  define rbp_compute_f_height(a_type, a_field, a_tree)
-#  define rbp_f_height	(3 * ((SIZEOF_PTR<<3) - (SIZEOF_PTR_2POW+1)))
-#else
-#  define rbp_compute_f_height(a_type, a_field, a_tree)
-\
-    unsigned rbp_f_height;						\
-    rbp_black_height(a_type, a_field, a_tree, rbp_f_height);		\
-    rbp_f_height *= 3;
-#endif
+#define rbp_f_height	(3 * ((SIZEOF_PTR<<3) - (SIZEOF_PTR_2POW+1)))
 
 #define	rb_foreach_begin(a_type, a_field, a_tree, a_var) {		\
-    rbp_compute_f_height(a_type, a_field, a_tree)			\
     {									\
 	/* Initialize the path to contain the left spine.             */\
 	a_type *rbp_f_path[rbp_f_height];				\
