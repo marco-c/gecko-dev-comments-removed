@@ -397,7 +397,7 @@ var Addons = {
         
         optionsBox.classList.remove("inner");
 
-        this.createWebExtensionOptions(optionsBox, addon);
+        this.createWebExtensionOptions(optionsBox, addon, addonItem);
         break;
       case AddonManager.OPTIONS_TYPE_TAB:
         
@@ -405,7 +405,7 @@ var Addons = {
         
         optionsBox.classList.add("inner");
 
-        this.createOptionsInTabButton(optionsBox, addon);
+        this.createOptionsInTabButton(optionsBox, addon, addonItem);
         break;
       case AddonManager.OPTIONS_TYPE_INLINE:
         
@@ -418,7 +418,7 @@ var Addons = {
     showAddonOptions();
   },
 
-  createOptionsInTabButton: function(destination, addon) {
+  createOptionsInTabButton: function(destination, addon, detailItem) {
     let frame = destination.querySelector("iframe#addon-options");
     let button = destination.querySelector("button#open-addon-options");
 
@@ -446,9 +446,13 @@ var Addons = {
       const {optionsURL} = addon;
       openOptionsInTab(optionsURL);
     };
+
+    
+    
+    detailItem.removeAttribute("optionsURL");
   },
 
-  createWebExtensionOptions: async function(destination, addon) {
+  createWebExtensionOptions: async function(destination, addon, detailItem) {
     
     
     await addon.startupPromise;
@@ -493,6 +497,10 @@ var Addons = {
     
     
     frame.contentWindow.location.replace(optionsURL);
+
+    
+    
+    detailItem.removeAttribute("optionsURL");
   },
 
   createInlineOptions(destination, optionsURL, aListItem) {
