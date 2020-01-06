@@ -176,43 +176,6 @@ HTMLFormControlsCollection::Item(uint32_t aIndex, nsIDOMNode** aReturn)
   return CallQueryInterface(item, aReturn);
 }
 
-NS_IMETHODIMP
-HTMLFormControlsCollection::NamedItem(const nsAString& aName,
-                                      nsIDOMNode** aReturn)
-{
-  FlushPendingNotifications();
-
-  *aReturn = nullptr;
-
-  nsCOMPtr<nsISupports> supports;
-
-  if (!mNameLookupTable.Get(aName, getter_AddRefs(supports))) {
-    
-    return NS_OK;
-  }
-
-  if (!supports) {
-    return NS_OK;
-  }
-
-  
-  CallQueryInterface(supports, aReturn);
-  if (*aReturn) {
-    return NS_OK;
-  }
-
-  
-  nsCOMPtr<nsIDOMNodeList> nodeList = do_QueryInterface(supports);
-  NS_ASSERTION(nodeList, "Huh, what's going one here?");
-  if (!nodeList) {
-    return NS_OK;
-  }
-
-  
-  
-  return nodeList->Item(0, aReturn);
-}
-
 nsISupports*
 HTMLFormControlsCollection::NamedItemInternal(const nsAString& aName,
                                               bool aFlushContent)
