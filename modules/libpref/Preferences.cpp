@@ -674,28 +674,6 @@ PREF_HasUserPref(const char* aPrefName)
 }
 
 
-static nsresult
-PREF_ClearUserPref(const char* aPrefName)
-{
-  if (!gHashTable) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
-  PrefHashEntry* pref = pref_HashTableLookup(aPrefName);
-  if (pref && pref->HasUserValue()) {
-    pref->ClearUserValue();
-
-    if (!pref->HasDefaultValue()) {
-      gHashTable->RemoveEntry(pref);
-    }
-
-    NotifyCallbacks(aPrefName);
-    Preferences::HandleDirty();
-  }
-  return NS_OK;
-}
-
-
 
 static nsresult
 PREF_LockPref(const char* aPrefName, bool aLockIt)
@@ -2419,11 +2397,10 @@ nsPrefBranch::SetComplexValue(const char* aPrefName,
 NS_IMETHODIMP
 nsPrefBranch::ClearUserPref(const char* aPrefName)
 {
-  ENSURE_PARENT_PROCESS("ClearUserPref", aPrefName);
   NS_ENSURE_ARG(aPrefName);
 
   const PrefName& pref = GetPrefName(aPrefName);
-  return PREF_ClearUserPref(pref.get());
+  return Preferences::ClearUser(pref.get());
 }
 
 NS_IMETHODIMP
@@ -3752,7 +3729,7 @@ Preferences::SetPreference(const PrefSetting& aSetting)
   if (userValue.type() == dom::MaybePrefValue::TPrefValue) {
     SetValueFromDom(prefName, userValue.get_PrefValue(), PrefValueKind::User);
   } else {
-    PREF_ClearUserPref(prefName);
+    Preferences::ClearUserInAnyProcess(prefName);
   }
 
   
@@ -4613,11 +4590,29 @@ Preferences::SetComplex(const char* aPrefName,
 }
 
  nsresult
-Preferences::ClearUser(const char* aPref)
+Preferences::ClearUserInAnyProcess(const char* aPrefName)
 {
-  ENSURE_PARENT_PROCESS("ClearUser", aPref);
   NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
-  return PREF_ClearUserPref(aPref);
+
+  PrefHashEntry* pref = pref_HashTableLookup(aPrefName);
+  if (pref && pref->HasUserValue()) {
+    pref->ClearUserValue();
+
+    if (!pref->HasDefaultValue()) {
+      gHashTable->RemoveEntry(pref);
+    }
+
+    NotifyCallbacks(aPrefName);
+    Preferences::HandleDirty();
+  }
+  return NS_OK;
+}
+
+ nsresult
+Preferences::ClearUser(const char* aPrefName)
+{
+  ENSURE_PARENT_PROCESS("ClearUser", aPrefName);
+  return ClearUserInAnyProcess(aPrefName);
 }
 
  bool

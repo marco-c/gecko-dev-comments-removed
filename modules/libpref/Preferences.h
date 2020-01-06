@@ -238,7 +238,7 @@ public:
                              PrefValueKind aKind = PrefValueKind::User);
 
   
-  static nsresult ClearUser(const char* aPref);
+  static nsresult ClearUser(const char* aPrefName);
 
   
   static bool HasUserValue(const char* aPref);
@@ -426,6 +426,8 @@ private:
     const char* aPrefName,
     const nsACString& aValue,
     PrefValueKind aKind = PrefValueKind::User);
+
+  static nsresult ClearUserInAnyProcess(const char* aPrefName);
 
   static nsresult RegisterCallback(PrefChangedFunc aCallback,
                                    const char* aPref,
