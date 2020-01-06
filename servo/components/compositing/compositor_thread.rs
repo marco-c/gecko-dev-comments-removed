@@ -125,6 +125,10 @@ pub enum EmbedderMsg {
     
     GetClientWindow(TopLevelBrowsingContextId, IpcSender<(Size2D<u32>, Point2D<i32>)>),
     
+    GetScreenSize(TopLevelBrowsingContextId, IpcSender<(Size2D<u32>)>),
+    
+    GetScreenAvailSize(TopLevelBrowsingContextId, IpcSender<(Size2D<u32>)>),
+    
     AllowNavigation(TopLevelBrowsingContextId, ServoUrl, IpcSender<bool>),
     
     KeyEvent(Option<TopLevelBrowsingContextId>, Option<char>, Key, KeyState, KeyModifiers),
@@ -222,6 +226,8 @@ impl Debug for EmbedderMsg {
             EmbedderMsg::MoveTo(..) => write!(f, "MoveTo"),
             EmbedderMsg::ResizeTo(..) => write!(f, "ResizeTo"),
             EmbedderMsg::GetClientWindow(..) => write!(f, "GetClientWindow"),
+            EmbedderMsg::GetScreenSize(..) => write!(f, "GetScreenSize"),
+            EmbedderMsg::GetScreenAvailSize(..) => write!(f, "GetScreenAvailSize"),
             EmbedderMsg::AllowNavigation(..) => write!(f, "AllowNavigation"),
             EmbedderMsg::KeyEvent(..) => write!(f, "KeyEvent"),
             EmbedderMsg::SetCursor(..) => write!(f, "SetCursor"),

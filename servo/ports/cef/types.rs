@@ -373,6 +373,7 @@ pub struct cef_point {
 
 
 
+#[derive(Default)]
 pub struct cef_rect {
   pub x: c_int,
   pub y: c_int,
@@ -1599,6 +1600,7 @@ pub enum cef_cursor_type_t {
 
 
 
+#[derive(Default)]
 pub struct _cef_screen_info {
   
   
