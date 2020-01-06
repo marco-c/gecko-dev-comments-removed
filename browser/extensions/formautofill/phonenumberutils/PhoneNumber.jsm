@@ -4,6 +4,7 @@
 
 
 
+
 "use strict";
 
 this.EXPORTED_SYMBOLS = ["PhoneNumber"];
@@ -12,9 +13,9 @@ const Cu = Components.utils;
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 XPCOMUtils.defineLazyModuleGetter(this, "PHONE_NUMBER_META_DATA",
-                                  "resource://gre/modules/PhoneNumberMetaData.jsm");
+                                  "resource://formautofill/phonenumberutils/PhoneNumberMetaData.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PhoneNumberNormalizer",
-                                  "resource://gre/modules/PhoneNumberNormalizer.jsm");
+                                  "resource://formautofill/phonenumberutils/PhoneNumberNormalizer.jsm");
 this.PhoneNumber = (function (dataBase) {
   
   'use strict';
@@ -199,7 +200,7 @@ this.PhoneNumber = (function (dataBase) {
   function NationalNumber(regionMetaData, number) {
     this.region = regionMetaData.region;
     this.regionMetaData = regionMetaData;
-    this.nationalNumber = number;
+    this.number = number;
   }
 
   
@@ -209,13 +210,13 @@ this.PhoneNumber = (function (dataBase) {
   NationalNumber.prototype = {
     
     get internationalFormat() {
-      var value = FormatNumber(this.regionMetaData, this.nationalNumber, true);
+      var value = FormatNumber(this.regionMetaData, this.number, true);
       Object.defineProperty(this, "internationalFormat", { value: value, enumerable: true });
       return value;
     },
     
     get nationalFormat() {
-      var value = FormatNumber(this.regionMetaData, this.nationalNumber, false);
+      var value = FormatNumber(this.regionMetaData, this.number, false);
       Object.defineProperty(this, "nationalFormat", { value: value, enumerable: true });
       return value;
     },
@@ -227,9 +228,22 @@ this.PhoneNumber = (function (dataBase) {
       return value;
     },
     
+    get nationalNumber() {
+      var value = this.nationalFormat ? this.nationalFormat.replace(NON_DIALABLE_CHARS, "")
+                                      : null;
+      Object.defineProperty(this, "nationalNumber", { value: value, enumerable: true });
+      return value;
+    },
+    
     get countryName() {
       var value = this.region ? this.region : null;
       Object.defineProperty(this, "countryName", { value: value, enumerable: true });
+      return value;
+    },
+    
+    get countryCode() {
+      var value = this.regionMetaData.countryCode ? "+" + this.regionMetaData.countryCode : null;
+      Object.defineProperty(this, "countryCode", { value: value, enumerable: true });
       return value;
     }
   };
@@ -258,13 +272,17 @@ this.PhoneNumber = (function (dataBase) {
   
   
   function ParseInternationalNumber(number) {
-    var ret;
-
     
     var countryCode = ParseCountryCode(number);
     if (!countryCode)
       return null;
     number = number.substr(countryCode.length);
+
+    return ParseNumberByCountryCode(number, countryCode);
+  }
+
+  function ParseNumberByCountryCode(number, countryCode) {
+    var ret;
 
     
     
@@ -275,7 +293,7 @@ this.PhoneNumber = (function (dataBase) {
           entry[n] = ParseMetaData(countryCode, entry[n]);
         if (n > 0)
           entry[n].formats = entry[0].formats;
-        ret = ParseNationalNumber(number, entry[n])
+        ret = ParseNationalNumberAndCheckNationalPrefix(number, entry[n]);
         if (ret)
           return ret;
       }
@@ -283,7 +301,34 @@ this.PhoneNumber = (function (dataBase) {
     }
     if (typeof entry == "string")
       entry = dataBase[countryCode] = ParseMetaData(countryCode, entry);
-    return ParseNationalNumber(number, entry);
+    return ParseNationalNumberAndCheckNationalPrefix(number, entry);
+  }
+
+  function ParseNationalNumberAndCheckNationalPrefix(number, md) {
+    var ret;
+
+    
+    
+    
+    if (md.nationalPrefixForParsing) {
+      
+      var withoutPrefix = number.replace(md.nationalPrefixForParsing,
+                                         md.nationalPrefixTransformRule || '');
+      ret = ParseNationalNumber(withoutPrefix, md)
+      if (ret)
+        return ret;
+    } else {
+      
+      
+      var nationalPrefix = md.nationalPrefix;
+      if (nationalPrefix && number.indexOf(nationalPrefix) == 0 &&
+          (ret = ParseNationalNumber(number.substr(nationalPrefix.length), md))) {
+        return ret;
+      }
+    }
+    ret = ParseNationalNumber(number, md)
+    if (ret)
+      return ret;
   }
 
   
@@ -316,6 +361,16 @@ this.PhoneNumber = (function (dataBase) {
       return ParseInternationalNumber(number.replace(LEADING_PLUS_CHARS_PATTERN, ""));
 
     
+    var matches = String(defaultRegion).match(/^\+?(\d+)/);
+    if (matches) {
+      var countryCode = ParseCountryCode(matches[1]);
+      if (!countryCode) {
+        return null;
+      }
+      return ParseNumberByCountryCode(number, countryCode);
+    }
+
+    
     var md = FindMetaDataForRegion(defaultRegion.toUpperCase());
 
     if (!md) {
@@ -333,26 +388,7 @@ this.PhoneNumber = (function (dataBase) {
         return ret;
     }
 
-    
-    
-    
-    if (md.nationalPrefixForParsing) {
-      
-      var withoutPrefix = number.replace(md.nationalPrefixForParsing,
-                                         md.nationalPrefixTransformRule || '');
-      ret = ParseNationalNumber(withoutPrefix, md)
-      if (ret)
-        return ret;
-    } else {
-      
-      
-      var nationalPrefix = md.nationalPrefix;
-      if (nationalPrefix && number.indexOf(nationalPrefix) == 0 &&
-          (ret = ParseNationalNumber(number.substr(nationalPrefix.length), md))) {
-        return ret;
-      }
-    }
-    ret = ParseNationalNumber(number, md)
+    ret = ParseNationalNumberAndCheckNationalPrefix(number, md);
     if (ret)
       return ret;
 
