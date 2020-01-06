@@ -275,9 +275,19 @@ JsepTrack::CreateEncodings(
     rids.push_back(SdpRidAttributeList::Rid());
   }
 
+  size_t max_streams = 1;
+
+  if (mJsEncodeConstraints.size()) {
+    max_streams = std::min(rids.size(), mJsEncodeConstraints.size());
+  }
+  
+  if (mSsrcs.size() > max_streams) {
+    mSsrcs.resize(max_streams);
+  }
+
   
   
-  for (size_t i = 0; i < rids.size(); ++i) {
+  for (size_t i = 0; i < max_streams; ++i) {
     if (i == negotiatedDetails->mEncodings.values.size()) {
       negotiatedDetails->mEncodings.values.push_back(new JsepTrackEncoding);
     }
