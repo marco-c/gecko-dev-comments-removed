@@ -174,14 +174,6 @@ var whitelist = [
 
 ];
 
-
-
-if (AppConstants.NIGHTLY_BUILD && AppConstants.MOZ_BUILD_APP == "browser") {
-  whitelist.push(
-    {file: "chrome://payments/content/paymentRequest.xhtml"}
-  );
-}
-
 if (!AppConstants.MOZ_PHOTON_THEME) {
   whitelist.push(
     
