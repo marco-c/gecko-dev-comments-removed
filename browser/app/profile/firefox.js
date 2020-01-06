@@ -620,12 +620,13 @@ pref("browser.snapshots.limit", 0);
 
 
 
+
 #ifdef XP_MACOSX
 
 
 
-pref("mousewheel.with_alt.action", 2);
 pref("mousewheel.with_shift.action", 1);
+pref("mousewheel.with_alt.action", 2);
 
 
 
@@ -637,8 +638,14 @@ pref("mousewheel.with_meta.action", 3);
 pref("mousewheel.with_control.action.override_x", 0);
 pref("mousewheel.with_meta.action.override_x", 0);
 #else
-pref("mousewheel.with_alt.action", 1);
-pref("mousewheel.with_shift.action", 2);
+
+
+
+
+
+
+pref("mousewheel.with_shift.action", 4);
+pref("mousewheel.with_alt.action", 2);
 pref("mousewheel.with_meta.action", 1); 
 #endif
 pref("mousewheel.with_control.action",3);

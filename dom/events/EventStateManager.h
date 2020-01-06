@@ -304,10 +304,14 @@ public:
   static bool IsRemoteTarget(nsIContent* aTarget);
 
   
-  static bool WheelEventIsScrollAction(WidgetWheelEvent* aEvent);
+  static bool WheelEventIsScrollAction(const WidgetWheelEvent* aEvent);
 
   
-  static void GetUserPrefsForWheelEvent(WidgetWheelEvent* aEvent,
+  
+  static bool WheelEventIsHorizontalScrollAction(const WidgetWheelEvent* aEvet);
+
+  
+  static void GetUserPrefsForWheelEvent(const WidgetWheelEvent* aEvent,
                                         double* aOutMultiplierX,
                                         double* aOutMultiplierY);
 
@@ -538,7 +542,7 @@ protected:
 
 
 
-    void GetUserPrefsForEvent(WidgetWheelEvent* aEvent,
+    void GetUserPrefsForEvent(const WidgetWheelEvent* aEvent,
                               double* aOutMultiplierX,
                               double* aOutMultiplierY);
 
@@ -558,25 +562,26 @@ protected:
       ACTION_SCROLL,
       ACTION_HISTORY,
       ACTION_ZOOM,
-      ACTION_LAST = ACTION_ZOOM,
+      ACTION_HORIZONTAL_SCROLL,
+      ACTION_LAST = ACTION_HORIZONTAL_SCROLL,
       
       
-      ACTION_SEND_TO_PLUGIN
+      ACTION_SEND_TO_PLUGIN,
     };
-    Action ComputeActionFor(WidgetWheelEvent* aEvent);
+    Action ComputeActionFor(const WidgetWheelEvent* aEvent);
 
     
 
 
 
-    bool NeedToComputeLineOrPageDelta(WidgetWheelEvent* aEvent);
+    bool NeedToComputeLineOrPageDelta(const WidgetWheelEvent* aEvent);
 
     
 
 
 
-    bool IsOverOnePageScrollAllowedX(WidgetWheelEvent* aEvent);
-    bool IsOverOnePageScrollAllowedY(WidgetWheelEvent* aEvent);
+    bool IsOverOnePageScrollAllowedX(const WidgetWheelEvent* aEvent);
+    bool IsOverOnePageScrollAllowedY(const WidgetWheelEvent* aEvent);
 
     
 
@@ -609,7 +614,7 @@ protected:
 
 
 
-    Index GetIndexFor(WidgetWheelEvent* aEvent);
+    Index GetIndexFor(const WidgetWheelEvent* aEvent);
 
     
 
@@ -624,6 +629,25 @@ protected:
     void Init(Index aIndex);
 
     void Reset();
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void GetMultiplierForDeltaXAndY(const WidgetWheelEvent* aEvent,
+                                    Index aIndex,
+                                    double* aMultiplierForDeltaX,
+                                    double* aMultiplierForDeltaY);
 
     bool mInit[COUNT_OF_MULTIPLIERS];
     double mMultiplierX[COUNT_OF_MULTIPLIERS];

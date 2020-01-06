@@ -3265,6 +3265,20 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       }
 
       WidgetWheelEvent* wheelEvent = aEvent->AsWheelEvent();
+      MOZ_ASSERT(wheelEvent);
+
+      
+      
+      WheelPrefs::Action action =
+        wheelEvent->mFlags.mHandledByAPZ ?
+          WheelPrefs::ACTION_NONE :
+          WheelPrefs::GetInstance()->ComputeActionFor(wheelEvent);
+
+      
+      
+      
+      
+      AutoWheelDeltaAdjuster adjuster(*wheelEvent);
 
       
       
@@ -3273,20 +3287,14 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         ComputeScrollTarget(mCurrentTarget, wheelEvent,
                             COMPUTE_DEFAULT_ACTION_TARGET);
       nsPluginFrame* pluginFrame = do_QueryFrame(frameToScroll);
-
-      
-      
-      WheelPrefs::Action action;
       if (pluginFrame) {
         MOZ_ASSERT(pluginFrame->WantsToHandleWheelEventAsDefaultAction());
         action = WheelPrefs::ACTION_SEND_TO_PLUGIN;
-      } else if (wheelEvent->mFlags.mHandledByAPZ) {
-        action = WheelPrefs::ACTION_NONE;
-      } else {
-        action = WheelPrefs::GetInstance()->ComputeActionFor(wheelEvent);
       }
+
       switch (action) {
-        case WheelPrefs::ACTION_SCROLL: {
+        case WheelPrefs::ACTION_SCROLL:
+        case WheelPrefs::ACTION_HORIZONTAL_SCROLL: {
           
           
 
@@ -5657,11 +5665,10 @@ void
 EventStateManager::WheelPrefs::Reset()
 {
   memset(mInit, 0, sizeof(mInit));
-
 }
 
 EventStateManager::WheelPrefs::Index
-EventStateManager::WheelPrefs::GetIndexFor(WidgetWheelEvent* aEvent)
+EventStateManager::WheelPrefs::GetIndexFor(const WidgetWheelEvent* aEvent)
 {
   if (!aEvent) {
     return INDEX_DEFAULT;
@@ -5759,15 +5766,37 @@ EventStateManager::WheelPrefs::Init(EventStateManager::WheelPrefs::Index aIndex)
   
   
   
+  
+  
   prefNameAction.AppendLiteral(".override_x");
   int32_t actionOverrideX = Preferences::GetInt(prefNameAction.get(), -1);
-  if (actionOverrideX < -1 || actionOverrideX > int32_t(ACTION_LAST)) {
+  if (actionOverrideX < -1 || actionOverrideX > int32_t(ACTION_LAST) ||
+      actionOverrideX == ACTION_HORIZONTAL_SCROLL) {
     NS_WARNING("Unsupported action override pref value, didn't override.");
     actionOverrideX = -1;
   }
   mOverriddenActionsX[aIndex] = (actionOverrideX == -1)
                               ? static_cast<Action>(action)
                               : static_cast<Action>(actionOverrideX);
+}
+
+void
+EventStateManager::WheelPrefs::GetMultiplierForDeltaXAndY(
+                                 const WidgetWheelEvent* aEvent,
+                                 Index aIndex,
+                                 double* aMultiplierForDeltaX,
+                                 double* aMultiplierForDeltaY)
+{
+  
+  
+  
+  
+  *aMultiplierForDeltaX = mMultiplierX[aIndex];
+  *aMultiplierForDeltaY = mMultiplierY[aIndex];
+  if (aEvent->mDeltaValuesAdjustedForDefaultHandler &&
+      ComputeActionFor(aEvent) == ACTION_HORIZONTAL_SCROLL) {
+    std::swap(*aMultiplierForDeltaX, *aMultiplierForDeltaY);
+  }
 }
 
 void
@@ -5780,16 +5809,19 @@ EventStateManager::WheelPrefs::ApplyUserPrefsToDelta(WidgetWheelEvent* aEvent)
   Index index = GetIndexFor(aEvent);
   Init(index);
 
-  aEvent->mDeltaX *= mMultiplierX[index];
-  aEvent->mDeltaY *= mMultiplierY[index];
+  double multiplierForDeltaX = 1.0, multiplierForDeltaY = 1.0;
+  GetMultiplierForDeltaXAndY(aEvent, index,
+                             &multiplierForDeltaX, &multiplierForDeltaY);
+  aEvent->mDeltaX *= multiplierForDeltaX;
+  aEvent->mDeltaY *= multiplierForDeltaY;
   aEvent->mDeltaZ *= mMultiplierZ[index];
 
   
   
   
   if (!NeedToComputeLineOrPageDelta(aEvent)) {
-    aEvent->mLineOrPageDeltaX *= static_cast<int32_t>(mMultiplierX[index]);
-    aEvent->mLineOrPageDeltaY *= static_cast<int32_t>(mMultiplierY[index]);
+    aEvent->mLineOrPageDeltaX *= static_cast<int32_t>(multiplierForDeltaX);
+    aEvent->mLineOrPageDeltaY *= static_cast<int32_t>(multiplierForDeltaY);
   } else {
     aEvent->mLineOrPageDeltaX = 0;
     aEvent->mLineOrPageDeltaY = 0;
@@ -5813,16 +5845,19 @@ EventStateManager::WheelPrefs::CancelApplyingUserPrefsFromOverflowDelta(
   
   
 
-  if (mMultiplierX[index]) {
-    aEvent->mOverflowDeltaX /= mMultiplierX[index];
+  double multiplierForDeltaX = 1.0, multiplierForDeltaY = 1.0;
+  GetMultiplierForDeltaXAndY(aEvent, index,
+                             &multiplierForDeltaX, &multiplierForDeltaY);
+  if (multiplierForDeltaX) {
+    aEvent->mOverflowDeltaX /= multiplierForDeltaX;
   }
-  if (mMultiplierY[index]) {
-    aEvent->mOverflowDeltaY /= mMultiplierY[index];
+  if (multiplierForDeltaY) {
+    aEvent->mOverflowDeltaY /= multiplierForDeltaY;
   }
 }
 
 EventStateManager::WheelPrefs::Action
-EventStateManager::WheelPrefs::ComputeActionFor(WidgetWheelEvent* aEvent)
+EventStateManager::WheelPrefs::ComputeActionFor(const WidgetWheelEvent* aEvent)
 {
   Index index = GetIndexFor(aEvent);
   Init(index);
@@ -5831,7 +5866,9 @@ EventStateManager::WheelPrefs::ComputeActionFor(WidgetWheelEvent* aEvent)
     (Abs(aEvent->mDeltaX) > Abs(aEvent->mDeltaY) &&
      Abs(aEvent->mDeltaX) > Abs(aEvent->mDeltaZ));
   Action* actions = deltaXPreferred ? mOverriddenActionsX : mActions;
-  if (actions[index] == ACTION_NONE || actions[index] == ACTION_SCROLL) {
+  if (actions[index] == ACTION_NONE ||
+      actions[index] == ACTION_SCROLL ||
+      actions[index] == ACTION_HORIZONTAL_SCROLL) {
     return actions[index];
   }
 
@@ -5839,8 +5876,11 @@ EventStateManager::WheelPrefs::ComputeActionFor(WidgetWheelEvent* aEvent)
   if (aEvent->mIsMomentum) {
     
     Init(INDEX_DEFAULT);
-    return (actions[INDEX_DEFAULT] == ACTION_SCROLL) ? ACTION_SCROLL :
-                                                       ACTION_NONE;
+    if (actions[INDEX_DEFAULT] == ACTION_SCROLL ||
+        actions[INDEX_DEFAULT] == ACTION_HORIZONTAL_SCROLL) {
+      return actions[INDEX_DEFAULT];
+    }
+    return ACTION_NONE;
   }
 
   return actions[index];
@@ -5848,7 +5888,7 @@ EventStateManager::WheelPrefs::ComputeActionFor(WidgetWheelEvent* aEvent)
 
 bool
 EventStateManager::WheelPrefs::NeedToComputeLineOrPageDelta(
-                                 WidgetWheelEvent* aEvent)
+                                 const WidgetWheelEvent* aEvent)
 {
   Index index = GetIndexFor(aEvent);
   Init(index);
@@ -5858,15 +5898,19 @@ EventStateManager::WheelPrefs::NeedToComputeLineOrPageDelta(
 }
 
 void
-EventStateManager::WheelPrefs::GetUserPrefsForEvent(WidgetWheelEvent* aEvent,
-                                                    double* aOutMultiplierX,
-                                                    double* aOutMultiplierY)
+EventStateManager::WheelPrefs::GetUserPrefsForEvent(
+                                 const WidgetWheelEvent* aEvent,
+                                 double* aOutMultiplierX,
+                                 double* aOutMultiplierY)
 {
   Index index = GetIndexFor(aEvent);
   Init(index);
 
-  *aOutMultiplierX = mMultiplierX[index];
-  *aOutMultiplierY = mMultiplierY[index];
+  double multiplierForDeltaX = 1.0, multiplierForDeltaY = 1.0;
+  GetMultiplierForDeltaXAndY(aEvent, index,
+                             &multiplierForDeltaX, &multiplierForDeltaY);
+  *aOutMultiplierX = multiplierForDeltaX;
+  *aOutMultiplierY = multiplierForDeltaY;
 }
 
 
@@ -5879,15 +5923,34 @@ EventStateManager::WheelPrefs::WheelEventsEnabledOnPlugins()
   return sWheelEventsEnabledOnPlugins;
 }
 
+
 bool
-EventStateManager::WheelEventIsScrollAction(WidgetWheelEvent* aEvent)
+EventStateManager::WheelEventIsScrollAction(const WidgetWheelEvent* aEvent)
 {
-  return aEvent->mMessage == eWheel &&
-         WheelPrefs::GetInstance()->ComputeActionFor(aEvent) == WheelPrefs::ACTION_SCROLL;
+  if (aEvent->mMessage != eWheel) {
+    return false;
+  }
+  WheelPrefs::Action action =
+    WheelPrefs::GetInstance()->ComputeActionFor(aEvent);
+  return action == WheelPrefs::ACTION_SCROLL ||
+         action == WheelPrefs::ACTION_HORIZONTAL_SCROLL;
+}
+
+
+bool
+EventStateManager::WheelEventIsHorizontalScrollAction(
+                     const WidgetWheelEvent* aEvent)
+{
+  if (aEvent->mMessage != eWheel) {
+    return false;
+  }
+  WheelPrefs::Action action =
+    WheelPrefs::GetInstance()->ComputeActionFor(aEvent);
+  return action == WheelPrefs::ACTION_HORIZONTAL_SCROLL;
 }
 
 void
-EventStateManager::GetUserPrefsForWheelEvent(WidgetWheelEvent* aEvent,
+EventStateManager::GetUserPrefsForWheelEvent(const WidgetWheelEvent* aEvent,
                                              double* aOutMultiplierX,
                                              double* aOutMultiplierY)
 {
@@ -5897,7 +5960,7 @@ EventStateManager::GetUserPrefsForWheelEvent(WidgetWheelEvent* aEvent,
 
 bool
 EventStateManager::WheelPrefs::IsOverOnePageScrollAllowedX(
-                                 WidgetWheelEvent* aEvent)
+                                 const WidgetWheelEvent* aEvent)
 {
   Index index = GetIndexFor(aEvent);
   Init(index);
@@ -5907,7 +5970,7 @@ EventStateManager::WheelPrefs::IsOverOnePageScrollAllowedX(
 
 bool
 EventStateManager::WheelPrefs::IsOverOnePageScrollAllowedY(
-                                 WidgetWheelEvent* aEvent)
+                                 const WidgetWheelEvent* aEvent)
 {
   Index index = GetIndexFor(aEvent);
   Init(index);

@@ -204,6 +204,35 @@ protected:
   };
 };
 
+
+
+
+
+
+
+class MOZ_STACK_CLASS AutoWheelDeltaAdjuster final
+{
+public:
+  
+
+
+
+
+
+
+
+  explicit AutoWheelDeltaAdjuster(WidgetWheelEvent& aWheelEvent);
+  ~AutoWheelDeltaAdjuster();
+
+private:
+  WidgetWheelEvent& mWheelEvent;
+  double mOldDeltaX;
+  double mOldDeltaZ;
+  double mOldOverflowDeltaX;
+  int32_t mOldLineOrPageDeltaX;
+  bool mTreatedVerticalWheelAsHorizontalScroll;
+};
+
 } 
 
 #endif 

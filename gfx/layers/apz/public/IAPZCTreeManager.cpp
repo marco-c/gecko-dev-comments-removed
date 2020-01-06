@@ -13,6 +13,7 @@
 #include "mozilla/MouseEvents.h"            
 #include "mozilla/TextEvents.h"             
 #include "mozilla/TouchEvents.h"            
+#include "mozilla/WheelHandlingHelper.h"    
 
 namespace mozilla {
 namespace layers {
@@ -113,31 +114,39 @@ IAPZCTreeManager::ReceiveInputEvent(
           scrollMode = ScrollWheelInput::SCROLLMODE_SMOOTH;
         }
 
-        ScreenPoint origin(wheelEvent.mRefPoint.x, wheelEvent.mRefPoint.y);
-        ScrollWheelInput input(wheelEvent.mTime, wheelEvent.mTimeStamp, 0,
-                               scrollMode,
-                               ScrollWheelInput::DeltaTypeForDeltaMode(
-                                                   wheelEvent.mDeltaMode),
-                               origin,
-                               wheelEvent.mDeltaX, wheelEvent.mDeltaY,
-                               wheelEvent.mAllowToOverrideSystemScrollSpeed);
+        
+        
+        
+        AutoWheelDeltaAdjuster adjuster(wheelEvent);
 
         
-        
-        
-        
-        
-        
-        EventStateManager::GetUserPrefsForWheelEvent(&wheelEvent,
-          &input.mUserDeltaMultiplierX,
-          &input.mUserDeltaMultiplierY);
+        if (wheelEvent.mDeltaX || wheelEvent.mDeltaY) {
+          ScreenPoint origin(wheelEvent.mRefPoint.x, wheelEvent.mRefPoint.y);
+          ScrollWheelInput input(wheelEvent.mTime, wheelEvent.mTimeStamp, 0,
+                                 scrollMode,
+                                 ScrollWheelInput::DeltaTypeForDeltaMode(
+                                                     wheelEvent.mDeltaMode),
+                                 origin,
+                                 wheelEvent.mDeltaX, wheelEvent.mDeltaY,
+                                 wheelEvent.mAllowToOverrideSystemScrollSpeed);
 
-        nsEventStatus status = ReceiveInputEvent(input, aOutTargetGuid, aOutInputBlockId);
-        wheelEvent.mRefPoint.x = input.mOrigin.x;
-        wheelEvent.mRefPoint.y = input.mOrigin.y;
-        wheelEvent.mFlags.mHandledByAPZ = input.mHandledByAPZ;
-        wheelEvent.mFocusSequenceNumber = input.mFocusSequenceNumber;
-        return status;
+          
+          
+          
+          
+          
+          
+          EventStateManager::GetUserPrefsForWheelEvent(&wheelEvent,
+            &input.mUserDeltaMultiplierX,
+            &input.mUserDeltaMultiplierY);
+
+          nsEventStatus status = ReceiveInputEvent(input, aOutTargetGuid, aOutInputBlockId);
+          wheelEvent.mRefPoint.x = input.mOrigin.x;
+          wheelEvent.mRefPoint.y = input.mOrigin.y;
+          wheelEvent.mFlags.mHandledByAPZ = input.mHandledByAPZ;
+          wheelEvent.mFocusSequenceNumber = input.mFocusSequenceNumber;
+          return status;
+        }
       }
 
       UpdateWheelTransaction(aEvent.mRefPoint, aEvent.mMessage);
