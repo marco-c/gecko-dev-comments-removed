@@ -119,10 +119,9 @@ protected:
   nsTArray<PrincipalHandle> mPrincipalHandles; 
   RefPtr<layers::Image> mImage;
   RefPtr<layers::ImageContainer> mImageContainer;
-  int mWidth, mHeight; 
   
 
-
+  int mWidth, mHeight;
   bool mInitDone;
   bool mHasDirectListeners;
   int mCaptureIndex;

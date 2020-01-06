@@ -32,7 +32,6 @@ enum {
 
 
 
-
 class MediaEngineVideoSource;
 class MediaEngineAudioSource;
 
@@ -305,7 +304,6 @@ public:
   virtual dom::MediaSourceEnum GetMediaSource() const = 0;
 
   
-
 
 
   virtual nsresult TakePhoto(MediaEnginePhotoCallback* aCallback) = 0;

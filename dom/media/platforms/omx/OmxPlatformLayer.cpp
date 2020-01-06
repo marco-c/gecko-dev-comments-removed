@@ -283,25 +283,6 @@ OmxPlatformLayer::CompressionFormat()
 }
 
 
-#ifdef OMX_PLATFORM_GONK
-
-bool
-OmxPlatformLayer::SupportsMimeType(const nsACString& aMimeType)
-{
-  return GonkOmxPlatformLayer::FindComponents(aMimeType);
-}
-
-OmxPlatformLayer*
-OmxPlatformLayer::Create(OmxDataDecoder* aDataDecoder,
-                         OmxPromiseLayer* aPromiseLayer,
-                         TaskQueue* aTaskQueue,
-                         layers::ImageContainer* aImageContainer)
-{
-  return new GonkOmxPlatformLayer(aDataDecoder, aPromiseLayer, aTaskQueue, aImageContainer);
-}
-
-#else 
-
 bool
 OmxPlatformLayer::SupportsMimeType(const nsACString& aMimeType)
 {
@@ -316,7 +297,5 @@ OmxPlatformLayer::Create(OmxDataDecoder* aDataDecoder,
 {
   return nullptr;
 }
-
-#endif
 
 }

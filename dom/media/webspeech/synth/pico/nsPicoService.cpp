@@ -53,7 +53,7 @@
 #define PICO_SAMPLE_RATE 16000
 
 
-#define GONK_PICO_LANG_PATH "/system/tts/lang_pico"
+#define PICO_LANG_PATH "/system/tts/lang_pico"
 
 namespace mozilla {
 namespace dom {
@@ -518,7 +518,7 @@ nsPicoService::Init()
   nsAutoCString langPath(PR_GetEnv("PICO_LANG_PATH"));
 
   if (langPath.IsEmpty()) {
-    langPath.AssignLiteral(GONK_PICO_LANG_PATH);
+    langPath.AssignLiteral(PICO_LANG_PATH);
   }
 
   nsCOMPtr<nsIFile> voicesDir;

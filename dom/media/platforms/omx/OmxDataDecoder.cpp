@@ -337,7 +337,6 @@ OmxDataDecoder::Output(BufferData* aData)
   if (isPlatformData) {
     
     
-    
     aData->mStatus = BufferData::BufferStatus::OMX_CLIENT_OUTPUT;
 
     MOZ_RELEASE_ASSERT(aData->mPromise.IsEmpty());

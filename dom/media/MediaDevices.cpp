@@ -83,8 +83,6 @@ public:
   OnSuccess(nsIVariant* aDevices) override
   {
     
-
-    
     nsTArray<nsCOMPtr<nsIMediaDevice>> devices;
     
     {

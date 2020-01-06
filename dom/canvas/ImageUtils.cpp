@@ -240,7 +240,6 @@ private:
 
 
 
-
 ImageUtils::ImageUtils(layers::Image* aImage)
 : mImpl(nullptr)
 {

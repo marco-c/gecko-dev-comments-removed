@@ -8,13 +8,27 @@
 #include "MediaContainerType.h"
 #include "MediaFormatReader.h"
 #include "MP4Demuxer.h"
-#include "nsMimeTypes.h"
+#include "mozilla/Preferences.h"
+#include "nsCharSeparatedTokenizer.h"
+#include "mozilla/CDMProxy.h"
+#include "mozilla/Logging.h"
 #include "mozilla/SharedThreadPool.h"
+#include "nsMimeTypes.h"
 #include "VideoUtils.h"
+
+#ifdef MOZ_WIDGET_ANDROID
+#include "nsIGfxInfo.h"
+#endif
+#include "mozilla/layers/LayersTypes.h"
 
 #include "PDMFactory.h"
 
 namespace mozilla {
+
+MP4Decoder::MP4Decoder(MediaDecoderInit& aInit)
+  : ChannelMediaDecoder(aInit)
+{
+}
 
 static bool
 IsWhitelistedH264Codec(const nsAString& aCodec)
@@ -43,14 +57,6 @@ IsWhitelistedH264Codec(const nsAString& aCodec)
 
 
 bool
-MP4Decoder::IsSupportedTypeWithoutDiagnostics(
-  const MediaContainerType& aContainerType)
-{
-  return IsSupportedType(aContainerType, nullptr);
-}
-
-
-bool
 MP4Decoder::IsSupportedType(const MediaContainerType& aType,
                             DecoderDoctorDiagnostics* aDiagnostics)
 {
@@ -65,10 +71,6 @@ MP4Decoder::IsSupportedType(const MediaContainerType& aType,
                        || aType.Type() == MEDIAMIMETYPE("audio/x-m4a");
   const bool isVideo = aType.Type() == MEDIAMIMETYPE("video/mp4")
                        || aType.Type() == MEDIAMIMETYPE("video/quicktime")
-  
-#ifdef MOZ_GONK_MEDIACODEC
-                       || aType.Type() == MEDIAMIMETYPE(VIDEO_3GPP)
-#endif
                        || aType.Type() == MEDIAMIMETYPE("video/x-m4v");
 
   if (!isAudio && !isVideo) {
@@ -270,6 +272,14 @@ MP4Decoder::IsVideoAccelerated(layers::KnowsCompositor* aKnowsCompositor, nsIGlo
            });
 
   return promise.forget();
+}
+
+void
+MP4Decoder::GetMozDebugReaderData(nsACString& aString)
+{
+  if (mReader) {
+    mReader->GetMozDebugReaderData(aString);
+  }
 }
 
 } 
