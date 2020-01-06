@@ -5,7 +5,7 @@
 "use strict";
 
 const { Ci } = require("chrome");
-const {DebuggerClient} = require("./debugger-client");
+const {DebuggerClient} = require("devtools/shared/client/debugger-client");
 
 
 
