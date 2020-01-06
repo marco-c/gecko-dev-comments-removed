@@ -8038,6 +8038,16 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
   }
 #endif
 
+  auto styleNewChildRangeEagerly =
+    [this, aInsertionKind, aContainer, aStartChild, aEndChild]() {
+      
+      
+      if (aInsertionKind == InsertionKind::Async &&
+          aContainer->IsStyledByServo()) {
+        StyleNewChildRange(aStartChild, aEndChild);
+      }
+    };
+
   bool isSingleInsert = (aStartChild->GetNextSibling() == aEndChild);
   NS_ASSERTION(isSingleInsert ||
                aInsertionKind == InsertionKind::Sync,
@@ -8047,6 +8057,8 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 
 #ifdef MOZ_XUL
   if (aContainer && IsXULListBox(aContainer)) {
+    
+    styleNewChildRangeEagerly();
     if (isSingleInsert) {
       if (NotifyListBoxBody(mPresShell->GetPresContext(), aContainer,
                             
@@ -8144,10 +8156,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 
   
   
-  
-  if (aInsertionKind == InsertionKind::Async && aContainer->IsStyledByServo()) {
-    StyleNewChildRange(aStartChild, aEndChild);
-  }
+  styleNewChildRangeEagerly();
 
   InsertionPoint insertion;
   if (isSingleInsert) {
