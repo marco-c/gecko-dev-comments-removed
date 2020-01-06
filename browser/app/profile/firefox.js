@@ -237,6 +237,8 @@ pref("general.autoScroll", false);
 pref("general.autoScroll", true);
 #endif
 
+pref("browser.stopReloadAnimation.enabled", true);
+
 
 
 pref("browser.uidensity", 0);
