@@ -26,10 +26,13 @@ class Loader;
 
 
 
-class MOZ_STACK_CLASS ErrorReporter {
+class ErrorReporter {
 public:
   ErrorReporter(const nsCSSScanner &aScanner,
-                const CSSStyleSheet *aSheet,
+                const StyleSheet *aSheet,
+                const Loader *aLoader,
+                nsIURI *aURI);
+  ErrorReporter(const StyleSheet *aSheet,
                 const Loader *aLoader,
                 nsIURI *aURI);
   ~ErrorReporter();
@@ -38,6 +41,7 @@ public:
 
   void OutputError();
   void OutputError(uint32_t aLineNumber, uint32_t aLineOffset);
+  void OutputError(uint32_t aLineNumber, uint32_t aLineOffset, const nsACString& aSource);
   void ClearError();
 
   
@@ -50,6 +54,9 @@ public:
   void ReportUnexpected(const char *aMessage, const nsString& aParam);
   
   void ReportUnexpected(const char *aMessage, const nsCSSToken& aToken);
+  
+  void ReportUnexpectedUnescaped(const char *aMessage,
+                                 const nsAutoString& aParam);
   
   void ReportUnexpected(const char *aMessage, const nsCSSToken& aToken,
                         char16_t aChar);
@@ -71,7 +78,7 @@ private:
   nsString mErrorLine;
   nsString mFileName;
   const nsCSSScanner *mScanner;
-  const CSSStyleSheet *mSheet;
+  const StyleSheet *mSheet;
   const Loader *mLoader;
   nsIURI *mURI;
   uint64_t mInnerWindowID;
