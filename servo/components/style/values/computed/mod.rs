@@ -132,6 +132,26 @@ impl<'a> Context<'a> {
     pub fn style(&self) -> &StyleBuilder {
         &self.builder
     }
+
+
+    
+    #[cfg(feature = "gecko")]
+    pub fn maybe_zoom_text(&self, size: Au) -> Au {
+        
+        
+        
+        if self.style().get_font().gecko.mAllowZoom {
+            self.device().zoom_text(size)
+        } else {
+            size
+        }
+    }
+
+    
+    #[cfg(feature = "servo")]
+    pub fn maybe_zoom_text(&self, size: Au) -> Au {
+        size
+    }
 }
 
 
