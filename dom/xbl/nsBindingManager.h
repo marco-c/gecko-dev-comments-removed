@@ -193,12 +193,6 @@ protected:
   
   static void PostPAQEventCallback(nsITimer* aTimer, void* aClosure);
 
-  
-  
-  using BoundContentBindingCallback = std::function<void (nsXBLBinding*)>;
-  void EnumerateBoundContentBindings(
-    const BoundContentBindingCallback& aCallback) const;
-
 
 protected:
   
