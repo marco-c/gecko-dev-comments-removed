@@ -4499,7 +4499,7 @@ var XULBrowserWindow = {
     LinkTargetDisplay.update();
   },
 
-  showTooltip(x, y, tooltip, direction, browser) {
+  showTooltip(x, y, tooltip, direction) {
     if (Cc["@mozilla.org/widget/dragservice;1"].getService(Ci.nsIDragService).
         getCurrentSession()) {
       return;
@@ -4511,7 +4511,8 @@ var XULBrowserWindow = {
     elt.label = tooltip;
     elt.style.direction = direction;
 
-    elt.openPopupAtScreen(browser.boxObject.screenX + x, browser.boxObject.screenY + y, false, null);
+    let anchor = gBrowser.selectedBrowser;
+    elt.openPopupAtScreen(anchor.boxObject.screenX + x, anchor.boxObject.screenY + y, false, null);
   },
 
   hideTooltip() {
@@ -5054,6 +5055,7 @@ var CombinedStopReload = {
                         aRequest instanceof Ci.nsIRequest &&
                         aWebProgress.isTopLevel &&
                         aWebProgress.isLoadingDocument &&
+                        !gBrowser.tabAnimationsInProgress &&
                         this.animate;
 
     this._cancelTransition();
@@ -5075,6 +5077,7 @@ var CombinedStopReload = {
                         aRequest instanceof Ci.nsIRequest &&
                         aWebProgress.isTopLevel &&
                         !aWebProgress.isLoadingDocument &&
+                        !gBrowser.tabAnimationsInProgress &&
                         this.animate;
 
     if (shouldAnimate) {
