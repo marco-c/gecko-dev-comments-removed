@@ -26,6 +26,9 @@ public:
   static bool IsSupportedType(const MediaContainerType& aContainerType,
                               DecoderDoctorDiagnostics* aDiagnostics);
 
+  static bool IsSupportedTypeWithoutDiagnostics(
+    const MediaContainerType& aContainerType);
+
   
   
   
