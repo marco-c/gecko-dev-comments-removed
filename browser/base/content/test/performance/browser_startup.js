@@ -93,7 +93,6 @@ const startupPhases = {
   "before handling user events": {blacklist: {
     modules: new Set([
       "resource://gre/modules/LoginManagerContextMenu.jsm",
-      "resource://gre/modules/Task.jsm",
     ]),
   }},
 };
@@ -105,7 +104,7 @@ function test() {
     return;
   }
 
-  let data = Cc["@mozilla.org/test/startuprecorder;1"].getService().wrappedJSObject.data;
+  let data = Cc["@mozilla.org/test/startuprecorder;1"].getService().wrappedJSObject.data.code;
   
   
   for (let phase in data) {

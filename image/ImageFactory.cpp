@@ -92,6 +92,18 @@ ImageFactory::CreateImage(nsIRequest* aRequest,
   
   uint32_t imageFlags = ComputeImageFlags(aURI, aMimeType, aIsMultiPart);
 
+#ifdef DEBUG
+  
+  if (NS_IsMainThread()) {
+    nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+    if (NS_WARN_IF(obs)) {
+      nsAutoCString spec;
+      aURI->GetSpec(spec);
+      obs->NotifyObservers(nullptr, "image-loading", NS_ConvertUTF8toUTF16(spec).get());
+    }
+  }
+#endif
+
   
   if (aMimeType.EqualsLiteral(IMAGE_SVG_XML)) {
     return CreateVectorImage(aRequest, aProgressTracker, aMimeType,
