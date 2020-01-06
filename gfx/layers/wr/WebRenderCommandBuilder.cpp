@@ -224,7 +224,8 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
     mScrollingHelper.BeginItem(item, aSc);
     
     
-    if (!item->CreateWebRenderCommands(aBuilder, aResources, aSc, mManager,
+    if (itemType != DisplayItemType::TYPE_LAYER_EVENT_REGIONS &&
+        !item->CreateWebRenderCommands(aBuilder, aResources, aSc, mManager,
                                        aDisplayListBuilder)) {
       PushItemAsImage(item, aBuilder, aResources, aSc, aDisplayListBuilder);
     }
