@@ -125,6 +125,24 @@ assert.window = function (win, msg = "") {
 
 
 
+assert.contentBrowser = function (context, msg = "") {
+  msg = msg || "Current window does not have a content browser";
+  assert.that(c => c && c.contentBrowser,
+      msg,
+      NoSuchWindowError)(context);
+};
+
+
+
+
+
+
+
+
+
+
+
+
 assert.noUserPrompt = function (dialog, msg = "") {
   assert.that(d => d === null || typeof d == "undefined",
       msg,
