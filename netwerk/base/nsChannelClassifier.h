@@ -32,7 +32,13 @@ public:
     
     void Start();
     
-    nsresult ShouldEnableTrackingProtection(bool *result);
+    bool ShouldEnableTrackingProtection();
+    
+    bool ShouldEnableTrackingAnnotation();
+
+    
+    nsresult IsTrackerWhitelisted(nsIURI* aWhiteListURI,
+                                  nsIURIClassifierCallback* aCallback);
 
     
     
@@ -41,6 +47,16 @@ public:
                                         const nsACString& aProvider,
                                         const nsACString& aPrefix);
 
+    
+    
+    
+    nsresult CheckIsTrackerWithLocalTable(nsIURIClassifierCallback* aCallback);
+
+    
+    already_AddRefed<nsIURI> CreateWhiteListURI() const;
+
+    already_AddRefed<nsIChannel> GetChannel();
+
 private:
     
     bool mIsAllowListed;
@@ -48,6 +64,7 @@ private:
     bool mSuspendedChannel;
     nsCOMPtr<nsIChannel> mChannel;
     Maybe<bool> mTrackingProtectionEnabled;
+    Maybe<bool> mTrackingAnnotationEnabled;
 
     ~nsChannelClassifier() {}
     
@@ -58,15 +75,15 @@ private:
     
     nsresult StartInternal();
     
-    nsresult IsTrackerWhitelisted(const nsACString& aList,
-                                  const nsACString& aProvider,
-                                  const nsACString& aPrefix);
-    
     bool IsHostnameWhitelisted(nsIURI *aUri, const nsACString &aWhitelisted);
     
     static bool SameLoadingURI(nsIDocument *aDoc, nsIChannel *aChannel);
-
+    
+    
+    
+    
     nsresult ShouldEnableTrackingProtectionInternal(nsIChannel *aChannel,
+                                                    bool aAnnotationsOnly,
                                                     bool *result);
 
     bool AddonMayLoad(nsIChannel *aChannel, nsIURI *aUri);
