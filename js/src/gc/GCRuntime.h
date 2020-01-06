@@ -153,6 +153,13 @@ class GCSchedulingTunables
 
 
 
+    UnprotectedData<size_t> maxMallocBytes_;
+
+    
+
+
+
+
     ActiveThreadData<size_t> gcMaxNurseryBytes_;
 
     
@@ -251,6 +258,7 @@ class GCSchedulingTunables
     GCSchedulingTunables();
 
     size_t gcMaxBytes() const { return gcMaxBytes_; }
+    size_t maxMallocBytes() const { return maxMallocBytes_; }
     size_t gcMaxNurseryBytes() const { return gcMaxNurseryBytes_; }
     size_t gcZoneAllocThresholdBase() const { return gcZoneAllocThresholdBase_; }
     float allocThresholdFactor() const { return allocThresholdFactor_; }
@@ -270,6 +278,8 @@ class GCSchedulingTunables
 
     MOZ_MUST_USE bool setParameter(JSGCParamKey key, uint32_t value, const AutoLockGC& lock);
     void resetParameter(JSGCParamKey key, const AutoLockGC& lock);
+
+    void setMaxMallocBytes(size_t value);
 
 private:
     void setHighFrequencyLowLimit(uint64_t value);
@@ -670,9 +680,6 @@ class MemoryCounter
     size_t maxBytes_;
 
     
-    GCLockData<size_t> initialMaxBytes_;
-
-    
     ActiveThreadData<size_t> bytesAtStartOfGC_;
 
     
@@ -683,7 +690,6 @@ class MemoryCounter
 
     size_t bytes() const { return bytes_; }
     size_t maxBytes() const { return maxBytes_; }
-    size_t initialMaxBytes(const AutoLockGC& lock) const { return initialMaxBytes_; }
     TriggerKind triggered() const { return triggered_; }
 
     void setMax(size_t newMax, const AutoLockGC& lock);
