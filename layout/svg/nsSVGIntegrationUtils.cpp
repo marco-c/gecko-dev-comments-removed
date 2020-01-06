@@ -646,9 +646,6 @@ struct EffectOffsets {
   nsPoint  offsetToBoundingBox;
   
   
-  gfxPoint offsetToBoundingBoxInDevPx;
-  
-  
   nsPoint  offsetToUserSpace;
   
   
@@ -699,9 +696,6 @@ ComputeEffectOffset(nsIFrame* aFrame, const PaintFramesParams& aParams)
 
   result.offsetToUserSpaceInDevPx =
     nsLayoutUtils::PointToGfxPoint(result.offsetToUserSpace,
-                                   aFrame->PresContext()->AppUnitsPerDevPixel());
-  result.offsetToBoundingBoxInDevPx =
-    nsLayoutUtils::PointToGfxPoint(result.offsetToBoundingBox,
                                    aFrame->PresContext()->AppUnitsPerDevPixel());
 
   return result;
