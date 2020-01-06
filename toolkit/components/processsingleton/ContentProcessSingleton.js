@@ -16,6 +16,8 @@ XPCOMUtils.defineLazyServiceGetter(this, "cpmm",
 
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryController",
                                   "resource://gre/modules/TelemetryController.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "E10SUtils",
+                                  "resource:///modules/E10SUtils.jsm");
 
 
 
@@ -79,11 +81,18 @@ ContentProcessSingleton.prototype = {
       for (let arg of consoleMsg.arguments) {
         if ((typeof arg == "object" || typeof arg == "function") &&
             arg !== null) {
-          try {
+          if (Services.appinfo.remoteType === E10SUtils.EXTENSION_REMOTE_TYPE) {
             
             
-            arg = Cu.cloneInto(arg, {});
-          } catch (e) {
+            
+            try {
+              
+              
+              arg = Cu.cloneInto(arg, {});
+            } catch (e) {
+              arg = unavailString;
+            }
+          } else {
             arg = unavailString;
           }
           totalArgLength += unavailStringLength;
