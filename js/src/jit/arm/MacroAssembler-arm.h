@@ -819,6 +819,8 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM
     void int32ValueToFloat32(const ValueOperand& operand, FloatRegister dest);
     void loadConstantFloat32(float f, FloatRegister dest);
 
+    void moveValue(const Value& val, Register type, Register data);
+
     CodeOffsetJump jumpWithPatch(RepatchLabel* label, Condition cond = Always,
                                  Label* documentation = nullptr);
     CodeOffsetJump backedgeJump(RepatchLabel* label, Label* documentation) {
@@ -852,6 +854,36 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM
             return;
           default: MOZ_CRASH("Bad payload width");
         }
+    }
+
+    void moveValue(const Value& val, const ValueOperand& dest);
+
+    void moveValue(const ValueOperand& src, const ValueOperand& dest) {
+        Register s0 = src.typeReg(), d0 = dest.typeReg(),
+                 s1 = src.payloadReg(), d1 = dest.payloadReg();
+
+        
+        
+        if (s1 == d0) {
+            if (s0 == d1) {
+                
+                ScratchRegisterScope scratch(asMasm());
+                MOZ_ASSERT(d1 != scratch);
+                MOZ_ASSERT(d0 != scratch);
+                ma_mov(d1, scratch);
+                ma_mov(d0, d1);
+                ma_mov(scratch, d0);
+                return;
+            }
+            
+            mozilla::Swap(s0, s1);
+            mozilla::Swap(d0, d1);
+        }
+
+        if (s0 != d0)
+            ma_mov(s0, d0);
+        if (s1 != d1)
+            ma_mov(s1, d1);
     }
 
     void storeValue(ValueOperand val, const Address& dst);
