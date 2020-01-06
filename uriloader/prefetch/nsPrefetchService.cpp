@@ -4,6 +4,13 @@
 
 
 #include "nsPrefetchService.h"
+
+#include "mozilla/AsyncEventDispatcher.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/CORSMode.h"
+#include "mozilla/dom/HTMLLinkElement.h"
+#include "mozilla/Preferences.h"
+
 #include "nsICacheEntry.h"
 #include "nsIServiceManager.h"
 #include "nsICategoryManager.h"
@@ -25,10 +32,6 @@
 #include "mozilla/Logging.h"
 #include "plstr.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/CORSMode.h"
-#include "mozilla/dom/HTMLLinkElement.h"
 #include "nsIDOMNode.h"
 #include "nsINode.h"
 #include "nsIDocument.h"
@@ -494,13 +497,17 @@ nsPrefetchService::DispatchEvent(nsPrefetchNode *node, bool aSuccess)
     for (uint32_t i = 0; i < node->mSources.Length(); i++) {
       nsCOMPtr<nsINode> domNode = do_QueryReferent(node->mSources.ElementAt(i));
       if (domNode && domNode->IsInComposedDoc()) {
-        nsContentUtils::DispatchTrustedEvent(domNode->OwnerDoc(),
-                                             domNode,
-                                             aSuccess ?
-                                              NS_LITERAL_STRING("load") :
-                                              NS_LITERAL_STRING("error"),
-                                              false,
-                                              false);
+        
+        
+        
+        RefPtr<AsyncEventDispatcher> dispatcher =
+          new AsyncEventDispatcher(domNode,
+                                   aSuccess ?
+                                    NS_LITERAL_STRING("load") :
+                                    NS_LITERAL_STRING("error"),
+                                    false);
+        dispatcher->RequireNodeInDocument();
+        dispatcher->PostDOMEvent();
       }
     }
 }
