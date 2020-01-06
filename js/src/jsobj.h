@@ -504,6 +504,7 @@ class JSObject : public js::gc::Cell
     
     
     inline bool nonProxyIsExtensible() const;
+    bool uninlinedNonProxyIsExtensible() const;
 
   public:
     
