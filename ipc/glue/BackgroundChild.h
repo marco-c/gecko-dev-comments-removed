@@ -12,7 +12,6 @@
 #include "mozilla/ipc/Transport.h"
 
 class nsIDOMBlob;
-class nsIIPCBackgroundChildCreateCallback;
 
 namespace mozilla {
 namespace dom {
@@ -45,8 +44,6 @@ class PBackgroundChild;
 
 
 
-
-
 class BackgroundChild final
 {
   friend class mozilla::dom::ContentChild;
@@ -59,10 +56,6 @@ public:
   
   static PBackgroundChild*
   GetForCurrentThread();
-
-  
-  static bool
-  GetOrCreateForCurrentThread(nsIIPCBackgroundChildCreateCallback* aCallback);
 
   
   static PBackgroundChild*

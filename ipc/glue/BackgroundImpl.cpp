@@ -28,7 +28,6 @@
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsIEventTarget.h"
-#include "nsIIPCBackgroundChildCreateCallback.h"
 #include "nsIMutable.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
@@ -399,10 +398,6 @@ private:
   GetForCurrentThread();
 
   
-  static bool
-  GetOrCreateForCurrentThread(nsIIPCBackgroundChildCreateCallback* aCallback);
-
-  
   static PBackgroundChild*
   GetOrCreateForCurrentThread();
 
@@ -627,35 +622,6 @@ private:
   }
 };
 
-
-class ChildImpl::ActorCreatedRunnable final :
-  public CancelableRunnable
-{
-  nsCOMPtr<nsIIPCBackgroundChildCreateCallback> mCallback;
-  RefPtr<ChildImpl> mActor;
-
-public:
-  ActorCreatedRunnable(nsIIPCBackgroundChildCreateCallback* aCallback,
-                       ChildImpl* aActor)
-    : CancelableRunnable("Background::ChildImpl::ActorCreatedRunnable")
-    , mCallback(aCallback)
-    , mActor(aActor)
-  {
-    
-    MOZ_ASSERT(aCallback);
-    MOZ_ASSERT(aActor);
-  }
-
-protected:
-  virtual ~ActorCreatedRunnable()
-  { }
-
-  NS_DECL_NSIRUNNABLE
-
-  nsresult
-  Cancel() override;
-};
-
 } 
 
 namespace mozilla {
@@ -746,14 +712,6 @@ PBackgroundChild*
 BackgroundChild::GetForCurrentThread()
 {
   return ChildImpl::GetForCurrentThread();
-}
-
-
-bool
-BackgroundChild::GetOrCreateForCurrentThread(
-                                 nsIIPCBackgroundChildCreateCallback* aCallback)
-{
-  return ChildImpl::GetOrCreateForCurrentThread(aCallback);
 }
 
 
@@ -1489,25 +1447,6 @@ ChildImpl::GetForCurrentThread()
 }
 
 
-bool
-ChildImpl::GetOrCreateForCurrentThread(
-                                 nsIIPCBackgroundChildCreateCallback* aCallback)
-{
-  MOZ_ASSERT(aCallback);
-
-  RefPtr<ChildImpl> actor =
-    static_cast<ChildImpl*>(GetOrCreateForCurrentThread());
-  if (NS_WARN_IF(!actor)) {
-    return false;
-  }
-
-  nsCOMPtr<nsIRunnable> runnable = new ActorCreatedRunnable(aCallback, actor);
-  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToCurrentThread(runnable));
-
-  return true;
-}
-
-
 PBackgroundChild*
 ChildImpl::GetOrCreateForCurrentThread()
 {
@@ -1647,27 +1586,6 @@ ChildImpl::GetThreadLocalForCurrentThread()
   }
 
   return threadLocalInfo->mConsumerThreadLocal;
-}
-
-NS_IMETHODIMP
-ChildImpl::ActorCreatedRunnable::Run()
-{
-  
-
-  MOZ_ASSERT(mCallback);
-  MOZ_ASSERT(mActor);
-
-  mCallback->ActorCreated(mActor);
-
-  return NS_OK;
-}
-
-nsresult
-ChildImpl::ActorCreatedRunnable::Cancel()
-{
-  
-  Run();
-  return NS_OK;
 }
 
 void
