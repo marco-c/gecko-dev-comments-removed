@@ -118,6 +118,14 @@ AccessibleWrap::QueryInterface(REFIID iid, void** ppv)
 
   *ppv = nullptr;
 
+  if (IID_IClientSecurity == iid) {
+    
+    
+    
+    
+    return E_NOINTERFACE;
+  }
+
   if (IID_IUnknown == iid)
     *ppv = static_cast<IAccessible*>(this);
   else if (IID_IDispatch == iid || IID_IAccessible == iid)

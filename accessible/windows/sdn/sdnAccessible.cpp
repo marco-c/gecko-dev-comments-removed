@@ -39,6 +39,14 @@ sdnAccessible::QueryInterface(REFIID aREFIID, void** aInstancePtr)
     return E_FAIL;
   *aInstancePtr = nullptr;
 
+  if (aREFIID == IID_IClientSecurity) {
+    
+    
+    
+    
+    return E_NOINTERFACE;
+  }
+
   if (aREFIID == IID_ISimpleDOMNode) {
     *aInstancePtr = static_cast<ISimpleDOMNode*>(this);
     AddRef();
