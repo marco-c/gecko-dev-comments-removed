@@ -2602,7 +2602,11 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
       mDocument->BindingManager()->AddToAttachedQueue(binding);
     }
 
-    if (resolveStyle) {
+    if (resolveStyle || styleContext->IsServo()) {
+      
+      
+      
+      
       
       
       
@@ -5907,20 +5911,20 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
         aState.AddPendingBinding(newPendingBinding.forget());
       }
 
-      if (resolveStyle) {
-        if (styleContext->IsServo()) {
-          styleContext =
-            mPresShell->StyleSet()->AsServo()->ResolveServoStyle(aContent->AsElement());
-        } else {
-          styleContext =
-            ResolveStyleContext(styleContext->AsGecko()->GetParent(),
-                                aContent, &aState);
-        }
-
-        display = styleContext->StyleDisplay();
-        aStyleContext = styleContext;
+      
+      
+      
+      if (styleContext->IsServo()) {
+        styleContext =
+          mPresShell->StyleSet()->AsServo()->ResolveServoStyle(aContent->AsElement());
+      } else if (resolveStyle) {
+        styleContext =
+          ResolveStyleContext(styleContext->AsGecko()->GetParent(),
+                              aContent, &aState);
       }
 
+      display = styleContext->StyleDisplay();
+      aStyleContext = styleContext;
       aTag = mDocument->BindingManager()->ResolveTag(aContent, &aNameSpaceID);
     }
   }
