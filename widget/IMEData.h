@@ -327,6 +327,11 @@ struct InputContext final
 
   
 
+
+  bool mHasHandledUserInput;
+
+  
+
   bool mInPrivateBrowsing;
 
   bool IsOriginMainProcess() const
