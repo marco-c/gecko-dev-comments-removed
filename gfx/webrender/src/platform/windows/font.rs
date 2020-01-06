@@ -2,11 +2,11 @@
 
 
 
-use api::{FontInstance, FontInstancePlatformOptions, FontKey, FontRenderMode};
+use api::{FontInstancePlatformOptions, FontKey, FontRenderMode};
 use api::{ColorU, GlyphDimensions, GlyphKey, SubpixelDirection};
 use dwrote;
 use gamma_lut::{ColorLut, GammaLut};
-use glyph_rasterizer::{GlyphFormat, RasterizedGlyph};
+use glyph_rasterizer::{FontInstance, GlyphFormat, RasterizedGlyph};
 use internal_types::FastHashMap;
 use std::sync::Arc;
 

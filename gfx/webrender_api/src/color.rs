@@ -2,7 +2,31 @@
 
 
 
+use std::cmp;
 use std::hash::{Hash, Hasher};
+
+
+
+
+
+
+
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, PartialOrd, Serialize)]
+pub struct PremultipliedColorF {
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+    pub a: f32,
+}
+
+impl PremultipliedColorF {
+    
+    pub const BLACK: Self = PremultipliedColorF { r: 0.0, g: 0.0, b: 0.0, a: 1.0 };
+    
+    pub const TRANSPARENT: Self = PremultipliedColorF { r: 0.0, g: 0.0, b: 0.0, a: 0.0 };
+}
 
 
 
@@ -38,33 +62,26 @@ impl ColorF {
     }
 
     
-    
-    
-    
-    pub fn premultiplied(&self) -> ColorF {
-        self.scale_rgb(self.a)
+    pub fn premultiplied(&self) -> PremultipliedColorF {
+        let c = self.scale_rgb(self.a);
+        PremultipliedColorF { r: c.r, g: c.g, b: c.b, a: c.a }
     }
 }
 
 
-impl Eq for ColorF {}
-impl Hash for ColorF {
+impl Eq for PremultipliedColorF {}
+impl Ord for PremultipliedColorF {
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
+        self.partial_cmp(other).unwrap_or(cmp::Ordering::Equal)
+    }
+}
+impl Hash for PremultipliedColorF {
     fn hash<H: Hasher>(&self, state: &mut H) {
         
-        self.r._to_bits().hash(state);
-        self.g._to_bits().hash(state);
-        self.b._to_bits().hash(state);
-        self.a._to_bits().hash(state);
-    }
-}
-
-
-pub trait ToBits {
-    fn _to_bits(self) -> u32;
-}
-impl ToBits for f32 {
-    fn _to_bits(self) -> u32 {
-        unsafe { ::std::mem::transmute(self) }
+        self.r.to_bits().hash(state);
+        self.g.to_bits().hash(state);
+        self.b.to_bits().hash(state);
+        self.a.to_bits().hash(state);
     }
 }
 
@@ -95,8 +112,11 @@ fn round_to_int(x: f32) -> u8 {
     val as u8
 }
 
+
+
+
 impl From<ColorF> for ColorU {
-    fn from(color: ColorF) -> ColorU {
+    fn from(color: ColorF) -> Self {
         ColorU {
             r: round_to_int(color.r),
             g: round_to_int(color.g),
@@ -107,7 +127,7 @@ impl From<ColorF> for ColorU {
 }
 
 impl From<ColorU> for ColorF {
-    fn from(color: ColorU) -> ColorF {
+    fn from(color: ColorU) -> Self {
         ColorF {
             r: color.r as f32 / 255.0,
             g: color.g as f32 / 255.0,

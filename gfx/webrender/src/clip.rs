@@ -245,7 +245,8 @@ impl ClipSources {
         }
     }
 
-    pub fn is_masking(&self) -> bool {
+    
+    pub fn has_clips(&self) -> bool {
         !self.clips.is_empty()
     }
 }
