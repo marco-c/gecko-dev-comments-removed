@@ -1182,13 +1182,13 @@ function Loader(options) {
   
   
   let sharedGlobalSandbox = Sandbox({
-    name: "Addon-SDK",
+    name: options.sandboxName || "Addon-SDK",
     wantXrays: false,
     wantGlobalProperties: [],
     invisibleToDebugger: options.invisibleToDebugger || false,
     metadata: {
-      addonID: options.id,
-      URI: "Addon-SDK"
+      addonID: options.noSandboxAddonId ? undefined : options.id,
+      URI: options.sandboxName || "Addon-SDK"
     },
     prototype: options.sandboxPrototype || globals,
   });
