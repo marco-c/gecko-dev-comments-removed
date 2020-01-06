@@ -947,8 +947,15 @@ ChromiumCDMParent::InitializeVideoDecoder(
       __func__);
   }
 
+  
+  
+  
+  
+  
+  
+  
   const size_t bufferSize =
-    I420FrameBufferSizePadded(aInfo.mImage.width, aInfo.mImage.height);
+    1.7 * I420FrameBufferSizePadded(aInfo.mImage.width, aInfo.mImage.height);
   if (bufferSize <= 0) {
     return MediaDataDecoder::InitPromise::CreateAndReject(
       MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
