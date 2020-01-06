@@ -10,7 +10,7 @@
 
 var { utils: Cu } = Components;
 var { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
-var { Loader, descriptor, resolveURI } = Cu.import("resource://gre/modules/commonjs/toolkit/loader.js", {});
+var { Loader, descriptor, resolveURI } = Cu.import("resource://devtools/shared/base-loader.js", {});
 var { requireRawId } = Cu.import("resource://devtools/shared/loader-plugin-raw.jsm", {});
 
 this.EXPORTED_SYMBOLS = ["DevToolsLoader", "devtools", "BuiltinProvider",
