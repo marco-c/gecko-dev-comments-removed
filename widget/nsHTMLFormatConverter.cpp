@@ -101,7 +101,7 @@ nsHTMLFormatConverter :: AddFlavorToList ( nsCOMPtr<nsIMutableArray>& inList, co
     
     
     nsCOMPtr<nsISupports> genericFlavor ( do_QueryInterface(dataFlavor) );
-    inList->AppendElement ( genericFlavor,  false);
+    inList->AppendElement ( genericFlavor );
   }
   return rv;
 

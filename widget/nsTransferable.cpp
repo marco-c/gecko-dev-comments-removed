@@ -274,7 +274,7 @@ nsTransferable::GetTransferDataFlavors()
     if ( flavorWrapper ) {
       flavorWrapper->SetData ( data.GetFlavor() );
       nsCOMPtr<nsISupports> genericWrapper ( do_QueryInterface(flavorWrapper) );
-      array->AppendElement( genericWrapper,  false );
+      array->AppendElement( genericWrapper );
     }
   }
 
@@ -557,7 +557,7 @@ nsTransferable::FlavorsTransferableCanImport(nsIArray **_retval)
 
         if (GetDataForFlavor (mDataArray, flavorStr.get())
             == mDataArray.NoIndex) 
-          array->AppendElement (flavorWrapper,  false);
+          array->AppendElement (flavorWrapper);
       } 
     }
   } 
@@ -602,7 +602,7 @@ nsTransferable::FlavorsTransferableCanExport(nsIArray **_retval)
 
         if (GetDataForFlavor (mDataArray, flavorStr.get())
             == mDataArray.NoIndex) 
-          array->AppendElement (flavorWrapper,  false);
+          array->AppendElement (flavorWrapper);
       } 
     }
   } 

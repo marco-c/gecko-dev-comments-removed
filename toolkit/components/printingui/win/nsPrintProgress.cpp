@@ -98,9 +98,9 @@ NS_IMETHODIMP nsPrintProgress::OpenProgressDialog(mozIDOMWindowProxy *parent,
     ifptr->SetData(static_cast<nsIPrintProgress*>(this));
     ifptr->SetDataIID(&NS_GET_IID(nsIPrintProgress));
 
-    array->AppendElement(ifptr,  false);
+    array->AppendElement(ifptr);
 
-    array->AppendElement(parameters,  false);
+    array->AppendElement(parameters);
 
     
     

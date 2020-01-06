@@ -523,7 +523,7 @@ void nsMIMEInfoWin::ProcessPath(nsCOMPtr<nsIMutableArray>& appList,
     return;
 
   
-  appList->AppendElement(aApp, false);
+  appList->AppendElement(aApp);
   trackList.AppendElement(lower);
 }
 

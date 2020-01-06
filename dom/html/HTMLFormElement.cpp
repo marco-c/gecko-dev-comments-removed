@@ -1917,8 +1917,7 @@ HTMLFormElement::CheckFormValidity(nsIMutableArray* aInvalidElements) const
       
       
       if (defaultAction && aInvalidElements) {
-        aInvalidElements->AppendElement(ToSupports(sortedControls[i]),
-                                        false);
+        aInvalidElements->AppendElement(ToSupports(sortedControls[i]));
       }
     }
   }

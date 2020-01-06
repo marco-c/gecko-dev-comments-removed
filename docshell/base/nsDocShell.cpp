@@ -6848,7 +6848,7 @@ nsDocShell::RefreshURI(nsIURI* aURI, int32_t aDelay, bool aRepeat,
   if (busyFlags & BUSY_FLAGS_BUSY || (!mIsActive && mDisableMetaRefreshWhenInactive)) {
     
     
-    mRefreshURIList->AppendElement(refreshTimer,  false);
+    mRefreshURIList->AppendElement(refreshTimer);
   } else {
     
     
@@ -6860,7 +6860,7 @@ nsDocShell::RefreshURI(nsIURI* aURI, int32_t aDelay, bool aRepeat,
                 NS_NewTimerWithCallback(refreshTimer, aDelay, nsITimer::TYPE_ONE_SHOT,
                                         win->TabGroup()->EventTargetFor(TaskCategory::Network)));
 
-    mRefreshURIList->AppendElement(timer,  false);  
+    mRefreshURIList->AppendElement(timer);  
   }
   return NS_OK;
 }
@@ -7287,7 +7287,7 @@ nsDocShell::SuspendRefreshURIs()
       NS_ASSERTION(rt,
                    "RefreshURIList timer callbacks should only be RefreshTimer objects");
 
-      mRefreshURIList->ReplaceElementAt(rt, i,  false);
+      mRefreshURIList->ReplaceElementAt(rt, i);
     }
   }
 
@@ -7352,7 +7352,7 @@ nsDocShell::RefreshURIFromQueue()
           
           
           
-          mRefreshURIList->ReplaceElementAt(timer, n,  false);
+          mRefreshURIList->ReplaceElementAt(timer, n);
         }
       }
     }

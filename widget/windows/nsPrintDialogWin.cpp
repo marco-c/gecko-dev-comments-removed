@@ -133,11 +133,11 @@ nsPrintDialogServiceWin::DoDialog(mozIDOMWindowProxy* aParent,
 
   nsCOMPtr<nsISupports> psSupports(do_QueryInterface(aPS));
   NS_ASSERTION(psSupports, "PrintSettings must be a supports");
-  array->AppendElement(psSupports, false);
+  array->AppendElement(psSupports);
 
   nsCOMPtr<nsISupports> blkSupps(do_QueryInterface(aParamBlock));
   NS_ASSERTION(blkSupps, "IOBlk must be a supports");
-  array->AppendElement(blkSupps, false);
+  array->AppendElement(blkSupps);
 
   nsCOMPtr<mozIDOMWindowProxy> dialog;
   nsresult rv = mWatcher->OpenWindow(aParent,

@@ -844,7 +844,7 @@ nsHTTPIndex::GetTargets(nsIRDFResource *aSource, nsIRDFResource *aProperty, bool
 		    if (NS_FAILED(idx_rv))
 		    {
     		    
-	    	    mConnectionList->AppendElement(aSource,  false);
+	    	    mConnectionList->AppendElement(aSource);
 
                 
                 
@@ -878,9 +878,9 @@ nsHTTPIndex::AddElement(nsIRDFResource *parent, nsIRDFResource *prop, nsIRDFNode
     }
 
     
-    mNodeList->AppendElement(parent,  false);
-    mNodeList->AppendElement(prop,  false);
-    mNodeList->AppendElement(child,  false);
+    mNodeList->AppendElement(parent);
+    mNodeList->AppendElement(prop);
+    mNodeList->AppendElement(child);
 
 	if (!mTimer)
 	{
