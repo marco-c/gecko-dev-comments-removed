@@ -393,15 +393,15 @@ UserProperties.prototype = {
 
 
 
-  setProperty: function (style, bame, userValue) {
-    let key = this.getKey(style, bame);
+  setProperty: function (style, name, userValue) {
+    let key = this.getKey(style, name);
     let entry = this.map.get(key, null);
 
     if (entry) {
-      entry[bame] = userValue;
+      entry[name] = userValue;
     } else {
       let props = {};
-      props[bame] = userValue;
+      props[name] = userValue;
       this.map.set(key, props);
     }
   },
