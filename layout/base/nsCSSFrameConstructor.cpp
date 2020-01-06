@@ -2585,9 +2585,6 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
                                   getter_AddRefs(binding), &resolveStyle);
     if (NS_FAILED(rv) && rv != NS_ERROR_XBL_BLOCKED) {
       
-      if (aDocElement->IsStyledByServo()) {
-        ServoRestyleManager::ClearServoDataFromSubtree(aDocElement);
-      }
       return nullptr;
     }
 
@@ -8663,35 +8660,6 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
   const InsertionKind insertionKind = (aFlags == REMOVE_FOR_RECONSTRUCTION)
                                         ? InsertionKind::Sync
                                         : InsertionKind::Async;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aFlags == REMOVE_DESTROY_FRAMES && aChild->IsElement() &&
-      aChild->IsStyledByServo()) {
-    ServoRestyleManager::ClearServoDataFromSubtree(aChild->AsElement());
-  }
 
   nsPresContext* presContext = mPresShell->GetPresContext();
   MOZ_ASSERT(presContext, "Our presShell should have a valid presContext");
