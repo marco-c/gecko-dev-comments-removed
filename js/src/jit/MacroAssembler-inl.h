@@ -331,6 +331,20 @@ MacroAssembler::hasSelfReference() const
 
 
 void
+MacroAssembler::moveValue(const ConstantOrRegister& src, const ValueOperand& dest)
+{
+    if (src.constant()) {
+        moveValue(src.value(), dest);
+        return;
+    }
+
+    moveValue(src.reg(), dest);
+}
+
+
+
+
+void
 MacroAssembler::addPtr(ImmPtr imm, Register dest)
 {
     addPtr(ImmWord(uintptr_t(imm.value)), dest);

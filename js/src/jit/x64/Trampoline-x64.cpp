@@ -462,7 +462,7 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
     
     masm.loadPtr(Address(rsp, RectifierFrameLayout::offsetOfNumActualArgs()), rdx);
 
-    masm.moveValue(UndefinedValue(), r10);
+    masm.moveValue(UndefinedValue(), ValueOperand(r10));
 
     masm.movq(rsp, r9); 
 

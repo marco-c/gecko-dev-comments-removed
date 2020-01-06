@@ -373,7 +373,7 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
     masm.Sub(w2, w6, w8);
 
     
-    masm.moveValue(UndefinedValue(), r4);
+    masm.moveValue(UndefinedValue(), ValueOperand(r4));
 
     
     {
