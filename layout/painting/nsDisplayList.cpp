@@ -808,7 +808,7 @@ nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(Layer* aLayer,
     
     
     
-    aFrame->SetProperty(nsIFrame::RefusedAsyncAnimationProperty(), true);
+    aFrame->Properties().Set(nsIFrame::RefusedAsyncAnimationProperty(), true);
 
     
     
@@ -1089,13 +1089,15 @@ void nsDisplayListBuilder::MarkOutOfFlowFrameForDisplay(nsIFrame* aDirtyFrame,
   const DisplayItemClipChain* combinedClipChain = mClipState.GetCurrentCombinedClipChain(this);
   const ActiveScrolledRoot* asr = mCurrentActiveScrolledRoot;
   OutOfFlowDisplayData* data = new OutOfFlowDisplayData(clipChain, combinedClipChain, asr, dirty);
-  aFrame->SetProperty(nsDisplayListBuilder::OutOfFlowDisplayDataProperty(), data);
+  aFrame->Properties().Set(nsDisplayListBuilder::OutOfFlowDisplayDataProperty(), data);
 
   MarkFrameForDisplay(aFrame, aDirtyFrame);
 }
 
 static void UnmarkFrameForDisplay(nsIFrame* aFrame) {
-  aFrame->DeleteProperty(nsDisplayListBuilder::OutOfFlowDisplayDataProperty());
+  nsPresContext* presContext = aFrame->PresContext();
+  presContext->PropertyTable()->
+    Delete(aFrame, nsDisplayListBuilder::OutOfFlowDisplayDataProperty());
 
   for (nsIFrame* f = aFrame; f;
        f = nsLayoutUtils::GetParentOrPlaceholderFor(f)) {
@@ -5360,18 +5362,6 @@ nsDisplayBoxShadowInner::CanCreateWebRenderCommands(nsDisplayListBuilder* aBuild
   if (!shadows) {
     
     return true;
-  }
-
-  for (uint32_t i = shadows->Length(); i > 0; --i) {
-    nsCSSShadowItem *shadowItem = shadows->ShadowAt(i - 1);
-    if (!shadowItem->mInset) {
-      continue;
-    }
-
-    if (shadowItem->mXOffset <= 0 || shadowItem->mYOffset <= 0) {
-      
-      return false;
-    }
   }
 
   return true;
