@@ -4066,3 +4066,17 @@ gfxFont::TryGetMathTable()
 
     return !!mMathTable;
 }
+
+ void
+SharedFontList::Initialize()
+{
+  sEmpty = new SharedFontList();
+}
+
+ void
+SharedFontList::Shutdown()
+{
+  sEmpty = nullptr;
+}
+
+StaticRefPtr<SharedFontList> SharedFontList::sEmpty;
