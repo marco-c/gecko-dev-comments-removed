@@ -226,6 +226,11 @@ this.PanelMultiView = class {
       this.__currentSubView = panel;
     return panel;
   }
+  get _keyNavigationMap() {
+    if (!this.__keyNavigationMap)
+      this.__keyNavigationMap = new Map();
+    return this.__keyNavigationMap;
+  }
 
   constructor(xulNode) {
     this.node = xulNode;
@@ -316,6 +321,19 @@ this.PanelMultiView = class {
   goBack(target) {
     let [current, previous] = this.panelViews.back();
     return this.showSubView(current, target, previous);
+  }
+
+  
+
+
+
+
+
+
+
+
+  _canGoBack(view = this._currentSubView) {
+    return !!view.getAttribute("title");
   }
 
   setMainView(aNewMainView) {
@@ -548,6 +566,7 @@ this.PanelMultiView = class {
             } else if (ev.target == nodeToAnimate && ev.propertyName == "transform") {
               onTransitionEnd();
               this._transitioning = false;
+              this._resetKeyNavigation(previousViewNode);
 
               
               
@@ -650,6 +669,12 @@ this.PanelMultiView = class {
           this.showMainView();
         }
         break;
+      case "keydown":
+        this._keyNavigation(aEvent);
+        break;
+      case "mousemove":
+        this._resetKeyNavigation();
+        break;
       case "overflow":
         if (!this.panelViews && aEvent.target.localName == "vbox") {
           
@@ -677,6 +702,9 @@ this.PanelMultiView = class {
             childList: true,
             subtree: true
           });
+        } else {
+          this.window.addEventListener("keydown", this);
+          this._panel.addEventListener("mousemove", this);
         }
         break;
       case "popupshown":
@@ -686,10 +714,149 @@ this.PanelMultiView = class {
         this.node.removeAttribute("panelopen");
         this._mainView.style.removeProperty("height");
         this.showMainView();
-        if (!this.panelViews)
+        if (!this.panelViews) {
           this._mainViewObserver.disconnect();
+        } else {
+          this.window.removeEventListener("keydown", this);
+          this._panel.removeEventListener("mousemove", this);
+          this._resetKeyNavigation();
+        }
         break;
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _keyNavigation(event) {
+    if (this._transitioning)
+      return;
+
+    let view = this._currentSubView;
+    let navMap = this._keyNavigationMap.get(view);
+    if (!navMap) {
+      navMap = {};
+      this._keyNavigationMap.set(view, navMap);
+    }
+
+    let buttons = navMap.buttons;
+    if (!buttons || !buttons.length) {
+      buttons = navMap.buttons = this._getNavigableElements(view);
+      
+      for (let button of buttons) {
+        if (button.classList.contains("subviewbutton-back"))
+          continue;
+        
+        if (button.hasAttribute("tabindex"))
+          break;
+        button.setAttribute("tabindex", 0);
+      }
+    }
+    if (!buttons.length)
+      return;
+
+    let stop = () => {
+      event.stopPropagation();
+      event.preventDefault();
+    };
+
+    let keyCode = event.code;
+    switch (keyCode) {
+      case "ArrowDown":
+      case "ArrowUp": {
+        stop();
+        let isDown = (keyCode == "ArrowDown");
+        let maxIdx = buttons.length - 1;
+        let buttonIndex = isDown ? 0 : maxIdx;
+        if (typeof navMap.selected == "number") {
+          if (isDown) {
+            buttonIndex = ++navMap.selected;
+            if (buttonIndex > maxIdx)
+              buttonIndex = 0;
+          } else {
+            buttonIndex = --navMap.selected;
+            if (buttonIndex < 0)
+              buttonIndex = maxIdx;
+          }
+        }
+        let button = buttons[buttonIndex];
+        button.focus();
+        navMap.selected = buttonIndex;
+        break;
+      }
+      case "ArrowLeft":
+      case "ArrowRight": {
+        stop();
+        let dir = this._dir;
+        if ((dir == "ltr" && keyCode == "ArrowLeft") ||
+            (dir == "rtl" && keyCode == "ArrowRight")) {
+          if (this._canGoBack(view))
+            this.goBack(view.backButton);
+          break;
+        }
+        
+        
+        if (!navMap.selected || !buttons[navMap.selected].classList.contains("subviewbutton-nav"))
+          break;
+        
+      }
+      case "Enter": {
+        let button = buttons[navMap.selected];
+        if (!button)
+          break;
+        stop();
+        
+        
+        button.click();
+        break;
+      }
+    }
+  }
+
+  
+
+
+
+
+
+  _resetKeyNavigation(view = this._currentSubView) {
+    let navMap = this._keyNavigationMap.get(view);
+    this._keyNavigationMap.clear();
+    if (!navMap)
+      return;
+
+    let buttons = this._getNavigableElements(view);
+    if (!buttons.length)
+      return;
+
+    let button = buttons[navMap.selected];
+    if (button)
+      button.blur();
+  }
+
+  
+
+
+
+
+
+
+  _getNavigableElements(view) {
+    let buttons = Array.from(view.querySelectorAll(".subviewbutton:not([disabled])"));
+    if (this._canGoBack(view))
+      buttons.unshift(view.backButton);
+    return buttons;
   }
 
   _shouldSetPosition() {
