@@ -106,10 +106,14 @@ impl RestyleData {
     }
 
     
-    pub fn set_reconstructed_ancestor(&mut self) {
-        
-        
-        self.flags.insert(ANCESTOR_WAS_RECONSTRUCTED);
+    pub fn set_reconstructed_ancestor(&mut self, reconstructed: bool) {
+        if reconstructed {
+            
+            
+            self.flags.insert(ANCESTOR_WAS_RECONSTRUCTED);
+        } else {
+            self.flags.remove(ANCESTOR_WAS_RECONSTRUCTED);
+        }
     }
 
     

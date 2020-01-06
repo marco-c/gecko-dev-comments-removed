@@ -170,6 +170,12 @@ pub trait DomTraversal<E: TElement> : Sync {
             
             
             data.invalidate_style_if_needed(root, shared_context);
+
+            
+            
+            
+            
+            data.restyle.set_reconstructed_ancestor(false);
         };
 
         let parent = root.traversal_parent();
@@ -592,28 +598,28 @@ where
     }
 
     
-    if flags.for_animation_only() {
+    if data.styles.is_display_none() {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        unsafe { element.clear_descendants_bits(); }
+    } else if flags.for_animation_only() {
         if flags.contains(ClearAnimationOnlyDirtyDescendants) {
             unsafe { element.unset_animation_only_dirty_descendants(); }
         }
-    } else {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if flags.contains(ClearDirtyDescendants) ||
-           data.styles.is_display_none() {
-            unsafe { element.unset_dirty_descendants(); }
-        }
+    } else if flags.contains(ClearDirtyDescendants) {
+        unsafe { element.unset_dirty_descendants(); }
     }
 
     context.thread_local.end_element(element);
@@ -793,9 +799,7 @@ where
         if let Some(ref mut child_data) = child_data {
             
             
-            if reconstructed_ancestor {
-                child_data.restyle.set_reconstructed_ancestor();
-            }
+            child_data.restyle.set_reconstructed_ancestor(reconstructed_ancestor);
 
             child_data.restyle.hint.insert(propagated_hint);
 
@@ -845,7 +849,6 @@ where
     }
 
     unsafe {
-        el.unset_dirty_descendants();
-        el.unset_animation_only_dirty_descendants();
+        el.clear_descendants_bits();
     }
 }

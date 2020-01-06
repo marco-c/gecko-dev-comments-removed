@@ -516,6 +516,13 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     
     
     
+    
+    
+    unsafe fn clear_descendants_bits(&self) { self.unset_dirty_descendants(); }
+
+    
+    
+    
     fn is_visited_link(&self) -> bool { false }
 
     
