@@ -1602,10 +1602,27 @@ var PlacesControllerDragHelper = {
         
         
         
-        let dragginUp = insertionPoint.itemId == unwrapped.parent &&
-                        index < (await PlacesUtils.bookmarks.fetch(unwrapped.itemGuid)).index;
-        if (index != -1 && dragginUp)
-          index += movedCount++;
+        if (index != -1 && unwrapped.itemGuid) {
+          
+          
+          
+          let existingBookmark = await PlacesUtils.bookmarks.fetch(unwrapped.itemGuid);
+          let dragginUp = parentGuid == existingBookmark.parentGuid &&
+                          index < existingBookmark.index;
+
+          if (dragginUp) {
+            index += movedCount++;
+          } else if (PlacesUIUtils.useAsyncTransactions) {
+            if (index == existingBookmark.index) {
+              
+              continue;
+            }
+            
+            
+            
+            index--;
+          }
+        }
 
         
         if (insertionPoint.isTag) {
@@ -1638,7 +1655,11 @@ var PlacesControllerDragHelper = {
         }
       }
     }
-
+    
+    
+    if (!transactions.length) {
+      return;
+    }
     if (PlacesUIUtils.useAsyncTransactions) {
       await PlacesTransactions.batch(transactions);
     } else {
