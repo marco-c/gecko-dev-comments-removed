@@ -1708,6 +1708,24 @@ PresShell::EndObservingDocument()
 char* nsPresShell_ReflowStackPointerTop;
 #endif
 
+class XBLConstructorRunner : public Runnable
+{
+public:
+  explicit XBLConstructorRunner(nsIDocument* aDocument)
+    : mDocument(aDocument)
+  {
+  }
+
+  NS_IMETHOD Run() override
+  {
+    mDocument->BindingManager()->ProcessAttachedQueue();
+    return NS_OK;
+  }
+
+private:
+  nsCOMPtr<nsIDocument> mDocument;
+};
+
 nsresult
 PresShell::Initialize(nscoord aWidth, nscoord aHeight)
 {
@@ -1804,23 +1822,13 @@ PresShell::Initialize(nscoord aWidth, nscoord aHeight)
     }
 
     
-    NS_ENSURE_STATE(!mHaveShutDown);
-
-    
-    mDocument->BindingManager()->ProcessAttachedQueue();
-
     
     NS_ENSURE_STATE(!mHaveShutDown);
 
     
     
-    {
-      nsAutoScriptBlocker scriptBlocker;
-      mPresContext->RestyleManager()->ProcessPendingRestyles();
-    }
-
     
-    NS_ENSURE_STATE(!mHaveShutDown);
+    nsContentUtils::AddScriptRunner(new XBLConstructorRunner(mDocument));
   }
 
   NS_ASSERTION(rootFrame, "How did that happen?");
