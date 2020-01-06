@@ -385,6 +385,9 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
   FT_EXPORT( FT_Error )
   FT_Outline_EmboldenXY( FT_Outline*  outline,
                          FT_Pos       xstrength,

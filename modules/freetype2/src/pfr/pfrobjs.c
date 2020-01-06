@@ -264,12 +264,6 @@
         charmap.encoding    = FT_ENCODING_UNICODE;
 
         error = FT_CMap_New( &pfr_cmap_class_rec, NULL, &charmap, NULL );
-
-#if 0
-        
-        if ( pfrface->num_charmaps )
-          pfrface->charmap = pfrface->charmaps[0];
-#endif
       }
 
       

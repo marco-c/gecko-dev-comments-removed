@@ -347,7 +347,23 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
+
     
     
     FT_Bool            subpixel_hinting_lean;

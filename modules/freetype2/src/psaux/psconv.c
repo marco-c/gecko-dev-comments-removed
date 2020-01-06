@@ -111,6 +111,10 @@
       p++;
       if ( p == limit )
         goto Bad;
+
+      
+      if ( *p == '-' || *p == '+' )
+        return 0;
     }
 
     num_limit = 0x7FFFFFFFL / base;
@@ -215,6 +219,10 @@
       p++;
       if ( p == limit )
         goto Bad;
+
+      
+      if ( *p == '-' || *p == '+' )
+        return 0;
     }
 
     

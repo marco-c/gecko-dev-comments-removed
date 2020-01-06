@@ -576,9 +576,11 @@
     
     
     
-    if ( face->format_tag != 0x00010000L &&    
-         face->format_tag != 0x00020000L &&    
-         face->format_tag != TTAG_true   )     
+    if ( face->format_tag != 0x00010000L  && 
+         face->format_tag != 0x00020000L  && 
+         face->format_tag != TTAG_true    && 
+         face->format_tag != TTAG_0xA5kbd && 
+         face->format_tag != TTAG_0xA5lst )  
     {
       FT_TRACE2(( "  not a TTF font\n" ));
       goto Bad_Format;
@@ -1232,6 +1234,8 @@
   
   
   
+  
+  
   FT_LOCAL_DEF( FT_Error )
   tt_size_reset( TT_Size  size,
                  FT_Bool  only_height )
@@ -1277,7 +1281,11 @@
     size->ttmetrics.valid = TRUE;
 
     if ( only_height )
+    {
+      
+      
       return FT_Err_Ok;
+    }
 
     if ( face->header.Flags & 8 )
     {

@@ -387,7 +387,11 @@
           if ( !ft_strcmp( s, "10646" )                      ||
                ( !ft_strcmp( s, "8859" ) &&
                  !ft_strcmp( face->charset_encoding, "1" ) ) )
-          unicode_charmap = 1;
+            unicode_charmap = 1;
+          
+          else if ( !ft_strcmp( s, "646.1991" )                 &&
+                    !ft_strcmp( face->charset_encoding, "IRV" ) )
+            unicode_charmap = 1;
         }
       }
 
@@ -409,12 +413,6 @@
         }
 
         error = FT_CMap_New( &pcf_cmap_class, NULL, &charmap, NULL );
-
-#if 0
-        
-        if ( pcfface->num_charmaps )
-          pcfface->charmap = pcfface->charmaps[0];
-#endif
       }
     }
 

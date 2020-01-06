@@ -271,7 +271,13 @@
           if ( FT_STREAM_SKIP( 4 ) )  
             goto Exit;
 
-          if ( ref[j].res_id < 0 || temp < 0 )
+          
+
+
+
+
+
+          if ( temp < 0 )
           {
             error = FT_THROW( Invalid_Table );
             goto Exit;
@@ -281,7 +287,7 @@
 
           FT_TRACE3(( "             [%d]:"
                       " resource_id=0x%04x, offset=0x%08x\n",
-                      j, ref[j].res_id, ref[j].offset ));
+                      j, (FT_UShort)ref[j].res_id, ref[j].offset ));
         }
 
         if ( sort_by_res_id )

@@ -859,10 +859,6 @@
                              NULL );
         if ( error )
           goto Fail;
-
-        
-        if ( root->num_charmaps )
-          root->charmap = root->charmaps[0];
       }
 
       
@@ -1095,7 +1091,7 @@
 
       
       
-      if ( FT_ALLOC_MULT( bitmap->buffer, pitch, bitmap->rows ) )
+      if ( FT_ALLOC_MULT( bitmap->buffer, bitmap->rows, pitch ) )
         goto Exit;
 
       column = (FT_Byte*)bitmap->buffer;

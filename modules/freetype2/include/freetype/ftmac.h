@@ -35,11 +35,12 @@
 FT_BEGIN_HEADER
 
 
-
+  
 #ifndef FT_DEPRECATED_ATTRIBUTE
-#if defined(__GNUC__)                                               && \
-    ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
-#define FT_DEPRECATED_ATTRIBUTE  __attribute__((deprecated))
+#if defined( __GNUC__ )                                     && \
+    ( ( __GNUC__ >= 4 )                                  ||    \
+      ( ( __GNUC__ == 3 ) && ( __GNUC_MINOR__ >= 1 ) ) )
+#define FT_DEPRECATED_ATTRIBUTE  __attribute__(( deprecated ))
 #else
 #define FT_DEPRECATED_ATTRIBUTE
 #endif

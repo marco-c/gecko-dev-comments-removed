@@ -85,7 +85,7 @@
 
     for ( nn = 0; nn < num_tables; nn++ )
     {
-      FT_UInt    num_pairs, length, coverage;
+      FT_UInt    num_pairs, length, coverage, format;
       FT_Byte*   p_next;
       FT_UInt32  mask = (FT_UInt32)1UL << nn;
 
@@ -106,6 +106,12 @@
 
       if ( p_next > p_limit )  
         p_next = p_limit;
+
+      format = coverage >> 8;
+
+      
+      if ( format != 0 )
+        goto NextTable;
 
       
       if ( ( coverage & 3U ) != 0x0001 ||

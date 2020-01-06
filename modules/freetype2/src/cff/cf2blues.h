@@ -111,7 +111,7 @@ FT_BEGIN_HEADER
 
 
 
-#define CF2_MIN_COUNTER  cf2_floatToFixed( 0.5 )
+#define CF2_MIN_COUNTER  cf2_doubleToFixed( 0.5 )
 
 
   

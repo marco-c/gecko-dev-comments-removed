@@ -581,6 +581,7 @@ FT_BEGIN_HEADER
   
   
   
+  
   typedef struct FT_CharMapRec_*  FT_CharMap;
 
 
@@ -1479,6 +1480,12 @@ FT_BEGIN_HEADER
   typedef struct FT_Size_InternalRec_*  FT_Size_Internal;
 
 
+  
+  
+  
+  
+  
+  
   
   
   
@@ -3135,6 +3142,8 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
   typedef enum  FT_Render_Mode_
   {
     FT_RENDER_MODE_NORMAL = 0,
@@ -4327,10 +4336,16 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
   FT_EXPORT( FT_Fixed )
   FT_RoundFix( FT_Fixed  a );
 
 
+  
+  
+  
   
   
   
@@ -4442,7 +4457,7 @@ FT_BEGIN_HEADER
 
 #define FREETYPE_MAJOR  2
 #define FREETYPE_MINOR  8
-#define FREETYPE_PATCH  0
+#define FREETYPE_PATCH  1
 
 
   

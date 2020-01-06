@@ -231,6 +231,12 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
+  
+  
+  
   FT_EXPORT( FT_Error )
   FT_Get_Glyph( FT_GlyphSlot  slot,
                 FT_Glyph     *aglyph );
@@ -549,6 +555,9 @@ FT_BEGIN_HEADER
   
 
 
+  
+  
+  
   
   
   
