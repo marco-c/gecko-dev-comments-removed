@@ -7111,24 +7111,27 @@ nsCSSFrameConstructor::GetInsertionPrevSibling(InsertionPoint* aInsertion,
 nsContainerFrame*
 nsCSSFrameConstructor::GetContentInsertionFrameFor(nsIContent* aContent)
 {
-  nsIContent* content = aContent;
-  nsIFrame* frame;
-  while (!(frame = content->GetPrimaryFrame())) {
-    if (!GetDisplayContentsStyleFor(content)) {
+  
+  nsIFrame* frame = aContent->GetPrimaryFrame();
+
+  if (!frame) {
+    if (GetDisplayContentsStyleFor(aContent)) {
+      nsIContent* parent = aContent->GetParent();
+      if (parent && parent == aContent->GetContainingShadow()) {
+        parent = parent->GetBindingParent();
+      }
+      frame = parent ? GetContentInsertionFrameFor(parent) : nullptr;
+    }
+    if (!frame) {
       return nullptr;
     }
-
-    content = content->GetFlattenedTreeParent();
-    if (!content) {
+  } else {
+    
+    
+    
+    if (frame->GetContent() != aContent) {
       return nullptr;
     }
-  }
-
-  
-  
-  
-  if (frame->GetContent() != aContent) {
-    return nullptr;
   }
 
   nsContainerFrame* insertionFrame = frame->GetContentInsertionFrame();
