@@ -163,12 +163,12 @@ add_task(function* () {
 
   
   testFilterButtons(monitor, "all");
-  yield testContents([1, 1, 1, 1, 1, 1, 1, 1, 1]);
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-html-button"));
   testFilterButtons(monitor, "html");
-  yield testContents([1, 0, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([1, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   EventUtils.sendMouseEvent({ type: "click" },
@@ -176,86 +176,86 @@ add_task(function* () {
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-css-button"));
   testFilterButtons(monitor, "css");
-  yield testContents([0, 1, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([0, 1, 0, 0, 0, 0, 0, 0, 0]);
 
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-all-button"));
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-js-button"));
   testFilterButtons(monitor, "js");
-  yield testContents([0, 0, 1, 0, 0, 0, 0, 0, 0]);
+  testContents([0, 0, 1, 0, 0, 0, 0, 0, 0]);
 
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-all-button"));
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-xhr-button"));
   testFilterButtons(monitor, "xhr");
-  yield testContents([1, 1, 1, 1, 1, 1, 1, 1, 0]);
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 0]);
 
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-all-button"));
   EventUtils.sendMouseEvent({ type: "click" },
      document.querySelector(".requests-list-filter-fonts-button"));
   testFilterButtons(monitor, "fonts");
-  yield testContents([0, 0, 0, 1, 0, 0, 0, 0, 0]);
+  testContents([0, 0, 0, 1, 0, 0, 0, 0, 0]);
 
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-all-button"));
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-images-button"));
   testFilterButtons(monitor, "images");
-  yield testContents([0, 0, 0, 0, 1, 0, 0, 0, 0]);
+  testContents([0, 0, 0, 0, 1, 0, 0, 0, 0]);
 
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-all-button"));
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-media-button"));
   testFilterButtons(monitor, "media");
-  yield testContents([0, 0, 0, 0, 0, 1, 1, 0, 0]);
+  testContents([0, 0, 0, 0, 0, 1, 1, 0, 0]);
 
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-all-button"));
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-flash-button"));
   testFilterButtons(monitor, "flash");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 1, 0]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 1, 0]);
 
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-all-button"));
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-ws-button"));
   testFilterButtons(monitor, "ws");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 1]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 1]);
 
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-all-button"));
 
   testFilterButtons(monitor, "all");
-  yield testContents([1, 1, 1, 1, 1, 1, 1, 1, 1]);
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-all-button"));
   setFreetextFilter("foobar");
-  yield testContents([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-all-button"));
   setFreetextFilter("sample");
-  yield testContents([1, 1, 1, 0, 0, 0, 0, 0, 0]);
+  testContents([1, 1, 1, 0, 0, 0, 0, 0, 0]);
 
   
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-all-button"));
   setFreetextFilter("SAMPLE");
-  yield testContents([1, 1, 1, 0, 0, 0, 0, 0, 0]);
+  testContents([1, 1, 1, 0, 0, 0, 0, 0, 0]);
 
   
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-all-button"));
   setFreetextFilter("-sample");
-  yield testContents([0, 0, 0, 1, 1, 1, 1, 1, 1]);
+  testContents([0, 0, 0, 1, 1, 1, 1, 1, 1]);
 
   
 
@@ -266,18 +266,18 @@ add_task(function* () {
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-css-button"));
   testFilterButtonsCustom(monitor, [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
-  yield testContents([1, 1, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([1, 1, 0, 0, 0, 0, 0, 0, 0]);
 
   
   
   setFreetextFilter("sample");
-  yield testContents([1, 1, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([1, 1, 0, 0, 0, 0, 0, 0, 0]);
 
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-flash-button"));
   setFreetextFilter("");
   testFilterButtonsCustom(monitor, [0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0]);
-  yield testContents([1, 1, 0, 0, 0, 0, 0, 1, 0]);
+  testContents([1, 1, 0, 0, 0, 0, 0, 1, 0]);
 
   
   EventUtils.sendMouseEvent({ type: "click" },
@@ -285,13 +285,13 @@ add_task(function* () {
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-flash-button"));
   testFilterButtons(monitor, "html");
-  yield testContents([1, 0, 0, 0, 0, 0, 0, 0, 0]);
+  testContents([1, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-html-button"));
   testFilterButtons(monitor, "all");
-  yield testContents([1, 1, 1, 1, 1, 1, 1, 1, 1]);
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   
   EventUtils.sendMouseEvent({ type: "click" },
@@ -304,7 +304,7 @@ add_task(function* () {
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector(".requests-list-filter-all-button"));
   testFilterButtons(monitor, "all");
-  yield testContents([1, 1, 1, 1, 1, 1, 1, 1, 1]);
+  testContents([1, 1, 1, 1, 1, 1, 1, 1, 1]);
 
   yield teardown(monitor);
 
@@ -315,15 +315,7 @@ add_task(function* () {
     return getSortedRequests(state).findIndex(r => r.id === state.requests.selectedId);
   }
 
-  function* testContents(visibility) {
-    let requestItems = document.querySelectorAll(".request-list-item");
-    for (let requestItem of requestItems) {
-      requestItem.scrollIntoView();
-      let requestsListStatus = requestItem.querySelector(".requests-list-status");
-      EventUtils.sendMouseEvent({ type: "mouseover" }, requestsListStatus);
-      yield waitUntil(() => requestsListStatus.title);
-    }
-
+  function testContents(visibility) {
     isnot(getSelectedRequest(store.getState()), undefined,
       "There should still be a selected item after filtering.");
     is(getSelectedIndex(store.getState()), 0,
