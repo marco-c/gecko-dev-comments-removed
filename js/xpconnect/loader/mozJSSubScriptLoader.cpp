@@ -594,16 +594,9 @@ mozJSSubScriptLoader::DoLoadSubScriptWithOptions(const nsAString& url,
         MOZ_ASSERT(JS_IsGlobalObject(targetObj));
     }
 
-    
-    
-    nsCOMPtr<nsIPrincipal> principal = mSystemPrincipal;
-    RootedObject result_obj(cx, targetObj);
     targetObj = JS_FindCompilationScope(cx, targetObj);
     if (!targetObj)
         return NS_ERROR_FAILURE;
-
-    if (targetObj != result_obj)
-        principal = GetObjectPrincipal(targetObj);
 
     
 
@@ -672,8 +665,9 @@ mozJSSubScriptLoader::DoLoadSubScriptWithOptions(const nsAString& url,
 
     
     
-    bool ignoreCache = options.ignoreCache || principal != mSystemPrincipal ||
-                       scheme.EqualsLiteral("blob");
+    bool ignoreCache = options.ignoreCache
+        || !GetObjectPrincipal(targetObj)->GetIsSystemPrincipal()
+        || scheme.EqualsLiteral("blob");
     StartupCache* cache = ignoreCache ? nullptr : StartupCache::GetSingleton();
 
     JSVersion version = JS_GetVersion(cx);
