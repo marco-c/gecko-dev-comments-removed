@@ -1323,7 +1323,6 @@ PromiseConstructor(JSContext* cx, unsigned argc, Value* vp)
 
     
     RootedObject newTarget(cx, &args.newTarget().toObject());
-    bool needsWrapping = false;
 
     
     
@@ -1352,6 +1351,9 @@ PromiseConstructor(JSContext* cx, unsigned argc, Value* vp)
     
     
     
+
+    bool needsWrapping = false;
+    RootedObject proto(cx);
     if (IsWrapper(newTarget)) {
         JSObject* unwrappedNewTarget = CheckedUnwrap(newTarget);
         MOZ_ASSERT(unwrappedNewTarget);
@@ -1367,15 +1369,15 @@ PromiseConstructor(JSContext* cx, unsigned argc, Value* vp)
             
             
             
-            if (newTarget == promiseCtor)
+            if (newTarget == promiseCtor) {
                 needsWrapping = true;
+                if (!GetBuiltinPrototype(cx, JSProto_Promise, &proto))
+                    return false;
+            }
         }
     }
 
-    RootedObject proto(cx);
     if (needsWrapping) {
-        if (!GetPrototypeFromConstructor(cx, newTarget, &proto))
-            return false;
         if (!cx->compartment()->wrap(cx, &proto))
             return false;
     } else {
