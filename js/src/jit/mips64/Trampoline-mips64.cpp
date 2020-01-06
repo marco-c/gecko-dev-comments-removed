@@ -428,14 +428,10 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
     masm.pushReturnAddress();
     
     
-    
 
     
-    
-    MOZ_ASSERT(ArgumentsRectifierReg == s3);
-
-    
-    masm.addPtr(Imm32(1), ArgumentsRectifierReg);
+    masm.loadPtr(Address(StackPointer, RectifierFrameLayout::offsetOfNumActualArgs()), s3);
+    masm.addPtr(Imm32(1), s3);
 
     Register numActArgsReg = a6;
     Register calleeTokenReg = a7;

@@ -427,10 +427,6 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
     MacroAssembler masm(cx);
     masm.pushReturnAddress();
 
-    
-    
-    MOZ_ASSERT(ArgumentsRectifierReg == s3);
-
     Register numActArgsReg = t6;
     Register calleeTokenReg = t7;
     Register numArgsReg = t5;
@@ -442,6 +438,10 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
     
     masm.loadPtr(Address(StackPointer, RectifierFrameLayout::offsetOfCalleeToken()),
                  calleeTokenReg);
+
+    
+    masm.mov(numActArgsReg, s3);
+
     masm.mov(calleeTokenReg, numArgsReg);
     masm.andPtr(Imm32(CalleeTokenMask), numArgsReg);
     masm.load16ZeroExtend(Address(numArgsReg, JSFunction::offsetOfNargs()), numArgsReg);
