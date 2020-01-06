@@ -147,6 +147,12 @@ FRAME_ID(nsXULScrollFrame, Scroll, NotLeaf)
 FRAME_ID(ViewportFrame, Viewport, NotLeaf)
 
 
+
+
+
+
+
+
 ABSTRACT_FRAME_ID(nsContainerFrame)
 ABSTRACT_FRAME_ID(nsFormControlFrame)
 ABSTRACT_FRAME_ID(nsIFrame)

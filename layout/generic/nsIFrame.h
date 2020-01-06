@@ -4487,6 +4487,13 @@ private:
 };
 
 
+inline do_QueryFrameHelper<nsIFrame>
+do_QueryFrame(AutoWeakFrame& s)
+{
+  return do_QueryFrameHelper<nsIFrame>(s.GetFrame());
+}
+
+
 
 
 class MOZ_HEAP_CLASS WeakFrame
@@ -4542,6 +4549,13 @@ private:
 
   nsIFrame* mFrame;
 };
+
+
+inline do_QueryFrameHelper<nsIFrame>
+do_QueryFrame(WeakFrame& s)
+{
+  return do_QueryFrameHelper<nsIFrame>(s.GetFrame());
+}
 
 inline bool
 nsFrameList::ContinueRemoveFrame(nsIFrame* aFrame)

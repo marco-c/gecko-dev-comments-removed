@@ -82,29 +82,66 @@ public:
   virtual void* QueryFrame(FrameIID id) = 0;
 };
 
-class do_QueryFrame
+class nsIFrame;
+
+template<class Source>
+class do_QueryFrameHelper
 {
 public:
-  explicit do_QueryFrame(nsQueryFrame *s) : mRawPtr(s) { }
+  explicit do_QueryFrameHelper(Source* s) : mRawPtr(s) { }
 
   
   
-  typedef void (do_QueryFrame::* MatchNullptr)(double, float);
+  typedef void (do_QueryFrameHelper::* MatchNullptr)(double, float);
   
-  MOZ_IMPLICIT do_QueryFrame(MatchNullptr aRawPtr) : mRawPtr(nullptr) {}
+  MOZ_IMPLICIT do_QueryFrameHelper(MatchNullptr aRawPtr) : mRawPtr(nullptr) {}
 
   template<class Dest>
   operator Dest*() {
     static_assert(mozilla::IsSame<Dest, typename Dest::Has_NS_DECL_QUERYFRAME_TARGET>::value,
                   "Dest must declare itself as a queryframe target");
-    if (!mRawPtr)
+    if (!mRawPtr) {
       return nullptr;
-
+    }
+    if (Dest* f = FastQueryFrame<Source, Dest>::QueryFrame(mRawPtr)) {
+      MOZ_ASSERT(f ==
+                 reinterpret_cast<Dest*>(mRawPtr->QueryFrame(Dest::kFrameIID)),
+                 "fast and slow paths should give the same result");
+      return f;
+    }
     return reinterpret_cast<Dest*>(mRawPtr->QueryFrame(Dest::kFrameIID));
   }
 
 private:
-  nsQueryFrame *mRawPtr;
+  
+  template<class Src, class Dst, typename = void, typename = void>
+  struct FastQueryFrame
+  {
+    static Dst* QueryFrame(Src* aFrame) { return nullptr; }
+  };
+  
+  
+  
+  
+  template<class Src, class Dst>
+  struct FastQueryFrame<Src, Dst,
+    typename mozilla::EnableIf<mozilla::IsBaseOf<nsIFrame, Src>::value>::type,
+    typename mozilla::EnableIf<mozilla::IsBaseOf<nsIFrame, Dst>::value>::Type>
+  {
+    static Dst* QueryFrame(Src* aFrame) {
+      return nsQueryFrame::FrameIID(aFrame->mClass) == Dst::kFrameIID ?
+        reinterpret_cast<Dst*>(aFrame) : nullptr;
+    }
+  };
+
+  Source* mRawPtr;
 };
+
+template<class T>
+inline do_QueryFrameHelper<T>
+do_QueryFrame(T* s)
+{
+  return do_QueryFrameHelper<T>(s);
+}
 
 #endif 
