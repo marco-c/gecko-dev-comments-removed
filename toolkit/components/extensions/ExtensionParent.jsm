@@ -69,6 +69,8 @@ let ParentAPIManager;
 let ProxyMessenger;
 let StartupCache;
 
+const global = this;
+
 
 let apiManager = new class extends SchemaAPIManager {
   constructor() {
@@ -783,6 +785,8 @@ ParentAPIManager = {
         },
         {
           recipient: {childId},
+        }).then(result => {
+          return result && result.deserialize(global);
         });
     }
 

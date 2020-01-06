@@ -3,6 +3,10 @@
 
 "use strict";
 
+Cu.import("resource://testing-common/PromiseTestUtils.jsm");
+
+PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
+
 add_task(async function test_alarm_without_permissions() {
   function backgroundScript() {
     browser.test.assertTrue(!browser.alarms,
