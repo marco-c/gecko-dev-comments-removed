@@ -22,6 +22,7 @@ use selector_parser::{PseudoClassStringArg, PseudoElement};
 use selectors::matching::{ElementSelectorFlags, VisitedHandlingMode};
 use shared_lock::Locked;
 use sink::Push;
+use smallvec::VecLike;
 use std::fmt;
 #[cfg(feature = "gecko")] use std::collections::HashMap;
 use std::fmt::Debug;
@@ -560,6 +561,14 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
         };
         return data.get_restyle()
                    .map_or(false, |r| r.hint.has_animation_hint());
+    }
+
+    
+    fn get_declarations_from_xbl_bindings<V>(&self,
+                                             _: &mut V)
+                                             -> bool
+        where V: Push<ApplicableDeclarationBlock> + VecLike<ApplicableDeclarationBlock> {
+        false
     }
 
     

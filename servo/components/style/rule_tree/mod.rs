@@ -407,6 +407,8 @@ pub enum CascadeLevel {
     
     UserNormal,
     
+    XBL,
+    
     AuthorNormal,
     
     StyleAttributeNormal,
@@ -1048,7 +1050,8 @@ impl StrongRuleNode {
                     CascadeLevel::UANormal |
                     CascadeLevel::UAImportant |
                     CascadeLevel::UserNormal |
-                    CascadeLevel::UserImportant => {
+                    CascadeLevel::UserImportant |
+                    CascadeLevel::XBL => {
                         for (id, declaration) in longhands {
                             if properties.contains(id) {
                                 
