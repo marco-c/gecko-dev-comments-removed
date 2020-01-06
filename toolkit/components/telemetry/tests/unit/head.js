@@ -301,6 +301,10 @@ function setEmptyPrefWatchlist() {
   });
 }
 
+function histogramValueCount(histogramSnapshot) {
+  return histogramSnapshot.counts.reduce((a, b) => a + b);
+}
+
 if (runningInParent) {
   
   Services.prefs.setCharPref("toolkit.telemetry.log.level", "Trace");
@@ -319,7 +323,8 @@ if (runningInParent) {
   
   
   Services.prefs.setBoolPref("experiments.enabled", false);
-
+  
+  Services.prefs.setBoolPref(TelemetryUtils.Preferences.HealthPingEnabled, false);
 
   fakePingSendTimer((callback, timeout) => {
     Services.tm.dispatchToMainThread(() => callback());
