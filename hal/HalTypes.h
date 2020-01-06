@@ -20,19 +20,6 @@ namespace hal {
 const uint64_t CONTENT_PROCESS_ID_UNKNOWN = uint64_t(-1);
 const uint64_t CONTENT_PROCESS_ID_MAIN = 0;
 
-
-
-
-
-
-enum ShutdownMode {
-  eHalShutdownMode_Unknown  = -1,
-  eHalShutdownMode_PowerOff = 0,
-  eHalShutdownMode_Reboot   = 1,
-  eHalShutdownMode_Restart  = 2,
-  eHalShutdownMode_Count    = 3
-};
-
 class SwitchEvent;
 
 enum SwitchDevice {
@@ -118,17 +105,6 @@ enum WakeLockControl {
 } 
 
 namespace IPC {
-
-
-
-
-template <>
-struct ParamTraits<mozilla::hal::ShutdownMode>
-  : public ContiguousEnumSerializer<
-             mozilla::hal::ShutdownMode,
-             mozilla::hal::eHalShutdownMode_Unknown,
-             mozilla::hal::eHalShutdownMode_Count>
-{};
 
 
 

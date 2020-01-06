@@ -140,14 +140,6 @@ public:
   
   static void ShutDown();
 
-  
-
-
-
-
-
-  static void JoinAllSubprocesses();
-
   static uint32_t GetPoolSize(const nsAString& aContentProcessType);
 
   static uint32_t GetMaxProcessCount(const nsAString& aContentProcessType);
@@ -670,9 +662,6 @@ private:
   static nsTArray<ContentParent*>* sPrivateContent;
   static nsDataHashtable<nsUint32HashKey, ContentParent*> *sJSPluginContentParents;
   static StaticAutoPtr<LinkedList<ContentParent> > sContentParents;
-
-  static void JoinProcessesIOThread(const nsTArray<ContentParent*>* aProcesses,
-                                    Monitor* aMonitor, bool* aDone);
 
   static hal::ProcessPriority GetInitialProcessPriority(Element* aFrameElement);
 

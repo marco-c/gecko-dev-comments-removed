@@ -295,20 +295,6 @@ void NotifySystemTimezoneChange(
 
 
 
-void Reboot();
-
-
-
-
-
-
-void PowerOff();
-
-
-
-
-
-
 void EnableWakeLockNotifications();
 
 
@@ -459,15 +445,6 @@ void SetCurrentThreadPriority(hal::ThreadPriority aThreadPriority);
 
 void SetThreadPriority(PlatformThreadId aThreadId,
                        hal::ThreadPriority aThreadPriority);
-
-
-
-
-
-
-
-
-void StartForceQuitWatchdog(hal::ShutdownMode aMode, int32_t aTimeoutSecs);
 
 
 
