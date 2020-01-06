@@ -37,40 +37,7 @@ private:
   ~nsEffectiveTLDService();
 
   nsCOMPtr<nsIIDNService>     mIDNService;
-
-  
   mozilla::Dafsa mGraph;
-
-  struct TLDCacheEntry
-  {
-    nsCString mHost;
-    nsCString mBaseDomain;
-  };
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static const uint32_t kTableSize = 31;
-  TLDCacheEntry mMruTable[kTableSize];
-
-  
-
-
-
-
-
-
-
-  inline bool LookupForAdd(const nsACString& aHost, TLDCacheEntry** aEntry);
 };
 
 #endif 
