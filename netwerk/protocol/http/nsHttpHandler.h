@@ -124,6 +124,7 @@ public:
     bool           AllowAltSvcOE() { return mEnableAltSvcOE; }
     bool           AllowOriginExtension() { return mEnableOriginExtension; }
     uint32_t       ConnectTimeout()  { return mConnectTimeout; }
+    uint32_t       TLSHandshakeTimeout()  { return mTLSHandshakeTimeout; }
     uint32_t       ParallelSpeculativeConnectLimit() { return mParallelSpeculativeConnectLimit; }
     bool           CriticalRequestPrioritization() { return mCriticalRequestPrioritization; }
     bool           UseH2Deps() { return mUseH2Deps; }
@@ -578,6 +579,10 @@ private:
     
     
     uint32_t       mConnectTimeout;
+
+    
+    
+    uint32_t       mTLSHandshakeTimeout;
 
     
     

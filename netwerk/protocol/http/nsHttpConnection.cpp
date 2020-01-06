@@ -1338,6 +1338,24 @@ nsHttpConnection::ReadTimeoutTick(PRIntervalTime now)
         nextTickAfter = std::max(nextTickAfter, 1U);
     }
 
+    if (!mNPNComplete) {
+      
+      
+      
+      
+      PRIntervalTime initialTLSDelta = now - mLastWriteTime;
+      if (initialTLSDelta > gHttpHandler->TLSHandshakeTimeout()) {
+        LOG(("canceling transaction: tls handshake takes too long: tls handshake "
+             "last %ums, timeout is %dms.",
+             PR_IntervalToMilliseconds(initialTLSDelta),
+             gHttpHandler->TLSHandshakeTimeout()));
+
+        
+        CloseTransaction(mTransaction, NS_ERROR_NET_TIMEOUT);
+        return UINT32_MAX;
+      }
+    }
+
     return nextTickAfter;
 }
 

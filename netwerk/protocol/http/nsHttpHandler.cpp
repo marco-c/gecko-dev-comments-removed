@@ -257,6 +257,7 @@ nsHttpHandler::nsHttpHandler()
     , mSpdyPingThreshold(PR_SecondsToInterval(58))
     , mSpdyPingTimeout(PR_SecondsToInterval(8))
     , mConnectTimeout(90000)
+    , mTLSHandshakeTimeout(30000)
     , mParallelSpeculativeConnectLimit(6)
     , mSpeculativeConnectEnabled(true)
     , mRequestTokenBucketEnabled(true)
@@ -1588,6 +1589,14 @@ nsHttpHandler::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
         if (NS_SUCCEEDED(rv))
             
             mConnectTimeout = clamped(val, 1, 0xffff) * PR_MSEC_PER_SEC;
+    }
+
+    
+    if (PREF_CHANGED(HTTP_PREF("tls-handshake-timeout"))) {
+        rv = prefs->GetIntPref(HTTP_PREF("tls-handshake-timeout"), &val);
+        if (NS_SUCCEEDED(rv))
+            
+            mTLSHandshakeTimeout = clamped(val, 1, 0xffff) * PR_MSEC_PER_SEC;
     }
 
     
