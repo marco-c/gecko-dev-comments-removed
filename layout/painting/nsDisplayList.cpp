@@ -8969,17 +8969,36 @@ nsDisplayMask::~nsDisplayMask()
 }
 #endif
 
+static bool
+CanMergeDisplayMaskFrame(nsIFrame* aFrame)
+{
+  
+  
+  if (aFrame->StyleBorder()->mBoxDecorationBreak ==
+        mozilla::StyleBoxDecorationBreak::Clone) {
+    return false;
+  }
+
+  
+  
+  if (aFrame->StyleSVGReset()->HasMask()) {
+    return false;
+  }
+
+  return true;
+}
+
 bool
 nsDisplayMask::CanMerge(const nsDisplayItem* aItem) const
 {
   
   
-  
-  
-  return HasSameTypeAndClip(aItem) && HasSameContent(aItem) &&
-         !mFrame->StyleSVGReset()->HasMask() &&
-         (mFrame->StyleBorder()->mBoxDecorationBreak !=
-            mozilla::StyleBoxDecorationBreak::Clone);
+  if (!HasSameTypeAndClip(aItem) || !HasSameContent(aItem)) {
+    return false;
+  }
+
+  return CanMergeDisplayMaskFrame(mFrame) &&
+         CanMergeDisplayMaskFrame(aItem->Frame());
 }
 
 already_AddRefed<Layer>
