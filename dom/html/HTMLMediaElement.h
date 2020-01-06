@@ -1801,7 +1801,8 @@ private:
 };
 
 
-bool HasDebuggerPrivilege(JSContext* aCx, JSObject* aObj);
+bool
+HasDebuggerOrTabsPrivilege(JSContext* aCx, JSObject* aObj);
 
 } 
 } 
