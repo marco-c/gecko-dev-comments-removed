@@ -9721,22 +9721,6 @@ nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame,
     return true;
   }
 
-  if (insertionFrame && aFrame->GetParent()->IsDetailsFrame()) {
-    HTMLSummaryElement* summary =
-      HTMLSummaryElement::FromContent(insertionFrame->GetContent());
-
-    if (summary && summary->IsMainSummary()) {
-      
-      
-      
-      RecreateFramesForContent(aFrame->GetParent()->GetContent(),
-                               false, REMOVE_FOR_RECONSTRUCTION,
-                               aDestroyedFramesFor);
-      return true;
-    }
-  }
-
-  
   nsIFrame* inFlowFrame =
     (aFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) ?
       aFrame->GetPlaceholderFrame() : aFrame;
@@ -9744,6 +9728,23 @@ nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame,
   MOZ_ASSERT(inFlowFrame == inFlowFrame->FirstContinuation(),
              "placeholder for primary frame has previous continuations?");
   nsIFrame* parent = inFlowFrame->GetParent();
+
+  if (parent && parent->IsDetailsFrame()) {
+    HTMLSummaryElement* summary =
+      HTMLSummaryElement::FromContent(aFrame->GetContent());
+
+    if (summary && summary->IsMainSummary()) {
+      
+      
+      
+      RecreateFramesForContent(parent->GetContent(),
+                               false, REMOVE_FOR_RECONSTRUCTION,
+                               aDestroyedFramesFor);
+      return true;
+    }
+  }
+
+  
   
   
   
