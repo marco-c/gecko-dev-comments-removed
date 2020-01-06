@@ -1438,6 +1438,9 @@ JS_RefreshCrossCompartmentWrappers(JSContext* cx, JS::Handle<JSObject*> obj);
 
 
 
+
+
+
 class MOZ_RAII JS_PUBLIC_API(JSAutoCompartment)
 {
     JSContext* cx_;
@@ -1463,6 +1466,10 @@ class MOZ_RAII JS_PUBLIC_API(JSAutoNullableCompartment)
 
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
+
+
+
+
 
 
 extern JS_PUBLIC_API(JSCompartment*)
