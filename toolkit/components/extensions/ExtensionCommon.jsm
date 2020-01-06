@@ -53,10 +53,34 @@ XPCOMUtils.defineLazyGetter(this, "console", getConsole);
 
 var ExtensionCommon;
 
+
+
+
+
+
 class SpreadArgs extends Array {
   constructor(args) {
     super();
     this.push(...args);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+class NoCloneSpreadArgs {
+  constructor(args) {
+    this.unwrappedValues = args;
+  }
+
+  [Symbol.iterator]() {
+    return this.unwrappedValues[Symbol.iterator]();
   }
 }
 
@@ -323,6 +347,8 @@ class BaseContext {
             dump(`Promise resolved after context unloaded\n`);
           } else if (!this.active) {
             dump(`Promise resolved while context is inactive\n`);
+          } else if (args instanceof NoCloneSpreadArgs) {
+            this.runSafeWithoutClone(callback, ...args.unwrappedValues);
           } else if (args instanceof SpreadArgs) {
             runSafe(callback, ...args);
           } else {
@@ -348,6 +374,9 @@ class BaseContext {
               dump(`Promise resolved after context unloaded\n`);
             } else if (!this.active) {
               dump(`Promise resolved while context is inactive\n`);
+            } else if (value instanceof NoCloneSpreadArgs) {
+              let values = value.unwrappedValues;
+              this.runSafeWithoutClone(resolve, values.length == 1 ? values[0] : values);
             } else if (value instanceof SpreadArgs) {
               runSafe(resolve, value.length == 1 ? value[0] : value);
             } else {
@@ -1488,6 +1517,7 @@ ExtensionCommon = {
   CanOfAPIs,
   LocalAPIImplementation,
   LocaleData,
+  NoCloneSpreadArgs,
   SchemaAPIInterface,
   SchemaAPIManager,
   SingletonEventManager,
