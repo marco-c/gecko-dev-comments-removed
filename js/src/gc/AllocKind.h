@@ -25,89 +25,79 @@ namespace gc {
 
 
 
-enum class AllocKind {
-    FIRST,
-    OBJECT_FIRST = FIRST,
-    FUNCTION = FIRST,
-    FUNCTION_EXTENDED,
-    OBJECT0,
-    OBJECT0_BACKGROUND,
-    OBJECT2,
-    OBJECT2_BACKGROUND,
-    OBJECT4,
-    OBJECT4_BACKGROUND,
-    OBJECT8,
-    OBJECT8_BACKGROUND,
-    OBJECT12,
-    OBJECT12_BACKGROUND,
-    OBJECT16,
-    OBJECT16_BACKGROUND,
-    OBJECT_LIMIT,
-    OBJECT_LAST = OBJECT_LIMIT - 1,
-    SCRIPT,
-    LAZY_SCRIPT,
-    SHAPE,
-    ACCESSOR_SHAPE,
-    BASE_SHAPE,
-    OBJECT_GROUP,
-    FAT_INLINE_STRING,
-    STRING,
-    EXTERNAL_STRING,
-    FAT_INLINE_ATOM,
-    ATOM,
-    SYMBOL,
-    JITCODE,
-    SCOPE,
-    REGEXP_SHARED,
-    LIMIT,
-    LAST = LIMIT - 1
-};
+
+
+
+
+
+
 
 
 
 #define FOR_EACH_OBJECT_ALLOCKIND(D)
  \
-    D(FUNCTION,            Object,        JSObject,          JSFunction) \
-    D(FUNCTION_EXTENDED,   Object,        JSObject,          FunctionExtended) \
-    D(OBJECT0,             Object,        JSObject,          JSObject_Slots0) \
-    D(OBJECT0_BACKGROUND,  Object,        JSObject,          JSObject_Slots0) \
-    D(OBJECT2,             Object,        JSObject,          JSObject_Slots2) \
-    D(OBJECT2_BACKGROUND,  Object,        JSObject,          JSObject_Slots2) \
-    D(OBJECT4,             Object,        JSObject,          JSObject_Slots4) \
-    D(OBJECT4_BACKGROUND,  Object,        JSObject,          JSObject_Slots4) \
-    D(OBJECT8,             Object,        JSObject,          JSObject_Slots8) \
-    D(OBJECT8_BACKGROUND,  Object,        JSObject,          JSObject_Slots8) \
-    D(OBJECT12,            Object,        JSObject,          JSObject_Slots12) \
-    D(OBJECT12_BACKGROUND, Object,        JSObject,          JSObject_Slots12) \
-    D(OBJECT16,            Object,        JSObject,          JSObject_Slots16) \
-    D(OBJECT16_BACKGROUND, Object,        JSObject,          JSObject_Slots16)
+    D(FUNCTION,            Object,       JSObject,          JSFunction,        true,   true)  \
+    D(FUNCTION_EXTENDED,   Object,       JSObject,          FunctionExtended,  true,   true)  \
+    D(OBJECT0,             Object,       JSObject,          JSObject_Slots0,   false,  false) \
+    D(OBJECT0_BACKGROUND,  Object,       JSObject,          JSObject_Slots0,   true,   true)  \
+    D(OBJECT2,             Object,       JSObject,          JSObject_Slots2,   false,  false) \
+    D(OBJECT2_BACKGROUND,  Object,       JSObject,          JSObject_Slots2,   true,   true)  \
+    D(OBJECT4,             Object,       JSObject,          JSObject_Slots4,   false,  false) \
+    D(OBJECT4_BACKGROUND,  Object,       JSObject,          JSObject_Slots4,   true,   true)  \
+    D(OBJECT8,             Object,       JSObject,          JSObject_Slots8,   false,  false) \
+    D(OBJECT8_BACKGROUND,  Object,       JSObject,          JSObject_Slots8,   true,   true)  \
+    D(OBJECT12,            Object,       JSObject,          JSObject_Slots12,  false,  false) \
+    D(OBJECT12_BACKGROUND, Object,       JSObject,          JSObject_Slots12,  true,   true)  \
+    D(OBJECT16,            Object,       JSObject,          JSObject_Slots16,  false,  false) \
+    D(OBJECT16_BACKGROUND, Object,       JSObject,          JSObject_Slots16,  true,   true)
 
 #define FOR_EACH_NONOBJECT_ALLOCKIND(D)
  \
-    D(SCRIPT,              Script,        JSScript,          JSScript) \
-    D(LAZY_SCRIPT,         LazyScript,    js::LazyScript,    js::LazyScript) \
-    D(SHAPE,               Shape,         js::Shape,         js::Shape) \
-    D(ACCESSOR_SHAPE,      Shape,         js::AccessorShape, js::AccessorShape) \
-    D(BASE_SHAPE,          BaseShape,     js::BaseShape,     js::BaseShape) \
-    D(OBJECT_GROUP,        ObjectGroup,   js::ObjectGroup,   js::ObjectGroup) \
-    D(FAT_INLINE_STRING,   String,        JSFatInlineString, JSFatInlineString) \
-    D(STRING,              String,        JSString,          JSString) \
-    D(EXTERNAL_STRING,     String,        JSExternalString,  JSExternalString) \
-    D(FAT_INLINE_ATOM,     String,        js::FatInlineAtom, js::FatInlineAtom) \
-    D(ATOM,                String,        js::NormalAtom,    js::NormalAtom) \
-    D(SYMBOL,              Symbol,        JS::Symbol,        JS::Symbol) \
-    D(JITCODE,             JitCode,       js::jit::JitCode,  js::jit::JitCode) \
-    D(SCOPE,               Scope,         js::Scope,         js::Scope) \
-    D(REGEXP_SHARED,       RegExpShared,  js::RegExpShared,  js::RegExpShared)
+    D(SCRIPT,              Script,       JSScript,          JSScript,          false,  false) \
+    D(LAZY_SCRIPT,         LazyScript,   js::LazyScript,    js::LazyScript,    true,   false) \
+    D(SHAPE,               Shape,        js::Shape,         js::Shape,         true,   false) \
+    D(ACCESSOR_SHAPE,      Shape,        js::AccessorShape, js::AccessorShape, true,   false) \
+    D(BASE_SHAPE,          BaseShape,    js::BaseShape,     js::BaseShape,     true,   false) \
+    D(OBJECT_GROUP,        ObjectGroup,  js::ObjectGroup,   js::ObjectGroup,   true,   false) \
+    D(FAT_INLINE_STRING,   String,       JSFatInlineString, JSFatInlineString, true,   false) \
+    D(STRING,              String,       JSString,          JSString,          true,   false) \
+    D(EXTERNAL_STRING,     String,       JSExternalString,  JSExternalString,  true,   false) \
+    D(FAT_INLINE_ATOM,     String,       js::FatInlineAtom, js::FatInlineAtom, true,   false) \
+    D(ATOM,                String,       js::NormalAtom,    js::NormalAtom,    true,   false) \
+    D(SYMBOL,              Symbol,       JS::Symbol,        JS::Symbol,        true,   false) \
+    D(JITCODE,             JitCode,      js::jit::JitCode,  js::jit::JitCode,  false,  false) \
+    D(SCOPE,               Scope,        js::Scope,         js::Scope,         true,   false) \
+    D(REGEXP_SHARED,       RegExpShared, js::RegExpShared,  js::RegExpShared,  true,   false)
 
 #define FOR_EACH_ALLOCKIND(D) \
     FOR_EACH_OBJECT_ALLOCKIND(D) \
     FOR_EACH_NONOBJECT_ALLOCKIND(D)
 
-static_assert(int(AllocKind::FIRST) == 0, "Various places depend on AllocKind starting at 0, "
-                                          "please audit them carefully!");
-static_assert(int(AllocKind::OBJECT_FIRST) == 0, "Various places depend on AllocKind::OBJECT_FIRST "
-                                                 "being 0, please audit them carefully!");
+
+
+enum class AllocKind {
+#define DEFINE_ALLOC_KIND(allocKind, _1, _2, _3, _4, _5) allocKind,
+
+    FOR_EACH_OBJECT_ALLOCKIND(DEFINE_ALLOC_KIND)
+
+    OBJECT_LIMIT,
+    OBJECT_LAST = OBJECT_LIMIT - 1,
+
+    FOR_EACH_NONOBJECT_ALLOCKIND(DEFINE_ALLOC_KIND)
+
+    LIMIT,
+    LAST = LIMIT - 1,
+
+    FIRST = 0,
+    OBJECT_FIRST = FUNCTION 
+
+#undef DEFINE_ALLOC_KIND
+};
+
+static_assert(int(AllocKind::FIRST) == 0,
+              "Various places depend on AllocKind starting at 0");
+static_assert(int(AllocKind::OBJECT_FIRST) == 0,
+              "OBJECT_FIRST must be defined as the first object kind");
 
 inline bool
 IsAllocKind(AllocKind kind)
@@ -173,7 +163,7 @@ static inline JS::TraceKind
 MapAllocToTraceKind(AllocKind kind)
 {
     static const JS::TraceKind map[] = {
-#define EXPAND_ELEMENT(allocKind, traceKind, type, sizedType) \
+#define EXPAND_ELEMENT(allocKind, traceKind, type, sizedType, bgFinal, nursery) \
         JS::TraceKind::traceKind,
 FOR_EACH_ALLOCKIND(EXPAND_ELEMENT)
 #undef EXPAND_ELEMENT
@@ -195,37 +185,13 @@ static inline bool
 IsNurseryAllocable(AllocKind kind)
 {
     MOZ_ASSERT(IsValidAllocKind(kind));
+
     static const bool map[] = {
-        true,      
-        true,      
-        false,     
-        true,      
-        false,     
-        true,      
-        false,     
-        true,      
-        false,     
-        true,      
-        false,     
-        true,      
-        false,     
-        true,      
-        false,     
-        false,     
-        false,     
-        false,     
-        false,     
-        false,     
-        false,     
-        false,     
-        false,     
-        false,     
-        false,     
-        false,     
-        false,     
-        false,     
-        false,     
+#define DEFINE_NURSERY_ALLOCABLE(_1, _2, _3, _4, _5, nursery) nursery,
+        FOR_EACH_ALLOCKIND(DEFINE_NURSERY_ALLOCABLE)
+#undef DEFINE_NURSERY_ALLOCABLE
     };
+
     JS_STATIC_ASSERT(JS_ARRAY_LENGTH(map) == size_t(AllocKind::LIMIT));
     return map[size_t(kind)];
 }
@@ -234,37 +200,13 @@ static inline bool
 IsBackgroundFinalized(AllocKind kind)
 {
     MOZ_ASSERT(IsValidAllocKind(kind));
+
     static const bool map[] = {
-        true,      
-        true,      
-        false,     
-        true,      
-        false,     
-        true,      
-        false,     
-        true,      
-        false,     
-        true,      
-        false,     
-        true,      
-        false,     
-        true,      
-        false,     
-        true,      
-        true,      
-        true,      
-        true,      
-        true,      
-        true,      
-        true,      
-        true,      
-        true,      
-        true,      
-        true,      
-        false,     
-        true,      
-        true,      
+#define DEFINE_BACKGROUND_FINALIZED(_1, _2, _3, _4, bgFinal, _5) bgFinal,
+        FOR_EACH_ALLOCKIND(DEFINE_BACKGROUND_FINALIZED)
+#undef DEFINE_BG_FINALIZE
     };
+
     JS_STATIC_ASSERT(JS_ARRAY_LENGTH(map) == size_t(AllocKind::LIMIT));
     return map[size_t(kind)];
 }
