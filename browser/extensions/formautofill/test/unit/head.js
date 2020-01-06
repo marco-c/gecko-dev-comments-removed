@@ -51,10 +51,15 @@ let extensionDir = Services.dirsvc.get("GreD", Ci.nsIFile);
 extensionDir.append("browser");
 extensionDir.append("features");
 extensionDir.append(EXTENSION_ID);
+let bootstrapFile = extensionDir.clone();
+bootstrapFile.append("bootstrap.js");
+let bootstrapURI = Services.io.newFileURI(bootstrapFile).spec;
 
 if (!extensionDir.exists()) {
   extensionDir = extensionDir.parent;
   extensionDir.append(EXTENSION_ID + ".xpi");
+  let jarURI = Services.io.newFileURI(extensionDir);
+  bootstrapURI = "jar:" + jarURI.spec + "!/bootstrap.js";
 }
 Components.manager.addBootstrappedManifestLocation(extensionDir);
 
