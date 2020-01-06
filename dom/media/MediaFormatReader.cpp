@@ -2281,15 +2281,6 @@ MediaFormatReader::Update(TrackType aTrack)
         nsCString error;
         mVideo.mIsHardwareAccelerated =
           mVideo.mDecoder && mVideo.mDecoder->IsHardwareAccelerated(error);
-#ifdef XP_WIN
-        
-        
-        VideoData* videoData = static_cast<VideoData*>(output.get());
-        mVideo.mIsHardwareAccelerated =
-          mVideo.mIsHardwareAccelerated ||
-          (videoData->mImage &&
-           videoData->mImage->GetFormat() == ImageFormat::D3D11_YCBCR_IMAGE);
-#endif
       }
     } else if (decoder.HasFatalError()) {
       LOG("Rejecting %s promise: DECODE_ERROR", TrackTypeToStr(aTrack));
