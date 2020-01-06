@@ -598,10 +598,6 @@ public:
   
 
 
-  nsTHashtable<nsUint64HashKey> mSuspendedContexts;
-  
-
-
 
 
   uint32_t mFirstCycleBreaker;
