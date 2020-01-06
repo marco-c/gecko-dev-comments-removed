@@ -27,7 +27,7 @@ const VALID_ENTRY_TYPES: &'static [&'static str] = &[
     
     
     
-    
+    "paint", 
 ];
 
 #[dom_struct]

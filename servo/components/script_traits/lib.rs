@@ -221,6 +221,15 @@ pub enum DocumentActivity {
 }
 
 
+#[derive(Deserialize, Serialize)]
+pub enum PaintMetricType {
+    
+    FirstPaint,
+    
+    FirstContentfulPaint,
+}
+
+
 #[derive(Copy, Clone, PartialEq, Eq, Hash, HeapSizeOf, Debug, Deserialize, Serialize)]
 pub enum UpdatePipelineIdReason {
     
@@ -300,7 +309,9 @@ pub enum ConstellationControlMsg {
     
     Reload(PipelineId),
     
-    WebVREvents(PipelineId, Vec<WebVREvent>)
+    WebVREvents(PipelineId, Vec<WebVREvent>),
+    
+    PaintMetric(PipelineId, PaintMetricType, f64),
 }
 
 impl fmt::Debug for ConstellationControlMsg {
@@ -334,6 +345,7 @@ impl fmt::Debug for ConstellationControlMsg {
             ReportCSSError(..) => "ReportCSSError",
             Reload(..) => "Reload",
             WebVREvents(..) => "WebVREvents",
+            PaintMetric(..) => "PaintMetric",
         };
         write!(formatter, "ConstellationMsg::{}", variant)
     }
