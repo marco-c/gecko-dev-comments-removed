@@ -236,6 +236,9 @@ this.ContentSearch = {
     
     
     if (where === "current") {
+      
+      
+      this._reply(msg, "Blur");
       browser.loadURIWithFlags(submission.uri.spec,
                                Ci.nsIWebNavigation.LOAD_FLAGS_NONE, null, null,
                                submission.postData);

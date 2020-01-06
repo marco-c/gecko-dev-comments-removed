@@ -514,6 +514,11 @@ ContentSearchUIController.prototype = {
     this.input.focus();
   },
 
+  _onMsgBlur(event) {
+    this.input.blur();
+    this._hideSuggestions();
+  },
+
   _onMsgSuggestions(suggestions) {
     
     
@@ -747,11 +752,6 @@ ContentSearchUIController.prototype = {
 
     
     this._table.addEventListener("mouseout", this);
-
-    
-    
-    
-    window.addEventListener("beforeunload", () => { this._hideSuggestions(); });
 
     let headerRow = document.createElementNS(HTML_NS, "tr");
     let header = document.createElementNS(HTML_NS, "td");
