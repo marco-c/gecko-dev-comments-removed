@@ -1554,8 +1554,10 @@ AccessibleWrap::GetRemoteIAccessibleFor(const VARIANT& aVarChild)
 
   RefPtr<IAccessible> result;
 
-  size_t docCount = remoteDocs->Length();
-  for (size_t i = 0; i < docCount; i++) {
+  
+  
+  
+  for (size_t i = 0; i < remoteDocs->Length(); i++) {
     DocAccessibleParent* remoteDoc = remoteDocs->ElementAt(i);
 
     uint32_t remoteDocMsaaId = WrapperFor(remoteDoc)->GetExistingID();
