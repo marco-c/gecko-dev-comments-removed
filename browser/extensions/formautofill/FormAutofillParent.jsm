@@ -80,7 +80,6 @@ FormAutofillParent.prototype = {
     Services.ppmm.addMessageListener("FormAutofill:GetAddresses", this);
     Services.ppmm.addMessageListener("FormAutofill:SaveAddress", this);
     Services.ppmm.addMessageListener("FormAutofill:RemoveAddresses", this);
-    Services.ppmm.addMessageListener("FormAutofill:OnFormSubmit", this);
 
     
     Services.prefs.addObserver(ENABLED_PREF, this);
@@ -193,9 +192,6 @@ FormAutofillParent.prototype = {
         data.guids.forEach(guid => this.profileStorage.addresses.remove(guid));
         break;
       }
-      case "FormAutofill:OnFormSubmit": {
-        this._onFormSubmit(data, target);
-      }
     }
   },
 
@@ -264,18 +260,5 @@ FormAutofillParent.prototype = {
     Services.ppmm.broadcastAsyncMessage("FormAutofill:savedFieldNames",
                                         Services.ppmm.initialProcessData.autofillSavedFieldNames);
     this._updateStatus();
-  },
-
-  _onFormSubmit(data, target) {
-    let {address} = data;
-
-    if (address.guid) {
-      
-      
-      
-    } else {
-      
-      
-    }
   },
 };
