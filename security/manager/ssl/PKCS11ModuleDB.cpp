@@ -116,6 +116,17 @@ PKCS11ModuleDB::AddModule(const nsAString& aModuleName,
 
   
   
+  
+  
+  
+  
+  
+  if (aModuleName.EqualsLiteral("Root Certs")) {
+    return NS_ERROR_ILLEGAL_VALUE;
+  }
+
+  
+  
   nsresult rv = BlockUntilLoadableRootsLoaded();
   if (NS_FAILED(rv)) {
     return rv;

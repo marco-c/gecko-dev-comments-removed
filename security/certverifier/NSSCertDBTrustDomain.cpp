@@ -1216,6 +1216,12 @@ LoadLoadableRoots(const nsCString& dir, const nsCString& modNameUTF8)
   
   int unusedModType;
   Unused << SECMOD_DeleteModule(modNameUTF8.get(), &unusedModType);
+  
+  
+  
+  
+  
+  Unused << SECMOD_DeleteModule("Root Certs", &unusedModType);
 
   nsAutoCString fullLibraryPath;
   if (!dir.IsEmpty()) {
