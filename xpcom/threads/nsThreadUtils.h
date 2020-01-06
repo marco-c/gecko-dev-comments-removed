@@ -1821,6 +1821,15 @@ GetCurrentPhysicalThread();
 
 
 
+
+
+
+
+
+
+
+
+
 PRThread*
 GetCurrentVirtualThread();
 
