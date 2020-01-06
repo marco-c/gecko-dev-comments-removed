@@ -50,6 +50,7 @@ use servo_url::ServoUrl;
 use std::sync::atomic::AtomicIsize;
 use style::data::ElementData;
 
+#[repr(C)]
 pub struct PartialPersistentLayoutData {
     
     
@@ -59,6 +60,9 @@ pub struct PartialPersistentLayoutData {
 
     
     pub parallel: DomParallelInfo,
+
+    
+    _align: [u64; 0]
 }
 
 impl PartialPersistentLayoutData {
@@ -66,6 +70,7 @@ impl PartialPersistentLayoutData {
         PartialPersistentLayoutData {
             style_data: ElementData::new(None),
             parallel: DomParallelInfo::new(),
+            _align: [],
         }
     }
 }

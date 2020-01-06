@@ -93,6 +93,7 @@ pub mod wrapper;
 
 pub use fragment::Fragment;
 pub use fragment::SpecificFragmentInfo;
+pub use self::data::PersistentLayoutData;
 
 
 
