@@ -10,6 +10,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.gecko.fxa.authenticator.AndroidFxAccount;
+import org.mozilla.gecko.fxa.devices.FxAccountDeviceListUpdater;
 import org.mozilla.gecko.util.GeckoBundle;
 
 public class FxAccountPushHandler {
@@ -97,6 +98,11 @@ public class FxAccountPushHandler {
         }
         final AndroidFxAccount fxAccount = new AndroidFxAccount(context, account);
         if (!fxAccount.getDeviceId().equals(data.getString("id"))) {
+            
+            
+            Log.i(LOG_TAG, "Another device in the account got disconnected, refreshing FxA device list.");
+            final FxAccountDeviceListUpdater deviceListUpdater = new FxAccountDeviceListUpdater(fxAccount, context.getContentResolver());
+            deviceListUpdater.update();
             return;
         }
         AccountManager.get(context).removeAccount(account, null, null);
