@@ -201,7 +201,6 @@ namespace {
 
 
 
-
 class PluginModuleMapping : public PRCList
 {
 public:
@@ -446,15 +445,6 @@ PluginModuleContentParent::LoadModule(uint32_t aPluginId,
 }
 
  void
-PluginModuleContentParent::AssociatePluginId(uint32_t aPluginId,
-                                             base::ProcessId aOtherPid)
-{
-    DebugOnly<PluginModuleMapping*> mapping =
-        PluginModuleMapping::AssociateWithProcessId(aPluginId, aOtherPid);
-    MOZ_ASSERT(mapping);
-}
-
- void
 PluginModuleContentParent::Initialize(Endpoint<PPluginModuleParent>&& aEndpoint)
 {
     nsAutoPtr<PluginModuleMapping> moduleMapping(
@@ -479,21 +469,6 @@ PluginModuleContentParent::Initialize(Endpoint<PPluginModuleParent>&& aEndpoint)
     
     
     moduleMapping.forget();
-}
-
- void
-PluginModuleContentParent::OnLoadPluginResult(const uint32_t& aPluginId,
-                                              const bool& aResult,
-                                              Endpoint<PPluginModuleParent>&& aEndpoint)
-{
-    Initialize(Move(aEndpoint));
-    nsAutoPtr<PluginModuleMapping> moduleMapping(
-        PluginModuleMapping::FindModuleByPluginId(aPluginId));
-    MOZ_ASSERT(moduleMapping);
-    PluginModuleContentParent* parent = moduleMapping->GetModule();
-    MOZ_ASSERT(parent);
-    parent->RecvNP_InitializeResult(aResult ? NPERR_NO_ERROR
-                                            : NPERR_GENERIC_ERROR);
 }
 
 
