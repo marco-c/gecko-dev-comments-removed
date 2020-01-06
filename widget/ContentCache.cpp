@@ -1353,26 +1353,32 @@ ContentCacheInParent::FlushPendingNotifications(nsIWidget* aWidget)
 
   
   
+  if (!aWidget) {
+    return;
+  }
+
+  
+  
   mPendingEventsNeedingAck++;
 
-  nsCOMPtr<nsIWidget> kungFuDeathGrip(aWidget);
+  nsCOMPtr<nsIWidget> widget = aWidget;
 
   
   
   
   if (mPendingTextChange.HasNotification()) {
     IMENotification notification(mPendingTextChange);
-    if (!aWidget->Destroyed()) {
+    if (!widget->Destroyed()) {
       mPendingTextChange.Clear();
-      IMEStateManager::NotifyIME(notification, aWidget, &mTabParent);
+      IMEStateManager::NotifyIME(notification, widget, &mTabParent);
     }
   }
 
   if (mPendingSelectionChange.HasNotification()) {
     IMENotification notification(mPendingSelectionChange);
-    if (!aWidget->Destroyed()) {
+    if (!widget->Destroyed()) {
       mPendingSelectionChange.Clear();
-      IMEStateManager::NotifyIME(notification, aWidget, &mTabParent);
+      IMEStateManager::NotifyIME(notification, widget, &mTabParent);
     }
   }
 
@@ -1380,9 +1386,9 @@ ContentCacheInParent::FlushPendingNotifications(nsIWidget* aWidget)
   
   if (mPendingLayoutChange.HasNotification()) {
     IMENotification notification(mPendingLayoutChange);
-    if (!aWidget->Destroyed()) {
+    if (!widget->Destroyed()) {
       mPendingLayoutChange.Clear();
-      IMEStateManager::NotifyIME(notification, aWidget, &mTabParent);
+      IMEStateManager::NotifyIME(notification, widget, &mTabParent);
     }
   }
 
@@ -1390,18 +1396,18 @@ ContentCacheInParent::FlushPendingNotifications(nsIWidget* aWidget)
   
   if (mPendingCompositionUpdate.HasNotification()) {
     IMENotification notification(mPendingCompositionUpdate);
-    if (!aWidget->Destroyed()) {
+    if (!widget->Destroyed()) {
       mPendingCompositionUpdate.Clear();
-      IMEStateManager::NotifyIME(notification, aWidget, &mTabParent);
+      IMEStateManager::NotifyIME(notification, widget, &mTabParent);
     }
   }
 
-  if (!--mPendingEventsNeedingAck && !aWidget->Destroyed() &&
+  if (!--mPendingEventsNeedingAck && !widget->Destroyed() &&
       (mPendingTextChange.HasNotification() ||
        mPendingSelectionChange.HasNotification() ||
        mPendingLayoutChange.HasNotification() ||
        mPendingCompositionUpdate.HasNotification())) {
-    FlushPendingNotifications(aWidget);
+    FlushPendingNotifications(widget);
   }
 }
 
