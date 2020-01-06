@@ -24,6 +24,8 @@ class WebMBufferedState;
 
 class MediaRawDataQueue
 {
+  typedef std::deque<RefPtr<MediaRawData>> ContainerType;
+
  public:
   uint32_t GetSize()
   {
@@ -93,8 +95,29 @@ class MediaRawDataQueue
     return mQueue.back();
   }
 
+    
+  ContainerType::iterator begin()
+  {
+    return mQueue.begin();
+  }
+
+  ContainerType::const_iterator begin() const
+  {
+    return mQueue.begin();
+  }
+
+  ContainerType::iterator end()
+  {
+    return mQueue.end();
+  }
+
+  ContainerType::const_iterator end() const
+  {
+    return mQueue.end();
+  }
+
 private:
-  std::deque<RefPtr<MediaRawData>> mQueue;
+  ContainerType mQueue;
 };
 
 class WebMTrackDemuxer;
