@@ -283,6 +283,16 @@ class ObjectElements
         capacity -= count;
         initializedLength -= count;
     }
+    void unshiftShiftedElements(uint32_t count) {
+        MOZ_ASSERT(count > 0);
+        MOZ_ASSERT(!(flags & (NONWRITABLE_ARRAY_LENGTH | FROZEN | COPY_ON_WRITE)));
+        uint32_t numShifted = numShiftedElements();
+        MOZ_ASSERT(count <= numShifted);
+        numShifted -= count;
+        flags = (numShifted << NumShiftedElementsShift) | (flags & FlagsMask);
+        capacity += count;
+        initializedLength += count;
+    }
     void clearShiftedElements() {
         flags &= FlagsMask;
         MOZ_ASSERT(numShiftedElements() == 0);
@@ -955,6 +965,8 @@ class NativeObject : public ShapedObject
             getSlotAddressUnchecked(i)->HeapSlot::~HeapSlot();
     }
 
+    inline void shiftDenseElementsUnchecked(uint32_t count);
+
   public:
     static bool rollbackProperties(JSContext* cx, HandleNativeObject obj,
                                    uint32_t slotSpan);
@@ -1073,6 +1085,9 @@ class NativeObject : public ShapedObject
 
     
     inline bool tryShiftDenseElements(uint32_t count);
+
+    
+    bool tryUnshiftDenseElements(uint32_t count);
 
     
     
