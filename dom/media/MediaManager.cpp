@@ -2173,6 +2173,29 @@ enum class GetUserMediaSecurityState {
 
 
 
+static void
+ReduceConstraint(
+    mozilla::dom::OwningBooleanOrMediaTrackConstraints& aConstraint) {
+  
+  if (!IsOn(aConstraint)) {
+    return;
+  }
+
+  
+  if (!aConstraint.IsMediaTrackConstraints()) {
+    return;
+  }
+
+  
+  auto& c = aConstraint.GetAsMediaTrackConstraints();
+  nsString mediaSource = c.mMediaSource;
+  aConstraint.SetAsMediaTrackConstraints().mMediaSource = mediaSource;
+}
+
+
+
+
+
 
 nsresult
 MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
@@ -2278,6 +2301,13 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
   rv = PrincipalToPrincipalInfo(principal, &principalInfo);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
+  }
+
+  const bool resistFingerprinting = nsContentUtils::ResistFingerprinting(aCallerType);
+
+  if (resistFingerprinting) {
+    ReduceConstraint(c.mVideo);
+    ReduceConstraint(c.mAudio);
   }
 
   if (!Preferences::GetBool("media.navigator.video.enabled", true)) {
@@ -2509,7 +2539,7 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
   RefPtr<MediaManager> self = this;
   p->Then([self, onSuccess, onFailure, windowID, c, windowListener,
            sourceListener, askPermission, prefs, isHTTPS, callID, principalInfo,
-           isChrome](SourceSet*& aDevices) mutable {
+           isChrome, resistFingerprinting](SourceSet*& aDevices) mutable {
     
     auto devices = MakeRefPtr<Refcountable<UniquePtr<SourceSet>>>(aDevices);
 
@@ -2523,7 +2553,7 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
 
     p2->Then([self, onSuccess, onFailure, windowID, c,
               windowListener, sourceListener, askPermission, prefs, isHTTPS,
-              callID, principalInfo, isChrome, devices
+              callID, principalInfo, isChrome, devices, resistFingerprinting
              ](const char*& badConstraint) mutable {
 
       
@@ -2547,7 +2577,13 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
       }
       if (!(*devices)->Length()) {
         RefPtr<MediaStreamError> error =
-            new MediaStreamError(window, NS_LITERAL_STRING("NotFoundError"));
+            new MediaStreamError(
+                window,
+                
+                
+                
+                resistFingerprinting ? NS_LITERAL_STRING("NotAllowedError")
+                                     : NS_LITERAL_STRING("NotFoundError"));
         onFailure->OnError(error);
         return;
       }
