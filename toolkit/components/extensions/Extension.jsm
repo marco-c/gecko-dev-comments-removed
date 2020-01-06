@@ -282,6 +282,12 @@ var UninstallObserver = {
       if (storage) {
         storage.clear();
       }
+
+      
+      
+      Services.perms.removeFromPrincipal(principal, "WebExtensions-unlimitedStorage");
+      Services.perms.removeFromPrincipal(principal, "indexedDB");
+      Services.perms.removeFromPrincipal(principal, "persistent-storage");
     }
 
     if (!this.leaveUuid) {
@@ -996,6 +1002,31 @@ this.Extension = class extends ExtensionData {
     return super.initLocale(locale);
   }
 
+  initUnlimitedStoragePermission() {
+    const principal = this.principal;
+
+    
+    
+    const hasSitePermission = Services.perms.testPermissionFromPrincipal(
+      principal, "WebExtensions-unlimitedStorage"
+    );
+
+    if (this.hasPermission("unlimitedStorage")) {
+      
+      
+      Services.perms.addFromPrincipal(principal, "WebExtensions-unlimitedStorage",
+                                      Services.perms.ALLOW_ACTION);
+      Services.perms.addFromPrincipal(principal, "indexedDB", Services.perms.ALLOW_ACTION);
+      Services.perms.addFromPrincipal(principal, "persistent-storage", Services.perms.ALLOW_ACTION);
+    } else if (hasSitePermission) {
+      
+      
+      Services.perms.removeFromPrincipal(principal, "WebExtensions-unlimitedStorage");
+      Services.perms.removeFromPrincipal(principal, "indexedDB");
+      Services.perms.removeFromPrincipal(principal, "persistent-storage");
+    }
+  }
+
   startup() {
     this.startupPromise = this._startup();
     return this.startupPromise;
@@ -1057,6 +1088,8 @@ this.Extension = class extends ExtensionData {
 
       this.policy.active = false;
       this.policy = processScript.initExtension(this.serialize(), this);
+
+      this.initUnlimitedStoragePermission();
 
       
       
