@@ -155,6 +155,13 @@ pub struct StickyFrameDisplayItem {
     
     
     pub horizontal_offset_bounds: StickyOffsetBounds,
+
+    
+    
+    
+    
+    
+    pub previously_applied_offset: LayoutVector2D,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
