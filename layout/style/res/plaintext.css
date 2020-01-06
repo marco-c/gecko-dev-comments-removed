@@ -9,6 +9,6 @@ pre {
 }
 
 
-html:not([dir]) pre {
+html:not([dir]) pre { 
   unicode-bidi: plaintext;
 }
