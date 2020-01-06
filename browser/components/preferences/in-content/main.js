@@ -1262,15 +1262,6 @@ var gMainPane = {
       accelerationPref.value = accelerationPref.defaultValue;
       performanceSettings.hidden = true;
     } else {
-      let e10sRolloutProcessCountPref =
-        document.getElementById("dom.ipc.processCount.web");
-      
-      
-      if (duringChangeEvent &&
-        e10sRolloutProcessCountPref.value &&
-        processCountPref.value == processCountPref.defaultValue) {
-        processCountPref.value = e10sRolloutProcessCountPref.value;
-      }
       performanceSettings.hidden = false;
     }
   },
@@ -1278,10 +1269,7 @@ var gMainPane = {
   buildContentProcessCountMenuList() {
     if (gMainPane.isE10SEnabled()) {
       let processCountPref = document.getElementById("dom.ipc.processCount");
-      let e10sRolloutProcessCountPref =
-        document.getElementById("dom.ipc.processCount.web");
-      let defaultProcessCount =
-        e10sRolloutProcessCountPref.value || processCountPref.defaultValue;
+      let defaultProcessCount = processCountPref.defaultValue;
       let bundlePreferences = document.getElementById("bundlePreferences");
       let label = bundlePreferences.getFormattedString("defaultContentProcessCount",
         [defaultProcessCount]);
