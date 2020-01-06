@@ -124,7 +124,7 @@ pub enum PropertyDeclarationParseError<'i> {
     
     ExperimentalProperty,
     
-    InvalidValue(String),
+    InvalidValue(CompactCowStr<'i>),
     
     
     
