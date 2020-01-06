@@ -10,7 +10,6 @@
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsThreadUtils.h"
-#include "mozilla/dom/AudioChannelBinding.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
@@ -191,8 +190,7 @@ public:
   
   
   
-  nsresult Init(uint32_t aNumChannels, uint32_t aChannelMap, uint32_t aRate,
-                const dom::AudioChannel aAudioStreamChannel);
+  nsresult Init(uint32_t aNumChannels, uint32_t aChannelMap, uint32_t aRate);
 
   
   void Shutdown();

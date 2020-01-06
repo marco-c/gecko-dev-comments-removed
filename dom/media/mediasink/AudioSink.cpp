@@ -34,11 +34,9 @@ static const int32_t LOW_AUDIO_USECS = 300000;
 AudioSink::AudioSink(AbstractThread* aThread,
                      MediaQueue<AudioData>& aAudioQueue,
                      const TimeUnit& aStartTime,
-                     const AudioInfo& aInfo,
-                     dom::AudioChannel aChannel)
+                     const AudioInfo& aInfo)
   : mStartTime(aStartTime)
   , mInfo(aInfo)
-  , mChannel(aChannel)
   , mPlaying(true)
   , mMonitor("AudioSink")
   , mWritten(0)
@@ -203,7 +201,7 @@ AudioSink::InitializeAudioStream(const PlaybackParams& aParams)
   
   
   
-  nsresult rv = mAudioStream->Init(mOutputChannels, channelMap, mOutputRate, mChannel);
+  nsresult rv = mAudioStream->Init(mOutputChannels, channelMap, mOutputRate);
   if (NS_FAILED(rv)) {
     mAudioStream->Shutdown();
     mAudioStream = nullptr;
