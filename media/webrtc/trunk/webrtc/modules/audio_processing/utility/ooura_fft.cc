@@ -21,7 +21,7 @@
 
 
 
-#include "webrtc/modules/audio_processing//utility/ooura_fft.h"
+#include "webrtc/modules/audio_processing/utility/ooura_fft.h"
 
 #include <math.h>
 
