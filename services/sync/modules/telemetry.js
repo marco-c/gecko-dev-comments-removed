@@ -218,7 +218,7 @@ class EngineRecord {
 }
 
 class TelemetryRecord {
-  constructor(allowedEngines) {
+  constructor(allowedEngines, why) {
     this.allowedEngines = allowedEngines;
     
     
@@ -227,6 +227,7 @@ class TelemetryRecord {
     this.when = Date.now();
     this.startTime = tryGetMonotonicTimestamp();
     this.took = 0; 
+    this.why = why;
 
     
     
@@ -243,6 +244,9 @@ class TelemetryRecord {
       status: this.status,
       devices: this.devices,
     };
+    if (this.why) {
+      result.why = this.why;
+    }
     let engines = [];
     for (let engine of this.engines) {
       engines.push(engine.toJSON());
@@ -497,13 +501,14 @@ class SyncTelemetryImpl {
   }
 
 
-  onSyncStarted() {
+  onSyncStarted(data) {
+    const why = data && JSON.parse(data).why;
     if (this.current) {
       log.warn("Observed weave:service:sync:start, but we're already recording a sync!");
       
       this.current = null;
     }
-    this.current = new TelemetryRecord(this.allowedEngines);
+    this.current = new TelemetryRecord(this.allowedEngines, why);
   }
 
   _checkCurrent(topic) {
@@ -605,7 +610,7 @@ class SyncTelemetryImpl {
 
       
       case "weave:service:sync:start":
-        this.onSyncStarted();
+        this.onSyncStarted(data);
         break;
 
       case "weave:service:sync:finish":

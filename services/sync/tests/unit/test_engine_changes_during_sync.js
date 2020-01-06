@@ -394,7 +394,7 @@ add_task(async function test_bookmark_change_during_sync() {
     
     
     _("Perform first sync and immediate follow-up sync");
-    Service.sync(["bookmarks"]);
+    Service.sync({engines: ["bookmarks"]});
 
     let pings = await pingsPromise;
     equal(pings.length, 2, "Should submit two pings");
