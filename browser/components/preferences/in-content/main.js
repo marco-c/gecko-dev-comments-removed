@@ -443,17 +443,12 @@ var gMainPane = {
     
     
     
-    
-    
-    
-    
-    var _delayedPaneLoad = function(self) {
-      self._loadData();
-      self._rebuildVisibleTypes();
-      self._sortVisibleTypes();
-      self._rebuildView();
-    }
-    setTimeout(_delayedPaneLoad, 0, this);
+    window.addEventListener("pageshow", () => {
+      this._loadData();
+      this._rebuildVisibleTypes();
+      this._sortVisibleTypes();
+      this._rebuildView();
+    });
 
     let browserBundle = document.getElementById("browserBundle");
     appendSearchKeywords("browserContainersSettings", [
