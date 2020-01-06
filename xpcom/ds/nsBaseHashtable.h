@@ -194,6 +194,69 @@ public:
     }
   }
 
+  struct LookupResult {
+  private:
+    EntryType* mEntry;
+    nsBaseHashtable& mTable;
+#ifdef DEBUG
+    uint32_t mTableGeneration;
+#endif
+
+  public:
+    LookupResult(EntryType* aEntry, nsBaseHashtable& aTable)
+      : mEntry(aEntry)
+      , mTable(aTable)
+#ifdef DEBUG
+      , mTableGeneration(aTable.GetGeneration())
+#endif
+    {}
+
+    
+    explicit operator bool() const
+    {
+      MOZ_ASSERT(mTableGeneration == mTable.GetGeneration());
+      return mEntry;
+    }
+
+    void Remove()
+    {
+      if (!*this) {
+        return;
+      }
+      mTable.RemoveEntry(mEntry);
+      mEntry = nullptr;
+    }
+
+    MOZ_MUST_USE DataType& Data()
+    {
+      MOZ_ASSERT(!!*this, "must have an entry to access its value");
+      return mEntry->mData;
+    }
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE LookupResult Lookup(KeyType aKey)
+  {
+    return LookupResult(this->GetEntry(aKey), *this);
+  }
+
   struct EntryPtr {
   private:
     EntryType& mEntry;
