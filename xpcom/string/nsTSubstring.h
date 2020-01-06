@@ -526,6 +526,9 @@ public:
     return *this;
   }
 
+  
+  
+  
   void NS_FASTCALL Adopt(char_type* aData, size_type aLength = size_type(-1));
 
 

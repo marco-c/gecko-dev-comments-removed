@@ -786,6 +786,22 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MOZ_STACK_CLASS nsTGetterCopies_CharT
 {
 public:
@@ -811,6 +827,7 @@ private:
   nsTSubstring_CharT& mString;
   char_type* mData;
 };
+
 
 inline nsTGetterCopies_CharT
 getter_Copies(nsTSubstring_CharT& aString)
