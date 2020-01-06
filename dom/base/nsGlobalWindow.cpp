@@ -8900,7 +8900,7 @@ nsGlobalWindow::FireAbuseEvents(const nsAString &aPopupURL,
   
   nsCOMPtr<nsIIOService> ios(do_GetService(NS_IOSERVICE_CONTRACTID));
   if (ios)
-    ios->NewURI(NS_ConvertUTF16toUTF8(aPopupURL), 0, baseURL,
+    ios->NewURI(NS_ConvertUTF16toUTF8(aPopupURL), nullptr, baseURL,
                 getter_AddRefs(popupURI));
 
   
@@ -13870,13 +13870,6 @@ nsGlobalWindow::GetGamepads(nsTArray<RefPtr<Gamepad> >& aGamepads)
 {
   MOZ_ASSERT(IsInnerWindow());
   aGamepads.Clear();
-
-  
-  
-  if (nsContentUtils::ShouldResistFingerprinting()) {
-    return;
-  }
-
   
   aGamepads.SetCapacity(mGamepads.Count());
   for (auto iter = mGamepads.Iter(); !iter.Done(); iter.Next()) {
