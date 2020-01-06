@@ -2697,8 +2697,8 @@ const nsAString& NonNullHelper(const binding_detail::FakeString& aArg)
 
 
 
-nsresult
-ReparentWrapper(JSContext* aCx, JS::Handle<JSObject*> aObj);
+void
+ReparentWrapper(JSContext* aCx, JS::Handle<JSObject*> aObj, ErrorResult& aError);
 
 
 

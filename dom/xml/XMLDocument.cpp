@@ -164,6 +164,10 @@ NS_NewDOMDocument(nsIDOMDocument** aInstancePtrResult,
     nsCOMPtr<nsINode> doctypeAsNode = do_QueryInterface(aDoctype);
     ErrorResult result;
     d->AppendChild(*doctypeAsNode, result);
+    
+    
+    
+    result.WouldReportJSException();
     if (NS_WARN_IF(result.Failed())) {
       return result.StealNSResult();
     }
@@ -181,6 +185,10 @@ NS_NewDOMDocument(nsIDOMDocument** aInstancePtrResult,
     }
 
     d->AppendChild(*root, result);
+    
+    
+    
+    result.WouldReportJSException();
     if (NS_WARN_IF(result.Failed())) {
       return result.StealNSResult();
     }
