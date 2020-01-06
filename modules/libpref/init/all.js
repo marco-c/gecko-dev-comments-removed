@@ -413,7 +413,7 @@ pref("media.wave.enabled", true);
 pref("media.webm.enabled", true);
 
 pref("media.eme.chromium-api.enabled", true);
-pref("media.eme.chromium-api.video-shmems", 6);
+pref("media.eme.chromium-api.video-shmems", 4);
 
 #ifdef MOZ_APPLEMEDIA
 #ifdef MOZ_WIDGET_UIKIT
@@ -934,6 +934,9 @@ pref("accessibility.AOM.enabled", false);
 
 pref("accessibility.delay_plugins", false);
 pref("accessibility.delay_plugin_time", 10000);
+
+
+pref("accessibility.handler.enabled", true);
 #endif
 
 pref("focusmanager.testmode", false);
@@ -4778,8 +4781,6 @@ pref("widget.chrome.allow-gtk-dark-theme", false);
 pref("widget.content.allow-gtk-dark-theme", false);
 #endif
 #endif
-
-pref("widget.window-transforms.disabled", false);
 
 #ifdef XP_WIN
 
