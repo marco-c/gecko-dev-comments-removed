@@ -206,15 +206,6 @@
     print = global.print;
   }
 
-  var quit = global.quit;
-  if (typeof quit !== "function") {
-    
-    
-    
-    quit = function quit() {};
-    global.quit = quit;
-  }
-
   var gczeal = global.gczeal;
   if (typeof gczeal !== "function") {
     if (typeof SpecialPowersSetGCZeal === "function") {

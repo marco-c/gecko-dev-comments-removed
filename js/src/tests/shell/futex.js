@@ -5,16 +5,17 @@
 
 
 
-if (!(this.SharedArrayBuffer && this.getSharedArrayBuffer && this.setSharedArrayBuffer)) {
-    reportCompare(true,true);
-    quit(0);
-}
-
 var DEBUG = false;
 
 function dprint(s) {
     if (DEBUG) print(s);
 }
+
+var hasSharedArrayBuffer = !!(this.SharedArrayBuffer &&
+                              this.getSharedArrayBuffer &&
+                              this.setSharedArrayBuffer);
+
+if (hasSharedArrayBuffer) {
 
 
 
@@ -59,13 +60,13 @@ assertThrowsInstanceOf(() => setSharedArrayBuffer(mem), Error);
 assertThrowsInstanceOf(() => setSharedArrayBuffer("abracadabra"), Error);
 assertThrowsInstanceOf(() => setSharedArrayBuffer(() => 37), Error);
 
+} 
 
 
-if (helperThreadCount() === 0) {
-  
-  reportCompare(true,true);
-  quit();
-}
+
+
+
+if (hasSharedArrayBuffer && helperThreadCount() !== 0) {
 
 
 
@@ -155,6 +156,8 @@ finally {
 assertEq(exn, true);
 
 
+
+} 
 
 dprint("Done");
 reportCompare(true,true);

@@ -5,10 +5,7 @@
 
 
 
-if (!(this.SharedArrayBuffer && this.Atomics)) {
-    reportCompare(true,true);
-    quit(0);
-}
+if (this.SharedArrayBuffer && this.Atomics) {
 
 
 
@@ -108,5 +105,7 @@ let sab = new SharedArrayBuffer(16);
 	assertThrowsInstanceOf(() => Atomics.wake(view, Idx), RangeError);
     }
 }
+
+} 
 
 reportCompare(true,true);

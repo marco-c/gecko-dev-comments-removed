@@ -13,9 +13,6 @@
 
 
 
-
-
-
 var UBound = 0;
 var BUGNUMBER = '(none)';
 var summary = 'Testing functions having duplicate formal parameter names';
@@ -27,21 +24,6 @@ var expect= '';
 var expectedvalues = [];
 var OBJ = new Object();
 var OBJ_TYPE = OBJ.toString();
-
-
-
-
-
-try
-{
-  if (!OBJ.toSource || !uneval(OBJ))
-    quit();
-}
-catch(e)
-{
-  quit();
-}
-
 
 
 
