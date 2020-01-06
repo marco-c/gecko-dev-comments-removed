@@ -5627,8 +5627,14 @@ this.XPIProvider = {
     }
 
     
-    if (isTheme(aAddon.type) && !isDisabled)
+    if (isTheme(aAddon.type) && !isDisabled) {
       AddonManagerPrivate.notifyAddonChanged(aAddon.id, aAddon.type, needsRestart);
+
+      if (xpiState) {
+        xpiState.syncWithDB(aAddon);
+        XPIStates.save();
+      }
+    }
 
     return isDisabled;
   },
