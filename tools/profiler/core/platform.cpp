@@ -54,9 +54,7 @@
 #include "nsIXULRuntime.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsDirectoryServiceDefs.h"
-#include "nsJSPrincipals.h"
 #include "nsMemoryReporterManager.h"
-#include "nsScriptSecurityManager.h"
 #include "nsXULAppAPI.h"
 #include "nsProfilerStartParams.h"
 #include "ProfilerParent.h"
@@ -659,30 +657,16 @@ public:
 #endif
 };
 
-static bool
-IsChromeJSScript(JSScript* aScript)
-{
-  
-
-  nsIScriptSecurityManager* const secman =
-    nsScriptSecurityManager::GetScriptSecurityManager();
-  NS_ENSURE_TRUE(secman, false);
-
-  JSPrincipals* const principals = JS_GetScriptPrincipals(aScript);
-  return secman->IsSystemPrincipal(nsJSPrincipals::get(principals));
-}
-
 static void
-AddPseudoEntry(uint32_t aFeatures, NotNull<RacyThreadInfo*> aRacyInfo,
-               const js::ProfileEntry& entry,
-               ProfilerStackCollector& aCollector)
+AddPseudoEntry(PSLockRef aLock, NotNull<RacyThreadInfo*> aRacyInfo,
+               const js::ProfileEntry& entry, ProfileBuffer& aBuffer)
 {
-  
-  
   
 
   MOZ_ASSERT(entry.kind() == js::ProfileEntry::Kind::CPP_NORMAL ||
              entry.kind() == js::ProfileEntry::Kind::JS_NORMAL);
+
+  aBuffer.AddEntry(ProfileBufferEntry::Label(entry.label()));
 
   const char* dynamicString = entry.dynamicString();
   int lineno = -1;
@@ -691,11 +675,18 @@ AddPseudoEntry(uint32_t aFeatures, NotNull<RacyThreadInfo*> aRacyInfo,
   
 
   if (dynamicString) {
-    bool isChromeJSEntry = false;
+    
+    if (ActivePS::FeaturePrivacy(aLock)) {
+      dynamicString = "(private)";
+    } else if (strlen(dynamicString) >= ProfileBuffer::kMaxFrameKeyLength) {
+      dynamicString = "(too long)";
+    }
+
+    
+    aBuffer.AddDynamicStringEntry(dynamicString);
     if (entry.isJs()) {
       JSScript* script = entry.script();
       if (script) {
-        isChromeJSEntry = IsChromeJSScript(script);
         if (!entry.pc()) {
           
           MOZ_ASSERT(&entry == &aRacyInfo->entries[aRacyInfo->stackSize() - 1]);
@@ -706,14 +697,6 @@ AddPseudoEntry(uint32_t aFeatures, NotNull<RacyThreadInfo*> aRacyInfo,
     } else {
       lineno = entry.line();
     }
-
-    
-    if (ProfilerFeature::HasPrivacy(aFeatures) && !isChromeJSEntry) {
-      dynamicString = "(private)";
-    } else if (strlen(dynamicString) >= ProfileBuffer::kMaxFrameKeyLength) {
-      dynamicString = "(too long)";
-    }
-
   } else {
     
     
@@ -722,8 +705,11 @@ AddPseudoEntry(uint32_t aFeatures, NotNull<RacyThreadInfo*> aRacyInfo,
     }
   }
 
-  aCollector.CollectCodeLocation(entry.label(), dynamicString, lineno,
-                                 Some(entry.category()));
+  if (lineno != -1) {
+    aBuffer.AddEntry(ProfileBufferEntry::LineNumber(lineno));
+  }
+
+  aBuffer.AddEntry(ProfileBufferEntry::Category(int(entry.category())));
 }
 
 
@@ -761,16 +747,11 @@ struct AutoWalkJSStack
   }
 };
 
-
-
 static void
-MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
-            const ThreadInfo& aThreadInfo, const Registers& aRegs,
-            const NativeStack& aNativeStack,
-            ProfilerStackCollector& aCollector)
+MergeStacksIntoProfile(PSLockRef aLock, bool aIsSynchronous,
+                       const ThreadInfo& aThreadInfo, const Registers& aRegs,
+                       const NativeStack& aNativeStack, ProfileBuffer& aBuffer)
 {
-  
-  
   
 
   NotNull<RacyThreadInfo*> racyInfo = aThreadInfo.RacyInfo();
@@ -786,10 +767,10 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
   
   
   
-  uint32_t startBufferGen = UINT32_MAX;
-  if (!aIsSynchronous && aCollector.Generation().isSome()) {
-    startBufferGen = *aCollector.Generation();
-  }
+  uint32_t startBufferGen;
+  startBufferGen = aIsSynchronous
+                 ? UINT32_MAX
+                 : aBuffer.mGeneration;
   uint32_t jsCount = 0;
   JS::ProfilingFrameIterator::Frame jsFrames[MAX_JS_FRAMES];
 
@@ -901,7 +882,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
       
       
       if (pseudoEntry.kind() != js::ProfileEntry::Kind::CPP_MARKER_FOR_JS) {
-        AddPseudoEntry(aFeatures, racyInfo, pseudoEntry, aCollector);
+        AddPseudoEntry(aLock, racyInfo, pseudoEntry, aBuffer);
       }
       pseudoIndex++;
       continue;
@@ -927,11 +908,13 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
       
       if (aIsSynchronous ||
           jsFrame.kind == JS::ProfilingFrameIterator::Frame_Wasm) {
-        aCollector.CollectCodeLocation("", jsFrame.label, -1, Nothing());
+        aBuffer.AddEntry(ProfileBufferEntry::Label(""));
+        aBuffer.AddDynamicStringEntry(jsFrame.label);
       } else {
         MOZ_ASSERT(jsFrame.kind == JS::ProfilingFrameIterator::Frame_Ion ||
                    jsFrame.kind == JS::ProfilingFrameIterator::Frame_Baseline);
-        aCollector.CollectJitReturnAddr(jsFrames[jsIndex].returnAddress);
+        aBuffer.AddEntry(
+          ProfileBufferEntry::JitReturnAddr(jsFrames[jsIndex].returnAddress));
       }
 
       jsIndex--;
@@ -943,7 +926,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
     if (nativeStackAddr) {
       MOZ_ASSERT(nativeIndex >= 0);
       void* addr = (void*)aNativeStack.mPCs[nativeIndex];
-      aCollector.CollectNativeLeafAddr(addr);
+      aBuffer.AddEntry(ProfileBufferEntry::NativeLeafAddr(addr));
     }
     if (nativeIndex >= 0) {
       nativeIndex--;
@@ -954,11 +937,10 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
   
   
   
-  if (!aIsSynchronous && context && aCollector.Generation().isSome()) {
-    MOZ_ASSERT(*aCollector.Generation() >= startBufferGen);
-    uint32_t lapCount = *aCollector.Generation() - startBufferGen;
-    JS::UpdateJSContextProfilerSampleBufferGen(context,
-                                               *aCollector.Generation(),
+  if (!aIsSynchronous && context) {
+    MOZ_ASSERT(aBuffer.mGeneration >= startBufferGen);
+    uint32_t lapCount = aBuffer.mGeneration - startBufferGen;
+    JS::UpdateJSContextProfilerSampleBufferGen(context, aBuffer.mGeneration,
                                                lapCount);
   }
 }
@@ -982,8 +964,6 @@ static void
 DoNativeBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
                   const Registers& aRegs, NativeStack& aNativeStack)
 {
-  
-  
   
 
   
@@ -1017,8 +997,6 @@ static void
 DoNativeBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
                   const Registers& aRegs, NativeStack& aNativeStack)
 {
-  
-  
   
 
   const mcontext_t* mcontext = &aRegs.mContext->uc_mcontext;
@@ -1098,8 +1076,6 @@ static void
 DoNativeBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
                   const Registers& aRegs, NativeStack& aNativeStack)
 {
-  
-  
   
 
   const mcontext_t* mc = &aRegs.mContext->uc_mcontext;
@@ -1246,13 +1222,13 @@ DoSharedSample(PSLockRef aLock, bool aIsSynchronous,
   if (ActivePS::FeatureStackWalk(aLock)) {
     DoNativeBacktrace(aLock, aThreadInfo, aRegs, nativeStack);
 
-    MergeStacks(ActivePS::Features(aLock), aIsSynchronous, aThreadInfo, aRegs,
-                nativeStack, aBuffer);
+    MergeStacksIntoProfile(aLock, aIsSynchronous, aThreadInfo, aRegs,
+                           nativeStack, aBuffer);
   } else
 #endif
   {
-    MergeStacks(ActivePS::Features(aLock), aIsSynchronous, aThreadInfo, aRegs,
-                nativeStack, aBuffer);
+    MergeStacksIntoProfile(aLock, aIsSynchronous, aThreadInfo, aRegs,
+                           nativeStack, aBuffer);
 
     if (ActivePS::FeatureLeaf(aLock)) {
       aBuffer.AddEntry(ProfileBufferEntry::NativeLeafAddr((void*)aRegs.mPC));
@@ -3060,63 +3036,6 @@ profiler_suspend_and_sample_thread(
         }
 #endif
         aCallback(nativeStack.mPCs, nativeStack.mCount, info->IsMainThread());
-      });
-
-      
-      
-      sampler.Disable(lock);
-      break;
-    }
-  }
-}
-
-
-
-
-void
-profiler_suspend_and_sample_thread(int aThreadId,
-                                   uint32_t aFeatures,
-                                   ProfilerStackCollector& aCollector,
-                                   bool aSampleNative )
-{
-  
-  PSAutoLock lock(gPSMutex);
-
-  const CorePS::ThreadVector& liveThreads = CorePS::LiveThreads(lock);
-  for (uint32_t i = 0; i < liveThreads.size(); i++) {
-    ThreadInfo* info = liveThreads.at(i);
-
-    if (info->ThreadId() == aThreadId) {
-      if (info->IsMainThread()) {
-        aCollector.SetIsMainThread();
-      }
-
-      
-      NativeStack nativeStack;
-
-      
-      Sampler sampler(lock);
-      sampler.SuspendAndSampleAndResumeThread(lock, *info,
-                                              [&](const Registers& aRegs) {
-        
-        
-        bool isSynchronous = false;
-#if defined(HAVE_NATIVE_UNWIND)
-        if (aSampleNative) {
-          DoNativeBacktrace(lock, *info, aRegs, nativeStack);
-
-          MergeStacks(aFeatures, isSynchronous, *info, aRegs, nativeStack,
-                      aCollector);
-        } else
-#endif
-        {
-          MergeStacks(aFeatures, isSynchronous, *info, aRegs, nativeStack,
-                      aCollector);
-
-          if (ProfilerFeature::HasLeaf(aFeatures)) {
-            aCollector.CollectNativeLeafAddr((void*)aRegs.mPC);
-          }
-        }
       });
 
       
