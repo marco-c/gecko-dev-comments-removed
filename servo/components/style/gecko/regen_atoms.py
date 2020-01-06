@@ -42,7 +42,7 @@ class GkAtomSource:
     PATTERN = re.compile('^(GK_ATOM)\((.+),\s*"(.*)"\)')
     FILE = "include/nsGkAtomList.h"
     CLASS = "nsGkAtoms"
-    TYPE = "nsIAtom"
+    TYPE = "nsAtom"
 
 
 class CSSPseudoElementsAtomSource:
@@ -163,14 +163,14 @@ class FileAvoidWrite(BytesIO):
             self.close()
 
 
-IMPORTS = ("\nuse gecko_bindings::structs::nsIAtom;"
+IMPORTS = ("\nuse gecko_bindings::structs::nsAtom;"
            "\nuse string_cache::Atom;\n\n")
 
 ATOM_TEMPLATE = ("            #[link_name = \"{link_name}\"]\n"
                  "            pub static {name}: *mut {type};")
 
 UNSAFE_STATIC = ("#[inline(always)]\n"
-                 "pub unsafe fn atom_from_static(ptr: *mut nsIAtom) -> Atom {\n"
+                 "pub unsafe fn atom_from_static(ptr: *mut nsAtom) -> Atom {\n"
                  "    Atom::from_static(ptr)\n"
                  "}\n\n")
 
@@ -220,7 +220,7 @@ def write_atom_macro(atoms, file_name):
         f.write(IMPORTS)
 
         for source in SOURCES:
-            if source.TYPE != "nsIAtom":
+            if source.TYPE != "nsAtom":
                 f.write("pub enum {} {{}}\n\n".format(source.TYPE))
 
         f.write(UNSAFE_STATIC)

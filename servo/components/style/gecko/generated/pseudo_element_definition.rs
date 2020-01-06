@@ -867,7 +867,7 @@ None
     }
 
     
-    pub fn pseudo_info(&self) -> (*mut structs::nsIAtom, CSSPseudoElementType) {
+    pub fn pseudo_info(&self) -> (*mut structs::nsAtom, CSSPseudoElementType) {
         (self.atom().as_ptr(), self.pseudo_type())
     }
 

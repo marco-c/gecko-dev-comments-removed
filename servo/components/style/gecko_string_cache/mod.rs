@@ -10,7 +10,7 @@ use gecko_bindings::bindings::Gecko_AddRefAtom;
 use gecko_bindings::bindings::Gecko_Atomize;
 use gecko_bindings::bindings::Gecko_Atomize16;
 use gecko_bindings::bindings::Gecko_ReleaseAtom;
-use gecko_bindings::structs::{nsIAtom, nsIAtom_AtomKind};
+use gecko_bindings::structs::{nsAtom, nsAtom_AtomKind};
 use nsstring::{nsAString, nsStr};
 use precomputed_hash::PrecomputedHash;
 use std::ascii::AsciiExt;
@@ -46,7 +46,7 @@ pub struct Atom(*mut WeakAtom);
 
 
 
-pub struct WeakAtom(nsIAtom);
+pub struct WeakAtom(nsAtom);
 
 
 
@@ -94,7 +94,7 @@ unsafe impl Sync for WeakAtom {}
 impl WeakAtom {
     
     #[inline]
-    pub unsafe fn new<'a>(atom: *const nsIAtom) -> &'a mut Self {
+    pub unsafe fn new<'a>(atom: *const nsAtom) -> &'a mut Self {
         &mut *(atom as *mut WeakAtom)
     }
 
@@ -149,7 +149,7 @@ impl WeakAtom {
     #[inline]
     pub fn is_static(&self) -> bool {
         unsafe {
-            (*self.as_ptr()).mKind() == nsIAtom_AtomKind::StaticAtom as u32
+            (*self.as_ptr()).mKind() == nsAtom_AtomKind::StaticAtom as u32
         }
     }
 
@@ -169,9 +169,9 @@ impl WeakAtom {
 
     
     #[inline]
-    pub fn as_ptr(&self) -> *mut nsIAtom {
-        let const_ptr: *const nsIAtom = &self.0;
-        const_ptr as *mut nsIAtom
+    pub fn as_ptr(&self) -> *mut nsAtom {
+        let const_ptr: *const nsAtom = &self.0;
+        const_ptr as *mut nsAtom
     }
 
     
@@ -240,7 +240,7 @@ impl fmt::Display for WeakAtom {
 
 impl Atom {
     
-    pub unsafe fn with<F, R>(ptr: *mut nsIAtom, callback: F) -> R where F: FnOnce(&Atom) -> R {
+    pub unsafe fn with<F, R>(ptr: *mut nsAtom, callback: F) -> R where F: FnOnce(&Atom) -> R {
         let atom = Atom(WeakAtom::new(ptr));
         let ret = callback(&atom);
         mem::forget(atom);
@@ -254,7 +254,7 @@ impl Atom {
     
     
     #[inline]
-    unsafe fn from_static(ptr: *mut nsIAtom) -> Self {
+    unsafe fn from_static(ptr: *mut nsAtom) -> Self {
         let atom = Atom(ptr as *mut WeakAtom);
         debug_assert!(atom.is_static(),
                       "Called from_static for a non-static atom!");
@@ -264,7 +264,7 @@ impl Atom {
     
     
     #[inline]
-    pub unsafe fn from_addrefed(ptr: *mut nsIAtom) -> Self {
+    pub unsafe fn from_addrefed(ptr: *mut nsAtom) -> Self {
         assert!(!ptr.is_null());
         unsafe {
             Atom(WeakAtom::new(ptr))
@@ -273,7 +273,7 @@ impl Atom {
 
     
     #[inline]
-    pub fn into_addrefed(self) -> *mut nsIAtom {
+    pub fn into_addrefed(self) -> *mut nsAtom {
         let ptr = self.as_ptr();
         mem::forget(self);
         ptr
@@ -375,9 +375,9 @@ impl From<String> for Atom {
     }
 }
 
-impl From<*mut nsIAtom> for Atom {
+impl From<*mut nsAtom> for Atom {
     #[inline]
-    fn from(ptr: *mut nsIAtom) -> Atom {
+    fn from(ptr: *mut nsAtom) -> Atom {
         assert!(!ptr.is_null());
         unsafe {
             let ret = Atom(WeakAtom::new(ptr));
