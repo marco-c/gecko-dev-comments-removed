@@ -3,8 +3,17 @@
 
 const PREF_NEWTAB_ENABLED = "browser.newtabpage.enabled";
 const PREF_NEWTAB_DIRECTORYSOURCE = "browser.newtabpage.directory.source";
+const PREF_NEWTAB_ACTIVITY_STREAM = "browser.newtabpage.activity-stream.enabled";
 
 Services.prefs.setBoolPref(PREF_NEWTAB_ENABLED, true);
+Services.prefs.setBoolPref(PREF_NEWTAB_ACTIVITY_STREAM, false);
+
+
+
+
+BrowserOpenTab();
+const initialTab = gBrowser.selectedTab;
+gBrowser.removeTab(initialTab);
 
 var tmp = {};
 Cu.import("resource://gre/modules/NewTabUtils.jsm", tmp);
@@ -78,6 +87,7 @@ registerCleanupFunction(function() {
   });
 
   Services.prefs.clearUserPref(PREF_NEWTAB_ENABLED);
+  Services.prefs.clearUserPref(PREF_NEWTAB_ACTIVITY_STREAM);
   Services.prefs.setCharPref(PREF_NEWTAB_DIRECTORYSOURCE, gOrigDirectorySource);
 
   return watchLinksChangeOnce();
