@@ -331,6 +331,25 @@ void *
 SystemElf::GetSymbolPtr(const char *symbol) const
 {
   void *sym = dlsym(dlhandle, symbol);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!sym &&
+      !strcmp(symbol, "isnanf") &&
+      !strcmp(GetName(), "libm.so")) {
+    sym = dlsym(dlhandle, "__isnanf");
+  }
   DEBUG_LOG("dlsym(%p [\"%s\"], \"%s\") = %p", dlhandle, GetPath(), symbol, sym);
   ElfLoader::Singleton.lastError = dlerror();
   return sym;
