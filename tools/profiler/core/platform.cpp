@@ -628,23 +628,18 @@ static const char* const kMainThreadName = "GeckoMain";
 
 
 
+
 class Registers
 {
 public:
-  Registers()
-    : mPC(nullptr)
-    , mSP(nullptr)
-    , mFP(nullptr)
-    , mLR(nullptr)
-#if defined(GP_OS_linux) || defined(GP_OS_android)
-    , mContext(nullptr)
-#endif
-  {}
+  Registers() {}
 
 #if defined(HAVE_NATIVE_UNWIND)
   
   void SyncPopulate();
 #endif
+
+  void Clear() { memset(this, 0, sizeof(*this)); }
 
   
   
@@ -2832,9 +2827,10 @@ profiler_get_backtrace()
   TimeStamp now = TimeStamp::Now();
 
   Registers regs;
-
 #if defined(HAVE_NATIVE_UNWIND)
   regs.SyncPopulate();
+#else
+  regs.Clear();
 #endif
 
   auto buffer = MakeUnique<ProfileBuffer>(PROFILER_GET_BACKTRACE_ENTRIES);
