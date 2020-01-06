@@ -31,6 +31,11 @@ add_task(function* () {
   
   yield clickJsonNode(".jsonPanelBox .treeTable .treeLabel");
   is(yield countRows(), 1, "There must be one row");
+
+  
+  yield selectJsonViewContentTab("headers");
+  yield selectJsonViewContentTab("json");
+  is(yield countRows(), 1, "There must still be one row");
 });
 
 function countRows() {
