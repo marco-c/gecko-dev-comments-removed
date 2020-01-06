@@ -1,34 +1,53 @@
 "use strict";
 
-let Cu = Components.utils;
-Cu.import("resource://gre/modules/Services.jsm");
 
 
 
 
 
 
-
-
-
-
-
-add_task(async function checkActivityStreamLoads() {
-  const asURL = "resource://activity-stream/data/content/activity-stream.html";
-
+async function checkNewtabLoads(selector, message) {
   
   BrowserOpenTab();
 
   
   let browser = gBrowser.selectedBrowser;
-  await BrowserTestUtils.browserLoaded(browser);
+  await waitForPreloaded(browser);
 
   
-  await ContentTask.spawn(browser, {url: asURL}, args => {
-    Assert.ok(content.document.querySelector("body.activity-stream"),
-      'Got <body class="activity-stream" Element');
-  });
+  let found = await ContentTask.spawn(browser, selector, arg =>
+    content.document.querySelector(arg) !== null);
+  ok(found, message);
 
   
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+}
+
+
+async function checkActivityStreamLoads() {
+  await checkNewtabLoads("body.activity-stream", "Got <body class='activity-stream'> Element");
+}
+
+
+add_task(async function checkActivityStreamNotPreloadedLoad() {
+  gBrowser.removePreloadedBrowser();
+  await checkActivityStreamLoads();
 });
+
+
+add_task(checkActivityStreamLoads);
+
+
+async function checkNotActivityStreamLoads() {
+  await SpecialPowers.pushPrefEnv({set: [["browser.newtabpage.activity-stream.enabled", false]]});
+  await checkNewtabLoads("body:not(.activity-stream)", "Got <body> Element not for activity-stream");
+}
+
+
+add_task(async function checkNotActivityStreamNotPreloadedLoad() {
+  gBrowser.removePreloadedBrowser();
+  await checkNotActivityStreamLoads();
+});
+
+
+add_task(checkNotActivityStreamLoads);

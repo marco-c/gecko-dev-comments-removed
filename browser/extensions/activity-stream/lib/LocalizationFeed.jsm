@@ -30,7 +30,14 @@ this.LocalizationFeed = class LocalizationFeed {
   }
 
   updateLocale() {
-    let locale = Services.locale.getRequestedLocale() || DEFAULT_LOCALE;
+    
+    
+    let locale = Services.locale.negotiateLanguages(
+      Services.locale.getAppLocalesAsLangTags(), 
+      Object.keys(this.allStrings), 
+      DEFAULT_LOCALE 
+    )[0];
+
     let strings = this.allStrings[locale];
 
     

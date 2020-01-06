@@ -75,8 +75,10 @@ function init(reason) {
 
 
 function uninit(reason) {
+  
   if (activityStream) {
     activityStream.uninit(reason);
+    activityStream = null;
   }
 }
 
