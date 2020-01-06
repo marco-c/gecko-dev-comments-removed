@@ -28,9 +28,9 @@ const startupPhases = {
       "MainProcessSingleton.js",
 
       
-      "WebContentConverter.js",
-      "nsSessionStartup.js",
-      "PushComponents.js",
+      "WebContentConverter.js", 
+      "nsSessionStartup.js", 
+      "PushComponents.js", 
     ]),
     modules: new Set([
       "resource://gre/modules/AppConstants.jsm",
@@ -38,12 +38,9 @@ const startupPhases = {
       "resource://gre/modules/Services.jsm",
 
       
-      "resource://gre/modules/Log.jsm",
-      "resource://gre/modules/AsyncPrefs.jsm",
-      "resource://gre/modules/RemotePageManager.jsm",
-      "resource://gre/modules/TelemetryStopwatch.jsm",
-      "resource://gre/modules/PrivateBrowsingUtils.jsm",
-      "resource://gre/modules/Promise.jsm"
+      "resource://gre/modules/AsyncPrefs.jsm", 
+      "resource://gre/modules/RemotePageManager.jsm", 
+      "resource://gre/modules/Promise.jsm" 
     ])
   }},
 
