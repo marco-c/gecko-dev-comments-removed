@@ -712,13 +712,6 @@ frontend::CompileLazyFunction(JSContext* cx, Handle<LazyScript*> lazy, const cha
     if (!NameFunctions(cx, pn))
         return false;
 
-    
-    if (script->scriptSource()->hasEncoder() &&
-        !script->scriptSource()->xdrEncodeFunction(cx, fun, sourceObject))
-    {
-        return false;
-    }
-
     return true;
 }
 
