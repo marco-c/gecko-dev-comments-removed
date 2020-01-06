@@ -4022,7 +4022,7 @@ nsCSSRendering::PaintDecorationLine(nsIFrame* aFrame, DrawTarget& aDrawTarget,
       Float& ptICoord = aParams.vertical ? pt.y : pt.x;
       Float& ptBCoord = aParams.vertical ? pt.x : pt.y;
       if (aParams.vertical) {
-        ptBCoord += adv + lineThickness / 2.0;
+        ptBCoord += adv;
       }
       Float iCoordLimit = ptICoord + rectISize + lineThickness;
 
@@ -4222,7 +4222,24 @@ nsCSSRendering::GetTextDecorationRectInternal(const Point& aPt,
   }
 
   gfxFloat baseline = floor(bCoord + aParams.ascent + 0.5);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   gfxFloat offset = 0.0;
+
   switch (aParams.decoration) {
     case NS_STYLE_TEXT_DECORATION_LINE_UNDERLINE:
       offset = aParams.offset;
@@ -4238,24 +4255,46 @@ nsCSSRendering::GetTextDecorationRectInternal(const Point& aPt,
         }
       }
       break;
+
     case NS_STYLE_TEXT_DECORATION_LINE_OVERLINE:
+      
+      
+      
+      
+      
       offset = aParams.offset - lineThickness + r.Height();
       break;
+
     case NS_STYLE_TEXT_DECORATION_LINE_LINE_THROUGH: {
+      
+      
       gfxFloat extra = floor(r.Height() / 2.0 + 0.5);
       extra = std::max(extra, lineThickness);
       offset = aParams.offset - lineThickness + extra;
       break;
     }
+
     default:
       NS_ERROR("Invalid decoration value!");
   }
 
+  
+  
+  
   if (aParams.vertical) {
-    r.y = baseline + floor(offset + 0.5);
     Swap(r.x, r.y);
     Swap(r.width, r.height);
+    
+    
+    
+    if (aParams.sidewaysLeft) {
+      r.x = baseline - floor(offset + 0.5);
+    } else {
+      r.x = baseline + floor(offset - r.Width() + 0.5);
+    }
   } else {
+    
+    
     r.y = baseline - floor(offset + 0.5);
   }
 
