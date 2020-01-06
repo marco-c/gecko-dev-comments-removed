@@ -1819,7 +1819,7 @@ MappedYCbCrChannelData::CopyInto(MappedYCbCrChannelData& aDst)
     return false;
   }
 
-  if (stride == aDst.stride) {
+  if (stride == aDst.stride && skip == aDst.skip) {
     
     
     
