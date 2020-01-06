@@ -2500,12 +2500,14 @@ EditorBase::InsertTextImpl(const nsAString& aStringToInsert,
 
   
   if (!node->IsNodeOfType(nsINode::eTEXT)) {
-    if (offset && node->GetChildAt(offset - 1)->IsNodeOfType(nsINode::eTEXT)) {
-      node = node->GetChildAt(offset - 1);
+    nsIContent* child = node->GetChildAt(offset);
+    if (offset && child && child->GetPreviousSibling() &&
+        child->GetPreviousSibling()->IsNodeOfType(nsINode::eTEXT)) {
+      node = child->GetPreviousSibling();
       offset = node->Length();
     } else if (offset < static_cast<int32_t>(node->Length()) &&
-               node->GetChildAt(offset)->IsNodeOfType(nsINode::eTEXT)) {
-      node = node->GetChildAt(offset);
+               child && child->IsNodeOfType(nsINode::eTEXT)) {
+      node = child;
       offset = 0;
     }
   }
@@ -2887,7 +2889,8 @@ EditorBase::SplitNodeImpl(nsIContent& aExistingRightNode,
 {
   
   AutoTArray<SavedRange, 10> savedRanges;
-  for (SelectionType selectionType : kPresentSelectionTypes) {
+  for (size_t i = 0; i < kPresentSelectionTypeCount; ++i) {
+    SelectionType selectionType(ToSelectionType(1 << i));
     SavedRange range;
     range.mSelection = GetSelection(selectionType);
     if (selectionType == SelectionType::eNormal) {
@@ -3035,7 +3038,8 @@ EditorBase::JoinNodesImpl(nsINode* aNodeToKeep,
 
   
   AutoTArray<SavedRange, 10> savedRanges;
-  for (SelectionType selectionType : kPresentSelectionTypes) {
+  for (size_t i = 0; i < kPresentSelectionTypeCount; ++i) {
+    SelectionType selectionType(ToSelectionType(1 << i));
     SavedRange range;
     range.mSelection = GetSelection(selectionType);
     if (selectionType == SelectionType::eNormal) {
