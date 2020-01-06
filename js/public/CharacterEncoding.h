@@ -232,7 +232,7 @@ template <typename CharT>
 extern UTF8CharsZ
 CharsToNewUTF8CharsZ(JSContext* maybeCx, const mozilla::Range<CharT> chars);
 
-uint32_t
+JS_PUBLIC_API(uint32_t)
 Utf8ToOneUcs4Char(const uint8_t* utf8Buffer, int utf8Length);
 
 
@@ -241,13 +241,13 @@ Utf8ToOneUcs4Char(const uint8_t* utf8Buffer, int utf8Length);
 
 
 
-extern TwoByteCharsZ
+extern JS_PUBLIC_API(TwoByteCharsZ)
 UTF8CharsToNewTwoByteCharsZ(JSContext* cx, const UTF8Chars utf8, size_t* outlen);
 
 
 
 
-extern TwoByteCharsZ
+extern JS_PUBLIC_API(TwoByteCharsZ)
 UTF8CharsToNewTwoByteCharsZ(JSContext* cx, const ConstUTF8CharsZ& utf8, size_t* outlen);
 
 
@@ -255,10 +255,10 @@ UTF8CharsToNewTwoByteCharsZ(JSContext* cx, const ConstUTF8CharsZ& utf8, size_t* 
 
 
 
-extern TwoByteCharsZ
+extern JS_PUBLIC_API(TwoByteCharsZ)
 LossyUTF8CharsToNewTwoByteCharsZ(JSContext* cx, const UTF8Chars utf8, size_t* outlen);
 
-extern TwoByteCharsZ
+extern JS_PUBLIC_API(TwoByteCharsZ)
 LossyUTF8CharsToNewTwoByteCharsZ(JSContext* cx, const ConstUTF8CharsZ& utf8, size_t* outlen);
 
 
@@ -308,7 +308,7 @@ FindSmallestEncoding(UTF8Chars utf8);
 
 
 
-extern Latin1CharsZ
+extern JS_PUBLIC_API(Latin1CharsZ)
 UTF8CharsToNewLatin1CharsZ(JSContext* cx, const UTF8Chars utf8, size_t* outlen);
 
 
@@ -316,14 +316,14 @@ UTF8CharsToNewLatin1CharsZ(JSContext* cx, const UTF8Chars utf8, size_t* outlen);
 
 
 
-extern Latin1CharsZ
+extern JS_PUBLIC_API(Latin1CharsZ)
 LossyUTF8CharsToNewLatin1CharsZ(JSContext* cx, const UTF8Chars utf8, size_t* outlen);
 
 
 
 
 
-extern bool
+extern JS_PUBLIC_API(bool)
 StringIsASCII(const char* s);
 
 } 
