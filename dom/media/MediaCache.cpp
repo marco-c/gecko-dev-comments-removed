@@ -1174,7 +1174,7 @@ MediaCache::PredictNextUseForIncomingData(MediaCacheStream* aStream)
 void
 MediaCache::Update()
 {
-  NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
+  MOZ_ASSERT(sThread->IsOnCurrentThread());
 
   ReentrantMonitorAutoEnter mon(mReentrantMonitor);
 
@@ -1565,7 +1565,7 @@ MediaCache::QueueUpdate()
   
   
   nsCOMPtr<nsIRunnable> event = new UpdateEvent(this);
-  SystemGroup::Dispatch(TaskCategory::Other, event.forget());
+  sThread->Dispatch(event.forget());
 }
 
 void
