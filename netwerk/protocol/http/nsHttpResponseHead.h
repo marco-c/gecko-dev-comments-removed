@@ -9,7 +9,7 @@
 #include "nsHttpHeaderArray.h"
 #include "nsHttp.h"
 #include "nsString.h"
-#include "mozilla/ReentrantMonitor.h"
+#include "mozilla/RecursiveMutex.h"
 
 class nsIHttpHeaderVisitor;
 
@@ -37,14 +37,14 @@ public:
                          , mCacheControlNoCache(false)
                          , mCacheControlImmutable(false)
                          , mPragmaNoCache(false)
-                         , mReentrantMonitor("nsHttpResponseHead.mReentrantMonitor")
+                         , mRecursiveMutex("nsHttpResponseHead.mRecursiveMutex")
                          , mInVisitHeaders(false) {}
 
     nsHttpResponseHead(const nsHttpResponseHead &aOther);
     nsHttpResponseHead &operator=(const nsHttpResponseHead &aOther);
 
-    void Enter() { mReentrantMonitor.Enter(); }
-    void Exit() { mReentrantMonitor.Exit(); }
+    void Enter() { mRecursiveMutex.Lock(); }
+    void Exit() { mRecursiveMutex.Unlock(); }
 
     nsHttpVersion Version();
 
@@ -187,7 +187,7 @@ private:
 
     
     
-    ReentrantMonitor  mReentrantMonitor;
+    RecursiveMutex  mRecursiveMutex;
     
     bool              mInVisitHeaders;
 
