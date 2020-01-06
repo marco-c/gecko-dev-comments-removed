@@ -26,6 +26,7 @@ namespace mozilla {
 namespace storage {
 class StatementJSHelper;
 class Connection;
+class StatementParamsHolder;
 class StatementRowHolder;
 
 class Statement final : public mozIStorageStatement
@@ -97,7 +98,7 @@ private:
 
 
 
-    nsMainThreadPtrHandle<nsIXPConnectJSObjectHolder> mStatementParamsHolder;
+    nsMainThreadPtrHandle<StatementParamsHolder> mStatementParamsHolder;
     nsMainThreadPtrHandle<StatementRowHolder> mStatementRowHolder;
 
   

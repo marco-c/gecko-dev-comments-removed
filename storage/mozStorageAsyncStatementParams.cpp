@@ -4,19 +4,14 @@
 
 
 
+#include "nsJSUtils.h"
 #include "nsMemory.h"
 #include "nsString.h"
-#include "nsCOMPtr.h"
-#include "nsJSUtils.h"
 
 #include "jsapi.h"
 
+#include "mozilla/dom/MozStorageAsyncStatementParamsBinding.h"
 #include "mozStoragePrivateHelpers.h"
-#include "mozStorageAsyncStatement.h"
-#include "mozStorageAsyncStatementParams.h"
-#include "mozIStorageStatement.h"
-
-#include "xpc_make_class.h"
 
 namespace mozilla {
 namespace storage {
@@ -24,107 +19,109 @@ namespace storage {
 
 
 
-AsyncStatementParams::AsyncStatementParams(AsyncStatement *aStatement)
-: mStatement(aStatement)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(AsyncStatementParams, mWindow)
+
+NS_INTERFACE_TABLE_HEAD(AsyncStatementParams)
+  NS_WRAPPERCACHE_INTERFACE_TABLE_ENTRY
+  NS_INTERFACE_TABLE(AsyncStatementParams, nsISupports)
+  NS_INTERFACE_TABLE_TO_MAP_SEGUE_CYCLE_COLLECTION(AsyncStatementParams)
+NS_INTERFACE_MAP_END
+
+NS_IMPL_CYCLE_COLLECTING_ADDREF(AsyncStatementParams)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(AsyncStatementParams)
+
+AsyncStatementParams::AsyncStatementParams(nsPIDOMWindowInner* aWindow, AsyncStatement *aStatement)
+: mWindow(aWindow),
+  mStatement(aStatement)
 {
   NS_ASSERTION(mStatement != nullptr, "mStatement is null");
 }
 
-NS_IMPL_ISUPPORTS(
-  AsyncStatementParams
-, mozIStorageStatementParams
-, nsIXPCScriptable
-)
-
-
-
-
-#define XPC_MAP_CLASSNAME         AsyncStatementParams
-#define XPC_MAP_QUOTED_CLASSNAME "AsyncStatementParams"
-#define XPC_MAP_FLAGS (XPC_SCRIPTABLE_WANT_SETPROPERTY | \
-                       XPC_SCRIPTABLE_WANT_RESOLVE | \
-                       XPC_SCRIPTABLE_ALLOW_PROP_MODS_DURING_RESOLVE)
-#include "xpc_map_end.h"
-
-NS_IMETHODIMP
-AsyncStatementParams::SetProperty(
-  nsIXPConnectWrappedNative *aWrapper,
-  JSContext *aCtx,
-  JSObject *aScopeObj,
-  jsid aId,
-  JS::Value *_vp,
-  bool *_retval
-)
+JSObject*
+AsyncStatementParams::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 {
-  NS_ENSURE_TRUE(mStatement, NS_ERROR_NOT_INITIALIZED);
-
-  if (JSID_IS_INT(aId)) {
-    int idx = JSID_TO_INT(aId);
-
-    nsCOMPtr<nsIVariant> variant(convertJSValToVariant(aCtx, *_vp));
-    NS_ENSURE_TRUE(variant, NS_ERROR_UNEXPECTED);
-    nsresult rv = mStatement->BindByIndex(idx, variant);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-  else if (JSID_IS_STRING(aId)) {
-    JSString *str = JSID_TO_STRING(aId);
-    nsAutoJSString autoStr;
-    if (!autoStr.init(aCtx, str)) {
-      return NS_ERROR_FAILURE;
-    }
-
-    NS_ConvertUTF16toUTF8 name(autoStr);
-
-    nsCOMPtr<nsIVariant> variant(convertJSValToVariant(aCtx, *_vp));
-    NS_ENSURE_TRUE(variant, NS_ERROR_UNEXPECTED);
-    nsresult rv = mStatement->BindByName(name, variant);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-  else {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  *_retval = true;
-  return NS_OK;
+  return dom::MozStorageAsyncStatementParamsBinding::Wrap(aCx, this, aGivenProto);
 }
 
-NS_IMETHODIMP
-AsyncStatementParams::Resolve(nsIXPConnectWrappedNative *aWrapper,
-                              JSContext *aCtx,
-                              JSObject *aScopeObj,
-                              jsid aId,
-                              bool *aResolvedp,
-                              bool *_retval)
+void
+AsyncStatementParams::NamedGetter(JSContext* aCx,
+                                  const nsAString& aName,
+                                  bool& aFound,
+                                  JS::MutableHandle<JS::Value> aResult,
+                                  mozilla::ErrorResult& aRv)
 {
-  JS::Rooted<JSObject*> scopeObj(aCtx, aScopeObj);
-
-  NS_ENSURE_TRUE(mStatement, NS_ERROR_NOT_INITIALIZED);
-  
-  
-
-  bool resolved = false;
-  bool ok = true;
-  if (JSID_IS_INT(aId)) {
-    uint32_t idx = JSID_TO_INT(aId);
-    
-    
-    ok = ::JS_DefineElement(aCtx, scopeObj, idx, JS::UndefinedHandleValue,
-                            JSPROP_RESOLVING);
-    resolved = true;
-  }
-  else if (JSID_IS_STRING(aId)) {
-    
-    
-    
-    JS::Rooted<jsid> id(aCtx, aId);
-    ok = ::JS_DefinePropertyById(aCtx, scopeObj, id, JS::UndefinedHandleValue,
-                                 JSPROP_RESOLVING);
-    resolved = true;
+  if (!mStatement) {
+    aRv.Throw(NS_ERROR_NOT_INITIALIZED);
+    return;
   }
 
-  *_retval = ok;
-  *aResolvedp = resolved && ok;
-  return NS_OK;
+  
+  aFound = false;
+}
+
+void
+AsyncStatementParams::NamedSetter(JSContext* aCx,
+                                  const nsAString& aName,
+                                  JS::Handle<JS::Value> aValue,
+                                  mozilla::ErrorResult& aRv)
+{
+  if (!mStatement) {
+    aRv.Throw(NS_ERROR_NOT_INITIALIZED);
+    return;
+  }
+
+  NS_ConvertUTF16toUTF8 name(aName);
+
+  nsCOMPtr<nsIVariant> variant(convertJSValToVariant(aCx, aValue));
+  if (!variant) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return;
+  }
+
+  aRv = mStatement->BindByName(name, variant);
+}
+
+void
+AsyncStatementParams::GetSupportedNames(nsTArray<nsString>& aNames)
+{
+  
+  
+}
+
+void
+AsyncStatementParams::IndexedGetter(JSContext* aCx,
+                                    uint32_t aIndex,
+                                    bool& aFound,
+                                    JS::MutableHandle<JS::Value> aResult,
+                                    mozilla::ErrorResult& aRv)
+{
+  if (!mStatement) {
+    aRv.Throw(NS_ERROR_NOT_INITIALIZED);
+    return;
+  }
+
+  
+  aFound = false;
+}
+
+void
+AsyncStatementParams::IndexedSetter(JSContext* aCx,
+                                    uint32_t aIndex,
+                                    JS::Handle<JS::Value> aValue,
+                                    mozilla::ErrorResult& aRv)
+{
+  if (!mStatement) {
+    aRv.Throw(NS_ERROR_NOT_INITIALIZED);
+    return;
+  }
+
+  nsCOMPtr<nsIVariant> variant(convertJSValToVariant(aCx, aValue));
+  if (!variant) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return;
+  }
+
+  aRv = mStatement->BindByIndex(aIndex, variant);
 }
 
 } 

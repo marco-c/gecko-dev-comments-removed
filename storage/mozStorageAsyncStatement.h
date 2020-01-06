@@ -18,12 +18,11 @@
 #include "StorageBaseStatementInternal.h"
 #include "mozilla/Attributes.h"
 
-class nsIXPConnectJSObjectHolder;
-
 namespace mozilla {
 namespace storage {
 
 class AsyncStatementJSHelper;
+class AsyncStatementParamsHolder;
 class Connection;
 
 class AsyncStatement final : public mozIStorageAsyncStatement
@@ -87,7 +86,7 @@ private:
   
 
 
-  nsMainThreadPtrHandle<nsIXPConnectJSObjectHolder> mStatementParamsHolder;
+  nsMainThreadPtrHandle<AsyncStatementParamsHolder> mStatementParamsHolder;
 
   
 

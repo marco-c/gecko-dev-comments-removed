@@ -10,10 +10,11 @@
 #include "nsIXPCScriptable.h"
 #include "nsIXPConnect.h"
 
-class AsyncStatement;
-
 namespace mozilla {
 namespace storage {
+
+class AsyncStatement;
+class AsyncStatementParams;
 
 
 
@@ -35,17 +36,24 @@ private:
 
 
 
-class AsyncStatementParamsHolder final : public nsIXPConnectJSObjectHolder
-{
+class AsyncStatementParamsHolder final : public nsISupports {
 public:
   NS_DECL_ISUPPORTS
-  NS_DECL_NSIXPCONNECTJSOBJECTHOLDER
 
-  explicit AsyncStatementParamsHolder(nsIXPConnectJSObjectHolder* aHolder);
+  explicit AsyncStatementParamsHolder(AsyncStatementParams* aParams)
+    : mParams(aParams)
+  {
+  }
+
+  AsyncStatementParams* Get() const {
+    MOZ_ASSERT(mParams);
+    return mParams;
+  }
 
 private:
   virtual ~AsyncStatementParamsHolder();
-  nsCOMPtr<nsIXPConnectJSObjectHolder> mHolder;
+
+  RefPtr<AsyncStatementParams> mParams;
 };
 
 } 
