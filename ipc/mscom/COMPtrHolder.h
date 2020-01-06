@@ -7,10 +7,15 @@
 #ifndef mozilla_mscom_COMPtrHolder_h
 #define mozilla_mscom_COMPtrHolder_h
 
+#include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/Move.h"
 #include "mozilla/mscom/ProxyStream.h"
 #include "mozilla/mscom/Ptr.h"
+#if defined(MOZ_CONTENT_SANDBOX)
+#include "mozilla/SandboxSettings.h"
+#endif 
 
 namespace mozilla {
 namespace mscom {
@@ -47,6 +52,22 @@ public:
   {
     mPtr = Forward<COMPtrType>(aPtr);
   }
+
+#if defined(MOZ_CONTENT_SANDBOX)
+  
+  
+  
+  void PreserveStream(RefPtr<IStream>&& aPtr) const
+  {
+    MOZ_ASSERT(!mMarshaledStream);
+    mMarshaledStream = ToPreservedStreamPtr(Move(aPtr));
+  }
+
+  PreservedStreamPtr GetPreservedStream()
+  {
+    return Move(mMarshaledStream);
+  }
+#endif 
 
   COMPtrHolder(const COMPtrHolder& aOther) = delete;
 
@@ -87,6 +108,12 @@ public:
 private:
   
   mutable COMPtrType mPtr;
+
+#if defined(MOZ_CONTENT_SANDBOX)
+  
+  
+  mutable PreservedStreamPtr mMarshaledStream;
+#endif 
 };
 
 } 
@@ -109,6 +136,24 @@ struct ParamTraits<mozilla::mscom::COMPtrHolder<Interface, _IID>>
     if (bufLen) {
       aMsg->WriteBytes(reinterpret_cast<const char*>(buf), bufLen);
     }
+
+#if defined(MOZ_CONTENT_SANDBOX)
+    if (XRE_IsParentProcess()) {
+      static const bool sIsStreamPreservationNeeded =
+        mozilla::GetEffectiveContentSandboxLevel() >= 3;
+      if (sIsStreamPreservationNeeded) {
+        
+
+
+
+
+
+
+        RefPtr<IStream> stream(proxyStream.GetStream());
+        aParam.PreserveStream(mozilla::Move(stream));
+      }
+    }
+#endif 
   }
 
   static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)

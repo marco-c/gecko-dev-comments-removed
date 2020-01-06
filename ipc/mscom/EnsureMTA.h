@@ -34,6 +34,8 @@ struct MTARelease;
 template <typename T>
 struct MTAReleaseInChildProcess;
 
+struct PreservedStreamDeleter;
+
 }
 
 
@@ -134,6 +136,8 @@ private:
 
   template <typename T>
   friend struct mozilla::mscom::detail::MTAReleaseInChildProcess;
+
+  friend struct mozilla::mscom::detail::PreservedStreamDeleter;
 };
 
 } 

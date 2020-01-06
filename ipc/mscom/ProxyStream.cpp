@@ -189,6 +189,26 @@ ProxyStream::GetBuffer(int& aReturnedBufSize) const
   return mGlobalLockedBuf;
 }
 
+RefPtr<IStream>
+ProxyStream::GetStream() const
+{
+  MOZ_ASSERT(mStream);
+  MOZ_ASSERT(mHGlobal);
+
+  if (!mStream) {
+    return nullptr;
+  }
+
+  
+  
+  LARGE_INTEGER pos;
+  pos.QuadPart = 0LL;
+  DebugOnly<HRESULT> hr = mStream->Seek(pos, STREAM_SEEK_SET, nullptr);
+  MOZ_ASSERT(SUCCEEDED(hr));
+
+  return mStream;
+}
+
 bool
 ProxyStream::GetInterface(void** aOutInterface)
 {

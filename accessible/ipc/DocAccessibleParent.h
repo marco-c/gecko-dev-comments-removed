@@ -236,7 +236,11 @@ private:
 #if defined(XP_WIN)
   
   HWND mEmulatedWindowHandle;
-#endif
+
+#if defined(MOZ_CONTENT_SANDBOX)
+  mscom::PreservedStreamPtr mParentProxyStream;
+#endif 
+#endif 
 
   
 
