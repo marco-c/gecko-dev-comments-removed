@@ -7355,7 +7355,7 @@ nsDisplayStickyPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
     wr::WrStickyId id = aBuilder.DefineStickyFrame(aSc.ToRelativeLayoutRect(bounds),
         top.ptrOr(nullptr), right.ptrOr(nullptr), bottom.ptrOr(nullptr), left.ptrOr(nullptr));
 
-    aBuilder.PushStickyFrame(id);
+    aBuilder.PushStickyFrame(id, GetClipChain());
   }
 
   
@@ -7367,16 +7367,11 @@ nsDisplayStickyPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
   StackingContextHelper sc(aSc, aBuilder);
   sc.AdjustOrigin(scTranslation);
 
-  
-  
-  
-  
-  
   nsDisplayOwnLayer::CreateWebRenderCommands(aBuilder, aResources, sc,
       aManager, aDisplayListBuilder);
 
   if (stickyScrollContainer) {
-    aBuilder.PopStickyFrame();
+    aBuilder.PopStickyFrame(GetClipChain());
   }
 
   return true;
