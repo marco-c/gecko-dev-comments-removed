@@ -803,7 +803,7 @@ IMEHandler::NeedOnScreenKeyboard()
   
   
   
-  if (!InputContextAction::IsUserAction(sLastContextActionCause)) {
+  if (!InputContextAction::IsHandlingUserInput(sLastContextActionCause)) {
     return false;
   }
 

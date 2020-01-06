@@ -233,22 +233,17 @@ public:
                      bool aHaveHotspot, float aHotspotX, float aHotspotY,
                      nsIWidget* aWidget, bool aLockCursor);
 
-  static void StartHandlingUserInput()
-  {
-    ++sUserInputEventDepth;
-    ++sUserInputCounter;
-    if (sUserInputEventDepth == 1) {
-      sLatestUserInputStart = sHandlingInputStart = TimeStamp::Now();
-    }
-  }
+  
 
-  static void StopHandlingUserInput()
-  {
-    --sUserInputEventDepth;
-    if (sUserInputEventDepth == 0) {
-      sHandlingInputStart = TimeStamp();
-    }
-  }
+
+
+
+
+
+
+
+  static void StartHandlingUserInput(EventMessage aMessage);
+  static void StopHandlingUserInput(EventMessage aMessage);
 
   static TimeStamp GetHandlingInputStart() {
     return sHandlingInputStart;
@@ -261,7 +256,9 @@ public:
 
 
 
+
   static bool IsHandlingUserInput();
+  static bool IsHandlingKeyboardInput();
 
   
 
@@ -1097,7 +1094,9 @@ public:
   
   
   
+  
   static int32_t sUserInputEventDepth;
+  static int32_t sUserKeyboardEventDepth;
 
   static bool sNormalLMouseEventInProcess;
 
@@ -1130,11 +1129,14 @@ public:
   ~AutoHandlingUserInputStatePusher();
 
 protected:
-  bool mIsHandlingUserInput;
-  bool mIsMouseDown;
-  bool mResetFMMouseButtonHandlingState;
-
   nsCOMPtr<nsIDocument> mMouseButtonEventHandlingDocument;
+  EventMessage mMessage;
+  bool mIsHandlingUserInput;
+
+  bool NeedsToResetFocusManagerMouseButtonHandlingState() const
+  {
+    return mMessage == eMouseDown || mMessage == eMouseUp;
+  }
 
 private:
   

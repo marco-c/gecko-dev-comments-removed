@@ -771,7 +771,11 @@ public:
   
 
 
-  bool HasKeyEventMessage() const;
+  static bool IsKeyEventMessage(EventMessage aMessage);
+  bool HasKeyEventMessage() const
+  {
+    return IsKeyEventMessage(mMessage);
+  }
   
 
 

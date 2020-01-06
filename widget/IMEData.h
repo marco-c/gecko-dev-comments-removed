@@ -370,7 +370,12 @@ struct InputContextAction final
     
     CAUSE_MOUSE,
     
-    CAUSE_TOUCH
+    CAUSE_TOUCH,
+    
+    
+    CAUSE_UNKNOWN_DURING_NON_KEYBOARD_INPUT,
+    
+    CAUSE_UNKNOWN_DURING_KEYBOARD_INPUT,
   };
   Cause mCause;
 
@@ -405,24 +410,49 @@ struct InputContextAction final
 
   bool UserMightRequestOpenVKB() const
   {
-    return (mFocusChange == FOCUS_NOT_CHANGED &&
-            (mCause == CAUSE_MOUSE || mCause == CAUSE_TOUCH));
-  }
-
-  static bool IsUserAction(Cause aCause)
-  {
-    switch (aCause) {
-      case CAUSE_KEY:
+    
+    if (mFocusChange != FOCUS_NOT_CHANGED) {
+      return false;
+    }
+    switch (mCause) {
+      
+      
       case CAUSE_MOUSE:
       case CAUSE_TOUCH:
+      
+      
+      
+      
+      
+      case CAUSE_UNKNOWN_DURING_NON_KEYBOARD_INPUT:
         return true;
       default:
         return false;
     }
   }
 
-  bool IsUserAction() const {
-    return IsUserAction(mCause);
+  
+
+
+
+
+
+  static bool IsHandlingUserInput(Cause aCause)
+  {
+    switch (aCause) {
+      case CAUSE_KEY:
+      case CAUSE_MOUSE:
+      case CAUSE_TOUCH:
+      case CAUSE_UNKNOWN_DURING_NON_KEYBOARD_INPUT:
+      case CAUSE_UNKNOWN_DURING_KEYBOARD_INPUT:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  bool IsHandlingUserInput() const {
+    return IsHandlingUserInput(mCause);
   }
 
   InputContextAction()
