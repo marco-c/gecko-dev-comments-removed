@@ -306,6 +306,9 @@ pref("devtools.webconsole.new-frontend-enabled", true);
 pref("devtools.webconsole.sidebarToggle", false);
 
 
+pref("devtools.performance.new-panel-enabled", false);
+
+
 pref("devtools.source-map.client-service.enabled", true);
 
 
