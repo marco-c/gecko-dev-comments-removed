@@ -69,6 +69,25 @@ CacheStreamControlParent::SerializeStream(CacheReadStream* aReadStreamOut,
 }
 
 void
+CacheStreamControlParent::OpenStream(const nsID& aId,
+                                     InputStreamResolver&& aResolver)
+{
+  NS_ASSERT_OWNINGTHREAD(CacheStreamControlParent);
+  MOZ_DIAGNOSTIC_ASSERT(aResolver);
+
+  if (!mStreamList || !mStreamList->ShouldOpenStreamFor(aId)) {
+    aResolver(nullptr);
+    return;
+  }
+
+  
+  
+  
+  
+  mStreamList->GetManager()->ExecuteOpenStream(this, Move(aResolver), aId);
+}
+
+void
 CacheStreamControlParent::NoteClosedAfterForget(const nsID& aId)
 {
   NS_ASSERT_OWNINGTHREAD(CacheStreamControlParent);
@@ -93,9 +112,35 @@ CacheStreamControlParent::ActorDestroy(ActorDestroyReason aReason)
   if (!mStreamList) {
     return;
   }
+  mStreamList->GetManager()->RemoveListener(this);
   mStreamList->RemoveStreamControl(this);
   mStreamList->NoteClosedAll();
   mStreamList = nullptr;
+}
+
+mozilla::ipc::IPCResult
+CacheStreamControlParent::RecvOpenStream(const nsID& aStreamId,
+                                         OpenStreamResolver&& aResolver)
+{
+  NS_ASSERT_OWNINGTHREAD(CacheStreamControlParent);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  CacheStreamControlParent* self = this;
+
+  OpenStream(aStreamId, [self, aResolver](nsCOMPtr<nsIInputStream>&& aStream) {
+      AutoIPCStream stream;
+      Unused << stream.Serialize(aStream, self->Manager());
+      aResolver(stream.TakeOptionalValue());
+    });
+
+  return IPC_OK();
 }
 
 mozilla::ipc::IPCResult
