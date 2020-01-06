@@ -36,7 +36,7 @@ struct ShapeUtils final
   
   
   static nsPoint ComputeCircleOrEllipseCenter(
-    const StyleBasicShape* aBasicShape,
+    const UniquePtr<StyleBasicShape>& aBasicShape,
     const nsRect& aRefBox);
 
   
@@ -44,7 +44,7 @@ struct ShapeUtils final
   
   
   static nscoord ComputeCircleRadius(
-    const StyleBasicShape* aBasicShape,
+    const UniquePtr<StyleBasicShape>& aBasicShape,
     const nsPoint& aCenter, const nsRect& aRefBox);
 
   
@@ -53,14 +53,14 @@ struct ShapeUtils final
   
   
   static nsSize ComputeEllipseRadii(
-    const StyleBasicShape* aBasicShape,
+    const UniquePtr<StyleBasicShape>& aBasicShape,
     const nsPoint& aCenter, const nsRect& aRefBox);
 
   
   
   
   static nsRect ComputeInsetRect(
-    const StyleBasicShape* aBasicShape,
+    const UniquePtr<StyleBasicShape>& aBasicShape,
     const nsRect& aRefBox);
 
   
@@ -69,7 +69,7 @@ struct ShapeUtils final
   
   
   static bool ComputeInsetRadii(
-    const StyleBasicShape* aBasicShape,
+    const UniquePtr<StyleBasicShape>& aBasicShape,
     const nsRect& aInsetRect,
     const nsRect& aRefBox,
     nscoord aRadii[8]);
@@ -79,7 +79,7 @@ struct ShapeUtils final
   
   
   static nsTArray<nsPoint> ComputePolygonVertices(
-    const StyleBasicShape* aBasicShape,
+    const UniquePtr<StyleBasicShape>& aBasicShape,
     const nsRect& aRefBox);
 };
 
