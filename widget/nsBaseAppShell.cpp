@@ -112,7 +112,7 @@ nsBaseAppShell::NativeEventCallback()
 void
 nsBaseAppShell::DoProcessMoreGeckoEvents()
 {
-  OnDispatchedEvent(nullptr);
+  OnDispatchedEvent();
 }
 
 
@@ -215,7 +215,7 @@ nsBaseAppShell::GetEventloopNestingLevel(uint32_t* aNestingLevelResult)
 
 
 NS_IMETHODIMP
-nsBaseAppShell::OnDispatchedEvent(nsIThreadInternal *thr)
+nsBaseAppShell::OnDispatchedEvent()
 {
   if (mBlockNativeEvent)
     return NS_OK;
@@ -241,7 +241,7 @@ nsBaseAppShell::OnProcessNextEvent(nsIThreadInternal *thr, bool mayWait)
     
     mBlockNativeEvent = false;
     if (NS_HasPendingEvents(thr))
-      OnDispatchedEvent(thr); 
+      OnDispatchedEvent(); 
   }
 
   PRIntervalTime start = PR_IntervalNow();

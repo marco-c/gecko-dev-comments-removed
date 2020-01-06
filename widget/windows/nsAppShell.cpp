@@ -315,7 +315,7 @@ nsAppShell::DoProcessMoreGeckoEvents()
   
   
   if (mEventloopNestingLevel < 2) {
-    OnDispatchedEvent(nullptr);
+    OnDispatchedEvent();
     mNativeCallbackPending = false;
   } else {
     mNativeCallbackPending = true;

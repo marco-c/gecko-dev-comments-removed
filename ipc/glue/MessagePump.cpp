@@ -438,7 +438,7 @@ MessagePumpForNonMainUIThreads::DoRunLoop()
 }
 
 NS_IMETHODIMP
-MessagePumpForNonMainUIThreads::OnDispatchedEvent(nsIThreadInternal *thread)
+MessagePumpForNonMainUIThreads::OnDispatchedEvent()
 {
   
   
