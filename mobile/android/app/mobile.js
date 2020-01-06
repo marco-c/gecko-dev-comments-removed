@@ -331,9 +331,6 @@ pref("gfx.displayport.strategy_pb.threshold", -1);
 pref("gfx.android.rgb16.force", false);
 
 
-pref("gfx.SurfaceTexture.detach.enabled", true);
-
-
 pref("gfx.use-surfacetexture-textures", false);
 
 
