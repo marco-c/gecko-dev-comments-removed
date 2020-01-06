@@ -169,6 +169,8 @@ def get_decision_parameters(options):
     ]
     parameters['existing_tasks'] = {}
     parameters['do_not_optimize'] = []
+    parameters['build_number'] = 1
+    parameters['next_version'] = None
 
     
     
