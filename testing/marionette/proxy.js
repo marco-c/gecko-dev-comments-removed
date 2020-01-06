@@ -24,7 +24,7 @@ const logger = Log.repository.getLogger("Marionette");
 
 
 
-var ownPriorityGetterTrap = {
+const ownPriorityGetterTrap = {
   get: (obj, prop) => {
     if (obj.hasOwnProperty(prop)) {
       return obj[prop];
