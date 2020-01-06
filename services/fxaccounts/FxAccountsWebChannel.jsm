@@ -29,8 +29,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Weave",
                                   "resource://services-sync/main.js");
-XPCOMUtils.defineLazyModuleGetter(this, "CryptoUtils",
-                                  "resource://services-crypto/utils.js");
 
 const COMMAND_PROFILE_CHANGE       = "profile:change";
 const COMMAND_CAN_LINK_ACCOUNT     = "fxaccounts:can_link_account";
@@ -40,6 +38,8 @@ const COMMAND_DELETE               = "fxaccounts:delete";
 const COMMAND_SYNC_PREFERENCES     = "fxaccounts:sync_preferences";
 const COMMAND_CHANGE_PASSWORD      = "fxaccounts:change_password";
 const COMMAND_FXA_STATUS           = "fxaccounts:fxa_status";
+
+const PREF_LAST_FXA_USER           = "identity.fxaccounts.lastSignedInUserHash";
 
 
 
@@ -459,7 +459,24 @@ this.FxAccountsWebChannelHelpers.prototype = {
 
 
   setPreviousAccountNameHashPref(acctName) {
-    Services.prefs.setStringPref(PREF_LAST_FXA_USER, CryptoUtils.sha256Base64(acctName));
+    Services.prefs.setStringPref(PREF_LAST_FXA_USER, this.sha256(acctName));
+  },
+
+  
+
+
+  sha256(str) {
+    let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
+                      .createInstance(Ci.nsIScriptableUnicodeConverter);
+    converter.charset = "UTF-8";
+    
+    let data = converter.convertToByteArray(str, {});
+    let hasher = Cc["@mozilla.org/security/hash;1"]
+                   .createInstance(Ci.nsICryptoHash);
+    hasher.init(hasher.SHA256);
+    hasher.update(data, data.length);
+
+    return hasher.finish(true);
   },
 
   

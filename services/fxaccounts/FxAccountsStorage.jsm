@@ -208,8 +208,11 @@ this.FxAccountsStorageManager.prototype = {
       
       throw new Error("No user is logged in");
     }
-    if (!newFields || "uid" in newFields) {
-      throw new Error("Can't change uid");
+    if (!newFields || "uid" in newFields || "email" in newFields) {
+      
+      
+      
+      throw new Error("Can't change uid or email address");
     }
     log.debug("_updateAccountData with items", Object.keys(newFields));
     

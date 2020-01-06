@@ -113,8 +113,6 @@ exports.FX_OAUTH_CLIENT_ID = "5882386c6d801776";
 
 exports.WEBCHANNEL_ID = "account_updates";
 
-exports.PREF_LAST_FXA_USER = "identity.fxaccounts.lastSignedInUserHash";
-
 
 
 exports.ERRNO_ACCOUNT_ALREADY_EXISTS         = 101;

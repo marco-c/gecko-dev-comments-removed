@@ -319,6 +319,13 @@ var gSyncPane = {
     }).then(data => {
       let fxaLoginStatus = document.getElementById("fxaLoginStatus");
       if (data) {
+        if (data.email) {
+          
+          
+          fxaEmailAddressLabels.forEach((label) => {
+            label.value = data.email;
+          });
+        }
         if (data.displayName) {
           fxaLoginStatus.setAttribute("hasName", true);
           displayNameLabel.hidden = false;

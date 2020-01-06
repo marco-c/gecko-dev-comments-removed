@@ -301,6 +301,12 @@ add_task(async function test_update_account_data() {
 
   
   newCreds = {
+    email: "someoneelse@example.com",
+    uid: credentials.uid,
+    assertion: "new_assertion",
+  }
+  await Assert.rejects(account.updateUserAccountData(newCreds));
+  newCreds = {
     email: credentials.email,
     uid: "another_uid",
     assertion: "new_assertion",

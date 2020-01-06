@@ -51,9 +51,8 @@ var publicProperties = [
   "getProfileCache",
   "getSignedInUser",
   "getSignedInUserProfile",
-  "handleAccountDestroyed",
   "handleDeviceDisconnection",
-  "handleEmailUpdated",
+  "handleAccountDestroyed",
   "hasLocalSession",
   "invalidateCertificate",
   "loadAndPoll",
@@ -604,14 +603,15 @@ FxAccountsInternal.prototype = {
     }
     let currentAccountState = this.currentAccountState;
     return currentAccountState.promiseInitialized.then(() => {
-      return currentAccountState.getUserAccountData(["uid"]);
+      return currentAccountState.getUserAccountData(["email", "uid"]);
     }).then(existing => {
-      if (existing.uid != credentials.uid) {
+      if (existing.email != credentials.email || existing.uid != credentials.uid) {
         throw new Error("The specified credentials aren't for the current user");
       }
       
       
       credentials = Cu.cloneInto(credentials, {}); 
+      delete credentials.email;
       delete credentials.uid;
       return currentAccountState.updateUserAccountData(credentials);
     });
@@ -1605,11 +1605,6 @@ FxAccountsInternal.prototype = {
     const data = JSON.stringify({ isLocalDevice });
     Services.obs.notifyObservers(null, ON_DEVICE_DISCONNECTED_NOTIFICATION, data);
     return null;
-  },
-
-  handleEmailUpdated(newEmail) {
-    Services.prefs.setStringPref(PREF_LAST_FXA_USER, CryptoUtils.sha256Base64(newEmail));
-    return this.currentAccountState.updateUserAccountData({ email: newEmail });
   },
 
   async handleAccountDestroyed(uid) {
