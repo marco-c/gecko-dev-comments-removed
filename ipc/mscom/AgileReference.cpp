@@ -135,7 +135,7 @@ AgileReference::ObtainGit()
 {
   
   
-  static IGlobalInterfaceTable * const sGit = []() -> IGlobalInterfaceTable * const {
+  static IGlobalInterfaceTable* sGit = []() -> IGlobalInterfaceTable* {
     IGlobalInterfaceTable* result = nullptr;
     DebugOnly<HRESULT> hr =
       ::CoCreateInstance(CLSID_StdGlobalInterfaceTable, nullptr,
