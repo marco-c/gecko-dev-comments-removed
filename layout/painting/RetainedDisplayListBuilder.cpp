@@ -53,6 +53,9 @@ void MarkFramesWithItemsAndImagesModified(nsDisplayList* aList)
 
       if (invalidate) {
         i->FrameForInvalidation()->MarkNeedsDisplayItemRebuild();
+        if (i->GetDependentFrame()) {
+          i->GetDependentFrame()->MarkNeedsDisplayItemRebuild();
+        }
       }
     }
     if (i->GetChildren()) {
@@ -727,15 +730,11 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop)
 
   if (mPreviousCaret != mBuilder.GetCaretFrame()) {
     if (mPreviousCaret) {
-      if (mBuilder.MarkFrameModifiedDuringBuilding(mPreviousCaret)) {
-        modifiedFrames.AppendElement(mPreviousCaret);
-      }
+      mBuilder.MarkFrameModifiedDuringBuilding(mPreviousCaret);
     }
 
     if (mBuilder.GetCaretFrame()) {
-      if (mBuilder.MarkFrameModifiedDuringBuilding(mBuilder.GetCaretFrame())) {
-        modifiedFrames.AppendElement(mBuilder.GetCaretFrame());
-      }
+      mBuilder.MarkFrameModifiedDuringBuilding(mBuilder.GetCaretFrame());
     }
 
     mPreviousCaret = mBuilder.GetCaretFrame();
