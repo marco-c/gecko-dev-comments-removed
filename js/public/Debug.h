@@ -283,6 +283,11 @@ GetDebuggerMallocSizeOf(JSContext* cx);
 
 
 JS_PUBLIC_API(bool)
+FireOnGarbageCollectionHookRequired(JSContext* cx);
+
+
+
+JS_PUBLIC_API(bool)
 FireOnGarbageCollectionHook(JSContext* cx, GarbageCollectionEvent::Ptr&& data);
 
 
