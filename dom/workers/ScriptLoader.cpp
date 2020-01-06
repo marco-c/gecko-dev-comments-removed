@@ -894,19 +894,10 @@ private:
   {
     AssertIsOnMainThread();
     MOZ_ASSERT(aIndex < mLoadInfos.Length());
-    MOZ_ASSERT_IF(IsMainWorkerScript(), mWorkerScriptType != DebuggerScript);
 
     WorkerPrivate* parentWorker = mWorkerPrivate->GetParent();
 
-    
-    
-    
-    
-    
-    nsIPrincipal* principal = (mWorkerScriptType == DebuggerScript) ?
-                              nsContentUtils::GetSystemPrincipal() :
-                              mWorkerPrivate->GetPrincipal();
-
+    nsIPrincipal* principal = mWorkerPrivate->GetPrincipal();
     nsCOMPtr<nsILoadGroup> loadGroup = mWorkerPrivate->GetLoadGroup();
     MOZ_DIAGNOSTIC_ASSERT(principal);
 
