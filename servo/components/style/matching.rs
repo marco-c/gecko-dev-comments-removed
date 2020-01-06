@@ -361,7 +361,7 @@ trait PrivateMatchMethods: TElement {
 
         
         
-        if old_values.flags != new_values.flags {
+        if old_values.flags.inherited() != new_values.flags.inherited() {
             debug!(" > flags changed: {:?} != {:?}", old_values.flags, new_values.flags);
             return ChildCascadeRequirement::MustCascadeChildren;
         }
