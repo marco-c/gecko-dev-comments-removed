@@ -17,6 +17,8 @@
 #include "mozilla/RefCountType.h"
 #include "mozilla/TypeTraits.h"
 
+#include <atomic>
+
 #if defined(MOZILLA_INTERNAL_API)
 #include "nsXPCOM.h"
 #endif
@@ -90,6 +92,74 @@ enum RefCountAtomicity
 };
 
 template<typename T, RefCountAtomicity Atomicity>
+class RC
+{
+public:
+  explicit RC(T aCount) : mValue(aCount) {}
+
+  T operator++() { return ++mValue; }
+  T operator--() { return --mValue; }
+
+  void operator=(const T& aValue) { mValue = aValue; }
+
+  operator T() const { return mValue; }
+
+private:
+  T mValue;
+};
+
+template<typename T>
+class RC<T, AtomicRefCount>
+{
+public:
+  explicit RC(T aCount) : mValue(aCount) {}
+
+  T operator++()
+  {
+    
+    
+    
+    
+    
+    
+    
+    
+    return mValue.fetch_add(1, std::memory_order_relaxed) + 1;
+  }
+
+  T operator--()
+  {
+    
+    
+    
+    
+    T result = mValue.fetch_sub(1, std::memory_order_release) - 1;
+    if (result == 0) {
+      
+      
+      
+      
+      std::atomic_thread_fence(std::memory_order_acquire);
+    }
+    return result;
+  }
+
+  
+  
+  void operator=(const T& aValue) { mValue.store(aValue, std::memory_order_seq_cst); }
+
+  operator T() const
+  {
+    
+    
+    return mValue.load(std::memory_order_acquire);
+  }
+
+private:
+  std::atomic<T> mValue;
+};
+
+template<typename T, RefCountAtomicity Atomicity>
 class RefCounted
 {
 protected:
@@ -150,9 +220,7 @@ public:
   }
 
 private:
-  mutable typename Conditional<Atomicity == AtomicRefCount,
-                               Atomic<MozRefCountType>,
-                               MozRefCountType>::Type mRefCnt;
+  mutable RC<MozRefCountType, Atomicity> mRefCnt;
 };
 
 #ifdef MOZ_REFCOUNTED_LEAK_CHECKING
