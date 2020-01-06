@@ -340,3 +340,14 @@ function addSVGElement(target, tag, attrs) {
   target.appendChild(element);
   return element;
 }
+
+
+
+
+function isServoEnabled() {
+  try {
+    return SpecialPowers.getBoolPref('layout.css.servo.enabled');
+  } catch(e) {
+    return false;
+  }
+}
