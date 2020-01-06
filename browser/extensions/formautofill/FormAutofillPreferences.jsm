@@ -14,6 +14,10 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 
 const PREF_AUTOFILL_ENABLED = "extensions.formautofill.addresses.enabled";
+
+
+
+
 const BUNDLE_URI = "chrome://formautofill/locale/formautofill.properties";
 const MANAGE_ADDRESSES_URL = "chrome://formautofill/content/manageAddresses.xhtml";
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
