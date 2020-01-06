@@ -1389,12 +1389,15 @@ ContentParent::ShutDownProcess(ShutDownMethod aMethod)
   
   
   if (aMethod == SEND_SHUTDOWN_MESSAGE) {
-    if (mIPCOpen && !mShutdownPending && SendShutdown()) {
-      mShutdownPending = true;
+    if (mIPCOpen && !mShutdownPending) {
       
-      StartForceKillTimer();
+      SetInputPriorityEventEnabled(false);
+      if (SendShutdown()) {
+        mShutdownPending = true;
+        
+        StartForceKillTimer();
+      }
     }
-
     
     
     return;
