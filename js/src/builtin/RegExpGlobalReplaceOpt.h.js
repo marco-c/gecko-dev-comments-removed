@@ -63,10 +63,10 @@ function FUNC_NAME(rx, S, lengthS, replaceValue, fullUnicode
         var matched = result[0];
 
         
-        var matchLength = matched.length;
+        var matchLength = matched.length | 0;
 
         
-        var position = result.index;
+        var position = result.index | 0;
         lastIndex = position + matchLength;
 
         
@@ -107,6 +107,7 @@ function FUNC_NAME(rx, S, lengthS, replaceValue, fullUnicode
             lastIndex = fullUnicode ? AdvanceStringIndex(S, lastIndex) : lastIndex + 1;
             if (lastIndex > lengthS)
                 break;
+            lastIndex |= 0;
         }
 
 #if defined(FUNCTIONAL) || defined(ELEMBASE)
