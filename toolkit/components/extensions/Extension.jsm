@@ -16,20 +16,6 @@ this.EXPORTED_SYMBOLS = ["Extension", "ExtensionData"];
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const Ci = Components.interfaces;
 const Cc = Components.classes;
 const Cu = Components.utils;

@@ -45,7 +45,6 @@ var {
 } = ExtensionCommon;
 
 var {
-  DefaultWeakMap,
   MessageManagerProxy,
   SpreadArgs,
   defineLazyGetter,
@@ -701,76 +700,6 @@ ParentAPIManager.init();
 
 
 
-class HiddenXULWindow {
-  constructor() {
-    this._windowlessBrowser = null;
-    this.waitInitialized = this.initWindowlessBrowser();
-  }
-
-  shutdown() {
-    if (this.unloaded) {
-      throw new Error("Unable to shutdown an unloaded HiddenXULWindow instance");
-    }
-
-    this.unloaded = true;
-
-    this.chromeShell = null;
-    this.waitInitialized = null;
-
-    this._windowlessBrowser.close();
-    this._windowlessBrowser = null;
-  }
-
-  get chromeDocument() {
-    return this._windowlessBrowser.document;
-  }
-
-  
-
-
-
-
-
-  async initWindowlessBrowser() {
-    if (this.waitInitialized) {
-      throw new Error("HiddenXULWindow already initialized");
-    }
-
-    
-    
-    let windowlessBrowser = Services.appShell.createWindowlessBrowser(true);
-    this._windowlessBrowser = windowlessBrowser;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    this.chromeShell = this._windowlessBrowser
-                           .QueryInterface(Ci.nsIInterfaceRequestor)
-                           .getInterface(Ci.nsIDocShell)
-                           .QueryInterface(Ci.nsIWebNavigation);
-
-    if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
-      let attrs = this.chromeShell.getOriginAttributes();
-      attrs.privateBrowsingId = 1;
-      this.chromeShell.setOriginAttributes(attrs);
-    }
-
-    let system = Services.scriptSecurityManager.getSystemPrincipal();
-    this.chromeShell.createAboutBlankContentViewer(system);
-    this.chromeShell.useGlobalHistory = false;
-    this.chromeShell.loadURI(XUL_URL, 0, null, null, null);
-
-    await promiseObserved("chrome-document-global-created",
-                          win => win.document == this.chromeShell.document);
-    return promiseDocumentLoaded(windowlessBrowser.document);
-  }
-
-  
 
 
 
@@ -778,64 +707,15 @@ class HiddenXULWindow {
 
 
 
-
-
-  async createBrowserElement(xulAttributes) {
-    if (!xulAttributes || Object.keys(xulAttributes).length === 0) {
-      throw new Error("missing mandatory xulAttributes parameter");
-    }
-
-    await this.waitInitialized;
-
-    const chromeDoc = this.chromeDocument;
-
-    const browser = chromeDoc.createElement("browser");
-    browser.setAttribute("type", "content");
-    browser.setAttribute("disableglobalhistory", "true");
-
-    for (const [name, value] of Object.entries(xulAttributes)) {
-      if (value != null) {
-        browser.setAttribute(name, value);
-      }
-    }
-
-    let awaitFrameLoader = Promise.resolve();
-
-    if (browser.getAttribute("remote") === "true") {
-      awaitFrameLoader = promiseEvent(browser, "XULFrameLoaderCreated");
-    }
-
-    chromeDoc.documentElement.appendChild(browser);
-    await awaitFrameLoader;
-
-    return browser;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class HiddenExtensionPage extends HiddenXULWindow {
+class HiddenExtensionPage {
   constructor(extension, viewType) {
     if (!extension || !viewType) {
       throw new Error("extension and viewType parameters are mandatory");
     }
-
-    super();
     this.extension = extension;
     this.viewType = viewType;
+    this.parentWindow = null;
+    this.windowlessBrowser = null;
     this.browser = null;
   }
 
@@ -847,12 +727,30 @@ class HiddenExtensionPage extends HiddenXULWindow {
       throw new Error("Unable to shutdown an unloaded HiddenExtensionPage instance");
     }
 
+    this.unloaded = true;
+
     if (this.browser) {
       this.browser.remove();
       this.browser = null;
     }
 
-    super.shutdown();
+    
+    
+    if (this.webNav) {
+      this.webNav.loadURI("about:blank", 0, null, null, null);
+      this.webNav = null;
+    }
+
+    if (this.parentWindow) {
+      this.parentWindow.close();
+      this.parentWindow = null;
+    }
+
+    if (this.windowlessBrowser) {
+      this.windowlessBrowser.loadURI("about:blank", 0, null, null, null);
+      this.windowlessBrowser.close();
+      this.windowlessBrowser = null;
+    }
   }
 
   
@@ -866,60 +764,26 @@ class HiddenExtensionPage extends HiddenXULWindow {
       throw new Error("createBrowserElement called twice");
     }
 
-    this.browser = await super.createBrowserElement({
-      "webextension-view-type": this.viewType,
-      "remote": this.extension.remote ? "true" : null,
-      "remoteType": E10SUtils.EXTENSION_REMOTE_TYPE,
-    });
+    let chromeDoc = await this.createWindowlessBrowser();
 
-    return this.browser;
+    const browser = this.browser = chromeDoc.createElement("browser");
+    browser.setAttribute("type", "content");
+    browser.setAttribute("disableglobalhistory", "true");
+    browser.setAttribute("webextension-view-type", this.viewType);
+
+    let awaitFrameLoader = Promise.resolve();
+
+    if (this.extension.remote) {
+      browser.setAttribute("remote", "true");
+      browser.setAttribute("remoteType", E10SUtils.EXTENSION_REMOTE_TYPE);
+      awaitFrameLoader = promiseEvent(browser, "XULFrameLoaderCreated");
+    }
+
+    chromeDoc.documentElement.appendChild(browser);
+    await awaitFrameLoader;
+
+    return browser;
   }
-}
-
-
-
-
-
-
-const DebugUtils = {
-  
-  
-  hiddenXULWindow: null,
-
-  
-  debugBrowserPromises: new Map(),
-  
-  debugActors: new DefaultWeakMap(() => new Set()),
-
-  _extensionUpdatedWatcher: null,
-  watchExtensionUpdated() {
-    if (!this._extensionUpdatedWatcher) {
-      
-      this._extensionUpdatedWatcher = async (evt, extension) => {
-        const browserPromise = this.debugBrowserPromises.get(extension.id);
-        if (browserPromise) {
-          const browser = await browserPromise;
-          if (browser.isRemoteBrowser !== extension.remote &&
-              this.debugBrowserPromises.get(extension.id) === browserPromise) {
-            
-            
-            this.debugBrowserPromises.delete(extension.id);
-            browser.remove();
-          }
-        }
-      };
-
-      apiManager.on("ready", this._extensionUpdatedWatcher);
-    }
-  },
-
-  unwatchExtensionUpdated() {
-    if (this._extensionUpdatedWatcher) {
-      apiManager.off("ready", this._extensionUpdatedWatcher);
-      delete this._extensionUpdatedWatcher;
-    }
-  },
-
 
   
 
@@ -931,42 +795,31 @@ const DebugUtils = {
 
 
 
-  async getExtensionProcessBrowser(webExtensionParentActor) {
-    const extensionId = webExtensionParentActor.addonId;
-    const extension = GlobalManager.getExtension(extensionId);
-    if (!extension) {
-      throw new Error(`Extension not found: ${extensionId}`);
-    }
 
-    const createBrowser = () => {
-      if (!this.hiddenXULWindow) {
-        this.hiddenXULWindow = new HiddenXULWindow();
-        this.watchExtensionUpdated();
-      }
 
-      return this.hiddenXULWindow.createBrowserElement({
-        "webextension-addon-debug-target": extensionId,
-        "remote": extension.remote ? "true" : null,
-        "remoteType": E10SUtils.EXTENSION_REMOTE_TYPE,
-      });
-    };
 
-    let browserPromise = this.debugBrowserPromises.get(extensionId);
+  createWindowlessBrowser() {
+    
+    
+    let windowlessBrowser = Services.appShell.createWindowlessBrowser(true);
+    this.windowlessBrowser = windowlessBrowser;
 
     
-    if (!browserPromise) {
-      browserPromise = createBrowser();
-      this.debugBrowserPromises.set(extensionId, browserPromise);
-      browserPromise.catch(() => {
-        this.debugBrowserPromises.delete(extensionId);
-      });
-    }
+    
+    
+    
+    
+    
+    
+    
+    let chromeShell = windowlessBrowser.QueryInterface(Ci.nsIInterfaceRequestor)
+                                       .getInterface(Ci.nsIDocShell)
+                                       .QueryInterface(Ci.nsIWebNavigation);
 
-    this.debugActors.get(browserPromise).add(webExtensionParentActor);
-
-    return browserPromise;
-  },
-
+    return this.initParentWindow(chromeShell).then(() => {
+      return promiseDocumentLoaded(windowlessBrowser.document);
+    });
+  }
 
   
 
@@ -976,28 +829,23 @@ const DebugUtils = {
 
 
 
-  async releaseExtensionProcessBrowser(webExtensionParentActor) {
-    const extensionId = webExtensionParentActor.addonId;
-    const browserPromise = this.debugBrowserPromises.get(extensionId);
 
-    if (browserPromise) {
-      const actorsSet = this.debugActors.get(browserPromise);
-      actorsSet.delete(webExtensionParentActor);
-      if (actorsSet.size === 0) {
-        this.debugActors.delete(browserPromise);
-        this.debugBrowserPromises.delete(extensionId);
-        await browserPromise.then((browser) => browser.remove());
-      }
+  initParentWindow(chromeShell) {
+    if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
+      let attrs = chromeShell.getOriginAttributes();
+      attrs.privateBrowsingId = 1;
+      chromeShell.setOriginAttributes(attrs);
     }
 
-    if (this.debugBrowserPromises.size === 0 && this.hiddenXULWindow) {
-      this.hiddenXULWindow.shutdown();
-      this.hiddenXULWindow = null;
-      this.unwatchExtensionUpdated();
-    }
-  },
-};
+    let system = Services.scriptSecurityManager.getSystemPrincipal();
+    chromeShell.createAboutBlankContentViewer(system);
+    chromeShell.useGlobalHistory = false;
+    chromeShell.loadURI(XUL_URL, 0, null, null, null);
 
+    return promiseObserved("chrome-document-global-created",
+                           win => win.document == chromeShell.document);
+  }
+}
 
 function promiseExtensionViewLoaded(browser) {
   return new Promise(resolve => {
@@ -1069,5 +917,4 @@ const ExtensionParent = {
   },
   promiseExtensionViewLoaded,
   watchExtensionProxyContextLoad,
-  DebugUtils,
 };
