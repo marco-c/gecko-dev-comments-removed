@@ -2,8 +2,6 @@
 
 
 
-Components.utils.import("resource://testing-common/ContentTask.jsm", {});
-
 
 
 
@@ -33,11 +31,9 @@ async function runTest(installer) {
   var browser = mgrWindow.document.querySelector("#detail-grid > rows > .inline-options-browser");
   var rows = browser.parentNode;
 
-  let url = await ContentTask.spawn(browser, {}, () => content.location.href);
-
   ok(browser, "Grid should have a browser child");
   is(browser.localName, "browser", "Grid should have a browser child");
-  is(url, element.mAddon.optionsURL, "Browser has the expected options URL loaded")
+  is(browser.currentURI.spec, element.mAddon.optionsURL, "Browser has the expected options URL loaded")
 
   is(browser.clientWidth, rows.clientWidth,
      "Browser should be the same width as its parent node");
