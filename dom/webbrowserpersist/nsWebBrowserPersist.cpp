@@ -1186,39 +1186,39 @@ nsresult nsWebBrowserPersist::SendErrorStatusChange(
         AppendUTF8toUTF16(fileurl, path);
     }
 
-    nsAutoString msgId;
+    const char* msgId;
     switch(aResult)
     {
     case NS_ERROR_FILE_NAME_TOO_LONG:
         
-        msgId.AssignLiteral("fileNameTooLongError");
+        msgId = "fileNameTooLongError";
         break;
     case NS_ERROR_FILE_ALREADY_EXISTS:
         
-        msgId.AssignLiteral("fileAlreadyExistsError");
+        msgId = "fileAlreadyExistsError";
         break;
     case NS_ERROR_FILE_DISK_FULL:
     case NS_ERROR_FILE_NO_DEVICE_SPACE:
         
-        msgId.AssignLiteral("diskFull");
+        msgId = "diskFull";
         break;
 
     case NS_ERROR_FILE_READ_ONLY:
         
-        msgId.AssignLiteral("readOnly");
+        msgId = "readOnly";
         break;
 
     case NS_ERROR_FILE_ACCESS_DENIED:
         
-        msgId.AssignLiteral("accessError");
+        msgId = "accessError";
         break;
 
     default:
         
         if (aIsReadError)
-            msgId.AssignLiteral("readError");
+            msgId = "readError";
         else
-            msgId.AssignLiteral("writeError");
+            msgId = "writeError";
         break;
     }
     
@@ -1232,7 +1232,7 @@ nsresult nsWebBrowserPersist::SendErrorStatusChange(
     nsXPIDLString msgText;
     const char16_t *strings[1];
     strings[0] = path.get();
-    rv = bundle->FormatStringFromName(msgId.get(), strings, 1, getter_Copies(msgText));
+    rv = bundle->FormatStringFromName(msgId, strings, 1, getter_Copies(msgText));
     NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 
     mProgressListener->OnStatusChange(nullptr, aRequest, aResult, msgText);

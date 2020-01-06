@@ -288,7 +288,7 @@ nsHttpChannelAuthProvider::CheckForSuperfluousAuth()
     
     
     
-    if (!ConfirmAuth(NS_LITERAL_STRING("SuperfluousAuth"), true)) {
+    if (!ConfirmAuth("SuperfluousAuth", true)) {
         
         
         Unused << mAuthChannel->Cancel(NS_ERROR_ABORT);
@@ -929,7 +929,7 @@ nsHttpChannelAuthProvider::GetCredentialsForChallenge(const char *challenge,
     if (identFromURI) {
         
         
-        if (!ConfirmAuth(NS_LITERAL_STRING("AutomaticAuth"), false)) {
+        if (!ConfirmAuth("AutomaticAuth", false)) {
             
             
             rv = mAuthChannel->Cancel(NS_ERROR_ABORT);
@@ -1509,8 +1509,8 @@ nsHttpChannelAuthProvider::ContinueOnAuthAvailable(const nsACString& creds)
 }
 
 bool
-nsHttpChannelAuthProvider::ConfirmAuth(const nsString &bundleKey,
-                                       bool            doYesNoPrompt)
+nsHttpChannelAuthProvider::ConfirmAuth(const char* bundleKey,
+                                       bool        doYesNoPrompt)
 {
     
     
@@ -1587,7 +1587,7 @@ nsHttpChannelAuthProvider::ConfirmAuth(const nsString &bundleKey,
     const char16_t *strs[2] = { ucsHost.get(), ucsUser.get() };
 
     nsXPIDLString msg;
-    bundle->FormatStringFromName(bundleKey.get(), strs, 2, getter_Copies(msg));
+    bundle->FormatStringFromName(bundleKey, strs, 2, getter_Copies(msg));
     if (!msg)
         return true;
 

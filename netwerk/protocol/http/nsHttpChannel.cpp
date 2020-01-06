@@ -2746,7 +2746,8 @@ nsHttpChannel::PromptTempRedirect()
     if (NS_FAILED(rv)) return rv;
 
     nsXPIDLString messageString;
-    rv = stringBundle->GetStringFromName(u"RepostFormData", getter_Copies(messageString));
+    rv = stringBundle->GetStringFromName("RepostFormData",
+                                         getter_Copies(messageString));
     
     if (NS_SUCCEEDED(rv) && messageString) {
         bool repost = false;

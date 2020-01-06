@@ -1658,8 +1658,8 @@ PlacesSQLQueryBuilder::SelectAsDay()
     switch(i) {
        case 0:
         
-         history->GetStringFromName(
-          u"finduri-AgeInDays-is-0", dateName);
+        history->GetStringFromName(
+          "finduri-AgeInDays-is-0", dateName);
         
         sqlFragmentContainerBeginTime = NS_LITERAL_CSTRING(
           "(strftime('%s','now','localtime','start of day','utc')*1000000)");
@@ -1672,8 +1672,8 @@ PlacesSQLQueryBuilder::SelectAsDay()
          break;
        case 1:
         
-         history->GetStringFromName(
-          u"finduri-AgeInDays-is-1", dateName);
+        history->GetStringFromName(
+          "finduri-AgeInDays-is-1", dateName);
         
         sqlFragmentContainerBeginTime = NS_LITERAL_CSTRING(
           "(strftime('%s','now','localtime','start of day','-1 day','utc')*1000000)");
@@ -1687,7 +1687,7 @@ PlacesSQLQueryBuilder::SelectAsDay()
       case 2:
         
         history->GetAgeInDaysString(7,
-          u"finduri-AgeInDays-last-is", dateName);
+          "finduri-AgeInDays-last-is", dateName);
         
         sqlFragmentContainerBeginTime = NS_LITERAL_CSTRING(
           "(strftime('%s','now','localtime','start of day','-7 days','utc')*1000000)");
@@ -1703,7 +1703,7 @@ PlacesSQLQueryBuilder::SelectAsDay()
       case 3:
         
         history->GetStringFromName(
-          u"finduri-AgeInMonths-is-0", dateName);
+          "finduri-AgeInMonths-is-0", dateName);
         
         sqlFragmentContainerBeginTime = NS_LITERAL_CSTRING(
           "(strftime('%s','now','localtime','start of month','utc')*1000000)");
@@ -1720,7 +1720,7 @@ PlacesSQLQueryBuilder::SelectAsDay()
         if (i == HISTORY_ADDITIONAL_DATE_CONT_NUM + 6) {
           
           history->GetAgeInDaysString(6,
-            u"finduri-AgeInMonths-isgreater", dateName);
+            "finduri-AgeInMonths-isgreater", dateName);
           
           sqlFragmentContainerBeginTime = NS_LITERAL_CSTRING(
             "(datetime(0, 'unixepoch')*1000000)");
@@ -1819,7 +1819,7 @@ PlacesSQLQueryBuilder::SelectAsSite()
   nsNavHistory *history = nsNavHistory::GetHistoryService();
   NS_ENSURE_STATE(history);
 
-  history->GetStringFromName(u"localhost", localFiles);
+  history->GetStringFromName("localhost", localFiles);
   mAddParams.Put(NS_LITERAL_CSTRING("localhost"), localFiles);
 
   
@@ -4197,11 +4197,11 @@ nsNavHistory::TitleForDomain(const nsCString& domain, nsACString& aTitle)
   }
 
   
-  GetStringFromName(u"localhost", aTitle);
+  GetStringFromName("localhost", aTitle);
 }
 
 void
-nsNavHistory::GetAgeInDaysString(int32_t aInt, const char16_t *aName,
+nsNavHistory::GetAgeInDaysString(int32_t aInt, const char* aName,
                                  nsACString& aResult)
 {
   nsIStringBundle *bundle = GetBundle();
@@ -4217,11 +4217,11 @@ nsNavHistory::GetAgeInDaysString(int32_t aInt, const char16_t *aName,
       return;
     }
   }
-  CopyUTF16toUTF8(nsDependentString(aName), aResult);
+  aResult.Assign(aName);
 }
 
 void
-nsNavHistory::GetStringFromName(const char16_t *aName, nsACString& aResult)
+nsNavHistory::GetStringFromName(const char* aName, nsACString& aResult)
 {
   nsIStringBundle *bundle = GetBundle();
   if (bundle) {
@@ -4232,7 +4232,7 @@ nsNavHistory::GetStringFromName(const char16_t *aName, nsACString& aResult)
       return;
     }
   }
-  CopyUTF16toUTF8(nsDependentString(aName), aResult);
+  aResult.Assign(aName);
 }
 
 

@@ -4923,7 +4923,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
   NS_ENSURE_TRUE(stringBundle, NS_ERROR_FAILURE);
   NS_ENSURE_TRUE(prompter, NS_ERROR_FAILURE);
 
-  nsAutoString error;
+  const char* error = nullptr;
   const uint32_t kMaxFormatStrArgs = 3;
   nsAutoString formatStrs[kMaxFormatStrArgs];
   uint32_t formatStrCount = 0;
@@ -4956,13 +4956,13 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
       nestedURI = do_QueryInterface(tempURI);
     }
     formatStrCount = 1;
-    error.AssignLiteral("unknownProtocolFound");
+    error = "unknownProtocolFound";
   } else if (NS_ERROR_FILE_NOT_FOUND == aError) {
     NS_ENSURE_ARG_POINTER(aURI);
-    error.AssignLiteral("fileNotFound");
+    error = "fileNotFound";
   } else if (NS_ERROR_FILE_ACCESS_DENIED == aError) {
     NS_ENSURE_ARG_POINTER(aURI);
-    error.AssignLiteral("fileAccessDenied");
+    error = "fileAccessDenied";
   } else if (NS_ERROR_UNKNOWN_HOST == aError) {
     NS_ENSURE_ARG_POINTER(aURI);
     
@@ -4971,15 +4971,15 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     innermostURI->GetHost(host);
     CopyUTF8toUTF16(host, formatStrs[0]);
     formatStrCount = 1;
-    error.AssignLiteral("dnsNotFound");
+    error = "dnsNotFound";
   } else if (NS_ERROR_CONNECTION_REFUSED == aError) {
     NS_ENSURE_ARG_POINTER(aURI);
     addHostPort = true;
-    error.AssignLiteral("connectionFailure");
+    error = "connectionFailure";
   } else if (NS_ERROR_NET_INTERRUPT == aError) {
     NS_ENSURE_ARG_POINTER(aURI);
     addHostPort = true;
-    error.AssignLiteral("netInterrupt");
+    error = "netInterrupt";
   } else if (NS_ERROR_NET_TIMEOUT == aError) {
     NS_ENSURE_ARG_POINTER(aURI);
     
@@ -4987,12 +4987,12 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     aURI->GetHost(host);
     CopyUTF8toUTF16(host, formatStrs[0]);
     formatStrCount = 1;
-    error.AssignLiteral("netTimeout");
+    error = "netTimeout";
   } else if (NS_ERROR_CSP_FRAME_ANCESTOR_VIOLATION == aError ||
              NS_ERROR_CSP_FORM_ACTION_VIOLATION == aError) {
     
     cssClass.AssignLiteral("neterror");
-    error.AssignLiteral("cspBlocked");
+    error = "cspBlocked";
   } else if (NS_ERROR_GET_MODULE(aError) == NS_ERROR_MODULE_SECURITY) {
     nsCOMPtr<nsINSSErrorsService> nsserr =
       do_GetService(NS_NSS_ERRORS_SERVICE_CONTRACTID);
@@ -5012,10 +5012,10 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
       uint32_t securityState;
       tsi->GetSecurityState(&securityState);
       if (securityState & nsIWebProgressListener::STATE_USES_SSL_3) {
-        error.AssignLiteral("sslv3Used");
+        error = "sslv3Used";
         addHostPort = true;
       } else if (securityState & nsIWebProgressListener::STATE_USES_WEAK_CRYPTO) {
-        error.AssignLiteral("weakCryptoUsed");
+        error = "weakCryptoUsed";
         addHostPort = true;
       } else {
         
@@ -5029,7 +5029,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     }
     if (!messageStr.IsEmpty()) {
       if (errorClass == nsINSSErrorsService::ERROR_CLASS_BAD_CERT) {
-        error.AssignLiteral("nssBadCert");
+        error = "nssBadCert";
 
         
         
@@ -5095,7 +5095,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
         }
 
       } else {
-        error.AssignLiteral("nssFailure2");
+        error = "nssFailure2";
       }
     }
   } else if (NS_ERROR_PHISHING_URI == aError ||
@@ -5118,17 +5118,17 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     bool sendTelemetry = false;
     if (NS_ERROR_PHISHING_URI == aError) {
       sendTelemetry = true;
-      error.AssignLiteral("deceptiveBlocked");
+      error = "deceptiveBlocked";
       bucketId = IsFrame() ? nsISecurityUITelemetry::WARNING_PHISHING_PAGE_FRAME
                            : nsISecurityUITelemetry::WARNING_PHISHING_PAGE_TOP;
     } else if (NS_ERROR_MALWARE_URI == aError) {
       sendTelemetry = true;
-      error.AssignLiteral("malwareBlocked");
+      error = "malwareBlocked";
       bucketId = IsFrame() ? nsISecurityUITelemetry::WARNING_MALWARE_PAGE_FRAME
                            : nsISecurityUITelemetry::WARNING_MALWARE_PAGE_TOP;
     } else if (NS_ERROR_UNWANTED_URI == aError) {
       sendTelemetry = true;
-      error.AssignLiteral("unwantedBlocked");
+      error = "unwantedBlocked";
       bucketId = IsFrame() ? nsISecurityUITelemetry::WARNING_UNWANTED_PAGE_FRAME
                            : nsISecurityUITelemetry::WARNING_UNWANTED_PAGE_TOP;
     }
@@ -5140,7 +5140,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     cssClass.AssignLiteral("blacklist");
   } else if (NS_ERROR_CONTENT_CRASHED == aError) {
     errorPage.AssignLiteral("tabcrashed");
-    error.AssignLiteral("tabcrashed");
+    error = "tabcrashed";
 
     nsCOMPtr<EventTarget> handler = mChromeEventHandler;
     if (handler) {
@@ -5159,69 +5159,69 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     switch (aError) {
       case NS_ERROR_MALFORMED_URI:
         
-        error.AssignLiteral("malformedURI");
+        error = "malformedURI";
         break;
       case NS_ERROR_REDIRECT_LOOP:
         
-        error.AssignLiteral("redirectLoop");
+        error = "redirectLoop";
         break;
       case NS_ERROR_UNKNOWN_SOCKET_TYPE:
         
-        error.AssignLiteral("unknownSocketType");
+        error = "unknownSocketType";
         break;
       case NS_ERROR_NET_RESET:
         
         
-        error.AssignLiteral("netReset");
+        error = "netReset";
         break;
       case NS_ERROR_DOCUMENT_NOT_CACHED:
         
         
-        error.AssignLiteral("notCached");
+        error = "notCached";
         break;
       case NS_ERROR_OFFLINE:
         
-        error.AssignLiteral("netOffline");
+        error = "netOffline";
         break;
       case NS_ERROR_DOCUMENT_IS_PRINTMODE:
         
-        error.AssignLiteral("isprinting");
+        error = "isprinting";
         break;
       case NS_ERROR_PORT_ACCESS_NOT_ALLOWED:
         
         addHostPort = true;
-        error.AssignLiteral("deniedPortAccess");
+        error = "deniedPortAccess";
         break;
       case NS_ERROR_UNKNOWN_PROXY_HOST:
         
-        error.AssignLiteral("proxyResolveFailure");
+        error = "proxyResolveFailure";
         break;
       case NS_ERROR_PROXY_CONNECTION_REFUSED:
         
-        error.AssignLiteral("proxyConnectFailure");
+        error = "proxyConnectFailure";
         break;
       case NS_ERROR_INVALID_CONTENT_ENCODING:
         
-        error.AssignLiteral("contentEncodingError");
+        error = "contentEncodingError";
         break;
       case NS_ERROR_REMOTE_XUL:
-        error.AssignLiteral("remoteXUL");
+        error = "remoteXUL";
         break;
       case NS_ERROR_UNSAFE_CONTENT_TYPE:
         
-        error.AssignLiteral("unsafeContentType");
+        error = "unsafeContentType";
         break;
       case NS_ERROR_CORRUPTED_CONTENT:
         
-        error.AssignLiteral("corruptedContentErrorv2");
+        error = "corruptedContentErrorv2";
         break;
       case NS_ERROR_INTERCEPTION_FAILED:
         
-        error.AssignLiteral("corruptedContentErrorv2");
+        error = "corruptedContentErrorv2";
         break;
       case NS_ERROR_NET_INADEQUATE_SECURITY:
         
-        error.AssignLiteral("inadequateSecurityError");
+        error = "inadequateSecurityError";
         addHostPort = true;
         break;
       default:
@@ -5230,7 +5230,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
   }
 
   
-  if (error.IsEmpty()) {
+  if (!error) {
     return NS_OK;
   }
 
@@ -5285,7 +5285,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
       strs[i] = formatStrs[i].get();
     }
     nsXPIDLString str;
-    rv = stringBundle->FormatStringFromName(error.get(), strs, formatStrCount,
+    rv = stringBundle->FormatStringFromName(error, strs, formatStrCount,
                                             getter_Copies(str));
     NS_ENSURE_SUCCESS(rv, rv);
     messageStr.Assign(str.get());
@@ -5299,14 +5299,14 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     rv = aURI->SchemeIs("https", &isSecureURI);
     if (NS_SUCCEEDED(rv) && isSecureURI) {
       
-      error.AssignLiteral("nssFailure2");
+      error = "nssFailure2";
     }
   }
 
   if (UseErrorPages()) {
     
     nsresult loadedPage = LoadErrorPage(aURI, aURL, errorPage.get(),
-                                        error.get(), messageStr.get(),
+                                        error, messageStr.get(),
                                         cssClass.get(), aFailedChannel);
     *aDisplayedErrorPage = NS_SUCCEEDED(loadedPage);
   } else {
@@ -5329,7 +5329,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
 NS_IMETHODIMP
 nsDocShell::LoadErrorPage(nsIURI* aURI, const char16_t* aURL,
                           const char* aErrorPage,
-                          const char16_t* aErrorType,
+                          const char* aErrorType,
                           const char16_t* aDescription,
                           const char* aCSSClass,
                           nsIChannel* aFailedChannel)
@@ -5386,7 +5386,7 @@ nsDocShell::LoadErrorPage(nsIURI* aURI, const char16_t* aURL,
     escapedCSSClass;
   SAFE_ESCAPE(escapedUrl, url, url_Path);
   SAFE_ESCAPE(escapedCharset, charset, url_Path);
-  SAFE_ESCAPE(escapedError, NS_ConvertUTF16toUTF8(aErrorType), url_Path);
+  SAFE_ESCAPE(escapedError, nsDependentCString(aErrorType), url_Path);
   SAFE_ESCAPE(escapedDescription,
               NS_ConvertUTF16toUTF8(aDescription), url_Path);
   if (aCSSClass) {
@@ -13336,19 +13336,19 @@ nsDocShell::ConfirmRepost(bool* aRepost)
                "Unable to set up repost prompter.");
 
   nsXPIDLString brandName;
-  rv = brandBundle->GetStringFromName(u"brandShortName",
+  rv = brandBundle->GetStringFromName("brandShortName",
                                       getter_Copies(brandName));
 
   nsXPIDLString msgString, button0Title;
   if (NS_FAILED(rv)) { 
-    rv = appBundle->GetStringFromName(u"confirmRepostPrompt",
+    rv = appBundle->GetStringFromName("confirmRepostPrompt",
                                       getter_Copies(msgString));
   } else {
     
     
     
     const char16_t* formatStrings[] = { brandName.get() };
-    rv = appBundle->FormatStringFromName(u"confirmRepostPrompt",
+    rv = appBundle->FormatStringFromName("confirmRepostPrompt",
                                          formatStrings,
                                          ArrayLength(formatStrings),
                                          getter_Copies(msgString));
@@ -13357,7 +13357,7 @@ nsDocShell::ConfirmRepost(bool* aRepost)
     return rv;
   }
 
-  rv = appBundle->GetStringFromName(u"resendButton.label",
+  rv = appBundle->GetStringFromName("resendButton.label",
                                     getter_Copies(button0Title));
   if (NS_FAILED(rv)) {
     return rv;

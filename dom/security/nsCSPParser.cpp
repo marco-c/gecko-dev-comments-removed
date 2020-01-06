@@ -284,7 +284,7 @@ nsCSPParser::logWarningErrorToConsole(uint32_t aSeverityFlag,
   CSPPARSERLOG(("nsCSPParser::logWarningErrorToConsole: %s", aProperty));
   
   
-  mCSPContext->logToConsole(NS_ConvertUTF8toUTF16(aProperty).get(),
+  mCSPContext->logToConsole(aProperty,
                             aParams,
                             aParamsLength,
                             EmptyString(), 
