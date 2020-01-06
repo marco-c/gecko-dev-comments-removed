@@ -914,7 +914,11 @@ XPCConvert::JSObject2NativeInterface(void** dest, HandleObject src,
         
         
         
-        JSObject* inner = js::CheckedUnwrap(src,  false);
+        
+        
+        RootedObject inner(cx,
+                           js::CheckedUnwrap(src,
+                                              false));
         if (!inner) {
             if (pErr)
                 *pErr = NS_ERROR_XPC_SECURITY_MANAGER_VETO;
