@@ -151,7 +151,13 @@ module.exports = {
     "no-array-constructor": "error",
 
     
+    "no-class-assign": "error",
+
+    
     "no-cond-assign": "error",
+
+    
+    "no-const-assign": "error",
 
     
     "no-control-regex": "error",
@@ -164,6 +170,9 @@ module.exports = {
 
     
     "no-dupe-args": "error",
+
+    
+    "no-dupe-class-members": "error",
 
     
     "no-dupe-keys": "error",

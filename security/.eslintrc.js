@@ -37,19 +37,10 @@ module.exports = {
     "no-case-declarations": "error",
 
     
-    "no-class-assign": "error",
-
-    
     "no-console": "error",
 
     
-    "no-const-assign": "error",
-
-    
     "no-constant-condition": ["error", { "checkLoops": false }],
-
-    
-    "no-dupe-class-members": "error",
 
     
     "no-extend-native": "error",
