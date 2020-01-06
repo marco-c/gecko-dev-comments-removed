@@ -65,6 +65,7 @@ RenderDXGITextureHostOGL::SetGLContext(gl::GLContext* aContext)
     
     DeleteTextureHandle();
     mGL = aContext;
+    mGL->MakeCurrent();
   }
 }
 
@@ -291,6 +292,7 @@ RenderDXGIYCbCrTextureHostOGL::SetGLContext(gl::GLContext* aContext)
     
     DeleteTextureHandle();
     mGL = aContext;
+    mGL->MakeCurrent();
   }
 }
 
