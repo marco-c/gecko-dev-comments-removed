@@ -299,6 +299,31 @@ evaluate.toJSON = function(obj, seenEls) {
   return rv;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+evaluate.isDead = function(obj, prop) {
+  try {
+    obj[prop];
+  } catch (e) {
+    if (e.message.includes("dead object")) {
+      return true;
+    }
+    throw e;
+  }
+  return false;
+};
+
 this.sandbox = {};
 
 
@@ -434,7 +459,7 @@ this.Sandboxes = class {
   get(name = "default", fresh = false) {
     let sb = this.boxes_.get(name);
     if (sb) {
-      if (fresh || sb.window != this.window_) {
+      if (fresh || evaluate.isDead(sb, "window") || sb.window != this.window_) {
         this.boxes_.delete(name);
         return this.get(name, false);
       }
