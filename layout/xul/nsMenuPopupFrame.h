@@ -225,6 +225,8 @@ public:
 
   virtual void DestroyFrom(nsIFrame* aDestructRoot) override;
 
+  bool HasRemoteContent() const;
+
   
   
   bool IsNoAutoHide() const;
@@ -234,7 +236,10 @@ public:
     return PopupLevel(IsNoAutoHide()); 
   }
 
-  void EnsureWidget();
+  
+  
+  
+  void EnsureWidget(bool aRecreate = false);
 
   nsresult CreateWidgetForView(nsView* aView);
   uint8_t GetShadowStyle();
