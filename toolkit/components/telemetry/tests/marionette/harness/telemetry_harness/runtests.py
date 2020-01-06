@@ -3,11 +3,13 @@
 
 
 from marionette_harness.runtests import cli as mn_cli
-from testcase import TelemetryTestCase
+from runner import TelemetryTestRunner
+from argument import TelemetryArguments
 
 
-def cli():
-    mn_cli(testcase_class=TelemetryTestCase)
+def cli(args=None):
+    mn_cli(runner_class=TelemetryTestRunner,
+           args=args)
 
 
 if __name__ == '__main__':
