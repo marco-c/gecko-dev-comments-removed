@@ -8,7 +8,6 @@
 
 #include "js/Class.h"
 #include "js/Proxy.h"
-#include "mozilla/dom/DOMJSProxyHandler.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "nsCycleCollectionTraversalCallback.h"
@@ -50,13 +49,6 @@ void
 nsWrapperCache::ReleaseWrapper(void* aScriptObjectHolder)
 {
   if (PreservingWrapper()) {
-    
-    
-    
-    JSObject* obj = GetWrapperPreserveColor();
-    if (IsDOMBinding() && obj && js::IsProxy(obj)) {
-      DOMProxyHandler::ClearExternalRefsForWrapperRelease(obj);
-    }
     SetPreservingWrapper(false);
     cyclecollector::DropJSObjectsImpl(aScriptObjectHolder);
   }

@@ -139,16 +139,6 @@ public:
 
 
 
-  static void ClearExternalRefsForWrapperRelease(JSObject* obj);
-
-  
-
-
-
-
-
-
-
   static JSObject* GetAndClearExpandoObject(JSObject* obj);
 
   

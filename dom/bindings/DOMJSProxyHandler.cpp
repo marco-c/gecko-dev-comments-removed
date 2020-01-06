@@ -71,25 +71,6 @@ struct SetDOMProxyInformation
 SetDOMProxyInformation gSetDOMProxyInformation;
 
 
-void
-DOMProxyHandler::ClearExternalRefsForWrapperRelease(JSObject* obj)
-{
-  MOZ_ASSERT(IsDOMProxy(obj), "expected a DOM proxy object");
-  JS::Value v = js::GetProxyPrivate(obj);
-  if (v.isUndefined() || v.isObject()) {
-    
-    
-    return;
-  }
-
-  
-  
-  js::ExpandoAndGeneration* expandoAndGeneration =
-    static_cast<js::ExpandoAndGeneration*>(v.toPrivate());
-  expandoAndGeneration->expando = UndefinedValue();
-}
-
-
 JSObject*
 DOMProxyHandler::GetAndClearExpandoObject(JSObject* obj)
 {
