@@ -262,25 +262,6 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
     return this.player.effect.getComputedTiming().direction;
   },
 
-  
-
-
-
-  getAnimationTimingFunction: function () {
-    if (!this.isCssAnimation()) {
-      return null;
-    }
-
-    let pseudo = null;
-    let target = this.player.effect.target;
-    if (target.type) {
-      
-      pseudo = target.type;
-      target = target.parentElement;
-    }
-    return this.window.getComputedStyle(target, pseudo).animationTimingFunction;
-  },
-
   getPropertiesCompositorStatus: function () {
     let properties = this.player.effect.getProperties();
     return properties.map(prop => {
@@ -326,7 +307,6 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
       fill: this.getFill(),
       easing: this.getEasing(),
       direction: this.getDirection(),
-      animationTimingFunction: this.getAnimationTimingFunction(),
       
       
       isRunningOnCompositor:
