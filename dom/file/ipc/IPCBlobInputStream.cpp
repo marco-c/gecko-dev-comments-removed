@@ -12,6 +12,8 @@
 #include "nsIStreamTransportService.h"
 #include "nsITransport.h"
 #include "nsNetCID.h"
+#include "nsStringStream.h"
+#include "SlicedInputStream.h"
 
 namespace mozilla {
 namespace dom {
@@ -116,6 +118,7 @@ NS_INTERFACE_MAP_BEGIN(IPCBlobInputStream)
   NS_INTERFACE_MAP_ENTRY(nsIAsyncInputStream)
   NS_INTERFACE_MAP_ENTRY(nsIInputStreamCallback)
   NS_INTERFACE_MAP_ENTRY(nsICloneableInputStream)
+  NS_INTERFACE_MAP_ENTRY(nsICloneableInputStreamWithRange)
   NS_INTERFACE_MAP_ENTRY(nsIIPCSerializableInputStream)
   NS_INTERFACE_MAP_ENTRY(nsIFileMetadata)
   NS_INTERFACE_MAP_ENTRY(nsIAsyncFileMetadata)
@@ -125,8 +128,12 @@ NS_INTERFACE_MAP_END
 IPCBlobInputStream::IPCBlobInputStream(IPCBlobInputStreamChild* aActor)
   : mActor(aActor)
   , mState(eInit)
+  , mStart(0)
+  , mLength(0)
 {
   MOZ_ASSERT(aActor);
+
+  mLength = aActor->Size();
 
   if (XRE_IsParentProcess()) {
     nsCOMPtr<nsIInputStream> stream;
@@ -151,7 +158,7 @@ IPCBlobInputStream::Available(uint64_t* aLength)
 {
   
   if (mState == eInit || mState == ePending) {
-    *aLength = mActor->Size();
+    *aLength = mLength;
     return NS_OK;
   }
 
@@ -162,7 +169,7 @@ IPCBlobInputStream::Available(uint64_t* aLength)
     
     
     if (!mAsyncRemoteStream) {
-      *aLength = mActor->Size();
+      *aLength = mLength;
       return NS_OK;
     }
 
@@ -281,10 +288,51 @@ IPCBlobInputStream::Clone(nsIInputStream** aResult)
 
   MOZ_ASSERT(mActor);
 
-  nsCOMPtr<nsIInputStream> stream = mActor->CreateStream();
+  RefPtr<IPCBlobInputStream> stream = mActor->CreateStream();
   if (!stream) {
     return NS_ERROR_FAILURE;
   }
+
+  stream->mStart = mStart;
+  stream->mLength = mLength;
+
+  stream.forget(aResult);
+  return NS_OK;
+}
+
+
+
+NS_IMETHODIMP
+IPCBlobInputStream::CloneWithRange(uint64_t aStart, uint64_t aLength,
+                                   nsIInputStream** aResult)
+{
+  if (mState == eClosed) {
+    return NS_BASE_STREAM_CLOSED;
+  }
+
+  
+  if (aLength == 0 || aStart >= mLength) {
+    return NS_NewCStringInputStream(aResult, EmptyCString());
+  }
+
+  MOZ_ASSERT(mActor);
+
+  RefPtr<IPCBlobInputStream> stream = mActor->CreateStream();
+  if (!stream) {
+    return NS_ERROR_FAILURE;
+  }
+
+  CheckedInt<uint64_t> streamSize = mLength;
+  streamSize -= aStart;
+  if (!streamSize.isValid()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (aLength > streamSize.value()) {
+    aLength = streamSize.value();
+  }
+
+  stream->SetRange(aStart + mStart, aLength);
 
   stream.forget(aResult);
   return NS_OK;
@@ -357,6 +405,11 @@ IPCBlobInputStream::StreamReady(nsIInputStream* aInputStream)
     return;
   }
 
+  
+  if (mStart > 0 || mLength < mActor->Size()) {
+    aInputStream = new SlicedInputStream(aInputStream, mStart, mLength);
+  }
+
   mRemoteStream = aInputStream;
 
   MOZ_ASSERT(mState == ePending);
@@ -413,6 +466,14 @@ IPCBlobInputStream::MaybeExecuteInputStreamCallback(nsIInputStreamCallback* aCal
   MOZ_ASSERT(mAsyncRemoteStream);
 
   return mAsyncRemoteStream->AsyncWait(this, 0, 0, aCallbackEventTarget);
+}
+
+void
+IPCBlobInputStream::SetRange(uint64_t aStart, uint64_t aLength)
+{
+  MOZ_ASSERT(mActor->Size() >= aStart + aLength);
+  mStart = aStart;
+  mLength = aLength;
 }
 
 
@@ -600,7 +661,6 @@ IPCBlobInputStream::EnsureAsyncRemoteStream()
   mRemoteStream = nullptr;
 
   return NS_OK;
-
 }
 
 } 
