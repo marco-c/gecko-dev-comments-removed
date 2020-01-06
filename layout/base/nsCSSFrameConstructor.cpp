@@ -8139,8 +8139,6 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     return;
   }
 
-  nsIContent* container = insertion.mParentFrame->GetContent();
-
   LayoutFrameType frameType = insertion.mParentFrame->Type();
   LAYOUT_PHASE_TEMP_EXIT();
   if (MaybeRecreateForFrameset(insertion.mParentFrame, aStartChild, aEndChild)) {
@@ -8280,7 +8278,6 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
         return;
       }
 
-      container = insertion.mParentFrame->GetContent();
       frameType = insertion.mParentFrame->Type();
     }
   }
@@ -8353,49 +8350,6 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
         LayoutFrameType::TableWrapper == frameType) {
       PullOutCaptionFrames(frameItems, captionItems);
     }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (prevSibling && frameItems.NotEmpty() &&
-      frameItems.FirstChild()->GetParent() != prevSibling->GetParent()) {
-#ifdef DEBUG
-    nsIFrame* frame1 = frameItems.FirstChild()->GetParent();
-    nsIFrame* frame2 = prevSibling->GetParent();
-    NS_ASSERTION(!IsFramePartOfIBSplit(frame1) &&
-                 !IsFramePartOfIBSplit(frame2),
-                 "Neither should be ib-split");
-    NS_ASSERTION((frame1->IsTableFrame() &&
-                  frame2->IsTableWrapperFrame()) ||
-                 (frame1->IsTableWrapperFrame() &&
-                  frame2->IsTableFrame()) ||
-                 frame1->IsFieldSetFrame() ||
-                 (frame1->GetParent() &&
-                  frame1->GetParent()->IsFieldSetFrame()),
-                 "Unexpected frame types");
-#endif
-    isAppend = true;
-    nsIFrame* appendAfterFrame;
-    insertion.mParentFrame =
-      ::AdjustAppendParentForAfterContent(this, container,
-                                          frameItems.FirstChild()->GetParent(),
-                                          aStartChild, &appendAfterFrame);
-    prevSibling = ::FindAppendPrevSibling(insertion.mParentFrame, appendAfterFrame);
   }
 
   if (haveFirstLineStyle && insertion.mParentFrame == containingBlock && isAppend) {
