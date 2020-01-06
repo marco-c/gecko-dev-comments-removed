@@ -46,6 +46,16 @@
     .tabbrowser-tab {
       color: var(--chrome-color) !important;
     }
+
+    
+
+
+    .tabbrowser-tab:hover > .tab-stack > .tab-background:not([selected=true]):-moz-lwtheme-darktext {
+      background-color: rgba(0,0,0,.1) !important;
+    }
+    .tabbrowser-tab:hover > .tab-stack > .tab-background > .tab-line:not([selected=true]):-moz-lwtheme-darktext {
+      background-color: rgba(0,0,0,.2) !important;
+    }
   }
 }
 
