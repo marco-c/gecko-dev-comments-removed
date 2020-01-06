@@ -51,6 +51,26 @@ CSSFilter ToCSSFilter(const nsStyleFilter& filter)
   }
 }
 
+EventRegions::EventRegions(const nsIntRegion& aHitRegion,
+                           const nsIntRegion& aMaybeHitRegion,
+                           const nsIntRegion& aDispatchToContentRegion,
+                           const nsIntRegion& aNoActionRegion,
+                           const nsIntRegion& aHorizontalPanRegion,
+                           const nsIntRegion& aVerticalPanRegion)
+{
+  mHitRegion = aHitRegion;
+  mNoActionRegion = aNoActionRegion;
+  mHorizontalPanRegion = aHorizontalPanRegion;
+  mVerticalPanRegion = aVerticalPanRegion;
+  
+  
+  
+  
+  mDispatchToContentHitRegion.Sub(aMaybeHitRegion, mHitRegion);
+  mDispatchToContentHitRegion.OrWith(aDispatchToContentRegion);
+  mHitRegion.OrWith(aMaybeHitRegion);
+}
+
 } 
 } 
 

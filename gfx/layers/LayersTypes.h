@@ -110,6 +110,16 @@ struct EventRegions {
   {
   }
 
+  
+  
+  
+  EventRegions(const nsIntRegion& aHitRegion,
+               const nsIntRegion& aMaybeHitRegion,
+               const nsIntRegion& aDispatchToContentRegion,
+               const nsIntRegion& aNoActionRegion,
+               const nsIntRegion& aHorizontalPanRegion,
+               const nsIntRegion& aVerticalPanRegion);
+
   bool operator==(const EventRegions& aRegions) const
   {
     return mHitRegion == aRegions.mHitRegion &&

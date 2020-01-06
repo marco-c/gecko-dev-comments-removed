@@ -1289,7 +1289,7 @@ protected:
   struct MaskLayerKey;
   already_AddRefed<ImageLayer>
   CreateOrRecycleMaskImageLayerFor(const MaskLayerKey& aKey,
-                                   void(*aSetUserData)(Layer* aLayer));
+                                   const std::function<void(Layer* aLayer)>& aSetUserData);
   
 
 
@@ -2216,7 +2216,7 @@ ContainerState::CreateOrRecycleImageLayer(PaintedLayer *aPainted)
 
 already_AddRefed<ImageLayer>
 ContainerState::CreateOrRecycleMaskImageLayerFor(const MaskLayerKey& aKey,
-                                                 void(*aSetUserData)(Layer* aLayer))
+                                                 const std::function<void(Layer* aLayer)>& aSetUserData)
 {
   RefPtr<ImageLayer> result = mRecycledMaskImageLayers.Get(aKey);
   if (result) {
@@ -3396,20 +3396,13 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
         containingPaintedLayerData->CombinedTouchActionRegion());
     }
   } else {
-    EventRegions regions;
-    regions.mHitRegion = ScaleRegionToOutsidePixels(data->mHitRegion);
-    regions.mNoActionRegion = ScaleRegionToOutsidePixels(data->mNoActionRegion);
-    regions.mHorizontalPanRegion = ScaleRegionToOutsidePixels(data->mHorizontalPanRegion);
-    regions.mVerticalPanRegion = ScaleRegionToOutsidePixels(data->mVerticalPanRegion);
-    
-    
-    
-    
-    nsIntRegion maybeHitRegion = ScaleRegionToOutsidePixels(data->mMaybeHitRegion);
-    regions.mDispatchToContentHitRegion.Sub(maybeHitRegion, regions.mHitRegion);
-    regions.mDispatchToContentHitRegion.OrWith(
-        ScaleRegionToOutsidePixels(data->mDispatchToContentHitRegion));
-    regions.mHitRegion.OrWith(maybeHitRegion);
+    EventRegions regions(
+        ScaleRegionToOutsidePixels(data->mHitRegion),
+        ScaleRegionToOutsidePixels(data->mMaybeHitRegion),
+        ScaleRegionToOutsidePixels(data->mDispatchToContentHitRegion),
+        ScaleRegionToOutsidePixels(data->mNoActionRegion),
+        ScaleRegionToOutsidePixels(data->mHorizontalPanRegion),
+        ScaleRegionToOutsidePixels(data->mVerticalPanRegion));
 
     Matrix mat = layer->GetTransform().As2D();
     mat.Invert();
@@ -3878,13 +3871,6 @@ GetASRForPerspective(const ActiveScrolledRoot* aASR, nsIFrame* aPerspectiveFrame
 }
 
 void
-SetCSSMaskLayerUserData(Layer* aMaskLayer)
-{
-  aMaskLayer->SetUserData(&gCSSMaskLayerUserData,
-                          new CSSMaskLayerUserData());
-}
-
-void
 ContainerState::SetupMaskLayerForCSSMask(Layer* aLayer,
                                          nsDisplayMask* aMaskItem)
 {
@@ -3892,7 +3878,12 @@ ContainerState::SetupMaskLayerForCSSMask(Layer* aLayer,
 
   RefPtr<ImageLayer> maskLayer =
     CreateOrRecycleMaskImageLayerFor(MaskLayerKey(aLayer, Nothing()),
-                                     SetCSSMaskLayerUserData);
+      [](Layer* aMaskLayer)
+      {
+        aMaskLayer->SetUserData(&gCSSMaskLayerUserData,
+                                new CSSMaskLayerUserData());
+      }
+    );
 
   CSSMaskLayerUserData* oldUserData =
     static_cast<CSSMaskLayerUserData*>(maskLayer->GetUserData(&gCSSMaskLayerUserData));
@@ -6387,13 +6378,6 @@ ContainerState::SetupMaskLayer(Layer *aLayer,
   SetClipCount(paintedData, aRoundedRectClipCount);
 }
 
-void
-SetMaskLayerUserData(Layer* aMaskLayer)
-{
-  aMaskLayer->SetUserData(&gMaskLayerUserData,
-                          new MaskLayerUserData());
-}
-
 already_AddRefed<Layer>
 ContainerState::CreateMaskLayer(Layer *aLayer,
                                const DisplayItemClip& aClip,
@@ -6410,7 +6394,13 @@ ContainerState::CreateMaskLayer(Layer *aLayer,
   
   MaskLayerKey recycleKey(aLayer, aForAncestorMaskLayer);
   RefPtr<ImageLayer> maskLayer =
-    CreateOrRecycleMaskImageLayerFor(recycleKey, SetMaskLayerUserData);
+    CreateOrRecycleMaskImageLayerFor(recycleKey,
+      [](Layer* aMaskLayer)
+      {
+        aMaskLayer->SetUserData(&gMaskLayerUserData,
+                                new MaskLayerUserData());
+      }
+    );
   MaskLayerUserData* userData = GetMaskLayerUserData(maskLayer);
 
   int32_t A2D = mContainerFrame->PresContext()->AppUnitsPerDevPixel();
