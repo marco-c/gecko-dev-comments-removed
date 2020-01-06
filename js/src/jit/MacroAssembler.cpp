@@ -819,19 +819,29 @@ void
 MacroAssembler::callMallocStub(size_t nbytes, Register result, Label* fail)
 {
     
-    const Register regNBytes = CallTempReg0;
+    const Register regReturn = CallTempReg0;
+    const Register regZone = CallTempReg0;
+    const Register regNBytes = CallTempReg1;
 
     MOZ_ASSERT(nbytes > 0);
     MOZ_ASSERT(nbytes <= INT32_MAX);
 
+    if (regZone != result)
+        push(regZone);
     if (regNBytes != result)
         push(regNBytes);
+
     move32(Imm32(nbytes), regNBytes);
+    movePtr(ImmPtr(GetJitContext()->compartment->zone()), regZone);
     call(GetJitContext()->runtime->jitRuntime()->mallocStub());
-    if (regNBytes != result) {
-        movePtr(regNBytes, result);
+    if (regReturn != result)
+        movePtr(regReturn, result);
+
+    if (regNBytes != result)
         pop(regNBytes);
-    }
+    if (regZone != result)
+        pop(regZone);
+
     branchTest32(Assembler::Zero, result, result, fail);
 }
 
