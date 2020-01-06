@@ -193,6 +193,20 @@ enum class ExitFrameToken : uint8_t;
 
 class AutoSaveLiveRegisters;
 
+enum class CheckUnsafeCallWithABI {
+    
+    Check,
+
+    
+    
+    DontCheckHasExitFrame,
+
+    
+    
+    
+    DontCheckOther,
+};
+
 
 
 
@@ -565,8 +579,10 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline void passABIArg(Register reg);
     inline void passABIArg(FloatRegister reg, MoveOp::Type type);
 
-    template <typename T>
-    inline void callWithABI(const T& fun, MoveOp::Type result = MoveOp::GENERAL);
+    inline void callWithABI(void* fun, MoveOp::Type result = MoveOp::GENERAL,
+                            CheckUnsafeCallWithABI check = CheckUnsafeCallWithABI::Check);
+    inline void callWithABI(Register fun, MoveOp::Type result = MoveOp::GENERAL);
+    inline void callWithABI(const Address& fun, MoveOp::Type result = MoveOp::GENERAL);
 
     void callWithABI(wasm::BytecodeOffset offset, wasm::SymbolicAddress fun,
                      MoveOp::Type result = MoveOp::GENERAL);
@@ -580,7 +596,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     void callWithABIPre(uint32_t* stackAdjust, bool callFromWasm = false) PER_ARCH;
 
     
-    void callWithABINoProfiler(void* fun, MoveOp::Type result);
+    void callWithABINoProfiler(void* fun, MoveOp::Type result, CheckUnsafeCallWithABI check);
     void callWithABINoProfiler(Register fun, MoveOp::Type result) PER_ARCH;
     void callWithABINoProfiler(const Address& fun, MoveOp::Type result) PER_ARCH;
 
