@@ -7878,7 +7878,7 @@ class CGPerSignatureCall(CGThing):
 
         if useCounterName:
             
-            code = "SetDocumentAndPageUseCounter(cx, obj, eUseCounter_%s);\n" % useCounterName
+            code = "SetDocumentAndPageUseCounter(obj, eUseCounter_%s);\n" % useCounterName
             cgThings.append(CGGeneric(code))
 
         self.cgRoot = CGList(cgThings)
