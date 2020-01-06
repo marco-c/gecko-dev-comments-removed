@@ -4,59 +4,8 @@
 
 
 
-const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu } = Components;
-
-const TEST_DOMAIN = "http://example.net/";
-const TEST_PATH = TEST_DOMAIN + "browser/browser/components/resistfingerprinting/test/browser/";
-
-let gMaxAvailWidth;
-let gMaxAvailHeight;
-
-
-let gPopupChromeUIWidth;
-let gPopupChromeUIHeight;
-
-const TESTCASES = [
-  { settingWidth: 600, settingHeight: 600, targetWidth: 600, targetHeight: 600 },
-  { settingWidth: 599, settingHeight: 599, targetWidth: 600, targetHeight: 600 },
-  { settingWidth: 401, settingHeight: 501, targetWidth: 600, targetHeight: 600 },
-];
-
-add_task(async function setup() {
-  await SpecialPowers.pushPrefEnv({"set":
-    [["privacy.resistFingerprinting", true]]
-  });
-
-  
-  let popUpChromeUISize = await calcPopUpWindowChromeUISize();
-
-  gPopupChromeUIWidth = popUpChromeUISize.chromeWidth;
-  gPopupChromeUIHeight = popUpChromeUISize.chromeHeight;
-
-  
-  let maxAvailSize = await calcMaximumAvailSize(gPopupChromeUIWidth,
-                                                gPopupChromeUIHeight);
-
-  gMaxAvailWidth = maxAvailSize.maxAvailWidth;
-  gMaxAvailHeight = maxAvailSize.maxAvailHeight;
-});
-
-add_task(async function test_window_open() {
-  
-  let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser, TEST_PATH + "file_dummy.html");
-
-  for (let test of TESTCASES) {
-    
-    await testWindowOpen(tab.linkedBrowser, test.settingWidth, test.settingHeight,
-                         test.targetWidth, test.targetHeight, false, gMaxAvailWidth,
-                         gMaxAvailHeight, gPopupChromeUIWidth, gPopupChromeUIHeight);
-
-    
-    await testWindowOpen(tab.linkedBrowser, test.settingWidth, test.settingHeight,
-                         test.targetWidth, test.targetHeight, true, gMaxAvailWidth,
-                         gMaxAvailHeight, gPopupChromeUIWidth, gPopupChromeUIHeight);
-  }
-
-  await BrowserTestUtils.removeTab(tab);
-});
+OpenTest.run([
+  {settingWidth: 600, settingHeight: 600, targetWidth: 600, targetHeight: 600},
+  {settingWidth: 599, settingHeight: 599, targetWidth: 600, targetHeight: 600},
+  {settingWidth: 401, settingHeight: 501, targetWidth: 600, targetHeight: 600}
+]);
