@@ -683,6 +683,11 @@ public class GeckoHlsPlayer implements BaseHlsPlayer, ExoPlayer.EventListener {
     
     @Override
     public synchronized boolean seek(long positionUs) {
+        if (mPlayer == null) {
+            Log.d(LOGTAG, "Seek operation won't be performed as no player exists!");
+            return false;
+        }
+
         
         
         
