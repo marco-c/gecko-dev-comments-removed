@@ -1235,6 +1235,13 @@ public class GeckoView extends LayerView {
 
 
         public class SecurityInformation {
+            public static final int SECURITY_MODE_UNKNOWN = 0;
+            public static final int SECURITY_MODE_IDENTIFIED = 1;
+            public static final int SECURITY_MODE_VERIFIED = 2;
+
+            public static final int CONTENT_UNKNOWN = 0;
+            public static final int CONTENT_BLOCKED = 1;
+            public static final int CONTENT_LOADED = 2;
             
 
 
@@ -1272,31 +1279,31 @@ public class GeckoView extends LayerView {
 
 
 
-            public final String securityMode;
+            public final int securityMode;
             
 
 
 
-            public final String mixedModePassive;
+            public final int mixedModePassive;
             
 
 
 
-            public final String mixedModeActive;
+            public final int mixedModeActive;
             
 
 
 
-            public final String trackingMode;
+            public final int trackingMode;
 
              SecurityInformation(GeckoBundle identityData) {
                 final GeckoBundle mode = identityData.getBundle("mode");
 
-                mixedModePassive = mode.getString("mixed_display");
-                mixedModeActive = mode.getString("mixed_active");
-                trackingMode = mode.getString("tracking");
+                mixedModePassive = mode.getInt("mixed_display");
+                mixedModeActive = mode.getInt("mixed_active");
+                trackingMode = mode.getInt("tracking");
 
-                securityMode = mode.getString("identity");
+                securityMode = mode.getInt("identity");
 
                 isSecure = identityData.getBoolean("secure");
                 isException = identityData.getBoolean("securityException");

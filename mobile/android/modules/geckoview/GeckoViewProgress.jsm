@@ -25,37 +25,38 @@ function debug(aMsg) {
 
 var IdentityHandler = {
   
-  IDENTITY_MODE_UNKNOWN: "unknown",
+  
+  IDENTITY_MODE_UNKNOWN: 0,
 
   
-  IDENTITY_MODE_IDENTIFIED: "identified",
+  IDENTITY_MODE_IDENTIFIED: 1,
 
   
-  IDENTITY_MODE_VERIFIED: "verified",
-
-  
-  
-
-  
-  MIXED_MODE_UNKNOWN: "unknown",
-
-  
-  MIXED_MODE_CONTENT_BLOCKED: "blocked",
-
-  
-  MIXED_MODE_CONTENT_LOADED: "loaded",
+  IDENTITY_MODE_VERIFIED: 2,
 
   
   
 
   
-  TRACKING_MODE_UNKNOWN: "unknown",
+  MIXED_MODE_UNKNOWN: 0,
 
   
-  TRACKING_MODE_CONTENT_BLOCKED: "blocked",
+  MIXED_MODE_CONTENT_BLOCKED: 1,
 
   
-  TRACKING_MODE_CONTENT_LOADED: "loaded",
+  MIXED_MODE_CONTENT_LOADED: 2,
+
+  
+  
+
+  
+  TRACKING_MODE_UNKNOWN: 0,
+
+  
+  TRACKING_MODE_CONTENT_BLOCKED: 1,
+
+  
+  TRACKING_MODE_CONTENT_LOADED: 2,
 
   _useTrackingProtection: false,
   _usePrivateMode: false,
