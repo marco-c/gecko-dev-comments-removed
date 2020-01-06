@@ -1,10 +1,5 @@
 
 
-if (!this.Promise) {
-    this.reportCompare && reportCompare(0, 0, "ok");
-    quit(0);
-}
-
 let results = [];
 
 new Promise(res=>res('result'))

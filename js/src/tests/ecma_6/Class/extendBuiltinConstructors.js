@@ -101,8 +101,7 @@ testBuiltin(Array, 3.0);
 testBuiltin(Array, "non-length one-arg");
 testBuiltin(Array, 5, 10, 15, "these are elements");
 
-if (typeof Promise !== "undefined")
-    testBuiltin(Promise, _=>{});
+testBuiltin(Promise, _=>{});
 
 if (this.SharedArrayBuffer)
     testBuiltin(SharedArrayBuffer);
