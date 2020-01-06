@@ -133,7 +133,7 @@ struct TimingParams
     
     
     static const StickyTimeDuration zeroDuration;
-    if (!aDuration || *aDuration == zeroDuration || aIterations == 0.0) {
+    if (!aDuration || aDuration->IsZero() || aIterations == 0.0) {
       return zeroDuration;
     }
 

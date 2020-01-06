@@ -161,7 +161,7 @@ AnimationEffectReadOnly::GetComputedTimingAt(
       = std::max(StickyTimeDuration(localTime - aTiming.Delay()),
                  zeroDuration);
   } else {
-    MOZ_ASSERT(result.mActiveDuration != zeroDuration,
+    MOZ_ASSERT(result.mActiveDuration,
                "How can we be in the middle of a zero-duration interval?");
     result.mPhase = ComputedTiming::AnimationPhase::Active;
     result.mActiveTime = localTime - aTiming.Delay();
@@ -170,7 +170,7 @@ AnimationEffectReadOnly::GetComputedTimingAt(
   
   
   double overallProgress;
-  if (result.mDuration == zeroDuration) {
+  if (!result.mDuration) {
     overallProgress = result.mPhase == ComputedTiming::AnimationPhase::Before
                       ? 0.0
                       : result.mIterations;
