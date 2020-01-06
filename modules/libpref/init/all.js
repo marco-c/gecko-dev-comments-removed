@@ -672,11 +672,7 @@ pref("layers.geometry.d3d11.enabled", true);
 pref("apz.allow_checkerboarding", true);
 pref("apz.allow_immediate_handoff", true);
 pref("apz.allow_zooming", false);
-#ifdef NIGHTLY_BUILD
-pref("apz.autoscroll.enabled", true);
-#else
 pref("apz.autoscroll.enabled", false);
-#endif
 
 
 
@@ -746,7 +742,6 @@ pref("apz.record_checkerboarding", true);
 #else
 pref("apz.record_checkerboarding", false);
 #endif
-pref("apz.second_tap_tolerance", "0.5");
 pref("apz.test.logging_enabled", false);
 pref("apz.touch_start_tolerance", "0.1");
 pref("apz.touch_move_tolerance", "0.1");
@@ -899,6 +894,7 @@ pref("gfx.webrender.force-angle", true);
 pref("gfx.webrender.highlight-painted-layers", false);
 pref("gfx.webrender.layers-free", false);
 pref("gfx.webrender.profiler.enabled", false);
+pref("gfx.webrender.blob-images", false);
 
 
 pref("gfx.webrendest.enabled", false);
