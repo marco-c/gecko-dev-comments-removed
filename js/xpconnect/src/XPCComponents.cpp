@@ -3490,19 +3490,6 @@ nsXPCComponents::SetReturnCode(JSContext* aCx, HandleValue aCode)
 }
 
 
-NS_IMETHODIMP nsXPCComponents::ReportError(HandleValue error, JSContext* cx)
-{
-    NS_WARNING("Components.reportError deprecated, use Components.utils.reportError");
-
-    nsCOMPtr<nsIXPCComponents_Utils> utils;
-    nsresult rv = GetUtils(getter_AddRefs(utils));
-    if (NS_FAILED(rv))
-        return rv;
-
-    return utils->ReportError(error, cx);
-}
-
-
 
 class ComponentsSH : public nsIXPCScriptable
 {
