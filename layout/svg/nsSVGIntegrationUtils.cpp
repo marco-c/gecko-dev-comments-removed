@@ -790,7 +790,8 @@ nsSVGIntegrationUtils::PaintMask(const PaintFramesParams& aParams)
   RefPtr<DrawTarget> maskTarget = ctx.GetDrawTarget();
 
   if (maskUsage.shouldGenerateMaskLayer &&
-      maskUsage.shouldGenerateClipMaskLayer) {
+      (maskUsage.shouldGenerateClipMaskLayer ||
+       maskUsage.shouldApplyClipPath)) {
     
     
     
