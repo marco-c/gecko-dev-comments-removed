@@ -415,7 +415,7 @@ FormAutofillParent.prototype = {
     }
   },
 
-  async _onCreditCardSubmit(creditCard, target) {
+  async _onCreditCardSubmit(creditCard, target, timeStartedFillingMS) {
     
     
     
@@ -423,13 +423,18 @@ FormAutofillParent.prototype = {
         Object.keys(creditCard.record).every(key => creditCard.untouchedFields.includes(key))) {
       
       Services.telemetry.scalarAdd("formautofill.creditCards.fill_type_autofill", 1);
+      this._recordFormFillingTime("creditCard", "autofill", timeStartedFillingMS);
       return;
     }
 
     
-    let ccScalar = creditCard.guid ? "formautofill.creditCards.fill_type_autofill_modified" :
-                                     "formautofill.creditCards.fill_type_manual";
-    Services.telemetry.scalarAdd(ccScalar, 1);
+    if (creditCard.guid) {
+      Services.telemetry.scalarAdd("formautofill.creditCards.fill_type_autofill_modified", 1);
+      this._recordFormFillingTime("creditCard", "autofill-update", timeStartedFillingMS);
+    } else {
+      Services.telemetry.scalarAdd("formautofill.creditCards.fill_type_manual", 1);
+      this._recordFormFillingTime("creditCard", "manual", timeStartedFillingMS);
+    }
 
     let state = await FormAutofillDoorhanger.show(target, "creditCard");
     if (state == "cancel") {
@@ -452,7 +457,7 @@ FormAutofillParent.prototype = {
       this._onAddressSubmit(address, target, timeStartedFillingMS);
     }
     if (creditCard) {
-      this._onCreditCardSubmit(creditCard, target);
+      this._onCreditCardSubmit(creditCard, target, timeStartedFillingMS);
     }
   },
   
@@ -467,6 +472,9 @@ FormAutofillParent.prototype = {
 
 
   _recordFormFillingTime(formType, fillingType, startedFillingMS) {
+    if (!startedFillingMS) {
+      return;
+    }
     let histogram = Services.telemetry.getKeyedHistogramById("FORM_FILLING_REQUIRED_TIME_MS");
     histogram.add(`${formType}-${fillingType}`, Date.now() - startedFillingMS);
   },

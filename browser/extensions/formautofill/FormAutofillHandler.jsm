@@ -589,6 +589,12 @@ FormAutofillHandler.prototype = {
       delete data.creditCard;
     }
 
+    
+    
+    if (data.address && data.creditCard) {
+      this.timeStartedFillingMS = null;
+    }
+
     return data;
   },
 
