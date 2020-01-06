@@ -118,8 +118,6 @@
 
 #page-action-buttons {
   -moz-box-align: center;
-  
-  margin-inline-end: 3px;
 }
 
 #pageActionSeparator {
@@ -158,18 +156,39 @@
 }
 
 .urlbar-icon {
-  padding: 0 6px;
-  
   width: 28px;
-  height: 16px;
+  height: 28px;
+  
+  padding: 6px;
   -moz-context-properties: fill, fill-opacity;
   fill: currentColor;
   fill-opacity: 0.6;
   color: inherit;
+  transition-property: background-color;
+  transition-duration: var(--toolbarbutton-hover-transition-duration);
+}
+
+:root[uidensity=compact] .urlbar-icon {
+  width: 24px;
+  height: 24px;
+  
+  padding: 4px;
+}
+
+:root[uidensity=touch] .urlbar-icon {
+  width: 30px;
+  height: 30px;
+  
+  padding: 7px;
 }
 
 .urlbar-icon:hover {
-  fill-opacity: 0.8;
+  background-color: hsla(0,0%,80%,.4);
+}
+
+.urlbar-icon:hover:active {
+  background-color: hsla(0,0%,80%,.45);
+  transition-duration: var(--toolbarbutton-active-transition-duration);
 }
 
 .urlbar-go-button,
