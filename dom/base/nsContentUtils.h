@@ -2284,6 +2284,14 @@ public:
   
 
 
+  static bool IsScopedStylePrefEnabled()
+  {
+    return sIsScopedStyleEnabled;
+  }
+
+  
+
+
   static bool IsControlledByServiceWorker(nsIDocument* aDocument);
 
   
@@ -3192,6 +3200,7 @@ private:
 #ifndef RELEASE_OR_BETA
   static bool sBypassCSSOMOriginCheck;
 #endif
+  static bool sIsScopedStyleEnabled;
   static bool sIsBytecodeCacheEnabled;
   static int32_t sBytecodeCacheStrategy;
   static uint32_t sCookiesLifetimePolicy;
