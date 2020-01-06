@@ -1745,7 +1745,7 @@ WebSocketChannel::ProcessInput(uint8_t *buffer, uint32_t count)
         }
 
         
-        if (!IsUTF8(utf8Data)) {
+        if (!IsUTF8(utf8Data, false)) {
           LOG(("WebSocketChannel:: text frame invalid utf-8\n"));
           return NS_ERROR_CANNOT_CONVERT_DATA;
         }
@@ -1796,7 +1796,7 @@ WebSocketChannel::ProcessInput(uint8_t *buffer, uint32_t count)
             
             
             
-            if (!IsUTF8(mServerCloseReason)) {
+            if (!IsUTF8(mServerCloseReason, false)) {
               LOG(("WebSocketChannel:: close frame invalid utf-8\n"));
               return NS_ERROR_CANNOT_CONVERT_DATA;
             }

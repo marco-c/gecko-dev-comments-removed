@@ -18,12 +18,6 @@
 
 #include "nsTArrayForwardDeclare.h"
 
-
-extern "C" {
-  size_t encoding_utf8_valid_up_to(uint8_t const* buffer, size_t buffer_len);
-  size_t encoding_ascii_valid_up_to(uint8_t const* buffer, size_t buffer_len);
-}
-
 inline size_t
 Distance(const nsReadingIterator<char16_t>& aStart,
          const nsReadingIterator<char16_t>& aEnd)
@@ -259,27 +253,7 @@ bool IsASCII(const nsAString& aString);
 
 
 
-inline bool IsASCII(const nsACString& aString)
-{
-  size_t length = aString.Length();
-  const uint8_t* ptr = reinterpret_cast<const uint8_t*>(aString.BeginReading());
-  
-  
-  
-  
-  if (length < 16) {
-    size_t accu = 0;
-    for (size_t i = 0; i < length; i++) {
-      accu |= ptr[i];
-    }
-    return accu < 0x80;
-  }
-  
-  
-  
-  
-  return length == encoding_ascii_valid_up_to(ptr, length);
-}
+bool IsASCII(const nsACString& aString);
 
 
 
@@ -289,27 +263,30 @@ inline bool IsASCII(const nsACString& aString)
 
 
 
-inline bool IsUTF8(const nsACString& aString)
-{
-  size_t length = aString.Length();
-  const uint8_t* ptr = reinterpret_cast<const uint8_t*>(aString.BeginReading());
-  
-  
-  
-  
-  if (length < 16) {
-    for (size_t i = 0; i < length; i++) {
-      if (ptr[i] >= 0x80) {
-        ptr += i;
-        length -= i;
-        goto end;
-      }
-    }
-    return true;
-  }
-  end:
-  return length == encoding_utf8_valid_up_to(ptr, length);
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool IsUTF8(const nsACString& aString, bool aRejectNonChar = true);
 
 bool ParseString(const nsACString& aAstring, char aDelimiter,
                  nsTArray<nsCString>& aArray);
