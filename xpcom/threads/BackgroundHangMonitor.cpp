@@ -26,6 +26,7 @@
 #include "nsXULAppAPI.h"
 #include "GeckoProfiler.h"
 #include "nsNetCID.h"
+#include "nsIHangDetails.h"
 
 #include <algorithm>
 
@@ -238,6 +239,27 @@ public:
   }
 };
 
+
+
+
+
+
+class HangDetails : public nsIHangDetails
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIHANGDETAILS
+
+  HangDetails(uint32_t aDuration, const nsACString& aName)
+    : mDuration(aDuration)
+    , mName(aName)
+    {}
+private:
+  virtual ~HangDetails() {}
+
+  uint32_t mDuration;
+  nsCString mName;
+};
 
 StaticRefPtr<BackgroundHangManager> BackgroundHangManager::sInstance;
 bool BackgroundHangManager::sDisabled = true;
@@ -598,6 +620,19 @@ BackgroundHangThread::ReportHang(PRIntervalTime aHangTime)
   newHistogram.Add(aHangTime, Move(mAnnotations));
 
   
+  nsCString name;
+  name.AssignASCII(mStats.GetName());
+  SystemGroup::Dispatch("NotifyBHRHangObservers", TaskCategory::Other,
+                        NS_NewRunnableFunction("NotifyBHRHangObservers", [=] {
+    nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+    if (os) {
+      
+      nsCOMPtr<nsIHangDetails> hangDetails = new HangDetails(aHangTime, name);
+      os->NotifyObservers(hangDetails, "bhr-thread-hang", nullptr);
+    }
+  }));
+
+  
   
   
   RefPtr<ProcessHangRunnable> processHang =
@@ -877,5 +912,21 @@ BackgroundHangMonitor::ThreadHangStatsIterator::GetNext()
   mThread = mThread->getNext();
   return stats;
 }
+
+NS_IMETHODIMP
+HangDetails::GetDuration(uint32_t* aDuration)
+{
+  *aDuration = mDuration;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+HangDetails::GetThreadName(nsACString& aName)
+{
+  aName.Assign(mName);
+  return NS_OK;
+}
+
+NS_IMPL_ISUPPORTS(HangDetails, nsIHangDetails)
 
 } 
