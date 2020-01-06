@@ -304,6 +304,7 @@ add_task(async function test_usePingSenderOnShutdown() {
   }
 
   TelemetryHealthPing.testReset();
+  await TelemetrySend.reset();
   PingServer.clearRequests();
 
   
