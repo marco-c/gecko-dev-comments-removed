@@ -1056,23 +1056,6 @@ GetXrayTraits(JSObject* obj)
 
 
 
-
-
-
-
-static inline bool
-GlobalHasExclusiveExpandos(JSObject* obj)
-{
-    MOZ_ASSERT(JS_IsGlobalObject(obj));
-    return !strcmp(js::GetObjectJSClass(obj)->name, "Sandbox");
-}
-
-static inline JSObject*
-GetCachedXrayExpando(JSObject* wrapper);
-
-static inline void
-SetCachedXrayExpando(JSObject* holder, JSObject* expandoWrapper);
-
 static nsIPrincipal*
 ObjectPrincipal(JSObject* obj)
 {
@@ -1103,7 +1086,8 @@ const JSClassOps XrayExpandoObjectClassOps = {
 bool
 XrayTraits::expandoObjectMatchesConsumer(JSContext* cx,
                                          HandleObject expandoObject,
-                                         nsIPrincipal* consumerOrigin)
+                                         nsIPrincipal* consumerOrigin,
+                                         HandleObject exclusiveGlobal)
 {
     MOZ_ASSERT(js::IsObjectInContextCompartment(expandoObject, cx));
 
@@ -1120,49 +1104,38 @@ XrayTraits::expandoObjectMatchesConsumer(JSContext* cx,
       return false;
 
     
-    
     JSObject* owner = JS_GetReservedSlot(expandoObject,
-                                         JSSLOT_EXPANDO_EXCLUSIVE_WRAPPER_HOLDER)
+                                         JSSLOT_EXPANDO_EXCLUSIVE_GLOBAL)
                                         .toObjectOrNull();
-    return owner == nullptr;
+    if (!owner && !exclusiveGlobal)
+        return true;
+
+    
+    MOZ_ASSERT(!exclusiveGlobal || js::IsObjectInContextCompartment(exclusiveGlobal, cx));
+    MOZ_ASSERT(!owner || js::IsObjectInContextCompartment(owner, cx));
+    return owner == exclusiveGlobal;
 }
 
 bool
 XrayTraits::getExpandoObjectInternal(JSContext* cx, JSObject* expandoChain,
-                                     HandleObject exclusiveWrapper,
                                      nsIPrincipal* origin,
+                                     JSObject* exclusiveGlobalArg,
                                      MutableHandleObject expandoObject)
 {
     MOZ_ASSERT(!JS_IsExceptionPending(cx));
     expandoObject.set(nullptr);
 
     
-    if (exclusiveWrapper) {
-        JSObject* expandoWrapper = GetCachedXrayExpando(exclusiveWrapper);
-        expandoObject.set(expandoWrapper ? UncheckedUnwrap(expandoWrapper) : nullptr);
-#ifdef DEBUG
-        
-        
-        
-        
-        if (expandoObject) {
-            JSObject* head = expandoChain;
-            while (head && head != expandoObject)
-                head = JS_GetReservedSlot(head, JSSLOT_EXPANDO_NEXT).toObjectOrNull();
-            MOZ_ASSERT(head == expandoObject);
-        }
-#endif
-        return true;
-    }
-
     
-    
+    RootedObject exclusiveGlobal(cx, exclusiveGlobalArg);
     RootedObject head(cx, expandoChain);
     JSAutoCompartment ac(cx, head);
+    if (!JS_WrapObject(cx, &exclusiveGlobal))
+        return false;
 
     
     while (head) {
-        if (expandoObjectMatchesConsumer(cx, head, origin)) {
+        if (expandoObjectMatchesConsumer(cx, head, origin, exclusiveGlobal)) {
             expandoObject.set(head);
             return true;
         }
@@ -1184,35 +1157,19 @@ XrayTraits::getExpandoObject(JSContext* cx, HandleObject target, HandleObject co
         return true;
 
     JSObject* consumerGlobal = js::GetGlobalForObjectCrossCompartment(consumer);
-    bool isExclusive = GlobalHasExclusiveExpandos(consumerGlobal);
-    return getExpandoObjectInternal(cx, chain, isExclusive ? consumer : nullptr,
-                                    ObjectPrincipal(consumer), expandoObject);
+    bool isSandbox = !strcmp(js::GetObjectJSClass(consumerGlobal)->name, "Sandbox");
+    return getExpandoObjectInternal(cx, chain, ObjectPrincipal(consumer),
+                                    isSandbox ? consumerGlobal : nullptr,
+                                    expandoObject);
 }
-
-
-
-
-
-
-
-
-
-
-
-static const JSClass gWrapperHolderClass = {
-    "XrayExpandoWrapperHolder",
-    JSCLASS_HAS_RESERVED_SLOTS(1)
-};
-static const size_t JSSLOT_WRAPPER_HOLDER_CONTENTS = 0;
 
 JSObject*
 XrayTraits::attachExpandoObject(JSContext* cx, HandleObject target,
-                                HandleObject exclusiveWrapper,
-                                nsIPrincipal* origin)
+                                nsIPrincipal* origin, HandleObject exclusiveGlobal)
 {
     
     MOZ_ASSERT(js::IsObjectInContextCompartment(target, cx));
-    MOZ_ASSERT_IF(exclusiveWrapper, !js::IsObjectInContextCompartment(exclusiveWrapper, cx));
+    MOZ_ASSERT(!exclusiveGlobal || js::IsObjectInContextCompartment(exclusiveGlobal, cx));
 
     
 #ifdef DEBUG
@@ -1220,7 +1177,7 @@ XrayTraits::attachExpandoObject(JSContext* cx, HandleObject target,
         JSObject* chain = getExpandoChain(target);
         if (chain) {
             RootedObject existingExpandoObject(cx);
-            if (getExpandoObjectInternal(cx, chain, exclusiveWrapper, origin, &existingExpandoObject))
+            if (getExpandoObjectInternal(cx, chain, origin, exclusiveGlobal, &existingExpandoObject))
                 MOZ_ASSERT(!existingExpandoObject);
             else
                 JS_ClearPendingException(cx);
@@ -1241,30 +1198,8 @@ XrayTraits::attachExpandoObject(JSContext* cx, HandleObject target,
     JS_SetReservedSlot(expandoObject, JSSLOT_EXPANDO_ORIGIN, JS::PrivateValue(origin));
 
     
-    RootedObject wrapperHolder(cx);
-    if (exclusiveWrapper) {
-        JSAutoCompartment ac(cx, exclusiveWrapper);
-        wrapperHolder = JS_NewObjectWithGivenProto(cx, &gWrapperHolderClass, nullptr);
-        if (!wrapperHolder)
-            return nullptr;
-        JS_SetReservedSlot(wrapperHolder, JSSLOT_WRAPPER_HOLDER_CONTENTS, ObjectValue(*exclusiveWrapper));
-    }
-    if (!JS_WrapObject(cx, &wrapperHolder))
-        return nullptr;
-    JS_SetReservedSlot(expandoObject, JSSLOT_EXPANDO_EXCLUSIVE_WRAPPER_HOLDER,
-                       ObjectOrNullValue(wrapperHolder));
-
-    
-    if (exclusiveWrapper) {
-        RootedObject cachedExpandoObject(cx, expandoObject);
-        JSAutoCompartment ac(cx, exclusiveWrapper);
-        if (!JS_WrapObject(cx, &cachedExpandoObject))
-            return nullptr;
-        JSObject* holder = ensureHolder(cx, exclusiveWrapper);
-        if (!holder)
-            return nullptr;
-        SetCachedXrayExpando(holder, cachedExpandoObject);
-    }
+    JS_SetReservedSlot(expandoObject, JSSLOT_EXPANDO_EXCLUSIVE_GLOBAL,
+                       ObjectOrNullValue(exclusiveGlobal));
 
     
     
@@ -1290,10 +1225,17 @@ XrayTraits::ensureExpandoObject(JSContext* cx, HandleObject wrapper,
     if (!getExpandoObject(cx, target, wrapper, &expandoObject))
         return nullptr;
     if (!expandoObject) {
-        JSObject* consumerGlobal = js::GetGlobalForObjectCrossCompartment(wrapper);
-        bool isExclusive = GlobalHasExclusiveExpandos(consumerGlobal);
-        expandoObject = attachExpandoObject(cx, target, isExclusive ? wrapper : nullptr,
-                                            ObjectPrincipal(wrapper));
+        
+        
+        
+        
+        
+        RootedObject consumerGlobal(cx, js::GetGlobalForObjectCrossCompartment(wrapper));
+        bool isSandbox = !strcmp(js::GetObjectJSClass(consumerGlobal)->name, "Sandbox");
+        if (!JS_WrapObject(cx, &consumerGlobal))
+            return nullptr;
+        expandoObject = attachExpandoObject(cx, target, ObjectPrincipal(wrapper),
+                                            isSandbox ? (HandleObject)consumerGlobal : nullptr);
     }
     return expandoObject;
 }
@@ -1324,21 +1266,13 @@ XrayTraits::cloneExpandoChain(JSContext* cx, HandleObject dst, HandleObject src)
 #endif
 
     while (oldHead) {
-        RootedObject exclusiveWrapper(cx);
-        RootedObject wrapperHolder(cx, JS_GetReservedSlot(oldHead,
-                                                          JSSLOT_EXPANDO_EXCLUSIVE_WRAPPER_HOLDER)
-                                                         .toObjectOrNull());
-        if (wrapperHolder) {
-            
-            
-            
-            JSAutoCompartment ac(cx, UncheckedUnwrap(wrapperHolder));
-            exclusiveWrapper = dst;
-            if (!JS_WrapObject(cx, &exclusiveWrapper))
-                return false;
-        }
-        RootedObject newHead(cx, attachExpandoObject(cx, dst, exclusiveWrapper,
-                                                     GetExpandoObjectPrincipal(oldHead)));
+        RootedObject exclusive(cx, JS_GetReservedSlot(oldHead,
+                                                      JSSLOT_EXPANDO_EXCLUSIVE_GLOBAL)
+                                                     .toObjectOrNull());
+        if (!JS_WrapObject(cx, &exclusive))
+            return false;
+        RootedObject newHead(cx, attachExpandoObject(cx, dst, GetExpandoObjectPrincipal(oldHead),
+                                                     exclusive));
         if (!JS_CopyPropertiesFrom(cx, newHead, oldHead))
             return false;
         oldHead = JS_GetReservedSlot(oldHead, JSSLOT_EXPANDO_NEXT).toObjectOrNull();
@@ -1354,8 +1288,6 @@ ClearXrayExpandoSlots(JSObject* target, size_t slotIndex)
         return;
     }
 
-    MOZ_ASSERT(slotIndex != JSSLOT_EXPANDO_NEXT);
-    MOZ_ASSERT(slotIndex != JSSLOT_EXPANDO_EXCLUSIVE_WRAPPER_HOLDER);
     MOZ_ASSERT(GetXrayTraits(target) == &DOMXrayTraits::singleton);
     RootingContext* rootingCx = RootingCx();
     RootedObject rootedTarget(rootingCx, target);
@@ -1394,19 +1326,17 @@ bool CloneExpandoChain(JSContext* cx, JSObject* dstArg, JSObject* srcArg)
 }
 } 
 
-static const size_t JSSLOT_XRAY_HOLDER = 0;
-
 static JSObject*
 GetHolder(JSObject* obj)
 {
-    return &js::GetProxyReservedSlot(obj, JSSLOT_XRAY_HOLDER).toObject();
+    return &js::GetProxyReservedSlot(obj, 0).toObject();
 }
 
- JSObject*
+JSObject*
 XrayTraits::getHolder(JSObject* wrapper)
 {
     MOZ_ASSERT(WrapperFactory::IsXrayWrapper(wrapper));
-    js::Value v = js::GetProxyReservedSlot(wrapper, JSSLOT_XRAY_HOLDER);
+    js::Value v = js::GetProxyReservedSlot(wrapper, 0);
     return v.isObject() ? &v.toObject() : nullptr;
 }
 
@@ -1418,26 +1348,8 @@ XrayTraits::ensureHolder(JSContext* cx, HandleObject wrapper)
         return holder;
     holder = createHolder(cx, wrapper); 
     if (holder)
-        js::SetProxyReservedSlot(wrapper, JSSLOT_XRAY_HOLDER, ObjectValue(*holder));
+        js::SetProxyReservedSlot(wrapper, 0, ObjectValue(*holder));
     return holder;
-}
-
-static inline JSObject*
-GetCachedXrayExpando(JSObject* wrapper)
-{
-    JSObject* holder = XrayTraits::getHolder(wrapper);
-    if (!holder)
-        return nullptr;
-    Value v = JS_GetReservedSlot(holder, XrayTraits::HOLDER_SLOT_EXPANDO);
-    return v.isObject() ? &v.toObject() : nullptr;
-}
-
-static inline void
-SetCachedXrayExpando(JSObject* holder, JSObject* expandoWrapper)
-{
-    MOZ_ASSERT(js::GetObjectCompartment(holder) ==
-               js::GetObjectCompartment(expandoWrapper));
-    JS_SetReservedSlot(holder, XrayTraits::HOLDER_SLOT_EXPANDO, ObjectValue(*expandoWrapper));
 }
 
 namespace XrayUtils {
@@ -2631,23 +2543,5 @@ template class PermissiveXrayDOM;
 template class SecurityXrayDOM;
 template class PermissiveXrayJS;
 template class PermissiveXrayOpaque;
-
-
-
-
-
-static bool
-IsCrossCompartmentXrayCallback(const js::BaseProxyHandler* handler)
-{
-    return handler == &PermissiveXrayDOM::singleton;
-}
-
-js::XrayJitInfo gXrayJitInfo = {
-    IsCrossCompartmentXrayCallback,
-    GlobalHasExclusiveExpandos,
-    JSSLOT_XRAY_HOLDER,
-    XrayTraits::HOLDER_SLOT_EXPANDO,
-    JSSLOT_EXPANDO_PROTOTYPE
-};
 
 } 
