@@ -24,6 +24,10 @@ run_task_schema = Schema({
 
     
     
+    Required('comm-checkout', default=False): bool,
+
+    
+    
     
     Required('command'): Any([basestring], basestring),
 })
@@ -56,6 +60,8 @@ def docker_worker_run_task(config, job, taskdesc):
     command = ['/home/worker/bin/run-task']
     if run['checkout']:
         command.append('--vcs-checkout=~/checkouts/gecko')
+    if run['comm-checkout']:
+        command.append('--comm-checkout=/home/worker/checkouts/gecko/comm')
     command.append('--fetch-hgfingerprint')
     command.append('--')
     command.extend(run_command)
