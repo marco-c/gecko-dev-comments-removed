@@ -11,6 +11,7 @@
 
 
 
+
 "use strict";
 
 
@@ -435,4 +436,59 @@ function enableServiceWorkerDebugging() {
     SpecialPowers.pushPrefEnv(options, done);
     Services.ppmm.releaseCachedProcesses();
   });
+}
+
+
+
+
+
+function promiseAddonEvent(event) {
+  return new Promise(resolve => {
+    let listener = {
+      [event]: function (...args) {
+        AddonManager.removeAddonListener(listener);
+        resolve(args);
+      }
+    };
+
+    AddonManager.addAddonListener(listener);
+  });
+}
+
+
+
+
+function installAddonWithManager(filePath) {
+  return new Promise((resolve, reject) => {
+    AddonManager.getInstallForFile(filePath, install => {
+      if (!install) {
+        throw new Error(`An install was not created for ${filePath}`);
+      }
+      install.addListener({
+        onDownloadFailed: reject,
+        onDownloadCancelled: reject,
+        onInstallFailed: reject,
+        onInstallCancelled: reject,
+        onInstallEnded: resolve
+      });
+      install.install();
+    });
+  });
+}
+
+function getAddonByID(addonId) {
+  return new Promise(resolve => {
+    AddonManager.getAddonByID(addonId, addon => resolve(addon));
+  });
+}
+
+
+
+
+function* tearDownAddon(addon) {
+  const onUninstalled = promiseAddonEvent("onUninstalled");
+  addon.uninstall();
+  const [uninstalledAddon] = yield onUninstalled;
+  is(uninstalledAddon.id, addon.id,
+     `Add-on was uninstalled: ${uninstalledAddon.id}`);
 }
