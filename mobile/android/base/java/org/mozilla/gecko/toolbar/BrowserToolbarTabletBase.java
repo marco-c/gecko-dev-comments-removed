@@ -11,6 +11,7 @@ import android.support.v4.content.ContextCompat;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.Tab;
 import org.mozilla.gecko.Tabs;
+import org.mozilla.gecko.skin.SkinConfig;
 import org.mozilla.gecko.tabs.TabHistoryController;
 import org.mozilla.gecko.menu.MenuItemActionBar;
 import org.mozilla.gecko.util.HardwareUtils;
@@ -145,11 +146,13 @@ abstract class BrowserToolbarTabletBase extends BrowserToolbar {
     public void setPrivateMode(final boolean isPrivate) {
         super.setPrivateMode(isPrivate);
 
-        
-        
-        final PorterDuffColorFilter colorFilter =
-                isPrivate ? privateBrowsingTabletMenuItemColorFilter : null;
-        setTabsCounterPrivateMode(isPrivate, colorFilter);
+        if (SkinConfig.isAustralis()) {
+            
+            
+            final PorterDuffColorFilter colorFilter =
+                    isPrivate ? privateBrowsingTabletMenuItemColorFilter : null;
+            setTabsCounterPrivateMode(isPrivate, colorFilter);
+        }
 
         backButton.setPrivateMode(isPrivate);
         forwardButton.setPrivateMode(isPrivate);
