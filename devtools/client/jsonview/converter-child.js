@@ -25,7 +25,6 @@ const BinaryInput = CC("@mozilla.org/binaryinputstream;1",
 const BufferStream = CC("@mozilla.org/io/arraybuffer-input-stream;1",
                        "nsIArrayBufferInputStream", "setData");
 const encodingLength = 2;
-const encoder = new TextEncoder();
 
 
 loader.lazyGetter(this, "jsonViewStrings", () => {
@@ -88,17 +87,12 @@ Converter.prototype = {
     }
 
     
-    if (!this.decoder) {
-      this.listener.onDataAvailable(request, context, inputStream, offset, count);
-    } else {
-      let buffer = new ArrayBuffer(count);
-      new BinaryInput(inputStream).readArrayBuffer(count, buffer);
-      this.convertAndSendBuffer(request, context, buffer);
-    }
+    let buffer = new ArrayBuffer(count);
+    new BinaryInput(inputStream).readArrayBuffer(count, buffer);
+    this.decodeAndInsertBuffer(request, context, buffer);
   },
 
   onStartRequest: function (request, context) {
-    
     
     
     request.QueryInterface(Ci.nsIChannel);
@@ -121,14 +115,14 @@ Converter.prototype = {
     
     let win = NetworkHelper.getWindowForRequest(request);
     this.data = exportData(win, request);
-    win.addEventListener("DOMContentLoaded", event => {
-      win.addEventListener("contentMessage", onContentMessage, false, true);
-    }, {once: true});
+    insertJsonData(win, this.data.json);
+    win.addEventListener("contentMessage", onContentMessage, false, true);
     keepThemeUpdated(win);
 
     
-    let bytes = encoder.encode(initialHTML(win.document));
-    this.convertAndSendBuffer(request, context, bytes.buffer);
+    let buffer = new TextEncoder().encode(initialHTML(win.document)).buffer;
+    let stream = new BufferStream(buffer, 0, buffer.byteLength);
+    this.listener.onDataAvailable(request, context, stream, 0, stream.available());
 
     
     this.encodingArray = [];
@@ -139,7 +133,7 @@ Converter.prototype = {
     if (this.encodingArray) {
       this.determineEncoding(request, context, true);
     } else {
-      this.convertAndSendBuffer(request, context, new ArrayBuffer(0), true);
+      this.decodeAndInsertBuffer(request, context, new ArrayBuffer(0), true);
     }
 
     
@@ -169,31 +163,23 @@ Converter.prototype = {
     }
 
     
-    if (encoding !== "UTF-8") {
-      this.decoder = new TextDecoder(encoding, {ignoreBOM: true});
-    }
-
+    this.decoder = new TextDecoder(encoding);
     this.data.encoding = encoding;
 
     
     let buffer = new Uint8Array(bytes).buffer;
-    this.convertAndSendBuffer(request, context, buffer, flush);
+    this.decodeAndInsertBuffer(request, context, buffer, flush);
     this.encodingArray = null;
   },
 
   
-  convertAndSendBuffer: function (request, context, buffer, flush = false) {
+  decodeAndInsertBuffer: function (request, context, buffer, flush = false) {
     
-    if (this.decoder) {
-      let data = this.decoder.decode(buffer, {stream: !flush});
-      buffer = encoder.encode(data).buffer;
-    }
+    let data = this.decoder.decode(buffer, {stream: !flush});
 
     
-    let stream = new BufferStream(buffer, 0, buffer.byteLength);
-
     
-    this.listener.onDataAvailable(request, context, stream, 0, stream.available());
+    this.data.json.appendData(data);
   }
 };
 
@@ -231,6 +217,8 @@ function exportData(win, request) {
 
   data.debug = debug;
 
+  data.json = new win.Text();
+
   let Locale = {
     $STR: key => {
       try {
@@ -267,22 +255,17 @@ function exportData(win, request) {
 }
 
 
-
-
-
-function startTag(qualifiedName, attributes = {}) {
-  return Object.entries(attributes).reduce(function (prev, [attr, value]) {
-    return prev + " " + attr + "=\"" +
-      value.replace(/&/g, "&amp;")
-           .replace(/\u00a0/g, "&nbsp;")
-           .replace(/"/g, "&quot;") +
-      "\"";
-  }, "<" + qualifiedName) + ">";
-}
-
-
-
 function initialHTML(doc) {
+  
+  function element(type, attributes = {}, children = []) {
+    let el = doc.createElement(type);
+    for (let [attr, value] of Object.entries(attributes)) {
+      el.setAttribute(attr, value);
+    }
+    el.append(...children);
+    return el;
+  }
+
   let os;
   let platform = Services.appinfo.OS;
   if (platform.startsWith("WINNT")) {
@@ -297,29 +280,53 @@ function initialHTML(doc) {
   
   let baseURI = "resource://devtools-client-jsonview/";
 
-  let style = doc.createElement("link");
-  style.rel = "stylesheet";
-  style.type = "text/css";
-  style.href = baseURI + "css/main.css";
-
-  let script = doc.createElement("script");
-  script.src = baseURI + "lib/require.js";
-  script.dataset.main = baseURI + "viewer-config.js";
-  script.defer = true;
-
-  let head = doc.createElement("head");
-  head.append(style, script);
-
   return "<!DOCTYPE html>\n" +
-    startTag("html", {
+    element("html", {
       "platform": os,
       "class": "theme-" + Services.prefs.getCharPref("devtools.theme"),
       "dir": Services.locale.isAppLocaleRTL ? "rtl" : "ltr"
-    }) +
-    head.outerHTML +
-    startTag("body") +
-    startTag("div", {"id": "content"}) +
-    startTag("plaintext", {"id": "json"});
+    }, [
+      element("head", {}, [
+        element("link", {
+          rel: "stylesheet",
+          type: "text/css",
+          href: baseURI + "css/main.css",
+        }),
+        element("script", {
+          src: baseURI + "lib/require.js",
+          "data-main": baseURI + "viewer-config.js",
+          defer: true,
+        })
+      ]),
+      element("body", {}, [
+        element("div", {"id": "content"}, [
+          element("div", {"id": "json"})
+        ])
+      ])
+    ]).outerHTML;
+}
+
+
+
+
+
+function insertJsonData(win, json) {
+  new win.MutationObserver(function (mutations, observer) {
+    for (let {target, addedNodes} of mutations) {
+      if (target.nodeType == 1 && target.id == "content") {
+        for (let node of addedNodes) {
+          if (node.nodeType == 1 && node.id == "json") {
+            observer.disconnect();
+            node.append(json);
+            return;
+          }
+        }
+      }
+    }
+  }).observe(win.document, {
+    childList: true,
+    subtree: true,
+  });
 }
 
 function keepThemeUpdated(win) {
