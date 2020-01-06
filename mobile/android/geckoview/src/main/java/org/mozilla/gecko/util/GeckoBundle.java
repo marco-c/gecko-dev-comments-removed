@@ -14,6 +14,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.os.Bundle;
+import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.v4.util.SimpleArrayMap;
 
@@ -27,7 +28,7 @@ import java.util.Iterator;
 
 
 @RobocopTarget
-public final class GeckoBundle {
+public final class GeckoBundle implements Parcelable {
     private static final String LOGTAG = "GeckoBundle";
     private static final boolean DEBUG = false;
 
@@ -352,6 +353,23 @@ public final class GeckoBundle {
             ret[i] = mMap.valueAt(i);
         }
         return ret;
+    }
+
+    private void put(final String key, final Object value) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      throw new UnsupportedOperationException();
     }
 
     
@@ -894,4 +912,55 @@ public final class GeckoBundle {
         }
         return new GeckoBundle(keys, values);
     }
+
+    @Override 
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override 
+    public void writeToParcel(final Parcel dest, final int flags) {
+        final int len = mMap.size();
+        dest.writeInt(len);
+
+        for (int i = 0; i < len; i++) {
+            dest.writeString(mMap.keyAt(i));
+            dest.writeValue(mMap.valueAt(i));
+        }
+    }
+
+    
+    public void readFromParcel(final Parcel source) {
+        final ClassLoader loader = getClass().getClassLoader();
+        final int len = source.readInt();
+        mMap.clear();
+        mMap.ensureCapacity(len);
+
+        for (int i = 0; i < len; i++) {
+            final String key = source.readString();
+            Object val = source.readValue(loader);
+
+            if (val instanceof Parcelable[]) {
+                final Parcelable[] array = (Parcelable[]) val;
+                val = Arrays.copyOf(array, array.length, GeckoBundle[].class);
+            }
+
+            mMap.put(key, val);
+        }
+    }
+
+    public static final Parcelable.Creator<GeckoBundle> CREATOR =
+            new Parcelable.Creator<GeckoBundle>() {
+        @Override
+        public GeckoBundle createFromParcel(final Parcel source) {
+            final GeckoBundle bundle = new GeckoBundle(0);
+            bundle.readFromParcel(source);
+            return bundle;
+        }
+
+        @Override
+        public GeckoBundle[] newArray(final int size) {
+            return new GeckoBundle[size];
+        }
+    };
 }
