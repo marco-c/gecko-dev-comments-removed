@@ -172,16 +172,20 @@ struct ServoComputedValueFlags {
 } 
 
 
-/**
- * We want C++ to be abe to read the style struct fields of ComputedValues
- * so we define this type on the C++ side and use the bindgenned version
- * on the Rust side.
- *
- * C++ just sees pointers and opaque types here, so bindgen will attempt to generate a Copy
- * impl. This will fail because the bindgenned version contains owned types. Opt out.
- *
- * <div rustbindgen nocopy></div>
- */
+struct ServoComputedValues;
+struct ServoComputedValuesForgotten {
+  
+  
+  explicit ServoComputedValuesForgotten(const ServoComputedValues* aValue) : mPtr(aValue) {}
+  const ServoComputedValues* mPtr;
+};
+
+
+
+
+
+
+
 struct ServoComputedValues {
 #define STYLE_STRUCT(name_, checkdata_cb_) mozilla::ServoRawOffsetArc<mozilla::Gecko##name_> name_;
   #define STYLE_STRUCT_LIST_IGNORE_VARIABLES
@@ -200,7 +204,23 @@ struct ServoComputedValues {
   
   mozilla::ServoVisitedStyle visited_style;
   mozilla::ServoComputedValueFlags flags;
-  ~ServoComputedValues() {} 
+
+  
+  
+  
+  
+  
+  
+  
+  ServoComputedValues& operator=(const ServoComputedValues&) = delete;
+  ServoComputedValues(const ServoComputedValues&) = delete;
+  ServoComputedValues&& operator=(const ServoComputedValues&&) = delete;
+  ServoComputedValues(const ServoComputedValues&&) = delete;
+
+  
+  explicit ServoComputedValues(const ServoComputedValuesForgotten aValue);
 };
+
+
 
 #endif 
