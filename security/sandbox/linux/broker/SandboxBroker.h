@@ -92,13 +92,6 @@ class SandboxBroker final
       AddPath(aPerms, aPath,
               (aPerms & MAY_CREATE) ? AddAlways : AddIfExistsNow);
     }
-    
-    
-    
-    
-    void AddAncestors(const char* aPath);
-    void AddAncestors(nsCString&& aPath);
-
     int Lookup(const nsACString& aPath) const;
     int Lookup(const char* aPath) const {
       return Lookup(nsDependentCString(aPath));
