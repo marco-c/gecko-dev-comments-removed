@@ -974,8 +974,13 @@ js::Nursery::maybeResizeNursery(JS::gcreason::Reason reason)
         return;
 #endif
 
-    bool canUsePromotionRate;
-    const float promotionRate = calcPromotionRate(&canUsePromotionRate);
+    
+
+
+
+
+    const float promotionRate =
+        float(previousGC.tenuredBytes) / float(previousGC.nurseryCapacity);
 
     newMaxNurseryChunks = runtime()->gc.tunables.gcMaxNurseryBytes() >> ChunkShift;
     if (newMaxNurseryChunks != maxNurseryChunks_) {
@@ -986,14 +991,10 @@ js::Nursery::maybeResizeNursery(JS::gcreason::Reason reason)
             
             shrinkAllocableSpace(extraChunks);
 
-            if (canUsePromotionRate)
-                previousPromotionRate_ = promotionRate;
+            previousPromotionRate_ = promotionRate;
             return;
         }
     }
-
-    if (!canUsePromotionRate)
-        return;
 
     if (promotionRate > GrowThreshold)
         growAllocableSpace();
