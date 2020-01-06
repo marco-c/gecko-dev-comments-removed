@@ -16,27 +16,22 @@
 
 
 
-class nsFormControlFrame : public nsAtomicContainerFrame,
-                           public nsIFormControlFrame
+class nsFormControlFrame final : public nsAtomicContainerFrame,
+                                 public nsIFormControlFrame
 {
 public:
+  NS_DECL_QUERYFRAME
+  NS_DECL_FRAMEARENA_HELPERS(nsFormControlFrame)
+
+  explicit nsFormControlFrame(nsStyleContext* aContext);
+
   
-
-
-
-
-  nsFormControlFrame(nsStyleContext*, nsIFrame::ClassID);
-
   virtual bool IsFrameOfType(uint32_t aFlags) const override
   {
     return nsAtomicContainerFrame::IsFrameOfType(aFlags &
       ~(nsIFrame::eReplaced | nsIFrame::eReplacedContainsBlock));
   }
 
-  NS_DECL_QUERYFRAME
-  NS_DECL_ABSTRACT_FRAME(nsFormControlFrame)
-
-  
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                 const nsDisplayListSet& aLists) override {
     DO_GLOBAL_REFLOW_COUNT_DSP("nsFormControlFrame");

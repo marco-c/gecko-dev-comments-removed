@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 FRAME_ID(BRFrame, Br, Leaf)
 FRAME_ID(DetailsFrame, Details, NotLeaf)
@@ -26,10 +26,9 @@ FRAME_ID(nsFileControlFrame, Block, Leaf)
 FRAME_ID(nsFirstLetterFrame, Letter, NotLeaf)
 FRAME_ID(nsFirstLineFrame, Line, NotLeaf)
 FRAME_ID(nsFlexContainerFrame, FlexContainer, NotLeaf)
+FRAME_ID(nsFormControlFrame, FormControl, Leaf)
 FRAME_ID(nsFrame, None, NotLeaf)
 FRAME_ID(nsGfxButtonControlFrame, GfxButtonControl, Leaf)
-FRAME_ID(nsGfxCheckboxControlFrame, FormControl, Leaf)
-FRAME_ID(nsGfxRadioControlFrame, FormControl, Leaf)
 FRAME_ID(nsGridContainerFrame, GridContainer, NotLeaf)
 FRAME_ID(nsGridRowGroupFrame, Box, NotLeaf)
 FRAME_ID(nsGridRowLeafFrame, Box, NotLeaf)
@@ -146,15 +145,14 @@ FRAME_ID(nsXULLabelFrame, XULLabel, NotLeaf)
 FRAME_ID(nsXULScrollFrame, Scroll, NotLeaf)
 FRAME_ID(ViewportFrame, Viewport, NotLeaf)
 
+// The following ABSTRACT_FRAME_IDs needs to come after the above
+// FRAME_IDs, because we have two separate enums, one that includes
+// only FRAME_IDs and another which includes both and we depend on
+// FRAME_IDs to have the same number in both.
+// See ClassID (the former) and FrameIID in nsQueryFrame.h.
 
-
-
-
-
-
-
+// Non-concrete classes (for FrameIID use)
 ABSTRACT_FRAME_ID(nsContainerFrame)
-ABSTRACT_FRAME_ID(nsFormControlFrame)
 ABSTRACT_FRAME_ID(nsIFrame)
 ABSTRACT_FRAME_ID(nsLeafFrame)
 ABSTRACT_FRAME_ID(nsMathMLContainerFrame)
@@ -164,7 +162,7 @@ ABSTRACT_FRAME_ID(nsSVGDisplayContainerFrame)
 ABSTRACT_FRAME_ID(nsSVGGradientFrame)
 ABSTRACT_FRAME_ID(nsSVGPaintServerFrame)
 
-
+// Interfaces (for FrameIID use)
 ABSTRACT_FRAME_ID(nsIAnonymousContentCreator)
 ABSTRACT_FRAME_ID(nsIComboboxControlFrame)
 ABSTRACT_FRAME_ID(nsIFormControlFrame)
