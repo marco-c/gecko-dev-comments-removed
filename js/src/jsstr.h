@@ -234,10 +234,6 @@ CompareAtoms(JSAtom* atom1, JSAtom* atom2);
 extern bool
 StringEqualsAscii(JSLinearString* str, const char* asciiBytes);
 
-
-extern bool
-StringHasPattern(JSLinearString* text, const char16_t* pat, uint32_t patlen);
-
 extern int
 StringFindPattern(JSLinearString* text, JSLinearString* pat, size_t start);
 
