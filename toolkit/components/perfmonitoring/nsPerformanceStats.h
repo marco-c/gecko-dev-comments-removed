@@ -154,11 +154,6 @@ protected:
   
 
 
-  JSContext* const mContext;
-
-  
-
-
   uint64_t GetNextId();
   uint64_t mUIdCounter;
 
@@ -611,8 +606,7 @@ public:
 
 
   static nsPerformanceGroup*
-    Make(JSContext* cx,
-         nsPerformanceStatsService* service,
+    Make(nsPerformanceStatsService* service,
          const nsAString& name,
          uint64_t windowId,
          uint64_t processId,
