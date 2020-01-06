@@ -427,8 +427,9 @@ public:
 
 
 
-  void DispatchFling(AsyncPanZoomController* aApzc,
-                     FlingHandoffState& aHandoffState);
+
+  ParentLayerPoint DispatchFling(AsyncPanZoomController* aApzc,
+                                 const FlingHandoffState& aHandoffState);
 
   void StartScrollbarDrag(
       const ScrollableLayerGuid& aGuid,

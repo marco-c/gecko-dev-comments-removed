@@ -1009,9 +1009,7 @@ public:
 
 
 
-
-
-  bool AttemptFling(FlingHandoffState& aHandoffState);
+  ParentLayerPoint AttemptFling(const FlingHandoffState& aHandoffState);
 
 private:
   friend class AndroidFlingAnimation;
@@ -1043,9 +1041,6 @@ private:
                              const RefPtr<const AsyncPanZoomController>& aScrolledApzc);
 
   void HandleSmoothScrollOverscroll(const ParentLayerPoint& aVelocity);
-
-  
-  void AcceptFling(FlingHandoffState& aHandoffState);
 
   
   void StartOverscrollAnimation(const ParentLayerPoint& aVelocity);

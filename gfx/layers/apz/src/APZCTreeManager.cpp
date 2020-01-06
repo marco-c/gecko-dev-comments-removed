@@ -2029,25 +2029,22 @@ APZCTreeManager::DispatchScroll(AsyncPanZoomController* aPrev,
   }
 }
 
-void
+ParentLayerPoint
 APZCTreeManager::DispatchFling(AsyncPanZoomController* aPrev,
-                               FlingHandoffState& aHandoffState)
+                               const FlingHandoffState& aHandoffState)
 {
   
   
   if (aHandoffState.mIsHandoff &&
       !gfxPrefs::APZAllowImmediateHandoff() &&
       aHandoffState.mScrolledApzc == aPrev) {
-    return;
+    return aHandoffState.mVelocity;
   }
 
   const OverscrollHandoffChain* chain = aHandoffState.mChain;
   RefPtr<AsyncPanZoomController> current;
   uint32_t overscrollHandoffChainLength = chain->Length();
   uint32_t startIndex;
-
-  
-  ParentLayerPoint finalResidualVelocity = aHandoffState.mVelocity;
 
   
   
@@ -2065,21 +2062,25 @@ APZCTreeManager::DispatchFling(AsyncPanZoomController* aPrev,
     
     
     if (startIndex >= overscrollHandoffChainLength) {
-      return;
+      return aHandoffState.mVelocity;
     }
   } else {
     startIndex = 0;
   }
 
+  
+  ParentLayerPoint finalResidualVelocity = aHandoffState.mVelocity;
+
+  ParentLayerPoint currentVelocity = aHandoffState.mVelocity;
   for (; startIndex < overscrollHandoffChainLength; startIndex++) {
     current = chain->GetApzcAtIndex(startIndex);
 
     
     if (current == nullptr || current->IsDestroyed()) {
-      return;
+      break;
     }
 
-    endPoint = startPoint + aHandoffState.mVelocity;
+    endPoint = startPoint + currentVelocity;
 
     
     if (startIndex > 0) {
@@ -2088,41 +2089,36 @@ APZCTreeManager::DispatchFling(AsyncPanZoomController* aPrev,
                                  current,
                                  startPoint,
                                  endPoint)) {
-        return;
-      }
-    }
-
-    ParentLayerPoint transformedVelocity = endPoint - startPoint;
-    aHandoffState.mVelocity = transformedVelocity;
-
-    if (current->AttemptFling(aHandoffState)) {
-      
-      
-      ParentLayerPoint residualVelocity = aHandoffState.mVelocity;
-
-      
-      if (IsZero(residualVelocity)) {
-        finalResidualVelocity = ParentLayerPoint();
         break;
       }
-
-      
-      
-      
-      if (!FuzzyEqualsAdditive(transformedVelocity.x,
-                               residualVelocity.x, COORDINATE_EPSILON)) {
-        finalResidualVelocity.x *= (residualVelocity.x / transformedVelocity.x);
-      }
-      if (!FuzzyEqualsAdditive(transformedVelocity.y,
-                               residualVelocity.y, COORDINATE_EPSILON)) {
-        finalResidualVelocity.y *= (residualVelocity.y / transformedVelocity.y);
-      }
     }
+
+    FlingHandoffState transformedHandoffState = aHandoffState;
+    transformedHandoffState.mVelocity = (endPoint - startPoint);
+
+    ParentLayerPoint residualVelocity = current->AttemptFling(transformedHandoffState);
+
+    
+    if (IsZero(residualVelocity)) {
+      return ParentLayerPoint();
+    }
+
+    
+    
+    if (!FuzzyEqualsAdditive(transformedHandoffState.mVelocity.x,
+                             residualVelocity.x, COORDINATE_EPSILON)) {
+      finalResidualVelocity.x *= (residualVelocity.x / transformedHandoffState.mVelocity.x);
+    }
+    if (!FuzzyEqualsAdditive(transformedHandoffState.mVelocity.y,
+                             residualVelocity.y, COORDINATE_EPSILON)) {
+      finalResidualVelocity.y *= (residualVelocity.y / transformedHandoffState.mVelocity.y);
+    }
+
+    currentVelocity = residualVelocity;
   }
 
   
-  
-  aHandoffState.mVelocity = finalResidualVelocity;
+  return finalResidualVelocity;
 }
 
 bool
