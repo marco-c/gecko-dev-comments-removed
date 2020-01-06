@@ -164,6 +164,8 @@ public:
   }
 #endif
 
+  void SetSharedOwningReference(mozilla::psm::SharedSSLState* ref);
+
 protected:
   virtual ~nsNSSSocketInfo();
 
@@ -225,12 +227,19 @@ private:
   uint64_t mPlaintextBytesRead;
 
   nsCOMPtr<nsIX509Cert> mClientCert;
+
+  
+  
+  
+  
+  
+  RefPtr<mozilla::psm::SharedSSLState> mOwningSharedRef;
 };
 
 class nsSSLIOLayerHelpers
 {
 public:
-  nsSSLIOLayerHelpers();
+  explicit nsSSLIOLayerHelpers(uint32_t aTlsFlags = 0);
   ~nsSSLIOLayerHelpers();
 
   nsresult Init();
@@ -288,6 +297,7 @@ public:
 private:
   mozilla::Mutex mutex;
   nsCOMPtr<nsIObserver> mPrefObserver;
+  uint32_t mTlsFlags;
 };
 
 nsresult nsSSLIOLayerNewSocket(int32_t family,
