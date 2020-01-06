@@ -111,7 +111,10 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
     
 
     
-    for (let { child } of validationInfo.problems.missingChildren || []) {
+    for (let { parent, child } of validationInfo.problems.missingChildren || []) {
+      
+      
+      ids.add(parent);
       ids.add(child);
     }
     if (ids.size > MAX_REQUESTED_IDS) {
@@ -132,8 +135,10 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
 
     
     
-    for (let { parent } of validationInfo.problems.deletedChildren || []) {
+    for (let { parent, child } of validationInfo.problems.deletedChildren || []) {
+      
       ids.add(parent);
+      ids.add(child);
     }
     if (ids.size > MAX_REQUESTED_IDS) {
       return ids; 
@@ -141,7 +146,9 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
 
     
     
-    for (let { child } of validationInfo.problems.deletedParents || []) {
+    for (let { parent, child } of validationInfo.problems.deletedParents || []) {
+      
+      ids.add(parent);
       ids.add(child);
     }
     if (ids.size > MAX_REQUESTED_IDS) {
@@ -169,7 +176,6 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
       ids.add(child);
     }
 
-    
     return ids;
   }
 
