@@ -38,6 +38,13 @@ impl ClipAndScrollInfo {
     }
 }
 
+
+
+
+
+
+pub type ItemTag = (u64, u8);
+
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct DisplayItem {
     pub item: SpecificDisplayItem,
@@ -50,6 +57,7 @@ pub struct PrimitiveInfo<T> {
     pub rect: TypedRect<f32, T>,
     pub local_clip: LocalClip,
     pub is_backface_visible: bool,
+    pub tag: Option<ItemTag>,
 }
 
 impl LayerPrimitiveInfo {
@@ -68,6 +76,7 @@ impl LayerPrimitiveInfo {
             rect: rect,
             local_clip: clip,
             is_backface_visible: true,
+            tag: None,
         }
     }
 }
