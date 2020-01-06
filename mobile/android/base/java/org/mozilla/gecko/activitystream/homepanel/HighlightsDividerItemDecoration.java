@@ -16,7 +16,9 @@ import android.view.View;
 
 
 
+
  class HighlightsDividerItemDecoration extends RecyclerView.ItemDecoration {
+
     
     private static final int START_DRAWING_AT_POSITION = 1;
 
@@ -48,11 +50,18 @@ import android.view.View;
                 continue;
             }
 
+            
+            final int childViewType = parent.getAdapter().getItemViewType(i);
+            if (childViewType == StreamRecyclerAdapter.RowItemType.HIGHLIGHTS_TITLE.getViewType()
+                    || childViewType == StreamRecyclerAdapter.RowItemType.TOP_STORIES_TITLE.getViewType()) {
+                continue;
+            }
+
             final RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child
                     .getLayoutParams();
-            final int top = child.getBottom() + params.bottomMargin;
-            final int bottom = top + divider.getIntrinsicHeight();
-            divider.setBounds(left, top, right, bottom);
+            final int topOfDivider = child.getTop() + params.topMargin;
+            final int bottomOfDivider = topOfDivider + divider.getIntrinsicHeight();
+            divider.setBounds(left, topOfDivider, right, bottomOfDivider);
             divider.draw(c);
         }
     }
