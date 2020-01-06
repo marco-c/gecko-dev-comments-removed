@@ -334,7 +334,7 @@ GetSizeInfoFlag(uint32_t aDesiredImageSize)
 nsresult
 nsIconChannel::GetHIconFromFile(HICON* hIcon)
 {
-  nsXPIDLCString contentType;
+  nsCString contentType;
   nsCString fileExt;
   nsCOMPtr<nsIFile> localFile; 
   uint32_t desiredImageSize;
