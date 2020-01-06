@@ -281,10 +281,6 @@ public:
   ~StyleChildrenIterator() { MOZ_COUNT_DTOR(StyleChildrenIterator); }
 
   nsIContent* GetNextChild();
-
-  
-  
-  static bool IsNeeded(const Element* aParent);
 };
 
 } 
