@@ -42,7 +42,7 @@ size_of_test!(test_size_of_application_declaration_block, ApplicableDeclarationB
 
 
 
-size_of_test!(test_size_of_rule_node, RuleNode, 88);
+size_of_test!(test_size_of_rule_node, RuleNode, 80);
 
 
 
