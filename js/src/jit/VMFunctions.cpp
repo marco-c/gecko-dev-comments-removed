@@ -1050,8 +1050,7 @@ InitRestParameter(JSContext* cx, uint32_t length, Value* rest, HandleObject temp
         if (length > 0) {
             if (!arrRes->ensureElements(cx, length))
                 return nullptr;
-            arrRes->setDenseInitializedLength(length);
-            arrRes->initDenseElements(0, rest, length);
+            arrRes->initDenseElements(rest, length);
             arrRes->setLengthInt32(length);
         }
         return arrRes;
@@ -1781,9 +1780,8 @@ ObjectHasGetterSetter(JSContext* cx, JSObject* objArg, Shape* propShape)
     }
 }
 
-template <bool HasOwn>
 bool
-HasNativeDataProperty(JSContext* cx, JSObject* obj, Value* vp)
+HasOwnNativeDataProperty(JSContext* cx, JSObject* obj, Value* vp)
 {
     AutoUnsafeCallWithABI unsafe;
 
@@ -1793,50 +1791,31 @@ HasNativeDataProperty(JSContext* cx, JSObject* obj, Value* vp)
     if (!ValueToAtomOrSymbol(cx, idVal, &id))
         return false;
 
-    do {
-        if (obj->isNative()) {
-            if (obj->as<NativeObject>().lastProperty()->search(cx, id)) {
-                vp[1].setBoolean(true);
-                return true;
-            }
-
-            
-            
-            if (MOZ_UNLIKELY(ClassMayResolveId(cx->names(), obj->getClass(), id, obj)))
-                return false;
-        } else if (obj->is<UnboxedPlainObject>()) {
-            if (obj->as<UnboxedPlainObject>().containsUnboxedOrExpandoProperty(cx, id)) {
-                vp[1].setBoolean(true);
-                return true;
-            }
-        } else if (obj->is<TypedObject>()) {
-            if (obj->as<TypedObject>().typeDescr().hasProperty(cx->names(), id)) {
-                vp[1].setBoolean(true);
-                return true;
-            }
-        } else {
-            return false;
+    if (!obj->isNative()) {
+        if (obj->is<UnboxedPlainObject>()) {
+            bool res = obj->as<UnboxedPlainObject>().containsUnboxedOrExpandoProperty(cx, id);
+            vp[1].setBoolean(res);
+            return true;
         }
+        return false;
+    }
 
-        
-        if (HasOwn)
-            break;
+    NativeObject* nobj = &obj->as<NativeObject>();
+    if (nobj->lastProperty()->search(cx, id)) {
+        vp[1].setBoolean(true);
+        return true;
+    }
 
-        
-        
-        obj = obj->staticPrototype();
-    } while (obj);
+    
+    if (MOZ_UNLIKELY(!nobj->is<PlainObject>())) {
+        if (ClassMayResolveId(cx->names(), nobj->getClass(), id, nobj))
+            return false;
+    }
 
     
     vp[1].setBoolean(false);
     return true;
 }
-
-template bool
-HasNativeDataProperty<true>(JSContext* cx, JSObject* obj, Value* vp);
-
-template bool
-HasNativeDataProperty<false>(JSContext* cx, JSObject* obj, Value* vp);
 
 JSString*
 TypeOfObject(JSObject* obj, JSRuntime* rt)
