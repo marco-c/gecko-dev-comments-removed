@@ -7,14 +7,17 @@ const ID = "bootstrap1@tests.mozilla.org";
 let profileDir = gProfD.clone();
 profileDir.append("extensions");
 
+
+const SCOPES = AddonManager.SCOPE_PROFILE | AddonManager.SCOPE_SYSTEM;
+Services.prefs.setIntPref("extensions.enabledScopes", SCOPES);
+Services.prefs.setIntPref("extensions.autoDisableScopes", SCOPES);
+
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
-startupManager();
-
-
-Services.prefs.setIntPref("extensions.autoDisableScopes", AddonManager.SCOPE_PROFILE);
 
 
 add_task(async function() {
+  await promiseStartupManager();
+
   let install = await promiseInstallFile(do_get_addon("test_bootstrap1_1"));
   do_check_eq(install.state, AddonManager.STATE_INSTALLED);
   do_check_false(hasFlag(install.addon.pendingOperations, AddonManager.PENDING_INSTALL));
@@ -47,8 +50,49 @@ add_task(async function() {
   do_check_true(addon.seen);
 
   addon.uninstall();
+
   await promiseShutdownManager();
 });
+
+
+add_task(async function() {
+  let savedStartupScanScopes = Services.prefs.getIntPref("extensions.startupScanScopes");
+  Services.prefs.setIntPref("extensions.startupScanScopes", 0);
+
+  let systemParentDir = gTmpD.clone();
+  systemParentDir.append("systemwide-extensions");
+  registerDirectory("XRESysSExtPD", systemParentDir.clone());
+  do_register_cleanup(() => {
+    systemParentDir.remove(true);
+  });
+
+  let systemDir = systemParentDir.clone();
+  systemDir.append(Services.appinfo.ID);
+
+  let path = manuallyInstall(do_get_addon("test_bootstrap1_1"), systemDir, ID);
+  
+  setExtensionModifiedTime(path, Date.now() - 10000);
+
+  await promiseStartupManager();
+  await AddonManagerPrivate.getNewSideloads();
+
+  let addon = await promiseAddonByID(ID);
+  do_check_eq(addon.version, "1.0");
+  do_check_true(addon.foreignInstall);
+  do_check_false(addon.seen);
+
+  await promiseRestartManager();
+
+  addon = await promiseAddonByID(ID);
+  do_check_true(addon.foreignInstall);
+  do_check_false(addon.seen);
+
+  await promiseShutdownManager();
+  path.remove(true);
+
+  Services.prefs.setIntPref("extensions.startupScanScopes", savedStartupScanScopes);
+});
+
 
 
 add_task(async function() {
@@ -56,7 +100,7 @@ add_task(async function() {
   
   setExtensionModifiedTime(path, Date.now() - 10000);
 
-  startupManager();
+  await promiseStartupManager();
 
   let addon = await promiseAddonByID(ID);
   do_check_eq(addon.version, "1.0");
@@ -76,7 +120,7 @@ add_task(async function() {
   manuallyInstall(do_get_addon("test_bootstrap1_2"), profileDir, ID);
   setExtensionModifiedTime(path, Date.now());
 
-  startupManager();
+  await promiseStartupManager();
 
   addon = await promiseAddonByID(ID);
   do_check_eq(addon.version, "2.0");
@@ -88,12 +132,13 @@ add_task(async function() {
 });
 
 
+
 add_task(async function() {
   let path = manuallyInstall(do_get_addon("test_bootstrap1_1"), profileDir, ID);
   
   setExtensionModifiedTime(path, Date.now() - 10000);
 
-  startupManager();
+  await promiseStartupManager();
 
   let addon = await promiseAddonByID(ID);
   do_check_eq(addon.version, "1.0");
@@ -127,12 +172,13 @@ add_task(async function() {
 });
 
 
+
 add_task(async function() {
   let path = manuallyInstall(do_get_addon("test_bootstrap1_1"), profileDir, ID);
   
   setExtensionModifiedTime(path, Date.now() - 10000);
 
-  startupManager();
+  await promiseStartupManager();
 
   let addon = await promiseAddonByID(ID);
   do_check_eq(addon.version, "1.0");
@@ -154,7 +200,7 @@ add_task(async function() {
   manuallyInstall(do_get_addon("test_bootstrap1_2"), profileDir, ID);
   setExtensionModifiedTime(path, Date.now());
 
-  startupManager();
+  await promiseStartupManager();
 
   addon = await promiseAddonByID(ID);
   do_check_eq(addon.version, "2.0");
@@ -166,12 +212,13 @@ add_task(async function() {
 });
 
 
+
 add_task(async function() {
   let path = manuallyInstall(do_get_addon("test_bootstrap1_1"), profileDir, ID);
   
   setExtensionModifiedTime(path, Date.now() - 10000);
 
-  startupManager();
+  await promiseStartupManager();
 
   let addon = await promiseAddonByID(ID);
   do_check_eq(addon.version, "1.0");
