@@ -435,8 +435,9 @@ private:
   
   RefPtr<MediaCache> mMediaCache;
 
+  ChannelMediaResource* const mClient;
+
   
-  ChannelMediaResource*  mClient;
   nsCOMPtr<nsIPrincipal> mPrincipal;
   
   bool                   mDidNotifyDataEnded;
@@ -501,14 +502,13 @@ private:
 
   
   
-
   
   
   
   
   
-  
-  UniquePtr<uint8_t[]> mPartialBlockBuffer = MakeUnique<uint8_t[]>(BLOCK_SIZE);
+  const UniquePtr<uint8_t[]> mPartialBlockBuffer =
+    MakeUnique<uint8_t[]>(BLOCK_SIZE);
 
   
   const bool mIsPrivateBrowsing;
