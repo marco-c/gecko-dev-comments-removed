@@ -7,12 +7,16 @@
 #include "CompositorD3D11.h"
 #include "TextureD3D11.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
-#endif 
+#elif defined(XP_MACOSX)
+#include "mozilla/gfx/MacIOSurface.h"
+#endif
 
 #include "mozilla/Base64.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
+#include "gfxPrefs.h"
 #include "gfxUtils.h"
 #include "gfxVRPuppet.h"
+#include "VRManager.h"
 
 #include "mozilla/dom/GamepadEventTypes.h"
 #include "mozilla/dom/GamepadBinding.h"
@@ -38,19 +42,9 @@ static const uint64_t kPuppetButtonMask[] = {
   4,
   8
 };
-
 static const uint32_t kNumPuppetButtonMask = sizeof(kPuppetButtonMask) /
                                              sizeof(uint64_t);
-
-static const uint32_t kPuppetAxes[] = {
-  0,
-  1,
-  2
-};
-
-static const uint32_t kNumPuppetAxis = sizeof(kPuppetAxes) /
-                                       sizeof(uint32_t);
-
+static const uint32_t kNumPuppetAxis = 3;
 static const uint32_t kNumPuppetHaptcs = 1;
 
 VRDisplayPuppet::VRDisplayPuppet()
@@ -378,7 +372,7 @@ VRDisplayPuppet::SubmitFrame(TextureSourceD3D11* aSource,
       result.mWidth = mapInfo.RowPitch / 4;
       result.mHeight = desc.Height;
       result.mFrameNum = mDisplayInfo.mFrameId;
-      nsCString rawString(Substring((char*)srcData, mapInfo.RowPitch * desc.Height));
+      nsCString rawString(Substring(srcData, mapInfo.RowPitch * desc.Height));
 
       if (Base64Encode(rawString, result.mBase64Image) != NS_OK) {
         MOZ_ASSERT(false, "Failed to encode base64 images.");
@@ -474,12 +468,66 @@ VRDisplayPuppet::SubmitFrame(MacIOSurface* aMacIOSurface,
                              const gfx::Rect& aLeftEyeRect,
                              const gfx::Rect& aRightEyeRect)
 {
-  if (!mIsPresenting) {
+  if (!mIsPresenting || !aMacIOSurface) {
     return false;
   }
 
-  
-  
+  VRManager* vm = VRManager::Get();
+  MOZ_ASSERT(vm);
+
+  switch (gfxPrefs::VRPuppetSubmitFrame()) {
+    case 0:
+      
+      break;
+    case 1:
+    {
+      
+      
+      RefPtr<SourceSurface> surf = aMacIOSurface->GetAsSurface();
+      RefPtr<DataSourceSurface> dataSurf = surf ? surf->GetDataSurface() :
+                                           nullptr;
+      if (dataSurf) {
+        
+        
+        
+        
+        
+        DataSourceSurface::MappedSurface map;
+        if (!dataSurf->Map(gfx::DataSourceSurface::MapType::READ, &map)) {
+          MOZ_ASSERT(false, "Read DataSourceSurface fail.");
+          return false;
+        }
+        const uint8_t* srcData = map.mData;
+        const auto& surfSize = dataSurf->GetSize();
+        VRSubmitFrameResultInfo result;
+        result.mFormat = SurfaceFormat::B8G8R8A8;
+        result.mWidth = surfSize.width;
+        result.mHeight = surfSize.height;
+        result.mFrameNum = mDisplayInfo.mFrameId;
+        
+        
+        nsCString rawString;
+        for (int32_t i = 0; i < surfSize.height; i++) {
+          rawString += Substring((const char*)(srcData) + i * map.mStride,
+                                  surfSize.width * 4);
+        }
+        dataSurf->Unmap();
+
+        if (Base64Encode(rawString, result.mBase64Image) != NS_OK) {
+          MOZ_ASSERT(false, "Failed to encode base64 images.");
+        }
+        
+        
+        vm->DispatchSubmitFrameResult(mDisplayInfo.mDisplayID, result);
+      }
+      break;
+    }
+    case 2:
+    {
+      MOZ_ASSERT(false, "No support for showing VR frames on MacOSX yet.");
+      break;
+    }
+  }
 
   return false;
 }
@@ -707,7 +755,7 @@ VRSystemManagerPuppet::HandleAxisMove(uint32_t aControllerIdx, uint32_t aAxis,
 
 void
 VRSystemManagerPuppet::HandlePoseTracking(uint32_t aControllerIdx,
-                                          const GamepadPoseState& aPose,
+                                          const dom::GamepadPoseState& aPose,
                                           VRControllerHost* aController)
 {
   MOZ_ASSERT(aController);
