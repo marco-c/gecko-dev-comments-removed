@@ -2887,7 +2887,7 @@ var SessionStoreInternal = {
         
         
         
-        reloadInFreshProcess: !!recentLoadArguments.reloadInFreshProcess,
+        newFrameloader: recentLoadArguments.newFrameloader,
         remoteType: recentLoadArguments.remoteType,
         
         
@@ -3738,7 +3738,7 @@ var SessionStoreInternal = {
     
     
     let newFrameloader =
-      aOptions.reloadInFreshProcess || !!browser.frameLoader.groupedSHistory;
+      aOptions.newFrameloader || !!browser.frameLoader.groupedSHistory;
 
     let isRemotenessUpdate;
     if (aOptions.remoteType !== undefined) {

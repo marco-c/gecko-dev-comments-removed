@@ -1099,6 +1099,18 @@ function LoadInOtherProcess(browser, loadOptions, historyIndex = -1) {
 
 
 function RedirectLoad({ target: browser, data }) {
+  if (data.loadOptions.reloadInFreshProcess) {
+    
+    
+    data.loadOptions.remoteType = E10SUtils.LARGE_ALLOCATION_REMOTE_TYPE;
+    data.loadOptions.newFrameloader = true;
+  } else if (browser.remoteType == E10SUtils.LARGE_ALLOCATION_REMOTE_TYPE) {
+    
+    
+    data.loadOptions.remoteType =
+      E10SUtils.getRemoteTypeForURI(data.loadOptions.uri, gMultiProcessBrowser);
+  }
+
   
   
   if (gBrowserInit.delayedStartupFinished) {
