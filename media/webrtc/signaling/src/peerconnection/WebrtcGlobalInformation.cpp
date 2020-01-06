@@ -1018,16 +1018,15 @@ static void StoreLongTermICEStatisticsImpl_m(
     const RTCIceCandidatePairStats &pair =
       query->report->mIceCandidatePairStats.Value()[i];
 
-    if (!pair.mState.WasPassed() || !pair.mComponentId.WasPassed()) {
+    if (!pair.mState.WasPassed() || !pair.mTransportId.WasPassed()) {
       MOZ_CRASH();
       continue;
     }
 
     
     
-    
     std::string streamId(
-      NS_ConvertUTF16toUTF8(pair.mComponentId.Value()).get());
+      NS_ConvertUTF16toUTF8(pair.mTransportId.Value()).get());
 
     streamResults[streamId].streamSucceeded |=
       pair.mState.Value() == RTCStatsIceCandidatePairState::Succeeded;
