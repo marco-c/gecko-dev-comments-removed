@@ -398,7 +398,7 @@ SipccSdpMediaSection::ClearCodecs()
 
 void
 SipccSdpMediaSection::AddDataChannel(const std::string& name, uint16_t port,
-                                     uint16_t streams)
+                                     uint16_t streams, uint32_t message_size)
 {
   
   
@@ -409,6 +409,10 @@ SipccSdpMediaSection::AddDataChannel(const std::string& name, uint16_t port,
     mFormats.push_back(name);
     mAttributeList.SetAttribute(new SdpNumberAttribute(
           SdpAttribute::kSctpPortAttribute, port));
+    if (message_size) {
+      mAttributeList.SetAttribute(new SdpNumberAttribute(
+            SdpAttribute::kMaxMessageSizeAttribute, message_size));
+    }
   } else {
     
     std::string port_str = std::to_string(port);
@@ -416,6 +420,11 @@ SipccSdpMediaSection::AddDataChannel(const std::string& name, uint16_t port,
     SdpSctpmapAttributeList* sctpmap = new SdpSctpmapAttributeList();
     sctpmap->PushEntry(port_str, name, streams);
     mAttributeList.SetAttribute(sctpmap);
+    if (message_size) {
+      
+      mAttributeList.SetAttribute(new SdpNumberAttribute(
+            SdpAttribute::kMaxMessageSizeAttribute, message_size));
+    }
   }
 }
 
