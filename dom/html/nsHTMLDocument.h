@@ -79,6 +79,16 @@ public:
 
   virtual nsContentList* GetFormControls() override;
 
+  nsContentList* GetExistingForms() const
+  {
+    return mForms;
+  }
+
+  nsContentList* GetExistingFormControls() const
+  {
+    return mFormControls;
+  }
+
   
   using nsDocument::CreateElement;
   using nsDocument::CreateElementNS;
