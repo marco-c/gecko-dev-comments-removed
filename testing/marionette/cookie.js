@@ -9,7 +9,10 @@ const {interfaces: Ci, utils: Cu, results: Cr} = Components;
 Cu.import("resource://gre/modules/Services.jsm");
 
 Cu.import("chrome://marionette/content/assert.js");
-const {InvalidCookieDomainError} = Cu.import("chrome://marionette/content/error.js", {});
+const {
+  InvalidCookieDomainError,
+  UnableToSetCookieError,
+} = Cu.import("chrome://marionette/content/error.js", {});
 const {pprint} = Cu.import("chrome://marionette/content/format.js", {});
 
 this.EXPORTED_SYMBOLS = ["cookie"];
@@ -48,7 +51,6 @@ this.cookie = {
 
 
 
-
 cookie.fromJSON = function(json) {
   let newCookie = {};
 
@@ -57,20 +59,17 @@ cookie.fromJSON = function(json) {
   newCookie.name = assert.string(json.name, "Cookie name must be string");
   newCookie.value = assert.string(json.value, "Cookie value must be string");
 
-  if (typeof json.domain != "undefined") {
-    newCookie.domain = assert.string(json.domain, "Cookie domain must be string");
-  }
   if (typeof json.path != "undefined") {
     newCookie.path = assert.string(json.path, "Cookie path must be string");
+  }
+  if (typeof json.domain != "undefined") {
+    newCookie.domain = assert.string(json.domain, "Cookie domain must be string");
   }
   if (typeof json.secure != "undefined") {
     newCookie.secure = assert.boolean(json.secure, "Cookie secure flag must be boolean");
   }
   if (typeof json.httpOnly != "undefined") {
     newCookie.httpOnly = assert.boolean(json.httpOnly, "Cookie httpOnly flag must be boolean");
-  }
-  if (typeof json.session != "undefined") {
-    newCookie.session = assert.boolean(json.session, "Cookie session flag must be boolean");
   }
   if (typeof json.expiry != "undefined") {
     newCookie.expiry = assert.positiveInteger(json.expiry, "Cookie expiry must be a positive integer");
@@ -94,9 +93,15 @@ cookie.fromJSON = function(json) {
 
 
 
+
+
 cookie.add = function(newCookie, {restrictToHost = null} = {}) {
   assert.string(newCookie.name, "Cookie name must be string");
   assert.string(newCookie.value, "Cookie value must be string");
+
+  if (typeof newCookie.path == "undefined") {
+    newCookie.path = "/";
+  }
 
   let hostOnly = false;
   if (typeof newCookie.domain == "undefined") {
@@ -105,16 +110,18 @@ cookie.add = function(newCookie, {restrictToHost = null} = {}) {
   }
   assert.string(newCookie.domain, "Cookie domain must be string");
 
-  if (typeof newCookie.path == "undefined") {
-    newCookie.path = "/";
+  if (typeof newCookie.secure == "undefined") {
+    newCookie.secure = false;
   }
-
+  if (typeof newCookie.httpOnly == "undefined") {
+    newCookie.httpOnly = false;
+  }
   if (typeof newCookie.expiry == "undefined") {
     
-    let date = new Date();
-    let now = new Date(Date.now());
-    date.setYear(now.getFullYear() + 20);
-    newCookie.expiry = date.getTime() / 1000;
+    newCookie.expiry = Number.MAX_SAFE_INTEGER;
+    newCookie.session = true;
+  } else {
+    newCookie.session = false;
   }
 
   let isIpAddress = false;
@@ -150,16 +157,20 @@ cookie.add = function(newCookie, {restrictToHost = null} = {}) {
   
   newCookie.domain = newCookie.domain.replace(IPV4_PORT_EXPR, "");
 
-  cookie.manager.add(
-      newCookie.domain,
-      newCookie.path,
-      newCookie.name,
-      newCookie.value,
-      newCookie.secure,
-      newCookie.httpOnly,
-      newCookie.session,
-      newCookie.expiry,
-      {} );
+  try {
+    cookie.manager.add(
+        newCookie.domain,
+        newCookie.path,
+        newCookie.name,
+        newCookie.value,
+        newCookie.secure,
+        newCookie.httpOnly,
+        newCookie.session,
+        newCookie.expiry,
+        {} );
+  } catch (e) {
+    throw new UnableToSetCookieError(e);
+  }
 };
 
 
