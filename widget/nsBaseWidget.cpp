@@ -1286,6 +1286,23 @@ nsBaseWidget::CreateCompositorSession(int aWidth,
       gfx::IntSize(aWidth, aHeight),
       &retry);
 
+    if (lm->AsWebRenderLayerManager() && mCompositorSession) {
+      TextureFactoryIdentifier textureFactoryIdentifier;
+      lm->AsWebRenderLayerManager()->Initialize(mCompositorSession->GetCompositorBridgeChild(),
+                                                wr::AsPipelineId(mCompositorSession->RootLayerTreeId()),
+                                                &textureFactoryIdentifier);
+      if (textureFactoryIdentifier.mParentBackend != LayersBackend::LAYERS_WR) {
+        retry = true;
+        DestroyCompositor();
+        
+        gfx::gfxConfig::GetFeature(gfx::Feature::WEBRENDER).ForceDisable(
+          gfx::FeatureStatus::Unavailable,
+          "WebRender initialization failed",
+          NS_LITERAL_CSTRING("FEATURE_FAILURE_WEBRENDER_INITIALIZE"));
+        gfx::gfxVars::SetUseWebRender(false);
+      }
+    }
+
     
     
     if (mCompositorSession || !retry) {
@@ -1347,10 +1364,8 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight)
   }
 
   if (lm->AsWebRenderLayerManager()) {
-    TextureFactoryIdentifier textureFactoryIdentifier;
-    lm->AsWebRenderLayerManager()->Initialize(mCompositorBridgeChild,
-                                              wr::AsPipelineId(mCompositorSession->RootLayerTreeId()),
-                                              &textureFactoryIdentifier);
+    TextureFactoryIdentifier textureFactoryIdentifier = lm->GetTextureFactoryIdentifier();
+    MOZ_ASSERT(textureFactoryIdentifier.mParentBackend == LayersBackend::LAYERS_WR);
     ImageBridgeChild::IdentifyCompositorTextureHost(textureFactoryIdentifier);
     gfx::VRManagerChild::IdentifyTextureHost(textureFactoryIdentifier);
   }
@@ -1801,13 +1816,11 @@ nsBaseWidget::NotifyIME(const IMENotification& aIMENotification)
       
       
       
-      
-      
-      
       if (mTextEventDispatcher && mTextEventDispatcher->IsComposing()) {
         return mTextEventDispatcher->NotifyIME(aIMENotification);
       }
-      return NS_OK;
+      
+      return NotifyIMEInternal(aIMENotification);
     default: {
       if (aIMENotification.mMessage == NOTIFY_IME_OF_FOCUS) {
         mIMEHasFocus = true;
@@ -1817,11 +1830,13 @@ nsBaseWidget::NotifyIME(const IMENotification& aIMENotification)
       
       
       
+      
       nsresult rv = mTextEventDispatcher->NotifyIME(aIMENotification);
+      nsresult rv2 = NotifyIMEInternal(aIMENotification);
       if (aIMENotification.mMessage == NOTIFY_IME_OF_BLUR) {
         mIMEHasFocus = false;
       }
-      return rv;
+      return rv2 == NS_ERROR_NOT_IMPLEMENTED ? rv : rv2;
     }
   }
 }
