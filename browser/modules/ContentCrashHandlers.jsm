@@ -660,10 +660,6 @@ this.UnsubmittedCrashHandler = {
 
 
   async checkForUnsubmittedCrashReports() {
-    if (!this.enabled || this.suppressed) {
-      return;
-    }
-
     let dateLimit = new Date();
     dateLimit.setDate(dateLimit.getDate() - PENDING_CRASH_REPORT_DAYS);
 
