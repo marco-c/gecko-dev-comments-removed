@@ -1018,11 +1018,8 @@ public:
 protected:
   SeekJob mSeekJob;
 
-  void SeekCompleted();
-
-private:
   virtual void DoSeek() = 0;
-
+  void SeekCompleted();
   virtual TimeUnit CalculateNewCurrentTime() const = 0;
 };
 
@@ -1194,21 +1191,6 @@ public:
     RequestVideoData();
   }
 
-private:
-  void DemuxerSeek()
-  {
-    
-    Reader()->Seek(mSeekJob.mTarget.ref())
-      ->Then(OwnerThread(), __func__,
-             [this] (const media::TimeUnit& aUnit) {
-               OnSeekResolved(aUnit);
-             },
-             [this] (const SeekRejectValue& aReject) {
-               OnSeekRejected(aReject);
-             })
-      ->Track(mSeekRequest);
-  }
-
   void DoSeek() override
   {
     mDoneAudioSeeking = !Info().HasAudio() || mSeekJob.mTarget->IsVideoOnly();
@@ -1259,6 +1241,21 @@ private:
 
     MOZ_ASSERT(false, "AccurateSeekTask doesn't handle other seek types.");
     return TimeUnit::Zero();
+  }
+
+private:
+  void DemuxerSeek()
+  {
+    
+    Reader()->Seek(mSeekJob.mTarget.ref())
+      ->Then(OwnerThread(), __func__,
+             [this] (const media::TimeUnit& aUnit) {
+               OnSeekResolved(aUnit);
+             },
+             [this] (const SeekRejectValue& aReject) {
+               OnSeekRejected(aReject);
+             })
+      ->Track(mSeekRequest);
   }
 
   void OnSeekResolved(media::TimeUnit)
@@ -1522,61 +1519,6 @@ public:
     mSeekJob.RejectIfExists(__func__);
   }
 
-private:
-  void DoSeekInternal()
-  {
-    auto currentTime = mCurrentTime;
-    DiscardFrames(VideoQueue(), [currentTime] (int64_t aSampleTime) {
-      return aSampleTime <= currentTime.ToMicroseconds();
-    });
-
-    if (!NeedMoreVideo()) {
-      FinishSeek();
-    } else if (!mMaster->IsRequestingVideoData()
-               && !mMaster->IsWaitingVideoData()) {
-      RequestVideoData();
-    }
-  }
-
-  class AysncNextFrameSeekTask : public Runnable
-  {
-  public:
-    explicit AysncNextFrameSeekTask(NextFrameSeekingState* aStateObject)
-      : mStateObj(aStateObject)
-    {
-    }
-
-    void Cancel() { mStateObj = nullptr; }
-
-    NS_IMETHOD Run() override
-    {
-      if (mStateObj) {
-        mStateObj->DoSeekInternal();
-      }
-      return NS_OK;
-    }
-
-  private:
-    NextFrameSeekingState* mStateObj;
-  };
-
-  void DoSeek() override
-  {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    RefPtr<Runnable> r = mAsyncSeekTask = new AysncNextFrameSeekTask(this);
-    OwnerThread()->Dispatch(r.forget());
-  }
-
   void HandleAudioDecoded(AudioData* aAudio) override
   {
     mMaster->PushAudio(aAudio);
@@ -1660,6 +1602,61 @@ private:
     
     return mSeekJob.mTarget->GetTime();
   }
+
+  void DoSeek() override
+  {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    RefPtr<Runnable> r = mAsyncSeekTask = new AysncNextFrameSeekTask(this);
+    OwnerThread()->Dispatch(r.forget());
+  }
+
+private:
+  void DoSeekInternal()
+  {
+    auto currentTime = mCurrentTime;
+    DiscardFrames(VideoQueue(), [currentTime] (int64_t aSampleTime) {
+      return aSampleTime <= currentTime.ToMicroseconds();
+    });
+
+    if (!NeedMoreVideo()) {
+      FinishSeek();
+    } else if (!mMaster->IsRequestingVideoData()
+               && !mMaster->IsWaitingVideoData()) {
+      RequestVideoData();
+    }
+  }
+
+  class AysncNextFrameSeekTask : public Runnable
+  {
+  public:
+    explicit AysncNextFrameSeekTask(NextFrameSeekingState* aStateObject)
+      : mStateObj(aStateObject)
+    {
+    }
+
+    void Cancel() { mStateObj = nullptr; }
+
+    NS_IMETHOD Run() override
+    {
+      if (mStateObj) {
+        mStateObj->DoSeekInternal();
+      }
+      return NS_OK;
+    }
+
+  private:
+    NextFrameSeekingState* mStateObj;
+  };
 
   void RequestVideoData()
   {
