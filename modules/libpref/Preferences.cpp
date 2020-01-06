@@ -4786,9 +4786,17 @@ pref_InitInitialObjects()
   
   
   
+  
+  
+  bool developerBuild = false;
+#ifndef MOZILLA_OFFICIAL
+  developerBuild = !strcmp(NS_STRINGIFY(MOZ_UPDATE_CHANNEL), "default");
+#endif
+
   if (!strcmp(NS_STRINGIFY(MOZ_UPDATE_CHANNEL), "nightly") ||
       !strcmp(NS_STRINGIFY(MOZ_UPDATE_CHANNEL), "aurora") ||
-      !strcmp(NS_STRINGIFY(MOZ_UPDATE_CHANNEL), "beta")) {
+      !strcmp(NS_STRINGIFY(MOZ_UPDATE_CHANNEL), "beta") ||
+      developerBuild) {
     PREF_SetBoolPref(kTelemetryPref, true, true);
   } else {
     PREF_SetBoolPref(kTelemetryPref, false, true);
