@@ -1,12 +1,13 @@
 
 
 
+from __future__ import absolute_import
 
-from symLogging import LogTrace, LogError
-
-import re
 import json
+import re
 import urllib2
+
+from .symLogging import LogTrace, LogError
 
 
 

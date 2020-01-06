@@ -1,10 +1,12 @@
 
 
 
+from __future__ import absolute_import, print_function
 
 import re
 import subprocess
-from cmanager import CounterManager
+
+from cmanager_base import CounterManager
 
 
 def xrestop(binary='xrestop'):

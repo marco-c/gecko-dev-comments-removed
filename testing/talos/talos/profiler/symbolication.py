@@ -1,6 +1,7 @@
 
 
 
+from __future__ import absolute_import
 
 import cStringIO
 import hashlib
@@ -10,9 +11,10 @@ import subprocess
 import urllib2
 import zipfile
 from distutils import spawn
-from symFileManager import SymFileManager
-from symbolicationRequest import SymbolicationRequest
-from symLogging import LogMessage
+
+from .symFileManager import SymFileManager
+from .symLogging import LogMessage
+from .symbolicationRequest import SymbolicationRequest
 
 """
 Symbolication is broken when using type 'str' in python 2.7, so we use 'basestring'.

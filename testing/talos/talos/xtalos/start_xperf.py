@@ -3,11 +3,13 @@
 
 
 
+from __future__ import absolute_import, print_function
 
 import os
-import sys
-import xtalos
 import subprocess
+import sys
+
+import xtalos
 
 
 def start(xperf_path, xperf_providers, xperf_stackwalk, xperf_user_providers,

@@ -1,17 +1,17 @@
 
 
 
+from __future__ import absolute_import
 
-import time
 import pprint
-import psutil
-import mozcrash
+import time
 import traceback
-from mozprocess import ProcessHandler
 from threading import Event
 
+import mozcrash
+import psutil
 from mozlog import get_proxy_logger
-
+from mozprocess import ProcessHandler
 from utils import TalosError
 
 LOG = get_proxy_logger()

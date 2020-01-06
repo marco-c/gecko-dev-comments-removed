@@ -3,12 +3,14 @@
 
 
 
+from __future__ import absolute_import, print_function
 
 import os
-import sys
-import xtalos
 import subprocess
+import sys
+
 import etlparser
+import xtalos
 
 
 def stop(xperf_path, debug=False):

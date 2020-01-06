@@ -3,15 +3,16 @@
 
 
 """Utility functions for Talos"""
+from __future__ import absolute_import
 
-import os
-import time
-import urlparse
-import string
-import urllib
 import json
-import re
+import os
 import platform
+import re
+import string
+import time
+import urllib
+import urlparse
 
 from mozlog import get_proxy_logger
 

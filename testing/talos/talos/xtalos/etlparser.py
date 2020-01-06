@@ -3,17 +3,18 @@
 
 
 
+from __future__ import absolute_import, print_function
 
 import csv
-import re
-import os
-import sys
-import xtalos
-import subprocess
 import json
-import mozfile
+import os
+import re
 import shutil
+import subprocess
+import sys
 
+import mozfile
+import xtalos
 
 EVENTNAME_INDEX = 0
 PROCESS_INDEX = 2

@@ -2,14 +2,15 @@
 
 
 
+from __future__ import absolute_import
+
 import os
-import psutil
-import sys
 import subprocess
+import sys
 import time
 
 import mozinfo
-
+import psutil
 from mozlog import get_proxy_logger
 
 here = os.path.dirname(os.path.realpath(__file__))

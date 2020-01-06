@@ -4,18 +4,19 @@
 
 
 
+from __future__ import absolute_import, print_function
 
 import hashlib
-import urllib
 import sys
+import urllib
 from collections import defaultdict
-from typing import Any  
-from typing import List  
 
 from mitmproxy import ctx
 from mitmproxy import exceptions
-from mitmproxy import io
 from mitmproxy import http
+from mitmproxy import io
+from typing import Any  
+from typing import List  
 
 
 class ServerPlayback:

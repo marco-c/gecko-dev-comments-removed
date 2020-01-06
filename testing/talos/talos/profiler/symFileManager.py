@@ -1,8 +1,7 @@
 
 
 
-
-from symLogging import LogTrace, LogError, LogMessage
+from __future__ import absolute_import
 
 import itertools
 import os
@@ -10,6 +9,8 @@ import re
 import threading
 import time
 from bisect import bisect
+
+from .symLogging import LogTrace, LogError, LogMessage
 
 
 PREFETCHED_LIBS = ["xul.pdb", "firefox.pdb"]
