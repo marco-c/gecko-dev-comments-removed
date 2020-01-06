@@ -72,23 +72,6 @@ public class Experiments {
 
 
 
-
-    public static boolean isInExperimentLocal(Context context, String experiment) {
-        if (SwitchBoard.isInBucket(context, 0, 20)) {
-            return Experiments.ONBOARDING3_A.equals(experiment);
-        } else if (SwitchBoard.isInBucket(context, 20, 60)) {
-            return Experiments.ONBOARDING3_B.equals(experiment);
-        } else if (SwitchBoard.isInBucket(context, 60, 100)) {
-            return Experiments.ONBOARDING3_C.equals(experiment);
-        } else {
-            return false;
-        }
-    }
-
-    
-
-
-
     public static List<String> getActiveExperiments(Context c) {
         final List<String> experiments = new LinkedList<>();
         experiments.addAll(SwitchBoard.getActiveExperiments(c));
