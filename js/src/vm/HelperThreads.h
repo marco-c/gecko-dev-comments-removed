@@ -143,7 +143,6 @@ class GlobalHelperThreadState
 
   public:
     size_t maxIonCompilationThreads() const;
-    size_t maxUnpausedIonCompilationThreads() const;
     size_t maxWasmCompilationThreads() const;
     size_t maxWasmTier2GeneratorThreads() const;
     size_t maxParseThreads() const;
@@ -173,10 +172,6 @@ class GlobalHelperThreadState
         
         
         PRODUCER,
-
-        
-        
-        PAUSE
     };
 
     void wait(AutoLockHelperThreadState& locked, CondVar which,
@@ -280,16 +275,7 @@ class GlobalHelperThreadState
     void scheduleCompressionTasks(const AutoLockHelperThreadState&);
 
   public:
-    
-    
-    
-    bool pendingIonCompileHasSufficientPriority(const AutoLockHelperThreadState& lock);
-
-    jit::IonBuilder* highestPriorityPendingIonCompile(const AutoLockHelperThreadState& lock,
-                                                      bool remove = false);
-    HelperThread* lowestPriorityUnpausedIonCompileAtThreshold(
-        const AutoLockHelperThreadState& lock);
-    HelperThread* highestPriorityPausedIonCompile(const AutoLockHelperThreadState& lock);
+    jit::IonBuilder* highestPriorityPendingIonCompile(const AutoLockHelperThreadState& lock);
 
     template <
         typename F,
@@ -335,13 +321,11 @@ class GlobalHelperThreadState
     
     js::ConditionVariable consumerWakeup;
     js::ConditionVariable producerWakeup;
-    js::ConditionVariable pauseWakeup;
 
     js::ConditionVariable& whichWakeup(CondVar which) {
         switch (which) {
           case CONSUMER: return consumerWakeup;
           case PRODUCER: return producerWakeup;
-          case PAUSE: return pauseWakeup;
           default: MOZ_CRASH("Invalid CondVar in |whichWakeup|");
         }
     }
@@ -375,13 +359,6 @@ struct HelperThread
 
 
     bool terminate;
-
-    
-
-
-
-
-    mozilla::Atomic<bool, mozilla::Relaxed> pause;
 
     
     mozilla::Maybe<HelperTaskUnion> currentTask;
@@ -471,10 +448,6 @@ SetFakeCPUCount(size_t count);
 
 HelperThread*
 CurrentHelperThread();
-
-
-void
-PauseCurrentHelperThread();
 
 
 bool
