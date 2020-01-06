@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SyncResult;
+import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.support.v4.content.LocalBroadcastManager;
@@ -73,6 +74,8 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
 
   
   private static final String PREF_BACKOFF_STORAGE_HOST = "backoffStorageHost";
+  
+  public static final String PREFS_SYNC_METERED = "sync.allow_metered";
 
   
   
@@ -504,6 +507,27 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
 
     
     
+    boolean shouldRejectSyncViaSettings = false;
+    
+    if (!extras.getBoolean(ContentResolver.SYNC_EXTRAS_IGNORE_SETTINGS, false)) {
+      
+      boolean isMeteredAllowed = true;
+      try {
+        isMeteredAllowed = fxAccount.getSyncPrefs().getBoolean(PREFS_SYNC_METERED, true);
+      } catch (Exception e) {
+        Logger.error(LOG_TAG, "Failed to read sync preferences. Allowing metered connections by default.");
+      }
+      
+      final ConnectivityManager manager = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+      final boolean isMetered = manager.isActiveNetworkMetered();
+      
+      
+      shouldRejectSyncViaSettings = !isMeteredAllowed && isMetered;
+    }
+
+
+    
+    
     final long syncDeadline = SystemClock.elapsedRealtime() + SYNC_DEADLINE_DELTA_MILLIS;
 
     Logger.info(LOG_TAG, "Syncing FxAccount" +
@@ -545,8 +569,25 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
     Collection<String> knownStageNames = SyncConfiguration.validEngineNames();
     Collection<String> stageNamesToSync = Utils.getStagesToSyncFromBundle(knownStageNames, extras);
 
+    
+    
+    
+    
+    
+    if (shouldRejectSyncViaSettings && fxAccount.neverSynced()) {
+      stageNamesToSync.clear();
+      stageNamesToSync.add("clients");
+    }
+
     final SyncDelegate syncDelegate = new SyncDelegate(latch, syncResult, fxAccount, stageNamesToSync);
     Result offeredResult = null;
+
+    if (shouldRejectSyncViaSettings && !fxAccount.neverSynced()) {
+      
+      
+      syncDelegate.rejectSync();
+      return;
+    }
 
     try {
       
