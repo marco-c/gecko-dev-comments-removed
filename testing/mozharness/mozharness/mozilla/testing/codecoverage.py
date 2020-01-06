@@ -45,6 +45,7 @@ class CodeCoverageMixin(object):
     """
     gcov_dir = None
     jsvm_dir = None
+    prefix = None
 
     @property
     def code_coverage_enabled(self):
@@ -81,6 +82,18 @@ class CodeCoverageMixin(object):
     def _set_gcov_prefix(self, action):
         if not self.code_coverage_enabled:
             return
+
+        if mozinfo.os == 'linux':
+            self.prefix = '/builds/worker/workspace/build/src/'
+            strip_count = self.prefix.count('/')
+        elif mozinfo.os == 'win':
+            self.prefix = 'z:/build/build/src/'
+            
+            
+            strip_count = self.prefix.count('/') + 1
+
+        os.environ['GCOV_PREFIX_STRIP'] = str(strip_count)
+
         
         self.gcov_dir = tempfile.mkdtemp()
         os.environ['GCOV_PREFIX'] = self.gcov_dir
@@ -139,31 +152,16 @@ class CodeCoverageMixin(object):
         if not self.code_coverage_enabled:
             return
 
+        del os.environ['GCOV_PREFIX_STRIP']
         del os.environ['GCOV_PREFIX']
         del os.environ['JS_CODE_COVERAGE_OUTPUT_DIR']
 
         if not self.ccov_upload_disabled:
-            
-            
-            
-            canary_dirs = ['browser', 'docshell', 'dom', 'js', 'layout', 'toolkit', 'xpcom', 'xpfe']
-            rel_topsrcdir = None
-            for root, dirs, files in os.walk(self.gcov_dir):
-                
-                if any(d in dirs for d in canary_dirs):
-                    rel_topsrcdir = root
-                    break
-
-            if rel_topsrcdir is None:
-                
-                
-                self.fatal("Could not find relative topsrcdir in code coverage data!")
-
             dirs = self.query_abs_dirs()
 
             
             file_path_gcda = os.path.join(dirs['abs_blob_upload_dir'], 'code-coverage-gcda.zip')
-            self.run_command(['zip', '-r', file_path_gcda, '.'], cwd=rel_topsrcdir)
+            self.run_command(['zip', '-r', file_path_gcda, '.'], cwd=self.gcov_dir)
 
             
             file_path_jsvm = os.path.join(dirs['abs_blob_upload_dir'], 'code-coverage-jsvm.zip')
@@ -173,16 +171,11 @@ class CodeCoverageMixin(object):
             
             self.download_file(self.url_to_gcno, file_name=None, parent_dir=self.grcov_dir)
 
-            if mozinfo.os == 'linux':
-                prefix = '/builds/worker/workspace/build/src/'
-            elif mozinfo.os == 'win':
-                prefix = 'z:/build/build/src/'
-
             
             grcov_command = [
                 os.path.join(self.grcov_dir, 'grcov'),
                 '-t', 'lcov',
-                '-p', prefix,
+                '-p', self.prefix,
                 '--ignore-dir', 'gcc',
                 os.path.join(self.grcov_dir, 'target.code-coverage-gcno.zip'), file_path_gcda
             ]
