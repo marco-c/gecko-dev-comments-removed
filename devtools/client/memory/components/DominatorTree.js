@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { DOM: dom, createClass, PropTypes, createFactory } = require("devtools/client/shared/vendor/react");
+const { DOM: dom, Component, PropTypes, createFactory } = require("devtools/client/shared/vendor/react");
 const { assert } = require("devtools/shared/DevToolsUtils");
 const { createParentMap } = require("devtools/shared/heapsnapshot/CensusUtils");
 const Tree = createFactory(require("devtools/client/shared/components/Tree"));
@@ -20,18 +20,18 @@ const DOMINATOR_TREE_AUTO_EXPAND_DEPTH = 3;
 
 
 
-const DominatorTreeSubtreeFetching = createFactory(createClass({
-  displayName: "DominatorTreeSubtreeFetching",
-
-  propTypes: {
-    depth: PropTypes.number.isRequired,
-    focused: PropTypes.bool.isRequired,
-  },
+class DominatorTreeSubtreeFetchingClass extends Component {
+  static get propTypes() {
+    return {
+      depth: PropTypes.number.isRequired,
+      focused: PropTypes.bool.isRequired,
+    };
+  }
 
   shouldComponentUpdate(nextProps, nextState) {
     return this.props.depth !== nextProps.depth
       || this.props.focused !== nextProps.focused;
-  },
+  }
 
   render() {
     let {
@@ -51,26 +51,26 @@ const DominatorTreeSubtreeFetching = createFactory(createClass({
       })
     );
   }
-}));
+}
 
 
 
 
 
-const DominatorTreeSiblingLink = createFactory(createClass({
-  displayName: "DominatorTreeSiblingLink",
-
-  propTypes: {
-    depth: PropTypes.number.isRequired,
-    focused: PropTypes.bool.isRequired,
-    item: PropTypes.instanceOf(DominatorTreeLazyChildren).isRequired,
-    onLoadMoreSiblings: PropTypes.func.isRequired,
-  },
+class DominatorTreeSiblingLinkClass extends Component {
+  static get propTypes() {
+    return {
+      depth: PropTypes.number.isRequired,
+      focused: PropTypes.bool.isRequired,
+      item: PropTypes.instanceOf(DominatorTreeLazyChildren).isRequired,
+      onLoadMoreSiblings: PropTypes.func.isRequired,
+    };
+  }
 
   shouldComponentUpdate(nextProps, nextState) {
     return this.props.depth !== nextProps.depth
       || this.props.focused !== nextProps.focused;
-  },
+  }
 
   render() {
     let {
@@ -100,22 +100,19 @@ const DominatorTreeSiblingLink = createFactory(createClass({
       )
     );
   }
-}));
+}
 
-
-
-
-module.exports = createClass({
-  displayName: "DominatorTree",
-
-  propTypes: {
-    dominatorTree: dominatorTreeModel.isRequired,
-    onLoadMoreSiblings: PropTypes.func.isRequired,
-    onViewSourceInDebugger: PropTypes.func.isRequired,
-    onExpand: PropTypes.func.isRequired,
-    onCollapse: PropTypes.func.isRequired,
-    onFocus: PropTypes.func.isRequired,
-  },
+class DominatorTree extends Component {
+  static get propTypes() {
+    return {
+      dominatorTree: dominatorTreeModel.isRequired,
+      onLoadMoreSiblings: PropTypes.func.isRequired,
+      onViewSourceInDebugger: PropTypes.func.isRequired,
+      onExpand: PropTypes.func.isRequired,
+      onCollapse: PropTypes.func.isRequired,
+      onFocus: PropTypes.func.isRequired,
+    };
+  }
 
   shouldComponentUpdate(nextProps, nextState) {
     
@@ -125,7 +122,7 @@ module.exports = createClass({
     
     
     return this.props.dominatorTree !== nextProps.dominatorTree;
-  },
+  }
 
   render() {
     const { dominatorTree, onViewSourceInDebugger, onLoadMoreSiblings } = this.props;
@@ -216,4 +213,9 @@ module.exports = createClass({
       itemHeight: TREE_ROW_HEIGHT,
     });
   }
-});
+}
+
+const DominatorTreeSubtreeFetching = createFactory(DominatorTreeSubtreeFetchingClass);
+const DominatorTreeSiblingLink = createFactory(DominatorTreeSiblingLinkClass);
+
+module.exports = DominatorTree;
