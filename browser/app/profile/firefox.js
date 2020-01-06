@@ -1482,6 +1482,8 @@ pref("toolkit.telemetry.shutdownPingSender.enabled", true);
 
 pref("toolkit.telemetry.shutdownPingSender.enabledFirstSession", false);
 
+pref("toolkit.telemetry.firstShutdownPing.enabled", true);
+
 pref("toolkit.telemetry.newProfilePing.enabled", true);
 
 pref("toolkit.telemetry.updatePing.enabled", true);

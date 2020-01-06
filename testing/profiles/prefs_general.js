@@ -262,6 +262,9 @@ user_pref("toolkit.telemetry.bhrPing.enabled", false);
 user_pref("toolkit.telemetry.shutdownPingSender.enabledFirstSession", false);
 
 
+user_pref("toolkit.telemetry.firstShutdownPing.enabled", false);
+
+
 
 user_pref("toolkit.telemetry.test.pref1", true);
 user_pref("toolkit.telemetry.test.pref2", false);

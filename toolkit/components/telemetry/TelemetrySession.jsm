@@ -1699,7 +1699,24 @@ var Impl = {
       };
       p.push(TelemetryController.submitExternalPing(getPingType(shutdownPayload), shutdownPayload, options)
                                 .catch(e => this._log.error("saveShutdownPings - failed to submit shutdown ping", e)));
-     }
+
+      
+      
+      const sendFirstShutdownPing =
+        Services.prefs.getBoolPref(Utils.Preferences.ShutdownPingSender, false) &&
+        Services.prefs.getBoolPref(Utils.Preferences.FirstShutdownPingEnabled, false) &&
+        TelemetryReportingPolicy.isFirstRun();
+
+      if (sendFirstShutdownPing) {
+        let options = {
+            addClientId: true,
+            addEnvironment: true,
+            usePingSender: true,
+          };
+        p.push(TelemetryController.submitExternalPing("first-shutdown", shutdownPayload, options)
+                                  .catch(e => this._log.error("saveShutdownPings - failed to submit first shutdown ping", e)));
+      }
+    }
 
     
     
