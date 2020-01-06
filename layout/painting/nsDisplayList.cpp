@@ -3988,8 +3988,8 @@ nsDisplayImageContainer::ConfigureLayer(ImageLayer* aLayer,
                         : IntSize(imageWidth, imageHeight);
 
   const int32_t factor = mFrame->PresContext()->AppUnitsPerDevPixel();
-  const LayoutDeviceRect destRect =
-    LayoutDeviceRect::FromAppUnits(GetDestRect(), factor);
+  const LayoutDeviceRect destRect(
+    LayoutDeviceIntRect::FromAppUnitsToNearest(GetDestRect(), factor));
 
   const LayoutDevicePoint p = destRect.TopLeft();
   Matrix transform = Matrix::Translation(p.x, p.y);
@@ -4045,8 +4045,8 @@ nsDisplayImageContainer::CanOptimizeToImageLayer(LayerManager* aManager,
   }
 
   const int32_t factor = mFrame->PresContext()->AppUnitsPerDevPixel();
-  const LayoutDeviceRect destRect =
-    LayoutDeviceRect::FromAppUnits(GetDestRect(), factor);
+  const LayoutDeviceRect destRect(
+    LayoutDeviceIntRect::FromAppUnitsToNearest(GetDestRect(), factor));
 
   
   const gfxSize scale = gfxSize(destRect.width / imageWidth,
@@ -4422,6 +4422,10 @@ nsDisplayLayerEventRegions::AddFrame(nsDisplayListBuilder* aBuilder,
   if (borderBoxHasRoundedCorners ||
       (aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT)) {
     mMaybeHitRegion.Or(mMaybeHitRegion, borderBox);
+
+    
+    
+    mMaybeHitRegion.SimplifyOutward(8);
   } else {
     mHitRegion.Or(mHitRegion, borderBox);
   }
@@ -8359,7 +8363,7 @@ nsDisplayMask::BuildLayer(nsDisplayListBuilder* aBuilder,
   return container.forget();
 }
 
-void
+bool
 nsDisplayMask::PaintMask(nsDisplayListBuilder* aBuilder,
                          gfxContext* aMaskContext)
 {
@@ -8378,6 +8382,8 @@ nsDisplayMask::PaintMask(nsDisplayListBuilder* aBuilder,
   nsSVGIntegrationUtils::PaintMask(params);
 
   nsDisplayMaskGeometry::UpdateDrawResult(this, imgParmas.result);
+
+  return imgParmas.result == mozilla::image::DrawResult::SUCCESS;
 }
 
 LayerState
