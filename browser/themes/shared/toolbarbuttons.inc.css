@@ -19,6 +19,9 @@
   --toolbarbutton-height: 0;
 }
 
+:root[uidensity=compact] {
+  --toolbarbutton-inner-padding: 5px;
+}
 
 :root[uidensity=touch] {
   --toolbarbutton-inner-padding: 9px;
