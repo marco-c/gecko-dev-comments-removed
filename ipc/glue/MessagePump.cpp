@@ -65,8 +65,8 @@ private:
 } 
 } 
 
-MessagePump::MessagePump(nsIThread* aThread)
-: mThread(aThread)
+MessagePump::MessagePump(nsIEventTarget* aEventTarget)
+  : mEventTarget(aEventTarget)
 {
   mDoWorkEvent = new DoWorkRunnable(this);
 }
@@ -81,7 +81,7 @@ MessagePump::Run(MessagePump::Delegate* aDelegate)
   MOZ_ASSERT(keep_running_);
   MOZ_RELEASE_ASSERT(NS_IsMainThread(),
                      "Use mozilla::ipc::MessagePumpForNonMainThreads instead!");
-  MOZ_RELEASE_ASSERT(!mThread);
+  MOZ_RELEASE_ASSERT(!mEventTarget);
 
   nsIThread* thisThread = NS_GetCurrentThread();
   MOZ_ASSERT(thisThread);
@@ -134,8 +134,8 @@ void
 MessagePump::ScheduleWork()
 {
   
-  if (mThread) {
-    mThread->Dispatch(mDoWorkEvent, NS_DISPATCH_NORMAL);
+  if (mEventTarget) {
+    mEventTarget->Dispatch(mDoWorkEvent, NS_DISPATCH_NORMAL);
   } else {
     
     
@@ -158,8 +158,8 @@ MessagePump::ScheduleDelayedWork(const base::TimeTicks& aDelayedTime)
 {
   
   
-  MOZ_RELEASE_ASSERT(NS_GetCurrentThread() == mThread ||
-                     (!mThread && NS_IsMainThread()));
+  MOZ_RELEASE_ASSERT((!mEventTarget && NS_IsMainThread())
+                     || mEventTarget->IsOnCurrentThread());
 
   if (!mDelayedWorkTimer) {
     mDelayedWorkTimer = do_CreateInstance(kNS_TIMER_CID);
@@ -190,13 +190,12 @@ MessagePump::ScheduleDelayedWork(const base::TimeTicks& aDelayedTime)
 nsIEventTarget*
 MessagePump::GetXPCOMThread()
 {
-  if (mThread) {
-    return mThread;
+  if (mEventTarget) {
+    return mEventTarget;
   }
 
   
-  nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
-  return mainThread;
+  return GetMainThreadEventTarget();
 }
 
 void
@@ -309,12 +308,12 @@ MessagePumpForNonMainThreads::Run(base::MessagePump::Delegate* aDelegate)
   MOZ_RELEASE_ASSERT(!NS_IsMainThread(), "Use mozilla::ipc::MessagePump instead!");
 
   nsIThread* thread = NS_GetCurrentThread();
-  MOZ_RELEASE_ASSERT(mThread == thread);
+  MOZ_RELEASE_ASSERT(mEventTarget->IsOnCurrentThread());
 
   mDelayedWorkTimer = do_CreateInstance(kNS_TIMER_CID);
   MOZ_ASSERT(mDelayedWorkTimer);
 
-  if (NS_FAILED(mDelayedWorkTimer->SetTarget(thread))) {
+  if (NS_FAILED(mDelayedWorkTimer->SetTarget(mEventTarget))) {
     MOZ_CRASH("Failed to set timer target!");
   }
 
