@@ -1599,8 +1599,8 @@ TabChild::MaybeDispatchCoalescedMouseMoveEvents()
   
   
   RecvRealMouseButtonEvent(*event,
-                           mCoalescedWheelData.GetScrollableLayerGuid(),
-                           mCoalescedWheelData.GetInputBlockId());
+                           mCoalescedMouseData.GetScrollableLayerGuid(),
+                           mCoalescedMouseData.GetInputBlockId());
   if (mCoalescedMouseEventFlusher) {
     mCoalescedMouseData.Reset();
     mCoalescedMouseEventFlusher->RemoveObserver();
