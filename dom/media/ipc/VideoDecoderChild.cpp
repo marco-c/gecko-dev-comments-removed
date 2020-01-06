@@ -174,7 +174,7 @@ VideoDecoderChild::ActorDestroy(ActorDestroyReason aWhy)
 #endif 
 }
 
-MediaResult
+bool
 VideoDecoderChild::InitIPDL(const VideoInfo& aVideoInfo,
                             const layers::TextureFactoryIdentifier& aIdentifier)
 {
@@ -185,8 +185,7 @@ VideoDecoderChild::InitIPDL(const VideoInfo& aVideoInfo,
   
   
   if (!manager) {
-    return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
-                       RESULT_DETAIL("VideoDecoderManager is not available."));
+    return false;
   }
 
   
@@ -196,22 +195,18 @@ VideoDecoderChild::InitIPDL(const VideoInfo& aVideoInfo,
   
   
   if (!manager->CanSend()) {
-    return NS_OK;
+    return true;
   }
 
   mIPDLSelfRef = this;
   bool success = false;
-  nsCString errorDescription;
   if (manager->SendPVideoDecoderConstructor(this, aVideoInfo, aIdentifier,
                                             &success,
                                             &mBlacklistedD3D11Driver,
-                                            &mBlacklistedD3D9Driver,
-                                            &errorDescription)) {
+                                            &mBlacklistedD3D9Driver)) {
     mCanSend = true;
   }
-
-  return success ? MediaResult(NS_OK) :
-                   MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, errorDescription);
+  return success;
 }
 
 void
