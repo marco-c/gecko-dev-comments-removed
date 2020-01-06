@@ -63,11 +63,6 @@ async function openAndCheckCustomizationUIMenu(target) {
 
 
 add_task(async function test_main_menu_touch() {
-  if (!gPhotonStructure) {
-    ok(true, "Skipping test because we're not in Photon mode");
-    return;
-  }
-
   let mainMenu = document.getElementById("appMenu-popup");
   let target = document.getElementById("PanelUI-menu-button");
   await openAndCheckMenu(mainMenu, target);
@@ -75,11 +70,6 @@ add_task(async function test_main_menu_touch() {
 
 
 add_task(async function test_page_action_panel_touch() {
-  if (!gPhotonStructure) {
-    ok(true, "Skipping test because we're not in Photon mode");
-    return;
-  }
-
   let pageActionPanel = document.getElementById("page-action-panel");
   let target = document.getElementById("urlbar-page-action-button");
   await openAndCheckMenu(pageActionPanel, target);
@@ -88,11 +78,6 @@ add_task(async function test_page_action_panel_touch() {
 
 
 add_task(async function test_customizationui_panel_touch() {
-  if (!gPhotonStructure) {
-    ok(true, "Skipping test because we're not in Photon mode");
-    return;
-  }
-
   CustomizableUI.addWidgetToArea("library-button", CustomizableUI.AREA_NAVBAR);
   CustomizableUI.addWidgetToArea("history-panelmenu", CustomizableUI.AREA_NAVBAR);
 

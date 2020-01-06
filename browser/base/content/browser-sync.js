@@ -65,15 +65,14 @@ var gSync = {
            .sort((a, b) => a.name.localeCompare(b.name));
   },
 
-  _generateNodeGetters(usePhoton) {
-    let prefix = usePhoton ? "appMenu-" : "PanelUI-";
+  _generateNodeGetters() {
     for (let k of ["Status", "Avatar", "Label", "Container"]) {
       let prop = "appMenu" + k;
       let suffix = k.toLowerCase();
       delete this[prop];
       this.__defineGetter__(prop, function() {
         delete this[prop];
-        return this[prop] = document.getElementById(prefix + "fxa-" + suffix);
+        return this[prop] = document.getElementById("appMenu-fxa-" + suffix);
       });
     }
   },
@@ -88,8 +87,6 @@ var gSync = {
         this.updateAllUI(state);
       }
     }
-
-    this.maybeMoveSyncedTabsButton();
   },
 
   init() {
@@ -102,14 +99,7 @@ var gSync = {
       Services.obs.addObserver(this, topic, true);
     }
 
-    
-    
-    XPCOMUtils.defineLazyPreferenceGetter(this, "gPhotonStructure",
-      "browser.photon.structure.enabled", (pref, old, newValue) => {
-      this._generateNodeGetters(newValue);
-      this._maybeUpdateUIState();
-    });
-    this._generateNodeGetters(this.gPhotonStructure);
+    this._generateNodeGetters();
 
     
     let broadcaster = document.getElementById("sync-status");
@@ -546,28 +536,6 @@ var gSync = {
       
       PanelUI.showSubView("PanelUI-remotetabs", anchor, area);
     }
-  },
-
-  
-
-
-
-
-
-
-  maybeMoveSyncedTabsButton() {
-    if (gPhotonStructure) {
-      return;
-    }
-    const prefName = "browser.migrated-sync-button";
-    let migrated = Services.prefs.getBoolPref(prefName, false);
-    if (migrated) {
-      return;
-    }
-    if (!CustomizableUI.getPlacementOfWidget("sync-button")) {
-      CustomizableUI.addWidgetToArea("sync-button", CustomizableUI.AREA_PANEL);
-    }
-    Services.prefs.setBoolPref(prefName, true);
   },
 
   
