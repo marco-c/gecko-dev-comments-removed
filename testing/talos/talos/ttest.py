@@ -13,6 +13,7 @@
 """
 from __future__ import absolute_import, print_function
 
+import json
 import os
 import platform
 import shutil
@@ -108,11 +109,13 @@ class TTest(object):
         if browser_config.get('stylothreads', 0) > 0:
             setup.env['STYLO_THREADS'] = str(browser_config['stylothreads'])
 
-        test_config['url'] = utils.interpolate(
-            test_config['url'],
-            profile=setup.profile_dir,
-            firefox=browser_config['browser_path']
-        )
+        
+        if test_config.get('url', None) is not None:
+            test_config['url'] = utils.interpolate(
+                test_config['url'],
+                profile=setup.profile_dir,
+                firefox=browser_config['browser_path']
+            )
 
         
         
@@ -170,6 +173,8 @@ class TTest(object):
                 
                 
                 timeout += 5 * 60
+                
+                setup.env["TPPROFILINGINFO"] = json.dumps(setup.gecko_profile.profiling_info)
 
             command_args = utils.GenerateBrowserCommandLine(
                 browser_config["browser_path"],

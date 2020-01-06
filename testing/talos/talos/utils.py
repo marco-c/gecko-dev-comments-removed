@@ -5,7 +5,6 @@
 """Utility functions for Talos"""
 from __future__ import absolute_import
 
-import json
 import os
 import platform
 import re
@@ -121,7 +120,6 @@ def parse_pref(value):
 def GenerateBrowserCommandLine(browser_path, extra_args, profile_dir,
                                url, profiling_info=None):
     
-
     command_args = [browser_path.strip()]
     if platform.system() == "Darwin":
         command_args.extend(['-foreground'])
@@ -139,15 +137,17 @@ def GenerateBrowserCommandLine(browser_path, extra_args, profile_dir,
         
         
         
-        if url.find(' -tp') != -1:
-            command_args.extend(['-tpprofilinginfo',
-                                 json.dumps(profiling_info)])
-        elif url.find('?') != -1:
-            url += '&' + urllib.urlencode(profiling_info)
-        else:
-            url += '?' + urllib.urlencode(profiling_info)
+        if url is not None:
+            
+            if url.find('?') != -1:
+                url += '&' + urllib.urlencode(profiling_info)
+            else:
+                url += '?' + urllib.urlencode(profiling_info)
+            command_args.extend(url.split(' '))
 
-    command_args.extend(url.split(' '))
+    
+    if url is not None:
+        command_args.extend(url.split(' '))
 
     return command_args
 
