@@ -38,6 +38,10 @@ class BitReader;
 
 struct SPSData
 {
+  bool operator==(const SPSData& aOther) const;
+
+  bool valid;
+
   
   
 
