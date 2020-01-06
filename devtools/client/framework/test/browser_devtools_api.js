@@ -17,8 +17,6 @@ thisTestLeaksUncaughtRejectionsAndShouldBeFixed("TypeError: this.doc is undefine
 const toolId1 = "test-tool-1";
 const toolId2 = "test-tool-2";
 
-var EventEmitter = require("devtools/shared/event-emitter");
-
 function test() {
   addTab("about:blank").then(runTests1);
 }
@@ -32,7 +30,7 @@ function runTests1(aTab) {
     url: "about:blank",
     label: "someLabel",
     build: function (iframeWindow, toolbox) {
-      let panel = new DevToolPanel(iframeWindow, toolbox);
+      let panel = createTestPanel(iframeWindow, toolbox);
       return panel.open();
     },
   };
@@ -93,7 +91,7 @@ function runTests2() {
     url: "about:blank",
     label: "someLabel",
     build: function (iframeWindow, toolbox) {
-      return new DevToolPanel(iframeWindow, toolbox);
+      return createTestPanel(iframeWindow, toolbox);
     },
   };
 
@@ -211,56 +209,3 @@ function finishUp() {
   gBrowser.removeCurrentTab();
   finish();
 }
-
-
-
-
-
-
-
-
-
-function DevToolPanel(iframeWindow, toolbox) {
-  EventEmitter.decorate(this);
-
-  this._toolbox = toolbox;
-
-  
-
-
-
-
-
-}
-
-DevToolPanel.prototype = {
-  open: function () {
-    let deferred = defer();
-
-    executeSoon(() => {
-      this._isReady = true;
-      this.emit("ready");
-      deferred.resolve(this);
-    });
-
-    return deferred.promise;
-  },
-
-  get target() {
-    return this._toolbox.target;
-  },
-
-  get toolbox() {
-    return this._toolbox;
-  },
-
-  get isReady() {
-    return this._isReady;
-  },
-
-  _isReady: false,
-
-  destroy: function DTI_destroy() {
-    return defer(null);
-  },
-};
