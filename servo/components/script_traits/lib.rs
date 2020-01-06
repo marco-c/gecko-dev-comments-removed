@@ -41,6 +41,7 @@ pub mod webdriver_msg;
 
 use app_units::Au;
 use bluetooth_traits::BluetoothRequest;
+use canvas_traits::CanvasData;
 use devtools_traits::{DevtoolScriptControlMsg, ScriptToDevtoolsControlMsg, WorkerId};
 use euclid::{Size2D, Length, Point2D, Vector2D, Rect, ScaleFactor, TypedSize2D};
 use gfx_traits::Epoch;
@@ -831,7 +832,7 @@ pub trait PaintWorkletExecutor: Sync + Send {
     
     fn draw_a_paint_image(&self,
                           name: Atom,
-                          concrete_object_size: Size2D<Au>)
-                          -> Result<Image, PaintWorkletError>;
+                          concrete_object_size: Size2D<Au>,
+                          sender: IpcSender<CanvasData>);
 }
 

@@ -256,6 +256,9 @@ pub enum MainThreadScriptMsg {
     DOMManipulation(DOMManipulationTask),
     
     UserInteraction(UserInteractionTask),
+    
+    
+    WorkletLoaded(PipelineId),
 }
 
 impl OpaqueSender<CommonScriptMsg> for Box<ScriptChan + Send> {
@@ -724,6 +727,7 @@ impl ScriptThread {
                     devtools_chan: script_thread.devtools_chan.clone(),
                     constellation_chan: script_thread.constellation_chan.clone(),
                     scheduler_chan: script_thread.scheduler_chan.clone(),
+                    image_cache: script_thread.image_cache.clone(),
                 };
                 Rc::new(WorkletThreadPool::spawn(chan, init))
             }).clone()
@@ -828,6 +832,7 @@ impl ScriptThread {
         debug!("Starting script thread.");
         while self.handle_msgs() {
             
+            debug!("Running script thread.");
         }
         debug!("Stopped script thread.");
     }
@@ -856,6 +861,7 @@ impl ScriptThread {
         let mut sequential = vec![];
 
         
+        debug!("Waiting for event.");
         let mut event = {
             let sel = Select::new();
             let mut script_port = sel.handle(&self.port);
@@ -887,6 +893,7 @@ impl ScriptThread {
                 panic!("unexpected select result")
             }
         };
+        debug!("Got event.");
 
         
         let mut mouse_move_event_index = None;
@@ -983,6 +990,7 @@ impl ScriptThread {
         }
 
         
+        debug!("Processing events.");
         for msg in sequential {
             debug!("Processing event {:?}.", msg);
             let category = self.categorize_msg(&msg);
@@ -1025,6 +1033,7 @@ impl ScriptThread {
         
         
         
+        debug!("Issuing batched reflows.");
         for (_, document) in self.documents.borrow().iter() {
             let window = document.window();
             let pending_reflows = window.get_pending_reflow_count();
@@ -1189,11 +1198,16 @@ impl ScriptThread {
                 
                 
                 if !runnable.is_cancelled() {
+                    debug!("Running runnable.");
                     runnable.main_thread_handler(self)
+                } else {
+                    debug!("Not running cancelled runnable.");
                 }
             }
             MainThreadScriptMsg::Common(CommonScriptMsg::CollectReports(reports_chan)) =>
                 self.collect_reports(reports_chan),
+            MainThreadScriptMsg::WorkletLoaded(pipeline_id) =>
+                self.handle_worklet_loaded(pipeline_id),
             MainThreadScriptMsg::DOMManipulation(task) =>
                 task.handle_task(self),
             MainThreadScriptMsg::UserInteraction(task) =>
@@ -1756,6 +1770,14 @@ impl ScriptThread {
         let document = self.documents.borrow().find_document(pipeline_id);
         if let Some(document) = document {
             self.rebuild_and_force_reflow(&document, ReflowReason::WebFontLoaded);
+        }
+    }
+
+    
+    fn handle_worklet_loaded(&self, pipeline_id: PipelineId) {
+        let document = self.documents.borrow().find_document(pipeline_id);
+        if let Some(document) = document {
+            self.rebuild_and_force_reflow(&document, ReflowReason::WorkletLoaded);
         }
     }
 
