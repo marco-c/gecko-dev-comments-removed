@@ -947,6 +947,12 @@ var TelemetrySendImpl = {
   sendPings(currentPings, persistedPingIds) {
     let pingSends = [];
 
+    
+    currentPings = [
+      ...currentPings.filter(ping => ping.type === "health"),
+      ...currentPings.filter(ping => ping.type !== "health"),
+    ];
+
     for (let current of currentPings) {
       let ping = current;
       let p = (async () => {
