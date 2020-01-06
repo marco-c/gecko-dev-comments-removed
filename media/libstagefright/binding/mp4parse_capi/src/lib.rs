@@ -841,7 +841,10 @@ impl<'a> Iterator for SampleToChunkIterator<'a> {
                         self.sample_count = next.samples_per_chunk;
                         
                         
-                        ((next.first_chunk - 1) .. next.first_chunk + self.remain_chunk_count -1)
+                        match next.first_chunk.checked_add(self.remain_chunk_count) {
+                            Some(r) => ((next.first_chunk - 1) .. r - 1),
+                            _ => (0 .. 0),
+                        }
                     },
                     _ => (0 .. 0),
                 };
