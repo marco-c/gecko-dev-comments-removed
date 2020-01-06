@@ -63,7 +63,7 @@
  	__webpack_require__.p = "";
 
  	
- 	return __webpack_require__(__webpack_require__.s = 26);
+ 	return __webpack_require__(__webpack_require__.s = 25);
  })
 
  ([
@@ -103,7 +103,7 @@ const globalImportContext = typeof Window === "undefined" ? BACKGROUND_PROCESS :
 
 
 const actionTypes = {};
-for (const type of ["BLOCK_URL", "BOOKMARK_URL", "DELETE_BOOKMARK_BY_ID", "DELETE_HISTORY_URL", "DELETE_HISTORY_URL_CONFIRM", "DIALOG_CANCEL", "DIALOG_OPEN", "FEED_INIT", "INIT", "LOCALE_UPDATED", "MIGRATION_CANCEL", "MIGRATION_START", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_UNLOAD", "NEW_TAB_VISIBLE", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "PINNED_SITES_UPDATED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_CHANGED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINK_BLOCKED", "PLACES_LINK_DELETED", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_REGISTER", "SECTION_ROWS_UPDATE", "SET_PREF", "SNIPPETS_DATA", "SNIPPETS_RESET", "SYSTEM_TICK", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_PIN", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "UNINIT"]) {
+for (const type of ["BLOCK_URL", "BOOKMARK_URL", "DELETE_BOOKMARK_BY_ID", "DELETE_HISTORY_URL", "DELETE_HISTORY_URL_CONFIRM", "DIALOG_CANCEL", "DIALOG_OPEN", "FEED_INIT", "INIT", "LOCALE_UPDATED", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_UNLOAD", "NEW_TAB_VISIBLE", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "PINNED_SITES_UPDATED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_CHANGED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINK_BLOCKED", "PLACES_LINK_DELETED", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_REGISTER", "SECTION_ROWS_UPDATE", "SET_PREF", "SNIPPETS_DATA", "SNIPPETS_RESET", "SYSTEM_TICK", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_PIN", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "UNINIT"]) {
   actionTypes[type] = type;
 }
 
@@ -314,7 +314,6 @@ module.exports = ReactRedux;
 
 
 
-
 module.exports = function shortURL(link) {
   if (!link.url && !link.hostname) {
     return "";
@@ -327,7 +326,7 @@ module.exports = function shortURL(link) {
   const eTLDLength = (eTLD || "").length || hostname.match(/\.com$/) && 3;
   const eTLDExtra = eTLDLength > 0 ? -(eTLDLength + 1) : Infinity;
   
-  return hostname.slice(0, eTLDExtra).toLowerCase() || hostname || link.title || link.url;
+  return hostname.slice(0, eTLDExtra).toLowerCase() || hostname || link.title;
 };
 
  }),
@@ -349,7 +348,7 @@ var _require2 = __webpack_require__(1);
 
 const ac = _require2.actionCreators;
 
-const linkMenuOptions = __webpack_require__(22);
+const linkMenuOptions = __webpack_require__(21);
 const DEFAULT_SITE_MENU_OPTIONS = ["CheckPinTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow"];
 
 class LinkMenu extends React.Component {
@@ -421,12 +420,11 @@ var _require2 = __webpack_require__(2);
 const addLocaleData = _require2.addLocaleData,
       IntlProvider = _require2.IntlProvider;
 
-const TopSites = __webpack_require__(20);
-const Search = __webpack_require__(18);
+const TopSites = __webpack_require__(19);
+const Search = __webpack_require__(17);
 const ConfirmDialog = __webpack_require__(14);
-const ManualMigration = __webpack_require__(16);
-const PreferencesPane = __webpack_require__(17);
-const Sections = __webpack_require__(19);
+const PreferencesPane = __webpack_require__(16);
+const Sections = __webpack_require__(18);
 
 
 const RTL_LIST = ["ar", "he", "fa", "ur"];
@@ -470,6 +468,7 @@ class Base extends React.Component {
           initialized = _props$App.initialized;
 
     const prefs = props.Prefs.values;
+
     if (!initialized) {
       return null;
     }
@@ -484,7 +483,6 @@ class Base extends React.Component {
           "main",
           null,
           prefs.showSearch && React.createElement(Search, null),
-          !prefs.migrationExpired && React.createElement(ManualMigration, null),
           prefs.showTopSites && React.createElement(TopSites, null),
           React.createElement(Sections, null),
           React.createElement(ConfirmDialog, null)
@@ -508,7 +506,7 @@ var _require = __webpack_require__(1);
 
 const at = _require.actionTypes;
 
-var _require2 = __webpack_require__(23);
+var _require2 = __webpack_require__(22);
 
 const perfSvc = _require2.perfService;
 
@@ -581,7 +579,7 @@ module.exports = class DetectUserSessionStart {
 
 
 
-var _require = __webpack_require__(25);
+var _require = __webpack_require__(24);
 
 const createStore = _require.createStore,
       combineReducers = _require.combineReducers,
@@ -646,7 +644,7 @@ module.exports = function initStore(reducers) {
       store.dispatch(msg.data);
     } catch (ex) {
       console.error("Content msg:", msg, "Dispatch error: ", ex); 
-      dump(`Content msg: ${JSON.stringify(msg)}\nDispatch error: ${ex}\n${ex.stack}`);
+      dump(`Content msg: ${ JSON.stringify(msg) }\nDispatch error: ${ ex }\n${ ex.stack }`);
     }
   });
 
@@ -855,7 +853,7 @@ class SnippetsProvider {
     const payload = this.snippetsMap.get("snippets");
 
     if (!snippetsEl) {
-      throw new Error(`No element was found with id '${this.elementId}'.`);
+      throw new Error(`No element was found with id '${ this.elementId }'.`);
     }
 
     
@@ -922,7 +920,7 @@ class SnippetsProvider {
 module.exports.SnippetsMap = SnippetsMap;
 module.exports.SnippetsProvider = SnippetsProvider;
 module.exports.SNIPPETS_UPDATE_INTERVAL_MS = SNIPPETS_UPDATE_INTERVAL_MS;
-}.call(exports, __webpack_require__(24)))
+}.call(exports, __webpack_require__(23)))
 
  }),
 
@@ -1161,41 +1159,6 @@ function Sections() {
         }
         return section;
       });
-    case at.PLACES_BOOKMARK_ADDED:
-      if (!action.data) {
-        return prevState;
-      }
-      return prevState.map(section => Object.assign({}, section, {
-        rows: section.rows.map(item => {
-          
-          if (item.url === action.data.url) {
-            var _action$data3 = action.data;
-            const bookmarkGuid = _action$data3.bookmarkGuid,
-                  bookmarkTitle = _action$data3.bookmarkTitle,
-                  lastModified = _action$data3.lastModified;
-
-            Object.assign(item, { bookmarkGuid, bookmarkTitle, bookmarkDateCreated: lastModified });
-          }
-          return item;
-        })
-      }));
-    case at.PLACES_BOOKMARK_REMOVED:
-      if (!action.data) {
-        return prevState;
-      }
-      return prevState.map(section => Object.assign({}, section, {
-        rows: section.rows.map(item => {
-          
-          if (item.url === action.data.url) {
-            const newSite = Object.assign({}, item);
-            delete newSite.bookmarkGuid;
-            delete newSite.bookmarkTitle;
-            delete newSite.bookmarkDateCreated;
-            return newSite;
-          }
-          return item;
-        })
-      }));
     case at.PLACES_LINK_DELETED:
     case at.PLACES_LINK_BLOCKED:
       return prevState.map(section => Object.assign({}, section, { rows: section.rows.filter(site => site.url !== action.data.url) }));
@@ -1261,18 +1224,9 @@ class Card extends React.Component {
   constructor(props) {
     super(props);
     this.state = { showContextMenu: false, activeCard: null };
-    this.onMenuButtonClick = this.onMenuButtonClick.bind(this);
-    this.onMenuUpdate = this.onMenuUpdate.bind(this);
   }
-  onMenuButtonClick(event) {
-    event.preventDefault();
-    this.setState({
-      activeCard: this.props.index,
-      showContextMenu: true
-    });
-  }
-  onMenuUpdate(showContextMenu) {
-    this.setState({ showContextMenu });
+  toggleContextMenu(event, index) {
+    this.setState({ showContextMenu: true, activeCard: index });
   }
   render() {
     var _props = this.props;
@@ -1290,14 +1244,14 @@ class Card extends React.Component {
 
     return React.createElement(
       "li",
-      { className: `card-outer${isContextMenuOpen ? " active" : ""}` },
+      { className: `card-outer${ isContextMenuOpen ? " active" : "" }` },
       React.createElement(
         "a",
         { href: link.url },
         React.createElement(
           "div",
           { className: "card" },
-          link.image && React.createElement("div", { className: "card-preview-image", style: { backgroundImage: `url(${link.image})` } }),
+          link.image && React.createElement("div", { className: "card-preview-image", style: { backgroundImage: `url(${ link.image })` } }),
           React.createElement(
             "div",
             { className: "card-details" },
@@ -1310,17 +1264,17 @@ class Card extends React.Component {
             ),
             React.createElement(
               "div",
-              { className: `card-text${link.image ? "" : " full-height"}` },
+              { className: `card-text${ link.image ? "" : " full-height" }` },
               React.createElement(
                 "h4",
-                { className: "card-title", dir: "auto" },
+                { className: "card-title" },
                 " ",
                 link.title,
                 " "
               ),
               React.createElement(
                 "p",
-                { className: "card-description", dir: "auto" },
+                { className: "card-description" },
                 " ",
                 link.description,
                 " "
@@ -1329,7 +1283,7 @@ class Card extends React.Component {
             React.createElement(
               "div",
               { className: "card-context" },
-              React.createElement("span", { className: `card-context-icon icon icon-${icon}` }),
+              React.createElement("span", { className: `card-context-icon icon icon-${ icon }` }),
               React.createElement(
                 "div",
                 { className: "card-context-label" },
@@ -1342,20 +1296,23 @@ class Card extends React.Component {
       React.createElement(
         "button",
         { className: "context-menu-button",
-          onClick: this.onMenuButtonClick },
+          onClick: e => {
+            e.preventDefault();
+            this.toggleContextMenu(e, index);
+          } },
         React.createElement(
           "span",
           { className: "sr-only" },
-          `Open context menu for ${link.title}`
+          `Open context menu for ${ link.title }`
         )
       ),
       React.createElement(LinkMenu, {
         dispatch: dispatch,
+        visible: isContextMenuOpen,
+        onUpdate: val => this.setState({ showContextMenu: val }),
         index: index,
-        onUpdate: this.onMenuUpdate,
-        options: link.context_menu_options || contextMenuOptions,
         site: link,
-        visible: isContextMenuOpen })
+        options: link.context_menu_options || contextMenuOptions })
     );
   }
 }
@@ -1380,10 +1337,6 @@ module.exports = {
   trending: {
     intlID: "type_label_recommended",
     icon: "trending"
-  },
-  now: {
-    intlID: "type_label_now",
-    icon: "now"
   }
 };
 
@@ -1536,8 +1489,24 @@ class ContextMenu extends React.Component {
       window.removeEventListener("click", this.hideContext);
     }
   }
-  componentWillUnmount() {
+  componentDidUnmount() {
     window.removeEventListener("click", this.hideContext);
+  }
+  onKeyDown(event, option) {
+    switch (event.key) {
+      case "Tab":
+        
+        
+        
+        if (event.shiftKey && option.first || !event.shiftKey && option.last) {
+          this.hideContext();
+        }
+        break;
+      case "Enter":
+        this.hideContext();
+        option.onClick();
+        break;
+    }
   }
   render() {
     return React.createElement(
@@ -1546,137 +1515,32 @@ class ContextMenu extends React.Component {
       React.createElement(
         "ul",
         { role: "menu", className: "context-menu-list" },
-        this.props.options.map((option, i) => option.type === "separator" ? React.createElement("li", { key: i, className: "separator" }) : React.createElement(ContextMenuItem, { key: i, option: option, hideContext: this.hideContext }))
-      )
-    );
-  }
-}
-
-class ContextMenuItem extends React.Component {
-  constructor(props) {
-    super(props);
-    this.onClick = this.onClick.bind(this);
-    this.onKeyDown = this.onKeyDown.bind(this);
-  }
-  onClick() {
-    this.props.hideContext();
-    this.props.option.onClick();
-  }
-  onKeyDown(event) {
-    const option = this.props.option;
-
-    switch (event.key) {
-      case "Tab":
-        
-        
-        
-        if (event.shiftKey && option.first || !event.shiftKey && option.last) {
-          this.props.hideContext();
-        }
-        break;
-      case "Enter":
-        this.props.hideContext();
-        option.onClick();
-        break;
-    }
-  }
-  render() {
-    const option = this.props.option;
-
-    return React.createElement(
-      "li",
-      { role: "menuitem", className: "context-menu-item" },
-      React.createElement(
-        "a",
-        { onClick: this.onClick, onKeyDown: this.onKeyDown, tabIndex: "0" },
-        option.icon && React.createElement("span", { className: `icon icon-spacer icon-${option.icon}` }),
-        option.label
+        this.props.options.map((option, i) => {
+          if (option.type === "separator") {
+            return React.createElement("li", { key: i, className: "separator" });
+          }
+          return React.createElement(
+            "li",
+            { role: "menuitem", className: "context-menu-item", key: i },
+            React.createElement(
+              "a",
+              { tabIndex: "0",
+                onKeyDown: e => this.onKeyDown(e, option),
+                onClick: () => {
+                  this.hideContext();
+                  option.onClick();
+                } },
+              option.icon && React.createElement("span", { className: `icon icon-spacer icon-${ option.icon }` }),
+              option.label
+            )
+          );
+        })
       )
     );
   }
 }
 
 module.exports = ContextMenu;
-module.exports.ContextMenu = ContextMenu;
-module.exports.ContextMenuItem = ContextMenuItem;
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-const React = __webpack_require__(0);
-
-var _require = __webpack_require__(3);
-
-const connect = _require.connect;
-
-var _require2 = __webpack_require__(2);
-
-const FormattedMessage = _require2.FormattedMessage;
-
-var _require3 = __webpack_require__(1);
-
-const at = _require3.actionTypes,
-      ac = _require3.actionCreators;
-
-
-
-
-
-
-
-
-
-
-class ManualMigration extends React.Component {
-  constructor(props) {
-    super(props);
-    this.onLaunchTour = this.onLaunchTour.bind(this);
-    this.onCancelTour = this.onCancelTour.bind(this);
-  }
-  onLaunchTour() {
-    this.props.dispatch(ac.SendToMain({ type: at.MIGRATION_START }));
-    this.props.dispatch(ac.UserEvent({ event: at.MIGRATION_START }));
-  }
-
-  onCancelTour() {
-    this.props.dispatch(ac.SendToMain({ type: at.MIGRATION_CANCEL }));
-    this.props.dispatch(ac.UserEvent({ event: at.MIGRATION_CANCEL }));
-  }
-
-  render() {
-    return React.createElement(
-      "div",
-      { className: "manual-migration-container" },
-      React.createElement(
-        "p",
-        null,
-        React.createElement("span", { className: "icon icon-info" }),
-        React.createElement(FormattedMessage, { id: "manual_migration_explanation" })
-      ),
-      React.createElement(
-        "div",
-        { className: "manual-migration-actions actions" },
-        React.createElement(
-          "button",
-          { onClick: this.onCancelTour },
-          React.createElement(FormattedMessage, { id: "manual_migration_cancel_button" })
-        ),
-        React.createElement(
-          "button",
-          { className: "done", onClick: this.onLaunchTour },
-          React.createElement(FormattedMessage, { id: "manual_migration_import_button" })
-        )
-      )
-    );
-  }
-}
-
-module.exports = connect()(ManualMigration);
-module.exports._unconnected = ManualMigration;
 
  }),
 
@@ -1757,7 +1621,7 @@ class PreferencesPane extends React.Component {
         "div",
         { className: "prefs-pane-button" },
         React.createElement("button", {
-          className: `prefs-button icon ${isVisible ? "icon-dismiss" : "icon-settings"}`,
+          className: `prefs-button icon ${ isVisible ? "icon-dismiss" : "icon-settings" }`,
           title: props.intl.formatMessage({ id: isVisible ? "settings_pane_done_button" : "settings_pane_button_label" }),
           onClick: this.togglePane })
       ),
@@ -1766,7 +1630,7 @@ class PreferencesPane extends React.Component {
         { className: "prefs-pane" },
         React.createElement(
           "div",
-          { className: `sidebar ${isVisible ? "" : "hidden"}` },
+          { className: `sidebar ${ isVisible ? "" : "hidden" }` },
           React.createElement(
             "div",
             { className: "prefs-modal-inner-wrapper" },
@@ -1848,12 +1712,7 @@ class Search extends React.Component {
   }
   onInputMount(input) {
     if (input) {
-      
-      
-      
-      
-      
-      this.controller = new ContentSearchUIController(input, input.parentNode, "newtab", "newtab");
+      this.controller = new ContentSearchUIController(input, input.parentNode, "activitystream", "activitystream");
       addEventListener("ContentSearchClient", this);
     } else {
       this.controller = null;
@@ -1925,7 +1784,7 @@ var _require2 = __webpack_require__(2);
 const FormattedMessage = _require2.FormattedMessage;
 
 const Card = __webpack_require__(12);
-const Topics = __webpack_require__(21);
+const Topics = __webpack_require__(20);
 
 class Section extends React.Component {
   render() {
@@ -1953,7 +1812,7 @@ class Section extends React.Component {
         React.createElement(
           "h3",
           { className: "section-title" },
-          React.createElement("span", { className: `icon icon-small-spacer icon-${icon}` }),
+          React.createElement("span", { className: `icon icon-small-spacer icon-${ icon }` }),
           React.createElement(FormattedMessage, title)
         ),
         infoOption && React.createElement(
@@ -1997,7 +1856,7 @@ class Section extends React.Component {
         React.createElement(
           "div",
           { className: "empty-state" },
-          React.createElement("img", { className: `empty-state-icon icon icon-${emptyState.icon}` }),
+          React.createElement("img", { className: `empty-state-icon icon icon-${ emptyState.icon }` }),
           React.createElement(
             "p",
             { className: "empty-state-message" },
@@ -2056,29 +1915,16 @@ class TopSite extends React.Component {
   constructor(props) {
     super(props);
     this.state = { showContextMenu: false, activeTile: null };
-    this.onLinkClick = this.onLinkClick.bind(this);
-    this.onMenuButtonClick = this.onMenuButtonClick.bind(this);
-    this.onMenuUpdate = this.onMenuUpdate.bind(this);
   }
   toggleContextMenu(event, index) {
-    this.setState({
-      activeTile: index,
-      showContextMenu: true
-    });
+    this.setState({ showContextMenu: true, activeTile: index });
   }
-  onLinkClick() {
+  trackClick() {
     this.props.dispatch(ac.UserEvent({
       event: "CLICK",
       source: TOP_SITES_SOURCE,
       action_position: this.props.index
     }));
-  }
-  onMenuButtonClick(event) {
-    event.preventDefault();
-    this.toggleContextMenu(event, this.props.index);
-  }
-  onMenuUpdate(showContextMenu) {
-    this.setState({ showContextMenu });
   }
   render() {
     var _props = this.props;
@@ -2088,15 +1934,15 @@ class TopSite extends React.Component {
 
     const isContextMenuOpen = this.state.showContextMenu && this.state.activeTile === index;
     const title = link.pinTitle || shortURL(link);
-    const screenshotClassName = `screenshot${link.screenshot ? " active" : ""}`;
-    const topSiteOuterClassName = `top-site-outer${isContextMenuOpen ? " active" : ""}`;
-    const style = { backgroundImage: link.screenshot ? `url(${link.screenshot})` : "none" };
+    const screenshotClassName = `screenshot${ link.screenshot ? " active" : "" }`;
+    const topSiteOuterClassName = `top-site-outer${ isContextMenuOpen ? " active" : "" }`;
+    const style = { backgroundImage: link.screenshot ? `url(${ link.screenshot })` : "none" };
     return React.createElement(
       "li",
       { className: topSiteOuterClassName, key: link.guid || link.url },
       React.createElement(
         "a",
-        { href: link.url, onClick: this.onLinkClick },
+        { onClick: () => this.trackClick(), href: link.url },
         React.createElement(
           "div",
           { className: "tile", "aria-hidden": true },
@@ -2109,32 +1955,36 @@ class TopSite extends React.Component {
         ),
         React.createElement(
           "div",
-          { className: `title ${link.isPinned ? "pinned" : ""}` },
+          { className: `title ${ link.isPinned ? "pinned" : "" }` },
           link.isPinned && React.createElement("div", { className: "icon icon-pin-small" }),
           React.createElement(
             "span",
-            { dir: "auto" },
+            null,
             title
           )
         )
       ),
       React.createElement(
         "button",
-        { className: "context-menu-button", onClick: this.onMenuButtonClick },
+        { className: "context-menu-button",
+          onClick: e => {
+            e.preventDefault();
+            this.toggleContextMenu(e, index);
+          } },
         React.createElement(
           "span",
           { className: "sr-only" },
-          `Open context menu for ${title}`
+          `Open context menu for ${ title }`
         )
       ),
       React.createElement(LinkMenu, {
         dispatch: dispatch,
-        index: index,
-        onUpdate: this.onMenuUpdate,
-        options: TOP_SITES_CONTEXT_MENU_OPTIONS,
+        visible: isContextMenuOpen,
+        onUpdate: val => this.setState({ showContextMenu: val }),
         site: link,
+        index: index,
         source: TOP_SITES_SOURCE,
-        visible: isContextMenuOpen })
+        options: TOP_SITES_CONTEXT_MENU_OPTIONS })
     );
   }
 }
@@ -2145,7 +1995,6 @@ const TopSites = props => React.createElement(
   React.createElement(
     "h3",
     { className: "section-title" },
-    React.createElement("span", { className: `icon icon-small-spacer icon-topsites` }),
     React.createElement(FormattedMessage, { id: "header_top_sites" })
   ),
   React.createElement(
@@ -2430,7 +2279,7 @@ _PerfService.prototype = {
     let entries = this.getEntriesByName(name, "mark");
 
     if (!entries.length) {
-      throw new Error(`No marks with the name ${name}`);
+      throw new Error(`No marks with the name ${ name }`);
     }
 
     let mostRecentEntry = entries[entries.length - 1];
