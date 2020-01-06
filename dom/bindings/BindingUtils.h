@@ -1778,31 +1778,8 @@ AtomizeAndPinJSString(JSContext* cx, jsid& id, const char* chars)
   return false;
 }
 
-
-template <typename Spec>
-static bool
-InitIds(JSContext* cx, const Prefable<Spec>* prefableSpecs, jsid* ids)
-{
-  MOZ_ASSERT(prefableSpecs);
-  MOZ_ASSERT(prefableSpecs->specs);
-  do {
-    
-    
-    Spec* spec = prefableSpecs->specs;
-    do {
-      if (!JS::PropertySpecNameToPermanentId(cx, spec->name, ids)) {
-        return false;
-      }
-    } while (++ids, (++spec)->name);
-
-    
-    
-    *ids = JSID_VOID;
-    ++ids;
-  } while ((++prefableSpecs)->specs);
-
-  return true;
-}
+bool
+InitIds(JSContext* cx, const NativeProperties* properties);
 
 bool
 QueryInterface(JSContext* cx, unsigned argc, JS::Value* vp);

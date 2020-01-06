@@ -170,6 +170,43 @@ struct Prefable {
   const T* const specs;
 };
 
+enum PropertyType {
+  eStaticMethod,
+  eStaticAttribute,
+  eMethod,
+  eAttribute,
+  eUnforgeableMethod,
+  eUnforgeableAttribute,
+  eConstant,
+  ePropertyTypeCount
+};
+
+#define NUM_BITS_PROPERTY_INFO_TYPE        3
+#define NUM_BITS_PROPERTY_INFO_PREF_INDEX 13
+#define NUM_BITS_PROPERTY_INFO_SPEC_INDEX 16
+
+struct PropertyInfo {
+  jsid id;
+  
+  
+  uint32_t type: NUM_BITS_PROPERTY_INFO_TYPE;
+  
+  uint32_t prefIndex: NUM_BITS_PROPERTY_INFO_PREF_INDEX;
+  
+  uint32_t specIndex: NUM_BITS_PROPERTY_INFO_SPEC_INDEX;
+};
+
+static_assert(ePropertyTypeCount <= 1ull << NUM_BITS_PROPERTY_INFO_TYPE,
+    "We have property type count that is > (1 << NUM_BITS_PROPERTY_INFO_TYPE)");
+
+
+
+
+
+
+
+
+
 
 
 
@@ -202,27 +239,28 @@ struct NativePropertiesN {
   
   
   
-  struct Trio {
+  struct Duo {
     const  void* const mPrefables;
-    const jsid* const mIds;
-    const  void* const mSpecs;
+    PropertyInfo* const mPropertyInfos;
   };
-
-  const int32_t iteratorAliasMethodIndex;
 
   constexpr const NativePropertiesN<7>* Upcast() const {
     return reinterpret_cast<const NativePropertiesN<7>*>(this);
   }
 
+  const PropertyInfo* PropertyInfos() const {
+    return duos[0].mPropertyInfos;
+  }
+
 #define DO(SpecT, FieldName) \
 public: \
-  /* The bitfields indicating the trio's presence and (if present) offset. */ \
+  /* The bitfields indicating the duo's presence and (if present) offset. */ \
   const uint32_t mHas##FieldName##s:1; \
   const uint32_t m##FieldName##sOffset:3; \
 private: \
-  const Trio* FieldName##sTrio() const { \
+  const Duo* FieldName##sDuo() const { \
     MOZ_ASSERT(Has##FieldName##s()); \
-    return &trios[m##FieldName##sOffset]; \
+    return &duos[m##FieldName##sOffset]; \
   } \
 public: \
   bool Has##FieldName##s() const { \
@@ -230,13 +268,10 @@ public: \
   } \
   const Prefable<const SpecT>* FieldName##s() const { \
     return static_cast<const Prefable<const SpecT>*> \
-                      (FieldName##sTrio()->mPrefables); \
+                      (FieldName##sDuo()->mPrefables); \
   } \
-  const jsid* FieldName##Ids() const { \
-    return FieldName##sTrio()->mIds; \
-  } \
-  const SpecT* FieldName##Specs() const { \
-    return static_cast<const SpecT*>(FieldName##sTrio()->mSpecs); \
+  PropertyInfo* FieldName##PropertyInfos() const { \
+    return FieldName##sDuo()->mPropertyInfos; \
   }
 
   DO(JSFunctionSpec, StaticMethod)
@@ -249,18 +284,28 @@ public: \
 
 #undef DO
 
-  const Trio trios[N];
+  
+  const int16_t iteratorAliasMethodIndex;
+  
+  
+  const uint16_t propertyInfoCount;
+  
+  
+  uint16_t* sortedPropertyIndices;
+
+  const Duo duos[N];
 };
 
 
 
+
 static_assert(sizeof(NativePropertiesN<1>) == 8 +  3*sizeof(void*), "1 size");
-static_assert(sizeof(NativePropertiesN<2>) == 8 +  6*sizeof(void*), "2 size");
-static_assert(sizeof(NativePropertiesN<3>) == 8 +  9*sizeof(void*), "3 size");
-static_assert(sizeof(NativePropertiesN<4>) == 8 + 12*sizeof(void*), "4 size");
-static_assert(sizeof(NativePropertiesN<5>) == 8 + 15*sizeof(void*), "5 size");
-static_assert(sizeof(NativePropertiesN<6>) == 8 + 18*sizeof(void*), "6 size");
-static_assert(sizeof(NativePropertiesN<7>) == 8 + 21*sizeof(void*), "7 size");
+static_assert(sizeof(NativePropertiesN<2>) == 8 +  5*sizeof(void*), "2 size");
+static_assert(sizeof(NativePropertiesN<3>) == 8 +  7*sizeof(void*), "3 size");
+static_assert(sizeof(NativePropertiesN<4>) == 8 +  9*sizeof(void*), "4 size");
+static_assert(sizeof(NativePropertiesN<5>) == 8 + 11*sizeof(void*), "5 size");
+static_assert(sizeof(NativePropertiesN<6>) == 8 + 13*sizeof(void*), "6 size");
+static_assert(sizeof(NativePropertiesN<7>) == 8 + 15*sizeof(void*), "7 size");
 
 
 typedef NativePropertiesN<7> NativeProperties;
