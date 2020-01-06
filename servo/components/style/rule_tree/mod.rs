@@ -1086,8 +1086,9 @@ impl StrongRuleNode {
         -> bool
         where E: ::dom::TElement
     {
-        use gecko_bindings::structs::{NS_AUTHOR_SPECIFIED_BACKGROUND, NS_AUTHOR_SPECIFIED_BORDER};
-        use gecko_bindings::structs::{NS_AUTHOR_SPECIFIED_PADDING, NS_AUTHOR_SPECIFIED_TEXT_SHADOW};
+        use gecko_bindings::structs::NS_AUTHOR_SPECIFIED_BACKGROUND;
+        use gecko_bindings::structs::NS_AUTHOR_SPECIFIED_BORDER;
+        use gecko_bindings::structs::NS_AUTHOR_SPECIFIED_PADDING;
         use properties::{CSSWideKeyword, LonghandId, LonghandIdSet};
         use properties::{PropertyDeclaration, PropertyDeclarationId};
         use std::borrow::Cow;
@@ -1144,15 +1145,6 @@ impl StrongRuleNode {
         ];
 
         
-        const TEXT_SHADOW_PROPS: &'static [LonghandId] = &[
-            LonghandId::TextShadow,
-        ];
-
-        fn inherited(id: LonghandId) -> bool {
-            id == LonghandId::TextShadow
-        }
-
-        
         let mut properties = LonghandIdSet::new();
 
         if rule_type_mask & NS_AUTHOR_SPECIFIED_BACKGROUND != 0 {
@@ -1170,11 +1162,6 @@ impl StrongRuleNode {
                 properties.insert(*id);
             }
         }
-        if rule_type_mask & NS_AUTHOR_SPECIFIED_TEXT_SHADOW != 0 {
-            for id in TEXT_SHADOW_PROPS {
-                properties.insert(*id);
-            }
-        }
 
         
         
@@ -1189,7 +1176,6 @@ impl StrongRuleNode {
             LonghandId::BorderInlineEndColor,
             LonghandId::BorderBlockStartColor,
             LonghandId::BorderBlockEndColor,
-            LonghandId::TextShadow,
         ];
 
         if !author_colors_allowed {
@@ -1201,14 +1187,6 @@ impl StrongRuleNode {
         let mut element_rule_node = Cow::Borrowed(self);
 
         loop {
-            
-            
-            
-            
-            
-            
-            
-            
             
             
             
@@ -1257,10 +1235,7 @@ impl StrongRuleNode {
                                 
                                 
                                 
-                                if declaration.get_css_wide_keyword() == Some(CSSWideKeyword::Inherit) ||
-                                    (declaration.get_css_wide_keyword() == Some(CSSWideKeyword::Unset) &&
-                                     inherited(id))
-                                {
+                                if declaration.get_css_wide_keyword() == Some(CSSWideKeyword::Inherit) {
                                     have_explicit_ua_inherit = true;
                                     inherited_properties.insert(id);
                                 }
