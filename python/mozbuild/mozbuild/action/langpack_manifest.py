@@ -266,7 +266,10 @@ def parse_chrome_manifest(path, base_path, chrome_entries):
 
 
 
-def create_webmanifest(locstr, appver, defines, chrome_entries):
+
+
+
+def create_webmanifest(locstr, min_app_ver, max_app_ver, defines, chrome_entries):
     locales = map(lambda loc: loc.strip(), locstr.split(','))
     main_locale = locales[0]
 
@@ -281,13 +284,13 @@ def create_webmanifest(locstr, appver, defines, chrome_entries):
         'applications': {
             'gecko': {
                 'id': 'langpack-{0}@firefox.mozilla.org'.format(main_locale),
-                'strict_min_version': appver,
-                'strict_max_version': '{0}.*'.format(appver)
+                'strict_min_version': min_app_ver,
+                'strict_max_version': max_app_ver,
             }
         },
         'name': '{0} Language Pack'.format(defines['MOZ_LANG_TITLE']),
         'description': 'Language pack for Firefox for {0}'.format(main_locale),
-        'version': appver,
+        'version': min_app_ver,
         'languages': {},
         'author': author
     }
@@ -309,7 +312,7 @@ def create_webmanifest(locstr, appver, defines, chrome_entries):
 
     for loc in locales:
         manifest['languages'][loc] = {
-            'version': appver,
+            'version': min_app_ver,
             'resources': None,
             'chrome_resources': cr
         }
@@ -321,8 +324,10 @@ def main(args):
     parser = argparse.ArgumentParser()
     parser.add_argument('--locales',
                         help='List of language codes provided by the langpack')
-    parser.add_argument('--appver',
-                        help='Version of the application the langpack is for')
+    parser.add_argument('--min-app-ver',
+                        help='Min version of the application the langpack is for')
+    parser.add_argument('--max-app-ver',
+                        help='Max version of the application the langpack is for')
     parser.add_argument('--defines', default=[], nargs='+',
                         help='List of defines files to load data from')
     parser.add_argument('--input',
@@ -338,7 +343,8 @@ def main(args):
 
     res = create_webmanifest(
         args.locales,
-        args.appver,
+        args.min_app_ver,
+        args.max_app_ver,
         defines,
         chrome_entries
     )
