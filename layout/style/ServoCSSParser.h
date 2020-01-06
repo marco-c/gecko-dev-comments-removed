@@ -38,6 +38,17 @@ public:
                            nscolor aCurrentColor,
                            const nsAString& aValue,
                            nscolor* aResultColor);
+
+  
+
+
+
+
+
+
+
+  static bool ParseIntersectionObserverRootMargin(const nsAString& aValue,
+                                                  nsCSSRect* aResult);
 };
 
 } 
