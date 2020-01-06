@@ -121,11 +121,18 @@ JS_TraceShapeCycleCollectorChildren(JS::CallbackTracer* trc, JS::GCCellPtr shape
 extern JS_FRIEND_API(void)
 JS_TraceObjectGroupCycleCollectorChildren(JS::CallbackTracer* trc, JS::GCCellPtr group);
 
+
+
+
+
+
+
 enum {
     JS_TELEMETRY_GC_REASON,
     JS_TELEMETRY_GC_IS_ZONE_GC,
     JS_TELEMETRY_GC_MS,
     JS_TELEMETRY_GC_BUDGET_MS,
+    JS_TELEMETRY_GC_BUDGET_OVERRUN,
     JS_TELEMETRY_GC_ANIMATION_MS,
     JS_TELEMETRY_GC_MAX_PAUSE_MS,
     JS_TELEMETRY_GC_MAX_PAUSE_MS_2,

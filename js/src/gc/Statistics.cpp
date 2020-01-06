@@ -995,6 +995,11 @@ Statistics::endSlice()
                 if (joinTime.ToMilliseconds() > budget_ms)
                     reportLongestPhaseInMajorGC(slice.parallelTimes, JS_TELEMETRY_GC_SLOW_TASK);
             }
+
+            
+            int64_t overrun = sliceTime.ToMicroseconds() - (1000 * budget_ms);
+            if (overrun > 0)
+                runtime->addTelemetry(JS_TELEMETRY_GC_BUDGET_OVERRUN, uint32_t(overrun));
         }
 
         sliceCount_++;
