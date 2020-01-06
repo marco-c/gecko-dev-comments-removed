@@ -207,24 +207,12 @@ static char* currentSessionId = nullptr;
 static bool doReport = true;
 
 
-static bool headlessClient = false;
-
-
 static bool showOSCrashReporter = false;
 
 
 static time_t lastCrashTime = 0;
 
 static XP_CHAR lastCrashTimeFilename[XP_PATH_MAX] = {0};
-
-
-
-static XP_CHAR crashMarkerFilename[XP_PATH_MAX] = {0};
-
-
-static bool lastRunCrashID_checked = false;
-
-static nsString* lastRunCrashID = nullptr;
 
 #if defined(MOZ_WIDGET_ANDROID)
 
@@ -986,17 +974,6 @@ MinidumpCallback(
 #endif
   }
 
-  if (headlessClient) {
-    
-    PlatformWriter markerFile(crashMarkerFilename);
-#if defined(XP_WIN)
-    markerFile.WriteBuffer(reinterpret_cast<const char*>(minidumpPath),
-                           2*wcslen(minidumpPath));
-#elif defined(XP_UNIX)
-    markerFile.WriteBuffer(minidumpPath, my_strlen(minidumpPath));
-#endif
-  }
-
   char oomAllocationSizeBuffer[32] = "";
   if (gOOMAllocationSize) {
     XP_STOA(gOOMAllocationSize, oomAllocationSizeBuffer, 10);
@@ -1593,29 +1570,28 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory,
   notesField = new nsCString();
   NS_ENSURE_TRUE(notesField, NS_ERROR_OUT_OF_MEMORY);
 
-  if (!headlessClient) {
 #if !defined(MOZ_WIDGET_ANDROID)
-    
-    nsAutoString crashReporterPath_temp;
-    nsresult rv = LocateExecutable(aXREDirectory,
-                                   NS_LITERAL_CSTRING(CRASH_REPORTER_FILENAME),
-                                   crashReporterPath_temp);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+  
+  nsAutoString crashReporterPath_temp;
+  nsresult rv = LocateExecutable(aXREDirectory,
+                                 NS_LITERAL_CSTRING(CRASH_REPORTER_FILENAME),
+                                 crashReporterPath_temp);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
 #ifdef XP_MACOSX
-    nsCOMPtr<nsIFile> libPath;
-    rv = aXREDirectory->Clone(getter_AddRefs(libPath));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-    }
+  nsCOMPtr<nsIFile> libPath;
+  rv = aXREDirectory->Clone(getter_AddRefs(libPath));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+  }
 
-    nsAutoString libraryPath_temp;
-    rv = libPath->GetPath(libraryPath_temp);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-    }
+  nsAutoString libraryPath_temp;
+  rv = libPath->GetPath(libraryPath_temp);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+  }
 #endif 
 
 #ifdef XP_WIN32
@@ -1628,20 +1604,19 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory,
 #endif
 #endif 
 #else
-    
-    
-    
-    const char* androidPackageName = PR_GetEnv("MOZ_ANDROID_PACKAGE_NAME");
-    if (androidPackageName != nullptr) {
-      nsCString package(androidPackageName);
-      package.AppendLiteral("/org.mozilla.gecko.CrashReporter");
-      crashReporterPath = ToNewCString(package);
-    } else {
-      nsCString package(ANDROID_PACKAGE_NAME "/org.mozilla.gecko.CrashReporter");
-      crashReporterPath = ToNewCString(package);
-    }
-#endif 
+  
+  
+  
+  const char* androidPackageName = PR_GetEnv("MOZ_ANDROID_PACKAGE_NAME");
+  if (androidPackageName != nullptr) {
+    nsCString package(androidPackageName);
+    package.AppendLiteral("/org.mozilla.gecko.CrashReporter");
+    crashReporterPath = ToNewCString(package);
+  } else {
+    nsCString package(ANDROID_PACKAGE_NAME "/org.mozilla.gecko.CrashReporter");
+    crashReporterPath = ToNewCString(package);
   }
+#endif 
 
   
 #if defined(XP_WIN32)
@@ -2041,34 +2016,6 @@ nsresult SetupExtraData(nsIFile* aAppDataDirectory, const nsACString& aBuildID)
     strncpy(lastCrashTimeFilename, filename.get(), filename.Length());
 #endif
 
-  if (headlessClient) {
-    nsCOMPtr<nsIFile> markerFile;
-    rv = dataDirectory->Clone(getter_AddRefs(markerFile));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = markerFile->AppendNative(NS_LITERAL_CSTRING("LastCrashFilename"));
-    NS_ENSURE_SUCCESS(rv, rv);
-    memset(crashMarkerFilename, 0, sizeof(crashMarkerFilename));
-
-#if defined(XP_WIN32)
-    nsAutoString markerFilename;
-    rv = markerFile->GetPath(markerFilename);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if (markerFilename.Length() < XP_PATH_MAX)
-      wcsncpy(crashMarkerFilename, markerFilename.get(),
-              markerFilename.Length());
-#else
-    nsAutoCString markerFilename;
-    rv = markerFile->GetNativePath(markerFilename);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if (markerFilename.Length() < XP_PATH_MAX)
-      strncpy(crashMarkerFilename, markerFilename.get(),
-              markerFilename.Length());
-#endif
-  }
-
   return NS_OK;
 }
 
@@ -2107,9 +2054,6 @@ nsresult UnsetExceptionHandler()
 
   delete notesField;
   notesField = nullptr;
-
-  delete lastRunCrashID;
-  lastRunCrashID = nullptr;
 
   if (pendingDirectory) {
     free(pendingDirectory);
@@ -3621,83 +3565,6 @@ UnregisterInjectorCallback(DWORD processID)
 }
 
 #endif 
-
-static bool
-CheckForLastRunCrash()
-{
-  if (lastRunCrashID)
-    return true;
-
-  
-  
-  nsCOMPtr<nsIFile> lastCrashFile;
-  CreateFileFromPath(crashMarkerFilename,
-                     getter_AddRefs(lastCrashFile));
-
-  bool exists;
-  if (NS_FAILED(lastCrashFile->Exists(&exists)) || !exists) {
-    return false;
-  }
-
-  nsAutoCString lastMinidump_contents;
-  if (NS_FAILED(GetFileContents(lastCrashFile, lastMinidump_contents))) {
-    return false;
-  }
-  lastCrashFile->Remove(false);
-
-#ifdef XP_WIN
-  
-  nsDependentString lastMinidump(
-      reinterpret_cast<const char16_t*>(lastMinidump_contents.get()));
-#else
-  nsAutoCString lastMinidump = lastMinidump_contents;
-#endif
-  nsCOMPtr<nsIFile> lastMinidumpFile;
-  CreateFileFromPath(lastMinidump.get(),
-                     getter_AddRefs(lastMinidumpFile));
-
-  if (!lastMinidumpFile || NS_FAILED(lastMinidumpFile->Exists(&exists)) || !exists) {
-    return false;
-  }
-
-  nsCOMPtr<nsIFile> lastExtraFile;
-  if (!GetExtraFileForMinidump(lastMinidumpFile,
-                               getter_AddRefs(lastExtraFile))) {
-    return false;
-  }
-
-  nsCOMPtr<nsIFile> memoryReportFile;
-  nsresult rv = GetDefaultMemoryReportFile(getter_AddRefs(memoryReportFile));
-  if (NS_FAILED(rv) || NS_FAILED(memoryReportFile->Exists(&exists)) || !exists) {
-    memoryReportFile = nullptr;
-  }
-
-  FindPendingDir();
-
-  
-  if (!MoveToPending(lastMinidumpFile, lastExtraFile, memoryReportFile)) {
-    return false;
-  }
-
-  lastRunCrashID = new nsString();
-  return GetIDFromMinidump(lastMinidumpFile, *lastRunCrashID);
-}
-
-bool
-GetLastRunCrashID(nsAString& id)
-{
-  if (!lastRunCrashID_checked) {
-    CheckForLastRunCrash();
-    lastRunCrashID_checked = true;
-  }
-
-  if (!lastRunCrashID) {
-    return false;
-  }
-
-  id = *lastRunCrashID;
-  return true;
-}
 
 #if defined(XP_WIN) || defined(XP_MACOSX)
 void

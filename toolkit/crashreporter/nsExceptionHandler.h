@@ -85,8 +85,6 @@ void SetMinidumpAnalysisAllThreads();
 nsresult SetRestartArgs(int argc, char** argv);
 nsresult SetupExtraData(nsIFile* aAppDataDirectory,
                         const nsACString& aBuildID);
-bool GetLastRunCrashID(nsAString& id);
-
 
 nsresult RegisterAppMemory(void* ptr, size_t length);
 nsresult UnregisterAppMemory(void* ptr);
