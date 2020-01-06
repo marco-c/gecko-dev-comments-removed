@@ -337,7 +337,7 @@ impl ToCss for System {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Symbol {
     
     String(String),
@@ -363,6 +363,17 @@ impl ToCss for Symbol {
         match *self {
             Symbol::String(ref s) => serialize_string(s, dest),
             Symbol::Ident(ref s) => serialize_identifier(s, dest),
+        }
+    }
+}
+
+impl Symbol {
+    
+    pub fn is_allowed_in_symbols(&self) -> bool {
+        match self {
+            
+            &Symbol::Ident(_) => false,
+            _ => true,
         }
     }
 }
@@ -495,7 +506,7 @@ impl ToCss for Fallback {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Symbols(pub Vec<Symbol>);
 
 impl Parse for Symbols {
