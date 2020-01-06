@@ -135,10 +135,8 @@ HTMLEditor::SetInlineProperty(nsIAtom* aProperty,
   NS_ENSURE_SUCCESS(rv, rv);
   if (!cancel && !handled) {
     
-    uint32_t rangeCount = selection->RangeCount();
-    for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; rangeIdx++) {
-      RefPtr<nsRange> range = selection->GetRangeAt(rangeIdx);
-
+    AutoRangeArray arrayOfRanges(selection);
+    for (auto& range : arrayOfRanges.mRanges) {
       
       
       rv = PromoteInlineRange(*range);
@@ -1240,25 +1238,21 @@ HTMLEditor::RemoveInlinePropertyImpl(nsIAtom* aProperty,
   NS_ENSURE_SUCCESS(rv, rv);
   if (!cancel && !handled) {
     
-    uint32_t rangeCount = selection->RangeCount();
     
     
-    AutoTArray<OwningNonNull<nsRange>, 8> arrayOfRanges;
-    for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; ++rangeIdx) {
-      arrayOfRanges.AppendElement(*selection->GetRangeAt(rangeIdx));
-    }
-    for (auto& range : arrayOfRanges) {
+    AutoRangeArray arrayOfRanges(selection);
+    for (auto& range : arrayOfRanges.mRanges) {
       if (aProperty == nsGkAtoms::name) {
         
         
-        rv = PromoteRangeIfStartsOrEndsInNamedAnchor(range);
+        rv = PromoteRangeIfStartsOrEndsInNamedAnchor(*range);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
       } else {
         
         
-        rv = PromoteInlineRange(range);
+        rv = PromoteInlineRange(*range);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -1394,10 +1388,8 @@ HTMLEditor::RelativeFontChange(FontSize aDir)
   AutoTransactionsConserveSelection dontSpazMySelection(this);
 
   
-  uint32_t rangeCount = selection->RangeCount();
-  for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; ++rangeIdx) {
-    RefPtr<nsRange> range = selection->GetRangeAt(rangeIdx);
-
+  AutoRangeArray arrayOfRanges(selection);
+  for (auto& range : arrayOfRanges.mRanges) {
     
     nsresult rv = PromoteInlineRange(*range);
     NS_ENSURE_SUCCESS(rv, rv);
