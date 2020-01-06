@@ -109,10 +109,8 @@ ChannelMediaResource::ChannelMediaResource(
 
 ChannelMediaResource::~ChannelMediaResource()
 {
-  if (mListener) {
-    
-    mListener->Revoke();
-  }
+  MOZ_ASSERT(!mChannel);
+  MOZ_ASSERT(!mListener);
 }
 
 
