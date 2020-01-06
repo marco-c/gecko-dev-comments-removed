@@ -1282,8 +1282,6 @@ pref("pdfjs.previousHandler.alwaysAskBeforeHandling", false);
 
 pref("image.mem.max_decoded_image_kb", 256000);
 
-pref("social.sidebar.unload_timeout_ms", 10000);
-
 
 
 pref("social.share.activationPanelEnabled", true);
