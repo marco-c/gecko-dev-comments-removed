@@ -35,8 +35,9 @@ enum class BorderStyle : uint32_t {
 };
 
 enum class BoxShadowClipMode : uint32_t {
-  Outset = 0,
-  Inset = 1,
+  None = 0,
+  Outset = 1,
+  Inset = 2,
 
   Sentinel 
 };
@@ -312,17 +313,6 @@ struct WrOpacityProperty {
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
 struct TypedTransform3D_f32__LayoutPixel__LayoutPixel {
   float m11;
   float m12;
@@ -404,7 +394,6 @@ struct ColorF {
            a == aOther.a;
   }
 };
-
 
 struct TypedPoint2D_f32__LayerPixel {
   float x;
@@ -571,7 +560,6 @@ struct NinePatchDescriptor {
   }
 };
 
-
 struct TypedVector2D_f32__LayerPixel {
   float x;
   float y;
@@ -651,7 +639,6 @@ struct ByteSlice {
            len == aOther.len;
   }
 };
-
 
 struct TypedPoint2D_u16__Tiles {
   uint16_t x;
