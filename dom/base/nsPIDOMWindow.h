@@ -786,6 +786,9 @@ public:
   
   inline bool HasActiveDocument();
 
+  
+  inline bool IsTopInnerWindow() const;
+
   bool AddAudioContext(mozilla::dom::AudioContext* aAudioContext);
   void RemoveAudioContext(mozilla::dom::AudioContext* aAudioContext);
   void MuteAudioContexts();
