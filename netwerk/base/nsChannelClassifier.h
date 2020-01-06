@@ -35,25 +35,11 @@ public:
     nsresult ShouldEnableTrackingProtection(bool *result);
 
     
-    nsresult IsTrackerWhitelisted(nsIURI* aWhiteListURI,
-                                  nsIURIClassifierCallback* aCallback);
-
-    
     
     nsresult OnClassifyCompleteInternal(nsresult aErrorCode,
                                         const nsACString& aList,
                                         const nsACString& aProvider,
                                         const nsACString& aPrefix);
-
-    
-    
-    
-    nsresult CheckIsTrackerWithLocalTable(nsIURIClassifierCallback* aCallback);
-
-    
-    already_AddRefed<nsIURI> CreateWhiteListURI() const;
-
-    already_AddRefed<nsIChannel> GetChannel();
 
 private:
     
@@ -71,6 +57,10 @@ private:
     
     
     nsresult StartInternal();
+    
+    nsresult IsTrackerWhitelisted(const nsACString& aList,
+                                  const nsACString& aProvider,
+                                  const nsACString& aPrefix);
     
     bool IsHostnameWhitelisted(nsIURI *aUri, const nsACString &aWhitelisted);
     
