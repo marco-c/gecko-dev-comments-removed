@@ -3820,9 +3820,6 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
           
           
           aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
-          
-          
-          aLine->MarkDirty();
         } else {
           
           
@@ -4714,8 +4711,6 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
       ShouldAvoidBreakInside(aState.mReflowInput)) {
     aLine->AppendFloats(aState.mCurrentLineFloats);
     aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
-    
-    aLine->MarkDirty();
     return true;
   }
 
