@@ -199,7 +199,7 @@ struct SigHandlerCoordinator
   ucontext_t mUContext; 
 };
 
-struct SigHandlerCoordinator* Sampler::sSigHandlerCoordinator = nullptr;
+struct SigHandlerCoordinator* SamplerThread::sSigHandlerCoordinator = nullptr;
 
 static void
 SigprofHandler(int aSignal, siginfo_t* aInfo, void* aContext)
@@ -208,18 +208,18 @@ SigprofHandler(int aSignal, siginfo_t* aInfo, void* aContext)
   int savedErrno = errno;
 
   MOZ_ASSERT(aSignal == SIGPROF);
-  MOZ_ASSERT(Sampler::sSigHandlerCoordinator);
+  MOZ_ASSERT(SamplerThread::sSigHandlerCoordinator);
 
   
   
   
-  Sampler::sSigHandlerCoordinator->mUContext =
+  SamplerThread::sSigHandlerCoordinator->mUContext =
     *static_cast<ucontext_t*>(aContext);
 
   
   
   
-  int r = sem_post(&Sampler::sSigHandlerCoordinator->mMessage2);
+  int r = sem_post(&SamplerThread::sSigHandlerCoordinator->mMessage2);
   MOZ_ASSERT(r == 0);
 
   
@@ -227,7 +227,7 @@ SigprofHandler(int aSignal, siginfo_t* aInfo, void* aContext)
 
   
   while (true) {
-    r = sem_wait(&Sampler::sSigHandlerCoordinator->mMessage3);
+    r = sem_wait(&SamplerThread::sSigHandlerCoordinator->mMessage3);
     if (r == -1 && errno == EINTR) {
       
       continue;
@@ -240,19 +240,33 @@ SigprofHandler(int aSignal, siginfo_t* aInfo, void* aContext)
   
   
   
-  r = sem_post(&Sampler::sSigHandlerCoordinator->mMessage4);
+  r = sem_post(&SamplerThread::sSigHandlerCoordinator->mMessage4);
   MOZ_ASSERT(r == 0);
 
   errno = savedErrno;
 }
 
-Sampler::Sampler(PSLockRef aLock)
-  : mMyPid(getpid())
-  
+static void*
+ThreadEntry(void* aArg)
+{
+  auto thread = static_cast<SamplerThread*>(aArg);
+  thread->mSamplerTid = gettid();
+  thread->Run();
+  return nullptr;
+}
+
+SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
+                             double aIntervalMilliseconds)
+  : mActivityGeneration(aActivityGeneration)
+  , mIntervalMicroseconds(
+      std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5))))
+  , mMyPid(getpid())
   
   
   , mSamplerTid(-1)
 {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
 #if defined(USE_EHABI_STACKWALK)
   mozilla::EHABIStackWalkInit();
 #elif defined(USE_LUL_STACKWALK)
@@ -290,29 +304,66 @@ Sampler::Sampler(PSLockRef aLock)
     }
   }
 #endif
+
+  
+  
+  
+  if (pthread_create(&mThread, nullptr, ThreadEntry, this) != 0) {
+    MOZ_CRASH("pthread_create failed");
+  }
+}
+
+SamplerThread::~SamplerThread()
+{
+  pthread_join(mThread, nullptr);
 }
 
 void
-Sampler::Disable(PSLockRef aLock)
+SamplerThread::Stop(PSLockRef aLock)
 {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  
+  
+  
   
   
   sigaction(SIGPROF, &mOldSigprofHandler, 0);
 }
 
-template<typename Func>
 void
-Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
-                                         TickSample& aSample,
-                                         const Func& aDoSample)
+SamplerThread::SleepMicro(uint32_t aMicroseconds)
+{
+  if (aMicroseconds >= 1000000) {
+    
+    
+    MOZ_ALWAYS_TRUE(!::usleep(aMicroseconds));
+    return;
+  }
+
+  struct timespec ts;
+  ts.tv_sec  = 0;
+  ts.tv_nsec = aMicroseconds * 1000UL;
+
+  int rv = ::nanosleep(&ts, &ts);
+
+  while (rv != 0 && errno == EINTR) {
+    
+    
+    rv = ::nanosleep(&ts, &ts);
+  }
+
+  MOZ_ASSERT(!rv, "nanosleep call failed");
+}
+
+void
+SamplerThread::SuspendAndSampleAndResumeThread(PSLockRef aLock,
+                                               TickSample& aSample)
 {
   
   
   MOZ_ASSERT(!sSigHandlerCoordinator);
 
-  if (mSamplerTid == -1) {
-    mSamplerTid = gettid();
-  }
   int sampleeTid = aSample.mThreadId;
   MOZ_RELEASE_ASSERT(sampleeTid != mSamplerTid);
 
@@ -359,7 +410,7 @@ Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
   
   FillInSample(aSample, &sSigHandlerCoordinator->mUContext);
 
-  aDoSample();
+  Tick(aLock, ActivePS::Buffer(aLock), aSample);
 
   
   
@@ -387,80 +438,6 @@ Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
   
   
   sSigHandlerCoordinator = nullptr;
-}
-
-
-
-
-
-
-
-static void*
-ThreadEntry(void* aArg)
-{
-  auto thread = static_cast<SamplerThread*>(aArg);
-  thread->Run();
-  return nullptr;
-}
-
-SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
-                             double aIntervalMilliseconds)
-  : Sampler(aLock)
-  , mActivityGeneration(aActivityGeneration)
-  , mIntervalMicroseconds(
-      std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5))))
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  
-  
-  
-  if (pthread_create(&mThread, nullptr, ThreadEntry, this) != 0) {
-    MOZ_CRASH("pthread_create failed");
-  }
-}
-
-SamplerThread::~SamplerThread()
-{
-  pthread_join(mThread, nullptr);
-}
-
-void
-SamplerThread::SleepMicro(uint32_t aMicroseconds)
-{
-  if (aMicroseconds >= 1000000) {
-    
-    
-    MOZ_ALWAYS_TRUE(!::usleep(aMicroseconds));
-    return;
-  }
-
-  struct timespec ts;
-  ts.tv_sec  = 0;
-  ts.tv_nsec = aMicroseconds * 1000UL;
-
-  int rv = ::nanosleep(&ts, &ts);
-
-  while (rv != 0 && errno == EINTR) {
-    
-    
-    rv = ::nanosleep(&ts, &ts);
-  }
-
-  MOZ_ASSERT(!rv, "nanosleep call failed");
-}
-
-void
-SamplerThread::Stop(PSLockRef aLock)
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  
-  
-  
-  
-  
-  Sampler::Disable(aLock);
 }
 
 

@@ -81,25 +81,103 @@ static const HANDLE kNoThread = INVALID_HANDLE_VALUE;
 
 
 
-Sampler::Sampler(PSLockRef aLock)
+static unsigned int __stdcall
+ThreadEntry(void* aArg)
 {
+  auto thread = static_cast<SamplerThread*>(aArg);
+  thread->Run();
+  return 0;
+}
+
+SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
+                             double aIntervalMilliseconds)
+    : mActivityGeneration(aActivityGeneration)
+    , mIntervalMicroseconds(
+        std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5))))
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  if (mIntervalMicroseconds < 10*1000) {
+    ::timeBeginPeriod(mIntervalMicroseconds / 1000);
+  }
+
+  
+  
+  
+  mThread = reinterpret_cast<HANDLE>(
+      _beginthreadex(nullptr,
+                      0,
+                     ThreadEntry,
+                     this,
+                      0,
+                     nullptr));
+  if (mThread == 0) {
+    MOZ_CRASH("_beginthreadex failed");
+  }
+}
+
+SamplerThread::~SamplerThread()
+{
+  WaitForSingleObject(mThread, INFINITE);
+
+  
+  if (mThread != kNoThread) {
+    CloseHandle(mThread);
+  }
 }
 
 void
-Sampler::Disable(PSLockRef aLock)
+SamplerThread::Stop(PSLockRef aLock)
 {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mIntervalMicroseconds < 10 * 1000) {
+    ::timeEndPeriod(mIntervalMicroseconds / 1000);
+  }
 }
 
-template<typename Func>
 void
-Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
-                                         TickSample& aSample,
-                                         const Func& aDoSample)
+SamplerThread::SleepMicro(uint32_t aMicroseconds)
+{
+  
+  
+  
+  if (mIntervalMicroseconds >= 1000) {
+    ::Sleep(std::max(1u, aMicroseconds / 1000));
+  } else {
+    TimeStamp start = TimeStamp::Now();
+    TimeStamp end = start + TimeDuration::FromMicroseconds(aMicroseconds);
+
+    
+    if (aMicroseconds >= 1000) {
+      ::Sleep(aMicroseconds / 1000);
+    }
+
+    
+    while (TimeStamp::Now() < end) {
+      _mm_pause();
+    }
+  }
+}
+
+void
+SamplerThread::SuspendAndSampleAndResumeThread(PSLockRef aLock,
+                                               TickSample& aSample)
 {
   HANDLE profiled_thread = aSample.mPlatformData->ProfiledThread();
-  if (profiled_thread == nullptr) {
+  if (profiled_thread == nullptr)
     return;
-  }
 
   
   CONTEXT context;
@@ -150,7 +228,7 @@ Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
 
   aSample.mContext = &context;
 
-  aDoSample();
+  Tick(aLock, ActivePS::Buffer(aLock), aSample);
 
   
   
@@ -160,105 +238,6 @@ Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
   
   
   
-}
-
-
-
-
-
-
-
-static unsigned int __stdcall
-ThreadEntry(void* aArg)
-{
-  auto thread = static_cast<SamplerThread*>(aArg);
-  thread->Run();
-  return 0;
-}
-
-SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
-                             double aIntervalMilliseconds)
-    : Sampler(aLock)
-    , mActivityGeneration(aActivityGeneration)
-    , mIntervalMicroseconds(
-        std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5))))
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  
-  
-  
-  if (mIntervalMicroseconds < 10*1000) {
-    ::timeBeginPeriod(mIntervalMicroseconds / 1000);
-  }
-
-  
-  
-  
-  mThread = reinterpret_cast<HANDLE>(
-      _beginthreadex(nullptr,
-                      0,
-                     ThreadEntry,
-                     this,
-                      0,
-                     nullptr));
-  if (mThread == 0) {
-    MOZ_CRASH("_beginthreadex failed");
-  }
-}
-
-SamplerThread::~SamplerThread()
-{
-  WaitForSingleObject(mThread, INFINITE);
-
-  
-  if (mThread != kNoThread) {
-    CloseHandle(mThread);
-  }
-}
-
-void
-SamplerThread::SleepMicro(uint32_t aMicroseconds)
-{
-  
-  
-  
-  if (mIntervalMicroseconds >= 1000) {
-    ::Sleep(std::max(1u, aMicroseconds / 1000));
-  } else {
-    TimeStamp start = TimeStamp::Now();
-    TimeStamp end = start + TimeDuration::FromMicroseconds(aMicroseconds);
-
-    
-    if (aMicroseconds >= 1000) {
-      ::Sleep(aMicroseconds / 1000);
-    }
-
-    
-    while (TimeStamp::Now() < end) {
-      _mm_pause();
-    }
-  }
-}
-
-void
-SamplerThread::Stop(PSLockRef aLock)
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mIntervalMicroseconds < 10 * 1000) {
-    ::timeEndPeriod(mIntervalMicroseconds / 1000);
-  }
-
-  Sampler::Disable(aLock);
 }
 
 
