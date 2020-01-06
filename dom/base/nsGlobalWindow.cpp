@@ -9076,7 +9076,7 @@ nsGlobalWindow::GetFrames(ErrorResult& aError)
   FORWARD_TO_OUTER_OR_THROW(GetFramesOuter, (), aError, nullptr);
 }
 
-nsGlobalWindow*
+nsGlobalWindowInner*
 nsGlobalWindow::CallerInnerWindow()
 {
   JSContext *cx = nsContentUtils::GetCurrentJSContext();
@@ -9108,7 +9108,7 @@ nsGlobalWindow::CallerInnerWindow()
   
   
   nsCOMPtr<nsPIDOMWindowInner> win = do_QueryInterface(global);
-  return nsGlobalWindow::Cast(win);
+  return nsGlobalWindowInner::Cast(win);
 }
 
 void
@@ -12995,7 +12995,7 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
 
 
 
-nsGlobalWindow*
+nsGlobalWindowInner*
 nsGlobalWindow::InnerForSetTimeoutOrInterval(ErrorResult& aError)
 {
   nsGlobalWindow* currentInner;
@@ -13035,14 +13035,16 @@ nsGlobalWindow::InnerForSetTimeoutOrInterval(ErrorResult& aError)
         return nullptr;
       }
 
-      return currentInner;
+      return static_cast<nsGlobalWindowInner*>(currentInner);
     }
   }
 
   
   
   
-  return forwardTo->AsInner()->HasActiveDocument() ? currentInner : nullptr;
+  return forwardTo->AsInner()->HasActiveDocument()
+    ? static_cast<nsGlobalWindowInner*>(currentInner)
+    : nullptr;
 }
 
 int32_t
@@ -14008,7 +14010,13 @@ nsGlobalWindow::DispatchVRDisplayPresentChange(uint32_t aDisplayID)
  already_AddRefed<nsGlobalWindow>
 nsGlobalWindow::CreateChrome(nsGlobalWindow *aOuterWindow)
 {
-  RefPtr<nsGlobalWindow> window = new nsGlobalWindow(aOuterWindow);
+  RefPtr<nsGlobalWindow> window;
+  if (aOuterWindow) {
+    window = new nsGlobalWindowInner(
+      static_cast<nsGlobalWindowOuter*>(aOuterWindow));
+  } else {
+    window = new nsGlobalWindowOuter();
+  }
   window->mIsChrome = true;
   window->mCleanMessageManager = true;
 
@@ -14399,7 +14407,13 @@ nsGlobalWindow::TakeOpenerForInitialContentBrowser(mozIDOMWindowProxy** aOpenerW
  already_AddRefed<nsGlobalWindow>
 nsGlobalWindow::Create(nsGlobalWindow *aOuterWindow)
 {
-  RefPtr<nsGlobalWindow> window = new nsGlobalWindow(aOuterWindow);
+  RefPtr<nsGlobalWindow> window;
+  if (aOuterWindow) {
+    window = new nsGlobalWindowInner(
+      static_cast<nsGlobalWindowOuter*>(aOuterWindow));
+  } else {
+    window = new nsGlobalWindowOuter();
+  }
   window->InitWasOffline();
   return window.forget();
 }
@@ -15055,6 +15069,14 @@ nsGlobalWindow::GetIntlUtils(ErrorResult& aError)
 
   return mIntlUtils;
 }
+
+nsGlobalWindowOuter::nsGlobalWindowOuter()
+  : nsGlobalWindow(nullptr)
+{}
+
+nsGlobalWindowInner::nsGlobalWindowInner(nsGlobalWindowOuter* aOuterWindow)
+  : nsGlobalWindow(aOuterWindow)
+{}
 
 template class nsPIDOMWindow<mozIDOMWindowProxy>;
 template class nsPIDOMWindow<mozIDOMWindow>;
