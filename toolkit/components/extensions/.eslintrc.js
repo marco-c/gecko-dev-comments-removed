@@ -11,6 +11,8 @@ module.exports = {
     "TextEncoder": false,
 
     "MatchGlob": false,
+    "MatchPattern": true,
+    "MatchPatternSet": false,
     
     "AppConstants": true,
     "Extension": true,

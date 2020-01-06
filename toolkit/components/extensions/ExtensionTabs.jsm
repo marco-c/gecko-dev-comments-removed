@@ -550,7 +550,7 @@ class TabBase {
       
       options.matchesHost = ["<all_urls>"];
     } else {
-      options.matchesHost = this.extension.whiteListedHosts.serialize();
+      options.matchesHost = this.extension.whiteListedHosts.patterns.map(host => host.pattern);
     }
 
     if (details.code !== null) {

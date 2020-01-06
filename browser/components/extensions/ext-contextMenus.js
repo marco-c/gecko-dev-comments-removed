@@ -2,8 +2,6 @@
 
 "use strict";
 
-Cu.import("resource://gre/modules/ExtensionManagement.jsm");
-Cu.import("resource://gre/modules/MatchPattern.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
@@ -381,11 +379,11 @@ MenuItem.prototype = {
     }
 
     if (createProperties.documentUrlPatterns != null) {
-      this.documentUrlMatchPattern = new MatchPattern(this.documentUrlPatterns);
+      this.documentUrlMatchPattern = new MatchPatternSet(this.documentUrlPatterns);
     }
 
     if (createProperties.targetUrlPatterns != null) {
-      this.targetUrlMatchPattern = new MatchPattern(this.targetUrlPatterns);
+      this.targetUrlMatchPattern = new MatchPatternSet(this.targetUrlPatterns);
     }
 
     
