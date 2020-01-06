@@ -24,6 +24,7 @@ function getSimpleMeasurementsFromTelemetryController() {
 add_task(async function test_setup() {
   
   loadAddonManager();
+  finishAddonManagerStartup();
   
   do_get_profile();
 

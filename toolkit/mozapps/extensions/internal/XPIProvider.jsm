@@ -2325,16 +2325,25 @@ this.XPIProvider = {
       
       
       if (!this.isDBLoaded) {
-        Services.obs.addObserver({
+        
+        
+        
+        const EVENTS = [ "sessionstore-windows-restored", "test-load-xpi-database" ];
+        let observer = {
           observe(subject, topic, data) {
-            Services.obs.removeObserver(this, "sessionstore-windows-restored");
+            for (let event of EVENTS) {
+              Services.obs.removeObserver(this, event);
+            }
 
             
             
             
             XPIDatabase.asyncLoadDB();
           },
-        }, "sessionstore-windows-restored");
+        };
+        for (let event of EVENTS) {
+          Services.obs.addObserver(observer, event);
+        }
       }
 
       AddonManagerPrivate.recordTimestamp("XPI_startup_end");
