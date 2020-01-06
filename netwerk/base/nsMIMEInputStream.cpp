@@ -92,24 +92,6 @@ nsMIMEInputStream::~nsMIMEInputStream()
 }
 
 NS_IMETHODIMP
-nsMIMEInputStream::GetAddContentLength(bool *aAddContentLength)
-{
-    *aAddContentLength = true;
-    return NS_OK;
-}
-NS_IMETHODIMP
-nsMIMEInputStream::SetAddContentLength(bool aAddContentLength)
-{
-    NS_ENSURE_FALSE(mStartedReading, NS_ERROR_FAILURE);
-    if (!aAddContentLength) {
-      
-      
-      return NS_ERROR_FAILURE;
-    }
-    return NS_OK;
-}
-
-NS_IMETHODIMP
 nsMIMEInputStream::AddHeader(const char *aName, const char *aValue)
 {
     NS_ENSURE_FALSE(mStartedReading, NS_ERROR_FAILURE);
