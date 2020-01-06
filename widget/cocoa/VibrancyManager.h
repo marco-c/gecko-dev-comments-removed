@@ -97,12 +97,6 @@ public:
 
 
 
-  NSColor* VibrancyFontSmoothingBackgroundColorForType(VibrancyType aType);
-
-  
-
-
-
 
   static bool SystemSupportsVibrancy();
 

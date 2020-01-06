@@ -3060,12 +3060,6 @@ nsTreeBodyFrame::PaintRow(int32_t               aRowIndex,
   
   Color originalColor(aRenderingContext.GetFontSmoothingBackgroundColor());
   if (theme && theme->ThemeSupportsWidget(aPresContext, nullptr, appearance)) {
-    nscolor color;
-    if (theme->WidgetProvidesFontSmoothingBackgroundColor(this, appearance,
-                                                          &color)) {
-      
-      aRenderingContext.SetFontSmoothingBackgroundColor(ToDeviceColor(color));
-    }
     nsRect dirty;
     dirty.IntersectRect(rowRect, aDirtyRect);
     theme->DrawWidgetBackground(&aRenderingContext, this, appearance, rowRect,

@@ -439,7 +439,6 @@ public:
     mLayer(nullptr),
     mSolidColor(NS_RGBA(0, 0, 0, 0)),
     mIsSolidColorInVisibleRegion(false),
-    mFontSmoothingBackgroundColor(NS_RGBA(0,0,0,0)),
     mNeedComponentAlpha(false),
     mForceTransparentSurface(false),
     mHideAllLayersBelow(false),
@@ -594,11 +593,6 @@ public:
 
 
   bool mIsSolidColorInVisibleRegion;
-  
-
-
-
-  nscolor mFontSmoothingBackgroundColor;
   
 
 
@@ -1495,7 +1489,6 @@ public:
   PaintedDisplayItemLayerUserData() :
     mMaskClipCount(0),
     mForcedBackgroundColor(NS_RGBA(0,0,0,0)),
-    mFontSmoothingBackgroundColor(NS_RGBA(0,0,0,0)),
     mXScale(1.f), mYScale(1.f),
     mAppUnitsPerDevPixel(0),
     mTranslation(0, 0),
@@ -1513,12 +1506,6 @@ public:
 
 
   nscolor mForcedBackgroundColor;
-
-  
-
-
-
-  nscolor mFontSmoothingBackgroundColor;
 
   
 
@@ -3290,8 +3277,6 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
     }
     userData->mForcedBackgroundColor = backgroundColor;
 
-    userData->mFontSmoothingBackgroundColor = data->mFontSmoothingBackgroundColor;
-
     
     
     
@@ -3499,12 +3484,6 @@ PaintedLayerData::Accumulate(ContainerState* aState,
   }
 
   bool isFirstVisibleItem = mVisibleRegion.IsEmpty();
-  if (isFirstVisibleItem) {
-    nscolor fontSmoothingBGColor;
-    if (aItem->ProvidesFontSmoothingBackgroundColor(&fontSmoothingBGColor)) {
-      mFontSmoothingBackgroundColor = fontSmoothingBGColor;
-    }
-  }
 
   Maybe<nscolor> uniformColor = aItem->IsUniform(aState->mBuilder);
 
@@ -6185,11 +6164,6 @@ FrameLayerBuilder::DrawPaintedLayer(PaintedLayer* aLayer,
                               userData->mForcedBackgroundColor);
   }
 
-  if (NS_GET_A(userData->mFontSmoothingBackgroundColor) > 0) {
-    aContext->SetFontSmoothingBackgroundColor(
-      Color::FromABGR(userData->mFontSmoothingBackgroundColor));
-  }
-
   
   
   gfxContextMatrixAutoSaveRestore saveMatrix(aContext);
@@ -6253,8 +6227,6 @@ FrameLayerBuilder::DrawPaintedLayer(PaintedLayer* aLayer,
         aRegionToDraw.GetBounds().Area());
     }
   }
-
-  aContext->SetFontSmoothingBackgroundColor(Color());
 
   bool isActiveLayerManager = !aLayer->Manager()->IsInactiveLayerManager();
 

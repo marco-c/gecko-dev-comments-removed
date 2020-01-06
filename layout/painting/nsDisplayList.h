@@ -1954,11 +1954,6 @@ public:
     return false;
   }
 
-  virtual bool ProvidesFontSmoothingBackgroundColor(nscolor* aColor) const
-  {
-    return false;
-  }
-
   
 
 
@@ -3488,7 +3483,6 @@ public:
   virtual nsRegion GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
                                    bool* aSnap) const override;
   virtual mozilla::Maybe<nscolor> IsUniform(nsDisplayListBuilder* aBuilder) const override;
-  virtual bool ProvidesFontSmoothingBackgroundColor(nscolor* aColor) const override;
   virtual bool MustPaintOnContentSide() const override { return true; }
 
   
