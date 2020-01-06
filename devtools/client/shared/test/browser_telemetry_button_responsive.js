@@ -10,7 +10,7 @@ const TEST_URI = "data:text/html;charset=utf-8," +
 
 const TOOL_DELAY = 200;
 
-loader.lazyRequireGetter(this, "ResponsiveUIManager", "devtools/client/responsive.html/manager", true);
+loader.lazyRequireGetter(this, "ResponsiveUIManager", "devtools/client/responsivedesign/responsivedesign");
 
 add_task(function* () {
   yield addTab(TEST_URI);
