@@ -808,40 +808,11 @@ public:
                                  bool aConvertListItem = false);
   static void EnsureInlineDisplay(mozilla::StyleDisplay& display);
 
-  enum class FlushUserFontSet {
-    Yes,
-    No,
-  };
-
-  static already_AddRefed<nsFontMetrics> GetMetricsFor(nsPresContext* aPresContext,
-                                                       bool aIsVertical,
-                                                       const nsStyleFont* aStyleFont,
-                                                       nscoord aFontSize,
-                                                       bool aUseUserFontSet,
-                                                       FlushUserFontSet aFlushUserFontSet);
-
   static already_AddRefed<nsFontMetrics> GetMetricsFor(nsPresContext* aPresContext,
                                                        nsStyleContext* aStyleContext,
                                                        const nsStyleFont* aStyleFont,
                                                        nscoord aFontSize,
                                                        bool aUseUserFontSet);
-
-  
-
-
-
-  static void FixupNoneGeneric(nsFont* aFont,
-                               const nsPresContext* aPresContext,
-                               uint8_t aGenericFontID,
-                               const nsFont* aDefaultVariableFont);
-
-  
-
-
-
-  static void ApplyMinFontSize(nsStyleFont* aFont,
-                               const nsPresContext* aPresContext,
-                               nscoord aMinFontSize);
 
   
   nsRuleNode* Transition(nsIStyleRule* aRule, mozilla::SheetType aLevel,
@@ -1059,17 +1030,9 @@ public:
     return !!mStyleData.GetStyleData(aSID);
   }
 
-  static void ComputeFontFeatures(const nsCSSValuePairList* aFeaturesList,
-                                  nsTArray<gfxFontFeature>& aFeatureSettings);
-
-  static void ComputeFontVariations(const nsCSSValuePairList* aVariationsList,
-                                    nsTArray<gfxFontVariation>& aVariationSettings);
-
   static nscoord CalcFontPointSize(int32_t aHTMLSize, int32_t aBasePointSize,
                                    nsPresContext* aPresContext,
                                    nsFontSizeType aFontSizeType = eFontSize_HTML);
-
-  static uint32_t ParseFontLanguageOverride(const nsAString& aLangTag);
 
   
 
@@ -1101,11 +1064,6 @@ public:
 
   static void FillAllMaskLists(nsStyleImageLayers& aLayers,
                                uint32_t aMaxItemCount);
-
-  static void ComputeSystemFont(nsFont* aSystemFont,
-                                mozilla::LookAndFeel::FontID aFontID,
-                                const nsPresContext* aPresContext,
-                                const nsFont* aDefaultVariableFont);
 
 private:
 #ifdef DEBUG

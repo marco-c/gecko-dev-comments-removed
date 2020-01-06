@@ -374,30 +374,6 @@ static inline nscoord ScaleViewportCoordTrunc(const nsCSSValue& aValue,
 
 already_AddRefed<nsFontMetrics>
 nsRuleNode::GetMetricsFor(nsPresContext* aPresContext,
-                          bool aIsVertical,
-                          const nsStyleFont* aStyleFont,
-                          nscoord aFontSize,
-                          bool aUseUserFontSet,
-                          FlushUserFontSet aFlushUserFontSet)
-{
-  nsFont font = aStyleFont->mFont;
-  font.size = aFontSize;
-  gfxFont::Orientation orientation
-    = aIsVertical ? gfxFont::eVertical : gfxFont::eHorizontal;
-  nsFontMetrics::Params params;
-  params.language = aStyleFont->mLanguage;
-  params.explicitLanguage = aStyleFont->mExplicitLanguage;
-  params.orientation = orientation;
-  params.userFontSet = aUseUserFontSet
-    ? aPresContext->GetUserFontSet(aFlushUserFontSet == FlushUserFontSet::Yes)
-    : nullptr;
-  params.textPerf = aPresContext->GetTextPerfMetrics();
-  return aPresContext->DeviceContext()->GetMetricsFor(font, params);
-}
-
-
-already_AddRefed<nsFontMetrics>
-nsRuleNode::GetMetricsFor(nsPresContext* aPresContext,
                           nsStyleContext* aStyleContext,
                           const nsStyleFont* aStyleFont,
                           nscoord aFontSize, 
@@ -410,66 +386,9 @@ nsRuleNode::GetMetricsFor(nsPresContext* aPresContext,
       isVertical = true;
     }
   }
-  return nsRuleNode::GetMetricsFor(
+  return nsLayoutUtils::GetMetricsFor(
       aPresContext, isVertical, aStyleFont, aFontSize, aUseUserFontSet,
-      FlushUserFontSet::Yes);
-}
-
-
-void
-nsRuleNode::FixupNoneGeneric(nsFont* aFont,
-                             const nsPresContext* aPresContext,
-                             uint8_t aGenericFontID,
-                             const nsFont* aDefaultVariableFont)
-{
-  bool useDocumentFonts =
-    aPresContext->GetCachedBoolPref(kPresContext_UseDocumentFonts);
-  if (aGenericFontID == kGenericFont_NONE ||
-      (!useDocumentFonts && (aGenericFontID == kGenericFont_cursive ||
-                             aGenericFontID == kGenericFont_fantasy))) {
-    FontFamilyType defaultGeneric =
-      aDefaultVariableFont->fontlist.GetDefaultFontType();
-    MOZ_ASSERT(aDefaultVariableFont->fontlist.IsEmpty() &&
-               (defaultGeneric == eFamily_serif ||
-                defaultGeneric == eFamily_sans_serif));
-    if (defaultGeneric != eFamily_none) {
-      if (useDocumentFonts) {
-        aFont->fontlist.SetDefaultFontType(defaultGeneric);
-      } else {
-        
-        
-        if (!aFont->fontlist.PrioritizeFirstGeneric()) {
-          aFont->fontlist.PrependGeneric(defaultGeneric);
-        }
-      }
-    }
-  } else {
-    aFont->fontlist.SetDefaultFontType(eFamily_none);
-  }
-}
-
-
-void
-nsRuleNode::ApplyMinFontSize(nsStyleFont* aFont,
-                             const nsPresContext* aPresContext,
-                             nscoord aMinFontSize)
-{
-  nscoord fontSize = aFont->mSize;
-
-  
-  
-  if (fontSize > 0) {
-    if (aMinFontSize < 0) {
-      aMinFontSize = 0;
-    } else {
-      aMinFontSize = (aMinFontSize * aFont->mMinFontSizeRatio) / 100;
-    }
-    if (fontSize < aMinFontSize && !aPresContext->IsChrome()) {
-      
-      fontSize = aMinFontSize;
-    }
-  }
-  aFont->mFont.size = fontSize;
+      nsLayoutUtils::FlushUserFontSet::Yes);
 }
 
 static nsSize CalcViewportUnitsScale(nsPresContext* aPresContext)
@@ -3538,59 +3457,6 @@ static int8_t ClampTo8Bit(int32_t aValue) {
 }
 
  void
-nsRuleNode::ComputeSystemFont(nsFont* aSystemFont, LookAndFeel::FontID aFontID,
-                              const nsPresContext* aPresContext,
-                              const nsFont* aDefaultVariableFont)
-{
-  gfxFontStyle fontStyle;
-  float devPerCSS =
-    (float)nsPresContext::AppUnitsPerCSSPixel() /
-    aPresContext->DeviceContext()->AppUnitsPerDevPixelAtUnitFullZoom();
-  nsAutoString systemFontName;
-  if (LookAndFeel::GetFont(aFontID, systemFontName, fontStyle, devPerCSS)) {
-    systemFontName.Trim("\"'");
-    aSystemFont->fontlist = FontFamilyList(systemFontName, eUnquotedName);
-    aSystemFont->fontlist.SetDefaultFontType(eFamily_none);
-    aSystemFont->style = fontStyle.style;
-    aSystemFont->systemFont = fontStyle.systemFont;
-    aSystemFont->weight = fontStyle.weight;
-    aSystemFont->stretch = fontStyle.stretch;
-    aSystemFont->size =
-      NSFloatPixelsToAppUnits(fontStyle.size,
-                              aPresContext->DeviceContext()->
-                                AppUnitsPerDevPixelAtUnitFullZoom());
-    
-    aSystemFont->sizeAdjust = fontStyle.sizeAdjust;
-
-#ifdef XP_WIN
-    
-    
-    
-    
-
-    if (aFontID == LookAndFeel::eFont_Field ||
-        aFontID == LookAndFeel::eFont_Button ||
-        aFontID == LookAndFeel::eFont_List) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      aSystemFont->size =
-        std::max(aDefaultVariableFont->size -
-                 nsPresContext::CSSPointsToAppUnits(2), 0);
-    }
-#endif
-  }
-}
-
- void
 nsRuleNode::SetFont(nsPresContext* aPresContext, GeckoStyleContext* aContext,
                     uint8_t aGenericFontID, const nsRuleData* aRuleData,
                     const nsStyleFont* aParentFont,
@@ -3658,8 +3524,8 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, GeckoStyleContext* aContext,
     lazySystemFont.emplace(*defaultVariableFont);
     LookAndFeel::FontID fontID =
       (LookAndFeel::FontID)systemFontValue->GetIntValue();
-    ComputeSystemFont(lazySystemFont.ptr(), fontID, aPresContext,
-                      defaultVariableFont);
+    nsLayoutUtils::ComputeSystemFont(lazySystemFont.ptr(), fontID, aPresContext,
+                                     defaultVariableFont);
   }
   const nsFont& systemFont = lazySystemFont.refOr(*defaultVariableFont);
 
@@ -3668,8 +3534,8 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, GeckoStyleContext* aContext,
     case eCSSUnit_FontFamilyList:
       
       
-      nsRuleNode::FixupNoneGeneric(&aFont->mFont, aPresContext,
-                                   aGenericFontID, defaultVariableFont);
+      nsLayoutUtils::FixupNoneGeneric(&aFont->mFont, aPresContext,
+                                      aGenericFontID, defaultVariableFont);
 
       aFont->mFont.systemFont = false;
       
@@ -3696,8 +3562,8 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, GeckoStyleContext* aContext,
       
       
       if (aRuleData->ValueForLang()->GetUnit() != eCSSUnit_Null) {
-        FixupNoneGeneric(&aFont->mFont, aPresContext, aGenericFontID,
-                         defaultVariableFont);
+        nsLayoutUtils::FixupNoneGeneric(&aFont->mFont, aPresContext,
+                                        aGenericFontID, defaultVariableFont);
       }
       break;
     case eCSSUnit_Initial:
@@ -3999,8 +3865,9 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, GeckoStyleContext* aContext,
 
     case eCSSUnit_PairList:
     case eCSSUnit_PairListDep:
-      ComputeFontFeatures(featureSettingsValue->GetPairListValue(),
-                          aFont->mFont.fontFeatureSettings);
+      nsLayoutUtils::ComputeFontFeatures(
+        featureSettingsValue->GetPairListValue(),
+        aFont->mFont.fontFeatureSettings);
       break;
 
     default:
@@ -4034,8 +3901,9 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, GeckoStyleContext* aContext,
 
     case eCSSUnit_PairList:
     case eCSSUnit_PairListDep:
-      ComputeFontVariations(variationSettingsValue->GetPairListValue(),
-                            aFont->mFont.fontVariationSettings);
+      nsLayoutUtils::ComputeFontVariations(
+        variationSettingsValue->GetPairListValue(),
+        aFont->mFont.fontVariationSettings);
       break;
 
     default:
@@ -4058,7 +3926,8 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, GeckoStyleContext* aContext,
   } else if (eCSSUnit_String == languageOverrideValue->GetUnit()) {
     nsAutoString lang;
     languageOverrideValue->GetStringValue(lang);
-    aFont->mFont.languageOverride = ParseFontLanguageOverride(lang);
+    aFont->mFont.languageOverride =
+      nsLayoutUtils::ParseFontLanguageOverride(lang);
   }
 
   
@@ -4149,8 +4018,8 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, GeckoStyleContext* aContext,
   NS_ASSERTION(aFont->mScriptUnconstrainedSize <= aFont->mSize,
                "scriptminsize should never be making things bigger");
 
-  nsRuleNode::ApplyMinFontSize(aFont, aPresContext,
-                               aPresContext->MinFontSize(aFont->mLanguage));
+  nsLayoutUtils::ApplyMinFontSize(aFont, aPresContext,
+                                  aPresContext->MinFontSize(aFont->mLanguage));
 
   
   const nsCSSValue* sizeAdjustValue = aRuleData->ValueForFontSizeAdjust();
@@ -4160,80 +4029,6 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, GeckoStyleContext* aContext,
     SetFactor(*sizeAdjustValue, aFont->mFont.sizeAdjust,
               aConditions, aParentFont->mFont.sizeAdjust, -1.0f,
               SETFCT_NONE | SETFCT_UNSET_INHERIT);
-}
-
-static inline void
-AssertValidFontTag(const nsString& aString)
-{
-  
-  MOZ_ASSERT(aString.Length() == 4 &&              
-             NS_IsAscii(aString.BeginReading()) && 
-             isprint(aString[0]) &&                
-             isprint(aString[1]) &&
-             isprint(aString[2]) &&
-             isprint(aString[3]));
-}
-
- void
-nsRuleNode::ComputeFontFeatures(const nsCSSValuePairList *aFeaturesList,
-                                nsTArray<gfxFontFeature>& aFeatureSettings)
-{
-  aFeatureSettings.Clear();
-  for (const nsCSSValuePairList* p = aFeaturesList; p; p = p->mNext) {
-    gfxFontFeature feat;
-
-    MOZ_ASSERT(aFeaturesList->mXValue.GetUnit() == eCSSUnit_String,
-               "unexpected value unit");
-
-    
-    nsAutoString tag;
-    p->mXValue.GetStringValue(tag);
-    AssertValidFontTag(tag);
-    if (tag.Length() != 4) {
-      continue;
-    }
-    
-    
-    feat.mTag = (tag[0] << 24) | (tag[1] << 16) | (tag[2] << 8)  | tag[3];
-
-    
-    NS_ASSERTION(p->mYValue.GetUnit() == eCSSUnit_Integer,
-                 "should have found an integer unit");
-    feat.mValue = p->mYValue.GetIntValue();
-
-    aFeatureSettings.AppendElement(feat);
-  }
-}
-
- void
-nsRuleNode::ComputeFontVariations(const nsCSSValuePairList* aVariationsList,
-                                  nsTArray<gfxFontVariation>& aVariationSettings)
-{
-  aVariationSettings.Clear();
-  for (const nsCSSValuePairList* p = aVariationsList; p; p = p->mNext) {
-    gfxFontVariation var;
-
-    MOZ_ASSERT(aVariationsList->mXValue.GetUnit() == eCSSUnit_String,
-               "unexpected value unit");
-
-    
-    nsAutoString tag;
-    p->mXValue.GetStringValue(tag);
-    AssertValidFontTag(tag);
-    if (tag.Length() != 4) {
-      continue;
-    }
-    
-    
-    var.mTag = (tag[0] << 24) | (tag[1] << 16) | (tag[2] << 8)  | tag[3];
-
-    
-    NS_ASSERTION(p->mYValue.GetUnit() == eCSSUnit_Number,
-                 "should have found a number unit");
-    var.mValue = p->mYValue.GetFloatValue();
-
-    aVariationSettings.AppendElement(var);
-  }
 }
 
 
@@ -4407,26 +4202,6 @@ nsRuleNode::ComputeFontData(void* aStartStruct,
   }
 
   COMPUTE_END_INHERITED(Font, font)
-}
-
- uint32_t
-nsRuleNode::ParseFontLanguageOverride(const nsAString& aLangTag)
-{
-  if (!aLangTag.Length() || aLangTag.Length() > 4) {
-    return NO_FONT_LANGUAGE_OVERRIDE;
-  }
-  uint32_t index, result = 0;
-  for (index = 0; index < aLangTag.Length(); ++index) {
-    char16_t ch = aLangTag[index];
-    if (!nsCRT::IsAscii(ch)) { 
-      return NO_FONT_LANGUAGE_OVERRIDE;
-    }
-    result = (result << 8) + ch;
-  }
-  while (index++ < 4) {
-    result = (result << 8) + 0x20;
-  }
-  return result;
 }
 
 template <typename T>
