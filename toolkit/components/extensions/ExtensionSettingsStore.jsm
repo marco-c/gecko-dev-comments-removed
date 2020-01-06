@@ -56,15 +56,8 @@ const JSON_FILE_NAME = "extension-settings.json";
 const JSON_FILE_VERSION = 2;
 const STORE_PATH = OS.Path.join(Services.dirsvc.get("ProfD", Ci.nsIFile).path, JSON_FILE_NAME);
 
-let _store;
-
-
-
-function clearFileFromCache() {
-  let finalizePromise = _store.finalize();
-  _store = null;
-  return finalizePromise;
-}
+let _initializePromise;
+let _store = {};
 
 
 function dataPostProcessor(json) {
@@ -84,30 +77,43 @@ function dataPostProcessor(json) {
 }
 
 
-function getStore(type) {
-  if (!_store) {
-    let initStore = new JSONFile({
+function initialize() {
+  if (!_initializePromise) {
+    _store = new JSONFile({
       path: STORE_PATH,
       dataPostProcessor,
     });
-    initStore.ensureDataReady();
-    _store = initStore;
+    _initializePromise = _store.load();
+  }
+  return _initializePromise;
+}
+
+
+async function reloadFile() {
+  await _store.finalize();
+  _initializePromise = null;
+  return initialize();
+}
+
+
+function ensureType(type) {
+  if (!_store.dataReady) {
+    throw new Error(
+      "The ExtensionSettingsStore was accessed before the initialize promise resolved.");
   }
 
   
   if (!_store.data[type]) {
     _store.data[type] = {};
   }
-
-  return _store;
 }
 
 
 
 function getTopItem(type, key) {
-  let store = getStore(type);
+  ensureType(type);
 
-  let keyInfo = store.data[type][key];
+  let keyInfo = _store.data[type][key];
   if (!keyInfo) {
     return null;
   }
@@ -155,9 +161,9 @@ function precedenceComparator(a, b) {
 
 function alterSetting(extension, type, key, action) {
   let returnItem;
-  let store = getStore(type);
+  ensureType(type);
 
-  let keyInfo = store.data[type][key];
+  let keyInfo = _store.data[type][key];
   if (!keyInfo) {
     if (action === "remove") {
       return null;
@@ -202,15 +208,27 @@ function alterSetting(extension, type, key, action) {
   }
 
   if (action === "remove" && keyInfo.precedenceList.length === 0) {
-    delete store.data[type][key];
+    delete _store.data[type][key];
   }
 
-  store.saveSoon();
+  _store.saveSoon();
 
   return returnItem;
 }
 
 this.ExtensionSettingsStore = {
+  
+
+
+
+
+
+
+
+  initialize() {
+    return initialize();
+  },
+
   
 
 
@@ -243,17 +261,17 @@ this.ExtensionSettingsStore = {
     }
 
     let id = extension.id;
-    let store = getStore(type);
+    ensureType(type);
 
-    if (!store.data[type][key]) {
+    if (!_store.data[type][key]) {
       
       let initialValue = await initialValueCallback(callbackArgument);
-      store.data[type][key] = {
+      _store.data[type][key] = {
         initialValue,
         precedenceList: [],
       };
     }
-    let keyInfo = store.data[type][key];
+    let keyInfo = _store.data[type][key];
     
     let foundIndex = keyInfo.precedenceList.findIndex(item => item.id == id);
     if (foundIndex === -1) {
@@ -269,7 +287,7 @@ this.ExtensionSettingsStore = {
     
     keyInfo.precedenceList.sort(precedenceComparator);
 
-    store.saveSoon();
+    _store.saveSoon();
 
     
     if (keyInfo.precedenceList[0].id == id) {
@@ -347,9 +365,9 @@ this.ExtensionSettingsStore = {
 
 
   getAllForExtension(extension, type) {
-    let store = getStore(type);
+    ensureType(type);
 
-    let keysObj = store.data[type];
+    let keysObj = _store.data[type];
     let items = [];
     for (let key in keysObj) {
       if (keysObj[key].precedenceList.find(item => item.id == extension.id)) {
@@ -410,9 +428,9 @@ this.ExtensionSettingsStore = {
 
 
   async getLevelOfControl(extension, type, key) {
-    let store = getStore(type);
+    ensureType(type);
 
-    let keyInfo = store.data[type][key];
+    let keyInfo = _store.data[type][key];
     if (!keyInfo || !keyInfo.precedenceList.length) {
       return "controllable_by_this_extension";
     }
@@ -444,6 +462,6 @@ this.ExtensionSettingsStore = {
 
 
   _reloadFile() {
-    return clearFileFromCache();
+    return reloadFile();
   },
 };
