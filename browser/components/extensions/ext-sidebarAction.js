@@ -5,11 +5,6 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "CustomizableUI",
-                                  "resource:///modules/CustomizableUI.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Services",
-                                  "resource://gre/modules/Services.jsm");
-
 Cu.import("resource://gre/modules/ExtensionParent.jsm");
 
 var {

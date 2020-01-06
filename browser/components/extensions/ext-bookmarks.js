@@ -5,8 +5,7 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
-                                  "resource://gre/modules/PlacesUtils.jsm");
+Cu.import("resource://gre/modules/PlacesUtils.jsm");
 
 const {
   TYPE_BOOKMARK,

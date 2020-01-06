@@ -6,9 +6,6 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "DevToolsShim",
-                                  "chrome://devtools-shim/content/DevToolsShim.jsm");
-
 var {
   SpreadArgs,
 } = ExtensionCommon;
