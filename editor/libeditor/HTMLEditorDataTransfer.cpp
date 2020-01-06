@@ -370,7 +370,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
     WSRunObject wsObj(this, parentNode, offsetOfNewNode);
     if (wsObj.mEndReasonNode &&
         TextEditUtils::IsBreak(wsObj.mEndReasonNode) &&
-        !IsVisBreak(wsObj.mEndReasonNode)) {
+        !IsVisibleBRElement(wsObj.mEndReasonNode)) {
       rv = DeleteNode(wsObj.mEndReasonNode);
       NS_ENSURE_SUCCESS(rv, rv);
     }
@@ -621,7 +621,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
         
         
         
-        if (!IsVisBreak(wsRunObj.mStartReasonNode)) {
+        if (!IsVisibleBRElement(wsRunObj.mStartReasonNode)) {
           
           
           selNode = GetNodeLocation(GetAsDOMNode(wsRunObj.mStartReasonNode), &selOffset);

@@ -674,7 +674,7 @@ protected:
   
 
 
-  bool IsVisBreak(nsINode* aNode);
+  bool IsVisibleBRElement(nsINode* aNode);
 
   
 
