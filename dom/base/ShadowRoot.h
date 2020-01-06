@@ -57,6 +57,13 @@ public:
 
 
 
+  void DistributeAllNodes();
+
+private:
+  
+
+
+
   void DistributeSingleNode(nsIContent* aContent);
 
   
@@ -65,12 +72,10 @@ public:
 
   void RemoveDistributedNode(nsIContent* aContent);
 
-  
+  static bool IsPooledNode(nsIContent* aChild, nsIContent* aContainer,
+                           nsIContent* aHost);
 
-
-
-  void DistributeAllNodes();
-
+public:
   void AddInsertionPoint(HTMLContentElement* aInsertionPoint);
   void RemoveInsertionPoint(HTMLContentElement* aInsertionPoint);
 
@@ -80,8 +85,6 @@ public:
 
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
-  static bool IsPooledNode(nsIContent* aChild, nsIContent* aContainer,
-                           nsIContent* aHost);
   static ShadowRoot* FromNode(nsINode* aNode);
 
   static void RemoveDestInsertionPoint(nsIContent* aInsertionPoint,
