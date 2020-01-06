@@ -1923,14 +1923,16 @@ gfxFont::DrawGlyphs(const gfxShapedText      *aShapedText,
                     double advance = details->mAdvance;
 
                     if (glyphData->IsMissing()) {
-                        if (auto* textDrawer = aRunParams.context->GetTextDrawer()) {
-                            textDrawer->FoundUnsupportedFeature();
-                            return false;
-                        }
                         
                         
                         if (aRunParams.drawMode != DrawMode::GLYPH_PATH &&
                             advance > 0) {
+
+                            if (auto* textDrawer = aRunParams.context->GetTextDrawer()) {
+                                textDrawer->FoundUnsupportedFeature();
+                                return false;
+                            }
+
                             double glyphX = aPt->x;
                             double glyphY = aPt->y;
                             if (aRunParams.isRTL) {
