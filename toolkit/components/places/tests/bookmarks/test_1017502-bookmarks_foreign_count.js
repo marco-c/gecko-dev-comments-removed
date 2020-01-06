@@ -83,10 +83,7 @@ add_task(async function maintenance_foreign_count_test() {
 
   
   Components.utils.import("resource://gre/modules/PlacesDBUtils.jsm");
-  let promiseMaintenanceFinished =
-    promiseTopicObserved("places-maintenance-finished");
-  PlacesDBUtils.maintenanceOnIdle();
-  await promiseMaintenanceFinished;
+  await PlacesDBUtils.maintenanceOnIdle();
 
   
   Assert.equal((await getForeignCountForURL(conn, T_URI)), 0);
