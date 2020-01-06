@@ -375,10 +375,11 @@ public:
   virtual nsresult FireDelayedDOMEvents() override;
 
   
-  virtual bool WouldReuseInnerWindow(nsIDocument* aNewDocument) override;
+  bool WouldReuseInnerWindow(nsIDocument* aNewDocument);
 
-  virtual void SetDocShell(nsIDocShell* aDocShell) override;
-  virtual void DetachFromDocShell() override;
+  void SetDocShell(nsIDocShell* aDocShell);
+  void DetachFromDocShell();
+
   virtual nsresult SetNewDocument(nsIDocument *aDocument,
                                   nsISupports *aState,
                                   bool aForceReuseInnerWindow) override;

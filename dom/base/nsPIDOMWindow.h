@@ -270,23 +270,9 @@ public:
   }
 
   
-  virtual bool WouldReuseInnerWindow(nsIDocument* aNewDocument) = 0;
-
-  
 
 
   nsIDocShell *GetDocShell() const;
-
-  
-
-
-
-  virtual void SetDocShell(nsIDocShell *aDocShell) = 0;
-
-  
-
-
-  virtual void DetachFromDocShell() = 0;
 
   
 
