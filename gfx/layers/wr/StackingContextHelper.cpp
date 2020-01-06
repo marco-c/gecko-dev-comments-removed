@@ -14,7 +14,6 @@ namespace layers {
 
 StackingContextHelper::StackingContextHelper()
   : mBuilder(nullptr)
-  , mHasPerspectiveTransform(false)
   , mXScale(1.0f)
   , mYScale(1.0f)
 {
@@ -27,7 +26,6 @@ StackingContextHelper::StackingContextHelper(const StackingContextHelper& aParen
                                              const Maybe<gfx::Matrix4x4>& aTransform,
                                              const nsTArray<wr::WrFilterOp>& aFilters)
   : mBuilder(&aBuilder)
-  , mHasPerspectiveTransform(false)
   , mXScale(1.0f)
   , mYScale(1.0f)
 {
@@ -53,7 +51,6 @@ StackingContextHelper::StackingContextHelper(const StackingContextHelper& aParen
                                              gfx::Matrix4x4* aTransformPtr,
                                              const nsTArray<wr::WrFilterOp>& aFilters)
   : mBuilder(&aBuilder)
-  , mHasPerspectiveTransform(false)
   , mXScale(1.0f)
   , mYScale(1.0f)
 {
@@ -86,7 +83,6 @@ StackingContextHelper::StackingContextHelper(const StackingContextHelper& aParen
                                              const nsTArray<wr::WrFilterOp>& aFilters,
                                              const gfx::CompositionOp& aMixBlendMode)
   : mBuilder(&aBuilder)
-  , mHasPerspectiveTransform(false)
   , mXScale(1.0f)
   , mYScale(1.0f)
 {
@@ -96,9 +92,9 @@ StackingContextHelper::StackingContextHelper(const StackingContextHelper& aParen
     mTransform = *aTransformPtr;
   }
 
-  if (aPerspectivePtr) {
-    mHasPerspectiveTransform = true;
-  }
+  
+  mTransform.PostScale(aParentSC.mXScale, aParentSC.mYScale, 1.0);
+  mTransform.NudgeToIntegersFixedEpsilon();
 
   bool is2d = !aTransformPtr || (aTransformPtr->Is2D() && !aPerspectivePtr);
   if (is2d) {
@@ -106,11 +102,6 @@ StackingContextHelper::StackingContextHelper(const StackingContextHelper& aParen
     nsRect childrenVisible = aItem->GetVisibleRectForChildren();
     visibleRect = itemBounds.Intersect(childrenVisible);
 
-    
-    mTransform.PostScale(aParentSC.mXScale, aParentSC.mYScale, 1.0);
-    mTransform.NudgeToIntegersFixedEpsilon();
-
-    
     gfx::Size scale = mTransform.As2D().ScaleFactors(true);
 
     
@@ -168,7 +159,7 @@ StackingContextHelper::ToRelativeLayoutRect(const LayerRect& aRect) const
     aMaybeScaledRect.Scale(mXScale, mYScale);
   }
 
-  return wr::ToLayoutRect(RoundedToInt(aMaybeScaledRect - mOrigin));
+  return wr::ToLayoutRect(aMaybeScaledRect - mOrigin);
 }
 
 wr::LayoutRect
@@ -180,14 +171,25 @@ StackingContextHelper::ToRelativeLayoutRect(const LayoutDeviceRect& aRect) const
     aMaybeScaledRect.Scale(mXScale, mYScale);
   }
 
-  return wr::ToLayoutRect(RoundedToInt(ViewAs<LayerPixel>(aMaybeScaledRect,
-                                                          PixelCastJustification::WebRenderHasUnitResolution) - mOrigin));
+  return wr::ToLayoutRect(ViewAs<LayerPixel>(aMaybeScaledRect, PixelCastJustification::WebRenderHasUnitResolution) - mOrigin);
 }
 
 wr::LayoutPoint
 StackingContextHelper::ToRelativeLayoutPoint(const LayerPoint& aPoint) const
 {
   return wr::ToLayoutPoint(aPoint - mOrigin);
+}
+
+wr::LayoutRect
+StackingContextHelper::ToRelativeLayoutRectRounded(const LayoutDeviceRect& aRect) const
+{
+  
+  LayoutDeviceRect aMaybeScaledRect = aRect;
+  if (mXScale != 1.0f || mYScale != 1.0f) {
+    aMaybeScaledRect.Scale(mXScale, mYScale);
+  }
+
+  return wr::ToLayoutRect(RoundedToInt(ViewAs<LayerPixel>(aMaybeScaledRect, PixelCastJustification::WebRenderHasUnitResolution) - mOrigin));
 }
 
 } 
