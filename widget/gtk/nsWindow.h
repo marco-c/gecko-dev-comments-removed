@@ -374,6 +374,18 @@ public:
     virtual bool WidgetTypeSupportsAcceleration() override;
 
     bool DoDrawTitlebar() const;
+
+    typedef enum { CSD_SUPPORT_FULL,    
+                   CSD_SUPPORT_FLAT,    
+                   CSD_SUPPORT_NONE,    
+                   CSD_SUPPORT_UNKNOWN
+    } CSDSupportLevel;
+    
+
+
+
+    static CSDSupportLevel GetCSDSupportLevel();
+
 protected:
     virtual ~nsWindow();
 
@@ -578,16 +590,6 @@ private:
     RefPtr<mozilla::widget::IMContextWrapper> mIMContext;
 
     mozilla::UniquePtr<mozilla::CurrentX11TimeGetter> mCurrentTimeGetter;
-    typedef enum { CSD_SUPPORT_FULL,    
-                   CSD_SUPPORT_FLAT,    
-                   CSD_SUPPORT_NONE,    
-                   CSD_SUPPORT_UNKNOWN
-    } CSDSupportLevel;
-    
-
-
-
-    static CSDSupportLevel GetCSDSupportLevel();
     static CSDSupportLevel sCSDSupportLevel;
 };
 
