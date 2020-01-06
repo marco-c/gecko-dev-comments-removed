@@ -1492,12 +1492,13 @@ var RecentBookmarksMenuUI = {
 
 
   onItemRemoved(itemId, parentId, index, itemType, uri, guid) {
+    if (!this.visible) {
+      return;
+    }
     
     
     
-    if (this._recentGuids.size == 0 ||
-        (guid && this._recentGuids.has(guid))) {
-
+    if (guid && this._recentGuids.has(guid)) {
       if (this._itemRemovedTimer) {
         clearTimeout(this._itemRemovedTimer);
       }
