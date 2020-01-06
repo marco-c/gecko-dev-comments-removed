@@ -841,8 +841,7 @@ public:
   
 
 
-  void SetBidi(uint32_t aBidiOptions,
-                           bool aForceRestyle = false);
+  void SetBidi(uint32_t aBidiOptions);
 
   
 

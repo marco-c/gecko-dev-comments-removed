@@ -676,7 +676,7 @@ nsPresContext::GetUserPreferences()
   
   
   
-  SetBidi(bidiOptions, false);
+  SetBidi(bidiOptions);
 }
 
 void
@@ -1654,15 +1654,12 @@ nsPresContext::SetBidiEnabled() const
 }
 
 void
-nsPresContext::SetBidi(uint32_t aSource, bool aForceRestyle)
+nsPresContext::SetBidi(uint32_t aSource)
 {
   
   if (aSource == GetBidi()) {
     return;
   }
-
-  NS_ASSERTION(!(aForceRestyle && (GetBidi() == 0)),
-               "ForceReflow on new prescontext");
 
   Document()->SetBidiOptions(aSource);
   if (IBMBIDI_TEXTDIRECTION_RTL == GET_BIDI_OPTION_DIRECTION(aSource)
@@ -1680,12 +1677,6 @@ nsPresContext::SetBidi(uint32_t aSource, bool aForceRestyle)
     if (doc) {
       SetVisualMode(IsVisualCharset(doc->GetDocumentCharacterSet()));
     }
-  }
-  if (aForceRestyle && mShell) {
-    
-    
-    mDocument->RebuildUserFontSet();
-    mShell->ReconstructFrames();
   }
 }
 
