@@ -31,23 +31,25 @@ public:
   NS_INLINE_DECL_REFCOUNTING(U2FTokenManager)
   static U2FTokenManager* Get();
   void Register(PWebAuthnTransactionParent* aTransactionParent,
+                const uint64_t& aTransactionId,
                 const WebAuthnTransactionInfo& aTransactionInfo);
   void Sign(PWebAuthnTransactionParent* aTransactionParent,
+            const uint64_t& aTransactionId,
             const WebAuthnTransactionInfo& aTransactionInfo);
-  void Cancel(PWebAuthnTransactionParent* aTransactionParent);
+  void Cancel(PWebAuthnTransactionParent* aTransactionParent,
+              const uint64_t& aTransactionId);
   void MaybeClearTransaction(PWebAuthnTransactionParent* aParent);
   static void Initialize();
 private:
   U2FTokenManager();
   ~U2FTokenManager();
   RefPtr<U2FTokenTransport> GetTokenManagerImpl();
-  void AbortTransaction(const nsresult& aError);
+  void AbortTransaction(const uint64_t& aTransactionId, const nsresult& aError);
   void ClearTransaction();
-  void MaybeConfirmRegister(uint64_t aTransactionId,
-                            U2FRegisterResult& aResult);
-  void MaybeAbortRegister(uint64_t aTransactionId, const nsresult& aError);
-  void MaybeConfirmSign(uint64_t aTransactionId, U2FSignResult& aResult);
-  void MaybeAbortSign(uint64_t aTransactionId, const nsresult& aError);
+  void MaybeConfirmRegister(const uint64_t& aTransactionId, U2FRegisterResult& aResult);
+  void MaybeAbortRegister(const uint64_t& aTransactionId, const nsresult& aError);
+  void MaybeConfirmSign(const uint64_t& aTransactionId, U2FSignResult& aResult);
+  void MaybeAbortSign(const uint64_t& aTransactionId, const nsresult& aError);
   
   
   
@@ -58,7 +60,7 @@ private:
   
   
   
-  uint64_t mTransactionId;
+  uint64_t mLastTransactionId;
 };
 
 } 

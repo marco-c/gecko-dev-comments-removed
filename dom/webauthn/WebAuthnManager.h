@@ -71,7 +71,10 @@ public:
     , mPromise(aPromise)
     , mInfo(aInfo)
     , mClientData(aClientData)
-  { }
+    , mId(NextId())
+  {
+    MOZ_ASSERT(mId > 0);
+  }
 
   
   nsCOMPtr<nsPIDOMWindowInner> mParent;
@@ -85,6 +88,18 @@ public:
 
   
   nsCString mClientData;
+
+  
+  uint64_t mId;
+
+private:
+  
+  
+  
+  static uint64_t NextId() {
+    static uint64_t id = 0;
+    return ++id;
+  }
 };
 
 class WebAuthnManager final : public nsIDOMEventListener
@@ -108,14 +123,16 @@ public:
   Store(nsPIDOMWindowInner* aParent, const Credential& aCredential);
 
   void
-  FinishMakeCredential(nsTArray<uint8_t>& aRegBuffer);
+  FinishMakeCredential(const uint64_t& aTransactionId,
+                       nsTArray<uint8_t>& aRegBuffer);
 
   void
-  FinishGetAssertion(nsTArray<uint8_t>& aCredentialId,
+  FinishGetAssertion(const uint64_t& aTransactionId,
+                     nsTArray<uint8_t>& aCredentialId,
                      nsTArray<uint8_t>& aSigBuffer);
 
   void
-  RequestAborted(const nsresult& aError);
+  RequestAborted(const uint64_t& aTransactionId, const nsresult& aError);
 
   void ActorDestroyed();
 
@@ -130,8 +147,6 @@ private:
   
   
   void CancelTransaction(const nsresult& aError);
-
-  typedef MozPromise<nsresult, nsresult, false> BackgroundActorPromise;
 
   bool MaybeCreateBackgroundActor();
 
