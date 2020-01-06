@@ -2,15 +2,6 @@
 
 
 
-
-
-
-
-
-
-Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
-PromiseTestUtils.whitelistRejectionsGlobally(/aborted by the user agent/);
-
 const permissionError = "error: NotAllowedError: The request is not allowed " +
     "by the user agent or the platform in the current context.";
 

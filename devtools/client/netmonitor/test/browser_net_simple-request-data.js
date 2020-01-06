@@ -7,12 +7,6 @@
 
 
 
-
-
-Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
-PromiseTestUtils.expectUncaughtRejection(/cookies is undefined/);
-PromiseTestUtils.expectUncaughtRejection(/cookies is undefined/);
-
 function test() {
   
   
