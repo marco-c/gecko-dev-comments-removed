@@ -3993,8 +3993,6 @@ MediaStreamGraphImpl::AudioContextOperationCompleted(MediaStream* aStream,
   
   
   
-  MonitorAutoLock lock(mMonitor);
-
   AudioContextState state;
   switch (aOperation) {
     case AudioContextOperation::Suspend:
