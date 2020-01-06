@@ -50,10 +50,7 @@ const clearCookies = async function(options) {
 
   if (options.since || options.hostnames) {
     
-    let cookiesEnum = cookieMgr.enumerator;
-    while (cookiesEnum.hasMoreElements()) {
-      let cookie = cookiesEnum.getNext().QueryInterface(Ci.nsICookie2);
-
+    for (const cookie of XPCOMUtils.IterSimpleEnumerator(cookieMgr.enumerator, Ci.nsICookie2)) {
       if ((!options.since || cookie.creationTime >= PlacesUtils.toPRTime(options.since)) &&
           (!options.hostnames || options.hostnames.includes(cookie.host.replace(/^\./, "")))) {
         
