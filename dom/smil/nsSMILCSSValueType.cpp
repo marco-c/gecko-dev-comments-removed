@@ -526,18 +526,78 @@ InterpolateForGecko(const ValueWrapper* aStartWrapper,
   return NS_ERROR_FAILURE;
 }
 
+static bool
+IsPropertyDiscretelyAnimatable(nsCSSPropertyID aProperty)
+{
+  
+  
+  
+  
+  
+  
+  if (nsCSSProps::IsShorthand(aProperty)) {
+    
+    
+    
+    
+    
+    
+    
+    bool result;
+    switch (aProperty) {
+      case eCSSProperty_font_variant:
+      case eCSSProperty_marker:
+      case eCSSProperty_overflow:
+        result = true;
+        break;
+      default:
+        result = false;
+        break;
+    }
+
+#ifdef DEBUG
+    bool resultAccordingToServo = true;
+    CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(p, aProperty,
+                                         CSSEnabledState::eForAllContent) {
+      
+      
+      if (!Servo_Property_IsDiscreteAnimatable(*p)) {
+        resultAccordingToServo = false;
+      }
+    }
+    MOZ_ASSERT(result == resultAccordingToServo,
+               "Gecko and Servo should agree on which shorthands should be"
+               " treated as discretely animatable");
+#endif
+
+    return result;
+  }
+
+  return Servo_Property_IsDiscreteAnimatable(aProperty);
+}
+
 static nsresult
 InterpolateForServo(const ValueWrapper* aStartWrapper,
                     const ValueWrapper& aEndWrapper,
                     double aUnitDistance,
                     nsSMILValue& aResult)
 {
+  
+  
+  
+  
+  
+  
+  if (IsPropertyDiscretelyAnimatable(aEndWrapper.mPropID)) {
+    return NS_ERROR_FAILURE;
+  }
+
   ServoAnimationValues results;
   size_t len = aEndWrapper.mServoValues.Length();
   results.SetCapacity(len);
   MOZ_ASSERT(!aStartWrapper || aStartWrapper->mServoValues.Length() == len,
              "Start and end values length should be the same if "
-             "The start value exists");
+             "the start value exists");
   for (size_t i = 0; i < len; i++) {
     const RefPtr<RawServoAnimationValue>*
       startValue = aStartWrapper
