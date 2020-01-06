@@ -11,6 +11,7 @@
 #include "mozilla/EditorBase.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/mozalloc.h"
+#include "mozilla/RangeBoundary.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
 #include "nsError.h"
@@ -56,46 +57,54 @@ DeleteRangeTransaction::DoTransaction()
   rangeToDelete.swap(mRangeToDelete);
 
   
-  nsCOMPtr<nsINode> startContainer = rangeToDelete->GetStartContainer();
-  int32_t startOffset = rangeToDelete->StartOffset();
-  nsCOMPtr<nsINode> endContainer = rangeToDelete->GetEndContainer();
-  int32_t endOffset = rangeToDelete->EndOffset();
-  MOZ_ASSERT(startContainer && endContainer);
+  const RangeBoundary& startRef = rangeToDelete->StartRef();
+  const RangeBoundary& endRef = rangeToDelete->EndRef();
+  MOZ_ASSERT(startRef.IsSetAndValid());
+  MOZ_ASSERT(endRef.IsSetAndValid());
 
-  if (startContainer == endContainer) {
+  if (startRef.Container() == endRef.Container()) {
     
-    nsIContent* startChild = rangeToDelete->GetChildAtStartOffset();
-    nsresult rv =
-      CreateTxnsToDeleteBetween(startContainer, startOffset,
-                                startChild, endOffset);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsresult rv = CreateTxnsToDeleteBetween(startRef.AsRaw(), endRef.AsRaw());
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   } else {
     
     
-    nsresult rv =
-      CreateTxnsToDeleteContent(startContainer, startOffset, nsIEditor::eNext);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsresult rv = CreateTxnsToDeleteContent(startRef.AsRaw(), nsIEditor::eNext);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     
     rv = CreateTxnsToDeleteNodesBetween(rangeToDelete);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     
-    rv = CreateTxnsToDeleteContent(endContainer, endOffset,
-                                   nsIEditor::ePrevious);
-    NS_ENSURE_SUCCESS(rv, rv);
+    rv = CreateTxnsToDeleteContent(endRef.AsRaw(), nsIEditor::ePrevious);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   
   nsresult rv = EditAggregateTransaction::DoTransaction();
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   bool bAdjustSelection;
   mEditorBase->ShouldTxnSetSelection(&bAdjustSelection);
   if (bAdjustSelection) {
     RefPtr<Selection> selection = mEditorBase->GetSelection();
-    NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
-    rv = selection->Collapse(startContainer, startOffset);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(!selection)) {
+      return NS_ERROR_NULL_POINTER;
+    }
+    rv = selection->Collapse(startRef.AsRaw());
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
   
 
@@ -122,30 +131,36 @@ DeleteRangeTransaction::GetTxnDescription(nsAString& aString)
 }
 
 nsresult
-DeleteRangeTransaction::CreateTxnsToDeleteBetween(nsINode* aNode,
-                                                  int32_t aStartOffset,
-                                                  nsIContent* aChildAtStartOffset,
-                                                  int32_t aEndOffset)
+DeleteRangeTransaction::CreateTxnsToDeleteBetween(
+                          const RawRangeBoundary& aStart,
+                          const RawRangeBoundary& aEnd)
 {
+  if (NS_WARN_IF(!aStart.IsSetAndValid()) ||
+      NS_WARN_IF(!aEnd.IsSetAndValid()) ||
+      NS_WARN_IF(aStart.Container() != aEnd.Container())) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
   if (NS_WARN_IF(!mEditorBase)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
   
-  if (aNode->IsNodeOfType(nsINode::eDATA_NODE)) {
+  if (aStart.Container()->IsNodeOfType(nsINode::eDATA_NODE)) {
     
     int32_t numToDel;
-    if (aStartOffset == aEndOffset) {
+    if (aStart == aEnd) {
       numToDel = 1;
     } else {
-      numToDel = aEndOffset - aStartOffset;
+      numToDel = aEnd.Offset() - aStart.Offset();
+      MOZ_DIAGNOSTIC_ASSERT(numToDel > 0);
     }
 
     RefPtr<nsGenericDOMDataNode> charDataNode =
-      static_cast<nsGenericDOMDataNode*>(aNode);
+      static_cast<nsGenericDOMDataNode*>(aStart.Container());
 
     RefPtr<DeleteTextTransaction> deleteTextTransaction =
-      new DeleteTextTransaction(*mEditorBase, *charDataNode, aStartOffset,
+      new DeleteTextTransaction(*mEditorBase, *charDataNode, aStart.Offset(),
                                 numToDel, mRangeUpdater);
     
     
@@ -156,13 +171,11 @@ DeleteRangeTransaction::CreateTxnsToDeleteBetween(nsINode* aNode,
     return NS_OK;
   }
 
-  nsIContent* child = aChildAtStartOffset;
-  for (int32_t i = aStartOffset; i < aEndOffset; ++i) {
-    
-    
-    if (NS_WARN_IF(!child)) {
-      break;
-    }
+  
+  
+  for (nsIContent* child = aStart.GetChildAtOffset();
+       child && child != aEnd.GetChildAtOffset();
+       child = child->GetNextSibling()) {
     RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
       new DeleteNodeTransaction(*mEditorBase, *child, mRangeUpdater);
     
@@ -172,47 +185,53 @@ DeleteRangeTransaction::CreateTxnsToDeleteBetween(nsINode* aNode,
     if (deleteNodeTransaction->CanDoIt()) {
       AppendChild(deleteNodeTransaction);
     }
-    child = child->GetNextSibling();
   }
 
   return NS_OK;
 }
 
 nsresult
-DeleteRangeTransaction::CreateTxnsToDeleteContent(nsINode* aNode,
-                                                  int32_t aOffset,
-                                                  nsIEditor::EDirection aAction)
+DeleteRangeTransaction::CreateTxnsToDeleteContent(
+                          const RawRangeBoundary& aPoint,
+                          nsIEditor::EDirection aAction)
 {
+  if (NS_WARN_IF(!aPoint.IsSetAndValid())) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
   if (NS_WARN_IF(!mEditorBase)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  
-  if (aNode->IsNodeOfType(nsINode::eDATA_NODE)) {
-    
-    uint32_t start, numToDelete;
-    if (nsIEditor::eNext == aAction) {
-      start = aOffset;
-      numToDelete = aNode->Length() - aOffset;
-    } else {
-      start = 0;
-      numToDelete = aOffset;
-    }
-
-    if (numToDelete) {
-      RefPtr<nsGenericDOMDataNode> dataNode =
-        static_cast<nsGenericDOMDataNode*>(aNode);
-      RefPtr<DeleteTextTransaction> deleteTextTransaction =
-        new DeleteTextTransaction(*mEditorBase, *dataNode, start, numToDelete,
-                                  mRangeUpdater);
-      
-      
-      if (NS_WARN_IF(!deleteTextTransaction->CanDoIt())) {
-        return NS_ERROR_FAILURE;
-      }
-      AppendChild(deleteTextTransaction);
-    }
+  if (!aPoint.Container()->IsNodeOfType(nsINode::eDATA_NODE)) {
+    return NS_OK;
   }
+
+  
+  uint32_t startOffset, numToDelete;
+  if (nsIEditor::eNext == aAction) {
+    startOffset = aPoint.Offset();
+    numToDelete = aPoint.Container()->Length() - aPoint.Offset();
+  } else {
+    startOffset = 0;
+    numToDelete = aPoint.Offset();
+  }
+
+  if (!numToDelete) {
+    return NS_OK;
+  }
+
+  RefPtr<nsGenericDOMDataNode> dataNode =
+    static_cast<nsGenericDOMDataNode*>(aPoint.Container());
+  RefPtr<DeleteTextTransaction> deleteTextTransaction =
+    new DeleteTextTransaction(*mEditorBase, *dataNode, startOffset, numToDelete,
+                              mRangeUpdater);
+  
+  
+  if (NS_WARN_IF(!deleteTextTransaction->CanDoIt())) {
+    return NS_ERROR_FAILURE;
+  }
+  AppendChild(deleteTextTransaction);
 
   return NS_OK;
 }

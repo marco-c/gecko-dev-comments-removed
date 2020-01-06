@@ -7,6 +7,7 @@
 #define DeleteRangeTransaction_h
 
 #include "EditAggregateTransaction.h"
+#include "mozilla/RangeBoundary.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsID.h"
 #include "nsIEditor.h"
@@ -50,15 +51,53 @@ public:
   }
 
 protected:
-  nsresult CreateTxnsToDeleteBetween(nsINode* aNode,
-                                     int32_t aStartOffset,
-                                     nsIContent* aChildAtStartOffset,
-                                     int32_t aEndOffset);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult CreateTxnsToDeleteBetween(const RawRangeBoundary& aStart,
+                                     const RawRangeBoundary& aEnd);
 
   nsresult CreateTxnsToDeleteNodesBetween(nsRange* aRangeToDelete);
 
-  nsresult CreateTxnsToDeleteContent(nsINode* aParent,
-                                     int32_t aOffset,
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult CreateTxnsToDeleteContent(const RawRangeBoundary& aPoint,
                                      nsIEditor::EDirection aAction);
 
   
