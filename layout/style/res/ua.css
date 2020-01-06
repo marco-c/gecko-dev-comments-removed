@@ -67,10 +67,28 @@
 
 *|*::-moz-table-column {
   display: table-column !important;
+  
+
+
+
+
+
+
+
+  visibility: hidden !important;
 }
 
 *|*::-moz-table-column-group {
   display: table-column-group !important;
+  
+
+
+
+
+
+
+
+  visibility: hidden !important;
 }
 
 *|*::-moz-table-row-group {
