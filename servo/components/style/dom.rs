@@ -111,8 +111,31 @@ where
 }
 
 
+pub struct DomDescendants<N> {
+    previous: Option<N>,
+    scope: N,
+}
 
-pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo {
+impl<N> Iterator for DomDescendants<N>
+where
+    N: TNode
+{
+    type Item = N;
+
+    fn next(&mut self) -> Option<N> {
+        let prev = match self.previous.take() {
+            None => return None,
+            Some(n) => n,
+        };
+
+        self.previous = prev.next_in_preorder(Some(self.scope));
+        self.previous
+    }
+}
+
+
+
+pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo + PartialEq {
     
     type ConcreteElement: TElement<ConcreteNode = Self>;
 
@@ -134,6 +157,40 @@ pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo {
     
     fn dom_children(&self) -> DomChildren<Self> {
         DomChildren(self.first_child())
+    }
+
+    
+    fn dom_descendants(&self) -> DomDescendants<Self> {
+        DomDescendants {
+            previous: Some(*self),
+            scope: *self,
+        }
+    }
+
+    
+    
+    fn next_in_preorder(&self, scoped_to: Option<Self>) -> Option<Self> {
+        if let Some(c) = self.first_child() {
+            return Some(c);
+        }
+
+        if Some(*self) == scoped_to {
+            return None;
+        }
+
+        let mut current = *self;
+        loop {
+            if let Some(s) = current.next_sibling() {
+                return Some(s);
+            }
+
+            let parent = current.parent_node();
+            if parent == scoped_to {
+                return None;
+            }
+
+            current = parent.expect("Not a descendant of the scope?");
+        }
     }
 
     
@@ -686,9 +743,10 @@ pub trait TElement
     
     
     
-    fn each_xbl_stylist<F>(&self, _: F) -> bool
+    fn each_xbl_stylist<'a, F>(&self, _: F) -> bool
     where
-        F: FnMut(&Stylist),
+        Self: 'a,
+        F: FnMut(AtomicRef<'a, Stylist>),
     {
         false
     }

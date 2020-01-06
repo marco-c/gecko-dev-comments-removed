@@ -306,9 +306,10 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
     
     
     #[inline]
-    pub fn lookup<E, F>(&self, element: E, quirks_mode: QuirksMode, f: &mut F) -> bool
-        where E: TElement,
-              F: FnMut(&T) -> bool
+    pub fn lookup<'a, E, F>(&'a self, element: E, quirks_mode: QuirksMode, f: &mut F) -> bool
+    where
+        E: TElement,
+        F: FnMut(&'a T) -> bool
     {
         
         if let Some(id) = element.get_id() {
@@ -366,15 +367,17 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
     
     
     #[inline]
-    pub fn lookup_with_additional<E, F>(&self,
-                                        element: E,
-                                        quirks_mode: QuirksMode,
-                                        additional_id: Option<&Atom>,
-                                        additional_classes: &[Atom],
-                                        f: &mut F)
-                                        -> bool
-        where E: TElement,
-              F: FnMut(&T) -> bool
+    pub fn lookup_with_additional<'a, E, F>(
+        &'a self,
+        element: E,
+        quirks_mode: QuirksMode,
+        additional_id: Option<&Atom>,
+        additional_classes: &[Atom],
+        f: &mut F,
+    ) -> bool
+    where
+        E: TElement,
+        F: FnMut(&'a T) -> bool
     {
         
         if !self.lookup(element, quirks_mode, f) {
