@@ -17,11 +17,10 @@
 
 class nsFrameSelection;
 class nsRange;
-class nsIEditor;
 class nsIWidget;
 
 namespace mozilla {
-
+class TextEditor;
 namespace dom {
 class Selection;
 }
@@ -424,7 +423,8 @@ public:
   
 
 
-  virtual already_AddRefed<nsIEditor> GetEditor() const;
+
+  virtual already_AddRefed<TextEditor> GetEditor() const;
 
   
 
