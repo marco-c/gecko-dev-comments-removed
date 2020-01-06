@@ -18,19 +18,8 @@ Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://gre/modules/TelemetryUtils.jsm", this);
 Cu.import("resource://gre/modules/AppConstants.jsm");
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  TelemetrySend: "resource://gre/modules/TelemetrySend.jsm",
-  AddonManagerPrivate: "resource://gre/modules/AddonManager.jsm",
-  AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
-  TelemetryController: "resource://gre/modules/TelemetryController.jsm",
-  TelemetryStorage: "resource://gre/modules/TelemetryStorage.jsm",
-  TelemetryLog: "resource://gre/modules/TelemetryLog.jsm",
-  ThirdPartyCookieProbe: "resource://gre/modules/ThirdPartyCookieProbe.jsm",
-  UITelemetry: "resource://gre/modules/UITelemetry.jsm",
-  GCTelemetry: "resource://gre/modules/GCTelemetry.jsm",
-  TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
-  TelemetryReportingPolicy: "resource://gre/modules/TelemetryReportingPolicy.jsm",
-});
+XPCOMUtils.defineLazyModuleGetter(this, "TelemetrySend",
+                                  "resource://gre/modules/TelemetrySend.jsm");
 
 const Utils = TelemetryUtils;
 
@@ -110,14 +99,45 @@ var gLastMemoryPoll = null;
 
 var gWasDebuggerAttached = false;
 
-XPCOMUtils.defineLazyServiceGetters(this, {
-  Telemetry: ["@mozilla.org/base/telemetry;1", "nsITelemetry"],
-  idleService: ["@mozilla.org/widget/idleservice;1", "nsIIdleService"],
-  cpmm: ["@mozilla.org/childprocessmessagemanager;1", "nsIMessageSender"],
-  cpml: ["@mozilla.org/childprocessmessagemanager;1", "nsIMessageListenerManager"],
-  ppmm: ["@mozilla.org/parentprocessmessagemanager;1", "nsIMessageBroadcaster"],
-  ppml: ["@mozilla.org/parentprocessmessagemanager;1", "nsIMessageListenerManager"],
-});
+XPCOMUtils.defineLazyServiceGetter(this, "Telemetry",
+                                   "@mozilla.org/base/telemetry;1",
+                                   "nsITelemetry");
+XPCOMUtils.defineLazyServiceGetter(this, "idleService",
+                                   "@mozilla.org/widget/idleservice;1",
+                                   "nsIIdleService");
+XPCOMUtils.defineLazyServiceGetter(this, "cpmm",
+                                   "@mozilla.org/childprocessmessagemanager;1",
+                                   "nsIMessageSender");
+XPCOMUtils.defineLazyServiceGetter(this, "cpml",
+                                   "@mozilla.org/childprocessmessagemanager;1",
+                                   "nsIMessageListenerManager");
+XPCOMUtils.defineLazyServiceGetter(this, "ppmm",
+                                   "@mozilla.org/parentprocessmessagemanager;1",
+                                   "nsIMessageBroadcaster");
+XPCOMUtils.defineLazyServiceGetter(this, "ppml",
+                                   "@mozilla.org/parentprocessmessagemanager;1",
+                                   "nsIMessageListenerManager");
+
+XPCOMUtils.defineLazyModuleGetter(this, "AddonManagerPrivate",
+                                  "resource://gre/modules/AddonManager.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
+                                  "resource://gre/modules/AsyncShutdown.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "TelemetryController",
+                                  "resource://gre/modules/TelemetryController.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "TelemetryStorage",
+                                  "resource://gre/modules/TelemetryStorage.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "TelemetryLog",
+                                  "resource://gre/modules/TelemetryLog.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ThirdPartyCookieProbe",
+                                  "resource://gre/modules/ThirdPartyCookieProbe.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "UITelemetry",
+                                  "resource://gre/modules/UITelemetry.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "GCTelemetry",
+                                  "resource://gre/modules/GCTelemetry.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "TelemetryEnvironment",
+                                  "resource://gre/modules/TelemetryEnvironment.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "TelemetryReportingPolicy",
+                                  "resource://gre/modules/TelemetryReportingPolicy.jsm");
 
 function generateUUID() {
   let str = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator).generateUUID().toString();
@@ -1274,51 +1294,47 @@ var Impl = {
     }
 
     
-    let histograms = protect(() => this.getHistograms(isSubsession, clearSubsession), {});
-    let keyedHistograms = protect(() => this.getKeyedHistograms(isSubsession, clearSubsession), {});
-    let scalars = protect(() => this.getScalars(isSubsession, clearSubsession), {});
-    let keyedScalars = protect(() => this.getScalars(isSubsession, clearSubsession, true), {});
-    let events = protect(() => this.getEvents(isSubsession, clearSubsession))
-
-    payloadObj.histograms = histograms.parent || {};
-    payloadObj.keyedHistograms = keyedHistograms.parent || {};
-    payloadObj.processes = {
-      parent: {
-        scalars: scalars.parent || {},
-        keyedScalars: keyedScalars.parent || {},
-        events: events.parent || [],
-      },
-      content: {
-        scalars: scalars.content,
-        keyedScalars: keyedScalars.content,
-        histograms: histograms.content,
-        keyedHistograms: keyedHistograms.content,
-        events: events.content || [],
-      },
-      extension: {
-        scalars: scalars.extension,
-        keyedScalars: keyedScalars.extension,
-        histograms: histograms.extension,
-        keyedHistograms: keyedHistograms.extension,
-        events: events.extension || [],
-      },
-      dynamic: {
-        events: events.dynamic || [],
-      },
+    let measurements = {
+      histograms: protect(() => this.getHistograms(isSubsession, clearSubsession), {}),
+      keyedHistograms: protect(() => this.getKeyedHistograms(isSubsession, clearSubsession), {}),
+      scalars: protect(() => this.getScalars(isSubsession, clearSubsession), {}),
+      keyedScalars: protect(() => this.getScalars(isSubsession, clearSubsession, true), {}),
+      events: protect(() => this.getEvents(isSubsession, clearSubsession)),
     };
 
+    let measurementsContainGPU = Object
+      .keys(measurements)
+      .some(key => "gpu" in measurements[key]);
+
+    payloadObj.processes = {};
+    let processTypes = ["parent", "content", "extension", "dynamic"];
     
-    if ("gpu" in histograms ||
-        "gpu" in keyedHistograms ||
-        "gpu" in scalars ||
-        "gpu" in keyedScalars) {
-      payloadObj.processes.gpu = {
-        scalars: scalars.gpu,
-        keyedScalars: keyedScalars.gpu,
-        histograms: histograms.gpu,
-        keyedHistograms: keyedHistograms.gpu,
-        events: events.gpu || [],
-      };
+    if (measurementsContainGPU) {
+      processTypes.push("gpu");
+    }
+
+    
+    for (const processType of processTypes) {
+      let processPayload = {};
+
+      for (const key in measurements) {
+        let payloadLoc = processPayload;
+        
+        if (processType == "parent" && (key == "histograms" || key == "keyedHistograms")) {
+          payloadLoc = payloadObj;
+        }
+        
+        if (processType == "dynamic" && key != "events") {
+          continue;
+        }
+
+        
+        let defaultValue = key == "events" ? [] : {};
+        payloadLoc[key] = measurements[key][processType] || defaultValue;
+      }
+
+      
+      payloadObj.processes[processType] = processPayload;
     }
 
     payloadObj.info = info;
