@@ -63,6 +63,7 @@ struct UndisplayedNode : public LinkedListElement<UndisplayedNode>
 class nsFrameManager : public nsFrameManagerBase
 {
   typedef mozilla::layout::FrameChildListID ChildListID;
+  typedef mozilla::UndisplayedNode UndisplayedNode;
 
 public:
   explicit nsFrameManager(nsIPresShell* aPresShell) {
@@ -78,7 +79,44 @@ public:
 
   void Destroy();
 
+
   
+  
+  
+  
+
+  
+
+
+  void SetUndisplayedContent(nsIContent* aContent,
+                             nsStyleContext* aStyleContext);
+
+  
+
+
+  void SetDisplayContents(nsIContent* aContent, nsStyleContext* aStyleContext);
+
+  
+
+
+  void ChangeUndisplayedContent(nsIContent* aContent,
+                                nsStyleContext* aStyleContext)
+  {
+    ChangeStyleContextInMap(mDisplayNoneMap, aContent, aStyleContext);
+  }
+
+  
+
+
+  void ChangeDisplayContents(nsIContent* aContent,
+                             nsStyleContext* aStyleContext)
+  {
+    ChangeStyleContextInMap(mDisplayContentsMap, aContent, aStyleContext);
+  }
+
+  
+
+
   nsStyleContext* GetUndisplayedContent(const nsIContent* aContent)
   {
     if (!mDisplayNoneMap) {
@@ -86,20 +124,7 @@ public:
     }
     return GetStyleContextInMap(mDisplayNoneMap, aContent);
   }
-  mozilla::UndisplayedNode*
-    GetAllUndisplayedContentIn(nsIContent* aParentContent);
-  void SetUndisplayedContent(nsIContent* aContent,
-                             nsStyleContext* aStyleContext);
-  void ChangeUndisplayedContent(nsIContent* aContent,
-                                nsStyleContext* aStyleContext)
-  {
-    ChangeStyleContextInMap(mDisplayNoneMap, aContent, aStyleContext);
-  }
 
-  void ClearUndisplayedContentIn(nsIContent* aContent,
-                                 nsIContent* aParentContent);
-
-  
   
 
 
@@ -115,14 +140,22 @@ public:
 
 
 
-  mozilla::UndisplayedNode* GetAllDisplayContentsIn(nsIContent* aParentContent);
+
+  UndisplayedNode* GetAllUndisplayedContentIn(nsIContent* aParentContent);
 
   
 
 
 
-  mozilla::UndisplayedNode* GetDisplayContentsNodeFor(
-      const nsIContent* aContent) {
+
+  UndisplayedNode* GetAllDisplayContentsIn(nsIContent* aParentContent);
+
+  
+
+
+
+  UndisplayedNode* GetDisplayContentsNodeFor(const nsIContent* aContent)
+  {
     if (!mDisplayContentsMap) {
       return nullptr;
     }
@@ -132,22 +165,19 @@ public:
   
 
 
-  void SetDisplayContents(nsIContent* aContent, nsStyleContext* aStyleContext);
-  
 
 
-  void ChangeDisplayContents(nsIContent* aContent,
-                             nsStyleContext* aStyleContext)
-  {
-    ChangeStyleContextInMap(mDisplayContentsMap, aContent, aStyleContext);
-  }
+  void ClearUndisplayedContentIn(nsIContent* aContent,
+                                 nsIContent* aParentContent);
 
   
 
 
 
 
-  void ClearDisplayContentsIn(nsIContent* aContent, nsIContent* aParentContent);
+  void ClearDisplayContentsIn(nsIContent* aContent,
+                              nsIContent* aParentContent);
+
 
   
   void AppendFrames(nsContainerFrame* aParentFrame,
