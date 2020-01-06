@@ -3603,15 +3603,19 @@ private:
   
   
   
-  enum {
-    FILL_OPACITY_SOURCE_MASK   = 0x03,  
-    STROKE_OPACITY_SOURCE_MASK = 0x0C,  
-    STROKE_DASHARRAY_CONTEXT   = 0x10,  
-    STROKE_DASHOFFSET_CONTEXT  = 0x20,  
-    STROKE_WIDTH_CONTEXT       = 0x40,  
-    FILL_OPACITY_SOURCE_SHIFT   = 0,
-    STROKE_OPACITY_SOURCE_SHIFT = 2,
-  };
+
+  
+  static const uint8_t FILL_OPACITY_SOURCE_MASK   = 0x03;
+  
+  static const uint8_t STROKE_OPACITY_SOURCE_MASK = 0x0C;
+  
+  static const uint8_t STROKE_DASHARRAY_CONTEXT   = 0x10;
+  
+  static const uint8_t STROKE_DASHOFFSET_CONTEXT  = 0x20;
+  
+  static const uint8_t STROKE_WIDTH_CONTEXT       = 0x40;
+  static const uint8_t FILL_OPACITY_SOURCE_SHIFT   = 0;
+  static const uint8_t STROKE_OPACITY_SOURCE_SHIFT = 2;
 
   uint8_t          mContextFlags;     
 };
