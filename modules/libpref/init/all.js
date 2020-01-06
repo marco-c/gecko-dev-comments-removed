@@ -4805,7 +4805,7 @@ pref("network.tcp.keepalive.retry_interval", 1);
 pref("network.tcp.keepalive.probe_count", 4);
 #endif
 
-pref("network.tcp.tcp_fastopen_enable", false);
+pref("network.tcp.tcp_fastopen_enable", true);
 pref("network.tcp.tcp_fastopen_consecutive_failure_limit", 5);
 
 
@@ -5207,8 +5207,7 @@ pref("memory.low_memory_notification_interval_ms", 10000);
 pref("memory.ghost_window_timeout_seconds", 60);
 
 
-
-pref("memory.free_dirty_pages", true);
+pref("memory.free_dirty_pages", false);
 
 
 #ifdef XP_LINUX
@@ -5242,12 +5241,6 @@ pref("dom.idle-observers-api.fuzz_time.disabled", true);
 
 
 pref("network.activity.blipIntervalMilliseconds", 0);
-
-
-
-
-
-pref("jsloader.shareGlobal", false);
 
 
 
@@ -5868,13 +5861,13 @@ pref("fuzzing.enabled", false);
 
 #if defined(XP_WIN)
 #if defined(NIGHTLY_BUILD)
-pref("layers.mlgpu.dev-enabled", true);
+pref("layers.mlgpu.enabled", true);
 
 
 
 pref("layers.mlgpu.enable-on-windows7", true);
 #else
-pref("layers.mlgpu.dev-enabled", false);
+pref("layers.mlgpu.enabled", false);
 pref("layers.mlgpu.enable-on-windows7", false);
 #endif
 #endif
