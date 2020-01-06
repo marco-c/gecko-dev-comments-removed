@@ -91,15 +91,6 @@ let allowedImageReferences = [
   {file: "chrome://devtools/skin/images/dock-bottom-maximize@2x.png",
    from: "chrome://devtools/skin/toolbox.css",
    isFromDevTools: true},
-  
-  {file: "chrome://global/skin/arrow/panelarrow-vertical@2x.png",
-   from: "resource://activity-stream/data/content/activity-stream.css",
-   isFromDevTools: false,
-   platforms: ["linux", "win"]},
-  {file: "chrome://global/skin/arrow/panelarrow-vertical-themed.svg",
-   from: "resource://activity-stream/data/content/activity-stream.css",
-   isFromDevTools: false,
-   platforms: ["macosx"]},
 ];
 
 

@@ -232,8 +232,7 @@ this.TopStoriesFeed = class TopStoriesFeed {
 
         
         
-        const position = SectionsManager.sections.get(SECTION_ID).order;
-        let rows = this.store.getState().Sections[position].rows.slice(0, this.stories.length);
+        let rows = this.stories.slice(0, this.stories.length);
         rows.splice(2, 0, this.spocs[0]);
 
         
@@ -282,6 +281,14 @@ this.TopStoriesFeed = class TopStoriesFeed {
       case at.PLACES_LINK_BLOCKED:
         if (this.spocs) {
           this.spocs = this.spocs.filter(s => s.url !== action.data.url);
+        }
+
+        if (this.stories) {
+          const prevStoriesLength = this.stories.length;
+          this.stories = this.stories.filter(s => s.url !== action.data.url);
+          if (prevStoriesLength !== this.stories.length) {
+            SectionsManager.updateSection(SECTION_ID, {rows: this.stories}, true);
+          }
         }
         break;
     }

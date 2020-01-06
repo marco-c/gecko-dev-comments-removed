@@ -72,24 +72,29 @@ this.Screenshots = {
 
 
 
-  async maybeCacheScreenshot(link, url, property, onScreenshot) {
+  async maybeGetAndSetScreenshot(link, url, property, onScreenshot) {
     
-    const cache = link.__sharedCache;
-    if (cache.fetchingScreenshot) {
-      return;
+    const updateCache = link.__updateCache ? link.__updateCache.bind(link) :
+      () => {};
+
+    
+    if (!link.__fetchingScreenshot) {
+      link.__fetchingScreenshot = this.getScreenshotForURL(url);
+      updateCache("__fetchingScreenshot");
+
+      
+      link.__fetchingScreenshot.then(onScreenshot).catch();
     }
 
     
-    cache.fetchingScreenshot = this.getScreenshotForURL(url);
-
-    
-    const screenshot = await cache.fetchingScreenshot;
-    delete cache.fetchingScreenshot;
+    const screenshot = await link.__fetchingScreenshot;
+    delete link.__fetchingScreenshot;
+    updateCache("__fetchingScreenshot");
 
     
     if (screenshot) {
-      cache.updateLink(property, screenshot);
-      onScreenshot(screenshot);
+      link[property] = screenshot;
+      updateCache(property);
     }
   }
 };
