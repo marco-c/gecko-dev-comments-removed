@@ -367,9 +367,10 @@ var CustomizableUIInternal = {
         defaultPlacements.push("characterencoding-button");
       }
 
-      savedPanelPlacements = savedPanelPlacements.filter(id => defaultPlacements.includes(id));
+      savedPanelPlacements = savedPanelPlacements.filter(id => !defaultPlacements.includes(id));
+
       if (savedPanelPlacements.length) {
-        gSavedState.placements[this.AREA_FIXED_OVERFLOW_PANEL] = savedPanelPlacements;
+        gSavedState.placements[CustomizableUI.AREA_FIXED_OVERFLOW_PANEL] = savedPanelPlacements;
       }
     }
 
@@ -1977,9 +1978,6 @@ var CustomizableUIInternal = {
                          oldPlacement.position, aPosition);
   },
 
-  
-  
-  
   
   
   
