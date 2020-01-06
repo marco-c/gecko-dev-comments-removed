@@ -929,6 +929,7 @@ var ActivityStreamProvider = {
 
 
 
+
   async _addFavicons(aLinks) {
     if (aLinks.length) {
       
@@ -938,7 +939,7 @@ var ActivityStreamProvider = {
       await Promise.all(aLinks.map(link => new Promise(resolve => {
         return PlacesUtils.favicons.getFaviconDataForPage(
             Services.io.newURI(link.url),
-            (iconuri, len, data, mime) => {
+            (iconuri, len, data, mime, size) => {
               
               
               
@@ -948,18 +949,22 @@ var ActivityStreamProvider = {
               if (!iconuri) {
                 link.favicon = null;
                 link.mimeType = null;
+                link.faviconSize = null;
               } else {
                 link.favicon = data;
                 link.mimeType = mime;
                 link.faviconLength = len;
+                link.faviconSize = size;
               }
               return resolve(link);
-            });
+            },
+            0); 
         }).catch(() => {
           
           
           link.favicon = null;
           link.mimeType = null;
+          link.faviconSize = null;
           return link;
         })
       ));

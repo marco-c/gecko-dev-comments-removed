@@ -343,7 +343,9 @@ add_task(async function addFavicons() {
   await provider._addFavicons(links);
   Assert.equal(links[0].favicon, null, "Got a null favicon because we passed in a bad url");
   Assert.equal(links[0].mimeType, null, "Got a null mime type because we passed in a bad url");
+  Assert.equal(links[0].faviconSize, null, "Got a null favicon size because we passed in a bad url");
 
+  
   
   links[0].url = "https://mozilla.com";
   let base64URL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAA" +
@@ -362,6 +364,7 @@ add_task(async function addFavicons() {
   Assert.equal(links[0].mimeType, "image/png", "Got the right mime type before deleting it");
   Assert.equal(links[0].faviconLength, links[0].favicon.length, "Got the right length for the byte array");
   Assert.equal(provider._faviconBytesToDataURI(links)[0].favicon, base64URL, "Got the right favicon");
+  Assert.equal(links[0].faviconSize, 1, "Got the right favicon size (width and height of favicon)");
 });
 
 add_task(async function getHighlights() {
