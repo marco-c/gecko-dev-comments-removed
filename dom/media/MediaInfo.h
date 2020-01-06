@@ -7,16 +7,16 @@
 #define MediaInfo_h
 
 #include "mozilla/UniquePtr.h"
-#include "nsRect.h"
 #include "mozilla/RefPtr.h"
 #include "nsDataHashtable.h"
-#include "nsSize.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "ImageTypes.h"
 #include "MediaData.h"
 #include "StreamTracks.h" 
 #include "TimeUnits.h"
+#include "mozilla/gfx/Point.h" 
+#include "mozilla/gfx/Rect.h"  
 
 namespace mozilla {
 
@@ -199,20 +199,25 @@ public:
   }
 
   explicit VideoInfo(int32_t aWidth, int32_t aHeight)
-    : VideoInfo(nsIntSize(aWidth, aHeight))
+    : VideoInfo(gfx::IntSize(aWidth, aHeight))
   {
   }
 
-  explicit VideoInfo(const nsIntSize& aSize)
-    : TrackInfo(kVideoTrack, NS_LITERAL_STRING("2"), NS_LITERAL_STRING("main"),
-                EmptyString(), EmptyString(), true, 2)
+  explicit VideoInfo(const gfx::IntSize& aSize)
+    : TrackInfo(kVideoTrack,
+                NS_LITERAL_STRING("2"),
+                NS_LITERAL_STRING("main"),
+                EmptyString(),
+                EmptyString(),
+                true,
+                2)
     , mDisplay(aSize)
     , mStereoMode(StereoMode::MONO)
     , mImage(aSize)
     , mCodecSpecificConfig(new MediaByteBuffer)
     , mExtraData(new MediaByteBuffer)
     , mRotation(kDegree_0)
-    , mImageRect(nsIntRect(nsIntPoint(), aSize))
+    , mImageRect(gfx::IntRect(gfx::IntPoint(), aSize))
   {
   }
 
@@ -259,18 +264,15 @@ public:
     return mAlphaPresent;
   }
 
-  nsIntRect ImageRect() const
+  gfx::IntRect ImageRect() const
   {
     if (mImageRect.Width() < 0 || mImageRect.Height() < 0) {
-      return nsIntRect(0, 0, mImage.width, mImage.height);
+      return gfx::IntRect(0, 0, mImage.width, mImage.height);
     }
     return mImageRect;
   }
 
-  void SetImageRect(const nsIntRect& aRect)
-  {
-    mImageRect = aRect;
-  }
+  void SetImageRect(const gfx::IntRect& aRect) { mImageRect = aRect; }
 
   
   
@@ -280,14 +282,14 @@ public:
   
   
   
-  nsIntRect ScaledImageRect(int64_t aWidth, int64_t aHeight) const
+  gfx::IntRect ScaledImageRect(int64_t aWidth, int64_t aHeight) const
   {
     if ((aWidth == mImage.width && aHeight == mImage.height)
         || !mImage.width
         || !mImage.height) {
       return ImageRect();
     }
-    nsIntRect imageRect = ImageRect();
+    gfx::IntRect imageRect = ImageRect();
     imageRect.x = (imageRect.x * aWidth) / mImage.width;
     imageRect.y = (imageRect.y * aHeight) / mImage.height;
     imageRect.SetWidth((aWidth * imageRect.Width()) / mImage.width);
@@ -312,13 +314,13 @@ public:
 
   
   
-  nsIntSize mDisplay;
+  gfx::IntSize mDisplay;
 
   
   StereoMode mStereoMode;
 
   
-  nsIntSize mImage;
+  gfx::IntSize mImage;
 
   RefPtr<MediaByteBuffer> mCodecSpecificConfig;
   RefPtr<MediaByteBuffer> mExtraData;
@@ -330,7 +332,7 @@ public:
 private:
   
   
-  nsIntRect mImageRect;
+  gfx::IntRect mImageRect;
 
   
   bool mAlphaPresent = false;
@@ -477,7 +479,7 @@ public:
     }
     
     
-    mVideo.mDisplay = nsIntSize(1, 1);
+    mVideo.mDisplay = gfx::IntSize(1, 1);
   }
 
   bool HasAudio() const

@@ -309,7 +309,7 @@ private:
 
   
   
-  nsIntRect mPicture;
+  gfx::IntRect mPicture;
 
   
   bool mIsChained;

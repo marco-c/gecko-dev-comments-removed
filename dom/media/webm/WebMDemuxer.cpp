@@ -339,10 +339,10 @@ WebMDemuxer::ReadMetadata()
       
       unsigned int cropH = params.crop_right + params.crop_left;
       unsigned int cropV = params.crop_bottom + params.crop_top;
-      nsIntRect pictureRect(params.crop_left,
-                            params.crop_top,
-                            params.width - cropH,
-                            params.height - cropV);
+      gfx::IntRect pictureRect(params.crop_left,
+                               params.crop_top,
+                               params.width - cropH,
+                               params.height - cropV);
 
       
       if (pictureRect.width <= 0
@@ -357,8 +357,8 @@ WebMDemuxer::ReadMetadata()
 
       
       
-      nsIntSize displaySize(params.display_width, params.display_height);
-      nsIntSize frameSize(params.width, params.height);
+      gfx::IntSize displaySize(params.display_width, params.display_height);
+      gfx::IntSize frameSize(params.width, params.height);
       if (!IsValidVideoRegion(frameSize, pictureRect, displaySize)) {
         
         continue;
@@ -698,7 +698,7 @@ WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
         if (isKeyframe) {
           
           
-          auto dimensions = nsIntSize(0, 0);
+          auto dimensions = gfx::IntSize(0, 0);
           switch (mVideoCodec) {
           case NESTEGG_CODEC_VP8:
             dimensions = VPXDecoder::GetFrameSize(sample, VPXDecoder::Codec::VP8);

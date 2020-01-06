@@ -93,7 +93,7 @@ GetSampleTime(IMFSample* aSample)
 
 
 HRESULT
-GetPictureRegion(IMFMediaType* aMediaType, nsIntRect& aOutPictureRegion)
+GetPictureRegion(IMFMediaType* aMediaType, gfx::IntRect& aOutPictureRegion)
 {
   
   
@@ -131,10 +131,10 @@ GetPictureRegion(IMFMediaType* aMediaType, nsIntRect& aOutPictureRegion)
 
   if (SUCCEEDED(hr)) {
     
-    aOutPictureRegion = nsIntRect(MFOffsetToInt32(videoArea.OffsetX),
-                                  MFOffsetToInt32(videoArea.OffsetY),
-                                  videoArea.Area.cx,
-                                  videoArea.Area.cy);
+    aOutPictureRegion = gfx::IntRect(MFOffsetToInt32(videoArea.OffsetX),
+                                     MFOffsetToInt32(videoArea.OffsetY),
+                                     videoArea.Area.cx,
+                                     videoArea.Area.cy);
     return S_OK;
   }
 
@@ -145,7 +145,7 @@ GetPictureRegion(IMFMediaType* aMediaType, nsIntRect& aOutPictureRegion)
   NS_ENSURE_TRUE(width <= MAX_VIDEO_WIDTH, E_FAIL);
   NS_ENSURE_TRUE(height <= MAX_VIDEO_HEIGHT, E_FAIL);
 
-  aOutPictureRegion = nsIntRect(0, 0, width, height);
+  aOutPictureRegion = gfx::IntRect(0, 0, width, height);
   return S_OK;
 }
 

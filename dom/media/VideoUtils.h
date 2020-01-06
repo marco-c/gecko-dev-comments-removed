@@ -11,6 +11,7 @@
 #include "MediaInfo.h"
 #include "TimeUnits.h"
 #include "VideoLimits.h"
+#include "mozilla/gfx/Point.h" 
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CheckedInt.h"
@@ -23,8 +24,7 @@
 #include "nsINamed.h"
 #include "nsIThread.h"
 #include "nsITimer.h"
-#include "nsRect.h"
-#include "nsSize.h"
+
 #include "nsThreadUtils.h"
 #include "prtime.h"
 
@@ -149,7 +149,8 @@ nsresult SecondsToUsecs(double aSeconds, int64_t& aOutUsecs);
 
 
 
-void ScaleDisplayByAspectRatio(nsIntSize& aDisplay, float aAspectRatio);
+void
+ScaleDisplayByAspectRatio(gfx::IntSize& aDisplay, float aAspectRatio);
 
 
 
@@ -162,8 +163,10 @@ bool IsVideoContentType(const nsCString& aContentType);
 
 
 
-bool IsValidVideoRegion(const nsIntSize& aFrame, const nsIntRect& aPicture,
-                        const nsIntSize& aDisplay);
+bool
+IsValidVideoRegion(const gfx::IntSize& aFrame,
+                   const gfx::IntRect& aPicture,
+                   const gfx::IntSize& aDisplay);
 
 
 

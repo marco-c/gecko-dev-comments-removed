@@ -10,7 +10,7 @@
 #include "TimeUnits.h"
 #include "VideoUtils.h"
 #include "WMF.h"
-#include "nsRect.h"
+#include "mozilla/gfx/Rect.h"
 #include "nsString.h"
 
 
@@ -45,7 +45,7 @@ int32_t MFOffsetToInt32(const MFOffset& aOffset);
 
 
 HRESULT
-GetPictureRegion(IMFMediaType* aMediaType, nsIntRect& aOutPictureRegion);
+GetPictureRegion(IMFMediaType* aMediaType, gfx::IntRect& aOutPictureRegion);
 
 
 

@@ -50,7 +50,7 @@ public:
   static bool IsKeyframe(Span<const uint8_t> aBuffer, Codec aCodec);
 
   
-  static nsIntSize GetFrameSize(Span<const uint8_t> aBuffer, Codec aCodec);
+  static gfx::IntSize GetFrameSize(Span<const uint8_t> aBuffer, Codec aCodec);
 
 private:
   ~VPXDecoder();
