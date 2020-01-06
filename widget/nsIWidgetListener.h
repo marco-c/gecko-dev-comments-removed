@@ -104,6 +104,11 @@ public:
   
 
 
+  virtual void OcclusionStateChanged(bool aIsFullyOccluded);
+
+  
+
+
   virtual void WindowActivated();
 
   
