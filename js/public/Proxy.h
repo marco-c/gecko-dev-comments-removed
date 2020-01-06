@@ -713,6 +713,13 @@ CheckProxyFlags()
                   ((Flags >> JSCLASS_RESERVED_SLOTS_SHIFT) & JSCLASS_RESERVED_SLOTS_MASK)
                   <= shadow::Object::MAX_FIXED_SLOTS,
                   "ProxyValueArray size must not exceed max JSObject size");
+
+    
+    
+    
+    static_assert(!(Flags & JSCLASS_SKIP_NURSERY_FINALIZE),
+                  "Proxies must not use JSCLASS_SKIP_NURSERY_FINALIZE; use "
+                  "the canNurseryAllocate() proxy handler method instead.");
     return Flags;
 }
 
