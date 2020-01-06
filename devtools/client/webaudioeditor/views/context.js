@@ -5,7 +5,7 @@
 
 
 
-const { debounce } = require("sdk/lang/functional");
+const { debounce } = require("devtools/shared/debounce");
 const flags = require("devtools/shared/flags");
 
 
