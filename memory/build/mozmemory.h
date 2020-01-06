@@ -16,22 +16,20 @@
 
 
 
-#ifndef MOZ_MEMORY
-#  error Should not include mozmemory.h when MOZ_MEMORY is not set
+#ifdef MALLOC_H
+#include MALLOC_H
 #endif
-
 #include "mozmemory_wrap.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Types.h"
 #include "mozjemalloc_types.h"
 
+#ifdef MOZ_MEMORY
 
 
 
 
-#ifdef XP_DARWIN
-#  include <malloc/malloc.h>
-#else
+#ifndef XP_DARWIN
 MOZ_MEMORY_API size_t malloc_good_size_impl(size_t size);
 
 
@@ -52,6 +50,13 @@ static inline size_t _malloc_good_size(size_t size) {
 #define MALLOC_DECL(name, return_type, ...) \
   MOZ_JEMALLOC_API return_type name(__VA_ARGS__);
 #define MALLOC_FUNCS MALLOC_FUNCS_JEMALLOC
+#include "malloc_decls.h"
+
+#endif
+
+#define MALLOC_DECL(name, return_type, ...) \
+  MOZ_JEMALLOC_API return_type name(__VA_ARGS__);
+#define MALLOC_FUNCS MALLOC_FUNCS_ARENA
 #include "malloc_decls.h"
 
 #endif 
