@@ -2084,6 +2084,12 @@ gfxFont::Draw(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
 
     gfxPoint origPt = *aPt;
     if (aRunParams.isVerticalRun && !fontParams.isVerticalFont) {
+
+        if (textDrawer) {
+            textDrawer->FoundUnsupportedFeature();
+            return;
+        }
+
         sideways = true;
         matrixRestore.SetContext(aRunParams.context);
         gfxPoint p(aPt->x * aRunParams.devPerApp,
@@ -2139,6 +2145,11 @@ gfxFont::Draw(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
             
             fontParams.extraStrikes =
                 std::max(1, NS_lroundf(GetSyntheticBoldOffset() / xscale));
+
+            if (textDrawer) {
+                textDrawer->FoundUnsupportedFeature();
+                return;
+            }
         }
     } else {
         fontParams.synBoldOnePixelOffset = 0;
@@ -2167,6 +2178,10 @@ gfxFont::Draw(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
         cairo_matrix_t matrix;
         cairo_scaled_font_get_font_matrix(mScaledFont, &matrix);
         if (matrix.xy != 0) {
+            if (textDrawer) {
+                textDrawer->FoundUnsupportedFeature();
+            }
+
             
             
             
