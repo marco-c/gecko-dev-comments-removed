@@ -10,11 +10,6 @@ print(BUGNUMBER + ": " + summary);
 
 
 
-
-
-assertEq(typeof newGlobal, "function");
-assertEq("formatToParts" in Intl.NumberFormat(), false);
-Intl = newGlobal({ experimentalNumberFormatFormatToPartsEnabled: true }).Intl;
 assertEq("formatToParts" in Intl.NumberFormat(), true);
 
 

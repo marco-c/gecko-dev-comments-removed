@@ -1526,6 +1526,7 @@ static const JSFunctionSpec numberFormat_static_methods[] = {
 
 static const JSFunctionSpec numberFormat_methods[] = {
     JS_SELF_HOSTED_FN("resolvedOptions", "Intl_NumberFormat_resolvedOptions", 0, 0),
+    JS_SELF_HOSTED_FN("formatToParts", "Intl_NumberFormat_formatToParts", 1, 0),
 #if JS_HAS_TOSOURCE
     JS_FN(js_toSource_str, numberFormat_toSource, 0, 0),
 #endif
@@ -1633,22 +1634,6 @@ CreateNumberFormatPrototype(JSContext* cx, HandleObject Intl, Handle<GlobalObjec
     
     if (!JS_DefineProperties(cx, proto, numberFormat_properties))
         return nullptr;
-
-    
-    
-    if (cx->compartment()->creationOptions().experimentalNumberFormatFormatToPartsEnabled()) {
-        RootedValue ftp(cx);
-        HandlePropertyName name = cx->names().formatToParts;
-        if (!GlobalObject::getSelfHostedFunction(cx, cx->global(),
-                                                 cx->names().NumberFormatFormatToParts,
-                                                 name, 1, &ftp))
-        {
-            return nullptr;
-        }
-
-        if (!DefineDataProperty(cx, proto, cx->names().formatToParts, ftp, 0))
-            return nullptr;
-    }
 
     
     RootedValue ctorValue(cx, ObjectValue(*ctor));
