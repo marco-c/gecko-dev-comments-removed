@@ -516,7 +516,8 @@
       gczeal(Number(properties.gczeal));
     }
 
-    document.write(`<title>${ properties.test }<\/title>`);
+    
+    document.title = properties.test;
 
     
     
@@ -537,10 +538,6 @@
     scripts.push({src: "js-test-driver-end.js", module: false});
 
     if (!moduleTest) {
-      
-      
-      document.write("<script></script>");
-
       var key, value;
       if (properties.language !== "type") {
         key = "language";
