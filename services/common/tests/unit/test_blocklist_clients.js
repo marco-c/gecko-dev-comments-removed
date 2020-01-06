@@ -6,14 +6,11 @@ Cu.import("resource://gre/modules/Timer.jsm");
 const { FileUtils } = Cu.import("resource://gre/modules/FileUtils.jsm", {});
 const { OS } = Cu.import("resource://gre/modules/osfile.jsm", {});
 
-const { Kinto } = Cu.import("resource://services-common/kinto-offline-client.js", {});
-const { FirefoxAdapter } = Cu.import("resource://services-common/kinto-storage-adapter.js", {});
 const BlocklistClients = Cu.import("resource://services-common/blocklist-clients.js", {});
 const { UptakeTelemetry } = Cu.import("resource://services-common/uptake-telemetry.js", {});
 
 const BinaryInputStream = CC("@mozilla.org/binaryinputstream;1",
   "nsIBinaryInputStream", "setInputStream");
-const kintoFilename = "kinto.sqlite";
 
 const gBlocklistClients = [
   {client: BlocklistClients.AddonBlocklistClient, testData: ["i808", "i720", "i539"]},
@@ -23,18 +20,6 @@ const gBlocklistClients = [
 
 
 let server;
-
-function kintoCollection(collectionName, sqliteHandle) {
-  const config = {
-    
-    
-    remote: "https://firefox.settings.services.mozilla.com/v1/",
-    adapter: FirefoxAdapter,
-    adapterOptions: {sqliteHandle},
-    bucket: "blocklists"
-  };
-  return new Kinto(config).collection(collectionName);
-}
 
 async function readJSON(filepath) {
   const binaryData = await OS.File.read(filepath);
@@ -48,14 +33,9 @@ async function clear_state() {
     Services.prefs.clearUserPref(client.lastCheckTimePref);
 
     
-    let sqliteHandle;
-    try {
-      sqliteHandle = await FirefoxAdapter.openConnection({path: kintoFilename});
-      const collection = kintoCollection(client.collectionName, sqliteHandle);
+    await client.openCollection(async (collection) => {
       await collection.clear();
-    } finally {
-      await sqliteHandle.close();
-    }
+    });
 
     
     const dumpFile = OS.Path.join(OS.Constants.Path.profileDir, client.filename);
@@ -120,11 +100,10 @@ add_task(async function test_initial_dump_is_loaded_as_synced_when_collection_is
     await client.maybeSync(1, Date.now());
 
     
-    const sqliteHandle = await FirefoxAdapter.openConnection({path: kintoFilename});
-    const collection = kintoCollection(client.collectionName, sqliteHandle);
-    const list = await collection.list();
-    equal(list.data[0]._status, "synced");
-    await sqliteHandle.close();
+    await client.openCollection(async (collection) => {
+      const list = await collection.list();
+      equal(list.data[0]._status, "synced");
+    });
   }
 });
 add_task(clear_state);
@@ -136,11 +115,10 @@ add_task(async function test_records_obtained_from_server_are_stored_in_db() {
 
     
     
-    const sqliteHandle = await FirefoxAdapter.openConnection({path: kintoFilename});
-    let collection = kintoCollection(client.collectionName, sqliteHandle);
-    let list = await collection.list();
-    equal(list.data.length, 1);
-    await sqliteHandle.close();
+    await client.openCollection(async (collection) => {
+      const list = await collection.list();
+      equal(list.data.length, 1);
+    });
   }
 });
 add_task(clear_state);
@@ -149,14 +127,12 @@ add_task(async function test_records_changes_are_overwritten_by_server_changes()
   const {client} = gBlocklistClients[0];
 
   
-  const sqliteHandle = await FirefoxAdapter.openConnection({path: kintoFilename});
-  const collection = kintoCollection(client.collectionName, sqliteHandle);
-  await collection.create({
-    "versionRange": [],
-    "id": "9d500963-d80e-3a91-6e74-66f3811b99cc"
-  }, { useRecordId: true });
-  await sqliteHandle.close();
-
+  await client.openCollection(async (collection) => {
+    await collection.create({
+      "versionRange": [],
+      "id": "9d500963-d80e-3a91-6e74-66f3811b99cc"
+    }, { useRecordId: true });
+  });
   await client.maybeSync(2000, Date.now(), {loadDump: false});
 });
 add_task(clear_state);
@@ -284,10 +260,9 @@ add_task(async function test_telemetry_reports_if_sync_fails() {
   const {client} = gBlocklistClients[0];
   const serverTime = Date.now();
 
-  const sqliteHandle = await FirefoxAdapter.openConnection({path: kintoFilename});
-  const collection = kintoCollection(client.collectionName, sqliteHandle);
-  await collection.db.saveLastModified(9999);
-  await sqliteHandle.close();
+  await client.openCollection(async (collection) => {
+    await collection.db.saveLastModified(9999);
+  });
 
   const startHistogram = getUptakeTelemetrySnapshot(client.identifier);
 
@@ -304,15 +279,15 @@ add_task(clear_state);
 add_task(async function test_telemetry_reports_unknown_errors() {
   const {client} = gBlocklistClients[0];
   const serverTime = Date.now();
-  const backup = FirefoxAdapter.openConnection;
-  FirefoxAdapter.openConnection = () => { throw new Error("Internal"); };
+  const backup = client.openCollection;
+  client.openCollection = () => { throw new Error("Internal"); };
   const startHistogram = getUptakeTelemetrySnapshot(client.identifier);
 
   try {
     await client.maybeSync(2000, serverTime);
   } catch (e) {}
 
-  FirefoxAdapter.openConnection = backup;
+  client.openCollection = backup;
   const endHistogram = getUptakeTelemetrySnapshot(client.identifier);
   const expectedIncrements = {[UptakeTelemetry.STATUS.UNKNOWN_ERROR]: 1};
   checkUptakeTelemetry(startHistogram, endHistogram, expectedIncrements);

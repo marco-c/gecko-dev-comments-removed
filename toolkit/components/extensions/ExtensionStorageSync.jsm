@@ -57,7 +57,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Kinto: "resource://services-common/kinto-offline-client.js",
   FirefoxAdapter: "resource://services-common/kinto-storage-adapter.js",
   Observers: "resource://services-common/observers.js",
-  Sqlite: "resource://gre/modules/Sqlite.jsm",
   Utils: "resource://services-sync/util.js",
 });
 
@@ -335,29 +334,24 @@ global.KeyRingEncryptionRemoteTransformer = KeyRingEncryptionRemoteTransformer;
 
 
 
-const storageSyncInit = (async function() {
-  const path = "storage-sync.sqlite";
-  const opts = {path, sharedMemoryCache: false};
-  const connection = await Sqlite.openConnection(opts);
-  await FirefoxAdapter._init(connection);
-  return {
-    connection,
-    kinto: new Kinto({
-      adapter: FirefoxAdapter,
-      adapterOptions: {sqliteHandle: connection},
-      timeout: KINTO_REQUEST_TIMEOUT,
-    }),
-  };
-})();
 
-AsyncShutdown.profileBeforeChange.addBlocker(
-  "ExtensionStorageSync: close Sqlite handle",
-  async function() {
-    const ret = await storageSyncInit;
-    const {connection} = ret;
-    await connection.close();
+async function storageSyncInit() {
+  
+  if (storageSyncInit.result === undefined) {
+    const path = "storage-sync.sqlite";
+    const connection = await FirefoxAdapter.openConnection({path});
+    storageSyncInit.result = {
+      connection,
+      kinto: new Kinto({
+        adapter: FirefoxAdapter,
+        adapterOptions: {sqliteHandle: connection},
+        timeout: KINTO_REQUEST_TIMEOUT,
+      }),
+    };
   }
-);
+  return storageSyncInit.result;
+}
+
 
 
 
@@ -432,7 +426,7 @@ class CryptoCollection {
 
   async getCollection() {
     throwIfNoFxA(this._fxaService, "tried to access cryptoCollection");
-    const {kinto} = await storageSyncInit;
+    const {kinto} = await storageSyncInit();
     return kinto.collection(STORAGE_SYNC_CRYPTO_COLLECTION_NAME, {
       idSchema: cryptoCollectionIdSchema,
       remoteTransformers: [new KeyRingEncryptionRemoteTransformer(this._fxaService)],
@@ -695,7 +689,7 @@ function cleanUpForContext(extension, context) {
 
 const openCollection = async function(cryptoCollection, extension, context) {
   let collectionId = extension.id;
-  const {kinto} = await storageSyncInit;
+  const {kinto} = await storageSyncInit();
   const remoteTransformers = [new CollectionKeyEncryptionRemoteTransformer(cryptoCollection, extension.id)];
   const coll = kinto.collection(collectionId, {
     idSchema: storageSyncIdSchema,
@@ -1230,7 +1224,17 @@ class ExtensionStorageSync {
     this.listeners.set(extension, listeners);
 
     
-    return this.getCollection(extension, context);
+    
+    return this.getCollection(extension, context)
+      .catch((e) => {
+        
+        
+        
+        
+        if (!(/Kinto storage adapter connection closing/.test(e.message))) {
+          throw e;
+        }
+      });
   }
 
   removeOnChangedListener(extension, listener) {
