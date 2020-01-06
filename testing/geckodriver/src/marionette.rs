@@ -316,7 +316,7 @@ impl MarionetteHandler {
                                                                e.description().to_owned())));
 
         
-        runner.args().push("-marionette");
+        runner.args().push("-marionette".to_owned());
 
         if let Some(args) = options.args.take() {
             runner.args().extend(args);
