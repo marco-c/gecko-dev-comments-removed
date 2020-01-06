@@ -77,17 +77,10 @@ impl MediaQuery {
     
     
     fn never_matching() -> Self {
-        Self::new(Some(Qualifier::Not), MediaQueryType::All, vec![])
-    }
-
-    
-    pub fn new(qualifier: Option<Qualifier>,
-               media_type: MediaQueryType,
-               expressions: Vec<Expression>) -> MediaQuery {
-        MediaQuery {
-            qualifier: qualifier,
-            media_type: media_type,
-            expressions: expressions,
+        Self {
+            qualifier: Some(Qualifier::Not),
+            media_type: MediaQueryType::All,
+            expressions: vec![],
         }
     }
 }
@@ -209,9 +202,12 @@ impl MediaQuery {
 
         let media_type = match input.try(|i| i.expect_ident_cloned()) {
             Ok(ident) => {
-                let result: Result<_, ParseError> = MediaQueryType::parse(&*ident)
-                    .map_err(|()| input.new_custom_error(SelectorParseErrorKind::UnexpectedIdent(ident.clone())));
-                result?
+                MediaQueryType::parse(&*ident)
+                    .map_err(|()| {
+                        input.new_custom_error(
+                            SelectorParseErrorKind::UnexpectedIdent(ident.clone())
+                        )
+                    })?
             }
             Err(_) => {
                 
@@ -229,7 +225,7 @@ impl MediaQuery {
         
         loop {
             if input.try(|input| input.expect_ident_matching("and")).is_err() {
-                return Ok(MediaQuery::new(qualifier, media_type, expressions))
+                return Ok(MediaQuery { qualifier, media_type, expressions })
             }
             expressions.push(Expression::parse(context, input)?)
         }
