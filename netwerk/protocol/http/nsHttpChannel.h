@@ -31,6 +31,7 @@
 #include "AlternateServices.h"
 #include "nsIHstsPrimingCallback.h"
 #include "nsIRaceCacheWithNetwork.h"
+#include "mozilla/extensions/PStreamFilterParent.h"
 #include "mozilla/Mutex.h"
 
 class nsDNSPrefetch;
@@ -292,6 +293,10 @@ public:
     
     
     bool IsReadingFromCache() const { return mIsReadingFromCache; }
+
+    base::ProcessId ProcessId();
+
+    MOZ_MUST_USE bool AttachStreamFilter(ipc::Endpoint<extensions::PStreamFilterParent>&& aEndpoint);
 
 private: 
     RefPtr<TransactionObserver> mTransactionObserver;
