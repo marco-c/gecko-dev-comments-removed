@@ -5253,15 +5253,8 @@ this.XPIProvider = {
         activeAddon.bootstrapScope, "console",
         () => new ConsoleAPI({ consoleID: "addon/" + aId }));
 
-      
-      
-      
       activeAddon.bootstrapScope.__SCRIPT_URI_SPEC__ = uri;
-      Components.utils.evalInSandbox(
-        "Components.classes['@mozilla.org/moz/jssubscript-loader;1'] \
-                   .getService(Components.interfaces.mozIJSSubScriptLoader) \
-                   .loadSubScript(__SCRIPT_URI_SPEC__);",
-                   activeAddon.bootstrapScope, "ECMAv5");
+      Services.scriptloader.loadSubScript(uri, activeAddon.bootstrapScope);
     } catch (e) {
       logger.warn("Error loading bootstrap.js for " + aId, e);
     }
@@ -5353,8 +5346,8 @@ this.XPIProvider = {
 
       let method = undefined;
       try {
-        method = Components.utils.evalInSandbox(`${aMethod};`,
-          activeAddon.bootstrapScope, "ECMAv5");
+        let scope = activeAddon.bootstrapScope;
+        method = scope[aMethod] || Cu.evalInSandbox(`${aMethod};`, scope);
       } catch (e) {
         
         
