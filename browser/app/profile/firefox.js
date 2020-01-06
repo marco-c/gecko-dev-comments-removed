@@ -1273,6 +1273,9 @@ pref("pdfjs.previousHandler.alwaysAskBeforeHandling", false);
 pref("image.mem.max_decoded_image_kb", 256000);
 
 
+pref("sidebar.position_start", true);
+
+
 
 pref("social.share.activationPanelEnabled", true);
 pref("social.shareDirectory", "https://activations.cdn.mozilla.net/sharePanel.html");
