@@ -23,6 +23,9 @@ const char* kCustomVersionHeader = "X-PingSender-Version: 1.0";
 const char* kContentEncodingHeader = "Content-Encoding: gzip";
 
 
+const uint32_t kConnectionTimeoutMs = 30 * 1000;
+
+
 
 
 
