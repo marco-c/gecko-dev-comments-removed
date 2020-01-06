@@ -252,9 +252,11 @@ WebRenderLayerManager::EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
   AUTO_PROFILER_TRACING("Paint", "RenderLayers");
   mTransactionIncomplete = false;
 
-  if (gfxPrefs::LayersDump()) {
-    this->Dump();
-  }
+#if 0
+  
+  
+  nsFrame::PrintDisplayList(aDisplayListBuilder, *aDisplayList);
+#endif
 
   
   mAnimationReadyTime = TimeStamp::Now();
