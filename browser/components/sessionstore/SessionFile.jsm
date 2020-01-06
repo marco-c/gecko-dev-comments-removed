@@ -98,11 +98,11 @@ var SessionFileInternal = {
   Paths: Object.freeze({
     
     
-    clean: Path.join(profileDir, "sessionstore.js"),
+    clean: Path.join(profileDir, "sessionstore.jsonlz4"),
 
     
     
-    cleanBackup: Path.join(profileDir, "sessionstore-backups", "previous.js"),
+    cleanBackup: Path.join(profileDir, "sessionstore-backups", "previous.jsonlz4"),
 
     
     backups: Path.join(profileDir, "sessionstore-backups"),
@@ -112,7 +112,7 @@ var SessionFileInternal = {
     
     
     
-    recovery: Path.join(profileDir, "sessionstore-backups", "recovery.js"),
+    recovery: Path.join(profileDir, "sessionstore-backups", "recovery.jsonlz4"),
 
     
     
@@ -121,13 +121,13 @@ var SessionFileInternal = {
     
     
     
-    recoveryBackup: Path.join(profileDir, "sessionstore-backups", "recovery.bak"),
+    recoveryBackup: Path.join(profileDir, "sessionstore-backups", "recovery.baklz4"),
 
     
     
     
     
-    upgradeBackupPrefix: Path.join(profileDir, "sessionstore-backups", "upgrade.js-"),
+    upgradeBackupPrefix: Path.join(profileDir, "sessionstore-backups", "upgrade.jsonlz4-"),
 
     
     
@@ -207,21 +207,28 @@ var SessionFileInternal = {
     }
   },
 
-  
-  async read() {
-    this._initializationStarted = true;
-
+  async _readInternal(useOldExtension) {
     let result;
     let noFilesFound = true;
+
     
     for (let key of this.Paths.loadOrder) {
       let corrupted = false;
       let exists = true;
       try {
-        let path = this.Paths[key];
+        let path;
         let startMs = Date.now();
 
-        let source = await OS.File.read(path, { encoding: "utf-8" });
+        let options = {encoding: "utf-8"};
+        if (useOldExtension) {
+          path = this.Paths[key]
+                     .replace("jsonlz4", "js")
+                     .replace("baklz4", "bak");
+        } else {
+          path = this.Paths[key];
+          options.compression = "lz4";
+        }
+        let source = await OS.File.read(path, options);
         let parsed = JSON.parse(source);
 
         if (!SessionStore.isFormatVersionCompatible(parsed.version || ["sessionrestore", 0] )) {
@@ -232,7 +239,8 @@ var SessionFileInternal = {
         result = {
           origin: key,
           source,
-          parsed
+          parsed,
+          useOldExtension
         };
         Telemetry.getHistogramById("FX_SESSION_RESTORE_CORRUPT_FILE").
           add(false);
@@ -260,6 +268,21 @@ var SessionFileInternal = {
         }
       }
     }
+    return {result, noFilesFound};
+  },
+
+  
+  async read() {
+    this._initializationStarted = true;
+
+    
+    let {result, noFilesFound} = await this._readInternal(false);
+    if (!result) {
+      
+      
+      let r = await this._readInternal(true);
+      result = r.result;
+    }
 
     
     let allCorrupt = !noFilesFound && !result;
@@ -271,7 +294,8 @@ var SessionFileInternal = {
       result = {
         origin: "empty",
         source: "",
-        parsed: null
+        parsed: null,
+        useOldExtension: false
       };
     }
 
@@ -279,7 +303,7 @@ var SessionFileInternal = {
 
     
     
-    let promiseInitialized = SessionWorker.post("init", [result.origin, this.Paths, {
+    let promiseInitialized = SessionWorker.post("init", [result.origin, result.useOldExtension, this.Paths, {
       maxUpgradeBackups: Preferences.get(PREF_MAX_UPGRADE_BACKUPS, 3),
       maxSerializeBack: Preferences.get(PREF_MAX_SERIALIZE_BACK, 10),
       maxSerializeForward: Preferences.get(PREF_MAX_SERIALIZE_FWD, -1)

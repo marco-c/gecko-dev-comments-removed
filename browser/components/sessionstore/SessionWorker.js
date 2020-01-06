@@ -82,6 +82,11 @@ var Agent = {
   
 
 
+  useOldExtension: false,
+
+  
+
+
   maxUpgradeBackups: null,
 
   
@@ -92,7 +97,8 @@ var Agent = {
 
 
 
-  init(origin, paths, prefs = {}) {
+
+  init(origin, useOldExtension, paths, prefs = {}) {
     if (!(origin in paths || origin == STATE_EMPTY)) {
       throw new TypeError("Invalid origin: " + origin);
     }
@@ -104,6 +110,7 @@ var Agent = {
       }
     }
 
+    this.useOldExtension = useOldExtension;
     this.state = origin;
     this.Paths = paths;
     this.maxUpgradeBackups = prefs.maxUpgradeBackups;
@@ -165,10 +172,20 @@ var Agent = {
       if (this.state == STATE_CLEAN) {
         
         
-        File.move(this.Paths.clean, this.Paths.cleanBackup);
+        if (!this.useOldExtension) {
+          File.move(this.Paths.clean, this.Paths.cleanBackup);
+        } else {
+          
+          
+          
+          let oldCleanPath = this.Paths.clean.replace("jsonlz4", "js");
+          let d = File.read(oldCleanPath);
+          File.writeAtomic(this.Paths.cleanBackup, d, {compression: "lz4"});
+        }
       }
 
       let startWriteMs = Date.now();
+      let fileStat;
 
       if (options.isFinalWrite) {
         
@@ -177,8 +194,10 @@ var Agent = {
         
         
         File.writeAtomic(this.Paths.clean, data, {
-          tmpPath: this.Paths.clean + ".tmp"
+          tmpPath: this.Paths.clean + ".tmp",
+          compression: "lz4"
         });
+        fileStat = File.stat(this.Paths.clean);
       } else if (this.state == STATE_RECOVERY) {
         
         
@@ -188,19 +207,23 @@ var Agent = {
         
         File.writeAtomic(this.Paths.recovery, data, {
           tmpPath: this.Paths.recovery + ".tmp",
-          backupTo: this.Paths.recoveryBackup
+          backupTo: this.Paths.recoveryBackup,
+          compression: "lz4"
         });
+        fileStat = File.stat(this.Paths.recovery);
       } else {
         
         
         
         File.writeAtomic(this.Paths.recovery, data, {
-          tmpPath: this.Paths.recovery + ".tmp"
+          tmpPath: this.Paths.recovery + ".tmp",
+          compression: "lz4"
         });
+        fileStat = File.stat(this.Paths.recovery);
       }
 
       telemetry.FX_SESSION_RESTORE_WRITE_FILE_MS = Date.now() - startWriteMs;
-      telemetry.FX_SESSION_RESTORE_FILE_SIZE_BYTES = data.byteLength;
+      telemetry.FX_SESSION_RESTORE_FILE_SIZE_BYTES = fileStat.size;
 
     } catch (ex) {
       
@@ -293,6 +316,8 @@ var Agent = {
     
     try {
       File.remove(this.Paths.clean);
+      
+      File.remove(this.Paths.clean.replace("jsonlz4", "js"), {ignoreAbsent: true});
     } catch (ex) {
       
       exn = exn || ex;
