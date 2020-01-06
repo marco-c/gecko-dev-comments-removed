@@ -124,11 +124,11 @@ import java.util.concurrent.Future;
 
     private void setTopSiteTitle(final TopSite topSite) {
         URI topSiteURI = null; 
-        boolean wasException = false;
+        boolean isInvalidURI = false;
         try {
             topSiteURI = new URI(topSite.getUrl());
         } catch (final URISyntaxException e) {
-            wasException = true;
+            isInvalidURI = true;
         }
 
         final boolean isSiteSuggestedFromDistribution = BrowserDB.from(itemView.getContext()).getSuggestedSites()
@@ -142,25 +142,29 @@ import java.util.concurrent.Future;
 
         
         
-        
-        
-        
-        
-        
-        if (wasException ||
-                isSiteSuggestedFromDistribution ||
-                !URIUtils.isPathEmpty(topSiteURI)) {
-            
-            final String pageTitle = topSite.getTitle();
+        final String pageTitle = topSite.getTitle();
+        if (isInvalidURI || isSiteSuggestedFromDistribution) {
             final String updateText = !TextUtils.isEmpty(pageTitle) ? pageTitle : topSite.getUrl();
-            setTopSiteTitleHelper(title, updateText);
+            setTopSiteTitleHelper(title, updateText); 
 
-        } else {
+        
+        
+        
+        
+        
+        } else if (URIUtils.isPathEmpty(topSiteURI) ||
+                (!URIUtils.isPathEmpty(topSiteURI) && TextUtils.isEmpty(pageTitle))) {
             
             
             final UpdateCardTitleAsyncTask titleAsyncTask = new UpdateCardTitleAsyncTask(itemView.getContext(),
                     topSiteURI, title);
             titleAsyncTask.execute();
+
+        
+        
+        
+        } else {
+            setTopSiteTitleHelper(title, pageTitle); 
         }
     }
 
