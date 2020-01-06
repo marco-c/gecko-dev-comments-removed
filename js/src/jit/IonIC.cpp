@@ -243,8 +243,11 @@ IonSetPropertyIC::update(JSContext* cx, HandleScript outerScript, IonSetProperty
             MOZ_ASSERT(!script->hasNonSyntacticScope());
             InitGlobalLexicalOperation(cx, &cx->global()->lexicalEnvironment(), script, pc, rhs);
         } else if (IsPropertyInitOp(JSOp(*pc))) {
-            RootedId id(cx, AtomToId(&idVal.toString()->asAtom()));
-            if (!InitPropertyOperation(cx, JSOp(*pc), obj, id, rhs))
+            
+            
+            
+            
+            if (!InitElemOperation(cx, pc, obj, idVal, rhs))
                 return false;
         } else {
             MOZ_ASSERT(IsPropertySetOp(JSOp(*pc)));
