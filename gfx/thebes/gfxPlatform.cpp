@@ -2167,6 +2167,15 @@ gfxPlatform::FlushFontAndWordCaches()
     gfxPlatform::PurgeSkiaFontCache();
 }
 
+ void
+gfxPlatform::ForceGlobalReflow()
+{
+    
+    static const char kPrefName[] = "font.internaluseonly.changed";
+    bool fontInternalChange = Preferences::GetBool(kPrefName, false);
+    Preferences::SetBool(kPrefName, !fontInternalChange);
+}
+
 void
 gfxPlatform::FontsPrefsChanged(const char *aPref)
 {

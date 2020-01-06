@@ -485,7 +485,9 @@ protected:
     void GetPrefsAndStartLoader();
 
     
-    void ForceGlobalReflow();
+    void ForceGlobalReflow() {
+        gfxPlatform::ForceGlobalReflow();
+    }
 
     void RebuildLocalFonts();
 

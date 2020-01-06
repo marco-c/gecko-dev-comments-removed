@@ -557,6 +557,14 @@ public:
 
     int32_t GetBidiNumeralOption();
 
+    
+
+
+
+
+
+    static void ForceGlobalReflow();
+
     static void
     FlushFontAndWordCaches();
 
