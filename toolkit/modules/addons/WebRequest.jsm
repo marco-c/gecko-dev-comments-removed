@@ -639,6 +639,11 @@ HttpObserverManager = {
   },
   GOOD_LAST_ACTIVITY: nsIHttpActivityObserver.ACTIVITY_SUBTYPE_RESPONSE_HEADER,
   observeActivity(nativeChannel, activityType, activitySubtype ) {
+    
+    
+    if (!(nativeChannel instanceof Ci.nsIChannel)) {
+      return;
+    }
     let channel = ChannelWrapper.get(nativeChannel);
 
     
