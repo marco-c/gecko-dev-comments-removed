@@ -23,6 +23,7 @@ class ProfileAutoCompleteResult {
   constructor(searchString, focusedFieldName, allFieldNames, matchingProfiles, {
     resultCode = null,
     isSecure = true,
+    isInputAutofilled = false,
   }) {
     log.debug("Constructing new ProfileAutoCompleteResult:", [...arguments]);
 
@@ -41,6 +42,8 @@ class ProfileAutoCompleteResult {
     this.errorDescription = "";
     
     this._isSecure = isSecure;
+    
+    this._isInputAutofilled = isInputAutofilled;
     
     this._allFieldNames = [...this._matchingProfiles.reduce((fieldSet, curProfile) => {
       for (let field of Object.keys(curProfile)) {
@@ -97,14 +100,24 @@ class ProfileAutoCompleteResult {
 
 
 
+
+
+
+
+
   getValueAt(index) {
     this._checkIndexBounds(index);
-    return this._popupLabels[index].primary;
+    return "";
   }
 
   getLabelAt(index) {
     this._checkIndexBounds(index);
-    return JSON.stringify(this._popupLabels[index]);
+
+    let label = this._popupLabels[index];
+    if (typeof label == "string") {
+      return label;
+    }
+    return JSON.stringify(label);
   }
 
   
@@ -127,6 +140,10 @@ class ProfileAutoCompleteResult {
     if (index == this.matchCount - 1) {
       return "autofill-footer";
     }
+    if (this._isInputAutofilled) {
+      return "autofill-clear-button";
+    }
+
     return "autofill-profile";
   }
 
@@ -237,6 +254,13 @@ class AddressResult extends ProfileAutoCompleteResult {
   }
 
   _generateLabels(focusedFieldName, allFieldNames, profiles) {
+    if (this._isInputAutofilled) {
+      return [
+        {primary: "", secondary: ""}, 
+        {primary: "", secondary: ""}, 
+      ];
+    }
+
     
     let labels = profiles.filter(profile => {
       return !!profile[focusedFieldName];
@@ -265,11 +289,6 @@ class AddressResult extends ProfileAutoCompleteResult {
     });
 
     return labels;
-  }
-
-  getValueAt(index) {
-    this._checkIndexBounds(index);
-    return "";
   }
 }
 
@@ -337,6 +356,13 @@ class CreditCardResult extends ProfileAutoCompleteResult {
       return [FormAutofillUtils.stringBundle.formatStringFromName("insecureFieldWarningDescription", [brandName], 1)];
     }
 
+    if (this._isInputAutofilled) {
+      return [
+        {primary: "", secondary: ""}, 
+        {primary: "", secondary: ""}, 
+      ];
+    }
+
     
     let labels = profiles.filter(profile => {
       return !!profile[focusedFieldName];
@@ -363,35 +389,13 @@ class CreditCardResult extends ProfileAutoCompleteResult {
     return labels;
   }
 
-  
-  
-  
-  getValueAt(index) {
-    this._checkIndexBounds(index);
-    return "";
-  }
-
-  getLabelAt(index) {
-    this._checkIndexBounds(index);
-
-    let label = this._popupLabels[index];
-    if (typeof label == "string") {
-      return label;
-    }
-    return JSON.stringify(label);
-  }
-
   getStyleAt(index) {
     this._checkIndexBounds(index);
     if (!this._isSecure && insecureWarningEnabled) {
       return "autofill-insecureWarning";
     }
 
-    if (index == this.matchCount - 1) {
-      return "autofill-footer";
-    }
-
-    return "autofill-profile";
+    return super.getStyleAt(index);
   }
 
   getImageAt(index) {
