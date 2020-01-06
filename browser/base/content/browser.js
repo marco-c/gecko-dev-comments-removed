@@ -1332,10 +1332,6 @@ var gBrowserInit = {
     mm.loadFrameScript("chrome://browser/content/content-UITour.js", true);
     mm.loadFrameScript("chrome://global/content/manifestMessages.js", true);
 
-    
-    
-    XULBrowserWindow.init();
-
     window.messageManager.addMessageListener("Browser:LoadURI", RedirectLoad);
 
     if (!gMultiProcessBrowser) {
@@ -4455,12 +4451,6 @@ var XULBrowserWindow = {
     return this.canViewSource = document.getElementById("canViewSource");
   },
 
-  init() {
-    
-    var securityUI = gBrowser.securityUI;
-    this.onSecurityChange(null, null, securityUI.state, true);
-  },
-
   setJSStatus() {
     
   },
@@ -7358,7 +7348,6 @@ var gIdentityHandler = {
     
     
     if (!this._uri) {
-      Cu.reportError("Unexpected early call to refreshForInsecureLoginForms.");
       return;
     }
     this.refreshIdentityBlock();
