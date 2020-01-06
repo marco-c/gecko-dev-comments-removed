@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+
+
+
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 from .registry import register_callback_action
 
 
@@ -25,7 +33,7 @@ But you can also use the default value `'World'`.
     },
 )
 def hello_world_action(parameters, input, task_group_id, task_id, task):
-    print "This message was triggered from context-menu of taskId: {}".format(task_id)
-    print ""
-    print "Hello {}".format(input)
-    print "--- Action is now executed"
+    print("This message was triggered from context-menu of taskId: {}".format(task_id))
+    print("")
+    print("Hello {}".format(input))
+    print("--- Action is now executed")
