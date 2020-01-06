@@ -1717,29 +1717,6 @@ add_task(async function test_abortedSession() {
   await TelemetryController.testShutdown();
   Assert.ok(!(await OS.File.exists(ABORTED_FILE)),
             "No aborted session ping must be available after a shutdown.");
-
-  
-  
-  await TelemetryStorage.savePingToFile(abortedSessionPing, ABORTED_FILE, false);
-  Assert.ok((await OS.File.exists(ABORTED_FILE)),
-            "The aborted session ping must exist in the aborted session ping directory.");
-
-  await TelemetryStorage.testClearPendingPings();
-  PingServer.clearRequests();
-  await TelemetryController.testReset();
-
-  Assert.ok(!(await OS.File.exists(ABORTED_FILE)),
-            "The aborted session ping must be removed from the aborted session ping directory.");
-
-  
-  await TelemetryController.testReset();
-
-  
-  const receivedPing = await PingServer.promiseNextPing();
-  Assert.equal(receivedPing.type, PING_TYPE_MAIN, "Should have the correct type");
-  Assert.equal(receivedPing.payload.info.reason, REASON_ABORTED_SESSION, "Ping should have the correct reason");
-
-  await TelemetryController.testShutdown();
 });
 
 add_task(async function test_abortedSession_Shutdown() {
@@ -1836,8 +1813,9 @@ add_task(async function test_schedulerComputerSleep() {
 
   const ABORTED_FILE = OS.Path.join(DATAREPORTING_PATH, ABORTED_PING_FILE_NAME);
 
-  await TelemetryStorage.testClearPendingPings();
   await TelemetryController.testReset();
+  await TelemetryController.testShutdown();
+  await TelemetryStorage.testClearPendingPings();
   PingServer.clearRequests();
 
   
@@ -1923,7 +1901,8 @@ add_task(async function test_schedulerEnvironmentReschedules() {
 
   
   PingServer.registerPingHandler((req, res) => {
-    Assert.ok(false, "No ping should be sent/received in this test.");
+    const receivedPing = decodeRequestPayload(req);
+    Assert.ok(false, `No ping should be received in this test (got ${receivedPing.id}).`);
   });
 
   
@@ -1947,7 +1926,8 @@ add_task(async function test_schedulerNothingDue() {
 
   
   PingServer.registerPingHandler((req, res) => {
-    Assert.ok(false, "No ping should be sent/received in this test.");
+    const receivedPing = decodeRequestPayload(req);
+    Assert.ok(false, `No ping should be received in this test (got ${receivedPing.id}).`);
   });
 
   
