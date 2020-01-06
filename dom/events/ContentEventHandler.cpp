@@ -1615,8 +1615,8 @@ ContentEventHandler::NodePosition
 ContentEventHandler::GetNodePositionHavingFlatText(
                        const NodePosition& aNodePosition)
 {
-  return GetNodePositionHavingFlatText(aNodePosition.mNode,
-                                       aNodePosition.mOffset);
+  return GetNodePositionHavingFlatText(aNodePosition.Container(),
+                                       aNodePosition.Offset());
 }
 
 ContentEventHandler::NodePosition
@@ -1644,10 +1644,11 @@ ContentEventHandler::GetNodePositionHavingFlatText(nsINode* aNode,
   
   
   if (aNodeOffset == childCount) {
-    NodePosition result;
-    result.mNode = aNode->GetChildAt(childCount - 1);
-    result.mOffset = result.mNode->IsNodeOfType(nsINode::eTEXT) ?
-      static_cast<int32_t>(result.mNode->AsContent()->TextLength()) : 1;
+    nsINode* node = aNode->GetChildAt(childCount - 1);
+    return NodePosition(node,
+      node->IsNodeOfType(nsINode::eTEXT)
+        ? static_cast<int32_t>(node->AsContent()->TextLength())
+        : 1);
   }
 
   NS_WARNING("aNodeOffset is invalid value");
@@ -1681,8 +1682,7 @@ ContentEventHandler::GetFirstFrameInRangeForTextRect(const RawRange& aRawRange)
       int32_t offsetInNode =
         node == aRawRange.GetStartContainer() ? aRawRange.StartOffset() : 0;
       if (static_cast<uint32_t>(offsetInNode) < node->Length()) {
-        nodePosition.mNode = node;
-        nodePosition.mOffset = offsetInNode;
+        nodePosition.Set(node, offsetInNode);
         break;
       }
       continue;
@@ -1692,19 +1692,18 @@ ContentEventHandler::GetFirstFrameInRangeForTextRect(const RawRange& aRawRange)
     
     if (ShouldBreakLineBefore(node->AsContent(), mRootContent) ||
         IsMozBR(node->AsContent())) {
-      nodePosition.mNode = node;
-      nodePosition.mOffset = 0;
+      nodePosition.Set(node, 0);
     }
   }
 
-  if (!nodePosition.IsValid()) {
+  if (!nodePosition.IsSet()) {
     return FrameAndNodeOffset();
   }
 
   nsIFrame* firstFrame = nullptr;
-  GetFrameForTextRect(nodePosition.mNode, nodePosition.mOffset,
+  GetFrameForTextRect(nodePosition.Container(), nodePosition.Offset(),
                       true, &firstFrame);
-  return FrameAndNodeOffset(firstFrame, nodePosition.mOffset);
+  return FrameAndNodeOffset(firstFrame, nodePosition.Offset());
 }
 
 ContentEventHandler::FrameAndNodeOffset
@@ -1761,17 +1760,19 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(const RawRange& aRawRange)
     }
 
     if (node->IsNodeOfType(nsINode::eTEXT)) {
-      nodePosition.mNode = node;
+      uint32_t offset;
       if (node == aRawRange.GetEndContainer()) {
-        nodePosition.mOffset = aRawRange.EndOffset();
+        offset = aRawRange.EndOffset();
       } else {
-        nodePosition.mOffset = node->Length();
+        offset = node->Length();
       }
+      nodePosition.Set(node, offset);
+
       
       
       
       
-      if (!nodePosition.mOffset) {
+      if (!nodePosition.Offset()) {
         continue;
       }
       break;
@@ -1779,18 +1780,18 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(const RawRange& aRawRange)
 
     if (ShouldBreakLineBefore(node->AsContent(), mRootContent) ||
         IsMozBR(node->AsContent())) {
-      nodePosition.mNode = node;
-      nodePosition.mOffset = 0;
+      nodePosition.Set(node, 0);
       break;
     }
   }
 
-  if (!nodePosition.IsValid()) {
+  if (!nodePosition.IsSet()) {
     return FrameAndNodeOffset();
   }
 
   nsIFrame* lastFrame = nullptr;
-  GetFrameForTextRect(nodePosition.mNode, nodePosition.mOffset,
+  GetFrameForTextRect(nodePosition.Container(),
+                      nodePosition.Offset(),
                       true, &lastFrame);
   if (!lastFrame) {
     return FrameAndNodeOffset();
@@ -1800,7 +1801,7 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(const RawRange& aRawRange)
   
   
   if (!lastFrame->IsTextFrame()) {
-    return FrameAndNodeOffset(lastFrame, nodePosition.mOffset);
+    return FrameAndNodeOffset(lastFrame, nodePosition.Offset());
   }
 
   int32_t start, end;
@@ -1812,15 +1813,16 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(const RawRange& aRawRange)
   
   
   
-  if (nodePosition.mOffset && nodePosition.mOffset == start) {
-    GetFrameForTextRect(nodePosition.mNode, --nodePosition.mOffset,
-                        true, &lastFrame);
+  if (nodePosition.Offset() && nodePosition.Offset() == static_cast<uint32_t>(start)) {
+    nodePosition.Set(nodePosition.Container(), nodePosition.Offset() - 1);
+    GetFrameForTextRect(nodePosition.Container(), nodePosition.Offset(), true,
+                        &lastFrame);
     if (NS_WARN_IF(!lastFrame)) {
       return FrameAndNodeOffset();
     }
   }
 
-  return FrameAndNodeOffset(lastFrame, nodePosition.mOffset);
+  return FrameAndNodeOffset(lastFrame, nodePosition.Offset());
 }
 
 ContentEventHandler::FrameRelativeRect
@@ -2873,8 +2875,8 @@ ContentEventHandler::GetFlatTextLengthInRange(
                        LineBreakType aLineBreakType,
                        bool aIsRemovingNode )
 {
-  if (NS_WARN_IF(!aRootContent) || NS_WARN_IF(!aStartPosition.IsValid()) ||
-      NS_WARN_IF(!aEndPosition.IsValid()) || NS_WARN_IF(!aLength)) {
+  if (NS_WARN_IF(!aRootContent) || NS_WARN_IF(!aStartPosition.IsSet()) ||
+      NS_WARN_IF(!aEndPosition.IsSet()) || NS_WARN_IF(!aLength)) {
     return NS_ERROR_INVALID_ARG;
   }
 
@@ -2896,49 +2898,50 @@ ContentEventHandler::GetFlatTextLengthInRange(
   
   
   if (aIsRemovingNode) {
-    DebugOnly<nsIContent*> parent = aStartPosition.mNode->GetParent();
-    MOZ_ASSERT(parent && parent->IndexOf(aStartPosition.mNode) == -1,
+    DebugOnly<nsIContent*> parent = aStartPosition.Container()->GetParent();
+    MOZ_ASSERT(parent && parent->IndexOf(aStartPosition.Container()) == -1,
       "At removing the node, the node shouldn't be in the array of children "
       "of its parent");
-    MOZ_ASSERT(aStartPosition.mNode == endPosition.mNode,
+    MOZ_ASSERT(aStartPosition.Container() == endPosition.Container(),
       "At removing the node, start and end node should be same");
-    MOZ_ASSERT(aStartPosition.mOffset == 0,
+    MOZ_ASSERT(aStartPosition.Offset() == 0,
       "When the node is being removed, the start offset should be 0");
-    MOZ_ASSERT(static_cast<uint32_t>(endPosition.mOffset) ==
-                 endPosition.mNode->GetChildCount(),
+    MOZ_ASSERT(static_cast<uint32_t>(endPosition.Offset()) ==
+                 endPosition.Container()->GetChildCount(),
       "When the node is being removed, the end offset should be child count");
     iter = NS_NewPreContentIterator();
-    nsresult rv = iter->Init(aStartPosition.mNode);
+    nsresult rv = iter->Init(aStartPosition.Container());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
   } else {
     RawRange prevRawRange;
     nsresult rv =
-      prevRawRange.SetStart(aStartPosition.mNode, aStartPosition.mOffset);
+      prevRawRange.SetStart(aStartPosition.Container(),
+                            aStartPosition.Offset());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
 
     
     
-    if (endPosition.mNode != aRootContent &&
+    if (endPosition.Container() != aRootContent &&
         endPosition.IsImmediatelyAfterOpenTag()) {
-      if (endPosition.mNode->HasChildren()) {
+      if (endPosition.Container()->HasChildren()) {
         
         
-        nsINode* firstChild = endPosition.mNode->GetFirstChild();
+        nsINode* firstChild = endPosition.Container()->GetFirstChild();
         if (NS_WARN_IF(!firstChild)) {
           return NS_ERROR_FAILURE;
         }
         endPosition = NodePositionBefore(firstChild, 0);
       } else {
         
-        nsIContent* parentContent = endPosition.mNode->GetParent();
+        nsIContent* parentContent = endPosition.Container()->GetParent();
         if (NS_WARN_IF(!parentContent)) {
           return NS_ERROR_FAILURE;
         }
-        int32_t indexInParent = parentContent->IndexOf(endPosition.mNode);
+        int32_t indexInParent = parentContent->IndexOf(endPosition.Container());
         if (NS_WARN_IF(indexInParent < 0)) {
           return NS_ERROR_FAILURE;
         }
@@ -2946,9 +2949,9 @@ ContentEventHandler::GetFlatTextLengthInRange(
       }
     }
 
-    if (endPosition.OffsetIsValid()) {
+    if (endPosition.IsSetAndValid()) {
       
-      rv = prevRawRange.SetEnd(endPosition.mNode, endPosition.mOffset);
+      rv = prevRawRange.SetEnd(endPosition.Container(), endPosition.Offset());
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -2959,9 +2962,9 @@ ContentEventHandler::GetFlatTextLengthInRange(
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-    } else if (endPosition.mNode != aRootContent) {
+    } else if (endPosition.Container() != aRootContent) {
       
-      rv = prevRawRange.SetEndAfter(endPosition.mNode);
+      rv = prevRawRange.SetEndAfter(endPosition.Container());
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -2995,21 +2998,21 @@ ContentEventHandler::GetFlatTextLengthInRange(
 
     if (node->IsNodeOfType(nsINode::eTEXT)) {
       
-      if (node == endPosition.mNode) {
+      if (node == endPosition.Container()) {
         *aLength += GetTextLength(content, aLineBreakType,
-                                  endPosition.mOffset);
+                                  endPosition.Offset());
       } else {
         *aLength += GetTextLength(content, aLineBreakType);
       }
     } else if (ShouldBreakLineBefore(content, aRootContent)) {
       
       
-      if (node == aStartPosition.mNode && !aStartPosition.IsBeforeOpenTag()) {
+      if (node == aStartPosition.Container() && !aStartPosition.IsBeforeOpenTag()) {
         continue;
       }
       
       
-      if (node == endPosition.mNode && endPosition.IsBeforeOpenTag()) {
+      if (node == endPosition.Container() && endPosition.IsBeforeOpenTag()) {
         continue;
       }
       *aLength += GetBRLength(aLineBreakType);
