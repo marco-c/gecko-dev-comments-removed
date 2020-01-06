@@ -312,6 +312,7 @@ public:
       return;
     }
 
+    GetWrapper(); 
     HoldJSObjects(aScriptObjectHolder, aTracer);
     SetPreservingWrapper(true);
 #ifdef DEBUG
