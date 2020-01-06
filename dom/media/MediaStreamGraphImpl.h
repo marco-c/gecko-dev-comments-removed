@@ -780,7 +780,7 @@ public:
 
 
 
-  bool mRealtime;
+  const bool mRealtime;
   
 
 
