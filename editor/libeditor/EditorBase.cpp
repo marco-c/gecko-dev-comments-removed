@@ -4067,15 +4067,22 @@ EditorBase::SplitNodeDeep(nsIContent& aNode,
 {
   MOZ_ASSERT(&aSplitPointParent == &aNode ||
              EditorUtils::IsDescendantOf(aSplitPointParent, aNode));
-  int32_t offset = aSplitPointOffset;
+
+  int32_t offset =
+    std::min(std::max(aSplitPointOffset, 0),
+             static_cast<int32_t>(aSplitPointParent.Length()));
+  EditorDOMPoint atStartOfRightNode(&aSplitPointParent, offset);
+  if (NS_WARN_IF(!atStartOfRightNode.IsSet())) {
+    return -1;
+  }
+  MOZ_ASSERT(atStartOfRightNode.IsSetAndValid());
 
   nsCOMPtr<nsIContent> leftNode, rightNode;
-  OwningNonNull<nsIContent> nodeToSplit = aSplitPointParent;
   while (true) {
     
     
-    nsCOMPtr<nsIContent> parent = nodeToSplit->GetParent();
-    if (NS_WARN_IF(nodeToSplit != &aNode && !parent)) {
+    if (NS_WARN_IF(atStartOfRightNode.Container() != &aNode &&
+                   !atStartOfRightNode.Container()->GetParent())) {
       return -1;
     }
 
@@ -4084,47 +4091,62 @@ EditorBase::SplitNodeDeep(nsIContent& aNode,
     
     
 
+    if (NS_WARN_IF(!atStartOfRightNode.Container()->IsContent())) {
+      return -1;
+    }
+    nsIContent* currentRightNode = atStartOfRightNode.Container()->AsContent();
+
     
     
     if ((aSplitAtEdges == SplitAtEdges::eAllowToCreateEmptyContainer &&
-         !nodeToSplit->GetAsText()) ||
-        (offset && offset != (int32_t)nodeToSplit->Length())) {
+         !atStartOfRightNode.Container()->GetAsText()) ||
+        (!atStartOfRightNode.IsStartOfContainer() &&
+         !atStartOfRightNode.IsEndOfContainer())) {
       ErrorResult error;
-      int32_t offsetAtStartOfRightNode =
-        std::min(std::max(offset, 0),
-                 static_cast<int32_t>(nodeToSplit->Length()));
-      nsCOMPtr<nsIContent> newLeftNode =
-        SplitNode(EditorRawDOMPoint(nodeToSplit, offsetAtStartOfRightNode),
-                  error);
+      rightNode = currentRightNode;
+      leftNode = SplitNode(atStartOfRightNode.AsRaw(), error);
       if (NS_WARN_IF(error.Failed())) {
         error.SuppressException();
         return -1;
       }
 
       
-      offset = parent->IndexOf(nodeToSplit);
-      rightNode = nodeToSplit;
-      leftNode = newLeftNode;
+      atStartOfRightNode.Set(currentRightNode);
     }
     
     
-    else if (offset) {
-      offset = parent->IndexOf(nodeToSplit) + 1;
-      leftNode = nodeToSplit;
+    else if (!atStartOfRightNode.IsStartOfContainer()) {
+      
+      
+      
+      
+      
+      leftNode = currentRightNode;
+
+      
+      atStartOfRightNode.Set(currentRightNode);
+      DebugOnly<bool> advanced = atStartOfRightNode.AdvanceOffset();
+      NS_WARNING_ASSERTION(advanced,
+        "Failed to advance offset after current node");
     }
     
     
     else {
-      offset = parent->IndexOf(nodeToSplit);
-      rightNode = nodeToSplit;
+      
+      
+      
+      
+      
+      rightNode = currentRightNode;
+
+      
+      atStartOfRightNode.Set(currentRightNode);
     }
 
-    if (nodeToSplit == &aNode) {
+    if (currentRightNode == &aNode) {
       
       break;
     }
-
-    nodeToSplit = *parent;
   }
 
   if (aOutLeftNode) {
@@ -4134,10 +4156,10 @@ EditorBase::SplitNodeDeep(nsIContent& aNode,
     rightNode.forget(aOutRightNode);
   }
   if (ioChildAtSplitPointOffset) {
-    *ioChildAtSplitPointOffset = nodeToSplit;
+    *ioChildAtSplitPointOffset = atStartOfRightNode.GetChildAtOffset();
   }
 
-  return offset;
+  return atStartOfRightNode.Offset();
 }
 
 
