@@ -50,7 +50,7 @@ class BlockingResourceBase
 {
 public:
   
-  enum BlockingResourceType { eMutex, eReentrantMonitor, eCondVar };
+  enum BlockingResourceType { eMutex, eReentrantMonitor, eCondVar, eRecursiveMutex };
 
   
 
