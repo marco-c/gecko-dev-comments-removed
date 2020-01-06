@@ -69,8 +69,6 @@ talos:
     - talos-tp6
     - talos-tp6-stylo-threads
     - talos-speedometer
-    - talos-h1
-    - talos-h2
 
 awsy:
     - awsy
@@ -198,8 +196,6 @@ windows-talos:
     - talos-tp6
     - talos-tp6-stylo-threads
     - talos-speedometer
-    - talos-h1
-    - talos-h2
 
 windows-talos-stylo-disabled:
     - talos-chrome-stylo-disabled
@@ -257,8 +253,6 @@ macosx64-talos:
     - talos-tp6
     - talos-tp6-stylo-threads
     - talos-speedometer
-    - talos-h1
-    - talos-h2
 
 macosx64-talos-stylo-disabled:
     - talos-chrome-stylo-disabled
@@ -315,6 +309,7 @@ android-common-tests:
     - mochitest-gpu
     - mochitest-media
     - reftest
+    - test-verify
     - xpcshell
 
 android-debug-tests:
@@ -328,6 +323,7 @@ android-gradle-tests:
     - mochitest-chrome
     - robocop
     - geckoview
+    - test-verify
 
 android-x86-tests:
     - mochitest-chrome
