@@ -545,7 +545,7 @@ pref("media.getusermedia.screensharing.enabled", true);
 pref("media.getusermedia.audiocapture.enabled", false);
 
 
-pref("media.webvtt.regions.enabled", false);
+pref("media.webvtt.regions.enabled", true);
 
 
 pref("media.webvtt.pseudo.enabled", true);
