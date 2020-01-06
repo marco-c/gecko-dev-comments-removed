@@ -109,20 +109,20 @@ private:
 UniquePtr<nsTArray<FakeBufferRefcountHelper>> gFakeBuffers;
 #endif
 
-class Atom final : public nsIAtom
+class nsAtom final : public nsIAtom
 {
 public:
-  static already_AddRefed<Atom> CreateDynamic(const nsAString& aString,
-                                              uint32_t aHash)
+  static already_AddRefed<nsAtom> CreateDynamic(const nsAString& aString,
+                                                uint32_t aHash)
   {
     
-    return dont_AddRef(new Atom(aString, aHash));
+    return dont_AddRef(new nsAtom(aString, aHash));
   }
 
-  static Atom* CreateStatic(nsStringBuffer* aStringBuffer, uint32_t aLength,
-                            uint32_t aHash)
+  static nsAtom* CreateStatic(nsStringBuffer* aStringBuffer, uint32_t aLength,
+                              uint32_t aHash)
   {
-    return new Atom(aStringBuffer, aLength, aHash);
+    return new nsAtom(aStringBuffer, aLength, aHash);
   }
 
   static void GCAtomTable();
@@ -137,7 +137,7 @@ public:
 
 private:
   
-  Atom(const nsAString& aString, uint32_t aHash)
+  nsAtom(const nsAString& aString, uint32_t aHash)
     : mRefCnt(1)
   {
     mLength = aString.Length();
@@ -171,7 +171,7 @@ private:
   }
 
   
-  Atom(nsStringBuffer* aStringBuffer, uint32_t aLength, uint32_t aHash)
+  nsAtom(nsStringBuffer* aStringBuffer, uint32_t aLength, uint32_t aHash)
   {
     mLength = aLength;
     SetKind(AtomKind::StaticAtom);
@@ -202,7 +202,8 @@ public:
   
   
   
-  ~Atom() {
+  ~nsAtom()
+  {
     if (IsDynamicAtom()) {
       nsStringBuffer::FromData(mString)->Release();
     } else {
@@ -222,17 +223,17 @@ protected:
   NS_DECL_OWNINGTHREAD
 };
 
-NS_IMPL_QUERY_INTERFACE(Atom, nsIAtom);
+NS_IMPL_QUERY_INTERFACE(nsAtom, nsIAtom);
 
 NS_IMETHODIMP
-Atom::ToUTF8String(nsACString& aBuf)
+nsAtom::ToUTF8String(nsACString& aBuf)
 {
   CopyUTF16toUTF8(nsDependentString(mString, mLength), aBuf);
   return NS_OK;
 }
 
 NS_IMETHODIMP_(size_t)
-Atom::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf)
+nsAtom::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf)
 {
   size_t n = aMallocSizeOf(this);
   
@@ -256,7 +257,7 @@ nsIAtom::AddRef()
     MOZ_ASSERT(IsStaticAtom());
     return 2;
   }
-  return static_cast<Atom*>(this)->DynamicAddRef();
+  return static_cast<nsAtom*>(this)->DynamicAddRef();
 }
 
 NS_IMETHODIMP_(MozExternalRefCountType)
@@ -267,7 +268,7 @@ nsIAtom::Release()
     MOZ_ASSERT(IsStaticAtom());
     return 1;
   }
-  return static_cast<Atom*>(this)->DynamicRelease();
+  return static_cast<nsAtom*>(this)->DynamicRelease();
 }
 
 
@@ -337,7 +338,7 @@ struct AtomTableEntry : public PLDHashEntryHdr
   
   
   
-  Atom* MOZ_NON_OWNING_REF mAtom;
+  nsAtom* MOZ_NON_OWNING_REF mAtom;
 };
 
 static PLDHashNumber
@@ -367,7 +368,7 @@ static void
 AtomTableClearEntry(PLDHashTable* aTable, PLDHashEntryHdr* aEntry)
 {
   auto entry = static_cast<AtomTableEntry*>(aEntry);
-  Atom* atom = entry->mAtom;
+  nsAtom* atom = entry->mAtom;
   if (atom->IsStaticAtom()) {
     
     
@@ -393,11 +394,11 @@ static const PLDHashTableOps AtomTableOps = {
 
 
 #define RECENTLY_USED_MAIN_THREAD_ATOM_CACHE_SIZE 31
-static Atom*
+static nsAtom*
   sRecentlyUsedMainThreadAtoms[RECENTLY_USED_MAIN_THREAD_ATOM_CACHE_SIZE] = {};
 
 void
-Atom::GCAtomTable()
+nsAtom::GCAtomTable()
 {
   if (NS_IsMainThread()) {
     MutexAutoLock lock(*gAtomTableLock);
@@ -406,7 +407,7 @@ Atom::GCAtomTable()
 }
 
 void
-Atom::GCAtomTableLocked(const MutexAutoLock& aProofOfLock, GCKind aKind)
+nsAtom::GCAtomTableLocked(const MutexAutoLock& aProofOfLock, GCKind aKind)
 {
   MOZ_ASSERT(NS_IsMainThread());
   for (uint32_t i = 0; i < RECENTLY_USED_MAIN_THREAD_ATOM_CACHE_SIZE; ++i) {
@@ -422,7 +423,7 @@ Atom::GCAtomTableLocked(const MutexAutoLock& aProofOfLock, GCKind aKind)
       continue;
     }
 
-    Atom* atom = entry->mAtom;
+    nsAtom* atom = entry->mAtom;
     if (atom->mRefCnt == 0) {
       i.Remove();
       delete atom;
@@ -474,7 +475,7 @@ Atom::GCAtomTableLocked(const MutexAutoLock& aProofOfLock, GCKind aKind)
 }
 
 MozExternalRefCountType
-Atom::DynamicAddRef()
+nsAtom::DynamicAddRef()
 {
   MOZ_ASSERT(IsDynamicAtom());
   nsrefcnt count = ++mRefCnt;
@@ -493,7 +494,7 @@ static const int32_t kAtomGCThreshold = 10000;
 #endif
 
 MozExternalRefCountType
-Atom::DynamicRelease()
+nsAtom::DynamicRelease()
 {
   MOZ_ASSERT(IsDynamicAtom());
   MOZ_ASSERT(mRefCnt > 0);
@@ -538,7 +539,7 @@ public:
 
   
   
-  Atom* MOZ_OWNING_REF mAtom;
+  nsAtom* MOZ_OWNING_REF mAtom;
 };
 
 
@@ -603,7 +604,7 @@ NS_ShutdownAtomTable()
   
   {
     MutexAutoLock lock(*gAtomTableLock);
-    Atom::GCAtomTableLocked(lock, Atom::GCKind::Shutdown);
+    nsAtom::GCAtomTableLocked(lock, nsAtom::GCKind::Shutdown);
   }
 #endif
 
@@ -674,7 +675,7 @@ RegisterStaticAtoms(const nsStaticAtom* aAtoms, uint32_t aAtomCount)
       GetAtomHashEntry(static_cast<char16_t*>(stringBuffer->Data()),
                        stringLen, &hash);
 
-    Atom* atom = he->mAtom;
+    nsAtom* atom = he->mAtom;
     if (atom) {
       
       
@@ -687,7 +688,7 @@ RegisterStaticAtoms(const nsStaticAtom* aAtoms, uint32_t aAtomCount)
           "Static atom registration for %s should be pushed back", name.get());
       }
     } else {
-      atom = Atom::CreateStatic(stringBuffer, stringLen, hash);
+      atom = nsAtom::CreateStatic(stringBuffer, stringLen, hash);
       he->mAtom = atom;
     }
     *atomp = atom;
@@ -727,7 +728,7 @@ NS_Atomize(const nsACString& aUTF8String)
   
   nsString str;
   CopyUTF8toUTF16(aUTF8String, str);
-  RefPtr<Atom> atom = Atom::CreateDynamic(str, hash);
+  RefPtr<nsAtom> atom = nsAtom::CreateDynamic(str, hash);
 
   he->mAtom = atom;
 
@@ -755,7 +756,7 @@ NS_Atomize(const nsAString& aUTF16String)
     return atom.forget();
   }
 
-  RefPtr<Atom> atom = Atom::CreateDynamic(aUTF16String, hash);
+  RefPtr<nsAtom> atom = nsAtom::CreateDynamic(aUTF16String, hash);
   he->mAtom = atom;
 
   return atom.forget();
@@ -769,7 +770,7 @@ NS_AtomizeMainThread(const nsAString& aUTF16String)
   uint32_t hash;
   AtomTableKey key(aUTF16String.Data(), aUTF16String.Length(), &hash);
   uint32_t index = hash % RECENTLY_USED_MAIN_THREAD_ATOM_CACHE_SIZE;
-  Atom* atom = sRecentlyUsedMainThreadAtoms[index];
+  nsAtom* atom = sRecentlyUsedMainThreadAtoms[index];
   if (atom) {
     uint32_t length = atom->GetLength();
     if (length == key.mLength &&
@@ -786,7 +787,7 @@ NS_AtomizeMainThread(const nsAString& aUTF16String)
   if (he->mAtom) {
     retVal = he->mAtom;
   } else {
-    RefPtr<Atom> newAtom = Atom::CreateDynamic(aUTF16String, hash);
+    RefPtr<nsAtom> newAtom = nsAtom::CreateDynamic(aUTF16String, hash);
     he->mAtom = newAtom;
     retVal = newAtom.forget();
   }
@@ -798,7 +799,7 @@ NS_AtomizeMainThread(const nsAString& aUTF16String)
 nsrefcnt
 NS_GetNumberOfAtoms(void)
 {
-  Atom::GCAtomTable(); 
+  nsAtom::GCAtomTable(); 
   MutexAutoLock lock(*gAtomTableLock);
   return gAtomTable->EntryCount();
 }
