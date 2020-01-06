@@ -6716,20 +6716,6 @@ SetProcessLargeAllocationFailureCallback(LargeAllocationFailureCallback afc);
 
 
 
-struct JS_PUBLIC_API(SystemInformation)
-{
-    uint32_t maxCpuClockMHz;    
-};
-
-extern JS_PUBLIC_API(void)
-SetSystemInformation(const SystemInformation* info);
-
-
-
-
-
-
-
 
 
 

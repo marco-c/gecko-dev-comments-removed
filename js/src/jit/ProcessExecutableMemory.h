@@ -50,11 +50,6 @@ extern void DeallocateExecutableMemory(void* addr, size_t bytes);
 
 extern bool CanLikelyAllocateMoreExecutableMemory();
 
-
-
-
-extern size_t LikelyAvailableExecutableMemory();
-
 } 
 } 
 
