@@ -326,9 +326,12 @@ public:
   Get();
 
   static StorageDBThread*
-  GetOrCreate();
+  GetOrCreate(const nsString& aProfilePath);
 
-  virtual nsresult Init();
+  static nsresult
+  GetProfilePath(nsString& aProfilePath);
+
+  virtual nsresult Init(const nsString& aProfilePath);
 
   
   virtual nsresult Shutdown();
