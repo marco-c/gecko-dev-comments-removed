@@ -3581,8 +3581,12 @@ nsGlobalWindow::DetachFromDocShell()
   mChromeEventHandler = nullptr; 
 
   if (mContext) {
+    
+    
+    
     nsJSContext::PokeGC(JS::gcreason::SET_DOC_SHELL,
-                        GetWrapperPreserveColor());
+                        (mTopLevelOuterContentWindow || mIsChrome) ?
+                          nullptr : GetWrapperPreserveColor());
     mContext = nullptr;
   }
 
