@@ -45,6 +45,9 @@
 
 nsGlobalWindowOuter::OuterWindowByIdTable *nsGlobalWindowOuter::sOuterWindowsById = nullptr;
 
+
+static NS_DEFINE_CID(kXULControllersCID, NS_XULCONTROLLERS_CID);
+
 static already_AddRefed<nsIVariant>
 CreateVoidVariant()
 {
