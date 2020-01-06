@@ -67,8 +67,10 @@ DomPanel.prototype = {
     this.target.on("navigate", this.onTabNavigated);
     this._toolbox.on("select", this.onPanelVisibilityChange);
 
+    
     let provider = {
-      getPrototypeAndProperties: this.getPrototypeAndProperties.bind(this)
+      getPrototypeAndProperties: this.getPrototypeAndProperties.bind(this),
+      openLink: this.openLink.bind(this),
     };
 
     exportIntoContentScope(this.panelWin, provider, "DomProvider");
@@ -175,6 +177,13 @@ DomPanel.prototype = {
     this.pendingRequests.set(grip.actor, deferred.promise);
 
     return deferred.promise;
+  },
+
+  openLink: function (url) {
+    let parentDoc = this._toolbox.doc;
+    let iframe = parentDoc.getElementById("this._toolbox");
+    let top = iframe.ownerDocument.defaultView.top;
+    top.openUILinkIn(url, "tab");
   },
 
   getRootGrip: function () {

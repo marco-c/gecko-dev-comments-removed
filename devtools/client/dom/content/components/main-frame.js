@@ -3,6 +3,8 @@
 
 
 
+ 
+
 "use strict";
 
 
@@ -25,15 +27,20 @@ var MainFrame = React.createClass({
   displayName: "MainFrame",
 
   propTypes: {
-    object: PropTypes.any,
-    filter: PropTypes.string,
     dispatch: PropTypes.func.isRequired,
+    filter: PropTypes.string,
+    object: PropTypes.any,
   },
 
   
 
 
   render: function () {
+    let {
+      filter,
+      object,
+    } = this.props;
+
     return (
       div({className: "mainFrame"},
         MainToolbar({
@@ -42,8 +49,9 @@ var MainFrame = React.createClass({
         }),
         div({className: "treeTableBox"},
           DomTree({
-            object: this.props.object,
-            filter: this.props.filter,
+            filter,
+            object,
+            openLink: url => DomProvider.openLink(url),
           })
         )
       )
