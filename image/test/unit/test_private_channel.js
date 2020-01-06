@@ -108,6 +108,8 @@ function run_test() {
 
   do_test_pending();
 
+  Services.prefs.setBoolPref("network.http.rcwn.enabled", false);
+
   
   
   
