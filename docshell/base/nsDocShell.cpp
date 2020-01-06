@@ -6335,6 +6335,10 @@ nsDocShell::SetIsActive(bool aIsActive)
   
   mIsActive = aIsActive;
 
+  if (TabChild* tc = TabChild::GetFrom(this)) {
+    tc->OnDocShellActivated(aIsActive);
+  }
+
   
   if (mIsPrerendered && aIsActive) {
     MOZ_ASSERT(mPrerenderGlobalHistory.get());

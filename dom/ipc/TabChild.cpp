@@ -2669,6 +2669,23 @@ TabChild::RemovePendingDocShellBlocker()
 }
 
 void
+TabChild::OnDocShellActivated(bool aIsActive)
+{
+  if (aIsActive) {
+    if (!sActiveTabs) {
+      sActiveTabs = new nsTHashtable<nsPtrHashKey<TabChild>>();
+    }
+    sActiveTabs->PutEntry(this);
+  } else {
+    if (sActiveTabs) {
+      sActiveTabs->RemoveEntry(this);
+      
+      
+    }
+  }
+}
+
+void
 TabChild::InternalSetDocShellIsActive(bool aIsActive, bool aPreserveLayers)
 {
   auto clearForcePaint = MakeScopeExit([&] {
@@ -2710,19 +2727,6 @@ TabChild::InternalSetDocShellIsActive(bool aIsActive, bool aPreserveLayers)
     }
 
     docShell->SetIsActive(aIsActive);
-  }
-
-  if (aIsActive) {
-    if (!sActiveTabs) {
-      sActiveTabs = new nsTHashtable<nsPtrHashKey<TabChild>>();
-    }
-    sActiveTabs->PutEntry(this);
-  } else {
-    if (sActiveTabs) {
-      sActiveTabs->RemoveEntry(this);
-      
-      
-    }
   }
 
   if (aIsActive) {
