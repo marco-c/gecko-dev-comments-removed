@@ -2199,24 +2199,11 @@ enum IsNameLookup { NotNameLookup = false, NameLookup = true };
 
 
 
-
-
 static bool
 GetNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
                        HandleValue receiver, IsNameLookup nameLookup, MutableHandleValue vp)
 {
     vp.setUndefined();
-
-    
-    
-    
-    if (JSGetterOp getProperty = obj->getClass()->getGetProperty()) {
-        if (!CallJSGetterOp(cx, getProperty, obj, id, vp))
-            return false;
-
-        if (!vp.isUndefined())
-            return true;
-    }
 
     
     if (nameLookup)
@@ -2227,7 +2214,7 @@ GetNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
     
     
     
-    if (!cx->compartment()->behaviors().extraWarnings(cx))
+    if (MOZ_LIKELY(!cx->compartment()->behaviors().extraWarnings(cx)))
         return true;
 
     jsbytecode* pc;
@@ -2484,30 +2471,6 @@ NativeSetExistingDataProperty(JSContext* cx, HandleNativeObject obj, HandleShape
     return true;  
 }
 
-static bool
-CallSetPropertyHookAfterDefining(JSContext* cx, HandleObject receiver, HandleId id, HandleValue v,
-                                 ObjectOpResult& result)
-{
-    MOZ_ASSERT(receiver->is<NativeObject>());
-    MOZ_ASSERT(receiver->getClass()->getSetProperty());
-
-    if (!result)
-        return true;
-
-    Rooted<NativeObject*> nativeReceiver(cx, &receiver->as<NativeObject>());
-    MOZ_ASSERT(!cx->helperThread());
-    RootedValue receiverValue(cx, ObjectValue(*receiver));
-
-    
-    
-    
-    
-    
-    RootedShape shape(cx, nativeReceiver->lookup(cx, id));
-    MOZ_ASSERT(shape);
-    return NativeSetExistingDataProperty(cx, nativeReceiver, shape, v, receiverValue, result);
-}
-
 
 
 
@@ -2547,9 +2510,6 @@ js::SetPropertyByDefining(JSContext* cx, HandleId id, HandleValue v, HandleValue
     }
 
     
-    const Class* clasp = receiver->getClass();
-
-    
     if (!PurgeEnvironmentChain(cx, receiver, id))
         return false;
 
@@ -2558,19 +2518,7 @@ js::SetPropertyByDefining(JSContext* cx, HandleId id, HandleValue v, HandleValue
         existing
         ? JSPROP_IGNORE_ENUMERATE | JSPROP_IGNORE_READONLY | JSPROP_IGNORE_PERMANENT
         : JSPROP_ENUMERATE;
-    JSGetterOp getter = clasp->getGetProperty();
-    JSSetterOp setter = clasp->getSetProperty();
-    MOZ_ASSERT(getter != JS_PropertyStub);
-    MOZ_ASSERT(setter != JS_StrictPropertyStub);
-    if (!DefineProperty(cx, receiver, id, v, getter, setter, attrs, result))
-        return false;
-
-    
-    
-    if (setter && receiver->is<NativeObject>())
-        return CallSetPropertyHookAfterDefining(cx, receiver, id, v, result);
-
-    return true;
+    return DefineProperty(cx, receiver, id, v, nullptr, nullptr, attrs, result);
 }
 
 
@@ -2623,14 +2571,8 @@ SetNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id, Handl
 
         
 
-        const Class* clasp = obj->getClass();
-        JSGetterOp getter = clasp->getGetProperty();
-        JSSetterOp setter = clasp->getSetProperty();
-        MOZ_ASSERT(getter != JS_PropertyStub);
-        MOZ_ASSERT(setter != JS_StrictPropertyStub);
-
         Rooted<PropertyDescriptor> desc(cx);
-        desc.initFields(nullptr, v, JSPROP_ENUMERATE, getter, setter);
+        desc.initFields(nullptr, v, JSPROP_ENUMERATE, nullptr, nullptr);
 
         if (DefinePropertyOp op = obj->getOpsDefineProperty()) {
             
@@ -2638,19 +2580,10 @@ SetNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id, Handl
                 return false;
 
             MOZ_ASSERT(!cx->helperThread());
-            if (!op(cx, obj, id, desc, result))
-                return false;
-        } else {
-            if (!DefineNonexistentProperty(cx, obj, id, desc, result))
-                return false;
+            return op(cx, obj, id, desc, result);
         }
 
-        
-        
-        if (setter)
-            return CallSetPropertyHookAfterDefining(cx, obj, id, v, result);
-
-        return true;
+        return DefineNonexistentProperty(cx, obj, id, desc, result);
     }
 
     return SetPropertyByDefining(cx, id, v, receiver, result);
