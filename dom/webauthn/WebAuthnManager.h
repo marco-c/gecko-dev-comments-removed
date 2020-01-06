@@ -79,7 +79,7 @@ public:
                      nsTArray<uint8_t>& aSigBuffer);
 
   void
-  Cancel(const nsresult& aError);
+  RequestAborted(const nsresult& aError);
 
   already_AddRefed<Promise>
   MakeCredential(nsPIDOMWindowInner* aParent,
@@ -88,9 +88,6 @@ public:
   already_AddRefed<Promise>
   GetAssertion(nsPIDOMWindowInner* aParent,
                const PublicKeyCredentialRequestOptions& aOptions);
-
-  already_AddRefed<Promise>
-  Store(nsPIDOMWindowInner* aParent, const Credential& aCredential);
 
   void StartRegister();
   void StartSign();
@@ -104,6 +101,7 @@ private:
   WebAuthnManager();
   virtual ~WebAuthnManager();
 
+  void Cancel(const nsresult& aError);
   void MaybeClearTransaction();
 
   typedef MozPromise<nsresult, nsresult, false> BackgroundActorPromise;
