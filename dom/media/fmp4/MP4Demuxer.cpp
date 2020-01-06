@@ -520,7 +520,7 @@ MP4TrackDemuxer::GetSamples(int32_t aNumSamples)
   }
   for (const auto& sample : samples->mSamples) {
     
-    if (mNeedSPSForTelemetry && mp4_demuxer::H264::HasSPS(sample)) {
+    if (mNeedSPSForTelemetry && mp4_demuxer::H264::HasSPS(sample->mExtraData)) {
       RefPtr<MediaByteBuffer> extradata =
         mp4_demuxer::H264::ExtractExtraData(sample);
       mNeedSPSForTelemetry = AccumulateSPSTelemetry(extradata);
