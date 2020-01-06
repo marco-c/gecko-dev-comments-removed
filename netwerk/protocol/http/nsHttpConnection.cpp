@@ -125,7 +125,20 @@ nsHttpConnection::~nsHttpConnection()
         mForceSendTimer = nullptr;
     }
 
-    Telemetry::Accumulate(Telemetry::TCP_FAST_OPEN, mFastOpenStatus);
+    if ((mFastOpenStatus != TFO_FAILED) &&
+        ((mFastOpenStatus != TFO_NOT_TRIED) ||
+ #if defined(_WIN64) && defined(WIN95)
+         (gHttpHandler->UseFastOpen() &&
+          gSocketTransportService &&
+          gSocketTransportService->HasFileDesc2PlatformOverlappedIOHandleFunc()))) {
+#else
+         gHttpHandler->UseFastOpen())) {
+#endif
+
+
+
+        Telemetry::Accumulate(Telemetry::TCP_FAST_OPEN_2, mFastOpenStatus);
+    }
 }
 
 nsresult
@@ -2390,6 +2403,19 @@ nsHttpConnection::SetFastOpen(bool aFastOpen)
         mTransaction &&
         !mTransaction->IsNullTransaction()) {
         mExperienced = true;
+    }
+}
+
+void
+nsHttpConnection::SetFastOpenStatus(uint8_t tfoStatus) {
+    mFastOpenStatus = tfoStatus;
+    if ((mFastOpenStatus >= TFO_FAILED_CONNECTION_REFUSED) &&
+        mSocketTransport) {
+        nsresult firstRetryError;
+        if (NS_SUCCEEDED(mSocketTransport->GetFirstRetryError(&firstRetryError)) &&
+            (NS_FAILED(firstRetryError))) {
+            mFastOpenStatus = tfoStatus + 4; 
+        }
     }
 }
 
