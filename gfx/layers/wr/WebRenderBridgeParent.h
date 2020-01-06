@@ -276,11 +276,6 @@ private:
   std::vector<wr::ImageKey> mKeysToDelete;
   
   
-  std::unordered_set<uint64_t> mActiveImageKeys;
-  std::unordered_set<uint64_t> mFontKeys;
-  std::unordered_set<uint64_t> mFontInstanceKeys;
-  
-  
   std::unordered_set<uint64_t> mActiveAnimations;
   nsDataHashtable<nsUint64HashKey, RefPtr<WebRenderImageHost>> mAsyncCompositables;
   nsDataHashtable<nsUint64HashKey, RefPtr<WebRenderImageHost>> mExternalImageIds;
