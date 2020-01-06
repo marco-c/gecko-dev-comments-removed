@@ -180,7 +180,9 @@ private:
   void MarkChanged();
   bool ShouldClipTemporarySurfaceDrawing(CompositionOp aOp, const Pattern& aPattern, bool aClipIsComplex);
   void PrepareForDrawing(CompositionOp aOp, const Pattern &aPattern);
-  void FinalizeDrawing(CompositionOp aOp, const Pattern &aPattern);
+  
+  
+  void FinalizeDrawing(CompositionOp aOp, const Pattern &aPattern, const Rect* aAffectedRect = nullptr);
   void FlushTransformToDC() {
     if (mTransformDirty) {
       mDC->SetTransform(D2DMatrix(mTransform));
@@ -190,7 +192,11 @@ private:
   void AddDependencyOnSource(SourceSurfaceD2D1* aSource);
 
   
-  already_AddRefed<ID2D1Image> GetImageForLayerContent(bool aShouldPreserveContent = true);
+  
+  
+  
+  
+  already_AddRefed<ID2D1Image> GetImageForLayerContent(bool aShouldPreserveContent = true, const Rect* aBounds = nullptr, Point* aOutOffset = nullptr);
 
   ID2D1Image* CurrentTarget()
   {
