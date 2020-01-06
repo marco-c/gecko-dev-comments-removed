@@ -332,8 +332,7 @@ function ignoreCallEdge(entry, callee)
     
     if (name == "Gecko_nsFont_InitSystem" ||
         name == "Gecko_GetFontMetrics" ||
-        name == "Gecko_nsStyleFont_FixupNoneGeneric" ||
-        name == "Gecko_nsStyleFont_FixupMinFontSize")
+        name == "ThreadSafeGetDefaultFontHelper")
     {
         return true;
     }
