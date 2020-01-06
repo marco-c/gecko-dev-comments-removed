@@ -3265,6 +3265,7 @@ GeckoDriver.prototype.commands = {
   "acceptConnections": GeckoDriver.prototype.acceptConnections,  
   "Marionette:Quit": GeckoDriver.prototype.quit,
   "quit": GeckoDriver.prototype.quit,  
+  "quitApplication": GeckoDriver.prototype.quit,  
 
   
   "Addon:Install": GeckoDriver.prototype.installAddon,
