@@ -334,18 +334,12 @@ static pthread_key_t tlsIndex;
 #else
 #  define SIZEOF_PTR_2POW       2
 #endif
-#define PIC
 
 #define	SIZEOF_PTR		(1U << SIZEOF_PTR_2POW)
 
 
 #ifndef SIZEOF_INT_2POW
 #  define SIZEOF_INT_2POW	2
-#endif
-
-
-#if (!defined(PIC) && !defined(NO_TLS))
-#  define NO_TLS
 #endif
 
 
