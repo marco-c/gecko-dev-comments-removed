@@ -26,7 +26,7 @@ add_task(async function init() {
 
 
 add_task(async function simple() {
-  let iconURL = "chrome://browser/skin/email-link.svg";
+  let iconURL = "chrome://browser/skin/mail.svg";
   let id = "test-simple";
   let nodeAttributes = {
     "test-attr": "test attr value",
@@ -294,7 +294,7 @@ add_task(async function withSubview() {
   };
 
   let action = PageActions.addAction(new PageActions.Action({
-    iconURL: "chrome://browser/skin/email-link.svg",
+    iconURL: "chrome://browser/skin/mail.svg",
     id,
     shownInUrlbar: true,
     subview,
@@ -437,7 +437,7 @@ add_task(async function withIframe() {
   let urlbarButtonID = BrowserPageActions._urlbarButtonNodeIDForActionID(id);
 
   let action = PageActions.addAction(new PageActions.Action({
-    iconURL: "chrome://browser/skin/email-link.svg",
+    iconURL: "chrome://browser/skin/mail.svg",
     id,
     shownInUrlbar: true,
     title: "Test iframe",
