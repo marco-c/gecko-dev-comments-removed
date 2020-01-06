@@ -30,6 +30,7 @@ use dom::bindings::str::{DOMString, USVString};
 use dom::bindings::xmlname::namespace_from_domstring;
 use dom::characterdata::{CharacterData, LayoutCharacterDataHelpers};
 use dom::cssstylesheet::CSSStyleSheet;
+use dom::customelementregistry::CallbackReaction;
 use dom::document::{Document, DocumentSource, HasBrowsingContext, IsHTMLDocument};
 use dom::documentfragment::DocumentFragment;
 use dom::documenttype::DocumentType;
@@ -66,6 +67,7 @@ use ref_slice::ref_slice;
 use script_layout_interface::{HTMLCanvasData, OpaqueStyleAndLayoutData, SVGSVGData};
 use script_layout_interface::{LayoutElementType, LayoutNodeType, TrustedNodeAddress};
 use script_layout_interface::message::Msg;
+use script_thread::ScriptThread;
 use script_traits::DocumentActivity;
 use script_traits::UntrustedNodeAddress;
 use selectors::matching::{matches_selector_list, MatchingContext, MatchingMode};
@@ -313,6 +315,10 @@ impl Node {
             
             vtable_for(&&*node).unbind_from_tree(&context);
             node.style_and_layout_data.get().map(|d| node.dispose(d));
+            
+            if let Some(element) = node.as_custom_element() {
+                ScriptThread::enqueue_callback_reaction(&*element, CallbackReaction::Disconnected);
+            }
         }
 
         self.owner_doc().content_and_heritage_changed(self, NodeDamage::OtherNodeDamage);
@@ -321,6 +327,15 @@ impl Node {
 
     pub fn to_untrusted_node_address(&self) -> UntrustedNodeAddress {
         UntrustedNodeAddress(self.reflector().get_jsobject().get() as *const c_void)
+    }
+
+    pub fn as_custom_element(&self) -> Option<Root<Element>> {
+        self.downcast::<Element>()
+            .and_then(|element| if element.get_custom_element_definition().is_some() {
+                Some(Root::from_ref(element))
+            } else {
+                None
+            })
     }
 }
 
@@ -1401,13 +1416,20 @@ impl Node {
         let old_doc = node.owner_doc();
         
         node.remove_self();
+        
         if &*old_doc != document {
             
             for descendant in node.traverse_preorder() {
                 descendant.set_owner_doc(document);
             }
-            
             for descendant in node.traverse_preorder() {
+                
+                if let Some(element) = node.as_custom_element() {
+                    ScriptThread::enqueue_callback_reaction(&*element,
+                        CallbackReaction::Adopted(old_doc.clone(), Root::from_ref(document)));
+                }
+
+                
                 vtable_for(&descendant).adopting_steps(&old_doc);
             }
         }
@@ -1615,6 +1637,9 @@ impl Node {
             
             parent.add_child(*kid, child);
             
+            if let Some(element) = kid.as_custom_element() {
+                ScriptThread::enqueue_callback_reaction(&*element, CallbackReaction::Connected);
+            }
         }
         if let SuppressObserver::Unsuppressed = suppress_observers {
             vtable_for(&parent).children_changed(
