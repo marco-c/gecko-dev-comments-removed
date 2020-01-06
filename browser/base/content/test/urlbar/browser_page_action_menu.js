@@ -82,7 +82,7 @@ add_task(async function bookmark() {
 
     
     hiddenPromise = promisePageActionPanelHidden();
-    gPageActionPanel.hidePopup();
+    BrowserPageActions.panelNode.hidePopup();
     await hiddenPromise;
   });
 });
@@ -125,7 +125,7 @@ add_task(async function sendToDevice_nonSendable() {
       document.getElementById("pageAction-panel-sendToDevice");
     Assert.ok(sendToDeviceButton.disabled);
     let hiddenPromise = promisePageActionPanelHidden();
-    gPageActionPanel.hidePopup();
+    BrowserPageActions.panelNode.hidePopup();
     await hiddenPromise;
   });
 });
@@ -180,7 +180,7 @@ add_task(async function sendToDevice_syncNotReady_other_states() {
 
     
     let hiddenPromise = promisePageActionPanelHidden();
-    gPageActionPanel.hidePopup();
+    BrowserPageActions.panelNode.hidePopup();
     await hiddenPromise;
 
     cleanUp();
@@ -270,7 +270,7 @@ add_task(async function sendToDevice_syncNotReady_configured() {
 
     
     let hiddenPromise = promisePageActionPanelHidden();
-    gPageActionPanel.hidePopup();
+    BrowserPageActions.panelNode.hidePopup();
     await hiddenPromise;
     cleanUp();
   });
@@ -316,7 +316,7 @@ add_task(async function sendToDevice_notSignedIn() {
 
     
     let hiddenPromise = promisePageActionPanelHidden();
-    gPageActionPanel.hidePopup();
+    BrowserPageActions.panelNode.hidePopup();
     await hiddenPromise;
   });
 });
@@ -372,7 +372,7 @@ add_task(async function sendToDevice_noDevices() {
 
     
     let hiddenPromise = promisePageActionPanelHidden();
-    gPageActionPanel.hidePopup();
+    BrowserPageActions.panelNode.hidePopup();
     await hiddenPromise;
 
     cleanUp();
@@ -438,12 +438,117 @@ add_task(async function sendToDevice_devices() {
 
     
     let hiddenPromise = promisePageActionPanelHidden();
-    gPageActionPanel.hidePopup();
+    BrowserPageActions.panelNode.hidePopup();
     await hiddenPromise;
 
     cleanUp();
   });
 });
+
+add_task(async function contextMenu() {
+  
+  let url = "http://example.com/";
+  await BrowserTestUtils.withNewTab(url, async () => {
+    
+    await promisePageActionPanelOpen();
+    let bookmarkButton = document.getElementById("pageAction-panel-bookmark");
+    let contextMenuPromise = promisePanelShown("pageActionPanelContextMenu");
+    EventUtils.synthesizeMouseAtCenter(bookmarkButton, {
+      type: "contextmenu",
+      button: 2,
+    });
+    await contextMenuPromise;
+
+    
+    let contextMenuNode = document.getElementById("pageActionPanelContextMenu");
+    Assert.equal(contextMenuNode.childNodes.length, 1,
+                 "Context menu has one child");
+    Assert.equal(contextMenuNode.childNodes[0].label, "Remove from Address Bar",
+                 "Context menu is in the 'remove' state");
+    contextMenuPromise = promisePanelHidden("pageActionPanelContextMenu");
+    EventUtils.synthesizeMouseAtCenter(contextMenuNode.childNodes[0], {});
+    await contextMenuPromise;
+
+    
+    
+    let starButtonBox = document.getElementById("star-button-box");
+    await BrowserTestUtils.waitForCondition(() => {
+      return starButtonBox.hidden;
+    }, "Waiting for star button to become hidden");
+
+    
+    
+    contextMenuPromise = promisePanelShown("pageActionPanelContextMenu");
+    EventUtils.synthesizeMouseAtCenter(bookmarkButton, {
+      type: "contextmenu",
+      button: 2,
+    });
+    await contextMenuPromise;
+
+    
+    Assert.equal(contextMenuNode.childNodes.length, 1,
+                 "Context menu has one child");
+    Assert.equal(contextMenuNode.childNodes[0].label, "Add to Address Bar",
+                 "Context menu is in the 'add' state");
+    contextMenuPromise = promisePanelHidden("pageActionPanelContextMenu");
+    EventUtils.synthesizeMouseAtCenter(contextMenuNode.childNodes[0], {});
+    await contextMenuPromise;
+
+    
+    await BrowserTestUtils.waitForCondition(() => {
+      return !starButtonBox.hidden;
+    }, "Waiting for star button to become unhidden");
+
+    
+    contextMenuPromise = promisePanelShown("pageActionPanelContextMenu");
+    EventUtils.synthesizeMouseAtCenter(starButtonBox, {
+      type: "contextmenu",
+      button: 2,
+    });
+    await contextMenuPromise;
+
+    
+    Assert.equal(contextMenuNode.childNodes.length, 1,
+                 "Context menu has one child");
+    Assert.equal(contextMenuNode.childNodes[0].label, "Remove from Address Bar",
+                 "Context menu is in the 'remove' state");
+    contextMenuPromise = promisePanelHidden("pageActionPanelContextMenu");
+    EventUtils.synthesizeMouseAtCenter(contextMenuNode.childNodes[0], {});
+    await contextMenuPromise;
+
+    
+    await BrowserTestUtils.waitForCondition(() => {
+      return starButtonBox.hidden;
+    }, "Waiting for star button to become hidden");
+
+    
+    
+    await promisePageActionPanelOpen();
+    contextMenuPromise = promisePanelShown("pageActionPanelContextMenu");
+    EventUtils.synthesizeMouseAtCenter(bookmarkButton, {
+      type: "contextmenu",
+      button: 2,
+    });
+    await contextMenuPromise;
+    Assert.equal(contextMenuNode.childNodes.length, 1,
+                 "Context menu has one child");
+    Assert.equal(contextMenuNode.childNodes[0].label, "Add to Address Bar",
+                 "Context menu is in the 'add' state");
+    contextMenuPromise = promisePanelHidden("pageActionPanelContextMenu");
+    EventUtils.synthesizeMouseAtCenter(contextMenuNode.childNodes[0], {});
+    await contextMenuPromise;
+    await BrowserTestUtils.waitForCondition(() => {
+      return !starButtonBox.hidden;
+    }, "Waiting for star button to become unhidden");
+  });
+
+  
+  
+  
+  EventUtils.synthesizeMouseAtCenter(gURLBar, { type: "mousemove" });
+  gURLBar.focus();
+});
+
 
 function promiseSyncReady() {
   let service = Cc["@mozilla.org/weave/service;1"]
