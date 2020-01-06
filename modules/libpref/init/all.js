@@ -5245,6 +5245,12 @@ pref("network.activity.blipIntervalMilliseconds", 0);
 
 
 
+
+
+pref("jsloader.shareGlobal", false);
+
+
+
 pref("dom.browserElement.maxScreenshotDelayMS", 2000);
 
 
