@@ -10,6 +10,7 @@
 #include "mozilla/Mutex.h"
 #include "nsDataHashtable.h"
 #include "nsHashKeys.h"
+#include "nsIEventTarget.h"
 #include "nsIMemoryReporter.h"
 #include "nsITimer.h"
 #include "nsServiceManagerUtils.h"
@@ -275,6 +276,9 @@ private:
 
   
   PendingReportersState* mPendingReportersState;
+
+  
+  nsCOMPtr<nsIEventTarget> mThreadPool;
 
   PendingProcessesState* GetStateForGeneration(uint32_t aGeneration);
   static MOZ_MUST_USE bool
