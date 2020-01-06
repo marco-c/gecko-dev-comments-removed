@@ -1939,7 +1939,7 @@ PlacesSQLQueryBuilder::Where()
 
   
   
-  if (mQueryString.Find("{ADDITIONAL_CONDITIONS}", 0) != kNotFound) {
+  if (mQueryString.Find("{ADDITIONAL_CONDITIONS}") != kNotFound) {
     nsAutoCString innerCondition;
     
     if (!mConditions.IsEmpty()) {

@@ -232,7 +232,7 @@ ChromiumCDMChild::OnResolveNewSessionPromiseInternal(uint32_t aPromiseId,
     
     
     
-    bool loadSuccessful = aSessionId != nullptr;
+    bool loadSuccessful = !aSessionId.IsEmpty();
     GMP_LOG("ChromiumCDMChild::OnResolveNewSessionPromise(pid=%u, sid=%s) "
             "resolving %s load session ",
             aPromiseId,
