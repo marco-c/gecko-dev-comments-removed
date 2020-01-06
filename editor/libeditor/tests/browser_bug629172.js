@@ -43,11 +43,10 @@ add_task(async function() {
       
       
       
-      var waitForKeypressContent = BrowserTestUtils.waitForContentEvent(aBrowser, "keypress");
-      EventUtils.synthesizeKey("x", {accelKey: true, shiftKey: true});
       if (gMultiProcessBrowser) {
-        return waitForKeypressContent;
+        return EventUtils.synthesizeAndWaitKey("x", {accelKey: true, shiftKey: true});
       }
+      EventUtils.synthesizeKey("x", {accelKey: true, shiftKey: true});
       return Promise.resolve();
     }
 
