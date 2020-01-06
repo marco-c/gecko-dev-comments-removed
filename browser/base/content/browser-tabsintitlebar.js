@@ -160,7 +160,9 @@ var TabsInTitlebar = {
       
 
       
-      let tabsHeight = rect($("TabsToolbar")).height;
+      let tabsToolbar = $("TabsToolbar");
+      let tabsStyles = window.getComputedStyle(tabsToolbar);
+      let fullTabsHeight = rect($("TabsToolbar")).height + verticalMargins(tabsStyles);
       
       let captionButtonsBoxWidth = rect($("titlebar-buttonbox-container")).width;
 
@@ -186,7 +188,8 @@ var TabsInTitlebar = {
       
       if (AppConstants.isPlatformAndVersionAtLeast("win", "10.0")) {
         if (!menuHeight) {
-          titlebarContentHeight = tabsHeight;
+          
+          titlebarContentHeight = fullTabsHeight + 1;
           $("titlebar-buttonbox").style.height = titlebarContentHeight + "px";
         }
       }
@@ -220,7 +223,7 @@ var TabsInTitlebar = {
 
       
       
-      let tabAndMenuHeight = tabsHeight + fullMenuHeight;
+      let tabAndMenuHeight = fullTabsHeight + fullMenuHeight;
 
       if (tabAndMenuHeight > titlebarContentHeight) {
         
