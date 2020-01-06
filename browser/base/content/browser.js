@@ -7993,8 +7993,8 @@ var gPageActionButton = {
     if (gSync.syncConfiguredAndLoading) {
       body.setAttribute("state", "notready");
       
-      Services.tm.dispatchToMainThread(() => {
-        Weave.Service.sync([]);  
+      Services.tm.dispatchToMainThread(async () => {
+        await Weave.Service.sync([]);  
         
         
         if (!window.closed && !gSync.syncConfiguredAndLoading) {
