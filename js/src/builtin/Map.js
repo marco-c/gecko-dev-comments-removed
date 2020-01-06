@@ -26,19 +26,14 @@ function MapConstructorInit(iterable) {
 }
 
 
+
 function MapForEach(callbackfn, thisArg = undefined) {
     
     var M = this;
-    if (!IsObject(M))
-        ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, "Map", "forEach", typeof M);
 
     
-    try {
-        callFunction(std_Map_has, M);
-    } catch (e) {
-        
-        ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, "Map", "forEach", typeof M);
-    }
+    if (!IsObject(M) || !IsMapObject(M))
+        return callFunction(CallMapMethodIfWrapped, M, callbackfn, thisArg, "MapForEach");
 
     
     if (!IsCallable(callbackfn))
