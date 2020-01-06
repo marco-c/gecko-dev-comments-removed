@@ -1,13 +1,13 @@
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("devtools/client/shared/vendor/react"));
+		module.exports = factory(require("devtools/client/shared/vendor/react"), require("devtools/client/shared/vendor/lodash"));
 	else if(typeof define === 'function' && define.amd)
-		define(["devtools/client/shared/vendor/react"], factory);
+		define(["devtools/client/shared/vendor/react", "devtools/client/shared/vendor/lodash"], factory);
 	else {
-		var a = typeof exports === 'object' ? factory(require("devtools/client/shared/vendor/react")) : factory(root["devtools/client/shared/vendor/react"]);
+		var a = typeof exports === 'object' ? factory(require("devtools/client/shared/vendor/react"), require("devtools/client/shared/vendor/lodash")) : factory(root["devtools/client/shared/vendor/react"], root["devtools/client/shared/vendor/lodash"]);
 		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
 	}
-})(this, function(__WEBPACK_EXTERNAL_MODULE_0__) {
+})(this, function(__WEBPACK_EXTERNAL_MODULE_0__, __WEBPACK_EXTERNAL_MODULE_49__) {
 return  (function(modules) { 
  	
  	var installedModules = {};
@@ -70,7 +70,7 @@ return  (function(modules) {
  	__webpack_require__.p = "/assets/build";
 
  	
- 	return __webpack_require__(__webpack_require__.s = 26);
+ 	return __webpack_require__(__webpack_require__.s = 15);
  })
 
  ([
@@ -82,6 +82,9 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_0__;
  }),
 
  (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 
 
@@ -491,7 +494,10 @@ module.exports = {
 
  }),
 
- (function(module, exports) {
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 
 
@@ -509,45 +515,48 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
 
 
 
 
-__webpack_require__(27);
 
 
-const Undefined = __webpack_require__(28);
-const Null = __webpack_require__(29);
-const StringRep = __webpack_require__(16);
-const LongStringRep = __webpack_require__(30);
-const Number = __webpack_require__(31);
-const ArrayRep = __webpack_require__(17);
-const Obj = __webpack_require__(32);
-const SymbolRep = __webpack_require__(33);
-const InfinityRep = __webpack_require__(34);
-const NaNRep = __webpack_require__(35);
-const Accessor = __webpack_require__(36);
+__webpack_require__(16);
 
 
-const Attribute = __webpack_require__(37);
-const DateTime = __webpack_require__(38);
-const Document = __webpack_require__(39);
-const Event = __webpack_require__(40);
-const Func = __webpack_require__(41);
-const PromiseRep = __webpack_require__(42);
-const RegExp = __webpack_require__(43);
-const StyleSheet = __webpack_require__(44);
-const CommentNode = __webpack_require__(45);
-const ElementNode = __webpack_require__(46);
-const TextNode = __webpack_require__(50);
-const ErrorRep = __webpack_require__(51);
-const Window = __webpack_require__(52);
-const ObjectWithText = __webpack_require__(53);
-const ObjectWithURL = __webpack_require__(54);
-const GripArray = __webpack_require__(19);
-const GripMap = __webpack_require__(55);
-const GripMapEntry = __webpack_require__(20);
-const Grip = __webpack_require__(9);
+const Undefined = __webpack_require__(17);
+const Null = __webpack_require__(18);
+const StringRep = __webpack_require__(5);
+const LongStringRep = __webpack_require__(19);
+const Number = __webpack_require__(20);
+const ArrayRep = __webpack_require__(7);
+const Obj = __webpack_require__(21);
+const SymbolRep = __webpack_require__(22);
+const InfinityRep = __webpack_require__(23);
+const NaNRep = __webpack_require__(24);
+const Accessor = __webpack_require__(25);
+
+
+const Attribute = __webpack_require__(26);
+const DateTime = __webpack_require__(27);
+const Document = __webpack_require__(28);
+const Event = __webpack_require__(29);
+const Func = __webpack_require__(30);
+const PromiseRep = __webpack_require__(31);
+const RegExp = __webpack_require__(32);
+const StyleSheet = __webpack_require__(33);
+const CommentNode = __webpack_require__(34);
+const ElementNode = __webpack_require__(35);
+const TextNode = __webpack_require__(37);
+const ErrorRep = __webpack_require__(38);
+const Window = __webpack_require__(39);
+const ObjectWithText = __webpack_require__(40);
+const ObjectWithURL = __webpack_require__(41);
+const GripArray = __webpack_require__(11);
+const GripMap = __webpack_require__(12);
+const GripMapEntry = __webpack_require__(13);
+const Grip = __webpack_require__(6);
 
 
 
@@ -645,6 +654,9 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
 
 
 
@@ -688,7 +700,7 @@ PropRep.propTypes = {
 
 
 function PropRep(props) {
-  const Grip = __webpack_require__(9);
+  const Grip = __webpack_require__(6);
   const { Rep } = __webpack_require__(3);
 
   let {
@@ -725,53 +737,9 @@ module.exports = wrapRender(PropRep);
 
  }),
 
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var isArray = Array.isArray;
-
-module.exports = isArray;
-
-
- }),
-
  (function(module, exports, __webpack_require__) {
 
-var getNative = __webpack_require__(23);
-
-
-var nativeCreate = getNative(Object, 'create');
-
-module.exports = nativeCreate;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var eq = __webpack_require__(88);
+"use strict";
 
 
 
@@ -779,48 +747,119 @@ var eq = __webpack_require__(88);
 
 
 
+const React = __webpack_require__(0);
+
+const {
+  containsURL,
+  isURL,
+  escapeString,
+  getGripType,
+  rawCropString,
+  sanitizeString,
+  wrapRender,
+  tokenSplitRegex
+} = __webpack_require__(1);
 
 
-function assocIndexOf(array, key) {
-  var length = array.length;
-  while (length--) {
-    if (eq(array[length][0], key)) {
-      return length;
-    }
+const { a, span } = React.DOM;
+
+
+
+
+StringRep.propTypes = {
+  useQuotes: React.PropTypes.bool,
+  escapeWhitespace: React.PropTypes.bool,
+  style: React.PropTypes.object,
+  object: React.PropTypes.string.isRequired,
+  member: React.PropTypes.any,
+  cropLimit: React.PropTypes.number,
+  openLink: React.PropTypes.func,
+  className: React.PropTypes.string
+};
+
+function StringRep(props) {
+  let {
+    className,
+    cropLimit,
+    object: text,
+    member,
+    style,
+    useQuotes = true,
+    escapeWhitespace = true,
+    openLink
+  } = props;
+
+  const classNames = ["objectBox", "objectBox-string"];
+  if (className) {
+    classNames.push(className);
   }
-  return -1;
+  let config = { className: classNames.join(" ") };
+  if (style) {
+    config.style = style;
+  }
+
+  if (useQuotes) {
+    text = escapeString(text, escapeWhitespace);
+  } else {
+    text = sanitizeString(text);
+  }
+
+  if ((!member || !member.open) && cropLimit) {
+    text = rawCropString(text, cropLimit);
+  }
+
+  if (!containsURL(text)) {
+    return span(config, text);
+  }
+
+  const items = [];
+
+  
+  
+  let tokens = text.split(tokenSplitRegex);
+  let textIndex = 0;
+  let tokenStart;
+  tokens.forEach((token, i) => {
+    tokenStart = text.indexOf(token, textIndex);
+    if (isURL(token)) {
+      items.push(text.slice(textIndex, tokenStart));
+      textIndex = tokenStart + token.length;
+
+      items.push(a({
+        className: "url",
+        title: token,
+        href: token,
+        draggable: false,
+        onClick: openLink ? e => {
+          e.preventDefault();
+          openLink(token);
+        } : null
+      }, token));
+    }
+  });
+
+  
+  items.push(text.slice(textIndex, text.length));
+  return span(config, ...items);
 }
 
-module.exports = assocIndexOf;
+function supportsObject(object, noGrip = false) {
+  return getGripType(object, noGrip) == "string";
+}
 
+
+
+module.exports = {
+  rep: wrapRender(StringRep),
+  supportsObject
+};
 
  }),
 
  (function(module, exports, __webpack_require__) {
 
-var isKeyable = __webpack_require__(94);
+"use strict";
 
-
-
-
-
-
-
-
-
-function getMapData(map, key) {
-  var data = map.__data__;
-  return isKeyable(key)
-    ? data[typeof key == 'string' ? 'string' : 'hash']
-    : data.map;
-}
-
-module.exports = getMapData;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
 
 
 
@@ -1135,283 +1174,8 @@ module.exports = Grip;
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
 
-
-
-
-const React = __webpack_require__(0);
-const InlineSVG = __webpack_require__(47);
-
-const svg = {
-  "arrow": __webpack_require__(48),
-  "open-inspector": __webpack_require__(49)
-};
-
-Svg.propTypes = {
-  className: React.PropTypes.string
-};
-
-function Svg(name, props) {
-  if (!svg[name]) {
-    throw new Error("Unknown SVG: " + name);
-  }
-  let className = name;
-  if (props && props.className) {
-    className = `${name} ${props.className}`;
-  }
-  if (name === "subSettings") {
-    className = "";
-  }
-  props = Object.assign({}, props, { className, src: svg[name] });
-  return React.createElement(InlineSVG, props);
-}
-
-module.exports = Svg;
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var baseGetTag = __webpack_require__(12),
-    isObjectLike = __webpack_require__(15);
-
-
-var symbolTag = '[object Symbol]';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isSymbol(value) {
-  return typeof value == 'symbol' ||
-    (isObjectLike(value) && baseGetTag(value) == symbolTag);
-}
-
-module.exports = isSymbol;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var Symbol = __webpack_require__(13),
-    getRawTag = __webpack_require__(66),
-    objectToString = __webpack_require__(67);
-
-
-var nullTag = '[object Null]',
-    undefinedTag = '[object Undefined]';
-
-
-var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
-
-
-
-
-
-
-
-
-function baseGetTag(value) {
-  if (value == null) {
-    return value === undefined ? undefinedTag : nullTag;
-  }
-  return (symToStringTag && symToStringTag in Object(value))
-    ? getRawTag(value)
-    : objectToString(value);
-}
-
-module.exports = baseGetTag;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var root = __webpack_require__(14);
-
-
-var Symbol = root.Symbol;
-
-module.exports = Symbol;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var freeGlobal = __webpack_require__(64);
-
-
-var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
-
-
-var root = freeGlobal || freeSelf || Function('return this')();
-
-module.exports = root;
-
-
- }),
-
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isObjectLike(value) {
-  return value != null && typeof value == 'object';
-}
-
-module.exports = isObjectLike;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-
-
-
-
-
-const React = __webpack_require__(0);
-
-const {
-  containsURL,
-  isURL,
-  escapeString,
-  getGripType,
-  rawCropString,
-  sanitizeString,
-  wrapRender,
-  tokenSplitRegex
-} = __webpack_require__(1);
-
-
-const { a, span } = React.DOM;
-
-
-
-
-StringRep.propTypes = {
-  useQuotes: React.PropTypes.bool,
-  escapeWhitespace: React.PropTypes.bool,
-  style: React.PropTypes.object,
-  object: React.PropTypes.string.isRequired,
-  member: React.PropTypes.any,
-  cropLimit: React.PropTypes.number,
-  openLink: React.PropTypes.func
-};
-
-function StringRep(props) {
-  let {
-    cropLimit,
-    object: text,
-    member,
-    style,
-    useQuotes = true,
-    escapeWhitespace = true,
-    openLink
-  } = props;
-
-  let config = { className: "objectBox objectBox-string" };
-  if (style) {
-    config.style = style;
-  }
-
-  if (useQuotes) {
-    text = escapeString(text, escapeWhitespace);
-  } else {
-    text = sanitizeString(text);
-  }
-
-  if ((!member || !member.open) && cropLimit) {
-    text = rawCropString(text, cropLimit);
-  }
-
-  if (!containsURL(text)) {
-    return span(config, text);
-  }
-
-  const items = [];
-
-  
-  
-  let tokens = text.split(tokenSplitRegex);
-  let textIndex = 0;
-  let tokenStart;
-  tokens.forEach((token, i) => {
-    tokenStart = text.indexOf(token, textIndex);
-    if (isURL(token)) {
-      items.push(text.slice(textIndex, tokenStart));
-      textIndex = tokenStart + token.length;
-
-      items.push(a({
-        className: "url",
-        title: token,
-        href: token,
-        draggable: false,
-        onClick: openLink ? e => {
-          e.preventDefault();
-          openLink(token);
-        } : null
-      }, token));
-    }
-  });
-
-  
-  items.push(text.slice(textIndex, text.length));
-  return span(config, ...items);
-}
-
-function supportsObject(object, noGrip = false) {
-  return getGripType(object, noGrip) == "string";
-}
-
-
-
-module.exports = {
-  rep: wrapRender(StringRep),
-  supportsObject
-};
-
- }),
-
- (function(module, exports, __webpack_require__) {
 
 
 
@@ -1533,6 +1297,10 @@ function ItemRep(props) {
   })), delim);
 }
 
+function getLength(object) {
+  return object.length;
+}
+
 function supportsObject(object) {
   return Array.isArray(object) || Object.prototype.toString.call(object) === "[object Arguments]";
 }
@@ -1545,12 +1313,16 @@ maxLengthMap.set(MODE.LONG, 10);
 module.exports = {
   rep: wrapRender(ArrayRep),
   supportsObject,
-  maxLengthMap
+  maxLengthMap,
+  getLength
 };
 
  }),
 
- (function(module, exports) {
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 
 
@@ -1582,6 +1354,201 @@ module.exports = {
  }),
 
  (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+
+
+
+
+const React = __webpack_require__(0);
+const InlineSVG = __webpack_require__(10);
+
+const svg = {
+  "open-inspector": __webpack_require__(36)
+};
+
+Svg.propTypes = {
+  className: React.PropTypes.string
+};
+
+function Svg(name, props) {
+  if (!svg[name]) {
+    throw new Error("Unknown SVG: " + name);
+  }
+  let className = name;
+  if (props && props.className) {
+    className = `${name} ${props.className}`;
+  }
+  if (name === "subSettings") {
+    className = "";
+  }
+  props = Object.assign({}, props, { className, src: svg[name] });
+  return React.createElement(InlineSVG, props);
+}
+
+module.exports = Svg;
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var _react = __webpack_require__(0);
+
+var _react2 = _interopRequireDefault(_react);
+
+var DOMParser = typeof window !== 'undefined' && window.DOMParser;
+var process = process || {};
+process.env = process.env || {};
+var parserAvailable = typeof DOMParser !== 'undefined' && DOMParser.prototype != null && DOMParser.prototype.parseFromString != null;
+
+function isParsable(src) {
+    
+    return parserAvailable && typeof src === 'string' && src.trim().substr(0, 4) === '<svg';
+}
+
+
+function parseFromSVGString(src) {
+    var parser = new DOMParser();
+    return parser.parseFromString(src, "image/svg+xml");
+}
+
+
+function switchSVGAttrToReactProp(propName) {
+    switch (propName) {
+        case 'class':
+            return 'className';
+        default:
+            return propName;
+    }
+}
+
+var InlineSVG = (function (_React$Component) {
+    _inherits(InlineSVG, _React$Component);
+
+    _createClass(InlineSVG, null, [{
+        key: 'defaultProps',
+        value: {
+            element: 'i',
+            raw: false,
+            src: ''
+        },
+        enumerable: true
+    }, {
+        key: 'propTypes',
+        value: {
+            src: _react2['default'].PropTypes.string.isRequired,
+            element: _react2['default'].PropTypes.string,
+            raw: _react2['default'].PropTypes.bool
+        },
+        enumerable: true
+    }]);
+
+    function InlineSVG(props) {
+        _classCallCheck(this, InlineSVG);
+
+        _get(Object.getPrototypeOf(InlineSVG.prototype), 'constructor', this).call(this, props);
+        this._extractSVGProps = this._extractSVGProps.bind(this);
+    }
+
+    
+
+    _createClass(InlineSVG, [{
+        key: '_serializeAttrs',
+        value: function _serializeAttrs(map) {
+            var ret = {};
+            var prop = undefined;
+            for (var i = 0; i < map.length; i++) {
+                prop = switchSVGAttrToReactProp(map[i].name);
+                ret[prop] = map[i].value;
+            }
+            return ret;
+        }
+
+        
+    }, {
+        key: '_extractSVGProps',
+        value: function _extractSVGProps(src) {
+            var map = parseFromSVGString(src).documentElement.attributes;
+            return map.length > 0 ? this._serializeAttrs(map) : null;
+        }
+
+        
+    }, {
+        key: '_stripSVG',
+        value: function _stripSVG(src) {
+            return parseFromSVGString(src).documentElement.innerHTML;
+        }
+    }, {
+        key: 'componentWillReceiveProps',
+        value: function componentWillReceiveProps(_ref) {
+            var children = _ref.children;
+
+            if ("production" !== process.env.NODE_ENV && children != null) {
+                console.info('<InlineSVG />: `children` prop will be ignored.');
+            }
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var Element = undefined,
+                __html = undefined,
+                svgProps = undefined;
+            var _props = this.props;
+            var element = _props.element;
+            var raw = _props.raw;
+            var src = _props.src;
+
+            var otherProps = _objectWithoutProperties(_props, ['element', 'raw', 'src']);
+
+            if (raw === true && isParsable(src)) {
+                Element = 'svg';
+                svgProps = this._extractSVGProps(src);
+                __html = this._stripSVG(src);
+            }
+            __html = __html || src;
+            Element = Element || element;
+            svgProps = svgProps || {};
+
+            return _react2['default'].createElement(Element, _extends({}, svgProps, otherProps, { src: null, children: null,
+                dangerouslySetInnerHTML: { __html: __html } }));
+        }
+    }]);
+
+    return InlineSVG;
+})(_react2['default'].Component);
+
+exports['default'] = InlineSVG;
+module.exports = exports['default'];
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 
 
@@ -1780,12 +1747,223 @@ maxLengthMap.set(MODE.LONG, 10);
 module.exports = {
   rep: wrapRender(GripArray),
   supportsObject,
-  maxLengthMap
+  maxLengthMap,
+  getLength
 };
 
  }),
 
  (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+
+
+
+
+
+const React = __webpack_require__(0);
+const {
+  isGrip,
+  wrapRender
+} = __webpack_require__(1);
+const PropRep = __webpack_require__(4);
+const { MODE } = __webpack_require__(2);
+
+const { span } = React.DOM;
+
+
+
+
+
+GripMap.propTypes = {
+  object: React.PropTypes.object,
+  
+  mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+  isInterestingEntry: React.PropTypes.func,
+  onDOMNodeMouseOver: React.PropTypes.func,
+  onDOMNodeMouseOut: React.PropTypes.func,
+  onInspectIconClick: React.PropTypes.func,
+  title: React.PropTypes.string
+};
+
+function GripMap(props) {
+  let {
+    mode,
+    object
+  } = props;
+
+  const config = {
+    "data-link-actor-id": object.actor,
+    className: "objectBox objectBox-object"
+  };
+
+  if (mode === MODE.TINY) {
+    return span(config, getTitle(props, object));
+  }
+
+  let propsArray = safeEntriesIterator(props, object, maxLengthMap.get(mode));
+
+  return span(config, getTitle(props, object), span({
+    className: "objectLeftBrace"
+  }, " { "), ...propsArray, span({
+    className: "objectRightBrace"
+  }, " }"));
+}
+
+function getTitle(props, object) {
+  let title = props.title || (object && object.class ? object.class : "Map");
+  return span({
+    className: "objectTitle"
+  }, title);
+}
+
+function safeEntriesIterator(props, object, max) {
+  max = typeof max === "undefined" ? 3 : max;
+  try {
+    return entriesIterator(props, object, max);
+  } catch (err) {
+    console.error(err);
+  }
+  return [];
+}
+
+function entriesIterator(props, object, max) {
+  
+  let isInterestingEntry = props.isInterestingEntry || ((type, value) => {
+    return type == "boolean" || type == "number" || type == "string" && value.length != 0;
+  });
+
+  let mapEntries = object.preview && object.preview.entries ? object.preview.entries : [];
+
+  let indexes = getEntriesIndexes(mapEntries, max, isInterestingEntry);
+  if (indexes.length < max && indexes.length < mapEntries.length) {
+    
+    indexes = indexes.concat(getEntriesIndexes(mapEntries, max - indexes.length, (t, value, name) => {
+      return !isInterestingEntry(t, value, name);
+    }));
+  }
+
+  let entries = getEntries(props, mapEntries, indexes);
+  if (entries.length < getLength(object)) {
+    
+    entries.push(span({
+      key: "more",
+      className: "more-ellipsis",
+      title: "more…"
+    }, "…"));
+  }
+
+  return unfoldEntries(entries);
+}
+
+function unfoldEntries(items) {
+  return items.reduce((res, item, index) => {
+    if (Array.isArray(item)) {
+      res = res.concat(item);
+    } else {
+      res.push(item);
+    }
+
+    
+    if (index !== items.length - 1) {
+      res.push(", ");
+    }
+    return res;
+  }, []);
+}
+
+
+
+
+
+
+
+
+
+function getEntries(props, entries, indexes) {
+  let {
+    onDOMNodeMouseOver,
+    onDOMNodeMouseOut,
+    onInspectIconClick
+  } = props;
+
+  
+  indexes.sort(function (a, b) {
+    return a - b;
+  });
+
+  return indexes.map((index, i) => {
+    let [key, entryValue] = entries[index];
+    let value = entryValue.value !== undefined ? entryValue.value : entryValue;
+
+    return PropRep({
+      name: key,
+      equal: " \u2192 ",
+      object: value,
+      mode: MODE.TINY,
+      onDOMNodeMouseOver,
+      onDOMNodeMouseOut,
+      onInspectIconClick
+    });
+  });
+}
+
+
+
+
+
+
+
+
+
+function getEntriesIndexes(entries, max, filter) {
+  return entries.reduce((indexes, [key, entry], i) => {
+    if (indexes.length < max) {
+      let value = entry && entry.value !== undefined ? entry.value : entry;
+      
+      
+      let type = (value && value.class ? value.class : typeof value).toLowerCase();
+
+      if (filter(type, value, key)) {
+        indexes.push(i);
+      }
+    }
+
+    return indexes;
+  }, []);
+}
+
+function getLength(grip) {
+  return grip.preview.size || 0;
+}
+
+function supportsObject(grip, noGrip = false) {
+  if (noGrip === true || !isGrip(grip)) {
+    return false;
+  }
+  return grip.preview && grip.preview.kind == "MapLike";
+}
+
+const maxLengthMap = new Map();
+maxLengthMap.set(MODE.SHORT, 3);
+maxLengthMap.set(MODE.LONG, 10);
+
+
+module.exports = {
+  rep: wrapRender(GripMap),
+  supportsObject,
+  maxLengthMap,
+  getLength
+};
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 
 
@@ -1861,16 +2039,21 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
 
 
 
 
-const get = __webpack_require__(61);
-const has = __webpack_require__(101);
+
+
+const { get, has } = __webpack_require__(49);
 const { maybeEscapePropertyName } = __webpack_require__(1);
-const ArrayRep = __webpack_require__(17);
-const GripArrayRep = __webpack_require__(19);
-const GripMapEntryRep = __webpack_require__(20);
+const ArrayRep = __webpack_require__(7);
+const GripArrayRep = __webpack_require__(11);
+const GripMap = __webpack_require__(12);
+const GripMapEntryRep = __webpack_require__(13);
+
+const MAX_NUMERICAL_PROPERTIES = 100;
 
 const NODE_TYPES = {
   BUCKET: Symbol("[n…n]"),
@@ -1883,6 +2066,8 @@ const NODE_TYPES = {
   PROMISE_REASON: Symbol("<reason>"),
   PROMISE_STATE: Symbol("<state>"),
   PROMISE_VALUE: Symbol("<value>"),
+  PROXY_HANDLER: Symbol("<handler>"),
+  PROXY_TARGET: Symbol("<target>"),
   SET: Symbol("<set>"),
   PROTOTYPE: Symbol("__proto__")
 };
@@ -1928,7 +2113,7 @@ function nodeIsMapEntry(item) {
 }
 
 function nodeHasChildren(item) {
-  return Array.isArray(item.contents) || nodeIsBucket(item);
+  return Array.isArray(item.contents);
 }
 
 function nodeIsObject(item) {
@@ -1961,7 +2146,7 @@ function nodeHasProperties(item) {
 }
 
 function nodeIsPrimitive(item) {
-  return !nodeHasChildren(item) && !nodeHasProperties(item) && !nodeIsEntries(item) && !nodeIsMapEntry(item) && !nodeHasAccessors(item);
+  return !nodeHasChildren(item) && !nodeHasProperties(item) && !nodeIsEntries(item) && !nodeIsMapEntry(item) && !nodeHasAccessors(item) && !nodeIsBucket(item);
 }
 
 function nodeIsDefaultProperties(item) {
@@ -1979,6 +2164,15 @@ function nodeIsPromise(item) {
   }
 
   return value.class == "Promise";
+}
+
+function nodeIsProxy(item) {
+  const value = getValue(item);
+  if (!value) {
+    return false;
+  }
+
+  return value.class == "Proxy";
 }
 
 function nodeIsPrototype(item) {
@@ -2006,8 +2200,10 @@ function nodeHasAccessors(item) {
   return !!getNodeGetter(item) || !!getNodeSetter(item);
 }
 
-function nodeSupportsBucketing(item) {
-  return nodeIsArrayLike(item) || nodeIsEntries(item);
+function nodeSupportsNumericalBucketing(item) {
+  
+  
+  return nodeIsArrayLike(item) && !nodeHasEntries(item) || nodeIsEntries(item) || nodeIsBucket(item);
 }
 
 function nodeHasEntries(item) {
@@ -2035,6 +2231,10 @@ function nodeHasAllEntriesInPreview(item) {
   return entries ? entries.length === size : items.length === length;
 }
 
+function nodeNeedsNumericalBuckets(item) {
+  return nodeSupportsNumericalBucketing(item) && getNumericalPropertiesCount(item) > MAX_NUMERICAL_PROPERTIES;
+}
+
 function makeNodesForPromiseProperties(item) {
   const { promiseState: { reason, value, state } } = getValue(item);
 
@@ -2055,14 +2255,23 @@ function makeNodesForPromiseProperties(item) {
   return properties;
 }
 
+function makeNodesForProxyProperties(item) {
+  const {
+    proxyHandler,
+    proxyTarget
+  } = getValue(item);
+
+  return [createNode(item, "<target>", `${item.path}/${SAFE_PATH_PREFIX}target`, { value: proxyTarget }, NODE_TYPES.PROXY_TARGET), createNode(item, "<handler>", `${item.path}/${SAFE_PATH_PREFIX}handler`, { value: proxyHandler }, NODE_TYPES.PROXY_HANDLER)];
+}
+
 function makeNodesForEntries(item) {
   const { path } = item;
-  const { preview } = getValue(item);
   const nodeName = "<entries>";
   const entriesPath = `${path}/${SAFE_PATH_PREFIX}entries`;
 
   if (nodeHasAllEntriesInPreview(item)) {
     let entriesNodes = [];
+    const { preview } = getValue(item);
     if (preview.entries) {
       entriesNodes = preview.entries.map(([key, value], index) => {
         return createNode(item, index, `${entriesPath}/${index}`, {
@@ -2129,9 +2338,9 @@ function sortProperties(properties) {
   });
 }
 
-function makeNumericalBuckets(propertiesNames, parent, ownProperties, startIndex = 0) {
+function makeNumericalBuckets(parent) {
   const parentPath = parent.path;
-  const numProperties = propertiesNames.length;
+  const numProperties = getNumericalPropertiesCount(parent);
 
   
   const bucketSize = 10 ** Math.max(2, Math.ceil(Math.log10(numProperties)) - 2);
@@ -2141,28 +2350,16 @@ function makeNumericalBuckets(propertiesNames, parent, ownProperties, startIndex
   for (let i = 1; i <= numBuckets; i++) {
     const minKey = (i - 1) * bucketSize;
     const maxKey = Math.min(i * bucketSize - 1, numProperties - 1);
+    const startIndex = nodeIsBucket(parent) ? parent.meta.startIndex : 0;
+    const minIndex = startIndex + minKey;
+    const maxIndex = startIndex + maxKey;
+    const bucketKey = `${SAFE_PATH_PREFIX}bucket_${minIndex}-${maxIndex}`;
+    const bucketName = `[${minIndex}…${maxIndex}]`;
 
-    if (maxKey === minKey) {
-      const name = propertiesNames[maxKey];
-      buckets.push(createNode(parent, name, `${parentPath}/${name}`, ownProperties[name]));
-    } else {
-      const minIndex = startIndex + minKey;
-      const maxIndex = startIndex + maxKey;
-      const bucketKey = `${SAFE_PATH_PREFIX}bucket_${minIndex}-${maxIndex}`;
-      const bucketName = `[${minIndex}…${maxIndex}]`;
-
-      const bucketRoot = createNode(parent, bucketName, `${parentPath}/${bucketKey}`, [], NODE_TYPES.BUCKET);
-
-      const bucketProperties = propertiesNames.slice(minKey, maxKey + 1);
-      let bucketNodes;
-      if (bucketProperties.length <= 100) {
-        bucketNodes = bucketProperties.map(name => createNode(bucketRoot, name, `${parentPath}/${bucketKey}/${name}`, ownProperties[name]));
-      } else {
-        bucketNodes = makeNumericalBuckets(bucketProperties, bucketRoot, ownProperties, minIndex);
-      }
-      setNodeChildren(bucketRoot, bucketNodes);
-      buckets.push(bucketRoot);
-    }
+    buckets.push(createNode(parent, bucketName, `${parentPath}/${bucketKey}`, null, NODE_TYPES.BUCKET, {
+      startIndex: minIndex,
+      endIndex: maxIndex
+    }));
   }
   return buckets;
 }
@@ -2211,14 +2408,17 @@ function makeNodesForProperties(objProps, parent) {
   let allProperties = Object.assign({}, ownProperties, safeGetterValues);
 
   
-  const propertiesNames = sortProperties(Object.keys(allProperties)).filter(name => allProperties[name].hasOwnProperty("value") || allProperties[name].hasOwnProperty("getterValue") || allProperties[name].hasOwnProperty("get") || allProperties[name].hasOwnProperty("set"));
+  const propertiesNames = sortProperties(Object.keys(allProperties)).filter(name => {
+    if (!allProperties[name]) {
+      return false;
+    }
 
-  const numProperties = propertiesNames.length;
+    const properties = Object.getOwnPropertyNames(allProperties[name]);
+    return properties.some(property => ["value", "getterValue", "get", "set"].includes(property));
+  });
 
   let nodes = [];
-  if (nodeSupportsBucketing(parent) && numProperties > 100) {
-    nodes = makeNumericalBuckets(propertiesNames, parent, allProperties);
-  } else if (parentValue && parentValue.class == "Window") {
+  if (parentValue && parentValue.class == "Window") {
     nodes = makeDefaultPropsBucket(propertiesNames, parent, allProperties);
   } else {
     nodes = makeNodesForOwnProps(propertiesNames, parent, allProperties);
@@ -2226,7 +2426,7 @@ function makeNodesForProperties(objProps, parent) {
 
   if (Array.isArray(ownSymbols)) {
     ownSymbols.forEach((ownSymbol, index) => {
-      nodes.push(createNode(parent, ownSymbol.name, `${parentPath}/${SAFE_PATH_PREFIX}symbol-${index}`, ownSymbol.descriptor));
+      nodes.push(createNode(parent, ownSymbol.name, `${parentPath}/${SAFE_PATH_PREFIX}symbol-${index}`, ownSymbol.descriptor || null));
     }, this);
   }
 
@@ -2240,13 +2440,26 @@ function makeNodesForProperties(objProps, parent) {
 
   
   if (prototype && prototype.type !== "null") {
-    nodes.push(createNode(parent, "__proto__", `${parentPath}/__proto__`, { value: prototype }, NODE_TYPES.PROTOTYPE));
+    nodes.push(makeNodeForPrototype(objProps, parent));
   }
 
   return nodes;
 }
 
-function createNode(parent, name, path, contents, type = NODE_TYPES.GRIP) {
+function makeNodeForPrototype(objProps, parent) {
+  const {
+    prototype
+  } = objProps || {};
+
+  
+  if (prototype && prototype.type !== "null") {
+    return createNode(parent, "__proto__", `${parent.path}/__proto__`, { value: prototype }, NODE_TYPES.PROTOTYPE);
+  }
+
+  return null;
+}
+
+function createNode(parent, name, path, contents, type = NODE_TYPES.GRIP, meta) {
   if (contents === undefined) {
     return null;
   }
@@ -2261,7 +2474,8 @@ function createNode(parent, name, path, contents, type = NODE_TYPES.GRIP) {
     name,
     path,
     contents,
-    type
+    type,
+    meta
   };
 }
 
@@ -2272,87 +2486,200 @@ function setNodeChildren(node, children) {
 
 function getChildren(options) {
   const {
-    actors = {},
-    getObjectEntries,
-    getObjectProperties,
+    cachedNodes,
+    loadedProperties = new Map(),
     item
   } = options;
-  
-  
-  if (nodeHasAccessors(item)) {
-    return makeNodesForAccessors(item);
-  }
 
-  if (nodeIsMapEntry(item)) {
-    return makeNodesForMapEntry(item);
-  }
-
-  if (nodeHasChildren(item)) {
-    return item.contents;
-  }
-
-  if (!nodeHasProperties(item) && !nodeIsEntries(item)) {
-    return [];
-  }
-
-  
-  
-  
-  
-  
-  
   const key = item.path;
-  if (actors && actors[key]) {
-    return actors[key];
+  if (cachedNodes && cachedNodes.has(key)) {
+    return cachedNodes.get(key);
   }
 
-  if (nodeIsBucket(item)) {
-    return item.contents.children;
-  }
-
-  let loadedProps;
-  if (nodeIsEntries(item)) {
-    
-    
-    const parent = getParent(item);
-    loadedProps = getObjectEntries(get(getValue(parent), "actor", undefined));
-  } else {
-    loadedProps = getObjectProperties(get(getValue(item), "actor", undefined));
-  }
-
+  const loadedProps = loadedProperties.get(key);
   const {
     ownProperties,
     ownSymbols,
     safeGetterValues,
     prototype
   } = loadedProps || {};
+  const hasLoadedProps = ownProperties || ownSymbols || safeGetterValues || prototype;
 
-  if (!ownProperties && !ownSymbols && !safeGetterValues && !prototype) {
+  
+  
+  
+  
+  
+  
+  
+  
+  const addToCache = children => {
+    if (cachedNodes) {
+      cachedNodes.set(item.path, children);
+    }
+    return children;
+  };
+
+  
+  
+  if (nodeHasChildren(item)) {
+    return addToCache(item.contents);
+  }
+
+  if (nodeHasAccessors(item)) {
+    return addToCache(makeNodesForAccessors(item));
+  }
+
+  if (nodeIsMapEntry(item)) {
+    return addToCache(makeNodesForMapEntry(item));
+  }
+
+  if (nodeIsProxy(item)) {
+    const nodes = makeNodesForProxyProperties(item);
+    const protoNode = makeNodeForPrototype(loadedProps, item);
+    if (protoNode) {
+      return addToCache(nodes.concat(protoNode));
+    }
+    return nodes;
+  }
+
+  if (nodeNeedsNumericalBuckets(item)) {
+    const bucketNodes = makeNumericalBuckets(item);
+    
+    
+    if (hasLoadedProps) {
+      return addToCache(bucketNodes.concat(makeNodesForProperties(loadedProps, item)));
+    }
+
+    
+    
+    return bucketNodes;
+  }
+
+  if (!nodeIsEntries(item) && !nodeIsBucket(item) && !nodeHasProperties(item)) {
     return [];
   }
 
-  let children = makeNodesForProperties(loadedProps, item);
-  actors[key] = children;
-  return children;
+  if (!hasLoadedProps) {
+    return [];
+  }
+
+  return addToCache(makeNodesForProperties(loadedProps, item));
 }
 
 function getParent(item) {
   return item.parent;
 }
 
+function getNumericalPropertiesCount(item) {
+  if (nodeIsBucket(item)) {
+    return item.meta.endIndex - item.meta.startIndex + 1;
+  }
+
+  const value = getValue(getClosestGripNode(item));
+  if (!value) {
+    return 0;
+  }
+
+  if (GripArrayRep.supportsObject(value)) {
+    return GripArrayRep.getLength(value);
+  }
+
+  if (GripMap.supportsObject(value)) {
+    return GripMap.getLength(value);
+  }
+
+  
+  
+  
+
+  return 0;
+}
+
+function getClosestGripNode(item) {
+  const type = getType(item);
+  if (type !== NODE_TYPES.BUCKET && type !== NODE_TYPES.DEFAULT_PROPERTIES && type !== NODE_TYPES.ENTRIES) {
+    return item;
+  }
+
+  const parent = getParent(item);
+  if (!parent) {
+    return null;
+  }
+
+  return getClosestGripNode(parent);
+}
+
+function getClosestNonBucketNode(item) {
+  const type = getType(item);
+
+  if (type !== NODE_TYPES.BUCKET) {
+    return item;
+  }
+
+  const parent = getParent(item);
+  if (!parent) {
+    return null;
+  }
+
+  return getClosestNonBucketNode(parent);
+}
+
+function shouldLoadItemIndexedProperties(item, loadedProperties = new Map()) {
+  const gripItem = getClosestGripNode(item);
+  const value = getValue(gripItem);
+
+  return value && nodeHasProperties(gripItem) && !loadedProperties.has(item.path) && !nodeIsProxy(item) && !nodeNeedsNumericalBuckets(item) && !nodeIsEntries(getClosestNonBucketNode(item))
+  
+  && !nodeIsDefaultProperties(item);
+}
+
+function shouldLoadItemNonIndexedProperties(item, loadedProperties = new Map()) {
+  const gripItem = getClosestGripNode(item);
+  const value = getValue(gripItem);
+
+  return value && nodeHasProperties(gripItem) && !loadedProperties.has(item.path) && !nodeIsProxy(item) && !nodeIsEntries(getClosestNonBucketNode(item)) && !nodeIsBucket(item)
+  
+  && !nodeIsDefaultProperties(item);
+}
+
+function shouldLoadItemEntries(item, loadedProperties = new Map()) {
+  const gripItem = getClosestGripNode(item);
+  const value = getValue(gripItem);
+
+  return value && nodeIsEntries(getClosestNonBucketNode(item)) && !nodeHasAllEntriesInPreview(gripItem) && !loadedProperties.has(item.path) && !nodeNeedsNumericalBuckets(item);
+}
+
+function shouldLoadItemPrototype(item, loadedProperties = new Map()) {
+  const value = getValue(item);
+
+  return value && !loadedProperties.has(item.path) && !nodeIsBucket(item) && !nodeIsMapEntry(item) && !nodeIsEntries(item) && !nodeIsDefaultProperties(item) && !nodeHasAccessors(item) && !nodeIsPrimitive(item);
+}
+
+function shouldLoadItemSymbols(item, loadedProperties = new Map()) {
+  const value = getValue(item);
+
+  return value && !loadedProperties.has(item.path) && !nodeIsBucket(item) && !nodeIsMapEntry(item) && !nodeIsEntries(item) && !nodeIsDefaultProperties(item) && !nodeHasAccessors(item) && !nodeIsPrimitive(item) && !nodeIsProxy(item);
+}
+
 module.exports = {
   createNode,
   getChildren,
+  getClosestGripNode,
+  getClosestNonBucketNode,
   getParent,
+  getNumericalPropertiesCount,
   getValue,
   makeNodesForEntries,
   makeNodesForPromiseProperties,
   makeNodesForProperties,
+  makeNumericalBuckets,
   nodeHasAccessors,
   nodeHasAllEntriesInPreview,
   nodeHasChildren,
   nodeHasEntries,
   nodeHasProperties,
+  nodeIsBucket,
   nodeIsDefaultProperties,
   nodeIsEntries,
   nodeIsFunction,
@@ -2364,10 +2691,17 @@ module.exports = {
   nodeIsPrimitive,
   nodeIsPromise,
   nodeIsPrototype,
+  nodeIsProxy,
   nodeIsSetter,
   nodeIsWindow,
-  nodeSupportsBucketing,
+  nodeNeedsNumericalBuckets,
+  nodeSupportsNumericalBucketing,
   setNodeChildren,
+  shouldLoadItemEntries,
+  shouldLoadItemIndexedProperties,
+  shouldLoadItemNonIndexedProperties,
+  shouldLoadItemPrototype,
+  shouldLoadItemSymbols,
   sortProperties,
   NODE_TYPES,
   
@@ -2378,119 +2712,8 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
-var isArray = __webpack_require__(5),
-    isKey = __webpack_require__(63),
-    stringToPath = __webpack_require__(68),
-    toString = __webpack_require__(98);
+"use strict";
 
-
-
-
-
-
-
-
-
-function castPath(value, object) {
-  if (isArray(value)) {
-    return value;
-  }
-  return isKey(value, object) ? [value] : stringToPath(toString(value));
-}
-
-module.exports = castPath;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var baseIsNative = __webpack_require__(75),
-    getValue = __webpack_require__(80);
-
-
-
-
-
-
-
-
-
-function getNative(object, key) {
-  var value = getValue(object, key);
-  return baseIsNative(value) ? value : undefined;
-}
-
-module.exports = getNative;
-
-
- }),
-
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isObject(value) {
-  var type = typeof value;
-  return value != null && (type == 'object' || type == 'function');
-}
-
-module.exports = isObject;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var isSymbol = __webpack_require__(11);
-
-
-var INFINITY = 1 / 0;
-
-
-
-
-
-
-
-
-function toKey(value) {
-  if (typeof value == 'string' || isSymbol(value)) {
-    return value;
-  }
-  var result = (value + '');
-  return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
-}
-
-module.exports = toKey;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
 
 
 
@@ -2498,8 +2721,8 @@ module.exports = toKey;
 
 const { MODE } = __webpack_require__(2);
 const { REPS, getRep } = __webpack_require__(3);
-const ObjectInspector = __webpack_require__(56);
-const ObjectInspectorUtils = __webpack_require__(21);
+const ObjectInspector = __webpack_require__(42);
+const ObjectInspectorUtils = __webpack_require__(14);
 
 const {
   parseURLEncodedText,
@@ -2530,6 +2753,9 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
 
 
 
@@ -2554,7 +2780,7 @@ const Undefined = function () {
 
 function supportsObject(object, noGrip = false) {
   if (noGrip === true) {
-    return false;
+    return object === undefined;
   }
 
   return object && object.type && object.type == "undefined" || getGripType(object, noGrip) == "undefined";
@@ -2570,6 +2796,9 @@ module.exports = {
  }),
 
  (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 
 
@@ -2592,7 +2821,7 @@ function Null(props) {
 
 function supportsObject(object, noGrip = false) {
   if (noGrip === true) {
-    return false;
+    return object === null;
   }
 
   if (object && object.type && object.type == "null") {
@@ -2612,6 +2841,9 @@ module.exports = {
  }),
 
  (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 
 
@@ -2686,6 +2918,9 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
 
 
 
@@ -2734,6 +2969,9 @@ module.exports = {
  }),
 
  (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 
 
@@ -2933,6 +3171,9 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
 
 
 
@@ -2979,6 +3220,9 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
 
 
 
@@ -3024,6 +3268,9 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
 
 
 
@@ -3059,6 +3306,9 @@ module.exports = {
  }),
 
  (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 
 
@@ -3128,6 +3378,9 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
 
 
 
@@ -3141,7 +3394,7 @@ const {
   isGrip,
   wrapRender
 } = __webpack_require__(1);
-const { rep: StringRep } = __webpack_require__(16);
+const { rep: StringRep } = __webpack_require__(5);
 
 
 const { span } = React.DOM;
@@ -3161,8 +3414,8 @@ function Attribute(props) {
 
   return span({
     "data-link-actor-id": object.actor,
-    className: "objectLink-Attr"
-  }, span({ className: "attrTitle" }, getTitle(object)), span({ className: "attrEqual" }, "="), StringRep({ object: value }));
+    className: "objectBox-Attr"
+  }, span({ className: "attrName" }, getTitle(object)), span({ className: "attrEqual" }, "="), StringRep({ className: "attrValue", object: value }));
 }
 
 function getTitle(grip) {
@@ -3186,6 +3439,9 @@ module.exports = {
  }),
 
  (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 
 
@@ -3251,6 +3507,9 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
 
 
 
@@ -3281,8 +3540,8 @@ function Document(props) {
 
   return span({
     "data-link-actor-id": grip.actor,
-    className: "objectBox objectBox-object"
-  }, getTitle(grip), span({ className: "objectPropValue" }, getLocation(grip)));
+    className: "objectBox objectBox-document"
+  }, getTitle(grip), span({ className: "location" }, getLocation(grip)));
 }
 
 function getLocation(grip) {
@@ -3315,6 +3574,9 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
 
 
 
@@ -3329,7 +3591,7 @@ const {
 } = __webpack_require__(1);
 
 const { MODE } = __webpack_require__(2);
-const { rep } = __webpack_require__(9);
+const { rep } = __webpack_require__(6);
 
 
 
@@ -3419,6 +3681,9 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
 
 
 
@@ -3433,6 +3698,7 @@ const {
   cropString,
   wrapRender
 } = __webpack_require__(1);
+const { MODE } = __webpack_require__(2);
 
 
 const { span } = React.DOM;
@@ -3454,22 +3720,22 @@ function FunctionRep(props) {
     
     
     dir: "ltr"
-  }, getTitle(props, grip), getFunctionName(grip, props), "(", ...renderParams(props), ")");
+  }, getTitle(grip, props), getFunctionName(grip, props), "(", ...renderParams(props), ")");
 }
 
-function getTitle(props, grip) {
+function getTitle(grip, props) {
   const {
-    simplified
+    mode
   } = props;
 
-  if (simplified === true && !grip.isGenerator && !grip.isAsync) {
+  if (mode === MODE.TINY && !grip.isGenerator && !grip.isAsync) {
     return null;
   }
 
-  let title = simplified === true ? "" : "function ";
+  let title = mode === MODE.TINY ? "" : "function ";
 
   if (grip.isGenerator) {
-    title = simplified === true ? "* " : "function* ";
+    title = mode === MODE.TINY ? "* " : "function* ";
   }
 
   if (grip.isAsync) {
@@ -3520,6 +3786,9 @@ module.exports = {
  }),
 
  (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 
 
@@ -3627,6 +3896,9 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
 
 
 
@@ -3679,6 +3951,9 @@ module.exports = {
  }),
 
  (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 
 
@@ -3745,6 +4020,9 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
 
 
 
@@ -3758,7 +4036,7 @@ const {
   wrapRender
 } = __webpack_require__(1);
 const { MODE } = __webpack_require__(2);
-const nodeConstants = __webpack_require__(18);
+const nodeConstants = __webpack_require__(8);
 
 
 const { span } = React.DOM;
@@ -3809,6 +4087,9 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
 
 
 
@@ -3821,9 +4102,10 @@ const {
   isGrip,
   wrapRender
 } = __webpack_require__(1);
+const { rep: StringRep } = __webpack_require__(5);
 const { MODE } = __webpack_require__(2);
-const nodeConstants = __webpack_require__(18);
-const Svg = __webpack_require__(10);
+const nodeConstants = __webpack_require__(8);
+const Svg = __webpack_require__(9);
 
 
 const { span } = React.DOM;
@@ -3887,16 +4169,16 @@ function ElementNode(props) {
 function getElements(grip, mode) {
   let { attributes, nodeName } = grip.preview;
   const nodeNameElement = span({
-    className: "tag-name theme-fg-color3"
+    className: "tag-name"
   }, nodeName);
 
   if (mode === MODE.TINY) {
     let elements = [nodeNameElement];
     if (attributes.id) {
-      elements.push(span({ className: "attr-name theme-fg-color2" }, `#${attributes.id}`));
+      elements.push(span({ className: "attrName" }, `#${attributes.id}`));
     }
     if (attributes.class) {
-      elements.push(span({ className: "attr-name theme-fg-color2" }, attributes.class.replace(/(^\s+)|(\s+$)/g, "").split(" ").map(cls => `.${cls}`).join("")));
+      elements.push(span({ className: "attrName" }, attributes.class.trim().split(/\s+/).map(cls => `.${cls}`).join("")));
     }
     return elements;
   }
@@ -3911,12 +4193,12 @@ function getElements(grip, mode) {
   }
   const attributeElements = attributeKeys.reduce((arr, name, i, keys) => {
     let value = attributes[name];
-    let attribute = span({}, span({ className: "attr-name theme-fg-color2" }, `${name}`), `="`, span({ className: "attr-value theme-fg-color6" }, `${value}`), `"`);
+    let attribute = span({}, span({ className: "attrName" }, name), span({ className: "attrEqual" }, "="), StringRep({ className: "attrValue", object: value }));
 
     return arr.concat([" ", attribute]);
   }, []);
 
-  return ["<", nodeNameElement, ...attributeElements, ">"];
+  return [span({ className: "angleBracket" }, "<"), nodeNameElement, ...attributeElements, span({ className: "angleBracket" }, ">")];
 }
 
 
@@ -3935,165 +4217,6 @@ module.exports = {
 
  }),
 
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, '__esModule', {
-    value: true
-});
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var _react = __webpack_require__(0);
-
-var _react2 = _interopRequireDefault(_react);
-
-var DOMParser = typeof window !== 'undefined' && window.DOMParser;
-var process = process || {};
-process.env = process.env || {};
-var parserAvailable = typeof DOMParser !== 'undefined' && DOMParser.prototype != null && DOMParser.prototype.parseFromString != null;
-
-function isParsable(src) {
-    
-    return parserAvailable && typeof src === 'string' && src.trim().substr(0, 4) === '<svg';
-}
-
-
-function parseFromSVGString(src) {
-    var parser = new DOMParser();
-    return parser.parseFromString(src, "image/svg+xml");
-}
-
-
-function switchSVGAttrToReactProp(propName) {
-    switch (propName) {
-        case 'class':
-            return 'className';
-        default:
-            return propName;
-    }
-}
-
-var InlineSVG = (function (_React$Component) {
-    _inherits(InlineSVG, _React$Component);
-
-    _createClass(InlineSVG, null, [{
-        key: 'defaultProps',
-        value: {
-            element: 'i',
-            raw: false,
-            src: ''
-        },
-        enumerable: true
-    }, {
-        key: 'propTypes',
-        value: {
-            src: _react2['default'].PropTypes.string.isRequired,
-            element: _react2['default'].PropTypes.string,
-            raw: _react2['default'].PropTypes.bool
-        },
-        enumerable: true
-    }]);
-
-    function InlineSVG(props) {
-        _classCallCheck(this, InlineSVG);
-
-        _get(Object.getPrototypeOf(InlineSVG.prototype), 'constructor', this).call(this, props);
-        this._extractSVGProps = this._extractSVGProps.bind(this);
-    }
-
-    
-
-    _createClass(InlineSVG, [{
-        key: '_serializeAttrs',
-        value: function _serializeAttrs(map) {
-            var ret = {};
-            var prop = undefined;
-            for (var i = 0; i < map.length; i++) {
-                prop = switchSVGAttrToReactProp(map[i].name);
-                ret[prop] = map[i].value;
-            }
-            return ret;
-        }
-
-        
-    }, {
-        key: '_extractSVGProps',
-        value: function _extractSVGProps(src) {
-            var map = parseFromSVGString(src).documentElement.attributes;
-            return map.length > 0 ? this._serializeAttrs(map) : null;
-        }
-
-        
-    }, {
-        key: '_stripSVG',
-        value: function _stripSVG(src) {
-            return parseFromSVGString(src).documentElement.innerHTML;
-        }
-    }, {
-        key: 'componentWillReceiveProps',
-        value: function componentWillReceiveProps(_ref) {
-            var children = _ref.children;
-
-            if ("production" !== process.env.NODE_ENV && children != null) {
-                console.info('<InlineSVG />: `children` prop will be ignored.');
-            }
-        }
-    }, {
-        key: 'render',
-        value: function render() {
-            var Element = undefined,
-                __html = undefined,
-                svgProps = undefined;
-            var _props = this.props;
-            var element = _props.element;
-            var raw = _props.raw;
-            var src = _props.src;
-
-            var otherProps = _objectWithoutProperties(_props, ['element', 'raw', 'src']);
-
-            if (raw === true && isParsable(src)) {
-                Element = 'svg';
-                svgProps = this._extractSVGProps(src);
-                __html = this._stripSVG(src);
-            }
-            __html = __html || src;
-            Element = Element || element;
-            svgProps = svgProps || {};
-
-            return _react2['default'].createElement(Element, _extends({}, svgProps, otherProps, { src: null, children: null,
-                dangerouslySetInnerHTML: { __html: __html } }));
-        }
-    }]);
-
-    return InlineSVG;
-})(_react2['default'].Component);
-
-exports['default'] = InlineSVG;
-module.exports = exports['default'];
-
- }),
-
- (function(module, exports) {
-
-module.exports = "<!-- This Source Code Form is subject to the terms of the Mozilla Public - License, v. 2.0. If a copy of the MPL was not distributed with this - file, You can obtain one at http://mozilla.org/MPL/2.0/. --><svg viewBox=\"0 0 16 16\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M8 13.4c-.5 0-.9-.2-1.2-.6L.4 5.2C0 4.7-.1 4.3.2 3.7S1 3 1.6 3h12.8c.6 0 1.2.1 1.4.7.3.6.2 1.1-.2 1.6l-6.4 7.6c-.3.4-.7.5-1.2.5z\"></path></svg>"
-
- }),
-
  (function(module, exports) {
 
 module.exports = "<!-- This Source Code Form is subject to the terms of the Mozilla Public - License, v. 2.0. If a copy of the MPL was not distributed with this - file, You can obtain one at http://mozilla.org/MPL/2.0/. --><svg viewBox=\"0 0 16 16\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M8,3L12,3L12,7L14,7L14,8L12,8L12,12L8,12L8,14L7,14L7,12L3,12L3,8L1,8L1,7L3,7L3,3L7,3L7,1L8,1L8,3ZM10,10L10,5L5,5L5,10L10,10Z\"></path></svg>"
@@ -4101,6 +4224,9 @@ module.exports = "<!-- This Source Code Form is subject to the terms of the Mozi
  }),
 
  (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 
 
@@ -4116,7 +4242,7 @@ const {
   wrapRender
 } = __webpack_require__(1);
 const { MODE } = __webpack_require__(2);
-const Svg = __webpack_require__(10);
+const Svg = __webpack_require__(9);
 
 
 const DOM = React.DOM;
@@ -4208,6 +4334,9 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
 
 
 
@@ -4274,6 +4403,9 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
 
 
 
@@ -4318,12 +4450,12 @@ function WindowRep(props) {
     return span(config, getTitle(object));
   }
 
-  return span(config, getTitle(object), " ", span({ className: "objectPropValue" }, getLocation(object)));
+  return span(config, getTitle(object), " ", span({ className: "location" }, getLocation(object)));
 }
 
 function getTitle(object) {
   let title = object.displayClass || object.class || "Window";
-  return span({ className: "objectBoxTitle" }, title);
+  return span({ className: "objectTitle" }, title);
 }
 
 function getLocation(object) {
@@ -4348,6 +4480,9 @@ module.exports = {
  }),
 
  (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 
 
@@ -4406,6 +4541,9 @@ module.exports = {
  }),
 
  (function(module, exports, __webpack_require__) {
+
+"use strict";
+
 
 
 
@@ -4470,204 +4608,16 @@ module.exports = {
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
 
 
+var _devtoolsComponents = __webpack_require__(43);
 
+var _devtoolsComponents2 = _interopRequireDefault(_devtoolsComponents);
 
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const React = __webpack_require__(0);
-const {
-  isGrip,
-  wrapRender
-} = __webpack_require__(1);
-const PropRep = __webpack_require__(4);
-const { MODE } = __webpack_require__(2);
-
-const { span } = React.DOM;
-
-
-
-
-
-GripMap.propTypes = {
-  object: React.PropTypes.object,
-  
-  mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
-  isInterestingEntry: React.PropTypes.func,
-  onDOMNodeMouseOver: React.PropTypes.func,
-  onDOMNodeMouseOut: React.PropTypes.func,
-  onInspectIconClick: React.PropTypes.func,
-  title: React.PropTypes.string
-};
-
-function GripMap(props) {
-  let {
-    mode,
-    object
-  } = props;
-
-  const config = {
-    "data-link-actor-id": object.actor,
-    className: "objectBox objectBox-object"
-  };
-
-  if (mode === MODE.TINY) {
-    return span(config, getTitle(props, object));
-  }
-
-  let propsArray = safeEntriesIterator(props, object, maxLengthMap.get(mode));
-
-  return span(config, getTitle(props, object), span({
-    className: "objectLeftBrace"
-  }, " { "), ...propsArray, span({
-    className: "objectRightBrace"
-  }, " }"));
-}
-
-function getTitle(props, object) {
-  let title = props.title || (object && object.class ? object.class : "Map");
-  return span({
-    className: "objectTitle"
-  }, title);
-}
-
-function safeEntriesIterator(props, object, max) {
-  max = typeof max === "undefined" ? 3 : max;
-  try {
-    return entriesIterator(props, object, max);
-  } catch (err) {
-    console.error(err);
-  }
-  return [];
-}
-
-function entriesIterator(props, object, max) {
-  
-  let isInterestingEntry = props.isInterestingEntry || ((type, value) => {
-    return type == "boolean" || type == "number" || type == "string" && value.length != 0;
-  });
-
-  let mapEntries = object.preview && object.preview.entries ? object.preview.entries : [];
-
-  let indexes = getEntriesIndexes(mapEntries, max, isInterestingEntry);
-  if (indexes.length < max && indexes.length < mapEntries.length) {
-    
-    indexes = indexes.concat(getEntriesIndexes(mapEntries, max - indexes.length, (t, value, name) => {
-      return !isInterestingEntry(t, value, name);
-    }));
-  }
-
-  let entries = getEntries(props, mapEntries, indexes);
-  if (entries.length < object.preview.size) {
-    
-    entries.push(span({
-      key: "more",
-      className: "more-ellipsis",
-      title: "more…"
-    }, "…"));
-  }
-
-  return unfoldEntries(entries);
-}
-
-function unfoldEntries(items) {
-  return items.reduce((res, item, index) => {
-    if (Array.isArray(item)) {
-      res = res.concat(item);
-    } else {
-      res.push(item);
-    }
-
-    
-    if (index !== items.length - 1) {
-      res.push(", ");
-    }
-    return res;
-  }, []);
-}
-
-
-
-
-
-
-
-
-
-function getEntries(props, entries, indexes) {
-  let {
-    onDOMNodeMouseOver,
-    onDOMNodeMouseOut,
-    onInspectIconClick
-  } = props;
-
-  
-  indexes.sort(function (a, b) {
-    return a - b;
-  });
-
-  return indexes.map((index, i) => {
-    let [key, entryValue] = entries[index];
-    let value = entryValue.value !== undefined ? entryValue.value : entryValue;
-
-    return PropRep({
-      name: key,
-      equal: " \u2192 ",
-      object: value,
-      mode: MODE.TINY,
-      onDOMNodeMouseOver,
-      onDOMNodeMouseOut,
-      onInspectIconClick
-    });
-  });
-}
-
-
-
-
-
-
-
-
-
-function getEntriesIndexes(entries, max, filter) {
-  return entries.reduce((indexes, [key, entry], i) => {
-    if (indexes.length < max) {
-      let value = entry && entry.value !== undefined ? entry.value : entry;
-      
-      
-      let type = (value && value.class ? value.class : typeof value).toLowerCase();
-
-      if (filter(type, value, key)) {
-        indexes.push(i);
-      }
-    }
-
-    return indexes;
-  }, []);
-}
-
-function supportsObject(grip, noGrip = false) {
-  if (noGrip === true || !isGrip(grip)) {
-    return false;
-  }
-  return grip.preview && grip.preview.kind == "MapLike";
-}
-
-const maxLengthMap = new Map();
-maxLengthMap.set(MODE.SHORT, 3);
-maxLengthMap.set(MODE.LONG, 10);
-
-
-module.exports = {
-  rep: wrapRender(GripMap),
-  supportsObject,
-  maxLengthMap
-};
-
- }),
-
- (function(module, exports, __webpack_require__) {
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
 
 
@@ -4680,11 +4630,11 @@ const {
   PropTypes
 } = __webpack_require__(0);
 
-const Tree = createFactory(__webpack_require__(57).Tree);
-__webpack_require__(59);
+const Tree = createFactory(_devtoolsComponents2.default.Tree);
+__webpack_require__(47);
 
-const classnames = __webpack_require__(60);
-const Svg = __webpack_require__(10);
+const classnames = __webpack_require__(48);
+
 const {
   REPS: {
     Rep,
@@ -4697,23 +4647,35 @@ const {
 
 const {
   getChildren,
+  getClosestGripNode,
   getParent,
   getValue,
   nodeHasAccessors,
-  nodeHasAllEntriesInPreview,
   nodeHasProperties,
   nodeIsDefaultProperties,
-  nodeIsEntries,
+  nodeIsFunction,
   nodeIsGetter,
   nodeIsMapEntry,
-  nodeIsFunction,
   nodeIsMissingArguments,
   nodeIsOptimizedOut,
   nodeIsPrimitive,
   nodeIsPrototype,
   nodeIsSetter,
-  nodeIsWindow
-} = __webpack_require__(21);
+  nodeIsWindow,
+  shouldLoadItemEntries,
+  shouldLoadItemIndexedProperties,
+  shouldLoadItemNonIndexedProperties,
+  shouldLoadItemPrototype,
+  shouldLoadItemSymbols
+} = __webpack_require__(14);
+
+const {
+  enumEntries,
+  enumIndexedProperties,
+  enumNonIndexedProperties,
+  getPrototype,
+  enumSymbols
+} = __webpack_require__(50);
 
 
 
@@ -4743,13 +4705,16 @@ const {
 
 
 class ObjectInspector extends Component {
-  constructor() {
+  constructor(props) {
     super();
+    this.cachedNodes = new Map();
 
-    this.actors = {};
     this.state = {
-      expandedKeys: new Set(),
-      focusedItem: null
+      actors: new Set(),
+      expandedPaths: new Set(),
+      focusedItem: null,
+      loadedProperties: props.loadedProperties || new Map(),
+      loading: new Map()
     };
 
     const self = this;
@@ -4761,17 +4726,36 @@ class ObjectInspector extends Component {
     self.getRoots = this.getRoots.bind(this);
   }
 
+  shouldComponentUpdate(nextProps, nextState) {
+    const {
+      expandedPaths,
+      loadedProperties
+    } = this.state;
+
+    return expandedPaths.size !== nextState.expandedPaths.size || loadedProperties.size !== nextState.loadedProperties.size || [...expandedPaths].some(key => !nextState.expandedPaths.has(key));
+  }
+
+  componentWillUnmount() {
+    const { releaseActor } = this.props;
+    if (typeof releaseActor !== "function") {
+      return;
+    }
+
+    const { actors } = this.state;
+    for (let actor of actors) {
+      releaseActor(actor);
+    }
+  }
+
   getChildren(item) {
     const {
-      getObjectEntries,
-      getObjectProperties
-    } = this.props;
-    const { actors } = this;
+      loadedProperties
+    } = this.state;
+    const { cachedNodes } = this;
 
     return getChildren({
-      getObjectEntries,
-      getObjectProperties,
-      actors,
+      loadedProperties,
+      cachedNodes,
       item
     });
   }
@@ -4784,39 +4768,121 @@ class ObjectInspector extends Component {
     return item.path;
   }
 
+  
+
+
+
+
+
+
   setExpanded(item, expand) {
-    const { expandedKeys } = this.state;
-    const key = this.getKey(item);
+    var _this = this;
 
-    if (expand === true) {
-      expandedKeys.add(key);
-    } else {
-      expandedKeys.delete(key);
-    }
+    return _asyncToGenerator(function* () {
+      if (nodeIsPrimitive(item)) {
+        return;
+      }
 
-    this.setState({ expandedKeys });
-
-    if (expand === true) {
       const {
-        getObjectProperties,
-        getObjectEntries,
-        loadObjectProperties,
-        loadObjectEntries
-      } = this.props;
+        loadedProperties
+      } = _this.state;
 
-      const value = getValue(item);
-      const parent = getParent(item);
-      const parentValue = getValue(parent);
-      const parentActor = parentValue ? parentValue.actor : null;
+      const key = _this.getKey(item);
 
-      if (nodeHasProperties(item) && value && !getObjectProperties(value.actor)) {
-        loadObjectProperties(value);
+      _this.setState(function (prevState, props) {
+        const newPaths = new Set(prevState.expandedPaths);
+        if (expand === true) {
+          newPaths.add(key);
+        } else {
+          newPaths.delete(key);
+        }
+        return {
+          expandedPaths: newPaths
+        };
+      });
+
+      if (expand === true) {
+        const gripItem = getClosestGripNode(item);
+        const value = getValue(gripItem);
+
+        const path = item.path;
+        const [start, end] = item.meta ? [item.meta.startIndex, item.meta.endIndex] : [];
+
+        let promises = [];
+        let objectClient;
+        const getObjectClient = function () {
+          if (objectClient) {
+            return objectClient;
+          }
+          return _this.props.createObjectClient(value);
+        };
+
+        if (shouldLoadItemIndexedProperties(item, loadedProperties)) {
+          promises.push(enumIndexedProperties(getObjectClient(), start, end));
+        }
+
+        if (shouldLoadItemNonIndexedProperties(item, loadedProperties)) {
+          promises.push(enumNonIndexedProperties(getObjectClient(), start, end));
+        }
+
+        if (shouldLoadItemEntries(item, loadedProperties)) {
+          promises.push(enumEntries(getObjectClient(), start, end));
+        }
+
+        if (shouldLoadItemPrototype(item, loadedProperties)) {
+          promises.push(getPrototype(getObjectClient()));
+        }
+
+        if (shouldLoadItemSymbols(item, loadedProperties)) {
+          promises.push(enumSymbols(getObjectClient(), start, end));
+        }
+
+        if (promises.length > 0) {
+          
+          _this.setState(function (prevState, props) {
+            const nextLoading = new Map(prevState.loading);
+            nextLoading.set(path, promises);
+            return {
+              loading: nextLoading
+            };
+          });
+
+          const responses = yield Promise.all(promises);
+
+          
+          const response = responses.reduce(function (accumulator, res) {
+            Object.entries(res).forEach(function ([k, v]) {
+              if (accumulator.hasOwnProperty(k)) {
+                if (Array.isArray(accumulator[k])) {
+                  accumulator[k].push(...v);
+                } else if (typeof accumulator[k] === "object") {
+                  accumulator[k] = Object.assign({}, accumulator[k], v);
+                }
+              } else {
+                accumulator[k] = v;
+              }
+            });
+            return accumulator;
+          }, {});
+
+          _this.setState(function (prevState, props) {
+            const nextLoading = new Map(prevState.loading);
+            nextLoading.delete(path);
+
+            const isRoot = _this.props.roots.some(function (root) {
+              const rootValue = getValue(root);
+              return rootValue && rootValue.actor === value.actor;
+            });
+
+            return {
+              actors: isRoot ? prevState.actors : new Set(prevState.actors).add(value.actor),
+              loadedProperties: new Map(prevState.loadedProperties).set(path, response),
+              loading: nextLoading
+            };
+          });
+        }
       }
-
-      if (nodeIsEntries(item) && !nodeHasAllEntriesInPreview(parent) && parentActor && !getObjectEntries(parentActor)) {
-        loadObjectEntries(parentValue);
-      }
-    }
+    })();
   }
 
   focusItem(item) {
@@ -4844,10 +4910,9 @@ class ObjectInspector extends Component {
       objectValue = dom.span({ className: "unavailable" }, "(optimized away)");
     } else if (nodeIsMissingArguments(item) || unavailable) {
       objectValue = dom.span({ className: "unavailable" }, "(unavailable)");
-    } else if (nodeIsFunction(item) && !nodeIsGetter(item) && !nodeIsSetter(item)) {
+    } else if (nodeIsFunction(item) && !nodeIsGetter(item) && !nodeIsSetter(item) && (this.props.mode === MODE.TINY || !this.props.mode)) {
       objectValue = undefined;
       label = this.renderGrip(item, Object.assign({}, this.props, {
-        simplified: depth !== 0,
         functionName: label
       }));
     } else if (nodeHasProperties(item) || nodeHasAccessors(item) || nodeIsMapEntry(item) || isPrimitive) {
@@ -4855,15 +4920,15 @@ class ObjectInspector extends Component {
       if (depth > 0) {
         repsProp.mode = this.props.mode === MODE.LONG ? MODE.SHORT : MODE.TINY;
       }
+      if (expanded) {
+        repsProp.mode = MODE.TINY;
+      }
 
       objectValue = this.renderGrip(item, repsProp);
     }
 
     const hasLabel = label !== null && typeof label !== "undefined";
     const hasValue = typeof objectValue !== "undefined";
-
-    const SINGLE_INDENT_WIDTH = 15;
-    const indentWidth = (depth + (isPrimitive ? 1 : 0)) * SINGLE_INDENT_WIDTH;
 
     const {
       onDoubleClick,
@@ -4876,13 +4941,12 @@ class ObjectInspector extends Component {
         focused,
         lessen: !expanded && (nodeIsDefaultProperties(item) || nodeIsPrototype(item) || dimTopLevelWindow === true && nodeIsWindow(item) && depth === 0)
       }),
-      style: {
-        marginLeft: indentWidth
-      },
-      onClick: isPrimitive === false ? e => {
+      onClick: e => {
         e.stopPropagation();
-        this.setExpanded(item, !expanded);
-      } : null,
+        if (isPrimitive === false) {
+          this.setExpanded(item, !expanded);
+        }
+      },
       onDoubleClick: onDoubleClick ? e => {
         e.stopPropagation();
         onDoubleClick(item, {
@@ -4891,11 +4955,7 @@ class ObjectInspector extends Component {
           expanded
         });
       } : null
-    }, isPrimitive === false ? Svg("arrow", {
-      className: classnames({
-        expanded: expanded
-      })
-    }) : null, hasLabel ? dom.span({
+    }, arrow, hasLabel ? dom.span({
       className: "object-label",
       onClick: onLabelClick ? event => {
         event.stopPropagation();
@@ -4906,7 +4966,7 @@ class ObjectInspector extends Component {
           setExpanded: this.setExpanded
         });
       } : null
-    }, label) : null, hasLabel && hasValue ? dom.span({ className: "object-delimiter" }, " : ") : null, hasValue ? objectValue : null);
+    }, label) : null, hasLabel && hasValue ? dom.span({ className: "object-delimiter" }, ": ") : null, hasValue ? objectValue : null);
   }
 
   renderGrip(item, props) {
@@ -4929,7 +4989,7 @@ class ObjectInspector extends Component {
     } = this.props;
 
     const {
-      expandedKeys,
+      expandedPaths,
       focusedItem
     } = this.state;
 
@@ -4945,14 +5005,16 @@ class ObjectInspector extends Component {
     return Tree({
       className: classnames({
         inline,
-        nowrap: disableWrap
+        nowrap: disableWrap,
+        "object-inspector": true
       }),
       autoExpandAll,
       autoExpandDepth,
       disabledFocus,
       itemHeight,
 
-      isExpanded: item => expandedKeys.has(this.getKey(item)),
+      isExpanded: item => expandedPaths.has(this.getKey(item)),
+      isExpandable: item => nodeIsPrimitive(item) === false,
       focused: focusedItem,
 
       getRoots: this.getRoots,
@@ -4978,10 +5040,9 @@ ObjectInspector.propTypes = {
   disableWrap: PropTypes.bool,
   inline: PropTypes.bool,
   roots: PropTypes.array,
-  getObjectProperties: PropTypes.func.isRequired,
-  loadObjectProperties: PropTypes.func.isRequired,
   itemHeight: PropTypes.number,
   mode: PropTypes.oneOf(Object.values(MODE)),
+  createObjectClient: PropTypes.func.isRequired,
   onFocus: PropTypes.func,
   onDoubleClick: PropTypes.func,
   onLabelClick: PropTypes.func
@@ -4993,25 +5054,55 @@ module.exports = ObjectInspector;
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
 
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _tree = __webpack_require__(44);
+
+var _tree2 = _interopRequireDefault(_tree);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = {
+  Tree: _tree2.default
+}; 
 
 
-const Tree = __webpack_require__(58);
-
-module.exports = {
-  Tree
-};
 
  }),
 
  (function(module, exports, __webpack_require__) {
 
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _react = __webpack_require__(0);
+
+var _react2 = _interopRequireDefault(_react);
+
+var _svgInlineReact = __webpack_require__(10);
+
+var _svgInlineReact2 = _interopRequireDefault(_svgInlineReact);
+
+var _arrow = __webpack_require__(45);
+
+var _arrow2 = _interopRequireDefault(_arrow);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const { DOM: dom, createClass, createFactory, createElement, PropTypes } = _react2.default; 
 
 
 
-
-const { DOM: dom, createClass, createFactory, PropTypes } = __webpack_require__(0);
+__webpack_require__(46);
 
 const AUTO_EXPAND_DEPTH = 0; 
 
@@ -5022,43 +5113,42 @@ const AUTO_EXPAND_DEPTH = 0;
 const ArrowExpander = createFactory(createClass({
   displayName: "ArrowExpander",
 
+  propTypes: {
+    expanded: PropTypes.bool
+  },
+
   shouldComponentUpdate(nextProps, nextState) {
-    return this.props.item !== nextProps.item || this.props.visible !== nextProps.visible || this.props.expanded !== nextProps.expanded;
+    return this.props.expanded !== nextProps.expanded;
   },
 
   render() {
-    const attrs = {
-      className: "arrow theme-twisty",
-      onClick: this.props.expanded ? () => this.props.onCollapse(this.props.item) : e => this.props.onExpand(this.props.item, e.altKey)
-    };
+    const {
+      expanded
+    } = this.props;
 
-    if (this.props.expanded) {
-      attrs.className += " open";
+    const classNames = ["arrow"];
+    if (expanded) {
+      classNames.push("expanded");
     }
-
-    if (!this.props.visible) {
-      attrs.style = Object.assign({}, this.props.style || {}, {
-        visibility: "hidden"
-      });
-    }
-
-    return dom.div(attrs, this.props.children);
+    return createElement(_svgInlineReact2.default, {
+      className: classNames.join(" "),
+      src: _arrow2.default
+    });
   }
 }));
 
 const TreeNode = createFactory(createClass({
   displayName: "TreeNode",
 
-  componentDidMount() {
-    if (this.props.focused) {
-      this.refs.button.focus();
-    }
-  },
-
-  componentDidUpdate() {
-    if (this.props.focused) {
-      this.refs.button.focus();
-    }
+  propTypes: {
+    index: PropTypes.number.isRequired,
+    depth: PropTypes.number.isRequired,
+    focused: PropTypes.bool.isRequired,
+    expanded: PropTypes.bool.isRequired,
+    item: PropTypes.any.isRequired,
+    isExpandable: PropTypes.bool.isRequired,
+    onClick: PropTypes.func,
+    renderItem: PropTypes.func.isRequired
   },
 
   shouldComponentUpdate(nextProps) {
@@ -5066,45 +5156,67 @@ const TreeNode = createFactory(createClass({
   },
 
   render() {
-    const arrow = ArrowExpander({
-      item: this.props.item,
-      expanded: this.props.expanded,
-      visible: this.props.hasChildren,
-      onExpand: this.props.onExpand,
-      onCollapse: this.props.onCollapse
-    });
+    const {
+      depth,
+      item,
+      focused,
+      expanded,
+      renderItem,
+      isExpandable
+    } = this.props;
 
-    let isOddRow = this.props.index % 2;
-    return dom.div({
-      className: `tree-node div ${isOddRow ? "tree-node-odd" : ""}`,
-      onFocus: this.props.onFocus,
-      onClick: this.props.onFocus,
-      onBlur: this.props.onBlur,
-      style: {
-        padding: 0,
-        margin: 0
-      }
-    }, this.props.renderItem(this.props.item, this.props.depth, this.props.focused, arrow, this.props.expanded),
+    const arrow = isExpandable ? ArrowExpander({
+      item,
+      expanded
+    }) : null;
+
+    const treeIndentWidthVar = "var(--tree-indent-width)";
+    const treeBorderColorVar = "var(--tree-indent-border-color, black)";
+    const treeBorderWidthVar = "var(--tree-indent-border-width, 1px)";
+
+    const paddingInlineStart = `calc(
+      (${treeIndentWidthVar} * ${depth})
+      ${isExpandable ? "" : "+ var(--arrow-total-width)"}
+    )`;
 
     
     
-    dom.button(this._buttonAttrs));
-  },
+    
+    
+    
+    
+    
+    const backgroundBorder = depth === 0 ? null : "linear-gradient(90deg, " + Array.from({ length: depth }).map((_, i) => {
+      const indentWidth = `(${i} * ${treeIndentWidthVar})`;
+      const alignIndent = `(var(--arrow-width) / 2)`;
+      const start = `calc(${indentWidth} + ${alignIndent})`;
+      const end = `calc(${indentWidth} + ${alignIndent} + ${treeBorderWidthVar})`;
 
-  _buttonAttrs: {
-    ref: "button",
-    style: {
-      opacity: 0,
-      width: "0 !important",
-      height: "0 !important",
-      padding: "0 !important",
-      outline: "none",
-      MozAppearance: "none",
-      
-      
-      
-      MozMarginStart: "-1000px !important"
+      return `transparent ${start},
+              ${treeBorderColorVar} ${start},
+              ${treeBorderColorVar} ${end},
+              transparent ${end}`;
+    }).join(",") + ")";
+
+    let ariaExpanded;
+    if (this.props.isExpandable) {
+      ariaExpanded = false;
     }
+    if (this.props.expanded) {
+      ariaExpanded = true;
+    }
+
+    return dom.div({
+      className: "tree-node" + (focused ? " focused" : ""),
+      style: {
+        paddingInlineStart,
+        backgroundImage: backgroundBorder
+      },
+      onClick: this.props.onClick,
+      role: "treeitem",
+      "aria-level": depth,
+      "aria-expanded": ariaExpanded
+    }, renderItem(item, depth, focused, arrow, expanded));
   }
 }));
 
@@ -5132,7 +5244,6 @@ function oncePerAnimationFrame(fn) {
   };
 }
 
-const NUMBER_OF_OFFSCREEN_ITEMS = 1;
 
 
 
@@ -5140,26 +5251,172 @@ const NUMBER_OF_OFFSCREEN_ITEMS = 1;
 
 
 
-const Tree = module.exports = createClass({
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const Tree = createClass({
   displayName: "Tree",
 
   propTypes: {
     
 
     
+    
+    
+    
+    
+    
+    
+    
     getParent: PropTypes.func.isRequired,
+
+    
+    
+    
+    
+    
+    
+    
     
     getChildren: PropTypes.func.isRequired,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     renderItem: PropTypes.func.isRequired,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     getRoots: PropTypes.func.isRequired,
+
+    
+    
+    
+    
+    
+    
+    
     
     getKey: PropTypes.func.isRequired,
+
+    
+    
+    
+    
+    
+    
     
     
     isExpanded: PropTypes.func.isRequired,
+
     
     
     itemHeight: PropTypes.number.isRequired,
@@ -5168,16 +5425,42 @@ const Tree = module.exports = createClass({
 
     
     focused: PropTypes.any,
+
     
     onFocus: PropTypes.func,
+
     
     autoExpandDepth: PropTypes.number,
     
     
     autoExpandAll: PropTypes.bool,
+
+    
+    
+    
+    
+    labelledby: PropTypes.string,
+    
+    label: PropTypes.string,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     onExpand: PropTypes.func,
-    onCollapse: PropTypes.func
+    onCollapse: PropTypes.func,
+    isExpandable: PropTypes.func,
+    
+    className: PropTypes.string,
+    
+    style: PropTypes.object
   },
 
   getDefaultProps() {
@@ -5197,7 +5480,12 @@ const Tree = module.exports = createClass({
 
   componentDidMount() {
     window.addEventListener("resize", this._updateHeight);
-    this._autoExpand(this.props);
+    this._autoExpand();
+    this._updateHeight();
+  },
+
+  componentWillReceiveProps(nextProps) {
+    this._autoExpand();
     this._updateHeight();
   },
 
@@ -5205,13 +5493,8 @@ const Tree = module.exports = createClass({
     window.removeEventListener("resize", this._updateHeight);
   },
 
-  componentWillReceiveProps(nextProps) {
-    this._autoExpand(nextProps);
-    this._updateHeight();
-  },
-
-  _autoExpand(props) {
-    if (!props.autoExpandDepth) {
+  _autoExpand() {
+    if (!this.props.autoExpandDepth) {
       return;
     }
 
@@ -5219,65 +5502,29 @@ const Tree = module.exports = createClass({
     
     
     const autoExpand = (item, currentDepth) => {
-      if (currentDepth >= props.autoExpandDepth || this.state.seen.has(item)) {
+      if (currentDepth >= this.props.autoExpandDepth || this.state.seen.has(item)) {
         return;
       }
 
-      props.onExpand(item);
+      this.props.onExpand(item);
       this.state.seen.add(item);
 
-      const children = props.getChildren(item);
+      const children = this.props.getChildren(item);
       const length = children.length;
       for (let i = 0; i < length; i++) {
         autoExpand(children[i], currentDepth + 1);
       }
     };
 
-    const roots = props.getRoots();
+    const roots = this.props.getRoots();
     const length = roots.length;
-    if (props.autoExpandAll) {
+    if (this.props.autoExpandAll) {
       for (let i = 0; i < length; i++) {
         autoExpand(roots[i], 0);
       }
     } else if (length != 0) {
       autoExpand(roots[0], 0);
     }
-  },
-
-  render() {
-    const traversal = this._dfsFromRoots();
-
-    const renderItem = i => {
-      let { item, depth } = traversal[i];
-      return TreeNode({
-        key: this.props.getKey(item, i),
-        index: i,
-        item: item,
-        depth: depth,
-        renderItem: this.props.renderItem,
-        focused: this.props.focused === item,
-        expanded: this.props.isExpanded(item),
-        hasChildren: !!this.props.getChildren(item).length,
-        onExpand: this._onExpand,
-        onCollapse: this._onCollapse,
-        onFocus: () => this._focus(i, item)
-      });
-    };
-
-    const style = Object.assign({}, this.props.style || {}, {
-      padding: 0,
-      margin: 0
-    });
-
-    return dom.div({
-      className: `tree ${this.props.className ? this.props.className : ""}`,
-      ref: "tree",
-      onKeyDown: this._onKeyDown,
-      onKeyPress: this._preventArrowKeyScrolling,
-      onKeyUp: this._preventArrowKeyScrolling,
-      onScroll: this._onScroll,
-      style
-    }, traversal.map((v, i) => renderItem(i)));
   },
 
   _preventArrowKeyScrolling(e) {
@@ -5459,7 +5706,7 @@ const Tree = module.exports = createClass({
         return;
 
       case "ArrowLeft":
-        if (this.props.isExpanded(this.props.focused) && this.props.getChildren(this.props.focused).length) {
+        if (this.props.isExpanded(this.props.focused) && this._nodeIsExpandable(this.props.focused)) {
           this._onCollapse(this.props.focused);
         } else {
           this._focusParentNode();
@@ -5469,8 +5716,9 @@ const Tree = module.exports = createClass({
       case "ArrowRight":
         if (!this.props.isExpanded(this.props.focused)) {
           this._onExpand(this.props.focused);
+        } else {
+          this._focusNextNode();
         }
-        return;
     }
   },
 
@@ -5548,8 +5796,95 @@ const Tree = module.exports = createClass({
     }
 
     this._focus(parentIndex, parent);
-  })
+  }),
+
+  _nodeIsExpandable: function (item) {
+    return this.props.isExpandable ? this.props.isExpandable(item) : !!this.props.getChildren(item).length;
+  },
+
+  render() {
+    const traversal = this._dfsFromRoots();
+    const {
+      focused
+    } = this.props;
+
+    const nodes = traversal.map((v, i) => {
+      const { item, depth } = traversal[i];
+      return TreeNode({
+        key: this.props.getKey(item, i),
+        index: i,
+        item,
+        depth,
+        renderItem: this.props.renderItem,
+        focused: focused === item,
+        expanded: this.props.isExpanded(item),
+        isExpandable: this._nodeIsExpandable(item),
+        onExpand: this._onExpand,
+        onCollapse: this._onCollapse,
+        onClick: e => {
+          this._focus(i, item);
+          if (this.props.isExpanded(item)) {
+            this.props.onCollapse(item);
+          } else {
+            this.props.onExpand(item, e.altKey);
+          }
+        }
+      });
+    });
+
+    const style = Object.assign({}, this.props.style || {}, {
+      padding: 0,
+      margin: 0
+    });
+
+    return dom.div({
+      className: `tree ${this.props.className ? this.props.className : ""}`,
+      ref: "tree",
+      role: "tree",
+      tabIndex: "0",
+      onKeyDown: this._onKeyDown,
+      onKeyPress: this._preventArrowKeyScrolling,
+      onKeyUp: this._preventArrowKeyScrolling,
+      onScroll: this._onScroll,
+      onFocus: ({ nativeEvent }) => {
+        if (focused || !nativeEvent || !this.refs.tree) {
+          return;
+        }
+
+        let { explicitOriginalTarget } = nativeEvent;
+        
+        
+        
+        if (explicitOriginalTarget !== this.refs.tree && !this.refs.tree.contains(explicitOriginalTarget)) {
+          this._focus(0, traversal[0].item);
+        }
+      },
+      onBlur: this._onBlur,
+      onClick: () => {
+        
+        this.refs.tree.focus();
+      },
+      "aria-label": this.props.label,
+      "aria-labelledby": this.props.labelledby,
+      "aria-activedescendant": focused && this.props.getKey(focused),
+      style
+    }, nodes);
+  }
 });
+
+exports.default = Tree;
+
+ }),
+
+ (function(module, exports) {
+
+module.exports = "<!-- This Source Code Form is subject to the terms of the Mozilla Public - License, v. 2.0. If a copy of the MPL was not distributed with this - file, You can obtain one at http://mozilla.org/MPL/2.0/. --><svg viewBox=\"0 0 16 16\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M8 13.4c-.5 0-.9-.2-1.2-.6L.4 5.2C0 4.7-.1 4.3.2 3.7S1 3 1.6 3h12.8c.6 0 1.2.1 1.4.7.3.6.2 1.1-.2 1.6l-6.4 7.6c-.3.4-.7.5-1.2.5z\"></path></svg>"
+
+ }),
+
+ (function(module, exports) {
+
+
 
  }),
 
@@ -5614,1496 +5949,87 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
 
  }),
 
- (function(module, exports, __webpack_require__) {
-
-var baseGet = __webpack_require__(62);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function get(object, path, defaultValue) {
-  var result = object == null ? undefined : baseGet(object, path);
-  return result === undefined ? defaultValue : result;
-}
-
-module.exports = get;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var castPath = __webpack_require__(22),
-    toKey = __webpack_require__(25);
-
-
-
-
-
-
-
-
-
-function baseGet(object, path) {
-  path = castPath(path, object);
-
-  var index = 0,
-      length = path.length;
-
-  while (object != null && index < length) {
-    object = object[toKey(path[index++])];
-  }
-  return (index && index == length) ? object : undefined;
-}
-
-module.exports = baseGet;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var isArray = __webpack_require__(5),
-    isSymbol = __webpack_require__(11);
-
-
-var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,
-    reIsPlainProp = /^\w*$/;
-
-
-
-
-
-
-
-
-
-function isKey(value, object) {
-  if (isArray(value)) {
-    return false;
-  }
-  var type = typeof value;
-  if (type == 'number' || type == 'symbol' || type == 'boolean' ||
-      value == null || isSymbol(value)) {
-    return true;
-  }
-  return reIsPlainProp.test(value) || !reIsDeepProp.test(value) ||
-    (object != null && value in Object(object));
-}
-
-module.exports = isKey;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-(function(global) {
-var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
-
-module.exports = freeGlobal;
-
-}.call(exports, __webpack_require__(65)))
-
- }),
-
  (function(module, exports) {
 
-var g;
+module.exports = __WEBPACK_EXTERNAL_MODULE_49__;
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
 
 
-g = (function() {
-	return this;
+let enumIndexedProperties = (() => {
+  var _ref = _asyncToGenerator(function* (objectClient, start, end) {
+    const { iterator } = yield objectClient.enumProperties({ ignoreNonIndexedProperties: true });
+    const response = yield iteratorSlice(iterator, start, end);
+    return response;
+  });
+
+  return function enumIndexedProperties(_x, _x2, _x3) {
+    return _ref.apply(this, arguments);
+  };
+})(); 
+
+
+
+let enumNonIndexedProperties = (() => {
+  var _ref2 = _asyncToGenerator(function* (objectClient, start, end) {
+    const { iterator } = yield objectClient.enumProperties({ ignoreIndexedProperties: true });
+
+    const response = yield iteratorSlice(iterator, start, end);
+    return response;
+  });
+
+  return function enumNonIndexedProperties(_x4, _x5, _x6) {
+    return _ref2.apply(this, arguments);
+  };
 })();
 
-try {
-	
-	g = g || Function("return this")() || (1,eval)("this");
-} catch(e) {
-	
-	if(typeof window === "object")
-		g = window;
-}
-
-
-
-
-
-module.exports = g;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var Symbol = __webpack_require__(13);
-
-
-var objectProto = Object.prototype;
-
-
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-
-
-
-
-
-var nativeObjectToString = objectProto.toString;
-
-
-var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
-
-
-
-
-
-
-
-
-function getRawTag(value) {
-  var isOwn = hasOwnProperty.call(value, symToStringTag),
-      tag = value[symToStringTag];
-
-  try {
-    value[symToStringTag] = undefined;
-    var unmasked = true;
-  } catch (e) {}
-
-  var result = nativeObjectToString.call(value);
-  if (unmasked) {
-    if (isOwn) {
-      value[symToStringTag] = tag;
-    } else {
-      delete value[symToStringTag];
-    }
-  }
-  return result;
-}
-
-module.exports = getRawTag;
-
-
- }),
-
- (function(module, exports) {
-
-
-var objectProto = Object.prototype;
-
-
-
-
-
-
-var nativeObjectToString = objectProto.toString;
-
-
-
-
-
-
-
-
-function objectToString(value) {
-  return nativeObjectToString.call(value);
-}
-
-module.exports = objectToString;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var memoizeCapped = __webpack_require__(69);
-
-
-var reLeadingDot = /^\./,
-    rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g;
-
-
-var reEscapeChar = /\\(\\)?/g;
-
-
-
-
-
-
-
-
-var stringToPath = memoizeCapped(function(string) {
-  var result = [];
-  if (reLeadingDot.test(string)) {
-    result.push('');
-  }
-  string.replace(rePropName, function(match, number, quote, string) {
-    result.push(quote ? string.replace(reEscapeChar, '$1') : (number || match));
-  });
-  return result;
-});
-
-module.exports = stringToPath;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var memoize = __webpack_require__(70);
-
-
-var MAX_MEMOIZE_SIZE = 500;
-
-
-
-
-
-
-
-
-
-function memoizeCapped(func) {
-  var result = memoize(func, function(key) {
-    if (cache.size === MAX_MEMOIZE_SIZE) {
-      cache.clear();
-    }
-    return key;
+let enumEntries = (() => {
+  var _ref3 = _asyncToGenerator(function* (objectClient, start, end) {
+    const { iterator } = yield objectClient.enumEntries();
+    const response = yield iteratorSlice(iterator, start, end);
+    return response;
   });
 
-  var cache = result.cache;
-  return result;
-}
-
-module.exports = memoizeCapped;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var MapCache = __webpack_require__(71);
-
-
-var FUNC_ERROR_TEXT = 'Expected a function';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function memoize(func, resolver) {
-  if (typeof func != 'function' || (resolver != null && typeof resolver != 'function')) {
-    throw new TypeError(FUNC_ERROR_TEXT);
-  }
-  var memoized = function() {
-    var args = arguments,
-        key = resolver ? resolver.apply(this, args) : args[0],
-        cache = memoized.cache;
-
-    if (cache.has(key)) {
-      return cache.get(key);
-    }
-    var result = func.apply(this, args);
-    memoized.cache = cache.set(key, result) || cache;
-    return result;
+  return function enumEntries(_x7, _x8, _x9) {
+    return _ref3.apply(this, arguments);
   };
-  memoized.cache = new (memoize.Cache || MapCache);
-  return memoized;
-}
+})();
 
+let enumSymbols = (() => {
+  var _ref4 = _asyncToGenerator(function* (objectClient, start, end) {
+    const { iterator } = yield objectClient.enumSymbols();
+    const response = yield iteratorSlice(iterator, start, end);
+    return response;
+  });
 
-memoize.Cache = MapCache;
-
-module.exports = memoize;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var mapCacheClear = __webpack_require__(72),
-    mapCacheDelete = __webpack_require__(93),
-    mapCacheGet = __webpack_require__(95),
-    mapCacheHas = __webpack_require__(96),
-    mapCacheSet = __webpack_require__(97);
-
-
-
-
-
-
-
-
-function MapCache(entries) {
-  var index = -1,
-      length = entries == null ? 0 : entries.length;
-
-  this.clear();
-  while (++index < length) {
-    var entry = entries[index];
-    this.set(entry[0], entry[1]);
-  }
-}
-
-
-MapCache.prototype.clear = mapCacheClear;
-MapCache.prototype['delete'] = mapCacheDelete;
-MapCache.prototype.get = mapCacheGet;
-MapCache.prototype.has = mapCacheHas;
-MapCache.prototype.set = mapCacheSet;
-
-module.exports = MapCache;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var Hash = __webpack_require__(73),
-    ListCache = __webpack_require__(85),
-    Map = __webpack_require__(92);
-
-
-
-
-
-
-
-
-function mapCacheClear() {
-  this.size = 0;
-  this.__data__ = {
-    'hash': new Hash,
-    'map': new (Map || ListCache),
-    'string': new Hash
+  return function enumSymbols(_x10, _x11, _x12) {
+    return _ref4.apply(this, arguments);
   };
+})();
+
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+
+function getPrototype(objectClient) {
+  return objectClient.getPrototype();
 }
 
-module.exports = mapCacheClear;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var hashClear = __webpack_require__(74),
-    hashDelete = __webpack_require__(81),
-    hashGet = __webpack_require__(82),
-    hashHas = __webpack_require__(83),
-    hashSet = __webpack_require__(84);
-
-
-
-
-
-
-
-
-function Hash(entries) {
-  var index = -1,
-      length = entries == null ? 0 : entries.length;
-
-  this.clear();
-  while (++index < length) {
-    var entry = entries[index];
-    this.set(entry[0], entry[1]);
-  }
+function iteratorSlice(iterator, start, end) {
+  start = start || 0;
+  const count = end ? end - start + 1 : iterator.count;
+  return iterator.slice(start, count);
 }
 
-
-Hash.prototype.clear = hashClear;
-Hash.prototype['delete'] = hashDelete;
-Hash.prototype.get = hashGet;
-Hash.prototype.has = hashHas;
-Hash.prototype.set = hashSet;
-
-module.exports = Hash;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var nativeCreate = __webpack_require__(6);
-
-
-
-
-
-
-
-
-function hashClear() {
-  this.__data__ = nativeCreate ? nativeCreate(null) : {};
-  this.size = 0;
-}
-
-module.exports = hashClear;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var isFunction = __webpack_require__(76),
-    isMasked = __webpack_require__(77),
-    isObject = __webpack_require__(24),
-    toSource = __webpack_require__(79);
-
-
-
-
-
-var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
-
-
-var reIsHostCtor = /^\[object .+?Constructor\]$/;
-
-
-var funcProto = Function.prototype,
-    objectProto = Object.prototype;
-
-
-var funcToString = funcProto.toString;
-
-
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-
-var reIsNative = RegExp('^' +
-  funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&')
-  .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
-);
-
-
-
-
-
-
-
-
-
-function baseIsNative(value) {
-  if (!isObject(value) || isMasked(value)) {
-    return false;
-  }
-  var pattern = isFunction(value) ? reIsNative : reIsHostCtor;
-  return pattern.test(toSource(value));
-}
-
-module.exports = baseIsNative;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var baseGetTag = __webpack_require__(12),
-    isObject = __webpack_require__(24);
-
-
-var asyncTag = '[object AsyncFunction]',
-    funcTag = '[object Function]',
-    genTag = '[object GeneratorFunction]',
-    proxyTag = '[object Proxy]';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isFunction(value) {
-  if (!isObject(value)) {
-    return false;
-  }
-  
-  
-  var tag = baseGetTag(value);
-  return tag == funcTag || tag == genTag || tag == asyncTag || tag == proxyTag;
-}
-
-module.exports = isFunction;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var coreJsData = __webpack_require__(78);
-
-
-var maskSrcKey = (function() {
-  var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
-  return uid ? ('Symbol(src)_1.' + uid) : '';
-}());
-
-
-
-
-
-
-
-
-function isMasked(func) {
-  return !!maskSrcKey && (maskSrcKey in func);
-}
-
-module.exports = isMasked;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var root = __webpack_require__(14);
-
-
-var coreJsData = root['__core-js_shared__'];
-
-module.exports = coreJsData;
-
-
- }),
-
- (function(module, exports) {
-
-
-var funcProto = Function.prototype;
-
-
-var funcToString = funcProto.toString;
-
-
-
-
-
-
-
-
-function toSource(func) {
-  if (func != null) {
-    try {
-      return funcToString.call(func);
-    } catch (e) {}
-    try {
-      return (func + '');
-    } catch (e) {}
-  }
-  return '';
-}
-
-module.exports = toSource;
-
-
- }),
-
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-function getValue(object, key) {
-  return object == null ? undefined : object[key];
-}
-
-module.exports = getValue;
-
-
- }),
-
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-
-
-function hashDelete(key) {
-  var result = this.has(key) && delete this.__data__[key];
-  this.size -= result ? 1 : 0;
-  return result;
-}
-
-module.exports = hashDelete;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var nativeCreate = __webpack_require__(6);
-
-
-var HASH_UNDEFINED = '__lodash_hash_undefined__';
-
-
-var objectProto = Object.prototype;
-
-
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-
-
-
-
-
-
-
-
-
-function hashGet(key) {
-  var data = this.__data__;
-  if (nativeCreate) {
-    var result = data[key];
-    return result === HASH_UNDEFINED ? undefined : result;
-  }
-  return hasOwnProperty.call(data, key) ? data[key] : undefined;
-}
-
-module.exports = hashGet;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var nativeCreate = __webpack_require__(6);
-
-
-var objectProto = Object.prototype;
-
-
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-
-
-
-
-
-
-
-
-
-function hashHas(key) {
-  var data = this.__data__;
-  return nativeCreate ? (data[key] !== undefined) : hasOwnProperty.call(data, key);
-}
-
-module.exports = hashHas;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var nativeCreate = __webpack_require__(6);
-
-
-var HASH_UNDEFINED = '__lodash_hash_undefined__';
-
-
-
-
-
-
-
-
-
-
-
-function hashSet(key, value) {
-  var data = this.__data__;
-  this.size += this.has(key) ? 0 : 1;
-  data[key] = (nativeCreate && value === undefined) ? HASH_UNDEFINED : value;
-  return this;
-}
-
-module.exports = hashSet;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var listCacheClear = __webpack_require__(86),
-    listCacheDelete = __webpack_require__(87),
-    listCacheGet = __webpack_require__(89),
-    listCacheHas = __webpack_require__(90),
-    listCacheSet = __webpack_require__(91);
-
-
-
-
-
-
-
-
-function ListCache(entries) {
-  var index = -1,
-      length = entries == null ? 0 : entries.length;
-
-  this.clear();
-  while (++index < length) {
-    var entry = entries[index];
-    this.set(entry[0], entry[1]);
-  }
-}
-
-
-ListCache.prototype.clear = listCacheClear;
-ListCache.prototype['delete'] = listCacheDelete;
-ListCache.prototype.get = listCacheGet;
-ListCache.prototype.has = listCacheHas;
-ListCache.prototype.set = listCacheSet;
-
-module.exports = ListCache;
-
-
- }),
-
- (function(module, exports) {
-
-
-
-
-
-
-
-
-function listCacheClear() {
-  this.__data__ = [];
-  this.size = 0;
-}
-
-module.exports = listCacheClear;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var assocIndexOf = __webpack_require__(7);
-
-
-var arrayProto = Array.prototype;
-
-
-var splice = arrayProto.splice;
-
-
-
-
-
-
-
-
-
-
-function listCacheDelete(key) {
-  var data = this.__data__,
-      index = assocIndexOf(data, key);
-
-  if (index < 0) {
-    return false;
-  }
-  var lastIndex = data.length - 1;
-  if (index == lastIndex) {
-    data.pop();
-  } else {
-    splice.call(data, index, 1);
-  }
-  --this.size;
-  return true;
-}
-
-module.exports = listCacheDelete;
-
-
- }),
-
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function eq(value, other) {
-  return value === other || (value !== value && other !== other);
-}
-
-module.exports = eq;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var assocIndexOf = __webpack_require__(7);
-
-
-
-
-
-
-
-
-
-
-function listCacheGet(key) {
-  var data = this.__data__,
-      index = assocIndexOf(data, key);
-
-  return index < 0 ? undefined : data[index][1];
-}
-
-module.exports = listCacheGet;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var assocIndexOf = __webpack_require__(7);
-
-
-
-
-
-
-
-
-
-
-function listCacheHas(key) {
-  return assocIndexOf(this.__data__, key) > -1;
-}
-
-module.exports = listCacheHas;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var assocIndexOf = __webpack_require__(7);
-
-
-
-
-
-
-
-
-
-
-
-function listCacheSet(key, value) {
-  var data = this.__data__,
-      index = assocIndexOf(data, key);
-
-  if (index < 0) {
-    ++this.size;
-    data.push([key, value]);
-  } else {
-    data[index][1] = value;
-  }
-  return this;
-}
-
-module.exports = listCacheSet;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var getNative = __webpack_require__(23),
-    root = __webpack_require__(14);
-
-
-var Map = getNative(root, 'Map');
-
-module.exports = Map;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var getMapData = __webpack_require__(8);
-
-
-
-
-
-
-
-
-
-
-function mapCacheDelete(key) {
-  var result = getMapData(this, key)['delete'](key);
-  this.size -= result ? 1 : 0;
-  return result;
-}
-
-module.exports = mapCacheDelete;
-
-
- }),
-
- (function(module, exports) {
-
-
-
-
-
-
-
-
-function isKeyable(value) {
-  var type = typeof value;
-  return (type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean')
-    ? (value !== '__proto__')
-    : (value === null);
-}
-
-module.exports = isKeyable;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var getMapData = __webpack_require__(8);
-
-
-
-
-
-
-
-
-
-
-function mapCacheGet(key) {
-  return getMapData(this, key).get(key);
-}
-
-module.exports = mapCacheGet;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var getMapData = __webpack_require__(8);
-
-
-
-
-
-
-
-
-
-
-function mapCacheHas(key) {
-  return getMapData(this, key).has(key);
-}
-
-module.exports = mapCacheHas;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var getMapData = __webpack_require__(8);
-
-
-
-
-
-
-
-
-
-
-
-function mapCacheSet(key, value) {
-  var data = getMapData(this, key),
-      size = data.size;
-
-  data.set(key, value);
-  this.size += data.size == size ? 0 : 1;
-  return this;
-}
-
-module.exports = mapCacheSet;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var baseToString = __webpack_require__(99);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function toString(value) {
-  return value == null ? '' : baseToString(value);
-}
-
-module.exports = toString;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var Symbol = __webpack_require__(13),
-    arrayMap = __webpack_require__(100),
-    isArray = __webpack_require__(5),
-    isSymbol = __webpack_require__(11);
-
-
-var INFINITY = 1 / 0;
-
-
-var symbolProto = Symbol ? Symbol.prototype : undefined,
-    symbolToString = symbolProto ? symbolProto.toString : undefined;
-
-
-
-
-
-
-
-
-
-function baseToString(value) {
-  
-  if (typeof value == 'string') {
-    return value;
-  }
-  if (isArray(value)) {
-    
-    return arrayMap(value, baseToString) + '';
-  }
-  if (isSymbol(value)) {
-    return symbolToString ? symbolToString.call(value) : '';
-  }
-  var result = (value + '');
-  return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
-}
-
-module.exports = baseToString;
-
-
- }),
-
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-
-function arrayMap(array, iteratee) {
-  var index = -1,
-      length = array == null ? 0 : array.length,
-      result = Array(length);
-
-  while (++index < length) {
-    result[index] = iteratee(array[index], index, array);
-  }
-  return result;
-}
-
-module.exports = arrayMap;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var baseHas = __webpack_require__(102),
-    hasPath = __webpack_require__(103);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function has(object, path) {
-  return object != null && hasPath(object, path, baseHas);
-}
-
-module.exports = has;
-
-
- }),
-
- (function(module, exports) {
-
-
-var objectProto = Object.prototype;
-
-
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-
-
-
-
-
-
-
-
-function baseHas(object, key) {
-  return object != null && hasOwnProperty.call(object, key);
-}
-
-module.exports = baseHas;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var castPath = __webpack_require__(22),
-    isArguments = __webpack_require__(104),
-    isArray = __webpack_require__(5),
-    isIndex = __webpack_require__(106),
-    isLength = __webpack_require__(107),
-    toKey = __webpack_require__(25);
-
-
-
-
-
-
-
-
-
-
-function hasPath(object, path, hasFunc) {
-  path = castPath(path, object);
-
-  var index = -1,
-      length = path.length,
-      result = false;
-
-  while (++index < length) {
-    var key = toKey(path[index]);
-    if (!(result = object != null && hasFunc(object, key))) {
-      break;
-    }
-    object = object[key];
-  }
-  if (result || ++index != length) {
-    return result;
-  }
-  length = object == null ? 0 : object.length;
-  return !!length && isLength(length) && isIndex(key, length) &&
-    (isArray(object) || isArguments(object));
-}
-
-module.exports = hasPath;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var baseIsArguments = __webpack_require__(105),
-    isObjectLike = __webpack_require__(15);
-
-
-var objectProto = Object.prototype;
-
-
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-
-var propertyIsEnumerable = objectProto.propertyIsEnumerable;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var isArguments = baseIsArguments(function() { return arguments; }()) ? baseIsArguments : function(value) {
-  return isObjectLike(value) && hasOwnProperty.call(value, 'callee') &&
-    !propertyIsEnumerable.call(value, 'callee');
+module.exports = {
+  enumEntries,
+  enumIndexedProperties,
+  enumNonIndexedProperties,
+  enumSymbols,
+  getPrototype
 };
-
-module.exports = isArguments;
-
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-var baseGetTag = __webpack_require__(12),
-    isObjectLike = __webpack_require__(15);
-
-
-var argsTag = '[object Arguments]';
-
-
-
-
-
-
-
-
-function baseIsArguments(value) {
-  return isObjectLike(value) && baseGetTag(value) == argsTag;
-}
-
-module.exports = baseIsArguments;
-
-
- }),
-
- (function(module, exports) {
-
-
-var MAX_SAFE_INTEGER = 9007199254740991;
-
-
-var reIsUint = /^(?:0|[1-9]\d*)$/;
-
-
-
-
-
-
-
-
-
-function isIndex(value, length) {
-  length = length == null ? MAX_SAFE_INTEGER : length;
-  return !!length &&
-    (typeof value == 'number' || reIsUint.test(value)) &&
-    (value > -1 && value % 1 == 0 && value < length);
-}
-
-module.exports = isIndex;
-
-
- }),
-
- (function(module, exports) {
-
-
-var MAX_SAFE_INTEGER = 9007199254740991;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isLength(value) {
-  return typeof value == 'number' &&
-    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
-}
-
-module.exports = isLength;
-
 
  })
  ]);
