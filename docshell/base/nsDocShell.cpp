@@ -8315,10 +8315,15 @@ nsDocShell::CanSavePresentation(uint32_t aLoadType,
   }
 
   
-  nsCOMPtr<nsIDocShellTreeItem> root;
-  GetSameTypeParent(getter_AddRefs(root));
-  if (root && root != this) {
-    return false;  
+  
+  bool cacheFrames =
+    Preferences::GetBool("browser.sessionhistory.cache_subframes", false);
+  if (!cacheFrames) {
+    nsCOMPtr<nsIDocShellTreeItem> root;
+    GetSameTypeParent(getter_AddRefs(root));
+    if (root && root != this) {
+      return false;  
+    }
   }
 
   
