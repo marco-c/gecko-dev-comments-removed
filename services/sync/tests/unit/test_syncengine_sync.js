@@ -665,125 +665,29 @@ add_task(async function test_processIncoming_resume_toFetch() {
 });
 
 
-add_task(async function test_processIncoming_applyIncomingBatchSize_smaller() {
-  _("Ensure that a number of incoming items less than applyIncomingBatchSize is still applied.");
-
-  
-  const APPLY_BATCH_SIZE = 10;
-  let engine = makeRotaryEngine();
-  engine.applyIncomingBatchSize = APPLY_BATCH_SIZE;
-  engine._store._applyIncomingBatch = engine._store.applyIncomingBatch;
-  engine._store.applyIncomingBatch = async function(records) {
-    let failed1 = records.shift();
-    let failed2 = records.pop();
-    await this._applyIncomingBatch(records);
-    return [failed1.id, failed2.id];
-  };
-
-  
-  let collection = new ServerCollection();
-  for (let i = 0; i < APPLY_BATCH_SIZE - 1; i++) {
-    let id = "record-no-" + i;
-    let payload = encryptPayload({id, denomination: "Record No. " + id});
-    collection.insert(id, payload);
-  }
-
-  let server = sync_httpd_setup({
-      "/1.1/foo/storage/rotary": collection.handler()
-  });
-
-  await SyncTestingInfrastructure(server);
-
-  let meta_global = Service.recordManager.set(engine.metaURL,
-                                              new WBORecord(engine.metaURL));
-  meta_global.payload.engines = {rotary: {version: engine.version,
-                                         syncID: engine.syncID}};
-  try {
-
-    
-    do_check_empty(engine._store.items);
-
-    await engine._syncStartup();
-    await engine._processIncoming();
-
-    
-    do_check_attribute_count(engine._store.items, APPLY_BATCH_SIZE - 1 - 2);
-    do_check_eq(engine.toFetch.length, 0);
-    do_check_eq(engine.previousFailed.length, 2);
-    do_check_eq(engine.previousFailed[0], "record-no-0");
-    do_check_eq(engine.previousFailed[1], "record-no-8");
-
-  } finally {
-    await cleanAndGo(engine, server);
-  }
-});
-
-
-add_task(async function test_processIncoming_applyIncomingBatchSize_multiple() {
-  _("Ensure that incoming items are applied according to applyIncomingBatchSize.");
-
-  const APPLY_BATCH_SIZE = 10;
-
-  
-  let engine = makeRotaryEngine();
-  engine.applyIncomingBatchSize = APPLY_BATCH_SIZE;
-  let batchCalls = 0;
-  engine._store._applyIncomingBatch = engine._store.applyIncomingBatch;
-  engine._store.applyIncomingBatch = async function(records) {
-    batchCalls += 1;
-    do_check_eq(records.length, APPLY_BATCH_SIZE);
-    await this._applyIncomingBatch.apply(this, arguments);
-  };
-
-  
-  let collection = new ServerCollection();
-  for (let i = 0; i < APPLY_BATCH_SIZE * 3; i++) {
-    let id = "record-no-" + i;
-    let payload = encryptPayload({id, denomination: "Record No. " + id});
-    collection.insert(id, payload);
-  }
-
-  let server = sync_httpd_setup({
-      "/1.1/foo/storage/rotary": collection.handler()
-  });
-
-  await SyncTestingInfrastructure(server);
-
-  let meta_global = Service.recordManager.set(engine.metaURL,
-                                              new WBORecord(engine.metaURL));
-  meta_global.payload.engines = {rotary: {version: engine.version,
-                                         syncID: engine.syncID}};
-  try {
-
-    
-    do_check_empty(engine._store.items);
-
-    await engine._syncStartup();
-    await engine._processIncoming();
-
-    
-    do_check_eq(batchCalls, 3);
-    do_check_attribute_count(engine._store.items, APPLY_BATCH_SIZE * 3);
-
-  } finally {
-    await cleanAndGo(engine, server);
-  }
-});
-
-
 add_task(async function test_processIncoming_notify_count() {
   _("Ensure that failed records are reported only once.");
 
-  const APPLY_BATCH_SIZE = 5;
   const NUMBER_OF_RECORDS = 15;
 
   
   let engine = makeRotaryEngine();
-  engine.applyIncomingBatchSize = APPLY_BATCH_SIZE;
   engine._store._applyIncomingBatch = engine._store.applyIncomingBatch;
   engine._store.applyIncomingBatch = async function(records) {
-    await engine._store._applyIncomingBatch(records.slice(1));
-    return [records[0].id];
+    let recordsToApply = [], recordsToFail = [];
+    for (let record of records) {
+      if (record.id == "record-no-0") {
+        recordsToFail.push(record);
+      } else if (records.length == NUMBER_OF_RECORDS &&
+                 (record.id == "record-no-5" || record.id == "record-no-10")) {
+        
+        recordsToFail.push(record);
+      } else {
+        recordsToApply.push(record);
+      }
+    }
+    await engine._store._applyIncomingBatch(recordsToApply);
+    return recordsToFail.map(record => record.id);
   };
 
   
@@ -861,18 +765,28 @@ add_task(async function test_processIncoming_notify_count() {
 
 add_task(async function test_processIncoming_previousFailed() {
   _("Ensure that failed records are retried.");
-  Svc.Prefs.set("client.type", "mobile");
 
-  const APPLY_BATCH_SIZE = 4;
   const NUMBER_OF_RECORDS = 14;
 
   
   let engine = makeRotaryEngine();
-  engine.mobileGUIDFetchBatchSize = engine.applyIncomingBatchSize = APPLY_BATCH_SIZE;
   engine._store._applyIncomingBatch = engine._store.applyIncomingBatch;
   engine._store.applyIncomingBatch = async function(records) {
-    await engine._store._applyIncomingBatch(records.slice(2));
-    return [records[0].id, records[1].id];
+    let recordsToApply = [], recordsToFail = [];
+    for (let record of records) {
+      if (record.id == "record-no-0" || record.id == "record-no-1" ||
+          record.id == "record-no-8" || record.id == "record-no-9") {
+        recordsToFail.push(record);
+      } else if (records.length == NUMBER_OF_RECORDS &&
+                 (record.id == "record-no-4" || record.id == "record-no-5" ||
+                  record.id == "record-no-12" || record.id == "record-no-13")) {
+        recordsToFail.push(record);
+      } else {
+        recordsToApply.push(record);
+      }
+    }
+    await engine._store._applyIncomingBatch(recordsToApply);
+    return recordsToFail.map(record => record.id);
   };
 
   
@@ -971,7 +885,6 @@ add_task(async function test_processIncoming_failed_records() {
                          "record-no-" + (2 + APPLY_BATCH_SIZE * 3),
                          "record-no-" + (1 + APPLY_BATCH_SIZE * 3)];
   let engine = makeRotaryEngine();
-  engine.applyIncomingBatchSize = APPLY_BATCH_SIZE;
 
   engine.__reconcile = engine._reconcile;
   engine._reconcile = async function _reconcile(record) {

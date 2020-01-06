@@ -52,7 +52,8 @@ add_task(async function test_history_download_limit() {
 
   let backlogAfterFirstSync = engine.toFetch.slice(0);
   deepEqual(backlogAfterFirstSync, ["place0000000", "place0000001",
-    "place0000002", "place0000003", "place0000004"]);
+    "place0000002", "place0000003", "place0000004", "place0000005",
+    "place0000006", "place0000007", "place0000008", "place0000009"]);
 
   
   equal(engine.lastSync, lastSync + 15);
@@ -67,7 +68,6 @@ add_task(async function test_history_download_limit() {
   let backlogAfterSecondSync = engine.toFetch.slice(0);
   deepEqual(backlogAfterFirstSync, backlogAfterSecondSync);
 
-  
   
   let newWBO = new ServerWBO("placeAAAAAAA", encryptPayload({
     id: "placeAAAAAAA",
@@ -99,8 +99,13 @@ add_task(async function test_history_download_limit() {
   ping = await sync_engine_and_validate_telem(engine, false);
   deepEqual(ping.engines[0].incoming, { applied: 5 });
 
-  deepEqual(engine.toFetch, []);
+  deepEqual(engine.toFetch, ["place0000005", "place0000006", "place0000007",
+    "place0000008", "place0000009"]);
 
   
-  
+  engine.lastModified = collection.modified;
+  ping = await sync_engine_and_validate_telem(engine, false);
+  deepEqual(ping.engines[0].incoming, { applied: 5 });
+
+  deepEqual(engine.toFetch, []);
 });
