@@ -25,7 +25,7 @@ gfxQuartzNativeDrawing::BeginNativeDrawing()
 
   DrawTarget *dt = mDrawTarget;
   if (dt->IsDualDrawTarget() || dt->IsTiledDrawTarget() ||
-      dt->GetBackendType() != BackendType::SKIA) {
+      dt->GetBackendType() != BackendType::SKIA || dt->IsRecording()) {
     
     Matrix transform = dt->GetTransform();
 
