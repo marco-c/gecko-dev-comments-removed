@@ -4876,6 +4876,8 @@ pref("extensions.webextensions.themes.enabled", false);
 pref("extensions.webextensions.themes.icons.enabled", false);
 pref("extensions.webextensions.remote", false);
 
+pref("extensions.webextensions.protocol.remote", true);
+
 pref("layers.popups.compositing.enabled", false);
 
 

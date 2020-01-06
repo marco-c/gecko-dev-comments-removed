@@ -1350,14 +1350,14 @@ public:
 
 
   static nsIFrame*
-  FirstContinuationOrIBSplitSibling(nsIFrame *aFrame);
+  FirstContinuationOrIBSplitSibling(const nsIFrame *aFrame);
 
   
 
 
 
   static nsIFrame*
-  LastContinuationOrIBSplitSibling(nsIFrame *aFrame);
+  LastContinuationOrIBSplitSibling(const nsIFrame *aFrame);
 
   
 

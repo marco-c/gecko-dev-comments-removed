@@ -8032,13 +8032,19 @@ nsTableFrame::UpdateStyleOfOwnedAnonBoxesForTableWrapper(
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
   uint32_t equalStructs, samePointerStructs; 
   nsChangeHint wrapperHint = aWrapperFrame->StyleContext()->CalcStyleDifference(
     newContext,
     &equalStructs,
     &samePointerStructs);
-  wrapperHint =
-    NS_RemoveSubsumedHints(wrapperHint, aRestyleState.ChangesHandled());
   if (wrapperHint) {
     aRestyleState.ChangeList().AppendChange(
       aWrapperFrame, aWrapperFrame->GetContent(), wrapperHint);
