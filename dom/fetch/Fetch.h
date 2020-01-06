@@ -192,11 +192,28 @@ public:
 
   
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   void
-  SetBodyUsed()
-  {
-    mBodyUsed = true;
-  }
+  SetBodyUsed(JSContext* aCx, ErrorResult& aRv);
 
   const nsCString&
   MimeType() const

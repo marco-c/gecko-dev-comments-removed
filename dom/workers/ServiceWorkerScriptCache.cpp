@@ -423,8 +423,10 @@ private:
     Optional<RequestOrUSVString> request;
     CacheQueryOptions options;
     ErrorResult error;
-    RefPtr<Promise> promise = mOldCache->Keys(request, options, error);
+    RefPtr<Promise> promise = mOldCache->Keys(aCx, request, options, error);
     if (NS_WARN_IF(error.Failed())) {
+      
+      MOZ_ASSERT(!error.IsJSException());
       rv = error.StealNSResult();
       return;
     }
@@ -521,7 +523,7 @@ private:
     MOZ_ASSERT(mPendingCount == 0);
     for (uint32_t i = 0; i < mCNList.Length(); ++i) {
       
-      rv = WriteToCache(cache, mCNList[i]);
+      rv = WriteToCache(aCx, cache, mCNList[i]);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return;
       }
@@ -559,7 +561,7 @@ private:
   }
 
   nsresult
-  WriteToCache(Cache* aCache, CompareNetwork* aCN)
+  WriteToCache(JSContext* aCx, Cache* aCache, CompareNetwork* aCN)
   {
     AssertIsOnMainThread();
     MOZ_ASSERT(aCache);
@@ -602,8 +604,10 @@ private:
     
     
     
-    RefPtr<Promise> cachePromise = aCache->Put(request, *response, result);
+    RefPtr<Promise> cachePromise = aCache->Put(aCx, request, *response, result);
     if (NS_WARN_IF(result.Failed())) {
+      
+      MOZ_ASSERT(!result.IsJSException());
       MOZ_ASSERT(!result.IsErrorWithMessage());
       return result.StealNSResult();
     }
@@ -1003,12 +1007,19 @@ CompareCache::Initialize(Cache* const aCache, const nsAString& aURL)
   MOZ_ASSERT(aCache);
   MOZ_DIAGNOSTIC_ASSERT(mState == WaitingForInitialization);
 
+  
+  
+  AutoJSAPI jsapi;
+  jsapi.Init();
+
   RequestOrUSVString request;
   request.SetAsUSVString().Rebind(aURL.Data(), aURL.Length());
   ErrorResult error;
   CacheQueryOptions params;
-  RefPtr<Promise> promise = aCache->Match(request, params, error);
+  RefPtr<Promise> promise = aCache->Match(jsapi.cx(), request, params, error);
   if (NS_WARN_IF(error.Failed())) {
+    
+    MOZ_ASSERT(!error.IsJSException());
     mState = Finished;
     return error.StealNSResult();
   }
