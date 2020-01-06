@@ -614,9 +614,9 @@ nsStyleContext::Destroy()
     
     presContext->PresShell()->
       FreeByObjectID(eArenaObjectID_GeckoStyleContext, this);
-    } else {
-      delete static_cast<ServoStyleContext*>(this);
-    }
+  } else {
+    delete static_cast<ServoStyleContext*>(this);
+  }
 }
 
 already_AddRefed<nsStyleContext>
