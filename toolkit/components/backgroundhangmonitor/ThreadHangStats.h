@@ -3,18 +3,30 @@
 
 
 
+#ifndef mozilla_BackgroundHangTelemetry_h
+#define mozilla_BackgroundHangTelemetry_h
 
-#ifndef mozilla_HangStack_h
-#define mozilla_HangStack_h
-
-#include "ipc/IPCMessageUtils.h"
-#include "mozilla/ProcessedStack.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/Array.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/HangAnnotations.h"
 #include "mozilla/Move.h"
-#include "nsTArray.h"
-#include "nsIHangDetails.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/PodOperations.h"
+#include "mozilla/Vector.h"
+#include "mozilla/CombinedStacks.h"
+
+#include "nsString.h"
+#include "prinrval.h"
+#include "jsapi.h"
 
 namespace mozilla {
+namespace Telemetry {
+
+
+
+
+
+static const uint32_t kMaximumNativeHangStacks = 300;
 
 
 
@@ -42,7 +54,6 @@ private:
 public:
   HangStack() {}
 
-  HangStack(const HangStack& aOther);
   HangStack(HangStack&& aOther)
     : mImpl(mozilla::Move(aOther.mImpl))
     , mBuffer(mozilla::Move(aOther.mBuffer))
@@ -125,20 +136,6 @@ public:
 };
 
 } 
-
-namespace IPC {
-
-template<>
-class ParamTraits<mozilla::HangStack>
-{
-public:
-  typedef mozilla::HangStack paramType;
-  static void Write(Message* aMsg, const paramType& aParam);
-  static bool Read(const Message* aMsg,
-                   PickleIterator* aIter,
-                   paramType* aResult);
-};
-
 } 
 
 #endif 

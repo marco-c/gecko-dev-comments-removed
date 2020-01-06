@@ -7,8 +7,8 @@
 #ifndef mozilla_ThreadStackHelper_h
 #define mozilla_ThreadStackHelper_h
 
+#include "mozilla/ThreadHangStats.h"
 #include "js/ProfilingStack.h"
-#include "HangDetails.h"
 
 #include <stddef.h>
 
@@ -53,13 +53,13 @@ namespace mozilla {
 class ThreadStackHelper
 {
 public:
-  typedef HangStack Stack;
+  typedef Telemetry::HangStack Stack;
 
   
   
   
   
-  typedef NativeHangStack NativeStack;
+  typedef Telemetry::NativeHangStack NativeStack;
 
 private:
 #ifdef MOZ_THREADSTACKHELPER_PSEUDO
