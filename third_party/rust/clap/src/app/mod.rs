@@ -4,9 +4,10 @@ mod macros;
 pub mod parser;
 mod meta;
 mod help;
+mod validator;
+mod usage;
 
 
-use std::borrow::Borrow;
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::fmt;
@@ -24,8 +25,7 @@ use yaml_rust::Yaml;
 
 use app::help::Help;
 use app::parser::Parser;
-use args::{ArgKind, AnyArg, Arg, ArgGroup, ArgMatcher, ArgMatches, ArgSettings};
-use errors::Error;
+use args::{AnyArg, Arg, ArgGroup, ArgMatcher, ArgMatches, ArgSettings};
 use errors::Result as ClapResult;
 pub use self::settings::AppSettings;
 use completions::Shell;
@@ -210,8 +210,68 @@ impl<'a, 'b> App<'a, 'b> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     pub fn about<S: Into<&'b str>>(mut self, about: S) -> Self {
         self.p.meta.about = Some(about.into());
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn long_about<S: Into<&'b str>>(mut self, about: S) -> Self {
+        self.p.meta.long_about = Some(about.into());
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn name<S: Into<String>>(mut self, name: S) -> Self {
+        self.p.meta.name = name.into();
         self
     }
 
@@ -266,8 +326,43 @@ impl<'a, 'b> App<'a, 'b> {
     
     
     
+    
+    
+    
+    
     pub fn version<S: Into<&'b str>>(mut self, ver: S) -> Self {
         self.p.meta.version = Some(ver.into());
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn long_version<S: Into<&'b str>>(mut self, ver: S) -> Self {
+        self.p.meta.long_version = Some(ver.into());
         self
     }
 
@@ -391,6 +486,47 @@ impl<'a, 'b> App<'a, 'b> {
         self
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn help_message<S: Into<&'a str>>(mut self, s: S) -> Self {
+        self.p.help_message = Some(s.into());
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn version_message<S: Into<&'a str>>(mut self, s: S) -> Self {
+        self.p.version_message = Some(s.into());
+        self
+    }
+
+    
+    
+    
     
     
     
@@ -640,8 +776,8 @@ impl<'a, 'b> App<'a, 'b> {
     
     
     
-    pub fn arg<A: Borrow<Arg<'a, 'b>> + 'a>(mut self, a: A) -> Self {
-        self.p.add_arg(a.borrow());
+    pub fn arg<A: Into<Arg<'a, 'b>>>(mut self, a: A) -> Self {
+        self.p.add_arg(a.into());
         self
     }
 
@@ -661,7 +797,7 @@ impl<'a, 'b> App<'a, 'b> {
     
     pub fn args(mut self, args: &[Arg<'a, 'b>]) -> Self {
         for arg in args {
-            self.p.add_arg(arg);
+            self.p.add_arg_ref(arg);
         }
         self
     }
@@ -684,7 +820,7 @@ impl<'a, 'b> App<'a, 'b> {
     
     
     pub fn arg_from_usage(mut self, usage: &'a str) -> Self {
-        self.p.add_arg(&Arg::from_usage(usage));
+        self.p.add_arg(Arg::from_usage(usage));
         self
     }
 
@@ -716,7 +852,7 @@ impl<'a, 'b> App<'a, 'b> {
             if l.is_empty() {
                 continue;
             }
-            self.p.add_arg(&Arg::from_usage(l));
+            self.p.add_arg(Arg::from_usage(l));
         }
         self
     }
@@ -1008,6 +1144,12 @@ impl<'a, 'b> App<'a, 'b> {
     
     
     
+    
+    
+    
+    
+    
+    
     pub fn print_help(&mut self) -> ClapResult<()> {
         
         
@@ -1033,6 +1175,46 @@ impl<'a, 'b> App<'a, 'b> {
     
     
     
+    
+    
+    
+    
+    
+    pub fn print_long_help(&mut self) -> ClapResult<()> {
+        
+        
+        self.p.propogate_globals();
+        self.p.propogate_settings();
+        self.p.derive_display_order();
+
+        self.p.create_help_and_version();
+        let out = io::stdout();
+        let mut buf_w = BufWriter::new(out.lock());
+        self.write_long_help(&mut buf_w)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn write_help<W: Write>(&self, w: &mut W) -> ClapResult<()> {
         
         
@@ -1043,9 +1225,41 @@ impl<'a, 'b> App<'a, 'b> {
         
         
 
-        Help::write_app_help(w, self)
+        Help::write_app_help(w, self, false)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn write_long_help<W: Write>(&mut self, w: &mut W) -> ClapResult<()> {
+        self.p.propogate_globals();
+        self.p.propogate_settings();
+        self.p.derive_display_order();
+        self.p.create_help_and_version();
+
+        Help::write_app_help(w, self, true)
+    }
+
+    
+    
+    
+    
+    
     
     
     
@@ -1059,9 +1273,29 @@ impl<'a, 'b> App<'a, 'b> {
     
     
     pub fn write_version<W: Write>(&self, w: &mut W) -> ClapResult<()> {
-        self.p.write_version(w).map_err(From::from)
+        self.p.write_version(w, false).map_err(From::from)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn write_long_version<W: Write>(&self, w: &mut W) -> ClapResult<()> {
+        self.p.write_version(w, true).map_err(From::from)
+    }
 
     
     
@@ -1268,7 +1502,21 @@ impl<'a, 'b> App<'a, 'b> {
     {
         self.get_matches_from_safe_borrow(itr).unwrap_or_else(|e| {
             
-            self.maybe_wait_for_exit(e);
+            if e.use_stderr() {
+                wlnerr!("{}", e.message);
+                if self.p.is_set(AppSettings::WaitOnError) {
+                    wlnerr!("\nPress [ENTER] / [RETURN] to continue...");
+                    let mut s = String::new();
+                    let i = io::stdin();
+                    i.lock().read_line(&mut s).unwrap();
+                }
+                drop(self);
+                drop(e);
+                process::exit(1);
+            }
+
+            drop(self);
+            e.exit()
         })
     }
 
@@ -1373,28 +1621,11 @@ impl<'a, 'b> App<'a, 'b> {
 
         if self.p.is_set(AppSettings::PropagateGlobalValuesDown) {
             for a in &self.p.global_args {
-                matcher.propagate(a.name);
+                matcher.propagate(a.b.name);
             }
         }
 
         Ok(matcher.into())
-    }
-
-    
-    
-    fn maybe_wait_for_exit(&self, e: Error) -> ! {
-        if e.use_stderr() {
-            wlnerr!("{}", e.message);
-            if self.p.is_set(AppSettings::WaitOnError) {
-                wlnerr!("\nPress [ENTER] / [RETURN] to continue...");
-                let mut s = String::new();
-                let i = io::stdin();
-                i.lock().read_line(&mut s).unwrap();
-            }
-            process::exit(1);
-        }
-
-        e.exit()
     }
 }
 
@@ -1425,6 +1656,7 @@ impl<'a> From<&'a Yaml> for App<'a, 'a> {
         }
 
         yaml_str!(a, yaml, version);
+        yaml_str!(a, yaml, author);
         yaml_str!(a, yaml, bin_name);
         yaml_str!(a, yaml, about);
         yaml_str!(a, yaml, before_help);
@@ -1434,6 +1666,8 @@ impl<'a> From<&'a Yaml> for App<'a, 'a> {
         yaml_str!(a, yaml, help);
         yaml_str!(a, yaml, help_short);
         yaml_str!(a, yaml, version_short);
+        yaml_str!(a, yaml, help_message);
+        yaml_str!(a, yaml, version_message);
         yaml_str!(a, yaml, alias);
         yaml_str!(a, yaml, visible_alias);
 
@@ -1535,15 +1769,13 @@ impl<'n, 'e> AnyArg<'n, 'e> for App<'n, 'e> {
     fn name(&self) -> &'n str {
         unreachable!("App struct does not support AnyArg::name, this is a bug!")
     }
-    fn id(&self) -> usize { self.p.id }
-    fn kind(&self) -> ArgKind { ArgKind::Subcmd }
     fn overrides(&self) -> Option<&[&'e str]> { None }
     fn requires(&self) -> Option<&[(Option<&'e str>, &'n str)]> { None }
     fn blacklist(&self) -> Option<&[&'e str]> { None }
     fn required_unless(&self) -> Option<&[&'e str]> { None }
     fn val_names(&self) -> Option<&VecMap<&'e str>> { None }
     fn is_set(&self, _: ArgSettings) -> bool { false }
-    fn val_terminator(&self) -> Option<&'e str> {None}
+    fn val_terminator(&self) -> Option<&'e str> { None }
     fn set(&mut self, _: ArgSettings) {
         unreachable!("App struct does not support AnyArg::set, this is a bug!")
     }
@@ -1559,8 +1791,11 @@ impl<'n, 'e> AnyArg<'n, 'e> for App<'n, 'e> {
     fn val_delim(&self) -> Option<char> { None }
     fn takes_value(&self) -> bool { true }
     fn help(&self) -> Option<&'e str> { self.p.meta.about }
-    fn default_val(&self) -> Option<&'n str> { None }
-    fn default_vals_ifs(&self) -> Option<vec_map::Values<(&'n str, Option<&'e str>, &'e str)>> {None}
+    fn long_help(&self) -> Option<&'e str> { self.p.meta.long_about }
+    fn default_val(&self) -> Option<&'e OsStr> { None }
+    fn default_vals_ifs(&self) -> Option<vec_map::Values<(&'n str, Option<&'e OsStr>, &'e OsStr)>> {
+        None
+    }
     fn longest_filter(&self) -> bool { true }
     fn aliases(&self) -> Option<Vec<&'e str>> {
         if let Some(ref aliases) = self.p.meta.aliases {

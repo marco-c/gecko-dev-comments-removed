@@ -152,6 +152,7 @@ impl<'a> ArgGroup<'a> {
     
     
     
+    #[cfg_attr(feature = "lints", allow(should_assert_eq))]
     pub fn arg(mut self, n: &'a str) -> Self {
         assert!(self.name != n,
                 "ArgGroup '{}' can not have same name as arg inside it",

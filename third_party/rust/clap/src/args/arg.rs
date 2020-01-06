@@ -2,13 +2,19 @@
 use std::collections::BTreeMap;
 use std::rc::Rc;
 use std::ffi::{OsString, OsStr};
+#[cfg(target_os="windows")]
+use osstringext::OsStrExt3;
+#[cfg(not(target_os="windows"))]
+use std::os::unix::ffi::OsStrExt;
+
 
 #[cfg(feature = "yaml")]
 use yaml_rust::Yaml;
 use vec_map::VecMap;
 
 use usage_parser::UsageParser;
-use args::settings::{ArgFlags, ArgSettings};
+use args::settings::ArgSettings;
+use args::arg_builder::{Base, Valued, Switched};
 
 
 
@@ -33,93 +39,21 @@ use args::settings::{ArgFlags, ArgSettings};
 
 
 #[allow(missing_debug_implementations)]
+#[derive(Default, Clone)]
 pub struct Arg<'a, 'b>
     where 'a: 'b
 {
     #[doc(hidden)]
-    pub name: &'a str,
+    pub b: Base<'a, 'b>,
     #[doc(hidden)]
-    pub short: Option<char>,
+    pub s: Switched<'b>,
     #[doc(hidden)]
-    pub long: Option<&'b str>,
-    #[doc(hidden)]
-    pub aliases: Option<Vec<(&'b str, bool)>>, 
-    #[doc(hidden)]
-    pub help: Option<&'b str>,
+    pub v: Valued<'a, 'b>,
     #[doc(hidden)]
     pub index: Option<u64>,
     #[doc(hidden)]
-    pub blacklist: Option<Vec<&'a str>>,
-    #[doc(hidden)]
-    pub possible_vals: Option<Vec<&'b str>>,
-    #[doc(hidden)]
-    pub requires: Option<Vec<(Option<&'b str>, &'a str)>>,
-    #[doc(hidden)]
-    pub groups: Option<Vec<&'a str>>,
-    #[doc(hidden)]
-    pub val_names: Option<VecMap<&'b str>>,
-    #[doc(hidden)]
-    pub num_vals: Option<u64>,
-    #[doc(hidden)]
-    pub max_vals: Option<u64>,
-    #[doc(hidden)]
-    pub min_vals: Option<u64>,
-    #[doc(hidden)]
-    pub validator: Option<Rc<Fn(String) -> Result<(), String>>>,
-    #[doc(hidden)]
-    pub validator_os: Option<Rc<Fn(&OsStr) -> Result<(), OsString>>>,
-    #[doc(hidden)]
-    pub overrides: Option<Vec<&'a str>>,
-    #[doc(hidden)]
-    pub settings: ArgFlags,
-    #[doc(hidden)]
-    pub val_delim: Option<char>,
-    #[doc(hidden)]
-    pub default_val: Option<&'a str>,
-    #[doc(hidden)]
-    pub default_vals_ifs: Option<VecMap<(&'a str, Option<&'b str>, &'b str)>>,
-    #[doc(hidden)]
-    pub disp_ord: usize,
-    #[doc(hidden)]
-    pub r_unless: Option<Vec<&'a str>>,
-    #[doc(hidden)]
     pub r_ifs: Option<Vec<(&'a str, &'b str)>>,
-    #[doc(hidden)]
-    pub val_terminator: Option<&'b str>,
 }
-
-impl<'a, 'b> Default for Arg<'a, 'b> {
-    fn default() -> Self {
-        Arg {
-            name: "".as_ref(),
-            short: None,
-            long: None,
-            aliases: None,
-            help: None,
-            index: None,
-            blacklist: None,
-            possible_vals: None,
-            requires: None,
-            groups: None,
-            val_names: None,
-            num_vals: None,
-            max_vals: None,
-            min_vals: None,
-            validator: None,
-            validator_os: None,
-            overrides: None,
-            settings: ArgFlags::new(),
-            val_delim: None,
-            default_val: None,
-            default_vals_ifs: None,
-            disp_ord: 999,
-            r_unless: None,
-            r_ifs: None,
-            val_terminator: None,
-        }
-    }
-}
-
 
 impl<'a, 'b> Arg<'a, 'b> {
     
@@ -139,7 +73,7 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     
-    pub fn with_name(n: &'a str) -> Self { Arg { name: n, ..Default::default() } }
+    pub fn with_name(n: &'a str) -> Self { Arg { b: Base::new(n), ..Default::default() } }
 
     
     
@@ -169,6 +103,7 @@ impl<'a, 'b> Arg<'a, 'b> {
                 "long" => yaml_to_str!(a, v, long),
                 "aliases" => yaml_vec_or_str!(v, a, alias),
                 "help" => yaml_to_str!(a, v, help),
+                "long_help" => yaml_to_str!(a, v, long_help),
                 "required" => yaml_to_bool!(a, v, required),
                 "required_if" => yaml_tuple2!(a, v, required_if),
                 "required_ifs" => yaml_tuple2!(a, v, required_if),
@@ -391,7 +326,7 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn short<S: AsRef<str>>(mut self, s: S) -> Self {
-        self.short = s.as_ref().trim_left_matches(|c| c == '-').chars().nth(0);
+        self.s.short = s.as_ref().trim_left_matches(|c| c == '-').chars().nth(0);
         self
     }
 
@@ -431,10 +366,12 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn long(mut self, l: &'b str) -> Self {
-        self.long = Some(l.trim_left_matches(|c| c == '-'));
+        self.s.long = Some(l.trim_left_matches(|c| c == '-'));
         self
     }
 
+    
+    
     
     
     
@@ -455,14 +392,16 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn alias<S: Into<&'b str>>(mut self, name: S) -> Self {
-        if let Some(ref mut als) = self.aliases {
+        if let Some(ref mut als) = self.s.aliases {
             als.push((name.into(), false));
         } else {
-            self.aliases = Some(vec![(name.into(), false)]);
+            self.s.aliases = Some(vec![(name.into(), false)]);
         }
         self
     }
 
+    
+    
     
     
     
@@ -483,16 +422,18 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn aliases(mut self, names: &[&'b str]) -> Self {
-        if let Some(ref mut als) = self.aliases {
+        if let Some(ref mut als) = self.s.aliases {
             for n in names {
                 als.push((n, false));
             }
         } else {
-            self.aliases = Some(names.iter().map(|n| (*n, false)).collect::<Vec<_>>());
+            self.s.aliases = Some(names.iter().map(|n| (*n, false)).collect::<Vec<_>>());
         }
         self
     }
 
+    
+    
     
     
     
@@ -512,14 +453,16 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn visible_alias<S: Into<&'b str>>(mut self, name: S) -> Self {
-        if let Some(ref mut als) = self.aliases {
+        if let Some(ref mut als) = self.s.aliases {
             als.push((name.into(), true));
         } else {
-            self.aliases = Some(vec![(name.into(), true)]);
+            self.s.aliases = Some(vec![(name.into(), true)]);
         }
         self
     }
 
+    
+    
     
     
     
@@ -537,16 +480,23 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn visible_aliases(mut self, names: &[&'b str]) -> Self {
-        if let Some(ref mut als) = self.aliases {
+        if let Some(ref mut als) = self.s.aliases {
             for n in names {
                 als.push((n, true));
             }
         } else {
-            self.aliases = Some(names.iter().map(|n| (*n, true)).collect::<Vec<_>>());
+            self.s.aliases = Some(names.iter().map(|n| (*n, true)).collect::<Vec<_>>());
         }
         self
     }
 
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -591,8 +541,159 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn help(mut self, h: &'b str) -> Self {
-        self.help = Some(h);
+        self.b.help = Some(h);
         self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn long_help(mut self, h: &'b str) -> Self {
+        self.b.long_help = Some(h);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn last(self, l: bool) -> Self {
+        if l {
+            self.set(ArgSettings::Last)
+        } else {
+            self.unset(ArgSettings::Last)
+        }
     }
 
     
@@ -654,6 +755,76 @@ impl<'a, 'b> Arg<'a, 'b> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn require_equals(mut self, r: bool) -> Self {
+        if r {
+            self.unsetb(ArgSettings::EmptyValues);
+            self.set(ArgSettings::RequireEquals)
+        } else {
+            self.unset(ArgSettings::RequireEquals)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -767,10 +938,10 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn required_unless(mut self, name: &'a str) -> Self {
-        if let Some(ref mut vec) = self.r_unless {
+        if let Some(ref mut vec) = self.b.r_unless {
             vec.push(name);
         } else {
-            self.r_unless = Some(vec![name]);
+            self.b.r_unless = Some(vec![name]);
         }
         self.required(true)
     }
@@ -839,12 +1010,12 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn required_unless_all(mut self, names: &[&'a str]) -> Self {
-        if let Some(ref mut vec) = self.r_unless {
+        if let Some(ref mut vec) = self.b.r_unless {
             for s in names {
                 vec.push(s);
             }
         } else {
-            self.r_unless = Some(names.iter().map(|s| *s).collect::<Vec<_>>());
+            self.b.r_unless = Some(names.iter().map(|s| *s).collect::<Vec<_>>());
         }
         self.setb(ArgSettings::RequiredUnlessAll);
         self.required(true)
@@ -915,12 +1086,12 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn required_unless_one(mut self, names: &[&'a str]) -> Self {
-        if let Some(ref mut vec) = self.r_unless {
+        if let Some(ref mut vec) = self.b.r_unless {
             for s in names {
                 vec.push(s);
             }
         } else {
-            self.r_unless = Some(names.iter().map(|s| *s).collect::<Vec<_>>());
+            self.b.r_unless = Some(names.iter().map(|s| *s).collect::<Vec<_>>());
         }
         self.required(true)
     }
@@ -963,10 +1134,10 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn conflicts_with(mut self, name: &'a str) -> Self {
-        if let Some(ref mut vec) = self.blacklist {
+        if let Some(ref mut vec) = self.b.blacklist {
             vec.push(name);
         } else {
-            self.blacklist = Some(vec![name]);
+            self.b.blacklist = Some(vec![name]);
         }
         self
     }
@@ -1013,16 +1184,17 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn conflicts_with_all(mut self, names: &[&'a str]) -> Self {
-        if let Some(ref mut vec) = self.blacklist {
+        if let Some(ref mut vec) = self.b.blacklist {
             for s in names {
                 vec.push(s);
             }
         } else {
-            self.blacklist = Some(names.iter().map(|s| *s).collect::<Vec<_>>());
+            self.b.blacklist = Some(names.iter().map(|s| *s).collect::<Vec<_>>());
         }
         self
     }
 
+    
     
     
     
@@ -1049,14 +1221,15 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn overrides_with(mut self, name: &'a str) -> Self {
-        if let Some(ref mut vec) = self.overrides {
+        if let Some(ref mut vec) = self.b.overrides {
             vec.push(name.as_ref());
         } else {
-            self.overrides = Some(vec![name.as_ref()]);
+            self.b.overrides = Some(vec![name.as_ref()]);
         }
         self
     }
 
+    
     
     
     
@@ -1084,12 +1257,12 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn overrides_with_all(mut self, names: &[&'a str]) -> Self {
-        if let Some(ref mut vec) = self.overrides {
+        if let Some(ref mut vec) = self.b.overrides {
             for s in names {
                 vec.push(s);
             }
         } else {
-            self.overrides = Some(names.iter().map(|s| *s).collect::<Vec<_>>());
+            self.b.overrides = Some(names.iter().map(|s| *s).collect::<Vec<_>>());
         }
         self
     }
@@ -1150,12 +1323,12 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn requires(mut self, name: &'a str) -> Self {
-        if let Some(ref mut vec) = self.requires {
+        if let Some(ref mut vec) = self.b.requires {
             vec.push((None, name));
         } else {
             let mut vec = vec![];
             vec.push((None, name));
-            self.requires = Some(vec);
+            self.b.requires = Some(vec);
         }
         self
     }
@@ -1220,10 +1393,10 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn requires_if(mut self, val: &'b str, arg: &'a str) -> Self {
-        if let Some(ref mut vec) = self.requires {
+        if let Some(ref mut vec) = self.b.requires {
             vec.push((Some(val), arg));
         } else {
-            self.requires = Some(vec![(Some(val), arg)]);
+            self.b.requires = Some(vec![(Some(val), arg)]);
         }
         self
     }
@@ -1280,7 +1453,7 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn requires_ifs(mut self, ifs: &[(&'b str, &'a str)]) -> Self {
-        if let Some(ref mut vec) = self.requires {
+        if let Some(ref mut vec) = self.b.requires {
             for &(val, arg) in ifs {
                 vec.push((Some(val), arg));
             }
@@ -1289,7 +1462,7 @@ impl<'a, 'b> Arg<'a, 'b> {
             for &(val, arg) in ifs {
                 vec.push((Some(val), arg));
             }
-            self.requires = Some(vec);
+            self.b.requires = Some(vec);
         }
         self
     }
@@ -1524,7 +1697,7 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn requires_all(mut self, names: &[&'a str]) -> Self {
-        if let Some(ref mut vec) = self.requires {
+        if let Some(ref mut vec) = self.b.requires {
             for s in names {
                 vec.push((None, s));
             }
@@ -1533,11 +1706,13 @@ impl<'a, 'b> Arg<'a, 'b> {
             for s in names {
                 vec.push((None, *s));
             }
-            self.requires = Some(vec);
+            self.b.requires = Some(vec);
         }
         self
     }
 
+    
+    
     
     
     
@@ -1644,6 +1819,42 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     
+    pub fn hide_default_value(self, hide: bool) -> Self {
+        if hide {
+            self.set(ArgSettings::HideDefaultValue)
+        } else {
+            self.unset(ArgSettings::HideDefaultValue)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1668,6 +1879,18 @@ impl<'a, 'b> Arg<'a, 'b> {
         self
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1865,12 +2088,16 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     
+    
+    
     pub fn value_terminator(mut self, term: &'b str) -> Self {
         self.setb(ArgSettings::TakesValue);
-        self.val_terminator = Some(term);
+        self.v.terminator = Some(term);
         self
     }
 
+    
+    
     
     
     
@@ -1924,6 +2151,8 @@ impl<'a, 'b> Arg<'a, 'b> {
         }
     }
 
+    
+    
     
     
     
@@ -2054,17 +2283,25 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     
+    
+    
+    
+    
     pub fn possible_values(mut self, names: &[&'b str]) -> Self {
-        if let Some(ref mut vec) = self.possible_vals {
+        if let Some(ref mut vec) = self.v.possible_vals {
             for s in names {
                 vec.push(s);
             }
         } else {
-            self.possible_vals = Some(names.iter().map(|s| *s).collect::<Vec<_>>());
+            self.v.possible_vals = Some(names.iter().map(|s| *s).collect::<Vec<_>>());
         }
         self
     }
 
+    
+    
+    
+    
     
     
     
@@ -2115,14 +2352,16 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn possible_value(mut self, name: &'b str) -> Self {
-        if let Some(ref mut vec) = self.possible_vals {
+        if let Some(ref mut vec) = self.v.possible_vals {
             vec.push(name);
         } else {
-            self.possible_vals = Some(vec![name]);
+            self.v.possible_vals = Some(vec![name]);
         }
         self
     }
 
+    
+    
     
     
     
@@ -2152,14 +2391,16 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn group(mut self, name: &'a str) -> Self {
-        if let Some(ref mut vec) = self.groups {
+        if let Some(ref mut vec) = self.b.groups {
             vec.push(name);
         } else {
-            self.groups = Some(vec![name]);
+            self.b.groups = Some(vec![name]);
         }
         self
     }
 
+    
+    
     
     
     
@@ -2190,16 +2431,18 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn groups(mut self, names: &[&'a str]) -> Self {
-        if let Some(ref mut vec) = self.groups {
+        if let Some(ref mut vec) = self.b.groups {
             for s in names {
                 vec.push(s);
             }
         } else {
-            self.groups = Some(names.into_iter().map(|s| *s).collect::<Vec<_>>());
+            self.b.groups = Some(names.into_iter().map(|s| *s).collect::<Vec<_>>());
         }
         self
     }
 
+    
+    
     
     
     
@@ -2236,7 +2479,7 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     pub fn number_of_values(mut self, qty: u64) -> Self {
         self.setb(ArgSettings::TakesValue);
-        self.num_vals = Some(qty);
+        self.v.num_vals = Some(qty);
         self
     }
 
@@ -2279,11 +2522,17 @@ impl<'a, 'b> Arg<'a, 'b> {
     pub fn validator<F>(mut self, f: F) -> Self
         where F: Fn(String) -> Result<(), String> + 'static
     {
-        self.validator = Some(Rc::new(f));
+        self.v.validator = Some(Rc::new(f));
         self
     }
 
     
+    
+    
+    
+    
+    #[cfg_attr(not(unix), doc=" ```ignore")]
+    #[cfg_attr(    unix , doc=" ```rust")]
     
     
     
@@ -2310,10 +2559,14 @@ impl<'a, 'b> Arg<'a, 'b> {
     pub fn validator_os<F>(mut self, f: F) -> Self
         where F: Fn(&OsStr) -> Result<(), OsString> + 'static
     {
-        self.validator_os = Some(Rc::new(f));
+        self.v.validator_os = Some(Rc::new(f));
         self
     }
 
+    
+    
+    
+    
     
     
     
@@ -2368,7 +2621,7 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     pub fn max_values(mut self, qty: u64) -> Self {
         self.setb(ArgSettings::TakesValue);
-        self.max_vals = Some(qty);
+        self.v.max_vals = Some(qty);
         self
     }
 
@@ -2425,8 +2678,12 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     
+    
+    
+    
+    
     pub fn min_values(mut self, qty: u64) -> Self {
-        self.min_vals = Some(qty);
+        self.v.min_vals = Some(qty);
         self.set(ArgSettings::TakesValue)
     }
 
@@ -2476,26 +2733,21 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     
-    
-    
     pub fn use_delimiter(mut self, d: bool) -> Self {
         if d {
-            if self.val_delim.is_none() {
-                self.val_delim = Some(',');
+            if self.v.val_delim.is_none() {
+                self.v.val_delim = Some(',');
             }
             self.setb(ArgSettings::TakesValue);
             self.setb(ArgSettings::UseValueDelimiter);
             self.unset(ArgSettings::ValueDelimiterNotSet)
         } else {
-            self.val_delim = None;
+            self.v.val_delim = None;
             self.unsetb(ArgSettings::UseValueDelimiter);
             self.unset(ArgSettings::ValueDelimiterNotSet)
         }
     }
 
-    
-    
-    
     
     
     
@@ -2604,12 +2856,11 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     
-    
     pub fn value_delimiter(mut self, d: &str) -> Self {
         self.unsetb(ArgSettings::ValueDelimiterNotSet);
         self.setb(ArgSettings::TakesValue);
         self.setb(ArgSettings::UseValueDelimiter);
-        self.val_delim = Some(d.chars()
+        self.v.val_delim = Some(d.chars()
             .nth(0)
             .expect("Failed to get value_delimiter from arg"));
         self
@@ -2676,11 +2927,11 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     pub fn value_names(mut self, names: &[&'b str]) -> Self {
         self.setb(ArgSettings::TakesValue);
-        if self.settings.is_set(ArgSettings::ValueDelimiterNotSet) {
+        if self.is_set(ArgSettings::ValueDelimiterNotSet) {
             self.unsetb(ArgSettings::ValueDelimiterNotSet);
             self.setb(ArgSettings::UseValueDelimiter);
         }
-        if let Some(ref mut vals) = self.val_names {
+        if let Some(ref mut vals) = self.v.val_names {
             let mut l = vals.len();
             for s in names {
                 vals.insert(l, s);
@@ -2691,7 +2942,7 @@ impl<'a, 'b> Arg<'a, 'b> {
             for (i, n) in names.iter().enumerate() {
                 vm.insert(i, *n);
             }
-            self.val_names = Some(vm);
+            self.v.val_names = Some(vm);
         }
         self
     }
@@ -2744,13 +2995,13 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     pub fn value_name(mut self, name: &'b str) -> Self {
         self.setb(ArgSettings::TakesValue);
-        if let Some(ref mut vals) = self.val_names {
+        if let Some(ref mut vals) = self.v.val_names {
             let l = vals.len();
             vals.insert(l, name);
         } else {
             let mut vm = VecMap::new();
             vm.insert(0, name);
-            self.val_names = Some(vm);
+            self.v.val_names = Some(vm);
         }
         self
     }
@@ -2818,9 +3069,17 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     
-    pub fn default_value(mut self, val: &'a str) -> Self {
+    pub fn default_value(self, val: &'a str) -> Self {
+        self.default_value_os(OsStr::from_bytes(val.as_bytes()))
+    }
+
+    
+    
+    
+    
+    pub fn default_value_os(mut self, val: &'a OsStr) -> Self {
         self.setb(ArgSettings::TakesValue);
-        self.default_val = Some(val);
+        self.v.default_val = Some(val);
         self
     }
 
@@ -2920,19 +3179,29 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     
-    pub fn default_value_if(mut self,
-                            arg: &'a str,
-                            val: Option<&'b str>,
-                            default: &'b str)
-                            -> Self {
+    pub fn default_value_if(self, arg: &'a str, val: Option<&'b str>, default: &'b str) -> Self {
+        self.default_value_if_os(arg,
+                                 val.map(str::as_bytes).map(OsStr::from_bytes),
+                                 OsStr::from_bytes(default.as_bytes()))
+    }
+
+    
+    
+    
+    
+    pub fn default_value_if_os(mut self,
+                               arg: &'a str,
+                               val: Option<&'b OsStr>,
+                               default: &'b OsStr)
+                               -> Self {
         self.setb(ArgSettings::TakesValue);
-        if let Some(ref mut vm) = self.default_vals_ifs {
+        if let Some(ref mut vm) = self.v.default_vals_ifs {
             let l = vm.len();
             vm.insert(l, (arg, val, default));
         } else {
             let mut vm = VecMap::new();
             vm.insert(0, (arg, val, default));
-            self.default_vals_ifs = Some(vm);
+            self.v.default_vals_ifs = Some(vm);
         }
         self
     }
@@ -3021,23 +3290,23 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     
-    #[cfg_attr(feature = "lints", allow(explicit_counter_loop))]
     pub fn default_value_ifs(mut self, ifs: &[(&'a str, Option<&'b str>, &'b str)]) -> Self {
-        self.setb(ArgSettings::TakesValue);
-        if let Some(ref mut vm) = self.default_vals_ifs {
-            let mut l = vm.len();
-            for &(arg, val, default) in ifs {
-                vm.insert(l, (arg, val, default));
-                l += 1;
-            }
-        } else {
-            let mut vm = VecMap::new();
-            let mut l = 0;
-            for &(arg, val, default) in ifs {
-                vm.insert(l, (arg, val, default));
-                l += 1;
-            }
-            self.default_vals_ifs = Some(vm);
+        for &(arg, val, default) in ifs {
+            self = self.default_value_if_os(arg,
+                                            val.map(str::as_bytes).map(OsStr::from_bytes),
+                                            OsStr::from_bytes(default.as_bytes()));
+        }
+        self
+    }
+
+    
+    
+    
+    
+    #[cfg_attr(feature = "lints", allow(explicit_counter_loop))]
+    pub fn default_value_ifs_os(mut self, ifs: &[(&'a str, Option<&'b OsStr>, &'b OsStr)]) -> Self {
+        for &(arg, val, default) in ifs {
+            self = self.default_value_if_os(arg, val, default);
         }
         self
     }
@@ -3152,13 +3421,13 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     pub fn display_order(mut self, ord: usize) -> Self {
-        self.disp_ord = ord;
+        self.s.disp_ord = ord;
         self
     }
 
     
     
-    pub fn is_set(&self, s: ArgSettings) -> bool { self.settings.is_set(s) }
+    pub fn is_set(&self, s: ArgSettings) -> bool { self.b.is_set(s) }
 
     
     
@@ -3175,72 +3444,26 @@ impl<'a, 'b> Arg<'a, 'b> {
     }
 
     #[doc(hidden)]
-    pub fn setb(&mut self, s: ArgSettings) { self.settings.set(s); }
+    pub fn setb(&mut self, s: ArgSettings) { self.b.set(s); }
 
     #[doc(hidden)]
-    pub fn unsetb(&mut self, s: ArgSettings) { self.settings.unset(s); }
+    pub fn unsetb(&mut self, s: ArgSettings) { self.b.unset(s); }
 }
 
 impl<'a, 'b, 'z> From<&'z Arg<'a, 'b>> for Arg<'a, 'b> {
     fn from(a: &'z Arg<'a, 'b>) -> Self {
         Arg {
-            name: a.name,
-            short: a.short,
-            long: a.long,
-            aliases: a.aliases.clone(),
-            help: a.help,
+            b: a.b.clone(),
+            v: a.v.clone(),
+            s: a.s.clone(),
             index: a.index,
-            possible_vals: a.possible_vals.clone(),
-            blacklist: a.blacklist.clone(),
-            requires: a.requires.clone(),
-            num_vals: a.num_vals,
-            min_vals: a.min_vals,
-            max_vals: a.max_vals,
-            val_names: a.val_names.clone(),
-            groups: a.groups.clone(),
-            validator: a.validator.clone(),
-            validator_os: a.validator_os.clone(),
-            overrides: a.overrides.clone(),
-            settings: a.settings,
-            val_delim: a.val_delim,
-            default_val: a.default_val,
-            default_vals_ifs: a.default_vals_ifs.clone(),
-            disp_ord: a.disp_ord,
-            r_unless: a.r_unless.clone(),
             r_ifs: a.r_ifs.clone(),
-            val_terminator: a.val_terminator,
         }
     }
 }
 
-impl<'a, 'b> Clone for Arg<'a, 'b> {
-    fn clone(&self) -> Self {
-        Arg {
-            name: self.name,
-            short: self.short,
-            long: self.long,
-            aliases: self.aliases.clone(),
-            help: self.help,
-            index: self.index,
-            possible_vals: self.possible_vals.clone(),
-            blacklist: self.blacklist.clone(),
-            requires: self.requires.clone(),
-            num_vals: self.num_vals,
-            min_vals: self.min_vals,
-            max_vals: self.max_vals,
-            val_names: self.val_names.clone(),
-            groups: self.groups.clone(),
-            validator: self.validator.clone(),
-            validator_os: self.validator_os.clone(),
-            overrides: self.overrides.clone(),
-            settings: self.settings,
-            val_delim: self.val_delim,
-            default_val: self.default_val,
-            default_vals_ifs: self.default_vals_ifs.clone(),
-            disp_ord: self.disp_ord,
-            r_unless: self.r_unless.clone(),
-            r_ifs: self.r_ifs.clone(),
-            val_terminator: self.val_terminator,
-        }
+impl<'n, 'e> PartialEq for Arg<'n, 'e> {
+    fn eq(&self, other: &Arg<'n, 'e>) -> bool {
+        self.b == other.b
     }
 }

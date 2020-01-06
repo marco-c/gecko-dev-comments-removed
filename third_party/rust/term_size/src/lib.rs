@@ -19,7 +19,7 @@ extern crate kernel32;
 #[cfg(target_os = "windows")]
 extern crate winapi;
 
-pub use platform::dimensions;
+pub use platform::{dimensions, dimensions_stdout, dimensions_stdin, dimensions_stderr};
 
 #[cfg(any(target_os = "linux",
           target_os = "android",
@@ -32,8 +32,8 @@ pub use platform::dimensions;
           target_os = "openbsd",
           target_os = "solaris"))]
 mod platform {
+    use libc::{STDOUT_FILENO, STDIN_FILENO, STDERR_FILENO, c_int, c_ulong, winsize};
     use std::mem::zeroed;
-    use libc::{STDOUT_FILENO, c_int, c_ulong, winsize};
 
     
     #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -58,21 +58,115 @@ mod platform {
     
     
     
-    unsafe fn get_dimensions() -> winsize {
+    unsafe fn get_dimensions_any() -> winsize {
+        let mut window: winsize = zeroed();
+        let mut result = ioctl(STDOUT_FILENO, TIOCGWINSZ, &mut window);
+
+        if result == -1 {
+            window = zeroed();
+            result = ioctl(STDIN_FILENO, TIOCGWINSZ, &mut window);
+            if result == -1 {
+                window = zeroed();
+                result = ioctl(STDERR_FILENO, TIOCGWINSZ, &mut window);
+                if result == -1 {
+                    return zeroed();
+                }
+            }
+        }
+        window
+    }
+
+    
+    
+    
+    unsafe fn get_dimensions_out() -> winsize {
         let mut window: winsize = zeroed();
         let result = ioctl(STDOUT_FILENO, TIOCGWINSZ, &mut window);
 
-        if result == -1 {
-            zeroed()
+        if result != -1 {
+            return window;
+        }
+        zeroed()
+    }
+
+    
+    
+    
+    unsafe fn get_dimensions_in() -> winsize {
+        let mut window: winsize = zeroed();
+        let result = ioctl(STDIN_FILENO, TIOCGWINSZ, &mut window);
+
+        if result != -1 {
+            return window;
+        }
+        zeroed()
+    }
+
+    
+    
+    
+    unsafe fn get_dimensions_err() -> winsize {
+        let mut window: winsize = zeroed();
+        let result = ioctl(STDERR_FILENO, TIOCGWINSZ, &mut window);
+
+        if result != -1 {
+            return window;
+        }
+        zeroed()
+    }
+
+    
+    
+    
+    
+    
+    pub fn dimensions() -> Option<(usize, usize)> {
+        let w = unsafe { get_dimensions_any() };
+
+        if w.ws_col == 0 || w.ws_row == 0 {
+            None
         } else {
-            window
+            Some((w.ws_col as usize, w.ws_row as usize))
         }
     }
 
     
     
-    pub fn dimensions() -> Option<(usize, usize)> {
-        let w = unsafe { get_dimensions() };
+    
+    
+    
+    pub fn dimensions_stdout() -> Option<(usize, usize)> {
+        let w = unsafe { get_dimensions_out() };
+
+        if w.ws_col == 0 || w.ws_row == 0 {
+            None
+        } else {
+            Some((w.ws_col as usize, w.ws_row as usize))
+        }
+    }
+
+    
+    
+    
+    
+    
+    pub fn dimensions_stdin() -> Option<(usize, usize)> {
+        let w = unsafe { get_dimensions_in() };
+
+        if w.ws_col == 0 || w.ws_row == 0 {
+            None
+        } else {
+            Some((w.ws_col as usize, w.ws_row as usize))
+        }
+    }
+
+    
+    
+    
+    
+    
+    pub fn dimensions_stderr() -> Option<(usize, usize)> {
+        let w = unsafe { get_dimensions_err() };
 
         if w.ws_col == 0 || w.ws_row == 0 {
             None
@@ -87,12 +181,11 @@ mod platform {
     use kernel32::{GetConsoleScreenBufferInfo, GetStdHandle};
     use winapi::{CONSOLE_SCREEN_BUFFER_INFO, COORD, SMALL_RECT, STD_OUTPUT_HANDLE};
 
+    
+    
     pub fn dimensions() -> Option<(usize, usize)> {
-        let null_coord = COORD{
-            X: 0,
-            Y: 0,
-        };
-        let null_smallrect = SMALL_RECT{
+        let null_coord = COORD { X: 0, Y: 0 };
+        let null_smallrect = SMALL_RECT {
             Left: 0,
             Top: 0,
             Right: 0,
@@ -100,7 +193,7 @@ mod platform {
         };
 
         let stdout_h = unsafe { GetStdHandle(STD_OUTPUT_HANDLE) };
-        let mut console_data = CONSOLE_SCREEN_BUFFER_INFO{
+        let mut console_data = CONSOLE_SCREEN_BUFFER_INFO {
             dwSize: null_coord,
             dwCursorPosition: null_coord,
             wAttributes: 0,
@@ -109,11 +202,19 @@ mod platform {
         };
 
         if unsafe { GetConsoleScreenBufferInfo(stdout_h, &mut console_data) } != 0 {
-            Some(((console_data.srWindow.Right - console_data.srWindow.Left) as usize, (console_data.srWindow.Bottom - console_data.srWindow.Top) as usize))
+            Some(((console_data.srWindow.Right - console_data.srWindow.Left) as usize,
+                  (console_data.srWindow.Bottom - console_data.srWindow.Top) as usize))
         } else {
             None
         }
     }
+    
+    
+    pub fn dimensions_stdout() -> Option<(usize, usize)> { dimensions() }
+    
+    pub fn dimensions_stdin() -> Option<(usize, usize)> { unimplemented!() }
+    
+    pub fn dimensions_stderr() -> Option<(usize, usize)> { unimplemented!() }
 }
 
 
@@ -129,7 +230,8 @@ mod platform {
               target_os = "solaris",
               target_os = "windows")))]
 mod platform {
-    pub fn dimensions() -> Option<(usize, usize)> {
-        None
-    }
+    pub fn dimensions() -> Option<(usize, usize)> { None }
+    pub fn dimensions_stdout() -> Option<(usize, usize)> { None }
+    pub fn dimensions_stdin() -> Option<(usize, usize)> { None }
+    pub fn dimensions_stderr() -> Option<(usize, usize)> { None }
 }

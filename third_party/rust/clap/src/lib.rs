@@ -509,6 +509,7 @@
 
 
 
+
 #![crate_type= "lib"]
 #![deny(
         missing_docs,
@@ -526,6 +527,7 @@
 #![cfg_attr(feature = "lints", deny(warnings))]
 #![cfg_attr(feature = "lints", allow(cyclomatic_complexity))]
 #![cfg_attr(feature = "lints", allow(doc_markdown))]
+#![cfg_attr(feature = "lints", allow(explicit_iter_loop))]
 
 #[cfg(feature = "suggestions")]
 extern crate strsim;
@@ -533,8 +535,6 @@ extern crate strsim;
 extern crate ansi_term;
 #[cfg(feature = "yaml")]
 extern crate yaml_rust;
-#[cfg(any(feature = "wrap_help", feature = "color"))]
-extern crate libc;
 extern crate unicode_width;
 #[macro_use]
 extern crate bitflags;
@@ -542,6 +542,8 @@ extern crate vec_map;
 #[cfg(feature = "wrap_help")]
 extern crate term_size;
 extern crate unicode_segmentation;
+#[cfg(feature = "color")]
+extern crate atty;
 
 #[cfg(feature = "yaml")]
 pub use yaml_rust::YamlLoader;
