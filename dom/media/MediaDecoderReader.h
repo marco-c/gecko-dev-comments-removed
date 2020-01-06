@@ -149,7 +149,7 @@ public:
   
   virtual nsresult ResetDecode(
     TrackSet aTracks = TrackSet(TrackInfo::kAudioTrack,
-                                TrackInfo::kVideoTrack));
+                                TrackInfo::kVideoTrack)) = 0;
 
   
   
@@ -181,13 +181,6 @@ public:
   virtual RefPtr<SeekPromise> Seek(const SeekTarget& aTarget) = 0;
 
   virtual void SetCDMProxy(CDMProxy* aProxy) = 0;
-
-  
-  
-  
-  void SetIgnoreAudioOutputFormat()
-  {
-  }
 
   
   

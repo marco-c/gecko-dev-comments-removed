@@ -242,11 +242,6 @@ MediaDecodeTask::Decode()
 
   mBufferDecoder->BeginDecoding(mDecoderReader->OwnerThread());
 
-  
-  
-  
-  mDecoderReader->SetIgnoreAudioOutputFormat();
-
   mDecoderReader->AsyncReadMetadata()->Then(mDecoderReader->OwnerThread(), __func__, this,
                                        &MediaDecodeTask::OnMetadataRead,
                                        &MediaDecodeTask::OnMetadataNotRead);
