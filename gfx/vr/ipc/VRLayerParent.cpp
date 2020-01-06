@@ -7,6 +7,7 @@
 #include "VRLayerParent.h"
 #include "mozilla/Unused.h"
 #include "VRDisplayHost.h"
+#include "mozilla/layers/CompositorThread.h"
 
 namespace mozilla {
 using namespace layers;
@@ -63,11 +64,18 @@ VRLayerParent::RecvSubmitFrame(const layers::SurfaceDescriptor &aTexture,
                                const gfx::Rect& aRightEyeRect)
 {
   if (mVRDisplayID) {
+    MessageLoop* loop = layers::CompositorThreadHolder::Loop();
     VRManager* vm = VRManager::Get();
     RefPtr<VRDisplayHost> display = vm->GetDisplay(mVRDisplayID);
     if (display) {
       
-      SubmitFrame(display, aTexture, aFrameId, aLeftEyeRect, aRightEyeRect);
+      
+      
+      loop->PostTask(NewRunnableMethod<VRDisplayHost*, const layers::SurfaceDescriptor, uint64_t,
+                                       const gfx::Rect&, const gfx::Rect&>(
+                     "gfx::VRLayerParent::SubmitFrame",
+                     this,
+                     &VRLayerParent::SubmitFrame, display, aTexture, aFrameId, aLeftEyeRect, aRightEyeRect));
     }
   }
 

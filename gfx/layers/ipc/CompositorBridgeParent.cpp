@@ -32,6 +32,7 @@
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"          
 #include "mozilla/gfx/gfxVars.h"        
+#include "VRManager.h"                  
 #include "mozilla/ipc/Transport.h"      
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUParent.h"
