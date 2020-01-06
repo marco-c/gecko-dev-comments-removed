@@ -622,15 +622,34 @@ BackgroundHangThread::ReportHang(PRIntervalTime aHangTime)
   
   nsCString name;
   name.AssignASCII(mStats.GetName());
-  SystemGroup::Dispatch("NotifyBHRHangObservers", TaskCategory::Other,
-                        NS_NewRunnableFunction("NotifyBHRHangObservers", [=] {
+  nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction("NotifyBHRHangObservers", [=] {
     nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
     if (os) {
       
       nsCOMPtr<nsIHangDetails> hangDetails = new HangDetails(aHangTime, name);
       os->NotifyObservers(hangDetails, "bhr-thread-hang", nullptr);
     }
-  }));
+  });
+  if (SystemGroup::Initialized()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsresult rv = SystemGroup::Dispatch("NotifyBHRHangObservers",
+                                        TaskCategory::Other,
+                                        do_AddRef(runnable.get()));
+    if (NS_FAILED(rv)) {
+      
+      
+      nsrefcnt refcnt = runnable.get()->Release();
+      MOZ_RELEASE_ASSERT(refcnt == 1, "runnable should have had 1 reference leaked");
+    }
+  }
 
   
   
