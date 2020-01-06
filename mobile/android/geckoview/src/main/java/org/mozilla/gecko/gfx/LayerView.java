@@ -150,6 +150,11 @@ public class LayerView extends FrameLayout {
         }
     }
 
+     void onCompositorReady() {
+        mCompositor.setDefaultClearColor(mDefaultClearColor);
+        mCompositor.enableLayerUpdateNotifications(!mDrawListeners.isEmpty());
+    }
+
     private LayerSession.Compositor mCompositor;
 
     public LayerView(Context context, AttributeSet attrs) {
@@ -404,6 +409,12 @@ public class LayerView extends FrameLayout {
 
      void clearDrawListeners() {
         mDrawListeners.clear();
+    }
+
+     void notifyDrawListeners() {
+        for (final DrawListener listener : mDrawListeners) {
+            listener.drawFinished();
+        }
     }
 
     @RobocopTarget

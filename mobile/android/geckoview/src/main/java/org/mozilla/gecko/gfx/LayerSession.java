@@ -10,6 +10,7 @@ import org.mozilla.gecko.mozglue.JNIObject;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.util.Log;
 import android.view.Surface;
 
@@ -19,14 +20,39 @@ public class LayerSession {
 
     
     
-     final static int STATIC_TOOLBAR_READY = 1;
     
     
-     final static int TOOLBAR_SHOW = 4;
     
-     final static int COMPOSITOR_CONTROLLER_OPEN = 20;
     
-     final static int IS_COMPOSITOR_CONTROLLER_OPEN = 21;
+     final static int STATIC_TOOLBAR_NEEDS_UPDATE      = 0;
+    
+    
+     final static int STATIC_TOOLBAR_READY             = 1;
+    
+     final static int TOOLBAR_HIDDEN                   = 2;
+    
+     final static int TOOLBAR_VISIBLE                  = 3;
+    
+    
+     final static int TOOLBAR_SHOW                     = 4;
+    
+     final static int FIRST_PAINT                      = 5;
+    
+     final static int REQUEST_SHOW_TOOLBAR_IMMEDIATELY = 6;
+    
+     final static int REQUEST_SHOW_TOOLBAR_ANIMATED    = 7;
+    
+     final static int REQUEST_HIDE_TOOLBAR_IMMEDIATELY = 8;
+    
+     final static int REQUEST_HIDE_TOOLBAR_ANIMATED    = 9;
+    
+     final static int LAYERS_UPDATED                   = 10;
+    
+     final static int TOOLBAR_SNAPSHOT_FAILED          = 11;
+    
+     final static int COMPOSITOR_CONTROLLER_OPEN       = 20;
+    
+     final static int IS_COMPOSITOR_CONTROLLER_OPEN    = 21;
 
     protected class Compositor extends JNIObject {
         public LayerView layerView;
@@ -75,36 +101,15 @@ public class LayerSession {
         @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
         public native void setMaxToolbarHeight(int height);
 
-        @WrapForJNI(calledFrom = "any", dispatchTo = "current")
+        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
         public native void setPinned(boolean pinned, int reason);
 
-        @WrapForJNI(calledFrom = "any", dispatchTo = "current")
+        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
         public native void sendToolbarAnimatorMessage(int message);
 
         @WrapForJNI(calledFrom = "ui")
         private void recvToolbarAnimatorMessage(int message) {
-            if (message == COMPOSITOR_CONTROLLER_OPEN) {
-                if (LayerSession.this.isCompositorReady()) {
-                    return;
-                }
-
-                
-                
-                ThreadUtils.postToUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        LayerSession.this.onCompositorReady();
-                    }
-                });
-            }
-
-            if (layerView != null) {
-                layerView.handleToolbarAnimatorMessage(message);
-            }
-
-            if (message == STATIC_TOOLBAR_READY || message == TOOLBAR_SHOW) {
-                LayerSession.this.onWindowBoundsChanged();
-            }
+            LayerSession.this.handleCompositorMessage(message);
         }
 
         @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
@@ -132,10 +137,8 @@ public class LayerSession {
         
         
         @WrapForJNI(calledFrom = "ui")
-        public void updateRootFrameMetrics(float scrollX, float scrollY, float zoom) {
-            if (layerView != null) {
-                layerView.onMetricsChanged(scrollX, scrollY, zoom);
-            }
+        private void updateRootFrameMetrics(float scrollX, float scrollY, float zoom) {
+            LayerSession.this.onMetricsChanged(scrollX, scrollY, zoom);
         }
     }
 
@@ -143,6 +146,8 @@ public class LayerSession {
 
     
     private GeckoDisplay mDisplay;
+    private DynamicToolbarAnimator mToolbar;
+    private ImmutableViewportMetrics mViewportMetrics = new ImmutableViewportMetrics();
     private boolean mAttachedCompositor;
     private boolean mCalledCreateCompositor;
     private boolean mCompositorReady;
@@ -157,6 +162,25 @@ public class LayerSession {
             ThreadUtils.assertOnUiThread();
         }
         return mDisplay;
+    }
+
+    
+
+
+
+
+    public @NonNull DynamicToolbarAnimator getDynamicToolbarAnimator() {
+        ThreadUtils.assertOnUiThread();
+
+        if (mToolbar == null) {
+            mToolbar = new DynamicToolbarAnimator(this);
+        }
+        return mToolbar;
+    }
+
+    public ImmutableViewportMetrics getViewportMetrics() {
+        ThreadUtils.assertOnUiThread();
+        return mViewportMetrics;
     }
 
      void onCompositorAttached() {
@@ -183,6 +207,66 @@ public class LayerSession {
         mCompositorReady = false;
     }
 
+     void handleCompositorMessage(final int message) {
+        if (DEBUG) {
+            ThreadUtils.assertOnUiThread();
+        }
+
+        switch (message) {
+            case COMPOSITOR_CONTROLLER_OPEN: {
+                if (isCompositorReady()) {
+                    return;
+                }
+
+                
+                
+                ThreadUtils.postToUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        onCompositorReady();
+                        if (mCompositor.layerView != null) {
+                            mCompositor.layerView.onCompositorReady();
+                        }
+                    }
+                });
+                break;
+            }
+
+            case FIRST_PAINT: {
+                if (mCompositor.layerView != null) {
+                    mCompositor.layerView.setSurfaceBackgroundColor(Color.TRANSPARENT);
+                }
+                break;
+            }
+
+            case LAYERS_UPDATED: {
+                if (mCompositor.layerView != null) {
+                    mCompositor.layerView.notifyDrawListeners();
+                }
+                break;
+            }
+
+            case STATIC_TOOLBAR_READY:
+            case TOOLBAR_SHOW: {
+                if (mToolbar != null) {
+                    mToolbar.handleToolbarAnimatorMessage(message);
+                    
+                    onWindowBoundsChanged();
+                }
+                break;
+            }
+
+            default: {
+                if (mToolbar != null) {
+                    mToolbar.handleToolbarAnimatorMessage(message);
+                } else {
+                    Log.w(LOGTAG, "Unexpected message: " + message);
+                }
+                break;
+            }
+        }
+    }
+
      boolean isCompositorReady() {
         return mCompositorReady;
     }
@@ -200,6 +284,26 @@ public class LayerSession {
             onSurfaceChanged(mSurface, mWidth, mHeight);
             mSurface = null;
         }
+
+        if (mToolbar != null) {
+            mToolbar.onCompositorReady();
+        }
+    }
+
+     void onMetricsChanged(final float scrollX, final float scrollY,
+                                        final float zoom) {
+        if (DEBUG) {
+            ThreadUtils.assertOnUiThread();
+        }
+
+        if (mViewportMetrics.viewportRectLeft != scrollX ||
+            mViewportMetrics.viewportRectTop != scrollY) {
+            mViewportMetrics = mViewportMetrics.setViewportOrigin(scrollX, scrollY);
+        }
+
+        if (mViewportMetrics.zoomFactor != zoom) {
+            mViewportMetrics = mViewportMetrics.setZoomFactor(zoom);
+        }
     }
 
      void onWindowBoundsChanged() {
@@ -207,19 +311,26 @@ public class LayerSession {
             ThreadUtils.assertOnUiThread();
         }
 
+        final int toolbarHeight;
+        if (mToolbar != null) {
+            toolbarHeight = mToolbar.getCurrentToolbarHeight();
+        } else {
+            toolbarHeight = 0;
+        }
+
         if (mAttachedCompositor) {
-            final int toolbarHeight;
-            if (mCompositor.layerView != null) {
-                toolbarHeight = mCompositor.layerView.getCurrentToolbarHeight();
-            } else {
-                toolbarHeight = 0;
-            }
             mCompositor.onBoundsChanged(mLeft, mTop + toolbarHeight,
                                         mWidth, mHeight - toolbarHeight);
+        }
 
-            if (mCompositor.layerView != null) {
-                mCompositor.layerView.onSizeChanged(mWidth, mHeight);
-            }
+        if (mViewportMetrics.viewportRectWidth != mWidth ||
+            mViewportMetrics.viewportRectHeight != (mHeight - toolbarHeight)) {
+            mViewportMetrics = mViewportMetrics.setViewportSize(mWidth,
+                                                                mHeight - toolbarHeight);
+        }
+
+        if (mCompositor.layerView != null) {
+            mCompositor.layerView.onSizeChanged(mWidth, mHeight);
         }
     }
 
@@ -229,6 +340,11 @@ public class LayerSession {
 
         mWidth = width;
         mHeight = height;
+
+        if (mViewportMetrics.viewportRectWidth == 0 ||
+            mViewportMetrics.viewportRectHeight == 0) {
+            mViewportMetrics = mViewportMetrics.setViewportSize(width, height);
+        }
 
         if (mCompositorReady) {
             mCompositor.syncResumeResizeCompositor(width, height, surface);
