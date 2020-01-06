@@ -119,6 +119,9 @@ var whitelist = [
   {file: "resource://pdf.js/web/debugger.js"},
 
   
+  {file: "resource://gre/modules/IndexedDB.jsm"},
+
+  
   
   {file: "chrome://branding/content/icon128.png"},
   
