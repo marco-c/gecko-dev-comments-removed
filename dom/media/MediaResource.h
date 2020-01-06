@@ -210,7 +210,7 @@ public:
   
   
   
-  virtual already_AddRefed<MediaByteBuffer> MediaReadAt(int64_t aOffset, uint32_t aCount)
+  already_AddRefed<MediaByteBuffer> MediaReadAt(int64_t aOffset, uint32_t aCount)
   {
     RefPtr<MediaByteBuffer> bytes = new MediaByteBuffer();
     bool ok = bytes->SetLength(aCount, fallible);
@@ -585,7 +585,6 @@ public:
                   uint32_t aCount, uint32_t* aBytes) override;
   
   bool ShouldCacheReads() override { return true; }
-  already_AddRefed<MediaByteBuffer> MediaReadAt(int64_t aOffset, uint32_t aCount) override;
   int64_t Tell() override;
 
   
