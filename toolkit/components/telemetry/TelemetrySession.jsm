@@ -14,7 +14,6 @@ Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/Services.jsm", this);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 Cu.import("resource://gre/modules/DeferredTask.jsm", this);
-Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://gre/modules/TelemetryUtils.jsm", this);
 Cu.import("resource://gre/modules/AppConstants.jsm");
@@ -43,7 +42,7 @@ const REASON_SHUTDOWN = "shutdown";
 const ENVIRONMENT_CHANGE_LISTENER = "TelemetrySession::onEnvironmentChange";
 
 const MS_IN_ONE_HOUR  = 60 * 60 * 1000;
-const MIN_SUBSESSION_LENGTH_MS = Preferences.get("toolkit.telemetry.minSubsessionLength", 5 * 60) * 1000;
+const MIN_SUBSESSION_LENGTH_MS = Services.prefs.getIntPref("toolkit.telemetry.minSubsessionLength", 5 * 60) * 1000;
 
 const LOGGER_NAME = "Toolkit.Telemetry";
 const LOGGER_PREFIX = "TelemetrySession" + (Utils.isContentProcess ? "#content::" : "::");
@@ -59,7 +58,7 @@ const ABORTED_SESSION_FILE_NAME = "aborted-session-ping";
 
 
 
-const IS_UNIFIED_TELEMETRY = Preferences.get(TelemetryUtils.Preferences.Unified, false);
+const IS_UNIFIED_TELEMETRY = Services.prefs.getBoolPref(TelemetryUtils.Preferences.Unified, false);
 
 
 const MAX_NUM_CONTENT_PAYLOADS = 10;
@@ -67,13 +66,13 @@ const MAX_NUM_CONTENT_PAYLOADS = 10;
 
 const TELEMETRY_INTERVAL = 60 * 1000;
 
-const TELEMETRY_DELAY = Preferences.get("toolkit.telemetry.initDelay", 60) * 1000;
+const TELEMETRY_DELAY = Services.prefs.getIntPref("toolkit.telemetry.initDelay", 60) * 1000;
 
 const TELEMETRY_TEST_DELAY = 1;
 
-const SCHEDULER_TICK_INTERVAL_MS = Preferences.get("toolkit.telemetry.scheduler.tickInterval", 5 * 60) * 1000;
+const SCHEDULER_TICK_INTERVAL_MS = Services.prefs.getIntPref("toolkit.telemetry.scheduler.tickInterval", 5 * 60) * 1000;
 
-const SCHEDULER_TICK_IDLE_INTERVAL_MS = Preferences.get("toolkit.telemetry.scheduler.idleTickInterval", 60 * 60) * 1000;
+const SCHEDULER_TICK_IDLE_INTERVAL_MS = Services.prefs.getIntPref("toolkit.telemetry.scheduler.idleTickInterval", 60 * 60) * 1000;
 
 
 const SCHEDULER_MIDNIGHT_TOLERANCE_MS = 15 * 60 * 1000;
@@ -85,7 +84,7 @@ const SCHEDULER_TICK_MAX_IDLE_DELAY_MS = 60 * 1000;
 
 
 
-const IDLE_TIMEOUT_SECONDS = Preferences.get("toolkit.telemetry.idleTimeout", 5 * 60);
+const IDLE_TIMEOUT_SECONDS = Services.prefs.getIntPref("toolkit.telemetry.idleTimeout", 5 * 60);
 
 
 
@@ -1507,12 +1506,12 @@ var Impl = {
 
     
     
-    let previousBuildId = Preferences.get(TelemetryUtils.Preferences.PreviousBuildID, null);
+    let previousBuildId = Services.prefs.getStringPref(TelemetryUtils.Preferences.PreviousBuildID, null);
     let thisBuildID = Services.appinfo.appBuildID;
     
     if (previousBuildId != thisBuildID) {
       this._previousBuildId = previousBuildId;
-      Preferences.set(TelemetryUtils.Preferences.PreviousBuildID, thisBuildID);
+      Services.prefs.setStringPref(TelemetryUtils.Preferences.PreviousBuildID, thisBuildID);
     }
 
     this.attachEarlyObservers();
@@ -1801,9 +1800,9 @@ var Impl = {
       
       
       const sendOnThisSession =
-        Preferences.get(Utils.Preferences.ShutdownPingSenderFirstSession, false) ||
+        Services.prefs.getBoolPref(Utils.Preferences.ShutdownPingSenderFirstSession, false) ||
         !TelemetryReportingPolicy.isFirstRun();
-      let sendWithPingsender = Preferences.get(TelemetryUtils.Preferences.ShutdownPingSender, false) &&
+      let sendWithPingsender = Services.prefs.getBoolPref(TelemetryUtils.Preferences.ShutdownPingSender, false) &&
                                sendOnThisSession;
 
       let options = {
