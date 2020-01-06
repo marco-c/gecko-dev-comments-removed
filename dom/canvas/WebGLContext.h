@@ -1029,6 +1029,19 @@ private:
     bool ValidateCapabilityEnum(GLenum cap, const char* info);
     realGLboolean* GetStateTrackingSlot(GLenum cap);
 
+    
+    mutable uint64_t mDataAllocGLCallCount;
+
+    void OnDataAllocCall() const {
+       mDataAllocGLCallCount++;
+    }
+
+    uint64_t GetNumGLDataAllocCalls() const {
+       return mDataAllocGLCallCount;
+    }
+
+    void OnEndOfFrame() const;
+
 
 
 public:
