@@ -136,7 +136,8 @@ add_task(async function() {
       
       await ContentTaskUtils.waitForCondition(() => {
         return statusDiv.getAttribute("status") == "success";
-      }, "Timed out waiting for plugin binding to be in success state");
+      }, "Timed out waiting for plugin binding to be in success state",
+      100, 200);
     });
 
     let [subject, ] = await crashReportPromise;
