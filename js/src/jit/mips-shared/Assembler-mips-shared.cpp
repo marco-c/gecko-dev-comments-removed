@@ -1596,13 +1596,13 @@ AssemblerMIPSShared::retarget(Label* label, Label* target)
             
             
             Instruction* inst = editSrc(labelBranchOffset);
-            int32_t prev = target->use(label->offset());
+            int32_t prev = target->offset();
+            target->use(label->offset());
             inst[1].setData(prev);
         } else {
             
             
-            DebugOnly<uint32_t> prev = target->use(label->offset());
-            MOZ_ASSERT((int32_t)prev == Label::INVALID_OFFSET);
+            target->use(label->offset());
         }
     }
     label->reset();
