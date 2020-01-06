@@ -162,9 +162,6 @@ public:
 
   
   
-  virtual nsIURI* URI() const { return nullptr; }
-  
-  
   
   virtual nsresult Close() = 0;
   
@@ -316,20 +313,8 @@ public:
 
   
   
-  virtual void FlushCache() { }
-
-  
-  virtual void NotifyLastByteRange() { }
-
-  
-  
   
   virtual const MediaContainerType& GetContentType() const = 0;
-
-  
-  virtual bool IsRealTime() {
-    return false;
-  }
 
   
   virtual bool IsLiveStream()
@@ -345,8 +330,6 @@ public:
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
-  const nsCString& GetContentURL() const { return EmptyCString(); }
-
 protected:
   virtual ~MediaResource() {};
 
@@ -356,7 +339,6 @@ private:
 
 class BaseMediaResource : public MediaResource {
 public:
-  nsIURI* URI() const override { return mURI; }
   void SetLoadInBackground(bool aLoadInBackground) override;
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override
@@ -377,12 +359,6 @@ public:
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
-  
-  const nsCString& GetContentURL() const
-  {
-    return mContentURL;
-  }
-
 protected:
   BaseMediaResource(MediaResourceCallback* aCallback,
                     nsIChannel* aChannel,
@@ -394,7 +370,6 @@ protected:
     mContainerType(aContainerType),
     mLoadInBackground(false)
   {
-    mURI->GetSpec(mContentURL);
   }
   virtual ~BaseMediaResource()
   {
@@ -428,9 +403,6 @@ protected:
   
   
   const MediaContainerType mContainerType;
-
-  
-  nsCString mContentURL;
 
   
   
@@ -532,13 +504,6 @@ public:
   nsresult CacheClientResume();
 
   void ThrottleReadahead(bool bThrottle) override;
-
-  
-  
-  void FlushCache() override;
-
-  
-  void NotifyLastByteRange() override;
 
   
   nsresult Open(nsIStreamListener** aStreamListener) override;
