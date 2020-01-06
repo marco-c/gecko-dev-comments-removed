@@ -23,7 +23,7 @@ def directories(pathmodule, cwd, fixup=lambda s: s):
     js_src = pathmodule.abspath(pathmodule.join(scripts, "..", ".."))
     source = pathmodule.abspath(pathmodule.join(js_src, "..", ".."))
     tooltool = pathmodule.abspath(env.get('TOOLTOOL_CHECKOUT',
-                                          pathmodule.join(source, "..")))
+                                          pathmodule.join(source, "..", "..")))
     return Dirs(scripts, js_src, source, tooltool)
 
 
@@ -92,7 +92,6 @@ POBJDIR = posixpath.join(PDIR.source, args.objdir)
 AUTOMATION = env.get('AUTOMATION', False)
 MAKE = env.get('MAKE', 'make')
 MAKEFLAGS = env.get('MAKEFLAGS', '-j6' + ('' if AUTOMATION else ' -s'))
-UNAME_M = subprocess.check_output(['uname', '-m']).strip()
 
 
 def set_vars_from_script(script, vars):
@@ -207,7 +206,7 @@ if word_bits is None and args.platform:
 
 
 if word_bits is None:
-    word_bits = 64 if UNAME_M == 'x86_64' else 32
+    word_bits = 64 if platform.architecture()[0] == '64bit' else 32
 
 if 'compiler' in variant:
     compiler = variant['compiler']
@@ -256,11 +255,11 @@ if word_bits == 32:
     if platform.system() == 'Windows':
         CONFIGURE_ARGS += ' --target=i686-pc-mingw32 --host=i686-pc-mingw32'
     elif platform.system() == 'Linux':
-        if UNAME_M != 'arm':
+        if not platform.machine().startswith('arm'):
             CONFIGURE_ARGS += ' --target=i686-pc-linux --host=i686-pc-linux'
 
     
-    if UNAME_M != 'arm':
+    if not platform.machine().startswith('arm'):
         if platform.system() == 'Windows':
             sse_flags = '-arch:SSE2'
         else:
@@ -289,7 +288,8 @@ ensure_dir_exists(OUTDIR, clobber=not args.keep)
 
 
 def run_command(command, check=False, **kwargs):
-    proc = Popen(command, cwd=OBJDIR, **kwargs)
+    kwargs.setdefault('cwd', OBJDIR)
+    proc = Popen(command, **kwargs)
     ACTIVE_PROCESSES.add(proc)
     stdout, stderr = None, None
     try:
@@ -304,12 +304,33 @@ def run_command(command, check=False, **kwargs):
 
 
 for k, v in variant.get('env', {}).items():
-    env[k] = v.format(
+    env[k.encode('ascii')] = v.encode('ascii').format(
         DIR=DIR.scripts,
         TOOLTOOL_CHECKOUT=DIR.tooltool,
         MOZ_UPLOAD_DIR=env['MOZ_UPLOAD_DIR'],
         OUTDIR=OUTDIR,
     )
+
+if AUTOMATION:
+    
+    if platform.system() == 'Linux' and platform.machine() == 'x86_64':
+        use_minidump = variant.get('use_minidump', True)
+    else:
+        use_minidump = False
+else:
+    use_minidump = False
+
+if use_minidump:
+    env.setdefault('MINIDUMP_SAVE_PATH', env['MOZ_UPLOAD_DIR'])
+    injector_lib = None
+    if platform.system() == 'Linux':
+        injector_lib = os.path.join(DIR.tooltool, 'breakpad-tools', 'libbreakpadinjector.so')
+        env.setdefault('MINIDUMP_STACKWALK',
+                       os.path.join(DIR.tooltool, 'linux64-minidump_stackwalk'))
+    elif platform.system() == 'Darwin':
+        injector_lib = os.path.join(DIR.tooltool, 'breakpad-tools', 'breakpadinjector.dylib')
+    if not injector_lib or not os.path.exists(injector_lib):
+        use_minidump=False
 
 def need_updating_configure(configure):
     if not os.path.exists(configure):
@@ -342,10 +363,23 @@ if not args.nobuild:
     
     run_command('%s -w %s' % (MAKE, MAKEFLAGS), shell=True, check=True)
 
+    if use_minidump:
+        
+        hostdir = os.path.join(OBJDIR, "dist", "host", "bin")
+        os.makedirs(hostdir)
+        shutil.copy(os.path.join(DIR.tooltool, "breakpad-tools", "dump_syms"),
+                    os.path.join(hostdir, 'dump_syms'))
+        run_command([
+            'make',
+            'recurse_syms',
+            'MOZ_SOURCE_REPO=file://' + DIR.source,
+            'RUST_TARGET=0', 'RUSTC_COMMIT=0'
+        ], check=True)
+
 COMMAND_PREFIX = []
 
 if subprocess.call("type setarch >/dev/null 2>&1", shell=True) == 0:
-    COMMAND_PREFIX.extend(['setarch', UNAME_M, '-R'])
+    COMMAND_PREFIX.extend(['setarch', platform.machine(), '-R'])
 
 
 def run_test_command(command, **kwargs):
@@ -392,6 +426,15 @@ if 'all' in args.skip_tests.split(","):
 if platform.system() == 'Windows':
     env['JITTEST_EXTRA_ARGS'] = "-j1 " + env.get('JITTEST_EXTRA_ARGS', '')
 
+if use_minidump:
+    
+    
+    
+    
+    
+    for v in ('JSTESTS_EXTRA_ARGS', 'JITTEST_EXTRA_ARGS'):
+        env[v] = "--args='--dll %s' %s" % (injector_lib, env.get(v, ''))
+
 
 
 results = []
@@ -406,7 +449,10 @@ if 'jittest' in test_suites:
     results.append(run_test_command([MAKE, 'check-jit-test']))
 if 'jsapitests' in test_suites:
     jsapi_test_binary = os.path.join(OBJDIR, 'dist', 'bin', 'jsapi-tests')
-    st = run_test_command([jsapi_test_binary])
+    test_env = env.copy()
+    if use_minidump and platform.system() == 'Linux':
+        test_env['LD_PRELOAD'] = injector_lib
+    st = run_test_command([jsapi_test_binary], env=test_env)
     if st < 0:
         print("PROCESS-CRASH | jsapi-tests | application crashed")
         print("Return code: {}".format(st))
@@ -497,6 +543,16 @@ if args.variant in ('tsan', 'msan'):
                os.path.join(env['MOZ_UPLOAD_DIR'], '%s.tar.gz' % args.variant)]
     command += files
     subprocess.call(command)
+
+
+if use_minidump:
+    venv_python = os.path.join(OBJDIR, "_virtualenv", "bin", "python")
+    run_command([
+        venv_python,
+        os.path.join(DIR.source, "testing/mozbase/mozcrash/mozcrash/mozcrash.py"),
+        os.getenv("TMPDIR", "/tmp"),
+        os.path.join(OBJDIR, "dist/crashreporter-symbols"),
+    ])
 
 for st in results:
     if st != 0:
