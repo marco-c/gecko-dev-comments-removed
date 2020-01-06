@@ -1671,6 +1671,3 @@ pref("urlclassifier.phishTable", "goog-phish-shavar,goog-phish-proto,test-phish-
 #endif
 
 pref("browser.suppress_first_window_animation", true);
-
-
-pref("browser.onboarding.disabled", false);
