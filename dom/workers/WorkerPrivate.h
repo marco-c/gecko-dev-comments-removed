@@ -1461,7 +1461,7 @@ public:
   
   
   
-  nsIEventTarget*
+  nsISerialEventTarget*
   ControlEventTarget();
 
 private:
