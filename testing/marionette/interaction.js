@@ -297,7 +297,13 @@ interaction.selectOption = function(el) {
   event.input(containerEl);
 
   
-  el.selected = !el.selected;
+  
+  
+  if (containerEl.multiple) {
+    el.selected = !el.selected;
+  } else if (!el.selected) {
+    el.selected = true;
+  }
 
   event.change(containerEl);
   event.mouseup(containerEl);
