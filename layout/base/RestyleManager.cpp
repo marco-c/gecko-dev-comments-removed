@@ -1531,6 +1531,25 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
         hint &= ~nsChangeHint_UpdatePostTransformOverflow;
       }
 
+      if (hint & nsChangeHint_AddOrRemoveTransform) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        hint &= ~nsChangeHint_UpdateTransformLayer;
+      }
+
       if (hint & nsChangeHint_UpdateEffects) {
         for (nsIFrame* cont = frame; cont;
              cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
