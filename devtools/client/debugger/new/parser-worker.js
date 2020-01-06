@@ -35432,9 +35432,9 @@ WorkerDispatcher.prototype = {
           }
 
           if (!this.worker) {
-            reject("Oops, The worker has shutdown!");
             return;
           }
+
           this.worker.removeEventListener("message", listener);
           if (result.error) {
             reject(result.error);
