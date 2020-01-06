@@ -9,7 +9,8 @@
 
 #include "mozilla/Move.h"
 
-#include "js/Utility.h"
+#include "jsutil.h"
+
 #include "js/Vector.h"
 
 namespace js {
@@ -121,9 +122,25 @@ class Fifo
     }
 
     
+    T popCopyFront() {
+        T ret = front();
+        popFront();
+        return ret;
+    }
+
+    
     void clear() {
         front_.clear();
         rear_.clear();
+    }
+
+    
+    
+    template <class Pred>
+    size_t eraseIf(Pred pred) {
+        size_t erased = EraseIf(front_, pred);
+        erased += EraseIf(rear_, pred);
+        return erased;
     }
 };
 
