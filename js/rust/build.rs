@@ -143,7 +143,8 @@ const UNSAFE_IMPL_SYNC_TYPES: &'static [&'static str] = &[
 
 const EXTRA_CLANG_FLAGS: &'static [&'static str] = &[
     "-x", "c++",
-    "-std=c++14",
+    "-std=gnu++14",
+    "-fno-sized-deallocation",
     "-DRUST_BINDGEN",
 ];
 
