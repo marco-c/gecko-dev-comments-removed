@@ -4382,7 +4382,8 @@ public:
     {
       
       
-      return HasSameTypeAndClip(aItem) && HasSameContent(aItem);
+      return HasSameTypeAndClip(aItem) && HasSameContent(aItem)
+          && mIsForBackground == static_cast<const nsDisplayBlendContainer*>(aItem)->mIsForBackground;
     }
 
     virtual bool ShouldFlattenAway(nsDisplayListBuilder* aBuilder) override
