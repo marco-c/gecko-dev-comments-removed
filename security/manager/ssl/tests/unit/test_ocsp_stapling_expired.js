@@ -9,6 +9,14 @@
 
 
 
+
+
+
+
+
+
+
+
 var gCurrentOCSPResponse = null;
 var gOCSPRequestCount = 0;
 
@@ -41,6 +49,7 @@ var args = [["good", "default-ee", "unused", 0],
              ["oldvalidperiod", "default-ee", "unused", 0],
              ["revoked", "default-ee", "unused", 0],
              ["unknown", "default-ee", "unused", 0],
+             ["good", "must-staple-ee", "unused", 0],
             ];
 var ocspResponses = generateOCSPResponses(args, "ocsp_certs");
 
@@ -53,6 +62,7 @@ var oldValidityPeriodOCSPResponseGood = ocspResponses[2];
 var ocspResponseRevoked = ocspResponses[3];
 
 var ocspResponseUnknown = ocspResponses[4];
+var ocspResponseGoodMustStaple = ocspResponses[5];
 
 
 var willNotRetry = 1;
@@ -164,6 +174,19 @@ function run_test() {
                 SEC_ERROR_OCSP_UNKNOWN_CERT,
                 ocspResponseUnknown, willRetry);
 
+  
+  
+  
+  
+  
+  
+  add_ocsp_test("ocsp-stapling-must-staple-expired.example.com",
+                PRErrorCodeSuccess, ocspResponseGoodMustStaple, willNotRetry);
+  add_ocsp_test("ocsp-stapling-must-staple-try-later.example.com",
+                PRErrorCodeSuccess, ocspResponseGoodMustStaple, willNotRetry);
+  add_ocsp_test("ocsp-stapling-must-staple-invalid-signer.example.com",
+                PRErrorCodeSuccess, ocspResponseGoodMustStaple, willNotRetry);
+
   add_test(function () { ocspResponder.stop(run_next_test); });
   add_test(check_ocsp_stapling_telemetry);
   run_next_test();
@@ -180,9 +203,9 @@ function check_ocsp_stapling_telemetry() {
         "Actual and expected connections with a good response should match");
   equal(histogram.counts[2], 0,
         "Actual and expected connections with no stapled response should match");
-  equal(histogram.counts[3], 21,
+  equal(histogram.counts[3], 22,
         "Actual and expected connections with an expired response should match");
-  equal(histogram.counts[4], 0,
+  equal(histogram.counts[4], 2,
         "Actual and expected connections with bad responses should match");
   run_next_test();
 }

@@ -10,10 +10,11 @@
 
 var gExpectOCSPRequest;
 
-function add_ocsp_test(aHost, aExpectedResult, aStaplingEnabled) {
+function add_ocsp_test(aHost, aExpectedResult, aStaplingEnabled,
+                       aExpectOCSPRequest = false) {
   add_connection_test(aHost, aExpectedResult,
     function() {
-      gExpectOCSPRequest = !aStaplingEnabled;
+      gExpectOCSPRequest = aExpectOCSPRequest;
       clearOCSPCache();
       clearSessionCache();
       Services.prefs.setBoolPref("security.ssl.enable_ocsp_stapling",
@@ -24,39 +25,39 @@ function add_ocsp_test(aHost, aExpectedResult, aStaplingEnabled) {
 function add_tests() {
   
   add_ocsp_test("ocsp-stapling-good.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
   add_ocsp_test("ocsp-stapling-revoked.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
   add_ocsp_test("ocsp-stapling-good-other-ca.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
   add_ocsp_test("ocsp-stapling-malformed.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
   add_ocsp_test("ocsp-stapling-srverr.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
   add_ocsp_test("ocsp-stapling-trylater.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
   add_ocsp_test("ocsp-stapling-needssig.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
   add_ocsp_test("ocsp-stapling-unauthorized.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
   add_ocsp_test("ocsp-stapling-unknown.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
   add_ocsp_test("ocsp-stapling-good-other.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
   add_ocsp_test("ocsp-stapling-none.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
   add_ocsp_test("ocsp-stapling-expired.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
   add_ocsp_test("ocsp-stapling-expired-fresh-ca.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
   add_ocsp_test("ocsp-stapling-skip-responseBytes.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
   add_ocsp_test("ocsp-stapling-critical-extension.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
   add_ocsp_test("ocsp-stapling-noncritical-extension.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
   add_ocsp_test("ocsp-stapling-empty-extensions.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
 
   
   
@@ -65,11 +66,6 @@ function add_tests() {
 
   add_ocsp_test("ocsp-stapling-revoked.example.com",
                 SEC_ERROR_REVOKED_CERTIFICATE, true);
-
-  
-  
-  
-  
 
   
   
@@ -82,7 +78,7 @@ function add_tests() {
     run_next_test();
   });
   add_ocsp_test("ocsp-stapling-good-other-ca.example.com",
-                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true);
+                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true, true);
 
   
   
@@ -94,7 +90,7 @@ function add_tests() {
   
   
   add_ocsp_test("ocsp-stapling-good-other-ca.example.com",
-                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true);
+                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true, true);
 
   
   
@@ -104,7 +100,7 @@ function add_tests() {
   add_ocsp_test("ocsp-stapling-srverr.example.com",
                 SEC_ERROR_OCSP_SERVER_ERROR, true);
   add_ocsp_test("ocsp-stapling-trylater.example.com",
-                SEC_ERROR_OCSP_TRY_SERVER_LATER, true);
+                SEC_ERROR_OCSP_TRY_SERVER_LATER, true, true);
   add_ocsp_test("ocsp-stapling-needssig.example.com",
                 SEC_ERROR_OCSP_REQUEST_NEEDS_SIG, true);
   add_ocsp_test("ocsp-stapling-unauthorized.example.com",
@@ -143,17 +139,17 @@ function add_tests() {
   add_ocsp_test("ocsp-stapling-delegated-included-last.example.com",
                 PRErrorCodeSuccess, true);
   add_ocsp_test("ocsp-stapling-delegated-missing.example.com",
-                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true);
+                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true, true);
   add_ocsp_test("ocsp-stapling-delegated-missing-multiple.example.com",
-                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true);
+                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true, true);
   add_ocsp_test("ocsp-stapling-delegated-no-extKeyUsage.example.com",
-                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true);
+                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true, true);
   add_ocsp_test("ocsp-stapling-delegated-from-intermediate.example.com",
-                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true);
+                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true, true);
   add_ocsp_test("ocsp-stapling-delegated-keyUsage-crlSigning.example.com",
-                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true);
+                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true, true);
   add_ocsp_test("ocsp-stapling-delegated-wrong-extKeyUsage.example.com",
-                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true);
+                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true, true);
 
   
   
@@ -162,7 +158,7 @@ function add_tests() {
   
   
   add_ocsp_test("keysize-ocsp-delegated.example.com",
-                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true);
+                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true, true);
 
   add_ocsp_test("revoked-ca-cert-used-as-end-entity.example.com",
                 SEC_ERROR_REVOKED_CERTIFICATE, true);
@@ -188,6 +184,11 @@ function check_ocsp_stapling_telemetry() {
 
 function run_test() {
   do_get_profile();
+  Services.prefs.setIntPref("security.OCSP.enabled", 1);
+  
+  
+  
+  Services.prefs.setIntPref("security.OCSP.timeoutMilliseconds.soft", 5000);
 
   let fakeOCSPResponder = new HttpServer();
   fakeOCSPResponder.registerPrefixHandler("/", function (request, response) {

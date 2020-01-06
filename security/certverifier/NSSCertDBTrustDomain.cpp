@@ -412,6 +412,17 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
       mOCSPStaplingStatus = CertVerifier::OCSP_STAPLING_EXPIRED;
       MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
              ("NSSCertDBTrustDomain: expired stapled OCSP response"));
+    } else if (stapledOCSPResponseResult ==
+                 Result::ERROR_OCSP_TRY_SERVER_LATER ||
+               stapledOCSPResponseResult ==
+                 Result::ERROR_OCSP_INVALID_SIGNING_CERT) {
+      
+      
+      
+      mOCSPStaplingStatus = CertVerifier::OCSP_STAPLING_INVALID;
+      MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
+              ("NSSCertDBTrustDomain: stapled OCSP response: "
+               "failure (whitelisted for compatibility)"));
     } else {
       
       mOCSPStaplingStatus = CertVerifier::OCSP_STAPLING_INVALID;
@@ -484,9 +495,9 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
   
   
   
-
+  
+  
   Duration shortLifetime(mCertShortLifetimeInDays * Time::ONE_DAY_IN_SECONDS);
-
   if ((mOCSPFetching == NeverFetchOCSP) ||
       (validityDuration < shortLifetime) ||
       (endEntityOrCA == EndEntityOrCA::MustBeCA &&
@@ -614,7 +625,7 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
     }
     if (stapledOCSPResponseResult != Success) {
       MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-             ("NSSCertDBTrustDomain: returning SECFailure from expired "
+             ("NSSCertDBTrustDomain: returning SECFailure from expired/invalid "
               "stapled response after OCSP request failure"));
       return stapledOCSPResponseResult;
     }
@@ -645,8 +656,8 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
   }
   if (stapledOCSPResponseResult != Success) {
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-           ("NSSCertDBTrustDomain: returning SECFailure from expired stapled "
-            "response after OCSP request verification failure"));
+           ("NSSCertDBTrustDomain: returning SECFailure from expired/invalid "
+            "stapled response after OCSP request verification failure"));
     return stapledOCSPResponseResult;
   }
 

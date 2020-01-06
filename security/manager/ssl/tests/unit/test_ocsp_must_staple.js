@@ -10,10 +10,11 @@
 
 var gExpectOCSPRequest;
 
-function add_ocsp_test(aHost, aExpectedResult, aStaplingEnabled) {
+function add_ocsp_test(aHost, aExpectedResult, aStaplingEnabled,
+                       aExpectOCSPRequest = false) {
   add_connection_test(aHost, aExpectedResult,
     function() {
-      gExpectOCSPRequest = !aStaplingEnabled;
+      gExpectOCSPRequest = aExpectOCSPRequest;
       clearOCSPCache();
       clearSessionCache();
       Services.prefs.setBoolPref("security.ssl.enable_ocsp_stapling",
@@ -73,13 +74,24 @@ function add_tests() {
                 SEC_ERROR_REVOKED_CERTIFICATE, true);
 
   add_ocsp_test("ocsp-stapling-must-staple-missing.example.com",
-                MOZILLA_PKIX_ERROR_REQUIRED_TLS_FEATURE_MISSING, true);
+                MOZILLA_PKIX_ERROR_REQUIRED_TLS_FEATURE_MISSING, true, true);
 
   add_ocsp_test("ocsp-stapling-must-staple-empty.example.com",
                 SEC_ERROR_OCSP_MALFORMED_RESPONSE, true);
 
   add_ocsp_test("ocsp-stapling-must-staple-missing.example.com",
-                PRErrorCodeSuccess, false);
+                PRErrorCodeSuccess, false, true);
+
+  
+  
+  add_ocsp_test("ocsp-stapling-must-staple-expired.example.com",
+                SEC_ERROR_OCSP_OLD_RESPONSE, true, true);
+  
+  add_ocsp_test("ocsp-stapling-must-staple-try-later.example.com",
+                SEC_ERROR_OCSP_TRY_SERVER_LATER, true, true);
+  
+  add_ocsp_test("ocsp-stapling-must-staple-invalid-signer.example.com",
+                SEC_ERROR_OCSP_INVALID_SIGNING_CERT, true, true);
 
   
   add_test(function() {
@@ -89,12 +101,17 @@ function add_tests() {
   });
 
   add_ocsp_test("ocsp-stapling-must-staple-missing.example.com",
-                PRErrorCodeSuccess, true);
+                PRErrorCodeSuccess, true, true);
 }
 
 function run_test() {
   do_get_profile();
   Services.prefs.setBoolPref("security.ssl.enable_ocsp_must_staple", true);
+  Services.prefs.setIntPref("security.OCSP.enabled", 1);
+  
+  
+  
+  Services.prefs.setIntPref("security.OCSP.timeoutMilliseconds.soft", 5000);
 
   let fakeOCSPResponder = new HttpServer();
   fakeOCSPResponder.registerPrefixHandler("/", function (request, response) {
