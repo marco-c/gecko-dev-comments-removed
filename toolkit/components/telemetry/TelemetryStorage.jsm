@@ -17,6 +17,7 @@ Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/Services.jsm", this);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 Cu.import("resource://gre/modules/osfile.jsm", this);
+Cu.import("resource://gre/modules/TelemetryStopwatch.jsm", this);
 Cu.import("resource://gre/modules/TelemetryUtils.jsm", this);
 Cu.import("resource://gre/modules/Promise.jsm", this);
 Cu.import("resource://gre/modules/Preferences.jsm", this);
@@ -167,6 +168,18 @@ this.TelemetryStorage = {
 
   loadArchivedPing(id) {
     return TelemetryStorageImpl.loadArchivedPing(id);
+  },
+
+  
+
+
+
+
+
+
+
+  removeArchivedPing(id, timestampCreated, type) {
+    return TelemetryStorageImpl._removeArchivedPing(id, timestampCreated, type);
   },
 
   
@@ -689,8 +702,10 @@ var TelemetryStorageImpl = {
 
 
   async loadArchivedPing(id) {
+    TelemetryStopwatch.start("TELEMETRY_ARCHIVE_LOAD_MS");
     const data = this._archivedPings.get(id);
     if (!data) {
+      TelemetryStopwatch.cancel("TELEMETRY_ARCHIVE_LOAD_MS");
       this._log.trace("loadArchivedPing - no ping with id: " + id);
       return Promise.reject(new Error("TelemetryStorage.loadArchivedPing - no ping with id " + id));
     }
@@ -705,25 +720,31 @@ var TelemetryStorageImpl = {
         Telemetry.getHistogramById("TELEMETRY_DISCARDED_ARCHIVED_PINGS_SIZE_MB")
                  .add(Math.floor(fileSize / 1024 / 1024));
         Telemetry.getHistogramById("TELEMETRY_PING_SIZE_EXCEEDED_ARCHIVED").add();
+        TelemetryStopwatch.cancel("TELEMETRY_ARCHIVE_LOAD_MS");
         await OS.File.remove(path, {ignoreAbsent: true});
         throw new Error("loadArchivedPing - exceeded the maximum ping size: " + fileSize);
       }
     };
 
+    let ping;
     try {
       
       this._log.trace("loadArchivedPing - loading ping from: " + pathCompressed);
       await checkSize(pathCompressed);
-      return await this.loadPingFile(pathCompressed,  true);
+      ping = await this.loadPingFile(pathCompressed,  true);
     } catch (ex) {
       if (!ex.becauseNoSuchFile) {
+        TelemetryStopwatch.cancel("TELEMETRY_ARCHIVE_LOAD_MS");
         throw ex;
       }
       
       this._log.trace("loadArchivedPing - compressed ping not found, loading: " + path);
       await checkSize(path);
-      return await this.loadPingFile(path,  false);
+      ping = await this.loadPingFile(path,  false);
     }
+
+    TelemetryStopwatch.finish("TELEMETRY_ARCHIVE_LOAD_MS");
+    return ping;
   },
 
   
@@ -1318,8 +1339,10 @@ var TelemetryStorageImpl = {
 
   async loadPendingPing(id) {
     this._log.trace("loadPendingPing - id: " + id);
+    TelemetryStopwatch.start("TELEMETRY_PENDING_LOAD_MS");
     let info = this._pendingPings.get(id);
     if (!info) {
+      TelemetryStopwatch.cancel("TELEMETRY_PENDING_LOAD_MS");
       this._log.trace("loadPendingPing - unknown id " + id);
       throw new Error("TelemetryStorage.loadPendingPing - no ping with id " + id);
     }
@@ -1330,6 +1353,7 @@ var TelemetryStorageImpl = {
       fileSize = (await OS.File.stat(info.path)).size;
     } catch (e) {
       if (!(e instanceof OS.File.Error) || !e.becauseNoSuchFile) {
+        TelemetryStopwatch.cancel("TELEMETRY_PENDING_LOAD_MS");
         throw e;
       }
       
@@ -1341,6 +1365,7 @@ var TelemetryStorageImpl = {
       Telemetry.getHistogramById("TELEMETRY_DISCARDED_PENDING_PINGS_SIZE_MB")
                .add(Math.floor(fileSize / 1024 / 1024));
       Telemetry.getHistogramById("TELEMETRY_PING_SIZE_EXCEEDED_PENDING").add();
+      TelemetryStopwatch.cancel("TELEMETRY_PENDING_LOAD_MS");
       throw new Error("loadPendingPing - exceeded the maximum ping size: " + fileSize);
     }
 
@@ -1355,12 +1380,15 @@ var TelemetryStorageImpl = {
       } else if (e instanceof PingParseError) {
         Telemetry.getHistogramById("TELEMETRY_PENDING_LOAD_FAILURE_PARSE").add();
       }
+      TelemetryStopwatch.cancel("TELEMETRY_PENDING_LOAD_MS");
+
       
       this._pendingPings.delete(id);
       
       throw e;
     }
 
+    TelemetryStopwatch.finish("TELEMETRY_PENDING_LOAD_MS");
     return ping;
   },
 
