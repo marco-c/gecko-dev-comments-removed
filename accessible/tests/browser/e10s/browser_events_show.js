@@ -8,8 +8,8 @@
 
 
 addAccessibleTask('<div id="div" style="visibility: hidden;"></div>',
-  function*(browser) {
+  async function(browser) {
     let onShow = waitForEvent(EVENT_SHOW, 'div');
-    yield invokeSetStyle(browser, 'div', 'visibility', 'visible');
-    yield onShow;
+    await invokeSetStyle(browser, 'div', 'visibility', 'visible');
+    await onShow;
   });

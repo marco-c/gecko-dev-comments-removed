@@ -4,13 +4,13 @@
 
 'use strict';
 
-add_task(function* () {
+add_task(async function () {
   info('Creating a service');
   
   let a11yInit = initPromise();
   let accService1 = Cc['@mozilla.org/accessibilityService;1'].getService(
     Ci.nsIAccessibilityService);
-  yield a11yInit;
+  await a11yInit;
   ok(accService1, 'Service initialized');
 
   
@@ -35,7 +35,7 @@ add_task(function* () {
   forceGC();
 
   
-  yield new Promise(resolve => executeSoon(resolve));
+  await new Promise(resolve => executeSoon(resolve));
 
   
   canShutdown = true;
@@ -44,5 +44,5 @@ add_task(function* () {
   ok(!accService2, 'Service is removed');
   
   forceGC();
-  yield a11yShutdown;
+  await a11yShutdown;
 });

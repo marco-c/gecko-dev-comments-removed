@@ -4,17 +4,17 @@
 
 'use strict';
 
-add_task(function* () {
+add_task(async function () {
   
-  yield setE10sPrefs();
+  await setE10sPrefs();
 
   let a11yInit = initPromise();
   let accService = Cc['@mozilla.org/accessibilityService;1'].getService(
     Ci.nsIAccessibilityService);
   ok(accService, 'Service initialized');
-  yield a11yInit;
+  await a11yInit;
 
-  yield BrowserTestUtils.withNewTab({
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: `data:text/html,
       <html>
@@ -24,10 +24,10 @@ add_task(function* () {
         </head>
         <body><div id="div" style="visibility: hidden;"></div></body>
       </html>`
-  }, function*(browser) {
+  }, async function(browser) {
     let onShow = waitForEvent(Ci.nsIAccessibleEvent.EVENT_SHOW, 'div');
-    yield invokeSetStyle(browser, 'div', 'visibility', 'visible');
-    let showEvent = yield onShow;
+    await invokeSetStyle(browser, 'div', 'visibility', 'visible');
+    let showEvent = await onShow;
     let divAcc = showEvent.accessible;
     ok(divAcc, 'Accessible proxy is created');
     
@@ -46,7 +46,7 @@ add_task(function* () {
     
     forceGC();
     
-    yield new Promise(resolve => executeSoon(resolve));
+    await new Promise(resolve => executeSoon(resolve));
 
     
     canShutdown = true;
@@ -56,9 +56,9 @@ add_task(function* () {
 
     
     forceGC();
-    yield a11yShutdown;
+    await a11yShutdown;
   });
 
   
-  yield unsetE10sPrefs();
+  await unsetE10sPrefs();
 });

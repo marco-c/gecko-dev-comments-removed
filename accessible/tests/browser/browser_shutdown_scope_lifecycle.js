@@ -4,7 +4,7 @@
 
 'use strict';
 
-add_task(function* () {
+add_task(async function () {
   
   
   let a11yInitThenShutdown = initPromise().then(shutdownPromise);
@@ -17,5 +17,5 @@ add_task(function* () {
 
   
   forceGC();
-  yield a11yInitThenShutdown;
+  await a11yInitThenShutdown;
 });

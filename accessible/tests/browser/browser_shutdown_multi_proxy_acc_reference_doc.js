@@ -4,9 +4,9 @@
 
 'use strict';
 
-add_task(function* () {
+add_task(async function () {
   
-  yield setE10sPrefs();
+  await setE10sPrefs();
 
   let docLoaded = waitForEvent(
     Ci.nsIAccessibleEvent.EVENT_DOCUMENT_LOAD_COMPLETE, 'body');
@@ -14,9 +14,9 @@ add_task(function* () {
   let accService = Cc['@mozilla.org/accessibilityService;1'].getService(
     Ci.nsIAccessibilityService);
   ok(accService, 'Service initialized');
-  yield a11yInit;
+  await a11yInit;
 
-  yield BrowserTestUtils.withNewTab({
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: `data:text/html,
       <html>
@@ -26,8 +26,8 @@ add_task(function* () {
         </head>
         <body id="body"><div id="div"></div></body>
       </html>`
-  }, function*(browser) {
-    let docLoadedEvent = yield docLoaded;
+  }, async function(browser) {
+    let docLoadedEvent = await docLoaded;
     let docAcc = docLoadedEvent.accessibleDocument;
     ok(docAcc, 'Accessible document proxy is created');
     
@@ -49,7 +49,7 @@ add_task(function* () {
     
     forceGC();
     
-    yield new Promise(resolve => executeSoon(resolve));
+    await new Promise(resolve => executeSoon(resolve));
 
     
     acc = null;
@@ -58,7 +58,7 @@ add_task(function* () {
     
     forceGC();
     
-    yield new Promise(resolve => executeSoon(resolve));
+    await new Promise(resolve => executeSoon(resolve));
 
     
     canShutdown = true;
@@ -68,9 +68,9 @@ add_task(function* () {
 
     
     forceGC();
-    yield a11yShutdown;
+    await a11yShutdown;
   });
 
   
-  yield unsetE10sPrefs();
+  await unsetE10sPrefs();
 });

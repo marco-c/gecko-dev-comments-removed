@@ -4,11 +4,11 @@
 
 'use strict';
 
-add_task(function* () {
+add_task(async function () {
   
-  yield setE10sPrefs();
+  await setE10sPrefs();
 
-  yield BrowserTestUtils.withNewTab({
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: `data:text/html,
       <html>
@@ -18,7 +18,7 @@ add_task(function* () {
         </head>
         <body></body>
       </html>`
-  }, function*(browser) {
+  }, async function(browser) {
     info('Creating a service in parent and waiting for service to be created ' +
       'in content');
     
@@ -28,7 +28,7 @@ add_task(function* () {
     let accService = Cc['@mozilla.org/accessibilityService;1'].getService(
       Ci.nsIAccessibilityService);
     ok(accService, 'Service initialized in parent');
-    yield Promise.all([parentA11yInit, contentA11yInit]);
+    await Promise.all([parentA11yInit, contentA11yInit]);
 
     info('Removing a service in parent and waiting for service to be shut ' +
       'down in content');
@@ -40,9 +40,9 @@ add_task(function* () {
     
     
     forceGC();
-    yield Promise.all([parentA11yShutdown, contentA11yShutdown]);
+    await Promise.all([parentA11yShutdown, contentA11yShutdown]);
   });
 
   
-  yield unsetE10sPrefs();
+  await unsetE10sPrefs();
 });
