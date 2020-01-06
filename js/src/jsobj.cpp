@@ -577,6 +577,30 @@ js::SetIntegrityLevel(JSContext* cx, HandleObject obj, IntegrityLevel level)
     return true;
 }
 
+static bool
+ResolveLazyProperties(JSContext* cx, HandleNativeObject obj)
+{
+    const Class* clasp = obj->getClass();
+    if (JSEnumerateOp enumerate = clasp->getEnumerate()) {
+        if (!enumerate(cx, obj))
+            return false;
+    }
+    if (clasp->getNewEnumerate() && clasp->getResolve()) {
+        AutoIdVector properties(cx);
+        if (!clasp->getNewEnumerate()(cx, obj, properties,  false))
+            return false;
+
+        RootedId id(cx);
+        for (size_t i = 0; i < properties.length(); i++) {
+            id = properties[i];
+            bool found;
+            if (!HasOwnProperty(cx, obj, id, &found))
+                return false;
+        }
+    }
+    return true;
+}
+
 
 bool
 js::TestIntegrityLevel(JSContext* cx, HandleObject obj, IntegrityLevel level, bool* result)
@@ -591,30 +615,68 @@ js::TestIntegrityLevel(JSContext* cx, HandleObject obj, IntegrityLevel level, bo
     }
 
     
-    AutoIdVector props(cx);
-    if (!GetPropertyKeys(cx, obj, JSITER_HIDDEN | JSITER_OWNONLY | JSITER_SYMBOLS, &props))
-        return false;
-
-    
-    RootedId id(cx);
-    Rooted<PropertyDescriptor> desc(cx);
-    for (size_t i = 0, len = props.length(); i < len; i++) {
-        id = props[i];
+    if (obj->isNative()) {
+        HandleNativeObject nobj = obj.as<NativeObject>();
 
         
-        if (!GetOwnPropertyDescriptor(cx, obj, id, &desc))
+        if (!ResolveLazyProperties(cx, nobj))
             return false;
 
         
-        if (!desc.object())
-            continue;
-
         
-        if (desc.configurable() ||
-            (level == IntegrityLevel::Frozen && desc.isDataDescriptor() && desc.writable()))
+        if (nobj->is<TypedArrayObject>() && nobj->as<TypedArrayObject>().length() > 0 &&
+            level == IntegrityLevel::Frozen)
         {
             *result = false;
             return true;
+        }
+
+        
+        if (nobj->getDenseInitializedLength() > 0 && !nobj->denseElementsAreFrozen()) {
+            *result = false;
+            return true;
+        }
+
+        
+        for (Shape::Range<NoGC> r(nobj->lastProperty()); !r.empty(); r.popFront()) {
+            Shape* shape = &r.front();
+
+            
+            if (shape->configurable() ||
+                (level == IntegrityLevel::Frozen &&
+                 shape->isDataDescriptor() && shape->writable()))
+            {
+                *result = false;
+                return true;
+            }
+        }
+    } else {
+        
+        AutoIdVector props(cx);
+        if (!GetPropertyKeys(cx, obj, JSITER_HIDDEN | JSITER_OWNONLY | JSITER_SYMBOLS, &props))
+            return false;
+
+        
+        RootedId id(cx);
+        Rooted<PropertyDescriptor> desc(cx);
+        for (size_t i = 0, len = props.length(); i < len; i++) {
+            id = props[i];
+
+            
+            if (!GetOwnPropertyDescriptor(cx, obj, id, &desc))
+                return false;
+
+            
+            if (!desc.object())
+                continue;
+
+            
+            if (desc.configurable() ||
+                (level == IntegrityLevel::Frozen && desc.isDataDescriptor() && desc.writable()))
+            {
+                *result = false;
+                return true;
+            }
         }
     }
 
@@ -2700,26 +2762,8 @@ js::PreventExtensions(JSContext* cx, HandleObject obj, ObjectOpResult& result, I
         return false;
 
     
-    if (obj->isNative()) {
-        const Class* clasp = obj->getClass();
-        if (JSEnumerateOp enumerate = clasp->getEnumerate()) {
-            if (!enumerate(cx, obj.as<NativeObject>()))
-                return false;
-        }
-        if (clasp->getNewEnumerate() && clasp->getResolve()) {
-            AutoIdVector properties(cx);
-            if (!clasp->getNewEnumerate()(cx, obj, properties,  false))
-                return false;
-
-            RootedId id(cx);
-            for (size_t i = 0; i < properties.length(); i++) {
-                id = properties[i];
-                bool found;
-                if (!HasOwnProperty(cx, obj, id, &found))
-                    return false;
-            }
-        }
-    }
+    if (obj->isNative() && !ResolveLazyProperties(cx, obj.as<NativeObject>()))
+        return false;
 
     
     
