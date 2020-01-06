@@ -7136,7 +7136,9 @@ HTMLMediaElement::RemoveMediaKeys()
   LOG(LogLevel::Debug, ("%s", __func__));
   
   
-  mMediaKeys->Unbind();
+  if (mMediaKeys) {
+    mMediaKeys->Unbind();
+  }
   mMediaKeys = nullptr;
 }
 
