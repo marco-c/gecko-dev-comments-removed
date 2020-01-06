@@ -407,6 +407,7 @@ ServoRestyleManager::ProcessPostTraversal(Element* aElement,
 
     if (styleFrame) {
       styleFrame->UpdateStyleOfOwnedAnonBoxes(childrenRestyleState);
+      UpdateFramePseudoElementStyles(styleFrame, childrenRestyleState);
     }
 
     if (!aElement->GetParent()) {
@@ -455,14 +456,6 @@ ServoRestyleManager::ProcessPostTraversal(Element* aElement,
         recreatedAnyContext |= ProcessPostTraversalForText(n, textState);
       }
     }
-  }
-
-  
-  
-  
-  
-  if (recreateContext && styleFrame) {
-    UpdateFramePseudoElementStyles(styleFrame, childrenRestyleState);
   }
 
   aElement->UnsetHasDirtyDescendantsForServo();
