@@ -293,6 +293,11 @@ public:
   static RecordedEvent *LoadEvent(S &aStream, EventType aType);
   static RecordedEvent *LoadEventFromStream(std::istream &aStream, EventType aType);
 
+  
+  
+  template<class S, class F>
+  static bool DoWithEvent(S &aStream, EventType aType, F f);
+
   EventType GetType() { return (EventType)mType; }
 protected:
   friend class DrawEventRecorderPrivate;
