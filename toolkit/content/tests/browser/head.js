@@ -148,6 +148,10 @@ class DateTimeTestHelper {
       await BrowserTestUtils.waitForEvent(this.panel, "DateTimePickerBindingReady")
     }
     this.frame = this.panel.dateTimePopupFrame;
+    await this.waitForPickerReady();
+  }
+
+  async waitForPickerReady() {
     await BrowserTestUtils.waitForEvent(this.frame, "load", true);
     
     await BrowserTestUtils.waitForEvent(this.frame.contentDocument, "PickerReady");
