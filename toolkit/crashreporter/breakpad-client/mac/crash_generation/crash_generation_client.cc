@@ -46,7 +46,7 @@ bool CrashGenerationClient::RequestDumpForException(
   MachSendMessage message(kDumpRequestMessage);
   message.AddDescriptor(mach_task_self());            
   message.AddDescriptor(crashing_thread);             
-  message.AddDescriptor(mach_thread_self());          
+  message.AddDescriptor(MACH_PORT_NULL);              
   message.AddDescriptor(acknowledge_port.GetPort());  
 
   ExceptionInfo info;
