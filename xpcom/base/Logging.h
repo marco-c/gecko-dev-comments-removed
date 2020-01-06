@@ -211,18 +211,62 @@ void log_print(const LogModule* aModule,
 
 
 
-
-
-
 #define MOZ_LOG_TEST(_module,_level) false
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if MOZ_LOGGING_ENABLED
 #define MOZ_LOG(_module,_level,_args)                                         \
   do {                                                                        \
-    if (MOZ_LOG_TEST(_module,_level)) {                                       \
+    const ::mozilla::LogModule* moz_real_module = _module;                    \
+    if (MOZ_LOG_TEST(moz_real_module,_level)) {                               \
+      mozilla::detail::log_print(moz_real_module, _level, MOZ_LOG_EXPAND_ARGS _args); \
+    }                                                                         \
+  } while (0)
+#else
+#define MOZ_LOG(_module,_level,_args)                                         \
+  do {                                                                        \
+    if (MOZ_LOG_TEST(_module,_level)) {                        \
       mozilla::detail::log_print(_module, _level, MOZ_LOG_EXPAND_ARGS _args); \
     }                                                                         \
   } while (0)
+#endif
 
 
 
