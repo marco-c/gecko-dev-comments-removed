@@ -1,0 +1,19 @@
+
+
+
+
+"use strict";
+
+const INITIAL_EVENTS = [];
+
+let reducers = {
+
+};
+
+module.exports = function (events = INITIAL_EVENTS, action) {
+  let reducer = reducers[action.type];
+  if (!reducer) {
+    return events;
+  }
+  return reducer(events, action);
+};
