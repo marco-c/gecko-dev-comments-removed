@@ -9711,6 +9711,8 @@ public:
     
     if (aTypeHint) {
       mTypeHint = aTypeHint;
+    } else {
+      mTypeHint.SetIsVoid(true);
     }
   }
 
@@ -9722,7 +9724,9 @@ public:
                                    mReferrer,
                                    mReferrerPolicy,
                                    mTriggeringPrincipal, mPrincipalToInherit,
-                                   mFlags, EmptyString(), mTypeHint.get(),
+                                   mFlags, EmptyString(),
+                                   mTypeHint.IsVoid() ? nullptr
+                                                      : mTypeHint.get(),
                                    NullString(), mPostData, mHeadersData,
                                    mLoadType, mSHEntry, mFirstParty,
                                    mSrcdoc, mSourceDocShell, mBaseURI,
@@ -9730,8 +9734,7 @@ public:
   }
 
 private:
-  
-  nsXPIDLCString mTypeHint;
+  nsCString mTypeHint;
   nsString mSrcdoc;
 
   RefPtr<nsDocShell> mDocShell;
