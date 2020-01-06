@@ -238,12 +238,13 @@ ServoStyleSheet::InsertRuleInternal(const nsAString& aRule,
   if (aRv.Failed()) {
     return 0;
   }
-  
-  
   if (mDocument) {
-    
-    
-    mDocument->StyleRuleAdded(this, mRuleList->GetRule(aIndex));
+    if (mRuleList->GetRuleType(aIndex) != css::Rule::IMPORT_RULE ||
+        !RuleHasPendingChildSheet(mRuleList->GetRule(aIndex))) {
+      
+      
+      mDocument->StyleRuleAdded(this, mRuleList->GetRule(aIndex));
+    }
   }
   return aIndex;
 }
