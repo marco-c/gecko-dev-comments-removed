@@ -221,7 +221,6 @@ Inspector.prototype = {
   _detectActorFeatures: function () {
     this._supportsDuplicateNode = false;
     this._supportsScrollIntoView = false;
-    this._supportsResolveRelativeURL = false;
 
     
     
@@ -232,10 +231,7 @@ Inspector.prototype = {
         }).catch(console.error),
         this._target.actorHasMethod("domnode", "scrollIntoView").then(value => {
           this._supportsScrollIntoView = value;
-        }).catch(console.error),
-        this._target.actorHasMethod("inspector", "resolveRelativeURL").then(value => {
-          this._supportsResolveRelativeURL = value;
-        }).catch(console.error),
+        }).catch(console.error)
       ]);
     });
   },
@@ -1600,8 +1596,7 @@ Inspector.prototype = {
     }
 
     let type = popupNode.dataset.type;
-    if (this._supportsResolveRelativeURL &&
-        (type === "uri" || type === "cssresource" || type === "jsresource")) {
+    if ((type === "uri" || type === "cssresource" || type === "jsresource")) {
       
       if (type === "uri" && !this.target.chrome) {
         linkFollow.visible = true;
@@ -2127,8 +2122,6 @@ Inspector.prototype = {
 
     if (type === "uri" || type === "cssresource" || type === "jsresource") {
       
-      
-      
       this.inspector.resolveRelativeURL(
         link, this.selection.nodeFront).then(url => {
           if (type === "uri") {
@@ -2169,8 +2162,6 @@ Inspector.prototype = {
 
 
   copyAttributeLink: function (link) {
-    
-    
     this.inspector.resolveRelativeURL(link, this.selection.nodeFront).then(url => {
       clipboardHelper.copyString(url);
     }, console.error);
