@@ -74,15 +74,6 @@ var inputTests = [
 
   
   {
-    input: "Date.prototype",
-    output: /Object \{.*\}/,
-    printOutput: "Invalid Date",
-    inspectable: true,
-    variablesViewLabel: "Object",
-  },
-
-  
-  {
     input: "new Number(43)",
     output: "Number { 43 }",
     printOutput: "43",
