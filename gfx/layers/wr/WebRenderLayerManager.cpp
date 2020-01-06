@@ -535,6 +535,9 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
       builder.Finalize(contentSize, mBuiltDisplayList);
 
       
+      mLayerScrollData.emplace_back();
+      mLayerScrollData.back().InitializeRoot(mLayerScrollData.size() - 1);
+      
       
       
       for (auto i = mLayerScrollData.crbegin(); i != mLayerScrollData.crend(); i++) {
