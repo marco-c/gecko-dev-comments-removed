@@ -443,6 +443,30 @@ nsRuleNode::FixupNoneGeneric(nsFont* aFont,
   }
 }
 
+
+void
+nsRuleNode::ApplyMinFontSize(nsStyleFont* aFont,
+                             const nsPresContext* aPresContext,
+                             nscoord aMinFontSize)
+{
+  nscoord fontSize = aFont->mSize;
+
+  
+  
+  if (fontSize > 0) {
+    if (aMinFontSize < 0) {
+      aMinFontSize = 0;
+    } else {
+      aMinFontSize = (aMinFontSize * aFont->mMinFontSizeRatio) / 100;
+    }
+    if (fontSize < aMinFontSize && !aPresContext->IsChrome()) {
+      
+      fontSize = aMinFontSize;
+    }
+  }
+  aFont->mFont.size = fontSize;
+}
+
 static nsSize CalcViewportUnitsScale(nsPresContext* aPresContext)
 {
   
@@ -4041,23 +4065,8 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, nsStyleContext* aContext,
   NS_ASSERTION(aFont->mScriptUnconstrainedSize <= aFont->mSize,
                "scriptminsize should never be making things bigger");
 
-  nscoord fontSize = aFont->mSize;
-
-  
-  
-  if (fontSize > 0) {
-    nscoord minFontSize = aPresContext->MinFontSize(aFont->mLanguage);
-    if (minFontSize < 0) {
-      minFontSize = 0;
-    } else {
-      minFontSize = (minFontSize * aFont->mMinFontSizeRatio) / 100;
-    }
-    if (fontSize < minFontSize && !aPresContext->IsChrome()) {
-      
-      fontSize = minFontSize;
-    }
-  }
-  aFont->mFont.size = fontSize;
+  nsRuleNode::ApplyMinFontSize(aFont, aPresContext,
+                               aPresContext->MinFontSize(aFont->mLanguage));
 
   
   const nsCSSValue* sizeAdjustValue = aRuleData->ValueForFontSizeAdjust();
