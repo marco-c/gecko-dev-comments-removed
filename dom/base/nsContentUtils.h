@@ -801,7 +801,8 @@ public:
   
 
 
-  static already_AddRefed<imgRequestProxy> GetStaticRequest(imgRequestProxy* aRequest);
+  static already_AddRefed<imgRequestProxy> GetStaticRequest(nsIDocument* aLoadingDocument,
+                                                            imgRequestProxy* aRequest);
 
   
 

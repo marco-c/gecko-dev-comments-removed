@@ -132,7 +132,9 @@ nsBulletFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
 
     if (needNewRequest) {
       RefPtr<imgRequestProxy> newRequestClone;
-      newRequest->Clone(mListener, getter_AddRefs(newRequestClone));
+      newRequest->SyncClone(mListener,
+                            PresContext()->Document(),
+                            getter_AddRefs(newRequestClone));
 
       
       
