@@ -805,6 +805,7 @@ class RefTest(object):
                                                  
                                                  
                                                  
+                                                 
                                                  timeout=options.timeout + 70.0,
                                                  symbolsPath=options.symbolsPath,
                                                  options=options,
