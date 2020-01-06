@@ -466,23 +466,12 @@ ValueFromStringHelper(nsCSSPropertyID aPropID,
     return nullptr;
   }
 
-  
-  const ServoComputedValues* currentStyle =
-    aStyleContext->StyleSource().AsServoComputedValues();
-  
-  const ServoComputedValues* parentStyle =
-    aStyleContext->GetParentAllowServo()
-    ? aStyleContext->GetParentAllowServo()->StyleSource()
-      .AsServoComputedValues()
-    : nullptr;
-  const ServoComputedValuesWithParent servoStyles =
-    { currentStyle, parentStyle };
-
-  
   nsIDocument* doc = aTargetElement->GetUncomposedDoc();
   if (!doc) {
     return nullptr;
   }
+
+  
   
   RefPtr<URLExtraData> data = new URLExtraData(doc->GetDocumentURI(),
                                                doc->GetDocumentURI(),
@@ -498,6 +487,18 @@ ValueFromStringHelper(nsCSSPropertyID aPropID,
   if (!servoDeclarationBlock) {
     return nullptr;
   }
+
+  
+  const ServoComputedValues* currentStyle =
+    aStyleContext->StyleSource().AsServoComputedValues();
+  
+  const ServoComputedValues* parentStyle =
+    aStyleContext->GetParentAllowServo()
+    ? aStyleContext->GetParentAllowServo()->StyleSource()
+      .AsServoComputedValues()
+    : nullptr;
+  const ServoComputedValuesWithParent servoStyles =
+    { currentStyle, parentStyle };
 
   
   PropertyValuePair propValuePair;
