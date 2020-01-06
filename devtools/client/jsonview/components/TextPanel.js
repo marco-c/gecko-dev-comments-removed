@@ -7,8 +7,9 @@
 "use strict";
 
 define(function (require, exports, module) {
-  const { DOM: dom, createFactory, createClass, PropTypes } = require("devtools/client/shared/vendor/react");
-
+  const { createFactory, Component } = require("devtools/client/shared/vendor/react");
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const dom = require("devtools/client/shared/vendor/react-dom-factories");
   const { createFactories } = require("devtools/client/shared/react-utils");
   const { Toolbar, ToolbarButton } = createFactories(require("./reps/Toolbar"));
   const { div, pre } = dom;
@@ -17,23 +18,24 @@ define(function (require, exports, module) {
 
 
 
-  let TextPanel = createClass({
-    displayName: "TextPanel",
+  class TextPanel extends Component {
+    static get propTypes() {
+      return {
+        isValidJson: PropTypes.bool,
+        actions: PropTypes.object,
+        data: PropTypes.string
+      };
+    }
 
-    propTypes: {
-      isValidJson: PropTypes.bool,
-      actions: PropTypes.object,
-      data: PropTypes.string
-    },
+    constructor(props) {
+      super(props);
+      this.state = {};
+    }
 
-    getInitialState: function () {
-      return {};
-    },
-
-    render: function () {
+    render() {
       return (
         div({className: "textPanelBox tab-panel-inner"},
-          TextToolbar({
+          TextToolbarFactory({
             actions: this.props.actions,
             isValidJson: this.props.isValidJson
           }),
@@ -45,35 +47,42 @@ define(function (require, exports, module) {
         )
       );
     }
-  });
+  }
 
   
 
 
 
-  let TextToolbar = createFactory(createClass({
-    displayName: "TextToolbar",
+  class TextToolbar extends Component {
+    static get propTypes() {
+      return {
+        actions: PropTypes.object,
+        isValidJson: PropTypes.bool
+      };
+    }
 
-    propTypes: {
-      actions: PropTypes.object,
-      isValidJson: PropTypes.bool
-    },
+    constructor(props) {
+      super(props);
+      this.onPrettify = this.onPrettify.bind(this);
+      this.onSave = this.onSave.bind(this);
+      this.onCopy = this.onCopy.bind(this);
+    }
 
     
 
-    onPrettify: function (event) {
+    onPrettify(event) {
       this.props.actions.onPrettify();
-    },
+    }
 
-    onSave: function (event) {
+    onSave(event) {
       this.props.actions.onSaveJson();
-    },
+    }
 
-    onCopy: function (event) {
+    onCopy(event) {
       this.props.actions.onCopyJson();
-    },
+    }
 
-    render: function () {
+    render() {
       return (
         Toolbar({},
           ToolbarButton({
@@ -95,8 +104,10 @@ define(function (require, exports, module) {
             null
         )
       );
-    },
-  }));
+    }
+  }
+
+  let TextToolbarFactory = createFactory(TextToolbar);
 
   
   exports.TextPanel = TextPanel;
