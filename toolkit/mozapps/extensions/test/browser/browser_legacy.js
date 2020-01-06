@@ -111,7 +111,7 @@ add_task(async function() {
   
   
   
-  await mgrWin.gLegacyView.refreshVisibility();
+  await mgrWin.gLegacyView.refresh();
 
   
   
@@ -156,7 +156,7 @@ add_task(async function() {
   });
 
   
-  await mgrWin.gLegacyView.refreshVisibility();
+  await mgrWin.gLegacyView.refresh();
   is(catItem.disabled, false, "Legacy category is visible");
   is(catItem.getAttribute("name"), get_string("type.unsupported.name"),
      "Category label with unsigned extensions is correct");
@@ -186,7 +186,7 @@ add_task(async function() {
   });
 
   
-  await mgrWin.gLegacyView.refreshVisibility();
+  await mgrWin.gLegacyView.refresh();
   is(catItem.disabled, false, "Legacy category is visible");
   is(catItem.getAttribute("name"), get_string("type.legacy.name"),
      "Category label with no unsigned extensions is correct");
