@@ -147,10 +147,8 @@ public:
   {
     Unlink();
     mValue.reset();
-    mCachedValue.Truncate();
     mValueBeingSet.Truncate();
     mTextCtrlElement = nullptr;
-    MOZ_ASSERT(!mMutationObserver);
   }
 
   mozilla::TextEditor* GetTextEditor();
@@ -200,19 +198,9 @@ public:
   void EmptyValue() { if (mValue) mValue->Truncate(); }
   bool IsEmpty() const { return mValue ? mValue->IsEmpty() : true; }
 
-  nsresult CreatePlaceholderNode();
-  nsresult CreatePreviewNode();
-  mozilla::dom::Element* CreateEmptyDivNode();
-
-  mozilla::dom::Element* GetRootNode() {
-    return mRootNode;
-  }
-  mozilla::dom::Element* GetPlaceholderNode() {
-    return mPlaceholderDiv;
-  }
-  mozilla::dom::Element* GetPreviewNode() {
-    return mPreviewDiv;
-  }
+  mozilla::dom::Element* GetRootNode();
+  mozilla::dom::Element* GetPlaceholderNode();
+  mozilla::dom::Element* GetPreviewNode();
 
   bool IsSingleLineTextControl() const {
     return mTextCtrlElement->IsSingleLineTextControl();
@@ -239,7 +227,6 @@ public:
   bool GetPlaceholderVisibility() {
     return mPlaceholderVisibility;
   }
-  void UpdatePlaceholderText(bool aNotify);
 
   
   void SetPreviewText(const nsAString& aValue, bool aNotify);
@@ -254,28 +241,6 @@ public:
 
 
   int32_t GetMaxLength();
-
-  void ClearValueCache()
-  {
-    mCachedValue.SetIsVoid(true);
-    MOZ_ASSERT(mCachedValue.IsEmpty());
-  }
-  void SetValueCache(const nsAString& aValue)
-  {
-    mCachedValue.Assign(aValue);
-    MOZ_ASSERT(!mCachedValue.IsVoid());
-  }
-  MOZ_MUST_USE bool
-  SetValueCache(const nsAString& aValue,
-                const mozilla::fallible_t& aFallible)
-  {
-    if (!mCachedValue.Assign(aValue, aFallible)) {
-      ClearValueCache();
-      return false;
-    }
-    MOZ_ASSERT(!mCachedValue.IsVoid());
-    return true;
-  }
 
   void HideSelectionIfBlurred();
 
@@ -411,8 +376,8 @@ public:
                       mozilla::Nothing());
 
   void UpdateEditableState(bool aNotify) {
-    if (mRootNode) {
-      mRootNode->UpdateEditableState(aNotify);
+    if (auto* root = GetRootNode()) {
+      root->UpdateEditableState(aNotify);
     }
   }
 
@@ -423,8 +388,6 @@ private:
   nsTextEditorState(const nsTextEditorState&);
   
   void operator= (const nsTextEditorState&);
-
-  nsresult CreateRootNode();
 
   void ValueWasChanged(bool aNotify);
 
@@ -468,23 +431,12 @@ private:
   
   
   nsITextControlElement* MOZ_NON_OWNING_REF mTextCtrlElement;
-  
   RefPtr<nsTextInputSelectionImpl> mSelCon;
   RefPtr<RestoreSelectionState> mRestoringSelection;
   RefPtr<mozilla::TextEditor> mTextEditor;
-  nsCOMPtr<mozilla::dom::Element> mRootNode;
-  nsCOMPtr<mozilla::dom::Element> mPlaceholderDiv;
-  nsCOMPtr<mozilla::dom::Element> mPreviewDiv;
   nsTextControlFrame* mBoundFrame;
   RefPtr<nsTextInputListener> mTextListener;
   mozilla::Maybe<nsString> mValue;
-  RefPtr<nsAnonDivObserver> mMutationObserver;
-  
-  
-  
-  
-  
-  nsString mCachedValue;
   
   
   

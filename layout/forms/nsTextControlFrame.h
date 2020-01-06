@@ -187,6 +187,18 @@ protected:
 public: 
   void SetValueChanged(bool aValueChanged);
 
+  mozilla::dom::Element* GetRootNode() const {
+    return mRootNode;
+  }
+
+  mozilla::dom::Element* GetPlaceholderNode() const {
+    return mPlaceholderDiv;
+  }
+
+  mozilla::dom::Element* GetPreviewNode() const {
+    return mPreviewDiv;
+  }
+
   
   nsresult MaybeBeginSecureKeyboardInput();
   void MaybeEndSecureKeyboardInput();
@@ -333,7 +345,53 @@ private:
     DeleteProperty(TextControlInitializer());
   }
 
+  const nsAString& CachedValue() const
+  {
+    return mCachedValue;
+  }
+
+  void ClearCachedValue()
+  {
+    mCachedValue.SetIsVoid(true);
+  }
+
+  void CacheValue(const nsAString& aValue)
+  {
+    mCachedValue.Assign(aValue);
+  }
+
+  MOZ_MUST_USE bool
+  CacheValue(const nsAString& aValue, const mozilla::fallible_t& aFallible)
+  {
+    if (!mCachedValue.Assign(aValue, aFallible)) {
+      ClearCachedValue();
+      return false;
+    }
+    return true;
+  }
+
 private:
+  class nsAnonDivObserver;
+
+  nsresult CreateRootNode();
+  void CreatePlaceholderIfNeeded();
+  void CreatePreviewIfNeeded();
+  bool ShouldInitializeEagerly() const;
+  void InitializeEagerlyIfNeeded();
+
+  RefPtr<mozilla::dom::Element> mRootNode;
+  RefPtr<mozilla::dom::Element> mPlaceholderDiv;
+  RefPtr<mozilla::dom::Element> mPreviewDiv;
+  RefPtr<nsAnonDivObserver> mMutationObserver;
+  
+  
+  
+  
+  
+  
+  
+  nsString mCachedValue;
+
   
   
   nscoord mFirstBaseline;

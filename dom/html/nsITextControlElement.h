@@ -141,17 +141,7 @@ public:
   
 
 
-  NS_IMETHOD_(mozilla::dom::Element*) CreatePlaceholderNode() = 0;
-
-  
-
-
   NS_IMETHOD_(mozilla::dom::Element*) GetPlaceholderNode() = 0;
-
-  
-
-
-  NS_IMETHOD_(mozilla::dom::Element*) CreatePreviewNode() = 0;
 
   
 
