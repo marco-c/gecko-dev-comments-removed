@@ -724,6 +724,7 @@ public:
 
 
 
+
 class AsyncStreamHelper final : public nsIInputStreamCallback
 {
 public:
@@ -768,7 +769,7 @@ private:
         mPendingStreams[i]->AsyncWait(this, aFlags, aRequestedCount,
                                       mEventTarget);
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        mValid = true;
+        mValid = false;
         return rv;
       }
     }
