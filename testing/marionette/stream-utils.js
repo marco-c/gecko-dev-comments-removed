@@ -59,6 +59,7 @@ function copyStream(input, output, length) {
   return copier.copy();
 }
 
+
 function StreamCopier(input, output, length) {
   EventEmitter.decorate(this);
   this._id = StreamCopier._nextId++;
@@ -194,7 +195,6 @@ StreamCopier.prototype = {
   },
 
 };
-
 
 
 

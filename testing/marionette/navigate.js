@@ -10,6 +10,7 @@ Cu.importGlobalProperties(["URL"]);
 
 this.EXPORTED_SYMBOLS = ["navigate"];
 
+
 this.navigate = {};
 
 

@@ -15,6 +15,10 @@ const PNG_MIME = "image/png";
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
+
+
+
+
 this.capture = {};
 
 capture.Format = {

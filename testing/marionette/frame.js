@@ -11,6 +11,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 this.EXPORTED_SYMBOLS = ["frame"];
 
+
 this.frame = {};
 
 const FRAME_SCRIPT = "chrome://marionette/content/listener.js";

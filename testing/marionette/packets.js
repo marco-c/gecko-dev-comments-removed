@@ -52,6 +52,8 @@ const PACKET_LENGTH_MAX = Math.pow(2, 40);
 
 
 
+
+
 function Packet(transport) {
   this._transport = transport;
   this._length = 0;

@@ -22,23 +22,6 @@ Cu.import("chrome://marionette/content/wait.js");
 
 const logger = Log.repository.getLogger("Marionette");
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 this.EXPORTED_SYMBOLS = ["element"];
 
 const DOCUMENT_POSITION_DISCONNECTED = 1;
@@ -46,6 +29,24 @@ const XMLNS = "http://www.w3.org/1999/xhtml";
 
 const uuidGen = Cc["@mozilla.org/uuid-generator;1"]
     .getService(Ci.nsIUUIDGenerator);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 this.element = {};
 
@@ -64,6 +65,9 @@ element.Strategy = {
   Anon: "anon",
   AnonAttribute: "anon attribute",
 };
+
+
+
 
 
 

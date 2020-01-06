@@ -32,6 +32,7 @@ const MARIONETTE_SCRIPT_FINISHED = "marionetteScriptFinished";
 const ELEMENT_KEY = "element";
 const W3C_ELEMENT_KEY = "element-6066-11e4-a52e-4f735466cecf";
 
+
 this.evaluate = {};
 
 
@@ -100,11 +101,16 @@ this.evaluate = {};
 
 
 
-
-
-
-
-evaluate.sandbox = function(sb, script, args = [], opts = {}) {
+evaluate.sandbox = function(sb, script, args = [],
+    {
+      async = false,
+      debug = false,
+      directInject = false,
+      file = "dummy file",
+      line = 0,
+      sandboxName = null,
+      timeout = DEFAULT_TIMEOUT,
+    } = {}) {
   let scriptTimeoutID, timeoutHandler, unloadHandler;
 
   let promise = new Promise((resolve, reject) => {
@@ -116,8 +122,8 @@ evaluate.sandbox = function(sb, script, args = [], opts = {}) {
         sb);
 
     
-    if (!opts.directInject) {
-      if (opts.async) {
+    if (!directInject) {
+      if (async) {
         sb[CALLBACK] = sb[COMPLETE];
       }
       sb[ARGUMENTS] = sandbox.cloneInto(args, sb);
@@ -125,7 +131,7 @@ evaluate.sandbox = function(sb, script, args = [], opts = {}) {
       
       
       
-      if (opts.async) {
+      if (async) {
         sb[CALLBACK] = sb[COMPLETE];
         src += `${ARGUMENTS}.push(rv => ${CALLBACK}(rv));`;
       }
@@ -134,7 +140,7 @@ evaluate.sandbox = function(sb, script, args = [], opts = {}) {
 
       
       
-      if (opts.sandboxName) {
+      if (sandboxName) {
         sb[MARIONETTE_SCRIPT_FINISHED] = sb[CALLBACK];
       }
     }
@@ -143,7 +149,7 @@ evaluate.sandbox = function(sb, script, args = [], opts = {}) {
     
     
     
-    if (opts.debug) {
+    if (debug) {
       sb.window.onerror = (msg, url, line) => {
         let err = new JavaScriptError(`${msg} at ${url}:${line}`);
         reject(err);
@@ -151,12 +157,8 @@ evaluate.sandbox = function(sb, script, args = [], opts = {}) {
     }
 
     
-    const timeout = opts.timeout || DEFAULT_TIMEOUT;
     scriptTimeoutID = setTimeout(timeoutHandler, timeout);
     sb.window.onunload = unloadHandler;
-
-    const file = opts.filename || "dummy file";
-    const line = opts.line || 0;
 
     let res;
     try {
@@ -171,7 +173,7 @@ evaluate.sandbox = function(sb, script, args = [], opts = {}) {
       reject(err);
     }
 
-    if (!opts.async) {
+    if (!async) {
       resolve(res);
     }
   });
@@ -426,6 +428,8 @@ sandbox.createSimpleTest = function(window, harness) {
 
 
 
+
+
 this.Sandboxes = class {
   
 
@@ -475,8 +479,6 @@ this.Sandboxes = class {
   }
 
   
-
-
   clear() {
     this.boxes_.clear();
   }

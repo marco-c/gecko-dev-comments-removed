@@ -16,6 +16,7 @@ Cu.import("chrome://marionette/content/frame.js");
 
 this.EXPORTED_SYMBOLS = ["browser"];
 
+
 this.browser = {};
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";

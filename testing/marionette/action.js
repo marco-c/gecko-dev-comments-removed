@@ -31,6 +31,8 @@ const {pprint} = error;
 
 
 
+
+
 this.action = {
   Pause: "pause",
   KeyDown: "keyDown",
@@ -431,6 +433,8 @@ class InputState {
 
 
 
+
+
   is(other) {
     if (typeof other == "undefined") {
       return false;
@@ -443,6 +447,8 @@ class InputState {
   }
 
   
+
+
 
 
 
@@ -634,6 +640,8 @@ action.InputState.Pointer = class Pointer extends InputState {
 
 
 
+
+
 action.Action = class {
   constructor(id, type, subtype) {
     if ([id, type, subtype].includes(undefined)) {
@@ -652,6 +660,7 @@ action.Action = class {
   }
 
   
+
 
 
 
@@ -960,6 +969,7 @@ action.Mouse = class {
 
 
 
+
 action.dispatch = function(chain, seenEls, container) {
   let chainEvents = Task.spawn(function*() {
     for (let tickActions of chain) {
@@ -972,6 +982,7 @@ action.dispatch = function(chain, seenEls, container) {
   });
   return chainEvents;
 };
+
 
 
 
@@ -1059,6 +1070,7 @@ action.computePointerDestination = function(
   }
   return {"x": x, "y": y};
 };
+
 
 
 
@@ -1252,6 +1264,7 @@ function dispatchPointerUp(a, inputState, win) {
     resolve();
   });
 }
+
 
 
 

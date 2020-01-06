@@ -47,6 +47,7 @@ const BUILTIN_ERRORS = new Set([
 
 this.EXPORTED_SYMBOLS = ["error", "error.pprint"].concat(Array.from(ERRORS));
 
+
 this.error = {};
 
 
@@ -233,6 +234,10 @@ class WebDriverError extends Error {
     }
   }
 
+  
+
+
+
   toJSON() {
     return {
       error: this.status,
@@ -240,6 +245,16 @@ class WebDriverError extends Error {
       stacktrace: this.stack || "",
     }
   }
+
+  
+
+
+
+
+
+
+
+
 
   static fromJSON(json) {
     if (typeof json.error == "undefined") {
@@ -261,6 +276,7 @@ class WebDriverError extends Error {
     return err;
   }
 }
+
 
 class ElementNotAccessibleError extends WebDriverError {
   constructor(message) {
@@ -310,6 +326,10 @@ class ElementClickInterceptedError extends WebDriverError {
   }
 }
 
+
+
+
+
 class ElementNotInteractableError extends WebDriverError {
   constructor(message) {
     super(message);
@@ -317,12 +337,17 @@ class ElementNotInteractableError extends WebDriverError {
   }
 }
 
+
+
+
+
 class InsecureCertificateError extends WebDriverError {
   constructor(message) {
     super(message);
     this.status = "insecure certificate";
   }
 }
+
 
 class InvalidArgumentError extends WebDriverError {
   constructor(message) {

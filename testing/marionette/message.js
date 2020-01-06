@@ -21,12 +21,28 @@ this.EXPORTED_SYMBOLS = [
 
 const logger = Log.repository.getLogger("Marionette");
 
+
+
+
+
+
+
+
+
 const MessageOrigin = {
+  
   Client: 0,
+  
   Server: 1,
 };
 
+
+
+
+
+
 this.Message = {};
+
 
 
 
@@ -188,6 +204,13 @@ const validator = {
 
 
 const ResponseBody = () => new Proxy({}, validator);
+
+
+
+
+
+
+
 
 
 

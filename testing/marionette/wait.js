@@ -11,7 +11,27 @@ Cu.import("chrome://marionette/content/error.js");
 this.EXPORTED_SYMBOLS = ["wait"];
 
 
+
+
+
+
 this.wait = {};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

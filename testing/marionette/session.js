@@ -28,6 +28,10 @@ try { appinfo.name = Services.appinfo.name.toLowerCase(); } catch (e) {}
 try { appinfo.version = Services.appinfo.version; } catch (e) {}
 
 
+
+
+
+
 this.session = {};
 
 
@@ -43,6 +47,7 @@ session.Timeouts = class {
 
   toString() { return "[object session.Timeouts]"; }
 
+  
   toJSON() {
     return {
       implicit: this.implicit,
@@ -79,14 +84,28 @@ session.Timeouts = class {
 };
 
 
+
+
+
+
 session.PageLoadStrategy = {
+  
   None: "none",
+  
+
+
+
   Eager: "eager",
+  
+
+
+
   Normal: "normal",
 };
 
 
 session.Proxy = class {
+  
   constructor() {
     this.proxyType = null;
     this.httpProxy = null;
@@ -159,6 +178,10 @@ session.Proxy = class {
 
   toString() { return "[object session.Proxy]"; }
 
+  
+
+
+
   toJSON() {
     return marshal({
       proxyType: this.proxyType,
@@ -174,6 +197,10 @@ session.Proxy = class {
       proxyAutoconfigUrl: this.proxyAutoconfigUrl,
     });
   }
+
+  
+
+
 
   static fromJSON(json) {
     let p = new session.Proxy();
@@ -219,6 +246,7 @@ session.Proxy = class {
 
 
 session.Capabilities = class extends Map {
+  
   constructor() {
     super([
       
@@ -242,6 +270,12 @@ session.Capabilities = class extends Map {
     ]);
   }
 
+  
+
+
+
+
+
   set(key, value) {
     if (key === "timeouts" && !(value instanceof session.Timeouts)) {
       throw new TypeError();
@@ -252,7 +286,13 @@ session.Capabilities = class extends Map {
     return super.set(key, value);
   }
 
+  
   toString() { return "[object session.Capabilities]"; }
+
+  
+
+
+
 
   toJSON() {
     return marshal(this);

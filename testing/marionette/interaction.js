@@ -24,8 +24,6 @@ Cu.importGlobalProperties(["File"]);
 this.EXPORTED_SYMBOLS = ["interaction"];
 
 
-
-
 const DISABLED_ATTRIBUTE_SUPPORTED_XUL = new Set([
   "ARROWSCROLLBOX",
   "BUTTON",
@@ -61,16 +59,12 @@ const DISABLED_ATTRIBUTE_SUPPORTED_XUL = new Set([
 ]);
 
 
-
-
 const CHECKED_PROPERTY_SUPPORTED_XUL = new Set([
   "BUTTON",
   "CHECKBOX",
   "LISTITEM",
   "TOOLBARBUTTON",
 ]);
-
-
 
 
 const SELECTED_PROPERTY_SUPPORTED_XUL = new Set([
@@ -82,6 +76,7 @@ const SELECTED_PROPERTY_SUPPORTED_XUL = new Set([
   "RICHLISTITEM",
   "TAB",
 ]);
+
 
 
 
@@ -106,6 +101,7 @@ const INPUT_TYPES_NO_EVENT = new Set([
   "button",
   "submit",
 ]);
+
 
 this.interaction = {};
 
@@ -280,6 +276,9 @@ function* seleniumClickElement(el, a11y) {
 
 
 
+
+
+
 interaction.selectOption = function(el) {
   if (element.isXULElement(el)) {
     throw new Error("XUL dropdowns not supported");
@@ -320,6 +319,7 @@ interaction.selectOption = function(el) {
 
 
 
+
 interaction.flushEventLoop = function* (win) {
   return new Promise(resolve => {
     let handleEvent = event => {
@@ -336,6 +336,7 @@ interaction.flushEventLoop = function* (win) {
     win.requestAnimationFrame(handleEvent);
   });
 };
+
 
 
 

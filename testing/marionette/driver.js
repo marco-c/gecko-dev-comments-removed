@@ -79,15 +79,28 @@ const globalMessageManager = Cc["@mozilla.org/globalmessagemanager;1"]
 
 
 
+
+
+
+
+
+
+
+
 var systemMessageListenerReady = false;
 Services.obs.addObserver(function() {
   systemMessageListenerReady = true;
 }, "system-message-listener-ready");
 
+
+
+
+
 this.Context = {
   CHROME: "chrome",
   CONTENT: "content",
 };
+
 
 this.Context.fromString = function(s) {
   s = s.toUpperCase();
@@ -103,11 +116,19 @@ this.Context.fromString = function(s) {
 
 
 
+
+
+
+
+
+
 function* enumeratorIterator(enumerator) {
   while (enumerator.hasMoreElements()) {
     yield enumerator.getNext();
   }
 }
+
+
 
 
 
@@ -830,13 +851,15 @@ GeckoDriver.prototype.executeScript = function*(cmd, resp) {
     sandboxName: cmd.parameters.sandbox,
     newSandbox: !!(typeof cmd.parameters.newSandbox == "undefined") ||
         cmd.parameters.newSandbox,
-    filename: cmd.parameters.filename,
+    file: cmd.parameters.filename,
     line: cmd.parameters.line,
     debug: cmd.parameters.debug_script,
   };
 
   resp.body.value = yield this.execute_(script, args, scriptTimeout, opts);
 };
+
+
 
 
 
@@ -905,7 +928,7 @@ GeckoDriver.prototype.executeAsyncScript = function* (cmd, resp) {
     sandboxName: cmd.parameters.sandbox,
     newSandbox: !!(typeof cmd.parameters.newSandbox == "undefined") ||
         cmd.parameters.newSandbox,
-    filename: cmd.parameters.filename,
+    file: cmd.parameters.filename,
     line: cmd.parameters.line,
     debug: cmd.parameters.debug_script,
     async: true,

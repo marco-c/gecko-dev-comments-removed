@@ -32,6 +32,7 @@ XPCOMUtils.defineLazyGetter(this, "service", () => {
 
 this.EXPORTED_SYMBOLS = ["accessibility"];
 
+
 this.accessibility = {
   get service() {
     return service;

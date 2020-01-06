@@ -39,7 +39,13 @@ const STATUS = {
 
 
 
-let reftest = {};
+
+
+this.reftest = {};
+
+
+
+
 
 reftest.Runner = class {
   constructor(driver) {

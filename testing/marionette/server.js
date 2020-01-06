@@ -37,6 +37,8 @@ const logger = Log.repository.getLogger("Marionette");
 const {KeepWhenOffline, LoopbackOnly} = Ci.nsIServerSocket;
 
 this.EXPORTED_SYMBOLS = ["server"];
+
+
 this.server = {};
 
 const PROTOCOL_VERSION = 3;

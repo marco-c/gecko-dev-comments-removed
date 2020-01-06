@@ -106,6 +106,8 @@ const PACKET_HEADER_MAX = 200;
 
 
 
+
+
 function DebuggerTransport(input, output) {
   EventEmitter.decorate(this);
 
@@ -712,6 +714,7 @@ LocalDebuggerTransport.prototype = {
     }
   },
 };
+
 
 
 

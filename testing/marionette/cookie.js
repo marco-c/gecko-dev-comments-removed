@@ -18,9 +18,18 @@ this.EXPORTED_SYMBOLS = ["cookie"];
 
 const IPV4_PORT_EXPR = /:\d+$/;
 
+
 this.cookie = {
   manager: Services.cookies,
 };
+
+
+
+
+
+
+
+
 
 
 
@@ -83,9 +92,7 @@ cookie.fromJSON = function(json) {
 
 
 
-
-
-cookie.add = function(newCookie, opts = {}) {
+cookie.add = function(newCookie, {restrictToHost = null} = {}) {
   assert.string(newCookie.name, "Cookie name must be string");
   assert.string(newCookie.value, "Cookie value must be string");
   assert.string(newCookie.domain, "Cookie domain must be string");
@@ -102,14 +109,11 @@ cookie.add = function(newCookie, opts = {}) {
     newCookie.expiry = date.getTime() / 1000;
   }
 
-  if (opts.restrictToHost) {
-    assert.in("restrictToHost", opts,
-        "Missing cookie domain for host restriction test");
-
-    if (newCookie.domain !== opts.restrictToHost) {
+  if (restrictToHost) {
+    if (newCookie.domain !== restrictToHost) {
       throw new InvalidCookieDomainError(
           `Cookies may only be set ` +
-          ` for the current domain (${opts.restrictToHost})`);
+          ` for the current domain (${restrictToHost})`);
     }
   }
 
@@ -144,6 +148,7 @@ cookie.remove = function(toDelete) {
       false,
       {} );
 };
+
 
 
 
