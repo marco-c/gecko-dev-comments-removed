@@ -91,8 +91,7 @@ var PointerRelay = {
 
   handleEvent: function PointerRelay_handleEvent(aEvent) {
     
-    if (Utils.MozBuildApp === "browser" &&
-      aEvent.view.top instanceof Ci.nsIDOMChromeWindow) {
+    if (Utils.MozBuildApp === "browser" && aEvent.view.top.isChromeWindow) {
       return;
     }
     if (aEvent.mozInputSource === Ci.nsIDOMMouseEvent.MOZ_SOURCE_UNKNOWN ||

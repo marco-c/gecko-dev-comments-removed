@@ -328,7 +328,7 @@ BrowserTabList.prototype.getTab = function ({ outerWindowID, tabId }) {
     
     let window = Services.wm.getOuterWindowWithId(outerWindowID);
     
-    if (window instanceof Ci.nsIDOMChromeWindow) {
+    if (window && window.isChromeWindow) {
       return promise.reject({
         error: "forbidden",
         message: "Window with outerWindowID '" + outerWindowID + "' is chrome"

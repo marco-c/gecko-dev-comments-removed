@@ -736,7 +736,7 @@ LoginManagerPrompter.prototype = {
       
       this._chromeWindow = null;
       this._browser = null;
-    } else if (aWindow instanceof Ci.nsIDOMChromeWindow) {
+    } else if (aWindow.isChromeWindow) {
       this._chromeWindow = aWindow;
       
       this._browser = null;
@@ -1578,7 +1578,7 @@ LoginManagerPrompter.prototype = {
       uri = Services.io.newURI(aURI);
     }
 
-    return uri.scheme + "://" + uri.displayHostPort;
+    return uri.scheme + "://" + uri.hostPort;
   },
 
 

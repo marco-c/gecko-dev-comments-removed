@@ -19,7 +19,7 @@ this.PrivateBrowsingUtils = {
   
   
   isWindowPrivate: function pbu_isWindowPrivate(aWindow) {
-    if (!(aWindow instanceof Components.interfaces.nsIDOMChromeWindow)) {
+    if (!aWindow.isChromeWindow) {
       dump("WARNING: content window passed to PrivateBrowsingUtils.isWindowPrivate. " +
            "Use isContentWindowPrivate instead (but only for frame scripts).\n"
            + new Error().stack);

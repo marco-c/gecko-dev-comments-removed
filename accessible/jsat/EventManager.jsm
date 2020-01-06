@@ -694,8 +694,7 @@ const AccessibilityEventObserver = {
     
     let eventManager = this.getListener(content);
     if (!eventManager || !eventManager._started) {
-      if (Utils.MozBuildApp === "browser" &&
-          !(content instanceof Ci.nsIDOMChromeWindow)) {
+      if (Utils.MozBuildApp === "browser" && !content.isChromeWindow) {
         Logger.warning(
           "AccessibilityEventObserver.observe: ignored event:",
           Logger.eventToString(event), "accessible:",
