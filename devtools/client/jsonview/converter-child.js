@@ -24,7 +24,7 @@ const BinaryInput = CC("@mozilla.org/binaryinputstream;1",
                        "nsIBinaryInputStream", "setInputStream");
 const BufferStream = CC("@mozilla.org/io/arraybuffer-input-stream;1",
                        "nsIArrayBufferInputStream", "setData");
-const encodingLength = 2;
+const encodingLength = 0;
 
 
 loader.lazyGetter(this, "jsonViewStrings", () => {
@@ -146,21 +146,8 @@ Converter.prototype = {
   
   determineEncoding: function (request, context, flush = false) {
     
-    
-    
-    
-    
-    
-    
     let encoding = "UTF-8";
     let bytes = this.encodingArray;
-    if (bytes.length >= 2) {
-      if (!bytes[0] && bytes[1] || bytes[0] == 0xFE && bytes[1] == 0xFF) {
-        encoding = "UTF-16BE";
-      } else if (bytes[0] && !bytes[1] || bytes[0] == 0xFF && bytes[1] == 0xFE) {
-        encoding = "UTF-16LE";
-      }
-    }
 
     
     this.decoder = new TextDecoder(encoding);
