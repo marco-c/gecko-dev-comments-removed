@@ -5,7 +5,7 @@
 
 
 use {CSSPixel, PinchZoomFactor, ParseError};
-use cssparser::{Parser, ToCss, ParseError as CssParseError, BasicParseError};
+use cssparser::{Parser, ToCss};
 use euclid::TypedSize2D;
 use std::ascii::AsciiExt;
 use std::fmt;
@@ -109,6 +109,7 @@ impl Zoom {
         use cssparser::Token;
         use values::specified::AllowedNumericType::NonNegative;
 
+        let location = input.current_source_location();
         match *input.next()? {
             
             
@@ -123,7 +124,7 @@ impl Zoom {
             Token::Ident(ref value) if value.eq_ignore_ascii_case("auto") => {
                 Ok(Zoom::Auto)
             }
-            ref t => Err(CssParseError::Basic(BasicParseError::UnexpectedToken(t.clone())))
+            ref t => Err(location.new_unexpected_token_error(t.clone()))
         }
     }
 
