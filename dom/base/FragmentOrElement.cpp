@@ -1262,6 +1262,13 @@ FragmentOrElement::SetTextContentInternal(const nsAString& aTextContent,
 void
 FragmentOrElement::DestroyContent()
 {
+  
+  
+  
+  if (IsElement() && AsElement()->HasServoData()) {
+    AsElement()->ClearServoData();
+  }
+
   nsIDocument *document = OwnerDoc();
   document->BindingManager()->RemovedFromDocument(this, document,
                                                   nsBindingManager::eRunDtor);
