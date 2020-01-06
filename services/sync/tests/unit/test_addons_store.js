@@ -92,6 +92,17 @@ function createAndStartHTTPServer(port) {
   return null; 
 }
 
+
+
+
+
+function checkReconcilerUpToDate(addon) {
+  let stateBefore = Object.assign({}, store.reconciler.addons[addon.id]);
+  store.reconciler.rectifyStateFromAddon(addon);
+  let stateAfter = store.reconciler.addons[addon.id];
+  deepEqual(stateBefore, stateAfter);
+}
+
 function run_test() {
   initTestLogging("Trace");
   Log.repository.getLogger("Sync.Engine.Addons").level = Log.Level.Trace;
@@ -137,6 +148,7 @@ add_test(function test_apply_enabled() {
   do_check_eq(0, failed.length);
   addon = getAddonFromAddonManagerByID(addon.id);
   do_check_true(addon.userDisabled);
+  checkReconcilerUpToDate(addon);
   records = [];
 
   _("Ensure enable record works as expected.");
@@ -145,6 +157,7 @@ add_test(function test_apply_enabled() {
   do_check_eq(0, failed.length);
   addon = getAddonFromAddonManagerByID(addon.id);
   do_check_false(addon.userDisabled);
+  checkReconcilerUpToDate(addon);
   records = [];
 
   _("Ensure enabled state updates don't apply if the ignore pref is set.");
@@ -158,6 +171,39 @@ add_test(function test_apply_enabled() {
 
   uninstallAddon(addon);
   Svc.Prefs.reset("addons.ignoreUserEnabledChanges");
+  run_next_test();
+});
+
+add_test(function test_apply_enabled_appDisabled() {
+  _("Ensures that changes to the userEnabled flag apply when the addon is appDisabled.");
+
+  let addon = installAddon("test_install3"); 
+  do_check_true(addon.appDisabled);
+  do_check_false(addon.isActive);
+  do_check_false(addon.userDisabled);
+
+  _("Ensure application of a disable record works as expected.");
+  store.reconciler.pruneChangesBeforeDate(Date.now() + 10);
+  store.reconciler._changes = [];
+  let records = [];
+  records.push(createRecordForThisApp(addon.syncGUID, addon.id, false, false));
+  let failed = store.applyIncomingBatch(records);
+  do_check_eq(0, failed.length);
+  addon = getAddonFromAddonManagerByID(addon.id);
+  do_check_true(addon.userDisabled);
+  checkReconcilerUpToDate(addon);
+  records = [];
+
+  _("Ensure enable record works as expected.");
+  records.push(createRecordForThisApp(addon.syncGUID, addon.id, true, false));
+  failed = store.applyIncomingBatch(records);
+  do_check_eq(0, failed.length);
+  addon = getAddonFromAddonManagerByID(addon.id);
+  do_check_false(addon.userDisabled);
+  checkReconcilerUpToDate(addon);
+  records = [];
+
+  uninstallAddon(addon);
   run_next_test();
 });
 
@@ -338,22 +384,32 @@ add_test(function test_get_all_ids() {
   _("Ensures that getAllIDs() returns an appropriate set.");
 
   _("Installing two addons.");
+  
+  
+  
+  
+  
+  
   let addon1 = installAddon("test_install1");
   let addon2 = installAddon("test_bootstrap1_1");
+  let addon3 = installAddon("test_install3");
 
   _("Ensure they're syncable.");
   do_check_true(store.isAddonSyncable(addon1));
   do_check_true(store.isAddonSyncable(addon2));
+  do_check_true(store.isAddonSyncable(addon3));
 
   let ids = store.getAllIDs();
 
   do_check_eq("object", typeof(ids));
-  do_check_eq(2, Object.keys(ids).length);
+  do_check_eq(3, Object.keys(ids).length);
   do_check_true(addon1.syncGUID in ids);
   do_check_true(addon2.syncGUID in ids);
+  do_check_true(addon3.syncGUID in ids);
 
   addon1.install.cancel();
   uninstallAddon(addon2);
+  uninstallAddon(addon3);
 
   run_next_test();
 });

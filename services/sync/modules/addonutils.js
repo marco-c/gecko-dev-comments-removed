@@ -403,97 +403,13 @@ AddonUtilsInternal.prototype = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-  updateUserDisabled: function updateUserDisabled(addon, value, cb) {
+  updateUserDisabled(addon, value) {
     if (addon.userDisabled == value) {
-      cb(null, addon);
       return;
-    }
-
-    let listener = {
-      onEnabling: (wrapper, needsRestart) => {
-        this._log.debug("onEnabling: " + wrapper.id);
-        if (wrapper.id != addon.id) {
-          return;
-        }
-
-        
-        if (!needsRestart) {
-          return;
-        }
-
-        AddonManager.removeAddonListener(listener);
-        cb(null, wrapper);
-      },
-
-      onEnabled: wrapper => {
-        this._log.debug("onEnabled: " + wrapper.id);
-        if (wrapper.id != addon.id) {
-          return;
-        }
-
-        AddonManager.removeAddonListener(listener);
-        cb(null, wrapper);
-      },
-
-      onDisabling: (wrapper, needsRestart) => {
-        this._log.debug("onDisabling: " + wrapper.id);
-        if (wrapper.id != addon.id) {
-          return;
-        }
-
-        if (!needsRestart) {
-          return;
-        }
-
-        AddonManager.removeAddonListener(listener);
-        cb(null, wrapper);
-      },
-
-      onDisabled: wrapper => {
-        this._log.debug("onDisabled: " + wrapper.id);
-        if (wrapper.id != addon.id) {
-          return;
-        }
-
-        AddonManager.removeAddonListener(listener);
-        cb(null, wrapper);
-      },
-
-      onOperationCancelled: wrapper => {
-        this._log.debug("onOperationCancelled: " + wrapper.id);
-        if (wrapper.id != addon.id) {
-          return;
-        }
-
-        AddonManager.removeAddonListener(listener);
-        cb(new Error("Operation cancelled"), wrapper);
-      }
-    };
-
-    
-    
-
-    if (!addon.appDisabled) {
-      AddonManager.addAddonListener(listener);
     }
 
     this._log.info("Updating userDisabled flag: " + addon.id + " -> " + value);
     addon.userDisabled = !!value;
-
-    if (!addon.appDisabled) {
-      cb(null, addon);
-    }
-    
   },
 
 };

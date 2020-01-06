@@ -385,9 +385,7 @@ AddonsStore.prototype = {
       
     }
 
-    let cb = Async.makeSpinningCallback();
-    this.updateUserDisabled(addon, !record.enabled, cb);
-    cb.wait();
+    this.updateUserDisabled(addon, !record.enabled);
   },
 
   
@@ -671,13 +669,8 @@ AddonsStore.prototype = {
 
 
 
-
-
-
-
-  updateUserDisabled: function updateUserDisabled(addon, value, callback) {
+  updateUserDisabled(addon, value) {
     if (addon.userDisabled == value) {
-      callback(null, addon);
       return;
     }
 
@@ -685,11 +678,16 @@ AddonsStore.prototype = {
     if (Svc.Prefs.get("addons.ignoreUserEnabledChanges", false)) {
       this._log.info("Ignoring enabled state change due to preference: " +
                      addon.id);
-      callback(null, addon);
       return;
     }
 
-    AddonUtils.updateUserDisabled(addon, value, callback);
+    AddonUtils.updateUserDisabled(addon, value);
+    
+    
+    
+    if (addon.appDisabled) {
+      this.reconciler.rectifyStateFromAddon(addon);
+    }
   },
 };
 
