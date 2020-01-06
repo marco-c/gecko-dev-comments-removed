@@ -176,40 +176,44 @@ for (let type of ['f32', 'f64']) {
     }
 }
 
-function testError(code, error, expect)
-{
-    enableGeckoProfiling();
-    var f = wasmEvalText(code).exports[""];
-    enableSingleStepProfiling();
-    assertThrowsInstanceOf(f, error);
-    assertEqStacks(disableSingleStepProfiling(), expect);
-    disableGeckoProfiling();
-}
+(function() {
+    
+    function testError(code, error, expect)
+    {
+        enableGeckoProfiling();
+        var f = wasmEvalText(code).exports[""];
+        enableSingleStepProfiling();
+        assertThrowsInstanceOf(f, error);
+        assertEqStacks(disableSingleStepProfiling(), expect);
+        disableGeckoProfiling();
+    }
 
-testError(
-`(module
-    (func $foo (unreachable))
-    (func (export "") (call $foo))
-)`,
-WebAssembly.RuntimeError,
-["", ">", "1,>", "0,1,>", "interstitial,0,1,>", "trap handling,0,1,>", "", ">", ""]);
+    testError(
+    `(module
+        (func $foo (unreachable))
+        (func (export "") (call $foo))
+    )`,
+    WebAssembly.RuntimeError,
+    ["", ">", "1,>", "0,1,>", "interstitial,0,1,>", "trap handling,0,1,>", "", ">", ""]);
 
-testError(
-`(module
-    (type $good (func))
-    (type $bad (func (param i32)))
-    (func $foo (call_indirect $bad (i32.const 1) (i32.const 0)))
-    (func $bar (type $good))
-    (table anyfunc (elem $bar))
-    (export "" $foo)
-)`,
-WebAssembly.RuntimeError,
-
-
-
-["", ">", "0,>", "1,0,>", "1,>", "trap handling,0,>", "", ">", ""]);
+    testError(
+    `(module
+        (type $good (func))
+        (type $bad (func (param i32)))
+        (func $foo (call_indirect $bad (i32.const 1) (i32.const 0)))
+        (func $bar (type $good))
+        (table anyfunc (elem $bar))
+        (export "" $foo)
+    )`,
+    WebAssembly.RuntimeError,
+    
+    
+    
+    ["", ">", "0,>", "1,0,>", "1,>", "trap handling,0,>", "", ">", ""]);
+})();
 
 (function() {
+    
     var e = wasmEvalText(`
     (module
         (func $foo (result i32) (i32.const 42))
@@ -280,6 +284,7 @@ WebAssembly.RuntimeError,
 })();
 
 (function() {
+    
     var m1 = new Module(wasmTextToBinary(`(module
         (func $foo (result i32) (i32.const 42))
         (export "foo" $foo)
@@ -309,4 +314,75 @@ WebAssembly.RuntimeError,
     assertEqStacks(disableSingleStepProfiling(), ["", ">", "1,>", "0,1,>", "1,>", ">", ""]);
     disableGeckoProfiling();
     assertEq(e4.bar(), 42);
+})();
+
+(function() {
+    
+    let prevOptions = getJitCompilerOptions();
+
+    
+    
+    if (prevOptions['baseline.enable'] === 0)
+        return;
+
+    setJitCompilerOption("baseline.warmup.trigger", 10);
+
+    enableGeckoProfiling();
+
+    var m = new Module(wasmTextToBinary(`(module
+        (import $ffi "a" "ffi" (param i32) (result i32))
+        (func $foo (export "foo") (param i32) (result i32)
+         get_local 0
+         call $ffi)
+    )`));
+
+    var valueToConvert = 0;
+    function ffi(n) {
+        new Error().stack; 
+        if (n == 1337) { return valueToConvert };
+        return 42;
+    }
+
+    
+    for (var i = 20; i --> 0;)
+        ffi(i);
+
+    var imports = { a: { ffi }};
+
+    var i = new Instance(m, imports).exports;
+
+    
+    assertEq(i.foo(0), 42);
+
+    enableSingleStepProfiling();
+    assertEq(i.foo(0), 42);
+    assertEqStacks(disableSingleStepProfiling(), ["", ">", "1,>", "<,1,>",
+        
+        
+        "",
+        
+        "<,1,>",
+        
+        
+        "",
+        
+        "<,1,>",
+        
+        "1,>", ">", ""]);
+
+    
+    valueToConvert = 2**31;
+
+    enableSingleStepProfiling();
+    assertEq(i.foo(1337), -(2**31));
+    assertEqStacks(disableSingleStepProfiling(), ["", ">", "1,>", "<,1,>", "", "<,1,>", "",
+        
+        
+        
+        "<,1,>",
+        
+        "1,>", ">", ""]);
+
+    disableGeckoProfiling();
+    setJitCompilerOption("baseline.warmup.trigger", prevOptions["baseline.warmup.trigger"]);
 })();
