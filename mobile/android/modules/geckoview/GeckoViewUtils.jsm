@@ -103,6 +103,27 @@ var GeckoViewUtils = {
     }
   },
 
+  _addLazyListeners: function(events, handler, scope, name, addFn, handleFn) {
+    if (!handler) {
+      handler = (_ => Array.isArray(name) ? name.map(n => scope[n]) : scope[name]);
+    }
+    let listener = (...args) => {
+      let handlers = handler(...args);
+      if (!handlers) {
+          return;
+      }
+      if (!Array.isArray(handlers)) {
+        handlers = [handlers];
+      }
+      handleFn(handlers, listener, args);
+    };
+    if (Array.isArray(events)) {
+      addFn(events, listener);
+    } else {
+      addFn([events], listener);
+    }
+  },
+
   
 
 
@@ -118,28 +139,50 @@ var GeckoViewUtils = {
 
 
   addLazyEventListener: function(target, events, {handler, scope, name, options}) {
-    if (!handler) {
-      handler = (_ => Array.isArray(name) ? name.map(n => scope[n]) : scope[name]);
-    }
-    let listener = event => {
-      let handlers = handler(event);
-      if (!handlers) {
-          return;
-      }
-      if (!Array.isArray(handlers)) {
-        handlers = [handlers];
-      }
-      if (!options || !options.once) {
-        target.removeEventListener(event.type, listener, options);
-        handlers.forEach(handler => target.addEventListener(event.type, handler, options));
-      }
-      handlers.forEach(handler => handler.handleEvent(event));
-    };
-    if (Array.isArray(events)) {
-      events.forEach(event => target.addEventListener(event, listener, options));
-    } else {
-      target.addEventListener(events, listener, options);
-    }
+    this._addLazyListeners(events, handler, scope, name,
+      (events, listener) => {
+        events.forEach(event => target.addEventListener(event, listener, options));
+      },
+      (handlers, listener, args) => {
+        if (!options || !options.once) {
+          target.removeEventListener(args[0].type, listener, options);
+          handlers.forEach(handler =>
+            target.addEventListener(args[0].type, handler, options));
+        }
+        handlers.forEach(handler => handler.handleEvent(args[0]));
+      });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  registerLazyWindowEventListener: function(window, events,
+                                            {handler, scope, name, once}) {
+    let dispatcher = this.getDispatcherForWindow(window);
+
+    this._addLazyListeners(events, handler, scope, name,
+      (events, listener) => {
+        dispatcher.registerListener(listener, events);
+      },
+      (handlers, listener, args) => {
+        if (!once) {
+          dispatcher.unregisterListener(listener, args[0]);
+          handlers.forEach(handler =>
+            dispatcher.registerListener(handler, args[0]));
+        }
+        handlers.forEach(handler => handler.onEvent(...args));
+      });
   },
 
   
@@ -149,7 +192,8 @@ var GeckoViewUtils = {
 
 
   getChromeWindow: function(aWin) {
-    return aWin.QueryInterface(Ci.nsIInterfaceRequestor)
+    return aWin &&
+           aWin.QueryInterface(Ci.nsIInterfaceRequestor)
                .getInterface(Ci.nsIDocShell).QueryInterface(Ci.nsIDocShellTreeItem)
                .rootTreeItem.QueryInterface(Ci.nsIInterfaceRequestor)
                .getInterface(Ci.nsIDOMWindow);
@@ -161,7 +205,11 @@ var GeckoViewUtils = {
 
 
   getDispatcherForWindow: function(aWin) {
-    let win = this.getChromeWindow(aWin.top);
-    return win.WindowEventDispatcher || EventDispatcher.for(win);
+    try {
+      let win = this.getChromeWindow(aWin.top);
+      return win.WindowEventDispatcher || EventDispatcher.for(win);
+    } catch (e) {
+      return null;
+    }
   },
 };

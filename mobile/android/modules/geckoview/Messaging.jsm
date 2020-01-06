@@ -216,12 +216,22 @@ DispatcherDelegate.prototype = {
 var EventDispatcher = {
   instance: new DispatcherDelegate(IS_PARENT_PROCESS ? Services.androidBridge : undefined),
 
+  
+
+
+
+
+
+
+
+
+
   for: function(aWindow) {
     let view = aWindow && aWindow.arguments && aWindow.arguments[0] &&
                aWindow.arguments[0].QueryInterface(Ci.nsIAndroidView);
 
     if (!view) {
-      let mm = aWindow && aWindow.messageManager;
+      let mm = !IS_PARENT_PROCESS && aWindow && aWindow.messageManager;
       if (!mm) {
         throw new Error("window is not a GeckoView-connected window and does" +
                         " not have a message manager");
@@ -231,6 +241,12 @@ var EventDispatcher = {
 
     return new DispatcherDelegate(view);
   },
+
+  
+
+
+
+
 
   forMessageManager: function(aMessageManager) {
     return new DispatcherDelegate(null, aMessageManager);
