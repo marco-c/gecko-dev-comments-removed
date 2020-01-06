@@ -6,6 +6,7 @@ package org.mozilla.gecko.tests;
 
 import android.util.Log;
 import com.robotium.solo.Condition;
+import org.mozilla.gecko.R;
 import org.mozilla.gecko.activitystream.homepanel.topstories.PocketStoriesLoader;
 import org.mozilla.gecko.tests.helpers.NavigationHelper;
 import org.mozilla.gecko.tests.helpers.WaitHelper;
@@ -48,6 +49,13 @@ public class testActivityStreamPocketReferrer extends JavascriptBridgeTest {
     }
 
     public void testActivityStreamPocketReferrer() throws Exception {
+        if (!getActivity().getResources().getBoolean(R.bool.pref_activitystream_pocket_enabled_default)) {
+            
+            
+            Log.d(LOGTAG, "Pocket recommendations are disabled by default; returning success...");
+            return;
+        }
+
         blockForReadyAndLoadJS(JS_FILE);
         NavigationHelper.goBack(); 
 
