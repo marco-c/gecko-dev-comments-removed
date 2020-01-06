@@ -41,7 +41,7 @@ public:
   
   
 
-  SlicedInputStream(already_AddRefed<nsIInputStream> aInputStream,
+  SlicedInputStream(nsIInputStream* aInputStream,
                     uint64_t aStart, uint64_t aLength);
 
   
@@ -51,7 +51,7 @@ private:
   ~SlicedInputStream();
 
   void
-  SetSourceStream(already_AddRefed<nsIInputStream> aInputStream);
+  SetSourceStream(nsIInputStream* aInputStream);
 
   nsresult
   RunAsyncWaitCallback();

@@ -71,10 +71,10 @@ class StreamReadyRunnable final : public CancelableRunnable
 {
 public:
   StreamReadyRunnable(IPCBlobInputStream* aDestinationStream,
-                      already_AddRefed<nsIInputStream> aCreatedStream)
+                      nsIInputStream* aCreatedStream)
     : CancelableRunnable("dom::StreamReadyRunnable")
     , mDestinationStream(aDestinationStream)
-    , mCreatedStream(Move(aCreatedStream))
+    , mCreatedStream(aCreatedStream)
   {
     MOZ_ASSERT(mDestinationStream);
     
@@ -83,7 +83,7 @@ public:
   NS_IMETHOD
   Run() override
   {
-    mDestinationStream->StreamReady(mCreatedStream.forget());
+    mDestinationStream->StreamReady(mCreatedStream);
     return NS_OK;
   }
 
@@ -317,7 +317,7 @@ IPCBlobInputStreamChild::RecvStreamReady(const OptionalIPCStream& aStream)
   }
 
   RefPtr<StreamReadyRunnable> runnable =
-    new StreamReadyRunnable(pendingStream, stream.forget());
+    new StreamReadyRunnable(pendingStream, stream);
 
   
   
