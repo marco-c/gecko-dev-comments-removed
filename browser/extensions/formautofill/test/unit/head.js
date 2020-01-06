@@ -15,7 +15,6 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource://gre/modules/ObjectUtils.jsm");
 Cu.import("resource://gre/modules/FormLikeFactory.jsm");
-Cu.import("resource://testing-common/FileTestUtils.jsm");
 Cu.import("resource://testing-common/MockDocument.jsm");
 Cu.import("resource://testing-common/TestUtils.jsm");
 
@@ -54,8 +53,41 @@ Components.manager.addBootstrappedManifestLocation(extensionDir);
 
 
 
+
+
+let gFileCounter = Math.floor(Math.random() * 1000000);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function getTempFile(leafName) {
-  return FileTestUtils.getTempFile(leafName);
+  
+  let [base, ext] = DownloadPaths.splitBaseNameAndExtension(leafName);
+  let finalLeafName = base + "-" + gFileCounter + ext;
+  gFileCounter++;
+
+  
+  let file = FileUtils.getFile("TmpD", [finalLeafName]);
+  do_check_false(file.exists());
+
+  do_register_cleanup(function() {
+    if (file.exists()) {
+      file.remove(false);
+    }
+  });
+
+  return file;
 }
 
 async function initProfileStorage(fileName, records, collectionName = "addresses") {

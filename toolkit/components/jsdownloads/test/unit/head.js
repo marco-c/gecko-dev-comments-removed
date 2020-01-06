@@ -37,8 +37,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "OS",
                                   "resource://gre/modules/osfile.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "FileTestUtils",
-                                  "resource://testing-common/FileTestUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "MockRegistrar",
                                   "resource://testing-common/MockRegistrar.jsm");
 
@@ -107,8 +105,50 @@ function httpUrl(aFileName) {
 
 
 
-function getTempFile(leafName) {
-  return FileTestUtils.getTempFile(leafName);
+var gFileCounter = Math.floor(Math.random() * 1000000);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getTempFile(aLeafName) {
+  
+  let [base, ext] = DownloadPaths.splitBaseNameAndExtension(aLeafName);
+  let leafName = base + "-" + gFileCounter + ext;
+  gFileCounter++;
+
+  
+  let file = FileUtils.getFile("TmpD", [leafName]);
+  do_check_false(file.exists());
+
+  do_register_cleanup(function() {
+    try {
+      file.remove(false);
+    } catch (e) {
+      if (!(e instanceof Components.Exception &&
+            (e.result == Cr.NS_ERROR_FILE_ACCESS_DENIED ||
+             e.result == Cr.NS_ERROR_FILE_TARGET_DOES_NOT_EXIST ||
+             e.result == Cr.NS_ERROR_FILE_NOT_FOUND))) {
+        throw e;
+      }
+      
+      
+      
+      
+    }
+  });
+
+  return file;
 }
 
 

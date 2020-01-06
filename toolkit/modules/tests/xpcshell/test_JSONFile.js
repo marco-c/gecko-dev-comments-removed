@@ -15,15 +15,40 @@ XPCOMUtils.defineLazyModuleGetter(this, "OS",
                                   "resource://gre/modules/osfile.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "JSONFile",
                                   "resource://gre/modules/JSONFile.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "FileTestUtils",
-                                  "resource://testing-common/FileTestUtils.jsm");
+
+let gFileCounter = Math.floor(Math.random() * 1000000);
 
 
 
 
 
-function getTempFile(leafName) {
-  return FileTestUtils.getTempFile(leafName);
+
+
+
+
+
+
+
+
+
+
+function getTempFile(aLeafName) {
+  
+  let [base, ext] = DownloadPaths.splitBaseNameAndExtension(aLeafName);
+  let leafName = base + "-" + gFileCounter + ext;
+  gFileCounter++;
+
+  
+  let file = FileUtils.getFile("TmpD", [leafName]);
+  do_check_false(file.exists());
+
+  do_register_cleanup(function() {
+    if (file.exists()) {
+      file.remove(false);
+    }
+  });
+
+  return file;
 }
 
 const TEST_STORE_FILE_NAME = "test-store.json";

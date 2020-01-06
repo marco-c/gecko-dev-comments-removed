@@ -30,8 +30,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "HttpServer",
                                   "resource://testing-common/httpd.js");
 XPCOMUtils.defineLazyModuleGetter(this, "OS",
                                   "resource://gre/modules/osfile.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "FileTestUtils",
-                                  "resource://testing-common/FileTestUtils.jsm");
 
 const TEST_TARGET_FILE_NAME_PDF = "test-download.pdf";
 
@@ -41,8 +39,39 @@ const TEST_TARGET_FILE_NAME_PDF = "test-download.pdf";
 
 
 
-function getTempFile(leafName) {
-  return FileTestUtils.getTempFile(leafName);
+var gFileCounter = Math.floor(Math.random() * 1000000);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getTempFile(aLeafName) {
+  
+  let [base, ext] = DownloadPaths.splitBaseNameAndExtension(aLeafName);
+  let leafName = base + "-" + gFileCounter + ext;
+  gFileCounter++;
+
+  
+  let file = FileUtils.getFile("TmpD", [leafName]);
+  ok(!file.exists(), "Temp file does not exist");
+
+  registerCleanupFunction(function() {
+    if (file.exists()) {
+      file.remove(false);
+    }
+  });
+
+  return file;
 }
 
 function promiseBrowserLoaded(browser) {

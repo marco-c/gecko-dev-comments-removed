@@ -12,7 +12,6 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/LoginRecipes.jsm");
 Cu.import("resource://gre/modules/LoginHelper.jsm");
-Cu.import("resource://testing-common/FileTestUtils.jsm");
 Cu.import("resource://testing-common/LoginTestUtils.jsm");
 Cu.import("resource://testing-common/MockDocument.jsm");
 
@@ -45,8 +44,43 @@ function run_test()
 
 
 
-function getTempFile(leafName) {
-  return FileTestUtils.getTempFile(leafName);
+
+
+
+let gFileCounter = Math.floor(Math.random() * 1000000);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getTempFile(aLeafName)
+{
+  
+  let [base, ext] = DownloadPaths.splitBaseNameAndExtension(aLeafName);
+  let leafName = base + "-" + gFileCounter + ext;
+  gFileCounter++;
+
+  
+  let file = FileUtils.getFile("TmpD", [leafName]);
+  do_check_false(file.exists());
+
+  do_register_cleanup(function() {
+    if (file.exists()) {
+      file.remove(false);
+    }
+  });
+
+  return file;
 }
 
 const RecipeHelpers = {
