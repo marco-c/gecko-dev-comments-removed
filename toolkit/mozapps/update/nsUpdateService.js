@@ -193,6 +193,9 @@ var gUpdateMutexHandle = null;
 XPCOMUtils.defineLazyModuleGetter(this, "UpdateUtils",
                                   "resource://gre/modules/UpdateUtils.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "WindowsRegistry",
+                                  "resource://gre/modules/WindowsRegistry.jsm");
+
 XPCOMUtils.defineLazyGetter(this, "gLogEnabled", function aus_gLogEnabled() {
   return getPref("getBoolPref", PREF_APP_UPDATE_LOG, false);
 });
@@ -2813,6 +2816,59 @@ Checker.prototype = {
 
   _callback: null,
 
+  _getCanMigrate: function UC__getCanMigrate() {
+    if (AppConstants.platform != "win") {
+      return false;
+    }
+
+    
+    
+    
+    let aryABI = UpdateUtils.ABI.split("-");
+    if (aryABI[0] != "x86" || aryABI[2] != "x64") {
+      return false;
+    }
+
+    let wrk = Cc["@mozilla.org/windows-registry-key;1"].
+              createInstance(Ci.nsIWindowsRegKey);
+
+    let regPath = "SOFTWARE\\Mozilla\\" + Services.appinfo.name +
+                  "\\32to64DidMigrate";
+    let regValHKCU = WindowsRegistry.readRegKey(wrk.ROOT_KEY_CURRENT_USER,
+                                                regPath, "Never", wrk.WOW64_32);
+    let regValHKLM = WindowsRegistry.readRegKey(wrk.ROOT_KEY_LOCAL_MACHINE,
+                                                regPath, "Never", wrk.WOW64_32);
+    
+    
+    if (regValHKCU === 1 || regValHKLM === 1) {
+      LOG("Checker:_getCanMigrate - all installations should not be migrated");
+      return false;
+    }
+
+    let appBaseDirPath = getAppBaseDir().path;
+    regValHKCU = WindowsRegistry.readRegKey(wrk.ROOT_KEY_CURRENT_USER, regPath,
+                                            appBaseDirPath, wrk.WOW64_32);
+    regValHKLM = WindowsRegistry.readRegKey(wrk.ROOT_KEY_LOCAL_MACHINE, regPath,
+                                            appBaseDirPath, wrk.WOW64_32);
+    
+    
+    
+    if (regValHKCU === 1 || regValHKLM === 1) {
+      LOG("Checker:_getCanMigrate - this installation should not be migrated");
+      return false;
+    }
+
+    
+    
+    if (regValHKCU === 0 || regValHKLM === 0) {
+      LOG("Checker:_getCanMigrate - this installation can be migrated");
+      return true;
+    }
+
+    LOG("Checker:_getCanMigrate - no registry entries for this installation");
+    return false;
+  },
+
   
 
 
@@ -2832,6 +2888,10 @@ Checker.prototype = {
 
     if (force) {
       url += (url.indexOf("?") != -1 ? "&" : "?") + "force=1";
+    }
+
+    if (this._getCanMigrate()) {
+      url += (url.indexOf("?") != -1 ? "&" : "?") + "mig64=1";
     }
 
     LOG("Checker:getUpdateURL - update URL: " + url);
