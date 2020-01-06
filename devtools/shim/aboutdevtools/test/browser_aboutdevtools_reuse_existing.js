@@ -40,24 +40,3 @@ add_task(async function () {
   await removeTab(aboutDevtoolsTab);
   await removeTab(tab);
 });
-
-
-
-
-function synthesizeToggleToolboxKey() {
-  info("Trigger the toogle toolbox shortcut");
-  if (Services.appinfo.OS == "Darwin") {
-    EventUtils.synthesizeKey("i", { accelKey: true, altKey: true });
-  } else {
-    EventUtils.synthesizeKey("i", { accelKey: true, shiftKey: true });
-  }
-}
-
-
-
-
-function isAboutDevtoolsTab(tab) {
-  let browser = tab.linkedBrowser;
-  let location = browser.documentURI.spec;
-  return location.startsWith("about:devtools");
-}
