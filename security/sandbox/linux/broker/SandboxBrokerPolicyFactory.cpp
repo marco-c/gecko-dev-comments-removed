@@ -79,13 +79,20 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
 #endif
 
 #ifdef MOZ_WIDGET_GTK
-  
   if (const auto userDir = g_get_user_runtime_dir()) {
+    
     
     nsPrintfCString shmPath("%s/dconf/", userDir);
     policy->AddPrefix(rdwrcr, shmPath.get());
+#ifdef MOZ_PULSEAUDIO
+    
+    
+    
+    nsPrintfCString pulsePath("%s/pulse", userDir);
+    policy->AddPath(rdonly, pulsePath.get());
+#endif 
   }
-#endif
+#endif 
 
   
   policy->AddPath(rdonly, "/dev/urandom");
@@ -110,6 +117,13 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
 
   
   policy->AddPath(rdonly, "/proc/modules");
+
+#ifdef MOZ_PULSEAUDIO
+  
+  if (const auto xauth = PR_GetEnv("XAUTHORITY")) {
+    policy->AddPath(rdonly, xauth);
+  }
+#endif
 
   
   
