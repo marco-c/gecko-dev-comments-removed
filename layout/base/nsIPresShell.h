@@ -452,6 +452,15 @@ public:
 
 
 
+
+
+  nsIScrollableFrame* GetNearestScrollableFrame(nsIFrame* aFrame,
+                                                ScrollDirection aDirection);
+
+  
+
+
+
   virtual nsIPageSequenceFrame* GetPageSequenceFrame() const = 0;
 
   
