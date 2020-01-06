@@ -5819,14 +5819,27 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
         aState.AddPendingBinding(newPendingBinding.forget());
       }
 
-      if (aContent->IsStyledByServo()) {
-        NS_WARNING("stylo: Skipping Unsupported binding re-resolve. This needs fixing.");
-        resolveStyle = false;
-      }
-
       if (resolveStyle) {
-        styleContext =
-          ResolveStyleContext(styleContext->GetParent(), aContent, &aState);
+        if (aContent->IsStyledByServo()) {
+          Element* element = aContent->AsElement();
+          ServoStyleSet* styleSet = mPresShell->StyleSet()->AsServo();
+
+          
+          ServoRestyleManager::ClearServoDataFromSubtree(element);
+          styleSet->StyleNewSubtree(element);
+
+          
+          
+          
+          styleSet->StyleNewChildren(element);
+
+          styleContext =
+            styleSet->ResolveStyleFor(element, nullptr, LazyComputeBehavior::Allow);
+        } else {
+          styleContext =
+            ResolveStyleContext(styleContext->GetParent(), aContent, &aState);
+        }
+
         display = styleContext->StyleDisplay();
         aStyleContext = styleContext;
       }
