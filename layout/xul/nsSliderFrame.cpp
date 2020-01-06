@@ -421,6 +421,22 @@ nsSliderFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
       nsRect dirty = aDirtyRect.Intersect(thumbRect);
       dirty = nsLayoutUtils::ComputePartialPrerenderArea(aDirtyRect, overflow, refSize);
 
+      
+      
+      
+      
+      DisplayListClipState::AutoSaveRestore thumbClipState(aBuilder);
+      aBuilder->GetCurrentReferenceFrame();
+      thumbClipState.ClipContainingBlockDescendants(
+          GetRectRelativeToSelf() + aBuilder->ToReferenceFrame(this));
+
+      
+      
+      
+      
+      DisplayListClipState::AutoSaveRestore thumbContentsClipState(aBuilder);
+      thumbContentsClipState.Clear();
+
       nsDisplayListBuilder::AutoContainerASRTracker contASRTracker(aBuilder);
       nsDisplayListCollection tempLists;
       nsBoxFrame::BuildDisplayListForChildren(aBuilder, dirty, tempLists);
@@ -436,9 +452,10 @@ nsSliderFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
       masterList.AppendToTop(tempLists.Outlines());
 
       
+      thumbContentsClipState.Restore();
+
+      
       const ActiveScrolledRoot* ownLayerASR = contASRTracker.GetContainerASR();
-      DisplayListClipState::AutoSaveRestore ownLayerClipState(aBuilder);
-      ownLayerClipState.ClearUpToASR(ownLayerASR);
       aLists.Content()->AppendNewToTop(new (aBuilder)
         nsDisplayOwnLayer(aBuilder, this, &masterList, ownLayerASR,
                           flags, scrollTargetId,

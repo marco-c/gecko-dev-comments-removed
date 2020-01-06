@@ -3935,6 +3935,13 @@ ContainerState::SetupMaskLayerForCSSMask(Layer* aLayer,
   aLayer->SetMaskLayer(maskLayer);
 }
 
+static bool
+IsScrollThumbLayer(nsDisplayItem* aItem)
+{
+  return aItem->GetType() == nsDisplayItem::TYPE_OWN_LAYER &&
+         static_cast<nsDisplayOwnLayer*>(aItem)->IsScrollThumbLayer();
+}
+
 
 
 
@@ -4204,8 +4211,9 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         mPaintedLayerDataTree.AddingOwnLayer(clipAGR,
                                              &scrolledClipRect,
                                              uniformColorPtr);
-      } else if (*animatedGeometryRoot == item->Frame() &&
-                 *animatedGeometryRoot != mBuilder->RootReferenceFrame()) {
+      } else if ((*animatedGeometryRoot == item->Frame() &&
+                  *animatedGeometryRoot != mBuilder->RootReferenceFrame()) ||
+                 (IsScrollThumbLayer(item) && mManager->IsWidgetLayerManager())) {
         
         
         mPaintedLayerDataTree.AddingOwnLayer(animatedGeometryRoot->mParentAGR,
