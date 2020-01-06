@@ -4599,7 +4599,16 @@ this.XPIProvider = {
 
      for (let [id, val] of this.activeAddons) {
        if (aInstanceID == val.instanceID) {
-         return new Promise(resolve => this.getAddonByID(id, resolve));
+         if (val.safeWrapper) {
+           return Promise.resolve(val.safeWrapper);
+         }
+
+         return new Promise(resolve => {
+           this.getAddonByID(id, function(addon) {
+             val.safeWrapper = new PrivateWrapper(addon);
+             resolve(val.safeWrapper);
+           });
+         });
        }
      }
 
@@ -4866,7 +4875,7 @@ this.XPIProvider = {
 
     for (let [id, val] of this.activeAddons) {
       aConnection.setAddonOptions(
-        id, { global: val.bootstrapScope });
+        id, { global: val.debugGlobal || val.bootstrapScope });
     }
   },
 
@@ -5182,6 +5191,8 @@ this.XPIProvider = {
                                aMultiprocessCompatible, aRunInSafeMode,
                                aDependencies, hasEmbeddedWebExtension) {
     this.activeAddons.set(aId, {
+      debugGlobal: null,
+      safeWrapper: null,
       bootstrapScope: null,
       
       instanceID: Symbol(aId),
@@ -8142,6 +8153,68 @@ AddonWrapper.prototype = {
     return getURIForResourceInFile(addon._sourceBundle, aPath);
   }
 };
+
+
+
+
+
+function PrivateWrapper(aAddon) {
+  AddonWrapper.call(this, aAddon);
+}
+
+PrivateWrapper.prototype = Object.create(AddonWrapper.prototype);
+Object.assign(PrivateWrapper.prototype, {
+  addonId() {
+    return this.id;
+  },
+
+  
+
+
+
+
+
+
+  getDebugGlobal(global) {
+    let activeAddon = XPIProvider.activeAddons.get(this.id);
+    if (activeAddon) {
+      return activeAddon.debugGlobal;
+    }
+
+    return null;
+  },
+
+  
+
+
+
+
+
+
+  setDebugGlobal(global) {
+    if (!global) {
+      
+      
+      
+      
+      AddonManagerPrivate.callAddonListeners("onPropertyChanged",
+                                             addonFor(this),
+                                             ["debugGlobal"]);
+    } else {
+      let activeAddon = XPIProvider.activeAddons.get(this.id);
+      if (activeAddon) {
+        let globalChanged = activeAddon.debugGlobal != global;
+        activeAddon.debugGlobal = global;
+
+        if (globalChanged) {
+          AddonManagerPrivate.callAddonListeners("onPropertyChanged",
+                                                 addonFor(this),
+                                                 ["debugGlobal"]);
+        }
+      }
+    }
+  }
+});
 
 function chooseValue(aAddon, aObj, aProp) {
   let repositoryAddon = aAddon._repositoryAddon;
