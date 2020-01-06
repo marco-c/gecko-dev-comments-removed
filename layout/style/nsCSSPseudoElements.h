@@ -15,6 +15,8 @@
 
 
 
+
+
 #define CSS_PSEUDO_ELEMENT_IS_CSS2                     (1<<0)
 
 
@@ -84,6 +86,11 @@ public:
   static bool IsPseudoElement(nsIAtom *aAtom);
 
   static bool IsCSS2PseudoElement(nsIAtom *aAtom);
+
+  static bool IsEagerlyCascadedInServo(const Type aType)
+  {
+    return PseudoElementHasFlags(aType, CSS_PSEUDO_ELEMENT_IS_CSS2);
+  }
 
 #define CSS_PSEUDO_ELEMENT(_name, _value, _flags) \
   static nsICSSPseudoElement* _name;

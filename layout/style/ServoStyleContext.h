@@ -34,13 +34,19 @@ public:
     return ComputedData()->visited_style.mPtr;
   }
 
+  bool IsLazilyCascadedPseudoElement() const
+  {
+    return IsPseudoElement() &&
+           !nsCSSPseudoElements::IsEagerlyCascadedInServo(GetPseudoType());
+  }
+
   ServoStyleContext* GetCachedInheritingAnonBoxStyle(nsIAtom* aAnonBox) const;
 
   void SetCachedInheritedAnonBoxStyle(nsIAtom* aAnonBox,
-                                      ServoStyleContext& aStyle)
+                                      ServoStyleContext* aStyle)
   {
     MOZ_ASSERT(!GetCachedInheritingAnonBoxStyle(aAnonBox));
-    MOZ_ASSERT(!aStyle.mNextInheritingAnonBoxStyle);
+    MOZ_ASSERT(!aStyle->mNextInheritingAnonBoxStyle);
 
     
     
@@ -52,8 +58,35 @@ public:
       return;
     }
 
-    mNextInheritingAnonBoxStyle.swap(aStyle.mNextInheritingAnonBoxStyle);
-    mNextInheritingAnonBoxStyle = &aStyle;
+    mNextInheritingAnonBoxStyle.swap(aStyle->mNextInheritingAnonBoxStyle);
+    mNextInheritingAnonBoxStyle = aStyle;
+  }
+
+  ServoStyleContext* GetCachedLazyPseudoStyle(CSSPseudoElementType aPseudo) const;
+
+  void SetCachedLazyPseudoStyle(ServoStyleContext* aStyle)
+  {
+    MOZ_ASSERT(aStyle->GetPseudo() && !aStyle->IsAnonBox());
+    MOZ_ASSERT(!GetCachedLazyPseudoStyle(aStyle->GetPseudoType()));
+    MOZ_ASSERT(!aStyle->mNextLazyPseudoStyle);
+    MOZ_ASSERT(!IsLazilyCascadedPseudoElement(), "lazy pseudos can't inherit lazy pseudos");
+    MOZ_ASSERT(aStyle->IsLazilyCascadedPseudoElement());
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (nsCSSPseudoElements::PseudoElementSupportsUserActionState(aStyle->GetPseudoType())) {
+      return;
+    }
+
+    mNextLazyPseudoStyle.swap(aStyle->mNextLazyPseudoStyle);
+    mNextLazyPseudoStyle = aStyle;
   }
 
   
@@ -72,6 +105,17 @@ private:
   
   
   RefPtr<ServoStyleContext> mNextInheritingAnonBoxStyle;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<ServoStyleContext> mNextLazyPseudoStyle;
 };
 
 } 
