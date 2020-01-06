@@ -1014,22 +1014,33 @@ pref("toolkit.asyncshutdown.log", false);
 
 pref("devtools.errorconsole.deprecation_warnings", true);
 
+#ifdef NIGHTLY_BUILD
+
+pref("devtools.debugger.prompt-connection", false);
+#else
+pref("devtools.debugger.prompt-connection", true);
+#endif
+
+#ifdef MOZILLA_OFFICIAL
 
 pref("devtools.chrome.enabled", false);
+
+pref("devtools.debugger.remote-enabled", false);
+#else
+
+pref("devtools.chrome.enabled", true);
+pref("devtools.debugger.remote-enabled", true);
+#endif
+
 
 
 pref("devtools.debugger.log", false);
 pref("devtools.debugger.log.verbose", false);
 
-
-pref("devtools.debugger.remote-enabled", false);
-
 pref("devtools.debugger.remote-port", 6000);
 pref("devtools.debugger.remote-websocket", false);
 
 pref("devtools.debugger.force-local", true);
-
-pref("devtools.debugger.prompt-connection", true);
 
 pref("devtools.debugger.forbid-certified-apps", true);
 
