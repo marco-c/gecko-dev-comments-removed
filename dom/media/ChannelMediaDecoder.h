@@ -56,13 +56,6 @@ class ChannelMediaDecoder : public MediaDecoder
 public:
   explicit ChannelMediaDecoder(MediaDecoderInit& aInit);
 
-  
-  
-  MediaResourceCallback* GetResourceCallback() const
-  {
-    return mResourceCallback;
-  }
-
   void Shutdown() override;
 
   

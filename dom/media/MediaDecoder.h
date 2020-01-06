@@ -145,11 +145,6 @@ public:
   {
     return mResource;
   }
-  void SetResource(MediaResource* aResource)
-  {
-    MOZ_ASSERT(NS_IsMainThread());
-    mResource = aResource;
-  }
 
   
   virtual already_AddRefed<nsIPrincipal> GetCurrentPrincipal();

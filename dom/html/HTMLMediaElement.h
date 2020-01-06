@@ -959,7 +959,6 @@ protected:
 
 
   nsresult FinishDecoderSetup(MediaDecoder* aDecoder,
-                              MediaResource* aStream,
                               nsIStreamListener **aListener);
 
   
