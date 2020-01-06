@@ -49,10 +49,11 @@
   outline: 1px dashed;
   outline-offset: -3px;
   -moz-outline-radius: 2px;
+}
+
+#navigator-toolbox > toolbar[customizing]:not(#toolbar-menubar):not(#TabsToolbar):not(#nav-bar):empty {
   
   min-height: 22px;
-  
-  padding-bottom: 0;
 }
 
 
