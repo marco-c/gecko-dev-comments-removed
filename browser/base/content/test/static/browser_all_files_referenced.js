@@ -130,8 +130,6 @@ var whitelist = new Set([
   {file: "chrome://browser/skin/customizableui/panelarrow-customizeTip@2x.png",
    platforms: ["linux", "win"]},
   
-  {file: "chrome://browser/skin/preferences/saveFile.png", platforms: ["win"]},
-  
   {file: "chrome://global/content/customizeToolbar.xul"},
   
   {file: "chrome://global/content/findUtils.js"},
