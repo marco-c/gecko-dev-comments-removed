@@ -265,7 +265,8 @@ nsContentDLF::CreateInstanceForDocument(nsISupports* aContainer,
 
  already_AddRefed<nsIDocument>
 nsContentDLF::CreateBlankDocument(nsILoadGroup* aLoadGroup,
-                                  nsIPrincipal* aPrincipal)
+                                  nsIPrincipal* aPrincipal,
+                                  nsDocShell* aContainer)
 {
   
   nsCOMPtr<nsIDocument> blankDoc(do_CreateInstance(kHTMLDocumentCID));
@@ -281,6 +282,7 @@ nsContentDLF::CreateBlankDocument(nsILoadGroup* aLoadGroup,
     return nullptr;
   }
   blankDoc->ResetToURI(uri, aLoadGroup, aPrincipal);
+  blankDoc->SetContainer(aContainer);
 
   
   nsNodeInfoManager *nim = blankDoc->NodeInfoManager();

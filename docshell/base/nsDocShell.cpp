@@ -8187,13 +8187,11 @@ nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
       principal = aPrincipal;
     }
     
-    blankDoc = nsContentDLF::CreateBlankDocument(mLoadGroup, principal);
+    blankDoc = nsContentDLF::CreateBlankDocument(mLoadGroup, principal, this);
     if (blankDoc) {
       
       
       blankDoc->SetBaseURI(aBaseURI);
-
-      blankDoc->SetContainer(this);
 
       
       
