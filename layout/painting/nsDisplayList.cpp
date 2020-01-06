@@ -1002,11 +1002,9 @@ nsDisplayListBuilder::EndFrame()
 }
 
 void
-nsDisplayListBuilder::MarkFrameForDisplay(nsIFrame* aFrame, nsIFrame* aStopAtFrame, bool aAlreadyAddedFrame)
+nsDisplayListBuilder::MarkFrameForDisplay(nsIFrame* aFrame, nsIFrame* aStopAtFrame)
 {
-  if (!aAlreadyAddedFrame) {
-    mFramesMarkedForDisplay.AppendElement(aFrame);
-  }
+  mFramesMarkedForDisplay.AppendElement(aFrame);
   for (nsIFrame* f = aFrame; f;
        f = nsLayoutUtils::GetParentOrPlaceholderForCrossDoc(f)) {
     if (f->GetStateBits() & NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO)
@@ -1166,24 +1164,14 @@ void nsDisplayListBuilder::MarkOutOfFlowFrameForDisplay(nsIFrame* aDirtyFrame,
 
   
   
-  
-
-  
-  
   const DisplayItemClipChain* clipChain =
     CopyWholeChain(mClipState.GetClipChainForContainingBlockDescendants());
   const DisplayItemClipChain* combinedClipChain = mClipState.GetCurrentCombinedClipChain(this);
   const ActiveScrolledRoot* asr = mCurrentActiveScrolledRoot;
   OutOfFlowDisplayData* data = new OutOfFlowDisplayData(clipChain, combinedClipChain, asr, visible, dirty);
   aFrame->SetProperty(nsDisplayListBuilder::OutOfFlowDisplayDataProperty(), data);
-  mFramesMarkedForDisplay.AppendElement(aFrame);
 
-  
-  
-  if (!dirty.IsEmpty() ||
-      aFrame->ForceDescendIntoIfVisible()) {
-    MarkFrameForDisplay(aFrame, aDirtyFrame, true);
-  }
+  MarkFrameForDisplay(aFrame, aDirtyFrame);
 }
 
 static void UnmarkFrameForDisplay(nsIFrame* aFrame, nsIFrame* aStopAtFrame) {
@@ -3679,6 +3667,7 @@ nsDisplayBackgroundImage::AppendBackgroundItemsToTop(nsDisplayListBuilder* aBuil
 
     if (bg->mImage.mLayers[i].mBlendMode != NS_STYLE_BLEND_NORMAL) {
       DisplayListClipState::AutoSaveRestore blendClip(aBuilder);
+      blendClip.ClearUpToASR(asr);
       
       
       
@@ -3692,6 +3681,7 @@ nsDisplayBackgroundImage::AppendBackgroundItemsToTop(nsDisplayListBuilder* aBuil
 
   if (needBlendContainer) {
     DisplayListClipState::AutoSaveRestore blendContainerClip(aBuilder);
+    blendContainerClip.ClearUpToASR(asr);
     bgItemList.AppendNewToTop(
       nsDisplayBlendContainer::CreateForBackgroundBlendMode(aBuilder, aFrame, &bgItemList, asr));
   }
@@ -4849,11 +4839,6 @@ nsDisplayLayerEventRegions::AddFrame(nsDisplayListBuilder* aBuilder,
     }
   }
 
-  if (aFrame != mFrame &&
-      aBuilder->IsRetainingDisplayList()) {
-    aFrame->AddDisplayItem(this);
-  }
-
 
   
 
@@ -4872,6 +4857,15 @@ nsDisplayLayerEventRegions::AddFrame(nsDisplayListBuilder* aBuilder,
   } else {
     borderBox = nsRect(nsPoint(0, 0), aFrame->GetSize());
   }
+  if (borderBox.IsEmpty()) {
+    return;
+  }
+
+  if (aFrame != mFrame &&
+      aBuilder->IsRetainingDisplayList()) {
+    aFrame->AddDisplayItem(this);
+  }
+
   borderBox += aBuilder->ToReferenceFrame(aFrame);
 
   bool borderBoxHasRoundedCorners = false;
@@ -5927,14 +5921,11 @@ nsDisplayWrapList::nsDisplayWrapList(nsDisplayListBuilder* aBuilder,
 
 nsDisplayWrapList::nsDisplayWrapList(nsDisplayListBuilder* aBuilder,
                                      nsIFrame* aFrame, nsDisplayList* aList,
-                                     const ActiveScrolledRoot* aActiveScrolledRoot,
-                                     bool aClearClipChain)
+                                     const ActiveScrolledRoot* aActiveScrolledRoot)
   : nsDisplayItem(aBuilder, aFrame, aActiveScrolledRoot)
   , mList(aBuilder)
-  , mFrameActiveScrolledRoot(aBuilder->CurrentActiveScrolledRoot())
   , mOverrideZIndex(0)
   , mHasZIndexOverride(false)
-  , mClearingClipChain(aClearClipChain)
 {
   MOZ_COUNT_CTOR(nsDisplayWrapList);
 
@@ -6252,7 +6243,7 @@ nsDisplayOpacity::nsDisplayOpacity(nsDisplayListBuilder* aBuilder,
                                    nsIFrame* aFrame, nsDisplayList* aList,
                                    const ActiveScrolledRoot* aActiveScrolledRoot,
                                    bool aForEventsAndPluginsOnly)
-    : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot, true)
+    : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot)
     , mOpacity(aFrame->StyleEffects()->mOpacity)
     , mForEventsAndPluginsOnly(aForEventsAndPluginsOnly)
 {
@@ -6555,7 +6546,7 @@ nsDisplayBlendMode::nsDisplayBlendMode(nsDisplayListBuilder* aBuilder,
                                              uint8_t aBlendMode,
                                              const ActiveScrolledRoot* aActiveScrolledRoot,
                                              uint32_t aIndex)
-  : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot, true)
+  : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot)
   , mBlendMode(aBlendMode)
   , mIndex(aIndex)
 {
@@ -6673,7 +6664,7 @@ nsDisplayBlendContainer::nsDisplayBlendContainer(nsDisplayListBuilder* aBuilder,
                                                  nsIFrame* aFrame, nsDisplayList* aList,
                                                  const ActiveScrolledRoot* aActiveScrolledRoot,
                                                  bool aIsForBackground)
-    : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot, true)
+    : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot)
     , mIsForBackground(aIsForBackground)
 {
   MOZ_COUNT_CTOR(nsDisplayBlendContainer);
@@ -6732,9 +6723,8 @@ nsDisplayOwnLayer::nsDisplayOwnLayer(nsDisplayListBuilder* aBuilder,
                                      const ActiveScrolledRoot* aActiveScrolledRoot,
                                      uint32_t aFlags, ViewID aScrollTarget,
                                      const ScrollThumbData& aThumbData,
-                                     bool aForceActive,
-                                     bool aClearClipChain)
-    : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot, aClearClipChain)
+                                     bool aForceActive)
+    : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot)
     , mFlags(aFlags)
     , mScrollTarget(aScrollTarget)
     , mThumbData(aThumbData)
@@ -9028,9 +9018,8 @@ nsCharClipDisplayItem::ComputeInvalidationRegion(nsDisplayListBuilder* aBuilder,
 nsDisplaySVGEffects::nsDisplaySVGEffects(nsDisplayListBuilder* aBuilder,
                                          nsIFrame* aFrame, nsDisplayList* aList,
                                          bool aHandleOpacity,
-                                         const ActiveScrolledRoot* aActiveScrolledRoot,
-                                         bool aClearClipChain)
-  : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot, aClearClipChain)
+                                         const ActiveScrolledRoot* aActiveScrolledRoot)
+  : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot)
   , mHandleOpacity(aHandleOpacity)
 {
   MOZ_COUNT_CTOR(nsDisplaySVGEffects);
@@ -9213,7 +9202,7 @@ nsDisplayMask::nsDisplayMask(nsDisplayListBuilder* aBuilder,
                              nsIFrame* aFrame, nsDisplayList* aList,
                              bool aHandleOpacity,
                              const ActiveScrolledRoot* aActiveScrolledRoot)
-  : nsDisplaySVGEffects(aBuilder, aFrame, aList, aHandleOpacity, aActiveScrolledRoot, true)
+  : nsDisplaySVGEffects(aBuilder, aFrame, aList, aHandleOpacity, aActiveScrolledRoot)
 {
   MOZ_COUNT_CTOR(nsDisplayMask);
 
