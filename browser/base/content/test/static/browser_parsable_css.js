@@ -17,7 +17,7 @@ let whitelist = [
   {sourceName: /devtools\/client\/debugger\/new\/debugger.css/i,
    isFromDevTools: true},
    
-   {sourceName: /devtools\/client\/shared\/components\/reps\/reps.css/i,
+   {sourceName: /devtools-client-shared\/components\/reps\/reps.css/i,
    isFromDevTools: true},
   
   {sourceName: /web\/viewer\.css$/i,
@@ -289,40 +289,48 @@ add_task(async function checkAllTheCSS() {
   await Promise.all(manifestPromises);
 
   
-  
-  let allPromises = [];
-
-  
   let isDevtools = SimpleTest.harnessParameters.subsuite == "devtools";
   let devtoolsPathBits = ["webide", "devtools"];
   uris = uris.filter(uri => isDevtools == devtoolsPathBits.some(path => uri.spec.includes(path)));
 
-  for (let uri of uris) {
-    let linkEl = doc.createElement("link");
+  let loadCSS = chromeUri => new Promise(resolve => {
+    let linkEl, onLoad, onError;
+    onLoad = e => {
+      processCSSRules(linkEl.sheet);
+      resolve();
+      linkEl.removeEventListener("load", onLoad);
+      linkEl.removeEventListener("error", onError);
+    };
+    onError = e => {
+      ok(false, "Loading " + linkEl.getAttribute("href") + " threw an error!");
+      resolve();
+      linkEl.removeEventListener("load", onLoad);
+      linkEl.removeEventListener("error", onError);
+    };
+    linkEl = doc.createElement("link");
     linkEl.setAttribute("rel", "stylesheet");
-    allPromises.push(new Promise(resolve => {
-      let onLoad = (e) => {
-        processCSSRules(linkEl.sheet);
-        resolve();
-        linkEl.removeEventListener("load", onLoad);
-        linkEl.removeEventListener("error", onError);
-      };
-      let onError = (e) => {
-        ok(false, "Loading " + linkEl.getAttribute("href") + " threw an error!");
-        resolve();
-        linkEl.removeEventListener("load", onLoad);
-        linkEl.removeEventListener("error", onError);
-      };
-      linkEl.addEventListener("load", onLoad);
-      linkEl.addEventListener("error", onError);
-      linkEl.setAttribute("type", "text/css");
-      let chromeUri = convertToCodeURI(uri.spec);
-      linkEl.setAttribute("href", chromeUri + kPathSuffix);
-    }));
+    linkEl.setAttribute("type", "text/css");
+    linkEl.addEventListener("load", onLoad);
+    linkEl.addEventListener("error", onError);
+    linkEl.setAttribute("href", chromeUri + kPathSuffix);
     doc.head.appendChild(linkEl);
+  });
+
+  
+  
+  const kInContentCommonCSS = "chrome://global/skin/in-content/common.css";
+  let allPromises = uris.map((uri) => convertToCodeURI(uri.spec))
+                    .filter((uri) => uri !== kInContentCommonCSS);
+
+  
+  
+  
+  if (allPromises.length !== uris.length) {
+    await loadCSS(kInContentCommonCSS);
   }
 
   
+  allPromises = allPromises.map(loadCSS);
   await Promise.all(allPromises);
 
   
