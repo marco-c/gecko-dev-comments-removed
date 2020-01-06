@@ -874,6 +874,33 @@ this.AddonRepository = {
 
 
 
+  retrieveRecommendedAddons(aMaxResults, aCallback) {
+    let url = this._formatURLPref(PREF_GETADDONS_GETRECOMMENDED, {
+      API_VERSION,
+
+      
+      MAX_RESULTS: 2 * aMaxResults
+    });
+
+    let handleResults = (aElements, aTotalResults) => {
+      this._getLocalAddonIds(aLocalAddonIds => {
+        
+        this._parseAddons(aElements, -1, aLocalAddonIds);
+      });
+    }
+
+    this._beginSearch(url, aMaxResults, aCallback, handleResults);
+  },
+
+  
+
+
+
+
+
+
+
+
 
 
   searchAddons(aSearchTerms, aMaxResults, aCallback) {
