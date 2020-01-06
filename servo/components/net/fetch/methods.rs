@@ -17,8 +17,8 @@ use hyper::mime::{Mime, SubLevel, TopLevel};
 use hyper::status::StatusCode;
 use mime_guess::guess_mime_type;
 use net_traits::{FetchTaskTarget, NetworkError, ReferrerPolicy};
-use net_traits::request::{CredentialsMode, Referrer, Request, RequestMode, ResponseTainting};
-use net_traits::request::{Type, Origin, Window};
+use net_traits::request::{CredentialsMode, Destination, Referrer, Request, RequestMode};
+use net_traits::request::{ResponseTainting, Origin, Window};
 use net_traits::response::{Response, ResponseBody, ResponseType};
 use servo_url::ServoUrl;
 use std::ascii::AsciiExt;
@@ -73,7 +73,7 @@ pub fn fetch_with_cors_cache(request: &mut Request,
     }
 
     
-    set_default_accept(request.type_, request.destination, &mut request.headers);
+    set_default_accept(request.destination, &mut request.headers);
 
     
     set_default_accept_language(&mut request.headers);
@@ -266,9 +266,9 @@ pub fn main_fetch(request: &mut Request,
         
         let response_is_network_error = response.is_network_error();
         let should_replace_with_nosniff_error =
-            !response_is_network_error && should_be_blocked_due_to_nosniff(request.type_, &response.headers);
+            !response_is_network_error && should_be_blocked_due_to_nosniff(request.destination, &response.headers);
         let should_replace_with_mime_type_error =
-            !response_is_network_error && should_be_blocked_due_to_mime_type(request.type_, &response.headers);
+            !response_is_network_error && should_be_blocked_due_to_mime_type(request.destination, &response.headers);
 
         
         let mut network_error_response = response.get_network_error().cloned().map(Response::network_error);
@@ -529,7 +529,7 @@ fn is_null_body_status(status: &Option<StatusCode>) -> bool {
 }
 
 
-pub fn should_be_blocked_due_to_nosniff(request_type: Type, response_headers: &Headers) -> bool {
+pub fn should_be_blocked_due_to_nosniff(destination: Destination, response_headers: &Headers) -> bool {
     
     
     
@@ -599,37 +599,37 @@ pub fn should_be_blocked_due_to_nosniff(request_type: Type, response_headers: &H
     }
 
     
-    return match request_type {
+    match content_type_header {
         
-        Type::Script => {
-            match content_type_header {
-                Some(&ContentType(ref mime_type)) => !is_javascript_mime_type(&mime_type),
-                None => true
-            }
-        }
+        Some(&ContentType(ref mime_type)) if destination.is_script_like()
+            => !is_javascript_mime_type(mime_type),
+
         
-        Type::Style => {
-            match content_type_header {
-                Some(&ContentType(Mime(TopLevel::Text, SubLevel::Css, _))) => false,
-                _ => true
-            }
-        }
+        Some(&ContentType(Mime(ref tl, ref sl, _))) if destination == Destination::Style
+            => *tl != TopLevel::Text && *sl != SubLevel::Css,
+
+        None if destination == Destination::Style || destination.is_script_like() => true,
         
         _ => false
-    };
+    }
 }
 
 
-fn should_be_blocked_due_to_mime_type(request_type: Type, response_headers: &Headers) -> bool {
+fn should_be_blocked_due_to_mime_type(destination: Destination, response_headers: &Headers) -> bool {
+    
     let mime_type = match response_headers.get::<ContentType>() {
         Some(header) => header,
         None => return false,
     };
-    request_type == Type::Script && match *mime_type {
+
+    
+    destination.is_script_like() && match *mime_type {
         ContentType(Mime(TopLevel::Audio, _, _)) |
         ContentType(Mime(TopLevel::Video, _, _)) |
         ContentType(Mime(TopLevel::Image, _, _)) => true,
         ContentType(Mime(TopLevel::Text, SubLevel::Ext(ref ext), _)) => ext == "csv",
+
+        
         _ => false,
     }
 }

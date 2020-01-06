@@ -17,7 +17,7 @@ use hyper::status::StatusCode;
 use hyper::version::HttpVersion;
 use net_traits::{CookieSource, MessageData, NetworkError, WebSocketCommunicate, WebSocketConnectData};
 use net_traits::{WebSocketDomAction, WebSocketNetworkEvent};
-use net_traits::request::{Destination, Type};
+use net_traits::request::Destination;
 use servo_url::ServoUrl;
 use std::ascii::AsciiExt;
 use std::io::{self, Write};
@@ -280,7 +280,7 @@ fn fetch(url: ServoUrl,
     
 
     
-    set_default_accept(Type::None, Destination::None, &mut headers);
+    set_default_accept(Destination::None, &mut headers);
 
     
     set_default_accept_language(&mut headers);
@@ -370,7 +370,7 @@ fn main_fetch(url: ServoUrl,
         
         
         
-        if should_be_blocked_due_to_nosniff(Type::None, &headers) {
+        if should_be_blocked_due_to_nosniff(Destination::None, &headers) {
             response = Err(NetworkError::Internal("Request should be blocked due to nosniff.".into()));
         }
     }
