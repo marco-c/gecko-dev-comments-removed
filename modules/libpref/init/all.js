@@ -176,7 +176,11 @@ pref("dom.permissions.revoke.enable", false);
 pref("dom.performance.time_to_non_blank_paint.enabled", false);
 
 
+#ifdef NIGHTLY_BUILD
 pref("dom.enable_performance_observer", true);
+#else
+pref("dom.enable_performance_observer", false);
+#endif
 
 
 pref("dom.requestIdleCallback.enabled", true);
@@ -1828,7 +1832,7 @@ pref("network.http.enforce-framing.soft", true);
 pref("network.http.max_response_header_size", 393216);
 
 
-pref("network.http.rcwn.enabled", false);
+pref("network.http.rcwn.enabled", true);
 pref("network.http.rcwn.cache_queue_normal_threshold", 8);
 pref("network.http.rcwn.cache_queue_priority_threshold", 2);
 
@@ -5424,11 +5428,7 @@ pref("browser.safebrowsing.id", "Firefox");
 #endif
 
 
-#ifdef MOZILLA_OFFICIAL
 pref("browser.safebrowsing.downloads.enabled", true);
-#else
-pref("browser.safebrowsing.downloads.enabled", false);
-#endif
 pref("browser.safebrowsing.downloads.remote.enabled", true);
 pref("browser.safebrowsing.downloads.remote.timeout_ms", 10000);
 pref("browser.safebrowsing.downloads.remote.url", "https://sb-ssl.google.com/safebrowsing/clientreport/download?key=%GOOGLE_API_KEY%");
