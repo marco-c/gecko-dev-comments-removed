@@ -351,13 +351,13 @@ impl MarionetteHandler {
 
         prefs.insert_slice(&extra_prefs[..]);
 
-        if let Some(ref level) = self.current_log_level {
-            prefs.insert("marionette.logging", Pref::new(level.to_string()));
-        };
-
         
+        if let Some(ref level) = self.current_log_level {
+            prefs.insert("marionette.log.level", Pref::new(level.to_string()));
+            prefs.insert("marionette.logging", Pref::new(level.to_string()));  
+        };
         prefs.insert("marionette.port", Pref::new(port as i64));
-        prefs.insert("marionette.defaultPrefs.port", Pref::new(port as i64));
+        prefs.insert("marionette.defaultPrefs.port", Pref::new(port as i64));  
 
         prefs.write().map_err(|_| WebDriverError::new(ErrorStatus::UnknownError,
                                                       "Unable to write Firefox profile"))
