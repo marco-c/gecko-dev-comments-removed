@@ -411,14 +411,14 @@ add_task(async function getHighlights() {
   }
 
   links = await provider.getHighlights();
-  Assert.equal(links.length, 0, "adding bookmarks without visits doesn't yield more links");
+  Assert.equal(links.length, 2, "bookmarks are returned even if not visited");
 
   
   let testURI = "http://mozilla.com/";
   await PlacesTestUtils.addVisits(testURI);
 
   links = await provider.getHighlights();
-  Assert.equal(links.length, 0, "adding visits without metadata doesn't yield more links");
+  Assert.equal(links.length, 2, "adding visits without metadata doesn't yield more links");
 
   
   for (let placeInfo of bookmarks) {
