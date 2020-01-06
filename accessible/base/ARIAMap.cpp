@@ -69,7 +69,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] =
   },
   { 
     &nsGkAtoms::article,
-    roles::DOCUMENT,
+    roles::ARTICLE,
     kUseMapRole,
     eNoValue,
     eNoAction,

@@ -1000,7 +1000,14 @@ enum Role {
 
   FOOTNOTE = 171,
 
-  LAST_ROLE = FOOTNOTE
+  
+
+
+
+
+  ARTICLE = 172,
+
+  LAST_ROLE = ARTICLE
 };
 
 } 
