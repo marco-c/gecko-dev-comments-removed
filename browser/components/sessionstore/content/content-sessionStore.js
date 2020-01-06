@@ -29,8 +29,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
 
 XPCOMUtils.defineLazyModuleGetter(this, "DocShellCapabilities",
   "resource:///modules/sessionstore/DocShellCapabilities.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "PageStyle",
-  "resource:///modules/sessionstore/PageStyle.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ScrollPosition",
   "resource://gre/modules/ScrollPosition.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "SessionHistory",
@@ -485,50 +483,6 @@ var FormDataListener = {
 
 
 
-
-
-var PageStyleListener = {
-  init() {
-    Services.obs.addObserver(this, "author-style-disabled-changed");
-    Services.obs.addObserver(this, "style-sheet-applicable-state-changed");
-    gFrameTree.addObserver(this);
-  },
-
-  uninit() {
-    Services.obs.removeObserver(this, "author-style-disabled-changed");
-    Services.obs.removeObserver(this, "style-sheet-applicable-state-changed");
-  },
-
-  observe(subject, topic) {
-    let frame = subject.defaultView;
-
-    if (frame && gFrameTree.contains(frame)) {
-      MessageQueue.push("pageStyle", () => this.collect());
-    }
-  },
-
-  collect() {
-    return PageStyle.collect(docShell, gFrameTree);
-  },
-
-  onFrameTreeCollected() {
-    MessageQueue.push("pageStyle", () => this.collect());
-  },
-
-  onFrameTreeReset() {
-    MessageQueue.push("pageStyle", () => null);
-  }
-};
-
-
-
-
-
-
-
-
-
-
 var DocShellCapabilitiesListener = {
   
 
@@ -847,7 +801,6 @@ var MessageQueue = {
 EventListener.init();
 MessageListener.init();
 FormDataListener.init();
-PageStyleListener.init();
 SessionHistoryListener.init();
 SessionStorageListener.init();
 ScrollPositionListener.init();
@@ -892,7 +845,6 @@ addEventListener("unload", () => {
   handleRevivedTab();
 
   
-  PageStyleListener.uninit();
   SessionStorageListener.uninit();
   SessionHistoryListener.uninit();
   MessageQueue.uninit();
