@@ -3,7 +3,7 @@
 
 
 
-#include "mozilla/layers/Keyboard.h"
+#include "mozilla/layers/KeyboardMap.h"
 
 #include "mozilla/TextEvents.h" 
 

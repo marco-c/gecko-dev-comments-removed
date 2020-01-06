@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_layers_Keyboard_h
-#define mozilla_layers_Keyboard_h
+#ifndef mozilla_layers_KeyboardMap_h
+#define mozilla_layers_KeyboardMap_h
 
 #include <stdint.h> 
 
