@@ -572,6 +572,17 @@ impl RuleNode {
         self.parent.is_none()
     }
 
+    fn next_sibling(&self) -> Option<WeakRuleNode> {
+        
+        
+        let ptr = self.next_sibling.load(Ordering::Acquire);
+        if ptr.is_null() {
+            None
+        } else {
+            Some(WeakRuleNode::from_ptr(ptr))
+        }
+    }
+
     
     
     
@@ -637,7 +648,7 @@ impl RuleNode {
 
         let _ = write!(writer, "\n");
         for child in self.iter_children() {
-            child.get().dump(guards, writer, indent + INDENT_INCREMENT);
+            child.upgrade().get().dump(guards, writer, indent + INDENT_INCREMENT);
         }
     }
 
@@ -692,31 +703,30 @@ impl StrongRuleNode {
         WeakRuleNode::from_ptr(self.ptr())
     }
 
-    fn next_sibling(&self) -> Option<WeakRuleNode> {
-        
-        
-        let ptr = self.get().next_sibling.load(Ordering::Acquire);
-        if ptr.is_null() {
-            None
-        } else {
-            Some(WeakRuleNode::from_ptr(ptr))
-        }
-    }
-
     fn parent(&self) -> Option<&StrongRuleNode> {
         self.get().parent.as_ref()
     }
 
-    fn ensure_child(&self,
-                    root: WeakRuleNode,
-                    source: StyleSource,
-                    level: CascadeLevel) -> StrongRuleNode {
+    fn ensure_child(
+        &self,
+        root: WeakRuleNode,
+        source: StyleSource,
+        level: CascadeLevel
+    ) -> StrongRuleNode {
         let mut last = None;
+
+        
+        
+        
+        
+        
+        
         
         for child in self.get().iter_children() {
-            if child.get().level == level &&
-                child.get().source.as_ref().unwrap().ptr_equals(&source) {
-                return child;
+            let child_node = unsafe { &*child.ptr() };
+            if child_node.level == level &&
+                child_node.source.as_ref().unwrap().ptr_equals(&source) {
+                return child.upgrade();
             }
             last = Some(child);
         }
@@ -728,11 +738,12 @@ impl StrongRuleNode {
         let new_ptr: *mut RuleNode = &mut *node;
 
         loop {
-            let strong;
+            let next;
 
             {
-                let next_sibling_ptr = match last {
-                    Some(ref l) => &l.get().next_sibling,
+                let last_node = last.as_ref().map(|l| unsafe { &*l.ptr() });
+                let next_sibling_ptr = match last_node {
+                    Some(ref l) => &l.next_sibling,
                     None => &self.get().first_child,
                 };
 
@@ -757,17 +768,17 @@ impl StrongRuleNode {
 
                 
                 
-                strong = WeakRuleNode::from_ptr(existing).upgrade();
+                next = WeakRuleNode::from_ptr(existing);
 
-                if strong.get().source.as_ref().unwrap().ptr_equals(&source) {
+                if unsafe { &*next.ptr() }.source.as_ref().unwrap().ptr_equals(&source) {
                     
                     
-                    return strong;
+                    return next.upgrade();
                 }
             }
 
             
-            last = Some(strong);
+            last = Some(next);
         }
     }
 
@@ -1366,12 +1377,11 @@ struct RuleChildrenListIter {
 }
 
 impl Iterator for RuleChildrenListIter {
-    type Item = StrongRuleNode;
+    type Item = WeakRuleNode;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.current.take().map(|current| {
-            let current = current.upgrade();
-            self.current = current.next_sibling();
+            self.current = unsafe { &*current.ptr() }.next_sibling();
             current
         })
     }
