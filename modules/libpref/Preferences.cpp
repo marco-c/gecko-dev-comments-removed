@@ -123,6 +123,7 @@ static const uint32_t MAX_ADVISABLE_PREF_LENGTH = 4 * 1024;
 
 enum class PrefType : uint8_t
 {
+  None = 0, 
   String = 1,
   Int = 2,
   Bool = 3,
@@ -274,10 +275,10 @@ static ArenaAllocator<8192, 1> gPrefNameArena;
 class Pref : public PLDHashEntryHdr
 {
 public:
-  Pref(const char* aName, PrefType aType)
+  explicit Pref(const char* aName)
   {
     mName = ArenaStrdup(aName, gPrefNameArena);
-    SetType(aType);
+
     
     
   }
@@ -764,7 +765,8 @@ pref_SetPref(const char* aPrefName,
 
   if (!pref->Name()) {
     
-    new (pref) Pref(aPrefName, aType);
+    new (pref) Pref(aPrefName);
+    pref->SetType(aType);
   }
 
   bool valueChanged = false, handleDirty = false;
