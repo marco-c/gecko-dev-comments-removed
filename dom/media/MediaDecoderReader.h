@@ -210,9 +210,6 @@ public:
   
   virtual void NotifyDataArrived() = 0;
 
-  virtual MediaQueue<AudioData>& AudioQueue() { return mAudioQueue; }
-  virtual MediaQueue<VideoData>& VideoQueue() { return mVideoQueue; }
-
   AbstractCanonical<media::TimeIntervals>* CanonicalBuffered()
   {
     return &mBuffered;
@@ -282,14 +279,6 @@ protected:
 
   
   virtual void UpdateBuffered() = 0;
-
-  
-  
-  MediaQueue<AudioData> mAudioQueue;
-
-  
-  
-  MediaQueue<VideoData> mVideoQueue;
 
   
   AbstractMediaDecoder* mDecoder;
