@@ -34,12 +34,6 @@ var ViewSourceContent = {
 
 
 
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsISelectionListener]),
-
-  
-
-
-
 
   messages: [
     "ViewSource:LoadSource",
@@ -57,16 +51,6 @@ var ViewSourceContent = {
 
 
   needsDrawSelection: false,
-
-  
-
-
-
-
-
-
-
-  selectionListenerAttached: false,
 
   get isViewSource() {
     let uri = content.document.documentURI;
@@ -109,11 +93,6 @@ var ViewSourceContent = {
     removeEventListener("unload", this);
 
     Services.els.removeSystemEventListener(global, "contextmenu", this, false);
-
-    
-    if (this.updateStatusTask) {
-      this.updateStatusTask.disarm();
-    }
   },
 
   
@@ -394,12 +373,6 @@ var ViewSourceContent = {
 
 
   onPageShow(event) {
-    let selection = content.getSelection();
-    if (selection) {
-      selection.QueryInterface(Ci.nsISelectionPrivate)
-               .addSelectionListener(this);
-      this.selectionListenerAttached = true;
-    }
     content.focus();
 
     
@@ -424,15 +397,6 @@ var ViewSourceContent = {
 
 
   onPageHide(event) {
-    
-    
-    
-    if (this.selectionListenerAttached) {
-      content.getSelection()
-             .QueryInterface(Ci.nsISelectionPrivate)
-             .removeSelectionListener(this);
-      this.selectionListenerAttached = false;
-    }
     sendAsyncMessage("ViewSource:SourceUnloaded");
   },
 
@@ -705,43 +669,6 @@ var ViewSourceContent = {
 
 
 
-  updateStatusTask: null,
-
-  
-
-
-
-  updateStatus() {
-    let selection = content.getSelection();
-
-    if (!selection.focusNode) {
-      sendAsyncMessage("ViewSource:UpdateStatus", { label: "" });
-      return;
-    }
-    if (selection.focusNode.nodeType != Ci.nsIDOMNode.TEXT_NODE) {
-      return;
-    }
-
-    let selCon = this.selectionController;
-    selCon.setDisplaySelection(Ci.nsISelectionController.SELECTION_ON);
-    selCon.setCaretVisibilityDuringSelection(true);
-
-    let interlinePosition = selection.QueryInterface(Ci.nsISelectionPrivate)
-                                     .interlinePosition;
-
-    let result = {};
-    this.findLocation(null, -1,
-        selection.focusNode, selection.focusOffset, interlinePosition, result);
-
-    let label = this.bundle.formatStringFromName("statusBarLineCol",
-                                                 [result.line, result.col], 2);
-    sendAsyncMessage("ViewSource:UpdateStatus", { label });
-  },
-
-  
-
-
-
 
 
 
@@ -757,25 +684,6 @@ var ViewSourceContent = {
                               null, referrerPolicy, 
                               null, null, 
                               Services.io.newURI(baseURI));
-  },
-
-  
-
-
-
-  
-
-
-
-
-  notifySelectionChanged(doc, sel, reason) {
-    if (!this.updateStatusTask) {
-      this.updateStatusTask = new DeferredTask(() => {
-        this.updateStatus();
-      }, 100);
-    }
-
-    this.updateStatusTask.arm();
   },
 
   
