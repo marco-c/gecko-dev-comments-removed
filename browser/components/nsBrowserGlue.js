@@ -1181,7 +1181,7 @@ BrowserGlue.prototype = {
     }
 
     
-    Services.tm.idleDispatchToMainThread(() => {
+    Services.tm.mainThread.idleDispatch(() => {
       ContextualIdentityService.load();
     });
 
@@ -1216,7 +1216,7 @@ BrowserGlue.prototype = {
         let newProfilePath = newProfile.rootDir.path;
         OS.File.removeDir(newProfilePath).then(() => {
           return OS.File.makeDir(newProfilePath);
-        }).catch(e => {
+        }).then(null, e => {
           Cu.reportError("Could not empty profile 'default': " + e);
         });
       }
@@ -1716,7 +1716,7 @@ BrowserGlue.prototype = {
 
   
   _migrateUI: function BG__migrateUI() {
-    const UI_VERSION = 47;
+    const UI_VERSION = 48;
     const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
 
     let currentUIVersion;
@@ -2044,6 +2044,14 @@ BrowserGlue.prototype = {
       } catch (ex) {
         
       }
+    }
+
+    if (currentUIVersion < 48) {
+      
+      
+      
+      
+      xulStore.removeValue(BROWSER_DOCURL, "sidebar-box", "checked");
     }
 
     
