@@ -543,22 +543,23 @@ TextureClient::Unlock()
   }
 
   if (mBorrowedDrawTarget) {
-    if (mOpenMode & OpenMode::OPEN_WRITE) {
-      mBorrowedDrawTarget->Flush();
-      if (mReadbackSink && !mData->ReadBack(mReadbackSink)) {
-        
-        
-        RefPtr<SourceSurface> snapshot = mBorrowedDrawTarget->Snapshot();
-        RefPtr<DataSourceSurface> dataSurf = snapshot->GetDataSurface();
-        mReadbackSink->ProcessReadback(dataSurf);
+    if (!(mOpenMode & OpenMode::OPEN_ASYNC_WRITE)) {
+      if (mOpenMode & OpenMode::OPEN_WRITE) {
+        mBorrowedDrawTarget->Flush();
+        if (mReadbackSink && !mData->ReadBack(mReadbackSink)) {
+          
+          
+          RefPtr<SourceSurface> snapshot = mBorrowedDrawTarget->Snapshot();
+          RefPtr<DataSourceSurface> dataSurf = snapshot->GetDataSurface();
+          mReadbackSink->ProcessReadback(dataSurf);
+        }
       }
-    }
 
-    mBorrowedDrawTarget->DetachAllSnapshots();
-    
-    
-    MOZ_ASSERT_IF(!(mOpenMode & OpenMode::OPEN_ASYNC_WRITE),
-                  mBorrowedDrawTarget->refCount() <= mExpectedDtRefs);
+      mBorrowedDrawTarget->DetachAllSnapshots();
+      
+      
+      MOZ_ASSERT(mBorrowedDrawTarget->refCount() <= mExpectedDtRefs);
+    }
 
     mBorrowedDrawTarget = nullptr;
   }
