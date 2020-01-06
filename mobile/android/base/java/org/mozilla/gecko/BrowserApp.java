@@ -73,6 +73,7 @@ import org.mozilla.gecko.DynamicToolbar.VisibilityTransition;
 import org.mozilla.gecko.Tabs.TabEvents;
 import org.mozilla.gecko.activitystream.ActivityStream;
 import org.mozilla.gecko.activitystream.ActivityStreamTelemetry;
+import org.mozilla.gecko.activitystream.homepanel.stream.StreamOverridablePageIconLayout;
 import org.mozilla.gecko.adjust.AdjustBrowserAppDelegate;
 import org.mozilla.gecko.animation.PropertyAnimator;
 import org.mozilla.gecko.annotation.RobocopTarget;
@@ -183,6 +184,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import static org.mozilla.gecko.mma.MmaDelegate.NEW_TAB;
@@ -349,6 +351,12 @@ public class BrowserApp extends GeckoApp
     @NonNull
     private SearchEngineManager mSearchEngineManager; 
 
+    
+    
+    
+    
+    private final Set<String> mStreamIconLayoutFailedRequestCache = StreamOverridablePageIconLayout.newFailedRequestCache();
+
     private boolean mHasResumed;
 
     @Override
@@ -358,6 +366,8 @@ public class BrowserApp extends GeckoApp
             view = BrowserToolbar.create(context, attrs);
         } else if (TabsPanel.TabsLayout.class.getName().equals(name)) {
             view = TabsPanel.createTabsLayout(context, attrs);
+        } else if (StreamOverridablePageIconLayout.class.getName().equals(name)) {
+            view = new StreamOverridablePageIconLayout(context, attrs, mStreamIconLayoutFailedRequestCache);
         } else {
             view = super.onCreateView(name, context, attrs);
         }

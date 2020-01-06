@@ -24,6 +24,9 @@ import org.mozilla.gecko.util.NetworkUtils;
 import org.mozilla.gecko.widget.FaviconView;
 
 import java.lang.ref.WeakReference;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 
@@ -48,8 +51,39 @@ public class StreamOverridablePageIconLayout extends FrameLayout implements Icon
 
     private @Nullable Future<IconResponse> ongoingFaviconLoad;
 
-    public StreamOverridablePageIconLayout(final Context context, final AttributeSet attrs) {
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    private final @NonNull Set<String> nonFaviconFailedRequestURLs;
+
+    
+
+
+
+    public static Set<String> newFailedRequestCache() {
+        
+        return Collections.synchronizedSet(new HashSet<String>());
+    }
+
+    
+
+
+    public StreamOverridablePageIconLayout(final Context context, final AttributeSet attrs,
+            @NonNull final Set<String> nonFaviconFailedRequestCache) {
         super(context, attrs);
+        if (nonFaviconFailedRequestCache == null) { throw new IllegalArgumentException("Expected non-null request cache"); }
+        this.nonFaviconFailedRequestURLs = nonFaviconFailedRequestCache;
+
         LayoutInflater.from(context).inflate(R.layout.activity_stream_overridable_page_icon_layout, this, true);
         initViews();
     }
@@ -63,8 +97,14 @@ public class StreamOverridablePageIconLayout extends FrameLayout implements Icon
 
         
         
+        
+        
+        
+        
+        
         if (NetworkUtils.isWifi(getContext()) &&
-                !TextUtils.isEmpty(overrideImageURL)) {
+                !TextUtils.isEmpty(overrideImageURL) &&
+                !nonFaviconFailedRequestURLs.contains(overrideImageURL)) {
             setUIMode(UIMode.NONFAVICON_IMAGE);
 
             
@@ -73,7 +113,7 @@ public class StreamOverridablePageIconLayout extends FrameLayout implements Icon
                     .load(Uri.parse(overrideImageURL))
                     .fit()
                     .centerCrop()
-                    .into(imageView, new OnErrorUsePageURLCallback(this, pageURL));
+                    .into(imageView, new OnErrorUsePageURLCallback(this, pageURL, overrideImageURL, nonFaviconFailedRequestURLs));
         } else {
             setFaviconImage(pageURL);
         }
@@ -129,11 +169,17 @@ public class StreamOverridablePageIconLayout extends FrameLayout implements Icon
     private static class OnErrorUsePageURLCallback implements Callback {
         private final WeakReference<StreamOverridablePageIconLayout> layoutWeakReference;
         private final String pageURL;
+        private final String requestURL;
+        private final Set<String> failedRequestURLs;
 
         private OnErrorUsePageURLCallback(final StreamOverridablePageIconLayout layoutWeakReference,
-                @NonNull final String pageURL) {
+                @NonNull final String pageURL,
+                @NonNull final String requestURL,
+                final Set<String> failedRequestURLs) {
             this.layoutWeakReference = new WeakReference<>(layoutWeakReference);
             this.pageURL = pageURL;
+            this.requestURL = requestURL;
+            this.failedRequestURLs = failedRequestURLs;
         }
 
         @Override
@@ -141,6 +187,11 @@ public class StreamOverridablePageIconLayout extends FrameLayout implements Icon
 
         @Override
         public void onError() {
+            
+            
+            
+            failedRequestURLs.add(requestURL);
+
             
             
             
