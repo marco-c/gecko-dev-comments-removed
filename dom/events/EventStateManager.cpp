@@ -2894,7 +2894,9 @@ EventStateManager::PostHandleKeyboardEvent(WidgetKeyboardEvent* aKeyboardEvent,
     
     
     
-    aKeyboardEvent->mWidget->PostHandleKeyEvent(aKeyboardEvent);
+    if (aKeyboardEvent->mWidget) {
+      aKeyboardEvent->mWidget->PostHandleKeyEvent(aKeyboardEvent);
+    }
     if (aKeyboardEvent->DefaultPrevented()) {
       aStatus = nsEventStatus_eConsumeNoDefault;
       return;
