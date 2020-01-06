@@ -96,6 +96,11 @@ impl BrowsingContext {
         self.instant = entry.instant;
         self.load_data = entry.load_data;
     }
+
+    
+    pub fn is_top_level(&self) -> bool {
+        self.id == self.top_level_id
+    }
 }
 
 

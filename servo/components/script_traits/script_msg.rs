@@ -105,8 +105,7 @@ pub enum ScriptMsg {
     
     PostMessage(BrowsingContextId, Option<ImmutableOrigin>, Vec<u8>),
     
-    
-    MozBrowserEvent(PipelineId, PipelineId, MozBrowserEvent),
+    MozBrowserEvent(PipelineId, TopLevelBrowsingContextId, MozBrowserEvent),
     
     TraverseHistory(TopLevelBrowsingContextId, TraversalDirection),
     
