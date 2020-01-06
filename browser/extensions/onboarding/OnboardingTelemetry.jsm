@@ -18,6 +18,111 @@ XPCOMUtils.defineLazyServiceGetter(this, "gUUIDGenerator",
 
 
 
+const NEW_TABLE = false;
+
+
+function hasString(str) {
+  return typeof str == "string" && str.length > 0;
+}
+
+
+function isEmptyString(str) {
+  return typeof str == "string" && str === "";
+}
+
+
+function isInteger(i) {
+  return Number.isInteger(i);
+}
+
+
+function isPositiveInteger(i) {
+  return Number.isInteger(i) && i > 0;
+}
+
+
+function isMinusOne(num) {
+  return num === -1;
+}
+
+
+function isValidCategory(category) {
+  return ["logo-interactions", "onboarding-interactions",
+    "overlay-interactions", "notification-interactions"]
+    .includes(category);
+}
+
+
+function isValidPage(page) {
+  return ["about:newtab", "about:home"].includes(page);
+}
+
+
+function isValidTourType(type) {
+  return ["new", "update"].includes(type);
+}
+
+
+function isValidBubbleState(str) {
+  return ["bubble", "dot", "hide"].includes(str);
+}
+
+
+function isValidLogoState(str) {
+  return ["logo", "watermark"].includes(str);
+}
+
+
+function isValidNotificationState(str) {
+  return ["show", "hide", "finished"].includes(str);
+}
+
+
+function definePerPing(column) {
+  return function() {
+    throw new Error(`Must define the '${column}' validator per ping because it is not the same for all pings`);
+  };
+}
+
+
+
+
+const BASIC_SESSION_SCHEMA = {
+  addon_version: hasString,
+  category: isValidCategory,
+  page: isValidPage,
+  parent_session_id: hasString,
+  root_session_id: hasString,
+  session_begin: isInteger,
+  session_end: isInteger,
+  session_id: hasString,
+  tour_type: isValidTourType,
+  type: hasString,
+};
+
+
+
+
+const BASIC_EVENT_SCHEMA = {
+  addon_version: hasString,
+  bubble_state: definePerPing("bubble_state"),
+  category: isValidCategory,
+  current_tour_id: definePerPing("current_tour_id"),
+  logo_state: definePerPing("logo_state"),
+  notification_impression: definePerPing("notification_impression"),
+  notification_state: definePerPing("notification_state"),
+  page: isValidPage,
+  parent_session_id: hasString,
+  root_session_id: hasString,
+  target_tour_id: definePerPing("target_tour_id"),
+  timestamp: isInteger,
+  tour_type: isValidTourType,
+  type: hasString,
+  width: isPositiveInteger,
+};
+
+
+
 
 
 
@@ -29,6 +134,209 @@ XPCOMUtils.defineLazyServiceGetter(this, "gUUIDGenerator",
 
 
 const EVENT_WHITELIST = {
+  
+  "notification-appear": {
+    topic: "firefox-onboarding-event2",
+    category: "notification-interactions",
+    validators: Object.assign({}, BASIC_EVENT_SCHEMA, {
+      bubble_state: isValidBubbleState,
+      current_tour_id: hasString,
+      logo_state: isValidLogoState,
+      notification_impression: isPositiveInteger,
+      notification_state: isValidNotificationState,
+      target_tour_id: isEmptyString,
+    }),
+  },
+  
+  "notification-close-button-click": {
+    topic: "firefox-onboarding-event2",
+    category: "notification-interactions",
+    validators: Object.assign({}, BASIC_EVENT_SCHEMA, {
+      bubble_state: isValidBubbleState,
+      current_tour_id: hasString,
+      logo_state: isValidLogoState,
+      notification_impression: isPositiveInteger,
+      notification_state: isValidNotificationState,
+      target_tour_id: hasString,
+    }),
+  },
+  
+  "notification-cta-click": {
+    topic: "firefox-onboarding-event2",
+    category: "notification-interactions",
+    validators: Object.assign({}, BASIC_EVENT_SCHEMA, {
+      bubble_state: isValidBubbleState,
+      current_tour_id: hasString,
+      logo_state: isValidLogoState,
+      notification_impression: isPositiveInteger,
+      notification_state: isValidNotificationState,
+      target_tour_id: hasString,
+    }),
+  },
+  
+  "notification-session": {
+    topic: "firefox-onboarding-session2",
+    category: "notification-interactions",
+    validators: BASIC_SESSION_SCHEMA,
+  },
+  
+  "notification-session-begin": {topic: "internal"},
+  
+  "notification-session-end": {topic: "internal"},
+  
+  "onboarding-logo-click": {
+    topic: "firefox-onboarding-event2",
+    category: "logo-interactions",
+    validators: Object.assign({}, BASIC_EVENT_SCHEMA, {
+      bubble_state: isValidBubbleState,
+      current_tour_id: isEmptyString,
+      logo_state: isValidLogoState,
+      notification_impression: isMinusOne,
+      notification_state: isValidNotificationState,
+      target_tour_id: isEmptyString,
+    }),
+  },
+  
+  "onboarding-noshow-smallscreen": {
+    topic: "firefox-onboarding-event2",
+    category: "onboarding-interactions",
+    validators: Object.assign({}, BASIC_EVENT_SCHEMA, {
+      bubble_state: isEmptyString,
+      current_tour_id: isEmptyString,
+      logo_state: isEmptyString,
+      notification_impression: isMinusOne,
+      notification_state: isEmptyString,
+      target_tour_id: isEmptyString,
+    }),
+  },
+  
+  "onboarding-register-session": {topic: "internal"},
+  
+  "onboarding-session": {
+    topic: "firefox-onboarding-session2",
+    category: "onboarding-interactions",
+    validators: BASIC_SESSION_SCHEMA,
+  },
+  
+  "onboarding-session-begin": {topic: "internal"},
+  
+  "onboarding-session-end": {topic: "internal"},
+  
+  "overlay-close-button-click": {
+    topic: "firefox-onboarding-event2",
+    category: "overlay-interactions",
+    validators: Object.assign({}, BASIC_EVENT_SCHEMA, {
+      bubble_state: isEmptyString,
+      current_tour_id: hasString,
+      logo_state: isEmptyString,
+      notification_impression: isMinusOne,
+      notification_state: isEmptyString,
+      target_tour_id: hasString,
+    }),
+  },
+  
+  "overlay-close-outside-click": {
+    topic: "firefox-onboarding-event2",
+    category: "overlay-interactions",
+    validators: Object.assign({}, BASIC_EVENT_SCHEMA, {
+      bubble_state: isEmptyString,
+      current_tour_id: hasString,
+      logo_state: isEmptyString,
+      notification_impression: isMinusOne,
+      notification_state: isEmptyString,
+      target_tour_id: hasString,
+    }),
+  },
+  
+  "overlay-cta-click": {
+    topic: "firefox-onboarding-event2",
+    category: "overlay-interactions",
+    validators: Object.assign({}, BASIC_EVENT_SCHEMA, {
+      bubble_state: isEmptyString,
+      current_tour_id: hasString,
+      logo_state: isEmptyString,
+      notification_impression: isMinusOne,
+      notification_state: isEmptyString,
+      target_tour_id: hasString,
+    }),
+  },
+  
+  "overlay-current-tour": {
+    topic: "firefox-onboarding-event2",
+    category: "overlay-interactions",
+    validators: Object.assign({}, BASIC_EVENT_SCHEMA, {
+      bubble_state: isEmptyString,
+      current_tour_id: hasString,
+      logo_state: isEmptyString,
+      notification_impression: isMinusOne,
+      notification_state: isEmptyString,
+      target_tour_id: isEmptyString,
+    }),
+  },
+  
+  "overlay-disapear-resize": {
+    topic: "firefox-onboarding-event2",
+    category: "overlay-interactions",
+    validators: Object.assign({}, BASIC_EVENT_SCHEMA, {
+      bubble_state: isEmptyString,
+      current_tour_id: isEmptyString,
+      logo_state: isEmptyString,
+      notification_impression: isMinusOne,
+      notification_state: isEmptyString,
+      target_tour_id: isEmptyString,
+    }),
+  },
+  
+  "overlay-nav-click": {
+    topic: "firefox-onboarding-event2",
+    category: "overlay-interactions",
+    validators: Object.assign({}, BASIC_EVENT_SCHEMA, {
+      bubble_state: isEmptyString,
+      current_tour_id: hasString,
+      logo_state: isEmptyString,
+      notification_impression: isMinusOne,
+      notification_state: isEmptyString,
+      target_tour_id: hasString,
+    }),
+  },
+  
+  "overlay-session": {
+    topic: "firefox-onboarding-session2",
+    category: "overlay-interactions",
+    validators:  BASIC_SESSION_SCHEMA,
+  },
+  
+  "overlay-session-begin": {topic: "internal"},
+  
+  "overlay-session-end":  {topic: "internal"},
+  
+  "overlay-skip-tour": {
+    topic: "firefox-onboarding-event2",
+    category: "overlay-interactions",
+    validators: Object.assign({}, BASIC_EVENT_SCHEMA, {
+      bubble_state: isEmptyString,
+      current_tour_id: hasString,
+      logo_state: isEmptyString,
+      notification_impression: isMinusOne,
+      notification_state: isEmptyString,
+      target_tour_id: isEmptyString,
+    }),
+  },
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+const OLD_EVENT_WHITELIST = {
   
   "notification-close-button-click": {topic: "firefox-onboarding-event", category: "notification-interactions"},
   
@@ -88,11 +396,18 @@ let OnboardingTelemetry = {
   },
 
   process(data) {
-    let { event, session_key } = data;
+    if (NEW_TABLE) {
+      throw new Error("Will implement in bug 1413830");
+    } else {
+      this.processOldPings(data);
+    }
+  },
 
-    let topic = EVENT_WHITELIST[event] && EVENT_WHITELIST[event].topic;
+  processOldPings(data) {
+    let { event, session_key } = data;
+    let topic = OLD_EVENT_WHITELIST[event] && OLD_EVENT_WHITELIST[event].topic;
     if (!topic) {
-      throw new Error(`ping-centre doesn't know ${event}, only knows ${Object.keys(EVENT_WHITELIST)}`);
+      throw new Error(`ping-centre doesn't know ${event}, only knows ${Object.keys(OLD_EVENT_WHITELIST)}`);
     }
 
     if (event === "onboarding-register-session") {
@@ -116,12 +431,12 @@ let OnboardingTelemetry = {
           break;
       }
     } else {
-      this._send(topic, data);
+      this._sendOldPings(topic, data);
     }
   },
 
   
-  _send(topic, data) {
+  _sendOldPings(topic, data) {
     let {
       addon_version,
     } = this.state;
@@ -138,7 +453,7 @@ let OnboardingTelemetry = {
       session_id,
       tour_type,
     } = this.state.sessions[session_key];
-    let category = EVENT_WHITELIST[event].category;
+    let category = OLD_EVENT_WHITELIST[event].category;
     
     
     let tour_source = Services.prefs.getStringPref("browser.onboarding.state", "default");
@@ -202,6 +517,37 @@ let OnboardingTelemetry = {
           tour_type,
         }, {filter: ONBOARDING_ID});
         break;
+    }
+  },
+
+  
+  _validatePayload(payload) {
+    let event = payload.type;
+    let { validators } = EVENT_WHITELIST[event];
+    if (!validators) {
+      throw new Error(`Event ${event} without validators should not be sent.`);
+    }
+    let validatorKeys = Object.keys(validators);
+    
+    if (Object.keys(payload).length > validatorKeys.length) {
+      throw new Error(`Event ${event} want to send more columns than expect, should not be sent.`);
+    }
+    let results = {};
+    let failed = false;
+    
+    for (let key of validatorKeys) {
+      if (payload[key] !== undefined) {
+        results[key] = validators[key](payload[key]);
+        if (!results[key]) {
+          failed = true;
+        }
+      } else {
+        results[key] = false;
+        failed = true;
+      }
+    }
+    if (failed) {
+      throw new Error(`Event ${event} contains incorrect data: ${JSON.stringify(results)}, should not be sent.`);
     }
   }
 };
