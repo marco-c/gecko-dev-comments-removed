@@ -723,7 +723,7 @@ void ChannelMediaResource::Resume()
       if (totalLength < 0 || GetOffset() < totalLength) {
         
         
-        CacheClientSeek(GetOffset(), false);
+        Seek(GetOffset(), false);
         element->DownloadResumed();
       } else {
         
