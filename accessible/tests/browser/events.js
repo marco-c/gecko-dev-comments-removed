@@ -15,6 +15,7 @@
 
 
 
+
 const EVENT_DOCUMENT_LOAD_COMPLETE = nsIAccessibleEvent.EVENT_DOCUMENT_LOAD_COMPLETE;
 const EVENT_HIDE = nsIAccessibleEvent.EVENT_HIDE;
 const EVENT_REORDER = nsIAccessibleEvent.EVENT_REORDER;
@@ -28,6 +29,7 @@ const EVENT_NAME_CHANGE = nsIAccessibleEvent.EVENT_NAME_CHANGE;
 const EVENT_VALUE_CHANGE = nsIAccessibleEvent.EVENT_VALUE_CHANGE;
 const EVENT_TEXT_VALUE_CHANGE = nsIAccessibleEvent.EVENT_TEXT_VALUE_CHANGE;
 const EVENT_FOCUS = nsIAccessibleEvent.EVENT_FOCUS;
+const EVENT_DOCUMENT_RELOAD = nsIAccessibleEvent.EVENT_DOCUMENT_RELOAD;
 
 
 
@@ -50,6 +52,31 @@ function eventToString(event) {
   return info;
 }
 
+function matchEvent(event, matchCriteria) {
+  let acc = event.accessible;
+  switch (typeof matchCriteria) {
+    case "string":
+      let id = getAccessibleDOMNodeID(acc);
+      if (id === matchCriteria) {
+        Logger.log(`Event matches DOMNode id: ${id}`);
+        return true;
+      }
+      break;
+    case "function":
+      if (matchCriteria(event)) {
+        Logger.log(`Lambda function matches event: ${eventToString(event)}`);
+        return true;
+      }
+      break;
+    default:
+      if (acc === matchCriteria) {
+        Logger.log(`Event matches accessible: ${prettyName(acc)}`);
+        return true;
+      }
+  }
+
+  return false;
+}
 
 
 
@@ -61,7 +88,9 @@ function eventToString(event) {
 
 
 
-function waitForEvent(eventType, expectedIdOrAcc) {
+
+
+function waitForEvent(eventType, matchCriteria) {
   return new Promise(resolve => {
     let eventObserver = {
       observe(subject, topic, data) {
@@ -81,18 +110,7 @@ function waitForEvent(eventType, expectedIdOrAcc) {
           return;
         }
 
-        let acc = event.accessible;
-        let id = getAccessibleDOMNodeID(acc);
-        let isID = typeof expectedIdOrAcc === 'string';
-        let actualIdOrAcc = isID ? id : acc;
-        
-        
-        if (actualIdOrAcc === expectedIdOrAcc) {
-          if (isID) {
-            Logger.log(`Correct event DOMNode id: ${id}`);
-          } else {
-            Logger.log(`Correct event accessible: ${prettyName(acc)}`);
-          }
+        if (matchEvent(event, matchCriteria)) {
           Logger.log(`Correct event type: ${eventTypeToString(eventType)}`);
           ok(event.accessibleDocument instanceof nsIAccessibleDocument,
             'Accessible document present.');
@@ -106,24 +124,63 @@ function waitForEvent(eventType, expectedIdOrAcc) {
   });
 }
 
+class UnexpectedEvents {
+  constructor(unexpected) {
+    if (unexpected.length) {
+      this.unexpected = unexpected;
+      Services.obs.addObserver(this, 'accessible-event');
+    }
+  }
+
+  observe(subject, topic, data) {
+    if (topic !== 'accessible-event') {
+      return;
+    }
+
+    let event = subject.QueryInterface(nsIAccessibleEvent);
+
+    let unexpectedEvent = this.unexpected.find(([etype, criteria]) =>
+      etype === event.eventType && matchEvent(event, criteria));
+
+    if (unexpectedEvent) {
+      ok(false, `Got unexpected event: ${eventToString(event)}`);
+    }
+  }
+
+  stop() {
+    if (this.unexpected) {
+      Services.obs.removeObserver(this, 'accessible-event');
+    }
+  }
+}
 
 
 
 
 
 
-function waitForMultipleEvents(events) {
+
+function waitForEvents(events, unexpected = [], ordered = false) {
   
   let currentIdx = 0;
 
-  return Promise.all(events.map(({ eventType, id }, idx) =>
-    
-    
-    waitForEvent(eventType, id).then(resolvedEvent => {
-      
-      is(idx, currentIdx++,
-        `Unexpected event order: ${eventToString(resolvedEvent)}`);
-      return resolvedEvent;
-    })
-  ));
+  let unexpectedListener = new UnexpectedEvents(unexpected);
+
+  return Promise.all(events.map((evt, idx) => {
+    let promise = evt instanceof Array ? waitForEvent(...evt) : evt;
+    return promise.then(result => {
+      if (ordered) {
+        is(idx, currentIdx++,
+          `Unexpected event order: ${result}`);
+      }
+      return result;
+    });
+  })).then(results => {
+    unexpectedListener.stop();
+    return results;
+  });
+}
+
+function waitForOrderedEvents(events, unexpected = []) {
+  return waitForEvents(events, unexpected, true);
 }

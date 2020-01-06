@@ -12,6 +12,7 @@
 
 
 
+
 const { interfaces: Ci, utils: Cu, classes: Cc } = Components;
 
 
@@ -213,22 +214,38 @@ function loadFrameScripts(browser, ...scripts) {
 
 
 
+function snippetToURL(snippet, bodyAttrs={}) {
+  let attrs = Object.assign({}, { id: "body" }, bodyAttrs);
+  let attrsString = Object.entries(attrs).map(
+    ([attr, value]) => `${attr}=${JSON.stringify(value)}`).join(" ");
+  let encodedDoc = btoa(
+    `<html>
+      <head>
+        <meta charset="utf-8"/>
+        <title>Accessibility Test</title>
+      </head>
+      <body ${attrsString}>${snippet}</body>
+    </html>`);
+
+  return `data:text/html;charset=utf-8;base64,${encodedDoc}`;
+}
+
+
+
+
+
+
+
+
+
+
 function addAccessibleTask(doc, task) {
   add_task(async function() {
     let url;
     if (doc.includes('doc_')) {
       url = `${CURRENT_CONTENT_DIR}e10s/${doc}`;
     } else {
-      
-      url = "data:text/html;charset=utf-8;base64,";
-      url += btoa(
-        `<html>
-          <head>
-            <meta charset="utf-8"/>
-            <title>Accessibility Test</title>
-          </head>
-          <body id="body">${doc}</body>
-        </html>`);
+      url = snippetToURL(doc);
     }
 
     registerCleanupFunction(() => {
