@@ -286,11 +286,32 @@ public:
 public:
   virtual bool IsModifiableNode(nsINode* aNode);
 
-  virtual nsresult InsertTextImpl(const nsAString& aStringToInsert,
-                                  nsCOMPtr<nsINode>* aInOutNode,
-                                  nsCOMPtr<nsIContent>* aInOutChildAtOffset,
-                                  int32_t* aInOutOffset,
-                                  nsIDocument* aDoc);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual nsresult
+  InsertTextImpl(nsIDocument& aDocument,
+                 const nsAString& aStringToInsert,
+                 const EditorRawDOMPoint& aPointToInsert,
+                 EditorRawDOMPoint* aPointAfterInsertedString = nullptr);
+
   nsresult InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
                                       Text& aTextNode, int32_t aOffset,
                                       bool aSuppressIME = false);
@@ -934,6 +955,7 @@ public:
   static nsresult GetEndNodeAndOffset(Selection* aSelection,
                                       nsINode** aEndContainer,
                                       int32_t* aEndOffset);
+  static EditorRawDOMPoint GetEndPoint(Selection* aSelection);
 
   static nsresult GetEndChildNode(Selection* aSelection,
                                   nsIContent** aEndNode);

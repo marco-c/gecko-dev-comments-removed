@@ -734,19 +734,28 @@ TextEditor::InsertLineBreak()
   TextRulesInfo ruleInfo(EditAction::insertBreak);
   ruleInfo.maxLength = mMaxTextLength;
   bool cancel, handled;
+  
+  
+  
+  
   nsresult rv = rules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
   NS_ENSURE_SUCCESS(rv, rv);
   if (!cancel && !handled) {
     
-    NS_ENSURE_STATE(selection->GetRangeAt(0));
-    nsCOMPtr<nsINode> selNode = selection->GetRangeAt(0)->GetStartContainer();
-    nsCOMPtr<nsIContent> selChild = selection->GetRangeAt(0)->GetChildAtStartOffset();
-    int32_t selOffset = selection->GetRangeAt(0)->StartOffset();
-    NS_ENSURE_STATE(selNode);
+    nsRange* firstRange = selection->GetRangeAt(0);
+    if (NS_WARN_IF(!firstRange)) {
+      return NS_ERROR_FAILURE;
+    }
+
+    EditorRawDOMPoint pointToInsert(firstRange->StartRef());
+    if (NS_WARN_IF(!pointToInsert.IsSet())) {
+      return NS_ERROR_FAILURE;
+    }
+    MOZ_ASSERT(pointToInsert.IsSetAndValid());
 
     
-    if (!IsTextNode(selNode) && !CanContainTag(*selNode,
-                                               *nsGkAtoms::textTagName)) {
+    if (!IsTextNode(pointToInsert.Container()) &&
+        !CanContainTag(*pointToInsert.Container(), *nsGkAtoms::textTagName)) {
       return NS_ERROR_FAILURE;
     }
 
@@ -758,25 +767,22 @@ TextEditor::InsertLineBreak()
     AutoTransactionsConserveSelection dontChangeMySelection(this);
 
     
-    rv = InsertTextImpl(NS_LITERAL_STRING("\n"), address_of(selNode),
-                        address_of(selChild), &selOffset, doc);
-    if (!selNode) {
+    EditorRawDOMPoint pointAfterInsertedLineBreak;
+    rv = InsertTextImpl(*doc, NS_LITERAL_STRING("\n"), pointToInsert,
+                        &pointAfterInsertedLineBreak);
+    if (NS_WARN_IF(!pointAfterInsertedLineBreak.IsSet())) {
       rv = NS_ERROR_NULL_POINTER; 
     }
     if (NS_SUCCEEDED(rv)) {
       
-      MOZ_ASSERT(!selChild,
-        "After inserting text into a text node, selChild should be nullptr");
-      rv = selection->Collapse(EditorRawDOMPoint(selNode, selOffset));
+      MOZ_ASSERT(!pointAfterInsertedLineBreak.GetChildAtOffset(),
+        "After inserting text into a text node, pointAfterInsertedLineBreak."
+        "GetChildAtOffset() should be nullptr");
+      rv = selection->Collapse(pointAfterInsertedLineBreak);
       if (NS_SUCCEEDED(rv)) {
         
-        nsCOMPtr<nsIDOMNode> endNode;
-        int32_t endOffset;
-        rv = GetEndNodeAndOffset(selection,
-                                 getter_AddRefs(endNode), &endOffset);
-
-        if (NS_SUCCEEDED(rv) &&
-            endNode == GetAsDOMNode(selNode) && endOffset == selOffset) {
+        EditorRawDOMPoint endPoint = GetEndPoint(selection);
+        if (endPoint == pointAfterInsertedLineBreak) {
           
           
           
