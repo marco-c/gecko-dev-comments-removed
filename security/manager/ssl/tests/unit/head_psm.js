@@ -867,3 +867,17 @@ function hexify(data) {
   
   return Array.from(data, (c, i) => ("0" + data.charCodeAt(i).toString(16)).slice(-2)).join("");
 }
+
+
+
+
+
+
+
+function writeLinesAndClose(lines, outputStream) {
+  for (let line of lines) {
+    line += "\n";
+    outputStream.write(line, line.length);
+  }
+  outputStream.close();
+}

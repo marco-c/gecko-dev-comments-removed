@@ -7,10 +7,6 @@
 
 
 
-function writeLine(aLine, aOutputStream) {
-  aOutputStream.write(aLine, aLine.length);
-}
-
 var gSSService = null;
 
 function checkStateRead(aSubject, aTopic, aData) {
@@ -52,13 +48,17 @@ function run_test() {
   
   ok(!stateFile.exists());
   let outputStream = FileUtils.openFileOutputStream(stateFile);
-  let now = (new Date()).getTime();
+  let expiryTime = Date.now() + 100000;
+  let lines = [];
   for (let i = 0; i < 10000; i++) {
     
     
-    writeLine("example" + i + ".example.com:HSTS\t0000000000000000000000000000000000000000000000000\t00000000000000000000000000000000000000\t" + (now + 100000) + ",1,0000000000000000000000000000000000000000000000000000000000000000000000000\n", outputStream);
+    lines.push(`example${i}.example.com:HSTS\t` +
+               "0000000000000000000000000000000000000000000000000\t" +
+               "00000000000000000000000000000000000000\t" +
+               `${expiryTime},1,0000000000000000000000000000000000000000000000000000000000000000000000000`);
   }
-  outputStream.close();
+  writeLinesAndClose(lines, outputStream);
   Services.obs.addObserver(checkStateRead, "data-storage-ready");
   do_test_pending();
   gSSService = Cc["@mozilla.org/ssservice;1"]

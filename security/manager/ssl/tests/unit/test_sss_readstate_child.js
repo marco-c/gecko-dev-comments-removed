@@ -7,10 +7,6 @@
 
 
 
-function writeLine(aLine, aOutputStream) {
-  aOutputStream.write(aLine, aLine.length);
-}
-
 function start_test_in_child() {
   run_test_in_child("sss_readstate_child_worker.js");
   do_test_finished();
@@ -24,15 +20,17 @@ function run_test() {
   
   ok(!stateFile.exists());
   let outputStream = FileUtils.openFileOutputStream(stateFile);
-  let now = (new Date()).getTime();
-  writeLine("expired.example.com:HSTS\t0\t0\t" + (now - 100000) + ",1,0\n", outputStream);
-  writeLine("notexpired.example.com:HSTS\t0\t0\t" + (now + 100000) + ",1,0\n", outputStream);
-  
-  writeLine("includesubdomains.preloaded.test:HSTS\t0\t0\t" + (now + 100000) + ",1,0\n", outputStream);
-  writeLine("incsubdomain.example.com:HSTS\t0\t0\t" + (now + 100000) + ",1,1\n", outputStream);
-  
-  writeLine("includesubdomains2.preloaded.test:HSTS\t0\t0\t0,2,0\n", outputStream);
-  outputStream.close();
+  let now = Date.now();
+  let lines = [
+    `expired.example.com:HSTS\t0\t0\t${now - 100000},1,0`,
+    `notexpired.example.com:HSTS\t0\t0\t${now + 100000},1,0`,
+    
+    `includesubdomains.preloaded.test:HSTS\t0\t0\t${now + 100000},1,0`,
+    `incsubdomain.example.com:HSTS\t0\t0\t${now + 100000},1,1`,
+    
+    "includesubdomains2.preloaded.test:HSTS\t0\t0\t0,2,0",
+  ];
+  writeLinesAndClose(lines, outputStream);
   Services.obs.addObserver(start_test_in_child, "data-storage-ready");
   do_test_pending();
   let SSService = Cc["@mozilla.org/ssservice;1"]
