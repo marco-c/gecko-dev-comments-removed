@@ -198,7 +198,6 @@ MarionetteComponent.prototype.observe = function(subject, topic, data) {
     case "command-line-startup":
       Services.obs.removeObserver(this, topic);
       this.handle(subject);
-      break;
 
     case "profile-after-change":
       
