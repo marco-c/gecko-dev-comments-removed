@@ -145,6 +145,21 @@ public class Highlight implements Item {
 
 
 
+    @NonNull
+    @Override
+    public String getImageUrl() {
+        final Metadata metadata = getMetadataSlow();
+        final String imageUrl = metadata.getImageUrl();
+        return imageUrl != null ? imageUrl : "";
+    }
+
+    
+
+
+
+
+
+
 
 
 

@@ -89,7 +89,7 @@ import java.net.URISyntaxException;
         pageIconLayout.setLayoutParams(layoutParams);
 
         
-        final String overrideIconURL = !shouldOverrideIconWithImageProvider ? null : item.getMetadataSlow().getImageUrl();
+        final String overrideIconURL = !shouldOverrideIconWithImageProvider ? null : item.getImageUrl();
         pageIconLayout.updateIcon(item.getUrl(), overrideIconURL);
 
         navigationView = (NavigationView) content.findViewById(R.id.menu);
