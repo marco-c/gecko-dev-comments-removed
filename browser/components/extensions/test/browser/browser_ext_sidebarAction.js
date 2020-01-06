@@ -2,6 +2,8 @@
 
 "use strict";
 
+requestLongerTimeout(2);
+
 let extData = {
   manifest: {
     "sidebar_action": {
