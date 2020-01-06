@@ -8615,7 +8615,15 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
   nsPresContext* presContext = mPresShell->GetPresContext();
   MOZ_ASSERT(presContext, "Our presShell should have a valid presContext");
 
-  if (aChild == presContext->GetViewportScrollbarStylesOverrideElement()) {
+  
+  
+  
+  
+  
+  
+  
+  if (aChild == presContext->GetViewportScrollbarStylesOverrideElement() ||
+      (!aContainer && aChild->IsElement())) {
     
     
     
