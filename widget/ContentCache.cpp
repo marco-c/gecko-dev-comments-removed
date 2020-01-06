@@ -15,6 +15,9 @@
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/TabParent.h"
+#ifdef MOZ_CRASHREPORTER
+#include "nsExceptionHandler.h"
+#endif 
 #include "nsIWidget.h"
 
 namespace mozilla {
@@ -1110,6 +1113,10 @@ ContentCacheInParent::OnCompositionEvent(const WidgetCompositionEvent& aEvent)
      GetBoolName(mWidgetHasComposition), mPendingCompositionCount,
      mCommitStringByRequest));
 
+#ifdef MOZ_CRASHREPORTER
+  mDispatchedEventMessages.AppendElement(aEvent.mMessage);
+#endif 
+
   
   
   if (!mWidgetHasComposition) {
@@ -1186,6 +1193,10 @@ ContentCacheInParent::OnSelectionEvent(
      GetBoolName(aSelectionEvent.mUseNativeLineBreak), mPendingEventsNeedingAck,
      GetBoolName(mWidgetHasComposition), mPendingCompositionCount));
 
+#ifdef MOZ_CRASHREPORTER
+  mDispatchedEventMessages.AppendElement(aSelectionEvent.mMessage);
+#endif 
+
   mPendingEventsNeedingAck++;
 }
 
@@ -1201,9 +1212,30 @@ ContentCacheInParent::OnEventNeedingAckHandled(nsIWidget* aWidget,
      "aMessage=%s), mPendingEventsNeedingAck=%u, mPendingCompositionCount=%" PRIu8,
      this, aWidget, ToChar(aMessage), mPendingEventsNeedingAck, mPendingCompositionCount));
 
+#ifdef MOZ_CRASHREPORTER
+  mReceivedEventMessages.AppendElement(aMessage);
+#endif 
+
   if (WidgetCompositionEvent::IsFollowedByCompositionEnd(aMessage) ||
       aMessage == eCompositionCommitRequestHandled) {
-    MOZ_RELEASE_ASSERT(mPendingCompositionCount > 0);
+
+#ifdef MOZ_CRASHREPORTER
+    if (mPendingCompositionCount == 1) {
+      RemoveUnnecessaryEventMessageLog();
+    }
+#endif 
+
+    if (NS_WARN_IF(!mPendingCompositionCount)) {
+#ifdef MOZ_CRASHREPORTER
+      nsPrintfCString info("There is no pending composition but received %s "
+                           "message from the remote child\n\n",
+                           ToChar(aMessage));
+      AppendEventMessageLog(info);
+      CrashReporter::AppendAppNotesToCrashReport(info);
+#endif 
+      MOZ_CRASH("No pending composition but received unexpected commit event");
+    }
+
     mPendingCompositionCount--;
     
     
@@ -1219,7 +1251,16 @@ ContentCacheInParent::OnEventNeedingAckHandled(nsIWidget* aWidget,
     mPendingCommitLength = 0;
   }
 
-  MOZ_RELEASE_ASSERT(mPendingEventsNeedingAck > 0);
+  if (NS_WARN_IF(!mPendingEventsNeedingAck)) {
+#ifdef MOZ_CRASHREPORTER
+    nsPrintfCString info("There is no pending events but received %s "
+                         "message from the remote child\n\n",
+                         ToChar(aMessage));
+    AppendEventMessageLog(info);
+    CrashReporter::AppendAppNotesToCrashReport(info);
+#endif 
+    MOZ_CRASH("No pending event message but received unexpected event");
+  }
   if (--mPendingEventsNeedingAck) {
     return;
   }
@@ -1408,6 +1449,61 @@ ContentCacheInParent::FlushPendingNotifications(nsIWidget* aWidget)
     FlushPendingNotifications(widget);
   }
 }
+
+#ifdef MOZ_CRASHREPORTER
+
+void
+ContentCacheInParent::RemoveUnnecessaryEventMessageLog()
+{
+  bool foundLastCompositionStart = false;
+  for (size_t i = mDispatchedEventMessages.Length(); i > 1; i--) {
+    if (mDispatchedEventMessages[i - 1] != eCompositionStart) {
+      continue;
+    }
+    if (!foundLastCompositionStart) {
+      
+      foundLastCompositionStart = true;
+      continue;
+    }
+    
+    mDispatchedEventMessages.RemoveElementsAt(0, i - 1);
+    break;
+  }
+  foundLastCompositionStart = false;
+  for (size_t i = mReceivedEventMessages.Length(); i > 1; i--) {
+    if (mReceivedEventMessages[i - 1] != eCompositionStart) {
+      continue;
+    }
+    if (!foundLastCompositionStart) {
+      
+      foundLastCompositionStart = true;
+      continue;
+    }
+    
+    mReceivedEventMessages.RemoveElementsAt(0, i - 1);
+    break;
+  }
+}
+
+void
+ContentCacheInParent::AppendEventMessageLog(nsACString& aLog) const
+{
+  aLog.AppendLiteral("Dispatched Event Message Log:\n");
+  for (EventMessage message : mDispatchedEventMessages) {
+    aLog.AppendLiteral("  ");
+    aLog.Append(ToChar(message));
+    aLog.AppendLiteral("\n");
+  }
+  aLog.AppendLiteral("\nReceived Event Message Log:\n");
+  for (EventMessage message : mReceivedEventMessages) {
+    aLog.AppendLiteral("  ");
+    aLog.Append(ToChar(message));
+    aLog.AppendLiteral("\n");
+  }
+  aLog.AppendLiteral("\n");
+}
+
+#endif 
 
 
 

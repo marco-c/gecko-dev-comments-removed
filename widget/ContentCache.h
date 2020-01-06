@@ -410,6 +410,12 @@ private:
   IMENotification mPendingLayoutChange;
   IMENotification mPendingCompositionUpdate;
 
+#ifdef MOZ_CRASHREPORTER
+  
+  nsTArray<EventMessage> mDispatchedEventMessages;
+  nsTArray<EventMessage> mReceivedEventMessages;
+#endif 
+
   
   dom::TabParent& MOZ_NON_OWNING_REF mTabParent;
   
@@ -464,6 +470,19 @@ private:
                          LayoutDeviceIntRect& aUnionTextRect) const;
 
   void FlushPendingNotifications(nsIWidget* aWidget);
+
+#ifdef MOZ_CRASHREPORTER
+  
+
+
+
+  void RemoveUnnecessaryEventMessageLog();
+
+  
+
+
+  void AppendEventMessageLog(nsACString& aLog) const;
+#endif 
 };
 
 } 
