@@ -17,10 +17,12 @@ const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 Cu.import("resource://gre/modules/AsyncShutdown.jsm", this);
 Cu.import("resource://gre/modules/DownloadPaths.jsm", this);
 Cu.import("resource://gre/modules/FileUtils.jsm", this);
+Cu.import("resource://gre/modules/osfile.jsm", this);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 Cu.import("resource://testing-common/Assert.jsm", this);
 
 let gFileCounter = 1;
+let gPathsToRemove = [];
 
 this.FileTestUtils = {
   
@@ -50,7 +52,52 @@ this.FileTestUtils = {
     let file = this._globalTemporaryDirectory.clone();
     file.append(leafName);
     Assert.ok(!file.exists(), "Sanity check the temporary file doesn't exist.");
+
+    
+    
+    gPathsToRemove.push(file.path);
     return file;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async tolerantRemove(path, isDir) {
+    try {
+      if (isDir === undefined) {
+        isDir = (await OS.File.stat(path)).isDir;
+      }
+      if (isDir) {
+        
+        
+        
+        await OS.File.removeDir(path);
+      } else {
+        
+        await OS.File.remove(path);
+      }
+    } catch (ex) {
+      
+      
+      
+      
+      if (!(ex instanceof OS.File.Error) ||
+          !(ex.becauseNoSuchFile || ex.becauseAccessDenied)) {
+        throw ex;
+      }
+    }
   },
 };
 
@@ -58,17 +105,31 @@ this.FileTestUtils = {
 
 
 
-XPCOMUtils.defineLazyGetter(FileTestUtils, "_globalTemporaryDirectory", () => {
-  
-  
-  
-  
-  let randomNumber = Math.floor(Math.random() * 1000000);
-  let dir = FileUtils.getFile("TmpD", ["testdir-" + randomNumber]);
-  dir.createUnique(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-  AsyncShutdown.profileBeforeChange.addBlocker("Removing test files", () => {
+XPCOMUtils.defineLazyGetter(FileTestUtils, "_globalTemporaryDirectory",
+  function () {
     
-    dir.remove(true);
+    
+    
+    
+    let randomNumber = Math.floor(Math.random() * 1000000);
+    let dir = FileUtils.getFile("TmpD", ["testdir-" + randomNumber]);
+    dir.createUnique(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
+    AsyncShutdown.profileBeforeChange.addBlocker("Removing test files",
+      async () => {
+        
+        for (let path of gPathsToRemove) {
+          await this.tolerantRemove(path);
+        }
+        
+        let iterator = new OS.File.DirectoryIterator(dir.path);
+        try {
+          await iterator.forEach(entry => this.tolerantRemove(entry.path,
+                                                              entry.isDir));
+        } finally {
+          iterator.close();
+        }
+        
+        await OS.File.removeEmptyDir(dir.path);
+      });
+    return dir;
   });
-  return dir;
-});
