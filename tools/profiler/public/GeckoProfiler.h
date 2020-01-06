@@ -429,7 +429,8 @@ profiler_call_enter(const char* aLabel, js::ProfileEntry::Category aCategory,
   if (!pseudoStack) {
     return pseudoStack;
   }
-  pseudoStack->pushCppFrame(aLabel, aDynamicString, aFrameAddress, aLine, aCategory);
+  pseudoStack->pushCppFrame(aLabel, aDynamicString, aFrameAddress, aLine,
+                            js::ProfileEntry::Kind::CPP_NORMAL, aCategory);
 
   
   

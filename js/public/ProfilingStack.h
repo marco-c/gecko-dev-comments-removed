@@ -56,32 +56,30 @@ class ProfileEntry
     int32_t volatile lineOrPcOffset;
 
     
-    uint32_t volatile flagsAndCategory_;
+    
+    uint32_t volatile kindAndCategory_;
 
     static int32_t pcToOffset(JSScript* aScript, jsbytecode* aPc);
 
   public:
-    
-    enum Flags : uint32_t {
+    enum class Kind : uint32_t {
         
-        
-        
-        
-        IS_CPP_ENTRY = 1u << 0,
+        CPP_NORMAL = 0,
 
         
         
-        BEGIN_PSEUDO_JS = 1u << 1,
+        
+        CPP_MARKER_FOR_JS = 1,
+
+        
+        JS_NORMAL = 2,
 
         
         
-        OSR = 1u << 2,
-
         
-        ALL = IS_CPP_ENTRY|BEGIN_PSEUDO_JS|OSR,
+        JS_OSR = 3,
 
-        
-        CATEGORY_MASK = ~ALL
+        KIND_MASK = 0x3,
     };
 
     
@@ -97,19 +95,30 @@ class ProfileEntry
         EVENTS   = 1u << 12,
 
         FIRST    = OTHER,
-        LAST     = EVENTS
+        LAST     = EVENTS,
+
+        CATEGORY_MASK = ~uint32_t(Kind::KIND_MASK),
     };
 
-    static_assert((static_cast<int>(Category::FIRST) & Flags::ALL) == 0,
-                  "The category bitflags should not intersect with the other flags!");
+    static_assert((uint32_t(Category::FIRST) & uint32_t(Kind::KIND_MASK)) == 0,
+                  "Category overlaps with Kind");
 
     
     
     
     
 
-    bool isCpp() const volatile { return hasFlag(IS_CPP_ENTRY); }
-    bool isJs() const volatile { return !isCpp(); }
+    bool isCpp() const volatile
+    {
+        Kind k = kind();
+        return k == Kind::CPP_NORMAL || k == Kind::CPP_MARKER_FOR_JS;
+    }
+
+    bool isJs() const volatile
+    {
+        Kind k = kind();
+        return k == Kind::JS_NORMAL || k == Kind::JS_OSR;
+    }
 
     void setLabel(const char* aLabel) volatile { label_ = aLabel; }
     const char* label() const volatile { return label_; }
@@ -117,14 +126,14 @@ class ProfileEntry
     const char* dynamicString() const volatile { return dynamicString_; }
 
     void initCppFrame(const char* aLabel, const char* aDynamicString, void* sp, uint32_t aLine,
-                      js::ProfileEntry::Flags aFlags, js::ProfileEntry::Category aCategory)
-                      volatile
+                      Kind aKind, Category aCategory) volatile
     {
         label_ = aLabel;
         dynamicString_ = aDynamicString;
         spOrScript = sp;
         lineOrPcOffset = static_cast<int32_t>(aLine);
-        flagsAndCategory_ = aFlags | js::ProfileEntry::IS_CPP_ENTRY | uint32_t(aCategory);
+        kindAndCategory_ = uint32_t(aKind) | uint32_t(aCategory);
+        MOZ_ASSERT(isCpp());
     }
 
     void initJsFrame(const char* aLabel, const char* aDynamicString, JSScript* aScript,
@@ -134,35 +143,20 @@ class ProfileEntry
         dynamicString_ = aDynamicString;
         spOrScript = aScript;
         lineOrPcOffset = pcToOffset(aScript, aPc);
-        flagsAndCategory_ = uint32_t(js::ProfileEntry::Category::JS);  
-    }
-
-    void setFlag(uint32_t flag) volatile {
-        MOZ_ASSERT(flag != IS_CPP_ENTRY);
-        flagsAndCategory_ |= flag;
-    }
-    void unsetFlag(uint32_t flag) volatile {
-        MOZ_ASSERT(flag != IS_CPP_ENTRY);
-        flagsAndCategory_ &= ~flag;
-    }
-    bool hasFlag(uint32_t flag) const volatile {
-        return bool(flagsAndCategory_ & flag);
-    }
-
-    uint32_t category() const volatile {
-        return flagsAndCategory_ & CATEGORY_MASK;
-    }
-
-    void setOSR() volatile {
+        kindAndCategory_ = uint32_t(Kind::JS_NORMAL) | uint32_t(Category::JS);
         MOZ_ASSERT(isJs());
-        setFlag(OSR);
     }
-    void unsetOSR() volatile {
-        MOZ_ASSERT(isJs());
-        unsetFlag(OSR);
+
+    void setKind(Kind aKind) volatile {
+        kindAndCategory_ = uint32_t(aKind) | uint32_t(category());
     }
-    bool isOSR() const volatile {
-        return hasFlag(OSR);
+
+    Kind kind() const volatile {
+        return Kind(kindAndCategory_ & uint32_t(Kind::KIND_MASK));
+    }
+
+    Category category() const volatile {
+        return Category(kindAndCategory_ & uint32_t(Category::CATEGORY_MASK));
     }
 
     void* stackAddress() const volatile {
@@ -224,10 +218,9 @@ class PseudoStack
     }
 
     void pushCppFrame(const char* label, const char* dynamicString, void* sp, uint32_t line,
-                      js::ProfileEntry::Category category,
-                      js::ProfileEntry::Flags flags = js::ProfileEntry::Flags(0)) {
+                      js::ProfileEntry::Kind kind, js::ProfileEntry::Category category) {
         if (stackPointer < MaxEntries) {
-            entries[stackPointer].initCppFrame(label, dynamicString, sp, line, flags, category);
+            entries[stackPointer].initCppFrame(label, dynamicString, sp, line, kind, category);
         }
 
         

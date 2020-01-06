@@ -727,11 +727,8 @@ AddPseudoEntry(PSLockRef aLock, ProfileBuffer* aBuffer,
                volatile js::ProfileEntry& entry,
                NotNull<RacyThreadInfo*> aRacyInfo)
 {
-  
-  
-  if (entry.hasFlag(js::ProfileEntry::BEGIN_PSEUDO_JS)) {
-    return;
-  }
+  MOZ_ASSERT(entry.kind() == js::ProfileEntry::Kind::CPP_NORMAL ||
+             entry.kind() == js::ProfileEntry::Kind::JS_NORMAL);
 
   int lineno = -1;
 
@@ -797,7 +794,7 @@ AddPseudoEntry(PSLockRef aLock, ProfileBuffer* aBuffer,
     aBuffer->addTag(ProfileBufferEntry::LineNumber(lineno));
   }
 
-  aBuffer->addTag(ProfileBufferEntry::Category(entry.category()));
+  aBuffer->addTag(ProfileBufferEntry::Category(uint32_t(entry.category())));
 }
 
 struct NativeStack
@@ -916,8 +913,7 @@ MergeStacksIntoProfile(PSLockRef aLock, ProfileBuffer* aBuffer,
       
       
       
-      
-      if (pseudoEntry.isJs() && pseudoEntry.isOSR()) {
+      if (pseudoEntry.kind() == js::ProfileEntry::Kind::JS_OSR) {
           pseudoIndex++;
           continue;
       }
@@ -957,7 +953,12 @@ MergeStacksIntoProfile(PSLockRef aLock, ProfileBuffer* aBuffer,
     if (pseudoStackAddr > jsStackAddr && pseudoStackAddr > nativeStackAddr) {
       MOZ_ASSERT(pseudoIndex < pseudoCount);
       volatile js::ProfileEntry& pseudoEntry = pseudoEntries[pseudoIndex];
-      AddPseudoEntry(aLock, aBuffer, pseudoEntry, racyInfo);
+
+      
+      
+      if (pseudoEntry.kind() != js::ProfileEntry::Kind::CPP_MARKER_FOR_JS) {
+        AddPseudoEntry(aLock, aBuffer, pseudoEntry, racyInfo);
+      }
       pseudoIndex++;
       continue;
     }
