@@ -1496,11 +1496,16 @@ Navigator::GetActiveVRDisplays(nsTArray<RefPtr<VRDisplay>>& aDisplays) const
 
 
 
+
+
+
+
+
+
   if (!mWindow || !mWindow->GetDocShell()) {
     return;
   }
   nsGlobalWindow* win = nsGlobalWindow::Cast(mWindow);
-  win->NotifyVREventListenerAdded();
   nsTArray<RefPtr<VRDisplay>> displays;
   if (win->UpdateVRDisplays(displays)) {
     for (auto display : displays) {
