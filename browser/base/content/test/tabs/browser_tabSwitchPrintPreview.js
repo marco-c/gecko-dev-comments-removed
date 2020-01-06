@@ -5,8 +5,10 @@ const kURL2 = "data:text/html,I shouldn't be here!";
 
 
 
+
 add_task(async function() {
   await BrowserTestUtils.withNewTab(kURL1, async function(browser) {
+    let originalTab = gBrowser.selectedTab;
     let tab = BrowserTestUtils.addTab(gBrowser, kURL2);
     document.getElementById("cmd_printPreview").doCommand();
     gBrowser.selectedTab = tab;
@@ -16,8 +18,10 @@ add_task(async function() {
     gBrowser.selectedTab = tab;
     isnot(gBrowser.selectedTab, tab, "Selected tab should still not be the tab we added");
     is(gBrowser.selectedTab, PrintPreviewListener._printPreviewTab, "Selected tab should still be the print preview tab");
-    PrintUtils.exitPrintPreview();
-    await BrowserTestUtils.waitForCondition(() => !gInPrintPreviewMode, "should be in print preview mode");
+    let tabSwitched = BrowserTestUtils.switchTab(gBrowser, () => { PrintUtils.exitPrintPreview(); });
+    await BrowserTestUtils.waitForCondition(() => !gInPrintPreviewMode, "should no longer be in print preview mode");
+    await tabSwitched;
+    is(gBrowser.selectedTab, originalTab, "Selected tab should be back to the original tab that we print previewed");
     await BrowserTestUtils.removeTab(tab);
   });
 });
