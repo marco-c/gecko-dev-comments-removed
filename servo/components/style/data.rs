@@ -229,14 +229,6 @@ pub enum RestyleKind {
 
 impl ElementData {
     
-    pub fn styles_and_restyle_mut(
-        &mut self
-    ) -> (&mut ElementStyles, &mut RestyleData) {
-        (&mut self.styles,
-         &mut self.restyle)
-    }
-
-    
     
     
     pub fn invalidate_style_if_needed<'a, E: TElement>(
