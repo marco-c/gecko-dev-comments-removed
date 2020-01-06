@@ -38,14 +38,7 @@
 
 
 
-
-
-
-
-
-
-
-async function withReflowObserver(testFn, expectedReflows = [], win = window) {
+async function withReflowObserver(testFn, expectedStacks = [], win = window) {
   let dwu = win.QueryInterface(Ci.nsIInterfaceRequestor)
                .getInterface(Ci.nsIDOMWindowUtils);
   let dirtyFrameFn = () => {
@@ -62,12 +55,7 @@ async function withReflowObserver(testFn, expectedReflows = [], win = window) {
 
   
   
-  
-  
-  expectedReflows = expectedReflows.slice(0);
-  expectedReflows.forEach(r => {
-    r.times = r.times || 1;
-  });
+  expectedStacks = expectedStacks.slice(0);
 
   let observer = {
     reflow(start, end) {
@@ -88,14 +76,12 @@ async function withReflowObserver(testFn, expectedReflows = [], win = window) {
         return;
       }
 
-      let index = expectedReflows.findIndex(reflow => path.startsWith(reflow.stack.join("|")));
+      let index = expectedStacks.findIndex(stack => path.startsWith(stack.join("|")));
 
       if (index != -1) {
         Assert.ok(true, "expected uninterruptible reflow: '" +
                   JSON.stringify(pathWithLineNumbers, null, "\t") + "'");
-        if (--expectedReflows[index].times == 0) {
-          expectedReflows.splice(index, 1);
-        }
+        expectedStacks.splice(index, 1);
       } else {
         Assert.ok(false, "unexpected uninterruptible reflow \n" +
                          JSON.stringify(pathWithLineNumbers, null, "\t") + "\n");
@@ -123,13 +109,13 @@ async function withReflowObserver(testFn, expectedReflows = [], win = window) {
     dirtyFrameFn();
     await testFn();
   } finally {
-    for (let remainder of expectedReflows) {
+    for (let remainder of expectedStacks) {
       Assert.ok(false,
-                `Unused expected reflow: ${JSON.stringify(remainder.stack, null, "\t")}\n` +
-                `This reflow was supposed to be hit ${remainder.times} more time(s).\n` +
+                `Unused expected reflow: ${JSON.stringify(remainder, null, "\t")}.\n` +
                 "This is probably a good thing - just remove it from the " +
                 "expected list.");
     }
+
 
     els.removeListenerForAllEvents(win, dirtyFrameFn, true);
     docShell.removeWeakReflowObserver(observer);
