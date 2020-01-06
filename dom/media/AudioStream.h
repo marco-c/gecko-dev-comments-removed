@@ -213,6 +213,9 @@ public:
   void Resume();
 
   
+  void ResetDefaultDevice();
+
+  
   
   int64_t GetPosition();
 
