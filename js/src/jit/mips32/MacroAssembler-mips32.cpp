@@ -510,8 +510,8 @@ MacroAssemblerMIPS::ma_bal(Label* label, DelaySlotFill delaySlotFill)
     if (label->bound()) {
         
         
-        addLongJump(nextOffset());
-        ma_liPatchable(ScratchRegister, Imm32(label->offset()));
+        addLongJump(nextOffset(), BufferOffset(label->offset()));
+        ma_liPatchable(ScratchRegister, Imm32(LabelBase::INVALID_OFFSET));
         as_jalr(ScratchRegister);
         if (delaySlotFill == FillDelaySlot)
             as_nop();
@@ -561,8 +561,8 @@ MacroAssemblerMIPS::branchWithCode(InstImm code, Label* label, JumpKind jumpKind
 
         if (code.encode() == inst_beq.encode()) {
             
-            addLongJump(nextOffset());
-            ma_liPatchable(ScratchRegister, Imm32(label->offset()));
+            addLongJump(nextOffset(), BufferOffset(label->offset()));
+            ma_liPatchable(ScratchRegister, Imm32(LabelBase::INVALID_OFFSET));
             as_jr(ScratchRegister);
             as_nop();
             return;
@@ -577,8 +577,8 @@ MacroAssemblerMIPS::branchWithCode(InstImm code, Label* label, JumpKind jumpKind
         writeInst(code_r.encode());
 
         
-        addLongJump(nextOffset());
-        ma_liPatchable(ScratchRegister, Imm32(label->offset()));
+        addLongJump(nextOffset(), BufferOffset(label->offset()));
+        ma_liPatchable(ScratchRegister, Imm32(LabelBase::INVALID_OFFSET));
         as_jr(ScratchRegister);
         as_nop();
         return;
@@ -1549,26 +1549,20 @@ MacroAssemblerMIPSCompat::backedgeJump(RepatchLabel* label, Label* documentation
 {
     
     MOZ_ASSERT(!label->used());
-    uint32_t dest = label->bound() ? label->offset() : LabelBase::INVALID_OFFSET;
+
     BufferOffset bo = nextOffset();
     label->use(bo.getOffset());
 
     
     m_buffer.ensureSpace(8 * sizeof(uint32_t));
-    if (label->bound()) {
-        int32_t offset = label->offset() - bo.getOffset();
-        MOZ_ASSERT(BOffImm16::IsInRange(offset));
-        as_b(BOffImm16(offset));
-    } else {
-        
-        as_b(BOffImm16(2 * sizeof(uint32_t)));
-    }
     
-    ma_liPatchable(ScratchRegister, Imm32(dest));
+    as_b(BOffImm16(2 * sizeof(uint32_t)));
+    
+    ma_liPatchable(ScratchRegister, Imm32(LabelBase::INVALID_OFFSET));
     MOZ_ASSERT(nextOffset().getOffset() - bo.getOffset() == 3 * sizeof(uint32_t));
     as_jr(ScratchRegister);
     
-    ma_liPatchable(ScratchRegister, Imm32(dest));
+    ma_liPatchable(ScratchRegister, Imm32(LabelBase::INVALID_OFFSET));
     as_jr(ScratchRegister);
     as_nop();
     MOZ_ASSERT(nextOffset().getOffset() - bo.getOffset() == 8 * sizeof(uint32_t));
@@ -1580,12 +1574,10 @@ MacroAssemblerMIPSCompat::jumpWithPatch(RepatchLabel* label, Label* documentatio
 {
     
     MOZ_ASSERT(!label->used());
-    uint32_t dest = label->bound() ? label->offset() : LabelBase::INVALID_OFFSET;
 
     BufferOffset bo = nextOffset();
     label->use(bo.getOffset());
-    addLongJump(bo);
-    ma_liPatchable(ScratchRegister, Imm32(dest));
+    ma_liPatchable(ScratchRegister, Imm32(LabelBase::INVALID_OFFSET));
     as_jr(ScratchRegister);
     as_nop();
     return CodeOffsetJump(bo.getOffset());

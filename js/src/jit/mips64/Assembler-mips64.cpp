@@ -131,14 +131,6 @@ Assembler::executableCopy(uint8_t* buffer, bool flushICache)
     MOZ_ASSERT(isFinished);
     m_buffer.executableCopy(buffer);
 
-    
-    for (size_t i = 0; i < longJumps_.length(); i++) {
-        Instruction* inst = (Instruction*) ((uintptr_t)buffer + longJumps_[i]);
-
-        uint64_t value = Assembler::ExtractLoad64Value(inst);
-        Assembler::UpdateLoad64Value(inst, (uint64_t)buffer + value);
-    }
-
     if (flushICache)
         AutoFlushICache::setRange(uintptr_t(buffer), m_buffer.size());
 }
@@ -262,8 +254,8 @@ Assembler::bind(InstImm* inst, uintptr_t branch, uintptr_t target)
     
     
     if (inst[0].encode() == inst_bgezal.encode()) {
-        addLongJump(BufferOffset(branch));
-        Assembler::WriteLoad64Instructions(inst, ScratchRegister, target);
+        addLongJump(BufferOffset(branch), BufferOffset(target));
+        Assembler::WriteLoad64Instructions(inst, ScratchRegister, LabelBase::INVALID_OFFSET);
         inst[4] = InstReg(op_special, ScratchRegister, zero, ra, ff_jalr).encode();
         
         return;
@@ -287,16 +279,16 @@ Assembler::bind(InstImm* inst, uintptr_t branch, uintptr_t target)
 
     if (inst[0].encode() == inst_beq.encode()) {
         
-        addLongJump(BufferOffset(branch));
-        Assembler::WriteLoad64Instructions(inst, ScratchRegister, target);
+        addLongJump(BufferOffset(branch), BufferOffset(target));
+        Assembler::WriteLoad64Instructions(inst, ScratchRegister, LabelBase::INVALID_OFFSET);
         inst[4] = InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
         
     } else {
         
         inst[0] = invertBranch(inst[0], BOffImm16(7 * sizeof(uint32_t)));
         
-        addLongJump(BufferOffset(branch + sizeof(uint32_t)));
-        Assembler::WriteLoad64Instructions(&inst[1], ScratchRegister, target);
+        addLongJump(BufferOffset(branch + sizeof(uint32_t)), BufferOffset(target));
+        Assembler::WriteLoad64Instructions(&inst[1], ScratchRegister, LabelBase::INVALID_OFFSET);
         inst[5] = InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
         
     }
@@ -320,7 +312,7 @@ Assembler::bind(RepatchLabel* label)
             
             
             
-            Assembler::UpdateLoad64Value(inst, dest.getOffset());
+            addLongJump(BufferOffset(label->offset()), dest);
         } else if (inst[1].extractOpcode() == (uint32_t(op_lui) >> OpcodeShift) ||
                    BOffImm16::IsInRange(offset))
         {
@@ -343,8 +335,8 @@ Assembler::bind(RepatchLabel* label)
             MOZ_ASSERT(inst[3].encode() == NopInst);
             MOZ_ASSERT(inst[4].encode() == NopInst);
             MOZ_ASSERT(inst[5].encode() == NopInst);
-            addLongJump(BufferOffset(label->offset()));
-            Assembler::WriteLoad64Instructions(inst, ScratchRegister, dest.getOffset());
+            addLongJump(BufferOffset(label->offset()), dest);
+            Assembler::WriteLoad64Instructions(inst, ScratchRegister, LabelBase::INVALID_OFFSET);
             inst[4] = InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
         } else {
             
@@ -359,8 +351,8 @@ Assembler::bind(RepatchLabel* label)
             MOZ_ASSERT(inst[4].encode() == NopInst);
             MOZ_ASSERT(inst[5].encode() == NopInst);
             MOZ_ASSERT(inst[6].encode() == NopInst);
-            addLongJump(BufferOffset(label->offset() + sizeof(uint32_t)));
-            Assembler::WriteLoad64Instructions(&inst[1], ScratchRegister, dest.getOffset());
+            addLongJump(BufferOffset(label->offset() + sizeof(uint32_t)), dest);
+            Assembler::WriteLoad64Instructions(&inst[1], ScratchRegister, LabelBase::INVALID_OFFSET);
             inst[5] = InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
         }
     }
