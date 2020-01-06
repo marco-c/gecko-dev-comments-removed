@@ -15,50 +15,50 @@
 
 #ifdef MOZ_WRAP_NEW_DELETE
 
-MOZ_MEMORY_API void *
-mozmem_malloc_impl(_Znwj)(unsigned int size)
+MOZ_MEMORY_API void*
+_Znwj(unsigned int size)
 {
   return malloc_impl(size);
 }
 
-MOZ_MEMORY_API void *
-mozmem_malloc_impl(_Znaj)(unsigned int size)
+MOZ_MEMORY_API void*
+_Znaj(unsigned int size)
 {
   return malloc_impl(size);
 }
 
 MOZ_MEMORY_API void
-mozmem_malloc_impl(_ZdlPv)(void *ptr)
+_ZdlPv(void* ptr)
 {
   free_impl(ptr);
 }
 
 MOZ_MEMORY_API void
-mozmem_malloc_impl(_ZdaPv)(void *ptr)
+_ZdaPv(void* ptr)
 {
   free_impl(ptr);
 }
 
-MOZ_MEMORY_API void *
-mozmem_malloc_impl(_ZnwjRKSt9nothrow_t)(unsigned int size)
+MOZ_MEMORY_API void*
+_ZnwjRKSt9nothrow_t(unsigned int size)
 {
   return malloc_impl(size);
 }
 
-MOZ_MEMORY_API void *
-mozmem_malloc_impl(_ZnajRKSt9nothrow_t)(unsigned int size)
+MOZ_MEMORY_API void*
+_ZnajRKSt9nothrow_t(unsigned int size)
 {
   return malloc_impl(size);
 }
 
 MOZ_MEMORY_API void
-mozmem_malloc_impl(_ZdlPvRKSt9nothrow_t)(void *ptr)
+_ZdlPvRKSt9nothrow_t(void* ptr)
 {
   free_impl(ptr);
 }
 
 MOZ_MEMORY_API void
-mozmem_malloc_impl(_ZdaPvRKSt9nothrow_t)(void *ptr)
+_ZdaPvRKSt9nothrow_t(void* ptr)
 {
   free_impl(ptr);
 }
