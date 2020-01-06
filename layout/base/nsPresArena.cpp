@@ -11,13 +11,13 @@
 
 #include "mozilla/Poison.h"
 #include "nsDebug.h"
-#include "nsArenaMemoryStats.h"
 #include "nsPrintfCString.h"
 #include "GeckoStyleContext.h"
 #include "FrameLayerBuilder.h"
 #include "mozilla/ArrayUtils.h"
 #include "nsStyleContext.h"
 #include "nsStyleContextInlines.h"
+#include "nsWindowSizes.h"
 
 #include <inttypes.h>
 
@@ -164,8 +164,7 @@ nsPresArena::Free(uint32_t aCode, void* aPtr)
 }
 
 void
-nsPresArena::AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                                    nsArenaMemoryStats* aArenaStats)
+nsPresArena::AddSizeOfExcludingThis(nsWindowSizes& aSizes) const
 {
   
   
@@ -178,11 +177,13 @@ nsPresArena::AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
   
   
 
-  size_t mallocSize = mPool.SizeOfExcludingThis(aMallocSizeOf);
+  size_t mallocSize = mPool.SizeOfExcludingThis(aSizes.mState.mMallocSizeOf);
 
   size_t totalSizeInFreeLists = 0;
-  for (FreeList* entry = mFreeLists; entry != ArrayEnd(mFreeLists); ++entry) {
-    mallocSize += entry->SizeOfExcludingThis(aMallocSizeOf);
+  for (const FreeList* entry = mFreeLists;
+       entry != ArrayEnd(mFreeLists);
+       ++entry) {
+    mallocSize += entry->SizeOfExcludingThis(aSizes.mState.mMallocSizeOf);
 
     
     
@@ -193,28 +194,28 @@ nsPresArena::AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
     size_t* p;
 
     switch (entry - mFreeLists) {
-#define FRAME_ID(classname, ...)                          \
-      case nsQueryFrame::classname##_id:                  \
-        p = &aArenaStats->FRAME_ID_STAT_FIELD(classname); \
+#define FRAME_ID(classname, ...) \
+      case nsQueryFrame::classname##_id: \
+        p = &aSizes.mArenaSizes.NS_ARENA_SIZES_FIELD(classname); \
         break;
 #define ABSTRACT_FRAME_ID(...)
 #include "nsFrameIdList.h"
 #undef FRAME_ID
 #undef ABSTRACT_FRAME_ID
       case eArenaObjectID_nsLineBox:
-        p = &aArenaStats->mLineBoxes;
+        p = &aSizes.mArenaSizes.mLineBoxes;
         break;
       case eArenaObjectID_nsRuleNode:
-        p = &aArenaStats->mRuleNodes;
+        p = &aSizes.mArenaSizes.mRuleNodes;
         break;
       case eArenaObjectID_GeckoStyleContext:
-        p = &aArenaStats->mStyleContexts;
+        p = &aSizes.mArenaSizes.mStyleContexts;
         break;
 #define STYLE_STRUCT(name_, checkdata_cb_)      \
         case eArenaObjectID_nsStyle##name_:
 #include "nsStyleStructList.h"
 #undef STYLE_STRUCT
-        p = &aArenaStats->mStyleStructs;
+        p = &aSizes.mArenaSizes.mStyleStructs;
         break;
       default:
         continue;
@@ -224,5 +225,5 @@ nsPresArena::AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
     totalSizeInFreeLists += totalSize;
   }
 
-  aArenaStats->mOther += mallocSize - totalSizeInFreeLists;
+  aSizes.mLayoutPresShellSize += mallocSize - totalSizeInFreeLists;
 }
