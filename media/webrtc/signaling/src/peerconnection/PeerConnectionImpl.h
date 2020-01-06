@@ -788,12 +788,6 @@ private:
   
   mozilla::TimeStamp mStartTime;
 
-  
-  
-  
-  
-  int mNumAudioStreams;
-  int mNumVideoStreams;
   bool mHaveConfiguredCodecs;
 
   bool mHaveDataStream;
