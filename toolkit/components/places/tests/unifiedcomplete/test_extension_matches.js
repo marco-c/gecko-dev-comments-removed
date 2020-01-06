@@ -266,7 +266,9 @@ add_task(async function test_extension_results_should_come_first() {
           {content: "baz", description: "third suggestion"},
         ]);
       }
-      controller.stopSearch();
+      
+      
+      
     }
   };
 
