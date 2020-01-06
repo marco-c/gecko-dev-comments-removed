@@ -857,6 +857,9 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       gDevToolsBrowser._forgetBrowserWindow(win);
     }
 
+    
+    DebuggerServer.removeContentServerScript();
+
     gDevTools.destroy({ shuttingDown });
   },
 };

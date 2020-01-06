@@ -69,6 +69,9 @@ if (isWorker) {
     Services.prefs.getBoolPref(VERBOSE_PREF);
 }
 
+const CONTENT_PROCESS_DBG_SERVER_SCRIPT =
+  "resource://devtools/server/content-process-debugger-server.js";
+
 function loadSubScript(url) {
   try {
     let loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
@@ -149,6 +152,8 @@ function ModuleAPI() {
 var DebuggerServer = {
   _listeners: [],
   _initialized: false,
+  
+  _contentProcessScriptLoaded: false,
   
   globalActorFactories: {},
   
@@ -755,7 +760,16 @@ var DebuggerServer = {
       deferred.resolve(actor);
     });
 
-    mm.sendAsyncMessage("DevTools:InitDebuggerServer", {
+    
+    if (!this._contentProcessScriptLoaded) {
+      
+      Services.ppmm.loadProcessScript(CONTENT_PROCESS_DBG_SERVER_SCRIPT, true);
+      this._contentProcessScriptLoaded = true;
+    }
+
+    
+    
+    mm.sendAsyncMessage("debug:init-content-server", {
       prefix: prefix
     });
 
@@ -1365,6 +1379,20 @@ var DebuggerServer = {
           this._connections[connID].rootActor.removeActorByName(name);
         }
       }
+    }
+  },
+
+  
+
+
+
+
+  removeContentServerScript() {
+    Services.ppmm.removeDelayedProcessScript(CONTENT_PROCESS_DBG_SERVER_SCRIPT);
+    try {
+      Services.ppmm.broadcastAsyncMessage("debug:close-content-server");
+    } catch (e) {
+      
     }
   },
 
