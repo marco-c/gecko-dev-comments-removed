@@ -448,7 +448,21 @@ public:
   
 
 
+
   virtual void SetPrincipal(nsIPrincipal *aPrincipal) = 0;
+
+  
+
+
+
+
+
+
+
+  const nsTArray<nsCOMPtr<nsIPrincipal>>& AncestorPrincipals() const
+  {
+    return mAncestorPrincipals;
+  }
 
   
 
@@ -3594,6 +3608,10 @@ protected:
   
   
   nsTArray<nsCOMPtr<nsIRunnable>> mBufferedCSPViolations;
+
+  
+  
+  nsTArray<nsCOMPtr<nsIPrincipal>> mAncestorPrincipals;
 
   
   

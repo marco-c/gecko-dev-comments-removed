@@ -19,6 +19,7 @@
 #include "nsIDOMStorageManager.h"
 #include "nsDocLoader.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/Move.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/TimeStamp.h"
@@ -290,6 +291,41 @@ public:
   nsresult SetHTMLEditorInternal(mozilla::HTMLEditor* aHTMLEditor);
 
   nsDOMNavigationTiming* GetNavigationTiming() const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const nsTArray<nsCOMPtr<nsIPrincipal>>& AncestorPrincipals() const
+  {
+    return mAncestorPrincipals;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  void SetAncestorPrincipals(
+    nsTArray<nsCOMPtr<nsIPrincipal>>&& aAncestorPrincipals)
+  {
+    mAncestorPrincipals = mozilla::Move(aAncestorPrincipals);
+  }
 
 private:
   bool CanSetOriginAttributes();
@@ -1093,6 +1129,9 @@ private:
   
   
   uint32_t mTouchEventsOverride;
+
+  
+  nsTArray<nsCOMPtr<nsIPrincipal>> mAncestorPrincipals;
 
   
   

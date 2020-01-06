@@ -2532,7 +2532,7 @@ nsFrameLoader::MaybeCreateDocShell()
   
   
 
-  int32_t parentType = docShell->ItemType();
+  const int32_t parentType = docShell->ItemType();
 
   
   
@@ -2710,6 +2710,16 @@ nsFrameLoader::MaybeCreateDocShell()
   }
 
   nsDocShell::Cast(mDocShell)->SetOriginAttributes(attrs);
+
+  if (!mDocShell->GetIsMozBrowser() &&
+      parentType == mDocShell->ItemType()) {
+    
+    nsTArray<nsCOMPtr<nsIPrincipal>> ancestorPrincipals;
+    
+    ancestorPrincipals = doc->AncestorPrincipals();
+    ancestorPrincipals.InsertElementAt(0, doc->NodePrincipal());
+    nsDocShell::Cast(mDocShell)->SetAncestorPrincipals(Move(ancestorPrincipals));
+  }
 
   ReallyLoadFrameScripts();
   InitializeBrowserAPI();
