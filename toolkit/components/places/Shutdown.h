@@ -53,17 +53,17 @@ class Database;
 
 
 
-
-
-
-
 class PlacesShutdownBlocker : public nsIAsyncShutdownBlocker
+                            , public nsIAsyncShutdownCompletionCallback
 {
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
+  NS_DECL_NSIASYNCSHUTDOWNCOMPLETIONCALLBACK
 
   explicit PlacesShutdownBlocker(const nsString& aName);
+
+  already_AddRefed<nsIAsyncShutdownClient> GetClient();
 
   
 
@@ -126,18 +126,13 @@ protected:
 
 
 class ClientsShutdownBlocker final : public PlacesShutdownBlocker
-                                   , public nsIAsyncShutdownCompletionCallback
 {
 public:
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_NSIASYNCSHUTDOWNCOMPLETIONCALLBACK
 
   explicit ClientsShutdownBlocker();
 
-  NS_IMETHOD BlockShutdown(nsIAsyncShutdownClient* aParentClient) override;
-
-  already_AddRefed<nsIAsyncShutdownClient> GetClient();
-
+  NS_IMETHOD Done() override;
 private:
   ~ClientsShutdownBlocker() {}
 };
@@ -152,9 +147,9 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_MOZISTORAGECOMPLETIONCALLBACK
 
-  NS_IMETHOD BlockShutdown(nsIAsyncShutdownClient* aParentClient) override;
-
   explicit ConnectionShutdownBlocker(mozilla::places::Database* aDatabase);
+
+  NS_IMETHOD Done() override;
 
 private:
   ~ConnectionShutdownBlocker() {}

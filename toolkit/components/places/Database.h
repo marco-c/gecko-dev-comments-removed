@@ -33,10 +33,6 @@
 
 #define TOPIC_PLACES_SHUTDOWN "places-shutdown"
 
-
-
-#define TOPIC_PLACES_WILL_CLOSE_CONNECTION "places-will-close-connection"
-
 #define TOPIC_PLACES_CONNECTION_CLOSED "places-connection-closed"
 
 
@@ -85,6 +81,11 @@ public:
 
 
   already_AddRefed<nsIAsyncShutdownClient> GetClientsShutdown();
+
+  
+
+
+  already_AddRefed<nsIAsyncShutdownClient> GetConnectionShutdown();
 
   
 

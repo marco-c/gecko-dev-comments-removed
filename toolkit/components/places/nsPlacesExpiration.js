@@ -32,7 +32,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
 
 
 
-const TOPIC_SHUTDOWN = "places-will-close-connection";
 const TOPIC_PREF_CHANGED = "nsPref:changed";
 const TOPIC_DEBUG_START_EXPIRATION = "places-debug-start-expiration";
 const TOPIC_EXPIRATION_FINISHED = "places-expiration-finished";
@@ -433,37 +432,37 @@ function nsPlacesExpiration() {
   }, Cu.reportError);
 
   
-  Services.obs.addObserver(this, TOPIC_SHUTDOWN, true);
   Services.obs.addObserver(this, TOPIC_DEBUG_START_EXPIRATION, true);
   Services.obs.addObserver(this, TOPIC_IDLE_DAILY, true);
+
+  
+  let shutdownClient = PlacesUtils.history.connectionShutdownClient.jsclient;
+  shutdownClient.addBlocker("Places Expiration: shutdown", () => {
+    if (this._shuttingDown) {
+      return;
+    }
+    this._shuttingDown = true;
+    this.expireOnIdle = false;
+    if (this._timer) {
+      this._timer.cancel();
+      this._timer = null;
+    }
+    
+    
+    if (this.status == STATUS.DIRTY) {
+      this._expireWithActionAndLimit(ACTION.SHUTDOWN_DIRTY, LIMIT.LARGE);
+    }
+    this._finalizeInternalStatements();
+  });
 }
 
 nsPlacesExpiration.prototype = {
-
-  
-
   observe: function PEX_observe(aSubject, aTopic, aData) {
     if (this._shuttingDown) {
       return;
     }
 
-    if (aTopic == TOPIC_SHUTDOWN) {
-      this._shuttingDown = true;
-      this.expireOnIdle = false;
-
-      if (this._timer) {
-        this._timer.cancel();
-        this._timer = null;
-      }
-
-      
-      
-      if (this.status == STATUS.DIRTY) {
-        this._expireWithActionAndLimit(ACTION.SHUTDOWN_DIRTY, LIMIT.LARGE);
-      }
-
-      this._finalizeInternalStatements();
-    } else if (aTopic == TOPIC_PREF_CHANGED) {
+    if (aTopic == TOPIC_PREF_CHANGED) {
       this._loadPrefsPromise = this._loadPrefs().then(() => {
         if (aData == PREF_INTERVAL_SECONDS) {
           

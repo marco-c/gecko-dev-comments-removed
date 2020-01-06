@@ -23,14 +23,6 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 
 
-function shutdownExpiration() {
-  let expire = Cc["@mozilla.org/places/expiration;1"].getService(Ci.nsIObserver);
-  expire.observe(null, "places-will-close-connection", null);
-}
-
-
-
-
 
 
 function force_expiration_start() {

@@ -95,24 +95,16 @@ add_task(async function shutdown() {
   
   
   
-  await new Promise(resolve => {
-    Services.obs.addObserver(function onNotification() {
-      Services.obs.removeObserver(onNotification, "places-will-close-connection");
-      do_check_true(true, "Observed fake places shutdown");
 
-      Services.tm.dispatchToMainThread(() => {
+  let shutdownClient = PlacesUtils.history.shutdownClient.jsclient;
+  shutdownClient.addBlocker("Places Expiration: shutdown",
+    function() {
+      Services.tm.mainThread.dispatch(() => {
         
         PlacesUtils.bookmarks.QueryInterface(Ci.nsINavHistoryObserver)
                              .onPageChanged(NetUtil.newURI("http://book.ma.rk/"),
                                             Ci.nsINavHistoryObserver.ATTRIBUTE_FAVICON,
                                             "test", "test");
-        resolve(promiseTopicObserved("places-connection-closed"));
-      });
-    }, "places-will-close-connection");
-    shutdownPlaces();
-  });
+      }, Ci.nsIThread.DISPATCH_NORMAL);
+    });
 });
-
-
-
-
