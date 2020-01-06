@@ -13,7 +13,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
-#if defined(ACCESSIBILITY)
+#if defined(ACCESSIBILITY) && defined(MOZ_CRASHREPORTER)
 #include "nsExceptionHandler.h"
 #endif 
 #include "nsWindowsHelpers.h"
@@ -50,7 +50,7 @@ MainThreadRuntime::MainThreadRuntime()
   , mActCtxRgn(a11y::Compatibility::GetActCtxResourceId())
 #endif 
 {
-#if defined(ACCESSIBILITY)
+#if defined(ACCESSIBILITY) && defined(MOZ_CRASHREPORTER)
   GeckoProcessType procType = XRE_GetProcessType();
   if (procType == GeckoProcessType_Default ||
       procType == GeckoProcessType_Content) {

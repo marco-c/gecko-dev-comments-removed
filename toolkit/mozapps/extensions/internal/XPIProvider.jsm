@@ -2201,7 +2201,8 @@ this.XPIProvider = {
         Services.obs.notifyObservers(null, "chrome-flush-caches");
       }
 
-      if (AppConstants.MOZ_CRASHREPORTER) {
+      if ("nsICrashReporter" in Ci &&
+          Services.appinfo instanceof Ci.nsICrashReporter) {
         
         try {
           Services.appinfo.annotateCrashReport("Theme", this.currentSkin);
@@ -2762,16 +2763,14 @@ this.XPIProvider = {
 
 
   addAddonsToCrashReporter() {
-    if (!(Services.appinfo instanceof Ci.nsICrashReporter) ||
-        !AppConstants.MOZ_CRASHREPORTER) {
+    if (!("nsICrashReporter" in Ci) ||
+        !(Services.appinfo instanceof Ci.nsICrashReporter))
       return;
-    }
 
     
     
-    if (Services.appinfo.inSafeMode) {
+    if (Services.appinfo.inSafeMode)
       return;
-    }
 
     let data = Array.from(XPIStates.enabledAddons(),
                           a => encoded`${a.id}:${a.version}`).join(",");

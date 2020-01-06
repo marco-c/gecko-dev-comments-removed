@@ -12,6 +12,7 @@
 #include "mozilla/Unused.h"
 #include "mozilla/ipc/Shmem.h"
 
+#ifdef MOZ_CRASHREPORTER
 namespace mozilla {
 namespace ipc {
 
@@ -77,6 +78,7 @@ private:
 
 } 
 } 
+#endif 
 
 #endif 
 

@@ -87,7 +87,7 @@ private:
   bool ShouldInstantiate(const DWORD aClientTid);
 
   bool GetClientExecutableName(const DWORD aClientTid, nsIFile** aOutClientExe);
-#if defined(MOZ_TELEMETRY_REPORTING)
+#if defined(MOZ_TELEMETRY_REPORTING) || defined(MOZ_CRASHREPORTER)
   class AccumulateRunnable final : public Runnable
   {
   public:
@@ -152,7 +152,7 @@ private:
   RootAccessibleWrap* mWeakRootAccWrap;
   IAccessible*        mWeakAccessible;
   IDispatch*          mWeakDispatch;
-#if defined(MOZ_TELEMETRY_REPORTING)
+#if defined(MOZ_TELEMETRY_REPORTING) || defined(MOZ_CRASHREPORTER)
   nsCOMPtr<nsIThread> mTelemetryThread;
 #endif 
 };

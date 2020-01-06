@@ -410,6 +410,7 @@ private:
   IMENotification mPendingLayoutChange;
   IMENotification mPendingCompositionUpdate;
 
+#ifdef MOZ_CRASHREPORTER
   
   nsTArray<EventMessage> mDispatchedEventMessages;
   nsTArray<EventMessage> mReceivedEventMessages;
@@ -449,6 +450,7 @@ private:
   }
   nsTArray<RequestIMEToCommitCompositionResult>
     mRequestIMEToCommitCompositionResults;
+#endif 
 
   
   dom::TabParent& MOZ_NON_OWNING_REF mTabParent;
@@ -505,6 +507,7 @@ private:
 
   void FlushPendingNotifications(nsIWidget* aWidget);
 
+#ifdef MOZ_CRASHREPORTER
   
 
 
@@ -515,6 +518,7 @@ private:
 
 
   void AppendEventMessageLog(nsACString& aLog) const;
+#endif 
 };
 
 } 

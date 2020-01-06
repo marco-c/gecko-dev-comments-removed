@@ -573,7 +573,11 @@ DuplicateHandle(HANDLE aSourceHandle,
 
 
 
+#ifdef MOZ_CRASHREPORTER
 void AnnotateSystemError();
+#else
+#define AnnotateSystemError() do { } while (0)
+#endif
 
 
 
@@ -692,7 +696,7 @@ private:
     ProcessId mMyPid, mOtherPid;
 };
 
-#if defined(XP_MACOSX)
+#if defined(MOZ_CRASHREPORTER) && defined(XP_MACOSX)
 void AnnotateCrashReportWithErrno(const char* tag, int error);
 #else
 static inline void AnnotateCrashReportWithErrno(const char* tag, int error)

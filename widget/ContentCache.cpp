@@ -15,7 +15,9 @@
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/TabParent.h"
+#ifdef MOZ_CRASHREPORTER
 #include "nsExceptionHandler.h"
+#endif 
 #include "nsIWidget.h"
 
 namespace mozilla {
@@ -1111,7 +1113,9 @@ ContentCacheInParent::OnCompositionEvent(const WidgetCompositionEvent& aEvent)
      GetBoolName(mWidgetHasComposition), mPendingCompositionCount,
      mCommitStringByRequest));
 
+#ifdef MOZ_CRASHREPORTER
   mDispatchedEventMessages.AppendElement(aEvent.mMessage);
+#endif 
 
   
   
@@ -1189,7 +1193,9 @@ ContentCacheInParent::OnSelectionEvent(
      GetBoolName(aSelectionEvent.mUseNativeLineBreak), mPendingEventsNeedingAck,
      GetBoolName(mWidgetHasComposition), mPendingCompositionCount));
 
+#ifdef MOZ_CRASHREPORTER
   mDispatchedEventMessages.AppendElement(aSelectionEvent.mMessage);
+#endif 
 
   mPendingEventsNeedingAck++;
 }
@@ -1206,22 +1212,27 @@ ContentCacheInParent::OnEventNeedingAckHandled(nsIWidget* aWidget,
      "aMessage=%s), mPendingEventsNeedingAck=%u, mPendingCompositionCount=%" PRIu8,
      this, aWidget, ToChar(aMessage), mPendingEventsNeedingAck, mPendingCompositionCount));
 
+#ifdef MOZ_CRASHREPORTER
   mReceivedEventMessages.AppendElement(aMessage);
+#endif 
 
   if (WidgetCompositionEvent::IsFollowedByCompositionEnd(aMessage) ||
       aMessage == eCompositionCommitRequestHandled) {
 
+#ifdef MOZ_CRASHREPORTER
     if (mPendingCompositionCount == 1) {
       RemoveUnnecessaryEventMessageLog();
     }
+#endif 
 
     if (NS_WARN_IF(!mPendingCompositionCount)) {
+#ifdef MOZ_CRASHREPORTER
       nsPrintfCString info("\nThere is no pending composition but received %s "
                            "message from the remote child\n\n",
                            ToChar(aMessage));
       AppendEventMessageLog(info);
       CrashReporter::AppendAppNotesToCrashReport(info);
-
+#endif 
       MOZ_CRASH("No pending composition but received unexpected commit event");
     }
 
@@ -1241,11 +1252,13 @@ ContentCacheInParent::OnEventNeedingAckHandled(nsIWidget* aWidget,
   }
 
   if (NS_WARN_IF(!mPendingEventsNeedingAck)) {
+#ifdef MOZ_CRASHREPORTER
     nsPrintfCString info("\nThere is no pending events but received %s "
                          "message from the remote child\n\n",
                          ToChar(aMessage));
     AppendEventMessageLog(info);
     CrashReporter::AppendAppNotesToCrashReport(info);
+#endif 
     MOZ_CRASH("No pending event message but received unexpected event");
   }
   if (--mPendingEventsNeedingAck) {
@@ -1277,10 +1290,11 @@ ContentCacheInParent::RequestIMEToCommitComposition(nsIWidget* aWidget,
   
   
   if (mPendingCompositionCount > 1) {
+#ifdef MOZ_CRASHREPORTER
     mRequestIMEToCommitCompositionResults.
       AppendElement(RequestIMEToCommitCompositionResult::
                       eToOldCompositionReceived);
-
+#endif 
     return false;
   }
 
@@ -1290,10 +1304,11 @@ ContentCacheInParent::RequestIMEToCommitComposition(nsIWidget* aWidget,
   
   
   if (mIsPendingLastCommitEvent) {
+#ifdef MOZ_CRASHREPORTER
     mRequestIMEToCommitCompositionResults.
       AppendElement(RequestIMEToCommitCompositionResult::
                       eToCommittedCompositionReceived);
-
+#endif 
     return false;
   }
 
@@ -1302,10 +1317,11 @@ ContentCacheInParent::RequestIMEToCommitComposition(nsIWidget* aWidget,
   if (!IMEStateManager::DoesTabParentHaveIMEFocus(&mTabParent)) {
     
     
+#ifdef MOZ_CRASHREPORTER
     mRequestIMEToCommitCompositionResults.
       AppendElement(RequestIMEToCommitCompositionResult::
                       eReceivedAfterTabParentBlur);
-
+#endif 
     aCommittedString = mCompositionString;
     return true;
   }
@@ -1316,11 +1332,11 @@ ContentCacheInParent::RequestIMEToCommitComposition(nsIWidget* aWidget,
     MOZ_LOG(sContentCacheLog, LogLevel::Warning,
       ("  0x%p RequestToCommitComposition(), "
        "does nothing due to no composition", this));
-
+#ifdef MOZ_CRASHREPORTER
     mRequestIMEToCommitCompositionResults.
       AppendElement(RequestIMEToCommitCompositionResult::
                       eReceivedButNoTextComposition);
-
+#endif 
     return false;
   }
 
@@ -1347,10 +1363,11 @@ ContentCacheInParent::RequestIMEToCommitComposition(nsIWidget* aWidget,
     
     
     
+#ifdef MOZ_CRASHREPORTER
     mRequestIMEToCommitCompositionResults.
       AppendElement(RequestIMEToCommitCompositionResult::
                       eHandledAsynchronously);
-
+#endif 
     return false;
   }
 
@@ -1362,9 +1379,10 @@ ContentCacheInParent::RequestIMEToCommitComposition(nsIWidget* aWidget,
   
   
   
+#ifdef MOZ_CRASHREPORTER
   mRequestIMEToCommitCompositionResults.
     AppendElement(RequestIMEToCommitCompositionResult::eHandledSynchronously);
-
+#endif 
   return true;
 }
 
@@ -1461,6 +1479,8 @@ ContentCacheInParent::FlushPendingNotifications(nsIWidget* aWidget)
   }
 }
 
+#ifdef MOZ_CRASHREPORTER
+
 void
 ContentCacheInParent::RemoveUnnecessaryEventMessageLog()
 {
@@ -1547,6 +1567,8 @@ ContentCacheInParent::AppendEventMessageLog(nsACString& aLog) const
   }
   aLog.AppendLiteral("\n");
 }
+
+#endif 
 
 
 

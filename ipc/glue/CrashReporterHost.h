@@ -12,7 +12,9 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/ipc/Shmem.h"
 #include "base/process.h"
+#ifdef MOZ_CRASHREPORTER
 #include "nsExceptionHandler.h"
+#endif
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -28,8 +30,13 @@ class GeckoChildProcessHost;
 class CrashReporterHost
 {
   typedef mozilla::ipc::Shmem Shmem;
+#ifdef MOZ_CRASHREPORTER
   typedef CrashReporter::AnnotationTable AnnotationTable;
   typedef CrashReporter::ThreadId ThreadId;
+#else
+  
+  typedef int32_t ThreadId;
+#endif
 
 public:
 
@@ -92,6 +99,7 @@ public:
                     const Shmem& aShmem,
                     ThreadId aThreadId);
 
+#ifdef MOZ_CRASHREPORTER
   
   
   
@@ -141,6 +149,7 @@ public:
     MOZ_ASSERT(HasMinidump());
     return mDumpID;
   }
+#endif
 
 private:
   static void AsyncAddCrash(int32_t aProcessType, int32_t aCrashType,
@@ -152,7 +161,9 @@ private:
   Shmem mShmem;
   ThreadId mThreadId;
   time_t mStartTime;
+#ifdef MOZ_CRASHREPORTER
   AnnotationTable mExtraNotes;
+#endif
   nsString mDumpID;
   bool mFinalized;
   nsCOMPtr<nsIFile> mTargetDump;

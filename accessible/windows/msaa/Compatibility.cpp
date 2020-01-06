@@ -7,8 +7,10 @@
 #include "Compatibility.h"
 
 #include "mozilla/WindowsVersion.h"
+#if defined(MOZ_CRASHREPORTER)
 #include "nsExceptionHandler.h"
 #include "nsPrintfCString.h"
+#endif 
 #include "nsUnicharUtils.h"
 #include "nsWindowsDllInterceptor.h"
 #include "nsWinUtils.h"
@@ -217,9 +219,11 @@ Compatibility::Init()
   
   InitConsumers();
 
+#ifdef MOZ_CRASHREPORTER
   CrashReporter::
     AnnotateCrashReport(NS_LITERAL_CSTRING("AccessibilityInProcClient"),
                         nsPrintfCString("0x%X", sConsumers));
+#endif
 
   
   uint32_t temp = sConsumers;
@@ -407,11 +411,13 @@ UseIAccessibleProxyStub()
     return true;
   }
 
+#if defined(MOZ_CRASHREPORTER)
   
   
   
   CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("IAccessibleConfig"),
                                      NS_LITERAL_CSTRING("NoSystemTypeLibOrPS"));
+#endif 
   return false;
 }
 

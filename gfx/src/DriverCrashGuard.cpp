@@ -9,7 +9,9 @@
 #include "gfxConfig.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
+#ifdef MOZ_CRASHREPORTER
 #include "nsExceptionHandler.h"
+#endif
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
 #include "nsXULAppAPI.h"
@@ -165,9 +167,11 @@ DriverCrashGuard::~DriverCrashGuard()
     dom::ContentChild::GetSingleton()->SendEndDriverCrashGuard(uint32_t(mType));
   }
 
+#ifdef MOZ_CRASHREPORTER
   
   CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("GraphicsStartupTest"),
                                      NS_LITERAL_CSTRING(""));
+#endif
 }
 
 bool
@@ -206,6 +210,7 @@ DriverCrashGuard::ActivateGuard()
 {
   mGuardActivated = true;
 
+#ifdef MOZ_CRASHREPORTER
   
   
   
@@ -213,6 +218,7 @@ DriverCrashGuard::ActivateGuard()
     CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("GraphicsStartupTest"),
                                        NS_LITERAL_CSTRING("1"));
   }
+#endif
 
   
   

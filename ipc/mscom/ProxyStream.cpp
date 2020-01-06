@@ -5,7 +5,7 @@
 
 
 #include "mozilla/Move.h"
-#if defined(ACCESSIBILITY)
+#if defined(ACCESSIBILITY) && defined(MOZ_CRASHREPORTER)
 #include "HandlerData.h"
 #include "mozilla/a11y/Platform.h"
 #include "mozilla/mscom/ActivationContext.h"
@@ -15,10 +15,12 @@
 #include "mozilla/mscom/Utils.h"
 #include "mozilla/ScopeExit.h"
 
+#if defined(MOZ_CRASHREPORTER)
 #include "mozilla/mscom/Objref.h"
 #include "nsExceptionHandler.h"
 #include "nsPrintfCString.h"
 #include "RegistrationAnnotator.h"
+#endif
 
 #include <windows.h>
 #include <objbase.h>
@@ -44,11 +46,15 @@ ProxyStream::ProxyStream(REFIID aIID, const BYTE* aInitBuf,
   , mBufSize(aInitBufSize)
   , mPreserveStream(false)
 {
+#if defined(MOZ_CRASHREPORTER)
   NS_NAMED_LITERAL_CSTRING(kCrashReportKey, "ProxyStreamUnmarshalStatus");
+#endif
 
   if (!aInitBufSize) {
+#if defined(MOZ_CRASHREPORTER)
     CrashReporter::AnnotateCrashReport(kCrashReportKey,
                                        NS_LITERAL_CSTRING("!aInitBufSize"));
+#endif 
     
     return;
   }
@@ -56,8 +62,10 @@ ProxyStream::ProxyStream(REFIID aIID, const BYTE* aInitBuf,
   HRESULT createStreamResult = CreateStream(aInitBuf, aInitBufSize,
                                             getter_AddRefs(mStream));
   if (FAILED(createStreamResult)) {
+#if defined(MOZ_CRASHREPORTER)
     nsPrintfCString hrAsStr("0x%08X", createStreamResult);
     CrashReporter::AnnotateCrashReport(kCrashReportKey, hrAsStr);
+#endif 
     return;
   }
 
@@ -66,12 +74,14 @@ ProxyStream::ProxyStream(REFIID aIID, const BYTE* aInitBuf,
   
   MOZ_ASSERT(mStream);
   if (!mStream) {
+#if defined(MOZ_CRASHREPORTER)
     CrashReporter::AnnotateCrashReport(kCrashReportKey,
                                        NS_LITERAL_CSTRING("!mStream"));
+#endif 
     return;
   }
 
-#if defined(ACCESSIBILITY)
+#if defined(ACCESSIBILITY) && defined(MOZ_CRASHREPORTER)
   const uint32_t expectedStreamLen = GetOBJREFSize(WrapNotNull(mStream));
   nsAutoCString strActCtx;
   nsAutoString manifestPath;
@@ -83,7 +93,7 @@ ProxyStream::ProxyStream(REFIID aIID, const BYTE* aInitBuf,
   
   
 
-#if defined(ACCESSIBILITY)
+#if defined(ACCESSIBILITY) && defined(MOZ_CRASHREPORTER)
   auto marshalFn = [this, &strActCtx, &manifestPath, &unmarshalResult, &aIID, aEnv]() -> void
 #else
   auto marshalFn = [this, &unmarshalResult, &aIID, aEnv]() -> void
@@ -106,7 +116,7 @@ ProxyStream::ProxyStream(REFIID aIID, const BYTE* aInitBuf,
       MOZ_DIAGNOSTIC_ASSERT(popOk);
     });
 
-#if defined(ACCESSIBILITY)
+#if defined(ACCESSIBILITY) && defined(MOZ_CRASHREPORTER)
     auto curActCtx = ActivationContext::GetCurrent();
     if (curActCtx.isOk()) {
       strActCtx.AppendPrintf("0x%p", curActCtx.unwrap());
@@ -133,6 +143,7 @@ ProxyStream::ProxyStream(REFIID aIID, const BYTE* aInitBuf,
 
   mStream = nullptr;
 
+#if defined(MOZ_CRASHREPORTER)
   if (FAILED(unmarshalResult) || !mUnmarshaledProxy) {
     nsPrintfCString hrAsStr("0x%08X", unmarshalResult);
     CrashReporter::AnnotateCrashReport(
@@ -165,6 +176,7 @@ ProxyStream::ProxyStream(REFIID aIID, const BYTE* aInitBuf,
                                        actualStreamLen);
 #endif 
   }
+#endif 
 }
 
 ProxyStream::ProxyStream(ProxyStream&& aOther)
@@ -296,11 +308,17 @@ ProxyStream::ProxyStream(REFIID aIID, IUnknown* aObject, Environment* aEnv,
   HRESULT statResult = S_OK;
   HRESULT getHGlobalResult = S_OK;
 
+#if defined(MOZ_CRASHREPORTER)
   nsAutoString manifestPath;
 
   auto marshalFn = [this, &aIID, aObject, mshlFlags, &stream, &streamSize,
                     &hglobal, &createStreamResult, &marshalResult, &statResult,
                     &getHGlobalResult, aEnv, &manifestPath]() -> void
+#else
+  auto marshalFn = [this, &aIID, aObject, mshlFlags, &stream, &streamSize,
+                    &hglobal, &createStreamResult, &marshalResult, &statResult,
+                    &getHGlobalResult, aEnv]() -> void
+#endif 
   {
     if (aEnv) {
       bool pushOk = aEnv->Push();
@@ -325,7 +343,7 @@ ProxyStream::ProxyStream(REFIID aIID, IUnknown* aObject, Environment* aEnv,
       return;
     }
 
-#if defined(ACCESSIBILITY)
+#if defined(ACCESSIBILITY) && defined(MOZ_CRASHREPORTER)
     ActivationContext::GetCurrentManifestPath(manifestPath);
 #endif 
 
@@ -357,6 +375,7 @@ ProxyStream::ProxyStream(REFIID aIID, IUnknown* aObject, Environment* aEnv,
     EnsureMTA mta(marshalFn);
   }
 
+#if defined(MOZ_CRASHREPORTER)
   if (FAILED(createStreamResult)) {
     nsPrintfCString hrAsStr("0x%08X", createStreamResult);
     CrashReporter::AnnotateCrashReport(
@@ -386,12 +405,15 @@ ProxyStream::ProxyStream(REFIID aIID, IUnknown* aObject, Environment* aEnv,
         NS_LITERAL_CSTRING("GetHGlobalFromStreamFailure"),
         hrAsStr);
   }
+#endif 
 
   mStream = mozilla::Move(stream);
 
   if (streamSize) {
+#if defined(MOZ_CRASHREPORTER)
     CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("ProxyStreamSizeFrom"),
                                        NS_LITERAL_CSTRING("IStream::Stat"));
+#endif 
     mBufSize = streamSize;
   }
 
@@ -406,16 +428,20 @@ ProxyStream::ProxyStream(REFIID aIID, IUnknown* aObject, Environment* aEnv,
   
   
   if (!streamSize) {
+#if defined(MOZ_CRASHREPORTER)
     CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("ProxyStreamSizeFrom"),
                                        NS_LITERAL_CSTRING("GlobalSize"));
+#endif 
     mBufSize = static_cast<int>(::GlobalSize(hglobal));
   }
 
+#if defined(MOZ_CRASHREPORTER)
   nsAutoCString strBufSize;
   strBufSize.AppendInt(mBufSize);
 
   CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("ProxyStreamSize"),
                                      strBufSize);
+#endif 
 }
 
 } 

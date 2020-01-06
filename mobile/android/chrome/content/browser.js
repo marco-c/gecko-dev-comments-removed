@@ -1991,7 +1991,9 @@ var BrowserApp = {
           
           
           case "datareporting.crashreporter.submitEnabled":
-            if (AppConstants.MOZ_CRASHREPORTER) {
+            let crashReporterBuilt = "nsICrashReporter" in Ci &&
+                Services.appinfo instanceof Ci.nsICrashReporter;
+            if (crashReporterBuilt) {
               aSubject.setAsBool(Services.appinfo.submitReports);
             }
             break;
@@ -2044,7 +2046,9 @@ var BrowserApp = {
 
           
           case "datareporting.crashreporter.submitEnabled":
-            if (AppConstants.MOZ_CRASHREPORTER) {
+            let crashReporterBuilt = "nsICrashReporter" in Ci &&
+                Services.appinfo instanceof Ci.nsICrashReporter;
+            if (crashReporterBuilt) {
               Services.appinfo.submitReports = value;
               aSubject.setAsEmpty();
             }
