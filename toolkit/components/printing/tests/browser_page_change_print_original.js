@@ -1,13 +1,16 @@
 
 
 
+const TEST_PATH = getRootDirectory(gTestPath)
+                    .replace("chrome://mochitests/content", "http://example.com");
+
 
 
 
 
 
 add_task(async function pp_after_orientation_change() {
-  const DATA_URI = `data:text/html,<script>window.onafterprint = function() { setTimeout("window.location = 'data:text/plain,REPLACED PAGE!'", 0); }</script><pre>INITIAL PAGE</pre>`;
+  const URI = TEST_PATH + "file_page_change_print_original_1.html";
   
   if (AppConstants.platform != "win" && AppConstants.platform != "linux") {
     ok(true, "Can't test if there's no print preview.");
@@ -15,7 +18,7 @@ add_task(async function pp_after_orientation_change() {
   }
 
   
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, DATA_URI, false, true);
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, URI, false, true);
   let browserToPrint = tab.linkedBrowser;
   let ppBrowser = PrintPreviewListener.getPrintPreviewBrowser();
 
@@ -29,7 +32,7 @@ add_task(async function pp_after_orientation_change() {
 
   
   await ContentTask.spawn(ppBrowser, null, async function() {
-    is(content.document.body.textContent, "INITIAL PAGE", "Should have initial page print previewed.");
+    is(content.document.body.textContent.trim(), "INITIAL PAGE", "Should have initial page print previewed.");
   });
 
   await originalTabNavigated;
@@ -46,12 +49,12 @@ add_task(async function pp_after_orientation_change() {
 
   
   await ContentTask.spawn(ppBrowser, null, async function() {
-    is(content.document.body.textContent, "INITIAL PAGE", "Should still have initial page print previewed.");
+    is(content.document.body.textContent.trim(), "INITIAL PAGE", "Should still have initial page print previewed.");
   });
 
   
   await ContentTask.spawn(browserToPrint, null, async function() {
-    is(content.document.body.textContent, "REPLACED PAGE!", "Original page should have changed.");
+    is(content.document.body.textContent.trim(), "REPLACED PAGE!", "Original page should have changed.");
   });
 
   PrintUtils.exitPrintPreview();
