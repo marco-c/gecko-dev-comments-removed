@@ -16,6 +16,10 @@
   padding-inline-start: 18px;
 }
 
+photonpanelmultiview .toolbaritem-combined-buttons > label {
+  padding-inline-start: 42px; 
+}
+
 .subviewbutton[checked="true"] {
   background-position: top 7px left 4px;
 }

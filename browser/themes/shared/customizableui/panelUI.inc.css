@@ -830,12 +830,12 @@ toolbaritem[cui-areatype="menu-panel"][sdkstylewidget="true"]:not(.panel-wide-it
 
 #appMenu-fxa-container[fxastatus="signedin"] > #appMenu-fxa-status > #appMenu-fxa-label {
   
-  padding-inline-start: 28px;
-  margin-inline-start: -28px;
+  padding-inline-start: 34px;
+  margin-inline-start: -34px;
 }
 
 #appMenu-fxa-container[fxastatus="signedin"] > #appMenu-fxa-status > #appMenu-fxa-avatar {
-  margin-inline-start: 12px;
+  margin-inline-start: 18px;
 }
 
 
