@@ -44,12 +44,12 @@ add_task(async function() {
   
   
   await startCustomizing();
-  let downloadsButton = document.getElementById("downloads-button");
-  simulateItemDrag(downloadsButton, navbar.customizationTarget);
+  let homeButton = document.getElementById("home-button");
+  simulateItemDrag(homeButton, navbar.customizationTarget);
 
   await endCustomizing();
 
-  is(downloadsButton.previousSibling.id, lastVisible.id,
+  is(homeButton.previousSibling.id, lastVisible.id,
      "The downloads button should be placed after the last visible item.");
 
   await resetCustomization();

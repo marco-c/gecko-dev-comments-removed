@@ -108,33 +108,12 @@ const DownloadsButton = {
 
     indicator.open = this._anchorRequested;
 
-    let widget = CustomizableUI.getWidget("downloads-button")
-                               .forWindow(window);
-     
-     if (!isElementVisible(indicator.parentNode) && !widget.overflowed) {
-       return null;
-     }
+    
+    if (!window.toolbar.visible) {
+      return null;
+    }
 
     return DownloadsIndicatorView.indicatorAnchor;
-  },
-
-  
-
-
-
-
-
-
-
-  checkIsVisible(aCallback) {
-    DownloadsOverlayLoader.ensureOverlayLoaded(this.kIndicatorOverlay, () => {
-      if (!this._placeholder) {
-        aCallback(false);
-      } else {
-        let element = DownloadsIndicatorView.indicator || this._placeholder;
-        aCallback(isElementVisible(element.parentNode));
-      }
-    });
   },
 
   
@@ -162,6 +141,36 @@ const DownloadsButton = {
       this._anchorRequested = true;
       aCallback(this._getAnchorInternal());
     });
+  },
+
+  unhideAndPlace() {
+    if (this._placeholder.hasAttribute("hidden")) {
+      this._navBar.setAttribute("hasdownloads", "true");
+      this._placeholder.removeAttribute("hidden");
+      let insertionPoint = document.getElementById("urlbar-container");
+      while (insertionPoint && insertionPoint.nextElementSibling) {
+        let next = insertionPoint.nextElementSibling;
+        if (!next.hidden &&
+            (next.nodeName == "toolbarspring" ||
+             next.id == "downloads-button" || 
+             next.id == "search-container" ||
+             next.id == "urlbar-search-splitter")) {
+          insertionPoint = next;
+        } else {
+          break;
+        }
+      }
+      if (insertionPoint && insertionPoint.nextElementSibling != this._placeholder &&
+          insertionPoint.nextElementSibling != this._placeholder.nextElementSibling) {
+        insertionPoint.insertAdjacentElement("afterend", this._placeholder);
+      }
+    }
+  },
+
+  hide() {
+    DownloadsPanel.hidePanel();
+    this._navBar.removeAttribute("hasdownloads");
+    this._placeholder.setAttribute("hidden", "true");
   },
 
   
@@ -252,12 +261,6 @@ const DownloadsIndicatorView = {
       return;
     }
 
-    
-    
-    if (!DownloadsButton._placeholder) {
-      return;
-    }
-
     DownloadsOverlayLoader.ensureOverlayLoaded(
       DownloadsButton.kIndicatorOverlay,
       () => {
@@ -339,21 +342,7 @@ const DownloadsIndicatorView = {
       return;
     }
 
-    let anchor = DownloadsButton._placeholder;
-    let widgetGroup = CustomizableUI.getWidget("downloads-button");
-    let widget = widgetGroup.forWindow(window);
-    if (widget.overflowed || widgetGroup.areaType == CustomizableUI.TYPE_MENU_PANEL) {
-      if (anchor && this._isAncestorPanelOpen(anchor)) {
-        
-        
-        
-        return;
-      }
-
-      
-      anchor = widget.anchor;
-    }
-    if (!anchor || !isElementVisible(anchor.parentNode)) {
+    if (!window.toolbar.visible) {
       
       return;
     }
@@ -365,6 +354,7 @@ const DownloadsIndicatorView = {
     
     
     let notifier = this.notifier;
+    let anchor = DownloadsButton._placeholder;
 
     if (aType == "start") {
       
@@ -423,7 +413,9 @@ const DownloadsIndicatorView = {
       this._hasDownloads = aValue;
 
       
+      
       if (aValue) {
+        DownloadsButton.unhideAndPlace();
         this._ensureOperational();
       }
     }
@@ -445,7 +437,6 @@ const DownloadsIndicatorView = {
 
     if (this._percentComplete !== aValue) {
       this._percentComplete = aValue;
-      this._refreshAttention();
 
       if (this._percentComplete >= 0) {
         this.indicator.setAttribute("progress", "true");
@@ -471,28 +462,13 @@ const DownloadsIndicatorView = {
     }
     if (this._attention != aValue) {
       this._attention = aValue;
-      this._refreshAttention();
+      if (this._attention == DownloadsCommon.ATTENTION_NONE) {
+        this.indicator.removeAttribute("attention");
+      } else {
+        this.indicator.setAttribute("attention", this._attention);
+      }
     }
     return this._attention;
-  },
-
-  _refreshAttention() {
-    
-    
-    let widgetGroup = CustomizableUI.getWidget("downloads-button");
-    let inMenu = widgetGroup.areaType == CustomizableUI.TYPE_MENU_PANEL;
-
-    
-    
-    let suppressAttention = !inMenu &&
-      this._attention == DownloadsCommon.ATTENTION_SUCCESS &&
-      this._percentComplete >= 0;
-
-    if (suppressAttention || this._attention == DownloadsCommon.ATTENTION_NONE) {
-      this.indicator.removeAttribute("attention");
-    } else {
-      this.indicator.setAttribute("attention", this._attention);
-    }
   },
   _attention: DownloadsCommon.ATTENTION_NONE,
 
@@ -504,14 +480,7 @@ const DownloadsIndicatorView = {
   },
 
   onCommand(aEvent) {
-    
-    let widgetGroup = CustomizableUI.getWidget("downloads-button");
-    if (widgetGroup.areaType == CustomizableUI.TYPE_MENU_PANEL) {
-      DownloadsPanel.showDownloadsHistory();
-    } else {
-      DownloadsPanel.showPanel();
-    }
-
+    DownloadsPanel.showPanel();
     aEvent.stopPropagation();
   },
 
@@ -563,11 +532,6 @@ const DownloadsIndicatorView = {
   },
 
   get indicatorAnchor() {
-    let widget = CustomizableUI.getWidget("downloads-button")
-                               .forWindow(window);
-    if (widget.overflowed) {
-      return widget.anchor;
-    }
     return document.getElementById("downloads-indicator-anchor");
   },
 

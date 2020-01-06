@@ -10,8 +10,14 @@
 
 add_task(async function test_height_reduced_after_removal() {
   await task_addDownloads([
+    { state: DownloadsCommon.DOWNLOAD_PAUSED },
     { state: DownloadsCommon.DOWNLOAD_FINISHED },
   ]);
+
+  await BrowserTestUtils.waitForCondition(() => {
+    let btn = document.getElementById("downloads-button");
+    return !btn.hidden && btn.getBoundingClientRect().width > 0;
+  });
 
   await task_openPanel();
   let panel = document.getElementById("downloadsPanel");
@@ -19,7 +25,8 @@ add_task(async function test_height_reduced_after_removal() {
 
   
   DownloadsPanel.hidePanel();
-  await task_resetState();
+  let publicList = await Downloads.getList(Downloads.PUBLIC);
+  await publicList.removeFinished();
 
   await task_openPanel();
   let heightAfterRemoval = panel.getBoundingClientRect().height;

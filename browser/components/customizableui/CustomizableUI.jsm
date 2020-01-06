@@ -57,7 +57,7 @@ const kSubviewEvents = [
 
 
 
-var kVersion = 10;
+var kVersion = 11;
 
 
 
@@ -177,7 +177,7 @@ var CustomizableUIInternal = {
     this.addListener(this);
     this._defineBuiltInWidgets();
     this.loadSavedState();
-    this._introduceNewBuiltinWidgets();
+    this._updateForNewVersion();
     this._markObsoleteBuiltinButtonsSeen();
 
     this.registerArea(CustomizableUI.AREA_FIXED_OVERFLOW_PANEL, {
@@ -195,7 +195,6 @@ var CustomizableUIInternal = {
       "urlbar-container",
       "search-container",
       "spring",
-      "downloads-button",
       "library-button",
       "sidebar-button",
     ];
@@ -263,7 +262,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  _introduceNewBuiltinWidgets() {
+  _updateForNewVersion() {
     
     
     if (!gSavedState) {
@@ -412,6 +411,15 @@ var CustomizableUIInternal = {
       for (let placements of Object.values(gSavedState.placements)) {
         if (placements.includes("webcompat-reporter-button")) {
           placements.splice(placements.indexOf("webcompat-reporter-button"), 1);
+          break;
+        }
+      }
+    }
+
+    if (currentVersion < 11 && gSavedState && gSavedState.placements) {
+      for (let placements of Object.values(gSavedState.placements)) {
+        if (placements.includes("downloads-button")) {
+          placements.splice(placements.indexOf("downloads-button"), 1);
           break;
         }
       }
