@@ -33,7 +33,6 @@ import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.JavaUtil;
 import org.mozilla.gecko.util.ThreadUtils;
-import org.mozilla.gecko.webapps.WebAppActivity;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -52,7 +51,6 @@ import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.util.Log;
 
-import static org.mozilla.gecko.Tab.TabType;
 
 public class Tabs implements BundleEventListener {
     private static final String LOGTAG = "GeckoTabs";
@@ -89,8 +87,6 @@ public class Tabs implements BundleEventListener {
     public static final int LOADURL_EXTERNAL     = 1 << 7;
     
     public static final int LOADURL_FIRST_AFTER_ACTIVITY_UNHIDDEN = 1 << 8;
-    public static final int LOADURL_CUSTOMTAB    = 1 << 9;
-    public static final int LOADURL_WEBAPP = 1 << 10;
 
     private static final long PERSIST_TABS_AFTER_MILLISECONDS = 1000 * 2;
 
@@ -206,15 +202,13 @@ public class Tabs implements BundleEventListener {
 
 
 
-
     public synchronized int getDisplayCount() {
         
         
         boolean getPrivate = mSelectedTab != null && mSelectedTab.isPrivate();
-        TabType type = mSelectedTab != null ? mSelectedTab.getType() : TabType.BROWSING;
         int count = 0;
         for (Tab tab : mOrder) {
-            if (tab.isPrivate() == getPrivate && tab.getType() == type) {
+            if (tab.isPrivate() == getPrivate) {
                 count++;
             }
         }
@@ -248,9 +242,9 @@ public class Tabs implements BundleEventListener {
         }
     }
 
-    private Tab addTab(int id, String url, boolean external, int parentId, String title, boolean isPrivate, int tabIndex, TabType type) {
-        final Tab tab = isPrivate ? new PrivateTab(mAppContext, id, url, external, parentId, title, type) :
-                                    new Tab(mAppContext, id, url, external, parentId, title, type);
+    private Tab addTab(int id, String url, boolean external, int parentId, String title, boolean isPrivate, int tabIndex) {
+        final Tab tab = isPrivate ? new PrivateTab(mAppContext, id, url, external, parentId, title) :
+                                    new Tab(mAppContext, id, url, external, parentId, title);
         synchronized (this) {
             lazyRegisterBookmarkObserver();
             mTabs.put(id, tab);
@@ -268,7 +262,7 @@ public class Tabs implements BundleEventListener {
         
         if (mInitialTabsAdded) {
             notifyListeners(tab, TabEvents.ADDED,
-                    Integer.toString(getPrivacySpecificTabIndex(tabIndex, isPrivate, type)));
+                    Integer.toString(getPrivacySpecificTabIndex(tabIndex, isPrivate)));
         }
 
         return tab;
@@ -280,7 +274,8 @@ public class Tabs implements BundleEventListener {
 
 
 
-    private int getPrivacySpecificTabIndex(int index, boolean isPrivate, TabType type) {
+
+    private int getPrivacySpecificTabIndex(int index, boolean isPrivate) {
         if (index == NEW_LAST_INDEX) {
             return NEW_LAST_INDEX;
         }
@@ -288,7 +283,7 @@ public class Tabs implements BundleEventListener {
         int privacySpecificIndex = -1;
         for (int i = 0; i <= index; i++) {
             final Tab tab = mOrder.get(i);
-            if (tab.isPrivate() == isPrivate && tab.getType() == type) {
+            if (tab.isPrivate() == isPrivate) {
                 privacySpecificIndex++;
             }
         }
@@ -345,44 +340,27 @@ public class Tabs implements BundleEventListener {
         return true;
     }
 
-    public synchronized boolean selectLastTab(Tab.TabType targetType) {
-        if (mOrder.isEmpty()) {
-            return false;
-        }
-
-        Tab tabToSelect = mOrder.get(mOrder.size() - 1);
-        if (tabToSelect.getType() != targetType) {
-            tabToSelect = getPreviousTabFrom(tabToSelect, false, targetType);
-            if (tabToSelect == null) {
-                return false;
-            }
-        }
-
-        selectTab(tabToSelect.getId());
-        return true;
-    }
-
     private int getIndexOf(Tab tab) {
         return mOrder.lastIndexOf(tab);
     }
 
-    private Tab getNextTabFrom(Tab tab, boolean getPrivate, TabType type) {
+    private Tab getNextTabFrom(Tab tab, boolean getPrivate) {
         int numTabs = mOrder.size();
         int index = getIndexOf(tab);
         for (int i = index + 1; i < numTabs; i++) {
             Tab next = mOrder.get(i);
-            if (next.isPrivate() == getPrivate && next.getType() == type) {
+            if (next.isPrivate() == getPrivate) {
                 return next;
             }
         }
         return null;
     }
 
-    private Tab getPreviousTabFrom(Tab tab, boolean getPrivate, TabType type) {
+    private Tab getPreviousTabFrom(Tab tab, boolean getPrivate) {
         int index = getIndexOf(tab);
         for (int i = index - 1; i >= 0; i--) {
             Tab prev = mOrder.get(i);
-            if (prev.isPrivate() == getPrivate && prev.getType() == type) {
+            if (prev.isPrivate() == getPrivate) {
                 return prev;
             }
         }
@@ -483,47 +461,26 @@ public class Tabs implements BundleEventListener {
             return selectedTab;
 
         boolean getPrivate = tab.isPrivate();
-        TabType type = tab.getType();
-        Tab nextTab = getNextTabFrom(tab, getPrivate, type);
+        Tab nextTab = getNextTabFrom(tab, getPrivate);
         if (nextTab == null)
-            nextTab = getPreviousTabFrom(tab, getPrivate, type);
+            nextTab = getPreviousTabFrom(tab, getPrivate);
         if (nextTab == null && getPrivate) {
             
-            nextTab = getFallbackNextTab(type);
-        }
-        if (nextTab == null && type != TabType.BROWSING) {
-            
-            
-            nextTab = getFallbackNextTab(TabType.BROWSING);
+            Tab lastTab = mOrder.get(mOrder.size() - 1);
+            if (!lastTab.isPrivate()) {
+                nextTab = lastTab;
+            } else {
+                nextTab = getPreviousTabFrom(lastTab, false);
+            }
         }
 
         Tab parent = getTab(tab.getParentId());
-        if (parent != null && parent.getType() == type) {
+        if (parent != null) {
             
             if (nextTab != null && nextTab.getParentId() == tab.getParentId())
                 return nextTab;
             else
                 return parent;
-        }
-        return nextTab;
-    }
-
-    
-
-
-
-
-
-
-
-
-    private Tab getFallbackNextTab(TabType type) {
-        Tab nextTab;
-        Tab lastTab = mOrder.get(mOrder.size() - 1);
-        if (!lastTab.isPrivate() && lastTab.getType() == type) {
-            nextTab = lastTab;
-        } else {
-            nextTab = getPreviousTabFrom(lastTab, false, type);
         }
         return nextTab;
     }
@@ -600,8 +557,7 @@ public class Tabs implements BundleEventListener {
                                       message.getInt("parentId"),
                                       message.getString("title"),
                                       message.getBoolean("isPrivate"),
-                                      message.getInt("tabIndex"),
-                                      TabType.valueOf(message.getString("tabType")));
+                                      message.getInt("tabIndex"));
                 
                 
                 if (message.getBoolean("selected"))
@@ -868,7 +824,7 @@ public class Tabs implements BundleEventListener {
 
     @RobocopTarget
     public Tab getFirstTabForUrl(String url) {
-        return getFirstTabForUrlHelper(url, null, TabType.BROWSING);
+        return getFirstTabForUrlHelper(url, null);
     }
 
     
@@ -879,18 +835,17 @@ public class Tabs implements BundleEventListener {
 
 
 
-
-    public Tab getFirstTabForUrl(String url, boolean isPrivate, TabType type) {
-        return getFirstTabForUrlHelper(url, isPrivate, type);
+    public Tab getFirstTabForUrl(String url, boolean isPrivate) {
+        return getFirstTabForUrlHelper(url, isPrivate);
     }
 
-    private Tab getFirstTabForUrlHelper(String url, Boolean isPrivate, TabType type) {
+    private Tab getFirstTabForUrlHelper(String url, Boolean isPrivate) {
         if (url == null) {
             return null;
         }
 
         for (Tab tab : mOrder) {
-            if (isPrivate != null && isPrivate != tab.isPrivate() || type != tab.getType()) {
+            if (isPrivate != null && isPrivate != tab.isPrivate()) {
                 continue;
             }
             if (url.equals(tab.getURL())) {
@@ -915,9 +870,7 @@ public class Tabs implements BundleEventListener {
 
 
 
-
-
-    public Tab getFirstReaderTabForUrl(String url, boolean isPrivate, TabType type) {
+    public Tab getFirstReaderTabForUrl(String url, boolean isPrivate) {
         if (url == null) {
             return null;
         }
@@ -925,7 +878,7 @@ public class Tabs implements BundleEventListener {
         url = ReaderModeUtils.stripAboutReaderUrl(url);
 
         for (Tab tab : mOrder) {
-            if (isPrivate != tab.isPrivate() || type != tab.getType()) {
+            if (isPrivate != tab.isPrivate()) {
                 continue;
             }
             String tabUrl = tab.getURL();
@@ -1006,10 +959,6 @@ public class Tabs implements BundleEventListener {
         boolean desktopMode = (flags & LOADURL_DESKTOP) != 0;
         boolean external = (flags & LOADURL_EXTERNAL) != 0;
         final boolean isFirstShownAfterActivityUnhidden = (flags & LOADURL_FIRST_AFTER_ACTIVITY_UNHIDDEN) != 0;
-        final boolean customTab = (flags & LOADURL_CUSTOMTAB) != 0;
-        final boolean webappTab = (flags & LOADURL_WEBAPP) != 0;
-        final TabType type = customTab ? TabType.CUSTOMTAB :
-            webappTab ? TabType.WEBAPP : TabType.BROWSING;
 
         data.putString("url", url);
         data.putString("engine", searchEngine);
@@ -1018,7 +967,6 @@ public class Tabs implements BundleEventListener {
         data.putBoolean("isPrivate", isPrivate);
         data.putBoolean("pinned", (flags & LOADURL_PINNED) != 0);
         data.putBoolean("desktopMode", desktopMode);
-        data.putString("tabType", type.name());
 
         final boolean needsNewTab;
         final String applicationId = (intent == null) ? null :
@@ -1067,19 +1015,10 @@ public class Tabs implements BundleEventListener {
             
             final int tabIndex = NEW_LAST_INDEX;
 
-            tabToSelect = addTab(tabId, tabUrl, external, parentId, url, isPrivate, tabIndex, type);
+            tabToSelect = addTab(tabId, tabUrl, external, parentId, url, isPrivate, tabIndex);
             tabToSelect.setDesktopMode(desktopMode);
             tabToSelect.setApplicationId(applicationId);
-            if (intent != null) {
-                if (customTab) {
-                    
-                    
-                    tabToSelect.setCustomTabIntent(intent);
-                }
-                if (intent.hasExtra(WebAppActivity.MANIFEST_PATH)) {
-                    tabToSelect.setManifestPath(intent.getStringExtra(WebAppActivity.MANIFEST_PATH));
-                }
-            }
+
             if (isFirstShownAfterActivityUnhidden) {
                 
                 
