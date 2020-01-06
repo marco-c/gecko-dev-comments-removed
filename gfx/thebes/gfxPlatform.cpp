@@ -848,18 +848,36 @@ gfxPlatform::IsDXInterop2Blocked()
   return status != nsIGfxInfo::FEATURE_STATUS_OK;
 }
 
+ int32_t
+gfxPlatform::MaxTextureSize()
+{
+  
+  
+  const int32_t kMinSizePref = 2048;
+  return std::max(kMinSizePref, gfxPrefs::MaxTextureSizeDoNotUseDirectly());
+}
+
+ int32_t
+gfxPlatform::MaxAllocSize()
+{
+  
+  
+  const int32_t kMinAllocPref = 10000000;
+  return std::max(kMinAllocPref, gfxPrefs::MaxAllocSizeDoNotUseDirectly());
+}
+
  void
 gfxPlatform::InitMoz2DLogging()
 {
-    auto fwd = new CrashStatsLogForwarder("GraphicsCriticalError");
-    fwd->SetCircularBufferSize(gfxPrefs::GfxLoggingCrashLength());
+  auto fwd = new CrashStatsLogForwarder("GraphicsCriticalError");
+  fwd->SetCircularBufferSize(gfxPrefs::GfxLoggingCrashLength());
 
-    mozilla::gfx::Config cfg;
-    cfg.mLogForwarder = fwd;
-    cfg.mMaxTextureSize = gfxPrefs::MaxTextureSize();
-    cfg.mMaxAllocSize = gfxPrefs::MaxAllocSize();
+  mozilla::gfx::Config cfg;
+  cfg.mLogForwarder = fwd;
+  cfg.mMaxTextureSize = gfxPlatform::MaxTextureSize();
+  cfg.mMaxAllocSize = gfxPlatform::MaxAllocSize();
 
-    gfx::Factory::Init(cfg);
+  gfx::Factory::Init(cfg);
 }
 
  bool
