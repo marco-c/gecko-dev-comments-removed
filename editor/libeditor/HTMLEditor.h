@@ -594,13 +594,6 @@ protected:
                                   const nsAString* aValue,
                                   nsAString* outValue = nullptr);
 
-  void IsTextPropertySetByContent(nsIDOMNode* aNode,
-                                  nsAtom* aProperty,
-                                  const nsAString* aAttribute,
-                                  const nsAString* aValue,
-                                  bool& aIsSet,
-                                  nsAString* outValue = nullptr);
-
   
   NS_IMETHOD PasteAsPlaintextQuotation(int32_t aSelectionType);
 

@@ -875,7 +875,6 @@ public:
   
 
 
-  static nsresult GetTagString(nsIDOMNode* aNode, nsAString& outString);
   static nsAtom* GetTag(nsIDOMNode* aNode);
 
   bool NodesSameType(nsIDOMNode* aNode1, nsIDOMNode* aNode2);
