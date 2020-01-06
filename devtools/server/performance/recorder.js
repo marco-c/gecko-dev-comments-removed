@@ -153,7 +153,7 @@ PerformanceRecorder.prototype = {
     } else if (topic === "profiler-stopped") {
       this._onProfilerUnexpectedlyStopped();
     } else if (topic === "profiler-status") {
-      EventEmitter.emit(this, "profiler-status", data);
+      this.emit("profiler-status", data);
     }
   },
 
@@ -176,7 +176,7 @@ PerformanceRecorder.prototype = {
 
     
     
-    EventEmitter.emit(this, "console-profile-start");
+    this.emit("console-profile-start");
 
     yield this.startRecording(Object.assign({}, getPerformanceRecordingPrefs(), {
       console: true,
@@ -273,7 +273,7 @@ PerformanceRecorder.prototype = {
     let activeRecordings = this._recordings.filter(r => r.isRecording());
 
     if (activeRecordings.length) {
-      EventEmitter.emit(this, "timeline-data", eventName, eventData, activeRecordings);
+      this.emit("timeline-data", eventName, eventData, activeRecordings);
     }
   },
 
@@ -373,7 +373,7 @@ PerformanceRecorder.prototype = {
     let model = new PerformanceRecordingActor(this.conn, options, data);
     this._recordings.push(model);
 
-    EventEmitter.emit(this, "recording-started", model);
+    this.emit("recording-started", model);
     return model;
   }),
 
@@ -397,7 +397,7 @@ PerformanceRecorder.prototype = {
     
     
     
-    EventEmitter.emit(this, "recording-stopping", model);
+    this.emit("recording-stopping", model);
 
     
     
@@ -432,7 +432,7 @@ PerformanceRecorder.prototype = {
       duration: profilerData.currentTime - startTime,
     };
 
-    EventEmitter.emit(this, "recording-stopped", model, recordingData);
+    this.emit("recording-stopped", model, recordingData);
     return model;
   }),
 

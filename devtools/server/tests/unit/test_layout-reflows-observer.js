@@ -10,6 +10,7 @@ var {
   releaseLayoutChangesObserver,
   LayoutChangesObserver
 } = require("devtools/server/actors/reflow");
+const EventEmitter = require("devtools/shared/event-emitter");
 
 
 
@@ -20,10 +21,13 @@ LayoutChangesObserver.prototype._clearTimeout = function () {};
 
 
 
-function MockTabActor() {
-  this.window = new MockWindow();
-  this.windows = [this.window];
-  this.attached = true;
+class MockTabActor extends EventEmitter {
+  constructor() {
+    super();
+    this.window = new MockWindow();
+    this.windows = [this.window];
+    this.attached = true;
+  }
 }
 
 function MockWindow() {}

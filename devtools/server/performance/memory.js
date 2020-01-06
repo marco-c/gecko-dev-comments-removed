@@ -395,7 +395,7 @@ Memory.prototype = {
 
 
   _onGarbageCollection: function (data) {
-    EventEmitter.emit(this, "garbage-collection", data);
+    this.emit("garbage-collection", data);
 
     
     
@@ -412,7 +412,7 @@ Memory.prototype = {
 
 
   _emitAllocations: function () {
-    EventEmitter.emit(this, "allocations", this.getAllocations());
+    this.emit("allocations", this.getAllocations());
     this._poller.arm();
   },
 

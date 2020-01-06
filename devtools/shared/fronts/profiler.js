@@ -11,8 +11,6 @@ const {
 } = require("devtools/shared/protocol");
 const { profilerSpec } = require("devtools/shared/specs/profiler");
 
-loader.lazyRequireGetter(this, "events", "devtools/shared/event-emitter");
-
 
 
 
@@ -24,11 +22,11 @@ exports.ProfilerFront = FrontClassWithSpec(profilerSpec, {
     this.manage(this);
 
     this._onProfilerEvent = this._onProfilerEvent.bind(this);
-    events.on(this, "*", this._onProfilerEvent);
+    this.on("*", this._onProfilerEvent);
   },
 
   destroy: function () {
-    events.off(this, "*", this._onProfilerEvent);
+    this.off("*", this._onProfilerEvent);
     Front.prototype.destroy.call(this);
   },
 
@@ -58,7 +56,7 @@ exports.ProfilerFront = FrontClassWithSpec(profilerSpec, {
       
       
       
-      events.emit(this, data.topic, data);
+      this.emit(data.topic, data);
     } else {
       
       

@@ -24,16 +24,12 @@ var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { assert } = DevToolsUtils;
 var { TabSources } = require("./utils/TabSources");
 var makeDebugger = require("./utils/make-debugger");
+const EventEmitter = require("devtools/shared/event-emitter");
 
 loader.lazyRequireGetter(this, "ThreadActor", "devtools/server/actors/script", true);
 loader.lazyRequireGetter(this, "unwrapDebuggerObjectGlobal", "devtools/server/actors/script", true);
 loader.lazyRequireGetter(this, "WorkerActorList", "devtools/server/actors/worker-list", true);
 loader.lazyImporter(this, "ExtensionContent", "resource://gre/modules/ExtensionContent.jsm");
-
-
-
-
-loader.lazyRequireGetter(this, "events", "devtools/shared/event-emitter");
 
 loader.lazyRequireGetter(this, "StyleSheetActor", "devtools/server/actors/stylesheets", true);
 
@@ -195,6 +191,10 @@ function getInnerId(window) {
 
 
 function TabActor(connection) {
+  
+  
+  EventEmitter.decorate(this);
+
   this.conn = connection;
   this._tabActorPool = null;
   
@@ -1209,7 +1209,7 @@ TabActor.prototype = {
       enumerable: true,
       configurable: true
     });
-    events.emit(this, "changed-toplevel-document");
+    this.emit("changed-toplevel-document");
     this.conn.send({
       from: this.actorID,
       type: "frameUpdate",
@@ -1231,7 +1231,7 @@ TabActor.prototype = {
       this._updateChildDocShells();
     }
 
-    events.emit(this, "window-ready", {
+    this.emit("window-ready", {
       window: window,
       isTopLevel: isTopLevel,
       id: getWindowID(window)
@@ -1258,7 +1258,7 @@ TabActor.prototype = {
   },
 
   _windowDestroyed(window, id = null, isFrozen = false) {
-    events.emit(this, "window-destroyed", {
+    this.emit("window-destroyed", {
       window: window,
       isTopLevel: window == this.window,
       id: id || getWindowID(window),
@@ -1295,7 +1295,7 @@ TabActor.prototype = {
     
     
     
-    events.emit(this, "will-navigate", {
+    this.emit("will-navigate", {
       window: window,
       isTopLevel: isTopLevel,
       newURI: newURI,
@@ -1344,7 +1344,7 @@ TabActor.prototype = {
     
     
     
-    events.emit(this, "navigate", {
+    this.emit("navigate", {
       window: window,
       isTopLevel: isTopLevel
     });
@@ -1412,7 +1412,7 @@ TabActor.prototype = {
     this._styleSheetActors.set(styleSheet, actor);
 
     this._tabPool.addActor(actor);
-    events.emit(this, "stylesheet-added", actor);
+    this.emit("stylesheet-added", actor);
 
     return actor;
   },

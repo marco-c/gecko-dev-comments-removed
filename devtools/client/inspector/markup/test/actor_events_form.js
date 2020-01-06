@@ -7,7 +7,7 @@
 
 
 
-const Events = require("devtools/shared/event-emitter");
+const EventEmitter = require("devtools/shared/event-emitter");
 const {ActorClassWithSpec, Actor, FrontClassWithSpec, Front, generateActorSpec} =
   require("devtools/shared/protocol");
 
@@ -34,11 +34,11 @@ var EventsFormActor = ActorClassWithSpec(eventsSpec, {
   },
 
   attach: function () {
-    Events.on(NodeActor, "form", this.onNodeActorForm);
+    EventEmitter.on(NodeActor, "form", this.onNodeActorForm);
   },
 
   detach: function () {
-    Events.off(NodeActor, "form", this.onNodeActorForm);
+    EventEmitter.off(NodeActor, "form", this.onNodeActorForm);
   },
 
   onNodeActorForm: function (event) {

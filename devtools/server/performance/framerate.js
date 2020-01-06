@@ -3,8 +3,6 @@
 
 "use strict";
 
-const { on, off } = require("devtools/shared/event-emitter");
-
 
 
 
@@ -16,12 +14,11 @@ class Framerate {
     this._contentWin = tabActor.window;
     this._onRefreshDriverTick = this._onRefreshDriverTick.bind(this);
     this._onGlobalCreated = this._onGlobalCreated.bind(this);
-
-    on(this.tabActor, "window-ready", this._onGlobalCreated);
+    this.tabActor.on("window-ready", this._onGlobalCreated);
   }
 
   destroy(conn) {
-    off(this.tabActor, "window-ready", this._onGlobalCreated);
+    this.tabActor.off("window-ready", this._onGlobalCreated);
     this.stopRecording();
   }
 
