@@ -1,7 +1,15 @@
+# -*- coding: utf-8 -*-
+
+
+
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 from .registry import register_callback_action
 from slugid import nice as slugid
 
-from actions.util import create_task
+from .util import create_task
 from taskgraph.util.taskcluster import get_artifact
 from taskgraph.util.parameterization import resolve_task_references
 from taskgraph.taskgraph import TaskGraph
