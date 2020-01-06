@@ -512,22 +512,6 @@ nsresult NS_NewLocalFileStream(nsIFileStream **result,
                                int32_t         perm          = -1,
                                int32_t         behaviorFlags = 0);
 
-
-
-
-nsresult NS_BackgroundInputStream(nsIInputStream **result,
-                                  nsIInputStream  *stream,
-                                  uint32_t         segmentSize  = 0,
-                                  uint32_t         segmentCount = 0);
-
-
-
-
-nsresult NS_BackgroundOutputStream(nsIOutputStream **result,
-                                   nsIOutputStream  *stream,
-                                   uint32_t          segmentSize  = 0,
-                                   uint32_t          segmentCount = 0);
-
 MOZ_MUST_USE nsresult
 NS_NewBufferedInputStream(nsIInputStream **result,
                           nsIInputStream  *str,
