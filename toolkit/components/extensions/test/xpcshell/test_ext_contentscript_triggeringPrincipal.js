@@ -44,7 +44,7 @@ const BASE_URL = `http://localhost:${server.identity.primaryPort}`;
 
 
 
-const AUTOCLOSE_TAGS = new Set(["img", "input", "source"]);
+const AUTOCLOSE_TAGS = new Set(["img", "input", "link", "source"]);
 
 
 
@@ -458,6 +458,11 @@ add_task(async function test_contentscript_triggeringPrincipals() {
     {
       element: ["input", {type: "image"}],
       src: "input.png",
+    },
+    {
+      element: ["link", {rel: "stylesheet"}],
+      src: "link.css",
+      srcAttr: "href",
     },
     {
       element: ["picture", {}, ["source", {}], ["img", {}]],

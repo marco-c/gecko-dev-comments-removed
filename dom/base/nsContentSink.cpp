@@ -810,7 +810,7 @@ nsContentSink::ProcessStyleLink(nsIContent* aElement,
   
   
   bool isAlternate;
-  rv = mCSSLoader->LoadStyleLink(aElement, url, aTitle, aMedia, aAlternate,
+  rv = mCSSLoader->LoadStyleLink(aElement, url, nullptr, aTitle, aMedia, aAlternate,
                                  CORS_NONE, referrerPolicy,
                                  integrity, mRunsToCompletion ? nullptr : this,
                                  &isAlternate);

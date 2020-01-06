@@ -257,9 +257,10 @@ SVGStyleElement::SetTitle(const nsAString& aTitle, ErrorResult& rv)
 
 
 already_AddRefed<nsIURI>
-SVGStyleElement::GetStyleSheetURL(bool* aIsInline)
+SVGStyleElement::GetStyleSheetURL(bool* aIsInline, nsIPrincipal** aTriggeringPrincipal)
 {
   *aIsInline = true;
+  *aTriggeringPrincipal = nullptr;
   return nullptr;
 }
 

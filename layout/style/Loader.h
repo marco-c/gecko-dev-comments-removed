@@ -267,8 +267,12 @@ public:
 
 
 
+
+
+
   nsresult LoadStyleLink(nsIContent* aElement,
                          nsIURI* aURL,
+                         nsIPrincipal* aTriggeringPrincipal,
                          const nsAString& aTitle,
                          const nsAString& aMedia,
                          bool aHasAlternateRel,
