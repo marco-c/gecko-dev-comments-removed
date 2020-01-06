@@ -251,36 +251,26 @@ nsICODecoder::SniffResource(const char* aData)
 {
   
   
-  
-  
-  
-  
-  
-  
+  mContainedIterator.emplace(mLexer.Clone(*mIterator, mDirEntry.mBytesInRes));
 
   
   
   bool isPNG = !memcmp(aData, nsPNGDecoder::pngSignatureBytes,
                        PNGSIGNATURESIZE);
   if (isPNG) {
-    if (mDirEntry.mBytesInRes <= BITMAPINFOSIZE) {
+    if (mDirEntry.mBytesInRes <= PNGSIGNATURESIZE) {
       return Transition::TerminateFailure();
     }
 
     
-    
-    SourceBufferIterator containedIterator
-      = mLexer.Clone(*mIterator, mDirEntry.mBytesInRes);
-
-    
     mContainedDecoder =
       DecoderFactory::CreateDecoderForICOResource(DecoderType::PNG,
-                                                  Move(containedIterator),
+                                                  Move(*mContainedIterator),
                                                   WrapNotNull(this),
                                                   Some(GetRealSize()));
 
     
-    size_t toRead = mDirEntry.mBytesInRes - BITMAPINFOSIZE;
+    size_t toRead = mDirEntry.mBytesInRes - PNGSIGNATURESIZE;
     return Transition::ToUnbuffered(ICOState::FINISHED_RESOURCE,
                                     ICOState::READ_RESOURCE,
                                     toRead);
@@ -292,7 +282,11 @@ nsICODecoder::SniffResource(const char* aData)
     }
 
     
-    return ReadBIH(aData);
+    memcpy(mBIHraw, aData, PNGSIGNATURESIZE);
+
+    
+    return Transition::To(ICOState::READ_BIH,
+                          BITMAPINFOSIZE - PNGSIGNATURESIZE);
   }
 }
 
@@ -310,34 +304,31 @@ LexerTransition<ICOState>
 nsICODecoder::ReadBIH(const char* aData)
 {
   
-  
-  mBPP = LittleEndian::readUint16(aData + 14);
+  memcpy(mBIHraw + PNGSIGNATURESIZE, aData, BITMAPINFOSIZE - PNGSIGNATURESIZE);
 
   
-  uint16_t numColors = GetNumColors();
-  if (numColors == uint16_t(-1)) {
-    return Transition::TerminateFailure();
+  
+  mBPP = LittleEndian::readUint16(mBIHraw + 14);
+
+  
+  
+  
+  
+  uint32_t dataOffset = bmp::FILE_HEADER_LENGTH + BITMAPINFOSIZE;
+  if (mBPP <= 8) {
+    
+    uint16_t numColors = GetNumColors();
+    if (numColors == (uint16_t)-1) {
+      return Transition::TerminateFailure();
+    }
+    dataOffset += 4 * numColors;
   }
-
-  
-  MOZ_ASSERT_IF(mBPP > 8, numColors == 0);
-
-  
-  
-  
-  
-  uint32_t dataOffset = bmp::FILE_HEADER_LENGTH + BITMAPINFOSIZE + 4 * numColors;
-
-  
-  
-  SourceBufferIterator containedIterator
-    = mLexer.Clone(*mIterator, mDirEntry.mBytesInRes);
 
   
   
   mContainedDecoder =
     DecoderFactory::CreateDecoderForICOResource(DecoderType::BMP,
-                                                Move(containedIterator),
+                                                Move(*mContainedIterator),
                                                 WrapNotNull(this),
                                                 Some(GetRealSize()),
                                                 Some(dataOffset));
@@ -347,6 +338,12 @@ nsICODecoder::ReadBIH(const char* aData)
 
   
   if (!FlushContainedDecoder()) {
+    return Transition::TerminateFailure();
+  }
+
+  
+  uint16_t numColors = GetNumColors();
+  if (numColors == uint16_t(-1)) {
     return Transition::TerminateFailure();
   }
 
@@ -565,11 +562,13 @@ nsICODecoder::DoDecode(SourceBufferIterator& aIterator, IResumable* aOnResume)
       case ICOState::SKIP_TO_RESOURCE:
         return Transition::ContinueUnbuffered(ICOState::SKIP_TO_RESOURCE);
       case ICOState::FOUND_RESOURCE:
-        return Transition::To(ICOState::SNIFF_RESOURCE, BITMAPINFOSIZE);
+        return Transition::To(ICOState::SNIFF_RESOURCE, PNGSIGNATURESIZE);
       case ICOState::SNIFF_RESOURCE:
         return SniffResource(aData);
       case ICOState::READ_RESOURCE:
         return ReadResource();
+      case ICOState::READ_BIH:
+        return ReadBIH(aData);
       case ICOState::PREPARE_FOR_MASK:
         return PrepareForMask();
       case ICOState::READ_MASK_ROW:
