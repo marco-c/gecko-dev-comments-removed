@@ -7685,7 +7685,8 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
       
       
       
-      if (isNewlyAddedContentForServo) {
+      
+      if (isNewlyAddedContentForServo && aAllowLazyConstruction) {
         LazilyStyleNewChildRange(aFirstNewContent, nullptr);
       }
       return;
@@ -8169,7 +8170,8 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
       
       
       
-      if (isNewlyAddedContentForServo) {
+      
+      if (isNewlyAddedContentForServo && aAllowLazyConstruction) {
         LazilyStyleNewChildRange(aStartChild, aEndChild);
       }
       return;
