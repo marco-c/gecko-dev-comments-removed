@@ -135,8 +135,13 @@ nsresult nsNSSShutDownList::evaporateAllNSSResourcesAndShutDown()
     return NS_ERROR_NOT_SAME_THREAD;
   }
 
-  StaticMutexAutoLock lock(sListLock);
   
+  
+  if (sInShutdown) {
+    return NS_OK;
+  }
+
+  StaticMutexAutoLock lock(sListLock);
   
   
   
@@ -152,6 +157,11 @@ nsresult nsNSSShutDownList::evaporateAllNSSResourcesAndShutDown()
     return NS_OK;
   }
 
+  
+  
+  
+  
+  
   sInShutdown = true;
 
   {
@@ -165,25 +175,10 @@ nsresult nsNSSShutDownList::evaporateAllNSSResourcesAndShutDown()
   }
 
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("now evaporating NSS resources"));
-
-  
-  
-  
-  while (singleton) {
-    auto iter = singleton->mObjects.Iter();
-    if (iter.Done()) {
-      break;
-    }
+  for (auto iter = singleton->mObjects.Iter(); !iter.Done(); iter.Next()) {
     auto entry = static_cast<ObjectHashEntry*>(iter.Get());
-    {
-      StaticMutexAutoUnlock unlock(sListLock);
-      entry->obj->shutdown(nsNSSShutDownObject::ShutdownCalledFrom::List);
-    }
+    entry->obj->shutdown(nsNSSShutDownObject::ShutdownCalledFrom::List);
     iter.Remove();
-  }
-
-  if (!singleton) {
-    return NS_ERROR_FAILURE;
   }
 
   singleton->mActivityState.releaseCurrentThreadActivityRestriction();
@@ -192,11 +187,12 @@ nsresult nsNSSShutDownList::evaporateAllNSSResourcesAndShutDown()
   return NS_OK;
 }
 
-void nsNSSShutDownList::enterActivityState()
+void nsNSSShutDownList::enterActivityState( bool& enteredActivityState)
 {
   StaticMutexAutoLock lock(sListLock);
   if (nsNSSShutDownList::construct(lock)) {
     singleton->mActivityState.enter();
+    enteredActivityState = true;
   }
 }
 
@@ -210,7 +206,11 @@ void nsNSSShutDownList::leaveActivityState()
 
 bool nsNSSShutDownList::construct(const StaticMutexAutoLock& )
 {
-  if (!singleton && !sInShutdown && XRE_IsParentProcess()) {
+  if (sInShutdown) {
+    return false;
+  }
+
+  if (!singleton && XRE_IsParentProcess()) {
     singleton = new nsNSSShutDownList();
   }
 
@@ -273,13 +273,16 @@ void nsNSSActivityState::releaseCurrentThreadActivityRestriction()
 }
 
 nsNSSShutDownPreventionLock::nsNSSShutDownPreventionLock()
+  : mEnteredActivityState(false)
 {
-  nsNSSShutDownList::enterActivityState();
+  nsNSSShutDownList::enterActivityState(mEnteredActivityState);
 }
 
 nsNSSShutDownPreventionLock::~nsNSSShutDownPreventionLock()
 {
-  nsNSSShutDownList::leaveActivityState();
+  if (mEnteredActivityState) {
+    nsNSSShutDownList::leaveActivityState();
+  }
 }
 
 bool

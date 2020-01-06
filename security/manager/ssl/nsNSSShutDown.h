@@ -57,6 +57,12 @@ class nsNSSShutDownPreventionLock
 public:
   nsNSSShutDownPreventionLock();
   ~nsNSSShutDownPreventionLock();
+private:
+  
+  
+  
+  
+  bool mEnteredActivityState;
 };
 
 
@@ -82,7 +88,9 @@ public:
   static nsresult doPK11Logout();
 
   
-  static void enterActivityState();
+  
+  
+  static void enterActivityState( bool& enteredActivityState);
   static void leaveActivityState();
 
 private:
