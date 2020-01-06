@@ -172,6 +172,68 @@ struct TenureCountCache
     }
 };
 
+struct MOZ_RAII AutoAssertNoNurseryAlloc
+{
+#ifdef DEBUG
+    AutoAssertNoNurseryAlloc();
+    ~AutoAssertNoNurseryAlloc();
+#else
+    AutoAssertNoNurseryAlloc() {}
+#endif
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_RAII AutoAssertEmptyNursery
+{
+  protected:
+    JSContext* cx;
+
+    mozilla::Maybe<AutoAssertNoNurseryAlloc> noAlloc;
+
+    
+    void checkCondition(JSContext* cx);
+
+    
+    AutoAssertEmptyNursery() : cx(nullptr) {
+    }
+
+  public:
+    explicit AutoAssertEmptyNursery(JSContext* cx) : cx(nullptr) {
+        checkCondition(cx);
+    }
+
+    AutoAssertEmptyNursery(const AutoAssertEmptyNursery& other) : AutoAssertEmptyNursery(other.cx)
+    {
+    }
+};
+
+
+
+
+
+
+
+
+
+
+class MOZ_RAII AutoEmptyNursery : public AutoAssertEmptyNursery
+{
+  public:
+    explicit AutoEmptyNursery(JSContext* cx);
+};
+
 } 
 } 
 
