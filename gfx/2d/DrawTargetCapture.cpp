@@ -27,7 +27,9 @@ DrawTargetCaptureImpl::~DrawTargetCaptureImpl()
 DrawTargetCaptureImpl::DrawTargetCaptureImpl(BackendType aBackend,
                                              const IntSize& aSize,
                                              SurfaceFormat aFormat)
-  : mSize(aSize)
+  : mSize(aSize),
+    mStride(0),
+    mSurfaceAllocationSize(0)
 {
   RefPtr<DrawTarget> screenRefDT =
       gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
@@ -39,7 +41,13 @@ DrawTargetCaptureImpl::DrawTargetCaptureImpl(BackendType aBackend,
     
     
     
-    gfxWarning() << "Creating a RefDT in DrawTargetCapture.";
+    
+    
+    
+    
+    if (aBackend == BackendType::DIRECT2D1_1) {
+      gfxWarning() << "Creating a RefDT in DrawTargetCapture.";
+    }
 
     
     
@@ -62,10 +70,36 @@ DrawTargetCaptureImpl::Init(const IntSize& aSize, DrawTarget* aRefDT)
   return true;
 }
 
+void
+DrawTargetCaptureImpl::InitForData(int32_t aStride, size_t aSurfaceAllocationSize)
+{
+  mStride = aStride;
+  mSurfaceAllocationSize = aSurfaceAllocationSize;
+}
+
 already_AddRefed<SourceSurface>
 DrawTargetCaptureImpl::Snapshot()
 {
-  RefPtr<DrawTarget> dt = mRefDT->CreateSimilarDrawTarget(mSize, mFormat);
+  RefPtr<DrawTarget> dt;
+  if (!mSurfaceAllocationSize) {
+    dt = mRefDT->CreateSimilarDrawTarget(mSize, mFormat);
+  } else {
+    uint8_t* data = static_cast<uint8_t*>(calloc(1, mSurfaceAllocationSize));
+    if (!data) {
+      return nullptr;
+    }
+    BackendType type = mRefDT->GetBackendType();
+    if (!Factory::DoesBackendSupportDataDrawtarget(type)) {
+      type = BackendType::SKIA;
+    }
+    dt = Factory::CreateDrawTargetForData(type, data, mSize, mStride, mFormat);
+    if (!dt) {
+      return nullptr;
+    }
+    dt->AddUserData(reinterpret_cast<UserDataKey*>(dt.get()),
+                    data,
+                    free);
+  }
 
   ReplayToDrawTarget(dt, Matrix());
 
