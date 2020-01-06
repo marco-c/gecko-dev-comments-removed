@@ -2505,7 +2505,8 @@ public:
 
 
   bool RecomputeVisibility(nsDisplayListBuilder* aBuilder,
-                           nsRegion* aVisibleRegion);
+                           nsRegion* aVisibleRegion,
+                           bool aUseClipBounds = true);
 
   
 
