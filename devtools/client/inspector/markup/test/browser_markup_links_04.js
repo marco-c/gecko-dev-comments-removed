@@ -93,12 +93,6 @@ add_task(function* () {
     let linkFollow = allMenuItems.find(i => i.id === "node-menu-link-follow");
     let linkCopy = allMenuItems.find(i => i.id === "node-menu-link-copy");
 
-    
-    
-    
-    
-    yield inspector.target.actorHasMethod("inspector", "resolveRelativeURL");
-
     is(linkFollow.visible, test.isLinkFollowItemVisible,
       "The follow-link item display is correct");
     is(linkCopy.visible, test.isLinkCopyItemVisible,
