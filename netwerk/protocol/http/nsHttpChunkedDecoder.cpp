@@ -5,10 +5,13 @@
 
 
 #include "HttpLog.h"
+
 #include <errno.h>
 #include "nsHttpChunkedDecoder.h"
 #include <algorithm>
 #include "plstr.h"
+
+#include "mozilla/Unused.h"
 
 namespace mozilla {
 namespace net {

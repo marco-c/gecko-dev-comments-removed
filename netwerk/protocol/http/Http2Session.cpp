@@ -997,7 +997,7 @@ Http2Session::VerifyStream(Http2Stream *aStream, uint32_t aOptionalID = 0)
 #ifndef DEBUG
   
   return true;
-#endif
+#else 
 
   if (!aStream)
     return true;
@@ -1043,6 +1043,7 @@ Http2Session::VerifyStream(Http2Stream *aStream, uint32_t aOptionalID = 0)
 
   MOZ_ASSERT(false, "VerifyStream");
   return false;
+#endif 
 }
 
 void
