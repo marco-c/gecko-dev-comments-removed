@@ -274,6 +274,7 @@ nsPresContext::nsPresContext(nsIDocument* aDocument, nsPresContextType aType)
     mIsGlyph(false),
     mUsesRootEMUnits(false),
     mUsesExChUnits(false),
+    mUsesViewportUnits(false),
     mPendingViewportChange(false),
     mCounterStylesDirty(true),
     mPostedFlushCounterStyles(false),
@@ -2058,9 +2059,7 @@ nsPresContext::RebuildAllStyleData(nsChangeHint aExtraHint,
 
   mUsesRootEMUnits = false;
   mUsesExChUnits = false;
-  if (nsStyleSet* styleSet = mShell->StyleSet()->GetAsGecko()) {
-    styleSet->SetUsesViewportUnits(false);
-  }
+  mUsesViewportUnits = false;
   mDocument->RebuildUserFontSet();
   RebuildCounterStyles();
 
@@ -2121,6 +2120,18 @@ nsPresContext::MediaFeatureValuesChanged(nsRestyleHint aRestyleHint,
   if (mShell) {
     aRestyleHint |= mShell->
       StyleSet()->MediumFeaturesChanged(mPendingViewportChange);
+  }
+
+  if (mPendingViewportChange &&
+      (mUsesViewportUnits || mDocument->IsStyledByServo())) {
+    
+    
+    
+    
+    
+    
+    
+    aRestyleHint |= eRestyle_ForceDescendants;
   }
 
   if (aRestyleHint || aChangeHint) {

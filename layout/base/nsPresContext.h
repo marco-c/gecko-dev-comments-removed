@@ -1153,6 +1153,14 @@ public:
     mUsesExChUnits = aValue;
   }
 
+  bool UsesViewportUnits() const {
+    return mUsesViewportUnits;
+  }
+
+  void SetUsesViewportUnits(bool aValue) {
+    mUsesViewportUnits = aValue;
+  }
+
   
   
   
@@ -1459,6 +1467,8 @@ protected:
   unsigned              mUsesRootEMUnits : 1;
   
   unsigned              mUsesExChUnits : 1;
+  
+  unsigned              mUsesViewportUnits : 1;
 
   
   unsigned              mPendingViewportChange : 1;
