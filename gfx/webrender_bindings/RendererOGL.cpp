@@ -105,6 +105,8 @@ RendererOGL::Render()
 {
   if (!mGL->MakeCurrent()) {
     gfxCriticalNote << "Failed to make render context current, can't draw.";
+    
+    
     return false;
   }
 
@@ -118,6 +120,8 @@ RendererOGL::Render()
 #endif
 
   if (!mWidget->PreRender(&widgetContext)) {
+    
+    
     return false;
   }
   
