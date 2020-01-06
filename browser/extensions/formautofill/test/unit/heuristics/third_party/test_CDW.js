@@ -6,7 +6,7 @@ runHeuristicsTest([
   {
     fixturePath: "Checkout_ShippingInfo.html",
     expectedResult: [
-      [
+      [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "given-name"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "family-name"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "organization"},
@@ -23,13 +23,13 @@ runHeuristicsTest([
         
         
 
-      ],
+      ]],
       [],
     ],
   }, {
     fixturePath: "Checkout_BillingPaymentInfo.html",
     expectedResult: [
-      [
+      [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "given-name"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "family-name"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "organization"},
@@ -47,14 +47,14 @@ runHeuristicsTest([
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-year"},
 
 
-      ],
+      ]],
       [],
     ],
   }, {
     fixturePath: "Checkout_Logon.html",
     expectedResult: [
       [],
-      [],
+      [[]],
       [],
     ],
   },

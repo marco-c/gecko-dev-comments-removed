@@ -8,7 +8,7 @@ runHeuristicsTest([
     expectedResult: [
       [],
       [],
-      [
+      [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "given-name"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "additional-name"}, 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "family-name"},
@@ -21,8 +21,8 @@ runHeuristicsTest([
         {"section": "", "addressType": "", "contactType": "", "fieldName": "postal-code"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "tel"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
-      ],
-      [
+      ]],
+      [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "given-name"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "additional-name"}, 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "family-name"},
@@ -35,17 +35,17 @@ runHeuristicsTest([
         {"section": "", "addressType": "", "contactType": "", "fieldName": "postal-code"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "tel"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
-      ],
+      ]],
       [],
-      [
+      [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
-      ],
+      ]],
       [],
     ],
   }, {
     fixturePath: "Payment.html",
     expectedResult: [
-      [
+      [[
 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-number"}, 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-month"},
@@ -53,13 +53,13 @@ runHeuristicsTest([
 
 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-name"}, 
-      ],
-      [
+      ]],
+      [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-number"}, 
-      ],
+      ]],
       [],
-      [],
-      [
+      [[]],
+      [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "given-name"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "additional-name"}, 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "family-name"},
@@ -72,8 +72,8 @@ runHeuristicsTest([
         {"section": "", "addressType": "", "contactType": "", "fieldName": "postal-code"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "tel"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
-      ],
-      [
+      ]],
+      [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "given-name"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "additional-name"}, 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "family-name"},
@@ -86,38 +86,38 @@ runHeuristicsTest([
         {"section": "", "addressType": "", "contactType": "", "fieldName": "postal-code"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "tel"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
-      ],
+      ]],
       [],
-      [
+      [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
-      ],
+      ]],
       [],
     ],
   }, {
     fixturePath: "SignIn.html",
     expectedResult: [
+      [[]],
       [],
+      [[
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
+      ]],
       [],
-      [
+      [[ 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
-      ],
-      [],
-      [ 
+      ]],
+      [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
-      ],
-      [
-        {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
-      ],
-      [
+      ]],
+      [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
 
-      ],
-      [ 
+      ]],
+      [[ 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
-      ],
-      [
+      ]],
+      [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
-      ],
+      ]],
       [],
     ],
   },

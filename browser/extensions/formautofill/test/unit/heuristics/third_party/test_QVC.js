@@ -6,7 +6,7 @@ runHeuristicsTest([
   {
     fixturePath: "YourInformation.html",
     expectedResult: [
-      [
+      [[
 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
 
@@ -18,15 +18,15 @@ runHeuristicsTest([
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp"},
 
 
-      ],
-      [
+      ]],
+      [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
-      ],
+      ]],
     ],
   }, {
     fixturePath: "PaymentMethod.html",
     expectedResult: [
-      [
+      [[
 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
 
@@ -38,20 +38,18 @@ runHeuristicsTest([
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp"},
 
 
-      ],
-      [
+      ]],
+      [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
-      ],
+      ]],
     ],
   }, {
     fixturePath: "SignIn.html",
     expectedResult: [
-      [
-        
-      ],
-      [ 
+      [[]],
+      [[ 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
-      ],
+      ]],
       [],
     ],
   },

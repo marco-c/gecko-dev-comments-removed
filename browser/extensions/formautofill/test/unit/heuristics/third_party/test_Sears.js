@@ -7,11 +7,26 @@ runHeuristicsTest([
     fixturePath: "ShippingAddress.html",
     expectedResult: [
       [],
-      [], 
+      [[]], 
+      [[ 
+
+      ]],
+      [[ 
+
+
+
+
+
+
+
+
+
+
+
+
+      ]],
       [ 
 
-      ],
-      [ 
 
 
 
@@ -25,42 +40,27 @@ runHeuristicsTest([
 
 
       ],
-      [ 
+      [[ 
 
+      ]],
+      [[ 
 
-
-
-
-
-
-
-
-
-
-
-
-      ],
-      [ 
-
-      ],
-      [ 
-
-      ],
+      ]],
     ],
   }, {
     fixturePath: "PaymentOptions.html",
     expectedResult: [
       [],
-      [], 
-      [ 
+      [[]], 
+      [[ 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-number"},
         
 
 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-month"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-year"},
-      ],
-      [ 
+      ]],
+      [[ 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "given-name"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "family-name"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "address-line1"},
@@ -70,8 +70,8 @@ runHeuristicsTest([
         {"section": "", "addressType": "", "contactType": "", "fieldName": "postal-code"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "tel"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "tel-extension"},
-      ],
-      [ 
+      ]],
+      [[ 
         {"section": "", "addressType": "", "contactType": "", "fieldName": "given-name"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "family-name"},
 
@@ -86,10 +86,10 @@ runHeuristicsTest([
 
 
 
-      ],
-      [
+      ]],
+      [[
         {"section": "", "addressType": "", "contactType": "", "fieldName": "email"},
-      ],
+      ]],
     ],
   },
 ], "../../../fixtures/third_party/Sears/");
