@@ -1226,16 +1226,18 @@ RDFServiceImpl::UnregisterDataSource(nsIRDFDataSource* aDataSource)
 
     nsresult rv;
 
-    nsXPIDLCString uri;
+    nsCString uri;
     rv = aDataSource->GetURI(getter_Copies(uri));
     if (NS_FAILED(rv)) return rv;
 
     
-    if (! uri)
+    if (uri.IsVoid())
         return NS_ERROR_UNEXPECTED;
 
     PLHashEntry** hep =
-        PL_HashTableRawLookup(mNamedDataSources, (*mNamedDataSources->keyHash)(uri), uri);
+        PL_HashTableRawLookup(mNamedDataSources,
+                              (*mNamedDataSources->keyHash)(uri.get()),
+                              uri.get());
 
     
     
@@ -1248,7 +1250,7 @@ RDFServiceImpl::UnregisterDataSource(nsIRDFDataSource* aDataSource)
 
     MOZ_LOG(gLog, LogLevel::Debug,
            ("rdfserv unregister-datasource [%p] %s",
-            aDataSource, (const char*) uri));
+            aDataSource, uri.get()));
 
     return NS_OK;
 }
