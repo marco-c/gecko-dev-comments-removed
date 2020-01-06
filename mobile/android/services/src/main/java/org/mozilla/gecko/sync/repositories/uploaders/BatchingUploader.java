@@ -137,9 +137,7 @@ public class BatchingUploader {
 
         final String payloadField = (String) recordJSON.get(CryptoRecord.KEY_PAYLOAD);
         if (payloadField == null) {
-            sessionStoreDelegate.deferredStoreDelegate(executor).onRecordStoreFailed(
-                    new IllegalRecordException(), guid
-            );
+            failRecordStore(new IllegalRecordException(), record, false);
             return;
         }
 
@@ -147,17 +145,13 @@ public class BatchingUploader {
         
         
         if (payloadField.length() > this.maxPayloadFieldBytes) {
-            sessionStoreDelegate.deferredStoreDelegate(executor).onRecordStoreFailed(
-                    new PayloadTooLargeToUpload(), guid
-            );
+            failRecordStore(new PayloadTooLargeToUpload(), record, true);
             return;
         }
 
         final byte[] recordBytes = Record.stringToJSONBytes(recordJSON.toJSONString());
         if (recordBytes == null) {
-            sessionStoreDelegate.deferredStoreDelegate(executor).onRecordStoreFailed(
-                    new IllegalRecordException(), guid
-            );
+            failRecordStore(new IllegalRecordException(), record, false);
             return;
         }
 
@@ -166,9 +160,7 @@ public class BatchingUploader {
 
         
         if ((recordDeltaByteCount + PER_PAYLOAD_OVERHEAD_BYTE_COUNT) > payload.maxBytes) {
-            sessionStoreDelegate.deferredStoreDelegate(executor).onRecordStoreFailed(
-                    new RecordTooLargeToUpload(), guid
-            );
+            failRecordStore(new RecordTooLargeToUpload(), record, true);
             return;
         }
 
@@ -181,7 +173,7 @@ public class BatchingUploader {
                 Logger.debug(LOG_TAG, "Record fits into the current batch and payload");
                 addAndFlushIfNecessary(recordDeltaByteCount, recordBytes, guid);
 
-            
+                
             } else if (canFitRecordIntoBatch) {
                 Logger.debug(LOG_TAG, "Current payload won't fit incoming record, uploading payload.");
                 flush(false, false);
@@ -191,7 +183,7 @@ public class BatchingUploader {
                 
                 addAndFlushIfNecessary(recordDeltaByteCount, recordBytes, guid);
 
-            
+                
             } else {
                 Logger.debug(LOG_TAG, "Current batch won't fit incoming record, committing batch.");
                 flush(true, false);
@@ -238,12 +230,41 @@ public class BatchingUploader {
         });
     }
 
+    
+    
+    @VisibleForTesting
+     boolean shouldFailBatchOnFailure(Record record) {
+        return record instanceof BookmarkRecord;
+    }
+
      void setLastStoreTimestamp(AtomicLong lastModifiedTimestamp) {
         repositorySession.setLastStoreTimestamp(lastModifiedTimestamp.get());
     }
 
      void finished() {
         sessionStoreDelegate.deferredStoreDelegate(executor).onStoreCompleted();
+    }
+
+    
+    private void failRecordStore(Exception e, Record record, boolean sizeOverflow) {
+        
+        
+        
+        
+        
+        
+        
+        
+        if (shouldFailBatchOnFailure(record)) {
+            
+            Logger.debug(LOG_TAG, "Batch failed with exception: " + e.toString());
+            sessionStoreDelegate.deferredStoreDelegate(executor).onRecordStoreFailed(e, record.guid);
+            payloadDispatcher.doStoreFailed(e);
+        } else if (!sizeOverflow) {
+            
+            sessionStoreDelegate.deferredStoreDelegate(executor).onRecordStoreFailed(e, record.guid);
+        }
+        
     }
 
     
