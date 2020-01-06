@@ -70,6 +70,22 @@ ScrollingLayersHelper::ScrollingLayersHelper(WebRenderLayer* aLayer,
     mBuilder->PushClip(aStackingContext.ToRelativeWrRect(clipRect),
         mask.ptrOr(nullptr));
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (layer->GetIsFixedPosition()) {
+    FrameMetrics::ViewID fixedFor = layer->GetFixedPositionScrollContainerId();
+    Maybe<FrameMetrics::ViewID> scrollsWith = mBuilder->ParentScrollIdFor(fixedFor);
+    Maybe<uint64_t> clipId = mBuilder->TopmostClipId();
+    
+    mBuilder->PushClipAndScrollInfo(scrollsWith.valueOr(0), clipId.ptrOr(nullptr));
+  }
 }
 
 ScrollingLayersHelper::~ScrollingLayersHelper()
@@ -79,6 +95,9 @@ ScrollingLayersHelper::~ScrollingLayersHelper()
   }
 
   Layer* layer = mLayer->GetLayer();
+  if (layer->GetIsFixedPosition()) {
+    mBuilder->PopClipAndScrollInfo();
+  }
   if (layer->GetScrolledClip()) {
     mBuilder->PopClip();
   }
