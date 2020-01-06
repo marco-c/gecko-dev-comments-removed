@@ -321,9 +321,11 @@ var gPrivacyPane = {
       this.initSubmitCrashes();
     }
     this.initTelemetry();
-    this.initSubmitHealthReport();
-    setEventListener("submitHealthReportBox", "command",
-                     gPrivacyPane.updateSubmitHealthReport);
+    if (AppConstants.MOZ_TELEMETRY_REPORTING) {
+      this.initSubmitHealthReport();
+      setEventListener("submitHealthReportBox", "command",
+                       gPrivacyPane.updateSubmitHealthReport);
+    }
 
     
     let bundlePrefs = document.getElementById("bundlePreferences");
@@ -1412,10 +1414,8 @@ var gPrivacyPane = {
 
 
   initTelemetry() {
-    this._setupLearnMoreLink("toolkit.telemetry.infoURL", "telemetryLearnMore");
-    
-    if (!AppConstants.MOZ_TELEMETRY_REPORTING) {
-      document.getElementById("submitTelemetryBox").setAttribute("disabled", "true");
+    if (AppConstants.MOZ_TELEMETRY_REPORTING) {
+      this._setupLearnMoreLink("toolkit.telemetry.infoURL", "telemetryLearnMore");
     }
   },
 
@@ -1439,6 +1439,9 @@ var gPrivacyPane = {
 
 
   setTelemetrySectionEnabled(aEnabled) {
+    if (!AppConstants.MOZ_TELEMETRY_REPORTING) {
+      return;
+    }
     
     let disabled = !aEnabled;
     document.getElementById("submitTelemetryBox").disabled = disabled;
@@ -1453,21 +1456,19 @@ var gPrivacyPane = {
 
 
   initSubmitHealthReport() {
+    if (!AppConstants.MOZ_TELEMETRY_REPORTING) {
+      return;
+    }
     this._setupLearnMoreLink("datareporting.healthreport.infoURL", "FHRLearnMore");
 
     let checkbox = document.getElementById("submitHealthReportBox");
 
-    
-    
-    
-    if (Services.prefs.prefIsLocked(PREF_UPLOAD_ENABLED) ||
-        !AppConstants.MOZ_TELEMETRY_REPORTING) {
+    if (Services.prefs.prefIsLocked(PREF_UPLOAD_ENABLED)) {
       checkbox.setAttribute("disabled", "true");
       return;
     }
 
-    checkbox.checked = Services.prefs.getBoolPref(PREF_UPLOAD_ENABLED) &&
-                       AppConstants.MOZ_TELEMETRY_REPORTING;
+    checkbox.checked = Services.prefs.getBoolPref(PREF_UPLOAD_ENABLED);
     this.setTelemetrySectionEnabled(checkbox.checked);
   },
 
@@ -1475,6 +1476,9 @@ var gPrivacyPane = {
 
 
   updateSubmitHealthReport() {
+    if (!AppConstants.MOZ_TELEMETRY_REPORTING) {
+      return;
+    }
     let checkbox = document.getElementById("submitHealthReportBox");
     Services.prefs.setBoolPref(PREF_UPLOAD_ENABLED, checkbox.checked);
     this.setTelemetrySectionEnabled(checkbox.checked);
