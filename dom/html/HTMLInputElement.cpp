@@ -7403,13 +7403,6 @@ HTMLInputElement::IsTextArea() const
 }
 
 NS_IMETHODIMP_(bool)
-HTMLInputElement::IsPlainTextControl() const
-{
-  
-  return true;
-}
-
-NS_IMETHODIMP_(bool)
 HTMLInputElement::IsPasswordTextControl() const
 {
   return mType == NS_FORM_INPUT_PASSWORD;

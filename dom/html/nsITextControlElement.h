@@ -60,12 +60,6 @@ public:
 
 
 
-  NS_IMETHOD_(bool) IsPlainTextControl() const = 0;
-
-  
-
-
-
   NS_IMETHOD_(bool) IsPasswordTextControl() const = 0;
 
   
