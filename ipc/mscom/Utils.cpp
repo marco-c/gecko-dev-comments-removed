@@ -4,6 +4,10 @@
 
 
 
+#if defined(MOZILLA_INTERNAL_API)
+#include "mozilla/dom/ContentChild.h"
+#endif
+
 #if defined(ACCESSIBILITY)
 #include "mozilla/mscom/Registration.h"
 #if defined(MOZILLA_INTERNAL_API)
@@ -236,6 +240,31 @@ GUIDToString(REFGUID aGuid, nsAString& aOutString)
     
     aOutString.SetLength(result - 1);
   }
+}
+
+bool
+IsCallerExternalProcess()
+{
+  MOZ_ASSERT(XRE_IsContentProcess());
+
+  
+
+
+
+
+
+
+
+
+  DWORD callerTid;
+  if (::CoGetCallerTID(&callerTid) != S_FALSE) {
+    return false;
+  }
+
+  
+  const DWORD parentMainTid =
+    dom::ContentChild::GetSingleton()->GetChromeMainThreadId();
+  return callerTid != parentMainTid;
 }
 
 #endif 

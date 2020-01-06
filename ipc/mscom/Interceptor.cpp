@@ -9,6 +9,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/Move.h"
 #include "mozilla/mscom/DispatchForwarder.h"
+#include "mozilla/mscom/FastMarshaler.h"
 #include "mozilla/mscom/Interceptor.h"
 #include "mozilla/mscom/InterceptorLog.h"
 #include "mozilla/mscom/MainThreadInvoker.h"
@@ -192,49 +193,13 @@ Interceptor::GetClassForHandler(DWORD aDestContext, void* aDestContextPtr,
   return mEventSink->GetHandler(WrapNotNull(aHandlerClsid));
 }
 
-
-
-
-
-
-
-
-
-
-DWORD
-Interceptor::GetMarshalFlags(DWORD aDestContext, DWORD aMarshalFlags)
-{
-  
-  if (aDestContext != MSHCTX_LOCAL) {
-    return aMarshalFlags;
-  }
-
-  
-  
-  DWORD callerTid;
-  if (::CoGetCallerTID(&callerTid) != S_FALSE) {
-    return aMarshalFlags;
-  }
-
-  
-  const DWORD chromeMainTid =
-    dom::ContentChild::GetSingleton()->GetChromeMainThreadId();
-  if (callerTid != chromeMainTid) {
-    return aMarshalFlags;
-  }
-
-  
-  return aMarshalFlags | MSHLFLAGS_NOPING;
-}
-
 HRESULT
 Interceptor::GetUnmarshalClass(REFIID riid, void* pv, DWORD dwDestContext,
                                void* pvDestContext, DWORD mshlflags,
                                CLSID* pCid)
 {
   return mStdMarshal->GetUnmarshalClass(riid, pv, dwDestContext, pvDestContext,
-                                        GetMarshalFlags(dwDestContext,
-                                                        mshlflags), pCid);
+                                        mshlflags, pCid);
 }
 
 HRESULT
@@ -243,10 +208,7 @@ Interceptor::GetMarshalSizeMax(REFIID riid, void* pv, DWORD dwDestContext,
                                DWORD* pSize)
 {
   HRESULT hr = mStdMarshal->GetMarshalSizeMax(riid, pv, dwDestContext,
-                                              pvDestContext,
-                                              GetMarshalFlags(dwDestContext,
-                                                              mshlflags),
-                                              pSize);
+                                              pvDestContext, mshlflags, pSize);
   if (FAILED(hr)) {
     return hr;
   }
@@ -285,44 +247,30 @@ Interceptor::MarshalInterface(IStream* pStm, REFIID riid, void* pv,
 #endif 
 
   hr = mStdMarshal->MarshalInterface(pStm, riid, pv, dwDestContext,
-                                     pvDestContext,
-                                     GetMarshalFlags(dwDestContext, mshlflags));
+                                     pvDestContext, mshlflags);
   if (FAILED(hr)) {
     return hr;
   }
 
 #if defined(MOZ_MSCOM_REMARSHAL_NO_HANDLER)
-  if (XRE_IsContentProcess()) {
-    const DWORD chromeMainTid =
-      dom::ContentChild::GetSingleton()->GetChromeMainThreadId();
-
+  if (XRE_IsContentProcess() && IsCallerExternalProcess()) {
     
 
-
-
-
-
-
-    DWORD callerTid;
-    if (::CoGetCallerTID(&callerTid) == S_FALSE && callerTid != chromeMainTid) {
-      
-
-      
-      
-      ULARGE_INTEGER endPos;
-      hr = pStm->Seek(seekTo, STREAM_SEEK_CUR, &endPos);
-      if (FAILED(hr)) {
-        return hr;
-      }
-
-      
-      if (!StripHandlerFromOBJREF(WrapNotNull(pStm), objrefPos.QuadPart,
-                                  endPos.QuadPart)) {
-        return E_FAIL;
-      }
-
-      return S_OK;
+    
+    
+    ULARGE_INTEGER endPos;
+    hr = pStm->Seek(seekTo, STREAM_SEEK_CUR, &endPos);
+    if (FAILED(hr)) {
+      return hr;
     }
+
+    
+    if (!StripHandlerFromOBJREF(WrapNotNull(pStm), objrefPos.QuadPart,
+                                endPos.QuadPart)) {
+      return E_FAIL;
+    }
+
+    return S_OK;
   }
 #endif 
 
@@ -648,18 +596,24 @@ Interceptor::ThreadSafeQueryInterface(REFIID aIid, IUnknown** aOutInterface)
   }
 
   if (aIid == IID_IMarshal) {
+    HRESULT hr;
+
     if (!mStdMarshalUnk) {
-      HRESULT hr = ::CoGetStdMarshalEx(static_cast<IWeakReferenceSource*>(this),
-                                       SMEXF_SERVER,
-                                       getter_AddRefs(mStdMarshalUnk));
+      if (XRE_IsContentProcess()) {
+        hr = FastMarshaler::Create(static_cast<IWeakReferenceSource*>(this),
+                                   getter_AddRefs(mStdMarshalUnk));
+      } else {
+        hr = ::CoGetStdMarshalEx(static_cast<IWeakReferenceSource*>(this),
+                                 SMEXF_SERVER, getter_AddRefs(mStdMarshalUnk));
+      }
+
       if (FAILED(hr)) {
         return hr;
       }
     }
 
     if (!mStdMarshal) {
-      HRESULT hr = mStdMarshalUnk->QueryInterface(IID_IMarshal,
-                                                  (void**)&mStdMarshal);
+      hr = mStdMarshalUnk->QueryInterface(IID_IMarshal, (void**)&mStdMarshal);
       if (FAILED(hr)) {
         return hr;
       }

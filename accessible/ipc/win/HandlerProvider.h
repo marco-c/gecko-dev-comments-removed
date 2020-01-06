@@ -67,6 +67,7 @@ private:
   const IID                         mTargetUnkIid;
   mscom::InterceptorTargetPtr<IUnknown> mTargetUnk; 
   UniquePtr<mscom::StructToStream>  mSerializer;
+  RefPtr<IUnknown>                  mFastMarshalUnk;
 };
 
 } 
