@@ -100,6 +100,12 @@ ICUUtils::LocalizeNumber(double aValue,
     UErrorCode status = U_ZERO_ERROR;
     AutoCloseUNumberFormat format(unum_open(UNUM_DECIMAL, nullptr, 0,
                                             langTag.get(), nullptr, &status));
+    
+    
+    if (U_FAILURE(status)) {
+      aLangTags.GetNext(langTag);
+      continue;
+    }
     unum_setAttribute(format, UNUM_GROUPING_USED,
                       LocaleNumberGroupingIsEnabled());
     
