@@ -230,7 +230,7 @@ PUSH_APK_SCOPES = {
 
 PUSH_APK_GOOGLE_PLAY_TRACT = {
     'aurora': 'beta',
-    'beta': 'production',
+    'beta': 'rollout',
     'release': 'rollout',
     'default': 'invalid',
 }
@@ -253,6 +253,7 @@ PUSH_APK_ROLLOUT_PERCENTAGE = {
     
     
     'release': 10,
+    'beta': 10,
     'default': None,
 }
 
