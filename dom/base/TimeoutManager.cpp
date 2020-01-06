@@ -186,6 +186,11 @@ namespace {
 
 
 
+#define DEFAULT_MAX_CONSECUTIVE_CALLBACK_MILLISECONDS 4
+uint32_t gMaxConsecutiveCallbackMilliseconds;
+
+
+
 #define DEFAULT_TARGET_MAX_CONSECUTIVE_CALLBACKS 5
 uint32_t gTargetMaxConsecutiveCallbacks;
 
@@ -304,6 +309,10 @@ TimeoutManager::Initialize()
   Preferences::AddUintVarCache(&gTargetMaxConsecutiveCallbacks,
                                "dom.timeout.max_consecutive_callbacks",
                                DEFAULT_TARGET_MAX_CONSECUTIVE_CALLBACKS);
+
+  Preferences::AddUintVarCache(&gMaxConsecutiveCallbackMilliseconds,
+                               "dom.timeout.max_consecutive_callback_ms",
+                               DEFAULT_MAX_CONSECUTIVE_CALLBACK_MILLISECONDS);
 }
 
 uint32_t
@@ -662,6 +671,12 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
     mTrackingTimeouts.SetInsertionPoint(dummy_tracking_timeout);
   }
 
+  uint32_t timeLimitMS = std::max(1u, gMaxConsecutiveCallbackMilliseconds);
+  const TimeDuration timeLimit = TimeDuration::FromMilliseconds(timeLimitMS);
+  TimeStamp start = TimeStamp::Now();
+
+  bool targetTimeoutSeen = false;
+
   
   
   
@@ -718,6 +733,24 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
         timeout->remove();
         timeout->Release();
         continue;
+      }
+
+      
+      
+      
+      
+      
+      
+      if (targetTimeoutSeen) {
+        TimeDuration elapsed = TimeStamp::Now() - start;
+        if (elapsed >= timeLimit) {
+          timeout->mFiringDepth = 0;
+          continue;
+        }
+      }
+
+      if (timeout == aTimeout) {
+        targetTimeoutSeen = true;
       }
 
       
