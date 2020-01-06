@@ -27,7 +27,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "quotaManagerService",
                                    "@mozilla.org/dom/quota-manager-service;1",
                                    "nsIQuotaManagerService");
 
-var {classes: Cc, interfaces: Ci} = Components;
+var {classes: Cc, interfaces: Ci, results: Cr} = Components;
 
 
 
@@ -308,6 +308,13 @@ Sanitizer.prototype = {
         let promises = [];
         await new Promise(resolve => {
           quotaManagerService.getUsage(request => {
+            if (request.resultCode != Cr.NS_OK) {
+              
+              
+              resolve();
+              return;
+            }
+
             for (let item of request.result) {
               let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(item.origin);
               let uri = principal.URI;

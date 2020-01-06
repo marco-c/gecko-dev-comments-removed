@@ -88,6 +88,13 @@ const clearIndexedDB = async function(options) {
 
   await new Promise(resolve => {
     quotaManagerService.getUsage(request => {
+      if (request.resultCode != Components.results.NS_OK) {
+        
+        
+        resolve();
+        return;
+      }
+
       for (let item of request.result) {
         let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(item.origin);
         let uri = principal.URI;
