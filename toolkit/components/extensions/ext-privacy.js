@@ -115,6 +115,19 @@ ExtensionPreferencesManager.addSetting("websites.hyperlinkAuditingEnabled", {
   },
 });
 
+ExtensionPreferencesManager.addSetting("websites.referrersEnabled", {
+  prefNames: [
+    "network.http.sendRefererHeader",
+  ],
+
+  
+  
+  
+  setCallback(value) {
+    return {[this.prefNames[0]]: value ? 2 : 0};
+  },
+});
+
 this.privacy = class extends ExtensionAPI {
   getAPI(context) {
     let {extension} = context;
@@ -158,6 +171,11 @@ this.privacy = class extends ExtensionAPI {
             "websites.hyperlinkAuditingEnabled",
             () => {
               return Preferences.get("browser.send_pings");
+            }),
+          referrersEnabled: getAPI(extension,
+            "websites.referrersEnabled",
+            () => {
+              return Preferences.get("network.http.sendRefererHeader") !== 0;
             }),
         },
       },
