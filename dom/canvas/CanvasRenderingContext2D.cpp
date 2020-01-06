@@ -2883,9 +2883,9 @@ GetFontStyleForServo(Element* aElement, const nsAString& aFont,
     
     
     parentStyle =
-      styleSet->ResolveTransientServoStyle(aElement,
-                                           CSSPseudoElementType::NotPseudo,
-                                           nullptr);
+      styleSet->ResolveStyleLazily(aElement,
+                                   CSSPseudoElementType::NotPseudo,
+                                   nullptr);
   } else {
     RefPtr<RawServoDeclarationBlock> declarations =
       CreateFontDeclarationForServo(NS_LITERAL_STRING("10px sans-serif"),

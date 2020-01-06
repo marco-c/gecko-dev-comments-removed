@@ -178,20 +178,11 @@ public:
   
   
   already_AddRefed<ServoStyleContext>
-  ResolveTransientStyle(dom::Element* aElement,
-                        CSSPseudoElementType aPseudoType,
-                        nsIAtom* aPseudoTag,
-                        StyleRuleInclusion aRules =
-                          StyleRuleInclusion::All);
-
-  
-  
-  already_AddRefed<ServoStyleContext>
-  ResolveTransientServoStyle(dom::Element* aElement,
-                             CSSPseudoElementType aPseudoType,
-                             nsIAtom* aPseudoTag,
-                             StyleRuleInclusion aRules =
-                               StyleRuleInclusion::All);
+  ResolveStyleLazily(dom::Element* aElement,
+                     CSSPseudoElementType aPseudoType,
+                     nsIAtom* aPseudoTag,
+                     StyleRuleInclusion aRules =
+                       StyleRuleInclusion::All);
 
   
   
@@ -554,12 +545,12 @@ private:
   void UpdateStylist();
 
   already_AddRefed<ServoStyleContext>
-    ResolveStyleLazily(dom::Element* aElement,
-                       CSSPseudoElementType aPseudoType,
-                       nsIAtom* aPseudoTag,
-                       const ServoStyleContext* aParentContext,
-                       StyleRuleInclusion aRules =
-                         StyleRuleInclusion::All);
+    ResolveStyleLazilyInternal(dom::Element* aElement,
+                               CSSPseudoElementType aPseudoType,
+                               nsIAtom* aPseudoTag,
+                               const ServoStyleContext* aParentContext,
+                               StyleRuleInclusion aRules =
+                                 StyleRuleInclusion::All);
 
   void RunPostTraversalTasks();
 
