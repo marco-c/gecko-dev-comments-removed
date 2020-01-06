@@ -221,7 +221,8 @@ function search(aQuery, aAttribute, aSubquery, aSubAttribute) {
     
     
     
-    if (element.getAttribute("data-hidden-from-search") != "true") {
+    if (element.getAttribute("data-hidden-from-search") != "true" ||
+        element.getAttribute("data-subpanel") == "true") {
       let attributeValue = element.getAttribute(aAttribute);
       if (attributeValue == aQuery) {
         if (!element.classList.contains("header") &&
