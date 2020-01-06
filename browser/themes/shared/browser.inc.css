@@ -31,6 +31,16 @@
   transition: min-height 170ms ease-out, max-height 170ms ease-out, visibility 170ms linear;
 }
 
+#navigator-toolbox > toolbar[customizing]:not(#toolbar-menubar):not(#TabsToolbar):not(#nav-bar) {
+  outline: 1px dashed;
+  outline-offset: -4px;
+  -moz-outline-radius: 2px;
+  
+  min-height: 22px;
+  
+  padding-bottom: 0;
+}
+
 
 .urlbar-go-button {
   padding: 0 3px;
