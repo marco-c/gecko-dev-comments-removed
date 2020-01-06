@@ -5,6 +5,7 @@
 
 
 #include "IPCStreamSource.h"
+#include "mozilla/webrender/WebRenderTypes.h"
 #include "nsIAsyncInputStream.h"
 #include "nsICancelableRunnable.h"
 #include "nsIRunnable.h"
@@ -16,6 +17,7 @@ using mozilla::dom::workers::Canceling;
 using mozilla::dom::workers::GetCurrentThreadWorkerPrivate;
 using mozilla::dom::workers::Status;
 using mozilla::dom::workers::WorkerPrivate;
+using mozilla::wr::ByteBuffer;
 
 namespace mozilla {
 namespace ipc {
@@ -190,7 +192,7 @@ void
 IPCStreamSource::Start()
 {
   NS_ASSERT_OWNINGTHREAD(IPCStreamSource);
-  DoRead(ReadReason::Starting);
+  DoRead();
 }
 
 void
@@ -201,7 +203,7 @@ IPCStreamSource::StartDestroy()
 }
 
 void
-IPCStreamSource::DoRead(ReadReason aReadReason)
+IPCStreamSource::DoRead()
 {
   NS_ASSERT_OWNINGTHREAD(IPCStreamSource);
   MOZ_ASSERT(mState == eActorConstructed);
@@ -215,70 +217,44 @@ IPCStreamSource::DoRead(ReadReason aReadReason)
   static_assert(kMaxBytesPerMessage <= static_cast<uint64_t>(UINT32_MAX),
                 "kMaxBytesPerMessage must cleanly cast to uint32_t");
 
-  
-  
-  
-  
-  
-  
-  
-  
-  bool noDataMeansEOF = (aReadReason == ReadReason::Notified);
+  char buffer[kMaxBytesPerMessage];
+
   while (true) {
     
     
     MOZ_ASSERT(mState == eActorConstructed);
 
     
-    
-    
-    
-    nsCString buffer;
-
-    uint64_t available = 0;
-    nsresult rv = mStream->Available(&available);
+    uint64_t dummy;
+    nsresult rv = mStream->Available(&dummy);
     if (NS_FAILED(rv)) {
       OnEnd(rv);
       return;
     }
 
-    if (available == 0) {
-      if (noDataMeansEOF) {
-        OnEnd(rv);
-      } else {
-        Wait();
-      }
-      return;
-    }
-
-    uint32_t expectedBytes =
-      static_cast<uint32_t>(std::min(available, kMaxBytesPerMessage));
-
-    buffer.SetLength(expectedBytes);
-
     uint32_t bytesRead = 0;
-    rv = mStream->Read(buffer.BeginWriting(), buffer.Length(), &bytesRead);
-    MOZ_ASSERT_IF(NS_FAILED(rv), bytesRead == 0);
-    buffer.SetLength(bytesRead);
-
-    
-    noDataMeansEOF = false;
-
-    
-    if (!buffer.IsEmpty()) {
-      SendData(buffer);
-    }
+    rv = mStream->Read(buffer, kMaxBytesPerMessage, &bytesRead);
 
     if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
+      MOZ_ASSERT(bytesRead == 0);
       Wait();
       return;
     }
 
-    
-    if (NS_FAILED(rv) || buffer.IsEmpty()) {
+    if (NS_FAILED(rv)) {
+      MOZ_ASSERT(bytesRead == 0);
       OnEnd(rv);
       return;
     }
+
+    
+    if (bytesRead == 0) {
+      OnEnd(NS_BASE_STREAM_CLOSED);
+      return;
+    }
+
+    
+    SendData(ByteBuffer(bytesRead, reinterpret_cast<uint8_t*>(buffer)));
   }
 }
 
@@ -307,7 +283,7 @@ IPCStreamSource::OnStreamReady(Callback* aCallback)
   MOZ_ASSERT(aCallback == mCallback);
   mCallback->ClearSource();
   mCallback = nullptr;
-  DoRead(ReadReason::Notified);
+  DoRead();
 }
 
 void
