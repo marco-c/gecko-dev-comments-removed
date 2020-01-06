@@ -8,10 +8,9 @@ use std::ops::Range;
 use std::cell::Cell;
 use std::char;
 use std::ascii::AsciiExt;
-use std::borrow::{Cow, ToOwned};
-use std::borrow::Cow::{Owned, Borrowed};
 use std::i32;
 
+use compact_cow_str::CompactCowStr;
 use self::Token::*;
 
 
@@ -23,44 +22,79 @@ use self::Token::*;
 pub enum Token<'a> {
 
     
-    Ident(Cow<'a, str>),
+    Ident(CompactCowStr<'a>),
 
     
     
     
-    AtKeyword(Cow<'a, str>),
+    AtKeyword(CompactCowStr<'a>),
 
     
     
     
-    Hash(Cow<'a, str>),
+    Hash(CompactCowStr<'a>),
 
     
     
     
-    IDHash(Cow<'a, str>),  
+    IDHash(CompactCowStr<'a>),  
 
     
     
     
-    QuotedString(Cow<'a, str>),
+    QuotedString(CompactCowStr<'a>),
 
     
     
     
-    UnquotedUrl(Cow<'a, str>),
+    UnquotedUrl(CompactCowStr<'a>),
 
     
     Delim(char),
 
     
-    Number(NumericValue),
+    Number {
+        
+        
+        
+        has_sign: bool,
+
+        
+        value: f32,
+
+        
+        int_value: Option<i32>,
+    },
 
     
-    Percentage(PercentageValue),
+    Percentage {
+        
+        has_sign: bool,
+
+        
+        unit_value: f32,
+
+        
+        
+        int_value: Option<i32>,
+    },
 
     
-    Dimension(NumericValue, Cow<'a, str>),
+    Dimension {
+        
+        
+        
+        has_sign: bool,
+
+        
+        value: f32,
+
+        
+        int_value: Option<i32>,
+
+        
+        unit: CompactCowStr<'a>
+    },
 
     
     WhiteSpace(&'a str),
@@ -109,7 +143,7 @@ pub enum Token<'a> {
     
     
     
-    Function(Cow<'a, str>),
+    Function(CompactCowStr<'a>),
 
     
     ParenthesisBlock,
@@ -163,36 +197,6 @@ impl<'a> Token<'a> {
             BadUrl | BadString | CloseParenthesis | CloseSquareBracket | CloseCurlyBracket
         )
     }
-}
-
-
-
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub struct NumericValue {
-    
-    pub value: f32,
-
-    
-    pub int_value: Option<i32>,
-
-    
-    
-    
-    pub has_sign: bool,
-}
-
-
-
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub struct PercentageValue {
-    
-    pub unit_value: f32,
-
-    
-    pub int_value: Option<i32>,
-
-    
-    pub has_sign: bool,
 }
 
 
@@ -559,28 +563,28 @@ fn consume_string<'a>(tokenizer: &mut Tokenizer<'a>, single_quote: bool) -> Toke
 
 
 fn consume_quoted_string<'a>(tokenizer: &mut Tokenizer<'a>, single_quote: bool)
-                             -> Result<Cow<'a, str>, ()> {
+                             -> Result<CompactCowStr<'a>, ()> {
     tokenizer.advance(1);  
     
     let start_pos = tokenizer.position();
     let mut string_bytes;
     loop {
         if tokenizer.is_eof() {
-            return Ok(Borrowed(tokenizer.slice_from(start_pos)))
+            return Ok(tokenizer.slice_from(start_pos).into())
         }
         match_byte! { tokenizer.next_byte_unchecked(),
             b'"' => {
                 if !single_quote {
                     let value = tokenizer.slice_from(start_pos);
                     tokenizer.advance(1);
-                    return Ok(Borrowed(value))
+                    return Ok(value.into())
                 }
             }
             b'\'' => {
                 if single_quote {
                     let value = tokenizer.slice_from(start_pos);
                     tokenizer.advance(1);
-                    return Ok(Borrowed(value))
+                    return Ok(value.into())
                 }
             }
             b'\\' | b'\0' => {
@@ -644,10 +648,10 @@ fn consume_quoted_string<'a>(tokenizer: &mut Tokenizer<'a>, single_quote: bool)
         string_bytes.push(b);
     }
 
-    Ok(Owned(
+    Ok(
         
-        unsafe { from_utf8_release_unchecked(string_bytes) }
-    ))
+        unsafe { from_utf8_release_unchecked(string_bytes) }.into()
+    )
 }
 
 
@@ -688,13 +692,13 @@ fn consume_ident_like<'a>(tokenizer: &mut Tokenizer<'a>) -> Token<'a> {
     }
 }
 
-fn consume_name<'a>(tokenizer: &mut Tokenizer<'a>) -> Cow<'a, str> {
+fn consume_name<'a>(tokenizer: &mut Tokenizer<'a>) -> CompactCowStr<'a> {
     
     let start_pos = tokenizer.position();
     let mut value_bytes;
     loop {
         if tokenizer.is_eof() {
-            return Borrowed(tokenizer.slice_from(start_pos))
+            return tokenizer.slice_from(start_pos).into()
         }
         match_byte! { tokenizer.next_byte_unchecked(),
             b'a'...b'z' | b'A'...b'Z' | b'0'...b'9' | b'_' | b'-' => { tokenizer.advance(1) },
@@ -709,7 +713,7 @@ fn consume_name<'a>(tokenizer: &mut Tokenizer<'a>) -> Cow<'a, str> {
             }
             b => {
                 if b.is_ascii() {
-                    return Borrowed(tokenizer.slice_from(start_pos));
+                    return tokenizer.slice_from(start_pos).into();
                 }
                 tokenizer.advance(1);
             }
@@ -744,10 +748,8 @@ fn consume_name<'a>(tokenizer: &mut Tokenizer<'a>) -> Cow<'a, str> {
             }
         }
     }
-    Owned(
-        
-        unsafe { from_utf8_release_unchecked(value_bytes) }
-    )
+    
+    unsafe { from_utf8_release_unchecked(value_bytes) }.into()
 }
 
 fn byte_to_hex_digit(b: u8) -> Option<u32> {
@@ -858,30 +860,35 @@ fn consume_numeric<'a>(tokenizer: &mut Tokenizer<'a>) -> Token<'a> {
 
     if !tokenizer.is_eof() && tokenizer.next_byte_unchecked() == b'%' {
         tokenizer.advance(1);
-        return Percentage(PercentageValue {
+        return Percentage {
             unit_value: (value / 100.) as f32,
             int_value: int_value,
             has_sign: has_sign,
-        })
+        }
     }
-    let value = NumericValue {
-        value: value as f32,
-        int_value: int_value,
-        has_sign: has_sign,
-    };
+    let value = value as f32;
     if is_ident_start(tokenizer) {
-        let name = consume_name(tokenizer);
+        let unit = consume_name(tokenizer);
         if tokenizer.viewport_percentages == SeenStatus::LookingForThem {
-            if name.eq_ignore_ascii_case("vh") ||
-               name.eq_ignore_ascii_case("vw") ||
-               name.eq_ignore_ascii_case("vmin") ||
-               name.eq_ignore_ascii_case("vmax") {
+            if unit.eq_ignore_ascii_case("vh") ||
+               unit.eq_ignore_ascii_case("vw") ||
+               unit.eq_ignore_ascii_case("vmin") ||
+               unit.eq_ignore_ascii_case("vmax") {
                    tokenizer.viewport_percentages = SeenStatus::SeenAtLeastOne;
            }
         }
-        Dimension(value, name)
+        Dimension {
+            value: value,
+            int_value: int_value,
+            has_sign: has_sign,
+            unit: unit,
+        }
     } else {
-        Number(value)
+        Number {
+            value: value,
+            int_value: int_value,
+            has_sign: has_sign,
+        }
     }
 }
 
@@ -903,7 +910,7 @@ fn consume_unquoted_url<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Token<'a>, 
             b'"' | b'\'' => { return Err(()) },  // Do not advance
             b')' => {
                 tokenizer.advance(offset + 1);
-                return Ok(UnquotedUrl(Borrowed("")));
+                return Ok(UnquotedUrl("".into()));
             }
             _ => {
                 tokenizer.advance(offset);
@@ -914,7 +921,7 @@ fn consume_unquoted_url<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Token<'a>, 
         }
     }
     tokenizer.position = tokenizer.input.len();
-    return Ok(UnquotedUrl(Borrowed("")));
+    return Ok(UnquotedUrl("".into()));
 
     fn consume_unquoted_url_internal<'a>(tokenizer: &mut Tokenizer<'a>) -> Token<'a> {
         
@@ -922,18 +929,18 @@ fn consume_unquoted_url<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Token<'a>, 
         let mut string_bytes: Vec<u8>;
         loop {
             if tokenizer.is_eof() {
-                return UnquotedUrl(Borrowed(tokenizer.slice_from(start_pos)))
+                return UnquotedUrl(tokenizer.slice_from(start_pos).into())
             }
             match_byte! { tokenizer.next_byte_unchecked(),
                 b' ' | b'\t' | b'\n' | b'\r' | b'\x0C' => {
                     let value = tokenizer.slice_from(start_pos);
                     tokenizer.advance(1);
-                    return consume_url_end(tokenizer, Borrowed(value))
+                    return consume_url_end(tokenizer, value.into())
                 }
                 b')' => {
                     let value = tokenizer.slice_from(start_pos);
                     tokenizer.advance(1);
-                    return UnquotedUrl(Borrowed(value))
+                    return UnquotedUrl(value.into())
                 }
                 b'\x01'...b'\x08' | b'\x0B' | b'\x0E'...b'\x1F' | b'\x7F'  // non-printable
                     | b'"' | b'\'' | b'(' => {
@@ -957,10 +964,11 @@ fn consume_unquoted_url<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Token<'a>, 
         while !tokenizer.is_eof() {
             match_byte! { tokenizer.consume_byte(),
                 b' ' | b'\t' | b'\n' | b'\r' | b'\x0C' => {
-                    return consume_url_end(tokenizer, Owned(
+                    return consume_url_end(
+                        tokenizer,
                         // string_bytes is well-formed UTF-8, see other comments.
-                        unsafe { from_utf8_release_unchecked(string_bytes) }
-                    ))
+                        unsafe { from_utf8_release_unchecked(string_bytes) }.into()
+                    )
                 }
                 b')' => {
                     break;
@@ -985,13 +993,13 @@ fn consume_unquoted_url<'a>(tokenizer: &mut Tokenizer<'a>) -> Result<Token<'a>, 
                 b => { string_bytes.push(b) }
             }
         }
-        UnquotedUrl(Owned(
+        UnquotedUrl(
             
-            unsafe { from_utf8_release_unchecked(string_bytes) }
-        ))
+            unsafe { from_utf8_release_unchecked(string_bytes) }.into()
+        )
     }
 
-    fn consume_url_end<'a>(tokenizer: &mut Tokenizer<'a>, string: Cow<'a, str>) -> Token<'a> {
+    fn consume_url_end<'a>(tokenizer: &mut Tokenizer<'a>, string: CompactCowStr<'a>) -> Token<'a> {
         while !tokenizer.is_eof() {
             match_byte! { tokenizer.consume_byte(),
                 b' ' | b'\t' | b'\n' | b'\r' | b'\x0C' => {},

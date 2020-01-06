@@ -2,11 +2,11 @@
 
 
 
+use compact_cow_str::CompactCowStr;
 use std::ops::Range;
 use std::ascii::AsciiExt;
 use std::ops::BitOr;
-use std::borrow::Cow;
-use tokenizer::{self, Token, NumericValue, PercentageValue, Tokenizer, SourceLocation};
+use tokenizer::{self, Token, Tokenizer, SourceLocation};
 
 
 
@@ -440,7 +440,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
 
     
     #[inline]
-    pub fn expect_ident(&mut self) -> Result<Cow<'i, str>, BasicParseError<'i>> {
+    pub fn expect_ident(&mut self) -> Result<CompactCowStr<'i>, BasicParseError<'i>> {
         match try!(self.next()) {
             Token::Ident(value) => Ok(value),
             t => Err(BasicParseError::UnexpectedToken(t))
@@ -458,7 +458,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
 
     
     #[inline]
-    pub fn expect_string(&mut self) -> Result<Cow<'i, str>, BasicParseError<'i>> {
+    pub fn expect_string(&mut self) -> Result<CompactCowStr<'i>, BasicParseError<'i>> {
         match try!(self.next()) {
             Token::QuotedString(value) => Ok(value),
             t => Err(BasicParseError::UnexpectedToken(t))
@@ -467,7 +467,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
 
     
     #[inline]
-    pub fn expect_ident_or_string(&mut self) -> Result<Cow<'i, str>, BasicParseError<'i>> {
+    pub fn expect_ident_or_string(&mut self) -> Result<CompactCowStr<'i>, BasicParseError<'i>> {
         match try!(self.next()) {
             Token::Ident(value) => Ok(value),
             Token::QuotedString(value) => Ok(value),
@@ -477,7 +477,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
 
     
     #[inline]
-    pub fn expect_url(&mut self) -> Result<Cow<'i, str>, BasicParseError<'i>> {
+    pub fn expect_url(&mut self) -> Result<CompactCowStr<'i>, BasicParseError<'i>> {
         match try!(self.next()) {
             Token::UnquotedUrl(value) => Ok(value),
             Token::Function(ref name) if name.eq_ignore_ascii_case("url") => {
@@ -491,7 +491,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
 
     
     #[inline]
-    pub fn expect_url_or_string(&mut self) -> Result<Cow<'i, str>, BasicParseError<'i>> {
+    pub fn expect_url_or_string(&mut self) -> Result<CompactCowStr<'i>, BasicParseError<'i>> {
         match try!(self.next()) {
             Token::UnquotedUrl(value) => Ok(value),
             Token::QuotedString(value) => Ok(value),
@@ -507,7 +507,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
     #[inline]
     pub fn expect_number(&mut self) -> Result<f32, BasicParseError<'i>> {
         match try!(self.next()) {
-            Token::Number(NumericValue { value, .. }) => Ok(value),
+            Token::Number { value, .. } => Ok(value),
             t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
@@ -517,7 +517,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
     pub fn expect_integer(&mut self) -> Result<i32, BasicParseError<'i>> {
         let token = try!(self.next());
         match token {
-            Token::Number(NumericValue { int_value: Some(int_value), .. }) => {
+            Token::Number { int_value: Some(int_value), .. } => {
                 Ok(int_value)
             }
             t => Err(BasicParseError::UnexpectedToken(t))
@@ -529,7 +529,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
     #[inline]
     pub fn expect_percentage(&mut self) -> Result<f32, BasicParseError<'i>> {
         match try!(self.next()) {
-            Token::Percentage(PercentageValue { unit_value, .. }) => Ok(unit_value),
+            Token::Percentage { unit_value, .. } => Ok(unit_value),
             t => Err(BasicParseError::UnexpectedToken(t))
         }
     }
@@ -607,7 +607,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
     
     
     #[inline]
-    pub fn expect_function(&mut self) -> Result<Cow<'i, str>, BasicParseError<'i>> {
+    pub fn expect_function(&mut self) -> Result<CompactCowStr<'i>, BasicParseError<'i>> {
         match try!(self.next()) {
             Token::Function(name) => Ok(name),
             t => Err(BasicParseError::UnexpectedToken(t))
