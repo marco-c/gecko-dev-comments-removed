@@ -478,7 +478,7 @@ HasStableTSC()
 
   
   __cpuid(regs, 0x80000000);
-  if (regs[0] < 0x80000007) {
+  if ((unsigned int)regs[0] < 0x80000007) {
     
     
     return false;
