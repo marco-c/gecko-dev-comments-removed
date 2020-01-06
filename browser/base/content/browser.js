@@ -1498,9 +1498,6 @@ var gBrowserInit = {
       }
     }
 
-    
-    setTimeout(function() { SafeBrowsing.init(); }, 2000);
-
     Services.obs.addObserver(gIdentityHandler, "perm-changed");
     Services.obs.addObserver(gRemoteControl, "remote-active");
     Services.obs.addObserver(gSessionHistoryObserver, "browser:purge-session-history");
