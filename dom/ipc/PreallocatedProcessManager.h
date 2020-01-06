@@ -33,14 +33,31 @@ class PreallocatedProcessManager final
   typedef mozilla::dom::ContentParent ContentParent;
 
 public:
+  
+
+
+
+
+
+
+
+  static void AllocateAfterDelay();
 
   
 
 
 
 
-  static void AddBlocker(ContentParent* aParent);
-  static void RemoveBlocker(ContentParent* aParent);
+
+  static void AllocateOnIdle();
+
+  
+
+
+
+
+
+  static void AllocateNow();
 
   
 
