@@ -489,7 +489,7 @@ server.TCPConnection = class {
     
     let msg;
     try {
-      msg = Message.fromMsg(data);
+      msg = Message.fromPacket(data);
       msg.origin = MessageOrigin.Client;
       this.log_(msg);
     } catch (e) {
@@ -649,7 +649,7 @@ server.TCPConnection = class {
 
   sendMessage(msg) {
     this.log_(msg);
-    let payload = msg.toMsg();
+    let payload = msg.toPacket();
     this.sendRaw(payload);
   }
 

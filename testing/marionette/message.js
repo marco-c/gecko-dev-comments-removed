@@ -8,6 +8,7 @@ const {utils: Cu} = Components;
 
 Cu.import("chrome://marionette/content/assert.js");
 Cu.import("chrome://marionette/content/error.js");
+const {truncate} = Cu.import("chrome://marionette/content/format.js", {});
 
 this.EXPORTED_SYMBOLS = [
   "Command",
@@ -15,6 +16,52 @@ this.EXPORTED_SYMBOLS = [
   "MessageOrigin",
   "Response",
 ];
+
+
+class Message {
+  
+
+
+
+  constructor(messageID) {
+    this.id = assert.integer(messageID);
+  }
+
+  toString() {
+    return truncate`${this.toPacket()}`;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static fromPacket(data) {
+    const [type] = data;
+
+    switch (type) {
+      case Command.TYPE:
+        return Command.fromPacket(data);
+
+      case Response.TYPE:
+        return Response.fromPacket(data);
+
+      default:
+        throw new TypeError(
+            "Unrecognised message type in packet: " + JSON.stringify(data));
+    }
+  }
+}
 
 
 
@@ -36,36 +83,6 @@ const MessageOrigin = {
 
 
 
-this.Message = {};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Message.fromMsg = function(data) {
-  switch (data[0]) {
-    case Command.TYPE:
-      return Command.fromMsg(data);
-
-    case Response.TYPE:
-      return Response.fromMsg(data);
-
-    default:
-      throw new TypeError(
-          "Unrecognised message type in packet: " + JSON.stringify(data));
-  }
-};
 
 
 
@@ -103,15 +120,10 @@ Message.fromMsg = function(data) {
 
 
 
+class Command extends Message {
+  constructor(messageID, name, params = {}) {
+    super(messageID);
 
-
-
-
-
-
-class Command {
-  constructor(msgID, name, params = {}) {
-    this.id = assert.integer(msgID);
     this.name = assert.string(name);
     this.parameters = assert.object(params);
 
@@ -138,18 +150,36 @@ class Command {
     }
   }
 
-  toMsg() {
-    return [Command.TYPE, this.id, this.name, this.parameters];
+  
+
+
+
+
+
+  toPacket() {
+    return [
+      Command.TYPE,
+      this.id,
+      this.name,
+      this.parameters,
+    ];
   }
 
-  toString() {
-    return "Command {id: " + this.id + ", " +
-        "name: " + JSON.stringify(this.name) + ", " +
-        "parameters: " + JSON.stringify(this.parameters) + "}";
-  }
+  
 
-  static fromMsg(msg) {
-    let [type, msgID, name, params] = msg;
+
+
+
+
+
+
+
+
+
+
+
+  static fromPacket(payload) {
+    let [type, msgID, name, params] = payload;
     assert.that(n => n === Command.TYPE)(type);
 
     
@@ -160,7 +190,6 @@ class Command {
     return new Command(msgID, name, params);
   }
 }
-
 Command.TYPE = 0;
 
 const validator = {
@@ -226,9 +255,10 @@ const ResponseBody = () => new Proxy({}, validator);
 
 
 
-class Response {
-  constructor(msgID, respHandler = () => {}) {
-    this.id = assert.integer(msgID);
+class Response extends Message {
+  constructor(messageID, respHandler = () => {}) {
+    super(messageID);
+
     this.respHandler_ = assert.callable(respHandler);
 
     this.error = null;
@@ -289,18 +319,36 @@ class Response {
     }
   }
 
-  toMsg() {
-    return [Response.TYPE, this.id, this.error, this.body];
+  
+
+
+
+
+
+  toPacket() {
+    return [
+      Response.TYPE,
+      this.id,
+      this.error,
+      this.body,
+    ];
   }
 
-  toString() {
-    return "Response {id: " + this.id + ", " +
-        "error: " + JSON.stringify(this.error) + ", " +
-        "body: " + JSON.stringify(this.body) + "}";
-  }
+  
 
-  static fromMsg(msg) {
-    let [type, msgID, err, body] = msg;
+
+
+
+
+
+
+
+
+
+
+
+  static fromPacket(payload) {
+    let [type, msgID, err, body] = payload;
     assert.that(n => n === Response.TYPE)(type);
 
     let resp = new Response(msgID);
@@ -310,5 +358,8 @@ class Response {
     return resp;
   }
 }
-
 Response.TYPE = 1;
+
+this.Message = Message;
+this.Command = Command;
+this.Response = Response;
