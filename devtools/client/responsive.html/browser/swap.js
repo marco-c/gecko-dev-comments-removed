@@ -31,7 +31,8 @@ const { tunnelToInnerBrowser } = require("./tunnel");
 
 
 function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
-  let gBrowser = tab.ownerDocument.defaultView.gBrowser;
+  let browserWindow = tab.ownerGlobal;
+  let gBrowser = browserWindow.gBrowser;
   let innerBrowser;
   let tunnel;
 
@@ -41,12 +42,32 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
   
   
   let dispatchDevToolsBrowserSwap = (from, to) => {
-    let CustomEvent = tab.ownerDocument.defaultView.CustomEvent;
+    let CustomEvent = browserWindow.CustomEvent;
     let event = new CustomEvent("DevTools:BrowserSwap", {
       detail: to,
       bubbles: true,
     });
     from.dispatchEvent(event);
+  };
+
+  
+  
+  
+  let addTabSilently = (uri, options) => {
+    browserWindow.addEventListener("TabOpen", event => {
+      event.stopImmediatePropagation();
+    }, { capture: true, once: true });
+    return gBrowser.addTab(uri, options);
+  };
+
+  
+  
+  
+  let swapBrowsersAndCloseOtherSilently = (ourTab, otherTab) => {
+    browserWindow.addEventListener("TabClose", event => {
+      event.stopImmediatePropagation();
+    }, { capture: true, once: true });
+    gBrowser.swapBrowsersAndCloseOther(ourTab, otherTab);
   };
 
   return {
@@ -62,7 +83,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       freezeNavigationState(tab);
 
       
-      let containerTab = gBrowser.addTab("about:blank", {
+      let containerTab = addTabSilently("about:blank", {
         skipAnimation: true,
         forceNotRemote: true,
       });
@@ -128,7 +149,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       
-      gBrowser.swapBrowsersAndCloseOther(tab, containerTab);
+      swapBrowsersAndCloseOtherSilently(tab, containerTab);
 
       
       
@@ -166,7 +187,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       tunnel = null;
 
       
-      let contentTab = gBrowser.addTab("about:blank", {
+      let contentTab = addTabSilently("about:blank", {
         skipAnimation: true,
       });
       gBrowser.hideTab(contentTab);
@@ -199,7 +220,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       dispatchDevToolsBrowserSwap(contentBrowser, tab.linkedBrowser);
-      gBrowser.swapBrowsersAndCloseOther(tab, contentTab);
+      swapBrowsersAndCloseOtherSilently(tab, contentTab);
 
       
       
@@ -213,6 +234,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       }
 
       gBrowser = null;
+      browserWindow = null;
 
       
       
