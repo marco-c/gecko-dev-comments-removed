@@ -273,6 +273,12 @@ toolbar:-moz-lwtheme {
   }
 }
 
+#TabsToolbar:not([collapsed="true"]) + #nav-bar {
+  
+
+  position: relative;
+}
+
 #PersonalToolbar {
   padding: 0 4px 4px;
 }
