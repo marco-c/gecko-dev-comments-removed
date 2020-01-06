@@ -7,180 +7,76 @@
 
 
 
-const ENABLE_HISTORY_PREF = "places.history.enabled";
+const URIs = ["about:license", "about:"];
 
 var gLibrary = null;
-var gTests = [];
-var gCurrentTest = null;
 
-
-var gTabsListener = {
-  _loadedURIs: [],
-  _openTabsCount: 0,
-
-  handleEvent(aEvent) {
-    if (aEvent.type != "TabOpen")
-      return;
-
-    if (++this._openTabsCount == gCurrentTest.URIs.length) {
-      is(gBrowser.tabs.length, gCurrentTest.URIs.length + 1,
-         "We have opened " + gCurrentTest.URIs.length + " new tab(s)");
-    }
-
-    var tab = aEvent.target;
-    is(tab.ownerGlobal, window,
-       "Tab has been opened in current browser window");
-  },
-
-  onLocationChange(aBrowser, aWebProgress, aRequest, aLocationURI,
-                             aFlags) {
-    var spec = aLocationURI.spec;
-    ok(true, spec);
-    
-    
-    
-    if (spec == "about:blank" || this._loadedURIs.includes(spec))
-      return;
-
-    ok(gCurrentTest.URIs.includes(spec),
-       "Opened URI found in list: " + spec);
-
-    if (gCurrentTest.URIs.includes(spec))
-      this._loadedURIs.push(spec);
-
-    if (this._loadedURIs.length == gCurrentTest.URIs.length) {
-      
-
-      
-      this._loadedURIs.length = 0;
-
-      this._openTabsCount = 0;
-
-      executeSoon(function() {
-        
-        while (gBrowser.tabs.length > 1)
-          gBrowser.removeCurrentTab();
-
-        
-        waitForFocus(gCurrentTest.finish, gBrowser.ownerGlobal);
-      });
-    }
-  }
-};
-
-
-
-
-gTests.push({
-  desc: "Open a folder in tabs.",
-  URIs: ["about:buildconfig", "about:"],
-  _folderId: -1,
-
-  setup() {
-    var bs = PlacesUtils.bookmarks;
-    
-    var folderId = bs.createFolder(bs.unfiledBookmarksFolder,
-                                   "Folder",
-                                   bs.DEFAULT_INDEX);
-    this._folderId = folderId;
-
-    
-    this.URIs.forEach(function(aURI) {
-      bs.insertBookmark(folderId,
-                        PlacesUtils._uri(aURI),
-                        bs.DEFAULT_INDEX,
-                        "Title");
-    });
-
-    
-    gLibrary.PlacesOrganizer.selectLeftPaneQuery("UnfiledBookmarks");
-    isnot(gLibrary.PlacesOrganizer._places.selectedNode, null,
-          "We correctly have selection in the Library left pane");
-    
-    var folderNode = gLibrary.ContentTree.view.view.nodeForTreeIndex(0);
-    is(folderNode.title, "Folder", "Found folder in the right pane");
-  },
-
-  finish() {
-    setTimeout(runNextTest, 0);
-  },
-
-  cleanup() {
-    PlacesUtils.bookmarks.removeItem(this._folderId);
-  }
-});
-
-
-
-function test() {
-  waitForExplicitFinish();
+add_task(async function test_setup() {
+  
+  await SpecialPowers.pushPrefEnv({set: [
+    ["places.history.enabled", false]
+  ]});
 
   
-  ok(PlacesUtils, "PlacesUtils in context");
-  ok(PlacesUIUtils, "PlacesUIUtils in context");
+  gLibrary = await promiseLibrary();
 
-  
-  gBrowser.tabContainer.addEventListener("TabOpen", gTabsListener);
-  gBrowser.addTabsProgressListener(gTabsListener);
-
-  
-  gPrefService.setBoolPref(ENABLE_HISTORY_PREF, false);
-
-  
-  openLibrary(function(library) {
-    gLibrary = library;
-    
-    runNextTest();
-  });
-}
-
-function runNextTest() {
-  
-  if (gCurrentTest)
-    gCurrentTest.cleanup();
-
-  if (gTests.length > 0) {
-    
-    gCurrentTest = gTests.shift();
-    info("Start of test: " + gCurrentTest.desc);
-    
-    
-    gCurrentTest.setup();
-
-    gLibrary.focus();
-    waitForFocus(function() {
-      
-      gLibrary.PlacesOrganizer.selectLeftPaneQuery("UnfiledBookmarks");
-      gLibrary.PlacesOrganizer._places.selectedNode.containerOpen = true;
-      
-      let bookmarkedNode = gLibrary.PlacesOrganizer._places.selectedNode.getChild(0);
-      mouseEventOnCell(gLibrary.PlacesOrganizer._places,
-        gLibrary.PlacesOrganizer._places.view.treeIndexForNode(bookmarkedNode),
-        0,
-        { button: 1 });
-    }, gLibrary);
-  } else {
-    
-
+  registerCleanupFunction(async () => {
     
     gLibrary.PlacesOrganizer.selectLeftPaneQuery("UnfiledBookmarks");
     gLibrary.PlacesOrganizer._places.selectedNode.containerOpen = false;
 
-    
-    gLibrary.close();
+    await PlacesUtils.bookmarks.eraseEverything();
 
     
-    gBrowser.tabContainer.removeEventListener("TabOpen", gTabsListener);
-    gBrowser.removeTabsProgressListener(gTabsListener);
+    await promiseLibraryClosed(gLibrary);
+  });
+});
 
-    
-    try {
-      gPrefService.clearUserPref(ENABLE_HISTORY_PREF);
-    } catch (ex) {}
+add_task(async function test_open_folder_in_tabs() {
+  let children = URIs.map(url => {
+    return {
+      title: "Title",
+      url
+    }
+  });
 
-    finish();
-  }
-}
+  
+  await PlacesUtils.bookmarks.insertTree({
+    guid: PlacesUtils.bookmarks.unfiledGuid,
+    children: [{
+      title: "Folder",
+      type: PlacesUtils.bookmarks.TYPE_FOLDER,
+      children,
+    }],
+  });
+
+  
+  gLibrary.PlacesOrganizer.selectLeftPaneQuery("UnfiledBookmarks");
+  Assert.notEqual(gLibrary.PlacesOrganizer._places.selectedNode, null,
+        "We correctly have selection in the Library left pane");
+
+  
+  var folderNode = gLibrary.ContentTree.view.view.nodeForTreeIndex(0);
+  Assert.equal(folderNode.title, "Folder", "Found folder in the right pane");
+
+  gLibrary.PlacesOrganizer._places.selectedNode.containerOpen = true;
+
+  
+  let promiseLoaded = Promise.all(URIs.map(uri =>
+    BrowserTestUtils.waitForNewTab(gBrowser, uri, false, true)));
+
+  let bookmarkedNode = gLibrary.PlacesOrganizer._places.selectedNode.getChild(0);
+  mouseEventOnCell(gLibrary.PlacesOrganizer._places,
+    gLibrary.PlacesOrganizer._places.view.treeIndexForNode(bookmarkedNode),
+    0,
+    { button: 1 });
+
+  let tabs = await promiseLoaded;
+
+  Assert.ok(true, "Expected tabs were loaded");
+
+  await Promise.all(tabs.map(tab => BrowserTestUtils.removeTab(tab)));
+});
 
 function mouseEventOnCell(aTree, aRowIndex, aColumnIndex, aEventDetails) {
   var selection = aTree.view.selection;
