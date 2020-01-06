@@ -14,6 +14,7 @@
 #include "gfxFontFeatures.h"
 #include "gfxFontVariations.h"
 #include "mozilla/RefPtr.h"             
+#include "nsColor.h"                    
 #include "nsCoord.h"                    
 #include "nsStringFwd.h"                
 #include "nsString.h"               
@@ -72,6 +73,10 @@ struct nsFont {
 
   
   uint8_t smoothing = NS_FONT_SMOOTHING_AUTO;
+
+  
+  
+  nscolor fontSmoothingBackgroundColor = NS_RGBA(0,0,0,0);
 
   
   uint16_t weight = NS_FONT_WEIGHT_NORMAL;

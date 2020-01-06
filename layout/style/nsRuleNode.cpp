@@ -3768,6 +3768,22 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, GeckoStyleContext* aContext,
            defaultVariableFont->smoothing);
 
   
+  const nsCSSValue* fsbColorValue =
+    aRuleData->ValueForFontSmoothingBackgroundColor();
+  if (eCSSUnit_Initial == fsbColorValue->GetUnit()) {
+    aFont->mFont.fontSmoothingBackgroundColor = NS_RGBA(0, 0, 0, 0);
+  } else if (eCSSUnit_Inherit == fsbColorValue->GetUnit() ||
+             eCSSUnit_Unset == fsbColorValue->GetUnit()) {
+    aConditions.SetUncacheable();
+    aFont->mFont.fontSmoothingBackgroundColor =
+      aParentFont->mFont.fontSmoothingBackgroundColor;
+  } else {
+    SetColor(*fsbColorValue, aParentFont->mFont.fontSmoothingBackgroundColor,
+             aPresContext, aContext, aFont->mFont.fontSmoothingBackgroundColor,
+             aConditions);
+  }
+
+  
   if (aFont->mMathVariant != NS_MATHML_MATHVARIANT_NONE) {
     
     aFont->mFont.style = NS_FONT_STYLE_NORMAL;
@@ -5325,18 +5341,6 @@ nsRuleNode::ComputeUserInterfaceData(void* aStartStruct,
                                  StyleComplexColor::Auto(),
                                  mPresContext,
                                  ui->mCaretColor, conditions);
-
-  
-  const nsCSSValue* fsbColorValue =
-    aRuleData->ValueForFontSmoothingBackgroundColor();
-  if (eCSSUnit_Initial == fsbColorValue->GetUnit() ||
-      eCSSUnit_Unset == fsbColorValue->GetUnit()) {
-    ui->mFontSmoothingBackgroundColor = NS_RGBA(0, 0, 0, 0);
-  } else {
-    SetColor(*fsbColorValue, parentUI->mFontSmoothingBackgroundColor,
-             mPresContext, aContext, ui->mFontSmoothingBackgroundColor,
-             conditions);
-  }
 
   COMPUTE_END_INHERITED(UserInterface, ui)
 }
