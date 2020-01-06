@@ -81,6 +81,18 @@ public:
     : mDidSelfCopy(false)
   { }
 
+  struct DrawIterator {
+    friend class RotatedBuffer;
+    DrawIterator()
+      : mCount(0)
+    {}
+
+    nsIntRegion mDrawRegion;
+
+  private:
+    uint32_t mCount;
+  };
+
   
 
 
@@ -89,12 +101,8 @@ public:
     BUFFER_WHITE, 
     BUFFER_BOTH 
   };
-
   
-
-
-
-
+  
   void DrawBufferWithRotation(gfx::DrawTarget* aTarget, ContextSource aSource,
                               float aOpacity = 1.0,
                               gfx::CompositionOp aOperator = gfx::CompositionOp::OP_OVER,
@@ -113,10 +121,6 @@ public:
               gfx::SourceSurface* aMask,
               const gfx::Matrix* aMaskTransform);
 
-  
-
-
-
   void UpdateDestinationFrom(const RotatedBuffer& aSource,
                              const nsIntRegion& aUpdateRegion);
 
@@ -124,17 +128,40 @@ public:
 
 
 
-  struct DrawIterator {
-    friend class RotatedBuffer;
-    DrawIterator()
-      : mCount(0)
-    {}
 
-    nsIntRegion mDrawRegion;
+  bool AdjustTo(const gfx::IntRect& aDestBufferRect,
+                const gfx::IntRect& aDrawBounds,
+                bool aCanHaveRotation,
+                bool aCanDrawRotated);
 
-  private:
-    uint32_t mCount;
-  };
+  
+
+
+
+
+  const gfx::IntRect& BufferRect() const { return mBufferRect; }
+  const gfx::IntPoint& BufferRotation() const { return mBufferRotation; }
+
+  void SetBufferRect(const gfx::IntRect& aBufferRect) {
+    mBufferRect = aBufferRect;
+  }
+  void SetBufferRotation(const gfx::IntPoint& aBufferRotation) {
+    mBufferRotation = aBufferRotation;
+  }
+
+  bool DidSelfCopy() const { return mDidSelfCopy; }
+  void ClearDidSelfCopy() { mDidSelfCopy = false; }
+
+  virtual gfx::SurfaceFormat GetFormat() const = 0;
+
+  virtual bool HaveBuffer() const = 0;
+  virtual bool HaveBufferOnWhite() const = 0;
+
+  virtual bool IsLocked() = 0;
+  virtual bool Lock(OpenMode aMode) = 0;
+  virtual void Unlock() = 0;
+
+  virtual already_AddRefed<gfx::SourceSurface> GetSourceSurface(ContextSource aSource) const = 0;
 
   
 
@@ -156,63 +183,6 @@ public:
                                     DrawIterator* aIter,
                                     bool aSetTransform = true,
                                     gfx::Matrix* aOutTransform = nullptr);
-
-  
-
-
-
-
-  bool AdjustTo(const gfx::IntRect& aDestBufferRect,
-                const gfx::IntRect& aDrawBounds,
-                bool aCanHaveRotation,
-                bool aCanDrawRotated);
-
-  
-
-
-
-
-  const gfx::IntRect& BufferRect() const { return mBufferRect; }
-  const gfx::IntPoint& BufferRotation() const { return mBufferRotation; }
-
-  
-
-
-
-  void SetBufferRect(const gfx::IntRect& aBufferRect) {
-    mBufferRect = aBufferRect;
-  }
-
-  
-
-
-
-  void SetBufferRotation(const gfx::IntPoint& aBufferRotation) {
-    mBufferRotation = aBufferRotation;
-  }
-
-  
-
-
-
-
-  bool DidSelfCopy() const { return mDidSelfCopy; }
-
-  
-
-
-  void ClearDidSelfCopy() { mDidSelfCopy = false; }
-
-  virtual bool IsLocked() = 0;
-  virtual bool Lock(OpenMode aMode) = 0;
-  virtual void Unlock() = 0;
-
-  virtual bool HaveBuffer() const = 0;
-  virtual bool HaveBufferOnWhite() const = 0;
-
-  virtual gfx::SurfaceFormat GetFormat() const = 0;
-
-  virtual already_AddRefed<gfx::SourceSurface> GetSourceSurface(ContextSource aSource) const = 0;
 
   virtual gfx::DrawTarget* GetDTBuffer() const = 0;
   virtual gfx::DrawTarget* GetDTBufferOnWhite() const = 0;
@@ -243,7 +213,7 @@ protected:
                           const gfx::Matrix* aMaskTransform) const;
 
   
-  gfx::IntRect  mBufferRect;
+  gfx::IntRect             mBufferRect;
   
 
 
@@ -254,12 +224,10 @@ protected:
 
 
 
-  gfx::IntPoint mBufferRotation;
+  gfx::IntPoint            mBufferRotation;
   
-
-
-
-  bool          mDidSelfCopy;
+  
+  bool                  mDidSelfCopy;
 };
 
 class RemoteRotatedBuffer : public RotatedBuffer
@@ -277,21 +245,22 @@ public:
   virtual bool Lock(OpenMode aMode) override;
   virtual void Unlock() override;
 
-  virtual bool HaveBuffer() const override { return !!mClient; }
-  virtual bool HaveBufferOnWhite() const override { return !!mClientOnWhite; }
-
-  virtual gfx::SurfaceFormat GetFormat() const override;
-
-  virtual already_AddRefed<gfx::SourceSurface> GetSourceSurface(ContextSource aSource) const override;
-
-  virtual gfx::DrawTarget* GetDTBuffer() const override;
-  virtual gfx::DrawTarget* GetDTBufferOnWhite() const override;
+  void SyncWithObject(SyncObjectClient* aSyncObject);
+  void Clear();
 
   TextureClient* GetClient() const { return mClient; }
   TextureClient* GetClientOnWhite() const { return mClientOnWhite; }
 
-  void SyncWithObject(SyncObjectClient* aSyncObject);
-  void Clear();
+  virtual gfx::SurfaceFormat GetFormat() const override;
+
+  virtual bool HaveBuffer() const override { return !!mClient; }
+  virtual bool HaveBufferOnWhite() const override { return !!mClientOnWhite; }
+
+  virtual already_AddRefed<gfx::SourceSurface> GetSourceSurface(ContextSource aSource) const override;
+
+protected:
+  virtual gfx::DrawTarget* GetDTBuffer() const override;
+  virtual gfx::DrawTarget* GetDTBufferOnWhite() const override;
 
 private:
   RefPtr<TextureClient> mClient;
@@ -316,13 +285,14 @@ public:
   virtual bool Lock(OpenMode aMode) override { return true; }
   virtual void Unlock() override {}
 
+  virtual gfx::SurfaceFormat GetFormat() const override;
+
   virtual bool HaveBuffer() const override { return !!mTarget; }
   virtual bool HaveBufferOnWhite() const override { return !!mTargetOnWhite; }
 
-  virtual gfx::SurfaceFormat GetFormat() const override;
-
   virtual already_AddRefed<gfx::SourceSurface> GetSourceSurface(ContextSource aSource) const override;
 
+protected:
   virtual gfx::DrawTarget* GetDTBuffer() const override;
   virtual gfx::DrawTarget* GetDTBufferOnWhite() const override;
 
@@ -353,6 +323,7 @@ public:
   virtual bool HaveBuffer() const { return !!mSource; }
   virtual bool HaveBufferOnWhite() const { return !!mSourceOnWhite; }
 
+protected:
   virtual gfx::DrawTarget* GetDTBuffer() const { return nullptr; }
   virtual gfx::DrawTarget* GetDTBufferOnWhite() const { return nullptr; }
 
