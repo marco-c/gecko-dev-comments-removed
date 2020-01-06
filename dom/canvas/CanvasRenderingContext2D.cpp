@@ -2901,9 +2901,7 @@ GetFontStyleForServo(Element* aElement, const nsAString& aFont,
   
   
   
-  Servo_DeclarationBlock_SerializeOneValue(declarations,
-                                           eCSSProperty_font,
-                                           &aOutUsedFont);
+  Servo_SerializeFontValueForCanvas(declarations, &aOutUsedFont);
 
   return sc.forget();
 }

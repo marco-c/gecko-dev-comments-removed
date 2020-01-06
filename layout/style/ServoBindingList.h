@@ -474,6 +474,11 @@ SERVO_BINDING_FUNC(Servo_StyleSet_GetBaseComputedValuesForElement,
                    mozilla::CSSPseudoElementType pseudo_type)
 
 
+SERVO_BINDING_FUNC(Servo_SerializeFontValueForCanvas, void,
+                   RawServoDeclarationBlockBorrowed declarations,
+                   nsAString* buffer)
+
+
 #define STYLE_STRUCT(name, checkdata_cb)                            \
   struct nsStyle##name;                                             \
   SERVO_BINDING_FUNC(Servo_GetStyle##name, const nsStyle##name*,  \
