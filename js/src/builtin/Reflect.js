@@ -127,10 +127,30 @@ function Reflect_getOwnPropertyDescriptor(target, propertyKey) {
 
 function Reflect_has(target, propertyKey) {
     
-    if (!IsObject(target))
+    if (!IsObject(target)) {
         ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT_ARG, "`target`", "Reflect.has",
                        ToSource(target));
+    }
 
     
     return propertyKey in target;
+}
+
+
+
+function Reflect_get(target, propertyKey) {
+    
+    if (!IsObject(target)) {
+        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT_ARG, "`target`", "Reflect.get",
+                       ToSource(target));
+    }
+
+    
+    if (arguments.length > 2) {
+        
+        return getPropertySuper(target, propertyKey, arguments[2]);
+    }
+
+    
+    return target[propertyKey];
 }
