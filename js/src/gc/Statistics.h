@@ -317,6 +317,7 @@ struct Statistics
     
     uint64_t startingMinorGCNumber;
     uint64_t startingMajorGCNumber;
+    uint64_t startingSliceNumber;
 
     
     mutable TimeDuration maxPauseInInterval;
