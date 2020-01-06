@@ -42,7 +42,11 @@ class BrowserAction {
 
 
   onClicked() {
-    this.emit("click", tabTracker.activeTab);
+    const tab = tabTracker.activeTab;
+
+    this.tabManager.addActiveTabPermission(tab);
+
+    this.emit("click", tab);
   }
 
   
