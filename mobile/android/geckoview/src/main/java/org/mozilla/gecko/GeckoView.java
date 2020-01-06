@@ -12,6 +12,7 @@ import org.mozilla.gecko.gfx.LayerView;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.graphics.Region;
 import android.os.Handler;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -71,6 +72,8 @@ public class GeckoView extends LayerView {
 
     private class Display implements GeckoDisplay,
                                      SurfaceHolder.Callback {
+        private final int[] mOrigin = new int[2];
+
         private Listener mListener;
         private boolean mValid;
 
@@ -93,6 +96,7 @@ public class GeckoView extends LayerView {
             }
 
             
+            onGlobalLayout();
             if (GeckoView.this.mSurfaceView != null) {
                 final SurfaceHolder holder = GeckoView.this.mSurfaceView.getHolder();
                 final Rect frame = holder.getSurfaceFrame();
@@ -119,6 +123,16 @@ public class GeckoView extends LayerView {
                 mListener.surfaceDestroyed();
             }
             mValid = false;
+        }
+
+        public void onGlobalLayout() {
+            if (mListener == null) {
+                return;
+            }
+            if (GeckoView.this.mSurfaceView != null) {
+                GeckoView.this.mSurfaceView.getLocationOnScreen(mOrigin);
+                mListener.screenOriginChanged(mOrigin[0], mOrigin[1]);
+            }
         }
     }
 
@@ -218,6 +232,17 @@ public class GeckoView extends LayerView {
         if (mSession != null && mSession.isOpen()) {
             mSession.closeWindow();
         }
+    }
+
+    @Override
+    public boolean gatherTransparentRegion(final Region region) {
+        
+        
+        
+        if (mSurfaceView != null) {
+            mDisplay.onGlobalLayout();
+        }
+        return super.gatherTransparentRegion(region);
     }
 
     @Override

@@ -38,6 +38,15 @@ public interface GeckoDisplay {
 
 
         void surfaceDestroyed();
+
+        
+
+
+
+
+
+
+        void screenOriginChanged(int left, int top);
     }
 
     
