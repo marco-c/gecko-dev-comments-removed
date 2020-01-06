@@ -441,27 +441,22 @@ enum class ShapedTextFlags : uint16_t {
     
 
 
-
-    TEXT_IS_PERSISTENT           = 0x0001,
-    
-
-
-    TEXT_IS_RTL                  = 0x0002,
+    TEXT_IS_RTL                  = 0x0001,
     
 
 
 
-    TEXT_ENABLE_SPACING          = 0x0004,
+    TEXT_ENABLE_SPACING          = 0x0002,
     
 
 
 
-    TEXT_IS_8BIT                 = 0x0008,
+    TEXT_IS_8BIT                 = 0x0004,
     
 
 
 
-    TEXT_ENABLE_HYPHEN_BREAKS    = 0x0010,
+    TEXT_ENABLE_HYPHEN_BREAKS    = 0x0008,
     
 
 
@@ -469,41 +464,45 @@ enum class ShapedTextFlags : uint16_t {
 
 
 
-    TEXT_NEED_BOUNDING_BOX       = 0x0020,
+    TEXT_NEED_BOUNDING_BOX       = 0x0010,
     
 
 
 
-    TEXT_DISABLE_OPTIONAL_LIGATURES = 0x0040,
-    
-
-
-
-
-    TEXT_OPTIMIZE_SPEED          = 0x0080,
-    
-
-
-
-    TEXT_HIDE_CONTROL_CHARACTERS = 0x0100,
-
+    TEXT_DISABLE_OPTIONAL_LIGATURES = 0x0020,
     
 
 
 
 
-    TEXT_TRAILING_ARABICCHAR     = 0x0200,
+    TEXT_OPTIMIZE_SPEED          = 0x0040,
+    
+
+
+
+    TEXT_HIDE_CONTROL_CHARACTERS = 0x0080,
+
     
 
 
 
 
-    TEXT_INCOMING_ARABICCHAR     = 0x0400,
+    TEXT_TRAILING_ARABICCHAR     = 0x0100,
+    
+
+
+
+
+    TEXT_INCOMING_ARABICCHAR     = 0x0200,
 
     
 
 
-    TEXT_USE_MATH_SCRIPT         = 0x0800,
+    TEXT_USE_MATH_SCRIPT         = 0x0400,
+
+    
+
+
 
     
 
