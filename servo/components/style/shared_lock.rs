@@ -13,6 +13,7 @@ use std::cell::UnsafeCell;
 use std::fmt;
 #[cfg(feature = "gecko")]
 use std::ptr;
+use stylesheets::Origin;
 
 
 
@@ -270,6 +271,14 @@ pub struct StylesheetGuards<'a> {
 }
 
 impl<'a> StylesheetGuards<'a> {
+    
+    pub fn for_origin(&self, origin: Origin) -> &SharedRwLockReadGuard<'a> {
+        match origin {
+            Origin::Author => &self.author,
+            _ => &self.ua_or_user,
+        }
+    }
+
     
     pub fn same(guard: &'a SharedRwLockReadGuard<'a>) -> Self {
         StylesheetGuards {

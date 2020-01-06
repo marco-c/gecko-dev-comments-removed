@@ -155,7 +155,6 @@ impl PerDocumentStyleDataImpl {
     {
         self.stylist.flush(
             &StylesheetGuards::same(guard),
-             None,
             document_element,
         )
     }
