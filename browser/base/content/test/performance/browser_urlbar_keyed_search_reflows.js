@@ -25,6 +25,7 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
       "_appendCurrentResult/<@chrome://global/content/bindings/autocomplete.xml",
     ],
     times: 18, 
+    minTimes: 12,
   },
 
   {
