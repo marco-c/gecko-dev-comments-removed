@@ -1104,6 +1104,8 @@ Services.prefs.setBoolPref(PREF_XPI_SIGNATURES_REQUIRED, true);
 
 Services.prefs.setBoolPref(PREF_ALLOW_NON_MPC, true);
 
+Services.prefs.setBoolPref("extensions.legacy.enabled", true);
+
 
 
 function copyBlocklistToProfile(blocklistFile) {

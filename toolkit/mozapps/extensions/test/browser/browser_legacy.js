@@ -2,96 +2,181 @@
 add_task(async function() {
   const INFO_URL = Services.urlFormatter.formatURLPref("app.support.baseURL") + "webextensions";
 
-  const NAMES = {
-    fullTheme: "Full Theme",
-    newTheme: "New LWT",
-    legacy: "Legacy Extension",
-    webextension: "WebExtension",
-    dictionary: "Dictionary",
-    langpack: "Language Pack",
-  };
-  let addons = [
-    {
-      id: "full-theme@tests.mozilla.org",
-      name: NAMES.fullTheme,
-      type: "theme",
-      isWebExtension: false,
-    },
-    {
-      id: "new-theme@tests.mozilla.org",
-      name: NAMES.newTheme,
-      type: "theme",
-      isWebExtension: true,
-    },
-    {
-      id: "legacy@tests.mozilla.org",
-      name: NAMES.legacy,
-      type: "extension",
-      isWebExtension: false,
-    },
+  
+  
+  
+  const IGNORE = [
+    "special-powers@mozilla.org",
+    "mochikit@mozilla.org",
+    "workerbootstrap-test@mozilla.org",
+    "worker-test@mozilla.org",
+    "mozscreenshots@mozilla.org",
+    "indexedDB-test@mozilla.org",
+  ];
+
+  let exceptions = Services.prefs.getCharPref("extensions.legacy.exceptions");
+  exceptions = [ exceptions, ...IGNORE ].join(",");
+
+  SpecialPowers.pushPrefEnv({
+    set: [
+      ["extensions.legacy.enabled", false],
+      ["extensions.legacy.exceptions", exceptions],
+
+      ["xpinstall.signatures.required", false],
+    ],
+  });
+
+  let goodAddons = [
     {
       id: "webextension@tests.mozilla.org",
-      name: NAMES.webextension,
+      name: "WebExtension",
       type: "extension",
       isWebExtension: true,
     },
     {
-      id: "dictionary@tests.mozilla.org",
-      name: NAMES.dictionary,
-      type: "dictionary",
+      id: "mozilla@tests.mozilla.org",
+      name: "Mozilla signed extension",
+      type: "extension",
+      isWebExtension: false,
+      signedState: AddonManager.SIGNEDSTATE_PRIVILEGED,
+    },
+  ];
+
+  let disabledAddon = [
+    {
+      id: "legacy@tests.mozilla.org",
+      name: "Legacy extension",
+      type: "extension",
+      isWebExtension: false,
+      appDisabled: true,
+    },
+  ];
+
+  let unsignedAddons = [
+    {
+      id: "unsigned_webext@tests.mozilla.org",
+      name: "Unsigned WebExtension",
+      type: "extension",
+      isWebExtension: true,
+      appDisabled: true,
+      signedState: AddonManager.SIGNEDSTATE_MISSING,
+    },
+    {
+      id: "unsigned_legacy@tests.mozilla.org",
+      name: "Unsigned legacy extension",
+      type: "extension",
+      isWebExtension: false,
+      appDisabled: true,
+      signedState: AddonManager.SIGNEDSTATE_MISSING,
     },
   ];
 
   let provider = new MockProvider();
-  provider.createAddons(addons);
+  provider.createAddons(goodAddons);
 
   let mgrWin = await open_manager(null);
   let catUtils = new CategoryUtilities(mgrWin);
 
-  async function check(category, name, isLegacy) {
-    await catUtils.openType(category);
+  
+  
+  async function checkList(listId, expectIds) {
+    let ids = new Set(expectIds);
+    for (let item of mgrWin.document.getElementById(listId).children) {
+      if (!item.mAddon.id.endsWith("@tests.mozilla.org")) {
+        continue;
+      }
 
-    let document = mgrWin.document;
-    
-    let item = Array.from(document.getElementById("addon-list").childNodes)
-                    .find(i => i.getAttribute("name") == name);
-
-    ok(item, `Found ${name} in list`);
-    item.parentNode.ensureElementIsVisible(item);
-
-    
-    let badge = document.getAnonymousElementByAttribute(item, "anonid", "legacy");
-
-    if (isLegacy) {
-      is_element_visible(badge, `Legacy badge is visible for ${name}`);
-      is(badge.href, INFO_URL, "Legacy badge link is correct");
-    } else {
-      is_element_hidden(badge, `Legacy badge is hidden for ${name}`);
+      ok(ids.has(item.mAddon.id), `Found ${item.mAddon.id} in addons list`);
+      ids.delete(item.mAddon.id);
     }
 
-    
-    let detailsButton = document.getAnonymousElementByAttribute(item, "anonid", "details-btn");
-    EventUtils.synthesizeMouseAtCenter(detailsButton, {}, mgrWin);
-    await new Promise(resolve => wait_for_view_load(mgrWin, resolve));
-
-    
-    let elements = document.getElementsByClassName("legacy-warning");
-    is(elements.length, 1, "Found the legacy-warning element");
-    badge = elements[0];
-
-    if (isLegacy) {
-      is_element_visible(badge, `Legacy badge is visible for ${name}`);
-      is(badge.href, INFO_URL, "Legacy badge link is correct");
-    } else {
-      is_element_hidden(badge, `Legacy badge is hidden for ${name}`);
+    for (let id of ids) {
+      ok(false, `Did not find ${id} in addons list`);
     }
   }
 
-  await check("theme", NAMES.fullTheme, true);
-  await check("theme", NAMES.newTheme, false);
-  await check("extension", NAMES.legacy, true);
-  await check("extension", NAMES.webextension, false);
-  await check("dictionary", NAMES.dictionary, false);
+  
+  
+  await catUtils.openType("extension");
+  checkList("addon-list",
+            ["webextension@tests.mozilla.org", "mozilla@tests.mozilla.org"]);
+
+  let banner = mgrWin.document.getElementById("legacy-extensions-notice");
+  is_element_hidden(banner, "Warning about legacy extensions should be hidden");
+  is(mgrWin.gLegacyView._categoryItem.disabled, true, "Legacy category is hidden");
+
+  
+  provider.createAddons(disabledAddon);
+
+  
+  
+  
+  await mgrWin.gLegacyView.refresh();
+
+  
+  
+  await catUtils.openType("plugin");
+  await catUtils.openType("extension");
+
+  checkList("addon-list",
+            ["webextension@tests.mozilla.org", "mozilla@tests.mozilla.org"]);
+
+  
+  banner = mgrWin.document.getElementById("legacy-extensions-notice");
+  is_element_visible(banner, "Warning about legacy extensions should be visible");
+
+  let catItem = mgrWin.gLegacyView._categoryItem;
+  is(catItem.disabled, false, "Legacy category is visible");
+  is(catItem.getAttribute("name"), get_string("type.legacy.name"),
+     "Category label with no unsigned extensions is correct");
+
+  
+  let legacyLink = mgrWin.document.getElementById("legacy-extensions-learnmore-link");
+  is_element_visible(legacyLink, "Link to leagcy extension is visible");
+
+  let loadPromise = new Promise(resolve => wait_for_view_load(mgrWin, resolve, true));
+  legacyLink.click();
+  await loadPromise;
+
+  is(mgrWin.gViewController.currentViewId, "addons://legacy/",
+     "Legacy extensions link leads to the correct view");
+
+  let link = mgrWin.document.getElementById("legacy-learnmore");
+  is(link.href, INFO_URL, "Learn more link points to the right place");
+
+  
+  checkList("legacy-list", ["legacy@tests.mozilla.org"]);
+
+  
+  provider.createAddons(unsignedAddons);
+  SpecialPowers.pushPrefEnv({
+    set: [
+      ["xpinstall.signatures.required", true],
+    ],
+  });
+
+  
+  await mgrWin.gLegacyView.refresh();
+  is(catItem.disabled, false, "Legacy category is visible");
+  is(catItem.getAttribute("name"), get_string("type.unsupported.name"),
+     "Category label with unsigned extensions is correct");
+
+  
+  
+  await catUtils.openType("extension");
+  checkList("addon-list",
+            ["webextension@tests.mozilla.org", "mozilla@tests.mozilla.org"]);
+
+  banner = mgrWin.document.getElementById("legacy-extensions-notice");
+  is_element_visible(banner, "Warning about legacy extensions should be visible");
+
+  
+  await catUtils.openType("legacy");
+  checkList("legacy-list", [
+    "legacy@tests.mozilla.org",
+    "unsigned_webext@tests.mozilla.org",
+    "unsigned_legacy@tests.mozilla.org",
+  ]);
 
   await close_manager(mgrWin);
 });
