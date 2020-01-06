@@ -1080,9 +1080,6 @@ class IonBuilder
     
     bool failedLexicalCheck_;
 
-    
-    bool nonStringIteration_;
-
 #ifdef DEBUG
     
     bool hasLazyArguments_;
