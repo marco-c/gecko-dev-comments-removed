@@ -139,10 +139,71 @@ static int32_t gMinTrackingBackgroundTimeoutValue = 0;
 static int32_t gTrackingTimeoutThrottlingDelay = 0;
 static bool    gAnnotateTrackingChannels = false;
 
+
+const uint32_t TimeoutManager::InvalidFiringId = 0;
+
 bool
 TimeoutManager::IsBackground() const
 {
   return !mWindow.AsInner()->IsPlayingAudio() && mWindow.IsBackgroundInternal();
+}
+
+uint32_t
+TimeoutManager::CreateFiringId()
+{
+  uint32_t id = mNextFiringId;
+  mNextFiringId += 1;
+  if (mNextFiringId == InvalidFiringId) {
+    mNextFiringId += 1;
+  }
+
+  mFiringIdStack.AppendElement(id);
+
+  return id;
+}
+
+void
+TimeoutManager::DestroyFiringId(uint32_t aFiringId)
+{
+  MOZ_DIAGNOSTIC_ASSERT(!mFiringIdStack.IsEmpty());
+  MOZ_DIAGNOSTIC_ASSERT(mFiringIdStack.LastElement() == aFiringId);
+  mFiringIdStack.RemoveElementAt(mFiringIdStack.Length() - 1);
+}
+
+bool
+TimeoutManager::IsInvalidFiringId(uint32_t aFiringId) const
+{
+  
+  
+  if (aFiringId == InvalidFiringId ||
+      mFiringIdStack.IsEmpty() ||
+      (mFiringIdStack.Length() == 1 && mFiringIdStack[0] != aFiringId)) {
+    return true;
+  }
+
+  
+  
+  uint32_t low = mFiringIdStack[0];
+  uint32_t high = mFiringIdStack.LastElement();
+  MOZ_DIAGNOSTIC_ASSERT(low != high);
+  if (low > high) {
+    
+    
+    
+    Swap(low, high);
+  }
+  MOZ_DIAGNOSTIC_ASSERT(low < high);
+
+  if (aFiringId < low || aFiringId > high) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  return !mFiringIdStack.Contains(aFiringId);
 }
 
 int32_t
@@ -241,7 +302,7 @@ CalculateNewBackPressureDelayMS(uint32_t aBacklogDepth)
 TimeoutManager::TimeoutManager(nsGlobalWindow& aWindow)
   : mWindow(aWindow),
     mTimeoutIdCounter(1),
-    mTimeoutFiringDepth(0),
+    mNextFiringId(InvalidFiringId + 1),
     mRunningTimeout(nullptr),
     mIdleCallbackTimeoutCounter(1),
     mBackPressureDelayMS(0),
@@ -317,6 +378,12 @@ TimeoutManager::GetTimeoutId(Timeout::Reason aReason)
     default:
       return ++mTimeoutIdCounter;
   }
+}
+
+bool
+TimeoutManager::IsRunningTimeout() const
+{
+  return mRunningTimeout;
 }
 
 nsresult
@@ -527,7 +594,11 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
   bool     last_expired_timeout_is_normal = false;
   Timeout* last_normal_insertion_point = nullptr;
   Timeout* last_tracking_insertion_point = nullptr;
-  uint32_t firingDepth = mTimeoutFiringDepth + 1;
+
+  uint32_t firingId = CreateFiringId();
+  auto guard = MakeScopeExit([&] {
+    DestroyFiringId(firingId);
+  });
 
   
   
@@ -577,10 +648,10 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
         break;
       }
 
-      if (timeout->mFiringDepth == 0) {
+      if (IsInvalidFiringId(timeout->mFiringId)) {
         
         
-        timeout->mFiringDepth = firingDepth;
+        timeout->mFiringId = firingId;
         last_expired_timeout_is_normal = expiredIter.PickedNormalIter();
         if (last_expired_timeout_is_normal) {
           last_expired_normal_timeout = timeout;
@@ -630,14 +701,14 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
   
   
   RefPtr<Timeout> dummy_normal_timeout = new Timeout();
-  dummy_normal_timeout->mFiringDepth = firingDepth;
+  dummy_normal_timeout->mFiringId = firingId;
   dummy_normal_timeout->SetDummyWhen(now);
   if (last_expired_timeout_is_normal) {
     last_expired_normal_timeout->setNext(dummy_normal_timeout);
   }
 
   RefPtr<Timeout> dummy_tracking_timeout = new Timeout();
-  dummy_tracking_timeout->mFiringDepth = firingDepth;
+  dummy_tracking_timeout->mFiringId = firingId;
   dummy_tracking_timeout->SetDummyWhen(now);
   if (!last_expired_timeout_is_normal) {
     last_expired_tracking_timeout->setNext(dummy_tracking_timeout);
@@ -691,7 +762,7 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
       }
       runIter.UpdateIterator();
 
-      if (timeout->mFiringDepth != firingDepth) {
+      if (timeout->mFiringId != firingId) {
         
         
         continue;
@@ -699,10 +770,7 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
 
       MOZ_ASSERT_IF(mWindow.IsFrozen(), mWindow.IsSuspended());
       if (mWindow.IsSuspended()) {
-        
-        
-        timeout->mFiringDepth = 0;
-        continue;
+        break;
       }
 
       
@@ -1109,9 +1177,9 @@ TimeoutManager::Timeouts::ResetTimersForThrottleReduction(int32_t aPreviousThrot
         timeout->remove();
         
         
-        uint32_t firingDepth = timeout->mFiringDepth;
+        uint32_t firingId = timeout->mFiringId;
         Insert(timeout, aSortBy);
-        timeout->mFiringDepth = firingDepth;
+        timeout->mFiringId = firingId;
         timeout->Release();
       }
 
@@ -1205,7 +1273,7 @@ TimeoutManager::Timeouts::Insert(Timeout* aTimeout, SortBy aSortBy)
     InsertFront(aTimeout);
   }
 
-  aTimeout->mFiringDepth = 0;
+  aTimeout->mFiringId = InvalidFiringId;
 
   
   
@@ -1219,7 +1287,6 @@ TimeoutManager::BeginRunningTimeout(Timeout* aTimeout)
   mRunningTimeout = aTimeout;
 
   ++gRunningTimeoutDepth;
-  ++mTimeoutFiringDepth;
 
   if (!mWindow.IsChromeWindow()) {
     TimeStamp now = TimeStamp::Now();
@@ -1240,7 +1307,6 @@ TimeoutManager::BeginRunningTimeout(Timeout* aTimeout)
 void
 TimeoutManager::EndRunningTimeout(Timeout* aTimeout)
 {
-  --mTimeoutFiringDepth;
   --gRunningTimeoutDepth;
 
   if (!mWindow.IsChromeWindow()) {

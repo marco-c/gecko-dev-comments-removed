@@ -94,7 +94,8 @@ public:
   nsCOMPtr<nsIPrincipal> mPrincipal;
 
   
-  uint32_t mFiringDepth;
+  
+  uint32_t mFiringId;
 
   uint32_t mNestingLevel;
 
