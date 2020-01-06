@@ -1084,8 +1084,7 @@ public:
       domStream =
         DOMMediaStream::CreateAudioCaptureStreamAsInput(window, principal, msg);
 
-      stream = msg->CreateSourceStream(
-        globalWindow->AbstractMainThreadFor(TaskCategory::Other)); 
+      stream = msg->CreateSourceStream(); 
       msg->RegisterCaptureStreamForWindow(
             mWindowID, domStream->GetInputStream()->AsProcessedStream());
       window->SetAudioCapture(true);

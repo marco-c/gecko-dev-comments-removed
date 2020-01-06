@@ -77,7 +77,6 @@ namespace media {
 
 
 
-class AbstractThread;
 class AudioNodeEngine;
 class AudioNodeExternalInputStream;
 class AudioNodeStream;
@@ -255,7 +254,7 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream>
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaStream)
 
-  explicit MediaStream(AbstractThread* aMainThread);
+  explicit MediaStream();
 
 protected:
   
@@ -665,8 +664,6 @@ protected:
   MediaStreamGraphImpl* mGraph;
 
   dom::AudioChannel mAudioChannelType;
-
-  const RefPtr<AbstractThread> mAbstractMainThread;
 };
 
 
@@ -678,7 +675,7 @@ protected:
 class SourceMediaStream : public MediaStream
 {
 public:
-  explicit SourceMediaStream(AbstractThread* aMainThread);
+  explicit SourceMediaStream();
 
   SourceMediaStream* AsSourceStream() override { return this; }
 
@@ -957,10 +954,12 @@ class MediaInputPort final
 {
 private:
   
-  MediaInputPort(MediaStream* aSource, TrackID& aSourceTrack,
-                 ProcessedMediaStream* aDest, TrackID& aDestTrack,
-                 uint16_t aInputNumber, uint16_t aOutputNumber,
-                 AbstractThread* aMainThread)
+  MediaInputPort(MediaStream* aSource,
+                 TrackID& aSourceTrack,
+                 ProcessedMediaStream* aDest,
+                 TrackID& aDestTrack,
+                 uint16_t aInputNumber,
+                 uint16_t aOutputNumber)
     : mSource(aSource)
     , mSourceTrack(aSourceTrack)
     , mDest(aDest)
@@ -968,7 +967,6 @@ private:
     , mInputNumber(aInputNumber)
     , mOutputNumber(aOutputNumber)
     , mGraph(nullptr)
-    , mAbstractMainThread(aMainThread)
   {
     MOZ_COUNT_CTOR(MediaInputPort);
   }
@@ -1111,8 +1109,6 @@ private:
 
   
   MediaStreamGraphImpl* mGraph;
-
-  const RefPtr<AbstractThread> mAbstractMainThread;
 };
 
 
@@ -1123,8 +1119,10 @@ private:
 class ProcessedMediaStream : public MediaStream
 {
 public:
-  explicit ProcessedMediaStream(AbstractThread* aMainThread)
-    : MediaStream(aMainThread), mAutofinish(false), mCycleMarker(0)
+  explicit ProcessedMediaStream()
+    : MediaStream()
+    , mAutofinish(false)
+    , mCycleMarker(0)
   {}
 
   
@@ -1277,8 +1275,14 @@ public:
   static MediaStreamGraph* GetInstance(GraphDriverType aGraphDriverRequested,
                                        dom::AudioChannel aChannel,
                                        nsPIDOMWindowInner* aWindow);
-  static MediaStreamGraph* CreateNonRealtimeInstance(TrackRate aSampleRate,
-                                                     nsPIDOMWindowInner* aWindowId);
+  static MediaStreamGraph* CreateNonRealtimeInstance(
+    TrackRate aSampleRate,
+    nsPIDOMWindowInner* aWindowId);
+
+  
+  
+  AbstractThread* AbstractMainThread();
+
   
   static void DestroyNonRealtimeInstance(MediaStreamGraph* aGraph);
 
@@ -1293,7 +1297,7 @@ public:
 
 
 
-  SourceMediaStream* CreateSourceStream(AbstractThread* aMainThread);
+  SourceMediaStream* CreateSourceStream();
   
 
 
@@ -1308,12 +1312,11 @@ public:
 
 
 
-  ProcessedMediaStream* CreateTrackUnionStream(AbstractThread* aMainThread);
+  ProcessedMediaStream* CreateTrackUnionStream();
   
 
 
-  ProcessedMediaStream* CreateAudioCaptureStream(TrackID aTrackId,
-                                                 AbstractThread* aMainThread);
+  ProcessedMediaStream* CreateAudioCaptureStream(TrackID aTrackId);
 
   
 
@@ -1352,18 +1355,8 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-  virtual void
-  DispatchToMainThreadAfterStreamStateUpdate(AbstractThread* aMainThread,
-                                             already_AddRefed<nsIRunnable> aRunnable);
+  virtual void DispatchToMainThreadAfterStreamStateUpdate(
+    already_AddRefed<nsIRunnable> aRunnable);
 
   
 
