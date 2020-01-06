@@ -71,7 +71,6 @@ PerformanceTiming::InitializeTimingInfo(nsITimedChannel* aChannel)
 {
   if (aChannel) {
     aChannel->GetAsyncOpen(&mAsyncOpen);
-    aChannel->GetDispatchFetchEventStart(&mWorkerStart);
     aChannel->GetAllRedirectsSameOrigin(&mAllRedirectsSameOrigin);
     aChannel->GetRedirectCount(&mRedirectCount);
     aChannel->GetRedirectStart(&mRedirectStart);
@@ -86,6 +85,12 @@ PerformanceTiming::InitializeTimingInfo(nsITimedChannel* aChannel)
     aChannel->GetCacheReadStart(&mCacheReadStart);
     aChannel->GetResponseEnd(&mResponseEnd);
     aChannel->GetCacheReadEnd(&mCacheReadEnd);
+
+    aChannel->GetDispatchFetchEventStart(&mWorkerStart);
+    aChannel->GetHandleFetchEventStart(&mWorkerRequestStart);
+    
+    
+    aChannel->GetHandleFetchEventEnd(&mWorkerResponseEnd);
 
     
     
@@ -399,6 +404,11 @@ PerformanceTiming::RequestStartHighRes()
       nsContentUtils::ShouldResistFingerprinting()) {
     return mZeroTime;
   }
+
+  if (mRequestStart.IsNull()) {
+    mRequestStart = mWorkerRequestStart;
+  }
+
   return TimeStampToDOMHighResOrFetchStart(mRequestStart);
 }
 
@@ -443,6 +453,9 @@ PerformanceTiming::ResponseEndHighRes()
   if (mResponseEnd.IsNull() ||
      (!mCacheReadEnd.IsNull() && mCacheReadEnd < mResponseEnd)) {
     mResponseEnd = mCacheReadEnd;
+  }
+  if (mResponseEnd.IsNull()) {
+    mResponseEnd = mWorkerResponseEnd;
   }
   
   return mResponseEnd.IsNull() ? ResponseStartHighRes()

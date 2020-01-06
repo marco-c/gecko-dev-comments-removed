@@ -1001,7 +1001,6 @@ InterceptedHttpChannel::OnStartRequest(nsIRequest* aRequest,
   if (!mProgressSink) {
     GetCallback(mProgressSink);
   }
-  mTransactionTimings.responseStart = TimeStamp::Now();
   if (mListener) {
     mListener->OnStartRequest(this, mListenerContext);
   }
@@ -1026,8 +1025,6 @@ InterceptedHttpChannel::OnStopRequest(nsIRequest* aRequest,
   
   
   MaybeCallStatusAndProgress();
-
-  mTransactionTimings.responseEnd = TimeStamp::Now();
 
   mIsPending = false;
 
