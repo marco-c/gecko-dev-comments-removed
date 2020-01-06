@@ -13692,10 +13692,8 @@ nsIDocument::UpdateStyleBackendType()
     
     
     
-    
-    
     if (!nsContentUtils::IsSystemPrincipal(NodePrincipal()) &&
-        !IsXULDocument() && !ShouldUseGeckoBackend(mDocumentURI) &&
+        !ShouldUseGeckoBackend(mDocumentURI) &&
         !nsLayoutUtils::IsInStyloBlocklist(NodePrincipal())) {
       mStyleBackendType = StyleBackendType::Servo;
     }
