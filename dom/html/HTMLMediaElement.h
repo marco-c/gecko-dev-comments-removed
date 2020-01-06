@@ -1430,7 +1430,7 @@ protected:
   
   
   nsMediaNetworkState mNetworkState;
-  Watchable<nsMediaReadyState> mReadyState;
+  nsMediaReadyState mReadyState = nsIDOMHTMLMediaElement::HAVE_NOTHING;
 
   enum LoadAlgorithmState {
     
