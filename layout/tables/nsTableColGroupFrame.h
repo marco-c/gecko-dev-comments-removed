@@ -20,7 +20,7 @@ class nsTableColFrame;
 class nsTableColGroupFrame final : public nsContainerFrame
 {
 public:
-  NS_DECL_FRAMEARENA_HELPERS
+  NS_DECL_FRAMEARENA_HELPERS(nsTableColGroupFrame)
 
   
 

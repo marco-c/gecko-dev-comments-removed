@@ -26,7 +26,7 @@ protected:
 
 public:
   NS_DECL_QUERYFRAME
-  NS_DECL_FRAMEARENA_HELPERS
+  NS_DECL_FRAMEARENA_HELPERS(nsSVGForeignObjectFrame)
 
   
   virtual void Init(nsIContent*       aContent,
