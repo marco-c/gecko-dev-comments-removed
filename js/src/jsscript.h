@@ -433,6 +433,12 @@ class ScriptSource
     
     
     
+    
+    uint32_t startColumn_;
+
+    
+    
+    
     uint32_t introductionOffset_;
 
     
@@ -506,6 +512,7 @@ class ScriptSource
         displayURL_(nullptr),
         sourceMapURL_(nullptr),
         mutedErrors_(false),
+        startColumn_(0),
         introductionOffset_(0),
         parameterListEnd_(0),
         introducerFilename_(nullptr),
@@ -617,6 +624,8 @@ class ScriptSource
     }
 
     bool mutedErrors() const { return mutedErrors_; }
+
+    uint32_t startColumn() const { return startColumn_; }
 
     bool hasIntroductionOffset() const { return hasIntroductionOffset_; }
     uint32_t introductionOffset() const {
