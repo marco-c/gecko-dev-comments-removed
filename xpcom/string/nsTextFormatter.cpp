@@ -833,11 +833,8 @@ dosprintf(SprintfStateStr* aState, const char16_t* aFmt, va_list aAp)
   } u;
   char16_t space = ' ';
 
-  nsAutoString hex;
-  hex.AssignLiteral("0123456789abcdef");
-
-  nsAutoString HEX;
-  HEX.AssignLiteral("0123456789ABCDEF");
+  static const char16_t hex[] = u"0123456789abcdef";
+  static char16_t HEX[] = u"0123456789ABCDEF";
 
   const char16_t* hexp;
   int rv, i;
@@ -981,7 +978,7 @@ dosprintf(SprintfStateStr* aState, const char16_t* aFmt, va_list aAp)
     }
 
     
-    hexp = hex.get();
+    hexp = hex;
     switch (c) {
       case 'd':
       case 'i':                               
@@ -1005,7 +1002,7 @@ dosprintf(SprintfStateStr* aState, const char16_t* aFmt, va_list aAp)
 
       case 'X':                               
         radix = 16;
-        hexp = HEX.get();
+        hexp = HEX;
         type |= 1;
         goto fetch_and_convert;
 
