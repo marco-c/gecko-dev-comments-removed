@@ -1683,7 +1683,7 @@ pref("network.http.keep_empty_response_headers_as_empty_string", true);
 pref("network.http.max_response_header_size", 393216);
 
 
-pref("network.http.rcwn.enabled", false);
+pref("network.http.rcwn.enabled", true);
 pref("network.http.rcwn.cache_queue_normal_threshold", 8);
 pref("network.http.rcwn.cache_queue_priority_threshold", 2);
 
@@ -5713,6 +5713,9 @@ pref("dom.moduleScripts.enabled", false);
 
 
 pref("dom.timeout.max_consecutive_callbacks_ms", 4);
+
+
+pref("dom.payments.request.enabled", false);
 
 #ifdef FUZZING
 pref("fuzzing.enabled", false);
