@@ -623,14 +623,7 @@ RasterImage::GetFrameInternal(const IntSize& aSize,
 NS_IMETHODIMP_(bool)
 RasterImage::IsImageContainerAvailable(LayerManager* aManager, uint32_t aFlags)
 {
-  int32_t maxTextureSize = aManager->GetMaxTextureSize();
-  if (!mHasSize ||
-      mSize.width > maxTextureSize ||
-      mSize.height > maxTextureSize) {
-    return false;
-  }
-
-  return true;
+  return IsImageContainerAvailableAtSize(aManager, mSize, aFlags);
 }
 
 NS_IMETHODIMP_(already_AddRefed<ImageContainer>)
@@ -644,7 +637,18 @@ RasterImage::IsImageContainerAvailableAtSize(LayerManager* aManager,
                                              const IntSize& aSize,
                                              uint32_t aFlags)
 {
-  return false;
+  
+  
+  
+  
+  int32_t maxTextureSize = aManager->GetMaxTextureSize();
+  if (!mHasSize || aSize.IsEmpty() ||
+      min(mSize.width, aSize.width) > maxTextureSize ||
+      min(mSize.height, aSize.height) > maxTextureSize) {
+    return false;
+  }
+
+  return true;
 }
 
 NS_IMETHODIMP_(already_AddRefed<ImageContainer>)
@@ -652,7 +656,7 @@ RasterImage::GetImageContainerAtSize(LayerManager* aManager,
                                      const IntSize& aSize,
                                      uint32_t aFlags)
 {
-  return nullptr;
+  return GetImageContainerImpl(aManager, aSize, aFlags);
 }
 
 size_t
