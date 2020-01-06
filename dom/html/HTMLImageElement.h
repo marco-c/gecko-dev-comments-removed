@@ -370,11 +370,6 @@ private:
 
 
 
-  void BeforeMaybeChangeAttr(int32_t aNamespaceID, nsIAtom* aName,
-                             const nsAttrValueOrString& aValue,
-                             bool aNotify);
-  
-
 
 
 
@@ -382,13 +377,9 @@ private:
 
 
   void AfterMaybeChangeAttr(int32_t aNamespaceID, nsIAtom* aName,
-                            bool aNotify);
-  
-
-
-
-
-  bool mForceReload;
+                            const nsAttrValueOrString& aValue,
+                            const nsAttrValue* aOldValue,
+                            bool aValueMaybeChanged, bool aNotify);
 
   bool mInDocResponsiveContent;
   RefPtr<ImageLoadTask> mPendingImageLoadTask;

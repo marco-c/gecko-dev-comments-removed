@@ -1337,6 +1337,7 @@ public:
   float FontSizeInflation();
 
   net::ReferrerPolicy GetReferrerPolicyAsEnum();
+  net::ReferrerPolicy ReferrerPolicyFromAttr(const nsAttrValue* aValue);
 
   
 

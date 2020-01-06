@@ -118,7 +118,6 @@ private:
 HTMLImageElement::HTMLImageElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
   : nsGenericHTMLElement(aNodeInfo)
   , mForm(nullptr)
-  , mForceReload(false)
   , mInDocResponsiveContent(false)
   , mCurrentDensity(1.0)
 {
@@ -378,10 +377,6 @@ HTMLImageElement::BeforeSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
                                 const nsAttrValueOrString* aValue,
                                 bool aNotify)
 {
-  if (aValue) {
-    BeforeMaybeChangeAttr(aNameSpaceID, aName, *aValue, aNotify);
-  }
-
   if (aNameSpaceID == kNameSpaceID_None && mForm &&
       (aName == nsGkAtoms::name || aName == nsGkAtoms::id)) {
     
@@ -402,8 +397,11 @@ HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
                                const nsAttrValue* aValue,
                                const nsAttrValue* aOldValue, bool aNotify)
 {
+  nsAttrValueOrString attrVal(aValue);
+
   if (aValue) {
-    AfterMaybeChangeAttr(aNameSpaceID, aName, aNotify);
+    AfterMaybeChangeAttr(aNameSpaceID, aName, attrVal, aOldValue, true,
+                         aNotify);
   }
 
   if (aNameSpaceID == kNameSpaceID_None && mForm &&
@@ -419,8 +417,6 @@ HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
   
   
   
-
-  nsAttrValueOrString attrVal(aValue);
 
   if (aName == nsGkAtoms::src &&
       aNameSpaceID == kNameSpaceID_None &&
@@ -466,21 +462,19 @@ HTMLImageElement::OnAttrSetButNotChanged(int32_t aNamespaceID, nsIAtom* aName,
                                          const nsAttrValueOrString& aValue,
                                          bool aNotify)
 {
-  BeforeMaybeChangeAttr(aNamespaceID, aName, aValue, aNotify);
-  AfterMaybeChangeAttr(aNamespaceID, aName, aNotify);
+  AfterMaybeChangeAttr(aNamespaceID, aName, aValue, nullptr, false, aNotify);
 
   return nsGenericHTMLElement::OnAttrSetButNotChanged(aNamespaceID, aName,
                                                       aValue, aNotify);
 }
 
 void
-HTMLImageElement::BeforeMaybeChangeAttr(int32_t aNamespaceID, nsIAtom* aName,
-                                        const nsAttrValueOrString& aValue,
-                                        bool aNotify)
+HTMLImageElement::AfterMaybeChangeAttr(int32_t aNamespaceID, nsIAtom* aName,
+                                       const nsAttrValueOrString& aValue,
+                                       const nsAttrValue* aOldValue,
+                                       bool aValueMaybeChanged, bool aNotify)
 {
-  
-  
-  
+  bool forceReload = false;
   
   
   
@@ -519,6 +513,10 @@ HTMLImageElement::BeforeMaybeChangeAttr(int32_t aNamespaceID, nsIAtom* aName,
       
       
       
+      
+      
+      
+      
       LoadImage(aValue.String(), true, aNotify, eImageLoadType_Normal);
 
       mNewRequestsWillNeedAnimationReset = false;
@@ -526,40 +524,31 @@ HTMLImageElement::BeforeMaybeChangeAttr(int32_t aNamespaceID, nsIAtom* aName,
   } else if (aNamespaceID == kNameSpaceID_None &&
              aName == nsGkAtoms::crossorigin &&
              aNotify) {
-    nsAttrValue attrValue;
-    ParseCORSValue(aValue.String(), attrValue);
-    if (GetCORSMode() != AttrValueToCORSMode(&attrValue)) {
+    if (aValueMaybeChanged && GetCORSMode() != AttrValueToCORSMode(aOldValue)) {
       
-      mForceReload = true;
+      forceReload = true;
     }
   } else if (aName == nsGkAtoms::referrerpolicy &&
       aNamespaceID == kNameSpaceID_None &&
       aNotify) {
-    ReferrerPolicy referrerPolicy = AttributeReferrerPolicyFromString(aValue.String());
+    ReferrerPolicy referrerPolicy = GetImageReferrerPolicy();
     if (!InResponsiveMode() &&
         referrerPolicy != RP_Unset &&
-        referrerPolicy != GetImageReferrerPolicy()) {
+        aValueMaybeChanged &&
+        referrerPolicy != ReferrerPolicyFromAttr(aOldValue)) {
       
       
       
       
       
-      mForceReload = true;
+      forceReload = true;
     }
   }
 
-  return;
-}
-
-void
-HTMLImageElement::AfterMaybeChangeAttr(int32_t aNamespaceID, nsIAtom* aName,
-                                       bool aNotify)
-{
   
   
   
-  if (mForceReload) {
-    mForceReload = false;
+  if (forceReload) {
     
     
     mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
@@ -575,8 +564,6 @@ HTMLImageElement::AfterMaybeChangeAttr(int32_t aNamespaceID, nsIAtom* aName,
       ForceReload(aNotify);
     }
   }
-
-  return;
 }
 
 nsresult
