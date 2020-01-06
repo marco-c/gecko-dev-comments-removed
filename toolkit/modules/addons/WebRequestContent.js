@@ -20,7 +20,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "WebRequestCommon",
 
 
 
-const IS_HTTP = /^https?:|wss?:/;
+const IS_HTTP = /^(?:http|ws)s?:/;
 
 var ContentPolicy = {
   _classDescription: "WebRequest content policy",
