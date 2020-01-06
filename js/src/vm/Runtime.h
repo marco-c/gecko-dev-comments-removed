@@ -816,6 +816,9 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     js::ExclusiveAccessLockOrGCTaskData<js::AtomSet*> atoms_;
 
     
+    js::ExclusiveAccessLockData<js::AtomSet*> atomsAddedWhileSweeping_;
+
+    
     
     
     js::WriteOnceData<JSCompartment*> atomsCompartment_;
@@ -830,14 +833,26 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     void finishAtoms();
     bool atomsAreFinished() const { return !atoms_; }
 
-    void sweepAtoms();
+    js::AtomSet* atomsForSweeping() {
+        MOZ_ASSERT(JS::CurrentThreadIsHeapCollecting());
+        return atoms_;
+    }
 
     js::AtomSet& atoms(js::AutoLockForExclusiveAccess& lock) {
+        MOZ_ASSERT(atoms_);
         return *atoms_;
     }
     js::AtomSet& unsafeAtoms() {
+        MOZ_ASSERT(atoms_);
         return *atoms_;
     }
+
+    bool createAtomsAddedWhileSweepingTable();
+    void destroyAtomsAddedWhileSweepingTable();
+    js::AtomSet* atomsAddedWhileSweeping() {
+        return atomsAddedWhileSweeping_;
+    }
+
     JSCompartment* atomsCompartment(js::AutoLockForExclusiveAccess& lock) {
         return atomsCompartment_;
     }
@@ -847,6 +862,10 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
     bool isAtomsCompartment(JSCompartment* comp) {
         return comp == atomsCompartment_;
+    }
+
+    const JS::Zone* atomsZone(js::AutoLockForExclusiveAccess& lock) const {
+        return gc.atomsZone;
     }
 
     
