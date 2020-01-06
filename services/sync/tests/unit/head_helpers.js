@@ -18,6 +18,13 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/PlacesUtils.jsm");
 Cu.import("resource://gre/modules/ObjectUtils.jsm");
 
+add_task(async function head_setup() {
+  
+  if (this.Service) {
+    await this.Service.promiseInitialized;
+  }
+});
+
 
 
 
@@ -384,7 +391,7 @@ function wait_for_pings(expectedPings) {
 
 async function wait_for_ping(callback, allowErrorPings, getFullPing = false) {
   let pingsPromise = wait_for_pings(1);
-  callback();
+  await callback();
   let [record] = await pingsPromise;
   if (allowErrorPings) {
     assert_valid_ping(record);
@@ -407,27 +414,27 @@ function sync_and_validate_telem(allowErrorPings, getFullPing = false) {
 
 
 
-function sync_engine_and_validate_telem(engine, allowErrorPings, onError) {
-  return new Promise((resolve, reject) => {
-    let telem = get_sync_test_telemetry();
-    let caughtError = null;
-    
-    
-    let ns = {};
-    Cu.import("resource://services-sync/status.js", ns);
-    ns.Status._engines = {};
-    ns.Status.partial = false;
-    
-    
-    
-    
-    
-    
-    
-    let initialServiceStatus = ns.Status._service;
-    let initialSyncStatus = ns.Status._sync;
+async function sync_engine_and_validate_telem(engine, allowErrorPings, onError) {
+  let telem = get_sync_test_telemetry();
+  let caughtError = null;
+  
+  
+  let ns = {};
+  Cu.import("resource://services-sync/status.js", ns);
+  ns.Status._engines = {};
+  ns.Status.partial = false;
+  
+  
+  
+  
+  
+  
+  
+  let initialServiceStatus = ns.Status._service;
+  let initialSyncStatus = ns.Status._sync;
 
-    let oldSubmit = telem.submit;
+  let oldSubmit = telem.submit;
+  let submitPromise = new Promise((resolve, reject) => {
     telem.submit = function(ping) {
       telem.submit = oldSubmit;
       ping.syncs.forEach(record => {
@@ -472,27 +479,28 @@ function sync_engine_and_validate_telem(engine, allowErrorPings, onError) {
         resolve(ping.syncs[0]);
       }
     }
-    
-    
-    
-    let oldObserve = Service.scheduler.observe;
-    Service.scheduler.observe = () => {};
-    try {
-      Svc.Obs.notify("weave:service:sync:start");
-      try {
-        engine.sync();
-      } catch (e) {
-        caughtError = e;
-      }
-      if (caughtError) {
-        Svc.Obs.notify("weave:service:sync:error", caughtError);
-      } else {
-        Svc.Obs.notify("weave:service:sync:finish");
-      }
-    } finally {
-      Service.scheduler.observe = oldObserve;
-    }
   });
+  
+  
+  
+  let oldObserve = Service.scheduler.observe;
+  Service.scheduler.observe = () => {};
+  try {
+    Svc.Obs.notify("weave:service:sync:start");
+    try {
+      await engine.sync();
+    } catch (e) {
+      caughtError = e;
+    }
+    if (caughtError) {
+      Svc.Obs.notify("weave:service:sync:error", caughtError);
+    } else {
+      Svc.Obs.notify("weave:service:sync:finish");
+    }
+  } finally {
+    Service.scheduler.observe = oldObserve;
+  }
+  return submitPromise;
 }
 
 
@@ -511,12 +519,6 @@ function promiseStopServer(server) {
   return new Promise(resolve => server.stop(resolve));
 }
 
-function promiseNextTick() {
-  return new Promise(resolve => {
-    Utils.nextTick(resolve);
-  });
-}
-
 
 
 
@@ -525,12 +527,12 @@ Utils.getDefaultDeviceName = function() {
   return "Test device name";
 };
 
-function registerRotaryEngine() {
+async function registerRotaryEngine() {
   let {RotaryEngine} =
     Cu.import("resource://testing-common/services/sync/rotaryengine.js", {});
   Service.engineManager.clear();
 
-  Service.engineManager.register(RotaryEngine);
+  await Service.engineManager.register(RotaryEngine);
   let engine = Service.engineManager.get("rotary");
   engine.enabled = true;
 

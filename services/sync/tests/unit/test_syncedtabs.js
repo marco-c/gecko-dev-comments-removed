@@ -31,6 +31,8 @@ MockTabsEngine.prototype = {
   },
 }
 
+let tabsEngine;
+
 
 let MockClientsEngine = {
   clientSettings: null, 
@@ -48,35 +50,36 @@ let MockClientsEngine = {
     if (this.clientSettings[id]) {
       return this.clientSettings[id];
     }
-    let engine = Weave.Service.engineManager.get("tabs");
-    return engine.clients[id].clientName;
+    return tabsEngine.clients[id].clientName;
   },
 }
 
-
-Weave.Service.engineManager.unregister("tabs");
-Weave.Service.engineManager.register(MockTabsEngine);
-Weave.Service.clientsEngine = MockClientsEngine;
-
-
-let weaveXPCService = Cc["@mozilla.org/weave/service;1"]
-                        .getService(Ci.nsISupports)
-                        .wrappedJSObject;
-weaveXPCService.ready = true;
-
 function configureClients(clients, clientSettings = {}) {
-  
-  let engine = Weave.Service.engineManager.get("tabs");
   
   for (let [guid, client] of Object.entries(clients)) {
     client.id = guid;
   }
-  engine.clients = clients;
+  tabsEngine.clients = clients;
   
   MockClientsEngine.clientSettings = clientSettings;
   
   Services.obs.notifyObservers(null, "weave:engine:sync:finish", "tabs");
 }
+
+add_task(async function setup() {
+  await Weave.Service.promiseInitialized;
+  
+  Weave.Service.engineManager.unregister("tabs");
+  await Weave.Service.engineManager.register(MockTabsEngine);
+  Weave.Service.clientsEngine = MockClientsEngine;
+  tabsEngine = Weave.Service.engineManager.get("tabs");
+
+  
+  let weaveXPCService = Cc["@mozilla.org/weave/service;1"]
+                          .getService(Ci.nsISupports)
+                          .wrappedJSObject;
+  weaveXPCService.ready = true;
+});
 
 
 add_task(async function test_noClients() {

@@ -17,10 +17,11 @@ Log.repository.getLogger("Sync.Engine.Bookmarks").level = Log.Level.Trace;
 Log.repository.getLogger("Sqlite").level = Log.Level.Error;
 
 
+
+Svc.Prefs.set("engine.bookmarks.validation.enabled", false);
+
+
 var recordedEvents = [];
-Service.recordTelemetryEvent = (object, method, value, extra = undefined) => {
-  recordedEvents.push({ object, method, value, extra });
-};
 
 function checkRecordedEvents(expected) {
   deepEqual(recordedEvents, expected);
@@ -32,32 +33,34 @@ function getServerBookmarks(server) {
   return server.user("foo").collection("bookmarks");
 }
 
-async function setup() {
-  let bookmarksEngine = Service.engineManager.get("bookmarks");
-
+async function makeServer() {
   let server = serverForFoo(bookmarksEngine);
   await SyncTestingInfrastructure(server);
-
-  
-  
-  Svc.Prefs.set("engine.bookmarks.validation.enabled", false);
-
   return server;
 }
 
 async function cleanup(server) {
   await promiseStopServer(server);
   await PlacesSyncUtils.bookmarks.wipe();
-  Svc.Prefs.reset("engine.bookmarks.validation.enabled");
   
   Service.collectionKeys.clear();
 }
 
+let bookmarksEngine;
+
+add_task(async function setup() {
+  bookmarksEngine = Service.engineManager.get("bookmarks");
+
+  Service.recordTelemetryEvent = (object, method, value, extra = undefined) => {
+    recordedEvents.push({ object, method, value, extra });
+  };
+});
+
 add_task(async function test_responder_error() {
-  let server = await setup();
+  let server = await makeServer();
 
   
-  Service.sync();
+  await Service.sync();
 
   let request = {
     request: "upload",
@@ -86,10 +89,10 @@ add_task(async function test_responder_error() {
 });
 
 add_task(async function test_responder_no_items() {
-  let server = await setup();
+  let server = await makeServer();
 
   
-  Service.sync();
+  await Service.sync();
 
   let request = {
     request: "upload",
@@ -112,7 +115,7 @@ add_task(async function test_responder_no_items() {
 
 
 add_task(async function test_responder_upload() {
-  let server = await setup();
+  let server = await makeServer();
 
   
   
@@ -121,7 +124,7 @@ add_task(async function test_responder_upload() {
                                                 url: "http://getfirefox.com/",
                                                 source: PlacesUtils.bookmarks.SOURCES.SYNC });
 
-  Service.sync();
+  await Service.sync();
   deepEqual(getServerBookmarks(server).keys().sort(), [
     "menu",
     "mobile",
@@ -145,7 +148,7 @@ add_task(async function test_responder_upload() {
     },
   ]);
 
-  Service.sync();
+  await Service.sync();
   deepEqual(getServerBookmarks(server).keys().sort(), [
     "menu",
     "mobile",
@@ -168,14 +171,14 @@ add_task(async function test_responder_upload() {
 
 
 add_task(async function test_responder_item_exists_locally() {
-  let server = await setup();
+  let server = await makeServer();
 
   let bm = await PlacesUtils.bookmarks.insert({ parentGuid: PlacesUtils.bookmarks.unfiledGuid,
                                                 title: "Get Firefox",
                                                 url: "http://getfirefox.com/" });
   
   _("Syncing to get item on the server");
-  Service.sync();
+  await Service.sync();
 
   
   let request = {
@@ -196,7 +199,7 @@ add_task(async function test_responder_item_exists_locally() {
   ]);
 
   _("Syncing to do the upload.");
-  Service.sync();
+  await Service.sync();
 
   checkRecordedEvents([
     { object: "repairResponse",
@@ -209,7 +212,7 @@ add_task(async function test_responder_item_exists_locally() {
 });
 
 add_task(async function test_responder_tombstone() {
-  let server = await setup();
+  let server = await makeServer();
 
   
   
@@ -221,7 +224,7 @@ add_task(async function test_responder_tombstone() {
 });
 
 add_task(async function test_responder_missing_items() {
-  let server = await setup();
+  let server = await makeServer();
 
   let fxBmk = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
@@ -236,7 +239,7 @@ add_task(async function test_responder_missing_items() {
     source: PlacesUtils.bookmarks.SOURCES.SYNC,
   });
 
-  Service.sync();
+  await Service.sync();
   deepEqual(getServerBookmarks(server).keys().sort(), [
     "menu",
     "mobile",
@@ -263,7 +266,7 @@ add_task(async function test_responder_missing_items() {
   ]);
 
   _("Sync after requesting IDs");
-  Service.sync();
+  await Service.sync();
   deepEqual(getServerBookmarks(server).keys().sort(), [
     "menu",
     "mobile",
@@ -285,9 +288,9 @@ add_task(async function test_responder_missing_items() {
 });
 
 add_task(async function test_non_syncable() {
-  let server = await setup();
+  let server = await makeServer();
 
-  Service.sync(); 
+  await Service.sync(); 
 
   
   let leftPaneId = PlacesUIUtils.leftPaneFolderId;
@@ -330,7 +333,7 @@ add_task(async function test_non_syncable() {
   ]);
 
   _("Sync to upload tombstones for items");
-  Service.sync();
+  await Service.sync();
 
   let toolbarQueryId = PlacesUIUtils.leftPaneQueries.BookmarksToolbar;
   let menuQueryId = PlacesUIUtils.leftPaneQueries.BookmarksMenu;
@@ -376,7 +379,7 @@ add_task(async function test_non_syncable() {
 });
 
 add_task(async function test_folder_descendants() {
-  let server = await setup();
+  let server = await makeServer();
 
   let parentFolder = await PlacesUtils.bookmarks.insert({
     type: PlacesUtils.bookmarks.TYPE_FOLDER,
@@ -404,7 +407,7 @@ add_task(async function test_folder_descendants() {
   });
 
   _("Initial sync to upload roots and parent folder");
-  Service.sync();
+  await Service.sync();
 
   let initialSyncIds = [
     "menu",
@@ -446,7 +449,7 @@ add_task(async function test_folder_descendants() {
   });
 
   _("Sync again; server contents shouldn't change");
-  Service.sync();
+  await Service.sync();
   deepEqual(getServerBookmarks(server).keys().sort(), initialSyncIds,
     "Second sync should not upload missing bookmarks");
 
@@ -479,7 +482,7 @@ add_task(async function test_folder_descendants() {
   ]);
 
   _("Sync after requesting repair; should upload missing records");
-  Service.sync();
+  await Service.sync();
   deepEqual(getServerBookmarks(server).keys().sort(), [
     ...initialSyncIds,
     childBmk.syncId,
@@ -500,7 +503,7 @@ add_task(async function test_folder_descendants() {
 
 
 add_task(async function test_aborts_unknown_request() {
-  let server = await setup();
+  let server = await makeServer();
 
   let request = {
     request: "not-upload",
@@ -520,4 +523,8 @@ add_task(async function test_aborts_unknown_request() {
     },
   ]);
   await cleanup(server);
+});
+
+add_task(async function teardown() {
+  Svc.Prefs.reset("engine.bookmarks.validation.enabled");
 });

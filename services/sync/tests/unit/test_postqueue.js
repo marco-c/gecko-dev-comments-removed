@@ -30,7 +30,7 @@ function makePostQueue(config, lastModTime, responseGenerator) {
   return { pq, stats };
 }
 
-add_test(function test_simple() {
+add_task(async function test_simple() {
   let config = {
     max_post_bytes: 1000,
     max_post_records: 100,
@@ -45,21 +45,19 @@ add_test(function test_simple() {
   }
 
   let { pq, stats } = makePostQueue(config, time, responseGenerator());
-  pq.enqueue(makeRecord(10));
-  pq.flush(true);
+  await pq.enqueue(makeRecord(10));
+  await pq.flush(true);
 
   deepEqual(stats.posts, [{
     nbytes: 12, 
     commit: true, 
     headers: [["x-if-unmodified-since", time]],
     batch: "true"}]);
-
-  run_next_test();
 });
 
 
 
-add_test(function test_max_post_bytes_no_batch() {
+add_task(async function test_max_post_bytes_no_batch() {
   let config = {
     max_post_bytes: 50,
     max_post_records: 4,
@@ -74,10 +72,10 @@ add_test(function test_max_post_bytes_no_batch() {
   }
 
   let { pq, stats } = makePostQueue(config, time, responseGenerator());
-  pq.enqueue(makeRecord(20)); 
-  pq.enqueue(makeRecord(20)); 
-  pq.enqueue(makeRecord(20)); 
-  pq.flush(true);
+  await pq.enqueue(makeRecord(20)); 
+  await pq.enqueue(makeRecord(20)); 
+  await pq.enqueue(makeRecord(20)); 
+  await pq.flush(true);
 
   deepEqual(stats.posts, [
     {
@@ -93,12 +91,10 @@ add_test(function test_max_post_bytes_no_batch() {
     }
   ]);
   equal(pq.lastModified, time + 200);
-
-  run_next_test();
 });
 
 
-add_test(function test_max_post_records_no_batch() {
+add_task(async function test_max_post_records_no_batch() {
   let config = {
     max_post_bytes: 100,
     max_post_records: 2,
@@ -114,10 +110,10 @@ add_test(function test_max_post_records_no_batch() {
   }
 
   let { pq, stats } = makePostQueue(config, time, responseGenerator());
-  pq.enqueue(makeRecord(20)); 
-  pq.enqueue(makeRecord(20)); 
-  pq.enqueue(makeRecord(20)); 
-  pq.flush(true);
+  await pq.enqueue(makeRecord(20)); 
+  await pq.enqueue(makeRecord(20)); 
+  await pq.enqueue(makeRecord(20)); 
+  await pq.flush(true);
 
   deepEqual(stats.posts, [
     {
@@ -133,14 +129,12 @@ add_test(function test_max_post_records_no_batch() {
     }
   ]);
   equal(pq.lastModified, time + 200);
-
-  run_next_test();
 });
 
 
 
 
-add_test(function test_single_batch() {
+add_task(async function test_single_batch() {
   let config = {
     max_post_bytes: 1000,
     max_post_records: 100,
@@ -155,8 +149,8 @@ add_test(function test_single_batch() {
   }
 
   let { pq, stats } = makePostQueue(config, time, responseGenerator());
-  ok(pq.enqueue(makeRecord(10)).enqueued);
-  pq.flush(true);
+  ok((await pq.enqueue(makeRecord(10))).enqueued);
+  await pq.flush(true);
 
   deepEqual(stats.posts, [
     {
@@ -166,13 +160,11 @@ add_test(function test_single_batch() {
       headers: [["x-if-unmodified-since", time]],
     }
   ]);
-
-  run_next_test();
 });
 
 
 
-add_test(function test_max_post_bytes_batch() {
+add_task(async function test_max_post_bytes_batch() {
   let config = {
     max_post_bytes: 50,
     max_post_records: 4,
@@ -191,10 +183,10 @@ add_test(function test_max_post_bytes_batch() {
   }
 
   let { pq, stats } = makePostQueue(config, time, responseGenerator());
-  ok(pq.enqueue(makeRecord(20)).enqueued); 
-  ok(pq.enqueue(makeRecord(20)).enqueued); 
-  ok(pq.enqueue(makeRecord(20)).enqueued); 
-  pq.flush(true);
+  ok((await pq.enqueue(makeRecord(20))).enqueued); 
+  ok((await pq.enqueue(makeRecord(20))).enqueued); 
+  ok((await pq.enqueue(makeRecord(20))).enqueued); 
+  await pq.flush(true);
 
   deepEqual(stats.posts, [
     {
@@ -211,12 +203,10 @@ add_test(function test_max_post_bytes_batch() {
   ]);
 
   equal(pq.lastModified, time + 200);
-
-  run_next_test();
 });
 
 
-add_test(function test_max_post_bytes_batch() {
+add_task(async function test_max_post_bytes_batch() {
   let config = {
     max_post_bytes: 50,
     max_post_records: 20,
@@ -242,16 +232,16 @@ add_test(function test_max_post_bytes_batch() {
   }
 
   let { pq, stats } = makePostQueue(config, time0, responseGenerator());
-  ok(pq.enqueue(makeRecord(20)).enqueued); 
-  ok(pq.enqueue(makeRecord(20)).enqueued); 
+  ok((await pq.enqueue(makeRecord(20))).enqueued); 
+  ok((await pq.enqueue(makeRecord(20))).enqueued); 
   
-  ok(pq.enqueue(makeRecord(20)).enqueued); 
+  ok((await pq.enqueue(makeRecord(20))).enqueued); 
   
-  ok(pq.enqueue(makeRecord(20)).enqueued); 
-  ok(pq.enqueue(makeRecord(20)).enqueued); 
+  ok((await pq.enqueue(makeRecord(20))).enqueued); 
+  ok((await pq.enqueue(makeRecord(20))).enqueued); 
   
-  ok(pq.enqueue(makeRecord(20)).enqueued); 
-  pq.flush(true);
+  ok((await pq.enqueue(makeRecord(20))).enqueued); 
+  await pq.flush(true);
 
   deepEqual(stats.posts, [
     {
@@ -281,13 +271,11 @@ add_test(function test_max_post_bytes_batch() {
   ]);
 
   equal(pq.lastModified, time1 + 200);
-
-  run_next_test();
 });
 
 
 
-add_test(function test_max_post_bytes_batch() {
+add_task(async function test_max_post_bytes_batch() {
   let config = {
     max_post_bytes: 1000,
     max_post_records: 2,
@@ -306,10 +294,10 @@ add_test(function test_max_post_bytes_batch() {
   }
 
   let { pq, stats } = makePostQueue(config, time, responseGenerator());
-  ok(pq.enqueue(makeRecord(20)).enqueued); 
-  ok(pq.enqueue(makeRecord(20)).enqueued); 
-  ok(pq.enqueue(makeRecord(20)).enqueued); 
-  pq.flush(true);
+  ok((await pq.enqueue(makeRecord(20))).enqueued); 
+  ok((await pq.enqueue(makeRecord(20))).enqueued); 
+  ok((await pq.enqueue(makeRecord(20))).enqueued); 
+  await pq.flush(true);
 
   deepEqual(stats.posts, [
     {
@@ -326,12 +314,10 @@ add_test(function test_max_post_bytes_batch() {
   ]);
 
   equal(pq.lastModified, time + 200);
-
-  run_next_test();
 });
 
 
-add_test(function test_huge_record() {
+add_task(async function test_huge_record() {
   let config = {
     max_post_bytes: 50,
     max_post_records: 100,
@@ -350,18 +336,18 @@ add_test(function test_huge_record() {
   }
 
   let { pq, stats } = makePostQueue(config, time, responseGenerator());
-  ok(pq.enqueue(makeRecord(20)).enqueued);
+  ok((await pq.enqueue(makeRecord(20))).enqueued);
 
-  let { enqueued, error } = pq.enqueue(makeRecord(1000));
+  let { enqueued, error } = await pq.enqueue(makeRecord(1000));
   ok(!enqueued);
   notEqual(error, undefined);
 
   
   
-  ok(pq.enqueue(makeRecord(20)).enqueued);
-  ok(pq.enqueue(makeRecord(20)).enqueued);
+  ok((await pq.enqueue(makeRecord(20))).enqueued);
+  ok((await pq.enqueue(makeRecord(20))).enqueued);
 
-  pq.flush(true);
+  await pq.flush(true);
 
   deepEqual(stats.posts, [
     {
@@ -378,12 +364,10 @@ add_test(function test_huge_record() {
   ]);
 
   equal(pq.lastModified, time + 200);
-
-  run_next_test();
 });
 
 
-add_test(function test_max_records_batch() {
+add_task(async function test_max_records_batch() {
   let config = {
     max_post_bytes: 1000,
     max_post_records: 3,
@@ -410,20 +394,20 @@ add_test(function test_max_records_batch() {
 
   let { pq, stats } = makePostQueue(config, time0, responseGenerator());
 
-  ok(pq.enqueue(makeRecord(20)).enqueued);
-  ok(pq.enqueue(makeRecord(20)).enqueued);
-  ok(pq.enqueue(makeRecord(20)).enqueued);
+  ok((await pq.enqueue(makeRecord(20))).enqueued);
+  ok((await pq.enqueue(makeRecord(20))).enqueued);
+  ok((await pq.enqueue(makeRecord(20))).enqueued);
 
-  ok(pq.enqueue(makeRecord(20)).enqueued);
-  ok(pq.enqueue(makeRecord(20)).enqueued);
+  ok((await pq.enqueue(makeRecord(20))).enqueued);
+  ok((await pq.enqueue(makeRecord(20))).enqueued);
 
-  ok(pq.enqueue(makeRecord(20)).enqueued);
-  ok(pq.enqueue(makeRecord(20)).enqueued);
-  ok(pq.enqueue(makeRecord(20)).enqueued);
+  ok((await pq.enqueue(makeRecord(20))).enqueued);
+  ok((await pq.enqueue(makeRecord(20))).enqueued);
+  ok((await pq.enqueue(makeRecord(20))).enqueued);
 
-  ok(pq.enqueue(makeRecord(20)).enqueued);
+  ok((await pq.enqueue(makeRecord(20))).enqueued);
 
-  pq.flush(true);
+  await pq.flush(true);
 
   deepEqual(stats.posts, [
     { 
@@ -450,6 +434,4 @@ add_test(function test_max_records_batch() {
   ]);
 
   equal(pq.lastModified, time1 + 200);
-
-  run_next_test();
 });

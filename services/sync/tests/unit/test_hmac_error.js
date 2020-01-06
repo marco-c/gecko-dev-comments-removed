@@ -11,19 +11,19 @@ Cu.import("resource://testing-common/services/sync/utils.js");
 var hmacErrorCount = 0;
 (function() {
   let hHE = Service.handleHMACEvent;
-  Service.handleHMACEvent = function() {
+  Service.handleHMACEvent = async function() {
     hmacErrorCount++;
     return hHE.call(Service);
   };
 })();
 
-function shared_setup() {
+async function shared_setup() {
   enableValidationPrefs();
 
   hmacErrorCount = 0;
 
   
-  let { engine, tracker } = registerRotaryEngine();
+  let { engine, tracker } = await registerRotaryEngine();
   engine.lastSync = 123; 
   engine._store.items = {flying: "LNER Class A3 4472",
                          scotsman: "Flying Scotsman"};
@@ -46,7 +46,7 @@ function shared_setup() {
 
 add_task(async function hmac_error_during_404() {
   _("Attempt to replicate the HMAC error setup.");
-  let [engine, rotaryColl, clientsColl, keysWBO, global, tracker] = shared_setup();
+  let [engine, rotaryColl, clientsColl, keysWBO, global, tracker] = await shared_setup();
 
   
   let keysHandler    = keysWBO.handler();
@@ -75,7 +75,7 @@ add_task(async function hmac_error_during_404() {
   let server = sync_httpd_setup(handlers);
   
   await configureIdentity({ username: "foo" }, server);
-  Service.login();
+  await Service.login();
 
   try {
     _("Syncing.");
@@ -102,7 +102,7 @@ add_task(async function hmac_error_during_404() {
 
 add_task(async function hmac_error_during_node_reassignment() {
   _("Attempt to replicate an HMAC error during node reassignment.");
-  let [engine, rotaryColl, clientsColl, keysWBO, global, tracker] = shared_setup();
+  let [engine, rotaryColl, clientsColl, keysWBO, global, tracker] = await shared_setup();
 
   let collectionsHelper = track_collections_helper();
   let upd = collectionsHelper.with_updated_collection;
@@ -180,7 +180,7 @@ add_task(async function hmac_error_during_node_reassignment() {
   
   function onwards() {
     _("== Invoking first sync.");
-    Service.sync();
+    Async.promiseSpinningly(Service.sync());
     _("We should not simultaneously have data but no keys on the server.");
     let hasData = rotaryColl.wbo("flying") ||
                   rotaryColl.wbo("scotsman");
@@ -227,7 +227,7 @@ add_task(async function hmac_error_during_node_reassignment() {
             server.stop(resolve);
           };
 
-          Service.sync();
+          Async.promiseSpinningly(Service.sync());
         },
         this);
       };

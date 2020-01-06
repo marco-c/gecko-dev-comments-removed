@@ -12,28 +12,19 @@ Cu.import("resource://services-sync/status.js");
 Cu.import("resource://services-sync/util.js");
 Cu.import("resource://testing-common/services/sync/utils.js");
 
-Service.engineManager.clear();
-
 function CatapultEngine() {
   SyncEngine.call(this, "Catapult", Service);
 }
 CatapultEngine.prototype = {
   __proto__: SyncEngine.prototype,
   exception: null, 
-  _sync: function _sync() {
+  async _sync() {
     throw this.exception;
   }
 };
 
-Service.engineManager.register(CatapultEngine);
-
 var scheduler = new SyncScheduler(Service);
-var clientsEngine = Service.clientsEngine;
-
-
-
-
-clientsEngine._removeRemoteClient = id => {};
+let clientsEngine;
 
 function sync_httpd_setup() {
   let global = new ServerWBO("global", {
@@ -68,15 +59,22 @@ async function setUp(server) {
 }
 
 async function cleanUpAndGo(server) {
-  await promiseNextTick();
-  clientsEngine._store.wipe();
-  Service.startOver();
+  await Async.promiseYield();
+  await clientsEngine._store.wipe();
+  await Service.startOver();
   if (server) {
     await promiseStopServer(server);
   }
 }
 
-function run_test() {
+add_task(async function setup() {
+  await Service.promiseInitialized;
+  clientsEngine = Service.clientsEngine;
+  
+  
+  
+  clientsEngine._removeRemoteClient = async (id) => {};
+  Service.engineManager.clear();
   initTestLogging("Trace");
 
   Log.repository.getLogger("Sync.Service").level = Log.Level.Trace;
@@ -85,8 +83,8 @@ function run_test() {
 
   scheduler.setDefaults();
 
-  run_next_test();
-}
+  await Service.engineManager.register(CatapultEngine);
+});
 
 add_test(function test_prefAttributes() {
   _("Test various attributes corresponding to preferences.");
@@ -178,7 +176,7 @@ add_task(async function test_updateClientMode() {
   do_check_false(scheduler.idle);
 
   
-  clientsEngine.resetClient();
+  await clientsEngine.resetClient();
   Svc.Prefs.reset("clients.devices.mobile");
   scheduler.updateClientMode();
 
@@ -211,7 +209,7 @@ add_task(async function test_masterpassword_locked_retry_interval() {
   };
 
   let oldVerifyLogin = Service.verifyLogin;
-  Service.verifyLogin = function() {
+  Service.verifyLogin = async function() {
     Status.login = MASTER_PASSWORD_LOCKED;
     return false;
   };
@@ -219,7 +217,7 @@ add_task(async function test_masterpassword_locked_retry_interval() {
   let server = sync_httpd_setup();
   await setUp(server);
 
-  Service.sync();
+  await Service.sync();
 
   do_check_true(loginFailed);
   do_check_eq(Status.login, MASTER_PASSWORD_LOCKED);
@@ -388,7 +386,7 @@ add_task(async function test_handleSyncError() {
   
   
   _("Test first error calls scheduleNextSync on default interval");
-  Service.sync();
+  await Service.sync();
   do_check_true(scheduler.nextSync <= Date.now() + scheduler.singleDeviceInterval);
   do_check_eq(scheduler.syncTimer.delay, scheduler.singleDeviceInterval);
   do_check_eq(scheduler._syncErrors, 1);
@@ -396,7 +394,7 @@ add_task(async function test_handleSyncError() {
   scheduler.syncTimer.clear();
 
   _("Test second error still calls scheduleNextSync on default interval");
-  Service.sync();
+  await Service.sync();
   do_check_true(scheduler.nextSync <= Date.now() + scheduler.singleDeviceInterval);
   do_check_eq(scheduler.syncTimer.delay, scheduler.singleDeviceInterval);
   do_check_eq(scheduler._syncErrors, 2);
@@ -404,7 +402,7 @@ add_task(async function test_handleSyncError() {
   scheduler.syncTimer.clear();
 
   _("Test third error sets Status.enforceBackoff and calls scheduleAtInterval");
-  Service.sync();
+  await Service.sync();
   let maxInterval = scheduler._syncErrors * (2 * MINIMUM_BACKOFF_INTERVAL);
   do_check_eq(Status.backoffInterval, 0);
   do_check_true(scheduler.nextSync <= (Date.now() + maxInterval));
@@ -419,7 +417,7 @@ add_task(async function test_handleSyncError() {
   scheduler.syncTimer.clear();
 
   _("Test fourth error still calls scheduleAtInterval even if enforceBackoff was reset");
-  Service.sync();
+  await Service.sync();
   maxInterval = scheduler._syncErrors * (2 * MINIMUM_BACKOFF_INTERVAL);
   do_check_true(scheduler.nextSync <= Date.now() + maxInterval);
   do_check_true(scheduler.syncTimer.delay <= maxInterval);
@@ -447,12 +445,12 @@ add_task(async function test_client_sync_finish_updateClientMode() {
   do_check_false(scheduler.idle);
 
   
-  clientsEngine._store.create(
+  await clientsEngine._store.create(
     { id: "foo", cleartext: { os: "mobile", version: "0.01", type: "desktop" } }
   );
   do_check_false(scheduler.numClients > 1);
   scheduler.updateClientMode();
-  Service.sync();
+  await Service.sync();
 
   do_check_eq(scheduler.syncThreshold, MULTI_DEVICE_THRESHOLD);
   do_check_eq(scheduler.syncInterval, scheduler.activeInterval);
@@ -460,11 +458,11 @@ add_task(async function test_client_sync_finish_updateClientMode() {
   do_check_false(scheduler.idle);
 
   
-  clientsEngine.resetClient();
+  await clientsEngine.resetClient();
   
   await setUp(server);
 
-  Service.sync();
+  await Service.sync();
 
   
   do_check_eq(scheduler.numClients, 1);
@@ -540,7 +538,7 @@ add_task(async function test_autoconnect_mp_locked() {
   scheduler.delayedAutoConnect(0);
   await promiseObserved;
 
-  await promiseNextTick();
+  await Async.promiseYield();
 
   do_check_eq(Status.login, MASTER_PASSWORD_LOCKED);
 
@@ -719,7 +717,7 @@ add_task(async function test_no_sync_node() {
   Service._clusterManager._findCluster = () => null;
   Service.clusterURL = "";
   try {
-    Service.sync();
+    await Service.sync();
     do_check_eq(Status.sync, NO_SYNC_NODE_FOUND);
     do_check_eq(scheduler.syncTimer.delay, NO_SYNC_NODE_INTERVAL);
 
@@ -744,7 +742,7 @@ add_task(async function test_sync_failed_partial_500s() {
 
   do_check_true(await setUp(server));
 
-  Service.sync();
+  await Service.sync();
 
   do_check_eq(Status.service, SYNC_FAILED_PARTIAL);
 
@@ -770,7 +768,7 @@ add_task(async function test_sync_failed_partial_400s() {
   engine.exception = {status: 400};
 
   
-  clientsEngine._store.create(
+  await clientsEngine._store.create(
     { id: "foo", cleartext: { os: "mobile", version: "0.01", type: "desktop" } }
   );
 
@@ -778,7 +776,7 @@ add_task(async function test_sync_failed_partial_400s() {
 
   do_check_true(await setUp(server));
 
-  Service.sync();
+  await Service.sync();
 
   do_check_eq(Status.service, SYNC_FAILED_PARTIAL);
   do_check_eq(scheduler.syncInterval, scheduler.activeInterval);
@@ -816,16 +814,16 @@ add_task(async function test_sync_X_Weave_Backoff() {
 
   
   
-  clientsEngine._store.create(
+  await clientsEngine._store.create(
     { id: "foo", cleartext: { os: "mobile", version: "0.01", type: "desktop" } }
   );
-  let rec = clientsEngine._store.createRecord("foo", "clients");
+  let rec = await clientsEngine._store.createRecord("foo", "clients");
   rec.encrypt(Service.collectionKeys.keyForCollection("clients"));
   rec.upload(Service.resource(clientsEngine.engineURL + rec.id));
 
   
   
-  Service.sync();
+  await Service.sync();
   do_check_eq(Status.backoffInterval, 0);
   do_check_eq(Status.minimumNextSync, 0);
   do_check_eq(scheduler.syncInterval, scheduler.activeInterval);
@@ -836,7 +834,7 @@ add_task(async function test_sync_X_Weave_Backoff() {
 
   
   serverBackoff = true;
-  Service.sync();
+  await Service.sync();
 
   do_check_true(Status.backoffInterval >= BACKOFF * 1000);
   
@@ -877,16 +875,16 @@ add_task(async function test_sync_503_Retry_After() {
 
   
   
-  clientsEngine._store.create(
+  await clientsEngine._store.create(
     { id: "foo", cleartext: { os: "mobile", version: "0.01", type: "desktop" } }
   );
-  let rec = clientsEngine._store.createRecord("foo", "clients");
+  let rec = await clientsEngine._store.createRecord("foo", "clients");
   rec.encrypt(Service.collectionKeys.keyForCollection("clients"));
   rec.upload(Service.resource(clientsEngine.engineURL + rec.id));
 
   
   
-  Service.sync();
+  await Service.sync();
   do_check_false(Status.enforceBackoff);
   do_check_eq(Status.backoffInterval, 0);
   do_check_eq(Status.minimumNextSync, 0);
@@ -898,7 +896,7 @@ add_task(async function test_sync_503_Retry_After() {
 
   
   serverMaintenance = true;
-  Service.sync();
+  await Service.sync();
 
   do_check_true(Status.enforceBackoff);
   do_check_true(Status.backoffInterval >= BACKOFF * 1000);
@@ -939,7 +937,7 @@ add_task(async function test_loginError_recoverable_reschedules() {
 
   scheduler.scheduleNextSync(0);
   await promiseObserved;
-  await promiseNextTick();
+  await Async.promiseYield();
 
   do_check_eq(Status.login, LOGIN_FAILED_NETWORK_ERROR);
 
@@ -974,7 +972,7 @@ add_task(async function test_loginError_fatal_clearsTriggers() {
 
   scheduler.scheduleNextSync(0);
   await promiseObserved;
-  await promiseNextTick();
+  await Async.promiseYield();
 
   
   
@@ -1003,7 +1001,7 @@ add_task(async function test_proper_interval_on_only_failing() {
     reconciled: 0
   });
 
-  await promiseNextTick();
+  await Async.promiseYield();
   scheduler.adjustSyncInterval();
   do_check_false(scheduler.hasIncomingItems);
   do_check_eq(scheduler.syncInterval, scheduler.singleDeviceInterval);

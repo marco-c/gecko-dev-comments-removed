@@ -11,19 +11,20 @@ Cu.import("resource://services-sync/util.js");
 Cu.import("resource://testing-common/services/sync/utils.js");
 Cu.import("resource://services-sync/bookmark_validator.js");
 
-
-initTestLogging("Trace");
-
 const bms = PlacesUtils.bookmarks;
+let engine;
+let store;
 
-Service.engineManager.register(BookmarksEngine);
+add_task(async function setup() {
+  initTestLogging("Trace");
+  await Service.engineManager.register(BookmarksEngine);
+  engine = Service.engineManager.get("bookmarks");
+  store = engine._store;
+  store._log.level = Log.Level.Trace;
+  engine._log.level = Log.Level.Trace;
+});
 
-const engine = new BookmarksEngine(Service);
-const store = engine._store;
-store._log.level = Log.Level.Trace;
-engine._log.level = Log.Level.Trace;
-
-async function setup() {
+async function sharedSetup() {
  let server = serverForFoo(engine);
   await SyncTestingInfrastructure(server);
 
@@ -37,14 +38,14 @@ async function setup() {
 async function cleanup(server) {
   Svc.Obs.notify("weave:engine:stop-tracking");
   let promiseStartOver = promiseOneObserver("weave:service:start-over:finish");
-  Service.startOver();
+  await Service.startOver();
   await promiseStartOver;
   await promiseStopServer(server);
   await bms.eraseEverything();
 }
 
 async function syncIdToId(syncId) {
-  let guid = await PlacesSyncUtils.bookmarks.syncIdToGuid(syncId);
+  let guid = PlacesSyncUtils.bookmarks.syncIdToGuid(syncId);
   return PlacesUtils.promiseItemId(guid);
 }
 
@@ -121,14 +122,14 @@ async function validate(collection, expectedFailures = []) {
 add_task(async function test_dupe_bookmark() {
   _("Ensure that a bookmark we consider a dupe is handled correctly.");
 
-  let { server, collection } = await this.setup();
+  let { server, collection } = await this.sharedSetup();
 
   try {
     
     let {id: folder1_id, guid: folder1_guid } = await createFolder(bms.toolbarFolder, "Folder 1");
     let {id: localId, guid: bmk1_guid} = await createBookmark(folder1_id, "http://getfirefox.com/", "Get Firefox!");
 
-    engine.sync();
+    await engine.sync();
 
     
     equal(collection.count(), 6);
@@ -165,7 +166,7 @@ add_task(async function test_dupe_bookmark() {
 
     _("Syncing so new dupe record is processed");
     engine.lastSync = engine.lastSync - 5;
-    engine.sync();
+    await engine.sync();
 
     
     equal(collection.count(), 7);
@@ -192,7 +193,7 @@ add_task(async function test_dupe_bookmark() {
 add_task(async function test_dupe_reparented_bookmark() {
   _("Ensure that a bookmark we consider a dupe from a different parent is handled correctly");
 
-  let { server, collection } = await this.setup();
+  let { server, collection } = await this.sharedSetup();
 
   try {
     
@@ -203,7 +204,7 @@ add_task(async function test_dupe_reparented_bookmark() {
 
     do_print(`folder1_guid=${folder1_guid}, folder2_guid=${folder2_guid}, bmk1_guid=${bmk1_guid}`);
 
-    engine.sync();
+    await engine.sync();
 
     
     equal(collection.count(), 7);
@@ -226,7 +227,7 @@ add_task(async function test_dupe_reparented_bookmark() {
 
     _("Syncing so new dupe record is processed");
     engine.lastSync = engine.lastSync - 5;
-    engine.sync();
+    await engine.sync();
 
     
     equal(collection.count(), 8);
@@ -258,7 +259,7 @@ add_task(async function test_dupe_reparented_bookmark() {
 add_task(async function test_dupe_reparented_locally_changed_bookmark() {
   _("Ensure that a bookmark with local changes we consider a dupe from a different parent is handled correctly");
 
-  let { server, collection } = await this.setup();
+  let { server, collection } = await this.sharedSetup();
 
   try {
     
@@ -269,7 +270,7 @@ add_task(async function test_dupe_reparented_locally_changed_bookmark() {
 
     do_print(`folder1_guid=${folder1_guid}, folder2_guid=${folder2_guid}, bmk1_guid=${bmk1_guid}`);
 
-    engine.sync();
+    await engine.sync();
 
     
     equal(collection.count(), 7);
@@ -303,7 +304,7 @@ add_task(async function test_dupe_reparented_locally_changed_bookmark() {
 
     _("Syncing so new dupe record is processed");
     engine.lastSync = engine.lastSync - 5;
-    engine.sync();
+    await engine.sync();
 
     
     equal(collection.count(), 8);
@@ -336,7 +337,7 @@ add_task(async function test_dupe_reparented_to_earlier_appearing_parent_bookmar
   _("Ensure that a bookmark we consider a dupe from a different parent that " +
     "appears in the same sync before the dupe item");
 
-  let { server, collection } = await this.setup();
+  let { server, collection } = await this.sharedSetup();
 
   try {
     
@@ -347,7 +348,7 @@ add_task(async function test_dupe_reparented_to_earlier_appearing_parent_bookmar
 
     do_print(`folder1=${folder1_guid}, bmk1=${bmk1_guid} folder2=${folder2_guid}`);
 
-    engine.sync();
+    await engine.sync();
 
     
     equal(collection.count(), 7);
@@ -394,12 +395,12 @@ add_task(async function test_dupe_reparented_to_earlier_appearing_parent_bookmar
 
     _("Syncing so new records are processed.");
     engine.lastSync = engine.lastSync - 5;
-    engine.sync();
+    await engine.sync();
 
     
     equal((await getFolderChildrenIDs(folder1_id)).length, 0);
-    let newParentID = store.idForGUID(newParentGUID);
-    let newID = store.idForGUID(newGUID);
+    let newParentID = await store.idForGUID(newParentGUID);
+    let newID = await store.idForGUID(newGUID);
     deepEqual(await getFolderChildrenIDs(newParentID), [newID]);
 
     
@@ -413,7 +414,7 @@ add_task(async function test_dupe_reparented_to_later_appearing_parent_bookmark(
   _("Ensure that a bookmark we consider a dupe from a different parent that " +
     "doesn't exist locally as we process the child, but does appear in the same sync");
 
-  let { server, collection } = await this.setup();
+  let { server, collection } = await this.sharedSetup();
 
   try {
     
@@ -424,7 +425,7 @@ add_task(async function test_dupe_reparented_to_later_appearing_parent_bookmark(
 
     do_print(`folder1=${folder1_guid}, bmk1=${bmk1_guid} folder2=${folder2_guid}`);
 
-    engine.sync();
+    await engine.sync();
 
     
     equal(collection.count(), 7);
@@ -470,13 +471,13 @@ add_task(async function test_dupe_reparented_to_later_appearing_parent_bookmark(
 
     _("Syncing so out-of-order records are processed.");
     engine.lastSync = engine.lastSync - 5;
-    engine.sync();
+    await engine.sync();
 
     
     
     equal((await getFolderChildrenIDs(folder1_id)).length, 0);
-    let newParentID = store.idForGUID(newParentGUID);
-    let newID = store.idForGUID(newGUID);
+    let newParentID = await store.idForGUID(newParentGUID);
+    let newID = await store.idForGUID(newGUID);
     deepEqual(await getFolderChildrenIDs(newParentID), [newID]);
 
     
@@ -490,7 +491,7 @@ add_task(async function test_dupe_reparented_to_future_arriving_parent_bookmark(
   _("Ensure that a bookmark we consider a dupe from a different parent that " +
     "doesn't exist locally and doesn't appear in this Sync is handled correctly");
 
-  let { server, collection } = await this.setup();
+  let { server, collection } = await this.sharedSetup();
 
   try {
     
@@ -501,7 +502,7 @@ add_task(async function test_dupe_reparented_to_future_arriving_parent_bookmark(
 
     do_print(`folder1=${folder1_guid}, bmk1=${bmk1_guid} folder2=${folder2_guid}`);
 
-    engine.sync();
+    await engine.sync();
 
     
     equal(collection.count(), 7);
@@ -526,7 +527,7 @@ add_task(async function test_dupe_reparented_to_future_arriving_parent_bookmark(
 
     _("Syncing so new dupe record is processed");
     engine.lastSync = engine.lastSync - 5;
-    engine.sync();
+    await engine.sync();
 
     
     equal(collection.count(), 8);
@@ -543,7 +544,7 @@ add_task(async function test_dupe_reparented_to_future_arriving_parent_bookmark(
 
     
     
-    equal(PlacesUtils.annotations.getItemAnnotation(store.idForGUID(newGUID), "sync/parent"),
+    equal(PlacesUtils.annotations.getItemAnnotation((await store.idForGUID(newGUID)), "sync/parent"),
           newParentGUID);
 
     
@@ -582,12 +583,12 @@ add_task(async function test_dupe_reparented_to_future_arriving_parent_bookmark(
 
     _("Syncing so missing parent appears");
     engine.lastSync = engine.lastSync - 5;
-    engine.sync();
+    await engine.sync();
 
     
     equal((await getFolderChildrenIDs(folder1_id)).length, 0);
-    let newParentID = store.idForGUID(newParentGUID);
-    let newID = store.idForGUID(newGUID);
+    let newParentID = await store.idForGUID(newParentGUID);
+    let newID = await store.idForGUID(newGUID);
     deepEqual(await getFolderChildrenIDs(newParentID), [newID]);
 
     
@@ -614,13 +615,13 @@ add_task(async function test_dupe_empty_folder() {
   _("Ensure that an empty folder we consider a dupe is handled correctly.");
   
   
-  let { server, collection } = await this.setup();
+  let { server, collection } = await this.sharedSetup();
 
   try {
     
     let {guid: folder1_guid } = await createFolder(bms.toolbarFolder, "Folder 1");
 
-    engine.sync();
+    await engine.sync();
 
     
     equal(collection.count(), 5);
@@ -638,7 +639,7 @@ add_task(async function test_dupe_empty_folder() {
 
     _("Syncing so new dupe records are processed");
     engine.lastSync = engine.lastSync - 5;
-    engine.sync();
+    await engine.sync();
 
     await validate(collection);
 
