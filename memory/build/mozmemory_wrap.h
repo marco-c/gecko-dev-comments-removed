@@ -88,22 +88,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef MOZ_MEMORY
 #  error Should only include mozmemory_wrap.h when MOZ_MEMORY is set.
 #endif
@@ -129,27 +113,18 @@
 #endif
 
 #ifdef MOZ_MEMORY_IMPL
-#  if defined(MOZ_JEMALLOC_IMPL) && defined(MOZ_REPLACE_MALLOC)
-#    define mozmem_malloc_impl(a)     je_ ## a
-#    define mozmem_jemalloc_impl(a)   je_ ## a
+#  define MOZ_JEMALLOC_API MOZ_EXTERN_C MFBT_API
+#  if defined(XP_WIN)
+#    define mozmem_malloc_impl(a)   je_ ## a
 #  else
-#    define MOZ_JEMALLOC_API MOZ_EXTERN_C MFBT_API
-#    if defined(XP_WIN)
-#      if defined(MOZ_REPLACE_MALLOC)
-#        define mozmem_malloc_impl(a)   a ## _impl
-#      else
-#        define mozmem_malloc_impl(a)   je_ ## a
-#      endif
-#    else
-#      define MOZ_MEMORY_API MOZ_EXTERN_C MFBT_API
-#      if defined(MOZ_WIDGET_ANDROID)
-#        define MOZ_WRAP_NEW_DELETE
-#      endif
+#    define MOZ_MEMORY_API MOZ_EXTERN_C MFBT_API
+#    if defined(MOZ_WIDGET_ANDROID)
+#      define MOZ_WRAP_NEW_DELETE
 #    endif
 #  endif
-#  ifdef XP_WIN
-#    define mozmem_dup_impl(a)      wrap_ ## a
-#  endif
+#endif
+#ifdef XP_WIN
+#  define mozmem_dup_impl(a)      wrap_ ## a
 #endif
 
 #if !defined(MOZ_MEMORY_IMPL)

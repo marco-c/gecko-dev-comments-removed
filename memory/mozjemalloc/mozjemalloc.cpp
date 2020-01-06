@@ -100,9 +100,18 @@
 
 
 
+
+
+
+
+
+
+
 #include "mozmemory_wrap.h"
 #include "mozjemalloc.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/Likely.h"
+#include "mozilla/MacroArgs.h"
 
 #ifdef ANDROID
 #define NO_TLS
@@ -5250,16 +5259,231 @@ _malloc_postfork_child(void)
 #define ARGS2(t1, t2) ARGS1(t1), arg2
 #define ARGS3(t1, t2, t3) ARGS2(t1, t2), arg3
 
-#define GENERIC_MALLOC_DECL_HELPER(name, return, return_type, ...) \
-  return_type name##_impl(ARGS_HELPER(TYPED_ARGS, ##__VA_ARGS__)) \
-  { \
-    return MozJemalloc::name(ARGS_HELPER(ARGS, ##__VA_ARGS__)); \
-  }
-
 #define GENERIC_MALLOC_DECL(name, return_type, ...) \
   GENERIC_MALLOC_DECL_HELPER(name, return, return_type, ##__VA_ARGS__)
 #define GENERIC_MALLOC_DECL_VOID(name, ...) \
   GENERIC_MALLOC_DECL_HELPER(name, , void, ##__VA_ARGS__)
+
+
+#ifdef MOZ_REPLACE_MALLOC
+
+
+
+
+
+
+
+
+
+
+
+#ifdef XP_DARWIN
+#  define MOZ_REPLACE_WEAK __attribute__((weak_import))
+#elif defined(XP_WIN) || defined(MOZ_WIDGET_ANDROID)
+#  define MOZ_NO_REPLACE_FUNC_DECL
+#elif defined(__GNUC__)
+#  define MOZ_REPLACE_WEAK __attribute__((weak))
+#endif
+
+#include "replace_malloc.h"
+
+#define MALLOC_DECL(name, return_type, ...) \
+    MozJemalloc::name,
+
+static const malloc_table_t malloc_table = {
+#include "malloc_decls.h"
+};
+
+static malloc_table_t replace_malloc_table;
+
+#ifdef MOZ_NO_REPLACE_FUNC_DECL
+#  define MALLOC_DECL(name, return_type, ...) \
+    typedef return_type (name##_impl_t)(__VA_ARGS__); \
+    name##_impl_t* replace_##name = nullptr;
+#  define MALLOC_FUNCS (MALLOC_FUNCS_INIT | MALLOC_FUNCS_BRIDGE)
+#  include "malloc_decls.h"
+#endif
+
+#ifdef XP_WIN
+typedef HMODULE replace_malloc_handle_t;
+
+static replace_malloc_handle_t
+replace_malloc_handle()
+{
+  char replace_malloc_lib[1024];
+  if (GetEnvironmentVariableA("MOZ_REPLACE_MALLOC_LIB", (LPSTR)&replace_malloc_lib,
+                              sizeof(replace_malloc_lib)) > 0) {
+    return LoadLibraryA(replace_malloc_lib);
+  }
+  return nullptr;
+}
+
+#    define REPLACE_MALLOC_GET_FUNC(handle, name) \
+      (name##_impl_t*) GetProcAddress(handle, "replace_" # name)
+
+#elif defined(ANDROID)
+#  include <dlfcn.h>
+
+typedef void* replace_malloc_handle_t;
+
+static replace_malloc_handle_t
+replace_malloc_handle()
+{
+  const char *replace_malloc_lib = getenv("MOZ_REPLACE_MALLOC_LIB");
+  if (replace_malloc_lib && *replace_malloc_lib) {
+    return dlopen(replace_malloc_lib, RTLD_LAZY);
+  }
+  return nullptr;
+}
+
+#  define REPLACE_MALLOC_GET_FUNC(handle, name) \
+    (name##_impl_t*) dlsym(handle, "replace_" # name)
+
+#else
+
+typedef bool replace_malloc_handle_t;
+
+static replace_malloc_handle_t
+replace_malloc_handle()
+{
+  return true;
+}
+
+#  define REPLACE_MALLOC_GET_FUNC(handle, name) \
+    replace_##name
+
+#endif
+
+static void replace_malloc_init_funcs();
+
+
+
+
+
+
+static int replace_malloc_initialized = 0;
+static void
+init()
+{
+  replace_malloc_init_funcs();
+  
+  
+  replace_malloc_initialized = 1;
+  if (replace_init) {
+    replace_init(&malloc_table);
+  }
+}
+
+#define GENERIC_MALLOC_DECL_HELPER(name, return, return_type, ...) \
+  template<> inline return_type \
+  ReplaceMalloc::name(ARGS_HELPER(TYPED_ARGS, ##__VA_ARGS__)) \
+  { \
+    if (MOZ_UNLIKELY(!replace_malloc_initialized)) { \
+      init(); \
+    } \
+    return replace_malloc_table.name(ARGS_HELPER(ARGS, ##__VA_ARGS__)); \
+  }
+
+#define MALLOC_DECL(...) MACRO_CALL(GENERIC_MALLOC_DECL, (__VA_ARGS__))
+#define MALLOC_DECL_VOID(...) MACRO_CALL(GENERIC_MALLOC_DECL_VOID, (__VA_ARGS__))
+#define MALLOC_FUNCS (MALLOC_FUNCS_MALLOC | MALLOC_FUNCS_JEMALLOC)
+#include "malloc_decls.h"
+
+#undef GENERIC_MALLOC_DECL_HELPER
+
+MOZ_JEMALLOC_API struct ReplaceMallocBridge*
+get_bridge(void)
+{
+  if (MOZ_UNLIKELY(!replace_malloc_initialized))
+    init();
+  if (MOZ_LIKELY(!replace_get_bridge))
+    return nullptr;
+  return replace_get_bridge();
+}
+
+
+
+
+
+
+
+
+static int
+default_posix_memalign(void** aPtr, size_t aAlignment, size_t aSize)
+{
+  void* result;
+  
+  if (((aAlignment - 1) & aAlignment) != 0 || (aAlignment < sizeof(void *)))
+    return EINVAL;
+  result = replace_malloc_table.memalign(aAlignment, aSize);
+  if (!result) {
+    return ENOMEM;
+  }
+  *aPtr = result;
+  return 0;
+}
+
+static void*
+default_aligned_alloc(size_t aAlignment, size_t aSize)
+{
+  
+  if (aSize % aAlignment)
+    return nullptr;
+  return replace_malloc_table.memalign(aAlignment, aSize);
+}
+
+
+static void*
+default_valloc(size_t aSize)
+{
+  return replace_malloc_table.memalign(GetKernelPageSize(), aSize);
+}
+
+static void
+replace_malloc_init_funcs()
+{
+  replace_malloc_handle_t handle = replace_malloc_handle();
+  if (handle) {
+#ifdef MOZ_NO_REPLACE_FUNC_DECL
+#  define MALLOC_DECL(name, ...) \
+    replace_##name = REPLACE_MALLOC_GET_FUNC(handle, name);
+
+#  define MALLOC_FUNCS (MALLOC_FUNCS_INIT | MALLOC_FUNCS_BRIDGE)
+#  include "malloc_decls.h"
+#endif
+
+#define MALLOC_DECL(name, ...) \
+  replace_malloc_table.name = REPLACE_MALLOC_GET_FUNC(handle, name);
+#include "malloc_decls.h"
+  }
+
+  if (!replace_malloc_table.posix_memalign && replace_malloc_table.memalign) {
+    replace_malloc_table.posix_memalign = default_posix_memalign;
+  }
+
+  if (!replace_malloc_table.aligned_alloc && replace_malloc_table.memalign) {
+    replace_malloc_table.aligned_alloc = default_aligned_alloc;
+  }
+
+  if (!replace_malloc_table.valloc && replace_malloc_table.memalign) {
+    replace_malloc_table.valloc = default_valloc;
+  }
+#define MALLOC_DECL(name, ...) \
+  if (!replace_malloc_table.name) { \
+    replace_malloc_table.name = MozJemalloc::name; \
+  }
+#include "malloc_decls.h"
+}
+
+#endif 
+
+
+
+#define GENERIC_MALLOC_DECL_HELPER(name, return, return_type, ...) \
+  return_type name##_impl(ARGS_HELPER(TYPED_ARGS, ##__VA_ARGS__)) \
+  { \
+    return DefaultMalloc::name(ARGS_HELPER(ARGS, ##__VA_ARGS__)); \
+  }
 
 #define MALLOC_DECL(...) MOZ_MEMORY_API MACRO_CALL(GENERIC_MALLOC_DECL, (__VA_ARGS__))
 #define MALLOC_DECL_VOID(...) MOZ_MEMORY_API MACRO_CALL(GENERIC_MALLOC_DECL_VOID, (__VA_ARGS__))
@@ -5288,16 +5512,7 @@ jemalloc_darwin_init(void)
 
 #endif
 
-
-
-
-
-#define malloc_is_malloc 1
-#define is_malloc_(a) malloc_is_ ## a
-#define is_malloc(a) is_malloc_(a)
-
-#if !defined(XP_DARWIN) && (is_malloc(malloc_impl) == 1)
-#  if defined(__GLIBC__) && !defined(__UCLIBC__)
+#if defined(__GLIBC__) && !defined(__UCLIBC__)
 
 
 
@@ -5314,14 +5529,13 @@ MOZ_EXPORT void* (*__realloc_hook)(void*, size_t) = realloc_impl;
 MOZ_EXPORT void* (*__memalign_hook)(size_t, size_t) = memalign_impl;
 }
 
-#  elif defined(RTLD_DEEPBIND)
+#elif defined(RTLD_DEEPBIND)
 
 
 
 
 
 #    error "Interposing malloc is unsafe on this system without libc malloc hooks."
-#  endif
 #endif
 
 #ifdef XP_WIN
