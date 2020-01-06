@@ -392,6 +392,11 @@ private:
   
 
 
+  void MaybeResolveBidiForAnonymousBlockChild();
+
+  
+
+
 
   void MaybeReflowAnonymousBlockChild();
 
