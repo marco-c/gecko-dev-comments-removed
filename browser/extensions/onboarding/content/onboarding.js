@@ -1078,27 +1078,26 @@ class Onboarding {
 }
 
 
-if (Services.prefs.getBoolPref("browser.onboarding.enabled", false) &&
-    !Services.prefs.getBoolPref("browser.onboarding.hidden", false)) {
-
+if (Services.prefs.getBoolPref("browser.onboarding.enabled", false)) {
   addEventListener("load", function onLoad(evt) {
     if (!content || evt.target != content.document) {
       return;
     }
-    removeEventListener("load", onLoad);
 
-    let window = evt.target.defaultView;
-    let location = window.location.href;
-    if (location == ABOUT_NEWTAB_URL || location == ABOUT_HOME_URL) {
-      
-      
-      if (Cu.isInAutomation) {
-        new Onboarding(window);
-        return;
+    if (!Services.prefs.getBoolPref("browser.onboarding.hidden", false)) {
+      let window = evt.target.defaultView;
+      let location = window.location.href;
+      if (location == ABOUT_NEWTAB_URL || location == ABOUT_HOME_URL) {
+        
+        
+        if (Cu.isInAutomation) {
+          new Onboarding(window);
+          return;
+        }
+        window.requestIdleCallback(() => {
+          new Onboarding(window);
+        });
       }
-      window.requestIdleCallback(() => {
-        new Onboarding(window);
-      });
     }
   }, true);
 }
