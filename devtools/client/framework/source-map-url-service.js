@@ -36,11 +36,14 @@ function SourceMapURLService(target, threadClient, sourceMapService) {
   Services.prefs.addObserver(SOURCE_MAP_PREF, this._onPrefChanged);
 
   
-  this._loadingPromise = new Promise(resolve => {
-    threadClient.getSources(({sources}) => {
-      
-      resolve(sources);
-    });
+  this._loadingPromise = threadClient.getSources().then(({sources}) => {
+    
+    
+    for (let source of sources) {
+      this._onSourceUpdated(null, {source});
+    }
+  }, e => {
+    
   });
 }
 
