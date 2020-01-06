@@ -265,12 +265,12 @@ protected:
     {
     }
 
-    const nsCOMPtr<nsIAtom> mName;
-    nsCOMPtr<nsIAtom> mPrefix;
+    nsIAtom* const MOZ_OWNING_REF mName;
+    nsIAtom* MOZ_OWNING_REF mPrefix;
     int32_t             mNamespaceID;
     uint16_t            mNodeType; 
     const nsAString* const mNameString;
-    nsCOMPtr<nsIAtom> mExtraName; 
+    nsIAtom* MOZ_OWNING_REF mExtraName; 
     PLHashNumber      mHash;
     bool              mHashInitialized;
   };
