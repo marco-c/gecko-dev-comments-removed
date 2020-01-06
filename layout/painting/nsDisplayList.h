@@ -4608,6 +4608,10 @@ public:
                                        nsTArray<WebRenderParentCommand>& aParentCommands,
                                        mozilla::layers::WebRenderLayerManager* aManager,
                                        nsDisplayListBuilder* aDisplayListBuilder) override;
+
+private:
+  
+  nsRect mEffectsBounds;
 };
 
 
