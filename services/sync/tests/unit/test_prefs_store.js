@@ -25,7 +25,15 @@ function makePersona(id) {
 function run_test() {
   _("Test fixtures.");
   
-  Services.prefs.readUserPrefsFromFile(do_get_file("prefs_test_prefs_store.js"));
+  Services.prefs.readUserPrefs(do_get_file("prefs_test_prefs_store.js"));
+  
+  
+  
+  
+  let prefFile = do_get_profile();
+  prefFile.append("prefs.js");
+  Services.prefs.savePrefFile(prefFile);
+  Services.prefs.readUserPrefs(prefFile);
 
   let store = Service.engineManager.get("prefs")._store;
   let prefs = new Preferences();

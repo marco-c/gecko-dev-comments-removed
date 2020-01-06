@@ -18,7 +18,7 @@ do_register_cleanup(saveAndReload);
 function resetAndLoad(filenames) {
   ps.resetPrefs();
   for (let filename of filenames) {
-    ps.readUserPrefsFromFile(do_get_file(filename));
+    ps.readUserPrefs(do_get_file(filename));
   }
 }
 
@@ -33,12 +33,7 @@ function saveAndReload() {
 
   
   ps.resetPrefs();
-
-  
-  
-  file.exists();
-
-  ps.readUserPrefsFromFile(file);
+  ps.readUserPrefs(file);
 }
 
 function run_test() {

@@ -309,7 +309,6 @@ function run_test() {
   let savePrefFile = do_get_cwd();
   savePrefFile.append("data");
   savePrefFile.append("savePref.js");
-
   if (savePrefFile.exists())
     savePrefFile.remove(false);
   savePrefFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, 0o666);
@@ -318,7 +317,7 @@ function run_test() {
 
   
   let prefFile = do_get_file("data/testPref.js");
-  ps.readUserPrefsFromFile(prefFile);
+  ps.readUserPrefs(prefFile);
 
   
   do_check_throws(function() {
@@ -338,12 +337,7 @@ function run_test() {
   do_check_eq(pb.getCharPref("char2"), "älskar");
 
   
-
-  
-  
-  savePrefFile.exists();
-
-  ps.readUserPrefsFromFile(savePrefFile);
+  ps.readUserPrefs(savePrefFile);
   
   savePrefFile.remove(false);
   do_check_eq(ps.getBoolPref("ReadPref.bool"), true);

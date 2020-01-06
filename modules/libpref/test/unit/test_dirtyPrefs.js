@@ -22,6 +22,17 @@ function run_test() {
 
   
   
+  
+  
+  
+  try {
+    ps.readUserPrefs(prefFile);
+  } catch (e) {
+    
+  }
+
+  
+  
   ps.savePrefFile(null);
   do_check_false(ps.dirty);
 

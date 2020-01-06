@@ -442,7 +442,9 @@ protected:
 
 
   nsresult UseDefaultPrefFile();
-  void UseUserPrefFile();
+  nsresult UseUserPrefFile();
+  nsresult ReadAndOwnUserPrefFile(nsIFile *aFile);
+  nsresult ReadAndOwnSharedUserPrefFile(nsIFile *aFile);
   nsresult MakeBackupPrefFile(nsIFile *aFile);
 
   
