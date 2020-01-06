@@ -44,7 +44,7 @@ var gSearchResultsPane = {
 
   stringMatchesFilters(str, filter) {
     if (!filter || !str) {
-      return true;
+      return false;
     }
     let searchStr = str.toLowerCase();
     let filterStrings = filter.toLowerCase().split(/\s+/);
@@ -239,10 +239,8 @@ var gSearchResultsPane = {
         noResultsEl.hidden = false;
 
         let strings = this.strings;
-
-        document.getElementById("sorry-message").textContent = AppConstants.platform == "win" ?
-          strings.getFormattedString("searchResults.sorryMessageWin", [query]) :
-          strings.getFormattedString("searchResults.sorryMessageUnix", [query]);
+        document.getElementById("sorry-message").textContent =
+          strings.getFormattedString("searchResults.sorryMessage2", [query]);
         let brandName = document.getElementById("bundleBrand").getString("brandShortName");
         document.getElementById("need-help").innerHTML =
           strings.getFormattedString("searchResults.needHelp", [brandName]);
@@ -272,7 +270,7 @@ var gSearchResultsPane = {
 
   searchWithinNode(nodeObject, searchPhrase) {
     let matchesFound = false;
-    if (nodeObject.childElementCount == 0 || nodeObject.tagName == "menulist") {
+    if (nodeObject.childElementCount == 0) {
       let simpleTextNodes = this.textNodeDescendants(nodeObject);
 
       for (let node of simpleTextNodes) {
@@ -284,8 +282,6 @@ var gSearchResultsPane = {
       let nodeSizes = [];
       let allNodeText = "";
       let runningSize = 0;
-      let labelResult = false;
-      let valueResult = false;
       let accessKeyTextNodes = this.textNodeDescendants(nodeObject.boxObject);
 
       for (let node of accessKeyTextNodes) {
@@ -298,9 +294,7 @@ var gSearchResultsPane = {
       let complexTextNodesResult = this.highlightMatches(accessKeyTextNodes, nodeSizes, allNodeText.toLowerCase(), searchPhrase);
 
       
-      if (nodeObject.getAttribute("label")) {
-        labelResult = this.stringMatchesFilters(nodeObject.getAttribute("label"), searchPhrase);
-      }
+      let labelResult = this.stringMatchesFilters(nodeObject.getAttribute("label"), searchPhrase);
 
       
       if (labelResult && nodeObject.tagName === "button") {
@@ -308,21 +302,26 @@ var gSearchResultsPane = {
       }
 
       
-      if (nodeObject.getAttribute("value")) {
-        valueResult = this.stringMatchesFilters(nodeObject.getAttribute("value"), searchPhrase);
-      }
-
-      if ((nodeObject.tagName == "button" || nodeObject.tagName == "menulist" || nodeObject.tagName == "menuitem") &&
-          (labelResult || valueResult)) {
-        nodeObject.setAttribute("highlightable", "true");
-      }
+      let valueResult = this.stringMatchesFilters(nodeObject.getAttribute("value"), searchPhrase);
 
       
       if (valueResult && nodeObject.tagName === "button") {
         this.listSearchTooltips.push(nodeObject);
       }
 
-      matchesFound = matchesFound || complexTextNodesResult || labelResult || valueResult;
+      
+      let keywordsResult = this.stringMatchesFilters(nodeObject.getAttribute("searchkeywords"), searchPhrase);
+
+      
+      if (keywordsResult && nodeObject.tagName === "button") {
+        this.listSearchTooltips.push(nodeObject);
+      }
+
+      if (nodeObject.tagName == "button" && (labelResult || valueResult || keywordsResult)) {
+        nodeObject.setAttribute("highlightable", "true");
+      }
+
+      matchesFound = matchesFound || complexTextNodesResult || labelResult || valueResult || keywordsResult;
     }
 
     for (let i = 0; i < nodeObject.childNodes.length; i++) {
