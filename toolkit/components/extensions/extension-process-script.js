@@ -224,7 +224,6 @@ DocumentManager = {
 
   checkParentFrames(window, addonId) {
     while (window.parent !== window) {
-      let {frameElement} = window;
       window = window.parent;
 
       let principal = window.document.nodePrincipal;
@@ -233,14 +232,6 @@ DocumentManager = {
         
         
         if (window.location.href === "about:addons") {
-          return true;
-        }
-
-        
-        
-        
-        if (frameElement &&
-            frameElement.mozMatchesSelector("browser[webextension-view-type='devtools_panel']")) {
           return true;
         }
       }
