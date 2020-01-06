@@ -79,8 +79,6 @@ NewDenseFullyAllocatedArrayWithTemplate(JSContext* cx, uint32_t length, JSObject
 extern ArrayObject*
 NewDenseCopyOnWriteArray(JSContext* cx, HandleArrayObject templateObject, gc::InitialHeap heap);
 
-
-
 extern ArrayObject*
 NewFullyAllocatedArrayTryUseGroup(JSContext* cx, HandleObjectGroup group, size_t length,
                                   NewObjectKind newKind = GenericObject);

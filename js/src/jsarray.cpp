@@ -2019,10 +2019,6 @@ FillWithUndefined(JSContext* cx, HandleObject obj, uint32_t start, uint32_t coun
     MOZ_ASSERT(start < start + count, "count > 0 and start + count doesn't overflow");
 
     do {
-        
-        
-        if (!obj->is<NativeObject>())
-            break;
         if (ObjectMayHaveExtraIndexedProperties(obj))
             break;
 
@@ -2517,17 +2513,9 @@ js::array_unshift(JSContext* cx, unsigned argc, Value* vp)
 
     
     if (args.length() > 0) {
-        
-        
-        
-        
-        
-        
         bool optimized = false;
         do {
             if (length > UINT32_MAX)
-                break;
-            if (!obj->isNative())
                 break;
             if (ObjectMayHaveExtraIndexedProperties(obj))
                 break;
@@ -3912,10 +3900,7 @@ NewArrayTryUseGroup(JSContext* cx, HandleObjectGroup group, size_t length,
 {
     MOZ_ASSERT(newKind != SingletonObject);
 
-    if (group->maybePreliminaryObjects())
-        group->maybePreliminaryObjects()->maybeAnalyze(cx, group);
-
-    if (group->shouldPreTenure() || group->maybePreliminaryObjects())
+    if (group->shouldPreTenure())
         newKind = TenuredObject;
 
     RootedObject proto(cx, group->proto().toObject());
@@ -3929,9 +3914,6 @@ NewArrayTryUseGroup(JSContext* cx, HandleObjectGroup group, size_t length,
     
     if (res->length() > INT32_MAX)
         res->setLength(cx, res->length());
-
-    if (PreliminaryObjectArray* preliminaryObjects = group->maybePreliminaryObjects())
-        preliminaryObjects->registerNewObject(res);
 
     return res;
 }
@@ -3948,9 +3930,6 @@ js::NewPartlyAllocatedArrayTryUseGroup(JSContext* cx, HandleObjectGroup group, s
 {
     return NewArrayTryUseGroup<ArrayObject::EagerAllocationMaxLength>(cx, group, length);
 }
-
-
-
 
 
 

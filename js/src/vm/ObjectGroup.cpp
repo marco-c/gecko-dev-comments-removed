@@ -857,28 +857,13 @@ ObjectGroup::newArrayObject(JSContext* cx,
 
         AddTypePropertyId(cx, group, nullptr, JSID_VOID, elementType);
 
-        if (elementType != TypeSet::UnknownType()) {
-            
-            
-            
-            PreliminaryObjectArrayWithTemplate* preliminaryObjects =
-                cx->new_<PreliminaryObjectArrayWithTemplate>(nullptr);
-            if (!preliminaryObjects)
-                return nullptr;
-            group->setPreliminaryObjects(preliminaryObjects);
-        }
-
         if (!p.add(cx, *table, ObjectGroupCompartment::ArrayObjectKey(elementType), group))
             return nullptr;
     }
 
     
     
-    
     ShouldUpdateTypes updateTypes = ShouldUpdateTypes::DontUpdate;
-    if (group->maybePreliminaryObjects())
-        group->maybePreliminaryObjects()->maybeAnalyze(cx, group);
-
     return NewCopiedArrayTryUseGroup(cx, group, vp, length, newKind, updateTypes);
 }
 
@@ -888,25 +873,10 @@ GiveObjectGroup(JSContext* cx, JSObject* source, JSObject* target)
 {
     MOZ_ASSERT(source->group() != target->group());
 
-    if (!target->is<ArrayObject>())
-        return true;
-
-    if (target->group()->maybePreliminaryObjects()) {
-        bool force = IsInsideNursery(source);
-        target->group()->maybePreliminaryObjects()->maybeAnalyze(cx, target->group(), force);
-    }
-
-    ObjectGroup* sourceGroup = source->group();
-
-    if (!source->is<ArrayObject>())
+    if (!target->is<ArrayObject>() || !source->is<ArrayObject>())
         return true;
 
     source->setGroup(target->group());
-
-    if (sourceGroup->maybePreliminaryObjects())
-        sourceGroup->maybePreliminaryObjects()->unregisterObject(source);
-    if (target->group()->maybePreliminaryObjects())
-        target->group()->maybePreliminaryObjects()->registerNewObject(source);
 
     for (size_t i = 0; i < source->as<ArrayObject>().getDenseInitializedLength(); i++) {
         Value v = source->as<ArrayObject>().getDenseElement(i);

@@ -398,8 +398,6 @@ class NewObjectCache;
 
 
 
-
-
 enum class DenseElementResult {
     Failure,
     Success,

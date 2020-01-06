@@ -3439,7 +3439,7 @@ JSFunction::setTypeForScriptedFunction(JSContext* cx, HandleFunction fun,
 
 
 void
-PreliminaryObjectArray::registerNewObject(JSObject* res)
+PreliminaryObjectArray::registerNewObject(PlainObject* res)
 {
     
     
@@ -3457,7 +3457,7 @@ PreliminaryObjectArray::registerNewObject(JSObject* res)
 }
 
 void
-PreliminaryObjectArray::unregisterObject(JSObject* obj)
+PreliminaryObjectArray::unregisterObject(PlainObject* obj)
 {
     for (size_t i = 0; i < COUNT; i++) {
         if (objects[i] == obj) {
