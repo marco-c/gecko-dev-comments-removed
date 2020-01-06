@@ -13,6 +13,7 @@ use properties::longhands::display::computed_value as display;
 use restyle_hints::{RESTYLE_DESCENDANTS, RESTYLE_LATER_SIBLINGS, RESTYLE_SELF, RestyleHint};
 use rule_tree::StrongRuleNode;
 use selector_parser::{EAGER_PSEUDO_COUNT, PseudoElement, RestyleDamage};
+use shared_lock::StylesheetGuards;
 #[cfg(feature = "servo")] use std::collections::HashMap;
 use std::fmt;
 #[cfg(feature = "servo")] use std::hash::BuildHasherDefault;
@@ -504,6 +505,24 @@ impl ElementData {
 
         self.styles_mut().primary.rules = rules;
         true
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn important_rules_are_different(&self,
+                                         rules: &StrongRuleNode,
+                                         guards: &StylesheetGuards) -> bool {
+        debug_assert!(self.has_styles());
+        let (important_rules, _custom) =
+            self.styles().primary.rules.get_properties_overriding_animations(&guards);
+        let (other_important_rules, _custom) = rules.get_properties_overriding_animations(&guards);
+        important_rules != other_important_rules
     }
 
     

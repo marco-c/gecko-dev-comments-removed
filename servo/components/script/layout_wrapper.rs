@@ -486,7 +486,10 @@ impl<'le> TElement for ServoLayoutElement<'le> {
     }
 
     fn has_animations(&self) -> bool {
-        unreachable!("this should be only called on gecko");
+        
+        
+        
+        false
     }
 
     fn has_css_animations(&self) -> bool {

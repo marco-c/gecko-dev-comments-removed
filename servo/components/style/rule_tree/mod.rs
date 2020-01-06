@@ -8,7 +8,7 @@
 
 #[cfg(feature = "servo")]
 use heapsize::HeapSizeOf;
-use properties::{Importance, PropertyDeclarationBlock};
+use properties::{Importance, LonghandIdSet, PropertyDeclarationBlock};
 use shared_lock::{Locked, StylesheetGuards, SharedRwLockReadGuard};
 use smallvec::SmallVec;
 use std::io::{self, Write};
@@ -1091,6 +1091,42 @@ impl StrongRuleNode {
         self.self_and_ancestors()
             .take_while(|node| node.cascade_level() >= CascadeLevel::SMILOverride)
             .any(|node| node.cascade_level().is_animation())
+    }
+
+    
+    
+    
+    pub fn get_properties_overriding_animations(&self, guards: &StylesheetGuards)
+                                                -> (LonghandIdSet, bool) {
+        use properties::PropertyDeclarationId;
+
+        
+        
+        
+        
+        
+        let iter = self.self_and_ancestors()
+                       .skip_while(|node| node.cascade_level() == CascadeLevel::Transitions)
+                       .take_while(|node| node.cascade_level() > CascadeLevel::Animations);
+        let mut result = (LonghandIdSet::new(), false);
+        for node in iter {
+            let style = node.style_source().unwrap();
+            for &(ref decl, important) in style.read(node.cascade_level().guard(guards))
+                                               .declarations()
+                                               .iter() {
+                
+                
+                
+                
+                if important.important() {
+                    match decl.id() {
+                        PropertyDeclarationId::Longhand(id) => result.0.insert(id),
+                        PropertyDeclarationId::Custom(_) => result.1 = true
+                    }
+                }
+            }
+        }
+        result
     }
 }
 
