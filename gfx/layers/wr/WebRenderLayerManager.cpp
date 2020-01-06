@@ -210,6 +210,7 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
   
   if (mTransactionIncomplete) {
     DiscardLocalImages();
+    WrBridge()->ProcessWebRenderParentCommands();
     return false;
   }
 
