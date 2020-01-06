@@ -264,8 +264,8 @@ this.TopSitesFeed = class TopSitesFeed {
       
       case at.MIGRATION_COMPLETED:
       case at.PLACES_HISTORY_CLEARED:
-      case at.PLACES_LINK_DELETED:
       case at.PLACES_LINK_BLOCKED:
+      case at.PLACES_LINKS_DELETED:
         this.frecentCache.expire();
         this.refresh();
         break;

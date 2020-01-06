@@ -17,8 +17,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "ProfileAge",
 
 const SNIPPETS_URL_PREF = "browser.aboutHomeSnippets.updateUrl";
 const TELEMETRY_PREF = "datareporting.healthreport.uploadEnabled";
-const ONBOARDING_FINISHED_PREF = "browser.onboarding.notification.finished";
 const FXA_USERNAME_PREF = "services.sync.username";
+const ONBOARDING_FINISHED_PREF = "browser.onboarding.notification.finished";
 
 const TARGET_SEARCHENGINE_PREFIX = "searchEngine-";
 
