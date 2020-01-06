@@ -78,6 +78,20 @@ public:
     return aOther.EqualsAsStrings(*mAttrValue);
   }
 
+  
+
+
+  bool IsEmpty() const
+  {
+    if (mStringPtr) {
+      return mStringPtr->IsEmpty();
+    }
+    if (mAttrValue) {
+      return mAttrValue->IsEmptyString();
+    }
+    return true;
+  }
+
 protected:
   const nsAttrValue*       mAttrValue;
   mutable const nsAString* mStringPtr;

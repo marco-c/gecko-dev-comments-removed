@@ -618,6 +618,7 @@ public:
   already_AddRefed<mozilla::dom::NodeInfo>
   GetExistingAttrNameFromQName(const nsAString& aStr) const;
 
+  MOZ_ALWAYS_INLINE  
   nsresult SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
                    const nsAString& aValue, bool aNotify)
   {
@@ -1471,14 +1472,9 @@ protected:
 
 
 
-  
-  
   virtual nsresult BeforeSetAttr(int32_t aNamespaceID, nsIAtom* aName,
                                  const nsAttrValueOrString* aValue,
-                                 bool aNotify)
-  {
-    return NS_OK;
-  }
+                                 bool aNotify);
 
   
 
@@ -1504,6 +1500,42 @@ protected:
   {
     return NS_OK;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void PreIdMaybeChange(int32_t aNamespaceID, nsIAtom* aName,
+                        const nsAttrValueOrString* aValue);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void PostIdMaybeChange(int32_t aNamespaceID, nsIAtom* aName,
+                         const nsAttrValue* aValue);
 
   
 
