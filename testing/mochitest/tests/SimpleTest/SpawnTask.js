@@ -252,6 +252,8 @@ return co;
 var add_task = (function () {
   
   var task_list = [];
+  var run_only_this_task = null;
+
   
   return function (generatorFunction) {
     if (task_list.length === 0) {
@@ -270,9 +272,28 @@ var add_task = (function () {
         spawn_task(function* () {
           
           
+          
+          function skipTask(name) {
+            let logger = parentRunner && parentRunner.structuredLogger;
+            if (!logger) {
+              info("SpawnTask.js | Skipping test " + name);
+              return;
+            }
+            logger.deactivateBuffering();
+            logger.testStatus(SimpleTest._getCurrentTestURL(), name, "SKIP");
+            logger.warning("SpawnTask.js | Skipping test " + name);
+            logger.activateBuffering();
+          }
+
+          
+          
           try {
             for (var task of task_list) {
               var name = task.name || "";
+              if (task.__skipMe || (run_only_this_task && task != run_only_this_task)) {
+                skipTask(name);
+                continue;
+              }
               info("SpawnTask.js | Entering test " + name);
               yield task();
               info("SpawnTask.js | Leaving test " + name);
@@ -289,8 +310,11 @@ var add_task = (function () {
         });
       });
     }
+    generatorFunction.skip = () => generatorFunction.__skipMe = true;
+    generatorFunction.only = () => run_only_this_task = generatorFunction;
     
     
     task_list.push(generatorFunction);
+    return generatorFunction;
   };
 })();
