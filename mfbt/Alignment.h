@@ -34,6 +34,26 @@ public:
 
 #define MOZ_ALIGNOF(T) mozilla::AlignmentFinder<T>::alignment
 
+namespace detail {
+template<typename T>
+struct AlignasHelper
+{
+  T mT;
+};
+} 
+
+
+
+
+
+
+
+
+
+
+
+#define MOZ_ALIGNAS_IN_STRUCT(T) alignas(mozilla::detail::AlignasHelper<T>)
+
 
 
 
