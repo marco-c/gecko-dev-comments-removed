@@ -224,7 +224,7 @@ HTMLSharedObjectElement::IsHTMLFocusable(bool aWithMouse,
     
     
     if (aTabIndex) {
-      GetTabIndex(aTabIndex);
+      *aTabIndex = TabIndex();
     }
 
     *aIsFocusable = true;

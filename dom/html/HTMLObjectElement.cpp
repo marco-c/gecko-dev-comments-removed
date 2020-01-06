@@ -361,7 +361,7 @@ HTMLObjectElement::IsHTMLFocusable(bool aWithMouse,
   nsIDocument *doc = GetComposedDoc();
   if (!doc || doc->HasFlag(NODE_IS_EDITABLE)) {
     if (aTabIndex) {
-      GetTabIndex(aTabIndex);
+      *aTabIndex = TabIndex();
     }
 
     *aIsFocusable = false;
@@ -377,7 +377,7 @@ HTMLObjectElement::IsHTMLFocusable(bool aWithMouse,
     
     
     if (aTabIndex) {
-      GetTabIndex(aTabIndex);
+      *aTabIndex = TabIndex();
     }
 
     *aIsFocusable = true;

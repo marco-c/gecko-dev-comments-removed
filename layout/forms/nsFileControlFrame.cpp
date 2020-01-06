@@ -116,9 +116,8 @@ MakeAnonButton(nsIDocument* aDoc, const char* labelKey,
   
   
   
-  int32_t tabIndex;
-  aInputElement->GetTabIndex(&tabIndex);
-  buttonElement->SetTabIndex(tabIndex);
+  IgnoredErrorResult ignored;
+  buttonElement->SetTabIndex(aInputElement->TabIndex(), ignored);
 
   return button.forget();
 }
