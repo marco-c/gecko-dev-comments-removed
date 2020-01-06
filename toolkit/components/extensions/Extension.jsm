@@ -102,7 +102,7 @@ XPCOMUtils.defineLazyGetter(this, "console", ExtensionUtils.getConsole);
 XPCOMUtils.defineLazyGetter(this, "LocaleData", () => ExtensionCommon.LocaleData);
 
 
-const SHUTDOWN_BLOCKER_MAX_MS = 1000;
+const SHUTDOWN_BLOCKER_MAX_MS = 8000;
 
 
 XPCOMUtils.defineLazyGetter(this, "allowedThemeProperties", () => {
