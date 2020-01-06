@@ -108,6 +108,13 @@ l10n_description_schema = Schema({
     Optional('toolchains'): _by_platform([basestring]),
 
     
+    
+    
+    
+    
+    Required('secrets', default=False): _by_platform(Any(bool, [basestring])),
+
+    
     Required('treeherder'): {
         
         Required('platform'): _by_platform(basestring),
@@ -251,6 +258,7 @@ def handle_keyed_by(config, jobs):
         "description",
         "run-time",
         "docker-image",
+        "secrets",
         "toolchains",
         "tooltool",
         "env",
@@ -385,6 +393,7 @@ def make_job_description(config, jobs):
                 'script': job['mozharness']['script'],
                 'actions': job['mozharness']['actions'],
                 'options': job['mozharness']['options'],
+                'secrets': job['secrets'],
             },
             'attributes': job['attributes'],
             'treeherder': {
