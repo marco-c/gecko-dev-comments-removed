@@ -231,14 +231,6 @@ ValueObserver::Observe(nsISupports     *aSubject,
 
 
 
-struct PrefWriteData
-{
-  UniquePtr<char*[]> mData;
-  uint32_t mCount;
-};
-
-
-
 class PreferencesWriter final
 {
 public:
@@ -246,10 +238,8 @@ public:
   {
   }
 
-  
-  
   static
-  nsresult Write(nsIFile* aFile, char* aPrefs[], uint32_t aPrefCount)
+  nsresult Write(nsIFile* aFile, PrefSaveData& aPrefs)
   {
     nsCOMPtr<nsIOutputStream> outStreamSink;
     nsCOMPtr<nsIOutputStream> outStream;
@@ -270,20 +260,31 @@ public:
       return rv;
     }
 
+    struct CharComparator
+    {
+      bool LessThan(const mozilla::UniqueFreePtr<char>& a,
+                    const mozilla::UniqueFreePtr<char>& b) const
+      {
+        return strcmp(a.get(), b.get()) < 0;
+      }
+      bool Equals(const mozilla::UniqueFreePtr<char>& a,
+                  const mozilla::UniqueFreePtr<char>& b) const
+      {
+        return strcmp(a.get(), b.get()) == 0;
+      }
+    };
+
     
-    NS_QuickSort(aPrefs, aPrefCount, sizeof(char *),
-                 pref_CompareStrings, nullptr);
+    aPrefs.Sort(CharComparator());
 
     
     outStream->Write(kPrefFileHeader, sizeof(kPrefFileHeader) - 1, &writeAmount);
 
-    for (uint32_t valueIdx = 0; valueIdx < aPrefCount; valueIdx++) {
-      char*& pref = aPrefs[valueIdx];
+    for (auto& prefptr : aPrefs) {
+      char* pref = prefptr.get();
       MOZ_ASSERT(pref);
       outStream->Write(pref, strlen(pref), &writeAmount);
       outStream->Write(NS_LINEBREAK, NS_LINEBREAK_LEN, &writeAmount);
-      free(pref);
-      pref = nullptr;
     }
 
     
@@ -322,9 +323,9 @@ public:
   
   
   
-  static Atomic<PrefWriteData*> sPendingWriteData;
+  static Atomic<PrefSaveData*> sPendingWriteData;
 };
-Atomic<PrefWriteData*> PreferencesWriter::sPendingWriteData((PrefWriteData*)0);
+Atomic<PrefSaveData*> PreferencesWriter::sPendingWriteData(nullptr);
 
 class PWRunnable : public Runnable
 {
@@ -333,16 +334,13 @@ public:
 
   NS_IMETHOD Run() override
   {
-    PrefWriteData* prefs = PreferencesWriter::sPendingWriteData.exchange(nullptr);
+    mozilla::UniquePtr<PrefSaveData> prefs(PreferencesWriter::sPendingWriteData.exchange(nullptr));
     
     
 
     nsresult rv = NS_OK;
     if (prefs) {
-      
-      
-      rv = PreferencesWriter::Write(mFile, prefs->mData.get(), prefs->mCount);
-      delete prefs;
+      rv = PreferencesWriter::Write(mFile, *prefs);
 
       
       
@@ -1216,16 +1214,15 @@ Preferences::WritePrefFile(nsIFile* aFile, SaveMethod aSaveMethod)
   if (AllowOffMainThreadSave()) {
 
     nsresult rv = NS_OK;
-    PrefWriteData* prefs = new PrefWriteData;
-    prefs->mData = pref_savePrefs(gHashTable, &prefs->mCount);
+    mozilla::UniquePtr<PrefSaveData> prefs =
+      MakeUnique<PrefSaveData>(pref_savePrefs(gHashTable));
 
     
     
-    prefs = PreferencesWriter::sPendingWriteData.exchange(prefs);
+    prefs.reset(PreferencesWriter::sPendingWriteData.exchange(prefs.release()));
     if (prefs) {
       
       
-      delete prefs;
       return rv;
     } else {
       
@@ -1249,12 +1246,8 @@ Preferences::WritePrefFile(nsIFile* aFile, SaveMethod aSaveMethod)
   
   
   
-  uint32_t prefCount = 0;
-  UniquePtr<char*[]> prefsData = pref_savePrefs(gHashTable, &prefCount);
-
-  
-  
-  return PreferencesWriter::Write(aFile, prefsData.get(), prefCount);
+  PrefSaveData prefsData = pref_savePrefs(gHashTable);
+  return PreferencesWriter::Write(aFile, prefsData);
 }
 
 static nsresult openPrefFile(nsIFile* aFile)
