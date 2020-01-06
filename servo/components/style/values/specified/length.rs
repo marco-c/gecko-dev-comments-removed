@@ -80,6 +80,7 @@ impl ToCss for FontRelativeLength {
 }
 
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum FontBaseSize {
     
     CurrentStyle,
