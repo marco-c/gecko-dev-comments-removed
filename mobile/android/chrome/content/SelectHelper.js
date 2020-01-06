@@ -3,9 +3,6 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetter(this, "Prompt",
-                                  "resource://gre/modules/Prompt.jsm");
-
 var SelectHelper = {
   _uiBusy: false,
 
