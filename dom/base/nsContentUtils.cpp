@@ -3714,7 +3714,9 @@ nsContentUtils::IsImageInCache(nsIURI* aURI, nsIDocument* aDocument)
 nsresult
 nsContentUtils::LoadImage(nsIURI* aURI, nsINode* aContext,
                           nsIDocument* aLoadingDocument,
-                          nsIPrincipal* aLoadingPrincipal, nsIURI* aReferrer,
+                          nsIPrincipal* aLoadingPrincipal,
+                          uint64_t aRequestContextID,
+                          nsIURI* aReferrer,
                           net::ReferrerPolicy aReferrerPolicy,
                           imgINotificationObserver* aObserver, int32_t aLoadFlags,
                           const nsAString& initiatorType,
@@ -3751,6 +3753,7 @@ nsContentUtils::LoadImage(nsIURI* aURI, nsINode* aContext,
                               aReferrer,            
                               aReferrerPolicy,      
                               aLoadingPrincipal,    
+                              aRequestContextID,    
                               loadGroup,            
                               aObserver,            
                               aContext,             
@@ -10421,8 +10424,11 @@ nsContentUtils::AppendNativeAnonymousChildren(
  void
 nsContentUtils::GetContentPolicyTypeForUIImageLoading(nsIContent* aLoadingNode,
                                                       nsIPrincipal** aLoadingPrincipal,
-                                                      nsContentPolicyType& aContentPolicyType)
+                                                      nsContentPolicyType& aContentPolicyType,
+                                                      uint64_t* aRequestContextID)
 {
+  MOZ_ASSERT(aRequestContextID);
+
   
   
   aContentPolicyType = nsIContentPolicy::TYPE_INTERNAL_IMAGE;
@@ -10440,6 +10446,15 @@ nsContentUtils::GetContentPolicyTypeForUIImageLoading(nsIContent* aLoadingNode,
       
       
       aContentPolicyType = nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON;
+
+      nsAutoString requestContextID;
+      aLoadingNode->GetAttr(kNameSpaceID_None, nsGkAtoms::requestcontextid,
+                            requestContextID);
+      nsresult rv;
+      int64_t val  = requestContextID.ToInteger64(&rv);
+      *aRequestContextID = NS_SUCCEEDED(rv)
+        ? val
+        : 0;
     } else {
       
       loadingPrincipal = aLoadingNode->NodePrincipal();
