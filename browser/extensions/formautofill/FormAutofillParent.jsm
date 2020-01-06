@@ -355,9 +355,7 @@ FormAutofillParent.prototype = {
     this._updateStatus();
   },
 
-  _onFormSubmit(data, target) {
-    let {address} = data;
-
+  _onAddressSubmit(address, target) {
     if (address.guid) {
       
       let originalAddress = this.profileStorage.addresses.get(address.guid);
@@ -416,6 +414,40 @@ FormAutofillParent.prototype = {
         
         Services.telemetry.scalarAdd("formautofill.addresses.fill_type_manual", 1);
       }
+    }
+  },
+
+  async _onCreditCardSubmit(creditCard, target) {
+    
+    
+    
+    if (creditCard.guid &&
+        Object.keys(creditCard.record).every(key => creditCard.untouchedFields.includes(key))) {
+      return;
+    }
+
+    let state = await FormAutofillDoorhanger.show(target, "creditCard");
+    if (state == "cancel") {
+      return;
+    }
+
+    if (state == "disable") {
+      Services.prefs.setBoolPref("extensions.formautofill.creditCards.enabled", false);
+      return;
+    }
+
+    await this.profileStorage.creditCards.normalizeCCNumberFields(creditCard.record);
+    this.profileStorage.creditCards.add(creditCard.record);
+  },
+
+  _onFormSubmit(data, target) {
+    let {address, creditCard} = data;
+
+    if (address) {
+      this._onAddressSubmit(address, target);
+    }
+    if (creditCard) {
+      this._onCreditCardSubmit(creditCard, target);
     }
   },
 };
