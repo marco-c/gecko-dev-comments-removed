@@ -214,9 +214,6 @@ def opt_seta(task, params):
     if task.task.get('provisionerId', '') == 'buildbot-bridge':
         label = task.task.get('payload').get('buildername')
         bbb_task = True
-
-        
-        return False
     else:
         label = task.label
 
