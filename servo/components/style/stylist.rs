@@ -41,7 +41,7 @@ use smallvec::VecLike;
 use std::fmt::Debug;
 use std::ops;
 use style_traits::viewport::ViewportConstraints;
-use stylesheet_set::{OriginValidity, SheetRebuildKind, StylesheetSet, StylesheetIterator, StylesheetFlusher};
+use stylesheet_set::{OriginValidity, SheetRebuildKind, StylesheetSet, StylesheetFlusher};
 #[cfg(feature = "gecko")]
 use stylesheets::{CounterStyleRule, FontFaceRule, FontFeatureValuesRule, PageRule};
 use stylesheets::{CssRule, Origin, OriginSet, PerOrigin, PerOriginIter};
@@ -632,14 +632,6 @@ impl Stylist {
     
     pub fn force_stylesheet_origins_dirty(&mut self, origins: OriginSet) {
         self.stylesheets.force_dirty(origins)
-    }
-
-    
-    
-    
-    
-    pub fn iter_stylesheets(&mut self) -> StylesheetIterator<StylistSheet> {
-        self.stylesheets.iter()
     }
 
     

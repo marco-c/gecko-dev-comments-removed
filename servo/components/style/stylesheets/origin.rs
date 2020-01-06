@@ -78,6 +78,7 @@ impl BitOrAssign<Origin> for OriginSet {
 
 
 
+#[derive(Clone)]
 pub struct OriginSetIterator {
     set: OriginSet,
     cur: i8,
