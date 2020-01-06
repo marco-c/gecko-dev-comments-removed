@@ -1666,40 +1666,6 @@ public class GeckoAppShell
         public void addAppStateListener(AppStateListener listener);
         public void removeAppStateListener(AppStateListener listener);
 
-        
-
-
-
-
-
-
-
-
-
-        public void checkUriVisited(String uri);
-
-        
-
-
-
-
-
-
-
-
-
-        public void markUriVisited(final String uri);
-
-        
-
-
-
-
-
-
-
-        public void setUriTitle(final String uri, final String title);
-
         public void setAccessibilityEnabled(boolean enabled);
 
         public boolean openUriExternal(String targetURI, String mimeType, String packageName, String className, String action, String title);
@@ -1861,33 +1827,6 @@ public class GeckoAppShell
     @WrapForJNI(calledFrom = "gecko")
     private static double[] getCurrentBatteryInformation() {
         return GeckoBatteryManager.getCurrentInformation();
-    }
-
-    @WrapForJNI(stubName = "CheckURIVisited", calledFrom = "gecko")
-    private static void checkUriVisited(String uri) {
-        final GeckoInterface geckoInterface = getGeckoInterface();
-        if (geckoInterface == null) {
-            return;
-        }
-        geckoInterface.checkUriVisited(uri);
-    }
-
-    @WrapForJNI(stubName = "MarkURIVisited", calledFrom = "gecko")
-    private static void markUriVisited(final String uri) {
-        final GeckoInterface geckoInterface = getGeckoInterface();
-        if (geckoInterface == null) {
-            return;
-        }
-        geckoInterface.markUriVisited(uri);
-    }
-
-    @WrapForJNI(stubName = "SetURITitle", calledFrom = "gecko")
-    private static void setUriTitle(final String uri, final String title) {
-        final GeckoInterface geckoInterface = getGeckoInterface();
-        if (geckoInterface == null) {
-            return;
-        }
-        geckoInterface.setUriTitle(uri, title);
     }
 
     @WrapForJNI(calledFrom = "gecko")
