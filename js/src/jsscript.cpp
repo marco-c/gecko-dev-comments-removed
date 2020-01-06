@@ -1054,7 +1054,9 @@ JSScript::setDefaultClassConstructorSpan(JSObject* sourceObject, uint32_t start,
 
 js::ScriptSourceObject&
 JSScript::scriptSourceUnwrap() const {
-    return UncheckedUnwrap(sourceObject())->as<ScriptSourceObject>();
+    
+    
+    return UncheckedUnwrapWithoutExpose(sourceObject())->as<ScriptSourceObject>();
 }
 
 js::ScriptSource*
@@ -1064,7 +1066,10 @@ JSScript::scriptSource() const {
 
 js::ScriptSource*
 JSScript::maybeForwardedScriptSource() const {
-    return UncheckedUnwrap(MaybeForwarded(sourceObject()))->as<ScriptSourceObject>().source();
+    JSObject* source = MaybeForwarded(sourceObject());
+    
+    
+    return UncheckedUnwrapWithoutExpose(source)->as<ScriptSourceObject>().source();
 }
 
 bool
@@ -4203,7 +4208,8 @@ LazyScript::sourceObject() const
 ScriptSource*
 LazyScript::maybeForwardedScriptSource() const
 {
-    return UncheckedUnwrap(MaybeForwarded(sourceObject()))->as<ScriptSourceObject>().source();
+    JSObject* source = MaybeForwarded(sourceObject());
+    return UncheckedUnwrapWithoutExpose(source)->as<ScriptSourceObject>().source();
 }
 
  LazyScript*

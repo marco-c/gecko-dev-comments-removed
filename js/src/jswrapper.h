@@ -345,8 +345,16 @@ IsWrapper(JSObject* obj)
 
 
 
+
+
+
+
 JS_FRIEND_API(JSObject*)
 UncheckedUnwrap(JSObject* obj, bool stopAtWindowProxy = true, unsigned* flagsp = nullptr);
+
+
+
+
 
 
 
@@ -359,6 +367,14 @@ CheckedUnwrap(JSObject* obj, bool stopAtWindowProxy = true);
 
 JS_FRIEND_API(JSObject*)
 UnwrapOneChecked(JSObject* obj, bool stopAtWindowProxy = true);
+
+
+
+
+
+
+JS_FRIEND_API(JSObject*)
+UncheckedUnwrapWithoutExpose(JSObject* obj);
 
 void
 ReportAccessDenied(JSContext* cx);

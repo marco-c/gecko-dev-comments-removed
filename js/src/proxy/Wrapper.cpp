@@ -301,7 +301,8 @@ Wrapper::isConstructor(JSObject* obj) const
 JSObject*
 Wrapper::weakmapKeyDelegate(JSObject* proxy) const
 {
-    return UncheckedUnwrap(proxy);
+    
+    return UncheckedUnwrapWithoutExpose(proxy);
 }
 
 JSObject*
@@ -331,14 +332,43 @@ Wrapper::wrappedObject(JSObject* wrapper)
 {
     MOZ_ASSERT(wrapper->is<WrapperObject>());
     JSObject* target = wrapper->as<ProxyObject>().target();
-    if (target)
-        JS::ExposeObjectToActiveJS(target);
+
+    
+    
+    
+    
+    if (target) {
+        if (wrapper->isMarked(gc::BLACK) && !wrapper->isMarked(gc::GRAY))
+            MOZ_ASSERT(JS::ObjectIsNotGray(target));
+        if (!wrapper->isMarked(gc::GRAY))
+            JS::ExposeObjectToActiveJS(target);
+    }
+
     return target;
+}
+
+JS_FRIEND_API(JSObject*)
+js::UncheckedUnwrapWithoutExpose(JSObject* wrapped)
+{
+    while (true) {
+        if (!wrapped->is<WrapperObject>() || MOZ_UNLIKELY(IsWindowProxy(wrapped)))
+            break;
+        wrapped = wrapped->as<WrapperObject>().target();
+
+        
+        
+        if (wrapped)
+            wrapped = MaybeForwarded(wrapped);
+    }
+    return wrapped;
 }
 
 JS_FRIEND_API(JSObject*)
 js::UncheckedUnwrap(JSObject* wrapped, bool stopAtWindowProxy, unsigned* flagsp)
 {
+    MOZ_ASSERT(!JS::CurrentThreadIsHeapCollecting());
+    MOZ_ASSERT(CurrentThreadCanAccessRuntime(wrapped->runtimeFromAnyThread()));
+
     unsigned flags = 0;
     while (true) {
         if (!wrapped->is<WrapperObject>() ||
@@ -347,12 +377,7 @@ js::UncheckedUnwrap(JSObject* wrapped, bool stopAtWindowProxy, unsigned* flagsp)
             break;
         }
         flags |= Wrapper::wrapperHandler(wrapped)->flags();
-        wrapped = wrapped->as<ProxyObject>().private_().toObjectOrNull();
-
-        
-        
-        if (wrapped)
-            wrapped = MaybeForwarded(wrapped);
+        wrapped = Wrapper::wrappedObject(wrapped);
     }
     if (flagsp)
         *flagsp = flags;
@@ -373,6 +398,9 @@ js::CheckedUnwrap(JSObject* obj, bool stopAtWindowProxy)
 JS_FRIEND_API(JSObject*)
 js::UnwrapOneChecked(JSObject* obj, bool stopAtWindowProxy)
 {
+    MOZ_ASSERT(!JS::CurrentThreadIsHeapCollecting());
+    MOZ_ASSERT(CurrentThreadCanAccessRuntime(obj->runtimeFromAnyThread()));
+
     if (!obj->is<WrapperObject>() ||
         MOZ_UNLIKELY(stopAtWindowProxy && IsWindowProxy(obj)))
     {

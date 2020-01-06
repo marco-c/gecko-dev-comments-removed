@@ -17,7 +17,9 @@ namespace js {
 inline bool
 EmulatesUndefined(JSObject* obj)
 {
-    JSObject* actual = MOZ_LIKELY(!obj->is<WrapperObject>()) ? obj : UncheckedUnwrap(obj);
+    
+    
+    JSObject* actual = MOZ_LIKELY(!obj->is<WrapperObject>()) ? obj : UncheckedUnwrapWithoutExpose(obj);
     return actual->getClass()->emulatesUndefined();
 }
 
