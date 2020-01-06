@@ -31,6 +31,7 @@ Cu.import("chrome://marionette/content/event.js");
 Cu.import("chrome://marionette/content/interaction.js");
 Cu.import("chrome://marionette/content/l10n.js");
 Cu.import("chrome://marionette/content/legacyaction.js");
+Cu.import("chrome://marionette/content/logging.js");
 Cu.import("chrome://marionette/content/modal.js");
 Cu.import("chrome://marionette/content/proxy.js");
 Cu.import("chrome://marionette/content/session.js");
@@ -125,6 +126,7 @@ this.GeckoDriver = function (appName, server) {
   this.timer = null;
   this.inactivityTimer = null;
 
+  this.marionetteLog = new logging.ContentLogger();
   this.testName = null;
 
   this.capabilities = new session.Capabilities();
@@ -699,6 +701,26 @@ GeckoDriver.prototype.getSessionCapabilities = function (cmd, resp) {
 
 
 
+GeckoDriver.prototype.log = function (cmd, resp) {
+  
+  this.marionetteLog.log(
+      cmd.parameters.value,
+      cmd.parameters.level || undefined);
+};
+
+
+GeckoDriver.prototype.getLogs = function (cmd, resp) {
+  resp.body = this.marionetteLog.get();
+};
+
+
+
+
+
+
+
+
+
 GeckoDriver.prototype.setContext = function (cmd, resp) {
   let val = cmd.parameters.value;
   let ctx = Context.fromString(val);
@@ -872,6 +894,10 @@ GeckoDriver.prototype.execute_ = function (script, args, timeout, opts = {}) {
 
     case Context.CHROME:
       let sb = this.sandboxes.get(opts.sandboxName, opts.newSandbox);
+      if (opts.sandboxName) {
+        sb = sandbox.augment(sb, new logging.Adapter(this.marionetteLog));
+      }
+
       opts.timeout = timeout;
       let wargs = evaluate.fromJSON(args, this.curBrowser.seenEls, sb.window);
       return evaluate.sandbox(sb, script, wargs, opts)
@@ -3064,6 +3090,13 @@ GeckoDriver.prototype.receiveMessage = function (message) {
       logger.info(message.json.message);
       break;
 
+    case "Marionette:shareData":
+      
+      if (message.json.log) {
+        this.marionetteLog.addAll(message.json.log);
+      }
+      break;
+
     case "Marionette:switchToModalOrigin":
       this.curBrowser.frameManager.switchToModalOrigin(message);
       this.mm = this.curBrowser.frameManager
@@ -3202,6 +3235,8 @@ GeckoDriver.prototype.commands = {
   "sayHello": GeckoDriver.prototype.sayHello,
   "newSession": GeckoDriver.prototype.newSession,
   "getSessionCapabilities": GeckoDriver.prototype.getSessionCapabilities,
+  "log": GeckoDriver.prototype.log,
+  "getLogs": GeckoDriver.prototype.getLogs,
   "setContext": GeckoDriver.prototype.setContext,
   "getContext": GeckoDriver.prototype.getContext,
   "executeScript": GeckoDriver.prototype.executeScript,

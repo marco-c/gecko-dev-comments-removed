@@ -23,6 +23,7 @@ Cu.import("chrome://marionette/content/evaluate.js");
 Cu.import("chrome://marionette/content/event.js");
 Cu.import("chrome://marionette/content/interaction.js");
 Cu.import("chrome://marionette/content/legacyaction.js");
+Cu.import("chrome://marionette/content/logging.js");
 Cu.import("chrome://marionette/content/navigate.js");
 Cu.import("chrome://marionette/content/proxy.js");
 Cu.import("chrome://marionette/content/session.js");
@@ -33,6 +34,8 @@ Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 Cu.importGlobalProperties(["URL"]);
+
+var contentLog = new logging.ContentLogger();
 
 var marionetteTestName;
 var winUtil = content.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -675,6 +678,13 @@ function sendError(err, uuid) {
 
 
 
+function sendLog(msg) {
+  sendToServer("Marionette:log", {message: msg});
+}
+
+
+
+
 function resetValues() {
   sandboxes.clear();
   curContainer = {frame: content, shadowRoot: null};
@@ -729,11 +739,18 @@ function* executeInSandbox(script, args, timeout, opts) {
   opts.timeout = timeout;
 
   let sb = sandboxes.get(opts.sandboxName, opts.newSandbox);
+  if (opts.sandboxName) {
+    sb = sandbox.augment(sb, new logging.Adapter(contentLog));
+  }
+
   let wargs = evaluate.fromJSON(
       args, seenEls, curContainer.frame, curContainer.shadowRoot);
   let evaluatePromise = evaluate.sandbox(sb, script, wargs, opts);
 
   let res = yield evaluatePromise;
+  sendSyncMessage(
+      "Marionette:shareData",
+      {log: evaluate.toJSON(contentLog.get(), seenEls)});
   return evaluate.toJSON(res, seenEls);
 }
 
@@ -765,6 +782,14 @@ function emitTouchEvent(type, touch) {
       }
     }
     
+    
+
+
+
+
+
+
+
     let domWindowUtils = curContainer.frame.QueryInterface(Components.interfaces.nsIInterfaceRequestor).getInterface(Components.interfaces.nsIDOMWindowUtils);
     domWindowUtils.sendTouchEvent(type, [touch.identifier], [touch.clientX], [touch.clientY], [touch.radiusX], [touch.radiusY], [touch.rotationAngle], [touch.force], 1, 0);
   }
