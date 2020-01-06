@@ -479,6 +479,9 @@ CancelOffThreadWasmTier2Generator();
 bool
 StartOffThreadPromiseHelperTask(JSContext* cx, UniquePtr<PromiseHelperTask> task);
 
+bool
+StartOffThreadPromiseHelperTask(PromiseHelperTask* task);
+
 
 
 
@@ -789,6 +792,9 @@ struct PromiseHelperTask : OffThreadPromiseTask
     
     virtual void execute() = 0;
 
+    
+    
+    
     
     
     void executeAndResolveAndDestroy(JSContext* cx);

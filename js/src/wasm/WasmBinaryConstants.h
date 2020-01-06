@@ -511,6 +511,10 @@ static const unsigned MaxFunctionBytes       =         128 * 1024;
 
 static const unsigned FailFP = 0xbad;
 
+
+
+static const unsigned MaxVarU32DecodedBytes = 5;
+
 } 
 } 
 

@@ -41,6 +41,8 @@ struct ShareableBytes : ShareableBase<ShareableBytes>
 {
     
     Bytes bytes;
+    ShareableBytes() = default;
+    explicit ShareableBytes(Bytes&& bytes) : bytes(Move(bytes)) {}
     size_t sizeOfExcludingThis(MallocSizeOf m) const { return bytes.sizeOfExcludingThis(m); }
     const uint8_t* begin() const { return bytes.begin(); }
     const uint8_t* end() const { return bytes.end(); }

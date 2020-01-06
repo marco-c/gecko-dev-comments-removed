@@ -75,13 +75,42 @@ EstimateCompiledCodeSize(Tier tier, size_t bytecodeSize);
 
 
 SharedModule
-CompileInitialTier(const ShareableBytes& bytecode, const CompileArgs& args, UniqueChars* error);
+CompileBuffer(const CompileArgs& args, const ShareableBytes& bytecode, UniqueChars* error);
 
 
 
 
 bool
-CompileTier2(Module& module, const CompileArgs& args, Atomic<bool>* cancelled);
+CompileTier2(const CompileArgs& args, Module& module, Atomic<bool>* cancelled);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef ExclusiveWaitableData<const uint8_t*> ExclusiveStreamEnd;
+typedef ExclusiveWaitableData<const Bytes*> ExclusiveTailBytesPtr;
+
+SharedModule
+CompileStreaming(const CompileArgs& args,
+                 const Bytes& envBytes,
+                 const Bytes& codeBytes,
+                 const ExclusiveStreamEnd& codeStreamEnd,
+                 const ExclusiveTailBytesPtr& tailBytesPtr,
+                 const Atomic<bool>& cancelled,
+                 UniqueChars* error);
 
 }  
 }  
