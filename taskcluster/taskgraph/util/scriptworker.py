@@ -232,7 +232,7 @@ PUSH_APK_SCOPES = {
 
 
 PUSH_APK_GOOGLE_PLAY_TRACT = {
-    'central': 'alpha',
+    'central': 'beta',
     'beta': 'rollout',
     'release': 'rollout',
     'default': 'invalid',
