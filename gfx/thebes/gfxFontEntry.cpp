@@ -1485,16 +1485,27 @@ gfxFontFamily::FindFontForChar(GlobalFontMatch *aMatchData)
                         unicodeRange, int(script),
                         NS_ConvertUTF16toUTF8(fe->Name()).get()));
             }
-        }
 
-        aMatchData->mCmapsTested++;
-        if (rank == 0) {
+            
+            
+            rank += CalcStyleMatch(fe, aMatchData->mStyle);
+        } else if (!fe->IsNormalStyle()) {
+            
+            
+            
+            GlobalFontMatch data(aMatchData->mCh, aMatchData->mStyle);
+            SearchAllFontsForChar(&data);
+            if (data.mMatchRank >= RANK_MATCHED_CMAP) {
+                fe = data.mBestMatch;
+                rank = data.mMatchRank;
+            } else {
+                return;
+            }
+        } else {
             return;
         }
 
-         
-         
-        rank += CalcStyleMatch(fe, aMatchData->mStyle);
+        aMatchData->mCmapsTested++;
 
         
 
