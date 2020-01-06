@@ -127,7 +127,7 @@ let signonsTreeView = {
   
   _invalidateTask: new DeferredTask(() => {
     signonsTree.treeBoxObject.invalidateColumn(signonsTree.columns.siteCol);
-  }, 10),
+  }, 10, 0),
   _lastSelectedRanges: [],
   selection: null,
 
