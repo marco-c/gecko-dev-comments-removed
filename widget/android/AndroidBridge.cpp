@@ -129,7 +129,7 @@ AndroidBridge::ConstructBridge()
 
 
 
-    putenv("NSS_DISABLE_UNLOAD=1");
+    putenv(const_cast<char*>("NSS_DISABLE_UNLOAD=1"));
 
     MOZ_ASSERT(!sBridge);
     sBridge = new AndroidBridge();
