@@ -100,6 +100,7 @@ public:
 
 
   static bool sBlockMixedScript;
+  static bool sBlockMixedObjectSubrequest;
   static bool sBlockMixedDisplay;
   
   static bool sUseHSTS;

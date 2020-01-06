@@ -53,6 +53,8 @@ enum nsMixedContentBlockerMessageType {
 
 bool nsMixedContentBlocker::sBlockMixedScript = false;
 
+bool nsMixedContentBlocker::sBlockMixedObjectSubrequest = false;
+
 
 bool nsMixedContentBlocker::sBlockMixedDisplay = false;
 
@@ -255,6 +257,9 @@ nsMixedContentBlocker::nsMixedContentBlocker()
   
   Preferences::AddBoolVarCache(&sBlockMixedScript,
                                "security.mixed_content.block_active_content");
+
+  Preferences::AddBoolVarCache(&sBlockMixedObjectSubrequest,
+                               "security.mixed_content.block_object_subrequest");
 
   
   Preferences::AddBoolVarCache(&sBlockMixedDisplay,
@@ -590,8 +595,14 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     
     case TYPE_IMAGE:
     case TYPE_MEDIA:
-    case TYPE_OBJECT_SUBREQUEST:
       classification = eMixedDisplay;
+      break;
+    case TYPE_OBJECT_SUBREQUEST:
+      if (sBlockMixedObjectSubrequest) {
+        classification = eMixedScript;
+      } else {
+        classification = eMixedDisplay;
+      }
       break;
 
     
