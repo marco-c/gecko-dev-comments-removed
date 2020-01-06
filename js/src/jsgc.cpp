@@ -4063,7 +4063,7 @@ ShouldCollectZone(Zone* zone, JS::gcreason::Reason reason)
     if (zone->isAtomsZone())
         return TlsContext.get()->canCollectAtoms();
 
-    return true;
+    return zone->canCollect();
 }
 
 bool
@@ -6706,9 +6706,8 @@ AutoGCSlice::AutoGCSlice(JSRuntime* rt)
         if (zone->isGCMarking()) {
             MOZ_ASSERT(zone->needsIncrementalBarrier());
             zone->setNeedsIncrementalBarrier(false);
-        } else {
-            MOZ_ASSERT(!zone->needsIncrementalBarrier());
         }
+        MOZ_ASSERT(!zone->needsIncrementalBarrier());
     }
 }
 
@@ -6716,11 +6715,10 @@ AutoGCSlice::~AutoGCSlice()
 {
     
     for (ZonesIter zone(runtime, WithAtoms); !zone.done(); zone.next()) {
+        MOZ_ASSERT(!zone->needsIncrementalBarrier());
         if (zone->isGCMarking()) {
             zone->setNeedsIncrementalBarrier(true);
             zone->arenas.purge();
-        } else {
-            zone->setNeedsIncrementalBarrier(false);
         }
     }
 }

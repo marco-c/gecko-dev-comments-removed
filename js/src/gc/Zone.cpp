@@ -104,8 +104,6 @@ Zone::init(bool isSystemArg)
 void
 Zone::setNeedsIncrementalBarrier(bool needs)
 {
-    MOZ_ASSERT_IF(needs && isAtomsZone(),
-                  !runtimeFromActiveCooperatingThread()->hasHelperThreadZones());
     MOZ_ASSERT_IF(needs, canCollect());
     needsIncrementalBarrier_ = needs;
 }
@@ -300,13 +298,12 @@ Zone::canCollect()
 {
     
     
-    if (!isAtomsZone() && group()->createdForHelperThread())
-        return false;
+    if (isAtomsZone())
+        return !runtimeFromAnyThread()->hasHelperThreadZones();
 
-    JSRuntime* rt = runtimeFromAnyThread();
-    if (isAtomsZone() && rt->hasHelperThreadZones())
-        return false;
-    return true;
+    
+    
+    return !group()->createdForHelperThread();
 }
 
 void
