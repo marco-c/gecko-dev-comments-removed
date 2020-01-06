@@ -1746,7 +1746,8 @@ VRSystemManagerOculus::StopVibrateHaptic(uint32_t aControllerIdx)
 {
   
   
-  if (!mSession || !mSession->IsTrackingReady()) {
+  if (!mSession || !mSession->IsTrackingReady() ||
+      (aControllerIdx >= mOculusController.Length())) {
     return;
   }
 
