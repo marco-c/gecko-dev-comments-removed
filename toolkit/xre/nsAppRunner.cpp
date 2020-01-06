@@ -918,9 +918,7 @@ nsXULAppInfo::GetRemoteType(nsAString& aRemoteType)
 static bool gBrowserTabsRemoteAutostart = false;
 static uint64_t gBrowserTabsRemoteStatus = 0;
 static bool gBrowserTabsRemoteAutostartInitialized = false;
-
-static bool gMultiprocessBlockPolicyInitialized = false;
-static uint32_t gMultiprocessBlockPolicy = 0;
+static bool gListeningForCohortChange = false;
 
 NS_IMETHODIMP
 nsXULAppInfo::Observe(nsISupports *aSubject, const char *aTopic, const char16_t *aData) {
@@ -5028,11 +5026,12 @@ const char* kForceEnableE10sPref = "browser.tabs.remote.force-enable";
 const char* kForceDisableE10sPref = "browser.tabs.remote.force-disable";
 
 uint32_t
-MultiprocessBlockPolicy() {
-  if (gMultiprocessBlockPolicyInitialized) {
-    return gMultiprocessBlockPolicy;
+MultiprocessBlockPolicy()
+{
+  if (XRE_IsContentProcess()) {
+    
+    return 0;
   }
-  gMultiprocessBlockPolicyInitialized = true;
 
   
 
@@ -5047,8 +5046,7 @@ MultiprocessBlockPolicy() {
 #endif
 
   if (addonsCanDisable && disabledByAddons) {
-    gMultiprocessBlockPolicy = kE10sDisabledForAddons;
-    return gMultiprocessBlockPolicy;
+    return kE10sDisabledForAddons;
   }
 
 #if defined(XP_WIN) && defined(RELEASE_OR_BETA)
@@ -5067,13 +5065,13 @@ MultiprocessBlockPolicy() {
   disabledForA11y = Preferences::GetBool(kAccessibilityLoadedLastSessionPref, false);
   if (!disabledForA11y  &&
       Preferences::HasUserValue(kAccessibilityLastRunDatePref)) {
-    #define ONE_WEEK_IN_SECONDS (60*60*24*7)
+    const uint32_t oneWeekInSeconds = 60 * 60 * 24 * 7;
     uint32_t a11yRunDate = Preferences::GetInt(kAccessibilityLastRunDatePref, 0);
     MOZ_ASSERT(0 != a11yRunDate);
     
     uint32_t now = PRTimeToSeconds(PR_Now());
     uint32_t difference = now - a11yRunDate;
-    if (difference > ONE_WEEK_IN_SECONDS || !a11yRunDate) {
+    if (difference > oneWeekInSeconds || !a11yRunDate) {
       Preferences::ClearUser(kAccessibilityLastRunDatePref);
     } else {
       disabledForA11y = true;
@@ -5081,8 +5079,7 @@ MultiprocessBlockPolicy() {
   }
 
   if (disabledForA11y) {
-    gMultiprocessBlockPolicy = kE10sDisabledForAccessibility;
-    return gMultiprocessBlockPolicy;
+    return kE10sDisabledForAccessibility;
   }
 #endif
 
@@ -5090,11 +5087,19 @@ MultiprocessBlockPolicy() {
 
 
 
-  gMultiprocessBlockPolicy = 0;
   return 0;
 }
 
 namespace mozilla {
+
+static void
+CohortChanged(const char* aPref, void* aClosure)
+{
+  
+  gBrowserTabsRemoteAutostartInitialized = false;
+  gBrowserTabsRemoteAutostart = false;
+  Preferences::UnregisterCallback(CohortChanged, "e10s.rollout.cohort");
+}
 
 bool
 BrowserTabsRemoteAutostart()
@@ -5108,6 +5113,15 @@ BrowserTabsRemoteAutostart()
   if (XRE_IsContentProcess()) {
     gBrowserTabsRemoteAutostart = true;
     return gBrowserTabsRemoteAutostart;
+  }
+
+  
+  
+  
+  
+  if (!gListeningForCohortChange) {
+    gListeningForCohortChange = true;
+    Preferences::RegisterCallback(CohortChanged, "e10s.rollout.cohort");
   }
 
   bool optInPref = Preferences::GetBool("browser.tabs.remote.autostart", false);
