@@ -49,8 +49,11 @@ TestUrgentHangsParent::Main()
 
     
     MessageLoop::current()->PostDelayedTask(
-        NewNonOwningRunnableMethod(this, &TestUrgentHangsParent::SecondStage),
-        3000);
+      NewNonOwningRunnableMethod(
+        "_ipdltest::TestUrgentHangsParent::SecondStage",
+        this,
+        &TestUrgentHangsParent::SecondStage),
+      3000);
 }
 
 void
@@ -67,8 +70,10 @@ TestUrgentHangsParent::SecondStage()
         fail("sending Test4_1");
 
     MessageLoop::current()->PostDelayedTask(
-        NewNonOwningRunnableMethod(this, &TestUrgentHangsParent::ThirdStage),
-        3000);
+      NewNonOwningRunnableMethod("_ipdltest::TestUrgentHangsParent::ThirdStage",
+                                 this,
+                                 &TestUrgentHangsParent::ThirdStage),
+      3000);
 }
 
 void
@@ -90,8 +95,9 @@ TestUrgentHangsParent::ThirdStage()
 
     
     MessageLoop::current()->PostDelayedTask(
-        NewNonOwningRunnableMethod(this, &TestUrgentHangsParent::Close),
-        3000);
+      NewNonOwningRunnableMethod(
+        "ipc::IToplevelProtocol::Close", this, &TestUrgentHangsParent::Close),
+      3000);
 }
 
 mozilla::ipc::IPCResult

@@ -111,7 +111,8 @@ PresentationNetworkHelper::OnGetWifiIPAddress(const nsACString& aIPAddress)
   MOZ_ASSERT(mFunc);
 
   NS_DispatchToMainThread(
-    NewRunnableMethod<nsCString>(mInfo,
+    NewRunnableMethod<nsCString>("dom::PresentationNetworkHelper::OnGetWifiIPAddress",
+                                 mInfo,
                                  mFunc,
                                  aIPAddress));
   return NS_OK;
@@ -684,6 +685,7 @@ PresentationControllingInfo::GetAddress()
   
   NS_DispatchToMainThread(
     NewRunnableMethod<nsCString>(
+      "dom::PresentationControllingInfo::OnGetAddress",
       this,
       &PresentationControllingInfo::OnGetAddress,
       NS_ConvertUTF16toUTF8(ip)));
@@ -1109,11 +1111,11 @@ PresentationControllingInfo::OnListedNetworkAddresses(const char** aAddressArray
   
   
   
-  NS_DispatchToMainThread(
-    NewRunnableMethod<nsCString>(
-      this,
-      &PresentationControllingInfo::OnGetAddress,
-      ip));
+  NS_DispatchToMainThread(NewRunnableMethod<nsCString>(
+    "dom::PresentationControllingInfo::OnGetAddress",
+    this,
+    &PresentationControllingInfo::OnGetAddress,
+    ip));
 
   return NS_OK;
 }
@@ -1125,11 +1127,11 @@ PresentationControllingInfo::OnListNetworkAddressesFailed()
 
   
   
-  NS_DispatchToMainThread(
-    NewRunnableMethod<nsCString>(
-      this,
-      &PresentationControllingInfo::OnGetAddress,
-      "127.0.0.1"));
+  NS_DispatchToMainThread(NewRunnableMethod<nsCString>(
+    "dom::PresentationControllingInfo::OnGetAddress",
+    this,
+    &PresentationControllingInfo::OnGetAddress,
+    "127.0.0.1"));
 
   return NS_OK;
 }

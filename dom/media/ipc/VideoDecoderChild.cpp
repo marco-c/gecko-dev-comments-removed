@@ -124,23 +124,24 @@ VideoDecoderChild::ActorDestroy(ActorDestroyReason aWhy)
     
     
     RefPtr<VideoDecoderChild> ref = this;
-    GetManager()->RunWhenRecreated(NS_NewRunnableFunction([=]() {
-      if (ref->mInitialized) {
-        mDecodedData.Clear();
-        mDecodePromise.RejectIfExists(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER,
-                                      __func__);
-        mDrainPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER,
-                                     __func__);
-        mFlushPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER,
-                                     __func__);
-        
-        
-        mNeedNewDecoder = true;
-      } else {
-        ref->mInitPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER,
-                                         __func__);
-      }
-    }));
+    GetManager()->RunWhenRecreated(
+      NS_NewRunnableFunction("dom::VideoDecoderChild::ActorDestroy", [=]() {
+        if (ref->mInitialized) {
+          mDecodedData.Clear();
+          mDecodePromise.RejectIfExists(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER,
+                                        __func__);
+          mDrainPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER,
+                                       __func__);
+          mFlushPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER,
+                                       __func__);
+          
+          
+          mNeedNewDecoder = true;
+        } else {
+          ref->mInitPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER,
+                                           __func__);
+        }
+      }));
   }
   mCanSend = false;
 }

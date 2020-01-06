@@ -264,6 +264,7 @@ LazyInstantiator::ShouldInstantiate(const DWORD aClientTid)
     
     nsCOMPtr<nsIRunnable> runnable(
         NewRunnableMethod<nsCOMPtr<nsIFile>, RefPtr<AccumulateRunnable>>(
+                                             "LazyInstantiator::GatherTelemetry",
                                              this,
                                              &LazyInstantiator::GatherTelemetry,
                                              clientExe,

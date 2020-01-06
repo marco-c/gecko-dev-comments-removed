@@ -1267,7 +1267,8 @@ PluginModuleChromeParent::RetainPluginRef()
         
         
         Unused << NS_DispatchToMainThread(
-            NewNonOwningRunnableMethod(mPlugin, &nsNPAPIPlugin::AddRef));
+            NewNonOwningRunnableMethod("nsNPAPIPlugin::AddRef",
+                                       mPlugin, &nsNPAPIPlugin::AddRef));
     }
 }
 
@@ -1283,7 +1284,8 @@ PluginModuleChromeParent::ReleasePluginRef()
     } else {
         
         Unused << NS_DispatchToMainThread(
-            NewNonOwningRunnableMethod(mPlugin, &nsNPAPIPlugin::Release));
+            NewNonOwningRunnableMethod("nsNPAPIPlugin::Release",
+                                       mPlugin, &nsNPAPIPlugin::Release));
     }
 }
 

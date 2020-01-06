@@ -145,7 +145,11 @@ NS_IMPL_ISUPPORTS(nsXHRParseEndListener, nsIDOMEventListener)
 class nsResumeTimeoutsEvent : public Runnable
 {
 public:
-  explicit nsResumeTimeoutsEvent(nsPIDOMWindowInner* aWindow) : mWindow(aWindow) {}
+  explicit nsResumeTimeoutsEvent(nsPIDOMWindowInner* aWindow)
+    : Runnable("dom::nsResumeTimeoutsEvent")
+    , mWindow(aWindow)
+  {
+  }
 
   NS_IMETHOD Run() override
   {
@@ -178,7 +182,6 @@ XMLHttpRequestMainThread::sDontWarnAboutSyncXHR = false;
 
 XMLHttpRequestMainThread::XMLHttpRequestMainThread()
   : mResponseBodyDecodedPos(0),
-    mResponseCharset(nullptr),
     mResponseType(XMLHttpRequestResponseType::_empty),
     mRequestObserver(nullptr),
     mState(State::unsent),
@@ -493,7 +496,7 @@ XMLHttpRequestMainThread::GetResponseXML(ErrorResult& aRv)
 nsresult
 XMLHttpRequestMainThread::DetectCharset()
 {
-  mResponseCharset = nullptr;
+  mResponseCharset.Truncate();
   mDecoder = nullptr;
 
   if (mResponseType != XMLHttpRequestResponseType::_empty &&
@@ -520,7 +523,7 @@ XMLHttpRequestMainThread::DetectCharset()
     encoding = UTF_8_ENCODING;
   }
 
-  mResponseCharset = encoding;
+  encoding->Name(mResponseCharset);
   mDecoder = encoding->NewDecoderWithBOMRemoval();
 
   return NS_OK;
@@ -2432,7 +2435,7 @@ XMLHttpRequestMainThread::MatchCharsetAndDecoderToResponseDocument()
     mResponseCharset = mResponseXML->GetDocumentCharacterSet();
     TruncateResponseText();
     mResponseBodyDecodedPos = 0;
-    mDecoder = mResponseCharset->NewDecoderWithBOMRemoval();
+    mDecoder = Encoding::ForName(mResponseCharset)->NewDecoderWithBOMRemoval();
   }
 }
 
@@ -3122,9 +3125,11 @@ XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody)
     } else {
       
       
-      return DispatchToMainThread(NewRunnableMethod<ProgressEventType>(this,
-                 &XMLHttpRequestMainThread::CloseRequestWithError,
-                 ProgressEventType::error));
+      return DispatchToMainThread(NewRunnableMethod<ProgressEventType>(
+        "dom::XMLHttpRequestMainThread::CloseRequestWithError",
+        this,
+        &XMLHttpRequestMainThread::CloseRequestWithError,
+        ProgressEventType::error));
     }
   }
 

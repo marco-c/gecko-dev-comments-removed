@@ -374,15 +374,14 @@ ForEachPing(nsIContent* aContent, ForEachPingCallback aCallback, void* aClosure)
   }
 
   nsIDocument* doc = aContent->OwnerDoc();
-  nsAutoCString charset;
-  doc->GetDocumentCharacterSet()->Name(charset);
 
   nsWhitespaceTokenizer tokenizer(value);
 
   while (tokenizer.hasMoreTokens()) {
     nsCOMPtr<nsIURI> uri, baseURI = aContent->GetBaseURI();
     ios->NewURI(NS_ConvertUTF16toUTF8(tokenizer.nextToken()),
-                charset.get(), baseURI, getter_AddRefs(uri));
+                doc->GetDocumentCharacterSet().get(),
+                baseURI, getter_AddRefs(uri));
     
     if (!uri) {
       continue;
@@ -455,9 +454,12 @@ nsPingListener::StartTimeout(DocGroup* aDocGroup)
   timer->SetTarget(aDocGroup->EventTargetFor(TaskCategory::Network));
 
   if (timer) {
-    nsresult rv = timer->InitWithFuncCallback(OnPingTimeout, mLoadGroup,
-                                              PING_TIMEOUT,
-                                              nsITimer::TYPE_ONE_SHOT);
+    nsresult rv =
+      timer->InitWithNamedFuncCallback(OnPingTimeout,
+                                       mLoadGroup,
+                                       PING_TIMEOUT,
+                                       nsITimer::TYPE_ONE_SHOT,
+                                       "nsPingListener::StartTimeout");
     if (NS_SUCCEEDED(rv)) {
       mTimer = timer;
       return NS_OK;
@@ -833,8 +835,6 @@ nsDocShell::nsDocShell()
   , mDefaultLoadFlags(nsIRequest::LOAD_NORMAL)
   , mFrameType(FRAME_TYPE_REGULAR)
   , mPrivateBrowsingId(0)
-  , mForcedCharset(nullptr)
-  , mParentCharset(nullptr)
   , mParentCharsetSource(0)
   , mJSRunToCompletionDepth(0)
   , mTouchEventsOverride(nsIDocShell::TOUCHEVENTS_OVERRIDE_NONE)
@@ -1770,10 +1770,12 @@ nsDocShell::DispatchToTabGroup(const char* aName,
 NS_IMETHODIMP
 nsDocShell::DispatchLocationChangeEvent()
 {
-  return DispatchToTabGroup("nsDocShell::FireDummyOnLocationChange",
-                            TaskCategory::Other,
-                            NewRunnableMethod(this,
-                              &nsDocShell::FireDummyOnLocationChange));
+  return DispatchToTabGroup(
+    "nsDocShell::FireDummyOnLocationChange",
+    TaskCategory::Other,
+    NewRunnableMethod("nsDocShell::FireDummyOnLocationChange",
+                      this,
+                      &nsDocShell::FireDummyOnLocationChange));
 }
 
 bool
@@ -2033,7 +2035,7 @@ nsDocShell::GetCharset(nsACString& aCharset)
   NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
   nsIDocument* doc = presShell->GetDocument();
   NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
-  doc->GetDocumentCharacterSet()->Name(aCharset);
+  aCharset = doc->GetDocumentCharacterSet();
   return NS_OK;
 }
 
@@ -2119,7 +2121,7 @@ NS_IMETHODIMP
 nsDocShell::SetForcedCharset(const nsACString& aCharset)
 {
   if (aCharset.IsEmpty()) {
-    mForcedCharset = nullptr;
+    mForcedCharset.Truncate();
     return NS_OK;
   }
   const Encoding* encoding = Encoding::ForLabel(aCharset);
@@ -2131,19 +2133,19 @@ nsDocShell::SetForcedCharset(const nsACString& aCharset)
     
     return NS_ERROR_INVALID_ARG;
   }
-  mForcedCharset = encoding;
+  encoding->Name(mForcedCharset);
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsDocShell::GetForcedCharset(nsACString& aResult)
 {
-  mForcedCharset->Name(aResult);
+  aResult = mForcedCharset;
   return NS_OK;
 }
 
 void
-nsDocShell::SetParentCharset(const Encoding*& aCharset,
+nsDocShell::SetParentCharset(const nsACString& aCharset,
                              int32_t aCharsetSource,
                              nsIPrincipal* aPrincipal)
 {
@@ -2153,7 +2155,7 @@ nsDocShell::SetParentCharset(const Encoding*& aCharset,
 }
 
 void
-nsDocShell::GetParentCharset(const Encoding*& aCharset,
+nsDocShell::GetParentCharset(nsACString& aCharset,
                              int32_t* aCharsetSource,
                              nsIPrincipal** aPrincipal)
 {
@@ -4195,7 +4197,7 @@ nsDocShell::AddChild(nsIDocShellTreeItem* aChild)
     
     
 
-    const Encoding* parentCS = doc->GetDocumentCharacterSet();
+    const nsACString& parentCS = doc->GetDocumentCharacterSet();
     int32_t charsetSource = doc->GetDocumentCharacterSetSource();
     
     childAsDocShell->SetParentCharset(parentCS,
@@ -9647,13 +9649,20 @@ public:
                     bool aLoadReplace,
                     nsIURI* aReferrer, uint32_t aReferrerPolicy,
                     nsIPrincipal* aTriggeringPrincipal,
-                    nsIPrincipal* aPrincipalToInherit, uint32_t aFlags,
-                    const char* aTypeHint, nsIInputStream* aPostData,
-                    nsIInputStream* aHeadersData, uint32_t aLoadType,
-                    nsISHEntry* aSHEntry, bool aFirstParty,
-                    const nsAString& aSrcdoc, nsIDocShell* aSourceDocShell,
-                    nsIURI* aBaseURI, bool aCheckForPrerender)
-    : mSrcdoc(aSrcdoc)
+                    nsIPrincipal* aPrincipalToInherit,
+                    uint32_t aFlags,
+                    const char* aTypeHint,
+                    nsIInputStream* aPostData,
+                    nsIInputStream* aHeadersData,
+                    uint32_t aLoadType,
+                    nsISHEntry* aSHEntry,
+                    bool aFirstParty,
+                    const nsAString& aSrcdoc,
+                    nsIDocShell* aSourceDocShell,
+                    nsIURI* aBaseURI,
+                    bool aCheckForPrerender)
+    : mozilla::Runnable("InternalLoadEvent")
+    , mSrcdoc(aSrcdoc)
     , mDocShell(aDocShell)
     , mURI(aURI)
     , mOriginalURI(aOriginalURI)
@@ -11624,8 +11633,7 @@ nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
       NS_ENSURE_TRUE(mContentViewer, NS_ERROR_FAILURE);
       nsIDocument* doc = mContentViewer->GetDocument();
       NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
-      nsAutoCString charset;
-      doc->GetDocumentCharacterSet()->Name(charset);
+      const nsACString& charset = doc->GetDocumentCharacterSet();
 
       nsCOMPtr<nsITextToSubURI> textToSubURI =
         do_GetService(NS_ITEXTTOSUBURI_CONTRACTID, &rv);
@@ -14046,7 +14054,8 @@ OnLinkClickEvent::OnLinkClickEvent(nsDocShell* aHandler,
                                    bool aNoOpenerImplied,
                                    bool aIsTrusted,
                                    nsIPrincipal* aTriggeringPrincipal)
-  : mHandler(aHandler)
+  : mozilla::Runnable("OnLinkClickEvent")
+  , mHandler(aHandler)
   , mURI(aURI)
   , mTargetSpec(aTargetSpec)
   , mFileName(aFileName)

@@ -709,11 +709,13 @@ NS_IMPL_ISUPPORTS(CallOnServerClose, nsIRunnable)
 class CallAcknowledge final : public CancelableRunnable
 {
 public:
-  CallAcknowledge(WebSocketChannel* aChannel,
-                  uint32_t aSize)
-    : mChannel(aChannel),
-      mListenerMT(mChannel->mListenerMT),
-      mSize(aSize) {}
+  CallAcknowledge(WebSocketChannel* aChannel, uint32_t aSize)
+    : CancelableRunnable("net::CallAcknowledge")
+    , mChannel(aChannel)
+    , mListenerMT(mChannel->mListenerMT)
+    , mSize(aSize)
+  {
+  }
 
   NS_IMETHOD Run() override
   {
@@ -1263,7 +1265,9 @@ WebSocketChannel::Observe(nsISupports *subject,
         
         if (!IsOnTargetThread()) {
           mTargetThread->Dispatch(
-            NewRunnableMethod(this, &WebSocketChannel::OnNetworkChanged),
+            NewRunnableMethod("net::WebSocketChannel::OnNetworkChanged",
+                              this,
+                              &WebSocketChannel::OnNetworkChanged),
             NS_DISPATCH_NORMAL);
         } else {
           nsresult rv = OnNetworkChanged();
@@ -1291,7 +1295,9 @@ WebSocketChannel::OnNetworkChanged()
     }
 
     return mSocketThread->Dispatch(
-      NewRunnableMethod(this, &WebSocketChannel::OnNetworkChanged),
+      NewRunnableMethod("net::WebSocketChannel::OnNetworkChanged",
+                        this,
+                        &WebSocketChannel::OnNetworkChanged),
       NS_DISPATCH_NORMAL);
   }
 
@@ -1378,8 +1384,10 @@ WebSocketChannel::BeginOpen(bool aCalledFromAdmissionManager)
     
     
     NS_DispatchToMainThread(
-      NewRunnableMethod(this, &WebSocketChannel::BeginOpenInternal),
-                           NS_DISPATCH_NORMAL);
+      NewRunnableMethod("net::WebSocketChannel::BeginOpenInternal",
+                        this,
+                        &WebSocketChannel::BeginOpenInternal),
+      NS_DISPATCH_NORMAL);
   } else {
     BeginOpenInternal();
   }
@@ -2296,7 +2304,8 @@ class RemoveObserverRunnable : public Runnable
 
 public:
   explicit RemoveObserverRunnable(WebSocketChannel* aChannel)
-    : mChannel(aChannel)
+    : Runnable("net::RemoveObserverRunnable")
+    , mChannel(aChannel)
   {}
 
   NS_IMETHOD Run() override
@@ -2940,7 +2949,9 @@ WebSocketChannel::StartWebsocketData()
 
   if (!IsOnTargetThread()) {
     return mTargetThread->Dispatch(
-      NewRunnableMethod(this, &WebSocketChannel::StartWebsocketData),
+      NewRunnableMethod("net::WebSocketChannel::StartWebsocketData",
+                        this,
+                        &WebSocketChannel::StartWebsocketData),
       NS_DISPATCH_NORMAL);
   }
 
@@ -2953,7 +2964,8 @@ WebSocketChannel::StartWebsocketData()
     LOG(("WebSocketChannel::StartWebsocketData mSocketIn->AsyncWait() failed "
          "with error 0x%08" PRIx32, static_cast<uint32_t>(rv)));
     return mSocketThread->Dispatch(
-      NewRunnableMethod<nsresult>(this,
+      NewRunnableMethod<nsresult>("net::WebSocketChannel::AbortSession",
+                                  this,
                                   &WebSocketChannel::AbortSession,
                                   rv),
       NS_DISPATCH_NORMAL);
@@ -2961,7 +2973,9 @@ WebSocketChannel::StartWebsocketData()
 
   if (mPingInterval) {
     rv = mSocketThread->Dispatch(
-      NewRunnableMethod(this, &WebSocketChannel::StartPinging),
+      NewRunnableMethod("net::WebSocketChannel::StartPinging",
+                        this,
+                        &WebSocketChannel::StartPinging),
       NS_DISPATCH_NORMAL);
     if (NS_FAILED(rv)) {
       LOG(("WebSocketChannel::StartWebsocketData Could not start pinging, "

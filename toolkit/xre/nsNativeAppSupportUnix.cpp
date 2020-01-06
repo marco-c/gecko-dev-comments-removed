@@ -254,7 +254,10 @@ nsNativeAppSupportUnix::InteractCB(SmcConn smc_conn, SmPointer client_data)
   
   
   
-  NS_DispatchToCurrentThread(NewRunnableMethod(self, &nsNativeAppSupportUnix::DoInteract));
+  NS_DispatchToCurrentThread(
+    NewRunnableMethod("nsNativeAppSupportUnix::DoInteract",
+                      self,
+                      &nsNativeAppSupportUnix::DoInteract));
 }
 
 void

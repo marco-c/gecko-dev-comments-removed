@@ -191,7 +191,7 @@ PDMFactory::EnsureInit() const
   
   nsCOMPtr<nsIEventTarget> mainTarget = GetMainThreadEventTarget();
   nsCOMPtr<nsIRunnable> runnable =
-    NS_NewRunnableFunction([]() {
+    NS_NewRunnableFunction("PDMFactory::EnsureInit", []() {
       StaticMutexAutoLock mon(sMonitor);
       if (!sInstance) {
         sInstance = new PDMFactoryImpl();

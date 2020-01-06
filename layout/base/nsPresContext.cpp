@@ -7,7 +7,6 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/Encoding.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStateManager.h"
 
@@ -121,7 +120,7 @@ class CharSetChangingRunnable : public Runnable
 {
 public:
   CharSetChangingRunnable(nsPresContext* aPresContext,
-                          NotNull<const Encoding*> aCharSet)
+                          const nsCString& aCharSet)
     : Runnable("CharSetChangingRunnable"),
       mPresContext(aPresContext),
       mCharSet(aCharSet)
@@ -136,7 +135,7 @@ public:
 
 private:
   RefPtr<nsPresContext> mPresContext;
-  NotNull<const Encoding*> mCharSet;
+  nsCString mCharSet;
 };
 
 } 
@@ -197,9 +196,15 @@ nsPresContext::PrefChangedUpdateTimerCallback(nsITimer *aTimer, void *aClosure)
 }
 
 static bool
-IsVisualCharset(NotNull<const Encoding*> aCharset)
+IsVisualCharset(const nsCString& aCharset)
 {
-  return aCharset == ISO_8859_8_ENCODING;
+  if (aCharset.LowerCaseEqualsLiteral("ibm862")             
+      || aCharset.LowerCaseEqualsLiteral("iso-8859-8") ) {  
+    return true; 
+  }
+  else {
+    return false; 
+  }
 }
 
 nsPresContext::nsPresContext(nsIDocument* aDocument, nsPresContextType aType)
@@ -1065,7 +1070,7 @@ nsPresContext::DetachShell()
 }
 
 void
-nsPresContext::DoChangeCharSet(NotNull<const Encoding*> aCharSet)
+nsPresContext::DoChangeCharSet(const nsCString& aCharSet)
 {
   UpdateCharSet(aCharSet);
   mDeviceContext->FlushFontCache();
@@ -1073,7 +1078,7 @@ nsPresContext::DoChangeCharSet(NotNull<const Encoding*> aCharSet)
 }
 
 void
-nsPresContext::UpdateCharSet(NotNull<const Encoding*> aCharSet)
+nsPresContext::UpdateCharSet(const nsCString& aCharSet)
 {
   mLanguage = mLangService->LookupCharSet(aCharSet);
   
@@ -1107,9 +1112,8 @@ nsPresContext::Observe(nsISupports* aSubject,
                         const char16_t* aData)
 {
   if (!nsCRT::strcmp(aTopic, "charset")) {
-    auto encoding = Encoding::ForName(NS_LossyConvertUTF16toASCII(aData));
     RefPtr<CharSetChangingRunnable> runnable =
-      new CharSetChangingRunnable(this, encoding);
+      new CharSetChangingRunnable(this, NS_LossyConvertUTF16toASCII(aData));
     return Document()->Dispatch("CharSetChangingRunnable",
                                 TaskCategory::Other,
                                 runnable.forget());
@@ -1794,7 +1798,9 @@ nsPresContext::ThemeChanged()
     sThemeChanged = true;
 
     nsCOMPtr<nsIRunnable> ev =
-      NewRunnableMethod(this, &nsPresContext::ThemeChangedInternal);
+      NewRunnableMethod("nsPresContext::ThemeChangedInternal",
+                        this,
+                        &nsPresContext::ThemeChangedInternal);
     nsresult rv = Document()->Dispatch("nsPresContext::ThemeChangedInternal",
                                        TaskCategory::Other,
                                        ev.forget());
@@ -1857,7 +1863,9 @@ nsPresContext::SysColorChanged()
   if (!mPendingSysColorChanged) {
     sLookAndFeelChanged = true;
     nsCOMPtr<nsIRunnable> ev =
-      NewRunnableMethod(this, &nsPresContext::SysColorChangedInternal);
+      NewRunnableMethod("nsPresContext::SysColorChangedInternal",
+                        this,
+                        &nsPresContext::SysColorChangedInternal);
     nsresult rv = Document()->Dispatch("nsPresContext::SysColorChangedInternal",
                                        TaskCategory::Other,
                                        ev.forget());
@@ -1892,7 +1900,9 @@ nsPresContext::UIResolutionChanged()
 {
   if (!mPendingUIResolutionChanged) {
     nsCOMPtr<nsIRunnable> ev =
-      NewRunnableMethod(this, &nsPresContext::UIResolutionChangedInternal);
+      NewRunnableMethod("nsPresContext::UIResolutionChangedInternal",
+                        this,
+                        &nsPresContext::UIResolutionChangedInternal);
     nsresult rv =
       Document()->Dispatch("nsPresContext::UIResolutionChangedInternal",
                            TaskCategory::Other,
@@ -2658,11 +2668,13 @@ nsPresContext::NotifyDidPaintSubdocumentCallback(nsIDocument* aDocument, void* a
 
 class DelayedFireDOMPaintEvent : public Runnable {
 public:
-  DelayedFireDOMPaintEvent(nsPresContext* aPresContext,
-                           nsTArray<nsRect>* aList,
-                           uint64_t aTransactionId,
-                           const mozilla::TimeStamp& aTimeStamp = mozilla::TimeStamp())
-    : mPresContext(aPresContext)
+  DelayedFireDOMPaintEvent(
+    nsPresContext* aPresContext,
+    nsTArray<nsRect>* aList,
+    uint64_t aTransactionId,
+    const mozilla::TimeStamp& aTimeStamp = mozilla::TimeStamp())
+    : mozilla::Runnable("DelayedFireDOMPaintEvent")
+    , mPresContext(aPresContext)
     , mTransactionId(aTransactionId)
     , mTimeStamp(aTimeStamp)
   {

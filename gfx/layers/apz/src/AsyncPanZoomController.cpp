@@ -636,10 +636,11 @@ public:
       
       
       
-      mDeferredTasks.AppendElement(
-          NewRunnableMethod<ParentLayerPoint>(&mApzc,
-                                              &AsyncPanZoomController::HandleSmoothScrollOverscroll,
-                                              velocity));
+      mDeferredTasks.AppendElement(NewRunnableMethod<ParentLayerPoint>(
+        "layers::AsyncPanZoomController::HandleSmoothScrollOverscroll",
+        &mApzc,
+        &AsyncPanZoomController::HandleSmoothScrollOverscroll,
+        velocity));
       return false;
     }
 
@@ -1383,8 +1384,11 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
           if (RefPtr<GeckoContentController> controller = GetGeckoContentController()) {
             mPinchPaintTimerSet = true;
             controller->PostDelayedTask(
-              NewRunnableMethod(this,
-                                &AsyncPanZoomController::DoDelayedRequestContentRepaint),
+              NewRunnableMethod(
+                "layers::AsyncPanZoomController::"
+                "DoDelayedRequestContentRepaint",
+                this,
+                &AsyncPanZoomController::DoDelayedRequestContentRepaint),
               delay);
           }
         }
@@ -2114,12 +2118,18 @@ nsEventStatus AsyncPanZoomController::GenerateSingleTap(TapType aType,
       
       
       RefPtr<Runnable> runnable =
-        NewRunnableMethod<TapType, LayoutDevicePoint, mozilla::Modifiers,
-                          ScrollableLayerGuid, uint64_t>(controller,
-                            &GeckoContentController::HandleTap,
-                            aType, geckoScreenPoint,
-                            aModifiers, GetGuid(),
-                            touch ? touch->GetBlockId() : 0);
+        NewRunnableMethod<TapType,
+                          LayoutDevicePoint,
+                          mozilla::Modifiers,
+                          ScrollableLayerGuid,
+                          uint64_t>("layers::GeckoContentController::HandleTap",
+                                    controller,
+                                    &GeckoContentController::HandleTap,
+                                    aType,
+                                    geckoScreenPoint,
+                                    aModifiers,
+                                    GetGuid(),
+                                    touch ? touch->GetBlockId() : 0);
 
       controller->PostDelayedTask(runnable.forget(), 0);
       return nsEventStatus_eConsumeNoDefault;
@@ -2966,7 +2976,11 @@ void AsyncPanZoomController::RequestContentRepaint(bool aUserAction) {
     
     auto func = static_cast<void (AsyncPanZoomController::*)(bool)>
         (&AsyncPanZoomController::RequestContentRepaint);
-    controller->DispatchToRepaintThread(NewRunnableMethod<bool>(this, func, aUserAction));
+    controller->DispatchToRepaintThread(NewRunnableMethod<bool>(
+      "layers::AsyncPanZoomController::RequestContentRepaint",
+      this,
+      func,
+      aUserAction));
     return;
   }
 
@@ -3750,8 +3764,12 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect, const uint32_t aFlags) {
       auto func = static_cast<void (AsyncPanZoomController::*)(const FrameMetrics&, const ParentLayerPoint&)>
           (&AsyncPanZoomController::RequestContentRepaint);
       controller->DispatchToRepaintThread(
-          NewRunnableMethod<FrameMetrics, ParentLayerPoint>(
-              this, func, endZoomToMetrics, velocity));
+        NewRunnableMethod<FrameMetrics, ParentLayerPoint>(
+          "layers::AsyncPanZoomController::ZoomToRect",
+          this,
+          func,
+          endZoomToMetrics,
+          velocity));
     }
   }
 }

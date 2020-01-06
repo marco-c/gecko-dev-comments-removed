@@ -19,6 +19,7 @@
 class ServiceInitializer : public mozilla::Runnable
 {
 public:
+  ServiceInitializer() : mozilla::Runnable("ServiceInitializer") {}
   NS_IMETHOD Run() override
   {
     

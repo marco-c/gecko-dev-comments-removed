@@ -731,12 +731,14 @@ nsXMLContentSink::ProcessStyleLink(nsIContent* aElement,
   return rv;
 }
 
-void
-nsXMLContentSink::SetDocumentCharset(NotNull<const Encoding*> aEncoding)
+NS_IMETHODIMP
+nsXMLContentSink::SetDocumentCharset(nsACString& aCharset)
 {
   if (mDocument) {
-    mDocument->SetDocumentCharacterSet(aEncoding);
+    mDocument->SetDocumentCharacterSet(aCharset);
   }
+
+  return NS_OK;
 }
 
 nsISupports *
@@ -1581,8 +1583,10 @@ nsXMLContentSink::ContinueInterruptedParsingIfEnabled()
 void
 nsXMLContentSink::ContinueInterruptedParsingAsync()
 {
-  nsCOMPtr<nsIRunnable> ev = NewRunnableMethod(this,
-    &nsXMLContentSink::ContinueInterruptedParsingIfEnabled);
+  nsCOMPtr<nsIRunnable> ev =
+    NewRunnableMethod("nsXMLContentSink::ContinueInterruptedParsingIfEnabled",
+                      this,
+                      &nsXMLContentSink::ContinueInterruptedParsingIfEnabled);
 
   NS_DispatchToCurrentThread(ev);
 }

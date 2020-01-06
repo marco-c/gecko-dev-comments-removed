@@ -95,15 +95,18 @@ FileBlockCache::Init()
 
   if (XRE_IsParentProcess()) {
     RefPtr<FileBlockCache> self = this;
-    rv = mThread->Dispatch(NS_NewRunnableFunction([self] {
-      PRFileDesc* fd = nullptr;
-      nsresult rv = NS_OpenAnonymousTemporaryFile(&fd);
-      if (NS_SUCCEEDED(rv)) {
-        self->SetCacheFile(fd);
-      } else {
-        self->Close();
-      }
-    }), NS_DISPATCH_NORMAL);
+    rv = mThread->Dispatch(
+      NS_NewRunnableFunction("FileBlockCache::Init",
+                             [self] {
+                               PRFileDesc* fd = nullptr;
+                               nsresult rv = NS_OpenAnonymousTemporaryFile(&fd);
+                               if (NS_SUCCEEDED(rv)) {
+                                 self->SetCacheFile(fd);
+                               } else {
+                                 self->Close();
+                               }
+                             }),
+      NS_DISPATCH_NORMAL);
   } else {
     
     RefPtr<FileBlockCache> self = this;
@@ -157,19 +160,28 @@ FileBlockCache::Close()
   
   
   
-  nsresult rv = thread->Dispatch(NS_NewRunnableFunction([thread, fd] {
-    if (fd) {
-      CloseFD(fd);
-    }
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIRunnable> event = new ShutdownThreadEvent(thread);
-    SystemGroup::Dispatch(
-      "ShutdownThreadEvent", TaskCategory::Other, event.forget());
-  }), NS_DISPATCH_NORMAL);
+  nsresult rv = thread->Dispatch(
+    NS_NewRunnableFunction("FileBlockCache::Close",
+                           [thread, fd] {
+                             if (fd) {
+                               CloseFD(fd);
+                             }
+                             
+                             
+                             
+                             
+                             
+                             
+                             
+                             
+                             
+                             nsCOMPtr<nsIRunnable> event =
+                               new ShutdownThreadEvent(thread);
+                             SystemGroup::Dispatch("ShutdownThreadEvent",
+                                                   TaskCategory::Other,
+                                                   event.forget());
+                           }),
+    NS_DISPATCH_NORMAL);
   NS_ENSURE_SUCCESS_VOID(rv);
 }
 
