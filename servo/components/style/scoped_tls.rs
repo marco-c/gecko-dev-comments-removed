@@ -9,6 +9,7 @@
 
 use rayon;
 use std::cell::{Ref, RefCell, RefMut};
+use std::ops::DerefMut;
 
 
 
@@ -53,10 +54,15 @@ impl<'scope, T: Send> ScopedTLS<'scope, T> {
 
     
     
-    pub fn ensure<F: FnOnce() -> T>(&self, f: F) -> RefMut<T> {
+    
+    
+    
+    
+    #[inline(always)]
+    pub fn ensure<F: FnOnce(&mut Option<T>)>(&self, f: F) -> RefMut<T> {
         let mut opt = self.borrow_mut();
         if opt.is_none() {
-            *opt = Some(f());
+            f(opt.deref_mut());
         }
 
         RefMut::map(opt, |x| x.as_mut().unwrap())

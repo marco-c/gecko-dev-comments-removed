@@ -26,7 +26,6 @@ use context::TraversalStatistics;
 use dom::{OpaqueNode, SendNode, TElement, TNode};
 use rayon;
 use scoped_tls::ScopedTLS;
-use sharing::STYLE_SHARING_CANDIDATE_CACHE_SIZE;
 use smallvec::SmallVec;
 use std::borrow::Borrow;
 use std::mem;
@@ -38,18 +37,7 @@ use traversal::{DomTraversal, PerLevelTraversalData, PreTraverseToken};
 
 
 
-
-
 pub const WORK_UNIT_MAX: usize = 16;
-
-
-
-
-
-#[allow(dead_code)]
-fn static_assert() {
-    unsafe { mem::transmute::<_, [u32; STYLE_SHARING_CANDIDATE_CACHE_SIZE]>([1; 8]); }
-}
 
 
 
@@ -128,6 +116,19 @@ pub fn traverse_dom<E, D>(traversal: &D,
 
 
 
+#[inline(never)]
+fn create_thread_local_context<'scope, E, D>(
+    traversal: &'scope D,
+    slot: &mut Option<D::ThreadLocalContext>)
+    where E: TElement + 'scope,
+          D: DomTraversal<E>
+{
+    *slot = Some(traversal.create_thread_local_context())
+}
+
+
+
+
 
 
 
@@ -153,7 +154,8 @@ fn top_down_dom<'a, 'scope, E, D>(nodes: &'a [SendNode<E::ConcreteNode>],
     {
         
         
-        let mut tlc = tls.ensure(|| traversal.create_thread_local_context());
+        let mut tlc = tls.ensure(
+            |slot: &mut Option<D::ThreadLocalContext>| create_thread_local_context(traversal, slot));
 
         for n in nodes {
             
