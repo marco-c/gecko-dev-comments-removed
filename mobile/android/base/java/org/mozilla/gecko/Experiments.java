@@ -26,18 +26,10 @@ public class Experiments {
     public static final String WHATSNEW_NOTIFICATION = "whatsnew-notification";
 
     
-    
-    public static final String ONBOARDING3_A = "onboarding3-a"; 
-    public static final String ONBOARDING3_B = "onboarding3-b"; 
-    public static final String ONBOARDING3_C = "onboarding3-c"; 
-
-    
     public static final String DOWNLOAD_CONTENT_CATALOG_SYNC = "download-content-catalog-sync";
 
     
     public static final String PROMOTE_ADD_TO_HOMESCREEN = "promote-add-to-homescreen";
-
-    public static final String PREF_ONBOARDING_VERSION = "onboarding_version";
 
     
     public static final String TRIPLE_READERVIEW_BOOKMARK_PROMPT = "triple-readerview-bookmark-prompt";
@@ -70,13 +62,6 @@ public class Experiments {
     public static List<String> getActiveExperiments(Context c) {
         final List<String> experiments = new LinkedList<>();
         experiments.addAll(SwitchBoard.getActiveExperiments(c));
-
-        
-        final String onboardingExperiment = GeckoSharedPrefs.forProfile(c).getString(Experiments.PREF_ONBOARDING_VERSION, null);
-        if (!TextUtils.isEmpty(onboardingExperiment)) {
-            experiments.add(onboardingExperiment);
-        }
-
         return experiments;
     }
 
