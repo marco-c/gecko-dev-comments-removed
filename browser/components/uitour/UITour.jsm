@@ -34,6 +34,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "ReaderParent",
   "resource:///modules/ReaderParent.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PageActions",
   "resource:///modules/PageActions.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "fxAccounts",
+  "resource://gre/modules/FxAccounts.jsm");
 
 
 const PREF_LOG_LEVEL      = "browser.uitour.loglevel";
@@ -548,25 +550,20 @@ this.UITour = {
       }
 
       case "showFirefoxAccounts": {
-        let p;
-        if (data.email) {
+        Promise.resolve().then(() => {
+          return data.email ? fxAccounts.promiseAccountsEmailURI(data.email, "uitour") :
+                              fxAccounts.promiseAccountsSignUpURI("uitour");
+        }).then(uri => {
+          const url = new URL(uri);
           
-          
-          p =  new URLSearchParams("action=email&entrypoint=uitour");
-          p.append("email", data.email);
-        } else {
-          
-          
-          p =  new URLSearchParams("action=signup&entrypoint=uitour");
-        }
-        
-        if (!this._populateCampaignParams(p, data.extraURLCampaignParams)) {
-          log.warn("showFirefoxAccounts: invalid campaign args specified");
-          return false;
-        }
+          if (!this._populateCampaignParams(url, data.extraURLCampaignParams)) {
+            log.warn("showFirefoxAccounts: invalid campaign args specified");
+            return false;
+          }
 
-        
-        browser.loadURI("about:accounts?" + p.toString());
+          
+          browser.loadURI(url.href);
+        });
         break;
       }
 
@@ -763,7 +760,7 @@ this.UITour = {
   
   
   
-  _populateCampaignParams(urlSearchParams, extraURLCampaignParams) {
+  _populateCampaignParams(url, extraURLCampaignParams) {
     
     if (typeof extraURLCampaignParams == "undefined") {
       
@@ -799,7 +796,7 @@ this.UITour = {
           log.warn("_populateCampaignParams: invalid campaign param specified");
           return false;
         }
-        urlSearchParams.append(name, value);
+        url.searchParams.append(name, value);
       }
     }
     return true;
