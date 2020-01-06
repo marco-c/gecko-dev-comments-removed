@@ -2119,11 +2119,11 @@ MOZ_DEFINE_MALLOC_SIZE_OF(OrphanMallocSizeOf)
 namespace xpc {
 
 static size_t
-SizeOfTreeIncludingThis(nsINode* tree)
+SizeOfTreeIncludingThis(nsINode* tree, SizeOfState& aState)
 {
-    size_t n = tree->SizeOfIncludingThis(OrphanMallocSizeOf);
+    size_t n = tree->SizeOfIncludingThis(aState);
     for (nsIContent* child = tree->GetFirstChild(); child; child = child->GetNextNode(tree))
-        n += child->SizeOfIncludingThis(OrphanMallocSizeOf);
+        n += child->SizeOfIncludingThis(aState);
 
     return n;
 }
@@ -2133,10 +2133,11 @@ class OrphanReporter : public JS::ObjectPrivateVisitor
   public:
     explicit OrphanReporter(GetISupportsFun aGetISupports)
       : JS::ObjectPrivateVisitor(aGetISupports)
-    {
-    }
+      , mState(OrphanMallocSizeOf)
+    {}
 
-    virtual size_t sizeOfIncludingThis(nsISupports* aSupports) override {
+    virtual size_t sizeOfIncludingThis(nsISupports* aSupports) override
+    {
         size_t n = 0;
         nsCOMPtr<nsINode> node = do_QueryInterface(aSupports);
         
@@ -2149,21 +2150,15 @@ class OrphanReporter : public JS::ObjectPrivateVisitor
             
             
             nsCOMPtr<nsINode> orphanTree = node->SubtreeRoot();
-            if (orphanTree &&
-                !mAlreadyMeasuredOrphanTrees.Contains(orphanTree)) {
-                
-                
-                
-                if (mAlreadyMeasuredOrphanTrees.PutEntry(orphanTree, fallible)) {
-                    n += SizeOfTreeIncludingThis(orphanTree);
-                }
+            if (orphanTree && !mState.HaveSeenPtr(orphanTree.get())) {
+                n += SizeOfTreeIncludingThis(orphanTree, mState);
             }
         }
         return n;
     }
 
   private:
-    nsTHashtable <nsISupportsHashKey> mAlreadyMeasuredOrphanTrees;
+    SizeOfState mState;
 };
 
 #ifdef DEBUG
