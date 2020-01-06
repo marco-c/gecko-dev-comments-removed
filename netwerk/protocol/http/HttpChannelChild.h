@@ -120,7 +120,7 @@ public:
   
   void OnBackgroundChildReady(HttpBackgroundChannelChild* aBgChild);
   
-  void OnBackgroundChildDestroyed();
+  void OnBackgroundChildDestroyed(HttpBackgroundChannelChild* aBgChild);
 
 protected:
   mozilla::ipc::IPCResult RecvOnStartRequest(const nsresult& channelStatus,
@@ -294,13 +294,13 @@ private:
   
   
   nsTArray<UniquePtr<ChannelEvent>> mUnknownDecoderEventQ;
-  bool mUnknownDecoderInvolved;
+  Atomic<bool, ReleaseAcquire> mUnknownDecoderInvolved;
 
   
-  bool mDivertingToParent;
+  Atomic<bool, ReleaseAcquire> mDivertingToParent;
   
   
-  bool mFlushedForDiversion;
+  Atomic<bool, ReleaseAcquire> mFlushedForDiversion;
   
   
   bool mSuspendSent;
@@ -332,7 +332,14 @@ private:
   
   bool mSuspendParentAfterSynthesizeResponse;
 
+  
+  Mutex mBgChildMutex;
+
+  
   RefPtr<HttpBackgroundChannelChild> mBgChild;
+
+  
+  nsCOMPtr<nsIRunnable> mBgInitFailCallback;
 
   
   

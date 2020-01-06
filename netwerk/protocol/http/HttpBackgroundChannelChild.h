@@ -95,11 +95,14 @@ private:
   RefPtr<HttpChannelChild> mChannelChild;
 
   
+  
   bool mStartReceived = false;
 
   
+  
   bool mStartSent = false;
 
+  
   
   
   nsTArray<nsCOMPtr<nsIRunnable>> mQueuedRunnables;
