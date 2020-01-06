@@ -257,6 +257,9 @@ static const DllBlockInfo sWindowsDllBlocklist[] = {
   
   { "onepin-opensc-pkcs11.dll", MAKE_VERSION(0, 15, 0xffff, 0xffff) },
 
+  
+  { "pghook.dll", ALL_VERSIONS },
+
   { nullptr, 0 }
 };
 
