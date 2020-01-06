@@ -45,6 +45,7 @@ var {
 } = ExtensionCommon;
 
 var {
+  DefaultMap,
   DefaultWeakMap,
   ExtensionError,
   MessageManagerProxy,
@@ -1224,7 +1225,7 @@ function extensionNameFromURI(uri) {
 
 let IconDetails = {
   
-  iconCache: new DefaultWeakMap(() => new Map()),
+  iconCache: new DefaultWeakMap(() => new DefaultMap(() => new Map())),
 
   
   
@@ -1236,16 +1237,21 @@ let IconDetails = {
   
   
   normalize(details, extension, context = null) {
-    if (!details.imageData && typeof details.path === "string") {
-      let icons = this.iconCache.get(extension);
+    if (!details.imageData && details.path) {
+      
+      
+      let key = details.path;
+      if (typeof key !== "string") {
+        key = uneval(key);
+      }
 
-      let baseURI = context ? context.uri : extension.baseURI;
-      let url = baseURI.resolve(details.path);
+      let icons = this.iconCache.get(extension)
+                      .get(context && context.uri.spec);
 
-      let icon = icons.get(url);
+      let icon = icons.get(key);
       if (!icon) {
         icon = this._normalize(details, extension, context);
-        icons.set(url, icon);
+        icons.set(key, icon);
       }
       return icon;
     }
