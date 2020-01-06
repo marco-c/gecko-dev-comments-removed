@@ -1281,6 +1281,16 @@ nsDOMWindowUtils::SendNativeTouchTap(int32_t aScreenX,
 }
 
 NS_IMETHODIMP
+nsDOMWindowUtils::SuppressAnimation(bool aSuppress)
+{
+  nsIWidget* widget = GetWidget();
+  if (widget) {
+    widget->SuppressAnimation(aSuppress);
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsDOMWindowUtils::ClearNativeTouchSequence(nsIObserver* aObserver)
 {
   nsCOMPtr<nsIWidget> widget = GetWidget();
@@ -1383,20 +1393,22 @@ nsDOMWindowUtils::Focus(nsIDOMElement* aElement)
 }
 
 NS_IMETHODIMP
-nsDOMWindowUtils::GarbageCollect(nsICycleCollectorListener *aListener)
+nsDOMWindowUtils::GarbageCollect(nsICycleCollectorListener *aListener,
+                                 int32_t aExtraForgetSkippableCalls)
 {
   AUTO_PROFILER_LABEL("nsDOMWindowUtils::GarbageCollect", GC);
 
   nsJSContext::GarbageCollectNow(JS::gcreason::DOM_UTILS);
-  nsJSContext::CycleCollectNow(aListener);
+  nsJSContext::CycleCollectNow(aListener, aExtraForgetSkippableCalls);
 
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsDOMWindowUtils::CycleCollect(nsICycleCollectorListener *aListener)
+nsDOMWindowUtils::CycleCollect(nsICycleCollectorListener *aListener,
+                               int32_t aExtraForgetSkippableCalls)
 {
-  nsJSContext::CycleCollectNow(aListener);
+  nsJSContext::CycleCollectNow(aListener, aExtraForgetSkippableCalls);
   return NS_OK;
 }
 

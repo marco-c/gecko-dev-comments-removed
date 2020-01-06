@@ -3898,6 +3898,8 @@ var SessionStoreInternal = {
     var _this = this;
     function win_(aName) { return _this._getWindowDimension(win, aName); }
 
+    const dwu = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                   .getInterface(Ci.nsIDOMWindowUtils);
     
     let screen = gScreenManager.screenForRect(aLeft, aTop, aWidth, aHeight);
     if (screen) {
@@ -3946,37 +3948,46 @@ var SessionStoreInternal = {
     }
 
     
-    if (!isNaN(aLeft) && !isNaN(aTop) && (aLeft != win_("screenX") || aTop != win_("screenY"))) {
-      aWindow.moveTo(aLeft, aTop);
-    }
-    if (aWidth && aHeight && (aWidth != win_("width") || aHeight != win_("height")) && !gResistFingerprintingEnabled) {
+    dwu.suppressAnimation(true);
+
+    
+    try {
+      
+      if (!isNaN(aLeft) && !isNaN(aTop) && (aLeft != win_("screenX") || aTop != win_("screenY"))) {
+        aWindow.moveTo(aLeft, aTop);
+      }
+      if (aWidth && aHeight && (aWidth != win_("width") || aHeight != win_("height")) && !gResistFingerprintingEnabled) {
+        
+        
+        if (aSizeMode != "maximized" || win_("sizemode") != "maximized") {
+          aWindow.resizeTo(aWidth, aHeight);
+        }
+      }
+      if (aSizeMode && win_("sizemode") != aSizeMode && !gResistFingerprintingEnabled) {
+        switch (aSizeMode) {
+        case "maximized":
+          aWindow.maximize();
+          break;
+        case "minimized":
+          aWindow.minimize();
+          break;
+        case "normal":
+          aWindow.restore();
+          break;
+        }
+      }
+      var sidebar = aWindow.document.getElementById("sidebar-box");
+      if (sidebar.getAttribute("sidebarcommand") != aSidebar) {
+        aWindow.SidebarUI.show(aSidebar);
+      }
       
       
-      if (aSizeMode != "maximized" || win_("sizemode") != "maximized") {
-        aWindow.resizeTo(aWidth, aHeight);
+      if (this.windowToFocus) {
+        this.windowToFocus.focus();
       }
-    }
-    if (aSizeMode && win_("sizemode") != aSizeMode && !gResistFingerprintingEnabled) {
-      switch (aSizeMode) {
-      case "maximized":
-        aWindow.maximize();
-        break;
-      case "minimized":
-        aWindow.minimize();
-        break;
-      case "normal":
-        aWindow.restore();
-        break;
-      }
-    }
-    var sidebar = aWindow.document.getElementById("sidebar-box");
-    if (sidebar.getAttribute("sidebarcommand") != aSidebar) {
-      aWindow.SidebarUI.show(aSidebar);
-    }
-    
-    
-    if (this.windowToFocus) {
-      this.windowToFocus.focus();
+    } finally {
+      
+      dwu.suppressAnimation(false);
     }
   },
 
