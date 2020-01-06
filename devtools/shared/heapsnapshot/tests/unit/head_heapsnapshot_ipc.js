@@ -1,0 +1,10 @@
+
+
+
+"use strict";
+
+
+
+
+var Cu = Components.utils;
+var CC = Components.Constructor;
