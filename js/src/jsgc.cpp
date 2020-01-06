@@ -193,6 +193,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Move.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/SizePrintfMacros.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Unused.h"
 
@@ -1124,13 +1125,13 @@ FOR_EACH_ALLOCKIND(EXPAND_THING_NAME)
 void
 js::gc::DumpArenaInfo()
 {
-    fprintf(stderr, "Arena header size: %zu\n\n", ArenaHeaderSize);
+    fprintf(stderr, "Arena header size: %" PRIuSIZE "\n\n", ArenaHeaderSize);
 
     fprintf(stderr, "GC thing kinds:\n");
     fprintf(stderr, "%25s %8s %8s %8s\n", "AllocKind:", "Size:", "Count:", "Padding:");
     for (auto kind : AllAllocKinds()) {
         fprintf(stderr,
-                "%25s %8zu %8zu %8zu\n",
+                "%25s %8" PRIuSIZE " %8" PRIuSIZE " %8" PRIuSIZE "\n",
                 AllocKindName(kind),
                 Arena::thingSize(kind),
                 Arena::thingsPerArena(kind),
@@ -3663,7 +3664,7 @@ ArenaLists::checkEmptyArenaList(AllocKind kind)
                 }
             }
         }
-        fprintf(stderr, "ERROR: GC found %zu live Cells at shutdown\n", num_live);
+        fprintf(stderr, "ERROR: GC found %" PRIuSIZE " live Cells at shutdown\n", num_live);
     }
 #endif 
     return num_live == 0;
@@ -7793,35 +7794,19 @@ js::gc::AssertGCThingHasType(js::gc::Cell* cell, JS::TraceKind kind)
 JS::AutoAssertNoGC::AutoAssertNoGC(JSContext* maybecx)
   : cx_(maybecx ? maybecx : TlsContext.get())
 {
-    cx_->inUnsafeRegion++;
+    if (cx_)
+        cx_->inUnsafeRegion++;
 }
 
 JS::AutoAssertNoGC::~AutoAssertNoGC()
 {
-    MOZ_ASSERT(cx_->inUnsafeRegion > 0);
-    cx_->inUnsafeRegion--;
+    if (cx_) {
+        MOZ_ASSERT(cx_->inUnsafeRegion > 0);
+        cx_->inUnsafeRegion--;
+    }
 }
 
 #ifdef DEBUG
-JS::AutoAssertNoAlloc::AutoAssertNoAlloc(JSContext* cx)
-  : gc(nullptr)
-{
-    disallowAlloc(cx->runtime());
-}
-
-void JS::AutoAssertNoAlloc::disallowAlloc(JSRuntime* rt)
-{
-    MOZ_ASSERT(!gc);
-    gc = &rt->gc;
-    TlsContext.get()->disallowAlloc();
-}
-
-JS::AutoAssertNoAlloc::~AutoAssertNoAlloc()
-{
-    if (gc)
-        TlsContext.get()->allowAlloc();
-}
-
 AutoAssertNoNurseryAlloc::AutoAssertNoNurseryAlloc()
 {
     TlsContext.get()->disallowNurseryAlloc();

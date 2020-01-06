@@ -535,23 +535,6 @@ class JS_PUBLIC_API(AutoAssertNoGC) : public AutoRequireNoGC
 
 
 
-class JS_PUBLIC_API(AutoAssertNoAlloc)
-{
-#ifdef JS_DEBUG
-    js::gc::GCRuntime* gc;
-
-  public:
-    AutoAssertNoAlloc() : gc(nullptr) {}
-    explicit AutoAssertNoAlloc(JSContext* cx);
-    void disallowAlloc(JSRuntime* rt);
-    ~AutoAssertNoAlloc();
-#else
-  public:
-    AutoAssertNoAlloc() {}
-    explicit AutoAssertNoAlloc(JSContext* cx) {}
-    void disallowAlloc(JSRuntime* rt) {}
-#endif
-};
 
 
 
@@ -562,16 +545,11 @@ class JS_PUBLIC_API(AutoAssertNoAlloc)
 
 
 
-
-
-
-
-
-class JS_PUBLIC_API(AutoSuppressGCAnalysis) : public AutoAssertNoAlloc
+class JS_PUBLIC_API(AutoSuppressGCAnalysis) : public AutoAssertNoGC
 {
   public:
-    AutoSuppressGCAnalysis() : AutoAssertNoAlloc() {}
-    explicit AutoSuppressGCAnalysis(JSContext* cx) : AutoAssertNoAlloc(cx) {}
+    AutoSuppressGCAnalysis() : AutoAssertNoGC() {}
+    explicit AutoSuppressGCAnalysis(JSContext* cx) : AutoAssertNoGC(cx) {}
 } JS_HAZ_GC_SUPPRESSED;
 
 
