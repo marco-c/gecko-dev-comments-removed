@@ -58,6 +58,8 @@ protected:
 public:
   explicit ChannelMediaDecoder(MediaDecoderInit& aInit);
 
+  MediaDecoderStateMachine* CreateStateMachine() override;
+
   void Shutdown() override;
 
   
