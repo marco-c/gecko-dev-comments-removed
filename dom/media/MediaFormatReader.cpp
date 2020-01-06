@@ -1117,6 +1117,7 @@ MediaFormatReader::MediaFormatReader(MediaFormatReaderInit& aInit,
   , mBuffered(mTaskQueue,
               TimeIntervals(),
               "MediaFormatReader::mBuffered (Canonical)")
+  , mFrameStats(aInit.mFrameStats)
 {
   MOZ_ASSERT(aDemuxer);
   MOZ_COUNT_CTOR(MediaFormatReader);
@@ -2150,7 +2151,7 @@ MediaFormatReader::Update(TrackType aTrack)
 
   
   
-  AbstractMediaDecoder::AutoNotifyDecoded a(mDecoder);
+  AbstractMediaDecoder::AutoNotifyDecoded a(mFrameStats);
 
   
   while (decoder.mTimeThreshold && decoder.mOutput.Length()) {
