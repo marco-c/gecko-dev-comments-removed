@@ -131,9 +131,19 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
 #endif
 
   
+  if (const auto xdgConfigPath = PR_GetEnv("XDG_CONFIG_PATH")) {
+    policy->AddDir(rdonly, xdgConfigPath);
+  }
+
+  nsAutoCString xdgConfigDirs(PR_GetEnv("XDG_CONFIG_DIRS"));
+  for (const auto& path : xdgConfigDirs.Split(':')) {
+    policy->AddDir(rdonly, PromiseFlatCString(path).get());
+  }
+
   
-  mozilla::Array<const char*, 3> confDirs = {
-    ".config",
+  
+  mozilla::Array<const char*, 3> extraConfDirs = {
+    ".config",   
     ".themes",
     ".fonts",
   };
@@ -143,7 +153,7 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   if (NS_SUCCEEDED(rv)) {
     nsCOMPtr<nsIFile> confDir;
 
-    for (auto dir : confDirs) {
+    for (const auto& dir : extraConfDirs) {
       rv = homeDir->Clone(getter_AddRefs(confDir));
       if (NS_SUCCEEDED(rv)) {
         rv = confDir->AppendNative(nsDependentCString(dir));
