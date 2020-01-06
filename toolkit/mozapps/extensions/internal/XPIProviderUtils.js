@@ -32,9 +32,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "Blocklist",
                                    "@mozilla.org/extensions/blocklist;1",
                                    Ci.nsIBlocklistService);
 
-XPCOMUtils.defineLazyPreferenceGetter(this, "ALLOW_NON_MPC",
-                                      "extensions.allow-non-mpc-extensions");
-
 Cu.import("resource://gre/modules/Log.jsm");
 const LOGGER_ID = "addons.xpi-utils";
 
@@ -1528,7 +1525,6 @@ this.XPIDatabaseReconcile = {
               }
             }
 
-            let wasDisabled = oldAddon.appDisabled;
             let oldPath = oldAddon.path || descriptorToPath(oldAddon.descriptor);
 
             
@@ -1554,18 +1550,6 @@ this.XPIDatabaseReconcile = {
             } else {
               
               newAddon = oldAddon;
-            }
-
-            
-            
-            
-            
-            
-            if (!wasDisabled && newAddon.appDisabled &&
-                !ALLOW_NON_MPC && !newAddon.multiprocessCompatible &&
-                (newAddon.blocklistState != Ci.nsIBlocklistService.STATE_BLOCKED) &&
-                newAddon.isPlatformCompatible && newAddon.isCompatible) {
-              AddonManagerPrivate.nonMpcDisabled = true;
             }
 
             if (newAddon)
