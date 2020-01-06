@@ -14,6 +14,8 @@
 #include "nsAlgorithm.h" 
 #include "updatehelper.h"
 #endif
+#define XZ_USE_CRC64
+#include "xz.h"
 
 
 
@@ -36,10 +38,10 @@
 # include <io.h>
 #endif
 
-static int inbuf_size  = 262144;
-static int outbuf_size = 262144;
-static char *inbuf  = nullptr;
-static char *outbuf = nullptr;
+static size_t inbuf_size  = 262144;
+static size_t outbuf_size = 262144;
+static uint8_t *inbuf  = nullptr;
+static uint8_t *outbuf = nullptr;
 
 
 
@@ -182,22 +184,22 @@ ArchiveReader::Open(const NS_tchar *path)
     Close();
 
   if (!inbuf) {
-    inbuf = (char *)malloc(inbuf_size);
+    inbuf = (uint8_t *)malloc(inbuf_size);
     if (!inbuf) {
       
       inbuf_size = 1024;
-      inbuf = (char *)malloc(inbuf_size);
+      inbuf = (uint8_t *)malloc(inbuf_size);
       if (!inbuf)
         return ARCHIVE_READER_MEM_ERROR;
     }
   }
 
   if (!outbuf) {
-    outbuf = (char *)malloc(outbuf_size);
+    outbuf = (uint8_t *)malloc(outbuf_size);
     if (!outbuf) {
       
       outbuf_size = 1024;
-      outbuf = (char *)malloc(outbuf_size);
+      outbuf = (uint8_t *)malloc(outbuf_size);
       if (!outbuf)
         return ARCHIVE_READER_MEM_ERROR;
     }
@@ -210,6 +212,9 @@ ArchiveReader::Open(const NS_tchar *path)
 #endif
   if (!mArchive)
     return READ_ERROR;
+
+  xz_crc32_init();
+  xz_crc64_init();
 
   return OK;
 }
@@ -273,12 +278,21 @@ ArchiveReader::ExtractItemToStream(const MarItem *item, FILE *fp)
 {
   
 
-  bz_stream strm;
-  int offset, inlen, outlen, ret = OK;
+  int offset, inlen, ret = OK;
+  struct xz_buf strm = { 0 };
+  enum xz_ret xz_rv = XZ_OK;
 
-  memset(&strm, 0, sizeof(strm));
-  if (BZ2_bzDecompressInit(&strm, 0, 0) != BZ_OK)
-    return UNEXPECTED_BZIP_ERROR;
+  struct xz_dec * dec = xz_dec_init(XZ_DYNALLOC, 64 * 1024 * 1024);
+  if (!dec) {
+    return UNEXPECTED_XZ_ERROR;
+  }
+
+  strm.in = inbuf;
+  strm.in_pos = 0;
+  strm.in_size = 0;
+  strm.out = outbuf;
+  strm.out_pos = 0;
+  strm.out_size = outbuf_size;
 
   offset = 0;
   for (;;) {
@@ -287,38 +301,49 @@ ArchiveReader::ExtractItemToStream(const MarItem *item, FILE *fp)
       break;
     }
 
-    if (offset < (int) item->length && strm.avail_in == 0) {
+    if (offset < (int) item->length && strm.in_pos == strm.in_size) {
       inlen = mar_read(mArchive, item, offset, inbuf, inbuf_size);
-      if (inlen <= 0)
-        return READ_ERROR;
+      if (inlen <= 0) {
+        ret = READ_ERROR;
+        break;
+      }
       offset += inlen;
-      strm.next_in = inbuf;
-      strm.avail_in = inlen;
+      strm.in_size = inlen;
+      strm.in_pos = 0;
     }
 
-    strm.next_out = outbuf;
-    strm.avail_out = outbuf_size;
+    xz_rv = xz_dec_run(dec, &strm);
 
-    ret = BZ2_bzDecompress(&strm);
-    if (ret != BZ_OK && ret != BZ_STREAM_END) {
-      ret = UNEXPECTED_BZIP_ERROR;
-      break;
-    }
-
-    outlen = outbuf_size - strm.avail_out;
-    if (outlen) {
-      if (fwrite(outbuf, outlen, 1, fp) != 1) {
+    if (strm.out_pos == outbuf_size) {
+      if (fwrite(outbuf, 1, strm.out_pos, fp) != strm.out_pos) {
         ret = WRITE_ERROR_EXTRACT;
         break;
       }
+
+      strm.out_pos = 0;
     }
 
-    if (ret == BZ_STREAM_END) {
-      ret = OK;
+    if (xz_rv == XZ_OK) {
+      
+      continue;
+    }
+
+    
+    
+    if (xz_rv != XZ_STREAM_END) {
+      ret = UNEXPECTED_XZ_ERROR;
       break;
     }
+
+    
+    
+    
+    if (fwrite(outbuf, 1, strm.out_pos, fp) != strm.out_pos) {
+      ret = WRITE_ERROR_EXTRACT;
+    }
+    break;
   }
 
-  BZ2_bzDecompressEnd(&strm);
+  xz_dec_end(dec);
   return ret;
 }
