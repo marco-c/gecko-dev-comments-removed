@@ -32,18 +32,6 @@ using mozilla::Swap;
 
 
 
-WasmFrameIter::WasmFrameIter()
-  : activation_(nullptr),
-    code_(nullptr),
-    callsite_(nullptr),
-    codeRange_(nullptr),
-    fp_(nullptr),
-    unwind_(Unwind::False),
-    unwoundAddressOfReturnAddress_(nullptr)
-{
-    MOZ_ASSERT(done());
-}
-
 WasmFrameIter::WasmFrameIter(WasmActivation* activation, Unwind unwind)
   : activation_(activation),
     code_(nullptr),
@@ -1002,17 +990,6 @@ ProfilingFrameIterator::label() const
     }
 
     MOZ_CRASH("bad code range kind");
-}
-
-void
-wasm::TraceActivations(JSContext* cx, const CooperatingContext& target, JSTracer* trc)
-{
-    for (ActivationIterator iter(cx, target); !iter.done(); ++iter) {
-        if (iter.activation()->isWasm()) {
-            for (WasmFrameIter fi(iter.activation()->asWasm()); !fi.done(); ++fi)
-                fi.instance()->trace(trc);
-        }
-    }
 }
 
 Instance*

@@ -625,17 +625,21 @@ HandleException(ResumeFromException* rfe)
     
     
     
-    DebugModeOSRVolatileJitFrameIterator iter(cx);
-    while (!iter.isEntry()) {
+    DebugModeOSRVolatileJitFrameIter iter(cx);
+    while (!iter.isJSJit() || !iter.asJSJit().isEntry()) {
+        while (!iter.isJSJit())
+            ++iter;
+        const JitFrameIterator& frame = iter.asJSJit();
+
         bool overrecursed = false;
-        if (iter.isIonJS()) {
+        if (frame.isIonJS()) {
             
             
-            InlineFrameIterator frames(cx, &iter);
+            InlineFrameIterator frames(cx, &frame);
 
             
             IonScript* ionScript = nullptr;
-            bool invalidated = iter.checkInvalidation(&ionScript);
+            bool invalidated = frame.checkInvalidation(&ionScript);
 
 #ifdef JS_TRACE_LOGGING
             if (logger && cx->compartment()->isDebuggee() && logger->enabled()) {
@@ -672,11 +676,11 @@ HandleException(ResumeFromException* rfe)
                 ++frames;
             }
 
-            activation->removeIonFrameRecovery(iter.jsFrame());
+            activation->removeIonFrameRecovery(frame.jsFrame());
             if (invalidated)
                 ionScript->decrementInvalidationCount(cx->runtime()->defaultFreeOp());
 
-        } else if (iter.isBaselineJS()) {
+        } else if (frame.isBaselineJS()) {
             
             
             
@@ -690,16 +694,16 @@ HandleException(ResumeFromException* rfe)
             
             
             jsbytecode* pc;
-            iter.baselineScriptAndPc(nullptr, &pc);
-            AutoBaselineHandlingException handlingException(iter.baselineFrame(), pc);
+            frame.baselineScriptAndPc(nullptr, &pc);
+            AutoBaselineHandlingException handlingException(frame.baselineFrame(), pc);
 
-            HandleExceptionBaseline(cx, iter, rfe, pc);
+            HandleExceptionBaseline(cx, frame, rfe, pc);
 
             
             
             
             
-            AutoDeleteDebugModeOSRInfo deleteDebugModeOSRInfo(iter.baselineFrame());
+            AutoDeleteDebugModeOSRInfo deleteDebugModeOSRInfo(frame.baselineFrame());
 
             if (rfe->kind != ResumeFromException::RESUME_ENTRY_FRAME &&
                 rfe->kind != ResumeFromException::RESUME_FORCED_RETURN)
@@ -711,7 +715,7 @@ HandleException(ResumeFromException* rfe)
             TraceLogStopEvent(logger, TraceLogger_Scripts);
 
             
-            JSScript* script = iter.script();
+            JSScript* script = frame.script();
             probes::ExitScript(cx, script, script->functionNonDelazifying(),
                                 false);
 
@@ -719,7 +723,7 @@ HandleException(ResumeFromException* rfe)
                 return;
         }
 
-        JitFrameLayout* current = iter.isScripted() ? iter.jsFrame() : nullptr;
+        JitFrameLayout* current = frame.isScripted() ? frame.jsFrame() : nullptr;
 
         ++iter;
 
@@ -738,7 +742,7 @@ HandleException(ResumeFromException* rfe)
         }
     }
 
-    rfe->stackPointer = iter.fp();
+    rfe->stackPointer = iter.asJSJit().fp();
 }
 
 
@@ -1257,10 +1261,8 @@ TraceRectifierFrame(JSTracer* trc, const JitFrameIterator& frame)
 }
 
 static void
-TraceJitActivation(JSTracer* trc, const JitActivationIterator& activations)
+TraceJitActivation(JSTracer* trc, JitActivation* activation)
 {
-    JitActivation* activation = activations->asJit();
-
 #ifdef CHECK_OSIPOINT_REGISTERS
     if (JitOptions.checkOsiPointRegisters) {
         
@@ -1273,7 +1275,7 @@ TraceJitActivation(JSTracer* trc, const JitActivationIterator& activations)
     activation->traceRematerializedFrames(trc);
     activation->traceIonRecovery(trc);
 
-    for (JitFrameIterator frames(activations); !frames.done(); ++frames) {
+    for (JitFrameIterator frames(activation); !frames.done(); ++frames) {
         switch (frames.type()) {
           case JitFrame_Exit:
             TraceJitExitFrame(trc, frames);
@@ -1302,11 +1304,22 @@ TraceJitActivation(JSTracer* trc, const JitActivationIterator& activations)
     }
 }
 
+static void
+TraceWasmActivation(JSTracer* trc, WasmActivation* act)
+{
+    for (wasm::WasmFrameIter iter(act); !iter.done(); ++iter)
+        iter.instance()->trace(trc);
+}
+
 void
 TraceJitActivations(JSContext* cx, const CooperatingContext& target, JSTracer* trc)
 {
-    for (JitActivationIterator activations(cx, target); !activations.done(); ++activations)
-        TraceJitActivation(trc, activations);
+    for (ActivationIterator activations(cx, target); !activations.done(); ++activations) {
+        if (activations->isJit())
+            TraceJitActivation(trc, activations->asJit());
+        if (activations->isWasm())
+            TraceWasmActivation(trc, activations->asWasm());
+    }
 }
 
 void
@@ -1316,9 +1329,9 @@ UpdateJitActivationsForMinorGC(JSRuntime* rt, JSTracer* trc)
     JSContext* cx = TlsContext.get();
     for (const CooperatingContext& target : rt->cooperatingContexts()) {
         for (JitActivationIterator activations(cx, target); !activations.done(); ++activations) {
-            for (JitFrameIterator frames(activations); !frames.done(); ++frames) {
-                if (frames.type() == JitFrame_IonJS)
-                    UpdateIonJSFrameForMinorGC(trc, frames);
+            for (OnlyJSJitFrameIter iter(activations); !iter.done(); ++iter) {
+                if (iter.frame().type() == JitFrame_IonJS)
+                    UpdateIonJSFrameForMinorGC(trc, iter.frame());
             }
         }
     }
@@ -1331,28 +1344,30 @@ GetPcScript(JSContext* cx, JSScript** scriptRes, jsbytecode** pcRes)
 
     
     
-    JitActivationIterator iter(cx);
-    JitFrameIterator it(iter);
+    JitActivationIterator actIter(cx);
+    OnlyJSJitFrameIter it(actIter);
     uint8_t* retAddr;
-    if (it.isExitFrame()) {
+    if (it.frame().isExitFrame()) {
         ++it;
 
         
-        if (it.isRectifier()) {
+        if (it.frame().isRectifier()) {
             ++it;
-            MOZ_ASSERT(it.isBaselineStub() || it.isBaselineJS() || it.isIonJS());
+            MOZ_ASSERT(it.frame().isBaselineStub() ||
+                       it.frame().isBaselineJS() ||
+                       it.frame().isIonJS());
         }
 
         
-        if (it.isBaselineStub()) {
+        if (it.frame().isBaselineStub()) {
             ++it;
-            MOZ_ASSERT(it.isBaselineJS());
-        } else if (it.isIonICCall()) {
+            MOZ_ASSERT(it.frame().isBaselineJS());
+        } else if (it.frame().isIonICCall()) {
             ++it;
-            MOZ_ASSERT(it.isIonJS());
+            MOZ_ASSERT(it.frame().isIonJS());
         }
 
-        MOZ_ASSERT(it.isBaselineJS() || it.isIonJS());
+        MOZ_ASSERT(it.frame().isBaselineJS() || it.frame().isIonJS());
 
         
         
@@ -1360,15 +1375,15 @@ GetPcScript(JSContext* cx, JSScript** scriptRes, jsbytecode** pcRes)
         
         
         
-        if (!it.isBaselineJS() || !it.baselineFrame()->hasOverridePc()) {
-            retAddr = it.returnAddressToFp();
+        if (!it.frame().isBaselineJS() || !it.frame().baselineFrame()->hasOverridePc()) {
+            retAddr = it.frame().returnAddressToFp();
             MOZ_ASSERT(retAddr);
         } else {
             retAddr = nullptr;
         }
     } else {
-        MOZ_ASSERT(it.isBailoutJS());
-        retAddr = it.returnAddress();
+        MOZ_ASSERT(it.frame().isBailoutJS());
+        retAddr = it.frame().returnAddress();
     }
 
     uint32_t hash;
@@ -1388,13 +1403,13 @@ GetPcScript(JSContext* cx, JSScript** scriptRes, jsbytecode** pcRes)
 
     
     jsbytecode* pc = nullptr;
-    if (it.isIonJS() || it.isBailoutJS()) {
-        InlineFrameIterator ifi(cx, &it);
+    if (it.frame().isIonJS() || it.frame().isBailoutJS()) {
+        InlineFrameIterator ifi(cx, &it.frame());
         *scriptRes = ifi.script();
         pc = ifi.pc();
     } else {
-        MOZ_ASSERT(it.isBaselineJS());
-        it.baselineScriptAndPc(scriptRes, &pc);
+        MOZ_ASSERT(it.frame().isBaselineJS());
+        it.frame().baselineScriptAndPc(scriptRes, &pc);
     }
 
     if (pcRes)
@@ -2660,6 +2675,7 @@ JitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame)
 
     if (prevType == JitFrame_Entry) {
         
+        
         returnAddressToFp_ = nullptr;
         fp_ = nullptr;
         type_ = JitFrame_Entry;
@@ -2694,11 +2710,12 @@ void
 AssertJitStackInvariants(JSContext* cx)
 {
     for (JitActivationIterator activations(cx); !activations.done(); ++activations) {
-        JitFrameIterator frames(activations);
+        JitFrameIter iter(activations.activation());
         size_t prevFrameSize = 0;
         size_t frameSize = 0;
         bool isScriptedCallee = false;
-        for (; !frames.done(); ++frames) {
+        for (; !iter.done(); ++iter) {
+            const JitFrameIterator& frames = iter.asJSJit();
             size_t calleeFp = reinterpret_cast<size_t>(frames.fp());
             size_t callerFp = reinterpret_cast<size_t>(frames.prevFp());
             MOZ_ASSERT(callerFp >= calleeFp);
@@ -2751,14 +2768,12 @@ AssertJitStackInvariants(JSContext* cx)
                     "The baseline stub restores the stack alignment");
             }
 
-            isScriptedCallee = false
-                || frames.isScripted()
-                || frames.type() == JitFrame_Rectifier;
+            isScriptedCallee = frames.isScripted() || frames.type() == JitFrame_Rectifier;
         }
 
-        MOZ_RELEASE_ASSERT(frames.type() == JitFrame_Entry,
+        MOZ_RELEASE_ASSERT(iter.asJSJit().type() == JitFrame_Entry,
           "The first frame of a Jit activation should be an entry frame");
-        MOZ_RELEASE_ASSERT(reinterpret_cast<size_t>(frames.fp()) % JitStackAlignment == 0,
+        MOZ_RELEASE_ASSERT(reinterpret_cast<size_t>(iter.asJSJit().fp()) % JitStackAlignment == 0,
           "The entry frame should be properly aligned");
     }
 }

@@ -85,21 +85,22 @@ class DebugModeOSRVolatileStub
 
 
 
-class DebugModeOSRVolatileJitFrameIterator : public JitFrameIterator
+
+class DebugModeOSRVolatileJitFrameIter : public JitFrameIter
 {
-    DebugModeOSRVolatileJitFrameIterator** stack;
-    DebugModeOSRVolatileJitFrameIterator* prev;
+    DebugModeOSRVolatileJitFrameIter** stack;
+    DebugModeOSRVolatileJitFrameIter* prev;
 
   public:
-    explicit DebugModeOSRVolatileJitFrameIterator(JSContext* cx)
-      : JitFrameIterator(cx)
+    explicit DebugModeOSRVolatileJitFrameIter(JSContext* cx)
+      : JitFrameIter(cx->activation())
     {
-        stack = &cx->liveVolatileJitFrameIterators_.ref();
+        stack = &cx->liveVolatileJitFrameIter_.ref();
         prev = *stack;
         *stack = this;
     }
 
-    ~DebugModeOSRVolatileJitFrameIterator() {
+    ~DebugModeOSRVolatileJitFrameIter() {
         MOZ_ASSERT(*stack == this);
         *stack = prev;
     }

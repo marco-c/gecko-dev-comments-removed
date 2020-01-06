@@ -33,7 +33,7 @@ class AutoCompartment;
 
 namespace jit {
 class JitContext;
-class DebugModeOSRVolatileJitFrameIterator;
+class DebugModeOSRVolatileJitFrameIter;
 } 
 
 typedef HashSet<Shape*> ShapeSet;
@@ -300,7 +300,7 @@ struct JSContext : public JS::RootingContext,
     }
 
     friend class JS::AutoSaveExceptionState;
-    friend class js::jit::DebugModeOSRVolatileJitFrameIterator;
+    friend class js::jit::DebugModeOSRVolatileJitFrameIter;
     friend void js::ReportOverRecursed(JSContext*, unsigned errorNumber);
 
     
@@ -636,7 +636,8 @@ struct JSContext : public JS::RootingContext,
 
     
     
-    js::ThreadLocalData<js::jit::DebugModeOSRVolatileJitFrameIterator*> liveVolatileJitFrameIterators_;
+    js::ThreadLocalData<js::jit::DebugModeOSRVolatileJitFrameIter*>
+        liveVolatileJitFrameIter_;
 
   public:
     js::ThreadLocalData<int32_t> reportGranularity;  

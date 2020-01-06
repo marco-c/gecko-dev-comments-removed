@@ -389,16 +389,16 @@ FrameIter::unaliasedForEachActual(JSContext* cx, Op op)
 {
     switch (data_.state_) {
       case DONE:
-      case WASM:
         break;
       case INTERP:
         interpFrame()->unaliasedForEachActual(op);
         return;
       case JIT:
-        if (data_.jitFrames_.isIonJS()) {
-            jit::MaybeReadFallback recover(cx, activation()->asJit(), &data_.jitFrames_);
+        MOZ_ASSERT(isJSJit());
+        if (jsJitFrame().isIonJS()) {
+            jit::MaybeReadFallback recover(cx, activation()->asJit(), &jsJitFrame());
             ionInlineFrames_.unaliasedForEachActual(cx, op, jit::ReadFrame_Actuals, recover);
-        } else if (data_.jitFrames_.isBailoutJS()) {
+        } else if (jsJitFrame().isBailoutJS()) {
             
             
             
@@ -408,8 +408,8 @@ FrameIter::unaliasedForEachActual(JSContext* cx, Op op)
             jit::MaybeReadFallback fallback;
             ionInlineFrames_.unaliasedForEachActual(cx, op, jit::ReadFrame_Actuals, fallback);
         } else {
-            MOZ_ASSERT(data_.jitFrames_.isBaselineJS());
-            data_.jitFrames_.unaliasedForEachActual(op, jit::ReadFrame_Actuals);
+            MOZ_ASSERT(jsJitFrame().isBaselineJS());
+            jsJitFrame().unaliasedForEachActual(op, jit::ReadFrame_Actuals);
         }
         return;
     }
@@ -1034,11 +1034,11 @@ FrameIter::hasCachedSavedFrame() const
     if (hasUsableAbstractFramePtr())
         return abstractFramePtr().hasCachedSavedFrame();
 
-    MOZ_ASSERT(data_.jitFrames_.isIonScripted());
+    MOZ_ASSERT(jsJitFrame().isIonScripted());
     
     
     
-    return isPhysicalIonFrame() && data_.jitFrames_.current()->hasCachedSavedFrame();
+    return isPhysicalIonFrame() && jsJitFrame().current()->hasCachedSavedFrame();
 }
 
 inline void
@@ -1052,7 +1052,7 @@ FrameIter::setHasCachedSavedFrame()
     }
 
     MOZ_ASSERT(isPhysicalIonFrame());
-    data_.jitFrames_.current()->setHasCachedSavedFrame();
+    jsJitFrame().current()->setHasCachedSavedFrame();
 }
 
 } 

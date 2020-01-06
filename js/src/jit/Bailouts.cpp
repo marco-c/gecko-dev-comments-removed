@@ -41,19 +41,19 @@ jit::Bailout(BailoutStack* sp, BaselineBailoutInfo** bailoutInfo)
 
     JitActivationIterator jitActivations(cx);
     BailoutFrameInfo bailoutData(jitActivations, sp);
-    JitFrameIterator iter(jitActivations);
-    MOZ_ASSERT(!iter.ionScript()->invalidated());
-    CommonFrameLayout* currentFramePtr = iter.current();
+    JitFrameIterator frame(jitActivations->asJit());
+    MOZ_ASSERT(!frame.ionScript()->invalidated());
+    CommonFrameLayout* currentFramePtr = frame.current();
 
     TraceLoggerThread* logger = TraceLoggerForCurrentThread(cx);
     TraceLogTimestamp(logger, TraceLogger_Bailout);
 
-    JitSpew(JitSpew_IonBailouts, "Took bailout! Snapshot offset: %d", iter.snapshotOffset());
+    JitSpew(JitSpew_IonBailouts, "Took bailout! Snapshot offset: %d", frame.snapshotOffset());
 
     MOZ_ASSERT(IsBaselineEnabled(cx));
 
     *bailoutInfo = nullptr;
-    uint32_t retval = BailoutIonToBaseline(cx, bailoutData.activation(), iter, false, bailoutInfo,
+    uint32_t retval = BailoutIonToBaseline(cx, bailoutData.activation(), frame, false, bailoutInfo,
                                             nullptr);
     MOZ_ASSERT(retval == BAILOUT_RETURN_OK ||
                retval == BAILOUT_RETURN_FATAL_ERROR ||
@@ -61,7 +61,7 @@ jit::Bailout(BailoutStack* sp, BaselineBailoutInfo** bailoutInfo)
     MOZ_ASSERT_IF(retval == BAILOUT_RETURN_OK, *bailoutInfo != nullptr);
 
     if (retval != BAILOUT_RETURN_OK) {
-        JSScript* script = iter.script();
+        JSScript* script = frame.script();
         probes::ExitScript(cx, script, script->functionNonDelazifying(),
                             false);
     }
@@ -74,8 +74,8 @@ jit::Bailout(BailoutStack* sp, BaselineBailoutInfo** bailoutInfo)
     
     
     
-    if (iter.ionScript()->invalidated())
-        iter.ionScript()->decrementInvalidationCount(cx->runtime()->defaultFreeOp());
+    if (frame.ionScript()->invalidated())
+        frame.ionScript()->decrementInvalidationCount(cx->runtime()->defaultFreeOp());
 
     
     
@@ -113,21 +113,22 @@ jit::InvalidationBailout(InvalidationBailoutStack* sp, size_t* frameSizeOut,
 
     JitActivationIterator jitActivations(cx);
     BailoutFrameInfo bailoutData(jitActivations, sp);
-    JitFrameIterator iter(jitActivations);
-    CommonFrameLayout* currentFramePtr = iter.current();
+    JitFrameIterator frame(jitActivations->asJit());
+    CommonFrameLayout* currentFramePtr = frame.current();
 
     TraceLoggerThread* logger = TraceLoggerForCurrentThread(cx);
     TraceLogTimestamp(logger, TraceLogger_Invalidation);
 
-    JitSpew(JitSpew_IonBailouts, "Took invalidation bailout! Snapshot offset: %d", iter.snapshotOffset());
+    JitSpew(JitSpew_IonBailouts, "Took invalidation bailout! Snapshot offset: %d",
+            frame.snapshotOffset());
 
     
-    *frameSizeOut = iter.frameSize();
+    *frameSizeOut = frame.frameSize();
 
     MOZ_ASSERT(IsBaselineEnabled(cx));
 
     *bailoutInfo = nullptr;
-    uint32_t retval = BailoutIonToBaseline(cx, bailoutData.activation(), iter, true, bailoutInfo,
+    uint32_t retval = BailoutIonToBaseline(cx, bailoutData.activation(), frame, true, bailoutInfo,
                                             nullptr);
     MOZ_ASSERT(retval == BAILOUT_RETURN_OK ||
                retval == BAILOUT_RETURN_FATAL_ERROR ||
@@ -146,21 +147,21 @@ jit::InvalidationBailout(InvalidationBailoutStack* sp, size_t* frameSizeOut,
         
         
         
-        JSScript* script = iter.script();
+        JSScript* script = frame.script();
         probes::ExitScript(cx, script, script->functionNonDelazifying(),
                             false);
 
 #ifdef JS_JITSPEW
-        JitFrameLayout* frame = iter.jsFrame();
+        JitFrameLayout* layout = frame.jsFrame();
         JitSpew(JitSpew_IonInvalidate, "Bailout failed (%s)",
                 (retval == BAILOUT_RETURN_FATAL_ERROR) ? "Fatal Error" : "Over Recursion");
-        JitSpew(JitSpew_IonInvalidate, "   calleeToken %p", (void*) frame->calleeToken());
-        JitSpew(JitSpew_IonInvalidate, "   frameSize %u", unsigned(frame->prevFrameLocalSize()));
-        JitSpew(JitSpew_IonInvalidate, "   ra %p", (void*) frame->returnAddress());
+        JitSpew(JitSpew_IonInvalidate, "   calleeToken %p", (void*) layout->calleeToken());
+        JitSpew(JitSpew_IonInvalidate, "   frameSize %u", unsigned(layout->prevFrameLocalSize()));
+        JitSpew(JitSpew_IonInvalidate, "   ra %p", (void*) layout->returnAddress());
 #endif
     }
 
-    iter.ionScript()->decrementInvalidationCount(cx->runtime()->defaultFreeOp());
+    frame.ionScript()->decrementInvalidationCount(cx->runtime()->defaultFreeOp());
 
     
     if (cx->runtime()->jitRuntime()->isProfilerInstrumentationEnabled(cx->runtime()))
@@ -202,8 +203,8 @@ jit::ExceptionHandlerBailout(JSContext* cx, const InlineFrameIterator& frame,
 
     JitActivationIterator jitActivations(cx);
     BailoutFrameInfo bailoutData(jitActivations, frame.frame());
-    JitFrameIterator iter(jitActivations);
-    CommonFrameLayout* currentFramePtr = iter.current();
+    JitFrameIterator frameView(jitActivations->asJit());
+    CommonFrameLayout* currentFramePtr = frameView.current();
 
     BaselineBailoutInfo* bailoutInfo = nullptr;
     uint32_t retval;
@@ -213,7 +214,7 @@ jit::ExceptionHandlerBailout(JSContext* cx, const InlineFrameIterator& frame,
         
         AutoEnterOOMUnsafeRegion oomUnsafe;
 
-        retval = BailoutIonToBaseline(cx, bailoutData.activation(), iter, true,
+        retval = BailoutIonToBaseline(cx, bailoutData.activation(), frameView, true,
                                       &bailoutInfo, &excInfo);
         if (retval == BAILOUT_RETURN_FATAL_ERROR && cx->isThrowingOutOfMemory())
             oomUnsafe.crash("ExceptionHandlerBailout");

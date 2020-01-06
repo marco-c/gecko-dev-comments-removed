@@ -49,6 +49,11 @@ struct CallableOffsets;
 
 
 
+
+
+
+
+
 class WasmFrameIter
 {
   public:
@@ -66,7 +71,7 @@ class WasmFrameIter
     void popFrame();
 
   public:
-    explicit WasmFrameIter();
+    
     explicit WasmFrameIter(WasmActivation* activation, Unwind unwind = Unwind::False);
     void operator++();
     bool done() const;
@@ -183,11 +188,6 @@ GenerateFunctionPrologue(jit::MacroAssembler& masm, unsigned framePushed, const 
                          FuncOffsets* offsets);
 void
 GenerateFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed, FuncOffsets* offsets);
-
-
-
-void
-TraceActivations(JSContext* cx, const CooperatingContext& target, JSTracer* trc);
 
 
 

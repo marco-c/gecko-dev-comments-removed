@@ -17,10 +17,6 @@
 #include "js/ProfilingFrameIterator.h"
 
 namespace js {
-    class ActivationIterator;
-} 
-
-namespace js {
 namespace jit {
 
 typedef void * CalleeToken;
@@ -83,7 +79,16 @@ class JitActivation;
 
 
 
+
 void AssertJitStackInvariants(JSContext* cx);
+
+
+
+
+
+
+
+
 
 class JitFrameIterator
 {
@@ -99,12 +104,16 @@ class JitFrameIterator
 
     void dumpBaseline() const;
 
-    explicit JitFrameIterator(const JitActivation* activation);
-
   public:
-    explicit JitFrameIterator();
+    
+    explicit JitFrameIterator(const JitActivation* activation);
     explicit JitFrameIterator(JSContext* cx);
-    explicit JitFrameIterator(const ActivationIterator& activations);
+
+    
+    void exchangeReturnAddressIfMatch(uint8_t* oldAddr, uint8_t* newAddr) {
+        if (returnAddressToFp_ == oldAddr)
+            returnAddressToFp_ = newAddr;
+    }
 
     
     FrameType type() const {
@@ -199,10 +208,10 @@ class JitFrameIterator
 
     
     
-    inline bool done() const {
+    bool done() const {
         return type_ == JitFrame_Entry;
     }
-    JitFrameIterator& operator++();
+    void operator++();
 
     
     IonScript* ionScript() const;
@@ -260,7 +269,7 @@ class JitFrameIterator
 #ifdef DEBUG
     bool verifyReturnAddressUsingNativeToBytecodeMap();
 #else
-    inline bool verifyReturnAddressUsingNativeToBytecodeMap() { return true; }
+    bool verifyReturnAddressUsingNativeToBytecodeMap() { return true; }
 #endif
 };
 
