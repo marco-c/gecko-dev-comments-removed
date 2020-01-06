@@ -4,8 +4,13 @@
 
 
 function findCommonPrefixLength(strs) {
-  if (strs.length < 2)
-    return 0;
+  if (strs.length < 2) {
+    
+    
+    var place = strs[0].lastIndexOf("/");
+    if (place < 0) place = 0;
+    return place;
+  }
 
   var len = 0;
   do {
