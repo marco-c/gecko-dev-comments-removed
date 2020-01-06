@@ -37,7 +37,6 @@ class EventTarget;
 
 class nsWebBrowser;
 class ChromeTooltipListener;
-class ChromeContextMenuListener;
 
 
 #define NS_ICDOCSHELLTREEOWNER_IID \
@@ -120,7 +119,6 @@ protected:
   
   
   RefPtr<ChromeTooltipListener> mChromeTooltipListener;
-  RefPtr<ChromeContextMenuListener> mChromeContextMenuListener;
 
   RefPtr<nsDocShellTreeOwner> mContentTreeOwner;
 
@@ -201,39 +199,6 @@ private:
   
   
   nsCOMPtr<nsIDOMNode> mPossibleTooltipNode;
-};
-
-
-
-
-class ChromeContextMenuListener : public nsIDOMEventListener
-{
-protected:
-  virtual ~ChromeContextMenuListener();
-
-public:
-  NS_DECL_ISUPPORTS
-
-  ChromeContextMenuListener(nsWebBrowser* aInBrowser,
-                            nsIWebBrowserChrome* aInChrome);
-
-  
-  NS_IMETHOD HandleEvent(nsIDOMEvent* aEvent) override;
-
-  
-  
-  NS_IMETHOD AddChromeListeners();
-  NS_IMETHOD RemoveChromeListeners();
-
-private:
-  NS_IMETHOD AddContextMenuListener();
-  NS_IMETHOD RemoveContextMenuListener();
-
-  bool mContextMenuListenerInstalled;
-
-  nsWebBrowser* mWebBrowser;
-  nsCOMPtr<mozilla::dom::EventTarget> mEventTarget;
-  nsCOMPtr<nsIWebBrowserChrome> mWebBrowserChrome;
 };
 
 #endif
