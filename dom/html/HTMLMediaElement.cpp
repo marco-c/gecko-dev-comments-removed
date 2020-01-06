@@ -1979,7 +1979,12 @@ void HTMLMediaElement::DoLoad()
     return;
   }
 
+  
+  
+  
+  
   if (EventStateManager::IsHandlingUserInput()) {
+    mHasUserInteractedLoadOrSeek = true;
     
     
     if (HasAttr(kNameSpaceID_None, nsGkAtoms::autoplay)) {
@@ -2747,6 +2752,12 @@ HTMLMediaElement::Seek(double aTime,
 
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
+  }
+
+  
+  
+  if (EventStateManager::IsHandlingUserInput()) {
+    mHasUserInteractedLoadOrSeek = true;
   }
 
   StopSuspendingAfterFirstFrame();
@@ -4032,6 +4043,7 @@ HTMLMediaElement::HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo>& aNo
     mIsEncrypted(false),
     mWaitingForKey(NOT_WAITING_FOR_KEY),
     mDisableVideo(false),
+    mHasUserInteractedLoadOrSeek(false),
     mFirstFrameLoaded(false),
     mDefaultPlaybackStartPosition(0.0),
     mHasSuspendTaint(false),

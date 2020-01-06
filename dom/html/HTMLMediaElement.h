@@ -741,6 +741,13 @@ public:
 
   void NotifyCueDisplayStatesChanged();
 
+  bool GetAndClearHasUserInteractedLoadOrSeek()
+  {
+    bool result = mHasUserInteractedLoadOrSeek;
+    mHasUserInteractedLoadOrSeek = false;
+    return result;
+  }
+
   
   bool IsCurrentlyPlaying() const;
 
@@ -1777,6 +1784,10 @@ private:
 
   
   TimeDurationAccumulator mVideoDecodeSuspendTime;
+
+  
+  
+  bool mHasUserInteractedLoadOrSeek;
 
   
   bool mFirstFrameLoaded;
