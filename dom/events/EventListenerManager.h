@@ -165,6 +165,7 @@ protected:
   uint16_t mMayHavePointerEnterLeaveEventListener : 1;
   uint16_t mMayHaveKeyEventListener : 1;
   uint16_t mMayHaveInputOrCompositionEventListener : 1;
+  uint16_t mMayHaveSelectionChangeEventListener : 1;
   uint16_t mClearingListeners : 1;
   uint16_t mIsMainThreadELM : 1;
   
@@ -441,6 +442,7 @@ public:
 
   bool MayHaveMouseEnterLeaveEventListener() { return mMayHaveMouseEnterLeaveEventListener; }
   bool MayHavePointerEnterLeaveEventListener() { return mMayHavePointerEnterLeaveEventListener; }
+  bool MayHaveSelectionChangeEventListener() { return mMayHaveSelectionChangeEventListener; }
 
   
 
