@@ -170,16 +170,16 @@ public:
 
 
 
-  void ClearUndisplayedContentIn(nsIContent* aContent,
-                                 nsIContent* aParentContent);
+  void UnregisterDisplayNoneStyleFor(nsIContent* aContent,
+                                     nsIContent* aParentContent);
 
   
 
 
 
 
-  void ClearDisplayContentsIn(nsIContent* aContent,
-                              nsIContent* aParentContent);
+  void UnregisterDisplayContentsStyleFor(nsIContent* aContent,
+                                         nsIContent* aParentContent);
 
 
   
