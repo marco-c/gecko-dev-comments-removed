@@ -17,6 +17,22 @@ template<class T> struct already_AddRefed;
 
 
 
+#if (defined(DEBUG) || defined(NIGHTLY_BUILD)) && !defined(MOZ_ASAN)
+# define STRING_BUFFER_CANARY 1
+#endif
+
+#ifdef STRING_BUFFER_CANARY
+enum nsStringBufferCanary : uint32_t {
+  CANARY_OK = 0xaf57c8fa,
+  CANARY_POISON = 0x534dc0f5
+};
+#endif
+
+
+
+
+
+
 
 
 
@@ -28,6 +44,10 @@ private:
 
   std::atomic<uint32_t> mRefCount;
   uint32_t mStorageSize;
+
+#ifdef STRING_BUFFER_CANARY
+  uint32_t mCanary;
+#endif
 
 public:
 
@@ -76,10 +96,11 @@ public:
 
 
 
-  static nsStringBuffer* FromData(void* aData)
-  {
-    return reinterpret_cast<nsStringBuffer*>(aData) - 1;
-  }
+
+
+
+
+  static nsStringBuffer* FromData(void* aData);
 
   
 
