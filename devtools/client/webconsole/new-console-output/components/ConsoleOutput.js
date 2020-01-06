@@ -10,6 +10,7 @@ const {
   PropTypes
 } = require("devtools/client/shared/vendor/react");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
+const {initialize} = require("devtools/client/webconsole/new-console-output/actions/ui");
 
 const {
   getAllMessagesById,
@@ -23,10 +24,14 @@ const MessageContainer = createFactory(require("devtools/client/webconsole/new-c
 const {
   MESSAGE_TYPE,
 } = require("devtools/client/webconsole/new-console-output/constants");
+const {
+  getInitialMessageCountForViewport
+} = require("devtools/client/webconsole/new-console-output/utils/messages.js");
 
 class ConsoleOutput extends Component {
   static get propTypes() {
     return {
+      initialized: PropTypes.bool.isRequired,
       messages: PropTypes.object.isRequired,
       messagesUi: PropTypes.object.isRequired,
       serviceContainer: PropTypes.shape({
@@ -60,6 +65,11 @@ class ConsoleOutput extends Component {
         if (this.props.onFirstMeaningfulPaint) {
           this.props.onFirstMeaningfulPaint();
         }
+
+        
+        setTimeout(() => {
+          this.props.dispatch(initialize());
+        }, 0);
       });
   }
 
@@ -84,7 +94,14 @@ class ConsoleOutput extends Component {
     
     
     
+    
+    
     this.shouldScrollBottom =
+      (
+        !this.props.initialized &&
+        nextProps.initialized &&
+        isScrolledToBottom(lastChild, outputNode)
+      ) ||
       (messagesDelta > 0 && nextProps.messages.last().type === MESSAGE_TYPE.RESULT) ||
       (visibleMessagesDelta > 0 && isScrolledToBottom(lastChild, outputNode));
   }
@@ -113,7 +130,16 @@ class ConsoleOutput extends Component {
       networkMessageActiveTabId,
       serviceContainer,
       timestampsVisible,
+      initialized,
     } = this.props;
+
+    if (!initialized) {
+      const numberMessagesFitViewport = getInitialMessageCountForViewport(window);
+      if (numberMessagesFitViewport < visibleMessages.length) {
+        visibleMessages = visibleMessages.slice(
+          visibleMessages.length - numberMessagesFitViewport);
+      }
+    }
 
     let messageNodes = visibleMessages.map((messageId) => MessageContainer({
       dispatch,
@@ -155,6 +181,7 @@ function isScrolledToBottom(outputNode, scrollNode) {
 
 function mapStateToProps(state, props) {
   return {
+    initialized: state.ui.initialized,
     messages: getAllMessagesById(state),
     visibleMessages: getVisibleMessages(state),
     messagesUi: getAllMessagesUiById(state),

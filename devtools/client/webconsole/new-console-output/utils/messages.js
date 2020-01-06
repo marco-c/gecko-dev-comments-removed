@@ -355,9 +355,16 @@ function isGroupType(type) {
   ].includes(type);
 }
 
-exports.prepareMessage = prepareMessage;
+function getInitialMessageCountForViewport(win) {
+  const minMessageHeight = 20;
+  return Math.ceil(win.innerHeight / minMessageHeight);
+}
 
-exports.getRepeatId = getRepeatId;
-
-exports.l10n = l10n;
-exports.isGroupType = isGroupType;
+module.exports = {
+  getInitialMessageCountForViewport,
+  isGroupType,
+  l10n,
+  prepareMessage,
+  
+  getRepeatId,
+};
