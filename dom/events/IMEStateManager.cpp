@@ -477,11 +477,24 @@ IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
     (sContent != aContent || sPresContext != aPresContext ||
      oldWidget != newWidget || sActiveTabParent != newTabParent);
 
-  if (oldWidget && focusActuallyChanging) {
-    
-    
-    if (aPresContext) {
-      NotifyIME(REQUEST_TO_COMMIT_COMPOSITION, oldWidget, sFocusedIMETabParent);
+  
+  
+  
+  if (oldWidget && focusActuallyChanging && sTextCompositions) {
+    RefPtr<TextComposition> composition =
+      sTextCompositions->GetCompositionFor(oldWidget);
+    if (composition) {
+      
+      
+      if (aPresContext ||
+          !sFocusedIMEWidget->IMENotificationRequestsRef().
+           WantDuringDeactive()) {
+        MOZ_LOG(sISMLog, LogLevel::Info,
+          ("  OnChangeFocusInternal(), requesting to commit composition to "
+           "the (previous) focused widget"));
+        NotifyIME(REQUEST_TO_COMMIT_COMPOSITION, oldWidget,
+                  composition->GetTabParent());
+      }
     }
   }
 
