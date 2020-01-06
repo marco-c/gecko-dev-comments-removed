@@ -8,6 +8,8 @@
 
 #include "mozilla/dom/HTMLInputElement.h"
 
+
+
 bool
 CheckboxInputType::IsValueMissing() const
 {
@@ -20,4 +22,22 @@ CheckboxInputType::IsValueMissing() const
   }
 
   return !mInputElement->Checked();
+}
+
+nsresult
+CheckboxInputType::GetValueMissingMessage(nsXPIDLString& aMessage)
+{
+  return nsContentUtils::GetLocalizedString(nsContentUtils::eDOM_PROPERTIES,
+                                            "FormValidationCheckboxMissing",
+                                            aMessage);
+}
+
+
+
+nsresult
+RadioInputType::GetValueMissingMessage(nsXPIDLString& aMessage)
+{
+  return nsContentUtils::GetLocalizedString(nsContentUtils::eDOM_PROPERTIES,
+                                            "FormValidationRadioMissing",
+                                            aMessage);
 }

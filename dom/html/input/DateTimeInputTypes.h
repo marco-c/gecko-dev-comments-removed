@@ -20,12 +20,21 @@ public:
   bool HasStepMismatch(bool aUseZeroIfValueNaN) const override;
   bool HasBadInput() const override;
 
+  nsresult GetRangeOverflowMessage(nsXPIDLString& aMessage) override;
+  nsresult GetRangeUnderflowMessage(nsXPIDLString& aMessage) override;
+
   nsresult MinMaxStepAttrChanged() override;
 
 protected:
   explicit DateTimeInputTypeBase(mozilla::dom::HTMLInputElement* aInputElement)
     : InputType(aInputElement)
   {}
+
+  
+
+
+
+  static bool IsInputDateTimeEnabled();
 
   bool IsMutable() const override;
 
@@ -57,6 +66,12 @@ public:
   {
     return new (aMemory) DateInputType(aInputElement);
   }
+
+  
+  
+  
+  
+  nsresult GetBadInputMessage(nsXPIDLString& aMessage) override;
 
   bool ConvertStringToNumber(nsAString& aValue,
                              mozilla::Decimal& aResultValue) const override;
