@@ -37,31 +37,52 @@ ScrollingLayersHelper::ScrollingLayersHelper(nsDisplayItem* aItem,
   
   
   
+  
+  
   const ActiveScrolledRoot* leafmostASR = aItem->GetActiveScrolledRoot();
   if (aItem->GetClipChain()) {
     leafmostASR = ActiveScrolledRoot::PickDescendant(leafmostASR,
         aItem->GetClipChain()->mASR);
   }
-  DefineAndPushScrollLayers(aItem, leafmostASR,
-      aItem->GetClipChain(), aBuilder, auPerDevPixel, aStackingContext, aCache);
+  auto ids = DefineClipChain(aItem, leafmostASR, aItem->GetClipChain(),
+      auPerDevPixel, aStackingContext, aCache);
 
   
   
   
   
   
-  DefineAndPushChain(aItem->GetClipChain(), aBuilder, aStackingContext,
-      auPerDevPixel, aCache);
+  
+  
+  
+  
 
-  
-  
-  
-  
-  
+  FrameMetrics::ViewID leafmostId = ids.first.valueOr(FrameMetrics::NULL_SCROLL_ID);
   FrameMetrics::ViewID scrollId = aItem->GetActiveScrolledRoot()
       ? nsLayoutUtils::ViewIDForASR(aItem->GetActiveScrolledRoot())
       : FrameMetrics::NULL_SCROLL_ID;
-  if (aBuilder.TopmostScrollId() != scrollId) {
+  
+  
+  
+  bool needClipAndScroll = (leafmostId != scrollId);
+
+  
+  
+  if (!needClipAndScroll && mBuilder->TopmostScrollId() != scrollId) {
+    MOZ_ASSERT(leafmostId == scrollId); 
+    mBuilder->PushScrollLayer(scrollId);
+    mPushedClips.push_back(wr::ScrollOrClipId(scrollId));
+  }
+  
+  
+  if (ids.second && aItem->GetClipChain()->mASR == leafmostASR) {
+    mBuilder->PushClip(ids.second.ref());
+    mPushedClips.push_back(wr::ScrollOrClipId(ids.second.ref()));
+  }
+  
+  
+  
+  if (needClipAndScroll) {
     Maybe<wr::WrClipId> clipId = mBuilder->TopmostClipId();
     mBuilder->PushClipAndScrollInfo(scrollId, clipId.ptrOr(nullptr));
     mPushedClipAndScroll = true;
