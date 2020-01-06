@@ -9,6 +9,10 @@ add_task(async function() {
 
   
   
+  let onbardingEnabled = AppConstants.NIGHTLY_BUILD && Services.prefs.getBoolPref("browser.onboarding.enabled");
+
+  
+  
   
   
   let FOCUS_COUNT = 30;
@@ -17,16 +21,22 @@ add_task(async function() {
   await setLinks("0,1,2,3,4,5,6,7,8");
   setPinnedLinks("");
 
-  await addNewTabPageTab();
+  let tab = await addNewTabPageTab();
+  if (onbardingEnabled) {
+    FOCUS_COUNT += 2;
+    await promiseTourNotificationOpened(tab.linkedBrowser);
+  }
   gURLBar.focus();
-
   
   countFocus(FOCUS_COUNT);
-
   
   NewTabUtils.allPages.enabled = false;
 
-  countFocus(4);
+  let expectedCount = 4;
+  if (onbardingEnabled) {
+    expectedCount += 2;
+  }
+  countFocus(expectedCount);
 
   NewTabUtils.allPages.enabled = true;
 });
@@ -42,7 +52,30 @@ function countFocus(aExpectedCount) {
       focusCount++;
     }
   } while (document.activeElement != gURLBar.inputField);
-
   ok(focusCount == aExpectedCount || focusCount == (aExpectedCount + 1),
      "Validate focus count in the new tab page.");
+}
+
+
+
+
+function promiseTourNotificationOpened(browser) {
+  let condition = () => {
+    return ContentTask.spawn(browser, {}, function() {
+      return new Promise(resolve => {
+        let bar = content.document.querySelector("#onboarding-notification-bar");
+        if (bar && bar.classList.contains("onboarding-opened") && bar.dataset.cssTransition == "end") {
+          resolve(true);
+          return;
+        }
+        resolve(false);
+      });
+    })
+  };
+  return BrowserTestUtils.waitForCondition(
+    condition,
+    "Should open tour notification",
+    100,
+    30
+  );
 }
