@@ -130,7 +130,6 @@ public class SyncClientsEngineStage extends AbstractSessionManagingSyncStage {
     public void handleRequestSuccess(SyncStorageResponse response) {
       final Context context = session.getContext();
       final Account account = FirefoxAccounts.getFirefoxAccount(context);
-      final AndroidFxAccount fxAccount = new AndroidFxAccount(context, account);
 
       
       
@@ -182,15 +181,17 @@ public class SyncClientsEngineStage extends AbstractSessionManagingSyncStage {
         uploadRemoteRecords();
 
         
-        if (!isFirstLocalClientRecordUpload) {
+        if (!isFirstLocalClientRecordUpload && account != null) {
           
+          final AndroidFxAccount fxAccount = new AndroidFxAccount(context, account);
           notifyClients(fxAccount, devicesToNotify);
         }
 
         return;
       }
       checkAndUpload();
-      if (isFirstLocalClientRecordUpload) {
+      if (isFirstLocalClientRecordUpload && account != null) {
+        final AndroidFxAccount fxAccount = new AndroidFxAccount(context, account);
         notifyAllClients(fxAccount);
       }
     }
