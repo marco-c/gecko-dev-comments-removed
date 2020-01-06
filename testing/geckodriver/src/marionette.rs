@@ -314,6 +314,10 @@ impl MarionetteHandler {
         let mut runner = try!(FirefoxRunner::new(&binary, options.profile.take())
                               .map_err(|e| WebDriverError::new(ErrorStatus::SessionNotCreated,
                                                                e.description().to_owned())));
+
+        
+        runner.args().push("-marionette");
+
         if let Some(args) = options.args.take() {
             runner.args().extend(args);
         };
