@@ -2825,6 +2825,18 @@ ToSupportsIsOnPrimaryInheritanceChain(T* aObject, nsWrapperCache* aCache)
 
 
 
+inline uint64_t
+BindingJSObjectMallocBytes(void *aNativePtr)
+{
+  return 0;
+}
+
+
+
+
+
+
+
 
 
 
@@ -2861,6 +2873,10 @@ public:
       mNative = aNative;
       mReflector = aReflector;
     }
+
+    if (uint64_t mallocBytes = BindingJSObjectMallocBytes(aNative)) {
+      JS_updateMallocCounter(aCx, mallocBytes);
+    }
   }
 
   void
@@ -2873,6 +2889,10 @@ public:
       js::SetReservedSlot(aReflector, DOM_OBJECT_SLOT, JS::PrivateValue(aNative));
       mNative = aNative;
       mReflector = aReflector;
+    }
+
+    if (uint64_t mallocBytes = BindingJSObjectMallocBytes(aNative)) {
+      JS_updateMallocCounter(aCx, mallocBytes);
     }
   }
 

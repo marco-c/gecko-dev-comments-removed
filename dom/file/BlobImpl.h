@@ -51,6 +51,8 @@ public:
 
   virtual void GetType(nsAString& aType) = 0;
 
+  virtual size_t GetAllocationSize() const = 0;
+
   
 
 

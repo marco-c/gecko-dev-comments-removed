@@ -130,6 +130,8 @@ public:
                                const nsAString& aContentType,
                                ErrorResult& aRv);
 
+  size_t GetAllocationSize() const;
+
 protected:
   
   Blob(nsISupports* aParent, BlobImpl* aImpl);
@@ -146,6 +148,10 @@ protected:
 private:
   nsCOMPtr<nsISupports> mParent;
 };
+
+
+
+uint64_t BindingJSObjectMallocBytes(Blob* aBlob);
 
 } 
 } 
