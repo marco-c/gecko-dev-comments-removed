@@ -13,14 +13,14 @@
 
 namespace xpc {
 
-struct ExposedPropertiesOnly;
+struct OpaqueWithSilentFailing;
 
 
 
 
 
 #define ChromeObjectWrapperBase \
-  FilteringWrapper<js::CrossCompartmentSecurityWrapper, ExposedPropertiesOnly>
+  FilteringWrapper<js::CrossCompartmentSecurityWrapper, OpaqueWithSilentFailing>
 
 class ChromeObjectWrapper : public ChromeObjectWrapperBase
 {

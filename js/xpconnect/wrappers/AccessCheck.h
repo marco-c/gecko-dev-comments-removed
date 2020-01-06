@@ -109,7 +109,7 @@ struct CrossOriginAccessiblePropertiesOnly : public Policy {
 
 
 
-struct ExposedPropertiesOnly : public Policy {
+struct OpaqueWithSilentFailing : public Policy {
     static bool check(JSContext* cx, JS::HandleObject wrapper, JS::HandleId id, js::Wrapper::Action act) {
         return false;
     }
