@@ -21,6 +21,7 @@ function createMockDevTools() {
     "registerTheme",
     "unregisterTool",
     "unregisterTheme",
+    "emit",
   ];
 
   let mock = {
@@ -171,6 +172,22 @@ function test_registering_theme() {
   checkCalls(mock, "registerTheme", 0);
 }
 
+function test_events() {
+  ok(!DevToolsShim.isInstalled(), "DevTools are not installed");
+
+  let mock = createMockDevTools();
+  
+  checkCalls(mock, "emit", 0);
+
+  
+  DevToolsShim.register(mock);
+  checkCalls(mock, "emit", 1, ["devtools-registered"]);
+
+  
+  DevToolsShim.unregister();
+  checkCalls(mock, "emit", 2, ["devtools-unregistered"]);
+}
+
 function run_test() {
   test_register_unregister();
   DevToolsShim.unregister();
@@ -189,4 +206,6 @@ function run_test() {
 
   test_registering_theme();
   DevToolsShim.unregister();
+
+  test_events();
 }
