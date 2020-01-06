@@ -202,6 +202,12 @@ this.PanelMultiView = class {
     return this.__dwu = this.window.QueryInterface(Ci.nsIInterfaceRequestor)
                                    .getInterface(Ci.nsIDOMWindowUtils);
   }
+  get _screenManager() {
+    if (this.__screenManager)
+      return this.__screenManager;
+    return this.__screenManager = Cc["@mozilla.org/gfx/screenmanager;1"]
+                                    .getService(Ci.nsIScreenManager);
+  }
   get _currentSubView() {
     return this.panelViews ? this.panelViews.currentView : this.__currentSubView;
   }
@@ -774,40 +780,47 @@ this.PanelMultiView = class {
           this.window.addEventListener("keydown", this);
           this._panel.addEventListener("mousemove", this);
         }
+
+        
+        
+        
+        
+        let anchorBox = this._panel.anchorNode.boxObject;
+        let screen = this._screenManager.screenForRect(anchorBox.screenX,
+                                                       anchorBox.screenY,
+                                                       anchorBox.width,
+                                                       anchorBox.height);
+        let availTop = {}, availHeight = {};
+        screen.GetAvailRect({}, availTop, {}, availHeight);
+        let cssAvailTop = availTop.value / screen.defaultCSSScaleFactor;
+
+        
+        
+        let maxHeight;
+        if (this._panel.alignmentPosition.startsWith("before_")) {
+          maxHeight = anchorBox.screenY - cssAvailTop;
+        } else {
+          let anchorScreenBottom = anchorBox.screenY + anchorBox.height;
+          let cssAvailHeight = availHeight.value / screen.defaultCSSScaleFactor;
+          maxHeight = cssAvailTop + cssAvailHeight - anchorScreenBottom;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        const EXTRA_MARGIN_PX = 20;
+        this._viewStack.style.maxHeight = (maxHeight - EXTRA_MARGIN_PX) + "px";
         break;
       case "popupshown":
         
         
         this.descriptionHeightWorkaround();
-
-        if (!this.panelViews) {
-          
-          
-          
-          
-          let maxHeight;
-          if (this._panel.alignmentPosition.startsWith("before_")) {
-            maxHeight = this._panel.getOuterScreenRect().bottom -
-                        this.window.screen.availTop;
-          } else {
-            maxHeight = this.window.screen.availTop +
-                        this.window.screen.availHeight -
-                        this._panel.getOuterScreenRect().top;
-          }
-          
-          
-          
-          let arrowBox = this.document.getAnonymousElementByAttribute(
-                                          this._panel, "anonid", "arrowbox");
-          maxHeight -= this._dwu.getBoundsWithoutFlushing(arrowBox).height;
-          
-          
-          
-          
-          
-          const EXTRA_MARGIN_PX = 8;
-          this._viewStack.style.maxHeight = (maxHeight - EXTRA_MARGIN_PX) + "px";
-        }
         break;
       case "popuphidden":
         this.node.removeAttribute("panelopen");
