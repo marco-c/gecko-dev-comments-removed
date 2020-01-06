@@ -148,11 +148,8 @@ impl WeakAtom {
     
     #[inline]
     pub fn is_static(&self) -> bool {
-        
-        
-        
         unsafe {
-            ((*self.as_ptr())._bitfield_1 & (0x80000000 as u32)) != 0
+            (*self.as_ptr()).mIsStatic() != 0
         }
     }
 
