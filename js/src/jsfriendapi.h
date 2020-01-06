@@ -109,6 +109,12 @@ JS_NewDeadWrapper(JSContext* cx, JSObject* origObject = nullptr);
 
 
 
+extern JS_FRIEND_API(bool)
+JS_IsScriptSourceObject(JSObject* obj);
+
+
+
+
 
 extern JS_FRIEND_API(void)
 JS_TraceShapeCycleCollectorChildren(JS::CallbackTracer* trc, JS::GCCellPtr shape);

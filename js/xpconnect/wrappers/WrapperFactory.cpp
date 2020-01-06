@@ -191,10 +191,14 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
     
     
     
+    
+    
+    
     JSCompartment* origin = js::GetObjectCompartment(obj);
     JSCompartment* target = js::GetObjectCompartment(scope);
-    if (CompartmentPrivate::Get(origin)->wasNuked ||
-        CompartmentPrivate::Get(target)->wasNuked) {
+    if (!JS_IsScriptSourceObject(obj) &&
+        (CompartmentPrivate::Get(origin)->wasNuked ||
+         CompartmentPrivate::Get(target)->wasNuked)) {
         NS_WARNING("Trying to create a wrapper into or out of a nuked compartment");
 
         retObj.set(JS_NewDeadWrapper(cx));
@@ -352,7 +356,8 @@ static void
 DEBUG_CheckUnwrapSafety(HandleObject obj, const js::Wrapper* handler,
                         JSCompartment* origin, JSCompartment* target)
 {
-    if (CompartmentPrivate::Get(origin)->wasNuked || CompartmentPrivate::Get(target)->wasNuked) {
+    if (!JS_IsScriptSourceObject(obj) &&
+        (CompartmentPrivate::Get(origin)->wasNuked || CompartmentPrivate::Get(target)->wasNuked)) {
         
         
         

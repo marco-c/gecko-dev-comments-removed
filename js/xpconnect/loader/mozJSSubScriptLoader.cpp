@@ -219,6 +219,26 @@ EvalScript(JSContext* cx,
 
         nsCString uriStr;
         if (preloadCache && NS_SUCCEEDED(uri->GetSpec(uriStr))) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             ScriptPreloader::GetSingleton().NoteScript(uriStr, cachePath, script);
         }
 
