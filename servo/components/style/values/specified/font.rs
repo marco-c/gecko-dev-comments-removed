@@ -168,7 +168,6 @@ impl ToComputedValue for KeywordSize {
     type ComputedValue = NonNegativeLength;
     #[inline]
     fn to_computed_value(&self, cx: &Context) -> NonNegativeLength {
-        use gecko_bindings::structs::nsIAtom;
         use values::specified::length::au_to_int_px;
         
         
@@ -194,7 +193,7 @@ impl ToComputedValue for KeywordSize {
         
 
         let ref gecko_font = cx.style().get_font().gecko();
-        let base_size = unsafe { Atom::with(gecko_font.mLanguage.raw::<nsIAtom>(), |atom| {
+        let base_size = unsafe { Atom::with(gecko_font.mLanguage.mRawPtr, |atom| {
             cx.font_metrics_provider.get_size(atom, gecko_font.mGenericID).0
         }) };
 
