@@ -11,12 +11,19 @@ def test_webdriver_special_key_sends_keydown(session,
                                              key_chain,
                                              name,
                                              expected):
+    if name.startswith("F"):
+        
+        
+        
+        session.execute_script("""
+            document.body.addEventListener("keydown",
+                    (e) => e.preventDefault());
+        """)
     key_chain.key_down(getattr(Keys, name)).perform()
     
     first_event = get_events(session)[0]
     
     expected = dict(expected)
-
 
     del expected["value"]
     
