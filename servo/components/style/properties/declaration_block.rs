@@ -258,10 +258,14 @@ impl PropertyDeclarationBlock {
 
     
     
+    
+    
+    
     pub fn extend(&mut self, drain: SourcePropertyDeclarationDrain, importance: Importance) {
         self.extend_common(drain, importance, false);
     }
 
+    
     
     
     
@@ -271,8 +275,12 @@ impl PropertyDeclarationBlock {
         self.extend_common(drain, importance, true)
     }
 
-    fn extend_common(&mut self, mut drain: SourcePropertyDeclarationDrain,
-                     importance: Importance, overwrite_more_important: bool) -> bool {
+    fn extend_common(
+        &mut self,
+        mut drain: SourcePropertyDeclarationDrain,
+        importance: Importance,
+        overwrite_more_important_and_reuse_slot: bool,
+    ) -> bool {
         let all_shorthand_len = match drain.all_shorthand {
             AllShorthand::NotSet => 0,
             AllShorthand::CSSWideKeyword(_) |
@@ -285,20 +293,32 @@ impl PropertyDeclarationBlock {
 
         let mut changed = false;
         for decl in &mut drain.declarations {
-            changed |= self.push_common(decl, importance, overwrite_more_important);
+            changed |= self.push_common(
+                decl,
+                importance,
+                overwrite_more_important_and_reuse_slot,
+            );
         }
         match drain.all_shorthand {
             AllShorthand::NotSet => {}
             AllShorthand::CSSWideKeyword(keyword) => {
                 for &id in ShorthandId::All.longhands() {
                     let decl = PropertyDeclaration::CSSWideKeyword(id, keyword);
-                    changed |= self.push_common(decl, importance, overwrite_more_important);
+                    changed |= self.push_common(
+                        decl,
+                        importance,
+                        overwrite_more_important_and_reuse_slot,
+                    );
                 }
             }
             AllShorthand::WithVariables(unparsed) => {
                 for &id in ShorthandId::All.longhands() {
                     let decl = PropertyDeclaration::WithVariables(id, unparsed.clone());
-                    changed |= self.push_common(decl, importance, overwrite_more_important);
+                    changed |= self.push_common(
+                        decl,
+                        importance,
+                        overwrite_more_important_and_reuse_slot,
+                    );
                 }
             }
         }
@@ -307,27 +327,37 @@ impl PropertyDeclarationBlock {
 
     
     
+    
+    
+    
+    
     pub fn push(&mut self, declaration: PropertyDeclaration, importance: Importance) {
         self.push_common(declaration, importance, false);
     }
 
-    fn push_common(&mut self, declaration: PropertyDeclaration, importance: Importance,
-                   overwrite_more_important: bool) -> bool {
+    fn push_common(
+        &mut self,
+        declaration: PropertyDeclaration,
+        importance: Importance,
+        overwrite_more_important_and_reuse_slot: bool
+    ) -> bool {
         let definitely_new = if let PropertyDeclarationId::Longhand(id) = declaration.id() {
             !self.longhands.contains(id)
         } else {
             false  
         };
 
+
         if !definitely_new {
-            for slot in &mut *self.declarations {
+            let mut index_to_remove = None;
+            for (i, slot) in self.declarations.iter_mut().enumerate() {
                 if slot.0.id() == declaration.id() {
                     match (slot.1, importance) {
                         (Importance::Normal, Importance::Important) => {
                             self.important_count += 1;
                         }
                         (Importance::Important, Importance::Normal) => {
-                            if overwrite_more_important {
+                            if overwrite_more_important_and_reuse_slot {
                                 self.important_count -= 1;
                             } else {
                                 return false
@@ -337,9 +367,24 @@ impl PropertyDeclarationBlock {
                             return false;
                         }
                     }
-                    *slot = (declaration, importance);
-                    return true
+
+                    if overwrite_more_important_and_reuse_slot {
+                        *slot = (declaration, importance);
+                        return true;
+                    }
+
+                    
+                    
+                    
+                    index_to_remove = Some(i);
+                    break;
                 }
+            }
+
+            if let Some(index) = index_to_remove {
+                self.declarations.remove(index);
+                self.declarations.push((declaration, importance));
+                return true;
             }
         }
 
