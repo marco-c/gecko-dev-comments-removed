@@ -111,6 +111,20 @@ public:
   
 
 
+
+  Maybe<float> GetAnimationOpacity(const uint64_t& aId) const;
+
+  
+
+
+
+
+
+  Maybe<gfx::Matrix4x4> GetAnimationTransform(const uint64_t& aId) const;
+
+  
+
+
   AnimatedValueTable::Iterator ConstAnimatedValueTableIter() const
   {
     return mAnimatedValues.ConstIter();
