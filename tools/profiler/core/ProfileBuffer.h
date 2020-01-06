@@ -40,7 +40,7 @@ public:
 
   
   
-  void addTagThreadId(int aThreadId, LastSample* aLS = nullptr);
+  void addTagThreadId(int aThreadId, LastSample* aLS);
 
   void StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                            double aSinceTime, JSContext* cx,

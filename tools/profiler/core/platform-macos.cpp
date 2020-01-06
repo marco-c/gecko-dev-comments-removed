@@ -76,11 +76,10 @@ Sampler::Disable(PSLockRef aLock)
 template<typename Func>
 void
 Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
-                                         const ThreadInfo& aThreadInfo,
-                                         const Func& aProcessRegs)
+                                         TickSample& aSample,
+                                         const Func& aDoSample)
 {
-  thread_act_t samplee_thread =
-    aThreadInfo.GetPlatformData()->ProfiledThread();
+  thread_act_t samplee_thread = aSample.mPlatformData->ProfiledThread();
 
   
   
@@ -112,16 +111,15 @@ Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
 #  define REGISTER_FIELD(name) r ## name
 # endif  
 
-  Registers regs;
   if (thread_get_state(samplee_thread,
                        flavor,
                        reinterpret_cast<natural_t*>(&state),
                        &count) == KERN_SUCCESS) {
-    regs.mPC = reinterpret_cast<Address>(state.REGISTER_FIELD(ip));
-    regs.mSP = reinterpret_cast<Address>(state.REGISTER_FIELD(sp));
-    regs.mFP = reinterpret_cast<Address>(state.REGISTER_FIELD(bp));
+    aSample.mPC = reinterpret_cast<Address>(state.REGISTER_FIELD(ip));
+    aSample.mSP = reinterpret_cast<Address>(state.REGISTER_FIELD(sp));
+    aSample.mFP = reinterpret_cast<Address>(state.REGISTER_FIELD(bp));
 
-    aProcessRegs(regs);
+    aDoSample();
   }
 
 #undef REGISTER_FIELD
@@ -193,8 +191,10 @@ PlatformInit(PSLockRef aLock)
 }
 
 void
-Registers::SyncPopulate()
+TickSample::PopulateContext()
 {
+  MOZ_ASSERT(mIsSynchronous);
+
   asm (
       
       
