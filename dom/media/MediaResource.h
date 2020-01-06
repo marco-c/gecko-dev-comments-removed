@@ -762,6 +762,18 @@ public:
   
   
   
+  
+  nsresult UncachedRangedReadAt(int64_t aOffset,
+                                char* aBuffer,
+                                uint32_t aRequestedCount,
+                                uint32_t aExtraCount,
+                                uint32_t* aBytes) const;
+
+  
+  
+  
+  
+  
   already_AddRefed<MediaByteBuffer> MediaReadAt(int64_t aOffset, uint32_t aCount) const
   {
     RefPtr<MediaByteBuffer> bytes = new MediaByteBuffer();
