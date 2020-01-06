@@ -39,6 +39,16 @@ public:
   static double ReduceTimePrecisionAsUSecs(double aTime);
   static double ReduceTimePrecisionAsSecs(double aTime);
 
+  
+  
+  static uint32_t CalculateTargetVideoResolution(uint32_t aVideoQuality);
+
+  
+  
+  static uint32_t GetSpoofedTotalFrames(double aTime);
+  static uint32_t GetSpoofedDroppedFrames(double aTime, uint32_t aWidth, uint32_t aHeight);
+  static uint32_t GetSpoofedPresentedFrames(double aTime, uint32_t aWidth, uint32_t aHeight);
+
 private:
   nsresult Init();
 
