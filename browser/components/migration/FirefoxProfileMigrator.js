@@ -126,13 +126,21 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileD
     };
   };
 
+  function savePrefs() {
+    
+    
+    
+    let newPrefsFile = currentProfileDir.clone();
+    newPrefsFile.append("prefs.js");
+    Services.prefs.savePrefFile(newPrefsFile);
+  }
+
   let types = MigrationUtils.resourceTypes;
   let places = getFileResource(types.HISTORY, ["places.sqlite", "places.sqlite-wal"]);
   let favicons = getFileResource(types.HISTORY, ["favicons.sqlite", "favicons.sqlite-wal"]);
   let cookies = getFileResource(types.COOKIES, ["cookies.sqlite", "cookies.sqlite-wal"]);
   let passwords = getFileResource(types.PASSWORDS,
-    ["signons.sqlite", "logins.json", "key3.db", "key4.db",
-     "signedInUser.json"]);
+    ["signons.sqlite", "logins.json", "key3.db", "key4.db"]);
   let formData = getFileResource(types.FORMDATA, [
     "formhistory.sqlite",
     "autofill-profiles.json",
@@ -168,11 +176,7 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileD
             
             Services.prefs.setCharPref("browser.startup.homepage_override.mstone", mstone);
             Services.prefs.setCharPref("browser.startup.homepage_override.buildID", buildID);
-            
-            
-            let newPrefsFile = currentProfileDir.clone();
-            newPrefsFile.append("prefs.js");
-            Services.prefs.savePrefFile(newPrefsFile);
+            savePrefs();
             aCallback(true);
           }, function() {
             aCallback(false);
@@ -181,6 +185,37 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileD
       };
     }
   }
+
+  
+  let sync = {
+    name: "sync", 
+    type: types.OTHERDATA,
+    migrate: async aCallback => {
+        
+        
+        
+      try {
+        let oldPath = OS.Path.join(sourceProfileDir.path, "signedInUser.json");
+        let exists = await OS.File.exists(oldPath);
+        if (exists) {
+          let raw = await OS.File.read(oldPath, {encoding: "utf-8"});
+          let data = JSON.parse(raw);
+          if (data && data.accountData && data.accountData.email) {
+            let username = data.accountData.email;
+            
+            Services.prefs.setStringPref("services.sync.username", username);
+            savePrefs();
+            
+            await OS.File.copy(oldPath, OS.Path.join(currentProfileDir.path, "signedInUser.json"));
+          }
+        }
+      } catch (ex) {
+        aCallback(false);
+        return;
+      }
+      aCallback(true);
+    }
+  };
 
   
   let times = {
@@ -252,7 +287,7 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileD
   };
 
   return [places, cookies, passwords, formData, dictionary, bookmarksBackups,
-          session, times, telemetry, favicons].filter(r => r);
+          session, sync, times, telemetry, favicons].filter(r => r);
 };
 
 Object.defineProperty(FirefoxProfileMigrator.prototype, "startupOnlyMigrator", {
