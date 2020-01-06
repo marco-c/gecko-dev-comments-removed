@@ -2090,10 +2090,15 @@ CCRunnerFired(TimeStamp aDeadline, void* aData)
         
         
 
-        
-        Element::ClearContentUnbinder();
-        
-        nsCycleCollector_doDeferredDeletion();
+        if (!aDeadline.IsNull() && TimeStamp::Now() < aDeadline) {
+          
+          Element::ClearContentUnbinder();
+
+          if (TimeStamp::Now() < aDeadline) {
+            
+            nsCycleCollector_doDeferredDeletion();
+          }
+        }
         return didDoWork;
       }
     } else {
