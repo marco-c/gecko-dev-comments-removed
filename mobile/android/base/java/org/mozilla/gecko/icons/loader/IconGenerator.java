@@ -41,7 +41,6 @@ public class IconGenerator implements IconLoader {
             0xFF36385A,
     };
 
-    private static final int TEXT_SIZE_DP = 12;
     @Override
     public IconResponse load(IconRequest request) {
         if (request.getIconCount() > 1) {
@@ -75,7 +74,9 @@ public class IconGenerator implements IconLoader {
 
         final String character = getRepresentativeCharacter(pageURL);
 
-        final float textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DP, context.getResources().getDisplayMetrics());
+        
+        
+        final float textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, widthAndHeight / 8, context.getResources().getDisplayMetrics());
 
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setTextSize(textSize);
