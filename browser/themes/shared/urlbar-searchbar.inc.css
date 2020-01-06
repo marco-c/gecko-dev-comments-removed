@@ -52,6 +52,11 @@
   -moz-box-align: center;
 }
 
+.urlbar-input-box,
+.searchbar-textbox > .autocomplete-textbox-container > .textbox-input-box {
+  margin: 0;
+}
+
 #urlbar-search-splitter {
   
 

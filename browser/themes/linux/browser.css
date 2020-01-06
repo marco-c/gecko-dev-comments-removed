@@ -178,9 +178,6 @@ menuitem.bookmark-item {
   -moz-appearance: none;
   -moz-box-align: stretch;
 }
-.urlbar-input-box {
-  margin: 0;
-}
 
 
 @keyframes urlbar-zoom-reset-pulse {
