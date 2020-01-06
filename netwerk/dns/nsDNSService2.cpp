@@ -993,11 +993,6 @@ nsDNSService::ResolveNative(const nsACString        &aHostname,
                             nsIDNSRecord           **result)
 {
     
-    if (NS_IsMainThread()) {
-        return NS_ERROR_NOT_AVAILABLE;
-    }
-
-    
     
     RefPtr<nsHostResolver> res;
     nsCOMPtr<nsIIDNService> idn;
