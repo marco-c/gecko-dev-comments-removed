@@ -28,6 +28,7 @@
 #include "Accessible2_i.c"
 #include "Accessible2_2_i.c"
 #include "Accessible2_3_i.c"
+#include "AccessibleHyperlink_i.c"
 
 namespace mozilla {
 namespace a11y {
@@ -60,6 +61,7 @@ AccessibleHandler::AccessibleHandler(IUnknown* aOuter, HRESULT* aResult)
   , mDispatch(nullptr)
   , mIA2PassThru(nullptr)
   , mServProvPassThru(nullptr)
+  , mIAHyperlinkPassThru(nullptr)
   , mCachedData()
   , mCacheGen(0)
 {
@@ -99,6 +101,29 @@ AccessibleHandler::ResolveIA2()
   if (SUCCEEDED(hr)) {
     
     mIA2PassThru->Release();
+  }
+
+  return hr;
+}
+
+HRESULT
+AccessibleHandler::ResolveIAHyperlink()
+{
+  if (mIAHyperlinkPassThru) {
+    return S_OK;
+  }
+
+  RefPtr<IUnknown> proxy(GetProxy());
+  if (!proxy) {
+    return E_UNEXPECTED;
+  }
+
+  HRESULT hr = proxy->QueryInterface(IID_IAccessibleHyperlink,
+                                     reinterpret_cast<void**>(&mIAHyperlinkPassThru));
+  if (SUCCEEDED(hr)) {
+    
+    
+    mIAHyperlinkPassThru->Release();
   }
 
   return hr;
@@ -391,6 +416,8 @@ CopyBSTR(BSTR aSrc)
   { \
     assignTo = CopyBSTR(mCachedData.mData.member); \
   }
+
+
 
 HRESULT
 AccessibleHandler::get_accParent(IDispatch **ppdispParent)
@@ -709,6 +736,8 @@ AccessibleHandler::put_accValue(VARIANT varChild, BSTR szValue)
   return E_NOTIMPL;
 }
 
+
+
 HRESULT
 AccessibleHandler::get_nRelations(long* nRelations)
 {
@@ -966,6 +995,8 @@ AccessibleHandler::get_attributes(BSTR* attributes)
   return S_OK;
 }
 
+
+
 HRESULT
 AccessibleHandler::get_attribute(BSTR name, VARIANT* attribute)
 {
@@ -1000,6 +1031,8 @@ AccessibleHandler::get_relationTargetsOfType(BSTR type, long maxTargets,
                                                  nTargets);
 }
 
+
+
 HRESULT
 AccessibleHandler::get_selectionRanges(IA2Range** ranges, long* nRanges)
 {
@@ -1022,6 +1055,8 @@ static const GUID kUnsupportedServices[] = {
   
   {0xb96fdb85, 0x7204, 0x4724, { 0x84, 0x2b, 0xc7, 0x05, 0x9d, 0xed, 0xb9, 0xd0 }}
 };
+
+
 
 HRESULT
 AccessibleHandler::QueryService(REFGUID aServiceId, REFIID aIid,
@@ -1064,6 +1099,8 @@ AccessibleHandler::QueryService(REFGUID aServiceId, REFIID aIid,
   return mServProvPassThru->QueryService(aServiceId, aIid, aOutInterface);
 }
 
+
+
 HRESULT
 AccessibleHandler::GetClassInfo(ITypeInfo** aOutTypeInfo)
 {
@@ -1073,6 +1110,124 @@ AccessibleHandler::GetClassInfo(ITypeInfo** aOutTypeInfo)
   }
 
   return ctl->GetHandlerTypeInfo(aOutTypeInfo);
+}
+
+
+
+HRESULT
+AccessibleHandler::nActions(long* nActions)
+{
+  HRESULT hr = ResolveIAHyperlink();
+  if (FAILED(hr)) {
+    return hr;
+  }
+  return mIAHyperlinkPassThru->nActions(nActions);
+}
+
+HRESULT
+AccessibleHandler::doAction(long actionIndex)
+{
+  HRESULT hr = ResolveIAHyperlink();
+  if (FAILED(hr)) {
+    return hr;
+  }
+  return mIAHyperlinkPassThru->doAction(actionIndex);
+}
+
+HRESULT
+AccessibleHandler::get_description(long actionIndex, BSTR* description)
+{
+  HRESULT hr = ResolveIAHyperlink();
+  if (FAILED(hr)) {
+    return hr;
+  }
+  return mIAHyperlinkPassThru->get_description(actionIndex, description);
+}
+
+HRESULT
+AccessibleHandler::get_keyBinding(long actionIndex,
+                                  long nMaxBindings,
+                                  BSTR** keyBindings,
+                                  long* nBindings)
+{
+  HRESULT hr = ResolveIAHyperlink();
+  if (FAILED(hr)) {
+    return hr;
+  }
+  return mIAHyperlinkPassThru->get_keyBinding(
+    actionIndex, nMaxBindings, keyBindings, nBindings);
+}
+
+HRESULT
+AccessibleHandler::get_name(long actionIndex, BSTR* name)
+{
+  HRESULT hr = ResolveIAHyperlink();
+  if (FAILED(hr)) {
+    return hr;
+  }
+  return mIAHyperlinkPassThru->get_name(actionIndex, name);
+}
+
+HRESULT
+AccessibleHandler::get_localizedName(long actionIndex, BSTR* localizedName)
+{
+  HRESULT hr = ResolveIAHyperlink();
+  if (FAILED(hr)) {
+    return hr;
+  }
+  return mIAHyperlinkPassThru->get_localizedName(actionIndex, localizedName);
+}
+
+
+
+HRESULT
+AccessibleHandler::get_anchor(long index, VARIANT* anchor)
+{
+  HRESULT hr = ResolveIAHyperlink();
+  if (FAILED(hr)) {
+    return hr;
+  }
+  return mIAHyperlinkPassThru->get_anchor(index, anchor);
+}
+
+HRESULT
+AccessibleHandler::get_anchorTarget(long index, VARIANT* anchorTarget)
+{
+  HRESULT hr = ResolveIAHyperlink();
+  if (FAILED(hr)) {
+    return hr;
+  }
+  return mIAHyperlinkPassThru->get_anchorTarget(index, anchorTarget);
+}
+
+HRESULT
+AccessibleHandler::get_startIndex(long* index)
+{
+  HRESULT hr = ResolveIAHyperlink();
+  if (FAILED(hr)) {
+    return hr;
+  }
+  return mIAHyperlinkPassThru->get_startIndex(index);
+}
+
+HRESULT
+AccessibleHandler::get_endIndex(long* index)
+{
+  HRESULT hr = ResolveIAHyperlink();
+  if (FAILED(hr)) {
+    return hr;
+  }
+  return mIAHyperlinkPassThru->get_endIndex(index);
+}
+
+HRESULT
+AccessibleHandler::get_valid(boolean* valid)
+{
+  HRESULT hr = ResolveIAHyperlink();
+  if (FAILED(hr)) {
+    return hr;
+  }
+  return mIAHyperlinkPassThru->get_valid(valid);
 }
 
 } 
