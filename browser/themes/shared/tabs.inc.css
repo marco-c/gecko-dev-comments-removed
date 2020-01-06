@@ -526,6 +526,15 @@
   width: calc(36px + var(--tab-curve-width));
 }
 
+.tabs-newtab-button > .toolbarbutton-menu-dropmarker {
+  display: none;
+}
+
+.tabs-newtab-button > .toolbarbutton-icon {
+  
+  margin-inline-end: 0;
+}
+
 @media (min-resolution: 1.1dppx) {
   
   #tabbrowser-tabs::before {
