@@ -342,9 +342,10 @@ var PingPicker = {
 
     
     pingExplanation.innerHTML = explanation;
-    pingExplanation.querySelector(".change-ping").addEventListener("click", () =>
-      document.getElementById("ping-picker").classList.remove("hidden")
-    );
+    pingExplanation.querySelector(".change-ping").addEventListener("click", (ev) => {
+      document.getElementById("ping-picker").classList.remove("hidden");
+      ev.stopPropagation();
+    });
 
     GenericSubsection.deleteAllSubSections();
   },
