@@ -2,13 +2,13 @@
 
 
 
-'use strict';
+"use strict";
 
 
-loadScripts({ name: 'layout.js', dir: MOCHITESTS_DIR });
+loadScripts({ name: "layout.js", dir: MOCHITESTS_DIR });
 
 async function runTests(browser, accDoc) {
-  loadFrameScripts(browser, { name: 'layout.js', dir: MOCHITESTS_DIR });
+  loadFrameScripts(browser, { name: "layout.js", dir: MOCHITESTS_DIR });
 
   let paragraph = findAccessibleChildByID(accDoc, "paragraph", [nsIAccessibleText]);
   let offset = 64; 

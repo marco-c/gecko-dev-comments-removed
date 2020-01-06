@@ -2,27 +2,27 @@
 
 
 
-'use strict';
+"use strict";
 
 
-loadScripts({ name: 'role.js', dir: MOCHITESTS_DIR });
+loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 
 addAccessibleTask('<span id="parent"><span id="child"></span></span>',
   async function(browser, accDoc) {
-    is(findAccessibleChildByID(accDoc, 'parent'), null,
-      'Check that parent is not accessible.');
-    is(findAccessibleChildByID(accDoc, 'child'), null,
-      'Check that child is not accessible.');
+    is(findAccessibleChildByID(accDoc, "parent"), null,
+      "Check that parent is not accessible.");
+    is(findAccessibleChildByID(accDoc, "child"), null,
+      "Check that child is not accessible.");
 
-    let onReorder = waitForEvent(EVENT_REORDER, 'body');
+    let onReorder = waitForEvent(EVENT_REORDER, "body");
     
     await ContentTask.spawn(browser, {}, () => {
       content.window.dummyListener = () => {};
-      content.document.getElementById('parent').addEventListener(
-        'click', content.window.dummyListener);
+      content.document.getElementById("parent").addEventListener(
+        "click", content.window.dummyListener);
     });
     await onReorder;
 
     let tree = { TEXT: [] };
-    testAccessibleTree(findAccessibleChildByID(accDoc, 'parent'), tree);
+    testAccessibleTree(findAccessibleChildByID(accDoc, "parent"), tree);
   });

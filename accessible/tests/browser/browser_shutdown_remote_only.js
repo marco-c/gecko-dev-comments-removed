@@ -2,7 +2,7 @@
 
 
 
-'use strict';
+"use strict";
 
 add_task(async function () {
   
@@ -19,7 +19,7 @@ add_task(async function () {
         <body></body>
       </html>`
   }, async function(browser) {
-    info('Creating a service in content');
+    info("Creating a service in content");
     
     let a11yInit = initPromise(browser);
     loadFrameScripts(browser, `let accService = Components.classes[
@@ -27,7 +27,7 @@ add_task(async function () {
         Components.interfaces.nsIAccessibilityService);`);
     await a11yInit;
 
-    info('Removing a service in content');
+    info("Removing a service in content");
     
     let a11yShutdown = shutdownPromise(browser);
     

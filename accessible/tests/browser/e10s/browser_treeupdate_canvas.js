@@ -2,22 +2,22 @@
 
 
 
-'use strict';
+"use strict";
 
 
-loadScripts({ name: 'role.js', dir: MOCHITESTS_DIR });
+loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 
 addAccessibleTask(`
   <canvas id="canvas">
     <div id="dialog" role="dialog" style="display: none;"></div>
   </canvas>`, async function(browser, accDoc) {
-  let canvas = findAccessibleChildByID(accDoc, 'canvas');
-  let dialog = findAccessibleChildByID(accDoc, 'dialog');
+  let canvas = findAccessibleChildByID(accDoc, "canvas");
+  let dialog = findAccessibleChildByID(accDoc, "dialog");
 
   testAccessibleTree(canvas, { CANVAS: [] });
 
-  let onShow = waitForEvent(EVENT_SHOW, 'dialog');
-  await invokeSetStyle(browser, 'dialog', 'display', 'block');
+  let onShow = waitForEvent(EVENT_SHOW, "dialog");
+  await invokeSetStyle(browser, "dialog", "display", "block");
   await onShow;
 
   testAccessibleTree(dialog, { DIALOG: [] });

@@ -2,18 +2,18 @@
 
 
 
-'use strict';
+"use strict";
 
 add_task(async function () {
   
   await setE10sPrefs();
 
   let docLoaded = waitForEvent(
-    Ci.nsIAccessibleEvent.EVENT_DOCUMENT_LOAD_COMPLETE, 'body');
+    Ci.nsIAccessibleEvent.EVENT_DOCUMENT_LOAD_COMPLETE, "body");
   let a11yInit = initPromise();
-  let accService = Cc['@mozilla.org/accessibilityService;1'].getService(
+  let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
     Ci.nsIAccessibilityService);
-  ok(accService, 'Service initialized');
+  ok(accService, "Service initialized");
   await a11yInit;
 
   await BrowserTestUtils.withNewTab({
@@ -29,22 +29,22 @@ add_task(async function () {
   }, async function(browser) {
     let docLoadedEvent = await docLoaded;
     let docAcc = docLoadedEvent.accessibleDocument;
-    ok(docAcc, 'Accessible document proxy is created');
+    ok(docAcc, "Accessible document proxy is created");
     
     docLoaded = null;
     docLoadedEvent = null;
     forceGC();
 
     let acc = docAcc.getChildAt(0);
-    ok(acc, 'Accessible proxy is created');
+    ok(acc, "Accessible proxy is created");
 
     let canShutdown = false;
     let a11yShutdown = new Promise((resolve, reject) =>
     shutdownPromise().then(flag => canShutdown ? resolve() :
-      reject('Accessible service was shut down incorrectly')));
+      reject("Accessible service was shut down incorrectly")));
 
     accService = null;
-    ok(!accService, 'Service is removed');
+    ok(!accService, "Service is removed");
     
     
     forceGC();
@@ -53,7 +53,7 @@ add_task(async function () {
 
     
     acc = null;
-    ok(!acc, 'Accessible proxy is removed');
+    ok(!acc, "Accessible proxy is removed");
     
     
     forceGC();
@@ -64,7 +64,7 @@ add_task(async function () {
     canShutdown = true;
     
     docAcc = null;
-    ok(!docAcc, 'Accessible document proxy is removed');
+    ok(!docAcc, "Accessible document proxy is removed");
 
     
     forceGC();

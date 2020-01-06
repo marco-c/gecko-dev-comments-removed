@@ -2,10 +2,10 @@
 
 
 
-'use strict';
+"use strict";
 
 
-loadScripts({ name: 'role.js', dir: MOCHITESTS_DIR });
+loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 
 addAccessibleTask(`
   <style>
@@ -19,8 +19,8 @@ addAccessibleTask(`
   <div id="container1"></div>
   <div id="container2"><div id="container2_child">text</div></div>`,
   async function(browser, accDoc) {
-    const id1 = 'container1';
-    const id2 = 'container2';
+    const id1 = "container1";
+    const id2 = "container2";
     let container1 = findAccessibleChildByID(accDoc, id1);
     let container2 = findAccessibleChildByID(accDoc, id2);
 
@@ -41,9 +41,9 @@ addAccessibleTask(`
     let onReorder = waitForEvent(EVENT_REORDER, id1);
     
     await ContentTask.spawn(browser, id1, id => {
-      let node = content.document.createElement('div');
-      node.textContent = 'text';
-      node.setAttribute('class', 'gentext');
+      let node = content.document.createElement("div");
+      node.textContent = "text";
+      node.setAttribute("class", "gentext");
       content.document.getElementById(id).appendChild(node);
     });
     await onReorder;
@@ -61,7 +61,7 @@ addAccessibleTask(`
 
     onReorder = waitForEvent(EVENT_REORDER, id2);
     
-    await invokeSetAttribute(browser, 'container2_child', 'class', 'gentext');
+    await invokeSetAttribute(browser, "container2_child", "class", "gentext");
     await onReorder;
 
     tree = {

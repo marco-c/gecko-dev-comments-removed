@@ -2,7 +2,7 @@
 
 
 
-'use strict';
+"use strict";
 
 add_task(async function () {
   
@@ -19,33 +19,33 @@ add_task(async function () {
         <body></body>
       </html>`
   }, async function(browser) {
-    info('Creating a service in parent and waiting for service to be created ' +
-      'in content');
+    info("Creating a service in parent and waiting for service to be created " +
+      "in content");
     
     
     let parentA11yInit = initPromise();
     let contentA11yInit = initPromise(browser);
-    let accService = Cc['@mozilla.org/accessibilityService;1'].getService(
+    let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
       Ci.nsIAccessibilityService);
-    ok(accService, 'Service initialized in parent');
+    ok(accService, "Service initialized in parent");
     await Promise.all([parentA11yInit, contentA11yInit]);
 
-    info('Adding additional reference to accessibility service in content ' +
-      'process');
+    info("Adding additional reference to accessibility service in content " +
+      "process");
     
     loadFrameScripts(browser, `let accService = Components.classes[
       '@mozilla.org/accessibilityService;1'].getService(
         Components.interfaces.nsIAccessibilityService);`);
 
-    info('Trying to shut down a service in content and making sure it stays ' +
-      'alive as it was started by parent');
+    info("Trying to shut down a service in content and making sure it stays " +
+      "alive as it was started by parent");
     let contentCanShutdown = false;
     
     
     
     let contentA11yShutdown = new Promise((resolve, reject) =>
       shutdownPromise(browser).then(flag => contentCanShutdown ?
-        resolve() : reject('Accessible service was shut down incorrectly')));
+        resolve() : reject("Accessible service was shut down incorrectly")));
     
     
     
@@ -54,13 +54,13 @@ add_task(async function () {
     
     await new Promise(resolve => executeSoon(resolve));
 
-    info('Removing a service in parent');
+    info("Removing a service in parent");
     
     contentCanShutdown = true;
     
     let parentA11yShutdown = shutdownPromise();
     accService = null;
-    ok(!accService, 'Service is removed in parent');
+    ok(!accService, "Service is removed in parent");
     
     
     forceGC();

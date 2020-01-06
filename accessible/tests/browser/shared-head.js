@@ -2,7 +2,7 @@
 
 
 
-'use strict';
+"use strict";
 
 
 
@@ -19,18 +19,18 @@ const { interfaces: Ci, utils: Cu, classes: Cc } = Components;
 
 
 const CURRENT_DIR =
-  'chrome://mochitests/content/browser/accessible/tests/browser/';
+  "chrome://mochitests/content/browser/accessible/tests/browser/";
 
 
 
 
 const MOCHITESTS_DIR =
-  'chrome://mochitests/content/a11y/accessible/tests/mochitest/';
+  "chrome://mochitests/content/a11y/accessible/tests/mochitest/";
 
 
 
 const CURRENT_CONTENT_DIR =
-  'http://example.com/browser/accessible/tests/browser/';
+  "http://example.com/browser/accessible/tests/browser/";
 
 const LOADED_FRAMESCRIPTS = new Map();
 
@@ -163,7 +163,7 @@ function invokeFocus(browser, id) {
 
 function loadScripts(...scripts) {
   for (let script of scripts) {
-    let path = typeof script === 'string' ? `${CURRENT_DIR}${script}` :
+    let path = typeof script === "string" ? `${CURRENT_DIR}${script}` :
       `${script.dir}${script.name}`;
     Services.scriptloader.loadSubScript(path, this);
   }
@@ -178,8 +178,8 @@ function loadFrameScripts(browser, ...scripts) {
   let mm = browser.messageManager;
   for (let script of scripts) {
     let frameScript;
-    if (typeof script === 'string') {
-      if (script.includes('.js')) {
+    if (typeof script === "string") {
+      if (script.includes(".js")) {
         
         
         frameScript = `${CURRENT_DIR}${script}`;
@@ -242,22 +242,22 @@ function snippetToURL(snippet, bodyAttrs={}) {
 function addAccessibleTask(doc, task) {
   add_task(async function() {
     let url;
-    if (doc.includes('doc_')) {
+    if (doc.includes("doc_")) {
       url = `${CURRENT_CONTENT_DIR}e10s/${doc}`;
     } else {
       url = snippetToURL(doc);
     }
 
     registerCleanupFunction(() => {
-      let observers = Services.obs.enumerateObservers('accessible-event');
+      let observers = Services.obs.enumerateObservers("accessible-event");
       while (observers.hasMoreElements()) {
         Services.obs.removeObserver(
           observers.getNext().QueryInterface(Ci.nsIObserver),
-          'accessible-event');
+          "accessible-event");
       }
     });
 
-    let onDocLoad = waitForEvent(EVENT_DOCUMENT_LOAD_COMPLETE, 'body');
+    let onDocLoad = waitForEvent(EVENT_DOCUMENT_LOAD_COMPLETE, "body");
 
     await BrowserTestUtils.withNewTab({
       gBrowser,
@@ -275,8 +275,8 @@ function addAccessibleTask(doc, task) {
       await SimpleTest.promiseFocus(browser);
 
       loadFrameScripts(browser,
-        'let { document, window, navigator } = content;',
-        { name: 'common.js', dir: MOCHITESTS_DIR });
+        "let { document, window, navigator } = content;",
+        { name: "common.js", dir: MOCHITESTS_DIR });
 
       Logger.log(
         `e10s enabled: ${Services.appinfo.browserTabsRemoteAutostart}`);

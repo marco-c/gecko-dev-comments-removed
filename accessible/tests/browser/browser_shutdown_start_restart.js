@@ -2,39 +2,39 @@
 
 
 
-'use strict';
+"use strict";
 
 add_task(async function () {
-  info('Creating a service');
+  info("Creating a service");
   
   let a11yInit = initPromise();
-  let accService = Cc['@mozilla.org/accessibilityService;1'].getService(
+  let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
     Ci.nsIAccessibilityService);
   await a11yInit;
-  ok(accService, 'Service initialized');
+  ok(accService, "Service initialized");
 
-  info('Removing a service');
+  info("Removing a service");
   
   let a11yShutdown = shutdownPromise();
   accService = null;
-  ok(!accService, 'Service is removed');
+  ok(!accService, "Service is removed");
   
   forceGC();
   await a11yShutdown;
 
-  info('Recreating a service');
+  info("Recreating a service");
   
   a11yInit = initPromise();
-  accService = Cc['@mozilla.org/accessibilityService;1'].getService(
+  accService = Cc["@mozilla.org/accessibilityService;1"].getService(
     Ci.nsIAccessibilityService);
   await a11yInit;
-  ok(accService, 'Service initialized again');
+  ok(accService, "Service initialized again");
 
-  info('Removing a service again');
+  info("Removing a service again");
   
   a11yShutdown = shutdownPromise();
   accService = null;
-  ok(!accService, 'Service is removed again');
+  ok(!accService, "Service is removed again");
   
   forceGC();
   await a11yShutdown;

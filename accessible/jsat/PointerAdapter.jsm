@@ -4,26 +4,26 @@
 
 
 
-'use strict';
+"use strict";
 
 const Ci = Components.interfaces;
 const Cu = Components.utils;
 
-this.EXPORTED_SYMBOLS = ['PointerRelay', 'PointerAdapter']; 
+this.EXPORTED_SYMBOLS = ["PointerRelay", "PointerAdapter"]; 
 
-Cu.import('resource://gre/modules/XPCOMUtils.jsm');
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, 'Utils', 
-  'resource://gre/modules/accessibility/Utils.jsm');
-XPCOMUtils.defineLazyModuleGetter(this, 'Logger', 
-  'resource://gre/modules/accessibility/Utils.jsm');
-XPCOMUtils.defineLazyModuleGetter(this, 'GestureSettings', 
-  'resource://gre/modules/accessibility/Gestures.jsm');
-XPCOMUtils.defineLazyModuleGetter(this, 'GestureTracker', 
-  'resource://gre/modules/accessibility/Gestures.jsm');
+XPCOMUtils.defineLazyModuleGetter(this, "Utils", 
+  "resource://gre/modules/accessibility/Utils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Logger", 
+  "resource://gre/modules/accessibility/Utils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "GestureSettings", 
+  "resource://gre/modules/accessibility/Gestures.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "GestureTracker", 
+  "resource://gre/modules/accessibility/Gestures.jsm");
 
 
-const MOUSE_ID = 'mouse';
+const MOUSE_ID = "mouse";
 
 const SYNTH_ID = -1;
 
@@ -37,34 +37,34 @@ var PointerRelay = {
     delete this._eventsOfInterest;
 
     switch (Utils.widgetToolkit) {
-      case 'android':
+      case "android":
         this._eventsOfInterest = {
-          'touchstart': true,
-          'touchmove': true,
-          'touchend': true };
+          "touchstart": true,
+          "touchmove": true,
+          "touchend": true };
         break;
 
-      case 'gonk':
+      case "gonk":
         this._eventsOfInterest = {
-          'touchstart': true,
-          'touchmove': true,
-          'touchend': true,
-          'mousedown': false,
-          'mousemove': false,
-          'mouseup': false,
-          'click': false };
+          "touchstart": true,
+          "touchmove": true,
+          "touchend": true,
+          "mousedown": false,
+          "mousemove": false,
+          "mouseup": false,
+          "click": false };
         break;
 
       default:
         
         this._eventsOfInterest = {
-          'mousemove': true,
-          'mousedown': true,
-          'mouseup': true,
-          'click': false
+          "mousemove": true,
+          "mousedown": true,
+          "mouseup": true,
+          "click": false
         };
-        if ('ontouchstart' in Utils.win) {
-          for (let eventType of ['touchstart', 'touchmove', 'touchend']) {
+        if ("ontouchstart" in Utils.win) {
+          for (let eventType of ["touchstart", "touchmove", "touchend"]) {
             this._eventsOfInterest[eventType] = true;
           }
         }
@@ -75,16 +75,16 @@ var PointerRelay = {
   },
 
   _eventMap: {
-    'touchstart': 'pointerdown',
-    'mousedown': 'pointerdown',
-    'touchmove': 'pointermove',
-    'mousemove': 'pointermove',
-    'touchend': 'pointerup',
-    'mouseup': 'pointerup'
+    "touchstart": "pointerdown",
+    "mousedown": "pointerdown",
+    "touchmove": "pointermove",
+    "mousemove": "pointermove",
+    "touchend": "pointerup",
+    "mouseup": "pointerup"
   },
 
   start: function PointerRelay_start(aOnPointerEvent) {
-    Logger.debug('PointerRelay.start');
+    Logger.debug("PointerRelay.start");
     this.onPointerEvent = aOnPointerEvent;
     for (let eventType in this._eventsOfInterest) {
       Utils.win.addEventListener(eventType, this, true, true);
@@ -92,7 +92,7 @@ var PointerRelay = {
   },
 
   stop: function PointerRelay_stop() {
-    Logger.debug('PointerRelay.stop');
+    Logger.debug("PointerRelay.stop");
     delete this.lastPointerMove;
     delete this.onPointerEvent;
     for (let eventType in this._eventsOfInterest) {
@@ -102,7 +102,7 @@ var PointerRelay = {
 
   handleEvent: function PointerRelay_handleEvent(aEvent) {
     
-    if (Utils.MozBuildApp === 'browser' &&
+    if (Utils.MozBuildApp === "browser" &&
       aEvent.view.top instanceof Ci.nsIDOMChromeWindow) {
       return;
     }
@@ -119,7 +119,7 @@ var PointerRelay = {
       target: aEvent.target
     }];
 
-    if (Utils.widgetToolkit === 'android' &&
+    if (Utils.widgetToolkit === "android" &&
       changedTouches.length === 1 && changedTouches[0].identifier === 1) {
       return;
     }
@@ -154,13 +154,13 @@ var PointerRelay = {
 
 this.PointerAdapter = { 
   start: function PointerAdapter_start() {
-    Logger.debug('PointerAdapter.start');
+    Logger.debug("PointerAdapter.start");
     GestureTracker.reset();
     PointerRelay.start(this.handleEvent);
   },
 
   stop: function PointerAdapter_stop() {
-    Logger.debug('PointerAdapter.stop');
+    Logger.debug("PointerAdapter.stop");
     PointerRelay.stop();
     GestureTracker.reset();
   },

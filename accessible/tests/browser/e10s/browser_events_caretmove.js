@@ -2,18 +2,18 @@
 
 
 
-'use strict';
+"use strict";
 
 
 
 
 
 addAccessibleTask('<input id="textbox" value="hello"/>', async function(browser) {
-  let onCaretMoved = waitForEvent(EVENT_TEXT_CARET_MOVED, 'textbox');
-  await invokeFocus(browser, 'textbox');
+  let onCaretMoved = waitForEvent(EVENT_TEXT_CARET_MOVED, "textbox");
+  await invokeFocus(browser, "textbox");
   let event = await onCaretMoved;
 
   let caretMovedEvent = event.QueryInterface(nsIAccessibleCaretMoveEvent);
   is(caretMovedEvent.caretOffset, 5,
-    'Correct caret offset.');
+    "Correct caret offset.");
 });

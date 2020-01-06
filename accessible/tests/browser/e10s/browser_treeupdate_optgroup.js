@@ -2,37 +2,37 @@
 
 
 
-'use strict';
+"use strict";
 
 
-loadScripts({ name: 'role.js', dir: MOCHITESTS_DIR });
+loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 
 addAccessibleTask('<select id="select"></select>', async function(browser, accDoc) {
-  let select = findAccessibleChildByID(accDoc, 'select');
+  let select = findAccessibleChildByID(accDoc, "select");
 
-  let onEvent = waitForEvent(EVENT_REORDER, 'select');
+  let onEvent = waitForEvent(EVENT_REORDER, "select");
   
   await ContentTask.spawn(browser, {}, () => {
     let doc = content.document;
-    let contentSelect = doc.getElementById('select');
-    let optGroup = doc.createElement('optgroup');
+    let contentSelect = doc.getElementById("select");
+    let optGroup = doc.createElement("optgroup");
 
     for (let i = 0; i < 2; i++) {
-      let opt = doc.createElement('option');
+      let opt = doc.createElement("option");
       opt.value = i;
-      opt.text = 'Option: Value ' + i;
+      opt.text = "Option: Value " + i;
       optGroup.appendChild(opt);
     }
     contentSelect.add(optGroup, null);
 
     for (let i = 0; i < 2; i++) {
-      let opt = doc.createElement('option');
+      let opt = doc.createElement("option");
       contentSelect.add(opt, null);
     }
-    contentSelect.firstChild.firstChild.id = 'option1Node';
+    contentSelect.firstChild.firstChild.id = "option1Node";
   });
   let event = await onEvent;
-  let option1Node = findAccessibleChildByID(event.accessible, 'option1Node');
+  let option1Node = findAccessibleChildByID(event.accessible, "option1Node");
 
   let tree = {
     COMBOBOX: [ {
@@ -49,12 +49,12 @@ addAccessibleTask('<select id="select"></select>', async function(browser, accDo
     } ]
   };
   testAccessibleTree(select, tree);
-  ok(!isDefunct(option1Node), 'option shouldn\'t be defunct');
+  ok(!isDefunct(option1Node), "option shouldn't be defunct");
 
-  onEvent = waitForEvent(EVENT_REORDER, 'select');
+  onEvent = waitForEvent(EVENT_REORDER, "select");
   
   await ContentTask.spawn(browser, {}, () => {
-    let contentSelect = content.document.getElementById('select');
+    let contentSelect = content.document.getElementById("select");
     contentSelect.firstChild.remove();
   });
   await onEvent;
@@ -69,12 +69,12 @@ addAccessibleTask('<select id="select"></select>', async function(browser, accDo
   };
   testAccessibleTree(select, tree);
   ok(isDefunct(option1Node),
-    'removed option shouldn\'t be accessible anymore!');
+    "removed option shouldn't be accessible anymore!");
 
-  onEvent = waitForEvent(EVENT_REORDER, 'select');
+  onEvent = waitForEvent(EVENT_REORDER, "select");
   
   await ContentTask.spawn(browser, {}, () => {
-    let contentSelect = content.document.getElementById('select');
+    let contentSelect = content.document.getElementById("select");
     while (contentSelect.length) {
       contentSelect.remove(0);
     }

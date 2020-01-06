@@ -2,7 +2,7 @@
 
 
 
-'use strict';
+"use strict";
 
 add_task(async function () {
   
@@ -10,9 +10,9 @@ add_task(async function () {
   let a11yInitThenShutdown = initPromise().then(shutdownPromise);
 
   (function() {
-    let accService = Cc['@mozilla.org/accessibilityService;1'].getService(
+    let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
       Ci.nsIAccessibilityService);
-    ok(accService, 'Service initialized');
+    ok(accService, "Service initialized");
   })();
 
   

@@ -2,14 +2,14 @@
 
 
 
-'use strict';
+"use strict";
 
 
 
 
 addAccessibleTask('<div id="div" style="visibility: hidden;"></div>',
   async function(browser) {
-    let onShow = waitForEvent(EVENT_SHOW, 'div');
-    await invokeSetStyle(browser, 'div', 'visibility', 'visible');
+    let onShow = waitForEvent(EVENT_SHOW, "div");
+    await invokeSetStyle(browser, "div", "visibility", "visible");
     await onShow;
   });

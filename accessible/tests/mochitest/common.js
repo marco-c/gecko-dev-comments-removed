@@ -91,7 +91,7 @@ const MAX_TRIM_LENGTH = 100;
 
 
 
-Components.utils.import('resource://gre/modules/Services.jsm');
+Components.utils.import("resource://gre/modules/Services.jsm");
 
 
 

@@ -10,7 +10,6 @@ module.exports = {
     
     "brace-style": "off",
     "consistent-return": "off",
-    "quotes": "off",
     "object-shorthand": "off",
     "space-before-function-paren": "off",
     "space-infix-ops": "off",

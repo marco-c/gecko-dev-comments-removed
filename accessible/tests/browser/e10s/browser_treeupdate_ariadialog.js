@@ -2,22 +2,22 @@
 
 
 
-'use strict';
+"use strict";
 
 
-loadScripts({ name: 'role.js', dir: MOCHITESTS_DIR });
+loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 
 
-addAccessibleTask('doc_treeupdate_ariadialog.html', async function(browser, accDoc) {
+addAccessibleTask("doc_treeupdate_ariadialog.html", async function(browser, accDoc) {
   testAccessibleTree(accDoc, {
     role: ROLE_DOCUMENT,
     children: [ ]
   });
 
   
-  let onShow = waitForEvent(EVENT_SHOW, 'dialog');
+  let onShow = waitForEvent(EVENT_SHOW, "dialog");
   await ContentTask.spawn(browser, {}, () => {
-    content.document.getElementById('dialog').style.display = 'block';
+    content.document.getElementById("dialog").style.display = "block";
   });
   await onShow;
 

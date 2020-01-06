@@ -2,7 +2,7 @@
 
 
 
-'use strict';
+"use strict";
 
 
 
@@ -17,17 +17,17 @@ addAccessibleTask(`
     <div id="next"></div>
   </div>`,
   async function(browser, accDoc) {
-    let acc = findAccessibleChildByID(accDoc, 'to-hide');
+    let acc = findAccessibleChildByID(accDoc, "to-hide");
     let onHide = waitForEvent(EVENT_HIDE, acc);
-    await invokeSetStyle(browser, 'to-hide', 'visibility', 'hidden');
+    await invokeSetStyle(browser, "to-hide", "visibility", "hidden");
     let event = await onHide;
     let hideEvent = event.QueryInterface(Ci.nsIAccessibleHideEvent);
 
-    is(getAccessibleDOMNodeID(hideEvent.targetParent), 'parent',
-      'Correct target parent.');
-    is(getAccessibleDOMNodeID(hideEvent.targetNextSibling), 'next',
-      'Correct target next sibling.');
-    is(getAccessibleDOMNodeID(hideEvent.targetPrevSibling), 'previous',
-      'Correct target previous sibling.');
+    is(getAccessibleDOMNodeID(hideEvent.targetParent), "parent",
+      "Correct target parent.");
+    is(getAccessibleDOMNodeID(hideEvent.targetNextSibling), "next",
+      "Correct target next sibling.");
+    is(getAccessibleDOMNodeID(hideEvent.targetPrevSibling), "previous",
+      "Correct target previous sibling.");
   }
 );

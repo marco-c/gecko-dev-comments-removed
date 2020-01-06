@@ -2,14 +2,14 @@
 
 
 
-'use strict';
+"use strict";
 
 
 
 Services.scriptloader.loadSubScript(
-  'chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js',
+  "chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js",
   this);
 
 
 
-loadScripts({ name: 'common.js', dir: MOCHITESTS_DIR }, 'events.js');
+loadScripts({ name: "common.js", dir: MOCHITESTS_DIR }, "events.js");

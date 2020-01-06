@@ -2,12 +2,12 @@
 
 
 
-'use strict';
+"use strict";
 
 
 
-loadScripts({ name: 'role.js', dir: MOCHITESTS_DIR },
-            { name: 'states.js', dir: MOCHITESTS_DIR });
+loadScripts({ name: "role.js", dir: MOCHITESTS_DIR },
+            { name: "states.js", dir: MOCHITESTS_DIR });
 
 async function runTest(browser, accDoc) {
   let getAcc = id => findAccessibleChildByID(accDoc, id);
@@ -23,7 +23,7 @@ async function runTest(browser, accDoc) {
 
   
   await ContentTask.spawn(browser, {}, () => {
-    content.document.getElementById('li_last').scrollIntoView(true);
+    content.document.getElementById("li_last").scrollIntoView(true);
   });
   testStates(lastLi, 0, 0, STATE_OFFSCREEN | STATE_INVISIBLE);
 

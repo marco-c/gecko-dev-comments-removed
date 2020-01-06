@@ -2,21 +2,21 @@
 
 
 
-'use strict';
+"use strict";
 
 add_task(async function () {
   
   let a11yInit = initPromise();
-  let accService = Cc['@mozilla.org/accessibilityService;1'].getService(
+  let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
     Ci.nsIAccessibilityService);
 
   await a11yInit;
-  ok(accService, 'Service initialized');
+  ok(accService, "Service initialized");
 
   
   
   let docAcc = accService.getAccessibleFor(document);
-  ok(docAcc, 'Accessible document is created');
+  ok(docAcc, "Accessible document is created");
 
   let canShutdown = false;
   
@@ -24,10 +24,10 @@ add_task(async function () {
   
   let a11yShutdown = new Promise((resolve, reject) =>
     shutdownPromise().then(flag => canShutdown ? resolve() :
-      reject('Accessible service was shut down incorrectly')));
+      reject("Accessible service was shut down incorrectly")));
 
   accService = null;
-  ok(!accService, 'Service is removed');
+  ok(!accService, "Service is removed");
 
   
   
@@ -39,7 +39,7 @@ add_task(async function () {
   canShutdown = true;
   
   docAcc = null;
-  ok(!docAcc, 'Accessible document is removed');
+  ok(!docAcc, "Accessible document is removed");
 
   
   forceGC();

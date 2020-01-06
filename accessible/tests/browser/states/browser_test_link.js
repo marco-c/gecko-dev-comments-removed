@@ -2,12 +2,12 @@
 
 
 
-'use strict';
+"use strict";
 
 
 
-loadScripts({ name: 'role.js', dir: MOCHITESTS_DIR },
-            { name: 'states.js', dir: MOCHITESTS_DIR });
+loadScripts({ name: "role.js", dir: MOCHITESTS_DIR },
+            { name: "states.js", dir: MOCHITESTS_DIR });
 
 async function runTests(browser, accDoc) {
   let getAcc = id => findAccessibleChildByID(accDoc, id);
@@ -18,7 +18,7 @@ async function runTests(browser, accDoc) {
   let onStateChanged = waitForEvent(EVENT_STATE_CHANGE, "link_traversed");
   let newWinOpened = BrowserTestUtils.waitForNewWindow();
 
-  await BrowserTestUtils.synthesizeMouse('#link_traversed',
+  await BrowserTestUtils.synthesizeMouse("#link_traversed",
     1, 1, { shiftKey: true }, browser);
 
   await onStateChanged;

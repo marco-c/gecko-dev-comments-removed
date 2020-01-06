@@ -2,7 +2,7 @@
 
 
 
-'use strict';
+"use strict";
 
 add_task(async function () {
   
@@ -19,24 +19,24 @@ add_task(async function () {
         <body></body>
       </html>`
   }, async function(browser) {
-    info('Creating a service in parent and waiting for service to be created ' +
-      'in content');
+    info("Creating a service in parent and waiting for service to be created " +
+      "in content");
     
     
     let parentA11yInit = initPromise();
     let contentA11yInit = initPromise(browser);
-    let accService = Cc['@mozilla.org/accessibilityService;1'].getService(
+    let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
       Ci.nsIAccessibilityService);
-    ok(accService, 'Service initialized in parent');
+    ok(accService, "Service initialized in parent");
     await Promise.all([parentA11yInit, contentA11yInit]);
 
-    info('Removing a service in parent and waiting for service to be shut ' +
-      'down in content');
+    info("Removing a service in parent and waiting for service to be shut " +
+      "down in content");
     
     let parentA11yShutdown = shutdownPromise();
     let contentA11yShutdown = shutdownPromise(browser);
     accService = null;
-    ok(!accService, 'Service is removed in parent');
+    ok(!accService, "Service is removed in parent");
     
     
     forceGC();

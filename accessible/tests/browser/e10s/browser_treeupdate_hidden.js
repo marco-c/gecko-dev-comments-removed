@@ -2,25 +2,25 @@
 
 
 
-'use strict';
+"use strict";
 
 
-loadScripts({ name: 'role.js', dir: MOCHITESTS_DIR });
+loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 
 async function setHidden(browser, value) {
-  let onReorder = waitForEvent(EVENT_REORDER, 'container');
-  await invokeSetAttribute(browser, 'child', 'hidden', value);
+  let onReorder = waitForEvent(EVENT_REORDER, "container");
+  await invokeSetAttribute(browser, "child", "hidden", value);
   await onReorder;
 }
 
 addAccessibleTask('<div id="container"><input id="child"></div>',
   async function(browser, accDoc) {
-    let container = findAccessibleChildByID(accDoc, 'container');
+    let container = findAccessibleChildByID(accDoc, "container");
 
     testAccessibleTree(container, { SECTION: [ { ENTRY: [ ] } ] });
 
     
-    await setHidden(browser, 'true');
+    await setHidden(browser, "true");
     testAccessibleTree(container, { SECTION: [ ] });
 
     

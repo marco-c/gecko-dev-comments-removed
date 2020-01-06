@@ -2,34 +2,34 @@
 
 
 
-'use strict';
+"use strict";
 
 add_task(async function () {
-  info('Creating a service');
+  info("Creating a service");
   
   let a11yInit = initPromise();
-  let accService1 = Cc['@mozilla.org/accessibilityService;1'].getService(
+  let accService1 = Cc["@mozilla.org/accessibilityService;1"].getService(
     Ci.nsIAccessibilityService);
   await a11yInit;
-  ok(accService1, 'Service initialized');
+  ok(accService1, "Service initialized");
 
   
   
-  let accService2 = Cc['@mozilla.org/accessibilityService;1'].getService(
+  let accService2 = Cc["@mozilla.org/accessibilityService;1"].getService(
     Ci.nsIAccessibilityService);
-  ok(accService2, 'Service initialized');
+  ok(accService2, "Service initialized");
 
-  info('Removing all service references');
+  info("Removing all service references");
   let canShutdown = false;
   
   
   
   let a11yShutdown = new Promise((resolve, reject) =>
     shutdownPromise().then(flag => canShutdown ?
-      resolve() : reject('Accessible service was shut down incorrectly')));
+      resolve() : reject("Accessible service was shut down incorrectly")));
   
   accService1 = null;
-  ok(!accService1, 'Service is removed');
+  ok(!accService1, "Service is removed");
   
   
   forceGC();
@@ -41,7 +41,7 @@ add_task(async function () {
   canShutdown = true;
   
   accService2 = null;
-  ok(!accService2, 'Service is removed');
+  ok(!accService2, "Service is removed");
   
   forceGC();
   await a11yShutdown;
