@@ -9,7 +9,7 @@ use context::{SharedStyleContext, StyleContext, ThreadLocalStyleContext};
 use data::{ElementData, ElementStyles, StoredRestyleHint};
 use dom::{DirtyDescendants, NodeInfo, OpaqueNode, TElement, TNode};
 use matching::{ChildCascadeRequirement, MatchMethods, StyleSharingBehavior};
-use restyle_hints::RestyleHint;
+use restyle_hints::{HintComputationContext, RestyleHint};
 use selector_parser::RestyleDamage;
 #[cfg(feature = "servo")] use servo_config::opts;
 use std::borrow::BorrowMut;
@@ -123,7 +123,8 @@ pub trait DomTraversal<E: TElement> : Sync {
     type ThreadLocalContext: Send + BorrowMut<ThreadLocalStyleContext<E>>;
 
     
-    fn process_preorder(&self, data: &PerLevelTraversalData,
+    fn process_preorder(&self,
+                        data: &PerLevelTraversalData,
                         thread_local: &mut Self::ThreadLocalContext,
                         node: E::ConcreteNode);
 
@@ -227,7 +228,10 @@ pub trait DomTraversal<E: TElement> : Sync {
         
         
         if let Some(mut data) = root.mutate_data() {
-            let later_siblings = data.compute_final_hint(root, shared_context);
+            let later_siblings =
+                data.compute_final_hint(root,
+                                        shared_context,
+                                        HintComputationContext::Root);
             if later_siblings {
                 if let Some(next) = root.next_sibling_element() {
                     if let Some(mut next_data) = next.mutate_data() {
@@ -669,11 +673,12 @@ pub fn recalc_style_at<E, D>(traversal: &D,
             r.damage_handled() | r.damage.handled_for_descendants()
         });
 
-        preprocess_children(traversal,
-                            element,
-                            propagated_hint,
-                            damage_handled,
-                            inherited_style_changed);
+        preprocess_children::<E, D>(context,
+                                    traversal_data,
+                                    element,
+                                    propagated_hint,
+                                    damage_handled,
+                                    inherited_style_changed);
     }
 
     
@@ -740,7 +745,8 @@ fn compute_style<E, D>(_traversal: &D,
         MatchAndCascade => {
             
             context.thread_local.bloom_filter
-                   .insert_parents_recovering(element, traversal_data.current_dom_depth);
+                   .insert_parents_recovering(element,
+                                              traversal_data.current_dom_depth);
 
             context.thread_local.bloom_filter.assert_complete(element);
             context.thread_local.statistics.elements_matched += 1;
@@ -770,15 +776,17 @@ fn compute_style<E, D>(_traversal: &D,
     }
 }
 
-fn preprocess_children<E, D>(traversal: &D,
+fn preprocess_children<E, D>(context: &mut StyleContext<E>,
+                             parent_traversal_data: &PerLevelTraversalData,
                              element: E,
                              mut propagated_hint: StoredRestyleHint,
                              damage_handled: RestyleDamage,
                              parent_inherited_style_changed: bool)
     where E: TElement,
-          D: DomTraversal<E>
+          D: DomTraversal<E>,
 {
     trace!("preprocess_children: {:?}", element);
+
     
     for child in element.as_node().children() {
         
@@ -787,7 +795,8 @@ fn preprocess_children<E, D>(traversal: &D,
             None => continue,
         };
 
-        let mut child_data = unsafe { D::ensure_element_data(&child).borrow_mut() };
+        let mut child_data =
+            unsafe { D::ensure_element_data(&child).borrow_mut() };
 
         
         if !child_data.has_styles() {
@@ -798,7 +807,12 @@ fn preprocess_children<E, D>(traversal: &D,
         
         
         let later_siblings =
-            child_data.compute_final_hint(child, traversal.shared_context());
+            child_data.compute_final_hint(child,
+                                          &context.shared,
+                                          HintComputationContext::Child {
+                                              local_context: &mut context.thread_local,
+                                              dom_depth: parent_traversal_data.current_dom_depth + 1,
+                                          });
 
         trace!(" > {:?} -> {:?} + {:?}, pseudo: {:?}, later_siblings: {:?}",
                child,

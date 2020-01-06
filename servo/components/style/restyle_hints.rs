@@ -9,6 +9,7 @@
 use Atom;
 use LocalName;
 use Namespace;
+use context::{SharedStyleContext, ThreadLocalStyleContext};
 use dom::TElement;
 use element_state::*;
 #[cfg(feature = "gecko")]
@@ -825,6 +826,35 @@ pub struct DependencySet {
     dependencies: SelectorMap<Dependency>,
 }
 
+
+pub enum HintComputationContext<'a, E: 'a>
+    where E: TElement,
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Root,
+
+    
+    
+    
+    
+    
+    Child {
+        
+        local_context: &'a mut ThreadLocalStyleContext<E>,
+        
+        dom_depth: usize,
+    }
+}
+
 impl DependencySet {
     
     pub fn note_selector(&mut self, selector: &Selector<SelectorImpl>) {
@@ -921,16 +951,17 @@ impl DependencySet {
 
     
     
-    pub fn compute_hint<E>(
+    pub fn compute_hint<'a, E>(
         &self,
         el: &E,
-        snapshots: &SnapshotMap)
+        shared_context: &SharedStyleContext,
+        hint_context: HintComputationContext<'a, E>)
         -> RestyleHint
         where E: TElement,
     {
         debug_assert!(el.has_snapshot(), "Shouldn't be here!");
-
-        let snapshot_el = ElementWrapper::new(el.clone(), snapshots);
+        let snapshot_el =
+            ElementWrapper::new(*el, shared_context.snapshot_map);
         let snapshot =
             snapshot_el.snapshot().expect("has_snapshot lied so badly");
 
@@ -960,8 +991,30 @@ impl DependencySet {
             });
         }
 
+        let bloom_filter = match hint_context {
+            HintComputationContext::Root => None,
+            HintComputationContext::Child { mut local_context, dom_depth } => {
+                local_context
+                    .bloom_filter
+                    .insert_parents_recovering(*el, dom_depth);
+                local_context.bloom_filter.assert_complete(*el);
+                Some(local_context.bloom_filter.filter())
+            }
+        };
+
+        let mut element_matching_context =
+            MatchingContext::new(MatchingMode::Normal, bloom_filter);
+
         
-        let mut matching_context =
+        
+        
+        
+        
+        
+        
+        
+        
+        let mut snapshot_matching_context =
             MatchingContext::new(MatchingMode::Normal, None);
 
         let lookup_element = if el.implemented_pseudo_element().is_some() {
@@ -989,11 +1042,11 @@ impl DependencySet {
             
             let matched_then =
                 matches_selector(&dep.selector, &snapshot_el,
-                                 &mut matching_context,
+                                 &mut snapshot_matching_context,
                                  &mut |_, _| {});
             let matches_now =
                 matches_selector(&dep.selector, el,
-                                 &mut matching_context,
+                                 &mut element_matching_context,
                                  &mut |_, _| {});
             if matched_then != matches_now {
                 hint.insert_from(&dep.hint);

@@ -9,6 +9,7 @@
 
 use dom::{SendElement, TElement};
 use selectors::bloom::BloomFilter;
+use smallvec::SmallVec;
 
 
 
@@ -223,7 +224,7 @@ impl<E: TElement> StyleBloom<E> {
 
         
         
-        let mut parents_to_insert = vec![];
+        let mut parents_to_insert = SmallVec::<[E; 8]>::new();
 
         
         
@@ -239,6 +240,8 @@ impl<E: TElement> StyleBloom<E> {
         
         debug_assert_eq!(common_parent_depth, current_depth);
 
+        
+        
         
         
         
