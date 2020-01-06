@@ -2537,7 +2537,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
   
   
   if (ServoStyleSet* set = mPresShell->StyleSet()->GetAsServo()) {
-    set->StyleDocument();
+    set->StyleDocument(TraversalRestyleBehavior::Normal);
   }
 
   
