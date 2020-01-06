@@ -55,6 +55,7 @@ public:
                           nsRect& aBounds)
     : mBuilder(aBuilder), mSc(aSc), mManager(aManager)
   {
+    SetPermitSubpixelAA(!aItem->IsSubpixelAADisabled());
 
     
     auto appUnitsPerDevPixel = aItem->Frame()->PresContext()->AppUnitsPerDevPixel();
@@ -128,9 +129,12 @@ public:
           LayoutDevicePoint::FromUnknownPoint(sourceGlyph.mPosition));
     }
 
+    wr::GlyphOptions glyphOptions;
+    glyphOptions.render_mode = wr::ToFontRenderMode(aOptions.mAntialiasMode, GetPermitSubpixelAA());
+
     mManager->WrBridge()->PushGlyphs(mBuilder, glyphs, aFont,
                                      color, mSc, mBoundsRect, mClipRect,
-                                     mBackfaceVisible);
+                                     mBackfaceVisible, &glyphOptions);
   }
 
   void

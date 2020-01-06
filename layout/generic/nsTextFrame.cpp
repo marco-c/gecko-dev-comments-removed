@@ -5138,7 +5138,6 @@ nsDisplayText::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder
   RefPtr<TextDrawTarget> textDrawer = new TextDrawTarget(aBuilder, aSc, aManager, this, mBounds);
   RefPtr<gfxContext> captureCtx = gfxContext::CreateOrNull(textDrawer);
 
-  
   RenderToContext(captureCtx, aDisplayListBuilder, true);
 
   return !textDrawer->HasUnsupportedFeatures();

@@ -2281,6 +2281,8 @@ public:
     mDisableSubpixelAA = true;
   }
 
+  bool IsSubpixelAADisabled() const { return mDisableSubpixelAA; }
+
   
 
 
