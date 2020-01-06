@@ -175,6 +175,28 @@ ClientPaintedLayer::PaintThebes(nsTArray<ReadbackProcessor::Update>* aReadbackUp
   }
 }
 
+class MOZ_RAII AutoQueuedAsyncPaint
+{
+public:
+  explicit AutoQueuedAsyncPaint(ClientLayerManager* aLayerManager)
+    : mLayerManager(aLayerManager)
+    , mQueuedAsyncPaints(false)
+  { }
+
+  void Queue() { mQueuedAsyncPaints = true; }
+
+  ~AutoQueuedAsyncPaint()
+  {
+    if (mQueuedAsyncPaints) {
+      mLayerManager->SetQueuedAsyncPaints();
+    }
+  }
+
+private:
+  ClientLayerManager* mLayerManager;
+  bool mQueuedAsyncPaints;
+};
+
 
 
 
@@ -201,23 +223,21 @@ ClientPaintedLayer::PaintThebes(nsTArray<ReadbackProcessor::Update>* aReadbackUp
 void
 ClientPaintedLayer::PaintOffMainThread()
 {
-  uint32_t flags = GetPaintFlags();
+  AutoQueuedAsyncPaint asyncPaints(ClientManager());
 
+  uint32_t flags = GetPaintFlags();
   PaintState state = mContentClient->BeginPaint(this, flags | ContentClient::PAINT_ASYNC);
-  bool didUpdate = false;
 
   if (state.mBufferState) {
     PaintThread::Get()->PrepareBuffer(state.mBufferState);
-    didUpdate = true;
+    asyncPaints.Queue();
   }
 
   if (!UpdatePaintRegion(state)) {
-    if (didUpdate) {
-      ClientManager()->SetQueuedAsyncPaints();
-    }
     return;
   }
 
+  bool didUpdate = false;
   RotatedBuffer::DrawIterator iter;
 
   
@@ -259,6 +279,7 @@ ClientPaintedLayer::PaintOffMainThread()
 
     mContentClient->ReturnDrawTarget(target);
 
+    asyncPaints.Queue();
     didUpdate = true;
   }
 
@@ -267,9 +288,7 @@ ClientPaintedLayer::PaintOffMainThread()
 
   if (didUpdate) {
     UpdateContentClient(state);
-    ClientManager()->SetQueuedAsyncPaints();
   }
-  return;
 }
 
 void
