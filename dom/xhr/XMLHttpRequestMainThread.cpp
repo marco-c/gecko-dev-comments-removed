@@ -1550,8 +1550,14 @@ XMLHttpRequestMainThread::Open(const nsACString& aMethod,
   } else if (responsibleDocument) {
     baseURI = responsibleDocument->GetBaseURI();
   }
+
+  NotNull<const Encoding*> originCharset = UTF_8_ENCODING;
+  if (responsibleDocument) {
+    originCharset = responsibleDocument->GetDocumentCharacterSet();
+  }
+
   nsCOMPtr<nsIURI> parsedURL;
-  rv = NS_NewURI(getter_AddRefs(parsedURL), aUrl, nullptr, baseURI);
+  rv = NS_NewURI(getter_AddRefs(parsedURL), aUrl, originCharset, baseURI);
   if (NS_FAILED(rv)) {
     if (rv ==  NS_ERROR_MALFORMED_URI) {
       return NS_ERROR_DOM_MALFORMED_URI;
@@ -2561,12 +2567,11 @@ XMLHttpRequestMainThread::MaybeLowerChannelPriority()
 }
 
 nsresult
-XMLHttpRequestMainThread::InitiateFetch(already_AddRefed<nsIInputStream> aUploadStream,
+XMLHttpRequestMainThread::InitiateFetch(nsIInputStream* aUploadStream,
                                         int64_t aUploadLength,
                                         nsACString& aUploadContentType)
 {
   nsresult rv;
-  nsCOMPtr<nsIInputStream> uploadStream = Move(aUploadStream);
 
   
   
@@ -2616,16 +2621,16 @@ XMLHttpRequestMainThread::InitiateFetch(already_AddRefed<nsIInputStream> aUpload
       }
     }
 
-    if (uploadStream) {
+    if (aUploadStream) {
       
       
-      if (!NS_InputStreamIsBuffered(uploadStream)) {
-        nsCOMPtr<nsIInputStream> bufferedStream;
+      nsCOMPtr<nsIInputStream> bufferedStream;
+      if (!NS_InputStreamIsBuffered(aUploadStream)) {
         rv = NS_NewBufferedInputStream(getter_AddRefs(bufferedStream),
-                                       uploadStream.forget(), 4096);
+                                       aUploadStream, 4096);
         NS_ENSURE_SUCCESS(rv, rv);
 
-        uploadStream = bufferedStream;
+        aUploadStream = bufferedStream;
       }
 
       
@@ -2634,7 +2639,7 @@ XMLHttpRequestMainThread::InitiateFetch(already_AddRefed<nsIInputStream> aUpload
       
       NS_ASSERTION(uploadChannel2, "http must support nsIUploadChannel2");
       if (uploadChannel2) {
-          uploadChannel2->ExplicitSetUploadStream(uploadStream,
+          uploadChannel2->ExplicitSetUploadStream(aUploadStream,
                                                   aUploadContentType,
                                                   mUploadTotal, mRequestMethod,
                                                   false);
@@ -2646,7 +2651,7 @@ XMLHttpRequestMainThread::InitiateFetch(already_AddRefed<nsIInputStream> aUpload
         }
         nsCOMPtr<nsIUploadChannel> uploadChannel =
           do_QueryInterface(httpChannel);
-        uploadChannel->SetUploadStream(uploadStream, aUploadContentType,
+        uploadChannel->SetUploadStream(aUploadStream, aUploadContentType,
                                        mUploadTotal);
         
         rv = httpChannel->SetRequestMethod(mRequestMethod);
@@ -3054,7 +3059,7 @@ XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody)
     }
   }
 
-  rv = InitiateFetch(uploadStream.forget(), mUploadTotal, uploadContentType);
+  rv = InitiateFetch(uploadStream, mUploadTotal, uploadContentType);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
