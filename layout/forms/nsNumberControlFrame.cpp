@@ -657,14 +657,12 @@ nsNumberControlFrame::SetValueOfAnonTextControl(const nsAString& aValue)
   
   nsAutoString localizedValue(aValue);
 
-#ifdef ENABLE_INTL_API
   
   Decimal val = HTMLInputElement::StringToDecimal(aValue);
   if (val.isFinite()) {
     ICUUtils::LanguageTagIterForContent langTagIter(mContent);
     ICUUtils::LocalizeNumber(val.toDouble(), langTagIter, localizedValue);
   }
-#endif
 
   
   
@@ -690,7 +688,6 @@ nsNumberControlFrame::GetValueOfAnonTextControl(nsAString& aValue)
 
   HTMLInputElement::FromContent(mTextField)->GetValue(aValue, CallerType::System);
 
-#ifdef ENABLE_INTL_API
   
   
   
@@ -731,7 +728,6 @@ nsNumberControlFrame::GetValueOfAnonTextControl(nsAString& aValue)
   
   aValue.Truncate();
   aValue.AppendFloat(value);
-#endif
 }
 
 bool
