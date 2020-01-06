@@ -446,13 +446,19 @@ public:
 
   
 
-  
+  void GetAccept(nsAString& aValue)
+  {
+    GetHTMLAttr(nsGkAtoms::accept, aValue);
+  }
   void SetAccept(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::accept, aValue, aRv);
   }
 
-  
+  void GetAlt(nsAString& aValue)
+  {
+    GetHTMLAttr(nsGkAtoms::alt, aValue);
+  }
   void SetAlt(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::alt, aValue, aRv);
@@ -497,7 +503,7 @@ public:
     return GetBoolAttr(nsGkAtoms::disabled);
   }
 
-  void SetDisabled(bool aValue,ErrorResult& aRv)
+  void SetDisabled(bool aValue, ErrorResult& aRv)
   {
     SetHTMLBoolAttr(nsGkAtoms::disabled, aValue, aRv);
   }
@@ -512,13 +518,13 @@ public:
     SetHTMLAttr(nsGkAtoms::formaction, aValue, aRv);
   }
 
-  
+  void GetFormEnctype(nsAString& aValue);
   void SetFormEnctype(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::formenctype, aValue, aRv);
   }
 
-  
+  void GetFormMethod(nsAString& aValue);
   void SetFormMethod(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::formmethod, aValue, aRv);
@@ -534,7 +540,10 @@ public:
     SetHTMLBoolAttr(nsGkAtoms::formnovalidate, aValue, aRv);
   }
 
-  
+  void GetFormTarget(nsAString& aValue)
+  {
+    GetHTMLAttr(nsGkAtoms::formtarget, aValue);
+  }
   void SetFormTarget(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::formtarget, aValue, aRv);
@@ -553,7 +562,7 @@ public:
   }
   
 
-  
+  void GetInputMode(nsAString& aValue);
   void SetInputMode(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::inputmode, aValue, aRv);
@@ -561,7 +570,10 @@ public:
 
   nsGenericHTMLElement* GetList() const;
 
-  
+  void GetMax(nsAString& aValue)
+  {
+    GetHTMLAttr(nsGkAtoms::max, aValue);
+  }
   void SetMax(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::max, aValue, aRv);
@@ -599,7 +611,10 @@ public:
     SetHTMLIntAttr(nsGkAtoms::minlength, aValue, aRv);
   }
 
-  
+  void GetMin(nsAString& aValue)
+  {
+    GetHTMLAttr(nsGkAtoms::min, aValue);
+  }
   void SetMin(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::min, aValue, aRv);
@@ -621,13 +636,19 @@ public:
     SetHTMLAttr(nsGkAtoms::name, aValue, aRv);
   }
 
-  
+  void GetPattern(nsAString& aValue)
+  {
+    GetHTMLAttr(nsGkAtoms::pattern, aValue);
+  }
   void SetPattern(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::pattern, aValue, aRv);
   }
 
-  
+  void GetPlaceholder(nsAString& aValue)
+  {
+    GetHTMLAttr(nsGkAtoms::placeholder, aValue);
+  }
   void SetPlaceholder(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::placeholder, aValue, aRv);
@@ -668,25 +689,34 @@ public:
     SetUnsignedIntAttr(nsGkAtoms::size, aValue, DEFAULT_COLS, aRv);
   }
 
-  
+  void GetSrc(nsAString& aValue)
+  {
+    GetURIAttr(nsGkAtoms::src, nullptr, aValue);
+  }
   void SetSrc(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::src, aValue, aRv);
   }
 
-  
+  void GetStep(nsAString& aValue)
+  {
+    GetHTMLAttr(nsGkAtoms::step, aValue);
+  }
   void SetStep(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::step, aValue, aRv);
   }
 
-  
+  void GetType(nsAString& aValue);
   void SetType(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::type, aValue, aRv);
   }
 
-  
+  void GetDefaultValue(nsAString& aValue)
+  {
+    GetHTMLAttr(nsGkAtoms::value, aValue);
+  }
   void SetDefaultValue(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::value, aValue, aRv);
@@ -739,7 +769,7 @@ public:
 
   already_AddRefed<nsINodeList> GetLabels();
 
-  
+  void Select();
 
   Nullable<uint32_t> GetSelectionStart(ErrorResult& aRv);
   void SetSelectionStart(const Nullable<uint32_t>& aValue, ErrorResult& aRv);
@@ -790,13 +820,19 @@ public:
 
   void ChooseDirectory(ErrorResult& aRv);
 
-  
+  void GetAlign(nsAString& aValue)
+  {
+    GetHTMLAttr(nsGkAtoms::align, aValue);
+  }
   void SetAlign(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::align, aValue, aRv);
   }
 
-  
+  void GetUseMap(nsAString& aValue)
+  {
+    GetHTMLAttr(nsGkAtoms::usemap, aValue);
+  }
   void SetUseMap(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::usemap, aValue, aRv);

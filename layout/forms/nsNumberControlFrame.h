@@ -154,7 +154,7 @@ public:
   
 
 
-  nsresult HandleSelectCall();
+  void HandleSelectCall();
 
   virtual Element* GetPseudoElement(CSSPseudoElementType aType) override;
 
