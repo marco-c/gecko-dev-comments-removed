@@ -750,15 +750,35 @@ ChannelMediaResource::RecreateChannel()
   nsContentPolicyType contentPolicyType = element->IsHTMLElement(nsGkAtoms::audio) ?
     nsIContentPolicy::TYPE_INTERNAL_AUDIO : nsIContentPolicy::TYPE_INTERNAL_VIDEO;
 
-  nsresult rv = NS_NewChannel(getter_AddRefs(mChannel),
-                              mURI,
-                              element,
-                              securityFlags,
-                              contentPolicyType,
-                              loadGroup,
-                              nullptr,  
-                              loadFlags);
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIPrincipal> loadingPrincipal;
+  bool setAttrs =
+    nsContentUtils::GetLoadingPrincipalForXULNode(element,
+                                                  getter_AddRefs(loadingPrincipal));
+
+  nsresult rv = NS_NewChannelWithTriggeringPrincipal(getter_AddRefs(mChannel),
+                                                     mURI,
+                                                     element,
+                                                     loadingPrincipal,
+                                                     securityFlags,
+                                                     contentPolicyType,
+                                                     loadGroup,
+                                                     nullptr,  
+                                                     loadFlags);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  if (setAttrs) {
+    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
+    if (loadInfo) {
+      
+      Unused << loadInfo->SetOriginAttributes(loadingPrincipal->OriginAttributesRef());
+   }
+  }
 
   nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(mChannel));
   if (cos) {
