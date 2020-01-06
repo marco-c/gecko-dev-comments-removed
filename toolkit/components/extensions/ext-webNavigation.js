@@ -8,7 +8,7 @@
 
 
 XPCOMUtils.defineLazyModuleGetter(this, "MatchURLFilters",
-                                  "resource://gre/modules/MatchPattern.jsm");
+                                  "resource://gre/modules/MatchURLFilters.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "WebNavigation",
                                   "resource://gre/modules/WebNavigation.jsm");
 
