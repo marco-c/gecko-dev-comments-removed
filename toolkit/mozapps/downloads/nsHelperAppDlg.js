@@ -270,6 +270,9 @@ nsUnknownContentTypeDialog.prototype = {
           
           if (result) {
             
+            
+            Services.obs.notifyObservers(null, "cloudstorage-prompt-notification", result.path);
+            
             aLauncher.saveDestinationAvailable(result);
             return;
           }
