@@ -63,8 +63,7 @@ nsSVGMaskFrame::GetMaskForMaskedFrame(MaskParams& aParams)
   
   context->Save();
   nsSVGUtils::SetClipRect(context, aParams.toUserSpace, maskArea);
-  context->SetMatrix(gfxMatrix());
-  gfxRect maskSurfaceRect = context->GetClipExtents();
+  gfxRect maskSurfaceRect = context->GetClipExtents(gfxContext::eDeviceSpace);
   maskSurfaceRect.RoundOut();
   context->Restore();
 
