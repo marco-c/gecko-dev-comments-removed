@@ -192,9 +192,9 @@ var gMainPane = {
     let defaultPerformancePref =
       document.getElementById("browser.preferences.defaultPerformanceSettings.enabled");
     defaultPerformancePref.addEventListener("change", () => {
-      this.updatePerformanceSettingsBox();
+      this.updatePerformanceSettingsBox({duringChangeEvent: true});
     });
-    this.updatePerformanceSettingsBox();
+    this.updatePerformanceSettingsBox({duringChangeEvent: false});
 
     
     this._updateUseCurrentButton();
@@ -1114,7 +1114,7 @@ var gMainPane = {
     }
   },
 
-  updatePerformanceSettingsBox() {
+  updatePerformanceSettingsBox({duringChangeEvent}) {
     let defaultPerformancePref =
       document.getElementById("browser.preferences.defaultPerformanceSettings.enabled");
     let performanceSettings = document.getElementById("performanceSettings");
@@ -1130,7 +1130,8 @@ var gMainPane = {
         document.getElementById("dom.ipc.processCount.web");
       
       
-      if (e10sRolloutProcessCountPref.value &&
+      if (duringChangeEvent &&
+          e10sRolloutProcessCountPref.value &&
           processCountPref.value == processCountPref.defaultValue) {
         processCountPref.value = e10sRolloutProcessCountPref.value;
       }
