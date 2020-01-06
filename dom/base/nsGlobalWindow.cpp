@@ -4989,6 +4989,9 @@ nsGlobalWindow::GetContentInternal(ErrorResult& aError, CallerType aCallerType)
 
   nsCOMPtr<nsIDocShellTreeItem> primaryContent;
   if (aCallerType != CallerType::System) {
+    if (mDoc) {
+      mDoc->WarnOnceAbout(nsIDocument::eWindowContentUntrusted);
+    }
     
     
     
