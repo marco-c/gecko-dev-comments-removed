@@ -53,9 +53,50 @@ MALLOC_DECL(malloc_good_size, size_t, size_t)
 #  endif
 #  if MALLOC_FUNCS & MALLOC_FUNCS_JEMALLOC
 MALLOC_DECL_VOID(jemalloc_stats, jemalloc_stats_t *)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 MALLOC_DECL_VOID(jemalloc_purge_freed_pages)
+
+
+
+
+
+
+
 MALLOC_DECL_VOID(jemalloc_free_dirty_pages)
+
+
+
+
+
 MALLOC_DECL_VOID(jemalloc_thread_local_arena, bool)
+
+
+
+
 MALLOC_DECL_VOID(jemalloc_ptr_info, const void*, jemalloc_ptr_info_t*)
 #  endif
 

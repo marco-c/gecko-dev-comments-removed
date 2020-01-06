@@ -49,49 +49,9 @@ static inline size_t _malloc_good_size(size_t size) {
 #  define malloc_good_size _malloc_good_size
 #endif
 
-MOZ_JEMALLOC_API void jemalloc_stats(jemalloc_stats_t *stats);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-MOZ_JEMALLOC_API void jemalloc_purge_freed_pages();
-
-
-
-
-
-
-
-MOZ_JEMALLOC_API void jemalloc_free_dirty_pages();
-
-MOZ_JEMALLOC_API void jemalloc_thread_local_arena(bool enabled);
-
-
-
-
-MOZ_JEMALLOC_API void jemalloc_ptr_info(const void* ptr,
-                                        jemalloc_ptr_info_t* info);
+#define MALLOC_DECL(name, return_type, ...) \
+  MOZ_JEMALLOC_API return_type name(__VA_ARGS__);
+#define MALLOC_FUNCS MALLOC_FUNCS_JEMALLOC
+#include "malloc_decls.h"
 
 #endif 
