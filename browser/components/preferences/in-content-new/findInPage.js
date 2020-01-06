@@ -244,8 +244,9 @@ var gSearchResultsPane = {
 
       
       for (let i = 0; i < rootPreferencesChildren.length; i++) {
-        if (rootPreferencesChildren[i].className != "header" &&
-            rootPreferencesChildren[i].className != "no-results-message" &&
+        if (!rootPreferencesChildren[i].classList.contains("header") &&
+            !rootPreferencesChildren[i].classList.contains("subcategory") &&
+            !rootPreferencesChildren[i].classList.contains("no-results-message") &&
             this.searchWithinNode(rootPreferencesChildren[i], this.query)) {
           rootPreferencesChildren[i].hidden = false;
           resultsFound = true;
