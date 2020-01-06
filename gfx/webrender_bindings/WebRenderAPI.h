@@ -195,9 +195,10 @@ public:
 
   void PushBuiltDisplayList(wr::BuiltDisplayList &dl);
 
-  void PushScrollLayer(const layers::FrameMetrics::ViewID& aScrollId,
-                       const wr::LayoutRect& aContentRect, 
-                       const wr::LayoutRect& aClipRect);
+  void DefineScrollLayer(const layers::FrameMetrics::ViewID& aScrollId,
+                         const wr::LayoutRect& aContentRect, 
+                         const wr::LayoutRect& aClipRect);
+  void PushScrollLayer(const layers::FrameMetrics::ViewID& aScrollId);
   void PopScrollLayer();
 
   void PushClipAndScrollInfo(const layers::FrameMetrics::ViewID& aScrollId,

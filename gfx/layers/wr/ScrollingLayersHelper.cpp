@@ -51,7 +51,7 @@ ScrollingLayersHelper::ScrollingLayersHelper(WebRenderLayer* aLayer,
       PushLayerLocalClip(aStackingContext);
     }
 
-    PushScrollLayer(fm, aStackingContext);
+    DefineAndPushScrollLayer(fm, aStackingContext);
   }
 
   
@@ -180,7 +180,7 @@ ScrollingLayersHelper::DefineAndPushScrollLayers(nsDisplayItem* aItem,
   
   
   
-  if (PushScrollLayer(metadata->GetMetrics(), aStackingContext)) {
+  if (DefineAndPushScrollLayer(metadata->GetMetrics(), aStackingContext)) {
     mPushedClips.push_back(wr::ScrollOrClipId(scrollId));
   }
 }
@@ -228,8 +228,8 @@ ScrollingLayersHelper::DefineAndPushChain(const DisplayItemClipChain* aChain,
 }
 
 bool
-ScrollingLayersHelper::PushScrollLayer(const FrameMetrics& aMetrics,
-                                       const StackingContextHelper& aStackingContext)
+ScrollingLayersHelper::DefineAndPushScrollLayer(const FrameMetrics& aMetrics,
+                                                const StackingContextHelper& aStackingContext)
 {
   if (!aMetrics.IsScrollable()) {
     return false;
@@ -251,9 +251,10 @@ ScrollingLayersHelper::PushScrollLayer(const FrameMetrics& aMetrics,
   
   
   contentRect.MoveTo(clipBounds.TopLeft());
-  mBuilder->PushScrollLayer(aMetrics.GetScrollId(),
+  mBuilder->DefineScrollLayer(aMetrics.GetScrollId(),
       aStackingContext.ToRelativeLayoutRect(contentRect),
       aStackingContext.ToRelativeLayoutRect(clipBounds));
+  mBuilder->PushScrollLayer(aMetrics.GetScrollId());
   return true;
 }
 
