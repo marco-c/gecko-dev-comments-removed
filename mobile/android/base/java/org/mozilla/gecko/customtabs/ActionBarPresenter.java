@@ -90,6 +90,22 @@ public class ActionBarPresenter {
 
 
 
+    public void onResume() {
+        mIdentityPopup.registerListeners();
+    }
+
+    
+
+
+
+    public void onPause() {
+        mIdentityPopup.unregisterListeners();
+    }
+
+    
+
+
+
 
     public void displayUrlOnly(@NonNull final String url) {
         updateCustomView(null, null, url);
