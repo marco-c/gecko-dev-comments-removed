@@ -68,6 +68,9 @@ assertEq(marks[3], 'gray', 'black map, gray key => gray value');
 
 
 
+if (typeof gczeal !== 'undefined')
+    gczeal(0);
+
 clearMarkObservers();
 
 
