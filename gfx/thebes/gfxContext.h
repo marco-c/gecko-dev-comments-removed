@@ -377,11 +377,16 @@ public:
 
     void PopClip();
 
+    enum ClipExtentsSpace {
+        eUserSpace = 0,
+        eDeviceSpace = 1,
+    };
+
     
 
 
 
-    gfxRect GetClipExtents() const;
+    gfxRect GetClipExtents(ClipExtentsSpace aSpace = eUserSpace) const;
 
     
 
