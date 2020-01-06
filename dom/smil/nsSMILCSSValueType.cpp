@@ -131,7 +131,9 @@ FinalizeServoAnimationValues(const RefPtr<RawServoAnimationValue>*& aValue1,
                              const RefPtr<RawServoAnimationValue>*& aValue2,
                              RefPtr<RawServoAnimationValue>& aZeroValueStorage)
 {
-  MOZ_ASSERT(aValue1 || aValue2, "expecting at least one non-null value");
+  if (!aValue1 && !aValue2) {
+    return false;
+  }
 
   
 
@@ -149,8 +151,9 @@ static bool
 FinalizeStyleAnimationValues(const StyleAnimationValue*& aValue1,
                              const StyleAnimationValue*& aValue2)
 {
-  MOZ_ASSERT(aValue1 || aValue2,
-             "expecting at least one non-null value");
+  if (!aValue1 && !aValue2) {
+    return false;
+  }
 
   if (!aValue1) {
     aValue1 = GetZeroValueForUnit(aValue2->GetUnit());
@@ -298,7 +301,7 @@ AddOrAccumulateForServo(nsSMILValue& aDest,
   MOZ_ASSERT(!aValueToAddWrapper || !aDestWrapper ||
              aValueToAddWrapper->mServoValues.Length() ==
                aDestWrapper->mServoValues.Length(),
-             "Both of values'length in the wrappers should be the same if "
+             "Both of values' length in the wrappers should be the same if "
              "both of them exist");
 
   for (size_t i = 0; i < len; i++) {
@@ -359,8 +362,15 @@ AddOrAccumulate(nsSMILValue& aDest, const nsSMILValue& aValueToAdd,
 
   ValueWrapper* destWrapper = ExtractValueWrapper(aDest);
   const ValueWrapper* valueToAddWrapper = ExtractValueWrapper(aValueToAdd);
-  MOZ_ASSERT(destWrapper || valueToAddWrapper,
-             "need at least one fully-initialized value");
+
+  
+  
+  
+  
+  
+  if (!destWrapper && !valueToAddWrapper) {
+    return false;
+  }
 
   nsCSSPropertyID property = valueToAddWrapper
                              ? valueToAddWrapper->mPropID
