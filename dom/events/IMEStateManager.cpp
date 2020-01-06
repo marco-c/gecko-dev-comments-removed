@@ -440,10 +440,27 @@ IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
     }
   }
 
-  if (sActiveIMEContentObserver &&
-      (aPresContext || !sActiveIMEContentObserver->KeepAliveDuringDeactive()) &&
-      !sActiveIMEContentObserver->IsManaging(aPresContext, aContent)) {
-    DestroyIMEContentObserver();
+  if (sActiveIMEContentObserver) {
+    
+    
+    
+    if (newTabParent) {
+      DestroyIMEContentObserver();
+    }
+    
+    
+    
+    else if (!aPresContext) {
+      if (!sActiveIMEContentObserver->KeepAliveDuringDeactive()) {
+        DestroyIMEContentObserver();
+      }
+    }
+    
+    
+    
+    else if (!sActiveIMEContentObserver->IsManaging(aPresContext, aContent)) {
+      DestroyIMEContentObserver();
+    }
   }
 
   if (!aPresContext) {
