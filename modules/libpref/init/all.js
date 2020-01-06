@@ -5914,9 +5914,5 @@ pref("toolkit.crashreporter.include_context_heap", true);
 
 pref("dom.noopener.newprocess.enabled", true);
 
-#ifdef XP_WIN
-pref("layers.omtp.enabled", true);
-#else
 pref("layers.omtp.enabled", false);
-#endif
 pref("layers.omtp.force-sync", false);
