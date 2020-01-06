@@ -105,7 +105,7 @@ function Test() {
   
   this.stateCounts = {};
   
-  this.deferNextTest = Promise.defer();
+  this.deferNextTest = PromiseUtils.defer();
 }
 
 Test.prototype = {
