@@ -9,7 +9,9 @@
 :root {
   --tab-toolbar-navbar-overlap: 0px;
   --navbar-tab-toolbar-highlight-overlap: 0px;
+%ifndef MOZ_PHOTON_THEME
   --space-above-tabbar: 0px;
+%endif
   --toolbarbutton-text-shadow: none;
   --backbutton-urlbar-overlap: 0px;
   
@@ -98,12 +100,13 @@ toolbar:-moz-lwtheme-darktext {
   --toolbarbutton-checkedhover-backgroundcolor: #d7d7d8;
 }
 
+%ifndef MOZ_PHOTON_THEME
 
 
 #main-window[tabsintitlebar][customizing] {
   --space-above-tabbar: 9px;
 }
-
+%endif
 
 .tab-background-middle {
   border-left-width: 0;
