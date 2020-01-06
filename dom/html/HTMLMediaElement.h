@@ -740,11 +740,6 @@ public:
 
   void NotifyCueDisplayStatesChanged();
 
-  bool GetHasUserInteraction()
-  {
-    return mHasUserInteraction;
-  }
-
   
   bool IsCurrentlyPlaying() const;
 
