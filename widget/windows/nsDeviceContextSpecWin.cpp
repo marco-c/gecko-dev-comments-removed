@@ -37,6 +37,7 @@
 #ifdef MOZ_ENABLE_SKIA_PDF
 #include "mozilla/gfx/PrintTargetSkPDF.h"
 #include "nsIUUIDGenerator.h"
+#include "mozilla/widget/PDFViaEMFPrintHelper.h"
 #endif
 
 static mozilla::LazyLogModule kWidgetPrintingLogMod("printing-widget");
@@ -44,6 +45,10 @@ static mozilla::LazyLogModule kWidgetPrintingLogMod("printing-widget");
 
 using namespace mozilla;
 using namespace mozilla::gfx;
+
+#ifdef MOZ_ENABLE_SKIA_PDF
+using namespace mozilla::widget;
+#endif
 
 static const wchar_t kDriverName[] =  L"WINSPOOL";
 
@@ -93,7 +98,11 @@ nsDeviceContextSpecWin::nsDeviceContextSpecWin()
   mDeviceName    = nullptr;
   mDevMode       = nullptr;
 #ifdef MOZ_ENABLE_SKIA_PDF
-  mPrintViaSkPDF = false;
+  mPrintViaSkPDF          = false;
+  mDC                     = NULL;
+  mPDFPageCount           = 0;
+  mPDFCurrentPageNum      = 0;
+  mPrintViaPDFInProgress  = false;
 #endif
 }
 
@@ -115,6 +124,11 @@ nsDeviceContextSpecWin::~nsDeviceContextSpecWin()
     psWin->SetDevMode(nullptr);
   }
 
+#ifdef MOZ_ENABLE_SKIA_PDF
+  if (mPrintViaSkPDF ) {
+    CleanupPrintViaPDF();
+  }
+#endif
   
   GlobalPrinters::GetInstance()->FreeGlobalPrinters();
 }
@@ -259,6 +273,40 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecWin::MakePrintTarget()
       auto skStream = MakeUnique<SkFILEWStream>(printFile.get());
       return PrintTargetSkPDF::CreateOrNull(Move(skStream), size);
     }
+
+    if (mDevMode) {
+      
+      
+      
+      
+      
+      nsresult rv =
+        NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(mPDFTempFile));
+      NS_ENSURE_SUCCESS(rv, nullptr);
+
+      nsCOMPtr<nsIUUIDGenerator> uuidGenerator =
+        do_GetService("@mozilla.org/uuid-generator;1", &rv);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return nullptr;
+      }
+      nsID uuid;
+      rv = uuidGenerator->GenerateUUIDInPlace(&uuid);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return nullptr;
+      }
+      char uuidChars[NSID_LENGTH];
+      uuid.ToProvidedString(uuidChars);
+
+      nsAutoCString printFile("tmp-printing");
+      printFile.Append(nsPrintfCString("%s.pdf", uuidChars));
+      rv = mPDFTempFile->AppendNative(printFile);
+      NS_ENSURE_SUCCESS(rv, nullptr);
+
+      nsAutoCString filePath;
+      mPDFTempFile->GetNativePath(filePath);
+      auto skStream = MakeUnique<SkFILEWStream>(filePath.get());
+      return PrintTargetSkPDF::CreateOrNull(Move(skStream), size);
+    }
   }
 #endif
 
@@ -312,6 +360,11 @@ nsDeviceContextSpecWin::GetDPI()
 {
   
   
+#ifdef MOZ_ENABLE_SKIA_PDF
+  if (mPrintViaSkPDF) {
+    return 72.0f;
+  }
+#endif
   return mOutputFormat == nsIPrintSettings::kOutputFormatPDF ? 72.0f : 144.0f;
 }
 
@@ -319,7 +372,11 @@ float
 nsDeviceContextSpecWin::GetPrintingScale()
 {
   MOZ_ASSERT(mPrintSettings);
-
+#ifdef MOZ_ENABLE_SKIA_PDF
+  if (mPrintViaSkPDF) {
+    return 1.0f; 
+  }
+#endif
   
   if (mOutputFormat == nsIPrintSettings::kOutputFormatPDF) {
     return 1.0f;
@@ -329,6 +386,145 @@ nsDeviceContextSpecWin::GetPrintingScale()
   int32_t resolution;
   mPrintSettings->GetResolution(&resolution);
   return float(resolution) / GetDPI();
+}
+
+#ifdef MOZ_ENABLE_SKIA_PDF
+void
+nsDeviceContextSpecWin::CleanupPrintViaPDF()
+{
+  if (mPDFPrintHelper) {
+    mPDFPrintHelper->CloseDocument();
+    mPDFPrintHelper = nullptr;
+    mPDFPageCount = 0;
+  }
+
+  if (mPDFTempFile) {
+    mPDFTempFile->Remove( false);
+    mPDFTempFile = nullptr;
+  }
+
+  if (mDC != NULL) {
+    if (mPrintViaPDFInProgress) {
+      ::EndDoc(mDC);
+      mPrintViaPDFInProgress = false;
+    }
+    ::DeleteDC(mDC);
+    mDC = NULL;
+  }
+}
+
+void
+nsDeviceContextSpecWin::FinishPrintViaPDF()
+{
+  MOZ_ASSERT(mDC != NULL);
+  MOZ_ASSERT(mPDFPrintHelper);
+  MOZ_ASSERT(mPDFTempFile);
+  MOZ_ASSERT(mPrintViaPDFInProgress);
+
+  bool isPrinted = false;
+  bool endPageSuccess = false;
+  if (::StartPage(mDC) > 0) {
+    isPrinted = mPDFPrintHelper->DrawPage(mDC, mPDFCurrentPageNum++,
+                                          ::GetDeviceCaps(mDC, HORZRES),
+                                          ::GetDeviceCaps(mDC, VERTRES));
+    if (::EndPage(mDC) > 0) {
+      endPageSuccess = true;
+    }
+  }
+
+  if (mPDFCurrentPageNum < mPDFPageCount && isPrinted && endPageSuccess) {
+    nsresult rv = NS_DispatchToCurrentThread(NewRunnableMethod(
+      "nsDeviceContextSpecWin::PrintPDFOnThread",
+      this,
+      &nsDeviceContextSpecWin::FinishPrintViaPDF));
+    if (NS_SUCCEEDED(rv)) {
+      return;
+    }
+  }
+
+  CleanupPrintViaPDF();
+}
+#endif
+
+nsresult
+nsDeviceContextSpecWin::BeginDocument(const nsAString& aTitle,
+                                      const nsAString& aPrintToFileName,
+                                      int32_t          aStartPage,
+                                      int32_t          aEndPage)
+{
+#ifdef MOZ_ENABLE_SKIA_PDF
+  if (mPrintViaSkPDF && (mOutputFormat != nsIPrintSettings::kOutputFormatPDF)) {
+    
+    
+    
+    
+    NS_WARNING_ASSERTION(mDriverName, "No driver!");
+    mDC = ::CreateDCW(mDriverName, mDeviceName, nullptr, mDevMode);
+    if (mDC == NULL) {
+      gfxCriticalError(gfxCriticalError::DefaultOptions(false))
+        << "Failed to create device context in GetSurfaceForPrinter";
+      return NS_ERROR_FAILURE;
+    }
+
+    const uint32_t DOC_TITLE_LENGTH = MAX_PATH - 1;
+    nsString title(aTitle);
+    nsString printToFileName(aPrintToFileName);
+    if (title.Length() > DOC_TITLE_LENGTH) {
+      title.SetLength(DOC_TITLE_LENGTH - 3);
+      title.AppendLiteral("...");
+    }
+
+    DOCINFOW di;
+    di.cbSize = sizeof(di);
+    di.lpszDocName = title.Length() > 0 ? title.get() : L"Mozilla Document";
+    di.lpszOutput = printToFileName.Length() > 0 ?
+                      printToFileName.get() : nullptr;
+    di.lpszDatatype = nullptr;
+    di.fwType = 0;
+
+    if (::StartDocW(mDC, &di) <= 0) {
+      
+      
+      return NS_ERROR_FAILURE;
+    }
+
+    mPrintViaPDFInProgress = true;
+  }
+#endif
+
+  return NS_OK;
+}
+
+nsresult
+nsDeviceContextSpecWin::EndDocument()
+{
+  nsresult rv = NS_OK;
+#ifdef MOZ_ENABLE_SKIA_PDF
+  if (mPrintViaSkPDF &&
+      mOutputFormat != nsIPrintSettings::kOutputFormatPDF &&
+      mPrintViaPDFInProgress) {
+
+    mPDFPrintHelper = MakeUnique<PDFViaEMFPrintHelper>();
+    rv = mPDFPrintHelper->OpenDocument(mPDFTempFile);
+    NS_ENSURE_SUCCESS(rv, rv);
+    mPDFPageCount = mPDFPrintHelper->GetPageCount();
+    if (mPDFPageCount <= 0) {
+      CleanupPrintViaPDF();
+      return NS_ERROR_FAILURE;
+    }
+    mPDFCurrentPageNum = 0;
+
+    rv = NS_DispatchToCurrentThread(NewRunnableMethod(
+      "nsDeviceContextSpecWin::PrintPDFOnThread",
+      this,
+      &nsDeviceContextSpecWin::FinishPrintViaPDF));
+    if (NS_FAILED(rv)) {
+      CleanupPrintViaPDF();
+      NS_WARNING("Failed to dispatch to the current thread!");
+    }
+  }
+#endif
+  return rv;
 }
 
 
