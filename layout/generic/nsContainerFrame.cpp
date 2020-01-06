@@ -1472,20 +1472,6 @@ nsContainerFrame::SetPropTableFrames(nsFrameList* aFrameList,
   SetProperty(aProperty, aFrameList);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void
 nsContainerFrame::PushChildren(nsIFrame* aFromChild,
                                nsIFrame* aPrevSibling)
@@ -1515,14 +1501,6 @@ nsContainerFrame::PushChildren(nsIFrame* aFromChild,
     SetOverflowFrames(tail);
   }
 }
-
-
-
-
-
-
-
-
 
 bool
 nsContainerFrame::MoveOverflowToChildList()
