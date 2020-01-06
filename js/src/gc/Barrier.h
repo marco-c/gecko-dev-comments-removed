@@ -318,8 +318,11 @@ struct InternalBarrierMethods<jsid>
 };
 
 
+
+
+
 template <typename T>
-class BarrieredBase
+class MOZ_NON_MEMMOVABLE BarrieredBase
 {
   protected:
     
