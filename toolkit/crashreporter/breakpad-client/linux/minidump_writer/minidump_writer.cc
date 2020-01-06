@@ -1247,7 +1247,7 @@ class MinidumpWriter {
   const int fd_;  
   const char* path_;  
 
-  const struct ucontext* const ucontext_;  
+  const ucontext_t* const ucontext_;  
 #if !defined(__ARM_EABI__) && !defined(__mips__)
   const google_breakpad::fpstate_t* const float_state_;  
 #endif

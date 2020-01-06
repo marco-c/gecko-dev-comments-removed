@@ -191,7 +191,7 @@ class ExceptionHandler {
   struct CrashContext {
     siginfo_t siginfo;
     pid_t tid;  
-    struct ucontext context;
+    ucontext_t context;
 #if !defined(__ARM_EABI__) && !defined(__mips__)
     
     
