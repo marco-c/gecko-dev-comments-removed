@@ -6361,12 +6361,37 @@ HTMLEditRules::GetHighestInlineParent(nsINode& aNode)
   if (!aNode.IsContent() || IsBlockNode(aNode)) {
     return nullptr;
   }
-  OwningNonNull<nsIContent> node = *aNode.AsContent();
 
-  while (node->GetParent() && IsInlineNode(*node->GetParent())) {
-    node = *node->GetParent();
+  if (NS_WARN_IF(!mHTMLEditor)) {
+    return nullptr;
   }
-  return node;
+
+  Element* host = mHTMLEditor->GetActiveEditingHost();
+  if (NS_WARN_IF(!host)) {
+    return nullptr;
+  }
+
+  
+  if (&aNode == host) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  if (NS_WARN_IF(!EditorUtils::IsDescendantOf(&aNode, host))) {
+    return nullptr;
+  }
+
+  
+  nsIContent* content = aNode.AsContent();
+  for (nsIContent* parent = content->GetParent();
+       parent && parent != host && IsInlineNode(*parent);
+       parent = parent->GetParent()) {
+    content = parent;
+  }
+  return content;
 }
 
 

@@ -378,6 +378,11 @@ protected:
   nsresult BustUpInlinesAtBRs(
              nsIContent& aNode,
              nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes);
+  
+
+
+
+
   nsIContent* GetHighestInlineParent(nsINode& aNode);
   void MakeTransitionList(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
                           nsTArray<bool>& aTransitionArray);
