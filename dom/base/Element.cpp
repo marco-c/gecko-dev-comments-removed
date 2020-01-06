@@ -1900,19 +1900,6 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
 
   
   
-  if (IsStyledByServo()) {
-    if (document) {
-      ClearServoData(document);
-    } else {
-      MOZ_ASSERT(!HasServoData());
-      MOZ_ASSERT(!HasAnyOfFlags(kAllServoDescendantBits | NODE_NEEDS_FRAME));
-    }
-  } else {
-    MOZ_ASSERT(!HasServoData());
-  }
-
-  
-  
   ResetEditableDescendantCount();
 
   if (aNullParent || !mParent->IsInShadowTree()) {
@@ -2003,6 +1990,19 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
     }
 
     shadowRoot->SetIsComposedDocParticipant(false);
+  }
+
+  
+  
+  if (IsStyledByServo()) {
+    if (document) {
+      ClearServoData(document);
+    } else {
+      MOZ_ASSERT(!HasServoData());
+      MOZ_ASSERT(!HasAnyOfFlags(kAllServoDescendantBits | NODE_NEEDS_FRAME));
+    }
+  } else {
+    MOZ_ASSERT(!HasServoData());
   }
 }
 
