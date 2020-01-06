@@ -84,6 +84,11 @@ FocusTarget::FocusTarget(nsIPresShell* aRootPresShell,
   
   nsCOMPtr<nsIPresShell> presShell = GetRetargetEventPresShell(aRootPresShell);
 
+  if (!presShell) {
+    mType = FocusTarget::eNone;
+    return;
+  }
+
   
   
   nsCOMPtr<nsIContent> scrollTarget = presShell->GetContentForScrolling();
