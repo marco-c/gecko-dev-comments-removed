@@ -18,6 +18,7 @@ use gecko_bindings::structs::{nsCSSKeyword, nsCSSProps_KTableEntry, nsCSSValue, 
 use gecko_bindings::structs::{nsMediaExpression_Range, nsMediaFeature};
 use gecko_bindings::structs::{nsMediaFeature_ValueType, nsMediaFeature_RangeType, nsMediaFeature_RequirementFlags};
 use gecko_bindings::structs::{nsPresContext, RawGeckoPresContextOwned};
+use gecko_bindings::structs::nsIAtom;
 use media_queries::MediaType;
 use parser::ParserContext;
 use properties::{ComputedValues, StyleBuilder};
@@ -31,7 +32,7 @@ use string_cache::Atom;
 use style_traits::{CSSPixel, DevicePixel};
 use style_traits::{ToCss, ParseError, StyleParseError};
 use style_traits::viewport::ViewportConstraints;
-use values::{CSSFloat, specified};
+use values::{CSSFloat, specified, CustomIdent};
 use values::computed::{self, ToComputedValue};
 
 
@@ -142,13 +143,14 @@ impl Device {
         unsafe {
             
             
-            
-            if self.pres_context().mMedium == atom!("screen").as_ptr() {
-                MediaType::Screen
+            let context = self.pres_context();
+            let medium_to_use = if context.mIsEmulatingMedia() != 0 {
+                context.mMediaEmulated.raw::<nsIAtom>()
             } else {
-                debug_assert!(self.pres_context().mMedium == atom!("print").as_ptr());
-                MediaType::Print
-            }
+                context.mMedium
+            };
+
+            MediaType(CustomIdent(Atom::from(medium_to_use)))
         }
     }
 
