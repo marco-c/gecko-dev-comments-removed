@@ -129,7 +129,6 @@ static float GetSampleRateForAudioContext(bool aIsOffline, float aSampleRate)
 
 AudioContext::AudioContext(nsPIDOMWindowInner* aWindow,
                            bool aIsOffline,
-                           AudioChannel aChannel,
                            uint32_t aNumberOfChannels,
                            uint32_t aLength,
                            float aSampleRate)
@@ -149,7 +148,7 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow,
 
   
   
-  mDestination = new AudioDestinationNode(this, aIsOffline, aChannel,
+  mDestination = new AudioDestinationNode(this, aIsOffline,
                                           aNumberOfChannels, aLength, aSampleRate);
 
   
@@ -207,8 +206,7 @@ AudioContext::Constructor(const GlobalObject& aGlobal,
   }
 
   RefPtr<AudioContext> object =
-    new AudioContext(window, false,
-                     AudioChannelService::GetDefaultAudioChannel());
+    new AudioContext(window, false);
   aRv = object->Init();
   if (NS_WARN_IF(aRv.Failed())) {
      return nullptr;
@@ -217,18 +215,6 @@ AudioContext::Constructor(const GlobalObject& aGlobal,
   RegisterWeakMemoryReporter(object);
 
   return object.forget();
-}
-
- already_AddRefed<AudioContext>
-AudioContext::Constructor(const GlobalObject& aGlobal,
-                          const OfflineAudioContextOptions& aOptions,
-                          ErrorResult& aRv)
-{
-  return Constructor(aGlobal,
-                     aOptions.mNumberOfChannels,
-                     aOptions.mLength,
-                     aOptions.mSampleRate,
-                     aRv);
 }
 
  already_AddRefed<AudioContext>
@@ -256,7 +242,6 @@ AudioContext::Constructor(const GlobalObject& aGlobal,
 
   RefPtr<AudioContext> object = new AudioContext(window,
                                                    true,
-                                                   AudioChannel::Normal,
                                                    aNumberOfChannels,
                                                    aLength,
                                                    aSampleRate);

@@ -526,8 +526,6 @@ private:
   
   AutoTArray<StreamAndPromiseForOperation, 1> mPromisesForOperation;
   
-  dom::AudioChannel mAudioChannel;
-  
   bool mAddedMixer;
 
   

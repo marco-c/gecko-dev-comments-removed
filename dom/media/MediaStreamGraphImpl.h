@@ -119,7 +119,6 @@ public:
 
   explicit MediaStreamGraphImpl(GraphDriverType aGraphDriverRequested,
                                 TrackRate aSampleRate,
-                                dom::AudioChannel aChannel,
                                 AbstractThread* aWindow);
 
   
@@ -820,8 +819,6 @@ public:
   RefPtr<AudioOutputObserver> mFarendObserverRef;
 #endif
 
-  dom::AudioChannel AudioChannel() const { return mAudioChannel; }
-
   
   nsCOMPtr<nsITimer> mShutdownTimer;
 
@@ -855,8 +852,6 @@ private:
 
   bool mCanRunMessagesSynchronously;
 #endif
-
-  dom::AudioChannel mAudioChannel;
 };
 
 } 

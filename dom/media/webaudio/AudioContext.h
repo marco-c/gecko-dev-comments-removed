@@ -7,8 +7,6 @@
 #ifndef AudioContext_h_
 #define AudioContext_h_
 
-#include "mozilla/dom/AudioChannelBinding.h"
-#include "mozilla/dom/OfflineAudioContextBinding.h"
 #include "MediaBufferDecoder.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
@@ -122,7 +120,6 @@ class AudioContext final : public DOMEventTargetHelper,
 {
   AudioContext(nsPIDOMWindowInner* aParentWindow,
                bool aIsOffline,
-               AudioChannel aChannel,
                uint32_t aNumberOfChannels = 0,
                uint32_t aLength = 0,
                float aSampleRate = 0.0f);
@@ -154,12 +151,6 @@ public:
   
   static already_AddRefed<AudioContext>
   Constructor(const GlobalObject& aGlobal, ErrorResult& aRv);
-
-  
-  static already_AddRefed<AudioContext>
-  Constructor(const GlobalObject& aGlobal,
-              const OfflineAudioContextOptions& aOptions,
-              ErrorResult& aRv);
 
   
   static already_AddRefed<AudioContext>
