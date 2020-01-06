@@ -85,9 +85,13 @@ public:
   virtual JSObject* WrapNode(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
   
-  
 
-  void SetValue(const nsAString& aValue, ErrorResult& aRv);
+  void GetValue(nsString& val, nsIPrincipal&)
+  {
+    GetValue(val);
+  }
+
+  void SetValue(const nsAString& aValue, nsIPrincipal* aTriggeringPrincipal, ErrorResult& aRv);
 
   bool Specified() const;
 

@@ -301,7 +301,9 @@ nsSVGElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
 nsresult
 nsSVGElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                            const nsAttrValue* aValue,
-                           const nsAttrValue* aOldValue, bool aNotify)
+                           const nsAttrValue* aOldValue,
+                           nsIPrincipal* aSubjectPrincipal,
+                           bool aNotify)
 {
   
   
@@ -332,7 +334,7 @@ nsSVGElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
   }
 
   return nsSVGElementBase::AfterSetAttr(aNamespaceID, aName, aValue, aOldValue,
-                                        aNotify);
+                                        aSubjectPrincipal, aNotify);
 }
 
 bool
@@ -1495,7 +1497,7 @@ nsSVGElement::DidChangeValue(nsAtom* aName,
   
   
   SetAttrAndNotify(kNameSpaceID_None, aName, nullptr, &aEmptyOrOldValue,
-                   aNewValue, modType, hasListeners, kNotifyDocumentObservers,
+                   aNewValue, nullptr, modType, hasListeners, kNotifyDocumentObservers,
                    kCallAfterSetAttr, document, updateBatch);
 }
 

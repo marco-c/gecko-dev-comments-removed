@@ -335,10 +335,11 @@ SVGAElement::IntrinsicState() const
 nsresult
 SVGAElement::SetAttr(int32_t aNameSpaceID, nsAtom* aName,
                      nsAtom* aPrefix, const nsAString& aValue,
+                     nsIPrincipal* aSubjectPrincipal,
                      bool aNotify)
 {
   nsresult rv = SVGAElementBase::SetAttr(aNameSpaceID, aName, aPrefix,
-                                         aValue, aNotify);
+                                         aValue, aSubjectPrincipal, aNotify);
 
   
   

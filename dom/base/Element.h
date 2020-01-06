@@ -691,12 +691,7 @@ public:
   already_AddRefed<mozilla::dom::NodeInfo>
   GetExistingAttrNameFromQName(const nsAString& aStr) const;
 
-  MOZ_ALWAYS_INLINE  
-  nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName,
-                   const nsAString& aValue, bool aNotify)
-  {
-    return SetAttr(aNameSpaceID, aName, nullptr, aValue, aNotify);
-  }
+  using nsIContent::SetAttr;
 
   
 
@@ -758,7 +753,8 @@ public:
   nsresult SetSingleClassFromParser(nsAtom* aSingleClassName);
 
   virtual nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
-                           const nsAString& aValue, bool aNotify) override;
+                           const nsAString& aValue, nsIPrincipal* aSubjectPrincipal,
+                           bool aNotify) override;
   
   
   nsresult SetParsedAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
@@ -929,11 +925,18 @@ public:
                       const nsAString& aLocalName,
                       nsAString& aReturn);
   void SetAttribute(const nsAString& aName, const nsAString& aValue,
-                    ErrorResult& aError);
+                    nsIPrincipal* aTriggeringPrincipal, ErrorResult& aError);
   void SetAttributeNS(const nsAString& aNamespaceURI,
                       const nsAString& aLocalName,
                       const nsAString& aValue,
+                      nsIPrincipal* aTriggeringPrincipal,
                       ErrorResult& aError);
+  void SetAttribute(const nsAString& aName, const nsAString& aValue,
+                    ErrorResult& aError)
+  {
+    SetAttribute(aName, aValue, nullptr, aError);
+  }
+
   void RemoveAttribute(const nsAString& aName,
                        ErrorResult& aError);
   void RemoveAttributeNS(const nsAString& aNamespaceURI,
@@ -1399,6 +1402,11 @@ public:
     aError = SetAttr(kNameSpaceID_None, aAttr, aValue, true);
   }
 
+  void SetAttr(nsAtom* aAttr, const nsAString& aValue, nsIPrincipal& aTriggeringPrincipal, ErrorResult& aError)
+  {
+    aError = nsIContent::SetAttr(kNameSpaceID_None, aAttr, aValue, &aTriggeringPrincipal, true);
+  }
+
   
 
 
@@ -1485,11 +1493,20 @@ protected:
 
 
 
+
+
+
+
+
+
+
+
   nsresult SetAttrAndNotify(int32_t aNamespaceID,
                             nsAtom* aName,
                             nsAtom* aPrefix,
                             const nsAttrValue* aOldValue,
                             nsAttrValue& aParsedValue,
+                            nsIPrincipal* aMaybeScriptedPrincipal,
                             uint8_t aModType,
                             bool aFireMutation,
                             bool aNotify,
@@ -1581,11 +1598,19 @@ protected:
 
 
 
+
+
+
+
+
+
   
   
   virtual nsresult AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                 const nsAttrValue* aValue,
-                                const nsAttrValue* aOldValue, bool aNotify)
+                                const nsAttrValue* aOldValue,
+                                nsIPrincipal* aMaybeScriptedPrincipal,
+                                bool aNotify)
   {
     return NS_OK;
   }
@@ -1968,7 +1993,7 @@ NS_IMETHOD SetAttribute(const nsAString& name,                                \
                         const nsAString& value) override                      \
 {                                                                             \
   mozilla::ErrorResult rv;                                                    \
-  Element::SetAttribute(name, value, rv);                                     \
+  Element::SetAttribute(name, value, nullptr, rv);                            \
   return rv.StealNSResult();                                                  \
 }                                                                             \
 using Element::HasAttribute;                                                  \

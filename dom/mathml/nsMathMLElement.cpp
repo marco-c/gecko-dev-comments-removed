@@ -1085,7 +1085,9 @@ nsMathMLElement::GetHrefURI() const
 nsresult
 nsMathMLElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                               const nsAttrValue* aValue,
-                              const nsAttrValue* aOldValue, bool aNotify)
+                              const nsAttrValue* aOldValue,
+                              nsIPrincipal* aSubjectPrincipal,
+                              bool aNotify)
 {
   
   
@@ -1103,7 +1105,7 @@ nsMathMLElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   }
 
   return nsMathMLElementBase::AfterSetAttr(aNameSpaceID, aName, aValue,
-                                           aOldValue, aNotify);
+                                           aOldValue, aSubjectPrincipal, aNotify);
 }
 
 JSObject*
