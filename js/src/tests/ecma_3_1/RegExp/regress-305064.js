@@ -4,7 +4,6 @@
 
 
 
-
 var BUGNUMBER = 305064;
 var summary = 'CharacterClassEscape \\s';
 var actual = '';
@@ -28,7 +27,6 @@ function test()
     {s : '\u0020', t : 'SPACE'},
     {s : '\u00A0', t : 'NO-BREAK SPACE'},
     {s : '\u1680', t : 'OGHAM SPACE MARK'},
-    {s : '\u180E', t : 'MONGOLIAN VOWEL SEPARATOR'},
     {s : '\u2000', t : 'EN QUAD'},
     {s : '\u2001', t : 'EM QUAD'},
     {s : '\u2002', t : 'EN SPACE'},
@@ -47,7 +45,6 @@ function test()
     {s : '\u000D', t : 'CARRIAGE RETURN'},
     {s : '\u2028', t : 'LINE SEPARATOR'},
     {s : '\u2029', t : 'PARAGRAPH SEPARATOR'},
-    {s : '\u200B', t : 'ZERO WIDTH SPACE (category Cf)'}
     ];
 
   for (var i = 0; i < whitespace.length; ++i)
