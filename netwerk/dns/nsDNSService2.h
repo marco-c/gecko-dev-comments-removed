@@ -59,8 +59,8 @@ private:
     
     
     
-    nsAdoptingCString                         mIPv4OnlyDomains;
-    nsAdoptingCString                         mForceResolve;
+    nsCString                                 mIPv4OnlyDomains;
+    nsCString                                 mForceResolve;
     bool                                      mDisableIPv6;
     bool                                      mDisablePrefetch;
     bool                                      mBlockDotOnion;
