@@ -17,15 +17,19 @@
 
 namespace mozilla {
 
-class IndiceWrapper {
+
+
+class IndiceWrapper
+{
 public:
-  virtual size_t Length() const = 0;
+  size_t Length() const;
 
-  
-  
-  virtual bool GetIndice(size_t aIndex, Index::Indice& aIndice) const = 0;
+  bool GetIndice(size_t aIndex, Index::Indice& aIndice) const;
 
-  virtual ~IndiceWrapper() {}
+  explicit IndiceWrapper(mp4parse_byte_data& aRustIndice);
+
+protected:
+  mp4parse_byte_data mIndice;
 };
 
 struct FreeMP4Parser { void operator()(mp4parse_parser* aPtr) { mp4parse_free(aPtr); } };
