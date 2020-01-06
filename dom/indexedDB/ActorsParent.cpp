@@ -9135,9 +9135,14 @@ public:
     
     
     
-    
     mContentType.Truncate();
-    mIsFile = false;
+
+    
+    
+    
+    
+    
+    mIsFile = true;
   }
 
   bool

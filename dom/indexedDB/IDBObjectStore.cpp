@@ -639,8 +639,18 @@ public:
         NullString(), aData.type, aData.size, INT64_MAX);
       MOZ_ASSERT(!aFile.mBlob->IsFile());
 
+      
+      
+      
+      
+      
+      
+
+      RefPtr<Blob> blob =
+        Blob::Create(aFile.mBlob->GetParentObject(), aFile.mBlob->Impl());
+      MOZ_ASSERT(blob);
       JS::Rooted<JS::Value> wrappedBlob(aCx);
-      if (!ToJSValue(aCx, aFile.mBlob, &wrappedBlob)) {
+      if (!ToJSValue(aCx, blob, &wrappedBlob)) {
         return false;
       }
 
