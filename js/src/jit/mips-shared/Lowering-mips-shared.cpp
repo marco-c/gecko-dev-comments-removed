@@ -620,7 +620,7 @@ LIRGeneratorMIPSShared::visitAtomicExchangeTypedArrayElement(MAtomicExchangeType
 }
 
 void
-LIRGeneratorMIPSShared::visitAsmJSCompareExchangeHeap(MAsmJSCompareExchangeHeap* ins)
+LIRGeneratorMIPSShared::visitWasmCompareExchangeHeap(MWasmCompareExchangeHeap* ins)
 {
     MOZ_ASSERT(ins->access().type() < Scalar::Float32);
     MOZ_ASSERT(ins->access().offset() == 0);
@@ -628,19 +628,19 @@ LIRGeneratorMIPSShared::visitAsmJSCompareExchangeHeap(MAsmJSCompareExchangeHeap*
     MDefinition* base = ins->base();
     MOZ_ASSERT(base->type() == MIRType::Int32);
 
-    LAsmJSCompareExchangeHeap* lir =
-        new(alloc()) LAsmJSCompareExchangeHeap(useRegister(base),
-                                               useRegister(ins->oldValue()),
-                                               useRegister(ins->newValue()),
-                                                temp(),
-                                                temp(),
-                                                temp());
+    LWasmCompareExchangeHeap* lir =
+        new(alloc()) LWasmCompareExchangeHeap(useRegister(base),
+                                              useRegister(ins->oldValue()),
+                                              useRegister(ins->newValue()),
+                                               temp(),
+                                               temp(),
+                                               temp());
 
     define(lir, ins);
 }
 
 void
-LIRGeneratorMIPSShared::visitAsmJSAtomicExchangeHeap(MAsmJSAtomicExchangeHeap* ins)
+LIRGeneratorMIPSShared::visitWasmAtomicExchangeHeap(MWasmAtomicExchangeHeap* ins)
 {
     MOZ_ASSERT(ins->base()->type() == MIRType::Int32);
     MOZ_ASSERT(ins->access().offset() == 0);
@@ -652,16 +652,16 @@ LIRGeneratorMIPSShared::visitAsmJSAtomicExchangeHeap(MAsmJSAtomicExchangeHeap* i
     
     
 
-    LAsmJSAtomicExchangeHeap* lir =
-        new(alloc()) LAsmJSAtomicExchangeHeap(base, value,
-                                               temp(),
-                                               temp(),
-                                               temp());
+    LWasmAtomicExchangeHeap* lir =
+        new(alloc()) LWasmAtomicExchangeHeap(base, value,
+                                              temp(),
+                                              temp(),
+                                              temp());
     define(lir, ins);
 }
 
 void
-LIRGeneratorMIPSShared::visitAsmJSAtomicBinopHeap(MAsmJSAtomicBinopHeap* ins)
+LIRGeneratorMIPSShared::visitWasmAtomicBinopHeap(MWasmAtomicBinopHeap* ins)
 {
     MOZ_ASSERT(ins->access().type() < Scalar::Float32);
     MOZ_ASSERT(ins->access().offset() == 0);
@@ -670,25 +670,25 @@ LIRGeneratorMIPSShared::visitAsmJSAtomicBinopHeap(MAsmJSAtomicBinopHeap* ins)
     MOZ_ASSERT(base->type() == MIRType::Int32);
 
     if (!ins->hasUses()) {
-        LAsmJSAtomicBinopHeapForEffect* lir =
-            new(alloc()) LAsmJSAtomicBinopHeapForEffect(useRegister(base),
-                                                        useRegister(ins->value()),
-                                                         temp(),
-                                                         temp(),
-                                                         temp(),
-                                                         temp());
+        LWasmAtomicBinopHeapForEffect* lir =
+            new(alloc()) LWasmAtomicBinopHeapForEffect(useRegister(base),
+                                                       useRegister(ins->value()),
+                                                        temp(),
+                                                        temp(),
+                                                        temp(),
+                                                        temp());
         add(lir, ins);
         return;
     }
 
-    LAsmJSAtomicBinopHeap* lir =
-        new(alloc()) LAsmJSAtomicBinopHeap(useRegister(base),
-                                           useRegister(ins->value()),
-                                            LDefinition::BogusTemp(),
-                                            temp(),
-                                            temp(),
-                                            temp(),
-                                            temp());
+    LWasmAtomicBinopHeap* lir =
+        new(alloc()) LWasmAtomicBinopHeap(useRegister(base),
+                                          useRegister(ins->value()),
+                                           LDefinition::BogusTemp(),
+                                           temp(),
+                                           temp(),
+                                           temp(),
+                                           temp());
 
     define(lir, ins);
 }
