@@ -6850,11 +6850,14 @@ CreateFunctionInfo(JSContext* cx,
                    HandleObject returnType,
                    const HandleValueArray& args)
 {
-  auto fninfo = cx->make_unique<FunctionInfo>();
+  FunctionInfo* fninfo(cx->new_<FunctionInfo>());
   if (!fninfo) {
     JS_ReportOutOfMemory(cx);
     return false;
   }
+
+  
+  JS_SetReservedSlot(typeObj, SLOT_FNINFO, PrivateValue(fninfo));
 
   ffi_abi abi;
   if (!GetABI(cx, abiType, &abi)) {
@@ -6910,12 +6913,14 @@ CreateFunctionInfo(JSContext* cx,
     fninfo->mFFITypes.infallibleAppend(ffiType);
   }
 
-  
-  if (!fninfo->mIsVariadic && !PrepareCIF(cx, fninfo.get()))
+  if (fninfo->mIsVariadic) {
+    
+    return true;
+  }
+
+  if (!PrepareCIF(cx, fninfo))
     return false;
 
-  
-  JS_SetReservedSlot(typeObj, SLOT_FNINFO, PrivateValue(fninfo.release()));
   return true;
 }
 
