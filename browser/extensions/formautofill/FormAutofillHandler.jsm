@@ -499,6 +499,30 @@ class FormAutofillSection {
 
 
 
+  clearPopulatedForm(focusedInput) {
+    let fieldDetails = this.getFieldDetailsByElement(focusedInput);
+    for (let fieldDetail of fieldDetails) {
+      let element = fieldDetail.elementWeakRef.get();
+      if (!element) {
+        log.warn(fieldDetail.fieldName, "is unreachable");
+        continue;
+      }
+
+      
+      if (fieldDetail.state == FIELD_STATES.AUTO_FILLED &&
+          element instanceof Ci.nsIDOMHTMLInputElement) {
+        element.setUserInput("");
+      }
+      this.changeFieldState(fieldDetail, FIELD_STATES.NORMAL);
+    }
+  }
+
+  
+
+
+
+
+
 
 
   changeFieldState(fieldDetail, nextState) {
@@ -871,6 +895,11 @@ class FormAutofillHandler {
   clearPreviewedFormFields(focusedInput) {
     let section = this.getSectionByElement(focusedInput);
     section.clearPreviewedFormFields(focusedInput);
+  }
+
+  clearPopulatedForm(focusedInput) {
+    let section = this.getSectionByElement(focusedInput);
+    section.clearPopulatedForm(focusedInput);
   }
 
   getFilledRecordGUID(focusedInput) {
