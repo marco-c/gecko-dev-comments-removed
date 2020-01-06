@@ -795,6 +795,13 @@ struct arena_s {
 	arena_bin_t		bins[1]; 
 };
 
+enum ChunkType {
+  UNKNOWN_CHUNK,
+  ARENA_CHUNK,    
+  HUGE_CHUNK,     
+  RECYCLED_CHUNK, 
+};
+
 
 
 
@@ -1027,7 +1034,7 @@ static size_t	opt_chunk_2pow = CHUNK_2POW_DEFAULT;
 
 
 static void	*chunk_alloc(size_t size, size_t alignment, bool base, bool zero);
-static void	chunk_dealloc(void *chunk, size_t size);
+static void	chunk_dealloc(void *chunk, size_t size, enum ChunkType type);
 static arena_t	*arenas_extend();
 static void	*huge_malloc(size_t size, bool zero);
 static void	*huge_palloc(size_t size, size_t alignment, bool zero);
@@ -2021,7 +2028,7 @@ chunk_recycle(extent_tree_t *chunks_szad, extent_tree_t *chunks_ad, size_t size,
 			malloc_mutex_unlock(&chunks_mtx);
 			node = base_node_alloc();
 			if (!node) {
-				chunk_dealloc(ret, size);
+				chunk_dealloc(ret, size, RECYCLED_CHUNK);
 				return nullptr;
 			}
 			malloc_mutex_lock(&chunks_mtx);
@@ -2098,7 +2105,7 @@ RETURN:
 
 	if (ret && base == false) {
 		if (malloc_rtree_set(chunk_rtree, (uintptr_t)ret, ret)) {
-			chunk_dealloc(ret, size);
+			chunk_dealloc(ret, size, UNKNOWN_CHUNK);
 			return nullptr;
 		}
 	}
@@ -2109,12 +2116,18 @@ RETURN:
 
 static void
 chunk_record(extent_tree_t *chunks_szad, extent_tree_t *chunks_ad, void *chunk,
-    size_t size)
+    size_t size, enum ChunkType type)
 {
 	bool unzeroed;
 	extent_node_t *xnode, *node, *prev, *xprev, key;
 
 	unzeroed = pages_purge(chunk, size);
+
+	
+
+	if (unzeroed && type != ARENA_CHUNK && type != RECYCLED_CHUNK) {
+		return;
+	}
 
 	
 
@@ -2209,7 +2222,7 @@ chunk_dalloc_mmap(void *chunk, size_t size)
 #undef CAN_RECYCLE
 
 static void
-chunk_dealloc(void *chunk, size_t size)
+chunk_dealloc(void *chunk, size_t size, enum ChunkType type)
 {
 
 	MOZ_ASSERT(chunk);
@@ -2220,7 +2233,7 @@ chunk_dealloc(void *chunk, size_t size)
 	malloc_rtree_set(chunk_rtree, (uintptr_t)chunk, nullptr);
 
 	if (chunk_dalloc_mmap(chunk, size))
-		chunk_record(&chunks_szad_mmap, &chunks_ad_mmap, chunk, size);
+		chunk_record(&chunks_szad_mmap, &chunks_ad_mmap, chunk, size, type);
 }
 
 
@@ -2704,7 +2717,7 @@ arena_chunk_dealloc(arena_t *arena, arena_chunk_t *chunk)
 		LinkedList_Remove(&arena->spare->chunks_madvised_elem);
 #endif
 
-		chunk_dealloc((void *)arena->spare, chunksize);
+		chunk_dealloc((void *)arena->spare, chunksize, ARENA_CHUNK);
 		arena->stats.mapped -= chunksize;
 		arena->stats.committed -= arena_chunk_header_npages;
 	}
@@ -4222,7 +4235,7 @@ huge_dalloc(void *ptr)
 	malloc_mutex_unlock(&huge_mtx);
 
 	
-	chunk_dealloc(node->addr, CHUNK_CEILING(node->size));
+	chunk_dealloc(node->addr, CHUNK_CEILING(node->size), HUGE_CHUNK);
 
 	base_node_dealloc(node);
 }
