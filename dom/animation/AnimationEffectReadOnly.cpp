@@ -186,7 +186,7 @@ AnimationEffectReadOnly::GetComputedTimingAt(
   
   
   result.mCurrentIteration =
-    IsInfinite(result.mIterations) &&
+    result.mIterations >= UINT64_MAX &&
       result.mPhase == ComputedTiming::AnimationPhase::After
     ? UINT64_MAX 
                  
