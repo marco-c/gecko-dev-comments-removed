@@ -120,7 +120,7 @@ public final class WaitHelper {
 
         
         final EventExpecter[] eventExpecters = new EventExpecter[] {
-            sActions.expectGlobalEvent(Actions.EventType.GECKO, "Content:DOMContentLoaded"),
+            sActions.expectGlobalEvent(Actions.EventType.UI, "Content:DOMContentLoaded"),
             sActions.expectGlobalEvent(Actions.EventType.UI, "Content:DOMTitleChanged")
         };
 
