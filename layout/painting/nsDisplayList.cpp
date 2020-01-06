@@ -7318,6 +7318,23 @@ nsDisplayStickyPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
 {
   StickyScrollContainer* stickyScrollContainer = StickyScrollContainer::GetStickyScrollContainerForFrame(mFrame);
   if (stickyScrollContainer) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!stickyScrollContainer->ScrollFrame()->MayBeAsynchronouslyScrolled()) {
+      stickyScrollContainer = nullptr;
+    }
+  }
+
+  if (stickyScrollContainer) {
     float auPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
 
     bool snap;
