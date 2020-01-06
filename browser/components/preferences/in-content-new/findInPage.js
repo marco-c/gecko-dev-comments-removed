@@ -293,17 +293,7 @@ var gSearchResultsPane = {
       let labelResult = this.stringMatchesFilters(nodeObject.getAttribute("label"), searchPhrase);
 
       
-      if (labelResult && nodeObject.tagName === "button") {
-        this.listSearchTooltips.push(nodeObject);
-      }
-
-      
       let valueResult = this.stringMatchesFilters(nodeObject.getAttribute("value"), searchPhrase);
-
-      
-      if (valueResult && nodeObject.tagName === "button") {
-        this.listSearchTooltips.push(nodeObject);
-      }
 
       
       let keywordsResult = this.stringMatchesFilters(nodeObject.getAttribute("searchkeywords"), searchPhrase);
