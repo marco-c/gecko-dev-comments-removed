@@ -2656,9 +2656,6 @@ pref("services.blocklist.signing.enforced", true);
 pref("services.blocklist.update_enabled", true);
 
 
-pref("security.onecrl.via.amo", false);
-
-
 
 
 

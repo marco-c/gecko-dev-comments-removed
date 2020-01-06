@@ -282,8 +282,6 @@ add_task(async function oneCRLTests() {
   
   
   
-  Services.prefs.setBoolPref("security.onecrl.via.amo", false);
-  
   Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds",
                             108000);
   
@@ -299,8 +297,6 @@ add_task(async function oneCRLTests() {
   clearOCSPCache();
   
   
-  Services.prefs.setBoolPref("security.onecrl.via.amo", false);
-  
   Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds",
                             108000);
   
@@ -310,7 +306,6 @@ add_task(async function oneCRLTests() {
   await ensureOneCRLSkipsOCSPForIntermediates("no-ocsp-int-path");
   await ensureOneCRLSkipsOCSPForIntermediates("test-oid-path");
 
-  Services.prefs.clearUserPref("security.onecrl.via.amo");
   Services.prefs.clearUserPref("security.onecrl.maximum_staleness_in_seconds");
   Services.prefs.clearUserPref("services.blocklist.onecrl.checked");
   Services.prefs.clearUserPref(
