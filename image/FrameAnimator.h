@@ -34,6 +34,7 @@ public:
     , mFirstFrameTimeout(FrameTimeout::FromRawMilliseconds(0))
     , mAnimationMode(aAnimationMode)
     , mHasBeenDecoded(false)
+    , mHasRequestedDecode(false)
     , mIsCurrentlyDecoded(false)
     , mCompositedFrameInvalid(false)
     , mDiscarded(false)
@@ -65,6 +66,11 @@ public:
 
 
   bool GetHasBeenDecoded() { return mHasBeenDecoded; }
+
+  
+
+
+  bool GetHasRequestedDecode() { return mHasRequestedDecode; }
 
   
 
@@ -220,6 +226,9 @@ private:
 
   
   bool mHasBeenDecoded;
+
+  
+  bool mHasRequestedDecode;
 
   
   bool mIsCurrentlyDecoded;
