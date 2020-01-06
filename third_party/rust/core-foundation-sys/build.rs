@@ -8,5 +8,7 @@
 
 
 fn main() {
-    println!("cargo:rustc-link-lib=framework=CoreFoundation");
+    if std::env::var("TARGET").unwrap().contains("-apple") {
+        println!("cargo:rustc-link-lib=framework=CoreFoundation");
+    }
 }

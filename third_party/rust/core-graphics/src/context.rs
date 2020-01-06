@@ -28,8 +28,9 @@ pub enum CGTextDrawingMode {
     CGTextClip
 }
 
-#[repr(C)]
-pub struct __CGContext;
+
+
+pub enum __CGContext {}
 
 pub type CGContextRef = *const __CGContext;
 

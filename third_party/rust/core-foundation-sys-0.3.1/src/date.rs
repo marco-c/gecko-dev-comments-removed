@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+pub type CFTimeInterval = f64;
+pub type CFAbsoluteTime = CFTimeInterval;
+
+extern {
+    pub fn CFAbsoluteTimeGetCurrent() -> CFAbsoluteTime;
+}

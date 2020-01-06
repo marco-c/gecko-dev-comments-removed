@@ -26,8 +26,9 @@ pub type CGDataProviderReleaseBytePointerCallback = Option<unsafe extern fn (*mu
 pub type CGDataProviderReleaseDataCallback = Option<unsafe extern fn (*mut c_void, *const c_void, size_t)>;
 pub type CGDataProviderGetBytesAtPositionCallback = Option<unsafe extern fn (*mut c_void, *mut c_void, off_t, size_t)>;
 
-#[repr(C)]
-pub struct __CGDataProvider;
+
+
+pub enum __CGDataProvider {}
 
 pub type CGDataProviderRef = *const __CGDataProvider;
 

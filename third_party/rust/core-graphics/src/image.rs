@@ -27,8 +27,9 @@ pub enum CGImageByteOrderInfo {
     CGImageByteOrder32Big = (4 << 12)
 }
 
-#[repr(C)]
-pub struct __CGImage;
+
+
+pub enum __CGImage {}
 
 pub type CGImageRef = *const __CGImage;
 

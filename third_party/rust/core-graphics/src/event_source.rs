@@ -12,8 +12,9 @@ pub enum CGEventSourceStateID {
     HIDSystemState = 1,
 }
 
-#[repr(C)]
-pub struct __CGEventSource;
+
+
+pub enum __CGEventSource {}
 
 pub type CGEventSourceRef = *const __CGEventSource;
 

@@ -28,7 +28,9 @@ pub type CGFloat = libc::c_float;
 
 pub type CGError = libc::int32_t;
 
-pub type CGAffineTransform = ();
+
+
+pub enum CGAffineTransform {}
 
 pub const kCGImageAlphaNone: u32 = 0;
 pub const kCGImageAlphaPremultipliedLast: u32 = 1;

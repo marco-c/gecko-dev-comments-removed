@@ -17,8 +17,9 @@ use std::ptr;
 
 pub type CGGlyph = libc::c_ushort;
 
-#[repr(C)]
-pub struct __CGFont;
+
+
+pub enum __CGFont {}
 
 pub type CGFontRef = *const __CGFont;
 

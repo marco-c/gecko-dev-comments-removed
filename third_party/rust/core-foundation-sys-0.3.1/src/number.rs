@@ -37,9 +37,8 @@ pub static kCFNumberFloat64Type:   CFNumberType = 6;
 
 
 
-
-
-pub enum __CFNumber {}
+#[repr(C)]
+pub struct __CFNumber;
 
 pub type CFNumberRef = *const __CFNumber;
 
