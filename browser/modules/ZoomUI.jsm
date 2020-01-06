@@ -44,6 +44,12 @@ function onZoomChange(event) {
     
     let gBrowser = event.currentTarget.gBrowser;
     let topDoc = event.target.defaultView.top.document;
+    if (!topDoc.documentElement) {
+      
+      
+      
+      return;
+    }
     browser = gBrowser.getBrowserForDocument(topDoc);
   } else {
     browser = event.originalTarget;
