@@ -388,12 +388,6 @@ gfxWindowsPlatform::CanUseHardwareVideoDecoding()
 bool
 gfxWindowsPlatform::InitDWriteSupport()
 {
-  
-  
-  if (!Factory::SupportsD2D1()) {
-    return false;
-  }
-
   mozilla::ScopedGfxFeatureReporter reporter("DWrite");
   decltype(DWriteCreateFactory)* createDWriteFactory = (decltype(DWriteCreateFactory)*)
       GetProcAddress(LoadLibraryW(L"dwrite.dll"), "DWriteCreateFactory");
