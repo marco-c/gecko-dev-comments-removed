@@ -37,6 +37,13 @@ use traversal::{DomTraversal, PerLevelTraversalData, PreTraverseToken};
 
 
 
+
+
+
+
+
+
+
 pub const WORK_UNIT_MAX: usize = 16;
 
 
@@ -142,6 +149,7 @@ fn create_thread_local_context<'scope, E, D>(
 
 
 
+
 #[inline(always)]
 #[allow(unsafe_code)]
 fn top_down_dom<'a, 'scope, E, D>(nodes: &'a [SendNode<E::ConcreteNode>],
@@ -185,7 +193,32 @@ fn top_down_dom<'a, 'scope, E, D>(nodes: &'a [SendNode<E::ConcreteNode>],
             
             
             
-            if !discovered_child_nodes.is_empty() {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if discovered_child_nodes.len() >= WORK_UNIT_MAX {
                 let mut traversal_data_copy = traversal_data.clone();
                 traversal_data_copy.current_dom_depth += 1;
                 traverse_nodes(&*discovered_child_nodes,
