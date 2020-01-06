@@ -1075,8 +1075,8 @@ IsArrayBufferSpecies(JSContext* cx, JSFunction* species)
 }
 
 static JSObject*
-GetSpeciesConstructor(JSContext* cx, HandleObject obj, bool isWrapped,
-                      SpeciesConstructorOverride override)
+GetBufferSpeciesConstructor(JSContext* cx, Handle<TypedArrayObject*> typedArray,
+                            bool isWrapped, SpeciesConstructorOverride override)
 {
     RootedObject defaultCtor(cx, GlobalObject::getOrCreateArrayBufferConstructor(cx, cx->global()));
     if (!defaultCtor)
@@ -1086,11 +1086,43 @@ GetSpeciesConstructor(JSContext* cx, HandleObject obj, bool isWrapped,
     if (override == SpeciesConstructorOverride::ArrayBuffer)
         return defaultCtor;
 
-    RootedObject wrappedObj(cx, obj);
-    if (isWrapped && !cx->compartment()->wrap(cx, &wrappedObj))
-        return nullptr;
+    RootedObject obj(cx, typedArray->bufferObject());
+    if (!obj) {
+        MOZ_ASSERT(!isWrapped);
 
-    return SpeciesConstructor(cx, wrappedObj, defaultCtor, IsArrayBufferSpecies);
+        
+        
+        
+        
+        
+
+        JSObject* proto = GlobalObject::getOrCreateArrayBufferPrototype(cx, cx->global());
+        if (!proto)
+            return nullptr;
+
+        Value ctor;
+        if (GetOwnPropertyPure(cx, proto, NameToId(cx->names().constructor), &ctor) &&
+            ctor.isObject() && &ctor.toObject() == defaultCtor)
+        {
+            jsid speciesId = SYMBOL_TO_JSID(cx->wellKnownSymbols().species);
+            JSFunction* getter;
+            if (GetOwnGetterPure(cx, defaultCtor, speciesId, &getter) && getter &&
+                IsArrayBufferSpecies(cx, getter))
+            {
+                return defaultCtor;
+            }
+        }
+
+        if (!TypedArrayObject::ensureHasBuffer(cx, typedArray))
+            return nullptr;
+
+        obj.set(typedArray->bufferObject());
+    } else {
+        if (isWrapped && !cx->compartment()->wrap(cx, &obj))
+            return nullptr;
+    }
+
+    return SpeciesConstructor(cx, obj, defaultCtor, IsArrayBufferSpecies);
 }
 
 template<typename T>
@@ -1130,8 +1162,6 @@ TypedArrayObjectTemplate<T>::fromTypedArray(JSContext* cx, HandleObject other, b
     Rooted<TypedArrayObject*> srcArray(cx);
     if (!isWrapped) {
         srcArray = &other->as<TypedArrayObject>();
-        if (!TypedArrayObject::ensureHasBuffer(cx, srcArray))
-            return nullptr;
     } else {
         RootedObject unwrapped(cx, CheckedUnwrap(other));
         if (!unwrapped) {
@@ -1142,15 +1172,17 @@ TypedArrayObjectTemplate<T>::fromTypedArray(JSContext* cx, HandleObject other, b
         JSAutoCompartment ac(cx, unwrapped);
 
         srcArray = &unwrapped->as<TypedArrayObject>();
+
+        
+        
         if (!TypedArrayObject::ensureHasBuffer(cx, srcArray))
             return nullptr;
     }
 
     
-    Rooted<ArrayBufferObjectMaybeShared*> srcData(cx, srcArray->bufferEither());
 
     
-    if (srcData->isDetached()) {
+    if (srcArray->hasDetachedBuffer()) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
         return nullptr;
     }
@@ -1168,7 +1200,7 @@ TypedArrayObjectTemplate<T>::fromTypedArray(JSContext* cx, HandleObject other, b
     SpeciesConstructorOverride override = isShared ? SpeciesConstructorOverride::ArrayBuffer
                                                    : SpeciesConstructorOverride::None;
 
-    RootedObject bufferCtor(cx, GetSpeciesConstructor(cx, srcData, isWrapped, override));
+    RootedObject bufferCtor(cx, GetBufferSpeciesConstructor(cx, srcArray, isWrapped, override));
     if (!bufferCtor)
         return nullptr;
 
@@ -1176,7 +1208,7 @@ TypedArrayObjectTemplate<T>::fromTypedArray(JSContext* cx, HandleObject other, b
     Rooted<ArrayBufferObject*> buffer(cx);
     if (ArrayTypeID() == srcType) {
         
-        if (srcData->isDetached()) {
+        if (srcArray->hasDetachedBuffer()) {
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
             return nullptr;
         }
@@ -1195,7 +1227,7 @@ TypedArrayObjectTemplate<T>::fromTypedArray(JSContext* cx, HandleObject other, b
     }
 
     
-    if (srcData->isDetached()) {
+    if (srcArray->hasDetachedBuffer()) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
         return nullptr;
     }
