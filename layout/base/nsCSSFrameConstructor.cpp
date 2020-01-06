@@ -2550,12 +2550,12 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
   
   if (ServoStyleSet* set = mPresShell->StyleSet()->GetAsServo()) {
     
-    if (!aDocElement->HasServoData()) {
-      
-      
-      
-      set->StyleNewSubtree(aDocElement);
-    }
+    aDocElement->OwnerDoc()->SetServoRestyleRoot(aDocElement->OwnerDocAsNode(),
+                                                 ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
+    
+    
+    
+    set->StyleDocument(ServoTraversalFlags::Empty);
   }
 
   
@@ -4293,11 +4293,9 @@ SetFlagsOnSubtree(nsIContent *aNode, uintptr_t aFlagsToSet)
   aNode->SetFlags(aFlagsToSet);
 
   
-  uint32_t count;
-  nsIContent * const *children = aNode->GetChildArray(&count);
-
-  for (uint32_t index = 0; index < count; ++index) {
-    SetFlagsOnSubtree(children[index], aFlagsToSet);
+  for (nsIContent* child = aNode->GetFirstChild(); child;
+       child = child->GetNextSibling()) {
+    SetFlagsOnSubtree(child, aFlagsToSet);
   }
 }
 
@@ -7598,6 +7596,22 @@ nsCSSFrameConstructor::StyleNewChildRange(nsIContent* aStartChild,
 }
 
 void
+nsCSSFrameConstructor::StyleChildRangeForReconstruct(nsIContent* aStartChild,
+                                                     nsIContent* aEndChild)
+{
+  ServoStyleSet* styleSet = mPresShell->StyleSet()->AsServo();
+
+  
+  
+  for (nsIContent* child = aStartChild; child != aEndChild;
+       child = child->GetNextSibling()) {
+    if (child->IsElement()) {
+      styleSet->StyleSubtreeForReconstruct(child->AsElement());
+    }
+  }
+}
+
+void
 nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
                                        nsIContent* aFirstNewContent,
                                        bool aAllowLazyConstruction,
@@ -7686,8 +7700,12 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   }
 
   
-  if (isNewlyAddedContentForServo) {
-    StyleNewChildRange(aFirstNewContent, nullptr);
+  if (aContainer->IsStyledByServo()) {
+    if (aForReconstruction) {
+      StyleChildRangeForReconstruct(aFirstNewContent, nullptr);
+    } else {
+      StyleNewChildRange(aFirstNewContent, nullptr);
+    }
   }
 
   if (isNewShadowTreeContent) {
@@ -8171,8 +8189,12 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
   }
 
   
-  if (isNewlyAddedContentForServo) {
-    StyleNewChildRange(aStartChild, aEndChild);
+  if (aContainer->IsStyledByServo()) {
+    if (aForReconstruction) {
+      StyleChildRangeForReconstruct(aStartChild, aEndChild);
+    } else {
+      StyleNewChildRange(aStartChild, aEndChild);
+    }
   }
 
   if (isNewShadowTreeContent) {

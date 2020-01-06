@@ -509,17 +509,6 @@ public:
 
 
 
-
-  virtual nsIContent * const * GetChildArray(uint32_t* aChildCount) const = 0;
-
-  
-
-
-
-
-
-
-
   virtual int32_t IndexOf(const nsINode* aPossibleChild) const = 0;
 
   
@@ -1291,10 +1280,9 @@ public:
   nsIContent* GetFirstChild() const { return mFirstChild; }
   nsIContent* GetLastChild() const
   {
-    uint32_t count;
-    nsIContent* const* children = GetChildArray(&count);
+    uint32_t count = GetChildCount();
 
-    return count > 0 ? children[count - 1] : nullptr;
+    return count > 0 ? GetChildAt(count - 1) : nullptr;
   }
 
   
