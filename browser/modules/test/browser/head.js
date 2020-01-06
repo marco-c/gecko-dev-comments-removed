@@ -79,27 +79,11 @@ let typeInSearchField = async function(browser, text, fieldName) {
 
 
 
-
-
-
-function getAndClearHistogram(name) {
-  let histogram = Services.telemetry.getHistogramById(name);
-  histogram.clear();
-  return histogram;
+function getSearchCountsHistogram() {
+  let search_hist = Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS");
+  search_hist.clear();
+  return search_hist;
 }
-
-
-
-
-
-
-
-function getAndClearKeyedHistogram(name) {
-  let histogram = Services.telemetry.getKeyedHistogramById(name);
-  histogram.clear();
-  return histogram;
-}
-
 
 
 
