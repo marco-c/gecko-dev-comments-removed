@@ -254,6 +254,9 @@ static const DllBlockInfo sWindowsDllBlocklist[] = {
   
   { "klsihk64.dll", MAKE_VERSION(14, 0, 456, 0xffff), DllBlockInfo::BLOCK_WIN8_ONLY },
 
+  
+  { "onepin-opensc-pkcs11.dll", MAKE_VERSION(0, 15, 0xffff, 0xffff) },
+
   { nullptr, 0 }
 };
 
