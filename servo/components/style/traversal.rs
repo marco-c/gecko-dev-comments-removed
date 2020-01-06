@@ -13,6 +13,7 @@ use sharing::StyleSharingTarget;
 use smallvec::SmallVec;
 use style_resolver::StyleResolverForElement;
 use stylist::RuleInclusion;
+use traversal_flags::{TraversalFlags, self};
 
 
 
@@ -25,45 +26,6 @@ pub struct PerLevelTraversalData {
     
     
     pub current_dom_depth: usize,
-}
-
-bitflags! {
-    /// Flags that control the traversal process.
-    pub flags TraversalFlags: u8 {
-        /// Traverse only unstyled children.
-        const UNSTYLED_CHILDREN_ONLY = 0x01,
-        /// Traverse only elements for animation restyles.
-        const ANIMATION_ONLY = 0x02,
-        /// Traverse without generating any change hints.
-        const FOR_RECONSTRUCT = 0x04,
-        /// Traverse triggered by CSS rule changes.
-        ///
-        /// Traverse and update all elements with CSS animations since
-        /// @keyframes rules may have changed
-        const FOR_CSS_RULE_CHANGES = 0x08,
-    }
-}
-
-impl TraversalFlags {
-    
-    pub fn for_animation_only(&self) -> bool {
-        self.contains(ANIMATION_ONLY)
-    }
-
-    
-    pub fn for_unstyled_children_only(&self) -> bool {
-        self.contains(UNSTYLED_CHILDREN_ONLY)
-    }
-
-    
-    pub fn for_reconstruct(&self) -> bool {
-        self.contains(FOR_RECONSTRUCT)
-    }
-
-    
-    pub fn for_css_rule_changes(&self) -> bool {
-        self.contains(FOR_CSS_RULE_CHANGES)
-    }
 }
 
 
@@ -208,12 +170,7 @@ pub trait DomTraversal<E: TElement> : Sync {
         shared_context: &SharedStyleContext,
         traversal_flags: TraversalFlags
     ) -> PreTraverseToken {
-        debug_assert!(!(traversal_flags.for_reconstruct() &&
-                        traversal_flags.for_unstyled_children_only()),
-                      "must not specify FOR_RECONSTRUCT in combination with \
-                       UNSTYLED_CHILDREN_ONLY");
-
-        if traversal_flags.for_unstyled_children_only() {
+        if traversal_flags.contains(traversal_flags::UnstyledChildrenOnly) {
             if root.borrow_data().map_or(true, |d| d.has_styles() && d.styles.is_display_none()) {
                 return PreTraverseToken {
                     traverse: false,
@@ -278,10 +235,6 @@ pub trait DomTraversal<E: TElement> : Sync {
 
         
         if is_servo_nonincremental_layout() {
-            return true;
-        }
-
-        if traversal_flags.for_reconstruct() {
             return true;
         }
 
@@ -358,7 +311,9 @@ pub trait DomTraversal<E: TElement> : Sync {
         
         
         
-        if (cfg!(feature = "servo") || traversal_flags.for_reconstruct()) &&
+        
+        if (cfg!(feature = "servo") ||
+            traversal_flags.contains(traversal_flags::AggressivelyForgetful)) &&
            !data.restyle.damage.is_empty() {
             return true;
         }
@@ -613,12 +568,10 @@ where
     
     
     
-    
     let mut traverse_children = has_dirty_descendants_for_this_restyle ||
                                 !propagated_hint.is_empty() ||
                                 context.thread_local.is_initial_style() ||
                                 data.restyle.reconstructed_self() ||
-                                flags.for_reconstruct() ||
                                 is_servo_nonincremental_layout();
 
     traverse_children = traverse_children &&
@@ -639,7 +592,7 @@ where
     
     
     
-    if context.shared.traversal_flags.for_reconstruct() {
+    if flags.contains(traversal_flags::Forgetful) {
         data.clear_restyle_state();
     }
 
@@ -656,11 +609,14 @@ where
     
     
     
-    
-    
-    if data.styles.is_display_none() ||
-       context.shared.traversal_flags.for_reconstruct() {
+    if flags.contains(traversal_flags::ClearDirtyDescendants) ||
+       data.styles.is_display_none() {
         unsafe { element.unset_dirty_descendants(); }
+    }
+
+    
+    if flags.contains(traversal_flags::ClearAnimationOnlyDirtyDescendants) {
+        unsafe { element.unset_animation_only_dirty_descendants(); }
     }
 
     context.thread_local.end_element(element);
@@ -821,8 +777,7 @@ where
             
             
             
-            
-            if !flags.for_reconstruct() && !is_initial_style {
+            if !is_initial_style {
                 if flags.for_animation_only() {
                     unsafe { element.set_animation_only_dirty_descendants(); }
                 } else {
