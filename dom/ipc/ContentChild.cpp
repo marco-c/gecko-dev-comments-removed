@@ -887,15 +887,8 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
     tabId, TabId(0), *ipcContext, aChromeFlags,
     GetID(), IsForBrowser());
 
-  nsTArray<FrameScriptInfo> frameScripts;
-  nsCString urlToLoad;
 
   PRenderFrameChild* renderFrame = newChild->SendPRenderFrameConstructor();
-  TextureFactoryIdentifier textureFactoryIdentifier;
-  uint64_t layersId = 0;
-  CompositorOptions compositorOptions;
-  uint32_t maxTouchPoints = 0;
-  DimensionInfo dimensionInfo;
 
   nsCOMPtr<nsPIDOMWindowInner> parentTopInnerWindow;
   if (aParent) {
@@ -907,7 +900,107 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
   }
 
   
-  RefPtr<CreateWindowPromise> windowCreated;
+  bool ready = false;
+
+  
+  
+  auto resolve = [&] (const CreatedWindowInfo& info) {
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
+    rv = info.rv();
+    *aWindowIsNew = info.windowOpened();
+    nsTArray<FrameScriptInfo> frameScripts(info.frameScripts());
+    nsCString urlToLoad = info.urlToLoad();
+    TextureFactoryIdentifier textureFactoryIdentifier = info.textureFactoryIdentifier();
+    uint64_t layersId = info.layersId();
+    CompositorOptions compositorOptions = info.compositorOptions();
+    uint32_t maxTouchPoints = info.maxTouchPoints();
+    DimensionInfo dimensionInfo = info.dimensions();
+
+    
+    ready = true;
+
+    
+    
+    
+
+    
+    
+    if (NS_FAILED(rv)) {
+      return;
+    }
+
+    if (!*aWindowIsNew) {
+      rv = NS_ERROR_ABORT;
+      return;
+    }
+
+    
+    if (NS_WARN_IF(!newChild->IPCOpen() || newChild->IsDestroyed())) {
+      rv = NS_ERROR_ABORT;
+      return;
+    }
+
+    if (layersId == 0) { 
+      renderFrame = nullptr;
+    }
+
+    ShowInfo showInfo(EmptyString(), false, false, true, false, 0, 0, 0);
+    auto* opener = nsPIDOMWindowOuter::From(aParent);
+    nsIDocShell* openerShell;
+    if (opener && (openerShell = opener->GetDocShell())) {
+      nsCOMPtr<nsILoadContext> context = do_QueryInterface(openerShell);
+      showInfo = ShowInfo(EmptyString(), false,
+                          context->UsePrivateBrowsing(), true, false,
+                          aTabOpener->WebWidget()->GetDPI(),
+                          aTabOpener->WebWidget()->RoundsWidgetCoordinatesTo(),
+                          aTabOpener->WebWidget()->GetDefaultScale().scale);
+    }
+
+    newChild->SetMaxTouchPoints(maxTouchPoints);
+
+    
+    
+    
+    
+    nsCOMPtr<mozIDOMWindowProxy> windowProxy = do_GetInterface(newChild->WebNavigation());
+    if (!aForceNoOpener && windowProxy && aParent) {
+      nsPIDOMWindowOuter* outer = nsPIDOMWindowOuter::From(windowProxy);
+      nsPIDOMWindowOuter* parent = nsPIDOMWindowOuter::From(aParent);
+      outer->SetOpenerWindow(parent, *aWindowIsNew);
+    }
+
+    
+    
+    newChild->DoFakeShow(textureFactoryIdentifier, layersId, compositorOptions,
+                        renderFrame, showInfo);
+
+    newChild->RecvUpdateDimensions(dimensionInfo);
+
+    for (size_t i = 0; i < frameScripts.Length(); i++) {
+      FrameScriptInfo& info = frameScripts[i];
+      if (!newChild->RecvLoadRemoteScript(info.url(), info.runInGlobalScope())) {
+        MOZ_CRASH();
+      }
+    }
+
+    if (!urlToLoad.IsEmpty()) {
+      newChild->RecvLoadURL(urlToLoad, showInfo);
+    }
+
+    nsCOMPtr<mozIDOMWindowProxy> win = do_GetInterface(newChild->WebNavigation());
+    win.forget(aReturn);
+  };
+
+  
+  
+  auto reject = [&] (ResponseRejectReason) {
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
+    NS_WARNING("windowCreated promise rejected");
+    rv = NS_ERROR_NOT_AVAILABLE;
+    ready = true;
+  };
+
+  
   if (aIframeMoz) {
     MOZ_ASSERT(aTabOpener);
     nsAutoCString url;
@@ -922,9 +1015,10 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
 
     
     
-    windowCreated =
-      newChild->SendBrowserFrameOpenWindow(aTabOpener, renderFrame, NS_ConvertUTF8toUTF16(url),
-                                           name, NS_ConvertUTF8toUTF16(features));
+    newChild->SendBrowserFrameOpenWindow(aTabOpener, renderFrame,
+                                         NS_ConvertUTF8toUTF16(url),
+                                         name, NS_ConvertUTF8toUTF16(features),
+                                         resolve, reject);
   } else {
     nsAutoCString baseURIString;
     float fullZoom;
@@ -942,48 +1036,12 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
       uriToLoad = mozilla::void_t();
     }
 
-    windowCreated =
-      SendCreateWindow(aTabOpener, newChild, renderFrame,
-                       aChromeFlags, aCalledFromJS, aPositionSpecified,
-                       aSizeSpecified,
-                       uriToLoad,
-                       features,
-                       baseURIString,
-                       fullZoom,
-                       Principal(triggeringPrincipal));
+    SendCreateWindow(aTabOpener, newChild, renderFrame,
+                     aChromeFlags, aCalledFromJS, aPositionSpecified,
+                     aSizeSpecified, uriToLoad, features, baseURIString,
+                     fullZoom, Principal(triggeringPrincipal),
+                     resolve, reject);
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  bool ready = false;
-  windowCreated->Then(nsContentUtils::GetStableStateEventTarget(), __func__,
-                      [&] (const CreatedWindowInfo& info) {
-                        MOZ_RELEASE_ASSERT(NS_IsMainThread(),
-                                           "windowCreated->Then must run on the main thread");
-                        rv = info.rv();
-                        *aWindowIsNew = info.windowOpened();
-                        frameScripts = info.frameScripts();
-                        urlToLoad = info.urlToLoad();
-                        textureFactoryIdentifier = info.textureFactoryIdentifier();
-                        layersId = info.layersId();
-                        compositorOptions = info.compositorOptions();
-                        maxTouchPoints = info.maxTouchPoints();
-                        dimensionInfo = info.dimensions();
-                        ready = true;
-                      },
-                      [&] (const CreateWindowPromise::RejectValueType aReason) {
-                        MOZ_RELEASE_ASSERT(NS_IsMainThread(),
-                                           "windowCreated->Then must run on the main thread");
-                        NS_WARNING("windowCreated promise rejected");
-                        rv = NS_ERROR_NOT_AVAILABLE;
-                        ready = true;
-                      });
 
   
   
@@ -1030,70 +1088,8 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
   
 
   
-  
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  if (!*aWindowIsNew) {
-    return NS_ERROR_ABORT;
-  }
-
-  
-  if (NS_WARN_IF(!newChild->IPCOpen() || newChild->IsDestroyed())) {
-    return NS_ERROR_ABORT;
-  }
-
-  if (layersId == 0) { 
-    renderFrame = nullptr;
-  }
-
-  ShowInfo showInfo(EmptyString(), false, false, true, false, 0, 0, 0);
-  auto* opener = nsPIDOMWindowOuter::From(aParent);
-  nsIDocShell* openerShell;
-  if (opener && (openerShell = opener->GetDocShell())) {
-    nsCOMPtr<nsILoadContext> context = do_QueryInterface(openerShell);
-    showInfo = ShowInfo(EmptyString(), false,
-                        context->UsePrivateBrowsing(), true, false,
-                        aTabOpener->WebWidget()->GetDPI(),
-                        aTabOpener->WebWidget()->RoundsWidgetCoordinatesTo(),
-                        aTabOpener->WebWidget()->GetDefaultScale().scale);
-  }
-
-  newChild->SetMaxTouchPoints(maxTouchPoints);
-
-  
-  
-  
-  
-  nsCOMPtr<mozIDOMWindowProxy> windowProxy = do_GetInterface(newChild->WebNavigation());
-  if (!aForceNoOpener && windowProxy && aParent) {
-    nsPIDOMWindowOuter* outer = nsPIDOMWindowOuter::From(windowProxy);
-    nsPIDOMWindowOuter* parent = nsPIDOMWindowOuter::From(aParent);
-    outer->SetOpenerWindow(parent, *aWindowIsNew);
-  }
-
-  
-  
-  newChild->DoFakeShow(textureFactoryIdentifier, layersId, compositorOptions,
-                       renderFrame, showInfo);
-
-  newChild->RecvUpdateDimensions(dimensionInfo);
-
-  for (size_t i = 0; i < frameScripts.Length(); i++) {
-    FrameScriptInfo& info = frameScripts[i];
-    if (!newChild->RecvLoadRemoteScript(info.url(), info.runInGlobalScope())) {
-      MOZ_CRASH();
-    }
-  }
-
-  if (!urlToLoad.IsEmpty()) {
-    newChild->RecvLoadURL(urlToLoad, showInfo);
-  }
-
-  nsCOMPtr<mozIDOMWindowProxy> win = do_GetInterface(newChild->WebNavigation());
-  win.forget(aReturn);
-  return NS_OK;
+  MOZ_ASSERT_IF(NS_SUCCEEDED(rv), *aReturn);
+  return rv;
 }
 
 void
