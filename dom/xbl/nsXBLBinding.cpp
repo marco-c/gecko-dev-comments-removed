@@ -135,7 +135,7 @@ nsXBLBinding::~nsXBLBinding(void)
     
     
     
-    nsXBLBinding::UninstallAnonymousContent(mContent->OwnerDoc(), mContent);
+    nsXBLBinding::UnbindAnonymousContent(mContent->OwnerDoc(), mContent);
   }
   nsXBLDocumentInfo* info = mPrototypeBinding->XBLDocumentInfo();
   NS_RELEASE(info);
@@ -147,8 +147,8 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsXBLBinding)
   
   
   if (tmp->mContent && !tmp->mIsShadowRootBinding) {
-    nsXBLBinding::UninstallAnonymousContent(tmp->mContent->OwnerDoc(),
-                                            tmp->mContent);
+    nsXBLBinding::UnbindAnonymousContent(tmp->mContent->OwnerDoc(),
+                                         tmp->mContent);
   }
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mContent)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mNextBinding)
@@ -191,8 +191,9 @@ nsXBLBinding::GetBindingWithContent()
 }
 
 void
-nsXBLBinding::InstallAnonymousContent(nsIContent* aAnonParent, nsIContent* aElement,
-                                      bool aChromeOnlyContent)
+nsXBLBinding::BindAnonymousContent(nsIContent* aAnonParent,
+                                   nsIContent* aElement,
+                                   bool aChromeOnlyContent)
 {
   
   
@@ -237,8 +238,8 @@ nsXBLBinding::InstallAnonymousContent(nsIContent* aAnonParent, nsIContent* aElem
 }
 
 void
-nsXBLBinding::UninstallAnonymousContent(nsIDocument* aDocument,
-                                        nsIContent* aAnonParent)
+nsXBLBinding::UnbindAnonymousContent(nsIDocument* aDocument,
+                                     nsIContent* aAnonParent)
 {
   nsAutoScriptBlocker scriptBlocker;
   
@@ -340,8 +341,8 @@ nsXBLBinding::GenerateAnonymousContent()
 
     
     
-    InstallAnonymousContent(mContent, mBoundElement,
-                            mPrototypeBinding->ChromeOnlyContent());
+    BindAnonymousContent(mContent, mBoundElement,
+                         mPrototypeBinding->ChromeOnlyContent());
 
     
     if (mDefaultInsertionPoint && mInsertionPoints.IsEmpty()) {
@@ -369,7 +370,7 @@ nsXBLBinding::GenerateAnonymousContent()
             
 
             
-            UninstallAnonymousContent(doc, mContent);
+            UnbindAnonymousContent(doc, mContent);
 
             
             ClearInsertionPoints();
@@ -822,7 +823,7 @@ nsXBLBinding::ChangeDocument(nsIDocument* aOldDocument, nsIDocument* aNewDocumen
     
     
     if (mContent && !mIsShadowRootBinding) {
-      nsXBLBinding::UninstallAnonymousContent(aOldDocument, mContent);
+      nsXBLBinding::UnbindAnonymousContent(aOldDocument, mContent);
     }
 
     
