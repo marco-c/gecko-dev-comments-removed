@@ -122,13 +122,40 @@ ContentAreaDropListener.prototype =
     if (disallowInherit)
       flags |= secMan.DISALLOW_INHERIT_PRINCIPAL;
 
-    
-    let principal = sourceNode ? sourceNode.nodePrincipal
-                               : secMan.createCodebasePrincipal(ioService.newURI("file:///"), {});
-
+    let principal;
+    if (sourceNode) {
+      principal = this._getTriggeringPrincipalFromSourceNode(sourceNode);
+    } else {
+      
+      
+      principal = secMan.createCodebasePrincipal(ioService.newURI("file:///"), {});
+    }
     secMan.checkLoadURIStrWithPrincipal(principal, uriString, flags);
 
     return uriString;
+  },
+
+  _getTriggeringPrincipalFromSourceNode: function(aSourceNode)
+  {
+    if (aSourceNode.localName == "browser" &&
+        aSourceNode.namespaceURI == "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul") {
+      return aSourceNode.contentPrincipal;
+    }
+    return aSourceNode.nodePrincipal;
+  },
+
+  getTriggeringPrincipal: function(aEvent)
+  {
+    let dataTransfer = aEvent.dataTransfer;
+    let sourceNode = dataTransfer.mozSourceNode;
+    if (sourceNode) {
+      return this._getTriggeringPrincipalFromSourceNode(sourceNode, false);
+    }
+    
+    
+    let secMan = Cc["@mozilla.org/scriptsecuritymanager;1"].
+                   getService(Ci.nsIScriptSecurityManager);
+    return secMan.getSystemPrincipal();
   },
 
   canDropLink: function(aEvent, aAllowSameDocument)
