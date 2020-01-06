@@ -218,7 +218,7 @@ pref("dom.compartment_per_addon", true);
 
 
 
-pref("dom.script_loader.bytecode_cache.enabled", false);
+pref("dom.script_loader.bytecode_cache.enabled", true);
 
 
 
@@ -3187,23 +3187,23 @@ pref("idle_queue.long_period", 50);
 
 
 #ifdef NIGHTLY_BUILD
-pref("prioritized_input_events.enabled", false);
+pref("input_event_queue.supported", false);
 #else
-pref("prioritized_input_events.enabled", false);
+pref("input_event_queue.supported", false);
 #endif
 
 
 
-pref("prioritized_input_events.duration.max", 8);
-pref("prioritized_input_events.duration.min", 1);
+pref("input_event_queue.duration.max", 8);
+pref("input_event_queue.duration.min", 1);
 
 
 
-pref("prioritized_input_events.default_duration_per_event", 1);
+pref("input_event_queue.default_duration_per_event", 1);
 
 
 
-pref("prioritized_input_events.count_for_prediction", 9);
+pref("input_event_queue.count_for_prediction", 9);
 
 
 
@@ -5342,6 +5342,7 @@ pref("dom.mapped_arraybuffer.enabled", true);
 
 
 pref("urlclassifier.malwareTable", "goog-malware-shavar,goog-unwanted-shavar,test-malware-simple,test-unwanted-simple,test-harmful-simple");
+
 #ifdef MOZILLA_OFFICIAL
 
 
@@ -5354,15 +5355,12 @@ pref("urlclassifier.phishTable", "googpub-phish-shavar,test-phish-simple");
 pref("urlclassifier.downloadAllowTable", "goog-downloadwhite-proto");
 pref("urlclassifier.downloadBlockTable", "goog-badbinurl-proto");
 
+pref("urlclassifier.disallow_completions", "test-malware-simple,test-harmful-simple,test-phish-simple,test-unwanted-simple,test-track-simple,test-trackwhite-simple,test-block-simple,goog-downloadwhite-digest256,base-track-digest256,mozstd-trackwhite-digest256,content-track-digest256,mozplugin-block-digest256,mozplugin2-block-digest256,block-flash-digest256,except-flash-digest256,allow-flashallow-digest256,except-flashallow-digest256,block-flashsubdoc-digest256,except-flashsubdoc-digest256,except-flashinfobar-digest256");
 
-pref("urlclassifier.passwordAllowTable", "goog-passwordwhite-proto");
 
 
 pref("urlclassifier.trackingTable", "test-track-simple,base-track-digest256");
 pref("urlclassifier.trackingWhitelistTable", "test-trackwhite-simple,mozstd-trackwhite-digest256");
-
-
-pref("urlclassifier.disallow_completions", "test-malware-simple,test-harmful-simple,test-phish-simple,test-unwanted-simple,test-track-simple,test-trackwhite-simple,test-block-simple,goog-downloadwhite-digest256,base-track-digest256,mozstd-trackwhite-digest256,content-track-digest256,mozplugin-block-digest256,mozplugin2-block-digest256,block-flash-digest256,except-flash-digest256,allow-flashallow-digest256,except-flashallow-digest256,block-flashsubdoc-digest256,except-flashsubdoc-digest256,except-flashinfobar-digest256");
 
 
 pref("urlclassifier.gethashnoise", 4);
@@ -5375,24 +5373,14 @@ pref("urlclassifier.update.response_timeout_ms", 30000);
 pref("urlclassifier.update.timeout_ms", 90000);
 
 
+
 pref("urlclassifier.alternate_error_page", "blocked");
 
 
 pref("browser.safebrowsing.phishing.enabled", true);
+
+
 pref("browser.safebrowsing.malware.enabled", true);
-pref("browser.safebrowsing.debug", false);
-
-
-pref("browser.safebrowsing.allowOverride", true);
-
-#ifdef MOZILLA_OFFICIAL
-
-
-pref("browser.safebrowsing.id", "navclient-auto-ffox");
-#else
-pref("browser.safebrowsing.id", "Firefox");
-#endif
-
 
 pref("browser.safebrowsing.downloads.enabled", true);
 pref("browser.safebrowsing.downloads.remote.enabled", true);
@@ -5402,9 +5390,7 @@ pref("browser.safebrowsing.downloads.remote.block_dangerous",            true);
 pref("browser.safebrowsing.downloads.remote.block_dangerous_host",       true);
 pref("browser.safebrowsing.downloads.remote.block_potentially_unwanted", true);
 pref("browser.safebrowsing.downloads.remote.block_uncommon",             true);
-
-
-pref("browser.safebrowsing.passwords.enabled", false);
+pref("browser.safebrowsing.debug", false);
 
 
 pref("browser.safebrowsing.provider.google.pver", "2.2");
@@ -5419,7 +5405,7 @@ pref("browser.safebrowsing.provider.google.advisoryName", "Google Safe Browsing"
 
 
 pref("browser.safebrowsing.provider.google4.pver", "4");
-pref("browser.safebrowsing.provider.google4.lists", "goog-badbinurl-proto,goog-downloadwhite-proto,goog-phish-proto,googpub-phish-proto,goog-malware-proto,goog-unwanted-proto,goog-harmful-proto,goog-passwordwhite-proto");
+pref("browser.safebrowsing.provider.google4.lists", "goog-badbinurl-proto,goog-downloadwhite-proto,goog-phish-proto,googpub-phish-proto,goog-malware-proto,goog-unwanted-proto,goog-harmful-proto");
 pref("browser.safebrowsing.provider.google4.updateURL", "https://safebrowsing.googleapis.com/v4/threatListUpdates:fetch?$ct=application/x-protobuf&key=%GOOGLE_API_KEY%&$httpMethod=POST");
 pref("browser.safebrowsing.provider.google4.gethashURL", "https://safebrowsing.googleapis.com/v4/fullHashes:find?$ct=application/x-protobuf&key=%GOOGLE_API_KEY%&$httpMethod=POST");
 pref("browser.safebrowsing.provider.google4.reportURL", "https://safebrowsing.google.com/safebrowsing/diagnostic?client=%NAME%&hl=%LOCALE%&site=");
@@ -5429,6 +5415,10 @@ pref("browser.safebrowsing.provider.google4.advisoryURL", "https://developers.go
 pref("browser.safebrowsing.provider.google4.advisoryName", "Google Safe Browsing");
 
 pref("browser.safebrowsing.reportPhishURL", "https://%LOCALE%.phish-report.mozilla.com/?hl=%LOCALE%&url=");
+
+
+pref("browser.safebrowsing.blockedURIs.enabled", true);
+pref("urlclassifier.blockedTable", "test-block-simple,mozplugin-block-digest256");
 
 
 pref("browser.safebrowsing.provider.mozilla.pver", "2.2");
@@ -5444,11 +5434,6 @@ pref("browser.safebrowsing.provider.mozilla.lists.base.description", "mozstdDesc
 pref("browser.safebrowsing.provider.mozilla.lists.content.name", "mozfullName");
 pref("browser.safebrowsing.provider.mozilla.lists.content.description", "mozfullDesc2");
 
-
-pref("browser.safebrowsing.blockedURIs.enabled", true);
-pref("urlclassifier.blockedTable", "test-block-simple,mozplugin-block-digest256");
-
-
 pref("urlclassifier.flashAllowTable", "allow-flashallow-digest256");
 pref("urlclassifier.flashAllowExceptTable", "except-flashallow-digest256");
 pref("urlclassifier.flashTable", "block-flash-digest256");
@@ -5459,6 +5444,17 @@ pref("urlclassifier.flashInfobarTable", "except-flashinfobar-digest256");
 
 pref("plugins.http_https_only", true);
 pref("plugins.flashBlock.enabled", false);
+
+
+pref("browser.safebrowsing.allowOverride", true);
+
+#ifdef MOZILLA_OFFICIAL
+
+
+pref("browser.safebrowsing.id", "navclient-auto-ffox");
+#else
+pref("browser.safebrowsing.id", "Firefox");
+#endif
 
 
 pref("snav.enabled", false);

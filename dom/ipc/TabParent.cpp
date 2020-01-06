@@ -180,7 +180,7 @@ TabParent::TabParent(nsIContentParent* aManager,
   
   
   mIsReadyToHandleInputEvents =
-    !Preferences::GetBool("prioritized_input_events.enabled", false);
+    !Preferences::GetBool("input_event_queue.supported", false);
 }
 
 TabParent::~TabParent()

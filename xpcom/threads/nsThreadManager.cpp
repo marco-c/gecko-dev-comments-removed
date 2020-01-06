@@ -117,10 +117,7 @@ nsThreadManager::Init()
   mMainThread = new nsThread(WrapNotNull(queue), nsThread::MAIN_THREAD, 0);
 
   prioritizedRef->SetMutexRef(queue->MutexRef());
-
-#ifndef RELEASE_OR_BETA
   prioritizedRef->SetNextIdleDeadlineRef(mMainThread->NextIdleDeadlineRef());
-#endif
 
   nsresult rv = mMainThread->InitCurrentThread();
   if (NS_FAILED(rv)) {
@@ -443,10 +440,9 @@ nsThreadManager::EnableMainThreadEventPrioritization()
   }
   sIsInitialized = true;
   MOZ_ASSERT(Preferences::IsServiceAvailable());
-  bool enable =
-    Preferences::GetBool("prioritized_input_events.enabled", false);
+  bool supported = Preferences::GetBool("input_event_queue.supported", false);
 
-  if (!enable) {
+  if (!supported) {
     return;
   }
   InputEventStatistics::Get().SetEnable(true);
