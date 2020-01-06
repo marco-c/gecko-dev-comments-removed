@@ -496,11 +496,6 @@ class nsStyleSet final
   
   void ClearSelectors();
 
-  
-  
-  
-  static bool IsCSSSheetType(mozilla::SheetType aSheetType);
-
   void SetUsesViewportUnits(bool aValue) {
     mUsesViewportUnits = aValue;
   }

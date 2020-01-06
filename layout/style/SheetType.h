@@ -23,7 +23,7 @@ enum class SheetType : uint8_t {
   User, 
   PresHint,
   Doc, 
-  ScopedDoc,
+  ScopedDoc, 
   StyleAttr,
   Override, 
   Animation,
@@ -32,6 +32,23 @@ enum class SheetType : uint8_t {
   Count,
   Unknown = 0xff
 };
+
+
+
+inline bool
+IsCSSSheetType(SheetType aSheetType)
+{
+  switch (aSheetType) {
+    case SheetType::Agent:
+    case SheetType::User:
+    case SheetType::Doc:
+    case SheetType::ScopedDoc:
+    case SheetType::Override:
+      return true;
+    default:
+      return false;
+  }
+}
 
 } 
 
