@@ -230,19 +230,7 @@ public:
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void NotifyDataLength(int64_t aLength);
-  
+
   
   
   
@@ -255,7 +243,24 @@ public:
   
   
   
-  void NotifyDataStarted(uint32_t aLoadID, int64_t aOffset, bool aSeekable);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void NotifyDataStarted(uint32_t aLoadID,
+                         int64_t aOffset,
+                         bool aSeekable,
+                         int64_t aLength);
   
   
   
