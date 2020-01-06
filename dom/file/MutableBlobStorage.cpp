@@ -364,7 +364,7 @@ MutableBlobStorage::~MutableBlobStorage()
 
   if (mFD) {
     RefPtr<Runnable> runnable = new CloseFileRunnable(mFD);
-    Unused << DispatchToIOThread(runnable.forget());
+    DispatchToIOThread(runnable.forget());
   }
 
   if (mTaskQueue) {
@@ -408,10 +408,7 @@ MutableBlobStorage::GetBlobWhenReady(nsISupports* aParent,
     
     RefPtr<Runnable> runnable =
       new LastRunnable(this, aParent, aContentType, aCallback);
-
-    
-    
-    Unused << DispatchToIOThread(runnable.forget());
+    DispatchToIOThread(runnable.forget());
     return;
   }
 
@@ -478,10 +475,7 @@ MutableBlobStorage::Append(const void* aData, uint32_t aLength)
       return NS_ERROR_OUT_OF_MEMORY;
     }
 
-    nsresult rv = DispatchToIOThread(runnable.forget());
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+    DispatchToIOThread(runnable.forget());
 
     mDataLen += aLength;
     return NS_OK;
@@ -587,10 +581,7 @@ MutableBlobStorage::TemporaryFileCreated(PRFileDesc* aFD)
   
   if (mStorageState == eClosed && !mPendingCallback) {
     RefPtr<Runnable> runnable = new CloseFileRunnable(aFD);
-
-    
-    
-    Unused << DispatchToIOThread(runnable.forget());
+    DispatchToIOThread(runnable.forget());
 
     
     mActor->SendOperationDone(false, EmptyCString());
@@ -614,11 +605,7 @@ MutableBlobStorage::TemporaryFileCreated(PRFileDesc* aFD)
 
   mData = nullptr;
 
-  nsresult rv = DispatchToIOThread(runnable.forget());
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    
-    return;
-  }
+  DispatchToIOThread(runnable.forget());
 
   
   
@@ -631,7 +618,7 @@ MutableBlobStorage::TemporaryFileCreated(PRFileDesc* aFD)
     RefPtr<Runnable> runnable =
       new LastRunnable(this, mPendingParent, mPendingContentType,
                        mPendingCallback);
-    Unused << DispatchToIOThread(runnable.forget());
+    DispatchToIOThread(runnable.forget());
 
     mPendingParent = nullptr;
     mPendingCallback = nullptr;
@@ -664,7 +651,7 @@ MutableBlobStorage::ErrorPropagated(nsresult aRv)
   }
 }
 
-nsresult
+void
 MutableBlobStorage::DispatchToIOThread(already_AddRefed<nsIRunnable> aRunnable)
 {
   if (!mTaskQueue) {
@@ -676,12 +663,7 @@ MutableBlobStorage::DispatchToIOThread(already_AddRefed<nsIRunnable> aRunnable)
   }
 
   nsCOMPtr<nsIRunnable> runnable(aRunnable);
-  nsresult rv = mTaskQueue->Dispatch(runnable.forget());
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  return NS_OK;
+  mTaskQueue->Dispatch(runnable.forget());
 }
 
 size_t
