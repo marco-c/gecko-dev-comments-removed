@@ -177,6 +177,8 @@ public:
     return ++sIdNameSpace;
   }
 
+  void FlushRendering(bool aIsSync);
+
 private:
   virtual ~WebRenderBridgeParent();
 
@@ -252,7 +254,7 @@ private:
 
   bool mPaused;
   bool mDestroyed;
-  bool mIsSnapshotting;
+  bool mForceRendering;
 
   
   WebRenderScrollData mScrollData;
