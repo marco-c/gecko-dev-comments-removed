@@ -122,7 +122,13 @@ function onPopState(aEvent) {
   
   if (aEvent.state) {
     
-    Addons.showDetails(Addons._getElementForAddon(aEvent.state.id));
+    const listItem = Addons._getElementForAddon(aEvent.state.id);
+    if (listItem) {
+      Addons.showDetails(listItem);
+    } else {
+      
+      history.back();
+    }
   } else {
     
     let detailItem = document.querySelector("#addons-details > .addon-item");
