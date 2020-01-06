@@ -20,17 +20,8 @@ const { normalize, dirname } = Cu.import("resource://gre/modules/osfile/ospath_u
 XPCOMUtils.defineLazyServiceGetter(this, "resProto",
                                    "@mozilla.org/network/protocol;1?name=resource",
                                    "nsIResProtocolHandler");
-XPCOMUtils.defineLazyServiceGetter(this, "zipCache",
-                                   "@mozilla.org/libjar/zip-reader-cache;1",
-                                   "nsIZipReaderCache");
 
 const { defineLazyGetter } = XPCOMUtils;
-
-defineLazyGetter(this, "XulApp", () => {
-  let xulappURI = module.uri.replace("toolkit/loader.js",
-                                     "sdk/system/xul-app.jsm");
-  return Cu.import(xulappURI, {});
-});
 
 
 const bind = Function.call.bind(Function.bind);
@@ -40,45 +31,6 @@ function* getOwnIdentifiers(x) {
   yield* Object.getOwnPropertyNames(x);
   yield* Object.getOwnPropertySymbols(x);
 }
-
-const NODE_MODULES = new Set([
-  "assert",
-  "buffer_ieee754",
-  "buffer",
-  "child_process",
-  "cluster",
-  "console",
-  "constants",
-  "crypto",
-  "_debugger",
-  "dgram",
-  "dns",
-  "domain",
-  "events",
-  "freelist",
-  "fs",
-  "http",
-  "https",
-  "_linklist",
-  "module",
-  "net",
-  "os",
-  "path",
-  "punycode",
-  "querystring",
-  "readline",
-  "repl",
-  "stream",
-  "string_decoder",
-  "sys",
-  "timers",
-  "tls",
-  "tty",
-  "url",
-  "util",
-  "vm",
-  "zlib",
-]);
 
 const COMPONENT_ERROR = '`Components` is not available in this context.\n' +
   'Functionality provided by Components may be available in an SDK\n' +
@@ -188,154 +140,6 @@ function serializeStack(frames) {
            stack;
   }, "");
 }
-
-class DefaultMap extends Map {
-  constructor(createItem, items = undefined) {
-    super(items);
-
-    this.createItem = createItem;
-  }
-
-  get(key) {
-    if (!this.has(key)) {
-      this.set(key, this.createItem(key));
-    }
-
-    return super.get(key);
-  }
-}
-
-const urlCache = {
-  
-
-
-
-
-
-
-
-
-
-
-  getZipFileContents(uri, baseURL) {
-    
-    
-    let basePath = addTrailingSlash(uri.JAREntry).slice(1);
-    let file = uri.JARFile.QueryInterface(Ci.nsIFileURL).file;
-
-    let enumerator = zipCache.getZip(file).findEntries("(*.js|*.json|*/)");
-
-    let results = new Set();
-    for (let entry of XPCOMUtils.IterStringEnumerator(enumerator)) {
-      if (entry.startsWith(basePath)) {
-        let path = entry.slice(basePath.length);
-
-        results.add(baseURL + path);
-      }
-    }
-
-    return results;
-  },
-
-  zipContentsCache: new DefaultMap(baseURL => {
-    let uri = NetUtil.newURI(baseURL);
-
-    if (baseURL.startsWith("resource:")) {
-      uri = NetUtil.newURI(resProto.resolveURI(uri));
-    }
-
-    if (uri instanceof Ci.nsIJARURI) {
-      return urlCache.getZipFileContents(uri, baseURL);
-    }
-
-    return null;
-  }),
-
-  filesCache: new DefaultMap(url => {
-    try {
-      let uri = NetUtil.newURI(url).QueryInterface(Ci.nsIFileURL);
-
-      return uri.file.exists();
-    } catch (e) {
-      return false;
-    }
-  }),
-
-  resolutionCache: new DefaultMap(fullId => {
-    return (resolveAsFile(fullId) ||
-            resolveAsDirectory(fullId));
-  }),
-
-  nodeModulesCache: new Map(),
-
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsISupportsWeakReference]),
-
-  observe() {
-    
-    
-    this.zipContentsCache.clear();
-    this.filesCache.clear();
-    this.resolutionCache.clear();
-    this.nodeModulesCache.clear();
-  },
-
-  getNodeModulePaths(rootURI, start) {
-    let url = join(rootURI, start);
-
-    if (this.nodeModulesCache.has(url))
-      return this.nodeModulesCache.get(url);
-
-    let result = Array.from(getNodeModulePaths(rootURI, start));
-    this.nodeModulesCache.set(url, result);
-    return result;
-  },
-
-  
-
-
-
-
-
-
-
-  getBaseURL(url) {
-    
-    
-    
-    if (url.startsWith("resource://")) {
-      return /^resource:\/\/[^\/]+\//.exec(url)[0];
-    }
-
-    let uri = NetUtil.newURI(url);
-    if (uri instanceof Ci.nsIJARURI) {
-      return `jar:${uri.JARFile.spec}!/`;
-    }
-
-    return null;
-  },
-
-  
-
-
-
-
-
-
-  exists(url) {
-    if (!/\.(?:js|json)$/.test(url)) {
-      url = addTrailingSlash(url);
-    }
-
-    let baseURL = this.getBaseURL(url);
-    let scripts = baseURL && this.zipContentsCache.get(baseURL);
-    if (scripts) {
-      return scripts.has(url);
-    }
-
-    return this.filesCache.get(url);
-  },
-}
-addObserver(urlCache, "startupcache-invalidate", true);
 
 function readURI(uri) {
   let nsURI = NetUtil.newURI(uri);
@@ -553,13 +357,6 @@ const load = iced(function load(loader, module) {
     module = loadModuleHook(module, require);
   }
 
-  if (loader.checkCompatibility) {
-    let err = XulApp.incompatibility(module);
-    if (err) {
-      throw err;
-    }
-  }
-
   
   
   
@@ -598,111 +395,6 @@ const resolve = iced(function resolve(id, base) {
     resolved = './' + resolved;
 
   return resolved;
-});
-
-
-
-function resolveAsFile(path) {
-  
-  path = normalizeExt(path);
-  if (urlCache.exists(path)) {
-    return path;
-  }
-
-  return null;
-}
-
-
-
-function resolveAsDirectory(path) {
-  try {
-    
-    
-    let manifestPath = addTrailingSlash(path) + 'package.json';
-
-    let main = (urlCache.exists(manifestPath) &&
-                getManifestMain(JSON.parse(readURI(manifestPath))));
-    if (main) {
-      let found = resolveAsFile(join(path, main));
-      if (found) {
-        return found
-      }
-    }
-  } catch (e) {}
-
-  return resolveAsFile(addTrailingSlash(path) + 'index.js');
-}
-
-function resolveRelative(rootURI, modulesDir, id) {
-  let fullId = join(rootURI, modulesDir, id);
-
-  let resolvedPath = urlCache.resolutionCache.get(fullId);
-  if (resolvedPath) {
-    return './' + resolvedPath.slice(rootURI.length);
-  }
-
-  return null;
-}
-
-
-
-function* getNodeModulePaths(rootURI, start) {
-  let moduleDir = 'node_modules';
-
-  let parts = start.split('/');
-  while (parts.length) {
-    let leaf = parts.pop();
-    let path = [...parts, leaf, moduleDir].join("/");
-    if (leaf !== moduleDir && urlCache.exists(join(rootURI, path))) {
-      yield path;
-    }
-  }
-
-  if (urlCache.exists(join(rootURI, moduleDir))) {
-    yield moduleDir;
-  }
-}
-
-
-
-
-
-
-const nodeResolve = iced(function nodeResolve(id, requirer, { rootURI }) {
-  
-  id = resolve(id, requirer);
-
-  
-  if (isAbsoluteURI(id)) {
-    return null;
-  }
-
-  
-  
-  let resolvedPath;
-
-  if ((resolvedPath = resolveRelative(rootURI, "", id))) {
-    return resolvedPath;
-  }
-
-  
-  
-  if (isAbsoluteURI(requirer)) {
-    return null;
-  }
-
-  
-  
-  for (let modulesDir of urlCache.getNodeModulePaths(rootURI, dirname(requirer))) {
-    if ((resolvedPath = resolveRelative(rootURI, modulesDir, id))) {
-      return resolvedPath;
-    }
-  }
-
-  
-  
-  
-  return null;
 });
 
 function addTrailingSlash(path) {
@@ -822,14 +514,6 @@ const Require = iced(function Require(loader, requirer) {
     manifest, rootURI, isNative, requireHook
   } = loader;
 
-  if (isSystemURI(requirer.uri)) {
-    
-    
-    
-    isNative = false;
-    loaderResolve = resolve;
-  }
-
   function require(id) {
     if (!id) 
       throw Error('You must provide a module name when calling require() from '
@@ -910,51 +594,7 @@ const Require = iced(function Require(loader, requirer) {
 
     let requirement, uri;
 
-    
-    
-    if (isNative) {
-      let { overrides } = manifest.jetpack;
-      for (let key in overrides) {
-        
-        if (/^[.\/]/.test(key)) {
-          continue;
-        }
-
-        
-        
-        
-        if (id == key || id.startsWith(key + "/")) {
-          id = overrides[key] + id.substr(key.length);
-          id = id.replace(/^[.\/]+/, "");
-        }
-      }
-
-      
-      
-      
-      if (!requirement && modules[id])
-        uri = requirement = id;
-
-      if (!requirement && !NODE_MODULES.has(id)) {
-        
-        
-        
-        
-        requirement = loaderResolve(id, requirer.id, {
-          manifest: manifest,
-          rootURI: rootURI
-        });
-      }
-
-      
-      
-      
-      
-      if (!requirement) {
-        requirement = isRelative(id) ? resolve(id, requirer.id) : id;
-      }
-    }
-    else if (modules[id]) {
+    if (modules[id]) {
       uri = requirement = id;
     }
     else if (requirer) {
@@ -998,19 +638,7 @@ const Require = iced(function Require(loader, requirer) {
     };
   };
 
-  
-  require.main = loader.main === requirer ? requirer : undefined;
   return iced(require);
-});
-
-const main = iced(function main(loader, id) {
-  
-  
-  if (!id && loader.isNative)
-    id = getManifestMain(loader.manifest);
-  let uri = resolveURI(id, loader.mapping);
-  let module = loader.main = loader.modules[uri] = Module(id, uri);
-  return loader.load(loader, module).exports;
 });
 
 
@@ -1124,10 +752,6 @@ function Loader(options) {
   for (let id of Object.keys(builtinModuleExports)) {
     
     let uri = resolveURI(id, mapping);
-    
-    
-    if (isNative && !uri)
-      uri = id;
     let module = Module(id, uri);
 
     
@@ -1177,7 +801,6 @@ function Loader(options) {
     mappingCache: { enumerable: false, value: new Map() },
     
     modules: { enumerable: false, value: modules },
-    metadata: { enumerable: false, value: metadata },
     useSharedGlobalSandbox: { enumerable: false, value: !!sharedGlobal },
     sharedGlobalSandbox: { enumerable: false, value: sharedGlobalSandbox },
     sharedGlobalBlocklist: { enumerable: false, value: sharedGlobalBlocklist },
@@ -1191,27 +814,9 @@ function Loader(options) {
     invisibleToDebugger: { enumerable: false,
                            value: options.invisibleToDebugger || false },
     load: { enumerable: false, value: options.load || load },
-    checkCompatibility: { enumerable: false, value: checkCompatibility },
     requireHook: { enumerable: false, value: options.requireHook },
     loadModuleHook: { enumerable: false, value: options.loadModuleHook },
-    
-    
-    main: new function() {
-      let main;
-      return {
-        enumerable: false,
-        get: function() { return main; },
-        
-        set: function(module) { main = main || module; }
-      }
-    }
   };
-
-  if (isNative) {
-    returnObj.isNative = { enumerable: false, value: true };
-    returnObj.manifest = { enumerable: false, value: manifest };
-    returnObj.rootURI = { enumerable: false, value: normalizeRootURI(rootURI) };
-  }
 
   return freeze(Object.create(null, returnObj));
 };
@@ -1223,10 +828,3 @@ var isJSMURI = uri => uri.endsWith('.jsm');
 var isJSURI = uri => uri.endsWith('.js');
 var isAbsoluteURI = uri => /^(resource|chrome|file|jar):/.test(uri);
 var isRelative = id => id.startsWith(".");
-
-
-
-function getManifestMain(manifest) {
-  let main = manifest.main || './index.js';
-  return isRelative(main) ? main : './' + main;
-}
