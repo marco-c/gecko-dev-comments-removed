@@ -667,7 +667,19 @@ public:
 
 
 
-  void Destroy() { DestroyFrom(this); }
+  using PostDestroyData = mozilla::layout::PostFrameDestroyData;
+  void Destroy() {
+    nsPresContext* presContext = PresContext();
+    PostDestroyData data;
+    DestroyFrom(this, data);
+    
+    for (auto& content : mozilla::Reversed(data.mAnonymousContent)) {
+      DestroyAnonymousContent(presContext, content.forget());
+    }
+    for (auto& content : mozilla::Reversed(data.mGeneratedContent)) {
+      content->UnbindFromTree();
+    }
+  }
 
   
 
@@ -718,7 +730,7 @@ protected:
 
 
 
-  virtual void DestroyFrom(nsIFrame* aDestructRoot) = 0;
+  virtual void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) = 0;
   friend class nsFrameList; 
   friend class nsLineBox;   
   friend class nsContainerFrame; 
@@ -3491,6 +3503,14 @@ public:
 
 
 
+
+
+  bool IsPseudoStackingContextFromStyle();
+
+  
+
+
+
   bool IsVisuallyAtomic(mozilla::EffectSet* aEffectSet,
                         const nsStyleDisplay* aStyleDisplay,
                         const nsStyleEffects* aStyleEffects);
@@ -4107,8 +4127,6 @@ public:
   bool HasDisplayItems();
   bool HasDisplayItem(nsDisplayItem* aItem);
 
-  void DestroyAnonymousContent(already_AddRefed<nsIContent> aContent);
-
   bool ForceDescendIntoIfVisible() { return mForceDescendIntoIfVisible; }
   void SetForceDescendIntoIfVisible(bool aForce) { mForceDescendIntoIfVisible = aForce; }
 
@@ -4128,6 +4146,8 @@ public:
   void SetBuiltBlendContainer(bool aBuilt) { mBuiltBlendContainer = aBuilt; }
 
 protected:
+  static void DestroyAnonymousContent(nsPresContext* aPresContext,
+                                      already_AddRefed<nsIContent>&& aContent);
 
   
 

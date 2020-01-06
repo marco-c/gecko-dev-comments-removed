@@ -556,8 +556,10 @@ public:
     mBounds.BSize(mWritingMode) = 0;
   }
 
+  using PostDestroyData = nsIFrame::PostDestroyData;
   static void DeleteLineList(nsPresContext* aPresContext, nsLineList& aLines,
-                             nsIFrame* aDestructRoot, nsFrameList* aFrames);
+                             nsIFrame* aDestructRoot, nsFrameList* aFrames,
+                             PostDestroyData& aPostDestroyData);
 
   
   
