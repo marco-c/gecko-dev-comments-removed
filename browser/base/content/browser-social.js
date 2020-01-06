@@ -25,6 +25,12 @@ XPCOMUtils.defineLazyGetter(this, "DynamicResizeWatcher", function() {
   return tmp.DynamicResizeWatcher;
 });
 
+XPCOMUtils.defineLazyGetter(this, "Utils", function() {
+  let tmp = {};
+  Cu.import("resource://gre/modules/sessionstore/Utils.jsm", tmp);
+  return tmp.Utils;
+});
+
 let messageManager = window.messageManager;
 let openUILinkIn = window.openUILinkIn;
 
@@ -203,7 +209,11 @@ SocialActivationListener = {
         if (provider.postActivationURL) {
           
           
-          gBrowser.loadOneTab(provider.postActivationURL, {inBackground: SocialShare.panel.state == "open"});
+          let triggeringPrincipal = Utils.deserializePrincipal(aMessage.data.triggeringPrincipal);
+          gBrowser.loadOneTab(provider.postActivationURL, {
+            inBackground: SocialShare.panel.state == "open",
+            triggeringPrincipal,
+          });
         }
       });
     }, options);
