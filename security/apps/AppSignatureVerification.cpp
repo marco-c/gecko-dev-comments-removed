@@ -483,10 +483,23 @@ CheckManifestVersion(const char* & nextLineStart,
 
 
 
-
 nsresult
-ParseSF(const char* filebuf,  DigestWithAlgorithm& mfDigest)
+ParseSF(const char* filebuf, SECOidTag digestAlgorithm,
+         nsAutoCString& mfDigest)
 {
+  const char* digestNameToFind = nullptr;
+  switch (digestAlgorithm) {
+    case SEC_OID_SHA256:
+      digestNameToFind = "sha256-digest-manifest";
+      break;
+    case SEC_OID_SHA1:
+      digestNameToFind = "sha1-digest-manifest";
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("bad argument to ParseSF");
+      return NS_ERROR_FAILURE;
+  }
+
   const char* nextLineStart = filebuf;
   nsresult rv = CheckManifestVersion(nextLineStart,
                                      NS_LITERAL_CSTRING(JAR_SF_HEADER));
@@ -494,9 +507,6 @@ ParseSF(const char* filebuf,  DigestWithAlgorithm& mfDigest)
     return rv;
   }
 
-  nsAutoCString savedSHA1Digest;
-  
-  
   for (;;) {
     nsAutoCString curLine;
     rv = ReadLine(nextLineStart, curLine);
@@ -507,11 +517,6 @@ ParseSF(const char* filebuf,  DigestWithAlgorithm& mfDigest)
     if (curLine.Length() == 0) {
       
       
-      if (!savedSHA1Digest.IsEmpty()) {
-        mfDigest.mDigest.Assign(savedSHA1Digest);
-        mfDigest.mAlgorithm = SEC_OID_SHA1;
-        return NS_OK;
-      }
       return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
     }
 
@@ -522,12 +527,11 @@ ParseSF(const char* filebuf,  DigestWithAlgorithm& mfDigest)
       return rv;
     }
 
-    if (attrName.LowerCaseEqualsLiteral("sha256-digest-manifest")) {
-      rv = Base64Decode(attrValue, mfDigest.mDigest);
+    if (attrName.EqualsIgnoreCase(digestNameToFind)) {
+      rv = Base64Decode(attrValue, mfDigest);
       if (NS_FAILED(rv)) {
         return rv;
       }
-      mfDigest.mAlgorithm = SEC_OID_SHA256;
 
       
       
@@ -540,18 +544,11 @@ ParseSF(const char* filebuf,  DigestWithAlgorithm& mfDigest)
       return NS_OK;
     }
 
-    if (attrName.LowerCaseEqualsLiteral("sha1-digest-manifest") &&
-        savedSHA1Digest.IsEmpty()) {
-      rv = Base64Decode(attrValue, savedSHA1Digest);
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
-    }
-
     
   }
 
-  return NS_OK;
+  MOZ_ASSERT_UNREACHABLE("somehow exited loop in ParseSF without returning");
+  return NS_ERROR_FAILURE;
 }
 
 
@@ -758,16 +755,56 @@ VerifyCertificate(CERTCertificate* signerCert, AppTrustedRoot trustedRoot,
   return NS_OK;
 }
 
+
+
+
+
+
+
+
+NSSCMSSignerInfo*
+GetSignerInfoForDigestAlgorithm(NSSCMSSignedData* signedData,
+                                SECOidTag digestAlgorithm)
+{
+  MOZ_ASSERT(digestAlgorithm == SEC_OID_SHA1 ||
+             digestAlgorithm == SEC_OID_SHA256);
+  if (digestAlgorithm != SEC_OID_SHA1 && digestAlgorithm != SEC_OID_SHA256) {
+    return nullptr;
+  }
+
+  int numSigners = NSS_CMSSignedData_SignerInfoCount(signedData);
+  if (numSigners < 1) {
+    return nullptr;
+  }
+  for (int i = 0; i < numSigners; i++) {
+    NSSCMSSignerInfo* signerInfo =
+      NSS_CMSSignedData_GetSignerInfo(signedData, i);
+    
+    SECOidData* digestAlgOID = SECOID_FindOID(&signerInfo->digestAlg.algorithm);
+    if (!digestAlgOID) {
+      continue;
+    }
+    if (digestAlgorithm == digestAlgOID->offset) {
+      return signerInfo;
+    }
+  }
+  return nullptr;
+}
+
 nsresult
 VerifySignature(AppTrustedRoot trustedRoot, const SECItem& buffer,
-                const SECItem& detachedDigest,
+                const SECItem& detachedSHA1Digest,
+                const SECItem& detachedSHA256Digest,
+                 SECOidTag& digestAlgorithm,
                  UniqueCERTCertList& builtChain)
 {
   
   
   
-  if (NS_WARN_IF(!buffer.data && buffer.len > 0) ||
-      NS_WARN_IF(!detachedDigest.data && detachedDigest.len > 0)) {
+
+  if (NS_WARN_IF(!buffer.data || buffer.len == 0 || !detachedSHA1Digest.data ||
+                 detachedSHA1Digest.len == 0 || !detachedSHA256Digest.data ||
+                 detachedSHA256Digest.len == 0)) {
     return NS_ERROR_INVALID_ARG;
   }
 
@@ -802,12 +839,6 @@ VerifySignature(AppTrustedRoot trustedRoot, const SECItem& buffer,
   }
 
   
-  if (NSS_CMSSignedData_SetDigestValue(signedData, SEC_OID_SHA1,
-                                       const_cast<SECItem*>(&detachedDigest))) {
-    return NS_ERROR_CMS_VERIFY_BAD_DIGEST;
-  }
-
-  
   
   UniqueCERTCertList certs(CERT_NewCertList());
   if (!certs) {
@@ -832,37 +863,43 @@ VerifySignature(AppTrustedRoot trustedRoot, const SECItem& buffer,
     }
   }
 
-  
-  int numSigners = NSS_CMSSignedData_SignerInfoCount(signedData);
-  if (NS_WARN_IF(numSigners != 1)) {
-    return NS_ERROR_CMS_VERIFY_ERROR_PROCESSING;
+  NSSCMSSignerInfo* signerInfo =
+    GetSignerInfoForDigestAlgorithm(signedData, SEC_OID_SHA256);
+  const SECItem* detachedDigest = &detachedSHA256Digest;
+  digestAlgorithm = SEC_OID_SHA256;
+  if (!signerInfo) {
+    signerInfo = GetSignerInfoForDigestAlgorithm(signedData, SEC_OID_SHA1);
+    if (!signerInfo) {
+      return NS_ERROR_CMS_VERIFY_NOT_SIGNED;
+    }
+    detachedDigest = &detachedSHA1Digest;
+    digestAlgorithm = SEC_OID_SHA1;
   }
+
   
-  NSSCMSSignerInfo* signer = NSS_CMSSignedData_GetSignerInfo(signedData, 0);
-  if (NS_WARN_IF(!signer)) {
-    return NS_ERROR_CMS_VERIFY_ERROR_PROCESSING;
-  }
   CERTCertificate* signerCert =
-    NSS_CMSSignerInfo_GetSigningCertificate(signer, CERT_GetDefaultCertDB());
+    NSS_CMSSignerInfo_GetSigningCertificate(signerInfo,
+                                            CERT_GetDefaultCertDB());
   if (!signerCert) {
     return NS_ERROR_CMS_VERIFY_ERROR_PROCESSING;
   }
 
   nsresult rv = VerifyCertificate(signerCert, trustedRoot, builtChain);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
+  if (NS_FAILED(rv)) {
     return rv;
   }
 
   
-  SECOidData* contentTypeOidData =
-    SECOID_FindOID(&signedData->contentInfo.contentType);
-  if (!contentTypeOidData) {
+  const char* pkcs7DataOidString = "1.2.840.113549.1.7.1";
+  ScopedAutoSECItem pkcs7DataOid;
+  if (SEC_StringToOID(nullptr, &pkcs7DataOid, pkcs7DataOidString, 0)
+        != SECSuccess) {
     return NS_ERROR_CMS_VERIFY_ERROR_PROCESSING;
   }
 
-  return MapSECStatus(NSS_CMSSignerInfo_Verify(signer,
-                         const_cast<SECItem*>(&detachedDigest),
-                         &contentTypeOidData->oid));
+  return MapSECStatus(
+    NSS_CMSSignerInfo_Verify(signerInfo, const_cast<SECItem*>(detachedDigest),
+                             &pkcs7DataOid));
 }
 
 nsresult
@@ -901,24 +938,39 @@ OpenSignedAppFile(AppTrustedRoot aTrustedRoot, nsIFile* aJarFile,
   
   nsAutoCString sfFilename;
   ScopedAutoSECItem sfBuffer;
-  Digest sfCalculatedDigest;
   rv = FindAndLoadOneEntry(zip, NS_LITERAL_CSTRING(JAR_SF_SEARCH_STRING),
-                           sfFilename, sfBuffer, SEC_OID_SHA1,
-                           &sfCalculatedDigest);
+                           sfFilename, sfBuffer);
   if (NS_FAILED(rv)) {
     return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
   }
 
-  sigBuffer.type = siBuffer;
-  UniqueCERTCertList builtChain;
-  rv = VerifySignature(aTrustedRoot, sigBuffer, sfCalculatedDigest.get(),
-                       builtChain);
+  
+  
+  Digest sfCalculatedSHA1Digest;
+  rv = sfCalculatedSHA1Digest.DigestBuf(SEC_OID_SHA1, sfBuffer.data,
+                                        sfBuffer.len - 1);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  Digest sfCalculatedSHA256Digest;
+  rv = sfCalculatedSHA256Digest.DigestBuf(SEC_OID_SHA256, sfBuffer.data,
+                                          sfBuffer.len - 1);
   if (NS_FAILED(rv)) {
     return rv;
   }
 
-  DigestWithAlgorithm mfDigest;
-  rv = ParseSF(BitwiseCast<char*, unsigned char*>(sfBuffer.data), mfDigest);
+  sigBuffer.type = siBuffer;
+  UniqueCERTCertList builtChain;
+  SECOidTag digestToUse;
+  rv = VerifySignature(aTrustedRoot, sigBuffer, sfCalculatedSHA1Digest.get(),
+                       sfCalculatedSHA256Digest.get(), digestToUse, builtChain);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  nsAutoCString mfDigest;
+  rv = ParseSF(BitwiseCast<char*, unsigned char*>(sfBuffer.data), digestToUse,
+               mfDigest);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -928,7 +980,7 @@ OpenSignedAppFile(AppTrustedRoot aTrustedRoot, nsIFile* aJarFile,
   ScopedAutoSECItem manifestBuffer;
   Digest mfCalculatedDigest;
   rv = FindAndLoadOneEntry(zip, NS_LITERAL_CSTRING(JAR_MF_SEARCH_STRING),
-                           mfFilename, manifestBuffer, mfDigest.mAlgorithm,
+                           mfFilename, manifestBuffer, digestToUse,
                            &mfCalculatedDigest);
   if (NS_FAILED(rv)) {
     return rv;
@@ -936,7 +988,7 @@ OpenSignedAppFile(AppTrustedRoot aTrustedRoot, nsIFile* aJarFile,
 
   nsDependentCSubstring calculatedDigest(
     DigestToDependentString(mfCalculatedDigest));
-  if (!mfDigest.mDigest.Equals(calculatedDigest)) {
+  if (!mfDigest.Equals(calculatedDigest)) {
     return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
   }
 
@@ -948,7 +1000,7 @@ OpenSignedAppFile(AppTrustedRoot aTrustedRoot, nsIFile* aJarFile,
   nsTHashtable<nsCStringHashKey> items;
 
   rv = ParseMF(BitwiseCast<char*, unsigned char*>(manifestBuffer.data), zip,
-               mfDigest.mAlgorithm, items, buf);
+               digestToUse, items, buf);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -1476,25 +1528,40 @@ VerifySignedDirectory(AppTrustedRoot aTrustedRoot,
                           + NS_LITERAL_STRING("sf"));
 
   ScopedAutoSECItem sfBuffer;
-  Digest sfCalculatedDigest;
-  rv = LoadOneMetafile(metaDir, sfFilename, sfBuffer, SEC_OID_SHA1,
-                       &sfCalculatedDigest);
+  rv = LoadOneMetafile(metaDir, sfFilename, sfBuffer);
   if (NS_FAILED(rv)) {
     return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
   }
 
+  
+  
+  Digest sfCalculatedSHA1Digest;
+  rv = sfCalculatedSHA1Digest.DigestBuf(SEC_OID_SHA1, sfBuffer.data,
+                                        sfBuffer.len - 1);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  Digest sfCalculatedSHA256Digest;
+  rv = sfCalculatedSHA256Digest.DigestBuf(SEC_OID_SHA256, sfBuffer.data,
+                                          sfBuffer.len - 1);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
   sigBuffer.type = siBuffer;
   UniqueCERTCertList builtChain;
-  rv = VerifySignature(aTrustedRoot, sigBuffer, sfCalculatedDigest.get(),
-                       builtChain);
+  SECOidTag digestToUse;
+  rv = VerifySignature(aTrustedRoot, sigBuffer, sfCalculatedSHA1Digest.get(),
+                       sfCalculatedSHA256Digest.get(), digestToUse, builtChain);
   if (NS_FAILED(rv)) {
     return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
   }
 
   
 
-  DigestWithAlgorithm mfDigest;
-  rv = ParseSF(BitwiseCast<char*, unsigned char*>(sfBuffer.data), mfDigest);
+  nsAutoCString mfDigest;
+  rv = ParseSF(BitwiseCast<char*, unsigned char*>(sfBuffer.data), digestToUse,
+               mfDigest);
   if (NS_FAILED(rv)) {
     return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
   }
@@ -1504,7 +1571,7 @@ VerifySignedDirectory(AppTrustedRoot aTrustedRoot,
   nsAutoString mfFilename(NS_LITERAL_STRING("manifest.mf"));
   ScopedAutoSECItem manifestBuffer;
   Digest mfCalculatedDigest;
-  rv = LoadOneMetafile(metaDir, mfFilename, manifestBuffer, mfDigest.mAlgorithm,
+  rv = LoadOneMetafile(metaDir, mfFilename, manifestBuffer, digestToUse,
                        &mfCalculatedDigest);
   if (NS_FAILED(rv)) {
     return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
@@ -1512,7 +1579,7 @@ VerifySignedDirectory(AppTrustedRoot aTrustedRoot,
 
   nsDependentCSubstring calculatedDigest(
     DigestToDependentString(mfCalculatedDigest));
-  if (!mfDigest.mDigest.Equals(calculatedDigest)) {
+  if (!mfDigest.Equals(calculatedDigest)) {
     return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
   }
 
@@ -1525,7 +1592,7 @@ VerifySignedDirectory(AppTrustedRoot aTrustedRoot,
 
   nsTHashtable<nsStringHashKey> items;
   rv = ParseMFUnpacked(BitwiseCast<char*, unsigned char*>(manifestBuffer.data),
-                       aDirectory, mfDigest.mAlgorithm, items, buf);
+                       aDirectory, digestToUse, items, buf);
   if (NS_FAILED(rv)){
     return rv;
   }
