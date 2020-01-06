@@ -773,6 +773,15 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     
     
     
+    
+    
+    
+    
+    
+
+    
+    
+    
     offsets->untrustedFPStart = masm.currentOffset();
     AssertStackAlignment(masm, JitStackAlignment, sizeOfRetAddr);
 
