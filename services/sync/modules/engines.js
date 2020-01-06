@@ -1047,6 +1047,7 @@ SyncEngine.prototype = {
     
     
     this._tracker.clearChangedIDs();
+    this._tracker.resetScore();
 
     this._log.info(this._modified.count() +
                    " outgoing items pre-reconciliation");
@@ -1729,7 +1730,6 @@ SyncEngine.prototype = {
   
   async _syncFinish() {
     this._log.trace("Finishing up sync");
-    this._tracker.resetScore();
 
     let doDelete = async (key, val) => {
       let coll = new Collection(this.engineURL, this._recordObj, this.service);
