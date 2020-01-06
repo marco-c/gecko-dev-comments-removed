@@ -839,6 +839,54 @@ public:
 
 
 
+
+
+
+
+
+  void StartBufferingCSPViolations()
+  {
+    MOZ_ASSERT(!mBufferingCSPViolations);
+    mBufferingCSPViolations = true;
+  }
+
+  
+
+
+
+  void StopBufferingCSPViolations(nsTArray<nsCOMPtr<nsIRunnable>>& aResult)
+  {
+    MOZ_ASSERT(mBufferingCSPViolations);
+    mBufferingCSPViolations = false;
+
+    aResult.SwapElements(mBufferedCSPViolations);
+    mBufferedCSPViolations.Clear();
+  }
+
+  
+
+
+  bool ShouldBufferCSPViolations() const
+  {
+    return mBufferingCSPViolations;
+  }
+
+  
+
+
+
+  void BufferCSPViolation(nsIRunnable* aReportingRunnable)
+  {
+    MOZ_ASSERT(mBufferingCSPViolations);
+
+    
+    mBufferedCSPViolations.AppendElement(aReportingRunnable, mozilla::fallible);
+  }
+
+  
+
+
+
   virtual void GetHeaderData(nsIAtom* aHeaderField, nsAString& aData) const = 0;
   virtual void SetHeaderData(nsIAtom* aheaderField, const nsAString& aData) = 0;
 
@@ -3310,6 +3358,10 @@ protected:
   bool mDidCallBeginLoad : 1;
 
   
+  
+  bool mBufferingCSPViolations : 1;
+
+  
   enum { eScopedStyle_Unknown, eScopedStyle_Disabled, eScopedStyle_Enabled };
   unsigned int mIsScopedStyleEnabled : 2;
 
@@ -3489,6 +3541,10 @@ protected:
   
   
   nsTHashtable<nsCStringHashKey> mTrackingScripts;
+
+  
+  
+  nsTArray<nsCOMPtr<nsIRunnable>> mBufferedCSPViolations;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocument, NS_IDOCUMENT_IID)
