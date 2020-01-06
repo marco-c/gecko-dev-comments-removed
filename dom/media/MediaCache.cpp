@@ -1990,8 +1990,8 @@ MediaCacheStream::UpdatePrincipal(nsIPrincipal* aPrincipal)
 
 void
 MediaCacheStream::NotifyDataReceived(uint32_t aLoadID,
-                                     int64_t aSize,
-                                     const char* aData)
+                                     uint32_t aCount,
+                                     const uint8_t* aData)
 {
   MOZ_ASSERT(aLoadID > 0);
   
@@ -2002,10 +2002,10 @@ MediaCacheStream::NotifyDataReceived(uint32_t aLoadID,
     return;
   }
 
-  LOG("Stream %p DataReceived at %" PRId64 " count=%" PRId64 " aLoadID=%u",
+  LOG("Stream %p DataReceived at %" PRId64 " count=%u aLoadID=%u",
       this,
       mChannelOffset,
-      aSize,
+      aCount,
       aLoadID);
 
   if (mLoadID != aLoadID) {
@@ -2014,38 +2014,42 @@ MediaCacheStream::NotifyDataReceived(uint32_t aLoadID,
     
     return;
   }
-  int64_t size = aSize;
-  const char* data = aData;
+
+  auto source = MakeSpan<const uint8_t>(aData, aCount);
 
   
-  while (size > 0) {
-    uint32_t blockIndex = OffsetToBlockIndexUnchecked(mChannelOffset);
-    int32_t blockOffset = int32_t(mChannelOffset - blockIndex*BLOCK_SIZE);
-    int32_t chunkSize = std::min<int64_t>(BLOCK_SIZE - blockOffset, size);
+  while (!source.IsEmpty()) {
+    
+    auto partial = MakeSpan<const uint8_t>(mPartialBlockBuffer.get(),
+                                           OffsetInBlock(mChannelOffset));
 
-    if (blockOffset == 0) {
+    if (partial.IsEmpty()) {
       
       
       mMetadataInPartialBlockBuffer = false;
     }
 
-    ReadMode mode = mMetadataInPartialBlockBuffer
-      ? MODE_METADATA : MODE_PLAYBACK;
+    
+    size_t remaining = BLOCK_SIZE - partial.Length();
 
-    if (blockOffset + chunkSize == BLOCK_SIZE) {
+    if (source.Length() >= remaining) {
       
-      auto data1 = MakeSpan<const uint8_t>(
-        mPartialBlockBuffer.get(), blockOffset);
-      auto data2 = MakeSpan<const uint8_t>(
-        reinterpret_cast<const uint8_t*>(data), chunkSize);
-      mMediaCache->AllocateAndWriteBlock(this, blockIndex, mode, data1, data2);
+      mMediaCache->AllocateAndWriteBlock(
+        this,
+        OffsetToBlockIndexUnchecked(mChannelOffset),
+        mMetadataInPartialBlockBuffer ? MODE_METADATA : MODE_PLAYBACK,
+        partial,
+        source.First(remaining));
+      source = source.From(remaining);
+      mChannelOffset += remaining;
     } else {
-      memcpy(mPartialBlockBuffer.get() + blockOffset, data, chunkSize);
+      
+      auto buf = MakeSpan<uint8_t>(mPartialBlockBuffer.get() + partial.Length(),
+                                   remaining);
+      memcpy(buf.Elements(), source.Elements(), source.Length());
+      mChannelOffset += source.Length();
+      break;
     }
-
-    mChannelOffset += chunkSize;
-    size -= chunkSize;
-    data += chunkSize;
   }
 
   MediaCache::ResourceStreamIterator iter(mMediaCache, mResourceID);
