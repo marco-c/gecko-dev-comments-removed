@@ -12,7 +12,7 @@
 #include "ImageTypes.h"                 
 #include "mozilla/Assertions.h"         
 #include "mozilla/Mutex.h"              
-#include "mozilla/ReentrantMonitor.h"   
+#include "mozilla/RecursiveMutex.h"     
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/layers/LayersTypes.h"  
@@ -545,7 +545,7 @@ public:
 
   void SetImageFactory(ImageFactory *aFactory)
   {
-    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
     mImageFactory = aFactory ? aFactory : new ImageFactory();
   }
 
@@ -569,7 +569,7 @@ public:
 
   TimeDuration GetPaintDelay()
   {
-    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
     return mPaintDelay;
   }
 
@@ -578,7 +578,7 @@ public:
 
 
   uint32_t GetPaintCount() {
-    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
     return mPaintCount;
   }
 
@@ -592,7 +592,7 @@ public:
 
   uint32_t GetDroppedImageCount()
   {
-    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
     return mDroppedImageCount;
   }
 
@@ -616,7 +616,7 @@ public:
   static ProducerID AllocateProducerID();
 
 private:
-  typedef mozilla::ReentrantMonitor ReentrantMonitor;
+  typedef mozilla::RecursiveMutex RecursiveMutex;
 
   
   ~ImageContainer();
@@ -633,7 +633,7 @@ private:
 
   
   
-  ReentrantMonitor mReentrantMonitor;
+  RecursiveMutex mRecursiveMutex;
 
 #ifdef XP_WIN
   RefPtr<D3D11YCbCrRecycleAllocator> mD3D11YCbCrRecycleAllocator;
