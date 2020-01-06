@@ -5664,6 +5664,14 @@ nsBlockInFlowLineIterator::nsBlockInFlowLineIterator(nsBlockFrame* aFrame,
     return;
 
   LineIterator line_end = aFrame->LinesEnd();
+  mLine = aFrame->LinesBegin();
+  if (mLine != line_end && mLine.next() == line_end &&
+      !aFrame->HasOverflowLines()) {
+    
+    *aFoundValidLine = true;
+    return;
+  }
+
   
   if (nsLineBox* const cursor = aFrame->GetLineCursor()) {
     mLine = line_end;
