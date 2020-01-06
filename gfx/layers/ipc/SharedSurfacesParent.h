@@ -34,6 +34,11 @@ public:
   static void Initialize();
   static void Shutdown();
 
+  
+  static already_AddRefed<gfx::DataSourceSurface>
+  Get(const wr::ExternalImageId& aId);
+
+  
   static already_AddRefed<gfx::DataSourceSurface>
   Acquire(const wr::ExternalImageId& aId);
 

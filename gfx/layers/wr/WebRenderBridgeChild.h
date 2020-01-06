@@ -96,7 +96,7 @@ public:
   void RemovePipelineIdForCompositable(const wr::PipelineId& aPipelineId);
 
   wr::ExternalImageId AllocExternalImageIdForCompositable(CompositableClient* aCompositable);
-  void DeallocExternalImageId(wr::ExternalImageId& aImageId);
+  void DeallocExternalImageId(const wr::ExternalImageId& aImageId);
 
   
 

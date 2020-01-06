@@ -231,7 +231,7 @@ WebRenderBridgeChild::AllocExternalImageIdForCompositable(CompositableClient* aC
 }
 
 void
-WebRenderBridgeChild::DeallocExternalImageId(wr::ExternalImageId& aImageId)
+WebRenderBridgeChild::DeallocExternalImageId(const wr::ExternalImageId& aImageId)
 {
   if (mDestroyed) {
     

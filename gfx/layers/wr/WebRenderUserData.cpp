@@ -51,7 +51,7 @@ WebRenderUserData::WrBridge() const
 
 WebRenderImageData::WebRenderImageData(WebRenderLayerManager* aWRManager, nsDisplayItem* aItem)
   : WebRenderUserData(aWRManager, aItem)
-  , mGeneration(0)
+  , mOwnsKey(false)
 {
 }
 
@@ -61,12 +61,23 @@ WebRenderImageData::~WebRenderImageData()
 }
 
 void
-WebRenderImageData::ClearCachedResources()
+WebRenderImageData::ClearImageKey()
 {
   if (mKey) {
-    mWRManager->AddImageKeyForDiscard(mKey.value());
+    
+    
+    if (mOwnsKey) {
+      mWRManager->AddImageKeyForDiscard(mKey.value());
+    }
     mKey.reset();
   }
+  mOwnsKey = false;
+}
+
+void
+WebRenderImageData::ClearCachedResources()
+{
+  ClearImageKey();
 
   if (mExternalImageId) {
     WrBridge()->DeallocExternalImageId(mExternalImageId.ref());
@@ -90,49 +101,46 @@ WebRenderImageData::UpdateImageKey(ImageContainer* aContainer,
     mContainer = aContainer;
   }
 
-  wr::ExternalImageId externalId;
-  uint32_t generation;
-  nsresult rv = SharedSurfacesChild::Share(aContainer, externalId, generation);
+  wr::WrImageKey key;
+  nsresult rv = SharedSurfacesChild::Share(aContainer, mWRManager, aResources,
+                                           aForceUpdate, key);
   if (NS_SUCCEEDED(rv)) {
-    if (mExternalImageId.isSome() && mExternalImageId.ref() == externalId) {
-      
-      
-      if (mKey && mGeneration == generation && !aForceUpdate) {
-        return mKey;
-      }
-    } else {
-      
-      mExternalImageId = Some(externalId);
-    }
-
-    mGeneration = generation;
-  } else if (rv == NS_ERROR_NOT_IMPLEMENTED) {
-    CreateImageClientIfNeeded();
-    CreateExternalImageIfNeeded();
-
-    if (!mImageClient || !mExternalImageId) {
-      return Nothing();
-    }
-
-    MOZ_ASSERT(mImageClient->AsImageClientSingle());
-
-    ImageClientSingle* imageClient = mImageClient->AsImageClientSingle();
-    uint32_t oldCounter = imageClient->GetLastUpdateGenerationCounter();
-
-    bool ret = imageClient->UpdateImage(aContainer, 0);
-    if (!ret || imageClient->IsEmpty()) {
-      
-      if (mKey) {
-        mWRManager->AddImageKeyForDiscard(mKey.value());
-        mKey = Nothing();
-      }
-      return Nothing();
-    }
-
     
-    if (!aForceUpdate && oldCounter == imageClient->GetLastUpdateGenerationCounter() && mKey) {
-      return mKey;
-    }
+    
+    
+    ClearImageKey();
+    mKey = Some(key);
+    return mKey;
+  }
+
+  if (rv != NS_ERROR_NOT_IMPLEMENTED) {
+    
+    ClearImageKey();
+    return Nothing();
+  }
+
+  CreateImageClientIfNeeded();
+  CreateExternalImageIfNeeded();
+
+  if (!mImageClient || !mExternalImageId) {
+    return Nothing();
+  }
+
+  MOZ_ASSERT(mImageClient->AsImageClientSingle());
+
+  ImageClientSingle* imageClient = mImageClient->AsImageClientSingle();
+  uint32_t oldCounter = imageClient->GetLastUpdateGenerationCounter();
+
+  bool ret = imageClient->UpdateImage(aContainer, 0);
+  if (!ret || imageClient->IsEmpty()) {
+    
+    ClearImageKey();
+    return Nothing();
+  }
+
+  
+  if (!aForceUpdate && oldCounter == imageClient->GetLastUpdateGenerationCounter() && mKey) {
+    return mKey;
   }
 
   
@@ -141,9 +149,10 @@ WebRenderImageData::UpdateImageKey(ImageContainer* aContainer,
     mWRManager->AddImageKeyForDiscard(mKey.value());
   }
 
-  wr::WrImageKey key = WrBridge()->GetNextImageKey();
+  key = WrBridge()->GetNextImageKey();
   aResources.AddExternalImage(mExternalImageId.value(), key);
   mKey = Some(key);
+  mOwnsKey = true;
 
   return mKey;
 }
