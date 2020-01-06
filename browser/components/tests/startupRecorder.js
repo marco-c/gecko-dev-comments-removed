@@ -70,8 +70,7 @@ startupRecorder.prototype = {
     if (topic == "sessionstore-windows-restored") {
       
       
-      
-      Services.tm.idleDispatchToMainThread(
+      Services.tm.mainThread.idleDispatch(
         this.record.bind(this, "before handling user events"));
     } else {
       const topicsToNames = {

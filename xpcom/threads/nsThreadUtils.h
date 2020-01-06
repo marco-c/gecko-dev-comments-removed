@@ -152,48 +152,6 @@ NS_IdleDispatchToCurrentThread(already_AddRefed<nsIRunnable>&& aEvent);
 extern nsresult
 NS_IdleDispatchToCurrentThread(already_AddRefed<nsIRunnable>&& aEvent, uint32_t aTimeout);
 
-
-
-
-
-
-
-
-
-
-
-
-
-extern nsresult
-NS_IdleDispatchToThread(already_AddRefed<nsIRunnable>&& aEvent,
-                        nsIThread* aThread);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern nsresult
-NS_IdleDispatchToThread(already_AddRefed<nsIRunnable>&& aEvent,
-                        uint32_t aTimeout,
-                        nsIThread* aThread);
-
 #ifndef XPCOM_GLUE_AVOID_NSPR
 
 
