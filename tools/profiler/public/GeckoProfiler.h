@@ -166,6 +166,16 @@ PROFILER_FUNC_VOID(profiler_stop())
 
 
 
+PROFILER_FUNC_VOID(profiler_ensure_started(int aEntries, double aInterval,
+                                           uint32_t aFeatures,
+                                           const char** aFilters,
+                                           uint32_t aFilterCount))
+
+
+
+
+
+
 
 PROFILER_FUNC_VOID(profiler_register_thread(const char* name,
                                             void* guessStackTop))
