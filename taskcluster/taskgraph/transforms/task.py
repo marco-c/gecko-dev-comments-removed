@@ -56,6 +56,9 @@ task_description_schema = Schema({
     Optional('attributes'): {basestring: object},
 
     
+    Optional('job-from'): basestring,
+
+    
     
     
     Optional('dependencies'): {basestring: object},
