@@ -329,28 +329,6 @@ public:
     mAncestorPrincipals = mozilla::Move(aAncestorPrincipals);
   }
 
-  
-
-
-
-
-  const nsTArray<uint64_t>& AncestorOuterWindowIDs() const
-  {
-    return mAncestorOuterWindowIDs;
-  }
-
-  
-
-
-
-
-
-
-  void SetAncestorOuterWindowIDs(nsTArray<uint64_t>&& aAncestorOuterWindowIDs)
-  {
-    mAncestorOuterWindowIDs = mozilla::Move(aAncestorOuterWindowIDs);
-  }
-
 private:
   bool CanSetOriginAttributes();
 
@@ -1157,8 +1135,6 @@ private:
 
   
   nsTArray<nsCOMPtr<nsIPrincipal>> mAncestorPrincipals;
-  
-  nsTArray<uint64_t> mAncestorOuterWindowIDs;
 
   
   
