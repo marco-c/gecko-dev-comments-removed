@@ -1332,6 +1332,19 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     for (let i = 0; i < gridDimension.lines.length; i++) {
       let line = gridDimension.lines[i];
       let linePos = line.start;
+
+      
+      
+      
+      
+      
+      
+      
+      
+      if (line.number === 0) {
+        continue;
+      }
+
       this.renderGridLineNumber(line.number, linePos, lineStartPos, line.breadth,
         dimensionType);
     }
