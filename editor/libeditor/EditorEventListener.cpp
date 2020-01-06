@@ -627,10 +627,16 @@ EditorEventListener::KeyPress(WidgetKeyboardEvent* aKeyboardEvent)
   }
 
   nsCOMPtr<nsIDocument> doc = editorBase->GetDocument();
-  bool handled = widget->ExecuteNativeKeyBinding(
-                           nsIWidget::NativeKeyBindingsForRichTextEditor,
-                           *aKeyboardEvent, DoCommandCallback, doc);
-  if (handled) {
+
+  
+  
+  
+  
+  AutoRestore<nsCOMPtr<nsIWidget>> saveWidget(aKeyboardEvent->mWidget);
+  aKeyboardEvent->mWidget = widget;
+  if (aKeyboardEvent->ExecuteEditCommands(
+                        nsIWidget::NativeKeyBindingsForRichTextEditor,
+                        DoCommandCallback, doc)) {
     aKeyboardEvent->PreventDefault();
   }
   return NS_OK;

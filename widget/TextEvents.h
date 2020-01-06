@@ -130,6 +130,9 @@ protected:
     , mIsComposing(false)
     , mIsReserved(false)
     , mIsSynthesizedByTIP(false)
+    , mEditCommandsForSingleLineEditorInitialized(false)
+    , mEditCommandsForMultiLineEditorInitialized(false)
+    , mEditCommandsForRichTextEditorInitialized(false)
   {
   }
 
@@ -158,6 +161,9 @@ public:
     , mIsComposing(false)
     , mIsReserved(false)
     , mIsSynthesizedByTIP(false)
+    , mEditCommandsForSingleLineEditorInitialized(false)
+    , mEditCommandsForMultiLineEditorInitialized(false)
+    , mEditCommandsForRichTextEditorInitialized(false)
   {
     
     mFlags.mOnlySystemGroupDispatchInContent =
@@ -197,6 +203,9 @@ public:
     WidgetKeyboardEvent* result =
       new WidgetKeyboardEvent(false, mMessage, nullptr);
     result->AssignKeyEventData(*this, true);
+    result->mEditCommandsForSingleLineEditor = mEditCommandsForSingleLineEditor;
+    result->mEditCommandsForMultiLineEditor = mEditCommandsForMultiLineEditor;
+    result->mEditCommandsForRichTextEditor = mEditCommandsForRichTextEditor;
     result->mFlags = mFlags;
     return result;
   }
@@ -277,6 +286,29 @@ public:
   
   
   bool mIsSynthesizedByTIP;
+
+#ifdef DEBUG
+  
+
+
+
+  bool IsEditCommandsInitialized(
+         nsIWidget::NativeKeyBindingsType aType) const
+  {
+    return const_cast<WidgetKeyboardEvent*>(this)->
+             IsEditCommandsInitializedRef(aType);
+  }
+#endif 
+
+  
+
+
+
+
+
+  bool ExecuteEditCommands(nsIWidget::NativeKeyBindingsType aType,
+                           nsIWidget::DoCommandCallback aCallback,
+                           void* aCallbackData);
 
   
   
@@ -408,6 +440,17 @@ public:
 #endif
     mInputMethodAppState = aEvent.mInputMethodAppState;
     mIsSynthesizedByTIP = aEvent.mIsSynthesizedByTIP;
+
+    
+    
+    
+
+    mEditCommandsForSingleLineEditorInitialized =
+      aEvent.mEditCommandsForSingleLineEditorInitialized;
+    mEditCommandsForMultiLineEditorInitialized =
+      aEvent.mEditCommandsForMultiLineEditorInitialized;
+    mEditCommandsForRichTextEditorInitialized =
+      aEvent.mEditCommandsForRichTextEditorInitialized;
   }
 
 private:
@@ -419,6 +462,52 @@ private:
                           CodeNameIndex> CodeNameIndexHashtable;
   static KeyNameIndexHashtable* sKeyNameIndexHashtable;
   static CodeNameIndexHashtable* sCodeNameIndexHashtable;
+
+  
+  
+  
+  
+  nsTArray<CommandInt> mEditCommandsForSingleLineEditor;
+  nsTArray<CommandInt> mEditCommandsForMultiLineEditor;
+  nsTArray<CommandInt> mEditCommandsForRichTextEditor;
+
+  nsTArray<CommandInt>& EditCommandsRef(nsIWidget::NativeKeyBindingsType aType)
+  {
+    switch (aType) {
+      case nsIWidget::NativeKeyBindingsForSingleLineEditor:
+        return mEditCommandsForSingleLineEditor;
+      case nsIWidget::NativeKeyBindingsForMultiLineEditor:
+        return mEditCommandsForMultiLineEditor;
+      case nsIWidget::NativeKeyBindingsForRichTextEditor:
+        return mEditCommandsForRichTextEditor;
+      default:
+        MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE(
+          "Invalid native key binding type");
+    }
+  }
+
+  
+  
+  bool mEditCommandsForSingleLineEditorInitialized;
+  bool mEditCommandsForMultiLineEditorInitialized;
+  bool mEditCommandsForRichTextEditorInitialized;
+
+  bool& IsEditCommandsInitializedRef(nsIWidget::NativeKeyBindingsType aType)
+  {
+    switch (aType) {
+      case nsIWidget::NativeKeyBindingsForSingleLineEditor:
+        return mEditCommandsForSingleLineEditorInitialized;
+      case nsIWidget::NativeKeyBindingsForMultiLineEditor:
+        return mEditCommandsForMultiLineEditorInitialized;
+      case nsIWidget::NativeKeyBindingsForRichTextEditor:
+        return mEditCommandsForRichTextEditorInitialized;
+      default:
+        MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE(
+          "Invalid native key binding type");
+    }
+  }
+
+  void InitEditCommandsFor(nsIWidget::NativeKeyBindingsType aType);
 };
 
 
