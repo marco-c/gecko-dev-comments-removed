@@ -1032,18 +1032,6 @@ protected:
 
   
   static DWORD sClientId;
-
-  
-  static bool sCreateNativeCaretForLegacyATOK;
-  static bool sDoNotReturnNoLayoutErrorToATOKOfCompositionString;
-  static bool sDoNotReturnNoLayoutErrorToMSSimplifiedTIP;
-  static bool sDoNotReturnNoLayoutErrorToMSTraditionalTIP;
-  static bool sDoNotReturnNoLayoutErrorToFreeChangJie;
-  static bool sDoNotReturnNoLayoutErrorToEasyChangjei;
-  static bool sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar;
-  static bool sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret;
-  static bool sHackQueryInsertForMSSimplifiedTIP;
-  static bool sHackQueryInsertForMSTraditionalTIP;
 };
 
 } 
