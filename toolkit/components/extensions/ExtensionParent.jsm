@@ -1292,7 +1292,7 @@ let IconDetails = {
           
           
           
-          this._checkURL(url, extension.principal);
+          this._checkURL(url, extension);
 
           result[size] = url;
         }
@@ -1303,8 +1303,8 @@ let IconDetails = {
           let lightURL = baseURI.resolve(light);
           let darkURL = baseURI.resolve(dark);
 
-          this._checkURL(lightURL, extension.principal);
-          this._checkURL(darkURL, extension.principal);
+          this._checkURL(lightURL, extension);
+          this._checkURL(darkURL, extension);
 
           let defaultURL = result[size];
           result[size] = {
@@ -1330,12 +1330,8 @@ let IconDetails = {
 
   
   
-  _checkURL(url, principal) {
-    try {
-      Services.scriptSecurityManager.checkLoadURIWithPrincipal(
-        principal, Services.io.newURI(url),
-        Services.scriptSecurityManager.DISALLOW_SCRIPT);
-    } catch (e) {
+  _checkURL(url, extension) {
+    if (!extension.checkLoadURL(url, {allowInheritsPrincipal: true})) {
       throw new ExtensionError(`Illegal URL ${url}`);
     }
   },

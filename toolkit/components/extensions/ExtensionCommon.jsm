@@ -271,27 +271,13 @@ class BaseContext {
   }
 
   checkLoadURL(url, options = {}) {
-    let ssm = Services.scriptSecurityManager;
-
-    let flags = ssm.STANDARD;
-    if (!options.allowScript) {
-      flags |= ssm.DISALLOW_SCRIPT;
-    }
-    if (!options.allowInheritsPrincipal) {
-      flags |= ssm.DISALLOW_INHERIT_PRINCIPAL;
-    }
-    if (options.dontReportErrors) {
-      flags |= ssm.DONT_REPORT_ERRORS;
+    
+    
+    if (url.startsWith(this.extension.baseURL)) {
+      return true;
     }
 
-    try {
-      ssm.checkLoadURIWithPrincipal(this.principal,
-                                    Services.io.newURI(url),
-                                    flags);
-    } catch (e) {
-      return false;
-    }
-    return true;
+    return ExtensionUtils.checkLoadURL(url, this.principal, options);
   }
 
   
@@ -1262,6 +1248,7 @@ class SchemaAPIManager extends EventEmitter {
     XPCOMUtils.defineLazyModuleGetters(global, {
       ExtensionUtils: "resource://gre/modules/ExtensionUtils.jsm",
       XPCOMUtils: "resource://gre/modules/XPCOMUtils.jsm",
+      require: "resource://devtools/shared/Loader.jsm",
     });
 
     return global;
