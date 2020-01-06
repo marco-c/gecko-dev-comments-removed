@@ -115,60 +115,6 @@ nsICODecoder::GetFinalStateFromContainedDecoder()
   return rv;
 }
 
-bool
-nsICODecoder::CheckAndFixBitmapSize(int8_t* aBIH)
-{
-  
-  
-  
-  
-  
-  
-  const int32_t width = LittleEndian::readInt32(aBIH + 4);
-  if (width <= 0 || width > 256) {
-    return false;
-  }
-
-  
-  
-  
-  
-  if (width != int32_t(GetRealWidth())) {
-    return false;
-  }
-
-  
-  
-  int32_t height = LittleEndian::readInt32(aBIH + 8);
-  if (height == 0) {
-    return false;
-  }
-
-  
-  
-  
-  height = abs(height);
-
-  
-  
-  height /= 2;
-  if (height > 256) {
-    return false;
-  }
-
-  
-  
-  if (height != int32_t(GetRealHeight())) {
-    return false;
-  }
-
-  
-  
-  LittleEndian::writeInt32(aBIH + 8, GetRealHeight());
-
-  return true;
-}
-
 LexerTransition<ICOState>
 nsICODecoder::ReadHeader(const char* aData)
 {
@@ -404,13 +350,6 @@ nsICODecoder::ReadBIH(const char* aData)
                                                 Some(dataOffset));
   RefPtr<nsBMPDecoder> bmpDecoder =
     static_cast<nsBMPDecoder*>(mContainedDecoder.get());
-
-  
-  
-  
-  if (!CheckAndFixBitmapSize(reinterpret_cast<int8_t*>(mBIHraw))) {
-    return Transition::TerminateFailure();
-  }
 
   
   if (!WriteToContainedDecoder(mBIHraw, sizeof(mBIHraw))) {
