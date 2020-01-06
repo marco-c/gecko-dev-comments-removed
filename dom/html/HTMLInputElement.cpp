@@ -1943,174 +1943,10 @@ HTMLInputElement::SetValue(Decimal aValue, CallerType aCallerType)
   }
 
   nsAutoString value;
-  ConvertNumberToString(aValue, value);
+  mInputType->ConvertNumberToString(aValue, value);
   IgnoredErrorResult rv;
   SetValue(value, aCallerType, rv);
 }
-
-bool
-HTMLInputElement::ConvertNumberToString(Decimal aValue,
-                                        nsAString& aResultString) const
-{
-  MOZ_ASSERT(DoesValueAsNumberApply(),
-             "ConvertNumberToString is only implemented for types implementing .valueAsNumber");
-  MOZ_ASSERT(aValue.isFinite(),
-             "aValue must be a valid non-Infinite number.");
-
-  aResultString.Truncate();
-
-  switch (mType) {
-    case NS_FORM_INPUT_NUMBER:
-    case NS_FORM_INPUT_RANGE:
-      {
-        char buf[32];
-        bool ok = aValue.toString(buf, ArrayLength(buf));
-        aResultString.AssignASCII(buf);
-        MOZ_ASSERT(ok, "buf not big enough");
-        return ok;
-      }
-    case NS_FORM_INPUT_DATE:
-      {
-        
-        aValue = aValue.floor();
-
-        double year = JS::YearFromTime(aValue.toDouble());
-        double month = JS::MonthFromTime(aValue.toDouble());
-        double day = JS::DayFromTime(aValue.toDouble());
-
-        if (IsNaN(year) || IsNaN(month) || IsNaN(day)) {
-          return false;
-        }
-
-        aResultString.AppendPrintf("%04.0f-%02.0f-%02.0f", year,
-                                   month + 1, day);
-
-        return true;
-      }
-    case NS_FORM_INPUT_TIME:
-      {
-        aValue = aValue.floor();
-        
-        
-        
-        uint32_t value =
-          NS_floorModulo(aValue, Decimal::fromDouble(kMsPerDay)).toDouble();
-
-        uint16_t milliseconds, seconds, minutes, hours;
-        if (!GetTimeFromMs(value, &hours, &minutes, &seconds, &milliseconds)) {
-          return false;
-        }
-
-        if (milliseconds != 0) {
-          aResultString.AppendPrintf("%02d:%02d:%02d.%03d",
-                                     hours, minutes, seconds, milliseconds);
-        } else if (seconds != 0) {
-          aResultString.AppendPrintf("%02d:%02d:%02d",
-                                     hours, minutes, seconds);
-        } else {
-          aResultString.AppendPrintf("%02d:%02d", hours, minutes);
-        }
-
-        return true;
-      }
-    case NS_FORM_INPUT_MONTH:
-      {
-        aValue = aValue.floor();
-
-        double month = NS_floorModulo(aValue, Decimal(12)).toDouble();
-        month = (month < 0 ? month + 12 : month);
-
-        double year = 1970 + (aValue.toDouble() - month) / 12;
-
-        
-        if (year < kMinimumYear || year > kMaximumYear) {
-          return false;
-        }
-
-        if (year == kMaximumYear && month > 8) {
-          return false;
-        }
-
-        aResultString.AppendPrintf("%04.0f-%02.0f", year, month + 1);
-        return true;
-      }
-    case NS_FORM_INPUT_WEEK:
-      {
-        aValue = aValue.floor();
-
-        
-        double year = JS::YearFromTime(aValue.toDouble());
-        double month = JS::MonthFromTime(aValue.toDouble());
-        double day = JS::DayFromTime(aValue.toDouble());
-        
-        double dayInYear = JS::DayWithinYear(aValue.toDouble(), year) + 1;
-
-        
-        uint32_t isoWeekday = DayOfWeek(year, month + 1, day, true);
-        
-        
-        uint32_t week = (dayInYear - isoWeekday + 10) / 7;
-
-        if (week < 1) {
-          year--;
-          if (year < 1) {
-            return false;
-          }
-          week = MaximumWeekInYear(year);
-        } else if (week > MaximumWeekInYear(year)) {
-          year++;
-          if (year > kMaximumYear ||
-              (year == kMaximumYear && week > kMaximumWeekInMaximumYear)) {
-            return false;
-          }
-          week = 1;
-        }
-
-        aResultString.AppendPrintf("%04.0f-W%02d", year, week);
-        return true;
-      }
-    case NS_FORM_INPUT_DATETIME_LOCAL:
-      {
-        aValue = aValue.floor();
-
-        uint32_t timeValue =
-          NS_floorModulo(aValue, Decimal::fromDouble(kMsPerDay)).toDouble();
-
-        uint16_t milliseconds, seconds, minutes, hours;
-        if (!GetTimeFromMs(timeValue,
-                           &hours, &minutes, &seconds, &milliseconds)) {
-          return false;
-        }
-
-        double year = JS::YearFromTime(aValue.toDouble());
-        double month = JS::MonthFromTime(aValue.toDouble());
-        double day = JS::DayFromTime(aValue.toDouble());
-
-        if (IsNaN(year) || IsNaN(month) || IsNaN(day)) {
-          return false;
-        }
-
-        if (milliseconds != 0) {
-          aResultString.AppendPrintf("%04.0f-%02.0f-%02.0fT%02d:%02d:%02d.%03d",
-                                     year, month + 1, day, hours, minutes,
-                                     seconds, milliseconds);
-        } else if (seconds != 0) {
-          aResultString.AppendPrintf("%04.0f-%02.0f-%02.0fT%02d:%02d:%02d",
-                                     year, month + 1, day, hours, minutes,
-                                     seconds);
-        } else {
-          aResultString.AppendPrintf("%04.0f-%02.0f-%02.0fT%02d:%02d",
-                                     year, month + 1, day, hours, minutes);
-        }
-
-        return true;
-      }
-    default:
-      MOZ_ASSERT(false, "Unrecognized input type");
-      return false;
-  }
-}
-
 
 Nullable<Date>
 HTMLInputElement::GetValueAsDate(ErrorResult& aRv)
@@ -4146,7 +3982,7 @@ HTMLInputElement::CancelRangeThumbDrag(bool aIsForUserEvent)
     
     
     nsAutoString val;
-    ConvertNumberToString(mRangeThumbDragStartValue, val);
+    mInputType->ConvertNumberToString(mRangeThumbDragStartValue, val);
     
     
     SetValueInternal(val, nsTextEditorState::eSetValue_BySetUserInput |
@@ -4169,7 +4005,7 @@ HTMLInputElement::SetValueOfRangeForUserEvent(Decimal aValue)
   Decimal oldValue = GetValueAsDecimal();
 
   nsAutoString val;
-  ConvertNumberToString(aValue, val);
+  mInputType->ConvertNumberToString(aValue, val);
   
   
   SetValueInternal(val, nsTextEditorState::eSetValue_BySetUserInput |
@@ -4272,7 +4108,7 @@ HTMLInputElement::StepNumberControlForUserEvent(int32_t aDirection)
   }
 
   nsAutoString newVal;
-  ConvertNumberToString(newValue, newVal);
+  mInputType->ConvertNumberToString(newValue, newVal);
   
   
   SetValueInternal(newVal, nsTextEditorState::eSetValue_BySetUserInput |
@@ -5417,29 +5253,6 @@ HTMLInputElement::MaximumWeekInYear(uint32_t aYear) const
   
   return day == 4 || (day == 3 && IsLeapYear(aYear)) ?
     kMaximumWeekInYear : kMaximumWeekInYear - 1;
-}
-
-bool
-HTMLInputElement::GetTimeFromMs(double aValue, uint16_t* aHours,
-                                uint16_t* aMinutes, uint16_t* aSeconds,
-                                uint16_t* aMilliseconds) const {
-  MOZ_ASSERT(aValue >= 0 && aValue < kMsPerDay,
-             "aValue must be milliseconds within a day!");
-
-  uint32_t value = floor(aValue);
-
-  *aMilliseconds = value % 1000;
-  value /= 1000;
-
-  *aSeconds = value % 60;
-  value /= 60;
-
-  *aMinutes = value % 60;
-  value /= 60;
-
-  *aHours = value;
-
-  return true;
 }
 
 bool
@@ -7771,8 +7584,8 @@ HTMLInputElement::GetValidationMessage(nsAString& aValidationMessage,
 
       if (maximum.isNaN() || valueHigh <= maximum) {
         nsAutoString valueLowStr, valueHighStr;
-        ConvertNumberToString(valueLow, valueLowStr);
-        ConvertNumberToString(valueHigh, valueHighStr);
+        mInputType->ConvertNumberToString(valueLow, valueLowStr);
+        mInputType->ConvertNumberToString(valueHigh, valueHighStr);
 
         if (valueLowStr.Equals(valueHighStr)) {
           const char16_t* params[] = { valueLowStr.get() };
@@ -7787,7 +7600,7 @@ HTMLInputElement::GetValidationMessage(nsAString& aValidationMessage,
         }
       } else {
         nsAutoString valueLowStr;
-        ConvertNumberToString(valueLow, valueLowStr);
+        mInputType->ConvertNumberToString(valueLow, valueLowStr);
 
         const char16_t* params[] = { valueLowStr.get() };
         rv = nsContentUtils::FormatLocalizedString(nsContentUtils::eDOM_PROPERTIES,

@@ -74,6 +74,20 @@ public:
   virtual bool ConvertStringToNumber(nsAString& aValue,
                                      mozilla::Decimal& aResultValue) const;
 
+  
+
+
+
+
+
+
+
+
+
+
+  virtual bool ConvertNumberToString(mozilla::Decimal aValue,
+                                     nsAString& aResultString) const;
+
 protected:
   explicit InputType(mozilla::dom::HTMLInputElement* aInputElement)
     : mInputElement(aInputElement)
@@ -195,6 +209,19 @@ protected:
 
 
   double DaysSinceEpochFromWeek(uint32_t aYear, uint32_t aWeek) const;
+
+  
+
+
+
+  uint32_t DayOfWeek(uint32_t aYear, uint32_t aMonth, uint32_t aDay,
+                     bool isoWeek) const;
+
+  
+
+
+
+  uint32_t MaximumWeekInYear(uint32_t aYear) const;
 
   mozilla::dom::HTMLInputElement* mInputElement;
 };
