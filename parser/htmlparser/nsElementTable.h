@@ -4,28 +4,19 @@
 
 
 
-
-
-
-
-
-
-
-
-#ifndef _NSELEMENTABLE
-#define _NSELEMENTABLE
+#ifndef nsElementTable_h
+#define nsElementTable_h
 
 #include "nsHTMLTags.h"
-#include "nsIDTD.h"
 
 #ifdef DEBUG
-extern void CheckElementTable();
+void CheckElementTable();
 #endif
 
 struct nsHTMLElement
 {
-  static  bool    IsContainer(nsHTMLTag aTag);
-  static  bool    IsBlock(nsHTMLTag aTag);
+  static bool IsContainer(nsHTMLTag aTag);
+  static bool IsBlock(nsHTMLTag aTag);
 };
 
-#endif
+#endif 

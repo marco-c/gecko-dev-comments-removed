@@ -4,8 +4,6 @@
 
 
 
-
-#include "nsIAtom.h"
 #include "nsElementTable.h"
 
 static const int kNone= 0x0;
@@ -222,14 +220,14 @@ static const HTMLElement gHTMLElements[] = {
 
 #undef ELEM
 
-
-
-bool nsHTMLElement::IsContainer(nsHTMLTag aId)
+bool
+nsHTMLElement::IsContainer(nsHTMLTag aId)
 {
   return !gHTMLElements[aId].mLeaf;
 }
 
-bool nsHTMLElement::IsBlock(nsHTMLTag aId)
+bool
+nsHTMLElement::IsBlock(nsHTMLTag aId)
 {
   return gHTMLElements[aId].IsMemberOf(kBlock)       ||
          gHTMLElements[aId].IsMemberOf(kBlockEntity) ||
@@ -239,12 +237,14 @@ bool nsHTMLElement::IsBlock(nsHTMLTag aId)
 }
 
 #ifdef DEBUG
-void CheckElementTable()
+void
+CheckElementTable()
 {
   for (nsHTMLTag t = eHTMLTag_unknown;
        t <= eHTMLTag_userdefined;
        t = nsHTMLTag(t + 1)) {
-    NS_ASSERTION(gHTMLElements[t].mTagID == t, "gHTMLElements entries does match tag list.");
+    MOZ_ASSERT(gHTMLElements[t].mTagID == t,
+               "gHTMLElements entries does match tag list.");
   }
 }
 #endif
