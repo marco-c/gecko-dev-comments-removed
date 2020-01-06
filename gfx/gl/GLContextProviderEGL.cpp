@@ -242,7 +242,6 @@ GLContextEGL::~GLContextEGL()
 #endif
 
     sEGLLibrary.fDestroyContext(EGL_DISPLAY(), mContext);
-    sEGLLibrary.UnsetCachedCurrentContext();
 
     mozilla::gl::DestroySurface(mSurface);
 }
@@ -346,18 +345,8 @@ GLContextEGL::MakeCurrentImpl(bool aForce) {
     
     
     
-    bool hasDifferentContext = false;
-    if (sEGLLibrary.CachedCurrentContext() != mContext) {
-        
-        
-        if (sEGLLibrary.fGetCurrentContext() != mContext) {
-            hasDifferentContext = true;
-        } else {
-            sEGLLibrary.SetCachedCurrentContext(mContext);
-        }
-    }
-
-    if (aForce || hasDifferentContext) {
+    bool needsMakeCurrent = (aForce || sEGLLibrary.fGetCurrentContext() != mContext);
+    if (needsMakeCurrent) {
         EGLSurface surface = mSurfaceOverride != EGL_NO_SURFACE
                               ? mSurfaceOverride
                               : mSurface;
@@ -378,11 +367,7 @@ GLContextEGL::MakeCurrentImpl(bool aForce) {
                 printf_stderr("EGL Error: 0x%04x\n", eglError);
 #endif
             }
-        } else {
-            sEGLLibrary.SetCachedCurrentContext(mContext);
         }
-    } else {
-        MOZ_ASSERT(sEGLLibrary.CachedCurrentContextMatches());
     }
 
     return succeeded;
