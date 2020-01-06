@@ -163,38 +163,6 @@ extern const js::Class OuterWindowProxyClass;
 
 
 
-class DialogValueHolder final : public nsISupports
-{
-public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(DialogValueHolder)
-
-  DialogValueHolder(nsIPrincipal* aSubject, nsIVariant* aValue)
-    : mOrigin(aSubject)
-    , mValue(aValue) {}
-  nsresult Get(nsIPrincipal* aSubject, nsIVariant** aResult);
-  void Get(JSContext* aCx, JS::Handle<JSObject*> aScope, nsIPrincipal* aSubject,
-           JS::MutableHandle<JS::Value> aResult, mozilla::ErrorResult& aError);
-private:
-  virtual ~DialogValueHolder() {}
-
-  nsCOMPtr<nsIPrincipal> mOrigin;
-  nsCOMPtr<nsIVariant> mValue;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1153,8 +1121,6 @@ protected:
 
   
   nsCOMPtr<nsIArray>            mArguments;
-
-  RefPtr<DialogValueHolder> mReturnValue;
 
   RefPtr<nsDOMWindowList>     mFrames;
   RefPtr<nsDOMWindowUtils>      mWindowUtils;
