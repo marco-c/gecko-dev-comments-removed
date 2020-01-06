@@ -414,9 +414,6 @@ struct JSContext : public JS::RootingContext,
 
     js::ThreadLocalData<js::EnterDebuggeeNoExecute*> noExecuteDebuggerTop;
 
-    
-    bool handlingSegFault;
-
     js::ThreadLocalData<js::ActivityCallback> activityCallback;
     js::ThreadLocalData<void*>                activityCallbackArg;
     void triggerActivityCallback(bool active);
