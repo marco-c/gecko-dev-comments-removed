@@ -248,7 +248,7 @@ private:
   ~CustomElementReactionsStack() {};
 
   
-  AutoTArray<ElementQueue, 8> mReactionsStack;
+  AutoTArray<UniquePtr<ElementQueue>, 8> mReactionsStack;
   ElementQueue mBackupQueue;
   
   bool mIsBackupQueueProcessing;
@@ -259,7 +259,7 @@ private:
 
 
 
-  void InvokeReactions(ElementQueue& aElementQueue);
+  void InvokeReactions(ElementQueue* aElementQueue);
 
   void Enqueue(Element* aElement, CustomElementReaction* aReaction);
 

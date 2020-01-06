@@ -864,7 +864,7 @@ void
 CustomElementReactionsStack::CreateAndPushElementQueue()
 {
   
-  mReactionsStack.AppendElement();
+  mReactionsStack.AppendElement(MakeUnique<ElementQueue>());
 }
 
 void
@@ -875,15 +875,19 @@ CustomElementReactionsStack::PopAndInvokeElementQueue()
   MOZ_ASSERT(!mReactionsStack.IsEmpty(),
              "Reaction stack shouldn't be empty");
 
-  ElementQueue& elementQueue = mReactionsStack.LastElement();
+  const uint32_t lastIndex = mReactionsStack.Length() - 1;
+  ElementQueue* elementQueue = mReactionsStack.ElementAt(lastIndex).get();
   
-  if (!elementQueue.IsEmpty()) {
+  if (!elementQueue->IsEmpty()) {
     InvokeReactions(elementQueue);
   }
 
-  DebugOnly<bool> isRemovedElement = mReactionsStack.RemoveElement(elementQueue);
-  MOZ_ASSERT(isRemovedElement,
-             "Reaction stack should have an element queue to remove");
+  
+  
+  MOZ_ASSERT(lastIndex == mReactionsStack.Length() - 1,
+             "reactions created by InvokeReactions() should be consumed and removed");
+
+  mReactionsStack.RemoveElementAt(lastIndex);
 }
 
 void
@@ -913,7 +917,7 @@ CustomElementReactionsStack::Enqueue(Element* aElement,
 
   
   if (!mReactionsStack.IsEmpty()) {
-    mReactionsStack.LastElement().AppendElement(do_GetWeakReference(aElement));
+    mReactionsStack.LastElement()->AppendElement(do_GetWeakReference(aElement));
     elementData->mReactionQueue.AppendElement(aReaction);
     return;
   }
@@ -938,16 +942,16 @@ CustomElementReactionsStack::InvokeBackupQueue()
 {
   
   if (!mBackupQueue.IsEmpty()) {
-    InvokeReactions(mBackupQueue);
+    InvokeReactions(&mBackupQueue);
   }
 }
 
 void
-CustomElementReactionsStack::InvokeReactions(ElementQueue& aElementQueue)
+CustomElementReactionsStack::InvokeReactions(ElementQueue* aElementQueue)
 {
   
-  for (uint32_t i = 0; i < aElementQueue.Length(); ++i) {
-    nsCOMPtr<Element> element = do_QueryReferent(aElementQueue[i]);
+  for (uint32_t i = 0; i < aElementQueue->Length(); ++i) {
+    nsCOMPtr<Element> element = do_QueryReferent(aElementQueue->ElementAt(i));
 
     if (!element) {
       continue;
@@ -967,7 +971,7 @@ CustomElementReactionsStack::InvokeReactions(ElementQueue& aElementQueue)
     }
     reactions.Clear();
   }
-  aElementQueue.Clear();
+  aElementQueue->Clear();
 }
 
 
