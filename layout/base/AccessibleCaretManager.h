@@ -49,7 +49,7 @@ class AccessibleCaretManager
 {
 public:
   explicit AccessibleCaretManager(nsIPresShell* aPresShell);
-  virtual ~AccessibleCaretManager();
+  virtual ~AccessibleCaretManager() = default;
 
   
   void Terminate();
