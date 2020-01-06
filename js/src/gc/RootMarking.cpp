@@ -442,12 +442,21 @@ js::gc::GCRuntime::finishRoots()
 
 
 
-class BufferGrayRootsTracer : public JS::CallbackTracer
+class BufferGrayRootsTracer final : public JS::CallbackTracer
 {
     
     bool bufferingGrayRootsFailed;
 
-    void onChild(const JS::GCCellPtr& thing) override;
+    void onObjectEdge(JSObject** objp) override { bufferRoot(*objp); }
+    void onStringEdge(JSString** stringp) override { bufferRoot(*stringp); }
+    void onScriptEdge(JSScript** scriptp) override { bufferRoot(*scriptp); }
+    void onSymbolEdge(JS::Symbol** symbolp) override { bufferRoot(*symbolp); }
+
+    void onChild(const JS::GCCellPtr& thing) override {
+        MOZ_CRASH("Unexpected gray root kind");
+    }
+
+    template <typename T> inline void bufferRoot(T* thing);
 
   public:
     explicit BufferGrayRootsTracer(JSRuntime* rt)
@@ -494,22 +503,16 @@ js::gc::GCRuntime::bufferGrayRoots()
     }
 }
 
-struct SetMaybeAliveFunctor {
-    template <typename T> void operator()(T* t) { SetMaybeAliveFlag(t); }
-};
-
-void
-BufferGrayRootsTracer::onChild(const JS::GCCellPtr& thing)
+template <typename T>
+inline void
+BufferGrayRootsTracer::bufferRoot(T* thing)
 {
     MOZ_ASSERT(JS::CurrentThreadIsHeapBusy());
-    MOZ_RELEASE_ASSERT(thing);
+    MOZ_ASSERT(thing);
     
-    MOZ_RELEASE_ASSERT(thing.asCell()->getTraceKind() <= JS::TraceKind::Null);
+    MOZ_ASSERT(thing->getTraceKind() <= JS::TraceKind::Null);
 
-    if (bufferingGrayRootsFailed)
-        return;
-
-    gc::TenuredCell* tenured = gc::TenuredCell::fromPointer(thing.asCell());
+    TenuredCell* tenured = &thing->asTenured();
 
     
     
@@ -519,7 +522,7 @@ BufferGrayRootsTracer::onChild(const JS::GCCellPtr& thing)
         
         
         
-        DispatchTyped(SetMaybeAliveFunctor(), thing);
+        SetMaybeAliveFlag(thing);
 
         if (!zone->gcGrayRoots().append(tenured))
             bufferingGrayRootsFailed = true;
