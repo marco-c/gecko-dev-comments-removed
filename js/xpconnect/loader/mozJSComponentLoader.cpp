@@ -473,6 +473,9 @@ mozJSComponentLoader::CreateLoaderGlobal(JSContext* aCx,
     if (xpc::SharedMemoryEnabled())
         options.creationOptions().setSharedMemoryAndAtomicsEnabled(true);
 
+    if (xpc::DOMStreamsEnabled())
+        options.creationOptions().setStreamsEnabled(true);
+
     
     
     
