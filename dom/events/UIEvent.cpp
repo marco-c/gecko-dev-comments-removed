@@ -124,7 +124,7 @@ UIEvent::GetMovementPoint()
   }
 
   if (!mEvent || !mEvent->AsGUIEvent()->mWidget ||
-      (mEvent->mMessage != eMouseMove)) {
+      (mEvent->mMessage != eMouseMove && mEvent->mMessage != ePointerMove)) {
     
     
     return nsIntPoint(0, 0);
