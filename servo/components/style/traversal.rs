@@ -692,6 +692,12 @@ pub fn recalc_style_at<E, D>(traversal: &D,
 
         
         
+        if element.is_native_anonymous() {
+            cascade_hint |= RECASCADE_SELF;
+        }
+
+        
+        
         if data.styles().is_display_none() {
             debug!("{:?} style is display:none - clearing data from descendants.",
                    element);
