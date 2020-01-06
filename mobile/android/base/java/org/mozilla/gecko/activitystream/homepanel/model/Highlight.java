@@ -18,7 +18,7 @@ import org.mozilla.gecko.activitystream.ranking.HighlightsRanking;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Highlight implements WebpageModel, RowModel {
+public class Highlight implements WebpageRowModel {
 
     
 
@@ -214,11 +214,13 @@ public class Highlight implements WebpageModel, RowModel {
         this.isPinned = pinned;
     }
 
+    @Override
     public Utils.HighlightSource getSource() {
         return source;
     }
 
-    public long getHistoryId() {
+    @Override
+    public long getUniqueId() {
         return historyId;
     }
 }
