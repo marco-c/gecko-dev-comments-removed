@@ -1947,6 +1947,10 @@ public:
       }
       mMaster->UpdatePlaybackPosition(clockTime);
 
+      
+      mMaster->mOnNextFrameStatus.Notify(
+        MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE);
+
       mMaster->mOnPlaybackEvent.Notify(MediaEventType::PlaybackEnded);
 
       mSentPlaybackEndedEvent = true;
