@@ -74,7 +74,27 @@ IsValidGUID(REFGUID aCheckGuid)
   return version == 1 || version == 4;
 }
 
-#ifdef ACCESSIBILITY
+#if defined(MOZILLA_INTERNAL_API)
+
+void
+GUIDToString(REFGUID aGuid, nsAString& aOutString)
+{
+  
+  
+  const int kBufLenWithNul = 39;
+  aOutString.SetLength(kBufLenWithNul);
+  int result = StringFromGUID2(aGuid, wwc(aOutString.BeginWriting()), kBufLenWithNul);
+  MOZ_ASSERT(result);
+  if (result) {
+    
+    aOutString.SetLength(result - 1);
+  }
+}
+
+#endif 
+
+#if defined(ACCESSIBILITY)
+
 static bool
 IsVtableIndexFromParentInterface(TYPEATTR* aTypeAttr,
                                  unsigned long aVtableIndex)
@@ -202,6 +222,7 @@ IsInterfaceEqualToOrInheritedFrom(REFIID aInterface, REFIID aFrom,
 
   return false;
 }
+
 #endif 
 
 } 

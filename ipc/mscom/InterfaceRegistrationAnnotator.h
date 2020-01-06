@@ -1,0 +1,22 @@
+
+
+
+
+
+
+#ifndef mozilla_mscom_InterfaceRegistrationAnnotator_h
+#define mozilla_mscom_InterfaceRegistrationAnnotator_h
+
+#if !defined(MOZ_CRASHREPORTER)
+#error "This header requires crash reporting to be enabled"
+#endif
+
+namespace mozilla {
+namespace mscom {
+
+void AnnotateInterfaceRegistration(REFIID aIid);
+
+} 
+} 
+
+#endif 
