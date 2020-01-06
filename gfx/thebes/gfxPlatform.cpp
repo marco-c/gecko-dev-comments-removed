@@ -8,6 +8,7 @@
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/ISurfaceAllocator.h"     
 #include "mozilla/webrender/RenderThread.h"
+#include "mozilla/webrender/webrender_ffi.h"
 #include "mozilla/layers/PaintThread.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUProcessManager.h"
@@ -1015,6 +1016,8 @@ gfxPlatform::Shutdown()
 
     gfxConfig::Shutdown();
 
+    mozilla::wr::wr_shutdown_external_log_handler();
+
     gPlatform->WillShutdown();
 
     delete gPlatform;
@@ -1039,6 +1042,7 @@ gfxPlatform::InitLayersIPC()
     }
 
     layers::CompositorThreadHolder::Start();
+    gfx::VRListenerThreadHolder::Start();
   }
 }
 
@@ -2562,6 +2566,10 @@ gfxPlatform::InitWebRenderConfig()
       Preferences::RegisterPrefixCallbackAndCall(WebRenderDebugPrefChangeCallback,
                                                  WR_DEBUG_PREF);
     }
+
+    
+    
+    mozilla::wr::wr_init_external_log_handler(wr::LogLevelFilter::Warn);
   }
 }
 
