@@ -107,6 +107,7 @@ private:
 public:
   NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
                      const char16_t* aData) override {
+    
     if (strcmp(aTopic, "xpcom-will-shutdown") == 0) {
       LOG(("Shutting down SCTP"));
       if (sctp_initialized) {
@@ -298,12 +299,6 @@ DataChannelConnection::Destroy()
   
   
   
-  usrsctp_deregister_address(static_cast<void *>(this));
-  LOG(("Deregistered %p from the SCTP stack.", static_cast<void *>(this)));
-
-  
-  
-  
   RUN_ON_THREAD(mSTS, WrapRunnable(RefPtr<DataChannelConnection>(this),
                                    &DataChannelConnection::DestroyOnSTS,
                                    mSocket, mMasterSocket),
@@ -326,6 +321,9 @@ void DataChannelConnection::DestroyOnSTS(struct socket *aMasterSocket,
     usrsctp_close(aSocket);
   if (aMasterSocket)
     usrsctp_close(aMasterSocket);
+
+  usrsctp_deregister_address(static_cast<void *>(this));
+  LOG(("Deregistered %p from the SCTP stack.", static_cast<void *>(this)));
 
   disconnect_all();
 }
