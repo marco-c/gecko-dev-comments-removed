@@ -66,7 +66,7 @@ public:
   NS_DECL_NSIASYNCVERIFYREDIRECTCALLBACK
 
   MOZ_MUST_USE nsresult Init(nsIURI* aURI,
-                             nsIURI* aFinalURI,
+                             nsIURI* aCurrentURI,
                              bool aHadInsecureRedirect,
                              nsIRequest* aRequest,
                              nsIChannel* aChannel,
@@ -152,7 +152,7 @@ public:
 
   
   nsresult GetURI(ImageURL** aURI);
-  nsresult GetFinalURI(nsIURI** aURI);
+  nsresult GetCurrentURI(nsIURI** aURI);
   bool IsScheme(const char* aScheme) const;
   bool IsChrome() const;
   bool IsData() const;
@@ -237,7 +237,7 @@ private:
   
   RefPtr<ImageURL> mURI;
   
-  nsCOMPtr<nsIURI> mFinalURI;
+  nsCOMPtr<nsIURI> mCurrentURI;
   
   
   
