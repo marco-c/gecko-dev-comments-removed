@@ -62,19 +62,29 @@
 
 
 namespace mozilla {
-
-class AudioStream;
-
 namespace audio {
+
+
+
+
+class DeviceChangeListener
+{
+protected:
+  virtual ~DeviceChangeListener() {};
+public:
+  
+  
+  virtual void ResetDefaultDevice() = 0;
+};
 
 class AudioNotificationReceiver final
 {
 public:
   
-  static void Register(AudioStream* aAudioStream);
+  static void Register(DeviceChangeListener* aDeviceChangeListener);
 
   
-  static void Unregister(AudioStream* aAudioStream);
+  static void Unregister(DeviceChangeListener* aDeviceChangeListener);
 
   
   static void NotifyDefaultDeviceChanged();

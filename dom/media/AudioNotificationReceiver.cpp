@@ -5,7 +5,6 @@
 
 
 #include "AudioNotificationReceiver.h"
-#include "AudioStream.h"          
 #include "mozilla/Logging.h"      
 #include "mozilla/StaticMutex.h"  
 #include "mozilla/StaticPtr.h"    
@@ -25,41 +24,43 @@ namespace audio {
 
 
 
-static StaticAutoPtr<nsTArray<AudioStream*>> sSubscribers;
+static StaticAutoPtr<nsTArray<DeviceChangeListener*>> sSubscribers;
 static StaticMutex sMutex;
 
 
 
 
  void
-AudioNotificationReceiver::Register(AudioStream* aAudioStream)
+AudioNotificationReceiver::Register(DeviceChangeListener* aDeviceChangeListener)
 {
   MOZ_ASSERT(XRE_IsContentProcess());
 
   StaticMutexAutoLock lock(sMutex);
   if (!sSubscribers) {
-    sSubscribers = new nsTArray<AudioStream*>();
+    sSubscribers = new nsTArray<DeviceChangeListener*>();
   }
-  sSubscribers->AppendElement(aAudioStream);
+  sSubscribers->AppendElement(aDeviceChangeListener);
 
-  ANR_LOG("The AudioStream: %p is registered successfully.", aAudioStream);
+  ANR_LOG("The DeviceChangeListener: %p is registered successfully.",
+          aDeviceChangeListener);
 }
 
  void
-AudioNotificationReceiver::Unregister(AudioStream* aAudioStream)
+AudioNotificationReceiver::Unregister(DeviceChangeListener* aDeviceChangeListener)
 {
   MOZ_ASSERT(XRE_IsContentProcess());
 
   StaticMutexAutoLock lock(sMutex);
   MOZ_ASSERT(!sSubscribers->IsEmpty(), "No subscriber.");
 
-  sSubscribers->RemoveElement(aAudioStream);
+  sSubscribers->RemoveElement(aDeviceChangeListener);
   if (sSubscribers->IsEmpty()) {
     
     sSubscribers = nullptr;
   }
 
-  ANR_LOG("The AudioStream: %p is unregistered successfully.", aAudioStream);
+  ANR_LOG("The DeviceChangeListener: %p is unregistered successfully.",
+          aDeviceChangeListener);
 }
 
  void
@@ -74,8 +75,9 @@ AudioNotificationReceiver::NotifyDefaultDeviceChanged()
     return;
   }
 
-  for (AudioStream* stream : *sSubscribers) {
-    ANR_LOG("Notify the AudioStream: %p that the default device has been changed.", stream);
+  for (DeviceChangeListener* stream : *sSubscribers) {
+    ANR_LOG("Notify the DeviceChangeListener: %p "
+            "that the default device has been changed.", stream);
     stream->ResetDefaultDevice();
   }
 }
