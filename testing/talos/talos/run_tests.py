@@ -59,9 +59,8 @@ def buildCommandLine(test):
 
     
     url = ['-tp', test['tpmanifest']]
-    CLI_bool_options = ['tpchrome', 'tpmozafterpaint', 'tpdisable_e10s',
-                        'tpnoisy', 'tprender', 'tploadnocache',
-                        'tpscrolltest', 'fnbpaint']
+    CLI_bool_options = ['tpchrome', 'tpmozafterpaint', 'tpnoisy', 'tprender',
+                        'tploadnocache', 'tpscrolltest', 'fnbpaint']
     CLI_options = ['tpcycles', 'tppagecycles', 'tpdelay', 'tptimeout']
     for key in CLI_bool_options:
         if test.get(key):
@@ -192,8 +191,7 @@ def run_tests(config, browser_config):
     httpd.start()
 
     
-    if config['e10s']:
-        talos_results.add_extra_option('e10s')
+    talos_results.add_extra_option('e10s')
 
     
     if config['enable_stylo']:

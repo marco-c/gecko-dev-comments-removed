@@ -46,8 +46,6 @@ var gPaintWindow = window;
 var gPaintListener = false;
 var loadNoCache = false;
 var scrollTest = false;
-var gDisableE10S = false;
-var gUseE10S = false;
 var profilingInfo = false;
 var baseVsRef = false;
 
@@ -154,7 +152,6 @@ function plInit() {
     if (args.fnbpaint) useFNBPaint = true;
     if (args.loadnocache) loadNoCache = true;
     if (args.scrolltest) scrollTest = true;
-    if (args.disableE10S) gDisableE10S = true;
     if (args.profilinginfo) profilingInfo = JSON.parse(args.profilinginfo)
 
     if (profilingInfo) {
@@ -244,13 +241,11 @@ function plInit() {
         
         
         
-        if (browserWindow.gMultiProcessBrowser) {
-          let remoteType = E10SUtils.getRemoteTypeForURI(pageUrls[0], true);
-          if (remoteType) {
-            browserWindow.XULBrowserWindow.forceInitialBrowserRemote(remoteType);
-          } else {
-            browserWindow.XULBrowserWindow.forceInitialBrowserNonRemote(null);
-          }
+        let remoteType = E10SUtils.getRemoteTypeForURI(pageUrls[0], true);
+        if (remoteType) {
+          browserWindow.XULBrowserWindow.forceInitialBrowserRemote(remoteType);
+        } else {
+          browserWindow.XULBrowserWindow.forceInitialBrowserNonRemote(null);
         }
 
         browserWindow.resizeTo(winWidth, winHeight);
@@ -258,9 +253,6 @@ function plInit() {
         browserWindow.focus();
 
         content = browserWindow.getBrowser();
-        gUseE10S = !gDisableE10S || (plPageFlags() & EXECUTE_SCROLL_TEST) ||
-                    (content.selectedBrowser &&
-                    content.selectedBrowser.getAttribute("remote") == "true")
 
         
         let contentScript = "data:,function _contentLoadHandler(e) { " +
@@ -496,10 +488,7 @@ var plNextPage = async function() {
       report.recordCCTime(tccend - tccstart);
 
       
-      
-      if (browserWindow.gMultiProcessBrowser) {
-        await forceContentGC();
-      }
+      await forceContentGC();
     }
 
     setTimeout(plLoadPage, delay);
