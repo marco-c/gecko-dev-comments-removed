@@ -91,7 +91,7 @@ public:
 
   
   
-  void NotifyDiversionFailed(nsresult aErrorCode, bool aSkipResume = true);
+  void NotifyDiversionFailed(nsresult aErrorCode);
 
   
   void SetApplyConversion(bool aApplyConversion) {
@@ -206,7 +206,7 @@ protected:
   MOZ_MUST_USE nsresult ResumeForDiversion();
 
   
-  void FailDiversion(nsresult aErrorCode, bool aSkipResume = true);
+  void FailDiversion(nsresult aErrorCode);
 
   friend class HttpChannelParentListener;
   RefPtr<mozilla::dom::TabParent> mTabParent;
