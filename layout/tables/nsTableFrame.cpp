@@ -173,9 +173,6 @@ nsTableFrame::Init(nsIContent*       aContent,
   const nsStyleTableBorder* tableStyle = StyleTableBorder();
   bool borderCollapse = (NS_STYLE_BORDER_COLLAPSE == tableStyle->mBorderCollapse);
   SetBorderCollapse(borderCollapse);
-  if (borderCollapse) {
-    SetNeedToCalcHasBCBorders(true);
-  }
 
   if (!aPrevInFlow) {
     
@@ -1201,7 +1198,9 @@ nsTableFrame::GetChildLists(nsTArray<ChildList>* aLists) const
 }
 
 nsRect
-nsDisplayTableItem::GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap) {
+nsDisplayTableItem::GetBounds(nsDisplayListBuilder* aBuilder,
+                              bool* aSnap) const
+{
   *aSnap = false;
   return mFrame->GetVisualOverflowRectRelativeToSelf() + ToReferenceFrame();
 }
@@ -1228,7 +1227,7 @@ nsDisplayTableItem::AllocateGeometry(nsDisplayListBuilder* aBuilder)
 void
 nsDisplayTableItem::ComputeInvalidationRegion(nsDisplayListBuilder* aBuilder,
                                               const nsDisplayItemGeometry* aGeometry,
-                                              nsRegion *aInvalidRegion)
+                                              nsRegion *aInvalidRegion) const
 {
   auto geometry =
     static_cast<const nsDisplayTableItemGeometry*>(aGeometry);
@@ -2925,14 +2924,15 @@ nsTableFrame::GetOuterBCBorder(const WritingMode aWM) const
   if (NeedToCalcBCBorders()) {
     const_cast<nsTableFrame*>(this)->CalcBCBorders();
   }
-  int32_t d2a = PresContext()->AppUnitsPerDevPixel();
+
+  int32_t p2t = nsPresContext::AppUnitsPerCSSPixel();
   BCPropertyData* propData = GetBCProperty();
   if (propData) {
     return LogicalMargin(aWM,
-               BC_BORDER_START_HALF_COORD(d2a, propData->mBStartBorderWidth),
-               BC_BORDER_END_HALF_COORD(d2a, propData->mIEndBorderWidth),
-               BC_BORDER_END_HALF_COORD(d2a, propData->mBEndBorderWidth),
-               BC_BORDER_START_HALF_COORD(d2a, propData->mIStartBorderWidth));
+               BC_BORDER_START_HALF_COORD(p2t, propData->mBStartBorderWidth),
+               BC_BORDER_END_HALF_COORD(p2t, propData->mIEndBorderWidth),
+               BC_BORDER_END_HALF_COORD(p2t, propData->mBEndBorderWidth),
+               BC_BORDER_START_HALF_COORD(p2t, propData->mIStartBorderWidth));
   }
   return LogicalMargin(aWM);
 }
@@ -2944,14 +2944,14 @@ nsTableFrame::GetIncludedOuterBCBorder(const WritingMode aWM) const
     const_cast<nsTableFrame*>(this)->CalcBCBorders();
   }
 
-  int32_t d2a = PresContext()->AppUnitsPerDevPixel();
+  int32_t p2t = nsPresContext::AppUnitsPerCSSPixel();
   BCPropertyData* propData = GetBCProperty();
   if (propData) {
     return LogicalMargin(aWM,
-               BC_BORDER_START_HALF_COORD(d2a, propData->mBStartBorderWidth),
-               BC_BORDER_END_HALF_COORD(d2a, propData->mIEndCellBorderWidth),
-               BC_BORDER_END_HALF_COORD(d2a, propData->mBEndBorderWidth),
-               BC_BORDER_START_HALF_COORD(d2a, propData->mIStartCellBorderWidth));
+               BC_BORDER_START_HALF_COORD(p2t, propData->mBStartBorderWidth),
+               BC_BORDER_END_HALF_COORD(p2t, propData->mIEndCellBorderWidth),
+               BC_BORDER_END_HALF_COORD(p2t, propData->mBEndBorderWidth),
+               BC_BORDER_START_HALF_COORD(p2t, propData->mIStartCellBorderWidth));
   }
   return LogicalMargin(aWM);
 }
@@ -5055,7 +5055,7 @@ GetColorAndStyle(const nsIFrame* aFrame,
 
   if (aWidth) {
     nscoord width = styleData->GetComputedBorderWidth(physicalSide);
-    *aWidth = aFrame->PresContext()->AppUnitsToDevPixels(width);
+    *aWidth = nsPresContext::AppUnitsToIntCSSPixels(width);
   }
 }
 
@@ -6823,7 +6823,6 @@ BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect)
   bool haveIntersect = false;
   
   nscoord rowB = mInitialOffsetB;
-  nsPresContext* presContext = mTable->PresContext();
   for (uint32_t rgIdx = 0; rgIdx < mRowGroups.Length() && !done; rgIdx++) {
     nsTableRowGroupFrame* rgFrame = mRowGroups[rgIdx];
     for (nsTableRowFrame* rowFrame = rgFrame->GetFirstRow(); rowFrame;
@@ -6832,10 +6831,8 @@ BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect)
       nscoord rowBSize = rowFrame->BSize(mTableWM);
       if (haveIntersect) {
         
-        nscoord borderHalf = mTable->GetPrevInFlow() ? 0 :
-                               presContext->DevPixelsToAppUnits(
-                                 rowFrame->GetBStartBCBorderWidth() + 1);
-
+        nscoord borderHalf = mTable->GetPrevInFlow() ? 0 : nsPresContext::
+          CSSPixelsToAppUnits(rowFrame->GetBStartBCBorderWidth() + 1);
         if (dirtyRect.BEnd(mTableWM) >= rowB - borderHalf) {
           nsTableRowFrame* fifRow =
             static_cast<nsTableRowFrame*>(rowFrame->FirstInFlow());
@@ -6845,9 +6842,8 @@ BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect)
       }
       else {
         
-        nscoord borderHalf = mTable->GetNextInFlow() ? 0 :
-                               presContext->DevPixelsToAppUnits(
-                                 rowFrame->GetBEndBCBorderWidth() + 1);
+        nscoord borderHalf = mTable->GetNextInFlow() ? 0 : nsPresContext::
+          CSSPixelsToAppUnits(rowFrame->GetBEndBCBorderWidth() + 1);
         if (rowB + rowBSize + borderHalf >= dirtyRect.BStart(mTableWM)) {
           mStartRg  = rgFrame;
           mStartRow = rowFrame;
@@ -6891,8 +6887,8 @@ BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect)
     nscoord colISize = colFrame->ISize(mTableWM);
     if (haveIntersect) {
       
-      nscoord iStartBorderHalf = presContext->DevPixelsToAppUnits(
-        colFrame->GetIStartBorderWidth() + 1);
+      nscoord iStartBorderHalf = nsPresContext::
+        CSSPixelsToAppUnits(colFrame->GetIStartBorderWidth() + 1);
       if (dirtyRect.IEnd(mTableWM) >= x - iStartBorderHalf) {
         endColIndex = colIdx;
       }
@@ -6900,8 +6896,8 @@ BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect)
     }
     else {
       
-      nscoord iEndBorderHalf = presContext->DevPixelsToAppUnits(
-        colFrame->GetIEndBorderWidth() + 1);
+      nscoord iEndBorderHalf = nsPresContext::
+        CSSPixelsToAppUnits(colFrame->GetIEndBorderWidth() + 1);
       if (x + colISize + iEndBorderHalf >= dirtyRect.IStart(mTableWM)) {
         startColIndex = endColIndex = colIdx;
         haveIntersect = true;
@@ -7140,8 +7136,7 @@ BCPaintBorderIterator::Next()
 
 
 static nscoord
-CalcVerCornerOffset(nsPresContext* aPresContext,
-                    LogicalSide aCornerOwnerSide,
+CalcVerCornerOffset(LogicalSide aCornerOwnerSide,
                     BCPixelSize aCornerSubWidth,
                     BCPixelSize aHorWidth,
                     bool        aIsStartOfSeg,
@@ -7168,7 +7163,7 @@ CalcVerCornerOffset(nsPresContext* aPresContext,
       offset = (aIsStartOfSeg) ? smallHalf : -largeHalf;
     }
   }
-  return aPresContext->DevPixelsToAppUnits(offset);
+  return nsPresContext::CSSPixelsToAppUnits(offset);
 }
 
 
@@ -7180,8 +7175,7 @@ CalcVerCornerOffset(nsPresContext* aPresContext,
 
 
 static nscoord
-CalcHorCornerOffset(nsPresContext* aPresContext,
-                    LogicalSide aCornerOwnerSide,
+CalcHorCornerOffset(LogicalSide aCornerOwnerSide,
                     BCPixelSize aCornerSubWidth,
                     BCPixelSize aVerWidth,
                     bool        aIsStartOfSeg,
@@ -7208,7 +7202,7 @@ CalcHorCornerOffset(nsPresContext* aPresContext,
       offset = (aIsStartOfSeg) ? smallHalf : -largeHalf;
     }
   }
-  return aPresContext->DevPixelsToAppUnits(offset);
+  return nsPresContext::CSSPixelsToAppUnits(offset);
 }
 
 BCBlockDirSeg::BCBlockDirSeg()
@@ -7242,14 +7236,12 @@ BCBlockDirSeg::Start(BCPaintBorderIterator& aIter,
 
   bool    bStartBevel     = (aBlockSegISize > 0) ? bevel : false;
   BCPixelSize maxInlineSegBSize = std::max(aIter.mPrevInlineSegBSize, aInlineSegBSize);
-  nsPresContext* presContext = aIter.mTable->PresContext();
-  nscoord offset          = CalcVerCornerOffset(presContext,
-                                                ownerSide, cornerSubWidth,
+  nscoord offset          = CalcVerCornerOffset(ownerSide, cornerSubWidth,
                                                 maxInlineSegBSize, true,
                                                 bStartBevel);
 
   mBStartBevelOffset = bStartBevel ?
-    presContext->DevPixelsToAppUnits(maxInlineSegBSize): 0;
+    nsPresContext::CSSPixelsToAppUnits(maxInlineSegBSize): 0;
   
   mBStartBevelSide     = (aInlineSegBSize > 0) ? eLogicalSideIEnd : eLogicalSideIStart;
   mOffsetB      += offset;
@@ -7306,8 +7298,7 @@ BCBlockDirSeg::GetBEndCorner(BCPaintBorderIterator& aIter,
    }
    mIsBEndBevel = (mWidth > 0) ? bevel : false;
    mBEndInlineSegBSize = std::max(aIter.mPrevInlineSegBSize, aInlineSegBSize);
-   mBEndOffset = CalcVerCornerOffset(aIter.mTable->PresContext(),
-                                    ownerSide, cornerSubWidth,
+   mBEndOffset = CalcVerCornerOffset(ownerSide, cornerSubWidth,
                                     mBEndInlineSegBSize,
                                     false, mIsBEndBevel);
    mLength += mBEndOffset;
@@ -7332,8 +7323,7 @@ BCBlockDirSeg::BuildBorderParameters(BCPaintBorderIterator& aIter,
 
   
   
-  nsPresContext* presContext = aIter.mTable->PresContext();
-  result.mAppUnitsPerDevPixel = presContext->AppUnitsPerDevPixel();
+  result.mAppUnitsPerDevPixel = col->PresContext()->AppUnitsPerDevPixel();
 
   switch (mOwner) {
     case eTableOwner:
@@ -7389,11 +7379,11 @@ BCBlockDirSeg::BuildBorderParameters(BCPaintBorderIterator& aIter,
   BCPixelSize smallHalf, largeHalf;
   DivideBCBorderSize(mWidth, smallHalf, largeHalf);
   LogicalRect segRect(aIter.mTableWM,
-                 mOffsetI - presContext->DevPixelsToAppUnits(largeHalf),
+                 mOffsetI - nsPresContext::CSSPixelsToAppUnits(largeHalf),
                  mOffsetB,
-                 presContext->DevPixelsToAppUnits(mWidth), mLength);
+                 nsPresContext::CSSPixelsToAppUnits(mWidth), mLength);
   nscoord bEndBevelOffset = (mIsBEndBevel) ?
-    presContext->DevPixelsToAppUnits(mBEndInlineSegBSize) : 0;
+                  nsPresContext::CSSPixelsToAppUnits(mBEndInlineSegBSize) : 0;
   LogicalSide bEndBevelSide =
     (aInlineSegBSize > 0) ? eLogicalSideIEnd : eLogicalSideIStart;
 
@@ -7447,6 +7437,7 @@ BCBlockDirSeg::Paint(BCPaintBorderIterator& aIter,
   nsCSSRendering::DrawTableBorderSegment(aDrawTarget, param->mBorderStyle, param->mBorderColor,
                                          param->mBGColor, param->mBorderRect,
                                          param->mAppUnitsPerDevPixel,
+                                         nsPresContext::AppUnitsPerCSSPixel(),
                                          param->mStartBevelSide, param->mStartBevelOffset,
                                          param->mEndBevelSide, param->mEndBevelOffset);
 }
@@ -7541,8 +7532,7 @@ BCInlineDirSeg::Start(BCPaintBorderIterator& aIter,
   int32_t relColIndex = aIter.GetRelativeColIndex();
   nscoord maxBlockSegISize = std::max(aIter.mBlockDirInfo[relColIndex].mWidth,
                                       aBEndBlockSegISize);
-  nscoord offset = CalcHorCornerOffset(aIter.mTable->PresContext(),
-                                       cornerOwnerSide, cornerSubWidth,
+  nscoord offset = CalcHorCornerOffset(cornerOwnerSide, cornerSubWidth,
                                        maxBlockSegISize, true, iStartBevel);
   mIStartBevelOffset = (iStartBevel && (aInlineSegBSize > 0)) ? maxBlockSegISize : 0;
   
@@ -7576,12 +7566,11 @@ BCInlineDirSeg::GetIEndCorner(BCPaintBorderIterator& aIter,
   int32_t relColIndex = aIter.GetRelativeColIndex();
   nscoord verWidth = std::max(aIter.mBlockDirInfo[relColIndex].mWidth,
                               aIStartSegISize);
-  nsPresContext* presContext = aIter.mTable->PresContext();
-  mEndOffset = CalcHorCornerOffset(presContext, ownerSide, cornerSubWidth,
-                                   verWidth, false, mIsIEndBevel);
+  mEndOffset = CalcHorCornerOffset(ownerSide, cornerSubWidth, verWidth,
+                                   false, mIsIEndBevel);
   mLength += mEndOffset;
   mIEndBevelOffset = (mIsIEndBevel) ?
-                       presContext->DevPixelsToAppUnits(verWidth) : 0;
+                       nsPresContext::CSSPixelsToAppUnits(verWidth) : 0;
   mIEndBevelSide = (aIStartSegISize > 0) ? eLogicalSideBEnd : eLogicalSideBStart;
 }
 
@@ -7601,8 +7590,7 @@ BCInlineDirSeg::BuildBorderParameters(BCPaintBorderIterator& aIter)
 
   
   
-  nsPresContext* presContext = aIter.mTable->PresContext();
-  result.mAppUnitsPerDevPixel = presContext->AppUnitsPerDevPixel();
+  result.mAppUnitsPerDevPixel = row->PresContext()->AppUnitsPerDevPixel();
 
   result.mBorderStyle = NS_STYLE_BORDER_STYLE_SOLID;
   result.mBorderColor = 0xFFFFFFFF;
@@ -7660,16 +7648,16 @@ BCInlineDirSeg::BuildBorderParameters(BCPaintBorderIterator& aIter)
   BCPixelSize smallHalf, largeHalf;
   DivideBCBorderSize(mWidth, smallHalf, largeHalf);
   LogicalRect segRect(aIter.mTableWM, mOffsetI,
-                      mOffsetB - presContext->DevPixelsToAppUnits(largeHalf),
+                      mOffsetB - nsPresContext::CSSPixelsToAppUnits(largeHalf),
                       mLength,
-                      presContext->DevPixelsToAppUnits(mWidth));
+                      nsPresContext::CSSPixelsToAppUnits(mWidth));
 
   
   result.mBorderRect = segRect.GetPhysicalRect(aIter.mTableWM, aIter.mTable->GetSize());
   result.mStartBevelSide = aIter.mTableWM.PhysicalSide(mIStartBevelSide);
   result.mEndBevelSide = aIter.mTableWM.PhysicalSide(mIEndBevelSide);
   result.mStartBevelOffset =
-    presContext->DevPixelsToAppUnits(mIStartBevelOffset);
+    nsPresContext::CSSPixelsToAppUnits(mIStartBevelOffset);
   result.mEndBevelOffset = mIEndBevelOffset;
   
   
@@ -7707,6 +7695,7 @@ BCInlineDirSeg::Paint(BCPaintBorderIterator& aIter, DrawTarget& aDrawTarget)
   nsCSSRendering::DrawTableBorderSegment(aDrawTarget, param->mBorderStyle, param->mBorderColor,
                                          param->mBGColor, param->mBorderRect,
                                          param->mAppUnitsPerDevPixel,
+                                         nsPresContext::AppUnitsPerCSSPixel(),
                                          param->mStartBevelSide, param->mStartBevelOffset,
                                          param->mEndBevelSide, param->mEndBevelOffset);
 }

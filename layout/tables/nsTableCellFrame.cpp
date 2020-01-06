@@ -428,7 +428,7 @@ public:
   virtual void Paint(nsDisplayListBuilder* aBuilder,
                      gfxContext* aCtx) override;
   virtual nsRect GetBounds(nsDisplayListBuilder* aBuilder,
-                           bool* aSnap) override;
+                           bool* aSnap) const override;
   NS_DISPLAY_DECL_NAME("TableCellBackground", TYPE_TABLE_CELL_BACKGROUND)
 };
 
@@ -444,7 +444,7 @@ void nsDisplayTableCellBackground::Paint(nsDisplayListBuilder* aBuilder,
 
 nsRect
 nsDisplayTableCellBackground::GetBounds(nsDisplayListBuilder* aBuilder,
-                                        bool* aSnap)
+                                        bool* aSnap) const
 {
   
   
@@ -1142,12 +1142,12 @@ nsBCTableCellFrame::GetFrameName(nsAString& aResult) const
 LogicalMargin
 nsBCTableCellFrame::GetBorderWidth(WritingMode aWM) const
 {
-  int32_t d2a = PresContext()->AppUnitsPerDevPixel();
+  int32_t pixelsToTwips = nsPresContext::AppUnitsPerCSSPixel();
   return LogicalMargin(aWM,
-                       BC_BORDER_END_HALF_COORD(d2a, mBStartBorder),
-                       BC_BORDER_START_HALF_COORD(d2a, mIEndBorder),
-                       BC_BORDER_START_HALF_COORD(d2a, mBEndBorder),
-                       BC_BORDER_END_HALF_COORD(d2a, mIStartBorder));
+                       BC_BORDER_END_HALF_COORD(pixelsToTwips, mBStartBorder),
+                       BC_BORDER_START_HALF_COORD(pixelsToTwips, mIEndBorder),
+                       BC_BORDER_START_HALF_COORD(pixelsToTwips, mBEndBorder),
+                       BC_BORDER_END_HALF_COORD(pixelsToTwips, mIStartBorder));
 }
 
 BCPixelSize
@@ -1187,12 +1187,12 @@ nsBCTableCellFrame::SetBorderWidth(LogicalSide aSide, BCPixelSize aValue)
 nsBCTableCellFrame::GetBorderOverflow()
 {
   WritingMode wm = GetWritingMode();
-  int32_t d2a = PresContext()->AppUnitsPerDevPixel();
+  int32_t p2t = nsPresContext::AppUnitsPerCSSPixel();
   LogicalMargin halfBorder(wm,
-                           BC_BORDER_START_HALF_COORD(d2a, mBStartBorder),
-                           BC_BORDER_END_HALF_COORD(d2a, mIEndBorder),
-                           BC_BORDER_END_HALF_COORD(d2a, mBEndBorder),
-                           BC_BORDER_START_HALF_COORD(d2a, mIStartBorder));
+                           BC_BORDER_START_HALF_COORD(p2t, mBStartBorder),
+                           BC_BORDER_END_HALF_COORD(p2t, mIEndBorder),
+                           BC_BORDER_END_HALF_COORD(p2t, mBEndBorder),
+                           BC_BORDER_START_HALF_COORD(p2t, mIStartBorder));
   return halfBorder.GetPhysicalMargin(wm);
 }
 
