@@ -308,13 +308,6 @@ private:
 
   
   
-  virtual void UpdatePlaybackRate();
-
-  
-  void ComputePlaybackRate();
-
-  
-  
   bool CanPlayThrough();
 
   dom::AudioChannel GetAudioChannel() { return mAudioChannel; }
@@ -407,12 +400,6 @@ private:
 #endif
 
   
-  
-  
-  
-  MediaStatistics GetStatistics();
-
-  
   FrameStatistics& GetFrameStatistics() { return *mFrameStats; }
 
   void UpdateReadyState()
@@ -450,8 +437,7 @@ protected:
   bool IsShutdown() const;
 
   
-  
-  void DurationChanged();
+  virtual void DurationChanged();
 
   
   WatchManager<MediaDecoder> mWatchManager;
@@ -467,6 +453,8 @@ protected:
     
     DurationChanged();
   }
+
+  virtual void OnPlaybackEvent(MediaEventType aEvent);
 
   
 
@@ -517,7 +505,6 @@ private:
   
   void NotifyCompositor();
 
-  void OnPlaybackEvent(MediaEventType aEvent);
   void OnPlaybackErrorEvent(const MediaResult& aError);
 
   void OnDecoderDoctorEvent(DecoderDoctorEvent aEvent);
@@ -553,7 +540,7 @@ protected:
 
   
   
-  void DownloadProgressed();
+  virtual void DownloadProgressed();
 
   
   
@@ -577,8 +564,6 @@ protected:
 
   void OnMetadataUpdate(TimedMetadata&& aMetadata);
 
-  bool ShouldThrottleDownload();
-
   
   
   
@@ -591,11 +576,6 @@ protected:
   const RefPtr<FrameStatistics> mFrameStats;
 
   RefPtr<VideoFrameContainer> mVideoFrameContainer;
-
-  
-  
-  
-  MediaChannelStatistics mPlaybackStatistics;
 
   
   
@@ -758,12 +738,6 @@ private:
   bool mTelemetryReported;
   const MediaContainerType mContainerType;
   bool mCanPlayThrough = false;
-
-  
-  double mPlaybackBytesPerSecond = 0;
-
-  
-  bool mPlaybackRateReliable = true;
 };
 
 } 

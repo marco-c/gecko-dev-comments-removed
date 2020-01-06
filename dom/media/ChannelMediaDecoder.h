@@ -54,6 +54,9 @@ class ChannelMediaDecoder : public MediaDecoder
   };
 
 protected:
+  void OnPlaybackEvent(MediaEventType aEvent) override;
+  void DurationChanged() override;
+  void DownloadProgressed() override;
   RefPtr<ResourceCallback> mResourceCallback;
   RefPtr<BaseMediaResource> mResource;
 
@@ -93,6 +96,21 @@ private:
 
   bool CanPlayThroughImpl() override final;
 
+  
+  void ComputePlaybackRate();
+
+  
+  
+  void UpdatePlaybackRate();
+
+  
+  
+  
+  
+  MediaStatistics GetStatistics();
+
+  bool ShouldThrottleDownload();
+
   WatchManager<ChannelMediaDecoder> mWatchManager;
 
   
@@ -100,6 +118,17 @@ private:
   
   
   bool mIgnoreProgressData = false;
+
+  
+  
+  
+  MediaChannelStatistics mPlaybackStatistics;
+
+  
+  double mPlaybackBytesPerSecond = 0;
+
+  
+  bool mPlaybackRateReliable = true;
 };
 
 } 

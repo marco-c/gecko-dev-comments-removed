@@ -517,13 +517,6 @@ void
 MediaDecoder::OnPlaybackEvent(MediaEventType aEvent)
 {
   switch (aEvent) {
-    case MediaEventType::PlaybackStarted:
-      mPlaybackStatistics.Start();
-      break;
-    case MediaEventType::PlaybackStopped:
-      mPlaybackStatistics.Stop();
-      ComputePlaybackRate();
-      break;
     case MediaEventType::PlaybackEnded:
       PlaybackEnded();
       break;
@@ -550,6 +543,9 @@ MediaDecoder::OnPlaybackEvent(MediaEventType aEvent)
       break;
     case MediaEventType::VideoOnlySeekCompleted:
       GetOwner()->DispatchAsyncEvent(NS_LITERAL_STRING("mozvideoonlyseekcompleted"));
+      break;
+    default:
+      break;
   }
 }
 
@@ -920,66 +916,6 @@ MediaDecoder::PlaybackEnded()
   GetOwner()->PlaybackEnded();
 }
 
-MediaStatistics
-MediaDecoder::GetStatistics()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MediaResource* r = GetResource();
-  MOZ_ASSERT(r);
-
-  MediaStatistics result;
-  result.mDownloadRate =
-    r->GetDownloadRate(&result.mDownloadRateReliable);
-  result.mDownloadPosition = r->GetCachedDataEnd(mDecoderPosition);
-  result.mTotalBytes = r->GetLength();
-  result.mPlaybackRate = mPlaybackBytesPerSecond;
-  result.mPlaybackRateReliable = mPlaybackRateReliable;
-  result.mDecoderPosition = mDecoderPosition;
-  result.mPlaybackPosition = mPlaybackPosition;
-  return result;
-}
-
-void
-MediaDecoder::ComputePlaybackRate()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(GetResource());
-
-  int64_t length = GetResource()->GetLength();
-  if (mozilla::IsFinite<double>(mDuration)
-      && mDuration > 0
-      && length >= 0) {
-    mPlaybackRateReliable = true;
-    mPlaybackBytesPerSecond = length / mDuration;
-    return;
-  }
-
-  bool reliable = false;
-  mPlaybackBytesPerSecond = mPlaybackStatistics.GetRateAtLastStop(&reliable);
-  mPlaybackRateReliable = reliable;
-}
-
-void
-MediaDecoder::UpdatePlaybackRate()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(GetResource());
-
-  ComputePlaybackRate();
-  uint32_t rate = mPlaybackBytesPerSecond;
-
-  if (mPlaybackRateReliable) {
-    
-    rate = std::max(rate, 1u);
-  } else {
-    
-    
-    rate = std::max(rate, 10000u);
-  }
-
-  GetResource()->SetPlaybackRate(rate);
-}
-
 void
 MediaDecoder::NotifySuspendedStatusChanged()
 {
@@ -992,47 +928,13 @@ MediaDecoder::NotifySuspendedStatusChanged()
   }
 }
 
-bool
-MediaDecoder::ShouldThrottleDownload()
-{
-  
-  
-  
-  MOZ_ASSERT(NS_IsMainThread());
-  NS_ENSURE_TRUE(mDecoderStateMachine, false);
-
-  int64_t length = GetResource()->GetLength();
-  if (length > 0 &&
-      length <= int64_t(MediaPrefs::MediaMemoryCacheMaxSize()) * 1024) {
-    
-    
-    
-    return false;
-  }
-
-  if (Preferences::GetBool("media.throttle-regardless-of-download-rate",
-                           false)) {
-    return true;
-  }
-
-  MediaStatistics stats = GetStatistics();
-  if (!stats.mDownloadRateReliable || !stats.mPlaybackRateReliable) {
-    return false;
-  }
-  uint32_t factor =
-    std::max(2u, Preferences::GetUint("media.throttle-factor", 2));
-  return stats.mDownloadRate > factor * stats.mPlaybackRate;
-}
-
 void
 MediaDecoder::DownloadProgressed()
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
   AbstractThread::AutoEnter context(AbstractMainThread());
-  UpdatePlaybackRate();
   GetOwner()->DownloadProgressed();
-  GetResource()->ThrottleReadahead(ShouldThrottleDownload());
 }
 
 void
@@ -1152,9 +1054,6 @@ MediaDecoder::DurationChanged()
   }
 
   LOG("Duration changed to %f", mDuration);
-
-  
-  UpdatePlaybackRate();
 
   
   
