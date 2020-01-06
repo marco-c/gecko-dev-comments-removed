@@ -16,6 +16,13 @@ XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils",
 XPCOMUtils.defineLazyModuleGetter(this, "CustomizableUI",
   "resource:///modules/CustomizableUI.jsm");
 
+const TRANSITION_PHASES = Object.freeze({
+  START: 1,
+  PREPARE: 2,
+  TRANSITION: 3,
+  END: 4
+});
+
 
 
 
@@ -341,7 +348,8 @@ this.PanelMultiView = class {
     this._panel.removeEventListener("popuphidden", this);
     this.window.removeEventListener("keydown", this);
     this.node = this._clickCapturer = this._viewContainer = this._mainViewContainer =
-      this._subViews = this._viewStack = this.__dwu = this._panelViewCache = null;
+      this._subViews = this._viewStack = this.__dwu = this._panelViewCache =
+        this._transitionDetails = null;
   }
 
   
@@ -423,6 +431,8 @@ this.PanelMultiView = class {
           this.node.setAttribute("viewtype", "main");
         });
       }
+    } else if (this.panelViews) {
+      this._mainView.setAttribute("current", "true");
     }
 
     if (!this.panelViews) {
@@ -431,12 +441,11 @@ this.PanelMultiView = class {
   }
 
   showSubView(aViewId, aAnchor, aPreviousView) {
-    const {document, window} = this;
     return (async () => {
       
       let viewNode = typeof aViewId == "string" ? this.node.querySelector("#" + aViewId) : aViewId;
       if (!viewNode) {
-        viewNode = document.getElementById(aViewId);
+        viewNode = this.document.getElementById(aViewId);
         if (viewNode) {
           this._placeSubView(viewNode);
         } else {
@@ -486,6 +495,7 @@ this.PanelMultiView = class {
 
       
       
+      
       let detail = {
         blockers: new Set(),
         addBlocker(promise) {
@@ -509,7 +519,6 @@ this.PanelMultiView = class {
       }
 
       this._currentSubView = viewNode;
-      viewNode.setAttribute("current", true);
       if (this.panelViews) {
         if (viewNode.id == this._mainViewId) {
           this.node.setAttribute("viewtype", "main");
@@ -521,141 +530,17 @@ this.PanelMultiView = class {
       }
 
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
       if (this.panelViews && playTransition) {
-        
-        
-        
-        let onTransitionEnd = () => {
-          this._dispatchViewEvent(previousViewNode, "ViewHiding");
-          previousViewNode.removeAttribute("current");
-          this.descriptionHeightWorkaround(viewNode);
-        };
-
-        
-        
-        if (this._panel.state != "open") {
-          onTransitionEnd();
-          return;
-        }
-
         if (aAnchor)
           aAnchor.setAttribute("open", true);
 
-        
-        
-        this._viewContainer.style.height = Math.max(previousRect.height, this._mainViewHeight) + "px";
-        this._viewContainer.style.width = previousRect.width + "px";
-        
-        let rect = this._panel.popupBoxObject.getOuterScreenRect();
-        this._panel.setAttribute("width", rect.width);
-        this._panel.setAttribute("height", rect.height);
+        await this._transitionViews(previousViewNode, viewNode, reverse, previousRect);
 
-        this._viewBoundsOffscreen(viewNode, previousRect, viewRect => {
-          this._transitioning = true;
-          if (this._autoResizeWorkaroundTimer)
-            window.clearTimeout(this._autoResizeWorkaroundTimer);
-          this._viewContainer.setAttribute("transition-reverse", reverse);
-          let nodeToAnimate = reverse ? previousViewNode : viewNode;
+        if (aAnchor)
+          aAnchor.removeAttribute("open");
 
-          if (!reverse) {
-            
-            
-            
-            
-            
-            nodeToAnimate.style.marginInlineStart = previousRect.width + "px";
-          }
-
-          
-          
-          
-          
-          nodeToAnimate.style.transition = "transform ease-" + (reverse ? "in" : "out") +
-            " var(--panelui-subview-transition-duration)";
-          nodeToAnimate.style.willChange = "transform";
-          nodeToAnimate.style.borderInlineStart = "1px solid var(--panel-separator-color)";
-
-          
-          
-          
-          window.addEventListener("MozAfterPaint", () => {
-            if (this._panel.state != "open") {
-              onTransitionEnd();
-              return;
-            }
-            
-            
-            this._viewContainer.style.height = Math.max(viewRect.height, this._mainViewHeight) + "px";
-            this._viewContainer.style.width = viewRect.width + "px";
-            this._panel.removeAttribute("width");
-            this._panel.removeAttribute("height");
-
-            
-            let moveToLeft = (this._dir == "rtl" && !reverse) || (this._dir == "ltr" && reverse);
-            let movementX = reverse ? viewRect.width : previousRect.width;
-            let moveX = (moveToLeft ? "" : "-") + movementX;
-            nodeToAnimate.style.transform = "translateX(" + moveX + "px)";
-            
-            
-            nodeToAnimate.style.width = viewRect.width + "px";
-
-            this._viewContainer.addEventListener("transitionend", this._transitionEndListener = ev => {
-              
-              
-              
-              if (ev.target != nodeToAnimate || ev.propertyName != "transform")
-                return;
-
-              this._viewContainer.removeEventListener("transitionend", this._transitionEndListener);
-              this._transitionEndListener = null;
-              onTransitionEnd();
-              this._transitioning = false;
-              if (reverse) {
-                this._resetKeyNavigation(previousViewNode);
-              }
-
-              
-              
-              
-              
-              this._autoResizeWorkaroundTimer = window.setTimeout(() => {
-                this._viewContainer.style.removeProperty("height");
-                this._viewContainer.style.removeProperty("width");
-              }, 500);
-
-              
-              
-              
-              
-              window.addEventListener("MozAfterPaint", () => {
-                nodeToAnimate.style.removeProperty("border-inline-start");
-                nodeToAnimate.style.removeProperty("transition");
-                nodeToAnimate.style.removeProperty("transform");
-                nodeToAnimate.style.removeProperty("width");
-
-                if (!reverse)
-                  viewNode.style.removeProperty("margin-inline-start");
-                if (aAnchor)
-                  aAnchor.removeAttribute("open");
-
-                this._viewContainer.removeAttribute("transition-reverse");
-
-                this._dispatchViewEvent(viewNode, "ViewShown");
-                this._updateKeyboardFocus(viewNode);
-              }, { once: true });
-            });
-          }, { once: true });
-        });
+        this._dispatchViewEvent(viewNode, "ViewShown");
+        this._updateKeyboardFocus(viewNode);
       } else if (!this.panelViews) {
         this._transitionHeight(() => {
           viewNode.setAttribute("current", true);
@@ -685,6 +570,200 @@ this.PanelMultiView = class {
 
 
 
+
+
+
+
+
+
+
+
+  async _transitionViews(previousViewNode, viewNode, reverse, previousRect) {
+    
+    
+    if (this._panel.state != "open") {
+      return;
+    }
+
+    const {window, document} = this;
+
+    if (this._autoResizeWorkaroundTimer)
+      window.clearTimeout(this._autoResizeWorkaroundTimer);
+
+    this._transitionDetails = {
+      phase: TRANSITION_PHASES.START,
+      previousViewNode, viewNode, reverse
+    };
+
+    
+    
+    this._viewContainer.style.height = Math.max(previousRect.height, this._mainViewHeight) + "px";
+    this._viewContainer.style.width = previousRect.width + "px";
+    
+    let rect = this._panel.popupBoxObject.getOuterScreenRect();
+    this._panel.setAttribute("width", rect.width);
+    this._panel.setAttribute("height", rect.height);
+
+    let viewRect;
+    if (viewNode.__lastKnownBoundingRect) {
+      viewRect = viewNode.__lastKnownBoundingRect;
+      viewNode.setAttribute("current", true);
+      this.descriptionHeightWorkaround(viewNode);
+    } else if (viewNode.customRectGetter) {
+      
+      
+      let {height, width} = previousRect;
+      viewRect = Object.assign({height, width}, viewNode.customRectGetter());
+      let {header} = viewNode;
+      if (header) {
+        viewRect.height += this._dwu.getBoundsWithoutFlushing(header).height;
+      }
+      viewNode.setAttribute("current", true);
+      this.descriptionHeightWorkaround(viewNode);
+    } else {
+      let oldSibling = viewNode.nextSibling || null;
+      this._offscreenViewStack.appendChild(viewNode);
+      viewNode.setAttribute("current", true);
+      this.descriptionHeightWorkaround(viewNode);
+
+      viewRect = await BrowserUtils.promiseLayoutFlushed(this.document, "layout", () => {
+        return this._dwu.getBoundsWithoutFlushing(viewNode);
+      });
+
+      try {
+        this._viewStack.insertBefore(viewNode, oldSibling);
+      } catch (ex) {
+        this._viewStack.appendChild(viewNode);
+      }
+    }
+
+    this._transitioning = true;
+    this._transitionDetails.phase = TRANSITION_PHASES.PREPARE;
+
+    
+    let moveToLeft = (this._dir == "rtl" && !reverse) || (this._dir == "ltr" && reverse);
+    let deltaX = previousRect.width;
+    let deepestNode = reverse ? previousViewNode : viewNode;
+
+    
+    
+    
+    if (reverse)
+      this._viewStack.style.marginInlineStart = "-" + deltaX + "px";
+
+    
+    
+    
+    
+    this._viewStack.style.transition = "transform var(--animation-easing-function)" +
+      " var(--panelui-subview-transition-duration)";
+    this._viewStack.style.willChange = "transform";
+    deepestNode.style.borderInlineStart = "1px solid var(--panel-separator-color)";
+
+    
+    
+    this._viewContainer.style.height = Math.max(viewRect.height, this._mainViewHeight) + "px";
+    this._viewContainer.style.width = viewRect.width + "px";
+    this._panel.removeAttribute("width");
+    this._panel.removeAttribute("height");
+    
+    
+    viewNode.style.width = viewRect.width + "px";
+
+    await BrowserUtils.promiseLayoutFlushed(document, "layout", () => {});
+
+    
+    this._transitionDetails.phase = TRANSITION_PHASES.TRANSITION;
+    this._viewStack.style.transform = "translateX(" + (moveToLeft ? "" : "-") + deltaX + "px)";
+
+    await new Promise(resolve => {
+      this._transitionDetails.resolve = resolve;
+      this._viewContainer.addEventListener("transitionend", this._transitionDetails.listener = ev => {
+        
+        
+        
+        if (ev.target != this._viewStack || ev.propertyName != "transform")
+          return;
+        this._viewContainer.removeEventListener("transitionend", this._transitionDetails.listener);
+        delete this._transitionDetails.listener;
+        resolve();
+      });
+    });
+
+    this._transitionDetails.phase = TRANSITION_PHASES.END;
+
+    await this._cleanupTransitionPhase();
+  }
+
+  
+
+
+
+
+  async _cleanupTransitionPhase() {
+    if (!this._transitionDetails)
+      return;
+
+    let {phase, previousViewNode, viewNode, reverse, resolve, listener} = this._transitionDetails;
+    this._transitionDetails = null;
+
+    
+    
+    this._dispatchViewEvent(previousViewNode, "ViewHiding");
+    previousViewNode.removeAttribute("current");
+    if (reverse)
+      this._resetKeyNavigation(previousViewNode);
+
+    if (phase >= TRANSITION_PHASES.START) {
+      this._panel.removeAttribute("width");
+      this._panel.removeAttribute("height");
+      
+      
+      
+      
+      this._autoResizeWorkaroundTimer = this.window.setTimeout(() => {
+        if (!this._viewContainer)
+          return;
+        this._viewContainer.style.removeProperty("height");
+        this._viewContainer.style.removeProperty("width");
+      }, 500);
+    }
+    if (phase >= TRANSITION_PHASES.PREPARE) {
+      this._transitioning = false;
+      if (reverse)
+        this._viewStack.style.removeProperty("margin-inline-start");
+      let deepestNode = reverse ? previousViewNode : viewNode;
+      deepestNode.style.removeProperty("border-inline-start");
+      this._viewStack.style.removeProperty("transition");
+    }
+    if (phase >= TRANSITION_PHASES.TRANSITION) {
+      this._viewStack.style.removeProperty("transform");
+      viewNode.style.removeProperty("width");
+      if (listener)
+        this._viewContainer.removeEventListener("transitionend", listener);
+      if (resolve)
+        resolve();
+    }
+    if (phase >= TRANSITION_PHASES.END) {
+      
+      
+      previousViewNode.style.display = "none";
+      await BrowserUtils.promiseLayoutFlushed(this.document, "layout", () => {});
+      previousViewNode.style.removeProperty("display");
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
   _dispatchViewEvent(viewNode, eventName, anchor, detail) {
     let cancel = false;
     if (eventName != "PanelMultiViewHidden") {
@@ -701,51 +780,6 @@ this.PanelMultiView = class {
     if (!cancel)
       cancel = evt.defaultPrevented;
     return cancel;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  _viewBoundsOffscreen(viewNode, previousRect, callback) {
-    if (viewNode.__lastKnownBoundingRect) {
-      callback(viewNode.__lastKnownBoundingRect);
-      return;
-    }
-
-    if (viewNode.customRectGetter) {
-      
-      
-      let {height, width} = previousRect;
-      let rect = Object.assign({height, width}, viewNode.customRectGetter());
-      let {header} = viewNode;
-      if (header) {
-        rect.height += this._dwu.getBoundsWithoutFlushing(header).height;
-      }
-      callback(rect);
-      return;
-    }
-
-    let oldSibling = viewNode.nextSibling || null;
-    this._offscreenViewStack.appendChild(viewNode);
-
-    BrowserUtils.promiseLayoutFlushed(this.document, "layout", () => {
-      return this._dwu.getBoundsWithoutFlushing(viewNode);
-    }).then(viewRect => {
-      try {
-        this._viewStack.insertBefore(viewNode, oldSibling);
-      } catch (ex) {
-        this._viewStack.appendChild(viewNode);
-      }
-
-      callback(viewRect);
-    });
   }
 
   
@@ -962,10 +996,7 @@ this.PanelMultiView = class {
         this.node.removeAttribute("panelopen");
         this.showMainView();
         if (this.panelViews) {
-          if (this._transitionEndListener) {
-            this._viewContainer.removeEventListener("transitionend", this._transitionEndListener);
-            this._transitionEndListener = null;
-          }
+          this._cleanupTransitionPhase();
           for (let panelView of this._viewStack.children) {
             if (panelView.nodeName != "children") {
               panelView.__lastKnownBoundingRect = null;
