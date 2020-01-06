@@ -1573,12 +1573,14 @@ DrawTarget::Draw3DTransformedSurface(SourceSurface* aSurface, const Matrix4x4& a
   if (!dstSurf) {
     return false;
   }
+
+  DataSourceSurface::ScopedMap map(dstSurf, DataSourceSurface::READ_WRITE);
   std::unique_ptr<SkCanvas> dstCanvas(
     SkCanvas::MakeRasterDirect(
                         SkImageInfo::Make(xformBounds.Width(), xformBounds.Height(),
                         GfxFormatToSkiaColorType(dstSurf->GetFormat()),
                         kPremul_SkAlphaType),
-      dstSurf->GetData(), dstSurf->Stride()));
+      map.GetData(), dstSurf->Stride()));
   if (!dstCanvas) {
     return false;
   }
@@ -1746,12 +1748,13 @@ DrawTargetSkia::OptimizeSourceSurfaceForUnknownAlpha(SourceSurface *aSurface) co
   }
 
   RefPtr<DataSourceSurface> dataSurface = aSurface->GetDataSurface();
+  DataSourceSurface::ScopedMap map(dataSurface, DataSourceSurface::READ_WRITE);
 
   
   
   
   
-  WriteRGBXFormat(dataSurface->GetData(), dataSurface->GetSize(),
+  WriteRGBXFormat(map.GetData(), dataSurface->GetSize(),
                   dataSurface->Stride(), dataSurface->GetFormat());
   return dataSurface.forget();
 }
@@ -1775,8 +1778,11 @@ DrawTargetSkia::OptimizeSourceSurface(SourceSurface *aSurface) const
   
   
   RefPtr<DataSourceSurface> dataSurface = aSurface->GetDataSurface();
-  MOZ_ASSERT(VerifyRGBXFormat(dataSurface->GetData(), dataSurface->GetSize(),
+#ifdef DEBUG
+  DataSourceSurface::ScopedMap map(dataSurface, DataSourceSurface::READ);
+  MOZ_ASSERT(VerifyRGBXFormat(map.GetData(), dataSurface->GetSize(),
                               dataSurface->Stride(), dataSurface->GetFormat()));
+#endif
   return dataSurface.forget();
 }
 
