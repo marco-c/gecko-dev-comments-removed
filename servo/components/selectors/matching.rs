@@ -75,7 +75,7 @@ impl ElementSelectorFlags {
 
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum MatchingMode {
     
     Normal,
@@ -95,9 +95,20 @@ pub enum MatchingMode {
 }
 
 
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
+pub enum VisitedHandlingMode {
+    
+    AllLinksUnvisited,
+    
+    
+    
+    RelevantLinkVisited,
+}
 
 
 
+
+#[derive(Clone)]
 pub struct MatchingContext<'a> {
     
     
@@ -106,6 +117,13 @@ pub struct MatchingContext<'a> {
     pub matching_mode: MatchingMode,
     
     pub bloom_filter: Option<&'a BloomFilter>,
+    
+    pub visited_handling: VisitedHandlingMode,
+    
+    
+    
+    
+    pub relevant_link_found: bool,
 }
 
 impl<'a> MatchingContext<'a> {
@@ -118,6 +136,23 @@ impl<'a> MatchingContext<'a> {
             relations: StyleRelations::empty(),
             matching_mode: matching_mode,
             bloom_filter: bloom_filter,
+            visited_handling: VisitedHandlingMode::AllLinksUnvisited,
+            relevant_link_found: false,
+        }
+    }
+
+    
+    pub fn new_for_visited(matching_mode: MatchingMode,
+                           bloom_filter: Option<&'a BloomFilter>,
+                           visited_handling: VisitedHandlingMode)
+                           -> Self
+    {
+        Self {
+            relations: StyleRelations::empty(),
+            matching_mode: matching_mode,
+            bloom_filter: bloom_filter,
+            visited_handling: visited_handling,
+            relevant_link_found: false,
         }
     }
 }
@@ -154,6 +189,100 @@ fn may_match<E>(sel: &SelectorInner<E::Impl>,
     }
 
     true
+}
+
+
+
+
+
+
+
+
+
+
+#[derive(PartialEq, Eq, Copy, Clone)]
+pub enum RelevantLinkStatus {
+    
+    
+    Looking,
+    
+    
+    
+    NotLooking,
+    
+    Found,
+}
+
+impl Default for RelevantLinkStatus {
+    fn default() -> Self {
+        RelevantLinkStatus::NotLooking
+    }
+}
+
+impl RelevantLinkStatus {
+    
+    
+    
+    fn examine_potential_link<E>(&self, element: &E, context: &mut MatchingContext)
+                                 -> RelevantLinkStatus
+        where E: Element,
+    {
+        if *self != RelevantLinkStatus::Looking {
+            return *self
+        }
+
+        if !element.is_link() {
+            return *self
+        }
+
+        
+        
+        
+        context.relevant_link_found = true;
+        
+        
+        RelevantLinkStatus::Found
+    }
+
+    
+    
+    
+    
+    pub fn is_visited<E>(&self, element: &E, context: &MatchingContext) -> bool
+        where E: Element,
+    {
+        if !element.is_link() {
+            return false
+        }
+
+        
+        if *self != RelevantLinkStatus::Found {
+            return false
+        }
+
+        context.visited_handling == VisitedHandlingMode::RelevantLinkVisited
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn is_unvisited<E>(&self, element: &E, context: &MatchingContext) -> bool
+        where E: Element,
+    {
+        if !element.is_link() {
+            return false
+        }
+
+        
+        if *self != RelevantLinkStatus::Found {
+            return true
+        }
+
+        context.visited_handling == VisitedHandlingMode::AllLinksUnvisited
+    }
 }
 
 
@@ -267,6 +396,7 @@ pub fn matches_complex_selector<E, F>(complex_selector: &ComplexSelector<E::Impl
     match matches_complex_selector_internal(iter,
                                             element,
                                             context,
+                                            RelevantLinkStatus::Looking,
                                             flags_setter) {
         SelectorMatchingResult::Matched => true,
         _ => false
@@ -276,13 +406,16 @@ pub fn matches_complex_selector<E, F>(complex_selector: &ComplexSelector<E::Impl
 fn matches_complex_selector_internal<E, F>(mut selector_iter: SelectorIter<E::Impl>,
                                            element: &E,
                                            context: &mut MatchingContext,
+                                           relevant_link: RelevantLinkStatus,
                                            flags_setter: &mut F)
                                            -> SelectorMatchingResult
      where E: Element,
            F: FnMut(&E, ElementSelectorFlags),
 {
+    let mut relevant_link = relevant_link.examine_potential_link(element, context);
+
     let matches_all_simple_selectors = selector_iter.all(|simple| {
-        matches_simple_selector(simple, element, context, flags_setter)
+        matches_simple_selector(simple, element, context, &relevant_link, flags_setter)
     });
 
     let combinator = selector_iter.next_sequence();
@@ -300,6 +433,9 @@ fn matches_complex_selector_internal<E, F>(mut selector_iter: SelectorIter<E::Im
         Some(c) => {
             let (mut next_element, candidate_not_found) = match c {
                 Combinator::NextSibling | Combinator::LaterSibling => {
+                    
+                    
+                    relevant_link = RelevantLinkStatus::NotLooking;
                     (element.prev_sibling_element(),
                      SelectorMatchingResult::NotMatchedAndRestartFromClosestDescendant)
                 }
@@ -321,6 +457,7 @@ fn matches_complex_selector_internal<E, F>(mut selector_iter: SelectorIter<E::Im
                 let result = matches_complex_selector_internal(selector_iter.clone(),
                                                                &element,
                                                                context,
+                                                               relevant_link,
                                                                flags_setter);
                 match (result, c) {
                     
@@ -365,6 +502,7 @@ fn matches_simple_selector<E, F>(
         selector: &Component<E::Impl>,
         element: &E,
         context: &mut MatchingContext,
+        relevant_link: &RelevantLinkStatus,
         flags_setter: &mut F)
         -> bool
     where E: Element,
@@ -465,7 +603,7 @@ fn matches_simple_selector<E, F>(
             )
         }
         Component::NonTSPseudoClass(ref pc) => {
-            element.match_non_ts_pseudo_class(pc, context, flags_setter)
+            element.match_non_ts_pseudo_class(pc, context, relevant_link, flags_setter)
         }
         Component::FirstChild => {
             matches_first_child(element, flags_setter)
@@ -509,7 +647,7 @@ fn matches_simple_selector<E, F>(
             matches_generic_nth_child(element, 0, 1, true, true, flags_setter)
         }
         Component::Negation(ref negated) => {
-            !negated.iter().all(|ss| matches_simple_selector(ss, element, context, flags_setter))
+            !negated.iter().all(|ss| matches_simple_selector(ss, element, context, relevant_link, flags_setter))
         }
     }
 }

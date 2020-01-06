@@ -475,12 +475,15 @@ fn compute_style_for_animation_step(context: &SharedStyleContext,
                 guard.declarations().iter().rev().map(|&(ref decl, _importance)| decl)
             };
 
+            
+            
             let computed =
                 properties::apply_declarations(context.stylist.device(),
                                                 false,
                                                iter,
                                                previous_style,
                                                previous_style,
+                                                None,
                                                 None,
                                                &*context.error_reporter,
                                                font_metrics_provider,

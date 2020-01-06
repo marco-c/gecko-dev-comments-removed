@@ -16,6 +16,7 @@ use std::ptr;
 use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
 use stylearc::Arc;
 use stylesheets::StyleRule;
+use stylist::ApplicableDeclarationList;
 use thread_state;
 
 
@@ -213,6 +214,18 @@ impl RuleTree {
         }
 
         current
+    }
+
+    
+    
+    pub fn compute_rule_node(&self,
+                             applicable_declarations: &mut ApplicableDeclarationList,
+                             guards: &StylesheetGuards)
+                             -> StrongRuleNode
+    {
+        let rules = applicable_declarations.drain().map(|d| (d.source, d.level));
+        let rule_node = self.insert_ordered_rules_with_important(rules, guards);
+        rule_node
     }
 
     
@@ -632,6 +645,8 @@ struct WeakRuleNode {
 
 #[derive(Debug, PartialEq)]
 pub struct StrongRuleNode {
+    
+    
     ptr: *mut RuleNode,
 }
 

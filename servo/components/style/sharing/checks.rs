@@ -8,6 +8,7 @@
 
 use context::{CurrentElementInfo, SelectorFlagsMap, SharedStyleContext};
 use dom::TElement;
+use element_state::*;
 use matching::MatchMethods;
 use selectors::bloom::BloomFilter;
 use selectors::matching::{ElementSelectorFlags, StyleRelations};
@@ -78,6 +79,20 @@ pub fn have_same_class<E>(element: E,
     }
 
     element_class_attributes == *candidate.class_attributes.as_ref().unwrap()
+}
+
+
+
+
+pub fn have_same_state_ignoring_visitedness<E>(element: E,
+                                               candidate: &StyleSharingCandidate<E>)
+                                               -> bool
+    where E: TElement,
+{
+    let state_mask = !IN_VISITED_OR_UNVISITED_STATE;
+    let state = element.get_state() & state_mask;
+    let candidate_state = candidate.element.get_state() & state_mask;
+    state == candidate_state
 }
 
 

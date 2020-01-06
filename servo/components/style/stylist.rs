@@ -568,6 +568,7 @@ impl Stylist {
                                 parent.map(|p| &**p),
                                 parent.map(|p| &**p),
                                 None,
+                                None,
                                 &RustLogReporter,
                                 font_metrics,
                                 cascade_flags,
@@ -639,12 +640,14 @@ impl Stylist {
         
         
         
+        
         let computed =
             properties::cascade(&self.device,
                                 &rule_node,
                                 guards,
                                 Some(parent_style),
                                 Some(parent_style),
+                                None,
                                 None,
                                 &RustLogReporter,
                                 font_metrics,
@@ -695,6 +698,7 @@ impl Stylist {
             }
         };
 
+        
         let mut declarations = ApplicableDeclarationList::new();
         let mut matching_context =
             MatchingContext::new(MatchingMode::ForStatelessPseudoElement, None);
@@ -1048,12 +1052,16 @@ impl Stylist {
         let rule_node =
             self.rule_tree.insert_ordered_rules(v.into_iter().map(|a| (a.source, a.level)));
 
+        
+        
+        
         let metrics = get_metrics_provider_for_product();
         Arc::new(properties::cascade(&self.device,
                                      &rule_node,
                                      guards,
                                      Some(parent_style),
                                      Some(parent_style),
+                                     None,
                                      None,
                                      &RustLogReporter,
                                      &metrics,

@@ -21,7 +21,7 @@ use selector_parser::{NonTSPseudoClass, PseudoElement, SelectorImpl, Snapshot, S
 use selectors::Element;
 use selectors::attr::{AttrSelectorOperation, NamespaceConstraint};
 use selectors::matching::{ElementSelectorFlags, MatchingContext, MatchingMode};
-use selectors::matching::matches_selector;
+use selectors::matching::{RelevantLinkStatus, VisitedHandlingMode, matches_selector};
 use selectors::parser::{Combinator, Component, Selector, SelectorInner, SelectorMethods};
 use selectors::visitor::SelectorVisitor;
 use smallvec::SmallVec;
@@ -535,6 +535,7 @@ impl<'a, E> Element for ElementWrapper<'a, E>
     fn match_non_ts_pseudo_class<F>(&self,
                                     pseudo_class: &NonTSPseudoClass,
                                     context: &mut MatchingContext,
+                                    relevant_link: &RelevantLinkStatus,
                                     _setter: &mut F)
                                     -> bool
         where F: FnMut(&Self, ElementSelectorFlags),
@@ -576,10 +577,21 @@ impl<'a, E> Element for ElementWrapper<'a, E>
             }
         }
 
+        
+        
+        
+        if *pseudo_class == NonTSPseudoClass::Link {
+            return relevant_link.is_unvisited(self, context)
+        }
+        if *pseudo_class == NonTSPseudoClass::Visited {
+            return relevant_link.is_visited(self, context)
+        }
+
         let flag = pseudo_class.state_flag();
         if flag.is_empty() {
             return self.element.match_non_ts_pseudo_class(pseudo_class,
                                                           context,
+                                                          relevant_link,
                                                           &mut |_, _| {})
         }
         match self.snapshot().and_then(|s| s.state()) {
@@ -587,6 +599,7 @@ impl<'a, E> Element for ElementWrapper<'a, E>
             None => {
                 self.element.match_non_ts_pseudo_class(pseudo_class,
                                                        context,
+                                                       relevant_link,
                                                        &mut |_, _| {})
             }
         }
@@ -598,6 +611,14 @@ impl<'a, E> Element for ElementWrapper<'a, E>
                             -> bool
     {
         self.element.match_pseudo_element(pseudo_element, context)
+    }
+
+    fn is_link(&self) -> bool {
+        let mut context = MatchingContext::new(MatchingMode::Normal, None);
+        self.match_non_ts_pseudo_class(&NonTSPseudoClass::AnyLink,
+                                       &mut context,
+                                       &RelevantLinkStatus::default(),
+                                       &mut |_, _| {})
     }
 
     fn parent_element(&self) -> Option<Self> {
@@ -943,6 +964,17 @@ impl DependencySet {
         
         
         
+        
+        if state_changes.intersects(IN_VISITED_OR_UNVISITED_STATE) {
+            trace!(" > visitedness change, force subtree restyle");
+            
+            
+            hint = RestyleHint::subtree();
+        }
+
+        
+        
+        
         let mut additional_id = None;
         let mut additional_classes = SmallVec::<[Atom; 8]>::new();
         if attrs_changed {
@@ -969,21 +1001,6 @@ impl DependencySet {
             }
         };
 
-        let mut element_matching_context =
-            MatchingContext::new(MatchingMode::Normal, bloom_filter);
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let mut snapshot_matching_context =
-            MatchingContext::new(MatchingMode::Normal, None);
-
         let lookup_element = if el.implemented_pseudo_element().is_some() {
             el.closest_non_native_anonymous_ancestor().unwrap()
         } else {
@@ -993,6 +1010,7 @@ impl DependencySet {
         self.dependencies
             .lookup_with_additional(lookup_element, additional_id, &additional_classes, &mut |dep| {
             trace!("scanning dependency: {:?}", dep);
+
             if !dep.sensitivities.sensitive_to(attrs_changed,
                                                state_changes) {
                 trace!(" > non-sensitive");
@@ -1007,16 +1025,60 @@ impl DependencySet {
             
             
             
+            
+            
+            
+            
+            
+            
+            let mut then_context =
+                MatchingContext::new_for_visited(MatchingMode::Normal, None,
+                                                 VisitedHandlingMode::AllLinksUnvisited);
             let matched_then =
                 matches_selector(&dep.selector, &snapshot_el,
-                                 &mut snapshot_matching_context,
+                                 &mut then_context,
                                  &mut |_, _| {});
+            let mut now_context =
+                MatchingContext::new_for_visited(MatchingMode::Normal, bloom_filter,
+                                                 VisitedHandlingMode::AllLinksUnvisited);
             let matches_now =
                 matches_selector(&dep.selector, el,
-                                 &mut element_matching_context,
+                                 &mut now_context,
                                  &mut |_, _| {});
-            if matched_then != matches_now {
+
+            
+            
+            if matched_then != matches_now ||
+               then_context.relevant_link_found != now_context.relevant_link_found {
                 hint.insert_from(&dep.hint);
+                return !hint.is_maximum()
+            }
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if now_context.relevant_link_found &&
+               dep.sensitivities.states.intersects(IN_VISITED_OR_UNVISITED_STATE) {
+                then_context.visited_handling = VisitedHandlingMode::RelevantLinkVisited;
+                let matched_then =
+                    matches_selector(&dep.selector, &snapshot_el,
+                                     &mut then_context,
+                                     &mut |_, _| {});
+                now_context.visited_handling = VisitedHandlingMode::RelevantLinkVisited;
+                let matches_now =
+                    matches_selector(&dep.selector, el,
+                                     &mut now_context,
+                                     &mut |_, _| {});
+                if matched_then != matches_now {
+                    hint.insert_from(&dep.hint);
+                    return !hint.is_maximum()
+                }
             }
 
             !hint.is_maximum()
