@@ -77,12 +77,11 @@ public:
     COMPLETE  
   };
 
-  explicit SourceBufferIterator(SourceBuffer* aOwner, size_t aReadLimit)
+  explicit SourceBufferIterator(SourceBuffer* aOwner)
     : mOwner(aOwner)
     , mState(START)
     , mChunkCount(0)
     , mByteCount(0)
-    , mRemainderToRead(aReadLimit)
   {
     MOZ_ASSERT(aOwner);
     mData.mIterating.mChunk = 0;
@@ -98,7 +97,6 @@ public:
     , mData(aOther.mData)
     , mChunkCount(aOther.mChunkCount)
     , mByteCount(aOther.mByteCount)
-    , mRemainderToRead(aOther.mRemainderToRead)
   { }
 
   ~SourceBufferIterator();
@@ -181,19 +179,6 @@ public:
   
   size_t ByteCount() const { return mByteCount; }
 
-  
-  SourceBuffer* Owner() const
-  {
-    MOZ_ASSERT(mOwner);
-    return mOwner;
-  }
-
-  
-  size_t Position() const
-  {
-    return mByteCount - mData.mIterating.mAvailableLength;
-  }
-
 private:
   friend class SourceBuffer;
 
@@ -222,11 +207,6 @@ private:
   {
     MOZ_ASSERT(mState != COMPLETE);
     mState = READY;
-
-    
-    if (aAvailableLength > mRemainderToRead) {
-      aAvailableLength = mRemainderToRead;
-    }
 
     
     mData.mIterating.mChunk = aChunk;
@@ -266,27 +246,19 @@ private:
 
   union {
     struct {
-      uint32_t mChunk;   
-      const char* mData; 
-      size_t mOffset;    
-                         
-      size_t mAvailableLength; 
-                               
-      size_t mNextReadLength; 
-                              
-                              
-                              
-    } mIterating;        
+      uint32_t mChunk;
+      const char* mData;
+      size_t mOffset;
+      size_t mAvailableLength;
+      size_t mNextReadLength;
+    } mIterating;
     struct {
-      nsresult mStatus;  
-    } mAtEnd;            
+      nsresult mStatus;
+    } mAtEnd;
   } mData;
 
   uint32_t mChunkCount;  
   size_t mByteCount;     
-                         
-  size_t mRemainderToRead; 
-                           
 };
 
 
@@ -348,10 +320,7 @@ public:
   
 
   
-
-
-
-  SourceBufferIterator Iterator(size_t aReadLength = SIZE_MAX);
+  SourceBufferIterator Iterator();
 
 
   
