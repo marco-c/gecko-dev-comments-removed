@@ -59,8 +59,6 @@ const LOGGER_NAME = "Toolkit.Telemetry";
 const LOGGER_PREFIX = "TelemetrySession" + (Utils.isContentProcess ? "#content::" : "::");
 
 const MESSAGE_TELEMETRY_PAYLOAD = "Telemetry:Payload";
-const MESSAGE_TELEMETRY_THREAD_HANGS = "Telemetry:ChildThreadHangs";
-const MESSAGE_TELEMETRY_GET_CHILD_THREAD_HANGS = "Telemetry:GetChildThreadHangs";
 const MESSAGE_TELEMETRY_USS = "Telemetry:USS";
 const MESSAGE_TELEMETRY_GET_CHILD_USS = "Telemetry:GetChildUSS";
 
@@ -523,17 +521,6 @@ this.TelemetrySession = Object.freeze({
 
 
 
-
-
-
-
-  getChildThreadHangs() {
-    return Impl.getChildThreadHangs();
-  },
-  
-
-
-
   testSavePendingPing() {
     return Impl.testSavePendingPing();
   },
@@ -659,17 +646,6 @@ var Impl = {
   
   
   _childTelemetry: [],
-  
-  
-  
-  
-  
-  
-  _childThreadHangs: [],
-  
-  _childThreadHangsResolveFunctions: [],
-  
-  _childThreadHangsTimeout: null,
   
   
   _sessionId: null,
@@ -1274,47 +1250,51 @@ var Impl = {
     }
 
     
-    let measurements = {
-      histograms: protect(() => this.getHistograms(isSubsession, clearSubsession), {}),
-      keyedHistograms: protect(() => this.getKeyedHistograms(isSubsession, clearSubsession), {}),
-      scalars: protect(() => this.getScalars(isSubsession, clearSubsession), {}),
-      keyedScalars: protect(() => this.getScalars(isSubsession, clearSubsession, true), {}),
-      events: protect(() => this.getEvents(isSubsession, clearSubsession)),
+    let histograms = protect(() => this.getHistograms(isSubsession, clearSubsession), {});
+    let keyedHistograms = protect(() => this.getKeyedHistograms(isSubsession, clearSubsession), {});
+    let scalars = protect(() => this.getScalars(isSubsession, clearSubsession), {});
+    let keyedScalars = protect(() => this.getScalars(isSubsession, clearSubsession, true), {});
+    let events = protect(() => this.getEvents(isSubsession, clearSubsession))
+
+    payloadObj.histograms = histograms.parent || {};
+    payloadObj.keyedHistograms = keyedHistograms.parent || {};
+    payloadObj.processes = {
+      parent: {
+        scalars: scalars.parent || {},
+        keyedScalars: keyedScalars.parent || {},
+        events: events.parent || [],
+      },
+      content: {
+        scalars: scalars.content,
+        keyedScalars: keyedScalars.content,
+        histograms: histograms.content,
+        keyedHistograms: keyedHistograms.content,
+        events: events.content || [],
+      },
+      extension: {
+        scalars: scalars.extension,
+        keyedScalars: keyedScalars.extension,
+        histograms: histograms.extension,
+        keyedHistograms: keyedHistograms.extension,
+        events: events.extension || [],
+      },
+      dynamic: {
+        events: events.dynamic || [],
+      },
     };
 
-    let measurementsContainGPU = Object
-      .keys(measurements)
-      .some(key => "gpu" in measurements[key]);
-
-    payloadObj.processes = {};
-    let processTypes = ["parent", "content", "extension", "dynamic"];
     
-    if (measurementsContainGPU) {
-      processTypes.push("gpu");
-    }
-
-    
-    for (const processType of processTypes) {
-      let processPayload = {};
-
-      for (const key in measurements) {
-        let payloadLoc = processPayload;
-        
-        if (processType == "parent" && (key == "histograms" || key == "keyedHistograms")) {
-          payloadLoc = payloadObj;
-        }
-        
-        if (processType == "dynamic" && key != "events") {
-          continue;
-        }
-
-        
-        let defaultValue = key == "events" ? [] : {};
-        payloadLoc[key] = measurements[key][processType] || defaultValue;
-      }
-
-      
-      payloadObj.processes[processType] = processPayload;
+    if ("gpu" in histograms ||
+        "gpu" in keyedHistograms ||
+        "gpu" in scalars ||
+        "gpu" in keyedScalars) {
+      payloadObj.processes.gpu = {
+        scalars: scalars.gpu,
+        keyedScalars: keyedScalars.gpu,
+        histograms: histograms.gpu,
+        keyedHistograms: keyedHistograms.gpu,
+        events: events.gpu || [],
+      };
     }
 
     payloadObj.info = info;
@@ -1496,7 +1476,6 @@ var Impl = {
     this.attachEarlyObservers();
 
     ppml.addMessageListener(MESSAGE_TELEMETRY_PAYLOAD, this);
-    ppml.addMessageListener(MESSAGE_TELEMETRY_THREAD_HANGS, this);
     ppml.addMessageListener(MESSAGE_TELEMETRY_USS, this);
   },
 
@@ -1583,7 +1562,6 @@ var Impl = {
     }
 
     this.addObserver("content-child-shutdown");
-    cpml.addMessageListener(MESSAGE_TELEMETRY_GET_CHILD_THREAD_HANGS, this);
     cpml.addMessageListener(MESSAGE_TELEMETRY_GET_CHILD_USS, this);
 
     let delayedTask = new DeferredTask(() => {
@@ -1631,35 +1609,6 @@ var Impl = {
         Telemetry.getHistogramById("TELEMETRY_DISCARDED_CONTENT_PINGS_COUNT").add();
       }
 
-      break;
-    }
-    case MESSAGE_TELEMETRY_THREAD_HANGS:
-    {
-      
-      this._childThreadHangs.push(message.data);
-
-      
-      
-      
-      
-      
-      if (this._childThreadHangs.length === Math.min(this._childCount, ppmm.childCount)) {
-        clearTimeout(this._childThreadHangsTimeout);
-
-        
-        
-        for (let resolve of this._childThreadHangsResolveFunctions) {
-          resolve(this._childThreadHangs);
-        }
-        this._childThreadHangsResolveFunctions = [];
-      }
-
-      break;
-    }
-    case MESSAGE_TELEMETRY_GET_CHILD_THREAD_HANGS:
-    {
-      
-      this.sendContentProcessThreadHangs();
       break;
     }
     case MESSAGE_TELEMETRY_USS:
@@ -1751,15 +1700,6 @@ var Impl = {
     cpmm.sendAsyncMessage(MESSAGE_TELEMETRY_PAYLOAD, payload);
   },
 
-  sendContentProcessThreadHangs: function sendContentProcessThreadHangs() {
-    this._log.trace("sendContentProcessThreadHangs");
-    let payload = {
-      childUUID: this._processUUID,
-      hangs: Telemetry.threadHangStats,
-    };
-    cpmm.sendAsyncMessage(MESSAGE_TELEMETRY_THREAD_HANGS, payload);
-  },
-
    
 
 
@@ -1847,50 +1787,6 @@ var Impl = {
     }
     this.gatherMemory();
     return this.getSessionPayload(reason, clearSubsession);
-  },
-
-  getChildThreadHangs: function getChildThreadHangs() {
-    return new Promise((resolve) => {
-      
-      if (ppmm.childCount === 0) {
-        resolve([]);
-        return;
-      }
-
-      
-      
-      this._childThreadHangsResolveFunctions.push((threadHangStats) => {
-        let hangs = threadHangStats.map(child => child.hangs);
-        return resolve(hangs);
-      });
-
-      
-      
-      if (this._childThreadHangsResolveFunctions.length === 1) {
-        
-        
-        this._childCount = ppmm.childCount;
-
-        this._childThreadHangs = []; 
-        for (let i = 0; i < this._childCount; i++) {
-          
-          
-          ppmm.getChildAt(i).sendAsyncMessage(MESSAGE_TELEMETRY_GET_CHILD_THREAD_HANGS);
-        }
-
-        
-        this._childThreadHangsTimeout = setTimeout(() => {
-          
-          
-          
-          
-          for (let resolve of this._childThreadHangsResolveFunctions) {
-            resolve(this._childThreadHangs);
-          }
-          this._childThreadHangsResolveFunctions = [];
-        }, 200);
-      }
-    });
   },
 
   gatherStartup: function gatherStartup() {
