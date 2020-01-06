@@ -1799,6 +1799,23 @@ EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
 
       WidgetDragEvent* event = &startEvent;
 
+      
+      
+      
+      
+      
+      uint32_t count = 0;
+      dataTransfer->GetMozItemCount(&count);
+      if (count == 0) {
+        nsCOMPtr<nsIDOMHTMLElement> htmlDragTarget = do_QueryInterface(targetContent);
+        bool draggable = false;
+        if (htmlDragTarget &&
+            NS_SUCCEEDED(htmlDragTarget->GetDraggable(&draggable)) &&
+            draggable) {
+          dataTransfer->AddDummyHiddenData();
+        }
+      }
+
       nsCOMPtr<nsIObserverService> observerService =
         mozilla::services::GetObserverService();
       
