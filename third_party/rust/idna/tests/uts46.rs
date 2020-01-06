@@ -56,6 +56,13 @@ pub fn collect_tests<F: FnMut(String, TestFn)>(add_test: &mut F) {
                     
                     return;
                 }
+                if to_ascii == "[V2]" {
+                    
+                    
+                    
+                    
+                    return;
+                }
                 let res = result.ok();
                 assert!(res == None, "Expected error. result: {} | original: {} | source: {}",
                         res.unwrap(), original, source);

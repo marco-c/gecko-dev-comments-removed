@@ -19,14 +19,27 @@ use unicode_bidi::{BidiClass, bidi_class};
 include!("uts46_mapping_table.rs");
 
 #[derive(Debug)]
+struct StringTableSlice {
+    byte_start: u16,
+    byte_len: u16,
+}
+
+fn decode_slice(slice: &StringTableSlice) -> &'static str {
+    let start = slice.byte_start as usize;
+    let len = slice.byte_len as usize;
+    &STRING_TABLE[start..(start + len)]
+}
+
+#[repr(u16)]
+#[derive(Debug)]
 enum Mapping {
     Valid,
     Ignored,
-    Mapped(&'static str),
-    Deviation(&'static str),
+    Mapped(StringTableSlice),
+    Deviation(StringTableSlice),
     Disallowed,
     DisallowedStd3Valid,
-    DisallowedStd3Mapped(&'static str),
+    DisallowedStd3Mapped(StringTableSlice),
 }
 
 struct Range {
@@ -56,10 +69,10 @@ fn map_char(codepoint: char, flags: Flags, output: &mut String, errors: &mut Vec
     match *find_char(codepoint) {
         Mapping::Valid => output.push(codepoint),
         Mapping::Ignored => {},
-        Mapping::Mapped(mapping) => output.push_str(mapping),
-        Mapping::Deviation(mapping) => {
+        Mapping::Mapped(ref slice) => output.push_str(decode_slice(slice)),
+        Mapping::Deviation(ref slice) => {
             if flags.transitional_processing {
-                output.push_str(mapping)
+                output.push_str(decode_slice(slice))
             } else {
                 output.push(codepoint)
             }
@@ -74,11 +87,11 @@ fn map_char(codepoint: char, flags: Flags, output: &mut String, errors: &mut Vec
             }
             output.push(codepoint)
         }
-        Mapping::DisallowedStd3Mapped(mapping) => {
+        Mapping::DisallowedStd3Mapped(ref slice) => {
             if flags.use_std3_ascii_rules {
                 errors.push(Error::DissallowedMappedInStd3);
             }
-            output.push_str(mapping)
+            output.push_str(decode_slice(slice))
         }
     }
 }
@@ -198,12 +211,10 @@ fn validate(label: &str, flags: Flags, errors: &mut Vec<Error>) {
     }
 
     
-    if {
-        let mut chars = label.chars().skip(2);
-        let third = chars.next();
-        let fourth = chars.next();
-        (third, fourth) == (Some('-'), Some('-'))
-    } || label.starts_with("-")
+    
+    
+    
+    if label.starts_with("-")
         || label.ends_with("-")
         || label.chars().next().map_or(false, is_combining_mark)
         || label.chars().any(|c| match *find_char(c) {

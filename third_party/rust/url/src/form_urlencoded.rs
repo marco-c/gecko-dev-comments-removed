@@ -47,6 +47,8 @@ pub fn parse(input: &[u8]) -> Parse {
 
 
 
+
+
 #[cfg(feature = "query_encoding")]
 pub fn parse_with_encoding<'a>(input: &'a [u8],
                                encoding_override: Option<::encoding::EncodingRef>,
@@ -119,7 +121,7 @@ fn decode(input: &[u8], encoding: EncodingOverride) -> Cow<str> {
 }
 
 
-fn replace_plus<'a>(input: &'a [u8]) -> Cow<'a, [u8]> {
+fn replace_plus(input: &[u8]) -> Cow<[u8]> {
     match input.iter().position(|&b| b == b'+') {
         None => Cow::Borrowed(input),
         Some(first_position) => {
