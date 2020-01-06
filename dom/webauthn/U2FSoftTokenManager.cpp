@@ -25,8 +25,6 @@ using mozilla::dom::CreateECParamsForCurve;
 
 const nsCString U2FSoftTokenManager::mSecretNickname =
   NS_LITERAL_CSTRING("U2F_NSSTOKEN");
-const nsString U2FSoftTokenManager::mVersion =
-  NS_LITERAL_STRING("U2F_V2");
 
 namespace {
 NS_NAMED_LITERAL_CSTRING(kAttestCertSubjectName, "CN=Firefox U2F Soft Token");
@@ -573,13 +571,6 @@ PrivateKeyFromKeyHandle(const UniquePK11SlotInfo& aSlot,
   }
 
   return unwrappedKey;
-}
-
-
-bool
-U2FSoftTokenManager::IsCompatibleVersion(const nsAString& aVersion)
-{
-  return mVersion == aVersion;
 }
 
 
