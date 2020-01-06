@@ -138,9 +138,11 @@ SdpHelper::MsectionIsDisabled(const SdpMediaSection& msection) const
 void
 SdpHelper::DisableMsection(Sdp* sdp, SdpMediaSection* msection)
 {
+  std::string mid;
+
   
   if (msection->GetAttributeList().HasAttribute(SdpAttribute::kMidAttribute)) {
-    std::string mid = msection->GetAttributeList().GetMid();
+    mid = msection->GetAttributeList().GetMid();
     if (sdp->GetAttributeList().HasAttribute(SdpAttribute::kGroupAttribute)) {
       UniquePtr<SdpGroupAttributeList> newGroupAttr(new SdpGroupAttributeList(
             sdp->GetAttributeList().GetGroup()));
@@ -156,6 +158,12 @@ SdpHelper::DisableMsection(Sdp* sdp, SdpMediaSection* msection)
     new SdpDirectionAttribute(SdpDirectionAttribute::kInactive);
   msection->GetAttributeList().SetAttribute(direction);
   msection->SetPort(0);
+
+  
+  if (!mid.empty()) {
+    msection->GetAttributeList().SetAttribute(new SdpStringAttribute(
+          SdpAttribute::kMidAttribute, mid));
+  }
 
   msection->ClearCodecs();
 
