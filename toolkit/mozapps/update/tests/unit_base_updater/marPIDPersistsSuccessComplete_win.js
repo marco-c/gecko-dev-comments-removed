@@ -42,6 +42,13 @@ function runUpdateFinished() {
 
 
 function waitForHelperExitFinished() {
+  checkPostUpdateAppLog();
+}
+
+
+
+
+function checkPostUpdateAppLogFinished() {
   standardInit();
   Assert.equal(readStatusState(), STATE_NONE,
                "the status file state" + MSG_SHOULD_EQUAL);
@@ -54,7 +61,5 @@ function waitForHelperExitFinished() {
   checkPostUpdateRunningFile(true);
   checkFilesAfterUpdateSuccess(getApplyDirFile);
   checkUpdateLogContains(ERR_PARENT_PID_PERSISTS);
-  
-  
-  waitForFilesInUse();
+  checkCallbackLog();
 }
