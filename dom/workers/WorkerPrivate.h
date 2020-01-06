@@ -218,8 +218,9 @@ private:
   WorkerPrivate* mParent;
   nsString mScriptURL;
   
+  nsString mWorkerName;
   
-  nsCString mWorkerName;
+  nsCString mServiceWorkerScope;
   LocationInfo mLocationInfo;
   
   
@@ -267,7 +268,8 @@ protected:
   WorkerPrivateParent(WorkerPrivate* aParent,
                       const nsAString& aScriptURL, bool aIsChromeWorker,
                       WorkerType aWorkerType,
-                      const nsACString& aWorkerName,
+                      const nsAString& aWorkerName,
+                      const nsACString& aServiceWorkerScope,
                       WorkerLoadInfo& aLoadInfo);
 
   ~WorkerPrivateParent();
@@ -531,7 +533,7 @@ public:
   ServiceWorkerScope() const
   {
     MOZ_DIAGNOSTIC_ASSERT(IsServiceWorker());
-    return mWorkerName;
+    return mServiceWorkerScope;
   }
 
   nsIURI*
@@ -836,7 +838,7 @@ public:
     }
   }
 
-  const nsCString&
+  const nsString&
   WorkerName() const
   {
     return mWorkerName;
@@ -1059,12 +1061,13 @@ public:
   static already_AddRefed<WorkerPrivate>
   Constructor(const GlobalObject& aGlobal, const nsAString& aScriptURL,
               bool aIsChromeWorker, WorkerType aWorkerType,
-              const nsACString& aWorkerName,
+              const nsAString& aWorkerName,
               WorkerLoadInfo* aLoadInfo, ErrorResult& aRv);
 
   static already_AddRefed<WorkerPrivate>
   Constructor(JSContext* aCx, const nsAString& aScriptURL, bool aIsChromeWorker,
-              WorkerType aWorkerType, const nsACString& aWorkerName,
+              WorkerType aWorkerType, const nsAString& aWorkerName,
+              const nsACString& aServiceWorkerScope,
               WorkerLoadInfo* aLoadInfo, ErrorResult& aRv);
 
   static bool
@@ -1463,7 +1466,8 @@ public:
 private:
   WorkerPrivate(WorkerPrivate* aParent,
                 const nsAString& aScriptURL, bool aIsChromeWorker,
-                WorkerType aWorkerType, const nsACString& aWorkerName,
+                WorkerType aWorkerType, const nsAString& aWorkerName,
+                const nsACString& aServiceWorkerScope,
                 WorkerLoadInfo& aLoadInfo);
 
   bool
