@@ -2940,47 +2940,20 @@ date_toSource(JSContext* cx, unsigned argc, Value* vp)
 }
 #endif
 
-MOZ_ALWAYS_INLINE bool
-IsObject(HandleValue v)
-{
-    return v.isObject();
-}
-
 
 MOZ_ALWAYS_INLINE bool
 date_toString_impl(JSContext* cx, const CallArgs& args)
 {
     
-    RootedObject obj(cx, &args.thisv().toObject());
-
-    
-    ESClass cls;
-    if (!GetBuiltinClass(cx, obj, &cls))
-        return false;
-
-    double tv;
-    if (cls != ESClass::Date) {
-        
-        tv = GenericNaN();
-    } else {
-        
-        RootedValue unboxed(cx);
-        if (!Unbox(cx, obj, &unboxed))
-            return false;
-
-        tv = unboxed.toNumber();
-    }
-
-    
-    return FormatDate(cx, tv, FormatSpec::DateTime, args.rval());
+    return FormatDate(cx, args.thisv().toObject().as<DateObject>().UTCTime().toNumber(),
+                      FormatSpec::DateTime, args.rval());
 }
 
 bool
 date_toString(JSContext* cx, unsigned argc, Value* vp)
 {
-    
     CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsObject, date_toString_impl>(cx, args);
+    return CallNonGenericMethod<IsDate, date_toString_impl>(cx, args);
 }
 
 MOZ_ALWAYS_INLINE bool
