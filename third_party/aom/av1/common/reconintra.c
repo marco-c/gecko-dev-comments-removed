@@ -3118,16 +3118,16 @@ void av1_predict_intra_block(const MACROBLOCKD *xd, int wpx, int hpx,
       } else {
         
         
-        assert(bsize == BLOCK_32X64
 #if CONFIG_EXT_PARTITION
-               || bsize == BLOCK_64X128
+        assert(bsize == BLOCK_32X64 || bsize == BLOCK_64X128);
+#else
+        assert(bsize == BLOCK_32X64);
 #endif  
-               );
-        assert(tx_size == TX_32X32
 #if CONFIG_TX64X64
-               || tx_size == TX64X64
+        assert(tx_size == TX_32X32 || tx_size == TX64X64);
+#else
+        assert(tx_size == TX_32X32);
 #endif  
-               );
         
       }
 #endif  
@@ -3191,16 +3191,16 @@ void av1_predict_intra_block(const MACROBLOCKD *xd, int wpx, int hpx,
       } else {
         
         
-        assert(bsize == BLOCK_64X32
 #if CONFIG_EXT_PARTITION
-               || bsize == BLOCK_128X64
+        assert(bsize == BLOCK_64X32 || bsize == BLOCK_128X64);
+#else
+        assert(bsize == BLOCK_64X32);
 #endif  
-               );
-        assert(tx_size == TX_32X32
 #if CONFIG_TX64X64
-               || tx_size == TX64X64
+        assert(tx_size == TX_32X32 || tx_size == TX64X64);
+#else
+        assert(tx_size == TX_32X32);
 #endif  
-               );
         
       }
 #endif  
