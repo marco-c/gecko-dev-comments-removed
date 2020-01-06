@@ -70,12 +70,15 @@ StreamList::Activate(CacheId aCacheId)
 }
 
 void
-StreamList::Add(const nsID& aId, nsCOMPtr<nsIInputStream>&& aStream)
+StreamList::Add(const nsID& aId, nsIInputStream* aStream)
 {
   
   
   MOZ_DIAGNOSTIC_ASSERT(!mStreamControl);
-  mList.AppendElement(Entry(aId, Move(aStream)));
+  MOZ_DIAGNOSTIC_ASSERT(aStream);
+  Entry* entry = mList.AppendElement();
+  entry->mId = aId;
+  entry->mStream = aStream;
 }
 
 already_AddRefed<nsIInputStream>
