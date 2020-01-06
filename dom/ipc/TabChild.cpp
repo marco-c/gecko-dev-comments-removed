@@ -2462,6 +2462,10 @@ TabChild::InternalSetDocShellIsActive(bool aIsActive, bool aPreserveLayers)
   if (aIsActive) {
     MakeVisible();
 
+    if (!docShell) {
+      return;
+    }
+
     
     
     
