@@ -2740,6 +2740,12 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     aBuilder->AddToWillChangeBudget(this, GetSize());
   }
 
+  
+  
+  
+  nsRect visibleRect = aBuilder->GetVisibleRect();
+  nsRect dirtyRect = aBuilder->GetDirtyRect();
+
   bool extend3DContext = Extend3DContext(disp, effectSet);
   Maybe<nsDisplayListBuilder::AutoPreserves3DContext> autoPreserves3DContext;
   if (extend3DContext && !Combines3DTransformWithAncestors(disp)) {
@@ -2749,13 +2755,12 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     
     
     aBuilder->SavePreserves3DRect();
-  }
 
-  
-  
-  
-  nsRect visibleRect = aBuilder->GetVisibleRect();
-  nsRect dirtyRect = aBuilder->GetDirtyRect();
+    
+    
+    dirtyRect = visibleRect;
+    aBuilder->MarkFrameModifiedDuringBuilding(this);
+  }
 
   bool inTransform = aBuilder->IsInTransform();
   bool isTransformed = IsTransformed(disp);
@@ -2808,7 +2813,9 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   }
 
   bool hasOverrideDirtyRect = false;
-  if (HasOverrideDirtyRegion() && !aBuilder->InInvalidSubtree()) {
+  
+  
+  if (HasOverrideDirtyRegion() && !aBuilder->InInvalidSubtree() && !IsFrameModified()) {
     nsDisplayListBuilder::DisplayListBuildingData* data =
       GetProperty(nsDisplayListBuilder::DisplayListBuildingRect());
     if (data) {
