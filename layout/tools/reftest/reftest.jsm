@@ -1638,7 +1638,8 @@ function RecordResult(testRunTime, errorMsg, scriptResults)
         true:  {s: ["PASS", "PASS"], n: "Random"},
         false: {s: ["FAIL", "FAIL"], n: "Random"}
     };
-    outputs[EXPECTED_FUZZY] = outputs[EXPECTED_PASS];
+    
+    
 
     var output;
     var extra;
@@ -1740,23 +1741,30 @@ function RecordResult(testRunTime, errorMsg, scriptResults)
             
             var equal;
             var maxDifference = {};
+            
+            
+            var fuzz_exceeded = false;
 
             differences = gWindowUtils.compareCanvases(gCanvas1, gCanvas2, maxDifference);
             equal = (differences == 0);
 
+            if (maxDifference.value > 0 && equal) {
+                throw "Inconsistent result from compareCanvases.";
+            }
+
             
             var expected = gURLs[0].expected;
 
-            if (maxDifference.value > 0 &&
-                maxDifference.value >= gURLs[0].fuzzyMinDelta &&
-                maxDifference.value <= gURLs[0].fuzzyMaxDelta &&
-                differences >= gURLs[0].fuzzyMinPixels &&
-                differences <= gURLs[0].fuzzyMaxPixels) {
-                if (equal) {
-                    throw "Inconsistent result from compareCanvases.";
-                }
-                equal = expected == EXPECTED_FUZZY;
-                logger.info(`REFTEST fuzzy match (${maxDifference.value}, ${differences}) <= (${gURLs[0].fuzzyMaxDelta}, ${gURLs[0].fuzzyMaxPixels})`);
+            if (expected == EXPECTED_FUZZY) {
+                logger.info(`REFTEST fuzzy test ` +
+                            `(${gURLs[0].fuzzyMinDelta}, ${gURLs[0].fuzzyMinPixels}) <= ` +
+                            `(${maxDifference.value}, ${differences}) <= ` +
+                            `(${gURLs[0].fuzzyMaxDelta}, ${gURLs[0].fuzzyMaxPixels})`);
+                fuzz_exceeded = maxDifference.value > gURLs[0].fuzzyMaxDelta ||
+                                differences > gURLs[0].fuzzyMaxPixels;
+                equal = !fuzz_exceeded &&
+                        maxDifference.value >= gURLs[0].fuzzyMinDelta &&
+                        differences >= gURLs[0].fuzzyMinPixels;
             }
 
             var failedExtraCheck = gFailedNoPaint || gFailedOpaqueLayer || gFailedAssignedLayer;
@@ -1764,7 +1772,27 @@ function RecordResult(testRunTime, errorMsg, scriptResults)
             
             var test_passed = (equal == (gURLs[0].type == TYPE_REFTEST_EQUAL)) && !failedExtraCheck;
 
-            output = outputs[expected][test_passed];
+            if (expected != EXPECTED_FUZZY) {
+                output = outputs[expected][test_passed];
+            } else if (test_passed) {
+                output = {s: ["PASS", "PASS"], n: "Pass"};
+            } else if (gURLs[0].type == TYPE_REFTEST_EQUAL &&
+                       !failedExtraCheck &&
+                       !fuzz_exceeded) {
+                
+                
+                
+                
+                
+                
+                if (equal) {
+                    throw "Logic error in reftest.jsm fuzzy test handling!";
+                }
+                output = {s: ["PASS", "FAIL"], n: "UnexpectedPass"};
+            } else {
+                
+                output = {s: ["FAIL", "PASS"], n: "UnexpectedFail"};
+            }
             extra = { status_msg: output.n };
 
             ++gTestResults[output.n];
