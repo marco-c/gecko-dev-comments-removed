@@ -371,7 +371,7 @@ ArgumentsObject::finishForIon(JSContext* cx, jit::JitFrameLayout* frame,
 {
     
     
-    AutoUnsafeCallWithABI unsafe;
+    JS::AutoCheckCannotGC nogc;
 
     JSFunction* callee = jit::CalleeTokenToFunction(frame->calleeToken());
     RootedObject callObj(cx, scopeChain->is<CallObject>() ? scopeChain : nullptr);

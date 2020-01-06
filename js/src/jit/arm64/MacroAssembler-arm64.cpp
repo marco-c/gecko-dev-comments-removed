@@ -145,7 +145,7 @@ MacroAssemblerCompat::handleFailureWithHandlerTail(void* handler)
     
     asMasm().setupUnalignedABICall(r1);
     asMasm().passABIArg(r0);
-    asMasm().callWithABI(handler, MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
+    asMasm().callWithABI(handler);
 
     Label entryFrame;
     Label catch_;
