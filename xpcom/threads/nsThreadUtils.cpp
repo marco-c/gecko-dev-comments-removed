@@ -373,7 +373,9 @@ NS_IdleDispatchToThread(already_AddRefed<nsIRunnable>&& aEvent,
 
   
   nsIEventTarget* target = mozilla::GetCurrentThreadEventTarget();
-  NS_ENSURE_STATE(target);
+  if (!target) {
+    return NS_ERROR_UNEXPECTED;
+  }
 
   nsCOMPtr<nsIIdleRunnable> idleEvent = do_QueryInterface(event);
 
