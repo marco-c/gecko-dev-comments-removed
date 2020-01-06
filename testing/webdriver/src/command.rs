@@ -426,10 +426,10 @@ pub trait Parameters: Sized {
 
 
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum NewSessionParameters {
     Spec(SpecNewSessionParameters),
-    Legacy(LegacyNewSessionParameters)
+    Legacy(LegacyNewSessionParameters),
 }
 
 impl Parameters for NewSessionParameters {
