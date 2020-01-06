@@ -123,14 +123,10 @@ UIEvent::GetMovementPoint()
     return mMovementPoint;
   }
 
-  if (!mEvent ||
-      (mEvent->mClass != eMouseEventClass &&
-       mEvent->mClass != eMouseScrollEventClass &&
-       mEvent->mClass != eWheelEventClass &&
-       mEvent->mClass != eDragEventClass &&
-       mEvent->mClass != ePointerEventClass &&
-       mEvent->mClass != eSimpleGestureEventClass) ||
-       !mEvent->AsGUIEvent()->mWidget) {
+  if (!mEvent || !mEvent->AsGUIEvent()->mWidget ||
+      (mEvent->mMessage != eMouseMove)) {
+    
+    
     return nsIntPoint(0, 0);
   }
 
