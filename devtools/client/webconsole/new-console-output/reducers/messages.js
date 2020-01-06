@@ -29,6 +29,11 @@ const MessageState = Immutable.Record({
   messagesTableDataById: Immutable.Map(),
   
   
+  
+  
+  messagesObjectPropertiesById: Immutable.Map(),
+  
+  
   groupsById: Immutable.Map(),
   
   currentGroup: null,
@@ -47,6 +52,7 @@ function messages(state = new MessageState(), action, filtersState, prefsState) 
     messagesById,
     messagesUiById,
     messagesTableDataById,
+    messagesObjectPropertiesById,
     networkMessagesUpdateById,
     groupsById,
     currentGroup,
@@ -192,6 +198,18 @@ function messages(state = new MessageState(), action, filtersState, prefsState) 
     case constants.MESSAGE_TABLE_RECEIVE:
       const {id, data} = action;
       return state.set("messagesTableDataById", messagesTableDataById.set(id, data));
+
+    case constants.MESSAGE_OBJECT_PROPERTIES_RECEIVE:
+      return state.set(
+        "messagesObjectPropertiesById",
+        messagesObjectPropertiesById.set(
+          action.id,
+          Object.assign({
+            [action.actor]: action.properties
+          }, messagesObjectPropertiesById.get(action.id))
+        )
+      );
+
     case constants.NETWORK_MESSAGE_UPDATE:
       return state.set(
         "networkMessagesUpdateById",

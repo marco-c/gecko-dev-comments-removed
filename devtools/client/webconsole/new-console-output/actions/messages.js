@@ -11,6 +11,7 @@ const {
 } = require("devtools/client/webconsole/new-console-output/utils/messages");
 const { IdGenerator } = require("devtools/client/webconsole/new-console-output/utils/id-generator");
 const { batchActions } = require("devtools/client/shared/redux/middleware/debounce");
+
 const {
   MESSAGE_ADD,
   NETWORK_MESSAGE_UPDATE,
@@ -19,6 +20,7 @@ const {
   MESSAGE_CLOSE,
   MESSAGE_TYPE,
   MESSAGE_TABLE_RECEIVE,
+  MESSAGE_OBJECT_PROPERTIES_RECEIVE,
 } = require("../constants");
 
 const defaultIdGenerator = new IdGenerator();
@@ -104,6 +106,43 @@ function networkMessageUpdate(packet, idGenerator = null) {
   };
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+function messageObjectPropertiesLoad(id, client, grip) {
+  return async (dispatch) => {
+    const response = await client.getPrototypeAndProperties();
+    dispatch(messageObjectPropertiesReceive(id, grip.actor, response));
+  };
+}
+
+
+
+
+
+
+
+
+
+function messageObjectPropertiesReceive(id, actor, properties) {
+  return {
+    type: MESSAGE_OBJECT_PROPERTIES_RECEIVE,
+    id,
+    actor,
+    properties
+  };
+}
+
 module.exports = {
   messageAdd,
   messagesClear,
@@ -111,6 +150,7 @@ module.exports = {
   messageClose,
   messageTableDataGet,
   networkMessageUpdate,
+  messageObjectPropertiesLoad,
   
   messageTableDataReceive,
 };
