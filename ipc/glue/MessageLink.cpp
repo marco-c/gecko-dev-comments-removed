@@ -356,18 +356,22 @@ ProcessLink::OnChannelConnected(int32_t peer_pid)
         MonitorAutoLock lock(*mChan->mMonitor);
         
         
-        if (mChan->mChannelState == ChannelOpening) {
-          mChan->mChannelState = ChannelConnected;
-          mChan->mMonitor->Notify();
-          notifyChannel = true;
+        
+        if (mChan->mChannelState == ChannelOpening ||
+            mChan->mChannelState == ChannelConnected)
+        {
+            mChan->mChannelState = ChannelConnected;
+            mChan->mMonitor->Notify();
+            notifyChannel = true;
         }
     }
 
-    if (mExistingListener)
+    if (mExistingListener) {
         mExistingListener->OnChannelConnected(peer_pid);
+    }
 
     if (notifyChannel) {
-      mChan->OnChannelConnected(peer_pid);
+        mChan->OnChannelConnected(peer_pid);
     }
 }
 
