@@ -120,8 +120,6 @@ enum class ScalarResult : uint8_t {
   
   UnsignedNegativeValue,
   UnsignedTruncatedValue,
-  
-  AlreadyRegistered,
 };
 
 
@@ -1122,10 +1120,22 @@ internal_GetScalarByEnum(const StaticMutexAutoLock& lock,
 
   
   if (scalarStorage->Get(aId.id, &scalar)) {
+    
+    
+    if (aId.dynamic) {
+      const DynamicScalarInfo& dynInfo = static_cast<const DynamicScalarInfo&>(info);
+      if (dynInfo.mDynamicExpiration) {
+        
+        return NS_ERROR_NOT_AVAILABLE;
+      }
+    }
+    
     *aRet = scalar;
     return NS_OK;
   }
 
+  
+  
   if (IsExpiredVersion(info.expiration())) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -1401,30 +1411,32 @@ internal_BroadcastDefinitions(const StaticMutexAutoLock& lock,
   }
 }
 
-ScalarResult
+void
 internal_RegisterScalars(const StaticMutexAutoLock& lock,
                          const nsTArray<DynamicScalarInfo>& scalarInfos)
 {
-  
-  for (auto& info : scalarInfos) {
-    if (gScalarNameIDMap.GetEntry(info.name())) {
-      return ScalarResult::AlreadyRegistered;
-    }
-  }
-
   
   if (!gDynamicScalarInfo) {
     gDynamicScalarInfo = new nsTArray<DynamicScalarInfo>();
   }
 
   for (auto scalarInfo : scalarInfos) {
+    
+    CharPtrEntryType *existingKey = gScalarNameIDMap.GetEntry(scalarInfo.name());
+    if (existingKey) {
+      
+      if (scalarInfo.mDynamicExpiration) {
+        DynamicScalarInfo& scalarData = (*gDynamicScalarInfo)[existingKey->mData.id];
+        scalarData.mDynamicExpiration = true;
+      }
+      continue;
+    }
+
     gDynamicScalarInfo->AppendElement(scalarInfo);
     uint32_t scalarId = gDynamicScalarInfo->Length() - 1;
     CharPtrEntryType *entry = gScalarNameIDMap.PutEntry(scalarInfo.name());
     entry->mData = ScalarKey{scalarId, true};
   }
-
-  return ScalarResult::Ok;
 }
 
 } 
@@ -2424,16 +2436,9 @@ TelemetryScalar::RegisterScalars(const nsACString& aCategoryName,
   }
 
   
-  ScalarResult res = ScalarResult::Ok;
   {
     StaticMutexAutoLock locker(gTelemetryScalarsMutex);
-    res = ::internal_RegisterScalars(locker, newScalarInfos);
-
-
-    if (res == ScalarResult::AlreadyRegistered) {
-      JS_ReportErrorASCII(cx, "Attempt to register a scalar that is already registered.");
-      return NS_ERROR_INVALID_ARG;
-    }
+    ::internal_RegisterScalars(locker, newScalarInfos);
 
     
     
@@ -2737,6 +2742,9 @@ TelemetryScalar::GetDynamicScalarDefinitions(
   StaticMutexAutoLock locker(gTelemetryScalarsMutex);
   internal_DynamicScalarToIPC(locker, *gDynamicScalarInfo, aDefArray);
 }
+
+
+
 
 
 
