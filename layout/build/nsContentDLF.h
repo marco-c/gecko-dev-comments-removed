@@ -51,9 +51,8 @@ public:
 
 
 
-  static nsresult CreateBlankDocument(nsILoadGroup* aLoadGroup,
-                                      nsIPrincipal* aPrincipal,
-                                      nsIDocument** aDocument);
+  static already_AddRefed<nsIDocument>
+  CreateBlankDocument(nsILoadGroup* aLoadGroup, nsIPrincipal* aPrincipal);
 
 private:
   static nsresult EnsureUAStyleSheet();

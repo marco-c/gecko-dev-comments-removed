@@ -8187,8 +8187,7 @@ nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
       principal = aPrincipal;
     }
     
-    nsContentDLF::CreateBlankDocument(mLoadGroup, principal,
-                                      getter_AddRefs(blankDoc));
+    blankDoc = nsContentDLF::CreateBlankDocument(mLoadGroup, principal);
     if (blankDoc) {
       
       

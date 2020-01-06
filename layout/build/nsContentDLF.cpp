@@ -263,78 +263,63 @@ nsContentDLF::CreateInstanceForDocument(nsISupports* aContainer,
   return NS_OK;
 }
 
- nsresult
+ already_AddRefed<nsIDocument>
 nsContentDLF::CreateBlankDocument(nsILoadGroup* aLoadGroup,
-                                  nsIPrincipal* aPrincipal,
-                                  nsIDocument** aDocument)
+                                  nsIPrincipal* aPrincipal)
 {
-  *aDocument = nullptr;
-
-  nsresult rv = NS_ERROR_FAILURE;
-
   
   nsCOMPtr<nsIDocument> blankDoc(do_CreateInstance(kHTMLDocumentCID));
 
-  if (blankDoc) {
-    
-    nsCOMPtr<nsIURI> uri;
-    NS_NewURI(getter_AddRefs(uri), NS_LITERAL_CSTRING("about:blank"));
-    if (uri) {
-      blankDoc->ResetToURI(uri, aLoadGroup, aPrincipal);
-      rv = NS_OK;
-    }
+  if (!blankDoc) {
+    return nullptr;
   }
 
   
-  if (NS_SUCCEEDED(rv)) {
-    rv = NS_ERROR_FAILURE;
+  nsCOMPtr<nsIURI> uri;
+  NS_NewURI(getter_AddRefs(uri), NS_LITERAL_CSTRING("about:blank"));
+  if (!uri) {
+    return nullptr;
+  }
+  blankDoc->ResetToURI(uri, aLoadGroup, aPrincipal);
 
-    nsNodeInfoManager *nim = blankDoc->NodeInfoManager();
+  
+  nsNodeInfoManager *nim = blankDoc->NodeInfoManager();
 
-    RefPtr<mozilla::dom::NodeInfo> htmlNodeInfo;
+  RefPtr<mozilla::dom::NodeInfo> htmlNodeInfo;
 
-    
-    htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::html, 0, kNameSpaceID_XHTML,
-                                    nsIDOMNode::ELEMENT_NODE);
-    nsCOMPtr<nsIContent> htmlElement =
-      NS_NewHTMLHtmlElement(htmlNodeInfo.forget());
+  
+  htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::html, 0, kNameSpaceID_XHTML,
+                                  nsIDOMNode::ELEMENT_NODE);
+  nsCOMPtr<nsIContent> htmlElement =
+    NS_NewHTMLHtmlElement(htmlNodeInfo.forget());
 
-    
-    htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::head, 0, kNameSpaceID_XHTML,
-                                    nsIDOMNode::ELEMENT_NODE);
-    nsCOMPtr<nsIContent> headElement =
-      NS_NewHTMLHeadElement(htmlNodeInfo.forget());
+  
+  htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::head, 0, kNameSpaceID_XHTML,
+                                  nsIDOMNode::ELEMENT_NODE);
+  nsCOMPtr<nsIContent> headElement =
+    NS_NewHTMLHeadElement(htmlNodeInfo.forget());
 
-    
-    htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::body, 0, kNameSpaceID_XHTML,
-                                    nsIDOMNode::ELEMENT_NODE);
-    nsCOMPtr<nsIContent> bodyElement =
-      NS_NewHTMLBodyElement(htmlNodeInfo.forget());
+  
+  htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::body, 0, kNameSpaceID_XHTML,
+                                  nsIDOMNode::ELEMENT_NODE);
+  nsCOMPtr<nsIContent> bodyElement =
+    NS_NewHTMLBodyElement(htmlNodeInfo.forget());
 
-    
-    if (htmlElement && headElement && bodyElement) {
-      NS_ASSERTION(blankDoc->GetChildCount() == 0,
-                   "Shouldn't have children");
-      rv = blankDoc->AppendChildTo(htmlElement, false);
-      if (NS_SUCCEEDED(rv)) {
-        rv = htmlElement->AppendChildTo(headElement, false);
-
-        if (NS_SUCCEEDED(rv)) {
-          
-          htmlElement->AppendChildTo(bodyElement, false);
-        }
-      }
-    }
+  
+  NS_ASSERTION(blankDoc->GetChildCount() == 0,
+                "Shouldn't have children");
+  if (!htmlElement || !headElement || !bodyElement ||
+      NS_FAILED(blankDoc->AppendChildTo(htmlElement, false)) ||
+      NS_FAILED(htmlElement->AppendChildTo(headElement, false)) ||
+      
+      NS_FAILED(htmlElement->AppendChildTo(bodyElement, false))) {
+    return nullptr;
   }
 
   
-  if (NS_SUCCEEDED(rv)) {
-    blankDoc->SetDocumentCharacterSetSource(kCharsetFromDocTypeDefault);
-    blankDoc->SetDocumentCharacterSet(UTF_8_ENCODING);
-
-    blankDoc.forget(aDocument);
-  }
-  return rv;
+  blankDoc->SetDocumentCharacterSetSource(kCharsetFromDocTypeDefault);
+  blankDoc->SetDocumentCharacterSet(UTF_8_ENCODING);
+  return blankDoc.forget();
 }
 
 
