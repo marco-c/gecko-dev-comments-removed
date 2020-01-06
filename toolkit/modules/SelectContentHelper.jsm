@@ -259,7 +259,12 @@ this.SelectContentHelper.prototype = {
 
       case "Forms:DismissedDropDown":
         let selectedOption = this.element.item(this.element.selectedIndex);
-        if (this.initialSelection != selectedOption) {
+        if (this.initialSelection === selectedOption) {
+          
+          DOMUtils.removeContentState(this.element,
+                                      kStateActive,
+                                       true);
+        } else {
           let win = this.element.ownerGlobal;
           
           
@@ -270,8 +275,12 @@ this.SelectContentHelper.prototype = {
           if (!this.closedWithEnter) {
             this.dispatchMouseEvent(win, selectedOption, "mousedown");
             this.dispatchMouseEvent(win, selectedOption, "mouseup");
-            DOMUtils.removeContentState(this.element, kStateActive);
           }
+          
+          
+          DOMUtils.removeContentState(this.element,
+                                      kStateActive,
+                                       true);
 
           let inputEvent = new win.UIEvent("input", {
             bubbles: true,
