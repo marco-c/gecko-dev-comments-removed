@@ -1,0 +1,79 @@
+
+
+
+
+
+
+
+
+"use strict";
+
+this.EXPORTED_SYMBOLS = [
+  "DownloadPaths",
+];
+
+const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+
+this.DownloadPaths = {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  createNiceUniqueFile(templateFile) {
+    
+    let curFile = templateFile.clone().QueryInterface(Ci.nsIFile);
+    let [base, ext] = DownloadPaths.splitBaseNameAndExtension(curFile.leafName);
+    
+    
+    for (let i = 1; i < 10000 && curFile.exists(); i++) {
+      curFile.leafName = base + "(" + i + ")" + ext;
+    }
+    
+    
+    
+    
+    
+    
+    curFile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, 0o644);
+    return curFile;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  splitBaseNameAndExtension(leafName) {
+    
+    
+    
+    
+    
+    
+    let [, base, ext] = /(.*?)(\.[A-Z0-9]{1,3}\.(?:gz|bz2|Z)|\.[^.]*)?$/i
+                        .exec(leafName);
+    
+    return [base, ext || ""];
+  },
+};

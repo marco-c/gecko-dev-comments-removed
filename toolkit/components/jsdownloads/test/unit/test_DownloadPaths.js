@@ -10,19 +10,6 @@
 
 
 
-
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cu = Components.utils;
-var Cr = Components.results;
-
-Cu.import("resource://gre/modules/DownloadPaths.jsm");
-
-
-
-
-
-
 function createTemporarySaveDirectory() {
   var saveDir = Cc["@mozilla.org/file/directory_service;1"].
                 getService(Ci.nsIProperties).get("TmpD", Ci.nsIFile);
@@ -54,7 +41,7 @@ function testCreateNiceUniqueFile(aTempFile, aExpectedLeafName) {
   do_check_eq(createdFile.leafName, aExpectedLeafName);
 }
 
-function run_test() {
+add_task(async function test_splitBaseNameAndExtension() {
   
   testSplitBaseNameAndExtension("base", ["base", ""]);
   testSplitBaseNameAndExtension("base.ext", ["base", ".ext"]);
@@ -88,7 +75,9 @@ function run_test() {
   testSplitBaseNameAndExtension(" .ext", [" ", ".ext"]);
   testSplitBaseNameAndExtension(" .ext. ", [" .ext", ". "]);
   testSplitBaseNameAndExtension(" .ext.gz ", [" .ext", ".gz "]);
+});
 
+add_task(async function test_createNiceUniqueFile() {
   var destDir = createTemporarySaveDirectory();
   try {
     
@@ -124,4 +113,4 @@ function run_test() {
     
     destDir.remove(true);
   }
-}
+});
