@@ -213,17 +213,10 @@ var StarUI = {
     this._uriForRemoval = "";
     
     
-    
-    
     if (typeof(aNode) == "number") {
       let itemId = aNode;
-      if (PlacesUIUtils.useAsyncTransactions) {
-        let guid = await PlacesUtils.promiseItemGuid(itemId);
-        aNode = await PlacesUIUtils.promiseNodeLike(guid);
-      } else {
-        aNode = { itemId };
-        await PlacesUIUtils.completeNodeLikeObjectForItemId(aNode);
-      }
+      let guid = await PlacesUtils.promiseItemGuid(itemId);
+      aNode = await PlacesUIUtils.promiseNodeLike(guid);
     }
 
     
