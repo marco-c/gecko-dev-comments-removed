@@ -5,10 +5,6 @@
 
 
 
-const { emit: coreEmit } = require("devtools/shared/event-emitter");
-
-
-
 
 
 
@@ -16,7 +12,7 @@ const { emit: coreEmit } = require("devtools/shared/event-emitter");
 
 
 const AudioNodeModel = Class({
-  extends: EventTarget,
+  extends: EventEmitter,
 
   
   collection: null,
@@ -45,7 +41,7 @@ const AudioNodeModel = Class({
 
     if (!edge) {
       this.connections.push({ source: this.id, destination: destination.id, param: param });
-      coreEmit(this, "connect", this, destination, param);
+      EventEmitter.emit(this, "connect", this, destination, param);
     }
   },
 
@@ -54,7 +50,7 @@ const AudioNodeModel = Class({
 
   disconnect: function () {
     this.connections.length = 0;
-    coreEmit(this, "disconnect", this);
+    EventEmitter.emit(this, "disconnect", this);
   },
 
   
@@ -74,7 +70,7 @@ const AudioNodeModel = Class({
 
   bypass: function (enable) {
     this._bypassed = enable;
-    return this.actor.bypass(enable).then(() => coreEmit(this, "bypass", this, enable));
+    return this.actor.bypass(enable).then(() => EventEmitter.emit(this, "bypass", this, enable));
   },
 
   
@@ -154,7 +150,7 @@ const AudioNodeModel = Class({
 
 
 const AudioNodesCollection = Class({
-  extends: EventTarget,
+  extends: EventEmitter,
 
   model: AudioNodeModel,
 
@@ -190,7 +186,7 @@ const AudioNodesCollection = Class({
     this.models.add(node);
 
     node.on("*", this._onModelEvent);
-    coreEmit(this, "add", node);
+    EventEmitter.emit(this, "add", node);
     return node;
   },
 
@@ -202,7 +198,7 @@ const AudioNodesCollection = Class({
 
   remove: function (node) {
     this.models.delete(node);
-    coreEmit(this, "remove", node);
+    EventEmitter.emit(this, "remove", node);
   },
 
   
@@ -280,7 +276,7 @@ const AudioNodesCollection = Class({
       this.remove(node);
     } else {
       
-      coreEmit(this, eventName, node, ...args);
+      EventEmitter.emit(this, eventName, node, ...args);
     }
   },
 

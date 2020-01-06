@@ -24,12 +24,11 @@ const { Ci, Cu } = require("chrome");
 const { Class } = require("sdk/core/heritage");
 
 
-loader.lazyRequireGetter(this, "events", "sdk/event/core");
 loader.lazyRequireGetter(this, "Task", "devtools/shared/task", true);
 loader.lazyRequireGetter(this, "Memory", "devtools/server/performance/memory", true);
 loader.lazyRequireGetter(this, "Framerate", "devtools/server/performance/framerate", true);
 loader.lazyRequireGetter(this, "StackFrameCache", "devtools/server/actors/utils/stack", true);
-loader.lazyRequireGetter(this, "EventTarget", "sdk/event/target", true);
+loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 
 
@@ -40,8 +39,7 @@ const DEFAULT_TIMELINE_DATA_PULL_TIMEOUT = 200;
 
 
 exports.Timeline = Class({
-  extends: EventTarget,
-
+  extends: EventEmitter,
   
 
 
@@ -56,7 +54,7 @@ exports.Timeline = Class({
     
     this._onWindowReady = this._onWindowReady.bind(this);
     this._onGarbageCollection = this._onGarbageCollection.bind(this);
-    events.on(this.tabActor, "window-ready", this._onWindowReady);
+    EventEmitter.on(this.tabActor, "window-ready", this._onWindowReady);
   },
 
   
@@ -65,7 +63,7 @@ exports.Timeline = Class({
   destroy: function () {
     this.stop();
 
-    events.off(this.tabActor, "window-ready", this._onWindowReady);
+    EventEmitter.off(this.tabActor, "window-ready", this._onWindowReady);
     this.tabActor = null;
   },
 
@@ -145,7 +143,7 @@ exports.Timeline = Class({
           if (this._withDocLoadingEvents) {
             if (marker.name == "document::DOMContentLoaded" ||
                 marker.name == "document::Load") {
-              events.emit(this, "doc-loading", marker, endTime);
+              EventEmitter.emit(this, "doc-loading", marker, endTime);
             }
           }
         }
@@ -154,24 +152,24 @@ exports.Timeline = Class({
 
     
     if (this._withMarkers && markers.length > 0) {
-      events.emit(this, "markers", markers, endTime);
+      EventEmitter.emit(this, "markers", markers, endTime);
     }
 
     
     if (this._withTicks) {
-      events.emit(this, "ticks", endTime, this._framerate.getPendingTicks());
+      EventEmitter.emit(this, "ticks", endTime, this._framerate.getPendingTicks());
     }
 
     
     if (this._withMemory) {
-      events.emit(this, "memory", endTime, this._memory.measure());
+      EventEmitter.emit(this, "memory", endTime, this._memory.measure());
     }
 
     
     if (this._withFrames && this._withMarkers) {
       let frames = this._stackFrames.makeEvent();
       if (frames) {
-        events.emit(this, "frames", endTime, frames);
+        EventEmitter.emit(this, "frames", endTime, frames);
       }
     }
 
@@ -251,7 +249,7 @@ exports.Timeline = Class({
     }
 
     if (this._withGCEvents) {
-      events.on(this._memory, "garbage-collection", this._onGarbageCollection);
+      EventEmitter.on(this._memory, "garbage-collection", this._onGarbageCollection);
     }
 
     if (this._withFrames && this._withMarkers) {
@@ -294,7 +292,7 @@ exports.Timeline = Class({
     }
 
     if (this._withGCEvents) {
-      events.off(this._memory, "garbage-collection", this._onGarbageCollection);
+      EventEmitter.off(this._memory, "garbage-collection", this._onGarbageCollection);
     }
 
     if (this._withFrames && this._withMarkers) {
@@ -346,7 +344,7 @@ exports.Timeline = Class({
 
     let endTime = docShells[0].now();
 
-    events.emit(this, "markers", collections.map(({
+    EventEmitter.emit(this, "markers", collections.map(({
       startTimestamp: start, endTimestamp: end
     }) => {
       return {
