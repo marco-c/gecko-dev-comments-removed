@@ -1096,7 +1096,7 @@ public:
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsATOK2016Active)
 
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSChangJieActive)
-  DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSQuickQuickActive)
+  DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSQuickActive)
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsFreeChangJieActive)
 
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSPinyinActive)
@@ -1130,19 +1130,16 @@ private:
   
   
   
+  
 
   bool IsMSJapaneseIMEActiveInternal() const
   {
     
-    
-    return mLangID == 0x411 &&
-      (mActiveTIPKeyboardDescription.EqualsLiteral("Microsoft IME") ||
-       mActiveTIPKeyboardDescription.Equals(
-         NS_LITERAL_STRING(u"Microsoft \xC785\xB825\xAE30")) ||
-       mActiveTIPKeyboardDescription.Equals(
-         NS_LITERAL_STRING(u"\x5FAE\x8F6F\x8F93\x5165\x6CD5")) ||
-       mActiveTIPKeyboardDescription.Equals(
-         NS_LITERAL_STRING(u"\x5FAE\x8EDF\x8F38\x5165\x6CD5")));
+    static const GUID kGUID = {
+      0xA76C93D9, 0x5523, 0x4E90,
+        { 0xAA, 0xFA, 0x4D, 0xB1, 0x12, 0xF9, 0xAC, 0x76 }
+    };
+    return mActiveTIPGUID == kGUID;
   }
 
   bool IsMSOfficeJapaneseIME2010ActiveInternal() const
@@ -1223,31 +1220,58 @@ private:
   }
 
   
+  
+  
+  
+
+  
 
 
 
   bool IsMSChangJieActiveInternal() const
   {
-    return mActiveTIPKeyboardDescription.EqualsLiteral("Microsoft ChangJie") ||
-      mActiveTIPKeyboardDescription.Equals(
-        NS_LITERAL_STRING(u"\x5FAE\x8F6F\x4ED3\x9889")) ||
-      mActiveTIPKeyboardDescription.Equals(
-        NS_LITERAL_STRING(u"\x5FAE\x8EDF\x5009\x9821"));
+    
+    static const GUID kGUID = {
+      0x4BDF9F03, 0xC7D3, 0x11D4,
+        { 0xB2, 0xAB, 0x00, 0x80, 0xC8, 0x82, 0x68, 0x7E }
+    };
+    return mActiveTIPGUID == kGUID;
   }
 
-  bool IsMSQuickQuickActiveInternal() const
+  bool IsMSQuickActiveInternal() const
   {
-    return mActiveTIPKeyboardDescription.EqualsLiteral("Microsoft Quick") ||
-      mActiveTIPKeyboardDescription.Equals(
-        NS_LITERAL_STRING(u"\x5FAE\x8F6F\x901F\x6210")) ||
-      mActiveTIPKeyboardDescription.Equals(
-        NS_LITERAL_STRING(u"\x5FAE\x8EDF\x901F\x6210"));
+    
+    static const GUID kGUID = {
+      0x6024B45F, 0x5C54, 0x11D4,
+        { 0xB9, 0x21, 0x00, 0x80, 0xC8, 0x82, 0x68, 0x7E }
+    };
+    return mActiveTIPGUID == kGUID;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   bool IsFreeChangJieActiveInternal() const
   {
     
-    return mActiveTIPKeyboardDescription.EqualsLiteral("Free CangJie IME 10");
+    static const GUID kGUID = {
+      0xB58630B5, 0x0ED3, 0x4335,
+        { 0xBB, 0xC9, 0xE7, 0x7B, 0xBC, 0xB4, 0x3C, 0xAD }
+    };
+    return mActiveTIPGUID == kGUID;
   }
 
   
@@ -1256,21 +1280,38 @@ private:
 
   bool IsMSPinyinActiveInternal() const
   {
-    return mActiveTIPKeyboardDescription.EqualsLiteral("Microsoft Pinyin") ||
-      mActiveTIPKeyboardDescription.Equals(
-        NS_LITERAL_STRING(u"\x5FAE\x8F6F\x62FC\x97F3")) ||
-      mActiveTIPKeyboardDescription.Equals(
-        NS_LITERAL_STRING(u"\x5FAE\x8EDF\x62FC\x97F3"));
+    
+    
+
+    
+    static const GUID kGUID = {
+      0xFA550B04, 0x5AD7, 0x411F,
+        { 0xA5, 0xAC, 0xCA, 0x03, 0x8E, 0xC5, 0x15, 0xD7 }
+    };
+    return mActiveTIPGUID == kGUID;
   }
 
   bool IsMSWubiActiveInternal() const
   {
-    return mActiveTIPKeyboardDescription.EqualsLiteral("Microsoft Wubi") ||
-      mActiveTIPKeyboardDescription.Equals(
-        NS_LITERAL_STRING(u"\x5FAE\x8F6F\x4E94\x7B14")) ||
-      mActiveTIPKeyboardDescription.Equals(
-        NS_LITERAL_STRING(u"\x5FAE\x8EDF\x4E94\x7B46"));
+    
+    static const GUID kGUID = {
+      0x82590C13, 0xF4DD, 0x44F4,
+        { 0xBA, 0x1D, 0x86, 0x67, 0x24, 0x6F, 0xDF, 0x8E }
+    };
+    return mActiveTIPGUID == kGUID;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
 public: 
   STDMETHODIMP OnActivated(DWORD, LANGID, REFCLSID, REFGUID, REFGUID,
@@ -2385,7 +2426,7 @@ TSFTextStore::QueryInsert(LONG acpTestStart,
   if (IsWin8OrLater() && !mComposition.IsComposing() &&
       ((TSFPrefs::NeedToHackQueryInsertForMSTraditionalTIP() &&
          (TSFStaticSink::IsMSChangJieActive() ||
-          TSFStaticSink::IsMSQuickQuickActive())) ||
+          TSFStaticSink::IsMSQuickActive())) ||
        (TSFPrefs::NeedToHackQueryInsertForMSSimplifiedTIP() &&
          (TSFStaticSink::IsMSPinyinActive() ||
           TSFStaticSink::IsMSWubiActive())))) {
@@ -4150,7 +4191,7 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
       IsWin8OrLater() &&
       ((TSFPrefs::DoNotReturnNoLayoutErrorToMSTraditionalTIP() &&
         (TSFStaticSink::IsMSChangJieActive() ||
-         TSFStaticSink::IsMSQuickQuickActive())) ||
+         TSFStaticSink::IsMSQuickActive())) ||
        (TSFPrefs::DoNotReturnNoLayoutErrorToMSSimplifiedTIP() &&
          (TSFStaticSink::IsMSPinyinActive() ||
           TSFStaticSink::IsMSWubiActive())))) {
