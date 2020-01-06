@@ -174,12 +174,6 @@ public:
   virtual void Resume() = 0;
   
   virtual already_AddRefed<nsIPrincipal> GetCurrentPrincipal() = 0;
-  
-  
-  
-  
-  
-  virtual bool CanClone() { return false; }
 
   
   
@@ -330,6 +324,13 @@ public:
     MediaResourceCallback* aCallback,
     nsIChannel* aChannel,
     bool aIsPrivateBrowsing);
+
+  
+  
+  
+  
+  
+  virtual bool CanClone() { return false; }
 
   
   

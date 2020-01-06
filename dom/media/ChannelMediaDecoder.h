@@ -66,6 +66,8 @@ public:
 
   void Shutdown() override;
 
+  bool CanClone();
+
   
   already_AddRefed<ChannelMediaDecoder> Clone(MediaDecoderInit& aInit);
 
