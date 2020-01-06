@@ -4,8 +4,22 @@
 
 
 
+use std::fmt;
+use style_traits::values::{SequenceWriter, ToCss};
 #[cfg(feature = "gecko")]
 use values::specified::url::SpecifiedUrl;
+
+
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, HasViewportPercentage, PartialEq)]
+pub struct BoxShadow<Color, SizeLength, ShapeLength> {
+    
+    pub base: SimpleShadow<Color, SizeLength, ShapeLength>,
+    
+    pub spread: ShapeLength,
+    
+    pub inset: bool,
+}
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, HeapSizeOf, Serialize))]
@@ -61,4 +75,26 @@ pub struct SimpleShadow<Color, SizeLength, ShapeLength> {
     pub vertical: SizeLength,
     
     pub blur: ShapeLength,
+}
+
+impl<Color, SizeLength, ShapeLength> ToCss for BoxShadow<Color, SizeLength, ShapeLength>
+where
+    Color: ToCss,
+    SizeLength: ToCss,
+    ShapeLength: ToCss,
+{
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
+    where
+        W: fmt::Write,
+    {
+        {
+            let mut writer = SequenceWriter::new(&mut *dest, " ");
+            writer.item(&self.base)?;
+            writer.item(&self.spread)?;
+        }
+        if self.inset {
+            dest.write_str(" inset")?;
+        }
+        Ok(())
+    }
 }
