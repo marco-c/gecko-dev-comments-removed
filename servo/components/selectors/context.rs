@@ -102,6 +102,9 @@ pub struct MatchingContext<'a> {
     
     pub scope_element: Option<OpaqueElement>,
 
+    
+    pub nesting_level: usize,
+
     quirks_mode: QuirksMode,
     classes_and_ids_case_sensitivity: CaseSensitivity,
 }
@@ -140,6 +143,7 @@ impl<'a> MatchingContext<'a> {
             relevant_link_found: false,
             classes_and_ids_case_sensitivity: quirks_mode.classes_and_ids_case_sensitivity(),
             scope_element: None,
+            nesting_level: 0,
         }
     }
 
