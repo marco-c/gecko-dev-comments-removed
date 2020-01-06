@@ -24,8 +24,6 @@
 
 namespace js {
 
-class AutoLockHelperThreadState;
-
 namespace gcstats {
 struct Statistics;
 } 
@@ -846,86 +844,6 @@ NotifyGCPreSwap(JSObject* a, JSObject* b);
 
 extern void
 NotifyGCPostSwap(JSObject* a, JSObject* b, unsigned preResult);
-
-
-
-
-
-
-
-
-
-class GCHelperState
-{
-    enum State {
-        IDLE,
-        SWEEPING
-    };
-
-    
-    JSRuntime* const rt;
-
-    
-    
-    
-    js::ConditionVariable done;
-
-    
-    ActiveThreadOrGCTaskData<State> state_;
-
-    
-    GCLockData<bool> hasThread;
-
-    void startBackgroundThread(State newState, const AutoLockGC& lock,
-                               const AutoLockHelperThreadState& helperLock);
-    void waitForBackgroundThread(js::AutoLockGC& lock);
-
-    State state(const AutoLockGC&);
-    void setState(State state, const AutoLockGC&);
-
-    friend class js::gc::ArenaLists;
-
-    static void freeElementsAndArray(void** array, void** end) {
-        MOZ_ASSERT(array <= end);
-        for (void** p = array; p != end; ++p)
-            js_free(*p);
-        js_free(array);
-    }
-
-    void doSweep(AutoLockGC& lock);
-
-  public:
-    explicit GCHelperState(JSRuntime* rt)
-      : rt(rt),
-        done(),
-        state_(IDLE)
-    { }
-
-    JSRuntime* runtime() { return rt; }
-
-    void finish();
-
-    void work();
-
-    void maybeStartBackgroundSweep(const AutoLockGC& lock,
-                                   const AutoLockHelperThreadState& helperLock);
-    void startBackgroundShrink(const AutoLockGC& lock);
-
-    
-    void waitBackgroundSweepEnd();
-
-#ifdef DEBUG
-    bool onBackgroundThread();
-#endif
-
-    
-
-
-
-    bool isBackgroundSweeping() const {
-        return state_ == SWEEPING;
-    }
-};
 
 typedef void (*IterateChunkCallback)(JSRuntime* rt, void* data, gc::Chunk* chunk);
 typedef void (*IterateZoneCallback)(JSRuntime* rt, void* data, JS::Zone* zone);
