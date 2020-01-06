@@ -21,18 +21,19 @@
 #include "unicode/rbbi.h"
 #include "unicode/schriter.h"
 #include "unicode/uchriter.h"
-#include "unicode/udata.h"
 #include "unicode/uclean.h"
-#include "rbbidata.h"
-#include "rbbirb.h"
+#include "unicode/udata.h"
+
+#include "brkeng.h"
+#include "ucln_cmn.h"
 #include "cmemory.h"
 #include "cstring.h"
-#include "umutex.h"
-#include "ucln_cmn.h"
-#include "brkeng.h"
-
+#include "rbbidata.h"
+#include "rbbi_cache.h"
+#include "rbbirb.h"
 #include "uassert.h"
-#include "uvector.h"
+#include "umutex.h"
+#include "uvectr32.h"
 
 
 #if U_LOCAL_SERVICE_HOOK
@@ -40,16 +41,16 @@
 #endif
 
 #ifdef RBBI_DEBUG
-static UBool fTrace = FALSE;
+static UBool gTrace = FALSE;
 #endif
 
 U_NAMESPACE_BEGIN
 
 
-#define START_STATE 1
+constexpr int32_t START_STATE = 1;
 
 
-#define STOP_STATE  0
+constexpr int32_t STOP_STATE = 0;
 
 
 UOBJECT_DEFINE_RTTI_IMPLEMENTATION(RuleBasedBreakIterator)
@@ -63,9 +64,8 @@ UOBJECT_DEFINE_RTTI_IMPLEMENTATION(RuleBasedBreakIterator)
 
 
 
-RuleBasedBreakIterator::RuleBasedBreakIterator(RBBIDataHeader* data, UErrorCode &status)
-{
-    init();
+RuleBasedBreakIterator::RuleBasedBreakIterator(RBBIDataHeader* data, UErrorCode &status) {
+    init(status);
     fData = new RBBIDataWrapper(data, status); 
     if (U_FAILURE(status)) {return;}
     if(fData == 0) {
@@ -81,7 +81,7 @@ RuleBasedBreakIterator::RuleBasedBreakIterator(RBBIDataHeader* data, UErrorCode 
 RuleBasedBreakIterator::RuleBasedBreakIterator(const uint8_t *compiledRules,
                        uint32_t       ruleLength,
                        UErrorCode     &status) {
-    init();
+    init(status);
     if (U_FAILURE(status)) {
         return;
     }
@@ -94,13 +94,13 @@ RuleBasedBreakIterator::RuleBasedBreakIterator(const uint8_t *compiledRules,
         status = U_ILLEGAL_ARGUMENT_ERROR;
         return;
     }
-    fData = new RBBIDataWrapper(data, RBBIDataWrapper::kDontAdopt, status); 
+    fData = new RBBIDataWrapper(data, RBBIDataWrapper::kDontAdopt, status);
     if (U_FAILURE(status)) {return;}
     if(fData == 0) {
         status = U_MEMORY_ALLOCATION_ERROR;
         return;
     }
-}    
+}
 
 
 
@@ -111,7 +111,7 @@ RuleBasedBreakIterator::RuleBasedBreakIterator(const uint8_t *compiledRules,
 
 RuleBasedBreakIterator::RuleBasedBreakIterator(UDataMemory* udm, UErrorCode &status)
 {
-    init();
+    init(status);
     fData = new RBBIDataWrapper(udm, status); 
     if (U_FAILURE(status)) {return;}
     if(fData == 0) {
@@ -131,7 +131,7 @@ RuleBasedBreakIterator::RuleBasedBreakIterator( const UnicodeString  &rules,
                                                 UParseError          &parseError,
                                                 UErrorCode           &status)
 {
-    init();
+    init(status);
     if (U_FAILURE(status)) {return;}
     RuleBasedBreakIterator *bi = (RuleBasedBreakIterator *)
         RBBIRuleBuilder::createRuleBasedBreakIterator(rules, &parseError, status);
@@ -153,7 +153,8 @@ RuleBasedBreakIterator::RuleBasedBreakIterator( const UnicodeString  &rules,
 
 
 RuleBasedBreakIterator::RuleBasedBreakIterator() {
-    init();
+    UErrorCode status = U_ZERO_ERROR;
+    init(status);
 }
 
 
@@ -166,7 +167,8 @@ RuleBasedBreakIterator::RuleBasedBreakIterator() {
 RuleBasedBreakIterator::RuleBasedBreakIterator(const RuleBasedBreakIterator& other)
 : BreakIterator(other)
 {
-    this->init();
+    UErrorCode status = U_ZERO_ERROR;
+    this->init(status);
     *this = other;
 }
 
@@ -181,28 +183,27 @@ RuleBasedBreakIterator::~RuleBasedBreakIterator() {
     }
     fCharIter = NULL;
     delete fSCharIter;
-    fCharIter = NULL;
+    fSCharIter = NULL;
     delete fDCharIter;
     fDCharIter = NULL;
-    
+
     utext_close(fText);
 
     if (fData != NULL) {
         fData->removeReference();
         fData = NULL;
     }
-    if (fCachedBreakPositions) {
-        uprv_free(fCachedBreakPositions);
-        fCachedBreakPositions = NULL;
-    }
-    if (fLanguageBreakEngines) {
-        delete fLanguageBreakEngines;
-        fLanguageBreakEngines = NULL;
-    }
-    if (fUnhandledBreakEngine) {
-        delete fUnhandledBreakEngine;
-        fUnhandledBreakEngine = NULL;
-    }
+    delete fBreakCache;
+    fBreakCache = NULL;
+
+    delete fDictionaryCache;
+    fDictionaryCache = NULL;
+
+    delete fLanguageBreakEngines;
+    fLanguageBreakEngines = NULL;
+
+    delete fUnhandledBreakEngine;
+    fUnhandledBreakEngine = NULL;
 }
 
 
@@ -214,7 +215,8 @@ RuleBasedBreakIterator::operator=(const RuleBasedBreakIterator& that) {
     if (this == &that) {
         return *this;
     }
-    reset();    
+    BreakIterator::operator=(that);
+
     fBreakType = that.fBreakType;
     if (fLanguageBreakEngines != NULL) {
         delete fLanguageBreakEngines;
@@ -244,6 +246,17 @@ RuleBasedBreakIterator::operator=(const RuleBasedBreakIterator& that) {
         fData = that.fData->addReference();
     }
 
+    fPosition = that.fPosition;
+    fRuleStatusIndex = that.fRuleStatusIndex;
+    fDone = that.fDone;
+
+    
+    
+    
+    
+    fBreakCache->reset(fPosition, fRuleStatusIndex);
+    fDictionaryCache->reset();
+
     return *this;
 }
 
@@ -255,33 +268,43 @@ RuleBasedBreakIterator::operator=(const RuleBasedBreakIterator& that) {
 
 
 
-void RuleBasedBreakIterator::init() {
-    UErrorCode  status    = U_ZERO_ERROR;
-    fText                 = utext_openUChars(NULL, NULL, 0, &status);
+void RuleBasedBreakIterator::init(UErrorCode &status) {
+    fText                 = NULL;
     fCharIter             = NULL;
     fSCharIter            = NULL;
     fDCharIter            = NULL;
     fData                 = NULL;
-    fLastRuleStatusIndex  = 0;
-    fLastStatusIndexValid = TRUE;
+    fPosition             = 0;
+    fRuleStatusIndex      = 0;
+    fDone                 = false;
     fDictionaryCharCount  = 0;
     fBreakType            = UBRK_WORD;  
                                         
                                         
                                         
 
-    fCachedBreakPositions    = NULL;
-    fLanguageBreakEngines    = NULL;
-    fUnhandledBreakEngine    = NULL;
-    fNumCachedBreakPositions = 0;
-    fPositionInCache         = 0;
+    fLanguageBreakEngines = NULL;
+    fUnhandledBreakEngine = NULL;
+    fBreakCache           = NULL;
+    fDictionaryCache      = NULL;
+
+    if (U_FAILURE(status)) {
+        return;
+    }
+
+    fText            = utext_openUChars(NULL, NULL, 0, &status);
+    fDictionaryCache = new DictionaryCache(this, status);
+    fBreakCache      = new BreakCache(this, status);
+    if (U_SUCCESS(status) && (fText == NULL || fDictionaryCache == NULL || fBreakCache == NULL)) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+    }
 
 #ifdef RBBI_DEBUG
     static UBool debugInitDone = FALSE;
     if (debugInitDone == FALSE) {
         char *debugEnv = getenv("U_RBBIDEBUG");
         if (debugEnv && uprv_strstr(debugEnv, "trace")) {
-            fTrace = TRUE;
+            gTrace = TRUE;
         }
         debugInitDone = TRUE;
     }
@@ -311,16 +334,28 @@ RuleBasedBreakIterator::operator==(const BreakIterator& that) const {
     if (typeid(*this) != typeid(that)) {
         return FALSE;
     }
+    if (this == &that) {
+        return TRUE;
+    }
+
+    
+    
+    
 
     const RuleBasedBreakIterator& that2 = (const RuleBasedBreakIterator&) that;
 
     if (!utext_equals(fText, that2.fText)) {
         
         
+        
         return FALSE;
     };
 
-    
+    if (!(fPosition == that2.fPosition &&
+            fRuleStatusIndex == that2.fRuleStatusIndex &&
+            fDone == that2.fDone)) {
+        return FALSE;
+    }
 
     if (that2.fData == fData ||
         (fData != NULL && that2.fData != NULL && *that2.fData == *fData)) {
@@ -348,7 +383,8 @@ void RuleBasedBreakIterator::setText(UText *ut, UErrorCode &status) {
     if (U_FAILURE(status)) {
         return;
     }
-    reset();
+    fBreakCache->reset();
+    fDictionaryCache->reset();
     fText = utext_clone(fText, ut, FALSE, TRUE, &status);
 
     
@@ -377,31 +413,10 @@ void RuleBasedBreakIterator::setText(UText *ut, UErrorCode &status) {
 
 
 UText *RuleBasedBreakIterator::getUText(UText *fillIn, UErrorCode &status) const {
-    UText *result = utext_clone(fillIn, fText, FALSE, TRUE, &status);  
+    UText *result = utext_clone(fillIn, fText, FALSE, TRUE, &status);
     return result;
 }
 
-
-
-
-
-
-const UnicodeString&
-RuleBasedBreakIterator::getRules() const {
-    if (fData != NULL) {
-        return fData->getRuleSourceString();
-    } else {
-        static const UnicodeString *s;
-        if (s == NULL) {
-            
-            
-            
-            
-            s = new UnicodeString;
-        }
-        return *s;
-    }
-}
 
 
 
@@ -430,8 +445,9 @@ RuleBasedBreakIterator::adoptText(CharacterIterator* newText) {
 
     fCharIter = newText;
     UErrorCode status = U_ZERO_ERROR;
-    reset();
-    if (newText==NULL || newText->startIndex() != 0) {   
+    fBreakCache->reset();
+    fDictionaryCache->reset();
+    if (newText==NULL || newText->startIndex() != 0) {
         
         
         fText = utext_openUChars(fText, NULL, 0, &status);
@@ -449,7 +465,8 @@ RuleBasedBreakIterator::adoptText(CharacterIterator* newText) {
 void
 RuleBasedBreakIterator::setText(const UnicodeString& newText) {
     UErrorCode status = U_ZERO_ERROR;
-    reset();
+    fBreakCache->reset();
+    fDictionaryCache->reset();
     fText = utext_openConstUnicodeString(fText, &newText, &status);
 
     
@@ -509,13 +526,12 @@ RuleBasedBreakIterator &RuleBasedBreakIterator::refreshInputText(UText *input, U
 
 
 int32_t RuleBasedBreakIterator::first(void) {
-    reset();
-    fLastRuleStatusIndex  = 0;
-    fLastStatusIndexValid = TRUE;
-    
-    
-
-    utext_setNativeIndex(fText, 0);
+    UErrorCode status = U_ZERO_ERROR;
+    if (!fBreakCache->seek(0)) {
+        fBreakCache->populateNear(0, status);
+    }
+    fBreakCache->current();
+    U_ASSERT(fPosition == 0);
     return 0;
 }
 
@@ -524,17 +540,12 @@ int32_t RuleBasedBreakIterator::first(void) {
 
 
 int32_t RuleBasedBreakIterator::last(void) {
-    reset();
-    if (fText == NULL) {
-        fLastRuleStatusIndex  = 0;
-        fLastStatusIndexValid = TRUE;
-        return BreakIterator::DONE;
-    }
-
-    fLastStatusIndexValid = FALSE;
-    int32_t pos = (int32_t)utext_nativeLength(fText);
-    utext_setNativeIndex(fText, pos);
-    return pos;
+    int32_t endPos = (int32_t)utext_nativeLength(fText);
+    UBool endShouldBeBoundary = isBoundary(endPos);      
+    (void)endShouldBeBoundary;
+    U_ASSERT(endShouldBeBoundary);
+    U_ASSERT(fPosition == endPos);
+    return endPos;
 }
 
 
@@ -547,14 +558,17 @@ int32_t RuleBasedBreakIterator::last(void) {
 
 
 int32_t RuleBasedBreakIterator::next(int32_t n) {
-    int32_t result = current();
-    while (n > 0) {
-        result = next();
-        --n;
-    }
-    while (n < 0) {
-        result = previous();
-        ++n;
+    int32_t result = 0;
+    if (n > 0) {
+        for (; n > 0 && result != UBRK_DONE; --n) {
+            result = next();
+        }
+    } else if (n < 0) {
+        for (; n < 0 && result != UBRK_DONE; ++n) {
+            result = previous();
+        }
+    } else {
+        result = current();
     }
     return result;
 }
@@ -564,121 +578,22 @@ int32_t RuleBasedBreakIterator::next(int32_t n) {
 
 
 int32_t RuleBasedBreakIterator::next(void) {
-    
-    
-    if (fCachedBreakPositions != NULL) {
-        if (fPositionInCache < fNumCachedBreakPositions - 1) {
-            ++fPositionInCache;
-            int32_t pos = fCachedBreakPositions[fPositionInCache];
-            utext_setNativeIndex(fText, pos);
-            return pos;
-        }
-        else {
-            reset();
-        }
-    }
-
-    int32_t startPos = current();
-    fDictionaryCharCount = 0;
-    int32_t result = handleNext(fData->fForwardTable);
-    if (fDictionaryCharCount > 0) {
-        result = checkDictionary(startPos, result, FALSE);
-    }
-    return result;
+    fBreakCache->next();
+    return fDone ? UBRK_DONE : fPosition;
 }
+
+
+
+
 
 
 
 
 
 int32_t RuleBasedBreakIterator::previous(void) {
-    int32_t result;
-    int32_t startPos;
-
-    
-    
-    if (fCachedBreakPositions != NULL) {
-        if (fPositionInCache > 0) {
-            --fPositionInCache;
-            
-            
-            if (fPositionInCache <= 0) {
-                fLastStatusIndexValid = FALSE;
-            }
-            int32_t pos = fCachedBreakPositions[fPositionInCache];
-            utext_setNativeIndex(fText, pos);
-            return pos;
-        }
-        else {
-            reset();
-        }
-    }
-
-    
-    if (fText == NULL || (startPos = current()) == 0) {
-        fLastRuleStatusIndex  = 0;
-        fLastStatusIndexValid = TRUE;
-        return BreakIterator::DONE;
-    }
-
-    if (fData->fSafeRevTable != NULL || fData->fSafeFwdTable != NULL) {
-        result = handlePrevious(fData->fReverseTable);
-        if (fDictionaryCharCount > 0) {
-            result = checkDictionary(result, startPos, TRUE);
-        }
-        return result;
-    }
-
-    
-    
-    
-    
-    
-    
-
-    int32_t start = current();
-
-    (void)UTEXT_PREVIOUS32(fText);
-    int32_t lastResult    = handlePrevious(fData->fReverseTable);
-    if (lastResult == UBRK_DONE) {
-        lastResult = 0;
-        utext_setNativeIndex(fText, 0);
-    }
-    result = lastResult;
-    int32_t lastTag       = 0;
-    UBool   breakTagValid = FALSE;
-
-    
-    
-    
-
-    for (;;) {
-        result         = next();
-        if (result == BreakIterator::DONE || result >= start) {
-            break;
-        }
-        lastResult     = result;
-        lastTag        = fLastRuleStatusIndex;
-        breakTagValid  = TRUE;
-    }
-
-    
-    
-    
-    
-    
-    
-
-    
-    
-    utext_setNativeIndex(fText, lastResult);
-    fLastRuleStatusIndex  = lastTag;       
-    fLastStatusIndexValid = breakTagValid;
-
-    
-    
-
-    return lastResult;
+    UErrorCode status = U_ZERO_ERROR;
+    fBreakCache->previous(status);
+    return fDone ? UBRK_DONE : fPosition;
 }
 
 
@@ -687,110 +602,21 @@ int32_t RuleBasedBreakIterator::previous(void) {
 
 
 
-int32_t RuleBasedBreakIterator::following(int32_t offset) {
+int32_t RuleBasedBreakIterator::following(int32_t startPos) {
     
     
-    
-    if (fText == NULL || offset >= utext_nativeLength(fText)) {
-        last();
-        return next();
-    }
-    else if (offset < 0) {
+    if (startPos < 0) {
         return first();
     }
 
     
     
-    utext_setNativeIndex(fText, offset);
-    offset = (int32_t)utext_getNativeIndex(fText);
+    utext_setNativeIndex(fText, startPos);
+    startPos = (int32_t)utext_getNativeIndex(fText);
 
-    
-    
-    
-    
-    if (fCachedBreakPositions != NULL) {
-        if (offset >= fCachedBreakPositions[0]
-                && offset < fCachedBreakPositions[fNumCachedBreakPositions - 1]) {
-            fPositionInCache = 0;
-            
-            while (offset >= fCachedBreakPositions[fPositionInCache]) {
-                ++fPositionInCache;
-            }
-            int32_t pos = fCachedBreakPositions[fPositionInCache];
-            utext_setNativeIndex(fText, pos);
-            return pos;
-        }
-        else {
-            reset();
-        }
-    }
-
-    
-    
-    
-
-    int32_t result = 0;
-
-    if (fData->fSafeRevTable != NULL) {
-        
-        utext_setNativeIndex(fText, offset);
-        
-        
-        
-        
-        (void)UTEXT_NEXT32(fText);
-        
-        handlePrevious(fData->fSafeRevTable);
-        int32_t result = next();
-        while (result <= offset) {
-            result = next();
-        }
-        return result;
-    }
-    if (fData->fSafeFwdTable != NULL) {
-        
-        utext_setNativeIndex(fText, offset);
-        (void)UTEXT_PREVIOUS32(fText);
-        
-        handleNext(fData->fSafeFwdTable);
-        
-        
-        
-        int32_t oldresult = previous();
-        while (oldresult > offset) {
-            int32_t result = previous();
-            if (result <= offset) {
-                return oldresult;
-            }
-            oldresult = result;
-        }
-        int32_t result = next();
-        if (result <= offset) {
-            return next();
-        }
-        return result;
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-
-    utext_setNativeIndex(fText, offset);
-    if (offset==0 || 
-        (offset==1  && utext_getNativeIndex(fText)==0)) {
-        return next();
-    }
-    result = previous();
-
-    while (result != BreakIterator::DONE && result <= offset) {
-        result = next();
-    }
-
-    return result;
+    UErrorCode status = U_ZERO_ERROR;
+    fBreakCache->following(startPos, status);
+    return fDone ? UBRK_DONE : fPosition;
 }
 
 
@@ -800,111 +626,21 @@ int32_t RuleBasedBreakIterator::following(int32_t offset) {
 
 
 int32_t RuleBasedBreakIterator::preceding(int32_t offset) {
-    
-    
-    
     if (fText == NULL || offset > utext_nativeLength(fText)) {
         return last();
     }
-    else if (offset < 0) {
-        return first();
-    }
 
     
     
+
     utext_setNativeIndex(fText, offset);
-    offset = (int32_t)utext_getNativeIndex(fText);
+    int32_t adjustedOffset = utext_getNativeIndex(fText);
 
-    
-    
-    if (fCachedBreakPositions != NULL) {
-        
-        
-        if (offset > fCachedBreakPositions[0]
-                && offset <= fCachedBreakPositions[fNumCachedBreakPositions - 1]) {
-            fPositionInCache = 0;
-            while (fPositionInCache < fNumCachedBreakPositions
-                   && offset > fCachedBreakPositions[fPositionInCache])
-                ++fPositionInCache;
-            --fPositionInCache;
-            
-            
-            if (fPositionInCache <= 0) {
-                fLastStatusIndexValid = FALSE;
-            }
-            utext_setNativeIndex(fText, fCachedBreakPositions[fPositionInCache]);
-            return fCachedBreakPositions[fPositionInCache];
-        }
-        else {
-            reset();
-        }
-    }
-
-    
-    
-    
-
-    if (fData->fSafeFwdTable != NULL) {
-        
-        utext_setNativeIndex(fText, offset);
-        int32_t newOffset = (int32_t)UTEXT_GETNATIVEINDEX(fText);
-        if (newOffset != offset) {
-            
-            
-            
-            
-            
-            (void)UTEXT_NEXT32(fText);
-            offset = (int32_t)UTEXT_GETNATIVEINDEX(fText);
-        }
-
-        
-        
-        
-        
-        
-        (void)UTEXT_PREVIOUS32(fText);
-        handleNext(fData->fSafeFwdTable);
-        int32_t result = (int32_t)UTEXT_GETNATIVEINDEX(fText);
-        while (result >= offset) {
-            result = previous();
-        }
-        return result;
-    }
-    if (fData->fSafeRevTable != NULL) {
-        
-        
-        
-        
-        
-        utext_setNativeIndex(fText, offset);
-        (void)UTEXT_NEXT32(fText);
-        
-        
-        handlePrevious(fData->fSafeRevTable);
-
-        
-        
-        
-        int32_t oldresult = next();
-        while (oldresult < offset) {
-            int32_t result = next();
-            if (result >= offset) {
-                return oldresult;
-            }
-            oldresult = result;
-        }
-        int32_t result = previous();
-        if (result >= offset) {
-            return previous();
-        }
-        return result;
-    }
-
-    
-    utext_setNativeIndex(fText, offset);
-    return previous();
+    UErrorCode status = U_ZERO_ERROR;
+    fBreakCache->preceding(adjustedOffset, status);
+    return fDone ? UBRK_DONE : fPosition;
 }
+
 
 
 
@@ -915,33 +651,34 @@ int32_t RuleBasedBreakIterator::preceding(int32_t offset) {
 
 UBool RuleBasedBreakIterator::isBoundary(int32_t offset) {
     
-    if (offset == 0) {
-        first();       
-        return TRUE;
-    }
-
-    if (offset == (int32_t)utext_nativeLength(fText)) {
-        last();       
-        return TRUE;
-    }
-
-    
     if (offset < 0) {
         first();       
         return FALSE;
     }
 
-    if (offset > utext_nativeLength(fText)) {
-        last();        
-        return FALSE;
+    
+    
+    
+
+    utext_setNativeIndex(fText, offset);
+    int32_t adjustedOffset = utext_getNativeIndex(fText);
+
+    bool result = false;
+    UErrorCode status = U_ZERO_ERROR;
+    if (fBreakCache->seek(adjustedOffset) || fBreakCache->populateNear(adjustedOffset, status)) {
+        result = (fBreakCache->current() == offset);
     }
 
-    
-    
-    
-    utext_previous32From(fText, offset);
-    int32_t backOne = (int32_t)UTEXT_GETNATIVEINDEX(fText);
-    UBool    result  = following(backOne) == offset;
+    if (result && adjustedOffset < offset && utext_char32At(fText, offset) == U_SENTINEL) {
+        
+        
+        return FALSE;
+    }
+    if (!result) {
+        
+        
+        next();
+    }
     return result;
 }
 
@@ -949,11 +686,12 @@ UBool RuleBasedBreakIterator::isBoundary(int32_t offset) {
 
 
 
+
 int32_t RuleBasedBreakIterator::current(void) const {
-    int32_t  pos = (int32_t)UTEXT_GETNATIVEINDEX(fText);
-    return pos;
+    return fPosition;
 }
- 
+
+
 
 
 
@@ -1024,39 +762,39 @@ struct LookAheadResults {
 
 
 
-
-
-
-
-int32_t RuleBasedBreakIterator::handleNext(const RBBIStateTable *statetable) {
+int32_t RuleBasedBreakIterator::handleNext() {
     int32_t             state;
     uint16_t            category        = 0;
     RBBIRunMode         mode;
-    
+
     RBBIStateTableRow  *row;
     UChar32             c;
     LookAheadResults    lookAheadMatches;
     int32_t             result             = 0;
     int32_t             initialPosition    = 0;
+    const RBBIStateTable *statetable       = fData->fForwardTable;
     const char         *tableData          = statetable->fTableData;
     uint32_t            tableRowLen        = statetable->fRowLen;
-
     #ifdef RBBI_DEBUG
-        if (fTrace) {
+        if (gTrace) {
             RBBIDebugPuts("Handle Next   pos   char  state category");
         }
     #endif
 
     
-    fLastStatusIndexValid = TRUE;
-    fLastRuleStatusIndex = 0;
+    
+    fRuleStatusIndex = 0;
+
+    fDictionaryCharCount = 0;
 
     
-    initialPosition = (int32_t)UTEXT_GETNATIVEINDEX(fText); 
+    initialPosition = fPosition;
+    UTEXT_SETNATIVEINDEX(fText, initialPosition);
     result          = initialPosition;
     c               = UTEXT_NEXT32(fText);
-    if (fData == NULL || c==U_SENTINEL) {
-        return BreakIterator::DONE;
+    if (c==U_SENTINEL) {
+        fDone = TRUE;
+        return UBRK_DONE;
     }
 
     
@@ -1064,8 +802,8 @@ int32_t RuleBasedBreakIterator::handleNext(const RBBIStateTable *statetable) {
     row = (RBBIStateTableRow *)
             
             (tableData + tableRowLen * state);
-            
-    
+
+
     mode     = RBBI_RUN;
     if (statetable->fFlags & RBBI_BOF_REQUIRED) {
         category = 2;
@@ -1100,7 +838,7 @@ int32_t RuleBasedBreakIterator::handleNext(const RBBIStateTable *statetable) {
             
             
             
-            UTRIE_GET16(&fData->fTrie, c, category);
+            category = UTRIE2_GET16(fData->fTrie, c);
 
             
             
@@ -1115,7 +853,7 @@ int32_t RuleBasedBreakIterator::handleNext(const RBBIStateTable *statetable) {
         }
 
        #ifdef RBBI_DEBUG
-            if (fTrace) {
+            if (gTrace) {
                 RBBIDebugPrintf("             %4ld   ", utext_getNativeIndex(fText));
                 if (0x20<=c && c<0x7f) {
                     RBBIDebugPrintf("\"%c\"  ", c);
@@ -1144,7 +882,7 @@ int32_t RuleBasedBreakIterator::handleNext(const RBBIStateTable *statetable) {
             if (mode != RBBI_START) {
                 result = (int32_t)UTEXT_GETNATIVEINDEX(fText);
             }
-            fLastRuleStatusIndex = row->fTagIdx;   
+            fRuleStatusIndex = row->fTagIdx;   
         }
 
         int16_t completedRule = row->fAccepting;
@@ -1152,8 +890,8 @@ int32_t RuleBasedBreakIterator::handleNext(const RBBIStateTable *statetable) {
             
             int32_t lookaheadResult = lookAheadMatches.getPosition(completedRule);
             if (lookaheadResult >= 0) {
-                fLastRuleStatusIndex = row->fTagIdx;
-                UTEXT_SETNATIVEINDEX(fText, lookaheadResult);
+                fRuleStatusIndex = row->fTagIdx;
+                fPosition = lookaheadResult;
                 return lookaheadResult;
             }
         }
@@ -1170,7 +908,7 @@ int32_t RuleBasedBreakIterator::handleNext(const RBBIStateTable *statetable) {
             
             break;
         }
-        
+
         
         
         
@@ -1182,8 +920,6 @@ int32_t RuleBasedBreakIterator::handleNext(const RBBIStateTable *statetable) {
                 mode = RBBI_RUN;
             }
         }
-
-
     }
 
     
@@ -1192,15 +928,16 @@ int32_t RuleBasedBreakIterator::handleNext(const RBBIStateTable *statetable) {
     
     
     if (result == initialPosition) {
-        UTEXT_SETNATIVEINDEX(fText, initialPosition);
-        UTEXT_NEXT32(fText);
-        result = (int32_t)UTEXT_GETNATIVEINDEX(fText);
+        utext_setNativeIndex(fText, initialPosition);
+        utext_next32(fText);
+        result = (int32_t)utext_getNativeIndex(fText);
+        fRuleStatusIndex = 0;
     }
 
     
-    UTEXT_SETNATIVEINDEX(fText, result);
+    fPosition = result;
     #ifdef RBBI_DEBUG
-        if (fTrace) {
+        if (gTrace) {
             RBBIDebugPrintf("result = %d\n\n", result);
         }
     #endif
@@ -1217,9 +954,7 @@ int32_t RuleBasedBreakIterator::handleNext(const RBBIStateTable *statetable) {
 
 
 
-
-
-int32_t RuleBasedBreakIterator::handlePrevious(const RBBIStateTable *statetable) {
+int32_t RuleBasedBreakIterator::handlePrevious(int32_t fromPosition) {
     int32_t             state;
     uint16_t            category        = 0;
     RBBIRunMode         mode;
@@ -1229,18 +964,13 @@ int32_t RuleBasedBreakIterator::handlePrevious(const RBBIStateTable *statetable)
     int32_t             result          = 0;
     int32_t             initialPosition = 0;
 
+    const RBBIStateTable *stateTable = fData->fSafeRevTable;
+    UTEXT_SETNATIVEINDEX(fText, fromPosition);
     #ifdef RBBI_DEBUG
-        if (fTrace) {
+        if (gTrace) {
             RBBIDebugPuts("Handle Previous   pos   char  state category");
         }
     #endif
-
-    
-    
-    
-    
-    fLastStatusIndexValid = FALSE;
-    fLastRuleStatusIndex = 0;
 
     
     if (fText == NULL || fData == NULL || UTEXT_GETNATIVEINDEX(fText)==0) {
@@ -1255,10 +985,10 @@ int32_t RuleBasedBreakIterator::handlePrevious(const RBBIStateTable *statetable)
     
     state = START_STATE;
     row = (RBBIStateTableRow *)
-            (statetable->fTableData + (statetable->fRowLen * state));
+            (stateTable->fTableData + (stateTable->fRowLen * state));
     category = 3;
     mode     = RBBI_RUN;
-    if (statetable->fFlags & RBBI_BOF_REQUIRED) {
+    if (stateTable->fFlags & RBBI_BOF_REQUIRED) {
         category = 2;
         mode     = RBBI_START;
     }
@@ -1273,12 +1003,6 @@ int32_t RuleBasedBreakIterator::handlePrevious(const RBBIStateTable *statetable)
                 
                 
                 
-                if (result == initialPosition) {
-                    
-                    
-                    UTEXT_SETNATIVEINDEX(fText, initialPosition);
-                    (void)UTEXT_PREVIOUS32(fText);   
-                }
                 break;
             }
             
@@ -1297,22 +1021,13 @@ int32_t RuleBasedBreakIterator::handlePrevious(const RBBIStateTable *statetable)
             
             
             
-            UTRIE_GET16(&fData->fTrie, c, category);
-
             
-            
-            
-            
-            
-            if ((category & 0x4000) != 0)  {
-                fDictionaryCharCount++;
-                
-                category &= ~0x4000;
-            }
+            category = UTRIE2_GET16(fData->fTrie, c);
+            category &= ~0x4000;
         }
 
         #ifdef RBBI_DEBUG
-            if (fTrace) {
+            if (gTrace) {
                 RBBIDebugPrintf("             %4d   ", (int32_t)utext_getNativeIndex(fText));
                 if (0x20<=c && c<0x7f) {
                     RBBIDebugPrintf("\"%c\"  ", c);
@@ -1332,7 +1047,7 @@ int32_t RuleBasedBreakIterator::handlePrevious(const RBBIStateTable *statetable)
         U_ASSERT(category<fData->fHeader->fCatCount);
         state = row->fNextState[category];  
         row = (RBBIStateTableRow *)
-            (statetable->fTableData + (statetable->fRowLen * state));
+            (stateTable->fTableData + (stateTable->fRowLen * state));
 
         if (row->fAccepting == -1) {
             
@@ -1368,7 +1083,7 @@ int32_t RuleBasedBreakIterator::handlePrevious(const RBBIStateTable *statetable)
         
         if (mode == RBBI_RUN) {
             c = UTEXT_PREVIOUS32(fText);
-        } else {            
+        } else {
             if (mode == RBBI_START) {
                 mode = RBBI_RUN;
             }
@@ -1386,10 +1101,8 @@ int32_t RuleBasedBreakIterator::handlePrevious(const RBBIStateTable *statetable)
         result = (int32_t)UTEXT_GETNATIVEINDEX(fText);
     }
 
-    
-    UTEXT_SETNATIVEINDEX(fText, result);
     #ifdef RBBI_DEBUG
-        if (fTrace) {
+        if (gTrace) {
             RBBIDebugPrintf("result = %d\n\n", result);
         }
     #endif
@@ -1397,17 +1110,6 @@ int32_t RuleBasedBreakIterator::handlePrevious(const RBBIStateTable *statetable)
 }
 
 
-void
-RuleBasedBreakIterator::reset()
-{
-    if (fCachedBreakPositions) {
-        uprv_free(fCachedBreakPositions);
-    }
-    fCachedBreakPositions = NULL;
-    fNumCachedBreakPositions = 0;
-    fDictionaryCharCount = 0;
-    fPositionInCache = 0;
-}
 
 
 
@@ -1415,67 +1117,27 @@ RuleBasedBreakIterator::reset()
 
 
 
-
-
-
-
-
-
-
-
-
-void RuleBasedBreakIterator::makeRuleStatusValid() {
-    if (fLastStatusIndexValid == FALSE) {
-        
-        if (fText == NULL || current() == 0) {
-            
-            fLastRuleStatusIndex = 0;
-            fLastStatusIndexValid = TRUE;
-        } else {
-            
-            int32_t pa = current();
-            previous();
-            if (fNumCachedBreakPositions > 0) {
-                reset();                
-            }
-            int32_t pb = next();
-            if (pa != pb) {
-                
-                
-                U_ASSERT(pa == pb);
-            }
-        }
-    }
-    U_ASSERT(fLastRuleStatusIndex >= 0  &&  fLastRuleStatusIndex < fData->fStatusMaxIdx);
-}
 
 
 int32_t  RuleBasedBreakIterator::getRuleStatus() const {
-    RuleBasedBreakIterator *nonConstThis  = (RuleBasedBreakIterator *)this;
-    nonConstThis->makeRuleStatusValid();
 
     
     
     
-    int32_t  idx = fLastRuleStatusIndex + fData->fRuleStatusTable[fLastRuleStatusIndex];
+    int32_t  idx = fRuleStatusIndex + fData->fRuleStatusTable[fRuleStatusIndex];
     int32_t  tagVal = fData->fRuleStatusTable[idx];
 
     return tagVal;
 }
 
 
-
-
 int32_t RuleBasedBreakIterator::getRuleStatusVec(
-             int32_t *fillInVec, int32_t capacity, UErrorCode &status)
-{
+             int32_t *fillInVec, int32_t capacity, UErrorCode &status) {
     if (U_FAILURE(status)) {
         return 0;
     }
 
-    RuleBasedBreakIterator *nonConstThis  = (RuleBasedBreakIterator *)this;
-    nonConstThis->makeRuleStatusValid();
-    int32_t  numVals = fData->fRuleStatusTable[fLastRuleStatusIndex];
+    int32_t  numVals = fData->fRuleStatusTable[fRuleStatusIndex];
     int32_t  numValsToCopy = numVals;
     if (numVals > capacity) {
         status = U_BUFFER_OVERFLOW_ERROR;
@@ -1483,7 +1145,7 @@ int32_t RuleBasedBreakIterator::getRuleStatusVec(
     }
     int i;
     for (i=0; i<numValsToCopy; i++) {
-        fillInVec[i] = fData->fRuleStatusTable[fLastRuleStatusIndex + i + 1];
+        fillInVec[i] = fData->fRuleStatusTable[fRuleStatusIndex + i + 1];
     }
     return numVals;
 }
@@ -1531,205 +1193,25 @@ BreakIterator *  RuleBasedBreakIterator::createBufferClone(void * ,
     return (RuleBasedBreakIterator *)clonedBI;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int32_t RuleBasedBreakIterator::checkDictionary(int32_t startPos,
-                            int32_t endPos,
-                            UBool reverse) {
-    
-    reset();
-
-    
-    
-    
-    if ((endPos - startPos) <= 1) {
-        return (reverse ? startPos : endPos);
-    }
-    
-    
-    
-    
-    utext_setNativeIndex(fText, reverse ? endPos : startPos);
-    if (reverse) {
-        UTEXT_PREVIOUS32(fText);
-    }
-    
-    int32_t rangeStart = startPos;
-    int32_t rangeEnd = endPos;
-
-    uint16_t    category;
-    int32_t     current;
-    UErrorCode  status = U_ZERO_ERROR;
-    UStack      breaks(status);
-    int32_t     foundBreakCount = 0;
-    UChar32     c = utext_current32(fText);
-
-    UTRIE_GET16(&fData->fTrie, c, category);
-    
-    
-    
-    
-    
-    
-    if (category & 0x4000) {
-        if (reverse) {
-            do {
-                utext_next32(fText);          
-                c = utext_current32(fText);
-                UTRIE_GET16(&fData->fTrie, c, category);
-            } while (c != U_SENTINEL && (category & 0x4000));
-            
-            rangeEnd = (int32_t)UTEXT_GETNATIVEINDEX(fText);
-            if (c == U_SENTINEL) {
-                
-                
-                c = UTEXT_PREVIOUS32(fText);
-            }
-            else {
-                c = UTEXT_PREVIOUS32(fText);
-            }
-        }
-        else {
-            do {
-                c = UTEXT_PREVIOUS32(fText);
-                UTRIE_GET16(&fData->fTrie, c, category);
-            }
-            while (c != U_SENTINEL && (category & 0x4000));
-            
-            if (c == U_SENTINEL) {
-                
-                c = utext_current32(fText);
-            }
-            else {
-                utext_next32(fText);
-                c = utext_current32(fText);
-            }
-            rangeStart = (int32_t)UTEXT_GETNATIVEINDEX(fText);;
-        }
-        UTRIE_GET16(&fData->fTrie, c, category);
-    }
-    
-    
-    
-    
-    
-    
-    if (reverse) {
-        utext_setNativeIndex(fText, rangeStart);
-        c = utext_current32(fText);
-        UTRIE_GET16(&fData->fTrie, c, category);
-    }
-    while(U_SUCCESS(status)) {
-        while((current = (int32_t)UTEXT_GETNATIVEINDEX(fText)) < rangeEnd && (category & 0x4000) == 0) {
-            utext_next32(fText);           
-            c = utext_current32(fText);
-            UTRIE_GET16(&fData->fTrie, c, category);
-        }
-        if (current >= rangeEnd) {
-            break;
-        }
-        
-        
-        
-        const LanguageBreakEngine *lbe = getLanguageBreakEngine(c);
-        
-        
-        
-        if (lbe != NULL) {
-            foundBreakCount += lbe->findBreaks(fText, rangeStart, rangeEnd, FALSE, fBreakType, breaks);
-        }
-        
-        
-        c = utext_current32(fText);
-        UTRIE_GET16(&fData->fTrie, c, category);
-    }
-    
-    
-    
-    if (foundBreakCount > 0) {
-        U_ASSERT(foundBreakCount == breaks.size());
-        int32_t totalBreaks = foundBreakCount;
-        if (startPos < breaks.elementAti(0)) {
-            totalBreaks += 1;
-        }
-        if (endPos > breaks.peeki()) {
-            totalBreaks += 1;
-        }
-        fCachedBreakPositions = (int32_t *)uprv_malloc(totalBreaks * sizeof(int32_t));
-        if (fCachedBreakPositions != NULL) {
-            int32_t out = 0;
-            fNumCachedBreakPositions = totalBreaks;
-            if (startPos < breaks.elementAti(0)) {
-                fCachedBreakPositions[out++] = startPos;
-            }
-            for (int32_t i = 0; i < foundBreakCount; ++i) {
-                fCachedBreakPositions[out++] = breaks.elementAti(i);
-            }
-            if (endPos > fCachedBreakPositions[out-1]) {
-                fCachedBreakPositions[out] = endPos;
-            }
-            
-            
-            
-            if (reverse) {
-                return preceding(endPos);
-            }
-            else {
-                return following(startPos);
-            }
-        }
-        
-    }
-
-    
-    
-    utext_setNativeIndex(fText, reverse ? startPos : endPos);
-    return (reverse ? startPos : endPos);
-}
-
 U_NAMESPACE_END
 
 
-static icu::UStack *gLanguageBreakFactories = NULL;
+static icu::UStack *gLanguageBreakFactories = nullptr;
+static const icu::UnicodeString *gEmptyString = nullptr;
 static icu::UInitOnce gLanguageBreakFactoriesInitOnce = U_INITONCE_INITIALIZER;
+static icu::UInitOnce gRBBIInitOnce = U_INITONCE_INITIALIZER;
 
 
 
 
 U_CDECL_BEGIN
-static UBool U_CALLCONV breakiterator_cleanup_dict(void) {
-    if (gLanguageBreakFactories) {
-        delete gLanguageBreakFactories;
-        gLanguageBreakFactories = NULL;
-    }
+static UBool U_CALLCONV rbbi_cleanup(void) {
+    delete gLanguageBreakFactories;
+    gLanguageBreakFactories = nullptr;
+    delete gEmptyString;
+    gEmptyString = nullptr;
     gLanguageBreakFactoriesInitOnce.reset();
+    gRBBIInitOnce.reset();
     return TRUE;
 }
 U_CDECL_END
@@ -1740,6 +1222,11 @@ static void U_CALLCONV _deleteFactory(void *obj) {
 }
 U_CDECL_END
 U_NAMESPACE_BEGIN
+
+static void U_CALLCONV rbbiInit() {
+    gEmptyString = new UnicodeString();
+    ucln_common_registerCleanup(UCLN_COMMON_RBBI, rbbi_cleanup);
+}
 
 static void U_CALLCONV initLanguageFactories() {
     UErrorCode status = U_ZERO_ERROR;
@@ -1755,7 +1242,7 @@ static void U_CALLCONV initLanguageFactories() {
         }
 #endif
     }
-    ucln_common_registerCleanup(UCLN_COMMON_BREAKITERATOR_DICT, breakiterator_cleanup_dict);
+    ucln_common_registerCleanup(UCLN_COMMON_RBBI, rbbi_cleanup);
 }
 
 
@@ -1766,7 +1253,7 @@ getLanguageBreakEngineFromFactory(UChar32 c, int32_t breakType)
     if (gLanguageBreakFactories == NULL) {
         return NULL;
     }
-    
+
     int32_t i = gLanguageBreakFactories->size();
     const LanguageBreakEngine *lbe = NULL;
     while (--i >= 0) {
@@ -1790,7 +1277,7 @@ const LanguageBreakEngine *
 RuleBasedBreakIterator::getLanguageBreakEngine(UChar32 c) {
     const LanguageBreakEngine *lbe = NULL;
     UErrorCode status = U_ZERO_ERROR;
-    
+
     if (fLanguageBreakEngines == NULL) {
         fLanguageBreakEngines = new UStack(status);
         if (fLanguageBreakEngines == NULL || U_FAILURE(status)) {
@@ -1799,7 +1286,7 @@ RuleBasedBreakIterator::getLanguageBreakEngine(UChar32 c) {
             return NULL;
         }
     }
-    
+
     int32_t i = fLanguageBreakEngines->size();
     while (--i >= 0) {
         lbe = (const LanguageBreakEngine *)(fLanguageBreakEngines->elementAt(i));
@@ -1807,11 +1294,11 @@ RuleBasedBreakIterator::getLanguageBreakEngine(UChar32 c) {
             return lbe;
         }
     }
-    
+
     
     
     lbe = getLanguageBreakEngineFromFactory(c, fBreakType);
-    
+
     
     if (lbe != NULL) {
         fLanguageBreakEngines->push((void *)lbe, status);
@@ -1819,7 +1306,7 @@ RuleBasedBreakIterator::getLanguageBreakEngine(UChar32 c) {
         
         return lbe;
     }
-    
+
     
     
     if (fUnhandledBreakEngine == NULL) {
@@ -1837,11 +1324,11 @@ RuleBasedBreakIterator::getLanguageBreakEngine(UChar32 c) {
             return NULL;
         }
     }
-    
+
     
     
     fUnhandledBreakEngine->handleCharacter(c, fBreakType);
-        
+
     return fUnhandledBreakEngine;
 }
 
@@ -1853,7 +1340,24 @@ RuleBasedBreakIterator::getLanguageBreakEngine(UChar32 c) {
 
 void RuleBasedBreakIterator::setBreakType(int32_t type) {
     fBreakType = type;
-    reset();
+}
+
+void RuleBasedBreakIterator::dumpCache() {
+    fBreakCache->dumpCache();
+}
+
+
+
+
+
+const UnicodeString&
+RuleBasedBreakIterator::getRules() const {
+    if (fData != NULL) {
+        return fData->getRuleSourceString();
+    } else {
+        umtx_initOnce(gRBBIInitOnce, &rbbiInit);
+        return *gEmptyString;
+    }
 }
 
 U_NAMESPACE_END

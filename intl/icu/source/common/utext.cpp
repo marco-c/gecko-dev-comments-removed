@@ -853,10 +853,6 @@ U_CDECL_END
 
 
 
-
-
-
-
 enum { UTF8_TEXT_CHUNK_SIZE=32 };
 
 
@@ -895,7 +891,7 @@ struct UTF8Buf {
                                                      
                                                      
                                                      
-    uint8_t   mapToUChars[UTF8_TEXT_CHUNK_SIZE*6+6]; 
+    uint8_t   mapToUChars[UTF8_TEXT_CHUNK_SIZE*3+6]; 
                                                      
     int32_t   align;
 };

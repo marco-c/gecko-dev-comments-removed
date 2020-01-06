@@ -102,10 +102,7 @@
     {
         HANDLE map;
         HANDLE file;
-        SECURITY_ATTRIBUTES mappingAttributes;
-        SECURITY_ATTRIBUTES *mappingAttributesPtr = NULL;
-        SECURITY_DESCRIPTOR securityDesc;
-
+        
         UDataMemory_init(pData); 
 
         
@@ -143,6 +140,11 @@
 
         
 #if U_PLATFORM_HAS_WINUWP_API == 0
+
+        SECURITY_ATTRIBUTES mappingAttributes;
+        SECURITY_ATTRIBUTES *mappingAttributesPtr = NULL;
+        SECURITY_DESCRIPTOR securityDesc;
+
         if (InitializeSecurityDescriptor(&securityDesc, SECURITY_DESCRIPTOR_REVISION)) {
             
             if (SetSecurityDescriptorDacl(&securityDesc, TRUE, (PACL)NULL, FALSE)) {

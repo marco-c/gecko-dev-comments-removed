@@ -72,7 +72,13 @@ enum {
 
 
 
-#define _FOLD_CASE_OPTIONS_MASK 0xff
+
+
+
+
+
+
+#define _FOLD_CASE_OPTIONS_MASK 7
 
 
 

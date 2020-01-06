@@ -961,6 +961,7 @@ ucase_toFullLower(UChar32 c,
 
 
 
+                *pString=nullptr;
                 return 0; 
             } else if(loc==UCASE_LOC_TURKISH && c==0x49 && !isFollowedByDotAbove(iter, context)) {
                 
@@ -1059,6 +1060,7 @@ toUpperOrTitle(UChar32 c,
 
 
 
+                *pString=nullptr;
                 return 0; 
             } else {
                 

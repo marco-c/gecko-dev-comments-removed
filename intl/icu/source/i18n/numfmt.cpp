@@ -1509,6 +1509,24 @@ NumberFormat::makeInstance(const Locale& desiredLocale,
     return f;
 }
 
+
+
+
+
+NumberFormat::ERoundingMode NumberFormat::getRoundingMode() const {
+    
+    return NumberFormat::ERoundingMode::kRoundUnnecessary;
+}
+
+
+
+
+
+
+void NumberFormat::setRoundingMode(NumberFormat::ERoundingMode ) {
+    
+}
+
 U_NAMESPACE_END
 
 #endif 

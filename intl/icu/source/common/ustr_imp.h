@@ -18,6 +18,7 @@
 #define __USTR_IMP_H__
 
 #include "unicode/utypes.h"
+#include "unicode/utf8.h"
 
 
 
@@ -80,5 +81,63 @@ u_terminateUChar32s(UChar32 *dest, int32_t destCapacity, int32_t length, UErrorC
 
 U_CAPI int32_t U_EXPORT2
 u_terminateWChars(wchar_t *dest, int32_t destCapacity, int32_t length, UErrorCode *pErrorCode);
+
+
+
+
+
+
+
+
+
+
+#define U8_COUNT_BYTES(leadByte) \
+    (U8_IS_SINGLE(leadByte) ? 1 : U8_COUNT_BYTES_NON_ASCII(leadByte))
+
+
+
+
+
+
+
+
+
+#define U8_COUNT_BYTES_NON_ASCII(leadByte) \
+    (U8_IS_LEAD(leadByte) ? ((uint8_t)(leadByte)>=0xe0)+((uint8_t)(leadByte)>=0xf0)+2 : 0)
+
+#ifdef __cplusplus
+
+U_NAMESPACE_BEGIN
+
+class UTF8 {
+public:
+    UTF8() = delete;  
+
+    
+
+
+
+
+
+
+
+
+
+    static inline UBool isValidTrail(int32_t prev, uint8_t t, int32_t i, int32_t length) {
+        
+        
+        if (length <= 2 || i > 1) {
+            return U8_IS_TRAIL(t);
+        } else if (length == 3) {
+            return U8_IS_VALID_LEAD3_AND_T1(prev, t);
+        } else {  
+            return U8_IS_VALID_LEAD4_AND_T1(prev, t);
+        }
+    }
+};
+
+U_NAMESPACE_END
+
+#endif  
 
 #endif

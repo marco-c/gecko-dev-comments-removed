@@ -25,6 +25,7 @@
 #include "uenumimp.h"
 #include "uhash.h"
 #include "hash.h"
+#include "uinvchar.h"
 #include "uresimp.h"
 #include "ulist.h"
 #include "ureslocs.h"
@@ -545,93 +546,97 @@ U_CAPI int32_t U_EXPORT2
 ucurr_forLocale(const char* locale,
                 UChar* buff,
                 int32_t buffCapacity,
-                UErrorCode* ec)
-{
-    int32_t resLen = 0;
-    const UChar* s = NULL;
-    if (ec != NULL && U_SUCCESS(*ec)) {
-        if ((buff && buffCapacity) || !buffCapacity) {
-            UErrorCode localStatus = U_ZERO_ERROR;
-            char id[ULOC_FULLNAME_CAPACITY];
-            if ((resLen = uloc_getKeywordValue(locale, "currency", id, ULOC_FULLNAME_CAPACITY, &localStatus))) {
-                
-                if(buffCapacity > resLen) {
-                    
-                    T_CString_toUpperCase(id);
-                    u_charsToUChars(id, buff, resLen);
-                }
-            } else {
-                
-                uint32_t variantType = idForLocale(locale, id, sizeof(id), ec);
+                UErrorCode* ec) {
+    if (U_FAILURE(*ec)) { return 0; }
+    if (buffCapacity < 0 || (buff == nullptr && buffCapacity > 0)) {
+        *ec = U_ILLEGAL_ARGUMENT_ERROR;
+        return 0;
+    }
 
-                if (U_FAILURE(*ec)) {
-                    return 0;
-                }
+    char currency[4];  
+    UErrorCode localStatus = U_ZERO_ERROR;
+    int32_t resLen = uloc_getKeywordValue(locale, "currency",
+                                          currency, UPRV_LENGTHOF(currency), &localStatus);
+    if (U_SUCCESS(localStatus) && resLen == 3 && uprv_isInvariantString(currency, resLen)) {
+        if (resLen < buffCapacity) {
+            T_CString_toUpperCase(currency);
+            u_charsToUChars(currency, buff, resLen);
+        }
+        return u_terminateUChars(buff, buffCapacity, resLen, ec);
+    }
+
+    
+    char id[ULOC_FULLNAME_CAPACITY];
+    uint32_t variantType = idForLocale(locale, id, UPRV_LENGTHOF(id), ec);
+    if (U_FAILURE(*ec)) {
+        return 0;
+    }
 
 #if !UCONFIG_NO_SERVICE
-                const UChar* result = CReg::get(id);
-                if (result) {
-                    if(buffCapacity > u_strlen(result)) {
-                        u_strcpy(buff, result);
-                    }
-                    return u_strlen(result);
-                }
+    const UChar* result = CReg::get(id);
+    if (result) {
+        if(buffCapacity > u_strlen(result)) {
+            u_strcpy(buff, result);
+        }
+        resLen = u_strlen(result);
+        return u_terminateUChars(buff, buffCapacity, resLen, ec);
+    }
 #endif
-                
-                char *idDelim = strchr(id, VAR_DELIM);
-                if (idDelim) {
-                    idDelim[0] = 0;
-                }
+    
+    char *idDelim = uprv_strchr(id, VAR_DELIM);
+    if (idDelim) {
+        idDelim[0] = 0;
+    }
 
-                
-                UResourceBundle *rb = ures_openDirect(U_ICUDATA_CURR, CURRENCY_DATA, &localStatus);
-                UResourceBundle *cm = ures_getByKey(rb, CURRENCY_MAP, rb, &localStatus);
-                UResourceBundle *countryArray = ures_getByKey(rb, id, cm, &localStatus);
-                UResourceBundle *currencyReq = ures_getByIndex(countryArray, 0, NULL, &localStatus);
+    const UChar* s = NULL;  
+    if (id[0] == 0) {
+        
+        
+        localStatus = U_MISSING_RESOURCE_ERROR;
+    } else {
+        
+        localStatus = U_ZERO_ERROR;
+        UResourceBundle *rb = ures_openDirect(U_ICUDATA_CURR, CURRENCY_DATA, &localStatus);
+        UResourceBundle *cm = ures_getByKey(rb, CURRENCY_MAP, rb, &localStatus);
+        UResourceBundle *countryArray = ures_getByKey(rb, id, cm, &localStatus);
+        UResourceBundle *currencyReq = ures_getByIndex(countryArray, 0, NULL, &localStatus);
+        s = ures_getStringByKey(currencyReq, "id", &resLen, &localStatus);
+
+        
+        
+        
+        
+        
+        if (U_SUCCESS(localStatus)) {
+            if ((variantType & VARIANT_IS_PREEURO) && u_strcmp(s, EUR_STR) == 0) {
+                currencyReq = ures_getByIndex(countryArray, 1, currencyReq, &localStatus);
                 s = ures_getStringByKey(currencyReq, "id", &resLen, &localStatus);
-
-                
-
-
-
-
-
-
-                if (U_SUCCESS(localStatus)) {
-                    if ((variantType & VARIANT_IS_PREEURO) && u_strcmp(s, EUR_STR) == 0) {
-                        currencyReq = ures_getByIndex(countryArray, 1, currencyReq, &localStatus);
-                        s = ures_getStringByKey(currencyReq, "id", &resLen, &localStatus);
-                    }
-                    else if ((variantType & VARIANT_IS_EURO)) {
-                        s = EUR_STR;
-                    }
-                }
-                ures_close(countryArray);
-                ures_close(currencyReq);
-
-                if ((U_FAILURE(localStatus)) && strchr(id, '_') != 0)
-                {
-                    
-                    uloc_getParent(locale, id, sizeof(id), ec);
-                    *ec = U_USING_FALLBACK_WARNING;
-                    return ucurr_forLocale(id, buff, buffCapacity, ec);
-                }
-                else if (*ec == U_ZERO_ERROR || localStatus != U_ZERO_ERROR) {
-                    
-                    *ec = localStatus;
-                }
-                if (U_SUCCESS(*ec)) {
-                    if(buffCapacity > resLen) {
-                        u_strcpy(buff, s);
-                    }
-                }
+            } else if ((variantType & VARIANT_IS_EURO)) {
+                s = EUR_STR;
             }
-            return u_terminateUChars(buff, buffCapacity, resLen, ec);
-        } else {
-            *ec = U_ILLEGAL_ARGUMENT_ERROR;
+        }
+        ures_close(currencyReq);
+        ures_close(countryArray);
+    }
+
+    if ((U_FAILURE(localStatus)) && strchr(id, '_') != 0) {
+        
+        uloc_getParent(locale, id, UPRV_LENGTHOF(id), ec);
+        *ec = U_USING_FALLBACK_WARNING;
+        
+        
+        return ucurr_forLocale(id, buff, buffCapacity, ec);
+    }
+    if (*ec == U_ZERO_ERROR || localStatus != U_ZERO_ERROR) {
+        
+        *ec = localStatus;
+    }
+    if (U_SUCCESS(*ec)) {
+        if(buffCapacity > resLen) {
+            u_strcpy(buff, s);
         }
     }
-    return resLen;
+    return u_terminateUChars(buff, buffCapacity, resLen, ec);
 }
 
 
@@ -648,7 +653,16 @@ static UBool fallback(char *loc) {
         return FALSE;
     }
     UErrorCode status = U_ZERO_ERROR;
-    uloc_getParent(loc, loc, (int32_t)uprv_strlen(loc), &status);
+    if (uprv_strcmp(loc, "en_GB") == 0) {
+        
+        
+        
+        
+        
+        uprv_strcpy(loc + 3, "001");
+    } else {
+        uloc_getParent(loc, loc, (int32_t)uprv_strlen(loc), &status);
+    }
  
 
 
@@ -2216,6 +2230,7 @@ ucurr_countCurrencies(const char* locale,
         UErrorCode localStatus = U_ZERO_ERROR;
         char id[ULOC_FULLNAME_CAPACITY];
         uloc_getKeywordValue(locale, "currency", id, ULOC_FULLNAME_CAPACITY, &localStatus);
+
         
          idForLocale(locale, id, sizeof(id), ec);
 

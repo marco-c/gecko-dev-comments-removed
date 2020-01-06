@@ -132,7 +132,7 @@ umtx_condBroadcast(UConditionVar *condition) {
 }
 
 U_CAPI void U_EXPORT2
-umtx_condSignal(UConditionVar *condition) {
+umtx_condSignal(UConditionVar * ) {
     
     
     

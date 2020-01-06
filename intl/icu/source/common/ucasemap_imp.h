@@ -9,16 +9,26 @@
 
 #include "unicode/utypes.h"
 #include "unicode/ucasemap.h"
+#include "unicode/uchar.h"
 #include "ucase.h"
 
-#ifndef U_COMPARE_IGNORE_CASE
 
 
 
 
 
-#define U_COMPARE_IGNORE_CASE       0x10000
-#endif
+
+
+#define U_TITLECASE_ITERATOR_MASK 0xe0
+
+
+
+
+
+
+
+
+#define U_TITLECASE_ADJUSTMENT_MASK 0x600
 
 
 
@@ -60,6 +70,44 @@ U_CFUNC UBool
 uprv_haveProperties(UErrorCode *pErrorCode);
 
 #ifdef __cplusplus
+
+U_NAMESPACE_BEGIN
+
+class BreakIterator;        
+class ByteSink;
+class Locale;               
+
+
+inline UBool ustrcase_checkTitleAdjustmentOptions(uint32_t options, UErrorCode &errorCode) {
+    if (U_FAILURE(errorCode)) { return FALSE; }
+    if ((options & U_TITLECASE_ADJUSTMENT_MASK) == U_TITLECASE_ADJUSTMENT_MASK) {
+        
+        errorCode = U_ILLEGAL_ARGUMENT_ERROR;
+        return FALSE;
+    }
+    return TRUE;
+}
+
+inline UBool ustrcase_isLNS(UChar32 c) {
+    
+    
+    
+    const uint32_t LNS = (U_GC_L_MASK|U_GC_N_MASK|U_GC_S_MASK|U_GC_CO_MASK) & ~U_GC_LM_MASK;
+    int gc = u_charType(c);
+    return (U_MASK(gc) & LNS) != 0 || (gc == U_MODIFIER_LETTER && ucase_getType(c) != UCASE_NONE);
+}
+
+#if !UCONFIG_NO_BREAK_ITERATION
+
+
+U_CFUNC
+BreakIterator *ustrcase_getTitleBreakIterator(
+        const Locale *locale, const char *locID, uint32_t options, BreakIterator *iter,
+        LocalPointer<BreakIterator> &ownedIter, UErrorCode &errorCode);
+
+#endif
+
+U_NAMESPACE_END
 
 #include "unicode/unistr.h"  
 
@@ -164,38 +212,42 @@ ustrcase_mapWithOverlap(int32_t caseLocale, uint32_t options, UCASEMAP_BREAK_ITE
 
 
 
-
-typedef int32_t U_CALLCONV
+typedef void U_CALLCONV
 UTF8CaseMapper(int32_t caseLocale, uint32_t options,
 #if !UCONFIG_NO_BREAK_ITERATION
                icu::BreakIterator *iter,
 #endif
-               uint8_t *dest, int32_t destCapacity,
                const uint8_t *src, int32_t srcLength,
-               icu::Edits *edits,
+               icu::ByteSink &sink, icu::Edits *edits,
                UErrorCode &errorCode);
 
 #if !UCONFIG_NO_BREAK_ITERATION
 
 
-U_CFUNC int32_t U_CALLCONV
+U_CFUNC void U_CALLCONV
 ucasemap_internalUTF8ToTitle(int32_t caseLocale, uint32_t options,
         icu::BreakIterator *iter,
-        uint8_t *dest, int32_t destCapacity,
         const uint8_t *src, int32_t srcLength,
-        icu::Edits *edits,
+        icu::ByteSink &sink, icu::Edits *edits,
         UErrorCode &errorCode);
 
 #endif
 
-
-
-
-
-U_CFUNC int32_t
+void
 ucasemap_mapUTF8(int32_t caseLocale, uint32_t options, UCASEMAP_BREAK_ITERATOR_PARAM
-                 uint8_t *dest, int32_t destCapacity,
-                 const uint8_t *src, int32_t srcLength,
+                 const char *src, int32_t srcLength,
+                 UTF8CaseMapper *stringCaseMapper,
+                 icu::ByteSink &sink, icu::Edits *edits,
+                 UErrorCode &errorCode);
+
+
+
+
+
+int32_t
+ucasemap_mapUTF8(int32_t caseLocale, uint32_t options, UCASEMAP_BREAK_ITERATOR_PARAM
+                 char *dest, int32_t destCapacity,
+                 const char *src, int32_t srcLength,
                  UTF8CaseMapper *stringCaseMapper,
                  icu::Edits *edits,
                  UErrorCode &errorCode);

@@ -20,10 +20,15 @@
 
 #if !UCONFIG_NO_NORMALIZATION
 
+#include "unicode/bytestream.h"
+#include "unicode/edits.h"
 #include "unicode/normalizer2.h"
+#include "unicode/stringoptions.h"
 #include "unicode/udata.h"
 #include "unicode/ustring.h"
 #include "unicode/utf16.h"
+#include "unicode/utf8.h"
+#include "bytesinkutil.h"
 #include "cmemory.h"
 #include "mutex.h"
 #include "normalizer2impl.h"
@@ -35,7 +40,141 @@
 
 U_NAMESPACE_BEGIN
 
+namespace {
 
+
+
+
+
+
+inline uint8_t leadByteForCP(UChar32 c) {
+    if (c <= 0x7f) {
+        return (uint8_t)c;
+    } else if (c <= 0x7ff) {
+        return (uint8_t)(0xc0+(c>>6));
+    } else {
+        
+        return 0xe0;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+UChar32 codePointFromValidUTF8(const uint8_t *cpStart, const uint8_t *cpLimit) {
+    
+    U_ASSERT(cpStart < cpLimit);
+    uint8_t c = *cpStart;
+    switch(cpLimit-cpStart) {
+    case 1:
+        return c;
+    case 2:
+        return ((c&0x1f)<<6) | (cpStart[1]&0x3f);
+    case 3:
+        
+        return (UChar)((c<<12) | ((cpStart[1]&0x3f)<<6) | (cpStart[2]&0x3f));
+    case 4:
+        return ((c&7)<<18) | ((cpStart[1]&0x3f)<<12) | ((cpStart[2]&0x3f)<<6) | (cpStart[3]&0x3f);
+    default:
+        U_ASSERT(FALSE);  
+        return U_SENTINEL;
+    }
+}
+
+
+
+
+
+UChar32 previousHangulOrJamo(const uint8_t *start, const uint8_t *p) {
+    if ((p - start) >= 3) {
+        p -= 3;
+        uint8_t l = *p;
+        uint8_t t1, t2;
+        if (0xe1 <= l && l <= 0xed &&
+                (t1 = (uint8_t)(p[1] - 0x80)) <= 0x3f &&
+                (t2 = (uint8_t)(p[2] - 0x80)) <= 0x3f &&
+                (l < 0xed || t1 <= 0x1f)) {
+            return ((l & 0xf) << 12) | (t1 << 6) | t2;
+        }
+    }
+    return U_SENTINEL;
+}
+
+
+
+
+
+int32_t getJamoTMinusBase(const uint8_t *src, const uint8_t *limit) {
+    
+    if ((limit - src) >= 3 && *src == 0xe1) {
+        if (src[1] == 0x86) {
+            uint8_t t = src[2];
+            
+            
+            if (0xa8 <= t && t <= 0xbf) {
+                return t - 0xa7;
+            }
+        } else if (src[1] == 0x87) {
+            uint8_t t = src[2];
+            if ((int8_t)t <= (int8_t)0x82) {
+                return t - (0xa7 - 0x40);
+            }
+        }
+    }
+    return -1;
+}
+
+void
+appendCodePointDelta(const uint8_t *cpStart, const uint8_t *cpLimit, int32_t delta,
+                     ByteSink &sink, Edits *edits) {
+    char buffer[U8_MAX_LENGTH];
+    int32_t length;
+    int32_t cpLength = (int32_t)(cpLimit - cpStart);
+    if (cpLength == 1) {
+        
+        buffer[0] = (uint8_t)(*cpStart + delta);
+        length = 1;
+    } else {
+        int32_t trail = *(cpLimit-1) + delta;
+        if (0x80 <= trail && trail <= 0xbf) {
+            
+            --cpLimit;
+            length = 0;
+            do { buffer[length++] = *cpStart++; } while (cpStart < cpLimit);
+            buffer[length++] = (uint8_t)trail;
+        } else {
+            
+            UChar32 c = codePointFromValidUTF8(cpStart, cpLimit) + delta;
+            length = 0;
+            U8_APPEND_UNSAFE(buffer, length, c);
+        }
+    }
+    if (edits != nullptr) {
+        edits->addReplace(cpLength, length);
+    }
+    sink.Append(buffer, length);
+}
+
+}  
+
+
+
+ReorderingBuffer::ReorderingBuffer(const Normalizer2Impl &ni, UnicodeString &dest,
+                                   UErrorCode &errorCode) :
+        impl(ni), str(dest),
+        start(str.getBuffer(8)), reorderStart(start), limit(start),
+        remainingCapacity(str.getCapacity()), lastCC(0) {
+    if (start == nullptr && U_SUCCESS(errorCode)) {
+        
+        errorCode = U_MEMORY_ALLOCATION_ERROR;
+    }
+}
 
 UBool ReorderingBuffer::init(int32_t destCapacity, UErrorCode &errorCode) {
     int32_t length=str.length();
@@ -67,6 +206,32 @@ UBool ReorderingBuffer::equals(const UChar *otherStart, const UChar *otherLimit)
     return
         length==(int32_t)(otherLimit-otherStart) &&
         0==u_memcmp(start, otherStart, length);
+}
+
+UBool ReorderingBuffer::equals(const uint8_t *otherStart, const uint8_t *otherLimit) const {
+    U_ASSERT((otherLimit - otherStart) <= INT32_MAX);  
+    int32_t length = (int32_t)(limit - start);
+    int32_t otherLength = (int32_t)(otherLimit - otherStart);
+    
+    if (otherLength < length || (otherLength / 3) > length) {
+        return FALSE;
+    }
+    
+    
+    for (int32_t i = 0, j = 0;;) {
+        if (i >= length) {
+            return j >= otherLength;
+        } else if (j >= otherLength) {
+            return FALSE;
+        }
+        
+        UChar32 c, other;
+        U16_NEXT_UNSAFE(start, i, c);
+        U8_NEXT_UNSAFE(otherStart, j, other);
+        if (c != other) {
+            return FALSE;
+        }
+    }
 }
 
 UBool ReorderingBuffer::appendSupplementary(UChar32 c, uint8_t cc, UErrorCode &errorCode) {
@@ -216,16 +381,12 @@ uint8_t ReorderingBuffer::previousCC() {
         return 0;
     }
     UChar32 c=*--codePointStart;
-    if(c<Normalizer2Impl::MIN_CCC_LCCC_CP) {
-        return 0;
-    }
-
     UChar c2;
     if(U16_IS_TRAIL(c) && start<codePointStart && U16_IS_LEAD(c2=*(codePointStart-1))) {
         --codePointStart;
         c=U16_GET_SUPPLEMENTARY(c2, c);
     }
-    return Normalizer2Impl::getCCFromYesOrMaybe(impl.getNorm16(c));
+    return impl.getCCFromYesOrMaybeCP(c);
 }
 
 
@@ -263,68 +424,36 @@ Normalizer2Impl::init(const int32_t *inIndexes, const UTrie2 *inTrie,
                       const uint16_t *inExtraData, const uint8_t *inSmallFCD) {
     minDecompNoCP=inIndexes[IX_MIN_DECOMP_NO_CP];
     minCompNoMaybeCP=inIndexes[IX_MIN_COMP_NO_MAYBE_CP];
+    minLcccCP=inIndexes[IX_MIN_LCCC_CP];
 
     minYesNo=inIndexes[IX_MIN_YES_NO];
     minYesNoMappingsOnly=inIndexes[IX_MIN_YES_NO_MAPPINGS_ONLY];
     minNoNo=inIndexes[IX_MIN_NO_NO];
+    minNoNoCompBoundaryBefore=inIndexes[IX_MIN_NO_NO_COMP_BOUNDARY_BEFORE];
+    minNoNoCompNoMaybeCC=inIndexes[IX_MIN_NO_NO_COMP_NO_MAYBE_CC];
+    minNoNoEmpty=inIndexes[IX_MIN_NO_NO_EMPTY];
     limitNoNo=inIndexes[IX_LIMIT_NO_NO];
     minMaybeYes=inIndexes[IX_MIN_MAYBE_YES];
+    U_ASSERT((minMaybeYes&7)==0);  
+    centerNoNoDelta=(minMaybeYes>>DELTA_SHIFT)-MAX_DELTA-1;
 
     normTrie=inTrie;
 
     maybeYesCompositions=inExtraData;
-    extraData=maybeYesCompositions+(MIN_NORMAL_MAYBE_YES-minMaybeYes);
+    extraData=maybeYesCompositions+((MIN_NORMAL_MAYBE_YES-minMaybeYes)>>OFFSET_SHIFT);
 
     smallFCD=inSmallFCD;
-
-    
-    
-    uint8_t bits=0;
-    for(UChar c=0; c<0x180; bits>>=1) {
-        if((c&0xff)==0) {
-            bits=smallFCD[c>>8];  
-        }
-        if(bits&1) {
-            for(int i=0; i<0x20; ++i, ++c) {
-                tccc180[c]=(uint8_t)getFCD16FromNormData(c);
-            }
-        } else {
-            uprv_memset(tccc180+c, 0, 0x20);
-            c+=0x20;
-        }
-    }
 }
-
-uint8_t Normalizer2Impl::getTrailCCFromCompYesAndZeroCC(const UChar *cpStart, const UChar *cpLimit) const {
-    UChar32 c;
-    if(cpStart==(cpLimit-1)) {
-        c=*cpStart;
-    } else {
-        c=U16_GET_SUPPLEMENTARY(cpStart[0], cpStart[1]);
-    }
-    uint16_t prevNorm16=getNorm16(c);
-    if(prevNorm16<=minYesNo) {
-        return 0;  
-    } else {
-        return (uint8_t)(*getMapping(prevNorm16)>>8);  
-    }
-}
-
-namespace {
 
 class LcccContext {
 public:
     LcccContext(const Normalizer2Impl &ni, UnicodeSet &s) : impl(ni), set(s) {}
 
     void handleRange(UChar32 start, UChar32 end, uint16_t norm16) {
-        if(impl.isAlgorithmicNoNo(norm16)) {
-            
-            
-            do {
-                uint16_t fcd16=impl.getFCD16(start);
-                if(fcd16>0xff) { set.add(start); }
-            } while(++start<=end);
-        } else {
+        if (norm16 > Normalizer2Impl::MIN_NORMAL_MAYBE_YES &&
+                norm16 != Normalizer2Impl::JAMO_VT) {
+            set.add(start, end);
+        } else if (impl.minNoNoCompNoMaybeCC <= norm16 && norm16 < impl.limitNoNo) {
             uint16_t fcd16=impl.getFCD16(start);
             if(fcd16>0xff) { set.add(start, end); }
         }
@@ -334,6 +463,8 @@ private:
     const Normalizer2Impl &impl;
     UnicodeSet &set;
 };
+
+namespace {
 
 struct PropertyStartsContext {
     PropertyStartsContext(const Normalizer2Impl &ni, const USetAdder *adder)
@@ -359,7 +490,8 @@ enumNorm16PropertyStartsRange(const void *context, UChar32 start, UChar32 end, u
     const PropertyStartsContext *ctx=(const PropertyStartsContext *)context;
     const USetAdder *sa=ctx->sa;
     sa->add(sa->set, start);
-    if(start!=end && ctx->impl.isAlgorithmicNoNo((uint16_t)value)) {
+    if (start != end && ctx->impl.isAlgorithmicNoNo((uint16_t)value) &&
+            (value & Normalizer2Impl::DELTA_TCCC_MASK) > Normalizer2Impl::DELTA_TCCC_1) {
         
         
         uint16_t prevFCD16=ctx->impl.getFCD16(start);
@@ -391,7 +523,6 @@ U_CDECL_END
 
 void
 Normalizer2Impl::addLcccChars(UnicodeSet &set) const {
-    
     LcccContext context(*this, set);
     utrie2_enum(normTrie, NULL, enumLcccRange, &context);
 }
@@ -568,77 +699,174 @@ Normalizer2Impl::decompose(const UChar *src, const UChar *limit,
 
 
 
-UBool Normalizer2Impl::decomposeShort(const UChar *src, const UChar *limit,
-                                      ReorderingBuffer &buffer,
-                                      UErrorCode &errorCode) const {
+const UChar *
+Normalizer2Impl::decomposeShort(const UChar *src, const UChar *limit,
+                                UBool stopAtCompBoundary, UBool onlyContiguous,
+                                ReorderingBuffer &buffer, UErrorCode &errorCode) const {
+    if (U_FAILURE(errorCode)) {
+        return nullptr;
+    }
     while(src<limit) {
+        if (stopAtCompBoundary && *src < minCompNoMaybeCP) {
+            return src;
+        }
+        const UChar *prevSrc = src;
         UChar32 c;
         uint16_t norm16;
         UTRIE2_U16_NEXT16(normTrie, src, limit, c, norm16);
+        if (stopAtCompBoundary && norm16HasCompBoundaryBefore(norm16)) {
+            return prevSrc;
+        }
         if(!decompose(c, norm16, buffer, errorCode)) {
-            return FALSE;
+            return nullptr;
+        }
+        if (stopAtCompBoundary && norm16HasCompBoundaryAfter(norm16, onlyContiguous)) {
+            return src;
         }
     }
-    return TRUE;
+    return src;
 }
 
 UBool Normalizer2Impl::decompose(UChar32 c, uint16_t norm16,
                                  ReorderingBuffer &buffer,
                                  UErrorCode &errorCode) const {
     
-    for(;;) {
-        
-        if(isDecompYes(norm16)) {
-            
+    if (norm16 >= limitNoNo) {
+        if (isMaybeOrNonZeroCC(norm16)) {
             return buffer.append(c, getCCFromYesOrMaybe(norm16), errorCode);
-        } else if(isHangul(norm16)) {
+        }
+        
+        c=mapAlgorithmic(c, norm16);
+        norm16=getNorm16(c);
+    }
+    if (norm16 < minYesNo) {
+        
+        return buffer.append(c, 0, errorCode);
+    } else if(isHangulLV(norm16) || isHangulLVT(norm16)) {
+        
+        UChar jamos[3];
+        return buffer.appendZeroCC(jamos, jamos+Hangul::decompose(c, jamos), errorCode);
+    }
+    
+    const uint16_t *mapping=getMapping(norm16);
+    uint16_t firstUnit=*mapping;
+    int32_t length=firstUnit&MAPPING_LENGTH_MASK;
+    uint8_t leadCC, trailCC;
+    trailCC=(uint8_t)(firstUnit>>8);
+    if(firstUnit&MAPPING_HAS_CCC_LCCC_WORD) {
+        leadCC=(uint8_t)(*(mapping-1)>>8);
+    } else {
+        leadCC=0;
+    }
+    return buffer.append((const UChar *)mapping+1, length, leadCC, trailCC, errorCode);
+}
+
+const uint8_t *
+Normalizer2Impl::decomposeShort(const uint8_t *src, const uint8_t *limit,
+                                UBool stopAtCompBoundary, UBool onlyContiguous,
+                                ReorderingBuffer &buffer, UErrorCode &errorCode) const {
+    if (U_FAILURE(errorCode)) {
+        return nullptr;
+    }
+    while (src < limit) {
+        const uint8_t *prevSrc = src;
+        uint16_t norm16;
+        UTRIE2_U8_NEXT16(normTrie, src, limit, norm16);
+        
+        UChar32 c = U_SENTINEL;
+        if (norm16 >= limitNoNo) {
+            if (isMaybeOrNonZeroCC(norm16)) {
+                
+                c = codePointFromValidUTF8(prevSrc, src);
+                if (!buffer.append(c, getCCFromYesOrMaybe(norm16), errorCode)) {
+                    return nullptr;
+                }
+                continue;
+            }
             
-            UChar jamos[3];
-            return buffer.appendZeroCC(jamos, jamos+Hangul::decompose(c, jamos), errorCode);
-        } else if(isDecompNoAlgorithmic(norm16)) {
-            c=mapAlgorithmic(c, norm16);
-            norm16=getNorm16(c);
+            if (stopAtCompBoundary) {
+                return prevSrc;
+            }
+            c = codePointFromValidUTF8(prevSrc, src);
+            c = mapAlgorithmic(c, norm16);
+            norm16 = getNorm16(c);
+        } else if (stopAtCompBoundary && norm16 < minNoNoCompNoMaybeCC) {
+            return prevSrc;
+        }
+        
+        
+        
+        
+        
+        U_ASSERT(norm16 != INERT);
+        if (norm16 < minYesNo) {
+            if (c < 0) {
+                c = codePointFromValidUTF8(prevSrc, src);
+            }
+            
+            if (!buffer.append(c, 0, errorCode)) {
+                return nullptr;
+            }
+        } else if (isHangulLV(norm16) || isHangulLVT(norm16)) {
+            
+            if (c < 0) {
+                c = codePointFromValidUTF8(prevSrc, src);
+            }
+            char16_t jamos[3];
+            if (!buffer.appendZeroCC(jamos, jamos+Hangul::decompose(c, jamos), errorCode)) {
+                return nullptr;
+            }
         } else {
             
-            const uint16_t *mapping=getMapping(norm16);
-            uint16_t firstUnit=*mapping;
-            int32_t length=firstUnit&MAPPING_LENGTH_MASK;
-            uint8_t leadCC, trailCC;
-            trailCC=(uint8_t)(firstUnit>>8);
-            if(firstUnit&MAPPING_HAS_CCC_LCCC_WORD) {
-                leadCC=(uint8_t)(*(mapping-1)>>8);
+            const uint16_t *mapping = getMapping(norm16);
+            uint16_t firstUnit = *mapping;
+            int32_t length = firstUnit & MAPPING_LENGTH_MASK;
+            uint8_t trailCC = (uint8_t)(firstUnit >> 8);
+            uint8_t leadCC;
+            if (firstUnit & MAPPING_HAS_CCC_LCCC_WORD) {
+                leadCC = (uint8_t)(*(mapping-1) >> 8);
             } else {
-                leadCC=0;
+                leadCC = 0;
             }
-            return buffer.append((const UChar *)mapping+1, length, leadCC, trailCC, errorCode);
+            if (!buffer.append((const char16_t *)mapping+1, length, leadCC, trailCC, errorCode)) {
+                return nullptr;
+            }
+        }
+        if (stopAtCompBoundary && norm16HasCompBoundaryAfter(norm16, onlyContiguous)) {
+            return src;
         }
     }
+    return src;
 }
 
 const UChar *
 Normalizer2Impl::getDecomposition(UChar32 c, UChar buffer[4], int32_t &length) const {
-    const UChar *decomp=NULL;
     uint16_t norm16;
-    for(;;) {
-        if(c<minDecompNoCP || isDecompYes(norm16=getNorm16(c))) {
-            
-            return decomp;
-        } else if(isHangul(norm16)) {
-            
-            length=Hangul::decompose(c, buffer);
-            return buffer;
-        } else if(isDecompNoAlgorithmic(norm16)) {
-            c=mapAlgorithmic(c, norm16);
-            decomp=buffer;
-            length=0;
-            U16_APPEND_UNSAFE(buffer, length, c);
-        } else {
-            
-            const uint16_t *mapping=getMapping(norm16);
-            length=*mapping&MAPPING_LENGTH_MASK;
-            return (const UChar *)mapping+1;
-        }
+    if(c<minDecompNoCP || isMaybeOrNonZeroCC(norm16=getNorm16(c))) {
+        
+        return nullptr;
     }
+    const UChar *decomp = nullptr;
+    if(isDecompNoAlgorithmic(norm16)) {
+        
+        c=mapAlgorithmic(c, norm16);
+        decomp=buffer;
+        length=0;
+        U16_APPEND_UNSAFE(buffer, length, c);
+        
+        norm16 = getNorm16(c);
+    }
+    if (norm16 < minYesNo) {
+        return decomp;
+    } else if(isHangulLV(norm16) || isHangulLVT(norm16)) {
+        
+        length=Hangul::decompose(c, buffer);
+        return buffer;
+    }
+    
+    const uint16_t *mapping=getMapping(norm16);
+    length=*mapping&MAPPING_LENGTH_MASK;
+    return (const UChar *)mapping+1;
 }
 
 
@@ -647,13 +875,11 @@ Normalizer2Impl::getDecomposition(UChar32 c, UChar buffer[4], int32_t &length) c
 
 const UChar *
 Normalizer2Impl::getRawDecomposition(UChar32 c, UChar buffer[30], int32_t &length) const {
-    
-    
     uint16_t norm16;
     if(c<minDecompNoCP || isDecompYes(norm16=getNorm16(c))) {
         
         return NULL;
-    } else if(isHangul(norm16)) {
+    } else if(isHangulLV(norm16) || isHangulLVT(norm16)) {
         
         Hangul::getRawDecomposition(c, buffer);
         length=2;
@@ -663,30 +889,29 @@ Normalizer2Impl::getRawDecomposition(UChar32 c, UChar buffer[30], int32_t &lengt
         length=0;
         U16_APPEND_UNSAFE(buffer, length, c);
         return buffer;
-    } else {
+    }
+    
+    const uint16_t *mapping=getMapping(norm16);
+    uint16_t firstUnit=*mapping;
+    int32_t mLength=firstUnit&MAPPING_LENGTH_MASK;  
+    if(firstUnit&MAPPING_HAS_RAW_MAPPING) {
         
-        const uint16_t *mapping=getMapping(norm16);
-        uint16_t firstUnit=*mapping;
-        int32_t mLength=firstUnit&MAPPING_LENGTH_MASK;  
-        if(firstUnit&MAPPING_HAS_RAW_MAPPING) {
-            
-            
-            const uint16_t *rawMapping=mapping-((firstUnit>>7)&1)-1;
-            uint16_t rm0=*rawMapping;
-            if(rm0<=MAPPING_LENGTH_MASK) {
-                length=rm0;
-                return (const UChar *)rawMapping-rm0;
-            } else {
-                
-                buffer[0]=(UChar)rm0;
-                u_memcpy(buffer+1, (const UChar *)mapping+1+2, mLength-2);
-                length=mLength-1;
-                return buffer;
-            }
+        
+        const uint16_t *rawMapping=mapping-((firstUnit>>7)&1)-1;
+        uint16_t rm0=*rawMapping;
+        if(rm0<=MAPPING_LENGTH_MASK) {
+            length=rm0;
+            return (const UChar *)rawMapping-rm0;
         } else {
-            length=mLength;
-            return (const UChar *)mapping+1;
+            
+            buffer[0]=(UChar)rm0;
+            u_memcpy(buffer+1, (const UChar *)mapping+1+2, mLength-2);
+            length=mLength-1;
+            return buffer;
         }
+    } else {
+        length=mLength;
+        return (const UChar *)mapping+1;
     }
 }
 
@@ -717,43 +942,60 @@ void Normalizer2Impl::decomposeAndAppend(const UChar *src, const UChar *limit,
     }
 }
 
+UBool Normalizer2Impl::hasDecompBoundaryBefore(UChar32 c) const {
+    return c < minLcccCP || (c <= 0xffff && !singleLeadMightHaveNonZeroFCD16(c)) ||
+        norm16HasDecompBoundaryBefore(getNorm16(c));
+}
 
-
-
-UBool Normalizer2Impl::hasDecompBoundary(UChar32 c, UBool before) const {
-    for(;;) {
-        if(c<minDecompNoCP) {
-            return TRUE;
-        }
-        uint16_t norm16=getNorm16(c);
-        if(isHangul(norm16) || isDecompYesAndZeroCC(norm16)) {
-            return TRUE;
-        } else if(norm16>MIN_NORMAL_MAYBE_YES) {
-            return FALSE;  
-        } else if(isDecompNoAlgorithmic(norm16)) {
-            c=mapAlgorithmic(c, norm16);
-        } else {
-            
-            const uint16_t *mapping=getMapping(norm16);
-            uint16_t firstUnit=*mapping;
-            if((firstUnit&MAPPING_LENGTH_MASK)==0) {
-                return FALSE;
-            }
-            if(!before) {
-                
-                
-                if(firstUnit>0x1ff) {
-                    return FALSE;  
-                }
-                if(firstUnit<=0xff) {
-                    return TRUE;  
-                }
-                
-            }
-            
-            return (firstUnit&MAPPING_HAS_CCC_LCCC_WORD)==0 || (*(mapping-1)&0xff00)==0;
-        }
+UBool Normalizer2Impl::norm16HasDecompBoundaryBefore(uint16_t norm16) const {
+    if (norm16 < minNoNoCompNoMaybeCC) {
+        return TRUE;
     }
+    if (norm16 >= limitNoNo) {
+        return norm16 <= MIN_NORMAL_MAYBE_YES || norm16 == JAMO_VT;
+    }
+    
+    const uint16_t *mapping=getMapping(norm16);
+    uint16_t firstUnit=*mapping;
+    
+    return (firstUnit&MAPPING_HAS_CCC_LCCC_WORD)==0 || (*(mapping-1)&0xff00)==0;
+}
+
+UBool Normalizer2Impl::hasDecompBoundaryAfter(UChar32 c) const {
+    if (c < minDecompNoCP) {
+        return TRUE;
+    }
+    if (c <= 0xffff && !singleLeadMightHaveNonZeroFCD16(c)) {
+        return TRUE;
+    }
+    return norm16HasDecompBoundaryAfter(getNorm16(c));
+}
+
+UBool Normalizer2Impl::norm16HasDecompBoundaryAfter(uint16_t norm16) const {
+    if(norm16 <= minYesNo || isHangulLVT(norm16)) {
+        return TRUE;
+    }
+    if (norm16 >= limitNoNo) {
+        if (isMaybeOrNonZeroCC(norm16)) {
+            return norm16 <= MIN_NORMAL_MAYBE_YES || norm16 == JAMO_VT;
+        }
+        
+        return (norm16 & DELTA_TCCC_MASK) <= DELTA_TCCC_1;
+    }
+    
+    const uint16_t *mapping=getMapping(norm16);
+    uint16_t firstUnit=*mapping;
+    
+    
+    if(firstUnit>0x1ff) {
+        return FALSE;  
+    }
+    if(firstUnit<=0xff) {
+        return TRUE;  
+    }
+    
+    
+    return (firstUnit&MAPPING_HAS_CCC_LCCC_WORD)==0 || (*(mapping-1)&0xff00)==0;
 }
 
 
@@ -1031,6 +1273,7 @@ Normalizer2Impl::composePair(UChar32 a, UChar32 b) const {
     if(isInert(norm16)) {
         return U_SENTINEL;
     } else if(norm16<minYesNoMappingsOnly) {
+        
         if(isJamoL(norm16)) {
             b-=Hangul::JAMO_V_BASE;
             if(0<=b && b<Hangul::JAMO_V_COUNT) {
@@ -1041,16 +1284,16 @@ Normalizer2Impl::composePair(UChar32 a, UChar32 b) const {
             } else {
                 return U_SENTINEL;
             }
-        } else if(isHangul(norm16)) {
+        } else if(isHangulLV(norm16)) {
             b-=Hangul::JAMO_T_BASE;
-            if(Hangul::isHangulWithoutJamoT(a) && 0<b && b<Hangul::JAMO_T_COUNT) {  
+            if(0<b && b<Hangul::JAMO_T_COUNT) {  
                 return a+b;
             } else {
                 return U_SENTINEL;
             }
         } else {
             
-            list=extraData+norm16;
+            list=getMapping(norm16);
             if(norm16>minYesNo) {  
                 list+=  
                     1+  
@@ -1060,7 +1303,7 @@ Normalizer2Impl::composePair(UChar32 a, UChar32 b) const {
     } else if(norm16<minMaybeYes || MIN_NORMAL_MAYBE_YES<=norm16) {
         return U_SENTINEL;
     } else {
-        list=maybeYesCompositions+norm16-minMaybeYes;
+        list=getCompositionsListForMaybe(norm16);
     }
     if(b<0 || 0x10ffff<b) {  
         return U_SENTINEL;
@@ -1082,18 +1325,6 @@ Normalizer2Impl::compose(const UChar *src, const UChar *limit,
                          UBool doCompose,
                          ReorderingBuffer &buffer,
                          UErrorCode &errorCode) const {
-    
-
-
-
-
-
-
-
-
-
-
-
     const UChar *prevBoundary=src;
     UChar32 minNoMaybeCP=minCompNoMaybeCP;
     if(limit==NULL) {
@@ -1103,101 +1334,148 @@ Normalizer2Impl::compose(const UChar *src, const UChar *limit,
         if(U_FAILURE(errorCode)) {
             return FALSE;
         }
-        if(prevBoundary<src) {
-            
-            prevBoundary=src-1;
-        }
         limit=u_strchr(src, 0);
+        if (prevBoundary != src) {
+            if (hasCompBoundaryAfter(*(src-1), onlyContiguous)) {
+                prevBoundary = src;
+            } else {
+                buffer.removeSuffix(1);
+                prevBoundary = --src;
+            }
+        }
     }
 
-    const UChar *prevSrc;
-    UChar32 c=0;
-    uint16_t norm16=0;
-
-    
-    uint8_t prevCC=0;
-
-    for(;;) {
+    for (;;) {
         
-        for(prevSrc=src; src!=limit;) {
+        
+        const UChar *prevSrc;
+        UChar32 c = 0;
+        uint16_t norm16 = 0;
+        for (;;) {
+            if (src == limit) {
+                if (prevBoundary != limit && doCompose) {
+                    buffer.appendZeroCC(prevBoundary, limit, errorCode);
+                }
+                return TRUE;
+            }
             if( (c=*src)<minNoMaybeCP ||
                 isCompYesAndZeroCC(norm16=UTRIE2_GET16_FROM_U16_SINGLE_LEAD(normTrie, c))
             ) {
                 ++src;
-            } else if(!U16_IS_SURROGATE(c)) {
-                break;
             } else {
-                UChar c2;
-                if(U16_IS_SURROGATE_LEAD(c)) {
-                    if((src+1)!=limit && U16_IS_TRAIL(c2=src[1])) {
-                        c=U16_GET_SUPPLEMENTARY(c, c2);
-                    }
-                } else  {
-                    if(prevSrc<src && U16_IS_LEAD(c2=*(src-1))) {
-                        --src;
-                        c=U16_GET_SUPPLEMENTARY(c2, c);
-                    }
-                }
-                if(isCompYesAndZeroCC(norm16=getNorm16(c))) {
-                    src+=U16_LENGTH(c);
+                prevSrc = src++;
+                if(!U16_IS_SURROGATE(c)) {
+                    break;
                 } else {
-                    break;
+                    UChar c2;
+                    if(U16_IS_SURROGATE_LEAD(c)) {
+                        if(src!=limit && U16_IS_TRAIL(c2=*src)) {
+                            ++src;
+                            c=U16_GET_SUPPLEMENTARY(c, c2);
+                        }
+                    } else  {
+                        if(prevBoundary<prevSrc && U16_IS_LEAD(c2=*(prevSrc-1))) {
+                            --prevSrc;
+                            c=U16_GET_SUPPLEMENTARY(c2, c);
+                        }
+                    }
+                    if(!isCompYesAndZeroCC(norm16=getNorm16(c))) {
+                        break;
+                    }
                 }
             }
         }
         
-        if(src!=prevSrc) {
-            if(doCompose) {
-                if(!buffer.appendZeroCC(prevSrc, src, errorCode)) {
-                    break;
-                }
-            } else {
-                prevCC=0;
-            }
-            if(src==limit) {
-                break;
-            }
-            
-            prevBoundary=src-1;
-            if( U16_IS_TRAIL(*prevBoundary) && prevSrc<prevBoundary &&
-                U16_IS_LEAD(*(prevBoundary-1))
-            ) {
-                --prevBoundary;
-            }
-            
-            prevSrc=src;
-        } else if(src==limit) {
-            break;
-        }
-
-        src+=U16_LENGTH(c);
+        
+        
+        
         
 
-
-
-
-
-
-        if(isJamoVT(norm16) && prevBoundary!=prevSrc) {
+        
+        if (!isMaybeOrNonZeroCC(norm16)) {  
+            if (!doCompose) {
+                return FALSE;
+            }
+            
+            
+            if (isDecompNoAlgorithmic(norm16)) {
+                
+                
+                if (norm16HasCompBoundaryAfter(norm16, onlyContiguous) ||
+                        hasCompBoundaryBefore(src, limit)) {
+                    if (prevBoundary != prevSrc && !buffer.appendZeroCC(prevBoundary, prevSrc, errorCode)) {
+                        break;
+                    }
+                    if(!buffer.append(mapAlgorithmic(c, norm16), 0, errorCode)) {
+                        break;
+                    }
+                    prevBoundary = src;
+                    continue;
+                }
+            } else if (norm16 < minNoNoCompBoundaryBefore) {
+                
+                if (norm16HasCompBoundaryAfter(norm16, onlyContiguous) ||
+                        hasCompBoundaryBefore(src, limit)) {
+                    if (prevBoundary != prevSrc && !buffer.appendZeroCC(prevBoundary, prevSrc, errorCode)) {
+                        break;
+                    }
+                    const UChar *mapping = reinterpret_cast<const UChar *>(getMapping(norm16));
+                    int32_t length = *mapping++ & MAPPING_LENGTH_MASK;
+                    if(!buffer.appendZeroCC(mapping, mapping + length, errorCode)) {
+                        break;
+                    }
+                    prevBoundary = src;
+                    continue;
+                }
+            } else if (norm16 >= minNoNoEmpty) {
+                
+                
+                
+                if (hasCompBoundaryBefore(src, limit) ||
+                        hasCompBoundaryAfter(prevBoundary, prevSrc, onlyContiguous)) {
+                    if (prevBoundary != prevSrc && !buffer.appendZeroCC(prevBoundary, prevSrc, errorCode)) {
+                        break;
+                    }
+                    prevBoundary = src;
+                    continue;
+                }
+            }
+            
+            
+        } else if (isJamoVT(norm16) && prevBoundary != prevSrc) {
             UChar prev=*(prevSrc-1);
-            UBool needToDecompose=FALSE;
             if(c<Hangul::JAMO_T_BASE) {
                 
-                prev=(UChar)(prev-Hangul::JAMO_L_BASE);
-                if(prev<Hangul::JAMO_L_COUNT) {
-                    if(!doCompose) {
+                
+                UChar l = (UChar)(prev-Hangul::JAMO_L_BASE);
+                if(l<Hangul::JAMO_L_COUNT) {
+                    if (!doCompose) {
                         return FALSE;
                     }
-                    UChar syllable=(UChar)
-                        (Hangul::HANGUL_BASE+
-                         (prev*Hangul::JAMO_V_COUNT+(c-Hangul::JAMO_V_BASE))*
-                         Hangul::JAMO_T_COUNT);
-                    UChar t;
-                    if(src!=limit && (t=(UChar)(*src-Hangul::JAMO_T_BASE))<Hangul::JAMO_T_COUNT) {
+                    int32_t t;
+                    if (src != limit &&
+                            0 < (t = ((int32_t)*src - Hangul::JAMO_T_BASE)) &&
+                            t < Hangul::JAMO_T_COUNT) {
+                        
                         ++src;
-                        syllable+=t;  
-                        prevBoundary=src;
-                        buffer.setLastChar(syllable);
+                    } else if (hasCompBoundaryBefore(src, limit)) {
+                        
+                        t = 0;
+                    } else {
+                        t = -1;
+                    }
+                    if (t >= 0) {
+                        UChar32 syllable = Hangul::HANGUL_BASE +
+                            (l*Hangul::JAMO_V_COUNT + (c-Hangul::JAMO_V_BASE)) *
+                            Hangul::JAMO_T_COUNT + t;
+                        --prevSrc;  
+                        if (prevBoundary != prevSrc && !buffer.appendZeroCC(prevBoundary, prevSrc, errorCode)) {
+                            break;
+                        }
+                        if(!buffer.appendBMP((UChar)syllable, 0, errorCode)) {
+                            break;
+                        }
+                        prevBoundary = src;
                         continue;
                     }
                     
@@ -1207,127 +1485,109 @@ Normalizer2Impl::compose(const UChar *src, const UChar *limit,
                     
                     
                     
-                    
-                    
-                    needToDecompose=TRUE;
                 }
-            } else if(Hangul::isHangulWithoutJamoT(prev)) {
+            } else if (Hangul::isHangulLV(prev)) {
                 
                 
-                if(!doCompose) {
+                if (!doCompose) {
                     return FALSE;
                 }
-                buffer.setLastChar((UChar)(prev+c-Hangul::JAMO_T_BASE));
-                prevBoundary=src;
-                continue;
-            }
-            if(!needToDecompose) {
-                
-                if(doCompose) {
-                    if(!buffer.appendBMP((UChar)c, 0, errorCode)) {
-                        break;
-                    }
-                } else {
-                    prevCC=0;
-                }
-                continue;
-            }
-        }
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        if(norm16>=MIN_YES_YES_WITH_CC) {
-            uint8_t cc=(uint8_t)norm16;  
-            if( onlyContiguous &&  
-                (doCompose ? buffer.getLastCC() : prevCC)==0 &&
-                prevBoundary<prevSrc &&
-                
-                
-                
-                
-                
-                
-                
-                getTrailCCFromCompYesAndZeroCC(prevBoundary, prevSrc)>cc
-            ) {
-                
-                if(!doCompose) {
-                    return FALSE;
-                }
-            } else if(doCompose) {
-                if(!buffer.append(c, cc, errorCode)) {
+                UChar32 syllable = prev + c - Hangul::JAMO_T_BASE;
+                --prevSrc;  
+                if (prevBoundary != prevSrc && !buffer.appendZeroCC(prevBoundary, prevSrc, errorCode)) {
                     break;
                 }
+                if(!buffer.appendBMP((UChar)syllable, 0, errorCode)) {
+                    break;
+                }
+                prevBoundary = src;
                 continue;
-            } else if(prevCC<=cc) {
-                prevCC=cc;
-                continue;
-            } else {
-                return FALSE;
             }
-        } else if(!doCompose && !isMaybeOrNonZeroCC(norm16)) {
-            return FALSE;
+            
+            
+        } else if (norm16 > JAMO_VT) {  
+            
+            
+            
+            uint8_t cc = getCCFromNormalYesOrMaybe(norm16);  
+            if (onlyContiguous  && getPreviousTrailCC(prevBoundary, prevSrc) > cc) {
+                
+                if (!doCompose) {
+                    return FALSE;
+                }
+            } else {
+                
+                
+                const UChar *nextSrc;
+                uint16_t n16;
+                for (;;) {
+                    if (src == limit) {
+                        if (doCompose) {
+                            buffer.appendZeroCC(prevBoundary, limit, errorCode);
+                        }
+                        return TRUE;
+                    }
+                    uint8_t prevCC = cc;
+                    nextSrc = src;
+                    UTRIE2_U16_NEXT16(normTrie, nextSrc, limit, c, n16);
+                    if (n16 >= MIN_YES_YES_WITH_CC) {
+                        cc = getCCFromNormalYesOrMaybe(n16);
+                        if (prevCC > cc) {
+                            if (!doCompose) {
+                                return FALSE;
+                            }
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                    src = nextSrc;
+                }
+                
+                
+                if (norm16HasCompBoundaryBefore(n16)) {
+                    if (isCompYesAndZeroCC(n16)) {
+                        src = nextSrc;
+                    }
+                    continue;
+                }
+                
+            }
         }
 
         
-
-
-
-
-
-
-
-
-
         
-
-
-
-
-        if(hasCompBoundaryBefore(c, norm16)) {
-            prevBoundary=prevSrc;
-        } else if(doCompose) {
-            buffer.removeSuffix((int32_t)(prevSrc-prevBoundary));
+        if (prevBoundary != prevSrc && !norm16HasCompBoundaryBefore(norm16)) {
+            const UChar *p = prevSrc;
+            UTRIE2_U16_PREV16(normTrie, prevBoundary, p, c, norm16);
+            if (!norm16HasCompBoundaryAfter(norm16, onlyContiguous)) {
+                prevSrc = p;
+            }
         }
-
-        
-        
-        src=(UChar *)findNextCompBoundary(src, limit);
-
-        
-        int32_t recomposeStartIndex=buffer.length();
-        if(!decomposeShort(prevBoundary, src, buffer, errorCode)) {
+        if (doCompose && prevBoundary != prevSrc && !buffer.appendZeroCC(prevBoundary, prevSrc, errorCode)) {
             break;
+        }
+        int32_t recomposeStartIndex=buffer.length();
+        
+        decomposeShort(prevSrc, src, FALSE , onlyContiguous,
+                       buffer, errorCode);
+        
+        src = decomposeShort(src, limit, TRUE , onlyContiguous,
+                             buffer, errorCode);
+        if (U_FAILURE(errorCode)) {
+            break;
+        }
+        if ((src - prevSrc) > INT32_MAX) {  
+            errorCode = U_INDEX_OUTOFBOUNDS_ERROR;
+            return TRUE;
         }
         recompose(buffer, recomposeStartIndex, onlyContiguous);
         if(!doCompose) {
-            if(!buffer.equals(prevBoundary, src)) {
+            if(!buffer.equals(prevSrc, src)) {
                 return FALSE;
             }
             buffer.remove();
-            prevCC=0;
         }
-
-        
         prevBoundary=src;
     }
     return TRUE;
@@ -1340,30 +1600,28 @@ const UChar *
 Normalizer2Impl::composeQuickCheck(const UChar *src, const UChar *limit,
                                    UBool onlyContiguous,
                                    UNormalizationCheckResult *pQCResult) const {
-    
-
-
-
     const UChar *prevBoundary=src;
     UChar32 minNoMaybeCP=minCompNoMaybeCP;
     if(limit==NULL) {
         UErrorCode errorCode=U_ZERO_ERROR;
         src=copyLowPrefixFromNulTerminated(src, minNoMaybeCP, NULL, errorCode);
-        if(prevBoundary<src) {
-            
-            prevBoundary=src-1;
-        }
         limit=u_strchr(src, 0);
+        if (prevBoundary != src) {
+            if (hasCompBoundaryAfter(*(src-1), onlyContiguous)) {
+                prevBoundary = src;
+            } else {
+                prevBoundary = --src;
+            }
+        }
     }
-
-    const UChar *prevSrc;
-    UChar32 c=0;
-    uint16_t norm16=0;
-    uint8_t prevCC=0;
 
     for(;;) {
         
-        for(prevSrc=src;;) {
+        
+        const UChar *prevSrc;
+        UChar32 c = 0;
+        uint16_t norm16 = 0;
+        for (;;) {
             if(src==limit) {
                 return src;
             }
@@ -1371,72 +1629,93 @@ Normalizer2Impl::composeQuickCheck(const UChar *src, const UChar *limit,
                 isCompYesAndZeroCC(norm16=UTRIE2_GET16_FROM_U16_SINGLE_LEAD(normTrie, c))
             ) {
                 ++src;
-            } else if(!U16_IS_SURROGATE(c)) {
-                break;
             } else {
-                UChar c2;
-                if(U16_IS_SURROGATE_LEAD(c)) {
-                    if((src+1)!=limit && U16_IS_TRAIL(c2=src[1])) {
-                        c=U16_GET_SUPPLEMENTARY(c, c2);
-                    }
-                } else  {
-                    if(prevSrc<src && U16_IS_LEAD(c2=*(src-1))) {
-                        --src;
-                        c=U16_GET_SUPPLEMENTARY(c2, c);
-                    }
-                }
-                if(isCompYesAndZeroCC(norm16=getNorm16(c))) {
-                    src+=U16_LENGTH(c);
-                } else {
+                prevSrc = src++;
+                if(!U16_IS_SURROGATE(c)) {
                     break;
+                } else {
+                    UChar c2;
+                    if(U16_IS_SURROGATE_LEAD(c)) {
+                        if(src!=limit && U16_IS_TRAIL(c2=*src)) {
+                            ++src;
+                            c=U16_GET_SUPPLEMENTARY(c, c2);
+                        }
+                    } else  {
+                        if(prevBoundary<prevSrc && U16_IS_LEAD(c2=*(prevSrc-1))) {
+                            --prevSrc;
+                            c=U16_GET_SUPPLEMENTARY(c2, c);
+                        }
+                    }
+                    if(!isCompYesAndZeroCC(norm16=getNorm16(c))) {
+                        break;
+                    }
                 }
             }
         }
-        if(src!=prevSrc) {
-            
-            prevBoundary=src-1;
-            if( U16_IS_TRAIL(*prevBoundary) && prevSrc<prevBoundary &&
-                U16_IS_LEAD(*(prevBoundary-1))
-            ) {
-                --prevBoundary;
-            }
-            prevCC=0;
-            
-            prevSrc=src;
-        }
-
-        src+=U16_LENGTH(c);
+        
+        
+        
+        
         
 
-
-
+        uint16_t prevNorm16 = INERT;
+        if (prevBoundary != prevSrc) {
+            if (norm16HasCompBoundaryBefore(norm16)) {
+                prevBoundary = prevSrc;
+            } else {
+                const UChar *p = prevSrc;
+                uint16_t n16;
+                UTRIE2_U16_PREV16(normTrie, prevBoundary, p, c, n16);
+                if (norm16HasCompBoundaryAfter(n16, onlyContiguous)) {
+                    prevBoundary = prevSrc;
+                } else {
+                    prevBoundary = p;
+                    prevNorm16 = n16;
+                }
+            }
+        }
 
         if(isMaybeOrNonZeroCC(norm16)) {
             uint8_t cc=getCCFromYesOrMaybe(norm16);
-            if( onlyContiguous &&  
-                cc!=0 &&
-                prevCC==0 &&
-                prevBoundary<prevSrc &&
+            if (onlyContiguous  && cc != 0 &&
+                    getTrailCCFromCompYesAndZeroCC(prevNorm16) > cc) {
                 
                 
                 
+            } else {
                 
                 
-                
-                
-                getTrailCCFromCompYesAndZeroCC(prevBoundary, prevSrc)>cc
-            ) {
-                
-            } else if(prevCC<=cc || cc==0) {
-                prevCC=cc;
-                if(norm16<MIN_YES_YES_WITH_CC) {
-                    if(pQCResult!=NULL) {
-                        *pQCResult=UNORM_MAYBE;
-                    } else {
-                        return prevBoundary;
+                const UChar *nextSrc;
+                for (;;) {
+                    if (norm16 < MIN_YES_YES_WITH_CC) {
+                        if (pQCResult != nullptr) {
+                            *pQCResult = UNORM_MAYBE;
+                        } else {
+                            return prevBoundary;
+                        }
                     }
+                    if (src == limit) {
+                        return src;
+                    }
+                    uint8_t prevCC = cc;
+                    nextSrc = src;
+                    UTRIE2_U16_NEXT16(normTrie, nextSrc, limit, c, norm16);
+                    if (isMaybeOrNonZeroCC(norm16)) {
+                        cc = getCCFromYesOrMaybe(norm16);
+                        if (!(prevCC <= cc || cc == 0)) {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                    src = nextSrc;
                 }
-                continue;
+                
+                if (isCompYesAndZeroCC(norm16)) {
+                    prevBoundary = src;
+                    src = nextSrc;
+                    continue;
+                }
             }
         }
         if(pQCResult!=NULL) {
@@ -1453,10 +1732,10 @@ void Normalizer2Impl::composeAndAppend(const UChar *src, const UChar *limit,
                                        ReorderingBuffer &buffer,
                                        UErrorCode &errorCode) const {
     if(!buffer.isEmpty()) {
-        const UChar *firstStarterInSrc=findNextCompBoundary(src, limit);
+        const UChar *firstStarterInSrc=findNextCompBoundary(src, limit, onlyContiguous);
         if(src!=firstStarterInSrc) {
             const UChar *lastStarterInDest=findPreviousCompBoundary(buffer.getStart(),
-                                                                    buffer.getLimit());
+                                                                    buffer.getLimit(), onlyContiguous);
             int32_t destSuffixLength=(int32_t)(buffer.getLimit()-lastStarterInDest);
             UnicodeString middle(lastStarterInDest, destSuffixLength);
             buffer.removeSuffix(destSuffixLength);
@@ -1481,91 +1760,349 @@ void Normalizer2Impl::composeAndAppend(const UChar *src, const UChar *limit,
     }
 }
 
+UBool
+Normalizer2Impl::composeUTF8(uint32_t options, UBool onlyContiguous,
+                             const uint8_t *src, const uint8_t *limit,
+                             ByteSink *sink, Edits *edits, UErrorCode &errorCode) const {
+    U_ASSERT(limit != nullptr);
+    UnicodeString s16;
+    uint8_t minNoMaybeLead = leadByteForCP(minCompNoMaybeCP);
+    const uint8_t *prevBoundary = src;
 
+    for (;;) {
+        
+        
+        const uint8_t *prevSrc;
+        uint16_t norm16 = 0;
+        for (;;) {
+            if (src == limit) {
+                if (prevBoundary != limit && sink != nullptr) {
+                    ByteSinkUtil::appendUnchanged(prevBoundary, limit,
+                                                  *sink, options, edits, errorCode);
+                }
+                return TRUE;
+            }
+            if (*src < minNoMaybeLead) {
+                ++src;
+            } else {
+                prevSrc = src;
+                UTRIE2_U8_NEXT16(normTrie, src, limit, norm16);
+                if (!isCompYesAndZeroCC(norm16)) {
+                    break;
+                }
+            }
+        }
+        
+        
+        
+        
+        
 
-
-
-
-
-
-UBool Normalizer2Impl::hasCompBoundaryBefore(UChar32 c, uint16_t norm16) const {
-    for(;;) {
-        if(isCompYesAndZeroCC(norm16)) {
-            return TRUE;
-        } else if(isMaybeOrNonZeroCC(norm16)) {
-            return FALSE;
-        } else if(isDecompNoAlgorithmic(norm16)) {
-            c=mapAlgorithmic(c, norm16);
-            norm16=getNorm16(c);
-        } else {
-            
-            const uint16_t *mapping=getMapping(norm16);
-            uint16_t firstUnit=*mapping;
-            if((firstUnit&MAPPING_LENGTH_MASK)==0) {
+        
+        if (!isMaybeOrNonZeroCC(norm16)) {  
+            if (sink == nullptr) {
                 return FALSE;
             }
-            if((firstUnit&MAPPING_HAS_CCC_LCCC_WORD) && (*(mapping-1)&0xff00)) {
-                return FALSE;  
+            
+            
+            if (isDecompNoAlgorithmic(norm16)) {
+                
+                
+                if (norm16HasCompBoundaryAfter(norm16, onlyContiguous) ||
+                        hasCompBoundaryBefore(src, limit)) {
+                    if (prevBoundary != prevSrc &&
+                            !ByteSinkUtil::appendUnchanged(prevBoundary, prevSrc,
+                                                           *sink, options, edits, errorCode)) {
+                        break;
+                    }
+                    appendCodePointDelta(prevSrc, src, getAlgorithmicDelta(norm16), *sink, edits);
+                    prevBoundary = src;
+                    continue;
+                }
+            } else if (norm16 < minNoNoCompBoundaryBefore) {
+                
+                if (norm16HasCompBoundaryAfter(norm16, onlyContiguous) ||
+                        hasCompBoundaryBefore(src, limit)) {
+                    if (prevBoundary != prevSrc &&
+                            !ByteSinkUtil::appendUnchanged(prevBoundary, prevSrc,
+                                                           *sink, options, edits, errorCode)) {
+                        break;
+                    }
+                    const uint16_t *mapping = getMapping(norm16);
+                    int32_t length = *mapping++ & MAPPING_LENGTH_MASK;
+                    if (!ByteSinkUtil::appendChange(prevSrc, src, (const UChar *)mapping, length,
+                                                    *sink, edits, errorCode)) {
+                        break;
+                    }
+                    prevBoundary = src;
+                    continue;
+                }
+            } else if (norm16 >= minNoNoEmpty) {
+                
+                
+                
+                if (hasCompBoundaryBefore(src, limit) ||
+                        hasCompBoundaryAfter(prevBoundary, prevSrc, onlyContiguous)) {
+                    if (prevBoundary != prevSrc &&
+                            !ByteSinkUtil::appendUnchanged(prevBoundary, prevSrc,
+                                                           *sink, options, edits, errorCode)) {
+                        break;
+                    }
+                    if (edits != nullptr) {
+                        edits->addReplace((int32_t)(src - prevSrc), 0);
+                    }
+                    prevBoundary = src;
+                    continue;
+                }
             }
-            int32_t i=1;  
-            UChar32 c;
-            U16_NEXT_UNSAFE(mapping, i, c);
-            return isCompYesAndZeroCC(getNorm16(c));
+            
+            
+        } else if (isJamoVT(norm16)) {
+            
+            
+            
+            U_ASSERT((src - prevSrc) == 3 && *prevSrc == 0xe1);
+            UChar32 prev = previousHangulOrJamo(prevBoundary, prevSrc);
+            if (prevSrc[1] == 0x85) {
+                
+                
+                UChar32 l = prev - Hangul::JAMO_L_BASE;
+                if ((uint32_t)l < Hangul::JAMO_L_COUNT) {
+                    if (sink == nullptr) {
+                        return FALSE;
+                    }
+                    int32_t t = getJamoTMinusBase(src, limit);
+                    if (t >= 0) {
+                        
+                        src += 3;
+                    } else if (hasCompBoundaryBefore(src, limit)) {
+                        
+                        t = 0;
+                    }
+                    if (t >= 0) {
+                        UChar32 syllable = Hangul::HANGUL_BASE +
+                            (l*Hangul::JAMO_V_COUNT + (prevSrc[2]-0xa1)) *
+                            Hangul::JAMO_T_COUNT + t;
+                        prevSrc -= 3;  
+                        if (prevBoundary != prevSrc &&
+                                !ByteSinkUtil::appendUnchanged(prevBoundary, prevSrc,
+                                                               *sink, options, edits, errorCode)) {
+                            break;
+                        }
+                        ByteSinkUtil::appendCodePoint(prevSrc, src, syllable, *sink, edits);
+                        prevBoundary = src;
+                        continue;
+                    }
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                }
+            } else if (Hangul::isHangulLV(prev)) {
+                
+                
+                if (sink == nullptr) {
+                    return FALSE;
+                }
+                UChar32 syllable = prev + getJamoTMinusBase(prevSrc, src);
+                prevSrc -= 3;  
+                if (prevBoundary != prevSrc &&
+                        !ByteSinkUtil::appendUnchanged(prevBoundary, prevSrc,
+                                                       *sink, options, edits, errorCode)) {
+                    break;
+                }
+                ByteSinkUtil::appendCodePoint(prevSrc, src, syllable, *sink, edits);
+                prevBoundary = src;
+                continue;
+            }
+            
+            
+        } else if (norm16 > JAMO_VT) {  
+            
+            
+            
+            uint8_t cc = getCCFromNormalYesOrMaybe(norm16);  
+            if (onlyContiguous  && getPreviousTrailCC(prevBoundary, prevSrc) > cc) {
+                
+                if (sink == nullptr) {
+                    return FALSE;
+                }
+            } else {
+                
+                
+                const uint8_t *nextSrc;
+                uint16_t n16;
+                for (;;) {
+                    if (src == limit) {
+                        if (sink != nullptr) {
+                            ByteSinkUtil::appendUnchanged(prevBoundary, limit,
+                                                          *sink, options, edits, errorCode);
+                        }
+                        return TRUE;
+                    }
+                    uint8_t prevCC = cc;
+                    nextSrc = src;
+                    UTRIE2_U8_NEXT16(normTrie, nextSrc, limit, n16);
+                    if (n16 >= MIN_YES_YES_WITH_CC) {
+                        cc = getCCFromNormalYesOrMaybe(n16);
+                        if (prevCC > cc) {
+                            if (sink == nullptr) {
+                                return FALSE;
+                            }
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                    src = nextSrc;
+                }
+                
+                
+                if (norm16HasCompBoundaryBefore(n16)) {
+                    if (isCompYesAndZeroCC(n16)) {
+                        src = nextSrc;
+                    }
+                    continue;
+                }
+                
+            }
         }
-    }
-}
 
-UBool Normalizer2Impl::hasCompBoundaryAfter(UChar32 c, UBool onlyContiguous, UBool testInert) const {
-    for(;;) {
-        uint16_t norm16=getNorm16(c);
-        if(isInert(norm16)) {
+        
+        
+        if (prevBoundary != prevSrc && !norm16HasCompBoundaryBefore(norm16)) {
+            const uint8_t *p = prevSrc;
+            UTRIE2_U8_PREV16(normTrie, prevBoundary, p, norm16);
+            if (!norm16HasCompBoundaryAfter(norm16, onlyContiguous)) {
+                prevSrc = p;
+            }
+        }
+        ReorderingBuffer buffer(*this, s16, errorCode);
+        if (U_FAILURE(errorCode)) {
+            break;
+        }
+        
+        decomposeShort(prevSrc, src, FALSE , onlyContiguous,
+                       buffer, errorCode);
+        
+        src = decomposeShort(src, limit, TRUE , onlyContiguous,
+                             buffer, errorCode);
+        if (U_FAILURE(errorCode)) {
+            break;
+        }
+        if ((src - prevSrc) > INT32_MAX) {  
+            errorCode = U_INDEX_OUTOFBOUNDS_ERROR;
             return TRUE;
-        } else if(norm16<=minYesNo) {
-            
-            
-            
-            return isHangul(norm16) && !Hangul::isHangulWithoutJamoT((UChar)c);
-        } else if(norm16>= (testInert ? minNoNo : minMaybeYes)) {
-            return FALSE;
-        } else if(isDecompNoAlgorithmic(norm16)) {
-            c=mapAlgorithmic(c, norm16);
-        } else {
-            
-            
-            
-            const uint16_t *mapping=getMapping(norm16);
-            uint16_t firstUnit=*mapping;
-            
-            
-            
-            
-            
-            
-            return
-                (firstUnit&MAPPING_NO_COMP_BOUNDARY_AFTER)==0 &&
-                (!onlyContiguous || firstUnit<=0x1ff);
+        }
+        recompose(buffer, 0, onlyContiguous);
+        if (!buffer.equals(prevSrc, src)) {
+            if (sink == nullptr) {
+                return FALSE;
+            }
+            if (prevBoundary != prevSrc &&
+                    !ByteSinkUtil::appendUnchanged(prevBoundary, prevSrc,
+                                                   *sink, options, edits, errorCode)) {
+                break;
+            }
+            if (!ByteSinkUtil::appendChange(prevSrc, src, buffer.getStart(), buffer.length(),
+                                            *sink, edits, errorCode)) {
+                break;
+            }
+            prevBoundary = src;
+        }
+    }
+    return TRUE;
+}
+
+UBool Normalizer2Impl::hasCompBoundaryBefore(const UChar *src, const UChar *limit) const {
+    if (src == limit || *src < minCompNoMaybeCP) {
+        return TRUE;
+    }
+    UChar32 c;
+    uint16_t norm16;
+    UTRIE2_U16_NEXT16(normTrie, src, limit, c, norm16);
+    return norm16HasCompBoundaryBefore(norm16);
+}
+
+UBool Normalizer2Impl::hasCompBoundaryBefore(const uint8_t *src, const uint8_t *limit) const {
+    if (src == limit) {
+        return TRUE;
+    }
+    uint16_t norm16;
+    UTRIE2_U8_NEXT16(normTrie, src, limit, norm16);
+    return norm16HasCompBoundaryBefore(norm16);
+}
+
+UBool Normalizer2Impl::hasCompBoundaryAfter(const UChar *start, const UChar *p,
+                                            UBool onlyContiguous) const {
+    if (start == p) {
+        return TRUE;
+    }
+    UChar32 c;
+    uint16_t norm16;
+    UTRIE2_U16_PREV16(normTrie, start, p, c, norm16);
+    return norm16HasCompBoundaryAfter(norm16, onlyContiguous);
+}
+
+UBool Normalizer2Impl::hasCompBoundaryAfter(const uint8_t *start, const uint8_t *p,
+                                            UBool onlyContiguous) const {
+    if (start == p) {
+        return TRUE;
+    }
+    uint16_t norm16;
+    UTRIE2_U8_PREV16(normTrie, start, p, norm16);
+    return norm16HasCompBoundaryAfter(norm16, onlyContiguous);
+}
+
+const UChar *Normalizer2Impl::findPreviousCompBoundary(const UChar *start, const UChar *p,
+                                                       UBool onlyContiguous) const {
+    BackwardUTrie2StringIterator iter(normTrie, start, p);
+    for(;;) {
+        uint16_t norm16=iter.previous16();
+        if (norm16HasCompBoundaryAfter(norm16, onlyContiguous)) {
+            return iter.codePointLimit;
+        }
+        if (hasCompBoundaryBefore(iter.codePoint, norm16)) {
+            return iter.codePointStart;
         }
     }
 }
 
-const UChar *Normalizer2Impl::findPreviousCompBoundary(const UChar *start, const UChar *p) const {
-    BackwardUTrie2StringIterator iter(normTrie, start, p);
-    uint16_t norm16;
-    do {
-        norm16=iter.previous16();
-    } while(!hasCompBoundaryBefore(iter.codePoint, norm16));
-    
-    
-    return iter.codePointStart;
+const UChar *Normalizer2Impl::findNextCompBoundary(const UChar *p, const UChar *limit,
+                                                   UBool onlyContiguous) const {
+    ForwardUTrie2StringIterator iter(normTrie, p, limit);
+    for(;;) {
+        uint16_t norm16=iter.next16();
+        if (hasCompBoundaryBefore(iter.codePoint, norm16)) {
+            return iter.codePointStart;
+        }
+        if (norm16HasCompBoundaryAfter(norm16, onlyContiguous)) {
+            return iter.codePointLimit;
+        }
+    }
 }
 
-const UChar *Normalizer2Impl::findNextCompBoundary(const UChar *p, const UChar *limit) const {
-    ForwardUTrie2StringIterator iter(normTrie, p, limit);
-    uint16_t norm16;
-    do {
-        norm16=iter.next16();
-    } while(!hasCompBoundaryBefore(iter.codePoint, norm16));
-    return iter.codePointStart;
+uint8_t Normalizer2Impl::getPreviousTrailCC(const UChar *start, const UChar *p) const {
+    if (start == p) {
+        return 0;
+    }
+    int32_t i = (int32_t)(p - start);
+    UChar32 c;
+    U16_PREV(start, 0, i, c);
+    return (uint8_t)getFCD16(c);
+}
+
+uint8_t Normalizer2Impl::getPreviousTrailCC(const uint8_t *start, const uint8_t *p) const {
+    if (start == p) {
+        return 0;
+    }
+    int32_t i = (int32_t)(p - start);
+    UChar32 c;
+    U8_PREV(start, 0, i, c);
+    return (uint8_t)getFCD16(c);
 }
 
 
@@ -1578,38 +2115,36 @@ const UChar *Normalizer2Impl::findNextCompBoundary(const UChar *p, const UChar *
 
 
 uint16_t Normalizer2Impl::getFCD16FromNormData(UChar32 c) const {
-    
-    for(;;) {
-        uint16_t norm16=getNorm16(c);
-        if(norm16<=minYesNo) {
+    uint16_t norm16=getNorm16(c);
+    if (norm16 >= limitNoNo) {
+        if(norm16>=MIN_NORMAL_MAYBE_YES) {
             
-            return 0;
-        } else if(norm16>=MIN_NORMAL_MAYBE_YES) {
-            
-            norm16&=0xff;
+            norm16=getCCFromNormalYesOrMaybe(norm16);
             return norm16|(norm16<<8);
         } else if(norm16>=minMaybeYes) {
             return 0;
-        } else if(isDecompNoAlgorithmic(norm16)) {
-            c=mapAlgorithmic(c, norm16);
-        } else {
-            
-            const uint16_t *mapping=getMapping(norm16);
-            uint16_t firstUnit=*mapping;
-            if((firstUnit&MAPPING_LENGTH_MASK)==0) {
-                
-                
-                
-                return 0x1ff;
-            } else {
-                norm16=firstUnit>>8;  
-                if(firstUnit&MAPPING_HAS_CCC_LCCC_WORD) {
-                    norm16|=*(mapping-1)&0xff00;  
-                }
-                return norm16;
+        } else {  
+            uint16_t deltaTrailCC = norm16 & DELTA_TCCC_MASK;
+            if (deltaTrailCC <= DELTA_TCCC_1) {
+                return deltaTrailCC >> OFFSET_SHIFT;
             }
+            
+            c=mapAlgorithmic(c, norm16);
+            norm16=getNorm16(c);
         }
     }
+    if(norm16<=minYesNo || isHangulLVT(norm16)) {
+        
+        return 0;
+    }
+    
+    const uint16_t *mapping=getMapping(norm16);
+    uint16_t firstUnit=*mapping;
+    norm16=firstUnit>>8;  
+    if(firstUnit&MAPPING_HAS_CCC_LCCC_WORD) {
+        norm16|=*(mapping-1)&0xff00;  
+    }
+    return norm16;
 }
 
 
@@ -1624,7 +2159,7 @@ Normalizer2Impl::makeFCD(const UChar *src, const UChar *limit,
     const UChar *prevBoundary=src;
     int32_t prevFCD16=0;
     if(limit==NULL) {
-        src=copyLowPrefixFromNulTerminated(src, MIN_CCC_LCCC_CP, buffer, errorCode);
+        src=copyLowPrefixFromNulTerminated(src, minLcccCP, buffer, errorCode);
         if(U_FAILURE(errorCode)) {
             return src;
         }
@@ -1653,7 +2188,7 @@ Normalizer2Impl::makeFCD(const UChar *src, const UChar *limit,
     for(;;) {
         
         for(prevSrc=src; src!=limit;) {
-            if((c=*src)<MIN_CCC_LCCC_CP) {
+            if((c=*src)<minLcccCP) {
                 prevFCD16=~c;
                 ++src;
             } else if(!singleLeadMightHaveNonZeroFCD16(c)) {
@@ -1694,9 +2229,13 @@ Normalizer2Impl::makeFCD(const UChar *src, const UChar *limit,
             if(prevFCD16<0) {
                 
                 UChar32 prev=~prevFCD16;
-                prevFCD16= prev<0x180 ? tccc180[prev] : getFCD16FromNormData(prev);
-                if(prevFCD16>1) {
-                    --prevBoundary;
+                if(prev<minDecompNoCP) {
+                    prevFCD16=0;
+                } else {
+                    prevFCD16=getFCD16FromNormData(prev);
+                    if(prevFCD16>1) {
+                        --prevBoundary;
+                    }
                 }
             } else {
                 const UChar *p=src-1;
@@ -1748,7 +2287,8 @@ Normalizer2Impl::makeFCD(const UChar *src, const UChar *limit,
 
 
 
-            if(!decomposeShort(prevBoundary, src, *buffer, errorCode)) {
+            decomposeShort(prevBoundary, src, FALSE, FALSE, *buffer, errorCode);
+            if (U_FAILURE(errorCode)) {
                 break;
             }
             prevBoundary=src;
@@ -1792,15 +2332,32 @@ void Normalizer2Impl::makeFCDAndAppend(const UChar *src, const UChar *limit,
 }
 
 const UChar *Normalizer2Impl::findPreviousFCDBoundary(const UChar *start, const UChar *p) const {
-    while(start<p && previousFCD16(start, p)>0xff) {}
+    while(start<p) {
+        const UChar *codePointLimit = p;
+        UChar32 c;
+        uint16_t norm16;
+        UTRIE2_U16_PREV16(normTrie, start, p, c, norm16);
+        if (c < minDecompNoCP || norm16HasDecompBoundaryAfter(norm16)) {
+            return codePointLimit;
+        }
+        if (norm16HasDecompBoundaryBefore(norm16)) {
+            return p;
+        }
+    }
     return p;
 }
 
 const UChar *Normalizer2Impl::findNextFCDBoundary(const UChar *p, const UChar *limit) const {
     while(p<limit) {
         const UChar *codePointStart=p;
-        if(nextFCD16(p, limit)<=0xff) {
+        UChar32 c;
+        uint16_t norm16;
+        UTRIE2_U16_NEXT16(normTrie, p, limit, c, norm16);
+        if (c < minLcccCP || norm16HasDecompBoundaryBefore(norm16)) {
             return codePointStart;
+        }
+        if (norm16HasDecompBoundaryAfter(norm16)) {
+            return p;
         }
     }
     return p;
@@ -1845,34 +2402,43 @@ void CanonIterData::addToStartSet(UChar32 origin, UChar32 decompLead, UErrorCode
     }
 }
 
+
+class InitCanonIterData {
+public:
+    static void doInit(Normalizer2Impl *impl, UErrorCode &errorCode);
+    static void handleRange(Normalizer2Impl *impl, UChar32 start, UChar32 end, uint16_t value, UErrorCode &errorCode);
+};
+
 U_CDECL_BEGIN
+
+
+static void U_CALLCONV
+initCanonIterData(Normalizer2Impl *impl, UErrorCode &errorCode) {
+    InitCanonIterData::doInit(impl, errorCode);
+}
 
 
 
 static UBool U_CALLCONV
 enumCIDRangeHandler(const void *context, UChar32 start, UChar32 end, uint32_t value) {
     UErrorCode errorCode = U_ZERO_ERROR;
-    if (value != 0) {
+    if (value != Normalizer2Impl::INERT) {
         Normalizer2Impl *impl = (Normalizer2Impl *)context;
-        impl->makeCanonIterDataFromNorm16(
-            start, end, (uint16_t)value, *impl->fCanonIterData, errorCode);
+        InitCanonIterData::handleRange(impl, start, end, (uint16_t)value, errorCode);
     }
     return U_SUCCESS(errorCode);
 }
 
+U_CDECL_END
 
-
-
-
-static void U_CALLCONV 
-initCanonIterData(Normalizer2Impl *impl, UErrorCode &errorCode) {
+void InitCanonIterData::doInit(Normalizer2Impl *impl, UErrorCode &errorCode) {
     U_ASSERT(impl->fCanonIterData == NULL);
     impl->fCanonIterData = new CanonIterData(errorCode);
     if (impl->fCanonIterData == NULL) {
         errorCode=U_MEMORY_ALLOCATION_ERROR;
     }
     if (U_SUCCESS(errorCode)) {
-        utrie2_enum(impl->getNormTrie(), NULL, enumCIDRangeHandler, impl);
+        utrie2_enum(impl->normTrie, NULL, enumCIDRangeHandler, impl);
         utrie2_freeze(impl->fCanonIterData->trie, UTRIE2_32_VALUE_BITS, &errorCode);
     }
     if (U_FAILURE(errorCode)) {
@@ -1881,12 +2447,15 @@ initCanonIterData(Normalizer2Impl *impl, UErrorCode &errorCode) {
     }
 }
 
-U_CDECL_END
+void InitCanonIterData::handleRange(
+        Normalizer2Impl *impl, UChar32 start, UChar32 end, uint16_t value, UErrorCode &errorCode) {
+    impl->makeCanonIterDataFromNorm16(start, end, value, *impl->fCanonIterData, errorCode);
+}
 
-void Normalizer2Impl::makeCanonIterDataFromNorm16(UChar32 start, UChar32 end, uint16_t norm16,
+void Normalizer2Impl::makeCanonIterDataFromNorm16(UChar32 start, UChar32 end, const uint16_t norm16,
                                                   CanonIterData &newData,
                                                   UErrorCode &errorCode) const {
-    if(norm16==0 || (minYesNo<=norm16 && norm16<minNoNo)) {
+    if(isInert(norm16) || (minYesNo<=norm16 && norm16<minNoNo)) {
         
         
         
@@ -1898,7 +2467,7 @@ void Normalizer2Impl::makeCanonIterDataFromNorm16(UChar32 start, UChar32 end, ui
     for(UChar32 c=start; c<=end; ++c) {
         uint32_t oldValue=utrie2_get32(newData.trie, c);
         uint32_t newValue=oldValue;
-        if(norm16>=minMaybeYes) {
+        if(isMaybeOrNonZeroCC(norm16)) {
             
             newValue|=CANON_NOT_SEGMENT_STARTER;
             if(norm16<MIN_NORMAL_MAYBE_YES) {
@@ -1909,12 +2478,16 @@ void Normalizer2Impl::makeCanonIterDataFromNorm16(UChar32 start, UChar32 end, ui
         } else {
             
             UChar32 c2=c;
+            
             uint16_t norm16_2=norm16;
-            while(limitNoNo<=norm16_2 && norm16_2<minMaybeYes) {
-                c2=mapAlgorithmic(c2, norm16_2);
-                norm16_2=getNorm16(c2);
+            if (isDecompNoAlgorithmic(norm16_2)) {
+                
+                c2 = mapAlgorithmic(c2, norm16_2);
+                norm16_2 = getNorm16(c2);
+                
+                U_ASSERT(!(isHangulLV(norm16_2) || isHangulLVT(norm16_2)));
             }
-            if(minYesNo<=norm16_2 && norm16_2<limitNoNo) {
+            if (norm16_2 > minYesNo) {
                 
                 const uint16_t *mapping=getMapping(norm16_2);
                 uint16_t firstUnit=*mapping;
@@ -2017,7 +2590,7 @@ unorm2_swap(const UDataSwapper *ds,
     uint8_t *outBytes;
 
     const int32_t *inIndexes;
-    int32_t indexes[Normalizer2Impl::IX_MIN_MAYBE_YES+1];
+    int32_t indexes[Normalizer2Impl::IX_TOTAL_SIZE+1];
 
     int32_t i, offset, nextOffset, size;
 
@@ -2029,12 +2602,13 @@ unorm2_swap(const UDataSwapper *ds,
 
     
     pInfo=(const UDataInfo *)((const char *)inData+4);
+    uint8_t formatVersion0=pInfo->formatVersion[0];
     if(!(
         pInfo->dataFormat[0]==0x4e &&   
         pInfo->dataFormat[1]==0x72 &&
         pInfo->dataFormat[2]==0x6d &&
         pInfo->dataFormat[3]==0x32 &&
-        (pInfo->formatVersion[0]==1 || pInfo->formatVersion[0]==2)
+        (1<=formatVersion0 && formatVersion0<=3)
     )) {
         udata_printError(ds, "unorm2_swap(): data format %02x.%02x.%02x.%02x (format version %02x) is not recognized as Normalizer2 data\n",
                          pInfo->dataFormat[0], pInfo->dataFormat[1],
@@ -2048,10 +2622,18 @@ unorm2_swap(const UDataSwapper *ds,
     outBytes=(uint8_t *)outData+headerSize;
 
     inIndexes=(const int32_t *)inBytes;
+    int32_t minIndexesLength;
+    if(formatVersion0==1) {
+        minIndexesLength=Normalizer2Impl::IX_MIN_MAYBE_YES+1;
+    } else if(formatVersion0==2) {
+        minIndexesLength=Normalizer2Impl::IX_MIN_YES_NO_MAPPINGS_ONLY+1;
+    } else {
+        minIndexesLength=Normalizer2Impl::IX_MIN_LCCC_CP+1;
+    }
 
     if(length>=0) {
         length-=headerSize;
-        if(length<(int32_t)sizeof(indexes)) {
+        if(length<minIndexesLength*4) {
             udata_printError(ds, "unorm2_swap(): too few bytes (%d after header) for Normalizer2 data\n",
                              length);
             *pErrorCode=U_INDEX_OUTOFBOUNDS_ERROR;
@@ -2060,7 +2642,7 @@ unorm2_swap(const UDataSwapper *ds,
     }
 
     
-    for(i=0; i<=Normalizer2Impl::IX_MIN_MAYBE_YES; ++i) {
+    for(i=0; i<UPRV_LENGTHOF(indexes); ++i) {
         indexes[i]=udata_readInt32(ds, inIndexes[i]);
     }
 

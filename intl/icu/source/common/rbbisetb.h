@@ -13,11 +13,13 @@
 #define RBBISETB_H
 
 #include "unicode/utypes.h"
+
+#if !UCONFIG_NO_BREAK_ITERATION
+
 #include "unicode/uobject.h"
 #include "rbbirb.h"
+#include "utrie2.h"
 #include "uvector.h"
-
-struct  UNewTrie;
 
 U_NAMESPACE_BEGIN
 
@@ -109,8 +111,8 @@ private:
 
     RangeDescriptor       *fRangeList;      
 
-    UNewTrie              *fTrie;           
-    uint32_t              fTrieSize;        
+    UTrie2                *fTrie;           
+    uint32_t               fTrieSize;       
 
     
     
@@ -129,4 +131,7 @@ private:
 
 
 U_NAMESPACE_END
+
+#endif 
+
 #endif

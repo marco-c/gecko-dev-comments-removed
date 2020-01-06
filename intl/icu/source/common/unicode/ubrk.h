@@ -237,6 +237,7 @@ typedef enum USentenceBreakTag {
 
 
 
+
 U_STABLE UBreakIterator* U_EXPORT2
 ubrk_open(UBreakIteratorType type,
       const char *locale,

@@ -1441,6 +1441,16 @@ private:
 
 
 
+    int32_t countDigits(const UnicodeString& text, int32_t start, int32_t end) const;
+
+    
+
+
+
+
+
+
+
 
 
 

@@ -84,6 +84,8 @@ public:
         BLOCK_LINE,
         
         CP_LINE,
+        
+        UNASSIGNED_LINE,
 
         
         ALG_NAMES_RANGE_LINE,
@@ -119,7 +121,9 @@ public:
     const UVersionInfo &getUnicodeVersion() const { return ucdVersion; }
 
     
-    UBool lineHasPropertyValues() const { return DEFAULTS_LINE<=lineType && lineType<=CP_LINE; }
+    UBool lineHasPropertyValues() const {
+        return DEFAULTS_LINE<=lineType && lineType<=UNASSIGNED_LINE;
+    }
 
     
 
@@ -166,6 +170,7 @@ private:
 
     UVersionInfo ucdVersion;
     UniProps defaultProps, blockProps, cpProps;
+    UnicodeSet blockValues;
     
     
     char lines[kNumLineBuffers][4096];

@@ -34,6 +34,7 @@
 
 #include "unicode/uobject.h"
 #include "unicode/locid.h"
+#include "unicode/numsys.h"
 #include "unicode/unum.h"
 #include "unicode/unistr.h"
 
@@ -183,6 +184,26 @@ public:
 
 
     DecimalFormatSymbols(const Locale& locale, UErrorCode& status);
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    DecimalFormatSymbols(const Locale& locale, const NumberingSystem& ns, UErrorCode& status);
+#endif  
 
     
 
@@ -347,7 +368,10 @@ private:
 
 
 
-    void initialize(const Locale& locale, UErrorCode& success, UBool useLastResortData = FALSE);
+
+
+    void initialize(const Locale& locale, UErrorCode& success,
+        UBool useLastResortData = FALSE, const NumberingSystem* ns = nullptr);
 
     
 

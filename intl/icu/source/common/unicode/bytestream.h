@@ -126,8 +126,8 @@ public:
   virtual void Flush();
 
 private:
-  ByteSink(const ByteSink &); 
-  ByteSink &operator=(const ByteSink &); 
+  ByteSink(const ByteSink &) = delete;
+  ByteSink &operator=(const ByteSink &) = delete;
 };
 
 
@@ -217,9 +217,10 @@ private:
   int32_t size_;
   int32_t appended_;
   UBool overflowed_;
-  CheckedArrayByteSink(); 
-  CheckedArrayByteSink(const CheckedArrayByteSink &); 
-  CheckedArrayByteSink &operator=(const CheckedArrayByteSink &); 
+
+  CheckedArrayByteSink() = delete;
+  CheckedArrayByteSink(const CheckedArrayByteSink &) = delete;
+  CheckedArrayByteSink &operator=(const CheckedArrayByteSink &) = delete;
 };
 
 
@@ -236,6 +237,21 @@ class StringByteSink : public ByteSink {
 
 
   StringByteSink(StringClass* dest) : dest_(dest) { }
+#ifndef U_HIDE_DRAFT_API
+  
+
+
+
+
+
+
+  StringByteSink(StringClass* dest, int32_t initialAppendCapacity) : dest_(dest) {
+    if (initialAppendCapacity > 0 &&
+        (uint32_t)initialAppendCapacity > (dest->capacity() - dest->length())) {
+      dest->reserve(dest->length() + initialAppendCapacity);
+    }
+  }
+#endif  
   
 
 
@@ -245,9 +261,10 @@ class StringByteSink : public ByteSink {
   virtual void Append(const char* data, int32_t n) { dest_->append(data, n); }
  private:
   StringClass* dest_;
-  StringByteSink(); 
-  StringByteSink(const StringByteSink &); 
-  StringByteSink &operator=(const StringByteSink &); 
+
+  StringByteSink() = delete;
+  StringByteSink(const StringByteSink &) = delete;
+  StringByteSink &operator=(const StringByteSink &) = delete;
 };
 
 U_NAMESPACE_END

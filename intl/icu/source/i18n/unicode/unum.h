@@ -267,6 +267,11 @@ typedef enum UNumberFormatStyle {
 
 
 
+
+
+
+
+
 typedef enum UNumberFormatRoundingMode {
     UNUM_ROUND_CEILING,
     UNUM_ROUND_FLOOR,

@@ -386,7 +386,7 @@ U_CAPI decNumber * U_EXPORT2 uprv_decNumberFromUInt32(decNumber *dn, uInt uin) {
     *up=(Unit)(uin%(DECDPUNMAX+1));
     uin=uin/(DECDPUNMAX+1);
     }
-  dn->digits=decGetDigits(dn->lsu, up-dn->lsu);
+  dn->digits=decGetDigits(dn->lsu, static_cast<int32_t>(up - dn->lsu));
   return dn;
   } 
 
@@ -666,7 +666,7 @@ U_CAPI decNumber * U_EXPORT2 uprv_decNumberFromString(decNumber *dn, const char 
 
     
     if (dotchar!=NULL && dotchar<last)  
-      exponent-=(last-dotchar);         
+      exponent -= static_cast<int32_t>(last-dotchar);         
     
 
     
@@ -866,7 +866,7 @@ U_CAPI decNumber * U_EXPORT2 uprv_decNumberAnd(decNumber *res, const decNumber *
       } 
     } 
   
-  res->digits=decGetDigits(res->lsu, uc-res->lsu);
+  res->digits=decGetDigits(res->lsu, static_cast<int32_t>(uc - res->lsu));
   res->exponent=0;                      
   res->bits=0;                          
   return res;  
@@ -1253,7 +1253,7 @@ U_CAPI decNumber * U_EXPORT2 uprv_decNumberInvert(decNumber *res, const decNumbe
       } 
     } 
   
-  res->digits=decGetDigits(res->lsu, uc-res->lsu);
+  res->digits=decGetDigits(res->lsu, static_cast<int32_t>(uc - res->lsu));
   res->exponent=0;                      
   res->bits=0;                          
   return res;  
@@ -1880,7 +1880,7 @@ U_CAPI decNumber * U_EXPORT2 uprv_decNumberOr(decNumber *res, const decNumber *l
       } 
     } 
   
-  res->digits=decGetDigits(res->lsu, uc-res->lsu);
+  res->digits=decGetDigits(res->lsu, static_cast<int32_t>(uc-res->lsu));
   res->exponent=0;                      
   res->bits=0;                          
   return res;  
@@ -2586,7 +2586,7 @@ U_CAPI decNumber * U_EXPORT2 uprv_decNumberRotate(decNumber *res, const decNumbe
           } 
         
         
-        res->digits=decGetDigits(res->lsu, msumax-res->lsu+1);
+        res->digits=decGetDigits(res->lsu, static_cast<int32_t>(msumax-res->lsu+1));
         } 
       } 
     } 
@@ -3310,7 +3310,7 @@ U_CAPI decNumber * U_EXPORT2 uprv_decNumberXor(decNumber *res, const decNumber *
       } 
     } 
   
-  res->digits=decGetDigits(res->lsu, uc-res->lsu);
+  res->digits=decGetDigits(res->lsu, static_cast<int32_t>(uc-res->lsu));
   res->exponent=0;                      
   res->bits=0;                          
   return res;  
@@ -5101,7 +5101,7 @@ static decNumber * decMultiplyOp(decNumber *res, const decNumber *lhs,
           } 
         *up=(Unit)item; up++;                
         } 
-      accunits=up-acc;                       
+      accunits = static_cast<int32_t>(up-acc);                       
       }
      else { 
     #endif
@@ -6587,11 +6587,11 @@ static Int decUnitAddSub(const Unit *a, Int alength,
 
   
   
-  if (carry==0) return c-clsu;     
+  if (carry==0) return static_cast<int32_t>(c-clsu);     
   if (carry>0) {                   
     *c=(Unit)carry;                
     c++;                           
-    return c-clsu;
+    return static_cast<int32_t>(c-clsu);
     }
   
   add=1;                           
@@ -6614,7 +6614,7 @@ static Int decUnitAddSub(const Unit *a, Int alength,
     *c=(Unit)(add-carry-1);
     c++;                      
     }
-  return clsu-c;              
+  return static_cast<int32_t>(clsu-c);              
   } 
 
 
@@ -6798,7 +6798,7 @@ static Int decShiftToLeast(Unit *uar, Int units, Int shift) {
   if (cut==DECDPUN) {              
     up=uar+D2U(shift);
     for (; up<uar+units; target++, up++) *target=*up;
-    return target-uar;
+    return static_cast<int32_t>(target-uar);
     }
 
   
@@ -6826,7 +6826,7 @@ static Int decShiftToLeast(Unit *uar, Int units, Int shift) {
     count-=cut;
     if (count<=0) break;
     }
-  return target-uar+1;
+  return static_cast<int32_t>(target-uar+1);
   } 
 
 #if DECSUBSET
@@ -7690,7 +7690,7 @@ static decNumber *decDecap(decNumber *dn, Int drop) {
   cut=MSUDIGITS(dn->digits-drop);       
   if (cut!=DECDPUN) *msu%=powers[cut];  
   
-  dn->digits=decGetDigits(dn->lsu, msu-dn->lsu+1);
+  dn->digits=decGetDigits(dn->lsu, static_cast<int32_t>(msu-dn->lsu+1));
   return dn;
   } 
 

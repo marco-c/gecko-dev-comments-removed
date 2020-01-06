@@ -46,10 +46,28 @@ static const UChar LOCALE_SEP  = 95;
 
 
 
-static const UChar ANY[] = { 65, 110, 121, 0 }; 
+static const UChar ANY[] = { 0x41, 0x6E, 0x79, 0 }; 
+static const UChar LAT[] = { 0x4C, 0x61, 0x74, 0 }; 
 
 
 #define NO_VARIANT UnicodeString()
+
+
+
+#define SPECDAG_INIT_SIZE 149
+
+
+#define VARIANT_LIST_INIT_SIZE 11
+#define VARIANT_LIST_MAX_SIZE 31
+
+
+
+#define AVAILABLE_IDS_INIT_SIZE 641
+
+
+
+#define ANY_TARGETS_INIT_SIZE 125
+#define LAT_TARGETS_INIT_SIZE 23
 
 
 
@@ -517,10 +535,17 @@ U_CDECL_END
 
 TransliteratorRegistry::TransliteratorRegistry(UErrorCode& status) :
     registry(TRUE, status),
-    specDAG(TRUE, status),
-    availableIDs(status)
+    specDAG(TRUE, SPECDAG_INIT_SIZE, status),
+    variantList(VARIANT_LIST_INIT_SIZE, status),
+    availableIDs(AVAILABLE_IDS_INIT_SIZE, status)
 {
     registry.setValueDeleter(deleteEntry);
+    variantList.setDeleter(uprv_deleteUObject);
+    variantList.setComparer(uhash_compareCaselessUnicodeString);
+    UnicodeString *emptyString = new UnicodeString();
+    if (emptyString != NULL) {
+        variantList.addElement(emptyString, status);
+    }
     availableIDs.setDeleter(uprv_deleteUObject);
     availableIDs.setComparer(uhash_compareCaselessUnicodeString);
     specDAG.setValueDeleter(uhash_deleteHashtable);
@@ -781,9 +806,15 @@ int32_t TransliteratorRegistry::countAvailableVariants(const UnicodeString& sour
     if (targets == 0) {
         return 0;
     }
-    UVector *variants = (UVector*) targets->get(target);
-    
-    return (variants == 0) ? 0 : variants->size();
+    uint32_t varMask = targets->geti(target);
+    int32_t varCount = 0;
+    while (varMask > 0) {
+        if (varMask & 1) {
+            varCount++;
+        }
+        varMask >>= 1;
+    }
+    return varCount;
 }
 
 UnicodeString& TransliteratorRegistry::getAvailableVariant(int32_t index,
@@ -795,17 +826,25 @@ UnicodeString& TransliteratorRegistry::getAvailableVariant(int32_t index,
         result.truncate(0); 
         return result;
     }
-    UVector *variants = (UVector*) targets->get(target);
-    if (variants == 0) {
-        result.truncate(0); 
-        return result;
+    uint32_t varMask = targets->geti(target);
+    int32_t varCount = 0;
+    int32_t varListIndex = 0;
+    while (varMask > 0) {
+        if (varMask & 1) {
+            if (varCount == index) {
+                UnicodeString *v = (UnicodeString*) variantList.elementAt(varListIndex);
+                if (v != NULL) {
+                    result = *v;
+                    return result;
+                }
+                break;
+            }
+            varCount++;
+        }
+        varMask >>= 1;
+        varListIndex++;
     }
-    UnicodeString *v = (UnicodeString*) variants->elementAt(index);
-    if (v == 0) {
-        result.truncate(0); 
-    } else {
-        result = *v;
-    }
+    result.truncate(0); 
     return result;
 }
 
@@ -911,9 +950,9 @@ void TransliteratorRegistry::registerEntry(const UnicodeString& ID,
             UnicodeString *newID = (UnicodeString *)ID.clone();
             
             if (newID != NULL) {
-	            
-	            newID->getTerminatedBuffer();
-	            availableIDs.addElement(newID, status);
+                
+                newID->getTerminatedBuffer();
+                availableIDs.addElement(newID, status);
             }
         }
     } else {
@@ -921,8 +960,6 @@ void TransliteratorRegistry::registerEntry(const UnicodeString& ID,
         availableIDs.removeElement((void*) &ID);
     }
 }
-
-
 
 
 
@@ -936,39 +973,38 @@ void TransliteratorRegistry::registerSTV(const UnicodeString& source,
     UErrorCode status = U_ZERO_ERROR;
     Hashtable *targets = (Hashtable*) specDAG.get(source);
     if (targets == 0) {
-        targets = new Hashtable(TRUE, status);
-        if (U_FAILURE(status) || targets == 0) {
+        int32_t size = 3;
+        if (source.compare(ANY,3) == 0) {
+            size = ANY_TARGETS_INIT_SIZE;
+        } else if (source.compare(LAT,3) == 0) {
+            size = LAT_TARGETS_INIT_SIZE;
+        }
+        targets = new Hashtable(TRUE, size, status);
+        if (U_FAILURE(status) || targets == NULL) {
             return;
         }
-        targets->setValueDeleter(uprv_deleteUObject);
         specDAG.put(source, targets, status);
     }
-    UVector *variants = (UVector*) targets->get(target);
-    if (variants == 0) {
-        variants = new UVector(uprv_deleteUObject,
-                               uhash_compareCaselessUnicodeString, status);
-        if (variants == 0) {
+    int32_t variantListIndex = variantList.indexOf((void*) &variant, 0);
+    if (variantListIndex < 0) {
+        if (variantList.size() >= VARIANT_LIST_MAX_SIZE) {
+            
             return;
         }
-        targets->put(target, variants, status);
-    }
-    
-    
-    
-    if (!variants->contains((void*) &variant)) {
-    	UnicodeString *tempus; 
-        if (variant.length() > 0) {
-        	tempus = new UnicodeString(variant);
-        	if (tempus != NULL) {
-        		variants->addElement(tempus, status);
-        	}
-        } else {
-        	tempus = new UnicodeString();  
-        	if (tempus != NULL) {
-        		variants->insertElementAt(tempus, 0, status);
-        	}
+        UnicodeString *variantEntry = new UnicodeString(variant);
+        if (variantEntry != NULL) {
+            variantList.addElement(variantEntry, status);
+            if (U_SUCCESS(status)) {
+                variantListIndex = variantList.size() - 1;
+            }
+        }
+        if (variantListIndex < 0) {
+            return;
         }
     }
+    uint32_t addMask = 1 << variantListIndex;
+    uint32_t varMask = targets->geti(target);
+    targets->puti(target, varMask | addMask, status);
 }
 
 
@@ -979,17 +1015,24 @@ void TransliteratorRegistry::removeSTV(const UnicodeString& source,
                                        const UnicodeString& variant) {
     
     
-
+    UErrorCode status = U_ZERO_ERROR;
     Hashtable *targets = (Hashtable*) specDAG.get(source);
-    if (targets == 0) {
+    if (targets == NULL) {
         return; 
     }
-    UVector *variants = (UVector*) targets->get(target);
-    if (variants == 0) {
+    uint32_t varMask = targets->geti(target);
+    if (varMask == 0) {
         return; 
     }
-    variants->removeElement((void*) &variant);
-    if (variants->size() == 0) {
+    int32_t variantListIndex = variantList.indexOf((void*) &variant, 0);
+    if (variantListIndex < 0) {
+        return; 
+    }
+    int32_t remMask = 1 << variantListIndex;
+    varMask &= (~remMask);
+    if (varMask != 0) {
+        targets->puti(target, varMask, status);
+    } else {
         targets->remove(target); 
         if (targets->count() == 0) {
             specDAG.remove(source); 
@@ -1281,8 +1324,8 @@ Transliterator* TransliteratorRegistry::instantiateEntry(const UnicodeString& ID
             UVector* rbts = new UVector(entry->u.dataVector->size(), status);
             
             if (rbts == NULL) {
-            	status = U_MEMORY_ALLOCATION_ERROR;
-            	return NULL;
+                status = U_MEMORY_ALLOCATION_ERROR;
+                return NULL;
             }
             int32_t passNumber = 1;
             for (int32_t i = 0; U_SUCCESS(status) && i < entry->u.dataVector->size(); i++) {

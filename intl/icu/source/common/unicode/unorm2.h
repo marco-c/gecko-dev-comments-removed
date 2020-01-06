@@ -32,6 +32,7 @@
 
 #include "unicode/utypes.h"
 #include "unicode/localpointer.h"
+#include "unicode/stringoptions.h"
 #include "unicode/uset.h"
 
 
@@ -525,30 +526,6 @@ unorm2_hasBoundaryAfter(const UNormalizer2 *norm2, UChar32 c);
 
 U_STABLE UBool U_EXPORT2
 unorm2_isInert(const UNormalizer2 *norm2, UChar32 c);
-
-
-
-
-
-
-#define UNORM_INPUT_IS_FCD          0x20000
-
-
-
-
-
-
-#define U_COMPARE_IGNORE_CASE       0x10000
-
-#ifndef U_COMPARE_CODE_POINT_ORDER
-
-
-
-
-
-
-#define U_COMPARE_CODE_POINT_ORDER  0x8000
-#endif
 
 
 

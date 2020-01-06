@@ -29,6 +29,21 @@ class UCharsTrie;
 class UVector32;
 
 
+#define CEBUFFER_INITIAL_CAPACITY 40
+
+
+
+
+
+
+
+
+
+#if defined (_MSC_VER)
+template class U_I18N_API MaybeStackArray<int64_t, CEBUFFER_INITIAL_CAPACITY>;
+#endif
+
+
 
 
 
@@ -36,10 +51,10 @@ class UVector32;
 
 class U_I18N_API CollationIterator : public UObject {
 private:
-    class CEBuffer {
+    class U_I18N_API CEBuffer {
     private:
         
-        static const int32_t INITIAL_CAPACITY = 40;
+        static const int32_t INITIAL_CAPACITY = CEBUFFER_INITIAL_CAPACITY;
     public:
         CEBuffer() : length(0) {}
         ~CEBuffer();

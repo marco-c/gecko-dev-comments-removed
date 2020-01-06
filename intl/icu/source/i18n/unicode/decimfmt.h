@@ -672,28 +672,6 @@ public:
 
 
 
-    enum ERoundingMode {
-        kRoundCeiling,  
-        kRoundFloor,    
-        kRoundDown,     
-        kRoundUp,       
-        kRoundHalfEven, 
-
-        kRoundHalfDown, 
-
-        kRoundHalfUp,   
-
-        
-
-
-
-        kRoundUnnecessary
-    };
-
-    
-
-
-
     enum EPadPosition {
         kPadBeforePrefix,
         kPadAfterPrefix,
@@ -1986,14 +1964,12 @@ public:
     UCurrencyUsage getCurrencyUsage() const;
 
 
-#ifndef U_HIDE_DEPRECATED_API
     
 
 
 
 
     static const char fgNumberPatterns[];
-#endif  
 
 #ifndef U_HIDE_INTERNAL_API
     

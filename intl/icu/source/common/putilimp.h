@@ -76,15 +76,6 @@ typedef size_t uintptr_t;
 
 
 
-
-#if !defined(U_HAVE_MSVC_2003_OR_EARLIER) && defined(_MSC_VER) && (_MSC_VER < 1400)
-#define U_HAVE_MSVC_2003_OR_EARLIER
-#endif
-
-
-
-
-
 #ifdef U_HAVE_NL_LANGINFO_CODESET
     
 #elif U_PLATFORM_USES_ONLY_WIN32_API || U_PLATFORM == U_PF_ANDROID || U_PLATFORM == U_PF_QNX
@@ -120,15 +111,15 @@ typedef size_t uintptr_t;
     
 #elif U_PLATFORM == U_PF_ANDROID
 #   define U_TIMEZONE timezone
+#elif defined(__UCLIBC__)
+    
+#elif defined(_NEWLIB_VERSION)
+#   define U_TIMEZONE _timezone
+#elif defined(__GLIBC__)
+    
+#   define U_TIMEZONE __timezone
 #elif U_PLATFORM_IS_LINUX_BASED
-#   if defined(__UCLIBC__)
-       
-#   elif defined(_NEWLIB_VERSION)
-#      define U_TIMEZONE      _timezone
-#   elif defined(__GLIBC__)
-       
-#      define U_TIMEZONE      __timezone
-#   endif
+    
 #elif U_PLATFORM_USES_ONLY_WIN32_API
 #   define U_TIMEZONE _timezone
 #elif U_PLATFORM == U_PF_BSD && !defined(__NetBSD__)

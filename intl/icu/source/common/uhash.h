@@ -154,7 +154,7 @@ struct UHashtable {
 
 
     
-  
+
     int32_t     count;      
 
 
@@ -162,12 +162,12 @@ struct UHashtable {
 
 
     
-    
+
     int32_t     highWaterMark;  
     int32_t     lowWaterMark;   
     float       highWaterRatio; 
     float       lowWaterRatio;  
-    
+
     int8_t      primeIndex;     
 
     UBool       allocated; 
@@ -190,7 +190,7 @@ U_CDECL_END
 
 
 
-U_CAPI UHashtable* U_EXPORT2 
+U_CAPI UHashtable* U_EXPORT2
 uhash_open(UHashFunction *keyHash,
            UKeyComparator *keyComp,
            UValueComparator *valueComp,
@@ -207,7 +207,7 @@ uhash_open(UHashFunction *keyHash,
 
 
 
-U_CAPI UHashtable* U_EXPORT2 
+U_CAPI UHashtable* U_EXPORT2
 uhash_openSize(UHashFunction *keyHash,
                UKeyComparator *keyComp,
                UValueComparator *valueComp,
@@ -224,7 +224,7 @@ uhash_openSize(UHashFunction *keyHash,
 
 
 
-U_CAPI UHashtable* U_EXPORT2 
+U_CAPI UHashtable* U_EXPORT2
 uhash_init(UHashtable *hash,
            UHashFunction *keyHash,
            UKeyComparator *keyComp,
@@ -235,7 +235,26 @@ uhash_init(UHashtable *hash,
 
 
 
-U_CAPI void U_EXPORT2 
+
+
+
+
+
+
+
+U_CAPI UHashtable* U_EXPORT2
+uhash_initSize(UHashtable *hash,
+               UHashFunction *keyHash,
+               UKeyComparator *keyComp,
+               UValueComparator *valueComp,
+               int32_t size,
+               UErrorCode *status);
+
+
+
+
+
+U_CAPI void U_EXPORT2
 uhash_close(UHashtable *hash);
 
 
@@ -246,7 +265,7 @@ uhash_close(UHashtable *hash);
 
 
 
-U_CAPI UHashFunction *U_EXPORT2 
+U_CAPI UHashFunction *U_EXPORT2
 uhash_setKeyHasher(UHashtable *hash, UHashFunction *fn);
 
 
@@ -256,7 +275,7 @@ uhash_setKeyHasher(UHashtable *hash, UHashFunction *fn);
 
 
 
-U_CAPI UKeyComparator *U_EXPORT2 
+U_CAPI UKeyComparator *U_EXPORT2
 uhash_setKeyComparator(UHashtable *hash, UKeyComparator *fn);
 
 
@@ -266,7 +285,7 @@ uhash_setKeyComparator(UHashtable *hash, UKeyComparator *fn);
 
 
 
-U_CAPI UValueComparator *U_EXPORT2 
+U_CAPI UValueComparator *U_EXPORT2
 uhash_setValueComparator(UHashtable *hash, UValueComparator *fn);
 
 
@@ -279,7 +298,7 @@ uhash_setValueComparator(UHashtable *hash, UValueComparator *fn);
 
 
 
-U_CAPI UObjectDeleter *U_EXPORT2 
+U_CAPI UObjectDeleter *U_EXPORT2
 uhash_setKeyDeleter(UHashtable *hash, UObjectDeleter *fn);
 
 
@@ -292,7 +311,7 @@ uhash_setKeyDeleter(UHashtable *hash, UObjectDeleter *fn);
 
 
 
-U_CAPI UObjectDeleter *U_EXPORT2 
+U_CAPI UObjectDeleter *U_EXPORT2
 uhash_setValueDeleter(UHashtable *hash, UObjectDeleter *fn);
 
 
@@ -302,7 +321,7 @@ uhash_setValueDeleter(UHashtable *hash, UObjectDeleter *fn);
 
 
 
-U_CAPI void U_EXPORT2 
+U_CAPI void U_EXPORT2
 uhash_setResizePolicy(UHashtable *hash, enum UHashResizePolicy policy);
 
 
@@ -310,7 +329,7 @@ uhash_setResizePolicy(UHashtable *hash, enum UHashResizePolicy policy);
 
 
 
-U_CAPI int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2
 uhash_count(const UHashtable *hash);
 
 
@@ -326,7 +345,7 @@ uhash_count(const UHashtable *hash);
 
 
 
-U_CAPI void* U_EXPORT2 
+U_CAPI void* U_EXPORT2
 uhash_put(UHashtable *hash,
           void *key,
           void *value,
@@ -344,7 +363,7 @@ uhash_put(UHashtable *hash,
 
 
 
-U_CAPI void* U_EXPORT2 
+U_CAPI void* U_EXPORT2
 uhash_iput(UHashtable *hash,
            int32_t key,
            void* value,
@@ -362,7 +381,7 @@ uhash_iput(UHashtable *hash,
 
 
 
-U_CAPI int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2
 uhash_puti(UHashtable *hash,
            void* key,
            int32_t value,
@@ -380,7 +399,7 @@ uhash_puti(UHashtable *hash,
 
 
 
-U_CAPI int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2
 uhash_iputi(UHashtable *hash,
            int32_t key,
            int32_t value,
@@ -393,8 +412,8 @@ uhash_iputi(UHashtable *hash,
 
 
 
-U_CAPI void* U_EXPORT2 
-uhash_get(const UHashtable *hash, 
+U_CAPI void* U_EXPORT2
+uhash_get(const UHashtable *hash,
           const void *key);
 
 
@@ -404,7 +423,7 @@ uhash_get(const UHashtable *hash,
 
 
 
-U_CAPI void* U_EXPORT2 
+U_CAPI void* U_EXPORT2
 uhash_iget(const UHashtable *hash,
            int32_t key);
 
@@ -415,7 +434,7 @@ uhash_iget(const UHashtable *hash,
 
 
 
-U_CAPI int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2
 uhash_geti(const UHashtable *hash,
            const void* key);
 
@@ -425,7 +444,7 @@ uhash_geti(const UHashtable *hash,
 
 
 
-U_CAPI int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2
 uhash_igeti(const UHashtable *hash,
            int32_t key);
 
@@ -435,7 +454,7 @@ uhash_igeti(const UHashtable *hash,
 
 
 
-U_CAPI void* U_EXPORT2 
+U_CAPI void* U_EXPORT2
 uhash_remove(UHashtable *hash,
              const void *key);
 
@@ -445,7 +464,7 @@ uhash_remove(UHashtable *hash,
 
 
 
-U_CAPI void* U_EXPORT2 
+U_CAPI void* U_EXPORT2
 uhash_iremove(UHashtable *hash,
               int32_t key);
 
@@ -455,7 +474,7 @@ uhash_iremove(UHashtable *hash,
 
 
 
-U_CAPI int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2
 uhash_removei(UHashtable *hash,
               const void* key);
 
@@ -465,7 +484,7 @@ uhash_removei(UHashtable *hash,
 
 
 
-U_CAPI int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2
 uhash_iremovei(UHashtable *hash,
                int32_t key);
 
@@ -473,7 +492,7 @@ uhash_iremovei(UHashtable *hash,
 
 
 
-U_CAPI void U_EXPORT2 
+U_CAPI void U_EXPORT2
 uhash_removeAll(UHashtable *hash);
 
 
@@ -487,7 +506,7 @@ uhash_removeAll(UHashtable *hash);
 
 
 
-U_CAPI const UHashElement* U_EXPORT2 
+U_CAPI const UHashElement* U_EXPORT2
 uhash_find(const UHashtable *hash, const void* key);
 
 
@@ -510,7 +529,7 @@ uhash_find(const UHashtable *hash, const void* key);
 
 
 
-U_CAPI const UHashElement* U_EXPORT2 
+U_CAPI const UHashElement* U_EXPORT2
 uhash_nextElement(const UHashtable *hash,
                   int32_t *pos);
 
@@ -525,7 +544,7 @@ uhash_nextElement(const UHashtable *hash,
 
 
 
-U_CAPI void* U_EXPORT2 
+U_CAPI void* U_EXPORT2
 uhash_removeElement(UHashtable *hash, const UHashElement* e);
 
 
@@ -559,7 +578,7 @@ uhash_removeElement(UHashtable *hash, const UHashElement* e);
 
 
 
-U_CAPI int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2
 uhash_hashUChars(const UHashTok key);
 
 
@@ -569,7 +588,7 @@ uhash_hashUChars(const UHashTok key);
 
 
 
-U_CAPI int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2
 uhash_hashChars(const UHashTok key);
 
 
@@ -589,7 +608,7 @@ uhash_hashIChars(const UHashTok key);
 
 
 
-U_CAPI UBool U_EXPORT2 
+U_CAPI UBool U_EXPORT2
 uhash_compareUChars(const UHashTok key1, const UHashTok key2);
 
 
@@ -599,7 +618,7 @@ uhash_compareUChars(const UHashTok key1, const UHashTok key2);
 
 
 
-U_CAPI UBool U_EXPORT2 
+U_CAPI UBool U_EXPORT2
 uhash_compareChars(const UHashTok key1, const UHashTok key2);
 
 
@@ -609,7 +628,7 @@ uhash_compareChars(const UHashTok key1, const UHashTok key2);
 
 
 
-U_CAPI UBool U_EXPORT2 
+U_CAPI UBool U_EXPORT2
 uhash_compareIChars(const UHashTok key1, const UHashTok key2);
 
 
@@ -621,7 +640,7 @@ uhash_compareIChars(const UHashTok key1, const UHashTok key2);
 
 
 
-U_CAPI int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2
 uhash_hashUnicodeString(const UElement key);
 
 
@@ -630,7 +649,7 @@ uhash_hashUnicodeString(const UElement key);
 
 
 
-U_CAPI int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2
 uhash_hashCaselessUnicodeString(const UElement key);
 
 
@@ -642,7 +661,7 @@ uhash_hashCaselessUnicodeString(const UElement key);
 
 
 
-U_CAPI int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2
 uhash_hashLong(const UHashTok key);
 
 
@@ -651,7 +670,7 @@ uhash_hashLong(const UHashTok key);
 
 
 
-U_CAPI UBool U_EXPORT2 
+U_CAPI UBool U_EXPORT2
 uhash_compareLong(const UHashTok key1, const UHashTok key2);
 
 
@@ -662,7 +681,7 @@ uhash_compareLong(const UHashTok key1, const UHashTok key2);
 
 
 
-U_CAPI void U_EXPORT2 
+U_CAPI void U_EXPORT2
 uhash_deleteHashtable(void *obj);
 
 
@@ -673,7 +692,7 @@ uhash_deleteHashtable(void *obj);
 
 
 
-U_CAPI UBool U_EXPORT2 
+U_CAPI UBool U_EXPORT2
 uhash_equals(const UHashtable* hash1, const UHashtable* hash2);
 
 

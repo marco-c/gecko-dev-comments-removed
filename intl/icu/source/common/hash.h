@@ -33,6 +33,8 @@ class U_COMMON_API Hashtable : public UMemory {
 
     inline void init(UHashFunction *keyHash, UKeyComparator *keyComp, UValueComparator *valueComp, UErrorCode& status);
 
+    inline void initSize(UHashFunction *keyHash, UKeyComparator *keyComp, UValueComparator *valueComp, int32_t size, UErrorCode& status);
+
 public:
     
 
@@ -40,6 +42,14 @@ public:
 
 
     Hashtable(UBool ignoreKeyCase, UErrorCode& status);
+
+    
+
+
+
+
+
+    Hashtable(UBool ignoreKeyCase, int32_t size, UErrorCode& status);
 
     
 
@@ -76,9 +86,9 @@ public:
     int32_t puti(const UnicodeString& key, int32_t value, UErrorCode& status);
 
     void* get(const UnicodeString& key) const;
-    
+
     int32_t geti(const UnicodeString& key) const;
-    
+
     void* remove(const UnicodeString& key);
 
     int32_t removei(const UnicodeString& key);
@@ -92,9 +102,9 @@ public:
 
 
     const UHashElement* nextElement(int32_t& pos) const;
-    
+
     UKeyComparator* setKeyComparator(UKeyComparator*keyComp);
-    
+
     UValueComparator* setValueComparator(UValueComparator* valueComp);
 
     UBool equals(const Hashtable& that) const;
@@ -107,7 +117,7 @@ private:
 
 
 
-inline void Hashtable::init(UHashFunction *keyHash, UKeyComparator *keyComp, 
+inline void Hashtable::init(UHashFunction *keyHash, UKeyComparator *keyComp,
                             UValueComparator *valueComp, UErrorCode& status) {
     if (U_FAILURE(status)) {
         return;
@@ -119,10 +129,23 @@ inline void Hashtable::init(UHashFunction *keyHash, UKeyComparator *keyComp,
     }
 }
 
-inline Hashtable::Hashtable(UKeyComparator *keyComp, UValueComparator *valueComp, 
+inline void Hashtable::initSize(UHashFunction *keyHash, UKeyComparator *keyComp,
+                                UValueComparator *valueComp, int32_t size, UErrorCode& status) {
+    if (U_FAILURE(status)) {
+        return;
+    }
+    uhash_initSize(&hashObj, keyHash, keyComp, valueComp, size, &status);
+    if (U_SUCCESS(status)) {
+        hash = &hashObj;
+        uhash_setKeyDeleter(hash, uprv_deleteUObject);
+    }
+}
+
+inline Hashtable::Hashtable(UKeyComparator *keyComp, UValueComparator *valueComp,
                  UErrorCode& status) : hash(0) {
     init( uhash_hashUnicodeString, keyComp, valueComp, status);
 }
+
 inline Hashtable::Hashtable(UBool ignoreKeyCase, UErrorCode& status)
  : hash(0)
 {
@@ -131,6 +154,17 @@ inline Hashtable::Hashtable(UBool ignoreKeyCase, UErrorCode& status)
             ignoreKeyCase ? uhash_compareCaselessUnicodeString
                         : uhash_compareUnicodeString,
             NULL,
+            status);
+}
+
+inline Hashtable::Hashtable(UBool ignoreKeyCase, int32_t size, UErrorCode& status)
+ : hash(0)
+{
+    initSize(ignoreKeyCase ? uhash_hashCaselessUnicodeString
+                        : uhash_hashUnicodeString,
+            ignoreKeyCase ? uhash_compareCaselessUnicodeString
+                        : uhash_compareUnicodeString,
+            NULL, size,
             status);
 }
 
@@ -200,7 +234,7 @@ inline void Hashtable::removeAll(void) {
 inline UKeyComparator* Hashtable::setKeyComparator(UKeyComparator*keyComp){
     return uhash_setKeyComparator(hash, keyComp);
 }
-    
+
 inline UValueComparator* Hashtable::setValueComparator(UValueComparator* valueComp){
     return uhash_setValueComparator(hash, valueComp);
 }

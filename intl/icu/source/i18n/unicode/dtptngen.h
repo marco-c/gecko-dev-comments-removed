@@ -18,6 +18,7 @@
 #include "unicode/locid.h"
 #include "unicode/udat.h"
 #include "unicode/udatpg.h"
+#include "unicode/unistr.h"
 
 U_NAMESPACE_BEGIN
 
@@ -526,9 +527,8 @@ private:
     enum {
         kDTPGNoFlags = 0,
         kDTPGFixFractionalSeconds = 1,
-        kDTPGSkeletonUsesCapJ = 2,
-        kDTPGSkeletonUsesLowB = 3,
-        kDTPGSkeletonUsesCapB = 4
+        kDTPGSkeletonUsesCapJ = 2
+        
     };
 
     void initData(const Locale &locale, UErrorCode &status);
@@ -546,6 +546,7 @@ private:
     UDateTimePatternField getAppendNameNumber(const char* field) const;
     UnicodeString& getMutableAppendItemName(UDateTimePatternField field);
     void getAppendName(UDateTimePatternField field, UnicodeString& value);
+    UnicodeString mapSkeletonMetacharacters(const UnicodeString& patternForm, int32_t* flags, UErrorCode& status);
     int32_t getCanonicalIndex(const UnicodeString& field);
     const UnicodeString* getBestRaw(DateTimeMatcher& source, int32_t includeMask, DistanceInfo* missingFields, const PtnSkeleton** specifiedSkeletonPtr = 0);
     UnicodeString adjustFieldTypes(const UnicodeString& pattern, const PtnSkeleton* specifiedSkeleton, int32_t flags, UDateTimePatternMatchOptions options = UDATPG_MATCH_NO_OPTIONS);

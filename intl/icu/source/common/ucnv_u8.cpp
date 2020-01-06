@@ -31,6 +31,7 @@
 #include "ucnv_bld.h"
 #include "ucnv_cnv.h"
 #include "cmemory.h"
+#include "ustr_imp.h"
 
 
 
@@ -44,50 +45,12 @@ U_CFUNC void ucnv_fromUnicode_UTF8_OFFSETS_LOGIC(UConverterFromUnicodeArgs *args
 
 
 
-
-
-
-
 #define MAXIMUM_UCS2            0x0000FFFF
-#define MAXIMUM_UTF             0x0010FFFF
-#define MAXIMUM_UCS4            0x7FFFFFFF
-#define HALF_SHIFT              10
-#define HALF_BASE               0x0010000
-#define HALF_MASK               0x3FF
-#define SURROGATE_HIGH_START    0xD800
-#define SURROGATE_HIGH_END      0xDBFF
-#define SURROGATE_LOW_START     0xDC00
-#define SURROGATE_LOW_END       0xDFFF
 
-
-#define SURROGATE_LOW_BASE      9216
-
-static const uint32_t offsetsFromUTF8[7] = {0,
+static const uint32_t offsetsFromUTF8[5] = {0,
   (uint32_t) 0x00000000, (uint32_t) 0x00003080, (uint32_t) 0x000E2080,
-  (uint32_t) 0x03C82080, (uint32_t) 0xFA082080, (uint32_t) 0x82082080
+  (uint32_t) 0x03C82080
 };
-
-
-
-static const int8_t bytesFromUTF8[256] = {
-  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-  3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 0, 0
-};
-
-
-
-
-
-
-
-static const uint32_t
-utf8_minChar32[7]={ 0, 0, 0x80, 0x800, 0x10000, 0xffffffff, 0xffffffff };
 
 static UBool hasCESU8Data(const UConverter *cnv)
 {
@@ -127,7 +90,7 @@ static void  U_CALLCONV ucnv_toUnicode_UTF8 (UConverterToUnicodeArgs * args,
     while (mySource < sourceLimit && myTarget < targetLimit)
     {
         ch = *(mySource++);
-        if (ch < 0x80)        
+        if (U8_IS_SINGLE(ch))        
         {
             *(myTarget++) = (UChar) ch;
         }
@@ -135,7 +98,7 @@ static void  U_CALLCONV ucnv_toUnicode_UTF8 (UConverterToUnicodeArgs * args,
         {
             
             toUBytes[0] = (char)ch;
-            inBytes = bytesFromUTF8[ch]; 
+            inBytes = U8_COUNT_BYTES_NON_ASCII(ch); 
             i = 1;
 
 morebytes:
@@ -144,7 +107,8 @@ morebytes:
                 if (mySource < sourceLimit)
                 {
                     toUBytes[i] = (char) (ch2 = *mySource);
-                    if (!U8_IS_TRAIL(ch2))
+                    if (!icu::UTF8::isValidTrail(ch, ch2, i, inBytes) &&
+                            !(isCESU8 && i == 1 && ch == 0xed && U8_IS_TRAIL(ch2)))
                     {
                         break; 
                     }
@@ -163,23 +127,11 @@ morebytes:
             }
 
             
-            ch -= offsetsFromUTF8[inBytes];
-
-            
-
-
-
-
-
-
-
-
-
-
-
-            if (i == inBytes && ch <= MAXIMUM_UTF && ch >= utf8_minChar32[i] &&
-                (isCESU8 ? i <= 3 : !U_IS_SURROGATE(ch)))
+            if (i == inBytes && (!isCESU8 || i <= 3))
             {
+                
+                ch -= offsetsFromUTF8[inBytes];
+
                 
                 if (ch <= MAXIMUM_UCS2) 
                 {
@@ -189,9 +141,8 @@ morebytes:
                 else
                 {
                     
-                    ch -= HALF_BASE;
-                    *(myTarget++) = (UChar) ((ch >> HALF_SHIFT) + SURROGATE_HIGH_START);
-                    ch = (ch & HALF_MASK) + SURROGATE_LOW_START;
+                    *(myTarget++) = U16_LEAD(ch);
+                    ch = U16_TRAIL(ch);
                     if (myTarget < targetLimit)
                     {
                         *(myTarget++) = (UChar)ch;
@@ -256,7 +207,7 @@ static void  U_CALLCONV ucnv_toUnicode_UTF8_OFFSETS_LOGIC (UConverterToUnicodeAr
     while (mySource < sourceLimit && myTarget < targetLimit)
     {
         ch = *(mySource++);
-        if (ch < 0x80)        
+        if (U8_IS_SINGLE(ch))        
         {
             *(myTarget++) = (UChar) ch;
             *(myOffsets++) = offsetNum++;
@@ -264,7 +215,7 @@ static void  U_CALLCONV ucnv_toUnicode_UTF8_OFFSETS_LOGIC (UConverterToUnicodeAr
         else
         {
             toUBytes[0] = (char)ch;
-            inBytes = bytesFromUTF8[ch];
+            inBytes = U8_COUNT_BYTES_NON_ASCII(ch);
             i = 1;
 
 morebytes:
@@ -273,7 +224,8 @@ morebytes:
                 if (mySource < sourceLimit)
                 {
                     toUBytes[i] = (char) (ch2 = *mySource);
-                    if (!U8_IS_TRAIL(ch2))
+                    if (!icu::UTF8::isValidTrail(ch, ch2, i, inBytes) &&
+                            !(isCESU8 && i == 1 && ch == 0xed && U8_IS_TRAIL(ch2)))
                     {
                         break; 
                     }
@@ -291,23 +243,11 @@ morebytes:
             }
 
             
-            ch -= offsetsFromUTF8[inBytes];
-
-            
-
-
-
-
-
-
-
-
-
-
-
-            if (i == inBytes && ch <= MAXIMUM_UTF && ch >= utf8_minChar32[i] &&
-                (isCESU8 ? i <= 3 : !U_IS_SURROGATE(ch)))
+            if (i == inBytes && (!isCESU8 || i <= 3))
             {
+                
+                ch -= offsetsFromUTF8[inBytes];
+
                 
                 if (ch <= MAXIMUM_UCS2) 
                 {
@@ -318,10 +258,9 @@ morebytes:
                 else
                 {
                     
-                    ch -= HALF_BASE;
-                    *(myTarget++) = (UChar) ((ch >> HALF_SHIFT) + SURROGATE_HIGH_START);
+                    *(myTarget++) = U16_LEAD(ch);
                     *(myOffsets++) = offsetNum;
-                    ch = (ch & HALF_MASK) + SURROGATE_LOW_START;
+                    ch = U16_TRAIL(ch);
                     if (myTarget < targetLimit)
                     {
                         *(myTarget++) = (UChar)ch;
@@ -616,10 +555,9 @@ static UChar32 U_CALLCONV ucnv_getNextUChar_UTF8(UConverterToUnicodeArgs *args,
     UConverter *cnv;
     const uint8_t *sourceInitial;
     const uint8_t *source;
-    uint16_t extraBytesToWrite;
     uint8_t myByte;
     UChar32 ch;
-    int8_t i, isLegalSequence;
+    int8_t i;
 
     
 
@@ -633,14 +571,14 @@ static UChar32 U_CALLCONV ucnv_getNextUChar_UTF8(UConverterToUnicodeArgs *args,
     }
 
     myByte = (uint8_t)*(source++);
-    if (myByte < 0x80)
+    if (U8_IS_SINGLE(myByte))
     {
         args->source = (const char *)source;
         return (UChar32)myByte;
     }
 
-    extraBytesToWrite = (uint16_t)bytesFromUTF8[myByte];
-    if (extraBytesToWrite == 0) {
+    uint16_t countTrailBytes = U8_COUNT_TRAIL_BYTES(myByte);
+    if (countTrailBytes == 0) {
         cnv->toUBytes[0] = myByte;
         cnv->toULength = 1;
         *err = U_ILLEGAL_CHAR_FOUND;
@@ -649,15 +587,17 @@ static UChar32 U_CALLCONV ucnv_getNextUChar_UTF8(UConverterToUnicodeArgs *args,
     }
 
     
-    if (((const char *)source + extraBytesToWrite - 1) > args->sourceLimit)
+    if (((const char *)source + countTrailBytes) > args->sourceLimit)
     {
         
+        uint16_t extraBytesToWrite = countTrailBytes + 1;
         cnv->toUBytes[0] = myByte;
         i = 1;
         *err = U_TRUNCATED_CHAR_FOUND;
         while(source < (const uint8_t *)args->sourceLimit) {
-            if(U8_IS_TRAIL(myByte = *source)) {
-                cnv->toUBytes[i++] = myByte;
+            uint8_t b = *source;
+            if(icu::UTF8::isValidTrail(myByte, b, i, extraBytesToWrite)) {
+                cnv->toUBytes[i++] = b;
                 ++source;
             } else {
                 
@@ -670,81 +610,28 @@ static UChar32 U_CALLCONV ucnv_getNextUChar_UTF8(UConverterToUnicodeArgs *args,
         return 0xffff;
     }
 
-    isLegalSequence = 1;
     ch = myByte << 6;
-    switch(extraBytesToWrite)
-    {     
-       
-    case 6:
-        ch += (myByte = *source);
-        ch <<= 6;
-        if (!U8_IS_TRAIL(myByte))
-        {
-            isLegalSequence = 0;
-            break;
+    if(countTrailBytes == 2) {
+        uint8_t t1 = *source, t2;
+        if(U8_IS_VALID_LEAD3_AND_T1(myByte, t1) && U8_IS_TRAIL(t2 = *++source)) {
+            args->source = (const char *)(source + 1);
+            return (((ch + t1) << 6) + t2) - offsetsFromUTF8[3];
         }
-        ++source;
-        U_FALLTHROUGH;
-    case 5:
-        ch += (myByte = *source);
-        ch <<= 6;
-        if (!U8_IS_TRAIL(myByte))
-        {
-            isLegalSequence = 0;
-            break;
+    } else if(countTrailBytes == 1) {
+        uint8_t t1 = *source;
+        if(U8_IS_TRAIL(t1)) {
+            args->source = (const char *)(source + 1);
+            return (ch + t1) - offsetsFromUTF8[2];
         }
-        ++source;
-        U_FALLTHROUGH;
-    case 4:
-        ch += (myByte = *source);
-        ch <<= 6;
-        if (!U8_IS_TRAIL(myByte))
-        {
-            isLegalSequence = 0;
-            break;
+    } else {  
+        uint8_t t1 = *source, t2, t3;
+        if(U8_IS_VALID_LEAD4_AND_T1(myByte, t1) && U8_IS_TRAIL(t2 = *++source) &&
+                U8_IS_TRAIL(t3 = *++source)) {
+            args->source = (const char *)(source + 1);
+            return (((((ch + t1) << 6) + t2) << 6) + t3) - offsetsFromUTF8[4];
         }
-        ++source;
-        U_FALLTHROUGH;
-    case 3:
-        ch += (myByte = *source);
-        ch <<= 6;
-        if (!U8_IS_TRAIL(myByte))
-        {
-            isLegalSequence = 0;
-            break;
-        }
-        ++source;
-        U_FALLTHROUGH;
-    case 2:
-        ch += (myByte = *source);
-        if (!U8_IS_TRAIL(myByte))
-        {
-            isLegalSequence = 0;
-            break;
-        }
-        ++source;
-    };
-    ch -= offsetsFromUTF8[extraBytesToWrite];
-    args->source = (const char *)source;
-
-    
-
-
-
-
-
-
-
-
-
-
-    if (isLegalSequence &&
-        (uint32_t)ch <= MAXIMUM_UTF &&
-        (uint32_t)ch >= utf8_minChar32[extraBytesToWrite] &&
-        !U_IS_SURROGATE(ch)
-    ) {
-        return ch; 
     }
+    args->source = (const char *)source;
 
     for(i = 0; sourceInitial < source; ++i) {
         cnv->toUBytes[i] = *sourceInitial++;
@@ -756,14 +643,6 @@ static UChar32 U_CALLCONV ucnv_getNextUChar_UTF8(UConverterToUnicodeArgs *args,
 U_CDECL_END
 
 
-
-
-static const UChar32
-utf8_minLegal[5]={ 0, 0, 0x80, 0x800, 0x10000 };
-
-
-static const UChar32
-utf8_offsets[7]={ 0, 0, 0x3080, 0xE2080, 0x3C82080 };
 
 U_CDECL_BEGIN
 
@@ -813,38 +692,34 @@ ucnv_UTF8FromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
         return;
     } else {
         
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        int32_t i;
-
+        
+        
         if(count>targetCapacity) {
             count=targetCapacity;
         }
 
-        i=0;
-        while(i<3 && i<(count-toULimit)) {
-            b=source[count-oldToULength-i-1];
-            if(U8_IS_TRAIL(b)) {
-                ++i;
-            } else {
-                if(i<U8_COUNT_TRAIL_BYTES(b)) {
+        
+        
+        
+        
+        {
+            
+            
+            int32_t length=count-toULimit;
+            if(length>0) {
+                uint8_t b1=*(sourceLimit-1);
+                if(U8_IS_SINGLE(b1)) {
                     
-                    count-=i+1;
+                } else if(U8_IS_TRAIL(b1) && length>=2) {
+                    uint8_t b2=*(sourceLimit-2);
+                    if(0xe0<=b2 && b2<0xf0 && U8_IS_VALID_LEAD3_AND_T1(b2, b1)) {
+                        
+                        count-=2;
+                    }
+                } else if(0xc2<=b1 && b1<0xf0) {
+                    
+                    --count;
                 }
-                break;
             }
         }
     }
@@ -859,17 +734,17 @@ ucnv_UTF8FromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
     
     while(count>0) {
         b=*source++;
-        if((int8_t)b>=0) {
+        if(U8_IS_SINGLE(b)) {
             
             *target++=b;
             --count;
             continue;
         } else {
-            if(b>0xe0) {
+            if(b>=0xe0) {
                 if( 
-                    (t1=source[0]) >= 0x80 && ((b<0xed && (t1 <= 0xbf)) ||
-                                               (b==0xed && (t1 <= 0x9f))) &&
-                    (t2=source[1]) >= 0x80 && t2 <= 0xbf
+                    b<0xf0 &&
+                    U8_IS_VALID_LEAD3_AND_T1(b, t1=source[0]) &&
+                    U8_IS_TRAIL(t2=source[1])
                 ) {
                     source+=2;
                     *target++=b;
@@ -878,10 +753,10 @@ ucnv_UTF8FromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
                     count-=3;
                     continue;
                 }
-            } else if(b<0xe0) {
+            } else {
                 if( 
                     b>=0xc2 &&
-                    (t1=*source) >= 0x80 && t1 <= 0xbf
+                    U8_IS_TRAIL(t1=*source)
                 ) {
                     ++source;
                     *target++=b;
@@ -889,30 +764,18 @@ ucnv_UTF8FromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
                     count-=2;
                     continue;
                 }
-            } else if(b==0xe0) {
-                if( 
-                    (t1=source[0]) >= 0xa0 && t1 <= 0xbf &&
-                    (t2=source[1]) >= 0x80 && t2 <= 0xbf
-                ) {
-                    source+=2;
-                    *target++=b;
-                    *target++=t1;
-                    *target++=t2;
-                    count-=3;
-                    continue;
-                }
             }
 
             
             oldToULength=0;
             toULength=1;
-            toULimit=U8_COUNT_TRAIL_BYTES(b)+1;
+            toULimit=U8_COUNT_BYTES_NON_ASCII(b);
             c=b;
 moreBytes:
             while(toULength<toULimit) {
                 if(source<sourceLimit) {
                     b=*source;
-                    if(U8_IS_TRAIL(b)) {
+                    if(icu::UTF8::isValidTrail(c, b, toULength, toULimit)) {
                         ++source;
                         ++toULength;
                         c=(c<<6)+b;
@@ -934,18 +797,7 @@ moreBytes:
                 }
             }
 
-            if( toULength==toULimit &&      
-                (toULength==3 || toULength==2) &&             
-                (c-=utf8_offsets[toULength])>=utf8_minLegal[toULength] &&
-                (c<=0xd7ff || 0xe000<=c)    
-            ) {
-                
-            } else if(
-                toULength==toULimit && toULength==4 &&
-                (0x10000<=(c-=utf8_offsets[4]) && c<=0x10ffff)
-            ) {
-                
-            } else {
+            if(toULength!=toULimit) {
                 
                 source-=(toULength-oldToULength);
                 while(oldToULength<toULength) {
@@ -979,7 +831,7 @@ moreBytes:
             *pErrorCode=U_BUFFER_OVERFLOW_ERROR;
         } else {
             b=*source;
-            toULimit=U8_COUNT_TRAIL_BYTES(b)+1;
+            toULimit=U8_COUNT_BYTES(b);
             if(toULimit>(sourceLimit-source)) {
                 
                 toULength=0;

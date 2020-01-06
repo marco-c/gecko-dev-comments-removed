@@ -36,8 +36,32 @@ public:
 
 
     Edits() :
-            array(stackArray), capacity(STACK_CAPACITY), length(0), delta(0),
-            errorCode(U_ZERO_ERROR) {}
+            array(stackArray), capacity(STACK_CAPACITY), length(0), delta(0), numChanges(0),
+            errorCode_(U_ZERO_ERROR) {}
+    
+
+
+
+
+    Edits(const Edits &other) :
+            array(stackArray), capacity(STACK_CAPACITY), length(other.length),
+            delta(other.delta), numChanges(other.numChanges),
+            errorCode_(other.errorCode_) {
+        copyArray(other);
+    }
+    
+
+
+
+
+
+    Edits(Edits &&src) U_NOEXCEPT :
+            array(stackArray), capacity(STACK_CAPACITY), length(src.length),
+            delta(src.delta), numChanges(src.numChanges),
+            errorCode_(src.errorCode_) {
+        moveArray(src);
+    }
+
     
 
 
@@ -48,7 +72,25 @@ public:
 
 
 
-    void reset();
+
+
+    Edits &operator=(const Edits &other);
+
+    
+
+
+
+
+
+
+
+    Edits &operator=(Edits &&src) U_NOEXCEPT;
+
+    
+
+
+
+    void reset() U_NOEXCEPT;
 
     
 
@@ -69,6 +111,9 @@ public:
 
 
 
+
+
+
     UBool copyErrorTo(UErrorCode &outErrorCode);
 
     
@@ -81,7 +126,13 @@ public:
 
 
 
-    UBool hasChanges() const;
+    UBool hasChanges() const { return numChanges != 0; }
+
+    
+
+
+
+    int32_t numberOfChanges() const { return numChanges; }
 
     
 
@@ -94,6 +145,15 @@ public:
 
 
 
+        Iterator() :
+                array(nullptr), index(0), length(0),
+                remaining(0), onlyChanges_(FALSE), coarse(FALSE),
+                dir(0), changed(FALSE), oldLength_(0), newLength_(0),
+                srcIndex(0), replIndex(0), destIndex(0) {}
+        
+
+
+
         Iterator(const Iterator &other) = default;
         
 
@@ -102,6 +162,9 @@ public:
         Iterator &operator=(const Iterator &other) = default;
 
         
+
+
+
 
 
 
@@ -124,7 +187,83 @@ public:
 
 
 
-        UBool findSourceIndex(int32_t i, UErrorCode &errorCode);
+
+
+
+        UBool findSourceIndex(int32_t i, UErrorCode &errorCode) {
+            return findIndex(i, TRUE, errorCode) == 0;
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        UBool findDestinationIndex(int32_t i, UErrorCode &errorCode) {
+            return findIndex(i, FALSE, errorCode) == 0;
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        int32_t destinationIndexFromSourceIndex(int32_t i, UErrorCode &errorCode);
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        int32_t sourceIndexFromDestinationIndex(int32_t i, UErrorCode &errorCode);
 
         
 
@@ -167,15 +306,22 @@ public:
         Iterator(const uint16_t *a, int32_t len, UBool oc, UBool crs);
 
         int32_t readLength(int32_t head);
-        void updateIndexes();
+        void updateNextIndexes();
+        void updatePreviousIndexes();
         UBool noNext();
         UBool next(UBool onlyChanges, UErrorCode &errorCode);
+        UBool previous(UErrorCode &errorCode);
+        
+        int32_t findIndex(int32_t i, UBool findSource, UErrorCode &errorCode);
 
         const uint16_t *array;
         int32_t index, length;
+        
+        
         int32_t remaining;
         UBool onlyChanges_, coarse;
 
+        int8_t dir;  
         UBool changed;
         int32_t oldLength_, newLength_;
         int32_t srcIndex, replIndex, destIndex;
@@ -219,9 +365,39 @@ public:
         return Iterator(array, length, FALSE, FALSE);
     }
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Edits &mergeAndAppend(const Edits &ab, const Edits &bc, UErrorCode &errorCode);
+
 private:
-    Edits(const Edits &) = delete;
-    Edits &operator=(const Edits &) = delete;
+    void releaseArray() U_NOEXCEPT;
+    Edits &copyArray(const Edits &other);
+    Edits &moveArray(Edits &src) U_NOEXCEPT;
 
     void setLastUnit(int32_t last) { array[length - 1] = (uint16_t)last; }
     int32_t lastUnit() const { return length > 0 ? array[length - 1] : 0xffff; }
@@ -234,7 +410,8 @@ private:
     int32_t capacity;
     int32_t length;
     int32_t delta;
-    UErrorCode errorCode;
+    int32_t numChanges;
+    UErrorCode errorCode_;
     uint16_t stackArray[STACK_CAPACITY];
 };
 

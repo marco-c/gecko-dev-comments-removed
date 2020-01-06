@@ -145,7 +145,22 @@
 #ifndef __UTF_OLD_H__
 #define __UTF_OLD_H__
 
-#ifndef U_HIDE_DEPRECATED_API
+
+
+
+
+
+
+
+
+
+
+
+#ifndef U_HIDE_OBSOLETE_UTF_OLD_H
+#   define U_HIDE_OBSOLETE_UTF_OLD_H 0
+#endif
+
+#if !defined(U_HIDE_DEPRECATED_API) && !U_HIDE_OBSOLETE_UTF_OLD_H
 
 #include "unicode/utf.h"
 #include "unicode/utf8.h"
@@ -1184,7 +1199,6 @@ U_CFUNC U_IMPORT const uint8_t utf8_countTrailBytes[];
 
 #define UTF_SET_CHAR_LIMIT(s, start, i, length) U16_SET_CP_LIMIT(s, start, i, length)
 
-#endif 
+#endif  
 
 #endif
-

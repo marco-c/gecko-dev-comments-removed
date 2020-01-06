@@ -33,7 +33,7 @@ namespace {
 const int32_t UNKNOWN = 1 << 21;
 const int32_t EXCLUSION = 2 << 21;
 const int32_t LIMITED_USE = 3 << 21;
-const int32_t ASPIRATIONAL = 4 << 21;
+
 const int32_t RECOMMENDED = 5 << 21;
 
 
@@ -71,7 +71,7 @@ const int32_t SCRIPT_PROPS[] = {
     0x0EA5 | RECOMMENDED | LB_LETTERS,  
     0x004C | RECOMMENDED | CASED,  
     0x0D15 | RECOMMENDED,  
-    0x1826 | ASPIRATIONAL,  
+    0x1826 | LIMITED_USE,  
     0x1000 | RECOMMENDED | LB_LETTERS,  
     0x168F | EXCLUSION,  
     0x10300 | EXCLUSION,  
@@ -84,8 +84,8 @@ const int32_t SCRIPT_PROPS[] = {
     0x078C | RECOMMENDED | RTL,  
     0x0E17 | RECOMMENDED | LB_LETTERS,  
     0x0F40 | RECOMMENDED,  
-    0x14C0 | ASPIRATIONAL,  
-    0xA288 | ASPIRATIONAL | LB_LETTERS,  
+    0x14C0 | LIMITED_USE,  
+    0xA288 | LIMITED_USE | LB_LETTERS,  
     0x1703 | EXCLUSION,  
     0x1723 | EXCLUSION,  
     0x1743 | EXCLUSION,  
@@ -104,7 +104,7 @@ const int32_t SCRIPT_PROPS[] = {
     0x10A00 | EXCLUSION | RTL,  
     0xA800 | LIMITED_USE,  
     0x1980 | LIMITED_USE | LB_LETTERS,  
-    0x2D30 | ASPIRATIONAL,  
+    0x2D30 | LIMITED_USE,  
     0x103A0 | EXCLUSION,  
     0x1B05 | LIMITED_USE,  
     0x1BC0 | LIMITED_USE,  
@@ -136,7 +136,7 @@ const int32_t SCRIPT_PROPS[] = {
     0x1036B | EXCLUSION,  
     0xA840 | EXCLUSION,  
     0x10900 | EXCLUSION | RTL,  
-    0x16F00 | ASPIRATIONAL,  
+    0x16F00 | LIMITED_USE,  
     0,
     0,
     0,
@@ -194,7 +194,7 @@ const int32_t SCRIPT_PROPS[] = {
     0,
     0,
     0x16A4F | EXCLUSION,  
-    0,
+    0x1B1C4 | EXCLUSION | LB_LETTERS,  
     0x11183 | EXCLUSION,  
     0x110D0 | EXCLUSION,  
     0x11680 | EXCLUSION,  
@@ -219,6 +219,9 @@ const int32_t SCRIPT_PROPS[] = {
     0x5B57 | RECOMMENDED | LB_LETTERS,  
     0x1112 | RECOMMENDED,  
     0,
+    0x11D10 | EXCLUSION,  
+    0x11A5C | EXCLUSION,  
+    0x11A0B | EXCLUSION,  
     
 };
 

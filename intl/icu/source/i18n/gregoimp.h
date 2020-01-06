@@ -49,6 +49,17 @@ class ClockMath {
 
 
 
+    static int64_t floorDivide(int64_t numerator, int64_t denominator);
+
+    
+
+
+
+
+
+
+
+
     static inline double floorDivide(double numerator, double denominator);
 
     

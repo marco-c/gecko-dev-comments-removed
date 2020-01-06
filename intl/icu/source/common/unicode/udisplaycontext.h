@@ -44,14 +44,12 @@ enum UDisplayContextType {
 
 
     UDISPCTX_TYPE_DISPLAY_LENGTH = 2,
-#ifndef U_HIDE_DRAFT_API
     
 
 
 
 
     UDISPCTX_TYPE_SUBSTITUTE_HANDLING = 3
-#endif 
 };
 
 
@@ -143,7 +141,6 @@ enum UDisplayContext {
 
 
     UDISPCTX_LENGTH_SHORT = (UDISPCTX_TYPE_DISPLAY_LENGTH<<8) + 1,
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -163,7 +160,6 @@ enum UDisplayContext {
 
 
     UDISPCTX_NO_SUBSTITUTE = (UDISPCTX_TYPE_SUBSTITUTE_HANDLING<<8) + 1
-#endif 
 
 };
 

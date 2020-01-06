@@ -8,6 +8,7 @@
 #define __CASEMAP_H__
 
 #include "unicode/utypes.h"
+#include "unicode/stringpiece.h"
 #include "unicode/uobject.h"
 
 
@@ -20,6 +21,7 @@ U_NAMESPACE_BEGIN
 #ifndef U_HIDE_DRAFT_API
 
 class BreakIterator;
+class ByteSink;
 class Edits;
 
 
@@ -30,6 +32,7 @@ class Edits;
 class U_COMMON_API CaseMap U_FINAL : public UMemory {
 public:
     
+
 
 
 
@@ -93,6 +96,7 @@ public:
 
 
 
+
     static int32_t toUpper(
             const char *locale, uint32_t options,
             const char16_t *src, int32_t srcLength,
@@ -102,6 +106,9 @@ public:
 #if !UCONFIG_NO_BREAK_ITERATION
 
     
+
+
+
 
 
 
@@ -182,6 +189,7 @@ public:
 
 
 
+
     static int32_t fold(
             uint32_t options,
             const char16_t *src, int32_t srcLength,
@@ -209,6 +217,12 @@ public:
 
 
 
+    static void utf8ToLower(
+            const char *locale, uint32_t options,
+            StringPiece src, ByteSink &sink, Edits *edits,
+            UErrorCode &errorCode);
+
+    
 
 
 
@@ -217,13 +231,132 @@ public:
 
 
 
-     static int32_t utf8ToLower(
+
+
+
+
+
+
+
+
+
+
+
+
+    static void utf8ToUpper(
+            const char *locale, uint32_t options,
+            StringPiece src, ByteSink &sink, Edits *edits,
+            UErrorCode &errorCode);
+
+#if !UCONFIG_NO_BREAK_ITERATION
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static void utf8ToTitle(
+            const char *locale, uint32_t options, BreakIterator *iter,
+            StringPiece src, ByteSink &sink, Edits *edits,
+            UErrorCode &errorCode);
+
+#endif  
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static void utf8Fold(
+            uint32_t options,
+            StringPiece src, ByteSink &sink, Edits *edits,
+            UErrorCode &errorCode);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static int32_t utf8ToLower(
             const char *locale, uint32_t options,
             const char *src, int32_t srcLength,
             char *dest, int32_t destCapacity, Edits *edits,
             UErrorCode &errorCode);
 
     
+
 
 
 
@@ -299,6 +432,9 @@ public:
 
 
 
+
+
+
     static int32_t utf8ToTitle(
             const char *locale, uint32_t options, BreakIterator *iter,
             const char *src, int32_t srcLength,
@@ -308,6 +444,7 @@ public:
 #endif  
 
     
+
 
 
 

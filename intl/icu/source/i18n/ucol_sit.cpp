@@ -465,7 +465,14 @@ ucol_prepareShortStringOpen( const char *definition,
     UResourceBundle *collElem = NULL;
     char keyBuffer[256];
     
-    if(!uloc_getKeywordValue(buffer, "collation", keyBuffer, 256, status)) {
+    int32_t keyLen = uloc_getKeywordValue(buffer, "collation", keyBuffer, sizeof(keyBuffer), status);
+    
+    if(keyLen >= (int32_t)sizeof(keyBuffer)) {
+      keyLen = 0;
+      *status = U_ZERO_ERROR;
+    }
+    if(keyLen == 0) {
+      
       
       UResourceBundle *defaultColl = ures_getByKeyWithFallback(collations, "default", NULL, status);
       if(U_SUCCESS(*status)) {

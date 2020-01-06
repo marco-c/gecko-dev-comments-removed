@@ -235,7 +235,7 @@ public:
         DST_OFFSET,           
         YEAR_WOY,             
         DOW_LOCAL,            
-        
+
         EXTENDED_YEAR,
         JULIAN_DAY,
         MILLISECONDS_IN_DAY,
@@ -1741,7 +1741,7 @@ protected:
 
 
 
-    int32_t computeMillisInDay();
+    double computeMillisInDay();
 
     
 
@@ -1752,7 +1752,7 @@ protected:
 
 
 
-    int32_t computeZoneOffset(double millis, int32_t millisInDay, UErrorCode &ec);
+    int32_t computeZoneOffset(double millis, double millisInDay, UErrorCode &ec);
 
 
     

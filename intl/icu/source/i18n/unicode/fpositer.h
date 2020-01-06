@@ -48,6 +48,13 @@ U_NAMESPACE_BEGIN
 class UVector32;
 
 
+namespace number {
+namespace impl {
+class NumberStringBuilder;
+}
+}
+
+
 
 
 
@@ -99,14 +106,15 @@ public:
     UBool next(FieldPosition& fp);
 
 private:
-    friend class FieldPositionIteratorHandler;
-
     
 
 
 
 
     void setData(UVector32 *adopt, UErrorCode& status);
+
+    friend class FieldPositionIteratorHandler;
+    friend class number::impl::NumberStringBuilder;
 
     UVector32 *data;
     int32_t pos;

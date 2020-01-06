@@ -206,6 +206,11 @@ static UBool isPOSIX_xdigit(const BinaryProperty &, UChar32 c, UProperty ) {
     return u_isxdigit(c);
 }
 
+static UBool isRegionalIndicator(const BinaryProperty &, UChar32 c, UProperty ) {
+    
+    return 0x1F1E6<=c && c<=0x1F1FF;
+}
+
 static const BinaryProperty binProps[UCHAR_BINARY_LIMIT]={
     
 
@@ -276,6 +281,9 @@ static const BinaryProperty binProps[UCHAR_BINARY_LIMIT]={
     { 2,                U_MASK(UPROPS_2_EMOJI_PRESENTATION), defaultContains },
     { 2,                U_MASK(UPROPS_2_EMOJI_MODIFIER), defaultContains },
     { 2,                U_MASK(UPROPS_2_EMOJI_MODIFIER_BASE), defaultContains },
+    { 2,                U_MASK(UPROPS_2_EMOJI_COMPONENT), defaultContains },
+    { 2,                0, isRegionalIndicator },
+    { 1,                U_MASK(UPROPS_PREPENDED_CONCATENATION_MARK), defaultContains },
 };
 
 U_CAPI UBool U_EXPORT2

@@ -629,10 +629,12 @@ protected:
     
     BreakIterator();
     
-    BreakIterator (const BreakIterator &other) : UObject(other) {}
+    BreakIterator (const BreakIterator &other);
 #ifndef U_HIDE_INTERNAL_API
     
-    BreakIterator (const Locale& valid, const Locale& actual);
+    BreakIterator (const Locale& valid, const Locale &actual);
+    
+    BreakIterator &operator = (const BreakIterator &other);
 #endif  
 
 private:
@@ -640,12 +642,6 @@ private:
     
     char actualLocale[ULOC_FULLNAME_CAPACITY];
     char validLocale[ULOC_FULLNAME_CAPACITY];
-
-    
-
-
-
-    BreakIterator& operator=(const BreakIterator&);
 };
 
 #ifndef U_HIDE_DEPRECATED_API

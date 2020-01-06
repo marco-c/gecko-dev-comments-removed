@@ -110,6 +110,9 @@
 
 
 
+
+
+
 #ifndef __UTF_H__
 #define __UTF_H__
 
@@ -126,8 +129,7 @@
 
 #define U_IS_UNICODE_NONCHAR(c) \
     ((c)>=0xfdd0 && \
-     ((uint32_t)(c)<=0xfdef || ((c)&0xfffe)==0xfffe) && \
-     (uint32_t)(c)<=0x10ffff)
+     ((c)<=0xfdef || ((c)&0xfffe)==0xfffe) && (c)<=0x10ffff)
 
 
 
@@ -148,9 +150,7 @@
 
 #define U_IS_UNICODE_CHAR(c) \
     ((uint32_t)(c)<0xd800 || \
-        ((uint32_t)(c)>0xdfff && \
-         (uint32_t)(c)<=0x10ffff && \
-         !U_IS_UNICODE_NONCHAR(c)))
+        (0xdfff<(c) && (c)<=0x10ffff && !U_IS_UNICODE_NONCHAR(c)))
 
 
 

@@ -442,10 +442,12 @@ class TransliteratorRegistry : public UMemory {
 
 
 
-
-
-
     Hashtable specDAG;
+
+    
+
+
+    UVector variantList;
 
     
 

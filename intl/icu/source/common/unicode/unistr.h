@@ -38,16 +38,6 @@
 
 struct UConverter;          
 
-#ifndef U_COMPARE_CODE_POINT_ORDER
-
-
-
-
-
-
-#define U_COMPARE_CODE_POINT_ORDER  0x8000
-#endif
-
 #ifndef USTRING_H
 
 
@@ -1730,7 +1720,7 @@ public:
 
   template<typename StringClass>
   StringClass &toUTF8String(StringClass &result) const {
-    StringByteSink<StringClass> sbs(&result);
+    StringByteSink<StringClass> sbs(&result, length());
     toUTF8(sbs);
     return result;
   }
@@ -1901,7 +1891,6 @@ public:
 
   UnicodeString &fastCopyFrom(const UnicodeString &src);
 
-#if U_HAVE_RVALUE_REFERENCES
   
 
 
@@ -1913,7 +1902,7 @@ public:
   UnicodeString &operator=(UnicodeString &&src) U_NOEXCEPT {
     return moveFrom(src);
   }
-#endif
+
   
   
 
@@ -3360,7 +3349,6 @@ public:
 
   UnicodeString(const UnicodeString& that);
 
-#if U_HAVE_RVALUE_REFERENCES
   
 
 
@@ -3368,7 +3356,6 @@ public:
 
 
   UnicodeString(UnicodeString &&src) U_NOEXCEPT;
-#endif
 
   
 

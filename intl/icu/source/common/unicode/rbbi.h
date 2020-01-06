@@ -31,23 +31,14 @@
 #include "unicode/schriter.h"
 #include "unicode/uchriter.h"
 
-
-struct UTrie;
-
 U_NAMESPACE_BEGIN
 
 
-struct RBBIDataHeader;
-class  RuleBasedBreakIteratorTables;
-class  BreakIterator;
-class  RBBIDataWrapper;
-class  UStack;
 class  LanguageBreakEngine;
+struct RBBIDataHeader;
+class  RBBIDataWrapper;
 class  UnhandledEngine;
-struct RBBIStateTable;
-
-
-
+class  UStack;
 
 
 
@@ -99,16 +90,33 @@ private:
     
 
 
-    int32_t             fLastRuleStatusIndex;
+
+
+
 
     
 
 
 
+    int32_t         fPosition;
+
+    
 
 
-    UBool               fLastStatusIndexValid;
+    int32_t         fRuleStatusIndex;
 
+    
+
+
+    UBool           fDone;
+
+    
+
+
+  public:    
+    class BreakCache;
+    BreakCache         *fBreakCache;
+  private:
     
 
 
@@ -120,23 +128,8 @@ private:
 
 
 
-
-
-
-    int32_t*            fCachedBreakPositions;
-
-    
-
-
-
-    int32_t             fNumCachedBreakPositions;
-
-    
-
-
-
-
-    int32_t             fPositionInCache;
+    class DictionaryCache;
+    DictionaryCache *fDictionaryCache;
 
     
 
@@ -179,12 +172,10 @@ private:
 
     RuleBasedBreakIterator(RBBIDataHeader* data, UErrorCode &status);
 
-
+    
     friend class RBBIRuleBuilder;
     
     friend class BreakIterator;
-
-
 
 public:
 
@@ -473,10 +464,14 @@ public:
 
 
 
+
+
+
     virtual int32_t current(void) const;
 
 
     
+
 
 
 
@@ -660,7 +655,7 @@ private:
 
 
 
-    void init();
+    void init(UErrorCode &status);
 
     
 
@@ -670,20 +665,7 @@ private:
 
 
 
-
-    int32_t handlePrevious(const RBBIStateTable *statetable);
-
-    
-
-
-
-
-
-
-
-
-    int32_t handleNext(const RBBIStateTable *statetable);
-
+    int32_t handlePrevious(int32_t fromPosition);
 
     
 
@@ -697,9 +679,7 @@ private:
 
 
 
-
-
-    int32_t checkDictionary(int32_t startPos, int32_t endPos, UBool reverse);
+    int32_t handleNext();
 
 
     
@@ -710,11 +690,14 @@ private:
 
     const LanguageBreakEngine *getLanguageBreakEngine(UChar32 c);
 
+  public:
+#ifndef U_HIDE_INTERNAL_API
     
 
 
-    void makeRuleStatusValid();
 
+     void dumpCache();
+#endif  
 };
 
 

@@ -162,7 +162,6 @@ public:
 
 
     explicit LocalMemory(T *p=NULL) : LocalPointerBase<T>(p) {}
-#if U_HAVE_RVALUE_REFERENCES
     
 
 
@@ -170,14 +169,12 @@ public:
     LocalMemory(LocalMemory<T> &&src) U_NOEXCEPT : LocalPointerBase<T>(src.ptr) {
         src.ptr=NULL;
     }
-#endif
     
 
 
     ~LocalMemory() {
         uprv_free(LocalPointerBase<T>::ptr);
     }
-#if U_HAVE_RVALUE_REFERENCES
     
 
 
@@ -187,7 +184,6 @@ public:
     LocalMemory<T> &operator=(LocalMemory<T> &&src) U_NOEXCEPT {
         return moveFrom(src);
     }
-#endif
     
 
 
@@ -312,6 +308,14 @@ public:
 
 
     MaybeStackArray() : ptr(stackArray), capacity(stackCapacity), needToRelease(FALSE) {}
+    
+
+
+
+
+    MaybeStackArray(int32_t newCapacity) : MaybeStackArray() {
+        if (capacity < newCapacity) { resize(newCapacity); }
+    };
     
 
 

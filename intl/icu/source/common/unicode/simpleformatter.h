@@ -22,6 +22,13 @@
 U_NAMESPACE_BEGIN
 
 
+namespace number {
+namespace impl {
+class SimpleModifier;
+}
+}
+
+
 
 
 
@@ -286,6 +293,9 @@ private:
             UnicodeString &result, const UnicodeString *resultCopy, UBool forbidResultAsValue,
             int32_t *offsets, int32_t offsetsLength,
             UErrorCode &errorCode);
+
+    
+    friend class number::impl::SimpleModifier;
 };
 
 U_NAMESPACE_END

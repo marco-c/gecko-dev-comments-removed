@@ -59,6 +59,7 @@
 #include "cmemory.h"
 #include "cstring.h"
 #include "umutex.h"
+#include "ustr_imp.h"
 
 
 #define MBCS_UNROLL_SINGLE_TO_BMP 1
@@ -5013,11 +5014,7 @@ ucnv_MBCSSingleFromUChar32(UConverterSharedData *sharedData,
 
 
 static const UChar32
-utf8_minLegal[5]={ 0, 0, 0x80, 0x800, 0x10000 };
-
-
-static const UChar32
-utf8_offsets[7]={ 0, 0, 0x3080, 0xE2080, 0x3C82080 };
+utf8_offsets[5]={ 0, 0, 0x3080, 0xE2080, 0x3C82080 };
 
 static void U_CALLCONV
 ucnv_SBCSFromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
@@ -5037,7 +5034,7 @@ ucnv_SBCSFromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
     uint8_t b, t1, t2;
 
     uint32_t asciiRoundtrips;
-    uint16_t value, minValue;
+    uint16_t value, minValue = 0;
     UBool hasSupplementary;
 
     
@@ -5076,27 +5073,26 @@ ucnv_SBCSFromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
     }
 
     
-
-
-
-
-
-
-
+    
+    
+    
     {
-        int32_t i, length;
-
-        length=(int32_t)(sourceLimit-source) - (toULimit-oldToULength);
-        for(i=0; i<3 && i<length;) {
-            b=*(sourceLimit-i-1);
-            if(U8_IS_TRAIL(b)) {
-                ++i;
-            } else {
-                if(i<U8_COUNT_TRAIL_BYTES(b)) {
+        
+        
+        int32_t length=(int32_t)(sourceLimit-source) - (toULimit-oldToULength);
+        if(length>0) {
+            uint8_t b1=*(sourceLimit-1);
+            if(U8_IS_SINGLE(b1)) {
+                
+            } else if(U8_IS_TRAIL(b1) && length>=2) {
+                uint8_t b2=*(sourceLimit-2);
+                if(0xe0<=b2 && b2<0xf0 && U8_IS_VALID_LEAD3_AND_T1(b2, b1)) {
                     
-                    sourceLimit-=i+1;
+                    sourceLimit-=2;
                 }
-                break;
+            } else if(0xc2<=b1 && b1<0xf0) {
+                
+                --sourceLimit;
             }
         }
     }
@@ -5130,7 +5126,7 @@ ucnv_SBCSFromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
     while(source<sourceLimit) {
         if(targetCapacity>0) {
             b=*source++;
-            if((int8_t)b>=0) {
+            if(U8_IS_SINGLE(b)) {
                 
                 if(IS_ASCII_ROUNDTRIP(b, asciiRoundtrips)) {
                     *target++=(uint8_t)b;
@@ -5185,7 +5181,7 @@ ucnv_SBCSFromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
                     
                     oldToULength=0;
                     toULength=1;
-                    toULimit=U8_COUNT_TRAIL_BYTES(b)+1;
+                    toULimit=U8_COUNT_BYTES_NON_ASCII(b);
                     c=b;
 moreBytes:
                     while(toULength<toULimit) {
@@ -5198,7 +5194,7 @@ moreBytes:
 
                         if(source<(uint8_t *)pToUArgs->sourceLimit) {
                             b=*source;
-                            if(U8_IS_TRAIL(b)) {
+                            if(icu::UTF8::isValidTrail(c, b, toULength, toULimit)) {
                                 ++source;
                                 ++toULength;
                                 c=(c<<6)+b;
@@ -5220,22 +5216,18 @@ moreBytes:
                         }
                     }
 
-                    if( toULength==toULimit &&      
-                        (toULength==3 || toULength==2) &&             
-                        (c-=utf8_offsets[toULength])>=utf8_minLegal[toULength] &&
-                        (c<=0xd7ff || 0xe000<=c)    
-                    ) {
-                        value=MBCS_SINGLE_RESULT_FROM_U(table, results, c);
-                    } else if(
-                        toULength==toULimit && toULength==4 &&
-                        (0x10000<=(c-=utf8_offsets[4]) && c<=0x10ffff)
-                    ) {
-                        
-                        if(!hasSupplementary) {
-                            
-                            value=0;
-                        } else {
+                    if(toULength==toULimit) {
+                        c-=utf8_offsets[toULength];
+                        if(toULength<=3) {  
                             value=MBCS_SINGLE_RESULT_FROM_U(table, results, c);
+                        } else {
+                            
+                            if(!hasSupplementary) {
+                                
+                                value=0;
+                            } else {
+                                value=MBCS_SINGLE_RESULT_FROM_U(table, results, c);
+                            }
                         }
                     } else {
                         
@@ -5310,7 +5302,7 @@ moreBytes:
             source<(sourceLimit=(uint8_t *)pToUArgs->sourceLimit)) {
         c=utf8->toUBytes[0]=b=*source++;
         toULength=1;
-        toULimit=U8_COUNT_TRAIL_BYTES(b)+1;
+        toULimit=U8_COUNT_BYTES(b);
         while(source<sourceLimit) {
             utf8->toUBytes[toULength++]=b=*source++;
             c=(c<<6)+b;
@@ -5344,7 +5336,7 @@ ucnv_DBCSFromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
 
     uint32_t stage2Entry;
     uint32_t asciiRoundtrips;
-    uint16_t value;
+    uint16_t value = 0;
     UBool hasSupplementary;
 
     
@@ -5376,27 +5368,26 @@ ucnv_DBCSFromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
     }
 
     
-
-
-
-
-
-
-
+    
+    
+    
     {
-        int32_t i, length;
-
-        length=(int32_t)(sourceLimit-source) - (toULimit-oldToULength);
-        for(i=0; i<3 && i<length;) {
-            b=*(sourceLimit-i-1);
-            if(U8_IS_TRAIL(b)) {
-                ++i;
-            } else {
-                if(i<U8_COUNT_TRAIL_BYTES(b)) {
+        
+        
+        int32_t length=(int32_t)(sourceLimit-source) - (toULimit-oldToULength);
+        if(length>0) {
+            uint8_t b1=*(sourceLimit-1);
+            if(U8_IS_SINGLE(b1)) {
+                
+            } else if(U8_IS_TRAIL(b1) && length>=2) {
+                uint8_t b2=*(sourceLimit-2);
+                if(0xe0<=b2 && b2<0xf0 && U8_IS_VALID_LEAD3_AND_T1(b2, b1)) {
                     
-                    sourceLimit-=i+1;
+                    sourceLimit-=2;
                 }
-                break;
+            } else if(0xc2<=b1 && b1<0xf0) {
+                
+                --sourceLimit;
             }
         }
     }
@@ -5412,7 +5403,7 @@ ucnv_DBCSFromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
     while(source<sourceLimit) {
         if(targetCapacity>0) {
             b=*source++;
-            if((int8_t)b>=0) {
+            if(U8_IS_SINGLE(b)) {
                 
                 if(IS_ASCII_ROUNDTRIP(b, asciiRoundtrips)) {
                     *target++=b;
@@ -5426,13 +5417,13 @@ ucnv_DBCSFromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
                     }
                 }
             } else {
-                if(b>0xe0) {
+                if(b>=0xe0) {
                     if( 
-                        (((t1=(uint8_t)(source[0]-0x80), b<0xed) && (t1 <= 0x3f)) ||
-                                                        (b==0xed && (t1 <= 0x1f))) &&
+                        b<=0xed &&  
+                        U8_IS_VALID_LEAD3_AND_T1(b, t1=source[0]) &&
                         (t2=(uint8_t)(source[1]-0x80)) <= 0x3f
                     ) {
-                        c=((b&0xf)<<6)|t1;
+                        c=((b&0xf)<<6)|(t1&0x3f);
                         source+=2;
                         value=DBCS_RESULT_FROM_UTF8(mbcsIndex, results, c, t2);
                         if(value==0) {
@@ -5442,7 +5433,7 @@ ucnv_DBCSFromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
                     } else {
                         c=-1;
                     }
-                } else if(b<0xe0) {
+                } else {
                     if( 
                         b>=0xc2 &&
                         (t1=(uint8_t)(*source-0x80)) <= 0x3f
@@ -5457,15 +5448,13 @@ ucnv_DBCSFromUTF8(UConverterFromUnicodeArgs *pFromUArgs,
                     } else {
                         c=-1;
                     }
-                } else {
-                    c=-1;
                 }
 
                 if(c<0) {
                     
                     oldToULength=0;
                     toULength=1;
-                    toULimit=U8_COUNT_TRAIL_BYTES(b)+1;
+                    toULimit=U8_COUNT_BYTES_NON_ASCII(b);
                     c=b;
 moreBytes:
                     while(toULength<toULimit) {
@@ -5478,7 +5467,7 @@ moreBytes:
 
                         if(source<(uint8_t *)pToUArgs->sourceLimit) {
                             b=*source;
-                            if(U8_IS_TRAIL(b)) {
+                            if(icu::UTF8::isValidTrail(c, b, toULength, toULimit)) {
                                 ++source;
                                 ++toULength;
                                 c=(c<<6)+b;
@@ -5500,22 +5489,18 @@ moreBytes:
                         }
                     }
 
-                    if( toULength==toULimit &&      
-                        (toULength==3 || toULength==2) &&             
-                        (c-=utf8_offsets[toULength])>=utf8_minLegal[toULength] &&
-                        (c<=0xd7ff || 0xe000<=c)    
-                    ) {
-                        stage2Entry=MBCS_STAGE_2_FROM_U(table, c);
-                    } else if(
-                        toULength==toULimit && toULength==4 &&
-                        (0x10000<=(c-=utf8_offsets[4]) && c<=0x10ffff)
-                    ) {
-                        
-                        if(!hasSupplementary) {
-                            
-                            stage2Entry=0;
-                        } else {
+                    if(toULength==toULimit) {
+                        c-=utf8_offsets[toULength];
+                        if(toULength<=3) {  
                             stage2Entry=MBCS_STAGE_2_FROM_U(table, c);
+                        } else {
+                            
+                            if(!hasSupplementary) {
+                                
+                                stage2Entry=0;
+                            } else {
+                                stage2Entry=MBCS_STAGE_2_FROM_U(table, c);
+                            }
                         }
                     } else {
                         
@@ -5620,7 +5605,7 @@ unassigned:
             source<(sourceLimit=(uint8_t *)pToUArgs->sourceLimit)) {
         c=utf8->toUBytes[0]=b=*source++;
         toULength=1;
-        toULimit=U8_COUNT_TRAIL_BYTES(b)+1;
+        toULimit=U8_COUNT_BYTES(b);
         while(source<sourceLimit) {
             utf8->toUBytes[toULength++]=b=*source++;
             c=(c<<6)+b;

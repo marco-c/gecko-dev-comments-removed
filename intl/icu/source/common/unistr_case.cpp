@@ -19,6 +19,7 @@
 
 
 #include "unicode/utypes.h"
+#include "unicode/brkiter.h"
 #include "unicode/casemap.h"
 #include "unicode/edits.h"
 #include "unicode/putil.h"
@@ -104,6 +105,12 @@ UnicodeString::caseMap(int32_t caseLocale, uint32_t options, UCASEMAP_BREAK_ITER
   UBool writable = isBufferWritable();
   UErrorCode errorCode = U_ZERO_ERROR;
 
+#if !UCONFIG_NO_BREAK_ITERATION
+  
+  
+  UnicodeString oldString;
+#endif
+
   
   if (writable ? oldLength <= UPRV_LENGTHOF(oldBuffer) : oldLength < US_STACKBUF_SIZE) {
     
@@ -123,6 +130,12 @@ UnicodeString::caseMap(int32_t caseLocale, uint32_t options, UCASEMAP_BREAK_ITER
       buffer = fUnion.fStackFields.fBuffer;
       capacity = US_STACKBUF_SIZE;
     }
+#if !UCONFIG_NO_BREAK_ITERATION
+    if (iter != nullptr) {
+      oldString.setTo(FALSE, oldArray, oldLength);
+      iter->setText(oldString);
+    }
+#endif
     newLength = stringCaseMapper(caseLocale, options, UCASEMAP_BREAK_ITERATOR
                                  buffer, capacity,
                                  oldArray, oldLength, NULL, errorCode);
@@ -143,7 +156,13 @@ UnicodeString::caseMap(int32_t caseLocale, uint32_t options, UCASEMAP_BREAK_ITER
     oldArray = getArrayStart();
     Edits edits;
     UChar replacementChars[200];
-    stringCaseMapper(caseLocale, options | UCASEMAP_OMIT_UNCHANGED_TEXT, UCASEMAP_BREAK_ITERATOR
+#if !UCONFIG_NO_BREAK_ITERATION
+    if (iter != nullptr) {
+      oldString.setTo(FALSE, oldArray, oldLength);
+      iter->setText(oldString);
+    }
+#endif
+    stringCaseMapper(caseLocale, options | U_OMIT_UNCHANGED_TEXT, UCASEMAP_BREAK_ITERATOR
                      replacementChars, UPRV_LENGTHOF(replacementChars),
                      oldArray, oldLength, &edits, errorCode);
     if (U_SUCCESS(errorCode)) {
@@ -179,6 +198,7 @@ UnicodeString::caseMap(int32_t caseLocale, uint32_t options, UCASEMAP_BREAK_ITER
     return *this;
   }
   errorCode = U_ZERO_ERROR;
+  
   newLength = stringCaseMapper(caseLocale, options, UCASEMAP_BREAK_ITERATOR
                                getArrayStart(), getCapacity(),
                                oldArray, oldLength, NULL, errorCode);

@@ -42,9 +42,8 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-    MeasureUnit() : fTypeId(0), fSubTypeId(0) { 
-        fCurrency[0] = 0;
-    }
+
+    MeasureUnit();
     
     
 
@@ -1316,6 +1315,12 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     void initCurrency(const char *isoCurrency);
+
+    
+
+
+
+    void initNoUnit(const char *subtype);
 
 #endif  
 

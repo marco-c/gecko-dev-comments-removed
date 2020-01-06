@@ -51,20 +51,21 @@ ubrk_swap(const UDataSwapper *ds,
 
 #include "unicode/uobject.h"
 #include "unicode/unistr.h"
+#include "unicode/uversion.h"
 #include "umutex.h"
-#include "utrie.h"
+#include "utrie2.h"
 
 U_NAMESPACE_BEGIN
+
+
+static const uint8_t RBBI_DATA_FORMAT_VERSION[] = {4, 0, 0, 0};
 
 
 
 
 struct RBBIDataHeader {
     uint32_t         fMagic;           
-    uint8_t          fFormatVersion[4]; 
-                                       
-                                       
-                                       
+    UVersionInfo     fFormatVersion;   
                                        
                                        
     uint32_t         fLength;          
@@ -152,6 +153,8 @@ public:
     RBBIDataWrapper(UDataMemory* udm, UErrorCode &status);
     ~RBBIDataWrapper();
 
+    static UBool          isDataVersionAcceptable(const UVersionInfo version);
+
     void                  init0();
     void                  init(const RBBIDataHeader *data, UErrorCode &status);
     RBBIDataWrapper      *addReference();
@@ -181,11 +184,11 @@ public:
     
     int32_t             fStatusMaxIdx;
 
-    UTrie               fTrie;
+    UTrie2             *fTrie;
 
 private:
     u_atomic_int32_t    fRefCount;
-    UDataMemory  *fUDataMem;
+    UDataMemory        *fUDataMem;
     UnicodeString       fRuleString;
     UBool               fDontFreeData;
 

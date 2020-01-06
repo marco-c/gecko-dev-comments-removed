@@ -368,18 +368,17 @@
 
 
 struct USpoofChecker;
+
+
+
 typedef struct USpoofChecker USpoofChecker; 
-
-#ifndef U_HIDE_DRAFT_API
-
-
 
 struct USpoofCheckResult;
 
 
 
+
 typedef struct USpoofCheckResult USpoofCheckResult;
-#endif 
 
 
 
@@ -419,7 +418,6 @@ typedef enum USpoofChecks {
 
     USPOOF_WHOLE_SCRIPT_CONFUSABLE  =   4,
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -430,7 +428,6 @@ typedef enum USpoofChecks {
 
 
     USPOOF_CONFUSABLE               =   USPOOF_SINGLE_SCRIPT_CONFUSABLE | USPOOF_MIXED_SCRIPT_CONFUSABLE | USPOOF_WHOLE_SCRIPT_CONFUSABLE,
-#endif 
 
 #ifndef U_HIDE_DEPRECATED_API
     
@@ -1058,7 +1055,6 @@ uspoof_checkUnicodeString(const USpoofChecker *sc,
 #endif
 
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -1087,7 +1083,7 @@ uspoof_checkUnicodeString(const USpoofChecker *sc,
 
 
 
-U_DRAFT int32_t U_EXPORT2
+U_STABLE int32_t U_EXPORT2
 uspoof_check2(const USpoofChecker *sc,
     const UChar* id, int32_t length,
     USpoofCheckResult* checkResult,
@@ -1124,7 +1120,7 @@ uspoof_check2(const USpoofChecker *sc,
 
 
 
-U_DRAFT int32_t U_EXPORT2
+U_STABLE int32_t U_EXPORT2
 uspoof_check2UTF8(const USpoofChecker *sc,
     const char *id, int32_t length,
     USpoofCheckResult* checkResult,
@@ -1156,7 +1152,7 @@ uspoof_check2UTF8(const USpoofChecker *sc,
 
 
 
-U_DRAFT int32_t U_EXPORT2
+U_STABLE int32_t U_EXPORT2
 uspoof_check2UnicodeString(const USpoofChecker *sc,
     const icu::UnicodeString &id,
     USpoofCheckResult* checkResult,
@@ -1181,7 +1177,7 @@ uspoof_check2UnicodeString(const USpoofChecker *sc,
 
 
 
-U_DRAFT USpoofCheckResult* U_EXPORT2
+U_STABLE USpoofCheckResult* U_EXPORT2
 uspoof_openCheckResult(UErrorCode *status);
 
 
@@ -1191,7 +1187,7 @@ uspoof_openCheckResult(UErrorCode *status);
 
 
 
-U_DRAFT void U_EXPORT2
+U_STABLE void U_EXPORT2
 uspoof_closeCheckResult(USpoofCheckResult *checkResult);
 
 #if U_SHOW_CPLUSPLUS_API
@@ -1227,7 +1223,7 @@ U_NAMESPACE_END
 
 
 
-U_DRAFT int32_t U_EXPORT2
+U_STABLE int32_t U_EXPORT2
 uspoof_getCheckResultChecks(const USpoofCheckResult *checkResult, UErrorCode *status);
 
 
@@ -1240,7 +1236,7 @@ uspoof_getCheckResultChecks(const USpoofCheckResult *checkResult, UErrorCode *st
 
 
 
-U_DRAFT URestrictionLevel U_EXPORT2
+U_STABLE URestrictionLevel U_EXPORT2
 uspoof_getCheckResultRestrictionLevel(const USpoofCheckResult *checkResult, UErrorCode *status);
 
 
@@ -1254,9 +1250,8 @@ uspoof_getCheckResultRestrictionLevel(const USpoofCheckResult *checkResult, UErr
 
 
 
-U_DRAFT const USet* U_EXPORT2
+U_STABLE const USet* U_EXPORT2
 uspoof_getCheckResultNumerics(const USpoofCheckResult *checkResult, UErrorCode *status);
-#endif 
 
 
 

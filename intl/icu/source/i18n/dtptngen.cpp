@@ -135,14 +135,17 @@ U_NAMESPACE_BEGIN
 
 static const UChar Canonical_Items[] = {
     
-    CAP_G, LOW_Y, CAP_Q, CAP_M, LOW_W, CAP_W, CAP_E, LOW_D, CAP_D, CAP_F,
+    CAP_G, LOW_Y, CAP_Q, CAP_M, LOW_W, CAP_W, CAP_E,
+    CAP_D, CAP_F, LOW_D, LOW_A, 
     CAP_H, LOW_M, LOW_S, CAP_S, LOW_V, 0
 };
 
 static const dtTypeElem dtTypes[] = {
     
     {CAP_G, UDATPG_ERA_FIELD, DT_SHORT, 1, 3,},
-    {CAP_G, UDATPG_ERA_FIELD, DT_LONG, 4, 0},
+    {CAP_G, UDATPG_ERA_FIELD, DT_LONG,  4, 0},
+    {CAP_G, UDATPG_ERA_FIELD, DT_NARROW, 5, 0},
+
     {LOW_Y, UDATPG_YEAR_FIELD, DT_NUMERIC, 1, 20},
     {CAP_Y, UDATPG_YEAR_FIELD, DT_NUMERIC + DT_DELTA, 1, 20},
     {LOW_U, UDATPG_YEAR_FIELD, DT_NUMERIC + 2*DT_DELTA, 1, 20},
@@ -150,12 +153,16 @@ static const dtTypeElem dtTypes[] = {
     {CAP_U, UDATPG_YEAR_FIELD, DT_SHORT, 1, 3},
     {CAP_U, UDATPG_YEAR_FIELD, DT_LONG, 4, 0},
     {CAP_U, UDATPG_YEAR_FIELD, DT_NARROW, 5, 0},
+
     {CAP_Q, UDATPG_QUARTER_FIELD, DT_NUMERIC, 1, 2},
     {CAP_Q, UDATPG_QUARTER_FIELD, DT_SHORT, 3, 0},
     {CAP_Q, UDATPG_QUARTER_FIELD, DT_LONG, 4, 0},
+    {CAP_Q, UDATPG_QUARTER_FIELD, DT_NARROW, 5, 0},
     {LOW_Q, UDATPG_QUARTER_FIELD, DT_NUMERIC + DT_DELTA, 1, 2},
-    {LOW_Q, UDATPG_QUARTER_FIELD, DT_SHORT + DT_DELTA, 3, 0},
-    {LOW_Q, UDATPG_QUARTER_FIELD, DT_LONG + DT_DELTA, 4, 0},
+    {LOW_Q, UDATPG_QUARTER_FIELD, DT_SHORT - DT_DELTA, 3, 0},
+    {LOW_Q, UDATPG_QUARTER_FIELD, DT_LONG - DT_DELTA, 4, 0},
+    {LOW_Q, UDATPG_QUARTER_FIELD, DT_NARROW - DT_DELTA, 5, 0},
+
     {CAP_M, UDATPG_MONTH_FIELD, DT_NUMERIC, 1, 2},
     {CAP_M, UDATPG_MONTH_FIELD, DT_SHORT, 3, 0},
     {CAP_M, UDATPG_MONTH_FIELD, DT_LONG, 4, 0},
@@ -165,32 +172,66 @@ static const dtTypeElem dtTypes[] = {
     {CAP_L, UDATPG_MONTH_FIELD, DT_LONG - DT_DELTA, 4, 0},
     {CAP_L, UDATPG_MONTH_FIELD, DT_NARROW - DT_DELTA, 5, 0},
     {LOW_L, UDATPG_MONTH_FIELD, DT_NUMERIC + DT_DELTA, 1, 1},
+
     {LOW_W, UDATPG_WEEK_OF_YEAR_FIELD, DT_NUMERIC, 1, 2},
-    {CAP_W, UDATPG_WEEK_OF_MONTH_FIELD, DT_NUMERIC + DT_DELTA, 1, 0},
+
+    {CAP_W, UDATPG_WEEK_OF_MONTH_FIELD, DT_NUMERIC, 1, 0},
+
     {CAP_E, UDATPG_WEEKDAY_FIELD, DT_SHORT, 1, 3},
     {CAP_E, UDATPG_WEEKDAY_FIELD, DT_LONG, 4, 0},
     {CAP_E, UDATPG_WEEKDAY_FIELD, DT_NARROW, 5, 0},
+    {CAP_E, UDATPG_WEEKDAY_FIELD, DT_SHORTER, 6, 0},
     {LOW_C, UDATPG_WEEKDAY_FIELD, DT_NUMERIC + 2*DT_DELTA, 1, 2},
     {LOW_C, UDATPG_WEEKDAY_FIELD, DT_SHORT - 2*DT_DELTA, 3, 0},
     {LOW_C, UDATPG_WEEKDAY_FIELD, DT_LONG - 2*DT_DELTA, 4, 0},
     {LOW_C, UDATPG_WEEKDAY_FIELD, DT_NARROW - 2*DT_DELTA, 5, 0},
+    {LOW_C, UDATPG_WEEKDAY_FIELD, DT_SHORTER - 2*DT_DELTA, 6, 0},
     {LOW_E, UDATPG_WEEKDAY_FIELD, DT_NUMERIC + DT_DELTA, 1, 2}, 
     {LOW_E, UDATPG_WEEKDAY_FIELD, DT_SHORT - DT_DELTA, 3, 0},
     {LOW_E, UDATPG_WEEKDAY_FIELD, DT_LONG - DT_DELTA, 4, 0},
     {LOW_E, UDATPG_WEEKDAY_FIELD, DT_NARROW - DT_DELTA, 5, 0},
+    {LOW_E, UDATPG_WEEKDAY_FIELD, DT_SHORTER - DT_DELTA, 6, 0},
+
     {LOW_D, UDATPG_DAY_FIELD, DT_NUMERIC, 1, 2},
-    {CAP_D, UDATPG_DAY_OF_YEAR_FIELD, DT_NUMERIC + DT_DELTA, 1, 3},
-    {CAP_F, UDATPG_DAY_OF_WEEK_IN_MONTH_FIELD, DT_NUMERIC + 2*DT_DELTA, 1, 0},
-    {LOW_G, UDATPG_DAY_FIELD, DT_NUMERIC + 3*DT_DELTA, 1, 20}, 
-    {LOW_A, UDATPG_DAYPERIOD_FIELD, DT_SHORT, 1, 0},
+    {LOW_G, UDATPG_DAY_FIELD, DT_NUMERIC + DT_DELTA, 1, 20}, 
+
+    {CAP_D, UDATPG_DAY_OF_YEAR_FIELD, DT_NUMERIC, 1, 3},
+
+    {CAP_F, UDATPG_DAY_OF_WEEK_IN_MONTH_FIELD, DT_NUMERIC, 1, 0},
+
+    {LOW_A, UDATPG_DAYPERIOD_FIELD, DT_SHORT, 1, 3},
+    {LOW_A, UDATPG_DAYPERIOD_FIELD, DT_LONG, 4, 0},
+    {LOW_A, UDATPG_DAYPERIOD_FIELD, DT_NARROW, 5, 0},
+    {LOW_B, UDATPG_DAYPERIOD_FIELD, DT_SHORT - DT_DELTA, 1, 3},
+    {LOW_B, UDATPG_DAYPERIOD_FIELD, DT_LONG - DT_DELTA, 4, 0},
+    {LOW_B, UDATPG_DAYPERIOD_FIELD, DT_NARROW - DT_DELTA, 5, 0},
+    
+    {CAP_B, UDATPG_DAYPERIOD_FIELD, DT_SHORT - 3*DT_DELTA, 1, 3},
+    {CAP_B, UDATPG_DAYPERIOD_FIELD, DT_LONG - 3*DT_DELTA, 4, 0},
+    {CAP_B, UDATPG_DAYPERIOD_FIELD, DT_NARROW - 3*DT_DELTA, 5, 0},
+
     {CAP_H, UDATPG_HOUR_FIELD, DT_NUMERIC + 10*DT_DELTA, 1, 2}, 
     {LOW_K, UDATPG_HOUR_FIELD, DT_NUMERIC + 11*DT_DELTA, 1, 2}, 
     {LOW_H, UDATPG_HOUR_FIELD, DT_NUMERIC, 1, 2}, 
     {CAP_K, UDATPG_HOUR_FIELD, DT_NUMERIC + DT_DELTA, 1, 2}, 
+    
+    
+    
+    
+    
+    
+    
+    {CAP_J, UDATPG_HOUR_FIELD, DT_NUMERIC + 5*DT_DELTA, 1, 2}, 
+    {LOW_J, UDATPG_HOUR_FIELD, DT_NUMERIC + 6*DT_DELTA, 1, 6}, 
+    {CAP_C, UDATPG_HOUR_FIELD, DT_NUMERIC + 7*DT_DELTA, 1, 6}, 
+
     {LOW_M, UDATPG_MINUTE_FIELD, DT_NUMERIC, 1, 2},
+
     {LOW_S, UDATPG_SECOND_FIELD, DT_NUMERIC, 1, 2},
-    {CAP_S, UDATPG_FRACTIONAL_SECOND_FIELD, DT_NUMERIC + DT_DELTA, 1, 1000},
-    {CAP_A, UDATPG_SECOND_FIELD, DT_NUMERIC + 2*DT_DELTA, 1, 1000},
+    {CAP_A, UDATPG_SECOND_FIELD, DT_NUMERIC + DT_DELTA, 1, 1000},
+
+    {CAP_S, UDATPG_FRACTIONAL_SECOND_FIELD, DT_NUMERIC, 1, 1000},
+
     {LOW_V, UDATPG_ZONE_FIELD, DT_SHORT - 2*DT_DELTA, 1, 0},
     {LOW_V, UDATPG_ZONE_FIELD, DT_LONG - 2*DT_DELTA, 4, 0},
     {LOW_Z, UDATPG_ZONE_FIELD, DT_SHORT, 1, 3},
@@ -202,24 +243,27 @@ static const dtTypeElem dtTypes[] = {
     {CAP_O, UDATPG_ZONE_FIELD, DT_LONG - DT_DELTA, 4, 0},
     {CAP_V, UDATPG_ZONE_FIELD, DT_SHORT - DT_DELTA, 1, 0},
     {CAP_V, UDATPG_ZONE_FIELD, DT_LONG - DT_DELTA, 2, 0},
+    {CAP_V, UDATPG_ZONE_FIELD, DT_LONG-1 - DT_DELTA, 3, 0},
+    {CAP_V, UDATPG_ZONE_FIELD, DT_LONG-2 - DT_DELTA, 4, 0},
     {CAP_X, UDATPG_ZONE_FIELD, DT_NARROW - DT_DELTA, 1, 0},
     {CAP_X, UDATPG_ZONE_FIELD, DT_SHORT - DT_DELTA, 2, 0},
     {CAP_X, UDATPG_ZONE_FIELD, DT_LONG - DT_DELTA, 4, 0},
     {LOW_X, UDATPG_ZONE_FIELD, DT_NARROW - DT_DELTA, 1, 0},
     {LOW_X, UDATPG_ZONE_FIELD, DT_SHORT - DT_DELTA, 2, 0},
     {LOW_X, UDATPG_ZONE_FIELD, DT_LONG - DT_DELTA, 4, 0},
-    {LOW_J, UDATPG_HOUR_FIELD, DT_NUMERIC, 1, 2}, 
-    {CAP_J, UDATPG_HOUR_FIELD, DT_NUMERIC, 1, 2}, 
+
     {0, UDATPG_FIELD_COUNT, 0, 0, 0} , 
  };
 
 static const char* const CLDR_FIELD_APPEND[] = {
-    "Era", "Year", "Quarter", "Month", "Week", "*", "Day-Of-Week", "Day", "*", "*", "*",
+    "Era", "Year", "Quarter", "Month", "Week", "*", "Day-Of-Week",
+    "*", "*", "Day", "*", 
     "Hour", "Minute", "Second", "*", "Timezone"
 };
 
 static const char* const CLDR_FIELD_NAME[] = {
-    "era", "year", "quarter", "month", "week", "*", "weekday", "*", "*", "day", "dayperiod",
+    "era", "year", "quarter", "month", "week", "weekOfMonth", "weekday",
+    "dayOfYear", "weekdayOfMonth", "day", "dayperiod", 
     "hour", "minute", "second", "*", "zone"
 };
 
@@ -963,47 +1007,13 @@ DateTimePatternGenerator::getBestPattern(const UnicodeString& patternForm, UDate
     int32_t timeMask=(1<<UDATPG_FIELD_COUNT) - 1 - dateMask;
 
     
-    UnicodeString patternFormCopy = UnicodeString(patternForm);
-    int32_t patPos, patLen = patternFormCopy.length();
-    UBool inQuoted = FALSE;
-    for (patPos = 0; patPos < patLen; patPos++) {
-        UChar patChr = patternFormCopy.charAt(patPos);
-        if (patChr == SINGLE_QUOTE) {
-            inQuoted = !inQuoted;
-        } else if (!inQuoted) {
-            if (patChr == LOW_J) {
-                patternFormCopy.setCharAt(patPos, fDefaultHourFormatChar);
-            } else if (patChr == CAP_C) {
-                AllowedHourFormat preferred;
-                if (fAllowedHourFormats[0] != ALLOWED_HOUR_FORMAT_UNKNOWN) {
-                    preferred = (AllowedHourFormat)fAllowedHourFormats[0];
-                } else {
-                    status = U_INVALID_FORMAT_ERROR;
-                    return UnicodeString();
-                }
-
-                if (preferred == ALLOWED_HOUR_FORMAT_H || preferred == ALLOWED_HOUR_FORMAT_HB || preferred == ALLOWED_HOUR_FORMAT_Hb) {
-                    patternFormCopy.setCharAt(patPos, CAP_H);
-                } else {
-                    patternFormCopy.setCharAt(patPos, LOW_H);
-                }
-
-                if (preferred == ALLOWED_HOUR_FORMAT_HB || preferred == ALLOWED_HOUR_FORMAT_hB) {
-                    flags |= kDTPGSkeletonUsesCapB;
-                } else if (preferred == ALLOWED_HOUR_FORMAT_Hb || preferred == ALLOWED_HOUR_FORMAT_hb) {
-                    flags |= kDTPGSkeletonUsesLowB;
-                }
-            } else if (patChr == CAP_J) {
-                
-                
-                patternFormCopy.setCharAt(patPos, CAP_H);
-                flags |= kDTPGSkeletonUsesCapJ;
-            }
-        }
+    UnicodeString patternFormMapped = mapSkeletonMetacharacters(patternForm, &flags, status);
+    if (U_FAILURE(status)) {
+        return UnicodeString();
     }
 
     resultPattern.remove();
-    dtMatcher->set(patternFormCopy, fp);
+    dtMatcher->set(patternFormMapped, fp);
     const PtnSkeleton* specifiedSkeleton=NULL;
     bestPattern=getBestRaw(*dtMatcher, -1, distanceInfo, &specifiedSkeleton);
     if ( distanceInfo->missingFieldMask==0 && distanceInfo->extraFieldMask==0 ) {
@@ -1030,6 +1040,82 @@ DateTimePatternGenerator::getBestPattern(const UnicodeString& patternForm, UDate
     dtFormat=getDateTimeFormat();
     SimpleFormatter(dtFormat, 2, 2, status).format(timePattern, datePattern, resultPattern, status);
     return resultPattern;
+}
+
+
+
+
+
+
+
+
+UnicodeString
+DateTimePatternGenerator::mapSkeletonMetacharacters(const UnicodeString& patternForm, int32_t* flags, UErrorCode& status) {
+    UnicodeString patternFormMapped;
+    patternFormMapped.remove();
+    UBool inQuoted = FALSE;
+    int32_t patPos, patLen = patternForm.length();
+    for (patPos = 0; patPos < patLen; patPos++) {
+        UChar patChr = patternForm.charAt(patPos);
+        if (patChr == SINGLE_QUOTE) {
+            inQuoted = !inQuoted;
+        } else if (!inQuoted) {
+            
+            
+            
+            
+            
+            
+            if (patChr == LOW_J || patChr == CAP_C) {
+                int32_t extraLen = 0; 
+                while (patPos+1 < patLen && patternForm.charAt(patPos+1)==patChr) {
+                    extraLen++;
+                    patPos++;
+                }
+                int32_t hourLen = 1 + (extraLen & 1);
+                int32_t dayPeriodLen = (extraLen < 2)? 1: 3 + (extraLen >> 1);
+                UChar hourChar = LOW_H;
+                UChar dayPeriodChar = LOW_A;
+                if (patChr == LOW_J) {
+                    hourChar = fDefaultHourFormatChar;
+                } else {
+                    AllowedHourFormat preferred;
+                    if (fAllowedHourFormats[0] != ALLOWED_HOUR_FORMAT_UNKNOWN) {
+                        preferred = (AllowedHourFormat)fAllowedHourFormats[0];
+                    } else {
+                        status = U_INVALID_FORMAT_ERROR;
+                        return UnicodeString();
+                    }
+                    if (preferred == ALLOWED_HOUR_FORMAT_H || preferred == ALLOWED_HOUR_FORMAT_HB || preferred == ALLOWED_HOUR_FORMAT_Hb) {
+                        hourChar = CAP_H;
+                    }
+                    
+                    if (preferred == ALLOWED_HOUR_FORMAT_HB || preferred == ALLOWED_HOUR_FORMAT_hB) {
+                        dayPeriodChar = CAP_B;
+                    } else if (preferred == ALLOWED_HOUR_FORMAT_Hb || preferred == ALLOWED_HOUR_FORMAT_hb) {
+                        dayPeriodChar = LOW_B;
+                    }
+                }
+                if (hourChar==CAP_H || hourChar==LOW_K) {
+                    dayPeriodLen = 0;
+                }
+                while (dayPeriodLen-- > 0) {
+                    patternFormMapped.append(dayPeriodChar);
+                }
+                while (hourLen-- > 0) {
+                    patternFormMapped.append(hourChar);
+                }
+            } else if (patChr == CAP_J) {
+                
+                
+                patternFormMapped.append(CAP_H);
+                *flags |= kDTPGSkeletonUsesCapJ;
+            } else {
+                patternFormMapped.append(patChr);
+            }
+        }
+    }
+    return patternFormMapped;
 }
 
 UnicodeString
@@ -1300,16 +1386,6 @@ DateTimePatternGenerator::adjustFieldTypes(const UnicodeString& pattern,
             int32_t typeValue = row->field;
 
             
-            if (typeValue == UDATPG_DAYPERIOD_FIELD && flags != 0) {
-                UChar c = NONE;  
-                if (flags & kDTPGSkeletonUsesCapB) { c = CAP_B; }
-                if (flags & kDTPGSkeletonUsesLowB) { c = LOW_B; }
-
-                if (c != NONE) {
-                    for (int32_t i = 0; i < field.length(); ++i)
-                    field.setCharAt(i, c);
-                }
-            }
 
             if ((flags & kDTPGFixFractionalSeconds) != 0 && typeValue == UDATPG_SECOND_FIELD) {
                 field += decimal;
@@ -1841,12 +1917,14 @@ DateTimeMatcher::set(const UnicodeString& pattern, FormatParser* fp, PtnSkeleton
     for (i=0; i<UDATPG_FIELD_COUNT; ++i) {
         skeletonResult.type[i] = NONE;
     }
+    skeletonResult.original.clear();
+    skeletonResult.baseOriginal.clear();
+    skeletonResult.addedDefaultDayPeriod = FALSE;
+
     fp->set(pattern);
     for (i=0; i < fp->itemNumber; i++) {
         const UnicodeString& value = fp->items[i];
-        if ( value.charAt(0) == LOW_A ) {
-            continue;  
-        }
+        
 
         if ( fp->isQuoteLiteral(value) ) {
             UnicodeString quoteLiteral;
@@ -1861,13 +1939,37 @@ DateTimeMatcher::set(const UnicodeString& pattern, FormatParser* fp, PtnSkeleton
         int32_t field = row->field;
         skeletonResult.original.populate(field, value);
         UChar repeatChar = row->patternChar;
-        int32_t repeatCount = row->minLen; 
+        int32_t repeatCount = row->minLen;
         skeletonResult.baseOriginal.populate(field, repeatChar, repeatCount);
         int16_t subField = row->type;
         if ( row->type > 0) {
             subField += value.length();
         }
         skeletonResult.type[field] = subField;
+    }
+    
+    if (!skeletonResult.original.isFieldEmpty(UDATPG_HOUR_FIELD)) {
+        if (skeletonResult.original.getFieldChar(UDATPG_HOUR_FIELD)==LOW_H || skeletonResult.original.getFieldChar(UDATPG_HOUR_FIELD)==CAP_K) {
+            
+            if (skeletonResult.original.isFieldEmpty(UDATPG_DAYPERIOD_FIELD)) {
+                
+                for (i = 0; dtTypes[i].patternChar != 0; i++) {
+                    if ( dtTypes[i].field == UDATPG_DAYPERIOD_FIELD ) {
+                        
+                        skeletonResult.original.populate(UDATPG_DAYPERIOD_FIELD, dtTypes[i].patternChar, dtTypes[i].minLen);
+                        skeletonResult.baseOriginal.populate(UDATPG_DAYPERIOD_FIELD, dtTypes[i].patternChar, dtTypes[i].minLen);
+                        skeletonResult.type[UDATPG_DAYPERIOD_FIELD] = dtTypes[i].type;
+                        skeletonResult.addedDefaultDayPeriod = TRUE;
+                        break;
+                    }
+                }
+            }
+        } else {
+            
+            skeletonResult.original.clearField(UDATPG_DAYPERIOD_FIELD);
+            skeletonResult.baseOriginal.clearField(UDATPG_DAYPERIOD_FIELD);
+            skeletonResult.type[UDATPG_DAYPERIOD_FIELD] = NONE;
+        }
     }
     copyFrom(skeletonResult);
 }
@@ -2290,13 +2392,27 @@ PtnSkeleton::equals(const PtnSkeleton& other) const  {
 UnicodeString
 PtnSkeleton::getSkeleton() const {
     UnicodeString result;
-    return original.appendTo(result);
+    result = original.appendTo(result);
+    int32_t pos;
+    if (addedDefaultDayPeriod && (pos = result.indexOf(LOW_A)) >= 0) {
+        
+        
+        result.remove(pos, 1);
+    }
+    return result;
 }
 
 UnicodeString
 PtnSkeleton::getBaseSkeleton() const {
     UnicodeString result;
-    return baseOriginal.appendTo(result);
+    result = baseOriginal.appendTo(result);
+    int32_t pos;
+    if (addedDefaultDayPeriod && (pos = result.indexOf(LOW_A)) >= 0) {
+        
+        
+        result.remove(pos, 1);
+    }
+    return result;
 }
 
 UChar

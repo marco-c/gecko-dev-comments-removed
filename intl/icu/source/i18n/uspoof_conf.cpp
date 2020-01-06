@@ -396,6 +396,7 @@ void ConfusabledataBuilder::outputData(UErrorCode &status) {
     for (i=0; i<numKeys; i++) {
         int32_t key =  fKeyVec->elementAti(i);
         UChar32 codePoint = ConfusableDataUtils::keyToCodePoint(key);
+        (void)previousCodePoint;    
         
         U_ASSERT(codePoint > previousCodePoint);
         keys[i] = key;

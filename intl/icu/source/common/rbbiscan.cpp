@@ -48,6 +48,7 @@
 
 static const UChar gRuleSet_rule_char_pattern[]       = {
  
+ 
     0x5b, 0x5e, 0x5b, 0x5c, 0x70, 0x7b, 0x5a, 0x7d, 0x5c, 0x75, 0x30, 0x30, 0x32, 0x30,
  
     0x2d, 0x5c, 0x75, 0x30, 0x30, 0x37, 0x66, 0x5d, 0x2d, 0x5b, 0x5c, 0x70,
@@ -558,6 +559,10 @@ UBool RBBIRuleScanner::doParseActions(int32_t action)
                 fRB->fDefaultTree   = &fRB->fSafeRevTree;
             } else if (opt == UNICODE_STRING("lookAheadHardBreak", 18)) {
                 fRB->fLookAheadHardBreak = TRUE;
+            } else if (opt == UNICODE_STRING("quoted_literals_only", 20)) {
+                fRuleSets[kRuleSet_rule_char-128].clear();
+            } else if (opt == UNICODE_STRING("unquoted_literals",  17)) {
+                fRuleSets[kRuleSet_rule_char-128].applyPattern(UnicodeString(gRuleSet_rule_char_pattern), *fRB->fStatus);
             } else {
                 error(U_BRK_UNRECOGNIZED_OPTION);
             }

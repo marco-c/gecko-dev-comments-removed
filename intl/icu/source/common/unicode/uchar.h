@@ -26,6 +26,7 @@
 #define UCHAR_H
 
 #include "unicode/utypes.h"
+#include "unicode/stringoptions.h"
 
 U_CDECL_BEGIN
 
@@ -41,7 +42,7 @@ U_CDECL_BEGIN
 
 
 
-#define U_UNICODE_VERSION "9.0"
+#define U_UNICODE_VERSION "10.0"
 
 
 
@@ -140,6 +141,7 @@ U_CDECL_BEGIN
 
 
 #define U_MASK(x) ((uint32_t)1<<(x))
+
 
 
 
@@ -427,12 +429,29 @@ typedef enum UProperty {
 
 
     UCHAR_EMOJI_MODIFIER_BASE=60,
+    
+
+
+
+
+
+    UCHAR_EMOJI_COMPONENT=61,
+    
+
+
+
+    UCHAR_REGIONAL_INDICATOR=62,
+    
+
+
+
+    UCHAR_PREPENDED_CONCATENATION_MARK=63,
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-    UCHAR_BINARY_LIMIT=61,
+    UCHAR_BINARY_LIMIT,
 #endif  
 
     
@@ -1647,6 +1666,23 @@ enum UBlockCode {
     
     UBLOCK_TANGUT_COMPONENTS = 273, 
 
+    
+
+    
+    UBLOCK_CJK_UNIFIED_IDEOGRAPHS_EXTENSION_F = 274, 
+    
+    UBLOCK_KANA_EXTENDED_A = 275, 
+    
+    UBLOCK_MASARAM_GONDI = 276, 
+    
+    UBLOCK_NUSHU = 277, 
+    
+    UBLOCK_SOYOMBO = 278, 
+    
+    UBLOCK_SYRIAC_SUPPLEMENT = 279, 
+    
+    UBLOCK_ZANABAZAR_SQUARE = 280, 
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -1654,7 +1690,7 @@ enum UBlockCode {
 
 
 
-    UBLOCK_COUNT = 274,
+    UBLOCK_COUNT = 281,
 #endif  
 
     
@@ -1930,6 +1966,19 @@ typedef enum UJoiningGroup {
     U_JG_AFRICAN_FEH,  
     U_JG_AFRICAN_NOON,  
     U_JG_AFRICAN_QAF,  
+
+    U_JG_MALAYALAM_BHA,  
+    U_JG_MALAYALAM_JA,  
+    U_JG_MALAYALAM_LLA,  
+    U_JG_MALAYALAM_LLLA,  
+    U_JG_MALAYALAM_NGA,  
+    U_JG_MALAYALAM_NNA,  
+    U_JG_MALAYALAM_NNNA,  
+    U_JG_MALAYALAM_NYA,  
+    U_JG_MALAYALAM_RA,  
+    U_JG_MALAYALAM_SSA,  
+    U_JG_MALAYALAM_TTA,  
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -3520,27 +3569,6 @@ u_toupper(UChar32 c);
 
 U_STABLE UChar32 U_EXPORT2
 u_totitle(UChar32 c);
-
-
-#define U_FOLD_CASE_DEFAULT 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define U_FOLD_CASE_EXCLUDE_SPECIAL_I 1
 
 
 

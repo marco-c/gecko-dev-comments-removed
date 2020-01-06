@@ -133,6 +133,8 @@
 
 #define U_PF_ANDROID 4050
 
+#define U_PF_FUCHSIA 4100
+
 
 #define U_PF_OS390 9000
 
@@ -152,6 +154,8 @@
 #   include <android/api-level.h>
 #elif defined(__pnacl__) || defined(__native_client__)
 #   define U_PLATFORM U_PF_BROWSER_NATIVE_CLIENT
+#elif defined(__Fuchsia__)
+#   define U_PLATFORM U_PF_FUCHSIA
 #elif defined(linux) || defined(__linux__) || defined(__linux)
 #   define U_PLATFORM U_PF_LINUX
 #elif defined(__APPLE__) && defined(__MACH__)
@@ -190,6 +194,20 @@
 #   define U_PLATFORM U_PF_OS400
 #else
 #   define U_PLATFORM U_PF_UNKNOWN
+#endif
+
+
+
+
+
+
+
+
+
+
+
+#ifndef UPRV_INCOMPLETE_CPP11_SUPPORT
+#   define UPRV_INCOMPLETE_CPP11_SUPPORT (U_PLATFORM == U_PF_AIX || U_PLATFORM == U_PF_OS390 || U_PLATFORM == U_PF_SOLARIS )
 #endif
 
 
@@ -344,31 +362,6 @@
 
 
 
-
-
-
-
-
-
-
-#ifndef U_IOSTREAM_SOURCE
-#define U_IOSTREAM_SOURCE 199711
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef __GNUC__
 #   define U_GCC_MAJOR_MINOR (__GNUC__ * 100 + __GNUC_MINOR__)
 #else
@@ -503,22 +496,6 @@
 namespace std {
   typedef decltype(nullptr) nullptr_t;
 };
-#endif
-
-
-
-
-
-
-
-#ifdef U_HAVE_RVALUE_REFERENCES
-    
-#elif U_CPLUSPLUS_VERSION >= 11 || __has_feature(cxx_rvalue_references) \
-        || defined(__GXX_EXPERIMENTAL_CXX0X__) \
-        || (defined(_MSC_VER) && _MSC_VER >= 1600)  
-#   define U_HAVE_RVALUE_REFERENCES 1
-#else
-#   define U_HAVE_RVALUE_REFERENCES 0
 #endif
 
 
@@ -871,6 +848,16 @@ namespace std {
 #    define U_CALLCONV U_EXPORT2
 #endif
 
+
+
+
+
+
+#if U_PLATFORM == U_PF_OS390 && defined(__cplusplus)
+#    define U_CALLCONV_FPTR U_CALLCONV
+#else
+#    define U_CALLCONV_FPTR
+#endif
 
 
 #endif

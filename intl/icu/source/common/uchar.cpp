@@ -729,8 +729,5 @@ upropsvec_addPropertyStarts(const USetAdder *sa, UErrorCode *pErrorCode) {
     }
 
     
-    if(propsVectorsColumns>0) {
-        
-        utrie2_enum(&propsVectorsTrie, NULL, _enumPropertyStartsRange, sa);
-    }
+    utrie2_enum(&propsVectorsTrie, NULL, _enumPropertyStartsRange, sa);
 }

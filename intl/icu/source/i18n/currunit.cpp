@@ -16,6 +16,7 @@
 
 #include "unicode/currunit.h"
 #include "unicode/ustring.h"
+#include "cstring.h"
 
 U_NAMESPACE_BEGIN
 
@@ -33,9 +34,28 @@ CurrencyUnit::CurrencyUnit(ConstChar16Ptr _isoCode, UErrorCode& ec) {
     }
 }
 
-CurrencyUnit::CurrencyUnit(const CurrencyUnit& other) :
-    MeasureUnit(other) {
+CurrencyUnit::CurrencyUnit(const CurrencyUnit& other) : MeasureUnit(other) {
     u_strcpy(isoCode, other.isoCode);
+}
+
+CurrencyUnit::CurrencyUnit(const MeasureUnit& other, UErrorCode& ec) : MeasureUnit(other) {
+    
+    
+    if (uprv_strcmp("currency", getType()) != 0) {
+        ec = U_ILLEGAL_ARGUMENT_ERROR;
+        isoCode[0] = 0;
+    } else {
+        
+        u_charsToUChars(getSubtype(), isoCode, 4);
+        isoCode[3] = 0; 
+    }
+}
+
+CurrencyUnit::CurrencyUnit() : MeasureUnit() {
+    u_strcpy(isoCode, u"XXX");
+    char simpleIsoCode[4];
+    u_UCharsToChars(isoCode, simpleIsoCode, 4);
+    initCurrency(simpleIsoCode);
 }
 
 CurrencyUnit& CurrencyUnit::operator=(const CurrencyUnit& other) {

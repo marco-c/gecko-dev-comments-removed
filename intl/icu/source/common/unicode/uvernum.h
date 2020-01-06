@@ -58,7 +58,7 @@
 
 
 
-#define U_ICU_VERSION_MAJOR_NUM 59
+#define U_ICU_VERSION_MAJOR_NUM 60
 
 
 
@@ -84,7 +84,7 @@
 
 
 
-#define U_ICU_VERSION_SUFFIX _59
+#define U_ICU_VERSION_SUFFIX _60
 
 
 
@@ -119,24 +119,19 @@
 
 
 
-#define U_ICU_VERSION "59.1"
+#define U_ICU_VERSION "60.1"
 
 
 
 
 
-#if U_PLATFORM_HAS_WINUWP_API == 0
-#define U_ICU_VERSION_SHORT "59"
-#else
-
-#define U_ICU_VERSION_SHORT
-#endif 
+#define U_ICU_VERSION_SHORT "60"
 
 #ifndef U_HIDE_INTERNAL_API
 
 
 
-#define U_ICU_DATA_VERSION "59.1"
+#define U_ICU_DATA_VERSION "60.1"
 #endif  
 
 

@@ -27,6 +27,9 @@
 #include "uvector.h"
 #include "umutex.h"
 
+
+#define ZONE_NAME_U16_MAX 128
+
 U_NAMESPACE_BEGIN
 
 
@@ -246,6 +249,8 @@ public:
 
     TimeZoneNames::MatchInfoCollection* find(const UnicodeString& text, int32_t start, uint32_t types, UErrorCode& status) const;
 
+    
+    
     static const TZDBNames* getMetaZoneNames(const UnicodeString& mzId, UErrorCode& status);
 
 private:

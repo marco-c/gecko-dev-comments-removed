@@ -210,7 +210,6 @@ class U_I18N_API MeasureFormat : public Format {
             FieldPosition &pos,
             UErrorCode &status) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -223,7 +222,6 @@ class U_I18N_API MeasureFormat : public Format {
 
 
     UnicodeString getUnitDisplayName(const MeasureUnit& unit, UErrorCode &status) const;
-#endif 
 
 
     

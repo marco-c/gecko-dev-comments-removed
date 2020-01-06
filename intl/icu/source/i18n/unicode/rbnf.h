@@ -1010,6 +1010,20 @@ public:
 
   virtual void setContext(UDisplayContext value, UErrorCode& status);
 
+    
+
+
+
+
+    virtual ERoundingMode getRoundingMode(void) const;
+
+    
+
+
+
+
+    virtual void setRoundingMode(ERoundingMode roundingMode);
+
 public:
     
 
@@ -1059,7 +1073,6 @@ private:
     void dispose();
     void stripWhitespace(UnicodeString& src);
     void initDefaultRuleSet();
-    void format(double number, NFRuleSet& ruleSet);
     NFRuleSet* findRuleSet(const UnicodeString& name, UErrorCode& status) const;
 
     
@@ -1079,6 +1092,7 @@ private:
     PluralFormat *createPluralFormat(UPluralType pluralType, const UnicodeString &pattern, UErrorCode& status) const;
     UnicodeString& adjustForCapitalizationContext(int32_t startPos, UnicodeString& currentResult, UErrorCode& status) const;
     UnicodeString& format(int64_t number, NFRuleSet *ruleSet, UnicodeString& toAppendTo, UErrorCode& status) const;
+    void format(double number, NFRuleSet& rs, UnicodeString& toAppendTo, UErrorCode& status) const;
 
 private:
     NFRuleSet **ruleSets;
@@ -1090,6 +1104,7 @@ private:
     DecimalFormatSymbols* decimalFormatSymbols;
     NFRule *defaultInfinityRule;
     NFRule *defaultNaNRule;
+    ERoundingMode roundingMode;
     UBool lenient;
     UnicodeString* lenientParseRules;
     LocalizationInfo* localizations;

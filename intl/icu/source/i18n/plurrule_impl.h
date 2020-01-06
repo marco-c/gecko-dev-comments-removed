@@ -28,6 +28,7 @@
 #include "unicode/ures.h"
 #include "uvector.h"
 #include "hash.h"
+#include "uassert.h"
 
 class PluralRulesTest;
 
@@ -177,6 +178,38 @@ private:
 
 };
 
+enum PluralOperand {
+    
+
+
+    PLURAL_OPERAND_N,
+
+    
+
+
+    PLURAL_OPERAND_I,
+
+    
+
+
+    PLURAL_OPERAND_F,
+
+    
+
+
+    PLURAL_OPERAND_T,
+
+    
+
+
+    PLURAL_OPERAND_V,
+
+    
+
+
+    PLURAL_OPERAND_W,
+
+    
 
 
 
@@ -184,7 +217,43 @@ private:
 
 
 
-class U_I18N_API FixedDecimal: public UMemory {
+
+    PLURAL_OPERAND_J
+};
+
+
+
+
+
+PluralOperand tokenTypeToPluralOperand(tokenType tt);
+
+
+
+
+
+class U_I18N_API IFixedDecimal {
+  public:
+    virtual ~IFixedDecimal();
+
+    
+
+
+
+    virtual double getPluralOperand(PluralOperand operand) const = 0;
+
+    virtual bool isNaN() const = 0;
+
+    virtual bool isInfinite() const = 0;
+};
+
+
+
+
+
+
+
+
+class U_I18N_API FixedDecimal: public IFixedDecimal, public UObject {
   public:
     
 
@@ -196,10 +265,16 @@ class U_I18N_API FixedDecimal: public UMemory {
     explicit FixedDecimal(double n);
     explicit FixedDecimal(const VisibleDigits &n);
     FixedDecimal();
+    ~FixedDecimal() U_OVERRIDE;
     FixedDecimal(const UnicodeString &s, UErrorCode &ec);
     FixedDecimal(const FixedDecimal &other);
 
-    double get(tokenType operand) const;
+    double getPluralOperand(PluralOperand operand) const U_OVERRIDE;
+    bool isNaN() const U_OVERRIDE;
+    bool isInfinite() const U_OVERRIDE;
+
+    bool isNanOrInfinity() const;  
+
     int32_t getVisibleFractionDigitCount() const;
 
     void init(double n, int32_t v, int64_t f);
@@ -217,7 +292,8 @@ class U_I18N_API FixedDecimal: public UMemory {
     int64_t     intValue;
     UBool       hasIntegerValue;
     UBool       isNegative;
-    UBool       isNanOrInfinity;
+    UBool       _isNaN;
+    UBool       _isInfinite;
 };
 
 class AndConstraint : public UMemory  {
@@ -240,7 +316,7 @@ public:
     virtual ~AndConstraint();
     AndConstraint* add();
     
-    UBool isFulfilled(const FixedDecimal &number);
+    UBool isFulfilled(const IFixedDecimal &number);
 };
 
 class OrConstraint : public UMemory  {
@@ -253,7 +329,7 @@ public:
     virtual ~OrConstraint();
     AndConstraint* add();
     
-    UBool isFulfilled(const FixedDecimal &number);
+    UBool isFulfilled(const IFixedDecimal &number);
 };
 
 class RuleChain : public UMemory  {
@@ -271,7 +347,7 @@ public:
     RuleChain(const RuleChain& other);
     virtual ~RuleChain();
 
-    UnicodeString select(const FixedDecimal &number) const;
+    UnicodeString select(const IFixedDecimal &number) const;
     void          dumpRules(UnicodeString& result);
     UErrorCode    getKeywords(int32_t maxArraySize, UnicodeString *keywords, int32_t& arraySize) const;
     UBool         isKeyword(const UnicodeString& keyword) const;

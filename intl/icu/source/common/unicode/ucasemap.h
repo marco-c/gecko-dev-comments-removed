@@ -23,6 +23,7 @@
 
 #include "unicode/utypes.h"
 #include "unicode/localpointer.h"
+#include "unicode/stringoptions.h"
 #include "unicode/ustring.h"
 
 
@@ -143,56 +144,6 @@ ucasemap_setLocale(UCaseMap *csm, const char *locale, UErrorCode *pErrorCode);
 
 U_STABLE void U_EXPORT2
 ucasemap_setOptions(UCaseMap *csm, uint32_t options, UErrorCode *pErrorCode);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define U_TITLECASE_NO_LOWERCASE 0x100
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define U_TITLECASE_NO_BREAK_ADJUSTMENT 0x200
-
-
-
-
-
-
-
-
-#define UCASEMAP_OMIT_UNCHANGED_TEXT 0x4000
 
 #if !UCONFIG_NO_BREAK_ITERATION
 

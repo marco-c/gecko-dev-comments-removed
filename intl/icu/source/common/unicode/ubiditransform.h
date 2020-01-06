@@ -23,8 +23,6 @@
 #include "unicode/uchar.h"
 #include "unicode/localpointer.h"
 
-#ifndef U_HIDE_DRAFT_API
-
 
 
 
@@ -242,7 +240,7 @@ typedef struct UBiDiTransform UBiDiTransform;
 
 
 
-U_DRAFT uint32_t U_EXPORT2
+U_STABLE uint32_t U_EXPORT2
 ubiditransform_transform(UBiDiTransform *pBiDiTransform,
             const UChar *src, int32_t srcLength,
             UChar *dest, int32_t destSize,
@@ -288,14 +286,14 @@ ubiditransform_transform(UBiDiTransform *pBiDiTransform,
 
 
 
-U_DRAFT UBiDiTransform* U_EXPORT2
+U_STABLE UBiDiTransform* U_EXPORT2
 ubiditransform_open(UErrorCode *pErrorCode);
 
 
 
 
 
-U_DRAFT void U_EXPORT2
+U_STABLE void U_EXPORT2
 ubiditransform_close(UBiDiTransform *pBidiTransform);
 
 #if U_SHOW_CPLUSPLUS_API
@@ -317,5 +315,4 @@ U_NAMESPACE_END
 
 #endif
 
-#endif 
 #endif

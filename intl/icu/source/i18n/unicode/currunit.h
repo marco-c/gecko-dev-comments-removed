@@ -40,6 +40,12 @@ class U_I18N_API CurrencyUnit: public MeasureUnit {
 
 
 
+    CurrencyUnit();
+
+    
+
+
+
 
 
 
@@ -51,6 +57,18 @@ class U_I18N_API CurrencyUnit: public MeasureUnit {
 
 
     CurrencyUnit(const CurrencyUnit& other);
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+    CurrencyUnit(const MeasureUnit& measureUnit, UErrorCode &ec);
+#endif  
 
     
 

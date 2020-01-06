@@ -444,6 +444,13 @@ typedef enum UScriptCode {
       
       USCRIPT_SYMBOLS_EMOJI                 = 174,
 
+      
+      USCRIPT_MASARAM_GONDI                 = 175,
+      
+      USCRIPT_SOYOMBO                       = 176,
+      
+      USCRIPT_ZANABAZAR_SQUARE              = 177,
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -451,7 +458,7 @@ typedef enum UScriptCode {
 
 
 
-    USCRIPT_CODE_LIMIT    = 175
+    USCRIPT_CODE_LIMIT    = 178
 #endif  
 } UScriptCode;
 

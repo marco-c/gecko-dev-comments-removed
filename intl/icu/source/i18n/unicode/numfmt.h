@@ -166,8 +166,40 @@ class StringEnumeration;
 
 
 
+
+
+
+
+
 class U_I18N_API NumberFormat : public Format {
 public:
+    
+
+
+
+
+
+
+
+
+    enum ERoundingMode {
+        kRoundCeiling,  
+        kRoundFloor,    
+        kRoundDown,     
+        kRoundUp,       
+        kRoundHalfEven, 
+
+        kRoundHalfDown, 
+
+        kRoundHalfUp,   
+
+        
+
+
+
+        kRoundUnnecessary
+    };
+
     
 
 
@@ -964,6 +996,21 @@ public:
 
 
     virtual UDisplayContext getContext(UDisplayContextType type, UErrorCode& status) const;
+
+    
+
+
+
+
+
+    virtual ERoundingMode getRoundingMode(void) const;
+
+    
+
+
+
+
+    virtual void setRoundingMode(ERoundingMode roundingMode);
 
 public:
 

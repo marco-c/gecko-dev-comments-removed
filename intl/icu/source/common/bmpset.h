@@ -34,6 +34,7 @@ U_NAMESPACE_BEGIN
 
 
 
+
 class BMPSet : public UMemory {
 public:
     BMPSet(const int32_t *parentList, int32_t parentListLength);
@@ -98,10 +99,10 @@ private:
     
 
 
+    UBool latin1Contains[0x100];
 
-
-
-    UBool asciiBytes[0xc0];
+    
+    UBool containsFFFD;
 
     
 

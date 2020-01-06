@@ -19,6 +19,7 @@ U_NAMESPACE_BEGIN
 
 class UnicodeSet;
 class UStack;
+class UVector32;
 class DictionaryMatcher;
 
 
@@ -71,14 +72,11 @@ class LanguageBreakEngine : public UMemory {
 
 
 
-
-
   virtual int32_t findBreaks( UText *text,
                               int32_t startPos,
                               int32_t endPos,
-                              UBool reverse,
                               int32_t breakType,
-                              UStack &foundBreaks ) const = 0;
+                              UVector32 &foundBreaks ) const = 0;
 
 };
 
@@ -196,14 +194,11 @@ class UnhandledEngine : public LanguageBreakEngine {
 
 
 
-
-
   virtual int32_t findBreaks( UText *text,
                               int32_t startPos,
                               int32_t endPos,
-                              UBool reverse,
                               int32_t breakType,
-                              UStack &foundBreaks ) const;
+                              UVector32 &foundBreaks ) const;
 
  
 

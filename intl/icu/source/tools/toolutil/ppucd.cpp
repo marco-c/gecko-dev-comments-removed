@@ -98,6 +98,7 @@ static const char *lineTypeStrings[]={
     "defaults",
     "block",
     "cp",
+    "unassigned",
     "algnamesrange"
 };
 
@@ -203,8 +204,17 @@ PreparsedUCD::getProps(UnicodeSet &newValues, UErrorCode &errorCode) {
     UChar32 start, end;
     if(!parseCodePointRange(field, start, end, errorCode)) { return NULL; }
     UniProps *props;
+    UBool insideBlock=FALSE;  
     switch(lineType) {
     case DEFAULTS_LINE:
+        
+        if(blockLineIndex>=0) {
+            fprintf(stderr,
+                    "error in preparsed UCD: default line %ld after one or more block lines\n",
+                    (long)lineNumber);
+            errorCode=U_PARSE_ERROR;
+            return NULL;
+        }
         if(defaultLineIndex>=0) {
             fprintf(stderr,
                     "error in preparsed UCD: second line with default properties on line %ld\n",
@@ -228,9 +238,22 @@ PreparsedUCD::getProps(UnicodeSet &newValues, UErrorCode &errorCode) {
         blockLineIndex=lineIndex;
         break;
     case CP_LINE:
+    case UNASSIGNED_LINE:
         if(blockProps.start<=start && end<=blockProps.end) {
-            
-            cpProps=blockProps;
+            insideBlock=TRUE;
+            if(lineType==CP_LINE) {
+                
+                cpProps=blockProps;
+            } else {
+                
+                
+                cpProps=defaultProps;
+                newValues=blockValues;
+                
+                int32_t blkIndex=UCHAR_BLOCK-UCHAR_INT_START;
+                cpProps.intProps[blkIndex]=blockProps.intProps[blkIndex];
+                newValues.remove((UChar32)UCHAR_BLOCK);
+            }
         } else if(start>blockProps.end || end<blockProps.start) {
             
             cpProps=defaultProps;
@@ -254,6 +277,22 @@ PreparsedUCD::getProps(UnicodeSet &newValues, UErrorCode &errorCode) {
     props->end=end;
     while((field=nextField())!=NULL) {
         if(!parseProperty(*props, field, newValues, errorCode)) { return NULL; }
+    }
+    if(lineType==BLOCK_LINE) {
+        blockValues=newValues;
+    } else if(lineType==UNASSIGNED_LINE && insideBlock) {
+        
+        for(int32_t prop=0; prop<UCHAR_BINARY_LIMIT; ++prop) {
+            if(newValues.contains(prop) && cpProps.binProps[prop]==blockProps.binProps[prop]) {
+                newValues.remove(prop);
+            }
+        }
+        for(int32_t prop=UCHAR_INT_START; prop<UCHAR_INT_LIMIT; ++prop) {
+            int32_t index=prop-UCHAR_INT_START;
+            if(newValues.contains(prop) && cpProps.intProps[index]==blockProps.intProps[index]) {
+                newValues.remove(prop);
+            }
+        }
     }
     return props;
 }

@@ -35,6 +35,11 @@ U_NAMESPACE_BEGIN
 
 struct CanonIterData;
 
+class ByteSink;
+class Edits;
+class InitCanonIterData;
+class LcccContext;
+
 class U_COMMON_API Hangul {
 public:
     
@@ -63,15 +68,23 @@ public:
         return HANGUL_BASE<=c && c<HANGUL_LIMIT;
     }
     static inline UBool
-    isHangulWithoutJamoT(UChar c) {
+    isHangulLV(UChar32 c) {
         c-=HANGUL_BASE;
-        return c<HANGUL_COUNT && c%JAMO_T_COUNT==0;
+        return 0<=c && c<HANGUL_COUNT && c%JAMO_T_COUNT==0;
     }
     static inline UBool isJamoL(UChar32 c) {
         return (uint32_t)(c-JAMO_L_BASE)<JAMO_L_COUNT;
     }
     static inline UBool isJamoV(UChar32 c) {
         return (uint32_t)(c-JAMO_V_BASE)<JAMO_V_COUNT;
+    }
+    static inline UBool isJamoT(UChar32 c) {
+        int32_t t=c-JAMO_T_BASE;
+        return 0<t && t<JAMO_T_COUNT;  
+    }
+    static UBool isJamo(UChar32 c) {
+        return JAMO_L_BASE<=c && c<=JAMO_T_END &&
+            (c<=JAMO_L_END || (JAMO_V_BASE<=c && c<=JAMO_V_END) || JAMO_T_BASE<c);
     }
 
     
@@ -117,10 +130,13 @@ class Normalizer2Impl;
 
 class U_COMMON_API ReorderingBuffer : public UMemory {
 public:
+    
     ReorderingBuffer(const Normalizer2Impl &ni, UnicodeString &dest) :
         impl(ni), str(dest),
         start(NULL), reorderStart(NULL), limit(NULL),
         remainingCapacity(0), lastCC(0) {}
+    
+    ReorderingBuffer(const Normalizer2Impl &ni, UnicodeString &dest, UErrorCode &errorCode);
     ~ReorderingBuffer() {
         if(start!=NULL) {
             str.releaseBuffer((int32_t)(limit-start));
@@ -135,11 +151,7 @@ public:
     uint8_t getLastCC() const { return lastCC; }
 
     UBool equals(const UChar *start, const UChar *limit) const;
-
-    
-    void setLastChar(UChar c) {
-        *(limit-1)=c;
-    }
+    UBool equals(const uint8_t *otherStart, const uint8_t *otherLimit) const;
 
     UBool append(UChar32 c, uint8_t cc, UErrorCode &errorCode) {
         return (c<=0xffff) ?
@@ -218,6 +230,12 @@ private:
     UChar *codePointStart, *codePointLimit;
 };
 
+
+
+
+
+
+
 class U_COMMON_API Normalizer2Impl : public UObject {
 public:
     Normalizer2Impl() : normTrie(NULL), fCanonIterData(NULL) {
@@ -233,8 +251,6 @@ public:
     void addCanonIterPropertyStarts(const USetAdder *sa, UErrorCode &errorCode) const;
 
     
-
-    const UTrie2 *getNormTrie() const { return normTrie; }
 
     UBool ensureCanonIterData(UErrorCode &errorCode) const;
 
@@ -255,15 +271,22 @@ public:
 
     uint8_t getCC(uint16_t norm16) const {
         if(norm16>=MIN_NORMAL_MAYBE_YES) {
-            return (uint8_t)norm16;
+            return getCCFromNormalYesOrMaybe(norm16);
         }
         if(norm16<minNoNo || limitNoNo<=norm16) {
             return 0;
         }
         return getCCFromNoNo(norm16);
     }
+    static uint8_t getCCFromNormalYesOrMaybe(uint16_t norm16) {
+        return (uint8_t)(norm16 >> OFFSET_SHIFT);
+    }
     static uint8_t getCCFromYesOrMaybe(uint16_t norm16) {
-        return norm16>=MIN_NORMAL_MAYBE_YES ? (uint8_t)norm16 : 0;
+        return norm16>=MIN_NORMAL_MAYBE_YES ? getCCFromNormalYesOrMaybe(norm16) : 0;
+    }
+    uint8_t getCCFromYesOrMaybeCP(UChar32 c) const {
+        if (c < minCompNoMaybeCP) { return 0; }
+        return getCCFromYesOrMaybe(getNorm16(c));
     }
 
     
@@ -272,10 +295,8 @@ public:
 
 
     uint16_t getFCD16(UChar32 c) const {
-        if(c<0) {
+        if(c<minDecompNoCP) {
             return 0;
-        } else if(c<0x180) {
-            return tccc180[c];
         } else if(c<=0xffff) {
             if(!singleLeadMightHaveNonZeroFCD16(c)) { return 0; }
         }
@@ -291,9 +312,7 @@ public:
 
     uint16_t nextFCD16(const UChar *&s, const UChar *limit) const {
         UChar32 c=*s++;
-        if(c<0x180) {
-            return tccc180[c];
-        } else if(!singleLeadMightHaveNonZeroFCD16(c)) {
+        if(c<minDecompNoCP || !singleLeadMightHaveNonZeroFCD16(c)) {
             return 0;
         }
         UChar c2;
@@ -311,8 +330,8 @@ public:
 
     uint16_t previousFCD16(const UChar *start, const UChar *&s) const {
         UChar32 c=*--s;
-        if(c<0x180) {
-            return tccc180[c];
+        if(c<minDecompNoCP) {
+            return 0;
         }
         if(!U16_IS_TRAIL(c)) {
             if(!singleLeadMightHaveNonZeroFCD16(c)) {
@@ -329,8 +348,6 @@ public:
     }
 
     
-    uint16_t getFCD16FromBelow180(UChar32 c) const { return tccc180[c]; }
-    
     UBool singleLeadMightHaveNonZeroFCD16(UChar32 lead) const {
         
         uint8_t bits=smallFCD[lead>>8];
@@ -339,9 +356,6 @@ public:
     }
     
     uint16_t getFCD16FromNormData(UChar32 c) const;
-
-    void makeCanonIterDataFromNorm16(UChar32 start, UChar32 end, uint16_t norm16,
-                                     CanonIterData &newData, UErrorCode &errorCode) const;
 
     
 
@@ -367,14 +381,25 @@ public:
     UBool getCanonStartSet(UChar32 c, UnicodeSet &set) const;
 
     enum {
-        MIN_CCC_LCCC_CP=0x300
-    };
+        
+        MIN_YES_YES_WITH_CC=0xfe02,
+        JAMO_VT=0xfe00,
+        MIN_NORMAL_MAYBE_YES=0xfc00,
+        JAMO_L=2,  
+        INERT=1,  
 
-    enum {
-        MIN_YES_YES_WITH_CC=0xff01,
-        JAMO_VT=0xff00,
-        MIN_NORMAL_MAYBE_YES=0xfe00,
-        JAMO_L=1,
+        
+        HAS_COMP_BOUNDARY_AFTER=1,
+        OFFSET_SHIFT=1,
+
+        
+        
+        DELTA_TCCC_0=0,
+        DELTA_TCCC_1=2,
+        DELTA_TCCC_GT_1=4,
+        DELTA_TCCC_MASK=6,
+        DELTA_SHIFT=3,
+
         MAX_DELTA=0x40
     };
 
@@ -394,21 +419,32 @@ public:
         IX_MIN_COMP_NO_MAYBE_CP,
 
         
-        IX_MIN_YES_NO,  
+
+        
+        IX_MIN_YES_NO,
+        
         IX_MIN_NO_NO,
         IX_LIMIT_NO_NO,
         IX_MIN_MAYBE_YES,
 
-        IX_MIN_YES_NO_MAPPINGS_ONLY,  
+        
+        IX_MIN_YES_NO_MAPPINGS_ONLY,
+        
+        IX_MIN_NO_NO_COMP_BOUNDARY_BEFORE,
+        
+        IX_MIN_NO_NO_COMP_NO_MAYBE_CC,
+        
+        IX_MIN_NO_NO_EMPTY,
 
-        IX_RESERVED15,
+        IX_MIN_LCCC_CP,
+        IX_RESERVED19,
         IX_COUNT
     };
 
     enum {
         MAPPING_HAS_CCC_LCCC_WORD=0x80,
         MAPPING_HAS_RAW_MAPPING=0x40,
-        MAPPING_NO_COMP_BOUNDARY_AFTER=0x20,
+        
         MAPPING_LENGTH_MASK=0x1f
     };
 
@@ -457,6 +493,12 @@ public:
                           UnicodeString &safeMiddle,
                           ReorderingBuffer &buffer,
                           UErrorCode &errorCode) const;
+
+    
+    UBool composeUTF8(uint32_t options, UBool onlyContiguous,
+                      const uint8_t *src, const uint8_t *limit,
+                      ByteSink *sink, icu::Edits *edits, UErrorCode &errorCode) const;
+
     const UChar *makeFCD(const UChar *src, const UChar *limit,
                          ReorderingBuffer *buffer, UErrorCode &errorCode) const;
     void makeFCDAndAppend(const UChar *src, const UChar *limit,
@@ -465,27 +507,42 @@ public:
                           ReorderingBuffer &buffer,
                           UErrorCode &errorCode) const;
 
-    UBool hasDecompBoundary(UChar32 c, UBool before) const;
+    UBool hasDecompBoundaryBefore(UChar32 c) const;
+    UBool norm16HasDecompBoundaryBefore(uint16_t norm16) const;
+    UBool hasDecompBoundaryAfter(UChar32 c) const;
+    UBool norm16HasDecompBoundaryAfter(uint16_t norm16) const;
     UBool isDecompInert(UChar32 c) const { return isDecompYesAndZeroCC(getNorm16(c)); }
 
     UBool hasCompBoundaryBefore(UChar32 c) const {
-        return c<minCompNoMaybeCP || hasCompBoundaryBefore(c, getNorm16(c));
+        return c<minCompNoMaybeCP || norm16HasCompBoundaryBefore(getNorm16(c));
     }
-    UBool hasCompBoundaryAfter(UChar32 c, UBool onlyContiguous, UBool testInert) const;
+    UBool hasCompBoundaryAfter(UChar32 c, UBool onlyContiguous) const {
+        return norm16HasCompBoundaryAfter(getNorm16(c), onlyContiguous);
+    }
+    UBool isCompInert(UChar32 c, UBool onlyContiguous) const {
+        uint16_t norm16=getNorm16(c);
+        return isCompYesAndZeroCC(norm16) &&
+            (norm16 & HAS_COMP_BOUNDARY_AFTER) != 0 &&
+            (!onlyContiguous || isInert(norm16) || *getMapping(norm16) <= 0x1ff);
+    }
 
-    UBool hasFCDBoundaryBefore(UChar32 c) const { return c<MIN_CCC_LCCC_CP || getFCD16(c)<=0xff; }
-    UBool hasFCDBoundaryAfter(UChar32 c) const {
-        uint16_t fcd16=getFCD16(c);
-        return fcd16<=1 || (fcd16&0xff)==0;
-    }
+    UBool hasFCDBoundaryBefore(UChar32 c) const { return hasDecompBoundaryBefore(c); }
+    UBool hasFCDBoundaryAfter(UChar32 c) const { return hasDecompBoundaryAfter(c); }
     UBool isFCDInert(UChar32 c) const { return getFCD16(c)<=1; }
 private:
+    friend class InitCanonIterData;
+    friend class LcccContext;
+
     UBool isMaybe(uint16_t norm16) const { return minMaybeYes<=norm16 && norm16<=JAMO_VT; }
     UBool isMaybeOrNonZeroCC(uint16_t norm16) const { return norm16>=minMaybeYes; }
-    static UBool isInert(uint16_t norm16) { return norm16==0; }
-    static UBool isJamoL(uint16_t norm16) { return norm16==1; }
+    static UBool isInert(uint16_t norm16) { return norm16==INERT; }
+    static UBool isJamoL(uint16_t norm16) { return norm16==JAMO_L; }
     static UBool isJamoVT(uint16_t norm16) { return norm16==JAMO_VT; }
-    UBool isHangul(uint16_t norm16) const { return norm16==minYesNo; }
+    uint16_t hangulLVT() const { return minYesNoMappingsOnly|HAS_COMP_BOUNDARY_AFTER; }
+    UBool isHangulLV(uint16_t norm16) const { return norm16==minYesNo; }
+    UBool isHangulLVT(uint16_t norm16) const {
+        return norm16==hangulLVT();
+    }
     UBool isCompYesAndZeroCC(uint16_t norm16) const { return norm16<minNoNo; }
     
     
@@ -525,29 +582,46 @@ private:
         }
     }
     
-    uint8_t getTrailCCFromCompYesAndZeroCC(const UChar *cpStart, const UChar *cpLimit) const;
+    uint8_t getTrailCCFromCompYesAndZeroCC(uint16_t norm16) const {
+        if(norm16<=minYesNo) {
+            return 0;  
+        } else {
+            
+            return (uint8_t)(*getMapping(norm16)>>8);  
+        }
+    }
+    uint8_t getPreviousTrailCC(const UChar *start, const UChar *p) const;
+    uint8_t getPreviousTrailCC(const uint8_t *start, const uint8_t *p) const;
 
     
     UChar32 mapAlgorithmic(UChar32 c, uint16_t norm16) const {
-        return c+norm16-(minMaybeYes-MAX_DELTA-1);
+        return c+(norm16>>DELTA_SHIFT)-centerNoNoDelta;
+    }
+    UChar32 getAlgorithmicDelta(uint16_t norm16) const {
+        return (norm16>>DELTA_SHIFT)-centerNoNoDelta;
     }
 
     
-    const uint16_t *getMapping(uint16_t norm16) const { return extraData+norm16; }
+    const uint16_t *getMapping(uint16_t norm16) const { return extraData+(norm16>>OFFSET_SHIFT); }
     const uint16_t *getCompositionsListForDecompYes(uint16_t norm16) const {
-        if(norm16==0 || MIN_NORMAL_MAYBE_YES<=norm16) {
+        if(norm16<JAMO_L || MIN_NORMAL_MAYBE_YES<=norm16) {
             return NULL;
         } else if(norm16<minMaybeYes) {
-            return extraData+norm16;  
+            return getMapping(norm16);  
         } else {
             return maybeYesCompositions+norm16-minMaybeYes;
         }
     }
     const uint16_t *getCompositionsListForComposite(uint16_t norm16) const {
-        const uint16_t *list=extraData+norm16;  
+        
+        const uint16_t *list=getMapping(norm16);
         return list+  
             1+  
             (*list&MAPPING_LENGTH_MASK);  
+    }
+    const uint16_t *getCompositionsListForMaybe(uint16_t norm16) const {
+        
+        return maybeYesCompositions+((norm16-minMaybeYes)>>OFFSET_SHIFT);
     }
     
 
@@ -563,22 +637,51 @@ private:
                                                 UChar32 minNeedDataCP,
                                                 ReorderingBuffer *buffer,
                                                 UErrorCode &errorCode) const;
-    UBool decomposeShort(const UChar *src, const UChar *limit,
-                         ReorderingBuffer &buffer, UErrorCode &errorCode) const;
+    const UChar *decomposeShort(const UChar *src, const UChar *limit,
+                                UBool stopAtCompBoundary, UBool onlyContiguous,
+                                ReorderingBuffer &buffer, UErrorCode &errorCode) const;
     UBool decompose(UChar32 c, uint16_t norm16,
                     ReorderingBuffer &buffer, UErrorCode &errorCode) const;
+
+    const uint8_t *decomposeShort(const uint8_t *src, const uint8_t *limit,
+                                  UBool stopAtCompBoundary, UBool onlyContiguous,
+                                  ReorderingBuffer &buffer, UErrorCode &errorCode) const;
 
     static int32_t combine(const uint16_t *list, UChar32 trail);
     void addComposites(const uint16_t *list, UnicodeSet &set) const;
     void recompose(ReorderingBuffer &buffer, int32_t recomposeStartIndex,
                    UBool onlyContiguous) const;
 
-    UBool hasCompBoundaryBefore(UChar32 c, uint16_t norm16) const;
-    const UChar *findPreviousCompBoundary(const UChar *start, const UChar *p) const;
-    const UChar *findNextCompBoundary(const UChar *p, const UChar *limit) const;
+    UBool hasCompBoundaryBefore(UChar32 c, uint16_t norm16) const {
+        return c<minCompNoMaybeCP || norm16HasCompBoundaryBefore(norm16);
+    }
+    UBool norm16HasCompBoundaryBefore(uint16_t norm16) const  {
+        return norm16 < minNoNoCompNoMaybeCC || isAlgorithmicNoNo(norm16);
+    }
+    UBool hasCompBoundaryBefore(const UChar *src, const UChar *limit) const;
+    UBool hasCompBoundaryBefore(const uint8_t *src, const uint8_t *limit) const;
+    UBool hasCompBoundaryAfter(const UChar *start, const UChar *p,
+                               UBool onlyContiguous) const;
+    UBool hasCompBoundaryAfter(const uint8_t *start, const uint8_t *p,
+                               UBool onlyContiguous) const;
+    UBool norm16HasCompBoundaryAfter(uint16_t norm16, UBool onlyContiguous) const {
+        return (norm16 & HAS_COMP_BOUNDARY_AFTER) != 0 &&
+            (!onlyContiguous || isTrailCC01ForCompBoundaryAfter(norm16));
+    }
+    
+    UBool isTrailCC01ForCompBoundaryAfter(uint16_t norm16) const {
+        return isInert(norm16) || (isDecompNoAlgorithmic(norm16) ?
+            (norm16 & DELTA_TCCC_MASK) <= DELTA_TCCC_1 : *getMapping(norm16) <= 0x1ff);
+    }
+
+    const UChar *findPreviousCompBoundary(const UChar *start, const UChar *p, UBool onlyContiguous) const;
+    const UChar *findNextCompBoundary(const UChar *p, const UChar *limit, UBool onlyContiguous) const;
 
     const UChar *findPreviousFCDBoundary(const UChar *start, const UChar *p) const;
     const UChar *findNextFCDBoundary(const UChar *p, const UChar *limit) const;
+
+    void makeCanonIterDataFromNorm16(UChar32 start, UChar32 end, const uint16_t norm16,
+                                     CanonIterData &newData, UErrorCode &errorCode) const;
 
     int32_t getCanonValue(UChar32 c) const;
     const UnicodeSet &getCanonStartSet(int32_t n) const;
@@ -586,23 +689,26 @@ private:
     
 
     
-    UChar32 minDecompNoCP;
-    UChar32 minCompNoMaybeCP;
+    UChar minDecompNoCP;
+    UChar minCompNoMaybeCP;
+    UChar minLcccCP;
 
     
     uint16_t minYesNo;
     uint16_t minYesNoMappingsOnly;
     uint16_t minNoNo;
+    uint16_t minNoNoCompBoundaryBefore;
+    uint16_t minNoNoCompNoMaybeCC;
+    uint16_t minNoNoEmpty;
     uint16_t limitNoNo;
+    uint16_t centerNoNoDelta;
     uint16_t minMaybeYes;
 
     const UTrie2 *normTrie;
     const uint16_t *maybeYesCompositions;
     const uint16_t *extraData;  
     const uint8_t *smallFCD;  
-    uint8_t tccc180[0x180];  
 
-public:  
     UInitOnce       fCanonIterDataInitOnce;
     CanonIterData  *fCanonIterData;
 };
@@ -655,6 +761,62 @@ unorm_getQuickCheck(UChar32 c, UNormalizationMode mode);
 
 U_CFUNC uint16_t
 unorm_getFCD16(UChar32 c);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
