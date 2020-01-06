@@ -271,6 +271,17 @@ class TabBase {
 
 
 
+
+  get lastAccessed() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
   get audible() {
     throw new Error("Not implemented");
   }
@@ -481,6 +492,7 @@ class TabBase {
       incognito: this.incognito,
       width: this.width,
       height: this.height,
+      lastAccessed: this.lastAccessed,
       audible: this.audible,
       mutedInfo: this.mutedInfo,
     };
