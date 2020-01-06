@@ -6338,10 +6338,12 @@ PresShell::Paint(nsView*         aViewToPaint,
     return;
   }
 
-  
-  
-  
-  mAPZFocusTarget = FocusTarget(this, mAPZFocusSequenceNumber);
+  if (gfxPrefs::APZKeyboardEnabled()) {
+    
+    
+    
+    mAPZFocusTarget = FocusTarget(this, mAPZFocusSequenceNumber);
+  }
 
   nsPresContext* presContext = GetPresContext();
   AUTO_LAYOUT_PHASE_ENTRY_POINT(presContext, Paint);
