@@ -153,6 +153,9 @@ public:
   
   virtual bool HasSink() { return true; }
 
+  
+  virtual void SetPushComplete() { };
+
   virtual ~Http2Stream();
 
   Http2Session *Session() { return mSession; }

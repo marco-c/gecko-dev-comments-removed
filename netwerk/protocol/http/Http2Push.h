@@ -68,6 +68,7 @@ public:
 
   
   virtual bool HasSink() override { return !!mConsumerStream; }
+  virtual void SetPushComplete() override { mPushCompleted = true; }
 
   nsCString &GetRequestString() { return mRequestString; }
 
