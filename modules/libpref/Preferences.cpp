@@ -160,9 +160,21 @@ PrefTypeToString(PrefType aType)
 }
 #endif
 
+static ArenaAllocator<8192, 1> gPrefNameArena;
+
 class PrefHashEntry : public PLDHashEntryHdr
 {
 public:
+  PrefHashEntry(const char* aName, PrefType aType)
+  {
+    mName = ArenaStrdup(aName, gPrefNameArena);
+    SetType(aType);
+    
+    
+  }
+
+  const char* Name() { return mName; }
+
   
 
   PrefType Type() const { return static_cast<PrefType>(mType); }
@@ -192,17 +204,17 @@ public:
   static bool MatchEntry(const PLDHashEntryHdr* aEntry, const void* aKey)
   {
     auto pref = static_cast<const PrefHashEntry*>(aEntry);
+    auto key = static_cast<const char*>(aKey);
 
-    if (pref->mKey == aKey) {
+    if (pref->mName == aKey) {
       return true;
     }
 
-    if (!pref->mKey || !aKey) {
+    if (!pref->mName || !aKey) {
       return false;
     }
 
-    auto otherKey = static_cast<const char*>(aKey);
-    return (strcmp(pref->mKey, otherKey) == 0);
+    return strcmp(pref->mName, key) == 0;
   }
 
   static void ClearEntry(PLDHashTable* aTable, PLDHashEntryHdr* aEntry)
@@ -216,7 +228,7 @@ public:
 
     
     
-    pref->mKey = nullptr;
+    pref->mName = nullptr;
     memset(aEntry, 0, aTable->EntrySize());
   }
 
@@ -246,7 +258,7 @@ private:
 public:
   void ToSetting(dom::PrefSetting* aSetting)
   {
-    aSetting->name() = mKey;
+    aSetting->name() = mName;
 
     if (HasDefaultValue()) {
       aSetting->defaultValue() = dom::PrefValue();
@@ -320,8 +332,9 @@ private:
   uint32_t mHasUserValue : 1;
   uint32_t mHasDefaultValue : 1;
 
+  const char* mName;
+
 public:
-  const char* mKey;
   PrefValue mDefaultValue;
   PrefValue mUserValue;
 };
@@ -340,8 +353,6 @@ struct CallbackNode
 };
 
 static PLDHashTable* gHashTable;
-
-static ArenaAllocator<8192, 1> gPrefNameArena;
 
 
 
@@ -365,7 +376,7 @@ static PLDHashTableOps pref_HashTableOps = {
 
 
 static PrefHashEntry*
-pref_HashTableLookup(const char* aKey);
+pref_HashTableLookup(const char* aPrefName);
 
 static bool
 pref_ValueChanged(PrefValue aOldValue, PrefValue aNewValue, PrefType aType);
@@ -381,7 +392,7 @@ enum
 };
 
 static nsresult
-pref_SetPref(const char* aKey,
+pref_SetPref(const char* aPrefName,
              PrefValue aValue,
              PrefType aType,
              uint32_t aFlags);
@@ -461,7 +472,7 @@ pref_savePrefs()
     }
 
     nsAutoCString prefName;
-    StrEscape(pref->mKey, prefName);
+    StrEscape(pref->Name(), prefName);
 
     nsAutoCString prefValue;
     if (pref->IsTypeString()) {
@@ -529,7 +540,7 @@ PREF_ClearAllUserPrefs()
     auto pref = static_cast<PrefHashEntry*>(iter.Get());
 
     if (pref->HasUserValue()) {
-      if (!prefNames.append(pref->mKey)) {
+      if (!prefNames.append(pref->Name())) {
         return NS_ERROR_OUT_OF_MEMORY;
       }
 
@@ -551,13 +562,13 @@ PREF_ClearAllUserPrefs()
 
 
 static nsresult
-PREF_LockPref(const char* aKey, bool aLockIt)
+PREF_LockPref(const char* aPrefName, bool aLockIt)
 {
   if (!gHashTable) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  PrefHashEntry* pref = pref_HashTableLookup(aKey);
+  PrefHashEntry* pref = pref_HashTableLookup(aPrefName);
   if (!pref) {
     return NS_ERROR_UNEXPECTED;
   }
@@ -566,11 +577,11 @@ PREF_LockPref(const char* aKey, bool aLockIt)
     if (!pref->IsLocked()) {
       pref->SetIsLocked(true);
       gIsAnyPrefLocked = true;
-      pref_DoCallback(aKey);
+      pref_DoCallback(aPrefName);
     }
   } else if (pref->IsLocked()) {
     pref->SetIsLocked(false);
-    pref_DoCallback(aKey);
+    pref_DoCallback(aPrefName);
   }
 
   return NS_OK;
@@ -636,21 +647,26 @@ static pref_initPhase gPhase = START;
 
 struct StringComparator
 {
-  const char* mKey;
-  explicit StringComparator(const char* aKey)
-    : mKey(aKey)
+  const char* mPrefName;
+
+  explicit StringComparator(const char* aPrefName)
+    : mPrefName(aPrefName)
   {
   }
-  int operator()(const char* aString) const { return strcmp(mKey, aString); }
+
+  int operator()(const char* aPrefName) const
+  {
+    return strcmp(mPrefName, aPrefName);
+  }
 };
 
 static bool
-InInitArray(const char* aKey)
+InInitArray(const char* aPrefName)
 {
   size_t prefsLen;
   size_t found;
   const char** list = mozilla::dom::ContentPrefs::GetContentPrefs(&prefsLen);
-  return BinarySearchIf(list, 0, prefsLen, StringComparator(aKey), &found);
+  return BinarySearchIf(list, 0, prefsLen, StringComparator(aPrefName), &found);
 }
 
 static bool gInstallingCallback = false;
@@ -697,7 +713,7 @@ pref_HashTableLookup(const char* aKey)
 }
 
 static nsresult
-pref_SetPref(const char* aKey,
+pref_SetPref(const char* aPrefName,
              PrefValue aValue,
              PrefType aType,
              uint32_t aFlags)
@@ -708,22 +724,21 @@ pref_SetPref(const char* aKey,
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  auto pref = static_cast<PrefHashEntry*>(gHashTable->Add(aKey, fallible));
+  auto pref = static_cast<PrefHashEntry*>(gHashTable->Add(aPrefName, fallible));
   if (!pref) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  if (!pref->mKey) {
+  if (!pref->Name()) {
     
-    pref->SetType(aType);
-    pref->mKey = ArenaStrdup(aKey, gPrefNameArena);
+    new (pref) PrefHashEntry(aPrefName, aType);
 
   } else if (pref->HasDefaultValue() && !pref->IsType(aType)) {
     NS_WARNING(
       nsPrintfCString(
         "Ignoring attempt to overwrite value of default pref %s (type %s) with "
         "the wrong type (%s)!",
-        aKey,
+        aPrefName,
         PrefTypeToString(pref->Type()),
         PrefTypeToString(aType))
         .get());
@@ -778,7 +793,7 @@ pref_SetPref(const char* aKey,
   }
 
   if (valueChanged) {
-    return pref_DoCallback(aKey);
+    return pref_DoCallback(aPrefName);
   }
 
   return NS_OK;
@@ -2518,8 +2533,8 @@ nsPrefBranch::DeleteBranch(const char* aStartingAt)
     
     
     
-    nsDependentCString key(pref->mKey);
-    if (StringBeginsWith(key, branchName) || key.Equals(branchNameNoDot)) {
+    nsDependentCString name(pref->Name());
+    if (StringBeginsWith(name, branchName) || name.Equals(branchNameNoDot)) {
       iter.Remove();
     }
   }
@@ -2552,8 +2567,8 @@ nsPrefBranch::GetChildList(const char* aStartingAt,
   size_t parentLen = parent.Length();
   for (auto iter = gHashTable->Iter(); !iter.Done(); iter.Next()) {
     auto pref = static_cast<PrefHashEntry*>(iter.Get());
-    if (strncmp(pref->mKey, parent.get(), parentLen) == 0) {
-      prefArray.AppendElement(pref->mKey);
+    if (strncmp(pref->Name(), parent.get(), parentLen) == 0) {
+      prefArray.AppendElement(pref->Name());
     }
   }
 
