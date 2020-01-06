@@ -627,6 +627,7 @@ public:
     , mForceDescendIntoIfVisible(false)
     , mBuiltDisplayList(false)
     , mFrameIsModified(false)
+    , mHasOverrideDirtyRegion(false)
     , mMayHaveWillChangeBudget(false)
     , mIsPrimaryFrame(false)
   {
@@ -4107,6 +4108,9 @@ public:
   bool IsFrameModified() { return mFrameIsModified; }
   void SetFrameIsModified(bool aFrameIsModified) { mFrameIsModified = aFrameIsModified; }
 
+  bool HasOverrideDirtyRegion() { return mHasOverrideDirtyRegion; }
+  void SetHasOverrideDirtyRegion(bool aHasDirtyRegion) { mHasOverrideDirtyRegion = aHasDirtyRegion; }
+
   bool MayHaveWillChangeBudget() { return mMayHaveWillChangeBudget; }
   void SetMayHaveWillChangeBudget(bool aHasBudget) { mMayHaveWillChangeBudget = aHasBudget; }
 
@@ -4287,6 +4291,8 @@ protected:
   bool mBuiltDisplayList : 1;
 
   bool mFrameIsModified : 1;
+
+  bool mHasOverrideDirtyRegion : 1;
 
   
 
