@@ -1364,8 +1364,11 @@ var gBrowserInit = {
 
     gRemoteControl.updateVisualCue(Marionette.running);
 
+    let uriToLoad = this._getUriToLoad();
+    gIdentityHandler.initIdentityBlock(uriToLoad);
+
     
-    this._boundDelayedStartup = this._delayedStartup.bind(this);
+    this._boundDelayedStartup = this._delayedStartup.bind(this, uriToLoad);
     window.addEventListener("MozAfterPaint", this._boundDelayedStartup);
 
     this._loadHandled = true;
@@ -1376,7 +1379,7 @@ var gBrowserInit = {
     this._boundDelayedStartup = null;
   },
 
-  _delayedStartup() {
+  _delayedStartup(uriToLoad) {
     let tmp = {};
     Cu.import("resource://gre/modules/TelemetryTimestamps.jsm", tmp);
     let TelemetryTimestamps = tmp.TelemetryTimestamps;
@@ -1422,7 +1425,6 @@ var gBrowserInit = {
     
     gAboutNewTabService.QueryInterface(Ci.nsISupports);
 
-    let uriToLoad = this._getUriToLoad();
     if (uriToLoad && uriToLoad != "about:blank") {
       if (uriToLoad instanceof Ci.nsIArray) {
         let count = uriToLoad.length;
@@ -4202,11 +4204,6 @@ function OpenBrowserWindow(options) {
   }
 
   return win;
-}
-
-
-function BrowserCustomizeToolbar() {
-  gCustomizeMode.enter();
 }
 
 
@@ -7018,6 +7015,12 @@ var gIdentityHandler = {
 
   _popupTriggeredByKeyboard: false,
 
+  
+
+
+
+  _secureInternalUIWhitelist: /^(?:accounts|addons|cache|config|crashes|customizing|downloads|healthreport|home|license|newaddon|permissions|preferences|privatebrowsing|rights|searchreset|sessionrestore|support|welcomeback)(?:[?#]|$)/i,
+
   get _isBroken() {
     return this._state & Ci.nsIWebProgressListener.STATE_IS_BROKEN;
   },
@@ -7646,6 +7649,14 @@ var gIdentityHandler = {
   },
 
   setURI(uri) {
+    
+    
+    if (this._ignoreAboutBlankUntilFirstLoad) {
+      if (uri.spec == "about:blank")
+        return;
+      this._ignoreAboutBlankUntilFirstLoad = false;
+    }
+
     this._uri = uri;
 
     try {
@@ -7655,8 +7666,8 @@ var gIdentityHandler = {
       this._uriHasHost = false;
     }
 
-    let whitelist = /^(?:accounts|addons|cache|config|crashes|customizing|downloads|healthreport|home|license|newaddon|permissions|preferences|privatebrowsing|rights|searchreset|sessionrestore|support|welcomeback)(?:[?#]|$)/i;
-    this._isSecureInternalUI = uri.schemeIs("about") && whitelist.test(uri.pathQueryRef);
+    this._isSecureInternalUI = uri.schemeIs("about") &&
+      this._secureInternalUIWhitelist.test(uri.pathQueryRef);
 
     this._isExtensionPage = uri.schemeIs("moz-extension");
 
@@ -7676,6 +7687,25 @@ var gIdentityHandler = {
       this._isURILoadedFromFile = resolvedURI.schemeIs("file");
     } catch (ex) {
       
+    }
+  },
+
+  
+
+
+
+
+  initIdentityBlock(initialURI) {
+    if ((typeof initialURI != "string") || !initialURI.startsWith("about:"))
+      return;
+
+    let uri = Services.io.newURI(initialURI);
+    if (this._secureInternalUIWhitelist.test(uri.pathQueryRef)) {
+      this._isSecureInternalUI = true;
+      this._ignoreAboutBlankUntilFirstLoad = true;
+      this.refreshIdentityBlock();
+      
+      gURLBar.setAttribute("pageproxystate", "valid");
     }
   },
 
@@ -8136,7 +8166,7 @@ function switchToTabHavingURI(aURI, aOpenNew, aOpenParams = {}) {
     
     let ignoreFragmentWhenComparing = typeof ignoreFragment == "string" &&
                                       ignoreFragment.startsWith("whenComparing");
-      let requestedCompare = cleanURL(
+    let requestedCompare = cleanURL(
           aURI.displaySpec, ignoreQueryString || replaceQueryString, ignoreFragmentWhenComparing);
     let browsers = aWindow.gBrowser.browsers;
     for (let i = 0; i < browsers.length; i++) {
