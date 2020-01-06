@@ -91,10 +91,6 @@ CommonDialog.prototype = {
             throw "unknown dialog type";
         }
 
-        if (xulDialog) {
-            xulDialog.setAttribute("windowtype", "prompt:" + this.args.promptType);
-        }
-
         
         let title = this.args.title;
         
