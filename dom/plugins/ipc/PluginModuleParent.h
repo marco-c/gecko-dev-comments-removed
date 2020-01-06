@@ -525,9 +525,6 @@ class PluginModuleChromeParent
     virtual mozilla::ipc::IPCResult
     RecvNP_InitializeResult(const NPError& aError) override;
 
-    bool
-    SendAssociatePluginId();
-
     void CachedSettingChanged();
 
     virtual mozilla::ipc::IPCResult
@@ -679,11 +676,6 @@ private:
 
     bool                mInitOnAsyncConnect;
     nsresult            mAsyncInitRv;
-    
-    
-    
-    
-    dom::ContentParent* mContentParent;
     nsCOMPtr<nsIObserver> mPluginOfflineObserver;
     bool mIsBlocklisted;
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
