@@ -2620,6 +2620,31 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
+  getNodeActorFromWindowID: function (windowID) {
+    let win;
+
+    try {
+      win = Services.wm.getOuterWindowWithId(windowID);
+    } catch (e) {
+      
+    }
+
+    if (!win) {
+      return { error: "noWindow",
+               message: "The related docshell is destroyed or not found" };
+    } else if (!win.frameElement) {
+      
+      
+      return this.attachElement(win.document.body || win.document.documentElement);
+    }
+
+    return this.attachElement(win.frameElement);
+  },
+
+  
+
+
+
 
 
   getStyleSheetOwnerNode: function (styleSheetActorID) {

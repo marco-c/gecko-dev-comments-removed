@@ -2055,9 +2055,18 @@ Toolbox.prototype = {
   
 
 
-  showFramesMenu: function (event) {
+  showFramesMenu: async function (event) {
     let menu = new Menu();
     let target = event.target;
+
+    
+    
+    await this.initInspector();
+    if (!("_supportsFrameHighlight" in this)) {
+    
+      this._supportsFrameHighlight =
+        await this.target.actorHasMethod("domwalker", "getNodeActorFromWindowID");
+    }
 
     
     this.frameMap.forEach(frame => {
@@ -2078,6 +2087,9 @@ Toolbox.prototype = {
         checked,
         click: () => {
           this.onSelectFrame(frame.id);
+        },
+        hover: () => {
+          this.onHightlightFrame(frame.id);
         }
       }));
     });
@@ -2088,6 +2100,7 @@ Toolbox.prototype = {
 
     menu.once("close").then(() => {
       this.frameButton.isChecked = false;
+      this.highlighterUtils.unhighlight();
     });
 
     
@@ -2132,6 +2145,18 @@ Toolbox.prototype = {
       windowId: frameId
     };
     this._target.client.request(packet);
+  },
+
+  
+
+
+  onHightlightFrame: async function (frameId) {
+    
+    if (this._supportsFrameHighlight &&
+        this.frameMap.get(this.selectedFrameId).parentID === undefined) {
+      let frameActor = await this.walker.getNodeActorFromWindowID(frameId);
+      this.highlighterUtils.highlightNodeFront(frameActor);
+    }
   },
 
   
