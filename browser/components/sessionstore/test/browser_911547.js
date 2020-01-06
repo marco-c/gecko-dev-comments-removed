@@ -5,7 +5,13 @@
 
 
 
+
+
+
+
+
 add_task(async function test() {
+  let dataURIPref = Services.prefs.getBoolPref("security.data_uri.unique_opaque_origin");
   
   let testURL = "http://mochi.test:8888/browser/browser/components/sessionstore/test/browser_911547_sample.html";
   let tab = gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, testURL);
@@ -16,13 +22,18 @@ add_task(async function test() {
 
   
   
-  await injectInlineScript(browser, `document.getElementById("test_id").value = "fail";`);
+  await injectInlineScript(browser, `document.getElementById("test_id1").value = "id1_modified";`);
 
   let loadedPromise = promiseBrowserLoaded(browser);
   await ContentTask.spawn(browser, null, function() {
-    is(content.document.getElementById("test_id").value, "ok",
+    is(content.document.getElementById("test_id1").value, "id1_initial",
        "CSP should block the inline script that modifies test_id");
 
+
+    
+    
+    
+    
     
     
     content.document.getElementById("test_data_link").click();
@@ -30,9 +41,14 @@ add_task(async function test() {
 
   await loadedPromise;
 
-  await ContentTask.spawn(browser, null, function() {
-    is(content.document.getElementById("test_id2").value, "ok",
-       "CSP should block the script loaded by the clicked data URI");
+  await ContentTask.spawn(browser, {dataURIPref}, function( {dataURIPref}) { 
+    if (dataURIPref) {
+      is(content.document.getElementById("test_id2").value, "id2_modified",
+         "data: URI should *not* inherit the CSP of the enclosing context");
+    } else {
+      is(content.document.getElementById("test_id2").value, "id2_initial",
+        "CSP should block the script loaded by the clicked data URI");
+    }
   });
 
   
@@ -43,9 +59,14 @@ add_task(async function test() {
   await promiseTabRestored(tab);
   browser = tab.linkedBrowser;
 
-  await ContentTask.spawn(browser, null, function() {
-    is(content.document.getElementById("test_id2").value, "ok",
-       "CSP should block the script loaded by the clicked data URI after restore");
+  await ContentTask.spawn(browser, {dataURIPref}, function({dataURIPref}) { 
+    if (dataURIPref) {
+      is(content.document.getElementById("test_id2").value, "id2_modified",
+         "data: URI should *not* inherit the CSP of the enclosing context");
+    } else {
+      is(content.document.getElementById("test_id2").value, "id2_initial",
+        "CSP should block the script loaded by the clicked data URI after restore");
+    }
   });
 
   
