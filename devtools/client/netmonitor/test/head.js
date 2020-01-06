@@ -93,7 +93,13 @@ Services.prefs.setBoolPref("devtools.debugger.log", false);
 const gDefaultFilters = Services.prefs.getCharPref("devtools.netmonitor.filters");
 
 
-Services.prefs.setCharPref("devtools.netmonitor.hiddenColumns", "[]");
+Services.prefs.setCharPref(
+  "devtools.netmonitor.visibleColumns",
+  "[\"cause\",\"contentSize\",\"cookies\",\"domain\",\"duration\"," +
+  "\"endTime\",\"file\",\"latency\",\"method\",\"protocol\"," +
+  "\"remoteip\",\"responseTime\",\"scheme\",\"setCookies\"," +
+  "\"startTime\",\"status\",\"transferred\",\"type\",\"waterfall\"]"
+);
 
 registerCleanupFunction(() => {
   info("finish() was called, cleaning up...");

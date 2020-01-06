@@ -9,10 +9,9 @@
 
 add_task(function* () {
   
-  
   Services.prefs.setCharPref(
-    "devtools.netmonitor.hiddenColumns",
-    "[\"file\",\"protocol\",\"remoteip\"]"
+    "devtools.netmonitor.visibleColumns",
+    "[\"waterfall\"]"
   );
 
   let { tab, monitor } = yield initNetMonitor(CUSTOM_GET_URL);

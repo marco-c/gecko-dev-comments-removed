@@ -356,6 +356,24 @@ function getFormattedProtocol(item) {
   return protocol.join("+");
 }
 
+
+
+
+
+function getResponseHeader(item, header) {
+  let { responseHeaders } = item;
+  if (!responseHeaders || !responseHeaders.headers.length) {
+    return null;
+  }
+  header = header.toLowerCase();
+  for (let responseHeader of responseHeaders.headers) {
+    if (responseHeader.name.toLowerCase() == header) {
+      return responseHeader.value;
+    }
+  }
+  return null;
+}
+
 module.exports = {
   getFormDataSections,
   fetchHeaders,
@@ -365,6 +383,7 @@ module.exports = {
   getAbbreviatedMimeType,
   getEndTime,
   getFormattedProtocol,
+  getResponseHeader,
   getResponseTime,
   getStartTime,
   getUrlBaseName,
