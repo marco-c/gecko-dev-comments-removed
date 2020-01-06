@@ -250,9 +250,6 @@ _mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset)
 #endif
 
 
-#define STRERROR_BUF 64
-
-
 #define QUANTUM_2POW_MIN 4
 
 
@@ -1551,7 +1548,7 @@ static void
 pages_unmap(void* aAddr, size_t aSize)
 {
   if (munmap(aAddr, aSize) == -1) {
-    char buf[STRERROR_BUF];
+    char buf[64];
 
     if (strerror_r(errno, buf, sizeof(buf)) == 0) {
       _malloc_message(
