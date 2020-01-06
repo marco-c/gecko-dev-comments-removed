@@ -61,7 +61,7 @@ public:
     NS_ASSERTION(ClientManager()->InConstruction(),
                  "Can only set properties in construction phase");
     mInvalidRegion.Add(aRegion);
-    UpdateValidRegionAfterInvalidRegionChanged();
+    mValidRegion.Sub(mValidRegion, mInvalidRegion.GetRegion());
   }
 
   virtual void RenderLayer() override { RenderLayerWithReadback(nullptr); }
@@ -73,7 +73,7 @@ public:
     if (mContentClient) {
       mContentClient->Clear();
     }
-    ClearValidRegion();
+    mValidRegion.SetEmpty();
     DestroyBackBuffer();
   }
 
