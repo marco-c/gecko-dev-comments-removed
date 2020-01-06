@@ -57,20 +57,10 @@ public:
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  Maybe<WrImageMask> BuildWrMaskLayer(const StackingContextHelper& aRelativeTo,
-                                      const StackingContextHelper* aUnapplySc);
+  Maybe<WrImageMask> BuildWrMaskLayer(const StackingContextHelper& aRelativeTo);
 
 protected:
   BoundsTransformMatrix BoundsTransform();
-  Maybe<LayerRect> ClipRect();
 
   void DumpLayerInfo(const char* aLayerType, const LayerRect& aRect);
 };
