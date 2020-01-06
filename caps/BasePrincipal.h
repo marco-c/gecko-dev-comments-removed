@@ -126,6 +126,18 @@ public:
   inline bool FastSubsumesConsideringDomainIgnoringFPD(nsIPrincipal* aOther);
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  nsIPrincipal* PrincipalToInherit(nsIURI* aRequestedURI = nullptr,
+                                   bool aAllowIfInheritsPrincipal = true);
+
+  
 
 
 

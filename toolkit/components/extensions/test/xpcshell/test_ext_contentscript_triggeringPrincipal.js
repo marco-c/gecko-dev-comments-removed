@@ -264,6 +264,21 @@ function injectElements(tests, baseOpts) {
     img.src = "data:image/svg+xml,%3Csvg%2F%3E";
     document.body.appendChild(img);
 
+    let rand = Math.random();
+
+    
+    
+    let link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "data:text/css;base64," + btoa(`
+      @font-face {
+          font-family: "DoesNotExist${rand}";
+          src: url("fonts/DoesNotExist.${rand}.woff") format("woff");
+          font-weight: normal;
+          font-style: normal;
+      }`);
+    document.head.appendChild(link);
+
     let overrideOpts = opts => Object.assign({}, baseOpts, opts);
     let opts = baseOpts;
 
