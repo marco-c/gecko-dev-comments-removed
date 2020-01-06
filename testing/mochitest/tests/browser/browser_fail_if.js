@@ -1,0 +1,4 @@
+
+function test() {
+  ok(false, "fail ok");
+}
