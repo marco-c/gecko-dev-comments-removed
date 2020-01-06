@@ -1284,18 +1284,18 @@ nsContentSubtreeIterator::Init(nsIDOMRange* aRange)
 
   
   mCommonParent = mRange->GetCommonAncestor();
-  nsINode* startParent = mRange->GetStartContainer();
+  nsINode* startContainer = mRange->GetStartContainer();
   int32_t startOffset = mRange->StartOffset();
   nsINode* endParent = mRange->GetEndContainer();
   int32_t endOffset = mRange->EndOffset();
-  MOZ_ASSERT(mCommonParent && startParent && endParent);
+  MOZ_ASSERT(mCommonParent && startContainer && endParent);
   
-  MOZ_ASSERT(uint32_t(startOffset) <= startParent->Length() &&
+  MOZ_ASSERT(uint32_t(startOffset) <= startContainer->Length() &&
              uint32_t(endOffset) <= endParent->Length());
 
   
-  if (startParent == endParent) {
-    nsINode* child = startParent->GetFirstChild();
+  if (startContainer == endParent) {
+    nsINode* child = startContainer->GetFirstChild();
 
     if (!child || startOffset == endOffset) {
       
@@ -1315,14 +1315,14 @@ nsContentSubtreeIterator::Init(nsIDOMRange* aRange)
   int32_t offset = mRange->StartOffset();
 
   nsINode* node = nullptr;
-  if (!startParent->GetChildCount()) {
+  if (!startContainer->GetChildCount()) {
     
-    node = startParent;
+    node = startContainer;
   } else {
-    nsIContent* child = startParent->GetChildAt(offset);
+    nsIContent* child = startContainer->GetChildAt(offset);
     if (!child) {
       
-      node = startParent;
+      node = startContainer;
     } else {
       firstCandidate = child;
     }

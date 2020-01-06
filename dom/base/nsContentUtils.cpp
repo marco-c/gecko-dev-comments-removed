@@ -7458,7 +7458,7 @@ nsContentUtils::GetSelectionInTextControl(Selection* aSelection,
 
   
   
-  nsINode* startParent = range->GetStartContainer();
+  nsINode* startContainer = range->GetStartContainer();
   uint32_t startOffset = range->StartOffset();
   nsINode* endParent = range->GetEndContainer();
   uint32_t endOffset = range->EndOffset();
@@ -7469,8 +7469,8 @@ nsContentUtils::GetSelectionInTextControl(Selection* aSelection,
   nsIContent* firstChild = aRoot->GetFirstChild();
 #ifdef DEBUG
   nsCOMPtr<nsIContent> lastChild = aRoot->GetLastChild();
-  NS_ASSERTION(startParent == aRoot || startParent == firstChild ||
-               startParent == lastChild, "Unexpected startParent");
+  NS_ASSERTION(startContainer == aRoot || startContainer == firstChild ||
+               startContainer == lastChild, "Unexpected startContainer");
   NS_ASSERTION(endParent == aRoot || endParent == firstChild ||
                endParent == lastChild, "Unexpected endParent");
   
@@ -7487,8 +7487,8 @@ nsContentUtils::GetSelectionInTextControl(Selection* aSelection,
     
     
     
-    if ((startParent == aRoot && startOffset != 0) ||
-        (startParent != aRoot && startParent != firstChild)) {
+    if ((startContainer == aRoot && startOffset != 0) ||
+        (startContainer != aRoot && startContainer != firstChild)) {
       startOffset = firstChild->Length();
     }
     if ((endParent == aRoot && endOffset != 0) ||

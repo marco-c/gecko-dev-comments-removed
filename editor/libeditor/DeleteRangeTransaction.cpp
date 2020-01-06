@@ -56,22 +56,22 @@ DeleteRangeTransaction::DoTransaction()
   rangeToDelete.swap(mRangeToDelete);
 
   
-  nsCOMPtr<nsINode> startParent = rangeToDelete->GetStartContainer();
+  nsCOMPtr<nsINode> startContainer = rangeToDelete->GetStartContainer();
   int32_t startOffset = rangeToDelete->StartOffset();
   nsCOMPtr<nsINode> endParent = rangeToDelete->GetEndContainer();
   int32_t endOffset = rangeToDelete->EndOffset();
-  MOZ_ASSERT(startParent && endParent);
+  MOZ_ASSERT(startContainer && endParent);
 
-  if (startParent == endParent) {
+  if (startContainer == endParent) {
     
     nsresult rv =
-      CreateTxnsToDeleteBetween(startParent, startOffset, endOffset);
+      CreateTxnsToDeleteBetween(startContainer, startOffset, endOffset);
     NS_ENSURE_SUCCESS(rv, rv);
   } else {
     
     
     nsresult rv =
-      CreateTxnsToDeleteContent(startParent, startOffset, nsIEditor::eNext);
+      CreateTxnsToDeleteContent(startContainer, startOffset, nsIEditor::eNext);
     NS_ENSURE_SUCCESS(rv, rv);
     
     rv = CreateTxnsToDeleteNodesBetween(rangeToDelete);
@@ -91,7 +91,7 @@ DeleteRangeTransaction::DoTransaction()
   if (bAdjustSelection) {
     RefPtr<Selection> selection = mEditorBase->GetSelection();
     NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
-    rv = selection->Collapse(startParent, startOffset);
+    rv = selection->Collapse(startContainer, startOffset);
     NS_ENSURE_SUCCESS(rv, rv);
   }
   
