@@ -207,7 +207,6 @@ private:
 
 class nsCounterManager {
 public:
-    nsCounterManager();
     
     bool AddCounterResetsAndIncrements(nsIFrame *aFrame);
 
