@@ -115,8 +115,8 @@ NS_IMETHODIMP nsReadConfig::Observe(nsISupports *aSubject, const char *aTopic, c
 nsresult nsReadConfig::readConfigFile()
 {
     nsresult rv = NS_OK;
-    nsCString lockFileName;
-    nsCString lockVendor;
+    nsAutoCString lockFileName;
+    nsAutoCString lockVendor;
     uint32_t fileNameLen = 0;
 
     nsCOMPtr<nsIPrefBranch> defaultPrefBranch;
@@ -133,7 +133,7 @@ nsresult nsReadConfig::readConfigFile()
     
 
     rv = defaultPrefBranch->GetCharPref("general.config.filename",
-                                  getter_Copies(lockFileName));
+                                        lockFileName);
 
 
     MOZ_LOG(MCD, LogLevel::Debug, ("general.config.filename = %s\n", lockFileName.get()));
@@ -179,16 +179,14 @@ nsresult nsReadConfig::readConfigFile()
       return rv;
     }
 
-    rv = prefBranch->GetCharPref("general.config.filename",
-                                  getter_Copies(lockFileName));
+    rv = prefBranch->GetCharPref("general.config.filename", lockFileName);
     if (NS_FAILED(rv))
         
         
         return NS_ERROR_FAILURE;
 
 
-    rv = prefBranch->GetCharPref("general.config.vendor",
-                                  getter_Copies(lockVendor));
+    rv = prefBranch->GetCharPref("general.config.vendor", lockVendor);
     
     if (NS_SUCCEEDED(rv)) {
 
@@ -203,9 +201,8 @@ nsresult nsReadConfig::readConfigFile()
     }
 
     
-    nsCString urlName;
-    rv = prefBranch->GetCharPref("autoadmin.global_config_url",
-                                  getter_Copies(urlName));
+    nsAutoCString urlName;
+    rv = prefBranch->GetCharPref("autoadmin.global_config_url", urlName);
     if (NS_SUCCEEDED(rv) && !urlName.IsEmpty()) {
 
         
