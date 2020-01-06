@@ -29,7 +29,7 @@ def generate_symbols_file(output, *args):
         if undefine in pp.context:
             del pp.context[undefine]
     
-    if buildconfig.substs['MOZ_DEBUG']:
+    if buildconfig.substs.get('MOZ_DEBUG'):
         pp.context['DEBUG'] = '1'
     
     if buildconfig.substs['OS_TARGET'] == 'WINNT':
