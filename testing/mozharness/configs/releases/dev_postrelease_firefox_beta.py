@@ -4,9 +4,9 @@ config = {
     "version_files": [{"file": "browser/config/version_display.txt"}],
     "repo": {
         
-        "repo": "https://hg.mozilla.org/projects/date",
+        "repo": "https://hg.mozilla.org/projects/maple",
         "branch": "default",
-        "dest": "date",
+        "dest": "maple",
         "vcs": "hg",
         "clone_upstream_url": "https://hg.mozilla.org/mozilla-unified",
     },
