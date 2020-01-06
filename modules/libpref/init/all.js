@@ -2818,9 +2818,6 @@ pref("layout.css.scope-pseudo.enabled", true);
 pref("layout.css.background-blend-mode.enabled", true);
 
 
-pref("layout.css.background-clip-text.enabled", true);
-
-
 pref("layout.css.text-combine-upright.enabled", true);
 
 pref("layout.css.text-combine-upright-digits.enabled", false);
