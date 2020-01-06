@@ -1,0 +1,38 @@
+
+
+
+
+
+
+import json
+import os
+
+from mozprocess import ProcessHandler
+
+from mozlint import result
+
+results = []
+
+
+def lint(files, config, **kwargs):
+    tests_dir = os.path.join(kwargs['root'], 'testing', 'web-platform', 'tests')
+
+    def process_line(line):
+        try:
+            data = json.loads(line)
+        except ValueError:
+            return
+        data["level"] = "error"
+        data["path"] = os.path.relpath(os.path.join(tests_dir, data["path"]), kwargs['root'])
+        results.append(result.from_config(config, **data))
+
+    path = os.path.join(tests_dir, "lint")
+    proc = ProcessHandler([path, "--json"], env=os.environ,
+                          processOutputLine=process_line)
+    proc.run()
+    try:
+        proc.wait()
+    except KeyboardInterrupt:
+        proc.kill()
+
+    return results
