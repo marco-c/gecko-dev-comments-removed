@@ -1135,6 +1135,18 @@ BrowserGlue.prototype = {
 
     
     
+    
+    
+    Services.tm.idleDispatchToMainThread(() => {
+      try {
+        Services.logins;
+      } catch (ex) {
+        Cu.reportError(ex);
+      }
+    }, 3000);
+
+    
+    
     Services.tm.idleDispatchToMainThread(() => {
       SafeBrowsing.init();
     }, 5000);
