@@ -264,6 +264,11 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
     startOffset = 0;
   }
 
+  
+  
+  
+  UpdatePrincipal();
+
   mCacheStream.NotifyDataStarted(mLoadID, startOffset);
   mCacheStream.SetTransportSeekable(seekable);
   mChannelStatistics.Start();
@@ -412,12 +417,6 @@ ChannelMediaResource::OnDataAvailable(uint32_t aLoadID,
   
   
   
-
-  
-  
-  
-  
-  UpdatePrincipal();
 
   RefPtr<ChannelMediaResource> self = this;
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
@@ -784,9 +783,10 @@ void
 ChannelMediaResource::UpdatePrincipal()
 {
   MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mChannel);
   nsCOMPtr<nsIPrincipal> principal;
   nsIScriptSecurityManager* secMan = nsContentUtils::GetSecurityManager();
-  if (secMan && mChannel) {
+  if (secMan) {
     secMan->GetChannelResultPrincipal(mChannel, getter_AddRefs(principal));
     mCacheStream.UpdatePrincipal(principal);
   }
