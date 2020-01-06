@@ -146,10 +146,10 @@ const PROP_TARGETAPP     = ["id", "minVersion", "maxVersion"];
 
 
 
+
 const TYPES = {
   extension: 2,
   theme: 4,
-  locale: 8,
   dictionary: 64,
   experiment: 128,
   apiextension: 256,
@@ -164,7 +164,6 @@ const RESTARTLESS_TYPES = new Set([
   "apiextension",
   "dictionary",
   "experiment",
-  "locale",
   "webextension",
   "webextension-theme",
 ]);
