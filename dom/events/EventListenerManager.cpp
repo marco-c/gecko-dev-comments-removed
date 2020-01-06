@@ -690,7 +690,7 @@ EventListenerManager::ListenerCanHandle(const Listener* aListener,
   
   
   
-  if (aListener->mAllEvents) {
+  if (MOZ_UNLIKELY(aListener->mAllEvents)) {
     return true;
   }
   if (aEvent->mMessage == eUnidentifiedEvent) {
@@ -699,9 +699,9 @@ EventListenerManager::ListenerCanHandle(const Listener* aListener,
     }
     return aListener->mTypeString.Equals(aEvent->mSpecifiedEventTypeString);
   }
-  if (!nsContentUtils::IsUnprefixedFullscreenApiEnabled() &&
-      aEvent->IsTrusted() && (aEventMessage == eFullscreenChange ||
-                              aEventMessage == eFullscreenError)) {
+  if (MOZ_UNLIKELY(!nsContentUtils::IsUnprefixedFullscreenApiEnabled() &&
+                    aEvent->IsTrusted() && (aEventMessage == eFullscreenChange ||
+                                            aEventMessage == eFullscreenError))) {
     
     
     if (!aEvent->mFlags.mInSystemGroup && !aListener->mIsChrome) {
