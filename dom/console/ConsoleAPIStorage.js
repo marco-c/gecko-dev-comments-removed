@@ -129,11 +129,6 @@ ConsoleAPIStorageService.prototype = {
 
     let storage = _consoleStorage.get(aId);
 
-    
-    
-    
-    aEvent.originAttributes = Cu.cloneInto(aEvent.originAttributes, {});
-
     storage.push(aEvent);
 
     

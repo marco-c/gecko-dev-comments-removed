@@ -1507,13 +1507,6 @@ Console::PopulateConsoleNotificationInTheTargetScope(JSContext* aCx,
   ClearException ce(aCx);
   RootedDictionary<ConsoleEvent> event(aCx);
 
-  
-  
-  JS::Rooted<JS::Value> originAttributesValue(aCx);
-  if (ToJSValue(aCx, aData->mOriginAttributes, &originAttributesValue)) {
-    event.mOriginAttributes = originAttributesValue;
-  }
-
   event.mAddonId = aData->mAddonId;
 
   event.mID.Construct();
