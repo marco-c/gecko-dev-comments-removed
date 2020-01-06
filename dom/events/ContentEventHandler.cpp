@@ -19,6 +19,7 @@
 #include "nsFontMetrics.h"
 #include "nsFrameSelection.h"
 #include "nsIContentIterator.h"
+#include "nsIParserService.h"
 #include "nsIPresShell.h"
 #include "nsISelection.h"
 #include "nsIFrame.h"
@@ -2839,9 +2840,33 @@ ContentEventHandler::GetStartOffset(nsRange* aRange,
                                     LineBreakType aLineBreakType)
 {
   MOZ_ASSERT(aRange);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  nsINode* startNode = aRange->GetStartContainer();
+  bool startIsContainer = true;
+  if (startNode->IsHTMLElement()) {
+    if (nsIParserService* ps = nsContentUtils::GetParserService()) {
+      nsIAtom* name = startNode->NodeInfo()->NameAtom();
+      ps->IsContainer(ps->HTMLAtomTagToId(name), startIsContainer);
+    }
+  }
+  const NodePosition& startPos =
+    startIsContainer
+    ? NodePosition(startNode, aRange->StartOffset())
+    : NodePositionBefore(startNode, aRange->StartOffset());
   return GetFlatTextLengthInRange(
-           NodePosition(mRootContent, 0),
-           NodePosition(aRange->GetStartContainer(), aRange->StartOffset()),
+           NodePosition(mRootContent, 0), startPos,
            mRootContent, aOffset, aLineBreakType);
 }
 

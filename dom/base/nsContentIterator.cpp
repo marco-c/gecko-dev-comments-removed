@@ -15,6 +15,7 @@
 #include "nsContentUtils.h"
 #include "nsINode.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIParserService.h"
 
 using mozilla::DebugOnly;
 
@@ -374,7 +375,14 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
       
       
       
-      if (!startIsData && startIndx) {
+      bool startIsContainer = true;
+      if (startNode->IsHTMLElement()) {
+        if (nsIParserService* ps = nsContentUtils::GetParserService()) {
+          nsIAtom* name = startNode->NodeInfo()->NameAtom();
+          ps->IsContainer(ps->HTMLAtomTagToId(name), startIsContainer);
+        }
+      }
+      if (!startIsData && (startIsContainer || startIndx)) {
         mFirst = GetNextSibling(startNode);
         NS_WARNING_ASSERTION(mFirst, "GetNextSibling returned null");
 
@@ -430,11 +438,19 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
         
         
         
-        if (!endIsData && !endNode->HasChildren() && !endIndx) {
+        bool endIsContainer = true;
+        if (endNode->IsHTMLElement()) {
+          if (nsIParserService* ps = nsContentUtils::GetParserService()) {
+            nsIAtom* name = endNode->NodeInfo()->NameAtom();
+            ps->IsContainer(ps->HTMLAtomTagToId(name), endIsContainer);
+          }
+        }
+        if (!endIsData && !endIsContainer && !endIndx) {
           mLast = PrevNode(endNode);
           NS_WARNING_ASSERTION(mLast, "PrevNode returned null");
-          if (NS_WARN_IF(!NodeIsInTraversalRange(mLast, mPre,
-                                                 startNode, startIndx,
+          if (mLast && mLast != mFirst &&
+              NS_WARN_IF(!NodeIsInTraversalRange(mLast, mPre,
+                                                 mFirst, 0,
                                                  endNode, endIndx))) {
             mLast = nullptr;
           }
