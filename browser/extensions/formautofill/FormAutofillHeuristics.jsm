@@ -62,7 +62,7 @@ class FieldScanner {
 
 
   set parsingIndex(index) {
-    if (index > this.fieldDetails.length) {
+    if (index > this._elements.length) {
       throw new Error("The parsing index is out of range.");
     }
     this._parsingIndex = index;
@@ -297,6 +297,70 @@ this.FormAutofillHeuristics = {
 
 
 
+  _matchContiguousSubArray(array, subArray) {
+    return array.some((elm, i) => subArray.every((sElem, j) => sElem == array[i + j]));
+  },
+
+  
+
+
+
+
+
+
+
+  _isExpirationMonthLikely(element) {
+    if (!(element instanceof Ci.nsIDOMHTMLSelectElement)) {
+      return false;
+    }
+
+    const options = [...element.options];
+    const desiredValues = Array(12).fill(1).map((v, i) => v + i);
+
+    
+    
+    if (options.length < 12 || options.length > 13) {
+      return false;
+    }
+
+    return this._matchContiguousSubArray(options.map(e => +e.value), desiredValues) ||
+           this._matchContiguousSubArray(options.map(e => +e.label), desiredValues);
+  },
+
+
+  
+
+
+
+
+
+
+
+  _isExpirationYearLikely(element) {
+    if (!(element instanceof Ci.nsIDOMHTMLSelectElement)) {
+      return false;
+    }
+
+    const options = [...element.options];
+    
+    
+    const curYear = new Date().getFullYear();
+    const desiredValues = Array(3).fill(0).map((v, i) => v + curYear + i);
+
+    return this._matchContiguousSubArray(options.map(e => +e.value), desiredValues) ||
+           this._matchContiguousSubArray(options.map(e => +e.label), desiredValues);
+  },
+
+
+  
+
+
+
+
+
+
+
+
 
 
   _parsePhoneFields(fieldScanner) {
@@ -401,6 +465,72 @@ this.FormAutofillHeuristics = {
 
 
 
+  _parseCreditCardExpirationDateFields(fieldScanner) {
+    if (fieldScanner.parsingFinished) {
+      return false;
+    }
+
+    const savedIndex = fieldScanner.parsingIndex;
+    const monthAndYearFieldNames = ["cc-exp-month", "cc-exp-year"];
+    const detail = fieldScanner.getFieldDetailByIndex(fieldScanner.parsingIndex);
+    const element = detail.elementWeakRef.get();
+
+    
+    if (!detail || !["cc-exp", ...monthAndYearFieldNames].includes(detail.fieldName)) {
+      return false;
+    }
+
+    
+    if (element.type == "month") {
+      fieldScanner.updateFieldName(fieldScanner.parsingIndex, "cc-exp");
+      fieldScanner.parsingIndex++;
+
+      return true;
+    }
+
+    
+    
+    if (fieldScanner.getFieldDetailByIndex(fieldScanner.parsingIndex++).fieldName == "cc-exp-month" &&
+        !fieldScanner.parsingFinished &&
+        fieldScanner.getFieldDetailByIndex(fieldScanner.parsingIndex++).fieldName == "cc-exp-year") {
+      return true;
+    }
+    fieldScanner.parsingIndex = savedIndex;
+
+    
+    
+    if (this._isExpirationMonthLikely(element)) {
+      fieldScanner.updateFieldName(fieldScanner.parsingIndex, "cc-exp-month");
+      fieldScanner.parsingIndex++;
+      const nextDetail = fieldScanner.getFieldDetailByIndex(fieldScanner.parsingIndex);
+      const nextElement = nextDetail.elementWeakRef.get();
+      if (this._isExpirationYearLikely(nextElement) && !fieldScanner.parsingFinished) {
+        fieldScanner.updateFieldName(fieldScanner.parsingIndex, "cc-exp-year");
+        fieldScanner.parsingIndex++;
+
+        return true;
+      }
+    }
+    fieldScanner.parsingIndex = savedIndex;
+
+    
+    
+    
+    fieldScanner.updateFieldName(fieldScanner.parsingIndex, "cc-exp");
+    fieldScanner.parsingIndex++;
+
+    return true;
+  },
+
+  
+
+
+
+
+
+
+
+
 
 
 
@@ -417,10 +547,11 @@ this.FormAutofillHeuristics = {
     while (!fieldScanner.parsingFinished) {
       let parsedPhoneFields = this._parsePhoneFields(fieldScanner);
       let parsedAddressFields = this._parseAddressFields(fieldScanner);
+      let parsedExpirationDateFields = this._parseCreditCardExpirationDateFields(fieldScanner);
 
       
       
-      if (!parsedPhoneFields && !parsedAddressFields) {
+      if (!parsedPhoneFields && !parsedAddressFields && !parsedExpirationDateFields) {
         fieldScanner.parsingIndex++;
       }
     }

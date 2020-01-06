@@ -17,10 +17,10 @@ runHeuristicsTest([
         
         
         
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp"},
 
-        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-year"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-number"},
-        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-month"},
+
 
 
       ],
@@ -42,10 +42,10 @@ runHeuristicsTest([
         
         
         
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp"}, 
 
-        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-year"},
         {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-number"}, 
-        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-month"},
+
 
 
       ],

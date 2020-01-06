@@ -84,7 +84,7 @@ runHeuristicsTest([
         {"section": "", "addressType": "", "contactType": "", "fieldName": "address-level1"},
 
         
-        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp-year"},
+        {"section": "", "addressType": "", "contactType": "", "fieldName": "cc-exp"},
 
 
 
