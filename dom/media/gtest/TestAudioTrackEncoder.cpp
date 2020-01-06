@@ -62,15 +62,7 @@ TestOpusInit(int aChannels, int aSamplingRate)
   return encoder.TestOpusCreation(aChannels, aSamplingRate);
 }
 
-static int
-TestOpusResampler(int aChannels, int aSamplingRate)
-{
-  TestOpusTrackEncoder encoder;
-  EXPECT_TRUE(encoder.TestOpusCreation(aChannels, aSamplingRate));
-  return encoder.TestGetOutputSampleRate();
-}
-
-TEST(Media, OpusEncoder_Init)
+TEST(OpusAudioTrackEncoder, Init)
 {
   
   EXPECT_FALSE(TestOpusInit(0, 16000));
@@ -101,7 +93,7 @@ TEST(Media, OpusEncoder_Init)
   EXPECT_FALSE(TestOpusInit(2, 200000));
 }
 
-TEST(Media, OpusEncoder_TryInit)
+TEST(OpusAudioTrackEncoder, TryInit)
 {
   {
     
@@ -164,7 +156,15 @@ TEST(Media, OpusEncoder_TryInit)
   }
 }
 
-TEST(Media, OpusEncoder_Resample)
+static int
+TestOpusResampler(int aChannels, int aSamplingRate)
+{
+  TestOpusTrackEncoder encoder;
+  EXPECT_TRUE(encoder.TestOpusCreation(aChannels, aSamplingRate));
+  return encoder.TestGetOutputSampleRate();
+}
+
+TEST(OpusAudioTrackEncoder, Resample)
 {
   
   
