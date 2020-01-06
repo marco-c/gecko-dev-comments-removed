@@ -45,16 +45,9 @@ public:
     NS_DECL_NSIMUTABLE
     NS_DECL_NSIIPCSERIALIZABLEURI
 
-    static already_AddRefed<nsSimpleURI> From(nsIURI* aURI);
-
     
 
     nsSimpleURI();
-
-    bool Equals(nsSimpleURI* aOther)
-    {
-      return EqualsInternal(aOther, eHonorRef);
-    }
 
     
     
