@@ -6,9 +6,6 @@
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
-Cu.import("resource://gre/modules/Log.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
-
 Cu.import("chrome://marionette/content/error.js");
 Cu.import("chrome://marionette/content/modal.js");
 
@@ -16,8 +13,6 @@ this.EXPORTED_SYMBOLS = ["proxy"];
 
 const uuidgen = Cc["@mozilla.org/uuid-generator;1"]
     .getService(Ci.nsIUUIDGenerator);
-
-const logger = Log.repository.getLogger("Marionette");
 
 
 
@@ -49,8 +44,8 @@ this.proxy = {};
 
 
 
-proxy.toListener = function (mmFn, sendAsyncFn, browserFn) {
-  let sender = new proxy.AsyncMessageChannel(mmFn, sendAsyncFn, browserFn);
+proxy.toListener = function (mmFn, sendAsyncFn) {
+  let sender = new proxy.AsyncMessageChannel(mmFn, sendAsyncFn);
   return new Proxy(sender, ownPriorityGetterTrap);
 };
 
@@ -63,21 +58,14 @@ proxy.toListener = function (mmFn, sendAsyncFn, browserFn) {
 
 
 proxy.AsyncMessageChannel = class {
-  constructor(mmFn, sendAsyncFn, browserFn) {
-    this.mmFn_ = mmFn;
+  constructor(mmFn, sendAsyncFn) {
     this.sendAsync = sendAsyncFn;
-    this.browserFn_ = browserFn;
-
     
     this.activeMessageId = null;
 
+    this.mmFn_ = mmFn;
     this.listeners_ = new Map();
     this.dialogueObserver_ = null;
-    this.closeHandler = null;
-  }
-
-  get browser() {
-    return this.browserFn_();
   }
 
   get mm() {
@@ -136,79 +124,19 @@ proxy.AsyncMessageChannel = class {
         }
       };
 
-      
-      
-      this.closeHandler = event => {
-        logger.debug(`Received DOM event "${event.type}" for "${event.target}"`);
-
-        switch (event.type) {
-          case "TabClose":
-          case "unload":
-            this.removeHandlers();
-            resolve();
-            break;
-        }
-      }
-
-      
-      
-      
       this.dialogueObserver_ = (subject, topic) => {
-        logger.debug(`Received observer notification "${topic}"`);
-
-        this.removeAllListeners_();
-        
-        this.sendAsync("cancelRequest");
-
-        this.removeHandlers();
+        this.cancelAll();
         resolve();
       };
 
       
       
       this.addListener_(path, cb);
-      this.addHandlers();
+      modal.addHandler(this.dialogueObserver_);
 
       
       this.sendAsync(name, marshal(args), uuid);
     });
-  }
-
-  
-
-
-  addHandlers() {
-    modal.addHandler(this.dialogueObserver_);
-
-    
-    
-    if (this.browser) {
-      this.browser.window.addEventListener("unload", this.closeHandler, false);
-
-      if (this.browser.tab) {
-        let node = this.browser.tab.addEventListener ?
-            this.browser.tab : this.browser.contentBrowser;
-        node.addEventListener("TabClose", this.closeHandler, false);
-      }
-    }
-  }
-
-  
-
-
-  removeHandlers() {
-    modal.removeHandler(this.dialogueObserver_);
-
-    if (this.browser) {
-      this.browser.window.removeEventListener("unload", this.closeHandler, false);
-
-      if (this.browser.tab) {
-        let node = this.browser.tab.addEventListener ?
-            this.browser.tab : this.browser.contentBrowser;
-
-        node.removeEventListener("TabClose", this.closeHandler, false);
-      }
-    }
   }
 
   
@@ -281,10 +209,21 @@ proxy.AsyncMessageChannel = class {
     return "Marionette:asyncReply:" + uuid;
   }
 
+  
+
+
+
+  cancelAll() {
+    this.removeAllListeners_();
+    modal.removeHandler(this.dialogueObserver_);
+    
+    this.sendAsync("cancelRequest");
+  }
+
   addListener_(path, callback) {
     let autoRemover = msg => {
       this.removeListener_(path);
-      this.removeHandlers();
+      modal.removeHandler(this.dialogueObserver_);
       callback(msg);
     };
 

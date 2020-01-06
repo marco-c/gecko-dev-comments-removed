@@ -130,8 +130,7 @@ this.GeckoDriver = function (appName, server) {
   this.capabilities = new session.Capabilities();
 
   this.mm = globalMessageManager;
-  this.listener = proxy.toListener(() => this.mm, this.sendAsync.bind(this),
-                                   () => this.curBrowser);
+  this.listener = proxy.toListener(() => this.mm, this.sendAsync.bind(this));
 
   
   this.dialog = null;

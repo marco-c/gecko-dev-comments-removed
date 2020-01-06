@@ -12,12 +12,6 @@ var uuidGen = Cc["@mozilla.org/uuid-generator;1"]
 var loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
     .getService(Ci.mozIJSSubScriptLoader);
 
-Cu.import("resource://gre/modules/FileUtils.jsm");
-Cu.import("resource://gre/modules/Log.jsm");
-Cu.import("resource://gre/modules/Preferences.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-
 Cu.import("chrome://marionette/content/accessibility.js");
 Cu.import("chrome://marionette/content/action.js");
 Cu.import("chrome://marionette/content/atom.js");
@@ -31,6 +25,11 @@ Cu.import("chrome://marionette/content/legacyaction.js");
 Cu.import("chrome://marionette/content/navigate.js");
 Cu.import("chrome://marionette/content/proxy.js");
 Cu.import("chrome://marionette/content/session.js");
+
+Cu.import("resource://gre/modules/FileUtils.jsm");
+Cu.import("resource://gre/modules/Preferences.jsm");
+Cu.import("resource://gre/modules/Task.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 Cu.importGlobalProperties(["URL"]);
 
@@ -80,11 +79,13 @@ var asyncChrome = proxy.toChromeAsync({
 });
 var syncChrome = proxy.toChrome(sendSyncMessage.bind(this));
 
+Cu.import("resource://gre/modules/Log.jsm");
 var logger = Log.repository.getLogger("Marionette");
 
 if (logger.ownAppenders.length == 0) {
   logger.addAppender(new Log.DumpAppender());
 }
+logger.debug("loaded listener.js");
 
 var modalHandler = function() {
   
@@ -387,8 +388,6 @@ var loadListener = {
 
 function registerSelf() {
   let msg = {value: winUtil.outerWindowID};
-  logger.debug(`Register listener.js for window ${msg.value}`);
-
   
   let register = sendSyncMessage("Marionette:register", msg);
 

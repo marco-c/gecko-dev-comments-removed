@@ -166,3 +166,8 @@ class TestSwitchWindow(WindowManagerMixin, MarionetteTestCase):
         self.marionette.close_chrome_window()
         self.marionette.switch_to_window(self.start_window)
         self.assertEqual(len(self.marionette.chrome_window_handles), 1)
+
+    def tearDown(self):
+        
+        self.close_all_windows()
+        MarionetteTestCase.tearDown(self)
