@@ -300,6 +300,7 @@ GridInspector.prototype = {
 
       grids.push({
         id: i,
+        actorID: grid.actorID,
         color,
         gridFragments: grid.gridFragments,
         highlighted: nodeFront == this.highlighters.gridHighlighterShown,
@@ -411,7 +412,17 @@ GridInspector.prototype = {
     }
 
     
+    
     const oldNodeFronts = grids.map(grid => grid.nodeFront.actorID);
+
+    
+    
+    if (grids.length && grids.some(grid => !grid.nodeFront.actorID)) {
+      this.updateGridPanel(newGridFronts);
+      return;
+    }
+
+    
     const newNodeFronts = newGridFronts.filter(grid => grid.containerNodeFront)
                                        .map(grid => grid.containerNodeFront.actorID);
     if (grids.length === newGridFronts.length &&
