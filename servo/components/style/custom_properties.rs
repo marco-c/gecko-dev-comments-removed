@@ -459,7 +459,57 @@ fn parse_var_function<'i, 't>(
 
 
 
-pub fn cascade<'a>(
+pub struct CustomPropertiesBuilder<'a> {
+    seen: PrecomputedHashSet<&'a Name>,
+    custom_properties: Option<OrderedMap<&'a Name, BorrowedSpecifiedValue<'a>>>,
+    inherited: Option<&'a Arc<CustomPropertiesMap>>,
+}
+
+impl<'a> CustomPropertiesBuilder<'a> {
+    
+    pub fn new(inherited: Option<&'a Arc<CustomPropertiesMap>>) -> Self {
+        Self {
+            seen: PrecomputedHashSet::default(),
+            custom_properties: None,
+            inherited,
+        }
+    }
+
+    
+    pub fn cascade(
+        &mut self,
+        name: &'a Name,
+        specified_value: DeclaredValue<'a, Box<SpecifiedValue>>,
+    ) {
+        cascade(
+            &mut self.custom_properties,
+            self.inherited,
+            &mut self.seen,
+            name,
+            specified_value,
+        )
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn build(mut self) -> Option<Arc<CustomPropertiesMap>> {
+        let mut map = match self.custom_properties.take() {
+            Some(map) => map,
+            None => return self.inherited.cloned(),
+        };
+
+        remove_cycles(&mut map);
+        Some(Arc::new(substitute_all(map)))
+    }
+}
+
+
+
+fn cascade<'a>(
     custom_properties: &mut Option<OrderedMap<&'a Name, BorrowedSpecifiedValue<'a>>>,
     inherited: Option<&'a Arc<CustomPropertiesMap>>,
     seen: &mut PrecomputedHashSet<&'a Name>,
@@ -506,24 +556,6 @@ pub fn cascade<'a>(
             CSSWideKeyword::Unset | 
             CSSWideKeyword::Inherit => {} 
         }
-    }
-}
-
-
-
-
-
-
-
-pub fn finish_cascade(
-    specified_values_map: Option<OrderedMap<&Name, BorrowedSpecifiedValue>>,
-    inherited: Option<&Arc<CustomPropertiesMap>>,
-) -> Option<Arc<CustomPropertiesMap>> {
-    if let Some(mut map) = specified_values_map {
-        remove_cycles(&mut map);
-        Some(Arc::new(substitute_all(map)))
-    } else {
-        inherited.cloned()
     }
 }
 
