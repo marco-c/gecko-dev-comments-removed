@@ -54,10 +54,10 @@ const LINKS_GET_LINKS_LIMIT = 100;
 const TOPIC_GATHER_TELEMETRY = "gather-telemetry";
 
 
-const TOP_SITES_LENGTH = 6;
+const ACTIVITY_STREAM_DEFAULT_FRECENCY = 150;
 
 
-const TOP_SITES_LIMIT = TOP_SITES_LENGTH * 2;
+const ACTIVITY_STREAM_DEFAULT_LIMIT = 12;
 
 
 
@@ -824,19 +824,56 @@ var PlacesProvider = {
 
 
 var ActivityStreamProvider = {
+  
+
+
+  _adjustLimitForBlocked({ignoreBlocked, numItems}) {
+    
+    if (ignoreBlocked) {
+      return numItems;
+    }
+    
+    return Object.keys(BlockedLinks.links).length + numItems;
+  },
 
   
 
 
 
 
+  _commonBookmarkGuidSelect: `(
+    SELECT guid
+    FROM moz_bookmarks b
+    WHERE fk = h.id
+      AND type = :bookmarkType
+      AND (
+        SELECT id
+        FROM moz_bookmarks p
+        WHERE p.id = b.parent
+          AND p.parent <> :tagsFolderId
+      ) NOTNULL
+    ) AS bookmarkGuid`,
+
+  
 
 
 
-  _processLinks(aLinks) {
-    let links_ = aLinks.filter(link => LinkChecker.checkLoadURI(link.url));
-    links_ = this._faviconBytesToDataURI(links_);
-    return this._addETLD(links_);
+  _commonPlacesWhere: `
+    AND hidden = 0
+    AND last_visit_date > 0
+    AND (SUBSTR(url, 1, 6) == "https:"
+      OR SUBSTR(url, 1, 5) == "http:")
+  `,
+
+  
+
+
+  _getCommonParams(aOptions, aParams = {}) {
+    return Object.assign({
+      bookmarkType: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      limit: this._adjustLimitForBlocked(aOptions),
+      tagsFolderId: PlacesUtils.tagsFolderId
+    }, aParams);
   },
 
   
@@ -913,50 +950,37 @@ var ActivityStreamProvider = {
 
 
 
-  _addETLD(aLinks) {
-    return aLinks.map(link => {
-      try {
-        link.eTLD = Services.eTLD.getPublicSuffix(Services.io.newURI(link.url));
-      } catch (e) {
-        link.eTLD = "";
-      }
-      return link;
-    });
-  },
-
-  
 
 
-
-
-
-
-
-  async getTopFrecentSites(aOptions = {}) {
-    let {ignoreBlocked} = aOptions;
+  async getTopFrecentSites(aOptions) {
+    const options = Object.assign({
+      ignoreBlocked: false,
+      numItems: ACTIVITY_STREAM_DEFAULT_LIMIT,
+      topsiteFrecency: ACTIVITY_STREAM_DEFAULT_FRECENCY
+    }, aOptions || {});
 
     
     
-    
-    const limit = Object.keys(BlockedLinks.links).length + TOP_SITES_LIMIT * 2 * 10;
+    const origNumItems = options.numItems;
+    options.numItems *= 2 * 10;
 
     
     
-    const sqlQuery = `SELECT
-                        moz_bookmarks.guid AS bookmarkGuid,
-                        frecency,
-                        moz_places.guid,
-                        last_visit_date / 1000 AS lastVisitDate,
-                        rev_host,
-                        moz_places.title,
-                        url
-                      FROM moz_places
-                      LEFT JOIN moz_bookmarks
-                      ON moz_places.id = moz_bookmarks.fk
-                      WHERE hidden = 0 AND last_visit_date NOTNULL
-                      AND (SUBSTR(moz_places.url, 1, 6) == "https:" OR SUBSTR(moz_places.url, 1, 5) == "http:")
-                      ORDER BY frecency DESC
-                      LIMIT ${limit}`;
+    const sqlQuery = `
+      SELECT
+        ${this._commonBookmarkGuidSelect},
+        frecency,
+        guid,
+        last_visit_date / 1000 AS lastVisitDate,
+        rev_host,
+        title,
+        url
+      FROM moz_places h
+      WHERE frecency >= :frecencyThreshold
+        ${this._commonPlacesWhere}
+      ORDER BY frecency DESC
+      LIMIT :limit
+    `;
 
     let links = await this.executePlacesQuery(sqlQuery, {
       columns: [
@@ -966,7 +990,10 @@ var ActivityStreamProvider = {
         "lastVisitDate",
         "title",
         "url"
-      ]
+      ],
+      params: this._getCommonParams(options, {
+        frecencyThreshold: options.topsiteFrecency
+      })
     });
 
     
@@ -993,7 +1020,7 @@ var ActivityStreamProvider = {
     
     const exactHosts = new Map();
     for (const link of links) {
-      if (!ignoreBlocked && BlockedLinks.isBlocked(link)) {
+      if (!options.ignoreBlocked && BlockedLinks.isBlocked(link)) {
         continue;
       }
 
@@ -1014,10 +1041,10 @@ var ActivityStreamProvider = {
     }
 
     
-    links = [...hosts.values()].sort(isOtherBetter).slice(0, TOP_SITES_LIMIT);
+    links = [...hosts.values()].sort(isOtherBetter).slice(0, origNumItems);
 
-    links = await this._addFavicons(links);
-    return this._processLinks(links);
+    
+    return this._faviconBytesToDataURI(await this._addFavicons(links));
   },
 
   
@@ -1036,31 +1063,6 @@ var ActivityStreamProvider = {
     result.bookmarkTitle = bookmark.title;
     result.lastModified = bookmark.lastModified.getTime();
     result.url = bookmark.url.href;
-    return result;
-  },
-
-  
-
-
-
-
-  async getHistorySize() {
-    let sqlQuery = `SELECT count(*) FROM moz_places
-                    WHERE hidden = 0 AND last_visit_date NOT NULL`;
-
-    let result = await this.executePlacesQuery(sqlQuery);
-    return result;
-  },
-
-  
-
-
-
-
-  async getBookmarksSize() {
-    let sqlQuery = `SELECT count(*) FROM moz_bookmarks WHERE type = :type`;
-
-    let result = await this.executePlacesQuery(sqlQuery, {params: {type: PlacesUtils.bookmarks.TYPE_BOOKMARK}});
     return result;
   },
 
