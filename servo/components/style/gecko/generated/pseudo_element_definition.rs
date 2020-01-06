@@ -3,7 +3,7 @@
 
 
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum PseudoElement {
         
         After,
@@ -824,8 +824,8 @@ None
                     PseudoElement::InlineTable => CSSPseudoElementType_InheritingAnonBox,
                     PseudoElement::Table => CSSPseudoElementType_InheritingAnonBox,
                     PseudoElement::TableCell => CSSPseudoElementType_InheritingAnonBox,
-                    PseudoElement::TableColGroup => CSSPseudoElementType_InheritingAnonBox,
-                    PseudoElement::TableCol => CSSPseudoElementType_InheritingAnonBox,
+                    PseudoElement::TableColGroup => CSSPseudoElementType::NonInheritingAnonBox,
+                    PseudoElement::TableCol => CSSPseudoElementType::NonInheritingAnonBox,
                     PseudoElement::TableWrapper => CSSPseudoElementType_InheritingAnonBox,
                     PseudoElement::TableRowGroup => CSSPseudoElementType_InheritingAnonBox,
                     PseudoElement::TableRow => CSSPseudoElementType_InheritingAnonBox,
