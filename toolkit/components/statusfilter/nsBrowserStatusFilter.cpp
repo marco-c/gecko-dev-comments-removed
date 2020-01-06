@@ -4,14 +4,13 @@
 
 
 #include "nsBrowserStatusFilter.h"
+#include "mozilla/SystemGroup.h"
 #include "nsIChannel.h"
 #include "nsITimer.h"
 #include "nsIServiceManager.h"
 #include "nsString.h"
 
-
-
-
+using namespace mozilla;
 
 
 
@@ -355,6 +354,9 @@ nsBrowserStatusFilter::StartDelayTimer()
     if (!mTimer)
         return NS_ERROR_FAILURE;
 
+    
+    
+    mTimer->SetTarget(SystemGroup::EventTargetFor(TaskCategory::Other));
     return mTimer->InitWithNamedFuncCallback(
         TimeoutHandler, this, 160, nsITimer::TYPE_ONE_SHOT,
         "nsBrowserStatusFilter::TimeoutHandler");

@@ -136,6 +136,9 @@ var WebProgressListener = {
     this._send("Content:StateChange", json, objects);
   },
 
+  
+  
+  
   onProgressChange: function onProgressChange(aWebProgress, aRequest, aCurSelf, aMaxSelf, aCurTotal, aMaxTotal) {
     let json = this._setupJSON(aWebProgress, aRequest);
     let objects = this._setupObjects(aWebProgress, aRequest);
@@ -186,6 +189,9 @@ var WebProgressListener = {
     this._send("Content:LocationChange", json, objects);
   },
 
+  
+  
+  
   onStatusChange: function onStatusChange(aWebProgress, aRequest, aStatus, aMessage) {
     let json = this._setupJSON(aWebProgress, aRequest);
     let objects = this._setupObjects(aWebProgress, aRequest);
