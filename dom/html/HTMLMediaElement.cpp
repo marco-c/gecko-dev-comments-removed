@@ -4647,17 +4647,6 @@ HTMLMediaElement::GetCanPlay(const nsAString& aType,
     
     return CANPLAY_NO;
   }
-  if (status == CANPLAY_YES &&
-      (*containerType).ExtendedType().Codecs().IsEmpty()) {
-    
-    
-    
-    
-    
-    
-    
-    return CANPLAY_MAYBE;
-  }
   return status;
 }
 
@@ -4675,11 +4664,9 @@ HTMLMediaElement::CanPlayType(const nsAString& aType, nsAString& aResult)
   case CANPLAY_YES:
     aResult.AssignLiteral("probably");
     break;
+  default:
   case CANPLAY_MAYBE:
     aResult.AssignLiteral("maybe");
-    break;
-  default:
-    MOZ_ASSERT_UNREACHABLE("Unexpected case.");
     break;
   }
 
