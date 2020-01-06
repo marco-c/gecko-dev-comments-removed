@@ -163,11 +163,7 @@ pref("app.update.silent", false);
 
 
 
-#ifdef XP_WIN
 pref("app.update.staging.enabled", false);
-#else
-pref("app.update.staging.enabled", true);
-#endif
 
 
 pref("app.update.url", "https://aus5.mozilla.org/update/6/%PRODUCT%/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%SYSTEM_CAPABILITIES%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/update.xml");
@@ -1276,7 +1272,12 @@ pref("browser.newtabpage.columns", 5);
 pref("browser.newtabpage.directory.source", "https://tiles.services.mozilla.com/v3/links/fetch/%LOCALE%/%CHANNEL%");
 
 
+#ifdef NIGHTLY_BUILD
 pref("browser.newtabpage.activity-stream.enabled", true);
+#else
+pref("browser.newtabpage.activity-stream.enabled", false);
+#endif
+
 pref("browser.newtabpage.activity-stream.aboutHome.enabled", false);
 
 
@@ -1554,8 +1555,7 @@ pref("browser.tabs.remote.autostart.2", true);
 
 
 
-
-pref("browser.tabs.remote.warmup.enabled", false);
+pref("browser.tabs.remote.warmup.enabled", true);
 pref("browser.tabs.remote.warmup.maxTabs", 3);
 pref("browser.tabs.remote.warmup.unloadDelayMs", 2000);
 
