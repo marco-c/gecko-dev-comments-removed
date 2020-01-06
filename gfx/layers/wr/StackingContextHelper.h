@@ -37,7 +37,8 @@ public:
                         gfx::Matrix4x4* aTransformPtr = nullptr,
                         gfx::Matrix4x4* aPerspectivePtr = nullptr,
                         const gfx::CompositionOp& aMixBlendMode = gfx::CompositionOp::OP_OVER,
-                        bool aBackfaceVisible = true);
+                        bool aBackfaceVisible = true,
+                        bool aIsPreserve3D = false);
   
   
   
