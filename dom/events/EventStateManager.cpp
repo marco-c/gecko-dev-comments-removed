@@ -763,11 +763,34 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       WidgetKeyboardEvent* keyEvent = aEvent->AsKeyboardEvent();
       if (keyEvent->ModifiersMatchWithAccessKey(AccessKeyType::eChrome) ||
           keyEvent->ModifiersMatchWithAccessKey(AccessKeyType::eContent)) {
-        AutoTArray<uint32_t, 10> accessCharCodes;
-        keyEvent->GetAccessKeyCandidates(accessCharCodes);
+        
+        
+        
+        
+        
+        
+        
+        if (IsRemoteTarget(GetFocusedContent())) {
+          
+          
+          
+          
+          if (CheckIfEventMatchesAccessKey(keyEvent, aPresContext)) {
+            keyEvent->StopPropagation();
+            keyEvent->MarkAsWaitingReplyFromRemoteProcess();
+          }
+        }
+        
+        
+        
+        
+        else {
+          AutoTArray<uint32_t, 10> accessCharCodes;
+          keyEvent->GetAccessKeyCandidates(accessCharCodes);
 
-        if (HandleAccessKey(keyEvent, aPresContext, accessCharCodes)) {
-          *aStatus = nsEventStatus_eConsumeNoDefault;
+          if (HandleAccessKey(keyEvent, aPresContext, accessCharCodes)) {
+            *aStatus = nsEventStatus_eConsumeNoDefault;
+          }
         }
       }
     }
@@ -1102,7 +1125,13 @@ HandleAccessKeyInRemoteChild(TabParent* aTabParent, void* aArg)
   bool active;
   aTabParent->GetDocShellIsActive(&active);
   if (active) {
-    accessKeyInfo->event->mAccessKeyForwardedToChild = true;
+    
+    
+    
+    
+    
+    accessKeyInfo->event->StopPropagation();
+    accessKeyInfo->event->MarkAsWaitingReplyFromRemoteProcess();
     aTabParent->HandleAccessKey(*accessKeyInfo->event,
                                 accessKeyInfo->charCodes);
     return true;
@@ -1205,13 +1234,19 @@ EventStateManager::WalkESMTreeToHandleAccessKey(
     
     
     
-    nsFocusManager* fm = nsFocusManager::GetFocusManager();
-    nsIContent* focusedContent = fm ? fm->GetFocusedContent() : nullptr;
-    if (TabParent::GetFrom(focusedContent)) {
+    if (TabParent::GetFrom(GetFocusedContent())) {
       
       
-      aEvent->mAccessKeyForwardedToChild = true;
-    } else {
+      
+      MOZ_ASSERT(aEvent->IsHandledInRemoteProcess() ||
+                 !aEvent->IsWaitingReplyFromRemoteProcess());
+    }
+    
+    
+    
+    
+    
+    else if (!aEvent->IsHandledInRemoteProcess()) {
       AccessKeyInfo accessKeyInfo(aEvent, aAccessCharCodes);
       nsContentUtils::CallOnAllRemoteChildren(mDocument->GetWindow(),
                                               HandleAccessKeyInRemoteChild,

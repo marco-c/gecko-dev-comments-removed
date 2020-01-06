@@ -271,8 +271,7 @@ nsMenuBarListener::KeyPress(nsIDOMEvent* aKeyEvent)
     
     WidgetKeyboardEvent* nativeKeyEvent =
       aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
-    if (!nativeKeyEvent ||
-        (nativeKeyEvent && nativeKeyEvent->mAccessKeyForwardedToChild)) {
+    if (!nativeKeyEvent) {
       return NS_OK;
     }
 
@@ -301,6 +300,9 @@ nsMenuBarListener::KeyPress(nsIDOMEvent* aKeyEvent)
       
       nsMenuFrame* result = mMenuBarFrame->FindMenuWithShortcut(keyEvent);
       if (result) {
+        
+        
+        
         mMenuBarFrame->SetActiveByKeyboard();
         mMenuBarFrame->SetActive(true);
         result->OpenMenu(true);

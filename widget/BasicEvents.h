@@ -256,6 +256,20 @@ public:
 
 
 
+  inline void ResetWaitingReplyFromRemoteProcessState()
+  {
+    if (IsWaitingReplyFromRemoteProcess()) {
+      
+      
+      
+      
+      mWantReplyFromContentProcess = false;
+    }
+  }
+  
+
+
+
   inline bool IsWaitingReplyFromRemoteProcess() const
   {
     return !mNoRemoteProcessDispatch && mWantReplyFromContentProcess;
@@ -301,6 +315,12 @@ public:
   {
     MOZ_ASSERT(!IsCrossProcessForwardingStopped());
     mPostedToRemoteProcess = false;
+    
+    
+    
+    if (IsWaitingReplyFromRemoteProcess()) {
+      mPropagationStopped = mImmediatePropagationStopped = false;
+    }
   }
   
 
@@ -628,6 +648,14 @@ public:
   inline void MarkAsWaitingReplyFromRemoteProcess()
   {
     mFlags.MarkAsWaitingReplyFromRemoteProcess();
+  }
+  
+
+
+
+  inline void ResetWaitingReplyFromRemoteProcessState()
+  {
+    mFlags.ResetWaitingReplyFromRemoteProcessState();
   }
   
 

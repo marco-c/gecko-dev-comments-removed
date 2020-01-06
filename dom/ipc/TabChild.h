@@ -802,6 +802,11 @@ private:
 
   void MaybeDispatchCoalescedWheelEvent();
 
+  
+
+
+  nsEventStatus DispatchWidgetEventViaAPZ(WidgetGUIEvent& aEvent);
+
   void DispatchWheelEvent(const WidgetWheelEvent& aEvent,
                           const ScrollableLayerGuid& aGuid,
                           const uint64_t& aInputBlockId);
