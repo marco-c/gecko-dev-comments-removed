@@ -1,5 +1,5 @@
 config = {
-    "branch": "date",
+    "branch": "jamun",
     "nightly_build": True,
     "update_channel": "beta-dev",
 
@@ -8,7 +8,7 @@ config = {
 
     
     
-    "mozilla_dir": "date",
+    "mozilla_dir": "jamun",
     "repos": [{
         "vcs": "hg",
         "repo": "https://hg.mozilla.org/build/tools",
@@ -16,10 +16,10 @@ config = {
         "dest": "tools",
     }, {
         "vcs": "hg",
-        "repo": "https://hg.mozilla.org/projects/date",
+        "repo": "https://hg.mozilla.org/projects/jamun",
         "branch": "%(revision)s",
-        "dest": "date",
-        "clone_upstream_url": "https://hg.mozilla.org/mozilla-unified",
+        "dest": "jamun",
+        "clone_upstream_url": "https://hg.mozilla.org/projects/jamun",
     }],
     
     'is_automation': True,
