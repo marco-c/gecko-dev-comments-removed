@@ -8,6 +8,9 @@ from .util.schema import validate_schema, Schema
 from voluptuous import Required
 
 graph_config_schema = Schema({
+    
+    
+    Required('trust-domain'): basestring,
     Required('treeherder'): {
         
         Required('group-names'): {basestring: basestring}
