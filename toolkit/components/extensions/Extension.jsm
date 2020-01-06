@@ -873,10 +873,6 @@ this.Extension = class extends ExtensionData {
         return Promise.reject({errors: this.errors});
       }
 
-      if (AppConstants.RELEASE_OR_BETA) {
-        return manifest;
-      }
-
       
       return Promise.all(
         Array.from(this.apiNames, api => ExtensionAPIs.load(api))
