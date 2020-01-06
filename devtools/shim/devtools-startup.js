@@ -545,8 +545,19 @@ DevToolsStartup.prototype = {
     }
 
     let url = "about:devtools";
+
+    let params = [];
     if (reason) {
-      url += "?reason=" + encodeURIComponent(reason);
+      params.push("reason=" + encodeURIComponent(reason));
+    }
+
+    let selectedBrowser = gBrowser.selectedBrowser;
+    if (selectedBrowser) {
+      params.push("tabid=" + selectedBrowser.outerWindowID);
+    }
+
+    if (params.length > 0) {
+      url += "?" + params.join("&");
     }
 
     

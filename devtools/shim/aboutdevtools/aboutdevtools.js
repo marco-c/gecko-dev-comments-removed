@@ -21,6 +21,7 @@ const MESSAGES = {
 
 let url = new URL(window.location.href.replace("about:", "http://"));
 let reason = url.searchParams.get("reason");
+let tabid = parseInt(url.searchParams.get("tabid"), 10);
 
 function getToolboxShortcut() {
   const bundleUrl = "chrome://devtools-shim/locale/key-shortcuts.properties";
@@ -74,6 +75,25 @@ window.addEventListener("load", function () {
   
   updatePage();
 }, { once: true });
+
+window.addEventListener("beforeunload", function () {
+  
+  if (document.visibilityState != "visible") {
+    
+    return;
+  }
+
+  
+  let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
+  let { gBrowser } = browserWindow;
+  let originalBrowser = gBrowser.getBrowserForOuterWindowID(tabid);
+  let originalTab = gBrowser.getTabForBrowser(originalBrowser);
+
+  if (originalTab) {
+    
+    gBrowser.selectedTab = originalTab;
+  }
+}, {once: true});
 
 window.addEventListener("unload", function () {
   let installButton = document.getElementById("install");
