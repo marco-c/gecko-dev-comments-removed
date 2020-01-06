@@ -1241,8 +1241,6 @@ protected:
 
   void HiddenVideoStop();
 
-  void ReportEMETelemetry();
-
   void ReportTelemetry();
 
   

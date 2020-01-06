@@ -1738,12 +1738,6 @@ void HTMLMediaElement::ShutdownDecoder()
 void HTMLMediaElement::AbortExistingLoads()
 {
   
-  
-  
-  if (mDecoder) {
-    ReportEMETelemetry();
-  }
-  
   mLoadWaitStatus = NOT_WAITING;
 
   
@@ -4591,18 +4585,6 @@ void HTMLMediaElement::HiddenVideoStop()
 }
 
 void
-HTMLMediaElement::ReportEMETelemetry()
-{
-  
-  NS_ASSERTION(NS_IsMainThread(), "Should be on main thread.");
-  if (mIsEncrypted && Preferences::GetBool("media.eme.enabled")) {
-    Telemetry::Accumulate(Telemetry::VIDEO_EME_PLAY_SUCCESS, mLoadedDataFired);
-    LOG(LogLevel::Debug, ("%p VIDEO_EME_PLAY_SUCCESS = %s",
-                       this, mLoadedDataFired ? "true" : "false"));
-  }
-}
-
-void
 HTMLMediaElement::ReportTelemetry()
 {
   
@@ -6463,7 +6445,6 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aPauseElement, bool aSuspendE
     UpdateAudioChannelPlayingState();
     if (aPauseElement) {
       ReportTelemetry();
-      ReportEMETelemetry();
 
       
       
