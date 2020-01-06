@@ -2,6 +2,10 @@
 
 
 
+
+
+
+
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ColorF {
@@ -13,15 +17,41 @@ pub struct ColorF {
 known_heap_size!(0, ColorF);
 
 impl ColorF {
-    pub fn premultiplied(&self) -> ColorF {
+    
+    pub fn new(r: f32, g: f32, b: f32, a: f32) -> ColorF {
         ColorF {
-            r: self.r * self.a,
-            g: self.g * self.a,
-            b: self.b * self.a,
+            r,
+            g,
+            b,
+            a,
+        }
+    }
+
+    
+    pub fn scale_rgb(&self, scale: f32) -> ColorF {
+        ColorF {
+            r: self.r * scale,
+            g: self.g * scale,
+            b: self.b * scale,
             a: self.a,
         }
     }
+
+    pub fn to_array(&self) -> [f32; 4] {
+        [self.r, self.g, self.b, self.a]
+    }
+
+    
+    
+    
+    
+    pub fn premultiplied(&self) -> ColorF {
+        self.scale_rgb(self.a)
+    }
 }
+
+
+
 
 #[repr(C)]
 #[derive(Clone, Copy, Hash, Eq, Debug, Deserialize, PartialEq, PartialOrd, Ord, Serialize)]
@@ -32,43 +62,44 @@ pub struct ColorU {
     pub a: u8,
 }
 
-impl From<ColorF> for ColorU {
-    fn from(color: ColorF) -> ColorU {
-        ColorU {
-            r: ColorU::round_to_int(color.r),
-            g: ColorU::round_to_int(color.g),
-            b: ColorU::round_to_int(color.b),
-            a: ColorU::round_to_int(color.a),
-        }
-    }
-}
-
-impl Into<ColorF> for ColorU {
-    fn into(self) -> ColorF {
-        ColorF {
-            r: self.r as f32 / 255.0,
-            g: self.g as f32 / 255.0,
-            b: self.b as f32 / 255.0,
-            a: self.a as f32 / 255.0,
-        }
-    }
-}
-
 impl ColorU {
-    fn round_to_int(x: f32) -> u8 {
-        debug_assert!((0.0 <= x) && (x <= 1.0));
-        let f = (255.0 * x) + 0.5;
-        let val = f.floor();
-        debug_assert!(val <= 255.0);
-        val as u8
-    }
-
+    
     pub fn new(r: u8, g: u8, b: u8, a: u8) -> ColorU {
         ColorU {
             r,
             g,
             b,
             a,
+        }
+    }
+}
+
+fn round_to_int(x: f32) -> u8 {
+    debug_assert!((0.0 <= x) && (x <= 1.0));
+    let f = (255.0 * x) + 0.5;
+    let val = f.floor();
+    debug_assert!(val <= 255.0);
+    val as u8
+}
+
+impl From<ColorF> for ColorU {
+    fn from(color: ColorF) -> ColorU {
+        ColorU {
+            r: round_to_int(color.r),
+            g: round_to_int(color.g),
+            b: round_to_int(color.b),
+            a: round_to_int(color.a),
+        }
+    }
+}
+
+impl From<ColorU> for ColorF {
+    fn from(color: ColorU) -> ColorF {
+        ColorF {
+            r: color.r as f32 / 255.0,
+            g: color.g as f32 / 255.0,
+            b: color.b as f32 / 255.0,
+            a: color.a as f32 / 255.0,
         }
     }
 }

@@ -11,7 +11,7 @@ use std::marker::PhantomData;
 use {BuiltDisplayList, BuiltDisplayListDescriptor, ClipId, ColorF, DeviceIntPoint, DeviceIntSize};
 use {DeviceUintRect, DeviceUintSize, FontKey, GlyphDimensions, GlyphKey};
 use {ImageData, ImageDescriptor, ImageKey, LayoutPoint, LayoutVector2D, LayoutSize, LayoutTransform};
-use {NativeFontHandle, WorldPoint};
+use {FontInstanceKey, NativeFontHandle, WorldPoint};
 #[cfg(feature = "webgl")]
 use {WebGLCommand, WebGLContextId};
 
@@ -23,7 +23,9 @@ pub enum ApiMsg {
     AddNativeFont(FontKey, NativeFontHandle),
     DeleteFont(FontKey),
     
-    GetGlyphDimensions(Vec<GlyphKey>, MsgSender<Vec<Option<GlyphDimensions>>>),
+    GetGlyphDimensions(FontInstanceKey, Vec<GlyphKey>, MsgSender<Vec<Option<GlyphDimensions>>>),
+    
+    GetGlyphIndices(FontKey, String, MsgSender<Vec<Option<u32>>>),
     
     AddImage(ImageKey, ImageDescriptor, ImageData, Option<TileSize>),
     
@@ -62,6 +64,8 @@ pub enum ApiMsg {
     
     
     ExternalEvent(ExternalEvent),
+    
+    ClearNamespace(IdNamespace),
     ShutDown,
 }
 
@@ -72,6 +76,7 @@ impl fmt::Debug for ApiMsg {
             ApiMsg::AddNativeFont(..) => "ApiMsg::AddNativeFont",
             ApiMsg::DeleteFont(..) => "ApiMsg::DeleteFont",
             ApiMsg::GetGlyphDimensions(..) => "ApiMsg::GetGlyphDimensions",
+            ApiMsg::GetGlyphIndices(..) => "ApiMsg::GetGlyphIndices",
             ApiMsg::AddImage(..) => "ApiMsg::AddImage",
             ApiMsg::UpdateImage(..) => "ApiMsg::UpdateImage",
             ApiMsg::DeleteImage(..) => "ApiMsg::DeleteImage",
@@ -94,6 +99,7 @@ impl fmt::Debug for ApiMsg {
             ApiMsg::SetPinchZoom(..) => "ApiMsg::SetPinchZoom",
             ApiMsg::SetPan(..) => "ApiMsg::SetPan",
             ApiMsg::SetWindowParameters(..) => "ApiMsg::SetWindowParameters",
+            ApiMsg::ClearNamespace(..) => "ApiMsg::ClearNamespace",
         })
     }
 }
@@ -125,7 +131,7 @@ pub enum WebGLCommand {
 pub struct PipelineId(pub u32, pub u32);
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
 pub struct IdNamespace(pub u32);
 
 #[repr(C)]
@@ -223,10 +229,23 @@ impl RenderApi {
     
     
     
-    pub fn get_glyph_dimensions(&self, glyph_keys: Vec<GlyphKey>)
+    pub fn get_glyph_dimensions(&self,
+                                font: FontInstanceKey,
+                                glyph_keys: Vec<GlyphKey>)
                                 -> Vec<Option<GlyphDimensions>> {
         let (tx, rx) = channel::msg_channel().unwrap();
-        let msg = ApiMsg::GetGlyphDimensions(glyph_keys, tx);
+        let msg = ApiMsg::GetGlyphDimensions(font, glyph_keys, tx);
+        self.api_sender.send(msg).unwrap();
+        rx.recv().unwrap()
+    }
+
+    
+    
+    pub fn get_glyph_indices(&self,
+                             font_key: FontKey,
+                             text: &str) -> Vec<Option<u32>> {
+        let (tx, rx) = channel::msg_channel().unwrap();
+        let msg = ApiMsg::GetGlyphIndices(font_key, text.to_string(), tx);
         self.api_sender.send(msg).unwrap();
         rx.recv().unwrap()
     }
@@ -439,11 +458,16 @@ impl RenderApi {
     }
 
     #[inline]
-    fn next_unique_id(&self) -> (u32, u32) {
-        let IdNamespace(namespace) = self.id_namespace;
+    fn next_unique_id(&self) -> (IdNamespace, u32) {
         let ResourceId(id) = self.next_id.get();
         self.next_id.set(ResourceId(id + 1));
-        (namespace, id)
+        (self.id_namespace, id)
+    }
+}
+
+impl Drop for RenderApi {
+    fn drop(&mut self) {
+        let _ = self.api_sender.send(ApiMsg::ClearNamespace(self.id_namespace));
     }
 }
 
@@ -492,14 +516,14 @@ impl ZoomFactor {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, Eq, Hash)]
 pub struct PropertyBindingId {
-    namespace: u32,
+    namespace: IdNamespace,
     uid: u32,
 }
 
 impl PropertyBindingId {
     pub fn new(value: u64) -> Self {
         PropertyBindingId {
-            namespace: (value>>32) as u32,
+            namespace: IdNamespace((value>>32) as u32),
             uid: value as u32,
         }
     }
