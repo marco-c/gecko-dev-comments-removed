@@ -148,11 +148,8 @@ pub struct RectangleDisplayItem {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct LineDisplayItem {
-    pub baseline: f32, 
-    pub start: f32,
-    pub end: f32,
     pub orientation: LineOrientation, 
-    pub width: f32,
+    pub wavy_line_thickness: f32,
     pub color: ColorF,
     pub style: LineStyle,
 }

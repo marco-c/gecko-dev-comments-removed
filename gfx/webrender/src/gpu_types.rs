@@ -140,22 +140,28 @@ impl From<CompositePrimitiveInstance> for PrimitiveInstance {
     }
 }
 
+
+
+
+pub const BRUSH_FLAG_USES_PICTURE: i32 = (1 << 0);
+
+
+
+
+
+
+
+
 #[repr(C)]
 pub struct BrushInstance {
-    picture_address: RenderTaskAddress,
-    prim_address: GpuCacheAddress,
-}
-
-impl BrushInstance {
-    pub fn new(
-        picture_address: RenderTaskAddress,
-        prim_address: GpuCacheAddress
-    ) -> BrushInstance {
-        BrushInstance {
-            picture_address,
-            prim_address,
-        }
-    }
+    pub picture_address: RenderTaskAddress,
+    pub prim_address: GpuCacheAddress,
+    pub layer_address: PackedLayerAddress,
+    pub clip_task_address: RenderTaskAddress,
+    pub z: i32,
+    pub flags: i32,
+    pub user_data0: i32,
+    pub user_data1: i32,
 }
 
 impl From<BrushInstance> for PrimitiveInstance {
@@ -164,12 +170,12 @@ impl From<BrushInstance> for PrimitiveInstance {
             data: [
                 instance.picture_address.0 as i32,
                 instance.prim_address.as_int(),
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
+                instance.layer_address.0,
+                instance.clip_task_address.0 as i32,
+                instance.z,
+                instance.flags,
+                instance.user_data0,
+                instance.user_data1,
             ]
         }
     }

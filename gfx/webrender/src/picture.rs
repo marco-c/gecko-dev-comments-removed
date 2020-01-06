@@ -4,9 +4,10 @@
 
 use api::{ColorF, ClipAndScrollInfo, device_length, DeviceIntSize};
 use api::{BoxShadowClipMode, LayerRect, Shadow};
+use box_shadow::BLUR_SAMPLE_SCALE;
 use frame_builder::PrimitiveContext;
 use gpu_cache::GpuDataRequest;
-use prim_store::{PrimitiveIndex, PrimitiveMetadata};
+use prim_store::PrimitiveIndex;
 use render_task::{ClearMode, RenderTask, RenderTaskId, RenderTaskTree};
 use tiling::RenderTargetKind;
 
@@ -45,6 +46,7 @@ pub struct PicturePrimitive {
     pub prim_runs: Vec<PrimitiveRun>,
     pub render_task_id: Option<RenderTaskId>,
     pub kind: PictureKind,
+    pub content_rect: LayerRect,
 
     
     
@@ -56,6 +58,7 @@ impl PicturePrimitive {
         PicturePrimitive {
             prim_runs: Vec::new(),
             render_task_id: None,
+            content_rect: LayerRect::zero(),
             kind: PictureKind::TextShadow {
                 shadow,
             },
@@ -71,9 +74,10 @@ impl PicturePrimitive {
         PicturePrimitive {
             prim_runs: Vec::new(),
             render_task_id: None,
+            content_rect: LayerRect::zero(),
             kind: PictureKind::BoxShadow {
                 blur_radius,
-                color,
+                color: color.premultiplied(),
                 blur_regions,
                 clip_mode,
             },
@@ -90,8 +94,19 @@ impl PicturePrimitive {
     pub fn add_primitive(
         &mut self,
         prim_index: PrimitiveIndex,
+        local_rect: &LayerRect,
         clip_and_scroll: ClipAndScrollInfo
     ) {
+        
+        
+        
+        
+        
+        
+        
+        
+        self.content_rect = self.content_rect.union(local_rect);
+
         if let Some(ref mut run) = self.prim_runs.last_mut() {
             if run.clip_and_scroll == clip_and_scroll &&
                run.prim_index.0 + run.count == prim_index.0 {
@@ -107,10 +122,38 @@ impl PicturePrimitive {
         });
     }
 
+    pub fn build(&mut self) -> LayerRect {
+        match self.kind {
+            PictureKind::TextShadow { ref shadow } => {
+                let blur_offset = shadow.blur_radius * BLUR_SAMPLE_SCALE;
+
+                self.content_rect = self.content_rect.inflate(
+                    blur_offset,
+                    blur_offset,
+                );
+
+                self.content_rect.translate(&shadow.offset)
+            }
+            PictureKind::BoxShadow { blur_radius, .. } => {
+                
+                
+                
+                
+                let blur_offset = blur_radius * 2.0;
+
+                self.content_rect = self.content_rect.inflate(
+                    blur_offset,
+                    blur_offset,
+                );
+
+                self.content_rect
+            }
+        }
+    }
+
     pub fn prepare_for_render(
         &mut self,
         prim_index: PrimitiveIndex,
-        prim_metadata: &PrimitiveMetadata,
         prim_context: &PrimitiveContext,
         render_tasks: &mut RenderTaskTree,
     ) {
@@ -119,64 +162,63 @@ impl PicturePrimitive {
         
         
         let cache_width =
-            (prim_metadata.local_rect.size.width * prim_context.device_pixel_ratio).ceil() as i32;
+            (self.content_rect.size.width * prim_context.device_pixel_ratio).ceil() as i32;
         let cache_height =
-            (prim_metadata.local_rect.size.height * prim_context.device_pixel_ratio).ceil() as i32;
+            (self.content_rect.size.height * prim_context.device_pixel_ratio).ceil() as i32;
         let cache_size = DeviceIntSize::new(cache_width, cache_height);
 
-        let (blur_radius, target_kind, blur_regions, clear_mode) = match self.kind {
+        let (blur_radius, target_kind, blur_regions, clear_mode, color) = match self.kind {
             PictureKind::TextShadow { ref shadow } => {
                 let dummy: &[LayerRect] = &[];
-                (shadow.blur_radius, RenderTargetKind::Color, dummy, ClearMode::Transparent)
+                (shadow.blur_radius,
+                 RenderTargetKind::Color,
+                 dummy,
+                 ClearMode::Transparent,
+                 shadow.color)
             }
-            PictureKind::BoxShadow { blur_radius, clip_mode, ref blur_regions, .. } => {
+            PictureKind::BoxShadow { blur_radius, clip_mode, ref blur_regions, color, .. } => {
                 let clear_mode = match clip_mode {
                     BoxShadowClipMode::Outset => ClearMode::One,
                     BoxShadowClipMode::Inset => ClearMode::Zero,
                 };
-                (blur_radius, RenderTargetKind::Alpha, blur_regions.as_slice(), clear_mode)
+                (blur_radius,
+                 RenderTargetKind::Alpha,
+                 blur_regions.as_slice(),
+                 clear_mode,
+                 color)
             }
         };
         let blur_radius = device_length(blur_radius, prim_context.device_pixel_ratio);
+
+        
+        
+        
+        let blur_std_deviation = blur_radius.0 as f32 * 0.5;
 
         let picture_task = RenderTask::new_picture(
             cache_size,
             prim_index,
             target_kind,
+            self.content_rect.origin,
+            color,
         );
         let picture_task_id = render_tasks.add(picture_task);
         let render_task = RenderTask::new_blur(
-            blur_radius,
+            blur_std_deviation,
             picture_task_id,
             render_tasks,
             target_kind,
             blur_regions,
             clear_mode,
+            color,
         );
         self.render_task_id = Some(render_tasks.add(render_task));
     }
 
-    pub fn write_gpu_blocks(&self, mut request: GpuDataRequest) {
-        match self.kind {
-            PictureKind::TextShadow { ref shadow } => {
-                request.push(shadow.color);
-                request.push([
-                    shadow.offset.x,
-                    shadow.offset.y,
-                    shadow.blur_radius,
-                    0.0,
-                ]);
-            }
-            PictureKind::BoxShadow { blur_radius, color, .. } => {
-                request.push(color);
-                request.push([
-                    0.0,
-                    0.0,
-                    blur_radius,
-                    0.0,
-                ]);
-            }
-        }
+    pub fn write_gpu_blocks(&self, mut _request: GpuDataRequest) {
+        
+        
+        
     }
 
     pub fn target_kind(&self) -> RenderTargetKind {

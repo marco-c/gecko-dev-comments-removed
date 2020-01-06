@@ -3,6 +3,7 @@
 
 
 use api::{DevicePoint, DeviceUintSize, FontInstance, GlyphKey};
+use glyph_rasterizer::GlyphFormat;
 use internal_types::FastHashMap;
 use resource_cache::ResourceClassCache;
 use std::sync::Arc;
@@ -14,6 +15,7 @@ pub struct CachedGlyphInfo {
     pub size: DeviceUintSize,
     pub offset: DevicePoint,
     pub scale: f32,
+    pub format: GlyphFormat,
 }
 
 pub type GlyphKeyCache = ResourceClassCache<GlyphKey, Option<CachedGlyphInfo>>;
