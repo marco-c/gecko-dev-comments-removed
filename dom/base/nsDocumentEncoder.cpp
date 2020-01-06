@@ -839,7 +839,7 @@ nsDocumentEncoder::SerializeRangeNodes(nsRange* aRange,
         
         
         
-        if (aNode != aRange->GetEndParent())
+        if (aNode != aRange->GetEndContainer())
         {
           endOffset++;
         }
@@ -947,7 +947,7 @@ nsDocumentEncoder::SerializeRangeToString(nsRange *aRange,
   NS_ENSURE_TRUE(startParent, NS_ERROR_FAILURE);
   int32_t startOffset = aRange->StartOffset();
 
-  nsINode* endParent = aRange->GetEndParent();
+  nsINode* endParent = aRange->GetEndContainer();
   NS_ENSURE_TRUE(endParent, NS_ERROR_FAILURE);
   int32_t endOffset = aRange->EndOffset();
 
