@@ -306,6 +306,14 @@ private:
 
   void UnsuppressEventHandlingAndResume();
 
+  
+  
+  static bool IsMappedArrayBufferEnabled();
+
+  
+  
+  static bool IsLowercaseResponseHeader();
+
 public:
   virtual void
   Send(JSContext* , ErrorResult& aRv) override
