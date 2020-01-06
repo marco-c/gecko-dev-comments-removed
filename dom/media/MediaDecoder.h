@@ -60,9 +60,27 @@ enum class Visibility : uint8_t;
 struct MediaDecoderInit
 {
   MediaDecoderOwner* const mOwner;
+  const dom::AudioChannel mAudioChannel;
+  const double mVolume;
+  const bool mPreservesPitch;
+  const double mPlaybackRate;
+  const bool mMinimizePreroll;
+  const bool mHasSuspendTaint;
 
-  explicit MediaDecoderInit(MediaDecoderOwner* aOwner)
+  MediaDecoderInit(MediaDecoderOwner* aOwner,
+                   dom::AudioChannel aAudioChannel,
+                   double aVolume,
+                   bool aPreservesPitch,
+                   double aPlaybackRate,
+                   bool aMinimizePreroll,
+                   bool aHasSuspendTaint)
     : mOwner(aOwner)
+    , mAudioChannel(aAudioChannel)
+    , mVolume(aVolume)
+    , mPreservesPitch(aPreservesPitch)
+    , mPlaybackRate(aPlaybackRate)
+    , mMinimizePreroll(aMinimizePreroll)
+    , mHasSuspendTaint(aHasSuspendTaint)
   {
   }
 };
@@ -729,6 +747,9 @@ protected:
 
 protected:
   
+  double mPlaybackRate;
+
+  
   Mirror<bool> mStateMachineIsShutdown;
 
   
@@ -754,9 +775,6 @@ protected:
 
   
   Canonical<double> mVolume;
-
-  
-  double mPlaybackRate = 1;
 
   Canonical<bool> mPreservesPitch;
 
