@@ -83,6 +83,19 @@ AllocateBufferForImage(const IntSize& size,
                        SurfaceFormat format,
                        bool aIsAnimated = false)
 {
+#ifdef ANDROID
+  if (aIsAnimated) {
+    
+    
+    
+    
+    
+    
+    
+    return Factory::CreateDataSourceSurface(size, format, false);
+  }
+#endif
+
   int32_t stride = VolatileSurfaceStride(size, format);
   if (!aIsAnimated && gfxPrefs::ImageMemShared()) {
     RefPtr<SourceSurfaceSharedData> newSurf = new SourceSurfaceSharedData();
