@@ -465,14 +465,15 @@ DevToolsStartup.prototype = {
   },
 
   onKey(window, key) {
-    
-    
-    
-
-    let startTime = window.performance.now();
-    let require = this.initDevTools("KeyShortcut");
-    if (require) {
+    if (!Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
+      let id = key.toolId || key.id;
+      this.openInstallPage("KeyShortcut", id);
+    } else {
       
+      
+      
+      let startTime = window.performance.now();
+      let require = this.initDevTools("KeyShortcut");
       let { gDevToolsBrowser } = require("devtools/client/framework/devtools-browser");
       gDevToolsBrowser.onKeyShortcut(window, key, startTime);
     }
@@ -528,7 +529,17 @@ DevToolsStartup.prototype = {
     return require;
   },
 
-  openInstallPage: function (reason) {
+  
+
+
+
+
+
+
+
+
+
+  openInstallPage: function (reason, keyId) {
     let { gBrowser } = Services.wm.getMostRecentWindow("navigator:browser");
 
     
@@ -554,6 +565,10 @@ DevToolsStartup.prototype = {
     let selectedBrowser = gBrowser.selectedBrowser;
     if (selectedBrowser) {
       params.push("tabid=" + selectedBrowser.outerWindowID);
+    }
+
+    if (keyId) {
+      params.push("keyid=" + keyId);
     }
 
     if (params.length > 0) {
