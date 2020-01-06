@@ -382,7 +382,7 @@ Store.prototype = {
 
 
   async create(record) {
-    throw "override create in a subclass";
+    throw new Error("override create in a subclass");
   },
 
   
@@ -395,7 +395,7 @@ Store.prototype = {
 
 
   async remove(record) {
-    throw "override remove in a subclass";
+    throw new Error("override remove in a subclass");
   },
 
   
@@ -408,7 +408,7 @@ Store.prototype = {
 
 
   async update(record) {
-    throw "override update in a subclass";
+    throw new Error("override update in a subclass");
   },
 
   
@@ -422,7 +422,7 @@ Store.prototype = {
 
 
   async itemExists(id) {
-    throw "override itemExists in a subclass";
+    throw new Error("override itemExists in a subclass");
   },
 
   
@@ -440,7 +440,7 @@ Store.prototype = {
 
 
   async createRecord(id, collection) {
-    throw "override createRecord in a subclass";
+    throw new Error("override createRecord in a subclass");
   },
 
   
@@ -452,7 +452,7 @@ Store.prototype = {
 
 
   async changeItemID(oldID, newID) {
-    throw "override changeItemID in a subclass";
+    throw new Error("override changeItemID in a subclass");
   },
 
   
@@ -462,7 +462,7 @@ Store.prototype = {
 
 
   async getAllIDs() {
-    throw "override getAllIDs in a subclass";
+    throw new Error("override getAllIDs in a subclass");
   },
 
   
@@ -476,7 +476,7 @@ Store.prototype = {
 
 
   async wipe() {
-    throw "override wipe in a subclass";
+    throw new Error("override wipe in a subclass");
   }
 };
 
@@ -716,7 +716,7 @@ Engine.prototype = {
     }
 
     if (!this._sync) {
-      throw "engine does not implement _sync method";
+      throw new Error("engine does not implement _sync method");
     }
 
     return this._notify("sync", this.name, this._sync)();
@@ -727,7 +727,7 @@ Engine.prototype = {
 
   async resetClient() {
     if (!this._resetClient) {
-      throw "engine does not implement _resetClient method";
+      throw new Error("engine does not implement _resetClient method");
     }
 
     return this._notify("reset-client", this.name, this._resetClient)();

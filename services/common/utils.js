@@ -155,7 +155,8 @@ this.CommonUtils = {
 
   namedTimer: function namedTimer(callback, wait, thisObj, name) {
     if (!thisObj || !name) {
-      throw "You must provide both an object and a property name for the timer!";
+      throw new Error(
+          "You must provide both an object and a property name for the timer!");
     }
 
     
@@ -303,10 +304,10 @@ this.CommonUtils = {
       function advance() {
         c  = str[cOffset++];
         if (!c || c == "" || c == "=") 
-          throw "Done";                
+          throw new Error("Done");     
         val = key.indexOf(c);
         if (val == -1)
-          throw "Unknown character in base32: " + c;
+          throw new Error(`Unknown character in base32: ${c}`);
       }
 
       
@@ -352,7 +353,7 @@ this.CommonUtils = {
         processBlock(ret, cOff, rOff);
       } catch (ex) {
         
-        if (ex == "Done")
+        if (ex.message == "Done")
           break;
         throw ex;
       }

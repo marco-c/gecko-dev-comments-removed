@@ -107,7 +107,8 @@ WeaveCrypto.prototype = {
         
         
         if (ivStr.length !== AES_CBC_IV_SIZE) {
-            throw "Invalid IV size; must be " + AES_CBC_IV_SIZE + " bytes.";
+            throw new Error(
+                `Invalid IV size; must be ${AES_CBC_IV_SIZE} bytes.`);
         }
 
         let iv = this.byteCompressInts(ivStr);
@@ -176,7 +177,7 @@ WeaveCrypto.prototype = {
                 memo = this._decryptionSymKeyMemo;
                 break;
             default:
-                throw "Unsupported operation in importSymKey.";
+                throw new Error("Unsupported operation in importSymKey.");
         }
 
         if (encodedKeyString in memo)
