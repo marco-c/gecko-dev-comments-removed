@@ -127,7 +127,7 @@ GetScalarsSnapshot(bool aKeyed, JSContext* aCx, JS::MutableHandle<JS::Value> aRe
   JS::RootedObject scalarObj(aCx, &scalarsSnapshot.toObject());
   
   
-  Unused << JS_GetProperty(aCx, scalarObj, "parent", &parentScalars);
+  Unused << JS_GetProperty(aCx, scalarObj, "default", &parentScalars);
 
   aResult.set(parentScalars);
 }
