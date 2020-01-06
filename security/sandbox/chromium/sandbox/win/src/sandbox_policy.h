@@ -103,6 +103,11 @@ class TargetPolicy {
   
   
   
+  virtual void SetDoNotUseRestrictingSIDs() = 0;
+
+  
+  
+  
   
   
   
