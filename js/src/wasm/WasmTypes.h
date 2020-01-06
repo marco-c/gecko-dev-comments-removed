@@ -550,6 +550,16 @@ class Sig
         return !(*this == rhs);
     }
 
+    bool hasI64ArgOrRet() const {
+        if (ret() == ExprType::I64)
+            return true;
+        for (ValType a : args()) {
+            if (a == ValType::I64)
+                return true;
+        }
+        return false;
+    }
+
     WASM_DECLARE_SERIALIZABLE(Sig)
 };
 
@@ -993,7 +1003,7 @@ class CodeRange
   public:
     enum Kind {
         Function,          
-        Entry,             
+        InterpEntry,       
         ImportJitExit,     
         ImportInterpExit,  
         BuiltinThunk,      
@@ -1097,7 +1107,7 @@ class CodeRange
     
 
     bool hasFuncIndex() const {
-        return isFunction() || isImportExit() || kind() == Entry;
+        return isFunction() || isImportExit() || kind() == InterpEntry;
     }
     uint32_t funcIndex() const {
         MOZ_ASSERT(hasFuncIndex());

@@ -416,6 +416,34 @@ assertEq(e2.f(), 52);
 
 
 
+
+var sideEffect = false;
+var i = wasmEvalText('(module (func (export "f") (param i64) (result i32) (i32.const 42)))').exports;
+assertErrorMessage(() => i.f({ valueOf() { sideEffect = true; return 42; } }), TypeError, 'cannot pass i64 to or from JS');
+assertEq(sideEffect, false);
+
+i = wasmEvalText('(module (func (export "f") (param i32) (param i64) (result i32) (i32.const 42)))').exports;
+assertErrorMessage(() => i.f({ valueOf() { sideEffect = true; return 42; } }, 0), TypeError, 'cannot pass i64 to or from JS');
+assertEq(sideEffect, false);
+
+i = wasmEvalText('(module (func (export "f") (param i32) (result i64) (i64.const 42)))').exports;
+assertErrorMessage(() => i.f({ valueOf() { sideEffect = true; return 42; } }), TypeError, 'cannot pass i64 to or from JS');
+assertEq(sideEffect, false);
+
+i = wasmEvalText('(module (import "i64" "func" (param i64)) (export "f" 0))', { i64: { func() {} } }).exports;
+assertErrorMessage(() => i.f({ valueOf() { sideEffect = true; return 42; } }), TypeError, 'cannot pass i64 to or from JS');
+assertEq(sideEffect, false);
+
+i = wasmEvalText('(module (import "i64" "func" (param i32) (param i64)) (export "f" 0))', { i64: { func() {} } }).exports;
+assertErrorMessage(() => i.f({ valueOf() { sideEffect = true; return 42; } }, 0), TypeError, 'cannot pass i64 to or from JS');
+assertEq(sideEffect, false);
+
+i = wasmEvalText('(module (import "i64" "func" (result i64)) (export "f" 0))', { i64: { func() {} } }).exports;
+assertErrorMessage(() => i.f({ valueOf() { sideEffect = true; return 42; } }), TypeError, 'cannot pass i64 to or from JS');
+assertEq(sideEffect, false);
+
+
+
 wasmFailValidateText('(module (export "a" 0))', /exported function index out of bounds/);
 wasmFailValidateText('(module (export "a" global 0))', /exported global index out of bounds/);
 wasmFailValidateText('(module (export "a" memory))', /exported memory index out of bounds/);
