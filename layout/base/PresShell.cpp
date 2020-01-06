@@ -3389,27 +3389,19 @@ ComputeWhereToScroll(int16_t aWhereToScroll,
                      nscoord* aRangeMin,
                      nscoord* aRangeMax) {
   nscoord resultCoord = aOriginalCoord;
-  
-  
+  nscoord scrollPortLength = aViewMax - aViewMin;
   if (nsIPresShell::SCROLL_MINIMUM == aWhereToScroll) {
-    if (aRectMin < aViewMin) {
-      
-      resultCoord = aRectMin;
-    } else if (aRectMax > aViewMax) {
-      
-      
-      resultCoord = aOriginalCoord + aRectMax - aViewMax;
-      if (resultCoord > aRectMin) {
-        resultCoord = aRectMin;
-      }
-    }
+    
+    
+    nscoord min = std::min(aRectMin, aRectMax - scrollPortLength);
+    nscoord max = std::max(aRectMin, aRectMax - scrollPortLength);
+    resultCoord = std::min(std::max(aOriginalCoord, min), max);
   } else {
     nscoord frameAlignCoord =
       NSToCoordRound(aRectMin + (aRectMax - aRectMin) * (aWhereToScroll / 100.0f));
-    resultCoord =  NSToCoordRound(frameAlignCoord - (aViewMax - aViewMin) * (
+    resultCoord =  NSToCoordRound(frameAlignCoord - scrollPortLength * (
                                   aWhereToScroll / 100.0f));
   }
-  nscoord scrollPortLength = aViewMax - aViewMin;
   
   *aRangeMin = std::min(resultCoord, aRectMax - scrollPortLength);
   *aRangeMax = std::max(resultCoord, aRectMin);
