@@ -185,12 +185,10 @@ var TabsInTitlebar = {
 
       
       
-      if (AppConstants.isPlatformAndVersionAtLeast("win", "10.0")) {
-        if (!menuHeight) {
-          
-          titlebarContentHeight = fullTabsHeight + 1;
-          $("titlebar-buttonbox").style.height = titlebarContentHeight + "px";
-        }
+      if (AppConstants.isPlatformAndVersionAtLeast("win", "10.0") &&
+          !menuHeight) {
+        titlebarContentHeight = fullTabsHeight;
+        $("titlebar-buttonbox").style.height = titlebarContentHeight + "px";
       }
 
       
