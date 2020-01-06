@@ -5,7 +5,7 @@
 
 
 
-use matching::{ElementSelectorFlags, StyleRelations};
+use matching::{ElementSelectorFlags, MatchingContext};
 use parser::{AttrSelector, SelectorImpl};
 use std::ascii::AsciiExt;
 
@@ -141,7 +141,7 @@ pub trait Element: MatchAttr + Sized {
 
     fn match_non_ts_pseudo_class<F>(&self,
                                     pc: &<Self::Impl as SelectorImpl>::NonTSPseudoClass,
-                                    relations: &mut StyleRelations,
+                                    context: &mut MatchingContext,
                                     flags_setter: &mut F) -> bool
         where F: FnMut(&Self, ElementSelectorFlags);
 
