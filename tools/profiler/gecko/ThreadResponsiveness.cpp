@@ -42,10 +42,16 @@ public:
 
     
     
-    nsresult rv = SystemGroup::Dispatch(TaskCategory::Other,
-                                        do_AddRef(this));
-    if (NS_SUCCEEDED(rv)) {
-      mHasEverBeenSuccessfullyDispatched = true;
+    
+    
+    
+    nsCOMPtr<nsIThread> mainThread;
+    nsresult rv = NS_GetMainThread(getter_AddRefs(mainThread));
+    if (NS_SUCCEEDED(rv) && mainThread) {
+      rv = SystemGroup::Dispatch(TaskCategory::Other, do_AddRef(this));
+      if (NS_SUCCEEDED(rv)) {
+        mHasEverBeenSuccessfullyDispatched = true;
+      }
     }
   }
 
