@@ -234,7 +234,7 @@ var BrowserPageActions = {
     let iframeNode = null;
 
     if (action.subview) {
-      let multiViewNode = document.createElement("photonpanelmultiview");
+      let multiViewNode = document.createElement("panelmultiview");
       panelViewNode = this._makePanelViewNodeForAction(action, true);
       multiViewNode.appendChild(panelViewNode);
       panelNode.appendChild(multiViewNode);
