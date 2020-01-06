@@ -217,15 +217,6 @@ public:
   
   
   
-  virtual bool IsExpectingMoreData()
-  {
-    
-    
-    return !IsDataCachedToEndOfResource(Tell()) && !IsSuspended();
-  }
-  
-  
-  
   
   
   
