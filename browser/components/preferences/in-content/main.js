@@ -6,6 +6,11 @@
 
 
 
+XPCOMUtils.defineLazyModuleGetter(this, "ExtensionPreferencesManager",
+                                  "resource://gre/modules/ExtensionPreferencesManager.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "AddonManager",
+                                  "resource://gre/modules/AddonManager.jsm");
+
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/Downloads.jsm");
 Components.utils.import("resource://gre/modules/FileUtils.jsm");
@@ -236,6 +241,8 @@ var gMainPane = {
       gMainPane.setHomePageToBookmark);
     setEventListener("restoreDefaultHomePage", "command",
       gMainPane.restoreDefaultHomePage);
+    setEventListener("disableHomePageExtension", "command",
+                     gMainPane.makeDisableControllingExtension("homepage_override"));
     setEventListener("chooseLanguage", "command",
       gMainPane.showLanguages);
     setEventListener("translationAttributionImage", "click",
@@ -621,6 +628,19 @@ var gMainPane = {
     let homePref = document.getElementById("browser.startup.homepage");
 
     
+    this._updateUseCurrentButton();
+
+    
+    handleControllingExtension("homepage_override")
+      .then((isControlled) => {
+        
+        document.querySelectorAll("#browserHomePage, .homepage-button")
+          .forEach((button) => {
+            button.disabled = isControlled;
+          });
+      });
+
+    
     
     
     let defaultBranch = Services.prefs.getDefaultBranch("");
@@ -695,16 +715,20 @@ var gMainPane = {
 
 
 
-  _updateUseCurrentButton() {
+  async _updateUseCurrentButton() {
     let useCurrent = document.getElementById("useCurrent");
-
-
     let tabs = this._getTabsForHomePage();
 
     if (tabs.length > 1)
       useCurrent.label = useCurrent.getAttribute("label2");
     else
       useCurrent.label = useCurrent.getAttribute("label1");
+
+    
+    if (await getControllingExtensionId("homepage_override")) {
+      useCurrent.disabled = true;
+      return;
+    }
 
     
     let prefName = "pref.browser.homepage.disable_button.current_page";
@@ -747,6 +771,14 @@ var gMainPane = {
   restoreDefaultHomePage() {
     var homePage = document.getElementById("browser.startup.homepage");
     homePage.value = homePage.defaultValue;
+  },
+
+  makeDisableControllingExtension(pref) {
+    return async function disableExtension() {
+      let id = await getControllingExtensionId(pref);
+      let addon = await AddonManager.getAddonByID(id);
+      addon.userDisabled = true;
+    };
   },
 
   
@@ -2569,6 +2601,66 @@ function getLocalHandlerApp(aFile) {
   localHandlerApp.executable = aFile;
 
   return localHandlerApp;
+}
+
+let extensionControlledContentIds = {
+  "homepage_override": "browserHomePageExtensionContent",
+};
+
+
+
+
+function getControllingExtensionId(settingName) {
+  return ExtensionPreferencesManager.getControllingExtensionId(settingName);
+}
+
+function getControllingExtensionEl(settingName) {
+  return document.getElementById(extensionControlledContentIds[settingName]);
+}
+
+async function handleControllingExtension(prefName) {
+  let controllingExtensionId = await getControllingExtensionId(prefName);
+
+  if (controllingExtensionId) {
+    showControllingExtension(prefName, controllingExtensionId);
+  } else {
+    hideControllingExtension(prefName);
+  }
+
+  return !!controllingExtensionId;
+}
+
+async function showControllingExtension(settingName, extensionId) {
+  let extensionControlledContent = getControllingExtensionEl(settingName);
+  
+  let addon = await AddonManager.getAddonByID(extensionId);
+  const defaultIcon = "chrome://mozapps/skin/extensions/extensionGeneric.svg";
+  let stringParts = document
+    .getElementById("bundlePreferences")
+    .getString(`extensionControlled.${settingName}`)
+    .split("%S");
+  let description = extensionControlledContent.querySelector("description");
+
+  
+  while (description.firstChild) {
+    description.firstChild.remove();
+  }
+
+  
+  description.appendChild(document.createTextNode(stringParts[0]));
+  let image = document.createElement("image");
+  image.setAttribute("src", addon.iconURL || defaultIcon);
+  image.classList.add("extension-controlled-icon");
+  description.appendChild(image);
+  description.appendChild(document.createTextNode(` ${addon.name}`));
+  description.appendChild(document.createTextNode(stringParts[1]));
+
+  
+  extensionControlledContent.hidden = false;
+}
+
+function hideControllingExtension(settingName) {
+  getControllingExtensionEl(settingName).hidden = true;
 }
 
 

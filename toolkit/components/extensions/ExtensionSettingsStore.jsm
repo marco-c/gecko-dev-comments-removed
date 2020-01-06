@@ -121,7 +121,7 @@ function getTopItem(type, key) {
   
   for (let item of keyInfo.precedenceList) {
     if (item.enabled) {
-      return {key, value: item.value};
+      return {key, value: item.value, id: item.id};
     }
   }
 
@@ -291,7 +291,7 @@ this.ExtensionSettingsStore = {
 
     
     if (keyInfo.precedenceList[0].id == id) {
-      return {key, value};
+      return {id, key, value};
     }
     return null;
   },
@@ -450,6 +450,16 @@ this.ExtensionSettingsStore = {
     return topItem.installDate > addon.installDate.valueOf() ?
       "controlled_by_other_extensions" :
       "controllable_by_this_extension";
+  },
+
+  
+  
+  getTopExtensionId(type, key) {
+    let item = getTopItem(type, key);
+    if (item) {
+      return item.id;
+    }
+    return null;
   },
 
   
