@@ -225,10 +225,6 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
 
     if (mBuffer) {
       newBuffer->UpdateDestinationFrom(*mBuffer, newBuffer->BufferRect());
-
-      
-      
-      mBuffer->Unlock();
     }
 
     
