@@ -126,7 +126,7 @@ public:
   
   
   
-  NS_IMETHOD SetIsOpaque(bool isOpaque) = 0;
+  virtual void SetIsOpaque(bool isOpaque) = 0;
   virtual bool GetIsOpaque() = 0;
 
   
