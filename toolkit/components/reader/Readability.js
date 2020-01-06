@@ -38,7 +38,6 @@ function Readability(uri, doc, options) {
 
   this._uri = uri;
   this._doc = doc;
-  this._biggestFrame = false;
   this._articleTitle = null;
   this._articleByline = null;
   this._articleDir = null;
@@ -47,23 +46,12 @@ function Readability(uri, doc, options) {
   this._debug = !!options.debug;
   this._maxElemsToParse = options.maxElemsToParse || this.DEFAULT_MAX_ELEMS_TO_PARSE;
   this._nbTopCandidates = options.nbTopCandidates || this.DEFAULT_N_TOP_CANDIDATES;
-  this._maxPages = options.maxPages || this.DEFAULT_MAX_PAGES;
+  this._wordThreshold = options.wordThreshold || this.DEFAULT_WORD_THRESHOLD;
 
   
   this._flags = this.FLAG_STRIP_UNLIKELYS |
                 this.FLAG_WEIGHT_CLASSES |
                 this.FLAG_CLEAN_CONDITIONALLY;
-
-  
-  
-  this._parsedPages = {};
-
-  
-  
-  this._pageETags = {};
-
-  
-  this._curPageNum = 1;
 
   var logEl;
 
@@ -111,11 +99,10 @@ Readability.prototype = {
   DEFAULT_N_TOP_CANDIDATES: 5,
 
   
-  
-  DEFAULT_MAX_PAGES: 5,
+  DEFAULT_TAGS_TO_SCORE: "section,h2,h3,h4,h5,h6,p,td,pre".toUpperCase().split(","),
 
   
-  DEFAULT_TAGS_TO_SCORE: "section,h2,h3,h4,h5,h6,p,td,pre".toUpperCase().split(","),
+  DEFAULT_WORD_THRESHOLD: 500,
 
   
   
@@ -138,6 +125,10 @@ Readability.prototype = {
   DIV_TO_P_ELEMS: [ "A", "BLOCKQUOTE", "DL", "DIV", "IMG", "OL", "P", "PRE", "TABLE", "UL", "SELECT" ],
 
   ALTER_TO_DIV_EXCEPTIONS: ["DIV", "ARTICLE", "SECTION", "P"],
+
+  PRESENTATIONAL_ATTRIBUTES: [ "align", "background", "bgcolor", "border", "cellpadding", "cellspacing", "frame", "hspace", "rules", "style", "valign", "vspace" ],
+
+  DEPRECATED_SIZE_ATTRIBUTE_ELEMS: [ "TABLE", "TH", "TD", "HR", "PRE" ],
 
   
 
@@ -321,11 +312,20 @@ Readability.prototype = {
         curTitle = origTitle = this._getInnerText(doc.getElementsByTagName('title')[0]);
     } catch (e) {}
 
-    if (curTitle.match(/ [\|\-] /)) {
-      curTitle = origTitle.replace(/(.*)[\|\-] .*/gi, '$1');
+    var titleHadHierarchicalSeparators = false;
+    function wordCount(str) {
+      return str.split(/\s+/).length;
+    }
 
-      if (curTitle.split(' ').length < 3)
-        curTitle = origTitle.replace(/[^\|\-]*[\|\-](.*)/gi, '$1');
+    
+    if ((/ [\|\-\\\/>»] /).test(curTitle)) {
+      titleHadHierarchicalSeparators = / [\\\/>»] /.test(curTitle);
+      curTitle = origTitle.replace(/(.*)[\|\-\\\/>»] .*/gi, '$1');
+
+      
+      
+      if (wordCount(curTitle) < 3)
+        curTitle = origTitle.replace(/[^\|\-\\\/>»]*[\|\-\\\/>»](.*)/gi, '$1');
     } else if (curTitle.indexOf(': ') !== -1) {
       
       
@@ -342,7 +342,7 @@ Readability.prototype = {
         curTitle = origTitle.substring(origTitle.lastIndexOf(':') + 1);
 
         
-        if (curTitle.split(' ').length < 3)
+        if (wordCount(curTitle) < 3)
           curTitle = origTitle.substring(origTitle.indexOf(':') + 1);
       }
     } else if (curTitle.length > 150 || curTitle.length < 15) {
@@ -353,9 +353,16 @@ Readability.prototype = {
     }
 
     curTitle = curTitle.trim();
-
-    if (curTitle.split(' ').length <= 4)
+    
+    
+    
+    
+    var curTitleWordCount = wordCount(curTitle);
+    if (curTitleWordCount <= 4 &&
+        (!titleHadHierarchicalSeparators ||
+         curTitleWordCount != wordCount(origTitle.replace(/[\|\-\\\/>»]+/g, "")) - 1)) {
       curTitle = origTitle;
+    }
 
     return curTitle;
   },
@@ -501,10 +508,16 @@ Readability.prototype = {
     var h2 = articleContent.getElementsByTagName('h2');
     if (h2.length === 1) {
       var lengthSimilarRate = (h2[0].textContent.length - this._articleTitle.length) / this._articleTitle.length;
-      if (Math.abs(lengthSimilarRate) < 0.5 &&
-          (lengthSimilarRate > 0 ? h2[0].textContent.includes(this._articleTitle) :
-                                   this._articleTitle.includes(h2[0].textContent))) {
-        this._clean(articleContent, "h2");
+      if (Math.abs(lengthSimilarRate) < 0.5) {
+        var titlesMatch = false;
+        if (lengthSimilarRate > 0) {
+          titlesMatch = h2[0].textContent.includes(this._articleTitle);
+        } else {
+          titlesMatch = this._articleTitle.includes(h2[0].textContent);
+        }
+        if (titlesMatch) {
+          this._clean(articleContent, "h2");
+        }
       }
     }
 
@@ -1014,24 +1027,22 @@ Readability.prototype = {
       if (this._debug)
         this.log("Article content post-prep: " + articleContent.innerHTML);
 
-      if (this._curPageNum === 1) {
-        if (neededToCreateTopCandidate) {
-          
-          
-          
-          
-          topCandidate.id = "readability-page-1";
-          topCandidate.className = "page";
-        } else {
-          var div = doc.createElement("DIV");
-          div.id = "readability-page-1";
-          div.className = "page";
-          var children = articleContent.childNodes;
-          while (children.length) {
-            div.appendChild(children[0]);
-          }
-          articleContent.appendChild(div);
+      if (neededToCreateTopCandidate) {
+        
+        
+        
+        
+        topCandidate.id = "readability-page-1";
+        topCandidate.className = "page";
+      } else {
+        var div = doc.createElement("DIV");
+        div.id = "readability-page-1";
+        div.className = "page";
+        var children = articleContent.childNodes;
+        while (children.length) {
+          div.appendChild(children[0]);
         }
+        articleContent.appendChild(div);
       }
 
       if (this._debug)
@@ -1042,7 +1053,7 @@ Readability.prototype = {
       
       
       
-      if (this._getInnerText(articleContent, true).length < 500) {
+      if (this._getInnerText(articleContent, true).length < this._wordThreshold) {
         page.innerHTML = pageCacheHtml;
 
         if (this._flagIsActive(this.FLAG_STRIP_UNLIKELYS)) {
@@ -1248,26 +1259,25 @@ Readability.prototype = {
 
 
   _cleanStyles: function(e) {
-    e = e || this._doc;
-    if (!e)
+    if (!e || e.tagName.toLowerCase() === 'svg')
       return;
-    var cur = e.firstChild;
 
-    
-    if (typeof e.removeAttribute === 'function' && e.className !== 'readability-styled')
-      e.removeAttribute('style');
-
-    
-    while (cur !== null) {
-      if (cur.nodeType === cur.ELEMENT_NODE) {
-        
-        if (cur.className !== "readability-styled")
-          cur.removeAttribute("style");
-
-        this._cleanStyles(cur);
+    if (e.className !== 'readability-styled') {
+      
+      for (var i = 0; i < this.PRESENTATIONAL_ATTRIBUTES.length; i++) {
+        e.removeAttribute(this.PRESENTATIONAL_ATTRIBUTES[i]);
       }
 
-      cur = cur.nextSibling;
+      if (this.DEPRECATED_SIZE_ATTRIBUTE_ELEMS.indexOf(e.tagName) !== -1) {
+        e.removeAttribute('width');
+        e.removeAttribute('height');
+      }
+    }
+
+    var cur = e.firstElementChild;
+    while (cur !== null) {
+      this._cleanStyles(cur);
+      cur = cur.nextElementSibling;
     }
   },
 
@@ -1291,363 +1301,6 @@ Readability.prototype = {
     });
 
     return linkLength / textLength;
-  },
-
-  
-
-
-
-
-
-  _findBaseUrl: function() {
-    var uri = this._uri;
-    var noUrlParams = uri.pathQueryRef.split("?")[0];
-    var urlSlashes = noUrlParams.split("/").reverse();
-    var cleanedSegments = [];
-    var possibleType = "";
-
-    for (var i = 0, slashLen = urlSlashes.length; i < slashLen; i += 1) {
-      var segment = urlSlashes[i];
-
-      
-      if (segment.indexOf(".") !== -1) {
-        possibleType = segment.split(".")[1];
-
-        
-        if (!possibleType.match(/[^a-zA-Z]/))
-          segment = segment.split(".")[0];
-      }
-
-      
-      if (segment.match(/((_|-)?p[a-z]*|(_|-))[0-9]{1,2}$/i) && ((i === 1) || (i === 0)))
-        segment = segment.replace(/((_|-)?p[a-z]*|(_|-))[0-9]{1,2}$/i, "");
-
-      var del = false;
-
-      
-      
-      if (i < 2 && segment.match(/^\d{1,2}$/))
-        del = true;
-
-      
-      if (i === 0 && segment.toLowerCase() === "index")
-        del = true;
-
-      
-      
-      if (i < 2 && segment.length < 3 && !urlSlashes[0].match(/[a-z]/i))
-        del = true;
-
-      
-      if (!del)
-        cleanedSegments.push(segment);
-    }
-
-    
-    return uri.scheme + "://" + uri.host + cleanedSegments.reverse().join("/");
-  },
-
-  
-
-
-
-
-
-  _findNextPageLink: function(elem) {
-    var uri = this._uri;
-    var possiblePages = {};
-    var allLinks = elem.getElementsByTagName('a');
-    var articleBaseUrl = this._findBaseUrl();
-
-    
-    
-    
-    
-    
-    
-    
-    for (var i = 0, il = allLinks.length; i < il; i += 1) {
-      var link = allLinks[i];
-      var linkHref = allLinks[i].href.replace(/#.*$/, '').replace(/\/$/, '');
-
-      
-      if (linkHref === "" ||
-        linkHref === articleBaseUrl ||
-        linkHref === uri.spec ||
-        linkHref in this._parsedPages) {
-        continue;
-      }
-
-      
-      if (uri.host !== linkHref.split(/\/+/g)[1])
-        continue;
-
-      var linkText = this._getInnerText(link);
-
-      
-      if (linkText.match(this.REGEXPS.extraneous) || linkText.length > 25)
-        continue;
-
-      
-      
-      var linkHrefLeftover = linkHref.replace(articleBaseUrl, '');
-      if (!linkHrefLeftover.match(/\d/))
-        continue;
-
-      if (!(linkHref in possiblePages)) {
-        possiblePages[linkHref] = {"score": 0, "linkText": linkText, "href": linkHref};
-      } else {
-        possiblePages[linkHref].linkText += ' | ' + linkText;
-      }
-
-      var linkObj = possiblePages[linkHref];
-
-      
-      
-      
-      if (linkHref.indexOf(articleBaseUrl) !== 0)
-        linkObj.score -= 25;
-
-      var linkData = linkText + ' ' + link.className + ' ' + link.id;
-      if (linkData.match(this.REGEXPS.nextLink))
-        linkObj.score += 50;
-
-      if (linkData.match(/pag(e|ing|inat)/i))
-        linkObj.score += 25;
-
-      if (linkData.match(/(first|last)/i)) {
-        
-        
-        
-        if (!linkObj.linkText.match(this.REGEXPS.nextLink))
-          linkObj.score -= 65;
-      }
-
-      if (linkData.match(this.REGEXPS.negative) || linkData.match(this.REGEXPS.extraneous))
-        linkObj.score -= 50;
-
-      if (linkData.match(this.REGEXPS.prevLink))
-        linkObj.score -= 200;
-
-      
-      var parentNode = link.parentNode;
-      var positiveNodeMatch = false;
-      var negativeNodeMatch = false;
-
-      while (parentNode) {
-        var parentNodeClassAndId = parentNode.className + ' ' + parentNode.id;
-
-        if (!positiveNodeMatch && parentNodeClassAndId && parentNodeClassAndId.match(/pag(e|ing|inat)/i)) {
-          positiveNodeMatch = true;
-          linkObj.score += 25;
-        }
-
-        if (!negativeNodeMatch && parentNodeClassAndId && parentNodeClassAndId.match(this.REGEXPS.negative)) {
-          
-          
-          if (!parentNodeClassAndId.match(this.REGEXPS.positive)) {
-            linkObj.score -= 25;
-            negativeNodeMatch = true;
-          }
-        }
-
-        parentNode = parentNode.parentNode;
-      }
-
-      
-      
-      if (linkHref.match(/p(a|g|ag)?(e|ing|ination)?(=|\/)[0-9]{1,2}/i) || linkHref.match(/(page|paging)/i))
-        linkObj.score += 25;
-
-      
-      if (linkHref.match(this.REGEXPS.extraneous))
-        linkObj.score -= 15;
-
-      
-
-
-
-
-
-
-
-
-      
-      
-      
-      var linkTextAsNumber = parseInt(linkText, 10);
-      if (linkTextAsNumber) {
-        
-        
-        if (linkTextAsNumber === 1) {
-          linkObj.score -= 10;
-        } else {
-          linkObj.score += Math.max(0, 10 - linkTextAsNumber);
-        }
-      }
-    }
-
-    
-    
-    
-    var topPage = null;
-    for (var page in possiblePages) {
-      if (possiblePages.hasOwnProperty(page)) {
-        if (possiblePages[page].score >= 50 &&
-          (!topPage || topPage.score < possiblePages[page].score))
-          topPage = possiblePages[page];
-      }
-    }
-
-    var nextHref = null;
-    if (topPage) {
-      nextHref = topPage.href.replace(/\/$/, '');
-
-      this.log('NEXT PAGE IS ' + nextHref);
-      this._parsedPages[nextHref] = true;
-    }
-    return nextHref;
-  },
-
-  _successfulRequest: function(request) {
-    return (request.status >= 200 && request.status < 300) ||
-        request.status === 304 ||
-         (request.status === 0 && request.responseText);
-  },
-
-  _ajax: function(url, options) {
-    var request = new XMLHttpRequest();
-
-    function respondToReadyState(readyState) {
-      if (request.readyState === 4) {
-        if (this._successfulRequest(request)) {
-          if (options.success)
-            options.success(request);
-        } else if (options.error) {
-          options.error(request);
-        }
-      }
-    }
-
-    if (typeof options === 'undefined')
-      options = {};
-
-    request.onreadystatechange = respondToReadyState;
-
-    request.open('get', url, true);
-    request.setRequestHeader('Accept', 'text/html');
-
-    try {
-      request.send(options.postBody);
-    } catch (e) {
-      if (options.error)
-        options.error();
-    }
-
-    return request;
-  },
-
-  _appendNextPage: function(nextPageLink) {
-    var doc = this._doc;
-    this._curPageNum += 1;
-
-    var articlePage = doc.createElement("DIV");
-    articlePage.id = 'readability-page-' + this._curPageNum;
-    articlePage.className = 'page';
-    articlePage.innerHTML = '<p class="page-separator" title="Page ' + this._curPageNum + '">&sect;</p>';
-
-    doc.getElementById("readability-content").appendChild(articlePage);
-
-    if (this._curPageNum > this._maxPages) {
-      var nextPageMarkup = "<div style='text-align: center'><a href='" + nextPageLink + "'>View Next Page</a></div>";
-      articlePage.innerHTML = articlePage.innerHTML + nextPageMarkup;
-      return;
-    }
-
-    
-    
-    ((pageUrl, thisPage) => {
-      this._ajax(pageUrl, {
-        success: function(r) {
-
-          
-          var eTag = r.getResponseHeader('ETag');
-          if (eTag) {
-            if (eTag in this._pageETags) {
-              this.log("Exact duplicate page found via ETag. Aborting.");
-              articlePage.style.display = 'none';
-              return;
-            }
-            this._pageETags[eTag] = 1;
-          }
-
-          
-          var page = doc.createElement("DIV");
-
-          
-          
-          
-          
-          
-          
-          
-          
-          var responseHtml = r.responseText.replace(/\n/g, '\uffff').replace(/<script.*?>.*?<\/script>/gi, '');
-          responseHtml = responseHtml.replace(/\n/g, '\uffff').replace(/<script.*?>.*?<\/script>/gi, '');
-          responseHtml = responseHtml.replace(/\uffff/g, '\n').replace(/<(\/?)noscript/gi, '<$1div');
-          responseHtml = responseHtml.replace(this.REGEXPS.replaceFonts, '<$1span>');
-
-          page.innerHTML = responseHtml;
-          this._replaceBrs(page);
-
-          
-          
-          this._flags = 0x1 | 0x2 | 0x4;
-
-          var secondNextPageLink = this._findNextPageLink(page);
-
-          
-          
-          var content = this._grabArticle(page);
-
-          if (!content) {
-            this.log("No content found in page to append. Aborting.");
-            return;
-          }
-
-          
-          
-          
-          var firstP = content.getElementsByTagName("P").length ? content.getElementsByTagName("P")[0] : null;
-          if (firstP && firstP.innerHTML.length > 100) {
-            for (var i = 1; i <= this._curPageNum; i += 1) {
-              var rPage = doc.getElementById('readability-page-' + i);
-              if (rPage && rPage.innerHTML.indexOf(firstP.innerHTML) !== -1) {
-                this.log('Duplicate of page ' + i + ' - skipping.');
-                articlePage.style.display = 'none';
-                this._parsedPages[pageUrl] = true;
-                return;
-              }
-            }
-          }
-
-          this._removeScripts(content);
-
-          thisPage.innerHTML = thisPage.innerHTML + content.innerHTML;
-
-          
-          
-          
-          setTimeout(() => {
-            this._postProcessContent(thisPage);
-          }, 500);
-
-
-          if (secondNextPageLink)
-            this._appendNextPage(secondNextPageLink);
-        }
-      });
-    })(nextPageLink, articlePage);
   },
 
   
@@ -1932,10 +1585,6 @@ Readability.prototype = {
     return (this._flags & flag) > 0;
   },
 
-  _addFlag: function(flag) {
-    this._flags = this._flags | flag;
-  },
-
   _removeFlag: function(flag) {
     this._flags = this._flags & ~flag;
   },
@@ -2026,16 +1675,6 @@ Readability.prototype = {
     
     this._removeScripts(this._doc);
 
-    
-    
-
-    
-    
-    
-
-    
-    
-
     this._prepDocument();
 
     var metadata = this._getArticleMetadata();
@@ -2048,14 +1687,6 @@ Readability.prototype = {
     this.log("Grabbed: " + articleContent.innerHTML);
 
     this._postProcessContent(articleContent);
-
-    
-    
-    
-    
-    
-    
-    
 
     
     
