@@ -8,7 +8,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["FormAutofillHeuristics"];
+this.EXPORTED_SYMBOLS = ["FormAutofillHeuristics", "LabelUtils"];
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
@@ -181,6 +181,84 @@ class FieldScanner {
     return index < this._elements.length;
   }
 }
+
+this.LabelUtils = {
+  
+  
+  
+  EXCLUDED_TAGS: ["SCRIPT", "NOSCRIPT", "OPTION", "STYLE"],
+  
+
+
+
+
+
+
+
+
+
+  extractLabelStrings(element) {
+    let strings = [];
+    let _extractLabelStrings = (el) => {
+      if (this.EXCLUDED_TAGS.includes(el.tagName)) {
+        return;
+      }
+
+      if (el.nodeType == Ci.nsIDOMNode.TEXT_NODE ||
+          el.childNodes.length == 0) {
+        let trimmedText = el.textContent.trim();
+        if (trimmedText) {
+          strings.push(trimmedText);
+        }
+        return;
+      }
+
+      for (let node of el.childNodes) {
+        if (node.nodeType != Ci.nsIDOMNode.ELEMENT_NODE &&
+            node.nodeType != Ci.nsIDOMNode.TEXT_NODE) {
+          continue;
+        }
+        _extractLabelStrings(node);
+      }
+    };
+    _extractLabelStrings(element);
+    return strings;
+  },
+
+  findLabelElements(element) {
+    let document = element.ownerDocument;
+    let labels = [];
+    
+    
+    
+    for (let label of document.querySelectorAll("label[for]")) {
+      if (element.id == label.htmlFor) {
+        labels.push(label);
+      }
+    }
+
+    if (labels.length > 0) {
+      log.debug("Label found by ID", element.id);
+      return labels;
+    }
+
+    let parent = element.parentNode;
+    if (!parent) {
+      return [];
+    }
+    do {
+      if (parent.tagName == "LABEL" &&
+          parent.control == element &&
+          !parent.hasAttribute("for")) {
+        log.debug("Label found in input's parent or ancestor.");
+        return [parent];
+      }
+      parent = parent.parentNode;
+    } while (parent);
+
+    return [];
+  },
+};
 
 
 
@@ -370,9 +448,9 @@ this.FormAutofillHeuristics = {
       yield element.name;
       if (!labelStrings) {
         labelStrings = [];
-        let labels = FormAutofillUtils.findLabelElements(element);
+        let labels = LabelUtils.findLabelElements(element);
         for (let label of labels) {
-          labelStrings.push(...FormAutofillUtils.extractLabelStrings(label));
+          labelStrings.push(...LabelUtils.extractLabelStrings(label));
         }
       }
       yield *labelStrings;
