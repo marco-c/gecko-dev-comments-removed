@@ -42,6 +42,21 @@ const uint32_t kRotateFilesNumber = 4;
 
 namespace mozilla {
 
+LazyLogModule::operator LogModule*()
+{
+  
+  
+  
+  
+  LogModule* tmp = mLog;
+  if (MOZ_UNLIKELY(!tmp)) {
+    tmp = LogModule::Get(mLogName);
+    mLog = tmp;
+  }
+
+  return tmp;
+}
+
 namespace detail {
 
 void log_print(const LogModule* aModule,

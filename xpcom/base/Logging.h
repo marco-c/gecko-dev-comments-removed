@@ -162,20 +162,7 @@ public:
   {
   }
 
-  operator LogModule*()
-  {
-    
-    
-    
-    
-    LogModule* tmp = mLog;
-    if (MOZ_UNLIKELY(!tmp)) {
-      tmp = LogModule::Get(mLogName);
-      mLog = tmp;
-    }
-
-    return tmp;
-  }
+  operator LogModule*();
 
 private:
   const char* const mLogName;
