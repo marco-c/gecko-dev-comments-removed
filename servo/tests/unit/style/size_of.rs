@@ -2,10 +2,9 @@
 
 
 
-#[test]
-fn size_of_property_declaration() {
-    ::style::properties::test_size_of_property_declaration();
-}
+use style::properties;
+
+size_of_test!(test_size_of_property_declaration, properties::PropertyDeclaration, 32);
 
 #[test]
 fn size_of_specified_values() {
