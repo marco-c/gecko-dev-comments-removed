@@ -3,9 +3,18 @@
 
 
 const dateTimeFormatFunctions = [];
-dateTimeFormatFunctions.push(Intl.DateTimeFormat.prototype.resolvedOptions);
-dateTimeFormatFunctions.push(Object.getOwnPropertyDescriptor(Intl.DateTimeFormat.prototype, "format").get);
-dateTimeFormatFunctions.push(Intl.DateTimeFormat.prototype.formatToParts);
+dateTimeFormatFunctions.push({
+    function: Intl.DateTimeFormat.prototype.resolvedOptions,
+    unwrap: true,
+});
+dateTimeFormatFunctions.push({
+    function: Object.getOwnPropertyDescriptor(Intl.DateTimeFormat.prototype, "format").get,
+    unwrap: true,
+});
+dateTimeFormatFunctions.push({
+    function: Intl.DateTimeFormat.prototype.formatToParts,
+    unwrap: false,
+});
 
 function IsConstructor(o) {
   try {
@@ -58,7 +67,7 @@ function thisValues(C) {
 const intlFallbackSymbol = Object.getOwnPropertySymbols(Intl.DateTimeFormat.call(Object.create(Intl.DateTimeFormat.prototype)))[0];
 
 
-for (let dateTimeFormatFunction of dateTimeFormatFunctions) {
+for (let {function: dateTimeFormatFunction, unwrap} of dateTimeFormatFunctions) {
     
     
     for (let thisValue of thisValues(Intl.DateTimeFormat)) {
@@ -79,10 +88,15 @@ for (let dateTimeFormatFunction of dateTimeFormatFunctions) {
     }
 
     for (let thisValue of intlObjects(Intl.DateTimeFormat)) {
-        dateTimeFormatFunction.call({
+        let obj = {
             __proto__: Intl.DateTimeFormat.prototype,
             [intlFallbackSymbol]: thisValue,
-        });
+        };
+        if (unwrap) {
+            dateTimeFormatFunction.call(obj);
+        } else {
+            assertThrowsInstanceOf(() => dateTimeFormatFunction.call(obj), TypeError);
+        }
     }
 
     
@@ -126,8 +140,8 @@ for (let dateTimeFormatFunction of dateTimeFormatFunctions) {
 
         delete Intl.DateTimeFormat[Symbol.hasInstance];
 
-        assertEq(hasInstanceCalled, true);
-        assertEq(symbolGetterCalled, true);
+        assertEq(hasInstanceCalled, unwrap);
+        assertEq(symbolGetterCalled, unwrap);
     }
 
     
@@ -178,34 +192,20 @@ for (let dateTimeFormatFunction of dateTimeFormatFunctions) {
 }
 
 
-if ("formatToParts" in Intl.DateTimeFormat.prototype) {
-    
-    let dateTimeFormat = new Intl.DateTimeFormat();
+{
+    let formatToParts = Intl.DateTimeFormat.prototype.formatToParts;
 
     
     let thisValue = Object.create(Intl.DateTimeFormat.prototype);
     Intl.DateTimeFormat.call(thisValue);
+    assertThrowsInstanceOf(() => formatToParts.call(thisValue), TypeError);
 
     
     let fakeObj = {
         __proto__: Intl.DateTimeFormat.prototype,
-        [intlFallbackSymbol]: dateTimeFormat,
+        [intlFallbackSymbol]: new Intl.DateTimeFormat(),
     };
-
-    function assertEqParts(actual, expected) {
-        assertEq(actual.length, expected.length, "parts count mismatch");
-        for (var i = 0; i < expected.length; i++) {
-            assertEq(actual[i].type, expected[i].type, "type mismatch at " + i);
-            assertEq(actual[i].value, expected[i].value, "value mismatch at " + i);
-        }
-    }
-
-    for (let number of [0, Date.now(), -Date.now()]) {
-        let expected = dateTimeFormat.formatToParts(number);
-        assertEqParts(thisValue.formatToParts(number), expected);
-        assertEqParts(thisValue[intlFallbackSymbol].formatToParts(number), expected);
-        assertEqParts(fakeObj.formatToParts(number), expected);
-    }
+    assertThrowsInstanceOf(() => formatToParts.call(fakeObj), TypeError);
 }
 
 

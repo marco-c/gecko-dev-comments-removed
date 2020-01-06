@@ -2371,7 +2371,13 @@ _SetCanonicalName(Intl_NumberFormat_format_get, "get format");
 
 function Intl_NumberFormat_formatToParts(value) {
     
-    var nf = UnwrapNumberFormat(this, "formatToParts");
+    var nf = this;
+
+    
+    if (!IsObject(nf) || !IsNumberFormat(nf)) {
+        ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "NumberFormat", "formatToParts",
+                       "NumberFormat");
+    }
 
     
     getNumberFormatInternals(nf);
@@ -3072,7 +3078,13 @@ _SetCanonicalName(Intl_DateTimeFormat_format_get, "get format");
 
 function Intl_DateTimeFormat_formatToParts(date) {
     
-    var dtf = UnwrapDateTimeFormat(this, "formatToParts");
+    var dtf = this;
+
+    
+    if (!IsObject(dtf) || !IsDateTimeFormat(dtf)) {
+        ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "DateTimeFormat", "formatToParts",
+                       "DateTimeFormat");
+    }
 
     
     getDateTimeFormatInternals(dtf);
