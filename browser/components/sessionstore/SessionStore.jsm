@@ -370,10 +370,6 @@ this.SessionStore = {
     return SessionStoreInternal.undoCloseById(aClosedId);
   },
 
-  resetBrowserToLazyState(tab) {
-    return SessionStoreInternal.resetBrowserToLazyState(tab);
-  },
-
   
 
 
@@ -1902,7 +1898,19 @@ var SessionStoreInternal = {
 
 
   onTabRemove: function ssi_onTabRemove(aWindow, aTab, aNoNotification) {
-    this.cleanUpRemovedBrowser(aTab);
+    let browser = aTab.linkedBrowser;
+    browser.removeEventListener("SwapDocShells", this);
+    browser.removeEventListener("oop-browser-crashed", this);
+
+    
+    
+    
+    let previousState = browser.__SS_restoreState;
+    if (previousState) {
+      this._resetTabRestoringState(aTab);
+      if (previousState == TAB_STATE_RESTORING)
+        this.restoreNextTab();
+    }
 
     if (!aNoNotification) {
       this.saveStateDelayed(aWindow);
@@ -1969,57 +1977,6 @@ var SessionStoreInternal = {
     
     
     this._closedTabs.set(permanentKey, {closedTabs, tabData});
-  },
-
-  
-
-
-
-
-
-  resetBrowserToLazyState(aTab) {
-    let browser = aTab.linkedBrowser;
-    
-    if (!browser.isConnected) {
-      return;
-    }
-
-    this.cleanUpRemovedBrowser(aTab);
-
-    aTab.setAttribute("pending", "true");
-
-    this._lastKnownFrameLoader.delete(browser.permanentKey);
-    this._crashedBrowsers.delete(browser.permanentKey);
-    aTab.removeAttribute("crashed");
-
-    aTab.__SS_lazyData = {
-      url: browser.currentURI.spec,
-      title: aTab.label,
-      userTypedValue: browser.userTypedValue || "",
-      userTypedClear: browser.userTypedClear || 0
-    }
-  },
-
-  
-
-
-
-
-  cleanUpRemovedBrowser(aTab) {
-    let browser = aTab.linkedBrowser;
-
-    browser.removeEventListener("SwapDocShells", this);
-    browser.removeEventListener("oop-browser-crashed", this);
-
-    
-    
-    
-    let previousState = browser.__SS_restoreState;
-    if (previousState) {
-      this._resetTabRestoringState(aTab);
-      if (previousState == TAB_STATE_RESTORING)
-        this.restoreNextTab();
-    }
   },
 
   
