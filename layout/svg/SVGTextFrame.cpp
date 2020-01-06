@@ -4583,13 +4583,20 @@ SVGTextFrame::ResolvePositionsForNode(nsIContent* aContent,
   if (aContent->IsSVGElement(nsGkAtoms::textPath)) {
     
     
+    
+    
     if (HasTextContent(aContent)) {
       if (MOZ_UNLIKELY(aIndex >= mPositions.Length())) {
         MOZ_ASSERT_UNREACHABLE("length of mPositions does not match characters "
                                "found by iterating content");
         return false;
       }
-      mPositions[aIndex].mPosition = gfxPoint();
+      if (!mPositions[aIndex].IsXSpecified()) {
+        mPositions[aIndex].mPosition.x = 0.0;
+      }
+      if (!mPositions[aIndex].IsYSpecified()) {
+        mPositions[aIndex].mPosition.y = 0.0;
+      }
       mPositions[aIndex].mStartOfChunk = true;
     }
   } else if (!aContent->IsSVGElement(nsGkAtoms::a)) {
