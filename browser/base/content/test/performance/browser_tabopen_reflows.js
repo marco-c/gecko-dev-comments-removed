@@ -15,9 +15,11 @@
 const EXPECTED_REFLOWS = [
   
   
-  [
-    "select@chrome://global/content/bindings/textbox.xml",
-  ],
+  {
+    stack: [
+      "select@chrome://global/content/bindings/textbox.xml",
+    ],
+  }
 ];
 
 
