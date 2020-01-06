@@ -625,6 +625,7 @@ public:
     , mIsWrapperBoxNeedingRestyle(false)
     , mReflowRequestedForCharDataChange(false)
     , mForceDescendIntoIfVisible(false)
+    , mBuiltDisplayList(false)
     , mIsPrimaryFrame(false)
   {
     mozilla::PodZero(&mOverflow);
@@ -3840,6 +3841,10 @@ public:
 
   
   
+  bool CheckAndClearDisplayListState();
+
+  
+  
   
   
   
@@ -4091,6 +4096,9 @@ public:
   bool ForceDescendIntoIfVisible() { return mForceDescendIntoIfVisible; }
   void SetForceDescendIntoIfVisible(bool aForce) { mForceDescendIntoIfVisible = aForce; }
 
+  bool BuiltDisplayList() { return mBuiltDisplayList; }
+  void SetBuiltDisplayList(bool aBuilt) { mBuiltDisplayList = aBuilt; }
+
 protected:
 
   
@@ -4258,6 +4266,14 @@ protected:
 
 
   bool mForceDescendIntoIfVisible : 1;
+
+  
+
+
+
+
+
+  bool mBuiltDisplayList : 1;
 
 private:
   
