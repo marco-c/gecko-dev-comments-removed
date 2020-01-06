@@ -77,37 +77,6 @@ function test_feature_availability_with_post_message_result(
 
 
 
-function test_feature_in_iframe(feature_name, feature_promise_factory) {
-  if (location.hash.includes(feature_name)) {
-    feature_promise_factory().then(
-        () => window.parent.postMessage('#OK', '*'),
-        (e) => window.parent.postMessage('#' + e.toString(), '*'));
-  }
-}
-
-
-
-function page_loaded_in_iframe() {
-  return location.hash.startsWith('#iframe');
-}
-
-
-
-function same_origin_url(feature_name) {
-  
-  
-  return location.pathname + '#iframe#' + feature_name;
-}
-
-
-
-function cross_origin_url(base_url, feature_name) {
-  return base_url + same_origin_url(feature_name);
-}
-
-
-
-
 
 
 
@@ -134,8 +103,13 @@ function run_all_fp_tests_allow_self(
     cross_origin, feature_name, error_name, feature_promise_factory) {
   
   
-  if (page_loaded_in_iframe()) {
-    test_feature_in_iframe(feature_name, feature_promise_factory);
+  if (location.hash.startsWith('#iframe')) {
+    
+    if (!location.hash.includes(feature_name))
+      return;
+    feature_promise_factory().then(
+        () => window.parent.postMessage('#OK', '*'),
+        (e) => window.parent.postMessage('#' + e.toString(), '*'));
     return;
   }
 
@@ -147,7 +121,10 @@ function run_all_fp_tests_allow_self(
           '" feature policy ["self"] allows the top-level document.');
 
   
-  const same_origin_frame_pathname = same_origin_url(feature_name);
+  
+  
+  const same_origin_frame_pathname =
+      location.pathname + '#iframe#' + feature_name;
   async_test(
       t => {
         test_feature_availability_with_post_message_result(
@@ -157,7 +134,7 @@ function run_all_fp_tests_allow_self(
           '" feature policy ["self"] allows same-origin iframes.');
 
   
-  const cross_origin_frame_url = cross_origin_url(cross_origin, feature_name);
+  const cross_origin_frame_url = cross_origin + same_origin_frame_pathname;
   async_test(
       t => {
         test_feature_availability_with_post_message_result(
@@ -174,76 +151,4 @@ function run_all_fp_tests_allow_self(
       },
       'Feature policy "' + feature_name +
           '" can be enabled in cross-origin iframes using "allow" attribute.');
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function run_all_fp_tests_allow_all(
-    cross_origin, feature_name, error_name, feature_promise_factory) {
-  
-  
-  if (page_loaded_in_iframe()) {
-    test_feature_in_iframe(feature_name, feature_promise_factory);
-    return;
-  }
-
-  
-  
-  promise_test(
-      () => feature_promise_factory(),
-      'Default "' + feature_name +
-          '" feature policy ["*"] allows the top-level document.');
-
-  
-  const same_origin_frame_pathname = same_origin_url(feature_name);
-  async_test(
-      t => {
-        test_feature_availability_with_post_message_result(
-            t, same_origin_frame_pathname, '#OK');
-      },
-      'Default "' + feature_name +
-          '" feature policy ["*"] allows same-origin iframes.');
-
-  
-  const cross_origin_frame_url = cross_origin_url(cross_origin, feature_name);
-  async_test(
-      t => {
-        test_feature_availability_with_post_message_result(
-            t, cross_origin_frame_url, '#OK');
-      },
-      'Default "' + feature_name +
-          '" feature policy ["*"] allows cross-origin iframes.');
-
-  
-  async_test(
-      t => {
-        test_feature_availability_with_post_message_result(
-            t, cross_origin_frame_url, '#' + error_name,
-            feature_name + " 'none'");
-      },
-      'Feature policy "' + feature_name +
-          '" can be disabled in cross-origin iframes using "allow" attribute.');
 }
