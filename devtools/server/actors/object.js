@@ -91,13 +91,25 @@ ObjectActor.prototype = {
       g.proxyTarget = this.hooks.createValueGrip(this.obj.proxyTarget);
       g.proxyHandler = this.hooks.createValueGrip(this.obj.proxyHandler);
     } else {
-      g.class = this.obj.class;
-      g.extensible = this.obj.isExtensible();
-      g.frozen = this.obj.isFrozen();
-      g.sealed = this.obj.isSealed();
+      try {
+        g.class = this.obj.class;
+        g.extensible = this.obj.isExtensible();
+        g.frozen = this.obj.isFrozen();
+        g.sealed = this.obj.isSealed();
+      } catch (e) {
+        
+        
+        
+      }
     }
 
-    if (g.class != "DeadObject") {
+    
+    let isCPOW = DevToolsUtils.isCPOW(this.obj);
+    if (isCPOW) {
+      g.class = "CPOW: " + g.class;
+    }
+
+    if (g.class != "DeadObject" && !isCPOW) {
       if (g.class == "Promise") {
         g.promiseState = this._createPromiseState();
       }

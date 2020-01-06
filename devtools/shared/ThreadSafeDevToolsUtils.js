@@ -72,6 +72,14 @@ exports.values = function values(object) {
 
 
 
+
+exports.isCPOW = function () {
+  return false;
+};
+
+
+
+
 exports.reportException = function reportException(who, exception) {
   const msg = `${who} threw an exception: ${exports.safeErrorString(exception)}`;
   dump(msg + "\n");

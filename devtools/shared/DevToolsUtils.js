@@ -31,6 +31,21 @@ for (let key of Object.keys(ThreadSafeDevToolsUtils)) {
 
 
 
+
+
+
+
+
+exports.isCPOW = function (debuggerObject) {
+  try {
+    return Cu.isCrossProcessWrapper(debuggerObject.unsafeDereference());
+  } catch (e) { }
+  return false;
+};
+
+
+
+
 exports.executeSoon = function (fn) {
   if (isWorker) {
     setImmediate(fn);
