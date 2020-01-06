@@ -655,8 +655,6 @@ KeyframeEffectReadOnly::ComposeStyleRule(
   }
 }
 
-
-
 void
 KeyframeEffectReadOnly::ComposeStyleRule(
   RawServoAnimationValueMap& aAnimationValues,
@@ -664,14 +662,13 @@ KeyframeEffectReadOnly::ComposeStyleRule(
   const AnimationPropertySegment& aSegment,
   const ComputedTiming& aComputedTiming)
 {
-  
-  
-
   Servo_AnimationCompose(&aAnimationValues,
                          &mBaseStyleValuesForServo,
                          aProperty.mProperty,
                          &aSegment,
-                         &aComputedTiming);
+                         &aProperty.mSegments.LastElement(),
+                         &aComputedTiming,
+                         mEffectOptions.mIterationComposite);
 }
 
 template<typename ComposeAnimationResult>
