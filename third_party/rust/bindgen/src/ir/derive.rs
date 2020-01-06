@@ -20,16 +20,9 @@ pub trait CanDeriveDebug {
 
 
 pub trait CanTriviallyDeriveDebug {
-
-    
-    type Extra;
-
     
     
-    fn can_trivially_derive_debug(&self,
-                        ctx: &BindgenContext,
-                        extra: Self::Extra)
-                        -> bool;
+    fn can_trivially_derive_debug(&self) -> bool;
 }
 
 
@@ -37,42 +30,17 @@ pub trait CanTriviallyDeriveDebug {
 pub trait CanDeriveCopy<'a> {
     
     
-    
-    type Extra;
+    fn can_derive_copy(&'a self, ctx: &'a BindgenContext) -> bool;
+}
 
-    
-    
-    fn can_derive_copy(&'a self,
-                       ctx: &'a BindgenContext,
-                       extra: Self::Extra)
-                       -> bool;
 
+
+
+
+pub trait CanTriviallyDeriveCopy {
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn can_derive_copy_in_array(&'a self,
-                                ctx: &'a BindgenContext,
-                                extra: Self::Extra)
-                                -> bool;
+    fn can_trivially_derive_copy(&self) -> bool;
 }
 
 
@@ -82,16 +50,80 @@ pub trait CanDeriveCopy<'a> {
 
 
 
-pub trait CanDeriveDefault<'a> {
+pub trait CanDeriveDefault {
     
     
+    fn can_derive_default(&self, ctx: &BindgenContext) -> bool;
+}
+
+
+
+
+
+pub trait CanTriviallyDeriveDefault {
     
-    type Extra;
+    
+    fn can_trivially_derive_default(&self) -> bool;
+}
+
+
+
+
+
+
+
+
+pub trait CanDeriveHash {
+    
+    
+    fn can_derive_hash(&self, ctx: &BindgenContext) -> bool;
+}
+
+
+
+
+
+
+
+
+pub trait CanDerivePartialEq {
+    
+    
+    fn can_derive_partialeq(&self, ctx: &BindgenContext) -> bool;
+}
+
+
+
+
+
+
+
+
+pub trait CanDeriveEq {
 
     
     
-    fn can_derive_default(&self,
-                          ctx: &BindgenContext,
-                          extra: Self::Extra)
-                          -> bool;
+    fn can_derive_eq(&self,
+                     ctx: &BindgenContext)
+                     -> bool;
+}
+
+
+
+
+
+pub trait CanTriviallyDeriveHash {
+    
+    
+    fn can_trivially_derive_hash(&self) -> bool;
+}
+
+
+
+
+
+pub trait CanTriviallyDerivePartialEq {
+    
+    
+    fn can_trivially_derive_partialeq(&self) -> bool;
 }

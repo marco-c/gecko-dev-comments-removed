@@ -15,6 +15,7 @@ use std::process::Command;
 
 use Tool;
 
+#[cfg(windows)]
 macro_rules! otry {
     ($expr:expr) => (match $expr {
         Some(val) => val,
@@ -50,10 +51,120 @@ pub fn find_tool(_target: &str, _tool: &str) -> Option<Tool> {
 #[cfg(windows)]
 pub fn find_tool(target: &str, tool: &str) -> Option<Tool> {
     use std::env;
+
+    
+    
+    if !target.contains("msvc") {
+        return None;
+    }
+
+    
+    
+    
+    if tool.contains("msbuild") {
+        return impl_::find_msbuild(target);
+    }
+
+    
+    
+    if env::var_os("VCINSTALLDIR").is_some() {
+        return env::var_os("PATH")
+            .and_then(|path| env::split_paths(&path).map(|p| p.join(tool)).find(|p| p.exists()))
+            .map(|path| Tool::new(path.into()));
+    }
+
+    
+    
+    
+    
+    
+    
+
+    return impl_::find_msvc_15(tool, target)
+        .or_else(|| impl_::find_msvc_14(tool, target))
+        .or_else(|| impl_::find_msvc_12(tool, target))
+        .or_else(|| impl_::find_msvc_11(tool, target));
+}
+
+
+pub enum VsVers {
+    
+    Vs12,
+    
+    Vs14,
+    
+    Vs15,
+
+    
+    
+    
+    #[doc(hidden)]
+    #[allow(bad_style)]
+    __Nonexhaustive_do_not_match_this_or_your_code_will_break,
+}
+
+
+
+
+
+#[cfg(not(windows))]
+pub fn find_vs_version() -> Result<VsVers, String> {
+    Err(format!("not windows"))
+}
+
+
+#[cfg(windows)]
+pub fn find_vs_version() -> Result<VsVers, String> {
+    use std::env;
+
+    match env::var("VisualStudioVersion") {
+        Ok(version) => {
+            match &version[..] {
+                "15.0" => Ok(VsVers::Vs15),
+                "14.0" => Ok(VsVers::Vs14),
+                "12.0" => Ok(VsVers::Vs12),
+                vers => Err(format!("\n\n\
+                                     unsupported or unknown VisualStudio version: {}\n\
+                                     if another version is installed consider running \
+                                     the appropriate vcvars script before building this \
+                                     crate\n\
+                                     ", vers)),
+            }
+        }
+        _ => {
+            
+            
+            if impl_::has_msbuild_version("15.0") {
+                Ok(VsVers::Vs15)
+            } else if impl_::has_msbuild_version("14.0") {
+                Ok(VsVers::Vs14)
+            } else if impl_::has_msbuild_version("12.0") {
+                Ok(VsVers::Vs12)
+            } else {
+                Err(format!("\n\n\
+                             couldn't determine visual studio generator\n\
+                             if VisualStudio is installed, however, consider \
+                             running the appropriate vcvars script before building \
+                             this crate\n\
+                             "))
+            }
+        }
+    }
+}
+
+#[cfg(windows)]
+mod impl_ {
+    use std::env;
     use std::ffi::OsString;
     use std::mem;
     use std::path::{Path, PathBuf};
+    use std::fs::File;
+    use std::io::Read;
     use registry::{RegistryKey, LOCAL_MACHINE};
+    use com;
+    use setup_config::{SetupConfiguration, SetupInstance};
+
+    use Tool;
 
     struct MsvcTool {
         tool: PathBuf,
@@ -84,44 +195,99 @@ pub fn find_tool(target: &str, tool: &str) -> Option<Tool> {
 
     
     
-    if !target.contains("msvc") {
-        return None;
+    
+    
+    
+    
+    
+    pub fn find_msvc_15(tool: &str, target: &str) -> Option<Tool> {
+        otry!(com::initialize().ok());
+
+        let config = otry!(SetupConfiguration::new().ok());
+        let iter = otry!(config.enum_all_instances().ok());
+        for instance in iter {
+            let instance = otry!(instance.ok());
+            let tool = tool_from_vs15_instance(tool, target, &instance);
+            if tool.is_some() {
+                return tool;
+            }
+        }
+
+        None
+    }
+
+    fn tool_from_vs15_instance(tool: &str, target: &str,
+                               instance: &SetupInstance) -> Option<Tool> {
+        let (bin_path, host_dylib_path, lib_path, include_path) = otry!(vs15_vc_paths(target, instance));
+        let tool_path = bin_path.join(tool);
+        if !tool_path.exists() { return None };
+
+        let mut tool = MsvcTool::new(tool_path);
+        tool.path.push(host_dylib_path);
+        tool.libs.push(lib_path);
+        tool.include.push(include_path);
+
+        if let Some((atl_lib_path, atl_include_path)) = atl_paths(target, &bin_path) {
+            tool.libs.push(atl_lib_path);
+            tool.include.push(atl_include_path);
+        }
+
+        otry!(add_sdks(&mut tool, target));
+
+        Some(tool.into_tool())
+    }
+
+    fn vs15_vc_paths(target: &str, instance: &SetupInstance) -> Option<(PathBuf, PathBuf, PathBuf, PathBuf)> {
+        let instance_path: PathBuf = otry!(instance.installation_path().ok()).into();
+        let version_path = instance_path.join(r"VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt");
+        let mut version_file = otry!(File::open(version_path).ok());
+        let mut version = String::new();
+        otry!(version_file.read_to_string(&mut version).ok());
+        let version = version.trim();
+        let host = match host_arch() {
+            X86 => "X86",
+            X86_64 => "X64",
+            _ => return None,
+        };
+        let target = otry!(lib_subdir(target));
+        
+        let path = instance_path.join(r"VC\Tools\MSVC").join(version);
+        
+        
+        let bin_path = path.join("bin").join(&format!("Host{}", host)).join(&target);
+        
+        
+        
+        let host_dylib_path = path.join("bin").join(&format!("Host{}", host)).join(&host.to_lowercase());
+        let lib_path = path.join("lib").join(&target);
+        let include_path = path.join("include");
+        Some((bin_path, host_dylib_path, lib_path, include_path))
+    }
+
+    fn atl_paths(target: &str, path: &Path) -> Option<(PathBuf, PathBuf)> {
+        let atl_path = path.join("atlfmc");
+        let sub = otry!(lib_subdir(target));
+        if atl_path.exists() {
+            Some((atl_path.join("lib").join(sub), atl_path.join("include")))
+        } else {
+            None
+        }
     }
 
     
     
-    
-    if tool.contains("msbuild") {
-        return find_msbuild(target);
-    }
-
-    
-    
-    if env::var_os("VCINSTALLDIR").is_some() {
-        return env::var_os("PATH")
-            .and_then(|path| env::split_paths(&path).map(|p| p.join(tool)).find(|p| p.exists()))
-            .map(|path| Tool::new(path.into()));
-    }
-
-    
-    
-    
-    
-    
-    
-
-    return find_msvc_latest(tool, target, "15.0")
-        .or_else(|| find_msvc_latest(tool, target, "14.0"))
-        .or_else(|| find_msvc_12(tool, target))
-        .or_else(|| find_msvc_11(tool, target));
-
-    
-    
-    fn find_msvc_latest(tool: &str, target: &str, ver: &str) -> Option<Tool> {
-        let vcdir = otry!(get_vc_dir(ver));
+    pub fn find_msvc_14(tool: &str, target: &str) -> Option<Tool> {
+        let vcdir = otry!(get_vc_dir("14.0"));
         let mut tool = otry!(get_tool(tool, &vcdir, target));
+        otry!(add_sdks(&mut tool, target));
+        Some(tool.into_tool())
+    }
+
+    fn add_sdks(tool: &mut MsvcTool, target: &str) -> Option<()> {
         let sub = otry!(lib_subdir(target));
         let (ucrt, ucrt_version) = otry!(get_ucrt_dir());
+
+        tool.path.push(ucrt.join("bin").join(&ucrt_version).join(sub));
 
         let ucrt_include = ucrt.join("include").join(&ucrt_version);
         tool.include.push(ucrt_include.join("ucrt"));
@@ -145,14 +311,13 @@ pub fn find_tool(target: &str, tool: &str) -> Option<Tool> {
             tool.include.push(sdk_include.join("um"));
             tool.include.push(sdk_include.join("winrt"));
             tool.include.push(sdk_include.join("shared"));
-        } else {
-            return None;
         }
-        Some(tool.into_tool())
+
+        Some(())
     }
 
     
-    fn find_msvc_12(tool: &str, target: &str) -> Option<Tool> {
+    pub fn find_msvc_12(tool: &str, target: &str) -> Option<Tool> {
         let vcdir = otry!(get_vc_dir("12.0"));
         let mut tool = otry!(get_tool(tool, &vcdir, target));
         let sub = otry!(lib_subdir(target));
@@ -168,7 +333,7 @@ pub fn find_tool(target: &str, tool: &str) -> Option<Tool> {
     }
 
     
-    fn find_msvc_11(tool: &str, target: &str) -> Option<Tool> {
+    pub fn find_msvc_11(tool: &str, target: &str) -> Option<Tool> {
         let vcdir = otry!(get_vc_dir("11.0"));
         let mut tool = otry!(get_tool(tool, &vcdir, target));
         let sub = otry!(lib_subdir(target));
@@ -403,8 +568,52 @@ pub fn find_tool(target: &str, tool: &str) -> Option<Tool> {
         max_key
     }
 
+    pub fn has_msbuild_version(version: &str) -> bool {
+        match version {
+            "15.0" => {
+                find_msbuild_vs15("x86_64-pc-windows-msvc").is_some() ||
+                    find_msbuild_vs15("i686-pc-windows-msvc").is_some()
+            }
+            "12.0" | "14.0" => {
+                LOCAL_MACHINE.open(
+                    &OsString::from(format!("SOFTWARE\\Microsoft\\MSBuild\\ToolsVersions\\{}",
+                                            version))).is_ok()
+            }
+            _ => false
+        }
+    }
+
     
-    fn find_msbuild(target: &str) -> Option<Tool> {
+    pub fn find_msbuild(target: &str) -> Option<Tool> {
+        
+        if let Some(r) = find_msbuild_vs15(target) {
+            return Some(r);
+        } else {
+            find_old_msbuild(target)
+        }
+    }
+
+    fn find_msbuild_vs15(target: &str) -> Option<Tool> {
+        
+        
+        
+        let key = r"SOFTWARE\WOW6432Node\Microsoft\VisualStudio\SxS\VS7";
+        LOCAL_MACHINE.open(key.as_ref())
+            .ok()
+            .and_then(|key| {
+                key.query_str("15.0").ok()
+            })
+            .map(|path| {
+                let path = PathBuf::from(path).join(r"MSBuild\15.0\Bin\MSBuild.exe");
+                let mut tool = Tool::new(path);
+                if target.contains("x86_64") {
+                    tool.env.push(("Platform".into(), "X64".into()));
+                }
+                tool
+            })
+    }
+
+    fn find_old_msbuild(target: &str) -> Option<Tool> {
         let key = r"SOFTWARE\Microsoft\MSBuild\ToolsVersions";
         LOCAL_MACHINE.open(key.as_ref())
             .ok()
