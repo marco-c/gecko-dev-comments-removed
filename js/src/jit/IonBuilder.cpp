@@ -419,22 +419,11 @@ IonBuilder::canInlineTarget(JSFunction* target, CallInfo& callInfo)
                 return DontInline(nullptr, "Empty TypeSet for argument");
             }
         }
-
-        
-        
-        
-        if ((CodeSpec[*pc].format & JOF_TYPESET) &&
-            !BytecodeIsPopped(pc) &&
-            bytecodeTypes(pc)->empty())
-        {
-            trackOptimizationOutcome(TrackedOutcome::CantInlineNoObservedTypes);
-            return DontInline(nullptr, "Empty type barrier");
-        }
     }
 
     
     
-    if (info().analysisMode() == Analysis_DefiniteProperties) {
+    if (target->isInterpreted() && info().analysisMode() == Analysis_DefiniteProperties) {
         RootedFunction fun(analysisContext, target);
         RootedScript script(analysisContext, JSFunction::getOrCreateScript(analysisContext, fun));
         if (!script)
