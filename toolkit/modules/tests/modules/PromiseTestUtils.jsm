@@ -165,6 +165,12 @@ this.PromiseTestUtils = {
 
     
     
+    if (!stack.endsWith("\n")) {
+      stack += "\n";
+    }
+
+    
+    
     this._rejections.push({
       id: PromiseDebugging.getPromiseID(promise),
       message,
@@ -252,10 +258,14 @@ this.PromiseTestUtils = {
 
       
       
+      
+      
+      
+      
       Assert.ok(false,
                 `A promise chain failed to handle a rejection:` +
-                ` ${rejection.message} - rejection date: ${rejection.date}` +
-                ` - stack: ${rejection.stack}`);
+                ` ${rejection.message} - stack: ${rejection.stack}` +
+                `Rejection date: ${rejection.date}`);
     }
   },
 
