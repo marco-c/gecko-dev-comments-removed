@@ -10,6 +10,8 @@
 #include "forwards.h"
 #endif 
 
+#pragma pack(push, 8)
+
 namespace Json {
 
 
@@ -53,5 +55,7 @@ public:
 };
 
 } 
+
+#pragma pack(pop)
 
 #endif 

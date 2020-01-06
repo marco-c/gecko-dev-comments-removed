@@ -23,6 +23,8 @@
 #pragma warning(disable : 4251)
 #endif 
 
+#pragma pack(push, 8)
+
 namespace Json {
 
 
@@ -396,6 +398,8 @@ bool JSON_API parseFromStream(
 JSON_API JSONCPP_ISTREAM& operator>>(JSONCPP_ISTREAM&, Value&);
 
 } 
+
+#pragma pack(pop)
 
 #if defined(JSONCPP_DISABLE_DLL_INTERFACE_WARNING)
 #pragma warning(pop)
