@@ -564,6 +564,9 @@ public class GeckoHlsPlayer implements ExoPlayer.EventListener {
 
     public long getDuration() {
         assertTrue(mPlayer != null);
+        if (isLiveStream()) {
+            return 0L;
+        }
         
         long duration = mPlayer.getDuration() * 1000;
         if (DEBUG) { Log.d(LOGTAG, "getDuration : " + duration  + "(Us)"); }
