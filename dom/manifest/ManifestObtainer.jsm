@@ -72,7 +72,8 @@ this.ManifestObtainer = {
       throw err;
     }
     return manifest;
-  }};
+  }
+};
 
 function toError(aErrorClone) {
   let error;
