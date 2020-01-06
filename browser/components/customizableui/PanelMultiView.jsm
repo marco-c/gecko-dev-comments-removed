@@ -830,6 +830,12 @@ this.PanelMultiView = class {
         this.node.removeAttribute("panelopen");
         this.showMainView();
         if (this.panelViews) {
+          for (let panelView of this._viewStack.children) {
+            if (panelView.nodeName != "children") {
+              panelView.style.removeProperty("min-width");
+              panelView.style.removeProperty("max-width");
+            }
+          }
           this.window.removeEventListener("keydown", this);
           this._panel.removeEventListener("mousemove", this);
           this._resetKeyNavigation();
@@ -1006,7 +1012,7 @@ this.PanelMultiView = class {
       
       element = element.labelElement || element;
 
-      let bounds = element.getBoundingClientRect();
+      let bounds = this._dwu.getBoundsWithoutFlushing(element);
       let previous = this._multiLineElementsMap.get(element);
       
       
@@ -1016,13 +1022,8 @@ this.PanelMultiView = class {
         continue;
       }
 
+      element.style.removeProperty("height");
       items.push({ element });
-    }
-
-    
-    
-    for (let item of items) {
-      item.element.style.removeProperty("height");
     }
 
     
