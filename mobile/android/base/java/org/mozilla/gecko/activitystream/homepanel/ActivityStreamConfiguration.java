@@ -5,8 +5,6 @@
 package org.mozilla.gecko.activitystream.homepanel;
 
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.support.annotation.VisibleForTesting;
 import org.mozilla.gecko.BrowserLocaleManager;
 import org.mozilla.gecko.Locales;
@@ -23,24 +21,23 @@ import java.util.Set;
 
 public class ActivityStreamConfiguration {
 
-    private static final Set<Locale> enabledLocales;
+    private static final Set<Locale> pocketEnabledLocales;
+    @VisibleForTesting static final String[] pocketEnabledLocaleTags = new String[] {
+            
+            "de-AT",
+            "de-CH",
+            "de-DE",
+            "en-GB",
+            "en-US",
+            "en-ZA",
+    };
 
     static {
-        final String[] enabledLocaleTags = new String[] {
-                
-                "de-AT",
-                "de-CH",
-                "de-DE",
-                "en-GB",
-                "en-US",
-                "en-ZA",
-        };
-
         final Set<Locale> mutableEnabledLocales = new HashSet<>();
-        for (final String enabledLocaleTag : enabledLocaleTags) {
+        for (final String enabledLocaleTag : pocketEnabledLocaleTags) {
             mutableEnabledLocales.add(Locales.parseLocaleCode(enabledLocaleTag));
         }
-        enabledLocales = Collections.unmodifiableSet(mutableEnabledLocales);
+        pocketEnabledLocales = Collections.unmodifiableSet(mutableEnabledLocales);
     }
 
     private ActivityStreamConfiguration() {}
@@ -61,6 +58,13 @@ public class ActivityStreamConfiguration {
     }
 
     @VisibleForTesting static boolean isPocketEnabledByLocaleInner(final Locale locale) {
-        return enabledLocales.contains(locale);
+        
+        
+        
+        
+        
+        
+        
+        return pocketEnabledLocales.contains(locale);
     }
 }
