@@ -474,23 +474,6 @@ public:
 
 
 
-
-
-  uint32_t GetCompositorID() const
-  {
-    return mCompositorID;
-  }
-  void SetCompositorID(uint32_t aID)
-  {
-    MOZ_ASSERT(mCompositorID == 0, "The compositor ID must be set only once.");
-    mCompositorID = aID;
-  }
-
-  
-
-
-
-
   virtual void Pause() {}
   
 
@@ -587,7 +570,6 @@ protected:
 
   TimeStamp mLastCompositionEndTime;
 
-  uint32_t mCompositorID;
   DiagnosticTypes mDiagnosticTypes;
   CompositorBridgeParent* mParent;
 
