@@ -224,6 +224,7 @@ this.PageActions = {
         this._persistedActions.idsInUrlbar.includes(action.id);
     } else {
       
+      this._persistedActions.ids.push(action.id);
       this._updateIDsInUrlbarForAction(action);
     }
   },

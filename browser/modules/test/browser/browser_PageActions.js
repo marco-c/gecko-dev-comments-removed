@@ -109,6 +109,9 @@ add_task(async function simple() {
   Assert.deepEqual(PageActions.actionForID(action.id), action,
                    "actionForID should be action");
 
+  Assert.ok(PageActions._persistedActions.ids.includes(action.id),
+            "PageActions should record action in its list of seen actions");
+
   
   let panelButtonNode = document.getElementById(panelButtonID);
   Assert.notEqual(panelButtonNode, null, "panelButtonNode");
@@ -180,6 +183,29 @@ add_task(async function simple() {
   Assert.equal(panelButtonNode.getAttribute("label"), action.title, "New label");
 
   
+  
+  
+
+  
+  PageActions._actionsByID.delete(action.id);
+  let index = PageActions._nonBuiltInActions.findIndex(a => a.id == action.id);
+  Assert.ok(index >= 0, "Action should be in _nonBuiltInActions to begin with");
+  PageActions._nonBuiltInActions.splice(index, 1);
+
+  
+  PageActions._registerAction(action);
+
+  
+  Assert.ok(PageActions._persistedActions.ids.includes(action.id),
+            "PageActions should have 'seen' the action");
+  Assert.ok(PageActions._persistedActions.idsInUrlbar.includes(action.id),
+            "idsInUrlbar should still include the action");
+  Assert.ok(action.shownInUrlbar,
+            "shownInUrlbar should still be true");
+  Assert.ok(action._shownInUrlbar,
+            "_shownInUrlbar should still be true, for good measure");
+
+  
   action.remove();
   panelButtonNode = document.getElementById(panelButtonID);
   Assert.equal(panelButtonNode, null, "panelButtonNode");
@@ -190,6 +216,9 @@ add_task(async function simple() {
                    "Actions should go back to initial");
   Assert.equal(PageActions.actionForID(action.id), null,
                "actionForID should be null");
+
+  Assert.ok(!PageActions._persistedActions.ids.includes(action.id),
+            "PageActions should remove action from its list of seen actions");
 
   
   
