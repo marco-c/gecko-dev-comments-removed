@@ -64,6 +64,12 @@ GPUProcessHost::WaitForLaunch()
 
   
   
+  if (PR_GetEnv("MOZ_DEBUG_CHILD_PROCESS") || PR_GetEnv("MOZ_DEBUG_CHILD_PAUSE")) {
+    timeoutMs = 0;
+  }
+
+  
+  
   
   bool result = GeckoChildProcessHost::WaitUntilConnected(timeoutMs);
   InitAfterConnect(result);
