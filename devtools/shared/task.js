@@ -87,7 +87,6 @@
 
 
 
-const Promise = require("promise");
 const defer = require("devtools/shared/defer");
 
 

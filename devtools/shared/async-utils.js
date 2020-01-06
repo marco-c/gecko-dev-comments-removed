@@ -14,7 +14,6 @@
 
 
 var {Task} = require("devtools/shared/task");
-var Promise = require("promise");
 
 
 
