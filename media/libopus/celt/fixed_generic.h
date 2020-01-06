@@ -105,6 +105,9 @@
 
 #define ROUND16(x,a) (EXTRACT16(PSHR32((x),(a))))
 
+#define SROUND16(x,a) EXTRACT16(SATURATE(PSHR32(x,a), 32767));
+
+
 #define HALF16(x)  (SHR16(x,1))
 #define HALF32(x)  (SHR32(x,1))
 
@@ -116,6 +119,14 @@
 #define ADD32(a,b) ((opus_val32)(a)+(opus_val32)(b))
 
 #define SUB32(a,b) ((opus_val32)(a)-(opus_val32)(b))
+
+
+#define ADD32_ovflw(a,b) ((opus_val32)((opus_uint32)(a)+(opus_uint32)(b)))
+
+#define SUB32_ovflw(a,b) ((opus_val32)((opus_uint32)(a)-(opus_uint32)(b)))
+
+
+#define NEG32_ovflw(a) ((opus_val32)(0-(opus_uint32)(a)))
 
 
 #define MULT16_16_16(a,b)     ((((opus_val16)(a))*((opus_val16)(b))))

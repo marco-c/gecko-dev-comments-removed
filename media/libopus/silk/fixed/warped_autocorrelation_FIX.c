@@ -31,17 +31,13 @@
 
 #include "main_FIX.h"
 
-#define QC  10
-#define QS  14
-
 #if defined(MIPSr1_ASM)
 #include "mips/warped_autocorrelation_FIX_mipsr1.h"
 #endif
 
 
-#ifndef OVERRIDE_silk_warped_autocorrelation_FIX
 
-void silk_warped_autocorrelation_FIX(
+void silk_warped_autocorrelation_FIX_c(
           opus_int32                *corr,                                  
           opus_int                  *scale,                                 
     const opus_int16                *input,                                 
@@ -92,4 +88,3 @@ void silk_warped_autocorrelation_FIX(
     }
     silk_assert( corr_QC[ 0 ] >= 0 ); 
 }
-#endif 

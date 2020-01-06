@@ -107,7 +107,7 @@ OPUS_EXPORT void opus_pcm_soft_clip(float *_x, int N, int C, float *declip_mem)
          
 
 
-         a += a*2.4e-7;
+         a += a*2.4e-7f;
          if (x[i*C]>0)
             a = -a;
          

@@ -35,7 +35,7 @@ extern "C"
 
           
 
-#define SILK_MAX_ORDER_LPC            16            /* max order of the LPC analysis in schur() and k2a() */
+#define SILK_MAX_ORDER_LPC            24            /* max order of the LPC analysis in schur() and k2a() */
 
 #include <string.h>                                 
 #include "typedef.h"
@@ -45,6 +45,11 @@ extern "C"
 
 #if defined(OPUS_X86_MAY_HAVE_SSE4_1)
 #include "x86/SigProc_FIX_sse.h"
+#endif
+
+#if (defined(OPUS_ARM_ASM) || defined(OPUS_ARM_MAY_HAVE_NEON_INTR))
+#include "arm/biquad_alt_arm.h"
+#include "arm/LPC_inv_pred_gain_arm.h"
 #endif
 
 
@@ -96,14 +101,22 @@ void silk_resampler_down2_3(
 
 
 
-void silk_biquad_alt(
+void silk_biquad_alt_stride1(
     const opus_int16            *in,                
     const opus_int32            *B_Q28,             
     const opus_int32            *A_Q28,             
     opus_int32                  *S,                 
     opus_int16                  *out,               
-    const opus_int32            len,                
-    opus_int                    stride              
+    const opus_int32            len                 
+);
+
+void silk_biquad_alt_stride2_c(
+    const opus_int16            *in,                
+    const opus_int32            *B_Q28,             
+    const opus_int32            *A_Q28,             
+    opus_int32                  *S,                 
+    opus_int16                  *out,               
+    const opus_int32            len                 
 );
 
 
@@ -132,14 +145,8 @@ void silk_bwexpander_32(
 
 
 
-opus_int32 silk_LPC_inverse_pred_gain(              
+opus_int32 silk_LPC_inverse_pred_gain_c(            
     const opus_int16            *A_Q12,             
-    const opus_int              order               
-);
-
-
-opus_int32 silk_LPC_inverse_pred_gain_Q24(          
-    const opus_int32            *A_Q24,             
     const opus_int              order               
 );
 
@@ -151,6 +158,14 @@ void silk_ana_filt_bank_1(
     opus_int16                  *outH,              
     const opus_int32            N                   
 );
+
+#if !defined(OVERRIDE_silk_biquad_alt_stride2)
+#define silk_biquad_alt_stride2(in, B_Q28, A_Q28, S, out, len, arch) ((void)(arch), silk_biquad_alt_stride2_c(in, B_Q28, A_Q28, S, out, len))
+#endif
+
+#if !defined(OVERRIDE_silk_LPC_inverse_pred_gain)
+#define silk_LPC_inverse_pred_gain(A_Q12, order, arch)     ((void)(arch), silk_LPC_inverse_pred_gain_c(A_Q12, order))
+#endif
 
 
 
@@ -271,6 +286,16 @@ void silk_A2NLSF(
 void silk_NLSF2A(
     opus_int16                  *a_Q12,             
     const opus_int16            *NLSF,              
+    const opus_int              d,                  
+    int                         arch                
+);
+
+
+void silk_LPC_fit(
+    opus_int16                  *a_QOUT,            
+    opus_int32                  *a_QIN,             
+    const opus_int              QOUT,               
+    const opus_int              QIN,                
     const opus_int              d                   
 );
 
@@ -471,8 +496,7 @@ static OPUS_INLINE opus_int32 silk_ROR32( opus_int32 a32, opus_int rot )
 
 #define silk_ADD_POS_SAT8(a, b)             ((((a)+(b)) & 0x80)                 ? silk_int8_MAX  : ((a)+(b)))
 #define silk_ADD_POS_SAT16(a, b)            ((((a)+(b)) & 0x8000)               ? silk_int16_MAX : ((a)+(b)))
-#define silk_ADD_POS_SAT32(a, b)            ((((a)+(b)) & 0x80000000)           ? silk_int32_MAX : ((a)+(b)))
-#define silk_ADD_POS_SAT64(a, b)            ((((a)+(b)) & 0x8000000000000000LL) ? silk_int64_MAX : ((a)+(b)))
+#define silk_ADD_POS_SAT32(a, b)            ((((opus_uint32)(a)+(opus_uint32)(b)) & 0x80000000) ? silk_int32_MAX : ((a)+(b)))
 
 #define silk_LSHIFT8(a, shift)              ((opus_int8)((opus_uint8)(a)<<(shift)))         /* shift >= 0, shift < 8  */
 #define silk_LSHIFT16(a, shift)             ((opus_int16)((opus_uint16)(a)<<(shift)))       /* shift >= 0, shift < 16 */
@@ -572,7 +596,9 @@ static OPUS_INLINE opus_int64 silk_max_64(opus_int64 a, opus_int64 b)
 
 
 
-#define silk_RAND(seed)                     (silk_MLA_ovflw(907633515, (seed), 196314165))
+#define RAND_MULTIPLIER                     196314165
+#define RAND_INCREMENT                      907633515
+#define silk_RAND(seed)                     (silk_MLA_ovflw((RAND_INCREMENT), (seed), (RAND_MULTIPLIER)))
 
 
 

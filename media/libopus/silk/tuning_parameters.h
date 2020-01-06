@@ -54,17 +54,10 @@ extern "C"
 #define FIND_LPC_COND_FAC                               1e-5f
 
 
-#define FIND_LTP_COND_FAC                               1e-5f
-#define LTP_DAMPING                                     0.05f
-#define LTP_SMOOTHING                                   0.1f
-
-
-#define MU_LTP_QUANT_NB                                 0.03f
-#define MU_LTP_QUANT_MB                                 0.025f
-#define MU_LTP_QUANT_WB                                 0.02f
-
-
 #define MAX_SUM_LOG_GAIN_DB                             250.0f
+
+
+#define LTP_CORR_INV_MAX                                0.03f
 
 
 
@@ -103,25 +96,16 @@ extern "C"
 #define SPARSE_SNR_INCR_dB                              2.0f
 
 
-#define SPARSENESS_THRESHOLD_QNT_OFFSET                 0.75f
+#define ENERGY_VARIATION_THRESHOLD_QNT_OFFSET           0.6f
 
 
 #define WARPING_MULTIPLIER                              0.015f
 
 
-#define SHAPE_WHITE_NOISE_FRACTION                      5e-5f
+#define SHAPE_WHITE_NOISE_FRACTION                      3e-5f
 
 
-#define BANDWIDTH_EXPANSION                             0.95f
-
-
-#define LOW_RATE_BANDWIDTH_EXPANSION_DELTA              0.01f
-
-
-#define LOW_RATE_HARMONIC_BOOST                         0.1f
-
-
-#define LOW_INPUT_QUALITY_HARMONIC_BOOST                0.1f
+#define BANDWIDTH_EXPANSION                             0.94f
 
 
 #define HARMONIC_SHAPING                                0.3f

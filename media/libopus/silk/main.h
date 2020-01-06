@@ -42,6 +42,10 @@
 #include "x86/main_sse.h"
 #endif
 
+#if (defined(OPUS_ARM_ASM) || defined(OPUS_ARM_MAY_HAVE_NEON_INTR))
+#include "arm/NSQ_del_dec_arm.h"
+#endif
+
 
 void silk_stereo_LR_to_MS(
     stereo_enc_state            *state,                         
@@ -209,9 +213,10 @@ void silk_quant_LTP_gains(
     opus_int8                   cbk_index[ MAX_NB_SUBFR ],                  
     opus_int8                   *periodicity_index,                         
     opus_int32                  *sum_gain_dB_Q7,                            
-    const opus_int32            W_Q18[ MAX_NB_SUBFR*LTP_ORDER*LTP_ORDER ],  
-    opus_int                    mu_Q9,                                      
-    opus_int                    lowComplexity,                              
+    opus_int                    *pred_gain_dB_Q7,                           
+    const opus_int32            XX_Q17[ MAX_NB_SUBFR*LTP_ORDER*LTP_ORDER ], 
+    const opus_int32            xX_Q17[ MAX_NB_SUBFR*LTP_ORDER ],           
+    const opus_int              subfr_len,                                  
     const opus_int              nb_subfr,                                   
     int                         arch                                        
 );
@@ -219,23 +224,22 @@ void silk_quant_LTP_gains(
 
 void silk_VQ_WMat_EC_c(
     opus_int8                   *ind,                           
-    opus_int32                  *rate_dist_Q14,                 
+    opus_int32                  *res_nrg_Q15,                   
+    opus_int32                  *rate_dist_Q8,                  
     opus_int                    *gain_Q7,                       
-    const opus_int16            *in_Q14,                        
-    const opus_int32            *W_Q18,                         
+    const opus_int32            *XX_Q17,                        
+    const opus_int32            *xX_Q17,                        
     const opus_int8             *cb_Q7,                         
     const opus_uint8            *cb_gain_Q7,                    
     const opus_uint8            *cl_Q5,                         
-    const opus_int              mu_Q9,                          
+    const opus_int              subfr_len,                      
     const opus_int32            max_gain_Q7,                    
-    opus_int                    L                               
+    const opus_int              L                               
 );
 
 #if !defined(OVERRIDE_silk_VQ_WMat_EC)
-#define silk_VQ_WMat_EC(ind, rate_dist_Q14, gain_Q7, in_Q14, W_Q18, cb_Q7, cb_gain_Q7, cl_Q5, \
-                          mu_Q9, max_gain_Q7, L, arch) \
-    ((void)(arch),silk_VQ_WMat_EC_c(ind, rate_dist_Q14, gain_Q7, in_Q14, W_Q18, cb_Q7, cb_gain_Q7, cl_Q5, \
-                          mu_Q9, max_gain_Q7, L))
+#define silk_VQ_WMat_EC(ind, res_nrg_Q15, rate_dist_Q8, gain_Q7, XX_Q17, xX_Q17, cb_Q7, cb_gain_Q7, cl_Q5, subfr_len, max_gain_Q7, L, arch) \
+    ((void)(arch),silk_VQ_WMat_EC_c(ind, res_nrg_Q15, rate_dist_Q8, gain_Q7, XX_Q17, xX_Q17, cb_Q7, cb_gain_Q7, cl_Q5, subfr_len, max_gain_Q7, L))
 #endif
 
 
@@ -246,11 +250,11 @@ void silk_NSQ_c(
     const silk_encoder_state    *psEncC,                                    
     silk_nsq_state              *NSQ,                                       
     SideInfoIndices             *psIndices,                                 
-    const opus_int32            x_Q3[],                                     
+    const opus_int16            x16[],                                      
     opus_int8                   pulses[],                                   
     const opus_int16            PredCoef_Q12[ 2 * MAX_LPC_ORDER ],          
     const opus_int16            LTPCoef_Q14[ LTP_ORDER * MAX_NB_SUBFR ],    
-    const opus_int16            AR2_Q13[ MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER ], 
+    const opus_int16            AR_Q13[ MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER ], 
     const opus_int              HarmShapeGain_Q14[ MAX_NB_SUBFR ],          
     const opus_int              Tilt_Q14[ MAX_NB_SUBFR ],                   
     const opus_int32            LF_shp_Q14[ MAX_NB_SUBFR ],                 
@@ -261,9 +265,9 @@ void silk_NSQ_c(
 );
 
 #if !defined(OVERRIDE_silk_NSQ)
-#define silk_NSQ(psEncC, NSQ, psIndices, x_Q3, pulses, PredCoef_Q12, LTPCoef_Q14, AR2_Q13, \
+#define silk_NSQ(psEncC, NSQ, psIndices, x16, pulses, PredCoef_Q12, LTPCoef_Q14, AR_Q13, \
                    HarmShapeGain_Q14, Tilt_Q14, LF_shp_Q14, Gains_Q16, pitchL, Lambda_Q10, LTP_scale_Q14, arch) \
-    ((void)(arch),silk_NSQ_c(psEncC, NSQ, psIndices, x_Q3, pulses, PredCoef_Q12, LTPCoef_Q14, AR2_Q13, \
+    ((void)(arch),silk_NSQ_c(psEncC, NSQ, psIndices, x16, pulses, PredCoef_Q12, LTPCoef_Q14, AR_Q13, \
                    HarmShapeGain_Q14, Tilt_Q14, LF_shp_Q14, Gains_Q16, pitchL, Lambda_Q10, LTP_scale_Q14))
 #endif
 
@@ -272,11 +276,11 @@ void silk_NSQ_del_dec_c(
     const silk_encoder_state    *psEncC,                                    
     silk_nsq_state              *NSQ,                                       
     SideInfoIndices             *psIndices,                                 
-    const opus_int32            x_Q3[],                                     
+    const opus_int16            x16[],                                      
     opus_int8                   pulses[],                                   
     const opus_int16            PredCoef_Q12[ 2 * MAX_LPC_ORDER ],          
     const opus_int16            LTPCoef_Q14[ LTP_ORDER * MAX_NB_SUBFR ],    
-    const opus_int16            AR2_Q13[ MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER ], 
+    const opus_int16            AR_Q13[ MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER ], 
     const opus_int              HarmShapeGain_Q14[ MAX_NB_SUBFR ],          
     const opus_int              Tilt_Q14[ MAX_NB_SUBFR ],                   
     const opus_int32            LF_shp_Q14[ MAX_NB_SUBFR ],                 
@@ -287,9 +291,9 @@ void silk_NSQ_del_dec_c(
 );
 
 #if !defined(OVERRIDE_silk_NSQ_del_dec)
-#define silk_NSQ_del_dec(psEncC, NSQ, psIndices, x_Q3, pulses, PredCoef_Q12, LTPCoef_Q14, AR2_Q13, \
+#define silk_NSQ_del_dec(psEncC, NSQ, psIndices, x16, pulses, PredCoef_Q12, LTPCoef_Q14, AR_Q13, \
                            HarmShapeGain_Q14, Tilt_Q14, LF_shp_Q14, Gains_Q16, pitchL, Lambda_Q10, LTP_scale_Q14, arch) \
-    ((void)(arch),silk_NSQ_del_dec_c(psEncC, NSQ, psIndices, x_Q3, pulses, PredCoef_Q12, LTPCoef_Q14, AR2_Q13, \
+    ((void)(arch),silk_NSQ_del_dec_c(psEncC, NSQ, psIndices, x16, pulses, PredCoef_Q12, LTPCoef_Q14, AR_Q13, \
                            HarmShapeGain_Q14, Tilt_Q14, LF_shp_Q14, Gains_Q16, pitchL, Lambda_Q10, LTP_scale_Q14))
 #endif
 
@@ -346,6 +350,7 @@ void silk_NLSF_VQ(
     opus_int32                  err_Q26[],                      
     const opus_int16            in_Q15[],                       
     const opus_uint8            pCB_Q8[],                       
+    const opus_int16            pWght_Q9[],                     
     const opus_int              K,                              
     const opus_int              LPC_order                       
 );

@@ -32,7 +32,7 @@
 #include "main.h"
 
 
-static OPUS_INLINE void silk_NLSF_residual_dequant(               
+static OPUS_INLINE void silk_NLSF_residual_dequant(          
           opus_int16         x_Q10[],                        
     const opus_int8          indices[],                      
     const opus_uint8         pred_coef_Q8[],                 
@@ -70,15 +70,9 @@ void silk_NLSF_decode(
     opus_uint8       pred_Q8[  MAX_LPC_ORDER ];
     opus_int16       ec_ix[    MAX_LPC_ORDER ];
     opus_int16       res_Q10[  MAX_LPC_ORDER ];
-    opus_int16       W_tmp_QW[ MAX_LPC_ORDER ];
-    opus_int32       W_tmp_Q9, NLSF_Q15_tmp;
+    opus_int32       NLSF_Q15_tmp;
     const opus_uint8 *pCB_element;
-
-    
-    pCB_element = &psNLSF_CB->CB1_NLSF_Q8[ NLSFIndices[ 0 ] * psNLSF_CB->order ];
-    for( i = 0; i < psNLSF_CB->order; i++ ) {
-        pNLSF_Q15[ i ] = silk_LSHIFT( (opus_int16)pCB_element[ i ], 7 );
-    }
+    const opus_int16 *pCB_Wght_Q9;
 
     
     silk_NLSF_unpack( ec_ix, pred_Q8, psNLSF_CB, NLSFIndices[ 0 ] );
@@ -87,12 +81,10 @@ void silk_NLSF_decode(
     silk_NLSF_residual_dequant( res_Q10, &NLSFIndices[ 1 ], pred_Q8, psNLSF_CB->quantStepSize_Q16, psNLSF_CB->order );
 
     
-    silk_NLSF_VQ_weights_laroia( W_tmp_QW, pNLSF_Q15, psNLSF_CB->order );
-
-    
+    pCB_element = &psNLSF_CB->CB1_NLSF_Q8[ NLSFIndices[ 0 ] * psNLSF_CB->order ];
+    pCB_Wght_Q9 = &psNLSF_CB->CB1_Wght_Q9[ NLSFIndices[ 0 ] * psNLSF_CB->order ];
     for( i = 0; i < psNLSF_CB->order; i++ ) {
-        W_tmp_Q9 = silk_SQRT_APPROX( silk_LSHIFT( (opus_int32)W_tmp_QW[ i ], 18 - NLSF_W_Q ) );
-        NLSF_Q15_tmp = silk_ADD32( pNLSF_Q15[ i ], silk_DIV32_16( silk_LSHIFT( (opus_int32)res_Q10[ i ], 14 ), W_tmp_Q9 ) );
+        NLSF_Q15_tmp = silk_ADD_LSHIFT32( silk_DIV32_16( silk_LSHIFT( (opus_int32)res_Q10[ i ], 14 ), pCB_Wght_Q9[ i ] ), (opus_int16)pCB_element[ i ], 7 );
         pNLSF_Q15[ i ] = (opus_int16)silk_LIMIT( NLSF_Q15_tmp, 0, 32767 );
     }
 

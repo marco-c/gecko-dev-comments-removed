@@ -1,7 +1,7 @@
 
 
 
-#include <NE10_init.h>
+#include <NE10_types.h>
 
 #ifndef NE10_FFT_PARAMS48000_960
 #define NE10_FFT_PARAMS48000_960

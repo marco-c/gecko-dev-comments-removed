@@ -36,6 +36,11 @@
 #include "debug.h"
 #include "entenc.h"
 
+#if ((defined(OPUS_ARM_ASM) && defined(FIXED_POINT)) \
+   || defined(OPUS_ARM_MAY_HAVE_NEON_INTR))
+#include "fixed/arm/warped_autocorrelation_FIX_arm.h"
+#endif
+
 #ifndef FORCE_CPP_BUILD
 #ifdef __cplusplus
 extern "C"
@@ -46,6 +51,9 @@ extern "C"
 #define silk_encoder_state_Fxx      silk_encoder_state_FIX
 #define silk_encode_do_VAD_Fxx      silk_encode_do_VAD_FIX
 #define silk_encode_frame_Fxx       silk_encode_frame_FIX
+
+#define QC  10
+#define QS  13
 
 
 
@@ -81,32 +89,10 @@ opus_int silk_init_encoder(
 opus_int silk_control_encoder(
     silk_encoder_state_Fxx          *psEnc,                                 
     silk_EncControlStruct           *encControl,                            
-    const opus_int32                TargetRate_bps,                         
     const opus_int                  allow_bw_switch,                        
     const opus_int                  channelNb,                              
     const opus_int                  force_fs_kHz
 );
-
-
-
-
-void silk_prefilter_FIX(
-    silk_encoder_state_FIX          *psEnc,                                 
-    const silk_encoder_control_FIX  *psEncCtrl,                             
-    opus_int32                      xw_Q10[],                               
-    const opus_int16                x[]                                     
-);
-
-void silk_warped_LPC_analysis_filter_FIX_c(
-          opus_int32            state[],                    
-          opus_int32            res_Q2[],                   
-    const opus_int16            coef_Q13[],                 
-    const opus_int16            input[],                    
-    const opus_int16            lambda_Q16,                 
-    const opus_int              length,                     
-    const opus_int              order                       
-);
-
 
 
 
@@ -121,7 +107,7 @@ void silk_noise_shape_analysis_FIX(
 );
 
 
-void silk_warped_autocorrelation_FIX(
+void silk_warped_autocorrelation_FIX_c(
           opus_int32                *corr,                                  
           opus_int                  *scale,                                 
     const opus_int16                *input,                                 
@@ -129,6 +115,11 @@ void silk_warped_autocorrelation_FIX(
     const opus_int                  length,                                 
     const opus_int                  order                                   
 );
+
+#if !defined(OVERRIDE_silk_warped_autocorrelation_FIX)
+#define silk_warped_autocorrelation_FIX(corr, scale, input, warping_Q16, length, order, arch) \
+        ((void)(arch), silk_warped_autocorrelation_FIX_c(corr, scale, input, warping_Q16, length, order))
+#endif
 
 
 void silk_LTP_scale_ctrl_FIX(
@@ -168,16 +159,12 @@ void silk_find_LPC_FIX(
 
 
 void silk_find_LTP_FIX(
-    opus_int16                      b_Q14[ MAX_NB_SUBFR * LTP_ORDER ],      
-    opus_int32                      WLTP[ MAX_NB_SUBFR * LTP_ORDER * LTP_ORDER ], 
-    opus_int                        *LTPredCodGain_Q7,                      
+    opus_int32                      XXLTP_Q17[ MAX_NB_SUBFR * LTP_ORDER * LTP_ORDER ], 
+    opus_int32                      xXLTP_Q17[ MAX_NB_SUBFR * LTP_ORDER ],  
     const opus_int16                r_lpc[],                                
     const opus_int                  lag[ MAX_NB_SUBFR ],                    
-    const opus_int32                Wght_Q15[ MAX_NB_SUBFR ],               
     const opus_int                  subfr_length,                           
     const opus_int                  nb_subfr,                               
-    const opus_int                  mem_offset,                             
-    opus_int                        corr_rshifts[ MAX_NB_SUBFR ],           
     int                             arch                                    
 );
 
@@ -231,8 +218,8 @@ void silk_corrMatrix_FIX(
     const opus_int16                *x,                                     
     const opus_int                  L,                                      
     const opus_int                  order,                                  
-    const opus_int                  head_room,                              
     opus_int32                      *XX,                                    
+    opus_int32                      *nrg,                                   
     opus_int                        *rshifts,                               
     int                              arch                                   
 );
@@ -246,22 +233,6 @@ void silk_corrVector_FIX(
     opus_int32                      *Xt,                                    
     const opus_int                  rshifts,                                
     int                             arch                                    
-);
-
-
-void silk_regularize_correlations_FIX(
-    opus_int32                      *XX,                                    
-    opus_int32                      *xx,                                    
-    opus_int32                      noise,                                  
-    opus_int                        D                                       
-);
-
-
-void silk_solve_LDL_FIX(
-    opus_int32                      *A,                                     
-    opus_int                        M,                                      
-    const opus_int32                *b,                                     
-    opus_int32                      *x_Q16                                  
 );
 
 #ifndef FORCE_CPP_BUILD

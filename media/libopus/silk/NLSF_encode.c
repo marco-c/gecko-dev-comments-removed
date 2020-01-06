@@ -39,7 +39,7 @@ opus_int32 silk_NLSF_encode(
           opus_int8             *NLSFIndices,                   
           opus_int16            *pNLSF_Q15,                     
     const silk_NLSF_CB_struct   *psNLSF_CB,                     
-    const opus_int16            *pW_QW,                         
+    const opus_int16            *pW_Q2,                         
     const opus_int              NLSF_mu_Q20,                    
     const opus_int              nSurvivors,                     
     const opus_int              signalType                      
@@ -47,21 +47,19 @@ opus_int32 silk_NLSF_encode(
 {
     opus_int         i, s, ind1, bestIndex, prob_Q8, bits_q7;
     opus_int32       W_tmp_Q9, ret;
-    VARDECL( opus_int32, err_Q26 );
+    VARDECL( opus_int32, err_Q24 );
     VARDECL( opus_int32, RD_Q25 );
     VARDECL( opus_int, tempIndices1 );
     VARDECL( opus_int8, tempIndices2 );
-    opus_int16       res_Q15[      MAX_LPC_ORDER ];
     opus_int16       res_Q10[      MAX_LPC_ORDER ];
     opus_int16       NLSF_tmp_Q15[ MAX_LPC_ORDER ];
-    opus_int16       W_tmp_QW[     MAX_LPC_ORDER ];
     opus_int16       W_adj_Q5[     MAX_LPC_ORDER ];
     opus_uint8       pred_Q8[      MAX_LPC_ORDER ];
     opus_int16       ec_ix[        MAX_LPC_ORDER ];
     const opus_uint8 *pCB_element, *iCDF_ptr;
+    const opus_int16 *pCB_Wght_Q9;
     SAVE_STACK;
 
-    silk_assert( nSurvivors <= NLSF_VQ_MAX_SURVIVORS );
     silk_assert( signalType >= 0 && signalType <= 2 );
     silk_assert( NLSF_mu_Q20 <= 32767 && NLSF_mu_Q20 >= 0 );
 
@@ -69,12 +67,12 @@ opus_int32 silk_NLSF_encode(
     silk_NLSF_stabilize( pNLSF_Q15, psNLSF_CB->deltaMin_Q15, psNLSF_CB->order );
 
     
-    ALLOC( err_Q26, psNLSF_CB->nVectors, opus_int32 );
-    silk_NLSF_VQ( err_Q26, pNLSF_Q15, psNLSF_CB->CB1_NLSF_Q8, psNLSF_CB->nVectors, psNLSF_CB->order );
+    ALLOC( err_Q24, psNLSF_CB->nVectors, opus_int32 );
+    silk_NLSF_VQ( err_Q24, pNLSF_Q15, psNLSF_CB->CB1_NLSF_Q8, psNLSF_CB->CB1_Wght_Q9, psNLSF_CB->nVectors, psNLSF_CB->order );
 
     
     ALLOC( tempIndices1, nSurvivors, opus_int );
-    silk_insertion_sort_increasing( err_Q26, tempIndices1, psNLSF_CB->nVectors, nSurvivors );
+    silk_insertion_sort_increasing( err_Q24, tempIndices1, psNLSF_CB->nVectors, nSurvivors );
 
     ALLOC( RD_Q25, nSurvivors, opus_int32 );
     ALLOC( tempIndices2, nSurvivors * MAX_LPC_ORDER, opus_int8 );
@@ -85,23 +83,12 @@ opus_int32 silk_NLSF_encode(
 
         
         pCB_element = &psNLSF_CB->CB1_NLSF_Q8[ ind1 * psNLSF_CB->order ];
+        pCB_Wght_Q9 = &psNLSF_CB->CB1_Wght_Q9[ ind1 * psNLSF_CB->order ];
         for( i = 0; i < psNLSF_CB->order; i++ ) {
             NLSF_tmp_Q15[ i ] = silk_LSHIFT16( (opus_int16)pCB_element[ i ], 7 );
-            res_Q15[ i ] = pNLSF_Q15[ i ] - NLSF_tmp_Q15[ i ];
-        }
-
-        
-        silk_NLSF_VQ_weights_laroia( W_tmp_QW, NLSF_tmp_Q15, psNLSF_CB->order );
-
-        
-        for( i = 0; i < psNLSF_CB->order; i++ ) {
-            W_tmp_Q9 = silk_SQRT_APPROX( silk_LSHIFT( (opus_int32)W_tmp_QW[ i ], 18 - NLSF_W_Q ) );
-            res_Q10[ i ] = (opus_int16)silk_RSHIFT( silk_SMULBB( res_Q15[ i ], W_tmp_Q9 ), 14 );
-        }
-
-        
-        for( i = 0; i < psNLSF_CB->order; i++ ) {
-            W_adj_Q5[ i ] = silk_DIV32_16( silk_LSHIFT( (opus_int32)pW_QW[ i ], 5 ), W_tmp_QW[ i ] );
+            W_tmp_Q9 = pCB_Wght_Q9[ i ];
+            res_Q10[ i ] = (opus_int16)silk_RSHIFT( silk_SMULBB( pNLSF_Q15[ i ] - NLSF_tmp_Q15[ i ], W_tmp_Q9 ), 14 );
+            W_adj_Q5[ i ] = silk_DIV32_varQ( (opus_int32)pW_Q2[ i ], silk_SMULBB( W_tmp_Q9, W_tmp_Q9 ), 21 );
         }
 
         

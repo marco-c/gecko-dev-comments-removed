@@ -66,6 +66,7 @@ opus_int (*const SILK_VAD_GETSA_Q8_IMPL[ OPUS_ARCHMASK + 1 ] )(
   MAY_HAVE_SSE4_1( silk_VAD_GetSA_Q8 )  
 };
 
+#if 0 
 void (*const SILK_NSQ_IMPL[ OPUS_ARCHMASK + 1 ] )(
     const silk_encoder_state    *psEncC,                                    
     silk_nsq_state              *NSQ,                                       
@@ -89,7 +90,9 @@ void (*const SILK_NSQ_IMPL[ OPUS_ARCHMASK + 1 ] )(
   MAY_HAVE_SSE4_1( silk_NSQ ), 
   MAY_HAVE_SSE4_1( silk_NSQ )  
 };
+#endif
 
+#if 0 
 void (*const SILK_VQ_WMAT_EC_IMPL[ OPUS_ARCHMASK + 1 ] )(
     opus_int8                   *ind,                           
     opus_int32                  *rate_dist_Q14,                 
@@ -109,7 +112,9 @@ void (*const SILK_VQ_WMAT_EC_IMPL[ OPUS_ARCHMASK + 1 ] )(
   MAY_HAVE_SSE4_1( silk_VQ_WMat_EC ), 
   MAY_HAVE_SSE4_1( silk_VQ_WMat_EC )  
 };
+#endif
 
+#if 0 
 void (*const SILK_NSQ_DEL_DEC_IMPL[ OPUS_ARCHMASK + 1 ] )(
     const silk_encoder_state    *psEncC,                                    
     silk_nsq_state              *NSQ,                                       
@@ -133,24 +138,9 @@ void (*const SILK_NSQ_DEL_DEC_IMPL[ OPUS_ARCHMASK + 1 ] )(
   MAY_HAVE_SSE4_1( silk_NSQ_del_dec ), 
   MAY_HAVE_SSE4_1( silk_NSQ_del_dec )  
 };
+#endif
 
 #if defined(FIXED_POINT)
-
-void (*const SILK_WARPED_LPC_ANALYSIS_FILTER_FIX_IMPL[ OPUS_ARCHMASK + 1 ] )(
-    opus_int32                  state[],                    
-    opus_int32                  res_Q2[],                   
-    const opus_int16            coef_Q13[],                 
-    const opus_int16            input[],                    
-    const opus_int16            lambda_Q16,                 
-    const opus_int              length,                     
-    const opus_int              order                       
-) = {
-  silk_warped_LPC_analysis_filter_FIX_c,                  
-  silk_warped_LPC_analysis_filter_FIX_c,
-  silk_warped_LPC_analysis_filter_FIX_c,
-  MAY_HAVE_SSE4_1( silk_warped_LPC_analysis_filter_FIX ), 
-  MAY_HAVE_SSE4_1( silk_warped_LPC_analysis_filter_FIX )  
-};
 
 void (*const SILK_BURG_MODIFIED_IMPL[ OPUS_ARCHMASK + 1 ] )(
     opus_int32                  *res_nrg,           

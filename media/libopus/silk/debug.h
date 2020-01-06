@@ -40,22 +40,9 @@ extern "C"
 unsigned long GetHighResolutionTime(void); 
 
 
-#if defined _WIN32
-    #ifdef _DEBUG
-        #define SILK_DEBUG  1
-    #else
-        #define SILK_DEBUG  0
-    #endif
 
-    
-    #if 0
-    
-    #undef  SILK_DEBUG
-    #define SILK_DEBUG  1
-    #endif
-#else
-    #define SILK_DEBUG  0
-#endif
+
+#define SILK_DEBUG 0
 
 
 #define SILK_TIC_TOC    0

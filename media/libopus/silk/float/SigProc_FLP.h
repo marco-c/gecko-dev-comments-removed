@@ -69,13 +69,6 @@ void silk_k2a_FLP(
 );
 
 
-silk_float silk_levinsondurbin_FLP(         
-    silk_float          A[],                
-    const silk_float    corr[],             
-    const opus_int      order               
-);
-
-
 void silk_autocorrelation_FLP(
     silk_float          *results,           
     const silk_float    *inputData,         

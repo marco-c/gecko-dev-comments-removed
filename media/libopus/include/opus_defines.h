@@ -166,7 +166,8 @@ extern "C" {
 #define OPUS_SET_PREDICTION_DISABLED_REQUEST 4042
 #define OPUS_GET_PREDICTION_DISABLED_REQUEST 4043
 
-
+#define OPUS_SET_PHASE_INVERSION_DISABLED_REQUEST 4046
+#define OPUS_GET_PHASE_INVERSION_DISABLED_REQUEST 4047
 
 
 #define __opus_check_int(x) (((void)((x) == (opus_int32)0)), (opus_int32)(x))
@@ -208,6 +209,9 @@ extern "C" {
 #define OPUS_FRAMESIZE_20_MS                 5004 /**< Use 20 ms frames */
 #define OPUS_FRAMESIZE_40_MS                 5005 /**< Use 40 ms frames */
 #define OPUS_FRAMESIZE_60_MS                 5006 /**< Use 60 ms frames */
+#define OPUS_FRAMESIZE_80_MS                 5007 /**< Use 80 ms frames */
+#define OPUS_FRAMESIZE_100_MS                5008 /**< Use 100 ms frames */
+#define OPUS_FRAMESIZE_120_MS                5009 /**< Use 120 ms frames */
 
 
 
@@ -569,7 +573,11 @@ extern "C" {
 
 
 
+
+
 #define OPUS_SET_EXPERT_FRAME_DURATION(x) OPUS_SET_EXPERT_FRAME_DURATION_REQUEST, __opus_check_int(x)
+
+
 
 
 
@@ -680,6 +688,30 @@ extern "C" {
 
 
 #define OPUS_GET_SAMPLE_RATE(x) OPUS_GET_SAMPLE_RATE_REQUEST, __opus_check_int_ptr(x)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define OPUS_SET_PHASE_INVERSION_DISABLED(x) OPUS_SET_PHASE_INVERSION_DISABLED_REQUEST, __opus_check_int(x)
+
+
+
+
+
+
+
+
+#define OPUS_GET_PHASE_INVERSION_DISABLED(x) OPUS_GET_PHASE_INVERSION_DISABLED_REQUEST, __opus_check_int_ptr(x)
 
 
 

@@ -348,12 +348,17 @@ static OPUS_INLINE int interp_bits2pulses(const CELTMode *m, int start, int end,
             
 
 
+            int depth_threshold;
             
 
+            if (codedBands > 17)
+               depth_threshold = j<prev ? 7 : 9;
+            else
+               depth_threshold = 0;
 #ifdef FUZZING
             if ((rand()&0x1) == 0)
 #else
-            if (codedBands<=start+2 || (band_bits > ((j<prev?7:9)*band_width<<LM<<BITRES)>>4 && j<=signalBandwidth))
+            if (codedBands<=start+2 || (band_bits > (depth_threshold*band_width<<LM<<BITRES)>>4 && j<=signalBandwidth))
 #endif
             {
                ec_enc_bit_logp(ec, 1, 1);

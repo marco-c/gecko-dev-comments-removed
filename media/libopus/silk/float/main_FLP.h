@@ -79,20 +79,9 @@ opus_int silk_init_encoder(
 opus_int silk_control_encoder(
     silk_encoder_state_FLP          *psEnc,                             
     silk_EncControlStruct           *encControl,                        
-    const opus_int32                TargetRate_bps,                     
     const opus_int                  allow_bw_switch,                    
     const opus_int                  channelNb,                          
     const opus_int                  force_fs_kHz
-);
-
-
-
-
-void silk_prefilter_FLP(
-    silk_encoder_state_FLP          *psEnc,                             
-    const silk_encoder_control_FLP  *psEncCtrl,                         
-    silk_float                      xw[],                               
-    const silk_float                x[]                                 
 );
 
 
@@ -153,15 +142,12 @@ void silk_find_LPC_FLP(
 
 
 void silk_find_LTP_FLP(
-    silk_float                      b[ MAX_NB_SUBFR * LTP_ORDER ],      
-    silk_float                      WLTP[ MAX_NB_SUBFR * LTP_ORDER * LTP_ORDER ], 
-    silk_float                      *LTPredCodGain,                     
-    const silk_float                r_lpc[],                            
+    silk_float                      XX[ MAX_NB_SUBFR * LTP_ORDER * LTP_ORDER ], 
+    silk_float                      xX[ MAX_NB_SUBFR * LTP_ORDER ],     
+    const silk_float                r_ptr[],                            
     const opus_int                  lag[  MAX_NB_SUBFR ],               
-    const silk_float                Wght[ MAX_NB_SUBFR ],               
     const opus_int                  subfr_length,                       
-    const opus_int                  nb_subfr,                           
-    const opus_int                  mem_offset                          
+    const opus_int                  nb_subfr                            
 );
 
 void silk_LTP_analysis_filter_FLP(
@@ -202,9 +188,10 @@ void silk_quant_LTP_gains_FLP(
     opus_int8                       cbk_index[ MAX_NB_SUBFR ],          
     opus_int8                       *periodicity_index,                 
     opus_int32                      *sum_log_gain_Q7,                   
-    const silk_float                W[ MAX_NB_SUBFR * LTP_ORDER * LTP_ORDER ], 
-    const opus_int                  mu_Q10,                             
-    const opus_int                  lowComplexity,                      
+    silk_float                      *pred_gain_dB,                      
+    const silk_float                XX[ MAX_NB_SUBFR * LTP_ORDER * LTP_ORDER ], 
+    const silk_float                xX[ MAX_NB_SUBFR * LTP_ORDER ],     
+    const opus_int                  subfr_len,                          
     const opus_int                  nb_subfr,                           
     int                             arch                                
 );
@@ -246,22 +233,6 @@ void silk_corrVector_FLP(
 );
 
 
-void silk_regularize_correlations_FLP(
-    silk_float                      *XX,                                
-    silk_float                      *xx,                                
-    const silk_float                noise,                              
-    const opus_int                  D                                   
-);
-
-
-void silk_solve_LDL_FLP(
-    silk_float                      *A,                                 
-    const opus_int                  M,                                  
-    const silk_float                *b,                                 
-    silk_float                      *x                                  
-);
-
-
 
 
 
@@ -285,7 +256,8 @@ void silk_A2NLSF_FLP(
 void silk_NLSF2A_FLP(
     silk_float                      *pAR,                               
     const opus_int16                *NLSF_Q15,                          
-    const opus_int                  LPC_order                           
+    const opus_int                  LPC_order,                          
+    int                             arch                                
 );
 
 

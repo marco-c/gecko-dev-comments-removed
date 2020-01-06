@@ -28,11 +28,6 @@
 #ifndef SILK_SIGPROC_FIX_MIPSR1_H
 #define SILK_SIGPROC_FIX_MIPSR1_H
 
-#ifdef  __cplusplus
-extern "C"
-{
-#endif
-
 #undef silk_SAT16
 static inline short int silk_SAT16(int a)
 {
@@ -62,4 +57,4 @@ static inline int silk_RSHIFT_ROUND(int a, int shift)
     return r;
 }
 
-#endif
+#endif 

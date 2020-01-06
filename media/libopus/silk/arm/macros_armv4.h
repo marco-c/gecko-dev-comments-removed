@@ -29,6 +29,11 @@
 #define SILK_MACROS_ARMv4_H
 
 
+
+
+#define SAFE_SHL(a,b) ((opus_int32)((opus_uint32)(a) << (b)))
+
+
 #undef silk_SMULWB
 static OPUS_INLINE opus_int32 silk_SMULWB_armv4(opus_int32 a, opus_int16 b)
 {
@@ -38,7 +43,7 @@ static OPUS_INLINE opus_int32 silk_SMULWB_armv4(opus_int32 a, opus_int16 b)
       "#silk_SMULWB\n\t"
       "smull %0, %1, %2, %3\n\t"
       : "=&r"(rd_lo), "=&r"(rd_hi)
-      : "%r"(a), "r"(b<<16)
+      : "%r"(a), "r"(SAFE_SHL(b,16))
   );
   return rd_hi;
 }
@@ -80,7 +85,7 @@ static OPUS_INLINE opus_int32 silk_SMULWW_armv4(opus_int32 a, opus_int32 b)
     : "=&r"(rd_lo), "=&r"(rd_hi)
     : "%r"(a), "r"(b)
   );
-  return (rd_hi<<16)+(rd_lo>>16);
+  return SAFE_SHL(rd_hi,16)+(rd_lo>>16);
 }
 #define silk_SMULWW(a, b) (silk_SMULWW_armv4(a, b))
 
@@ -96,8 +101,10 @@ static OPUS_INLINE opus_int32 silk_SMLAWW_armv4(opus_int32 a, opus_int32 b,
     : "=&r"(rd_lo), "=&r"(rd_hi)
     : "%r"(b), "r"(c)
   );
-  return a+(rd_hi<<16)+(rd_lo>>16);
+  return a+SAFE_SHL(rd_hi,16)+(rd_lo>>16);
 }
 #define silk_SMLAWW(a, b, c) (silk_SMLAWW_armv4(a, b, c))
+
+#undef SAFE_SHL
 
 #endif 

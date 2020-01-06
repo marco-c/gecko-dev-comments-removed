@@ -78,6 +78,9 @@ typedef struct {
     opus_int useInBandFEC;
 
     
+    opus_int LBRR_coded;
+
+    
     opus_int useDTX;
 
     
@@ -110,6 +113,11 @@ typedef struct {
     
     opus_int switchReady;
 
+    
+    opus_int signalType;
+
+    
+    opus_int offset;
 } silk_EncControlStruct;
 
 

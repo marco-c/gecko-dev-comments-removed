@@ -226,8 +226,6 @@ void silk_decode_core(
         }
 
         
-
-        
         silk_memcpy( sLPC_Q14, &sLPC_Q14[ psDec->subfr_length ], MAX_LPC_ORDER * sizeof( opus_int32 ) );
         pexc_Q14 += psDec->subfr_length;
         pxq      += psDec->subfr_length;

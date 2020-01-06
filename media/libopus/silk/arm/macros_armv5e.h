@@ -30,6 +30,11 @@
 #define SILK_MACROS_ARMv5E_H
 
 
+
+
+#define SAFE_SHL(a,b) ((opus_int32)((opus_uint32)(a) << (b)))
+
+
 #undef silk_SMULWB
 static OPUS_INLINE opus_int32 silk_SMULWB_armv5e(opus_int32 a, opus_int16 b)
 {
@@ -190,7 +195,7 @@ static OPUS_INLINE opus_int32 silk_CLZ16_armv5(opus_int16 in16)
       "#silk_CLZ16\n\t"
       "clz %0, %1;\n"
       : "=r"(res)
-      : "r"(in16<<16|0x8000)
+      : "r"(SAFE_SHL(in16,16)|0x8000)
   );
   return res;
 }
@@ -209,5 +214,7 @@ static OPUS_INLINE opus_int32 silk_CLZ32_armv5(opus_int32 in32)
   return res;
 }
 #define silk_CLZ32(in32) (silk_CLZ32_armv5(in32))
+
+#undef SAFE_SHL
 
 #endif 

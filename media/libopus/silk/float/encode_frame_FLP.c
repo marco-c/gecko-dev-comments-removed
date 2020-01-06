@@ -29,6 +29,7 @@
 #include "config.h"
 #endif
 
+#include <stdlib.h>
 #include "main_FLP.h"
 #include "tuning_parameters.h"
 
@@ -85,7 +86,6 @@ opus_int silk_encode_frame_FLP(
     silk_encoder_control_FLP sEncCtrl;
     opus_int     i, iter, maxIter, found_upper, found_lower, ret = 0;
     silk_float   *x_frame, *res_pitch_frame;
-    silk_float   xfw[ MAX_FRAME_LENGTH ];
     silk_float   res_pitch[ 2 * MAX_FRAME_LENGTH + LA_PITCH_MAX ];
     ec_enc       sRangeEnc_copy, sRangeEnc_copy2;
     silk_nsq_state sNSQ_copy, sNSQ_copy2;
@@ -97,6 +97,9 @@ opus_int silk_encode_frame_FLP(
     opus_int8    LastGainIndex_copy2;
     opus_int32   pGains_Q16[ MAX_NB_SUBFR ];
     opus_uint8   ec_buf_copy[ 1275 ];
+    opus_int     gain_lock[ MAX_NB_SUBFR ] = {0};
+    opus_int16   best_gain_mult[ MAX_NB_SUBFR ];
+    opus_int     best_sum[ MAX_NB_SUBFR ];
 
     
     LastGainIndex_copy2 = nBits_lower = nBits_upper = gainMult_lower = gainMult_upper = 0;
@@ -139,7 +142,7 @@ opus_int silk_encode_frame_FLP(
         
         
         
-        silk_find_pred_coefs_FLP( psEnc, &sEncCtrl, res_pitch, x_frame, condCoding );
+        silk_find_pred_coefs_FLP( psEnc, &sEncCtrl, res_pitch_frame, x_frame, condCoding );
 
         
         
@@ -149,12 +152,7 @@ opus_int silk_encode_frame_FLP(
         
         
         
-        silk_prefilter_FLP( psEnc, &sEncCtrl, xfw, x_frame );
-
-        
-        
-        
-        silk_LBRR_encode_FLP( psEnc, &sEncCtrl, xfw, condCoding );
+        silk_LBRR_encode_FLP( psEnc, &sEncCtrl, x_frame, condCoding );
 
         
         maxIter = 6;
@@ -188,7 +186,11 @@ opus_int silk_encode_frame_FLP(
                 
                 
                 
-                silk_NSQ_wrapper_FLP( psEnc, &sEncCtrl, &psEnc->sCmn.indices, &psEnc->sCmn.sNSQ, psEnc->sCmn.pulses, xfw );
+                silk_NSQ_wrapper_FLP( psEnc, &sEncCtrl, &psEnc->sCmn.indices, &psEnc->sCmn.sNSQ, psEnc->sCmn.pulses, x_frame );
+
+                if ( iter == maxIter && !found_lower ) {
+                    silk_memcpy( &sRangeEnc_copy2, psRangeEnc, sizeof( ec_enc ) );
+                }
 
                 
                 
@@ -202,6 +204,33 @@ opus_int silk_encode_frame_FLP(
                       psEnc->sCmn.pulses, psEnc->sCmn.frame_length );
 
                 nBits = ec_tell( psRangeEnc );
+
+                
+                if ( iter == maxIter && !found_lower && nBits > maxBits ) {
+                    silk_memcpy( psRangeEnc, &sRangeEnc_copy2, sizeof( ec_enc ) );
+
+                    
+                    psEnc->sShape.LastGainIndex = sEncCtrl.lastGainIndexPrev;
+                    for ( i = 0; i < psEnc->sCmn.nb_subfr; i++ ) {
+                        psEnc->sCmn.indices.GainsIndices[ i ] = 4;
+                    }
+                    if (condCoding != CODE_CONDITIONALLY) {
+                       psEnc->sCmn.indices.GainsIndices[ 0 ] = sEncCtrl.lastGainIndexPrev;
+                    }
+                    psEnc->sCmn.ec_prevLagIndex = ec_prevLagIndex_copy;
+                    psEnc->sCmn.ec_prevSignalType = ec_prevSignalType_copy;
+                    
+                    for ( i = 0; i < psEnc->sCmn.frame_length; i++ ) {
+                        psEnc->sCmn.pulses[ i ] = 0;
+                    }
+
+                    silk_encode_indices( &psEnc->sCmn, psRangeEnc, psEnc->sCmn.nFramesEncoded, 0, condCoding );
+
+                    silk_encode_pulses( psRangeEnc, psEnc->sCmn.indices.signalType, psEnc->sCmn.indices.quantOffsetType,
+                        psEnc->sCmn.pulses, psEnc->sCmn.frame_length );
+
+                    nBits = ec_tell( psRangeEnc );
+                }
 
                 if( useCBR == 0 && iter == 0 && nBits <= maxBits ) {
                     break;
@@ -223,7 +252,9 @@ opus_int silk_encode_frame_FLP(
             if( nBits > maxBits ) {
                 if( found_lower == 0 && iter >= 2 ) {
                     
-                    sEncCtrl.Lambda *= 1.5f;
+                    sEncCtrl.Lambda = silk_max_float(sEncCtrl.Lambda*1.5f, 1.5f);
+                    
+                    psEnc->sCmn.indices.quantOffsetType = 0;
                     found_upper = 0;
                     gainsID_upper = -1;
                 } else {
@@ -250,15 +281,34 @@ opus_int silk_encode_frame_FLP(
                 break;
             }
 
+            if ( !found_lower && nBits > maxBits ) {
+                int j;
+                for ( i = 0; i < psEnc->sCmn.nb_subfr; i++ ) {
+                    int sum=0;
+                    for ( j = i*psEnc->sCmn.subfr_length; j < (i+1)*psEnc->sCmn.subfr_length; j++ ) {
+                        sum += abs( psEnc->sCmn.pulses[j] );
+                    }
+                    if ( iter == 0 || (sum < best_sum[i] && !gain_lock[i]) ) {
+                        best_sum[i] = sum;
+                        best_gain_mult[i] = gainMult_Q8;
+                    } else {
+                        gain_lock[i] = 1;
+                    }
+                }
+            }
             if( ( found_lower & found_upper ) == 0 ) {
                 
-                opus_int32 gain_factor_Q16;
-                gain_factor_Q16 = silk_log2lin( silk_LSHIFT( nBits - maxBits, 7 ) / psEnc->sCmn.frame_length + SILK_FIX_CONST( 16, 7 ) );
-                gain_factor_Q16 = silk_min_32( gain_factor_Q16, SILK_FIX_CONST( 2, 16 ) );
                 if( nBits > maxBits ) {
-                    gain_factor_Q16 = silk_max_32( gain_factor_Q16, SILK_FIX_CONST( 1.3, 16 ) );
+                    if (gainMult_Q8 < 16384) {
+                        gainMult_Q8 *= 2;
+                    } else {
+                        gainMult_Q8 = 32767;
+                    }
+                } else {
+                    opus_int32 gain_factor_Q16;
+                    gain_factor_Q16 = silk_log2lin( silk_LSHIFT( nBits - maxBits, 7 ) / psEnc->sCmn.frame_length + SILK_FIX_CONST( 16, 7 ) );
+                    gainMult_Q8 = silk_SMULWB( gain_factor_Q16, gainMult_Q8 );
                 }
-                gainMult_Q8 = silk_SMULWB( gain_factor_Q16, gainMult_Q8 );
             } else {
                 
                 gainMult_Q8 = gainMult_lower + ( ( gainMult_upper - gainMult_lower ) * ( maxBits - nBits_lower ) ) / ( nBits_upper - nBits_lower );
@@ -272,7 +322,13 @@ opus_int silk_encode_frame_FLP(
             }
 
             for( i = 0; i < psEnc->sCmn.nb_subfr; i++ ) {
-                pGains_Q16[ i ] = silk_LSHIFT_SAT32( silk_SMULWB( sEncCtrl.GainsUnq_Q16[ i ], gainMult_Q8 ), 8 );
+                opus_int16 tmp;
+                if ( gain_lock[i] ) {
+                    tmp = best_gain_mult[i];
+                } else {
+                    tmp = gainMult_Q8;
+                }
+                pGains_Q16[ i ] = silk_LSHIFT_SAT32( silk_SMULWB( sEncCtrl.GainsUnq_Q16[ i ], tmp ), 8 );
             }
 
             

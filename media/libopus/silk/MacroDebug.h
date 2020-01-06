@@ -541,7 +541,6 @@ static OPUS_INLINE opus_int32 silk_DIV32_16_(opus_int32 a32, opus_int32 b32, cha
 
 
 
-
 #undef silk_LSHIFT8
 #define silk_LSHIFT8(a,b) silk_LSHIFT8_((a), (b), __FILE__, __LINE__)
 static OPUS_INLINE opus_int8 silk_LSHIFT8_(opus_int8 a, opus_int32 shift, char *file, int line){

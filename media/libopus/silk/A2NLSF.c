@@ -40,7 +40,7 @@
 
 
 #define BIN_DIV_STEPS_A2NLSF_FIX      3 /* must be no higher than 16 - log2( LSF_COS_TAB_SZ_FIX ) */
-#define MAX_ITERATIONS_A2NLSF_FIX    30
+#define MAX_ITERATIONS_A2NLSF_FIX    16
 
 
 
@@ -130,7 +130,7 @@ void silk_A2NLSF(
     const opus_int              d                   
 )
 {
-    opus_int      i, k, m, dd, root_ix, ffrac;
+    opus_int   i, k, m, dd, root_ix, ffrac;
     opus_int32 xlo, xhi, xmid;
     opus_int32 ylo, yhi, ymid, thr;
     opus_int32 nom, den;
@@ -239,13 +239,13 @@ void silk_A2NLSF(
                     
                     NLSF[ 0 ] = (opus_int16)silk_DIV32_16( 1 << 15, d + 1 );
                     for( k = 1; k < d; k++ ) {
-                        NLSF[ k ] = (opus_int16)silk_SMULBB( k + 1, NLSF[ 0 ] );
+                        NLSF[ k ] = (opus_int16)silk_ADD16( NLSF[ k-1 ], NLSF[ 0 ] );
                     }
                     return;
                 }
 
                 
-                silk_bwexpander_32( a_Q16, d, 65536 - silk_SMULBB( 10 + i, i ) ); 
+                silk_bwexpander_32( a_Q16, d, 65536 - silk_LSHIFT( 1, i ) );
 
                 silk_A2NLSF_init( a_Q16, P, Q, dd );
                 p = P;                            
