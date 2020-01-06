@@ -248,6 +248,17 @@ TextComposition::DispatchCompositionEvent(
 
   
   
+  
+  
+  
+  
+  if (mRequestedToCommitOrCancel && !aIsSynthesized) {
+    *aStatus = nsEventStatus_eConsumeNoDefault;
+    return;
+  }
+
+  
+  
   if (mTabParent) {
     Unused << mTabParent->SendCompositionEvent(*aCompositionEvent);
     aCompositionEvent->StopPropagation();
@@ -290,17 +301,6 @@ TextComposition::DispatchCompositionEvent(
   }
 
   if (!IsValidStateForComposition(aCompositionEvent->mWidget)) {
-    *aStatus = nsEventStatus_eConsumeNoDefault;
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  if (mRequestedToCommitOrCancel && !aIsSynthesized) {
     *aStatus = nsEventStatus_eConsumeNoDefault;
     return;
   }
