@@ -29,7 +29,7 @@ __all__ = ['extract_tarball',
 try:
     WindowsError
 except NameError:
-    WindowsError = None 
+    WindowsError = None  
 
 
 
@@ -54,7 +54,7 @@ def extract_zip(src, dest):
     else:
         try:
             bundle = zipfile.ZipFile(src)
-        except Exception, e:
+        except Exception:
             print "src: %s" % src
             raise
 
@@ -179,6 +179,7 @@ def remove(path):
         os.chmod(path, path_stats.st_mode | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
         _call_with_windows_retry(shutil.rmtree, path)
 
+
 def depth(directory):
     """returns the integer depth of a directory or path relative to '/' """
 
@@ -192,18 +193,20 @@ def depth(directory):
     return level
 
 
+
 ascii_delimeters = {
-    'vertical_line' : '|',
-    'item_marker'   : '+',
-    'last_child'    : '\\'
+    'vertical_line': '|',
+    'item_marker': '+',
+    'last_child': '\\'
     }
 
 
 unicode_delimeters = {
-    'vertical_line' : '│',
-    'item_marker'   : '├',
-    'last_child'    : '└'
+    'vertical_line': '│',
+    'item_marker': '├',
+    'last_child': '└'
     }
+
 
 def tree(directory,
          item_marker=unicode_delimeters['item_marker'],
@@ -230,8 +233,7 @@ def tree(directory,
         for resource in (dirnames, filenames):
             resource[:] = sorted(resource, key=sort_key)
 
-        files_end =  item_marker
-        dirpath_marker = item_marker
+        files_end = item_marker
 
         if level > len(indent):
             indent.append(vertical_line)
@@ -254,16 +256,14 @@ def tree(directory,
 
         
         
-        retval.append('%s%s%s'% (''.join(indent[:-1]),
-                                 dirpath_mark,
-                                 basename if retval else directory))
+        retval.append('%s%s%s' % (''.join(indent[:-1]),
+                      dirpath_mark, basename if retval else directory))
         
         if filenames:
             last_file = filenames[-1]
             retval.extend([('%s%s%s' % (''.join(indent),
-                                        files_end if filename == last_file else item_marker,
-                                        filename))
-                                        for index, filename in enumerate(filenames)])
+                          files_end if filename == last_file else item_marker, filename))
+                          for index, filename in enumerate(filenames)])
 
     return '\n'.join(retval)
 
@@ -353,6 +353,7 @@ def is_url(thing):
     else:
         return len(parsed[0]) >= 2
 
+
 def load(resource):
     """
     open a file or URL for reading.  If the passed resource string is not a URL,
@@ -369,4 +370,3 @@ def load(resource):
         return file(resource)
 
     return urllib2.urlopen(resource)
-
