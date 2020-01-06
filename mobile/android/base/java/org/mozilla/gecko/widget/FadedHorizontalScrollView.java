@@ -16,11 +16,16 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Shader;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
+import android.view.TouchDelegate;
 import android.view.View;
 import android.widget.HorizontalScrollView;
 
 import org.mozilla.gecko.AppConstants.Versions;
 import org.mozilla.gecko.R;
+
+
+
 
 
 
@@ -38,6 +43,8 @@ public class FadedHorizontalScrollView extends HorizontalScrollView {
     private float mFadeTop;
     private float mFadeBottom;
     private boolean mVerticalFadeBordersDirty;
+
+    private boolean mInterceptingTouchEvents;
 
     public FadedHorizontalScrollView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -155,5 +162,31 @@ public class FadedHorizontalScrollView extends HorizontalScrollView {
             setShader(fade);
             setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT));
         }
+    }
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        
+        
+        
+        mInterceptingTouchEvents = false;
+
+        final boolean intercept = super.onInterceptTouchEvent(ev);
+        if (intercept) {
+            mInterceptingTouchEvents = true;
+        }
+        return intercept;
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent ev) {
+        if (!mInterceptingTouchEvents) {
+            final TouchDelegate touchDelegate = getTouchDelegate();
+            if (touchDelegate != null && touchDelegate.onTouchEvent(ev)) {
+                return true;
+            }
+        }
+
+        return super.onTouchEvent(ev);
     }
 }
