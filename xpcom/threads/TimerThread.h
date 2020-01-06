@@ -19,7 +19,6 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Monitor.h"
-#include "mozilla/UniquePtr.h"
 
 #include <algorithm>
 
@@ -111,8 +110,7 @@ private:
     }
 
     static bool
-    UniquePtrLessThan(mozilla::UniquePtr<Entry>& aLeft,
-                      mozilla::UniquePtr<Entry>& aRight)
+    UniquePtrLessThan(UniquePtr<Entry>& aLeft, UniquePtr<Entry>& aRight)
     {
       
       
@@ -125,7 +123,7 @@ private:
     }
   };
 
-  nsTArray<mozilla::UniquePtr<Entry>> mTimers;
+  nsTArray<UniquePtr<Entry>> mTimers;
   uint32_t mAllowedEarlyFiringMicroseconds;
 };
 
