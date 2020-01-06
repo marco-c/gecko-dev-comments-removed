@@ -216,9 +216,13 @@ public:
     mOffset = mozilla::Some(aOffset);
   }
   void
-  Set(const nsIContent* aChild)
+  Set(const nsINode* aChild)
   {
     MOZ_ASSERT(aChild);
+    if (!aChild->IsContent()) {
+      Clear();
+      return;
+    }
     mParent = aChild->GetParentNode();
     mRef = aChild->GetPreviousSibling();
     if (!mRef) {
@@ -247,11 +251,13 @@ public:
 
 
 
-  void
+
+
+  bool
   AdvanceOffset()
   {
     if (NS_WARN_IF(!mParent)) {
-      return;
+      return false;
     }
     EnsureRef();
     if (!mRef) {
@@ -260,30 +266,31 @@ public:
         MOZ_ASSERT(mOffset.isSome());
         if (NS_WARN_IF(mOffset.value() == mParent->Length())) {
           
-          return;
+          return false;
         }
         mOffset = mozilla::Some(mOffset.value() + 1);
-        return;
+        return true;
       }
       mRef = mParent->GetFirstChild();
       if (NS_WARN_IF(!mRef)) {
         
         mOffset = mozilla::Some(0);
-      } else {
-        mOffset = mozilla::Some(1);
+        return false;
       }
-      return;
+      mOffset = mozilla::Some(1);
+      return true;
     }
 
     nsIContent* nextSibling = mRef->GetNextSibling();
     if (NS_WARN_IF(!nextSibling)) {
       
-      return;
+      return false;
     }
     mRef = nextSibling;
     if (mOffset.isSome()) {
       mOffset = mozilla::Some(mOffset.value() + 1);
     }
+    return true;
   }
 
   
@@ -294,33 +301,36 @@ public:
 
 
 
-  void
+
+
+  bool
   RewindOffset()
   {
     if (NS_WARN_IF(!mParent)) {
-      return;
+      return false;
     }
     EnsureRef();
     if (!mRef) {
       if (NS_WARN_IF(mParent->IsContainerNode())) {
         
         mOffset = mozilla::Some(0);
-        return;
+        return false;
       }
       
       MOZ_ASSERT(mOffset.isSome());
       if (NS_WARN_IF(mOffset.value() == 0)) {
         
-        return;
+        return false;
       }
       mOffset = mozilla::Some(mOffset.value() - 1);
-      return;
+      return true;
     }
 
     mRef = mRef->GetPreviousSibling();
     if (mOffset.isSome()) {
       mOffset = mozilla::Some(mOffset.value() - 1);
     }
+    return true;
   }
 
   void
