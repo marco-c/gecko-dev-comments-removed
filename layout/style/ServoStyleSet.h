@@ -432,6 +432,16 @@ public:
     mNeedsRestyleAfterEnsureUniqueInner = true;
   }
 
+  
+
+
+
+
+
+
+
+  bool MightHaveAttributeDependency(nsIAtom* aAttribute);
+
 private:
   
   
