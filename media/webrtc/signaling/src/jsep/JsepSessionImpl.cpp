@@ -727,6 +727,7 @@ JsepSessionImpl::CreateOffer(const JsepOfferOptions& options,
                              std::string* offer)
 {
   mLastError.clear();
+  mLocalIceIsRestarting = options.mIceRestart.isSome() && *(options.mIceRestart);
 
   if (mState != kJsepStateStable) {
     JSEP_SET_ERROR("Cannot create offer in state " << GetStateStr(mState));
@@ -1994,6 +1995,15 @@ JsepSessionImpl::ValidateRemoteDescription(const Sdp& description)
     }
 
     bool differ = mSdpHelper.IceCredentialsDiffer(newMsection, oldMsection);
+
+    
+    if (mIsOfferer && differ && !mLocalIceIsRestarting) {
+      JSEP_SET_ERROR("Remote description indicates ICE restart but offer did not "
+                     "request ICE restart (new remote description changes either "
+                     "the ice-ufrag or ice-pwd)");
+      return NS_ERROR_INVALID_ARG;
+    }
+
     
     if (!iceCredsDiffer.isSome()) {
       

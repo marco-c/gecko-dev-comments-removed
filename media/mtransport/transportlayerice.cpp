@@ -102,6 +102,17 @@ void TransportLayerIce::SetParameters(RefPtr<NrIceCtx> ctx,
   
   
   
+  
+  
+  
+  if (!stream) {
+    MOZ_ASSERT(false);
+    return;
+  }
+
+  
+  
+  
   if (stream_ && !old_stream_ && (stream_ != stream)) {
     
     
