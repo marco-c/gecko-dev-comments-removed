@@ -7,6 +7,10 @@
 
 #include "DecoderData.h"
 
+namespace mozilla {
+class BitReader;
+}
+
 namespace mp4_demuxer {
 
 
@@ -33,8 +37,6 @@ enum NAL_TYPES {
     H264_NAL_SLICE_EXT       = 20,
     H264_NAL_SLICE_EXT_DVC   = 21,
 };
-
-class BitReader;
 
 struct SPSData
 {
@@ -485,9 +487,9 @@ private:
     const uint8_t* aNAL, size_t aLength);
   
   static bool DecodeSPS(const mozilla::MediaByteBuffer* aSPS, SPSData& aDest);
-  static bool vui_parameters(BitReader& aBr, SPSData& aDest);
+  static bool vui_parameters(mozilla::BitReader& aBr, SPSData& aDest);
   
-  static void hrd_parameters(BitReader& aBr);
+  static void hrd_parameters(mozilla::BitReader& aBr);
   static uint8_t NumSPS(const mozilla::MediaByteBuffer* aExtraData);
   
   

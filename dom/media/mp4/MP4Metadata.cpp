@@ -22,10 +22,12 @@
 
 using mozilla::media::TimeUnit;
 
+namespace mozilla {
+LazyLogModule gMP4MetadataLog("MP4Metadata");
+}
+
 namespace mp4_demuxer
 {
-
-LazyLogModule gMP4MetadataLog("MP4Metadata");
 
 
 

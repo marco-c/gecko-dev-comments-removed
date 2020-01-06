@@ -84,7 +84,7 @@ public:
 
   
   
-  Result<uint32_t, nsresult> Parse(mp4_demuxer::BufferReader* aReader);
+  Result<uint32_t, nsresult> Parse(BufferReader* aReader);
 
   
   void Reset();
@@ -228,20 +228,20 @@ public:
     
     
     
-    bool Parse(mp4_demuxer::BufferReader* aReader);
+    bool Parse(BufferReader* aReader);
 
   private:
     
     
     
-    Result<bool, nsresult> ParseXing(mp4_demuxer::BufferReader* aReader);
+    Result<bool, nsresult> ParseXing(BufferReader* aReader);
 
     
     
     
     
     
-    Result<bool, nsresult> ParseVBRI(mp4_demuxer::BufferReader* aReader);
+    Result<bool, nsresult> ParseVBRI(BufferReader* aReader);
 
     
     Maybe<uint32_t> mNumAudioFrames;
@@ -316,13 +316,13 @@ public:
   
   
   
-  Result<bool, nsresult> Parse(mp4_demuxer::BufferReader* aReader, uint32_t* aBytesToSkip);
+  Result<bool, nsresult> Parse(BufferReader* aReader, uint32_t* aBytesToSkip);
 
   
   
   
   
-  bool ParseVBRHeader(mp4_demuxer::BufferReader* aReader);
+  bool ParseVBRHeader(BufferReader* aReader);
 
 private:
   
