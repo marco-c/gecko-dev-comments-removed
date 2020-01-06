@@ -162,14 +162,14 @@ nsRFPService::UpdatePref()
         PR_SetEnv(tz);
       }
     } else {
-#if defined(XP_LINUX) || defined (XP_MACOSX)
-      
-      
-      PR_SetEnv("TZ=:/etc/localtime");
-#else
+#if defined(XP_WIN)
       
       
       PR_SetEnv("TZ=");
+#else
+      
+      
+      PR_SetEnv("TZ=:/etc/localtime");
 #endif
     }
   }
