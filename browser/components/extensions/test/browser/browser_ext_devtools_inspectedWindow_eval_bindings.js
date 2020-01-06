@@ -2,10 +2,8 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetter(this, "gDevTools",
-                                  "resource://devtools/client/framework/gDevTools.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "devtools",
-                                  "resource://devtools/shared/Loader.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "DevToolsShim",
+                                  "chrome://devtools-shim/content/DevToolsShim.jsm");
 
 
 
@@ -56,7 +54,9 @@ add_task(async function test_devtools_inspectedWindow_eval_bindings() {
 
   await extension.startup();
 
-  const target = devtools.TargetFactory.forTab(tab);
+  const {gDevTools} = DevToolsShim;
+
+  const target = gDevTools.getTargetForTab(tab);
   
   
   const toolbox = await gDevTools.showToolbox(target, "styleeditor");
