@@ -5,9 +5,6 @@
 
 
 
-
-
-
 "use strict";
 
 
@@ -18,6 +15,9 @@ Services.scriptloader.loadSubScript(
 
 var {HUDService} = require("devtools/client/webconsole/hudservice");
 var WCUL10n = require("devtools/client/webconsole/webconsole-l10n");
+const DOCS_GA_PARAMS = "?utm_source=mozilla" +
+                       "&utm_medium=firefox-console-errors" +
+                       "&utm_campaign=default";
 
 Services.prefs.setBoolPref("devtools.webconsole.new-frontend-enabled", true);
 registerCleanupFunction(function* () {
@@ -363,4 +363,28 @@ async function openConsole(tab) {
   let target = TargetFactory.forTab(tab || gBrowser.selectedTab);
   const toolbox = await gDevTools.showToolbox(target, "webconsole");
   return toolbox.getCurrentPanel().hud;
-};
+}
+
+
+
+
+
+
+
+
+
+
+
+function simulateLinkClick(element) {
+  return new Promise((resolve) => {
+    
+    let oldOpenUILinkIn = window.openUILinkIn;
+    window.openUILinkIn = function (link) {
+      window.openUILinkIn = oldOpenUILinkIn;
+      resolve(link);
+    };
+
+    
+    element.click();
+  });
+}
