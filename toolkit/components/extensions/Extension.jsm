@@ -77,6 +77,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "require",
                                   "resource://devtools/shared/Loader.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Schemas",
                                   "resource://gre/modules/Schemas.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "setTimeout",
+                                  "resource://gre/modules/Timer.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryStopwatch",
                                   "resource://gre/modules/TelemetryStopwatch.jsm");
 
@@ -114,6 +116,8 @@ XPCOMUtils.defineLazyGetter(this, "console", ExtensionUtils.getConsole);
 
 XPCOMUtils.defineLazyGetter(this, "LocaleData", () => ExtensionCommon.LocaleData);
 
+
+const SHUTDOWN_BLOCKER_MAX_MS = 1000;
 
 
 XPCOMUtils.defineLazyGetter(this, "allowedThemeProperties", () => {
@@ -1087,9 +1091,6 @@ this.Extension = class extends ExtensionData {
   startup() {
     this.startupPromise = this._startup();
 
-    this._startupComplete = this.startupPromise.catch(() => {});
-    OS.File.shutdown.addBlocker("Extension startup", this._startupComplete);
-
     return this.startupPromise;
   }
 
@@ -1209,9 +1210,16 @@ this.Extension = class extends ExtensionData {
   async shutdown(reason) {
     let promise = this._shutdown(reason);
 
+    let blocker = () => {
+      return Promise.race([
+        promise,
+        new Promise(resolve => setTimeout(resolve, SHUTDOWN_BLOCKER_MAX_MS)),
+      ]);
+    };
+
     AsyncShutdown.profileChangeTeardown.addBlocker(
       `Extension Shutdown: ${this.id} (${this.manifest && this.name})`,
-      promise.catch(() => {}));
+      blocker);
 
     
     
@@ -1223,6 +1231,7 @@ this.Extension = class extends ExtensionData {
 
     let cleanup = () => {
       shutdownPromises.delete(this.id);
+      AsyncShutdown.profileChangeTeardown.removeBlocker(blocker);
     };
     shutdownPromises.set(this.id, promise.then(cleanup, cleanup));
 
