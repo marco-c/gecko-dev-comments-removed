@@ -747,19 +747,18 @@ MediaFormatReader::DecoderFactory::DoCreateDecoder(Data& aData)
     case TrackType::kVideoTrack: {
       
       
-      aData.mDecoder = mOwner->mPlatform->CreateDecoder({
-        ownerData.mInfo
-        ? *ownerData.mInfo->GetAsVideoInfo()
-        : *ownerData.mOriginalInfo->GetAsVideoInfo(),
-        ownerData.mTaskQueue,
-        mOwner->mKnowsCompositor,
-        mOwner->GetImageContainer(),
-        mOwner->mCrashHelper,
-        CreateDecoderParams::UseNullDecoder(ownerData.mIsNullDecode),
-        &result,
-        TrackType::kVideoTrack,
-        &mOwner->OnTrackWaitingForKeyProducer()
-      });
+      aData.mDecoder = mOwner->mPlatform->CreateDecoder(
+        { ownerData.mInfo ? *ownerData.mInfo->GetAsVideoInfo()
+                          : *ownerData.mOriginalInfo->GetAsVideoInfo(),
+          ownerData.mTaskQueue,
+          mOwner->mKnowsCompositor,
+          mOwner->GetImageContainer(),
+          mOwner->mCrashHelper,
+          CreateDecoderParams::UseNullDecoder(ownerData.mIsNullDecode),
+          &result,
+          TrackType::kVideoTrack,
+          &mOwner->OnTrackWaitingForKeyProducer(),
+          CreateDecoderParams::VideoFrameRate(ownerData.mMeanRate.Mean()) });
       break;
     }
 
@@ -2091,6 +2090,8 @@ MediaFormatReader::HandleDemuxedSamples(
       decoder.mLastStreamSourceID = info->GetID();
       decoder.mInfo = info;
 
+      decoder.mMeanRate.Reset();
+
       if (sample->mKeyframe) {
         if (samples.Length()) {
           decoder.mQueuedSamples = Move(samples);
@@ -2105,6 +2106,10 @@ MediaFormatReader::HandleDemuxedSamples(
         return;
       }
     }
+
+    
+    
+    decoder.mMeanRate.Update(sample->mDuration);
 
     if (!decoder.mDecoder) {
       mDecoderFactory->CreateDecoder(aTrack);
