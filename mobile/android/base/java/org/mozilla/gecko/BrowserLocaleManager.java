@@ -355,6 +355,11 @@ public class BrowserLocaleManager implements LocaleManager {
         return currentLocale = Locales.parseLocaleCode(current);
     }
 
+    @Override
+    public Locale getDefaultSystemLocale() {
+        return systemLocale;
+    }
+
     
 
 
@@ -395,7 +400,8 @@ public class BrowserLocaleManager implements LocaleManager {
         return locale.toString();
     }
 
-    private boolean isMirroringSystemLocale(final Context context) {
+    @Override
+    public boolean isMirroringSystemLocale(Context context) {
         return getPersistedLocale(context) == null;
     }
 
@@ -466,7 +472,15 @@ public class BrowserLocaleManager implements LocaleManager {
     @WrapForJNI
     private static String getLocale() {
         try {
-            return Locales.getLocaleManager().getCurrentLocale(GeckoAppShell.getApplicationContext()).toString();
+            LocaleManager localeManager = Locales.getLocaleManager();
+            Context context = GeckoAppShell.getApplicationContext();
+            if (!localeManager.isMirroringSystemLocale(context)) {
+                
+                return Locales.getLanguageTag(localeManager.getCurrentLocale(context));
+            }
+            
+            Locale locale = localeManager.getDefaultSystemLocale();
+            return Locales.getLanguageTag(locale);
         } catch (NullPointerException e) {
             Log.i(LOG_TAG, "Couldn't get current locale.");
             return null;
