@@ -255,6 +255,12 @@ var ProcessHangMonitor = {
         win.addEventListener("load", listener, true);
         break;
       }
+
+      case "domwindowclosed": {
+        let win = subject.QueryInterface(Ci.nsIDOMWindow);
+        this.onWindowClosed(win);
+        break;
+      }
     }
   },
 
@@ -267,6 +273,48 @@ var ProcessHangMonitor = {
   onQuitApplicationGranted() {
     this._shuttingDown = true;
     this.stopAllHangs();
+    this.updateWindows();
+  },
+
+  onWindowClosed(win) {
+    let maybeStopHang = (report) => {
+      if (report.hangType == report.SLOW_SCRIPT) {
+        let hungBrowserWindow = null;
+        try {
+          hungBrowserWindow = report.scriptBrowser.ownerGlobal;
+        } catch (e) {
+          
+          
+          
+          
+        }
+        if (!hungBrowserWindow || hungBrowserWindow == win) {
+          this.stopHang(report);
+          return true;
+        }
+      } else if (report.hangType == report.PLUGIN_HANG) {
+        
+        
+        this.stopHang(report);
+        return true;
+      }
+      return false;
+    }
+
+    
+    
+    for (let report of this._activeReports) {
+      if (maybeStopHang(report)) {
+        this._activeReports.delete(report);
+      }
+    }
+
+    for (let [pausedReport, ] of this._pausedReports) {
+      if (maybeStopHang(pausedReport)) {
+        this.removePausedReport(pausedReport);
+      }
+    }
+
     this.updateWindows();
   },
 
