@@ -100,15 +100,14 @@ ExpandedPrincipal::SubsumesInternal(nsIPrincipal* aOther,
 {
   
   
-  nsCOMPtr<nsIExpandedPrincipal> expanded = do_QueryInterface(aOther);
-  if (expanded) {
-    nsTArray< nsCOMPtr<nsIPrincipal> >* otherList;
-    expanded->GetWhiteList(&otherList);
-    for (uint32_t i = 0; i < otherList->Length(); ++i){
+  if (Cast(aOther)->Is<ExpandedPrincipal>()) {
+    auto* expanded = Cast(aOther)->As<ExpandedPrincipal>();
+
+    for (auto& other : expanded->WhiteList()) {
       
       
       
-      if (!SubsumesInternal((*otherList)[i], aConsideration)) {
+      if (!SubsumesInternal(other, aConsideration)) {
         return false;
       }
     }
@@ -151,11 +150,10 @@ ExpandedPrincipal::GetURI(nsIURI** aURI)
   return NS_OK;
 }
 
-NS_IMETHODIMP
-ExpandedPrincipal::GetWhiteList(nsTArray<nsCOMPtr<nsIPrincipal> >** aWhiteList)
+const nsTArray<nsCOMPtr<nsIPrincipal>>&
+ExpandedPrincipal::WhiteList()
 {
-  *aWhiteList = &mPrincipals;
-  return NS_OK;
+  return mPrincipals;
 }
 
 NS_IMETHODIMP
