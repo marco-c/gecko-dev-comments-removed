@@ -1339,7 +1339,7 @@ NativeFileWatcherService::AddPath(const nsAString& aPathToWatch,
   }
 
   
-  wrappedCallbacks.release();
+  Unused << wrappedCallbacks.release();
 
   WakeUpWorkerThread();
 
@@ -1413,7 +1413,7 @@ NativeFileWatcherService::RemovePath(const nsAString& aPathToRemove,
   }
 
   
-  wrappedCallbacks.release();
+  Unused << wrappedCallbacks.release();
 
   WakeUpWorkerThread();
 
