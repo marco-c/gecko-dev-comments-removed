@@ -408,6 +408,11 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
     }
 
     
+    fn contains_roots_of_absolute_flow_tree(&self) -> bool {
+        self.contains_relatively_positioned_fragments() || self.is_root()
+    }
+
+    
     
     fn update_late_computed_inline_position_if_necessary(&mut self, inline_position: Au);
 
@@ -501,9 +506,6 @@ pub trait ImmutableFlowUtils {
 
     
     fn is_table_kind(self) -> bool;
-
-    
-    fn contains_roots_of_absolute_flow_tree(&self) -> bool;
 
     
     fn is_leaf(self) -> bool;
@@ -1196,11 +1198,6 @@ impl<'a> ImmutableFlowUtils for &'a Flow {
                 FlowClass::TableRow | FlowClass::TableCaption | FlowClass::TableCell => true,
             _ => false,
         }
-    }
-
-    
-    fn contains_roots_of_absolute_flow_tree(&self) -> bool {
-        self.contains_relatively_positioned_fragments() || self.is_root()
     }
 
     
