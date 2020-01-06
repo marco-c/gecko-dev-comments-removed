@@ -41,6 +41,11 @@ pub struct Opts {
 
     
     
+    
+    
+    
+    
+    
     pub time_profiling: Option<OutputOptions>,
 
     
@@ -419,8 +424,10 @@ fn print_debug_usage(app: &str) -> ! {
 
 #[derive(Clone, Deserialize, Serialize)]
 pub enum OutputOptions {
+    
+    DB(ServoUrl, Option<String>, Option<String>, Option<String>),
     FileName(String),
-    Stdout(f64)
+    Stdout(f64),
 }
 
 fn args_fail(msg: &str) -> ! {
@@ -598,6 +605,9 @@ pub fn from_cmdline_args(args: &[String]) -> ArgumentParsingResult {
                     "config directory following xdg spec on linux platform", "");
     opts.optflag("v", "version", "Display servo version information");
     opts.optflag("", "unminify-js", "Unminify Javascript");
+    opts.optopt("", "profiler-db-user", "Profiler database user", "");
+    opts.optopt("", "profiler-db-pass", "Profiler database password", "");
+    opts.optopt("", "profiler-db-name", "Profiler database name", "");
 
     let opt_match = match opts.parse(args) {
         Ok(m) => m,
@@ -666,7 +676,14 @@ pub fn from_cmdline_args(args: &[String]) -> ArgumentParsingResult {
         match opt_match.opt_str("p") {
             Some(argument) => match argument.parse::<f64>() {
                 Ok(interval) => Some(OutputOptions::Stdout(interval)) ,
-                Err(_) => Some(OutputOptions::FileName(argument)),
+                Err(_) => {
+                    match ServoUrl::parse(&argument) {
+                        Ok(url) => Some(OutputOptions::DB(url, opt_match.opt_str("profiler-db-name"),
+                                                          opt_match.opt_str("profiler-db-user"),
+                                                          opt_match.opt_str("profiler-db-pass"))),
+                        Err(_) => Some(OutputOptions::FileName(argument)),
+                    }
+                }
             },
             None => Some(OutputOptions::Stdout(5.0 as f64)),
         }
