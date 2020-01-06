@@ -2,13 +2,6 @@
 
 "use strict";
 
-
-add_task(async function setup() {
-  await SpecialPowers.pushPrefEnv({
-    "set": [["toolkit.cosmeticAnimations.enabled", true]]
-  });
-});
-
 add_task(async function testPopupSelectPopup() {
   let extension = ExtensionTestUtils.loadExtension({
     background() {

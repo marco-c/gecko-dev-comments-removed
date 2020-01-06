@@ -68,16 +68,11 @@ const PREF_SECURITY_DELAY_INITIAL = Services.prefs.getIntPref("security.notifica
 
 
 function setup() {
-  
-  const origAnimationsPrefValue = Services.prefs.getBoolPref("toolkit.cosmeticAnimations.enabled");
-  Services.prefs.setBoolPref("toolkit.cosmeticAnimations.enabled", true);
-
   BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/")
                   .then(goNext);
   registerCleanupFunction(() => {
     gBrowser.removeTab(gBrowser.selectedTab);
     PopupNotifications.buttonDelay = PREF_SECURITY_DELAY_INITIAL;
-    Services.prefs.setBoolPref("toolkit.cosmeticAnimations.enabled", origAnimationsPrefValue);
   });
 }
 
