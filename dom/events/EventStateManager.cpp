@@ -2631,7 +2631,7 @@ EventStateManager::DoScrollText(nsIScrollableFrame* aScrollableFrame,
   }
 
   nsIScrollbarMediator::ScrollSnapMode snapMode = nsIScrollbarMediator::DISABLE_SNAP;
-  nsAtom* origin = nullptr;
+  nsIAtom* origin = nullptr;
   switch (aEvent->mDeltaMode) {
     case nsIDOMWheelEvent::DOM_DELTA_LINE:
       origin = nsGkAtoms::mouseWheel;
@@ -4276,7 +4276,8 @@ EventStateManager::GeneratePointerEnterExit(EventMessage aMessage,
  void
 EventStateManager::UpdateLastRefPointOfMouseEvent(WidgetMouseEvent* aMouseEvent)
 {
-  if (aMouseEvent->mMessage != eMouseMove) {
+  if (aMouseEvent->mMessage != eMouseMove &&
+      aMouseEvent->mMessage != ePointerMove) {
     return;
   }
 
@@ -4309,9 +4310,14 @@ EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
                      WidgetMouseEvent* aMouseEvent)
 {
   MOZ_ASSERT(sIsPointerLocked);
-  if (aMouseEvent->mMessage != eMouseMove || !aMouseEvent->mWidget) {
+  if ((aMouseEvent->mMessage != eMouseMove &&
+       aMouseEvent->mMessage != ePointerMove) || !aMouseEvent->mWidget) {
     return;
   }
+
+  
+  
+  bool updateSynthCenteringPoint = aMouseEvent->mMessage == eMouseMove;
 
   
   
@@ -4322,7 +4328,7 @@ EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
   LayoutDeviceIntPoint center =
     GetWindowClientRectCenter(aMouseEvent->mWidget);
 
-  if (aMouseEvent->mRefPoint != center) {
+  if (aMouseEvent->mRefPoint != center && updateSynthCenteringPoint) {
     
     
     
@@ -4337,7 +4343,9 @@ EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
     aMouseEvent->StopPropagation();
     
     
-    sSynthCenteringPoint = kInvalidRefPoint;
+    if (updateSynthCenteringPoint) {
+      sSynthCenteringPoint = kInvalidRefPoint;
+    }
   }
 }
 
