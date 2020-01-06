@@ -263,6 +263,7 @@ public:
 
 
   MediaStreamGraphImpl* GraphImpl();
+  const MediaStreamGraphImpl* GraphImpl() const;
   MediaStreamGraph* Graph();
   
 
@@ -273,7 +274,7 @@ public:
   
 
 
-  TrackRate GraphRate() { return mTracks.GraphRate(); }
+  TrackRate GraphRate() const { return mTracks.GraphRate(); }
 
   
   
@@ -375,19 +376,19 @@ public:
 
   
   
-  StreamTime GetCurrentTime()
+  StreamTime GetCurrentTime() const
   {
     NS_ASSERTION(NS_IsMainThread(), "Call only on main thread");
     return mMainThreadCurrentTime;
   }
   
-  bool IsFinished()
+  bool IsFinished() const
   {
     NS_ASSERTION(NS_IsMainThread(), "Call only on main thread");
     return mMainThreadFinished;
   }
 
-  bool IsDestroyed()
+  bool IsDestroyed() const
   {
     NS_ASSERTION(NS_IsMainThread(), "Call only on main thread");
     return mMainThreadDestroyed;
@@ -409,14 +410,14 @@ public:
 
 
   virtual void DestroyImpl();
-  StreamTime GetTracksEnd() { return mTracks.GetEnd(); }
+  StreamTime GetTracksEnd() const { return mTracks.GetEnd(); }
 #ifdef DEBUG
-  void DumpTrackInfo() { return mTracks.DumpTrackInfo(); }
+  void DumpTrackInfo() const { return mTracks.DumpTrackInfo(); }
 #endif
   void SetAudioOutputVolumeImpl(void* aKey, float aVolume);
   void AddAudioOutputImpl(void* aKey);
   
-  bool HasAudioOutput()
+  bool HasAudioOutput() const
   {
     return !mAudioOutputs.IsEmpty();
   }
@@ -446,38 +447,39 @@ public:
   {
     mConsumers.RemoveElement(aPort);
   }
-  uint32_t ConsumerCount()
+  uint32_t ConsumerCount() const
   {
     return mConsumers.Length();
   }
   StreamTracks& GetStreamTracks() { return mTracks; }
-  GraphTime GetStreamTracksStartTime() { return mTracksStartTime; }
+  GraphTime GetStreamTracksStartTime() const { return mTracksStartTime; }
 
-  double StreamTimeToSeconds(StreamTime aTime)
+  double StreamTimeToSeconds(StreamTime aTime) const
   {
     NS_ASSERTION(0 <= aTime && aTime <= STREAM_TIME_MAX, "Bad time");
     return static_cast<double>(aTime)/mTracks.GraphRate();
   }
-  int64_t StreamTimeToMicroseconds(StreamTime aTime)
+  int64_t StreamTimeToMicroseconds(StreamTime aTime) const
   {
     NS_ASSERTION(0 <= aTime && aTime <= STREAM_TIME_MAX, "Bad time");
-    return (aTime*1000000)/mTracks.GraphRate();
+    return (aTime*1000000) / mTracks.GraphRate();
   }
-  StreamTime SecondsToNearestStreamTime(double aSeconds)
+  StreamTime SecondsToNearestStreamTime(double aSeconds) const
   {
     NS_ASSERTION(0 <= aSeconds && aSeconds <= TRACK_TICKS_MAX/TRACK_RATE_MAX,
                  "Bad seconds");
     return mTracks.GraphRate() * aSeconds + 0.5;
   }
-  StreamTime MicrosecondsToStreamTimeRoundDown(int64_t aMicroseconds) {
+  StreamTime MicrosecondsToStreamTimeRoundDown(int64_t aMicroseconds) const
+  {
     return (aMicroseconds*mTracks.GraphRate())/1000000;
   }
 
-  TrackTicks TimeToTicksRoundUp(TrackRate aRate, StreamTime aTime)
+  TrackTicks TimeToTicksRoundUp(TrackRate aRate, StreamTime aTime) const
   {
     return RateConvertTicksRoundUp(aRate, mTracks.GraphRate(), aTime);
   }
-  StreamTime TicksToTimeRoundDown(TrackRate aRate, TrackTicks aTicks)
+  StreamTime TicksToTimeRoundDown(TrackRate aRate, TrackTicks aTicks) const
   {
     return RateConvertTicksRoundDown(mTracks.GraphRate(), aRate, aTicks);
   }
@@ -486,31 +488,31 @@ public:
 
 
 
-  StreamTime GraphTimeToStreamTimeWithBlocking(GraphTime aTime);
+  StreamTime GraphTimeToStreamTimeWithBlocking(GraphTime aTime) const;
   
 
 
 
 
 
-  StreamTime GraphTimeToStreamTime(GraphTime aTime);
+  StreamTime GraphTimeToStreamTime(GraphTime aTime) const;
   
 
 
 
 
 
-  GraphTime StreamTimeToGraphTime(StreamTime aTime);
+  GraphTime StreamTimeToGraphTime(StreamTime aTime) const;
 
-  bool IsFinishedOnGraphThread() { return mFinished; }
+  bool IsFinishedOnGraphThread() const { return mFinished; }
   void FinishOnGraphThread();
 
-  bool HasCurrentData() { return mHasCurrentData; }
+  bool HasCurrentData() const { return mHasCurrentData; }
 
   
 
 
-  StreamTracks::Track* FindTrack(TrackID aID);
+  StreamTracks::Track* FindTrack(TrackID aID) const;
 
   StreamTracks::Track* EnsureTrack(TrackID aTrack);
 
@@ -525,7 +527,7 @@ public:
   virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
   virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
-  bool IsSuspended() { return mSuspendedCount > 0; }
+  bool IsSuspended() const { return mSuspendedCount > 0; }
   void IncrementSuspendCount();
   void DecrementSuspendCount();
 
@@ -799,7 +801,8 @@ public:
 
   bool HasPendingAudioTrack();
 
-  TimeStamp GetStreamTracksStrartTimeStamp() {
+  TimeStamp GetStreamTracksStrartTimeStamp()
+  {
     MutexAutoLock lock(mMutex);
     return mStreamTracksStartTimeStamp;
   }
@@ -992,10 +995,10 @@ public:
   void Destroy();
 
   
-  MediaStream* GetSource() { return mSource; }
-  TrackID GetSourceTrackId() { return mSourceTrack; }
-  ProcessedMediaStream* GetDestination() { return mDest; }
-  TrackID GetDestinationTrackId() { return mDestTrack; }
+  MediaStream* GetSource() const { return mSource; }
+  TrackID GetSourceTrackId() const { return mSourceTrack; }
+  ProcessedMediaStream* GetDestination() const { return mDest; }
+  TrackID GetDestinationTrackId() const { return mDestTrack; }
 
   
 
@@ -1011,7 +1014,8 @@ private:
 public:
   
   
-  bool PassTrackThrough(TrackID aTrackId) {
+  bool PassTrackThrough(TrackID aTrackId) const
+  {
     bool blocked = false;
     for (auto pair : mBlockedTracks) {
       if (pair.first() == aTrackId &&
@@ -1026,7 +1030,8 @@ public:
 
   
   
-  bool AllowCreationOf(TrackID aTrackId) {
+  bool AllowCreationOf(TrackID aTrackId) const
+  {
     bool blocked = false;
     for (auto pair : mBlockedTracks) {
       if (pair.first() == aTrackId &&
@@ -1049,7 +1054,7 @@ public:
   };
   
   
-  InputInterval GetNextInputInterval(GraphTime aTime);
+  InputInterval GetNextInputInterval(GraphTime aTime) const;
 
   
 
@@ -1173,11 +1178,11 @@ public:
   {
     mInputs.RemoveElement(aPort) || mSuspendedInputs.RemoveElement(aPort);
   }
-  bool HasInputPort(MediaInputPort* aPort)
+  bool HasInputPort(MediaInputPort* aPort) const
   {
     return mInputs.Contains(aPort) || mSuspendedInputs.Contains(aPort);
   }
-  uint32_t InputPortCount()
+  uint32_t InputPortCount() const
   {
     return mInputs.Length() + mSuspendedInputs.Length();
   }
@@ -1285,7 +1290,8 @@ public:
   static void DestroyNonRealtimeInstance(MediaStreamGraph* aGraph);
 
   virtual nsresult OpenAudioInput(int aID,
-                                  AudioDataListener *aListener) {
+                                  AudioDataListener *aListener)
+  {
     return NS_ERROR_FAILURE;
   }
   virtual void CloseAudioInput(AudioDataListener *aListener) {}

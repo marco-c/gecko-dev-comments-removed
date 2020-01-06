@@ -358,7 +358,7 @@ public:
 
 
 
-  StreamTime GraphTimeToStreamTimeWithBlocking(MediaStream* aStream, GraphTime aTime);
+  StreamTime GraphTimeToStreamTimeWithBlocking(const MediaStream* aStream, GraphTime aTime) const;
 
   
 
