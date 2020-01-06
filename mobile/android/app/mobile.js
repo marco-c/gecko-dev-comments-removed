@@ -636,6 +636,9 @@ pref("media.hls.enabled", true);
 #endif
 
 
+pref("media.suspend-bkgnd-video.enabled", true);
+
+
 pref("image.downscale-during-decode.enabled", true);
 
 pref("browser.safebrowsing.downloads.enabled", false);
