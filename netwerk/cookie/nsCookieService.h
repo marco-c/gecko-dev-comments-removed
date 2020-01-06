@@ -215,8 +215,8 @@ class nsCookieService final : public nsICookieService
     NS_DECL_NSIMEMORYREPORTER
 
     nsCookieService();
-    static nsICookieService*      GetXPCOMSingleton();
-    nsresult                      Init();
+    static already_AddRefed<nsICookieService> GetXPCOMSingleton();
+    nsresult Init();
 
   
 
@@ -330,7 +330,7 @@ class nsCookieService final : public nsICookieService
     friend class ReadCookieDBListener;
     friend class CloseCookieDBListener;
 
-    static nsCookieService*       GetSingleton();
+    static already_AddRefed<nsCookieService> GetSingleton();
     friend class mozilla::net::CookieServiceParent;
 };
 

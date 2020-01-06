@@ -203,7 +203,7 @@ HttpChannelChild::HttpChannelChild()
   
   
   
-  CookieServiceChild::GetSingleton();
+  RefPtr<CookieServiceChild> cookieService = CookieServiceChild::GetSingleton();
 }
 
 HttpChannelChild::~HttpChannelChild()

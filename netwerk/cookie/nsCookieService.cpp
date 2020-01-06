@@ -5,6 +5,7 @@
 
 
 #include "mozilla/Attributes.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Printf.h"
@@ -72,7 +73,7 @@ using namespace mozilla::net;
 
 
 
-static nsCookieService *gCookieService;
+static StaticRefPtr<nsCookieService> gCookieService;
 
 
 
@@ -638,7 +639,7 @@ DBState::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 
 
 
-nsICookieService*
+already_AddRefed<nsICookieService>
 nsCookieService::GetXPCOMSingleton()
 {
   if (IsNeckoChild())
@@ -647,14 +648,13 @@ nsCookieService::GetXPCOMSingleton()
   return GetSingleton();
 }
 
-nsCookieService*
+already_AddRefed<nsCookieService>
 nsCookieService::GetSingleton()
 {
   NS_ASSERTION(!IsNeckoChild(), "not a parent process");
 
   if (gCookieService) {
-    NS_ADDREF(gCookieService);
-    return gCookieService;
+    return do_AddRef(gCookieService);
   }
 
   
@@ -665,13 +665,14 @@ nsCookieService::GetSingleton()
   
   gCookieService = new nsCookieService();
   if (gCookieService) {
-    NS_ADDREF(gCookieService);
-    if (NS_FAILED(gCookieService->Init())) {
-      NS_RELEASE(gCookieService);
+    if (NS_SUCCEEDED(gCookieService->Init())) {
+      ClearOnShutdown(&gCookieService);
+    } else {
+      gCookieService = nullptr;
     }
   }
 
-  return gCookieService;
+  return do_AddRef(gCookieService);
 }
 
  void
