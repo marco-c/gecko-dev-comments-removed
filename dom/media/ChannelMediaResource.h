@@ -178,10 +178,6 @@ protected:
                                      uint32_t aCount,
                                      uint32_t* aWriteCount);
 
-  nsresult CopySegmentToCache(const char* aFromSegment,
-                              uint32_t aCount,
-                              uint32_t* aWriteCount);
-
   
   RefPtr<Listener> mListener;
   
