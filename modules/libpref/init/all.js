@@ -202,6 +202,7 @@ pref("dom.gamepad.non_standard_events.enabled", false);
 pref("dom.gamepad.non_standard_events.enabled", true);
 #endif
 pref("dom.gamepad.extensions.enabled", true);
+pref("dom.gamepad.haptic_feedback.enabled", true);
 
 
 
@@ -444,7 +445,7 @@ pref("media.decoder-doctor.wmf-disabled-is-failure", false);
 pref("media.decoder-doctor.new-issue-endpoint", "https://webcompat.com/issues/new");
 
 
-#ifdef RELEASE
+#ifdef RELEASE_OR_BETA
 pref("media.suspend-bkgnd-video.enabled", false);
 #else
 pref("media.suspend-bkgnd-video.enabled", true);
