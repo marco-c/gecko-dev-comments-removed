@@ -169,11 +169,9 @@ nsHangDetails::Submit()
 
   RefPtr<nsHangDetails> hangDetails = this;
   nsCOMPtr<nsIRunnable> notifyObservers = NS_NewRunnableFunction("NotifyBHRHangObservers", [hangDetails] {
-    nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-    if (os) {
-      os->NotifyObservers(hangDetails, "bhr-thread-hang", nullptr);
-    }
-
+    
+    
+    
     
     
     switch (XRE_GetProcessType()) {
@@ -191,8 +189,13 @@ nsHangDetails::Submit()
       }
       break;
     }
-    case GeckoProcessType_Default:
+    case GeckoProcessType_Default: {
+      nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+      if (os) {
+        os->NotifyObservers(hangDetails, "bhr-thread-hang", nullptr);
+      }
       break;
+    }
     default:
       
       
