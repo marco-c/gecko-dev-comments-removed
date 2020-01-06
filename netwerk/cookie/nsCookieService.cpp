@@ -607,12 +607,6 @@ NS_IMPL_ISUPPORTS(AppClearDataObserver, nsIObserver)
 } 
 
 size_t
-nsCookieKey::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
-{
-  return mBaseDomain.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
-}
-
-size_t
 nsCookieEntry::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
 {
   size_t amount = nsCookieKey::SizeOfExcludingThis(aMallocSizeOf);
@@ -3440,14 +3434,14 @@ nsCookieService::GetCookieStringInternal(nsIURI *aHostURI,
 
 
 bool
-nsCookieService::SetCookieInternal(nsIURI                        *aHostURI,
-                                   const nsCookieKey             &aKey,
-                                   bool                           aRequireHostMatch,
-                                   CookieStatus                   aStatus,
-                                   nsDependentCString            &aCookieHeader,
-                                   int64_t                        aServerTime,
-                                   bool                           aFromHttp,
-                                   nsIChannel                    *aChannel)
+nsCookieService::SetCookieInternal(nsIURI             *aHostURI,
+                                   const nsCookieKey  &aKey,
+                                   bool                aRequireHostMatch,
+                                   CookieStatus        aStatus,
+                                   nsDependentCString &aCookieHeader,
+                                   int64_t             aServerTime,
+                                   bool                aFromHttp,
+                                   nsIChannel         *aChannel)
 {
   NS_ASSERTION(aHostURI, "null host!");
 
@@ -3591,12 +3585,12 @@ nsCookieService::SetCookieInternal(nsIURI                        *aHostURI,
 
 
 void
-nsCookieService::AddInternal(const nsCookieKey             &aKey,
-                             nsCookie                      *aCookie,
-                             int64_t                        aCurrentTimeInUsec,
-                             nsIURI                        *aHostURI,
-                             const char                    *aCookieHeader,
-                             bool                           aFromHttp)
+nsCookieService::AddInternal(const nsCookieKey &aKey,
+                             nsCookie          *aCookie,
+                             int64_t            aCurrentTimeInUsec,
+                             nsIURI            *aHostURI,
+                             const char        *aCookieHeader,
+                             bool               aFromHttp)
 {
   int64_t currentTime = aCurrentTimeInUsec / PR_USEC_PER_SEC;
 
@@ -4998,8 +4992,8 @@ nsCookieService::RemoveCookiesWithOriginAttributes(
 
 
 bool
-nsCookieService::FindSecureCookie(const nsCookieKey    &aKey,
-                                  nsCookie             *aCookie)
+nsCookieService::FindSecureCookie(const nsCookieKey &aKey,
+                                  nsCookie          *aCookie)
 {
   EnsureReadDomain(aKey);
 
