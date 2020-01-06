@@ -118,13 +118,19 @@ private:
   
 
 
-  void ProcessPostTraversal(Element* aElement,
+
+
+
+
+
+
+  bool ProcessPostTraversal(Element* aElement,
                             nsStyleContext* aParentContext,
                             ServoStyleSet* aStyleSet,
                             nsStyleChangeList& aChangeList);
 
   struct TextPostTraversalState;
-  void ProcessPostTraversalForText(nsIContent* aTextNode,
+  bool ProcessPostTraversalForText(nsIContent* aTextNode,
                                    nsStyleChangeList& aChangeList,
                                    TextPostTraversalState& aState);
 
