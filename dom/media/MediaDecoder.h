@@ -121,15 +121,6 @@ public:
   void NetworkError();
 
   
-  
-  
-  
-  
-  
-  
-  virtual MediaResource* GetResource() const = 0;
-
-  
   virtual already_AddRefed<nsIPrincipal> GetCurrentPrincipal();
 
   
@@ -490,6 +481,15 @@ protected:
     media::TimeUnit::FromMicroseconds(250000);
 
 private:
+  
+  
+  
+  
+  
+  
+  
+  virtual MediaResource* GetResource() const = 0;
+
   nsCString GetDebugInfo();
 
   

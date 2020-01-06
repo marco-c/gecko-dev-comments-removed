@@ -21,8 +21,6 @@ public:
   {
   }
 
-  MediaResource* GetResource() const override final;
-
   void Shutdown() override;
 
   
@@ -43,6 +41,8 @@ public:
   void Resume() override;
 
 private:
+  MediaResource* GetResource() const override final;
+
   MediaDecoderStateMachine* CreateStateMachine();
 
   bool CanPlayThroughImpl() override final
