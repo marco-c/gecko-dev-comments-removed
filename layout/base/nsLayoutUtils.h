@@ -2347,11 +2347,6 @@ public:
   
 
 
-  static bool CSSClipPathShapesEnabled();
-
-  
-
-
   static bool UnsetValueEnabled();
 
   
