@@ -544,6 +544,8 @@ protected:
 
   nsPopupType PopupType() const { return mPopupType; }
 
+  bool HasRemoteContent() const { return mHasRemoteContent; }
+
   void NotifyRollupGeometryChange()
   {
     
@@ -678,6 +680,7 @@ protected:
   nsPopupLevel      mPopupLevel;
   nsPopupType       mPopupType;
   SizeConstraints   mSizeConstraints;
+  bool              mHasRemoteContent;
 
   CompositorWidgetDelegate* mCompositorWidgetDelegate;
 
