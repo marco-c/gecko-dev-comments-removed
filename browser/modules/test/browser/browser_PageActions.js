@@ -214,14 +214,6 @@ add_task(async function simple() {
   urlbarButtonNode = document.getElementById(urlbarButtonID);
   Assert.equal(urlbarButtonNode, null, "urlbarButtonNode");
 
-  Assert.deepEqual(PageActions.actions, initialActions,
-                   "Actions should go back to initial");
-  Assert.equal(PageActions.actionForID(action.id), null,
-               "actionForID should be null");
-
-  Assert.ok(!PageActions._persistedActions.ids.includes(action.id),
-            "PageActions should remove action from its list of seen actions");
-
   
   
   let separatorNode = document.getElementById(
@@ -233,6 +225,17 @@ add_task(async function simple() {
   Assert.ok(!BrowserPageActions.mainViewBodyNode
             .lastChild.localName.includes("separator"),
             "Last child should not be separator");
+
+  Assert.deepEqual(PageActions.actions, initialActions,
+                   "Actions should go back to initial");
+  Assert.equal(PageActions.actionForID(action.id), null,
+               "actionForID should be null");
+
+  Assert.ok(PageActions._persistedActions.ids.includes(action.id),
+            "Action ID should remain in cache until purged");
+  PageActions._purgeUnregisteredPersistedActions();
+  Assert.ok(!PageActions._persistedActions.ids.includes(action.id),
+            "Action ID should be removed from cache after being purged");
 });
 
 
@@ -873,6 +876,12 @@ add_task(async function urlbarOrderNewWindow() {
   );
 
   
+  
+  
+  
+  ids = ids.filter(id => PageActions.actionForID(id));
+
+  
   let win = await BrowserTestUtils.openNewBrowserWindow();
 
   
@@ -973,7 +982,7 @@ add_task(async function migrate1() {
   
   await BrowserTestUtils.closeWindow(win);
   Services.prefs.clearUserPref(PageActions.PREF_PERSISTED_ACTIONS);
-  PageActions.actionForID("copyURL")._shownInUrlbar = false;
+  PageActions.actionForID("copyURL").shownInUrlbar = false;
 });
 
 
@@ -1037,6 +1046,111 @@ add_task(async function perWindowState() {
   
   await BrowserTestUtils.closeWindow(newWindow);
   action.remove();
+});
+
+
+
+
+
+
+
+add_task(async function removeRetainState() {
+  
+  let initialActionsInUrlbar = PageActions.actionsInUrlbar;
+  Assert.ok(initialActionsInUrlbar.length > 0,
+            "This test expects there to be at least one action in the urlbar initially (like the bookmark star)");
+
+  
+  let id = "test-removeRetainState";
+  let testAction = PageActions.addAction(new PageActions.Action({
+    id,
+    title: "Test removeRetainState",
+  }));
+
+  
+  testAction.shownInUrlbar = true;
+
+  
+  
+  for (let action of initialActionsInUrlbar) {
+    action.shownInUrlbar = false;
+    action.shownInUrlbar = true;
+  }
+
+  
+  Assert.deepEqual(
+    PageActions.actionsInUrlbar.map(a => a.id),
+    [testAction].concat(initialActionsInUrlbar).map(a => a.id),
+    "PageActions.actionsInUrlbar should be in expected order: testAction followed by all initial actions"
+  );
+
+  
+  let actualUrlbarNodeIDs = [];
+  for (let node = BrowserPageActions.mainButtonNode.nextSibling;
+       node;
+       node = node.nextSibling) {
+    actualUrlbarNodeIDs.push(node.id);
+  }
+  Assert.deepEqual(
+    actualUrlbarNodeIDs,
+    [testAction].concat(initialActionsInUrlbar).map(a => BrowserPageActions.urlbarButtonNodeIDForActionID(a.id)),
+    "urlbar nodes should be in expected order: testAction followed by all initial actions"
+  );
+
+  
+  testAction.remove();
+
+  
+  Assert.deepEqual(
+    PageActions.actionsInUrlbar.map(a => a.id),
+    initialActionsInUrlbar.map(a => a.id),
+    "PageActions.actionsInUrlbar should be in expected order after removing test action: all initial actions"
+  );
+
+  
+  actualUrlbarNodeIDs = [];
+  for (let node = BrowserPageActions.mainButtonNode.nextSibling;
+       node;
+       node = node.nextSibling) {
+    actualUrlbarNodeIDs.push(node.id);
+  }
+  Assert.deepEqual(
+    actualUrlbarNodeIDs,
+    initialActionsInUrlbar.map(a => BrowserPageActions.urlbarButtonNodeIDForActionID(a.id)),
+    "urlbar nodes should be in expected order after removing test action: all initial actions"
+  );
+
+  
+  testAction = PageActions.addAction(new PageActions.Action({
+    id,
+    title: "Test removeRetainState",
+  }));
+
+  
+  testAction.shownInUrlbar = true;
+
+  
+  Assert.deepEqual(
+    PageActions.actionsInUrlbar.map(a => a.id),
+    [testAction].concat(initialActionsInUrlbar).map(a => a.id),
+    "PageActions.actionsInUrlbar should be in expected order after re-adding test action: testAction followed by all initial actions"
+  );
+
+  
+  actualUrlbarNodeIDs = [];
+  for (let node = BrowserPageActions.mainButtonNode.nextSibling;
+       node;
+       node = node.nextSibling) {
+    actualUrlbarNodeIDs.push(node.id);
+  }
+  Assert.deepEqual(
+    actualUrlbarNodeIDs,
+    [testAction].concat(initialActionsInUrlbar).map(a => BrowserPageActions.urlbarButtonNodeIDForActionID(a.id)),
+    "urlbar nodes should be in expected order after re-adding test action: testAction followed by all initial actions"
+  );
+
+  
+  testAction.remove();
 });
 
 

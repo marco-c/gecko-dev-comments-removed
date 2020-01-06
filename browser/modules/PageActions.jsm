@@ -21,6 +21,8 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
   "resource://gre/modules/AppConstants.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
+  "resource://gre/modules/AsyncShutdown.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "BinarySearch",
   "resource://gre/modules/BinarySearch.jsm");
 
@@ -64,6 +66,16 @@ this.PageActions = {
     while (callbacks && callbacks.length) {
       callbacks.shift()();
     }
+
+    
+    
+    
+    
+    
+    AsyncShutdown.profileBeforeChange.addBlocker(
+      "PageActions: purging unregistered actions from cache",
+      () => this._purgeUnregisteredPersistedActions(),
+    );
   },
 
   _deferredAddActionCalls: [],
@@ -247,6 +259,7 @@ this.PageActions = {
     this._storePersistedActions();
   },
 
+  
   _builtInActions: [],
   _nonBuiltInActions: [],
   _actionsByID: new Map(),
@@ -335,16 +348,6 @@ this.PageActions = {
       }
     }
 
-    
-    for (let name of ["ids", "idsInUrlbar"]) {
-      let array = this._persistedActions[name];
-      let index = array.indexOf(action.id);
-      if (index >= 0) {
-        array.splice(index, 1);
-      }
-    }
-    this._storePersistedActions();
-
     for (let bpa of allBrowserPageActions()) {
       bpa.removeAction(action);
     }
@@ -400,6 +403,17 @@ this.PageActions = {
     } catch (ex) {}
   },
 
+  _purgeUnregisteredPersistedActions() {
+    
+    
+    for (let name of ["ids", "idsInUrlbar"]) {
+      this._persistedActions[name] = this._persistedActions[name].filter(id => {
+        return this.actionForID(id);
+      });
+    }
+    this._storePersistedActions();
+  },
+
   _migratePersistedActions(actions) {
     
     
@@ -433,6 +447,9 @@ this.PageActions = {
     };
   },
 
+  
+  
+  
   _persistedActions: {
     version: PERSISTED_ACTIONS_CURRENT_VERSION,
     
