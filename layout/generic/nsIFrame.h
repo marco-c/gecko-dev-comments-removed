@@ -622,6 +622,7 @@ public:
     , mHasFirstLetterChild(false)
     , mParentIsWrapperAnonBox(false)
     , mIsWrapperBoxNeedingRestyle(false)
+    , mReflowRequestedForCharDataChange(false)
   {
     mozilla::PodZero(&mOverflow);
   }
@@ -4170,6 +4171,23 @@ protected:
 
 
   bool mIsWrapperBoxNeedingRestyle : 1;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool mReflowRequestedForCharDataChange : 1;
 
   
 

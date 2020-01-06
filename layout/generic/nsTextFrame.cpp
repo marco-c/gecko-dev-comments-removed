@@ -4865,6 +4865,7 @@ nsTextFrame::CharacterDataChanged(CharacterDataChangeInfo* aInfo)
   
   
   
+  
   nsIFrame* lastDirtiedFrameParent = nullptr;
 
   nsIPresShell* shell = PresContext()->GetPresShell();
@@ -4884,18 +4885,28 @@ nsTextFrame::CharacterDataChanged(CharacterDataChangeInfo* aInfo)
       lastDirtiedFrameParent = parentOfTextFrame;
     }
 
-    if (!areAncestorsAwareOfReflowRequest) {
+    if (textFrame->mReflowRequestedForCharDataChange) {
       
-      shell->FrameNeedsReflow(textFrame, nsIPresShell::eStyleChange,
-                              NS_FRAME_IS_DIRTY);
+      MOZ_ASSERT(textFrame->HasAnyStateBits(NS_FRAME_IS_DIRTY),
+                 "mReflowRequestedForCharDataChange should only be set "
+                 "on dirty frames");
     } else {
       
       
-      
-      
-      
-      
-      textFrame->AddStateBits(NS_FRAME_IS_DIRTY);
+      textFrame->mReflowRequestedForCharDataChange = true;
+      if (!areAncestorsAwareOfReflowRequest) {
+        
+        shell->FrameNeedsReflow(textFrame, nsIPresShell::eStyleChange,
+                                NS_FRAME_IS_DIRTY);
+      } else {
+        
+        
+        
+        
+        
+        
+        textFrame->AddStateBits(NS_FRAME_IS_DIRTY);
+      }
     }
     textFrame->InvalidateFrame();
 
@@ -9404,7 +9415,9 @@ nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
   
   
   
+  
   RemoveStateBits(TEXT_REFLOW_FLAGS | TEXT_WHITESPACE_FLAGS);
+  mReflowRequestedForCharDataChange = false;
 
   
   
