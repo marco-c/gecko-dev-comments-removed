@@ -828,6 +828,11 @@ imgRequestProxy::PerformClone(imgINotificationObserver* aObserver,
   *aClone = nullptr;
   RefPtr<imgRequestProxy> clone = NewClonedProxy();
 
+  nsCOMPtr<nsILoadGroup> loadGroup;
+  if (aLoadingDocument) {
+    loadGroup = aLoadingDocument->GetDocumentLoadGroup();
+  }
+
   
   
   
@@ -835,7 +840,7 @@ imgRequestProxy::PerformClone(imgINotificationObserver* aObserver,
   
   
   clone->SetLoadFlags(mLoadFlags);
-  nsresult rv = clone->Init(mBehaviour->GetOwner(), mLoadGroup,
+  nsresult rv = clone->Init(mBehaviour->GetOwner(), loadGroup,
                             aLoadingDocument, mURI, aObserver);
   if (NS_FAILED(rv)) {
     return rv;
@@ -849,19 +854,43 @@ imgRequestProxy::PerformClone(imgINotificationObserver* aObserver,
   if (GetOwner() && GetOwner()->GetValidator()) {
     
     
+    
+    
+    
+    
     clone->SetNotificationsDeferred(true);
     GetOwner()->GetValidator()->AddProxy(clone);
-  } else if (aSyncNotify) {
-    
-    
-    
-    
-    clone->SyncNotifyListener();
   } else {
     
     
     
-    clone->NotifyListener();
+    
+    
+    
+    bool addToLoadGroup = mIsInLoadGroup;
+    if (!addToLoadGroup) {
+      RefPtr<ProgressTracker> tracker = clone->GetProgressTracker();
+      addToLoadGroup = tracker && !(tracker->GetProgress() & FLAG_LOAD_COMPLETE);
+    }
+
+    if (addToLoadGroup) {
+      clone->AddToLoadGroup();
+    }
+
+    if (aSyncNotify) {
+      
+      
+      
+      
+      clone->mForceDispatchLoadGroup = true;
+      clone->SyncNotifyListener();
+      clone->mForceDispatchLoadGroup = false;
+    } else {
+      
+      
+      
+      clone->NotifyListener();
+    }
   }
 
   return NS_OK;
