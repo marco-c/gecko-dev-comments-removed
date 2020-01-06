@@ -122,6 +122,9 @@ var whitelist = [
   {file: "resource://gre/modules/IndexedDB.jsm"},
 
   
+  {file: "resource://gre/modules/MessageContext.jsm"},
+
+  
   
   {file: "chrome://branding/content/icon128.png"},
   
