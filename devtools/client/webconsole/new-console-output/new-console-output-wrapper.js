@@ -47,12 +47,13 @@ NewConsoleOutputWrapper.prototype = {
       }
 
       
-      if (event.originalTarget.closest("a")) {
+      let target = event.originalTarget || event.target;
+      if (target.closest("a")) {
         return;
       }
 
       
-      if (!event.originalTarget.closest(".webconsole-output")) {
+      if (!target.closest(".webconsole-output")) {
         return;
       }
 

@@ -431,22 +431,57 @@ function getToplevelMessageCount(record) {
   return record.messagesById.count(message => !message.groupId);
 }
 
+
+
+
 function shouldMessageBeVisible(message, messagesState, filtersState, checkGroup = true) {
-  return (
-    (
-      checkGroup === false
-      || isInOpenedGroup(message, messagesState.groupsById, messagesState.messagesUiById)
-    )
-    && (
-      isUnfilterable(message)
-      || (
-        matchLevelFilters(message, filtersState)
-        && matchCssFilters(message, filtersState)
-        && matchNetworkFilters(message, filtersState)
-        && matchSearchFilters(message, filtersState)
-      )
-    )
-  );
+  
+  if (
+    checkGroup
+    && !isInOpenedGroup(message, messagesState.groupsById, messagesState.messagesUiById)
+  ) {
+    return false;
+  }
+
+  
+  
+  if (isUnfilterable(message)) {
+    return true;
+  }
+
+  
+  if (!matchFilters(message, filtersState)) {
+    return false;
+  }
+
+  
+  
+  let text = (filtersState.text || "").trim();
+  if (text) {
+    return matchSearchFilters(message, text);
+  }
+
+  return true;
+}
+
+function matchFilters(message, filtersState) {
+  if (matchLevelFilters(message, filtersState)) {
+    return true;
+  }
+
+  
+  
+  if (matchCssFilters(message, filtersState)) {
+    return true;
+  }
+
+  
+  
+  if (matchNetworkFilters(message, filtersState)) {
+    return true;
+  }
+
+  return false;
 }
 
 function isUnfilterable(message) {
@@ -474,31 +509,33 @@ function isGroupClosed(groupId, messagesUI) {
   return messagesUI.includes(groupId) === false;
 }
 
-function matchLevelFilters(message, filters) {
-  return filters.get(message.level) === true;
-}
-
 function matchNetworkFilters(message, filters) {
   return (
-    message.source !== MESSAGE_SOURCE.NETWORK
-    || (filters.get("net") === true && message.isXHR === false)
-    || (filters.get("netxhr") === true && message.isXHR === true)
+    message.source === MESSAGE_SOURCE.NETWORK &&
+    (filters.get("net") === true && message.isXHR === false) ||
+    (filters.get("netxhr") === true && message.isXHR === true)
+  );
+}
+
+function matchLevelFilters(message, filters) {
+  return (
+    (message.source === MESSAGE_SOURCE.CONSOLE_API ||
+    message.source === MESSAGE_SOURCE.JAVASCRIPT) &&
+    filters.get(message.level) === true
   );
 }
 
 function matchCssFilters(message, filters) {
   return (
-    message.source != MESSAGE_SOURCE.CSS
-    || filters.get("css") === true
+    message.source === MESSAGE_SOURCE.CSS &&
+    filters.get("css") === true
   );
 }
 
-function matchSearchFilters(message, filters) {
-  let text = (filters.text || "").trim();
+function matchSearchFilters(message, text) {
   return (
-    text === ""
     
-    || isTextInParameters(text, message.parameters)
+    isTextInParameters(text, message.parameters)
     
     || isTextInFrame(text, message.frame)
     
