@@ -3591,37 +3591,34 @@ PreliminaryObjectArrayWithTemplate::maybeAnalyze(JSContext* cx, ObjectGroup* gro
     ScopedJSDeletePtr<PreliminaryObjectArrayWithTemplate> preliminaryObjects(this);
     group->detachPreliminaryObjects();
 
-    if (shape()) {
-        MOZ_ASSERT(shape()->slotSpan() != 0);
-        MOZ_ASSERT(OnlyHasDataProperties(shape()));
+    MOZ_ASSERT(shape());
+    MOZ_ASSERT(shape()->slotSpan() != 0);
+    MOZ_ASSERT(OnlyHasDataProperties(shape()));
 
-        
-        
-        for (size_t i = 0; i < PreliminaryObjectArray::COUNT; i++) {
-            JSObject* objBase = preliminaryObjects->get(i);
-            if (!objBase)
-                continue;
-            PlainObject* obj = &objBase->as<PlainObject>();
+    
+    
+    for (size_t i = 0; i < PreliminaryObjectArray::COUNT; i++) {
+        JSObject* objBase = preliminaryObjects->get(i);
+        if (!objBase)
+            continue;
+        PlainObject* obj = &objBase->as<PlainObject>();
 
-            if (obj->inDictionaryMode() || !OnlyHasDataProperties(obj->lastProperty()))
-                return;
+        if (obj->inDictionaryMode() || !OnlyHasDataProperties(obj->lastProperty()))
+            return;
 
-            if (CommonPrefix(obj->lastProperty(), shape()) != shape())
-                return;
-        }
+        if (CommonPrefix(obj->lastProperty(), shape()) != shape())
+            return;
     }
 
     TryConvertToUnboxedLayout(cx, enter, shape(), group, preliminaryObjects);
     if (group->maybeUnboxedLayout())
         return;
 
-    if (shape()) {
-        
-        
-        
-        
-        group->addDefiniteProperties(cx, shape());
-    }
+    
+    
+    
+    
+    group->addDefiniteProperties(cx, shape());
 }
 
 
