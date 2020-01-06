@@ -67,6 +67,27 @@ function checkKeyedScalar(scalars, scalarName, key, expectedValue) {
 
 
 
+
+
+
+let checkScalar = (scalars, scalarName, value, msg) => {
+  if (value > 0) {
+    is(scalars[scalarName], value, msg);
+    return;
+  }
+  ok(!(scalarName in scalars), scalarName + " must not be reported.");
+};
+
+
+
+
+
+
+
+
+
+
+
 let typeInSearchField = async function(browser, text, fieldName) {
   await ContentTask.spawn(browser, [fieldName, text], async function([contentFieldName, contentText]) {
     
