@@ -196,6 +196,14 @@ pub enum FontSettings<T> {
     Tag(Vec<FontSettingTag<T>>)
 }
 
+impl <T> FontSettings<T> {
+    #[inline]
+    
+    pub fn normal() -> Self {
+        FontSettings::Normal
+    }
+}
+
 impl<T: Parse> Parse for FontSettings<T> {
     
     fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {

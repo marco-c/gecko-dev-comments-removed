@@ -1804,14 +1804,6 @@ impl Parse for FontLanguageOverride {
 
 pub type FontVariantSettings = FontSettings<FontSettingTagFloat>;
 
-impl FontVariantSettings {
-    #[inline]
-    
-    pub fn normal() -> FontVariantSettings {
-        FontSettings::Normal
-    }
-}
-
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
 
 pub struct XTextZoom(pub bool);

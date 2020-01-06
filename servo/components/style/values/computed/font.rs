@@ -290,14 +290,6 @@ pub type FontVariantNumeric = specified::VariantNumeric;
 
 pub type FontFeatureSettings = FontSettings<FontSettingTagInt>;
 
-impl FontFeatureSettings {
-    #[inline]
-    
-    pub fn normal() -> FontFeatureSettings {
-        FontSettings::Normal
-    }
-}
-
 
 
 
