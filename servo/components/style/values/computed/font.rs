@@ -278,6 +278,9 @@ impl FontVariantAlternates {
 }
 
 
+pub type FontVariantEastAsian = specified::VariantEastAsian;
+
+
 
 
 
