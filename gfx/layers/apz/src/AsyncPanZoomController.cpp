@@ -737,6 +737,7 @@ AsyncPanZoomController::AsyncPanZoomController(uint64_t aLayersId,
      mAPZCId(sAsyncPanZoomControllerCount++),
      mSharedLock(nullptr),
      mAsyncTransformAppliedToContent(false),
+     mTestHasAsyncKeyScrolled(false),
      mCheckerboardEventLock("APZCBELock")
 {
   if (aGestures == USE_GESTURE_DETECTOR) {
@@ -1702,6 +1703,9 @@ AsyncPanZoomController::OnKeyboard(const KeyboardInput& aEvent)
 {
   
   ReportKeyboardScrollAction(aEvent.mAction);
+
+  
+  mTestHasAsyncKeyScrolled = true;
 
   
   CSSPoint destination = GetKeyboardDestination(aEvent.mAction);
@@ -3238,7 +3242,7 @@ bool AsyncPanZoomController::UpdateAnimation(const TimeStamp& aSampleTime,
   
   
   
-  bool needComposite = SampleCompositedAsyncTransform();
+  SampleCompositedAsyncTransform();
 
   TimeDuration sampleTimeDelta = aSampleTime - mLastSampleTime;
   mLastSampleTime = aSampleTime;
@@ -3258,9 +3262,9 @@ bool AsyncPanZoomController::UpdateAnimation(const TimeStamp& aSampleTime,
       RequestContentRepaint();
     }
     UpdateSharedCompositorFrameMetrics();
-    needComposite = true;
+    return true;
   }
-  return needComposite;
+  return false;
 }
 
 AsyncTransformComponentMatrix
@@ -3421,17 +3425,12 @@ AsyncPanZoomController::GetEffectiveZoom(AsyncTransformConsumer aMode) const
   return mFrameMetrics.GetZoom();
 }
 
-bool
+void
 AsyncPanZoomController::SampleCompositedAsyncTransform()
 {
   ReentrantMonitorAutoEnter lock(mMonitor);
-  if (mCompositedScrollOffset != mFrameMetrics.GetScrollOffset() ||
-      mCompositedZoom != mFrameMetrics.GetZoom()) {
-    mCompositedScrollOffset = mFrameMetrics.GetScrollOffset();
-    mCompositedZoom = mFrameMetrics.GetZoom();
-    return true;
-  }
-  return false;
+  mCompositedScrollOffset = mFrameMetrics.GetScrollOffset();
+  mCompositedZoom = mFrameMetrics.GetZoom();
 }
 
 AsyncTransformComponentMatrix
