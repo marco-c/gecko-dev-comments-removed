@@ -118,7 +118,7 @@ public:
   
 
 
-  nsStyleContext* GetUndisplayedContent(const nsIContent* aContent)
+  nsStyleContext* GetDisplayNoneStyleFor(const nsIContent* aContent)
   {
     if (!mDisplayNoneMap) {
       return nullptr;

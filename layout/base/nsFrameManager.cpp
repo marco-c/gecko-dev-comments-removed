@@ -264,7 +264,7 @@ nsFrameManager::ClearUndisplayedContentIn(nsIContent* aContent,
       printf( "REMOVED!\n");
 #endif
       
-      MOZ_ASSERT(!GetUndisplayedContent(aContent),
+      MOZ_ASSERT(!GetDisplayNoneStyleFor(aContent),
                  "Found more undisplayed content data after removal");
       return;
     }

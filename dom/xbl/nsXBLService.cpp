@@ -147,9 +147,8 @@ public:
       if (!childFrame) {
         
         nsFrameManager* fm = shell->FrameManager();
-        nsStyleContext* sc = fm->GetUndisplayedContent(mBoundElement);
+        nsStyleContext* sc = fm->GetDisplayNoneStyleFor(mBoundElement);
         if (!sc) {
-          
           sc = fm->GetDisplayContentsStyleFor(mBoundElement);
         }
         if (!sc) {

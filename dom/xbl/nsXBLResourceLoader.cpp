@@ -259,9 +259,8 @@ nsXBLResourceLoader::NotifyBoundElements()
           nsIFrame* childFrame = content->GetPrimaryFrame();
           if (!childFrame) {
             
-            
             nsStyleContext* sc =
-              shell->FrameManager()->GetUndisplayedContent(content);
+              shell->FrameManager()->GetDisplayNoneStyleFor(content);
 
             if (!sc) {
               sc = shell->FrameManager()->GetDisplayContentsStyleFor(content);
