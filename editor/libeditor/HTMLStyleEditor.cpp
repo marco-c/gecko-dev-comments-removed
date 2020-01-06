@@ -287,10 +287,10 @@ HTMLEditor::SetInlinePropertyOnTextNode(Text& aText,
 
   
   ErrorResult rv;
-  RefPtr<Text> text = &aText;
+  nsCOMPtr<nsIContent> text = &aText;
   if (uint32_t(aEndOffset) != aText.Length()) {
     
-    text = SplitNode(aText, aEndOffset, rv)->GetAsText();
+    text = SplitNode(*text, aEndOffset, rv);
     NS_ENSURE_TRUE(!rv.Failed(), rv.StealNSResult());
   }
 
