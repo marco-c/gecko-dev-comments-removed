@@ -741,9 +741,7 @@ class NativeObject : public ShapedObject
     bool hasDynamicSlots() const { return !!slots_; }
 
     
-    uint32_t numDynamicSlots() const {
-        return dynamicSlotsCount(numFixedSlots(), slotSpan(), getClass());
-    }
+    MOZ_ALWAYS_INLINE uint32_t numDynamicSlots() const;
 
     bool empty() const {
         return lastProperty()->isEmptyShape();
@@ -1024,10 +1022,9 @@ class NativeObject : public ShapedObject
 
 
 
-    static uint32_t dynamicSlotsCount(uint32_t nfixed, uint32_t span, const Class* clasp);
-    static uint32_t dynamicSlotsCount(Shape* shape) {
-        return dynamicSlotsCount(shape->numFixedSlots(), shape->slotSpan(), shape->getObjectClass());
-    }
+    static MOZ_ALWAYS_INLINE uint32_t dynamicSlotsCount(uint32_t nfixed, uint32_t span,
+                                                        const Class* clasp);
+    static MOZ_ALWAYS_INLINE uint32_t dynamicSlotsCount(Shape* shape);
 
     
 
