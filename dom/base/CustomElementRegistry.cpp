@@ -58,8 +58,8 @@ CustomElementCallback::Call()
     case nsIDocument::eConnected:
       static_cast<LifecycleConnectedCallback *>(mCallback.get())->Call(mThisObject, rv);
       break;
-    case nsIDocument::eDetached:
-      static_cast<LifecycleDetachedCallback *>(mCallback.get())->Call(mThisObject, rv);
+    case nsIDocument::eDisconnected:
+      static_cast<LifecycleDisconnectedCallback *>(mCallback.get())->Call(mThisObject, rv);
       break;
     case nsIDocument::eAttributeChanged:
       static_cast<LifecycleAttributeChangedCallback *>(mCallback.get())->Call(mThisObject,
@@ -345,9 +345,9 @@ CustomElementRegistry::CreateCustomElementCallback(
       }
       break;
 
-    case nsIDocument::eDetached:
-      if (aDefinition->mCallbacks->mDetachedCallback.WasPassed()) {
-        func = aDefinition->mCallbacks->mDetachedCallback.Value();
+    case nsIDocument::eDisconnected:
+      if (aDefinition->mCallbacks->mDisconnectedCallback.WasPassed()) {
+        func = aDefinition->mCallbacks->mDisconnectedCallback.Value();
       }
       break;
 
@@ -1034,14 +1034,14 @@ CustomElementReactionsStack::Enqueue(Element* aElement,
 
   
   if (!mReactionsStack.IsEmpty()) {
-    mReactionsStack.LastElement()->AppendElement(do_GetWeakReference(aElement));
+    mReactionsStack.LastElement()->AppendElement(aElement);
     elementData->mReactionQueue.AppendElement(aReaction);
     return;
   }
 
   
   
-  mBackupQueue.AppendElement(do_GetWeakReference(aElement));
+  mBackupQueue.AppendElement(aElement);
   elementData->mReactionQueue.AppendElement(aReaction);
 
   if (mIsBackupQueueProcessing) {
@@ -1079,14 +1079,18 @@ CustomElementReactionsStack::InvokeReactions(ElementQueue* aElementQueue,
 
   
   for (uint32_t i = 0; i < aElementQueue->Length(); ++i) {
-    nsCOMPtr<Element> element = do_QueryReferent(aElementQueue->ElementAt(i));
+    Element* element = aElementQueue->ElementAt(i);
 
     if (!element) {
       continue;
     }
 
     RefPtr<CustomElementData> elementData = element->GetCustomElementData();
-    MOZ_ASSERT(elementData, "CustomElementData should exist");
+    if (!elementData) {
+      
+      
+      return;
+    }
 
     auto& reactions = elementData->mReactionQueue;
     for (uint32_t j = 0; j < reactions.Length(); ++j) {
@@ -1141,9 +1145,9 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(CustomElementDefinition)
     cb.NoteXPCOMChild(callbacks->mConnectedCallback.Value());
   }
 
-  if (callbacks->mDetachedCallback.WasPassed()) {
-    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mCallbacks->mDetachedCallback");
-    cb.NoteXPCOMChild(callbacks->mDetachedCallback.Value());
+  if (callbacks->mDisconnectedCallback.WasPassed()) {
+    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mCallbacks->mDisconnectedCallback");
+    cb.NoteXPCOMChild(callbacks->mDisconnectedCallback.Value());
   }
 
   NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mConstructor");

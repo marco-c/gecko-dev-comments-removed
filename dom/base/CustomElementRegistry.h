@@ -262,7 +262,8 @@ public:
   
   
   
-  typedef AutoTArray<nsWeakPtr, 1> ElementQueue;
+  
+  typedef AutoTArray<RefPtr<Element>, 1> ElementQueue;
 
   
 

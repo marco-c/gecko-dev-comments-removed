@@ -1948,11 +1948,12 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
 
     document->ClearBoxObjectFor(this);
 
-    
-    
-    if (GetCustomElementData() && document->GetDocShell()) {
-      
-      nsContentUtils::EnqueueLifecycleCallback(nsIDocument::eDetached, this);
+     
+     
+    if (CustomElementRegistry::IsCustomElementEnabled() &&
+        GetCustomElementData()) {
+      nsContentUtils::EnqueueLifecycleCallback(nsIDocument::eDisconnected,
+                                               this);
     }
   }
 
