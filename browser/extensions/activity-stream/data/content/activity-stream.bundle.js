@@ -1712,7 +1712,12 @@ class Search extends React.Component {
   }
   onInputMount(input) {
     if (input) {
-      this.controller = new ContentSearchUIController(input, input.parentNode, "activitystream", "activitystream");
+      
+      
+      
+      
+      
+      this.controller = new ContentSearchUIController(input, input.parentNode, "newtab", "newtab");
       addEventListener("ContentSearchClient", this);
     } else {
       this.controller = null;
