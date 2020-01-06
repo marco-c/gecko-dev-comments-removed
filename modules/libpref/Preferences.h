@@ -334,7 +334,7 @@ public:
   static int64_t SizeOfIncludingThisAndOtherStuff(
     mozilla::MallocSizeOf aMallocSizeOf);
 
-  static void HandleDirty();
+  static void DirtyCallback();
 
   
   
