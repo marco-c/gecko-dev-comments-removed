@@ -1249,9 +1249,9 @@ TextureClient::CreateForRawBufferAccess(LayersIPCChannel* aAllocator,
   
   
   
-  NS_WARNING_ASSERTION(aMoz2DBackend != gfx::BackendType::SKIA &&
-                       aMoz2DBackend != gfx::BackendType::DIRECT2D &&
-                       aMoz2DBackend != gfx::BackendType::DIRECT2D1_1,
+  NS_WARNING_ASSERTION(aMoz2DBackend == gfx::BackendType::SKIA ||
+                       aMoz2DBackend == gfx::BackendType::DIRECT2D ||
+                       aMoz2DBackend == gfx::BackendType::DIRECT2D1_1,
                        "Unsupported TextureClient backend type");
 
   TextureData* texData = BufferTextureData::Create(aSize, aFormat, gfx::BackendType::SKIA,
