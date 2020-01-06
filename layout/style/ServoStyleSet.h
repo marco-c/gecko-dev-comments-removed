@@ -270,17 +270,7 @@ public:
 
 
 
-
   bool StyleDocument(ServoTraversalFlags aFlags);
-
-  
-
-
-
-
-
-
-  bool StyleDocumentForThrottledAnimationFlush();
 
   
 

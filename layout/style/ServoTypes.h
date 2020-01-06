@@ -66,12 +66,6 @@ enum class ServoTraversalFlags : uint32_t {
   
   
   ForNewlyBoundElement = 1 << 4,
-  
-  
-  
-  
-  
-  ForThrottledAnimationFlush = 1 << 5,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ServoTraversalFlags)

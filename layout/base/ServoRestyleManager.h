@@ -123,6 +123,19 @@ public:
                                     nsRestyleHint aRestyleHint);
   void ProcessPendingRestyles();
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
   void UpdateOnlyAnimationStyles();
 
   void ContentStateChanged(nsIContent* aContent, EventStates aStateMask);
