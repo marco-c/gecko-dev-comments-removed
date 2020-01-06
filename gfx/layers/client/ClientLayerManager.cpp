@@ -729,16 +729,23 @@ ClientLayerManager::ForwardTransaction(bool aScheduleComposite)
   
   
   
+  RefPtr<SyncObjectClient> syncObject = nullptr;
   if (!gfxPlatform::GetPlatform()->DidRenderingDeviceReset()) {
     if (mForwarder->GetSyncObject() &&
         mForwarder->GetSyncObject()->IsSyncObjectValid()) {
-      if (mTextureSyncOnPaintThread) {
-        
-        PaintThread::Get()->SynchronizePaintTextures(mForwarder->GetSyncObject());
-      } else {
-        mForwarder->GetSyncObject()->Synchronize();
-      }
+      syncObject = mForwarder->GetSyncObject();
     }
+  }
+
+  
+  
+  
+  
+  if (mTextureSyncOnPaintThread) {
+    MOZ_ASSERT(PaintThread::Get());
+    PaintThread::Get()->FinishedLayerTransaction(syncObject);
+  } else if (syncObject) {
+    syncObject->Synchronize();
   }
 
   mPhase = PHASE_FORWARD;

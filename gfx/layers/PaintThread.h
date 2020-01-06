@@ -81,7 +81,7 @@ public:
   
   
   
-  void SynchronizePaintTextures(SyncObjectClient* aSyncObject);
+  void FinishedLayerTransaction(SyncObjectClient* aSyncObject);
 
   
   
@@ -101,8 +101,8 @@ private:
                           CapturedPaintState* aState,
                           PrepDrawTargetForPaintingCallback aCallback);
   void EndAsyncPaintingLayer();
-  void SyncTextureData(CompositorBridgeChild* aBridge,
-                       SyncObjectClient* aSyncObject);
+  void EndAsyncLayerTransaction(CompositorBridgeChild* aBridge,
+                                SyncObjectClient* aSyncObject);
 
   static StaticAutoPtr<PaintThread> sSingleton;
   static StaticRefPtr<nsIThread> sThread;
