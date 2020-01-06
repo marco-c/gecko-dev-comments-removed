@@ -2569,10 +2569,23 @@ gfxFontGroup::InitScriptRun(DrawTarget* aDrawTarget,
 
     gfxFont *mainFont = GetFirstValidFont();
 
+    ShapedTextFlags orientation =
+        aTextRun->GetFlags() & ShapedTextFlags::TEXT_ORIENT_MASK;
+
+    if (orientation != ShapedTextFlags::TEXT_ORIENT_HORIZONTAL &&
+        (aRunScript == Script::MONGOLIAN || aRunScript == Script::PHAGS_PA)) {
+        
+        
+        
+        
+        
+        
+        orientation = ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_RIGHT;
+    }
+
     uint32_t runStart = 0;
     AutoTArray<gfxTextRange,3> fontRanges;
-    ComputeRanges(fontRanges, aString, aLength, aRunScript,
-                  aTextRun->GetFlags() & ShapedTextFlags::TEXT_ORIENT_MASK);
+    ComputeRanges(fontRanges, aString, aLength, aRunScript, orientation);
     uint32_t numRanges = fontRanges.Length();
     bool missingChars = false;
 
