@@ -774,8 +774,9 @@ ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
         break;
       }
 
-      if (rs->mFrame->GetStateBits() & NS_FRAME_CONTAINS_RELATIVE_BSIZE)
+      if (rs->mFrame->GetStateBits() & NS_FRAME_CONTAINS_RELATIVE_BSIZE) {
         break; 
+      }
       rs->mFrame->AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
 
       
@@ -1088,21 +1089,22 @@ ReflowInput::GetHypotheticalBoxContainer(nsIFrame*    aFrame,
 
   
 
-  const ReflowInput* state;
+  const ReflowInput* reflowInput;
   if (aFrame->GetStateBits() & NS_FRAME_IN_REFLOW) {
-    for (state = mParentReflowInput; state && state->mFrame != aFrame;
-         state = state->mParentReflowInput) {
+    for (reflowInput = mParentReflowInput;
+         reflowInput && reflowInput->mFrame != aFrame;
+         reflowInput = reflowInput->mParentReflowInput) {
       
     }
   } else {
-    state = nullptr;
+    reflowInput = nullptr;
   }
 
-  if (state) {
-    WritingMode wm = state->GetWritingMode();
+  if (reflowInput) {
+    WritingMode wm = reflowInput->GetWritingMode();
     NS_ASSERTION(wm == aFrame->GetWritingMode(), "unexpected writing mode");
-    aCBIStartEdge = state->ComputedLogicalBorderPadding().IStart(wm);
-    aCBSize = state->ComputedSize(wm);
+    aCBIStartEdge = reflowInput->ComputedLogicalBorderPadding().IStart(wm);
+    aCBSize = reflowInput->ComputedSize(wm);
   } else {
     
 
@@ -1273,7 +1275,7 @@ void
 ReflowInput::CalculateHypotheticalPosition(
   nsPresContext* aPresContext,
   nsPlaceholderFrame* aPlaceholderFrame,
-  const ReflowInput* cbrs,
+  const ReflowInput* aReflowInput,
   nsHypotheticalPosition& aHypotheticalPos,
   LayoutFrameType aFrameType) const
 {
@@ -1285,7 +1287,7 @@ ReflowInput::CalculateHypotheticalPosition(
   nscoord blockIStartContentEdge;
   
   
-  WritingMode cbwm = cbrs->GetWritingMode();
+  WritingMode cbwm = aReflowInput->GetWritingMode();
   LogicalSize blockContentSize(cbwm);
   nsIFrame* containingBlock =
     GetHypotheticalBoxContainer(aPlaceholderFrame, blockIStartContentEdge,
@@ -1359,7 +1361,7 @@ ReflowInput::CalculateHypotheticalPosition(
   
   
   nsSize containerSize = containingBlock->GetStateBits() & NS_FRAME_IN_REFLOW
-    ? cbrs->ComputedSizeAsContainerIfConstrained()
+    ? aReflowInput->ComputedSizeAsContainerIfConstrained()
     : containingBlock->GetSize();
   LogicalPoint
     placeholderOffset(wm, aPlaceholderFrame->GetOffsetTo(containingBlock),
@@ -1496,20 +1498,20 @@ ReflowInput::CalculateHypotheticalPosition(
         
         
         
-        cbOffset -= containingBlock->GetOffsetTo(cbrs->mFrame);
+        cbOffset -= containingBlock->GetOffsetTo(aReflowInput->mFrame);
         break;
       }
       containingBlock = parent;
-    } while (containingBlock != cbrs->mFrame);
+    } while (containingBlock != aReflowInput->mFrame);
   } else {
     
     
     
     
-    cbOffset = containingBlock->GetOffsetTo(cbrs->mFrame);
+    cbOffset = containingBlock->GetOffsetTo(aReflowInput->mFrame);
   }
-  nsSize cbrsSize = cbrs->ComputedSizeAsContainerIfConstrained();
-  LogicalPoint logCBOffs(wm, cbOffset, cbrsSize - containerSize);
+  nsSize reflowSize = aReflowInput->ComputedSizeAsContainerIfConstrained();
+  LogicalPoint logCBOffs(wm, cbOffset, reflowSize - containerSize);
   aHypotheticalPos.mIStart += logCBOffs.I(wm);
   aHypotheticalPos.mBStart += logCBOffs.B(wm);
 
@@ -1517,8 +1519,9 @@ ReflowInput::CalculateHypotheticalPosition(
   
   
   LogicalMargin border =
-    cbrs->ComputedLogicalBorderPadding() - cbrs->ComputedLogicalPadding();
-  border = border.ConvertTo(wm, cbrs->GetWritingMode());
+    aReflowInput->ComputedLogicalBorderPadding() -
+    aReflowInput->ComputedLogicalPadding();
+  border = border.ConvertTo(wm, aReflowInput->GetWritingMode());
   aHypotheticalPos.mIStart -= border.IStart(wm);
   aHypotheticalPos.mBStart -= border.BStart(wm);
 
@@ -1575,7 +1578,7 @@ ReflowInput::CalculateHypotheticalPosition(
 
     LogicalPoint origin(wm, aHypotheticalPos.mIStart,
                         aHypotheticalPos.mBStart);
-    origin = origin.ConvertTo(cbwm, wm, cbrsSize -
+    origin = origin.ConvertTo(cbwm, wm, reflowSize -
                               boxSize.GetPhysicalSize(wm));
 
     aHypotheticalPos.mIStart = origin.I(cbwm);
@@ -1588,12 +1591,12 @@ ReflowInput::CalculateHypotheticalPosition(
 
 void
 ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
-                                     const ReflowInput* cbrs,
+                                     const ReflowInput* aReflowInput,
                                      const LogicalSize& aCBSize,
                                      LayoutFrameType aFrameType)
 {
   WritingMode wm = GetWritingMode();
-  WritingMode cbwm = cbrs->GetWritingMode();
+  WritingMode cbwm = aReflowInput->GetWritingMode();
   NS_PRECONDITION(aCBSize.BSize(cbwm) != NS_AUTOHEIGHT,
                   "containing block bsize must be constrained");
 
@@ -1635,8 +1638,8 @@ ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
       hypotheticalPos.mIStart = nscoord(0);
       hypotheticalPos.mBStart = nscoord(0);
     } else {
-      CalculateHypotheticalPosition(aPresContext, placeholderFrame, cbrs,
-                                    hypotheticalPos, aFrameType);
+      CalculateHypotheticalPosition(aPresContext, placeholderFrame,
+                                    aReflowInput, hypotheticalPos, aFrameType);
     }
   }
 
@@ -2064,8 +2067,8 @@ CalcQuirkContainingBlockHeight(const ReflowInput* aCBReflowInput)
 
     }
     
-    else if (LayoutFrameType::Block == frameType && rs->mParentReflowInput &&
-             rs->mParentReflowInput->mFrame->IsCanvasFrame()) {
+    else if (LayoutFrameType::Block == frameType && ri->mParentReflowInput &&
+             ri->mParentReflowInput->mFrame->IsCanvasFrame()) {
       
       result -= GetBlockMarginBorderPadding(secondAncestorRI);
     }
@@ -2231,14 +2234,14 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
     ComputedMaxWidth() = ComputedMaxHeight() = NS_UNCONSTRAINEDSIZE;
   } else {
     
-    const ReflowInput* cbrs = mCBReflowInput;
-    MOZ_ASSERT(cbrs, "no containing block");
+    const ReflowInput* cbri = mCBReflowInput;
+    MOZ_ASSERT(cbri, "no containing block");
     MOZ_ASSERT(mFrame->GetParent());
 
     
     
     LogicalSize cbSize = (aContainingBlockSize == LogicalSize(wm, -1, -1))
-      ? ComputeContainingBlockRectangle(aPresContext, cbrs)
+      ? ComputeContainingBlockRectangle(aPresContext, cbri)
       : aContainingBlockSize;
 
     
@@ -2248,11 +2251,11 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
       
       
       
-      if (cbrs->mParentReflowInput) {
-        fType = cbrs->mFrame->Type();
+      if (cbri->mParentReflowInput) {
+        fType = cbri->mFrame->Type();
         if (IS_TABLE_CELL(fType)) {
           
-          cbSize.BSize(wm) = cbrs->ComputedSize(wm).BSize(wm);
+          cbSize.BSize(wm) = cbri->ComputedSize(wm).BSize(wm);
         }
       }
     }
@@ -2262,7 +2265,7 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
 
     
     
-    WritingMode cbwm = cbrs->GetWritingMode();
+    WritingMode cbwm = cbri->GetWritingMode();
     InitOffsets(cbwm, OffsetPercentBasis(mFrame, cbwm,
                                          cbSize.ConvertTo(cbwm, wm)),
                 aFrameType, mFlags, aBorder, aPadding, mStyleDisplay);
@@ -2284,12 +2287,12 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
             NS_FRAME_REPLACED_CONTAINS_BLOCK(
                 NS_CSS_FRAME_TYPE_INLINE) == mFrameType) {
           
-          NS_ASSERTION(nullptr != cbrs, "no containing block");
+          NS_ASSERTION(nullptr != cbri, "no containing block");
           
           if (!wm.IsVertical() &&
               eCompatibility_NavQuirks == aPresContext->CompatibilityMode()) {
             if (!IS_TABLE_CELL(fType)) {
-              cbSize.BSize(wm) = CalcQuirkContainingBlockHeight(cbrs);
+              cbSize.BSize(wm) = CalcQuirkContainingBlockHeight(cbri);
               if (cbSize.BSize(wm) == NS_AUTOHEIGHT) {
                 blockSizeUnit = eStyleUnit_Auto;
               }
@@ -2303,7 +2306,7 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
           
           else
           {
-            nscoord computedBSize = cbrs->ComputedSize(wm).BSize(wm);
+            nscoord computedBSize = cbri->ComputedSize(wm).BSize(wm);
             if (NS_AUTOHEIGHT != computedBSize) {
               cbSize.BSize(wm) = computedBSize;
             }
@@ -2400,7 +2403,9 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
 
     } else if (NS_FRAME_GET_TYPE(mFrameType) == NS_CSS_FRAME_TYPE_ABSOLUTE) {
       
-      InitAbsoluteConstraints(aPresContext, cbrs, cbSize.ConvertTo(cbrs->GetWritingMode(), wm), aFrameType);
+      InitAbsoluteConstraints(aPresContext, cbri,
+                              cbSize.ConvertTo(cbri->GetWritingMode(), wm),
+                              aFrameType);
     } else {
       AutoMaybeDisableFontInflation an(mFrame);
 
@@ -2739,28 +2744,28 @@ ReflowInput::CalculateBlockSideMargins(LayoutFrameType aFrameType)
     
     
     
-    const ReflowInput* prs = mParentReflowInput;
+    const ReflowInput* pri = mParentReflowInput;
     if (aFrameType == LayoutFrameType::Table) {
-      NS_ASSERTION(prs->mFrame->IsTableWrapperFrame(),
+      NS_ASSERTION(pri->mFrame->IsTableWrapperFrame(),
                    "table not inside table wrapper");
       
       
-      prs = prs->mParentReflowInput;
+      pri = pri->mParentReflowInput;
     }
-    if (prs &&
-        (prs->mStyleText->mTextAlign == NS_STYLE_TEXT_ALIGN_MOZ_LEFT ||
-         prs->mStyleText->mTextAlign == NS_STYLE_TEXT_ALIGN_MOZ_CENTER ||
-         prs->mStyleText->mTextAlign == NS_STYLE_TEXT_ALIGN_MOZ_RIGHT)) {
-      if (prs->mWritingMode.IsBidiLTR()) {
+    if (pri &&
+        (pri->mStyleText->mTextAlign == NS_STYLE_TEXT_ALIGN_MOZ_LEFT ||
+         pri->mStyleText->mTextAlign == NS_STYLE_TEXT_ALIGN_MOZ_CENTER ||
+         pri->mStyleText->mTextAlign == NS_STYLE_TEXT_ALIGN_MOZ_RIGHT)) {
+      if (pri->mWritingMode.IsBidiLTR()) {
         isAutoStartMargin =
-          prs->mStyleText->mTextAlign != NS_STYLE_TEXT_ALIGN_MOZ_LEFT;
+          pri->mStyleText->mTextAlign != NS_STYLE_TEXT_ALIGN_MOZ_LEFT;
         isAutoEndMargin =
-          prs->mStyleText->mTextAlign != NS_STYLE_TEXT_ALIGN_MOZ_RIGHT;
+          pri->mStyleText->mTextAlign != NS_STYLE_TEXT_ALIGN_MOZ_RIGHT;
       } else {
         isAutoStartMargin =
-          prs->mStyleText->mTextAlign != NS_STYLE_TEXT_ALIGN_MOZ_RIGHT;
+          pri->mStyleText->mTextAlign != NS_STYLE_TEXT_ALIGN_MOZ_RIGHT;
         isAutoEndMargin =
-          prs->mStyleText->mTextAlign != NS_STYLE_TEXT_ALIGN_MOZ_LEFT;
+          pri->mStyleText->mTextAlign != NS_STYLE_TEXT_ALIGN_MOZ_LEFT;
       }
     }
     
