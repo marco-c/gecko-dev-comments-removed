@@ -75,31 +75,6 @@ CompileInitialTier(const ShareableBytes& bytecode, const CompileArgs& args, Uniq
 bool
 CompileTier2(Module& module, const CompileArgs& args, Atomic<bool>* cancelled);
 
-
-
-
-
-
-bool
-GetDebugEnabled(const CompileArgs& args, ModuleKind kind = ModuleKind::Wasm);
-
-
-
-
-
-
-
-
-CompileMode
-GetInitialCompileMode(const CompileArgs& args, ModuleKind kind = ModuleKind::Wasm);
-
-
-
-
-
-Tier
-GetTier(const CompileArgs& args, CompileMode compileMode, ModuleKind kind = ModuleKind::Wasm);
-
 }  
 }  
 

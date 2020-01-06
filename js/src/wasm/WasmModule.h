@@ -226,7 +226,7 @@ class Module : public JS::WasmModule
 
     void startTier2(const CompileArgs& args);
     void finishTier2(UniqueLinkDataTier linkData2, UniqueMetadataTier metadata2,
-                     UniqueConstCodeSegment code2, UniqueModuleEnvironment env2);
+                     UniqueConstCodeSegment code2, ModuleEnvironment* env2);
 
     
     

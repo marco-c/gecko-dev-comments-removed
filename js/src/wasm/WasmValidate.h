@@ -35,11 +35,16 @@ namespace wasm {
 
 struct ModuleEnvironment
 {
-    ModuleKind                kind;
+    
+    const CompileMode         mode;
+    const Tier                tier;
+    const DebugEnabled        debug;
+    const ModuleKind          kind;
+
+    
     MemoryUsage               memoryUsage;
     Atomic<uint32_t>          minMemoryLength;
     Maybe<uint32_t>           maxMemoryLength;
-
     SigWithIdVector           sigs;
     SigWithIdPtrVector        funcSigs;
     Uint32Vector              funcImportGlobalDataOffsets;
@@ -54,8 +59,14 @@ struct ModuleEnvironment
     NameInBytecodeVector      funcNames;
     CustomSectionVector       customSections;
 
-    explicit ModuleEnvironment(ModuleKind kind = ModuleKind::Wasm)
-      : kind(kind),
+    explicit ModuleEnvironment(CompileMode mode = CompileMode::Once,
+                               Tier tier = Tier::Ion,
+                               DebugEnabled debug = DebugEnabled::False,
+                               ModuleKind kind = ModuleKind::Wasm)
+      : mode(mode),
+        tier(tier),
+        debug(debug),
+        kind(kind),
         memoryUsage(MemoryUsage::None),
         minMemoryLength(0)
     {}
@@ -91,6 +102,9 @@ struct ModuleEnvironment
     bool isAsmJS() const {
         return kind == ModuleKind::AsmJS;
     }
+    bool debugEnabled() const {
+        return debug == DebugEnabled::True;
+    }
     bool funcIsImport(uint32_t funcIndex) const {
         return funcIndex < funcImportGlobalDataOffsets.length();
     }
@@ -98,8 +112,6 @@ struct ModuleEnvironment
         return funcSigs[funcIndex] - sigs.begin();
     }
 };
-
-typedef UniquePtr<ModuleEnvironment> UniqueModuleEnvironment;
 
 
 

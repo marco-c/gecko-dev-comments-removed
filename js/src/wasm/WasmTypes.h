@@ -361,7 +361,7 @@ enum class Tier
     Baseline,
     Debug = Baseline,
     Ion,
-    Serialized = Ion,
+    Serialized = Ion
 };
 
 
@@ -372,6 +372,14 @@ enum class CompileMode
     Once,
     Tier1,
     Tier2
+};
+
+
+
+enum class DebugEnabled
+{
+    False,
+    True
 };
 
 

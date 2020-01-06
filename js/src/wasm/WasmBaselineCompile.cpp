@@ -364,6 +364,7 @@ class BaseCompiler
 #endif
 
     typedef Vector<NonAssertingLabel, 8, SystemAllocPolicy> LabelVector;
+    typedef Vector<MIRType, 8, SystemAllocPolicy> MIRTypeVector;
 
     
     
