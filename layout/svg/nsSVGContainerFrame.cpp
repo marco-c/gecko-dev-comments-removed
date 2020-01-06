@@ -34,7 +34,7 @@ NS_NewSVGContainerFrame(nsIPresShell* aPresShell,
                         nsStyleContext* aContext)
 {
   nsIFrame* frame =
-    new (aPresShell) nsSVGContainerFrame(aContext, nsSVGContainerFrame::kClassID, LayoutFrameType::None);
+    new (aPresShell) nsSVGContainerFrame(aContext, nsSVGContainerFrame::kClassID);
   
   
   
