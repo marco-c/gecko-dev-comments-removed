@@ -26,7 +26,7 @@
 #include "mozilla/layers/PLayerTransactionParent.h"
 #include "mozilla/layers/RemoteContentController.h"
 #include "mozilla/layers/WebRenderBridgeParent.h"
-#include "mozilla/layers/WebRenderCompositableHolder.h"
+#include "mozilla/layers/AsyncImagePipelineManager.h"
 #include "mozilla/mozalloc.h"           
 #include "nsDebug.h"                    
 #include "nsTArray.h"                   
@@ -225,7 +225,7 @@ CrossProcessCompositorBridgeParent::AllocPWebRenderBridgeParent(const wr::Pipeli
   WebRenderBridgeParent* root = sIndirectLayerTrees[cbp->RootLayerTreeId()].mWrBridge.get();
 
   RefPtr<wr::WebRenderAPI> api = root->GetWebRenderAPI();
-  RefPtr<WebRenderCompositableHolder> holder = root->CompositableHolder();
+  RefPtr<AsyncImagePipelineManager> holder = root->AsyncImageManager();
   RefPtr<CompositorAnimationStorage> animStorage = cbp->GetAnimationStorage();
   parent = new WebRenderBridgeParent(this, aPipelineId, nullptr, root->CompositorScheduler(), Move(api), Move(holder), Move(animStorage));
 
