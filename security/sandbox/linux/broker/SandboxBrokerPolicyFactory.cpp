@@ -403,7 +403,7 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
 
   MOZ_ASSERT(NS_IsMainThread());
   
-  if (GetEffectiveContentSandboxLevel() <= 1) {
+  if (!IsContentSandboxEnabled()) {
     return nullptr;
   }
 
