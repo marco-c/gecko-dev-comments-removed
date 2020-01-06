@@ -855,13 +855,8 @@ NativeObject::putProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
 
 
 
-    if (hadSlot && !shape->hasSlot()) {
-        if (oldSlot < obj->slotSpan())
-            obj->freeSlot(cx, oldSlot);
-        
-        if (!cx->helperThread())
-            ++cx->propertyRemovals;
-    }
+    if (hadSlot && !shape->hasSlot() && oldSlot < obj->slotSpan())
+        obj->freeSlot(cx, oldSlot);
 
     obj->checkShapeConsistency();
 
@@ -959,11 +954,8 @@ NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj, jsid id_)
     }
 
     
-    if (shape->hasSlot()) {
+    if (shape->hasSlot())
         obj->freeSlot(cx, shape->slot());
-        if (!cx->helperThread())
-            ++cx->propertyRemovals;
-    }
 
     
 
@@ -1042,8 +1034,6 @@ NativeObject::clear(JSContext* cx, HandleNativeObject obj)
 
     JS_ALWAYS_TRUE(obj->setLastProperty(cx, shape));
 
-    if (!cx->helperThread())
-        ++cx->propertyRemovals;
     obj->checkShapeConsistency();
 }
 

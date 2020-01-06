@@ -614,13 +614,6 @@ struct JSContext : public JS::RootingContext,
     js::ThreadLocalData<uint32_t> debuggerMutations;
 
     
-
-
-
-
-    js::ThreadLocalData<uint32_t> propertyRemovals;
-
-    
     js::ThreadLocalData<js::jit::PcScriptCache*> ionPcScriptCache;
 
   private:

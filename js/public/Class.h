@@ -381,11 +381,9 @@ typedef bool
 
 
 
-
-
 typedef bool
 (* JSSetterOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
-               JS::MutableHandleValue vp, JS::ObjectOpResult& result);
+               JS::HandleValue v, JS::ObjectOpResult& result);
 
 
 

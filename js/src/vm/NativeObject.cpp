@@ -2503,22 +2503,8 @@ NativeSetExistingDataProperty(JSContext* cx, HandleNativeObject obj, HandleShape
 
     MOZ_ASSERT(!obj->is<WithEnvironmentObject>());  
 
-    uint32_t sample = cx->propertyRemovals;
     RootedId id(cx, shape->propid());
-    RootedValue value(cx, v);
-    if (!CallJSSetterOp(cx, shape->setterOp(), obj, id, &value, result))
-        return false;
-
-    
-    
-    if (shape->hasSlot() &&
-        (MOZ_LIKELY(cx->propertyRemovals == sample) ||
-         obj->contains(cx, shape)))
-    {
-        obj->setSlot(shape->slot(), value);
-    }
-
-    return true;  
+    return CallJSSetterOp(cx, shape->setterOp(), obj, id, v, result);
 }
 
 
@@ -2729,8 +2715,7 @@ SetExistingProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleVa
             if (shape->hasDefaultSetter())
                 return result.succeed();
 
-            RootedValue valCopy(cx, v);
-            return CallJSSetterOp(cx, shape->setterOp(), obj, id, &valCopy, result);
+            return CallJSSetterOp(cx, shape->setterOp(), obj, id, v, result);
         }
 
         

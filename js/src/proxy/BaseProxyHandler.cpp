@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "js/Proxy.h"
 #include "vm/ProxyObject.h"
@@ -27,30 +27,30 @@ BaseProxyHandler::has(JSContext* cx, HandleObject proxy, HandleId id, bool* bp) 
 {
     assertEnteredPolicy(cx, proxy, id, GET);
 
-    // This method is not covered by any spec, but we follow ES 2016
-    // (February 11, 2016) 9.1.7.1 fairly closely.
+    
+    
 
-    // Step 2. (Step 1 is a superfluous assertion.)
-    // Non-standard: Use our faster hasOwn trap.
+    
+    
     if (!hasOwn(cx, proxy, id, bp))
         return false;
 
-    // Step 3.
+    
     if (*bp)
         return true;
 
-    // The spec calls this variable "parent", but that word has weird
-    // connotations in SpiderMonkey, so let's go with "proto".
-    // Step 4.
+    
+    
+    
     RootedObject proto(cx);
     if (!GetPrototype(cx, proxy, &proto))
         return false;
 
-    // Step 5.,5.a.
+    
     if (proto)
         return HasProperty(cx, proto, id, bp);
 
-    // Step 6.
+    
     *bp = false;
     return true;
 }
@@ -94,51 +94,51 @@ BaseProxyHandler::get(JSContext* cx, HandleObject proxy, HandleValue receiver,
 {
     assertEnteredPolicy(cx, proxy, id, GET);
 
-    // This method is not covered by any spec, but we follow ES 2016
-    // (January 21, 2016) 9.1.8 fairly closely.
+    
+    
 
-    // Step 2. (Step 1 is a superfluous assertion.)
+    
     Rooted<PropertyDescriptor> desc(cx);
     if (!getOwnPropertyDescriptor(cx, proxy, id, &desc))
         return false;
     desc.assertCompleteIfFound();
 
-    // Step 3.
+    
     if (!desc.object()) {
-        // The spec calls this variable "parent", but that word has weird
-        // connotations in SpiderMonkey, so let's go with "proto".
-        // Step 3.a.
+        
+        
+        
         RootedObject proto(cx);
         if (!GetPrototype(cx, proxy, &proto))
             return false;
 
-        // Step 3.b.
+        
         if (!proto) {
             vp.setUndefined();
             return true;
         }
 
-        // Step 3.c.
+        
         return GetProperty(cx, proto, receiver, id, vp);
     }
 
-    // Step 4.
+    
     if (desc.isDataDescriptor()) {
         vp.set(desc.value());
         return true;
     }
 
-    // Step 5.
+    
     MOZ_ASSERT(desc.isAccessorDescriptor());
     RootedObject getter(cx, desc.getterObject());
 
-    // Step 6.
+    
     if (!getter) {
         vp.setUndefined();
         return true;
     }
 
-    // Step 7.
+    
     RootedValue getterFunc(cx, ObjectValue(*getter));
     return CallGetter(cx, receiver, getterFunc, vp);
 }
@@ -149,18 +149,18 @@ BaseProxyHandler::set(JSContext* cx, HandleObject proxy, HandleId id, HandleValu
 {
     assertEnteredPolicy(cx, proxy, id, SET);
 
-    // This method is not covered by any spec, but we follow ES6 draft rev 28
-    // (2014 Oct 14) 9.1.9 fairly closely, adapting it slightly for
-    // SpiderMonkey's particular foibles.
+    
+    
+    
 
-    // Steps 2-3.  (Step 1 is a superfluous assertion.)
+    
     Rooted<PropertyDescriptor> ownDesc(cx);
     if (!getOwnPropertyDescriptor(cx, proxy, id, &ownDesc))
         return false;
     ownDesc.assertCompleteIfFound();
 
-    // The rest is factored out into a separate function with a weird name.
-    // This algorithm continues just below.
+    
+    
     return SetPropertyIgnoringNamedGetter(cx, proxy, id, v, receiver, ownDesc, result);
 }
 
@@ -171,53 +171,51 @@ js::SetPropertyIgnoringNamedGetter(JSContext* cx, HandleObject obj, HandleId id,
 {
     Rooted<PropertyDescriptor> ownDesc(cx, ownDesc_);
 
-    // Step 4.
+    
     if (!ownDesc.object()) {
-        // The spec calls this variable "parent", but that word has weird
-        // connotations in SpiderMonkey, so let's go with "proto".
+        
+        
         RootedObject proto(cx);
         if (!GetPrototype(cx, obj, &proto))
             return false;
         if (proto)
             return SetProperty(cx, proto, id, v, receiver, result);
 
-        // Step 4.d.
+        
         ownDesc.setDataDescriptor(UndefinedHandleValue, JSPROP_ENUMERATE);
     }
 
-    // Step 5.
+    
     if (ownDesc.isDataDescriptor()) {
-        // Steps 5.a-b.
+        
         if (!ownDesc.writable())
             return result.fail(JSMSG_READ_ONLY);
         if (!receiver.isObject())
             return result.fail(JSMSG_SET_NON_OBJECT_RECEIVER);
         RootedObject receiverObj(cx, &receiver.toObject());
 
-        // Nonstandard SpiderMonkey special case: setter ops.
-        if (SetterOp setter = ownDesc.setter()) {
-            RootedValue valCopy(cx, v);
-            return CallJSSetterOp(cx, setter, receiverObj, id, &valCopy, result);
-        }
+        
+        if (SetterOp setter = ownDesc.setter())
+            return CallJSSetterOp(cx, setter, receiverObj, id, v, result);
 
-        // Steps 5.c-d.
+        
         Rooted<PropertyDescriptor> existingDescriptor(cx);
         if (!GetOwnPropertyDescriptor(cx, receiverObj, id, &existingDescriptor))
             return false;
 
-        // Step 5.e.
+        
         if (existingDescriptor.object()) {
-            // Step 5.e.i.
+            
             if (existingDescriptor.isAccessorDescriptor())
                 return result.fail(JSMSG_OVERWRITING_ACCESSOR);
 
-            // Step 5.e.ii.
+            
             if (!existingDescriptor.writable())
                 return result.fail(JSMSG_READ_ONLY);
         }
 
 
-        // Steps 5.e.iii-iv. and 5.f.i.
+        
         unsigned attrs =
             existingDescriptor.object()
             ? JSPROP_IGNORE_ENUMERATE | JSPROP_IGNORE_READONLY | JSPROP_IGNORE_PERMANENT
@@ -226,7 +224,7 @@ js::SetPropertyIgnoringNamedGetter(JSContext* cx, HandleObject obj, HandleId id,
         return DefineDataProperty(cx, receiverObj, id, v, attrs, result);
     }
 
-    // Step 6.
+    
     MOZ_ASSERT(ownDesc.isAccessorDescriptor());
     RootedObject setter(cx);
     if (ownDesc.hasSetterObject())
@@ -249,7 +247,7 @@ BaseProxyHandler::getOwnEnumerablePropertyKeys(JSContext* cx, HandleObject proxy
     if (!ownPropertyKeys(cx, proxy, props))
         return false;
 
-    /* Select only the enumerable properties through in-place iteration. */
+    
     RootedId id(cx);
     size_t i = 0;
     for (size_t j = 0, len = props.length(); j < len; j++) {
@@ -280,8 +278,8 @@ BaseProxyHandler::enumerate(JSContext* cx, HandleObject proxy) const
 {
     assertEnteredPolicy(cx, proxy, JSID_VOID, ENUMERATE);
 
-    // GetPropertyKeys will invoke getOwnEnumerablePropertyKeys along the proto
-    // chain for us.
+    
+    
     AutoIdVector props(cx);
     if (!GetPropertyKeys(cx, proxy, 0, &props))
         return nullptr;
@@ -395,9 +393,9 @@ bool
 BaseProxyHandler::setPrototype(JSContext* cx, HandleObject proxy, HandleObject proto,
                                ObjectOpResult& result) const
 {
-    // Disallow sets of protos on proxies with dynamic prototypes but no hook.
-    // This keeps us away from the footgun of having the first proto set opt
-    // you out of having dynamic protos altogether.
+    
+    
+    
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_SET_PROTO_OF,
                               "incompatible Proxy");
     return false;
