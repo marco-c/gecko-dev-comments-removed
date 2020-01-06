@@ -213,14 +213,15 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
       }
     }
 
-    
-    ScrollingLayersHelper clip(item, aBuilder, aSc, mClipIdCache, apzEnabled);
+    { 
+      ScrollingLayersHelper clip(item, aBuilder, aSc, mClipIdCache, apzEnabled);
 
-    
-    
-    if (!item->CreateWebRenderCommands(aBuilder, aResources, aSc, mManager,
-                                       aDisplayListBuilder)) {
-      PushItemAsImage(item, aBuilder, aResources, aSc, aDisplayListBuilder);
+      
+      
+      if (!item->CreateWebRenderCommands(aBuilder, aResources, aSc, mManager,
+                                         aDisplayListBuilder)) {
+        PushItemAsImage(item, aBuilder, aResources, aSc, aDisplayListBuilder);
+      }
     }
 
     if (apzEnabled) {
