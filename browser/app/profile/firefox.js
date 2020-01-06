@@ -730,7 +730,11 @@ pref("browser.preferences.instantApply", true);
 pref("browser.preferences.search", true);
 
 
+#if defined(NIGHTLY_BUILD)
+pref("browser.preferences.useOldOrganization", false);
+#else
 pref("browser.preferences.useOldOrganization", true);
+#endif
 
 
 
