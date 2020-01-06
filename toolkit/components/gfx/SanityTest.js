@@ -345,6 +345,9 @@ SanityTest.prototype = {
     
     
     sanityTest.moveTo(100000000, 1000000000);
+    
+    
+    sanityTest.resizeTo(PAGE_WIDTH, PAGE_HEIGHT);
     tester.scheduleTest(sanityTest);
   },
 };
