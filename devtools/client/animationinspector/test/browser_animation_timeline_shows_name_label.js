@@ -22,25 +22,7 @@ add_task(function* () {
 });
 
 function checkNameLabel(rootWrapperEl, expectedLabelContent) {
-  const timeblockEl = rootWrapperEl.querySelector(".time-block");
-  const labelEl = rootWrapperEl.querySelector(".name div");
+  const labelEl = rootWrapperEl.querySelector(".name svg text");
   is(labelEl.textContent, expectedLabelContent,
      `Text content of labelEl sould be ${ expectedLabelContent }`);
-
-  
-  timeblockEl.style.width = "10000px";
-  const originalLabelWidth = labelEl.clientWidth;
-  ok(originalLabelWidth < timeblockEl.clientWidth / 2,
-     "Label width should be less than 50%");
-
-  
-  timeblockEl.style.width = `${ originalLabelWidth * 2 }px`;
-  is(labelEl.clientWidth + labelEl.offsetLeft, originalLabelWidth,
-     `Label width + offsetLeft should be ${ originalLabelWidth }px`);
-
-  
-  timeblockEl.style.width = `${ originalLabelWidth }px`;
-  is(labelEl.clientWidth + labelEl.offsetLeft,
-     Math.round(timeblockEl.clientWidth / 2),
-     "Label width + offsetLeft should be half of timeblockEl");
 }
