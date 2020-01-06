@@ -3061,6 +3061,10 @@ public:
 
   
   
+  static bool AutoFocusEnabled() { return sAutoFocusEnabled; }
+
+  
+  
   static bool IsBytecodeCacheEnabled() { return sIsBytecodeCacheEnabled; }
 
   
@@ -3219,6 +3223,7 @@ private:
   static bool sRequestIdleCallbackEnabled;
   static bool sLowerNetworkPriority;
   static bool sShowInputPlaceholderOnFocus;
+  static bool sAutoFocusEnabled;
 #ifndef RELEASE_OR_BETA
   static bool sBypassCSSOMOriginCheck;
 #endif
