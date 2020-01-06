@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(DataView.prototype.getInt32.name, "getInt32");
+
+verifyNotEnumerable(DataView.prototype.getInt32, "name");
+verifyNotWritable(DataView.prototype.getInt32, "name");
+verifyConfigurable(DataView.prototype.getInt32, "name");
+
+reportCompare(0, 0);

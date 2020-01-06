@@ -18,6 +18,7 @@
 
 
 
+
 assert.compareArray("abcdef".match(/(?<!abc)\w\w\w/), ["abc"], "#1");
 assert.compareArray("abcdef".match(/(?<!a.c)\w\w\w/), ["abc"], "#2");
 assert.compareArray("abcdef".match(/(?<!a\wc)\w\w\w/), ["abc"], "#3");

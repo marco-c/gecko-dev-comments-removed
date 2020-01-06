@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue(Atomics.exchange.name, "exchange");
 
 verifyNotEnumerable(Atomics.exchange, "name");

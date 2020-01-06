@@ -21,6 +21,7 @@
 
 
 
+
 assert.sameValue("abcdef".match(/(?<=^[^a-c]{3})def/), null, "#1");
 assert.sameValue("foooo".match(/"^foooo(?<=^o+)$/), null, "#2");
 assert.sameValue("foooo".match(/"^foooo(?<=^o*)$/), null, "#3");

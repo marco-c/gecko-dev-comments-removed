@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Float64Array.prototype.buffer;
+});
+
+reportCompare(0, 0);

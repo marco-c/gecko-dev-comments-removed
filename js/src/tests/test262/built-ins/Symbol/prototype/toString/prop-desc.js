@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Symbol.prototype.toString, 'function');
+
+verifyNotEnumerable(Symbol.prototype, 'toString');
+verifyWritable(Symbol.prototype, 'toString');
+verifyConfigurable(Symbol.prototype, 'toString');
+
+reportCompare(0, 0);

@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Date.prototype.toDateString.name, "toDateString");
+
+verifyNotEnumerable(Date.prototype.toDateString, "name");
+verifyNotWritable(Date.prototype.toDateString, "name");
+verifyConfigurable(Date.prototype.toDateString, "name");
+
+reportCompare(0, 0);

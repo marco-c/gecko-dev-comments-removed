@@ -33,7 +33,6 @@
 
 
 
-
 var callCount = 0;
 var obj = {
   async *method(_ = (function() { throw new Test262Error(); }())) {

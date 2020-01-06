@@ -20,7 +20,6 @@
 
 
 
-
 var buffer = new SharedArrayBuffer(1);
 
 testWithTypedArrayConstructors(function(TA) {

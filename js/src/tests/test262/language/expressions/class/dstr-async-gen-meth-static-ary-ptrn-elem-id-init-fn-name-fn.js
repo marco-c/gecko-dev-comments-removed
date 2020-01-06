@@ -56,7 +56,6 @@
 
 
 
-
 var callCount = 0;
 var C = class {
   static async *method([fn = function () {}, xFn = function x() {}]) {

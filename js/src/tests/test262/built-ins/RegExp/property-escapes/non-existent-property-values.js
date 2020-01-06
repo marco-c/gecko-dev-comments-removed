@@ -10,6 +10,7 @@
 
 
 
+
 assert.throws.early(SyntaxError, "/\\p{General_Category=WAT}/u");
 assert.throws.early(SyntaxError, "/\\P{Line_Breakz=WAT}/u");
 

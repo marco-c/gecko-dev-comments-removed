@@ -17,7 +17,6 @@
 
 
 
-
 var g = async function*() {
   yield 1;
   throw new Test262Error('Generator must not be resumed.');

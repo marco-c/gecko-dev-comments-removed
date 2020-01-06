@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Date.prototype.setUTCHours.name, "setUTCHours");
+
+verifyNotEnumerable(Date.prototype.setUTCHours, "name");
+verifyNotWritable(Date.prototype.setUTCHours, "name");
+verifyConfigurable(Date.prototype.setUTCHours, "name");
+
+reportCompare(0, 0);

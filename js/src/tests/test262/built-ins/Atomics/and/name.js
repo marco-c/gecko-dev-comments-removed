@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue(Atomics.and.name, "and");
 
 verifyNotEnumerable(Atomics.and, "name");

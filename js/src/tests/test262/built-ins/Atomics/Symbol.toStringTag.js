@@ -13,6 +13,7 @@
 
 
 
+
 assert.sameValue(Atomics[Symbol.toStringTag], 'Atomics');
 
 verifyNotEnumerable(Atomics, Symbol.toStringTag);

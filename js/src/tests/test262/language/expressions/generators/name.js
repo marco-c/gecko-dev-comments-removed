@@ -23,6 +23,7 @@
 
 
 
+
 assert.sameValue(Object.hasOwnProperty.call(function*() {}, 'name'), false);
 
 assert.sameValue(function* func() {}.name, 'func');

@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.getPrototypeOf(WeakSet),
+  Function.prototype,
+  '`Object.getPrototypeOf(WeakSet)` returns `Function.prototype`'
+);
+
+reportCompare(0, 0);

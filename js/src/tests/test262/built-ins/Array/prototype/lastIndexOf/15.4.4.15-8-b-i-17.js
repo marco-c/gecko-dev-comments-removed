@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+        var arr = [];
+        Object.defineProperty(arr, "0", {
+            set: function () { },
+            configurable: true
+        });
+
+assert.sameValue(arr.lastIndexOf(undefined), 0, 'arr.lastIndexOf(undefined)');
+
+reportCompare(0, 0);

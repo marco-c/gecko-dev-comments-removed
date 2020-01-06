@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+        var result = false;
+        function callbackfn(val, idx, obj) {
+            result = (this === JSON);
+        }
+
+        [11].forEach(callbackfn, JSON);
+
+assert(result, 'result !== true');
+
+reportCompare(0, 0);

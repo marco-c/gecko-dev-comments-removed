@@ -8,6 +8,7 @@
 
 
 
+
 var x = [];
 x.length = {valueOf: function() {return 2}};
 if (x.length !== 2) {
@@ -19,7 +20,7 @@ x = [];
 x.length = {valueOf: function() {return 2}, toString: function() {return 1}};
 if (x.length !== 2) {
   $ERROR('#0: x = []; x.length = {valueOf: function() {return 2}, toString: function() {return 1}};  x.length === 2. Actual: ' + (x.length));
-} 
+}
 
 
 x = [];
@@ -29,9 +30,9 @@ if (x.length !== 2) {
 }
 
 
-try {  
+try {
   x = [];
-  x.length = {valueOf: function() {return 2}, toString: function() {throw "error"}};  
+  x.length = {valueOf: function() {return 2}, toString: function() {throw "error"}};
   if (x.length !== 2) {
     $ERROR('#4.1: x = []; x.length = {valueOf: function() {return 2}, toString: function() {throw "error"}}; x.length === ",". Actual: ' + (x.length));
   }
@@ -61,14 +62,14 @@ if (x.length !== 1) {
 
 try {
   x = [];
-  x.length = {valueOf: function() {throw "error"}, toString: function() {return 1}};  
+  x.length = {valueOf: function() {throw "error"}, toString: function() {return 1}};
   x.length;
   $ERROR('#7.1: x = []; x.length = {valueOf: function() {throw "error"}, toString: function() {return 1}}; x.length throw "error". Actual: ' + (x.length));
-}  
+}
 catch (e) {
   if (e !== "error") {
     $ERROR('#7.2: x = []; x.length = {valueOf: function() {throw "error"}, toString: function() {return 1}}; x.length throw "error". Actual: ' + (e));
-  } 
+  }
 }
 
 
@@ -77,11 +78,11 @@ try {
   x.length = {valueOf: function() {return {}}, toString: function() {return {}}};
   x.length;
   $ERROR('#8.1: x = []; x.length = {valueOf: function() {return {}}, toString: function() {return {}}}  x.length throw TypeError. Actual: ' + (x.length));
-}  
+}
 catch (e) {
   if ((e instanceof TypeError) !== true) {
     $ERROR('#8.2: x = []; x.length = {valueOf: function() {return {}}, toString: function() {return {}}}  x.length throw TypeError. Actual: ' + (e));
-  } 
+  }
 }
 
 reportCompare(0, 0);

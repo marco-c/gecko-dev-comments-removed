@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var ArrayIteratorProto = Object.getPrototypeOf([][Symbol.iterator]());
+var iter = [].keys();
+
+assert.sameValue(
+  Object.getPrototypeOf(iter), ArrayIteratorProto,
+  'The prototype of [].keys() is %ArrayIteratorPrototype%'
+);
+
+reportCompare(0, 0);

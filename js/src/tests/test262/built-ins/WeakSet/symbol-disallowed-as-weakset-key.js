@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+var weakset = new WeakSet();
+var sym = Symbol();
+
+assert.throws(TypeError, function() {
+  weakset.add(sym);
+});
+
+reportCompare(0, 0);

@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue(Atomics.load.name, "load");
 
 verifyNotEnumerable(Atomics.load, "name");

@@ -6,6 +6,7 @@
 
 
 
+
 var sizes   = [    1,     2,     3,     4,     5,     6,     7,  8,
                    9,    10,    11,    12];
 var answers = [   {},    {}, false,  true, false, false, false, false,

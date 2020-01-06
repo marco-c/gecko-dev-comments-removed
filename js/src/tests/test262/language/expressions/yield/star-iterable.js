@@ -7,6 +7,7 @@
 
 
 
+
 var results = [{ value: 1 }, { value: 8 }, { value: 34, done: true }];
 var idx = 0;
 var iterator = {};

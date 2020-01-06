@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.isArray(new Number(-3)), false, 'Array.isArray(new Number(-3))');
+
+reportCompare(0, 0);

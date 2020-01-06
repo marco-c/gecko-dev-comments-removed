@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TypedArrayPrototype = TypedArray.prototype;
+
+assert.throws(TypeError, function() {
+  TypedArrayPrototype.byteOffset;
+});
+
+reportCompare(0, 0);

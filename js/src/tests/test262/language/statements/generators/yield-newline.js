@@ -7,6 +7,7 @@
 
 
 
+
 var iter, result;
 function* g() {
   yield

@@ -27,7 +27,6 @@
 
 
 
-
 var f = async function*([x = (function() { throw new Test262Error(); })()] = [undefined]) {
   
 };

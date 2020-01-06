@@ -25,7 +25,6 @@
 
 
 
-
 async function* f({ w: { x, y, z } = undefined } = { }) {
   
 };

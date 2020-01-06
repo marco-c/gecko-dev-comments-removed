@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithTypedArrayConstructors(function(TA) {
+  var from = TA.from;
+
+  assert.throws(TypeError, function() {
+    from([]);
+  });
+});
+
+reportCompare(0, 0);

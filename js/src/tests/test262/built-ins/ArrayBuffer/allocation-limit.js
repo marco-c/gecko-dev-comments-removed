@@ -18,6 +18,7 @@
 
 
 
+
 assert.throws(RangeError, function() {
   
   
@@ -29,3 +30,5 @@ assert.throws(RangeError, function() {
   
   new ArrayBuffer(9007199254740992 - 1);
 }, "`length` parameter is Math.pow(2, 53) - 1");
+
+reportCompare(0, 0);

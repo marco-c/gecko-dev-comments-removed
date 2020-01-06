@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+var AsyncFunction = async function foo() { }.constructor;
+assert.sameValue(typeof AsyncFunction, "function");
+
+reportCompare(0, 0);

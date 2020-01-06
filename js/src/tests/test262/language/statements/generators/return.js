@@ -7,6 +7,7 @@
 
 
 
+
 function* g1() { return; }
 function* g2() { return 1; }
 

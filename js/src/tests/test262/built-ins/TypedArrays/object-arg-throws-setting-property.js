@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  "2": {
+    valueOf() {
+      throw new Test262Error();
+    }
+  },
+  length: 4
+};
+
+testWithTypedArrayConstructors(function(TA) {
+  assert.throws(Test262Error, function() {
+    new TA(obj);
+  });
+});
+
+reportCompare(0, 0);

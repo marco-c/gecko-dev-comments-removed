@@ -21,6 +21,7 @@
 
 
 
+
 assert.sameValue(typeof Atomics, "object", "no [[Call]]");
 assert.throws(TypeError, function() {
   new Atomics();

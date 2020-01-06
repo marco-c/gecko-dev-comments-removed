@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof String.prototype.includes,
+  'function',
+  '`typeof String.prototype.includes` is `function`'
+);
+
+verifyNotEnumerable(String.prototype, 'includes');
+verifyWritable(String.prototype, 'includes');
+verifyConfigurable(String.prototype, 'includes');
+
+reportCompare(0, 0);

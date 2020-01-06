@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Object.prototype, "__defineGetter__", {
+  enumerable: false,
+  writable: true,
+  configurable: true,
+});
+
+reportCompare(0, 0);

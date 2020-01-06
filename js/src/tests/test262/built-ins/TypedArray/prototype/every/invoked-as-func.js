@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var every = TypedArray.prototype.every;
+
+assert.sameValue(typeof every, 'function');
+
+assert.throws(TypeError, function() {
+  every();
+});
+
+reportCompare(0, 0);

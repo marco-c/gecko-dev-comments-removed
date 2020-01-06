@@ -16,11 +16,14 @@
 
 
 
+
 let source = "(?<fst>.)(?<snd>.)|(?<thd>x)";
 for (let flags of ["", "u", "g", "gu"]) {
   let re = new RegExp(source, flags);
   assert.throws(SyntaxError, () => "abcd".replace(re, "$<snd"),
                 "unclosed named group in replacement should throw a SyntaxError");
+  assert.throws(SyntaxError, () => "abcd".replace(re, "$<>"),
+                "empty named group in replacement should throw a SyntaxError");
 }
 
 reportCompare(0, 0);

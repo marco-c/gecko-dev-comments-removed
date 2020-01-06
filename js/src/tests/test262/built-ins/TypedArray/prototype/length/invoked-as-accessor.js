@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TypedArrayPrototype = TypedArray.prototype;
+
+assert.throws(TypeError, function() {
+  TypedArrayPrototype.length;
+});
+
+reportCompare(0, 0);

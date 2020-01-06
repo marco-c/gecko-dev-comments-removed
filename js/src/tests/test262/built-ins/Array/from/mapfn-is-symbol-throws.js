@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Array.from([], Symbol('1'));
+});
+
+reportCompare(0, 0);

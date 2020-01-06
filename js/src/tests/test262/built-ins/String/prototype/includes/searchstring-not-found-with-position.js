@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var str = 'The future is cool!';
+
+assert.sameValue(
+  str.includes('The future', 1), false,
+  'Returns false on str.includes("The future", 1)'
+);
+
+assert.sameValue(
+  str.includes(str, 1), false,
+  'Returns false on str.includes(str, 1)'
+);
+
+reportCompare(0, 0);

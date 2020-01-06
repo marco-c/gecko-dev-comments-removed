@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+        var newArr = [11].filter(function () { });
+
+assert(Array.isArray(newArr), 'Array.isArray(newArr) !== true');
+
+reportCompare(0, 0);

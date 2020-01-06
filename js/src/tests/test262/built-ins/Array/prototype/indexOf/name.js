@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.prototype.indexOf.name, "indexOf");
+
+verifyNotEnumerable(Array.prototype.indexOf, "name");
+verifyNotWritable(Array.prototype.indexOf, "name");
+verifyConfigurable(Array.prototype.indexOf, "name");
+
+reportCompare(0, 0);

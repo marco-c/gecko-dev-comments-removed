@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getPrototypeOf(Uint32Array.prototype), TypedArray.prototype);
+
+reportCompare(0, 0);

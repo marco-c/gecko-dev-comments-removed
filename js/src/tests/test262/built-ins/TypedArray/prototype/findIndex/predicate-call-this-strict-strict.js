@@ -1,0 +1,55 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithTypedArrayConstructors(function(TA) {
+  var sample = new TA(1);
+  var result;
+
+  sample.findIndex(function() {
+    result = this;
+  });
+
+  assert.sameValue(
+    result,
+    undefined,
+    "without thisArg, predicate this is undefined"
+  );
+
+  var o = {};
+  sample.findIndex(function() {
+    result = this;
+  }, o);
+
+  assert.sameValue(result, o, "thisArg becomes the predicate this");
+});
+
+reportCompare(0, 0);

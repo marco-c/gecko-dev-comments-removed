@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+var arr = [];
+var result = arr.fill(1);
+
+assert.sameValue(result, arr);
+
+var o = {
+  length: 0
+};
+result = Array.prototype.fill.call(o);
+assert.sameValue(result, o);
+
+reportCompare(0, 0);

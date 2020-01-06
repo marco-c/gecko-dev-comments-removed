@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Uint8Array.length, 3);
+
+verifyNotEnumerable(Uint8Array, "length");
+verifyNotWritable(Uint8Array, "length");
+verifyConfigurable(Uint8Array, "length");
+
+reportCompare(0, 0);

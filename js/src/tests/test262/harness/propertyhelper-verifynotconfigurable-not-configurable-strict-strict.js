@@ -9,7 +9,6 @@
 
 
 
-
 var obj = {};
 Object.defineProperty(obj, 'a', {
   configurable: false

@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+obj[Symbol.toPrimitive] = function() {
+  return Symbol.toPrimitive;
+};
+
+assert.throws(TypeError, function() {
+  isNaN(obj);
+});
+
+reportCompare(0, 0);

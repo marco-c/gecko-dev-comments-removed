@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = Object.defineProperty({}, Symbol.toPrimitive, {
+  get: function() {
+    throw new Test262Error();
+  }
+});
+
+assert.throws(Test262Error, function() {
+  isNaN(obj);
+});
+
+reportCompare(0, 0);

@@ -52,8 +52,6 @@
 
 
 
-
-
 async function * gen() {
   for await (const { x: y = unresolvableReference } of [{}]) {
     return;
@@ -61,6 +59,10 @@ async function * gen() {
 }
 
 gen().next()
-  .then(_ => { throw new Test262Error("Expected async function to reject, but resolved."); }, ({ constructor }) => assert.sameValue(constructor, ReferenceError))
+  .then(_ => {
+    throw new Test262Error("Expected async function to reject, but resolved.");
+  }, ({ constructor }) => {
+    assert.sameValue(constructor, ReferenceError);
+    
+  })
   .then($DONE, $DONE);
-

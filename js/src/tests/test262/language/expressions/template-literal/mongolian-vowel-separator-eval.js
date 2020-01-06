@@ -18,6 +18,7 @@
 
 
 
+
 assert.sameValue(eval("`\u180E`"), "\u180E");
 
 reportCompare(0, 0);

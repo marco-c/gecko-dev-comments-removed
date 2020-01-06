@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var join = TypedArray.prototype.join;
+
+assert.sameValue(typeof join, 'function');
+
+assert.throws(TypeError, function() {
+  join();
+});
+
+reportCompare(0, 0);

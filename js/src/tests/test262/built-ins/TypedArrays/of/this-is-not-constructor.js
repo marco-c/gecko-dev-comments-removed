@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var m = { m() {} }.m;
+
+testWithTypedArrayConstructors(function(TA) {
+  assert.throws(TypeError, function() {
+    TA.of.call(m, []);
+  });
+});
+
+reportCompare(0, 0);

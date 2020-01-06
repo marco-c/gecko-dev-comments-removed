@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Symbol.keyFor.name, "keyFor");
+
+verifyNotEnumerable(Symbol.keyFor, "name");
+verifyNotWritable(Symbol.keyFor, "name");
+verifyConfigurable(Symbol.keyFor, "name");
+
+reportCompare(0, 0);

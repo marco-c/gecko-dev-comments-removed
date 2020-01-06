@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof (Date.prototype.toISOString), "function", 'typeof (Date.prototype.toISOString)');
+
+reportCompare(0, 0);

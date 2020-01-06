@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+        var objFunction = function () { };
+
+        function callbackfn(val, idx, obj) {
+            return this === objFunction;
+        }
+
+        var testResult = [11].map(callbackfn, objFunction);
+
+assert.sameValue(testResult[0], true, 'testResult[0]');
+
+reportCompare(0, 0);

@@ -6,7 +6,6 @@
 
 
 
-
 var obj = {};
 
 Object.defineProperty(obj, 'a', {

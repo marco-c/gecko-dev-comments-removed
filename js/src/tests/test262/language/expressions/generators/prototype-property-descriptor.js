@@ -8,6 +8,7 @@
 
 
 
+
 var g = function*() {};
 
 verifyNotEnumerable(g, 'prototype');

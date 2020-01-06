@@ -10,6 +10,7 @@
 
 
 
+
 assert.throws.early(SyntaxError, "/\\p{ASCII=Yes}/u");
 assert.throws.early(SyntaxError, "/\\p{ASCII=Y}/u");
 assert.throws.early(SyntaxError, "/\\p{ASCII=T}/u");

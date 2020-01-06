@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var values = TypedArray.prototype.values;
+
+assert.sameValue(typeof values, 'function');
+
+assert.throws(TypeError, function() {
+  values();
+});
+
+reportCompare(0, 0);

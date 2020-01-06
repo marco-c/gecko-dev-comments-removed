@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var global = fnGlobalObject();
+assert.sameValue(f, undefined, 'binding is initialized to `undefined`');
+
+verifyProperty(global, "f", {
+  enumerable: true,
+  writable: true,
+  configurable: false
+});
+
+{
+  function f() {  }
+}
+
+reportCompare(0, 0);

@@ -7,7 +7,6 @@
 
 
 
-
 let x = "h";
 let f = { async  *  f  (  )  {  } }.f;
 let g = { async  *  [  "g"  ]  (  )  {  } }.g;

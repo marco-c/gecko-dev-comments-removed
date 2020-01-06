@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+        var obj = { length: 1 };
+
+            Object.prototype[0] = false;
+            Object.defineProperty(obj, "0", {
+                get: function () {
+                    return true;
+                },
+                configurable: true
+            });
+
+assert.sameValue(Array.prototype.indexOf.call(obj, true), 0, 'Array.prototype.indexOf.call(obj, true)');
+
+reportCompare(0, 0);

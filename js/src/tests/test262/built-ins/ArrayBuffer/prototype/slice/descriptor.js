@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(ArrayBuffer.prototype, "slice");
+verifyWritable(ArrayBuffer.prototype, "slice");
+verifyConfigurable(ArrayBuffer.prototype, "slice");
+
+reportCompare(0, 0);

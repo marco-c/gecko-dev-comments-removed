@@ -1,0 +1,43 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var o = {
+  '0': true,
+  length: 43
+};
+
+Object.defineProperty(o, '42', {
+  set: function() {
+    throw new Test262Error();
+  }
+});
+
+assert.throws(Test262Error, function() {
+  Array.prototype.copyWithin.call(o, 42, 0);
+});
+
+reportCompare(0, 0);

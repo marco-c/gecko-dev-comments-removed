@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(String.prototype.blink, "name", {
+  enumerable: false,
+  writable: false,
+  configurable: true,
+  value: "blink"
+});
+
+reportCompare(0, 0);

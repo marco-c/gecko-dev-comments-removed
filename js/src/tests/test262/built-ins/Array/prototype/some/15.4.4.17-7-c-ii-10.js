@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+        function callbackfn(val) {
+            return val > 10;
+        }
+
+assert([11, 12].some(callbackfn), '[11, 12].some(callbackfn) !== true');
+
+reportCompare(0, 0);

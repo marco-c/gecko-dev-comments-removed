@@ -36,7 +36,6 @@
 
 
 
-
 async function* f([[x]] = [null]) {
   
 };

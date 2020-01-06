@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+        var result = false;
+        function callbackfn(val, idx, obj) {
+            result = (this === Math);
+        }
+
+        [11].forEach(callbackfn, Math);
+
+assert(result, 'result !== true');
+
+reportCompare(0, 0);

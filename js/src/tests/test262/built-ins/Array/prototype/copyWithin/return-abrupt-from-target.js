@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var o1 = {
+  valueOf: function() {
+    throw new Test262Error();
+  }
+};
+assert.throws(Test262Error, function() {
+  [].copyWithin(o1);
+});
+
+reportCompare(0, 0);

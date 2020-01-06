@@ -11,6 +11,7 @@
 
 
 
-assert.sameValue(typeof Intl.DateTimeFormat.prototype.format(0), "string", "Intl.DateTimeFormat's prototype is not an object that has been initialized as an Intl.DateTimeFormat");
+assert.throws(TypeError, () => Intl.DateTimeFormat.prototype.format(0),
+              "Intl.DateTimeFormat's prototype is not an object that has been initialized as an Intl.DateTimeFormat");
 
 reportCompare(0, 0);

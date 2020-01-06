@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+    WeakSet();
+});
+
+assert.throws(TypeError, function() {
+    WeakSet([]);
+});
+
+reportCompare(0, 0);

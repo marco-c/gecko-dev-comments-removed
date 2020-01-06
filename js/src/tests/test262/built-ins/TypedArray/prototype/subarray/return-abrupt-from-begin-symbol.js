@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol("1");
+
+testWithTypedArrayConstructors(function(TA) {
+  var sample = new TA();
+  
+  assert.throws(TypeError, function() {
+    sample.subarray(s);
+  });
+});
+
+reportCompare(0, 0);

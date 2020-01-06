@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Uint8Array.prototype.constructor, Uint8Array);
+
+verifyNotEnumerable(Uint8Array.prototype, "constructor");
+verifyWritable(Uint8Array.prototype, "constructor");
+verifyConfigurable(Uint8Array.prototype, "constructor");
+
+reportCompare(0, 0);

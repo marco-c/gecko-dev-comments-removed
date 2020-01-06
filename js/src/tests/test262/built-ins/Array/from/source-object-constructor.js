@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.from.call(Object, []).constructor, Object);
+
+reportCompare(0, 0);

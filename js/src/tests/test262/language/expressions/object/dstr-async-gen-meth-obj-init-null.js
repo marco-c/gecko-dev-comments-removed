@@ -28,7 +28,6 @@
 
 
 
-
 var obj = {
   async *method({}) {
     

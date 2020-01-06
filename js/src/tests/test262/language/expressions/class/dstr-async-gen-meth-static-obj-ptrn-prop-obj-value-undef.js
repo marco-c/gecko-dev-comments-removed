@@ -49,7 +49,6 @@
 
 
 
-
 var C = class {
   static async *method({ w: { x, y, z } = undefined }) {
     

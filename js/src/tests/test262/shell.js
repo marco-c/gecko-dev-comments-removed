@@ -1,4 +1,11 @@
 
+
+
+
+
+
+
+
 function assert(mustBeTrue, message) {
   if (mustBeTrue === true) {
     return;
@@ -82,11 +89,16 @@ assert.throws = function (expectedErrorConstructor, func, message) {
 };
 
 assert.throws.early = function(err, code) {
-  let wrappedCode = `function wrapperFn() { ${code} }`;
+  let wrappedCode = 'function wrapperFn() { ' + code + ' }';
   let ieval = eval;
 
-  assert.throws(err, () => { Function(wrappedCode); }, `Function: ${code}`);
+  assert.throws(err, function() { Function(wrappedCode); }, 'Function: ' + code);
 };
+
+
+
+
+
 
 
 
@@ -106,8 +118,15 @@ function compareArray(a, b) {
 
 assert.compareArray = function(actual, expected, message) {
   assert(compareArray(actual, expected),
-         `Expected [${actual.join(", ")}] and [${expected.join(", ")}] to have the same contents. ${message}`);
-}
+         'Expected [' + actual.join(', ') + '] and [' + expected.join(', ') + '] to have the same contents. ' + message);
+};
+
+
+
+
+
+
+
 
 
 
@@ -125,7 +144,7 @@ function verifyProperty(obj, name, desc, options) {
     assert.sameValue(
       originalDesc,
       undefined,
-      `obj['${nameStr}'] descriptor should be undefined`
+      "obj['" + nameStr + "'] descriptor should be undefined"
     );
 
     
@@ -134,41 +153,47 @@ function verifyProperty(obj, name, desc, options) {
 
   assert(
     Object.prototype.hasOwnProperty.call(obj, name),
-    `obj should have an own property ${nameStr}`
+    "obj should have an own property " + nameStr
   );
 
   assert.notSameValue(
     desc,
     null,
-    `The desc argument should be an object or undefined, null`
+    "The desc argument should be an object or undefined, null"
   );
 
   assert.sameValue(
     typeof desc,
     "object",
-    `The desc argument should be an object or undefined, ${String(desc)}`
+    "The desc argument should be an object or undefined, " + String(desc)
   );
 
   var failures = [];
 
+  if (Object.prototype.hasOwnProperty.call(desc, 'value')) {
+    if (desc.value !== originalDesc.value) {
+      failures.push("descriptor value should be " + desc.value);
+    }
+  }
+
   if (Object.prototype.hasOwnProperty.call(desc, 'enumerable')) {
     if (desc.enumerable !== originalDesc.enumerable ||
         desc.enumerable !== isEnumerable(obj, name)) {
-      failures.push(`descriptor should ${desc.enumerable ? '' : 'not '}be enumerable`);
+      failures.push('descriptor should ' + (desc.enumerable ? '' : 'not ') + 'be enumerable');
     }
   }
 
   if (Object.prototype.hasOwnProperty.call(desc, 'writable')) {
     if (desc.writable !== originalDesc.writable ||
         desc.writable !== isWritable(obj, name)) {
-      failures.push(`descriptor should ${desc.writable ? '' : 'not '}be writable`);
+      failures.push('descriptor should ' + (desc.writable ? '' : 'not ') + 'be writable');
     }
   }
 
   if (Object.prototype.hasOwnProperty.call(desc, 'configurable')) {
     if (desc.configurable !== originalDesc.configurable ||
         desc.configurable !== isConfigurable(obj, name)) {
-      failures.push(`descriptor should ${desc.configurable ? '' : 'not '}be configurable`);
+      failures.push('descriptor should ' + (desc.configurable ? '' : 'not ') + 'be configurable');
     }
   }
 
@@ -239,9 +264,9 @@ function isWritable(obj, name, verifyProp, value) {
   
   if (writeSucceeded) {
     if (hadValue) {
-    obj[name] = oldValue;
+      obj[name] = oldValue;
     } else {
-    delete obj[name];
+      delete obj[name];
     }
   }
 
@@ -306,6 +331,14 @@ function verifyNotConfigurable(obj, name) {
     $ERROR("Expected obj[" + String(name) + "] NOT to be configurable, but was.");
   }
 }
+
+
+
+
+
+
+
+
 
 
 

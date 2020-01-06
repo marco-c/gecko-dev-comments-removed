@@ -6,12 +6,6 @@
 
 
 
-
-
-$ERROR = function $ERROR(message) {
-  throw new Test262Error(message);
-};
-
 assert.throws(Test262Error, () => {
   verifyProperty();
 }, "0 arguments");

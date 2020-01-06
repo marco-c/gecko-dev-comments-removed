@@ -6,7 +6,6 @@
 
 
 
-
 var threw = false;
 var obj = {};
 Object.preventExtensions(obj);

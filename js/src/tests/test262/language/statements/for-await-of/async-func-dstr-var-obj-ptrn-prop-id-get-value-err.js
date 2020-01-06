@@ -42,7 +42,6 @@
 
 
 
-
 var initEvalCount = 0;
 var poisonedProperty = Object.defineProperty({}, 'poisoned', {
   get: function() {
@@ -57,7 +56,10 @@ async function fn() {
 }
 
 fn()
-  .then(_ => { throw new Test262Error("Expected async function to reject, but resolved."); }, ({ constructor }) => assert.sameValue(constructor, Test262Error))
+  .then(_ => {
+    throw new Test262Error("Expected async function to reject, but resolved.");
+  }, ({ constructor }) => {
+    assert.sameValue(constructor, Test262Error);
+    
+  })
   .then($DONE, $DONE);
-
-assert.sameValue(initEvalCount, 0);

@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Array, 'of');
+verifyWritable(Array, 'of');
+verifyConfigurable(Array, 'of');
+
+reportCompare(0, 0);

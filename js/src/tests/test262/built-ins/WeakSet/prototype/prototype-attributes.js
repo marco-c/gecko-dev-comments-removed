@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(WeakSet, 'prototype');
+verifyNotWritable(WeakSet, 'prototype');
+verifyNotConfigurable(WeakSet, 'prototype');
+
+reportCompare(0, 0);

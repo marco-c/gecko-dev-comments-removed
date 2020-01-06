@@ -7,6 +7,7 @@
 
 
 
+
 var result;
 var g1 = function*() { return; };
 var g2 = function*() { return 1; };

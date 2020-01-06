@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+  var arr = new Array(10);
+assert.throws(TypeError, function() {
+    arr.some(5);
+});
+
+reportCompare(0, 0);

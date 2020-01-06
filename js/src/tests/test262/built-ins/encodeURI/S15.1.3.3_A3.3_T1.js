@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+if (encodeURI("#") !== "#") {
+  $ERROR('#1: unescapedURISet containing "#"');
+}
+
+reportCompare(0, 0);

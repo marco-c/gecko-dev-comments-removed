@@ -8,7 +8,6 @@
 
 
 
-
 var threw = false;
 var obj = {};
 var s = Symbol('1');

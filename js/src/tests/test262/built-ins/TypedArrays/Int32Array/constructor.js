@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Int32Array, 'function', 'typeof Int32Array is "function"');
+
+reportCompare(0, 0);

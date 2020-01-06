@@ -29,7 +29,6 @@
 
 
 
-
 var callCount = 0;
 async function* f([, , ...x] = [1, 2]) {
   assert(Array.isArray(x));

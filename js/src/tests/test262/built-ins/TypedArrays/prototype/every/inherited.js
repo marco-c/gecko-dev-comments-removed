@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+testWithTypedArrayConstructors(function(TA) {
+  assert.sameValue(TA.prototype.hasOwnProperty("every"), false);
+});
+
+reportCompare(0, 0);

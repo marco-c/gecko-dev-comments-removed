@@ -35,7 +35,6 @@
 
 
 
-
 var callCount = 0;
 var obj = {
   async *method([[x, y, z] = [4, 5, 6]] = []) {

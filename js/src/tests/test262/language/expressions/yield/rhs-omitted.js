@@ -7,6 +7,7 @@
 
 
 
+
 var iter, result;
 function* g1() { (yield) }
 function* g2() { [yield] }

@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+        
+        
+        
+        
+        
+        var fromIndex = {
+            toString: function () {
+                return '2';
+            }
+        };
+        var targetObj = new RegExp();
+
+assert.sameValue([0, true, targetObj, 3, false].lastIndexOf(targetObj, fromIndex), 2, '[0, true, targetObj, 3, false].lastIndexOf(targetObj, fromIndex)');
+assert.sameValue([0, true, 3, targetObj, false].lastIndexOf(targetObj, fromIndex), -1, '[0, true, 3, targetObj, false].lastIndexOf(targetObj, fromIndex)');
+
+reportCompare(0, 0);

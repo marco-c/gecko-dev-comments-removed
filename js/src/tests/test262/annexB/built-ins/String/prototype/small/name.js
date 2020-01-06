@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(String.prototype.small, "name", {
+  enumerable: false,
+  writable: false,
+  configurable: true,
+  value: "small"
+});
+
+reportCompare(0, 0);

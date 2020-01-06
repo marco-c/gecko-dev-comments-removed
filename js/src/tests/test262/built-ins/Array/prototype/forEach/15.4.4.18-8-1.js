@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+  var callCnt = 0;
+  function cb(){callCnt++}
+  var i = [].forEach(cb);
+
+assert.sameValue(callCnt, 0, 'callCnt');
+
+reportCompare(0, 0);

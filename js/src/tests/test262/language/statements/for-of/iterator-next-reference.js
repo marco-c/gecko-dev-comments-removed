@@ -10,34 +10,34 @@
 
 var iterable = {};
 var iterator = {};
-var firstIterResult = { done: false };
-var iterationCount, invocationCount;
+var iterationCount = 0;
+var loadNextCount = 0;
 
 iterable[Symbol.iterator] = function() {
   return iterator;
 };
 
-iterator.next = function() { return { value: 45, done: false }; };
-iterationCount = 0;
-invocationCount = 0;
+function next() {
+  if (iterationCount) return { done: true };
+  return { value: 45, done: false };
+}
+Object.defineProperty(iterator, 'next', {
+  get() { loadNextCount++; return next; },
+  configurable: true
+});
+
 for (var x of iterable) {
   assert.sameValue(x, 45);
 
-  iterator.next = function() {
-    invocationCount++;
-
-    Object.defineProperty(iterator, 'next', {
-      get: function() {
-        $ERROR('Should not access the `next` method after iteration ' +
-          'is complete.');
-      }
-    });
-
-    return { value: null, done: true };
-  };
+  Object.defineProperty(iterator, 'next', {
+    get: function() {
+      throw new Test262Error(
+          'Should not access the `next` method after the iteration prologue.');
+    }
+  });
   iterationCount++;
 }
 assert.sameValue(iterationCount, 1);
-assert.sameValue(invocationCount, 1);
+assert.sameValue(loadNextCount, 1);
 
 reportCompare(0, 0);

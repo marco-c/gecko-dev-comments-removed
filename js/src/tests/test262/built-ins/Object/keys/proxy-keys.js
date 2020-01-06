@@ -23,6 +23,7 @@
 
 
 
+
 let log = [];
 let s = Symbol("test");
 let target = {

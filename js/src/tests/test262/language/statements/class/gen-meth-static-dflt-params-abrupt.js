@@ -70,6 +70,7 @@
 
 
 
+
 var callCount = 0;
 class C {
   static *method(_ = (function() { throw new Test262Error(); }())) {

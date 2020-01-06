@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var proto = Object.getPrototypeOf(BigInt.prototype);
+assert.sameValue(proto, Object.prototype);
+
+reportCompare(0, 0);

@@ -30,7 +30,6 @@
 
 
 
-
 var initCount = 0;
 function counter() {
   initCount += 1;

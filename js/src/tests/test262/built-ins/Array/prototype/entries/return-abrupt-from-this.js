@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Array.prototype.entries.call(undefined);
+});
+
+assert.throws(TypeError, function() {
+  Array.prototype.entries.call(null);
+});
+
+reportCompare(0, 0);

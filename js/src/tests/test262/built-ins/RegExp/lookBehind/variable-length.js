@@ -21,6 +21,7 @@
 
 
 
+
 assert.compareArray("abcdef".match(/(?<=[a|b|c]*)[^a|b|c]{3}/), ["def"], "#1");
 assert.compareArray("abcdef".match(/(?<=\w*)[^a|b|c]{3}/), ["def"], "#2");
 

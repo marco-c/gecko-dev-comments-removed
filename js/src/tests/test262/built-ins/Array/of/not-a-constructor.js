@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  new Array.of();
+});
+
+reportCompare(0, 0);

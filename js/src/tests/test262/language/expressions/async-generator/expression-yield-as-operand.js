@@ -11,7 +11,6 @@
 
 
 
-
 var g = async function*() {
   yield yield 1;
 };

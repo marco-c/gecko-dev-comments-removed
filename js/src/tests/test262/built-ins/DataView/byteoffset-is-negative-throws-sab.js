@@ -18,7 +18,6 @@
 
 
 
-
 var ab = new SharedArrayBuffer(42);
 
 assert.throws(RangeError, function() {

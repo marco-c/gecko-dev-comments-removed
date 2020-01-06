@@ -45,7 +45,6 @@
 
 
 
-
 var obj = {
   [Symbol.iterator]: false
 };

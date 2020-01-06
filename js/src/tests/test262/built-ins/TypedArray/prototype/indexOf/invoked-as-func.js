@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var indexOf = TypedArray.prototype.indexOf;
+
+assert.sameValue(typeof indexOf, 'function');
+
+assert.throws(TypeError, function() {
+  indexOf();
+});
+
+reportCompare(0, 0);

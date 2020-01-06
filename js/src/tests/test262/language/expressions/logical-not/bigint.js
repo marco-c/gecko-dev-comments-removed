@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(!0n, true, "!0n");
+assert.sameValue(!1n, false, "!1n");
+assert.sameValue(!-1n, false, "!-1n");
+
+reportCompare(0, 0);

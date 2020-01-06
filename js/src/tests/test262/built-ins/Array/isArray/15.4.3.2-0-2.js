@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.isArray.length, 1, 'Array.isArray.length');
+
+reportCompare(0, 0);

@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithTypedArrayConstructors(function(TA) {
+  var sample = new TA(1);
+  $DETACHBUFFER(sample.buffer);
+  assert.throws(TypeError, function() {
+    sample.toString();
+  });
+});
+
+reportCompare(0, 0);

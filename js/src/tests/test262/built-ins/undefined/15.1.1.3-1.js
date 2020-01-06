@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+undefined = 5;
+assert.sameValue(typeof undefined, "undefined", 'typeof undefined');
+
+var nosuchproperty;
+assert.sameValue(nosuchproperty, undefined, 'nosuchproperty');
+
+reportCompare(0, 0);

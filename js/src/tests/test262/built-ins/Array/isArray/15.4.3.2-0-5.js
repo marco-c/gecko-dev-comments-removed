@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+var b = Array.isArray(Array.prototype);
+
+assert.sameValue(b, true, 'b');
+
+reportCompare(0, 0);

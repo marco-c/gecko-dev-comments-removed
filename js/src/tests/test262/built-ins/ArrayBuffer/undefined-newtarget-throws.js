@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  ArrayBuffer();
+});
+
+assert.throws(TypeError, function() {
+  ArrayBuffer(10);
+});
+
+reportCompare(0, 0);

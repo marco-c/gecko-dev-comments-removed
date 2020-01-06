@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Date.prototype.setMilliseconds.name, "setMilliseconds");
+
+verifyNotEnumerable(Date.prototype.setMilliseconds, "name");
+verifyNotWritable(Date.prototype.setMilliseconds, "name");
+verifyConfigurable(Date.prototype.setMilliseconds, "name");
+
+reportCompare(0, 0);

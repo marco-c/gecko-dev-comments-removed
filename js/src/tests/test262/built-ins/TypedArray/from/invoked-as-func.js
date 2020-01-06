@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var from = TypedArray.from;
+
+assert.throws(TypeError, function() {
+  from([]);
+});
+
+reportCompare(0, 0);

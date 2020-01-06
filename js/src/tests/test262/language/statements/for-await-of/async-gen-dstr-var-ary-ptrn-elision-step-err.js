@@ -53,9 +53,8 @@
 
 
 
-
 var following = 0;
-var iter =function* () {
+var iter = function* () {
   throw new Test262Error();
   following += 1;
 }();
@@ -67,9 +66,11 @@ async function * gen() {
 }
 
 gen().next()
-  .then(_ => { throw new Test262Error("Expected async function to reject, but resolved."); }, ({ constructor }) => assert.sameValue(constructor, Test262Error))
+  .then(_ => {
+    throw new Test262Error("Expected async function to reject, but resolved.");
+  }, ({ constructor }) => {
+    assert.sameValue(constructor, Test262Error);
+    assert.sameValue(following, 0, "iterator is properly closed");
+  })
   .then($DONE, $DONE);
 
-
-iter.next();
-assert.sameValue(following, 0, 'Iterator was properly closed.');

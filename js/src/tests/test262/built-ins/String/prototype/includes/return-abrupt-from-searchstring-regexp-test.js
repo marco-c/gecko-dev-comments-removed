@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+Object.defineProperty(obj, Symbol.match, {
+  get: function() {
+    throw new Test262Error();
+  }
+});
+
+assert.throws(Test262Error, function() {
+  ''.includes(obj);
+});
+
+var regexp = /./;
+Object.defineProperty(regexp, Symbol.match, {
+  get: function() {
+    throw new Test262Error();
+  }
+});
+
+assert.throws(Test262Error, function() {
+  ''.includes(regexp);
+});
+
+reportCompare(0, 0);

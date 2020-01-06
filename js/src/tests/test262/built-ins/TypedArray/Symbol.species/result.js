@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var value = {};
+var getter = Object.getOwnPropertyDescriptor(TypedArray, Symbol.species).get;
+
+assert.sameValue(getter.call(value), value);
+
+reportCompare(0, 0);

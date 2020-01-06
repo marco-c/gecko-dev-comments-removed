@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var get = Object.getOwnPropertyDescriptor(RegExp.prototype, 'flags').get;
+
+assert.sameValue(get.call(RegExp.prototype), '');
+
+reportCompare(0, 0);

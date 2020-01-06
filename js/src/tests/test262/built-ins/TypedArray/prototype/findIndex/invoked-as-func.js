@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var findIndex = TypedArray.prototype.findIndex;
+
+assert.sameValue(typeof findIndex, 'function');
+
+assert.throws(TypeError, function() {
+  findIndex();
+});
+
+reportCompare(0, 0);

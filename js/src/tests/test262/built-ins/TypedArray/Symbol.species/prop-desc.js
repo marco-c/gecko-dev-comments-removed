@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var desc = Object.getOwnPropertyDescriptor(TypedArray, Symbol.species);
+
+assert.sameValue(desc.set, undefined);
+assert.sameValue(typeof desc.get, 'function');
+
+reportCompare(0, 0);

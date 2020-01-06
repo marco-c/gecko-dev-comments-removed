@@ -5,6 +5,7 @@
 
 
 
+
 var sym = Symbol();
 
 assert.sameValue(!sym, false, "`!sym` is `false`");

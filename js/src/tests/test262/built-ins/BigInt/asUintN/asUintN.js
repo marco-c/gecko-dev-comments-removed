@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof BigInt.asUintN, 'function');
+
+verifyProperty(BigInt, "asUintN", {
+  enumerable: false,
+  writable: true,
+  configurable: true
+});
+
+reportCompare(0, 0);

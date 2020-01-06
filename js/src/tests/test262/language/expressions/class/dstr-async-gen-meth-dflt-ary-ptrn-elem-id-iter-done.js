@@ -53,7 +53,6 @@
 
 
 
-
 var callCount = 0;
 var C = class {
   async *method([_, x] = []) {

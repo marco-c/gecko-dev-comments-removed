@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Date.prototype.toLocaleTimeString.name, "toLocaleTimeString");
+
+verifyNotEnumerable(Date.prototype.toLocaleTimeString, "name");
+verifyNotWritable(Date.prototype.toLocaleTimeString, "name");
+verifyConfigurable(Date.prototype.toLocaleTimeString, "name");
+
+reportCompare(0, 0);

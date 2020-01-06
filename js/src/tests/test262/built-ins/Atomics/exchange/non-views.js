@@ -7,6 +7,8 @@
 
 
 
+
+
 testWithAtomicsNonViewValues(function(view) {
     assert.throws(TypeError, (() => Atomics.exchange(view, 0, 0)));
 });

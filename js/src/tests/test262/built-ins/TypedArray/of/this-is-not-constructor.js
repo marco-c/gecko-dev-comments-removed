@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var m = { m() {} }.m;
+
+assert.throws(TypeError, function() {
+  TypedArray.of.call(m, []);
+});
+
+reportCompare(0, 0);

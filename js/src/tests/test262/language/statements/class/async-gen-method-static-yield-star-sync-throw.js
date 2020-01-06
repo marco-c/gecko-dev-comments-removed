@@ -57,7 +57,6 @@
 
 
 
-
 var log = [];
 var obj = {
   [Symbol.iterator]() {

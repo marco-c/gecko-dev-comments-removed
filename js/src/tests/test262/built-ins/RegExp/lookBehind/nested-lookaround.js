@@ -21,6 +21,7 @@
 
 
 
+
 assert.compareArray("abcdef".match(/(?<=ab(?=c)\wd)\w\w/), ["ef"], "#1");
 assert.compareArray("abcdef".match(/(?<=a(?=([^a]{2})d)\w{3})\w\w/), ["ef", "bc"], "#2");
 assert.compareArray("abcdef".match(/(?<=a(?=([bc]{2}(?<!a{2}))d)\w{3})\w\w/), ["ef", "bc"], "#3");

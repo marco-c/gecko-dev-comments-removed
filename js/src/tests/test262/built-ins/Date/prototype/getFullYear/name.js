@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Date.prototype.getFullYear.name, "getFullYear");
+
+verifyNotEnumerable(Date.prototype.getFullYear, "name");
+verifyNotWritable(Date.prototype.getFullYear, "name");
+verifyConfigurable(Date.prototype.getFullYear, "name");
+
+reportCompare(0, 0);

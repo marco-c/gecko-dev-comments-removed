@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol('');
+
+assert.throws(TypeError, function() {
+  String.prototype.includes.call(s, '');
+});
+
+reportCompare(0, 0);

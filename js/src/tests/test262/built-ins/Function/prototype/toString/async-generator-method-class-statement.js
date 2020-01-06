@@ -7,7 +7,6 @@
 
 
 
-
 let x = "h";
 class F { async  *  f  (  )  {  } }
 class G { async  *  [  "g"  ]  (  )  {  } }

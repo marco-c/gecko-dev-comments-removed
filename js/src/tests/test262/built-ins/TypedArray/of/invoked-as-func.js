@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var of = TypedArray.of;
+
+assert.throws(TypeError, function() {
+  of();
+});
+
+reportCompare(0, 0);

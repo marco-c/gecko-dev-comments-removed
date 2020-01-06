@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Symbol.prototype.constructor, Symbol);
+
+verifyNotEnumerable(Symbol.prototype, 'constructor');
+verifyWritable(Symbol.prototype, 'constructor');
+verifyConfigurable(Symbol.prototype, 'constructor');
+
+reportCompare(0, 0);

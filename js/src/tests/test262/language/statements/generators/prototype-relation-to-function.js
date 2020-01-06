@@ -8,6 +8,7 @@
 
 
 
+
 function f() {}
 function* g() {}
 

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+if (delete Date.UTC  === false) {
+  $ERROR('#1: The Date.UTC property has not the attributes DontDelete');
+}
+
+if (Date.hasOwnProperty('UTC')) {
+  $ERROR('#2: The Date.UTC property has not the attributes DontDelete');
+}
+
+reportCompare(0, 0);

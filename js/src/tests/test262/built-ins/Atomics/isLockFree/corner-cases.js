@@ -6,6 +6,7 @@
 
 
 
+
 assert.sameValue(false, Atomics.isLockFree(hide(3, Number.NaN)));
 assert.sameValue(false, Atomics.isLockFree(hide(3, -1)));
 assert.sameValue(false, Atomics.isLockFree(hide(3, 3.14)));

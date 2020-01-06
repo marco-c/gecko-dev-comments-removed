@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var x = Date.prototype.toTimeString.length;
+verifyNotWritable(Date.prototype.toTimeString, "length", null, 1);
+if (Date.prototype.toTimeString.length !== x) {
+  $ERROR('#1: The Date.prototype.toTimeString.length has the attribute ReadOnly');
+}
+
+reportCompare(0, 0);

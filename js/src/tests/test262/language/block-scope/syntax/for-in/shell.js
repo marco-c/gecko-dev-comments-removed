@@ -1,11 +1,22 @@
 
 
-function arrayContains(arr, expected) {
+
+
+
+
+
+
+
+
+
+
+
+function arrayContains(array, subArray) {
   var found;
-  for (var i = 0; i < expected.length; i++) {
+  for (var i = 0; i < subArray.length; i++) {
     found = false;
-    for (var j = 0; j < arr.length; j++) {
-      if (expected[i] === arr[j]) {
+    for (var j = 0; j < array.length; j++) {
+      if (subArray[i] === array[j]) {
         found = true;
         break;
       }

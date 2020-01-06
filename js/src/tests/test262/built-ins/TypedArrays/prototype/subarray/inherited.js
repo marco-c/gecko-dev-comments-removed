@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+testWithTypedArrayConstructors(function(TA) {
+  assert.sameValue(TA.prototype.hasOwnProperty("subarray"), false);
+});
+
+reportCompare(0, 0);

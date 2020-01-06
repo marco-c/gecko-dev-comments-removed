@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var iter = [][Symbol.iterator]();
+
+assert.sameValue("[object Array Iterator]", Object.prototype.toString.call(iter));
+
+reportCompare(0, 0);

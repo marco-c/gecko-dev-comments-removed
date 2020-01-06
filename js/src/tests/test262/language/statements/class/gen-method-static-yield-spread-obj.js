@@ -27,6 +27,7 @@
 
 
 
+
 var callCount = 0;
 
 class C {static *gen() {

@@ -22,6 +22,7 @@
 
 
 
+
 assert.sameValue(Atomics.isLockFree.length, 1);
 
 verifyNotEnumerable(Atomics.isLockFree, "length");

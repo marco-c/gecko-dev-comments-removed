@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+  var arr = new Array(10);
+assert.throws(TypeError, function() {
+    arr.reduceRight("abc");
+});
+
+reportCompare(0, 0);

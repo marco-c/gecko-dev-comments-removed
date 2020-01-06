@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+var global = this;
+        var accessed = false;
+
+        function callbackfn(val, idx, obj) {
+            accessed = true;
+            return this === global;
+        }
+
+assert([11].every(callbackfn, global), '[11].every(callbackfn, global) !== true');
+assert(accessed, 'accessed !== true');
+
+reportCompare(0, 0);

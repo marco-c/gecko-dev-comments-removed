@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Uint32Array.prototype.constructor, Uint32Array);
+
+verifyNotEnumerable(Uint32Array.prototype, "constructor");
+verifyWritable(Uint32Array.prototype, "constructor");
+verifyConfigurable(Uint32Array.prototype, "constructor");
+
+reportCompare(0, 0);

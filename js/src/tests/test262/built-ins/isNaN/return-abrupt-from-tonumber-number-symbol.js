@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol(1);
+
+assert.throws(TypeError, function() {
+  isNaN(s);
+});
+
+reportCompare(0, 0);

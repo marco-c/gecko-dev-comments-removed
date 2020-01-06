@@ -8,6 +8,7 @@
 
 
 
+
 assert(compareArray(["a", "a"], "bab".match(/(?<a>a)/u)));
 assert(compareArray(["a", "a"], "bab".match(/(?<a42>a)/u)));
 assert(compareArray(["a", "a"], "bab".match(/(?<_>a)/u)));

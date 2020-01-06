@@ -51,7 +51,6 @@
 
 
 
-
 var callCount = 0;
 async function* f([...[x, y, z]]) {
   assert.sameValue(x, 3);

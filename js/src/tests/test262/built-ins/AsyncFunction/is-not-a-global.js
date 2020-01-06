@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function () {
+  AsyncFunction
+}, "AsyncFunction should not be present as a global");
+
+reportCompare(0, 0);

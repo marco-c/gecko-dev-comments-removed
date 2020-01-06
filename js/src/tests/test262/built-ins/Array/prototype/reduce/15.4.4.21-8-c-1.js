@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+  function callbackfn(prevVal, curVal, idx, obj)
+  {
+  }
+
+  var arr = new Array(10);
+assert.throws(TypeError, function() {
+    arr.reduce(callbackfn);
+});
+
+reportCompare(0, 0);

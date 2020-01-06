@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+        var obj = { 0: 0, 1: 1, length: true };
+
+assert.sameValue(Array.prototype.lastIndexOf.call(obj, 0), 0, 'Array.prototype.lastIndexOf.call(obj, 0)');
+assert.sameValue(Array.prototype.lastIndexOf.call(obj, 1), -1, 'Array.prototype.lastIndexOf.call(obj, 1)');
+
+reportCompare(0, 0);

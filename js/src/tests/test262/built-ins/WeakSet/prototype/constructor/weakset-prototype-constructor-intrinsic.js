@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  WeakSet.prototype.constructor,
+  WeakSet,
+  'The value of WeakSet.prototype.constructor is "WeakSet"'
+);
+
+reportCompare(0, 0);

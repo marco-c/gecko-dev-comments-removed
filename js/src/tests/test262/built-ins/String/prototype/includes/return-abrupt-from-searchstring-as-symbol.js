@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol();
+
+assert.throws(TypeError, function() {
+  ''.includes(s);
+});
+
+reportCompare(0, 0);

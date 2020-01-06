@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var filter = TypedArray.prototype.filter;
+
+assert.sameValue(typeof filter, 'function');
+
+assert.throws(TypeError, function() {
+  filter();
+});
+
+reportCompare(0, 0);

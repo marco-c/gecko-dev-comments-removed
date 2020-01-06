@@ -1,0 +1,22 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+var sym = Symbol("66");
+
+assert.throws(TypeError, function() {
+  sym.toString = 0;
+});
+
+assert.throws(TypeError, function() {
+  sym.valueOf = 0;
+});
+
+reportCompare(0, 0);

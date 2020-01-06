@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var searchString = /./;
+
+assert.throws(TypeError, function() {
+  ''.endsWith(searchString);
+});
+
+reportCompare(0, 0);

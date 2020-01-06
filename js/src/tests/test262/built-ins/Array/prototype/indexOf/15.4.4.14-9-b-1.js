@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue([0, , 2].indexOf(undefined), -1, '[0, , 2].indexOf(undefined)');
+
+reportCompare(0, 0);

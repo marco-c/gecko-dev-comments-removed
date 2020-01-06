@@ -9,6 +9,7 @@
 
 
 
+
 var g = function*() {};
 
 assert.sameValue(

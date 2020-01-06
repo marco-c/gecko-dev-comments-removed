@@ -5,6 +5,7 @@
 
 
 
+
 var sym = Symbol();
 
 assert.sameValue(sym ? 1 : 2, 1, "`sym ? 1 : 2` is `1`");

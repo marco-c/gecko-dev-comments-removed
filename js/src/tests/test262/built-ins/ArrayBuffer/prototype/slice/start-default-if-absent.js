@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var arrayBuffer = new ArrayBuffer(8);
+
+var result = arrayBuffer.slice();
+assert.sameValue(result.byteLength, 8);
+
+reportCompare(0, 0);

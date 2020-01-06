@@ -8,6 +8,7 @@
 
 
 
+
 function* g() { actual = yield; }
 var iter = g();
 var actual, result;

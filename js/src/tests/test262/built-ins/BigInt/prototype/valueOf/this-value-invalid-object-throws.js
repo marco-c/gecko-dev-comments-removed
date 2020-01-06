@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var valueOf = BigInt.prototype.valueOf;
+
+assert.throws(TypeError, function() {
+  valueOf.call({});
+}, "{}");
+
+assert.throws(TypeError, function() {
+  valueOf.call(Object(1));
+}, "Object(1)");
+
+reportCompare(0, 0);

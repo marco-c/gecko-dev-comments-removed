@@ -9,7 +9,6 @@
 
 
 
-
 async function* f() {}
 var AsyncGenerator = f.constructor;
 

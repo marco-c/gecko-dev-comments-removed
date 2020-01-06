@@ -8,6 +8,7 @@
 
 
 
+
 var result;
 var g = function*() {
   ({  yield: 1 });

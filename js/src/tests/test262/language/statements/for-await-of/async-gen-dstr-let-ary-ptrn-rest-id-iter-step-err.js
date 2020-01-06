@@ -47,7 +47,6 @@
 
 
 
-
 var first = 0;
 var second = 0;
 var iter = function*() {
@@ -63,9 +62,10 @@ async function * gen() {
 }
 
 gen().next()
-  .then(_ => { throw new Test262Error("Expected async function to reject, but resolved."); }, ({ constructor }) => assert.sameValue(constructor, Test262Error))
+  .then(_ => {
+    throw new Test262Error("Expected async function to reject, but resolved.");
+  }, ({ constructor }) => {
+    assert.sameValue(constructor, Test262Error);
+    
+  })
   .then($DONE, $DONE);
-
-iter.next();
-assert.sameValue(first, 1);
-assert.sameValue(second, 0, 'Iterator is closed following abrupt completion.');

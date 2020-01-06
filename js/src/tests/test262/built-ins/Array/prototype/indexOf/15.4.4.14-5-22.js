@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+        var fromIndex = {
+            valueOf: function () {
+                return 1;
+            }
+        };
+
+
+assert.sameValue([0, true].indexOf(true, fromIndex), 1, '[0, true].indexOf(true, fromIndex)');
+
+reportCompare(0, 0);

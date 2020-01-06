@@ -8,6 +8,7 @@
 
 
 
+
 function* g() {
   var x = 1;
 

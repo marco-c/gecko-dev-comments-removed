@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var a = new WeakSet();
+var b = new WeakSet(undefined);
+var c = new WeakSet(null);
+
+assert.sameValue(Object.getPrototypeOf(a), WeakSet.prototype);
+assert.sameValue(Object.getPrototypeOf(b), WeakSet.prototype);
+assert.sameValue(Object.getPrototypeOf(c), WeakSet.prototype);
+
+reportCompare(0, 0);

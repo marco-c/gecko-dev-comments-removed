@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithTypedArrayConstructors(function(TA) {
+  var sample = new TA(1);
+  $DETACHBUFFER(sample.buffer);
+
+  assert.throws(TypeError, function() {
+    Object.getOwnPropertyDescriptor(sample, 0);
+  });
+});
+
+reportCompare(0, 0);

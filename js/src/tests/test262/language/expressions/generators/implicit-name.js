@@ -9,6 +9,7 @@
 
 
 
+
 var f = function *(a) { yield a+1; return; };
 
 assert.sameValue(f.name, 'f');

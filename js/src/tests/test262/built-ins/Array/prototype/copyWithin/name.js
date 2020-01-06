@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Array.prototype.copyWithin.name, 'copyWithin',
+  'The value of `Array.prototype.copyWithin.name` is `"copyWithin"`'
+);
+
+verifyNotEnumerable(Array.prototype.copyWithin, 'name');
+verifyNotWritable(Array.prototype.copyWithin, 'name');
+verifyConfigurable(Array.prototype.copyWithin, 'name');
+
+reportCompare(0, 0);

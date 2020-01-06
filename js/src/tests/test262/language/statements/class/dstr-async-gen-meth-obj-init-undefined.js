@@ -46,7 +46,6 @@
 
 
 
-
 class C {
   async *method({}) {
     

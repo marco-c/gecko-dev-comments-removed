@@ -7,7 +7,6 @@
 
 
 
-
 var threw = false;
 var fn = function() {
   throw new Error();

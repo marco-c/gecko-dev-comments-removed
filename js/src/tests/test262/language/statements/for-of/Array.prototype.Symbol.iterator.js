@@ -8,6 +8,7 @@
 
 
 
+
 var array = [0, 'a', true, false, null, , undefined, NaN];
 var i = 0;
 

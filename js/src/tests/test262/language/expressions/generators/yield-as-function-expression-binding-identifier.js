@@ -9,6 +9,7 @@
 
 
 
+
 var result;
 var g = function*() {
   (function yield() {});

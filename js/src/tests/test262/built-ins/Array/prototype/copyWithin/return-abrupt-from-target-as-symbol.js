@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol(1);
+assert.throws(TypeError, function() {
+  [].copyWithin(s, 0);
+});
+
+reportCompare(0, 0);

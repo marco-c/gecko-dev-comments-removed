@@ -7,6 +7,7 @@
 
 
 
+
 function* g() {
   try {
     throw new Error();

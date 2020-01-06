@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Uint8Array.name, "Uint8Array");
+
+verifyNotEnumerable(Uint8Array, "name");
+verifyNotWritable(Uint8Array, "name");
+verifyConfigurable(Uint8Array, "name");
+
+reportCompare(0, 0);

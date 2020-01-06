@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(isFinite(NaN), false, "NaN");
+assert.sameValue(isFinite(Infinity), false, "Infinity");
+assert.sameValue(isFinite(-Infinity), false, "-Infinity");
+
+reportCompare(0, 0);

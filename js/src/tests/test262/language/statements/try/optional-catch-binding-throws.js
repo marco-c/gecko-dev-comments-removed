@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(Test262Error, function() {
+    try {
+        throw new Error();
+    } catch {
+        throw new Test262Error();
+    }
+});
+
+reportCompare(0, 0);

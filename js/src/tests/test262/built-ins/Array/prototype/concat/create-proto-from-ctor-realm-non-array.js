@@ -22,6 +22,7 @@
 
 
 
+
 var array = [];
 var callCount = 0;
 var CustomCtor = function() {};

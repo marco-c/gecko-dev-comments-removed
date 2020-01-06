@@ -19,7 +19,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TA) {
   var buffer = new SharedArrayBuffer(4);
   assert.throws(TypeError, function() {

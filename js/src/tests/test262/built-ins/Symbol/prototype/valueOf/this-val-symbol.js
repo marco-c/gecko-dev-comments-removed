@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var valueOf = Symbol.prototype.valueOf;
+var subject = Symbol('s');
+
+assert.sameValue(valueOf.call(subject), subject);
+
+reportCompare(0, 0);

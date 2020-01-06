@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var reverse = TypedArray.prototype.reverse;
+
+assert.sameValue(typeof reverse, 'function');
+
+assert.throws(TypeError, function() {
+  reverse();
+});
+
+reportCompare(0, 0);

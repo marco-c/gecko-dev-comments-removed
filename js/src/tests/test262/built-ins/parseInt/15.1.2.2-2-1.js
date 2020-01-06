@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(parseInt(""), NaN, 'parseInt("")');
+
+reportCompare(0, 0);

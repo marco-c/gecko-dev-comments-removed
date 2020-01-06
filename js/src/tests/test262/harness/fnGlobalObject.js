@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var gO = fnGlobalObject();
+
+assert(typeof gO === "object");
+assert.sameValue(gO, this);
+
+reportCompare(0, 0);

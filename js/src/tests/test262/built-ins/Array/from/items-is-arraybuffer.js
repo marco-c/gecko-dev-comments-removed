@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var arrayBuffer = new ArrayBuffer(7);
+
+var result = Array.from(arrayBuffer);
+
+assert.sameValue(result.length, 0);
+
+reportCompare(0, 0);

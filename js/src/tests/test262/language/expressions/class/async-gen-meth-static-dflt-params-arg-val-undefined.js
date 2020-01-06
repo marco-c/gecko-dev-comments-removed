@@ -56,7 +56,6 @@
 
 
 
-
 var callCount = 0;
 var C = class {
   static async *method(fromLiteral = 23, fromExpr = 45, fromHole = 99) {

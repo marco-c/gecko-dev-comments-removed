@@ -46,7 +46,6 @@
 
 
 
-
 var iter = (function*() { throw new Test262Error(); })();
 
 async function * gen() {
@@ -56,6 +55,11 @@ async function * gen() {
 }
 
 gen().next()
-  .then(_ => { throw new Test262Error("Expected async function to reject, but resolved."); }, ({ constructor }) => assert.sameValue(constructor, Test262Error))
+  .then(_ => {
+    throw new Test262Error("Expected async function to reject, but resolved.");
+  }, ({ constructor }) => {
+    assert.sameValue(constructor, Test262Error);
+    
+  })
   .then($DONE, $DONE);
 

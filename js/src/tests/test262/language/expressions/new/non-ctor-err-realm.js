@@ -18,6 +18,7 @@
 
 
 
+
 var otherParseInt = $262.createRealm().global.parseInt;
 
 assert.sameValue(typeof otherParseInt, 'function');

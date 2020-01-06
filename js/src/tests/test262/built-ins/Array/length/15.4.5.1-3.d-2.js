@@ -9,6 +9,7 @@
 
 
 
+
 assert.throws(RangeError, function() {
       [].length = 4294967297 ;
 });

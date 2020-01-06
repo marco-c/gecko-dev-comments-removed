@@ -10,5 +10,7 @@
 
 
 
+
+throw "Test262: This statement should not be evaluated.";
 (function() { 'use strict'; { let f; var f; } })
 

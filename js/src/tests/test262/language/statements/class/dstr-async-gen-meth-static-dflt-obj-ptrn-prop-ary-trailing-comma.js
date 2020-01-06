@@ -48,7 +48,6 @@
 
 
 
-
 var callCount = 0;
 class C {
   static async *method({ x: [y], } = { x: [45] }) {

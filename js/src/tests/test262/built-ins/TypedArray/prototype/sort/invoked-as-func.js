@@ -1,0 +1,37 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var sort = TypedArray.prototype.sort;
+
+assert.sameValue(typeof sort, 'function');
+
+assert.throws(TypeError, function() {
+  sort();
+});
+
+reportCompare(0, 0);

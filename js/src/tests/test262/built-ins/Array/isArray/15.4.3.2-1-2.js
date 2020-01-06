@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.isArray(new Boolean(false)), false, 'Array.isArray(new Boolean(false))');
+
+reportCompare(0, 0);

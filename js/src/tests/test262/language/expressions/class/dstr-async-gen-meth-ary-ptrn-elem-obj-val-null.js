@@ -60,7 +60,6 @@
 
 
 
-
 var C = class {
   async *method([{ x }]) {
     

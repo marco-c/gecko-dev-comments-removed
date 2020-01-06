@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+        var targetObj = {};
+
+            Number.prototype[1] = targetObj;
+            Number.prototype.length = 2;
+
+assert.sameValue(Array.prototype.indexOf.call(5, targetObj), 1, 'Array.prototype.indexOf.call(5, targetObj)');
+
+reportCompare(0, 0);

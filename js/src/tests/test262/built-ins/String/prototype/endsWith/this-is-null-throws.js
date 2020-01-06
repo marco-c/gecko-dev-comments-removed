@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  String.prototype.endsWith.call(null, '');
+});
+
+reportCompare(0, 0);

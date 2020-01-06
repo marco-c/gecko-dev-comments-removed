@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+  var arr = new Array(10);
+assert.throws(TypeError, function() {
+    arr.map(new Object());
+});
+
+reportCompare(0, 0);

@@ -6,6 +6,7 @@
 
 
 
+
 assert.sameValue(typeof Symbol('A'), 'symbol', "`typeof Symbol('A')` is `'symbol'`");
 assert.sameValue(typeof Symbol(), 'symbol', "`typeof Symbol()` is `'symbol'`");
 

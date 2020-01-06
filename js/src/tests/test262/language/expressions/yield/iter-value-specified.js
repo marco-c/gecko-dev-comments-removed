@@ -8,6 +8,7 @@
 
 
 
+
 function* g() { actual = yield; }
 var expected = {};
 var iter = g();

@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+        var testResult = false;
+        function callbackfn(prevVal, curVal, idx, obj) {
+            if (idx === 1) {
+                testResult = (curVal === 1);
+            }
+        }
+
+            Object.defineProperty(Array.prototype, "1", {
+                get: function () {
+                    return "11";
+                },
+                configurable: true
+            });
+            [0, 1, 2].reduceRight(callbackfn, "initialValue");
+
+assert(testResult, 'testResult !== true');
+
+reportCompare(0, 0);

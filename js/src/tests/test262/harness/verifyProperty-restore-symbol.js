@@ -7,6 +7,7 @@
 
 
 
+
 var obj;
 var prop = Symbol(1);
 var desc = { enumerable: true, configurable: true, writable: true, value: 42 };

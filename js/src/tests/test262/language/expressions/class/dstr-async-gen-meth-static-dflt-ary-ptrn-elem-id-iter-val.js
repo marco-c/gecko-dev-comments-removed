@@ -62,7 +62,6 @@
 
 
 
-
 var callCount = 0;
 var C = class {
   static async *method([x, y, z] = [1, 2, 3]) {

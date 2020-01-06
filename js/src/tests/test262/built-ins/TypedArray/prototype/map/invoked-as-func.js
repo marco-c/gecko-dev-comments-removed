@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var map = TypedArray.prototype.map;
+
+assert.sameValue(typeof map, 'function');
+
+assert.throws(TypeError, function() {
+  map();
+});
+
+reportCompare(0, 0);

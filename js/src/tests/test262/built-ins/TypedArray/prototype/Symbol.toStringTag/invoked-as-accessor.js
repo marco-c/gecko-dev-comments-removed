@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TypedArrayPrototype = TypedArray.prototype;
+
+assert.sameValue(TypedArrayPrototype[Symbol.toStringTag], undefined);
+
+reportCompare(0, 0);

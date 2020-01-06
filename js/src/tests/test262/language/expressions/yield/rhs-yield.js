@@ -6,6 +6,7 @@
 
 
 
+
 function* g() {
   yield yield 1;
 }

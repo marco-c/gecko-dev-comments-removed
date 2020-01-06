@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+        var testResult = false;
+
+        function callbackfn(val, idx, obj) {
+            if (idx === 2 && val === "prototype") {
+                testResult = true;
+            }
+        }
+        var arr = [0, 1, 2];
+
+            Object.defineProperty(Array.prototype, "2", {
+                get: function () {
+                    return "prototype";
+                },
+                configurable: true
+            });
+
+            Object.defineProperty(arr, "1", {
+                get: function () {
+                    arr.length = 2;
+                    return 1;
+                },
+                configurable: true
+            });
+
+            arr.forEach(callbackfn);
+
+assert(testResult, 'testResult !== true');
+
+reportCompare(0, 0);

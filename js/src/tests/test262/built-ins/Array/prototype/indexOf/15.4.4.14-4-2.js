@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+  var i = Array.prototype.indexOf.call({length: null}, 1);
+
+
+assert.sameValue(i, -1, 'i');
+
+reportCompare(0, 0);

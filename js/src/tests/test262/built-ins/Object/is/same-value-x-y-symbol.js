@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var a = Symbol();
+var b = Symbol("description");
+
+assert.sameValue(Object.is(a, a), true, "`Object.is(a, a)` returns `true`");
+assert.sameValue(Object.is(b, b), true, "`Object.is(b, b)` returns `true`");
+
+reportCompare(0, 0);

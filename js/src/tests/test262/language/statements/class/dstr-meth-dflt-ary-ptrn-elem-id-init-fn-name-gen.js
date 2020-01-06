@@ -72,6 +72,7 @@
 
 
 
+
 var callCount = 0;
 class C {
   method([gen = function* () {}, xGen = function* x() {}] = []) {

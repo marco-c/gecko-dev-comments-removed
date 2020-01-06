@@ -7,6 +7,7 @@
 
 
 
+
 verifyWritable(Atomics, "exchange");
 verifyNotEnumerable(Atomics, "exchange");
 verifyConfigurable(Atomics, "exchange");

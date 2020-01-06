@@ -7,6 +7,7 @@
 
 
 
+
 verifyWritable(Atomics, "load");
 verifyNotEnumerable(Atomics, "load");
 verifyConfigurable(Atomics, "load");

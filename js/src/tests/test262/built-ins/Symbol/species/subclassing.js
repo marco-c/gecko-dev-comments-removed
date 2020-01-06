@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MyRegExp extends RegExp {
+};
+
+assert.sameValue(MyRegExp[Symbol.species], MyRegExp);
+
+
+reportCompare(0, 0);

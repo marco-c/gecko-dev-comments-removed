@@ -31,7 +31,6 @@
 
 
 
-
 var callCount = 0;
 async function* f({ arrow = () => {} }) {
   assert.sameValue(arrow.name, 'arrow');

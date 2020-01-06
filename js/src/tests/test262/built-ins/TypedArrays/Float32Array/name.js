@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Float32Array.name, "Float32Array");
+
+verifyNotEnumerable(Float32Array, "name");
+verifyNotWritable(Float32Array, "name");
+verifyConfigurable(Float32Array, "name");
+
+reportCompare(0, 0);

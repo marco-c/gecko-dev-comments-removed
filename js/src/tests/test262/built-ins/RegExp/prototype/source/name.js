@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var get = Object.getOwnPropertyDescriptor(RegExp.prototype, 'source').get;
+
+verifyProperty(get, 'name', {
+  value: 'get source',
+  writable: false,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

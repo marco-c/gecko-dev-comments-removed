@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(parseFloat(undefined), NaN, "undefined");
+assert.sameValue(parseFloat(null), NaN, "null");
+
+reportCompare(0, 0);

@@ -8,7 +8,6 @@
 
 
 
-
 var threw = false;
 var obj = {};
 var s = Symbol('1');
@@ -29,9 +28,7 @@ try {
 }
 
 if (threw === false) {
-  throw new Test262Error(
-    'Expected a Test262Error, but no error was thrown for symbol key.'
-  );
+  $ERROR('Expected a Test262Error, but no error was thrown.');
 }
 
 reportCompare(0, 0);

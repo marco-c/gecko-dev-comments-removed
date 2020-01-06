@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  WeakSet.prototype.delete.call(new Map(), {});
+});
+
+assert.throws(TypeError, function() {
+  var s = new WeakSet();
+  s.delete.call(new Map(), {});
+});
+
+reportCompare(0, 0);

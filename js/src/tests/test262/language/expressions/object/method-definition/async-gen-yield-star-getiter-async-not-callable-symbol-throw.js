@@ -37,7 +37,6 @@
 
 
 
-
 var obj = {
   get [Symbol.iterator]() {
     throw new Test262Error('it should not get Symbol.iterator');

@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.prototype.filter.name, "filter");
+
+verifyNotEnumerable(Array.prototype.filter, "name");
+verifyNotWritable(Array.prototype.filter, "name");
+verifyConfigurable(Array.prototype.filter, "name");
+
+reportCompare(0, 0);

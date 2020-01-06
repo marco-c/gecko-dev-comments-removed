@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = new Set();
+
+assert.sameValue(s.has(Symbol()), false, "`s.has(Symbol())` returns `false`");
+
+reportCompare(0, 0);

@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var arrayLike = {};
+
+Object.defineProperty(arrayLike, "length", {
+  get: function() {
+    throw new Test262Error();
+  }
+});
+
+testWithTypedArrayConstructors(function(TA) {
+  assert.throws(Test262Error, function() {
+    TA.from(arrayLike);
+  });
+});
+
+reportCompare(0, 0);

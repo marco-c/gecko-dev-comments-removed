@@ -16,6 +16,7 @@
 
 
 
+
 for (let re of [/^.$/su, /^.$/sum]) {
   assert(re.test("a"));
   assert(re.test("3"));

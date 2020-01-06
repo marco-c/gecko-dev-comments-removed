@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+        function callbackfn() {
+            return true;
+        }
+
+        var testResult = [11].map(callbackfn);
+
+assert.sameValue(testResult[0], true, 'testResult[0]');
+
+reportCompare(0, 0);

@@ -47,7 +47,6 @@
 
 
 
-
 var C = class {
   async *method({} = undefined) {
     

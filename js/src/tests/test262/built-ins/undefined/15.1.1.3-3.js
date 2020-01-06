@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var newProperty = undefined = 42;
+
+assert.sameValue(newProperty, 42, 'newProperty');
+
+reportCompare(0, 0);

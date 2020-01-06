@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  new Symbol();
+});
+
+assert.throws(TypeError, function() {
+  new Symbol('1');
+});
+
+reportCompare(0, 0);

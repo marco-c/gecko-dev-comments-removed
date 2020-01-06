@@ -14,6 +14,7 @@
 
 
 
+
 var len;
 var hits = 0;
 

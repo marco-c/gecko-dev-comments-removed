@@ -3,155 +3,97 @@
 
 
 
-const NATIVE_FUNCTION_RE = /\bfunction\b[\s\S]*\([\s\S]*\)[\s\S]*\{[\s\S]*\[[\s\S]*\bnative\b[\s\S]+\bcode\b[\s\S]*\][\s\S]*\}/;
 
 
 
+if (Promise === undefined && this.setTimeout === undefined) {
+  if(/\$DONE()/.test(code))
+    $ERROR("Async test capability is not supported in your test environment");
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function testBuiltInObject(obj, isFunction, isConstructor, properties, length) {
-
-  if (obj === undefined) {
-    $ERROR("Object being tested is undefined.");
-  }
-
-  var objString = Object.prototype.toString.call(obj);
-  if (isFunction) {
-    if (objString !== "[object Function]") {
-      $ERROR("The [[Class]] internal property of a built-in function must be " +
-          "\"Function\", but toString() returns " + objString);
+if (Promise !== undefined && this.setTimeout === undefined) {
+  (function(that) {
+     that.setTimeout = function(callback, delay) {
+      var p = Promise.resolve();
+      var start = Date.now();
+      var end = start + delay;
+      function check(){
+        var timeLeft = end - Date.now();
+        if(timeLeft > 0)
+          p.then(check);
+        else
+          callback();
+      }
+      p.then(check);
     }
-  } else {
-    if (objString !== "[object Object]") {
-      $ERROR("The [[Class]] internal property of a built-in non-function object must be " +
-          "\"Object\", but toString() returns " + objString);
-    }
-  }
+  })(this);
+}
 
-  if (!Object.isExtensible(obj)) {
-    $ERROR("Built-in objects must be extensible.");
-  }
 
-  if (isFunction && Object.getPrototypeOf(obj) !== Function.prototype) {
-    $ERROR("Built-in functions must have Function.prototype as their prototype.");
-  }
 
-  if (isConstructor && Object.getPrototypeOf(obj.prototype) !== Object.prototype) {
-    $ERROR("Built-in prototype objects must have Object.prototype as their prototype.");
-  }
 
-  
-  
 
-  
-  
 
-  if (isFunction) {
 
-    if (typeof obj.length !== "number" || obj.length !== Math.floor(obj.length)) {
-      $ERROR("Built-in functions must have a length property with an integer value.");
-    }
 
-    if (obj.length !== length) {
-      $ERROR("Function's length property doesn't have specified value; expected " +
-        length + ", got " + obj.length + ".");
-    }
 
-    var desc = Object.getOwnPropertyDescriptor(obj, "length");
-    if (desc.writable) {
-      $ERROR("The length property of a built-in function must not be writable.");
-    }
-    if (desc.enumerable) {
-      $ERROR("The length property of a built-in function must not be enumerable.");
-    }
-    if (!desc.configurable) {
-      $ERROR("The length property of a built-in function must be configurable.");
-    }
-  }
+var __globalObject = Function("return this;")();
+function fnGlobalObject() {
+  return __globalObject;
+}
 
-  properties.forEach(function(prop) {
-    var desc = Object.getOwnPropertyDescriptor(obj, prop);
-    if (desc === undefined) {
-      $ERROR("Missing property " + prop + ".");
-    }
-    
-    if (desc.hasOwnProperty("writable") && !desc.writable) {
-      $ERROR("The " + prop + " property of this built-in object must be writable.");
-    }
-    if (desc.enumerable) {
-      $ERROR("The " + prop + " property of this built-in object must not be enumerable.");
-    }
-    if (!desc.configurable) {
-      $ERROR("The " + prop + " property of this built-in object must be configurable.");
-    }
-  });
 
-  
-  
-  
-  
 
-  var exception;
-  if (isFunction && !isConstructor) {
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+var typedArrayConstructors = [
+  Float64Array,
+  Float32Array,
+  Int32Array,
+  Int16Array,
+  Int8Array,
+  Uint32Array,
+  Uint16Array,
+  Uint8Array,
+  Uint8ClampedArray
+];
+
+
+
+
+var TypedArray = Object.getPrototypeOf(Int8Array);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function testWithTypedArrayConstructors(f, selected) {
+  var constructors = selected || typedArrayConstructors;
+  for (var i = 0; i < constructors.length; ++i) {
+    var constructor = constructors[i];
     try {
-      
-      var instance = new obj();
+      f(constructor);
     } catch (e) {
-      exception = e;
-    }
-    if (exception === undefined || exception.name !== "TypeError") {
-      $ERROR("Built-in functions that aren't constructors must throw TypeError when " +
-        "used in a \"new\" statement.");
+      e.message += " (Testing with " + constructor.name + ".)";
+      throw e;
     }
   }
-
-  if (isFunction && !isConstructor && obj.hasOwnProperty("prototype")) {
-    $ERROR("Built-in functions that aren't constructors must not have a prototype property.");
-  }
-
-  
-  return true;
-}
-
-
-function allowProxyTraps(overrides) {
-  function throwTest262Error(msg) {
-    return function () { throw new Test262Error(msg); };
-  }
-  if (!overrides) { overrides = {}; }
-  return {
-    getPrototypeOf: overrides.getPrototypeOf || throwTest262Error('[[GetPrototypeOf]] trap called'),
-    setPrototypeOf: overrides.setPrototypeOf || throwTest262Error('[[SetPrototypeOf]] trap called'),
-    isExtensible: overrides.isExtensible || throwTest262Error('[[IsExtensible]] trap called'),
-    preventExtensions: overrides.preventExtensions || throwTest262Error('[[PreventExtensions]] trap called'),
-    getOwnPropertyDescriptor: overrides.getOwnPropertyDescriptor || throwTest262Error('[[GetOwnProperty]] trap called'),
-    has: overrides.has || throwTest262Error('[[HasProperty]] trap called'),
-    get: overrides.get || throwTest262Error('[[Get]] trap called'),
-    set: overrides.set || throwTest262Error('[[Set]] trap called'),
-    deleteProperty: overrides.deleteProperty || throwTest262Error('[[Delete]] trap called'),
-    defineProperty: overrides.defineProperty || throwTest262Error('[[DefineOwnProperty]] trap called'),
-    enumerate: throwTest262Error('[[Enumerate]] trap called: this trap has been removed'),
-    ownKeys: overrides.ownKeys || throwTest262Error('[[OwnPropertyKeys]] trap called'),
-    apply: overrides.apply || throwTest262Error('[[Call]] trap called'),
-    construct: overrides.construct || throwTest262Error('[[Construct]] trap called')
-  };
 }
 
 
@@ -163,18 +105,22 @@ function allowProxyTraps(overrides) {
 
 
 
+function testTypedArrayConversions(byteConversionValues, fn) {
+  var values = byteConversionValues.values;
+  var expected = byteConversionValues.expected;
 
+  testWithTypedArrayConstructors(function(TA) {
+    var name = TA.name.slice(0, -5);
 
-function assertRelativeDateMs(date, expectedMs) {
-  var actualMs = date.valueOf();
-  var localOffset = date.getTimezoneOffset() * 60000;
-
-  if (actualMs - localOffset !== expectedMs) {
-    $ERROR(
-      'Expected ' + date + ' to be ' + expectedMs +
-      ' milliseconds from the Unix epoch'
-    );
-  }
+    return values.forEach(function(value, index) {
+      var exp = expected[name][index];
+      var initial = 0;
+      if (exp === 0) {
+        initial = 1;
+      }
+      fn(TA, value, exp, initial);
+    });
+  });
 }
 
 
@@ -623,3 +569,343 @@ var byteConversionValues = {
     ]
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function testBuiltInObject(obj, isFunction, isConstructor, properties, length) {
+
+  if (obj === undefined) {
+    $ERROR("Object being tested is undefined.");
+  }
+
+  var objString = Object.prototype.toString.call(obj);
+  if (isFunction) {
+    if (objString !== "[object Function]") {
+      $ERROR("The [[Class]] internal property of a built-in function must be " +
+          "\"Function\", but toString() returns " + objString);
+    }
+  } else {
+    if (objString !== "[object Object]") {
+      $ERROR("The [[Class]] internal property of a built-in non-function object must be " +
+          "\"Object\", but toString() returns " + objString);
+    }
+  }
+
+  if (!Object.isExtensible(obj)) {
+    $ERROR("Built-in objects must be extensible.");
+  }
+
+  if (isFunction && Object.getPrototypeOf(obj) !== Function.prototype) {
+    $ERROR("Built-in functions must have Function.prototype as their prototype.");
+  }
+
+  if (isConstructor && Object.getPrototypeOf(obj.prototype) !== Object.prototype) {
+    $ERROR("Built-in prototype objects must have Object.prototype as their prototype.");
+  }
+
+  
+  
+
+  
+  
+
+  if (isFunction) {
+
+    if (typeof obj.length !== "number" || obj.length !== Math.floor(obj.length)) {
+      $ERROR("Built-in functions must have a length property with an integer value.");
+    }
+
+    if (obj.length !== length) {
+      $ERROR("Function's length property doesn't have specified value; expected " +
+        length + ", got " + obj.length + ".");
+    }
+
+    var desc = Object.getOwnPropertyDescriptor(obj, "length");
+    if (desc.writable) {
+      $ERROR("The length property of a built-in function must not be writable.");
+    }
+    if (desc.enumerable) {
+      $ERROR("The length property of a built-in function must not be enumerable.");
+    }
+    if (!desc.configurable) {
+      $ERROR("The length property of a built-in function must be configurable.");
+    }
+  }
+
+  properties.forEach(function(prop) {
+    var desc = Object.getOwnPropertyDescriptor(obj, prop);
+    if (desc === undefined) {
+      $ERROR("Missing property " + prop + ".");
+    }
+    
+    if (desc.hasOwnProperty("writable") && !desc.writable) {
+      $ERROR("The " + prop + " property of this built-in object must be writable.");
+    }
+    if (desc.enumerable) {
+      $ERROR("The " + prop + " property of this built-in object must not be enumerable.");
+    }
+    if (!desc.configurable) {
+      $ERROR("The " + prop + " property of this built-in object must be configurable.");
+    }
+  });
+
+  
+  
+  
+  
+
+  var exception;
+  if (isFunction && !isConstructor) {
+    
+    
+    
+    
+    try {
+      
+      var instance = new obj();
+    } catch (e) {
+      exception = e;
+    }
+    if (exception === undefined || exception.name !== "TypeError") {
+      $ERROR("Built-in functions that aren't constructors must throw TypeError when " +
+        "used in a \"new\" statement.");
+    }
+  }
+
+  if (isFunction && !isConstructor && obj.hasOwnProperty("prototype")) {
+    $ERROR("Built-in functions that aren't constructors must not have a prototype property.");
+  }
+
+  
+  return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function checkSequence(arr, message) {
+  arr.forEach(function(e, i) {
+    if (e !== (i+1)) {
+      $ERROR((message ? message : "Steps in unexpected sequence:") +
+             " '" + arr.join(',') + "'");
+    }
+  });
+
+  return true;
+}
+
+
+
+
+
+
+
+
+
+
+function allowProxyTraps(overrides) {
+  function throwTest262Error(msg) {
+    return function () { throw new Test262Error(msg); };
+  }
+  if (!overrides) { overrides = {}; }
+  return {
+    getPrototypeOf: overrides.getPrototypeOf || throwTest262Error('[[GetPrototypeOf]] trap called'),
+    setPrototypeOf: overrides.setPrototypeOf || throwTest262Error('[[SetPrototypeOf]] trap called'),
+    isExtensible: overrides.isExtensible || throwTest262Error('[[IsExtensible]] trap called'),
+    preventExtensions: overrides.preventExtensions || throwTest262Error('[[PreventExtensions]] trap called'),
+    getOwnPropertyDescriptor: overrides.getOwnPropertyDescriptor || throwTest262Error('[[GetOwnProperty]] trap called'),
+    has: overrides.has || throwTest262Error('[[HasProperty]] trap called'),
+    get: overrides.get || throwTest262Error('[[Get]] trap called'),
+    set: overrides.set || throwTest262Error('[[Set]] trap called'),
+    deleteProperty: overrides.deleteProperty || throwTest262Error('[[Delete]] trap called'),
+    defineProperty: overrides.defineProperty || throwTest262Error('[[DefineOwnProperty]] trap called'),
+    enumerate: throwTest262Error('[[Enumerate]] trap called: this trap has been removed'),
+    ownKeys: overrides.ownKeys || throwTest262Error('[[OwnPropertyKeys]] trap called'),
+    apply: overrides.apply || throwTest262Error('[[Call]] trap called'),
+    construct: overrides.construct || throwTest262Error('[[Construct]] trap called')
+  };
+}
+
+
+
+
+
+
+
+
+
+function decimalToHexString(n) {
+  var hex = "0123456789ABCDEF";
+  n >>>= 0;
+  var s = "";
+  while (n) {
+    s = hex[n & 0xf] + s;
+    n >>>= 4;
+  }
+  while (s.length < 4) {
+    s = "0" + s;
+  }
+  return s;
+}
+
+function decimalToPercentHexString(n) {
+  var hex = "0123456789ABCDEF";
+  return "%" + hex[(n >> 4) & 0xf] + hex[n & 0xf];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function assertRelativeDateMs(date, expectedMs) {
+  var actualMs = date.valueOf();
+  var localOffset = date.getTimezoneOffset() * 60000;
+
+  if (actualMs - localOffset !== expectedMs) {
+    $ERROR(
+      'Expected ' + date + ' to be ' + expectedMs +
+      ' milliseconds from the Unix epoch'
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function arrayContains(array, subArray) {
+  var found;
+  for (var i = 0; i < subArray.length; i++) {
+    found = false;
+    for (var j = 0; j < array.length; j++) {
+      if (subArray[i] === array[j]) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var $MAX_ITERATIONS = 100000;
+
+
+
+
+
+
+
+
+
+
+
+var distinctNaNs = [
+  0/0, Infinity/Infinity, -(0/0), Math.pow(-1, 0.5), -Math.pow(-1, 0.5)
+];
+
+
+
+
+
+
+
+
+
+
+
+
+function $DETACHBUFFER(buffer) {
+  if (!$262 || typeof $262.detachArrayBuffer !== "function") {
+    throw new Test262Error("No method available to detach an ArrayBuffer");
+  }
+  $262.detachArrayBuffer(buffer);
+}
+
+
+
+
+
+
+
+
+
+var date_1899_end = -2208988800001;
+var date_1900_start = -2208988800000;
+var date_1969_end = -1;
+var date_1970_start = 0;
+var date_1999_end = 946684799999;
+var date_2000_start = 946684800000;
+var date_2099_end = 4102444799999;
+var date_2100_start = 4102444800000;
+
+
+
+
+
+
+
+
+
+const NATIVE_FUNCTION_RE = /\bfunction\b[\s\S]*\([\s\S]*\)[\s\S]*\{[\s\S]*\[[\s\S]*\bnative\b[\s\S]+\bcode\b[\s\S]*\][\s\S]*\}/;

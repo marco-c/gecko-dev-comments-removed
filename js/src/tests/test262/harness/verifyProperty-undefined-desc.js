@@ -6,12 +6,6 @@
 
 
 
-
-
-$ERROR = function $ERROR(message) {
-  throw new Test262Error(message);
-};
-
 var sample = {
   bar: undefined,
   get baz() {}

@@ -49,6 +49,7 @@
 
 
 
+
 var callCount = 0;
 var f;
 f = function*(_ = (function() { throw new Test262Error(); }())) {

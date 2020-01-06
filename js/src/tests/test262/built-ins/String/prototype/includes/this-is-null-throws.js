@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  String.prototype.includes.call(null, '');
+});
+
+reportCompare(0, 0);

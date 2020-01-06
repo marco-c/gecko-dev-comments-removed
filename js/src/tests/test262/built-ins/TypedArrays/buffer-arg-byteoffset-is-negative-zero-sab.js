@@ -17,7 +17,6 @@
 
 
 
-
 testWithTypedArrayConstructors(function(TAConstructor) {
   var typedArray = new TAConstructor(new SharedArrayBuffer(8), -0);
   assert.sameValue(typedArray.byteOffset, +0);

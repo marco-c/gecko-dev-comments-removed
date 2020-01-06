@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+assert(Object(0n) instanceof BigInt);
+assert.sameValue(Object(0n).valueOf(), 0n);
+
+reportCompare(0, 0);

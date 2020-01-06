@@ -42,15 +42,14 @@
 
 
 
-
 var doneCallCount = 0;
 var iter = {};
 iter[Symbol.iterator] = function() {
   return {
-    next: function() {
+    next() {
       return { value: null, done: false };
     },
-    return: function() {
+    return() {
       doneCallCount += 1;
       return {};
     }

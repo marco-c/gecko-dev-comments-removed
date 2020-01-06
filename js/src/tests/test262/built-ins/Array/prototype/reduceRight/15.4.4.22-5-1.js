@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+  function cb(){}
+assert.throws(TypeError, function() {
+    [].reduceRight(cb);
+});
+
+reportCompare(0, 0);

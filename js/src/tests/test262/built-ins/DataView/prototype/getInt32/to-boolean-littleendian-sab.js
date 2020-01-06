@@ -30,7 +30,6 @@
 
 
 
-
 var buffer = new SharedArrayBuffer(4);
 var sample = new DataView(buffer, 0);
 

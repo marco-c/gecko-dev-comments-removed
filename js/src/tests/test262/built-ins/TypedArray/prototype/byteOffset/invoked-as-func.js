@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TypedArrayPrototype = TypedArray.prototype;
+var getter = Object.getOwnPropertyDescriptor(
+  TypedArrayPrototype, 'byteOffset'
+).get;
+
+assert.throws(TypeError, function() {
+  getter();
+});
+
+reportCompare(0, 0);

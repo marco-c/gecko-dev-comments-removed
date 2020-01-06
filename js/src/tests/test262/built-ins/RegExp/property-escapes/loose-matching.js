@@ -10,6 +10,7 @@
 
 
 
+
 /\p{Any}/u;
 assert.throws.early(SyntaxError, "/\\p{any}/u");
 assert.throws.early(SyntaxError, "/\\P{ANY}/u");

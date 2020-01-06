@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+var ArrayIteratorProto = Object.getPrototypeOf([][Symbol.iterator]());
+
+assert.sameValue("Array Iterator", ArrayIteratorProto[Symbol.toStringTag]);
+
+reportCompare(0, 0);

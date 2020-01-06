@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+if (delete Date.parse  === false) {
+  $ERROR('#1: The Date.parse property has not the attributes DontDelete');
+}
+
+if (Date.hasOwnProperty('parse')) {
+  $ERROR('#2: The Date.parse property has not the attributes DontDelete');
+}
+
+reportCompare(0, 0);

@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(Date.now.length, 0, 'Date.now.length');
+
+reportCompare(0, 0);

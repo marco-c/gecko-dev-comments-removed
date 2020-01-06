@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+            Object.prototype[0] = false;
+
+assert.sameValue(Array.prototype.indexOf.call({ 0: true, 1: 1, length: 2 }, true), 0, 'Array.prototype.indexOf.call({ 0: true, 1: 1, length: 2 }, true)');
+
+reportCompare(0, 0);

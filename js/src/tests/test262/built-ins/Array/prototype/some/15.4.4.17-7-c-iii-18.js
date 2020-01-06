@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+        function callbackfn(val, idx, obj) {
+            return new Boolean();
+        }
+
+assert([11].some(callbackfn), '[11].some(callbackfn) !== true');
+
+reportCompare(0, 0);

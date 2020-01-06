@@ -15,7 +15,6 @@
 
 
 
-
 var error = new Error('boop');
 var g = async function*() {
   yield 1;

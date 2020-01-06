@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TypedArray.prototype["-0"] = "test262";
+
+testWithTypedArrayConstructors(function(TA) {
+  var sample = new TA(1);
+
+  assert.sameValue(Reflect.has(sample, "-0"), false, "-0");
+});
+
+reportCompare(0, 0);

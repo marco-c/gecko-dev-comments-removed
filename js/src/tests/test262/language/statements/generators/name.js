@@ -13,6 +13,7 @@
 
 
 
+
 function* g() {}
 
 assert.sameValue(g.name, 'g');

@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Date.prototype.getSeconds.name, "getSeconds");
+
+verifyNotEnumerable(Date.prototype.getSeconds, "name");
+verifyNotWritable(Date.prototype.getSeconds, "name");
+verifyConfigurable(Date.prototype.getSeconds, "name");
+
+reportCompare(0, 0);

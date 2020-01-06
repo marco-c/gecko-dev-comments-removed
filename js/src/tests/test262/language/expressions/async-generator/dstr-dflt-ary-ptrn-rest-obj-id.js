@@ -31,7 +31,6 @@
 
 
 
-
 var callCount = 0;
 var f;
 f = async function*([...{ length }] = [1, 2, 3]) {

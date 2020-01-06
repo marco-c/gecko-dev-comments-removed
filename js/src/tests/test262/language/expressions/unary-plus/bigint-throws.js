@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() { +0n });
+assert.throws(TypeError, function() { +1n });
+assert.throws(TypeError, function() { +-1n });
+assert.throws(TypeError, function() { +1000000000000000n });
+
+reportCompare(0, 0);

@@ -76,6 +76,7 @@
 
 
 
+
 var callCount = 0;
 var C = class {
   static *method(fromLiteral = 23, fromExpr = 45, fromHole = 99) {

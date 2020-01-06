@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var arr = [undefined, , , 'foo'];
+var called = 0;
+
+arr.find(function() {
+  called++;
+});
+
+assert.sameValue(called, 4);
+
+reportCompare(0, 0);

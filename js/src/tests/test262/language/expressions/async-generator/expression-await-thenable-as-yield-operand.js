@@ -10,7 +10,6 @@
 
 
 
-
 var thenable = {
   then: function(resolve, reject) {
     resolve("a");

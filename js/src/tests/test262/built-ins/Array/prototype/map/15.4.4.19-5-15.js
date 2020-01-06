@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+        var objDate = new Date();
+
+        function callbackfn(val, idx, obj) {
+            return this === objDate;
+        }
+
+        var testResult = [11].map(callbackfn, objDate);
+
+assert.sameValue(testResult[0], true, 'testResult[0]');
+
+reportCompare(0, 0);

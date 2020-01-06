@@ -15,6 +15,7 @@
 
 
 
+
 for (let re of [/^.$/, /^.$/m]) {
   assert(re.test("a"));
   assert(re.test("3"));

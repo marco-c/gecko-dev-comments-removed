@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(DataView.prototype.getFloat32.name, "getFloat32");
+
+verifyNotEnumerable(DataView.prototype.getFloat32, "name");
+verifyNotWritable(DataView.prototype.getFloat32, "name");
+verifyConfigurable(DataView.prototype.getFloat32, "name");
+
+reportCompare(0, 0);

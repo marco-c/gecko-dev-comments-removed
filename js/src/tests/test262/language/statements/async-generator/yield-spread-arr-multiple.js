@@ -21,7 +21,6 @@
 
 
 
-
 var arr = ['a', 'b', 'c'];
 var item;
 

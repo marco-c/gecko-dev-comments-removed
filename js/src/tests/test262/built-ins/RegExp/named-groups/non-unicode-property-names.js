@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue("a", /(?<π>a)/.exec("bab").groups.π);
 assert.throws(SyntaxError, () => eval('/(?<\\u{03C0}>a)/'), "\\u{} escapes allowed only in Unicode mode");
 assert.sameValue("a", /(?<π>a)/.exec("bab").groups.\u03C0);

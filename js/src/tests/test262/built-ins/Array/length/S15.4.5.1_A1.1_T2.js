@@ -8,14 +8,15 @@
 
 
 
+
 try {
   var x = [];
   x.length = NaN;
   $ERROR('#1.1: x = []; x.length = NaN throw RangeError. Actual: x.length === ' + (x.length));
-} catch(e) {    
+} catch(e) {
   if ((e instanceof RangeError) !== true) {
     $ERROR('#1.2: x = []; x.length = NaN throw RangeError. Actual: ' + (e));
-  }    
+  }
 }
 
 
@@ -23,10 +24,10 @@ try {
   x = [];
   x.length = Number.POSITIVE_INFINITY;
   $ERROR('#2.1: x = []; x.length = Number.POSITIVE_INFINITY throw RangeError. Actual: x.length === ' + (x.length));
-} catch(e) {    
+} catch(e) {
   if ((e instanceof RangeError) !== true) {
     $ERROR('#2.2: x = []; x.length = Number.POSITIVE_INFINITY throw RangeError. Actual: ' + (e));
-  }    
+  }
 }
 
 
@@ -34,10 +35,10 @@ try {
   x = [];
   x.length = Number.NEGATIVE_INFINITY;
   $ERROR('#3.1: x = []; x.length = Number.NEGATIVE_INFINITY throw RangeError. Actual: x.length === ' + (x.length));
-} catch(e) {    
+} catch(e) {
   if ((e instanceof RangeError) !== true) {
     $ERROR('#3.2: x = []; x.length = Number.NEGATIVE_INFINITY throw RangeError. Actual: ' + (e));
-  }    
+  }
 }
 
 
@@ -45,10 +46,10 @@ try {
   x = [];
   x.length = undefined;
   $ERROR('#4.1: x = []; x.length = undefined throw RangeError. Actual: x.length === ' + (x.length));
-} catch(e) {    
+} catch(e) {
   if ((e instanceof RangeError) !== true) {
     $ERROR('#4.2: x = []; x.length = undefined throw RangeError. Actual: ' + (e));
-  }    
+  }
 }
 
 reportCompare(0, 0);

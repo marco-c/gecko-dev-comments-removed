@@ -16,6 +16,7 @@
 
 
 
+
 let source = "(?<fst>.)(?<snd>.)|(?<thd>x)";
 for (let flags of ["", "u", "g", "gu"]) {
   let re = new RegExp(source, flags);

@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.prototype.concat.prototype, void 0);
+
+reportCompare(0, 0);

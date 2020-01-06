@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var slice = TypedArray.prototype.slice;
+
+assert.sameValue(typeof slice, 'function');
+
+assert.throws(TypeError, function() {
+  slice();
+});
+
+reportCompare(0, 0);

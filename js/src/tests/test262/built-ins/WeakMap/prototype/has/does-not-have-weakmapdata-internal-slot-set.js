@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  WeakMap.prototype.has.call(new Set(), {}, 1);
+});
+
+assert.throws(TypeError, function() {
+  var map = new WeakMap();
+  map.has.call(new Set(), {}, 1);
+});
+
+reportCompare(0, 0);

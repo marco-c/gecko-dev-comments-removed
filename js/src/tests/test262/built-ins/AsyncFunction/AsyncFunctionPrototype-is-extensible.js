@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+var AsyncFunction = async function foo() { }.constructor;
+AsyncFunction.prototype.x = 1;
+assert.sameValue(AsyncFunction.prototype.x, 1);
+
+
+reportCompare(0, 0);

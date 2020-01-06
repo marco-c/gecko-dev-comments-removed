@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, 'WeakSet');
+verifyWritable(this, 'WeakSet');
+verifyConfigurable(this, 'WeakSet');
+
+reportCompare(0, 0);

@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+        var accessed = false;
+        var callbackAccessed = false;
+        function callbackfn() {
+            callbackAccessed = true;
+        }
+
+        var obj = { length: 0 };
+
+        Object.defineProperty(obj, "0", {
+            get: function () {
+                accessed = true;
+                return 10;
+            },
+            configurable: true
+        });
+
+        Array.prototype.reduce.call(obj, function () { }, "initialValue");
+
+assert.sameValue(accessed, false, 'accessed');
+assert.sameValue(callbackAccessed, false, 'callbackAccessed');
+
+reportCompare(0, 0);

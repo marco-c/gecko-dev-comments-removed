@@ -9,6 +9,7 @@
 
 
 
+
 function* g() {}
 
 assert.sameValue(

@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.prototype.indexOf.call("abc", "b"), 1, 'Array.prototype.indexOf.call("abc", "b")');
+
+reportCompare(0, 0);

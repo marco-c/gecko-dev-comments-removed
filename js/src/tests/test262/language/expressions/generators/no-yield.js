@@ -8,6 +8,7 @@
 
 
 
+
 var result;
 var foo = function*(a) {};
 

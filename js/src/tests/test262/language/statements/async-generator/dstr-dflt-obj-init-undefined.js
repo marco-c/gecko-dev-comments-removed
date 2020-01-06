@@ -23,7 +23,6 @@
 
 
 
-
 async function* f({} = undefined) {
   
 };

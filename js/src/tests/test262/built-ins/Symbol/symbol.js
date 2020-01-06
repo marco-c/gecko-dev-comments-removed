@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, "Symbol");
+verifyWritable(this, "Symbol");
+verifyConfigurable(this, "Symbol");
+
+reportCompare(0, 0);

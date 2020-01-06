@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+        var obj = { 1: true, 2: false, length: -4294967294.5 }; 
+
+assert.sameValue(Array.prototype.indexOf.call(obj, true), -1, 'Array.prototype.indexOf.call(obj, true)');
+assert.sameValue(Array.prototype.indexOf.call(obj, false), -1, 'Array.prototype.indexOf.call(obj, false)');
+
+reportCompare(0, 0);

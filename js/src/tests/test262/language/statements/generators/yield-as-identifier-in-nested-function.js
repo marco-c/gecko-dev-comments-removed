@@ -9,6 +9,7 @@
 
 
 
+
 var result;
 function* g() {
   function h() {

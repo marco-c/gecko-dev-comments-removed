@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Date.prototype.setHours.name, "setHours");
+
+verifyNotEnumerable(Date.prototype.setHours, "name");
+verifyNotWritable(Date.prototype.setHours, "name");
+verifyConfigurable(Date.prototype.setHours, "name");
+
+reportCompare(0, 0);

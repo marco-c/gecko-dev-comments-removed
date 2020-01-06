@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+  var i = [].lastIndexOf(42);
+
+assert.sameValue(i, -1, 'i');
+
+reportCompare(0, 0);

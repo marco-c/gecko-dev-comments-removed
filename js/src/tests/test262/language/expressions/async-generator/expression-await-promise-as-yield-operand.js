@@ -10,7 +10,6 @@
 
 
 
-
 var iter = (async function*() {
   yield await new Promise(function(resolve) {
     resolve("a");

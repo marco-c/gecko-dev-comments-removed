@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  valueOf: null,
+  toString: null
+};
+
+assert.throws(TypeError, function() {
+  Date.prototype[Symbol.toPrimitive].call(obj, 'number');
+});
+
+reportCompare(0, 0);

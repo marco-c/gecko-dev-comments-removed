@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.prototype.shift.name, "shift");
+
+verifyNotEnumerable(Array.prototype.shift, "name");
+verifyNotWritable(Array.prototype.shift, "name");
+verifyConfigurable(Array.prototype.shift, "name");
+
+reportCompare(0, 0);

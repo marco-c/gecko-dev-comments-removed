@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+WeakSet.prototype.add = null;
+new WeakSet();
+
+assert.throws(TypeError, function() {
+  new WeakSet([]);
+});
+
+reportCompare(0, 0);

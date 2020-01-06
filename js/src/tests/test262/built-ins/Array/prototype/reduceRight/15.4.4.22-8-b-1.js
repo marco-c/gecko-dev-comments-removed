@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+        var accessed = false;
+
+        var obj = { length: 0 };
+
+        Object.defineProperty(obj, "0", {
+            get: function () {
+                accessed = true;
+                return 10;
+            },
+            configurable: true
+        });
+
+assert.throws(TypeError, function() {
+            Array.prototype.reduceRight.call(obj, function () { });
+});
+
+assert.sameValue(accessed, false, 'accessed');
+
+reportCompare(0, 0);

@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var speciesConstructor = {};
+speciesConstructor[Symbol.species] = function(length) {
+  return {};
+};
+
+var arrayBuffer = new ArrayBuffer(8);
+arrayBuffer.constructor = speciesConstructor;
+
+assert.throws(TypeError, function() {
+  arrayBuffer.slice();
+});
+
+reportCompare(0, 0);

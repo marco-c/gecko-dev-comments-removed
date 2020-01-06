@@ -30,6 +30,7 @@
 
 
 
+
 var other = $262.createRealm().global;
 var strings1, strings2;
 

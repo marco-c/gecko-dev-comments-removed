@@ -9,6 +9,7 @@
 
 
 
+
 assert.throws.early(SyntaxError, "/\\p{UnknownBinaryProperty}/u");
 assert.throws.early(SyntaxError, "/\\P{UnknownBinaryProperty}/u");
 

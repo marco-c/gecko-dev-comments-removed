@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(unescape, "name", {
+  enumerable: false,
+  writable: false,
+  configurable: true,
+  value: "unescape"
+});
+
+reportCompare(0, 0);

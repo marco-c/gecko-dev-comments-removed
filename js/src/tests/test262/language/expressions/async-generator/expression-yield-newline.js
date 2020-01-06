@@ -10,7 +10,6 @@
 
 
 
-
 var g = async function*() {
   yield
   1;

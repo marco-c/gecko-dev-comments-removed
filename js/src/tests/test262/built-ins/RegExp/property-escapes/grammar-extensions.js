@@ -9,6 +9,7 @@
 
 
 
+
 /\p{General_Category=Letter}/u;
 /\P{General_Category=Letter}/u;
 assert.throws.early(SyntaxError, "/\\p{^General_Category=Letter}/u");

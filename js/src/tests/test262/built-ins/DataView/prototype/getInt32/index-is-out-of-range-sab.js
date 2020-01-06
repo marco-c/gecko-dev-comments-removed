@@ -26,7 +26,6 @@
 
 
 
-
 var sample;
 var buffer = new SharedArrayBuffer(12);
 

@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+if (Date.propertyIsEnumerable('prototype')) {
+  $ERROR('#1: The Date.prototype property has the attribute DontEnum');
+}
+
+for(var x in Date) {
+  if(x === "prototype") {
+    $ERROR('#2: The Date.prototype has the attribute DontEnum');
+  }
+}
+
+reportCompare(0, 0);

@@ -18,6 +18,7 @@
 
 
 
+
 var args;
 
 function* g(x = args = arguments) {

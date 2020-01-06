@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+  var a = [1,2,3];
+
+
+assert.sameValue(a.indexOf(1,null), 0, 'a.indexOf(1,null)');
+
+reportCompare(0, 0);

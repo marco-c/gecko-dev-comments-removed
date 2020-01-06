@@ -8,6 +8,7 @@
 
 
 
+
 var result;
 function* g() {
   ({ get yield() { return 1 } });

@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  WeakSet.prototype.has.call([], {});
+});
+
+assert.throws(TypeError, function() {
+  var s = new WeakSet();
+  s.has.call([], {});
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var GeneratorFunction = Object.getPrototypeOf(function* () {}).constructor;
+
+assert.sameValue(GeneratorFunction.length, 1);
+
+verifyNotEnumerable(GeneratorFunction, 'length');
+verifyNotWritable(GeneratorFunction, 'length');
+verifyConfigurable(GeneratorFunction, 'length');
+
+reportCompare(0, 0);

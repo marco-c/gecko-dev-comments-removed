@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var copyWithin = TypedArray.prototype.copyWithin;
+
+assert.sameValue(typeof copyWithin, 'function');
+
+assert.throws(TypeError, function() {
+  copyWithin();
+});
+
+reportCompare(0, 0);

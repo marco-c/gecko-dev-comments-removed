@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if (new Intl.DateTimeFormat("en").resolvedOptions().locale === "en") {
+  Object.prototype.year = "2-digit";
+  assert.notSameValue(new Date().toLocaleString("en").length, 2);
+}
+
+reportCompare(0, 0);

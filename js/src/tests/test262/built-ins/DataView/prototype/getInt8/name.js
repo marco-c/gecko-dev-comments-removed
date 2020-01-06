@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(DataView.prototype.getInt8.name, "getInt8");
+
+verifyNotEnumerable(DataView.prototype.getInt8, "name");
+verifyNotWritable(DataView.prototype.getInt8, "name");
+verifyConfigurable(DataView.prototype.getInt8, "name");
+
+reportCompare(0, 0);

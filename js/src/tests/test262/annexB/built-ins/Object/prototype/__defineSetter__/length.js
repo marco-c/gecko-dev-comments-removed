@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Object.prototype.__defineSetter__, "length", {
+  enumerable: false,
+  writable: false,
+  configurable: true,
+  value: 2
+});
+
+reportCompare(0, 0);

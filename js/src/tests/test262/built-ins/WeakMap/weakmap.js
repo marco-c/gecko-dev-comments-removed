@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(this, 'WeakMap');
+verifyWritable(this, 'WeakMap');
+verifyConfigurable(this, 'WeakMap');
+
+reportCompare(0, 0);

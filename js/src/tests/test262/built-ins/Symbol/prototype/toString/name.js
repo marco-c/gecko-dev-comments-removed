@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Symbol.prototype.toString.name, "toString");
+
+verifyNotEnumerable(Symbol.prototype.toString, "name");
+verifyNotWritable(Symbol.prototype.toString, "name");
+verifyConfigurable(Symbol.prototype.toString, "name");
+
+reportCompare(0, 0);

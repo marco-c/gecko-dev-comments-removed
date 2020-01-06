@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var valueOf = Symbol.prototype.valueOf;
+var symbol = Symbol('s');
+var symbolObject = Object(symbol);
+
+assert.sameValue(valueOf.call(symbolObject), symbol);
+
+reportCompare(0, 0);

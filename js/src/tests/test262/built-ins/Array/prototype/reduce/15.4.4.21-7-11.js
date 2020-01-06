@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+        var str = "initialValue is not present";
+
+assert.sameValue([str].reduce(function () { }), str, '[str].reduce(function () { })');
+
+reportCompare(0, 0);

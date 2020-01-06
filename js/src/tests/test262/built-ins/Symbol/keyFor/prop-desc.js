@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Symbol.keyFor, 'function');
+
+verifyNotEnumerable(Symbol, 'keyFor');
+verifyWritable(Symbol, 'keyFor');
+verifyConfigurable(Symbol, 'keyFor');
+
+reportCompare(0, 0);

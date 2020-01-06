@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(RegExp.prototype.compile, "name", {
+  enumerable: false,
+  writable: false,
+  configurable: true,
+  value: "compile"
+});
+
+reportCompare(0, 0);

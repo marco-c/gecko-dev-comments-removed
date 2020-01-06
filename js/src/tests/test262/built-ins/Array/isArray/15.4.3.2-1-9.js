@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.isArray(new Date()), false, 'Array.isArray(new Date())');
+
+reportCompare(0, 0);

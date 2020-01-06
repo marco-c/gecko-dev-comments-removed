@@ -6,6 +6,7 @@
 
 
 
+
 var sym1 = Symbol();
 var sym2 = Symbol();
 class C {

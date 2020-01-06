@@ -11,6 +11,7 @@
 
 
 
-assert.sameValue(typeof Intl.NumberFormat.prototype.format(0), "string", "Intl.NumberFormat's prototype is not an object that has been initialized as an Intl.NumberFormat");
+assert.throws(TypeError, () => Intl.NumberFormat.prototype.format(0),
+              "Intl.NumberFormat's prototype is not an object that has been initialized as an Intl.NumberFormat");
 
 reportCompare(0, 0);

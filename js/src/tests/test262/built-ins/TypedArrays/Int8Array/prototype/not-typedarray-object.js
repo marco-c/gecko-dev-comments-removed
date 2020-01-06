@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Int8Array.prototype.buffer;
+});
+
+reportCompare(0, 0);

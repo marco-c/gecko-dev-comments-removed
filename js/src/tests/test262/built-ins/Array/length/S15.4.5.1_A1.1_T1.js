@@ -8,14 +8,15 @@
 
 
 
+
 try {
   var x = [];
   x.length = 4294967296;
   $ERROR('#1.1: x = []; x.length = 4294967296 throw RangeError. Actual: x.length === ' + (x.length));
-} catch(e) {    
+} catch(e) {
   if ((e instanceof RangeError) !== true) {
     $ERROR('#1.2: x = []; x.length = 4294967296 throw RangeError. Actual: ' + (e));
-  }    
+  }
 }
 
 
@@ -23,10 +24,10 @@ try {
   x = [];
   x.length = -1;
   $ERROR('#2.1: x = []; x.length = -1 throw RangeError. Actual: x.length === ' + (x.length));
-} catch(e) {    
+} catch(e) {
   if ((e instanceof RangeError) !== true) {
     $ERROR('#2.2: x = []; x.length = -1 throw RangeError. Actual: ' + (e));
-  }    
+  }
 }
 
 
@@ -34,10 +35,10 @@ try {
   x = [];
   x.length = 1.5;
   $ERROR('#3.1: x = []; x.length = 1.5 throw RangeError. Actual: x.length === ' + (x.length));
-} catch(e) {    
+} catch(e) {
   if ((e instanceof RangeError) !== true) {
     $ERROR('#3.2: x = []; x.length = 1.5 throw RangeError. Actual: ' + (e));
-  }    
+  }
 }
 
 reportCompare(0, 0);

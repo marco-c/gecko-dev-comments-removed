@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+            Array.prototype.filter.call(undefined); 
+});
+
+reportCompare(0, 0);

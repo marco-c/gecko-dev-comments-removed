@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+            Array.prototype.reduceRight.call(undefined);
+});
+
+reportCompare(0, 0);

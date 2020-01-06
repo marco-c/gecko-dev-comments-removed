@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+        function callbackfn(prevVal, curVal, idx, obj) {
+            return (obj.length === 3);
+        }
+
+        var str = new String("012");
+
+assert.sameValue(Array.prototype.reduce.call(str, callbackfn, 1), true, 'Array.prototype.reduce.call(str, callbackfn, 1)');
+
+reportCompare(0, 0);

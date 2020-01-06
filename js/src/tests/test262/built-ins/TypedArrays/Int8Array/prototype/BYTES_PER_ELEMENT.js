@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Int8Array.prototype.BYTES_PER_ELEMENT, 1);
+
+verifyNotEnumerable(Int8Array.prototype, "BYTES_PER_ELEMENT");
+verifyNotWritable(Int8Array.prototype, "BYTES_PER_ELEMENT");
+verifyNotConfigurable(Int8Array.prototype, "BYTES_PER_ELEMENT");
+
+reportCompare(0, 0);

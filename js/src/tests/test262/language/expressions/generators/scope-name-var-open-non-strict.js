@@ -18,6 +18,7 @@
 
 
 
+
 var g = 'outside';
 var probeBefore = function() { return g; };
 var setBefore = function() { g = null; };

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+WeakMap.prototype.set = null;
+new WeakMap();
+
+assert.throws(TypeError, function() {
+  new WeakMap([]);
+});
+
+reportCompare(0, 0);

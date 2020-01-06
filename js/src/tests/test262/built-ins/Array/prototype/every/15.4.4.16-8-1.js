@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+  function cb() {}
+  var i = [].every(cb);
+
+assert.sameValue(i, true, 'i');
+
+reportCompare(0, 0);

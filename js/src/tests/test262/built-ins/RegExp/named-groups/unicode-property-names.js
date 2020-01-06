@@ -7,6 +7,7 @@
 
 
 
+
 assert.sameValue("a", /(?<π>a)/u.exec("bab").groups.π);
 assert.sameValue("a", /(?<\u{03C0}>a)/u.exec("bab").groups.π);
 assert.sameValue("a", /(?<π>a)/u.exec("bab").groups.\u03C0);

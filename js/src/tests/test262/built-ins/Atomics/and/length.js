@@ -22,6 +22,7 @@
 
 
 
+
 assert.sameValue(Atomics.and.length, 3);
 
 verifyNotEnumerable(Atomics.and, "length");

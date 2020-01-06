@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+var o = new Object();
+o[12] = 13;
+var b = Array.isArray(o);
+
+assert.sameValue(b, false, 'b');
+
+reportCompare(0, 0);

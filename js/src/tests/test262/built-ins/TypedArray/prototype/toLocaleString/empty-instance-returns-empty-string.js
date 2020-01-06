@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithTypedArrayConstructors(function(TA) {
+  var sample = new TA();
+  assert.sameValue(sample.toLocaleString(), "");
+});
+
+reportCompare(0, 0);

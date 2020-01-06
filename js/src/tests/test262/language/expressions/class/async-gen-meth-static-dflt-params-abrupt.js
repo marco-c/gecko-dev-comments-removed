@@ -52,7 +52,6 @@
 
 
 
-
 var callCount = 0;
 var C = class {
   static async *method(_ = (function() { throw new Test262Error(); }())) {

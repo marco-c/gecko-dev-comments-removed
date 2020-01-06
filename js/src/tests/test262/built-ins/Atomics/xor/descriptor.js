@@ -7,6 +7,7 @@
 
 
 
+
 verifyWritable(Atomics, "xor");
 verifyNotEnumerable(Atomics, "xor");
 verifyConfigurable(Atomics, "xor");

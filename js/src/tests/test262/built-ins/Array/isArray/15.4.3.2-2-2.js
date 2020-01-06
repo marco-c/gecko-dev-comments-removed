@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+        var proto = Array.prototype;
+        var Con = function () { };
+        Con.prototype = proto;
+
+        var child = new Con();
+
+assert.sameValue(Array.isArray(child), false, 'Array.isArray(child)');
+
+reportCompare(0, 0);

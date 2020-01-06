@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue(Atomics.wait.name, "wait");
 
 verifyNotEnumerable(Atomics.wait, "name");

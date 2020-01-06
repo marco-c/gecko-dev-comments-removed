@@ -9,6 +9,7 @@
 
 
 
+
 assert.throws.early(SyntaxError, "/\\p{General_Category}/u");
 assert.throws.early(SyntaxError, "/\\P{General_Category}/u");
 assert.throws.early(SyntaxError, "/\\p{General_Category=}/u");

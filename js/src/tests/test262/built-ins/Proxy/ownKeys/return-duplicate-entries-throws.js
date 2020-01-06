@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var p = new Proxy({}, {
+  ownKeys() {
+    return ["a", "a"];
+  }
+});
+
+assert.throws(TypeError, function() {
+  Object.keys(p);
+});
+
+reportCompare(0, 0);

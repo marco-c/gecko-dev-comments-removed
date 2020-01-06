@@ -58,7 +58,6 @@
 
 
 
-
 var C = class {
   async *method({ x: y = unresolvableReference } = {}) {
     

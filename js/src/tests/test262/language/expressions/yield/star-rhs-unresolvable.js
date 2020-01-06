@@ -11,6 +11,7 @@
 
 
 
+
 var err;
 function* g() {
   try {

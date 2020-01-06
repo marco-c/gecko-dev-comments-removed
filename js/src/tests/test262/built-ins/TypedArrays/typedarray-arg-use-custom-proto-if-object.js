@@ -1,0 +1,50 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function newTarget() {}
+var proto = {};
+newTarget.prototype = proto;
+
+var sample = new Int8Array(8);
+
+testWithTypedArrayConstructors(function(TA) {
+  var ta = Reflect.construct(TA, [sample], newTarget);
+
+  assert.sameValue(ta.constructor, Object);
+  assert.sameValue(Object.getPrototypeOf(ta), proto);
+});
+
+reportCompare(0, 0);

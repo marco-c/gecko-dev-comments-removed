@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+var AsyncFunction = async function foo() { }.constructor;
+verifyNotConfigurable(AsyncFunction, 'prototype');
+verifyNotWritable(AsyncFunction, 'prototype');
+verifyNotEnumerable(AsyncFunction, 'prototype');
+
+reportCompare(0, 0);

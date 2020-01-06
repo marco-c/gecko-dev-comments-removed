@@ -7,7 +7,6 @@
 
 
 
-
 let x = "h";
 let f = class { static async  *  f  (  )  {  } }.f;
 let g = class { static async  *  [  "g"  ]  (  )  {  } }.g;

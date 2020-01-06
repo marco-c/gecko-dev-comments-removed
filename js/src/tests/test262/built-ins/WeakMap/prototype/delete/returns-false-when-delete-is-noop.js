@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var map = new WeakMap();
+var foo = {};
+var bar = {};
+
+map.set(foo, 42);
+
+assert.sameValue(map.delete(bar), false);
+
+reportCompare(0, 0);

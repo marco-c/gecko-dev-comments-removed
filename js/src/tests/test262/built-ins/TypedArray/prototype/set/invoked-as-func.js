@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var set = TypedArray.prototype.set;
+
+assert.sameValue(typeof set, 'function');
+
+assert.throws(TypeError, function() {
+  set();
+});
+
+reportCompare(0, 0);

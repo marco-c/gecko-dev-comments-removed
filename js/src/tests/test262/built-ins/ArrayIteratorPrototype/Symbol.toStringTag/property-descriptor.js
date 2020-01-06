@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var ArrayIteratorProto = Object.getPrototypeOf([][Symbol.iterator]());
+
+assert.sameValue("Array Iterator", ArrayIteratorProto[Symbol.toStringTag]);
+
+verifyNotEnumerable(ArrayIteratorProto, Symbol.toStringTag);
+verifyNotWritable(ArrayIteratorProto, Symbol.toStringTag);
+verifyConfigurable(ArrayIteratorProto, Symbol.toStringTag);
+
+reportCompare(0, 0);

@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(new Date(NaN).toString(), "Invalid Date");
+
+reportCompare(0, 0);

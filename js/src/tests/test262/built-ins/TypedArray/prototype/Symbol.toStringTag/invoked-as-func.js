@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TypedArrayPrototype = TypedArray.prototype;
+var getter = Object.getOwnPropertyDescriptor(
+  TypedArrayPrototype, Symbol.toStringTag
+).get;
+
+assert.sameValue(getter(), undefined);
+
+reportCompare(0, 0);

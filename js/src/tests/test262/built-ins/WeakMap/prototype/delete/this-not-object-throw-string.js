@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  WeakMap.prototype.delete.call('', {});
+});
+
+assert.throws(TypeError, function() {
+  var map = new WeakMap();
+  map.delete.call('', {});
+});
+
+reportCompare(0, 0);

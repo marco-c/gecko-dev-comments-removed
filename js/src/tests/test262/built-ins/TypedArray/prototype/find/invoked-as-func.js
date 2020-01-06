@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var find = TypedArray.prototype.find;
+
+assert.sameValue(typeof find, 'function');
+
+assert.throws(TypeError, function() {
+  find();
+});
+
+reportCompare(0, 0);

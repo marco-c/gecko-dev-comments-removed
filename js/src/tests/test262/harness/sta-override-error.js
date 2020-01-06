@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+function BaloneyError() {}
+
+
+$ERROR = function() {
+  throw new BaloneyError();
+};
+
+assert.throws(BaloneyError, function() {
+  $ERROR();
+});
+
+reportCompare(0, 0);

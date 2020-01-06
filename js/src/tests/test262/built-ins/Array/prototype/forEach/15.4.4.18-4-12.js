@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+        var accessed = false;
+        function callbackfn(val, idx, obj) {
+            accessed = true;
+        }
+
+        [11, 9].forEach(callbackfn);
+
+assert(accessed, 'accessed !== true');
+
+reportCompare(0, 0);

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+        var testResult = false;
+        function callbackfn(prevVal, curVal, idx, obj) {
+            if (idx === 1) {
+                testResult = (prevVal === 2);
+            }
+        }
+
+        var func = function (a, b, c) {
+            Array.prototype.reduceRight.call(arguments, callbackfn);
+        };
+
+        func(0, 1, 2);
+
+assert(testResult, 'testResult !== true');
+
+reportCompare(0, 0);

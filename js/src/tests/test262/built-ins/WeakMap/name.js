@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+    WeakMap.name, 'WeakMap',
+    'The value of `WeakMap.name` is "WeakMap"'
+);
+
+verifyNotEnumerable(WeakMap, 'name');
+verifyNotWritable(WeakMap, 'name');
+verifyConfigurable(WeakMap, 'name');
+
+reportCompare(0, 0);

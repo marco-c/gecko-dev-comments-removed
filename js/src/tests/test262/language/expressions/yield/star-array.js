@@ -7,6 +7,7 @@
 
 
 
+
 function* g() {
   yield* [1, 2, 3];
 }

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(RegExp.prototype[Symbol.match].length, 1);
+
+verifyNotEnumerable(RegExp.prototype[Symbol.match], 'length');
+verifyNotWritable(RegExp.prototype[Symbol.match], 'length');
+verifyConfigurable(RegExp.prototype[Symbol.match], 'length');
+
+reportCompare(0, 0);

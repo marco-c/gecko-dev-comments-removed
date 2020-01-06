@@ -55,7 +55,6 @@
 
 
 
-
 async function fn() {
   for await (let [{ x }] of [[]]) {
     return;
@@ -63,6 +62,11 @@ async function fn() {
 }
 
 fn()
-  .then(_ => { throw new Test262Error("Expected async function to reject, but resolved."); }, ({ constructor }) => assert.sameValue(constructor, TypeError))
+  .then(_ => {
+    throw new Test262Error("Expected async function to reject, but resolved.");
+  }, ({ constructor }) => {
+    assert.sameValue(constructor, TypeError);
+    
+  })
   .then($DONE, $DONE);
 

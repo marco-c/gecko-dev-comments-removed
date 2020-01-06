@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  toString: function() {
+    throw new Test262Error();
+  }
+};
+
+testWithTypedArrayConstructors(function(TA) {
+  var sample = new TA();
+
+  assert.throws(Test262Error, function() {
+    sample.join(obj);
+  });
+});
+
+reportCompare(0, 0);

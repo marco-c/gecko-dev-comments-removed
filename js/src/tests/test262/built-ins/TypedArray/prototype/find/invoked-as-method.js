@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TypedArrayPrototype = TypedArray.prototype;
+
+assert.sameValue(typeof TypedArrayPrototype.find, 'function');
+
+assert.throws(TypeError, function() {
+  TypedArrayPrototype.find();
+});
+
+reportCompare(0, 0);

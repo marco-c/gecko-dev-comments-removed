@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithTypedArrayConstructors(function(TA) {
+  var called = 0;
+
+  assert.throws(TypeError, function() {
+    new TA().reduceRight(function() {
+      called++;
+    });
+  });
+
+  assert.sameValue(called, 0);
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  length: Symbol("1")
+};
+
+testWithTypedArrayConstructors(function(TA) {
+  assert.throws(TypeError, function() {
+    new TA(obj);
+  });
+});
+
+reportCompare(0, 0);

@@ -15,7 +15,6 @@
 
 
 
-
 var obj = {
   valueOf: function() {
     throw new Test262Error("NewTarget should be verified before byteOffset");

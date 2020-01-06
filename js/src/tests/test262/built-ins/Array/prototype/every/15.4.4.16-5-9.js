@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+        var accessed = false;
+        var objFunction = function () { };
+
+        function callbackfn(val, idx, obj) {
+            accessed = true;
+            return this === objFunction;
+        }
+
+assert([11].every(callbackfn, objFunction), '[11].every(callbackfn, objFunction) !== true');
+assert(accessed, 'accessed !== true');
+
+reportCompare(0, 0);

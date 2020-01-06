@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(decodeURI.name, "decodeURI");
+
+verifyNotEnumerable(decodeURI, "name");
+verifyNotWritable(decodeURI, "name");
+verifyConfigurable(decodeURI, "name");
+
+reportCompare(0, 0);

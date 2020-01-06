@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Uint16Array, 'function', 'typeof Uint16Array is "function"');
+
+reportCompare(0, 0);

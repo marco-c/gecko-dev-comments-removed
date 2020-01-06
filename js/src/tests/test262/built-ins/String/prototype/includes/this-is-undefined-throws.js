@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  String.prototype.includes.call(undefined, '');
+});
+
+reportCompare(0, 0);

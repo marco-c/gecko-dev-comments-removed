@@ -31,7 +31,6 @@
 
 
 
-
 var callCount = 0;
 async function* f([...{ length }]) {
   assert.sameValue(length, 3);

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  WeakMap();
+});
+
+assert.throws(TypeError, function() {
+  WeakMap([]);
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+BigInt.prototype.toJSON = function () { return this.toString(); };
+assert.sameValue(JSON.stringify(0n), '"0"');
+
+reportCompare(0, 0);

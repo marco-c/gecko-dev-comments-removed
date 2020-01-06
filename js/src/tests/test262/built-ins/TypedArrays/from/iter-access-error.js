@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var iter = {};
+Object.defineProperty(iter, Symbol.iterator, {
+  get: function() {
+    throw new Test262Error();
+  }
+});
+
+testWithTypedArrayConstructors(function(TA) {
+  assert.throws(Test262Error, function() {
+    TA.from(iter);
+  });
+});
+
+reportCompare(0, 0);

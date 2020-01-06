@@ -9,6 +9,7 @@
 
 
 
+
 var iter, result;
 function* yield() { (yield 3) + (yield 4); }
 

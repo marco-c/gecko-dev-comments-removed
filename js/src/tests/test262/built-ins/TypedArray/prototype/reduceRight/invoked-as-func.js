@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var reduceRight = TypedArray.prototype.reduceRight;
+
+assert.sameValue(typeof reduceRight, 'function');
+
+assert.throws(TypeError, function() {
+  reduceRight();
+});
+
+reportCompare(0, 0);

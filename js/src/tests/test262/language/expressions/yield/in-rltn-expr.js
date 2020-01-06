@@ -12,6 +12,7 @@
 
 
 
+
 var obj = Object.create(null);
 var iter, iterResult, value;
 function* g() {

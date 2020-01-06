@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+  function cb(){}
+  var i = [].some(cb);
+
+assert.sameValue(i, false, 'i');
+
+reportCompare(0, 0);

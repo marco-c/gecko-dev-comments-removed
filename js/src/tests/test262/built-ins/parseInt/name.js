@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(parseInt.name, "parseInt");
+
+verifyNotEnumerable(parseInt, "name");
+verifyNotWritable(parseInt, "name");
+verifyConfigurable(parseInt, "name");
+
+reportCompare(0, 0);

@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+function* g() {}
+var GeneratorPrototype = Object.getPrototypeOf(g).prototype;
+
+verifyNotEnumerable(GeneratorPrototype, 'return');
+verifyWritable(GeneratorPrototype, 'return');
+verifyConfigurable(GeneratorPrototype, 'return');
+
+reportCompare(0, 0);

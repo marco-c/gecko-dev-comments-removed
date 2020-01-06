@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Date.prototype.getUTCMonth.name, "getUTCMonth");
+
+verifyNotEnumerable(Date.prototype.getUTCMonth, "name");
+verifyNotWritable(Date.prototype.getUTCMonth, "name");
+verifyConfigurable(Date.prototype.getUTCMonth, "name");
+
+reportCompare(0, 0);

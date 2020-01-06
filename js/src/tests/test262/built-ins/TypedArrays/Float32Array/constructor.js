@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Float32Array, 'function', 'typeof Float32Array is "function"');
+
+reportCompare(0, 0);

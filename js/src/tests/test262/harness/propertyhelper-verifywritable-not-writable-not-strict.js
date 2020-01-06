@@ -8,7 +8,6 @@
 
 
 
-
 var threw = false;
 var obj = {};
 Object.defineProperty(obj, 'a', {

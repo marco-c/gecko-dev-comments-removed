@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+    WeakSet.name, 'WeakSet',
+    'The value of `WeakSet.name` is "WeakSet"'
+);
+
+verifyNotEnumerable(WeakSet, 'name');
+verifyNotWritable(WeakSet, 'name');
+verifyConfigurable(WeakSet, 'name');
+
+reportCompare(0, 0);

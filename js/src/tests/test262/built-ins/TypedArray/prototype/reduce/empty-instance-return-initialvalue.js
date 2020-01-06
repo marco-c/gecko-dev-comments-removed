@@ -1,0 +1,43 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithTypedArrayConstructors(function(TA) {
+  var called = false;
+  var result = new TA().reduce(function() {
+    called = true;
+  }, 42);
+
+  assert.sameValue(result, 42);
+  assert.sameValue(called, false);
+});
+
+reportCompare(0, 0);

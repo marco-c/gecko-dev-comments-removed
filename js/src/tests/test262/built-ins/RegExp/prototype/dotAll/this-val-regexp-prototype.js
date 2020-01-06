@@ -14,6 +14,7 @@
 
 
 
+
 var get = Object.getOwnPropertyDescriptor(RegExp.prototype, "dotAll").get;
 
 assert.sameValue(get.call(RegExp.prototype), undefined);

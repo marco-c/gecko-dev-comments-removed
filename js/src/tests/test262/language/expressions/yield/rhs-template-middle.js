@@ -9,6 +9,7 @@
 
 
 
+
 var complete = false;
 var iter, iterResult, str;
 function* g() {

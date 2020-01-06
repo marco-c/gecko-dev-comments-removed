@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Date.prototype.getUTCMinutes.name, "getUTCMinutes");
+
+verifyNotEnumerable(Date.prototype.getUTCMinutes, "name");
+verifyNotWritable(Date.prototype.getUTCMinutes, "name");
+verifyConfigurable(Date.prototype.getUTCMinutes, "name");
+
+reportCompare(0, 0);

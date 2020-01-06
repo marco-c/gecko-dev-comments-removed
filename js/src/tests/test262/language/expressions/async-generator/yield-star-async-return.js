@@ -40,7 +40,6 @@
 
 
 
-
 var log = [];
 var obj = {
   [Symbol.asyncIterator]() {

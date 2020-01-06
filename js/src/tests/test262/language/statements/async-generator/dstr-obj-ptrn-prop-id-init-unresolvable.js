@@ -34,7 +34,6 @@
 
 
 
-
 async function* f({ x: y = unresolvableReference }) {
   
 };

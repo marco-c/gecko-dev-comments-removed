@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Object.prototype.__lookupSetter__, "name", {
+  enumerable: false,
+  writable: false,
+  configurable: true,
+  value: "__lookupSetter__"
+});
+
+reportCompare(0, 0);

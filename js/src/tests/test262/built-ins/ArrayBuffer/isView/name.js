@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(ArrayBuffer.isView.name, "isView");
+
+verifyNotEnumerable(ArrayBuffer.isView, "name");
+verifyNotWritable(ArrayBuffer.isView, "name");
+verifyConfigurable(ArrayBuffer.isView, "name");
+
+reportCompare(0, 0);

@@ -13,6 +13,7 @@
 
 
 
+
 var target;
 
 target = Object.defineProperty(function() {}, 'name', { value: undefined });

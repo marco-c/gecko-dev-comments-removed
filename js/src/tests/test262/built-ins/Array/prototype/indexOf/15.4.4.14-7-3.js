@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue([].indexOf(1, 0), -1, '[].indexOf(1, 0)');
+
+reportCompare(0, 0);

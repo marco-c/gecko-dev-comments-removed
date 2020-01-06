@@ -7,11 +7,6 @@
 
 
 
-
-$ERROR = function $ERROR(message) {
-  throw new Test262Error(message);
-};
-
 var sample = { foo: 42 };
 
 assert.throws(Test262Error, () => {

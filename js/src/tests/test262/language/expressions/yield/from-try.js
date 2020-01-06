@@ -7,6 +7,7 @@
 
 
 
+
 function* g() {
   try {
     yield 1;

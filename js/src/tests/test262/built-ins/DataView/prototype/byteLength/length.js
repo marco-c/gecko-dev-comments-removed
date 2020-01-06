@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var desc = Object.getOwnPropertyDescriptor(DataView.prototype, "byteLength");
+
+assert.sameValue(desc.get.length, 0);
+
+verifyNotEnumerable(desc.get, "length");
+verifyNotWritable(desc.get, "length");
+verifyConfigurable(desc.get, "length");
+
+reportCompare(0, 0);

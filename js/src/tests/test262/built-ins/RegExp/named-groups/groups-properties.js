@@ -15,6 +15,7 @@
 
 
 
+
 assert(compareArray(["fst", "snd"],
              Object.getOwnPropertyNames(
                  /(?<fst>.)|(?<snd>.)/u.exec("abcd").groups)));
@@ -31,11 +32,5 @@ assert.sameValue(counter, 0);
 verifyWritable(groups, "x");
 verifyEnumerable(groups, "x");
 verifyConfigurable(groups, "x");
-
-
-
-groups = /(?<__proto__>a)/u.exec("a").groups;
-assert.sameValue("a", groups.__proto__);
-assert.sameValue(null, Object.getPrototypeOf(groups));
 
 reportCompare(0, 0);

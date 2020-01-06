@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function* g() {}
+var GeneratorPrototype = Object.getPrototypeOf(g).prototype;
+
+assert.sameValue(GeneratorPrototype.next.name, "next");
+
+verifyNotEnumerable(GeneratorPrototype.next, "name");
+verifyNotWritable(GeneratorPrototype.next, "name");
+verifyConfigurable(GeneratorPrototype.next, "name");
+
+reportCompare(0, 0);

@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+var sym = Symbol();
+
+assert.sameValue(
+  obj.propertyIsEnumerable(sym),
+  false,
+  "Returns false if symbol own property not found"
+);
+
+obj[sym] = 0;
+
+assert.sameValue(
+  obj.propertyIsEnumerable(sym),
+  true,
+  "Returns true if symbol own enumerable property found"
+);
+
+reportCompare(0, 0);

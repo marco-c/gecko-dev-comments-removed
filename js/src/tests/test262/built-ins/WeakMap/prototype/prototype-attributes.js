@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(WeakMap, 'prototype');
+verifyNotWritable(WeakMap, 'prototype');
+verifyNotConfigurable(WeakMap, 'prototype');
+
+reportCompare(0, 0);

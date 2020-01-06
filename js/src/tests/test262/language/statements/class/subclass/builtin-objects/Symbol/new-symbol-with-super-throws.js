@@ -17,6 +17,7 @@
 
 
 
+
 class S1 extends Symbol {}
 
 assert.throws(TypeError, function() {

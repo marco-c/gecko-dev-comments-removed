@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof WeakSet, 'function',
+  'typeof WeakSet is "function"'
+);
+
+reportCompare(0, 0);

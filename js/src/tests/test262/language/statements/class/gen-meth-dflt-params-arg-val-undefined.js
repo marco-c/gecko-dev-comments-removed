@@ -74,6 +74,7 @@
 
 
 
+
 var callCount = 0;
 class C {
   *method(fromLiteral = 23, fromExpr = 45, fromHole = 99) {

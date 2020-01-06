@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof WeakSet.prototype.has,
+  'function',
+  'typeof WeakSet.prototype.has is "function"'
+);
+
+verifyNotEnumerable(WeakSet.prototype, 'has');
+verifyWritable(WeakSet.prototype, 'has');
+verifyConfigurable(WeakSet.prototype, 'has');
+
+reportCompare(0, 0);

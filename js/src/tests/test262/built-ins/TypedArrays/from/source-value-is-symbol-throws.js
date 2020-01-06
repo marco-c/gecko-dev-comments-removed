@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol("1");
+
+testWithTypedArrayConstructors(function(TA) {
+  assert.throws(TypeError, function() {
+    TA.from([s]);
+  });
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.isArray(JSON), false, 'Array.isArray(JSON)');
+
+reportCompare(0, 0);

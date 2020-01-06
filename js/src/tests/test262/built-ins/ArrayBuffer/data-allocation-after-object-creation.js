@@ -22,6 +22,7 @@
 
 
 
+
 function DummyError() { }
 
 var newTarget = function(){}.bind(null);

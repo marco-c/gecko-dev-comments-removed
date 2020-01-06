@@ -10,6 +10,8 @@
 
 
 
+
+
 var uriReserved = [";", "/", "?", ":", "@", "&", "=", "+", "$", ","];
 var uriUnescaped = ["-", "_", ".", "!", "~", "*", "'", "(", ")", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 var errorCount = 0;
@@ -17,7 +19,7 @@ var count = 0;
 var indexP;
 var indexO = 0;
 
-l : 
+l :
 for (var index = 0x0000; index <= 0x007F; index++) {
   count++;
   var str = String.fromCharCode(index);
@@ -26,28 +28,28 @@ for (var index = 0x0000; index <= 0x007F; index++) {
   }
    for (indexC = 0; indexC < uriUnescaped.length; indexC++) {
     if (uriUnescaped[indexC] === str) continue l;
-  }    
-  if ("#" === str) continue l; 
+  }
+  if ("#" === str) continue l;
   if (encodeURI(str).toUpperCase() === decimalToPercentHexString(index)) continue l;
 
-  if (indexO === 0) { 
+  if (indexO === 0) {
     indexO = index;
   } else {
-    if ((index - indexP) !== 1) {             
+    if ((index - indexP) !== 1) {
       if ((indexP - indexO) !== 0) {
         var hexP = decimalToHexString(indexP);
         var hexO = decimalToHexString(indexO);
         $ERROR('#' + hexO + '-' + hexP + ' ');
-      } 
+      }
       else {
         var hexP = decimalToHexString(indexP);
         $ERROR('#' + hexP + ' ');
-      }  
+      }
       indexO = index;
-    }         
+    }
   }
   indexP = index;
-  errorCount++;     
+  errorCount++;
 }
 
 if (errorCount > 0) {
@@ -58,7 +60,7 @@ if (errorCount > 0) {
   } else {
     var hexP = decimalToHexString(indexP);
     $ERROR('#' + hexP + ' ');
-  }     
+  }
   $ERROR('Total error: ' + errorCount + ' bad Unicode character in ' + count + ' ');
 }
 

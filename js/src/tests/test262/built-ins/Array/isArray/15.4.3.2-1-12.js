@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.isArray(new SyntaxError()), false, 'Array.isArray(new SyntaxError())');
+
+reportCompare(0, 0);

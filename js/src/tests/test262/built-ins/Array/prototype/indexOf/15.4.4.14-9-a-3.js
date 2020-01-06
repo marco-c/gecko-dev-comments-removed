@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+        var arr = [];
+        arr.length = 30;
+        var targetObj = function () { };
+
+        var fromIndex = {
+            valueOf: function () {
+                arr[4] = targetObj;
+                return 3;
+            }
+        };
+
+assert.sameValue(arr.indexOf(targetObj, fromIndex), 4, 'arr.indexOf(targetObj, fromIndex)');
+
+reportCompare(0, 0);

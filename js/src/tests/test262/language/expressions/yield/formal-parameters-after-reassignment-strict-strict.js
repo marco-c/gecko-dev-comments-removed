@@ -8,6 +8,7 @@
 
 
 
+
 function* g(a, b, c, d) {
   arguments[0] = 32;
   arguments[1] = 54;

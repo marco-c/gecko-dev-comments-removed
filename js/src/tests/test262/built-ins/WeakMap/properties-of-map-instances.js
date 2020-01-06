@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.getPrototypeOf(new WeakMap()),
+  WeakMap.prototype,
+  '`Object.getPrototypeOf(new WeakMap())` returns `WeakMap.prototype`'
+);
+
+reportCompare(0, 0);

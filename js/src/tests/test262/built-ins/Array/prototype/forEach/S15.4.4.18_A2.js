@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+function foo() {
+  ['z'].forEach(function(){ Object.freeze(Array.prototype.forEach); });
+}
+foo();
+
+reportCompare(0, 0);

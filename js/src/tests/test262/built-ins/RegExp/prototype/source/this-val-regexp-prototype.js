@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var get = Object.getOwnPropertyDescriptor(RegExp.prototype, 'source').get;
+
+assert.sameValue(get.call(RegExp.prototype), '(?:)');
+
+reportCompare(0, 0);

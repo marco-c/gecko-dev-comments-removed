@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var GeneratorFunction = Object.getPrototypeOf(function* () {}).constructor;
+
+assert(Object.isExtensible(GeneratorFunction));
+
+reportCompare(0, 0);

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol('1');
+
+assert.throws(TypeError, function() {
+  Symbol(s);
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol("");
+
+testWithTypedArrayConstructors(function(TA) {
+  var sample = new TA();
+
+  assert.throws(TypeError, function() {
+    sample.join(s);
+  });
+});
+
+reportCompare(0, 0);

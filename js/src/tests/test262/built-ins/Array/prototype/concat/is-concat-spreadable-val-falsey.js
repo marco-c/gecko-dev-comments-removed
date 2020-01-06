@@ -1,0 +1,58 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var item = [1, 2];
+var result;
+
+item[Symbol.isConcatSpreadable] = null;
+result = [].concat(item);
+assert.sameValue(result.length, 1);
+assert.sameValue(result[0], item);
+
+item[Symbol.isConcatSpreadable] = false;
+result = [].concat(item);
+assert.sameValue(result.length, 1);
+assert.sameValue(result[0], item);
+
+item[Symbol.isConcatSpreadable] = 0;
+result = [].concat(item);
+assert.sameValue(result.length, 1);
+assert.sameValue(result[0], item);
+
+item[Symbol.isConcatSpreadable] = NaN;
+result = [].concat(item);
+assert.sameValue(result.length, 1);
+assert.sameValue(result[0], item);
+
+reportCompare(0, 0);

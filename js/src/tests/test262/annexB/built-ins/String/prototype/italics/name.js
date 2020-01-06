@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(String.prototype.italics, "name", {
+  enumerable: false,
+  writable: false,
+  configurable: true,
+  value: "italics"
+});
+
+reportCompare(0, 0);

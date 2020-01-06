@@ -6,6 +6,7 @@
 
 
 
+
 function* g() {
   yield arguments[0];
   yield arguments[1];

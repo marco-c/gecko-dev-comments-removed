@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Date.prototype.getTime.name, "getTime");
+
+verifyNotEnumerable(Date.prototype.getTime, "name");
+verifyNotWritable(Date.prototype.getTime, "name");
+verifyConfigurable(Date.prototype.getTime, "name");
+
+reportCompare(0, 0);

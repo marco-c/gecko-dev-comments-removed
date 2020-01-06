@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue('word'.endsWith('r'), false, '"word".endsWith("r")');
+
+reportCompare(0, 0);

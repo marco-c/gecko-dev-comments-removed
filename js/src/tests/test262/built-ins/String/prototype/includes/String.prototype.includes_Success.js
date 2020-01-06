@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue('word'.includes('w', 0), true, '"word".includes("w", 0)');
+
+reportCompare(0, 0);

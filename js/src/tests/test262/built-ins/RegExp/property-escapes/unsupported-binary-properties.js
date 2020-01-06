@@ -10,6 +10,7 @@
 
 
 
+
 assert.throws.early(SyntaxError, "/\\p{Composition_Exclusion}/u");
 assert.throws.early(SyntaxError, "/\\P{Composition_Exclusion}/u");
 assert.throws.early(SyntaxError, "/\\p{Expands_On_NFC}/u");

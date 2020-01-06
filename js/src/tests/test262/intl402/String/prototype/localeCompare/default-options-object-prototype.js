@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if (new Intl.Collator("en").resolvedOptions().locale === "en") {
+  Object.prototype.sensitivity = "base";
+  assert.sameValue("a".localeCompare("A"), -1);
+}
+
+reportCompare(0, 0);

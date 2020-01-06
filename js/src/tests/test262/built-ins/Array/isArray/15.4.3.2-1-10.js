@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.isArray(new RegExp()), false, 'Array.isArray(new RegExp())');
+
+reportCompare(0, 0);

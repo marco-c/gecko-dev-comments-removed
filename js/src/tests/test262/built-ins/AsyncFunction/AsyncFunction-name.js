@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+var AsyncFunction = async function foo() { }.constructor;
+assert.sameValue(AsyncFunction.name, "AsyncFunction");
+verifyNotWritable(AsyncFunction, "name");
+verifyNotEnumerable(AsyncFunction, "name");
+verifyConfigurable(AsyncFunction, "name");
+
+reportCompare(0, 0);

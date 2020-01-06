@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(String.prototype.sub, "name", {
+  enumerable: false,
+  writable: false,
+  configurable: true,
+  value: "sub"
+});
+
+reportCompare(0, 0);

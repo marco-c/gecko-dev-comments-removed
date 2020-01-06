@@ -18,6 +18,7 @@
 
 
 
+
 var args;
 
 var g  = function* (x = args = arguments) {

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+  function cb(){}
+assert.sameValue([].reduce(cb,1), 1, '[].reduce(cb,1)');
+
+reportCompare(0, 0);

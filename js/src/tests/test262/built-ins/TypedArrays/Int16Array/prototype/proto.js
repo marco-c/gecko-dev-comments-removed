@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getPrototypeOf(Int16Array.prototype), TypedArray.prototype);
+
+reportCompare(0, 0);

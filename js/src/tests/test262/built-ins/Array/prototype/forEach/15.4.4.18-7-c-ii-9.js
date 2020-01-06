@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+        var called = 0;
+        function callbackfn() {
+            called++;
+        }
+
+        [11, 12].forEach(callbackfn);
+
+assert.sameValue(called, 2, 'called');
+
+reportCompare(0, 0);

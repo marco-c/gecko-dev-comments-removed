@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var r = /./;
+var poisonedLength = {
+  get length() {
+    throw new Test262Error();
+  }
+};
+r.exec = function() {
+  return poisonedLength;
+};
+
+assert.throws(Test262Error, function() {
+  r[Symbol.replace]('a', 'b');
+});
+
+reportCompare(0, 0);

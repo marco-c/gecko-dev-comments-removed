@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Number('\u180E'), NaN, 'Number("\\u180E") === NaN. Actual: ' + (Number("\u180E")));
+
+reportCompare(0, 0);

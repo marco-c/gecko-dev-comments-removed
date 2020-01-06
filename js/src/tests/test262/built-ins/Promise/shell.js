@@ -1,5 +1,14 @@
 
 
+
+
+
+
+
+
+
+
+
 function checkSequence(arr, message) {
   arr.forEach(function(e, i) {
     if (e !== (i+1)) {
@@ -7,4 +16,6 @@ function checkSequence(arr, message) {
              " '" + arr.join(',') + "'");
     }
   });
+
+  return true;
 }

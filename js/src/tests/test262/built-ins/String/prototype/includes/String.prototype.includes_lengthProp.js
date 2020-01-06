@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+assert.sameValue('word'.includes.length, 1, '"word".includes.length');
+
+reportCompare(0, 0);

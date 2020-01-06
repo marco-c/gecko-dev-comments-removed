@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+        var testResult = false;
+
+        function callbackfn(val, idx, obj) {
+            if (idx === 0) {
+                testResult = (typeof val === "undefined");
+            }
+        }
+
+        var arr = [];
+
+        Object.defineProperty(arr, "0", {
+            set: function () { },
+            configurable: true
+        });
+
+        arr.forEach(callbackfn);
+
+assert(testResult, 'testResult !== true');
+
+reportCompare(0, 0);

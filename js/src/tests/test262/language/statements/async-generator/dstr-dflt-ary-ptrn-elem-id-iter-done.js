@@ -29,7 +29,6 @@
 
 
 
-
 var callCount = 0;
 async function* f([_, x] = []) {
   assert.sameValue(x, undefined);

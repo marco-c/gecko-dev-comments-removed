@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Promise.prototype.finally, 'function');
+
+verifyNotEnumerable(Promise.prototype, 'finally');
+verifyWritable(Promise.prototype, 'finally');
+verifyConfigurable(Promise.prototype, 'finally');
+
+reportCompare(0, 0);

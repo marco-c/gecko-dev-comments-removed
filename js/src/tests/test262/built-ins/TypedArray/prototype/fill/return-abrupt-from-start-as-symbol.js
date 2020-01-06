@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var start = Symbol(1);
+
+testWithTypedArrayConstructors(function(TA) {
+  var sample = new TA();
+  assert.throws(TypeError, function() {
+    sample.fill(1, start);
+  });
+});
+
+reportCompare(0, 0);

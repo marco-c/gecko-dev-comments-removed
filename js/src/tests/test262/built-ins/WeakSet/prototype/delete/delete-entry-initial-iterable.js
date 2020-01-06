@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var foo = {};
+var s = new WeakSet([foo]);
+
+var result = s.delete(foo);
+
+assert.sameValue(s.has(foo), false);
+assert.sameValue(result, true, 'WeakSet#delete returns true');
+
+reportCompare(0, 0);

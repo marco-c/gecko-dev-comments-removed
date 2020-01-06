@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var fromIndex = Symbol("1");
+
+testWithTypedArrayConstructors(function(TA) {
+  var sample = new TA(1);
+
+  assert.throws(TypeError, function() {
+    sample.indexOf(7, fromIndex);
+  });
+});
+
+reportCompare(0, 0);

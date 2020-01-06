@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TypedArrayPrototype = TypedArray.prototype;
+
+assert.sameValue(typeof TypedArrayPrototype.reverse, 'function');
+
+assert.throws(TypeError, function() {
+  TypedArrayPrototype.reverse();
+});
+
+reportCompare(0, 0);
