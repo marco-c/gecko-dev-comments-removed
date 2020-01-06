@@ -117,7 +117,11 @@ GridInspector.prototype = {
 
     this.inspector.reflowTracker.untrackReflows(this, this.onReflow);
 
-    this.swatchColorPickerTooltip.destroy();
+    
+    
+    if (this.swatchColorPickerTooltip) {
+      this.swatchColorPickerTooltip.destroy();
+    }
 
     this.document = null;
     this.highlighters = null;
