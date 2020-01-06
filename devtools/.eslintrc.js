@@ -39,7 +39,7 @@ module.exports = {
     
 
     
-    "mozilla/no-aArgs": "warn",
+    "mozilla/no-aArgs": "error",
     "mozilla/no-cpows-in-tests": "error",
     "mozilla/no-single-arg-cu-import": "error",
     
@@ -48,7 +48,7 @@ module.exports = {
     
     
     "mozilla/reject-some-requires": ["error", "^devtools/shared/platform/(chome|content)/"],
-    "mozilla/var-only-at-top-level": "warn",
+    "mozilla/var-only-at-top-level": "error",
 
     
     "react/display-name": "error",
@@ -57,7 +57,7 @@ module.exports = {
     "react/no-did-update-set-state": "error",
     "react/no-direct-mutation-state": "error",
     "react/no-unknown-property": "error",
-    "react/prefer-es6-class": ["warn", "never"],
+    "react/prefer-es6-class": ["error", "never"],
     "react/prop-types": "error",
     "react/sort-comp": ["error", {
       order: [

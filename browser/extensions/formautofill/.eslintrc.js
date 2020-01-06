@@ -82,10 +82,10 @@ module.exports = {
     "no-fallthrough": "error",
 
     
-    "no-multi-str": "warn",
+    "no-multi-str": "error",
 
     
-    "no-multiple-empty-lines": ["warn", {"max": 2}],
+    "no-multiple-empty-lines": ["error", {"max": 2}],
 
     
     "no-proto": "error",
@@ -99,7 +99,7 @@ module.exports = {
     "no-throw-literal": "error",
 
     
-    "padded-blocks": ["warn", "never"],
+    "padded-blocks": ["error", "never"],
 
     
     "radix": "error",
