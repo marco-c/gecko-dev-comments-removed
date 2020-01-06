@@ -150,7 +150,7 @@ NS_CP_ContentTypeName(uint32_t contentType)
         return NS_ERROR_FAILURE;                                              \
                                                                               \
     return policy-> action (contentType, contentLocation, requestOrigin,      \
-                            context, mimeType, extra, originPrincipal,        \
+                            context, mimeType, extra, triggeringPrincipal,    \
                             decision);                                        \
   PR_END_MACRO
 
@@ -158,7 +158,7 @@ NS_CP_ContentTypeName(uint32_t contentType)
 #define CHECK_CONTENT_POLICY_WITH_SERVICE(action, _policy)                    \
   PR_BEGIN_MACRO                                                              \
     return _policy-> action (contentType, contentLocation, requestOrigin,     \
-                             context, mimeType, extra, originPrincipal,       \
+                             context, mimeType, extra, triggeringPrincipal,   \
                              decision);                                       \
   PR_END_MACRO
 
@@ -171,8 +171,12 @@ NS_CP_ContentTypeName(uint32_t contentType)
 #define CHECK_PRINCIPAL_AND_DATA(action)                                      \
   nsCOMPtr<nsIURI> requestOrigin;                                             \
   PR_BEGIN_MACRO                                                              \
-  if (originPrincipal) {                                                      \
-      bool isSystem = originPrincipal->GetIsSystemPrincipal();                \
+  if (loadingPrincipal) {                                                     \
+      /* We exempt most loads into any document with the system principal     \
+       * from content policy checks, mostly as an optimization. Which means   \
+       * that we need to apply this check to the loading principal, not the   \
+       * principal that triggered the load. */                                \
+      bool isSystem = loadingPrincipal->GetIsSystemPrincipal();               \
       if (isSystem && contentType != nsIContentPolicy::TYPE_DOCUMENT) {       \
           *decision = nsIContentPolicy::ACCEPT;                               \
           nsCOMPtr<nsINode> n = do_QueryInterface(context);                   \
@@ -193,13 +197,13 @@ NS_CP_ContentTypeName(uint32_t contentType)
                       dataPolicy-> action (externalType, contentLocation,     \
                                            requestOrigin, context,            \
                                            mimeType, extra,                   \
-                                           originPrincipal, decision);        \
+                                           triggeringPrincipal, decision);    \
                   }                                                           \
               }                                                               \
           }                                                                   \
           return NS_OK;                                                       \
       }                                                                       \
-      nsresult rv = originPrincipal->GetURI(getter_AddRefs(requestOrigin));   \
+      nsresult rv = loadingPrincipal->GetURI(getter_AddRefs(requestOrigin));  \
       NS_ENSURE_SUCCESS(rv, rv);                                              \
   }                                                                           \
   PR_END_MACRO
@@ -213,10 +217,12 @@ NS_CP_ContentTypeName(uint32_t contentType)
 
 
 
+
 inline nsresult
 NS_CheckContentLoadPolicy(uint32_t          contentType,
                           nsIURI           *contentLocation,
-                          nsIPrincipal     *originPrincipal,
+                          nsIPrincipal     *loadingPrincipal,
+                          nsIPrincipal     *triggeringPrincipal,
                           nsISupports      *context,
                           const nsACString &mimeType,
                           nsISupports      *extra,
@@ -239,10 +245,12 @@ NS_CheckContentLoadPolicy(uint32_t          contentType,
 
 
 
+
 inline nsresult
 NS_CheckContentProcessPolicy(uint32_t          contentType,
                              nsIURI           *contentLocation,
-                             nsIPrincipal     *originPrincipal,
+                             nsIPrincipal     *loadingPrincipal,
+                             nsIPrincipal     *triggeringPrincipal,
                              nsISupports      *context,
                              const nsACString &mimeType,
                              nsISupports      *extra,
