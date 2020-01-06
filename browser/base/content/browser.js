@@ -1314,6 +1314,9 @@ var gBrowserInit = {
     
     Services.obs.notifyObservers(window, "browser-window-before-show");
 
+    gUIDensity.update();
+    gPrefService.addObserver(gUIDensity.prefDomain, gUIDensity);
+
     let isResistFingerprintingEnabled = gPrefService.getBoolPref("privacy.resistFingerprinting");
 
     
@@ -1426,11 +1429,7 @@ var gBrowserInit = {
         
         
         try {
-          gBrowser.loadTabs(specs, {
-            inBackground: false,
-            replace: true,
-            
-          });
+          gBrowser.loadTabs(specs, false, true);
         } catch (e) {}
       } else if (uriToLoad instanceof XULElement) {
         
@@ -1769,6 +1768,8 @@ var gBrowserInit = {
     gExtensionsNotifications.uninit();
 
     Services.obs.removeObserver(gPluginHandler.NPAPIPluginCrashed, "plugin-crashed");
+
+    gPrefService.removeObserver(gUIDensity.prefDomain, gUIDensity);
 
     try {
       gBrowser.removeProgressListener(window.XULBrowserWindow);
@@ -2166,10 +2167,7 @@ function BrowserGoHome(aEvent) {
   case "tab":
     urls = homePage.split("|");
     var loadInBackground = getBoolPref("browser.tabs.loadBookmarksInBackground", false);
-    gBrowser.loadTabs(urls, {
-      inBackground: loadInBackground,
-      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-    });
+    gBrowser.loadTabs(urls, loadInBackground);
     break;
   case "window":
     OpenBrowserWindow();
@@ -2187,11 +2185,7 @@ function loadOneOrMoreURIs(aURIString) {
   
   
   try {
-    gBrowser.loadTabs(aURIString.split("|"), {
-      inBackground: false,
-      replace: true,
-      
-    });
+    gBrowser.loadTabs(aURIString.split("|"), false, true);
   } catch (e) {
   }
 }
@@ -5422,6 +5416,31 @@ function displaySecurityInfo() {
 }
 
 
+var gUIDensity = {
+  prefDomain: "browser.uidensity",
+  observe(aSubject, aTopic, aPrefName) {
+    if (aTopic != "nsPref:changed" || aPrefName != this.prefDomain)
+      return;
+
+    this.update();
+  },
+
+  update() {
+    let doc = document.documentElement;
+    switch (gPrefService.getIntPref(this.prefDomain)) {
+    case 1:
+      doc.setAttribute("uidensity", "compact");
+      break;
+    case 2:
+      doc.setAttribute("uidensity", "touch");
+      break;
+    default:
+      doc.removeAttribute("uidensity");
+      break;
+    }
+  },
+};
+
 var gHomeButton = {
   prefDomain: "browser.startup.homepage",
   observe(aSubject, aTopic, aPrefName) {
@@ -5840,13 +5859,12 @@ function stripUnsafeProtocolOnPaste(pasteData) {
 
 
 
-function handleDroppedLink(event, urlOrLinks, nameOrTriggeringPrincipal, triggeringPrincipal) {
+function handleDroppedLink(event, urlOrLinks, name) {
   let links;
   if (Array.isArray(urlOrLinks)) {
     links = urlOrLinks;
-    triggeringPrincipal = nameOrTriggeringPrincipal;
   } else {
-    links = [{ url: urlOrLinks, nameOrTriggeringPrincipal, type: "" }];
+    links = [{ url: urlOrLinks, name, type: "" }];
   }
 
   let lastLocationChange = gBrowser.selectedBrowser.lastLocationChange;
@@ -5877,7 +5895,6 @@ function handleDroppedLink(event, urlOrLinks, nameOrTriggeringPrincipal, trigger
         allowThirdPartyFixup: false,
         postDatas,
         userContextId,
-        triggeringPrincipal,
       });
     }
   })();

@@ -233,6 +233,10 @@ pref("general.autoScroll", true);
 #endif
 
 
+
+pref("browser.uidensity", 0);
+
+
 pref("browser.shell.checkDefaultBrowser", true);
 pref("browser.shell.shortcutFavicons",true);
 pref("browser.shell.mostRecentDateSetAsDefault", "");
@@ -658,12 +662,6 @@ pref("accessibility.loadedInLastSession", false);
 
 pref("plugins.click_to_play", true);
 pref("plugins.testmode", false);
-
-
-pref("plugins.show_infobar", true);
-
-
-pref("plugins.remember_infobar_dismissal", false);
 
 pref("plugin.default.state", 1);
 
