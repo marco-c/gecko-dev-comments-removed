@@ -65,7 +65,7 @@ public class SearchEngineManager implements SharedPreferences.OnSharedPreference
     private static final String PREF_DEFAULT_ENGINE_KEY = "search.engines.defaultname";
 
     
-    private static final String PREF_REGION_KEY = "search.region";
+    public static final String PREF_REGION_KEY = "search.region";
 
     
     private static final String GEOIP_LOCATION_URL = "https://location.services.mozilla.com/v1/country?key=" + AppConstants.MOZ_MOZILLA_API_KEY;
