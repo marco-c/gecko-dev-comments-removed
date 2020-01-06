@@ -60,7 +60,8 @@ public class GeckoHlsPlayer implements BaseHlsPlayer, ExoPlayer.EventListener {
 
 
     private final int mPlayerId;
-    private volatile boolean mSuspended = false;
+    private boolean mExoplayerSuspended = false;
+    private boolean mMediaElementSuspended = false;
     private DataSource.Factory mMediaDataSourceFactory;
 
     private Handler mMainHandler;
@@ -312,6 +313,9 @@ public class GeckoHlsPlayer implements BaseHlsPlayer, ExoPlayer.EventListener {
     public synchronized void onLoadingChanged(boolean isLoading) {
         if (DEBUG) { Log.d(LOGTAG, "loading [" + isLoading + "]"); }
         if (!isLoading) {
+            if (mMediaElementSuspended) {
+                suspendExoplayer();
+            }
             
             mComponentEventDispatcher.onDataArrived(C.TRACK_TYPE_DEFAULT);
         }
@@ -321,8 +325,8 @@ public class GeckoHlsPlayer implements BaseHlsPlayer, ExoPlayer.EventListener {
     @Override
     public synchronized void onPlayerStateChanged(boolean playWhenReady, int state) {
         if (DEBUG) { Log.d(LOGTAG, "state [" + playWhenReady + ", " + getStateString(state) + "]"); }
-        if (state == ExoPlayer.STATE_READY && !mSuspended) {
-            mPlayer.setPlayWhenReady(true);
+        if (state == ExoPlayer.STATE_READY && !mExoplayerSuspended && !mMediaElementSuspended) {
+            resumeExoplayer();
         }
     }
 
@@ -682,6 +686,12 @@ public class GeckoHlsPlayer implements BaseHlsPlayer, ExoPlayer.EventListener {
         
         
         
+        if (mExoplayerSuspended) {
+            resumeExoplayer();
+        }
+        
+        
+        
         
         
         try {
@@ -712,7 +722,7 @@ public class GeckoHlsPlayer implements BaseHlsPlayer, ExoPlayer.EventListener {
 
     
     @Override
-    public long getNextKeyFrameTime() {
+    public synchronized long getNextKeyFrameTime() {
         long nextKeyFrameTime = mVRenderer != null
             ? mVRenderer.getNextKeyFrameTime()
             : Long.MAX_VALUE;
@@ -722,29 +732,68 @@ public class GeckoHlsPlayer implements BaseHlsPlayer, ExoPlayer.EventListener {
     
     @Override
     public synchronized void suspend() {
-        if (mSuspended) {
+        if (mExoplayerSuspended) {
             return;
         }
-        if (DEBUG) { Log.d(LOGTAG, "suspend player id : " + mPlayerId); }
-        mSuspended = true;
-        if (mPlayer != null) {
-            mPlayer.setPlayWhenReady(false);
+        if (mMediaElementSuspended) {
+            if (DEBUG) {
+                Log.d(LOGTAG, "suspend player id : " + mPlayerId);
+            }
+            suspendExoplayer();
         }
     }
 
     
     @Override
     public synchronized void resume() {
-        if (!mSuspended) {
+        if (!mExoplayerSuspended) {
           return;
         }
-        if (DEBUG) { Log.d(LOGTAG, "resume player id : " + mPlayerId); }
-        mSuspended = false;
-        if (mPlayer != null) {
-            mPlayer.setPlayWhenReady(true);
+        if (!mMediaElementSuspended) {
+            if (DEBUG) {
+                Log.d(LOGTAG, "resume player id : " + mPlayerId);
+            }
+            resumeExoplayer();
         }
     }
 
+    
+    @Override
+    public synchronized void play() {
+        if (!mMediaElementSuspended) {
+            return;
+        }
+        if (DEBUG) { Log.d(LOGTAG, "mediaElement played."); }
+        mMediaElementSuspended = false;
+        resumeExoplayer();
+    }
+
+    
+    @Override
+    public synchronized void pause() {
+        if (mMediaElementSuspended) {
+            return;
+        }
+        if (DEBUG) { Log.d(LOGTAG, "mediaElement paused."); }
+        mMediaElementSuspended = true;
+        suspendExoplayer();
+    }
+
+    private synchronized void suspendExoplayer() {
+        if (mPlayer != null) {
+            mExoplayerSuspended = true;
+            if (DEBUG) { Log.d(LOGTAG, "suspend Exoplayer"); }
+            mPlayer.setPlayWhenReady(false);
+        }
+    }
+
+    private synchronized void resumeExoplayer() {
+        if (mPlayer != null) {
+            mExoplayerSuspended = false;
+            if (DEBUG) { Log.d(LOGTAG, "resume Exoplayer"); }
+            mPlayer.setPlayWhenReady(true);
+        }
+    }
     
     @Override
     public synchronized void release() {
