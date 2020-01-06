@@ -304,6 +304,9 @@ private:
     bool mReaderInitialized = false;
 
     
+    bool mCacheWritten = false;
+
+    
     nsCString mGREPrefix;
     nsCString mAppPrefix;
 
