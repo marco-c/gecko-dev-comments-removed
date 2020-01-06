@@ -3,7 +3,6 @@
 
 
 
-
 #include "mozilla/layers/ContentClient.h"
 #include "BasicLayers.h"                
 #include "gfxContext.h"                 
@@ -435,7 +434,8 @@ ContentClient::CalculateBufferForPaint(PaintedLayer* aLayer,
 
     
     
-    if (canReuseBuffer &&
+    if (canKeepBufferContents &&
+        mBuffer &&
         (contentType != BufferContentType() ||
         (mode == SurfaceMode::SURFACE_COMPONENT_ALPHA) != mBuffer->HaveBufferOnWhite()))
     {
