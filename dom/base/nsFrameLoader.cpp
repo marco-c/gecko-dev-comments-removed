@@ -2711,14 +2711,24 @@ nsFrameLoader::MaybeCreateDocShell()
 
   nsDocShell::Cast(mDocShell)->SetOriginAttributes(attrs);
 
+  
+  
+  
   if (!mDocShell->GetIsMozBrowser() &&
-      parentType == mDocShell->ItemType()) {
+      parentType == mDocShell->ItemType() &&
+      !doc->IsStaticDocument()) {
     
     nsTArray<nsCOMPtr<nsIPrincipal>> ancestorPrincipals;
     
     ancestorPrincipals = doc->AncestorPrincipals();
     ancestorPrincipals.InsertElementAt(0, doc->NodePrincipal());
     nsDocShell::Cast(mDocShell)->SetAncestorPrincipals(Move(ancestorPrincipals));
+
+    
+    nsTArray<uint64_t> ancestorOuterWindowIDs;
+    ancestorOuterWindowIDs = doc->AncestorOuterWindowIDs();
+    ancestorOuterWindowIDs.InsertElementAt(0, doc->GetWindow()->WindowID());
+    nsDocShell::Cast(mDocShell)->SetAncestorOuterWindowIDs(Move(ancestorOuterWindowIDs));
   }
 
   ReallyLoadFrameScripts();
