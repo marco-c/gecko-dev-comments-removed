@@ -49,6 +49,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "SafeBrowsing",
 
 
 
+
 let initializedModules = {};
 
 [
@@ -79,6 +80,7 @@ let initializedModules = {};
   ["NetUtil", "resource://gre/modules/NetUtil.jsm"],
   ["NewTabUtils", "resource://gre/modules/NewTabUtils.jsm"],
   ["OS", "resource://gre/modules/osfile.jsm"],
+  ["PageActions", "resource:///modules/PageActions.jsm"],
   ["PageThumbs", "resource://gre/modules/PageThumbs.jsm"],
   ["PdfJs", "resource://pdf.js/PdfJs.jsm"],
   ["PermissionUI", "resource:///modules/PermissionUI.jsm"],
@@ -971,6 +973,8 @@ BrowserGlue.prototype = {
     NewTabUtils.init();
     NewTabUtils.links.addProvider(DirectoryLinksProvider);
     AboutNewTab.init();
+
+    PageActions.init();
 
     this._firstWindowTelemetry(aWindow);
     this._firstWindowLoaded();
