@@ -708,13 +708,11 @@ struct arena_t {
   
   arena_chunk_tree_t mChunksDirty;
 
-#ifdef MALLOC_DOUBLE_PURGE
 private:
+#ifdef MALLOC_DOUBLE_PURGE
   
 
   mozilla::DoublyLinkedList<arena_chunk_t> mChunksMAdvised;
-
-public:
 #endif
 
   
@@ -729,6 +727,7 @@ public:
 
   arena_chunk_t* mSpare;
 
+public:
   
 
 
@@ -774,9 +773,13 @@ public:
 
   bool Init();
 
+private:
   void InitChunk(arena_chunk_t* aChunk, bool aZeroed);
 
+public:
   void DeallocChunk(arena_chunk_t* aChunk);
+
+  arena_run_t* AllocRun(arena_bin_t* aBin, size_t aSize, bool aLarge, bool aZero);
 
   void Purge(bool aAll);
 
@@ -2749,63 +2752,59 @@ arena_t::DeallocChunk(arena_chunk_t* aChunk)
   mSpare = aChunk;
 }
 
-static arena_run_t *
-arena_run_alloc(arena_t *arena, arena_bin_t *bin, size_t size, bool large,
-    bool zero)
+arena_run_t*
+arena_t::AllocRun(arena_bin_t* aBin, size_t aSize, bool aLarge, bool aZero)
 {
-	arena_run_t *run;
-	arena_chunk_map_t *mapelm, key;
+  arena_run_t* run;
+  arena_chunk_map_t* mapelm;
+  arena_chunk_map_t key;
 
-	MOZ_ASSERT(size <= arena_maxclass);
-	MOZ_ASSERT((size & pagesize_mask) == 0);
+  MOZ_ASSERT(aSize <= arena_maxclass);
+  MOZ_ASSERT((aSize & pagesize_mask) == 0);
 
-	
-	key.bits = size | CHUNK_MAP_KEY;
-	mapelm = arena_avail_tree_nsearch(&arena->mRunsAvail, &key);
-	if (mapelm) {
-		arena_chunk_t *chunk =
-		    (arena_chunk_t*)CHUNK_ADDR2BASE(mapelm);
-		size_t pageind = ((uintptr_t)mapelm -
-		    (uintptr_t)chunk->map) /
-		    sizeof(arena_chunk_map_t);
+  
+  key.bits = aSize | CHUNK_MAP_KEY;
+  mapelm = arena_avail_tree_nsearch(&mRunsAvail, &key);
+  if (mapelm) {
+    arena_chunk_t* chunk =
+        (arena_chunk_t*)CHUNK_ADDR2BASE(mapelm);
+    size_t pageind = (uintptr_t(mapelm) - uintptr_t(chunk->map)) /
+        sizeof(arena_chunk_map_t);
 
-		run = (arena_run_t *)((uintptr_t)chunk + (pageind
-		    << pagesize_2pow));
-		arena_run_split(arena, run, size, large, zero);
-		return (run);
-	}
+    run = (arena_run_t*)(uintptr_t(chunk) + (pageind << pagesize_2pow));
+    arena_run_split(this, run, aSize, aLarge, aZero);
+    return run;
+  }
 
-	if (arena->mSpare) {
-		
-		arena_chunk_t *chunk = arena->mSpare;
-		arena->mSpare = nullptr;
-		run = (arena_run_t *)((uintptr_t)chunk +
-		    (arena_chunk_header_npages << pagesize_2pow));
-		
-		arena_avail_tree_insert(&arena->mRunsAvail,
-		    &chunk->map[arena_chunk_header_npages]);
-		arena_run_split(arena, run, size, large, zero);
-		return (run);
-	}
+  if (mSpare) {
+    
+    arena_chunk_t* chunk = mSpare;
+    mSpare = nullptr;
+    run = (arena_run_t*)(uintptr_t(chunk) + (arena_chunk_header_npages << pagesize_2pow));
+    
+    arena_avail_tree_insert(&mRunsAvail, &chunk->map[arena_chunk_header_npages]);
+    arena_run_split(this, run, aSize, aLarge, aZero);
+    return run;
+  }
 
-	
+  
 
 
 
-	{
-		bool zeroed;
-		arena_chunk_t *chunk = (arena_chunk_t *)
-		    chunk_alloc(chunksize, chunksize, false, &zeroed);
-		if (!chunk)
-			return nullptr;
+  {
+    bool zeroed;
+    arena_chunk_t* chunk = (arena_chunk_t*)
+        chunk_alloc(chunksize, chunksize, false, &zeroed);
+    if (!chunk) {
+      return nullptr;
+    }
 
-		arena->InitChunk(chunk, zeroed);
-		run = (arena_run_t *)((uintptr_t)chunk +
-		    (arena_chunk_header_npages << pagesize_2pow));
-	}
-	
-	arena_run_split(arena, run, size, large, zero);
-	return (run);
+    InitChunk(chunk, zeroed);
+    run = (arena_run_t*)(uintptr_t(chunk) + (arena_chunk_header_npages << pagesize_2pow));
+  }
+  
+  arena_run_split(this, run, aSize, aLarge, aZero);
+  return run;
 }
 
 void
@@ -3068,7 +3067,7 @@ arena_bin_nonfull_run_get(arena_t *arena, arena_bin_t *bin)
 	
 
 	
-	run = arena_run_alloc(arena, bin, bin->run_size, false, false);
+	run = arena->AllocRun(bin, bin->run_size, false, false);
 	if (!run)
 		return nullptr;
 	
@@ -3280,7 +3279,7 @@ arena_malloc_large(arena_t *arena, size_t size, bool zero)
 	
 	size = PAGE_CEILING(size);
 	malloc_spin_lock(&arena->mLock);
-	ret = (void *)arena_run_alloc(arena, nullptr, size, true, zero);
+	ret = arena->AllocRun(nullptr, size, true, zero);
 	if (!ret) {
 		malloc_spin_unlock(&arena->mLock);
 		return nullptr;
@@ -3347,7 +3346,7 @@ arena_palloc(arena_t *arena, size_t alignment, size_t size, size_t alloc_size)
 	MOZ_ASSERT((alignment & pagesize_mask) == 0);
 
 	malloc_spin_lock(&arena->mLock);
-	ret = (void *)arena_run_alloc(arena, nullptr, alloc_size, true, false);
+	ret = arena->AllocRun(nullptr, alloc_size, true, false);
 	if (!ret) {
 		malloc_spin_unlock(&arena->mLock);
 		return nullptr;
