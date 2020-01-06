@@ -835,7 +835,7 @@ nsHttpChannelAuthProvider::GetCredentialsForChallenge(const char *challenge,
     
     
     
-    mAuthChannel->ConnectionRestartable(mConnectionBased && !authAtProgress);
+    mAuthChannel->ConnectionRestartable(!authAtProgress);
 
     if (identityInvalid) {
         if (entry) {
