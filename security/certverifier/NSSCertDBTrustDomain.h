@@ -88,6 +88,7 @@ public:
                        NetscapeStepUpPolicy netscapeStepUpPolicy,
                        const OriginAttributes& originAttributes,
                        UniqueCERTCertList& builtChain,
+           UniqueCERTCertList* peerCertChain = nullptr,
            PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
            const char* hostname = nullptr);
 
@@ -197,6 +198,7 @@ private:
   NetscapeStepUpPolicy mNetscapeStepUpPolicy;
   const OriginAttributes& mOriginAttributes;
   UniqueCERTCertList& mBuiltChain; 
+  UniqueCERTCertList* mPeerCertChain; 
   PinningTelemetryInfo* mPinningTelemetryInfo;
   const char* mHostname; 
   nsCOMPtr<nsICertBlocklist> mCertBlocklist;

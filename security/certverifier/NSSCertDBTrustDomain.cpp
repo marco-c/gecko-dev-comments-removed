@@ -59,6 +59,7 @@ NSSCertDBTrustDomain::NSSCertDBTrustDomain(SECTrustType certDBTrustType,
                                            NetscapeStepUpPolicy netscapeStepUpPolicy,
                                            const OriginAttributes& originAttributes,
                                            UniqueCERTCertList& builtChain,
+                               UniqueCERTCertList* peerCertChain,
                                PinningTelemetryInfo* pinningTelemetryInfo,
                                const char* hostname)
   : mCertDBTrustType(certDBTrustType)
@@ -76,6 +77,7 @@ NSSCertDBTrustDomain::NSSCertDBTrustDomain(SECTrustType certDBTrustType,
   , mNetscapeStepUpPolicy(netscapeStepUpPolicy)
   , mOriginAttributes(originAttributes)
   , mBuiltChain(builtChain)
+  , mPeerCertChain(peerCertChain)
   , mPinningTelemetryInfo(pinningTelemetryInfo)
   , mHostname(hostname)
   , mCertBlocklist(do_GetService(NS_CERTBLOCKLIST_CONTRACTID))
@@ -140,10 +142,93 @@ FindIssuerInner(const UniqueCERTCertList& candidates, bool useRoots,
   return Success;
 }
 
+
+
+static void
+RemoveCandidatesAlreadyTried(UniqueCERTCertList& newCandidates,
+                             const UniqueCERTCertList& alreadyTried)
+{
+  for (const CERTCertListNode* triedNode = CERT_LIST_HEAD(alreadyTried);
+       !CERT_LIST_END(triedNode, alreadyTried);
+       triedNode = CERT_LIST_NEXT(triedNode)) {
+    CERTCertListNode* newNode = CERT_LIST_HEAD(newCandidates);
+    while (!CERT_LIST_END(newNode, newCandidates)) {
+      CERTCertListNode* savedNode = CERT_LIST_NEXT(newNode);
+      if (CERT_CompareCerts(triedNode->cert, newNode->cert)) {
+        CERT_RemoveCertListNode(newNode);
+      }
+      newNode = savedNode;
+    }
+  }
+}
+
+
+
+static Result
+AddMatchingCandidates(UniqueCERTCertList& matchingCandidates,
+                      const UniqueCERTCertList& candidatesIn,
+                      Input subjectName)
+{
+  for (const CERTCertListNode* node = CERT_LIST_HEAD(candidatesIn);
+       !CERT_LIST_END(node, candidatesIn); node = CERT_LIST_NEXT(node)) {
+    Input candidateSubjectName;
+    Result rv = candidateSubjectName.Init(node->cert->derSubject.data,
+                                          node->cert->derSubject.len);
+    if (rv != Success) {
+      continue; 
+    }
+    if (InputsAreEqual(candidateSubjectName, subjectName)) {
+      UniqueCERTCertificate certDuplicate(CERT_DupCertificate(node->cert));
+      if (!certDuplicate) {
+        return Result::FATAL_ERROR_NO_MEMORY;
+      }
+      SECStatus srv = CERT_AddCertToListTail(matchingCandidates.get(),
+                                             certDuplicate.get());
+      if (srv != SECSuccess) {
+        return MapPRErrorCodeToResult(PR_GetError());
+      }
+      
+      Unused << certDuplicate.release();
+    }
+  }
+  return Success;
+}
+
 Result
 NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
                                  IssuerChecker& checker, Time)
 {
+  
+  
+  bool keepGoing;
+  UniqueCERTCertList peerCertChainCandidates(CERT_NewCertList());
+  if (!peerCertChainCandidates) {
+    return Result::FATAL_ERROR_NO_MEMORY;
+  }
+  if (mPeerCertChain) {
+    
+    
+    Result rv = AddMatchingCandidates(peerCertChainCandidates, *mPeerCertChain,
+                                      encodedIssuerName);
+    if (rv != Success) {
+      return rv;
+    }
+    rv = FindIssuerInner(peerCertChainCandidates, true, encodedIssuerName,
+                         checker, keepGoing);
+    if (rv != Success) {
+      return rv;
+    }
+    if (keepGoing) {
+      rv = FindIssuerInner(peerCertChainCandidates, false, encodedIssuerName,
+                           checker, keepGoing);
+      if (rv != Success) {
+        return rv;
+      }
+    }
+    if (!keepGoing) {
+      return Success;
+    }
+  }
   
   
   SECItem encodedIssuerNameItem = UnsafeMapInputToSECItem(encodedIssuerName);
@@ -152,8 +237,8 @@ NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
                                           &encodedIssuerNameItem, 0,
                                           false));
   if (candidates) {
+    RemoveCandidatesAlreadyTried(candidates, peerCertChainCandidates);
     
-    bool keepGoing;
     Result rv = FindIssuerInner(candidates, true, encodedIssuerName, checker,
                                 keepGoing);
     if (rv != Success) {

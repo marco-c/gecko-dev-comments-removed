@@ -461,6 +461,7 @@ nsNSSSocketInfo::IsAcceptableForHost(const nsACString& hostname, bool* _retval)
                                       nullptr, 
                                       hostnameFlat.get(),
                                       unusedBuiltChain,
+                                      nullptr, 
                                       false, 
                                       flags);
   if (result != mozilla::pkix::Success) {

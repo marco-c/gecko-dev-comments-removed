@@ -1078,6 +1078,7 @@ nsSiteSecurityService::ProcessPKPHeader(
                                         now, nullptr, 
                                         host.get(), 
                                         certList,
+                                        nullptr, 
                                         false, 
                                         flags,
                                         aOriginAttributes)
