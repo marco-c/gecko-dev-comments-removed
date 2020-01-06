@@ -484,6 +484,14 @@ toolbarpaletteitem[place="palette"] > #personal-bookmarks > #bookmarks-toolbar-p
 }
 
 
+
+#back-button[disabled="true"] > .toolbarbutton-icon {
+  opacity: 1 !important;
+  -moz-context-properties: fill, fill-opacity;
+  fill-opacity: 0.4;
+}
+
+
 .toolbarbutton-1:not(:hover):-moz-window-inactive,
 #main-window:not([customizing]) .toolbarbutton-1:-moz-window-inactive[disabled="true"] {
   opacity: 0.5;
