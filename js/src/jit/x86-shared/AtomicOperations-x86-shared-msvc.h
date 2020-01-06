@@ -6,394 +6,18 @@
 
 
 
-#ifndef jit_shared_AtomicOperations_x86_shared_h
-#define jit_shared_AtomicOperations_x86_shared_h
+#ifndef jit_shared_AtomicOperations_x86_shared_msvc_h
+#define jit_shared_AtomicOperations_x86_shared_msvc_h
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Types.h"
 
+#if !defined(_MSC_VER)
+# error "This file only for Microsoft Visual C++"
+#endif
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if defined(__clang__) || defined(__GNUC__)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# define LOCKFREE8
-
-
-
-
-
-
-
-
-
-# if defined(__clang__) && defined(__i386)
-#  undef LOCKFREE8
-# endif
-
-inline bool
-js::jit::AtomicOperations::isLockfree8()
-{
-# ifndef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    MOZ_ASSERT(__atomic_always_lock_free(sizeof(int8_t), 0));
-    MOZ_ASSERT(__atomic_always_lock_free(sizeof(int16_t), 0));
-    MOZ_ASSERT(__atomic_always_lock_free(sizeof(int32_t), 0));
-# endif
-# ifdef LOCKFREE8
-#  ifndef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    MOZ_ASSERT(__atomic_always_lock_free(sizeof(int64_t), 0));
-#  endif
-    return true;
-# else
-    return false;
-# endif
-}
-
-inline void
-js::jit::AtomicOperations::fenceSeqCst()
-{
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    __sync_synchronize();
-# else
-    __atomic_thread_fence(__ATOMIC_SEQ_CST);
-# endif
-}
-
-template<typename T>
-inline T
-js::jit::AtomicOperations::loadSeqCst(T* addr)
-{
-    MOZ_ASSERT(sizeof(T) < 8 || isLockfree8());
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    
-    
-    
-    
-    T v = *static_cast<T volatile*>(addr);
-# else
-    T v;
-    __atomic_load(addr, &v, __ATOMIC_SEQ_CST);
-# endif
-    return v;
-}
-
-# ifndef LOCKFREE8
-template<>
-inline int64_t
-js::jit::AtomicOperations::loadSeqCst(int64_t* addr)
-{
-    MOZ_CRASH();
-}
-
-template<>
-inline uint64_t
-js::jit::AtomicOperations::loadSeqCst(uint64_t* addr)
-{
-    MOZ_CRASH();
-}
-# endif 
-
-template<typename T>
-inline void
-js::jit::AtomicOperations::storeSeqCst(T* addr, T val)
-{
-    MOZ_ASSERT(sizeof(T) < 8 || isLockfree8());
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    *static_cast<T volatile*>(addr) = val;
-    __sync_synchronize();
-# else
-    __atomic_store(addr, &val, __ATOMIC_SEQ_CST);
-# endif
-}
-
-# ifndef LOCKFREE8
-template<>
-inline void
-js::jit::AtomicOperations::storeSeqCst(int64_t* addr, int64_t val)
-{
-    MOZ_CRASH();
-}
-
-template<>
-inline void
-js::jit::AtomicOperations::storeSeqCst(uint64_t* addr, uint64_t val)
-{
-    MOZ_CRASH();
-}
-# endif 
-
-template<typename T>
-inline T
-js::jit::AtomicOperations::exchangeSeqCst(T* addr, T val)
-{
-    MOZ_ASSERT(sizeof(T) < 8 || isLockfree8());
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    T v;
-    do {
-        
-        
-        v = *addr;
-    } while (!__sync_bool_compare_and_swap(addr, v, val));
-    return v;
-# else
-    T v;
-    __atomic_exchange(addr, &val, &v, __ATOMIC_SEQ_CST);
-    return v;
-# endif
-}
-
-# ifndef LOCKFREE8
-template<>
-inline int64_t
-js::jit::AtomicOperations::exchangeSeqCst(int64_t* addr, int64_t val)
-{
-    MOZ_CRASH();
-}
-
-template<>
-inline uint64_t
-js::jit::AtomicOperations::exchangeSeqCst(uint64_t* addr, uint64_t val)
-{
-    MOZ_CRASH();
-}
-# endif 
-
-template<typename T>
-inline T
-js::jit::AtomicOperations::compareExchangeSeqCst(T* addr, T oldval, T newval)
-{
-    MOZ_ASSERT(sizeof(T) < 8 || isLockfree8());
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    return __sync_val_compare_and_swap(addr, oldval, newval);
-# else
-    __atomic_compare_exchange(addr, &oldval, &newval, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
-    return oldval;
-# endif
-}
-
-# ifndef LOCKFREE8
-template<>
-inline int64_t
-js::jit::AtomicOperations::compareExchangeSeqCst(int64_t* addr, int64_t oldval, int64_t newval)
-{
-    MOZ_CRASH();
-}
-
-template<>
-inline uint64_t
-js::jit::AtomicOperations::compareExchangeSeqCst(uint64_t* addr, uint64_t oldval, uint64_t newval)
-{
-    MOZ_CRASH();
-}
-# endif 
-
-template<typename T>
-inline T
-js::jit::AtomicOperations::fetchAddSeqCst(T* addr, T val)
-{
-    static_assert(sizeof(T) <= 4, "not available for 8-byte values yet");
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    return __sync_fetch_and_add(addr, val);
-# else
-    return __atomic_fetch_add(addr, val, __ATOMIC_SEQ_CST);
-# endif
-}
-
-template<typename T>
-inline T
-js::jit::AtomicOperations::fetchSubSeqCst(T* addr, T val)
-{
-    static_assert(sizeof(T) <= 4, "not available for 8-byte values yet");
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    return __sync_fetch_and_sub(addr, val);
-# else
-    return __atomic_fetch_sub(addr, val, __ATOMIC_SEQ_CST);
-# endif
-}
-
-template<typename T>
-inline T
-js::jit::AtomicOperations::fetchAndSeqCst(T* addr, T val)
-{
-    static_assert(sizeof(T) <= 4, "not available for 8-byte values yet");
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    return __sync_fetch_and_and(addr, val);
-# else
-    return __atomic_fetch_and(addr, val, __ATOMIC_SEQ_CST);
-# endif
-}
-
-template<typename T>
-inline T
-js::jit::AtomicOperations::fetchOrSeqCst(T* addr, T val)
-{
-    static_assert(sizeof(T) <= 4, "not available for 8-byte values yet");
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    return __sync_fetch_and_or(addr, val);
-# else
-    return __atomic_fetch_or(addr, val, __ATOMIC_SEQ_CST);
-# endif
-}
-
-template<typename T>
-inline T
-js::jit::AtomicOperations::fetchXorSeqCst(T* addr, T val)
-{
-    static_assert(sizeof(T) <= 4, "not available for 8-byte values yet");
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    return __sync_fetch_and_xor(addr, val);
-# else
-    return __atomic_fetch_xor(addr, val, __ATOMIC_SEQ_CST);
-# endif
-}
-
-template<typename T>
-inline T
-js::jit::AtomicOperations::loadSafeWhenRacy(T* addr)
-{
-    return *addr;               
-}
-
-template<typename T>
-inline void
-js::jit::AtomicOperations::storeSafeWhenRacy(T* addr, T val)
-{
-    *addr = val;                
-}
-
-inline void
-js::jit::AtomicOperations::memcpySafeWhenRacy(void* dest, const void* src, size_t nbytes)
-{
-    MOZ_ASSERT(!((char*)dest <= (char*)src && (char*)src < (char*)dest+nbytes));
-    MOZ_ASSERT(!((char*)src <= (char*)dest && (char*)dest < (char*)src+nbytes));
-    ::memcpy(dest, src, nbytes); 
-}
-
-inline void
-js::jit::AtomicOperations::memmoveSafeWhenRacy(void* dest, const void* src, size_t nbytes)
-{
-    ::memmove(dest, src, nbytes); 
-}
-
-template<size_t nbytes>
-inline void
-js::jit::RegionLock::acquire(void* addr)
-{
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    while (!__sync_bool_compare_and_swap(&spinlock, 0, 1))
-        continue;
-# else
-    uint32_t zero = 0;
-    uint32_t one = 1;
-    while (!__atomic_compare_exchange(&spinlock, &zero, &one, false, __ATOMIC_ACQUIRE, __ATOMIC_ACQUIRE)) {
-        zero = 0;
-    }
-# endif
-}
-
-template<size_t nbytes>
-inline void
-js::jit::RegionLock::release(void* addr)
-{
-    MOZ_ASSERT(AtomicOperations::loadSeqCst(&spinlock) == 1, "releasing unlocked region lock");
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    __sync_sub_and_fetch(&spinlock, 1); 
-# else
-    uint32_t zero = 0;
-    __atomic_store(&spinlock, &zero, __ATOMIC_SEQ_CST);
-# endif
-}
-
-# undef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-# undef LOCKFREE8
-
-#elif defined(_MSC_VER)
-
-
-
-
-
-
-# define HAVE_EXCHANGE64
-
-# if !_WIN64
-#  undef HAVE_EXCHANGE64
-# endif
 
 
 
@@ -410,7 +34,7 @@ js::jit::AtomicOperations::isLockfree8()
     
     
     
-    
+
     return true;
 }
 
@@ -418,7 +42,9 @@ inline void
 js::jit::AtomicOperations::fenceSeqCst()
 {
     _ReadWriteBarrier();
-# if JS_BITS_PER_WORD == 32
+# ifdef _M_IX86
+    
+    
     
     
     
@@ -449,6 +75,10 @@ js::jit::AtomicOperations::storeSeqCst(T* addr, T val)
     fenceSeqCst();
 }
 
+
+
+
+
 # define MSC_EXCHANGEOP(T, U, xchgop)                           \
     template<> inline T                                         \
     js::jit::AtomicOperations::exchangeSeqCst(T* addr, T val) { \
@@ -474,7 +104,7 @@ MSC_EXCHANGEOP(int16_t, short, _InterlockedExchange16)
 MSC_EXCHANGEOP(uint16_t, short, _InterlockedExchange16)
 MSC_EXCHANGEOP(int32_t, long, _InterlockedExchange)
 MSC_EXCHANGEOP(uint32_t, long, _InterlockedExchange)
-# ifdef HAVE_EXCHANGE64
+# ifdef _M_X64
 MSC_EXCHANGEOP(int64_t, __int64, _InterlockedExchange64)
 MSC_EXCHANGEOP(uint64_t, __int64, _InterlockedExchange64)
 # else
@@ -593,13 +223,5 @@ js::jit::RegionLock::release(void* addr)
     MOZ_ASSERT(AtomicOperations::loadSeqCst(&spinlock) == 1, "releasing unlocked region lock");
     _InterlockedExchange((long*)&spinlock, 0);
 }
-
-# undef HAVE_EXCHANGE64
-
-#elif defined(ENABLE_SHARED_ARRAY_BUFFER)
-
-# error "Either disable JS shared memory at compile time, use GCC, Clang, or MSVC, or add code here"
-
-#endif 
 
 #endif 

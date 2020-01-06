@@ -95,7 +95,7 @@ js::BoxNonStrictThis(JSContext* cx, HandleValue thisv, MutableHandleValue vp)
     MOZ_ASSERT(!thisv.isMagic());
 
     if (thisv.isNullOrUndefined()) {
-        vp.set(cx->global()->lexicalEnvironment().thisValue());
+        vp.set(GetThisValue(cx->global()));
         return true;
     }
 
@@ -127,31 +127,6 @@ js::GetFunctionThis(JSContext* cx, AbstractFramePtr frame, MutableHandleValue re
     }
 
     RootedValue thisv(cx, frame.thisArgument());
-
-    
-    
-    
-    
-    
-    
-    if (frame.script()->hasNonSyntacticScope() && thisv.isNullOrUndefined()) {
-        RootedObject env(cx, frame.environmentChain());
-        while (true) {
-            if (IsNSVOLexicalEnvironment(env) || IsGlobalLexicalEnvironment(env)) {
-                res.set(GetThisValue(env));
-                return true;
-            }
-            if (!env->enclosingEnvironment()) {
-                
-                
-                MOZ_ASSERT(env->is<GlobalObject>());
-                res.set(GetThisValue(env));
-                return true;
-            }
-            env = env->enclosingEnvironment();
-        }
-    }
-
     return BoxNonStrictThis(cx, thisv, res);
 }
 
@@ -1490,9 +1465,6 @@ static inline Value
 ComputeImplicitThis(JSObject* obj)
 {
     if (obj->is<GlobalObject>())
-        return UndefinedValue();
-
-    if (obj->is<NonSyntacticVariablesObject>())
         return UndefinedValue();
 
     if (IsCacheableEnvironment(obj))
@@ -4721,7 +4693,7 @@ js::AtomicIsLockFree(JSContext* cx, HandleValue in, int* out)
     int i;
     if (!ToInt32(cx, in, &i))
         return false;
-    *out = js::jit::AtomicOperations::isLockfree(i);
+    *out = js::jit::AtomicOperations::isLockfreeJS(i);
     return true;
 }
 

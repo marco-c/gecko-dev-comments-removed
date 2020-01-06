@@ -110,9 +110,6 @@ class AtomicOperations
 
     
     
-
-    
-    
     template<typename T>
     static inline T fetchAddSeqCst(T* addr, T val);
 
@@ -131,11 +128,14 @@ class AtomicOperations
     
     
     
+    
 
+    
     
     template<typename T>
     static inline T loadSafeWhenRacy(T* addr);
 
+    
     
     template<typename T>
     static inline void storeSafeWhenRacy(T* addr, T val);
@@ -160,7 +160,7 @@ class AtomicOperations
     
     
     
-    static inline bool isLockfree(int32_t n);
+    static inline bool isLockfreeJS(int32_t n);
 
     
     
@@ -293,7 +293,7 @@ class RegionLock
 };
 
 inline bool
-AtomicOperations::isLockfree(int32_t size)
+AtomicOperations::isLockfreeJS(int32_t size)
 {
     
 
@@ -306,7 +306,6 @@ AtomicOperations::isLockfree(int32_t size)
         
         return true;
       case 8:
-        
         
         
         
@@ -351,8 +350,10 @@ AtomicOperations::isLockfree(int32_t size)
 
 
 #if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
-# if defined(__clang__) || defined(__GNUC__) || defined(_MSC_VER)
-#  include "jit/x86-shared/AtomicOperations-x86-shared.h"
+# if defined(__clang__) || defined(__GNUC__)
+#  include "jit/x86-shared/AtomicOperations-x86-shared-gcc.h"
+# elif defined(_MSC_VER)
+#  include "jit/x86-shared/AtomicOperations-x86-shared-msvc.h"
 # else
 #  error "No AtomicOperations support for this platform+compiler combination"
 # endif
