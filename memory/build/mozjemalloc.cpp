@@ -460,8 +460,8 @@ DECLARE_GLOBAL(size_t, gMaxSubPageClass)
 DECLARE_GLOBAL(uint8_t, nsbins)
 DECLARE_GLOBAL(uint8_t, gPageSize2Pow)
 DECLARE_GLOBAL(size_t, gPageSizeMask)
-DECLARE_GLOBAL(size_t, chunk_npages)
-DECLARE_GLOBAL(size_t, arena_chunk_header_npages)
+DECLARE_GLOBAL(size_t, gChunkNumPages)
+DECLARE_GLOBAL(size_t, gChunkHeaderNumPages)
 DECLARE_GLOBAL(size_t, gMaxLargeClass)
 
 DEFINE_GLOBALS
@@ -479,19 +479,19 @@ DEFINE_GLOBAL(uint8_t) gPageSize2Pow = GLOBAL_LOG2(gPageSize);
 DEFINE_GLOBAL(size_t) gPageSizeMask = gPageSize - 1;
 
 
-DEFINE_GLOBAL(size_t) chunk_npages = kChunkSize >> gPageSize2Pow;
+DEFINE_GLOBAL(size_t) gChunkNumPages = kChunkSize >> gPageSize2Pow;
 
 
 DEFINE_GLOBAL(size_t)
-arena_chunk_header_npages =
-  ((sizeof(arena_chunk_t) + sizeof(arena_chunk_map_t) * (chunk_npages - 1) +
+gChunkHeaderNumPages =
+  ((sizeof(arena_chunk_t) + sizeof(arena_chunk_map_t) * (gChunkNumPages - 1) +
     gPageSizeMask) &
    ~gPageSizeMask) >>
   gPageSize2Pow;
 
 
 DEFINE_GLOBAL(size_t)
-gMaxLargeClass = kChunkSize - (arena_chunk_header_npages << gPageSize2Pow);
+gMaxLargeClass = kChunkSize - (gChunkHeaderNumPages << gPageSize2Pow);
 
 
 GLOBAL_ASSERT(1ULL << gPageSize2Pow == gPageSize,
@@ -2536,28 +2536,27 @@ arena_t::InitChunk(arena_chunk_t* aChunk, bool aZeroed)
   
 #ifdef MALLOC_DECOMMIT
   arena_run_t* run =
-    (arena_run_t*)(uintptr_t(aChunk) +
-                   (arena_chunk_header_npages << gPageSize2Pow));
+    (arena_run_t*)(uintptr_t(aChunk) + (gChunkHeaderNumPages << gPageSize2Pow));
 #endif
 
-  for (i = 0; i < arena_chunk_header_npages; i++) {
+  for (i = 0; i < gChunkHeaderNumPages; i++) {
     aChunk->map[i].bits = 0;
   }
   aChunk->map[i].bits = gMaxLargeClass | flags;
-  for (i++; i < chunk_npages - 1; i++) {
+  for (i++; i < gChunkNumPages - 1; i++) {
     aChunk->map[i].bits = flags;
   }
-  aChunk->map[chunk_npages - 1].bits = gMaxLargeClass | flags;
+  aChunk->map[gChunkNumPages - 1].bits = gMaxLargeClass | flags;
 
 #ifdef MALLOC_DECOMMIT
   
   
   pages_decommit(run, gMaxLargeClass);
 #endif
-  mStats.committed += arena_chunk_header_npages;
+  mStats.committed += gChunkHeaderNumPages;
 
   
-  mRunsAvail.Insert(&aChunk->map[arena_chunk_header_npages]);
+  mRunsAvail.Insert(&aChunk->map[gChunkHeaderNumPages]);
 
 #ifdef MALLOC_DOUBLE_PURGE
   new (&aChunk->chunks_madvised_elem) DoublyLinkedListElement<arena_chunk_t>();
@@ -2582,13 +2581,13 @@ arena_t::DeallocChunk(arena_chunk_t* aChunk)
 
     chunk_dealloc((void*)mSpare, kChunkSize, ARENA_CHUNK);
     mStats.mapped -= kChunkSize;
-    mStats.committed -= arena_chunk_header_npages;
+    mStats.committed -= gChunkHeaderNumPages;
   }
 
   
   
   
-  mRunsAvail.Remove(&aChunk->map[arena_chunk_header_npages]);
+  mRunsAvail.Remove(&aChunk->map[gChunkHeaderNumPages]);
 
   mSpare = aChunk;
 }
@@ -2617,9 +2616,9 @@ arena_t::AllocRun(arena_bin_t* aBin, size_t aSize, bool aLarge, bool aZero)
     arena_chunk_t* chunk = mSpare;
     mSpare = nullptr;
     run = (arena_run_t*)(uintptr_t(chunk) +
-                         (arena_chunk_header_npages << gPageSize2Pow));
+                         (gChunkHeaderNumPages << gPageSize2Pow));
     
-    mRunsAvail.Insert(&chunk->map[arena_chunk_header_npages]);
+    mRunsAvail.Insert(&chunk->map[gChunkHeaderNumPages]);
   } else {
     
     
@@ -2632,7 +2631,7 @@ arena_t::AllocRun(arena_bin_t* aBin, size_t aSize, bool aLarge, bool aZero)
 
     InitChunk(chunk, zeroed);
     run = (arena_run_t*)(uintptr_t(chunk) +
-                         (arena_chunk_header_npages << gPageSize2Pow));
+                         (gChunkHeaderNumPages << gPageSize2Pow));
   }
   
   return SplitRun(run, aSize, aLarge, aZero) ? run : nullptr;
@@ -2665,8 +2664,8 @@ arena_t::Purge(bool aAll)
     chunk = mChunksDirty.Last();
     MOZ_DIAGNOSTIC_ASSERT(chunk);
 
-    for (i = chunk_npages - 1; chunk->ndirty > 0; i--) {
-      MOZ_DIAGNOSTIC_ASSERT(i >= arena_chunk_header_npages);
+    for (i = gChunkNumPages - 1; chunk->ndirty > 0; i--) {
+      MOZ_DIAGNOSTIC_ASSERT(i >= gChunkHeaderNumPages);
 
       if (chunk->map[i].bits & CHUNK_MAP_DIRTY) {
 #ifdef MALLOC_DECOMMIT
@@ -2678,7 +2677,7 @@ arena_t::Purge(bool aAll)
                    0);
         chunk->map[i].bits ^= free_operation | CHUNK_MAP_DIRTY;
         
-        for (npages = 1; i > arena_chunk_header_npages &&
+        for (npages = 1; i > gChunkHeaderNumPages &&
                          (chunk->map[i - 1].bits & CHUNK_MAP_DIRTY);
              npages++) {
           i--;
@@ -2733,8 +2732,8 @@ arena_t::DallocRun(arena_run_t* aRun, bool aDirty)
 
   chunk = GetChunkForPtr(aRun);
   run_ind = (size_t)((uintptr_t(aRun) - uintptr_t(chunk)) >> gPageSize2Pow);
-  MOZ_DIAGNOSTIC_ASSERT(run_ind >= arena_chunk_header_npages);
-  MOZ_DIAGNOSTIC_ASSERT(run_ind < chunk_npages);
+  MOZ_DIAGNOSTIC_ASSERT(run_ind >= gChunkHeaderNumPages);
+  MOZ_DIAGNOSTIC_ASSERT(run_ind < gChunkNumPages);
   if ((chunk->map[run_ind].bits & CHUNK_MAP_LARGE) != 0) {
     size = chunk->map[run_ind].bits & ~gPageSizeMask;
   } else {
@@ -2769,7 +2768,7 @@ arena_t::DallocRun(arena_run_t* aRun, bool aDirty)
     size | (chunk->map[run_ind + run_pages - 1].bits & gPageSizeMask);
 
   
-  if (run_ind + run_pages < chunk_npages &&
+  if (run_ind + run_pages < gChunkNumPages &&
       (chunk->map[run_ind + run_pages].bits & CHUNK_MAP_ALLOCATED) == 0) {
     size_t nrun_size = chunk->map[run_ind + run_pages].bits & ~gPageSizeMask;
 
@@ -2789,7 +2788,7 @@ arena_t::DallocRun(arena_run_t* aRun, bool aDirty)
   }
 
   
-  if (run_ind > arena_chunk_header_npages &&
+  if (run_ind > gChunkHeaderNumPages &&
       (chunk->map[run_ind - 1].bits & CHUNK_MAP_ALLOCATED) == 0) {
     size_t prun_size = chunk->map[run_ind - 1].bits & ~gPageSizeMask;
 
@@ -2814,7 +2813,7 @@ arena_t::DallocRun(arena_run_t* aRun, bool aDirty)
   mRunsAvail.Insert(&chunk->map[run_ind]);
 
   
-  if ((chunk->map[arena_chunk_header_npages].bits &
+  if ((chunk->map[gChunkHeaderNumPages].bits &
        (~gPageSizeMask | CHUNK_MAP_ALLOCATED)) == gMaxLargeClass) {
     DeallocChunk(chunk);
   }
@@ -3407,7 +3406,7 @@ MozJemalloc::jemalloc_ptr_info(const void* aPtr, jemalloc_ptr_info_t* aInfo)
 
   
   size_t pageind = (((uintptr_t)aPtr - (uintptr_t)chunk) >> gPageSize2Pow);
-  if (pageind < arena_chunk_header_npages) {
+  if (pageind < gChunkHeaderNumPages) {
     
     *aInfo = { TagUnknown, nullptr, 0 };
     return;
@@ -3448,8 +3447,8 @@ MozJemalloc::jemalloc_ptr_info(const void* aPtr, jemalloc_ptr_info_t* aInfo)
       
       
       pageind--;
-      MOZ_DIAGNOSTIC_ASSERT(pageind >= arena_chunk_header_npages);
-      if (pageind < arena_chunk_header_npages) {
+      MOZ_DIAGNOSTIC_ASSERT(pageind >= gChunkHeaderNumPages);
+      if (pageind < gChunkHeaderNumPages) {
         *aInfo = { TagUnknown, nullptr, 0 };
         return;
       }
@@ -3667,7 +3666,7 @@ arena_t::RallocGrowLarge(arena_chunk_t* aChunk,
 
   
   MOZ_ASSERT(aSize > aOldSize);
-  if (pageind + npages < chunk_npages &&
+  if (pageind + npages < gChunkNumPages &&
       (aChunk->map[pageind + npages].bits & CHUNK_MAP_ALLOCATED) == 0 &&
       (aChunk->map[pageind + npages].bits & ~gPageSizeMask) >=
         aSize - aOldSize) {
@@ -4604,7 +4603,7 @@ MozJemalloc::jemalloc_stats(jemalloc_stats_t* aStats)
 
   
   chunk_header_size =
-    ((aStats->mapped / aStats->chunksize) * arena_chunk_header_npages)
+    ((aStats->mapped / aStats->chunksize) * gChunkHeaderNumPages)
     << gPageSize2Pow;
 
   aStats->mapped += non_arena_mapped;
@@ -4622,11 +4621,11 @@ static void
 hard_purge_chunk(arena_chunk_t* aChunk)
 {
   
-  for (size_t i = arena_chunk_header_npages; i < chunk_npages; i++) {
+  for (size_t i = gChunkHeaderNumPages; i < gChunkNumPages; i++) {
     
     size_t npages;
     for (npages = 0; aChunk->map[i + npages].bits & CHUNK_MAP_MADVISED &&
-                     i + npages < chunk_npages;
+                     i + npages < gChunkNumPages;
          npages++) {
       
       
