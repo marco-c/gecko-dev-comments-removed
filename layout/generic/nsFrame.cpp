@@ -1486,10 +1486,9 @@ nsIFrame::HasAnimationOfTransform(EffectSet* aEffectSet) const
   EffectSet* effects =
     aEffectSet ? aEffectSet : EffectSet::GetEffectSet(this);
 
-  return mContent &&
+  return IsPrimaryFrame() &&
     nsLayoutUtils::HasAnimationOfProperty(effects, eCSSProperty_transform) &&
-    IsFrameOfType(eSupportsCSSTransforms) &&
-    IsPrimaryFrame();
+    IsFrameOfType(eSupportsCSSTransforms);
 }
 
 bool
@@ -10778,12 +10777,10 @@ nsIFrame::GetPseudoElement(CSSPseudoElementType aType)
 }
 
 static bool
-IsFrameScrolledOutOfView(nsIFrame* aTarget,
-                         const nsRect& aTargetRect,
-                         nsIFrame* aParent)
+IsFrameScrolledOutOfView(nsIFrame *aFrame)
 {
   nsIScrollableFrame* scrollableFrame =
-    nsLayoutUtils::GetNearestScrollableFrame(aParent,
+    nsLayoutUtils::GetNearestScrollableFrame(aFrame,
       nsLayoutUtils::SCROLLABLE_SAME_DOC |
       nsLayoutUtils::SCROLLABLE_INCLUDE_HIDDEN);
   if (!scrollableFrame) {
@@ -10791,10 +10788,11 @@ IsFrameScrolledOutOfView(nsIFrame* aTarget,
   }
 
   nsIFrame *scrollableParent = do_QueryFrame(scrollableFrame);
+  nsRect rect = aFrame->GetVisualOverflowRectRelativeToSelf();
 
   nsRect transformedRect =
-    nsLayoutUtils::TransformFrameRectToAncestor(aTarget,
-                                                aTargetRect,
+    nsLayoutUtils::TransformFrameRectToAncestor(aFrame,
+                                                rect,
                                                 scrollableParent);
 
   nsRect scrollableRect = scrollableParent->GetVisualOverflowRect();
@@ -10816,14 +10814,13 @@ IsFrameScrolledOutOfView(nsIFrame* aTarget,
     return false;
   }
 
-  return IsFrameScrolledOutOfView(aTarget, aTargetRect, parent);
+  return IsFrameScrolledOutOfView(parent);
 }
 
 bool
 nsIFrame::IsScrolledOutOfView()
 {
-  nsRect rect = GetVisualOverflowRectRelativeToSelf();
-  return IsFrameScrolledOutOfView(this, rect, this);
+  return IsFrameScrolledOutOfView(this);
 }
 
 gfx::Matrix
