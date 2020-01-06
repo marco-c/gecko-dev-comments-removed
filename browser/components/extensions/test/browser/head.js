@@ -41,6 +41,7 @@ const {CustomizableUI} = Cu.import("resource:///modules/CustomizableUI.jsm", {})
 if (gTestPath.includes("test-oop-extensions")) {
   SpecialPowers.pushPrefEnv({set: [
     ["extensions.webextensions.remote", true],
+    ["layers.popups.compositing.enabled", true],
   ]});
   
   

@@ -11,6 +11,7 @@ var {AppConstants} = SpecialPowers.Cu.import("resource://gre/modules/AppConstant
 if (location.pathname.includes("test-oop-extensions")) {
   SpecialPowers.pushPrefEnv({set: [
     ["extensions.webextensions.remote", true],
+    ["layers.popups.compositing.enabled", true],
   ]});
   
   

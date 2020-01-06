@@ -370,6 +370,9 @@ static const int32_t kResizableBorderMinSize = 3;
 static bool gIsPointerEventsEnabled = false;
 
 
+static bool gIsPopupCompositingEnabled = false;
+
+
 
 
 
@@ -671,6 +674,10 @@ nsWindow::nsWindow()
     Preferences::AddBoolVarCache(&gIsPointerEventsEnabled,
                                  "dom.w3c_pointer_events.enabled",
                                  gIsPointerEventsEnabled);
+
+    Preferences::AddBoolVarCache(&gIsPopupCompositingEnabled,
+                                 "layers.popups.compositing.enabled",
+                                 gIsPopupCompositingEnabled);
   } 
 
   mIdleService = nullptr;
@@ -7169,7 +7176,7 @@ nsWindow::ShouldUseOffMainThreadCompositing()
   
   
   
-  if (mTransparencyMode == eTransparencyTransparent) {
+  if (!(HasRemoteContent() && gIsPopupCompositingEnabled) && mTransparencyMode == eTransparencyTransparent) {
     return false;
   }
 
