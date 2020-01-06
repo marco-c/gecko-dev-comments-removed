@@ -1520,7 +1520,7 @@ var AddonManagerInternal = {
                                    "addons-background-update-complete");
     })();
     
-    buPromise.then(null, e => logger.warn("Error in background update", e));
+    buPromise.catch(e => logger.warn("Error in background update", e));
     return buPromise;
   },
 

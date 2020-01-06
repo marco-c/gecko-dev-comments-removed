@@ -124,7 +124,7 @@ ElementStyle.prototype = {
       }
 
       return undefined;
-    }).then(null, e => {
+    }).catch(e => {
       
       
       if (this.destroyed) {

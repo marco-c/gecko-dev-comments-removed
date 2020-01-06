@@ -432,7 +432,7 @@ function internalSave(aURL, aDocument, aDefaultFileName, aContentDisposition,
       file = fpParams.file;
 
       continueSave();
-    }).then(null, Components.utils.reportError);
+    }).catch(Components.utils.reportError);
   }
 
   function continueSave() {
@@ -825,7 +825,7 @@ function DownloadURL(aURL, aFileName, aInitiatingDocument) {
     
     let list = await Downloads.getList(Downloads.ALL);
     list.add(download);
-  })().then(null, Components.utils.reportError);
+  })().catch(Components.utils.reportError);
 }
 
 

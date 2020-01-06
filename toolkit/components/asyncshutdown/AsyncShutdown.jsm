@@ -711,7 +711,7 @@ function Barrier(name) {
       }
 
       
-      promise = promise.then(null, error => {
+      promise = promise.catch(error => {
         let msg = `A blocker encountered an error while we were waiting.
           Blocker:  ${ name }
           Phase: ${ this._name }
@@ -852,7 +852,7 @@ Barrier.prototype = Object.freeze({
     
     let promise = this._waitForMe.wait();
 
-    promise = promise.then(null, function onError(error) {
+    promise = promise.catch(function onError(error) {
       
       
       let msg = "An uncaught error appeared while completing the phase." +

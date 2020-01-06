@@ -142,8 +142,8 @@ this.UserAgentUpdates = {
         }
       );
       
-      return prevLoad ? prevLoad.then(null, tryNext) : tryNext();
-    }, null).then(null, (ex) => {
+      return prevLoad ? prevLoad.catch(tryNext) : tryNext();
+    }, null).catch((ex) => {
       if (AppConstants.platform !== "android") {
         
         throw new Error("UserAgentUpdates: Failed to load " + FILE_UPDATES +

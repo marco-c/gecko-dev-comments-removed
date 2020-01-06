@@ -374,9 +374,9 @@ var Scheduler = this.Scheduler = {
   push: function(code) {
     let promise = this.queue.then(code);
     
-    this.queue = promise.then(null, () => undefined);
+    this.queue = promise.catch(() => undefined);
     
-    return promise.then(null, null);
+    return promise.catch(null);
   },
 
   

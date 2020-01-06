@@ -3069,7 +3069,7 @@ PlacesCreateLivemarkTransaction.prototype = {
     
     
     this._promise = PlacesUtils.livemarks.getLivemark({ id: this.item.id })
-      .then(null, null).then( () => {
+      .catch(null).then( () => {
         PlacesUtils.bookmarks.removeItem(this.item.id);
       });
   }
@@ -3121,7 +3121,7 @@ PlacesRemoveLivemarkTransaction.prototype = {
     
     
     PlacesUtils.livemarks.getLivemark({ id: this.item.id })
-      .then(null, () => {
+      .catch(() => {
         PlacesUtils.livemarks.addLivemark({ parentId: this.item.parentId,
                                             title: this.item.title,
                                             siteURI: this.item.siteURI,

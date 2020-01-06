@@ -840,8 +840,7 @@ BrowserIDClusterManager.prototype = {
     let cb = Async.makeSpinningCallback();
     promiseClusterURL().then(function(clusterURL) {
       cb(null, clusterURL);
-    }).then(
-      null, err => {
+    }).catch(err => {
       log.info("Failed to fetch the cluster URL", err);
       
       

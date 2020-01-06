@@ -1674,7 +1674,7 @@ var gBrowserInit = {
       this.gmpInstallManager = new GMPInstallManager();
       
       
-      this.gmpInstallManager.simpleCheckAndInstall().then(null, () => {});
+      this.gmpInstallManager.simpleCheckAndInstall().catch(() => {});
     }, {timeout: 1000 * 60});
 
     SessionStore.promiseInitialized.then(() => {

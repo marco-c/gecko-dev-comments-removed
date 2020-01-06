@@ -483,7 +483,7 @@ var AppManager = exports.AppManager = {
           
           
           this.selectedRuntime.connect(this.connection)
-                              .then(null, e => reject(e));
+                              .catch(e => reject(e));
         } catch (e) {
           reject(e);
         }

@@ -385,7 +385,7 @@ GMPWrapper.prototype = {
         let gmpInstallManager = new GMPInstallManager();
         
         
-        gmpInstallManager.simpleCheckAndInstall().then(null, () => {});
+        gmpInstallManager.simpleCheckAndInstall().catch(() => {});
       }
       this._isUpdateCheckPending = false;
     }, delay);

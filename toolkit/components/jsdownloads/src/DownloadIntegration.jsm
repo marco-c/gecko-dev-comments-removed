@@ -914,7 +914,7 @@ this.DownloadObserver = {
     };
 
     
-    aList.addView(downloadsView).then(null, Cu.reportError);
+    aList.addView(downloadsView).catch(Cu.reportError);
   },
 
   
@@ -987,8 +987,8 @@ this.DownloadObserver = {
 
           
           for (let download of downloads) {
-            list.remove(download).then(null, Cu.reportError);
-            download.finalize(true).then(null, Cu.reportError);
+            list.remove(download).catch(Cu.reportError);
+            download.finalize(true).catch(Cu.reportError);
           }
         })();
         

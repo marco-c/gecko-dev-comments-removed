@@ -720,7 +720,7 @@ var Bookmarks = Object.freeze({
 
         
         if (urls && urls.length) {
-          updateFrecency(db, urls, true).then(null, Cu.reportError);
+          updateFrecency(db, urls, true).catch(Cu.reportError);
         }
       }
     );

@@ -293,7 +293,7 @@ this.DeferredTask.prototype = {
       
       
       this._runningPromise = null;
-    })().then(null, Cu.reportError));
+    })().catch(Cu.reportError));
   },
 
   

@@ -132,7 +132,7 @@ DownloadLegacyTransfer.prototype = {
             }
           }
         });
-      }).then(null, Cu.reportError);
+      }).catch(Cu.reportError);
     } else if ((aStateFlags & Ci.nsIWebProgressListener.STATE_STOP) &&
         (aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK)) {
       
@@ -146,7 +146,7 @@ DownloadLegacyTransfer.prototype = {
           download.saver.setRedirects(this._redirects);
         }
         download.saver.onTransferFinished(aStatus);
-      }).then(null, Cu.reportError);
+      }).catch(Cu.reportError);
 
       
       this._cancelable = null;
@@ -176,7 +176,7 @@ DownloadLegacyTransfer.prototype = {
       
       this._deferDownload.promise.then(function DLT_OSC_onDownload(aDownload) {
         aDownload.saver.onTransferFinished(aStatus);
-      }).then(null, Cu.reportError);
+      }).catch(Cu.reportError);
     }
   },
 
@@ -192,7 +192,7 @@ DownloadLegacyTransfer.prototype = {
     
     this._deferDownload.promise.then(function DLT_OPC64_onDownload(aDownload) {
       aDownload.saver.onProgressBytes(aCurTotalProgress, aMaxTotalProgress);
-    }).then(null, Cu.reportError);
+    }).catch(Cu.reportError);
   },
 
   onRefreshAttempted: function DLT_onRefreshAttempted(aWebProgress, aRefreshURI,
@@ -247,7 +247,7 @@ DownloadLegacyTransfer.prototype = {
 
       
       return Downloads.getList(Downloads.ALL).then(list => list.add(aDownload));
-    }).then(null, Cu.reportError);
+    }).catch(Cu.reportError);
   },
 
   setSha256Hash(hash) {

@@ -1180,7 +1180,7 @@ FxAccountsInternal.prototype = {
         
         
         
-        currentState.whenVerifiedDeferred.promise.then(null, err => {
+        currentState.whenVerifiedDeferred.promise.catch(err => {
           log.info("the wait for user verification was stopped: " + err);
         });
       }
