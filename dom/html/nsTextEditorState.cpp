@@ -2692,7 +2692,9 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
             if (selection) {
               
               
-              selection->RemoveAllRanges();
+              
+              
+              selection->RemoveAllRangesTemporarily();
             }
 
             textEditor->SetText(newValue);

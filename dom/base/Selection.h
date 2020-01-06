@@ -215,6 +215,14 @@ public:
   void RemoveRange(nsRange& aRange, mozilla::ErrorResult& aRv);
   void RemoveAllRanges(mozilla::ErrorResult& aRv);
 
+  
+
+
+
+
+
+  nsresult RemoveAllRangesTemporarily();
+
   void Stringify(nsAString& aResult);
 
   bool ContainsNode(nsINode& aNode, bool aPartlyContained, mozilla::ErrorResult& aRv);
@@ -473,6 +481,12 @@ private:
   AutoTArray<RangeData, 1> mRanges;
 
   RefPtr<nsRange> mAnchorFocusRange;
+  
+  
+  
+  
+  
+  RefPtr<nsRange> mCachedRange;
   RefPtr<nsFrameSelection> mFrameSelection;
   RefPtr<nsAutoScrollTimer> mAutoScrollTimer;
   FallibleTArray<nsCOMPtr<nsISelectionListener>> mSelectionListeners;

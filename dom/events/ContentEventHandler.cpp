@@ -3232,7 +3232,7 @@ ContentEventHandler::OnSelectionEvent(WidgetSelectionEvent* aEvent)
   mSelection->StartBatchChanges();
 
   
-  rv = mSelection->RemoveAllRanges();
+  rv = mSelection->RemoveAllRangesTemporarily();
   
   if (NS_SUCCEEDED(rv)) {
     if (aEvent->mReversed) {

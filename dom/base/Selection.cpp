@@ -786,6 +786,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Selection)
   
   
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelectionListeners)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mCachedRange)
   tmp->RemoveAllRanges();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFrameSelection)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
@@ -798,6 +799,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Selection)
     }
   }
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAnchorFocusRange)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCachedRange)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFrameSelection)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSelectionListeners)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
@@ -2290,6 +2292,32 @@ Selection::RemoveAllRanges(ErrorResult& aRv)
   }
 }
 
+nsresult
+Selection::RemoveAllRangesTemporarily()
+{
+  if (!mCachedRange) {
+    
+    
+    
+    for (auto& rangeData : mRanges) {
+      auto& range = rangeData.mRange;
+      if (range->GetRefCount() == 1 ||
+          (range->GetRefCount() == 2 && range == mAnchorFocusRange)) {
+        mCachedRange = range;
+        break;
+      }
+    }
+  }
+
+  
+  ErrorResult result;
+  RemoveAllRanges(result);
+  if (result.Failed()) {
+    mCachedRange = nullptr;
+  }
+  return result.StealNSResult();
+}
+
 
 
 
@@ -2331,6 +2359,10 @@ Selection::AddRangeInternal(nsRange& aRange, nsIDocument* aDocument,
     
     return;
   }
+
+  
+  
+  mCachedRange = nullptr;
 
   
   RefPtr<Selection> kungFuDeathGrip(this);
@@ -2588,7 +2620,9 @@ Selection::Collapse(nsINode& aContainer, uint32_t aOffset, ErrorResult& aRv)
   
   
   if (oldRange && oldRange->GetRefCount() == 1) {
-    range = oldRange;
+    range = Move(oldRange);
+  } else if (mCachedRange) {
+    range = Move(mCachedRange);
   } else {
     range = new nsRange(container);
   }
@@ -4044,6 +4078,11 @@ Selection::SetBaseAndExtent(nsINode& aAnchorNode, uint32_t aAnchorOffset,
     
     return;
   }
+
+  
+  
+  
+  mCachedRange = nullptr;
 
   SelectionBatcher batch(this);
 
