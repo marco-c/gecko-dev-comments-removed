@@ -2,7 +2,6 @@
 
 
 
-use PendingImage;
 use app_units::Au;
 use euclid::point::Point2D;
 use euclid::rect::Rect;
@@ -38,8 +37,6 @@ pub trait LayoutRPC {
     fn offset_parent(&self) -> OffsetParentResponse;
     
     fn margin_style(&self) -> MarginStyleResponse;
-    
-    fn pending_images(&self) -> Vec<PendingImage>;
     
     fn nodes_from_point_response(&self) -> Vec<UntrustedNodeAddress>;
 

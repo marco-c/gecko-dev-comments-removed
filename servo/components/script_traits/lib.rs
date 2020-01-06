@@ -69,7 +69,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender};
-use style_traits::{CSSPixel, UnsafeNode};
+use style_traits::CSSPixel;
 use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
 use webrender_traits::ClipId;
 use webvr_traits::{WebVREvent, WebVRMsg};
@@ -274,7 +274,7 @@ pub enum ConstellationControlMsg {
     
     TickAllAnimations(PipelineId),
     
-    TransitionEnd(UnsafeNode, String, f64),
+    TransitionEnd(UntrustedNodeAddress, String, f64),
     
     
     WebFontLoaded(PipelineId),

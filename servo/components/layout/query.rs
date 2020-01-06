@@ -17,7 +17,6 @@ use inline::LAST_FRAGMENT_OF_ELEMENT;
 use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::PipelineId;
 use opaque_node::OpaqueNodeMethods;
-use script_layout_interface::PendingImage;
 use script_layout_interface::rpc::{ContentBoxResponse, ContentBoxesResponse};
 use script_layout_interface::rpc::{HitTestResponse, LayoutRPC};
 use script_layout_interface::rpc::{MarginStyleResponse, NodeGeometryResponse};
@@ -28,7 +27,6 @@ use script_traits::LayoutMsg as ConstellationMsg;
 use script_traits::UntrustedNodeAddress;
 use sequential;
 use std::cmp::{min, max};
-use std::mem;
 use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 use style::computed_values;
@@ -88,9 +86,6 @@ pub struct LayoutThreadData {
 
     
     pub text_index_response: TextIndexResponse,
-
-    
-    pub pending_images: Vec<PendingImage>,
 
     
     pub nodes_from_point_response: Vec<UntrustedNodeAddress>,
@@ -197,12 +192,6 @@ impl LayoutRPC for LayoutRPCImpl {
         let &LayoutRPCImpl(ref rw_data) = self;
         let rw_data = rw_data.lock().unwrap();
         rw_data.text_index_response.clone()
-    }
-
-    fn pending_images(&self) -> Vec<PendingImage> {
-        let &LayoutRPCImpl(ref rw_data) = self;
-        let mut rw_data = rw_data.lock().unwrap();
-        mem::replace(&mut rw_data.pending_images, vec![])
     }
 }
 
