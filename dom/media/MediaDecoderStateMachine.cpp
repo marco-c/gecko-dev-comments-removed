@@ -1056,15 +1056,6 @@ public:
                "Seek shouldn't be finished");
     MOZ_ASSERT(aAudio);
 
-    
-    
-    
-    
-    if (mSeekJob.mTarget->IsVideoOnly()) {
-      mMaster->PushAudio(aAudio);
-      return;
-    }
-
     AdjustFastSeekIfNeeded(aAudio);
 
     if (mSeekJob.mTarget->IsFast()) {
@@ -1786,6 +1777,19 @@ public:
     }
 
     AccurateSeekingState::Exit();
+  }
+
+  void HandleAudioDecoded(AudioData* aAudio) override
+  {
+    MOZ_ASSERT(mDoneAudioSeeking && !mDoneVideoSeeking,
+               "Seek shouldn't be finished");
+    MOZ_ASSERT(aAudio);
+
+    
+    
+    
+    
+    mMaster->PushAudio(aAudio);
   }
 };
 
