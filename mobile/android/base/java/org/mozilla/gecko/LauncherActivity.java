@@ -65,7 +65,9 @@ public class LauncherActivity extends Activity {
         } else if (!isViewIntentWithURL(safeIntent)) {
             dispatchNormalIntent();
 
-        } else if (isCustomTabsIntent(safeIntent)) {
+        
+        } else if (AppConstants.MOZ_ANDROID_CUSTOM_TABS && isCustomTabsIntent(safeIntent)
+                && isCustomTabsEnabled()) {
             dispatchCustomTabsIntent();
 
         
@@ -154,6 +156,10 @@ public class LauncherActivity extends Activity {
 
     private static boolean isWebAppIntent(@NonNull final SafeIntent safeIntent) {
         return GeckoApp.ACTION_WEBAPP.equals(safeIntent.getAction());
+    }
+
+    private boolean isCustomTabsEnabled() {
+        return GeckoSharedPrefs.forApp(this).getBoolean(GeckoPreferences.PREFS_CUSTOM_TABS, false);
     }
 
     private boolean isDeepLink(SafeIntent intent) {
