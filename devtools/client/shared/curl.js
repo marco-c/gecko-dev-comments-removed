@@ -107,11 +107,6 @@ const Curl = {
     }
 
     
-    if (data.httpVersion && data.httpVersion != DEFAULT_HTTP_VERSION) {
-      command.push("--" + data.httpVersion.split("/")[1]);
-    }
-
-    
     let headers = data.headers;
     if (multipartRequest) {
       let multipartHeaders = utils.getHeadersFromMultipartText(postDataText);
