@@ -432,7 +432,11 @@ pref("media.decoder-doctor.wmf-disabled-is-failure", false);
 pref("media.decoder-doctor.new-issue-endpoint", "https://webcompat.com/issues/new");
 
 
+#ifdef RELEASE_OR_BETA
+pref("media.suspend-bkgnd-video.enabled", false);
+#else
 pref("media.suspend-bkgnd-video.enabled", true);
+#endif
 
 
 pref("media.suspend-bkgnd-video.delay-ms", 10000);
@@ -1422,7 +1426,7 @@ pref("javascript.options.ion",              true);
 pref("javascript.options.asmjs",            true);
 pref("javascript.options.wasm",             true);
 pref("javascript.options.wasm_ionjit",      true);
-pref("javascript.options.wasm_baselinejit", false);
+pref("javascript.options.wasm_baselinejit", true);
 pref("javascript.options.native_regexp",    true);
 pref("javascript.options.parallel_parsing", true);
 #if !defined(RELEASE_OR_BETA) && !defined(ANDROID) && !defined(XP_IOS)
