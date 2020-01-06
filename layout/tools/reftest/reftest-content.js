@@ -675,9 +675,17 @@ function OnDocumentLoad(event)
         
         return;
 
-    if (gClearingForAssertionCheck &&
-        currentDoc.location.href == BLANK_URL_FOR_CLEARING) {
-        DoAssertionCheck();
+    if (gClearingForAssertionCheck) {
+        if (currentDoc.location.href == BLANK_URL_FOR_CLEARING) {
+            DoAssertionCheck();
+            return;
+        }
+
+        
+        
+        
+        LogInfo("Retry loading a blank page");
+        LoadURI(BLANK_URL_FOR_CLEARING);
         return;
     }
 
