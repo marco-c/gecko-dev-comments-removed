@@ -541,9 +541,21 @@ Gecko_UpdateAnimations(RawGeckoElementBorrowed aElement,
         UpdateTransitions(const_cast<dom::Element*>(aElement), pseudoType,
                           oldServoValues, servoValues);
     }
+
     if (aTasks & UpdateAnimationsTasks::EffectProperties) {
       presContext->EffectCompositor()->UpdateEffectProperties(
         servoValues, const_cast<dom::Element*>(aElement), pseudoType);
+    }
+
+    if (aTasks & UpdateAnimationsTasks::CascadeResults) {
+      
+      
+      
+      presContext->EffectCompositor()
+                 ->RequestRestyle(const_cast<Element*>(aElement),
+                                  pseudoType,
+                                  EffectCompositor::RestyleType::Standard,
+                                  EffectCompositor::CascadeLevel::Animations);
     }
   }
 }
