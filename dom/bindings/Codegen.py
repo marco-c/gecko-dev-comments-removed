@@ -6912,7 +6912,7 @@ def getWrapTemplateForType(type, descriptorProvider, result, successCode,
         
         
         wrapCode = setObjectOrNull(
-            "GetCallbackFromCallbackObject(%(result)s)",
+            "GetCallbackFromCallbackObject(cx, %(result)s)",
             wrapAsType=type)
         if type.nullable():
             wrapCode = (

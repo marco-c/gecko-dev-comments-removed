@@ -93,6 +93,10 @@ public:
     return CallbackPreserveColor();
   }
 
+  
+  
+  JSObject* Callback(JSContext* aCx);
+
   JSObject* GetCreationStack() const
   {
     return mCreationStack;
@@ -598,6 +602,11 @@ public:
   JS::Handle<JSObject*> CallbackOrNull() const
   {
     return this->get()->CallbackOrNull();
+  }
+
+  JSObject* Callback(JSContext* aCx) const
+  {
+    return this->get()->Callback(aCx);
   }
 
   ~RootedCallback()

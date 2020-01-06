@@ -6549,6 +6549,9 @@ nsDocument::RegisterElement(JSContext* aCx, const nsAString& aType,
     options.mExtends.Construct(lcName);
   }
 
+  
+  
+  
   RefPtr<Function> functionConstructor =
     new Function(aCx, wrappedConstructor, sgo);
 
