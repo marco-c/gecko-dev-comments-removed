@@ -215,7 +215,9 @@ class FilteringMessageManager {
 
 
   removeHandler(messageName, handler) {
-    this.handlers.get(messageName).delete(handler);
+    if (this.handlers.has(messageName)) {
+      this.handlers.get(messageName).delete(handler);
+    }
   }
 }
 

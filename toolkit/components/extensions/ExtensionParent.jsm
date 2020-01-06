@@ -272,7 +272,24 @@ ProxyMessenger = {
       
       
       let tab = apiManager.global.tabTracker.getTab(tabId, null);
-      return tab && (tab.linkedBrowser || tab.browser).messageManager;
+      if (!tab) {
+        return null;
+      }
+      let browser = tab.linkedBrowser || tab.browser;
+
+      
+      
+      
+      
+      
+      if (browser.currentURI.cloneIgnoringRef().spec === "about:addons") {
+        let optionsBrowser = browser.contentDocument.querySelector(".inline-options-browser");
+        if (optionsBrowser) {
+          browser = optionsBrowser;
+        }
+      }
+
+      return browser.messageManager;
     }
 
     
