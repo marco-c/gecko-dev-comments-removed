@@ -159,9 +159,47 @@ struct PatternStorage
   };
 };
 
-class MemWriter {
-  public:
-    void write(const char*, size_t);
+
+
+
+
+
+
+struct SizeCollector {
+  SizeCollector() : mTotalSize(0) {}
+    void write(const char*, size_t s) {
+      mTotalSize += s;
+    }
+  size_t mTotalSize;
+};
+
+struct MemWriter {
+  explicit MemWriter(char* aPtr) : mPtr(aPtr) {}
+    void write(const char* aData, size_t aSize) {
+       memcpy(mPtr, aData, aSize);
+       mPtr += aSize;
+    }
+  char* mPtr;
+};
+
+struct MemStream {
+  char *mData;
+  size_t mLength;
+  size_t mCapacity;
+  void Resize(size_t aSize) {
+    mLength = aSize;
+    if (mLength > mCapacity) {
+      mCapacity = mCapacity * 2;
+      
+      
+      if (mLength > mCapacity) {
+        mCapacity = mLength;
+      }
+      mData = (char*)realloc(mData, mCapacity * 2);
+    }
+  }
+  MemStream() : mData(nullptr), mLength(0), mCapacity(0) {}
+  ~MemStream() { free(mData); }
 };
 
 class RecordedEvent {
@@ -224,7 +262,7 @@ public:
   virtual bool PlayEvent(Translator *aTranslator) const { return true; }
 
   virtual void RecordToStream(std::ostream &aStream) const {}
-  virtual void RecordToStream(MemWriter &aStream) const {}
+  virtual void RecordToStream(MemStream &aStream) const  = 0;
 
   virtual void OutputSimpleEventInfo(std::stringstream &aStringStream) const { }
 
