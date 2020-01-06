@@ -1311,7 +1311,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         
         
         if !self.pending_paint_metrics.is_empty() {
-            let paint_time = precise_time_ns() as f64;
+            let paint_time = precise_time_ns();
             let mut to_remove = Vec::new();
             
             for (id, pending_epoch) in &self.pending_paint_metrics {

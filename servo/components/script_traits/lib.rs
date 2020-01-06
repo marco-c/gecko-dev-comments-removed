@@ -122,7 +122,7 @@ pub enum LayoutControlMsg {
     
     GetWebFontLoadState(IpcSender<bool>),
     
-    PaintMetric(Epoch, f64),
+    PaintMetric(Epoch, u64),
 }
 
 
@@ -324,7 +324,7 @@ pub enum ConstellationControlMsg {
     
     WebVREvents(PipelineId, Vec<WebVREvent>),
     
-    PaintMetric(PipelineId, ProgressiveWebMetricType, f64),
+    PaintMetric(PipelineId, ProgressiveWebMetricType, u64),
 }
 
 impl fmt::Debug for ConstellationControlMsg {

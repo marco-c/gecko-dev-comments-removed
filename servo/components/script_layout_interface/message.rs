@@ -97,7 +97,7 @@ pub enum Msg {
     RegisterPaint(Atom, Vec<Atom>, Box<Painter>),
 
     
-    SetNavigationStart(f64),
+    SetNavigationStart(u64),
 }
 
 #[derive(Debug, PartialEq)]
