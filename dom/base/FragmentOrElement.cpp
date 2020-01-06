@@ -383,7 +383,9 @@ nsIContent::GetBaseURI(bool aTryUseXHRDocBaseURI) const
     MOZ_ASSERT(bindingParent);
     SVGUseElement* useElement = static_cast<SVGUseElement*>(bindingParent);
     
-    return do_AddRef(useElement->GetContentURLData()->BaseURI());
+    if (URLExtraData* data = useElement->GetContentURLData()) {
+      return do_AddRef(data->BaseURI());
+    }
   }
 
   nsIDocument* doc = OwnerDoc();
@@ -453,7 +455,9 @@ nsIContent::GetBaseURIWithoutXMLBase() const
     nsIContent* bindingParent = GetBindingParent();
     MOZ_ASSERT(bindingParent);
     SVGUseElement* useElement = static_cast<SVGUseElement*>(bindingParent);
-    return useElement->GetContentURLData()->BaseURI();
+    if (URLExtraData* data = useElement->GetContentURLData()) {
+      return data->BaseURI();
+    }
   }
   
   
@@ -487,7 +491,9 @@ nsIContent::GetURLDataForStyleAttr() const
     nsIContent* bindingParent = GetBindingParent();
     MOZ_ASSERT(bindingParent);
     SVGUseElement* useElement = static_cast<SVGUseElement*>(bindingParent);
-    return useElement->GetContentURLData();
+    if (URLExtraData* data = useElement->GetContentURLData()) {
+      return data;
+    }
   }
   
   
