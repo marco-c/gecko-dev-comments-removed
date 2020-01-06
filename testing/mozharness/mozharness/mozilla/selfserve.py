@@ -2,6 +2,7 @@ import json
 import site
 
 
+
 class SelfServeMixin(object):
     def _get_session(self):
         site_packages_path = self.query_python_site_packages_path()

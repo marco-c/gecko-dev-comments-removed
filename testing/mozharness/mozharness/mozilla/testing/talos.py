@@ -48,8 +48,10 @@ TalosErrorList = PythonErrorList + [
     {'regex': re.compile(r'''No machine_name called '.*' can be found'''), 'level': CRITICAL},
     {'substr': r"""No such file or directory: 'browser_output.txt'""",
      'level': CRITICAL,
-     'explanation': r"""Most likely the browser failed to launch, or the test was otherwise unsuccessful in even starting."""},
+     'explanation': r"""Most likely the browser failed to launch, or the test was otherwise "
+         "unsuccessful in even starting."""},
 ]
+
 
 
 
@@ -142,12 +144,6 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
             "default": 0,
             "help": "The interval between samples taken by the profiler (milliseconds)"
         }],
-        [["--e10s"], {
-            "dest": "e10s",
-            "action": "store_true",
-            "default": False,
-            "help": "we should have --disable-e10s, but instead we assume non-e10s and use --e10s to help"
-        }],
         [["--enable-stylo"], {
             "action": "store_true",
             "dest": "enable_stylo",
@@ -204,11 +200,16 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
         self.gecko_profile = self.config.get('gecko_profile')
         self.gecko_profile_interval = self.config.get('gecko_profile_interval')
         self.pagesets_name = None
-        self.mitmproxy_rel_bin = None 
-        self.mitmproxy_recording_set = None 
-        self.mitmproxy_recordings_file_list = self.config.get('mitmproxy', None) 
-        self.mitmdump = None 
+        
+        self.mitmproxy_rel_bin = None
+        
+        self.mitmproxy_recording_set = None
+        
+        self.mitmproxy_recordings_file_list = self.config.get('mitmproxy', None)
+        
+        self.mitmdump = None
 
+    
     
     
     
@@ -218,7 +219,9 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
             
             
             try:
-                junk, junk, opts = self.buildbot_config['sourcestamp']['changes'][-1]['comments'].partition('mozharness:')
+                junk, junk, opts = self.buildbot_config(
+                   ['sourcestamp']['changes'][-1]['comments'].partition('mozharness:')
+                   )
             except IndexError:
                 
                 opts = None
@@ -255,7 +258,8 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
         if self.abs_dirs:
             return self.abs_dirs
         abs_dirs = super(Talos, self).query_abs_dirs()
-        abs_dirs['abs_blob_upload_dir'] = os.path.join(abs_dirs['abs_work_dir'], 'blobber_upload_dir')
+        abs_dirs['abs_blob_upload_dir'] = os.path.join(abs_dirs['abs_work_dir'],
+                                                       'blobber_upload_dir')
         self.abs_dirs = abs_dirs
         return self.abs_dirs
 
@@ -295,6 +299,7 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
     def get_suite_from_test(self):
         """ Retrieve the talos suite name from a given talos test name."""
         
+        
         suite_name = None
         if self.query_talos_json_config():
             if '-a' in self.config['talos_extra_options']:
@@ -316,7 +321,7 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
     def validate_suite(self):
         """ Ensure suite name is a valid talos suite. """
         if self.query_talos_json_config() and self.suite is not None:
-            if not self.suite in self.talos_json_config.get('suites'):
+            if self.suite not in self.talos_json_config.get('suites'):
                 self.fatal("Suite '%s' is not valid (not found in talos json config)" % self.suite)
 
     def talos_options(self, args=None, **kw):
@@ -324,7 +329,8 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
         
         binary_path = self.binary_path or self.config.get('binary_path')
         if not binary_path:
-            self.fatal("Talos requires a path to the binary.  You can specify binary_path or add download-and-extract to your action list.")
+            self.fatal("Talos requires a path to the binary.  You can specify binary_path or "
+                       "add download-and-extract to your action list.")
 
         
         options = []
@@ -335,8 +341,6 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
         kw_options = {'executablePath': binary_path}
         if 'suite' in self.config:
             kw_options['suite'] = self.config['suite']
-            if self.config.get('e10s', False):
-                kw_options['suite'] = "%s-e10s" % self.config['suite']
         if self.config.get('title'):
             kw_options['title'] = self.config['title']
         if self.config.get('branch'):
@@ -379,10 +383,11 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
         )
 
         
-        if self.config.get('run_local') and 'talos_extra_options' in self.config:
+        if self.config.get('run_local'):
             
             self.talos_path = os.path.dirname(self.talos_json)
-            if '-a' in self.config['talos_extra_options'] or '--activeTests' in self.config['talos_extra_options']:
+            if '-a' in (self.config['talos_extra_options'] or
+                        '--activeTests' in self.config['talos_extra_options']):
                 
                 self.suite = self.get_suite_from_test()
             elif '--suite' in self.config['talos_extra_options']:
@@ -400,7 +405,7 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
         
         
         if self.query_pagesets_name():
-            if '--no-download' not in self.config.get('talos_extra_options', []):
+            if '--no-download' not in self.config['talos_extra_options']:
                 self.info("Downloading pageset with tooltool...")
                 self.src_talos_webdir = os.path.join(self.talos_path, 'talos')
                 src_talos_pageset = os.path.join(self.src_talos_webdir, 'tests')
@@ -450,15 +455,16 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
         
         self.py3_venv_configuration(python_path=self.py3_path, venv_path='py3venv')
         self.py3_create_venv()
-        requirements = [os.path.join(self.talos_path, 'talos', 'mitmproxy', 'mitmproxy_requirements.txt')]
+        requirements = [os.path.join(self.talos_path, 'talos', 'mitmproxy',
+                        'mitmproxy_requirements.txt')]
         self.py3_install_requirement_files(requirements)
         
         sys.path.insert(1, self.py3_path_to_executables())
 
     def install_mitmproxy(self):
         """Install the mitmproxy tool into the Python 3.x env"""
-        self.info("Installing mitmproxy")
         if 'win' in self.platform_name():
+            self.info("Installing mitmproxy")
             self.py3_install_modules(modules=['mitmproxy'])
             self.mitmdump = os.path.join(self.py3_path_to_executables(), 'mitmdump')
         else:
@@ -477,7 +483,8 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
                         self.fatal("Aborting: mitmproxy_release_bin_osx not found in talos.json")
                     self.download_mitmproxy_binary(_platform)
                 else:
-                    self.info("Not downloading mitmproxy rel binary because no-download was specified")
+                    self.info("Not downloading mitmproxy rel binary because "
+                              "no-download was specified")
             self.info('The mitmdump macosx binary is found at: %s' % self.mitmdump)
         self.run_command([self.mitmdump, '--version'], env=self.query_env())
 
@@ -487,7 +494,9 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
             return self.mitmproxy_rel_bin
         if self.query_talos_json_config() and self.suite is not None:
             config_key = "mitmproxy_release_bin_" + platform
-            self.mitmproxy_rel_bin = self.talos_json_config['suites'][self.suite].get(config_key, False)
+            self.mitmproxy_rel_bin = (
+                self.talos_json_config['suites'][self.suite].get(config_key, False)
+            )
             return self.mitmproxy_rel_bin
 
     def download_mitmproxy_binary(self, platform):
@@ -514,14 +523,17 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
         if self.mitmproxy_recording_set:
             return self.mitmproxy_recording_set
         if self.query_talos_json_config() and self.suite is not None:
-            self.mitmproxy_recording_set = self.talos_json_config['suites'][self.suite].get('mitmproxy_recording_set', False)
+            self.mitmproxy_recording_set = (
+                self.talos_json_config['suites'][self.suite].get('mitmproxy_recording_set', False)
+            )
             return self.mitmproxy_recording_set
 
     def download_mitmproxy_recording_set(self):
         """Download the set of mitmproxy recording files that will be played back"""
         self.info("Downloading the mitmproxy recording set using tooltool")
         dest = os.path.join(self.talos_path, 'talos', 'mitmproxy')
-        manifest_file = os.path.join(self.talos_path, 'talos', 'mitmproxy', 'mitmproxy-playback-set.manifest')
+        manifest_file = os.path.join(self.talos_path, 'talos', 'mitmproxy',
+                                     'mitmproxy-playback-set.manifest')
         self.tooltool_fetch(
             manifest_file,
             output_dir=dest,
@@ -605,7 +617,6 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
             shutil.copyfile(src, dest)
         except:
             self.critical("Error copying results %s to upload dir %s" % (src, dest))
-            parser.update_worst_log_and_tbpl_levels(CRITICAL, TBPL_FAILURE)
 
     def run_tests(self, args=None, **kw):
         """run Talos tests"""

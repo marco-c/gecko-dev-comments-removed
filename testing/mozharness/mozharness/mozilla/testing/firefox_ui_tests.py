@@ -10,8 +10,7 @@ import copy
 import os
 import sys
 
-from mozharness.base.log import FATAL, WARNING
-from mozharness.base.python import PostScriptRun, PreScriptAction
+from mozharness.base.python import PreScriptAction
 from mozharness.mozilla.structuredlog import StructuredOutputParser
 from mozharness.mozilla.testing.testbase import (
     TestingMixin,
@@ -30,7 +29,8 @@ firefox_ui_tests_config_options = [
         "action": "store_true",
         "dest": "allow_software_gl_layers",
         "default": False,
-        "help": "Permits a software GL implementation (such as LLVMPipe) to use the GL compositor.",
+        "help": "Permits a software GL implementation (such as LLVMPipe) to use "
+                "the GL compositor.",
     }],
     [["--enable-webrender"], {
         "action": "store_true",
@@ -254,6 +254,7 @@ class FirefoxUITests(TestingMixin, VCSToolsScript, CodeCoverageMixin):
             env.update({'MINIDUMP_STACKWALK': self.minidump_stackwalk_path})
         env['RUST_BACKTRACE'] = 'full'
 
+        
         
         if self.config.get('code_coverage'):
             env['GCOV_PREFIX'] = self.gcov_dir

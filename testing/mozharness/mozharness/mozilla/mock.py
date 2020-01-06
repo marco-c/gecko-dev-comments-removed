@@ -19,7 +19,6 @@ Nothing to remove.'
 
 
 
-
 class MockMixin(object):
     """Provides methods to setup and interact with mock environments.
     https://wiki.mozilla.org/ReleaseEngineering/Applications/Mock
