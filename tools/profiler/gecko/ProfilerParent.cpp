@@ -129,6 +129,34 @@ ProfilerParent::Init()
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   ProfilerParentTracker::StartTracking(this);
+
+  
+  
+  
+  
+  
+
+  int entries = 0;
+  double interval = 0;
+  mozilla::Vector<const char*> filters;
+  uint32_t features;
+  profiler_get_start_params(&entries, &interval, &features, &filters);
+
+  if (entries != 0) {
+    ProfilerInitParams ipcParams;
+    ipcParams.enabled() = true;
+    ipcParams.entries() = entries;
+    ipcParams.interval() = interval;
+    ipcParams.features() = features;
+
+    for (uint32_t i = 0; i < filters.length(); ++i) {
+      ipcParams.filters().AppendElement(filters[i]);
+    }
+
+    Unused << SendEnsureStarted(ipcParams);
+  } else {
+    Unused << SendStop();
+  }
 }
 
 ProfilerParent::~ProfilerParent()
