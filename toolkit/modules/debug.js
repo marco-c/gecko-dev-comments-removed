@@ -47,6 +47,7 @@ this.NS_ASSERT = function NS_ASSERT(condition, message) {
     }
   } catch (ex) {}
 
+  
   var caller = arguments.callee.caller;
   var assertionText = "ASSERT: " + message + "\n";
 

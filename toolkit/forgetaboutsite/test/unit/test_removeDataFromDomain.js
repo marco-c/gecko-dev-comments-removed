@@ -502,7 +502,7 @@ async function test_push_cleared() {
 
 async function test_cache_cleared() {
   
-  do_check_true(tests[tests.length - 1] == arguments.callee);
+  do_check_true(tests[tests.length - 1] == test_cache_cleared);
 
   
   

@@ -395,8 +395,8 @@ profileDir.append("extensions");
 
 function Pload_blocklist(aFile) {
   let blocklist_updated = new Promise((resolve, reject) => {
-    Services.obs.addObserver(function() {
-      Services.obs.removeObserver(arguments.callee, "blocklist-updated");
+    Services.obs.addObserver(function observer() {
+      Services.obs.removeObserver(observer, "blocklist-updated");
 
       resolve();
     }, "blocklist-updated");
@@ -438,8 +438,8 @@ function Pbackground_update() {
       }
     })
 
-    Services.obs.addObserver(function() {
-      Services.obs.removeObserver(arguments.callee, "addons-background-update-complete");
+    Services.obs.addObserver(function observer() {
+      Services.obs.removeObserver(observer, "addons-background-update-complete");
       backgroundCheckCompleted = true;
 
       
@@ -554,7 +554,6 @@ add_task(async function init() {
 
 
 add_task(async function run_app_update_test() {
-  do_print("Test: " + arguments.callee.name);
   await promiseRestartManager();
   await Pload_blocklist("app_update.xml");
   await promiseRestartManager();
@@ -632,7 +631,6 @@ add_task(async function app_update_step_4() {
 
 
 add_task(async function run_app_update_schema_test() {
-  do_print("Test: " + arguments.callee.name);
   await promiseRestartManager();
 
   let [s1, s2, s3, s4, s5, h, r] = await promiseAddonsByIDs(ADDON_IDS);
@@ -736,7 +734,6 @@ add_task(async function update_schema_5() {
 
 
 add_task(async function run_blocklist_update_test() {
-  do_print("Test: " + arguments.callee.name + "\n");
   await Pload_blocklist("blocklist_update1.xml");
   await promiseRestartManager();
 
@@ -809,7 +806,6 @@ add_task(async function run_blocklist_update_test() {
 
 
 add_task(async function run_addon_change_test() {
-  do_print("Test: " + arguments.callee.name + "\n");
   await Pload_blocklist("addon_change.xml");
   await promiseRestartManager();
 
@@ -936,7 +932,6 @@ add_task(async function run_addon_change_4() {
 
 
 add_task(async function run_addon_change_2_test() {
-  do_print("Test: " + arguments.callee.name + "\n");
   await promiseShutdownManager();
 
   getFileForAddon(profileDir, softblock1_1.id).remove(true);
@@ -1043,7 +1038,6 @@ add_task(async function addon_change_2_test_3() {
 
 
 add_task(async function run_background_update_test() {
-  do_print("Test: " + arguments.callee.name + "\n");
   await promiseRestartManager();
 
   let [s1, s2, s3, s4, s5, h, r] = await promiseAddonsByIDs(ADDON_IDS);
@@ -1073,7 +1067,6 @@ add_task(async function run_background_update_test() {
 
 
 add_task(async function run_background_update_2_test() {
-  do_print("Test: " + arguments.callee.name + "\n");
   await promiseShutdownManager();
 
   getFileForAddon(profileDir, softblock1_1.id).remove(true);
@@ -1133,7 +1126,6 @@ add_task(async function run_background_update_2_test() {
 
 
 add_task(async function run_manual_update_test() {
-  do_print("Test: " + arguments.callee.name + "\n");
   await promiseRestartManager();
   await Pload_blocklist("manual_update.xml");
   await promiseRestartManager();
@@ -1187,7 +1179,6 @@ add_task(async function run_manual_update_test() {
 
 
 add_task(async function run_manual_update_2_test() {
-  do_print("Test: " + arguments.callee.name + "\n");
   await promiseShutdownManager();
 
   getFileForAddon(profileDir, softblock1_1.id).remove(true);
@@ -1258,7 +1249,6 @@ add_task(async function run_manual_update_2_test() {
 
 
 add_task(async function run_local_install_test() {
-  do_print("Test: " + arguments.callee.name + "\n");
   await promiseShutdownManager();
 
   getFileForAddon(profileDir, softblock1_1.id).remove(true);

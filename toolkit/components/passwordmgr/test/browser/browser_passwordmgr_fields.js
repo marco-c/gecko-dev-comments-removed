@@ -49,10 +49,10 @@ add_task(async function test() {
        "Last Changed column is displayed");
 
     
-    Services.ww.registerNotification(function(aSubject, aTopic, aData) {
+    Services.ww.registerNotification(function notification(aSubject, aTopic, aData) {
       if (aSubject.location == pwmgrdlg.location && aTopic == "domwindowclosed") {
         
-        Services.ww.unregisterNotification(arguments.callee);
+        Services.ww.unregisterNotification(notification);
 
         pwmgr.removeAllLogins();
 

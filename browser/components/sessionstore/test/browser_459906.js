@@ -14,11 +14,11 @@ function test() {
 
   var frameCount = 0;
   let tab = BrowserTestUtils.addTab(gBrowser, testURL);
-  tab.linkedBrowser.addEventListener("load", function(aEvent) {
+  tab.linkedBrowser.addEventListener("load", function listener(aEvent) {
     
     if (frameCount++ < 2)
       return;
-    tab.linkedBrowser.removeEventListener("load", arguments.callee, true);
+    tab.linkedBrowser.removeEventListener("load", listener, true);
 
     let iframes = tab.linkedBrowser.contentWindow.frames;
     
@@ -26,20 +26,20 @@ function test() {
 
     frameCount = 0;
     let tab2 = gBrowser.duplicateTab(tab);
-    tab2.linkedBrowser.addEventListener("load", function(eventTab2) {
+    tab2.linkedBrowser.addEventListener("load", function loadListener(eventTab2) {
       
       if (frameCount++ < 2)
         return;
-      tab2.linkedBrowser.removeEventListener("load", arguments.callee, true);
+      tab2.linkedBrowser.removeEventListener("load", loadListener, true);
 
-      executeSoon(function() {
+      executeSoon(function innerHTMLPoller() {
         let iframesTab2 = tab2.linkedBrowser.contentWindow.frames;
         if (iframesTab2[1].document.body.innerHTML !== uniqueValue) {
           
           
           
           info("Polling for innerHTML value");
-          setTimeout(arguments.callee, 100);
+          setTimeout(innerHTMLPoller, 100);
           return;
         }
 

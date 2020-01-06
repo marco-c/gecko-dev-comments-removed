@@ -27,9 +27,6 @@ module.exports = {
     "no-alert": "error",
 
     
-    "no-caller": "error",
-
-    
     
     "no-case-declarations": "error",
 

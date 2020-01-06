@@ -157,9 +157,6 @@ module.exports = {
     "no-bitwise": "off",
 
     
-    "no-caller": "error",
-
-    
     
     "no-catch-shadow": "off",
 
