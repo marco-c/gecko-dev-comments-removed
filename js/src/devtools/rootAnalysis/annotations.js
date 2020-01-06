@@ -67,6 +67,8 @@ var ignoreClasses = {
 
 
 var ignoreCallees = {
+    "js::Class.trace" : true,
+    "js::Class.finalize" : true,
     "js::ClassOps.trace" : true,
     "js::ClassOps.finalize" : true,
     "JSRuntime.destroyPrincipals" : true,
