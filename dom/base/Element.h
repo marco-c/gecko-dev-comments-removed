@@ -473,6 +473,16 @@ public:
     ELEMENT_HAS_ANIMATION_ONLY_DIRTY_DESCENDANTS_FOR_SERVO |
     NODE_DESCENDANTS_NEED_FRAMES;
 
+  
+
+
+
+
+
+
+
+  void NoteDirtySubtreeForServo();
+
   void NoteDirtyForServo();
   void NoteAnimationOnlyDirtyForServo();
   void NoteDescendantsNeedFramesForServo();
