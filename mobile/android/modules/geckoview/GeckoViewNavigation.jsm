@@ -130,6 +130,26 @@ class GeckoViewNavigation extends GeckoViewModule {
   }
 
   
+  createContentWindowInFrame(aUri, aParams, aWhere, aFlags, aNextTabParentId,
+                             aName) {
+    debug("createContentWindowInFrame: aUri=" + (aUri && aUri.spec) +
+          " aParams=" + aParams +
+          " aWhere=" + aWhere +
+          " aFlags=" + aFlags +
+          " aNextTabParentId=" + aNextTabParentId +
+          " aName=" + aName);
+
+    let handled = this.handleLoadUri(aUri, null, aWhere, aFlags, null);
+    if (!handled &&
+        (aWhere === Ci.nsIBrowserDOMWindow.OPEN_DEFAULTWINDOW ||
+         aWhere === Ci.nsIBrowserDOMWindow.OPEN_CURRENTWINDOW)) {
+      return this.browser;
+    }
+
+    throw Cr.NS_ERROR_ABORT;
+  }
+
+  
   openURI(aUri, aOpener, aWhere, aFlags, aTriggeringPrincipal) {
     return this.createContentWindow(aUri, aOpener, aWhere, aFlags,
                                     aTriggeringPrincipal);
@@ -137,21 +157,11 @@ class GeckoViewNavigation extends GeckoViewModule {
 
   
   openURIInFrame(aUri, aParams, aWhere, aFlags, aNextTabParentId, aName) {
-    debug("openURIInFrame: aUri=" + (aUri && aUri.spec) +
-          " aParams=" + aParams +
-          " aWhere=" + aWhere +
-          " aFlags=" + aFlags +
-          " aNextTabParentId=" + aNextTabParentId +
-          " aName=" + aName);
-
-    if (aWhere === Ci.nsIBrowserDOMWindow.OPEN_DEFAULTWINDOW ||
-        aWhere === Ci.nsIBrowserDOMWindow.OPEN_CURRENTWINDOW) {
-      return this.browser;
-    }
-
-    throw Cr.NS_ERROR_ABORT;
+    return this.createContentWindowInFrame(aUri, aParams, aWhere, aFlags,
+                                           aNextTabParentId, aName);
   }
 
+  
   isTabContentWindow(aWindow) {
     debug("isTabContentWindow " + this.browser.contentWindow === aWindow);
     return this.browser.contentWindow === aWindow;
