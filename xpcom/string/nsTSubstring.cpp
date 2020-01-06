@@ -972,11 +972,11 @@ nsTSubstring_CharT::StripTaggedASCII(const ASCIIMaskArray& aToStrip)
     uint32_t secondChar = (uint32_t)*from++;
     
     
-    if (MOZ_LIKELY(!mozilla::ASCIIMask::IsMasked(aToStrip, firstChar))) {
+    if (!mozilla::ASCIIMask::IsMasked(aToStrip, firstChar)) {
       
       *to++ = (char_type)firstChar;
     }
-    if (MOZ_LIKELY(!mozilla::ASCIIMask::IsMasked(aToStrip, secondChar))) {
+    if (!mozilla::ASCIIMask::IsMasked(aToStrip, secondChar)) {
       *to++ = (char_type)secondChar;
     }
   }
@@ -987,7 +987,7 @@ nsTSubstring_CharT::StripTaggedASCII(const ASCIIMaskArray& aToStrip)
   case 1:
     {
       uint32_t firstChar = (uint32_t)*from++;
-      if (MOZ_LIKELY(!mozilla::ASCIIMask::IsMasked(aToStrip, firstChar))) {
+      if (!mozilla::ASCIIMask::IsMasked(aToStrip, firstChar)) {
         *to++ = (char_type)firstChar;
       }
     }
