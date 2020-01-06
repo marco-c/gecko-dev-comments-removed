@@ -19,6 +19,7 @@ const TOUR_AGENT_JS_URI = "resource://onboarding/onboarding-tour-agent.js";
 const BRAND_SHORT_NAME = Services.strings
                      .createBundle("chrome://branding/locale/brand.properties")
                      .GetStringFromName("brandShortName");
+const PROMPT_COUNT_PREF = "browser.onboarding.notification.prompt-count";
 
 
 
@@ -284,7 +285,8 @@ class Onboarding {
     this._loadJS(TOUR_AGENT_JS_URI);
 
     this._initPrefObserver();
-    this._initNotification();
+    
+    this._window.requestIdleCallback(() => this._initNotification());
   }
 
   _getTourIDList(tourType) {
@@ -371,11 +373,13 @@ class Onboarding {
         break;
       case "onboarding-notification-close-btn":
         this.hideNotification();
+        this._removeTourFromNotificationQueue(this._notificationBar.dataset.targetTourId);
         break;
       case "onboarding-notification-action-btn":
         let tourId = this._notificationBar.dataset.targetTourId;
         this.toggleOverlay();
         this.gotoPage(tourId);
+        this._removeTourFromNotificationQueue(tourId);
         break;
     }
     let classList = evt.target.classList;
@@ -459,44 +463,122 @@ class Onboarding {
     }
   }
 
+  _muteNotificationOnFirstSession() {
+    if (Preferences.isSet("browser.onboarding.notification.tour-ids-queue")) {
+      
+      return false;
+    }
+
+    let muteDuration = Preferences.get("browser.onboarding.notification.mute-duration-on-first-session-ms");
+    if (muteDuration == 0) {
+      
+      return false;
+    }
+
+    
+    
+    let lastTime = 1000 * Preferences.get("browser.onboarding.notification.last-time-of-changing-tour-sec", 0);
+    if (lastTime <= 0) {
+      this.sendMessageToChrome("set-prefs", [{
+        name: "browser.onboarding.notification.last-time-of-changing-tour-sec",
+        value: Math.floor(Date.now() / 1000)
+      }]);
+      return true;
+    }
+    return Date.now() - lastTime <= muteDuration;
+  }
+
+  _isTimeForNextTourNotification() {
+    let promptCount = Preferences.get("browser.onboarding.notification.prompt-count", 0);
+    let maxCount = Preferences.get("browser.onboarding.notification.max-prompt-count-per-tour");
+    if (promptCount >= maxCount) {
+      return true;
+    }
+
+    let lastTime = 1000 * Preferences.get("browser.onboarding.notification.last-time-of-changing-tour-sec", 0);
+    let maxTime = Preferences.get("browser.onboarding.notification.max-life-time-per-tour-ms");
+    if (lastTime && Date.now() - lastTime >= maxTime) {
+      return true;
+    }
+
+    return false;
+  }
+
+  _removeTourFromNotificationQueue(tourId) {
+    let params = [];
+    let queue = this._getNotificationQueue();
+    params.push({
+      name: "browser.onboarding.notification.tour-ids-queue",
+      value: queue.filter(id => id != tourId).join(",")
+    });
+    params.push({
+      name: "browser.onboarding.notification.last-time-of-changing-tour-sec",
+      value: 0
+    });
+    params.push({
+      name: "browser.onboarding.notification.prompt-count",
+      value: 0
+    });
+    this.sendMessageToChrome("set-prefs", params);
+  }
+
+  _getNotificationQueue() {
+    let queue = "";
+    if (Preferences.isSet("browser.onboarding.notification.tour-ids-queue")) {
+      queue = Preferences.get("browser.onboarding.notification.tour-ids-queue");
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      let ids = this._tours.map(tour => tour.id).join(",");
+      queue = `${ids},${ids}`;
+      this.sendMessageToChrome("set-prefs", [{
+        name: "browser.onboarding.notification.tour-ids-queue",
+        value: queue
+      }]);
+    }
+    return queue ? queue.split(",") : [];
+  }
+
   showNotification() {
     if (Preferences.get("browser.onboarding.notification.finished", false)) {
       return;
     }
 
-    
-    let targetTour = null;
-
-    
-    
-    let lastPromptedId = this._tours[this._tours.length - 1].id;
-    lastPromptedId = Preferences.get("browser.onboarding.notification.lastPrompted", lastPromptedId);
-
-    let lastTourIndex = this._tours.findIndex(tour => tour.id == lastPromptedId);
-    if (lastTourIndex < 0) {
-      
-      
-      
-      
-      lastTourIndex = this._tours.length - 1;
-    }
-
-    
-    
-    
-    
-    
-    let toursToNotify = [ ...this._tours.slice(lastTourIndex + 1), ...this._tours.slice(0, lastTourIndex + 1) ];
-    targetTour = toursToNotify.find(tour => !this.isTourCompleted(tour.id));
-
-
-    if (!targetTour) {
-      this.sendMessageToChrome("set-prefs", [{
-        name: "browser.onboarding.notification.finished",
-        value: true
-      }]);
+    if (this._muteNotificationOnFirstSession()) {
       return;
     }
+
+    let queue = this._getNotificationQueue();
+    let startQueueLength = queue.length;
+    
+    if (queue.length > 0 && this._isTimeForNextTourNotification()) {
+      queue.shift();
+    }
+    
+    while (queue.length > 0 && this.isTourCompleted(queue[0])) {
+      queue.shift();
+    }
+
+    if (queue.length == 0) {
+      this.sendMessageToChrome("set-prefs", [
+        {
+          name: "browser.onboarding.notification.finished",
+          value: true
+        },
+        {
+          name: "browser.onboarding.notification.tour-ids-queue",
+          value: ""
+        }
+      ]);
+      return;
+    }
+    let targetTourId = queue[0];
+    let targetTour = this._tours.find(tour => tour.id == targetTourId);
 
     
     this._notificationBar = this._renderNotificationBar();
@@ -513,10 +595,29 @@ class Onboarding {
     tourMessage.textContent = notificationStrings.message;
     this._notificationBar.classList.add("onboarding-opened");
 
-    this.sendMessageToChrome("set-prefs", [{
-      name: "browser.onboarding.notification.lastPrompted",
-      value: targetTour.id
-    }]);
+    let params = [];
+    if (startQueueLength != queue.length) {
+      
+      params.push({
+        name: "browser.onboarding.notification.last-time-of-changing-tour-sec",
+        value: Math.floor(Date.now() / 1000)
+      });
+      params.push({
+        name: PROMPT_COUNT_PREF,
+        value: 1
+      });
+      params.push({
+        name: "browser.onboarding.notification.tour-ids-queue",
+        value: queue.join(",")
+      });
+    } else {
+      let promptCount = Preferences.get(PROMPT_COUNT_PREF, 0);
+      params.push({
+        name: PROMPT_COUNT_PREF,
+        value: promptCount + 1
+      });
+    }
+    this.sendMessageToChrome("set-prefs", params);
   }
 
   hideNotification() {
