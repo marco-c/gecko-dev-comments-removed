@@ -563,9 +563,6 @@ pref("media.peerconnection.capture_delay", 50);
 pref("media.getusermedia.playout_delay", 50);
 pref("media.navigator.audio.full_duplex", false);
 #endif
-
-
-pref("media.navigator.mediadatadecoder_enabled", false);
 #endif
 
 pref("dom.webaudio.enabled", true);
@@ -642,7 +639,7 @@ pref("media.decoder.skip-to-next-key-frame.enabled", true);
 
 
 
-pref("media.cubeb.logging_level", "");
+pref("media.cubeb.log_level", "");
 
 
 pref("media.playback.warnings-as-errors", false);
@@ -720,6 +717,7 @@ pref("apz.overscroll.stretch_factor", "0.35");
 pref("apz.paint_skipping.enabled", true);
 
 pref("apz.peek_messages.enabled", true);
+pref("apz.popups.enabled", false);
 
 
 pref("apz.printtree", false);
@@ -5673,6 +5671,9 @@ pref("dom.input.fallbackUploadDir", "");
 
 
 pref("plugins.rewrite_youtube_embeds", true);
+
+
+pref("plugins.navigator_hide_disabled_flash", false);
 
 
 pref("dom.mozBrowserFramesEnabled", false);
