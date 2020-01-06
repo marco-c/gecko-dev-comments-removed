@@ -1119,12 +1119,30 @@ nsDisplayListBuilder::FindAnimatedGeometryRootFor(nsDisplayItem* aItem)
   return FindAnimatedGeometryRootFor(aItem->Frame());
 }
 
+static bool
+AnyContentAncestorModified(nsIFrame* aFrame,
+                           nsIFrame* aStopAtFrame = nullptr)
+{
+  for (nsIFrame* f = aFrame; f;
+       f = nsLayoutUtils::GetParentOrPlaceholderForCrossDoc(f)) {
+    if (f->IsFrameModified()) {
+      return true;
+    }
+
+    if (aStopAtFrame && f == aStopAtFrame) {
+      break;
+    }
+  }
+
+  return false;
+}
 
 void nsDisplayListBuilder::MarkOutOfFlowFrameForDisplay(nsIFrame* aDirtyFrame,
                                                         nsIFrame* aFrame)
 {
   nsRect visible = GetVisibleRect();
   nsRect dirtyRectRelativeToDirtyFrame = GetDirtyRect();
+
   if (nsLayoutUtils::IsFixedPosFrameInDisplayPort(aFrame) &&
       IsPaintingToWindow()) {
     NS_ASSERTION(aDirtyFrame == aFrame->GetParent(), "Dirty frame should be viewport frame");
@@ -1166,6 +1184,14 @@ void nsDisplayListBuilder::MarkOutOfFlowFrameForDisplay(nsIFrame* aDirtyFrame,
   if (!(aFrame->GetStateBits() & NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO) &&
       visible.IsEmpty()) {
     return;
+  }
+
+  
+  
+  
+  
+  if (AnyContentAncestorModified(aFrame, aDirtyFrame)) {
+    dirty = visible;
   }
 
   
