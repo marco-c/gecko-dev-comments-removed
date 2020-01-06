@@ -120,21 +120,28 @@ public:
   virtual ~nsSVGIDRenderingObserver();
 
 protected:
-  Element* GetTarget() override { return mElement.get(); }
+  Element* GetTarget() override { return mObservedElementTracker.get(); }
 
   
   virtual void DoUpdate() override;
 
-  class SourceReference : public IDTracker
+  
+
+
+
+
+  class ElementTracker final : public IDTracker
   {
   public:
-    explicit SourceReference(nsSVGIDRenderingObserver* aContainer) : mContainer(aContainer) {}
+    explicit ElementTracker(nsSVGIDRenderingObserver* aOwningObserver)
+      : mOwningObserver(aOwningObserver)
+    {}
   protected:
     virtual void ElementChanged(Element* aFrom, Element* aTo) override {
-      mContainer->StopListening();
+      mOwningObserver->StopListening(); 
       IDTracker::ElementChanged(aFrom, aTo);
-      mContainer->StartListening();
-      mContainer->DoUpdate();
+      mOwningObserver->StartListening(); 
+      mOwningObserver->DoUpdate();
     }
     
 
@@ -142,10 +149,10 @@ protected:
 
     virtual bool IsPersistent() override { return true; }
   private:
-    nsSVGIDRenderingObserver* mContainer;
+    nsSVGIDRenderingObserver* mOwningObserver;
   };
 
-  SourceReference mElement;
+  ElementTracker mObservedElementTracker;
 };
 
 struct nsSVGFrameReferenceFromProperty
