@@ -332,7 +332,7 @@ nsFileStreamBase::DoOpen()
         
         
         if (parent) {
-            Unused << parent->Create(nsIFile::DIRECTORY_TYPE, 0644);
+            Unused << parent->Create(nsIFile::DIRECTORY_TYPE, 0755);
         }
     }
 
