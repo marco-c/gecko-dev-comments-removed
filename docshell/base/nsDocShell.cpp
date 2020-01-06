@@ -13559,6 +13559,12 @@ nsDocShell::ConfirmRepost(bool* aRepost)
     return rv;
   }
 
+  
+  
+  if (nsCOMPtr<nsIWritablePropertyBag2> promptBag = do_QueryInterface(prompter)) {
+    promptBag->SetPropertyAsBool(NS_LITERAL_STRING("allowTabModal"), true);
+  }
+
   int32_t buttonPressed;
   
   
