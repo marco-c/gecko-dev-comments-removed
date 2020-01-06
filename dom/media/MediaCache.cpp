@@ -2134,22 +2134,6 @@ MediaCacheStream::FlushPartialBlockInternal(bool aNotifyAll,
 }
 
 void
-MediaCacheStream::FlushPartialBlock()
-{
-  NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
-
-  ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
-
-  
-  
-  
-  
-  FlushPartialBlockInternal(false, mon);
-
-  mMediaCache->QueueUpdate();
-}
-
-void
 MediaCacheStream::NotifyDataEndedInternal(uint32_t aLoadID,
                                           nsresult aStatus,
                                           bool aReopenOnError)

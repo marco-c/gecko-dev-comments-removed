@@ -269,9 +269,6 @@ public:
   void NotifyDataReceived(uint32_t aLoadID,
                           uint32_t aCount,
                           const uint8_t* aData);
-  
-  
-  void FlushPartialBlock();
 
   
   
@@ -448,7 +445,6 @@ private:
   
   
   int64_t GetNextCachedDataInternal(int64_t aOffset);
-  
   
   
   
