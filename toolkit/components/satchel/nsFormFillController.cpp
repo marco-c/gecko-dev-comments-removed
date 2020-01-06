@@ -11,6 +11,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h" 
 #include "mozilla/dom/HTMLInputElement.h"
+#include "mozilla/dom/PageTransitionEvent.h"
 #include "mozilla/Logging.h"
 #include "nsIFormAutoComplete.h"
 #include "nsIInputListAutoComplete.h"
@@ -981,7 +982,13 @@ nsFormFillController::HandleEvent(nsIDOMEvent* aEvent)
         }
       }
 
-      RemoveForDocument(doc);
+      
+      
+      
+      bool persisted = aEvent->InternalDOMEvent()->AsPageTransitionEvent()->Persisted();
+      if (!persisted) {
+        RemoveForDocument(doc);
+      }
     }
     break;
   default:
@@ -996,6 +1003,7 @@ nsFormFillController::HandleEvent(nsIDOMEvent* aEvent)
 void
 nsFormFillController::RemoveForDocument(nsIDocument* aDoc)
 {
+  MOZ_LOG(sLogger, LogLevel::Verbose, ("RemoveForDocument: %p", aDoc));
   for (auto iter = mPwmgrInputs.Iter(); !iter.Done(); iter.Next()) {
     const nsINode* key = iter.Key();
     if (key && (!aDoc || key->OwnerDoc() == aDoc)) {
