@@ -3,24 +3,16 @@
 
 "use strict";
 
-const {classes: Cc, interfaces: Ci} = Components;
-
-
-
-
-
-add_task(function setup() {
-  Services.prefs.setBoolPref("browser.sessionstore.restore_on_demand", true);
-
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("browser.sessionstore.restore_on_demand");
-  });
-});
-
 
 
 
 add_task(async function test_label_and_icon() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.sessionstore.restore_on_demand", true]],
+  });
+
   
   let tab = BrowserTestUtils.addTab(gBrowser, "about:robots");
   let browser = tab.linkedBrowser;
