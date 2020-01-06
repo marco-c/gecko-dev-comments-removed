@@ -19,13 +19,6 @@ use rayon;
 
 extern crate webrender_api;
 
-
-
-
-
-
-static ENABLE_RECORDING: bool = false;
-
 type WrAPI = RenderApi;
 type WrBorderStyle = BorderStyle;
 type WrBoxShadowClipMode = BoxShadowClipMode;
@@ -661,6 +654,12 @@ extern "C" {
     fn is_in_render_thread() -> bool;
     fn is_in_main_thread() -> bool;
     fn is_glcontext_egl(glcontext_ptr: *mut c_void) -> bool;
+    
+    
+    
+    
+    
+    fn gfx_use_wrench() -> bool;
     fn gfx_critical_note(msg: *const c_char);
 }
 
@@ -834,7 +833,7 @@ pub extern "C" fn wr_window_new(window_id: WrWindowId,
                                 -> bool {
     assert!(unsafe { is_in_render_thread() });
 
-    let recorder: Option<Box<ApiRecordingReceiver>> = if ENABLE_RECORDING {
+    let recorder: Option<Box<ApiRecordingReceiver>> = if unsafe { gfx_use_wrench() } {
         let name = format!("wr-record-{}.bin", window_id.0);
         Some(Box::new(BinaryRecorder::new(&PathBuf::from(name))))
     } else {
