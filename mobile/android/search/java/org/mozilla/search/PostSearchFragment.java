@@ -110,6 +110,7 @@ public class PostSearchFragment extends Fragment {
             networkError = false;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
             
