@@ -224,7 +224,7 @@ class Test(MachCommandBase):
         you specify a directory with xpcshell and browser chrome mochitests,
         both harnesses will be invoked.
         """
-        from mozbuild.testing import TestResolver
+        from moztest.resolve import TestResolver
 
         
         run_suites = set()
@@ -517,7 +517,7 @@ class CramTest(MachCommandBase):
         from manifestparser import TestManifest
 
         if test_objects is None:
-            from mozbuild.testing import TestResolver
+            from moztest.resolve import TestResolver
             resolver = self._spawn(TestResolver)
             if test_paths:
                 
@@ -627,7 +627,7 @@ class ChunkFinder(MachCommandBase):
         suite_name = kwargs['suite_name'][0]
         _, dump_tests = tempfile.mkstemp()
 
-        from mozbuild.testing import TestResolver
+        from moztest.resolve import TestResolver
         resolver = self._spawn(TestResolver)
         relpath = self._wrap_path_argument(test_path).relpath()
         tests = list(resolver.resolve_tests(paths=[relpath]))
@@ -829,7 +829,7 @@ class TestInfoCommand(MachCommandBase):
             self.full_test_name = self.test_name
 
         
-        from mozbuild.testing import TestResolver
+        from moztest.resolve import TestResolver
         resolver = self._spawn(TestResolver)
         relpath = self._wrap_path_argument(self.full_test_name).relpath()
         tests = list(resolver.resolve_tests(paths=[relpath]))

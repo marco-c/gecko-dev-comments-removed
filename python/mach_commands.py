@@ -112,7 +112,7 @@ class MachCommands(MachCommandBase):
         
         
         if test_objects is None:
-            from mozbuild.testing import TestResolver
+            from moztest.resolve import TestResolver
             resolver = self._spawn(TestResolver)
             if tests:
                 
