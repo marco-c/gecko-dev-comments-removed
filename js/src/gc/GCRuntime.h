@@ -716,7 +716,7 @@ class GCRuntime
     }
 
     void runDebugGC();
-    inline void poke();
+    void notifyRootsRemoved();
 
     enum TraceOrMarkRuntime {
         TraceRuntime,
@@ -1303,9 +1303,10 @@ class GCRuntime
 
     ActiveThreadData<bool> compactingEnabled;
 
-    ActiveThreadData<bool> poked;
+    ActiveThreadData<bool> rootsRemoved;
 
     
+
 
 
 

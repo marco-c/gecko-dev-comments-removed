@@ -41,18 +41,6 @@ GetGCObjectKind(const Class* clasp)
     return GetGCObjectKind(nslots);
 }
 
-inline void
-GCRuntime::poke()
-{
-    poked = true;
-
-#ifdef JS_GC_ZEAL
-    
-    if (hasZealMode(ZealMode::Poke))
-        nextScheduled = 1;
-#endif
-}
-
 class ArenaIter
 {
     Arena* arena;

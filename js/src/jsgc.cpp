@@ -928,7 +928,7 @@ GCRuntime::GCRuntime(JSRuntime* rt) :
     defaultTimeBudget_((int64_t) SliceBudget::UnlimitedTimeBudget),
     incrementalAllowed(true),
     compactingEnabled(true),
-    poked(false),
+    rootsRemoved(false),
 #ifdef JS_GC_ZEAL
     zealModeBits(0),
     zealFrequency(0),
@@ -969,7 +969,7 @@ const char* gc::ZealModeHelpText =
     "  \n"
     "  Values:\n"
     "    0: (None) Normal amount of collection (resets all modes)\n"
-    "    1: (Poke) Collect when roots are added or removed\n"
+    "    1: (RootsChange) Collect when roots are added or removed\n"
     "    2: (Alloc) Collect when every N allocations (default: 100)\n"
     "    3: (FrameGC) Collect when the window paints (browser only)\n"
     "    4: (VerifierPre) Verify pre write barriers between instructions\n"
@@ -1633,7 +1633,7 @@ void
 GCRuntime::removeRoot(Value* vp)
 {
     rootsHash.ref().remove(vp);
-    poke();
+    notifyRootsRemoved();
 }
 
 extern JS_FRIEND_API(bool)
@@ -3108,7 +3108,7 @@ GCRuntime::maybeGC(Zone* zone)
     MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
 
 #ifdef JS_GC_ZEAL
-    if (hasZealMode(ZealMode::Alloc) || hasZealMode(ZealMode::Poke)) {
+    if (hasZealMode(ZealMode::Alloc) || hasZealMode(ZealMode::RootsChange)) {
         JS::PrepareForFullGC(rt->activeContextFromOwnThread());
         gc(GC_NORMAL, JS::gcreason::DEBUG_GC);
         return;
@@ -6461,6 +6461,7 @@ GCRuntime::incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason rea
         cleanUpEverything = ShouldCleanUpEverything(reason, invocationKind);
         isCompacting = shouldCompact();
         lastMarkSlice = false;
+        rootsRemoved = false;
 
         incrementalState = State::MarkRoots;
 
@@ -6946,8 +6947,9 @@ bool
 GCRuntime::shouldRepeatForDeadZone(JS::gcreason::Reason reason)
 {
     MOZ_ASSERT_IF(reason == JS::gcreason::COMPARTMENT_REVIVED, !isIncremental);
+    MOZ_ASSERT(!isIncrementalGCInProgress());
 
-    if (!isIncremental || isIncrementalGCInProgress())
+    if (!isIncremental)
         return false;
 
     for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next()) {
@@ -6973,28 +6975,13 @@ GCRuntime::collect(bool nonincrementalByAPI, SliceBudget budget, JS::gcreason::R
     AutoEnqueuePendingParseTasksAfterGC aept(*this);
     AutoScheduleZonesForGC asz(rt);
 
-    bool repeat = false;
+    bool repeat;
     do {
-        poked = false;
         bool wasReset = gcCycle(nonincrementalByAPI, budget, reason) == IncrementalResult::Reset;
 
         if (reason == JS::gcreason::ABORT_GC) {
             MOZ_ASSERT(!isIncrementalGCInProgress());
             break;
-        }
-
-        bool repeatForDeadZone = false;
-        if (poked && cleanUpEverything) {
-            
-            JS::PrepareForFullGC(rt->activeContextFromOwnThread());
-        } else if (shouldRepeatForDeadZone(reason) && !wasReset) {
-            
-
-
-
-
-            repeatForDeadZone = true;
-            reason = JS::gcreason::COMPARTMENT_REVIVED;
         }
 
         
@@ -7003,7 +6990,23 @@ GCRuntime::collect(bool nonincrementalByAPI, SliceBudget budget, JS::gcreason::R
 
 
 
-        repeat = (poked && cleanUpEverything) || wasReset || repeatForDeadZone;
+
+
+
+        repeat = false;
+        if (!isIncrementalGCInProgress()) {
+            if (wasReset) {
+                repeat = true;
+            } else if (rootsRemoved && cleanUpEverything) {
+                
+                JS::PrepareForFullGC(rt->activeContextFromOwnThread());
+                repeat = true;
+                reason = JS::gcreason::ROOTS_REMOVED;
+            } else if (shouldRepeatForDeadZone(reason)) {
+                repeat = true;
+                reason = JS::gcreason::COMPARTMENT_REVIVED;
+            }
+         }
     } while (repeat);
 
     if (reason == JS::gcreason::COMPARTMENT_REVIVED)
@@ -7568,6 +7571,18 @@ GCRuntime::setFullCompartmentChecks(bool enabled)
 {
     MOZ_ASSERT(!JS::CurrentThreadIsHeapMajorCollecting());
     fullCompartmentChecks = enabled;
+}
+
+void
+GCRuntime::notifyRootsRemoved()
+{
+    rootsRemoved = true;
+
+#ifdef JS_GC_ZEAL
+    
+    if (hasZealMode(ZealMode::RootsChange))
+        nextScheduled = 1;
+#endif
 }
 
 #ifdef JS_GC_ZEAL
