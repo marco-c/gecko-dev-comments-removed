@@ -147,9 +147,23 @@ protected:
   };
 
   
+  struct MOZ_STACK_CLASS ServoCSSParsingEnvironment {
+    mozilla::URLExtraData* mUrlExtraData;
+    nsCompatibility mCompatMode;
+
+    ServoCSSParsingEnvironment(mozilla::URLExtraData* aUrlData, nsCompatibility aCompatMode)
+      : mUrlExtraData(aUrlData), mCompatMode(aCompatMode) {}
+  };
+
+  
   
   
   virtual void GetCSSParsingEnvironment(CSSParsingEnvironment& aCSSParseEnv) = 0;
+
+  
+  
+  
+  virtual ServoCSSParsingEnvironment GetServoCSSParsingEnvironment() const = 0;
 
   
   
@@ -157,11 +171,9 @@ protected:
                                               CSSParsingEnvironment& aCSSParseEnv);
 
   
-  static mozilla::URLExtraData* GetURLDataForRule(const mozilla::css::Rule* aRule);
-
   
-  
-  virtual mozilla::URLExtraData* GetURLData() const = 0;
+  static ServoCSSParsingEnvironment
+    GetServoCSSParsingEnvironmentForRule(const mozilla::css::Rule* aRule);
 
   nsresult ParsePropertyValue(const nsCSSPropertyID aPropID,
                               const nsAString& aPropValue,
