@@ -897,7 +897,7 @@ CssRuleView.prototype = {
       
       return onEditorsReady.then(() => {
         this.emit("ruleview-refreshed");
-      }, e => console.error(e));
+      }, console.error);
     }).catch(promiseWarn);
   },
 

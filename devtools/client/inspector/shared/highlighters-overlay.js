@@ -535,7 +535,7 @@ HighlightersOverlay.prototype = {
     
     let onHidden = this.highlighters[this.hoveredHighlighterShown].hide();
     if (onHidden) {
-      onHidden.catch(e => console.error(e));
+      onHidden.catch(console.error);
     }
 
     this.hoveredHighlighterShown = null;
