@@ -139,6 +139,9 @@ public:
 
   bool OnlySystemGroupDispatch(mozilla::EventMessage aMessage) const override;
 
+  
+  nsIScrollableFrame* GetScrollFrame();
+
 private:
 
   bool GetScrollToClick();

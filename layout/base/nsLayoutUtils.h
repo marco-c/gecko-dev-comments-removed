@@ -602,18 +602,6 @@ public:
   
 
 
-
-  static void SetScrollbarThumbLayerization(nsIFrame* aThumbFrame, bool aLayerize);
-
-  
-
-
-
-  static bool IsScrollbarThumbLayerized(nsIFrame* aThumbFrame);
-
-  
-
-
   static nsIScrollableFrame* GetScrollableFrameFor(const nsIFrame *aScrolledFrame);
 
   

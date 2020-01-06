@@ -85,6 +85,7 @@
 #include "nsSVGMaskFrame.h"
 #include "nsTableCellFrame.h"
 #include "nsTableColFrame.h"
+#include "nsSliderFrame.h"
 #include "ClientLayerManager.h"
 #include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
@@ -1579,7 +1580,12 @@ nsDisplayListBuilder::IsAnimatedGeometryRoot(nsIFrame* aFrame,
   
   
   if (parentType == LayoutFrameType::Slider) {
-    if (nsLayoutUtils::IsScrollbarThumbLayerized(aFrame)) {
+    nsIScrollableFrame* sf = static_cast<nsSliderFrame*>(parent)->GetScrollFrame();
+    
+    
+    
+    
+    if (sf && sf->IsMaybeScrollingActive()) {
       return AGR_YES;
     }
     maybe = true;
@@ -5038,7 +5044,7 @@ nsDisplayBorder::CreateBorderImageWebRenderCommands(mozilla::wr::DisplayListBuil
 
       gfx::IntSize size;
       Maybe<wr::ImageKey> key = aManager->CommandBuilder().CreateImageKey(this, container, aBuilder,
-                                                                          aResources, aSc, size, Nothing());
+                                                                          aResources, aSc, size);
       if (key.isNothing()) {
         return;
       }
