@@ -1040,6 +1040,14 @@ nsIFrame::MarkNeedsDisplayItemRebuild()
 
   modifiedFrames->AppendElement(this);
 
+  
+  
+  if (displayRoot != rootFrame &&
+      !displayRoot->HasProperty(nsIFrame::ModifiedFrameList())) {
+    displayRoot->SetProperty(nsIFrame::ModifiedFrameList(),
+                             new nsTArray<nsIFrame*>());
+  }
+
   MOZ_ASSERT(PresContext()->LayoutPhaseCount(eLayoutPhase_DisplayListBuilding) == 0);
   SetFrameIsModified(true);
 
