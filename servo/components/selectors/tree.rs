@@ -124,6 +124,14 @@ pub trait Element: MatchAttr + Sized {
     fn parent_element(&self) -> Option<Self>;
 
     
+    
+    
+    
+    fn pseudo_element_originating_element(&self) -> Option<Self> {
+        self.parent_element()
+    }
+
+    
     fn first_child_element(&self) -> Option<Self>;
 
     
@@ -144,6 +152,11 @@ pub trait Element: MatchAttr + Sized {
                                     context: &mut MatchingContext,
                                     flags_setter: &mut F) -> bool
         where F: FnMut(&Self, ElementSelectorFlags);
+
+    fn match_pseudo_element(&self,
+                            pe: &<Self::Impl as SelectorImpl>::PseudoElement,
+                            context: &mut MatchingContext)
+                            -> bool;
 
     fn get_id(&self) -> Option<<Self::Impl as SelectorImpl>::Identifier>;
     fn has_class(&self, name: &<Self::Impl as SelectorImpl>::ClassName) -> bool;
