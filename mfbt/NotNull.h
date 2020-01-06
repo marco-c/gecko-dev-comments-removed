@@ -63,6 +63,7 @@
 
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Move.h"
 #include <stddef.h>
 
 namespace mozilla {
@@ -102,6 +103,8 @@ template <typename T>
 class NotNull
 {
   template <typename U> friend NotNull<U> WrapNotNull(U aBasePtr);
+  template<typename U, typename... Args>
+  friend NotNull<U> MakeNotNull(Args&&... aArgs);
 
   T mBasePtr;
 
@@ -150,6 +153,22 @@ WrapNotNull(const T aBasePtr)
   NotNull<T> notNull(aBasePtr);
   MOZ_RELEASE_ASSERT(aBasePtr);
   return notNull;
+}
+
+
+
+
+template<typename T, typename... Args>
+NotNull<T>
+MakeNotNull(Args&&... aArgs)
+{
+  
+  
+  using Pointee = typename mozilla::RemoveConst<
+    typename mozilla::RemoveReference<decltype(*DeclVal<T>())>::Type>::Type;
+  static_assert(!IsArray<Pointee>::value,
+                "MakeNotNull cannot construct an array");
+  return NotNull<T>(new Pointee(Forward<Args>(aArgs)...));
 }
 
 
