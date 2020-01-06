@@ -50,7 +50,8 @@ public:
                         uint64_t aAnimationsId,
                         float* aOpacityPtr,
                         gfx::Matrix4x4* aTransformPtr,
-                        const nsTArray<wr::WrFilterOp>& aFilters = nsTArray<wr::WrFilterOp>());
+                        const nsTArray<wr::WrFilterOp>& aFilters = nsTArray<wr::WrFilterOp>(),
+                        const gfx::CompositionOp& aMixBlendMode = gfx::CompositionOp::OP_OVER);
   
   
   
