@@ -1097,6 +1097,12 @@ public:
 
   virtual void FieldSetDisabledChanged(bool aNotify);
 
+  
+
+
+
+  void UpdateDisabledState(bool aNotify);
+
   void FieldSetFirstLegendChanged(bool aNotify) {
     UpdateFieldSet(aNotify);
   }

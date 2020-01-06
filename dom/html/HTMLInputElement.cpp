@@ -1446,6 +1446,13 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
 
     if (aName == nsGkAtoms::required || aName == nsGkAtoms::disabled ||
         aName == nsGkAtoms::readonly) {
+      if (aName == nsGkAtoms::disabled) {
+        
+        
+        
+        UpdateDisabledState(aNotify);
+      }
+
       UpdateValueMissingValidityState();
 
       
@@ -7463,10 +7470,14 @@ HTMLInputElement::HasCachedSelection()
 void
 HTMLInputElement::FieldSetDisabledChanged(bool aNotify)
 {
+  
+  
+  
+  nsGenericHTMLFormElementWithState::FieldSetDisabledChanged(aNotify);
+
   UpdateValueMissingValidityState();
   UpdateBarredFromConstraintValidation();
-
-  nsGenericHTMLFormElementWithState::FieldSetDisabledChanged(aNotify);
+  UpdateState(aNotify);
 }
 
 void

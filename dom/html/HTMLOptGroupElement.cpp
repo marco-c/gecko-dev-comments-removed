@@ -102,35 +102,33 @@ HTMLOptGroupElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
                                   const nsAttrValue* aOldValue, bool aNotify)
 {
   if (aNameSpaceID == kNameSpaceID_None && aName == nsGkAtoms::disabled) {
-    
-    
-    for (nsIContent* child = nsINode::GetFirstChild(); child;
-         child = child->GetNextSibling()) {
-      if (child->IsHTMLElement(nsGkAtoms::option)) {
-        
-        child->AsElement()->UpdateState(true);
+
+    EventStates disabledStates;
+    if (aValue) {
+      disabledStates |= NS_EVENT_STATE_DISABLED;
+    } else {
+      disabledStates |= NS_EVENT_STATE_ENABLED;
+    }
+
+    EventStates oldDisabledStates = State() & DISABLED_STATES;
+    EventStates changedStates = disabledStates ^ oldDisabledStates;
+
+    if (!changedStates.IsEmpty()) {
+      ToggleStates(changedStates, aNotify);
+
+      
+      
+      for (nsIContent* child = nsINode::GetFirstChild(); child;
+           child = child->GetNextSibling()) {
+        if (auto optElement = HTMLOptionElement::FromContent(child)) {
+          optElement->OptGroupDisabledChanged(true);
+        }
       }
     }
   }
 
   return nsGenericHTMLElement::AfterSetAttr(aNameSpaceID, aName, aValue,
                                             aOldValue, aNotify);
-}
-
-EventStates
-HTMLOptGroupElement::IntrinsicState() const
-{
-  EventStates state = nsGenericHTMLElement::IntrinsicState();
-
-  if (HasAttr(kNameSpaceID_None, nsGkAtoms::disabled)) {
-    state |= NS_EVENT_STATE_DISABLED;
-    state &= ~NS_EVENT_STATE_ENABLED;
-  } else {
-    state &= ~NS_EVENT_STATE_DISABLED;
-    state |= NS_EVENT_STATE_ENABLED;
-  }
-
-  return state;
 }
 
 JSObject*

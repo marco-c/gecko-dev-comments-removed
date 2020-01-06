@@ -62,6 +62,19 @@ public:
 
   void SetSelectedInternal(bool aValue, bool aNotify);
 
+  
+
+
+
+
+  void OptGroupDisabledChanged(bool aNotify);
+
+  
+
+
+
+  void UpdateDisabledState(bool aNotify);
+
   virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                               nsIContent* aBindingParent,
                               bool aCompileEventHandlers) override;
@@ -77,7 +90,7 @@ public:
   nsresult CopyInnerTo(mozilla::dom::Element* aDest, bool aPreallocateChildren);
 
   virtual bool IsDisabled() const override {
-    return HasAttr(kNameSpaceID_None, nsGkAtoms::disabled);
+    return State().HasState(NS_EVENT_STATE_DISABLED);
   }
 
   bool Disabled() const

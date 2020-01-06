@@ -1107,6 +1107,13 @@ HTMLTextAreaElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
   if (aNameSpaceID == kNameSpaceID_None) {
     if (aName == nsGkAtoms::required || aName == nsGkAtoms::disabled ||
         aName == nsGkAtoms::readonly) {
+      if (aName == nsGkAtoms::disabled) {
+        
+        
+        
+        UpdateDisabledState(aNotify);
+      }
+
       UpdateValueMissingValidityState();
 
       
@@ -1420,10 +1427,14 @@ HTMLTextAreaElement::HasCachedSelection()
 void
 HTMLTextAreaElement::FieldSetDisabledChanged(bool aNotify)
 {
+  
+  
+  
+  nsGenericHTMLFormElementWithState::FieldSetDisabledChanged(aNotify);
+
   UpdateValueMissingValidityState();
   UpdateBarredFromConstraintValidation();
-
-  nsGenericHTMLFormElementWithState::FieldSetDisabledChanged(aNotify);
+  UpdateState(aNotify);
 }
 
 JSObject*

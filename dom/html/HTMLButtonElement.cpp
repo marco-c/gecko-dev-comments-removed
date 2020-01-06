@@ -106,9 +106,14 @@ HTMLButtonElement::UpdateBarredFromConstraintValidation()
 void
 HTMLButtonElement::FieldSetDisabledChanged(bool aNotify)
 {
-  UpdateBarredFromConstraintValidation();
 
+  
+  
+  
   nsGenericHTMLFormElementWithState::FieldSetDisabledChanged(aNotify);
+
+  UpdateBarredFromConstraintValidation();
+  UpdateState(aNotify);
 }
 
 
@@ -436,6 +441,12 @@ HTMLButtonElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
     }
 
     if (aName == nsGkAtoms::type || aName == nsGkAtoms::disabled) {
+      if (aName == nsGkAtoms::disabled) {
+        
+        
+        UpdateDisabledState(aNotify);
+      }
+
       UpdateBarredFromConstraintValidation();
     }
   }

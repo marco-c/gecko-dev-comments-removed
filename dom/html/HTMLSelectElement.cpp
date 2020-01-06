@@ -1325,6 +1325,12 @@ HTMLSelectElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
 {
   if (aNameSpaceID == kNameSpaceID_None) {
     if (aName == nsGkAtoms::disabled) {
+      
+      
+      
+      UpdateDisabledState(aNotify);
+
+      UpdateValueMissingValidityState();
       UpdateBarredFromConstraintValidation();
     } else if (aName == nsGkAtoms::required) {
       UpdateValueMissingValidityState();
@@ -1869,9 +1875,14 @@ HTMLSelectElement::UpdateBarredFromConstraintValidation()
 void
 HTMLSelectElement::FieldSetDisabledChanged(bool aNotify)
 {
-  UpdateBarredFromConstraintValidation();
-
+  
+  
+  
   nsGenericHTMLFormElementWithState::FieldSetDisabledChanged(aNotify);
+
+  UpdateValueMissingValidityState();
+  UpdateBarredFromConstraintValidation();
+  UpdateState(aNotify);
 }
 
 void
