@@ -138,14 +138,21 @@ function needHomepageOverride(prefb) {
 function getPostUpdateOverridePage(defaultOverridePage) {
   var um = Components.classes["@mozilla.org/updates/update-manager;1"]
                      .getService(Components.interfaces.nsIUpdateManager);
-  try {
-    
-    var update = um.getUpdateAt(0)
+  
+  
+  
+  if (um.activeUpdate) {
+    var update = um.activeUpdate
                    .QueryInterface(Components.interfaces.nsIPropertyBag);
-  } catch (e) {
+  } else {
     
-    Components.utils.reportError("Unable to find update: " + e);
-    return defaultOverridePage;
+    try {
+      update = um.getUpdateAt(0)
+                 .QueryInterface(Components.interfaces.nsIPropertyBag);
+    } catch (e) {
+      Components.utils.reportError("Unable to find update: " + e);
+      return defaultOverridePage;
+    }
   }
 
   let actions = update.getProperty("actions");
