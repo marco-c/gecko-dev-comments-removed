@@ -453,7 +453,7 @@ this.downloads = class extends ExtensionAPI {
             return Promise.resolve();
           }
 
-          function createTarget(downloadsDir) {
+          async function createTarget(downloadsDir) {
             let target;
             if (filename) {
               target = OS.Path.join(downloadsDir, filename);
@@ -469,46 +469,49 @@ this.downloads = class extends ExtensionAPI {
 
             
             const dir = OS.Path.dirname(target);
-            return OS.File.makeDir(dir, {from: downloadsDir}).then(() => {
-              return OS.File.exists(target);
-            }).then(exists => {
-              
-              
-              
-              
-              if (exists) {
-                switch (options.conflictAction) {
-                  case "uniquify":
-                  default:
-                    target = DownloadPaths.createNiceUniqueFile(new FileUtils.File(target)).path;
-                    break;
+            await OS.File.makeDir(dir, {from: downloadsDir});
 
-                  case "overwrite":
-                    break;
-                }
-              }
-            }).then(() => {
-              if (!options.saveAs) {
-                return Promise.resolve(target);
-              }
-
+            if (await OS.File.exists(target)) {
               
-              const picker = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-              const window = Services.wm.getMostRecentWindow("navigator:browser");
-              picker.init(window, null, Ci.nsIFilePicker.modeSave);
-              picker.displayDirectory = new FileUtils.File(dir);
-              picker.appendFilters(Ci.nsIFilePicker.filterAll);
-              picker.defaultString = OS.Path.basename(target);
-
               
-              return new Promise((resolve, reject) => {
-                picker.open(result => {
-                  if (result === Ci.nsIFilePicker.returnCancel) {
-                    reject({message: "Download canceled by the user"});
-                  } else {
-                    resolve(picker.file.path);
+              
+              
+              switch (options.conflictAction) {
+                case "uniquify":
+                default:
+                  target = DownloadPaths.createNiceUniqueFile(new FileUtils.File(target)).path;
+                  if (options.saveAs) {
+                    
+                    
+                    await OS.File.remove(target);
                   }
-                });
+                  break;
+
+                case "overwrite":
+                  break;
+              }
+            }
+
+            if (!options.saveAs) {
+              return target;
+            }
+
+            
+            const picker = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+            const window = Services.wm.getMostRecentWindow("navigator:browser");
+            picker.init(window, null, Ci.nsIFilePicker.modeSave);
+            picker.displayDirectory = new FileUtils.File(dir);
+            picker.appendFilters(Ci.nsIFilePicker.filterAll);
+            picker.defaultString = OS.Path.basename(target);
+
+            
+            return new Promise((resolve, reject) => {
+              picker.open(result => {
+                if (result === Ci.nsIFilePicker.returnCancel) {
+                  reject({message: "Download canceled by the user"});
+                } else {
+                  resolve(picker.file.path);
+                }
               });
             });
           }
