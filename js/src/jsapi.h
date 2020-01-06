@@ -5520,7 +5520,8 @@ JS_ParseJSONWithReviver(JSContext* cx, JS::HandleString str, JS::HandleValue rev
 
 
 extern JS_PUBLIC_API(bool)
-JS_SetDefaultLocale(JSContext* cx, const char* locale);
+JS_SetDefaultLocale(JSRuntime* rt, const char* locale);
+
 
 
 
@@ -5532,7 +5533,7 @@ JS_GetDefaultLocale(JSContext* cx);
 
 
 extern JS_PUBLIC_API(void)
-JS_ResetDefaultLocale(JSContext* cx);
+JS_ResetDefaultLocale(JSRuntime* rt);
 
 
 
@@ -5549,14 +5550,14 @@ struct JSLocaleCallbacks {
 
 
 extern JS_PUBLIC_API(void)
-JS_SetLocaleCallbacks(JSContext* cx, const JSLocaleCallbacks* callbacks);
+JS_SetLocaleCallbacks(JSRuntime* rt, const JSLocaleCallbacks* callbacks);
 
 
 
 
 
 extern JS_PUBLIC_API(const JSLocaleCallbacks*)
-JS_GetLocaleCallbacks(JSContext* cx);
+JS_GetLocaleCallbacks(JSRuntime* rt);
 
 
 
