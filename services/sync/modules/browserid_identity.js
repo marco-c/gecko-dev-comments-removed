@@ -257,6 +257,11 @@ this.BrowserIDManager.prototype = {
     case fxAccountsCommon.ONLOGIN_NOTIFICATION: {
       
       
+      if (Weave.Status.login == LOGIN_FAILED_LOGIN_REJECTED) {
+        Weave.Status.login = LOGIN_SUCCEEDED;
+      }
+      
+      
       
       
       
