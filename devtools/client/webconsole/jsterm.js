@@ -1006,12 +1006,7 @@ JSTerm.prototype = {
     inputNode.style.height = "auto";
 
     
-    
-    
-    let scrollHeight = inputNode.inputField ?
-      inputNode.inputField.scrollHeight : inputNode.scrollHeight;
-
-
+    let scrollHeight = inputNode.inputField.scrollHeight;
     if (scrollHeight > 0) {
       inputNode.style.height = scrollHeight + "px";
     }

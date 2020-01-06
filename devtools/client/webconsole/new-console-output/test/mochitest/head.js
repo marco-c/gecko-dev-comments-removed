@@ -254,10 +254,3 @@ function* checkClickOnNode(hud, toolbox, frameLinkNode) {
     "expected source url"
   );
 }
-
-
-
-
-function hasFocus(node) {
-  return node.ownerDocument.activeElement == node;
-}

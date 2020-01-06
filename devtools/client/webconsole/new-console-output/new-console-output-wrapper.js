@@ -60,8 +60,7 @@ NewConsoleOutputWrapper.prototype = {
       }
 
       
-      
-      if (!target.closest(".webconsole-output-wrapper")) {
+      if (!target.closest(".webconsole-output")) {
         return;
       }
 
