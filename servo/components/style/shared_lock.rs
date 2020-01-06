@@ -177,6 +177,13 @@ impl<T> Locked<T> {
     }
 
     
+    #[cfg(feature = "gecko")]
+    pub unsafe fn read_unchecked<'a>(&'a self) -> &'a T {
+        let ptr = self.data.get();
+        &*ptr
+    }
+
+    
     pub fn write_with<'a>(&'a self, guard: &'a mut SharedRwLockWriteGuard) -> &'a mut T {
         assert!(self.same_lock_as(&guard.0),
                 "Locked::write_with called with a guard from an unrelated SharedRwLock");
