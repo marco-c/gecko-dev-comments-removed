@@ -135,8 +135,9 @@ private:
 
 private:
   struct Timeouts {
-    Timeouts()
-      : mTimeoutInsertionPoint(nullptr)
+    explicit Timeouts(const TimeoutManager& aManager)
+      : mManager(aManager)
+      , mTimeoutInsertionPoint(nullptr)
     {
     }
 
@@ -196,6 +197,10 @@ private:
     friend class OrderedTimeoutIterator;
 
   private:
+    
+    
+    const TimeoutManager&     mManager;
+
     typedef mozilla::LinkedList<RefPtr<Timeout>> TimeoutList;
 
     
