@@ -1739,6 +1739,14 @@ var Scratchpad = {
     this._setupCommandListeners();
     this._updateViewMenuItems();
     this._setupPopupShowingListeners();
+
+    
+    
+    
+    if (Services.appinfo.OS == "WINNT") {
+      let helpMenu = document.getElementById("sp-help-menu");
+      helpMenu.setAttribute("accesskey", helpMenu.getAttribute("accesskeywindows"));
+    }
   },
 
   
