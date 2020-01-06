@@ -10,6 +10,7 @@ var FullZoom = {
   name: "browser.content.full-zoom",
 
   
+  
   _siteSpecificPref: undefined,
 
   
@@ -25,6 +26,11 @@ var FullZoom = {
   _initialLocations: new WeakMap(),
 
   get siteSpecific() {
+    if (this._siteSpecificPref === undefined) {
+      this._siteSpecificPref =
+        !gPrefService.getBoolPref("privacy.resistFingerprinting") &&
+        gPrefService.getBoolPref("browser.zoom.siteSpecific");
+    }
     return this._siteSpecificPref;
   },
 
@@ -46,13 +52,16 @@ var FullZoom = {
                  getService(Ci.nsIContentPrefService2);
     this._cps2.addObserverForName(this.name, this);
 
-    this._siteSpecificPref =
-      gPrefService.getBoolPref("browser.zoom.siteSpecific");
     this.updateBackgroundTabs =
       gPrefService.getBoolPref("browser.zoom.updateBackgroundTabs");
+
     
     
     gPrefService.addObserver("browser.zoom.", this, true);
+
+    
+    
+    gPrefService.addObserver("privacy.resistFingerprinting", this, true);
 
     
     
@@ -93,9 +102,11 @@ var FullZoom = {
     switch (aTopic) {
       case "nsPref:changed":
         switch (aData) {
+          case "privacy.resistFingerprinting":
+            
           case "browser.zoom.siteSpecific":
-            this._siteSpecificPref =
-              gPrefService.getBoolPref("browser.zoom.siteSpecific");
+            
+            this._siteSpecificPref = undefined;
             break;
           case "browser.zoom.updateBackgroundTabs":
             this.updateBackgroundTabs =
