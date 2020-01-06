@@ -227,7 +227,6 @@ struct RangePaintInfo {
   RangePaintInfo(nsRange* aRange, nsIFrame* aFrame)
     : mRange(aRange)
     , mBuilder(aFrame, nsDisplayListBuilderMode::PAINTING, false)
-    , mList(&mBuilder)
   {
     MOZ_COUNT_CTOR(RangePaintInfo);
     mBuilder.BeginFrame();
@@ -4238,12 +4237,6 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
     
     if (!mIsDestroying) {
       nsAutoScriptBlocker scriptBlocker;
-#ifdef MOZ_GECKO_PROFILER
-      AutoProfilerTracing tracingStyleFlush("Paint", "Styles",
-                                            Move(mStyleCause));
-      mStyleCause = nullptr;
-#endif
-
       mPresContext->RestyleManager()->ProcessPendingRestyles();
     }
 
@@ -4258,11 +4251,6 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
                         ? FlushType::Layout
                         : FlushType::InterruptibleLayout) &&
         !mIsDestroying) {
-#ifdef MOZ_GECKO_PROFILER
-      AutoProfilerTracing tracingLayoutFlush("Paint", "Reflow",
-                                              Move(mReflowCause));
-      mReflowCause = nullptr;
-#endif
       didLayoutFlush = true;
       mFrameConstructor->RecalcQuotesAndCounters();
       viewManager->FlushDelayedResize(true);
@@ -4805,7 +4793,7 @@ PresShell::ClipListToRange(nsDisplayListBuilder *aBuilder,
   
   
   nsRect surfaceRect;
-  nsDisplayList tmpList(aBuilder);
+  nsDisplayList tmpList;
 
   nsDisplayItem* i;
   while ((i = aList->RemoveBottom())) {

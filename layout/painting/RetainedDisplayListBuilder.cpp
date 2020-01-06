@@ -86,7 +86,7 @@ void
 RetainedDisplayListBuilder::PreProcessDisplayList(nsDisplayList* aList,
                                                   AnimatedGeometryRoot* aAGR)
 {
-  nsDisplayList saved(&mBuilder);
+  nsDisplayList saved;
   while (nsDisplayItem* i = aList->RemoveBottom()) {
     if (i->HasDeletedFrame() || !i->CanBeReused()) {
       i->Destroy(&mBuilder);
@@ -353,7 +353,7 @@ RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
                                               nsDisplayList* aOutList,
                                               Maybe<const ActiveScrolledRoot*>& aOutContainerASR)
 {
-  nsDisplayList merged(&mBuilder);
+  nsDisplayList merged;
   const auto UseItem = [&](nsDisplayItem* aItem) {
     const ActiveScrolledRoot* itemClipASR =
       aItem->GetClipChain() ? aItem->GetClipChain()->mASR : nullptr;
@@ -433,7 +433,7 @@ RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
             
             
             if (old->GetChildren()) {
-              nsDisplayList empty(&mBuilder);
+              nsDisplayList empty;
               Maybe<const ActiveScrolledRoot*> containerASRForChildren;
               MergeDisplayLists(&empty, old->GetChildren(),
                                 old->GetChildren(), containerASRForChildren);
@@ -490,7 +490,7 @@ RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
         
         
         
-        nsDisplayList empty(&mBuilder);
+        nsDisplayList empty;
         Maybe<const ActiveScrolledRoot*> containerASRForChildren;
 
         MergeDisplayLists(&empty, old->GetChildren(),
@@ -822,7 +822,7 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop)
 
     PreProcessDisplayList(&mList, modifiedAGR);
 
-    nsDisplayList modifiedDL(&mBuilder);
+    nsDisplayList modifiedDL;
     if (!modifiedDirty.IsEmpty() || !framesWithProps.IsEmpty()) {
       mBuilder.SetDirtyRect(modifiedDirty);
       mBuilder.SetPartialUpdate(true);

@@ -240,7 +240,7 @@ TEST(ArenaAllocator, Clear)
   
   
   
-  static const size_t kArenaSize = 64;
+  static const size_t kArenaSize = 128;
   ArenaAllocator<kArenaSize> a;
 
   
