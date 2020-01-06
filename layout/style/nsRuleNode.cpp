@@ -2678,6 +2678,42 @@ nsRuleNode::WalkRuleTree(const nsStyleStructID aSID,
              "not forcing detail to eRulePartialMixed just below is no "
              "longer valid");
 
+  if (detail == eRuleNone && isReset) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (ruleData.mConditions.CacheableWithDependencies()) {
+      MOZ_ASSERT(pseudoRestriction,
+                 "should only be cacheable with dependencies if we had a "
+                 "pseudo restriction");
+      ruleData.mConditions.Clear();
+    } else {
+      
+      
+      
+      MOZ_ASSERT(ruleData.mConditions.CacheableWithoutDependencies() ||
+                 ((HasAnimationData() ||
+                   GetLevel() == SheetType::Transition) &&
+                  aContext->GetParent() &&
+                  aContext->GetParent()->HasPseudoElementData()),
+                 "should only be uncacheable if we had an animation rule "
+                 "and we're inside a pseudo");
+    }
+  }
+
   if (!ruleData.mConditions.CacheableWithoutDependencies() &&
       aSID != eStyleStruct_Variables) {
     
