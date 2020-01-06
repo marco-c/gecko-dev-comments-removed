@@ -525,6 +525,13 @@ HTMLEditor::SplitStyleAbovePoint(nsCOMPtr<nsINode>* aNode,
   NS_ENSURE_TRUE(aNode && *aNode && aOffset, NS_ERROR_NULL_POINTER);
   NS_ENSURE_TRUE((*aNode)->IsContent(), NS_OK);
 
+  if (aOutLeftNode) {
+    *aOutLeftNode = nullptr;
+  }
+  if (aOutRightNode) {
+    *aOutRightNode = nullptr;
+  }
+
   
   OwningNonNull<nsIContent> node = *(*aNode)->AsContent();
 
@@ -553,13 +560,21 @@ HTMLEditor::SplitStyleAbovePoint(nsCOMPtr<nsINode>* aNode,
         
         isSet) {
       
-      int32_t offset = SplitNodeDeep(*node, *(*aNode)->AsContent(), *aOffset,
-                                     SplitAtEdges::eAllowToCreateEmptyContainer,
-                                     aOutLeftNode, aOutRightNode);
-      NS_ENSURE_TRUE(offset != -1, NS_ERROR_FAILURE);
-      
-      *aNode = node->GetParent();
-      *aOffset = offset;
+      SplitNodeResult splitNodeResult =
+        SplitNodeDeep(*node, EditorRawDOMPoint(*aNode, *aOffset),
+                      SplitAtEdges::eAllowToCreateEmptyContainer);
+      NS_WARNING_ASSERTION(splitNodeResult.Succeeded(),
+        "Failed to split the node");
+
+      EditorRawDOMPoint atRightNode(splitNodeResult.SplitPoint());
+      *aNode = atRightNode.Container();
+      *aOffset = atRightNode.Offset();
+      if (aOutLeftNode) {
+        NS_IF_ADDREF(*aOutLeftNode = splitNodeResult.GetPreviousNode());
+      }
+      if (aOutRightNode) {
+        NS_IF_ADDREF(*aOutRightNode = splitNodeResult.GetNextNode());
+      }
     }
     node = node->GetParent();
   }

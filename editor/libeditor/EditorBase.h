@@ -122,6 +122,7 @@ class InsertTextTransaction;
 class JoinNodeTransaction;
 class PlaceholderTransaction;
 class RemoveStyleSheetTransaction;
+class SplitNodeResult;
 class SplitNodeTransaction;
 class TextComposition;
 class TextEditor;
@@ -224,7 +225,6 @@ enum class SplitAtEdges
   
   eAllowToCreateEmptyContainer
 };
-
 
 
 
@@ -479,7 +479,7 @@ protected:
 
 
   already_AddRefed<Element> CreateNode(nsAtom* aTag,
-                                       EditorRawDOMPoint& aPointToInsert);
+                                       const EditorRawDOMPoint& aPointToInsert);
 
   
 
@@ -1147,13 +1147,28 @@ public:
 
   nsresult IsPreformatted(nsIDOMNode* aNode, bool* aResult);
 
-  int32_t SplitNodeDeep(nsIContent& aNode, nsIContent& aSplitPointParent,
-                        int32_t aSplitPointOffset,
-                        SplitAtEdges aSplitAtEdges,
-                        nsIContent** outLeftNode = nullptr,
-                        nsIContent** outRightNode = nullptr,
-                        nsCOMPtr<nsIContent>* ioChildAtSplitPointOffset =
-                          nullptr);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  SplitNodeResult
+  SplitNodeDeep(nsIContent& aMostAncestorToSplit,
+                const EditorRawDOMPoint& aDeepestStartOfRightNode,
+                SplitAtEdges aSplitAtEdges);
+
   EditorDOMPoint JoinNodeDeep(nsIContent& aLeftNode,
                               nsIContent& aRightNode);
 

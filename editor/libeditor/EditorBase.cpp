@@ -1419,15 +1419,17 @@ EditorBase::SetSpellcheckUserOverride(bool enable)
 
 already_AddRefed<Element>
 EditorBase::CreateNode(nsAtom* aTag,
-                       EditorRawDOMPoint& aPointToInsert)
+                       const EditorRawDOMPoint& aPointToInsert)
 {
   MOZ_ASSERT(aTag);
   MOZ_ASSERT(aPointToInsert.IsSetAndValid());
 
+  EditorRawDOMPoint pointToInsert(aPointToInsert);
+
   
   
   
-  int32_t offset = static_cast<int32_t>(aPointToInsert.Offset());
+  int32_t offset = static_cast<int32_t>(pointToInsert.Offset());
 
   AutoRules beginRulesSniffing(this, EditAction::createNode, nsIEditor::eNext);
 
@@ -1435,14 +1437,14 @@ EditorBase::CreateNode(nsAtom* aTag,
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
       listener->WillCreateNode(nsDependentAtomString(aTag),
-                               GetAsDOMNode(aPointToInsert.GetChildAtOffset()));
+                               GetAsDOMNode(pointToInsert.GetChildAtOffset()));
     }
   }
 
   nsCOMPtr<Element> ret;
 
   RefPtr<CreateElementTransaction> transaction =
-    CreateTxnForCreateElement(*aTag, aPointToInsert);
+    CreateTxnForCreateElement(*aTag, pointToInsert);
   nsresult rv = DoTransaction(transaction);
   if (NS_SUCCEEDED(rv)) {
     ret = transaction->GetNewNode();
@@ -1450,10 +1452,10 @@ EditorBase::CreateNode(nsAtom* aTag,
     
     
     
-    aPointToInsert.Set(ret);
+    pointToInsert.Set(ret);
   }
 
-  mRangeUpdater.SelAdjCreateNode(aPointToInsert.Container(), offset);
+  mRangeUpdater.SelAdjCreateNode(pointToInsert.Container(), offset);
 
   {
     AutoActionListenerArray listeners(mActionListeners);
@@ -4042,48 +4044,28 @@ EditorBase::IsPreformatted(nsIDOMNode* aNode,
   return NS_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int32_t
-EditorBase::SplitNodeDeep(nsIContent& aNode,
-                          nsIContent& aSplitPointParent,
-                          int32_t aSplitPointOffset,
-                          SplitAtEdges aSplitAtEdges,
-                          nsIContent** aOutLeftNode,
-                          nsIContent** aOutRightNode,
-                          nsCOMPtr<nsIContent>* ioChildAtSplitPointOffset)
+SplitNodeResult
+EditorBase::SplitNodeDeep(nsIContent& aMostAncestorToSplit,
+                          const EditorRawDOMPoint& aStartOfDeepestRightNode,
+                          SplitAtEdges aSplitAtEdges)
 {
-  MOZ_ASSERT(&aSplitPointParent == &aNode ||
-             EditorUtils::IsDescendantOf(aSplitPointParent, aNode));
+  MOZ_ASSERT(aStartOfDeepestRightNode.IsSetAndValid());
+  MOZ_ASSERT(aStartOfDeepestRightNode.Container() == &aMostAncestorToSplit ||
+             EditorUtils::IsDescendantOf(*aStartOfDeepestRightNode.Container(),
+                                         aMostAncestorToSplit));
 
-  int32_t offset =
-    std::min(std::max(aSplitPointOffset, 0),
-             static_cast<int32_t>(aSplitPointParent.Length()));
-  EditorDOMPoint atStartOfRightNode(&aSplitPointParent, offset);
-  if (NS_WARN_IF(!atStartOfRightNode.IsSet())) {
-    return -1;
+  if (NS_WARN_IF(!aStartOfDeepestRightNode.IsSet())) {
+    return SplitNodeResult(NS_ERROR_INVALID_ARG);
   }
-  MOZ_ASSERT(atStartOfRightNode.IsSetAndValid());
 
-  nsCOMPtr<nsIContent> leftNode, rightNode;
+  nsCOMPtr<nsIContent> newLeftNodeOfMostAncestor;
+  EditorDOMPoint atStartOfRightNode(aStartOfDeepestRightNode);
   while (true) {
     
     
-    if (NS_WARN_IF(atStartOfRightNode.Container() != &aNode &&
+    if (NS_WARN_IF(atStartOfRightNode.Container() != &aMostAncestorToSplit &&
                    !atStartOfRightNode.Container()->GetParent())) {
-      return -1;
+      return SplitNodeResult(NS_ERROR_FAILURE);
     }
 
     
@@ -4092,7 +4074,7 @@ EditorBase::SplitNodeDeep(nsIContent& aNode,
     
 
     if (NS_WARN_IF(!atStartOfRightNode.Container()->IsContent())) {
-      return -1;
+      return SplitNodeResult(NS_ERROR_FAILURE);
     }
     nsIContent* currentRightNode = atStartOfRightNode.Container()->AsContent();
 
@@ -4103,11 +4085,15 @@ EditorBase::SplitNodeDeep(nsIContent& aNode,
         (!atStartOfRightNode.IsStartOfContainer() &&
          !atStartOfRightNode.IsEndOfContainer())) {
       ErrorResult error;
-      rightNode = currentRightNode;
-      leftNode = SplitNode(atStartOfRightNode.AsRaw(), error);
+      nsCOMPtr<nsIContent> newLeftNode =
+        SplitNode(atStartOfRightNode.AsRaw(), error);
       if (NS_WARN_IF(error.Failed())) {
-        error.SuppressException();
-        return -1;
+        return SplitNodeResult(NS_ERROR_FAILURE);
+      }
+
+      if (currentRightNode == &aMostAncestorToSplit) {
+        
+        return SplitNodeResult(newLeftNode, &aMostAncestorToSplit);
       }
 
       
@@ -4116,12 +4102,9 @@ EditorBase::SplitNodeDeep(nsIContent& aNode,
     
     
     else if (!atStartOfRightNode.IsStartOfContainer()) {
-      
-      
-      
-      
-      
-      leftNode = currentRightNode;
+      if (currentRightNode == &aMostAncestorToSplit) {
+        return SplitNodeResult(&aMostAncestorToSplit, nullptr);
+      }
 
       
       atStartOfRightNode.Set(currentRightNode);
@@ -4132,34 +4115,16 @@ EditorBase::SplitNodeDeep(nsIContent& aNode,
     
     
     else {
-      
-      
-      
-      
-      
-      rightNode = currentRightNode;
+      if (currentRightNode == &aMostAncestorToSplit) {
+        return SplitNodeResult(nullptr, &aMostAncestorToSplit);
+      }
 
       
       atStartOfRightNode.Set(currentRightNode);
     }
-
-    if (currentRightNode == &aNode) {
-      
-      break;
-    }
   }
 
-  if (aOutLeftNode) {
-    leftNode.forget(aOutLeftNode);
-  }
-  if (aOutRightNode) {
-    rightNode.forget(aOutRightNode);
-  }
-  if (ioChildAtSplitPointOffset) {
-    *ioChildAtSplitPointOffset = atStartOfRightNode.GetChildAtOffset();
-  }
-
-  return atStartOfRightNode.Offset();
+  return SplitNodeResult(NS_ERROR_FAILURE);
 }
 
 

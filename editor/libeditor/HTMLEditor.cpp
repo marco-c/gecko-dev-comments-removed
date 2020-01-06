@@ -1619,19 +1619,18 @@ HTMLEditor::InsertNodeAtPoint(nsIDOMNode* aNode,
     parent = parent->GetParent();
   }
   if (parent != topChild) {
-    nsCOMPtr<nsIContent> child;
-    if (ioChildAtOffset) {
-      child = do_QueryInterface(*ioChildAtOffset);
-    }
     
-    int32_t offset = SplitNodeDeep(*topChild, *origParent, *ioOffset,
-                                   aSplitAtEdges,
-                                   nullptr, nullptr, address_of(child));
-    NS_ENSURE_STATE(offset != -1);
-    *ioParent = GetAsDOMNode(parent);
-    *ioOffset = offset;
+    SplitNodeResult splitNodeResult =
+      SplitNodeDeep(*topChild, EditorRawDOMPoint(origParent, *ioOffset),
+                    aSplitAtEdges);
+    if (NS_WARN_IF(splitNodeResult.Failed())) {
+      return splitNodeResult.Rv();
+    }
+    EditorRawDOMPoint splitPoint(splitNodeResult.SplitPoint());
+    *ioParent = GetAsDOMNode(splitPoint.Container());
+    *ioOffset = splitPoint.Offset();
     if (ioChildAtOffset) {
-      *ioChildAtOffset = GetAsDOMNode(child);
+      *ioChildAtOffset = GetAsDOMNode(splitPoint.GetChildAtOffset());
     }
   }
   
@@ -1975,52 +1974,56 @@ HTMLEditor::MakeOrChangeList(const nsAString& aListType,
     return rv;
   }
 
-  if (!handled) {
-    
-    bool isCollapsed = selection->Collapsed();
-
-    NS_ENSURE_TRUE(selection->GetRangeAt(0) &&
-                   selection->GetRangeAt(0)->GetStartContainer() &&
-                   selection->GetRangeAt(0)->GetStartContainer()->IsContent(),
-                   NS_ERROR_FAILURE);
-    OwningNonNull<nsIContent> node =
-      *selection->GetRangeAt(0)->GetStartContainer()->AsContent();
-    int32_t offset = selection->GetRangeAt(0)->StartOffset();
-    nsCOMPtr<nsIContent> child =
-      selection->GetRangeAt(0)->GetChildAtStartOffset();
-
-    if (isCollapsed) {
-      
-      nsCOMPtr<nsIContent> parent = node;
-      nsCOMPtr<nsIContent> topChild = node;
-
-      RefPtr<nsAtom> listAtom = NS_Atomize(aListType);
-      while (!CanContainTag(*parent, *listAtom)) {
-        topChild = parent;
-        parent = parent->GetParent();
-      }
-
-      if (parent != node) {
-        
-        offset = SplitNodeDeep(*topChild, *node, offset,
-                               SplitAtEdges::eAllowToCreateEmptyContainer,
-                               nullptr, nullptr,
-                               address_of(child));
-        NS_ENSURE_STATE(offset != -1);
-      }
-
-      
-      MOZ_DIAGNOSTIC_ASSERT(child);
-      EditorRawDOMPoint atChild(parent, child, offset);
-      RefPtr<Element> newList = CreateNode(listAtom, atChild);
-      NS_ENSURE_STATE(newList);
-      
-      EditorRawDOMPoint atStartOfNewList(newList, 0);
-      RefPtr<Element> newItem = CreateNode(nsGkAtoms::li, atStartOfNewList);
-      NS_ENSURE_STATE(newItem);
-      rv = selection->Collapse(newItem, 0);
-      NS_ENSURE_SUCCESS(rv, rv);
+  if (!handled && selection->Collapsed()) {
+    nsRange* firstRange = selection->GetRangeAt(0);
+    if (NS_WARN_IF(!firstRange)) {
+      return NS_ERROR_FAILURE;
     }
+
+    EditorRawDOMPoint atStartOfSelection(firstRange->StartRef());
+    if (NS_WARN_IF(!atStartOfSelection.IsSet()) ||
+        NS_WARN_IF(!atStartOfSelection.Container()->IsContent())) {
+      return NS_ERROR_FAILURE;
+    }
+
+    
+    EditorDOMPoint pointToInsertList(atStartOfSelection);
+
+    RefPtr<nsAtom> listAtom = NS_Atomize(aListType);
+    while (!CanContainTag(*pointToInsertList.Container(), *listAtom)) {
+      pointToInsertList.Set(pointToInsertList.Container());
+      if (NS_WARN_IF(!pointToInsertList.IsSet()) ||
+          NS_WARN_IF(!pointToInsertList.Container()->IsContent())) {
+        return NS_ERROR_FAILURE;
+      }
+    }
+
+    if (pointToInsertList.Container() != atStartOfSelection.Container()) {
+      
+      SplitNodeResult splitNodeResult =
+        SplitNodeDeep(*pointToInsertList.GetChildAtOffset(),
+                      atStartOfSelection,
+                      SplitAtEdges::eAllowToCreateEmptyContainer);
+      if (NS_WARN_IF(splitNodeResult.Failed())) {
+        return splitNodeResult.Rv();
+      }
+      pointToInsertList = splitNodeResult.SplitPoint();
+      if (NS_WARN_IF(!pointToInsertList.IsSet())) {
+        return NS_ERROR_FAILURE;
+      }
+    }
+
+    
+    
+    
+    RefPtr<Element> newList = CreateNode(listAtom, pointToInsertList.AsRaw());
+    NS_ENSURE_STATE(newList);
+    
+    EditorRawDOMPoint atStartOfNewList(newList, 0);
+    RefPtr<Element> newItem = CreateNode(nsGkAtoms::li, atStartOfNewList);
+    NS_ENSURE_STATE(newItem);
+    rv = selection->Collapse(newItem, 0);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   return rules->DidDoAction(selection, &ruleInfo, rv);
@@ -2120,51 +2123,55 @@ HTMLEditor::InsertBasicBlock(const nsAString& aBlockType)
     return rv;
   }
 
-  if (!handled) {
-    
-    bool isCollapsed = selection->Collapsed();
-
-    NS_ENSURE_TRUE(selection->GetRangeAt(0) &&
-                   selection->GetRangeAt(0)->GetStartContainer() &&
-                   selection->GetRangeAt(0)->GetStartContainer()->IsContent(),
-                   NS_ERROR_FAILURE);
-    OwningNonNull<nsIContent> node =
-      *selection->GetRangeAt(0)->GetStartContainer()->AsContent();
-    int32_t offset = selection->GetRangeAt(0)->StartOffset();
-    nsCOMPtr<nsIContent> child =
-      selection->GetRangeAt(0)->GetChildAtStartOffset();
-
-    if (isCollapsed) {
-      
-      nsCOMPtr<nsIContent> parent = node;
-      nsCOMPtr<nsIContent> topChild = node;
-
-      RefPtr<nsAtom> blockAtom = NS_Atomize(aBlockType);
-      while (!CanContainTag(*parent, *blockAtom)) {
-        NS_ENSURE_TRUE(parent->GetParent(), NS_ERROR_FAILURE);
-        topChild = parent;
-        parent = parent->GetParent();
-      }
-
-      if (parent != node) {
-        
-        offset = SplitNodeDeep(*topChild, *node, offset,
-                               SplitAtEdges::eAllowToCreateEmptyContainer,
-                               nullptr, nullptr,
-                               address_of(child));
-        NS_ENSURE_STATE(offset != -1);
-      }
-
-      
-      MOZ_DIAGNOSTIC_ASSERT(child);
-      EditorRawDOMPoint atChild(parent, child, offset);
-      RefPtr<Element> newBlock = CreateNode(blockAtom, atChild);
-      NS_ENSURE_STATE(newBlock);
-
-      
-      rv = selection->Collapse(newBlock, 0);
-      NS_ENSURE_SUCCESS(rv, rv);
+  if (!handled && selection->Collapsed()) {
+    nsRange* firstRange = selection->GetRangeAt(0);
+    if (NS_WARN_IF(!firstRange)) {
+      return NS_ERROR_FAILURE;
     }
+
+    EditorRawDOMPoint atStartOfSelection(firstRange->StartRef());
+    if (NS_WARN_IF(!atStartOfSelection.IsSet()) ||
+        NS_WARN_IF(!atStartOfSelection.Container()->IsContent())) {
+      return NS_ERROR_FAILURE;
+    }
+
+    
+    EditorDOMPoint pointToInsertBlock(atStartOfSelection);
+
+    RefPtr<nsAtom> blockAtom = NS_Atomize(aBlockType);
+    while (!CanContainTag(*pointToInsertBlock.Container(), *blockAtom)) {
+      pointToInsertBlock.Set(pointToInsertBlock.Container());
+      if (NS_WARN_IF(!pointToInsertBlock.IsSet()) ||
+          NS_WARN_IF(!pointToInsertBlock.Container()->IsContent())) {
+        return NS_ERROR_FAILURE;
+      }
+    }
+
+    if (pointToInsertBlock.Container() != atStartOfSelection.Container()) {
+      
+      SplitNodeResult splitBlockResult =
+        SplitNodeDeep(*pointToInsertBlock.GetChildAtOffset(),
+                      atStartOfSelection,
+                      SplitAtEdges::eAllowToCreateEmptyContainer);
+      if (NS_WARN_IF(splitBlockResult.Failed())) {
+        return splitBlockResult.Rv();
+      }
+      pointToInsertBlock = splitBlockResult.SplitPoint();
+      if (NS_WARN_IF(!pointToInsertBlock.IsSet())) {
+        return NS_ERROR_FAILURE;
+      }
+    }
+
+    
+    
+    
+    RefPtr<Element> newBlock =
+      CreateNode(blockAtom, pointToInsertBlock.AsRaw());
+    NS_ENSURE_STATE(newBlock);
+
+    
+    rv = selection->Collapse(newBlock, 0);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   return rules->DidDoAction(selection, &ruleInfo, rv);
@@ -2198,57 +2205,62 @@ HTMLEditor::Indent(const nsAString& aIndent)
     return rv;
   }
 
-  if (!handled) {
+  if (!handled && selection->Collapsed() && aIndent.EqualsLiteral("indent")) {
+    nsRange* firstRange = selection->GetRangeAt(0);
+    if (NS_WARN_IF(!firstRange)) {
+      return NS_ERROR_FAILURE;
+    }
+
+    EditorRawDOMPoint atStartOfSelection(firstRange->StartRef());
+    if (NS_WARN_IF(!atStartOfSelection.IsSet()) ||
+        NS_WARN_IF(!atStartOfSelection.Container()->IsContent())) {
+      return NS_ERROR_FAILURE;
+    }
+
     
-    bool isCollapsed = selection->Collapsed();
+    EditorDOMPoint pointToInsertBlockquote(atStartOfSelection);
 
-    NS_ENSURE_TRUE(selection->GetRangeAt(0) &&
-                   selection->GetRangeAt(0)->GetStartContainer() &&
-                   selection->GetRangeAt(0)->GetStartContainer()->IsContent(),
-                   NS_ERROR_FAILURE);
-    OwningNonNull<nsIContent> node =
-      *selection->GetRangeAt(0)->GetStartContainer()->AsContent();
-    int32_t offset = selection->GetRangeAt(0)->StartOffset();
-    nsCOMPtr<nsIContent> child =
-      selection->GetRangeAt(0)->GetChildAtStartOffset();
-
-    if (aIndent.EqualsLiteral("indent")) {
-      if (isCollapsed) {
-        
-        nsCOMPtr<nsIContent> parent = node;
-        nsCOMPtr<nsIContent> topChild = node;
-        while (!CanContainTag(*parent, *nsGkAtoms::blockquote)) {
-          NS_ENSURE_TRUE(parent->GetParent(), NS_ERROR_FAILURE);
-          topChild = parent;
-          parent = parent->GetParent();
-        }
-
-        if (parent != node) {
-          
-          offset = SplitNodeDeep(*topChild, *node, offset,
-                                 SplitAtEdges::eAllowToCreateEmptyContainer,
-                                 nullptr, nullptr,
-                                 address_of(child));
-          NS_ENSURE_STATE(offset != -1);
-        }
-
-        
-        MOZ_DIAGNOSTIC_ASSERT(child);
-        EditorRawDOMPoint atChild(parent, child, offset);
-        RefPtr<Element> newBQ = CreateNode(nsGkAtoms::blockquote, atChild);
-        NS_ENSURE_STATE(newBQ);
-        
-        rv = selection->Collapse(newBQ, 0);
-        NS_ENSURE_SUCCESS(rv, rv);
-        rv = InsertText(NS_LITERAL_STRING(" "));
-        NS_ENSURE_SUCCESS(rv, rv);
-        
-        NS_ENSURE_STATE(selection->GetRangeAt(0));
-        rv = selection->Collapse(selection->GetRangeAt(0)->GetStartContainer(),
-                                 0);
-        NS_ENSURE_SUCCESS(rv, rv);
+    while (!CanContainTag(*pointToInsertBlockquote.Container(),
+                          *nsGkAtoms::blockquote)) {
+      pointToInsertBlockquote.Set(pointToInsertBlockquote.Container());
+      if (NS_WARN_IF(!pointToInsertBlockquote.IsSet()) ||
+          NS_WARN_IF(!pointToInsertBlockquote.Container()->IsContent())) {
+        return NS_ERROR_FAILURE;
       }
     }
+
+    if (pointToInsertBlockquote.Container() !=
+          atStartOfSelection.Container()) {
+      
+      SplitNodeResult splitBlockquoteResult =
+        SplitNodeDeep(*pointToInsertBlockquote.GetChildAtOffset(),
+                      atStartOfSelection,
+                      SplitAtEdges::eAllowToCreateEmptyContainer);
+      if (NS_WARN_IF(splitBlockquoteResult.Failed())) {
+        return splitBlockquoteResult.Rv();
+      }
+      pointToInsertBlockquote = splitBlockquoteResult.SplitPoint();
+      if (NS_WARN_IF(!pointToInsertBlockquote.IsSet())) {
+        return NS_ERROR_FAILURE;
+      }
+    }
+
+    
+    
+    
+    RefPtr<Element> newBQ =
+      CreateNode(nsGkAtoms::blockquote, pointToInsertBlockquote.AsRaw());
+    NS_ENSURE_STATE(newBQ);
+    
+    rv = selection->Collapse(newBQ, 0);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = InsertText(NS_LITERAL_STRING(" "));
+    NS_ENSURE_SUCCESS(rv, rv);
+    
+    NS_ENSURE_STATE(selection->GetRangeAt(0));
+    rv = selection->Collapse(selection->GetRangeAt(0)->GetStartContainer(),
+                             0);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
   return rules->DidDoAction(selection, &ruleInfo, rv);
 }
