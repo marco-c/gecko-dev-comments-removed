@@ -48,7 +48,7 @@ main(int argc, char** argv, char** envp)
 
     
     
-    setbuf(stdout, 0);
+    setbuf(stdout, nullptr);
 
 #ifdef HAS_DLL_BLOCKLIST
     DllBlocklist_Initialize();
