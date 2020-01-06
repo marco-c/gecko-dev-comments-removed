@@ -801,7 +801,9 @@ class FunctionCompiler
         
         
         
-        if ((*base)->isConstant()) {
+        if (!access->isAtomic() && !isAsmJS() && 
+            (*base)->isConstant())
+        {
             uint32_t basePtr = (*base)->toConstant()->toInt32();
             uint32_t offset = access->offset();
 
