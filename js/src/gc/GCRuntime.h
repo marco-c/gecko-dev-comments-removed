@@ -1214,7 +1214,6 @@ class GCRuntime
     
     
     
-    
     GCLockData<ChunkPool> emptyChunks_;
 
     

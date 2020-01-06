@@ -145,6 +145,7 @@ class Nursery
     unsigned numChunks() const { return chunks_.length(); }
 
     bool exists() const { return maxChunks() != 0; }
+    size_t nurserySize() const { return maxChunks() << ChunkShift; }
 
     void enable();
     void disable();
@@ -410,6 +411,8 @@ class Nursery
     Canary* lastCanary_;
 #endif
 
+    NurseryChunk* allocChunk();
+
     NurseryChunk& chunk(unsigned index) const {
         return *chunks_[index];
     }
@@ -417,11 +420,9 @@ class Nursery
     void setCurrentChunk(unsigned chunkno);
     void setStartPosition();
 
-    
-
-
-
-    MOZ_MUST_USE bool allocateFirstChunk(AutoLockGCBgAlloc& lock);
+    void updateNumChunks(unsigned newCount);
+    void updateNumChunksLocked(unsigned newCount,
+                               AutoLockGCBgAlloc& lock);
 
     MOZ_ALWAYS_INLINE uintptr_t currentEnd() const;
 
@@ -473,14 +474,9 @@ class Nursery
 
     
     void maybeResizeNursery(JS::gcreason::Reason reason);
-    bool growAllocableSpace();
-    bool growAllocableSpace(unsigned newSize);
-    void shrinkAllocableSpace(unsigned newCount);
+    void growAllocableSpace();
+    void shrinkAllocableSpace(unsigned removeNumChunks);
     void minimizeAllocableSpace();
-
-    
-    
-    void freeChunksFrom(unsigned firstFreeChunk);
 
     
     void maybeClearProfileDurations();
