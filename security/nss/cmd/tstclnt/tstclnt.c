@@ -1183,7 +1183,7 @@ run_client(void)
 
     
     if (enableAltServerHello) {
-        rv = SSL_UseAltHandshakeType(s, PR_TRUE);
+        rv = SSL_UseAltServerHelloType(s, PR_TRUE);
         if (rv != SECSuccess) {
             SECU_PrintError(progName, "error enabling alternate ServerHello type");
             error = 1;
