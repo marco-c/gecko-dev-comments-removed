@@ -1568,14 +1568,23 @@ class Assembler : public AssemblerShared
     
 
     
+    BufferOffset as_ldrexd(Register rt, Register rt2, Register rn, Condition c = Always);
+
+    
     BufferOffset as_ldrex(Register rt, Register rn, Condition c = Always);
     BufferOffset as_ldrexh(Register rt, Register rn, Condition c = Always);
     BufferOffset as_ldrexb(Register rt, Register rn, Condition c = Always);
 
     
+    BufferOffset as_strexd(Register rd, Register rt, Register rt2, Register rn, Condition c = Always);
+
+    
     BufferOffset as_strex(Register rd, Register rt, Register rn, Condition c = Always);
     BufferOffset as_strexh(Register rd, Register rt, Register rn, Condition c = Always);
     BufferOffset as_strexb(Register rd, Register rt, Register rn, Condition c = Always);
+
+    
+    BufferOffset as_clrex();
 
     
     
