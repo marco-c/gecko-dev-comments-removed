@@ -1033,6 +1033,8 @@ uprv_convertToPosix(uint32_t hostid, char *posixID, int32_t posixIDCapacity, UEr
     const char *pPosixID = NULL;
 
 #ifdef USE_WINDOWS_LCID_MAPPING_API
+    char locName[LOCALE_NAME_MAX_LENGTH] = {};      
+
     
     
     
@@ -1040,7 +1042,6 @@ uprv_convertToPosix(uint32_t hostid, char *posixID, int32_t posixIDCapacity, UEr
     if ((hostid & 0x3FF) != 0x92) {
         int32_t tmpLen = 0;
         UChar windowsLocaleName[LOCALE_NAME_MAX_LENGTH];  
-        char locName[LOCALE_NAME_MAX_LENGTH];             
 
         
         tmpLen = LCIDToLocaleName(hostid, (PWSTR)windowsLocaleName, UPRV_LENGTHOF(windowsLocaleName), LOCALE_ALLOW_NEUTRAL_NAMES);
