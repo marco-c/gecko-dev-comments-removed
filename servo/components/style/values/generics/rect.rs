@@ -12,7 +12,7 @@ use style_traits::{ToCss, ParseError};
 
 
 
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue)]
+#[derive(Clone, ComputeSquaredDistance, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Rect<T>(pub T, pub T, pub T, pub T);
 

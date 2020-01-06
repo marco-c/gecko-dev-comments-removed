@@ -24,7 +24,7 @@ pub struct Matrix<T, U = T> {
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, ComputeSquaredDistance, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue, ToCss)]
 pub struct TransformOrigin<H, V, Depth> {
     
     pub horizontal: H,
