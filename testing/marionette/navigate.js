@@ -25,34 +25,18 @@ this.navigate = {};
 
 
 
-
-
-
-navigate.isLoadEventExpected = function(current, future = undefined) {
+navigate.isLoadEventExpected = function(url) {
   
-  if (typeof current == "undefined") {
-    throw TypeError("Expected at least one URL");
+  if (typeof url == "undefined") {
+    throw TypeError("Expected destination URL");
   }
 
-  
-  if (typeof future == "undefined") {
-    return true;
-  }
-
-  let cur = new URL(current);
-  let fut = new URL(future);
-
-  
-  
-  
-  if (fut.protocol == "javascript:") {
-    return false;
-  }
-
-  
-  if (cur.href.includes("#") && fut.href.includes("#") &&
-      cur.hash === fut.hash) {
-    return false;
+  switch (new URL(url).protocol) {
+    
+    
+    
+    case "javascript:":
+      return false;
   }
 
   return true;
