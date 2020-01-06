@@ -5675,9 +5675,6 @@ pref("dom.input.fallbackUploadDir", "");
 pref("plugins.rewrite_youtube_embeds", true);
 
 
-pref("plugins.navigator_hide_disabled_flash", false);
-
-
 pref("dom.mozBrowserFramesEnabled", false);
 
 
