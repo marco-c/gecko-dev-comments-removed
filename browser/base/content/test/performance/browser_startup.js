@@ -40,7 +40,6 @@ const startupPhases = {
       
       "resource://gre/modules/AsyncPrefs.jsm", 
       "resource://gre/modules/RemotePageManager.jsm", 
-      "resource://gre/modules/Promise.jsm" 
     ])
   }},
 
@@ -77,6 +76,7 @@ const startupPhases = {
       "resource://gre/modules/NewTabUtils.jsm",
       "resource://gre/modules/PageThumbs.jsm",
       "resource://gre/modules/PlacesSyncUtils.jsm",
+      "resource://gre/modules/Promise.jsm",
       "resource://gre/modules/Sqlite.jsm",
     ]),
     services: new Set([
