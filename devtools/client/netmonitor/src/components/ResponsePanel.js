@@ -5,7 +5,7 @@
 "use strict";
 
 const {
-  createClass,
+  Component,
   createFactory,
   DOM,
   PropTypes,
@@ -34,22 +34,27 @@ const JSON_VIEW_MIME_TYPE = "application/vnd.mozilla.json.view";
 
 
 
-const ResponsePanel = createClass({
-  displayName: "ResponsePanel",
-
-  propTypes: {
-    request: PropTypes.object.isRequired,
-    openLink: PropTypes.func,
-  },
-
-  getInitialState() {
+class ResponsePanel extends Component {
+  static get propTypes() {
     return {
+      request: PropTypes.object.isRequired,
+      openLink: PropTypes.func,
+    };
+  }
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
       imageDimensions: {
         width: 0,
         height: 0,
       },
     };
-  },
+
+    this.updateImageDimemsions = this.updateImageDimemsions.bind(this);
+    this.isJSON = this.isJSON.bind(this);
+  }
 
   updateImageDimemsions({ target }) {
     this.setState({
@@ -58,7 +63,7 @@ const ResponsePanel = createClass({
         height: target.naturalHeight,
       },
     });
-  },
+  }
 
   
   
@@ -114,7 +119,7 @@ const ResponsePanel = createClass({
     }
 
     return null;
-  },
+  }
 
   render() {
     let { openLink, request } = this.props;
@@ -193,6 +198,6 @@ const ResponsePanel = createClass({
       )
     );
   }
-});
+}
 
 module.exports = ResponsePanel;
