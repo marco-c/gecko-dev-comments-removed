@@ -445,6 +445,10 @@ this.ReaderMode = {
       }
     }
 
+    
+    
+    let {documentURI} = doc;
+
     let uriParam = {
       spec: doc.baseURIObject.spec,
       host: doc.baseURIObject.host,
@@ -465,6 +469,10 @@ this.ReaderMode = {
       histogram.add(PARSE_ERROR_WORKER);
     }
 
+    
+    
+    doc = null;
+
     if (!article) {
       this.log("Worker did not return an article");
       histogram.add(PARSE_ERROR_NO_ARTICLE);
@@ -474,7 +482,7 @@ this.ReaderMode = {
     
     
     
-    article.url = doc.documentURI;
+    article.url = documentURI;
     delete article.uri;
 
     let flags = Ci.nsIDocumentEncoder.OutputSelectionOnly | Ci.nsIDocumentEncoder.OutputAbsoluteLinks;
