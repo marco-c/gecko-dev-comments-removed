@@ -284,15 +284,15 @@ function TimeKeeper(props) {
 
 
     _getSteps(startValue, endValue, minStep, formatter) {
-      const { min, max, stepInMs } = this.props;
+      const { min, max, step } = this.props;
       
       
       
-      const timeStep = Math.max(minStep, stepInMs);
+      const timeStep = Math.max(minStep, step);
 
       
       let time = min.valueOf() + Math.ceil((startValue - min.valueOf()) / timeStep) * timeStep;
-      let maxValue = min.valueOf() + Math.floor((max.valueOf() - min.valueOf()) / stepInMs) * stepInMs;
+      let maxValue = min.valueOf() + Math.floor((max.valueOf() - min.valueOf()) / step) * step;
       let steps = [];
 
       
@@ -408,9 +408,9 @@ function TimeKeeper(props) {
 
 
     _isOffStep(time) {
-      const { min, stepInMs } = this.props;
+      const { min, step } = this.props;
 
-      return (time.valueOf() - min.valueOf()) % stepInMs != 0;
+      return (time.valueOf() - min.valueOf()) % step != 0;
     }
   };
 }

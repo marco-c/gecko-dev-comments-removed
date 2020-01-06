@@ -14,8 +14,6 @@ function TimePicker(context) {
 
 {
   const DAY_PERIOD_IN_HOURS = 12,
-        SECOND_IN_MS = 1000,
-        MINUTE_IN_MS = 60000,
         DAY_IN_MS = 86400000;
 
   TimePicker.prototype = {
@@ -51,28 +49,15 @@ function TimePicker(context) {
 
       let timerHour = hour == undefined ? now.getHours() : hour;
       let timerMinute = minute == undefined ? now.getMinutes() : minute;
-
-      
       let timeKeeper = new TimeKeeper({
-        min: this._parseTimeString(min) || new Date(0),
-        max: this._parseTimeString(max) || new Date(DAY_IN_MS - 1),
-        stepInMs: step ? step * SECOND_IN_MS : MINUTE_IN_MS,
+        min: new Date(Number.isNaN(min) ? 0 : min),
+        max: new Date(Number.isNaN(max) ? DAY_IN_MS - 1 : max),
+        step,
         format: format || "12"
       });
       timeKeeper.setState({ hour: timerHour, minute: timerMinute });
 
       this.state = { timeKeeper };
-    },
-
-    
-
-
-
-
-
-    _parseTimeString(timeString) {
-      let time = new Date("1970-01-01T" + timeString + "Z");
-      return time.toString() == "Invalid Date" ? false : time;
     },
 
     
