@@ -621,11 +621,36 @@ int do_relocation_section(Elf *elf, unsigned int rel_type, unsigned int rel_type
 
     unsigned int old_end = section->getOffset() + section->getSize();
 
-    if (init_array) {
-        if (! init_array_reloc) {
+    if (init_array && !init_array_reloc) {
+        
+        
+        const size_t zero = 0;
+        const size_t all = SIZE_MAX;
+        const char *data = init_array->getData();
+        size_t length = Elf_Addr::size(elf->getClass());
+        bool empty = true;
+        for (size_t off = 0; off < init_array->getSize(); off += length) {
+            if (memcmp(data + off, &zero, length) &&
+                memcmp(data + off, &all, length)) {
+                empty = false;
+                break;
+            }
+        }
+	
+	
+	
+	
+	
+        if (empty) {
+            new_rels.emplace_back();
+            init_array_reloc = new_rels.size();
+            Rel_Type *rel = &new_rels[init_array_reloc - 1];
+            rel->r_offset = init_array->getAddr();
+        } else {
             fprintf(stderr, "Didn't find relocation for DT_INIT_ARRAY's first entry. Skipping\n");
             return -1;
         }
+    } else if (init_array) {
         Rel_Type *rel = &new_rels[init_array_reloc - 1];
         unsigned int addend = get_addend(rel, elf);
         
