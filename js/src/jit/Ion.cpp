@@ -203,7 +203,6 @@ JitRuntime::JitRuntime(JSRuntime* rt)
     argumentsRectifierReturnOffset_(0),
     invalidatorOffset_(0),
     lazyLinkStubOffset_(0),
-    lazyLinkStubEndOffset_(0),
     interpreterStubOffset_(0),
     debugTrapHandler_(nullptr),
     baselineDebugModeOSRHandler_(nullptr),
@@ -2799,17 +2798,8 @@ InvalidateActivation(FreeOp* fop, const JitActivationIterator& activations, bool
         if (!frame.isIonScripted())
             continue;
 
-        JitRuntime* jrt = fop->runtime()->jitRuntime();
-
-        bool calledFromLinkStub = false;
-        if (frame.returnAddressToFp() >= jrt->lazyLinkStub().value &&
-            frame.returnAddressToFp() < jrt->lazyLinkStubEnd().value)
-        {
-            calledFromLinkStub = true;
-        }
-
         
-        if (!calledFromLinkStub && frame.checkInvalidation())
+        if (frame.checkInvalidation())
             continue;
 
         JSScript* script = frame.script();
@@ -2867,8 +2857,7 @@ InvalidateActivation(FreeOp* fop, const JitActivationIterator& activations, bool
         ionCode->setInvalidated();
 
         
-        
-        if (calledFromLinkStub || frame.isBailoutJS())
+        if (frame.isBailoutJS())
             continue;
 
         

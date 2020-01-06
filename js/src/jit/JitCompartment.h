@@ -134,7 +134,6 @@ class JitRuntime
 
     
     ExclusiveAccessLockWriteOnceData<uint32_t> lazyLinkStubOffset_;
-    ExclusiveAccessLockWriteOnceData<uint32_t> lazyLinkStubEndOffset_;
 
     
     ExclusiveAccessLockWriteOnceData<uint32_t> interpreterStubOffset_;
@@ -314,9 +313,6 @@ class JitRuntime
 
     TrampolinePtr lazyLinkStub() const {
         return trampolineCode(lazyLinkStubOffset_);
-    }
-    TrampolinePtr lazyLinkStubEnd() const {
-        return trampolineCode(lazyLinkStubEndOffset_);
     }
     TrampolinePtr interpreterStub() const {
         return trampolineCode(interpreterStubOffset_);
