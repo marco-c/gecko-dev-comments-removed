@@ -398,7 +398,11 @@ gfxHarfBuzzShaper::HBGetGlyphVAdvance(hb_font_t *font, void *font_data,
     
     
     
-    return fcd->mShaper->GetGlyphVAdvance(glyph);
+    
+    
+    
+    
+    return -fcd->mShaper->GetGlyphVAdvance(glyph);
 }
 
 struct VORG {
@@ -423,6 +427,9 @@ gfxHarfBuzzShaper::HBGetGlyphVOrigin(hb_font_t *font, void *font_data,
     const gfxHarfBuzzShaper::FontCallbackData *fcd =
         static_cast<const gfxHarfBuzzShaper::FontCallbackData*>(font_data);
     fcd->mShaper->GetGlyphVOrigin(glyph, x, y);
+    
+    
+    *y = -*y;
     return true;
 }
 
@@ -1703,8 +1710,9 @@ gfxHarfBuzzShaper::SetGlyphsFromRun(gfxShapedText  *aShapedText,
         hb_position_t i_offset, i_advance; 
         hb_position_t b_offset, b_advance; 
         if (aVertical) {
-            i_offset = posInfo[glyphStart].y_offset;
-            i_advance = posInfo[glyphStart].y_advance;
+            
+            i_offset = -posInfo[glyphStart].y_offset;
+            i_advance = -posInfo[glyphStart].y_advance;
             b_offset = posInfo[glyphStart].x_offset;
             b_advance = posInfo[glyphStart].x_advance;
         } else {
@@ -1772,8 +1780,9 @@ gfxHarfBuzzShaper::SetGlyphsFromRun(gfxShapedText  *aShapedText,
                 }
 
                 if (aVertical) {
-                    i_offset = baseIOffset - posInfo[glyphStart].y_offset;
-                    i_advance = posInfo[glyphStart].y_advance;
+                    
+                    i_offset = baseIOffset + posInfo[glyphStart].y_offset;
+                    i_advance = -posInfo[glyphStart].y_advance;
                     b_offset = baseBOffset - posInfo[glyphStart].x_offset;
                     b_advance = posInfo[glyphStart].x_advance;
                 } else {
