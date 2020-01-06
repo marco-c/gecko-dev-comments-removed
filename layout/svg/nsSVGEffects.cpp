@@ -350,7 +350,9 @@ nsSVGFilterProperty::DoUpdate()
   nsChangeHint changeHint =
     nsChangeHint(nsChangeHint_RepaintFrame);
 
-  if (frame && frame->IsFrameOfType(nsIFrame::eSVG)) {
+  
+  
+  if (frame->HasAllStateBits(NS_FRAME_SVG_LAYOUT)) {
     
     
     changeHint |= nsChangeHint_InvalidateRenderingObservers;
