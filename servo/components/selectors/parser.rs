@@ -763,19 +763,93 @@ impl<Impl: SelectorImpl> ToCss for Selector<Impl> {
         
         
         
-        let mut combinators = self.iter_raw_match_order().rev().filter(|x| x.is_combinator());
+
+        let mut combinators = self.iter_raw_match_order().rev().filter(|x| x.is_combinator()).peekable();
         let compound_selectors = self.iter_raw_match_order().as_slice().split(|x| x.is_combinator()).rev();
 
         let mut combinators_exhausted = false;
         for compound in compound_selectors {
             debug_assert!(!combinators_exhausted);
-            for item in compound.iter() {
-                item.to_css(dest)?;
+
+            
+
+            if !compound.is_empty() {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                let (can_elide_namespace, first_non_namespace) = match &compound[0] {
+                    &Component::ExplicitAnyNamespace |
+                    &Component::ExplicitNoNamespace |
+                    &Component::Namespace(_, _) => (false, 1),
+                    &Component::DefaultNamespace(_) => (true, 1),
+                    _ => (true, 0),
+                };
+                if first_non_namespace == compound.len() - 1 {
+                    match (combinators.peek(), &compound[first_non_namespace]) {
+                        
+                        
+                        
+                        
+                        
+                        
+                        (Some(&&Component::Combinator(Combinator::PseudoElement)), _) => (),
+                        (_, &Component::ExplicitUniversalType) => {
+                            
+                            
+                            for simple in compound.iter() {
+                                simple.to_css(dest)?;
+                            }
+                            continue
+                        }
+                        (_, _) => (),
+                    }
+                }
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                for simple in compound.iter() {
+                    if let Component::ExplicitUniversalType = *simple {
+                        
+                        
+                        
+                        
+                        if can_elide_namespace {
+                            continue
+                        }
+                    }
+                    simple.to_css(dest)?;
+                }
             }
+
+            
+            
+            
+            
+            
             match combinators.next() {
                 Some(c) => c.to_css(dest)?,
                 None => combinators_exhausted = true,
             };
+
+            
+            
+            
+            
+            
         }
 
        Ok(())
@@ -1017,13 +1091,30 @@ fn parse_type_selector<'i, 't, P, E, Impl, S>(parser: &P, input: &mut CssParser<
                     sink.push(Component::DefaultNamespace(url))
                 }
                 QNamePrefix::ExplicitNamespace(prefix, url) => {
-                    sink.push(Component::Namespace(prefix, url))
+                    sink.push(match parser.default_namespace() {
+                        Some(ref default_url) if url == *default_url => Component::DefaultNamespace(url),
+                        _ => Component::Namespace(prefix, url),
+                    })
                 }
                 QNamePrefix::ExplicitNoNamespace => {
                     sink.push(Component::ExplicitNoNamespace)
                 }
                 QNamePrefix::ExplicitAnyNamespace => {
-                    sink.push(Component::ExplicitAnyNamespace)
+                    match parser.default_namespace() {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        None => {},
+                        Some(_) => sink.push(Component::ExplicitAnyNamespace),
+                    }
                 }
                 QNamePrefix::ImplicitNoNamespace => {
                     unreachable!()  
@@ -1640,6 +1731,15 @@ pub mod tests {
         ns_prefixes: HashMap<DummyAtom, DummyAtom>,
     }
 
+    impl DummyParser {
+        fn default_with_namespace(default_ns: DummyAtom) -> DummyParser {
+            DummyParser {
+                default_ns: Some(default_ns),
+                ns_prefixes: Default::default(),
+            }
+        }
+    }
+
     impl SelectorImpl for DummySelectorImpl {
         type AttrValue = DummyAtom;
         type Identifier = DummyAtom;
@@ -1729,19 +1829,40 @@ pub mod tests {
         }
     }
 
-    fn parse<'i>(input: &'i str) -> Result<SelectorList<DummySelectorImpl>,
-                                           ParseError<'i, SelectorParseError<'i, ()>>> {
+    fn parse<'i>(input: &'i str)
+                 -> Result<SelectorList<DummySelectorImpl>, ParseError<'i, SelectorParseError<'i, ()>>> {
         parse_ns(input, &DummyParser::default())
     }
 
+    fn parse_expected<'i, 'a>(input: &'i str, expected: Option<&'a str>)
+                              -> Result<SelectorList<DummySelectorImpl>, ParseError<'i, SelectorParseError<'i, ()>>> {
+        parse_ns_expected(input, &DummyParser::default(), expected)
+    }
+
     fn parse_ns<'i>(input: &'i str, parser: &DummyParser)
-                    -> Result<SelectorList<DummySelectorImpl>,
-                              ParseError<'i, SelectorParseError<'i, ()>>> {
+                    -> Result<SelectorList<DummySelectorImpl>, ParseError<'i, SelectorParseError<'i, ()>>> {
+        parse_ns_expected(input, parser, None)
+    }
+
+    fn parse_ns_expected<'i, 'a>(
+        input: &'i str,
+        parser: &DummyParser,
+        expected: Option<&'a str>
+    ) -> Result<SelectorList<DummySelectorImpl>, ParseError<'i, SelectorParseError<'i, ()>>> {
         let mut parser_input = ParserInput::new(input);
         let result = SelectorList::parse(parser, &mut CssParser::new(&mut parser_input));
         if let Ok(ref selectors) = result {
             assert_eq!(selectors.0.len(), 1);
-            assert_eq!(selectors.0[0].to_css_string(), input);
+            
+            
+            
+            assert_eq!(
+                selectors.0[0].to_css_string(),
+                match expected {
+                    Some(x) => x,
+                    None => input
+                }
+            );
         }
         result
     }
@@ -1781,15 +1902,33 @@ pub mod tests {
                 })), specificity(0, 0, 1))
         ))));
         
-        assert_eq!(parse("*|e"), Ok(SelectorList::from_vec(vec!(
+        
+        assert_eq!(parse_expected("*|e", Some("e")), Ok(SelectorList::from_vec(vec!(
             Selector::from_vec(vec!(
-                Component::ExplicitAnyNamespace,
                 Component::LocalName(LocalName {
                     name: DummyAtom::from("e"),
                     lower_name: DummyAtom::from("e")
                 })
             ), specificity(0, 0, 1))
         ))));
+        
+        
+        
+        
+        assert_eq!(
+            parse_ns(
+                "*|e",
+                &DummyParser::default_with_namespace(DummyAtom::from("https://mozilla.org"))
+            ),
+            Ok(SelectorList::from_vec(vec!(
+                Selector::from_vec(vec!(
+                    Component::ExplicitAnyNamespace,
+                    Component::LocalName(LocalName {
+                        name: DummyAtom::from("e"),
+                        lower_name: DummyAtom::from("e")
+                    })
+                ), specificity(0, 0, 1)))))
+        );
         assert_eq!(parse("*"), Ok(SelectorList::from_vec(vec!(
             Selector::from_vec(vec!(
                 Component::ExplicitUniversalType,
@@ -1801,12 +1940,22 @@ pub mod tests {
                 Component::ExplicitUniversalType,
             ), specificity(0, 0, 0))
         ))));
-        assert_eq!(parse("*|*"), Ok(SelectorList::from_vec(vec!(
+        assert_eq!(parse_expected("*|*", Some("*")), Ok(SelectorList::from_vec(vec!(
             Selector::from_vec(vec!(
-                Component::ExplicitAnyNamespace,
                 Component::ExplicitUniversalType,
             ), specificity(0, 0, 0))
         ))));
+        assert_eq!(
+            parse_ns(
+                "*|*",
+                &DummyParser::default_with_namespace(DummyAtom::from("https://mozilla.org"))
+            ),
+            Ok(SelectorList::from_vec(vec!(
+                Selector::from_vec(vec!(
+                    Component::ExplicitAnyNamespace,
+                    Component::ExplicitUniversalType,
+                ), specificity(0, 0, 0)))))
+        );
         assert_eq!(parse(".foo:lang(en-US)"), Ok(SelectorList::from_vec(vec!(
             Selector::from_vec(vec!(
                     Component::Class(DummyAtom::from("foo")),
@@ -2026,10 +2175,11 @@ pub mod tests {
                 ].into_boxed_slice()
             )), specificity(0, 0, 0))
         ))));
-        assert_eq!(parse_ns(":not(*|*)", &parser), Ok(SelectorList::from_vec(vec!(
+        
+        
+        assert_eq!(parse_ns_expected(":not(*|*)", &parser, Some(":not(*)")), Ok(SelectorList::from_vec(vec!(
             Selector::from_vec(vec!(Component::Negation(
                 vec![
-                    Component::ExplicitAnyNamespace,
                     Component::ExplicitUniversalType,
                 ].into_boxed_slice()
             )), specificity(0, 0, 0))
@@ -2060,7 +2210,10 @@ pub mod tests {
 
     #[test]
     fn test_universal() {
-        let selector = &parse("*|*::before").unwrap().0[0];
+        let selector = &parse_ns(
+            "*|*::before",
+            &DummyParser::default_with_namespace(DummyAtom::from("https://mozilla.org"))
+        ).unwrap().0[0];
         assert!(selector.is_universal());
     }
 
