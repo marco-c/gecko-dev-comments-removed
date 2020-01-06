@@ -34,12 +34,32 @@ function NewConsoleOutputWrapper(parentNode, jsterm, toolbox, owner, document) {
 
   store = configureStore(this.jsterm.hud);
 }
-
 NewConsoleOutputWrapper.prototype = {
   init: function () {
     const attachRefToHud = (id, node) => {
       this.jsterm.hud[id] = node;
     };
+    
+    this.parentNode.addEventListener("click", (event) => {
+      
+      if (event.detail !== 1 || event.button !== 0) {
+        return;
+      }
+
+      
+      let selection = this.document.defaultView.getSelection();
+      if (selection && !selection.isCollapsed) {
+        return;
+      }
+
+      
+      if (event.target.nodeName.toLowerCase() === "a" ||
+          event.target.parentNode.nodeName.toLowerCase() === "a") {
+        return;
+      }
+
+      this.jsterm.focus();
+    });
 
     const serviceContainer = {
       attachRefToHud,
@@ -140,14 +160,13 @@ NewConsoleOutputWrapper.prototype = {
         filterBar,
         childComponent
     ));
-
     this.body = ReactDOM.render(provider, this.parentNode);
-  },
 
+    this.jsterm.focus();
+  },
   dispatchMessageAdd: function (message, waitForResponse) {
     let action = actions.messageAdd(message);
     batchedMessageAdd(action);
-
     
     
     

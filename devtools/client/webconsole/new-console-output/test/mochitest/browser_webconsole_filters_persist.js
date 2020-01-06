@@ -40,19 +40,15 @@ add_task(function* () {
   filterButtons.forEach(filterButton => {
     ok(filterIsEnabled(filterButton), "filter is enabled");
   });
-
   
   yield closeTabAndToolbox();
 });
-
 function* getFilterButtons(hud) {
-  const outputNode = hud.ui.experimentalOutputNode;
-
+  const outputNode = hud.ui.outputNode;
   info("Wait for console toolbar to appear");
   const toolbar = yield waitFor(() => {
     return outputNode.querySelector(".webconsole-filterbar-primary");
   });
-
   
   if (!outputNode.querySelector(".webconsole-filterbar-secondary")) {
     toolbar.querySelector(".devtools-filter-icon").click();
