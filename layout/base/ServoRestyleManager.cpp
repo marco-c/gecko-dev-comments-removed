@@ -58,6 +58,16 @@ ExpectedOwnerForChild(const nsIFrame& aFrame)
     return aFrame.GetParent();
   }
 
+  if (aFrame.IsLineFrame()) {
+    
+    
+    
+    
+    
+    
+    return aFrame.GetParent();
+  }
+
   const nsIFrame* parent = FirstContinuationOrPartOfIBSplit(aFrame.GetParent());
 
   if (aFrame.IsTableFrame()) {
@@ -711,8 +721,30 @@ ServoRestyleManager::ProcessPostTraversal(
   
   
   
-  if (wasRestyled && styleFrame) {
-    UpdateFramePseudoElementStyles(styleFrame, childrenRestyleState);
+  if (styleFrame) {
+    if (wasRestyled) {
+      UpdateFramePseudoElementStyles(styleFrame, childrenRestyleState);
+    } else if (traverseElementChildren &&
+               styleFrame->IsFrameOfType(nsIFrame::eBlockFrame)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      nsIFrame* firstLineFrame =
+        static_cast<nsBlockFrame*>(styleFrame)->GetFirstLineFrame();
+      if (firstLineFrame) {
+        for (nsIFrame* kid : firstLineFrame->PrincipalChildList()) {
+          ReparentStyleContext(kid);
+        }
+      }
+    }
   }
 
   if (!forThrottledAnimationFlush) {
