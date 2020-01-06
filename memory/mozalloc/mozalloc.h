@@ -98,12 +98,6 @@ MFBT_API size_t moz_malloc_usable_size(void *ptr);
 
 MFBT_API size_t moz_malloc_size_of(const void *ptr);
 
-
-
-
-
-MFBT_API size_t moz_malloc_enclosing_size_of(const void *ptr);
-
 #if defined(HAVE_STRNDUP)
 MFBT_API char* moz_xstrndup(const char* str, size_t strsize)
     MOZ_ALLOCATOR;

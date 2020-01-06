@@ -103,7 +103,6 @@
 
 
 
-
 #ifndef MOZ_MEMORY
 #  error Should only include mozmemory_wrap.h when MOZ_MEMORY is set.
 #endif
@@ -208,7 +207,5 @@
 #define jemalloc_free_dirty_pages_impl   mozmem_jemalloc_impl(jemalloc_free_dirty_pages)
 #define jemalloc_thread_local_arena_impl \
           mozmem_jemalloc_impl(jemalloc_thread_local_arena)
-#define jemalloc_ptr_info_impl \
-          mozmem_jemalloc_impl(jemalloc_ptr_info)
 
 #endif 
