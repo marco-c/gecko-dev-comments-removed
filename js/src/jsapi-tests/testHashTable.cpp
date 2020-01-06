@@ -2,11 +2,12 @@
 
 
 
+#include "mozilla/Move.h"
+
 #include "js/HashTable.h"
 #include "js/Utility.h"
-#include "jsapi-tests/tests.h"
 
-#include "mozilla/Move.h"
+#include "jsapi-tests/tests.h"
 
 
 
