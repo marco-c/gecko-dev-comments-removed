@@ -97,7 +97,7 @@ RuleEditor.prototype = {
 
   _create: function () {
     this.element = this.doc.createElement("div");
-    this.element.className = "ruleview-rule theme-separator";
+    this.element.className = "ruleview-rule theme-separator devtools-monospace";
     this.element.setAttribute("uneditable", !this.isEditable);
     this.element.setAttribute("unmatched", this.rule.isUnmatched);
     this.element._ruleEditor = this;
@@ -144,6 +144,7 @@ RuleEditor.prototype = {
         element: this.selectorText,
         done: this._onSelectorDone,
         cssProperties: this.rule.cssProperties,
+        contextMenu: this.ruleView.inspector.onTextBoxContextMenu
       });
     }
 
@@ -462,6 +463,7 @@ RuleEditor.prototype = {
       contentType: InplaceEditor.CONTENT_TYPES.CSS_PROPERTY,
       popup: this.ruleView.popup,
       cssProperties: this.rule.cssProperties,
+      contextMenu: this.ruleView.inspector.onTextBoxContextMenu
     });
 
     
