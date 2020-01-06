@@ -345,8 +345,8 @@ private:
 
 
 
-static nsIFrame*
-FindFirstLetterFrameForElement(const Element* aElement)
+static nsBlockFrame*
+GetBlockForElement(const Element* aElement)
 {
   nsIFrame* frame = aElement->GetPrimaryFrame();
   if (!frame) {
@@ -364,7 +364,25 @@ FindFirstLetterFrameForElement(const Element* aElement)
     return nullptr;
   }
 
-  return static_cast<nsBlockFrame*>(frame)->GetFirstLetter();
+  return static_cast<nsBlockFrame*>(frame);
+}
+
+
+
+static nsIFrame*
+FindFirstLetterFrameForElement(const Element* aElement)
+{
+  nsBlockFrame* f = GetBlockForElement(aElement);
+  return f ? f->GetFirstLetter() : nullptr;
+}
+
+
+
+static nsIFrame*
+FindFirstLineFrameForElement(const Element* aElement)
+{
+  nsBlockFrame* f = GetBlockForElement(aElement);
+  return f ? f->GetFirstLineFrame() : nullptr;
 }
 
 static void
@@ -803,8 +821,7 @@ ServoRestyleManager::FrameForPseudoElement(const Element* aElement,
   }
 
   if (aPseudoTagOrNull == nsCSSPseudoElements::firstLine) {
-    
-    return nullptr;
+    return FindFirstLineFrameForElement(aElement);
   }
 
   MOZ_CRASH("Unkown pseudo-element given to "

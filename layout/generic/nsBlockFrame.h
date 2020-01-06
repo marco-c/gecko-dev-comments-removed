@@ -277,6 +277,11 @@ public:
 
   nsIFrame* GetFirstLetter() const;
 
+  
+
+
+  nsIFrame* GetFirstLineFrame() const;
+
   void MarkIntrinsicISizesDirty() override;
 private:
   void CheckIntrinsicCacheAgainstShrinkWrapState();
