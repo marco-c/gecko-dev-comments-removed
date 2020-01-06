@@ -564,7 +564,7 @@ MustReresolveStyle(const nsStyleContext* aContext)
 
   if (aContext->HasPseudoElementData()) {
     if (!aContext->GetPseudo() ||
-        aContext->StyleSource().IsServoComputedValues()) {
+        aContext->IsServo()) {
       
       
       return true;
@@ -871,7 +871,7 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
 
   if (!mStyleContext || MustReresolveStyle(mStyleContext)) {
 #ifdef DEBUG
-    if (mStyleContext && mStyleContext->StyleSource().IsGeckoRuleNodeOrNull()) {
+    if (mStyleContext && mStyleContext->IsGecko()) {
       
       
       

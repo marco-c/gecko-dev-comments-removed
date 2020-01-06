@@ -701,7 +701,7 @@ ValueFromStringHelper(nsCSSPropertyID aPropID,
 
   
   const ServoComputedValues* currentStyle =
-    aStyleContext->StyleSource().AsServoComputedValues();
+    aStyleContext->ComputedValues();
 
   
   aPresContext->StyleSet()->AsServo()->GetAnimationValues(servoDeclarationBlock,

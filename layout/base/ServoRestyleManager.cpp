@@ -382,7 +382,7 @@ ServoRestyleManager::ProcessPostTraversal(Element* aElement,
   
   
   const bool recreateContext = oldStyleContext &&
-    oldStyleContext->StyleSource().AsServoComputedValues() != computedValues;
+    oldStyleContext->ComputedValues() != computedValues;
 
   RefPtr<nsStyleContext> newContext = nullptr;
   if (recreateContext) {
