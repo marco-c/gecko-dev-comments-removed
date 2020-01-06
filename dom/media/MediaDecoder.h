@@ -572,8 +572,8 @@ private:
 
   
   
-  void MetadataLoaded(nsAutoPtr<MediaInfo> aInfo,
-                      nsAutoPtr<MetadataTags> aTags,
+  void MetadataLoaded(UniquePtr<MediaInfo> aInfo,
+                      UniquePtr<MetadataTags> aTags,
                       MediaDecoderEventVisibility aEventVisibility);
 
   MediaEventSource<void>*
