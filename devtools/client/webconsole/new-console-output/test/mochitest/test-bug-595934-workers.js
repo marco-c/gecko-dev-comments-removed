@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+"use strict";
+
+var onmessage = function () {
+  fooBarWorker();
+};
+
