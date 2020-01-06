@@ -85,7 +85,8 @@ toolbar[brighttext] .toolbarbutton-1 {
 
 
 .browserContainer > findbar .findbar-find-status,
-.browserContainer > findbar .found-matches {
+.browserContainer > findbar .found-matches,
+.browserContainer > findbar .findbar-button {
   color: inherit;
 }
 
