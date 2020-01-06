@@ -19,16 +19,10 @@ function copyString(string) {
   document.removeEventListener("copy", doCopy);
 }
 
-function getCurrentFlavors() {
-  
-  return [];
-}
-
-function getData() {
+function getText() {
   
   return null;
 }
 
 exports.copyString = copyString;
-exports.getCurrentFlavors = getCurrentFlavors;
-exports.getData = getData;
+exports.getText = getText;
