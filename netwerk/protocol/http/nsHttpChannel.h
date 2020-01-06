@@ -499,6 +499,10 @@ private:
 
     already_AddRefed<nsChannelClassifier> GetOrCreateChannelClassifier();
 
+    
+    
+    MOZ_MUST_USE nsresult RedirectToInterceptedChannel();
+
 private:
     
     

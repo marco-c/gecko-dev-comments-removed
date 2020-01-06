@@ -815,9 +815,7 @@ NetworkMonitor.prototype = {
     this.interceptedChannels.add(subject);
 
     
-    if (Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT) {
-      this._httpResponseExaminer(channel, "http-on-examine-cached-response");
-    }
+    this._httpResponseExaminer(channel, "http-on-examine-cached-response");
   },
 
   
