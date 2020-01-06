@@ -12,8 +12,8 @@ const {
 const { connect } = require("devtools/client/shared/vendor/react-redux");
 
 
-const MonitorPanel = createFactory(require("./monitor-panel"));
-const StatisticsPanel = createFactory(require("./statistics-panel"));
+const MonitorPanel = createFactory(require("./MonitorPanel"));
+const StatisticsPanel = createFactory(require("./StatisticsPanel"));
 
 const { div } = DOM;
 
