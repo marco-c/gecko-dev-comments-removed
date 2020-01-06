@@ -17,6 +17,7 @@
 #include "nsIEventTarget.h"
 #include "nsIObserver.h"
 #include "mozilla/RefPtr.h"
+#include "nsStringFwd.h"
 
 class nsIThread;
 class nsIThreadPool;
@@ -64,7 +65,7 @@ public:
 
 
 
-  bool SyncRunIfPreferred(IDecodingTask* aTask);
+  bool SyncRunIfPreferred(IDecodingTask* aTask, const nsCString& aURI);
 
   
 
@@ -72,7 +73,7 @@ public:
 
 
 
-  void SyncRunIfPossible(IDecodingTask* aTask);
+  void SyncRunIfPossible(IDecodingTask* aTask, const nsCString& aURI);
 
   
 

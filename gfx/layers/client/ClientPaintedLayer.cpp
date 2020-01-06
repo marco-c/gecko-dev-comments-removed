@@ -177,8 +177,7 @@ ClientPaintedLayer::GetPaintFlags()
 void
 ClientPaintedLayer::PaintThebes(nsTArray<ReadbackProcessor::Update>* aReadbackUpdates)
 {
-  PROFILER_LABEL("ClientPaintedLayer", "PaintThebes",
-    js::ProfileEntry::Category::GRAPHICS);
+  AUTO_PROFILER_LABEL("ClientPaintedLayer::PaintThebes", GRAPHICS);
 
   NS_ASSERTION(ClientManager()->InDrawing(),
                "Can only draw in drawing phase");

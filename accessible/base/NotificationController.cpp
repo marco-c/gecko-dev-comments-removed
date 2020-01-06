@@ -590,7 +590,7 @@ NotificationController::ProcessMutationEvents()
 void
 NotificationController::WillRefresh(mozilla::TimeStamp aTime)
 {
-  PROFILER_LABEL_FUNC(js::ProfileEntry::Category::OTHER);
+  AUTO_PROFILER_LABEL("NotificationController::WillRefresh", OTHER);
 
   
   

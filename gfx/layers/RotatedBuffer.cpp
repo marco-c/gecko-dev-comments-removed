@@ -170,8 +170,7 @@ RotatedBuffer::DrawBufferWithRotation(gfx::DrawTarget *aTarget, ContextSource aS
                                       gfx::SourceSurface* aMask,
                                       const gfx::Matrix* aMaskTransform) const
 {
-  PROFILER_LABEL("RotatedBuffer", "DrawBufferWithRotation",
-    js::ProfileEntry::Category::GRAPHICS);
+  AUTO_PROFILER_LABEL("RotatedBuffer::DrawBufferWithRotation", GRAPHICS);
 
   
   

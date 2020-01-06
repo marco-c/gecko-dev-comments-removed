@@ -536,7 +536,7 @@ ContentChild::RecvSetXPCOMProcessAttributes(const XPCOMInitData& aXPCOMInit,
 {
   mLookAndFeelCache = aLookAndFeelIntCache;
   InitXPCOM(aXPCOMInit, aInitialData);
-  InitGraphicsDeviceData(aXPCOMInit.contentDeviceData());
+  InitGraphicsDeviceData();
 
 #ifdef NS_PRINTING
   
@@ -998,11 +998,11 @@ ContentChild::AppendProcessId(nsACString& aName)
 }
 
 void
-ContentChild::InitGraphicsDeviceData(const ContentDeviceData& aData)
+ContentChild::InitGraphicsDeviceData()
 {
   
   
-  gfxPlatform::InitChild(aData);
+  gfxPlatform::GetPlatform();
 }
 
 void
@@ -2321,9 +2321,8 @@ ContentChild::RecvAsyncMessage(const nsString& aMsg,
                                const ClonedMessageData& aData)
 {
   NS_LossyConvertUTF16toASCII messageNameCStr(aMsg);
-  PROFILER_LABEL_DYNAMIC("ContentChild", "RecvAsyncMessage",
-                        js::ProfileEntry::Category::EVENTS,
-                        messageNameCStr.get());
+  AUTO_PROFILER_LABEL_DYNAMIC("ContentChild::RecvAsyncMessage", EVENTS,
+                              messageNameCStr.get());
 
   CrossProcessCpowHolder cpows(this, aCpows);
   RefPtr<nsFrameMessageManager> cpm =

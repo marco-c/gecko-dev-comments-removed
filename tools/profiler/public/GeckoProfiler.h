@@ -324,50 +324,41 @@ PROFILER_FUNC(PseudoStack* profiler_get_pseudo_stack(), nullptr)
 #define PROFILER_APPEND_LINE_NUMBER(id) \
   PROFILER_APPEND_LINE_NUMBER_EXPAND(id, __LINE__)
 
-#if defined(__GNUC__) || defined(_MSC_VER)
-# define PROFILER_FUNCTION_NAME __FUNCTION__
-#else
-  
-# define PROFILER_FUNCTION_NAME __func__
-#endif
 
 
 
 
 
 
-#define PROFILER_LABEL(name_space, info, category) \
+
+
+
+
+#define AUTO_PROFILER_LABEL(label, category) \
   mozilla::AutoProfilerLabel \
-  PROFILER_APPEND_LINE_NUMBER(profiler_raii)(name_space "::" info, nullptr, \
-                                             __LINE__, category)
+  PROFILER_APPEND_LINE_NUMBER(profiler_raii)( \
+    label, nullptr, __LINE__, js::ProfileEntry::Category::category)
 
 
 
-#define PROFILER_LABEL_FUNC(category) \
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define AUTO_PROFILER_LABEL_DYNAMIC(label, category, dynamicStr) \
   mozilla::AutoProfilerLabel \
-  PROFILER_APPEND_LINE_NUMBER(profiler_raii)(PROFILER_FUNCTION_NAME, nullptr, \
-                                             __LINE__, category)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define PROFILER_LABEL_DYNAMIC(name_space, info, category, dynamicStr) \
-  mozilla::AutoProfilerLabel \
-  PROFILER_APPEND_LINE_NUMBER(profiler_raii)(name_space "::" info, dynamicStr, \
-                                             __LINE__, category)
+  PROFILER_APPEND_LINE_NUMBER(profiler_raii)( \
+    label, dynamicStr, __LINE__, js::ProfileEntry::Category::category)
 
 
 

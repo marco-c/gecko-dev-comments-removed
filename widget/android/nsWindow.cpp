@@ -1253,8 +1253,7 @@ nsWindow::GeckoViewSupport::Open(const jni::Class::LocalRef& aCls,
 {
     MOZ_ASSERT(NS_IsMainThread());
 
-    PROFILER_LABEL("nsWindow", "GeckoViewSupport::Open",
-                   js::ProfileEntry::Category::OTHER);
+    AUTO_PROFILER_LABEL("nsWindow::GeckoViewSupport::Open", OTHER);
 
     nsCOMPtr<nsIWindowWatcher> ww = do_GetService(NS_WINDOWWATCHER_CONTRACTID);
     MOZ_RELEASE_ASSERT(ww);

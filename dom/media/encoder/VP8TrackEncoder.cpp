@@ -220,8 +220,7 @@ VP8TrackEncoder::SetConfigurationValues(int32_t aWidth, int32_t aHeight, int32_t
 already_AddRefed<TrackMetadataBase>
 VP8TrackEncoder::GetMetadata()
 {
-  PROFILER_LABEL("VP8TrackEncoder", "GetMetadata",
-    js::ProfileEntry::Category::OTHER);
+  AUTO_PROFILER_LABEL("VP8TrackEncoder::GetMetadata", OTHER);
   {
     
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
@@ -603,8 +602,7 @@ VP8TrackEncoder::GetNextEncodeOperation(TimeDuration aTimeElapsed,
 nsresult
 VP8TrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData)
 {
-  PROFILER_LABEL("VP8TrackEncoder", "GetEncodedTrack",
-    js::ProfileEntry::Category::OTHER);
+  AUTO_PROFILER_LABEL("VP8TrackEncoder::GetEncodedTrack", OTHER);
   bool EOS;
   {
     
