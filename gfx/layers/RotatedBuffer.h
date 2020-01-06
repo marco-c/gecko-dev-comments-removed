@@ -31,22 +31,6 @@ class PaintedLayer;
 
 
 
-class BorrowDrawTarget
-{
-protected:
-  void ReturnDrawTarget(gfx::DrawTarget*& aReturned);
-
-  
-  
-  
-  RefPtr<gfx::DrawTarget> mLoanedDrawTarget;
-  gfx::Matrix mLoanedTransform;
-
-  
-  
-  
-  bool mSetTransform;
-};
 
 
 
@@ -60,11 +44,7 @@ protected:
 
 
 
-
-
-
-class RotatedBuffer : public BorrowDrawTarget
-{
+class RotatedBuffer {
 public:
   typedef gfxContentType ContentType;
 
@@ -77,18 +57,6 @@ public:
   RotatedBuffer()
     : mDidSelfCopy(false)
   { }
-
-  struct DrawIterator {
-    friend class RotatedBuffer;
-    DrawIterator()
-      : mCount(0)
-    {}
-
-    nsIntRegion mDrawRegion;
-
-  private:
-    uint32_t mCount;
-  };
 
   
 
@@ -106,9 +74,6 @@ public:
                               gfx::SourceSurface* aMask = nullptr,
                               const gfx::Matrix* aMaskTransform = nullptr) const;
 
-  void UpdateDestinationFrom(const RotatedBuffer& aSource,
-                             const nsIntRegion& aUpdateRegion);
-
   
 
 
@@ -123,9 +88,6 @@ public:
   virtual already_AddRefed<gfx::SourceSurface> GetSourceSurface(ContextSource aSource) const = 0;
 
 protected:
-
-  virtual gfx::DrawTarget* GetDTBuffer() const = 0;
-  virtual gfx::DrawTarget* GetDTBufferOnWhite() const = 0;
 
   enum XSide {
     LEFT, RIGHT
@@ -148,27 +110,6 @@ protected:
                           gfx::CompositionOp aOperator,
                           gfx::SourceSurface* aMask,
                           const gfx::Matrix* aMaskTransform) const;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  gfx::DrawTarget*
-  BorrowDrawTargetForQuadrantUpdate(const gfx::IntRect& aBounds,
-                                    ContextSource aSource,
-                                    DrawIterator* aIter,
-                                    bool aSetTransform = true,
-                                    gfx::Matrix* aOutTransform = nullptr);
 
   
   gfx::IntRect             mBufferRect;
@@ -204,10 +145,6 @@ public:
   virtual bool HaveBuffer() const { return !!mSource; }
   virtual bool HaveBufferOnWhite() const { return !!mSourceOnWhite; }
 
-protected:
-  virtual gfx::DrawTarget* GetDTBuffer() const { return nullptr; }
-  virtual gfx::DrawTarget* GetDTBufferOnWhite() const { return nullptr; }
-
 private:
   RefPtr<gfx::SourceSurface> mSource;
   RefPtr<gfx::SourceSurface> mSourceOnWhite;
@@ -215,9 +152,29 @@ private:
 
 
 
+class BorrowDrawTarget
+{
+protected:
+  void ReturnDrawTarget(gfx::DrawTarget*& aReturned);
+
+  
+  
+  
+  RefPtr<gfx::DrawTarget> mLoanedDrawTarget;
+  gfx::Matrix mLoanedTransform;
+
+  
+  
+  
+  bool mSetTransform;
+};
+
+
+
 
 
 class RotatedContentBuffer : public RotatedBuffer
+                           , public BorrowDrawTarget
 {
 public:
   typedef gfxContentType ContentType;
@@ -315,6 +272,18 @@ public:
   PaintState BeginPaint(PaintedLayer* aLayer,
                         uint32_t aFlags);
 
+  struct DrawIterator {
+    friend class RotatedContentBuffer;
+    DrawIterator()
+      : mCount(0)
+    {}
+
+    nsIntRegion mDrawRegion;
+
+  private:
+    uint32_t mCount;
+  };
+
   
 
 
@@ -362,6 +331,14 @@ public:
   CreateBuffer(ContentType aType, const gfx::IntRect& aRect, uint32_t aFlags,
                RefPtr<gfx::DrawTarget>* aBlackDT, RefPtr<gfx::DrawTarget>* aWhiteDT) = 0;
 
+  
+
+
+
+
+  gfx::DrawTarget* GetDTBuffer() { return mDTBuffer; }
+  gfx::DrawTarget* GetDTBufferOnWhite() { return mDTBufferOnWhite; }
+
   virtual already_AddRefed<gfx::SourceSurface> GetSourceSurface(ContextSource aSource) const;
 
   
@@ -402,6 +379,29 @@ protected:
     }
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  gfx::DrawTarget*
+  BorrowDrawTargetForQuadrantUpdate(const gfx::IntRect& aBounds,
+                                    ContextSource aSource,
+                                    DrawIterator* aIter,
+                                    bool aSetTransform = true,
+                                    gfx::Matrix* aOutTransform = nullptr);
+
+  static bool IsClippingCheap(gfx::DrawTarget* aTarget, const nsIntRegion& aRegion);
+
 protected:
   
 
@@ -417,14 +417,6 @@ protected:
 
   
   void FlushBuffers();
-
-  
-
-
-
-
-  virtual gfx::DrawTarget* GetDTBuffer() const { return mDTBuffer; }
-  virtual gfx::DrawTarget* GetDTBufferOnWhite() const { return mDTBufferOnWhite; }
 
   
 
