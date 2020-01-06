@@ -1755,7 +1755,41 @@ Toolbox.prototype = {
         node.removeAttribute("selected");
         node.removeAttribute("aria-selected");
       }
+      
+      if (!node.id) {
+        node = this.webconsolePanel;
+      }
+
+      let iframe = node.querySelector(".toolbox-panel-iframe");
+      if (iframe) {
+        let visible = node.id == id;
+        this.setIframeVisible(iframe, visible);
+      }
     });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  setIframeVisible: function (iframe, visible) {
+    let state = visible ? "visible" : "hidden";
+    let win = iframe.contentWindow;
+    let doc = win.document;
+    if (doc.visibilityState != state) {
+      
+      
+      Object.defineProperty(doc, "visibilityState", { value: state, configurable: true });
+
+      
+      win.dispatchEvent(new win.Event("visibilitychange"));
+    }
   },
 
   
