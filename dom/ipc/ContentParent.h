@@ -753,6 +753,17 @@ private:
   
 
 
+  bool TryToRecycle();
+
+  
+
+
+
+  void RemoveFromList();
+
+  
+
+
 
   bool ShouldKeepProcessAlive() const;
 
@@ -1182,6 +1193,7 @@ private:
 
   GeckoChildProcessHost* mSubprocess;
   const TimeStamp mLaunchTS; 
+  TimeStamp mActivateTS;
   ContentParent* mOpener;
 
   nsString mRemoteType;

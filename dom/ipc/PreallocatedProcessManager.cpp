@@ -43,6 +43,7 @@ public:
   void AllocateOnIdle();
   void AllocateNow();
   already_AddRefed<ContentParent> Take();
+  bool Provide(ContentParent* aParent);
 
 private:
   static mozilla::StaticRefPtr<PreallocatedProcessManagerImpl> sSingleton;
@@ -163,7 +164,24 @@ PreallocatedProcessManagerImpl::RereadPrefs()
 already_AddRefed<ContentParent>
 PreallocatedProcessManagerImpl::Take()
 {
+  if (!mEnabled || mShutdown) {
+    return nullptr;
+  }
+
   return mPreallocatedProcess.forget();
+}
+
+bool
+PreallocatedProcessManagerImpl::Provide(ContentParent* aParent)
+{
+  if (mEnabled && !mShutdown && !mPreallocatedProcess) {
+    mPreallocatedProcess = aParent;
+  }
+
+  
+  
+  
+  return aParent == mPreallocatedProcess;
 }
 
 void
@@ -280,6 +298,12 @@ PreallocatedProcessManager::AllocateNow()
 PreallocatedProcessManager::Take()
 {
   return GetPPMImpl()->Take();
+}
+
+ bool
+PreallocatedProcessManager::Provide(ContentParent* aParent)
+{
+  return GetPPMImpl()->Provide(aParent);
 }
 
 } 

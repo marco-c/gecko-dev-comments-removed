@@ -862,12 +862,17 @@ ContentParent::GetNewOrUsedBrowserProcess(const nsAString& aRemoteType,
     }
 
     
+    
+    
+    
     RefPtr<ContentParent> p;
     if (aRemoteType.EqualsLiteral(DEFAULT_REMOTE_TYPE) &&
-        (p = PreallocatedProcessManager::Take())) {
+        (p = PreallocatedProcessManager::Take()) &&
+        !p->mShutdownPending) {
       
       p->mOpener = aOpener;
       contentParents.AppendElement(p);
+      p->mActivateTS = TimeStamp::Now();
       return p.forget();
     }
   }
@@ -882,6 +887,7 @@ ContentParent::GetNewOrUsedBrowserProcess(const nsAString& aRemoteType,
   p->Init();
 
   contentParents.AppendElement(p);
+  p->mActivateTS = TimeStamp::Now();
   return p.forget();
 }
 
@@ -1522,7 +1528,7 @@ ContentParent::ShutDownMessageManager()
 }
 
 void
-ContentParent::MarkAsTroubled()
+ContentParent::RemoveFromList()
 {
   if (IsForJSPlugin()) {
     if (sJSPluginContentParents) {
@@ -1554,6 +1560,12 @@ ContentParent::MarkAsTroubled()
       sPrivateContent = nullptr;
     }
   }
+}
+
+void
+ContentParent::MarkAsTroubled()
+{
+  RemoveFromList();
   mIsAvailable = false;
 }
 
@@ -1855,6 +1867,26 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
 }
 
 bool
+ContentParent::TryToRecycle()
+{
+  
+  const double kMaxLifeSpan = 5;
+  if (mShutdownPending ||
+      mCalledKillHard ||
+      !IsAvailable() ||
+      !mRemoteType.EqualsLiteral(DEFAULT_REMOTE_TYPE) ||
+      (TimeStamp::Now() - mActivateTS).ToSeconds() > kMaxLifeSpan ||
+      !PreallocatedProcessManager::Provide(this)) {
+    return false;
+  }
+
+  
+  
+  RemoveFromList();
+  return true;
+}
+
+bool
 ContentParent::ShouldKeepProcessAlive() const
 {
   if (IsForJSPlugin()) {
@@ -1916,6 +1948,10 @@ ContentParent::NotifyTabDestroying(const TabId& aTabId,
       return;
     }
 
+    if (cp->TryToRecycle()) {
+      return;
+    }
+
     
     
     cp->MarkAsDead();
@@ -1965,7 +2001,7 @@ ContentParent::NotifyTabDestroyed(const TabId& aTabId,
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
   nsTArray<TabId> tabIds = cpm->GetTabParentsByProcessId(this->ChildID());
 
-  if (tabIds.Length() == 1 && !ShouldKeepProcessAlive()) {
+  if (tabIds.Length() == 1 && !ShouldKeepProcessAlive() && !TryToRecycle()) {
     
     
     MessageLoop::current()->PostTask(NewRunnableMethod
@@ -2103,6 +2139,7 @@ ContentParent::ContentParent(ContentParent* aOpener,
   : nsIContentParent()
   , mSubprocess(nullptr)
   , mLaunchTS(TimeStamp::Now())
+  , mActivateTS(TimeStamp::Now())
   , mOpener(aOpener)
   , mRemoteType(aRemoteType)
   , mChildID(gContentChildID++)
