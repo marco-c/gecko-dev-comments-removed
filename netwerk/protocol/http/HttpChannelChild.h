@@ -133,7 +133,6 @@ protected:
                                              const bool& isFromCache,
                                              const bool& cacheEntryAvailable,
                                              const int32_t& cacheFetchCount,
-                                             const uint32_t& cacheLastFetched,
                                              const uint32_t& cacheExpirationTime,
                                              const nsCString& cachedCharset,
                                              const nsCString& securityInfoSerialization,
@@ -164,8 +163,6 @@ protected:
                                                       const bool& asError) override;
 
   mozilla::ipc::IPCResult RecvSetPriority(const int16_t& aPriority) override;
-
-  virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
   MOZ_MUST_USE bool
   GetAssociatedContentSecurity(nsIAssociatedContentSecurity** res = nullptr);
@@ -279,7 +276,6 @@ private:
   bool mCacheEntryAvailable;
   bool mAltDataCacheEntryAvailable;
   int32_t      mCacheFetchCount;
-  uint32_t     mCacheLastFetched;
   uint32_t     mCacheExpirationTime;
   nsCString    mCachedCharset;
 
@@ -378,7 +374,6 @@ private:
                       const bool& isFromCache,
                       const bool& cacheEntryAvailable,
                       const int32_t& cacheFetchCount,
-                      const uint32_t& cacheLastFetched,
                       const uint32_t& cacheExpirationTime,
                       const nsCString& cachedCharset,
                       const nsCString& securityInfoSerialization,
