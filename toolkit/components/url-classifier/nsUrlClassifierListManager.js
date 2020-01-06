@@ -236,10 +236,7 @@ PROT_ListManager.prototype.setUpdateCheckTimer = function(updateUrl,
                                     .createInstance(Ci.nsITimer);
   this.updateCheckers_[updateUrl].initWithCallback(() => {
     this.updateCheckers_[updateUrl] = null;
-    if (updateUrl && !this.checkForUpdates(updateUrl)) {
-      
-      this.setUpdateCheckTimer(updateUrl, this.updateInterval);
-    }
+    this.checkForUpdates(updateUrl);
   }, delay, Ci.nsITimer.TYPE_ONE_SHOT);
 }
 

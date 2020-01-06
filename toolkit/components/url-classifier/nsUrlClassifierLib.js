@@ -78,19 +78,16 @@ this.HTTP_TEMPORARY_REDIRECT    = 307;
 
 
 
-
 this.RequestBackoff =
 function RequestBackoff(maxErrors, retryIncrement,
                         maxRequests, requestPeriod,
-                        timeoutIncrement, maxTimeout,
-                        tolerance) {
+                        timeoutIncrement, maxTimeout) {
   this.MAX_ERRORS_ = maxErrors;
   this.RETRY_INCREMENT_ = retryIncrement;
   this.MAX_REQUESTS_ = maxRequests;
   this.REQUEST_PERIOD_ = requestPeriod;
   this.TIMEOUT_INCREMENT_ = timeoutIncrement;
   this.MAX_TIMEOUT_ = maxTimeout;
-  this.TOLERANCE_ = tolerance;
 
   
   this.requestTimes_ = [];
@@ -114,9 +111,7 @@ RequestBackoff.prototype.reset = function() {
 
 RequestBackoff.prototype.canMakeRequest = function() {
   var now = Date.now();
-  
-  
-  if (now + this.TOLERANCE_ < this.nextRequestTime_) {
+  if (now < this.nextRequestTime_) {
     return false;
   }
 
@@ -185,8 +180,7 @@ function RequestBackoffV4(maxRequests, requestPeriod) {
                   maxRequests ,
                 requestPeriod ,
               backoffInterval ,
-          24 * 60 * 60 * 1000 ,
-                         1000 );
+          24 * 60 * 60 * 1000 );
 }
 
 

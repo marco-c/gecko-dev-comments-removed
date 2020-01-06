@@ -11,7 +11,7 @@ function setNow(time) {
 function run_test() {
   
   
-  var rb = new jslib.RequestBackoff(3, 1, 3, 10, 5, 19, 0);
+  var rb = new jslib.RequestBackoff(3, 1, 3, 10, 5, 19);
   setNow(1);
   rb.noteServerResponse(200);
   do_check_true(rb.canMakeRequest());
