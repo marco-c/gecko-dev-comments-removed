@@ -1111,6 +1111,14 @@ Database::InitSchema(bool* aDatabaseMigrated)
         rv = MigrateV38Up();
         NS_ENSURE_SUCCESS(rv, rv);
       }
+
+      
+
+      if (currentSchemaVersion < 39) {
+        rv = MigrateV39Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
       
 
       
@@ -1168,6 +1176,8 @@ Database::InitSchema(bool* aDatabaseMigrated)
     rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_BOOKMARKS_PARENTPOSITION);
     NS_ENSURE_SUCCESS(rv, rv);
     rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_BOOKMARKS_PLACELASTMODIFIED);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_BOOKMARKS_DATEADDED);
     NS_ENSURE_SUCCESS(rv, rv);
     rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_BOOKMARKS_GUID);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -2320,6 +2330,17 @@ Database::MigrateV38Up()
     ));
     NS_ENSURE_SUCCESS(rv, rv);
   }
+
+  return NS_OK;
+}
+
+nsresult
+Database::MigrateV39Up() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  nsresult rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_BOOKMARKS_DATEADDED);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
 }
