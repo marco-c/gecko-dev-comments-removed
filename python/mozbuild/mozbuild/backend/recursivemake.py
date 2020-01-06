@@ -530,7 +530,13 @@ class RecursiveMakeBackend(CommonBackend):
             self._no_skip[tier].add(backend_file.relobjdir)
             first_output = obj.outputs[0]
             dep_file = "%s.pp" % first_output
-            backend_file.write('%s:: %s\n' % (tier, first_output))
+
+            
+            
+            
+            
+            if tier == 'misc' or not self.environment.is_artifact_build:
+                backend_file.write('%s:: %s\n' % (tier, first_output))
             for output in obj.outputs:
                 if output != first_output:
                     backend_file.write('%s: %s ;\n' % (output, first_output))
@@ -1340,6 +1346,10 @@ class RecursiveMakeBackend(CommonBackend):
         ))
         if not path:
             raise Exception("Cannot install to " + target)
+
+        
+        if path == 'dist/include' and self.environment.is_artifact_build:
+            return
 
         manifest = path.replace('/', '_')
         install_manifest = self._install_manifests[manifest]
