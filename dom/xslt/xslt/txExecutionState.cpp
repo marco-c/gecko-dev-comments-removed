@@ -17,9 +17,9 @@
 const int32_t txExecutionState::kMaxRecursionDepth = 20000;
 
 nsresult
-txLoadedDocumentsHash::init(const txXPathNode& aSource)
+txLoadedDocumentsHash::init(txXPathNode* aSourceDocument)
 {
-    mSourceDocument = txXPathNodeUtils::getOwnerDocument(aSource);
+    mSourceDocument = aSourceDocument;
 
     nsAutoString baseURI;
     nsresult rv = txXPathNodeUtils::getBaseURI(*mSourceDocument, baseURI);
@@ -27,14 +27,7 @@ txLoadedDocumentsHash::init(const txXPathNode& aSource)
         return rv;
     }
 
-    
-    
-    
-    
-    MOZ_ASSERT(txXPathNodeUtils::getNodeType(aSource) == txXPathNodeType::DOCUMENT_NODE ||
-               txXPathNodeUtils::getNodeType(aSource) == txXPathNodeType::DOCUMENT_FRAGMENT_NODE);
-
-    PutEntry(baseURI)->mDocument = txXPathNativeNode::createXPathNode(txXPathNativeNode::getNode(aSource));
+    PutEntry(baseURI)->mDocument = mSourceDocument;
     return NS_OK;
 }
 
@@ -123,7 +116,7 @@ txExecutionState::init(const txXPathNode& aNode,
     mOutputHandler->startDocument();
 
     
-    rv = mLoadedDocuments.init(aNode);
+    rv = mLoadedDocuments.init(txXPathNodeUtils::getOwnerDocument(aNode));
     NS_ENSURE_SUCCESS(rv, rv);
 
     
