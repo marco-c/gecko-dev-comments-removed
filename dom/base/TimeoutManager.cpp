@@ -916,11 +916,16 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
         return;
       }
 
+      
+      
+      
+      
+      TimeStamp lastCallbackTime = now;
       now = TimeStamp::Now();
 
       
       
-      bool needsReinsertion = RescheduleTimeout(timeout, now);
+      bool needsReinsertion = RescheduleTimeout(timeout, lastCallbackTime, now);
 
       
       
@@ -971,20 +976,22 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
 }
 
 bool
-TimeoutManager::RescheduleTimeout(Timeout* aTimeout, const TimeStamp& now)
+TimeoutManager::RescheduleTimeout(Timeout* aTimeout,
+                                  const TimeStamp& aLastCallbackTime,
+                                  const TimeStamp& aCurrentNow)
 {
+  MOZ_DIAGNOSTIC_ASSERT(aLastCallbackTime <= aCurrentNow);
+
   if (!aTimeout->mIsInterval) {
     return false;
   }
-
-  TimeStamp currentNow = TimeStamp::Now();
 
   
   
   TimeDuration nextInterval = CalculateDelay(aTimeout);
 
-  TimeStamp firingTime = now + nextInterval;
-  TimeDuration delay = firingTime - currentNow;
+  TimeStamp firingTime = aLastCallbackTime + nextInterval;
+  TimeDuration delay = firingTime - aCurrentNow;
 
   
   
@@ -993,13 +1000,13 @@ TimeoutManager::RescheduleTimeout(Timeout* aTimeout, const TimeStamp& now)
     delay = TimeDuration(0);
   }
 
-  aTimeout->SetWhenOrTimeRemaining(currentNow, delay);
+  aTimeout->SetWhenOrTimeRemaining(aCurrentNow, delay);
 
   if (mWindow.IsSuspended()) {
     return true;
   }
 
-  nsresult rv = MaybeSchedule(aTimeout->When(), currentNow);
+  nsresult rv = MaybeSchedule(aTimeout->When(), aCurrentNow);
   NS_ENSURE_SUCCESS(rv, false);
 
   return true;

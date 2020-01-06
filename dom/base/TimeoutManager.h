@@ -49,8 +49,6 @@ public:
 
   
   void RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadline);
-  
-  bool RescheduleTimeout(mozilla::dom::Timeout* aTimeout, const TimeStamp& now);
 
   void ClearAllTimeouts();
   uint32_t GetTimeoutId(mozilla::dom::Timeout::Reason aReason);
@@ -116,6 +114,11 @@ public:
 
 private:
   void MaybeStartThrottleTimeout();
+
+  
+  bool RescheduleTimeout(mozilla::dom::Timeout* aTimeout,
+                         const TimeStamp& aLastCallbackTime,
+                         const TimeStamp& aCurrentNow);
 
   bool IsBackground() const;
 
