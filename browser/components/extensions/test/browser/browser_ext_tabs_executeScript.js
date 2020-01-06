@@ -2,8 +2,10 @@
 
 "use strict";
 
+XPCOMUtils.defineLazyPreferenceGetter(this, "useRemoteWebExtensions",
+                                      "extensions.webextensions.remote", false);
+
 add_task(async function testExecuteScript() {
-  let {ExtensionManagement} = Cu.import("resource://gre/modules/ExtensionManagement.jsm", {});
   let {MessageChannel} = Cu.import("resource://gre/modules/MessageChannel.jsm", {});
 
   function countMM(messageManagerMap) {
@@ -257,7 +259,7 @@ add_task(async function testExecuteScript() {
   
   
   is(countMM(MessageChannel.messageManagers), messageManagersSize, "Message manager count");
-  if (!ExtensionManagement.useRemoteWebExtensions) {
+  if (!useRemoteWebExtensions) {
     is(countMM(MessageChannel.responseManagers), responseManagersSize, "Response manager count");
   }
   is(MessageChannel.pendingResponses.size, 0, "Pending response count");

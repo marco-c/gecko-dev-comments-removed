@@ -3,19 +3,6 @@
 "use strict";
 
 add_task(async function webNavigation_getFrameId_of_existing_main_frame() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   const BASE = "http://mochi.test:8888/browser/browser/components/extensions/test/browser/";
   const DUMMY_URL = BASE + "file_dummy.html";
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, DUMMY_URL, true);
