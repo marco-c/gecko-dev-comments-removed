@@ -678,7 +678,6 @@ pref("layers.geometry.d3d11.enabled", true);
 pref("apz.allow_checkerboarding", true);
 pref("apz.allow_immediate_handoff", true);
 pref("apz.allow_zooming", false);
-pref("apz.autoscroll.enabled", false);
 
 
 
@@ -5414,7 +5413,7 @@ pref("browser.safebrowsing.provider.mozilla.nextupdatetime", "1");
 pref("browser.safebrowsing.provider.mozilla.lists.base.name", "mozstdName");
 pref("browser.safebrowsing.provider.mozilla.lists.base.description", "mozstdDesc");
 pref("browser.safebrowsing.provider.mozilla.lists.content.name", "mozfullName");
-pref("browser.safebrowsing.provider.mozilla.lists.content.description", "mozfullDesc2");
+pref("browser.safebrowsing.provider.mozilla.lists.content.description", "mozfullDesc");
 
 pref("urlclassifier.flashAllowTable", "allow-flashallow-digest256");
 pref("urlclassifier.flashAllowExceptTable", "except-flashallow-digest256");
@@ -5738,12 +5737,11 @@ pref("layout.css.servo.enabled", false);
 
 
 
-#ifdef RELEASE
 
 
 pref("security.mixed_content.send_hsts_priming", false);
 pref("security.mixed_content.use_hsts", false);
-#else
+#ifdef EARLY_BETA_OR_EARLIER
 
 
 pref("security.mixed_content.send_hsts_priming", true);

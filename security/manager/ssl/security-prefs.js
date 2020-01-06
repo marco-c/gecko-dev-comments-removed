@@ -124,12 +124,11 @@ pref("security.cert_pinning.max_max_age_seconds", 5184000);
 
 
 
-#ifdef RELEASE
 
 
 pref("security.mixed_content.send_hsts_priming", false);
 pref("security.mixed_content.use_hsts", false);
-#else
+#ifdef EARLY_BETA_OR_EARLIER
 
 
 pref("security.mixed_content.send_hsts_priming", true);
