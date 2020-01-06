@@ -487,6 +487,9 @@ pref("browser.tabs.showAudioPlayingIcon", true);
 
 pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
 
+
+pref("browser.tabs.tabMinWidth", 50);
+
 pref("browser.ctrlTab.previews", false);
 
 
