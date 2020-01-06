@@ -857,6 +857,17 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
   uint32_t maxTouchPoints = 0;
   DimensionInfo dimensionInfo;
 
+  nsCOMPtr<nsPIDOMWindowInner> parentTopInnerWindow;
+  if (aParent) {
+    nsCOMPtr<nsPIDOMWindowOuter> parentTopWindow =
+      nsPIDOMWindowOuter::From(aParent)->GetTop();
+    if (parentTopWindow) {
+      parentTopInnerWindow = parentTopWindow->GetCurrentInnerWindow();
+    }
+  }
+
+  
+  RefPtr<CreateWindowPromise> windowCreated;
   if (aIframeMoz) {
     MOZ_ASSERT(aTabOpener);
     nsAutoCString url;
@@ -869,10 +880,11 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
       url.SetIsVoid(true);
     }
 
-    newChild->SendBrowserFrameOpenWindow(aTabOpener, renderFrame, NS_ConvertUTF8toUTF16(url),
-                                         name, NS_ConvertUTF8toUTF16(features),
-                                         aWindowIsNew, &textureFactoryIdentifier,
-                                         &layersId, &compositorOptions, &maxTouchPoints);
+    
+    
+    windowCreated =
+      newChild->SendBrowserFrameOpenWindow(aTabOpener, renderFrame, NS_ConvertUTF8toUTF16(url),
+                                           name, NS_ConvertUTF8toUTF16(features));
   } else {
     nsAutoCString baseURIString;
     float fullZoom;
@@ -881,30 +893,89 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
       return rv;
     }
 
-    if (!SendCreateWindow(aTabOpener, newChild, renderFrame,
-                          aChromeFlags, aCalledFromJS, aPositionSpecified,
-                          aSizeSpecified,
-                          features,
-                          baseURIString,
-                          fullZoom,
-                          &rv,
-                          aWindowIsNew,
-                          &frameScripts,
-                          &urlToLoad,
-                          &textureFactoryIdentifier,
-                          &layersId,
-                          &compositorOptions,
-                          &maxTouchPoints,
-                          &dimensionInfo)) {
-      PRenderFrameChild::Send__delete__(renderFrame);
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-
-    if (NS_FAILED(rv)) {
-      PRenderFrameChild::Send__delete__(renderFrame);
-      return rv;
-    }
+    windowCreated =
+      SendCreateWindow(aTabOpener, newChild, renderFrame,
+                       aChromeFlags, aCalledFromJS, aPositionSpecified,
+                       aSizeSpecified,
+                       features,
+                       baseURIString,
+                       fullZoom);
   }
+
+  
+  
+  
+  bool ready = false;
+  windowCreated->Then(SystemGroup::EventTargetFor(TaskCategory::Other), __func__,
+                      [&] (const CreatedWindowInfo& info) {
+                        rv = info.rv();
+                        *aWindowIsNew = info.windowOpened();
+                        frameScripts = info.frameScripts();
+                        urlToLoad = info.urlToLoad();
+                        textureFactoryIdentifier = info.textureFactoryIdentifier();
+                        layersId = info.layersId();
+                        compositorOptions = info.compositorOptions();
+                        maxTouchPoints = info.maxTouchPoints();
+                        dimensionInfo = info.dimensions();
+                        ready = true;
+                      },
+                      [&] (const CreateWindowPromise::RejectValueType aReason) {
+                        NS_WARNING("windowCreated promise rejected");
+                        rv = NS_ERROR_NOT_AVAILABLE;
+                        ready = true;
+                      });
+
+  
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+  newChild->AddPendingDocShellBlocker();
+  auto removePendingDocShellBlocker = MakeScopeExit([&] {
+    if (newChild) {
+      newChild->RemovePendingDocShellBlocker();
+    }
+  });
+
+  
+  if (parentTopInnerWindow) {
+    parentTopInnerWindow->Suspend();
+  }
+
+  {
+    AutoNoJSAPI nojsapi;
+
+    
+    
+    
+    
+    SpinEventLoopUntil([&] () { return ready; });
+    MOZ_RELEASE_ASSERT(ready,
+                       "We are on the main thread, so we should not exit this "
+                       "loop without ready being true.");
+  }
+
+  if (parentTopInnerWindow) {
+    parentTopInnerWindow->Resume();
+  }
+
+  
+  
+  
+
+  
+  
+  if (NS_FAILED(rv)) {
+    PRenderFrameChild::Send__delete__(renderFrame);
+    return rv;
+  }
+
   if (!*aWindowIsNew) {
     PRenderFrameChild::Send__delete__(renderFrame);
     return NS_ERROR_ABORT;
