@@ -308,7 +308,12 @@ exports.WebConsoleCommands = WebConsoleCommands;
 
 
 WebConsoleCommands._registerOriginal("$", function (owner, selector) {
-  return owner.window.document.querySelector(selector);
+  try {
+    return owner.window.document.querySelector(selector);
+  } catch (err) {
+    
+    throw new owner.window.DOMException(err.message, err.name);
+  }
 });
 
 
@@ -320,7 +325,13 @@ WebConsoleCommands._registerOriginal("$", function (owner, selector) {
 
 
 WebConsoleCommands._registerOriginal("$$", function (owner, selector) {
-  let nodes = owner.window.document.querySelectorAll(selector);
+  let nodes;
+  try {
+    nodes = owner.window.document.querySelectorAll(selector);
+  } catch (err) {
+    
+    throw new owner.window.DOMException(err.message, err.name);
+  }
 
   
   
