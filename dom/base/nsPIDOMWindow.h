@@ -127,11 +127,6 @@ template<class T>
 class nsPIDOMWindow : public T
 {
 public:
-  nsPIDOMWindowInner* AsInner();
-  const nsPIDOMWindowInner* AsInner() const;
-  nsPIDOMWindowOuter* AsOuter();
-  const nsPIDOMWindowOuter* AsOuter() const;
-
   virtual nsPIDOMWindowOuter* GetPrivateRoot() = 0;
   virtual mozilla::dom::CustomElementRegistry* CustomElements() = 0;
   
@@ -224,10 +219,6 @@ protected:
 
 public:
   
-  inline bool IsLoading() const;
-  inline bool IsHandlingResizeEvent() const;
-
-  
   
   
   virtual void SetInitialPrincipalToSubject() = 0;
@@ -254,13 +245,6 @@ public:
   
   
   virtual nsresult FireDelayedDOMEvents() = 0;
-
-  nsPIDOMWindowOuter* GetOuterWindow() const
-  {
-    return mIsInnerWindow
-      ? mOuterWindow.get()
-      : const_cast<nsPIDOMWindowOuter*>(AsOuter());
-  }
 
   bool IsInnerWindow() const
   {
@@ -763,6 +747,17 @@ class nsPIDOMWindowInner : public nsPIDOMWindow<mozIDOMWindow>
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_PIDOMWINDOWINNER_IID)
 
+  nsPIDOMWindowInner* AsInner() {
+    return this;
+  }
+  const nsPIDOMWindowInner* AsInner() const {
+    return this;
+  }
+
+  nsPIDOMWindowOuter* GetOuterWindow() const {
+    return mOuterWindow;
+  }
+
   static nsPIDOMWindowInner* From(mozIDOMWindow* aFrom) {
     return static_cast<nsPIDOMWindowInner*>(aFrom);
   }
@@ -778,6 +773,10 @@ public:
 
   
   inline bool IsTopInnerWindow() const;
+
+  
+  inline bool IsLoading() const;
+  inline bool IsHandlingResizeEvent() const;
 
   bool AddAudioContext(mozilla::dom::AudioContext* aAudioContext);
   void RemoveAudioContext(mozilla::dom::AudioContext* aAudioContext);
@@ -958,6 +957,17 @@ protected:
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_PIDOMWINDOWOUTER_IID)
 
+  nsPIDOMWindowOuter* AsOuter() {
+    return this;
+  }
+  const nsPIDOMWindowOuter* AsOuter() const {
+    return this;
+  }
+
+  nsPIDOMWindowOuter* GetOuterWindow() const {
+    return const_cast<nsPIDOMWindowOuter*>(this);
+  }
+
   static nsPIDOMWindowOuter* From(mozIDOMWindowProxy* aFrom) {
     return static_cast<nsPIDOMWindowOuter*>(aFrom);
   }
@@ -965,6 +975,10 @@ public:
   
   
   static nsPIDOMWindowOuter* GetFromCurrentInner(nsPIDOMWindowInner* aInner);
+
+  
+  inline bool IsLoading() const;
+  inline bool IsHandlingResizeEvent() const;
 
   nsPIDOMWindowInner* GetCurrentInnerWindow() const
   {
