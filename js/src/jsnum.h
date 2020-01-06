@@ -82,6 +82,10 @@ extern JSAtom*
 Int32ToAtom(JSContext* cx, int32_t si);
 
 
+extern bool
+IsInteger(const Value& val);
+
+
 
 
 
