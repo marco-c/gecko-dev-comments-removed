@@ -7,6 +7,7 @@
 #include "sandboxBroker.h"
 
 #include <string>
+#include <vector>
 
 #include "base/win/windows_version.h"
 #include "mozilla/Assertions.h"
@@ -30,8 +31,24 @@
 
 
 
+const std::vector<std::wstring> kDllsToUnload = {
+  
+  L"hmpalert.dll",
 
-#define WEBROOT_DLL L"WRusr.dll"
+  
+  L"k7pswsen.dll",
+
+  
+  L"prntm64.dll",
+  L"sysfer.dll",
+
+  
+  L"snxhk64.dll",
+  L"snxhk.dll",
+
+  
+  L"wrusr.dll",
+};
 
 namespace mozilla
 {
@@ -217,8 +234,19 @@ SandboxBroker::LaunchApp(const wchar_t *aPath,
   }
 
   
-  PROCESS_INFORMATION targetInfo = {0};
+  
   sandbox::ResultCode result;
+  for (std::wstring dllToUnload : kDllsToUnload) {
+    
+    if (::GetModuleHandleW(dllToUnload.c_str())) {
+      result = mPolicy->AddDllToUnload(dllToUnload.c_str());
+      MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
+                         "AddDllToUnload should never fail, what happened?");
+    }
+  }
+
+  
+  PROCESS_INFORMATION targetInfo = {0};
   sandbox::ResultCode last_warning = sandbox::SBOX_ALL_OK;
   DWORD last_error = ERROR_SUCCESS;
   result = sBrokerService->SpawnTarget(aPath, aArguments, mPolicy,
@@ -444,12 +472,6 @@ SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
     result = mPolicy->SetAlternateDesktop(false);
     MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
                        "Failed to create alternate desktop for sandbox.");
-
-    
-    
-    result = mPolicy->AddDllToUnload(WEBROOT_DLL);
-    MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
-                       "AddDllToUnload should never fail, what happened?");
 
     mitigations |= sandbox::MITIGATION_IMAGE_LOAD_NO_LOW_LABEL;
     
@@ -832,12 +854,6 @@ SandboxBroker::SetSecurityLevelForGMPlugin(SandboxLevel aLevel)
   result = mPolicy->SetAlternateDesktop(true);
   SANDBOX_ENSURE_SUCCESS(result,
                          "Failed to create alternate desktop for sandbox.");
-
-  
-  
-  result = mPolicy->AddDllToUnload(WEBROOT_DLL);
-  MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
-                     "AddDllToUnload should never fail, what happened?");
 
   result = mPolicy->SetIntegrityLevel(sandbox::INTEGRITY_LEVEL_LOW);
   MOZ_ASSERT(sandbox::SBOX_ALL_OK == result,
