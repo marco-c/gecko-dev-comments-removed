@@ -1,11 +1,7 @@
 
 
 
-#ifdef RELEASE_OR_BETA
-pref("devtools.debugger.new-debugger-frontend", false);
-#else
 pref("devtools.debugger.new-debugger-frontend", true);
-#endif
 
 
 pref("devtools.debugger.enabled", true);
