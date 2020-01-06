@@ -479,6 +479,11 @@ function StartTests()
 
     
     
+    
+    CleanUpCrashDumpFiles();
+
+    
+    
     if (gRepeat == null) {
       gRepeat = prefs.getIntPref("reftest.repeat", 0);
     }
@@ -1924,7 +1929,11 @@ function FindUnexpectedCrashDumpFiles()
             if (!foundCrashDumpFile) {
                 ++gTestResults.UnexpectedFail;
                 foundCrashDumpFile = true;
-                logger.testEnd(gCurrentURL, "FAIL", "PASS", "This test left crash dumps behind, but we weren't expecting it to!");
+                if (gCurrentURL) {
+                    logger.testEnd(gCurrentURL, "FAIL", "PASS", "This test left crash dumps behind, but we weren't expecting it to!");
+                } else {
+                    logger.error("Harness startup left crash dumps behind, but we weren't expecting it to!");
+                }
             }
             logger.info("Found unexpected crash dump file " + path);
             gUnexpectedCrashDumpFiles[path] = true;
