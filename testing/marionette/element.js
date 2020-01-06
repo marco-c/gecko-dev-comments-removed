@@ -10,7 +10,6 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 Cu.import("chrome://marionette/content/assert.js");
 Cu.import("chrome://marionette/content/atom.js");
 const {
-  InvalidArgumentError,
   InvalidSelectorError,
   NoSuchElementError,
   StaleElementReferenceError,
@@ -1264,7 +1263,7 @@ class WebElement {
       return new ChromeWebElement(uuid);
     }
 
-    throw new InvalidArgumentError("Expected DOM window/element " +
+    throw new TypeError("Expected DOM window/element " +
         pprint`or XUL element, got: ${node}`);
   }
 
@@ -1285,8 +1284,12 @@ class WebElement {
 
 
   static fromJSON(json) {
-    assert.object(json);
-    let keys = Object.keys(json);
+    let keys = [];
+    try {
+      keys = Object.keys(json);
+    } catch (e) {
+      throw new TypeError(`Expected JSON Object: ${e}`);
+    }
 
     for (let key of keys) {
       switch (key) {
@@ -1305,11 +1308,12 @@ class WebElement {
       }
     }
 
-    throw new InvalidArgumentError(
+    throw new TypeError(
         pprint`Expected web element reference, got: ${json}`);
   }
 
   
+
 
 
 
@@ -1344,7 +1348,7 @@ class WebElement {
         return new ContentWebElement(uuid);
 
       default:
-        throw new InvalidArgumentError("Unknown context: " + context);
+        throw new TypeError("Unknown context: " + context);
     }
   }
 
@@ -1403,7 +1407,7 @@ class ContentWebElement extends WebElement {
     const {Identifier, LegacyIdentifier} = ContentWebElement;
 
     if (!(Identifier in json) && !(LegacyIdentifier in json)) {
-      throw new InvalidArgumentError(
+      throw new TypeError(
           pprint`Expected web element reference, got: ${json}`);
     }
 
@@ -1430,7 +1434,7 @@ class ContentWebWindow extends WebElement {
 
   static fromJSON(json) {
     if (!(ContentWebWindow.Identifier in json)) {
-      throw new InvalidArgumentError(
+      throw new TypeError(
           pprint`Expected web window reference, got: ${json}`);
     }
     let uuid = json[ContentWebWindow.Identifier];
@@ -1455,7 +1459,7 @@ class ContentWebFrame extends WebElement {
 
   static fromJSON(json) {
     if (!(ContentWebFrame.Identifier in json)) {
-      throw new InvalidArgumentError(pprint`Expected web frame reference, got: ${json}`);
+      throw new TypeError(pprint`Expected web frame reference, got: ${json}`);
     }
     let uuid = json[ContentWebFrame.Identifier];
     return new ContentWebFrame(uuid);
@@ -1478,7 +1482,7 @@ class ChromeWebElement extends WebElement {
 
   static fromJSON(json) {
     if (!(ChromeWebElement.Identifier in json)) {
-      throw new InvalidArgumentError("Expected chrome element reference " +
+      throw new TypeError("Expected chrome element reference " +
           pprint`for XUL/XBL element, got: ${json}`);
     }
     let uuid = json[ChromeWebElement.Identifier];

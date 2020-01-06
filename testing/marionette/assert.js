@@ -334,7 +334,6 @@ assert.object = function(obj, msg = "") {
 
 
 
-
 assert.in = function(prop, obj, msg = "") {
   assert.object(obj, msg);
   msg = msg || pprint`Expected ${prop} in ${obj}`;
