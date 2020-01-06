@@ -5,6 +5,8 @@
 
 
 #include "nsReferencedElement.h"
+
+#include "mozilla/Encoding.h"
 #include "nsContentUtils.h"
 #include "nsIURI.h"
 #include "nsBindingManager.h"
@@ -115,7 +117,7 @@ nsReferencedElement::Reset(nsIContent* aFromContent, nsIURI* aURI,
   }
 
   if (aWatch) {
-    RefPtr<nsIAtom> atom = NS_Atomize(ref);
+    nsCOMPtr<nsIAtom> atom = NS_Atomize(ref);
     if (!atom)
       return;
     atom.swap(mWatchID);
@@ -137,7 +139,7 @@ nsReferencedElement::ResetWithID(nsIContent* aFromContent, const nsString& aID,
   
 
   if (aWatch) {
-    RefPtr<nsIAtom> atom = NS_Atomize(aID);
+    nsCOMPtr<nsIAtom> atom = NS_Atomize(aID);
     if (!atom)
       return;
     atom.swap(mWatchID);
