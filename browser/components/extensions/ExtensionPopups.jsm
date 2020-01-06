@@ -421,9 +421,6 @@ class ViewPopup extends BasePopup {
     
     let panel = document.createElement("panel");
     panel.setAttribute("type", "arrow");
-    if (extension.remote) {
-      panel.setAttribute("remote", "true");
-    }
     document.getElementById("mainPopupSet").appendChild(panel);
 
     super(extension, panel, popupURL, browserStyle, fixedWidth, blockParser);

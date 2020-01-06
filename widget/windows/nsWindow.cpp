@@ -7170,6 +7170,19 @@ nsWindow::IsPopup()
   return mWindowType == eWindowType_popup;
 }
 
+bool
+nsWindow::ShouldUseOffMainThreadCompositing()
+{
+  
+  
+  
+  if (!(HasRemoteContent() && gIsPopupCompositingEnabled) && mTransparencyMode == eTransparencyTransparent) {
+    return false;
+  }
+
+  return nsBaseWidget::ShouldUseOffMainThreadCompositing();
+}
+
 void
 nsWindow::WindowUsesOMTC()
 {
