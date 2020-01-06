@@ -277,7 +277,9 @@ HighlightersOverlay.prototype = {
 
     try {
       highlighter = yield utils.getHighlighterByType(type);
-    } catch (e) {}
+    } catch (e) {
+      
+    }
 
     if (!highlighter) {
       return null;
