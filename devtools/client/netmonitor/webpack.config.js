@@ -18,11 +18,30 @@ let webpackConfig = {
   },
 
   module: {
-    loaders: [
+    rules: [
       {
         test: /\.(png|svg)$/,
         loader: "file-loader?name=[path][name].[ext]",
       },
+      {
+        
+
+
+
+
+
+
+
+        test: /\.js/,
+        loader: "rewrite-raw",
+      },
+    ]
+  },
+
+  resolveLoader: {
+    modules: [
+      path.resolve("./node_modules"),
+      path.resolve("../shared/webpack"),
     ]
   },
 
@@ -33,16 +52,22 @@ let webpackConfig = {
     libraryTarget: "umd",
   },
 
-  
   resolve: {
-    fallback: path.join(__dirname, "node_modules"),
+    modules: [
+      
+      
+      path.resolve(__dirname, "node_modules"), "node_modules"
+    ],
     alias: {
+      "Services": "devtools-modules/src/Services",
       "react": path.join(__dirname, "node_modules/react"),
+
       "devtools/client/framework/devtools": path.join(__dirname, "../../client/shims/devtools"),
       "devtools/client/framework/menu": "devtools-modules/src/menu",
       "devtools/client/framework/menu-item": path.join(__dirname, "../../client/framework/menu-item"),
       "devtools/client/locales": path.join(__dirname, "../../client/locales/en-US"),
       "devtools/client/netmonitor/src/utils/menu": "devtools-contextmenu",
+
       "devtools/client/shared/components/autocomplete-popup": path.join(__dirname, "../../client/shared/components/autocomplete-popup"),
       "devtools/client/shared/components/reps/reps": path.join(__dirname, "../../client/shared/components/reps/reps"),
       "devtools/client/shared/components/search-box": path.join(__dirname, "../../client/shared/components/search-box"),
@@ -60,6 +85,7 @@ let webpackConfig = {
       "devtools/client/shared/prefs": path.join(__dirname, "../../client/shared/prefs"),
       "devtools/client/shared/scroll": path.join(__dirname, "../../client/shared/scroll"),
       "devtools/client/shared/source-utils": path.join(__dirname, "../../client/shared/source-utils"),
+      "devtools/client/shared/theme": path.join(__dirname, "../../client/shared/theme"),
       "devtools/client/shared/vendor/immutable": "immutable",
       "devtools/client/shared/vendor/react": "react",
       "devtools/client/shared/vendor/react-dom": "react-dom",
@@ -71,7 +97,10 @@ let webpackConfig = {
       "devtools/client/shared/widgets/tooltip/ImageTooltipHelper": path.join(__dirname, "../../client/shared/widgets/tooltip/ImageTooltipHelper"),
       "devtools/client/shared/widgets/tooltip/TooltipToggle": path.join(__dirname, "../../client/shared/widgets/tooltip/TooltipToggle"),
       "devtools/client/shared/widgets/Chart": path.join(__dirname, "../../client/shared/widgets/Chart"),
+
       "devtools/client/sourceeditor/editor": "devtools-source-editor/src/source-editor",
+      "devtools/client/themes/variables.css": path.join(__dirname, "../../client/themes/variables.css"),
+
       "devtools/shared/async-utils": path.join(__dirname, "../../shared/async-utils"),
       "devtools/shared/defer": path.join(__dirname, "../../shared/defer"),
       "devtools/shared/old-event-emitter": "devtools-modules/src/utils/event-emitter",
@@ -80,9 +109,16 @@ let webpackConfig = {
       "devtools/shared/locales": path.join(__dirname, "../../shared/locales/en-US"),
       "devtools/shared/platform/clipboard": path.join(__dirname, "../../shared/platform/content/clipboard"),
       "devtools/shared/plural-form": path.join(__dirname, "../../shared/plural-form"),
+      "devtools/shared/css/color": path.join(__dirname, "../../shared/css/color"),
+      "devtools/shared/css/color-db": path.join(__dirname, "../../shared/css/color-db"),
+      "devtools/shared/css/lexer": path.join(__dirname, "../../shared/css/lexer"),
+      "devtools/shared/css/parsing-utils": path.join(__dirname, "../../shared/css/parsing-utils"),
+      "devtools/shared/css/properties-db": path.join(__dirname, "../../shared/css/properties-db"),
+      "devtools/shared/css/generated/properties-db": path.join(__dirname, "../../shared/css/generated/properties-db"),
       "devtools/shared/task": path.join(__dirname, "../../shared/task"),
+
+      "devtools/shim/locales": path.join(__dirname, "../../shared/locales/en-US"),
       "toolkit/locales": path.join(__dirname, "../../../toolkit/locales/en-US"),
-      "Services": "devtools-modules/src/Services",
     },
   },
 };
@@ -114,19 +150,18 @@ const mappings = [
 webpackConfig.plugins = mappings.map(([regex, res]) =>
   new NormalModuleReplacementPlugin(regex, res));
 
-
 const basePath = path.join(__dirname, "../../").replace(/\\/g, "\\\\");
 const baseName = path.basename(__dirname);
-webpackConfig.babelExcludes = new RegExp(`^${basePath}(.(?!${baseName}))*$`);
 
-let config = toolboxConfig(webpackConfig, getConfig());
-
-
-
-
+let config = toolboxConfig(webpackConfig, getConfig(), {
+  
+  babelExcludes: new RegExp(`^${basePath}(.(?!${baseName}))*$`)
+});
 
 
-config.module.loaders = config.module.loaders
-  .filter((loader) => !["svg-inline", "raw"].includes(loader.loader));
+
+
+config.module.rules = config.module.rules
+  .filter((rule) => !["svg-inline-loader"].includes(rule.loader));
 
 module.exports = config;
