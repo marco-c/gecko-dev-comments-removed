@@ -7,6 +7,7 @@
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/CompositorManagerParent.h"
 #include "mozilla/layers/CompositorThread.h"
+#include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/dom/ContentChild.h"   
 #include "mozilla/dom/TabChild.h"       
 #include "mozilla/dom/TabGroup.h"       
@@ -161,6 +162,7 @@ CompositorManagerChild::CompositorManagerChild(CompositorManagerParent* aParent,
 
   mCanSend = true;
   AddRef();
+  SetReplyTimeout();
 }
 
 CompositorManagerChild::CompositorManagerChild(Endpoint<PCompositorManagerChild>&& aEndpoint,
@@ -175,6 +177,7 @@ CompositorManagerChild::CompositorManagerChild(Endpoint<PCompositorManagerChild>
 
   mCanSend = true;
   AddRef();
+  SetReplyTimeout();
 }
 
 void
@@ -241,6 +244,27 @@ CompositorManagerChild::GetSpecificMessageEventTarget(const Message& aMsg)
   }
 
   return do_AddRef(tabChild->TabGroup()->EventTargetFor(TaskCategory::Other));
+}
+
+void
+CompositorManagerChild::SetReplyTimeout()
+{
+#ifndef DEBUG
+  
+  if (XRE_IsParentProcess()) {
+    int32_t timeout = gfxPrefs::GPUProcessIPCReplyTimeoutMs();
+    SetReplyTimeoutMs(timeout);
+  }
+#endif
+}
+
+bool
+CompositorManagerChild::ShouldContinueFromReplyTimeout()
+{
+  if (XRE_IsParentProcess()) {
+    GPUProcessManager::Get()->KillProcess();
+  }
+  return false;
 }
 
 } 
