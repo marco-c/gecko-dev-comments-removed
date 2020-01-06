@@ -8,7 +8,6 @@
 
 
 
-
 const expressionSelectors = {
   input: "input.input-expression"
 };
@@ -57,38 +56,19 @@ async function editExpression(dbg, input) {
 add_task(async function() {
   const dbg = await initDebugger("doc-script-switching.html");
 
-  invokeInTab("firstCall");
+  await togglePauseOnExceptions(dbg, true, false);
+  await addExpression(dbg, "location");
+
+  const paused = waitForPaused(dbg);
+  addExpression(dbg, "foo.bar");
+  await paused;
+  ok(dbg.selectors.hasWatchExpressionErrored(dbg.getState()));
+
+  
+  resume(dbg);
   await waitForPaused(dbg);
 
-  await addExpression(dbg, "f");
-  is(getLabel(dbg, 1), "f");
-  is(getValue(dbg, 1), "(unavailable)");
-
-  await editExpression(dbg, "oo");
-  is(getLabel(dbg, 1), "foo()");
-
-  
-  assertEmptyValue(dbg, 1);
-
-  await addExpression(dbg, "location");
-  is(getLabel(dbg, 2), "location");
-  ok(getValue(dbg, 2).includes("Location"), "has a value");
-
-  
-  toggleExpression(dbg, 2);
-  await waitForDispatch(dbg, "LOAD_OBJECT_PROPERTIES");
-
-  await deleteExpression(dbg, "foo");
-  await deleteExpression(dbg, "location");
-  is(findAllElements(dbg, "expressionNodes").length, 0);
-
-  
-  await resume(dbg);
-  await addExpression(dbg, "location");
   toggleExpression(dbg, 1);
   await waitForDispatch(dbg, "LOAD_OBJECT_PROPERTIES");
-  is(findAllElements(dbg, "expressionNodes").length, 17);
-
-  await deleteExpression(dbg, "location");
-  is(findAllElements(dbg, "expressionNodes").length, 0);
+  is(findAllElements(dbg, "expressionNodes").length, 18);
 });

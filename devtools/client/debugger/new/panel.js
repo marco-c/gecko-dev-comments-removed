@@ -31,11 +31,11 @@ DebuggerPanel.prototype = {
       tabTarget: this.toolbox.target,
       debuggerClient: this.toolbox.target.client,
       sourceMaps: this.toolbox.sourceMapService,
-      
       toolboxActions: {
+        
         openLink: this.openLink.bind(this)
       }
-    })
+    });
 
     this._actions = actions;
     this._store = store;

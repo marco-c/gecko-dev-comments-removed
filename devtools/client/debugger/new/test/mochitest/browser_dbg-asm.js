@@ -1,15 +1,25 @@
+add_task(async function() {
+  const dbg = await initDebugger("doc-asm.html");
+  await reload(dbg);
 
+  
+  
+  await waitForPaused(dbg);
+  await resume(dbg);
 
+  await waitForSources(dbg, "doc-asm.html", "asm.js");
 
+  
+  is(findAllElements(dbg, "sourceNodes").length, 2);
 
+  await clickElement(dbg, "sourceArrow", 2);
+  is(findAllElements(dbg, "sourceNodes").length, 4);
 
+  await selectSource(dbg, "asm.js");
 
-const {
-  setupTestRunner,
-  asm
-} = require("devtools/client/debugger/new/integration-tests");
+  await addBreakpoint(dbg, "asm.js", 7);
+  invokeInTab("runAsm");
 
-add_task(function*() {
-  setupTestRunner(this);
-  yield asm(this);
+  await waitForPaused(dbg);
+  assertPausedLocation(dbg, "asm.js", 7);
 });
