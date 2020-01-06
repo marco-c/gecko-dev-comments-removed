@@ -278,6 +278,14 @@ AnimationTimeBlock.prototype = {
 
     
     
+    if (state.animationTimingFunction && state.animationTimingFunction !== "ease") {
+      text += L10N.getStr("player.animationTimingFunctionLabel") + " ";
+      text += state.animationTimingFunction;
+      text += "\n";
+    }
+
+    
+    
     if (state.propertyState) {
       if (state.propertyState
                .every(propState => propState.runningOnCompositor)) {
