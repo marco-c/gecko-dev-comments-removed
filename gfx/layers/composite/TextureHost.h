@@ -617,7 +617,7 @@ public:
   
   virtual void CreateRenderTexture(const wr::ExternalImageId& aExternalImageId)
   {
-    MOZ_ASSERT_UNREACHABLE("No CreateRenderTexture() implementation for this TextureHost type.");
+    MOZ_RELEASE_ASSERT(false, "No CreateRenderTexture() implementation for this TextureHost type.");
   }
 
   
