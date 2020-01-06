@@ -8,7 +8,6 @@ use euclid::Size2D;
 use fnv::FnvHashMap;
 use gleam::gl;
 use offscreen_gl_context::{GLContext, GLContextAttributes, GLLimits, NativeGLContextMethods};
-use std::mem;
 use std::thread;
 use super::gl_context::{GLContextFactory, GLContextWrapper};
 use webrender;
@@ -202,8 +201,6 @@ impl<VR: WebVRRenderHandler + 'static, OB: WebGLThreadObserver> WebGLThread<VR, 
                     image_key: None,
                     share_mode,
                     gl_sync: None,
-                    old_image_key: None,
-                    very_old_image_key: None,
                 });
 
                 self.observer.on_context_create(id, texture_id, size);
@@ -233,11 +230,16 @@ impl<VR: WebVRRenderHandler + 'static, OB: WebGLThreadObserver> WebGLThread<VR, 
                 info.size = real_size;
                 
                 
-                if let Some(image_key) = info.image_key.take() {
-                    
-                    
-                    debug_assert!(info.old_image_key.is_none());
-                    info.old_image_key = Some(image_key);
+                
+                match (info.image_key, info.share_mode) {
+                    (Some(image_key), WebGLContextShareMode::SharedTexture) => {
+                        Self::update_wr_external_image(&self.webrender_api,
+                                                       info.size,
+                                                       info.alpha,
+                                                       context_id,
+                                                       image_key);
+                    },
+                    _ => {}
                 }
 
                 sender.send(Ok(())).unwrap();
@@ -255,12 +257,6 @@ impl<VR: WebVRRenderHandler + 'static, OB: WebGLThreadObserver> WebGLThread<VR, 
             let mut updates = webrender_api::ResourceUpdates::new();
 
             if let Some(image_key) = info.image_key {
-                updates.delete_image(image_key);
-            }
-            if let Some(image_key) = info.old_image_key {
-                updates.delete_image(image_key);
-            }
-            if let Some(image_key) = info.very_old_image_key {
                 updates.delete_image(image_key);
             }
 
@@ -323,13 +319,6 @@ impl<VR: WebVRRenderHandler + 'static, OB: WebGLThreadObserver> WebGLThread<VR, 
         };
 
         
-        if let Some(image_key) = mem::replace(&mut info.very_old_image_key, info.old_image_key.take()) {
-            let mut updates = webrender_api::ResourceUpdates::new();
-            updates.delete_image(image_key);
-            self.webrender_api.update_resources(updates);
-        }
-
-        
         sender.send(image_key).unwrap();
     }
 
@@ -365,13 +354,7 @@ impl<VR: WebVRRenderHandler + 'static, OB: WebGLThreadObserver> WebGLThread<VR, 
                                 alpha: bool,
                                 context_id: WebGLContextId) -> webrender_api::ImageKey {
         let descriptor = Self::image_descriptor(size, alpha);
-
-        let data = webrender_api::ExternalImageData {
-            id: webrender_api::ExternalImageId(context_id.0 as u64),
-            channel_index: 0,
-            image_type: webrender_api::ExternalImageType::Texture2DHandle,
-        };
-        let data = webrender_api::ImageData::External(data);
+        let data = Self::external_image_data(context_id);
 
         let image_key = webrender_api.generate_image_key();
         let mut updates = webrender_api::ResourceUpdates::new();
@@ -382,6 +365,23 @@ impl<VR: WebVRRenderHandler + 'static, OB: WebGLThreadObserver> WebGLThread<VR, 
         webrender_api.update_resources(updates);
 
         image_key
+    }
+
+    
+    fn update_wr_external_image(webrender_api: &webrender_api::RenderApi,
+                                size: Size2D<i32>,
+                                alpha: bool,
+                                context_id: WebGLContextId,
+                                image_key: webrender_api::ImageKey) {
+        let descriptor = Self::image_descriptor(size, alpha);
+        let data = Self::external_image_data(context_id);
+
+        let mut updates = webrender_api::ResourceUpdates::new();
+        updates.update_image(image_key,
+                             descriptor,
+                             data,
+                             None);
+        webrender_api.update_resources(updates);
     }
 
     
@@ -433,6 +433,16 @@ impl<VR: WebVRRenderHandler + 'static, OB: WebGLThreadObserver> WebGLThread<VR, 
     }
 
     
+    fn external_image_data(context_id: WebGLContextId) -> webrender_api::ImageData {
+        let data = webrender_api::ExternalImageData {
+            id: webrender_api::ExternalImageId(context_id.0 as u64),
+            channel_index: 0,
+            image_type: webrender_api::ExternalImageType::Texture2DHandle,
+        };
+        webrender_api::ImageData::External(data)
+    }
+
+    
     fn raw_pixels(context: &GLContextWrapper, size: Size2D<i32>) -> Vec<u8> {
         let width = size.width as usize;
         let height = size.height as usize;
@@ -479,10 +489,6 @@ struct WebGLContextInfo {
     share_mode: WebGLContextShareMode,
     
     gl_sync: Option<gl::GLsync>,
-    
-    old_image_key: Option<webrender_api::ImageKey>,
-    
-    very_old_image_key: Option<webrender_api::ImageKey>,
 }
 
 
