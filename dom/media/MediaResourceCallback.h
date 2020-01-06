@@ -46,7 +46,7 @@ public:
   virtual void NotifyPrincipalChanged() {}
 
   
-  virtual void NotifySuspendedStatusChanged() {}
+  virtual void NotifySuspendedStatusChanged(bool aSuspendedByCache) {}
 
   
   virtual void NotifyBytesConsumed(int64_t aBytes, int64_t aOffset) {}

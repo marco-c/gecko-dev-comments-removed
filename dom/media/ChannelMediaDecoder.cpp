@@ -114,7 +114,7 @@ ChannelMediaDecoder::ResourceCallback::NotifyDataEnded(nsresult aStatus)
       
       
       
-      self->mDecoder->NotifySuspendedStatusChanged();
+      owner->NotifySuspendedByCache(true);
     }
   });
   mAbstractMainThread->Dispatch(r.forget());
@@ -130,11 +130,14 @@ ChannelMediaDecoder::ResourceCallback::NotifyPrincipalChanged()
 }
 
 void
-ChannelMediaDecoder::ResourceCallback::NotifySuspendedStatusChanged()
+ChannelMediaDecoder::ResourceCallback::NotifySuspendedStatusChanged(
+  bool aSuspendedByCache)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  if (mDecoder) {
-    mDecoder->NotifySuspendedStatusChanged();
+  MediaDecoderOwner* owner = GetMediaOwner();
+  if (owner) {
+    AbstractThread::AutoEnter context(owner->AbstractMainThread());
+    owner->NotifySuspendedByCache(aSuspendedByCache);
   }
 }
 
