@@ -841,39 +841,16 @@ private:
                   uint32_t aDataLength);
 
   
-  class FrameConstructionItemList final {
+
+
+  class FrameConstructionItemList
+  {
   public:
-    FrameConstructionItemList() :
-      mInlineCount(0),
-      mBlockCount(0),
-      mLineParticipantCount(0),
-      mItemCount(0),
-      mLineBoundaryAtStart(false),
-      mLineBoundaryAtEnd(false),
-      mParentHasNoXBLChildren(false),
-      mTriedConstructingFrames(false)
+    void Reset(nsCSSFrameConstructor* aFCtor)
     {
-      memset(mDesiredParentCounts, 0, sizeof(mDesiredParentCounts));
-    }
-
-    ~FrameConstructionItemList() {
-      while (FrameConstructionItem* item = mItems.popFirst()) {
-        delete item;
-      }
-
-      
-      
-      
-      if (!mUndisplayedItems.IsEmpty() && mTriedConstructingFrames) {
-        
-        
-        nsFrameManager *mgr =
-          mUndisplayedItems[0].mStyleContext->PresContext()->FrameManager();
-        for (uint32_t i = 0; i < mUndisplayedItems.Length(); ++i) {
-          UndisplayedItem& item = mUndisplayedItems[i];
-          mgr->RegisterDisplayNoneStyleFor(item.mContent, item.mStyleContext);
-        }
-      }
+      Destroy(aFCtor);
+      this->~FrameConstructionItemList();
+      new (this) FrameConstructionItemList();
     }
 
     void SetLineBoundaryAtStart(bool aBoundary) { mLineBoundaryAtStart = aBoundary; }
@@ -897,7 +874,8 @@ private:
     
     
     
-    FrameConstructionItem* AppendItem(const FrameConstructionData* aFCData,
+    FrameConstructionItem* AppendItem(nsCSSFrameConstructor* aFCtor,
+                                      const FrameConstructionData* aFCData,
                                       nsIContent* aContent,
                                       nsIAtom* aTag,
                                       int32_t aNameSpaceID,
@@ -907,10 +885,10 @@ private:
                                       nsTArray<nsIAnonymousContentCreator::ContentInfo>* aAnonChildren)
     {
       FrameConstructionItem* item =
-        new FrameConstructionItem(aFCData, aContent, aTag, aNameSpaceID,
-                                  aPendingBinding, aStyleContext,
-                                  aSuppressWhiteSpaceOptimizations,
-                                  aAnonChildren);
+        new (aFCtor) FrameConstructionItem(aFCData, aContent, aTag, aNameSpaceID,
+                                           aPendingBinding, aStyleContext,
+                                           aSuppressWhiteSpaceOptimizations,
+                                           aAnonChildren);
       mItems.insertBack(item);
       ++mItemCount;
       ++mDesiredParentCounts[item->DesiredParentType()];
@@ -918,7 +896,8 @@ private:
     }
 
     
-    FrameConstructionItem* PrependItem(const FrameConstructionData* aFCData,
+    FrameConstructionItem* PrependItem(nsCSSFrameConstructor* aFCtor,
+                                       const FrameConstructionData* aFCData,
                                        nsIContent* aContent,
                                        nsIAtom* aTag,
                                        int32_t aNameSpaceID,
@@ -928,10 +907,10 @@ private:
                                        nsTArray<nsIAnonymousContentCreator::ContentInfo>* aAnonChildren)
     {
       FrameConstructionItem* item =
-        new FrameConstructionItem(aFCData, aContent, aTag, aNameSpaceID,
-                                  aPendingBinding, aStyleContext,
-                                  aSuppressWhiteSpaceOptimizations,
-                                  aAnonChildren);
+        new (aFCtor) FrameConstructionItem(aFCData, aContent, aTag, aNameSpaceID,
+                                           aPendingBinding, aStyleContext,
+                                           aSuppressWhiteSpaceOptimizations,
+                                           aAnonChildren);
       mItems.insertFront(item);
       ++mItemCount;
       ++mDesiredParentCounts[item->DesiredParentType()];
@@ -1043,7 +1022,8 @@ private:
       
       
       
-      void AppendItemsToList(const Iterator& aEnd,
+      void AppendItemsToList(nsCSSFrameConstructor*     aFCtor,
+                             const Iterator&            aEnd,
                              FrameConstructionItemList& aTargetList);
 
       
@@ -1058,14 +1038,65 @@ private:
       
       
       
-      void DeleteItemsTo(const Iterator& aEnd);
+      void DeleteItemsTo(nsCSSFrameConstructor* aFCtor, const Iterator& aEnd);
 
     private:
       FrameConstructionItem* mCurrent;
       FrameConstructionItemList& mList;
     };
 
+  protected:
+    FrameConstructionItemList() :
+      mInlineCount(0),
+      mBlockCount(0),
+      mLineParticipantCount(0),
+      mItemCount(0),
+      mLineBoundaryAtStart(false),
+      mLineBoundaryAtEnd(false),
+      mParentHasNoXBLChildren(false),
+      mTriedConstructingFrames(false)
+    {
+      MOZ_COUNT_CTOR(FrameConstructionItemList);
+      memset(mDesiredParentCounts, 0, sizeof(mDesiredParentCounts));
+    }
+
+    void Destroy(nsCSSFrameConstructor* aFCtor)
+    {
+      while (FrameConstructionItem* item = mItems.popFirst()) {
+        item->Delete(aFCtor);
+      }
+
+      
+      
+      
+      if (!mUndisplayedItems.IsEmpty() && mTriedConstructingFrames) {
+        for (uint32_t i = 0; i < mUndisplayedItems.Length(); ++i) {
+          UndisplayedItem& item = mUndisplayedItems[i];
+          aFCtor->RegisterDisplayNoneStyleFor(item.mContent, item.mStyleContext);
+        }
+      }
+    }
+
+    
+    friend struct FrameConstructionItem;
+    ~FrameConstructionItemList()
+    {
+      MOZ_COUNT_DTOR(FrameConstructionItemList);
+      MOZ_ASSERT(mItems.isEmpty(), "leaking");
+    }
   private:
+    
+    void* operator new(size_t) = delete;
+    void* operator new[](size_t) = delete;
+#ifdef _MSC_VER  
+    void operator delete(void*) { MOZ_CRASH("FrameConstructionItemList::del"); }
+#else
+    void operator delete(void*) = delete;
+#endif
+    void operator delete[](void*) = delete;
+    
+    void* operator new(size_t, void* aPtr) { return aPtr; }
+
     struct UndisplayedItem {
       UndisplayedItem(nsIContent* aContent, nsStyleContext* aStyleContext) :
         mContent(aContent), mStyleContext(aStyleContext)
@@ -1098,9 +1129,24 @@ private:
     bool mTriedConstructingFrames;
   };
 
+  
+  struct MOZ_RAII AutoFrameConstructionItemList final
+    : public FrameConstructionItemList
+  {
+    template<typename... Args>
+    explicit AutoFrameConstructionItemList(nsCSSFrameConstructor* aFCtor, Args&&... args)
+      : FrameConstructionItemList(std::forward<Args>(args)...)
+      , mFCtor(aFCtor)
+    { MOZ_ASSERT(mFCtor); }
+    ~AutoFrameConstructionItemList() { Destroy(mFCtor); }
+  private:
+    nsCSSFrameConstructor* const mFCtor;
+  };
+
   typedef FrameConstructionItemList::Iterator FCItemIterator;
 
   
+
 
 
 
@@ -1124,6 +1170,7 @@ private:
       mHasInlineEnds(false), mIsPopup(false),
       mIsLineParticipant(false), mIsForSVGAElement(false)
     {
+      MOZ_COUNT_CTOR(FrameConstructionItem);
       if (aAnonChildren) {
         NS_ASSERTION(!(mFCData->mBits & FCDATA_FUNC_IS_FULL_CTOR) ||
                      mFCData->mFullConstructor ==
@@ -1136,11 +1183,19 @@ private:
         mAnonChildren.SwapElements(*aAnonChildren);
       }
     }
-    ~FrameConstructionItem() {
+
+    void* operator new(size_t, nsCSSFrameConstructor* aFCtor)
+    { return aFCtor->AllocateFCItem(); }
+
+    void Delete(nsCSSFrameConstructor* aFCtor)
+    {
+      mChildItems.Destroy(aFCtor);
       if (mIsGeneratedContent) {
         mContent->UnbindFromTree();
         NS_RELEASE(mContent);
       }
+      this->~FrameConstructionItem();
+      aFCtor->FreeFCItem(this);
     }
 
     ParentType DesiredParentType() {
@@ -1239,7 +1294,44 @@ private:
     bool mIsForSVGAElement:1;
 
   private:
+    
+    
+    void* operator new(size_t) = delete;
+    void* operator new[](size_t) = delete;
+#ifdef _MSC_VER  
+    void operator delete(void*) { MOZ_CRASH("FrameConstructionItem::delete"); }
+#else
+    void operator delete(void*) = delete;
+#endif
+    void operator delete[](void*) = delete;
     FrameConstructionItem(const FrameConstructionItem& aOther) = delete; 
+    
+    ~FrameConstructionItem()
+    {
+      MOZ_COUNT_DTOR(FrameConstructionItem);
+      MOZ_ASSERT(mChildItems.IsEmpty(), "leaking");
+    }
+  };
+
+  
+
+
+
+
+
+
+  struct MOZ_RAII AutoFrameConstructionItem final
+  {
+    template<typename... Args>
+    explicit AutoFrameConstructionItem(nsCSSFrameConstructor* aFCtor, Args&&... args)
+      : mFCtor(aFCtor)
+      , mItem(new (aFCtor) FrameConstructionItem(std::forward<Args>(args)...))
+    { MOZ_ASSERT(mFCtor); }
+    ~AutoFrameConstructionItem() { mItem->Delete(mFCtor); }
+    operator FrameConstructionItem&() { return *mItem; }
+  private:
+    nsCSSFrameConstructor* const mFCtor;
+    FrameConstructionItem* const mItem;
   };
 
   
