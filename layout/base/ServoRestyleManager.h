@@ -163,6 +163,8 @@ private:
 #endif 
 };
 
+enum class ServoPostTraversalFlags : uint32_t;
+
 
 
 
@@ -262,13 +264,13 @@ private:
   bool ProcessPostTraversal(Element* aElement,
                             ServoStyleContext* aParentContext,
                             ServoRestyleState& aRestyleState,
-                            bool aParentWasRestyled);
+                            ServoPostTraversalFlags aFlags);
 
   struct TextPostTraversalState;
   bool ProcessPostTraversalForText(nsIContent* aTextNode,
                                    TextPostTraversalState& aState,
                                    ServoRestyleState& aRestyleState,
-                                   bool aParentWasRestyled);
+                                   ServoPostTraversalFlags aFlags);
 
   inline ServoStyleSet* StyleSet() const
   {
