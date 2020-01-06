@@ -148,6 +148,9 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
     if 'job-script' in run:
         env['JOB_SCRIPT'] = run['job-script']
 
+    if 'try' in config.params['project']:
+        env['TRY_COMMIT_MSG'] = config.params['message']
+
     
     
     
@@ -219,6 +222,9 @@ def mozharness_on_generic_worker(config, job, taskdesc):
     })
     if run['use-simple-package']:
         env.update({'MOZ_SIMPLE_PACKAGE_NAME': 'target'})
+
+    if 'try' in config.params['project']:
+        env['TRY_COMMIT_MSG'] = config.params['message']
 
     if not job['attributes']['build_platform'].startswith('win'):
         raise Exception(
