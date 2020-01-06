@@ -563,14 +563,13 @@ private:
                 rbp_r_p->SetRight(rbp_r_t);
               }
               break;
-            } else {
-              
-
-
-
-
-              rbp_r_xp = rbp_r_p;
             }
+            
+
+
+
+
+            rbp_r_xp = rbp_r_p;
           }
           rbp_r_t = rbp_r_c->Right();
           rbp_r_u = rbp_r_t->Left();
