@@ -7,6 +7,7 @@
 #include "mozilla/a11y/PlatformChild.h"
 #include "mozilla/mscom/EnsureMTA.h"
 #include "mozilla/mscom/InterceptorLog.h"
+#include "mozilla/WindowsVersion.h"
 
 #include "Accessible2.h"
 #include "Accessible2_2.h"
@@ -48,6 +49,31 @@ PlatformChild::PlatformChild()
   , mMiscTypelib(mozilla::mscom::RegisterTypelib(L"Accessible.tlb"))
   , mSdnTypelib(mozilla::mscom::RegisterTypelib(L"AccessibleMarshal.dll"))
 {
+  
+  
+  
+  
+  WORD actCtxResourceId;
+#if defined(HAVE_64BIT_BUILD)
+  actCtxResourceId = 64;
+#else
+  if (IsWin10CreatorsUpdateOrLater()) {
+    actCtxResourceId = 64;
+  } else {
+    actCtxResourceId = 32;
+  }
+#endif
+
+  mozilla::mscom::ActivationContext actCtx(actCtxResourceId);
+
+  mActCtxMain.reset(new mozilla::mscom::ActivationContextRegion(actCtx));
+
+  mozilla::mscom::MTADeletePtr<mozilla::mscom::ActivationContextRegion> tmpActCtxMTA;
+  mozilla::mscom::EnsureMTA([&actCtx, &tmpActCtxMTA]() -> void {
+    tmpActCtxMTA.reset(new mozilla::mscom::ActivationContextRegion(Move(actCtx)));
+  });
+  mActCtxMTA = Move(tmpActCtxMTA);
+
   mozilla::mscom::InterceptorLog::Init();
   mozilla::mscom::RegisterArrayData(sPlatformChildArrayData);
 
