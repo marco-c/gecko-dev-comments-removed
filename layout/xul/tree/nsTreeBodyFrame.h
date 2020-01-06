@@ -196,7 +196,8 @@ public:
   };
 
   DrawResult PaintTreeBody(nsRenderingContext& aRenderingContext,
-                           const nsRect& aDirtyRect, nsPoint aPt);
+                           const nsRect& aDirtyRect, nsPoint aPt,
+                           nsDisplayListBuilder* aBuilder);
 
   nsITreeBoxObject* GetTreeBoxObject() const { return mTreeBoxObject; }
 
@@ -217,12 +218,13 @@ protected:
                          const nsRect&        aDirtyRect);
 
   
-  DrawResult PaintRow(int32_t              aRowIndex,
-                      const nsRect&        aRowRect,
-                      nsPresContext*       aPresContext,
-                      nsRenderingContext&  aRenderingContext,
-                      const nsRect&        aDirtyRect,
-                      nsPoint              aPt);
+  DrawResult PaintRow(int32_t               aRowIndex,
+                      const nsRect&         aRowRect,
+                      nsPresContext*        aPresContext,
+                      nsRenderingContext&   aRenderingContext,
+                      const nsRect&         aDirtyRect,
+                      nsPoint               aPt,
+                      nsDisplayListBuilder* aBuilder);
 
   
   DrawResult PaintSeparator(int32_t              aRowIndex,
@@ -232,14 +234,15 @@ protected:
                             const nsRect&        aDirtyRect);
 
   
-  DrawResult PaintCell(int32_t              aRowIndex, 
-                       nsTreeColumn*        aColumn,
-                       const nsRect&        aCellRect,
-                       nsPresContext*       aPresContext,
-                       nsRenderingContext&  aRenderingContext,
-                       const nsRect&        aDirtyRect,
-                       nscoord&             aCurrX,
-                       nsPoint              aPt);
+  DrawResult PaintCell(int32_t               aRowIndex,
+                       nsTreeColumn*         aColumn,
+                       const nsRect&         aCellRect,
+                       nsPresContext*        aPresContext,
+                       nsRenderingContext&   aRenderingContext,
+                       const nsRect&         aDirtyRect,
+                       nscoord&              aCurrX,
+                       nsPoint               aPt,
+                       nsDisplayListBuilder* aBuilder);
 
   
   DrawResult PaintTwisty(int32_t              aRowIndex,
@@ -252,14 +255,15 @@ protected:
                          nscoord&             aCurrX);
 
   
-  DrawResult PaintImage(int32_t              aRowIndex,
-                        nsTreeColumn*        aColumn,
-                        const nsRect&        aImageRect,
-                        nsPresContext*       aPresContext,
-                        nsRenderingContext&  aRenderingContext,
-                        const nsRect&        aDirtyRect,
-                        nscoord&             aRemainingWidth,
-                        nscoord&             aCurrX);
+  DrawResult PaintImage(int32_t               aRowIndex,
+                        nsTreeColumn*         aColumn,
+                        const nsRect&         aImageRect,
+                        nsPresContext*        aPresContext,
+                        nsRenderingContext&   aRenderingContext,
+                        const nsRect&         aDirtyRect,
+                        nscoord&              aRemainingWidth,
+                        nscoord&              aCurrX,
+                        nsDisplayListBuilder* aBuilder);
 
   
   DrawResult PaintText(int32_t             aRowIndex,
@@ -279,12 +283,13 @@ protected:
                            const nsRect&        aDirtyRect);
 
   
-  DrawResult PaintProgressMeter(int32_t              aRowIndex, 
-                                nsTreeColumn*        aColumn,
-                                const nsRect&        aProgressMeterRect,
-                                nsPresContext*       aPresContext,
-                                nsRenderingContext&  aRenderingContext,
-                                const nsRect&        aDirtyRect);
+  DrawResult PaintProgressMeter(int32_t               aRowIndex,
+                                nsTreeColumn*         aColumn,
+                                const nsRect&         aProgressMeterRect,
+                                nsPresContext*        aPresContext,
+                                nsRenderingContext&   aRenderingContext,
+                                const nsRect&         aDirtyRect,
+                                nsDisplayListBuilder* aBuilder);
 
   
   DrawResult PaintDropFeedback(const nsRect&        aDropFeedbackRect, 
