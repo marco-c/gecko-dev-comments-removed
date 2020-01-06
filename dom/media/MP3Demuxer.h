@@ -74,6 +74,10 @@ public:
 
     
     
+    uint32_t TotalTagSize() const;
+
+    
+    
     bool IsValid(int aPos) const;
 
     
