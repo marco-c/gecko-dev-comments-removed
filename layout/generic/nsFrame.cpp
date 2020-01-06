@@ -9055,20 +9055,6 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
 
   ComputeAndIncludeOutlineArea(this, aOverflowAreas, aNewSize);
 
-  nsSize oldSize = mRect.Size();
-  bool sizeChanged = ((aOldSize ? *aOldSize : oldSize) != aNewSize);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  SetSize(aNewSize);
-
   
   aOverflowAreas.VisualOverflow() =
     ComputeEffectsRect(this, aOverflowAreas.VisualOverflow(), aNewSize);
@@ -9085,6 +9071,15 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
   }
 
   
+  nsSize oldSize = mRect.Size();
+  bool sizeChanged = ((aOldSize ? *aOldSize : oldSize) != aNewSize);
+
+  
+
+
+
+  SetSize(aNewSize);
+
   if (ChildrenHavePerspective(disp) && sizeChanged) {
     nsRect newBounds(nsPoint(0, 0), aNewSize);
     RecomputePerspectiveChildrenOverflow(this, effectSet);
