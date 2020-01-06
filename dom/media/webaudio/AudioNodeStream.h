@@ -91,7 +91,7 @@ public:
   void SetDoubleParameter(uint32_t aIndex, double aValue);
   void SetInt32Parameter(uint32_t aIndex, int32_t aValue);
   void SetThreeDPointParameter(uint32_t aIndex, const dom::ThreeDPoint& aValue);
-  void SetBuffer(AudioChunk&& aBuffer);
+  void SetBuffer(already_AddRefed<ThreadSharedFloatArrayBufferList>&& aBuffer);
   
   void SendTimelineEvent(uint32_t aIndex, const dom::AudioTimelineEvent& aEvent);
   
