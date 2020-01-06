@@ -59,6 +59,26 @@ treecol {
 
 
 
+
+
+
+#generalCategory,
+#searchCategory,
+#browserPrivacyCategory,
+#firefoxAccountCategory {
+  margin-top: 0;
+}
+
+.header-name {
+  font-size: 2rem;
+}
+
+.subcategory {
+  margin-top: 48px;
+}
+
+
+
 #categories {
   max-height: 100vh;
 }
@@ -79,6 +99,10 @@ treecol {
 
 #category-general > .category-icon {
   list-style-image: url("chrome://browser/skin/preferences/in-content-new/icons.svg#general");
+}
+
+#category-search > .category-icon {
+  list-style-image: url("chrome://browser/skin/preferences/in-content-new/icons.svg#searchResults");
 }
 
 #category-application > .category-icon {
@@ -244,10 +268,6 @@ treecol {
   margin-inline-start: 15px;
 }
 
-#crashReporterGroup {
-  margin-top: 0;
-}
-
 
 
 #historyPane:not([selectedIndex="1"]) > #historyDontRememberPane,
@@ -392,7 +412,6 @@ groupbox {
   list-style-image: url(chrome://browser/skin/fxa/default-avatar.svg);
   margin-inline-end: 15px;
   image-rendering: -moz-crisp-edges;
-  border: 1px solid transparent;
 }
 
 #fxaLoginStatus[hasName] #fxaProfileImage {
@@ -404,11 +423,11 @@ groupbox {
 }
 
 #fxaProfileImage.actionable:hover {
-  border-color: #0095DD;
+  box-shadow: 0px 0px 0px 1px #0095DD;
 }
 
 #fxaProfileImage.actionable:hover:active {
-  border-color: #ff9500;
+  box-shadow: 0px 0px 0px 1px #ff9500;
 }
 
 #noFxaAccount {

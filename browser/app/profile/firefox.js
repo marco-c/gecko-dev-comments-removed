@@ -981,6 +981,10 @@ pref("browser.zoom.updateBackgroundTabs", true);
 pref("breakpad.reportURL", "https://crash-stats.mozilla.com/report/index/");
 
 
+pref("toolkit.datacollection.infoURL",
+     "https://www.mozilla.org/legal/privacy/firefox.html");
+
+
 pref("toolkit.crashreporter.infoURL",
      "https://www.mozilla.org/legal/privacy/firefox.html#crash-reporter");
 
