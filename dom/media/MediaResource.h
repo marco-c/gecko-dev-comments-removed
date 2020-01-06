@@ -150,6 +150,7 @@ typedef media::IntervalSet<int64_t> MediaByteRangeSet;
 
 
 
+
 class MediaResource
 {
 public:
