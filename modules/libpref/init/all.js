@@ -5222,11 +5222,6 @@ pref("urlclassifier.update.timeout_ms", 60000);
 
 
 
-
-pref("urlclassifier.max-complete-age", 2700);
-
-
-
 pref("urlclassifier.alternate_error_page", "blocked");
 
 
