@@ -2636,6 +2636,17 @@ HTMLInputElement::GetRootEditorNode()
 }
 
 NS_IMETHODIMP_(Element*)
+HTMLInputElement::CreatePlaceholderNode()
+{
+  nsTextEditorState* state = GetEditorState();
+  if (state) {
+    NS_ENSURE_SUCCESS(state->CreatePlaceholderNode(), nullptr);
+    return state->GetPlaceholderNode();
+  }
+  return nullptr;
+}
+
+NS_IMETHODIMP_(Element*)
 HTMLInputElement::GetPlaceholderNode()
 {
   nsTextEditorState* state = GetEditorState();
@@ -2663,6 +2674,17 @@ HTMLInputElement::GetPlaceholderVisibility()
   }
 
   return state->GetPlaceholderVisibility();
+}
+
+NS_IMETHODIMP_(Element*)
+HTMLInputElement::CreatePreviewNode()
+{
+  nsTextEditorState* state = GetEditorState();
+  if (state) {
+    NS_ENSURE_SUCCESS(state->CreatePreviewNode(), nullptr);
+    return state->GetPreviewNode();
+  }
+  return nullptr;
 }
 
 NS_IMETHODIMP_(Element*)
@@ -3328,7 +3350,9 @@ HTMLInputElement::SetCheckedInternal(bool aChecked, bool aNotify)
     }
   }
 
-  UpdateAllValidityStates(aNotify);
+  
+  
+  UpdateAllValidityStatesButNotElementState();
 
   
   
@@ -5018,7 +5042,8 @@ HTMLInputElement::HandleTypeChange(uint8_t aNewType, bool aNotify)
   UpdateHasRange();
 
   
-  UpdateAllValidityStates(false);
+  
+  UpdateAllValidityStatesButNotElementState();
 
   UpdateApzAwareFlag();
 
@@ -7335,6 +7360,16 @@ void
 HTMLInputElement::UpdateAllValidityStates(bool aNotify)
 {
   bool validBefore = IsValid();
+  UpdateAllValidityStatesButNotElementState();
+
+  if (validBefore != IsValid()) {
+    UpdateState(aNotify);
+  }
+}
+
+void
+HTMLInputElement::UpdateAllValidityStatesButNotElementState()
+{
   UpdateTooLongValidityState();
   UpdateTooShortValidityState();
   UpdateValueMissingValidityState();
@@ -7344,10 +7379,6 @@ HTMLInputElement::UpdateAllValidityStates(bool aNotify)
   UpdateRangeUnderflowValidityState();
   UpdateStepMismatchValidityState();
   UpdateBadInputValidityState();
-
-  if (validBefore != IsValid()) {
-    UpdateState(aNotify);
-  }
 }
 
 void
