@@ -296,7 +296,7 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     
     
     
-    type FontMetricsProvider: FontMetricsProvider;
+    type FontMetricsProvider: FontMetricsProvider + Send;
 
     
     fn as_node(&self) -> Self::ConcreteNode;

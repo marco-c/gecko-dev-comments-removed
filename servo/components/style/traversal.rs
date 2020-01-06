@@ -5,7 +5,7 @@
 
 
 use atomic_refcell::AtomicRefCell;
-use context::{ElementCascadeInputs, StyleContext, SharedStyleContext, ThreadLocalStyleContext};
+use context::{ElementCascadeInputs, StyleContext, SharedStyleContext};
 use data::{ElementData, ElementStyles};
 use dom::{DirtyDescendants, NodeInfo, OpaqueNode, TElement, TNode};
 use invalidation::element::restyle_hints::{RECASCADE_SELF, RECASCADE_DESCENDANTS, RestyleHint};
@@ -13,7 +13,6 @@ use matching::{ChildCascadeRequirement, MatchMethods};
 use sharing::{StyleSharingBehavior, StyleSharingTarget};
 #[cfg(feature = "servo")] use servo_config::opts;
 use smallvec::SmallVec;
-use std::borrow::BorrowMut;
 
 
 
@@ -139,21 +138,16 @@ fn is_servo_nonincremental_layout() -> bool {
 
 pub trait DomTraversal<E: TElement> : Sync {
     
-    
-    
-    type ThreadLocalContext: Send + BorrowMut<ThreadLocalStyleContext<E>>;
-
-    
     fn process_preorder(&self,
                         data: &PerLevelTraversalData,
-                        thread_local: &mut Self::ThreadLocalContext,
+                        context: &mut StyleContext<E>,
                         node: E::ConcreteNode);
 
     
     
     
     fn process_postorder(&self,
-                         thread_local: &mut Self::ThreadLocalContext,
+                         contect: &mut StyleContext<E>,
                          node: E::ConcreteNode);
 
     
@@ -177,7 +171,7 @@ pub trait DomTraversal<E: TElement> : Sync {
     
     fn handle_postorder_traversal(
         &self,
-        thread_local: &mut Self::ThreadLocalContext,
+        context: &mut StyleContext<E>,
         root: OpaqueNode,
         mut node: E::ConcreteNode,
         children_to_process: isize
@@ -190,7 +184,7 @@ pub trait DomTraversal<E: TElement> : Sync {
         if children_to_process == 0 {
             
             loop {
-                self.process_postorder(thread_local, node);
+                self.process_postorder(context, node);
                 if node.opaque() == root {
                     break;
                 }
@@ -404,7 +398,7 @@ pub trait DomTraversal<E: TElement> : Sync {
     
     fn should_traverse_children(
         &self,
-        thread_local: &mut ThreadLocalStyleContext<E>,
+        context: &mut StyleContext<E>,
         parent: E,
         parent_data: &ElementData,
         log: LogBehavior
@@ -442,7 +436,7 @@ pub trait DomTraversal<E: TElement> : Sync {
         
         
         
-        if cfg!(feature = "gecko") && thread_local.is_initial_style() &&
+        if cfg!(feature = "gecko") && context.thread_local.is_initial_style() &&
            parent_data.styles.primary().has_moz_binding() {
             if log.allow() {
                 debug!("Parent {:?} has XBL binding, deferring traversal",
@@ -458,23 +452,23 @@ pub trait DomTraversal<E: TElement> : Sync {
     
     fn traverse_children<F>(
         &self,
-        thread_local: &mut Self::ThreadLocalContext,
+        context: &mut StyleContext<E>,
         parent: E,
         mut f: F
     )
     where
-        F: FnMut(&mut Self::ThreadLocalContext, E::ConcreteNode)
+        F: FnMut(&mut StyleContext<E>, E::ConcreteNode)
     {
         
         let should_traverse =
             self.should_traverse_children(
-                thread_local.borrow_mut(),
+                context,
                 parent,
                 &parent.borrow_data().unwrap(),
                 MayLog
             );
 
-        thread_local.borrow_mut().end_element(parent);
+        context.thread_local.end_element(parent);
         if !should_traverse {
             return;
         }
@@ -495,7 +489,7 @@ pub trait DomTraversal<E: TElement> : Sync {
                         }
                     }
                 }
-                f(thread_local, kid);
+                f(context, kid);
             }
         }
     }
@@ -516,9 +510,6 @@ pub trait DomTraversal<E: TElement> : Sync {
 
     
     fn shared_context(&self) -> &SharedStyleContext;
-
-    
-    fn create_thread_local_context(&self) -> Self::ThreadLocalContext;
 
     
     
@@ -763,7 +754,7 @@ where
     
     
     let should_traverse_children = traversal.should_traverse_children(
-        &mut context.thread_local,
+        context,
         element,
         &data,
         DontLog
