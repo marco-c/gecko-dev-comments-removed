@@ -227,7 +227,7 @@ Submitter.prototype = {
                    .createInstance(Ci.nsIDOMFormData);
     
     for (let [name, value] of Object.entries(this.extraKeyVals)) {
-      if (name != "ServerURL") {
+      if (name != "ServerURL" && name != "StackTraces") {
         formData.append(name, value);
       }
     }
