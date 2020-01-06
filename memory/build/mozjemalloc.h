@@ -4,6 +4,9 @@
 
 
 
+#ifndef mozjemalloc_h
+#define mozjemalloc_h
+
 #include "mozjemalloc_types.h"
 #include "mozilla/MacroArgs.h"
 
@@ -72,3 +75,5 @@ struct DummyArenaAllocator {
 #define MALLOC_FUNCS MALLOC_FUNCS_MALLOC_BASE
 #include "malloc_decls.h"
 };
+
+#endif
