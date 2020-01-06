@@ -1768,8 +1768,7 @@ GetNSSProfilePath(nsAutoCString& aProfilePath)
 
 
 static nsresult
-AttemptToRenamePKCS11ModuleDB(const nsACString& profilePath,
-                              const nsACString& moduleDBFilename)
+AttemptToRenamePKCS11ModuleDB(const nsACString& profilePath)
 {
   
   
@@ -1780,8 +1779,8 @@ AttemptToRenamePKCS11ModuleDB(const nsACString& profilePath,
             ("MOZPSM_NSSDBDIR_OVERRIDE set - not renaming PKCS#11 module DB"));
     return NS_OK;
   }
-  nsAutoCString destModuleDBFilename(moduleDBFilename);
-  destModuleDBFilename.Append(".fips");
+  NS_NAMED_LITERAL_CSTRING(moduleDBFilename, "secmod.db");
+  NS_NAMED_LITERAL_CSTRING(destModuleDBFilename, "secmod.db.fips");
   nsCOMPtr<nsIFile> dbFile = do_CreateInstance("@mozilla.org/file/local;1");
   if (!dbFile) {
     return NS_ERROR_FAILURE;
@@ -1803,7 +1802,7 @@ AttemptToRenamePKCS11ModuleDB(const nsACString& profilePath,
   
   if (!exists) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("%s doesn't exist?", PromiseFlatCString(moduleDBFilename).get()));
+            ("%s doesn't exist?", moduleDBFilename.get()));
     return NS_OK;
   }
   nsCOMPtr<nsIFile> destDBFile = do_CreateInstance("@mozilla.org/file/local;1");
@@ -1845,22 +1844,6 @@ AttemptToRenamePKCS11ModuleDB(const nsACString& profilePath,
   
   Unused << dbFile->MoveToNative(profileDir, destModuleDBFilename);
   return NS_OK;
-}
-
-
-
-
-static nsresult
-AttemptToRenameBothPKCS11ModuleDBVersions(const nsACString& profilePath)
-{
-  NS_NAMED_LITERAL_CSTRING(legacyModuleDBFilename, "secmod.db");
-  NS_NAMED_LITERAL_CSTRING(sqlModuleDBFilename, "pkcs11.txt");
-  nsresult rv = AttemptToRenamePKCS11ModuleDB(profilePath,
-                                              legacyModuleDBFilename);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  return AttemptToRenamePKCS11ModuleDB(profilePath, sqlModuleDBFilename);
 }
 #endif 
 
@@ -1911,18 +1894,12 @@ InitializeNSSWithFallbacks(const nsACString& profilePath, bool nocertdb,
   savedPRErrorCode2 = PR_GetError();
 #endif 
 
-  MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-          ("failed to initialize NSS with codes %d %d", savedPRErrorCode1,
-           savedPRErrorCode2));
-
 #ifndef ANDROID
   
   
   
   if (!safeMode && (savedPRErrorCode1 == SEC_ERROR_LEGACY_DATABASE ||
-                    savedPRErrorCode2 == SEC_ERROR_LEGACY_DATABASE ||
-                    savedPRErrorCode1 == SEC_ERROR_PKCS11_DEVICE_ERROR ||
-                    savedPRErrorCode2 == SEC_ERROR_PKCS11_DEVICE_ERROR)) {
+                    savedPRErrorCode2 == SEC_ERROR_LEGACY_DATABASE)) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("attempting no-module db init"));
     
     
@@ -1941,7 +1918,7 @@ InitializeNSSWithFallbacks(const nsACString& profilePath, bool nocertdb,
       
       
       
-      nsresult rv = AttemptToRenameBothPKCS11ModuleDBVersions(profilePath);
+      nsresult rv = AttemptToRenamePKCS11ModuleDB(profilePath);
       if (NS_FAILED(rv)) {
         return rv;
       }
