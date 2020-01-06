@@ -23,7 +23,7 @@ namespace js {
 namespace vtune {
 
 
-static Mutex VTuneMutex(mutexid::VTuneLock);
+static Mutex* VTuneMutex = nullptr;
 
 
 
@@ -33,12 +33,24 @@ static bool VTuneLoaded(false);
 bool
 Initialize()
 {
+    VTuneMutex = js_new<Mutex>(mutexid::VTuneLock);
+    if (!VTuneMutex)
+        return false;
+
     
     int loaded = loadiJIT_Funcs();
     if (loaded == 1)
         VTuneLoaded = true;
 
     return true;
+}
+
+
+void
+Shutdown()
+{
+    js_delete(VTuneMutex);
+    VTuneMutex = nullptr;
 }
 
 bool
@@ -53,14 +65,16 @@ uint32_t
 GenerateUniqueMethodID()
 {
     
-    LockGuard<Mutex> guard(VTuneMutex);
+    MOZ_ASSERT(VTuneMutex);
+    LockGuard<Mutex> guard(*VTuneMutex);
     return (uint32_t)iJIT_GetNewMethodID();
 }
 
 static int
 SafeNotifyEvent(iJIT_JVM_EVENT event_type, void* data)
 {
-    LockGuard<Mutex> guard(VTuneMutex);
+    MOZ_ASSERT(VTuneMutex);
+    LockGuard<Mutex> guard(*VTuneMutex);
     return iJIT_NotifyEvent(event_type, data);
 }
 

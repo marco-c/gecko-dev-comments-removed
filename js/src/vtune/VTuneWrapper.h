@@ -20,6 +20,7 @@ namespace js {
 namespace vtune {
 
 bool Initialize();
+void Shutdown();
 
 
 

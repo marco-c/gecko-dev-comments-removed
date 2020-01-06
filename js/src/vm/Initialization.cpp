@@ -190,6 +190,10 @@ JS_ShutDown(void)
     u_cleanup();
 #endif 
 
+#ifdef MOZ_VTUNE
+    js::vtune::Shutdown();
+#endif 
+
     js::FinishDateTimeState();
 
     if (!JSRuntime::hasLiveRuntimes()) {
