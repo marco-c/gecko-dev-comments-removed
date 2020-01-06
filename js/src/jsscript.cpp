@@ -2090,10 +2090,12 @@ ScriptSource::xdrEncodeTopLevel(JSContext* cx, HandleScript script)
 
     RootedScript s(cx, script);
     if (!xdrEncoder_->codeScript(&s)) {
-        if (xdrEncoder_->resultCode() == JS::TranscodeResult_Throw)
-            return false;
         
-        return true;
+        
+        if (xdrEncoder_->resultCode() & JS::TranscodeResult_Failure)
+            return true;
+
+        return false;
     }
 
     failureCase.release();
@@ -2110,8 +2112,14 @@ ScriptSource::xdrEncodeFunction(JSContext* cx, HandleFunction fun, HandleScriptS
     });
 
     RootedFunction f(cx, fun);
-    if (!xdrEncoder_->codeFunction(&f, sourceObject))
+    if (!xdrEncoder_->codeFunction(&f, sourceObject)) {
+        
+        
+        if (xdrEncoder_->resultCode() & JS::TranscodeResult_Failure)
+            return true;
+
         return false;
+    }
 
     failureCase.release();
     return true;
