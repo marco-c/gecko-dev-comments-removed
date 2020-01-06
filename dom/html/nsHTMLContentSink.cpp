@@ -1068,7 +1068,7 @@ HTMLContentSink::FlushPendingNotifications(FlushType aType)
         FlushTags();
       }
     }
-    if (aType >= FlushType::InterruptibleLayout) {
+    if (aType >= FlushType::EnsurePresShellInitAndFrames) {
       
       
       StartLayout(true);
