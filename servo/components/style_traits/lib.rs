@@ -124,10 +124,31 @@ pub enum StyleParseError<'i> {
     UnspecifiedError,
     
     UnexpectedTokenWithinNamespace(Token<'i>),
+    
+    ValueError(ValueParseError<'i>),
 }
 
 
-#[derive(Eq, PartialEq, Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
+pub enum ValueParseError<'i> {
+    
+    InvalidColor(Token<'i>),
+}
+
+impl<'i> ValueParseError<'i> {
+    
+    pub fn from_parse_error(this: ParseError<'i>) -> Option<ValueParseError<'i>> {
+        match this {
+            cssparser::ParseError::Custom(
+                SelectorParseError::Custom(
+                    StyleParseError::ValueError(e))) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+
+#[derive(PartialEq, Clone, Debug)]
 pub enum PropertyDeclarationParseError<'i> {
     
     UnknownProperty(CowRcStr<'i>),
@@ -136,7 +157,7 @@ pub enum PropertyDeclarationParseError<'i> {
     
     ExperimentalProperty,
     
-    InvalidValue(CowRcStr<'i>),
+    InvalidValue(CowRcStr<'i>, Option<ValueParseError<'i>>),
     
     
     
