@@ -82,9 +82,12 @@ protected:
 
 private:
   
-  already_AddRefed<gfxDrawable>
-    LookupCachedSurface(const SVGDrawingParameters& aParams);
+  already_AddRefed<SourceSurface>
+    LookupCachedSurface(const IntSize& aSize,
+                        const Maybe<SVGImageContext>& aSVGContext,
+                        uint32_t aFlags);
 
+  void DrawInternal(const SVGDrawingParameters& aParams, bool aContextPaint);
   void CreateSurfaceAndShow(const SVGDrawingParameters& aParams,
                             gfx::BackendType aBackend);
   void Show(gfxDrawable* aDrawable, const SVGDrawingParameters& aParams);
