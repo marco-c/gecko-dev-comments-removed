@@ -57,13 +57,12 @@ class JSONPrinter
     
     void property(const char* name, size_t value);
 #endif
-    void property(const char* name, double value);
 
     void formatProperty(const char* name, const char* format, ...) MOZ_FORMAT_PRINTF(3, 4);
 
     
     
-    enum TimePrecision { SECONDS, MILLISECONDS };
+    enum TimePrecision { SECONDS, MILLISECONDS, MICROSECONDS };
     void property(const char* name, const mozilla::TimeDuration& dur, TimePrecision precision);
 
     void floatProperty(const char* name, double value, size_t precision);
