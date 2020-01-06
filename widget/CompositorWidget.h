@@ -260,6 +260,13 @@ public:
   
 
 
+  virtual bool IsHidden() const {
+    return false;
+  }
+
+  
+
+
   virtual RefPtr<VsyncObserver> GetVsyncObserver() const;
 
   virtual WinCompositorWidget* AsWindows() {

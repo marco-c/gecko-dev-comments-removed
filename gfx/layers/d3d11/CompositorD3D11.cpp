@@ -967,7 +967,7 @@ CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
   
   
   NS_ASSERTION(mHwnd, "Couldn't find an HWND when initialising?");
-  if (::IsIconic(mHwnd)) {
+  if (mWidget->IsHidden()) {
     
     
     ReadUnlockTextures();
