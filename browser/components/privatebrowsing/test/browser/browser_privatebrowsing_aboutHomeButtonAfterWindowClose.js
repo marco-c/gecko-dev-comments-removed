@@ -6,6 +6,11 @@
 
 add_task(async function test_no_sessionrestore_button() {
   
+  
+  await SpecialPowers.pushPrefEnv({set: [
+    ["browser.newtabpage.activity-stream.aboutHome.enabled", false]
+  ]});
+  
   (await BrowserTestUtils.openNewBrowserWindow({private: true})).close();
 
   let win = await BrowserTestUtils.openNewBrowserWindow({private: true});
