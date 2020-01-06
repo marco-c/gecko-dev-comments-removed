@@ -232,8 +232,8 @@ var TabsInTitlebar = {
 
       
       
-      let minTitlebarOrTabsHeight = Math.min(titlebarContentHeight, tabAndMenuHeight);
-      titlebar.style.marginBottom = "-" + minTitlebarOrTabsHeight + "px";
+      let maxTitlebarOrTabsHeight = Math.max(titlebarContentHeight, tabAndMenuHeight);
+      titlebar.style.marginBottom = "-" + maxTitlebarOrTabsHeight + "px";
 
       
       if (AppConstants.platform == "macosx") {
