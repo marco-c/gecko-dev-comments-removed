@@ -14,7 +14,7 @@ import itertools
 
 
 banner = """/* This file is auto-generated, only for internal use in TelemetryEvent.h,
-   see gen-event-data.py. */
+   see gen_event_data.py. */
 """
 
 file_header = """\

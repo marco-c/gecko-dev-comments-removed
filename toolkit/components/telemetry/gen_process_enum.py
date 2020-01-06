@@ -13,7 +13,7 @@ import collections
 
 
 banner = """/* This file is auto-generated from Telemetry build scripts,
-   see gen-processes-enum.py. */
+   see gen_process_enum.py. */
 """
 
 file_header = """\
