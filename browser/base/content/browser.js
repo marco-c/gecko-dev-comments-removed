@@ -5058,10 +5058,10 @@ nsBrowserAccess.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIBrowserDOMWindow, Ci.nsISupports]),
 
   _openURIInNewTab(aURI, aReferrer, aReferrerPolicy, aIsPrivate,
-                   aIsExternal, aForceNotRemote = false,
-                   aUserContextId = Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID,
-                   aOpener = null, aTriggeringPrincipal = null,
-                   aNextTabParentId = 0, aName = "") {
+                             aIsExternal, aForceNotRemote = false,
+                             aUserContextId = Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID,
+                             aOpener = null, aTriggeringPrincipal = null,
+                             aNextTabParentId = 0) {
     let win, needToFocusWin;
 
     
@@ -5095,7 +5095,6 @@ nsBrowserAccess.prototype = {
                                       forceNotRemote: aForceNotRemote,
                                       opener: aOpener,
                                       nextTabParentId: aNextTabParentId,
-                                      name: aName,
                                       });
     let browser = win.gBrowser.getBrowserForTab(tab);
 
@@ -5199,7 +5198,7 @@ nsBrowserAccess.prototype = {
   },
 
   openURIInFrame: function browser_openURIInFrame(aURI, aParams, aWhere, aFlags,
-                                                  aNextTabParentId, aName) {
+                                                  aNextTabParentId) {
     if (aWhere != Ci.nsIBrowserDOMWindow.OPEN_NEWTAB) {
       dump("Error: openURIInFrame can only open in new tabs");
       return null;
@@ -5219,7 +5218,7 @@ nsBrowserAccess.prototype = {
                                         isExternal, false,
                                         userContextId, null,
                                         aParams.triggeringPrincipal,
-                                        aNextTabParentId, aName);
+                                        aNextTabParentId);
     if (browser)
       return browser.QueryInterface(Ci.nsIFrameLoaderOwner);
 
@@ -7839,11 +7838,17 @@ var gPageActionButton = {
   },
 
   showSendToDeviceView(subviewButton) {
+    this.setupSendToDeviceView();
+    PanelUI.showSubView("page-action-sendToDeviceView", subviewButton);
+  },
+
+  setupSendToDeviceView() {
     let browser = gBrowser.selectedBrowser;
     let url = browser.currentURI.spec;
     let title = browser.contentTitle;
     let body = this.sendToDeviceBody;
 
+    
     gSync.populateSendTabToDevicesMenu(body, url, title, (clientId, name, clientType) => {
       if (!name) {
         return document.createElement("toolbarseparator");
@@ -7856,19 +7861,31 @@ var gPageActionButton = {
       return item;
     });
 
-    if (gSync.remoteClients.length) {
-      body.setAttribute("hasdevices", "true");
-    } else {
-      body.removeAttribute("hasdevices");
+    if (!gSync.isSignedIn) {
+      
+      body.setAttribute("state", "notsignedin");
+      return;
     }
 
-    if (UIState.get().status == UIState.STATUS_SIGNED_IN) {
-      body.setAttribute("signedin", "true");
-    } else {
-      body.removeAttribute("signedin");
+    
+    
+    if (!gSync.syncReady) {
+      body.setAttribute("state", "notready");
+      
+      Services.tm.dispatchToMainThread(() => {
+        Weave.Service.sync([]);  
+        if (!window.closed && gSync.syncReady) {
+          this.setupSendToDeviceView();
+        }
+      });
+      return;
+    }
+    if (!gSync.remoteClients.length) {
+      body.setAttribute("state", "nodevice");
+      return;
     }
 
-    PanelUI.showSubView("page-action-sendToDeviceView", subviewButton);
+    body.setAttribute("state", "signedin");
   },
 
   fxaButtonClicked() {
