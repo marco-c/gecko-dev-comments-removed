@@ -913,6 +913,7 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mIncludeAllOutOfFlows(false),
       mDescendIntoSubdocuments(true),
       mSelectedFramesOnly(false),
+      mAccurateVisibleRegions(false),
       mAllowMergingAndFlattening(true),
       mWillComputePluginGeometry(false),
       mInTransform(false),
@@ -942,29 +943,11 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
     }
   }
 
-  static_assert(static_cast<uint32_t>(DisplayItemType::TYPE_MAX) < (1 << TYPE_BITS),
-                "Check TYPE_MAX should not overflow");
-}
+  mFrameToAnimatedGeometryRootMap.Put(aReferenceFrame, &mRootAGR);
 
-void
-nsDisplayListBuilder::BeginFrame()
-{
   nsCSSRendering::BeginFrameTreesLocked();
-  mCurrentAGR = &mRootAGR;
-  mFrameToAnimatedGeometryRootMap.Put(mReferenceFrame, &mRootAGR);
-
-  mIsPaintingToWindow = false;
-  mIgnoreSuppression = false;
-  mInTransform = false;
-  mSyncDecodeImages = false;
-}
-
-void
-nsDisplayListBuilder::EndFrame()
-{
-  mFrameToAnimatedGeometryRootMap.Clear();
-
-  nsCSSRendering::EndFrameTreesLocked();
+  static_assert(static_cast<uint32_t>(DisplayItemType::TYPE_MAX) < (1 << TYPE_BITS),
+                "Check nsDisplayItem::TYPE_MAX should not overflow");
 }
 
 static void MarkFrameForDisplay(nsIFrame* aFrame, nsIFrame* aStopAtFrame) {
@@ -1125,6 +1108,8 @@ nsDisplayListBuilder::~nsDisplayListBuilder() {
   NS_ASSERTION(mPresShellStates.Length() == 0,
                "All presshells should have been exited");
   NS_ASSERTION(!mCurrentTableItem, "No table item should be active");
+
+  nsCSSRendering::EndFrameTreesLocked();
 
   for (ActiveScrolledRoot* asr : mActiveScrolledRoots) {
     asr->ActiveScrolledRoot::~ActiveScrolledRoot();
@@ -4739,8 +4724,8 @@ nsDisplayCaret::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilde
   LayoutDeviceRect devHookRect = LayoutDeviceRect::FromAppUnits(
     hookRect + ToReferenceFrame(), appUnitsPerDevPixel);
 
-  wr::LayoutRect caret = aSc.ToRelativeLayoutRectRounded(devCaretRect);
-  wr::LayoutRect hook = aSc.ToRelativeLayoutRectRounded(devHookRect);
+  wr::LayoutRect caret = aSc.ToRelativeLayoutRect(devCaretRect);
+  wr::LayoutRect hook = aSc.ToRelativeLayoutRect(devHookRect);
 
   
   aBuilder.PushRect(caret,
@@ -5018,13 +5003,13 @@ nsDisplayBorder::CreateBorderImageWebRenderCommands(mozilla::wr::DisplayListBuil
 
   LayoutDeviceRect destRect = LayoutDeviceRect::FromAppUnits(
     mBorderImageRenderer->mArea, appUnitsPerDevPixel);
-  wr::LayoutRect dest = aSc.ToRelativeLayoutRectRounded(destRect);
+  wr::LayoutRect dest = aSc.ToRelativeLayoutRect(destRect);
 
   wr::LayoutRect clip = dest;
   if (!mBorderImageRenderer->mClip.IsEmpty()) {
     LayoutDeviceRect clipRect = LayoutDeviceRect::FromAppUnits(
       mBorderImageRenderer->mClip, appUnitsPerDevPixel);
-    clip = aSc.ToRelativeLayoutRectRounded(clipRect);
+    clip = aSc.ToRelativeLayoutRect(clipRect);
   }
 
   switch (mBorderImageRenderer->mImageRenderer.GetType()) {
@@ -5399,7 +5384,7 @@ nsDisplayBoxShadowOuter::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
 
       LayoutDeviceRect deviceBox = LayoutDeviceRect::FromAppUnits(
           shadowRect, appUnitsPerDevPixel);
-      wr::LayoutRect deviceBoxRect = aSc.ToRelativeLayoutRectRounded(deviceBox);
+      wr::LayoutRect deviceBoxRect = aSc.ToRelativeLayoutRect(deviceBox);
       wr::LayoutRect deviceClipRect = aSc.ToRelativeLayoutRect(clipRect);
 
       
