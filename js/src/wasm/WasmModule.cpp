@@ -269,6 +269,8 @@ Module::notifyCompilationListeners()
         tiering->active = false;
 
         Swap(listeners, tiering->listeners);
+
+        tiering.notify_all();
     }
 
     for (RefPtr<JS::WasmModuleListener>& listener : listeners)
@@ -308,6 +310,14 @@ Module::finishTier2(UniqueLinkDataTier linkData2, UniqueMetadataTier metadata2,
 
         jumpTable[cr.funcIndex()] = base + cr.funcTierEntry();
     }
+}
+
+void
+Module::blockOnTier2Complete() const
+{
+    auto tiering = tiering_.lock();
+    while (tiering->active)
+        tiering.wait();
 }
 
  size_t
@@ -619,8 +629,7 @@ Module::extractCode(JSContext* cx, Tier tier, MutableHandleValue vp) const
 
     
     
-    while (!compilationComplete())
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    blockOnTier2Complete();
 
     if (!code_->hasTier(tier)) {
         vp.setNull();
@@ -1216,6 +1225,9 @@ Module::instantiate(JSContext* cx,
 
     JSUseCounter useCounter = metadata().isAsmJS() ? JSUseCounter::ASMJS : JSUseCounter::WASM;
     cx->runtime()->setUseCounter(instance, useCounter);
+
+    if (cx->options().testWasmAwaitTier2())
+        blockOnTier2Complete();
 
     return true;
 }

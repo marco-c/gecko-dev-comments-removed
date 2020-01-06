@@ -116,6 +116,8 @@ struct Tiering
     bool active;
 };
 
+typedef ExclusiveWaitableData<Tiering> ExclusiveTiering;
+
 
 
 
@@ -140,7 +142,7 @@ class Module : public JS::WasmModule
     const DataSegmentVector dataSegments_;
     const ElemSegmentVector elemSegments_;
     const SharedBytes       bytecode_;
-    ExclusiveData<Tiering>  tiering_;
+    ExclusiveTiering        tiering_;
 
     
     
@@ -219,20 +221,7 @@ class Module : public JS::WasmModule
     void startTier2(const CompileArgs& args);
     void finishTier2(UniqueLinkDataTier linkData2, UniqueMetadataTier metadata2,
                      UniqueCodeSegment code2, ModuleEnvironment* env2);
-
-    
-    
-    
-    
-    
-    
-
-    void blockOnIonCompileFinished() const;
-
-    
-    
-
-    void unblockOnTier2GeneratorFinished(CompileMode newMode) const;
+    void blockOnTier2Complete() const;
 
     
 

@@ -83,9 +83,8 @@ bool
 CompileArgs::initFromContext(JSContext* cx, ScriptedCaller&& scriptedCaller)
 {
     baselineEnabled = cx->options().wasmBaseline();
-
-    
-    ionEnabled = cx->options().wasmIon() || !cx->options().wasmBaseline();
+    ionEnabled = cx->options().wasmIon();
+    testTiering = cx->options().testWasmAwaitTier2();
 
     
     
@@ -309,7 +308,7 @@ static const double spaceCutoffPct = 0.9;
 
 
 static bool
-GetTieringEnabled(uint32_t codeSize)
+TieringBeneficial(uint32_t codeSize)
 {
     if (!CanUseExtraThreads())
         return false;
@@ -389,11 +388,13 @@ InitialCompileFlags(const CompileArgs& args, Decoder& d, CompileMode* mode, Tier
     if (StartsCodeSection(d.begin(), d.end(), &range))
         codeSectionSize = range.size;
 
-    bool baselineEnabled = BaselineCanCompile() && args.baselineEnabled;
+    bool baselineEnabled = BaselineCanCompile() && (args.baselineEnabled || args.testTiering);
     bool debugEnabled = BaselineCanCompile() && args.debugEnabled;
-    bool ionEnabled = args.ionEnabled || !baselineEnabled;
+    bool ionEnabled = args.ionEnabled || !baselineEnabled || args.testTiering;
 
-    if (baselineEnabled && ionEnabled && !debugEnabled && GetTieringEnabled(codeSectionSize)) {
+    if (baselineEnabled && ionEnabled && !debugEnabled &&
+        (TieringBeneficial(codeSectionSize) || args.testTiering))
+    {
         *mode = CompileMode::Tier1;
         *tier = Tier::Baseline;
     } else {
