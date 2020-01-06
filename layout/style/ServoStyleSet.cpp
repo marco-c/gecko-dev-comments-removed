@@ -83,6 +83,7 @@ ServoStyleSet::Init(nsPresContext* aPresContext, nsBindingManager* aBindingManag
 
   
   
+  SetStylistStyleSheetsDirty();
 }
 
 void
