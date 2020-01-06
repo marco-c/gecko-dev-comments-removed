@@ -56,6 +56,7 @@
 #include "nsIIOService.h"
 #include "nsNetCID.h"
 
+#include "nsDSURIContentListener.h"
 #include "nsMimeTypes.h"
 
 #include "nsIHttpChannel.h"
@@ -1193,7 +1194,6 @@ NS_INTERFACE_MAP_BEGIN(nsExternalAppHandler)
    NS_INTERFACE_MAP_ENTRY(nsIRequestObserver)
    NS_INTERFACE_MAP_ENTRY(nsIHelperAppLauncher)
    NS_INTERFACE_MAP_ENTRY(nsICancelable)
-   NS_INTERFACE_MAP_ENTRY(nsITimerCallback)
    NS_INTERFACE_MAP_ENTRY(nsIBackgroundFileSaverObserver)
    NS_INTERFACE_MAP_ENTRY(nsINamed)
 NS_INTERFACE_MAP_END_THREADSAFE
@@ -1208,11 +1208,9 @@ nsExternalAppHandler::nsExternalAppHandler(nsIMIMEInfo * aMIMEInfo,
 : mMimeInfo(aMIMEInfo)
 , mContentContext(aContentContext)
 , mWindowContext(aWindowContext)
-, mWindowToClose(nullptr)
 , mSuggestedFileName(aSuggestedFilename)
 , mForceSave(aForceSave)
 , mCanceled(false)
-, mShouldCloseWindow(false)
 , mStopRequestIssued(false)
 , mReason(aReason)
 , mContentLength(-1)
@@ -1588,13 +1586,15 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest *request, nsISuppo
     aChannel->GetContentLength(&mContentLength);
   }
 
+  mMaybeCloseWindowHelper = new MaybeCloseWindowHelper(mContentContext);
+
   nsCOMPtr<nsIPropertyBag2> props(do_QueryInterface(request, &rv));
   
   if (props) {
     bool tmp = false;
     props->GetPropertyAsBool(NS_LITERAL_STRING("docshell.newWindowTarget"),
                              &tmp);
-    mShouldCloseWindow = tmp;
+    mMaybeCloseWindowHelper->SetShouldCloseWindow(tmp);
   }
 
   
@@ -1613,14 +1613,14 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest *request, nsISuppo
       Unused << httpChannel->GetResponseHeader(NS_LITERAL_CSTRING("refresh"),
                                                refreshHeader);
       if (!refreshHeader.IsEmpty()) {
-        mShouldCloseWindow = false;
+        mMaybeCloseWindowHelper->SetShouldCloseWindow(false);
       }
     }
   }
 
   
   
-  MaybeCloseWindow();
+  mContentContext = mMaybeCloseWindowHelper->MaybeCloseWindow();
 
   
   
@@ -2521,42 +2521,6 @@ bool nsExternalAppHandler::GetNeverAskFlagFromPref(const char * prefName, const 
   prefCString.EndReading(end);
   return !CaseInsensitiveFindInReadable(nsDependentCString(aContentType),
                                         start, end);
-}
-
-nsresult nsExternalAppHandler::MaybeCloseWindow()
-{
-  nsCOMPtr<nsPIDOMWindowOuter> window = do_GetInterface(mContentContext);
-  NS_ENSURE_STATE(window);
-
-  if (mShouldCloseWindow) {
-    
-    
-    nsCOMPtr<nsPIDOMWindowOuter> opener = window->GetOpener();
-
-    if (opener && !opener->Closed()) {
-      mContentContext = do_GetInterface(opener);
-
-      
-      
-      NS_ASSERTION(!mTimer, "mTimer was already initialized once!");
-      MOZ_TRY_VAR(mTimer, NS_NewTimerWithCallback(this, 0, nsITimer::TYPE_ONE_SHOT));
-      mWindowToClose = window;
-    }
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsExternalAppHandler::Notify(nsITimer* timer)
-{
-  NS_ASSERTION(mWindowToClose, "No window to close after timer fired");
-
-  mWindowToClose->Close();
-  mWindowToClose = nullptr;
-  mTimer = nullptr;
-
-  return NS_OK;
 }
 
 NS_IMETHODIMP

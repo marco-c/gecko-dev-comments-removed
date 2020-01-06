@@ -10,9 +10,54 @@
 #include "nsCOMPtr.h"
 #include "nsIURIContentListener.h"
 #include "nsWeakReference.h"
+#include "nsITimer.h"
 
 class nsDocShell;
+class nsIInterfaceRequestor;
 class nsIWebNavigationInfo;
+class nsPIDOMWindowOuter;
+
+
+class MaybeCloseWindowHelper final
+  : public nsITimerCallback
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSITIMERCALLBACK
+
+  explicit MaybeCloseWindowHelper(nsIInterfaceRequestor* aContentContext);
+
+  
+
+
+
+  nsIInterfaceRequestor* MaybeCloseWindow();
+
+  void SetShouldCloseWindow(bool aShouldCloseWindow);
+
+protected:
+  ~MaybeCloseWindowHelper();
+
+private:
+  
+
+
+  nsCOMPtr<nsIInterfaceRequestor> mContentContext;
+
+  
+
+
+
+  nsCOMPtr<nsPIDOMWindowOuter> mWindowToClose;
+  nsCOMPtr<nsITimer> mTimer;
+
+  
+
+
+
+
+  bool mShouldCloseWindow;
+};
 
 class nsDSURIContentListener final
   : public nsIURIContentListener

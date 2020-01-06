@@ -25,7 +25,6 @@
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIChannel.h"
-#include "nsITimer.h"
 #include "nsIBackgroundFileSaver.h"
 
 #include "nsIHandlerService.h"
@@ -40,7 +39,7 @@
 class nsExternalAppHandler;
 class nsIMIMEInfo;
 class nsITransfer;
-class nsPIDOMWindowOuter;
+class MaybeCloseWindowHelper;
 
 
 
@@ -211,7 +210,6 @@ private:
 
 class nsExternalAppHandler final : public nsIStreamListener,
                                    public nsIHelperAppLauncher,
-                                   public nsITimerCallback,
                                    public nsIBackgroundFileSaverObserver,
                                    public nsINamed
 {
@@ -221,7 +219,6 @@ public:
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSIHELPERAPPLAUNCHER
   NS_DECL_NSICANCELABLE
-  NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSIBACKGROUNDFILESAVEROBSERVER
   NS_DECL_NSINAMED
 
@@ -297,8 +294,7 @@ protected:
 
 
 
-  nsCOMPtr<nsPIDOMWindowOuter> mWindowToClose;
-  nsCOMPtr<nsITimer> mTimer;
+  RefPtr<MaybeCloseWindowHelper> mMaybeCloseWindowHelper;
 
   
 
@@ -319,13 +315,6 @@ protected:
 
 
   bool mCanceled;
-
-  
-
-
-
-
-  bool mShouldCloseWindow;
 
   
 
@@ -468,13 +457,6 @@ protected:
 
 
   void SendStatusChange(ErrorType type, nsresult aStatus, nsIRequest *aRequest, const nsString& path);
-
-  
-
-
-
-
-  nsresult MaybeCloseWindow();
 
   
 
