@@ -16,7 +16,7 @@ use std::fmt;
 
 
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FontMetrics {
     
     pub x_height: Au,
@@ -25,7 +25,7 @@ pub struct FontMetrics {
 }
 
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum FontMetricsQueryResult {
     
     

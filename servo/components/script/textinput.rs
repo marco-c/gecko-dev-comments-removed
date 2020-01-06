@@ -16,13 +16,13 @@ use std::ops::Range;
 use std::usize;
 use unicode_segmentation::UnicodeSegmentation;
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum Selection {
     Selected,
     NotSelected
 }
 
-#[derive(JSTraceable, PartialEq, Copy, Clone, HeapSizeOf)]
+#[derive(Clone, Copy, HeapSizeOf, JSTraceable, PartialEq)]
 pub enum SelectionDirection {
     Forward,
     Backward,
@@ -49,7 +49,7 @@ impl From<SelectionDirection> for DOMString {
     }
 }
 
-#[derive(JSTraceable, Copy, Clone, HeapSizeOf, PartialEq)]
+#[derive(Clone, Copy, HeapSizeOf, JSTraceable, PartialEq)]
 pub struct TextPoint {
     
     pub line: usize,
@@ -58,7 +58,7 @@ pub struct TextPoint {
 }
 
 
-#[derive(JSTraceable, HeapSizeOf)]
+#[derive(HeapSizeOf, JSTraceable)]
 pub struct TextInput<T: ClipboardProvider> {
     
     lines: Vec<DOMString>,
@@ -96,14 +96,14 @@ impl Default for TextPoint {
 }
 
 
-#[derive(PartialEq, Eq)]
+#[derive(Eq, PartialEq)]
 pub enum Lines {
     Single,
     Multiple,
 }
 
 
-#[derive(PartialEq, Eq, Copy, Clone)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub enum Direction {
     Forward,
     Backward

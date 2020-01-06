@@ -130,7 +130,7 @@ use webrender_api::ClipId;
 use webvr_traits::WebVRMsg;
 
 
-#[derive(JSTraceable, Copy, Clone, Debug, PartialEq, HeapSizeOf)]
+#[derive(Clone, Copy, Debug, HeapSizeOf, JSTraceable, PartialEq)]
 enum WindowState {
     Alive,
     Zombie,     

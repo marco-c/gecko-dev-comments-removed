@@ -270,7 +270,7 @@ counter_style_descriptors! {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum System {
     
     Cyclic,
@@ -335,7 +335,7 @@ impl ToCss for System {
 }
 
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Symbol {
     
     String(String),
@@ -378,7 +378,7 @@ impl Symbol {
 }
 
 
-#[derive(Debug, Clone, ToCss)]
+#[derive(Clone, Debug, ToCss)]
 pub struct Negative(pub Symbol, pub Option<Symbol>);
 
 impl Parse for Negative {
@@ -393,7 +393,7 @@ impl Parse for Negative {
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Ranges(pub Vec<Range<Option<i32>>>);
 
 impl Parse for Ranges {
@@ -482,7 +482,7 @@ impl Parse for Fallback {
 }
 
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Symbols(pub Vec<Symbol>);
 
 impl Parse for Symbols {

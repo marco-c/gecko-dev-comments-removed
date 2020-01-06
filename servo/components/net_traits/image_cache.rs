@@ -16,14 +16,14 @@ use webrender_api;
 
 
 
-#[derive(Copy, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Deserialize, PartialEq, Serialize)]
 pub enum CanRequestImages {
     No,
     Yes,
 }
 
 
-#[derive(Clone, Deserialize, Serialize, HeapSizeOf)]
+#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
 pub enum ImageOrMetadataAvailable {
     ImageAvailable(Arc<Image>, ServoUrl),
     MetadataAvailable(ImageMetadata),
@@ -60,7 +60,7 @@ impl ImageResponder {
 }
 
 
-#[derive(Clone, Debug, Deserialize, Serialize, HeapSizeOf)]
+#[derive(Clone, Debug, Deserialize, HeapSizeOf, Serialize)]
 pub enum ImageResponse {
     
     Loaded(Arc<Image>, ServoUrl),
@@ -73,7 +73,7 @@ pub enum ImageResponse {
 }
 
 
-#[derive(PartialEq, Copy, Clone, Deserialize, Serialize)]
+#[derive(Clone, Copy, Deserialize, PartialEq, Serialize)]
 pub enum ImageState {
     Pending(PendingImageId),
     LoadError,
@@ -81,7 +81,7 @@ pub enum ImageState {
 }
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Deserialize, Serialize, HeapSizeOf, Hash, Debug)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, HeapSizeOf, PartialEq, Serialize)]
 pub struct PendingImageId(pub u64);
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -90,7 +90,7 @@ pub struct PendingImageResponse {
     pub id: PendingImageId,
 }
 
-#[derive(Copy, Clone, PartialEq, Hash, Eq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum UsePlaceholder {
     No,
     Yes,

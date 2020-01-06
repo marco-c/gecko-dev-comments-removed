@@ -588,7 +588,7 @@ impl ISizeAndMarginsComputer for InternalTable {
 
 
 
-#[derive(Clone, Serialize, Debug, Copy)]
+#[derive(Clone, Copy, Debug, Serialize)]
 pub struct ColumnIntrinsicInlineSize {
     
     pub preferred: Au,
@@ -625,7 +625,7 @@ impl ColumnIntrinsicInlineSize {
 
 
 
-#[derive(Serialize, Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize)]
 pub struct ColumnComputedInlineSize {
     
     pub size: Au,

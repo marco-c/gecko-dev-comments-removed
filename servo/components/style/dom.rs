@@ -46,7 +46,7 @@ pub use style_traits::UnsafeNode;
 
 
 
-#[derive(Clone, PartialEq, Copy, Debug, Hash, Eq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
 pub struct OpaqueNode(pub usize);
 

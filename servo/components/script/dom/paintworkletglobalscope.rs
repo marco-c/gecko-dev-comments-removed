@@ -467,7 +467,7 @@ pub enum PaintWorkletTask {
 
 
 
-#[derive(JSTraceable, HeapSizeOf)]
+#[derive(HeapSizeOf, JSTraceable)]
 #[must_root]
 struct PaintDefinition {
     class_constructor: Heap<JSVal>,

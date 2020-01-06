@@ -102,7 +102,7 @@ impl<ColorType: Parse, UrlPaintServer: Parse> Parse for SVGPaint<ColorType, UrlP
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToAnimatedValue)]
-#[derive(ToAnimatedZero, ToCss, ToComputedValue)]
+#[derive(ToAnimatedZero, ToComputedValue, ToCss)]
 pub enum SvgLengthOrPercentageOrNumber<LengthOrPercentage, Number> {
     
     LengthOrPercentage(LengthOrPercentage),
@@ -195,7 +195,7 @@ pub enum SVGLength<LengthType> {
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, ComputeSquaredDistance, Debug, PartialEq, HasViewportPercentage, ToAnimatedValue, ToComputedValue)]
+#[derive(Clone, ComputeSquaredDistance, Debug, HasViewportPercentage, PartialEq, ToAnimatedValue, ToComputedValue)]
 pub enum SVGStrokeDashArray<LengthType> {
     
     Values(Vec<LengthType>),

@@ -34,7 +34,7 @@ use selectors::parser::SelectorParseError;
 
 
 #[cfg(not(feature = "servo"))]
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum DevicePixel {}
 
 
@@ -148,7 +148,7 @@ impl<'i> ValueParseError<'i> {
 }
 
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum PropertyDeclarationParseError<'i> {
     
     UnknownProperty(CowRcStr<'i>),

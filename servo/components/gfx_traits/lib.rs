@@ -18,7 +18,7 @@ use range::RangeIndex;
 use std::sync::atomic::{ATOMIC_USIZE_INIT, AtomicUsize, Ordering};
 
 
-#[derive(PartialEq, Eq, Debug, Copy, Clone, PartialOrd, Ord, Deserialize, Serialize, Hash)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Epoch(pub u32);
 
 impl Epoch {
@@ -62,7 +62,7 @@ int_range_index! {
 
 
 
-#[derive(Clone, Debug, PartialEq, Eq, Copy, Hash, Deserialize, Serialize, HeapSizeOf)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, HeapSizeOf, PartialEq, Serialize)]
 pub enum FragmentType {
     
     FragmentBody,

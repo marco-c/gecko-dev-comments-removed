@@ -12,7 +12,7 @@ use std::sync::mpsc::{Receiver, Sender};
 
 
 
-#[derive(JSTraceable, Clone)]
+#[derive(Clone, JSTraceable)]
 pub struct SendableWorkerScriptChan<T: DomObject> {
     pub sender: Sender<(Trusted<T>, CommonScriptMsg)>,
     pub worker: Trusted<T>,
@@ -34,7 +34,7 @@ impl<T: JSTraceable + DomObject + 'static> ScriptChan for SendableWorkerScriptCh
 
 
 
-#[derive(JSTraceable, Clone)]
+#[derive(Clone, JSTraceable)]
 pub struct WorkerThreadWorkerChan<T: DomObject> {
     pub sender: Sender<(Trusted<T>, WorkerScriptMsg)>,
     pub worker: Trusted<T>,

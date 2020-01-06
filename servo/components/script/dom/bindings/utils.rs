@@ -47,7 +47,7 @@ impl HeapSizeOf for WindowProxyHandler {
     }
 }
 
-#[derive(JSTraceable, HeapSizeOf)]
+#[derive(HeapSizeOf, JSTraceable)]
 
 pub struct GlobalStaticData {
     
@@ -79,7 +79,7 @@ pub const JSCLASS_DOM_GLOBAL: u32 = js::JSCLASS_USERBIT1;
 
 
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub struct DOMClass {
     
     

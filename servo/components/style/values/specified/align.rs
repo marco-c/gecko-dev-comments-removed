@@ -113,7 +113,7 @@ const ALIGN_ALL_SHIFT: u32 = structs::NS_STYLE_ALIGN_ALL_SHIFT;
 
 
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
 pub struct AlignJustifyContent(u16);
 
@@ -206,7 +206,7 @@ impl Parse for AlignJustifyContent {
 
 
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ToCss)]
 pub struct AlignJustifySelf(pub AlignFlags);
 
 impl AlignJustifySelf {
@@ -244,7 +244,7 @@ impl Parse for AlignJustifySelf {
 
 
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ToCss)]
 pub struct AlignItems(pub AlignFlags);
 
 impl AlignItems {
@@ -282,7 +282,7 @@ impl Parse for AlignItems {
 
 
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ToCss)]
 pub struct JustifyItems(pub AlignFlags);
 
 impl JustifyItems {

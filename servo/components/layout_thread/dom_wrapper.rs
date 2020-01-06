@@ -85,7 +85,7 @@ pub unsafe fn drop_style_and_layout_data(data: OpaqueStyleAndLayoutData) {
     let _ = Box::from_raw(non_opaque);
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub struct ServoLayoutNode<'a> {
     
     node: LayoutJS<Node>,
@@ -329,7 +329,7 @@ impl<'ln> ServoLayoutNode<'ln> {
 }
 
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub struct ServoLayoutDocument<'ld> {
     document: LayoutJS<Document>,
     chain: PhantomData<&'ld ()>,
@@ -374,7 +374,7 @@ impl<'ld> ServoLayoutDocument<'ld> {
 }
 
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub struct ServoLayoutElement<'le> {
     element: LayoutJS<Element>,
     chain: PhantomData<&'le ()>,
@@ -810,7 +810,7 @@ impl<'le> ::selectors::Element for ServoLayoutElement<'le> {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct ServoThreadSafeLayoutNode<'ln> {
     
     node: ServoLayoutNode<'ln>,
@@ -1103,7 +1103,7 @@ impl<ConcreteNode> Iterator for ThreadSafeLayoutNodeChildrenIterator<ConcreteNod
 
 
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct ServoThreadSafeLayoutElement<'le> {
     element: ServoLayoutElement<'le>,
 

@@ -28,7 +28,7 @@ use values::generics::transform::{StepPosition, TimingFunction as GenericTimingF
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum KeyframesIterationState {
     
     Infinite,
@@ -39,7 +39,7 @@ pub enum KeyframesIterationState {
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum KeyframesRunningState {
     
     
@@ -52,7 +52,7 @@ pub enum KeyframesRunningState {
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct KeyframesAnimationState {
     
     pub started_at: f64,
@@ -244,7 +244,7 @@ impl Animation {
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct AnimationFrame {
     
     pub property_animation: PropertyAnimation,
@@ -254,7 +254,7 @@ pub struct AnimationFrame {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct PropertyAnimation {
     property: AnimatedProperty,
     timing_function: TimingFunction,

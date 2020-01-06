@@ -26,7 +26,7 @@ pub struct Headers {
 }
 
 
-#[derive(Copy, Clone, JSTraceable, HeapSizeOf, PartialEq)]
+#[derive(Clone, Copy, HeapSizeOf, JSTraceable, PartialEq)]
 pub enum Guard {
     Immutable,
     Request,

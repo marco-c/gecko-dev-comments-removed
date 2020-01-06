@@ -426,7 +426,7 @@ pub struct Stylist {
 }
 
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum RuleInclusion {
     
     

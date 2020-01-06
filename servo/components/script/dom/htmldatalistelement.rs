@@ -43,7 +43,7 @@ impl HTMLDataListElement {
 impl HTMLDataListElementMethods for HTMLDataListElement {
     
     fn Options(&self) -> Root<HTMLCollection> {
-        #[derive(JSTraceable, HeapSizeOf)]
+        #[derive(HeapSizeOf, JSTraceable)]
         struct HTMLDataListOptionsFilter;
         impl CollectionFilter for HTMLDataListOptionsFilter {
             fn filter(&self, elem: &Element, _root: &Node) -> bool {

@@ -52,7 +52,7 @@ pub fn au_to_int_px(au: f32) -> i32 {
     (au / AU_PER_PX).round() as i32
 }
 
-#[derive(Clone, PartialEq, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 
 pub enum FontRelativeLength {
@@ -167,7 +167,7 @@ impl FontRelativeLength {
     }
 }
 
-#[derive(Clone, PartialEq, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 
 
@@ -224,7 +224,7 @@ impl ViewportPercentageLength {
 }
 
 
-#[derive(Clone, PartialEq, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct CharacterWidth(pub i32);
 
@@ -256,7 +256,7 @@ fn to_au_round(length: CSSFloat, au_per_unit: CSSFloat) -> Au {
 }
 
 
-#[derive(Clone, PartialEq, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum AbsoluteLength {
     
@@ -347,7 +347,7 @@ impl Mul<CSSFloat> for AbsoluteLength {
 }
 
 
-#[derive(Clone, PartialEq, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg(feature = "gecko")]
 pub struct PhysicalLength(pub CSSFloat);
 
@@ -393,7 +393,7 @@ impl Mul<CSSFloat> for PhysicalLength {
 
 
 
-#[derive(Clone, PartialEq, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum NoCalcLength {
     

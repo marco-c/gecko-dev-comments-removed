@@ -73,7 +73,7 @@ impl Serialize for TableRowFlow {
 }
 
 
-#[derive(Serialize, Copy, Clone)]
+#[derive(Clone, Copy, Serialize)]
 pub struct CellIntrinsicInlineSize {
     
     pub column_size: ColumnIntrinsicInlineSize,
@@ -571,7 +571,7 @@ impl CollapsedBorderSpacingForRow {
 }
 
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct CollapsedBorder {
     
     pub style: border_top_style::T,
@@ -596,7 +596,7 @@ impl Serialize for CollapsedBorder {
 
 
 #[allow(dead_code)]
-#[derive(Copy, Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 pub enum CollapsedBorderProvenance {
     FromPreviousTableCell = 6,
     FromNextTableCell = 5,
@@ -906,7 +906,7 @@ fn set_inline_position_of_child_flow(
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub struct BorderCollapseInfoForChildTableCell<'a> {
     collapsed_borders_for_row: &'a CollapsedBordersForRow,
     collapsed_border_spacing_for_row: &'a CollapsedBorderSpacingForRow,

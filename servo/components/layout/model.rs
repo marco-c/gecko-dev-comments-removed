@@ -18,7 +18,7 @@ use style::values::computed::{BorderCornerRadius, LengthOrPercentageOrAuto};
 use style::values::computed::{LengthOrPercentage, LengthOrPercentageOrNone};
 
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct AdjoiningMargins {
     
     pub most_positive: Au,
@@ -61,7 +61,7 @@ impl AdjoiningMargins {
 }
 
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum CollapsibleMargins {
     
     None(Au, Au),
@@ -295,7 +295,7 @@ impl MarginCollapseInfo {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum MarginCollapseState {
     
     AccumulatingCollapsibleTopMargin,
@@ -304,7 +304,7 @@ pub enum MarginCollapseState {
 }
 
 
-#[derive(Serialize, Copy, Clone)]
+#[derive(Clone, Copy, Serialize)]
 pub struct IntrinsicISizes {
     
     pub minimum_inline_size: Au,
@@ -395,7 +395,7 @@ impl IntrinsicISizesContribution {
 }
 
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum MaybeAuto {
     Auto,
     Specified(Au),

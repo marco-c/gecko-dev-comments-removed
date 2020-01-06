@@ -23,7 +23,7 @@ use stylesheets::{NestedRuleIterationCondition, Stylesheet};
 
 
 
-#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct MediaListKey(usize);
 

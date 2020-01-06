@@ -559,7 +559,7 @@ pub trait MutableOwnedFlowUtils {
                                             absolute_descendants: &mut AbsoluteDescendants);
 }
 
-#[derive(Copy, Clone, Serialize, PartialEq, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 pub enum FlowClass {
     Block,
     Inline,
@@ -771,7 +771,7 @@ pub type AbsoluteDescendantOffsetIter<'a> = Zip<AbsoluteDescendantIter<'a>, Iter
 
 
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub struct EarlyAbsolutePositionInfo {
     
     pub relative_containing_block_size: LogicalSize<Au>,
@@ -793,7 +793,7 @@ impl EarlyAbsolutePositionInfo {
 
 
 
-#[derive(Serialize, Copy, Clone)]
+#[derive(Clone, Copy, Serialize)]
 pub struct LateAbsolutePositionInfo {
     
     
@@ -809,7 +809,7 @@ impl LateAbsolutePositionInfo {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct FragmentationContext {
     pub available_block_size: Au,
     pub this_fragment_is_empty: bool,
@@ -1412,7 +1412,7 @@ impl ContainingBlockLink {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct OpaqueFlow(pub usize);
 
 impl OpaqueFlow {

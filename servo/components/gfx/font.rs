@@ -154,7 +154,7 @@ bitflags! {
 }
 
 
-#[derive(Clone, Eq, PartialEq, Hash, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct ShapingOptions {
     
     
@@ -168,7 +168,7 @@ pub struct ShapingOptions {
 }
 
 
-#[derive(Clone, Eq, PartialEq, Hash, Debug)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 struct ShapeCacheEntry {
     text: String,
     options: ShapingOptions,

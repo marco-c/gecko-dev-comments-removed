@@ -21,7 +21,7 @@ pub use gfx_traits::ByteIndex;
 
 
 
-#[derive(Clone, Debug, Copy, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct GlyphEntry {
     value: u32,
 }
@@ -147,7 +147,7 @@ impl GlyphEntry {
 
 
 
-#[derive(Clone, Debug, Copy, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 struct DetailedGlyph {
     id: GlyphId,
     
@@ -166,7 +166,7 @@ impl DetailedGlyph {
     }
 }
 
-#[derive(PartialEq, Clone, Eq, Debug, Copy, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 struct DetailedGlyphRecord {
     
     entry_offset: ByteIndex,
@@ -308,7 +308,7 @@ impl<'a> DetailedGlyphStore {
 
 
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub struct GlyphData {
     id: GlyphId,
     advance: Au,
@@ -339,7 +339,7 @@ impl GlyphData {
 
 
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub enum GlyphInfo<'a> {
     Simple(&'a GlyphStore, ByteIndex),
     Detail(&'a GlyphStore, ByteIndex, u16),

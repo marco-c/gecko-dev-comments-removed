@@ -170,7 +170,7 @@ impl ToJSValConvertible for USVString {
 }
 
 
-#[derive(PartialEq, Clone)]
+#[derive(Clone, PartialEq)]
 pub enum StringificationBehavior {
     
     Default,

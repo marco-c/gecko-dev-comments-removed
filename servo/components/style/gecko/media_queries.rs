@@ -200,7 +200,7 @@ impl Device {
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Expression {
     feature: &'static nsMediaFeature,
     value: Option<MediaExpressionValue>,
@@ -242,7 +242,7 @@ impl PartialEq for Expression {
 }
 
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Resolution {
     
     Dpi(CSSFloat),
@@ -295,7 +295,7 @@ impl ToCss for Resolution {
 }
 
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum MediaExpressionValue {
     
     Length(specified::Length),

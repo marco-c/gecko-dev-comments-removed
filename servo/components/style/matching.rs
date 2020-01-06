@@ -40,7 +40,7 @@ impl StyleDifference {
 }
 
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub enum StyleChange {
     
     Unchanged,
@@ -50,7 +50,7 @@ pub enum StyleChange {
 
 
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum ChildCascadeRequirement {
     
     
@@ -96,7 +96,7 @@ impl RulesChanged {
 }
 
 
-#[derive(PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CascadeVisitedMode {
     
     Unvisited,

@@ -9,7 +9,7 @@ use bloom::BloomFilter;
 
 
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum MatchingMode {
     
     Normal,
@@ -29,7 +29,7 @@ pub enum MatchingMode {
 }
 
 
-#[derive(PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum VisitedHandlingMode {
     
     AllLinksUnvisited,
@@ -48,7 +48,7 @@ pub enum VisitedHandlingMode {
 
 
 
-#[derive(PartialEq, Eq, Copy, Clone, Hash, Debug)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum QuirksMode {
     
     Quirks,

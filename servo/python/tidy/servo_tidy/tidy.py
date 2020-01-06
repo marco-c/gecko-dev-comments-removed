@@ -692,6 +692,19 @@ def check_rust(file_name, lines):
             
             prev_mod = {}
 
+        
+        if is_attribute:
+            
+            match = re.search(r"#\[derive\(([a-zA-Z, ]*)", line)
+            if match:
+                derives = map(lambda w: w.strip(), match.group(1).split(','))
+                
+                sorted_derives = sorted(derives)
+                if sorted_derives != derives:
+                    yield(idx + 1, decl_message.format("derivable traits list")
+                              + decl_expected.format(", ".join(sorted_derives))
+                              + decl_found.format(", ".join(derives)))
+
 
 
 def is_associated_type(match, line):

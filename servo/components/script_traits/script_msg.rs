@@ -163,7 +163,7 @@ pub enum ScriptMsg {
 }
 
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct ScopeThings {
     
     pub script_url: ServoUrl,
@@ -178,7 +178,7 @@ pub struct ScopeThings {
 }
 
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct DOMMessage(pub Vec<u8>);
 
 

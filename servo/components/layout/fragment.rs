@@ -574,7 +574,7 @@ impl ScannedTextFragmentInfo {
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct SplitInfo {
     
     
@@ -633,7 +633,7 @@ impl UnscannedTextFragmentInfo {
 }
 
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub struct TableColumnFragmentInfo {
     
     pub span: u32,
@@ -3049,7 +3049,7 @@ pub trait FragmentBorderBoxIterator {
 
 /// The coordinate system used in `stacking_relative_border_box()`. See the documentation of that
 /// method for details.
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum CoordinateSystem {
     /// The border box returned is relative to the fragment's parent stacking context.
     Parent,
@@ -3094,7 +3094,7 @@ impl<'a> InlineStyleIterator<'a> {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum WhitespaceStrippingResult {
     RetainFragment,
     FragmentContainedOnlyBidiControlCharacters,
@@ -3116,7 +3116,7 @@ impl WhitespaceStrippingResult {
 
 /// The overflow area. We need two different notions of overflow: paint overflow and scrollable
 /// overflow.
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Overflow {
     pub scroll: Rect<Au>,
     pub paint: Rect<Au>,
@@ -3163,7 +3163,7 @@ bitflags! {
 /// Specified distances from the margin edge of a block to its content in the inline direction.
 /// These are returned by `guess_inline_content_edge_offsets()` and are used in the float placement
 /// speculation logic.
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct SpeculatedInlineContentEdgeOffsets {
     pub start: Au,
     pub end: Au,

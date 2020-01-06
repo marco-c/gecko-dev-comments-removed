@@ -108,7 +108,7 @@ use script_thread::ScriptThread;
 use std::ptr;
 
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub struct NonCallbackInterfaceObjectClass {
     
     pub class: Class,

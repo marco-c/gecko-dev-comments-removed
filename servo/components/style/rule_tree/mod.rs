@@ -69,7 +69,7 @@ impl Drop for RuleTree {
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum StyleSource {
     
     Style(Arc<Locked<StyleRule>>),
@@ -442,7 +442,7 @@ const RULE_TREE_GC_INTERVAL: usize = 300;
 
 
 #[repr(u8)]
-#[derive(Eq, PartialEq, Copy, Clone, Debug, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum CascadeLevel {
     

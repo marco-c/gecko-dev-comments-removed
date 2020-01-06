@@ -88,7 +88,7 @@ impl Eq for UrlExtraData {}
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 #[allow(missing_docs)]
 pub enum CssRule {
     
@@ -135,7 +135,7 @@ impl MallocSizeOfWithGuard for CssRule {
 }
 
 #[allow(missing_docs)]
-#[derive(PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CssRuleType {
     
     Style               = 1,

@@ -77,7 +77,7 @@ pub use script_msg::{ServiceWorkerMsg, ScopeThings, SWManagerMsg, SWManagerSende
 
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct UntrustedNodeAddress(pub *const c_void);
 
 impl HeapSizeOf for UntrustedNodeAddress {
@@ -196,7 +196,7 @@ pub struct NewLayoutInfo {
 }
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
+#[derive(Clone, Copy, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum DiscardBrowsingContext {
     
     Yes,
@@ -210,7 +210,7 @@ pub enum DiscardBrowsingContext {
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, HeapSizeOf, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, HeapSizeOf, PartialEq, Serialize)]
 pub enum DocumentActivity {
     
     Inactive,
@@ -230,7 +230,7 @@ pub enum PaintMetricType {
 }
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, HeapSizeOf, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, HeapSizeOf, PartialEq, Serialize)]
 pub enum UpdatePipelineIdReason {
     
     Navigation,
@@ -352,7 +352,7 @@ impl fmt::Debug for ConstellationControlMsg {
 }
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub enum DocumentState {
     
     Idle,
@@ -362,7 +362,7 @@ pub enum DocumentState {
 
 
 
-#[derive(Clone, Eq, PartialEq, Deserialize, Serialize, Debug)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum AnimationState {
     
     AnimationsPresent,
@@ -390,7 +390,7 @@ pub enum TouchEventType {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct TouchId(pub i32);
 
 
@@ -433,7 +433,7 @@ pub enum CompositorEvent {
 }
 
 
-#[derive(Copy, Clone, HeapSizeOf, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Deserialize, HeapSizeOf, PartialEq, Serialize)]
 pub enum TouchpadPressurePhase {
     
     BeforeClick,
@@ -463,7 +463,7 @@ pub enum TimerSchedulerMsg {
 pub struct TimerEvent(pub TimerSource, pub TimerEventId);
 
 
-#[derive(Copy, Clone, Debug, HeapSizeOf, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, HeapSizeOf, Serialize)]
 pub enum TimerSource {
     
     FromWindow(PipelineId),
@@ -472,7 +472,7 @@ pub enum TimerSource {
 }
 
 
-#[derive(PartialEq, Eq, Copy, Clone, Debug, HeapSizeOf, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, HeapSizeOf, PartialEq, Serialize)]
 pub struct TimerEventId(pub u32);
 
 
@@ -555,7 +555,7 @@ pub trait ScriptThreadFactory {
 }
 
 
-#[derive(PartialEq, Eq, Copy, Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum IFrameSandboxState {
     
     IFrameSandboxed,
@@ -695,7 +695,7 @@ pub enum AnimationTickType {
 }
 
 
-#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct ScrollState {
     
     pub scroll_root_id: ClipId,
@@ -704,7 +704,7 @@ pub struct ScrollState {
 }
 
 
-#[derive(Copy, Clone, Deserialize, Serialize, HeapSizeOf)]
+#[derive(Clone, Copy, Deserialize, HeapSizeOf, Serialize)]
 pub struct WindowSizeData {
     
     
@@ -715,7 +715,7 @@ pub struct WindowSizeData {
 }
 
 
-#[derive(Deserialize, Eq, PartialEq, Serialize, Copy, Clone, HeapSizeOf)]
+#[derive(Clone, Copy, Deserialize, Eq, HeapSizeOf, PartialEq, Serialize)]
 pub enum WindowSizeType {
     
     Initial,
@@ -786,7 +786,7 @@ pub enum ConstellationMsg {
 }
 
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct WorkerGlobalScopeInit {
     
     pub resource_threads: ResourceThreads,
@@ -811,7 +811,7 @@ pub struct WorkerGlobalScopeInit {
 }
 
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct WorkerScriptLoadOrigin {
     
     pub referrer_url: Option<ServoUrl>,
@@ -822,7 +822,7 @@ pub struct WorkerScriptLoadOrigin {
 }
 
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum PaintWorkletError {
     
     Timeout,
@@ -849,7 +849,7 @@ pub trait Painter: SpeculativePainter {
 
 
 
-#[derive(Debug, Deserialize, Serialize, Clone, HeapSizeOf)]
+#[derive(Clone, Debug, Deserialize, HeapSizeOf, Serialize)]
 pub struct DrawAPaintImageResult {
     
     pub width: u32,
@@ -864,7 +864,7 @@ pub struct DrawAPaintImageResult {
 }
 
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct ScriptToConstellationChan {
     
     pub sender: IpcSender<(PipelineId, ScriptMsg)>,

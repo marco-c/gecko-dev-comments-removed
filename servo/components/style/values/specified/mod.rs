@@ -669,7 +669,7 @@ pub type NamespaceId = ();
 
 
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Attr {
     

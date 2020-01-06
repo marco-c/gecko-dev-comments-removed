@@ -13,7 +13,7 @@ use style::logical_geometry::{LogicalRect, LogicalSize, WritingMode};
 use style::values::computed::LengthOrPercentageOrAuto;
 
 
-#[derive(Clone, Serialize, Debug, Copy)]
+#[derive(Clone, Copy, Debug, Serialize)]
 pub enum FloatKind {
     Left,
     Right
@@ -30,7 +30,7 @@ impl FloatKind {
 }
 
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub enum ClearType {
     Left,
     Right,
@@ -431,7 +431,7 @@ impl Floats {
 
 
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub struct SpeculatedFloatPlacement {
     
     pub left: Au,

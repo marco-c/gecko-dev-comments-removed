@@ -25,7 +25,7 @@ use std::ptr;
 use std::rc::Rc;
 
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum ExceptionHandling {
     
     Report,

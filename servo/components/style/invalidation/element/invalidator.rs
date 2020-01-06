@@ -48,7 +48,7 @@ type InvalidationVector = SmallVec<[Invalidation; 10]>;
 
 
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum InvalidationKind {
     Descendant,
     Sibling,

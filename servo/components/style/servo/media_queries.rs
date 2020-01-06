@@ -133,7 +133,7 @@ impl Device {
 
 
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum ExpressionKind {
     
@@ -143,7 +143,7 @@ pub enum ExpressionKind {
 
 
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Expression(ExpressionKind);
 
@@ -221,7 +221,7 @@ impl ToCss for Expression {
 
 
 
-#[derive(PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum Range<T> {
     

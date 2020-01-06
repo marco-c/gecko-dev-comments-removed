@@ -31,7 +31,7 @@ use style_traits::{ParseError, StyleParseError};
 
 
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[allow(missing_docs)]
 #[repr(usize)]
@@ -252,7 +252,7 @@ pub type PseudoClassStringArg = Box<str>;
 
 
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[allow(missing_docs)]
 pub enum NonTSPseudoClass {

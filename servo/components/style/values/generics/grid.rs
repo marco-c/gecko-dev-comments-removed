@@ -14,7 +14,7 @@ use values::computed::{ComputedValueAsSpecified, Context, ToComputedValue};
 use values::specified::Integer;
 use values::specified::grid::parse_line_names;
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 
 
@@ -138,7 +138,7 @@ define_css_keyword_enum!{ TrackKeyword:
     "min-content" => MinContent
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 
 
@@ -382,7 +382,7 @@ no_viewport_percentage!(RepeatCount);
 
 
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct TrackRepeat<L> {
     
@@ -508,7 +508,7 @@ impl<L: ToComputedValue> ToComputedValue for TrackRepeat<L> {
 
 
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum TrackListType {
     
@@ -533,7 +533,7 @@ impl ComputedValueAsSpecified for TrackListType {}
 
 
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct TrackList<T> {
     
@@ -601,7 +601,7 @@ impl<T: ToCss> ToCss for TrackList<T> {
 
 
 
-#[derive(Clone, PartialEq, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct LineNameList {
     
@@ -698,7 +698,7 @@ no_viewport_percentage!(LineNameList);
 
 
 
-#[derive(Clone, PartialEq, Debug, ToCss)]
+#[derive(Clone, Debug, PartialEq, ToCss)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum GridTemplateComponent<L> {
     

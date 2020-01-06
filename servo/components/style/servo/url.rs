@@ -22,7 +22,7 @@ use values::computed::{Context, ToComputedValue, ComputedUrl};
 
 
 
-#[derive(Clone, Debug, HeapSizeOf, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize, HeapSizeOf, Serialize)]
 pub struct SpecifiedUrl {
     
     

@@ -22,7 +22,7 @@ use std::cell::Cell;
 use std::ptr;
 
 
-#[derive(JSTraceable, HeapSizeOf)]
+#[derive(HeapSizeOf, JSTraceable)]
 pub enum IteratorType {
     
     Keys,

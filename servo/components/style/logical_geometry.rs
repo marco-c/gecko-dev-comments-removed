@@ -175,12 +175,12 @@ impl fmt::Display for WritingMode {
 
 
 #[cfg(not(debug_assertions))]
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 #[cfg_attr(feature = "servo", derive(Serialize))]
 struct DebugWritingMode;
 
 #[cfg(debug_assertions)]
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 #[cfg_attr(feature = "servo", derive(Serialize))]
 struct DebugWritingMode {
     mode: WritingMode
@@ -232,7 +232,7 @@ impl Debug for DebugWritingMode {
 
 
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(Serialize))]
 pub enum Direction {
     Inline,
@@ -240,7 +240,7 @@ pub enum Direction {
 }
 
 
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 #[cfg_attr(feature = "servo", derive(Serialize))]
 pub struct LogicalSize<T> {
     pub inline: T,  
@@ -377,7 +377,7 @@ impl<T: Sub<T, Output=T>> Sub for LogicalSize<T> {
 
 
 
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 #[cfg_attr(feature = "servo", derive(Serialize))]
 pub struct LogicalPoint<T> {
     
@@ -550,7 +550,7 @@ impl<T: Copy + Sub<T, Output=T>> Sub<LogicalSize<T>> for LogicalPoint<T> {
 
 
 
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 #[cfg_attr(feature = "servo", derive(Serialize))]
 pub struct LogicalMargin<T> {
     pub block_start: T,
@@ -854,7 +854,7 @@ impl<T: Sub<T, Output=T>> Sub for LogicalMargin<T> {
 
 
 
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 #[cfg_attr(feature = "servo", derive(Serialize))]
 pub struct LogicalRect<T> {
     pub start: LogicalPoint<T>,
@@ -1102,7 +1102,7 @@ impl<T: Copy + Add<T, Output=T> + Sub<T, Output=T>> Sub<LogicalMargin<T>> for Lo
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum PhysicalSide {
     Top,
     Right,

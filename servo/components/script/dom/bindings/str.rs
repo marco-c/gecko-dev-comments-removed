@@ -18,7 +18,7 @@ use std::str;
 use std::str::{Bytes, FromStr};
 
 
-#[derive(JSTraceable, Clone, Eq, PartialEq, HeapSizeOf, Debug)]
+#[derive(Clone, Debug, Eq, HeapSizeOf, JSTraceable, PartialEq)]
 pub struct ByteString(Vec<u8>);
 
 impl ByteString {

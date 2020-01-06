@@ -63,7 +63,7 @@ use unicode_bidi as bidi;
 
 
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Line {
     
     
@@ -823,7 +823,7 @@ impl LineBreaker {
 }
 
 
-#[derive(Serialize, Clone)]
+#[derive(Clone, Serialize)]
 pub struct InlineFragments {
     
     pub fragments: Vec<Fragment>,
@@ -1864,13 +1864,13 @@ impl InlineMetrics {
     }
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 enum LineFlushMode {
     No,
     Flush,
 }
 
-#[derive(Copy, Clone, Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Serialize)]
 pub struct LineMetrics {
     pub space_above_baseline: Au,
     pub space_below_baseline: Au,

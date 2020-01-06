@@ -3,7 +3,7 @@
 
 
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum PseudoElement {
     % for pseudo in PSEUDOS:
         /// ${pseudo.value}

@@ -36,7 +36,7 @@ pub struct UserAgentStylesheets {
 
 
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Debug, Default)]
 #[allow(missing_docs)]
 pub struct Namespaces {
     pub default: Option<(Namespace, NamespaceId)>,

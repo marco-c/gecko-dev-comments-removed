@@ -99,7 +99,7 @@ impl DeepCloneWithLock for KeyframesRule {
 
 
 
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct KeyframePercentage(pub f32);
 
@@ -147,7 +147,7 @@ impl KeyframePercentage {
 
 
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct KeyframeSelector(Vec<KeyframePercentage>);
 
 impl ToCss for KeyframeSelector {

@@ -10,7 +10,7 @@ use servo_url::{ImmutableOrigin, ServoUrl};
 use std::default::Default;
 
 
-#[derive(Copy, Clone, PartialEq, HeapSizeOf)]
+#[derive(Clone, Copy, HeapSizeOf, PartialEq)]
 pub enum Initiator {
     None,
     Download,
@@ -20,7 +20,7 @@ pub enum Initiator {
 }
 
 
-#[derive(Copy, Clone, PartialEq, Serialize, Deserialize, HeapSizeOf)]
+#[derive(Clone, Copy, Deserialize, HeapSizeOf, PartialEq, Serialize)]
 pub enum Type {
     None,
     Audio,
@@ -33,7 +33,7 @@ pub enum Type {
 }
 
 
-#[derive(Copy, Clone, PartialEq, Serialize, Deserialize, HeapSizeOf)]
+#[derive(Clone, Copy, Deserialize, HeapSizeOf, PartialEq, Serialize)]
 pub enum Destination {
     None,
     Document,
@@ -53,14 +53,14 @@ pub enum Destination {
 }
 
 
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize, HeapSizeOf)]
+#[derive(Clone, Debug, Deserialize, HeapSizeOf, PartialEq, Serialize)]
 pub enum Origin {
     Client,
     Origin(ImmutableOrigin),
 }
 
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, HeapSizeOf)]
+#[derive(Clone, Deserialize, HeapSizeOf, PartialEq, Serialize)]
 pub enum Referrer {
     NoReferrer,
     
@@ -69,7 +69,7 @@ pub enum Referrer {
 }
 
 
-#[derive(Copy, Clone, PartialEq, Serialize, Deserialize, HeapSizeOf)]
+#[derive(Clone, Copy, Deserialize, HeapSizeOf, PartialEq, Serialize)]
 pub enum RequestMode {
     Navigate,
     SameOrigin,
@@ -79,7 +79,7 @@ pub enum RequestMode {
 }
 
 
-#[derive(Copy, Clone, PartialEq, Serialize, Deserialize, HeapSizeOf)]
+#[derive(Clone, Copy, Deserialize, HeapSizeOf, PartialEq, Serialize)]
 pub enum CredentialsMode {
     Omit,
     CredentialsSameOrigin,
@@ -87,7 +87,7 @@ pub enum CredentialsMode {
 }
 
 
-#[derive(Copy, Clone, PartialEq, Serialize, Deserialize, HeapSizeOf)]
+#[derive(Clone, Copy, Deserialize, HeapSizeOf, PartialEq, Serialize)]
 pub enum CacheMode {
     Default,
     NoStore,
@@ -98,7 +98,7 @@ pub enum CacheMode {
 }
 
 
-#[derive(Copy, Clone, PartialEq, Serialize, Deserialize, HeapSizeOf)]
+#[derive(Clone, Copy, Deserialize, HeapSizeOf, PartialEq, Serialize)]
 pub enum ServiceWorkersMode {
     All,
     Foreign,
@@ -106,7 +106,7 @@ pub enum ServiceWorkersMode {
 }
 
 
-#[derive(Copy, Clone, PartialEq, Serialize, Deserialize, HeapSizeOf)]
+#[derive(Clone, Copy, Deserialize, HeapSizeOf, PartialEq, Serialize)]
 pub enum RedirectMode {
     Follow,
     Error,
@@ -114,7 +114,7 @@ pub enum RedirectMode {
 }
 
 
-#[derive(Copy, Clone, PartialEq, HeapSizeOf)]
+#[derive(Clone, Copy, HeapSizeOf, PartialEq)]
 pub enum ResponseTainting {
     Basic,
     CorsTainting,
@@ -122,20 +122,20 @@ pub enum ResponseTainting {
 }
 
 
-#[derive(Copy, Clone, PartialEq, HeapSizeOf)]
+#[derive(Clone, Copy, HeapSizeOf, PartialEq)]
 pub enum Window {
     NoWindow,
     Client, 
 }
 
 
-#[derive(Copy, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Deserialize, PartialEq, Serialize)]
 pub enum CorsSettings {
     Anonymous,
     UseCredentials,
 }
 
-#[derive(Serialize, Deserialize, Clone, HeapSizeOf)]
+#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
 pub struct RequestInit {
     #[serde(deserialize_with = "::hyper_serde::deserialize",
             serialize_with = "::hyper_serde::serialize")]

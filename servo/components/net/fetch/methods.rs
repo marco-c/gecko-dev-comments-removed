@@ -536,7 +536,7 @@ pub fn should_be_blocked_due_to_nosniff(request_type: Type, response_headers: &H
     
     
     
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Clone, Copy, Debug)]
     struct XContentTypeOptions;
 
     impl Header for XContentTypeOptions {

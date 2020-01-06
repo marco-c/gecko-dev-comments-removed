@@ -204,7 +204,7 @@ impl<'a> CoordDataMut for CornersDataMut<'a> {
 
 
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum CoordDataValue {
     
     Null,

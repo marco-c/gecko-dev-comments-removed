@@ -17,7 +17,7 @@ pub use super::specified::{AlignItems, AlignJustifyContent, AlignJustifySelf};
 
 
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct JustifyItems {
     
     pub specified: specified::JustifyItems,

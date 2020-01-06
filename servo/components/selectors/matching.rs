@@ -215,7 +215,7 @@ fn may_match<E>(hashes: &AncestorHashes,
 
 
 
-#[derive(PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RelevantLinkStatus {
     
     
@@ -352,7 +352,7 @@ impl RelevantLinkStatus {
 
 
 
-#[derive(PartialEq, Eq, Copy, Clone)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 enum SelectorMatchingResult {
     Matched,
     NotMatchedAndRestartFromClosestLaterSibling,

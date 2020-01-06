@@ -9,7 +9,7 @@
 use time;
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 enum TimerMode {
     
     Test(f64),
@@ -20,7 +20,7 @@ enum TimerMode {
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Timer {
     mode: TimerMode,
 }

@@ -44,7 +44,7 @@ use std::ops::{Deref, DerefMut};
 use std::ptr;
 use std::rc::Rc;
 
-#[derive(PartialEq, Clone, JSTraceable)]
+#[derive(Clone, JSTraceable, PartialEq)]
 pub enum CommonEventHandler {
     EventHandler(Rc<EventHandlerNonNull>),
     ErrorEventHandler(Rc<OnErrorEventHandlerNonNull>),
@@ -61,14 +61,14 @@ impl CommonEventHandler {
     }
 }
 
-#[derive(JSTraceable, Copy, Clone, PartialEq, HeapSizeOf)]
+#[derive(Clone, Copy, HeapSizeOf, JSTraceable, PartialEq)]
 pub enum ListenerPhase {
     Capturing,
     Bubbling,
 }
 
 
-#[derive(JSTraceable, Clone, PartialEq)]
+#[derive(Clone, JSTraceable, PartialEq)]
 struct InternalRawUncompiledHandler {
     source: DOMString,
     url: ServoUrl,
@@ -76,7 +76,7 @@ struct InternalRawUncompiledHandler {
 }
 
 
-#[derive(JSTraceable, PartialEq, Clone)]
+#[derive(Clone, JSTraceable, PartialEq)]
 enum InlineEventListener {
     Uncompiled(InternalRawUncompiledHandler),
     Compiled(CommonEventHandler),
@@ -106,7 +106,7 @@ impl InlineEventListener {
     }
 }
 
-#[derive(JSTraceable, Clone, PartialEq)]
+#[derive(Clone, JSTraceable, PartialEq)]
 enum EventListenerType {
     Additive(Rc<EventListener>),
     Inline(InlineEventListener),
@@ -228,7 +228,7 @@ struct EventListenerEntry {
     listener: EventListenerType
 }
 
-#[derive(JSTraceable, HeapSizeOf)]
+#[derive(HeapSizeOf, JSTraceable)]
 
 struct EventListeners(Vec<EventListenerEntry>);
 

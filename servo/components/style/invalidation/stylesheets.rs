@@ -20,7 +20,7 @@ use stylesheets::{CssRule, StylesheetInDocument};
 
 
 
-#[derive(Debug, Hash, Eq, PartialEq)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 enum InvalidationScope {
     

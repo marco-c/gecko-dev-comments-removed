@@ -42,7 +42,7 @@ impl AnimationRules {
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Importance {
     
     Normal,

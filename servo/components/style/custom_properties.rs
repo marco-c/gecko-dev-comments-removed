@@ -39,7 +39,7 @@ pub fn parse_name(s: &str) -> Result<&str, ()> {
 
 
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct SpecifiedValue {
     css: String,

@@ -23,7 +23,7 @@ pub use servo::media_queries::{Device, Expression};
 pub use gecko::media_queries::{Device, Expression};
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct MediaList {
     
@@ -60,7 +60,7 @@ pub enum Qualifier {
 
 
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct MediaQuery {
     
@@ -132,7 +132,7 @@ impl ToCss for MediaQuery {
 }
 
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum MediaQueryType {
     
@@ -161,7 +161,7 @@ impl MediaQueryType {
 }
 
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct MediaType(pub CustomIdent);
 

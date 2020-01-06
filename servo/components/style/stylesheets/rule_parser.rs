@@ -86,7 +86,7 @@ impl<'b> TopLevelRuleParser<'b> {
 }
 
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
+#[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
 pub enum State {
     
     Start = 1,

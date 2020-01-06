@@ -727,7 +727,7 @@ pub struct StyleContext<'a, E: TElement + 'a> {
 }
 
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ReflowGoal {
     
     ForDisplay,

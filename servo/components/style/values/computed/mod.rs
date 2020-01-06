@@ -554,7 +554,7 @@ impl From<Au> for NonNegativeAu {
 
 
 #[cfg(feature = "servo")]
-#[derive(Clone, Debug, HeapSizeOf, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, HeapSizeOf, PartialEq, Serialize)]
 pub enum ComputedUrl {
     
     Invalid(Arc<String>),

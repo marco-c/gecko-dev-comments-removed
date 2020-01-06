@@ -80,7 +80,7 @@ impl<'a> SelectorParser<'a> {
 
 
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PseudoElementCascadeType {
     
     

@@ -68,14 +68,14 @@ impl ConvertPipelineIdFromWebRender for webrender_api::PipelineId {
 
 
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 enum ReadyState {
     Unknown,
     WaitingForConstellationReply,
     ReadyToSaveImage,
 }
 
-#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct FrameTreeId(u32);
 
 impl FrameTreeId {
@@ -88,7 +88,7 @@ impl FrameTreeId {
 
 
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 enum LayerPixel {}
 
 
@@ -195,7 +195,7 @@ pub struct IOCompositor<Window: WindowMethods> {
     pending_paint_metrics: HashMap<PipelineId, Epoch>,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 struct ScrollZoomEvent {
     
     magnification: f32,
@@ -209,13 +209,13 @@ struct ScrollZoomEvent {
     event_count: u32,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Debug, PartialEq)]
 enum CompositionRequest {
     NoCompositingNecessary,
     CompositeNow(CompositingReason),
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum ShutdownState {
     NotShuttingDown,
     ShuttingDown,
@@ -247,7 +247,7 @@ impl PipelineDetails {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum CompositeTarget {
     
     Window,
@@ -1657,7 +1657,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
 }
 
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum CompositingReason {
     
     DelayedCompositeTimeout,

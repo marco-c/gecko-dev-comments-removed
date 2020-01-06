@@ -39,7 +39,7 @@ macro_rules! local_name {
 }
 
 
-#[derive(PartialEq, Eq)]
+#[derive(Eq, PartialEq)]
 pub struct Atom(*mut WeakAtom);
 
 

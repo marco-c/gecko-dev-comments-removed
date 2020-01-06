@@ -243,7 +243,7 @@ impl<'a> PostorderFlowTraversal for BubbleISizes<'a> {
 }
 
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub struct AssignISizes<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
@@ -263,7 +263,7 @@ impl<'a> PreorderFlowTraversal for AssignISizes<'a> {
 
 
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub struct AssignBSizes<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
