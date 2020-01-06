@@ -132,6 +132,30 @@ public:
     rv = dir->Append(NS_LITERAL_STRING(DOMCACHE_DIRECTORY_NAME));
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
+    int64_t paddingSize = 0;
+    {
+      
+      
+      MutexAutoLock lock(mDirPaddingFileMutex);
+
+      if (mozilla::dom::cache::
+          DirectoryPaddingFileExists(dir, DirPaddingFile::TMP_FILE) ||
+          NS_WARN_IF(NS_FAILED(mozilla::dom::cache::
+                               LockedDirectoryPaddingGet(dir,
+                                                         &paddingSize)))) {
+        nsCOMPtr<mozIStorageConnection> conn;
+        
+
+        rv = mozilla::dom::cache::LockedDirectoryPaddingRestore(dir, conn);
+        if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+        rv = mozilla::dom::cache::LockedDirectoryPaddingGet(dir, &paddingSize);
+        if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+      }
+    }
+
+    aUsageInfo->AppendToFileUsage(paddingSize);
+
     nsCOMPtr<nsISimpleEnumerator> entries;
     rv = dir->GetDirectoryEntries(getter_AddRefs(entries));
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
@@ -180,6 +204,12 @@ public:
         MOZ_DIAGNOSTIC_ASSERT(fileSize >= 0);
 
         aUsageInfo->AppendToDatabaseUsage(fileSize);
+        continue;
+      }
+
+      
+      if (leafName.EqualsLiteral(PADDING_FILE_NAME) ||
+          leafName.EqualsLiteral(PADDING_TMP_FILE_NAME)) {
         continue;
       }
 
