@@ -17,7 +17,7 @@ const TEST_XHR_ERROR_URI = `http://example.com/404.html?${Date.now()}`;
 const TEST_IMAGE = "http://example.com/browser/devtools/client/webconsole/" +
                    "test/test-image.png";
 
-"use strict";
+const {ObjectClient} = require("devtools/shared/client/main");
 
 add_task(function* () {
   yield loadTab(TEST_URI);
@@ -31,11 +31,11 @@ add_task(function* () {
 
   hud = yield opened;
   ok(hud, "browser console opened");
-
-  yield consoleOpened(hud);
+  yield testMessages(hud);
+  yield testCPOWInspection(hud);
 });
 
-function consoleOpened(hud) {
+function testMessages(hud) {
   hud.jsterm.clearOutput(true);
 
   expectUncaughtException();
@@ -157,6 +157,28 @@ function consoleOpened(hud) {
       },
     ],
   });
+}
+
+function* testCPOWInspection(hud) {
+  
+  
+  
+  
+  
+  let cpowEval = yield hud.jsterm.requestEvaluation("gBrowser.selectedBrowser");
+  info("Creating an ObjectClient with: " + cpowEval.result.actor);
+
+  let objectClient = new ObjectClient(hud.jsterm.hud.proxy.client, {
+    actor: cpowEval.result.actor,
+  });
+
+  
+  
+  let prototypeAndProperties = yield objectClient.getPrototypeAndProperties();
+
+  
+  is(prototypeAndProperties.prototype.class, "XBL prototype JSClass",
+    "Looks like a valid response");
 }
 
 function waitForConsole() {
