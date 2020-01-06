@@ -51,8 +51,7 @@ ServoSpecifiedValues::SetIdentStringValue(nsCSSPropertyID aId,
   if (aId == eCSSProperty__x_lang) {
     
     
-    mPresContext->GetDefaultFont(kPresContext_DefaultVariableFont_ID,
-                                 atom);
+    mPresContext->ForceCacheLang(atom);
   }
 }
 

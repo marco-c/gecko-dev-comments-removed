@@ -373,6 +373,9 @@ public:
                                                        GetFontPrefsForLang(lang));
   }
 
+  void ForceCacheLang(nsIAtom *aLanguage);
+  void CacheAllLangs();
+
   
   
   bool GetCachedBoolPref(nsPresContext_CachedBoolPrefType aPrefType) const
@@ -1419,6 +1422,9 @@ protected:
   
   
   LangGroupFontPrefs    mLangGroupFontPrefs;
+
+  bool mFontGroupCacheDirty;
+  nsTHashtable<nsRefPtrHashKey<nsIAtom>> mLanguagesUsed;
 
   nscoord               mBorderWidthTable[3];
 
