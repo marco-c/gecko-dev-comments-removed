@@ -174,15 +174,22 @@ WebRenderLayerManager::BeginTransaction()
 bool
 WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
 {
+  
+  
+  
+  
+  
+  
+
+  if (aFlags & EndTransactionFlags::END_NO_COMPOSITE && 
+      !mWebRenderCommandBuilder.NeedsEmptyTransaction()) {
+    MOZ_ASSERT(!mTarget);
+    WrBridge()->SendSetFocusTarget(mFocusTarget);
+    return true;
+  }
+
   LayoutDeviceIntSize size = mWidget->GetClientSize();
   WrBridge()->BeginTransaction();
-
-  
-  
-  
-  
-  
-  
 
   mWebRenderCommandBuilder.EmptyTransaction();
 
