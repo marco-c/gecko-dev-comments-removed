@@ -814,7 +814,7 @@ class Node {
     
     
     class HashPolicy {
-        typedef js::PointerHasher<void*, mozilla::tl::FloorLog2<sizeof(void*)>::value> PtrHash;
+        typedef js::PointerHasher<void*> PtrHash;
 
       public:
         typedef Node Lookup;

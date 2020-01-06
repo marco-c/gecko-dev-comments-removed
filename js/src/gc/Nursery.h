@@ -364,7 +364,7 @@ class Nursery
 
 
 
-    typedef HashSet<void*, PointerHasher<void*, 3>, SystemAllocPolicy> MallocedBuffersSet;
+    typedef HashSet<void*, PointerHasher<void*>, SystemAllocPolicy> MallocedBuffersSet;
     MallocedBuffersSet mallocedBuffers;
 
     
@@ -378,7 +378,7 @@ class Nursery
 
 
 
-    typedef HashMap<void*, void*, PointerHasher<void*, 1>, SystemAllocPolicy> ForwardedBufferMap;
+    typedef HashMap<void*, void*, PointerHasher<void*>, SystemAllocPolicy> ForwardedBufferMap;
     ForwardedBufferMap forwardedBuffers;
 
     
