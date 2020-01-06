@@ -55,10 +55,6 @@ CustomElementCallback::Call()
         mArgs.name, mArgs.oldValue, mArgs.newValue, rv);
       break;
   }
-
-  
-  
-  rv.SuppressException();
 }
 
 void
@@ -92,10 +88,24 @@ CustomElementData::CustomElementData(nsIAtom* aType)
 
 CustomElementData::CustomElementData(nsIAtom* aType, State aState)
   : mType(aType)
+  , mCurrentCallback(-1)
   , mElementIsBeingCreated(false)
   , mCreatedCallbackInvoked(true)
+  , mAssociatedMicroTask(-1)
   , mState(aState)
 {
+}
+
+void
+CustomElementData::RunCallbackQueue()
+{
+  
+  while (static_cast<uint32_t>(++mCurrentCallback) < mCallbackQueue.Length()) {
+    mCallbackQueue[mCurrentCallback]->Call();
+  }
+
+  mCallbackQueue.Clear();
+  mCurrentCallback = -1;
 }
 
 
@@ -114,7 +124,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(CustomElementRegistry)
   for (auto iter = tmp->mCustomDefinitions.Iter(); !iter.Done(); iter.Next()) {
-    auto& callbacks = iter.UserData()->mCallbacks;
+    nsAutoPtr<LifecycleCallbacks>& callbacks = iter.UserData()->mCallbacks;
 
     if (callbacks->mAttributeChangedCallback.WasPassed()) {
       NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb,
@@ -178,6 +188,43 @@ CustomElementRegistry::IsCustomElementEnabled(JSContext* aCx, JSObject* aObject)
          nsContentUtils::IsWebComponentsEnabled();
 }
 
+ void
+CustomElementRegistry::ProcessTopElementQueue()
+{
+  MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
+
+  nsTArray<RefPtr<CustomElementData>>& stack = *sProcessingStack;
+  uint32_t firstQueue = stack.LastIndexOf((CustomElementData*) nullptr);
+
+  for (uint32_t i = firstQueue + 1; i < stack.Length(); ++i) {
+    
+    
+    
+    if (stack[i]->mAssociatedMicroTask != -1) {
+      stack[i]->RunCallbackQueue();
+      stack[i]->mAssociatedMicroTask = -1;
+    }
+  }
+
+  
+  
+  if (firstQueue != 0) {
+    stack.SetLength(firstQueue);
+  } else {
+    
+    stack.SetLength(1);
+  }
+}
+
+ void
+CustomElementRegistry::XPCOMShutdown()
+{
+  sProcessingStack.reset();
+}
+
+ Maybe<nsTArray<RefPtr<CustomElementData>>>
+CustomElementRegistry::sProcessingStack;
+
 CustomElementRegistry::CustomElementRegistry(nsPIDOMWindowInner* aWindow)
  : mWindow(aWindow)
  , mIsCustomDefinitionRunning(false)
@@ -187,6 +234,12 @@ CustomElementRegistry::CustomElementRegistry(nsPIDOMWindowInner* aWindow)
   MOZ_ALWAYS_TRUE(mConstructors.init());
 
   mozilla::HoldJSObjects(this);
+
+  if (!sProcessingStack) {
+    sProcessingStack.emplace();
+    
+    sProcessingStack->AppendElement((CustomElementData*) nullptr);
+  }
 }
 
 CustomElementRegistry::~CustomElementRegistry()
@@ -290,15 +343,14 @@ CustomElementRegistry::SetupCustomElement(Element* aElement,
 
   
   
-  
-  
-  SyncInvokeReactions(nsIDocument::eCreated, aElement, definition);
+  EnqueueLifecycleCallback(nsIDocument::eCreated, aElement, nullptr, definition);
 }
 
-UniquePtr<CustomElementCallback>
-CustomElementRegistry::CreateCustomElementCallback(
-  nsIDocument::ElementCallbackType aType, Element* aCustomElement,
-  LifecycleCallbackArgs* aArgs, CustomElementDefinition* aDefinition)
+void
+CustomElementRegistry::EnqueueLifecycleCallback(nsIDocument::ElementCallbackType aType,
+                                                Element* aCustomElement,
+                                                LifecycleCallbackArgs* aArgs,
+                                                CustomElementDefinition* aDefinition)
 {
   RefPtr<CustomElementData> elementData = aCustomElement->GetCustomElementData();
   MOZ_ASSERT(elementData, "CustomElementData should exist");
@@ -317,7 +369,7 @@ CustomElementRegistry::CreateCustomElementCallback(
     if (!definition || definition->mLocalName != info->NameAtom()) {
       
       
-      return nullptr;
+      return;
     }
   }
 
@@ -351,7 +403,7 @@ CustomElementRegistry::CreateCustomElementCallback(
 
   
   if (!func) {
-    return nullptr;
+    return;
   }
 
   if (aType == nsIDocument::eCreated) {
@@ -359,62 +411,55 @@ CustomElementRegistry::CreateCustomElementCallback(
   } else if (!elementData->mCreatedCallbackInvoked) {
     
     
-    return nullptr;
+    return;
   }
 
   
-  auto callback =
-    MakeUnique<CustomElementCallback>(aCustomElement, aType, func, elementData);
-
+  CustomElementCallback* callback = new CustomElementCallback(aCustomElement,
+                                                              aType,
+                                                              func,
+                                                              elementData);
+  
+  elementData->mCallbackQueue.AppendElement(callback);
   if (aArgs) {
     callback->SetArgs(*aArgs);
   }
 
-  return Move(callback);
-}
+  if (!elementData->mElementIsBeingCreated) {
+    CustomElementData* lastData =
+      sProcessingStack->SafeLastElement(nullptr);
 
-void
-CustomElementRegistry::SyncInvokeReactions(nsIDocument::ElementCallbackType aType,
-                                           Element* aCustomElement,
-                                           CustomElementDefinition* aDefinition)
-{
-  auto callback = CreateCustomElementCallback(aType, aCustomElement, nullptr,
-                                              aDefinition);
-  if (!callback) {
-    return;
+    
+    
+    bool shouldPushElementQueue =
+      (!lastData || lastData->mAssociatedMicroTask <
+         static_cast<int32_t>(nsContentUtils::MicroTaskLevel()));
+
+    
+    
+    if (shouldPushElementQueue) {
+      
+      
+      sProcessingStack->AppendElement((CustomElementData*) nullptr);
+    }
+
+    sProcessingStack->AppendElement(elementData);
+    elementData->mAssociatedMicroTask =
+      static_cast<int32_t>(nsContentUtils::MicroTaskLevel());
+
+    
+    
+    if (shouldPushElementQueue) {
+      
+      
+      
+      
+      nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+        "dom::CustomElementRegistry::EnqueueLifecycleCallback",
+        &CustomElementRegistry::ProcessTopElementQueue);
+      nsContentUtils::AddScriptRunner(runnable);
+    }
   }
-
-  UniquePtr<CustomElementReaction> reaction(Move(
-    MakeUnique<CustomElementCallbackReaction>(this, aDefinition,
-                                              Move(callback))));
-
-  RefPtr<SyncInvokeReactionRunnable> runnable =
-    new SyncInvokeReactionRunnable(Move(reaction), aCustomElement);
-
-  nsContentUtils::AddScriptRunner(runnable);
-}
-
-void
-CustomElementRegistry::EnqueueLifecycleCallback(nsIDocument::ElementCallbackType aType,
-                                                Element* aCustomElement,
-                                                LifecycleCallbackArgs* aArgs,
-                                                CustomElementDefinition* aDefinition)
-{
-  auto callback =
-    CreateCustomElementCallback(aType, aCustomElement, aArgs, aDefinition);
-  if (!callback) {
-    return;
-  }
-
-  DocGroup* docGroup = mWindow->GetDocGroup();
-  if (!docGroup) {
-    return;
-  }
-
-  CustomElementReactionsStack* reactionsStack =
-    docGroup->CustomElementReactionsStack();
-  reactionsStack->EnqueueCallbackReaction(this, aCustomElement, aDefinition,
-                                          Move(callback));
 }
 
 void
@@ -899,16 +944,6 @@ CustomElementReactionsStack::EnqueueUpgradeReaction(CustomElementRegistry* aRegi
 }
 
 void
-CustomElementReactionsStack::EnqueueCallbackReaction(CustomElementRegistry* aRegistry,
-                                                     Element* aElement,
-                                                     CustomElementDefinition* aDefinition,
-                                                     UniquePtr<CustomElementCallback> aCustomElementCallback)
-{
-  Enqueue(aElement, new CustomElementCallbackReaction(aRegistry, aDefinition,
-                                                      Move(aCustomElementCallback)));
-}
-
-void
 CustomElementReactionsStack::Enqueue(Element* aElement,
                                      CustomElementReaction* aReaction)
 {
@@ -949,7 +984,6 @@ CustomElementReactionsStack::InvokeBackupQueue()
 void
 CustomElementReactionsStack::InvokeReactions(ElementQueue& aElementQueue)
 {
-  
   for (uint32_t i = 0; i < aElementQueue.Length(); ++i) {
     nsCOMPtr<Element> element = do_QueryReferent(aElementQueue[i]);
 
@@ -960,14 +994,10 @@ CustomElementReactionsStack::InvokeReactions(ElementQueue& aElementQueue)
     RefPtr<CustomElementData> elementData = element->GetCustomElementData();
     MOZ_ASSERT(elementData, "CustomElementData should exist");
 
-    auto& reactions = elementData->mReactionQueue;
+    nsTArray<nsAutoPtr<CustomElementReaction>>& reactions =
+      elementData->mReactionQueue;
     for (uint32_t j = 0; j < reactions.Length(); ++j) {
-      
-      
-      auto reaction(Move(reactions.ElementAt(j)));
-      if (reaction) {
-        reaction->Invoke(element);
-      }
+      reactions.ElementAt(j)->Invoke(element);
     }
     reactions.Clear();
   }
@@ -1000,15 +1030,6 @@ CustomElementDefinition::CustomElementDefinition(nsIAtom* aType,
 CustomElementUpgradeReaction::Invoke(Element* aElement)
 {
   mRegistry->Upgrade(aElement, mDefinition);
-}
-
-
-
-
- void
-CustomElementCallbackReaction::Invoke(Element* aElement)
-{
-  mCustomElementCallback->Call();
 }
 
 } 
