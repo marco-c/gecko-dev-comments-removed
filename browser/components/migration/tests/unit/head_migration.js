@@ -49,25 +49,21 @@ function promiseMigration(migrator, resourceType, aProfile = null) {
 
 
 function registerFakePath(key, file) {
-  let dirsvc = Services.dirsvc.QueryInterface(Ci.nsIProperties);
-  let originalFile;
-  try {
-    
-    
-    originalFile = dirsvc.get(key, Ci.nsIFile);
-    dirsvc.undefine(key);
-  } catch (e) {
-    
-    
-    
-    originalFile = undefined;
-  }
-
-  dirsvc.set(key, file);
+   
+  let provider = {
+    getFile(prop, persistent) {
+      persistent.value = true;
+      if (prop == key) {
+        return file;
+      }
+      throw Cr.NS_ERROR_FAILURE;
+    },
+    QueryInterface: XPCOMUtils.generateQI([ Ci.nsIDirectoryServiceProvider ])
+  };
+  Services.dirsvc.QueryInterface(Ci.nsIDirectoryService)
+                 .registerProvider(provider);
   do_register_cleanup(() => {
-    dirsvc.undefine(key);
-    if (originalFile) {
-      dirsvc.set(key, originalFile);
-    }
+    Services.dirsvc.QueryInterface(Ci.nsIDirectoryService)
+                   .unregisterProvider(provider);
   });
 }
