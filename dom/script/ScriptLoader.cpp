@@ -1884,6 +1884,12 @@ ScriptLoader::ProcessRequest(ScriptLoadRequest* aRequest)
   
   
   aRequest->mScriptText.clearAndFree();
+  if (aRequest->IsBytecode()) {
+    
+    
+    
+    aRequest->mScriptBytecode.clearAndFree();
+  }
 
   return rv;
 }
