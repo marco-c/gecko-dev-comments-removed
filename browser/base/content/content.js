@@ -200,6 +200,13 @@ var AboutBlockedSiteListener = {
       "https://support.mozilla.org/kb/how-does-phishing-and-malware-protection-work");
 
     
+    let showDetails = Services.prefs.getBoolPref("browser.xul.error_pages.show_safe_browsing_details_on_load");
+    if (showDetails) {
+      let details = content.document.getElementById("errorDescriptionContainer");
+      details.removeAttribute("hidden");
+    }
+
+    
     let advisoryUrl = Services.prefs.getCharPref(
       "browser.safebrowsing.provider." + provider + ".advisoryURL", "");
     if (!advisoryUrl) {
