@@ -557,20 +557,6 @@ class JS_PUBLIC_API(AutoAssertNoAlloc)
 
 
 
-class JS_PUBLIC_API(AutoAssertOnBarrier)
-{
-    JSContext* context;
-    bool prev;
-
-  public:
-    explicit AutoAssertOnBarrier(JSContext* cx);
-    ~AutoAssertOnBarrier();
-};
-
-
-
-
-
 
 
 
@@ -645,9 +631,6 @@ UnmarkGrayGCThingRecursively(GCCellPtr thing);
 namespace js {
 namespace gc {
 
-extern JS_FRIEND_API(bool)
-BarriersAreAllowedOnCurrentThread();
-
 static MOZ_ALWAYS_INLINE void
 ExposeGCThingToActiveJS(JS::GCCellPtr thing)
 {
@@ -661,8 +644,6 @@ ExposeGCThingToActiveJS(JS::GCCellPtr thing)
     
     if (thing.mayBeOwnedByOtherRuntime())
         return;
-
-    MOZ_DIAGNOSTIC_ASSERT(BarriersAreAllowedOnCurrentThread());
 
     if (IsIncrementalBarrierNeededOnTenuredGCThing(thing))
         JS::IncrementalReadBarrier(thing);

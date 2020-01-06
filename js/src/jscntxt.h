@@ -474,10 +474,6 @@ struct JSContext : public JS::RootingContext,
 
     js::ThreadLocalData<int32_t> suppressGC;
 
-    
-    
-    js::ThreadLocalData<bool> allowGCBarriers;
-
 #ifdef DEBUG
     
     js::ThreadLocalData<bool> ionCompiling;
