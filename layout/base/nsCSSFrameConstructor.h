@@ -74,12 +74,25 @@ private:
   nsCSSFrameConstructor& operator=(const nsCSSFrameConstructor& aCopy) = delete;
 
 public:
+  
+
+
+
+
+
+
+  enum class InsertionKind
+  {
+    Sync,
+    Async,
+  };
+
   mozilla::RestyleManager* RestyleManager() const
     { return mPresShell->GetPresContext()->RestyleManager(); }
 
   nsIFrame* ConstructRootFrame();
 
-  void ReconstructDocElementHierarchy();
+  void ReconstructDocElementHierarchy(InsertionKind);
 
   
   
@@ -299,19 +312,6 @@ private:
                             TreeMatchContext* aProvidedTreeMatchContext);
 
 public:
-  
-
-
-
-
-
-
-  enum class InsertionKind
-  {
-    Sync,
-    Async,
-  };
-
   enum RemoveFlags {
     REMOVE_CONTENT,
     REMOVE_FOR_RECONSTRUCTION,
