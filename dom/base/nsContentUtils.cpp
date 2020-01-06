@@ -10444,6 +10444,44 @@ nsContentUtils::AppendNativeAnonymousChildren(
   }
 }
 
+ bool
+nsContentUtils::GetLoadingPrincipalForXULNode(nsIContent* aLoadingNode,
+                                              nsIPrincipal** aLoadingPrincipal)
+{
+  MOZ_ASSERT(aLoadingNode);
+  MOZ_ASSERT(aLoadingPrincipal);
+
+  bool result = false;
+  nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadingNode->NodePrincipal();
+  nsAutoString loadingStr;
+  aLoadingNode->GetAttr(kNameSpaceID_None, nsGkAtoms::loadingprincipal,
+                        loadingStr);
+  if (loadingStr.IsEmpty()) {
+    
+    
+    loadingPrincipal.forget(aLoadingPrincipal);
+    return result;
+  }
+
+  nsCOMPtr<nsISupports> serializedPrincipal;
+  NS_DeserializeObject(NS_ConvertUTF16toUTF8(loadingStr),
+                       getter_AddRefs(serializedPrincipal));
+  loadingPrincipal = do_QueryInterface(serializedPrincipal);
+  if (loadingPrincipal) {
+    
+    
+    MOZ_ASSERT(nsContentUtils::IsSystemPrincipal(aLoadingNode->NodePrincipal()),
+               "aLoadingNode Should be loaded with SystemPrincipal");
+
+    result = true;
+  } else {
+    
+    loadingPrincipal = aLoadingNode->NodePrincipal();
+  }
+
+  loadingPrincipal.forget(aLoadingPrincipal);
+  return result;
+}
 
  void
 nsContentUtils::GetContentPolicyTypeForUIImageLoading(nsIContent* aLoadingNode,
@@ -10453,38 +10491,23 @@ nsContentUtils::GetContentPolicyTypeForUIImageLoading(nsIContent* aLoadingNode,
 {
   MOZ_ASSERT(aRequestContextID);
 
-  
-  
-  aContentPolicyType = nsIContentPolicy::TYPE_INTERNAL_IMAGE;
-  nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadingNode->NodePrincipal();
-  nsAutoString imageLoadingPrincipal;
-  aLoadingNode->GetAttr(kNameSpaceID_None, nsGkAtoms::loadingprincipal,
-                        imageLoadingPrincipal);
-  if (!imageLoadingPrincipal.IsEmpty()) {
-    nsCOMPtr<nsISupports> serializedPrincipal;
-    NS_DeserializeObject(NS_ConvertUTF16toUTF8(imageLoadingPrincipal),
-                         getter_AddRefs(serializedPrincipal));
-    loadingPrincipal = do_QueryInterface(serializedPrincipal);
+  bool result = GetLoadingPrincipalForXULNode(aLoadingNode, aLoadingPrincipal);
+  if (result) {
+    
+    
+    aContentPolicyType = nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON;
 
-    if (loadingPrincipal) {
-      
-      
-      aContentPolicyType = nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON;
-
-      nsAutoString requestContextID;
-      aLoadingNode->GetAttr(kNameSpaceID_None, nsGkAtoms::requestcontextid,
-                            requestContextID);
-      nsresult rv;
-      int64_t val  = requestContextID.ToInteger64(&rv);
-      *aRequestContextID = NS_SUCCEEDED(rv)
-        ? val
-        : 0;
-    } else {
-      
-      loadingPrincipal = aLoadingNode->NodePrincipal();
-    }
+    nsAutoString requestContextID;
+    aLoadingNode->GetAttr(kNameSpaceID_None, nsGkAtoms::requestcontextid,
+                          requestContextID);
+    nsresult rv;
+    int64_t val  = requestContextID.ToInteger64(&rv);
+    *aRequestContextID = NS_SUCCEEDED(rv)
+      ? val
+      : 0;
+  } else {
+    aContentPolicyType = nsIContentPolicy::TYPE_INTERNAL_IMAGE;
   }
-  loadingPrincipal.forget(aLoadingPrincipal);
 }
 
  nsresult

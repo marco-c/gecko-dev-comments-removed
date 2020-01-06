@@ -3043,6 +3043,19 @@ public:
 
 
 
+
+
+
+
+  static bool
+  GetLoadingPrincipalForXULNode(nsIContent* aLoadingNode,
+                                nsIPrincipal** aLoadingPrincipal);
+
+  
+
+
+
+
   static void
   GetContentPolicyTypeForUIImageLoading(nsIContent* aLoadingNode,
                                         nsIPrincipal** aLoadingPrincipal,
