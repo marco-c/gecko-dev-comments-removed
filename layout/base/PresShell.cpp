@@ -7478,7 +7478,12 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       nsPoint eventPoint;
       uint32_t flags = 0;
       if (aEvent->mMessage == eTouchStart) {
-        flags |= INPUT_IGNORE_ROOT_SCROLL_FRAME;
+        if (gfxPrefs::APZAllowZooming()) {
+          
+          
+          
+          flags |= INPUT_IGNORE_ROOT_SCROLL_FRAME;
+        }
         WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
         
         
