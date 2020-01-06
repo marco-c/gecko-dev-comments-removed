@@ -258,6 +258,9 @@ static const TestFileData rustTestFiles[] = {
   { "test_case_1329061.mov",        0, -1,   0,   0, 1,  234567981,
                                                             false,   0, false, false, 2 },
   { "test_case_1351094.mp4",        0, -1,   0,   0, 0, -1, false,   0, true,  true,  0 },
+  { "test_case_1389299.mp4",        1, 5589333,
+                                           560, 320, 1, 5589333,
+                                                            true,    0, true,  true,  2  },
 };
 TEST(stagefright_MPEG4Metadata, test_case_mp4)
 {

@@ -198,7 +198,7 @@ CencSampleEncryptionInfoEntry* SampleIterator::GetSampleEncryptionEntry()
 
   
   
-  nsTArray<SampleToGroupEntry>* sampleToGroupEntries =
+  FallibleTArray<SampleToGroupEntry>* sampleToGroupEntries =
     currentMoof->mFragmentSampleToGroupEntries.Length() != 0
     ? &currentMoof->mFragmentSampleToGroupEntries
     : &mIndex->mMoofParser->mTrackSampleToGroupEntries;
@@ -231,7 +231,7 @@ CencSampleEncryptionInfoEntry* SampleIterator::GetSampleEncryptionEntry()
     return nullptr;
   }
 
-  nsTArray<CencSampleEncryptionInfoEntry>* entries =
+  FallibleTArray<CencSampleEncryptionInfoEntry>* entries =
                       &mIndex->mMoofParser->mTrackSampleEncryptionInfoEntries;
 
   uint32_t groupIndex = sampleToGroupEntry->mGroupDescriptionIndex;
