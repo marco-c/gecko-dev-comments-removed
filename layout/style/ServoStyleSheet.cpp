@@ -176,7 +176,12 @@ ServoStyleSheet::ParseSheet(css::Loader* aLoader,
 void
 ServoStyleSheet::LoadFailed()
 {
-  Inner()->mSheet = Servo_StyleSheet_Empty(mParsingMode).Consume();
+  if (!Inner()->mSheet) {
+    
+    
+    
+    Inner()->mSheet = Servo_StyleSheet_Empty(mParsingMode).Consume();
+  }
   Inner()->mURLData = URLExtraData::Dummy();
 }
 
