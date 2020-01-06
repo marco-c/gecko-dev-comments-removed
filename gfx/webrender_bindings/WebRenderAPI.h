@@ -48,42 +48,13 @@ struct Line {
   wr::LineStyle style;
 };
 
-class WebRenderAPI
-{
-  NS_INLINE_DECL_REFCOUNTING(WebRenderAPI);
 
+
+class ResourceUpdateQueue {
 public:
-  
-  static already_AddRefed<WebRenderAPI> Create(layers::CompositorBridgeParentBase* aBridge,
-                                               RefPtr<widget::CompositorWidget>&& aWidget,
-                                               LayoutDeviceIntSize aSize);
+  ResourceUpdateQueue();
 
-  already_AddRefed<WebRenderAPI> Clone();
-
-  wr::WindowId GetId() const { return mId; }
-
-  void UpdateScrollPosition(const wr::WrPipelineId& aPipelineId,
-                            const layers::FrameMetrics::ViewID& aScrollId,
-                            const wr::LayoutPoint& aScrollPosition);
-
-  void GenerateFrame();
-  void GenerateFrame(const nsTArray<wr::WrOpacityProperty>& aOpacityArray,
-                     const nsTArray<wr::WrTransformProperty>& aTransformArray);
-
-  void SetWindowParameters(LayoutDeviceIntSize size);
-  void SetRootDisplayList(gfx::Color aBgColor,
-                          Epoch aEpoch,
-                          mozilla::LayerSize aViewportSize,
-                          wr::WrPipelineId pipeline_id,
-                          const wr::LayoutSize& content_size,
-                          wr::BuiltDisplayListDescriptor dl_descriptor,
-                          uint8_t *dl_data,
-                          size_t dl_size);
-
-  void ClearRootDisplayList(Epoch aEpoch,
-                            wr::WrPipelineId pipeline_id);
-
-  void SetRootPipeline(wr::PipelineId aPipeline);
+  ~ResourceUpdateQueue();
 
   void AddImage(wr::ImageKey aKey,
                 const ImageDescriptor& aDescriptor,
@@ -131,9 +102,58 @@ public:
 
   void DeleteFontInstance(wr::FontInstanceKey aKey);
 
+  
+  wr::ResourceUpdates* Raw() { return mUpdates; }
+
+protected:
+  wr::ResourceUpdates* mUpdates;
+};
+
+class WebRenderAPI
+{
+  NS_INLINE_DECL_REFCOUNTING(WebRenderAPI);
+
+public:
+  
+  static already_AddRefed<WebRenderAPI> Create(layers::CompositorBridgeParentBase* aBridge,
+                                               RefPtr<widget::CompositorWidget>&& aWidget,
+                                               LayoutDeviceIntSize aSize);
+
+  already_AddRefed<WebRenderAPI> Clone();
+
+  wr::WindowId GetId() const { return mId; }
+
+  void UpdateScrollPosition(const wr::WrPipelineId& aPipelineId,
+                            const layers::FrameMetrics::ViewID& aScrollId,
+                            const wr::LayoutPoint& aScrollPosition);
+
+  void GenerateFrame();
+  void GenerateFrame(const nsTArray<wr::WrOpacityProperty>& aOpacityArray,
+                     const nsTArray<wr::WrTransformProperty>& aTransformArray);
+
+  void SetWindowParameters(LayoutDeviceIntSize size);
+
+  void SetDisplayList(gfx::Color aBgColor,
+                      Epoch aEpoch,
+                      mozilla::LayerSize aViewportSize,
+                      wr::WrPipelineId pipeline_id,
+                      const wr::LayoutSize& content_size,
+                      wr::BuiltDisplayListDescriptor dl_descriptor,
+                      uint8_t *dl_data,
+                      size_t dl_size);
+
+  void ClearDisplayList(Epoch aEpoch, wr::WrPipelineId pipeline_id);
+
+  void SetRootPipeline(wr::PipelineId aPipeline);
+
+  void UpdateResources(ResourceUpdateQueue& aUpdates);
+
+  ResourceUpdateQueue& Resources() { return mResources; }
+
   void SetFrameStartTime(const TimeStamp& aTime);
 
   void RunOnRenderThread(UniquePtr<RendererEvent> aEvent);
+
   void Readback(gfx::IntSize aSize, uint8_t *aBuffer, uint32_t aBufferSize);
 
   void Pause();
@@ -157,6 +177,7 @@ protected:
   
   void WaitFlushed();
 
+  ResourceUpdateQueue mResources;
   wr::DocumentHandle* mDocHandle;
   wr::WindowId mId;
   uint32_t mMaxTextureSize;
