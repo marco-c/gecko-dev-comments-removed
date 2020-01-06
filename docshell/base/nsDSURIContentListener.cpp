@@ -23,6 +23,7 @@
 #include "nsDocShellLoadTypes.h"
 #include "nsIMultiPartChannel.h"
 #include "nsContentUtils.h"
+#include "mozilla/dom/nsCSPUtils.h"
 
 using namespace mozilla;
 
@@ -84,14 +85,6 @@ nsDSURIContentListener::DoContent(const nsACString& aContentType,
   nsresult rv;
   NS_ENSURE_ARG_POINTER(aContentHandler);
   NS_ENSURE_TRUE(mDocShell, NS_ERROR_FAILURE);
-
-  
-  
-  
-  if (!CheckFrameOptions(aRequest)) {
-    *aAbortProcess = true;
-    return NS_OK;
-  }
 
   *aAbortProcess = false;
 
@@ -266,9 +259,10 @@ nsDSURIContentListener::SetParentContentListener(
   return NS_OK;
 }
 
-bool
+ bool
 nsDSURIContentListener::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
-                                                   const nsAString& aPolicy)
+                                                   const nsAString& aPolicy,
+                                                   nsIDocShell* aDocShell)
 {
   static const char allowFrom[] = "allow-from";
   const uint32_t allowFromLen = ArrayLength(allowFrom) - 1;
@@ -286,7 +280,7 @@ nsDSURIContentListener::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
   aHttpChannel->GetURI(getter_AddRefs(uri));
 
   
-  if (!mDocShell) {
+  if (!aDocShell) {
     return true;
   }
 
@@ -294,7 +288,7 @@ nsDSURIContentListener::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
   
   
   
-  nsCOMPtr<nsPIDOMWindowOuter> thisWindow = mDocShell->GetWindow();
+  nsCOMPtr<nsPIDOMWindowOuter> thisWindow = aDocShell->GetWindow();
   
   if (!thisWindow) {
     return true;
@@ -314,7 +308,7 @@ nsDSURIContentListener::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
   
   
   nsCOMPtr<nsIDocShellTreeItem> thisDocShellItem(
-    do_QueryInterface(static_cast<nsIDocShell*>(mDocShell)));
+    do_QueryInterface(static_cast<nsIDocShell*>(aDocShell)));
   nsCOMPtr<nsIDocShellTreeItem> parentDocShellItem;
   nsCOMPtr<nsIDocShellTreeItem> curDocShellItem = thisDocShellItem;
   nsCOMPtr<nsIDocument> topDoc;
@@ -404,21 +398,65 @@ nsDSURIContentListener::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
 }
 
 
-
-
-bool
-nsDSURIContentListener::CheckFrameOptions(nsIRequest* aRequest)
+static bool
+ShouldIgnoreFrameOptions(nsIChannel* aChannel, nsIPrincipal* aPrincipal)
 {
-  nsresult rv;
-  nsCOMPtr<nsIChannel> chan = do_QueryInterface(aRequest);
-  if (!chan) {
+  NS_ENSURE_TRUE(aChannel, false);
+  NS_ENSURE_TRUE(aPrincipal, false);
+
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  aPrincipal->GetCsp(getter_AddRefs(csp));
+  if (!csp) {
+    
+    return false;
+  }
+
+  bool enforcesFrameAncestors = false;
+  csp->GetEnforcesFrameAncestors(&enforcesFrameAncestors);
+  if (!enforcesFrameAncestors) {
+    
+    
+    return false;
+  }
+
+  
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
+  uint64_t innerWindowID = loadInfo ? loadInfo->GetInnerWindowID() : 0;
+  const char16_t* params[] = { u"x-frame-options",
+                               u"frame-ancestors" };
+  CSP_LogLocalizedStr(u"IgnoringSrcBecauseOfDirective",
+                      params, ArrayLength(params),
+                      EmptyString(), 
+                      EmptyString(), 
+                      0,             
+                      0,             
+                      nsIScriptError::warningFlag,
+                      "CSP", innerWindowID);
+
+  return true;
+}
+
+
+
+
+ bool
+nsDSURIContentListener::CheckFrameOptions(nsIChannel* aChannel,
+                                          nsIDocShell* aDocShell,
+                                          nsIPrincipal* aPrincipal)
+{
+  if (!aChannel || !aDocShell) {
     return true;
   }
 
-  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(chan);
+  if (ShouldIgnoreFrameOptions(aChannel, aPrincipal)) {
+    return true;
+  }
+
+  nsresult rv;
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
   if (!httpChannel) {
     
-    rv = mDocShell->GetHttpChannel(chan, getter_AddRefs(httpChannel));
+    rv = nsDocShell::Cast(aDocShell)->GetHttpChannel(aChannel, getter_AddRefs(httpChannel));
     if (NS_FAILED(rv)) {
       return false;
     }
@@ -443,11 +481,11 @@ nsDSURIContentListener::CheckFrameOptions(nsIRequest* aRequest)
   nsCharSeparatedTokenizer tokenizer(xfoHeaderValue, ',');
   while (tokenizer.hasMoreTokens()) {
     const nsSubstring& tok = tokenizer.nextToken();
-    if (!CheckOneFrameOptionsPolicy(httpChannel, tok)) {
+    if (!CheckOneFrameOptionsPolicy(httpChannel, tok, aDocShell)) {
       
       httpChannel->Cancel(NS_BINDING_ABORTED);
-      if (mDocShell) {
-        nsCOMPtr<nsIWebNavigation> webNav(do_QueryObject(mDocShell));
+      if (aDocShell) {
+        nsCOMPtr<nsIWebNavigation> webNav(do_QueryObject(aDocShell));
         if (webNav) {
           nsCOMPtr<nsILoadInfo> loadInfo = httpChannel->GetLoadInfo();
           nsCOMPtr<nsIPrincipal> triggeringPrincipal = loadInfo
@@ -465,7 +503,7 @@ nsDSURIContentListener::CheckFrameOptions(nsIRequest* aRequest)
   return true;
 }
 
-void
+ void
 nsDSURIContentListener::ReportXFOViolation(nsIDocShellTreeItem* aTopDocShellItem,
                                            nsIURI* aThisURI,
                                            XFOHeader aHeader)
