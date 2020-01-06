@@ -7,7 +7,6 @@
 
 
 
-const { extend } = require("sdk/util/object");
 const { MarkerBlueprintUtils } = require("devtools/client/performance/modules/marker-blueprint-utils");
 
 
@@ -19,7 +18,7 @@ const { MarkerBlueprintUtils } = require("devtools/client/performance/modules/ma
 
 
 function createParentNode(marker) {
-  return extend(marker, { submarkers: [] });
+  return Object.assign({}, marker, { submarkers: [] });
 }
 
 
@@ -56,7 +55,7 @@ function collapseMarkersIntoNode({ rootNode, markersList, filter }) {
     if (collapsible) {
       extendedProps.submarkers = [];
     }
-    curr = extend(curr, extendedProps);
+    Object.assign(curr, extendedProps);
 
     
     

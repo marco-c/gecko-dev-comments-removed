@@ -3,9 +3,6 @@
 
 "use strict";
 
-loader.lazyRequireGetter(this, "extend",
-  "sdk/util/object", true);
-
 
 
 

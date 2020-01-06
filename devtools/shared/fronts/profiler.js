@@ -12,7 +12,6 @@ const {
 const { profilerSpec } = require("devtools/shared/specs/profiler");
 
 loader.lazyRequireGetter(this, "events", "sdk/event/core");
-loader.lazyRequireGetter(this, "extend", "sdk/util/object", true);
 
 
 
@@ -40,7 +39,7 @@ exports.ProfilerFront = FrontClassWithSpec(profilerSpec, {
 
 
   getProfile: custom(function (options) {
-    return this._getProfile(extend({ stringify: true }, options));
+    return this._getProfile(Object.assign({ stringify: true }, options));
   }, {
     impl: "_getProfile"
   }),
