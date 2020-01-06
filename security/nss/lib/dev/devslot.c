@@ -226,15 +226,16 @@ nssSlot_GetToken(
     NSSSlot *slot)
 {
     NSSToken *rvToken = NULL;
-    nssSlot_EnterMonitor(slot);
 
-    
+    if (nssSlot_IsTokenPresent(slot)) {
+        
 
-    if (nssSlot_IsTokenPresent(slot) && slot->token) {
-        rvToken = nssToken_AddRef(slot->token);
+        nssSlot_EnterMonitor(slot);
+        if (slot->token)
+            rvToken = nssToken_AddRef(slot->token);
+        nssSlot_ExitMonitor(slot);
     }
 
-    nssSlot_ExitMonitor(slot);
     return rvToken;
 }
 
