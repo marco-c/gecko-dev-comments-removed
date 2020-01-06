@@ -471,8 +471,7 @@ var gCSSProperties = {
   },
   'fill-opacity': {
     
-    types: [
-    ]
+    types: [ 'opacity' ]
   },
   'fill-rule': {
     
