@@ -162,9 +162,6 @@ public:
   VertexStagingBuffer* GetInstances() {
     return &mInstances;
   }
-  ConstantStagingBuffer* GetItems() {
-    return &mItems;
-  }
 
   bool IsCompatible(const ItemInfo& aItem) override;
   void PrepareForRendering() override;
@@ -202,10 +199,6 @@ protected:
   }
 
   
-  
-  bool PrepareItemBuffer();
-
-  
   bool SetupPSBuffer0(float aOpacity);
 
   bool HasMask() const {
@@ -222,9 +215,6 @@ protected:
 
   VertexStagingBuffer mInstances;
   VertexBufferSection mInstanceBuffer;
-
-  ConstantStagingBuffer mItems;
-  ConstantBufferSection mItemBuffer;
 
   ConstantBufferSection mPSBuffer0;
 };
@@ -250,14 +240,20 @@ protected:
   public:
     explicit Txn(BatchRenderPass* aPass)
      : mPass(aPass),
-       mPrevItemPos(aPass->mItems.GetPosition()),
        mPrevInstancePos(aPass->mInstances.GetPosition())
     {}
+
+    bool Add(const Traits& aTraits) {
+      if (!AddImpl(aTraits)) {
+        return Fail();
+      }
+      return true;
+    }
 
     
     
     
-    bool Add(const Traits& aTraits);
+    bool AddImpl(const Traits& aTraits);
 
     bool Fail() {
       MOZ_ASSERT(!mStatus.isSome() || !mStatus.value());
@@ -277,7 +273,6 @@ protected:
     ~Txn() {
       if (!mStatus.isSome() || !mStatus.value()) {
         mPass->mInstances.RestorePosition(mPrevInstancePos);
-        mPass->mItems.RestorePosition(mPrevItemPos);
       }
     }
 

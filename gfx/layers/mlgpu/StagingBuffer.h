@@ -52,6 +52,15 @@ public:
   }
 
   
+  template <typename T1, typename T2>
+  bool AddItem(const T1& aItem1, const T2& aItem2) {
+    if (mReversed) {
+      return PrependItem(aItem1, aItem2);
+    }
+    return AppendItem(aItem1, aItem2);
+  }
+
+  
   template <typename T>
   bool AppendItem(const T& aItem) {
     MOZ_ASSERT(!mReversed);
@@ -79,7 +88,7 @@ public:
 
   
   template <typename T1, typename T2>
-  bool PrependItem(const T1& aFirst, const T2& aSecond) {
+  bool AppendItem(const T1& aFirst, const T2& aSecond) {
     struct Combined {
       T1 first;
       T2 second;
@@ -88,7 +97,7 @@ public:
     
     static_assert(sizeof(value) == sizeof(aFirst) + sizeof(aSecond),
                   "Items must be packed within struct");
-    return PrependItem(value);
+    return AppendItem(value);
   }
 
   
@@ -115,6 +124,20 @@ public:
 
     mNumItems++;
     return true;
+  }
+
+  
+  template <typename T1, typename T2>
+  bool PrependItem(const T1& aFirst, const T2& aSecond) {
+    struct Combined {
+      T1 first;
+      T2 second;
+    } value = { aFirst, aSecond };
+
+    
+    static_assert(sizeof(value) == sizeof(aFirst) + sizeof(aSecond),
+                  "Items must be packed within struct");
+    return PrependItem(value);
   }
 
   size_t NumBytes() const {

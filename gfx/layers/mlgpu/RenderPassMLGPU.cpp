@@ -210,8 +210,7 @@ RenderPassMLGPU::PrepareForRendering()
 ShaderRenderPass::ShaderRenderPass(FrameBuilder* aBuilder, const ItemInfo& aItem)
  : RenderPassMLGPU(aBuilder, aItem),
    mGeometry(GeometryMode::Unknown),
-   mHasRectTransformAndClip(aItem.HasRectTransformAndClip()),
-   mItems(mDevice)
+   mHasRectTransformAndClip(aItem.HasRectTransformAndClip())
 {
   mMask = aItem.layer->GetMask();
   if (mMask) {
@@ -269,14 +268,6 @@ ShaderRenderPass::SetGeometry(const ItemInfo& aItem, GeometryMode aMode)
   
   if (aItem.renderOrder != RenderOrder::FrontToBack) {
     mInstances.SetReversed();
-
-    
-    
-    
-    
-    if (mGeometry != GeometryMode::Polygon) {
-      mItems.SetReversed();
-    }
   }
 }
 
@@ -287,19 +278,12 @@ ShaderRenderPass::PrepareForRendering()
     return;
   }
   if (!mDevice->GetSharedVertexBuffer()->Allocate(&mInstanceBuffer, mInstances) ||
-      !PrepareItemBuffer() ||
       !SetupPSBuffer0(GetOpacity()) ||
       !OnPrepareBuffers())
   {
     return;
   }
   return RenderPassMLGPU::PrepareForRendering();
-}
-
-bool
-ShaderRenderPass::PrepareItemBuffer()
-{
-  return mDevice->GetSharedVSBuffer()->Allocate(&mItemBuffer, mItems);
 }
 
 bool
@@ -335,8 +319,6 @@ ShaderRenderPass::ExecuteRendering()
     mDevice->SetTopology(MLGPrimitiveTopology::UnitQuad);
   }
   mDevice->SetVertexBuffer(1, &mInstanceBuffer);
-
-  mDevice->SetVSConstantBuffer(kItemBufferSlot, &mItemBuffer);
 
   if (mGeometry == GeometryMode::Polygon) {
     mDevice->DrawInstanced(3, mInstanceBuffer.NumVertices(), 0, 0);

@@ -29,7 +29,6 @@ static const size_t kMaxConstantBufferSize = 4096 * kConstantBufferElementSize;
 
 static const uint32_t kWorldConstantBufferSlot = 0;
 static const uint32_t kLayerBufferSlot = 1;
-static const uint32_t kItemBufferSlot = 2;
 static const uint32_t kMaskBufferSlot = 3;
 static const uint32_t kBlendConstantBufferSlot = 4;
 static const uint32_t kClearConstantBufferSlot = 2;
@@ -108,6 +107,14 @@ struct SimpleTraits
   struct AnyTriangle { };
   struct FirstTriangle : AnyTriangle { };
   struct SecondTriangle : AnyTriangle { };
+  struct UnitQuad { };
+
+  
+  struct UnitQuadVertex {
+    gfx::Rect rect;
+    uint32_t layerIndex;
+    int depth;
+  };
 
   
   struct TriangleVertices {
@@ -123,6 +130,8 @@ struct SimpleTraits
   TriangleVertices MakeVertex(const SecondTriangle& aIgnore) const;
   TriangleVertices MakeVertex(const gfx::Triangle& aTriangle) const;
 
+  UnitQuadVertex MakeUnitQuadVertex() const;
+
   
   
   
@@ -131,7 +140,11 @@ struct SimpleTraits
   
   nsTArray<gfx::Triangle> GenerateTriangles(const gfx::Polygon& aPolygon) const;
 
-  bool AddInstanceTo(ShaderRenderPass* aPass) const;
+  
+  const Maybe<gfx::Polygon>& geometry() const;
+  const gfx::Rect& rect() const {
+    return mRect;
+  }
 
   const ItemInfo& mItem;
   gfx::Rect mRect;
@@ -143,12 +156,10 @@ struct ColorTraits : public SimpleTraits
    : SimpleTraits(aItem, aRect), mColor(aColor)
   {}
 
-  bool AddItemTo(ShaderRenderPass* aPass) const;
-
   
   template <typename VertexType>
-  uint32_t MakeVertexData(const VertexType& aIgnore, uint32_t aItemIndex) const {
-    return aItemIndex;
+  const gfx::Color& MakeVertexData(const VertexType& aIgnore) const {
+    return mColor;
   }
 
   gfx::Color mColor;
@@ -166,11 +177,12 @@ struct TexturedTraits : public SimpleTraits
   struct VertexData {
     gfx::Point p1, p2, p3;
   };
-  VertexData MakeVertexData(const FirstTriangle& aIgnore, uint32_t aItemIndex) const;
-  VertexData MakeVertexData(const SecondTriangle& aIgnore, uint32_t aItemIndex) const;
-  VertexData MakeVertexData(const gfx::TexturedTriangle& aTriangle, uint32_t aItemIndex) const;
-
-  bool AddItemTo(ShaderRenderPass* aPass) const;
+  VertexData MakeVertexData(const FirstTriangle& aIgnore) const;
+  VertexData MakeVertexData(const SecondTriangle& aIgnore) const;
+  VertexData MakeVertexData(const gfx::TexturedTriangle& aTriangle) const;
+  const gfx::Rect& MakeVertexData(const UnitQuad& aIgnore) const {
+    return mTexCoords;
+  }
 
   gfx::Rect mTexCoords;
 };
