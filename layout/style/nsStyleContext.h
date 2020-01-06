@@ -192,9 +192,6 @@ public:
   inline nsStyleContext* GetStyleIfVisited() const;
 
   
-  void SetStyleIfVisited(already_AddRefed<nsStyleContext> aStyleIfVisited);
-
-  
   
   bool HasChildThatUsesGrandancestorStyle() const
     { return !!(mBits & NS_STYLE_CHILD_USES_GRANDANCESTOR_STYLE); }
@@ -359,11 +356,6 @@ protected:
   #undef STYLE_STRUCT_INHERITED
 
   RefPtr<nsStyleContext> mParent;
-
-  
-  
-  
-  RefPtr<nsStyleContext> mStyleIfVisited;
 
   
   

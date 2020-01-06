@@ -8,6 +8,8 @@
 #include "nsStyleConsts.h"
 #include "nsStyleStruct.h"
 #include "nsPresContext.h"
+#include "nsCSSRuleProcessor.h"
+#include "mozilla/dom/HTMLBodyElement.h"
 
 #include "mozilla/ServoBindings.h"
 
@@ -28,4 +30,42 @@ ServoStyleContext::ServoStyleContext(nsStyleContext* aParent,
 
   
   
+}
+
+void
+ServoStyleContext::UpdateWithElementState(Element* aElementForAnimation)
+{
+  bool isLink = false;
+  bool isVisitedLink = false;
+  
+  
+  if (aElementForAnimation) {
+    isLink = nsCSSRuleProcessor::IsLink(aElementForAnimation);
+    isVisitedLink = nsCSSRuleProcessor::GetContentState(aElementForAnimation)
+                                       .HasState(NS_EVENT_STATE_VISITED);
+  }
+
+
+  auto parent = GetParentAllowServo();
+
+  
+  
+  bool relevantLinkVisited = isLink ? isVisitedLink :
+    (parent && parent->RelevantLinkVisited());
+
+  if (relevantLinkVisited && GetStyleIfVisited()) {
+    AddStyleBit(NS_STYLE_RELEVANT_LINK_VISITED);
+  }
+
+  
+  if (aElementForAnimation &&
+      aElementForAnimation->IsHTMLElement(nsGkAtoms::body) &&
+      GetPseudoType() == CSSPseudoElementType::NotPseudo &&
+      mPresContext->CompatibilityMode() == eCompatibility_NavQuirks) {
+    nsIDocument* doc = aElementForAnimation->GetUncomposedDoc();
+    if (doc && doc->GetBodyElement() == aElementForAnimation) {
+      
+      mPresContext->SetBodyTextColor(StyleColor()->mColor);
+    }
+  }
 }

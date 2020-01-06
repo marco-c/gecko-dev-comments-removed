@@ -11,6 +11,10 @@
 
 namespace mozilla {
 
+namespace dom {
+  class Element;
+}
+
 class ServoStyleContext final : public nsStyleContext {
 public:
   ServoStyleContext(nsStyleContext* aParent,
@@ -34,6 +38,12 @@ public:
   void Release() {
     Servo_StyleContext_Release(this);
   }
+
+  ServoStyleContext* GetStyleIfVisited() const { return ComputedValues()->visited_style.mPtr; }
+
+  
+  
+  void UpdateWithElementState(dom::Element* aElement);
 
   
 

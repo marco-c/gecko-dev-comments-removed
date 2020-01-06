@@ -31,6 +31,9 @@ public:
   void* GetUniqueStyleData(const nsStyleStructID& aSID);
   void* CreateEmptyStyleData(const nsStyleStructID& aSID);
 
+  
+  void SetStyleIfVisited(already_AddRefed<nsStyleContext> aStyleIfVisited);
+  nsStyleContext* GetStyleIfVisited() const { return mStyleIfVisited; };
 #ifdef DEBUG
   
 
@@ -219,6 +222,11 @@ private:
   GeckoStyleContext* mPrevSibling;
   GeckoStyleContext* mNextSibling;
   RefPtr<nsRuleNode> mRuleNode;
+
+  
+  
+  
+  RefPtr<nsStyleContext> mStyleIfVisited;
 
 #ifdef DEBUG
 public:
