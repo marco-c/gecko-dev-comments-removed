@@ -197,8 +197,4 @@ function* testCPOWInspection(hud) {
   
   is(prototypeAndProperties.prototype.class, "XBL prototype JSClass",
     "Looks like a valid response");
-
-  
-  let cpow = prototypeAndProperties.ownProperties._contentWindow.value;
-  is(cpow.class, "CPOW: Window", "The CPOW grip has the right class.");
 }
