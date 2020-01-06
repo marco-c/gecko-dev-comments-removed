@@ -4,6 +4,8 @@
 
 
 
+var GLOBAL = this + '';
+
 
 
 
