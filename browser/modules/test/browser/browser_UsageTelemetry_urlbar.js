@@ -93,6 +93,10 @@ add_task(async function setup() {
   await PlacesTestUtils.clearHistory();
 
   
+  
+  await SpecialPowers.pushPrefEnv({"set": [["browser.urlbar.maxHistoricalSearchSuggestions", 0]]});
+
+  
   registerCleanupFunction(async function() {
     Services.telemetry.canRecordExtended = oldCanRecord;
     Services.search.currentEngine = originalEngine;

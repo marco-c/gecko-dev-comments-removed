@@ -318,6 +318,9 @@ pref("browser.urlbar.maxRichResults", 10);
 pref("browser.urlbar.delay", 50);
 
 
+pref("browser.urlbar.maxHistoricalSearchSuggestions", 1);
+
+
 
 pref("browser.urlbar.suggest.history",              true);
 pref("browser.urlbar.suggest.bookmark",             true);
