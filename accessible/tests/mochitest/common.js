@@ -194,18 +194,6 @@ function isObject(aObj, aExpectedObj, aMsg) {
 
 
 
-function isWithin(aExpected, aGot, aWithin, aMsg) {
-  if (Math.abs(aGot - aExpected) <= aWithin) {
-    ok(true, `${aMsg} - Got ${aGot}`);
-  } else {
-    ok(false,
-       `${aMsg} - Got ${aGot}, expected ${aExpected} with error of ${aWithin}`);
-  }
-}
-
-
-
-
 
 
 
