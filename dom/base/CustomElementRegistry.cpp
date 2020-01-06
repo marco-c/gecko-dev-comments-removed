@@ -19,7 +19,7 @@ namespace dom {
 void
 CustomElementCallback::Call()
 {
-  ErrorResult rv;
+  IgnoredErrorResult rv;
   switch (mType) {
     case nsIDocument::eCreated:
     {
@@ -55,10 +55,6 @@ CustomElementCallback::Call()
         mArgs.name, mArgs.oldValue, mArgs.newValue, rv);
       break;
   }
-
-  
-  
-  rv.SuppressException();
 }
 
 void
@@ -84,6 +80,36 @@ CustomElementCallback::CustomElementCallback(Element* aThisObject,
 
 
 
+already_AddRefed<Element>
+CustomElementConstructor::Construct(const char* aExecutionReason,
+                                    ErrorResult& aRv)
+{
+  CallSetup s(this, aRv, aExecutionReason,
+              CallbackFunction::eRethrowExceptions);
+
+  JSContext* cx = s.GetContext();
+  if (!cx) {
+    MOZ_ASSERT(aRv.Failed());
+    return nullptr;
+  }
+
+  JS::Rooted<JSObject*> result(cx);
+  JS::Rooted<JS::Value> constructor(cx, JS::ObjectValue(*mCallback));
+  if (!JS::Construct(cx, constructor, JS::HandleValueArray::empty(), &result)) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return nullptr;
+  }
+
+  RefPtr<Element> element;
+  if (NS_FAILED(UNWRAP_OBJECT(Element, &result, element))) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return nullptr;
+  }
+
+  return element.forget();
+}
+
+
 
 CustomElementData::CustomElementData(nsIAtom* aType)
   : CustomElementData(aType, CustomElementData::State::eUndefined)
@@ -100,6 +126,33 @@ CustomElementData::CustomElementData(nsIAtom* aType, State aState)
 
 
 
+
+namespace {
+
+class MOZ_RAII AutoConstructionStackEntry final
+{
+public:
+  AutoConstructionStackEntry(nsTArray<RefPtr<nsGenericHTMLElement>>& aStack,
+                             nsGenericHTMLElement* aElement)
+    : mStack(aStack)
+  {
+    mIndex = mStack.Length();
+    mStack.AppendElement(aElement);
+  }
+
+  ~AutoConstructionStackEntry()
+  {
+    MOZ_ASSERT(mIndex == mStack.Length() - 1,
+               "Removed element should be the last element");
+    mStack.RemoveElementAt(mIndex);
+  }
+
+private:
+  nsTArray<RefPtr<nsGenericHTMLElement>>& mStack;
+  uint32_t mIndex;
+};
+
+} 
 
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(CustomElementRegistry)
@@ -139,6 +192,10 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(CustomElementRegistry)
         "mCustomDefinitions->mCallbacks->mDetachedCallback");
       cb.NoteXPCOMChild(callbacks->mDetachedCallback.Value());
     }
+
+    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb,
+      "mCustomDefinitions->mConstructor");
+    cb.NoteXPCOMChild(iter.UserData()->mConstructor);
   }
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWhenDefinedPromiseMap)
@@ -147,9 +204,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(CustomElementRegistry)
   for (auto iter = tmp->mCustomDefinitions.Iter(); !iter.Done(); iter.Next()) {
-    aCallbacks.Trace(&iter.UserData()->mConstructor,
-                     "mCustomDefinitions constructor",
-                     aClosure);
     aCallbacks.Trace(&iter.UserData()->mPrototype,
                      "mCustomDefinitions prototype",
                      aClosure);
@@ -438,6 +492,7 @@ CustomElementRegistry::UpgradeCandidates(nsIAtom* aKey,
     return;
   }
 
+  
   nsAutoPtr<nsTArray<nsWeakPtr>> candidates;
   if (mCandidatesMap.Remove(aKey, &candidates)) {
     MOZ_ASSERT(candidates);
@@ -725,7 +780,7 @@ CustomElementRegistry::Define(const nsAString& aName,
   CustomElementDefinition* definition =
     new CustomElementDefinition(nameAtom,
                                 localNameAtom,
-                                constructor,
+                                &aFunctionConstructor,
                                 constructorPrototype,
                                 callbacks,
                                 0 );
@@ -738,7 +793,6 @@ CustomElementRegistry::Define(const nsAString& aName,
   
 
 
-  
   UpgradeCandidates(nameAtom, definition, aRv);
 
   
@@ -769,7 +823,7 @@ CustomElementRegistry::Get(JSContext* aCx, const nsAString& aName,
     return;
   }
 
-  aRetVal.setObject(*data->mConstructor);
+  aRetVal.setObjectOrNull(data->mConstructor->CallableOrNull());
 }
 
 already_AddRefed<Promise>
@@ -803,23 +857,67 @@ CustomElementRegistry::WhenDefined(const nsAString& aName, ErrorResult& aRv)
   return promise.forget();
 }
 
-void
-CustomElementRegistry::Upgrade(Element* aElement,
-                               CustomElementDefinition* aDefinition)
+namespace {
+
+static void
+DoUpgrade(Element* aElement,
+          CustomElementConstructor* aConstructor,
+          ErrorResult& aRv)
 {
   
-  aElement->RemoveStates(NS_EVENT_STATE_UNRESOLVED);
-
   
-  
-  
-  if (aElement->NodeInfo()->NameAtom() != aDefinition->mLocalName) {
-    
+  RefPtr<Element> constructResult =
+    aConstructor->Construct("Custom Element Upgrade", aRv);
+  if (aRv.Failed()) {
     return;
   }
 
-  MOZ_ASSERT(aElement->IsHTMLElement(aDefinition->mLocalName));
+  if (constructResult.get() != aElement) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return;
+  }
+}
 
+} 
+
+
+void
+CustomElementRegistry::Upgrade(Element* aElement,
+                               CustomElementDefinition* aDefinition,
+                               ErrorResult& aRv)
+{
+  aElement->RemoveStates(NS_EVENT_STATE_UNRESOLVED);
+
+  RefPtr<CustomElementData> data = aElement->GetCustomElementData();
+  MOZ_ASSERT(data, "CustomElementData should exist");
+
+  
+  if (data->mState == CustomElementData::State::eCustom ||
+      data->mState == CustomElementData::State::eFailed) {
+    return;
+  }
+
+  
+  
+  
+
+  
+  AutoConstructionStackEntry acs(aDefinition->mConstructionStack,
+                                 nsGenericHTMLElement::FromContent(aElement));
+
+  
+  DoUpgrade(aElement, aDefinition->mConstructor, aRv);
+  if (aRv.Failed()) {
+    data->mState = CustomElementData::State::eFailed;
+    
+    data->mReactionQueue.Clear();
+    return;
+  }
+
+  
+  data->mState = CustomElementData::State::eCustom;
+
+  
   EnqueueLifecycleCallback(nsIDocument::eCreated, aElement, nullptr, aDefinition);
 }
 
@@ -845,7 +943,13 @@ CustomElementReactionsStack::PopAndInvokeElementQueue()
   ElementQueue* elementQueue = mReactionsStack.ElementAt(lastIndex).get();
   
   if (!elementQueue->IsEmpty()) {
-    InvokeReactions(elementQueue);
+    
+    
+    
+    
+    nsIGlobalObject* global = GetEntryGlobal();
+    MOZ_ASSERT(global, "Should always have a entry global here!");
+    InvokeReactions(elementQueue, global);
   }
 
   
@@ -908,13 +1012,24 @@ CustomElementReactionsStack::InvokeBackupQueue()
 {
   
   if (!mBackupQueue.IsEmpty()) {
-    InvokeReactions(&mBackupQueue);
+    
+    
+    
+    
+    InvokeReactions(&mBackupQueue, nullptr);
   }
 }
 
 void
-CustomElementReactionsStack::InvokeReactions(ElementQueue* aElementQueue)
+CustomElementReactionsStack::InvokeReactions(ElementQueue* aElementQueue,
+                                             nsIGlobalObject* aGlobal)
 {
+  
+  Maybe<AutoEntryScript> aes;
+  if (aGlobal) {
+    aes.emplace(aGlobal, "custom elements reaction invocation");
+  }
+
   
   for (uint32_t i = 0; i < aElementQueue->Length(); ++i) {
     nsCOMPtr<Element> element = do_QueryReferent(aElementQueue->ElementAt(i));
@@ -932,7 +1047,16 @@ CustomElementReactionsStack::InvokeReactions(ElementQueue* aElementQueue)
       
       auto reaction(Move(reactions.ElementAt(j)));
       if (reaction) {
-        reaction->Invoke(element);
+        ErrorResult rv;
+        reaction->Invoke(element, rv);
+        if (aes) {
+          JSContext* cx = aes->cx();
+          if (rv.MaybeSetPendingException(cx)) {
+            aes->ReportException();
+          }
+          MOZ_ASSERT(!JS_IsExceptionPending(cx));
+        }
+        MOZ_ASSERT(!rv.Failed());
       }
     }
     reactions.Clear();
@@ -945,13 +1069,13 @@ CustomElementReactionsStack::InvokeReactions(ElementQueue* aElementQueue)
 
 CustomElementDefinition::CustomElementDefinition(nsIAtom* aType,
                                                  nsIAtom* aLocalName,
-                                                 JSObject* aConstructor,
+                                                 Function* aConstructor,
                                                  JSObject* aPrototype,
                                                  LifecycleCallbacks* aCallbacks,
                                                  uint32_t aDocOrder)
   : mType(aType),
     mLocalName(aLocalName),
-    mConstructor(aConstructor),
+    mConstructor(new CustomElementConstructor(aConstructor)),
     mPrototype(aPrototype),
     mCallbacks(aCallbacks),
     mDocOrder(aDocOrder)
@@ -963,16 +1087,16 @@ CustomElementDefinition::CustomElementDefinition(nsIAtom* aType,
 
 
  void
-CustomElementUpgradeReaction::Invoke(Element* aElement)
+CustomElementUpgradeReaction::Invoke(Element* aElement, ErrorResult& aRv)
 {
-  mRegistry->Upgrade(aElement, mDefinition);
+  mRegistry->Upgrade(aElement, mDefinition, aRv);
 }
 
 
 
 
  void
-CustomElementCallbackReaction::Invoke(Element* aElement)
+CustomElementCallbackReaction::Invoke(Element* aElement, ErrorResult& aRv)
 {
   mCustomElementCallback->Call();
 }
