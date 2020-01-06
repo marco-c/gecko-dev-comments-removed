@@ -1195,6 +1195,19 @@ MarkupView.prototype = {
     container.setExpanded(false);
   },
 
+  _collapseAll: function (container) {
+    container.setExpanded(false);
+    let children = container.getChildContainers() || [];
+    children.forEach(child => this._collapseAll(child));
+  },
+
+  
+
+
+  collapseAll: function (node) {
+    this._collapseAll(this.getContainer(node));
+  },
+
   
 
 
@@ -1443,13 +1456,15 @@ MarkupView.prototype = {
 
 
 
-  setNodeExpanded: function (node, expanded, expandDescendants) {
+  setNodeExpanded: function (node, expanded, applyToDescendants) {
     if (expanded) {
-      if (expandDescendants) {
+      if (applyToDescendants) {
         this.expandAll(node);
       } else {
         this.expandNode(node);
       }
+    } else if (applyToDescendants) {
+      this.collapseAll(node);
     } else {
       this.collapseNode(node);
     }
