@@ -189,14 +189,14 @@ pub enum LocatorStrategy {
     CSSSelector,
     LinkText,
     PartialLinkText,
-    XPath
+    XPath,
 }
 
 impl LocatorStrategy {
     pub fn from_json(body: &Json) -> WebDriverResult<LocatorStrategy> {
         match try_opt!(body.as_string(),
                        ErrorStatus::InvalidArgument,
-                       "Cound not convert strategy to string") {
+                       "Expected locator strategy as string") {
             "css selector" => Ok(LocatorStrategy::CSSSelector),
             "link text" => Ok(LocatorStrategy::LinkText),
             "partial link text" => Ok(LocatorStrategy::PartialLinkText),
@@ -215,5 +215,57 @@ impl ToJson for LocatorStrategy {
             LocatorStrategy::PartialLinkText => "partial link text",
             LocatorStrategy::XPath => "xpath"
         }.to_string())
+    }
+}
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub enum WindowState {
+    
+    Maximized,
+    
+    Minimized,
+    
+    Normal,
+    
+    Fullscreen,
+}
+
+impl WindowState {
+    pub fn from_json(body: &Json) -> WebDriverResult<WindowState> {
+        use self::WindowState::*;
+        let s = try_opt!(
+            body.as_string(),
+            ErrorStatus::InvalidArgument,
+            "Expecetd window state as string"
+        );
+        match s {
+            "maximized" => Ok(Maximized),
+            "minimized" => Ok(Minimized),
+            "normal" => Ok(Normal),
+            "fullscreen" => Ok(Fullscreen),
+            x => Err(WebDriverError::new(
+                ErrorStatus::InvalidArgument,
+                format!("Unknown window state {}", x),
+            )),
+        }
+    }
+}
+
+impl ToJson for WindowState {
+    fn to_json(&self) -> Json {
+        use self::WindowState::*;
+        let state = match *self {
+            Maximized => "maximized",
+            Minimized => "minimized",
+            Normal => "normal",
+            Fullscreen => "fullscreen",
+        };
+        Json::String(state.to_string())
     }
 }
