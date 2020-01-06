@@ -286,9 +286,7 @@ public:
   
 
 
-
-
-  void CancelAnimation(const ScrollableLayerGuid &aGuid) override;
+  void CancelAnimation(const ScrollableLayerGuid &aGuid);
 
   
 

@@ -157,13 +157,6 @@ public:
       const ScrollableLayerGuid& aGuid,
       const Maybe<ZoomConstraints>& aConstraints) = 0;
 
-  
-
-
-
-
-  virtual void CancelAnimation(const ScrollableLayerGuid &aGuid) = 0;
-
   virtual void SetDPI(float aDpiValue) = 0;
 
   
