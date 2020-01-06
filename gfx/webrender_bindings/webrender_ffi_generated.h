@@ -41,6 +41,13 @@ enum class BoxShadowClipMode : uint32_t {
   Sentinel 
 };
 
+enum class ClipMode {
+  Clip = 0,
+  ClipOut = 1,
+
+  Sentinel 
+};
+
 enum class ExtendMode : uint32_t {
   Clamp = 0,
   Repeat = 1,
@@ -450,10 +457,14 @@ struct ComplexClipRegion {
   LayoutRect rect;
   
   BorderRadius radii;
+  
+  
+  ClipMode mode;
 
   bool operator==(const ComplexClipRegion& aOther) const {
     return rect == aOther.rect &&
-           radii == aOther.radii;
+           radii == aOther.radii &&
+           mode == aOther.mode;
   }
 };
 
