@@ -316,18 +316,6 @@ pref("browser.urlbar.delay", 50);
 
 
 
-
-pref("browser.urlbar.restrict.history", "^");
-pref("browser.urlbar.restrict.bookmark", "*");
-pref("browser.urlbar.restrict.tag", "+");
-pref("browser.urlbar.restrict.openpage", "%");
-pref("browser.urlbar.restrict.typed", "~");
-pref("browser.urlbar.restrict.searches", "$");
-pref("browser.urlbar.match.title", "#");
-pref("browser.urlbar.match.url", "@");
-
-
-
 pref("browser.urlbar.suggest.history",              true);
 pref("browser.urlbar.suggest.bookmark",             true);
 pref("browser.urlbar.suggest.openpage",             true);

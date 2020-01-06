@@ -2,6 +2,8 @@
 
 
 
+const RESTRICT_TOKEN_OPENPAGE = "%";
+
 var stateBackup = ss.getBrowserState();
 
 function cleanup() {
@@ -116,5 +118,5 @@ function checkAutocompleteResults(aExpected, aCallback) {
   };
 
   info("Searching open pages.");
-  gController.startSearch(Services.prefs.getCharPref("browser.urlbar.restrict.openpage"));
+  gController.startSearch(RESTRICT_TOKEN_OPENPAGE);
 }
