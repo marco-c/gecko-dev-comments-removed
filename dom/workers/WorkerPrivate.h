@@ -236,7 +236,10 @@ private:
   
   nsTArray<RefPtr<SharedWorker>> mSharedWorkers;
 
-  uint64_t mBusyCount;
+  
+  
+  Atomic<uint64_t> mBusyCount;
+
   
   
   uint32_t mParentWindowPausedDepth;
@@ -928,6 +931,14 @@ public:
   bool
   PrincipalIsValid() const;
 #endif
+
+  
+  
+  uint32_t
+  BusyCount()
+  {
+    return mBusyCount;
+  }
 };
 
 class WorkerDebugger : public nsIWorkerDebugger {
@@ -1479,6 +1490,9 @@ public:
   
   nsISerialEventTarget*
   HybridEventTarget();
+
+  void
+  DumpCrashInformation(nsACString& aString);
 
 private:
   WorkerPrivate(WorkerPrivate* aParent,

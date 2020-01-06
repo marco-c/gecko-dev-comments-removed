@@ -51,6 +51,8 @@
 #include "mozilla/Unused.h"
 #include "mozilla/Telemetry.h"
 
+#include "mozilla/dom/workers/RuntimeService.h"
+
 
 
 
@@ -154,6 +156,12 @@ RunWatchdog(void* arg)
 
     if (gHeartbeat++ < timeToLive) {
       continue;
+    }
+
+    mozilla::dom::workers::RuntimeService* runtimeService =
+      mozilla::dom::workers::RuntimeService::GetService();
+    if (runtimeService) {
+     runtimeService->CrashIfHanging();
     }
 
     
