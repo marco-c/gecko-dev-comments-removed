@@ -10,9 +10,9 @@ const TEST_PERMISSION = "test-permission";
 Components.utils.import("resource://gre/modules/Promise.jsm");
 
 function promiseTimeout(delay) {
-  let deferred = Promise.defer();
-  do_timeout(delay, deferred.resolve);
-  return deferred.promise;
+  return new Promise(resolve => {
+    do_timeout(delay, resolve);
+  });
 }
 
 function run_test() {
@@ -237,29 +237,29 @@ function findCapabilityViaEnum(origin = TEST_ORIGIN, type = TEST_PERMISSION) {
 
 
 function checkCapabilityViaDB(expected, origin = TEST_ORIGIN, type = TEST_PERMISSION) {
-  let deferred = Promise.defer();
-  let count = 0;
-  let max = 20;
-  let do_check = () => {
-    let got = findCapabilityViaDB(origin, type);
-    if (got == expected) {
+  return new Promise(resolve => {
+    let count = 0;
+    let max = 20;
+    let do_check = () => {
+      let got = findCapabilityViaDB(origin, type);
+      if (got == expected) {
+        
+        do_check_eq(got, expected, "The database has the expected value");
+        resolve();
+        return;
+      }
       
-      do_check_eq(got, expected, "The database has the expected value");
-      deferred.resolve();
-      return;
-    }
-    
-    if (count++ == max) {
+      if (count++ == max) {
+        
+        do_check_eq(got, expected, "The database wasn't updated with the expected value");
+        resolve();
+        return;
+      }
       
-      do_check_eq(got, expected, "The database wasn't updated with the expected value");
-      deferred.resolve();
-      return;
+      do_timeout(100, do_check);
     }
-    
-    do_timeout(100, do_check);
-  }
-  do_check();
-  return deferred.promise;
+    do_check();
+  });
 }
 
 
