@@ -131,7 +131,7 @@ class EmbeddedExtension {
 
 
 
-  startup(reason) {
+  startup() {
     if (this.started) {
       return Promise.reject(new Error("This embedded extension has already been started"));
     }
@@ -185,7 +185,7 @@ class EmbeddedExtension {
 
       
       
-      this.extension.startup(reason).catch((err) => {
+      this.extension.startup().catch((err) => {
         this.started = false;
         this.startupPromise = null;
         this.extension.off("startup", onBeforeStarted);
@@ -202,13 +202,13 @@ class EmbeddedExtension {
 
 
 
-  shutdown(reason) {
+  shutdown() {
     EmbeddedExtensionManager.untrackEmbeddedExtension(this);
 
     
     if (this.startupPromise) {
       let promise = this.startupPromise.then(() => {
-        return this.extension.shutdown(reason);
+        return this.extension.shutdown();
       });
 
       AsyncShutdown.profileChangeTeardown.addBlocker(
@@ -220,7 +220,7 @@ class EmbeddedExtension {
 
     
     if (this.extension && this.started && !this.extension.hasShutdown) {
-      this.extension.shutdown(reason);
+      this.extension.shutdown();
     }
 
     return Promise.resolve();
