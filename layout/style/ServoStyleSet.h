@@ -393,6 +393,20 @@ public:
                            const ServoStyleContext* aStyle);
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  already_AddRefed<ServoStyleContext>
+  ResolveServoStyleByAddingAnimation(dom::Element* aElement,
+                                     const ServoStyleContext* aStyle,
+                                     RawServoAnimationValue* aAnimationValue);
+  
 
 
 

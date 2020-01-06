@@ -648,6 +648,14 @@ SERVO_BINDING_FUNC(Servo_StyleSet_GetBaseComputedValuesForElement,
                    const mozilla::ServoElementSnapshotTable* snapshots,
                    mozilla::CSSPseudoElementType pseudo_type)
 
+SERVO_BINDING_FUNC(Servo_StyleSet_GetComputedValuesByAddingAnimation,
+                   ServoStyleContextStrong,
+                   RawServoStyleSetBorrowed set,
+                   RawGeckoElementBorrowed element,
+                   ServoStyleContextBorrowed existing_style,
+                   const mozilla::ServoElementSnapshotTable* snapshots,
+                   RawServoAnimationValueBorrowed animation)
+
 
 SERVO_BINDING_FUNC(Servo_SerializeFontValueForCanvas, void,
                    RawServoDeclarationBlockBorrowed declarations,
