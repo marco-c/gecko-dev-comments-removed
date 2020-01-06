@@ -1,0 +1,9 @@
+
+
+
+
+
+
+def copy(out_file, in_path):
+    with open(in_path, 'r') as fh:
+        out_file.write(fh.read())
