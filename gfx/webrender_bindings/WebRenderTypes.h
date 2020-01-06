@@ -736,6 +736,16 @@ struct WrClipId {
   }
 };
 
+
+
+struct WrStickyId {
+  uint64_t id;
+
+  bool operator==(const WrClipId& other) const {
+    return id == other.id;
+  }
+};
+
 typedef Variant<layers::FrameMetrics::ViewID, WrClipId> ScrollOrClipId;
 
 enum class WebRenderError : int8_t {
