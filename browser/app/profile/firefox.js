@@ -673,10 +673,6 @@ pref("accessibility.typeaheadfind.linksonly", false);
 pref("accessibility.typeaheadfind.flashBar", 1);
 
 
-pref("accessibility.support.url", "https://support.mozilla.org/%LOCALE%/kb/accessibility-services");
-pref("accessibility.indicator.enabled", true);
-
-
 pref("accessibility.loadedInLastSession", false);
 
 pref("plugins.click_to_play", true);
@@ -1563,8 +1559,7 @@ pref("browser.tabs.remote.autostart.2", true);
 
 
 
-
-pref("browser.tabs.remote.warmup.enabled", false);
+pref("browser.tabs.remote.warmup.enabled", true);
 pref("browser.tabs.remote.warmup.maxTabs", 3);
 pref("browser.tabs.remote.warmup.unloadDelayMs", 2000);
 

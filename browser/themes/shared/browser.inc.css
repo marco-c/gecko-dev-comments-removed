@@ -58,7 +58,7 @@
 
 
 
-#navigator-toolbox {
+#navigator-toolbox[animate] {
   position: relative;
 }
 
@@ -72,7 +72,6 @@
 
 
 
-.accessibility-indicator,
 .private-browsing-indicator {
   background-repeat: no-repeat;
   background-size: 100% auto;
@@ -83,28 +82,10 @@
   margin-right: 8px;
 }
 
-.accessibility-indicator {
-  background-image: url("chrome://browser/skin/accessibility.svg");
-  -moz-user-focus: normal;
-  
-  -moz-appearance: none;
-  margin-top: unset;
-  margin-bottom: unset;
-  min-width: unset;
-  color: unset;
-  text-shadow: unset;
-}
-
-.accessibility-indicator:-moz-any(:hover, :active, :focus, :-moz-focusring) {
-  background-image: url("chrome://browser/skin/accessibility-active.svg");
-  outline: 0;
-}
-
 .private-browsing-indicator {
   background-image: url("chrome://browser/skin/private-browsing.svg");
 }
 
-:root:not([accessibilitymode]) .accessibility-indicator,
 :root:not([privatebrowsingmode=temporary]) .private-browsing-indicator {
   display: none;
 }
