@@ -306,68 +306,29 @@ var Manager = {
   },
 
   onCreatedNavigationTarget(browser, data) {
-    const {
-      createdOuterWindowId,
-      isSourceTab,
-      sourceFrameId,
-      url,
-    } = data;
+    const {isSourceTab, createdWindowId, sourceFrameId, url} = data;
 
     
     
     
-    
-    
-    const pairedMessage = this.createdNavigationTargetByOuterWindowId.get(createdOuterWindowId);
-
-    if (!isSourceTab) {
-      if (pairedMessage) {
-        
-        Services.console.logStringMessage(
-          `Discarding onCreatedNavigationTarget for ${createdOuterWindowId}: ` +
-          "unexpected pending data while receiving the created tab data"
-        );
-      }
-
-      
-      
-      const browserWeakRef = Cu.getWeakReference(browser);
-
-      this.createdNavigationTargetByOuterWindowId.set(createdOuterWindowId, {
-        browserWeakRef,
-        data,
-      });
-
-      return;
-    }
+    const pairedMessage = this.createdNavigationTargetByOuterWindowId.get(createdWindowId);
 
     if (!pairedMessage) {
-      
-      
-      
-      
-      
-      
-      Services.console.logStringMessage(
-        `Discarding onCreatedNavigationTarget for ${createdOuterWindowId}: ` +
-        "received source tab data without any created tab data available"
-      );
-
+      this.createdNavigationTargetByOuterWindowId.set(createdWindowId, {browser, data});
       return;
     }
 
-    this.createdNavigationTargetByOuterWindowId.delete(createdOuterWindowId);
+    this.createdNavigationTargetByOuterWindowId.delete(createdWindowId);
 
-    let sourceTabBrowser = browser;
-    let createdTabBrowser = pairedMessage.browserWeakRef.get();
+    let sourceTabBrowser;
+    let createdTabBrowser;
 
-    if (!createdTabBrowser) {
-      Services.console.logStringMessage(
-        `Discarding onCreatedNavigationTarget for ${createdOuterWindowId}: ` +
-        "the created tab has been already destroyed"
-      );
-
-      return;
+    if (isSourceTab) {
+      sourceTabBrowser = browser;
+      createdTabBrowser = pairedMessage.browser;
+    } else {
+      sourceTabBrowser = pairedMessage.browser;
+      createdTabBrowser = browser;
     }
 
     this.fire("onCreatedNavigationTarget", createdTabBrowser, {}, {
