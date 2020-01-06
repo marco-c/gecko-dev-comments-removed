@@ -94,7 +94,7 @@ const globalImportContext = typeof Window === "undefined" ? BACKGROUND_PROCESS :
 
 
 const actionTypes = {};
-for (const type of ["BLOCK_URL", "BOOKMARK_URL", "DELETE_BOOKMARK_BY_ID", "DELETE_HISTORY_URL", "DELETE_HISTORY_URL_CONFIRM", "DIALOG_CANCEL", "DIALOG_OPEN", "DISABLE_ONBOARDING", "INIT", "LOCALE_UPDATED", "MIGRATION_CANCEL", "MIGRATION_COMPLETED", "MIGRATION_START", "NEW_TAB_INIT", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_REHYDRATED", "NEW_TAB_STATE_REQUEST", "NEW_TAB_UNLOAD", "OPEN_LINK", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "PAGE_PRERENDERED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_CHANGED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINKS_DELETED", "PLACES_LINK_BLOCKED", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "SAVE_SESSION_PERF_DATA", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_DISABLE", "SECTION_ENABLE", "SECTION_OPTIONS_CHANGED", "SECTION_REGISTER", "SECTION_UPDATE", "SECTION_UPDATE_CARD", "SETTINGS_CLOSE", "SETTINGS_OPEN", "SET_PREF", "SHOW_FIREFOX_ACCOUNTS", "SNIPPETS_DATA", "SNIPPETS_RESET", "SYSTEM_TICK", "TELEMETRY_IMPRESSION_STATS", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_ADD", "TOP_SITES_CANCEL_EDIT", "TOP_SITES_EDIT", "TOP_SITES_PIN", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "UNINIT"]) {
+for (const type of ["BLOCK_URL", "BOOKMARK_URL", "DELETE_BOOKMARK_BY_ID", "DELETE_HISTORY_URL", "DELETE_HISTORY_URL_CONFIRM", "DIALOG_CANCEL", "DIALOG_OPEN", "DISABLE_ONBOARDING", "INIT", "MIGRATION_CANCEL", "MIGRATION_COMPLETED", "MIGRATION_START", "NEW_TAB_INIT", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_REHYDRATED", "NEW_TAB_STATE_REQUEST", "NEW_TAB_UNLOAD", "OPEN_LINK", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "PAGE_PRERENDERED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_CHANGED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINKS_DELETED", "PLACES_LINK_BLOCKED", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "SAVE_SESSION_PERF_DATA", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_DISABLE", "SECTION_ENABLE", "SECTION_OPTIONS_CHANGED", "SECTION_REGISTER", "SECTION_UPDATE", "SECTION_UPDATE_CARD", "SETTINGS_CLOSE", "SETTINGS_OPEN", "SET_PREF", "SHOW_FIREFOX_ACCOUNTS", "SNIPPETS_DATA", "SNIPPETS_RESET", "SYSTEM_TICK", "TELEMETRY_IMPRESSION_STATS", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_ADD", "TOP_SITES_CANCEL_EDIT", "TOP_SITES_EDIT", "TOP_SITES_PIN", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "UNINIT"]) {
   actionTypes[type] = type;
 }
 
@@ -266,6 +266,12 @@ var actionUtils = {
     }
     return false;
   },
+  isFromMain(action) {
+    if (!action.meta) {
+      return false;
+    }
+    return action.meta.from === MAIN_MESSAGE_TYPE && action.meta.to === CONTENT_MESSAGE_TYPE;
+  },
   getPortIdOfSender(action) {
     return action.meta && action.meta.fromTarget || null;
   },
@@ -298,6 +304,12 @@ module.exports = ReactIntl;
 
  (function(module, exports) {
 
+module.exports = ReactRedux;
+
+ }),
+
+ (function(module, exports) {
+
 var g;
 
 
@@ -325,12 +337,6 @@ module.exports = g;
 
  (function(module, exports) {
 
-module.exports = ReactRedux;
-
- }),
-
- (function(module, exports) {
-
 module.exports = {
   TOP_SITES_SOURCE: "TOP_SITES",
   TOP_SITES_CONTEXT_MENU_OPTIONS: ["CheckPinTopSite", "EditTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", "DeleteUrl"],
@@ -353,9 +359,6 @@ module.exports = {
 const { actionTypes: at } = __webpack_require__(0);
 const { Dedupe } = __webpack_require__(20);
 
-
-const RTL_LIST = ["ar", "he", "fa", "ur"];
-
 const TOP_SITES_DEFAULT_LENGTH = 6;
 const TOP_SITES_SHOWMORE_LENGTH = 12;
 
@@ -365,12 +368,6 @@ const INITIAL_STATE = {
   App: {
     
     initialized: false,
-    
-    locale: "",
-    
-    strings: null,
-    
-    textDirection: "",
     
     version: null
   },
@@ -403,18 +400,6 @@ function App(prevState = INITIAL_STATE.App, action) {
   switch (action.type) {
     case at.INIT:
       return Object.assign({}, prevState, action.data || {}, { initialized: true });
-    case at.LOCALE_UPDATED:
-      {
-        if (!action.data) {
-          return prevState;
-        }
-        let { locale, strings } = action.data;
-        return Object.assign({}, prevState, {
-          locale,
-          strings,
-          textDirection: RTL_LIST.indexOf(locale.split("-")[0]) >= 0 ? "rtl" : "ltr"
-        });
-      }
     default:
       return prevState;
   }
@@ -1088,6 +1073,43 @@ class Info extends React.PureComponent {
 
 const InfoIntl = injectIntl(Info);
 
+class Disclaimer extends React.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onAcknowledge = this.onAcknowledge.bind(this);
+  }
+
+  onAcknowledge() {
+    this.props.dispatch(ac.SetPref(this.props.disclaimerPref, false));
+    this.props.dispatch(ac.UserEvent({ event: "SECTION_DISCLAIMER_ACKNOWLEDGED", source: this.props.eventSource }));
+  }
+
+  render() {
+    const disclaimer = this.props.disclaimer;
+    return React.createElement(
+      "div",
+      { className: "section-disclaimer" },
+      React.createElement(
+        "div",
+        { className: "section-disclaimer-text" },
+        getFormattedMessage(disclaimer.text),
+        disclaimer.link && React.createElement(
+          "a",
+          { href: disclaimer.link.href, target: "_blank", rel: "noopener noreferrer" },
+          getFormattedMessage(disclaimer.link.title || disclaimer.link)
+        )
+      ),
+      React.createElement(
+        "button",
+        { onClick: this.onAcknowledge },
+        getFormattedMessage(disclaimer.button)
+      )
+    );
+  }
+}
+
+const DisclaimerIntl = injectIntl(Disclaimer);
+
 class CollapsibleSection extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -1146,7 +1168,9 @@ class CollapsibleSection extends React.PureComponent {
   render() {
     const isCollapsed = this.props.Prefs.values[this.props.prefName];
     const { enableAnimation, isAnimating } = this.state;
-    const infoOption = this.props.infoOption;
+    const { id, infoOption, eventSource, disclaimer } = this.props;
+    const disclaimerPref = `section.${id}.showDisclaimer`;
+    const needsDisclaimer = disclaimer && this.props.Prefs.values[disclaimerPref];
 
     return React.createElement(
       "section",
@@ -1170,6 +1194,7 @@ class CollapsibleSection extends React.PureComponent {
       React.createElement(
         "div",
         { className: `section-body${isAnimating ? " animating" : ""}`, onTransitionEnd: this.onTransitionEnd },
+        needsDisclaimer && React.createElement(DisclaimerIntl, { disclaimerPref: disclaimerPref, disclaimer: disclaimer, eventSource: eventSource, dispatch: this.props.dispatch }),
         this.props.children
       )
     );
@@ -1189,7 +1214,9 @@ module.exports = injectIntl(CollapsibleSection);
 module.exports._unconnected = CollapsibleSection;
 module.exports.Info = Info;
 module.exports.InfoIntl = InfoIntl;
-}.call(exports, __webpack_require__(3)))
+module.exports.Disclaimer = Disclaimer;
+module.exports.DisclaimerIntl = DisclaimerIntl;
+}.call(exports, __webpack_require__(4)))
 
  }),
 
@@ -1503,16 +1530,16 @@ module.exports = {
 (function(global) {const React = __webpack_require__(1);
 const ReactDOM = __webpack_require__(13);
 const Base = __webpack_require__(14);
-const { Provider } = __webpack_require__(4);
+const { Provider } = __webpack_require__(3);
 const initStore = __webpack_require__(31);
 const { reducers } = __webpack_require__(6);
 const DetectUserSessionStart = __webpack_require__(33);
 const { addSnippetsSubscriber } = __webpack_require__(34);
 const { actionTypes: at, actionCreators: ac } = __webpack_require__(0);
 
-new DetectUserSessionStart().sendEventOrAddListener();
-
 const store = initStore(reducers, global.gActivityStreamPrerenderedState);
+
+new DetectUserSessionStart(store).sendEventOrAddListener();
 
 
 
@@ -1524,11 +1551,14 @@ if (!global.gActivityStreamPrerenderedState) {
 ReactDOM.render(React.createElement(
   Provider,
   { store: store },
-  React.createElement(Base, { isPrerendered: !!global.gActivityStreamPrerenderedState })
+  React.createElement(Base, {
+    isPrerendered: !!global.gActivityStreamPrerenderedState,
+    locale: global.document.documentElement.lang,
+    strings: global.gActivityStreamStrings })
 ), document.getElementById("root"));
 
 addSnippetsSubscriber(store);
-}.call(exports, __webpack_require__(3)))
+}.call(exports, __webpack_require__(4)))
 
  }),
 
@@ -1540,8 +1570,8 @@ module.exports = ReactDOM;
 
  (function(module, exports, __webpack_require__) {
 
-(function(global) {const React = __webpack_require__(1);
-const { connect } = __webpack_require__(4);
+const React = __webpack_require__(1);
+const { connect } = __webpack_require__(3);
 const { addLocaleData, IntlProvider } = __webpack_require__(2);
 const TopSites = __webpack_require__(15);
 const Search = __webpack_require__(21);
@@ -1555,21 +1585,15 @@ const { PrerenderData } = __webpack_require__(30);
 
 
 
-function addLocaleDataForReactIntl({ locale, textDirection }) {
+function addLocaleDataForReactIntl(locale) {
   addLocaleData([{ locale, parentLocale: "en" }]);
-  if (global.document) {
-    global.document.documentElement.lang = locale;
-    global.document.documentElement.dir = textDirection;
-  }
 }
 
 class Base extends React.PureComponent {
   componentWillMount() {
-    const { App } = this.props;
+    const { App, locale } = this.props;
     this.sendNewTabRehydrated(App);
-    if (App.locale) {
-      addLocaleDataForReactIntl(App);
-    }
+    addLocaleDataForReactIntl(locale);
   }
 
   componentDidMount() {
@@ -1583,25 +1607,12 @@ class Base extends React.PureComponent {
 
     
     addEventListener("visibilitychange", () => {
-      this.updateTitle(this.props.App);
       document.getElementById("favicon").href += "#";
     }, { once: true });
   }
 
   componentWillUpdate({ App }) {
     this.sendNewTabRehydrated(App);
-
-    
-    if (App.locale && App.locale !== this.props.App.locale) {
-      addLocaleDataForReactIntl(App);
-      this.updateTitle(App);
-    }
-  }
-
-  updateTitle({ strings }) {
-    if (strings) {
-      document.title = strings.newtab_page_title;
-    }
   }
 
   
@@ -1616,7 +1627,8 @@ class Base extends React.PureComponent {
 
   render() {
     const props = this.props;
-    const { locale, strings, initialized } = props.App;
+    const { App, locale, strings } = props;
+    const { initialized } = App;
     const prefs = props.Prefs.values;
 
     const shouldBeFixedToTop = PrerenderData.arePrefsValid(name => prefs[name]);
@@ -1627,12 +1639,9 @@ class Base extends React.PureComponent {
       return null;
     }
 
-    
-    
-    
     return React.createElement(
       IntlProvider,
-      { key: "STATIC", locale: locale, messages: strings },
+      { locale: locale, messages: strings },
       React.createElement(
         "div",
         { className: outerClassName },
@@ -1657,49 +1666,107 @@ class Base extends React.PureComponent {
 
 module.exports = connect(state => ({ App: state.App, Prefs: state.Prefs }))(Base);
 module.exports._unconnected = Base;
-}.call(exports, __webpack_require__(3)))
 
  }),
 
  (function(module, exports, __webpack_require__) {
 
 const React = __webpack_require__(1);
-const { connect } = __webpack_require__(4);
+const { connect } = __webpack_require__(3);
 const { FormattedMessage } = __webpack_require__(2);
 
 const TopSitesEdit = __webpack_require__(16);
 const { TopSite, TopSitePlaceholder } = __webpack_require__(7);
 const CollapsibleSection = __webpack_require__(9);
 const ComponentPerfTimer = __webpack_require__(10);
+const { actionCreators: ac, actionTypes: at } = __webpack_require__(0);
+const { MIN_RICH_FAVICON_SIZE, MIN_CORNER_FAVICON_SIZE } = __webpack_require__(5);
 
-const TopSites = props => {
-  const realTopSites = props.TopSites.rows.slice(0, props.TopSitesCount);
-  const placeholderCount = props.TopSitesCount - realTopSites.length;
-  const infoOption = {
-    header: { id: "settings_pane_topsites_header" },
-    body: { id: "settings_pane_topsites_body" }
+
+
+
+
+
+function countTopSitesIconsTypes(topSites) {
+  const countTopSitesTypes = (acc, link) => {
+    if (link.tippyTopIcon) {
+      acc.tippytop++;
+    } else if (link.faviconSize >= MIN_RICH_FAVICON_SIZE) {
+      acc.rich_icon++;
+    } else if (link.screenshot && link.faviconSize >= MIN_CORNER_FAVICON_SIZE) {
+      acc.screenshot_with_icon++;
+    } else if (link.screenshot) {
+      acc.screenshot++;
+    } else {
+      acc.no_image++;
+    }
+
+    return acc;
   };
-  return React.createElement(
-    ComponentPerfTimer,
-    { id: "topsites", initialized: props.TopSites.initialized, dispatch: props.dispatch },
-    React.createElement(
-      CollapsibleSection,
-      { className: "top-sites", icon: "topsites", title: React.createElement(FormattedMessage, { id: "header_top_sites" }), infoOption: infoOption, prefName: "collapseTopSites", Prefs: props.Prefs, dispatch: props.dispatch },
+
+  return topSites.reduce(countTopSitesTypes, {
+    "screenshot_with_icon": 0,
+    "screenshot": 0,
+    "tippytop": 0,
+    "rich_icon": 0,
+    "no_image": 0
+  });
+}
+
+class TopSites extends React.PureComponent {
+  componentDidUpdate() {
+    const realTopSites = this.props.TopSites.rows.slice(0, this.props.TopSitesCount);
+
+    const topSitesIconsStats = countTopSitesIconsTypes(realTopSites);
+    
+    this.props.dispatch(ac.SendToMain({
+      type: at.SAVE_SESSION_PERF_DATA,
+      data: { topsites_icon_stats: topSitesIconsStats }
+    }));
+  }
+
+  componentDidMount() {
+    const realTopSites = this.props.TopSites.rows.slice(0, this.props.TopSitesCount);
+
+    const topSitesIconsStats = countTopSitesIconsTypes(realTopSites);
+    
+    this.props.dispatch(ac.SendToMain({
+      type: at.SAVE_SESSION_PERF_DATA,
+      data: { topsites_icon_stats: topSitesIconsStats }
+    }));
+  }
+
+  render() {
+    const props = this.props;
+    const realTopSites = props.TopSites.rows.slice(0, props.TopSitesCount);
+
+    const placeholderCount = props.TopSitesCount - realTopSites.length;
+    const infoOption = {
+      header: { id: "settings_pane_topsites_header" },
+      body: { id: "settings_pane_topsites_body" }
+    };
+    return React.createElement(
+      ComponentPerfTimer,
+      { id: "topsites", initialized: props.TopSites.initialized, dispatch: props.dispatch },
       React.createElement(
-        "ul",
-        { className: "top-sites-list" },
-        realTopSites.map((link, index) => link && React.createElement(TopSite, {
-          key: link.guid || link.url,
-          dispatch: props.dispatch,
-          link: link,
-          index: index,
-          intl: props.intl })),
-        placeholderCount > 0 && [...Array(placeholderCount)].map((_, i) => React.createElement(TopSitePlaceholder, { key: i }))
-      ),
-      React.createElement(TopSitesEdit, props)
-    )
-  );
-};
+        CollapsibleSection,
+        { className: "top-sites", icon: "topsites", title: React.createElement(FormattedMessage, { id: "header_top_sites" }), infoOption: infoOption, prefName: "collapseTopSites", Prefs: props.Prefs, dispatch: props.dispatch },
+        React.createElement(
+          "ul",
+          { className: "top-sites-list" },
+          realTopSites.map((link, index) => link && React.createElement(TopSite, {
+            key: link.guid || link.url,
+            dispatch: props.dispatch,
+            link: link,
+            index: index,
+            intl: props.intl })),
+          placeholderCount > 0 && [...Array(placeholderCount)].map((_, i) => React.createElement(TopSitePlaceholder, { key: i }))
+        ),
+        React.createElement(TopSitesEdit, props)
+      )
+    );
+  }
+}
 
 module.exports = connect(state => ({ TopSites: state.TopSites, Prefs: state.Prefs, TopSitesCount: state.Prefs.values.topSitesCount }))(TopSites);
 module.exports._unconnected = TopSites;
@@ -2188,7 +2255,7 @@ module.exports = {
     icon: "bookmark-hollow",
     action: ac.SendToMain({
       type: at.BOOKMARK_URL,
-      data: { url: site.url, title: site.title }
+      data: { url: site.url, title: site.title, type: site.type }
     }),
     userEvent: "BOOKMARK_ADD"
   }),
@@ -2220,7 +2287,6 @@ module.exports = {
     impression: ac.ImpressionStats({
       source: eventSource,
       block: 0,
-      incognito: true,
       tiles: [{ id: site.guid, pos: index }]
     }),
     userEvent: "BLOCK"
@@ -2266,7 +2332,6 @@ module.exports = {
     impression: ac.ImpressionStats({
       source: eventSource,
       pocket: 0,
-      incognito: true,
       tiles: [{ id: site.guid, pos: index }]
     }),
     userEvent: "SAVE_TO_POCKET"
@@ -2333,7 +2398,7 @@ module.exports = {
 
 
 const React = __webpack_require__(1);
-const { connect } = __webpack_require__(4);
+const { connect } = __webpack_require__(3);
 const { FormattedMessage, injectIntl } = __webpack_require__(2);
 const { actionCreators: ac } = __webpack_require__(0);
 const { IS_NEWTAB } = __webpack_require__(22);
@@ -2431,8 +2496,7 @@ class Search extends React.PureComponent {
   }
 }
 
-
-module.exports = connect(state => ({ locale: state.App.locale }))(injectIntl(Search));
+module.exports = connect()(injectIntl(Search));
 module.exports._unconnected = Search;
 
  }),
@@ -2443,14 +2507,14 @@ module.exports._unconnected = Search;
   
   IS_NEWTAB: global.document && global.document.documentURI === "about:newtab"
 };
-}.call(exports, __webpack_require__(3)))
+}.call(exports, __webpack_require__(4)))
 
  }),
 
  (function(module, exports, __webpack_require__) {
 
 const React = __webpack_require__(1);
-const { connect } = __webpack_require__(4);
+const { connect } = __webpack_require__(3);
 const { FormattedMessage } = __webpack_require__(2);
 const { actionTypes, actionCreators: ac } = __webpack_require__(0);
 
@@ -2552,7 +2616,7 @@ module.exports.Dialog = ConfirmDialog;
  (function(module, exports, __webpack_require__) {
 
 const React = __webpack_require__(1);
-const { connect } = __webpack_require__(4);
+const { connect } = __webpack_require__(3);
 const { FormattedMessage } = __webpack_require__(2);
 const { actionTypes: at, actionCreators: ac } = __webpack_require__(0);
 
@@ -2616,7 +2680,7 @@ module.exports._unconnected = ManualMigration;
  (function(module, exports, __webpack_require__) {
 
 const React = __webpack_require__(1);
-const { connect } = __webpack_require__(4);
+const { connect } = __webpack_require__(3);
 const { injectIntl, FormattedMessage } = __webpack_require__(2);
 const { actionCreators: ac, actionTypes: at } = __webpack_require__(0);
 const { TOP_SITES_DEFAULT_LENGTH, TOP_SITES_SHOWMORE_LENGTH } = __webpack_require__(6);
@@ -2815,7 +2879,7 @@ module.exports.PreferencesInput = PreferencesInput;
 (function(global) {var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 const React = __webpack_require__(1);
-const { connect } = __webpack_require__(4);
+const { connect } = __webpack_require__(3);
 const { injectIntl, FormattedMessage } = __webpack_require__(2);
 const Card = __webpack_require__(27);
 const { PlaceholderCard } = Card;
@@ -2845,8 +2909,7 @@ class Section extends React.PureComponent {
     if (this.needsImpressionStats(cards)) {
       props.dispatch(ac.ImpressionStats({
         source: props.eventSource,
-        tiles: cards.map(link => ({ id: link.guid })),
-        incognito: props.options && props.options.personalized
+        tiles: cards.map(link => ({ id: link.guid }))
       }));
       this.impressionCardGuids = cards.map(link => link.guid);
     }
@@ -2941,7 +3004,7 @@ class Section extends React.PureComponent {
     const {
       id, eventSource, title, icon, rows,
       infoOption, emptyState, dispatch, maxRows,
-      contextMenuOptions, initialized
+      contextMenuOptions, initialized, disclaimer
     } = this.props;
     const maxCards = CARDS_PER_ROW * maxRows;
 
@@ -2963,7 +3026,14 @@ class Section extends React.PureComponent {
       this.props,
       React.createElement(
         CollapsibleSection,
-        { className: "section", icon: icon, title: getFormattedMessage(title), infoOption: infoOption, prefName: `section.${id}.collapsed`, Prefs: this.props.Prefs, dispatch: this.props.dispatch },
+        { className: "section", icon: icon, title: getFormattedMessage(title),
+          infoOption: infoOption,
+          id: id,
+          eventSource: eventSource,
+          disclaimer: disclaimer,
+          prefName: `section.${id}.collapsed`,
+          Prefs: this.props.Prefs,
+          dispatch: this.props.dispatch },
         !shouldShowEmptyState && React.createElement(
           "ul",
           { className: "section-list", style: { padding: 0 } },
@@ -3015,7 +3085,7 @@ module.exports = connect(state => ({ Sections: state.Sections, Prefs: state.Pref
 module.exports._unconnected = Sections;
 module.exports.SectionIntl = SectionIntl;
 module.exports._unconnectedSection = Section;
-}.call(exports, __webpack_require__(3)))
+}.call(exports, __webpack_require__(4)))
 
  }),
 
@@ -3106,7 +3176,6 @@ class Card extends React.PureComponent {
       this.props.dispatch(ac.ImpressionStats({
         source: this.props.eventSource,
         click: 0,
-        incognito: true,
         tiles: [{ id: this.props.link.guid, pos: this.props.index }]
       }));
     }
@@ -3398,6 +3467,7 @@ const { actionTypes: at, actionCreators: ac, actionUtils: au } = __webpack_requi
 const MERGE_STORE_ACTION = "NEW_TAB_INITIAL_STATE";
 const OUTGOING_MESSAGE_NAME = "ActivityStream:ContentToMain";
 const INCOMING_MESSAGE_NAME = "ActivityStream:MainToContent";
+const EARLY_QUEUED_ACTIONS = [at.SAVE_SESSION_PERF_DATA, at.PAGE_PRERENDERED];
 
 
 
@@ -3475,8 +3545,35 @@ const rehydrationMiddleware = store => next => action => {
 
 
 
+const queueEarlyMessageMiddleware = store => next => action => {
+  if (store._receivedFromMain) {
+    next(action);
+  } else if (au.isFromMain(action)) {
+    next(action);
+    store._receivedFromMain = true;
+    
+    if (store._earlyActionQueue) {
+      store._earlyActionQueue.forEach(next);
+      store._earlyActionQueue = [];
+    }
+  } else if (EARLY_QUEUED_ACTIONS.includes(action.type)) {
+    store._earlyActionQueue = store._earlyActionQueue || [];
+    store._earlyActionQueue.push(action);
+  } else {
+    
+    next(action);
+  }
+};
+
+
+
+
+
+
+
+
 module.exports = function initStore(reducers, initialState) {
-  const store = createStore(mergeStateReducer(combineReducers(reducers)), initialState, global.addMessageListener && applyMiddleware(rehydrationMiddleware, messageMiddleware));
+  const store = createStore(mergeStateReducer(combineReducers(reducers)), initialState, global.addMessageListener && applyMiddleware(rehydrationMiddleware, queueEarlyMessageMiddleware, messageMiddleware));
 
   store._didRehydrate = false;
   store._didRequestInitialState = false;
@@ -3496,10 +3593,12 @@ module.exports = function initStore(reducers, initialState) {
 };
 
 module.exports.rehydrationMiddleware = rehydrationMiddleware;
+module.exports.queueEarlyMessageMiddleware = queueEarlyMessageMiddleware;
 module.exports.MERGE_STORE_ACTION = MERGE_STORE_ACTION;
 module.exports.OUTGOING_MESSAGE_NAME = OUTGOING_MESSAGE_NAME;
 module.exports.INCOMING_MESSAGE_NAME = INCOMING_MESSAGE_NAME;
-}.call(exports, __webpack_require__(3)))
+module.exports.EARLY_QUEUED_ACTIONS = EARLY_QUEUED_ACTIONS;
+}.call(exports, __webpack_require__(4)))
 
  }),
 
@@ -3511,16 +3610,16 @@ module.exports = Redux;
 
  (function(module, exports, __webpack_require__) {
 
-(function(global) {const { actionTypes: at } = __webpack_require__(0);
+(function(global) {const { actionTypes: at, actionCreators: ac } = __webpack_require__(0);
 const { perfService: perfSvc } = __webpack_require__(11);
 
 const VISIBLE = "visible";
 const VISIBILITY_CHANGE_EVENT = "visibilitychange";
 
 module.exports = class DetectUserSessionStart {
-  constructor(options = {}) {
+  constructor(store, options = {}) {
+    this._store = store;
     
-    this.sendAsyncMessage = options.sendAsyncMessage || global.sendAsyncMessage;
     this.document = options.document || global.document;
     this._perfService = options.perfService || perfSvc;
     this._onVisibilityChange = this._onVisibilityChange.bind(this);
@@ -3554,10 +3653,10 @@ module.exports = class DetectUserSessionStart {
     try {
       let visibility_event_rcvd_ts = this._perfService.getMostRecentAbsMarkStartByName("visibility_event_rcvd_ts");
 
-      this.sendAsyncMessage("ActivityStream:ContentToMain", {
+      this._store.dispatch(ac.SendToMain({
         type: at.SAVE_SESSION_PERF_DATA,
         data: { visibility_event_rcvd_ts }
-      });
+      }));
     } catch (ex) {
       
       
@@ -3575,7 +3674,7 @@ module.exports = class DetectUserSessionStart {
     }
   }
 };
-}.call(exports, __webpack_require__(3)))
+}.call(exports, __webpack_require__(4)))
 
  }),
 
@@ -3932,7 +4031,7 @@ module.exports = {
   SnippetsProvider,
   SNIPPETS_UPDATE_INTERVAL_MS
 };
-}.call(exports, __webpack_require__(3)))
+}.call(exports, __webpack_require__(4)))
 
  })
  ]);

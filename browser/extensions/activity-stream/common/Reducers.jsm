@@ -6,9 +6,6 @@
 const {actionTypes: at} = Components.utils.import("resource://activity-stream/common/Actions.jsm", {});
 const {Dedupe} = Components.utils.import("resource://activity-stream/common/Dedupe.jsm", {});
 
-
-const RTL_LIST = ["ar", "he", "fa", "ur"];
-
 const TOP_SITES_DEFAULT_LENGTH = 6;
 const TOP_SITES_SHOWMORE_LENGTH = 12;
 
@@ -18,12 +15,6 @@ const INITIAL_STATE = {
   App: {
     
     initialized: false,
-    
-    locale: "",
-    
-    strings: null,
-    
-    textDirection: "",
     
     version: null
   },
@@ -56,17 +47,6 @@ function App(prevState = INITIAL_STATE.App, action) {
   switch (action.type) {
     case at.INIT:
       return Object.assign({}, prevState, action.data || {}, {initialized: true});
-    case at.LOCALE_UPDATED: {
-      if (!action.data) {
-        return prevState;
-      }
-      let {locale, strings} = action.data;
-      return Object.assign({}, prevState, {
-        locale,
-        strings,
-        textDirection: RTL_LIST.indexOf(locale.split("-")[0]) >= 0 ? "rtl" : "ltr"
-      });
-    }
     default:
       return prevState;
   }

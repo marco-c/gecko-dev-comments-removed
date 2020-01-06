@@ -34,79 +34,14 @@ const USER_PREFS_ENCODING = {
   "showSponsored": 1 << 5
 };
 
-const IMPRESSION_STATS_RESET_TIME = 60 * 60 * 1000; 
-const PREF_IMPRESSION_STATS_CLICKED = "impressionStats.clicked";
-const PREF_IMPRESSION_STATS_BLOCKED = "impressionStats.blocked";
-const PREF_IMPRESSION_STATS_POCKETED = "impressionStats.pocketed";
+const PREF_IMPRESSION_ID = "impressionId";
 const TELEMETRY_PREF = "telemetry";
-
-
-
-
-class PersistentGuidSet extends Set {
-  constructor(prefs, prefName) {
-    let guids = [];
-    try {
-      guids = JSON.parse(prefs.get(prefName));
-      if (typeof guids[Symbol.iterator] !== "function") {
-        guids = [];
-        prefs.set(prefName, "[]");
-      }
-    } catch (e) {
-      Cu.reportError(e);
-      prefs.set(prefName, "[]");
-    }
-
-    super(guids);
-
-    this._prefs = prefs;
-    this._prefName = prefName;
-  }
-
-  
-
-
-
-
-
-  save(guid) {
-    if (!this.has(guid)) {
-      this.add(guid);
-      this._prefs.set(this._prefName, JSON.stringify(this.items()));
-      return true;
-    }
-    return false;
-  }
-
-  
-
-
-  clear() {
-    if (this.size !== 0) {
-      this._prefs.set(this._prefName, "[]");
-      super.clear();
-    }
-  }
-
-  
-
-
-  items() {
-    return [...this];
-  }
-}
 
 this.TelemetryFeed = class TelemetryFeed {
   constructor(options) {
     this.sessions = new Map();
     this._prefs = new Prefs();
-    this._impressionStatsLastReset = Date.now();
-    this._impressionStats = {
-      clicked: new PersistentGuidSet(this._prefs, PREF_IMPRESSION_STATS_CLICKED),
-      blocked: new PersistentGuidSet(this._prefs, PREF_IMPRESSION_STATS_BLOCKED),
-      pocketed: new PersistentGuidSet(this._prefs, PREF_IMPRESSION_STATS_POCKETED)
-    };
-
+    this._impressionId = this.getOrCreateImpressionId();
     this.telemetryEnabled = this._prefs.get(TELEMETRY_PREF);
     this._aboutHomeSeen = false;
     this._onTelemetryPrefChange = this._onTelemetryPrefChange.bind(this);
@@ -115,6 +50,15 @@ this.TelemetryFeed = class TelemetryFeed {
 
   init() {
     Services.obs.addObserver(this.browserOpenNewtabStart, "browser-open-newtab-start");
+  }
+
+  getOrCreateImpressionId() {
+    let impressionId = this._prefs.get(PREF_IMPRESSION_ID);
+    if (!impressionId) {
+      impressionId = String(gUUIDGenerator.generateUUID());
+      this._prefs.set(PREF_IMPRESSION_ID, impressionId);
+    }
+    return impressionId;
   }
 
   browserOpenNewtabStart() {
@@ -315,7 +259,7 @@ this.TelemetryFeed = class TelemetryFeed {
     const appInfo = this.store.getState().App;
     const ping = {
       addon_version: appInfo.version,
-      locale: appInfo.locale,
+      locale: Services.locale.getRequestedLocale(),
       user_prefs: this.userPreferences
     };
 
@@ -338,22 +282,17 @@ this.TelemetryFeed = class TelemetryFeed {
 
 
 
-
-
   createImpressionStats(action) {
-    let ping = Object.assign(
+    return Object.assign(
       this.createPing(au.getPortIdOfSender(action)),
       action.data,
-      {action: "activity_stream_impression_stats"}
+      {
+        action: "activity_stream_impression_stats",
+        impression_id: this._impressionId,
+        client_id: "n/a",
+        session_id: "n/a"
+      }
     );
-
-    if (ping.incognito) {
-      ping.client_id = "n/a";
-      ping.session_id = "n/a";
-      delete ping.incognito;
-    }
-
-    return ping;
   }
 
   createUserEvent(action) {
@@ -402,26 +341,7 @@ this.TelemetryFeed = class TelemetryFeed {
   }
 
   handleImpressionStats(action) {
-    const payload = action.data;
-    let guidSet;
-    let index;
-
-    if ("click" in payload) {
-      guidSet = this._impressionStats.clicked;
-      index = payload.click;
-    } else if ("block" in payload) {
-      guidSet = this._impressionStats.blocked;
-      index = payload.block;
-    } else if ("pocket" in payload) {
-      guidSet = this._impressionStats.pocketed;
-      index = payload.pocket;
-    }
-
-    
-    
-    if (!guidSet || guidSet.save(payload.tiles[index].id)) {
-      this.sendEvent(this.createImpressionStats(action));
-    }
+    this.sendEvent(this.createImpressionStats(action));
   }
 
   handleUserEvent(action) {
@@ -430,13 +350,6 @@ this.TelemetryFeed = class TelemetryFeed {
 
   handleUndesiredEvent(action) {
     this.sendEvent(this.createUndesiredEvent(action));
-  }
-
-  resetImpressionStats() {
-    for (const key of Object.keys(this._impressionStats)) {
-      this._impressionStats[key].clear();
-    }
-    this._impressionStatsLastReset = Date.now();
   }
 
   onAction(action) {
@@ -455,11 +368,6 @@ this.TelemetryFeed = class TelemetryFeed {
         break;
       case at.SAVE_SESSION_PERF_DATA:
         this.saveSessionPerfData(au.getPortIdOfSender(action), action.data);
-        break;
-      case at.SYSTEM_TICK:
-        if (Date.now() - this._impressionStatsLastReset >= IMPRESSION_STATS_RESET_TIME) {
-          this.resetImpressionStats();
-        }
         break;
       case at.TELEMETRY_IMPRESSION_STATS:
         this.handleImpressionStats(action);
@@ -535,11 +443,7 @@ this.TelemetryFeed = class TelemetryFeed {
 
 this.EXPORTED_SYMBOLS = [
   "TelemetryFeed",
-  "PersistentGuidSet",
   "USER_PREFS_ENCODING",
-  "IMPRESSION_STATS_RESET_TIME",
-  "TELEMETRY_PREF",
-  "PREF_IMPRESSION_STATS_CLICKED",
-  "PREF_IMPRESSION_STATS_BLOCKED",
-  "PREF_IMPRESSION_STATS_POCKETED"
+  "PREF_IMPRESSION_ID",
+  "TELEMETRY_PREF"
 ];
