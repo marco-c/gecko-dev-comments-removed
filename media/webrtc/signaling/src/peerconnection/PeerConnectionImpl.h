@@ -450,6 +450,7 @@ public:
   GetParameters(dom::MediaStreamTrack& aTrack,
                 std::vector<JsepTrack::JsConstraints>* aOutConstraints);
 
+  
   NS_IMETHODIMP_TO_ERRORRESULT(AddRIDExtension, ErrorResult &rv,
                                dom::MediaStreamTrack& aRecvTrack,
                                unsigned short aExtensionId)
@@ -457,6 +458,7 @@ public:
     rv = AddRIDExtension(aRecvTrack, aExtensionId);
   }
 
+  
   NS_IMETHODIMP_TO_ERRORRESULT(AddRIDFilter, ErrorResult& rv,
                                dom::MediaStreamTrack& aRecvTrack,
                                const nsAString& aRid)
@@ -658,6 +660,8 @@ private:
     return true;
   }
 
+  
+  
   RefPtr<MediaPipeline> GetMediaPipelineForTrack(
       dom::MediaStreamTrack& aRecvTrack);
 
