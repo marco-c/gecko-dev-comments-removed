@@ -164,14 +164,13 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
     
     
     if (js::IsWindow(obj)) {
-        JSAutoCompartment ac(cx, obj);
         obj = js::ToWindowProxyIfWindow(obj);
         MOZ_ASSERT(obj);
         
         
         obj = js::UncheckedUnwrap(obj);
         if (JS_IsDeadWrapper(obj)) {
-            JS_ReportErrorASCII(cx, "Can't wrap dead object");
+            retObj.set(JS_NewDeadWrapper(cx, obj));
             return;
         }
         MOZ_ASSERT(js::IsWindowProxy(obj));
