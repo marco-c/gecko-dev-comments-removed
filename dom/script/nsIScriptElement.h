@@ -66,6 +66,12 @@ public:
     return mUri;
   }
 
+  nsIPrincipal* GetScriptURITriggeringPrincipal()
+  {
+    NS_PRECONDITION(mFrozen, "Not ready for this call yet!");
+    return mSrcTriggeringPrincipal;
+  }
+
   
 
 
@@ -320,6 +326,11 @@ protected:
 
 
   nsCOMPtr<nsIURI> mUri;
+
+  
+
+
+  nsCOMPtr<nsIPrincipal> mSrcTriggeringPrincipal;
 
   
 
