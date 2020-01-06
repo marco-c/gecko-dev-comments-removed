@@ -594,6 +594,15 @@ DevTools.prototype = {
 
 
 
+  openBrowserConsole: function () {
+    let {HUDService} = require("devtools/client/webconsole/hudservice");
+    HUDService.openBrowserConsoleOrFocus();
+  },
+
+  
+
+
+
 
 
 
