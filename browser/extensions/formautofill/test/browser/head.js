@@ -15,7 +15,8 @@ const EDIT_CREDIT_CARD_DIALOG_URL = "chrome://formautofill/content/editCreditCar
 const BASE_URL = "http://mochi.test:8888/browser/browser/extensions/formautofill/test/browser/";
 const FORM_URL = "http://mochi.test:8888/browser/browser/extensions/formautofill/test/browser/autocomplete_basic.html";
 const FTU_PREF = "extensions.formautofill.firstTimeUse";
-const ENABLED_PREF = "extensions.formautofill.addresses.enabled";
+const ENABLED_AUTOFILL_ADDRESSES_PREF = "extensions.formautofill.addresses.enabled";
+const ENABLED_AUTOFILL_CREDITCARDS_PREF = "extensions.formautofill.creditCards.enabled";
 const SYNC_USERNAME_PREF = "services.sync.username";
 const SYNC_ADDRESSES_PREF = "services.sync.engine.addresses";
 
