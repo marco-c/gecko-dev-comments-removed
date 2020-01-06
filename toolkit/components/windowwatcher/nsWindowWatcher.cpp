@@ -778,22 +778,6 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
     }
   }
 
-  
-  
-  
-  if (!aCalledFromJS && aArgv &&
-      WinHasOption(features, "-moz-internal-modal", 0, nullptr)) {
-    windowIsModalContentDialog = true;
-
-    
-    
-    
-    
-    
-    chromeFlags |= nsIWebBrowserChrome::CHROME_MODAL_CONTENT_WINDOW;
-    chromeFlags |= nsIWebBrowserChrome::CHROME_MODAL;
-  }
-
   SizeSpec sizeSpec;
   CalcSizeSpec(features, sizeSpec);
 
