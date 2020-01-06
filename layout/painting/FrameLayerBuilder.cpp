@@ -2273,7 +2273,8 @@ InvalidateEntirePaintedLayer(PaintedLayer* aLayer, AnimatedGeometryRoot* aAnimat
     printf_stderr("Invalidating entire layer %p: %s\n", aLayer, aReason);
   }
 #endif
-  aLayer->InvalidateWholeLayer();
+  nsIntRect invalidate = aLayer->GetValidRegion().GetBounds();
+  aLayer->InvalidateRegion(invalidate);
   aLayer->SetInvalidRectToVisibleRegion();
   ResetScrollPositionForLayerPixelAlignment(aAnimatedGeometryRoot);
 }
@@ -2312,14 +2313,17 @@ ContainerState::AttemptToRecyclePaintedLayer(AnimatedGeometryRoot* aAnimatedGeom
                                              const nsPoint& aTopLeft)
 {
   Layer* oldLayer = mLayerBuilder->GetOldLayerFor(aItem);
-  if (!oldLayer || !oldLayer->AsPaintedLayer() ||
-      !mPaintedLayersAvailableForRecycling.Contains(oldLayer->AsPaintedLayer())) {
+  if (!oldLayer || !oldLayer->AsPaintedLayer()) {
+    return nullptr;
+  }
+
+  if (!mPaintedLayersAvailableForRecycling.EnsureRemoved(oldLayer->AsPaintedLayer())) {
+    
     return nullptr;
   }
 
   
   RefPtr<PaintedLayer> layer = oldLayer->AsPaintedLayer();
-  mPaintedLayersAvailableForRecycling.RemoveEntry(layer);
 
   
   
@@ -3205,7 +3209,7 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
       ParentLayerIntRect emptyRect;
       data->mLayer->SetClipRect(Some(emptyRect));
       data->mLayer->SetVisibleRegion(LayerIntRegion());
-      data->mLayer->InvalidateWholeLayer();
+      data->mLayer->InvalidateRegion(data->mLayer->GetValidRegion().GetBounds());
       data->mLayer->SetEventRegions(EventRegions());
 
       for (auto& item : data->mAssignedDisplayItems) {
@@ -3271,7 +3275,7 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
         printf_stderr("Invalidating layer %p: %s\n", data->mLayer, str.get());
       }
 #endif
-      data->mLayer->InvalidateWholeLayer();
+      data->mLayer->InvalidateRegion(data->mLayer->GetValidRegion());
     }
     userData->mForcedBackgroundColor = backgroundColor;
 
@@ -6354,7 +6358,7 @@ ContainerState::SetupMaskLayer(Layer *aLayer,
   if (paintedData &&
       aRoundedRectClipCount < paintedData->mMaskClipCount) {
     PaintedLayer* painted = aLayer->AsPaintedLayer();
-    painted->InvalidateWholeLayer();
+    painted->InvalidateRegion(painted->GetValidRegion().GetBounds());
   }
 
   
