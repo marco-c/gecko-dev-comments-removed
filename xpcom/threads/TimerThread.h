@@ -116,6 +116,11 @@ private:
       
       return aRight->mTimeout < aLeft->mTimeout;
     }
+
+    TimeStamp Timeout() const
+    {
+      return mTimeout;
+    }
   };
 
   nsTArray<UniquePtr<Entry>> mTimers;
