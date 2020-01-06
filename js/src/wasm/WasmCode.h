@@ -421,20 +421,21 @@ typedef RefPtr<const Metadata> SharedMetadata;
 
 
 
-
-
 class Code : public ShareableBase<Code>
 {
-    UniqueConstCodeSegment              segment_;
+    
+    
+
+    UniqueConstCodeSegment              tier_;
     SharedMetadata                      metadata_;
     ExclusiveData<CacheableCharsVector> profilingLabels_;
 
   public:
     Code();
 
-    Code(UniqueConstCodeSegment segment, const Metadata& metadata);
+    Code(UniqueConstCodeSegment tier, const Metadata& metadata);
 
-    const CodeSegment& segment() const { return *segment_; }
+    const CodeSegment& segmentTier() const { return *tier_; }
     const MetadataTier& metadataTier() const { return metadata_->tier(); }
     const Metadata& metadata() const { return *metadata_; }
 

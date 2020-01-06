@@ -49,10 +49,10 @@ struct InstanceComparator
         
         
         
-        if (instance->codeBase() == target.codeBase())
+        if (instance->codeBaseTier() == target.codeBaseTier())
             return instance < &target ? -1 : 1;
 
-        return target.codeBase() < instance->codeBase() ? -1 : 1;
+        return target.codeBaseTier() < instance->codeBaseTier() ? -1 : 1;
     }
 };
 
@@ -103,9 +103,9 @@ struct PCComparator
     explicit PCComparator(const void* pc) : pc(pc) {}
 
     int operator()(const Instance* instance) const {
-        if (instance->codeSegment().containsCodePC(pc))
+        if (instance->codeSegmentTier().containsCodePC(pc))
             return 0;
-        return pc < instance->codeBase() ? -1 : 1;
+        return pc < instance->codeBaseTier() ? -1 : 1;
     }
 };
 
