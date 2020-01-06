@@ -917,6 +917,18 @@ class WindowBase {
   }
 
   
+
+
+
+
+
+  get title() {
+    if (this.activeTab.hasTabPermission) {
+      return this._title;
+    }
+  }
+
+  
   
   
   
@@ -941,6 +953,13 @@ class WindowBase {
 
 
   getTabs() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+  get activeTab() {
     throw new Error("Not implemented");
   }
   
