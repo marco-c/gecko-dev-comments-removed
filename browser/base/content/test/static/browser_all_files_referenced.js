@@ -167,8 +167,6 @@ var whitelist = [
   
   {file: "resource://gre/modules/Manifest.jsm"},
   
-  {file: "resource://gre/modules/PresentationDeviceInfoManager.jsm"},
-  
   {file: "resource://gre/modules/accessibility/AccessFu.jsm"},
   
   {file: "resource://gre/modules/sdk/bootstrap.js"},

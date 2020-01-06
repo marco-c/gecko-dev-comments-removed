@@ -756,9 +756,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "PopupBoxObject", xbl: true},
 
-    {name: "PresentationDeviceInfoManager",
-     disabled: true},
-
     {name: "Presentation", desktop: false, release: false },
 
     {name: "PresentationAvailability", desktop: false, release: false },
