@@ -4688,14 +4688,23 @@ ModuleEvaluate(JSContext* cx, JS::HandleObject moduleRecord);
 
 
 
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API(JSObject*)
 GetRequestedModules(JSContext* cx, JS::HandleObject moduleRecord);
 
+extern JS_PUBLIC_API(JSString*)
+GetRequestedModuleSpecifier(JSContext* cx, JS::HandleValue requestedModuleObject);
 
-
-
-extern JS_PUBLIC_API(JSScript*)
-GetModuleScript(JSContext* cx, JS::HandleObject moduleRecord);
+extern JS_PUBLIC_API(void)
+GetRequestedModuleSourcePos(JSContext* cx, JS::HandleValue requestedModuleObject,
+                            uint32_t* lineNumber, uint32_t* columnNumber);
 
 extern JS_PUBLIC_API(bool)
 IsModuleErrored(JSObject* moduleRecord);
