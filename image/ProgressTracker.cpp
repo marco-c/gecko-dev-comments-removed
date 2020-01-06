@@ -471,9 +471,11 @@ ProgressTracker::RemoveObserver(IProgressObserver* aObserver)
 
   
   bool removed = mObservers.Write([=](ObserverTable* aTable) {
-    bool removed = aTable->Get(observer, nullptr);
-    aTable->Remove(observer);
-    return removed;
+    if (auto entry = aTable->Lookup(observer)) {
+      entry.Remove();
+      return true;
+    }
+    return false;
   });
 
   
