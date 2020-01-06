@@ -13,6 +13,7 @@ use euclid::Size2D;
 use font_metrics::get_metrics_provider_for_product;
 use gecko::values::convert_nscolor_to_rgba;
 use gecko_bindings::bindings;
+use gecko_bindings::structs;
 use gecko_bindings::structs::{nsCSSKeyword, nsCSSProps_KTableEntry, nsCSSValue, nsCSSUnit, nsStringBuffer};
 use gecko_bindings::structs::{nsMediaExpression_Range, nsMediaFeature};
 use gecko_bindings::structs::{nsMediaFeature_ValueType, nsMediaFeature_RangeType, nsMediaFeature_RequirementFlags};
@@ -425,13 +426,8 @@ impl MediaExpressionValue {
 fn find_feature<F>(mut f: F) -> Option<&'static nsMediaFeature>
     where F: FnMut(&'static nsMediaFeature) -> bool,
 {
-    
-    
-    
-    
-    
     unsafe {
-        let mut features = bindings::Gecko_GetMediaFeatures();
+        let mut features = structs::nsMediaFeatures_features.as_ptr();
         while !(*features).mName.is_null() {
             if f(&*features) {
                 return Some(&*features);
@@ -439,7 +435,6 @@ fn find_feature<F>(mut f: F) -> Option<&'static nsMediaFeature>
             features = features.offset(1);
         }
     }
-
     None
 }
 
