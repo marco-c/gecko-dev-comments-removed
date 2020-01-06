@@ -2975,7 +2975,7 @@ pref("layout.css.float-logical-values.enabled", true);
 pref("layout.css.image-orientation.enabled", true);
 
 
-pref("layout.css.font-display.enabled", false);
+pref("layout.css.font-display.enabled", true);
 
 
 pref("layout.css.font-variations.enabled", false);
