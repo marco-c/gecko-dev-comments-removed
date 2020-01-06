@@ -2126,7 +2126,7 @@ nsPresContext::MediaFeatureValuesChanged(nsRestyleHint aRestyleHint,
     }
 
     
-    for (auto mql : localMediaQueryLists) {
+    for (const auto& mql : localMediaQueryLists) {
       nsAutoMicroTask mt;
       mql->MaybeNotify();
     }
