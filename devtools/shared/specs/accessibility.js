@@ -7,8 +7,6 @@
 const protocol = require("devtools/shared/protocol");
 const { Arg, generateActorSpec, RetVal, types } = protocol;
 
-const { nodeSpec } = require("devtools/shared/specs/inspector");
-
 types.addActorType("accessible");
 
 const accessibleSpec = generateActorSpec({
