@@ -28,7 +28,7 @@ public:
   
   
   void StreamJSON(SpliceableJSONWriter& aWriter,
-                  const mozilla::TimeStamp& aStartTime,
+                  const mozilla::TimeStamp& aProcessStartTime,
                   UniqueStacks& aUniqueStacks);
 
 private:

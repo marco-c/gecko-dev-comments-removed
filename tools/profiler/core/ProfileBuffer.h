@@ -42,16 +42,18 @@ public:
   
   void addTagThreadId(int aThreadId, LastSample* aLS);
 
-  void StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId, double aSinceTime,
-                           JSContext* cx, UniqueStacks& aUniqueStacks);
+  void StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
+                           double aSinceTime, JSContext* cx,
+                           UniqueStacks& aUniqueStacks);
   void StreamMarkersToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
-                           const mozilla::TimeStamp& aStartTime,
+                           const mozilla::TimeStamp& aProcessStartTime,
                            double aSinceTime,
                            UniqueStacks& aUniqueStacks);
 
   
   
-  bool DuplicateLastSample(int aThreadId, const mozilla::TimeStamp& aStartTime,
+  bool DuplicateLastSample(int aThreadId,
+                           const mozilla::TimeStamp& aProcessStartTime,
                            LastSample& aLS);
 
   void addStoredMarker(ProfilerMarker* aStoredMarker);
