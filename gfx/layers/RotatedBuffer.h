@@ -126,16 +126,6 @@ public:
 
 
 
-  bool AdjustTo(const gfx::IntRect& aDestBufferRect,
-                const gfx::IntRect& aDrawBounds,
-                bool aCanHaveRotation,
-                bool aCanDrawRotated);
-
-  
-
-
-
-
   const gfx::IntRect& BufferRect() const { return mBufferRect; }
   const gfx::IntPoint& BufferRotation() const { return mBufferRotation; }
 
