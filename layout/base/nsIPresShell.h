@@ -957,20 +957,6 @@ public:
   
 
 
-  void DisableThemeSupport()
-  {
-    
-    mIsThemeSupportDisabled = true;
-  }
-
-  
-
-
-  bool IsThemeSupportEnabled() const { return !mIsThemeSupportDisabled; }
-
-  
-
-
   virtual nsresult GetAgentStyleSheets(
       nsTArray<RefPtr<mozilla::StyleSheet>>& aSheets) = 0;
 
@@ -1861,9 +1847,6 @@ protected:
 
   
   bool                      mPaintingSuppressed : 1;
-
-  
-  bool                      mIsThemeSupportDisabled : 1;
 
   bool                      mIsActive : 1;
   bool                      mFrozen : 1;

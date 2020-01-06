@@ -2441,9 +2441,6 @@ nsNativeThemeWin::ThemeSupportsWidget(nsPresContext* aPresContext,
   
   
 
-  if (aPresContext && !aPresContext->PresShell()->IsThemeSupportEnabled())
-    return false;
-
   if (aWidgetType == NS_THEME_FOCUS_OUTLINE) {
     return true;
   }
