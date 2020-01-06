@@ -265,7 +265,7 @@ class AutofillRecords {
     this._schemaVersion = schemaVersion;
 
     let hasChanges = (result, record) => this._migrateRecord(record) || result;
-    if (this.data.reduce(hasChanges, false)) {
+    if (this._data.reduce(hasChanges, false)) {
       this._store.saveSoon();
     }
   }
@@ -286,7 +286,7 @@ class AutofillRecords {
 
 
 
-  get data() {
+  get _data() {
     return this._store.data[this._collectionName];
   }
 
@@ -322,9 +322,9 @@ class AutofillRecords {
         includeDeleted: true,
       });
       if (index > -1) {
-        let existing = this.data[index];
+        let existing = this._data[index];
         if (existing.deleted) {
-          this.data.splice(index, 1);
+          this._data.splice(index, 1);
         } else {
           throw new Error(`Record ${recordToSave.guid} already exists`);
         }
@@ -372,7 +372,7 @@ class AutofillRecords {
       sync.changeCounter = 0;
     }
 
-    this.data.push(recordToSave);
+    this._data.push(recordToSave);
 
     this._store.saveSoon();
 
@@ -408,7 +408,7 @@ class AutofillRecords {
     }
 
     
-    let recordFound = this._clone(this.data[recordFoundIndex]);
+    let recordFound = this._clone(this._data[recordFoundIndex]);
     this._stripComputedFields(recordFound);
 
     let recordToUpdate = this._clone(record);
@@ -445,7 +445,7 @@ class AutofillRecords {
     }
 
     this._computeFields(recordFound);
-    this.data[recordFoundIndex] = recordFound;
+    this._data[recordFoundIndex] = recordFound;
 
     this._store.saveSoon();
 
@@ -496,7 +496,7 @@ class AutofillRecords {
         this.log.warn("attempting to remove non-existing entry", guid);
         return;
       }
-      let existing = this.data[index];
+      let existing = this._data[index];
       if (existing.deleted) {
         return; 
       }
@@ -504,7 +504,7 @@ class AutofillRecords {
       if (existingSync) {
         
         
-        this.data[index] = {
+        this._data[index] = {
           guid,
           timeLastModified: Date.now(),
           deleted: true,
@@ -514,7 +514,7 @@ class AutofillRecords {
       } else {
         
         
-        this.data.splice(index, 1);
+        this._data.splice(index, 1);
       }
     }
 
@@ -564,7 +564,7 @@ class AutofillRecords {
   getAll({rawData = false, includeDeleted = false} = {}) {
     this.log.debug("getAll", rawData, includeDeleted);
 
-    let records = this.data.filter(r => !r.deleted || includeDeleted);
+    let records = this._data.filter(r => !r.deleted || includeDeleted);
     
     let clonedRecords = records.map(r => this._cloneAndCleanUp(r));
     clonedRecords.forEach(record => {
@@ -712,12 +712,12 @@ class AutofillRecords {
 
 
   _replaceRecordAt(index, remoteRecord, {keepSyncMetadata = false} = {}) {
-    let localRecord = this.data[index];
+    let localRecord = this._data[index];
     let newRecord = this._clone(remoteRecord);
 
     this._stripComputedFields(newRecord);
 
-    this.data[index] = newRecord;
+    this._data[index] = newRecord;
 
     if (keepSyncMetadata) {
       
@@ -772,7 +772,7 @@ class AutofillRecords {
     this._getSyncMetaData(forkedLocalRecord, true);
 
     this._computeFields(forkedLocalRecord);
-    this.data.push(forkedLocalRecord);
+    this._data.push(forkedLocalRecord);
 
     return forkedLocalRecord;
   }
@@ -803,7 +803,7 @@ class AutofillRecords {
       throw new Error(`Record ${remoteRecord.guid} not found`);
     }
 
-    let localRecord = this.data[localIndex];
+    let localRecord = this._data[localIndex];
     let sync = this._getSyncMetaData(localRecord, true);
 
     let forkedGUID = null;
@@ -857,11 +857,11 @@ class AutofillRecords {
 
       let sync = this._getSyncMetaData(tombstone, true);
       sync.changeCounter = 0;
-      this.data.push(tombstone);
+      this._data.push(tombstone);
       return;
     }
 
-    let existing = this.data[index];
+    let existing = this._data[index];
     let sync = this._getSyncMetaData(existing, true);
     if (sync.changeCounter > 0) {
       
@@ -878,7 +878,7 @@ class AutofillRecords {
 
     
     
-    this.data[index] = {
+    this._data[index] = {
       guid,
       timeLastModified: Date.now(),
       deleted: true,
@@ -900,7 +900,7 @@ class AutofillRecords {
   pullSyncChanges() {
     let changes = {};
 
-    let profiles = this.data;
+    let profiles = this._data;
     for (let profile of profiles) {
       let sync = this._getSyncMetaData(profile, true);
       if (sync.changeCounter < 1) {
@@ -957,7 +957,7 @@ class AutofillRecords {
 
 
   resetSync() {
-    for (let record of this.data) {
+    for (let record of this._data) {
       delete record._sync;
     }
     
@@ -987,7 +987,7 @@ class AutofillRecords {
     }
 
     let index = this._findIndexByGUID(oldID);
-    let profile = this.data[index];
+    let profile = this._data[index];
     if (!profile) {
       throw new Error("changeGUID: no source record");
     }
@@ -1037,7 +1037,7 @@ class AutofillRecords {
       
       throw new Error("Tombstones can't have duplicates");
     }
-    let localRecords = this.data;
+    let localRecords = this._data;
     for (let localRecord of localRecords) {
       if (localRecord.deleted) {
         continue;
@@ -1110,11 +1110,11 @@ class AutofillRecords {
 
   _findByGUID(guid, {includeDeleted = false} = {}) {
     let found = this._findIndexByGUID(guid, {includeDeleted});
-    return found < 0 ? undefined : this.data[found];
+    return found < 0 ? undefined : this._data[found];
   }
 
   _findIndexByGUID(guid, {includeDeleted = false} = {}) {
-    return this.data.findIndex(record => {
+    return this._data.findIndex(record => {
       return record.guid == guid && (!record.deleted || includeDeleted);
     });
   }
@@ -1178,7 +1178,7 @@ class AutofillRecords {
 
   mergeToStorage(targetRecord, strict = false) {
     let mergedGUIDs = [];
-    for (let record of this.data) {
+    for (let record of this._data) {
       if (!record.deleted && this.mergeIfPossible(record.guid, targetRecord, strict)) {
         mergedGUIDs.push(record.guid);
       }
@@ -1665,7 +1665,7 @@ class CreditCards extends AutofillRecords {
   getDuplicateGuid(targetCreditCard) {
     let clonedTargetCreditCard = this._clone(targetCreditCard);
     this._normalizeRecord(clonedTargetCreditCard);
-    for (let creditCard of this.data) {
+    for (let creditCard of this._data) {
       let isDuplicate = this.VALID_FIELDS.every(field => {
         if (!clonedTargetCreditCard[field]) {
           return !creditCard[field];
