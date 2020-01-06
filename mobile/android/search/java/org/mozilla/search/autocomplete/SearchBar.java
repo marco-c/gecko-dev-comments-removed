@@ -139,7 +139,7 @@ public class SearchBar extends FrameLayout {
         engineIcon.setContentDescription(engine.getName());
 
         
-        int color = BitmapUtils.getDominantColor(bitmap);
+        int color = BitmapUtils.getDominantColorCustomImplementation(bitmap);
 
         
         
