@@ -22,6 +22,7 @@
 
 #![deny(missing_docs)]
 
+use arrayvec::ArrayVec;
 use context::TraversalStatistics;
 use dom::{OpaqueNode, SendNode, TElement, TNode};
 use rayon;
@@ -41,22 +42,23 @@ pub const WORK_UNIT_MAX: usize = 16;
 
 
 
-
-
-type NodeList<N> = SmallVec<[SendNode<N>; WORK_UNIT_MAX]>;
+type WorkUnit<N> = ArrayVec<[SendNode<N>; WORK_UNIT_MAX]>;
 
 
 #[allow(unsafe_code)]
 pub fn traverse_dom<E, D>(traversal: &D,
                           root: E,
                           token: PreTraverseToken,
-                          queue: &rayon::ThreadPool)
+                          pool: &rayon::ThreadPool)
     where E: TElement,
           D: DomTraversal<E>,
 {
     let dump_stats = traversal.shared_context().options.dump_style_statistics;
     let start_time = if dump_stats { Some(time::precise_time_s()) } else { None };
-    let mut nodes = NodeList::<E::ConcreteNode>::new();
+
+    
+    
+    let mut nodes = SmallVec::<[SendNode<E::ConcreteNode>; 8]>::new();
 
     debug_assert!(traversal.is_parallel());
     
@@ -82,16 +84,18 @@ pub fn traverse_dom<E, D>(traversal: &D,
     let traversal_data = PerLevelTraversalData {
         current_dom_depth: depth,
     };
-    let tls = ScopedTLS::<D::ThreadLocalContext>::new(queue);
+    let tls = ScopedTLS::<D::ThreadLocalContext>::new(pool);
     let root = root.as_node().opaque();
 
-    queue.install(|| {
+    pool.install(|| {
         rayon::scope(|scope| {
-            traverse_nodes(nodes,
+            let nodes = nodes;
+            traverse_nodes(&*nodes,
                            DispatchMode::TailCall,
                            root,
                            traversal_data,
                            scope,
+                           pool,
                            traversal,
                            &tls);
         });
@@ -144,13 +148,19 @@ fn top_down_dom<'a, 'scope, E, D>(nodes: &'a [SendNode<E::ConcreteNode>],
                                   root: OpaqueNode,
                                   mut traversal_data: PerLevelTraversalData,
                                   scope: &'a rayon::Scope<'scope>,
+                                  pool: &'scope rayon::ThreadPool,
                                   traversal: &'scope D,
                                   tls: &'scope ScopedTLS<'scope, D::ThreadLocalContext>)
     where E: TElement + 'scope,
           D: DomTraversal<E>,
 {
     debug_assert!(nodes.len() <= WORK_UNIT_MAX);
-    let mut discovered_child_nodes = NodeList::<E::ConcreteNode>::new();
+
+    
+    
+    
+    
+    let mut discovered_child_nodes = SmallVec::<[SendNode<E::ConcreteNode>; 128]>::new();
     {
         
         
@@ -174,11 +184,12 @@ fn top_down_dom<'a, 'scope, E, D>(nodes: &'a [SendNode<E::ConcreteNode>],
                 let children = mem::replace(&mut discovered_child_nodes, Default::default());
                 let mut traversal_data_copy = traversal_data.clone();
                 traversal_data_copy.current_dom_depth += 1;
-                traverse_nodes(children,
+                traverse_nodes(&*children,
                                DispatchMode::NotTailCall,
                                root,
                                traversal_data_copy,
                                scope,
+                               pool,
                                traversal,
                                tls);
             }
@@ -203,11 +214,12 @@ fn top_down_dom<'a, 'scope, E, D>(nodes: &'a [SendNode<E::ConcreteNode>],
     
     if !discovered_child_nodes.is_empty() {
         traversal_data.current_dom_depth += 1;
-        traverse_nodes(discovered_child_nodes,
+        traverse_nodes(&discovered_child_nodes,
                        DispatchMode::TailCall,
                        root,
                        traversal_data,
                        scope,
+                       pool,
                        traversal,
                        tls);
     }
@@ -226,11 +238,12 @@ impl DispatchMode {
 }
 
 #[inline]
-fn traverse_nodes<'a, 'scope, E, D>(nodes: NodeList<E::ConcreteNode>,
+fn traverse_nodes<'a, 'scope, E, D>(nodes: &[SendNode<E::ConcreteNode>],
                                     mode: DispatchMode,
                                     root: OpaqueNode,
                                     traversal_data: PerLevelTraversalData,
                                     scope: &'a rayon::Scope<'scope>,
+                                    pool: &'scope rayon::ThreadPool,
                                     traversal: &'scope D,
                                     tls: &'scope ScopedTLS<'scope, D::ThreadLocalContext>)
     where E: TElement + 'scope,
@@ -240,40 +253,31 @@ fn traverse_nodes<'a, 'scope, E, D>(nodes: NodeList<E::ConcreteNode>,
 
     
     
+    
+    
+    let may_dispatch_tail = mode.is_tail_call() &&
+        !pool.current_thread_has_pending_tasks().unwrap();
+
+    
+    
     if nodes.len() <= WORK_UNIT_MAX {
-        if mode.is_tail_call() {
-            
-            top_down_dom(&nodes, root, traversal_data, scope, traversal, tls);
+        let work = nodes.iter().cloned().collect::<WorkUnit<E::ConcreteNode>>();
+        if may_dispatch_tail {
+            top_down_dom(&work, root, traversal_data, scope, pool, traversal, tls);
         } else {
-            
             scope.spawn(move |scope| {
-                let nodes = nodes;
-                top_down_dom(&nodes, root, traversal_data, scope, traversal, tls);
+                let work = work;
+                top_down_dom(&work, root, traversal_data, scope, pool, traversal, tls);
             });
         }
     } else {
-        
-        let mut first_chunk: Option<NodeList<E::ConcreteNode>> = None;
         for chunk in nodes.chunks(WORK_UNIT_MAX) {
-            if mode.is_tail_call() && first_chunk.is_none() {
-                first_chunk = Some(chunk.iter().cloned().collect::<NodeList<E::ConcreteNode>>());
-            } else {
-                let boxed = chunk.iter().cloned().collect::<Vec<_>>().into_boxed_slice();
-                let traversal_data_copy = traversal_data.clone();
-                scope.spawn(move |scope| {
-                    let b = boxed;
-                    top_down_dom(&*b, root, traversal_data_copy, scope, traversal, tls)
-                });
-
-            }
-        }
-
-        
-        
-        debug_assert_eq!(first_chunk.is_some(), mode.is_tail_call());
-        if let Some(c) = first_chunk {
-            debug_assert_eq!(c.len(), WORK_UNIT_MAX);
-            top_down_dom(&*c, root, traversal_data, scope, traversal, tls);
+            let nodes = chunk.iter().cloned().collect::<WorkUnit<E::ConcreteNode>>();
+            let traversal_data_copy = traversal_data.clone();
+            scope.spawn(move |scope| {
+                let n = nodes;
+                top_down_dom(&*n, root, traversal_data_copy, scope, pool, traversal, tls)
+            });
         }
     }
 }
