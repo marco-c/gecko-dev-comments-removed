@@ -113,11 +113,29 @@ class CppEclipseBackend(CommonBackend):
 
         self._write_launch_files(launch_dir)
 
+        cdt_ui_prefs_path = os.path.join(workspace_settings_dir, 'org.eclipse.cdt.ui.prefs')
+        cdt_ui_prefs = STATIC_CDT_UI_PREFS
         
         
-        formatter_prefs_path = os.path.join(settings_dir, 'org.eclipse.cdt.core.prefs')
-        with open(formatter_prefs_path, 'wb') as fh:
-            fh.write(FORMATTER_SETTINGS);
+        
+        cdt_ui_prefs += """org.eclipse.cdt.ui.formatterprofiles=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?>\\n<profiles version\="1">\\n<profile kind\="CodeFormatterProfile" name\="Mozilla" version\="1">\\n"""
+        XML_PREF_TEMPLATE = """<setting id\="@PREF_NAME@" value\="@PREF_VAL@"/>\\n"""
+        for line in FORMATTER_SETTINGS.splitlines():
+            [pref, val] = line.split("=")
+            cdt_ui_prefs += XML_PREF_TEMPLATE.replace("@PREF_NAME@", pref).replace("@PREF_VAL@", val)
+        cdt_ui_prefs += "</profile>\\n</profiles>\\n"
+        with open(cdt_ui_prefs_path, 'wb') as fh:
+            fh.write(cdt_ui_prefs);
+
+        cdt_core_prefs_path = os.path.join(workspace_settings_dir, 'org.eclipse.cdt.core.prefs')
+        with open(cdt_core_prefs_path, 'wb') as fh:
+            cdt_core_prefs = STATIC_CDT_CORE_PREFS
+            
+            
+            
+            
+            cdt_core_prefs += FORMATTER_SETTINGS
+            fh.write(cdt_core_prefs);
 
         editor_prefs_path = os.path.join(workspace_settings_dir, "org.eclipse.ui.editors.prefs");
         with open(editor_prefs_path, 'wb') as fh:
@@ -515,8 +533,10 @@ tabWidth=2
 undoHistorySize=200
 """
 
-FORMATTER_SETTINGS = """eclipse.preferences.version=1
-org.eclipse.cdt.core.formatter.alignment_for_arguments_in_method_invocation=16
+STATIC_CDT_CORE_PREFS="""eclipse.preferences.version=1
+"""
+
+FORMATTER_SETTINGS = """org.eclipse.cdt.core.formatter.alignment_for_arguments_in_method_invocation=16
 org.eclipse.cdt.core.formatter.alignment_for_assignment=16
 org.eclipse.cdt.core.formatter.alignment_for_base_clause_in_type_declaration=80
 org.eclipse.cdt.core.formatter.alignment_for_binary_expression=16
@@ -678,6 +698,12 @@ org.eclipse.cdt.core.formatter.put_empty_statement_on_new_line=true
 org.eclipse.cdt.core.formatter.tabulation.char=space
 org.eclipse.cdt.core.formatter.tabulation.size=2
 org.eclipse.cdt.core.formatter.use_tabs_only_for_leading_indentations=false
+"""
+
+STATIC_CDT_UI_PREFS="""eclipse.preferences.version=1
+formatter_profile=_Mozilla
+formatter_settings_version=1
+org.eclipse.cdt.ui.formatterprofiles.version=1
 """
 
 NOINDEX_TEMPLATE = """eclipse.preferences.version=1
