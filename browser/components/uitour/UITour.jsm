@@ -115,7 +115,13 @@ this.UITour = {
       
       widgetName: "appMenu-fxa-label",
     }],
-    ["addons",      {query: "#appMenu-addons-button"}],
+    ["addons",      {
+      query: (aDocument) => {
+        
+        let node = aDocument.getElementById("add-ons-button");
+        return node ? node : aDocument.getElementById("appMenu-addons-button");
+      },
+    }],
     ["appMenu",     {
       addTargetListener: (aDocument, aCallback) => {
         let panelPopup = aDocument.defaultView.PanelUI.panel;
@@ -146,7 +152,13 @@ this.UITour = {
     }],
     ["help",        {query: "#appMenu-help-button"}],
     ["home",        {query: "#home-button"}],
-    ["library",     {query: "#appMenu-library-button"}],
+    ["library",     {
+      query: (aDocument) => {
+        
+        let node = aDocument.getElementById("library-button");
+        return node ? node : aDocument.getElementById("appMenu-library-button");
+      },
+    }],
     ["pocket", {
       allowAdd: true,
       query: (aDocument) => {
