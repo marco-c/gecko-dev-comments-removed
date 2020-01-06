@@ -5,127 +5,111 @@
 
 const URL = HTTPROOT + "browser_frametree_sample.html";
 const URL_FRAMESET = HTTPROOT + "browser_frametree_sample_frameset.html";
-
-
-
-
+const URL_IFRAMES = HTTPROOT + "browser_frametree_sample_iframes.html";
 
 
 
 
 add_task(async function test_frametree() {
-  const FRAME_TREE_SINGLE = { href: URL };
-  const FRAME_TREE_FRAMESET = {
-    href: URL_FRAMESET,
-    children: [{href: URL}, {href: URL}, {href: URL}]
-  };
-
   
   let tab = BrowserTestUtils.addTab(gBrowser, URL);
   let browser = tab.linkedBrowser;
-  await promiseNewFrameTree(browser);
-  await checkFrameTree(browser, FRAME_TREE_SINGLE,
-    "loading a page resets and creates the frame tree correctly");
+  await promiseBrowserLoaded(browser);
 
   
+  is(await countNonDynamicFrames(browser), 0, "no child frames");
+
   
-  await sendMessage(browser, "ss-test:createDynamicFrames", {id: "frames", url: URL});
   browser.loadURI(URL_FRAMESET);
-  await promiseNewFrameTree(browser);
-  await checkFrameTree(browser, FRAME_TREE_FRAMESET,
-    "dynamic frames created on or after the load event are ignored");
+  await promiseBrowserLoaded(browser);
 
   
+  is(await countNonDynamicFrames(browser), 2, "two non-dynamic child frames");
+
   
-  
+  let pageShowPromise = ContentTask.spawn(browser, null, async () => {
+    return ContentTaskUtils.waitForEvent(this, "pageshow", true);
+  });
   browser.goBack();
-  await promiseNewFrameTree(browser);
-  await checkFrameTree(browser, FRAME_TREE_SINGLE,
-    "loading from bfache resets and creates the frame tree correctly");
+  await pageShowPromise;
 
   
-  
-  browser.loadURI(URL_FRAMESET);
-  executeSoon(() => browser.stop());
-  await promiseNewFrameTree(browser);
+  is(await countNonDynamicFrames(browser), 0, "no child frames");
 
   
-  await sendMessage(browser, "ss-test:createDynamicFrames", {id: "frames", url: URL});
-  browser.loadURI(URL_FRAMESET);
-  await promiseNewFrameTree(browser);
-  await checkFrameTree(browser, FRAME_TREE_FRAMESET,
-    "reloading a page resets and creates the frame tree correctly");
+  await ContentTask.spawn(browser, URL, async ([url]) => {
+    let frame = content.document.createElement("iframe");
+    frame.setAttribute("src", url);
+    content.document.body.appendChild(frame);
+    return ContentTaskUtils.waitForEvent(frame, "load");
+  });
 
   
-  gBrowser.removeTab(tab);
+  is(await countNonDynamicFrames(browser), 0, "we still have a single root frame");
+
+  
+  await promiseRemoveTab(tab);
 });
-
-
 
 
 
 
 add_task(async function test_frametree_dynamic() {
   
-  
-  const FRAME_TREE = {
-    href: URL_FRAMESET,
-    children: [{href: URL}, {href: URL}, {href: URL}]
-  };
-  const FRAME_TREE_REMOVED = {
-    href: URL_FRAMESET,
-    children: [{href: URL}, {href: URL}]
-  };
-
-  
-  let tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let tab = BrowserTestUtils.addTab(gBrowser, URL_IFRAMES);
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
 
   
-  await sendMessage(browser, "ss-test:createDynamicFrames", {id: "frames", url: URL});
-  browser.loadURI(URL_FRAMESET);
-  await promiseNewFrameTree(browser);
+  is(await countNonDynamicFrames(browser), 2, "two non-dynamic child frames");
+  is(await enumerateIndexes(browser), "0,1", "correct indexes 0 and 1");
 
   
-  
-  
-  await checkFrameTree(browser, FRAME_TREE,
-    "frame tree contains first four frames");
+  await ContentTask.spawn(browser, URL, async ([url]) => {
+    let frame = content.document.createElement("iframe");
+    frame.setAttribute("src", url);
+    content.document.body.insertBefore(frame, content.document.getElementsByTagName("iframe")[1]);
+    return ContentTaskUtils.waitForEvent(frame, "load");
+  });
 
   
-  await sendMessage(browser, "ss-test:removeLastFrame", {id: "frames"});
-  
-  await checkFrameTree(browser, FRAME_TREE,
-    "frame tree contains first four frames");
+  is(await countNonDynamicFrames(browser), 2, "two non-dynamic child frames");
+  is(await enumerateIndexes(browser), "0,1", "correct indexes 0 and 1");
 
   
-  await sendMessage(browser, "ss-test:removeLastFrame", {id: "frames"});
-  
-  await checkFrameTree(browser, FRAME_TREE_REMOVED,
-    "frame tree contains first three frames");
+  await ContentTask.spawn(browser, URL, async ([url]) => {
+    let frame = content.document.createElement("iframe");
+    frame.setAttribute("src", url);
+    content.document.body.appendChild(frame);
+    return ContentTaskUtils.waitForEvent(frame, "load");
+  });
 
   
-  gBrowser.removeTab(tab);
+  is(await countNonDynamicFrames(browser), 2, "two non-dynamic child frames");
+  is(await enumerateIndexes(browser), "0,1", "correct indexes 0 and 1");
+
+  
+  await promiseRemoveTab(tab);
 });
 
+async function countNonDynamicFrames(browser) {
+  return await ContentTask.spawn(browser, null, async () => {
+    const ssu = Cc["@mozilla.org/browser/sessionstore/utils;1"]
+                  .getService(Ci.nsISessionStoreUtils);
 
-
-
-
-function checkFrameTree(browser, expected, msg) {
-  return sendMessage(browser, "ss-test:mapFrameTree").then(tree => {
-    is(JSON.stringify(tree), JSON.stringify(expected), msg);
+    let count = 0;
+    ssu.forEachNonDynamicChildFrame(content, () => count++);
+    return count;
   });
 }
 
+async function enumerateIndexes(browser) {
+  return await ContentTask.spawn(browser, null, async () => {
+    const ssu = Cc["@mozilla.org/browser/sessionstore/utils;1"]
+                  .getService(Ci.nsISessionStoreUtils);
 
-
-
-
-
-function promiseNewFrameTree(browser) {
-  let reset = promiseContentMessage(browser, "ss-test:onFrameTreeCollected");
-  let collect = promiseContentMessage(browser, "ss-test:onFrameTreeCollected");
-  return Promise.all([reset, collect]);
+    let indexes = [];
+    ssu.forEachNonDynamicChildFrame(content, (frame, i) => indexes.push(i));
+    return indexes.join(",");
+  });
 }

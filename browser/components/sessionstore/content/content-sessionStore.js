@@ -34,12 +34,12 @@ XPCOMUtils.defineLazyModuleGetter(this, "SessionHistory",
 XPCOMUtils.defineLazyModuleGetter(this, "SessionStorage",
   "resource:///modules/sessionstore/SessionStorage.jsm");
 
-Cu.import("resource:///modules/sessionstore/FrameTree.jsm", this);
-var gFrameTree = new FrameTree(this);
-
 Cu.import("resource:///modules/sessionstore/ContentRestore.jsm", this);
 XPCOMUtils.defineLazyGetter(this, "gContentRestore",
                             () => { return new ContentRestore(this) });
+
+const ssu = Cc["@mozilla.org/browser/sessionstore/utils;1"]
+              .getService(Ci.nsISessionStoreUtils);
 
 
 var gCurrentEpoch = 0;
@@ -76,10 +76,102 @@ function createLazy(fn) {
 
 
 
+function mapFrameTree(cb) {
+  return (function map(frame, cb) {
+    
+    let obj = cb(frame) || {};
+    let children = [];
+
+    
+    ssu.forEachNonDynamicChildFrame(frame, (subframe, index) => {
+      let result = map(subframe, cb);
+      if (result && Object.keys(result).length) {
+        children[index] = result;
+      }
+    });
+
+    if (children.length) {
+      obj.children = children;
+    }
+
+    return Object.keys(obj).length ? obj : null;
+  })(content, cb);
+}
+
+
+
+
+
+var StateChangeNotifier = {
+
+  init() {
+    this._observers = new Set();
+    let ifreq = docShell.QueryInterface(Ci.nsIInterfaceRequestor);
+    let webProgress = ifreq.getInterface(Ci.nsIWebProgress);
+    webProgress.addProgressListener(this, Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT);
+  },
+
+  
+
+
+
+
+
+  addObserver(obs) {
+    this._observers.add(obs);
+  },
+
+  
+
+
+
+
+  notifyObservers(method) {
+    for (let obs of this._observers) {
+      if (obs.hasOwnProperty(method)) {
+        obs[method]();
+      }
+    }
+  },
+
+  
+
+
+  onStateChange(webProgress, request, stateFlags, status) {
+    
+    
+    if (!webProgress.isTopLevel || webProgress.DOMWindow != content) {
+      return;
+    }
+
+    
+    
+    
+    
+    
+    if (!docShell.hasLoadedNonBlankURI) {
+      return;
+    }
+
+    if (stateFlags & Ci.nsIWebProgressListener.STATE_START) {
+      this.notifyObservers("onPageLoadStarted");
+    } else if (stateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
+      this.notifyObservers("onPageLoadCompleted");
+    }
+  },
+
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
+                                         Ci.nsISupportsWeakReference])
+};
+
+
+
+
+
 var EventListener = {
 
   init() {
-    addEventListener("load", this, true);
+    addEventListener("load", ssu.createDynamicFrameEventFilter(this), true);
   },
 
   handleEvent(event) {
@@ -251,7 +343,7 @@ var SessionHistoryListener = {
     
     
     
-    gFrameTree.addObserver(this);
+    StateChangeNotifier.addObserver(this);
 
     
     
@@ -329,11 +421,11 @@ var SessionHistoryListener = {
     this.collect();
   },
 
-  onFrameTreeCollected() {
+  onPageLoadCompleted() {
     this.collect();
   },
 
-  onFrameTreeReset() {
+  onPageLoadStarted() {
     this.collect();
   },
 
@@ -402,30 +494,24 @@ var SessionHistoryListener = {
 
 var ScrollPositionListener = {
   init() {
-    addEventListener("scroll", this);
-    gFrameTree.addObserver(this);
+    addEventListener("scroll", ssu.createDynamicFrameEventFilter(this));
+    StateChangeNotifier.addObserver(this);
   },
 
-  handleEvent(event) {
-    let frame = event.target.defaultView;
-
-    
-    
-    if (gFrameTree.contains(frame)) {
-      MessageQueue.push("scroll", () => this.collect());
-    }
-  },
-
-  onFrameTreeCollected() {
+  handleEvent() {
     MessageQueue.push("scroll", () => this.collect());
   },
 
-  onFrameTreeReset() {
+  onPageLoadCompleted() {
+    MessageQueue.push("scroll", () => this.collect());
+  },
+
+  onPageLoadStarted() {
     MessageQueue.push("scroll", () => null);
   },
 
   collect() {
-    return gFrameTree.map(ScrollPosition.collect);
+    return mapFrameTree(ScrollPosition.collect);
   }
 };
 
@@ -448,26 +534,20 @@ var ScrollPositionListener = {
 
 var FormDataListener = {
   init() {
-    addEventListener("input", this, true);
-    gFrameTree.addObserver(this);
+    addEventListener("input", ssu.createDynamicFrameEventFilter(this), true);
+    StateChangeNotifier.addObserver(this);
   },
 
-  handleEvent(event) {
-    let frame = event.target.ownerGlobal;
-
-    
-    
-    if (gFrameTree.contains(frame)) {
-      MessageQueue.push("formdata", () => this.collect());
-    }
+  handleEvent() {
+    MessageQueue.push("formdata", () => this.collect());
   },
 
-  onFrameTreeReset() {
+  onPageLoadStarted() {
     MessageQueue.push("formdata", () => null);
   },
 
   collect() {
-    return gFrameTree.map(FormData.collect);
+    return mapFrameTree(FormData.collect);
   }
 };
 
@@ -488,13 +568,10 @@ var DocShellCapabilitiesListener = {
   _latestCapabilities: "",
 
   init() {
-    gFrameTree.addObserver(this);
+    StateChangeNotifier.addObserver(this);
   },
 
-  
-
-
-  onFrameTreeReset() {
+  onPageLoadStarted() {
     
     
     let caps = DocShellCapabilities.collect(docShell).join(",");
@@ -518,19 +595,14 @@ var DocShellCapabilitiesListener = {
 
 var SessionStorageListener = {
   init() {
-    addEventListener("MozSessionStorageChanged", this, true);
+    let filter = ssu.createDynamicFrameEventFilter(this);
+    addEventListener("MozSessionStorageChanged", filter, true);
     Services.obs.addObserver(this, "browser:purge-domain-data");
-    gFrameTree.addObserver(this);
+    StateChangeNotifier.addObserver(this);
   },
 
   uninit() {
     Services.obs.removeObserver(this, "browser:purge-domain-data");
-  },
-
-  handleEvent(event) {
-    if (gFrameTree.contains(event.target)) {
-      this.collectFromEvent(event);
-    }
   },
 
   observe() {
@@ -550,7 +622,7 @@ var SessionStorageListener = {
     this._changes = undefined;
   },
 
-  collectFromEvent(event) {
+  handleEvent(event) {
     if (!docShell) {
       return;
     }
@@ -598,16 +670,14 @@ var SessionStorageListener = {
     
     this.resetChanges();
 
-    MessageQueue.push("storage", () => {
-      return SessionStorage.collect(docShell, gFrameTree);
-    });
+    MessageQueue.push("storage", () => SessionStorage.collect(content));
   },
 
-  onFrameTreeCollected() {
+  onPageLoadCompleted() {
     this.collect();
   },
 
-  onFrameTreeReset() {
+  onPageLoadStarted() {
     this.collect();
   }
 };
@@ -795,6 +865,7 @@ var MessageQueue = {
   },
 };
 
+StateChangeNotifier.init();
 EventListener.init();
 MessageListener.init();
 FormDataListener.init();

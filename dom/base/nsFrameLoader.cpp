@@ -2412,6 +2412,10 @@ nsFrameLoader::MaybeCreateDocShell()
   mIsTopLevelContent =
     AddTreeItemToTreeOwner(mDocShell, parentTreeOwner, parentType, docShell);
 
+  if (mIsTopLevelContent) {
+    mDocShell->SetCreatedDynamically(false);
+  }
+
   
   
   nsCOMPtr<nsIDOMEventTarget> chromeEventHandler;
