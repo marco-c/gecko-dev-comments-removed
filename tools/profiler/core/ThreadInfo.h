@@ -230,11 +230,10 @@ public:
 
     mContext = aContext;
 
-    js::SetContextProfilingStack(
-      aContext,
-      (js::ProfileEntry*) RacyInfo()->entries,
-      RacyInfo()->AddressOfStackPointer(),
-      (uint32_t) mozilla::ArrayLength(RacyInfo()->entries));
+    
+    
+    
+    js::SetContextProfilingStack(aContext, RacyInfo());
 
     PollJSSampling();
   }

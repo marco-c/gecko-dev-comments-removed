@@ -415,7 +415,7 @@ extern MOZ_THREAD_LOCAL(PseudoStack*) sPseudoStack;
 
 
 inline void*
-profiler_call_enter(const char* aInfo, js::ProfileEntry::Category aCategory,
+profiler_call_enter(const char* aLabel, js::ProfileEntry::Category aCategory,
                     void* aFrameAddress, uint32_t aLine,
                     const char* aDynamicString = nullptr)
 {
@@ -425,7 +425,7 @@ profiler_call_enter(const char* aInfo, js::ProfileEntry::Category aCategory,
   if (!pseudoStack) {
     return pseudoStack;
   }
-  pseudoStack->push(aInfo, aCategory, aFrameAddress, aLine, aDynamicString);
+  pseudoStack->pushCppFrame(aLabel, aDynamicString, aFrameAddress, aLine, aCategory);
 
   
   
