@@ -677,13 +677,13 @@ WorkerProxyToMainThreadRunnable::Dispatch()
   mWorkerPrivate->AssertIsOnWorkerThread();
 
   if (NS_WARN_IF(!HoldWorker())) {
-    RunBackOnWorkerThread();
+    RunBackOnWorkerThreadForCleanup();
     return false;
   }
 
   if (NS_WARN_IF(NS_FAILED(mWorkerPrivate->DispatchToMainThread(this)))) {
     ReleaseWorker();
-    RunBackOnWorkerThread();
+    RunBackOnWorkerThreadForCleanup();
     return false;
   }
 
@@ -716,6 +716,7 @@ WorkerProxyToMainThreadRunnable::PostDispatchOnMainThread()
     }
 
     
+    
     nsresult
     Cancel() override
     {
@@ -730,7 +731,7 @@ WorkerProxyToMainThreadRunnable::PostDispatchOnMainThread()
       aWorkerPrivate->AssertIsOnWorkerThread();
 
       if (mRunnable) {
-        mRunnable->RunBackOnWorkerThread();
+        mRunnable->RunBackOnWorkerThreadForCleanup();
 
         
         mRunnable->ReleaseWorker();

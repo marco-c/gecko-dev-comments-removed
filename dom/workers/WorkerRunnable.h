@@ -415,6 +415,12 @@ private:
 
 
 
+
+
+
+
+
+
 class WorkerProxyToMainThreadRunnable : public Runnable
 {
 protected:
@@ -426,7 +432,7 @@ protected:
   virtual void RunOnMainThread() = 0;
 
   
-  virtual void RunBackOnWorkerThread() = 0;
+  virtual void RunBackOnWorkerThreadForCleanup() = 0;
 
 public:
   bool Dispatch();

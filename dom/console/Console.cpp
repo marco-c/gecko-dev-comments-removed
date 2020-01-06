@@ -337,7 +337,7 @@ public:
     mWorkerPrivate->AssertIsOnWorkerThread();
 
     if (NS_WARN_IF(!PreDispatch(aCx))) {
-      RunBackOnWorkerThread();
+      RunBackOnWorkerThreadForCleanup();
       return false;
     }
 
@@ -421,7 +421,7 @@ protected:
   }
 
   void
-  RunBackOnWorkerThread() override
+  RunBackOnWorkerThreadForCleanup() override
   {
     mWorkerPrivate->AssertIsOnWorkerThread();
     ReleaseData();
