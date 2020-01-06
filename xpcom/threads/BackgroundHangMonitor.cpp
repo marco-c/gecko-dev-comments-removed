@@ -262,7 +262,7 @@ private:
 };
 
 StaticRefPtr<BackgroundHangManager> BackgroundHangManager::sInstance;
-bool BackgroundHangManager::sDisabled = true;
+bool BackgroundHangManager::sDisabled = false;
 
 MOZ_THREAD_LOCAL(BackgroundHangThread*) BackgroundHangThread::sTlsKey;
 bool BackgroundHangThread::sTlsKeyInitialized;
@@ -299,12 +299,6 @@ BackgroundHangManager::~BackgroundHangManager()
 void
 BackgroundHangManager::RunMonitorThread()
 {
-  
-  
-  
-  
-  profiler_initialize_stackwalk();
-
   
   MonitorAutoLock autoLock(mLock);
 
@@ -773,10 +767,6 @@ BackgroundHangMonitor::Startup()
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 #ifdef MOZ_ENABLE_BACKGROUND_HANG_MONITOR
   MOZ_ASSERT(!BackgroundHangManager::sInstance, "Already initialized");
-
-  
-  MOZ_ASSERT(BackgroundHangManager::sDisabled);
-  BackgroundHangManager::sDisabled = false;
 
   if (!strcmp(NS_STRINGIFY(MOZ_UPDATE_CHANNEL), "beta")) {
     if (XRE_IsParentProcess()) { 

@@ -64,7 +64,6 @@
 #include "shared-libraries.h"
 #include "prdtoa.h"
 #include "prtime.h"
-#include "prenv.h"
 
 #ifdef MOZ_TASK_TRACER
 #include "GeckoTaskTracer.h"
@@ -170,6 +169,9 @@ class CorePS
 private:
   CorePS()
     : mProcessStartTime(TimeStamp::ProcessCreation())
+#ifdef USE_LUL_STACKWALK
+    , mLul(nullptr)
+#endif
   {}
 
   ~CorePS()
@@ -201,17 +203,18 @@ public:
   
   static bool Exists() { return !!sInstance; }
 
-  static size_t SizeOf(PSLockRef, MallocSizeOf aMallocSizeOf)
+  static void AddSizeOf(PSLockRef, MallocSizeOf aMallocSizeOf,
+                        size_t& aProfSize, size_t& aLulSize)
   {
-    size_t profSize = aMallocSizeOf(sInstance);
+    aProfSize += aMallocSizeOf(sInstance);
 
     for (uint32_t i = 0; i < sInstance->mLiveThreads.size(); i++) {
-      profSize +=
+      aProfSize +=
         sInstance->mLiveThreads.at(i)->SizeOfIncludingThis(aMallocSizeOf);
     }
 
     for (uint32_t i = 0; i < sInstance->mDeadThreads.size(); i++) {
-      profSize +=
+      aProfSize +=
         sInstance->mDeadThreads.at(i)->SizeOfIncludingThis(aMallocSizeOf);
     }
 
@@ -222,7 +225,11 @@ public:
     
     
 
-    return profSize;
+#if defined(USE_LUL_STACKWALK)
+    if (sInstance->mLul) {
+      aLulSize += sInstance->mLul->SizeOfIncludingThis(aMallocSizeOf);
+    }
+#endif
   }
 
   
@@ -230,6 +237,14 @@ public:
 
   PS_GET(ThreadVector&, LiveThreads)
   PS_GET(ThreadVector&, DeadThreads)
+
+#ifdef USE_LUL_STACKWALK
+  static lul::LUL* Lul(PSLockRef) { return sInstance->mLul.get(); }
+  static void SetLul(PSLockRef, UniquePtr<lul::LUL> aLul)
+  {
+    sInstance->mLul = Move(aLul);
+  }
+#endif
 
 private:
   
@@ -245,6 +260,11 @@ private:
   
   ThreadVector mLiveThreads;
   ThreadVector mDeadThreads;
+
+#ifdef USE_LUL_STACKWALK
+  
+  UniquePtr<lul::LUL> mLul;
+#endif
 };
 
 CorePS* CorePS::sInstance = nullptr;
@@ -605,82 +625,6 @@ MOZ_THREAD_LOCAL(PseudoStack*) AutoProfilerLabel::sPseudoStack;
 
 
 static const char* const kMainThreadName = "GeckoMain";
-
-#if defined(USE_LUL_STACKWALK)
-
-
-
-
-
-
-class LulPS {
-public:
-  
-  
-  static bool Exists() {
-    
-    
-    mozilla::StaticMutexAutoLock lock(sLulMutex);
-    return !!sLul;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  static lul::LUL* Get()
-  {
-    MOZ_RELEASE_ASSERT(sLul, "Lul must have been initialized when Get() is called");
-    return sLul;
-  }
-
-  
-  static lul::LUL* GetOrCreate()
-  {
-    mozilla::StaticMutexAutoLock lock(sLulMutex);
-    if (sLul) {
-      return sLul;
-    }
-
-    lul::LUL* lul = new lul::LUL(logging_sink_for_LUL);
-    read_procmaps(lul);
-
-    
-    
-    
-    lul->EnableUnwinding();
-
-    
-    if (PR_GetEnv("MOZ_PROFILER_LUL_TEST")) {
-      int nTests = 0, nTestsPassed = 0;
-      RunLulUnitTests(&nTests, &nTestsPassed, lul);
-    }
-
-    sLul = lul;
-    return sLul;
-  }
-
-  static void Destroy()
-  {
-    mozilla::StaticMutexAutoLock lock(sLulMutex);
-    if (sLul) {
-      delete sLul;
-      sLul = nullptr;
-    }
-  }
-
-private:
-  static mozilla::StaticMutex sLulMutex;
-  static lul::LUL* sLul;
-};
-
-mozilla::StaticMutex LulPS::sLulMutex;
-lul::LUL* LulPS::sLul = nullptr;
-#endif
 
 
 
@@ -1279,7 +1223,7 @@ DoNativeBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
   }
 
   size_t framePointerFramesAcquired = 0;
-  lul::LUL* lul = LulPS::Get();
+  lul::LUL* lul = CorePS::Lul(aLock);
   lul->Unwind(reinterpret_cast<uintptr_t*>(aNativeStack.mPCs),
               reinterpret_cast<uintptr_t*>(aNativeStack.mSPs),
               &aNativeStack.mCount, &framePointerFramesAcquired,
@@ -1740,7 +1684,7 @@ PrintUsageThenExit(int aExitCode)
     "  If set, the profiler saves a profile to the named file on shutdown.\n"
     "\n"
     "  MOZ_PROFILER_LUL_TEST\n"
-    "  If set to any value, runs LUL unit tests when it is initialized.\n"
+    "  If set to any value, runs LUL unit tests at startup.\n"
     "\n"
     "  This platform %s native unwinding.\n"
     "\n",
@@ -1951,8 +1895,7 @@ SamplerThread::Run()
         
         
         
-        lul::LUL* lul = LulPS::Get();
-        lul->MaybeShowStats();
+        CorePS::Lul(lock)->MaybeShowStats();
 #endif
       }
     }
@@ -2016,12 +1959,13 @@ GeckoProfilerReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   size_t profSize = 0;
+  size_t lulSize = 0;
 
   {
     PSAutoLock lock(gPSMutex);
 
     if (CorePS::Exists()) {
-      profSize += CorePS::SizeOf(lock, GeckoProfilerMallocSizeOf);
+      CorePS::AddSizeOf(lock, GeckoProfilerMallocSizeOf, profSize, lulSize);
     }
 
     if (ActivePS::Exists(lock)) {
@@ -2035,12 +1979,6 @@ GeckoProfilerReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
     "by LUL).");
 
 #if defined(USE_LUL_STACKWALK)
-  size_t lulSize = 0;
-
-  if (LulPS::Exists()) {
-    lulSize += LulPS::Get()->SizeOfIncludingThis(GeckoProfilerMallocSizeOf);
-  }
-
   MOZ_COLLECT_REPORT(
     "explicit/profiler/lul", KIND_HEAP, UNITS_BYTES, lulSize,
     "Memory used by LUL, a stack unwinder used by the Gecko Profiler.");
@@ -2298,10 +2236,6 @@ profiler_shutdown()
     }
 
     CorePS::Destroy(lock);
-
-#ifdef USE_LUL_STACKWALK
-    LulPS::Destroy();
-#endif
 
     
     
@@ -3153,17 +3087,6 @@ profiler_suspend_and_sample_thread(
       break;
     }
   }
-}
-
-void
-profiler_initialize_stackwalk()
-{
-#if defined(USE_EHABI_STACKWALK)
-  mozilla::EHABIStackWalkInit();
-#elif defined(USE_LUL_STACKWALK)
-  lul::LUL* lul = LulPS::GetOrCreate();
-  MOZ_RELEASE_ASSERT(lul);
-#endif
 }
 
 
