@@ -96,6 +96,14 @@ async function removeDevice(device, type = "phones") {
 
 
 
+async function removeLocalDevices() {
+  await asyncStorage.removeItem(LOCAL_DEVICES);
+  localDevices = {};
+}
+
+
+
+
 async function getDevices() {
   
   let devices = await getJSON(DEVICES_URL);
@@ -120,6 +128,7 @@ function getDeviceString(deviceType) {
 module.exports = {
   addDevice,
   removeDevice,
+  removeLocalDevices,
   getDevices,
   getDeviceString,
 };
