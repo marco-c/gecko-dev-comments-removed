@@ -23,6 +23,17 @@ function* do_run_test() {
   let profile = do_get_profile();
 
   
+  
+  Services.cookiemgr.sessionEnumerator;
+
+  
+  do_close_profile(test_generator);
+  yield;
+
+  
+  do_get_cookie_file(profile).remove(false);
+
+  
   let schema3db = new CookieDatabaseConnection(do_get_cookie_file(profile), 3);
 
   let now = Date.now() * 1000;
@@ -79,6 +90,8 @@ function* do_run_test() {
 
   
   
+  do_load_profile();
+
   
   do_check_eq(Services.cookiemgr.countCookiesFromHost("foo.com"), 20);
 
