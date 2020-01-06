@@ -2670,7 +2670,7 @@ Toolbox.prototype = {
   initPerformance: Task.async(function* () {
     
     
-    if (!this.target.hasActor("profiler")) {
+    if (!this.target.hasActor("performance")) {
       return promise.resolve();
     }
 
