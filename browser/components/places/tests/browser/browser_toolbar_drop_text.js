@@ -24,7 +24,6 @@ add_task(async function test() {
   let placesItems = document.getElementById("PlacesToolbarItems");
   ok(placesItems, "PlacesToolbarItems should not be null");
   ok(placesItems.localName == "scrollbox", "PlacesToolbarItems should not be null");
-  ok(placesItems.childNodes[0], "PlacesToolbarItems must have at least one child");
 
   
 
@@ -39,7 +38,12 @@ add_task(async function test() {
     let promiseItemAddedNotification = promiseBookmarksNotification(
       "onItemAdded", (itemId, parentId, index, type, uri, guid) => uri.spec == url);
 
-    EventUtils.synthesizeDrop(placesItems.childNodes[0],
+    
+    
+    
+    
+    
+    EventUtils.synthesizeDrop(toolbar,
                               placesItems,
                               [[{type: aMimeType,
                                 data: url}]],
@@ -80,7 +84,8 @@ add_task(async function test() {
     let promiseItemAddedNotification = promiseBookmarksNotification(
       "onItemAdded", (itemId, parentId, index, type, uri, guid) => uri.spec == urls[2]);
 
-    EventUtils.synthesizeDrop(placesItems.childNodes[0],
+    
+    EventUtils.synthesizeDrop(toolbar,
                               placesItems,
                               [[{type: aMimeType,
                                  data}]],
