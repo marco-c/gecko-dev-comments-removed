@@ -113,6 +113,15 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
   }
 
   if (aLoadingContext) {
+    
+    
+    
+    nsCOMPtr<nsPIDOMWindowInner> contextInner =
+      aLoadingContext->OwnerDoc()->GetInnerWindow();
+    if (contextInner) {
+      mClientInfo = contextInner->GetClientInfo();
+    }
+
     nsCOMPtr<nsPIDOMWindowOuter> contextOuter = aLoadingContext->OwnerDoc()->GetWindow();
     if (contextOuter) {
       ComputeIsThirdPartyContext(contextOuter);
