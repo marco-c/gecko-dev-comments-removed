@@ -77,7 +77,7 @@ function getStore(type) {
 
 
 
-async function getTopItem(type, key) {
+function getTopItem(type, key) {
   let store = getStore(type);
 
   let keyInfo = store.data[type][key];
@@ -126,7 +126,7 @@ function precedenceComparator(a, b) {
 
 
 
-async function alterSetting(extension, type, key, action) {
+function alterSetting(extension, type, key, action) {
   let returnItem;
   let store = getStore(type);
 
@@ -171,7 +171,7 @@ async function alterSetting(extension, type, key, action) {
   }
 
   if (foundIndex === 0) {
-    returnItem = await getTopItem(type, key);
+    returnItem = getTopItem(type, key);
   }
 
   if (action === "remove" && keyInfo.precedenceList.length === 0) {
@@ -318,7 +318,7 @@ this.ExtensionSettingsStore = {
 
 
 
-  async getAllForExtension(extension, type) {
+  getAllForExtension(extension, type) {
     let store = getStore(type);
 
     let keysObj = store.data[type];
@@ -342,6 +342,20 @@ this.ExtensionSettingsStore = {
 
   getSetting(type, key) {
     return getTopItem(type, key);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  hasSetting(extension, type, key) {
+    return this.getAllForExtension(extension, type).includes(key);
   },
 
   
