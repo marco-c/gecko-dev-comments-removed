@@ -4941,6 +4941,48 @@ InitDispatchToEventLoop(JSContext* cx, DispatchToEventLoopCallback callback, voi
 
 
 
+
+
+
+
+
+class JS_PUBLIC_API(StreamConsumer)
+{
+  protected:
+    
+    StreamConsumer() = default;
+    virtual ~StreamConsumer() = default;
+
+  public:
+    
+    
+    
+    virtual bool consumeChunk(const uint8_t* begin, size_t length) = 0;
+
+    
+    
+    enum CloseReason { EndOfFile, Error };
+    virtual void streamClosed(CloseReason reason) = 0;
+};
+
+enum class MimeType { Wasm };
+
+typedef bool
+(*ConsumeStreamCallback)(JSContext* cx, JS::HandleObject obj, MimeType mimeType,
+                         StreamConsumer* consumer);
+
+extern JS_PUBLIC_API(void)
+InitConsumeStreamCallback(JSContext* cx, ConsumeStreamCallback callback);
+
+
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API(void)
 ShutdownAsyncTasks(JSContext* cx);
 
