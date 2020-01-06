@@ -72,7 +72,7 @@ function check_histogram(histogram_type, name, min, max, bucket_count) {
   for (let i of s.counts) {
     do_check_eq(i, 1);
   }
-  var hgrams = Telemetry.histogramSnapshots.parent;
+  var hgrams = Telemetry.histogramSnapshots
   let gh = hgrams[name]
   do_check_eq(gh.histogram_type, histogram_type);
 
@@ -114,7 +114,7 @@ function test_instantiate() {
   
   h.add(1);
   let snapshot = h.snapshot();
-  let subsession = Telemetry.snapshotSubsessionHistograms().parent;
+  let subsession = Telemetry.snapshotSubsessionHistograms();
   Assert.ok(ID in subsession);
   Assert.equal(snapshot.sum, subsession[ID].sum,
                "Histogram and subsession histogram sum must match.");
@@ -172,7 +172,7 @@ add_task(async function test_noSerialization() {
   
   
   Telemetry.getHistogramById("NEWTAB_PAGE_PINNED_SITES_COUNT");
-  do_check_false("NEWTAB_PAGE_PINNED_SITES_COUNT" in Telemetry.histogramSnapshots.parent);
+  do_check_false("NEWTAB_PAGE_PINNED_SITES_COUNT" in Telemetry.histogramSnapshots);
 });
 
 add_task(async function test_boolean_histogram() {
@@ -439,14 +439,8 @@ add_task(async function test_expired_histogram() {
 
   dummy.add(1);
 
-  for (let process of ["main", "content", "gpu", "extension"]) {
-    if (!(process in Telemetry.histogramSnapshots)) {
-      do_print("Nothing present for process " + process);
-      continue;
-    }
-    do_check_eq(Telemetry.histogramSnapshots[process]["__expired__"], undefined);
-  }
-  do_check_eq(Telemetry.histogramSnapshots.parent[test_expired_id], undefined);
+  do_check_eq(Telemetry.histogramSnapshots["__expired__"], undefined);
+  do_check_eq(Telemetry.histogramSnapshots[test_expired_id], undefined);
   do_check_eq(rh[test_expired_id], undefined);
 });
 
@@ -503,7 +497,7 @@ add_task(async function test_keyed_boolean_histogram() {
   Assert.deepEqual(h.keys().sort(), testKeys);
   Assert.deepEqual(h.snapshot(), testSnapShot);
 
-  let allSnapshots = Telemetry.keyedHistogramSnapshots.parent;
+  let allSnapshots = Telemetry.keyedHistogramSnapshots;
   Assert.deepEqual(allSnapshots[KEYED_ID], testSnapShot);
 
   h.clear();
@@ -559,7 +553,7 @@ add_task(async function test_keyed_count_histogram() {
   Assert.deepEqual(h.keys().sort(), testKeys);
   Assert.deepEqual(h.snapshot(), testSnapShot);
 
-  let allSnapshots = Telemetry.keyedHistogramSnapshots.parent;
+  let allSnapshots = Telemetry.keyedHistogramSnapshots;
   Assert.deepEqual(allSnapshots[KEYED_ID], testSnapShot);
 
   
@@ -632,7 +626,7 @@ add_task(async function test_keyed_flag_histogram() {
   Assert.deepEqual(h.keys().sort(), [KEY]);
   Assert.deepEqual(h.snapshot(), testSnapshot);
 
-  let allSnapshots = Telemetry.keyedHistogramSnapshots.parent;
+  let allSnapshots = Telemetry.keyedHistogramSnapshots;
   Assert.deepEqual(allSnapshots[KEYED_ID], testSnapshot);
 
   h.clear();
@@ -782,7 +776,7 @@ add_task(async function test_histogramSnapshots() {
   keyed.add("a", 1);
 
   
-  Assert.ok(!("TELEMETRY_TEST_KEYED_COUNT" in Telemetry.histogramSnapshots.parent));
+  Assert.ok(!("TELEMETRY_TEST_KEYED_COUNT#a" in Telemetry.histogramSnapshots));
 });
 
 add_task(async function test_datasets() {
@@ -825,15 +819,15 @@ function test_subsession() {
 
   
   h.clear();
-  let snapshot = Telemetry.histogramSnapshots.parent;
-  let subsession = Telemetry.snapshotSubsessionHistograms().parent;
+  let snapshot = Telemetry.histogramSnapshots;
+  let subsession = Telemetry.snapshotSubsessionHistograms();
   Assert.ok(!(COUNT in snapshot));
   Assert.ok(!(COUNT in subsession));
 
   
   h.add(1);
-  snapshot = Telemetry.histogramSnapshots.parent;
-  subsession = Telemetry.snapshotSubsessionHistograms().parent;
+  snapshot = Telemetry.histogramSnapshots;
+  subsession = Telemetry.snapshotSubsessionHistograms();
   Assert.ok(COUNT in snapshot);
   Assert.ok(COUNT in subsession);
   Assert.equal(snapshot[COUNT].sum, 1);
@@ -841,15 +835,15 @@ function test_subsession() {
 
   
   h.clear();
-  snapshot = Telemetry.histogramSnapshots.parent;
-  subsession = Telemetry.snapshotSubsessionHistograms().parent;
+  snapshot = Telemetry.histogramSnapshots;
+  subsession = Telemetry.snapshotSubsessionHistograms();
   Assert.ok(!(COUNT in snapshot));
   Assert.ok(!(COUNT in subsession));
 
   
   h.add(1);
-  snapshot = Telemetry.histogramSnapshots.parent;
-  subsession = Telemetry.snapshotSubsessionHistograms().parent;
+  snapshot = Telemetry.histogramSnapshots;
+  subsession = Telemetry.snapshotSubsessionHistograms();
   Assert.ok(COUNT in snapshot);
   Assert.ok(COUNT in subsession);
   Assert.equal(snapshot[COUNT].sum, 1);
@@ -857,16 +851,16 @@ function test_subsession() {
 
   
   h.clear(true);
-  snapshot = Telemetry.histogramSnapshots.parent;
-  subsession = Telemetry.snapshotSubsessionHistograms().parent;
+  snapshot = Telemetry.histogramSnapshots;
+  subsession = Telemetry.snapshotSubsessionHistograms();
   Assert.ok(COUNT in snapshot);
   Assert.ok(!(COUNT in subsession));
   Assert.equal(snapshot[COUNT].sum, 1);
 
   
   h.add(1);
-  snapshot = Telemetry.histogramSnapshots.parent;
-  subsession = Telemetry.snapshotSubsessionHistograms().parent;
+  snapshot = Telemetry.histogramSnapshots;
+  subsession = Telemetry.snapshotSubsessionHistograms();
   Assert.equal(snapshot[COUNT].sum, 2);
   Assert.equal(subsession[COUNT].sum, 1);
 
@@ -876,8 +870,8 @@ function test_subsession() {
   flag.clear();
   h.add(1);
   flag.add(1);
-  snapshot = Telemetry.histogramSnapshots.parent;
-  subsession = Telemetry.snapshotSubsessionHistograms(true).parent;
+  snapshot = Telemetry.histogramSnapshots;
+  subsession = Telemetry.snapshotSubsessionHistograms(true);
   Assert.ok(COUNT in snapshot);
   Assert.ok(COUNT in subsession);
   Assert.ok(FLAG in snapshot);
@@ -889,8 +883,8 @@ function test_subsession() {
 
   
   
-  snapshot = Telemetry.histogramSnapshots.parent;
-  subsession = Telemetry.snapshotSubsessionHistograms().parent;
+  snapshot = Telemetry.histogramSnapshots;
+  subsession = Telemetry.snapshotSubsessionHistograms();
   Assert.ok(COUNT in snapshot);
   Assert.ok(!(COUNT in subsession));
   Assert.ok(FLAG in snapshot);
