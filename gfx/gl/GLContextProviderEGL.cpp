@@ -84,6 +84,9 @@ using namespace mozilla::widget;
 static bool
 CreateConfig(EGLConfig* aConfig, bool aEnableDepthBuffer);
 
+static bool
+CreateConfig(EGLConfig* aConfig, int32_t depth, bool aEnableDepthBuffer);
+
 
 
 
@@ -177,9 +180,19 @@ GLContextEGLFactory::Create(EGLNativeWindowType aWindow,
     bool doubleBuffered = true;
 
     EGLConfig config;
-    if (!CreateConfig(&config, aWebRender)) {
-        gfxCriticalNote << "Failed to create EGLConfig!";
-        return nullptr;
+    if (aWebRender && sEGLLibrary.IsANGLE()) {
+        
+        const int bpp = 32;
+        const bool withDepth = true;
+        if (!CreateConfig(&config, bpp, withDepth)) {
+            gfxCriticalNote << "Failed to create EGLConfig for WebRender ANGLE!";
+            return nullptr;
+        }
+    } else {
+        if (!CreateConfig(&config, aWebRender)) {
+            gfxCriticalNote << "Failed to create EGLConfig!";
+            return nullptr;
+        }
     }
 
     EGLSurface surface = mozilla::gl::CreateSurfaceFromNativeWindow(aWindow, config);
