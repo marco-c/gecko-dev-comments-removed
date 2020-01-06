@@ -195,7 +195,7 @@ static bool sNeedsFullCC = false;
 static bool sNeedsFullGC = false;
 static bool sNeedsGCAfterCC = false;
 static bool sIncrementalCC = false;
-static int32_t sActiveIntersliceGCBudget = 0; 
+static int32_t sActiveIntersliceGCBudget = 5; 
 static nsScriptNameSpaceManager *gNameSpaceManager;
 
 static PRTime sFirstCollectionTime;
