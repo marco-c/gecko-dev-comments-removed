@@ -8,6 +8,7 @@
 
 #include "gfxFont.h"
 #include "gfxFontFamilyList.h"
+#include "gfxFontSrcPrincipal.h"
 #include "gfxFontSrcURI.h"
 #include "nsRefPtrHashtable.h"
 #include "nsCOMPtr.h"
@@ -59,7 +60,7 @@ struct gfxFontFaceSrc {
     RefPtr<gfxFontSrcURI>  mURI;           
     nsCOMPtr<nsIURI>       mReferrer;      
     mozilla::net::ReferrerPolicy mReferrerPolicy;
-    nsCOMPtr<nsIPrincipal> mOriginPrincipal; 
+    RefPtr<gfxFontSrcPrincipal> mOriginPrincipal; 
 
     RefPtr<gfxFontFaceBufferSource> mBuffer;
 };
@@ -112,7 +113,7 @@ public:
 
     nsTArray<uint8_t> mMetadata;  
     RefPtr<gfxFontSrcURI>  mURI;       
-    nsCOMPtr<nsIPrincipal> mPrincipal; 
+    RefPtr<gfxFontSrcPrincipal> mPrincipal; 
     nsString          mLocalName; 
     nsString          mRealName;  
     uint32_t          mSrcIndex;  
@@ -257,10 +258,10 @@ public:
     
     
     virtual nsresult CheckFontLoad(const gfxFontFaceSrc* aFontFaceSrc,
-                                   nsIPrincipal** aPrincipal,
+                                   gfxFontSrcPrincipal** aPrincipal,
                                    bool* aBypassCache) = 0;
 
-    virtual nsIPrincipal* GetStandardFontLoadPrincipal() = 0;
+    virtual gfxFontSrcPrincipal* GetStandardFontLoadPrincipal() = 0;
 
     
     virtual bool IsFontLoadAllowed(nsIURI* aFontLocation,
@@ -303,7 +304,7 @@ public:
         
         
         static gfxFontEntry* GetFont(gfxFontSrcURI* aSrcURI,
-                                     nsIPrincipal* aPrincipal,
+                                     gfxFontSrcPrincipal* aPrincipal,
                                      gfxUserFontEntry* aUserFontEntry,
                                      bool              aPrivate);
 
@@ -369,13 +370,13 @@ public:
         
         struct Key {
             RefPtr<gfxFontSrcURI>   mURI;
-            nsCOMPtr<nsIPrincipal>  mPrincipal; 
+            RefPtr<gfxFontSrcPrincipal> mPrincipal; 
             
             
             gfxFontEntry* MOZ_NON_OWNING_REF mFontEntry;
             bool                    mPrivate;
 
-            Key(gfxFontSrcURI* aURI, nsIPrincipal* aPrincipal,
+            Key(gfxFontSrcURI* aURI, gfxFontSrcPrincipal* aPrincipal,
                 gfxFontEntry* aFontEntry, bool aPrivate)
                 : mURI(aURI),
                   mPrincipal(aPrincipal),
@@ -410,10 +411,8 @@ public:
             static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
 
             static PLDHashNumber HashKey(const KeyTypePointer aKey) {
-                uint32_t principalHash = 0;
-                if (aKey->mPrincipal) {
-                    aKey->mPrincipal->GetHashValue(&principalHash);
-                }
+                PLDHashNumber principalHash =
+                    aKey->mPrincipal ? aKey->mPrincipal->Hash() : 0;
                 return mozilla::HashGeneric(principalHash + int(aKey->mPrivate),
                                             aKey->mURI->Hash(),
                                             HashFeatures(aKey->mFontEntry->mFeatureSettings),
@@ -427,7 +426,7 @@ public:
             enum { ALLOW_MEMMOVE = false };
 
             gfxFontSrcURI* GetURI() const { return mURI; }
-            nsIPrincipal* GetPrincipal() const { return mPrincipal; }
+            gfxFontSrcPrincipal* GetPrincipal() const { return mPrincipal; }
             gfxFontEntry* GetFontEntry() const { return mFontEntry; }
             bool IsPrivate() const { return mPrivate; }
 
@@ -465,7 +464,7 @@ public:
             nsDataHashtable<nsPtrHashKey<gfxUserFontSet>, bool> mAllowedFontSets;
 
             RefPtr<gfxFontSrcURI>  mURI;
-            nsCOMPtr<nsIPrincipal> mPrincipal; 
+            RefPtr<gfxFontSrcPrincipal> mPrincipal; 
 
             
             
@@ -629,7 +628,7 @@ public:
     
     void SetLoader(nsFontFaceLoader* aLoader) { mLoader = aLoader; }
     nsFontFaceLoader* GetLoader() { return mLoader; }
-    nsIPrincipal* GetPrincipal() { return mPrincipal; }
+    gfxFontSrcPrincipal* GetPrincipal() { return mPrincipal; }
     uint32_t GetSrcIndex() { return mSrcIndex; }
     void GetFamilyNameAndURIForLogging(nsACString& aFamilyName,
                                        nsACString& aURI);
@@ -708,7 +707,7 @@ protected:
     
     nsFontFaceLoader* MOZ_NON_OWNING_REF mLoader; 
     gfxUserFontSet*          mFontSet; 
-    nsCOMPtr<nsIPrincipal>   mPrincipal;
+    RefPtr<gfxFontSrcPrincipal> mPrincipal;
 };
 
 

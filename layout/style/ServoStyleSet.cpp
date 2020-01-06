@@ -15,6 +15,7 @@
 #include "mozilla/css/Loader.h"
 #include "mozilla/dom/AnonymousContent.h"
 #include "mozilla/dom/ChildIterator.h"
+#include "mozilla/dom/FontFaceSet.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/RestyleManagerInlines.h"
@@ -308,9 +309,18 @@ ServoStyleSet::PreTraverseSync()
     }
 
     
+    FontFaceSet* fontFaceSet =
+      static_cast<FontFaceSet::UserFontSet*>(userFontSet)->GetFontFaceSet();
+    fontFaceSet->UpdateStandardFontLoadPrincipal();
+    bool principalChanged = fontFaceSet->HasStandardFontLoadPrincipalChanged();
+
+    
     
     uint32_t cacheGeneration = gfxUserFontSet::UserFontCache::Generation();
-    if (cacheGeneration != mUserFontCacheUpdateGeneration) {
+    if (principalChanged) {
+      gfxUserFontSet::UserFontCache::ClearAllowedFontSets(userFontSet);
+    }
+    if (cacheGeneration != mUserFontCacheUpdateGeneration || principalChanged) {
       gfxUserFontSet::UserFontCache::UpdateAllowedFontSets(userFontSet);
       mUserFontCacheUpdateGeneration = cacheGeneration;
     }
