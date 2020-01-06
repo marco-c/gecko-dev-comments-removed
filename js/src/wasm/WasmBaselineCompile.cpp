@@ -5212,16 +5212,18 @@ BaseCompiler::sniffConditionalControlCmp(Cond compareOp, ValType operandType)
 {
     MOZ_ASSERT(latentOp_ == LatentOp::None, "Latent comparison state not properly reset");
 
+#ifdef JS_CODEGEN_X86
+    
+    
+    
+    if (operandType == ValType::I64)
+        return false;
+#endif
+
     OpBytes op;
     iter_.peekOp(&op);
     switch (op.b0) {
       case uint16_t(Op::Select):
-#ifdef JS_CODEGEN_X86
-        
-        
-        if (operandType == ValType::I64)
-            return false;
-#endif
         MOZ_FALLTHROUGH;
       case uint16_t(Op::BrIf):
       case uint16_t(Op::If):
