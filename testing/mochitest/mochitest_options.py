@@ -840,6 +840,11 @@ class MochitestArguments(ArgumentContainer):
 
         
         
+        if os.name == 'nt' and options.flavor == 'a11y':
+            options.leakThresholds["default"] += 248
+
+        
+        
         
         
         if options.test_paths and build_obj:
