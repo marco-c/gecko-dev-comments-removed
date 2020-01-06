@@ -1,3 +1,5 @@
+Cu.import("resource://gre/modules/Services.jsm");
+
 function create_subdir(dir, subdirname) {
   let subdir = dir.clone();
   subdir.append(subdirname);
@@ -15,9 +17,7 @@ function make_fake_appdir() {
   
   
   
-  let dirSvc = Cc["@mozilla.org/file/directory_service;1"]
-               .getService(Ci.nsIProperties);
-  let profD = dirSvc.get("ProfD", Ci.nsIFile);
+  let profD = Services.dirsvc.get("ProfD", Ci.nsIFile);
   
   let appD = create_subdir(profD, "UAppData");
 
@@ -48,23 +48,21 @@ function make_fake_appdir() {
     }
   };
   
-  dirSvc.QueryInterface(Ci.nsIDirectoryService)
-        .registerProvider(_provider);
+  Services.dirsvc.QueryInterface(Ci.nsIDirectoryService)
+                 .registerProvider(_provider);
   
   try {
-    dirSvc.undefine("UAppData");
+    Services.dirsvc.undefine("UAppData");
   } catch (ex) {} 
   return appD.clone();
 }
 
 function cleanup_fake_appdir() {
-  let dirSvc = Cc["@mozilla.org/file/directory_service;1"]
-               .getService(Ci.nsIProperties);
-  dirSvc.QueryInterface(Ci.nsIDirectoryService)
-        .unregisterProvider(_provider);
+  Services.dirsvc.QueryInterface(Ci.nsIDirectoryService)
+                 .unregisterProvider(_provider);
   
   try {
-    dirSvc.undefine("UAppData");
+    Services.dirsvc.undefine("UAppData");
   } catch (ex) {
     dump("cleanup_fake_appdir: dirSvc.undefine failed: " + ex.message + "\n");
   }

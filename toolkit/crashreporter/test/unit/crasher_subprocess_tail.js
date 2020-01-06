@@ -3,12 +3,10 @@
 
 if (shouldDelay) {
   let shouldCrashNow = false;
-  let tm = Components.classes["@mozilla.org/thread-manager;1"]
-                     .getService(Components.interfaces.nsIThreadManager);
 
-  tm.dispatchToMainThread({ run: () => { shouldCrashNow = true; } });
+  Services.tm.dispatchToMainThread({ run: () => { shouldCrashNow = true; } });
 
-  tm.spinEventLoopUntil(() => shouldCrashNow);
+  Services.tm.spinEventLoopUntil(() => shouldCrashNow);
 }
 
 

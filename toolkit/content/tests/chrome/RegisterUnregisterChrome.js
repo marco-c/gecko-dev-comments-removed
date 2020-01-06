@@ -6,18 +6,17 @@ const XUL_CACHE_PREF = "nglayout.debug.disable_xul_cache";
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Cr = Components.results;
+var Cu = Components.utils;
 
-var gDirSvc    = Cc["@mozilla.org/file/directory_service;1"].
-  getService(Ci.nsIDirectoryService).QueryInterface(Ci.nsIProperties);
+Cu.import("resource://gre/modules/Services.jsm");
+
 var gChromeReg = Cc["@mozilla.org/chrome/chrome-registry;1"].
                     getService(Ci.nsIXULChromeRegistry);
-var gPrefs     = Cc["@mozilla.org/preferences-service;1"].
-                    getService(Ci.nsIPrefBranch);
 
 
 
 function copyToTemporaryFile(f) {
-  let tmpd = gDirSvc.get("ProfD", Ci.nsIFile);
+  let tmpd = Services.dirsvc.get("ProfD", Ci.nsIFile);
   let tmpf = tmpd.clone();
   tmpf.append("temp.manifest");
   tmpf.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, 0o600);
@@ -27,9 +26,7 @@ function copyToTemporaryFile(f) {
 }
 
 function* dirIter(directory) {
-  var ioSvc = Cc["@mozilla.org/network/io-service;1"].
-              getService(Ci.nsIIOService);
-  var testsDir = ioSvc.newURI(directory)
+  var testsDir = Services.io.newURI(directory)
                   .QueryInterface(Ci.nsIFileURL).file;
 
   let en = testsDir.directoryEntries;
@@ -57,7 +54,7 @@ function copyDirToTempProfile(path, subdirname) {
     subdirname = "mochikit-tmp";
   }
 
-  let tmpdir = gDirSvc.get("ProfD", Ci.nsIFile);
+  let tmpdir = Services.dirsvc.get("ProfD", Ci.nsIFile);
   tmpdir.append(subdirname);
   tmpdir.createUnique(Components.interfaces.nsIFile.DIRECTORY_TYPE, 0o777);
 
@@ -76,8 +73,7 @@ function copyDirToTempProfile(path, subdirname) {
 }
 
 function convertChromeURI(chromeURI) {
-  let uri = Cc["@mozilla.org/network/io-service;1"].
-    getService(Ci.nsIIOService).newURI(chromeURI);
+  let uri = Services.io.newURI(chromeURI);
   return gChromeReg.convertChromeURL(uri);
 }
 
@@ -99,7 +95,7 @@ function chromeURIToFile(chromeURI) {
 
 
 function createManifestTemporarily(tempDir, manifestText) {
-  gPrefs.setBoolPref(XUL_CACHE_PREF, true);
+  Services.prefs.setBoolPref(XUL_CACHE_PREF, true);
 
   tempDir.append("temp.manifest");
 
@@ -120,14 +116,14 @@ function createManifestTemporarily(tempDir, manifestText) {
     tempfile.fileSize = 0; 
     gChromeReg.checkForNewChrome();
     gChromeReg.refreshSkins();
-    gPrefs.clearUserPref(XUL_CACHE_PREF);
+    Services.prefs.clearUserPref(XUL_CACHE_PREF);
   };
 }
 
 
 
 function registerManifestTemporarily(manifestURI) {
-  gPrefs.setBoolPref(XUL_CACHE_PREF, true);
+  Services.prefs.setBoolPref(XUL_CACHE_PREF, true);
 
   let file = chromeURIToFile(manifestURI);
 
@@ -141,7 +137,7 @@ function registerManifestTemporarily(manifestURI) {
     tempfile.fileSize = 0; 
     gChromeReg.checkForNewChrome();
     gChromeReg.refreshSkins();
-    gPrefs.clearUserPref(XUL_CACHE_PREF);
+    Services.prefs.clearUserPref(XUL_CACHE_PREF);
   };
 }
 

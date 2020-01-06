@@ -312,15 +312,14 @@ Finder.prototype = {
     }
 
     let fastFind = this._fastFind;
-    const fm = Cc["@mozilla.org/focus-manager;1"].getService(Ci.nsIFocusManager);
     try {
       
       
       
       if (fastFind.foundLink) {
-        fm.setFocus(fastFind.foundLink, fm.FLAG_NOSCROLL);
+        Services.focus.setFocus(fastFind.foundLink, Services.focus.FLAG_NOSCROLL);
       } else if (fastFind.foundEditable) {
-        fm.setFocus(fastFind.foundEditable, fm.FLAG_NOSCROLL);
+        Services.focus.setFocus(fastFind.foundEditable, Services.focus.FLAG_NOSCROLL);
         fastFind.collapseSelection();
       } else {
         this._getWindow().focus();
