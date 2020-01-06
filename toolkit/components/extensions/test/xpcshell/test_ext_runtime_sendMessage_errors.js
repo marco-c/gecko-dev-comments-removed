@@ -19,14 +19,8 @@ add_task(async function test_sendMessage_error() {
       [[null, null, null], "Could not establish connection. Receiving end does not exist."],
 
       
-      
-      [[null, location, null], "Could not establish connection. Receiving end does not exist."],
-
-      
-      [[null, [circ, location], null], "cyclic object value"],
-      
-      [[null, circ, null], "Could not establish connection. Receiving end does not exist."],
-      
+      [[null, location, null], "The object could not be cloned."],
+      [[null, [circ, location], null], "The object could not be cloned."],
     ];
 
     
