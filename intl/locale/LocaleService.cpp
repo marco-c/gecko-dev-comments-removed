@@ -380,6 +380,13 @@ LocaleService::OnLocalesChanged()
 
 
 
+
+
+
+
+
+
+
 void
 LocaleService::FilterMatches(const nsTArray<nsCString>& aRequested,
                              const nsTArray<nsCString>& aAvailable,
@@ -458,6 +465,14 @@ LocaleService::FilterMatches(const nsTArray<nsCString>& aRequested,
     if (findRangeMatches(requestedLocale)) {
       HANDLE_STRATEGY;
     }
+
+    
+    if (requestedLocale.AddLikelySubtagsWithoutRegion()) {
+      if (findRangeMatches(requestedLocale)) {
+        HANDLE_STRATEGY;
+      }
+    }
+
 
     
     requestedLocale.SetRegionRange();
@@ -822,12 +837,34 @@ LocaleService::Locale::SetRegionRange()
 bool
 LocaleService::Locale::AddLikelySubtags()
 {
+  return AddLikelySubtagsForLocale(mLocaleStr);
+}
+
+bool
+LocaleService::Locale::AddLikelySubtagsWithoutRegion()
+{
+  nsAutoCString locale(mLanguage);
+
+  if (!mScript.IsEmpty()) {
+    locale.Append("-");
+    locale.Append(mScript);
+  }
+
+  
+
+  return AddLikelySubtagsForLocale(locale);
+}
+
+bool
+LocaleService::Locale::AddLikelySubtagsForLocale(const nsACString& aLocale)
+{
 #ifdef ENABLE_INTL_API
   const int32_t kLocaleMax = 160;
   char maxLocale[kLocaleMax];
+  nsAutoCString locale(aLocale);
 
   UErrorCode status = U_ZERO_ERROR;
-  uloc_addLikelySubtags(mLocaleStr.get(), maxLocale, kLocaleMax, &status);
+  uloc_addLikelySubtags(locale.get(), maxLocale, kLocaleMax, &status);
 
   if (U_FAILURE(status)) {
     return false;
@@ -843,7 +880,10 @@ LocaleService::Locale::AddLikelySubtags()
   mLanguage = loc.mLanguage;
   mScript = loc.mScript;
   mRegion = loc.mRegion;
-  mVariant = loc.mVariant;
+
+  
+  
+
   return true;
 #else
   return false;
