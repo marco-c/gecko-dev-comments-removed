@@ -370,25 +370,6 @@ TabTarget.prototype = {
     return !this.window;
   },
 
-  getExtensionPathName(url) {
-    
-    if (!this.isWebExtension) {
-      throw new Error("Target is not a WebExtension");
-    }
-
-    try {
-      const parsedURL = new URL(url);
-      
-      if (parsedURL.protocol !== "moz-extension:") {
-        return url;
-      }
-      return parsedURL.pathname;
-    } catch (e) {
-      
-      return url;
-    }
-  },
-
   
 
 
@@ -533,11 +514,8 @@ TabTarget.prototype = {
       event.nativeConsoleAPI = packet.nativeConsoleAPI;
       event.isFrameSwitching = packet.isFrameSwitching;
 
-      
-      
-      
-      
-      if (!packet.isFrameSwitching || this.isWebExtension) {
+      if (!packet.isFrameSwitching) {
+        
         this._url = packet.url;
         this._title = packet.title;
       }
