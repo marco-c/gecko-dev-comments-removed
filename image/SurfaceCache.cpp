@@ -775,8 +775,7 @@ public:
       aProvider->Availability().SetAvailable();
     }
 
-    NotNull<RefPtr<CachedSurface>> surface =
-      WrapNotNull(new CachedSurface(aProvider));
+    auto surface = MakeNotNull<RefPtr<CachedSurface>>(aProvider);
 
     
     
