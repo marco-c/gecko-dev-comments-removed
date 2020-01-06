@@ -24,6 +24,14 @@ registerCleanupFunction(function() {
 });
 
 add_task(async function() {
+  
+  
+  
+  await promiseDisableOnboardingTours();
+  is(false, Services.prefs.getBoolPref("browser.onboarding.enabled"), "Should disable the onboarding tours");
+});
+
+add_task(async function() {
   info("Check that clearing cookies does not clear storage");
 
   await withSnippetsMap(
