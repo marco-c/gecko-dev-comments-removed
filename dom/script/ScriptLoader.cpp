@@ -275,12 +275,12 @@ ScriptLoader::ModuleScriptsEnabled()
 }
 
 bool
-ScriptLoader::ModuleMapContainsURL(nsIURI* aURL) const
+ScriptLoader::ModuleMapContainsModule(ModuleLoadRequest* aRequest) const
 {
   
   
-  return mFetchingModules.Contains(aURL) ||
-         mFetchedModules.Contains(aURL);
+  return mFetchingModules.Contains(aRequest->mURI) ||
+         mFetchedModules.Contains(aRequest->mURI);
 }
 
 bool
@@ -297,7 +297,7 @@ ScriptLoader::SetModuleFetchStarted(ModuleLoadRequest* aRequest)
   
 
   MOZ_ASSERT(aRequest->IsLoading());
-  MOZ_ASSERT(!ModuleMapContainsURL(aRequest->mURI));
+  MOZ_ASSERT(!ModuleMapContainsModule(aRequest));
   mFetchingModules.Put(aRequest->mURI, nullptr);
 }
 
@@ -328,21 +328,21 @@ ScriptLoader::SetModuleFetchFinishedAndResumeWaitingRequests(ModuleLoadRequest* 
 }
 
 RefPtr<GenericPromise>
-ScriptLoader::WaitForModuleFetch(nsIURI* aURL)
+ScriptLoader::WaitForModuleFetch(ModuleLoadRequest* aRequest)
 {
-  MOZ_ASSERT(ModuleMapContainsURL(aURL));
+  MOZ_ASSERT(ModuleMapContainsModule(aRequest));
 
   RefPtr<GenericPromise::Private> promise;
-  if (mFetchingModules.Get(aURL, getter_AddRefs(promise))) {
+  if (mFetchingModules.Get(aRequest->mURI, getter_AddRefs(promise))) {
     if (!promise) {
       promise = new GenericPromise::Private(__func__);
-      mFetchingModules.Put(aURL, promise);
+      mFetchingModules.Put(aRequest->mURI, promise);
     }
     return promise;
   }
 
   RefPtr<ModuleScript> ms;
-  MOZ_ALWAYS_TRUE(mFetchedModules.Get(aURL, getter_AddRefs(ms)));
+  MOZ_ALWAYS_TRUE(mFetchedModules.Get(aRequest->mURI, getter_AddRefs(ms)));
   if (!ms || ms->InstantiationFailed()) {
     return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
@@ -626,15 +626,9 @@ ScriptLoader::StartFetchingModuleDependencies(ModuleLoadRequest* aRequest)
   
   nsTArray<RefPtr<GenericPromise>> importsReady;
   for (size_t i = 0; i < urls.Length(); i++) {
-    nsCOMPtr<nsIURI> url = urls[i];
-    
-    
-    if (ModuleMapContainsURL(url)) {
-      importsReady.AppendElement(WaitForModuleFetch(url));
-    } else {
-      importsReady.AppendElement(
-        StartFetchingModuleAndDependencies(aRequest, url));
-    }
+    RefPtr<GenericPromise> childReady =
+      StartFetchingModuleAndDependencies(aRequest, urls[i]);
+    importsReady.AppendElement(childReady);
   }
 
   
@@ -875,8 +869,8 @@ ScriptLoader::StartLoad(ScriptLoadRequest* aRequest)
     
     
     ModuleLoadRequest* request = aRequest->AsModuleRequest();
-    if (ModuleMapContainsURL(request->mURI)) {
-      WaitForModuleFetch(request->mURI)
+    if (ModuleMapContainsModule(request)) {
+      WaitForModuleFetch(request)
         ->Then(AbstractThread::MainThread(), __func__, request,
                &ModuleLoadRequest::ModuleLoaded,
                &ModuleLoadRequest::LoadFailed);
