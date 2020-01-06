@@ -3283,7 +3283,8 @@ TabParent::StartApzAutoscroll(float aAnchorX, float aAnchorY,
       
       
       
-      LayoutDeviceIntPoint anchor = RoundedToInt(LayoutDevicePoint{aAnchorX, aAnchorY});
+      CSSPoint anchorCss{aAnchorX, aAnchorY};
+      LayoutDeviceIntPoint anchor = RoundedToInt(anchorCss * widget->GetDefaultScale());
       anchor -= widget->WidgetToScreenOffset();
 
       widget->StartAsyncAutoscroll(
