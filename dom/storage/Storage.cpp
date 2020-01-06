@@ -38,11 +38,17 @@ Storage::Storage(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal)
 Storage::~Storage()
 {}
 
+ bool
+Storage::StoragePrefIsEnabled()
+{
+  return mozilla::Preferences::GetBool(kStorageEnabled);
+}
+
 bool
 Storage::CanUseStorage(nsIPrincipal& aSubjectPrincipal)
 {
   
-  if (!mozilla::Preferences::GetBool(kStorageEnabled)) {
+  if (!StoragePrefIsEnabled()) {
     return false;
   }
 
