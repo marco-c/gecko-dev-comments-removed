@@ -145,6 +145,8 @@ var TalosContentProfiler;
 
 
 
+
+
     beginTest(testName) {
       if (initted) {
         currentTest = testName;
@@ -153,15 +155,13 @@ var TalosContentProfiler;
           entries,
           threadsArray,
         });
-      } else {
-        var msg = "You should not call beginTest without having first " +
-                  "initted the Profiler"
-        console.error(msg);
-        return Promise.reject(msg);
       }
+      return Promise.resolve();
     },
 
     
+
+
 
 
 
@@ -174,12 +174,8 @@ var TalosContentProfiler;
       if (initted) {
         let profileFile = profileDir + "/" + currentTest + ".profile";
         return sendEventAndWait("Profiler:Finish", { profileFile });
-      } else {
-        var msg = "You should not call finishTest without having first " +
-                  "initted the Profiler";
-        console.error(msg);
-        return Promise.reject(msg);
       }
+      return Promise.resolve();
     },
 
     
