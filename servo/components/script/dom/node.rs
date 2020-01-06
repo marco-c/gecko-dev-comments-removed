@@ -74,9 +74,10 @@ use selectors::matching::{matches_selector_list, MatchingContext, MatchingMode};
 use selectors::parser::SelectorList;
 use servo_arc::Arc;
 use servo_url::ServoUrl;
+use smallvec::SmallVec;
 use std::borrow::ToOwned;
 use std::cell::{Cell, UnsafeCell, RefMut};
-use std::cmp::max;
+use std::cmp;
 use std::default::Default;
 use std::iter;
 use std::mem;
@@ -385,6 +386,17 @@ impl Node {
     }
 
     
+    
+    pub fn is_before(&self, other: &Node) -> bool {
+        let cmp = other.CompareDocumentPosition(self);
+        if cmp & NodeConstants::DOCUMENT_POSITION_DISCONNECTED != 0 {
+            return false;
+        }
+
+        cmp & NodeConstants::DOCUMENT_POSITION_PRECEDING != 0
+    }
+
+    
     pub fn registered_mutation_observers(&self) -> RefMut<Vec<RegisteredObserver>> {
          self.mutation_observers.borrow_mut()
     }
@@ -487,7 +499,7 @@ impl Node {
         
         
         let doc: Root<Node> = Root::upcast(self.owner_doc());
-        let version = max(self.inclusive_descendants_version(), doc.inclusive_descendants_version()) + 1;
+        let version = cmp::max(self.inclusive_descendants_version(), doc.inclusive_descendants_version()) + 1;
         for ancestor in self.inclusive_ancestors() {
             ancestor.inclusive_descendants_version.set(version);
         }
@@ -627,8 +639,8 @@ impl Node {
             
             (false, false, _, true) | (false, true, QuirksMode::Quirks, _) => {
                 Rect::new(Point2D::new(window.ScrollX(), window.ScrollY()),
-                                       Size2D::new(max(window.InnerWidth(), scroll_area.size.width),
-                                                   max(window.InnerHeight(), scroll_area.size.height)))
+                                       Size2D::new(cmp::max(window.InnerWidth(), scroll_area.size.width),
+                                                   cmp::max(window.InnerHeight(), scroll_area.size.height)))
             },
             
             _ => scroll_area
@@ -2363,55 +2375,70 @@ impl NodeMethods for Node {
 
     
     fn CompareDocumentPosition(&self, other: &Node) -> u16 {
+        
         if self == other {
+            return 0
+        }
+
+        
+
+        let mut self_and_ancestors =
+            self.inclusive_ancestors().collect::<SmallVec<[_; 20]>>();
+        let mut other_and_ancestors =
+            other.inclusive_ancestors().collect::<SmallVec<[_; 20]>>();
+
+        if self_and_ancestors.last() != other_and_ancestors.last() {
+            let random =
+                as_uintptr(self_and_ancestors.last().unwrap())
+                    < as_uintptr(other_and_ancestors.last().unwrap());
+            let random = if random {
+                NodeConstants::DOCUMENT_POSITION_FOLLOWING
+            } else {
+                NodeConstants::DOCUMENT_POSITION_PRECEDING
+            };
+
             
-            0
-        } else {
-            let mut lastself = Root::from_ref(self);
-            let mut lastother = Root::from_ref(other);
-            for ancestor in self.ancestors() {
-                if &*ancestor == other {
-                    
-                    return NodeConstants::DOCUMENT_POSITION_CONTAINS +
-                           NodeConstants::DOCUMENT_POSITION_PRECEDING;
-                }
-                lastself = ancestor;
-            }
-            for ancestor in other.ancestors() {
-                if &*ancestor == self {
-                    
-                    return NodeConstants::DOCUMENT_POSITION_CONTAINED_BY +
-                           NodeConstants::DOCUMENT_POSITION_FOLLOWING;
-                }
-                lastother = ancestor;
-            }
+            return random +
+                NodeConstants::DOCUMENT_POSITION_DISCONNECTED +
+                NodeConstants::DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC;
+        }
 
-            if lastself != lastother {
-                let abstract_uint: uintptr_t = as_uintptr(&self);
-                let other_uint: uintptr_t = as_uintptr(&*other);
+        let mut parent = self_and_ancestors.pop().unwrap();
+        other_and_ancestors.pop().unwrap();
 
-                let random = if abstract_uint < other_uint {
+        let mut current_position = cmp::min(self_and_ancestors.len(), other_and_ancestors.len());
+
+        while current_position > 0 {
+            current_position -= 1;
+            let child_1 = self_and_ancestors.pop().unwrap();
+            let child_2 = other_and_ancestors.pop().unwrap();
+
+            if child_1 != child_2 {
+                let is_before =
+                    parent.children().position(|c| c == child_1).unwrap()
+                     < parent.children().position(|c| c == child_2).unwrap();
+                
+                
+                return if is_before {
                     NodeConstants::DOCUMENT_POSITION_FOLLOWING
                 } else {
                     NodeConstants::DOCUMENT_POSITION_PRECEDING
                 };
-                
-                return random +
-                    NodeConstants::DOCUMENT_POSITION_DISCONNECTED +
-                    NodeConstants::DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC;
             }
 
-            for child in lastself.traverse_preorder() {
-                if &*child == other {
-                    
-                    return NodeConstants::DOCUMENT_POSITION_PRECEDING;
-                }
-                if &*child == self {
-                    
-                    return NodeConstants::DOCUMENT_POSITION_FOLLOWING;
-                }
-            }
-            unreachable!()
+            parent = child_1;
+        }
+
+        
+        
+        
+        
+        return if self_and_ancestors.len() < other_and_ancestors.len() {
+            NodeConstants::DOCUMENT_POSITION_FOLLOWING +
+            NodeConstants::DOCUMENT_POSITION_CONTAINED_BY
+        } else {
+            NodeConstants::DOCUMENT_POSITION_PRECEDING +
+            NodeConstants::DOCUMENT_POSITION_CONTAINS
         }
     }
 
