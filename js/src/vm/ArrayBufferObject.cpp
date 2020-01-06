@@ -710,6 +710,7 @@ ArrayBufferObject::createForWasm(JSContext* cx, uint32_t initialSize,
 {
     MOZ_ASSERT(initialSize % wasm::PageSize == 0);
     MOZ_RELEASE_ASSERT(wasm::HaveSignalHandlers());
+    MOZ_RELEASE_ASSERT((initialSize / wasm::PageSize) <= wasm::MaxMemoryInitialPages);
 
     
     
