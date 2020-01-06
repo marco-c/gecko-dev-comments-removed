@@ -132,9 +132,10 @@ const roundTo = (value, exp) => {
 
 
 
-const scalePoint = (x, y, transX, transY, scale) => {
-  let newX = (x - transX) * scale + transX;
-  let newY = (y - transY) * scale + transY;
+
+const scalePoint = (x, y, transX, transY, scale, axis = "xy") => {
+  let newX = (axis === "y") ? x : (x - transX) * scale + transX;
+  let newY = (axis === "x") ? y : (y - transY) * scale + transY;
   return [newX, newY];
 };
 
