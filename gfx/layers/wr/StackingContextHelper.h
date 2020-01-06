@@ -66,12 +66,11 @@ public:
 
   
   
-  gfx::Matrix4x4 TransformToParentSC() const;
+  gfx::Matrix4x4 TransformToRoot() const;
 
 private:
   wr::DisplayListBuilder* mBuilder;
   LayerPoint mOrigin;
-  WrPoint mOffsetToParent;
   gfx::Matrix4x4 mTransform;
 };
 
