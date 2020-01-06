@@ -2339,7 +2339,7 @@ PluginInstanceChild::SetupFlashMsgThrottle()
 }
 
 WNDPROC
-PluginInstanceChild::FlashThrottleAsyncMsg::GetProc()
+PluginInstanceChild::FlashThrottleMsg::GetProc()
 {
     if (mInstance) {
         return mWindowed ? mInstance->mPluginWndProc :
@@ -2349,9 +2349,13 @@ PluginInstanceChild::FlashThrottleAsyncMsg::GetProc()
 }
 
 NS_IMETHODIMP
-PluginInstanceChild::FlashThrottleAsyncMsg::Run()
+PluginInstanceChild::FlashThrottleMsg::Run()
 {
-    RemoveFromAsyncList();
+    if (!mInstance) {
+        return NS_OK;
+    }
+
+    mInstance->mPendingFlashThrottleMsgs.RemoveElement(this);
 
     
     
@@ -2364,6 +2368,14 @@ PluginInstanceChild::FlashThrottleAsyncMsg::Run()
     return NS_OK;
 }
 
+nsresult
+PluginInstanceChild::FlashThrottleMsg::Cancel()
+{
+    MOZ_ASSERT(mInstance);
+    mInstance = nullptr;
+    return NS_OK;
+}
+
 void
 PluginInstanceChild::FlashThrottleMessage(HWND aWnd,
                                           UINT aMsg,
@@ -2373,13 +2385,11 @@ PluginInstanceChild::FlashThrottleMessage(HWND aWnd,
 {
     
     
-    RefPtr<FlashThrottleAsyncMsg> task =
-        new FlashThrottleAsyncMsg(this, aWnd, aMsg, aWParam,
-                                  aLParam, isWindowed);
-    {
-        MutexAutoLock lock(mAsyncCallMutex);
-        mPendingAsyncCalls.AppendElement(task);
-    }
+    RefPtr<FlashThrottleMsg> task =
+        new FlashThrottleMsg(this, aWnd, aMsg, aWParam, aLParam, isWindowed);
+
+    mPendingFlashThrottleMsgs.AppendElement(task);
+
     MessageLoop::current()->PostDelayedTask(task.forget(),
                                             kFlashWMUSERMessageThrottleDelayMs);
 }
@@ -4262,6 +4272,11 @@ PluginInstanceChild::Destroy()
     DestroyWinlessPopupSurrogate();
     UnhookWinlessFlashThrottle();
     DestroyPluginWindow();
+
+    for (uint32_t i = 0; i < mPendingFlashThrottleMsgs.Length(); ++i) {
+        mPendingFlashThrottleMsgs[i]->Cancel();
+    }
+    mPendingFlashThrottleMsgs.Clear();
 #endif
 
     
