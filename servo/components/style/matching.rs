@@ -1560,10 +1560,11 @@ pub trait MatchMethods : TElement {
             return RestyleDamage::compute_style_difference(source, new_values)
         }
 
-        let new_style_is_display_none =
-            new_values.get_box().clone_display() == display::T::none;
-        let old_style_is_display_none =
-            old_values.get_box().clone_display() == display::T::none;
+        let new_display = new_values.get_box().clone_display();
+        let old_display = old_values.get_box().clone_display();
+
+        let new_style_is_display_none = new_display == display::T::none;
+        let old_style_is_display_none = old_display == display::T::none;
 
         
         
@@ -1611,10 +1612,19 @@ pub trait MatchMethods : TElement {
         }
 
         
-        warn!("Reframing due to lack of old style source: {:?}, pseudo: {:?}",
-               self, pseudo);
         
-        StyleDifference::new(RestyleDamage::reconstruct(), StyleChange::Changed)
+        
+        
+        let needs_reconstruction = new_display != old_display;
+        let damage = if needs_reconstruction {
+            RestyleDamage::reconstruct()
+        } else {
+            RestyleDamage::empty()
+        };
+        
+        
+        
+        StyleDifference::new(damage, StyleChange::Changed)
     }
 
     
