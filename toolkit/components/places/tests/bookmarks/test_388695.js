@@ -5,48 +5,34 @@
 
 
 
-try {
-  var bmsvc = Cc["@mozilla.org/browser/nav-bookmarks-service;1"].
-              getService(Ci.nsINavBookmarksService);
-} catch (ex) {
-  do_throw("Could not get nav-bookmarks-service\n");
-}
-
-var gTestRoot;
-var gURI;
-var gItemId1;
-var gItemId2;
+let bm = PlacesUtils.bookmarks;
 
 
-function run_test() {
-  gURI = uri("http://foo.tld.com/");
-  gTestRoot = bmsvc.createFolder(bmsvc.placesRoot, "test folder",
-                                 bmsvc.DEFAULT_INDEX);
 
-  
-  
-  
-  
-  
-  do_test_pending();
 
-  gItemId1 = bmsvc.insertBookmark(gTestRoot, gURI, bmsvc.DEFAULT_INDEX, "");
-  do_timeout(100, phase2);
-}
 
-function phase2() {
-  gItemId2 = bmsvc.insertBookmark(gTestRoot, gURI, bmsvc.DEFAULT_INDEX, "");
-  var b = bmsvc.getBookmarkIdsForURI(gURI);
-  do_check_eq(b[0], gItemId2);
-  do_check_eq(b[1], gItemId1);
-  do_timeout(100, phase3);
-}
+add_task(async function sort_bookmark_by_relevance() {
+    let now = new Date();
+    let modifiedTime = new Date(now.setHours(now.getHours() - 2));
 
-function phase3() {
-  
-  bmsvc.setItemTitle(gItemId1, "");
-  var b = bmsvc.getBookmarkIdsForURI(gURI);
-  do_check_eq(b[0], gItemId1);
-  do_check_eq(b[1], gItemId2);
-  do_test_finished();
-}
+    let url = "http://foo.tld.com/";
+    let parentGuid = (await bm.insert({type: bm.TYPE_FOLDER,
+                                       title: "test folder",
+                                       parentGuid: bm.unfiledGuid})).guid;
+    let item1Guid = (await bm.insert({url,
+                                      parentGuid})).guid;
+    let item2Guid = (await bm.insert({url,
+                                      parentGuid,
+                                      dateAdded: modifiedTime,
+                                      lastModified: modifiedTime})).guid;
+    let bms = [];
+    await bm.fetch({url}, bm1 => bms.push(bm1));
+    Assert.equal(bms[0].guid, item1Guid);
+    Assert.equal(bms[1].guid, item2Guid);
+    await bm.update({guid: item2Guid, title: "modified"});
+
+    let bms1 = [];
+    await bm.fetch({url}, bm2 => bms1.push(bm2));
+    Assert.equal(bms1[0].guid, item2Guid);
+    Assert.equal(bms1[1].guid, item1Guid);
+});
