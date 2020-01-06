@@ -111,6 +111,27 @@
 # define USE_LUL_STACKWALK
 # include "lul/LulMain.h"
 # include "lul/platform-linux-lul.h"
+
+
+
+
+
+
+
+
+
+
+# if defined(MOZ_PROFILING)
+#  define USE_FRAME_POINTER_STACK_WALK
+# endif
+#endif
+
+
+
+
+
+#if defined(USE_FRAME_POINTER_STACK_WALK) || defined(USE_MOZ_STACK_WALK)
+# define HAVE_FASTINIT_NATIVE_UNWIND
 #endif
 
 #ifdef MOZ_VALGRIND
@@ -195,12 +216,12 @@ private:
 
   ~CorePS()
   {
-    while (!mLiveThreads.empty()) {
+    while (mLiveThreads.size() > 0) {
       delete mLiveThreads.back();
       mLiveThreads.pop_back();
     }
 
-    while (!mDeadThreads.empty()) {
+    while (mDeadThreads.size() > 0) {
       delete mDeadThreads.back();
       mDeadThreads.pop_back();
     }
@@ -1020,10 +1041,12 @@ StackWalkCallback(uint32_t aFrameNumber, void* aPC, void* aSP, void* aClosure)
   nativeStack->mPCs[nativeStack->mCount] = aPC;
   nativeStack->mCount++;
 }
+#endif
 
+#if defined(USE_FRAME_POINTER_STACK_WALK)
 static void
-DoNativeBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
-                  const Registers& aRegs, NativeStack& aNativeStack)
+DoFramePointerBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
+                        const Registers& aRegs, NativeStack& aNativeStack)
 {
   
   
@@ -1037,28 +1060,43 @@ DoNativeBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
 
   uint32_t maxFrames = uint32_t(MAX_NATIVE_FRAMES - aNativeStack.mCount);
 
-#if defined(USE_FRAME_POINTER_STACK_WALK)
   void* stackEnd = aThreadInfo.StackTop();
   if (aRegs.mFP >= aRegs.mSP && aRegs.mFP <= stackEnd) {
     FramePointerStackWalk(StackWalkCallback,  0, maxFrames,
                           &aNativeStack, reinterpret_cast<void**>(aRegs.mFP),
                           stackEnd);
   }
-#elif defined(USE_MOZ_STACK_WALK)
+}
+#endif
+
+#if defined(USE_MOZ_STACK_WALK)
+static void
+DoMozStackWalkBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
+                        const Registers& aRegs, NativeStack& aNativeStack)
+{
+  
+  
+  
+
+  
+  
+  
+  
+  StackWalkCallback( 0, aRegs.mPC, aRegs.mSP, &aNativeStack);
+
+  uint32_t maxFrames = uint32_t(MAX_NATIVE_FRAMES - aNativeStack.mCount);
+
   HANDLE thread = GetThreadHandle(aThreadInfo.GetPlatformData());
   MOZ_ASSERT(thread);
   MozStackWalkThread(StackWalkCallback,  0, maxFrames,
                      &aNativeStack, thread,  nullptr);
-#else
-# error "bad configuration"
-#endif
 }
 #endif
 
 #ifdef USE_EHABI_STACKWALK
 static void
-DoNativeBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
-                  const Registers& aRegs, NativeStack& aNativeStack)
+DoEHABIBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
+                 const Registers& aRegs, NativeStack& aNativeStack)
 {
   
   
@@ -1138,8 +1176,8 @@ ASAN_memcpy(void* aDst, const void* aSrc, size_t aLen)
 #endif
 
 static void
-DoNativeBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
-                  const Registers& aRegs, NativeStack& aNativeStack)
+DoLULBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
+               const Registers& aRegs, NativeStack& aNativeStack)
 {
   
   
@@ -1261,6 +1299,30 @@ DoNativeBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
   lul->mStats.mFP      += framePointerFramesAcquired;
 }
 
+#endif
+
+#ifdef HAVE_NATIVE_UNWIND
+static void
+DoNativeBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
+                  const Registers& aRegs, NativeStack& aNativeStack)
+{
+  
+  
+  
+  
+  
+#if defined(USE_LUL_STACKWALK)
+  DoLULBacktrace(aLock, aThreadInfo, aRegs, aNativeStack);
+#elif defined(USE_EHABI_STACKWALK)
+  DoEHABIBacktrace(aLock, aThreadInfo, aRegs, aNativeStack);
+#elif defined(USE_FRAME_POINTER_STACK_WALK)
+  DoFramePointerBacktrace(aLock, aThreadInfo, aRegs, aNativeStack);
+#elif defined(USE_MOZ_STACK_WALK)
+  DoMozStackWalkBacktrace(aLock, aThreadInfo, aRegs, aNativeStack);
+#else
+  #error "Invalid configuration"
+#endif
+}
 #endif
 
 
@@ -2846,7 +2908,7 @@ locked_profiler_stop(PSLockRef aLock)
 
   
   CorePS::ThreadVector& deadThreads = CorePS::DeadThreads(aLock);
-  while (!deadThreads.empty()) {
+  while (deadThreads.size() > 0) {
     delete deadThreads.back();
     deadThreads.pop_back();
   }
@@ -3367,9 +3429,18 @@ profiler_suspend_and_sample_thread(
                                               [&](const Registers& aRegs) {
         
         
-#if defined(HAVE_NATIVE_UNWIND)
+#if defined(HAVE_FASTINIT_NATIVE_UNWIND)
         if (aSampleNative) {
-          DoNativeBacktrace(lock, *info, aRegs, nativeStack);
+          
+          
+          
+# if defined(USE_FRAME_POINTER_STACK_WALK)
+          DoFramePointerBacktrace(lock, *info, aRegs, nativeStack);
+# elif defined(USE_MOZ_STACK_WALK)
+          DoMozStackWalkBacktrace(lock, *info, aRegs, nativeStack);
+# else
+#  error "Invalid configuration"
+# endif
         }
 #endif
         aCallback(nativeStack.mPCs, nativeStack.mCount, info->IsMainThread());
@@ -3414,9 +3485,18 @@ profiler_suspend_and_sample_thread(int aThreadId,
         
         
         bool isSynchronous = false;
-#if defined(HAVE_NATIVE_UNWIND)
+#if defined(HAVE_FASTINIT_NATIVE_UNWIND)
         if (aSampleNative) {
-          DoNativeBacktrace(lock, *info, aRegs, nativeStack);
+          
+          
+          
+# if defined(USE_FRAME_POINTER_STACK_WALK)
+          DoFramePointerBacktrace(lock, *info, aRegs, nativeStack);
+# elif defined(USE_MOZ_STACK_WALK)
+          DoMozStackWalkBacktrace(lock, *info, aRegs, nativeStack);
+# else
+#  error "Invalid configuration"
+# endif
 
           MergeStacks(aFeatures, isSynchronous, *info, aRegs, nativeStack,
                       aCollector);
