@@ -242,6 +242,8 @@ var invalidGradientAndElementValues = [
   
   "linear-gradient(red -99, yellow, green, blue 120%)",
   
+  "linear-gradient(30, red, blue)",
+  
   "linear-gradient(30deg red, blue)",
   "linear-gradient(to top left red, blue)",
   "linear-gradient(to right red, blue)",
