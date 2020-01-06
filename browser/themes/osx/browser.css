@@ -1368,7 +1368,12 @@ html|span.ac-emphasize-text-url {
 
 #sidebar-header {
   
-  font-size: 12px;
+  font-size: 1.4545em;
+  border-bottom: 1px solid hsla(240, 5%, 5%, .1);
+}
+
+.sidebar-splitter {
+  border-color: hsla(240, 5%, 5%, .1);
 }
 
 
