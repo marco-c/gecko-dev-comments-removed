@@ -1,7 +1,9 @@
 "use strict";
 
+Components.utils.import("resource://gre/modules/ExtensionCommon.jsm");
 
-Components.utils.import("resource://gre/modules/ExtensionAPI.jsm");
+const {ExtensionAPIs} = ExtensionCommon;
+
 const {ExtensionManager} = Components.utils.import("resource://gre/modules/ExtensionChild.jsm", {});
 
 Components.utils.importGlobalProperties(["Blob", "URL"]);
