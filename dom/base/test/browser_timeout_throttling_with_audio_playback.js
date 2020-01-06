@@ -13,8 +13,14 @@ var testURLs = [
 
 
 
-const kMinTimeoutForeground = 10;
 const kMinTimeoutBackground = 100 * 1000 * 1000;
+
+const kDelay = 10;
+
+
+
+
+const kAllowedError = 1000;
 
 Services.scriptloader.loadSubScript(kPluginJS, this);
 
@@ -31,19 +37,16 @@ function* runTest(url) {
   
   yield BrowserTestUtils.switchTab(gBrowser, currentTab);
 
-  let timeout = yield ContentTask.spawn(newBrowser, {}, function() {
+  let timeout = yield ContentTask.spawn(newBrowser, kDelay, function(delay) {
     return new Promise(resolve => {
       let before = new Date();
       content.window.setTimeout(function() {
         let after = new Date();
-        
-        
-        resolve(after - before + 1);
-      }, 0);
+        resolve(after - before);
+      }, delay);
     });
   });
-  ok(timeout >= kMinTimeoutForeground &&
-     timeout <  kMinTimeoutBackground, `Got the correct timeout (${timeout})`);
+  ok(timeout <= kDelay + kAllowedError, `Got the correct timeout (${timeout}`);
 
   
   yield BrowserTestUtils.removeTab(newTab);
@@ -51,7 +54,6 @@ function* runTest(url) {
 
 add_task(function* setup() {
   yield SpecialPowers.pushPrefEnv({"set": [
-    ["dom.min_timeout_value", kMinTimeoutForeground],
     ["dom.min_background_timeout_value", kMinTimeoutBackground],
   ]});
 });
