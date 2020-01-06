@@ -1574,6 +1574,11 @@ public:
   
 
 
+  virtual bool HasHandledUserInput() const = 0;
+
+  
+
+
 protected:
   void DoObserveStyleFlushes();
   void DoObserveLayoutFlushes();
