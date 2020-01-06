@@ -1572,7 +1572,12 @@ TimeoutManager::StartThrottlingTrackingTimeouts()
 void
 TimeoutManager::OnDocumentLoaded()
 {
-  MaybeStartThrottleTrackingTimout();
+  
+  
+  
+  if (!mThrottleTrackingTimeouts) {
+    MaybeStartThrottleTrackingTimout();
+  }
 }
 
 void
