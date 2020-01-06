@@ -32,11 +32,63 @@ pub struct FrameId(pub u32);
 
 static DEFAULT_SCROLLBAR_COLOR: ColorF = ColorF { r: 0.3, g: 0.3, b: 0.3, a: 0.6 };
 
+
+
+
+
+
+
+
+
+
+
+struct NestedDisplayListInfo {
+    
+    
+    nest_index: u64,
+
+    
+    
+    
+    scroll_node_id: ClipId,
+
+    
+    
+    clip_node_id: ClipId,
+}
+
+impl NestedDisplayListInfo {
+    fn convert_id_to_nested(&self, id: &ClipId) -> ClipId {
+        match *id {
+            ClipId::Clip(id, _, pipeline_id) => ClipId::Clip(id, self.nest_index, pipeline_id),
+            _ => *id,
+        }
+    }
+
+    fn convert_scroll_id_to_nested(&self, id: &ClipId) -> ClipId {
+        if id.is_root_scroll_node() {
+            self.scroll_node_id
+        } else {
+            self.convert_id_to_nested(id)
+        }
+    }
+
+    fn convert_clip_id_to_nested(&self, id: &ClipId) -> ClipId {
+        if id.is_root_scroll_node() {
+            self.clip_node_id
+        } else {
+            self.convert_id_to_nested(id)
+        }
+    }
+}
+
 struct FlattenContext<'a> {
     scene: &'a Scene,
     builder: &'a mut FrameBuilder,
     resource_cache: &'a mut ResourceCache,
     replacements: Vec<(ClipId, ClipId)>,
+    nested_display_list_info: Vec<NestedDisplayListInfo>,
+    current_nested_display_list_index: u64,
 }
 
 impl<'a> FlattenContext<'a> {
@@ -49,10 +101,52 @@ impl<'a> FlattenContext<'a> {
             builder: builder,
             resource_cache: resource_cache,
             replacements: Vec::new(),
+            nested_display_list_info: Vec::new(),
+            current_nested_display_list_index: 0,
         }
     }
 
-    fn clip_id_with_replacement(&self, id: ClipId) -> ClipId {
+    fn push_nested_display_list_ids(&mut self, info: ClipAndScrollInfo) {
+        self.current_nested_display_list_index += 1;
+        self.nested_display_list_info.push(NestedDisplayListInfo {
+            nest_index: self.current_nested_display_list_index,
+            scroll_node_id: info.scroll_node_id,
+            clip_node_id: info.clip_node_id(),
+        });
+    }
+
+    fn pop_nested_display_list_ids(&mut self) {
+        self.nested_display_list_info.pop();
+    }
+
+    fn convert_new_id_to_neested(&self, id: &ClipId) -> ClipId {
+        if let Some(nested_info) = self.nested_display_list_info.last() {
+            nested_info.convert_id_to_nested(id)
+        } else {
+            *id
+        }
+    }
+
+    fn convert_clip_scroll_info_to_nested(&self, info: &mut ClipAndScrollInfo) {
+        if let Some(nested_info) = self.nested_display_list_info.last() {
+            info.scroll_node_id = nested_info.convert_scroll_id_to_nested(&info.scroll_node_id);
+            info.clip_node_id =
+                info.clip_node_id.map(|ref id| nested_info.convert_clip_id_to_nested(id));
+        }
+
+        
+        
+        debug_assert!(!info.scroll_node_id.is_nested() ||
+                      !self.nested_display_list_info.is_empty());
+        debug_assert!(!info.clip_node_id().is_nested() ||
+                      !self.nested_display_list_info.is_empty());
+    }
+
+    
+    
+    
+    
+    fn apply_scroll_frame_id_replacement(&self, id: ClipId) -> ClipId {
         match self.replacements.last() {
             Some(&(to_replace, replacement)) if to_replace == id => replacement,
             _ => id,
@@ -275,7 +369,8 @@ impl Frame {
                                              &clip_viewport,
                                              clip,
                                              &mut self.clip_scroll_tree);
-        context.builder.add_scroll_frame(item.id,
+        let new_id = context.convert_new_id_to_neested(&item.id);
+        context.builder.add_scroll_frame(new_id,
                                          new_clip_id,
                                          pipeline_id,
                                          &content_rect,
@@ -314,8 +409,6 @@ impl Frame {
             return;
         }
 
-        let mut clip_id = context.clip_id_with_replacement(context_scroll_node_id);
-
         if stacking_context.scroll_policy == ScrollPolicy::Fixed {
             context.replacements.push((context_scroll_node_id,
                                        context.builder.current_reference_frame_id()));
@@ -339,6 +432,7 @@ impl Frame {
                                         .pre_mul(&perspective);
 
             let reference_frame_bounds = LayerRect::new(LayerPoint::zero(), bounds.size);
+            let mut clip_id = context.apply_scroll_frame_id_replacement(context_scroll_node_id);
             clip_id = context.builder.push_reference_frame(Some(clip_id),
                                                            pipeline_id,
                                                            &reference_frame_bounds,
@@ -435,8 +529,11 @@ impl Frame {
                             reference_frame_relative_offset: LayerVector2D)
                             -> Option<BuiltDisplayListIter<'a>> {
         let mut clip_and_scroll = item.clip_and_scroll();
+        context.convert_clip_scroll_info_to_nested(&mut clip_and_scroll);
+
+        let unreplaced_scroll_id = clip_and_scroll.scroll_node_id;
         clip_and_scroll.scroll_node_id =
-            context.clip_id_with_replacement(clip_and_scroll.scroll_node_id);
+            context.apply_scroll_frame_id_replacement(clip_and_scroll.scroll_node_id);
 
         match *item.item() {
             SpecificDisplayItem::WebGL(ref info) => {
@@ -572,7 +669,7 @@ impl Frame {
                 self.flatten_stacking_context(&mut subtraversal,
                                               pipeline_id,
                                               context,
-                                              item.clip_and_scroll().scroll_node_id,
+                                              unreplaced_scroll_id,
                                               reference_frame_relative_offset,
                                               &item.rect(),
                                               &info.stacking_context,
@@ -596,6 +693,14 @@ impl Frame {
                                   &content_rect,
                                   item.clip_region());
             }
+            SpecificDisplayItem::PushNestedDisplayList => {
+                
+                
+                
+                
+                context.push_nested_display_list_ids(clip_and_scroll);
+            }
+            SpecificDisplayItem::PopNestedDisplayList => context.pop_nested_display_list_ids(),
 
             
             SpecificDisplayItem::SetGradientStops | SpecificDisplayItem::SetClipRegion(_) => { }
