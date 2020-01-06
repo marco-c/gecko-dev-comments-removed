@@ -315,7 +315,7 @@ class InfoSvnCommand:
     
     lspattern = re.compile(
         r'^ *(?P<rev>\d+) +(?P<author>.+?) +(0? *(?P<size>\d+))? '
-            '*(?P<date>\w+ +\d{2} +[\d:]+) +(?P<file>.*)$')
+            r'*(?P<date>\w+ +\d{2} +[\d:]+) +(?P<file>.*)$')
     def __init__(self, line):
         
         

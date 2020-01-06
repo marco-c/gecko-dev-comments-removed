@@ -23,6 +23,7 @@ _winerrnomap = {
     2: errno.ENOENT,
     3: errno.ENOENT,
     17: errno.EEXIST,
+    18: errno.EXDEV,
     13: errno.EBUSY, 
     22: errno.ENOTDIR,
     20: errno.ENOTDIR,

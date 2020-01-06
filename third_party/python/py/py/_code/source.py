@@ -193,14 +193,6 @@ class Source(object):
             if flag & _AST_FLAG:
                 return co
             lines = [(x + "\n") for x in self.lines]
-            if sys.version_info[0] >= 3:
-                
-                
-                
-                m = ModuleType("_pycodecompile_pseudo_module")
-                py.std.inspect.modulesbyfile[filename] = None
-                py.std.sys.modules[None] = m
-                m.__loader__ = 1
             py.std.linecache.cache[filename] = (1, None, lines, filename)
             return co
 
