@@ -4278,7 +4278,8 @@ ConnectAnonymousTreeDescendants(nsIContent* aParent,
   }
 }
 
-void SetNativeAnonymousBitOnDescendants(nsIContent *aRoot)
+static void
+SetNativeAnonymousBitOnDescendants(nsIContent* aRoot)
 {
   for (nsIContent* curr = aRoot; curr; curr = curr->GetNextNode(aRoot)) {
     curr->SetFlags(NODE_IS_NATIVE_ANONYMOUS);
@@ -5898,7 +5899,7 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
     }
   }
 
-  bool isGeneratedContent = ((aFlags & ITEM_IS_GENERATED_CONTENT) != 0);
+  const bool isGeneratedContent = !!(aFlags & ITEM_IS_GENERATED_CONTENT);
 
   
   
@@ -7342,7 +7343,8 @@ nsCSSFrameConstructor::CreateNeededFrames(
   }
 }
 
-void nsCSSFrameConstructor::CreateNeededFrames()
+void
+nsCSSFrameConstructor::CreateNeededFrames()
 {
   NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
                "Someone forgot a script blocker");
@@ -7352,7 +7354,8 @@ void nsCSSFrameConstructor::CreateNeededFrames()
     "root element should not have frame created lazily");
   if (rootElement && rootElement->HasFlag(NODE_DESCENDANTS_NEED_FRAMES)) {
     BeginUpdate();
-    TreeMatchContext treeMatchContext(mDocument, TreeMatchContext::ForFrameConstruction);
+    TreeMatchContext treeMatchContext(
+        mDocument, TreeMatchContext::ForFrameConstruction);
     treeMatchContext.InitAncestors(rootElement);
     CreateNeededFrames(rootElement, treeMatchContext);
     EndUpdate();
@@ -7949,8 +7952,6 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 
   NS_PRECONDITION(aStartChild, "must always pass a child");
 
-  
-  
 #ifdef DEBUG
   if (gNoisyContentUpdates) {
     printf("nsCSSFrameConstructor::ContentRangeInserted container=%p "
@@ -7966,9 +7967,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
       }
     }
   }
-#endif
 
-#ifdef DEBUG
   for (nsIContent* child = aStartChild;
        child != aEndChild;
        child = child->GetNextSibling()) {
@@ -8010,45 +8009,39 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
   
   
   
-  if (! aContainer) {
+  if (!aContainer) {
     NS_ASSERTION(isSingleInsert,
                  "root node insertion should be a single insertion");
-    Element *docElement = mDocument->GetRootElement();
+    Element* docElement = mDocument->GetRootElement();
 
     if (aStartChild != docElement) {
       
       return;
     }
 
-    NS_PRECONDITION(nullptr == mRootElementFrame,
-                    "root element frame already created");
+    NS_PRECONDITION(!mRootElementFrame, "root element frame already created");
 
     
-    nsIFrame* docElementFrame =
-      ConstructDocElementFrame(docElement, aFrameState);
-
-    if (docElementFrame) {
+    if (ConstructDocElementFrame(docElement, aFrameState)) {
       InvalidateCanvasIfNeeded(mPresShell, aStartChild);
 #ifdef DEBUG
       if (gReallyNoisyContentUpdates) {
         printf("nsCSSFrameConstructor::ContentRangeInserted: resulting frame "
                "model:\n");
-        docElementFrame->List(stdout, 0);
+        mRootElementFrame->List(stdout, 0);
       }
 #endif
     }
 
     if (aFrameState) {
       
-      nsIFrame* rootScrollFrame = mPresShell->GetRootScrollFrame();
-      if (rootScrollFrame) {
+      if (nsIFrame* rootScrollFrame = mPresShell->GetRootScrollFrame()) {
         RestoreFrameStateFor(rootScrollFrame, aFrameState);
       }
     }
 
 #ifdef ACCESSIBILITY
-    nsAccessibilityService* accService = nsIPresShell::AccService();
-    if (accService) {
+    if (nsAccessibilityService* accService = nsIPresShell::AccService()) {
       accService->ContentRangeInserted(mPresShell, aContainer,
                                        aStartChild, aEndChild);
     }
@@ -8569,7 +8562,12 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent*  aContainer,
   
   
   
-  if (aFlags == REMOVE_DESTROY_FRAMES && aChild->IsElement() && aChild->IsStyledByServo()) {
+  
+  
+  
+  
+  if (aFlags == REMOVE_DESTROY_FRAMES && aChild->IsElement() &&
+      aChild->IsStyledByServo()) {
     ServoRestyleManager::ClearServoDataFromSubtree(aChild->AsElement());
   }
 
@@ -8587,9 +8585,6 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent*  aContainer,
     
     presContext->UpdateViewportScrollbarStylesOverride();
   }
-
-  
-  
 
 #ifdef DEBUG
   if (gNoisyContentUpdates) {
@@ -8655,7 +8650,6 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent*  aContainer,
     }
     return;
   }
-
 #endif 
 
   
@@ -9102,23 +9096,28 @@ nsCSSFrameConstructor::WillDestroyFrameTree()
 
 
 
-void nsCSSFrameConstructor::GetAlternateTextFor(nsIContent*    aContent,
-                                                nsIAtom*       aTag,  
-                                                nsXPIDLString& aAltText)
+void
+nsCSSFrameConstructor::GetAlternateTextFor(nsIContent*    aContent,
+                                           nsIAtom*       aTag,
+                                           nsXPIDLString& aAltText)
 {
   
   
+  if (aContent->GetAttr(kNameSpaceID_None, nsGkAtoms::alt, aAltText)) {
+    return;
+  }
 
-  
-  
-  if (!aContent->GetAttr(kNameSpaceID_None, nsGkAtoms::alt, aAltText) &&
-      nsGkAtoms::input == aTag) {
+  if (nsGkAtoms::input == aTag) {
     
     
-    if (!aContent->GetAttr(kNameSpaceID_None, nsGkAtoms::value, aAltText)) {
-      nsContentUtils::GetLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
-                                         "Submit", aAltText);
+    if (aContent->GetAttr(kNameSpaceID_None, nsGkAtoms::value, aAltText)) {
+      return;
     }
+
+    
+    
+    nsContentUtils::GetLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
+                                       "Submit", aAltText);
   }
 }
 
@@ -10854,7 +10853,8 @@ nsCSSFrameConstructor::WrapItemsInPseudoParent(nsIContent* aParentContent,
   aIter.InsertItem(newItem);
 }
 
-void nsCSSFrameConstructor::CreateNeededPseudoSiblings(
+void
+nsCSSFrameConstructor::CreateNeededPseudoSiblings(
     nsFrameConstructorState& aState,
     FrameConstructionItemList& aItems,
     nsIFrame* aParentFrame)
