@@ -475,6 +475,17 @@ JitZone::init(JSContext* cx)
 }
 
 void
+jit::FreeIonBuilder(IonBuilder* builder)
+{
+    
+    
+    
+    
+    js_delete(builder->backgroundCodegen());
+    js_delete(builder->alloc().lifoAlloc());
+}
+
+void
 jit::FinishOffThreadBuilder(JSRuntime* runtime, IonBuilder* builder,
                             const AutoLockHelperThreadState& locked)
 {
@@ -504,11 +515,8 @@ jit::FinishOffThreadBuilder(JSRuntime* runtime, IonBuilder* builder,
     }
 
     
-    
-    
-    
-    js_delete(builder->backgroundCodegen());
-    js_delete(builder->alloc().lifoAlloc());
+    if (!StartOffThreadIonFree(builder, locked))
+        FreeIonBuilder(builder);
 }
 
 static void
