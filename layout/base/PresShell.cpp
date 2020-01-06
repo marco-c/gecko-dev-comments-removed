@@ -4786,7 +4786,7 @@ PresShell::ClipListToRange(nsDisplayListBuilder *aBuilder,
     nsIFrame* frame = i->Frame();
     nsIContent* content = frame->GetContent();
     if (content) {
-      bool atStart = (content == aRange->GetStartParent());
+      bool atStart = (content == aRange->GetStartContainer());
       bool atEnd = (content == aRange->GetEndParent());
       if ((atStart || atEnd) && frame->IsTextFrame()) {
         int32_t frameStartOffset, frameEndOffset;
@@ -4830,7 +4830,7 @@ PresShell::ClipListToRange(nsDisplayListBuilder *aBuilder,
       
       
       else if (content->GetUncomposedDoc() ==
-                 aRange->GetStartParent()->GetUncomposedDoc()) {
+                 aRange->GetStartContainer()->GetUncomposedDoc()) {
         
         bool before, after;
         nsresult rv =
@@ -4883,7 +4883,7 @@ PresShell::CreateRangePaintInfo(nsIDOMRange* aRange,
   
   
   
-  nsINode* startParent = range->GetStartParent();
+  nsINode* startParent = range->GetStartContainer();
   nsINode* endParent = range->GetEndParent();
   nsIDocument* doc = startParent->GetComposedDoc();
   if (startParent == doc || endParent == doc) {

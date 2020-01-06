@@ -56,7 +56,7 @@ DeleteRangeTransaction::DoTransaction()
   rangeToDelete.swap(mRangeToDelete);
 
   
-  nsCOMPtr<nsINode> startParent = rangeToDelete->GetStartParent();
+  nsCOMPtr<nsINode> startParent = rangeToDelete->GetStartContainer();
   int32_t startOffset = rangeToDelete->StartOffset();
   nsCOMPtr<nsINode> endParent = rangeToDelete->GetEndParent();
   int32_t endOffset = rangeToDelete->EndOffset();

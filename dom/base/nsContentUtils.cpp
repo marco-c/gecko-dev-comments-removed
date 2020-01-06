@@ -7458,7 +7458,7 @@ nsContentUtils::GetSelectionInTextControl(Selection* aSelection,
 
   
   
-  nsINode* startParent = range->GetStartParent();
+  nsINode* startParent = range->GetStartContainer();
   uint32_t startOffset = range->StartOffset();
   nsINode* endParent = range->GetEndParent();
   uint32_t endOffset = range->EndOffset();

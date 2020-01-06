@@ -1482,7 +1482,7 @@ nsresult mozInlineSpellChecker::DoSpellCheck(mozInlineSpellWordUtil& aWordUtil,
   {
     
     
-    nsINode* beginNode = aStatus->mRange->GetStartParent();
+    nsINode* beginNode = aStatus->mRange->GetStartContainer();
     int32_t beginOffset = aStatus->mRange->StartOffset();
     nsINode* endNode = aStatus->mRange->GetEndParent();
     int32_t endOffset = aStatus->mRange->EndOffset();
