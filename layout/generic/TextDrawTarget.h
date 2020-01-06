@@ -92,7 +92,7 @@ public:
   };
 
   explicit TextDrawTarget()
-  : mCurrentlyDrawing(Phase::eSelection)
+  : mCurrentlyDrawing(Phase::eSelection), mHasUnsupportedFeatures(false)
   {
     mCurrentTarget = gfx::Factory::CreateDrawTarget(gfx::BackendType::SKIA, IntSize(1, 1), gfx::SurfaceFormat::B8G8R8A8);
     SetSelectionIndex(0);
@@ -104,6 +104,7 @@ public:
 
   
   void StartDrawing(Phase aPhase) { mCurrentlyDrawing = aPhase; }
+  void FoundUnsupportedFeature() { mHasUnsupportedFeatures = true; }
 
   void SetSelectionIndex(size_t i) {
     
@@ -257,6 +258,10 @@ public:
   bool
   CanSerializeFonts()
   {
+    if (mHasUnsupportedFeatures) {
+      return false;
+    }
+
     for (const SelectedTextRunFragment& part : GetParts()) {
       for (const TextRunFragment& frag : part.text) {
         if (!frag.font->CanSerialize()) {
@@ -384,6 +389,9 @@ private:
 
   
   RefPtr<DrawTarget> mCurrentTarget;
+
+  
+  bool mHasUnsupportedFeatures;
 
   
 public:
