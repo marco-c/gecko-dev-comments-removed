@@ -11,6 +11,10 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.Rect;
+import android.graphics.RectF;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.Surface;
 
@@ -147,15 +151,22 @@ public class LayerSession {
     
     private GeckoDisplay mDisplay;
     private DynamicToolbarAnimator mToolbar;
-    private ImmutableViewportMetrics mViewportMetrics = new ImmutableViewportMetrics();
+
     private boolean mAttachedCompositor;
     private boolean mCalledCreateCompositor;
     private boolean mCompositorReady;
     private Surface mSurface;
+
+    
     private int mLeft;
-    private int mTop;
+    private int mTop; 
+    private int mClientTop; 
     private int mWidth;
-    private int mHeight;
+    private int mHeight; 
+    private int mClientHeight; 
+    private float mViewportLeft;
+    private float mViewportTop;
+    private float mViewportZoom = 1.0f;
 
      GeckoDisplay getDisplay() {
         if (DEBUG) {
@@ -178,9 +189,96 @@ public class LayerSession {
         return mToolbar;
     }
 
-    public ImmutableViewportMetrics getViewportMetrics() {
+    
+
+
+
+
+
+
+
+
+    public void getClientToScreenMatrix(@NonNull final Matrix matrix) {
         ThreadUtils.assertOnUiThread();
-        return mViewportMetrics;
+
+        getClientToSurfaceMatrix(matrix);
+        matrix.postTranslate(mLeft, mTop);
+    }
+
+    
+
+
+
+
+
+
+    public void getClientToSurfaceMatrix(@NonNull final Matrix matrix) {
+        ThreadUtils.assertOnUiThread();
+
+        matrix.setScale(mViewportZoom, mViewportZoom);
+        if (mClientTop != mTop) {
+            matrix.postTranslate(0, mClientTop - mTop);
+        }
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    public void getPageToScreenMatrix(@NonNull final Matrix matrix) {
+        ThreadUtils.assertOnUiThread();
+
+        getPageToSurfaceMatrix(matrix);
+        matrix.postTranslate(mLeft, mTop);
+    }
+
+    
+
+
+
+
+
+
+    public void getPageToSurfaceMatrix(@NonNull final Matrix matrix) {
+        ThreadUtils.assertOnUiThread();
+
+        getClientToSurfaceMatrix(matrix);
+        matrix.postTranslate(-mViewportLeft, -mViewportTop);
+    }
+
+    
+
+
+
+
+
+
+
+
+    public void getClientBounds(@NonNull final RectF rect) {
+        ThreadUtils.assertOnUiThread();
+
+        rect.set(0.0f, 0.0f, (float) mWidth / mViewportZoom,
+                             (float) mClientHeight / mViewportZoom);
+    }
+
+    
+
+
+
+
+
+
+    public void getSurfaceBounds(@NonNull final Rect rect) {
+        ThreadUtils.assertOnUiThread();
+
+        rect.set(0, mClientTop - mTop, mWidth, mHeight);
     }
 
      void onCompositorAttached() {
@@ -296,14 +394,9 @@ public class LayerSession {
             ThreadUtils.assertOnUiThread();
         }
 
-        if (mViewportMetrics.viewportRectLeft != scrollX ||
-            mViewportMetrics.viewportRectTop != scrollY) {
-            mViewportMetrics = mViewportMetrics.setViewportOrigin(scrollX, scrollY);
-        }
-
-        if (mViewportMetrics.zoomFactor != zoom) {
-            mViewportMetrics = mViewportMetrics.setZoomFactor(zoom);
-        }
+        mViewportLeft = scrollX;
+        mViewportTop = scrollY;
+        mViewportZoom = zoom;
     }
 
      void onWindowBoundsChanged() {
@@ -318,15 +411,11 @@ public class LayerSession {
             toolbarHeight = 0;
         }
 
-        if (mAttachedCompositor) {
-            mCompositor.onBoundsChanged(mLeft, mTop + toolbarHeight,
-                                        mWidth, mHeight - toolbarHeight);
-        }
+        mClientTop = mTop + toolbarHeight;
+        mClientHeight = mHeight - toolbarHeight;
 
-        if (mViewportMetrics.viewportRectWidth != mWidth ||
-            mViewportMetrics.viewportRectHeight != (mHeight - toolbarHeight)) {
-            mViewportMetrics = mViewportMetrics.setViewportSize(mWidth,
-                                                                mHeight - toolbarHeight);
+        if (mAttachedCompositor) {
+            mCompositor.onBoundsChanged(mLeft, mClientTop, mWidth, mClientHeight);
         }
 
         if (mCompositor.layerView != null) {
@@ -340,11 +429,6 @@ public class LayerSession {
 
         mWidth = width;
         mHeight = height;
-
-        if (mViewportMetrics.viewportRectWidth == 0 ||
-            mViewportMetrics.viewportRectHeight == 0) {
-            mViewportMetrics = mViewportMetrics.setViewportSize(width, height);
-        }
 
         if (mCompositorReady) {
             mCompositor.syncResumeResizeCompositor(width, height, surface);
@@ -361,6 +445,9 @@ public class LayerSession {
         
         
         mSurface = surface;
+
+        
+        onWindowBoundsChanged();
     }
 
      void onSurfaceDestroyed() {
