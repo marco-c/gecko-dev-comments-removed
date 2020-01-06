@@ -23,9 +23,6 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
       "handleOverUnderflow@chrome://global/content/bindings/autocomplete.xml",
       "_onChanged@chrome://global/content/bindings/autocomplete.xml",
       "_appendCurrentResult/<@chrome://global/content/bindings/autocomplete.xml",
-      "setTimeout handler*_appendCurrentResult@chrome://global/content/bindings/autocomplete.xml",
-      "_invalidate@chrome://global/content/bindings/autocomplete.xml",
-      "invalidate@chrome://global/content/bindings/autocomplete.xml"
     ],
     times: 6, 
     minTimes: 0, 
