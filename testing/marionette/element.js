@@ -423,6 +423,24 @@ element.findByLinkText = function(node, s) {
 
 
 
+element.findAnonymousNodes = function* (rootNode, node) {
+  let anons = rootNode.getAnonymousNodes(node) || [];
+  for (let node of anons) {
+    yield node;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
 element.findByPartialLinkText = function(node, s) {
   return filterLinks(node, link => link.text.indexOf(s) != -1);
 };
@@ -524,7 +542,7 @@ function findElement(using, value, rootNode, startNode) {
       }
 
     case element.Strategy.Anon:
-      return rootNode.getAnonymousNodes(startNode);
+      return element.findAnonymousNodes(rootNode, startNode).next().value;
 
     case element.Strategy.AnonAttribute:
       let attr = Object.keys(value)[0];
@@ -587,7 +605,7 @@ function findElements(using, value, rootNode, startNode) {
       return startNode.querySelectorAll(value);
 
     case element.Strategy.Anon:
-      return rootNode.getAnonymousNodes(startNode);
+      return [...element.findAnonymousNodes(rootNode, startNode)];
 
     case element.Strategy.AnonAttribute:
       let attr = Object.keys(value)[0];
