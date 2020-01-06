@@ -94,10 +94,8 @@ var selectNodeAndWaitForAnimations = Task.async(
     let {AnimationsPanel} = inspector.sidebar.getWindowForTab(TAB_NAME);
     yield waitForAllAnimationTargets(AnimationsPanel);
 
-    if (AnimationsPanel.animationsTimelineComponent.animations.length === 1) {
-      
-      yield waitForAnimationSelecting(AnimationsPanel);
-    }
+    
+    yield waitForAnimationTimelineRendering(AnimationsPanel);
   }
 );
 
@@ -163,11 +161,8 @@ var openAnimationInspector = Task.async(function* () {
   
   
   yield waitForAllAnimationTargets(AnimationsPanel);
-
-  if (AnimationsPanel.animationsTimelineComponent.animations.length === 1) {
-    
-    yield waitForAnimationSelecting(AnimationsPanel);
-  }
+  
+  yield waitForAnimationTimelineRendering(AnimationsPanel);
 
   return {
     toolbox: toolbox,
@@ -301,12 +296,14 @@ function* assertScrubberMoving(panel, isMoving) {
 
 function* clickTimelinePlayPauseButton(panel) {
   let onUiUpdated = panel.once(panel.UI_UPDATED_EVENT);
+  const onAnimationTimelineRendered = waitForAnimationTimelineRendering(panel);
 
   let btn = panel.playTimelineButtonEl;
   let win = btn.ownerDocument.defaultView;
   EventUtils.sendMouseEvent({type: "click"}, btn, win);
 
   yield onUiUpdated;
+  yield onAnimationTimelineRendered;
   yield waitForAllAnimationTargets(panel);
 }
 
@@ -317,12 +314,14 @@ function* clickTimelinePlayPauseButton(panel) {
 
 function* clickTimelineRewindButton(panel) {
   let onUiUpdated = panel.once(panel.UI_UPDATED_EVENT);
+  const onAnimationTimelineRendered = waitForAnimationTimelineRendering(panel);
 
   let btn = panel.rewindTimelineButtonEl;
   let win = btn.ownerDocument.defaultView;
   EventUtils.sendMouseEvent({type: "click"}, btn, win);
 
   yield onUiUpdated;
+  yield onAnimationTimelineRendered;
   yield waitForAllAnimationTargets(panel);
 }
 
@@ -334,6 +333,7 @@ function* clickTimelineRewindButton(panel) {
 
 function* changeTimelinePlaybackRate(panel, rate) {
   let onUiUpdated = panel.once(panel.UI_UPDATED_EVENT);
+  const onAnimationTimelineRendered = waitForAnimationTimelineRendering(panel);
 
   let select = panel.rateSelectorEl.firstChild;
   let win = select.ownerDocument.defaultView;
@@ -352,6 +352,7 @@ function* changeTimelinePlaybackRate(panel, rate) {
   EventUtils.synthesizeMouseAtCenter(option, {type: "mouseup"}, win);
 
   yield onUiUpdated;
+  yield onAnimationTimelineRendered;
   yield waitForAllAnimationTargets(panel);
 
   
@@ -366,6 +367,18 @@ function* changeTimelinePlaybackRate(panel, rate) {
 
 function* waitForAnimationSelecting(panel) {
   yield panel.animationsTimelineComponent.once("animation-selected");
+}
+
+
+
+
+
+function* waitForAnimationTimelineRendering(panel) {
+  const ready =
+    panel.animationsTimelineComponent.animations.length === 0
+    ? Promise.resolve()
+    : panel.animationsTimelineComponent.once("animation-timeline-rendering-completed");
+  yield ready;
 }
 
 
@@ -479,4 +492,6 @@ function* setStyle(animation, panel, name, value, selector) {
   
   
   yield waitForAllAnimationTargets(panel);
+  
+  yield waitForAnimationTimelineRendering(panel);
 }

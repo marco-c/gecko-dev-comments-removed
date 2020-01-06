@@ -257,6 +257,185 @@ exports.ProgressGraphHelper = ProgressGraphHelper;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function SummaryGraphHelper(win, state, minSegmentDuration) {
+  this.win = win;
+  const doc = this.win.document;
+  this.targetEl = doc.createElement("div");
+  doc.documentElement.appendChild(this.targetEl);
+
+  const effectTiming = Object.assign({}, state, {
+    iterations: state.iterationCount ? state.iterationCount : Infinity
+  });
+  this.animation = this.targetEl.animate(null, effectTiming);
+  this.animation.pause();
+  this.endTime = this.animation.effect.getComputedTiming().endTime;
+
+  this.minSegmentDuration = minSegmentDuration;
+  this.minProgressThreshold = DEFAULT_MIN_PROGRESS_THRESHOLD;
+}
+
+SummaryGraphHelper.prototype = {
+  
+
+
+  destroy: function () {
+    this.animation.cancel();
+    this.targetEl.remove();
+    this.targetEl = null;
+    this.animation = null;
+    this.win = null;
+  },
+
+  
+
+
+
+
+
+
+  setKeyframes: function (keyframes) {
+    let frames = null;
+    if (keyframes) {
+      
+      frames = keyframes.map(keyframe => {
+        return {
+          opacity: keyframe.offset,
+          offset: keyframe.offset,
+          easing: keyframe.easing
+        };
+      });
+    }
+    this.animation.effect.setKeyframes(frames);
+    this.hasFrames = !!frames;
+  },
+
+  
+
+
+
+
+
+
+
+  setOriginalBehavior: function (isOriginalBehavior) {
+    this.isOriginalBehavior = isOriginalBehavior;
+  },
+
+  
+
+
+
+  setFillMode: function (fill) {
+    this.animation.effect.timing.fill = fill;
+  },
+
+  
+
+
+
+  setClosePathNeeded: function (isClosePathNeeded) {
+    this.isClosePathNeeded = isClosePathNeeded;
+  },
+
+  
+
+
+
+  setMinProgressThreshold: function (minProgressThreshold) {
+    this.minProgressThreshold = minProgressThreshold;
+  },
+
+  
+
+
+
+
+
+  getSegment: function (time) {
+    if (this.isOriginalBehavior) {
+      
+      if (time < 0) {
+        return { x: time, y: 0 };
+      }
+      
+      this.animation.currentTime = time < this.endTime ? time : this.endTime;
+    } else {
+      this.animation.currentTime = time;
+    }
+    const value = this.hasFrames ? this.getOpacityValue() : this.getProgressValue();
+    return { x: time, y: value };
+  },
+
+  
+
+
+
+
+
+
+
+
+  createPathSegments: function (startTime, endTime) {
+    return createPathSegments(startTime, endTime,
+                              this.minSegmentDuration, this.minProgressThreshold, this);
+  },
+
+  
+
+
+
+
+
+
+  appendPathElement: function (parentEl, pathSegments, cls) {
+    return appendPathElement(parentEl, pathSegments, cls, this.isClosePathNeeded);
+  },
+
+  
+
+
+
+  getProgressValue: function () {
+    return Math.max(this.animation.effect.getComputedTiming().progress, 0);
+  },
+
+  
+
+
+
+  getOpacityValue: function () {
+    return this.win.getComputedStyle(this.targetEl).opacity;
+  }
+};
+
+exports.SummaryGraphHelper = SummaryGraphHelper;
+
+
+
+
+
+
+
+
+
+
+
+
+
 function createPathSegments(startTime, endTime, minSegmentDuration,
                             minProgressThreshold, segmentHelper) {
   
@@ -310,7 +489,8 @@ exports.createPathSegments = createPathSegments;
 
 
 
-function appendPathElement(parentEl, pathSegments, cls) {
+
+function appendPathElement(parentEl, pathSegments, cls, isClosePathNeeded = true) {
   
   let path = `M${ pathSegments[0].x },0`;
   for (let i = 0; i < pathSegments.length; i++) {
@@ -330,7 +510,10 @@ function appendPathElement(parentEl, pathSegments, cls) {
             ? createStepsPathString(pathSegment, nextPathSegment)
             : createCubicBezierPathString(pathSegment, nextPathSegment);
   }
-  path += ` L${ pathSegments[pathSegments.length - 1].x },0 Z`;
+  path += ` L${ pathSegments[pathSegments.length - 1].x },0`;
+  if (isClosePathNeeded) {
+    path += " Z";
+  }
   
   return createSVGNode({
     parent: parentEl,
@@ -459,3 +642,42 @@ function getRGBADistance(rgba1, rgba2) {
   const diffB = startB - endB;
   return Math.sqrt(diffA * diffA + diffR * diffR + diffG * diffG + diffB * diffB);
 }
+
+
+
+
+
+
+
+
+function getPreferredKeyframesProgressThreshold(keyframes) {
+  let minProgressTreshold = DEFAULT_MIN_PROGRESS_THRESHOLD;
+  for (let i = 0; i < keyframes.length - 1; i++) {
+    const keyframe = keyframes[i];
+    if (!keyframe.easing) {
+      continue;
+    }
+    let keyframeProgressThreshold = getPreferredProgressThreshold(keyframe.easing);
+    if (keyframeProgressThreshold !== DEFAULT_MIN_PROGRESS_THRESHOLD) {
+      
+      keyframeProgressThreshold *=
+        (keyframes[i + 1].offset - keyframe.offset);
+    }
+    minProgressTreshold = Math.min(keyframeProgressThreshold, minProgressTreshold);
+  }
+  return minProgressTreshold;
+}
+exports.getPreferredKeyframesProgressThreshold = getPreferredKeyframesProgressThreshold;
+
+
+
+
+
+
+function getPreferredProgressThreshold(easing) {
+  const stepFunction = easing.match(/steps\((\d+)/);
+  return stepFunction
+       ? 1 / (parseInt(stepFunction[1], 10) + 1)
+       : DEFAULT_MIN_PROGRESS_THRESHOLD;
+}
+exports.getPreferredProgressThreshold = getPreferredProgressThreshold;

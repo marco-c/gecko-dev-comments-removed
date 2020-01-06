@@ -27,7 +27,7 @@ add_task(function* () {
        " is in paused state");
 
   
-  let onUpdated = panel.once(panel.UI_UPDATED_EVENT);
+  let onUpdated = waitForAnimationTimelineRendering(panel);
   EventUtils.sendKey("SPACE", window);
   yield onUpdated;
   ok(playTimelineButtonEl.classList.contains("paused"),
@@ -37,7 +37,7 @@ add_task(function* () {
        " is in playing state");
 
   
-  onUpdated = panel.once(panel.UI_UPDATED_EVENT);
+  onUpdated = waitForAnimationTimelineRendering(panel);
   EventUtils.sendKey("SPACE", window);
   yield onUpdated;
   ok(!playTimelineButtonEl.classList.contains("paused"),

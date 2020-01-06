@@ -9,7 +9,8 @@
 const EventEmitter = require("devtools/shared/event-emitter");
 const {createNode, createSVGNode, TimeScale, getFormattedAnimationTitle} =
   require("devtools/client/animationinspector/utils");
-const {createPathSegments, appendPathElement, DEFAULT_MIN_PROGRESS_THRESHOLD} =
+const {SummaryGraphHelper, getPreferredKeyframesProgressThreshold,
+       getPreferredProgressThreshold} =
   require("devtools/client/animationinspector/graph-helper");
 
 const { LocalizationHelper } = require("devtools/shared/l10n");
@@ -19,6 +20,9 @@ const L10N =
 
 
 const MAX_INFINITE_ANIMATIONS_ITERATIONS = 10;
+
+
+const MIN_KEYFRAMES_EASING_OPACITY = .5;
 
 
 
@@ -50,7 +54,7 @@ AnimationTimeBlock.prototype = {
     }
   },
 
-  render: function (animation) {
+  render: function (animation, tracks) {
     this.unrender();
 
     this.animation = animation;
@@ -87,115 +91,20 @@ AnimationTimeBlock.prototype = {
                             ${ 1 + strokeHeightForViewBox * 2 }`);
 
     
-    const segmentHelper = getSegmentHelper(state, this.win);
+    const minSegmentDuration = totalDisplayedDuration / this.containerEl.clientWidth;
+    
+    const minEffectProgressThreshold = getPreferredProgressThreshold(state.easing);
 
     
-    const minSegmentDuration =
-      totalDisplayedDuration / this.containerEl.clientWidth;
     
-    let minProgressThreshold = DEFAULT_MIN_PROGRESS_THRESHOLD;
-    
-    
-    const stepFunction = state.easing.match(/steps\((\d+)/);
-    if (stepFunction) {
-      minProgressThreshold = 1 / (parseInt(stepFunction[1], 10) + 1);
+    const graphHelper = new SummaryGraphHelper(this.win, state, minSegmentDuration);
+    renderKeyframesEasingGraph(summaryEl, state, totalDisplayedDuration,
+                               minEffectProgressThreshold, tracks, graphHelper);
+    if (state.easing !== "linear") {
+      renderEffectEasingGraph(summaryEl, state, totalDisplayedDuration,
+                              minEffectProgressThreshold, graphHelper);
     }
-
-    
-    let mainIterationStartTime = 0;
-    let iterationStart = state.iterationStart;
-    let iterationCount = state.iterationCount ? state.iterationCount : Infinity;
-
-    
-    if (state.delay > 0) {
-      renderDelay(summaryEl, state, segmentHelper);
-      mainIterationStartTime = state.delay;
-    } else {
-      const negativeDelayCount = -state.delay / state.duration;
-      
-      iterationStart += negativeDelayCount;
-      
-      if (iterationCount !== Infinity) {
-        iterationCount -= negativeDelayCount;
-      }
-    }
-
-    
-    
-    
-    
-    const firstSectionCount =
-      iterationStart % 1 === 0
-      ? 0 : Math.min(iterationCount, 1) - iterationStart % 1;
-    if (firstSectionCount) {
-      renderFirstIteration(summaryEl, state, mainIterationStartTime,
-                           firstSectionCount, minSegmentDuration,
-                           minProgressThreshold, segmentHelper);
-    }
-
-    if (iterationCount === Infinity) {
-      
-      
-      renderInfinity(summaryEl, state, mainIterationStartTime,
-                     firstSectionCount, totalDisplayedDuration,
-                     minSegmentDuration, minProgressThreshold, segmentHelper);
-    } else {
-      
-
-      
-      if (state.fill === "both" || state.fill === "forwards") {
-        renderForwardsFill(summaryEl, state, mainIterationStartTime,
-                           iterationCount, totalDisplayedDuration,
-                           segmentHelper);
-      }
-
-      
-      
-      
-      const middleSectionCount =
-        Math.floor(iterationCount - firstSectionCount);
-      renderMiddleIterations(summaryEl, state, mainIterationStartTime,
-                             firstSectionCount, middleSectionCount,
-                             minSegmentDuration, minProgressThreshold,
-                             segmentHelper);
-
-      
-      
-      
-      const lastSectionCount =
-        iterationCount - middleSectionCount - firstSectionCount;
-      if (lastSectionCount) {
-        renderLastIteration(summaryEl, state, mainIterationStartTime,
-                            firstSectionCount, middleSectionCount,
-                            lastSectionCount, minSegmentDuration,
-                            minProgressThreshold, segmentHelper);
-      }
-
-      
-      if (state.endDelay > 0) {
-        renderEndDelay(summaryEl, state,
-                       mainIterationStartTime, iterationCount, segmentHelper);
-      }
-    }
-
-    
-    if (state.delay < 0) {
-      segmentHelper.animation.effect.timing.fill = "both";
-      segmentHelper.asOriginalBehavior = false;
-      renderNegativeDelayHiddenProgress(summaryEl, state, minSegmentDuration,
-                                        minProgressThreshold, segmentHelper);
-    }
-    
-    if (state.iterationCount && state.endDelay < 0) {
-      if (segmentHelper.asOriginalBehavior) {
-        segmentHelper.animation.effect.timing.fill = "both";
-        segmentHelper.asOriginalBehavior = false;
-      }
-      renderNegativeEndDelayHiddenProgress(summaryEl, state,
-                                           minSegmentDuration,
-                                           minProgressThreshold,
-                                           segmentHelper);
-    }
+    graphHelper.destroy();
 
     
     createNode({
@@ -346,13 +255,161 @@ AnimationTimeBlock.prototype = {
 
 
 
-function renderDelay(parentEl, state, segmentHelper) {
-  const startSegment = segmentHelper.getSegment(0);
-  const endSegment = { x: state.delay, y: startSegment.y };
-  appendPathElement(parentEl, [startSegment, endSegment], "delay-path");
+
+
+
+function renderKeyframesEasingGraph(parentEl, state, totalDisplayedDuration,
+                                    minEffectProgressThreshold, tracks, graphHelper) {
+  const keyframesList = getOffsetAndEasingOnlyKeyframesList(tracks);
+  const keyframeEasingOpacity = Math.max(1 / keyframesList.length,
+                                         MIN_KEYFRAMES_EASING_OPACITY);
+  for (let keyframes of keyframesList) {
+    const minProgressTreshold =
+      Math.min(minEffectProgressThreshold,
+               getPreferredKeyframesProgressThreshold(keyframes));
+    graphHelper.setMinProgressThreshold(minProgressTreshold);
+    graphHelper.setKeyframes(keyframes);
+    graphHelper.setClosePathNeeded(true);
+    const element = renderGraph(parentEl, state, totalDisplayedDuration,
+                                "keyframes-easing", graphHelper);
+    element.style.opacity = keyframeEasingOpacity;
+  }
 }
 
 
+
+
+
+
+
+
+
+function renderEffectEasingGraph(parentEl, state, totalDisplayedDuration,
+                                 minEffectProgressThreshold, graphHelper) {
+  graphHelper.setMinProgressThreshold(minEffectProgressThreshold);
+  graphHelper.setKeyframes(null);
+  graphHelper.setClosePathNeeded(false);
+  renderGraph(parentEl, state, totalDisplayedDuration, "effect-easing", graphHelper);
+}
+
+
+
+
+
+
+
+
+
+function renderGraph(parentEl, state, totalDisplayedDuration, className, graphHelper) {
+  const graphEl = createSVGNode({
+    parent: parentEl,
+    nodeType: "g",
+    attributes: {
+      "class": className,
+    }
+  });
+
+  
+  let mainIterationStartTime = 0;
+  let iterationStart = state.iterationStart;
+  let iterationCount = state.iterationCount ? state.iterationCount : Infinity;
+
+  graphHelper.setFillMode(state.fill);
+  graphHelper.setOriginalBehavior(true);
+
+  
+  if (state.delay > 0) {
+    renderDelay(graphEl, state, graphHelper);
+    mainIterationStartTime = state.delay;
+  } else {
+    const negativeDelayCount = -state.delay / state.duration;
+    
+    iterationStart += negativeDelayCount;
+    
+    if (iterationCount !== Infinity) {
+      iterationCount -= negativeDelayCount;
+    }
+  }
+
+  
+  
+  
+  
+  const firstSectionCount =
+    iterationStart % 1 === 0
+    ? 0 : Math.min(iterationCount, 1) - iterationStart % 1;
+  if (firstSectionCount) {
+    renderFirstIteration(graphEl, state, mainIterationStartTime,
+                         firstSectionCount, graphHelper);
+  }
+
+  if (iterationCount === Infinity) {
+    
+    
+    renderInfinity(graphEl, state, mainIterationStartTime,
+                   firstSectionCount, totalDisplayedDuration, graphHelper);
+  } else {
+    
+
+    
+    if (state.fill === "both" || state.fill === "forwards") {
+      renderForwardsFill(graphEl, state, mainIterationStartTime,
+                         iterationCount, totalDisplayedDuration, graphHelper);
+    }
+
+    
+    
+    
+    const middleSectionCount =
+      Math.floor(iterationCount - firstSectionCount);
+    renderMiddleIterations(graphEl, state, mainIterationStartTime,
+                           firstSectionCount, middleSectionCount, graphHelper);
+
+    
+    
+    
+    const lastSectionCount =
+      iterationCount - middleSectionCount - firstSectionCount;
+    if (lastSectionCount) {
+      renderLastIteration(graphEl, state, mainIterationStartTime,
+                          firstSectionCount, middleSectionCount,
+                          lastSectionCount, graphHelper);
+    }
+
+    
+    if (state.endDelay > 0) {
+      renderEndDelay(graphEl, state,
+                     mainIterationStartTime, iterationCount, graphHelper);
+    }
+  }
+
+  
+  if (state.delay < 0) {
+    graphHelper.setFillMode("both");
+    graphHelper.setOriginalBehavior(false);
+    renderNegativeDelayHiddenProgress(graphEl, state, graphHelper);
+  }
+  
+  if (state.iterationCount && state.endDelay < 0) {
+    graphHelper.setFillMode("both");
+    graphHelper.setOriginalBehavior(false);
+    renderNegativeEndDelayHiddenProgress(graphEl, state, graphHelper);
+  }
+
+  return graphEl;
+}
+
+
+
+
+
+
+
+function renderDelay(parentEl, state, graphHelper) {
+  const startSegment = graphHelper.getSegment(0);
+  const endSegment = { x: state.delay, y: startSegment.y };
+  graphHelper.appendPathElement(parentEl, [startSegment, endSegment], "delay-path");
+}
 
 
 
@@ -363,17 +420,12 @@ function renderDelay(parentEl, state, segmentHelper) {
 
 
 function renderFirstIteration(parentEl, state, mainIterationStartTime,
-                              firstSectionCount, minSegmentDuration,
-                              minProgressThreshold, segmentHelper) {
+                              firstSectionCount, graphHelper) {
   const startTime = mainIterationStartTime;
   const endTime = startTime + firstSectionCount * state.duration;
-  const segments =
-    createPathSegments(startTime, endTime, minSegmentDuration,
-                       minProgressThreshold, segmentHelper);
-  appendPathElement(parentEl, segments, "iteration-path");
+  const segments = graphHelper.createPathSegments(startTime, endTime);
+  graphHelper.appendPathElement(parentEl, segments, "iteration-path");
 }
-
-
 
 
 
@@ -386,17 +438,14 @@ function renderFirstIteration(parentEl, state, mainIterationStartTime,
 
 function renderMiddleIterations(parentEl, state, mainIterationStartTime,
                                 firstSectionCount, middleSectionCount,
-                                minSegmentDuration, minProgressThreshold,
-                                segmentHelper) {
+                                graphHelper) {
   const offset = mainIterationStartTime + firstSectionCount * state.duration;
   for (let i = 0; i < middleSectionCount; i++) {
     
     const startTime = offset + i * state.duration;
     const endTime = startTime + state.duration;
-    const segments =
-      createPathSegments(startTime, endTime, minSegmentDuration,
-                         minProgressThreshold, segmentHelper);
-    appendPathElement(parentEl, segments, "iteration-path");
+    const segments = graphHelper.createPathSegments(startTime, endTime);
+    graphHelper.appendPathElement(parentEl, segments, "iteration-path");
   }
 }
 
@@ -410,19 +459,14 @@ function renderMiddleIterations(parentEl, state, mainIterationStartTime,
 
 
 
-
-
 function renderLastIteration(parentEl, state, mainIterationStartTime,
                              firstSectionCount, middleSectionCount,
-                             lastSectionCount, minSegmentDuration,
-                             minProgressThreshold, segmentHelper) {
+                             lastSectionCount, graphHelper) {
   const startTime = mainIterationStartTime +
                       (firstSectionCount + middleSectionCount) * state.duration;
   const endTime = startTime + lastSectionCount * state.duration;
-  const segments =
-    createPathSegments(startTime, endTime, minSegmentDuration,
-                       minProgressThreshold, segmentHelper);
-  appendPathElement(parentEl, segments, "iteration-path");
+  const segments = graphHelper.createPathSegments(startTime, endTime);
+  graphHelper.appendPathElement(parentEl, segments, "iteration-path");
 }
 
 
@@ -434,11 +478,8 @@ function renderLastIteration(parentEl, state, mainIterationStartTime,
 
 
 
-
-
 function renderInfinity(parentEl, state, mainIterationStartTime,
-                        firstSectionCount, totalDuration, minSegmentDuration,
-                        minProgressThreshold, segmentHelper) {
+                        firstSectionCount, totalDuration, graphHelper) {
   
   
   let uncappedInfinityIterationCount =
@@ -456,9 +497,8 @@ function renderInfinity(parentEl, state, mainIterationStartTime,
     mainIterationStartTime + firstSectionCount * state.duration;
   const firstEndTime = firstStartTime + state.duration;
   const firstSegments =
-    createPathSegments(firstStartTime, firstEndTime, minSegmentDuration,
-                       minProgressThreshold, segmentHelper);
-  appendPathElement(parentEl, firstSegments, "iteration-path infinity");
+    graphHelper.createPathSegments(firstStartTime, firstEndTime);
+  graphHelper.appendPathElement(parentEl, firstSegments, "iteration-path infinity");
 
   
   const isAlternate = state.direction.match(/alternate/);
@@ -476,7 +516,7 @@ function renderInfinity(parentEl, state, mainIterationStartTime,
         return { x: segment.x - firstStartTime + startTime, y: segment.y };
       });
     }
-    appendPathElement(parentEl, segments, "iteration-path infinity copied");
+    graphHelper.appendPathElement(parentEl, segments, "iteration-path infinity copied");
   }
 }
 
@@ -489,11 +529,11 @@ function renderInfinity(parentEl, state, mainIterationStartTime,
 
 
 function renderEndDelay(parentEl, state,
-                        mainIterationStartTime, iterationCount, segmentHelper) {
+                        mainIterationStartTime, iterationCount, graphHelper) {
   const startTime = mainIterationStartTime + iterationCount * state.duration;
-  const startSegment = segmentHelper.getSegment(startTime);
+  const startSegment = graphHelper.getSegment(startTime);
   const endSegment = { x: startTime + state.endDelay, y: startSegment.y };
-  appendPathElement(parentEl, [startSegment, endSegment], "enddelay-path");
+  graphHelper.appendPathElement(parentEl, [startSegment, endSegment], "enddelay-path");
 }
 
 
@@ -506,12 +546,13 @@ function renderEndDelay(parentEl, state,
 
 
 function renderForwardsFill(parentEl, state, mainIterationStartTime,
-                            iterationCount, totalDuration, segmentHelper) {
+                            iterationCount, totalDuration, graphHelper) {
   const startTime = mainIterationStartTime + iterationCount * state.duration +
                       (state.endDelay > 0 ? state.endDelay : 0);
-  const startSegment = segmentHelper.getSegment(startTime);
+  const startSegment = graphHelper.getSegment(startTime);
   const endSegment = { x: totalDuration, y: startSegment.y };
-  appendPathElement(parentEl, [startSegment, endSegment], "fill-forwards-path");
+  graphHelper.appendPathElement(parentEl, [startSegment, endSegment],
+                                "fill-forwards-path");
 }
 
 
@@ -520,17 +561,12 @@ function renderForwardsFill(parentEl, state, mainIterationStartTime,
 
 
 
-
-
-function renderNegativeDelayHiddenProgress(parentEl, state, minSegmentDuration,
-                                           minProgressThreshold,
-                                           segmentHelper) {
+function renderNegativeDelayHiddenProgress(parentEl, state, graphHelper) {
   const startTime = state.delay;
   const endTime = 0;
   const segments =
-    createPathSegments(startTime, endTime, minSegmentDuration,
-                       minProgressThreshold, segmentHelper);
-  appendPathElement(parentEl, segments, "delay-path negative");
+    graphHelper.createPathSegments(startTime, endTime);
+  graphHelper.appendPathElement(parentEl, segments, "delay-path negative");
 }
 
 
@@ -539,18 +575,11 @@ function renderNegativeDelayHiddenProgress(parentEl, state, minSegmentDuration,
 
 
 
-
-
-function renderNegativeEndDelayHiddenProgress(parentEl, state,
-                                              minSegmentDuration,
-                                              minProgressThreshold,
-                                              segmentHelper) {
+function renderNegativeEndDelayHiddenProgress(parentEl, state, graphHelper) {
   const endTime = state.delay + state.iterationCount * state.duration;
   const startTime = endTime + state.endDelay;
-  const segments =
-    createPathSegments(startTime, endTime, minSegmentDuration,
-                       minProgressThreshold, segmentHelper);
-  appendPathElement(parentEl, segments, "enddelay-path negative");
+  const segments = graphHelper.createPathSegments(startTime, endTime);
+  graphHelper.appendPathElement(parentEl, segments, "enddelay-path negative");
 }
 
 
@@ -559,44 +588,29 @@ function renderNegativeEndDelayHiddenProgress(parentEl, state,
 
 
 
-
-
-
-
-
-
-
-
-
-function getSegmentHelper(state, win) {
-  
-  
-  const timing = Object.assign({}, state, {
-    iterations: state.iterationCount ? state.iterationCount : Infinity
-  });
-
-  
-  const dummyAnimation =
-    new win.Animation(new win.KeyframeEffect(null, null, timing), null);
-
-  
-  return {
-    animation: dummyAnimation,
-    endTime: dummyAnimation.effect.getComputedTiming().endTime,
-    asOriginalBehavior: true,
-    getSegment: function (time) {
-      if (this.asOriginalBehavior) {
-        
-        if (time < 0) {
-          return { x: time, y: 0 };
-        }
-        
-        this.animation.currentTime = time < this.endTime ? time : this.endTime;
-      } else {
-        this.animation.currentTime = time;
+function getOffsetAndEasingOnlyKeyframesList(tracks) {
+  return Object.keys(tracks).reduce((result, name) => {
+    const track = tracks[name];
+    const exists = result.find(keyframes => {
+      if (track.length !== keyframes.length) {
+        return false;
       }
-      const progress = this.animation.effect.getComputedTiming().progress;
-      return { x: time, y: Math.max(progress, 0) };
+      for (let i = 0; i < track.length; i++) {
+        const keyframe1 = track[i];
+        const keyframe2 = keyframes[i];
+        if (keyframe1.offset !== keyframe2.offset ||
+            keyframe1.easing !== keyframe2.easing) {
+          return false;
+        }
+      }
+      return true;
+    });
+    if (!exists) {
+      const keyframes = track.map(keyframe => {
+        return { offset: keyframe.offset, easing: keyframe.easing };
+      });
+      result.push(keyframes);
     }
-  };
+    return result;
+  }, []);
 }

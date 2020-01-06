@@ -89,67 +89,6 @@ AnimationDetails.prototype = {
 
 
 
-  getTracks: Task.async(function* () {
-    let tracks = {};
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    if (this.serverTraits.hasGetProperties) {
-      let properties = yield this.animation.getProperties();
-      for (let {name, values} of properties) {
-        if (!tracks[name]) {
-          tracks[name] = [];
-        }
-
-        for (let {value, offset, easing, distance} of values) {
-          distance = distance ? distance : 0;
-          tracks[name].push({value, offset, easing, distance});
-        }
-      }
-    } else {
-      let frames = yield this.animation.getFrames();
-      for (let frame of frames) {
-        for (let name in frame) {
-          if (this.NON_PROPERTIES.indexOf(name) != -1) {
-            continue;
-          }
-
-          
-          
-          const propertyCSSName = getCssPropertyName(name);
-          if (!tracks[propertyCSSName]) {
-            tracks[propertyCSSName] = [];
-          }
-
-          tracks[propertyCSSName].push({
-            value: frame[name],
-            offset: frame.computedOffset,
-            easing: frame.easing,
-            distance: 0
-          });
-        }
-      }
-    }
-
-    return tracks;
-  }),
-
-  
-
-
-
-
 
 
 
@@ -165,22 +104,20 @@ AnimationDetails.prototype = {
     return Promise.resolve(animationTypes);
   }),
 
-  render: Task.async(function* (animation) {
+  render: Task.async(function* (animation, tracks) {
     this.unrender();
 
     if (!animation) {
       return;
     }
     this.animation = animation;
+    this.tracks = tracks;
 
     
     
     if (!this.containerEl || this.animation !== animation) {
       return;
     }
-
-    
-    this.tracks = yield this.getTracks(animation, this.serverTraits);
 
     
     const animationTypes = yield this.getAnimationTypes(Object.keys(this.tracks));
@@ -199,10 +136,6 @@ AnimationDetails.prototype = {
     });
     this.dummyAnimation =
       new this.win.Animation(new this.win.KeyframeEffect(null, null, timing), null);
-
-    
-    
-    this.emit("animation-detail-rendering-completed");
   }),
 
   renderAnimatedPropertiesHeader: function () {
