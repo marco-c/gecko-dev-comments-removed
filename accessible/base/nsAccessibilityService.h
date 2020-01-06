@@ -304,6 +304,21 @@ private:
     CreateAccessibleByFrameType(nsIFrame* aFrame, nsIContent* aContent,
                                 Accessible* aContext);
 
+  
+
+
+  void NotifyOfConsumersChange();
+
+  
+
+
+  void SetConsumers(uint32_t aConsumers);
+
+  
+
+
+  void UnsetConsumers(uint32_t aConsumers);
+
 #ifdef MOZ_XUL
   
 
