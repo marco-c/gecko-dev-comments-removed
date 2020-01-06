@@ -32,7 +32,12 @@ class DeclarationBlock
 {
 protected:
   explicit DeclarationBlock(StyleBackendType aType)
-    : mImmutable(false), mType(aType) { mContainer.mRaw = 0; }
+    : mImmutable(false)
+    , mIsDirty(false)
+    , mType(aType)
+  {
+    mContainer.mRaw = 0;
+  }
 
   DeclarationBlock(const DeclarationBlock& aCopy)
     : DeclarationBlock(aCopy.mType) {}
@@ -64,6 +69,21 @@ public:
 
 
   void SetImmutable() { mImmutable = true; }
+
+  
+
+
+  bool IsDirty() const { return mIsDirty; }
+
+  
+
+
+  void SetDirty() { mIsDirty = true; }
+
+  
+
+
+  void UnsetDirty() { mIsDirty = false; }
 
   
 
@@ -136,6 +156,8 @@ private:
 
   
   bool mImmutable;
+  
+  bool mIsDirty;
 
   const StyleBackendType mType;
 };
