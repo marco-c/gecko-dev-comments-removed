@@ -515,6 +515,7 @@ fn get_location_with_offset(
 ) -> SourceLocation {
     SourceLocation {
         line: location.line + offset as u32,
-        column: location.column,
+        
+        column: location.column + 1,
     }
 }
