@@ -591,8 +591,7 @@ NukeAllWrappersForCompartment(JSContext* cx, JSCompartment* compartment,
     
     
     
-    js::NukeCrossCompartmentWrappers(cx, js::AllCompartments(),
-                                     js::SingleCompartment(compartment),
+    js::NukeCrossCompartmentWrappers(cx, js::AllCompartments(), compartment,
                                      nukeReferencesToWindow,
                                      js::NukeAllReferences);
 
