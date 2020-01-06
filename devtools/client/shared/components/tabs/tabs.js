@@ -331,7 +331,6 @@ define(function (require, exports, module) {
           let style = {
             visibility: selected ? "visible" : "hidden",
             height: selected ? "100%" : "0",
-            width: selected ? "100%" : "0",
           };
 
           
