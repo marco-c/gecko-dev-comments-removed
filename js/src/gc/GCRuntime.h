@@ -959,8 +959,7 @@ class GCRuntime
     void startTask(GCParallelTask& task, gcstats::PhaseKind phase, AutoLockHelperThreadState& locked);
     void joinTask(GCParallelTask& task, gcstats::PhaseKind phase, AutoLockHelperThreadState& locked);
 
-    
-    void deleteEmptyZoneGroup(ZoneGroup* group);
+    void mergeCompartments(JSCompartment* source, JSCompartment* target);
 
   private:
     enum IncrementalResult
@@ -970,11 +969,16 @@ class GCRuntime
     };
 
     
+    void deleteEmptyZoneGroup(ZoneGroup* group);
+
+    
     friend class ArenaLists;
     Chunk* pickChunk(const AutoLockGC& lock,
                      AutoMaybeStartBackgroundAllocation& maybeStartBGAlloc);
     Arena* allocateArena(Chunk* chunk, Zone* zone, AllocKind kind,
                          ShouldCheckThresholds checkThresholds, const AutoLockGC& lock);
+
+
     void arenaAllocatedDuringGC(JS::Zone* zone, Arena* arena);
 
     

@@ -85,7 +85,7 @@ enum NewObjectKind {
 
 class ObjectGroup : public gc::TenuredCell
 {
-    friend void gc::MergeCompartments(JSCompartment* source, JSCompartment* target);
+    friend class gc::GCRuntime;
 
     
     const Class* clasp_;
@@ -97,7 +97,6 @@ class ObjectGroup : public gc::TenuredCell
     JSCompartment* compartment_;
 
   public:
-
     const Class* clasp() const {
         return clasp_;
     }

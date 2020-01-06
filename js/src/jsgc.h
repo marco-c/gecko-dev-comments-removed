@@ -756,7 +756,7 @@ class ArenaLists
     
 
 
-    void adoptArenas(JSRuntime* runtime, ArenaLists* fromArenaLists);
+    void adoptArenas(JSRuntime* runtime, ArenaLists* fromArenaLists, bool targetZoneIsCollecting);
 
     
     bool containsArena(JSRuntime* runtime, Arena* arena);
@@ -815,8 +815,6 @@ class ArenaLists
                                    ShouldCheckThresholds checkThresholds,
                                    AutoMaybeStartBackgroundAllocation& maybeStartBGAlloc);
     inline TenuredCell* allocateFromArenaInner(JS::Zone* zone, Arena* arena, AllocKind kind);
-
-    inline void normalizeBackgroundFinalizeState(AllocKind thingKind);
 
     friend class GCRuntime;
     friend class js::Nursery;
