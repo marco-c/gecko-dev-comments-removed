@@ -54,8 +54,6 @@ Components.manager.addBootstrappedManifestLocation(extensionDir);
 
 
 
-
-
 function getTempFile(leafName) {
   return FileTestUtils.getTempFile(leafName);
 }
