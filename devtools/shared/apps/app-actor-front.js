@@ -11,7 +11,7 @@ const {NetUtil} = require("resource://gre/modules/NetUtil.jsm");
 const promise = require("promise");
 const defer = require("devtools/shared/defer");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-const EventEmitter = require("devtools/shared/old-event-emitter");
+const EventEmitter = require("devtools/shared/event-emitter");
 
 
 
