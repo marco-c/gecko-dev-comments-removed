@@ -789,9 +789,10 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
         FlushRepaintsToClearScreenToGeckoTransform();
       }
 
-      bool hitScrollbar = false;
+      HitTestingTreeNode* hitScrollbarNode = nullptr;
       RefPtr<AsyncPanZoomController> apzc = GetTargetAPZC(mouseInput.mOrigin,
-            &hitResult, &hitScrollbar);
+            &hitResult, &hitScrollbarNode);
+      bool hitScrollbar = hitScrollbarNode;
 
       
       
@@ -1651,7 +1652,7 @@ APZCTreeManager::GetTargetNode(const ScrollableLayerGuid& aGuid,
 already_AddRefed<AsyncPanZoomController>
 APZCTreeManager::GetTargetAPZC(const ScreenPoint& aPoint,
                                HitTestResult* aOutHitResult,
-                               bool* aOutHitScrollbar)
+                               HitTestingTreeNode** aOutHitScrollbar)
 {
   MutexAutoLock lock(mTreeLock);
   HitTestResult hitResult = HitNothing;
@@ -1792,7 +1793,7 @@ AsyncPanZoomController*
 APZCTreeManager::GetAPZCAtPoint(HitTestingTreeNode* aNode,
                                 const ParentLayerPoint& aHitTestPoint,
                                 HitTestResult* aOutHitResult,
-                                bool* aOutHitScrollbar)
+                                HitTestingTreeNode** aOutScrollbarNode)
 {
   mTreeLock.AssertCurrentThreadOwns();
 
@@ -1845,8 +1846,8 @@ APZCTreeManager::GetAPZCAtPoint(HitTestingTreeNode* aNode,
       MOZ_ASSERT(resultNode);
       for (HitTestingTreeNode* n = resultNode; n; n = n->GetParent()) {
         if (n->IsScrollbarNode()) {
-          if (aOutHitScrollbar) {
-            *aOutHitScrollbar = true;
+          if (aOutScrollbarNode) {
+            *aOutScrollbarNode = n;
           }
           
           
