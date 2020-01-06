@@ -13,16 +13,5 @@ namespace mozilla {
 
 int GetEffectiveContentSandboxLevel();
 
-
-
-
-
-bool IsDevelopmentBuild();
-
-
-
-
-nsresult GetRepoDir(nsIFile **aRepoDir);
-nsresult GetObjDir(nsIFile **aObjDir);
 }
 #endif 
