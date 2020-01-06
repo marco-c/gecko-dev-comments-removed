@@ -383,7 +383,7 @@ class nsStyleSet final
 
 
 
-  nsRestyleHint MediumFeaturesChanged(bool aViewportChanged);
+  bool MediumFeaturesChanged();
 
   
   

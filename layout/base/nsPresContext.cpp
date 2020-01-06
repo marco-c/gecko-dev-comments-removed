@@ -2117,9 +2117,8 @@ nsPresContext::MediaFeatureValuesChanged(nsRestyleHint aRestyleHint,
   mPendingMediaFeatureValuesChanged = false;
 
   
-  if (mShell) {
-    aRestyleHint |= mShell->
-      StyleSet()->MediumFeaturesChanged(mPendingViewportChange);
+  if (mShell && mShell->StyleSet()->MediumFeaturesChanged()) {
+    aRestyleHint |= eRestyle_Subtree;
   }
 
   if (mPendingViewportChange &&
