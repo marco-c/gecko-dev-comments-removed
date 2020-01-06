@@ -197,9 +197,6 @@ ForOfIterator::closeThrow()
 
     
     cx_->setPendingException(completionException);
-
-    
-    return;
 }
 
 bool

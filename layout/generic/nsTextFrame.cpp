@@ -4625,7 +4625,6 @@ nsContinuingTextFrame::AddInlineMinISize(gfxContext *aRenderingContext,
                                          InlineMinISizeData *aData)
 {
   
-  return;
 }
 
  void
@@ -4633,7 +4632,6 @@ nsContinuingTextFrame::AddInlinePrefISize(gfxContext *aRenderingContext,
                                           InlinePrefISizeData *aData)
 {
   
-  return;
 }
 
 

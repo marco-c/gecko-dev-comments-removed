@@ -178,8 +178,6 @@ XMLStylesheetProcessingInstruction::GetStyleSheetInfo(nsAString& aTitle,
   
   
   aType.AssignLiteral("text/css");
-
-  return;
 }
 
 nsGenericDOMDataNode*

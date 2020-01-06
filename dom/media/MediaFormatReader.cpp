@@ -1093,13 +1093,13 @@ MediaFormatReader::DemuxerProxy::NotifyDataArrived()
   });
 }
 
-MediaFormatReader::MediaFormatReader(MediaFormatReaderInit& aInit,
+MediaFormatReader::MediaFormatReader(MediaDecoderReaderInit& aInit,
                                      MediaDataDemuxer* aDemuxer)
-  : mTaskQueue(new TaskQueue(GetMediaThreadPool(MediaThreadType::PLAYBACK),
-                             "MediaFormatReader::mTaskQueue",
-                              true))
-  , mAudio(this, MediaData::AUDIO_DATA, MediaPrefs::MaxAudioDecodeError())
-  , mVideo(this, MediaData::VIDEO_DATA, MediaPrefs::MaxVideoDecodeError())
+  : MediaDecoderReader(aInit)
+  , mAudio(this, MediaData::AUDIO_DATA,
+           MediaPrefs::MaxAudioDecodeError())
+  , mVideo(this, MediaData::VIDEO_DATA,
+           MediaPrefs::MaxVideoDecodeError())
   , mDemuxer(new DemuxerProxy(aDemuxer))
   , mDemuxerInitDone(false)
   , mPendingNotifyDataArrived(false)
@@ -1113,10 +1113,6 @@ MediaFormatReader::MediaFormatReader(MediaFormatReaderInit& aInit,
   , mCrashHelper(aInit.mCrashHelper)
   , mDecoderFactory(new DecoderFactory(this))
   , mShutdownPromisePool(new ShutdownPromisePool())
-  , mDecoder(aInit.mDecoder)
-  , mBuffered(mTaskQueue,
-              TimeIntervals(),
-              "MediaFormatReader::mBuffered (Canonical)")
 {
   MOZ_ASSERT(aDemuxer);
   MOZ_COUNT_CTOR(MediaFormatReader);
@@ -1127,7 +1123,6 @@ MediaFormatReader::MediaFormatReader(MediaFormatReaderInit& aInit,
 MediaFormatReader::~MediaFormatReader()
 {
   MOZ_COUNT_DTOR(MediaFormatReader);
-  MOZ_ASSERT(mShutdown);
 }
 
 RefPtr<ShutdownPromise>
@@ -1210,14 +1205,11 @@ MediaFormatReader::TearDownDecoders()
   mPlatform = nullptr;
   mVideoFrameContainer = nullptr;
 
-  ReleaseResources();
-  mBuffered.DisconnectAll();
-  mDecoder = nullptr;
-  return mTaskQueue->BeginShutdown();
+  return MediaDecoderReader::Shutdown();
 }
 
 nsresult
-MediaFormatReader::Init()
+MediaFormatReader::InitInternal()
 {
   MOZ_ASSERT(NS_IsMainThread(), "Must be on main thread.");
 
@@ -1252,7 +1244,7 @@ MediaFormatReader::IsWaitingOnCDMResource()
   return IsEncrypted() && !mCDMProxy;
 }
 
-RefPtr<MediaFormatReader::MetadataPromise>
+RefPtr<MediaDecoderReader::MetadataPromise>
 MediaFormatReader::AsyncReadMetadata()
 {
   MOZ_ASSERT(OnTaskQueue());
@@ -1496,7 +1488,7 @@ MediaFormatReader::ShouldSkip(TimeUnit aTimeThreshold)
          && !nextKeyframe.IsInfinite();
 }
 
-RefPtr<MediaFormatReader::VideoDataPromise>
+RefPtr<MediaDecoderReader::VideoDataPromise>
 MediaFormatReader::RequestVideoData(const TimeUnit& aTimeThreshold)
 {
   MOZ_ASSERT(OnTaskQueue());
@@ -1613,7 +1605,7 @@ MediaFormatReader::OnVideoDemuxCompleted(
   ScheduleUpdate(TrackInfo::kVideoTrack);
 }
 
-RefPtr<MediaFormatReader::AudioDataPromise>
+RefPtr<MediaDecoderReader::AudioDataPromise>
 MediaFormatReader::RequestAudioData()
 {
   MOZ_ASSERT(OnTaskQueue());
@@ -2429,7 +2421,7 @@ MediaFormatReader::SizeOfQueue(TrackType aTrack)
   return decoder.mSizeOfQueue;
 }
 
-RefPtr<MediaFormatReader::WaitForDataPromise>
+RefPtr<MediaDecoderReader::WaitForDataPromise>
 MediaFormatReader::WaitForData(MediaData::Type aType)
 {
   MOZ_ASSERT(OnTaskQueue());
@@ -2488,7 +2480,7 @@ MediaFormatReader::ResetDecode(TrackSet aTracks)
     }
   }
 
-  return NS_OK;
+  return MediaDecoderReader::ResetDecode(aTracks);
 }
 
 void
@@ -2541,7 +2533,6 @@ MediaFormatReader::SkipVideoDemuxToNextKeyFrame(TimeUnit aTimeThreshold)
            &MediaFormatReader::OnVideoSkipCompleted,
            &MediaFormatReader::OnVideoSkipFailed)
     ->Track(mSkipRequest);
-  return;
 }
 
 void
@@ -2609,7 +2600,7 @@ MediaFormatReader::OnVideoSkipFailed(
   }
 }
 
-RefPtr<MediaFormatReader::SeekPromise>
+RefPtr<MediaDecoderReader::SeekPromise>
 MediaFormatReader::Seek(const SeekTarget& aTarget)
 {
   MOZ_ASSERT(OnTaskQueue());

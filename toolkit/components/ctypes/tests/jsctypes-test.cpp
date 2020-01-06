@@ -37,7 +37,6 @@ void
 test_void_t_cdecl()
 {
   
-  return;
 }
 
 

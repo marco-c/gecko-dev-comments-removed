@@ -494,8 +494,6 @@ HTMLLinkElement::GetStyleSheetInfo(nsAString& aTitle,
   
   
   aType.AssignLiteral("text/css");
-
-  return;
 }
 
 CORSMode

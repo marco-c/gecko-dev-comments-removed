@@ -68,7 +68,6 @@ public:
     virtual void TransactionHasDataToWrite(nsAHttpTransaction *)
     {
         
-        return;
     }
 
     
@@ -76,7 +75,6 @@ public:
     virtual void TransactionHasDataToRecv(nsAHttpTransaction *)
     {
         
-        return;
     }
 
     

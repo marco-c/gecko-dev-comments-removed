@@ -483,7 +483,7 @@ nsAuthURLParser::ParseAuthority(const char *auth, int32_t authLen,
     
     const char *p = auth + authLen - 1;
     for (; (*p != '@') && (p > auth); --p) {
-      continue;
+        continue; 
     }
     if ( *p == '@' ) {
         

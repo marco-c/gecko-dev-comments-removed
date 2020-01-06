@@ -658,7 +658,6 @@ nsPluginStreamListenerPeer::MakeByteRangeString(NPByteRange* aRangeList, nsACStr
 
   rangeRequest = string;
   *numRequests  = requestCnt;
-  return;
 }
 
 

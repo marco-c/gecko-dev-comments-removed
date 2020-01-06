@@ -924,7 +924,6 @@ nsHtml5TreeBuilder::elementPopped(int32_t aNamespace, nsIAtom* aName, nsIContent
     
     mSpeculativeLoadQueue.AppendElement()->InitEndPicture();
   }
-  return;
 }
 
 void
