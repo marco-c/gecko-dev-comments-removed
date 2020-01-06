@@ -315,7 +315,6 @@ inline bool IsXMMReversedOperands(TwoByteOpcodeID opcode)
       case OP2_MOVSD_WsdVsd: 
       case OP2_MOVAPS_WsdVsd:
       case OP2_MOVDQ_WdqVdq:
-      case OP3_PEXTRD_EdVdqIb:
         return true;
       default:
         break;
