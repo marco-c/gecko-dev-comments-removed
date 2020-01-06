@@ -781,6 +781,8 @@ public:
     mSyncDecodeImages = aSyncDecodeImages;
   }
 
+  void FreeClipChains();
+
   
 
 
@@ -1668,7 +1670,7 @@ private:
   
   nsDisplayList*                 mScrollInfoItemsForHoisting;
   nsTArray<RefPtr<ActiveScrolledRoot>>  mActiveScrolledRoots;
-  AutoTArray<DisplayItemClipChain*, 128> mClipChainsToDestroy;
+  std::list<DisplayItemClipChain*> mClipChainsToDestroy;
   nsTArray<nsDisplayItem*> mTemporaryItems;
   const ActiveScrolledRoot*      mActiveScrolledRootForRootScrollframe;
   nsDisplayListBuilderMode       mMode;
@@ -2492,7 +2494,7 @@ protected:
   bool CanUseAdvancedLayer(LayerManager* aManager) const;
 
   nsIFrame* mFrame;
-  const DisplayItemClipChain* mClipChain;
+  RefPtr<const DisplayItemClipChain> mClipChain;
   const DisplayItemClip* mClip;
   RefPtr<const ActiveScrolledRoot> mActiveScrolledRoot;
   
@@ -2516,7 +2518,7 @@ protected:
 
   struct {
     nsRect mVisibleRect;
-    const DisplayItemClipChain* mClipChain;
+    RefPtr<const DisplayItemClipChain> mClipChain;
     const DisplayItemClip* mClip;
   } mState;
 };

@@ -992,6 +992,7 @@ nsDisplayListBuilder::EndFrame()
 {
   mFrameToAnimatedGeometryRootMap.Clear();
   mActiveScrolledRoots.Clear();
+  FreeClipChains();
 
   nsCSSRendering::EndFrameTreesLocked();
 }
@@ -1349,6 +1350,27 @@ nsDisplayListBuilder::LeavePresShell(nsIFrame* aReferenceFrame, nsDisplayList* a
 }
 
 void
+nsDisplayListBuilder::FreeClipChains()
+{
+  
+  
+  
+  auto it = mClipChainsToDestroy.begin();
+
+  while(it != mClipChainsToDestroy.end()) {
+    DisplayItemClipChain* clip = *it;
+
+    if (!clip->mRefCount) {
+      it = mClipChainsToDestroy.erase(it);
+      clip->DisplayItemClipChain::~DisplayItemClipChain();
+      Destroy(DisplayItemType::TYPE_ZERO, clip);
+    } else {
+      ++it;
+    }
+  }
+}
+
+void
 nsDisplayListBuilder::ResetMarkedFramesForDisplayList()
 {
   
@@ -1447,8 +1469,8 @@ nsDisplayListBuilder::AllocateDisplayItemClipChain(const DisplayItemClip& aClip,
                                                    const DisplayItemClipChain* aParent)
 {
   void* p = Allocate(sizeof(DisplayItemClipChain), DisplayItemType::TYPE_ZERO);
-  DisplayItemClipChain* c = new (KnownNotNull, p) DisplayItemClipChain{ aClip, aASR, aParent };
-  mClipChainsToDestroy.AppendElement(c);
+  DisplayItemClipChain* c = new (KnownNotNull, p) DisplayItemClipChain(aClip, aASR, aParent);
+  mClipChainsToDestroy.emplace_front(c);
   return c;
 }
 
