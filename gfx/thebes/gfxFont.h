@@ -763,8 +763,6 @@ public:
 
     class CompressedGlyph {
     public:
-        CompressedGlyph() { mValue = 0; }
-
         enum {
             
             
@@ -894,25 +892,52 @@ public:
             return toggle;
         }
 
-        CompressedGlyph& SetSimpleGlyph(uint32_t aAdvanceAppUnits, uint32_t aGlyph) {
+        
+        
+        static CompressedGlyph
+        MakeSimpleGlyph(uint32_t aAdvanceAppUnits, uint32_t aGlyph) {
             NS_ASSERTION(IsSimpleAdvance(aAdvanceAppUnits), "Advance overflow");
             NS_ASSERTION(IsSimpleGlyphID(aGlyph), "Glyph overflow");
+            CompressedGlyph g;
+            g.mValue = FLAG_IS_SIMPLE_GLYPH |
+                       (aAdvanceAppUnits << ADVANCE_SHIFT) |
+                       aGlyph;
+            return g;
+        }
+
+        
+        
+        CompressedGlyph& SetSimpleGlyph(uint32_t aAdvanceAppUnits,
+                                        uint32_t aGlyph) {
             NS_ASSERTION(!CharTypeFlags(), "Char type flags lost");
             mValue = (mValue & (FLAGS_CAN_BREAK_BEFORE | FLAG_CHAR_IS_SPACE)) |
-                FLAG_IS_SIMPLE_GLYPH |
-                (aAdvanceAppUnits << ADVANCE_SHIFT) | aGlyph;
+                MakeSimpleGlyph(aAdvanceAppUnits, aGlyph).mValue;
             return *this;
         }
+
+        
+        
+        static CompressedGlyph
+        MakeComplex(bool aClusterStart, bool aLigatureStart,
+                    uint32_t aGlyphCount) {
+            CompressedGlyph g;
+            g.mValue = FLAG_NOT_MISSING |
+                       (aClusterStart ? 0 : FLAG_NOT_CLUSTER_START) |
+                       (aLigatureStart ? 0 : FLAG_NOT_LIGATURE_GROUP_START) |
+                       (aGlyphCount << GLYPH_COUNT_SHIFT);
+            return g;
+        }
+
+        
+        
         CompressedGlyph& SetComplex(bool aClusterStart, bool aLigatureStart,
-                uint32_t aGlyphCount) {
+                                    uint32_t aGlyphCount) {
             mValue = (mValue & (FLAGS_CAN_BREAK_BEFORE | FLAG_CHAR_IS_SPACE)) |
-                FLAG_NOT_MISSING |
                 CharTypeFlags() |
-                (aClusterStart ? 0 : FLAG_NOT_CLUSTER_START) |
-                (aLigatureStart ? 0 : FLAG_NOT_LIGATURE_GROUP_START) |
-                (aGlyphCount << GLYPH_COUNT_SHIFT);
+                MakeComplex(aClusterStart, aLigatureStart, aGlyphCount).mValue;
             return *this;
         }
+
         
 
 
