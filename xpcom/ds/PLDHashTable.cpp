@@ -199,15 +199,22 @@ PLDHashTable::HashShift(uint32_t aEntrySize, uint32_t aLength)
 PLDHashTable::PLDHashTable(const PLDHashTableOps* aOps, uint32_t aEntrySize,
                            uint32_t aLength)
   : mOps(aOps)
+  , mEntryStore()
+  , mGeneration(0)
   , mHashShift(HashShift(aEntrySize, aLength))
   , mEntrySize(aEntrySize)
   , mEntryCount(0)
   , mRemovedCount(0)
-  , mEntryStore()
 #ifdef DEBUG
   , mChecker()
 #endif
 {
+  
+  
+  
+  if (aEntrySize != uint32_t(mEntrySize)) {
+    MOZ_CRASH("Entry size is too large");
+  }
 }
 
 PLDHashTable&
@@ -232,7 +239,7 @@ PLDHashTable::operator=(PLDHashTable&& aOther)
   mHashShift = Move(aOther.mHashShift);
   mEntryCount = Move(aOther.mEntryCount);
   mRemovedCount = Move(aOther.mRemovedCount);
-  mEntryStore.Set(aOther.mEntryStore);
+  mEntryStore.Set(aOther.mEntryStore.Get(), &mGeneration);
 #ifdef DEBUG
   mChecker = Move(aOther.mChecker);
 #endif
@@ -242,7 +249,7 @@ PLDHashTable::operator=(PLDHashTable&& aOther)
 #ifdef DEBUG
     AutoDestructorOp op(mChecker);
 #endif
-    aOther.mEntryStore.Set(nullptr);
+    aOther.mEntryStore.Set(nullptr, &aOther.mGeneration);
   }
 
   return *this;
@@ -483,7 +490,7 @@ PLDHashTable::ChangeTable(int32_t aDeltaLog2)
   char* oldEntryStore;
   char* oldEntryAddr;
   oldEntryAddr = oldEntryStore = mEntryStore.Get();
-  mEntryStore.Set(newEntryStore);
+  mEntryStore.Set(newEntryStore, &mGeneration);
   PLDHashMoveEntry moveEntry = mOps->moveEntry;
 
   
@@ -548,7 +555,7 @@ PLDHashTable::Add(const void* aKey, const mozilla::fallible_t&)
     
     MOZ_RELEASE_ASSERT(SizeOfEntryStore(CapacityFromHashShift(), mEntrySize,
                                         &nbytes));
-    mEntryStore.Set((char*)malloc(nbytes));
+    mEntryStore.Set((char*)malloc(nbytes), &mGeneration);
     if (!mEntryStore.Get()) {
       return nullptr;
     }

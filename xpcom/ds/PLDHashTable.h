@@ -209,40 +209,45 @@ class PLDHashTable
 private:
   
   
+  
+  
+  
+  
+  
   class EntryStore
   {
   private:
     char* mEntryStore;
-    uint32_t mGeneration;
 
   public:
-    EntryStore() : mEntryStore(nullptr), mGeneration(0) {}
+    EntryStore() : mEntryStore(nullptr) {}
 
     ~EntryStore()
     {
       free(mEntryStore);
       mEntryStore = nullptr;
-      mGeneration++;    
     }
 
     char* Get() { return mEntryStore; }
     const char* Get() const { return mEntryStore; }
 
-    void Set(char* aEntryStore)
+    void Set(char* aEntryStore, uint16_t* aGeneration)
     {
       mEntryStore = aEntryStore;
-      mGeneration++;
+      *aGeneration += 1;
     }
-
-    uint32_t Generation() const { return mGeneration; }
   };
 
+  
+  
+  
   const PLDHashTableOps* const mOps;  
-  int16_t             mHashShift;     
-  const uint32_t      mEntrySize;     
+  EntryStore          mEntryStore;    
+  uint16_t            mGeneration;    
+  uint8_t             mHashShift;     
+  const uint8_t       mEntrySize;     
   uint32_t            mEntryCount;    
   uint32_t            mRemovedCount;  
-  EntryStore          mEntryStore;    
 
 #ifdef DEBUG
   mutable Checker mChecker;
@@ -280,11 +285,14 @@ public:
   PLDHashTable(PLDHashTable&& aOther)
       
       
+      
+      
+      
+      
     : mOps(aOther.mOps)
-    , mEntrySize(aOther.mEntrySize)
-      
-      
     , mEntryStore()
+    , mGeneration(0)
+    , mEntrySize(aOther.mEntrySize)
 #ifdef DEBUG
     , mChecker()
 #endif
@@ -309,7 +317,7 @@ public:
 
   uint32_t EntrySize()  const { return mEntrySize; }
   uint32_t EntryCount() const { return mEntryCount; }
-  uint32_t Generation() const { return mEntryStore.Generation(); }
+  uint32_t Generation() const { return mGeneration; }
 
   
   

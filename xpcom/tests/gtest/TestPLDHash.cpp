@@ -105,7 +105,14 @@ InitCapacityOk_InitialEntryStoreTooBig()
   
   
   
-  PLDHashTable t(PLDHashTable::StubOps(), (uint32_t)1 << 23, (uint32_t)1 << 8);
+  PLDHashTable t(PLDHashTable::StubOps(), (uint32_t)1 << 8, (uint32_t)1 << 23);
+}
+
+void
+InitCapacityOk_EntrySizeTooBig()
+{
+  
+  PLDHashTable t(PLDHashTable::StubOps(), 256);
 }
 
 TEST(PLDHashTableTest, InitCapacityOk)
@@ -118,7 +125,7 @@ TEST(PLDHashTableTest, InitCapacityOk)
 
   
   
-  PLDHashTable t2(PLDHashTable::StubOps(), (uint32_t)1 << 23, (uint32_t)1 << 7);
+  PLDHashTable t2(PLDHashTable::StubOps(), (uint32_t)1 << 7, (uint32_t)1 << 23);
 
   
   TestCrashyOperation(InitCapacityOk_InitialLengthTooBig);
@@ -126,6 +133,12 @@ TEST(PLDHashTableTest, InitCapacityOk)
   
   
   TestCrashyOperation(InitCapacityOk_InitialEntryStoreTooBig);
+
+  
+  PLDHashTable t3(PLDHashTable::StubOps(), 255);
+
+  
+  TestCrashyOperation(InitCapacityOk_EntrySizeTooBig);
 
   
   
