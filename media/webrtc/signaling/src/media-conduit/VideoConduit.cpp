@@ -1213,6 +1213,9 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
     }
 
     
+    mRecvSSRC = mRecvStreamConfig.rtp.remote_ssrc;
+
+    
     if (mRecvSSRC == 0) {
       
       
@@ -1226,9 +1229,8 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
       } while (ssrc == 0); 
 
       mRecvStreamConfig.rtp.remote_ssrc = ssrc;
+      mRecvSSRC = ssrc;
     }
-    
-    mRecvSSRC = mRecvStreamConfig.rtp.remote_ssrc;
 
     
     
