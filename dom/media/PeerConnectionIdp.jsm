@@ -106,7 +106,7 @@ PeerConnectionIdp.prototype = {
       idMatch = sessionLevel.match(PeerConnectionIdp._identityPattern);
     }
     if (!idMatch) {
-      return; 
+      return undefined; 
     }
 
     let assertion;
