@@ -68,7 +68,10 @@ add_task(async function test_actionContextMenus() {
   await extension.startup();
   const tabId = await extension.awaitMessage("ready");
 
-  for (const kind of ["page", "browser"]) {
+  
+  
+
+  for (const kind of ["browser"]) {
     const menu = await openActionContextMenu(extension, kind);
     const [submenu, second, , , , last, separator] = menu.children;
 
