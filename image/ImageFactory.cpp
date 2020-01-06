@@ -75,6 +75,14 @@ ComputeImageFlags(ImageURL* uri, const nsCString& aMimeType, bool isMultiPart)
     imageFlags |= Image::INIT_FLAG_TRANSIENT;
   }
 
+  
+  
+  bool isDataURI = false;
+  rv = uri->SchemeIs("data", &isDataURI);
+  if (NS_SUCCEEDED(rv) && isDataURI) {
+    imageFlags |= Image::INIT_FLAG_SYNC_LOAD;
+  }
+
   return imageFlags;
 }
 
