@@ -578,13 +578,6 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
 
     
     
-    
-    case TYPE_SAVEAS_DOWNLOAD:
-      *aDecision = ACCEPT;
-      return NS_OK;
-
-    
-    
     case TYPE_IMAGE:
     case TYPE_MEDIA:
     case TYPE_OBJECT_SUBREQUEST:
