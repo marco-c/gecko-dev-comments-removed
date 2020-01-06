@@ -490,6 +490,8 @@ function promiseNextTick() {
 
 
 
+
+Utils._orig_getDefaultDeviceName = Utils.getDefaultDeviceName;
 Utils.getDefaultDeviceName = function() {
   return "Test device name";
 };
