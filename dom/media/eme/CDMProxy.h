@@ -175,7 +175,7 @@ public:
   
   virtual void OnSessionMessage(const nsAString& aSessionId,
                                 dom::MediaKeyMessageType aMessageType,
-                                const nsTArray<uint8_t>& aMessage) = 0;
+                                nsTArray<uint8_t>& aMessage) = 0;
 
   
   virtual void OnExpirationChange(const nsAString& aSessionId,

@@ -18,8 +18,6 @@
 #include "mozilla/Span.h"
 #include "ReorderQueue.h"
 
-class ChromiumCDMCallback;
-
 namespace mozilla {
 
 class MediaRawData;
@@ -40,7 +38,7 @@ public:
 
   uint32_t PluginId() const { return mPluginId; }
 
-  bool Init(ChromiumCDMCallback* aCDMCallback,
+  bool Init(ChromiumCDMProxy* aProxy,
             bool aAllowDistinctiveIdentifier,
             bool aAllowPersistentState,
             nsIEventTarget* aMainThread);
@@ -152,7 +150,8 @@ protected:
   GMPContentParent* mContentParent;
   
   
-  ChromiumCDMCallback* mCDMCallback = nullptr;
+  
+  ChromiumCDMProxy* mProxy = nullptr;
   nsDataHashtable<nsUint32HashKey, uint32_t> mPromiseToCreateSessionToken;
   nsTArray<RefPtr<DecryptJob>> mDecrypts;
 
@@ -189,7 +188,7 @@ protected:
   ReorderQueue mReorderQueue;
 
   
-  nsCOMPtr<nsIEventTarget> mMainThread;
+    nsCOMPtr<nsIEventTarget> mMainThread;
 };
 
 } 
