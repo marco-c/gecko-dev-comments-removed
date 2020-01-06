@@ -127,6 +127,7 @@
 #include "prenv.h"
 #include "TextDrawTarget.h"
 #include "nsDeckFrame.h"
+#include "nsIEffectiveTLDService.h" 
 
 #ifdef MOZ_XUL
 #include "nsXULPopupManager.h"
@@ -192,6 +193,8 @@ typedef nsStyleTransformMatrix::TransformReferenceBox TransformReferenceBox;
  bool nsLayoutUtils::sTextCombineUprightDigitsEnabled;
 #ifdef MOZ_STYLO
  bool nsLayoutUtils::sStyloEnabled;
+ bool nsLayoutUtils::sStyloBlocklistEnabled;
+ nsTArray<nsCString>* nsLayoutUtils::sStyloBlocklist = nullptr;
 #endif
  uint32_t nsLayoutUtils::sIdlePeriodDeadlineLimit;
  uint32_t nsLayoutUtils::sQuiescentFramesBeforeIdlePeriod;
@@ -7971,6 +7974,24 @@ nsLayoutUtils::Initialize()
     Preferences::AddBoolVarCache(&sStyloEnabled,
                                  "layout.css.servo.enabled");
   }
+  
+  
+  
+  
+  
+  
+  sStyloBlocklistEnabled =
+    Preferences::GetBool("layout.css.stylo-blocklist.enabled");
+  if (sStyloBlocklistEnabled && !sStyloBlocklist) {
+    nsAutoCString blocklist;
+    Preferences::GetCString("layout.css.stylo-blocklist.blocked_domains", blocklist);
+    if (!blocklist.IsEmpty()) {
+      sStyloBlocklist = new nsTArray<nsCString>;
+      for (const nsACString& domainString : blocklist.Split(',')) {
+        sStyloBlocklist->AppendElement(domainString);
+      }
+    }
+  }
 #endif
   Preferences::AddUintVarCache(&sIdlePeriodDeadlineLimit,
                                "layout.idle_period.time_limit",
@@ -7993,7 +8014,13 @@ nsLayoutUtils::Shutdown()
     delete sContentMap;
     sContentMap = nullptr;
   }
-
+#ifdef MOZ_STYLO
+  if (sStyloBlocklist) {
+    sStyloBlocklist->Clear();
+    delete sStyloBlocklist;
+    sStyloBlocklist = nullptr;
+  }
+#endif
   for (auto& callback : kPrefCallbacks) {
     Preferences::UnregisterCallback(callback.func, callback.name);
   }
@@ -8002,6 +8029,39 @@ nsLayoutUtils::Shutdown()
   
   nsStyleList::Shutdown();
 }
+
+#ifdef MOZ_STYLO
+
+bool
+nsLayoutUtils::IsInStyloBlocklist(nsIPrincipal* aPrincipal)
+{
+  if (!sStyloBlocklist) {
+    return false;
+  }
+
+  
+  
+  nsCOMPtr<nsIURI> codebaseURI;
+  aPrincipal->GetURI(getter_AddRefs(codebaseURI));
+  if (!codebaseURI) {
+    return false;
+  }
+
+  nsCOMPtr<nsIEffectiveTLDService> tldService =
+    do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
+  NS_ENSURE_TRUE(tldService, false);
+
+  
+  nsAutoCString baseDomain;
+  NS_SUCCEEDED(tldService->GetBaseDomain(codebaseURI, 0, baseDomain));
+  for (const nsCString& domains : *sStyloBlocklist) {
+    if (baseDomain.Equals(domains)) {
+      return true;
+    }
+  }
+  return false;
+}
+#endif
 
 
 void

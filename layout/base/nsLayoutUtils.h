@@ -2558,6 +2558,17 @@ public:
   static void Initialize();
   static void Shutdown();
 
+#ifdef MOZ_STYLO
+  
+
+
+
+
+
+
+  static bool IsInStyloBlocklist(nsIPrincipal* aPrincipal);
+#endif
+
   
 
 
@@ -3025,6 +3036,8 @@ private:
   static bool sTextCombineUprightDigitsEnabled;
 #ifdef MOZ_STYLO
   static bool sStyloEnabled;
+  static bool sStyloBlocklistEnabled;
+  static nsTArray<nsCString>* sStyloBlocklist;
 #endif
   static uint32_t sIdlePeriodDeadlineLimit;
   static uint32_t sQuiescentFramesBeforeIdlePeriod;
