@@ -21,6 +21,7 @@
 #include "nsIDOMCustomEvent.h"
 #include "nsIDOMDocument.h"
 #include "nsIDOMHTMLObjectElement.h"
+#include "nsIDOMHTMLAppletElement.h"
 #include "nsIExternalProtocolHandler.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIObjectFrame.h"
@@ -89,7 +90,7 @@
 #include "mozilla/EventStates.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/dom/HTMLObjectElementBinding.h"
-#include "mozilla/dom/HTMLEmbedElement.h"
+#include "mozilla/dom/HTMLSharedObjectElement.h"
 #include "mozilla/dom/HTMLObjectElement.h"
 #include "nsChannelClassifier.h"
 
@@ -102,6 +103,7 @@
 
 static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
 
+static const char *kPrefJavaMIME = "plugin.java.mime";
 static const char *kPrefYoutubeRewrite = "plugins.rewrite_youtube_embeds";
 static const char *kPrefBlockURIs = "browser.safebrowsing.blockedURIs.enabled";
 static const char *kPrefFavorFallbackMode = "plugins.favorfallback.mode";
@@ -120,6 +122,13 @@ GetObjectLog()
 
 #define LOG(args) MOZ_LOG(GetObjectLog(), mozilla::LogLevel::Debug, args)
 #define LOG_ENABLED() MOZ_LOG_TEST(GetObjectLog(), mozilla::LogLevel::Debug)
+
+static bool
+IsJavaMIME(const nsACString & aMIMEType)
+{
+  return
+    nsPluginHost::GetSpecialType(aMIMEType) == nsPluginHost::eSpecialType_Java;
+}
 
 static bool
 IsFlashMIME(const nsACString & aMIMEType)
@@ -861,7 +870,8 @@ nsObjectLoadingContent::GetPluginParameters(nsTArray<MozPluginParameter>& aParam
 }
 
 void
-nsObjectLoadingContent::GetNestedParams(nsTArray<MozPluginParameter>& aParams)
+nsObjectLoadingContent::GetNestedParams(nsTArray<MozPluginParameter>& aParams,
+                                        bool aIgnoreCodebase)
 {
   nsCOMPtr<Element> ourElement =
     do_QueryInterface(static_cast<nsIObjectLoadingContent*>(this));
@@ -889,12 +899,16 @@ nsObjectLoadingContent::GetNestedParams(nsTArray<MozPluginParameter>& aParams)
 
     nsCOMPtr<nsIContent> parent = element->GetParent();
     nsCOMPtr<nsIDOMHTMLObjectElement> domObject;
-    while (!domObject && parent) {
+    nsCOMPtr<nsIDOMHTMLAppletElement> domApplet;
+    while (!(domObject || domApplet) && parent) {
       domObject = do_QueryInterface(parent);
+      domApplet = do_QueryInterface(parent);
       parent = parent->GetParent();
     }
 
-    if (domObject) {
+    if (domApplet) {
+      parent = do_QueryInterface(domApplet);
+    } else if (domObject) {
       parent = do_QueryInterface(domObject);
     } else {
       continue;
@@ -907,6 +921,11 @@ nsObjectLoadingContent::GetNestedParams(nsTArray<MozPluginParameter>& aParams)
 
       param.mName.Trim(" \n\r\t\b", true, true, false);
       param.mValue.Trim(" \n\r\t\b", true, true, false);
+
+      
+      if (aIgnoreCodebase && param.mName.EqualsIgnoreCase("codebase")) {
+        continue;
+      }
 
       aParams.AppendElement(param);
     }
@@ -933,11 +952,22 @@ nsObjectLoadingContent::BuildParametersArray()
     mCachedAttributes.AppendElement(param);
   }
 
+  bool isJava = IsJavaMIME(mContentType);
+
+  nsCString codebase;
+  if (isJava) {
+      nsresult rv = mBaseURI->GetSpec(codebase);
+      NS_ENSURE_SUCCESS(rv, rv);
+  }
+
   nsAdoptingCString wmodeOverride = Preferences::GetCString("plugins.force.wmode");
   for (uint32_t i = 0; i < mCachedAttributes.Length(); i++) {
     if (!wmodeOverride.IsEmpty() && mCachedAttributes[i].mName.EqualsIgnoreCase("wmode")) {
       CopyASCIItoUTF16(wmodeOverride, mCachedAttributes[i].mValue);
       wmodeOverride.Truncate();
+    } else if (!codebase.IsEmpty() && mCachedAttributes[i].mName.EqualsIgnoreCase("codebase")) {
+      CopyASCIItoUTF16(codebase, mCachedAttributes[i].mValue);
+      codebase.Truncate();
     }
   }
 
@@ -945,6 +975,13 @@ nsObjectLoadingContent::BuildParametersArray()
     MozPluginParameter param;
     param.mName = NS_LITERAL_STRING("wmode");
     CopyASCIItoUTF16(wmodeOverride, param.mValue);
+    mCachedAttributes.AppendElement(param);
+  }
+
+  if (!codebase.IsEmpty()) {
+    MozPluginParameter param;
+    param.mName = NS_LITERAL_STRING("codebase");
+    CopyASCIItoUTF16(codebase, param.mValue);
     mCachedAttributes.AppendElement(param);
   }
 
@@ -963,7 +1000,7 @@ nsObjectLoadingContent::BuildParametersArray()
     }
   }
 
-  GetNestedParams(mCachedParameters);
+  GetNestedParams(mCachedParameters, isJava);
 
   return NS_OK;
 }
@@ -1349,6 +1386,46 @@ nsObjectLoadingContent::ObjectState() const
   return NS_EVENT_STATE_LOADING;
 }
 
+
+bool
+nsObjectLoadingContent::CheckJavaCodebase()
+{
+  nsCOMPtr<nsIContent> thisContent =
+    do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
+  nsCOMPtr<nsIScriptSecurityManager> secMan =
+    nsContentUtils::GetSecurityManager();
+  nsCOMPtr<nsINetUtil> netutil = do_GetNetUtil();
+  NS_ASSERTION(thisContent && secMan && netutil, "expected interfaces");
+
+
+  
+  
+  nsresult rv = secMan->CheckLoadURIWithPrincipal(thisContent->NodePrincipal(),
+                                                  mBaseURI, 0);
+  if (NS_FAILED(rv)) {
+    LOG(("OBJLC [%p]: Java codebase check failed", this));
+    return false;
+  }
+
+  nsCOMPtr<nsIURI> principalBaseURI;
+  rv = thisContent->NodePrincipal()->GetURI(getter_AddRefs(principalBaseURI));
+  if (NS_FAILED(rv)) {
+    NS_NOTREACHED("Failed to URI from node principal?");
+    return false;
+  }
+  
+  
+  if (NS_URIIsLocalFile(mBaseURI) &&
+      nsScriptSecurityManager::GetStrictFileOriginPolicy() &&
+      !NS_RelaxStrictFileOriginPolicy(mBaseURI, principalBaseURI, true)) {
+    LOG(("OBJLC [%p]: Java failed RelaxStrictFileOriginPolicy for file URI",
+         this));
+    return false;
+  }
+
+  return true;
+}
+
 void
 nsObjectLoadingContent::MaybeRewriteYoutubeEmbed(nsIURI* aURI, nsIURI* aBaseURI, nsIURI** aOutURI)
 {
@@ -1550,7 +1627,7 @@ nsObjectLoadingContent::CheckProcessPolicy(int16_t *aContentPolicy)
 }
 
 nsObjectLoadingContent::ParameterUpdateFlags
-nsObjectLoadingContent::UpdateObjectParameters()
+nsObjectLoadingContent::UpdateObjectParameters(bool aJavaURI)
 {
   nsCOMPtr<nsIContent> thisContent =
     do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
@@ -1565,6 +1642,7 @@ nsObjectLoadingContent::UpdateObjectParameters()
   nsCOMPtr<nsIURI> newURI;
   nsCOMPtr<nsIURI> newBaseURI;
   ObjectType newType;
+  bool isJava = false;
   
   bool stateInvalid = false;
   
@@ -1583,6 +1661,51 @@ nsObjectLoadingContent::UpdateObjectParameters()
   
   
   
+
+  if (aJavaURI || thisContent->NodeInfo()->Equals(nsGkAtoms::applet)) {
+    nsAdoptingCString javaMIME = Preferences::GetCString(kPrefJavaMIME);
+    newMime = javaMIME;
+    NS_ASSERTION(IsJavaMIME(newMime),
+                 "plugin.mime.java should be recognized as java");
+    isJava = true;
+  } else {
+    nsAutoString rawTypeAttr;
+    thisContent->GetAttr(kNameSpaceID_None, nsGkAtoms::type, rawTypeAttr);
+    if (!rawTypeAttr.IsEmpty()) {
+      typeAttr = rawTypeAttr;
+      CopyUTF16toUTF8(rawTypeAttr, newMime);
+      isJava = IsJavaMIME(newMime);
+    }
+  }
+
+  
+  
+  
+
+  if (caps & eSupportClassID) {
+    nsAutoString classIDAttr;
+    thisContent->GetAttr(kNameSpaceID_None, nsGkAtoms::classid, classIDAttr);
+    if (!classIDAttr.IsEmpty()) {
+      
+      nsAdoptingCString javaMIME = Preferences::GetCString(kPrefJavaMIME);
+      NS_ASSERTION(IsJavaMIME(javaMIME),
+                   "plugin.mime.java should be recognized as java");
+      RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
+      if (StringBeginsWith(classIDAttr, NS_LITERAL_STRING("java:")) &&
+          pluginHost &&
+          pluginHost->HavePluginForType(javaMIME)) {
+        newMime = javaMIME;
+        isJava = true;
+      } else {
+        
+        
+        
+        newMime.Truncate();
+        stateInvalid = true;
+      }
+    }
+  }
+
   
   
   
@@ -1590,8 +1713,34 @@ nsObjectLoadingContent::UpdateObjectParameters()
   nsAutoString codebaseStr;
   nsCOMPtr<nsIURI> docBaseURI = thisContent->GetBaseURI();
   bool hasCodebase = thisContent->HasAttr(kNameSpaceID_None, nsGkAtoms::codebase);
-  if (hasCodebase) {
+  if (hasCodebase)
     thisContent->GetAttr(kNameSpaceID_None, nsGkAtoms::codebase, codebaseStr);
+
+
+  
+  if (isJava) {
+    
+    
+    nsTArray<MozPluginParameter> params;
+    GetNestedParams(params, false);
+    for (uint32_t i = 0; i < params.Length(); i++) {
+      if (params[i].mName.EqualsIgnoreCase("codebase")) {
+        hasCodebase = true;
+        codebaseStr = params[i].mValue;
+      }
+    }
+  }
+
+  if (isJava && hasCodebase && codebaseStr.IsEmpty()) {
+    
+    codebaseStr.Assign('/');
+    
+    
+    
+  } else if (isJava && !hasCodebase) {
+    
+    
+    codebaseStr.Assign('.');
   }
 
   if (!codebaseStr.IsEmpty()) {
@@ -1608,13 +1757,6 @@ nsObjectLoadingContent::UpdateObjectParameters()
     }
   }
 
-  nsAutoString rawTypeAttr;
-  thisContent->GetAttr(kNameSpaceID_None, nsGkAtoms::type, rawTypeAttr);
-  if (!rawTypeAttr.IsEmpty()) {
-    typeAttr = rawTypeAttr;
-    CopyUTF16toUTF8(rawTypeAttr, newMime);
-  }
-
   
   if (!newBaseURI) {
     newBaseURI = docBaseURI;
@@ -1626,11 +1768,18 @@ nsObjectLoadingContent::UpdateObjectParameters()
 
   nsAutoString uriStr;
   
-  if (thisContent->NodeInfo()->Equals(nsGkAtoms::object)) {
+  if (isJava) {
+    
+    
+    
+    
+    
+  } else if (thisContent->NodeInfo()->Equals(nsGkAtoms::object)) {
     thisContent->GetAttr(kNameSpaceID_None, nsGkAtoms::data, uriStr);
   } else if (thisContent->NodeInfo()->Equals(nsGkAtoms::embed)) {
     thisContent->GetAttr(kNameSpaceID_None, nsGkAtoms::src, uriStr);
   } else {
+    
     NS_NOTREACHED("Unrecognized plugin-loading tag");
   }
 
@@ -1665,6 +1814,9 @@ nsObjectLoadingContent::UpdateObjectParameters()
       (caps & eAllowPluginSkipChannel) &&
       IsPluginEnabledByExtension(newURI, newMime)) {
     LOG(("OBJLC [%p]: Using extension as type hint (%s)", this, newMime.get()));
+    if (!isJava && IsJavaMIME(newMime)) {
+      return UpdateObjectParameters(true);
+    }
   }
 
   
@@ -1778,6 +1930,15 @@ nsObjectLoadingContent::UpdateObjectParameters()
       }
     } else {
       newMime = channelType;
+      if (IsJavaMIME(newMime)) {
+        
+        
+        
+        
+        LOG(("OBJLC [%p]: Refusing to load with channel with java MIME",
+             this));
+        stateInvalid = true;
+      }
     }
   } else if (newChannel) {
     LOG(("OBJLC [%p]: We failed to open a channel, marking invalid", this));
@@ -1849,6 +2010,12 @@ nsObjectLoadingContent::UpdateObjectParameters()
   }
 
   if (!URIEquals(mBaseURI, newBaseURI)) {
+    if (isJava) {
+      
+      
+      
+      retval = (ParameterUpdateFlags)(retval | eParamStateChanged);
+    }
     LOG(("OBJLC [%p]: Object effective baseURI changed", this));
     mBaseURI = newBaseURI;
   }
@@ -2043,6 +2210,9 @@ nsObjectLoadingContent::LoadObject(bool aNotify,
 
   if (mType != eType_Null) {
     bool allowLoad = true;
+    if (IsJavaMIME(mContentType)) {
+      allowLoad = CheckJavaCodebase();
+    }
     int16_t contentPolicy = nsIContentPolicy::ACCEPT;
     
     
@@ -2940,7 +3110,8 @@ nsObjectLoadingContent::LoadFallback(FallbackType aType, bool aNotify) {
   
   
   nsTArray<nsINodeList*> childNodes;
-  if (thisContent->IsHTMLElement(nsGkAtoms::object) &&
+  if ((thisContent->IsHTMLElement(nsGkAtoms::object) ||
+       thisContent->IsHTMLElement(nsGkAtoms::applet)) &&
       (aType == eFallbackUnsupported ||
        aType == eFallbackDisabled ||
        aType == eFallbackBlocklisted ||
@@ -2957,7 +3128,8 @@ nsObjectLoadingContent::LoadFallback(FallbackType aType, bool aNotify) {
         aType = eFallbackAlternate;
       }
       if (thisIsObject) {
-        if (auto embed = HTMLEmbedElement::FromContent(child)) {
+        if (child->IsHTMLElement(nsGkAtoms::embed)) {
+          HTMLSharedObjectElement* embed = static_cast<HTMLSharedObjectElement*>(child);
           embed->StartObjectLoad(true, true);
           skipChildDescendants = true;
         } else if (auto object = HTMLObjectElement::FromContent(child)) {
@@ -3368,8 +3540,8 @@ nsObjectLoadingContent::FavorFallbackMode(bool aIsPluginClickToPlay) {
     return false;
   }
 
-  nsCString prefString;
-  if (NS_SUCCEEDED(Preferences::GetCString(kPrefFavorFallbackMode, &prefString))) {
+  nsAutoCString prefString;
+  if (NS_SUCCEEDED(Preferences::GetCString(kPrefFavorFallbackMode, prefString))) {
     if (aIsPluginClickToPlay &&
         prefString.EqualsLiteral("follow-ctp")) {
       return true;
@@ -3395,8 +3567,8 @@ nsObjectLoadingContent::HasGoodFallback() {
   }
 
   nsTArray<nsCString> rulesList;
-  nsCString prefString;
-  if (NS_SUCCEEDED(Preferences::GetCString(kPrefFavorFallbackRules, &prefString))) {
+  nsAutoCString prefString;
+  if (NS_SUCCEEDED(Preferences::GetCString(kPrefFavorFallbackRules, prefString))) {
       ParseString(prefString, ',', rulesList);
   }
 
@@ -3770,6 +3942,11 @@ nsObjectLoadingContent::BlockEmbedOrObjectContentLoading()
 {
   nsCOMPtr<nsIContent> thisContent =
     do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
+  if (!thisContent->IsHTMLElement(nsGkAtoms::embed) &&
+      !thisContent->IsHTMLElement(nsGkAtoms::object)) {
+    
+    return false;
+  }
 
   
   
