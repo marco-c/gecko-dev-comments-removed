@@ -157,7 +157,25 @@ public:
 
 
 
-  void Remove(KeyType aKey) { this->RemoveEntry(aKey); }
+
+
+
+
+
+  bool Remove(KeyType aKey, DataType* aData = nullptr)
+  {
+    if (auto* ent = this->GetEntry(aKey)) {
+      if (aData) {
+        *aData = mozilla::Move(ent->mData);
+      }
+      this->RemoveEntry(ent);
+      return true;
+    }
+    if (aData) {
+      *aData = mozilla::Move(DataType());
+    }
+    return false;
+  }
 
   struct LookupResult {
   private:

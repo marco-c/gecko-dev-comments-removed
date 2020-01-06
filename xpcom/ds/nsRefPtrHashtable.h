@@ -58,16 +58,15 @@ public:
                         const mozilla::fallible_t&);
 
   
-  using base_type::Remove;
-
-  
 
 
 
 
 
 
-  bool Remove(KeyType aKey, UserDataType* aData);
+
+
+  inline bool Remove(KeyType aKey, UserDataType* aData = nullptr);
 };
 
 template<typename K, typename T>
@@ -173,18 +172,19 @@ bool
 nsRefPtrHashtable<KeyClass, PtrType>::Remove(KeyType aKey,
                                              UserDataType* aRefPtr)
 {
-  MOZ_ASSERT(aRefPtr);
   typename base_type::EntryType* ent = this->GetEntry(aKey);
 
   if (ent) {
-    ent->mData.forget(aRefPtr);
+    if (aRefPtr) {
+      ent->mData.forget(aRefPtr);
+    }
     this->RemoveEntry(ent);
     return true;
   }
 
-  
-  
-  *aRefPtr = nullptr;
+  if (aRefPtr) {
+    *aRefPtr = nullptr;
+  }
   return false;
 }
 
