@@ -188,6 +188,8 @@ function loadAddonManager(...args) {
   
   const distroDir = FileUtils.getDir("ProfD", ["sysfeatures", "app0"], true);
   AddonTestUtils.registerDirectory("XREAppFeat", distroDir);
+  AddonTestUtils.awaitPromise(AddonTestUtils.overrideBuiltIns(
+          {"system": ["tel-system-xpi@tests.mozilla.org"]}));
   return AddonTestUtils.promiseStartupManager();
 }
 

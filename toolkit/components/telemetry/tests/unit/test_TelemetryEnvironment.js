@@ -869,7 +869,9 @@ add_task(async function setup() {
   
   
   
-  await AddonTestUtils.promiseRestartManager();
+  await AddonTestUtils.promiseShutdownManager();
+  await AddonTestUtils.overrideBuiltIns({"system": []});
+  await AddonTestUtils.promiseStartupManager();
 
   
   registerFakePluginHost();
