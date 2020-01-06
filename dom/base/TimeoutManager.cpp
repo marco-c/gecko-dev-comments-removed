@@ -581,9 +581,9 @@ TimeoutManager::ClearTimeout(int32_t aTimerId, Timeout::Reason aReason)
 }
 
 void
-TimeoutManager::RunTimeout(Timeout* aTimeout)
+TimeoutManager::RunTimeout(const TimeStamp& aTargetDeadline)
 {
-  MOZ_DIAGNOSTIC_ASSERT(aTimeout);
+  MOZ_DIAGNOSTIC_ASSERT(!aTargetDeadline.IsNull());
 
   if (mWindow.IsSuspended()) {
     return;
@@ -632,14 +632,13 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
   TimeStamp now = TimeStamp::Now();
   TimeStamp deadline;
 
-  if (aTimeout->When() > now) {
-    
+  if (aTargetDeadline > now) {
     
     
     
     
 
-    deadline = aTimeout->When();
+    deadline = aTargetDeadline;
   } else {
     deadline = now;
   }
@@ -659,7 +658,6 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
                                        nullptr);
 
     uint32_t numTimersToRun = 0;
-    bool targetTimerSeen = false;
 
     while (true) {
       Timeout* timeout = expiredIter.Next();
@@ -681,21 +679,10 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
         numTimersToRun += 1;
 
         
-        
-        if (timeout == aTimeout) {
-          targetTimerSeen = true;
-        }
-
-        
-        
-        
-        
-        if (targetTimerSeen) {
-          if (numTimersToRun % kNumTimersPerInitialElapsedCheck == 0) {
-            TimeDuration elapsed(TimeStamp::Now() - start);
-            if (elapsed >= initalTimeLimit) {
-              break;
-            }
+        if (numTimersToRun % kNumTimersPerInitialElapsedCheck == 0) {
+          TimeDuration elapsed(TimeStamp::Now() - start);
+          if (elapsed >= initalTimeLimit) {
+            break;
           }
         }
       }
@@ -749,8 +736,6 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
     
     mTrackingTimeouts.SetInsertionPoint(dummy_tracking_timeout);
   }
-
-  bool targetTimeoutSeen = false;
 
   
   
@@ -807,16 +792,12 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
         continue;
       }
 
-      if (timeout == aTimeout) {
-        targetTimeoutSeen = true;
-      }
-
       
       bool timeout_was_cleared = mWindow.RunTimeoutHandler(timeout, scx);
       MOZ_LOG(gLog, LogLevel::Debug,
-              ("Run%s(TimeoutManager=%p, timeout=%p, aTimeout=%p, tracking=%d) returned %d\n", timeout->mIsInterval ? "Interval" : "Timeout",
-               this, timeout, aTimeout,
-               int(aTimeout->mIsTracking),
+              ("Run%s(TimeoutManager=%p, timeout=%p, tracking=%d) returned %d\n", timeout->mIsInterval ? "Interval" : "Timeout",
+               this, timeout,
+               int(timeout->mIsTracking),
                !!timeout_was_cleared));
 
       if (timeout_was_cleared) {
@@ -879,14 +860,9 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
 
       
       
-      
-      
-      
-      if (targetTimeoutSeen) {
-        TimeDuration elapsed = TimeStamp::Now() - start;
-        if (elapsed >= totalTimeLimit) {
-          break;
-        }
+      TimeDuration elapsed = TimeStamp::Now() - start;
+      if (elapsed >= totalTimeLimit) {
+        break;
       }
     }
   }

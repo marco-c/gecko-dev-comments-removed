@@ -47,7 +47,7 @@ public:
                     mozilla::dom::Timeout::Reason aReason);
 
   
-  void RunTimeout(mozilla::dom::Timeout* aTimeout);
+  void RunTimeout(const TimeStamp& aTargetDeadline);
   
   bool RescheduleTimeout(mozilla::dom::Timeout* aTimeout, const TimeStamp& now);
 
