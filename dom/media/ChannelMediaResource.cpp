@@ -84,7 +84,7 @@ ChannelMediaResource::Listener::OnStopRequest(nsIRequest* aRequest,
   MOZ_ASSERT(NS_IsMainThread());
   if (!mResource)
     return NS_OK;
-  return mResource->OnStopRequest(aRequest, aStatus, mReopenOnError);
+  return mResource->OnStopRequest(aRequest, aStatus);
 }
 
 nsresult
@@ -371,9 +371,7 @@ ChannelMediaResource::ParseContentRangeHeader(nsIHttpChannel * aHttpChan,
 }
 
 nsresult
-ChannelMediaResource::OnStopRequest(nsIRequest* aRequest,
-                                    nsresult aStatus,
-                                    bool aReopenOnError)
+ChannelMediaResource::OnStopRequest(nsIRequest* aRequest, nsresult aStatus)
 {
   NS_ASSERTION(mChannel.get() == aRequest, "Wrong channel!");
   NS_ASSERTION(!mSuspendAgent.IsSuspended(),
@@ -393,7 +391,7 @@ ChannelMediaResource::OnStopRequest(nsIRequest* aRequest,
     ModifyLoadFlags(loadFlags & ~nsIRequest::LOAD_BACKGROUND);
   }
 
-  mCacheStream.NotifyDataEnded(mLoadID, aStatus, aReopenOnError);
+  mCacheStream.NotifyDataEnded(mLoadID, aStatus, true );
   return NS_OK;
 }
 
@@ -719,9 +717,6 @@ ChannelMediaResource::Resume()
     if (mChannel) {
       
       mChannelStatistics.Start();
-      
-      
-      mListener->SetReopenOnError();
       element->DownloadResumed();
     } else {
       int64_t totalLength = GetLength();
