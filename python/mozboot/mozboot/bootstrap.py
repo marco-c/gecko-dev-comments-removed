@@ -487,8 +487,11 @@ def current_firefox_checkout(check_output, hg=None):
 
         
         
+        
         elif os.path.exists(git_dir):
-            return ('git', path)
+            moz_configure = os.path.join(path, 'moz.configure')
+            if os.path.exists(moz_configure):
+                return ('git', path)
 
         path, child = os.path.split(path)
         if child == '':
