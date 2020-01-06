@@ -64,11 +64,11 @@ this.Screenshot = {
   },
 
   
-  captureExternal(filename) {
+  async captureExternal(filename) {
     let imagePath = this._buildImagePath(filename);
-    return this._screenshotFunction(imagePath).then(() => {
-      log.debug("saved screenshot: " + filename);
-    });
+    await this._screenshotFunction(imagePath);
+    log.debug("saved screenshot: " + filename);
+    return imagePath;
   },
 
   
@@ -102,12 +102,6 @@ this.Screenshot = {
 
         
         let args = ["-x", "-t", "png"];
-        
-        if (windowID && Services.sysinfo.getProperty("version").indexOf("10.") !== 0) {
-          
-          args.push("-l");
-          args.push(windowID);
-        }
         args.push(filename);
         process.runAsync(args, args.length, this._processObserver(resolve, reject));
       });
