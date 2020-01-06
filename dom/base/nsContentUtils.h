@@ -200,7 +200,10 @@ typedef bool (*CallOnRemoteChildFunction) (mozilla::dom::TabParent* aTabParent,
 namespace mozilla {
 
 
-typedef AutoTArray<mozilla::dom::Element*,16> ManualNAC;
+
+
+
+typedef AutoTArray<RefPtr<mozilla::dom::Element>,16> ManualNAC;
 }
 
 class nsContentUtils
