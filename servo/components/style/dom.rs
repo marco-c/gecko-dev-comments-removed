@@ -33,6 +33,7 @@ use std::ops::Deref;
 use stylearc::{Arc, ArcBorrow};
 use stylist::Stylist;
 use thread_state;
+use traversal::TraversalFlags;
 
 pub use style_traits::UnsafeNode;
 
@@ -471,6 +472,29 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
 
     
     fn has_current_styles(&self, data: &ElementData) -> bool {
+        if self.has_snapshot() && !self.handled_snapshot() {
+            return false;
+        }
+
+        data.has_styles() && !data.has_invalidations()
+    }
+
+    
+    fn has_current_styles_for_traversal(&self,
+                                        data: &ElementData,
+                                        traversal_flags: TraversalFlags) -> bool {
+        if traversal_flags.for_animation_only() {
+            
+            
+            
+            
+            
+            
+            
+            return data.has_styles() &&
+                   !data.restyle.hint.has_animation_hint_or_recascade();
+        }
+
         if self.has_snapshot() && !self.handled_snapshot() {
             return false;
         }

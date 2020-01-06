@@ -241,6 +241,11 @@ impl ElementData {
         element: E,
         shared_context: &SharedStyleContext)
     {
+        
+        if shared_context.traversal_flags.for_animation_only() {
+            return;
+        }
+
         use invalidation::element::invalidator::TreeStyleInvalidator;
 
         debug!("invalidate_style_if_needed: {:?}, flags: {:?}, has_snapshot: {}, \
@@ -278,25 +283,17 @@ impl ElementData {
     pub fn restyle_kind(&self,
                         shared_context: &SharedStyleContext)
                         -> RestyleKind {
+        if shared_context.traversal_flags.for_animation_only() {
+            return self.restyle_kind_for_animation(shared_context);
+        }
+
         debug_assert!(!self.has_styles() || self.has_invalidations(),
                       "Should've stopped earlier");
         if !self.has_styles() {
-            debug_assert!(!shared_context.traversal_flags.for_animation_only(),
-                          "Unstyled element shouldn't be traversed during \
-                           animation-only traversal");
             return RestyleKind::MatchAndCascade;
         }
 
         let hint = self.restyle.hint;
-        if shared_context.traversal_flags.for_animation_only() {
-            
-            
-            if hint.has_animation_hint() {
-                return RestyleKind::CascadeWithReplacements(hint & RestyleHint::for_animations());
-            }
-            return RestyleKind::CascadeOnly;
-        }
-
         if hint.match_self() {
             return RestyleKind::MatchAndCascade;
         }
@@ -310,6 +307,26 @@ impl ElementData {
         debug_assert!(hint.has_recascade_self(),
                       "We definitely need to do something!");
         return RestyleKind::CascadeOnly;
+    }
+
+    
+    pub fn restyle_kind_for_animation(&self,
+                                      shared_context: &SharedStyleContext)
+                                      -> RestyleKind {
+        debug_assert!(shared_context.traversal_flags.for_animation_only());
+        debug_assert!(self.has_styles(),
+                      "Unstyled element shouldn't be traversed during \
+                       animation-only traversal");
+
+        
+        
+        
+        let hint = self.restyle.hint;
+        if hint.has_animation_hint() {
+            return RestyleKind::CascadeWithReplacements(hint & RestyleHint::for_animations());
+        }
+        return RestyleKind::CascadeOnly;
+
     }
 
     

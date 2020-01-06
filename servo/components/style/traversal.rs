@@ -235,7 +235,9 @@ pub trait DomTraversal<E: TElement> : Sync {
             
             
             
-            data.invalidate_style_if_needed(root, shared_context);
+            if !flags.for_animation_only() {
+                data.invalidate_style_if_needed(root, shared_context);
+            }
 
             let parent = root.traversal_parent();
             let parent_data = match parent {
@@ -328,8 +330,7 @@ pub trait DomTraversal<E: TElement> : Sync {
         
         if traversal_flags.for_animation_only() {
             return el.has_animation_only_dirty_descendants() ||
-                   data.restyle.hint.has_animation_hint() ||
-                   data.restyle.hint.has_recascade_self();
+                   data.restyle.hint.has_animation_hint_or_recascade();
         }
 
         
@@ -524,10 +525,12 @@ where
 {
     context.thread_local.begin_element(element, data);
     context.thread_local.statistics.elements_traversed += 1;
-    debug_assert!(!element.has_snapshot() || element.handled_snapshot(),
+    debug_assert!(context.shared.traversal_flags.for_animation_only() ||
+                  !element.has_snapshot() || element.handled_snapshot(),
                   "Should've handled snapshots here already");
 
-    let compute_self = !element.has_current_styles(data);
+    let compute_self =
+        !element.has_current_styles_for_traversal(data, context.shared.traversal_flags);
     let mut hint = RestyleHint::empty();
 
     debug!("recalc_style_at: {:?} (compute_self={:?}, \
@@ -580,8 +583,7 @@ where
            propagated_hint,
            data.styles.is_display_none(),
            element.implemented_pseudo_element());
-    debug_assert!(element.has_current_styles(data) ||
-                  context.shared.traversal_flags.for_animation_only(),
+    debug_assert!(element.has_current_styles_for_traversal(data, context.shared.traversal_flags),
                   "Should have computed style or haven't yet valid computed \
                    style in case of animation-only restyle");
 
@@ -811,7 +813,9 @@ where
         
         
         
-        child_data.invalidate_style_if_needed(child, &context.shared);
+        if !flags.for_animation_only() {
+            child_data.invalidate_style_if_needed(child, &context.shared);
+        }
 
         if D::element_needs_traversal(child, flags, &*child_data, Some(data)) {
             note_child(child_node);
