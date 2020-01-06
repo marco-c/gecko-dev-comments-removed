@@ -1263,8 +1263,18 @@ nsLayoutUtils::IsMissingDisplayPortBaseRect(nsIContent* aContent)
   return false;
 }
 
+enum class MaxSizeExceededBehaviour {
+  
+  
+  eAssert,
+  
+  
+  eDrop,
+};
+
 static bool
-GetDisplayPortImpl(nsIContent* aContent, nsRect* aResult, float aMultiplier)
+GetDisplayPortImpl(nsIContent* aContent, nsRect* aResult, float aMultiplier,
+                   MaxSizeExceededBehaviour aBehaviour = MaxSizeExceededBehaviour::eAssert)
 {
   DisplayPortPropertyData* rectData = nullptr;
   DisplayPortMarginsPropertyData* marginsData = nullptr;
@@ -1293,10 +1303,16 @@ GetDisplayPortImpl(nsIContent* aContent, nsRect* aResult, float aMultiplier)
   if (!gfxPrefs::LayersTilesEnabled()) {
     
     
-    NS_ASSERTION(result.width <= GetMaxDisplayPortSize(aContent, nullptr),
-                 "Displayport must be a valid texture size");
-    NS_ASSERTION(result.height <= GetMaxDisplayPortSize(aContent, nullptr),
-                 "Displayport must be a valid texture size");
+    nscoord maxSize = GetMaxDisplayPortSize(aContent, nullptr);
+    if (result.width > maxSize || result.height > maxSize) {
+      switch (aBehaviour) {
+      case MaxSizeExceededBehaviour::eAssert:
+        NS_ASSERTION(false, "Displayport must be a valid texture size");
+        break;
+      case MaxSizeExceededBehaviour::eDrop:
+        return false;
+      }
+    }
   }
 
   *aResult = result;
@@ -1339,7 +1355,13 @@ nsLayoutUtils::GetDisplayPortForVisibilityTesting(
   RelativeTo aRelativeTo )
 {
   MOZ_ASSERT(aResult);
-  bool usingDisplayPort = GetDisplayPortImpl(aContent, aResult, 1.0f);
+  
+  
+  
+  
+  
+  bool usingDisplayPort = GetDisplayPortImpl(aContent, aResult, 1.0f,
+      MaxSizeExceededBehaviour::eDrop);
   if (usingDisplayPort && aRelativeTo == RelativeTo::ScrollFrame) {
     TranslateFromScrollPortToScrollFrame(aContent, aResult);
   }
