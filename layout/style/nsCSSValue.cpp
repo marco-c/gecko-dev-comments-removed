@@ -2149,8 +2149,7 @@ nsCSSValue::SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
 
     
     case eCSSUnit_Image:
-      
-      
+      n += mValue.mImage->SizeOfIncludingThis(aMallocSizeOf);
       break;
 
     
@@ -3203,6 +3202,15 @@ css::ImageValue::~ImageValue()
 
     iter.Remove();
   }
+}
+
+size_t
+css::ImageValue::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  size_t n = aMallocSizeOf(this);
+  n += css::URLValueData::SizeOfExcludingThis(aMallocSizeOf);
+  n += mRequests.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  return n;
 }
 
 size_t
