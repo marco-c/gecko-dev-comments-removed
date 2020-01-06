@@ -33,13 +33,20 @@ add_task(async function() {
 
   await createTabs(TAB_COUNT_FOR_SQUEEZE);
 
+  
+  
+  
+  
+  
+  let origTab = gBrowser.selectedTab;
+
   await withReflowObserver(async function() {
     let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
     BrowserOpenTab();
     await BrowserTestUtils.waitForEvent(gBrowser.selectedTab, "transitionend",
       false, e => e.propertyName === "max-width");
     await switchDone;
-  }, EXPECTED_REFLOWS);
+  }, EXPECTED_REFLOWS, window, origTab);
 
   await removeAllButFirstTab();
 });

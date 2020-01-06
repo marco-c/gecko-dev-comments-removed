@@ -32,7 +32,13 @@ add_task(async function() {
   Assert.equal(EXPECTED_REFLOWS.length, 0,
     "We shouldn't have added any new expected reflows.");
 
+  
+  
+  
+  
+  
   let origTab = gBrowser.selectedTab;
+
   let firstSwitchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
   let otherTab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
   await firstSwitchDone;
@@ -41,7 +47,7 @@ add_task(async function() {
     let switchDone = BrowserTestUtils.waitForEvent(window, "TabSwitchDone");
     gBrowser.selectedTab = origTab;
     await switchDone;
-  }, EXPECTED_REFLOWS);
+  }, EXPECTED_REFLOWS, window, origTab);
 
   await BrowserTestUtils.removeTab(otherTab);
 });
