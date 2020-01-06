@@ -647,7 +647,7 @@ function updateFormHistoryWrite(aChanges, aCallbacks) {
         
         
         if (change.newGuid) {
-          change.guid = change.newGuid
+          change.guid = change.newGuid;
           delete change.newGuid;
         }
         stmt = makeUpdateStatement(guid, change, bindingArrays);
@@ -964,7 +964,7 @@ this.FormHistory = {
   getAutoCompleteResults(searchString, params, aCallbacks) {
     
     let searchTokens;
-    let where = ""
+    let where = "";
     let boundaryCalc = "";
     if (searchString.length > 1) {
       searchTokens = searchString.split(/\s+/);
