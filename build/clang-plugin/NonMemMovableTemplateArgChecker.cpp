@@ -5,7 +5,8 @@
 #include "NonMemMovableTemplateArgChecker.h"
 #include "CustomMatchers.h"
 
-void NonMemMovableTemplateArgChecker::registerMatchers(MatchFinder* AstMatcher) {
+void NonMemMovableTemplateArgChecker::registerMatchers(
+    MatchFinder *AstMatcher) {
   
   AstMatcher->addMatcher(
       classTemplateSpecializationDecl(
@@ -17,10 +18,9 @@ void NonMemMovableTemplateArgChecker::registerMatchers(MatchFinder* AstMatcher) 
 
 void NonMemMovableTemplateArgChecker::check(
     const MatchFinder::MatchResult &Result) {
-  const char* Error =
+  const char *Error =
       "Cannot instantiate %0 with non-memmovable template argument %1";
-  const char* Note =
-      "instantiation of %0 requested here";
+  const char *Note = "instantiation of %0 requested here";
 
   
   const ClassTemplateSpecializationDecl *Specialization =
@@ -33,9 +33,8 @@ void NonMemMovableTemplateArgChecker::check(
   for (unsigned i = 0; i < Args.size(); ++i) {
     QualType ArgType = Args[i].getAsType();
     if (NonMemMovable.hasEffectiveAnnotation(ArgType)) {
-      diag(Specialization->getLocation(), Error,
-           DiagnosticIDs::Error) << Specialization
-                                 << ArgType;
+      diag(Specialization->getLocation(), Error, DiagnosticIDs::Error)
+          << Specialization << ArgType;
       
       
       

@@ -5,23 +5,22 @@
 #include "MustOverrideChecker.h"
 #include "CustomMatchers.h"
 
-void MustOverrideChecker::registerMatchers(MatchFinder* AstMatcher) {
+void MustOverrideChecker::registerMatchers(MatchFinder *AstMatcher) {
   AstMatcher->addMatcher(cxxRecordDecl(isDefinition()).bind("class"), this);
 }
 
-void MustOverrideChecker::registerPPCallbacks(CompilerInstance& CI) {
+void MustOverrideChecker::registerPPCallbacks(CompilerInstance &CI) {
   this->CI = &CI;
 }
 
-void MustOverrideChecker::check(
-    const MatchFinder::MatchResult &Result) {
+void MustOverrideChecker::check(const MatchFinder::MatchResult &Result) {
   auto D = Result.Nodes.getNodeAs<CXXRecordDecl>("class");
 
   
   
   typedef std::vector<CXXMethodDecl *> OverridesVector;
   OverridesVector MustOverrides;
-  for (const auto& Base : D->bases()) {
+  for (const auto &Base : D->bases()) {
     
     CXXRecordDecl *Parent = Base.getType()
                                 .getDesugaredType(D->getASTContext())
@@ -34,15 +33,15 @@ void MustOverrideChecker::check(
       continue;
     }
     Parent = Parent->getDefinition();
-    for (const auto& M : Parent->methods()) {
+    for (const auto &M : Parent->methods()) {
       if (hasCustomAnnotation(M, "moz_must_override"))
         MustOverrides.push_back(M);
     }
   }
 
-  for (auto& O : MustOverrides) {
+  for (auto &O : MustOverrides) {
     bool Overridden = false;
-    for (const auto& M : D->methods()) {
+    for (const auto &M : D->methods()) {
       
       
       if (getNameChecked(M) == getNameChecked(O) &&
@@ -52,9 +51,8 @@ void MustOverrideChecker::check(
       }
     }
     if (!Overridden) {
-      diag(D->getLocation(), "%0 must override %1",
-           DiagnosticIDs::Error) << D->getDeclName()
-                                 << O->getDeclName();
+      diag(D->getLocation(), "%0 must override %1", DiagnosticIDs::Error)
+          << D->getDeclName() << O->getDeclName();
       diag(O->getLocation(), "function to override is here",
            DiagnosticIDs::Note);
     }

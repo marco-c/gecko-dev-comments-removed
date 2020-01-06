@@ -6,7 +6,7 @@
 
 
 
-extern const char* MOZ_THIRD_PARTY_PATHS[];
+extern const char *MOZ_THIRD_PARTY_PATHS[];
 
 extern const uint32_t MOZ_THIRD_PARTY_PATHS_COUNT;
 

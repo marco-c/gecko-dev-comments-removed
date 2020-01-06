@@ -2,16 +2,16 @@
 
 
 
-#include "plugin.h"
 #include "DiagnosticsMatcher.h"
+#include "plugin.h"
 #include "clang/Frontend/FrontendPluginRegistry.h"
 
 class MozCheckAction : public PluginASTAction {
 public:
   ASTConsumerPtr CreateASTConsumer(CompilerInstance &CI,
                                    StringRef FileName) override {
-    void* Buffer = CI.getASTContext().Allocate<DiagnosticsMatcher>();
-    auto Matcher = new(Buffer) DiagnosticsMatcher(CI);
+    void *Buffer = CI.getASTContext().Allocate<DiagnosticsMatcher>();
+    auto Matcher = new (Buffer) DiagnosticsMatcher(CI);
     return Matcher->makeASTConsumer();
   }
 

@@ -10,10 +10,9 @@
 
 class CanRunScriptChecker : public BaseCheck {
 public:
-  CanRunScriptChecker(StringRef CheckName,
-                      ContextType *Context = nullptr)
-    : BaseCheck(CheckName, Context) {}
-  void registerMatchers(MatchFinder* AstMatcher) override;
+  CanRunScriptChecker(StringRef CheckName, ContextType *Context = nullptr)
+      : BaseCheck(CheckName, Context) {}
+  void registerMatchers(MatchFinder *AstMatcher) override;
   void check(const MatchFinder::MatchResult &Result) override;
 
   
@@ -26,7 +25,7 @@ private:
   void buildFuncSet(ASTContext *Context);
 
   bool IsFuncSetBuilt;
-  std::unordered_set<const FunctionDecl*> CanRunScriptFuncs;
+  std::unordered_set<const FunctionDecl *> CanRunScriptFuncs;
 };
 
 #endif

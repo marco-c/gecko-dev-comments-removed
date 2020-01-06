@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef VariableUsageHelpers_h__
 #define VariableUsageHelpers_h__
 
@@ -14,9 +13,8 @@
 
 
 
-std::vector<const Stmt*>
-getUsageAsRvalue(const ValueDecl* ValueDeclaration,
-                 const FunctionDecl* FuncDecl);
+std::vector<const Stmt *> getUsageAsRvalue(const ValueDecl *ValueDeclaration,
+                                           const FunctionDecl *FuncDecl);
 
 
 
@@ -46,20 +44,20 @@ std::error_code make_error_code(EscapesFunctionError);
 
 
 
-ErrorOr<std::tuple<const Stmt*, const Decl*>>
-escapesFunction(const Expr* Arg, const FunctionDecl *FuncDecl,
-                const Expr* const* Arguments, unsigned NumArgs);
+ErrorOr<std::tuple<const Stmt *, const Decl *>>
+escapesFunction(const Expr *Arg, const FunctionDecl *FuncDecl,
+                const Expr *const *Arguments, unsigned NumArgs);
 
 
-ErrorOr<std::tuple<const Stmt*, const Decl*>>
-escapesFunction(const Expr* Arg, const CallExpr* Call);
+ErrorOr<std::tuple<const Stmt *, const Decl *>>
+escapesFunction(const Expr *Arg, const CallExpr *Call);
 
 
-ErrorOr<std::tuple<const Stmt*, const Decl*>>
-escapesFunction(const Expr* Arg, const CXXConstructExpr* Construct);
+ErrorOr<std::tuple<const Stmt *, const Decl *>>
+escapesFunction(const Expr *Arg, const CXXConstructExpr *Construct);
 
 
-ErrorOr<std::tuple<const Stmt*, const Decl*>>
-escapesFunction(const Expr* Arg, const CXXOperatorCallExpr* OpCall);
+ErrorOr<std::tuple<const Stmt *, const Decl *>>
+escapesFunction(const Expr *Arg, const CXXOperatorCallExpr *OpCall);
 
 #endif

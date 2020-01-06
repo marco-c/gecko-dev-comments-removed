@@ -42,36 +42,35 @@ void DanglingOnTemporaryChecker::registerMatchers(MatchFinder *AstMatcher) {
   
   
 
-  auto hasParentCall =
-      hasParent(expr(anyOf(
-          cxxOperatorCallExpr(
-              
-              
-              
-              
-              unless(has(expr(ignoreTrivials(lambdaExpr())))),
-              expr().bind("parentOperatorCallExpr")),
-          callExpr(
-              
-              
-              
-              
-              unless(has(expr(ignoreTrivials(lambdaExpr())))),
-              expr().bind("parentCallExpr")),
-          objcMessageExpr(
-              
-              
-              
-              
-              unless(has(expr(ignoreTrivials(lambdaExpr())))),
-              expr().bind("parentObjCMessageExpr")),
-          cxxConstructExpr(
-              
-              
-              
-              
-              unless(has(expr(ignoreTrivials(lambdaExpr())))),
-              expr().bind("parentConstructExpr")))));
+  auto hasParentCall = hasParent(expr(
+      anyOf(cxxOperatorCallExpr(
+                
+                
+                
+                
+                unless(has(expr(ignoreTrivials(lambdaExpr())))),
+                expr().bind("parentOperatorCallExpr")),
+            callExpr(
+                
+                
+                
+                
+                unless(has(expr(ignoreTrivials(lambdaExpr())))),
+                expr().bind("parentCallExpr")),
+            objcMessageExpr(
+                
+                
+                
+                
+                unless(has(expr(ignoreTrivials(lambdaExpr())))),
+                expr().bind("parentObjCMessageExpr")),
+            cxxConstructExpr(
+                
+                
+                
+                
+                unless(has(expr(ignoreTrivials(lambdaExpr())))),
+                expr().bind("parentConstructExpr")))));
 
   AstMatcher->addMatcher(
       
@@ -80,11 +79,9 @@ void DanglingOnTemporaryChecker::registerMatchers(MatchFinder *AstMatcher) {
           isFirstParty(),
 
           
-          on(allOf(
-              unless(hasType(pointerType())),
-              isTemporary(),
-              
-              unless(cxxThisExpr()))),
+          on(allOf(unless(hasType(pointerType())), isTemporary(),
+                   
+                   unless(cxxThisExpr()))),
 
           
           callee(cxxMethodDecl(noDanglingOnTemporaries())),
@@ -101,9 +98,7 @@ void DanglingOnTemporaryChecker::registerMatchers(MatchFinder *AstMatcher) {
 
               
               
-              hasAncestor(expr(
-                  hasParentCall,
-                  expr().bind("parentCallArg"))),
+              hasAncestor(expr(hasParentCall, expr().bind("parentCallArg"))),
               
               anything())),
       this);
@@ -163,8 +158,7 @@ void DanglingOnTemporaryChecker::check(const MatchFinder::MatchResult &Result) {
       Result.Nodes.getNodeAs<CXXConstructExpr>("parentConstructExpr");
   const CXXOperatorCallExpr *ParentOperatorCallExpr =
       Result.Nodes.getNodeAs<CXXOperatorCallExpr>("parentOperatorCallExpr");
-  const Expr *ParentCallArg =
-      Result.Nodes.getNodeAs<Expr>("parentCallArg");
+  const Expr *ParentCallArg = Result.Nodes.getNodeAs<Expr>("parentCallArg");
 
   
   if (!MemberCall) {
@@ -180,12 +174,12 @@ void DanglingOnTemporaryChecker::check(const MatchFinder::MatchResult &Result) {
     }
 
     
-    auto FunctionEscapeData
-        = ParentOperatorCallExpr
+    auto FunctionEscapeData =
+        ParentOperatorCallExpr
             ? escapesFunction(ParentCallArg, ParentOperatorCallExpr)
-          : ParentCallExpr
-              ? escapesFunction(ParentCallArg, ParentCallExpr)
-          : escapesFunction(ParentCallArg, ParentConstructExpr);
+            : ParentCallExpr
+                  ? escapesFunction(ParentCallArg, ParentCallExpr)
+                  : escapesFunction(ParentCallArg, ParentConstructExpr);
 
     
     if (std::error_code ec = FunctionEscapeData.getError()) {
@@ -193,11 +187,11 @@ void DanglingOnTemporaryChecker::check(const MatchFinder::MatchResult &Result) {
       
       
       if (static_cast<EscapesFunctionError>(ec.value()) ==
-          EscapesFunctionError::FunctionIsVariadic ||
+              EscapesFunctionError::FunctionIsVariadic ||
           static_cast<EscapesFunctionError>(ec.value()) ==
-          EscapesFunctionError::FunctionDeclNotFound ||
+              EscapesFunctionError::FunctionDeclNotFound ||
           static_cast<EscapesFunctionError>(ec.value()) ==
-          EscapesFunctionError::FunctionIsBuiltin) {
+              EscapesFunctionError::FunctionIsBuiltin) {
         return;
       }
 
@@ -258,5 +252,5 @@ void DanglingOnTemporaryChecker::check(const MatchFinder::MatchResult &Result) {
     diag(MemberCall->getExprLoc(), Error, DiagnosticIDs::Error)
         << MemberCall->getMethodDecl()->getName()
         << MemberCall->getSourceRange();
-    }
+  }
 }

@@ -5,7 +5,7 @@
 #include "CanRunScriptChecker.h"
 #include "CustomMatchers.h"
 
-void CanRunScriptChecker::registerMatchers(MatchFinder* AstMatcher) {
+void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
   auto InvalidArg =
       
       ignoreTrivials(expr(
@@ -19,17 +19,15 @@ void CanRunScriptChecker::registerMatchers(MatchFinder* AstMatcher) {
           
           unless(declRefExpr(to(parmVarDecl()))),
           
-          unless(callExpr(callee(
-            functionDecl(hasName("MOZ_KnownLive"))))),
+          unless(callExpr(callee(functionDecl(hasName("MOZ_KnownLive"))))),
           expr().bind("invalidArg")));
 
-  auto OptionalInvalidExplicitArg =
-      anyOf(
-          
-          hasAnyArgument(InvalidArg),
+  auto OptionalInvalidExplicitArg = anyOf(
+      
+      hasAnyArgument(InvalidArg),
 
-          
-          anything());
+      
+      anything());
 
   
   
@@ -46,9 +44,7 @@ void CanRunScriptChecker::registerMatchers(MatchFinder* AstMatcher) {
                   anyOf(
                       
                       on(cxxOperatorCallExpr(
-                          anyOf(
-                              hasAnyArgument(InvalidArg),
-                              anything()))),
+                          anyOf(hasAnyArgument(InvalidArg), anything()))),
                       
                       on(InvalidArg),
 
@@ -57,13 +53,11 @@ void CanRunScriptChecker::registerMatchers(MatchFinder* AstMatcher) {
               
               callExpr(
                   
-                  OptionalInvalidExplicitArg,
-                  expr().bind("callExpr")),
+                  OptionalInvalidExplicitArg, expr().bind("callExpr")),
               
               cxxConstructExpr(
                   
-                  OptionalInvalidExplicitArg,
-                  expr().bind("constructExpr"))),
+                  OptionalInvalidExplicitArg, expr().bind("constructExpr"))),
 
           anyOf(
               
@@ -80,52 +74,52 @@ void CanRunScriptChecker::onStartOfTranslationUnit() {
 }
 
 namespace {
-  
-  
-  
-  class FuncSetCallback : public MatchFinder::MatchCallback {
-  public:
-    FuncSetCallback(std::unordered_set<const FunctionDecl*> &FuncSet)
+
+
+
+class FuncSetCallback : public MatchFinder::MatchCallback {
+public:
+  FuncSetCallback(std::unordered_set<const FunctionDecl *> &FuncSet)
       : CanRunScriptFuncs(FuncSet) {}
 
-    void run(const MatchFinder::MatchResult &Result) override;
+  void run(const MatchFinder::MatchResult &Result) override;
 
-  private:
-    
-    
-    void addAllOverriddenMethodsRecursively(const CXXMethodDecl* Method);
+private:
+  
+  
+  void addAllOverriddenMethodsRecursively(const CXXMethodDecl *Method);
 
-    std::unordered_set<const FunctionDecl*> &CanRunScriptFuncs;
-  };
+  std::unordered_set<const FunctionDecl *> &CanRunScriptFuncs;
+};
 
-  void FuncSetCallback::run(const MatchFinder::MatchResult &Result) {
-    const FunctionDecl* Func =
+void FuncSetCallback::run(const MatchFinder::MatchResult &Result) {
+  const FunctionDecl *Func =
       Result.Nodes.getNodeAs<FunctionDecl>("canRunScriptFunction");
 
-    CanRunScriptFuncs.insert(Func);
+  CanRunScriptFuncs.insert(Func);
+
+  
+  if (auto *Method = dyn_cast<CXXMethodDecl>(Func)) {
+    addAllOverriddenMethodsRecursively(Method);
+  }
+}
+
+void FuncSetCallback::addAllOverriddenMethodsRecursively(
+    const CXXMethodDecl *Method) {
+  for (auto OverriddenMethod : Method->overridden_methods()) {
+    CanRunScriptFuncs.insert(OverriddenMethod);
 
     
-    if (auto* Method = dyn_cast<CXXMethodDecl>(Func)) {
-      addAllOverriddenMethodsRecursively(Method);
-    }
-  }
-
-  void FuncSetCallback::addAllOverriddenMethodsRecursively(
-      const CXXMethodDecl* Method) {
-    for (auto OverriddenMethod : Method->overridden_methods()) {
-      CanRunScriptFuncs.insert(OverriddenMethod);
-
-      
-      
-      if (!OverriddenMethod->isThisDeclarationADefinition()) {
-        if (auto Def = OverriddenMethod->getDefinition()) {
-          CanRunScriptFuncs.insert(Def);
-        }
+    
+    if (!OverriddenMethod->isThisDeclarationADefinition()) {
+      if (auto Def = OverriddenMethod->getDefinition()) {
+        CanRunScriptFuncs.insert(Def);
       }
-
-      addAllOverriddenMethodsRecursively(OverriddenMethod);
     }
+
+    addAllOverriddenMethodsRecursively(OverriddenMethod);
   }
+}
 } 
 
 void CanRunScriptChecker::buildFuncSet(ASTContext *Context) {
@@ -135,16 +129,15 @@ void CanRunScriptChecker::buildFuncSet(ASTContext *Context) {
   
   FuncSetCallback Callback(CanRunScriptFuncs);
   
-  Finder.addMatcher(functionDecl(hasCanRunScriptAnnotation())
-                      .bind("canRunScriptFunction"),
-                    &Callback);
+  Finder.addMatcher(
+      functionDecl(hasCanRunScriptAnnotation()).bind("canRunScriptFunction"),
+      &Callback);
 
   
   Finder.matchAST(*Context);
 }
 
-void CanRunScriptChecker::check(
-    const MatchFinder::MatchResult &Result) {
+void CanRunScriptChecker::check(const MatchFinder::MatchResult &Result) {
 
   
   
@@ -153,46 +146,44 @@ void CanRunScriptChecker::check(
     IsFuncSetBuilt = true;
   }
 
-  const char* ErrorInvalidArg =
+  const char *ErrorInvalidArg =
       "arguments must all be strong refs or parent parameters when calling a "
       "function marked as MOZ_CAN_RUN_SCRIPT (including the implicit object "
       "argument)";
 
-  const char* ErrorNonCanRunScriptParent =
+  const char *ErrorNonCanRunScriptParent =
       "functions marked as MOZ_CAN_RUN_SCRIPT can only be called from "
       "functions also marked as MOZ_CAN_RUN_SCRIPT";
-  const char* NoteNonCanRunScriptParent =
-      "parent function declared here";
+  const char *NoteNonCanRunScriptParent = "parent function declared here";
 
-  const Expr* InvalidArg = Result.Nodes.getNodeAs<Expr>("invalidArg");
+  const Expr *InvalidArg = Result.Nodes.getNodeAs<Expr>("invalidArg");
 
-  const CallExpr* Call = Result.Nodes.getNodeAs<CallExpr>("callExpr");
+  const CallExpr *Call = Result.Nodes.getNodeAs<CallExpr>("callExpr");
   
   
   if (Call && (!Call->getDirectCallee() ||
-      !CanRunScriptFuncs.count(Call->getDirectCallee()))) {
+               !CanRunScriptFuncs.count(Call->getDirectCallee()))) {
     Call = nullptr;
   }
 
-  const CXXConstructExpr* Construct =
+  const CXXConstructExpr *Construct =
       Result.Nodes.getNodeAs<CXXConstructExpr>("constructExpr");
 
   
   
   
   if (Construct && (!Construct->getConstructor() ||
-      !CanRunScriptFuncs.count(Construct->getConstructor()))) {
+                    !CanRunScriptFuncs.count(Construct->getConstructor()))) {
     Construct = nullptr;
   }
 
-  const FunctionDecl* ParentFunction =
+  const FunctionDecl *ParentFunction =
       Result.Nodes.getNodeAs<FunctionDecl>("nonCanRunScriptParentFunction");
   
   
   if (ParentFunction && CanRunScriptFuncs.count(ParentFunction)) {
     ParentFunction = nullptr;
   }
-
 
   
   SourceRange CallRange;

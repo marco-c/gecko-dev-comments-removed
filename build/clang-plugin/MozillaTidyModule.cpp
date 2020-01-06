@@ -24,8 +24,8 @@ public:
 };
 
 
-static ClangTidyModuleRegistry::Add<MozillaModule> X("mozilla-module",
-                                                     "Adds Mozilla lint checks.");
+static ClangTidyModuleRegistry::Add<MozillaModule>
+    X("mozilla-module", "Adds Mozilla lint checks.");
 
 } 
 } 

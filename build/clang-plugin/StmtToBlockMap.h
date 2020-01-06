@@ -45,10 +45,12 @@ inline SmallVector<const Stmt *, 1> getParentStmts(const Stmt *S,
 
 
 
+
 class StmtToBlockMap {
 public:
   
-  StmtToBlockMap(const CFG *TheCFG, ASTContext *TheContext) : Context(TheContext) {
+  StmtToBlockMap(const CFG *TheCFG, ASTContext *TheContext)
+      : Context(TheContext) {
     for (const auto *B : *TheCFG) {
       for (size_t I = 0; I < B->size(); ++I) {
         if (Optional<CFGStmt> S = (*B)[I].getAs<CFGStmt>()) {
@@ -64,7 +66,8 @@ public:
   
   
   
-  const CFGBlock *blockContainingStmt(const Stmt *S, size_t *Index = nullptr) const {
+  const CFGBlock *blockContainingStmt(const Stmt *S,
+                                      size_t *Index = nullptr) const {
     while (!Map.count(S)) {
       SmallVector<const Stmt *, 1> Parents = getParentStmts(S, Context);
       if (Parents.empty())
@@ -73,7 +76,8 @@ public:
     }
 
     const auto &E = Map.lookup(S);
-    if (Index) *Index = E.second;
+    if (Index)
+      *Index = E.second;
     return E.first;
   }
 
