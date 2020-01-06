@@ -240,7 +240,7 @@ HelperAppLauncherDialog.prototype = {
 
 
   _useNewButtonOrder: function() {
-    let _useNewButtonOrder = true;
+    let useNewButtonOrder = true;
     let jenv = null;
 
     try {
