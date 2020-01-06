@@ -1465,12 +1465,11 @@ ClearResolutionFunctionSlots(JSFunction* resolutionFun)
 }
 
 
-static MOZ_MUST_USE PromiseObject*
+static MOZ_MUST_USE MOZ_ALWAYS_INLINE PromiseObject*
 CreatePromiseObjectInternal(JSContext* cx, HandleObject proto ,
                             bool protoIsWrapped , bool informDebugger )
 {
     
-    Rooted<PromiseObject*> promise(cx);
     
     
     
@@ -1480,12 +1479,12 @@ CreatePromiseObjectInternal(JSContext* cx, HandleObject proto ,
     if (protoIsWrapped)
         ac.emplace(cx, proto);
 
-    promise = NewObjectWithClassProto<PromiseObject>(cx, proto);
+    PromiseObject* promise = NewObjectWithClassProto<PromiseObject>(cx, proto);
     if (!promise)
         return nullptr;
 
     
-    promise->setFixedSlot(PromiseSlot_Flags, Int32Value(0));
+    promise->initFixedSlot(PromiseSlot_Flags, Int32Value(0));
 
     
     
@@ -1493,20 +1492,24 @@ CreatePromiseObjectInternal(JSContext* cx, HandleObject proto ,
     
     
 
+    if (MOZ_LIKELY(!ShouldCaptureDebugInfo(cx)))
+        return promise;
+
     
     
     
-    if (ShouldCaptureDebugInfo(cx)) {
-        PromiseDebugInfo* debugInfo = PromiseDebugInfo::create(cx, promise);
-        if (!debugInfo)
-            return nullptr;
-    }
+
+    Rooted<PromiseObject*> promiseRoot(cx, promise);
+
+    PromiseDebugInfo* debugInfo = PromiseDebugInfo::create(cx, promiseRoot);
+    if (!debugInfo)
+        return nullptr;
 
     
     if (informDebugger)
-        Debugger::onNewPromise(cx, promise);
+        Debugger::onNewPromise(cx, promiseRoot);
 
-    return promise;
+    return promiseRoot;
 }
 
 
@@ -1588,7 +1591,7 @@ PromiseConstructor(JSContext* cx, unsigned argc, Value* vp)
         if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto))
             return false;
     }
-    Rooted<PromiseObject*> promise(cx, PromiseObject::create(cx, executor, proto, needsWrapping));
+    PromiseObject* promise = PromiseObject::create(cx, executor, proto, needsWrapping);
     if (!promise)
         return false;
 
