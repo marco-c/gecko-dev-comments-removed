@@ -728,18 +728,16 @@ template <class L>
 void
 MacroAssembler::wasmBoundsCheck(Condition cond, Register index, Register boundsCheckLimit, L label)
 {
-    MOZ_CRASH("NYI - patching is no longer available");
-    
-    
-
-    
+    ma_b(index, boundsCheckLimit, label, cond);
 }
 
 template <class L>
 void
 MacroAssembler::wasmBoundsCheck(Condition cond, Register index, Address boundsCheckLimit, L label)
 {
-    MOZ_CRASH("NYI - patching is no longer available");
+    SecondScratchRegisterScope scratch2(*this);
+    load32(boundsCheckLimit,SecondScratchReg);
+    ma_b(index, SecondScratchReg, label, cond);
 }
 
 
