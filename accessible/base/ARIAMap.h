@@ -34,7 +34,15 @@ enum EValueRule
 
 
 
-  eHasValueMinMax
+  eHasValueMinMax,
+
+  
+
+
+
+
+
+  eHasValueMinMaxIfFocusable
 };
 
 
