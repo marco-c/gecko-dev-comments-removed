@@ -317,7 +317,7 @@ LoadActivation(MacroAssembler& masm, Register dest)
 
 static void
 GenerateCallablePrologue(MacroAssembler& masm, unsigned framePushed, ExitReason reason,
-                         uint32_t* entry)
+                         uint32_t* entry, uint32_t* tierEntry, CompileMode mode, uint32_t funcIndex)
 {
     
     
@@ -340,6 +340,30 @@ GenerateCallablePrologue(MacroAssembler& masm, unsigned framePushed, ExitReason 
         MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
         masm.moveStackPtrTo(FramePointer);
         MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    if (reason.isNone()) {
+        if (mode == CompileMode::Tier1) {
+            Register scratch = ABINonArgReg0;
+            masm.loadPtr(Address(WasmTlsReg, offsetof(TlsData, jumpTable)), scratch);
+            masm.jump(Address(scratch, funcIndex*sizeof(uintptr_t)));
+        }
+        if (tierEntry)
+            *tierEntry = masm.currentOffset();
     }
 
     if (!reason.isNone()) {
@@ -427,7 +451,7 @@ GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReason 
 
 void
 wasm::GenerateFunctionPrologue(MacroAssembler& masm, unsigned framePushed, const SigIdDesc& sigId,
-                               FuncOffsets* offsets)
+                               FuncOffsets* offsets, CompileMode mode, uint32_t funcIndex)
 {
     
     
@@ -460,7 +484,8 @@ wasm::GenerateFunctionPrologue(MacroAssembler& masm, unsigned framePushed, const
 
     
     masm.nopAlign(CodeAlignment);
-    GenerateCallablePrologue(masm, framePushed, ExitReason::None(), &offsets->normalEntry);
+    GenerateCallablePrologue(masm, framePushed, ExitReason::None(), &offsets->normalEntry,
+                             &offsets->tierEntry, mode, funcIndex);
 
     masm.setFramePushed(framePushed);
 }
@@ -478,7 +503,8 @@ wasm::GenerateExitPrologue(MacroAssembler& masm, unsigned framePushed, ExitReaso
                            CallableOffsets* offsets)
 {
     masm.haltingAlign(CodeAlignment);
-    GenerateCallablePrologue(masm, framePushed, reason, &offsets->begin);
+    GenerateCallablePrologue(masm, framePushed, reason, &offsets->begin, nullptr,
+                             CompileMode::Once, 0);
     masm.setFramePushed(framePushed);
 }
 

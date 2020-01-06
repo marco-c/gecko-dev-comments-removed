@@ -894,7 +894,8 @@ struct FuncOffsets : CallableOffsets
 {
     MOZ_IMPLICIT FuncOffsets()
       : CallableOffsets(),
-        normalEntry(0)
+        normalEntry(0),
+        tierEntry(0)
     {}
 
     
@@ -904,9 +905,16 @@ struct FuncOffsets : CallableOffsets
     
     uint32_t normalEntry;
 
+    
+    
+    
+    
+    uint32_t tierEntry;
+
     void offsetBy(uint32_t offset) {
         CallableOffsets::offsetBy(offset);
         normalEntry += offset;
+        tierEntry += offset;
     }
 };
 
@@ -939,6 +947,7 @@ class CodeRange
     uint32_t funcIndex_;
     uint32_t funcLineOrBytecode_;
     uint8_t funcBeginToNormalEntry_;
+    uint8_t funcBeginToTierEntry_;
     Kind kind_ : 8;
 
   public:
@@ -998,6 +1007,10 @@ class CodeRange
     uint32_t funcNormalEntry() const {
         MOZ_ASSERT(isFunction());
         return begin_ + funcBeginToNormalEntry_;
+    }
+    uint32_t funcTierEntry() const {
+        MOZ_ASSERT(isFunction());
+        return begin_ + funcBeginToTierEntry_;
     }
     uint32_t funcIndex() const {
         MOZ_ASSERT(isFunction());
@@ -1341,6 +1354,10 @@ struct TlsData
 
     
     void* allocatedBase;
+
+    
+    
+    uintptr_t* jumpTable;
 
     
     

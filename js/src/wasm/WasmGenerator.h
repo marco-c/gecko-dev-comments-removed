@@ -228,6 +228,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     LinkData                        linkData_;
     MetadataTier*                   metadataTier_; 
     MutableMetadata                 metadata_;
+    UniqueJumpTable                 jumpTable_;
 
     
     UniqueModuleEnvironment         env_;
@@ -331,6 +332,9 @@ class MOZ_STACK_CLASS ModuleGenerator
     void bumpMinMemoryLength(uint32_t newMinMemoryLength);
     MOZ_MUST_USE bool addGlobal(ValType type, bool isConst, uint32_t* index);
     MOZ_MUST_USE bool addExport(CacheableChars&& fieldChars, uint32_t funcIndex);
+
+    
+    UniqueJumpTable createJumpTable(const CodeSegment& codeSegment);
 
     
     SharedModule finishModule(const ShareableBytes& bytecode);
