@@ -5,7 +5,7 @@ add_task(async function() {
   
   let browser = gBrowser.selectedBrowser;
   browser.loadURI(testURL);
-  await BrowserTestUtils.browserLoaded(browser, testURL);
+  await BrowserTestUtils.browserLoaded(browser, false, testURL);
 
   
   let notificationValue = "Protocol Registration: testprotocol";

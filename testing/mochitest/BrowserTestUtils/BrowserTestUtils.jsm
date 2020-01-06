@@ -262,6 +262,11 @@ this.BrowserTestUtils = {
 
   browserLoaded(browser, includeSubFrames=false, wantLoad=null) {
     
+    if (includeSubFrames && typeof includeSubFrames != "boolean") {
+      throw("The second argument to browserLoaded should be a boolean.");
+    }
+
+    
     
     let tabbrowser = browser.ownerGlobal.gBrowser;
     if (tabbrowser && tabbrowser.getTabForBrowser) {
