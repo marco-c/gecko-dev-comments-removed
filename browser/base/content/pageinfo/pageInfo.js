@@ -348,10 +348,10 @@ function loadPageInfo(frameOuterWindowID, imageElement, browser) {
   gStrings["application/xml"]      = gBundle.getString("feedXML");
   gStrings["application/rdf+xml"]  = gBundle.getString("feedXML");
 
+  let imageInfo = imageElement;
+
   
-  mm.sendAsyncMessage("PageInfo:getData", {strings: gStrings,
-                      frameOuterWindowID},
-                      { imageElement });
+  mm.sendAsyncMessage("PageInfo:getData", {strings: gStrings, frameOuterWindowID});
 
   let pageInfoData;
 
@@ -365,7 +365,7 @@ function loadPageInfo(frameOuterWindowID, imageElement, browser) {
     let principal = docInfo.principal;
     gDocInfo = docInfo;
 
-    gImageElement = pageInfoData.imageInfo;
+    gImageElement = imageInfo;
 
     var titleFormat = windowInfo.isTopWindow ? "pageInfo.page.title"
                                              : "pageInfo.frame.title";

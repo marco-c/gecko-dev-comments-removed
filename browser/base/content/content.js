@@ -14,12 +14,9 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  E10SUtils: "resource:///modules/E10SUtils.jsm",
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   ContentLinkHandler: "resource:///modules/ContentLinkHandler.jsm",
-  ContentMetaHandler: "resource:///modules/ContentMetaHandler.jsm",
   ContentWebRTC: "resource:///modules/ContentWebRTC.jsm",
-  SpellCheckHelper: "resource://gre/modules/InlineSpellChecker.jsm",
   InlineSpellCheckerContent: "resource://gre/modules/InlineSpellCheckerContent.jsm",
   LoginManagerContent: "resource://gre/modules/LoginManagerContent.jsm",
   LoginFormFactory: "resource://gre/modules/LoginManagerContent.jsm",
@@ -32,30 +29,20 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Utils: "resource://gre/modules/sessionstore/Utils.jsm",
   WebNavigationFrames: "resource://gre/modules/WebNavigationFrames.jsm",
   Feeds: "resource:///modules/Feeds.jsm",
-  findCssSelector: "resource://gre/modules/css-selector.js",
+  ContextMenu: "resource:///modules/ContextMenu.jsm",
 });
-
-XPCOMUtils.defineLazyGetter(this, "PageMenuChild", function() {
-  let tmp = {};
-  Cu.import("resource://gre/modules/PageMenu.jsm", tmp);
-  return new tmp.PageMenuChild();
-});
-
-Cu.importGlobalProperties(["URL"]);
 
 
 var global = this;
 
+var contextMenu = this.contextMenu = new ContextMenu(global);
+
 
 var formSubmitObserver = new FormSubmitObserver(content, this);
 
-addMessageListener("ContextMenu:DoCustomCommand", function(message) {
-  E10SUtils.wrapHandlingUserInput(
-    content, message.data.handlingUserInput,
-    () => PageMenuChild.executeMenu(message.data.generatedItemId));
-});
-
 addMessageListener("RemoteLogins:fillForm", function(message) {
+  
+  message.objects.inputElement = contextMenu.getTarget(message, "inputElement");
   LoginManagerContent.receiveMessage(message, content);
 });
 addEventListener("DOMFormHasPassword", function(event) {
@@ -78,144 +65,6 @@ addEventListener("blur", function(event) {
   LoginManagerContent.onUsernameInput(event);
 });
 
-var handleContentContextMenu = function(event) {
-  let defaultPrevented = event.defaultPrevented;
-  if (!Services.prefs.getBoolPref("dom.event.contextmenu.enabled")) {
-    let plugin = null;
-    try {
-      plugin = event.target.QueryInterface(Ci.nsIObjectLoadingContent);
-    } catch (e) {}
-    if (plugin && plugin.displayedType == Ci.nsIObjectLoadingContent.TYPE_PLUGIN) {
-      
-      return;
-    }
-
-    defaultPrevented = false;
-  }
-
-  if (defaultPrevented)
-    return;
-
-  let addonInfo = {};
-  let subject = {
-    event,
-    addonInfo,
-  };
-  subject.wrappedJSObject = subject;
-  Services.obs.notifyObservers(subject, "content-contextmenu");
-
-  let doc = event.target.ownerDocument;
-  let docLocation = doc.mozDocumentURIIfNotForErrorPages;
-  docLocation = docLocation && docLocation.spec;
-  let charSet = doc.characterSet;
-  let baseURI = doc.baseURI;
-  let referrer = doc.referrer;
-  let referrerPolicy = doc.referrerPolicy;
-  let frameOuterWindowID = WebNavigationFrames.getFrameId(doc.defaultView);
-  let loginFillInfo = LoginManagerContent.getFieldContext(event.target);
-
-  
-  let parentAllowsMixedContent = !!docShell.mixedContentChannel;
-
-  
-  let referrerAttrValue = Services.netUtils.parseAttributePolicyString(event.target.
-                          getAttribute("referrerpolicy"));
-  if (referrerAttrValue !== Ci.nsIHttpChannel.REFERRER_POLICY_UNSET) {
-    referrerPolicy = referrerAttrValue;
-  }
-
-  let disableSetDesktopBg = null;
-  
-  let contentType = null;
-  let contentDisposition = null;
-  if (event.target.nodeType == Ci.nsIDOMNode.ELEMENT_NODE &&
-      event.target instanceof Ci.nsIImageLoadingContent &&
-      event.target.currentURI) {
-    disableSetDesktopBg = disableSetDesktopBackground(event.target);
-
-    try {
-      let imageCache =
-        Cc["@mozilla.org/image/tools;1"].getService(Ci.imgITools)
-                                        .getImgCacheForDocument(doc);
-      let props =
-        imageCache.findEntryProperties(event.target.currentURI, doc);
-      try {
-        contentType = props.get("type", Ci.nsISupportsCString).data;
-      } catch (e) {}
-      try {
-        contentDisposition =
-          props.get("content-disposition", Ci.nsISupportsCString).data;
-      } catch (e) {}
-    } catch (e) {}
-  }
-
-  let selectionInfo = BrowserUtils.getSelectionDetails(content);
-
-  let loadContext = docShell.QueryInterface(Ci.nsILoadContext);
-  let userContextId = loadContext.originAttributes.userContextId;
-  let popupNodeSelectors = getNodeSelectors(event.target);
-
-  if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
-    let editFlags = SpellCheckHelper.isEditable(event.target, content);
-    let spellInfo;
-    if (editFlags &
-        (SpellCheckHelper.EDITABLE | SpellCheckHelper.CONTENTEDITABLE)) {
-      spellInfo =
-        InlineSpellCheckerContent.initContextMenu(event, editFlags, this);
-    }
-
-    
-    
-    
-    docShell.contentViewer.QueryInterface(Ci.nsIContentViewerEdit)
-            .setCommandNode(event.target);
-    event.target.ownerGlobal.updateCommands("contentcontextmenu");
-
-    let customMenuItems = PageMenuChild.build(event.target);
-    let principal = doc.nodePrincipal;
-
-    sendRpcMessage("contextmenu",
-                   { editFlags, spellInfo, customMenuItems, addonInfo,
-                     principal, docLocation, charSet, baseURI, referrer,
-                     referrerPolicy, contentType, contentDisposition,
-                     frameOuterWindowID, selectionInfo, disableSetDesktopBg,
-                     loginFillInfo, parentAllowsMixedContent, userContextId,
-                     popupNodeSelectors,
-                   }, {
-                     event,
-                     popupNode: event.target,
-                   });
-  } else {
-    
-    let browser = docShell.chromeEventHandler;
-    let mainWin = browser.ownerGlobal;
-    mainWin.setContextMenuContentData({
-      isRemote: false,
-      event,
-      popupNode: event.target,
-      popupNodeSelectors,
-      browser,
-      addonInfo,
-      documentURIObject: doc.documentURIObject,
-      docLocation,
-      charSet,
-      referrer,
-      referrerPolicy,
-      contentType,
-      contentDisposition,
-      selectionInfo,
-      disableSetDesktopBackground: disableSetDesktopBg,
-      loginFillInfo,
-      parentAllowsMixedContent,
-      userContextId,
-    });
-  }
-}
-
-Cc["@mozilla.org/eventlistenerservice;1"]
-  .getService(Ci.nsIEventListenerService)
-  .addSystemEventListener(global, "contextmenu", handleContentContextMenu, false);
-
 
 const TLS_ERROR_REPORT_TELEMETRY_UI_SHOWN = 0;
 const TLS_ERROR_REPORT_TELEMETRY_EXPANDED = 1;
@@ -237,29 +86,6 @@ const PREF_BLOCKLIST_CLOCK_SKEW_SECONDS = "services.blocklist.clock_skew_seconds
 
 const PREF_SSL_IMPACT_ROOTS = ["security.tls.version.", "security.ssl3."];
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getNodeSelectors(node) {
-  let selectors = [];
-  while (node) {
-    selectors.push(findCssSelector(node));
-    node = node.ownerGlobal.frameElement;
-  }
-
-  return selectors;
-}
 
 function getSerializedSecurityInfo(docShell) {
   let serhelper = Cc["@mozilla.org/network/serialization-helper;1"]
@@ -770,7 +596,6 @@ var ClickEventHandler = {
 ClickEventHandler.init();
 
 ContentLinkHandler.init(this);
-ContentMetaHandler.init(this);
 
 
 var pluginContent = new PluginContent(global);
@@ -812,13 +637,13 @@ var PageMetadataMessenger = {
   receiveMessage(message) {
     switch (message.name) {
       case "PageMetadata:GetPageData": {
-        let target = message.objects.target;
+        let target = contextMenu.getTarget(message);
         let result = PageMetadata.getData(content.document, target);
         sendAsyncMessage("PageMetadata:PageDataResult", result);
         break;
       }
       case "PageMetadata:GetMicroformats": {
-        let target = message.objects.target;
+        let target = contextMenu.getTarget(message);
         let result = PageMetadata.getMicroformats(content.document, target);
         sendAsyncMessage("PageMetadata:MicroformatsResult", result);
         break;
@@ -827,149 +652,6 @@ var PageMetadataMessenger = {
   }
 }
 PageMetadataMessenger.init();
-
-addMessageListener("ContextMenu:SaveVideoFrameAsImage", (message) => {
-  let video = message.objects.target;
-  let canvas = content.document.createElementNS("http://www.w3.org/1999/xhtml", "canvas");
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-
-  let ctxDraw = canvas.getContext("2d");
-  ctxDraw.drawImage(video, 0, 0);
-  sendAsyncMessage("ContextMenu:SaveVideoFrameAsImage:Result", {
-    dataURL: canvas.toDataURL("image/jpeg", ""),
-  });
-});
-
-addMessageListener("ContextMenu:MediaCommand", (message) => {
-  E10SUtils.wrapHandlingUserInput(
-    content, message.data.handlingUserInput,
-    () => {
-      let media = message.objects.element;
-      switch (message.data.command) {
-        case "play":
-          media.play();
-          break;
-        case "pause":
-          media.pause();
-          break;
-        case "loop":
-          media.loop = !media.loop;
-          break;
-        case "mute":
-          media.muted = true;
-          break;
-        case "unmute":
-          media.muted = false;
-          break;
-        case "playbackRate":
-          media.playbackRate = message.data.data;
-          break;
-        case "hidecontrols":
-          media.removeAttribute("controls");
-          break;
-        case "showcontrols":
-          media.setAttribute("controls", "true");
-          break;
-        case "fullscreen":
-          if (content.document.fullscreenEnabled)
-            media.requestFullscreen();
-          break;
-      }
-    });
-});
-
-addMessageListener("ContextMenu:Canvas:ToBlobURL", (message) => {
-  message.objects.target.toBlob((blob) => {
-    let blobURL = URL.createObjectURL(blob);
-    sendAsyncMessage("ContextMenu:Canvas:ToBlobURL:Result", { blobURL });
-  });
-});
-
-addMessageListener("ContextMenu:ReloadFrame", (message) => {
-  message.objects.target.ownerDocument.location.reload();
-});
-
-addMessageListener("ContextMenu:ReloadImage", (message) => {
-  let image = message.objects.target;
-  if (image instanceof Ci.nsIImageLoadingContent)
-    image.forceReload();
-});
-
-addMessageListener("ContextMenu:BookmarkFrame", (message) => {
-  let frame = message.objects.target.ownerDocument;
-  sendAsyncMessage("ContextMenu:BookmarkFrame:Result",
-                   { title: frame.title,
-                     description: PlacesUIUtils.getDescriptionFromDocument(frame) });
-});
-
-addMessageListener("ContextMenu:SearchFieldBookmarkData", (message) => {
-  let node = message.objects.target;
-
-  let charset = node.ownerDocument.characterSet;
-
-  let formBaseURI = Services.io.newURI(node.form.baseURI, charset);
-
-  let formURI = Services.io.newURI(node.form.getAttribute("action"), charset,
-                                   formBaseURI);
-
-  let spec = formURI.spec;
-
-  let isURLEncoded =
-               (node.form.method.toUpperCase() == "POST"
-                && (node.form.enctype == "application/x-www-form-urlencoded" ||
-                    node.form.enctype == ""));
-
-  let title = node.ownerDocument.title;
-  let description = PlacesUIUtils.getDescriptionFromDocument(node.ownerDocument);
-
-  let formData = [];
-
-  function escapeNameValuePair(aName, aValue, aIsFormUrlEncoded) {
-    if (aIsFormUrlEncoded) {
-      return escape(aName + "=" + aValue);
-    }
-    return escape(aName) + "=" + escape(aValue);
-  }
-
-  for (let el of node.form.elements) {
-    if (!el.type) 
-      continue;
-
-    if (el == node) {
-      formData.push((isURLEncoded) ? escapeNameValuePair(el.name, "%s", true) :
-                                     
-                                     escapeNameValuePair(el.name, "", false) + "%s");
-      continue;
-    }
-
-    let type = el.type.toLowerCase();
-
-    if (((el instanceof content.HTMLInputElement && el.mozIsTextField(true)) ||
-        type == "hidden" || type == "textarea") ||
-        ((type == "checkbox" || type == "radio") && el.checked)) {
-      formData.push(escapeNameValuePair(el.name, el.value, isURLEncoded));
-    } else if (el instanceof content.HTMLSelectElement && el.selectedIndex >= 0) {
-      for (let j = 0; j < el.options.length; j++) {
-        if (el.options[j].selected)
-          formData.push(escapeNameValuePair(el.name, el.options[j].value,
-                                            isURLEncoded));
-      }
-    }
-  }
-
-  let postData;
-
-  if (isURLEncoded)
-    postData = formData.join("&");
-  else {
-    let separator = spec.includes("?") ? "&" : "?";
-    spec += separator + formData.join("&");
-  }
-
-  sendAsyncMessage("ContextMenu:SearchFieldBookmarkData:Result",
-                   { spec, title, description, postData, charset });
-});
 
 addMessageListener("Bookmarks:GetPageDetails", (message) => {
   let doc = content.document;
@@ -1030,56 +712,6 @@ var LightWeightThemeWebInstallListener = {
 
 LightWeightThemeWebInstallListener.init();
 
-function disableSetDesktopBackground(aTarget) {
-  
-  
-  if (!(aTarget instanceof Ci.nsIImageLoadingContent))
-    return true;
-
-  if (("complete" in aTarget) && !aTarget.complete)
-    return true;
-
-  if (aTarget.currentURI.schemeIs("javascript"))
-    return true;
-
-  let request = aTarget.QueryInterface(Ci.nsIImageLoadingContent)
-                       .getRequest(Ci.nsIImageLoadingContent.CURRENT_REQUEST);
-  if (!request)
-    return true;
-
-  return false;
-}
-
-addMessageListener("ContextMenu:SetAsDesktopBackground", (message) => {
-  let target = message.objects.target;
-
-  
-  
-  let disable = disableSetDesktopBackground(target);
-
-  if (!disable) {
-    try {
-      BrowserUtils.urlSecurityCheck(target.currentURI.spec, target.ownerDocument.nodePrincipal);
-      let canvas = content.document.createElement("canvas");
-      canvas.width = target.naturalWidth;
-      canvas.height = target.naturalHeight;
-      let ctx = canvas.getContext("2d");
-      ctx.drawImage(target, 0, 0);
-      let dataUrl = canvas.toDataURL();
-      let url = (new URL(target.ownerDocument.location.href)).pathname;
-      let imageName = url.substr(url.lastIndexOf("/") + 1);
-      sendAsyncMessage("ContextMenu:SetAsDesktopBackground:Result",
-                       { dataUrl, imageName });
-    } catch (e) {
-      Cu.reportError(e);
-      disable = true;
-    }
-  }
-
-  if (disable)
-    sendAsyncMessage("ContextMenu:SetAsDesktopBackground:Result", { disable });
-});
-
 var PageInfoListener = {
 
   init() {
@@ -1102,31 +734,15 @@ var PageInfoListener = {
       document = content.document;
     }
 
-    let imageElement = message.objects.imageElement;
-
     let pageInfoData = {metaViewRows: this.getMetaInfo(document),
                         docInfo: this.getDocumentInfo(document),
                         feeds: this.getFeedsInfo(document, strings),
-                        windowInfo: this.getWindowInfo(window),
-                        imageInfo: this.getImageInfo(imageElement)};
+                        windowInfo: this.getWindowInfo(window)};
 
     sendAsyncMessage("PageInfo:data", pageInfoData);
 
     
     this.getMediaInfo(document, window, strings);
-  },
-
-  getImageInfo(imageElement) {
-    let imageInfo = null;
-    if (imageElement) {
-      imageInfo = {
-        currentSrc: imageElement.currentSrc,
-        width: imageElement.width,
-        height: imageElement.height,
-        imageText: imageElement.title || imageElement.alt
-      };
-    }
-    return imageInfo;
   },
 
   getMetaInfo(document) {
