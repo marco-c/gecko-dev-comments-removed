@@ -320,5 +320,7 @@ async function waitForAutocompleteResultAt(index) {
     () => gURLBar.popup.richlistbox.children.length > index &&
           gURLBar.popup.richlistbox.children[index].getAttribute("ac-text") == searchString,
     `Waiting for the autocomplete result for "${searchString}" at [${index}] to appear`);
+  
+  await new Promise(resolve => window.requestIdleCallback(resolve, {timeout: 1000}));
   return gURLBar.popup.richlistbox.children[index];
 }

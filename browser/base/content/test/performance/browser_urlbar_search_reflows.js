@@ -57,7 +57,7 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
       "_invalidate@chrome://global/content/bindings/autocomplete.xml",
       "invalidate@chrome://global/content/bindings/autocomplete.xml"
     ],
-    times: 60, 
+    times: 36, 
   },
 
   {
@@ -100,6 +100,18 @@ const EXPECTED_REFLOWS_SECOND_OPEN = [
       "_invalidate/this._adjustHeightTimeout<@chrome://global/content/bindings/autocomplete.xml",
     ],
     times: 3, 
+  },
+
+  {
+    stack: [
+      "_handleOverflow@chrome://global/content/bindings/autocomplete.xml",
+      "handleOverUnderflow@chrome://global/content/bindings/autocomplete.xml",
+      "_reuseAcItem@chrome://global/content/bindings/autocomplete.xml",
+      "_appendCurrentResult@chrome://global/content/bindings/autocomplete.xml",
+      "_invalidate@chrome://global/content/bindings/autocomplete.xml",
+      "invalidate@chrome://global/content/bindings/autocomplete.xml"
+    ],
+    times: 24, 
   },
 
   

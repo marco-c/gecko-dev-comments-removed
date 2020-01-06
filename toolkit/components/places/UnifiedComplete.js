@@ -82,7 +82,7 @@ const FRECENCY_DEFAULT = 1000;
 const MAXIMUM_ALLOWED_EXTENSION_MATCHES = 6;
 
 
-const MAXIMUM_ALLOWED_EXTENSION_TIME_MS = 5000;
+const MAXIMUM_ALLOWED_EXTENSION_TIME_MS = 3000;
 
 
 
@@ -94,6 +94,9 @@ const REGEXP_USER_CONTEXT_ID = /(?:^| )user-context-id:(\d+)/;
 
 
 const REGEXP_SPACES = /\s+/;
+
+
+const NOTIFYRESULT_DELAY_MS = 16;
 
 
 const QUERYINDEX_QUERYTYPE     = 0;
@@ -330,6 +333,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "textURIService",
 function setTimeout(callback, ms) {
   let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
   timer.initWithCallback(callback, ms, timer.TYPE_ONE_SHOT);
+  return timer;
 }
 
 function convertBucketsCharPrefToArray(str) {
@@ -992,6 +996,9 @@ Search.prototype = {
     
     if (!this.pending)
       return;
+    if (this._notifyTimer)
+      this._notifyTimer.cancel();
+    this._notifyDelaysCount = 0;
     if (this._sleepTimer)
       this._sleepTimer.cancel();
     if (this._sleepResolve) {
@@ -1127,7 +1134,6 @@ Search.prototype = {
           
           
           this._autocompleteSearch.finishSearch(true);
-          this.stop();
           return;
         }
       }
@@ -1667,9 +1673,8 @@ Search.prototype = {
 
     
     
-    let timeoutPromise = new Promise((resolve, reject) => {
-      setTimeout(() => reject(new Error("timeout waiting for the extension to add its results to the location bar")),
-                 MAXIMUM_ALLOWED_EXTENSION_TIME_MS);
+    let timeoutPromise = new Promise(resolve => {
+      setTimeout(resolve, MAXIMUM_ALLOWED_EXTENSION_TIME_MS);
     });
     return Promise.race([timeoutPromise, promise]).catch(Cu.reportError);
   },
@@ -1909,7 +1914,7 @@ Search.prototype = {
       TelemetryStopwatch.finish(TELEMETRY_1ST_RESULT, this);
     if (this._currentMatchCount == 6)
       TelemetryStopwatch.finish(TELEMETRY_6_FIRST_RESULTS, this);
-    this.notifyResults(true);
+    this.notifyResult(true, match.type == MATCHTYPE.HEURISTIC);
   },
 
   _getInsertIndexForMatch(match) {
@@ -2009,7 +2014,7 @@ Search.prototype = {
       }
     }
     if (changed && notify) {
-      this.notifyResults(true);
+      this.notifyResult(true);
     }
   },
 
@@ -2364,24 +2369,47 @@ Search.prototype = {
     return query;
   },
 
- 
+  
+  
+  _notifyTimer: null,
+
+  
 
 
 
 
 
-  notifyResults(searchOngoing) {
-    let result = this._result;
-    let resultCode = this._currentMatchCount ? "RESULT_SUCCESS" : "RESULT_NOMATCH";
-    if (searchOngoing) {
-      resultCode += "_ONGOING";
+
+
+  _notifyDelaysCount: 0,
+  notifyResult(searchOngoing, skipDelay = false) {
+    let notify = () => {
+      this._notifyDelaysCount = 0;
+      let resultCode = this._currentMatchCount ? "RESULT_SUCCESS" : "RESULT_NOMATCH";
+      if (searchOngoing) {
+        resultCode += "_ONGOING";
+      }
+      let result = this._result;
+      result.setSearchResult(Ci.nsIAutoCompleteResult[resultCode]);
+      this._listener.onSearchResult(this._autocompleteSearch, result);
+      if (!searchOngoing) {
+        
+        this._listener = null;
+        this._autocompleteSearch = null;
+        this.stop();
+      }
+    };
+    if (this._notifyTimer) {
+      this._notifyTimer.cancel();
     }
-    result.setSearchResult(Ci.nsIAutoCompleteResult[resultCode]);
-    this._listener.onSearchResult(this._autocompleteSearch, result);
-    if (!searchOngoing) {
-      
-      this._listener = null;
-      this._autocompleteSearch = null;
+    
+    
+    
+    if (skipDelay || this._notifyDelaysCount > 3) {
+      notify();
+    } else {
+      this._notifyDelaysCount++;
+      this._notifyTimer = setTimeout(notify, NOTIFYRESULT_DELAY_MS);
     }
   },
 };
@@ -2579,7 +2607,6 @@ UnifiedComplete.prototype = {
     if (!notify || !search.pending)
       return;
 
-
     
     
     
@@ -2594,7 +2621,7 @@ UnifiedComplete.prototype = {
     
     
     
-    search.notifyResults(false);
+    search.notifyResult(false);
   },
 
   
