@@ -293,19 +293,6 @@ nsNodeUtils::LastRelease(nsINode* aNode)
                                               NodeWillBeDestroyed, (aNode));
     }
 
-    if (aNode->IsElement()) {
-      Element* elem = aNode->AsElement();
-      FragmentOrElement::nsDOMSlots* domSlots =
-        static_cast<FragmentOrElement::nsDOMSlots*>(slots);
-      if (domSlots->mExtendedSlots) {
-        for (auto iter = domSlots->mExtendedSlots->mRegisteredIntersectionObservers.Iter();
-             !iter.Done(); iter.Next()) {
-          DOMIntersectionObserver* observer = iter.Key();
-          observer->UnlinkTarget(*elem);
-        }
-      }
-    }
-
     delete slots;
     aNode->mSlots = nullptr;
   }
@@ -320,6 +307,12 @@ nsNodeUtils::LastRelease(nsINode* aNode)
   }
   else {
     if (aNode->HasProperties()) {
+      if (aNode->IsElement()) {
+        Element* elem = aNode->AsElement();
+        elem->UnlinkIntersectionObservers();
+        elem->DeleteProperty(nsGkAtoms::intersectionobserverlist);
+      }
+
       
       
       nsCOMPtr<nsIDocument> document = aNode->OwnerDoc();

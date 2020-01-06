@@ -40,7 +40,6 @@ namespace mozilla {
 class DeclarationBlock;
 namespace dom {
 struct CustomElementData;
-class DOMIntersectionObserver;
 class Element;
 } 
 } 
@@ -312,12 +311,6 @@ public:
 
 
     RefPtr<CustomElementData> mCustomElementData;
-
-    
-
-
-    nsDataHashtable<nsRefPtrHashKey<DOMIntersectionObserver>, int32_t>
-      mRegisteredIntersectionObservers;
 
     
 
