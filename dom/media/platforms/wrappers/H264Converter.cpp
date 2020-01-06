@@ -136,6 +136,7 @@ H264Converter::Flush()
   mDecodePromiseRequest.DisconnectIfExists();
   mDecodePromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   mNeedKeyframe = true;
+  mPendingFrames.Clear();
 
   MOZ_RELEASE_ASSERT(mFlushPromise.IsEmpty(), "Previous flush didn't complete");
 
@@ -160,8 +161,12 @@ H264Converter::Flush()
 
 
 
-  if (mFlushRequest.Exists() || mShutdownRequest.Exists() ||
-      mInitPromiseRequest.Exists()) {
+
+
+
+
+  if (mDrainRequest.Exists() || mFlushRequest.Exists() ||
+      mShutdownRequest.Exists() || mInitPromiseRequest.Exists()) {
     
     return mFlushPromise.Ensure(__func__);
   }
@@ -174,6 +179,7 @@ H264Converter::Flush()
 RefPtr<MediaDataDecoder::DecodePromise>
 H264Converter::Drain()
 {
+  MOZ_RELEASE_ASSERT(!mDrainRequest.Exists());
   mNeedKeyframe = true;
   if (mDecoder) {
     return mDecoder->Drain();
@@ -353,7 +359,8 @@ void
 H264Converter::DecodeFirstSample(MediaRawData* aSample)
 {
   if (mNeedKeyframe && !aSample->mKeyframe) {
-    mDecodePromise.Resolve(DecodedData(), __func__);
+    mDecodePromise.Resolve(mPendingFrames, __func__);
+    mPendingFrames.Clear();
     return;
   }
 
@@ -373,7 +380,9 @@ H264Converter::DecodeFirstSample(MediaRawData* aSample)
     ->Then(AbstractThread::GetCurrent()->AsTaskQueue(), __func__,
            [self, this](const MediaDataDecoder::DecodedData& aResults) {
              mDecodePromiseRequest.Complete();
-             mDecodePromise.Resolve(aResults, __func__);
+             mPendingFrames.AppendElements(aResults);
+             mDecodePromise.Resolve(mPendingFrames, __func__);
+             mPendingFrames.Clear();
            },
            [self, this](const MediaResult& aError) {
              mDecodePromiseRequest.Complete();
@@ -411,13 +420,12 @@ H264Converter::CheckForSPSChange(MediaRawData* aSample)
     return NS_OK;
   }
 
-  RefPtr<MediaRawData> sample = aSample;
   MOZ_ASSERT(mCanRecycleDecoder.isSome());
   if (*mCanRecycleDecoder) {
     
     UpdateConfigFromExtraData(extra_data);
-    if (!sample->mTrackInfo) {
-      sample->mTrackInfo = new TrackInfoSharedPtr(mCurrentConfig, 0);
+    if (!aSample->mTrackInfo) {
+      aSample->mTrackInfo = new TrackInfoSharedPtr(mCurrentConfig, 0);
     }
     mNeedKeyframe = true;
     return NS_OK;
@@ -425,6 +433,49 @@ H264Converter::CheckForSPSChange(MediaRawData* aSample)
 
   
   
+  DrainThenFlushDecoder(aSample);
+  return NS_ERROR_DOM_MEDIA_INITIALIZING_DECODER;
+}
+
+void
+H264Converter::DrainThenFlushDecoder(MediaRawData* aPendingSample)
+{
+  RefPtr<MediaRawData> sample = aPendingSample;
+  RefPtr<H264Converter> self = this;
+  mDecoder->Drain()
+    ->Then(AbstractThread::GetCurrent()->AsTaskQueue(),
+           __func__,
+           [self, sample, this](const MediaDataDecoder::DecodedData& aResults) {
+             mDrainRequest.Complete();
+             if (!mFlushPromise.IsEmpty()) {
+               
+               mFlushPromise.Resolve(true, __func__);
+               return;
+             }
+             if (aResults.Length() > 0) {
+               mPendingFrames.AppendElements(aResults);
+               DrainThenFlushDecoder(sample);
+               return;
+             }
+             
+             
+             FlushThenShutdownDecoder(sample);
+           },
+           [self, this](const MediaResult& aError) {
+             mDrainRequest.Complete();
+             if (!mFlushPromise.IsEmpty()) {
+               
+               mFlushPromise.Reject(aError, __func__);
+               return;
+             }
+             mDecodePromise.Reject(aError, __func__);
+           })
+    ->Track(mDrainRequest);
+}
+
+void H264Converter::FlushThenShutdownDecoder(MediaRawData* aPendingSample)
+{
+  RefPtr<MediaRawData> sample = aPendingSample;
   RefPtr<H264Converter> self = this;
   mDecoder->Flush()
     ->Then(AbstractThread::GetCurrent()->AsTaskQueue(),
@@ -466,15 +517,14 @@ H264Converter::CheckForSPSChange(MediaRawData* aSample)
            },
            [self, this](const MediaResult& aError) {
              mFlushRequest.Complete();
-               if (!mFlushPromise.IsEmpty()) {
-                 
-                 mFlushPromise.Reject(aError, __func__);
-                 return;
-               }
-               mDecodePromise.Reject(aError, __func__);
+             if (!mFlushPromise.IsEmpty()) {
+               
+               mFlushPromise.Reject(aError, __func__);
+               return;
+             }
+             mDecodePromise.Reject(aError, __func__);
            })
     ->Track(mFlushRequest);
-  return NS_ERROR_DOM_MEDIA_INITIALIZING_DECODER;
 }
 
 void
