@@ -5235,10 +5235,6 @@ pref("memory.low_memory_notification_interval_ms", 10000);
 pref("memory.ghost_window_timeout_seconds", 60);
 
 
-
-pref("memory.free_dirty_pages", true);
-
-
 pref("memory.dump_reports_on_oom", false);
 
 
