@@ -30,7 +30,6 @@
 
 
 
-#include "prio.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include "nscore.h"
