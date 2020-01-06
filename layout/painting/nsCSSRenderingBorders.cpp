@@ -210,6 +210,7 @@ nsCSSBorderRenderer::nsCSSBorderRenderer(nsPresContext* aPresContext,
 
   mOneUnitBorder = CheckFourFloatsEqual(mBorderWidths, 1.0);
   mNoBorderRadius = AllCornersZeroSize(mBorderRadii);
+  mAllBordersSameStyle = AreBorderSideFinalStylesSame(eSideBitsAll);
   mAvoidStroke = false;
 }
 
@@ -3199,9 +3200,7 @@ nsCSSBorderRenderer::DrawBorders()
 {
   bool forceSeparateCorners = false;
 
-  bool allBordersSameStyle = AreBorderSideFinalStylesSame(eSideBitsAll);
-
-  if (allBordersSameStyle &&
+  if (mAllBordersSameStyle &&
       ((mCompositeColors[0] == nullptr &&
        (mBorderStyles[0] == NS_STYLE_BORDER_STYLE_NONE ||
         mBorderStyles[0] == NS_STYLE_BORDER_STYLE_HIDDEN ||
@@ -3260,7 +3259,7 @@ nsCSSBorderRenderer::DrawBorders()
   
   
   
-  if (allBordersSameStyle &&
+  if (mAllBordersSameStyle &&
       mCompositeColors[0] == nullptr &&
       allBordersSameWidth &&
       mBorderStyles[0] == NS_STYLE_BORDER_STYLE_SOLID &&
@@ -3274,7 +3273,7 @@ nsCSSBorderRenderer::DrawBorders()
     return;
   }
 
-  if (allBordersSameStyle &&
+  if (mAllBordersSameStyle &&
       mCompositeColors[0] == nullptr &&
       mBorderStyles[0] == NS_STYLE_BORDER_STYLE_SOLID &&
       !mAvoidStroke &&
@@ -3341,7 +3340,7 @@ nsCSSBorderRenderer::DrawBorders()
   
   
   
-  if (allBordersSameStyle && mCompositeColors[0] != nullptr && !mNoBorderRadius)
+  if (mAllBordersSameStyle && mCompositeColors[0] != nullptr && !mNoBorderRadius)
     forceSeparateCorners = true;
 
   PrintAsString(" mOuterRect: "); PrintAsString(mOuterRect); PrintAsStringNewline();
@@ -3371,14 +3370,14 @@ nsCSSBorderRenderer::DrawBorders()
     {
       
       
-      allBordersSameStyle = false;
+      mAllBordersSameStyle = false;
       dashedSides |= (1 << i);
     }
   }
 
-  PrintAsFormatString(" allBordersSameStyle: %d dashedSides: 0x%02x\n", allBordersSameStyle, dashedSides);
+  PrintAsFormatString(" mAllBordersSameStyle: %d dashedSides: 0x%02x\n", mAllBordersSameStyle, dashedSides);
 
-  if (allBordersSameStyle && !forceSeparateCorners) {
+  if (mAllBordersSameStyle && !forceSeparateCorners) {
     
     DrawBorderSides(eSideBitsAll);
     PrintAsStringNewline("---------------- (1)");
