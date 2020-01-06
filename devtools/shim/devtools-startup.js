@@ -434,6 +434,17 @@ DevToolsStartup.prototype = {
 
 
 
+  isDevToolsUser() {
+    let selfXssCount = Services.prefs.getIntPref("devtools.selfxss.count", 0);
+    return selfXssCount > 0;
+  },
+
+  
+
+
+
+
+
 
   setupEnabledPref(hasDevToolsFlag) {
     if (Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
@@ -442,7 +453,8 @@ DevToolsStartup.prototype = {
     }
 
     let hasToolbarPref = Services.prefs.getBoolPref(TOOLBAR_VISIBLE_PREF, false);
-    if (hasDevToolsFlag || hasToolbarPref) {
+
+    if (hasDevToolsFlag || hasToolbarPref || this.isDevToolsUser()) {
       Services.prefs.setBoolPref(DEVTOOLS_ENABLED_PREF, true);
     }
   },
