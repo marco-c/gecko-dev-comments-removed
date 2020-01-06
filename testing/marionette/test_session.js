@@ -189,6 +189,11 @@ add_test(function test_Proxy_toJSON() {
     let manual = new session.Proxy();
     manual.proxyType = "manual";
 
+    if (proxy == "socksProxy") {
+      manual.socksVersion = 5;
+      expected.socksVersion = 5;
+    }
+
     
     manual[proxy] = "foo";
     expected[proxy] = "foo"
@@ -238,8 +243,8 @@ add_test(function test_Proxy_fromJSON() {
 
     let expected = {"proxyType": "manual"};
     if (proxy == "socksProxy") {
-      manual.socksProxyVersion = 5;
-      expected.socksProxyVersion = 5;
+      manual.socksVersion = 5;
+      expected.socksVersion = 5;
     }
 
     
