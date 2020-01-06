@@ -30,6 +30,7 @@
 #include "mozilla/LookAndFeel.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIDOMHTMLDocument.h"
+#include "nsHTMLDocument.h"
 #include "nsIDOMHTMLElement.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsThreadUtils.h"
@@ -231,7 +232,7 @@ nsPresContext::nsPresContext(nsIDocument* aDocument, nsPresContextType aType)
     mFocusBackgroundColor(mBackgroundColor),
     mFocusTextColor(mDefaultColor),
     mBodyTextColor(mDefaultColor),
-    mViewportScrollbarOverrideNode(nullptr),
+    mViewportScrollbarOverrideElement(nullptr),
     mViewportStyleScrollbar(NS_STYLE_OVERFLOW_AUTO, NS_STYLE_OVERFLOW_AUTO),
     mFocusRingWidth(1),
     mExistThrottledUpdates(false),
@@ -399,6 +400,7 @@ nsPresContext::~nsPresContext()
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsPresContext)
    NS_INTERFACE_MAP_ENTRY(nsISupports)
+   NS_INTERFACE_MAP_ENTRY(nsIObserver)
 NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsPresContext)
@@ -1016,6 +1018,7 @@ nsPresContext::AttachShell(nsIPresShell* aShell, StyleBackendType aBackendType)
         mImageAnimationMode = imgIContainer::kNormalAnimMode;
     }
 
+    doc->AddCharSetObserver(this);
     UpdateCharSet(doc->GetDocumentCharacterSet());
   }
 }
@@ -1023,6 +1026,13 @@ nsPresContext::AttachShell(nsIPresShell* aShell, StyleBackendType aBackendType)
 void
 nsPresContext::DetachShell()
 {
+  
+  
+  nsIDocument *doc = mShell ? mShell->GetDocument() : nullptr;
+  if (doc) {
+    doc->RemoveCharSetObserver(this);
+  }
+
   
   
   
@@ -1111,12 +1121,21 @@ nsPresContext::UpdateCharSet(NotNull<const Encoding*> aCharSet)
   }
 }
 
-void
-nsPresContext::DispatchCharSetChange(NotNull<const Encoding*> aEncoding)
+NS_IMETHODIMP
+nsPresContext::Observe(nsISupports* aSubject,
+                        const char* aTopic,
+                        const char16_t* aData)
 {
-  RefPtr<CharSetChangingRunnable> runnable =
-    new CharSetChangingRunnable(this, aEncoding);
-  Document()->Dispatch(TaskCategory::Other, runnable.forget());
+  if (!nsCRT::strcmp(aTopic, "charset")) {
+    auto encoding = Encoding::ForName(NS_LossyConvertUTF16toASCII(aData));
+    RefPtr<CharSetChangingRunnable> runnable =
+      new CharSetChangingRunnable(this, encoding);
+    return Document()->Dispatch(TaskCategory::Other,
+                                runnable.forget());
+  }
+
+  NS_WARNING("unrecognized topic in nsPresContext::Observe");
+  return NS_ERROR_FAILURE;
 }
 
 nsPresContext*
@@ -1457,7 +1476,7 @@ CheckOverflow(const nsStyleDisplay* aDisplay, ScrollbarStyles* aStyles)
   return true;
 }
 
-static nsIContent*
+static Element*
 GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
                                         ScrollbarStyles *aStyles)
 {
@@ -1484,14 +1503,12 @@ GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
   
   
   
-  nsCOMPtr<nsIDOMHTMLDocument> htmlDoc(do_QueryInterface(document));
+  nsHTMLDocument* htmlDoc = document->AsHTMLDocument();
   if (!htmlDoc || !docElement->IsHTMLElement()) {
     return nullptr;
   }
 
-  nsCOMPtr<nsIDOMHTMLElement> body;
-  htmlDoc->GetBody(getter_AddRefs(body));
-  nsCOMPtr<nsIContent> bodyElement = do_QueryInterface(body);
+  Element* bodyElement = htmlDoc->GetBody();
 
   if (!bodyElement ||
       !bodyElement->NodeInfo()->Equals(nsGkAtoms::body)) {
@@ -1500,7 +1517,7 @@ GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
   }
 
   RefPtr<nsStyleContext> bodyStyle =
-    styleSet->ResolveStyleFor(bodyElement->AsElement(), rootStyle,
+    styleSet->ResolveStyleFor(bodyElement, rootStyle,
                               LazyComputeBehavior::Allow);
 
   if (CheckOverflow(bodyStyle->StyleDisplay(), aStyles)) {
@@ -1511,16 +1528,16 @@ GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
   return nullptr;
 }
 
-nsIContent*
+Element*
 nsPresContext::UpdateViewportScrollbarStylesOverride()
 {
   
   mViewportStyleScrollbar = ScrollbarStyles(NS_STYLE_OVERFLOW_AUTO,
                                             NS_STYLE_OVERFLOW_AUTO);
-  mViewportScrollbarOverrideNode = nullptr;
+  mViewportScrollbarOverrideElement = nullptr;
   
   if (!IsPaginated()) {
-    mViewportScrollbarOverrideNode =
+    mViewportScrollbarOverrideElement =
       GetPropagatedScrollbarStylesForViewport(this, &mViewportStyleScrollbar);
   }
 
@@ -1532,12 +1549,12 @@ nsPresContext::UpdateViewportScrollbarStylesOverride()
     
     
     if (fullscreenElement != document->GetRootElement() &&
-        fullscreenElement != mViewportScrollbarOverrideNode) {
+        fullscreenElement != mViewportScrollbarOverrideElement) {
       mViewportStyleScrollbar = ScrollbarStyles(NS_STYLE_OVERFLOW_HIDDEN,
                                                 NS_STYLE_OVERFLOW_HIDDEN);
     }
   }
-  return mViewportScrollbarOverrideNode;
+  return mViewportScrollbarOverrideElement;
 }
 
 bool
