@@ -1568,10 +1568,6 @@ protected:
 
   
   
-  bool mAutoplayEnabled;
-
-  
-  
   WakeLockBoolWrapper mPaused;
 
   
