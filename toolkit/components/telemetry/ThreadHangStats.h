@@ -17,6 +17,7 @@
 
 #include "nsString.h"
 #include "prinrval.h"
+#include "jsapi.h"
 
 namespace mozilla {
 namespace Telemetry {
@@ -263,6 +264,17 @@ public:
     return mName.get();
   }
 };
+
+
+
+
+
+
+
+
+
+JSObject*
+CreateJSThreadHangStats(JSContext* cx, const Telemetry::ThreadHangStats& thread);
 
 } 
 } 
