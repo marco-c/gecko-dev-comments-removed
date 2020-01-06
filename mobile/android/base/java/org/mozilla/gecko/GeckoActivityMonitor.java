@@ -45,12 +45,6 @@ public class GeckoActivityMonitor implements Application.ActivityLifecycleCallba
     @Override
     public void onActivityCreated(Activity activity, Bundle savedInstanceState) { }
 
-    
-    
-    
-    
-    public void onActivityNewIntent(Activity activity) { }
-
     @Override
     public void onActivityStarted(Activity activity) {
         if (currentActivity.get() == null) {

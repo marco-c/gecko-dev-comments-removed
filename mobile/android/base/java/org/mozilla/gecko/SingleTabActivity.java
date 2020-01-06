@@ -37,9 +37,6 @@ public abstract class SingleTabActivity extends GeckoApp {
             
             super.onNewIntent(intent.getUnsafe());
         } else {
-            
-            
-            GeckoActivityMonitor.getInstance().onActivityNewIntent(this);
             loadTabFromIntent(intent);
         }
         
