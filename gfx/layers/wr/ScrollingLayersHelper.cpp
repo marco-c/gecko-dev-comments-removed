@@ -152,9 +152,8 @@ ScrollingLayersHelper::DefineAndPushChain(const DisplayItemClipChain* aChain,
     
     LayoutDeviceRect clip = LayoutDeviceRect::FromAppUnits(
         aChain->mClip.GetClipRect(), aAppUnitsPerDevPixel);
-    nsTArray<wr::WrComplexClipRegion> wrRoundedRects;
-    aChain->mClip.ToWrComplexClipRegions(aAppUnitsPerDevPixel, aStackingContext, wrRoundedRects);
-    clipId = Some(aBuilder.DefineClip(aStackingContext.ToRelativeLayoutRect(clip), &wrRoundedRects));
+    
+    clipId = Some(aBuilder.DefineClip(aStackingContext.ToRelativeLayoutRect(clip)));
     aCache[aChain] = clipId.value();
   }
   
