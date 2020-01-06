@@ -678,6 +678,12 @@ class SyncTelemetryImpl {
   
   
   transformError(error) {
+    
+    
+    
+    if (typeof error == "object" && error.code && error.cause) {
+      error = error.cause;
+    }
     if (Async.isShutdownException(error)) {
       return { name: "shutdownerror" };
     }
