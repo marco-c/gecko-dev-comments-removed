@@ -28,9 +28,18 @@ OSPreferences::ReadSystemLocales(nsTArray<nsCString>& aLocaleList)
 bool
 OSPreferences::ReadRegionalPrefsLocales(nsTArray<nsCString>& aLocaleList)
 {
+  MOZ_ASSERT(aLocaleList.IsEmpty());
+
   
   
-  return ReadSystemLocales(aLocaleList);
+  nsAutoCString localeStr(setlocale(LC_TIME, nullptr));
+
+  if (CanonicalizeLanguageTag(localeStr)) {
+    aLocaleList.AppendElement(localeStr);
+    return true;
+  }
+
+  return false;
 }
 
 
