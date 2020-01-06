@@ -1180,6 +1180,12 @@ impl LengthOrNumber {
 
         Length::parse_non_negative(context, input).map(Either::First)
     }
+
+    
+    #[inline]
+    pub fn zero() -> Self {
+        Either::Second(Number::new(0.))
+    }
 }
 
 

@@ -1,0 +1,11 @@
+
+
+
+
+
+
+use values::computed::length::LengthOrNumber;
+use values::generics::rect::Rect;
+
+
+pub type LengthOrNumberRect = Rect<LengthOrNumber>;
