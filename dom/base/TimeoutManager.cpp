@@ -252,11 +252,6 @@ uint32_t gMaxConsecutiveCallbacksMilliseconds;
 
 
 
-#define DEFAULT_TARGET_MAX_CONSECUTIVE_CALLBACKS 5
-uint32_t gTargetMaxConsecutiveCallbacks;
-
-
-
 #define DEFAULT_THROTTLED_EVENT_QUEUE_BACK_PRESSURE 5000
 static uint32_t gThrottledEventQueueBackPressure;
 
@@ -367,10 +362,6 @@ TimeoutManager::Initialize()
   Preferences::AddUintVarCache(&gBackPressureDelayMinimumMS,
                                "dom.timeout.back_pressure_delay_minimum_ms",
                                DEFAULT_BACK_PRESSURE_DELAY_MINIMUM_MS);
-
-  Preferences::AddUintVarCache(&gTargetMaxConsecutiveCallbacks,
-                               "dom.timeout.max_consecutive_callbacks",
-                               DEFAULT_TARGET_MAX_CONSECUTIVE_CALLBACKS);
 
   Preferences::AddUintVarCache(&gMaxConsecutiveCallbacksMilliseconds,
                                "dom.timeout.max_consecutive_callbacks_ms",
@@ -697,22 +688,7 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         if (targetTimerSeen) {
-          if (numTimersToRun >= gTargetMaxConsecutiveCallbacks &&
-              !mWindow.IsChromeWindow()) {
-            break;
-          }
           if (numTimersToRun % kNumTimersPerInitialElapsedCheck == 0) {
             TimeDuration elapsed(TimeStamp::Now() - start);
             if (elapsed >= initalTimeLimit) {
