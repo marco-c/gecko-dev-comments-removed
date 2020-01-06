@@ -125,7 +125,7 @@ statusbarpanel {
 
 
 sidebarheader {
-  height: 25px;
+  min-height: 25px;
   background-color: -moz-Dialog;
 }
 
