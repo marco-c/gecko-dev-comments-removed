@@ -12,6 +12,8 @@ const {insertPinned, TOP_SITES_SHOWMORE_LENGTH} = Cu.import("resource://activity
 const {Dedupe} = Cu.import("resource://activity-stream/common/Dedupe.jsm", {});
 const {shortURL} = Cu.import("resource://activity-stream/lib/ShortURL.jsm", {});
 
+XPCOMUtils.defineLazyModuleGetter(this, "filterAdult",
+  "resource://activity-stream/lib/FilterAdult.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "NewTabUtils",
   "resource://gre/modules/NewTabUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Screenshots",
@@ -75,11 +77,16 @@ this.TopSitesFeed = class TopSitesFeed {
     }
 
     
-    
-    const deduped = this.dedupe.group(pinned, frecent, notBlockedDefaultSites);
-    pinned = insertPinned([...deduped[1], ...deduped[2]], pinned);
+    const [, dedupedFrecent, dedupedDefaults] = this.dedupe.group(
+      pinned, frecent, notBlockedDefaultSites);
+    const dedupedUnpinned = [...dedupedFrecent, ...dedupedDefaults];
 
-    return pinned.slice(0, TOP_SITES_SHOWMORE_LENGTH);
+    
+    const checkedAdult = this.store.getState().Prefs.values.filterAdult ?
+      filterAdult(dedupedUnpinned) : dedupedUnpinned;
+
+    
+    return insertPinned(checkedAdult, pinned).slice(0, TOP_SITES_SHOWMORE_LENGTH);
   }
   async refresh(target = null) {
     if (!this._tippyTopProvider.initialized) {
