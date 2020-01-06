@@ -87,6 +87,7 @@ private:
   
 
   
+  DECL_MEDIA_PREF("media.memory_cache_max_size",              MediaMemoryCacheMaxSize, uint32_t, 8192);
   DECL_MEDIA_PREF("media.cache.resource-index",               MediaResourceIndexCache, uint32_t, 8192);
 
   
