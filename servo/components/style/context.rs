@@ -820,15 +820,6 @@ pub struct StyleContext<'a, E: TElement + 'a> {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum ReflowGoal {
-    
-    ForDisplay,
-    
-    ForScriptQuery,
-}
-
-
 #[cfg(feature = "servo")]
 pub trait RegisteredSpeculativePainter: SpeculativePainter {
     

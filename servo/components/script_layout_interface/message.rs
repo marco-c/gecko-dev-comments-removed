@@ -20,7 +20,7 @@ use servo_atoms::Atom;
 use servo_url::ServoUrl;
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender};
-use style::context::{QuirksMode, ReflowGoal};
+use style::context::QuirksMode;
 use style::properties::PropertyId;
 use style::selector_parser::PseudoElement;
 use style::stylesheets::Stylesheet;
@@ -103,8 +103,9 @@ pub enum Msg {
 
 
 #[derive(Debug, PartialEq)]
-pub enum ReflowQueryType {
-    NoQuery,
+pub enum ReflowGoal {
+    Full,
+    TickAnimations,
     ContentBoxQuery(TrustedNodeAddress),
     ContentBoxesQuery(TrustedNodeAddress),
     NodeOverflowQuery(TrustedNodeAddress),
@@ -119,10 +120,38 @@ pub enum ReflowQueryType {
     NodesFromPoint(Point2D<f32>),
 }
 
+impl ReflowGoal {
+    
+    
+    pub fn needs_display_list(&self) -> bool {
+        match *self {
+            ReflowGoal::NodesFromPoint(..) | ReflowGoal::HitTestQuery(..) |
+            ReflowGoal::TextIndexQuery(..) | ReflowGoal::Full => true,
+            ReflowGoal::ContentBoxQuery(_) | ReflowGoal::ContentBoxesQuery(_) |
+            ReflowGoal::NodeGeometryQuery(_) | ReflowGoal::NodeScrollGeometryQuery(_) |
+            ReflowGoal::NodeOverflowQuery(_) | ReflowGoal::NodeScrollRootIdQuery(_) |
+            ReflowGoal::ResolvedStyleQuery(..) | ReflowGoal::OffsetParentQuery(_) |
+            ReflowGoal::MarginStyleQuery(_) |  ReflowGoal::TickAnimations => false,
+        }
+    }
+
+    
+    
+    pub fn needs_display(&self) -> bool {
+        match *self {
+            ReflowGoal::MarginStyleQuery(_)  | ReflowGoal::TextIndexQuery(..) |
+            ReflowGoal::HitTestQuery(..) | ReflowGoal::ContentBoxQuery(_) |
+            ReflowGoal::ContentBoxesQuery(_) | ReflowGoal::NodeGeometryQuery(_) |
+            ReflowGoal::NodeScrollGeometryQuery(_) | ReflowGoal::NodeOverflowQuery(_) |
+            ReflowGoal::NodeScrollRootIdQuery(_) | ReflowGoal::ResolvedStyleQuery(..) |
+            ReflowGoal::OffsetParentQuery(_) | ReflowGoal::NodesFromPoint(..) => false,
+            ReflowGoal::Full | ReflowGoal::TickAnimations => true,
+        }
+    }
+}
+
 
 pub struct Reflow {
-    
-    pub goal: ReflowGoal,
     
     pub page_clip_rect: Rect<Au>,
 }
@@ -149,7 +178,7 @@ pub struct ScriptReflow {
     
     pub script_join_chan: Sender<ReflowComplete>,
     
-    pub query_type: ReflowQueryType,
+    pub reflow_goal: ReflowGoal,
     
     pub dom_count: u32,
 }
