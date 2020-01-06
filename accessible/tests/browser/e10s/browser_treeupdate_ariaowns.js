@@ -192,22 +192,6 @@ async function stealAndRecacheChildren(browser, accDoc) {
   
   let onReorder = waitForEvent(EVENT_REORDER, id2);
   await invokeSetAttribute(browser, id2, "aria-owns", "t3_child");
-  await onReorder;
-
-  let tree = {
-    SECTION: [ ]
-  };
-  testAccessibleTree(acc1, tree);
-
-  tree = {
-    SECTION: [
-      { CHECKBUTTON: [ ] }
-    ]
-  };
-  testAccessibleTree(acc2, tree);
-
-  
-  onReorder = waitForEvent(EVENT_REORDER, id2);
   await ContentTask.spawn(browser, id2, id => {
     let div = content.document.createElement("div");
     div.setAttribute("role", "radio");
@@ -215,15 +199,16 @@ async function stealAndRecacheChildren(browser, accDoc) {
   });
   await onReorder;
 
-  tree = {
-    SECTION: [ ]
+  let tree = {
+    SECTION: [
+      { CHECKBUTTON: [ ] } 
+    ]
   };
   testAccessibleTree(acc1, tree);
 
   tree = {
     SECTION: [
-      { RADIOBUTTON: [ ] },
-      { CHECKBUTTON: [ ] } 
+      { RADIOBUTTON: [ ] }
     ]
   };
   testAccessibleTree(acc2, tree);

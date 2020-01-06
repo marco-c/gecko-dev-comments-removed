@@ -55,25 +55,34 @@ async function runTests(browser, accDoc) {
 
   await onReorders;
 
+  
   testChildrenIds(one, ["aa", "a"]);
 
-  onReorders = waitForEvents([
-      [EVENT_REORDER, "two"],    
-      [EVENT_REORDER, "three"], 
-      [EVENT_REORDER, "one"]]); 
+  onReorders = waitForEvent(EVENT_REORDER, "one");
 
   await ContentTask.spawn(browser, null, async function() {
     
     document.getElementById("one").removeAttribute("aria-owns");
-    
-    document.getElementById("three").setAttribute("aria-owns", "b d");
   });
 
   await onReorders;
 
+  
   testChildrenIds(one, ["a", "aa"]);
-  testChildrenIds(two, ["c"]);
-  testChildrenIds(three, ["b", "d"]);
+
+  onReorders = waitForEvents([
+      [EVENT_REORDER, "four"],    
+      [EVENT_REORDER, "two"]]); 
+
+  await ContentTask.spawn(browser, null, async function() {
+    
+    document.getElementById("four").setAttribute("aria-owns", "b e");
+  });
+
+  await onReorders;
+
+  testChildrenIds(four, ["b", "e"]);
+  testChildrenIds(two, ["d", "c"]);
 }
 
 
