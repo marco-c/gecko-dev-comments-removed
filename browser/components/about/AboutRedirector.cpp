@@ -23,6 +23,7 @@ NS_IMPL_ISUPPORTS(AboutRedirector, nsIAboutModule)
 
 bool AboutRedirector::sUseOldPreferences = false;
 bool AboutRedirector::sActivityStreamEnabled = false;
+bool AboutRedirector::sActivityStreamAboutHomeEnabled = false;
 
 struct RedirEntry {
   const char* id;
@@ -120,6 +121,19 @@ GetAboutModuleName(nsIURI *aURI)
   return path;
 }
 
+void
+AboutRedirector::LoadActivityStreamPrefs()
+{
+  static bool sASEnabledCacheInited = false;
+  if (!sASEnabledCacheInited) {
+    Preferences::AddBoolVarCache(&AboutRedirector::sActivityStreamEnabled,
+                                 "browser.newtabpage.activity-stream.enabled");
+    Preferences::AddBoolVarCache(&AboutRedirector::sActivityStreamAboutHomeEnabled,
+                                 "browser.newtabpage.activity-stream.aboutHome.enabled");
+    sASEnabledCacheInited = true;
+  }
+}
+
 NS_IMETHODIMP
 AboutRedirector::NewChannel(nsIURI* aURI,
                             nsILoadInfo* aLoadInfo,
@@ -142,12 +156,14 @@ AboutRedirector::NewChannel(nsIURI* aURI,
                                  "browser.preferences.useOldOrganization");
     sPrefCacheInited = true;
   }
+  LoadActivityStreamPrefs();
 
   for (auto & redir : kRedirMap) {
     if (!strcmp(path.get(), redir.id)) {
       nsAutoCString url;
 
-      if (path.EqualsLiteral("newtab")) {
+      if (path.EqualsLiteral("newtab") ||
+          (path.EqualsLiteral("home") && sActivityStreamEnabled && sActivityStreamAboutHomeEnabled)) {
         
         nsCOMPtr<nsIAboutNewTabService> aboutNewTabService =
           do_GetService("@mozilla.org/browser/aboutnewtab-service;1", &rv);
@@ -201,12 +217,7 @@ AboutRedirector::GetURIFlags(nsIURI *aURI, uint32_t *result)
 
   nsAutoCString name = GetAboutModuleName(aURI);
 
-  static bool sASEnabledCacheInited = false;
-  if (!sASEnabledCacheInited) {
-    Preferences::AddBoolVarCache(&sActivityStreamEnabled,
-                                 "browser.newtabpage.activity-stream.enabled");
-    sASEnabledCacheInited = true;
-  }
+  LoadActivityStreamPrefs();
 
   for (auto & redir : kRedirMap) {
     if (name.Equals(redir.id)) {
@@ -214,7 +225,7 @@ AboutRedirector::GetURIFlags(nsIURI *aURI, uint32_t *result)
       
       
       
-      if (name.EqualsLiteral("newtab")) {
+      if (name.EqualsLiteral("newtab") || (name.EqualsLiteral("home") && sActivityStreamAboutHomeEnabled)) {
         if (sActivityStreamEnabled) {
           *result = redir.flags |
             nsIAboutModule::URI_MUST_LOAD_IN_CHILD |
