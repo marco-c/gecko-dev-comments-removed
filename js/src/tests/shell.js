@@ -340,10 +340,7 @@
 
 
   var PASSED = " PASSED! ";
-  global.PASSED = PASSED;
-
   var FAILED = " FAILED! ";
-  global.FAILED = FAILED;
 
   
   function startTest() {
@@ -386,9 +383,7 @@
         funcName += "()";
 
       if (lastFunc !== funcName) {
-        
-        global.reportCompare(funcName, lastFunc,
-                             "Test driver failure wrong exit function ");
+        reportCompare(funcName, lastFunc, "Test driver failure wrong exit function ");
       }
     }
   }
