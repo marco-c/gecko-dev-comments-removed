@@ -4,7 +4,6 @@
 
 
 
-#[cfg(feature = "gecko")]
 use Atom;
 use app_units::Au;
 use byteorder::{BigEndian, ByteOrder};
@@ -1816,6 +1815,34 @@ impl Parse for XTextZoom {
 }
 
 impl ToCss for XTextZoom {
+    fn to_css<W>(&self, _: &mut W) -> fmt::Result where W: fmt::Write {
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
+
+pub struct XLang(pub Atom);
+
+impl XLang {
+    #[inline]
+    
+    pub fn get_initial_value() -> XLang {
+        XLang(atom!(""))
+    }
+}
+
+impl Parse for XLang {
+    fn parse<'i, 't>(
+        _: &ParserContext,
+        input: &mut Parser<'i, 't>
+    ) -> Result<XLang, ParseError<'i>> {
+        debug_assert!(false, "Should be set directly by presentation attributes only.");
+        Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
+    }
+}
+
+impl ToCss for XLang {
     fn to_css<W>(&self, _: &mut W) -> fmt::Result where W: fmt::Write {
         Ok(())
     }
