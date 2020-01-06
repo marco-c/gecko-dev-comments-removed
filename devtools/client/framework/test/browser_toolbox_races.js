@@ -11,7 +11,6 @@ requestLongerTimeout(2);
 
 
 const URL = "data:text/html;charset=utf-8,Toggling devtools quickly";
-const {gDevToolsBrowser} = require("devtools/client/framework/devtools-browser");
 
 add_task(function* () {
   
@@ -81,10 +80,5 @@ add_task(function* () {
 });
 
 function toggle() {
-  
-  
-  
-  
-  
-  gDevToolsBrowser.toggleToolboxCommand(window.gBrowser);
+  EventUtils.synthesizeKey("VK_F12", {});
 }
