@@ -90,9 +90,18 @@ SharedThreadPool::Get(const nsCString& aName, uint32_t aThreadLimit)
   ReentrantMonitorAutoEnter mon(*sMonitor);
   SharedThreadPool* pool = nullptr;
   nsresult rv;
-  if (!sPools->Get(aName, &pool)) {
+
+  if (auto entry = sPools->LookupForAdd(aName)) {
+    pool = entry.Data();
+    if (NS_FAILED(pool->EnsureThreadLimitIsAtLeast(aThreadLimit))) {
+      NS_WARNING("Failed to set limits on thread pool");
+    }
+  } else {
     nsCOMPtr<nsIThreadPool> threadPool(CreateThreadPool(aName));
-    NS_ENSURE_TRUE(threadPool, nullptr);
+    if (NS_WARN_IF(!threadPool)) {
+      sPools->Remove(aName); 
+      return nullptr;
+    }
     pool = new SharedThreadPool(aName, threadPool);
 
     
@@ -101,14 +110,18 @@ SharedThreadPool::Get(const nsCString& aName, uint32_t aThreadLimit)
     
     
     rv = pool->SetThreadLimit(aThreadLimit);
-    NS_ENSURE_SUCCESS(rv, nullptr);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      sPools->Remove(aName); 
+      return nullptr;
+    }
 
     rv = pool->SetIdleThreadLimit(aThreadLimit);
-    NS_ENSURE_SUCCESS(rv, nullptr);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      sPools->Remove(aName); 
+      return nullptr;
+    }
 
-    sPools->Put(aName, pool);
-  } else if (NS_FAILED(pool->EnsureThreadLimitIsAtLeast(aThreadLimit))) {
-    NS_WARNING("Failed to set limits on thread pool");
+    entry.OrInsert([pool] () { return pool; });
   }
 
   MOZ_ASSERT(pool);
