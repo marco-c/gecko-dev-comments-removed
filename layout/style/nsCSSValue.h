@@ -10,6 +10,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/ServoTypes.h"
 #include "mozilla/SheetType.h"
 #include "mozilla/StyleComplexColor.h"
 #include "mozilla/URLExtraData.h"
@@ -40,6 +41,7 @@ class nsIURI;
 class nsPresContext;
 template <class T>
 class nsPtrHashKey;
+struct RustString;
 
 namespace mozilla {
 class CSSStyleSheet;
@@ -104,9 +106,14 @@ protected:
   
   URLValueData(const nsAString& aString,
                already_AddRefed<URLExtraData> aExtraData);
+  URLValueData(ServoRawOffsetArc<RustString> aString,
+               already_AddRefed<URLExtraData> aExtraData);
   
   URLValueData(already_AddRefed<PtrHolder<nsIURI>> aURI,
                const nsAString& aString,
+               already_AddRefed<URLExtraData> aExtraData);
+  URLValueData(already_AddRefed<PtrHolder<nsIURI>> aURI,
+               ServoRawOffsetArc<RustString> aString,
                already_AddRefed<URLExtraData> aExtraData);
 
 public:
@@ -156,27 +163,51 @@ public:
 
   bool EqualsExceptRef(nsIURI* aURI) const;
 
+  
+  
+  const nsString& GetUTF16String() const;
+  
+  nsString GetUTF16StringForAnyThread() const;
+
+  bool IsStringEmpty() const;
+
 private:
   
   
   mutable PtrHandle<nsIURI> mURI;
 public:
-  nsString mString;
   RefPtr<URLExtraData> mExtraData;
 private:
+  
+  
+  nsDependentCSubstring GetRustString() const;
+
   mutable bool mURIResolved;
   
   mutable Maybe<bool> mIsLocalRef;
   mutable Maybe<bool> mMightHaveRef;
 
+  mutable union RustOrGeckoString {
+    explicit RustOrGeckoString(const nsAString& aString)
+    : mString(aString) {}
+    explicit RustOrGeckoString(ServoRawOffsetArc<RustString> aString)
+    : mRustString(aString) {}
+    ~RustOrGeckoString() {}
+    nsString mString;
+    mozilla::ServoRawOffsetArc<RustString> mRustString;
+  } mStrings;
+  mutable bool mUsingRustString;
+
 protected:
-  virtual ~URLValueData() = default;
+  virtual ~URLValueData();
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
 private:
   URLValueData(const URLValueData& aOther) = delete;
   URLValueData& operator=(const URLValueData& aOther) = delete;
+
+  friend struct ImageValue;
 };
 
 struct URLValue final : public URLValueData
@@ -200,6 +231,8 @@ struct URLValue final : public URLValueData
 
 struct ImageValue final : public URLValueData
 {
+  static ImageValue* CreateFromURLValue(URLValue* url, nsIDocument* aDocument);
+
   
   
   
@@ -210,8 +243,18 @@ struct ImageValue final : public URLValueData
              nsIDocument* aDocument);
 
   
+  ImageValue(nsIURI* aURI, ServoRawOffsetArc<RustString> aString,
+             already_AddRefed<URLExtraData> aExtraData,
+             nsIDocument* aDocument);
+
+  
   
   ImageValue(const nsAString& aString,
+             already_AddRefed<URLExtraData> aExtraData);
+
+  
+  
+  ImageValue(ServoRawOffsetArc<RustString> aURIString,
              already_AddRefed<URLExtraData> aExtraData);
 
   ImageValue(const ImageValue&) = delete;
@@ -850,8 +893,8 @@ public:
     MOZ_ASSERT(mUnit == eCSSUnit_URL || mUnit == eCSSUnit_Image,
                "not a URL value");
     return mUnit == eCSSUnit_URL ?
-             mValue.mURL->mString.get() :
-             mValue.mImage->mString.get();
+             mValue.mURL->GetUTF16String().get() :
+             mValue.mImage->GetUTF16String().get();
   }
 
   

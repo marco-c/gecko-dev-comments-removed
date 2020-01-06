@@ -3082,6 +3082,13 @@ public:
   static bool
   IsLocalRefURL(const nsString& aString);
 
+  
+
+
+
+  static bool
+  IsLocalRefURL(const nsACString& aString);
+
   static bool
   IsCustomElementsEnabled() { return sIsCustomElementsEnabled; }
 

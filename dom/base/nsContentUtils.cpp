@@ -10620,12 +10620,12 @@ nsContentUtils::GetEventTargetByLoadInfo(nsILoadInfo* aLoadInfo, TaskCategory aC
   return target.forget();
 }
 
- bool
-nsContentUtils::IsLocalRefURL(const nsString& aString)
-{
+namespace {
+template<class T>
+bool IsLocalRefURL(const T& aString) {
   
-  const char16_t* current = aString.get();
-  for (; *current != '\0'; current++) {
+  const typename T::char_type* current = aString.BeginReading();
+  for (; current != aString.EndReading(); current++) {
     if (*current > 0x20) {
       
       
@@ -10634,6 +10634,19 @@ nsContentUtils::IsLocalRefURL(const nsString& aString)
   }
 
   return false;
+}
+}
+
+ bool
+nsContentUtils::IsLocalRefURL(const nsString& aString)
+{
+  return ::IsLocalRefURL(aString);
+}
+
+ bool
+nsContentUtils::IsLocalRefURL(const nsACString& aString)
+{
+  return ::IsLocalRefURL(aString);
 }
 
 
