@@ -41,7 +41,8 @@ public:
 
 
   nsresult
-  CreatePayment(nsPIDOMWindowInner* aWindow,
+  CreatePayment(JSContext* aCx,
+                nsPIDOMWindowInner* aWindow,
                 nsIPrincipal* aTopLevelPrincipal,
                 const Sequence<PaymentMethodData>& aMethodData,
                 const PaymentDetailsInit& aDetails,
@@ -53,7 +54,8 @@ public:
   nsresult AbortPayment(const nsAString& aRequestId);
   nsresult CompletePayment(const nsAString& aRequestId,
                            const PaymentComplete& aComplete);
-  nsresult UpdatePayment(const nsAString& aRequestId,
+  nsresult UpdatePayment(JSContext* aCx,
+                         const nsAString& aRequestId,
                          const PaymentDetailsUpdate& aDetails);
 
   nsresult RespondPayment(const IPCPaymentActionResponse& aResponse);
