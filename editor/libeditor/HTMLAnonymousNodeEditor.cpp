@@ -176,6 +176,14 @@ HTMLEditor::CreateAnonymousElement(nsIAtom* aTag,
     return nullptr;
   }
 
+  
+  
+  
+  
+  if (!parentContent->IsHTMLElement()) {
+    return nullptr;
+  }
+
   nsCOMPtr<nsIDocument> doc = GetDocument();
   if (NS_WARN_IF(!doc)) {
     return nullptr;
