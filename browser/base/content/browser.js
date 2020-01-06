@@ -1314,9 +1314,6 @@ var gBrowserInit = {
     
     Services.obs.notifyObservers(window, "browser-window-before-show");
 
-    gUIDensity.update();
-    gPrefService.addObserver(gUIDensity.prefDomain, gUIDensity);
-
     let isResistFingerprintingEnabled = gPrefService.getBoolPref("privacy.resistFingerprinting");
 
     
@@ -1432,7 +1429,7 @@ var gBrowserInit = {
           gBrowser.loadTabs(specs, {
             inBackground: false,
             replace: true,
-            
+            triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
           });
         } catch (e) {}
       } else if (uriToLoad instanceof XULElement) {
@@ -1497,7 +1494,7 @@ var gBrowserInit = {
       } else {
         
         
-        loadOneOrMoreURIs(uriToLoad);
+        loadOneOrMoreURIs(uriToLoad, Services.scriptSecurityManager.getSystemPrincipal());
       }
     }
 
@@ -1772,8 +1769,6 @@ var gBrowserInit = {
     gExtensionsNotifications.uninit();
 
     Services.obs.removeObserver(gPluginHandler.NPAPIPluginCrashed, "plugin-crashed");
-
-    gPrefService.removeObserver(gUIDensity.prefDomain, gUIDensity);
 
     try {
       gBrowser.removeProgressListener(window.XULBrowserWindow);
@@ -2165,7 +2160,7 @@ function BrowserGoHome(aEvent) {
   
   switch (where) {
   case "current":
-    loadOneOrMoreURIs(homePage);
+    loadOneOrMoreURIs(homePage, Services.scriptSecurityManager.getSystemPrincipal());
     break;
   case "tabshifted":
   case "tab":
@@ -2182,7 +2177,7 @@ function BrowserGoHome(aEvent) {
   }
 }
 
-function loadOneOrMoreURIs(aURIString) {
+function loadOneOrMoreURIs(aURIString, aTriggeringPrincipal) {
   
   if (window.location.href != getBrowserURL()) {
     window.openDialog(getBrowserURL(), "_blank", "all,dialog=no", aURIString);
@@ -2195,7 +2190,7 @@ function loadOneOrMoreURIs(aURIString) {
     gBrowser.loadTabs(aURIString.split("|"), {
       inBackground: false,
       replace: true,
-      
+      triggeringPrincipal: aTriggeringPrincipal,
     });
   } catch (e) {
   }
@@ -5426,31 +5421,6 @@ function displaySecurityInfo() {
   BrowserPageInfo(null, "securityTab");
 }
 
-
-var gUIDensity = {
-  prefDomain: "browser.uidensity",
-  observe(aSubject, aTopic, aPrefName) {
-    if (aTopic != "nsPref:changed" || aPrefName != this.prefDomain)
-      return;
-
-    this.update();
-  },
-
-  update() {
-    let doc = document.documentElement;
-    switch (gPrefService.getIntPref(this.prefDomain)) {
-    case 1:
-      doc.setAttribute("uidensity", "compact");
-      break;
-    case 2:
-      doc.setAttribute("uidensity", "touch");
-      break;
-    default:
-      doc.removeAttribute("uidensity");
-      break;
-    }
-  },
-};
 
 var gHomeButton = {
   prefDomain: "browser.startup.homepage",
