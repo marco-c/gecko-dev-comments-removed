@@ -5337,6 +5337,10 @@ pref("dom.vr.puppet.enabled", false);
 
 pref("dom.vr.puppet.submitframe", 0);
 
+
+
+pref("dom.vr.display.rafMaxDuration", 50);
+
 pref("dom.vr.test.enabled", false);
 
 

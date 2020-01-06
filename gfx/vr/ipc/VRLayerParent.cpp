@@ -71,7 +71,7 @@ VRLayerParent::RecvSubmitFrame(const layers::SurfaceDescriptor &aTexture,
       
       
       
-      loop->PostTask(NewRunnableMethod<VRDisplayHost*, const layers::SurfaceDescriptor&, uint64_t,
+      loop->PostTask(NewRunnableMethod<VRDisplayHost*, const layers::SurfaceDescriptor, uint64_t,
                                        const gfx::Rect&, const gfx::Rect&>(
                      "gfx::VRLayerParent::SubmitFrame",
                      this,

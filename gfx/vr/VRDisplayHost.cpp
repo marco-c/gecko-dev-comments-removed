@@ -4,6 +4,7 @@
 
 
 #include "VRDisplayHost.h"
+#include "gfxPrefs.h"
 #include "gfxVR.h"
 #include "ipc/VRLayerParent.h"
 #include "mozilla/layers/TextureHost.h"
@@ -221,14 +222,6 @@ VRDisplayHost::NotifyVSync()
 
 
 
-
-
-
-
-
-
-  const double kVRDisplayRAFMaxDuration = 50;
-
   bool bShouldStartFrame = false;
 
   if (mDisplayInfo.mPresentingGroups == 0) {
@@ -242,7 +235,7 @@ VRDisplayHost::NotifyVSync()
       bShouldStartFrame = true;
     } else {
       TimeDuration duration = TimeStamp::Now() - mLastFrameStart;
-      if (duration.ToMilliseconds() > kVRDisplayRAFMaxDuration) {
+      if (duration.ToMilliseconds() > gfxPrefs::VRDisplayRafMaxDuration()) {
         bShouldStartFrame = true;
       }
     }
@@ -274,7 +267,6 @@ VRDisplayHost::SubmitFrame(VRLayerParent* aLayer,
     return;
   }
   mFrameStarted = false;
-
   switch (aTexture.type()) {
 
 #if defined(XP_WIN)
