@@ -256,6 +256,8 @@ PreprocessValue(JSContext* cx, HandleObject holder, KeyType key, MutableHandleVa
 
     
     if (scx->replacer && scx->replacer->isCallable()) {
+        MOZ_ASSERT(holder != nullptr, "holder object must be present when replacer is callable");
+
         if (!keyStr) {
             keyStr = KeyStringifier<KeyType>::toString(cx, key);
             if (!keyStr)
@@ -748,15 +750,21 @@ js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_, const V
         MOZ_ASSERT(gap.empty());
     }
 
-    
-    RootedPlainObject wrapper(cx, NewBuiltinClassInstance<PlainObject>(cx));
-    if (!wrapper)
-        return false;
-
-    
+    RootedPlainObject wrapper(cx);
     RootedId emptyId(cx, NameToId(cx->names().empty));
-    if (!NativeDefineDataProperty(cx, wrapper, emptyId, vp, JSPROP_ENUMERATE))
-        return false;
+    if (replacer && replacer->isCallable()) {
+        
+        
+
+        
+        wrapper = NewBuiltinClassInstance<PlainObject>(cx);
+        if (!wrapper)
+            return false;
+
+        
+        if (!NativeDefineDataProperty(cx, wrapper, emptyId, vp, JSPROP_ENUMERATE))
+            return false;
+    }
 
     
     StringifyContext scx(cx, sb, gap, replacer, propertyList,
