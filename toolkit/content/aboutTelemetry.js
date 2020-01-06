@@ -1897,6 +1897,8 @@ function show(selected) {
     }
   }
 
+  adjustHeaderState();
+
   let current_button = document.querySelector(".category.selected");
   if (current_button == selected)
     return;
@@ -1911,7 +1913,6 @@ function show(selected) {
   
   document.getSelection().empty();
 
-  adjustHeaderState();
   displayProcessesSelector(selectedValue);
   adjustSearchState();
   changeUrlPath(selectedValue);
