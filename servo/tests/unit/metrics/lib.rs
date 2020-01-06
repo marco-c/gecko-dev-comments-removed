@@ -1,0 +1,16 @@
+
+
+
+
+extern crate euclid;
+extern crate gfx;
+extern crate ipc_channel;
+extern crate metrics;
+extern crate msg;
+extern crate net_traits;
+extern crate profile_traits;
+extern crate style;
+extern crate time;
+
+#[cfg(test)]
+mod paint_time;
