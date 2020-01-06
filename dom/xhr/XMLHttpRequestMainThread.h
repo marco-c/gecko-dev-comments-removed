@@ -526,7 +526,6 @@ protected:
                                    uint32_t count,
                                    uint32_t *writeCount);
   nsresult CreateResponseParsedJSON(JSContext* aCx);
-  void CreatePartialBlob(ErrorResult& aRv);
   
   
   nsresult ChangeState(State aState, bool aBroadcast = true);
@@ -666,8 +665,6 @@ protected:
   RefPtr<Blob> mResponseBlob;
   
   RefPtr<MutableBlobStorage> mBlobStorage;
-  
-  nsAutoPtr<BlobSet> mBlobSet;
 
   nsString mOverrideMimeType;
 
