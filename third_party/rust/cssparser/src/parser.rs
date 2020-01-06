@@ -294,6 +294,15 @@ impl<'i: 't, 't> Parser<'i, 't> {
     
     
     
+    
+    
+    pub fn current_source_url(&self) -> Option<&str> {
+        self.input.tokenizer.current_source_url()
+    }
+
+    
+    
+    
     #[inline]
     pub fn state(&self) -> ParserState {
         ParserState {
