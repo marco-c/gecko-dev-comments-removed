@@ -27,21 +27,14 @@
 use device::FrameId;
 use profiler::GpuCacheProfileCounters;
 use renderer::MAX_VERTEX_TEXTURE_WIDTH;
-use std::{mem, u32};
+use std::mem;
 use webrender_traits::{ColorF, LayerRect};
 
 pub const GPU_CACHE_INITIAL_HEIGHT: u32 = 512;
 const FRAMES_BEFORE_EVICTION: usize = 10;
-const NEW_ROWS_PER_RESIZE: u32 = 512;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 struct Epoch(u32);
-
-impl Epoch {
-    fn next(&mut self) {
-        *self = Epoch(self.0.wrapping_add(1));
-    }
-}
 
 #[derive(Debug, Copy, Clone)]
 struct CacheLocation {
@@ -200,10 +193,6 @@ struct FreeBlockLists {
     free_list_2: Option<BlockIndex>,
     free_list_4: Option<BlockIndex>,
     free_list_8: Option<BlockIndex>,
-    free_list_16: Option<BlockIndex>,
-    free_list_32: Option<BlockIndex>,
-    free_list_64: Option<BlockIndex>,
-    free_list_128: Option<BlockIndex>,
     free_list_large: Option<BlockIndex>,
 }
 
@@ -214,10 +203,6 @@ impl FreeBlockLists {
             free_list_2: None,
             free_list_4: None,
             free_list_8: None,
-            free_list_16: None,
-            free_list_32: None,
-            free_list_64: None,
-            free_list_128: None,
             free_list_large: None,
         }
     }
@@ -232,11 +217,7 @@ impl FreeBlockLists {
             2 => (2, &mut self.free_list_2),
             3...4 => (4, &mut self.free_list_4),
             5...8 => (8, &mut self.free_list_8),
-            9...16 => (16, &mut self.free_list_16),
-            17...32 => (32, &mut self.free_list_32),
-            33...64 => (64, &mut self.free_list_64),
-            65...128 => (128, &mut self.free_list_128),
-            129...MAX_VERTEX_TEXTURE_WIDTH => (MAX_VERTEX_TEXTURE_WIDTH, &mut self.free_list_large),
+            9...MAX_VERTEX_TEXTURE_WIDTH => (MAX_VERTEX_TEXTURE_WIDTH, &mut self.free_list_large),
             _ => panic!("Can't allocate > MAX_VERTEX_TEXTURE_WIDTH per resource!"),
         }
     }
@@ -294,8 +275,10 @@ impl Texture {
 
         
         if free_list.is_none() {
+            
+            
             if self.rows.len() as u32 == self.height {
-                self.height += NEW_ROWS_PER_RESIZE;
+                panic!("need to re-alloc texture!!");
             }
 
             
@@ -375,7 +358,7 @@ impl Texture {
                     let (_, free_list) = self.free_lists
                                              .get_actual_block_count_and_free_list(row.block_count_per_item);
 
-                    block.epoch.next();
+                    block.epoch = Epoch(block.epoch.0 + 1);
                     block.next = *free_list;
                     *free_list = Some(index);
 
@@ -463,16 +446,6 @@ impl GpuCache {
 
     
     
-    
-    pub fn invalidate(&mut self, handle: &GpuCacheHandle) {
-        if let Some(ref location) = handle.location {
-            let block = &mut self.texture.blocks[location.block_index.0];
-            block.epoch.next();
-        }
-    }
-
-    
-    
     pub fn request<'a>(&'a mut self, handle: &'a mut GpuCacheHandle) -> Option<GpuDataRequest<'a>> {
         
         if let Some(ref location) = handle.location {
@@ -483,30 +456,12 @@ impl GpuCache {
                 return None
             }
         }
-
         Some(GpuDataRequest {
             handle: handle,
             frame_id: self.frame_id,
             start_index: self.texture.pending_blocks.len(),
             texture: &mut self.texture,
         })
-    }
-
-    
-    
-    
-    
-    
-    
-    pub fn push_per_frame_blocks(&mut self, blocks: &[GpuBlockData]) -> GpuCacheHandle {
-        let start_index = self.texture.pending_blocks.len();
-        self.texture.pending_blocks.extend_from_slice(blocks);
-        let location = self.texture.push_data(start_index,
-                                              blocks.len(),
-                                              self.frame_id);
-        GpuCacheHandle {
-            location: Some(location),
-        }
     }
 
     
