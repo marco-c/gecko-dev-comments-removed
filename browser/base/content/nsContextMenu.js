@@ -832,9 +832,10 @@ nsContextMenu.prototype = {
   },
 
   
-  reloadFrame() {
+  reloadFrame(aEvent) {
+    let forceReload = aEvent.shiftKey;
     this.browser.messageManager.sendAsyncMessage("ContextMenu:ReloadFrame",
-                                                 null, { target: this.target });
+                                                 null, { target: this.target, forceReload });
   },
 
   
