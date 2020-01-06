@@ -8,6 +8,7 @@ const {Cu} = require("chrome");
 const Services = require("Services");
 
 
+loader.lazyRequireGetter(this, "TargetFactory", "devtools/client/framework/target", true);
 loader.lazyRequireGetter(this, "Toolbox", "devtools/client/framework/toolbox", true);
 loader.lazyRequireGetter(this, "ToolboxHostManager", "devtools/client/framework/toolbox-host-manager", true);
 loader.lazyRequireGetter(this, "gDevToolsBrowser", "devtools/client/framework/devtools-browser", true);
@@ -467,6 +468,18 @@ DevTools.prototype = {
     yield toolbox.destroy();
     return true;
   }),
+
+  
+
+
+
+
+
+
+
+  getTargetForTab: function (tab) {
+    return TargetFactory.forTab(tab);
+  },
 
   
 
