@@ -291,6 +291,16 @@ public:
   
 
 
+  void StartAutoscroll(const ScreenPoint& aAnchorLocation);
+
+  
+
+
+  void StopAutoscroll();
+
+  
+
+
   void GetGuid(ScrollableLayerGuid* aGuidOut) const;
 
   
@@ -899,7 +909,8 @@ protected:
     SMOOTH_SCROLL,            
 
     WHEEL_SCROLL,             
-    KEYBOARD_SCROLL           
+    KEYBOARD_SCROLL,          
+    AUTOSCROLL                
   };
 
   
@@ -993,6 +1004,7 @@ public:
 
 private:
   friend class AndroidFlingAnimation;
+  friend class AutoscrollAnimation;
   friend class GenericFlingAnimation;
   friend class OverscrollAnimation;
   friend class SmoothScrollAnimation;
