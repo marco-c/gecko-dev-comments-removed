@@ -345,6 +345,12 @@ IsUIMessageWaiting()
 #ifndef XP_WIN
   return false;
 #else
+  
+  
+  
+  if (GeckoProcessType_Content == XRE_GetProcessType()) {
+    return false;
+  }
 #define NS_WM_IMEFIRST WM_IME_SETCONTEXT
 #define NS_WM_IMELAST  WM_IME_KEYUP
   BOOL haveUIMessageWaiting = FALSE;
