@@ -7,14 +7,11 @@
 #![allow(unsafe_code)]
 #![deny(missing_docs)]
 
-use Atom;
 use atomic_refcell::AtomicRefMut;
-use bit_vec::BitVec;
-use cache::{LRUCache, LRUCacheMutIterator};
 use cascade_info::CascadeInfo;
-use context::{CurrentElementInfo, SelectorFlagsMap, SharedStyleContext, StyleContext};
-use data::{ComputedStyle, ElementData, ElementStyles, RestyleData};
-use dom::{AnimationRules, SendElement, TElement, TNode};
+use context::{SelectorFlagsMap, SharedStyleContext, StyleContext};
+use data::{ComputedStyle, ElementData, RestyleData};
+use dom::{AnimationRules, TElement, TNode};
 use font_metrics::FontMetricsProvider;
 use log::LogLevel::Trace;
 use properties::{CascadeFlags, ComputedValues, SKIP_ROOT_AND_ITEM_BASED_DISPLAY_FIXUP, cascade};
@@ -23,11 +20,10 @@ use restyle_hints::{RESTYLE_CSS_ANIMATIONS, RESTYLE_CSS_TRANSITIONS, RestyleRepl
 use restyle_hints::{RESTYLE_STYLE_ATTRIBUTE, RESTYLE_SMIL};
 use rule_tree::{CascadeLevel, RuleTree, StrongRuleNode};
 use selector_parser::{PseudoElement, RestyleDamage, SelectorImpl};
-use selectors::bloom::BloomFilter;
 use selectors::matching::{ElementSelectorFlags, MatchingContext, MatchingMode, StyleRelations};
 use selectors::matching::AFFECTED_BY_PSEUDO_ELEMENTS;
 use shared_lock::StylesheetGuards;
-use sink::ForgetfulSink;
+use sharing::{StyleSharingBehavior, StyleSharingResult};
 use stylearc::Arc;
 use stylist::ApplicableDeclarationList;
 
@@ -40,16 +36,6 @@ enum InheritMode {
     
     
     FromPrimaryStyle,
-}
-
-
-#[inline]
-fn relations_are_shareable(relations: &StyleRelations) -> bool {
-    use selectors::matching::*;
-    !relations.intersects(AFFECTED_BY_ID_SELECTOR |
-                          AFFECTED_BY_PSEUDO_ELEMENTS |
-                          AFFECTED_BY_STYLE_ATTRIBUTE |
-                          AFFECTED_BY_PRESENTATIONAL_HINTS)
 }
 
 
@@ -78,336 +64,6 @@ pub enum StyleChange {
     Unchanged,
     
     Changed,
-}
-
-
-
-
-
-
-
-
-#[derive(Debug)]
-struct StyleSharingCandidate<E: TElement> {
-    
-    
-    element: SendElement<E>,
-    
-    class_attributes: Option<Vec<Atom>>,
-    
-    revalidation_match_results: Option<BitVec>,
-}
-
-impl<E: TElement> PartialEq<StyleSharingCandidate<E>> for StyleSharingCandidate<E> {
-    fn eq(&self, other: &Self) -> bool {
-        self.element == other.element
-    }
-}
-
-
-
-
-
-
-pub struct StyleSharingCandidateCache<E: TElement> {
-    cache: LRUCache<StyleSharingCandidate<E>>,
-}
-
-
-#[derive(Clone, Debug)]
-pub enum CacheMiss {
-    
-    Parent,
-    
-    NativeAnonymousContent,
-    
-    LocalName,
-    
-    Namespace,
-    
-    
-    Link,
-    
-    
-    UserAndAuthorRules,
-    
-    State,
-    
-    IdAttr,
-    
-    StyleAttr,
-    
-    Class,
-    
-    PresHints,
-    
-    
-    Revalidation,
-}
-
-fn same_computed_values<E: TElement>(first: Option<E>, second: Option<E>) -> bool {
-    let (a, b) = match (first, second) {
-        (Some(f), Some(s)) => (f, s),
-        _ => return false,
-    };
-
-    let eq = Arc::ptr_eq(a.borrow_data().unwrap().styles().primary.values(),
-                         b.borrow_data().unwrap().styles().primary.values());
-    eq
-}
-
-fn element_matches_candidate<E: TElement>(element: &E,
-                                          candidate: &mut StyleSharingCandidate<E>,
-                                          candidate_element: &E,
-                                          shared: &SharedStyleContext,
-                                          bloom: &BloomFilter,
-                                          info: &mut CurrentElementInfo,
-                                          selector_flags_map: &mut SelectorFlagsMap<E>)
-                                          -> Result<ComputedStyle, CacheMiss> {
-    macro_rules! miss {
-        ($miss: ident) => {
-            return Err(CacheMiss::$miss);
-        }
-    }
-
-    
-    
-    
-    let parent = element.parent_element();
-    let candidate_parent = candidate_element.parent_element();
-    if parent != candidate_parent && !same_computed_values(parent, candidate_parent) {
-        miss!(Parent)
-    }
-
-    if element.is_native_anonymous() {
-        debug_assert!(!candidate_element.is_native_anonymous(),
-                      "Why inserting NAC into the cache?");
-        miss!(NativeAnonymousContent)
-    }
-
-    if *element.get_local_name() != *candidate_element.get_local_name() {
-        miss!(LocalName)
-    }
-
-    if *element.get_namespace() != *candidate_element.get_namespace() {
-        miss!(Namespace)
-    }
-
-    if element.is_link() != candidate_element.is_link() {
-        miss!(Link)
-    }
-
-    if element.matches_user_and_author_rules() != candidate_element.matches_user_and_author_rules() {
-        miss!(UserAndAuthorRules)
-    }
-
-    if element.get_state() != candidate_element.get_state() {
-        miss!(State)
-    }
-
-    if element.get_id() != candidate_element.get_id() {
-        miss!(IdAttr)
-    }
-
-    if element.style_attribute().is_some() {
-        miss!(StyleAttr)
-    }
-
-    if !have_same_class(element, candidate, candidate_element) {
-        miss!(Class)
-    }
-
-    if has_presentational_hints(element) {
-        miss!(PresHints)
-    }
-
-    if !revalidate(element, candidate, candidate_element,
-                   shared, bloom, info, selector_flags_map) {
-        miss!(Revalidation)
-    }
-
-    let data = candidate_element.borrow_data().unwrap();
-    debug_assert!(element.has_current_styles(&data));
-    let current_styles = data.styles();
-
-    debug!("Sharing style between {:?} and {:?}", element, candidate_element);
-
-    Ok(current_styles.primary.clone())
-}
-
-fn has_presentational_hints<E: TElement>(element: &E) -> bool {
-    let mut hints = ForgetfulSink::new();
-    element.synthesize_presentational_hints_for_legacy_attributes(&mut hints);
-    !hints.is_empty()
-}
-
-fn have_same_class<E: TElement>(element: &E,
-                                candidate: &mut StyleSharingCandidate<E>,
-                                candidate_element: &E) -> bool {
-    
-    let mut element_class_attributes = vec![];
-    element.each_class(|c| element_class_attributes.push(c.clone()));
-
-    if candidate.class_attributes.is_none() {
-        let mut attrs = vec![];
-        candidate_element.each_class(|c| attrs.push(c.clone()));
-        candidate.class_attributes = Some(attrs)
-    }
-
-    element_class_attributes == *candidate.class_attributes.as_ref().unwrap()
-}
-
-#[inline]
-fn revalidate<E: TElement>(element: &E,
-                           candidate: &mut StyleSharingCandidate<E>,
-                           candidate_element: &E,
-                           shared: &SharedStyleContext,
-                           bloom: &BloomFilter,
-                           info: &mut CurrentElementInfo,
-                           selector_flags_map: &mut SelectorFlagsMap<E>)
-                           -> bool {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let stylist = &shared.stylist;
-
-    if info.revalidation_match_results.is_none() {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let mut set_selector_flags = |el: &E, flags: ElementSelectorFlags| {
-            element.apply_selector_flags(selector_flags_map, el, flags);
-        };
-        info.revalidation_match_results =
-            Some(stylist.match_revalidation_selectors(element, bloom,
-                                                      &mut set_selector_flags));
-    }
-
-    if candidate.revalidation_match_results.is_none() {
-        candidate.revalidation_match_results =
-            Some(stylist.match_revalidation_selectors(candidate_element, bloom,
-                                                      &mut |_, _| {}));
-    }
-
-    let for_element = info.revalidation_match_results.as_ref().unwrap();
-    let for_candidate = candidate.revalidation_match_results.as_ref().unwrap();
-    debug_assert!(for_element.len() == for_candidate.len());
-    for_element == for_candidate
-}
-
-static STYLE_SHARING_CANDIDATE_CACHE_SIZE: usize = 8;
-
-impl<E: TElement> StyleSharingCandidateCache<E> {
-    
-    pub fn new() -> Self {
-        StyleSharingCandidateCache {
-            cache: LRUCache::new(STYLE_SHARING_CANDIDATE_CACHE_SIZE),
-        }
-    }
-
-    
-    pub fn num_entries(&self) -> usize {
-        self.cache.num_entries()
-    }
-
-    fn iter_mut(&mut self) -> LRUCacheMutIterator<StyleSharingCandidate<E>> {
-        self.cache.iter_mut()
-    }
-
-    
-    
-    
-    pub fn insert_if_possible(&mut self,
-                              element: &E,
-                              style: &Arc<ComputedValues>,
-                              relations: StyleRelations,
-                              revalidation_match_results: Option<BitVec>) {
-        let parent = match element.parent_element() {
-            Some(element) => element,
-            None => {
-                debug!("Failing to insert to the cache: no parent element");
-                return;
-            }
-        };
-
-        if element.is_native_anonymous() {
-            debug!("Failing to insert into the cache: NAC");
-            return;
-        }
-
-        
-        
-        if !relations_are_shareable(&relations) {
-            debug!("Failing to insert to the cache: {:?}", relations);
-            return;
-        }
-
-        
-        if cfg!(debug_assertions) {
-            let mut hints = ForgetfulSink::new();
-            element.synthesize_presentational_hints_for_legacy_attributes(&mut hints);
-            debug_assert!(hints.is_empty(), "Style relations should not be shareable!");
-        }
-
-        let box_style = style.get_box();
-        if box_style.specifies_transitions() {
-            debug!("Failing to insert to the cache: transitions");
-            return;
-        }
-
-        if box_style.specifies_animations() {
-            debug!("Failing to insert to the cache: animations");
-            return;
-        }
-
-        debug!("Inserting into cache: {:?} with parent {:?}",
-               element, parent);
-
-        self.cache.insert(StyleSharingCandidate {
-            element: unsafe { SendElement::new(*element) },
-            class_attributes: None,
-            revalidation_match_results: revalidation_match_results,
-        });
-    }
-
-    
-    pub fn touch(&mut self, index: usize) {
-        self.cache.touch(index);
-    }
-
-    
-    pub fn clear(&mut self) {
-        self.cache.evict_all()
-    }
-}
-
-
-pub enum StyleSharingResult {
-    
-    CannotShare,
-    
-    
-    
-    
-    StyleWasShared(usize, ChildCascadeRequirement),
 }
 
 
@@ -839,43 +495,6 @@ trait PrivateMatchMethods: TElement {
     }
 
     
-    fn accumulate_damage(&self,
-                         shared_context: &SharedStyleContext,
-                         restyle: Option<&mut RestyleData>,
-                         old_values: Option<&ComputedValues>,
-                         new_values: &Arc<ComputedValues>,
-                         pseudo: Option<&PseudoElement>)
-                         -> ChildCascadeRequirement {
-        let restyle = match restyle {
-            Some(r) => r,
-            None => return ChildCascadeRequirement::MustCascade,
-        };
-
-        let old_values = match old_values {
-            Some(v) => v,
-            None => return ChildCascadeRequirement::MustCascade,
-        };
-
-        
-        
-        let is_existing_before_or_after =
-            cfg!(feature = "gecko") &&
-            pseudo.map_or(false, |p| p.is_before_or_after()) &&
-            self.existing_style_for_restyle_damage(old_values, pseudo)
-                .is_some();
-
-        if is_existing_before_or_after {
-            return ChildCascadeRequirement::CanSkipCascade;
-        }
-
-        self.accumulate_damage_for(shared_context,
-                                   restyle,
-                                   old_values,
-                                   new_values,
-                                   pseudo)
-    }
-
-    
     #[cfg(feature = "gecko")]
     fn accumulate_damage_for(&self,
                              shared_context: &SharedStyleContext,
@@ -966,18 +585,6 @@ trait PrivateMatchMethods: TElement {
             }
         }
     }
-
-    fn share_style_with_candidate_if_possible(&self,
-                                              candidate: &mut StyleSharingCandidate<Self>,
-                                              shared: &SharedStyleContext,
-                                              bloom: &BloomFilter,
-                                              info: &mut CurrentElementInfo,
-                                              selector_flags_map: &mut SelectorFlagsMap<Self>)
-                                              -> Result<ComputedStyle, CacheMiss> {
-        let candidate_element = *candidate.element;
-        element_matches_candidate(self, candidate, &candidate_element,
-                                  shared, bloom, info, selector_flags_map)
-    }
 }
 
 fn compute_rule_node<E: TElement>(rule_tree: &RuleTree,
@@ -993,22 +600,14 @@ fn compute_rule_node<E: TElement>(rule_tree: &RuleTree,
 impl<E: TElement> PrivateMatchMethods for E {}
 
 
-#[derive(Clone, Copy, PartialEq)]
-pub enum StyleSharingBehavior {
-    
-    Allow,
-    
-    Disallow,
-}
-
-
 pub trait MatchMethods : TElement {
     
     
     fn match_and_cascade(&self,
                          context: &mut StyleContext<Self>,
                          data: &mut ElementData,
-                         sharing: StyleSharingBehavior) -> ChildCascadeRequirement
+                         sharing: StyleSharingBehavior)
+                         -> ChildCascadeRequirement
     {
         
         let mut relations = StyleRelations::empty();
@@ -1324,6 +923,43 @@ pub trait MatchMethods : TElement {
     }
 
     
+    fn accumulate_damage(&self,
+                         shared_context: &SharedStyleContext,
+                         restyle: Option<&mut RestyleData>,
+                         old_values: Option<&ComputedValues>,
+                         new_values: &Arc<ComputedValues>,
+                         pseudo: Option<&PseudoElement>)
+                         -> ChildCascadeRequirement {
+        let restyle = match restyle {
+            Some(r) => r,
+            None => return ChildCascadeRequirement::MustCascade,
+        };
+
+        let old_values = match old_values {
+            Some(v) => v,
+            None => return ChildCascadeRequirement::MustCascade,
+        };
+
+        
+        
+        let is_existing_before_or_after =
+            cfg!(feature = "gecko") &&
+            pseudo.map_or(false, |p| p.is_before_or_after()) &&
+            self.existing_style_for_restyle_damage(old_values, pseudo)
+                .is_some();
+
+        if is_existing_before_or_after {
+            return ChildCascadeRequirement::CanSkipCascade;
+        }
+
+        self.accumulate_damage_for(shared_context,
+                                   restyle,
+                                   old_values,
+                                   new_values,
+                                   pseudo)
+    }
+
+    
     
     
     fn replace_rules(&self,
@@ -1407,99 +1043,22 @@ pub trait MatchMethods : TElement {
     
     unsafe fn share_style_if_possible(&self,
                                       context: &mut StyleContext<Self>,
-                                      data: &mut AtomicRefMut<ElementData>)
+                                      data: &mut ElementData)
                                       -> StyleSharingResult {
-        if context.shared.options.disable_style_sharing_cache {
-            debug!("{:?} Cannot share style: style sharing cache disabled", self);
-            return StyleSharingResult::CannotShare
-        }
-
-        if self.parent_element().is_none() {
-            debug!("{:?} Cannot share style: element has style attribute", self);
-            return StyleSharingResult::CannotShare
-        }
-
-        if self.is_native_anonymous() {
-            debug!("{:?} Cannot share style: NAC", self);
-            return StyleSharingResult::CannotShare;
-        }
-
-        if self.style_attribute().is_some() {
-            debug!("{:?} Cannot share style: element has style attribute", self);
-            return StyleSharingResult::CannotShare
-        }
-
-        if self.has_attr(&ns!(), &local_name!("id")) {
-            debug!("{:?} Cannot share style: element has id", self);
-            return StyleSharingResult::CannotShare
-        }
-
-        let cache = &mut context.thread_local.style_sharing_candidate_cache;
+        let shared_context = &context.shared;
         let current_element_info =
-            &mut context.thread_local.current_element_info.as_mut().unwrap();
-        let bloom = context.thread_local.bloom_filter.filter();
+            context.thread_local.current_element_info.as_mut().unwrap();
         let selector_flags_map = &mut context.thread_local.selector_flags;
-        let mut should_clear_cache = false;
-        for (i, candidate) in cache.iter_mut().enumerate() {
-            let sharing_result =
-                self.share_style_with_candidate_if_possible(candidate,
-                                                            &context.shared,
-                                                            bloom,
-                                                            current_element_info,
-                                                            selector_flags_map);
-            match sharing_result {
-                Ok(shared_style) => {
-                    
+        let bloom_filter = context.thread_local.bloom_filter.filter();
 
-                    
-                    debug_assert_eq!(data.has_styles(), data.has_restyle());
-                    let old_values = data.get_styles_mut()
-                                         .and_then(|s| s.primary.values.take());
-                    let child_cascade_requirement =
-                        self.accumulate_damage(&context.shared,
-                                               data.get_restyle_mut(),
-                                               old_values.as_ref().map(|v| v.as_ref()),
-                                               shared_style.values(),
-                                               None);
-
-                    
-                    
-                    
-                    
-                    
-                    let styles = ElementStyles::new(shared_style);
-                    data.set_styles(styles);
-
-                    return StyleSharingResult::StyleWasShared(i, child_cascade_requirement)
-                }
-                Err(miss) => {
-                    debug!("Cache miss: {:?}", miss);
-
-                    
-                    
-                    match miss {
-                        
-                        CacheMiss::Parent => {
-                            should_clear_cache = true;
-                            break;
-                        },
-                        
-                        
-                        CacheMiss::PresHints |
-                        CacheMiss::Revalidation => break,
-                        _ => {}
-                    }
-                }
-            }
-        }
-
-        debug!("{:?} Cannot share style: {} cache entries", self, cache.num_entries());
-
-        if should_clear_cache {
-            cache.clear();
-        }
-
-        StyleSharingResult::CannotShare
+        context.thread_local
+            .style_sharing_candidate_cache
+            .share_style_if_possible(shared_context,
+                                     current_element_info,
+                                     selector_flags_map,
+                                     bloom_filter,
+                                     *self,
+                                     data)
     }
 
     
