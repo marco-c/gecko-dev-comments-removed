@@ -615,9 +615,9 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
 
   
   if (ShouldCheckSRI(mRequest, mResponse) && mSRIMetadata.IsEmpty()) {
-    nsIConsoleReportCollector* aReporter = nullptr;
+    nsIConsoleReportCollector* reporter = nullptr;
     if (mObserver) {
-      aReporter = mObserver->GetReporter();
+      reporter = mObserver->GetReporter();
     }
 
     nsAutoCString sourceUri;
@@ -627,9 +627,9 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
       sourceUri.Assign(mWorkerScript);
     }
     SRICheck::IntegrityMetadata(mRequest->GetIntegrity(), sourceUri,
-                                aReporter, &mSRIMetadata);
+                                reporter, &mSRIMetadata);
     mSRIDataVerifier = new SRICheckDataVerifier(mSRIMetadata, sourceUri,
-                                                aReporter);
+                                                reporter);
 
     
     return NS_OK;
@@ -796,9 +796,9 @@ FetchDriver::OnStopRequest(nsIRequest* aRequest,
 
       nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
 
-      nsIConsoleReportCollector* aReporter = nullptr;
+      nsIConsoleReportCollector* reporter = nullptr;
       if (mObserver) {
-        aReporter = mObserver->GetReporter();
+        reporter = mObserver->GetReporter();
       }
 
       nsAutoCString sourceUri;
@@ -808,7 +808,7 @@ FetchDriver::OnStopRequest(nsIRequest* aRequest,
         sourceUri.Assign(mWorkerScript);
       }
       nsresult rv = mSRIDataVerifier->Verify(mSRIMetadata, channel, sourceUri,
-                                             aReporter);
+                                             reporter);
       if (NS_FAILED(rv)) {
         FailWithNetworkError();
         
