@@ -7358,6 +7358,15 @@ BaseCompiler::emitBody()
           case uint16_t(Op::CurrentMemory):
             CHECK_NEXT(emitCurrentMemory());
 
+          
+          case uint16_t(Op::ThreadPrefix): {
+            MOZ_CRASH("ThreadPrefix ops not yet implemented");
+          }
+
+          
+          case uint16_t(Op::MozPrefix):
+            return iter_.unrecognizedOpcode(&op);
+
           default:
             return iter_.unrecognizedOpcode(&op);
         }
