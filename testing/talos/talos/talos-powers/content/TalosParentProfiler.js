@@ -17,21 +17,20 @@
 var TalosParentProfiler;
 
 (function() {
+  Components.utils.import("resource://gre/modules/Services.jsm");
+  Components.utils.import("resource://gre/modules/Console.jsm");
 
   
   
   
   
-  let initted = false;
+  let initted = Services.profiler.IsActive();
 
   
   let currentTest = "unknown";
 
   
   let interval, entries, threadsArray, profileDir;
-
-  Components.utils.import("resource://gre/modules/Services.jsm");
-  Components.utils.import("resource://gre/modules/Console.jsm");
 
   
   
