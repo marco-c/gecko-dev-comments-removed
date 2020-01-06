@@ -12,6 +12,7 @@
 #include "nsIChannelEventSink.h"
 
 class nsIStreamListener;
+class nsIDocument;
 
 #define NS_CONTENTSECURITYMANAGER_CONTRACTID "@mozilla.org/contentsecuritymanager;1"
 
@@ -35,6 +36,7 @@ public:
   static bool AllowTopLevelNavigationToDataURI(nsIURI* aURI,
                                                nsContentPolicyType aContentPolicyType,
                                                nsIPrincipal* aTriggeringPrincipal,
+                                               nsIDocument* aDoc,
                                                bool aLoadFromExternal,
                                                bool aIsDownload);
 
