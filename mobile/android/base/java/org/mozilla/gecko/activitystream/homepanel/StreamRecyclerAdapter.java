@@ -7,6 +7,7 @@ package org.mozilla.gecko.activitystream.homepanel;
 
 import android.database.Cursor;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,6 +22,7 @@ import org.mozilla.gecko.activitystream.homepanel.stream.HighlightsTitle;
 import org.mozilla.gecko.activitystream.homepanel.stream.StreamItem;
 import org.mozilla.gecko.activitystream.homepanel.stream.TopPanel;
 import org.mozilla.gecko.activitystream.homepanel.stream.WelcomePanel;
+import org.mozilla.gecko.util.StringUtils;
 import org.mozilla.gecko.widget.RecyclerViewClickSupport;
 
 import java.util.Collections;
@@ -28,6 +30,8 @@ import java.util.EnumSet;
 import java.util.List;
 
 public class StreamRecyclerAdapter extends RecyclerView.Adapter<StreamItem> implements RecyclerViewClickSupport.OnItemClickListener {
+    private static final String LOGTAG = StringUtils.safeSubstring("Gecko" + StreamRecyclerAdapter.class.getSimpleName(), 0, 23);
+
     private Cursor topSitesCursor;
 
     private HomePager.OnUrlOpenListener onUrlOpenListener;
@@ -118,6 +122,21 @@ public class StreamRecyclerAdapter extends RecyclerView.Adapter<StreamItem> impl
     public void onItemClicked(RecyclerView recyclerView, int position, View v) {
         if (getItemViewType(position) != HighlightItem.LAYOUT_ID) {
             
+            return;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (position == RecyclerView.NO_POSITION) {
+            Log.w(LOGTAG, "onItemClicked: received NO_POSITION. Returning");
             return;
         }
 
