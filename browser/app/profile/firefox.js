@@ -1544,14 +1544,6 @@ pref("privacy.userContext.extension", "");
 pref("browser.tabs.remote.autostart", true);
 pref("browser.tabs.remote.desktopbehavior", true);
 
-#if !defined(RELEASE_OR_BETA) || defined(MOZ_DEV_EDITION)
-
-
-
-pref("browser.tabs.remote.autostart.1", false);
-pref("browser.tabs.remote.autostart.2", true);
-#endif
-
 
 
 
