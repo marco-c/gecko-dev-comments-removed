@@ -24,6 +24,12 @@ impl nsCSSValue {
     }
 
     
+    #[inline]
+    pub fn is_none(&self) -> bool {
+        self.mUnit == nsCSSUnit::eCSSUnit_None
+    }
+
+    
     
     pub fn integer_unchecked(&self) -> i32 {
         debug_assert!(self.mUnit == nsCSSUnit::eCSSUnit_Integer ||
