@@ -13,12 +13,14 @@ import org.mozilla.gecko.home.ImageLoader;
 import org.mozilla.gecko.icons.storage.MemoryStorage;
 import org.mozilla.gecko.util.ThreadUtils;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.ComponentCallbacks2;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Configuration;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -39,7 +41,7 @@ import android.util.Log;
 
 
 
-class MemoryMonitor extends BroadcastReceiver {
+class MemoryMonitor extends BroadcastReceiver implements ComponentCallbacks2 {
     private static final String LOGTAG = "GeckoMemoryMonitor";
     private static final String ACTION_MEMORY_DUMP = "org.mozilla.gecko.MEMORY_DUMP";
     private static final String ACTION_FORCE_PRESSURE = "org.mozilla.gecko.FORCE_MEMORY_PRESSURE";
@@ -51,6 +53,8 @@ class MemoryMonitor extends BroadcastReceiver {
     private static final int MEMORY_PRESSURE_MEDIUM = 3;
     private static final int MEMORY_PRESSURE_HIGH = 4;
 
+    
+    @SuppressLint("StaticFieldLeak")
     private static final MemoryMonitor sInstance = new MemoryMonitor();
 
     static MemoryMonitor getInstance() {
@@ -80,9 +84,11 @@ class MemoryMonitor extends BroadcastReceiver {
         filter.addAction(ACTION_MEMORY_DUMP);
         filter.addAction(ACTION_FORCE_PRESSURE);
         mAppContext.registerReceiver(this, filter);
+        mAppContext.registerComponentCallbacks(this);
         mInited = true;
     }
 
+    @Override
     public void onLowMemory() {
         Log.d(LOGTAG, "onLowMemory() notification received");
         if (increaseMemoryPressure(MEMORY_PRESSURE_HIGH)) {
@@ -94,6 +100,7 @@ class MemoryMonitor extends BroadcastReceiver {
         }
     }
 
+    @Override
     public void onTrimMemory(int level) {
         Log.d(LOGTAG, "onTrimMemory() notification received with level " + level);
         if (level == ComponentCallbacks2.TRIM_MEMORY_COMPLETE) {
@@ -276,4 +283,9 @@ class MemoryMonitor extends BroadcastReceiver {
             
         }
     }
+
+    
+    
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) { }
 }

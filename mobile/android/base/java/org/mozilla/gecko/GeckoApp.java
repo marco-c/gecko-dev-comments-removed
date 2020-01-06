@@ -1279,8 +1279,6 @@ public abstract class GeckoApp extends GeckoActivity
             Class.forName("android.os.AsyncTask");
         } catch (ClassNotFoundException e) { }
 
-        MemoryMonitor.getInstance().init(getApplicationContext());
-
         
         
         
