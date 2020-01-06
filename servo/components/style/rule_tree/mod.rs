@@ -199,10 +199,11 @@ impl RuleTree {
         for (source, level) in iter {
             debug_assert!(last_level <= level, "Not really ordered");
             debug_assert!(!level.is_important(), "Important levels handled internally");
-            let (any_normal, any_important) = {
+            let any_important = {
                 let pdb = source.read(level.guard(guards));
-                (pdb.any_normal(), pdb.any_important())
+                pdb.any_important()
             };
+
             if any_important {
                 found_important = true;
                 match level {
@@ -216,19 +217,25 @@ impl RuleTree {
                     _ => {},
                 };
             }
+
             
             
             
-            if any_normal || !any_important {
-                if matches!(level, Transitions) && found_important {
-                    
-                    
-                    
-                    debug_assert!(transition.is_none());
-                    transition = Some(source);
-                } else {
-                    current = current.ensure_child(self.root.downgrade(), source, level);
-                }
+            
+            
+            
+            
+            
+            
+            
+            if matches!(level, Transitions) && found_important {
+                
+                
+                
+                debug_assert!(transition.is_none());
+                transition = Some(source);
+            } else {
+                current = current.ensure_child(self.root.downgrade(), source, level);
             }
             last_level = level;
         }
