@@ -97,7 +97,7 @@ impl ToCss for ComputedValue {
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CustomPropertiesMap {
     
     index: Vec<Name>,
@@ -142,13 +142,6 @@ impl CustomPropertiesMap {
     pub fn len(&self) -> usize {
         debug_assert_eq!(self.values.len(), self.index.len());
         self.values.len()
-    }
-}
-
-impl Eq for CustomPropertiesMap {}
-impl PartialEq for CustomPropertiesMap {
-    fn eq(&self, other: &CustomPropertiesMap) -> bool {
-        self.values == other.values && self.index == other.index
     }
 }
 
