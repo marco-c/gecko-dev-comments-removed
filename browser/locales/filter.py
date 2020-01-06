@@ -18,7 +18,7 @@ def test(mod, path, entity = None):
   if mod not in ("browser", "extensions/spellcheck"):
     
     return "error"
-  if not entity:
+  if entity is None:
     
     if mod == "extensions/spellcheck":
       return "ignore"
