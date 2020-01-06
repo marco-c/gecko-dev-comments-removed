@@ -73,9 +73,6 @@ extern mozilla::LazyLogModule gContentSinkLogModuleInfo;
 
 
 
-
-#define NS_DELAY_FOR_WINDOW_CREATION  500000
-
 class nsContentSink : public nsICSSLoaderObserver,
                       public nsSupportsWeakReference,
                       public nsStubDocumentObserver,
