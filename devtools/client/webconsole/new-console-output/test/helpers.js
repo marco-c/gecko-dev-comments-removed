@@ -11,6 +11,9 @@ const actions = require("devtools/client/webconsole/new-console-output/actions/i
 const { configureStore } = require("devtools/client/webconsole/new-console-output/store");
 const { IdGenerator } = require("devtools/client/webconsole/new-console-output/utils/id-generator");
 const { stubPackets } = require("devtools/client/webconsole/new-console-output/test/fixtures/stubs/index");
+const {
+  getAllMessagesById,
+} = require("devtools/client/webconsole/new-console-output/selectors/messages");
 
 
 
@@ -66,10 +69,23 @@ function clonePacket(packet) {
   return JSON.parse(JSON.stringify(packet));
 }
 
+
+
+
+
+
+
+
+function getMessageAt(state, index) {
+  const messages = getAllMessagesById(state);
+  return messages.get([...messages.keys()][index]);
+}
+
 module.exports = {
+  clonePacket,
+  getMessageAt,
+  renderComponent,
   setupActions,
   setupStore,
-  renderComponent,
   shallowRenderComponent,
-  clonePacket
 };
