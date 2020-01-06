@@ -270,6 +270,7 @@ public:
                                   JS::MutableHandle<JS::PropertyDescriptor> aDesc);
 
   
+  
   static bool ShouldResistFingerprinting();
   static bool ShouldResistFingerprinting(nsIDocShell* aDocShell);
 
@@ -2202,7 +2203,7 @@ public:
   static bool ResistFingerprinting(mozilla::dom::CallerType aCallerType)
   {
     return aCallerType != mozilla::dom::CallerType::System &&
-           mozilla::nsRFPService::IsResistFingerprintingEnabled();
+           ShouldResistFingerprinting();
   }
 
   
