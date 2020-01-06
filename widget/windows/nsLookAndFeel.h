@@ -76,6 +76,7 @@ private:
   int32_t mUseAccessibilityTheme;
   int32_t mUseDefaultTheme; 
   int32_t mNativeThemeId; 
+  int32_t mCaretBlinkTime;
 
   struct CachedSystemFont {
     CachedSystemFont()
