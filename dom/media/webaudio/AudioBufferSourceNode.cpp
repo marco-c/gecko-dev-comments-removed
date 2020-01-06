@@ -809,10 +809,7 @@ AudioBufferSourceNode::NotifyMainThreadStreamFinished()
   {
   public:
     explicit EndedEventDispatcher(AudioBufferSourceNode* aNode)
-      : mozilla::Runnable("EndedEventDispatcher")
-      , mNode(aNode)
-    {
-    }
+      : mNode(aNode) {}
     NS_IMETHOD Run() override
     {
       

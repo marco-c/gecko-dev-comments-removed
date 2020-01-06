@@ -42,8 +42,7 @@ NamedPipeService::Init()
   
   
   nsCOMPtr<nsIObserver> self(this);
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction("NamedPipeService::Init",
-                                                   [self = Move(self)] () -> void {
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self = Move(self)] () -> void {
     MOZ_ASSERT(NS_IsMainThread());
 
     nsCOMPtr<nsIObserverService> svc = mozilla::services::GetObserverService();

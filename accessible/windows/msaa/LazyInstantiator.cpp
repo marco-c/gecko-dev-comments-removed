@@ -251,8 +251,7 @@ LazyInstantiator::ShouldInstantiate(const DWORD aClientTid)
     
     
     nsCOMPtr<nsIRunnable> runnable(
-        NewRunnableMethod<nsCOMPtr<nsIFile>>("LazyInstantiator::GatherTelemetry",
-                                             this,
+        NewRunnableMethod<nsCOMPtr<nsIFile>>(this,
                                              &LazyInstantiator::GatherTelemetry,
                                              clientExe));
     NS_NewThread(getter_AddRefs(mTelemetryThread), runnable);
@@ -328,9 +327,7 @@ LazyInstantiator::GatherTelemetry(nsIFile* aClientExe)
 
   
   
-  NS_DispatchToMainThread(NewNonOwningRunnableMethod<nsString>(
-        "LazyInstantiator::AccumulateTelemetry",
-        this,
+  NS_DispatchToMainThread(NewNonOwningRunnableMethod<nsString>(this,
         &LazyInstantiator::AccumulateTelemetry, value));
 }
 

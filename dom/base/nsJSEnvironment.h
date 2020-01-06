@@ -179,8 +179,7 @@ class AsyncErrorReporter final : public mozilla::Runnable
 public:
   
   explicit AsyncErrorReporter(xpc::ErrorReport* aReport)
-    : Runnable("dom::AsyncErrorReporter")
-    , mReport(aReport)
+    : mReport(aReport)
   {}
 
   NS_IMETHOD Run() override

@@ -51,10 +51,9 @@ TestInterruptShutdownRaceParent::RecvStartDeath()
 {
     
     
-    MessageLoop::current()->PostTask(NewNonOwningRunnableMethod(
-      "_ipdltest::TestInterruptShutdownRaceParent::StartShuttingDown",
-      this,
-      &TestInterruptShutdownRaceParent::StartShuttingDown));
+    MessageLoop::current()->PostTask(
+        NewNonOwningRunnableMethod(this,
+				   &TestInterruptShutdownRaceParent::StartShuttingDown));
     return IPC_OK();
 }
 

@@ -140,7 +140,6 @@ public:
   
   class QuitTask : public mozilla::Runnable {
    public:
-    QuitTask() : mozilla::Runnable("QuitTask") {}
     NS_IMETHOD Run() override {
       MessageLoop::current()->Quit();
       return NS_OK;

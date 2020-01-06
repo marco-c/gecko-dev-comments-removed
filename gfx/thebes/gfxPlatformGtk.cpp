@@ -652,10 +652,7 @@ public:
       if (!mVsyncThread.Start())
         return false;
 
-      RefPtr<Runnable> vsyncSetup =
-        NewRunnableMethod("GLXVsyncSource::GLXDisplay::SetupGLContext",
-                          this,
-                          &GLXDisplay::SetupGLContext);
+      RefPtr<Runnable> vsyncSetup = NewRunnableMethod(this, &GLXDisplay::SetupGLContext);
       mVsyncThread.message_loop()->PostTask(vsyncSetup.forget());
       
       lock.Wait();
@@ -727,8 +724,7 @@ public:
       
       
       if (!mVsyncTask) {
-        mVsyncTask = NewRunnableMethod(
-          "GLXVsyncSource::GLXDisplay::RunVsync", this, &GLXDisplay::RunVsync);
+        mVsyncTask = NewRunnableMethod(this, &GLXDisplay::RunVsync);
         RefPtr<Runnable> addrefedTask = mVsyncTask;
         mVsyncThread.message_loop()->PostTask(addrefedTask.forget());
       }
@@ -752,8 +748,7 @@ public:
       DisableVsync();
 
       
-      RefPtr<Runnable> shutdownTask = NewRunnableMethod(
-        "GLXVsyncSource::GLXDisplay::Cleanup", this, &GLXDisplay::Cleanup);
+      RefPtr<Runnable> shutdownTask = NewRunnableMethod(this, &GLXDisplay::Cleanup);
       mVsyncThread.message_loop()->PostTask(shutdownTask.forget());
 
       

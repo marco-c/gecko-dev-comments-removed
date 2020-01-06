@@ -75,18 +75,11 @@ WebBrowserPersistSerializeParent::ActorDestroy(ActorDestroyReason aWhy)
         MOZ_ASSERT(aWhy != Deletion);
         
         
-        nsCOMPtr<nsIRunnable> errorLater =
-          NewRunnableMethod<nsCOMPtr<nsIWebBrowserPersistDocument>,
-                            nsCOMPtr<nsIOutputStream>,
-                            nsCString,
-                            nsresult>(
-            "nsIWebBrowserPersistWriteCompletion::OnFinish",
-            mFinish,
-            &nsIWebBrowserPersistWriteCompletion::OnFinish,
-            mDocument,
-            mStream,
-            EmptyCString(),
-            NS_ERROR_FAILURE);
+        nsCOMPtr<nsIRunnable> errorLater = NewRunnableMethod
+            <nsCOMPtr<nsIWebBrowserPersistDocument>, nsCOMPtr<nsIOutputStream>,
+             nsCString, nsresult>
+            (mFinish, &nsIWebBrowserPersistWriteCompletion::OnFinish,
+             mDocument, mStream, EmptyCString(), NS_ERROR_FAILURE);
         NS_DispatchToCurrentThread(errorLater);
         mFinish = nullptr;
     }

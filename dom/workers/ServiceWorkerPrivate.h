@@ -27,8 +27,6 @@ class KeepAliveToken;
 class LifeCycleEventCallback : public Runnable
 {
 public:
-  LifeCycleEventCallback() : Runnable("dom::workers::LifeCycleEventCallback") {}
-
   
   virtual void
   SetResult(bool aResult) = 0;

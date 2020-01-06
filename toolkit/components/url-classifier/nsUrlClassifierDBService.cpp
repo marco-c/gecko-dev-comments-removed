@@ -1830,41 +1830,39 @@ nsUrlClassifierDBService::AsyncClassifyLocalWithTables(nsIURI *aURI,
     new nsMainThreadPtrHolder<nsIURIClassifierCallback>(
       "nsIURIClassifierCallback", aCallback));
 
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-    "nsUrlClassifierDBService::AsyncClassifyLocalWithTables",
-    [worker, key, tables, callback, startTime]() -> void {
+  nsCOMPtr<nsIRunnable> r =
+    NS_NewRunnableFunction([worker, key, tables, callback, startTime] () -> void {
 
-      nsCString matchedLists;
-      nsAutoPtr<LookupResultArray> results(new LookupResultArray());
-      if (results) {
-        nsresult rv = worker->DoLocalLookup(key, tables, results);
-        if (NS_SUCCEEDED(rv)) {
-          for (uint32_t i = 0; i < results->Length(); i++) {
-            if (i > 0) {
-              matchedLists.AppendLiteral(",");
-            }
-            matchedLists.Append(results->ElementAt(i).mTableName);
+    nsCString matchedLists;
+    nsAutoPtr<LookupResultArray> results(new LookupResultArray());
+    if (results) {
+      nsresult rv = worker->DoLocalLookup(key, tables, results);
+      if (NS_SUCCEEDED(rv)) {
+        for (uint32_t i = 0; i < results->Length(); i++) {
+          if (i > 0) {
+            matchedLists.AppendLiteral(",");
           }
+          matchedLists.Append(results->ElementAt(i).mTableName);
         }
       }
+    }
 
-      nsCOMPtr<nsIRunnable> cbRunnable = NS_NewRunnableFunction(
-        "nsUrlClassifierDBService::AsyncClassifyLocalWithTables",
-        [callback, matchedLists, startTime]() -> void {
-          
-          AccumulateDelta_impl<Millisecond>::compute(
-            Telemetry::URLCLASSIFIER_ASYNC_CLASSIFYLOCAL_TIME, startTime);
+    nsCOMPtr<nsIRunnable> cbRunnable =
+      NS_NewRunnableFunction([callback, matchedLists, startTime] () -> void {
+        
+        AccumulateDelta_impl<Millisecond>::compute(
+          Telemetry::URLCLASSIFIER_ASYNC_CLASSIFYLOCAL_TIME, startTime);
 
-          
-          auto cb = const_cast<nsIURIClassifierCallback*>(callback.get());
-          cb->OnClassifyComplete(NS_OK, 
-                                 matchedLists,
-                                 EmptyCString(),  
-                                 EmptyCString()); 
-        });
+        
+        auto cb = const_cast<nsIURIClassifierCallback*>(callback.get());
+        cb->OnClassifyComplete(NS_OK,           
+                               matchedLists,
+                               EmptyCString(),  
+                               EmptyCString()); 
+      });
 
-      NS_DispatchToMainThread(cbRunnable);
-    });
+    NS_DispatchToMainThread(cbRunnable);
+  });
 
   return gDbBackgroundThread->Dispatch(r, NS_DISPATCH_NORMAL);
 }
@@ -2268,10 +2266,8 @@ nsUrlClassifierDBService::Shutdown()
   
   
   using Worker = nsUrlClassifierDBServiceWorker;
-  RefPtr<nsIRunnable> r = NewRunnableMethod(
-    "nsUrlClassifierDBServiceWorker::FlushAndDisableAsyncUpdate",
-    mWorker,
-    &Worker::FlushAndDisableAsyncUpdate);
+  RefPtr<nsIRunnable> r =
+    NewRunnableMethod(mWorker, &Worker::FlushAndDisableAsyncUpdate);
   SyncRunnable::DispatchToThread(gDbBackgroundThread, r);
 
   
