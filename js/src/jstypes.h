@@ -97,8 +97,10 @@
 
 
 
-#if !defined(__clang__) && defined(__GNUC__) && (__GNUC__ < 6 || (__GNUC__ == 6 && __GNUC_MINOR__ <= 4))
-#define JS_BROKEN_GCC_ATTRIBUTE_WARNING
+#if MOZ_IS_GCC
+#  if MOZ_GCC_VERSION_AT_MOST(8, 0, 0)
+#    define JS_BROKEN_GCC_ATTRIBUTE_WARNING
+#  endif
 #endif
 
 
