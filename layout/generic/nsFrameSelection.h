@@ -728,7 +728,7 @@ private:
   nsIContent* IsInSameTable(nsIContent *aContent1, nsIContent *aContent2) const;
   
   nsIContent* GetParentTable(nsIContent *aCellNode) const;
-  nsresult CreateAndAddRange(nsINode *aParentNode, int32_t aOffset);
+  nsresult CreateAndAddRange(nsINode* aContainer, int32_t aOffset);
 
   nsCOMPtr<nsINode> mCellParent; 
   nsCOMPtr<nsIContent> mStartSelectedCell;
