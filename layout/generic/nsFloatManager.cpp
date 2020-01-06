@@ -756,38 +756,46 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
 
   const StyleShapeSource& shapeOutside = mFrame->StyleDisplay()->mShapeOutside;
 
-  switch (shapeOutside.GetType()) {
-    case StyleShapeSourceType::None:
-      
-      return;
+  if (shapeOutside.GetType() == StyleShapeSourceType::None) {
+    return;
+  }
 
-    case StyleShapeSourceType::URL:
-      MOZ_ASSERT_UNREACHABLE("shape-outside doesn't have URL source type!");
-      return;
+  if (shapeOutside.GetType() == StyleShapeSourceType::URL) {
+    
+    
+    
+    return;
+  }
 
-    case StyleShapeSourceType::Image:
-      
-      
-      return;
+  
+  LogicalRect shapeBoxRect =
+    ShapeInfo::ComputeShapeBoxRect(shapeOutside, mFrame, aMarginRect, aWM);
 
-    case StyleShapeSourceType::Box: {
-      
-      LogicalRect shapeBoxRect =
-        ShapeInfo::ComputeShapeBoxRect(shapeOutside, mFrame, aMarginRect, aWM);
-      mShapeInfo = ShapeInfo::CreateShapeBox(mFrame, shapeBoxRect, aWM,
-                                             aContainerSize);
-      break;
+  if (shapeOutside.GetType() == StyleShapeSourceType::Box) {
+    mShapeInfo = ShapeInfo::CreateShapeBox(mFrame, shapeBoxRect, aWM,
+                                           aContainerSize);
+  } else if (shapeOutside.GetType() == StyleShapeSourceType::Shape) {
+    const UniquePtr<StyleBasicShape>& basicShape = shapeOutside.GetBasicShape();
+
+    switch (basicShape->GetShapeType()) {
+      case StyleBasicShapeType::Polygon:
+        mShapeInfo =
+          ShapeInfo::CreatePolygon(basicShape, shapeBoxRect, aWM,
+                                   aContainerSize);
+        break;
+      case StyleBasicShapeType::Circle:
+      case StyleBasicShapeType::Ellipse:
+        mShapeInfo =
+          ShapeInfo::CreateCircleOrEllipse(basicShape, shapeBoxRect, aWM,
+                                           aContainerSize);
+        break;
+      case StyleBasicShapeType::Inset:
+        mShapeInfo =
+          ShapeInfo::CreateInset(basicShape, shapeBoxRect, aWM, aContainerSize);
+        break;
     }
-
-    case StyleShapeSourceType::Shape: {
-      const UniquePtr<StyleBasicShape>& basicShape = shapeOutside.GetBasicShape();
-      
-      LogicalRect shapeBoxRect =
-        ShapeInfo::ComputeShapeBoxRect(shapeOutside, mFrame, aMarginRect, aWM);
-      mShapeInfo = ShapeInfo::CreateBasicShape(basicShape, shapeBoxRect, aWM,
-                                               aContainerSize);
-      break;
-    }
+  } else {
+    MOZ_ASSERT_UNREACHABLE("Unknown StyleShapeSourceType!");
   }
 
   MOZ_ASSERT(mShapeInfo,
@@ -950,26 +958,6 @@ nsFloatManager::ShapeInfo::CreateShapeBox(
   return MakeUnique<RoundedBoxShapeInfo>(logicalShapeBoxRect,
                                          ConvertToFloatLogical(physicalRadii,
                                                                aWM));
-}
-
- UniquePtr<nsFloatManager::ShapeInfo>
-nsFloatManager::ShapeInfo::CreateBasicShape(
-  const UniquePtr<StyleBasicShape>& aBasicShape,
-  const LogicalRect& aShapeBoxRect,
-  WritingMode aWM,
-  const nsSize& aContainerSize)
-{
-  switch (aBasicShape->GetShapeType()) {
-    case StyleBasicShapeType::Polygon:
-      return CreatePolygon(aBasicShape, aShapeBoxRect, aWM, aContainerSize);
-    case StyleBasicShapeType::Circle:
-    case StyleBasicShapeType::Ellipse:
-      return CreateCircleOrEllipse(aBasicShape, aShapeBoxRect, aWM,
-                                   aContainerSize);
-    case StyleBasicShapeType::Inset:
-      return CreateInset(aBasicShape, aShapeBoxRect, aWM, aContainerSize);
-  }
-  return nullptr;
 }
 
  UniquePtr<nsFloatManager::ShapeInfo>
