@@ -2979,7 +2979,9 @@ static bool
 IsOrHasAncestorWithDisplayNone(Element* aElement, nsIPresShell* aPresShell)
 {
   AutoTArray<Element*, 10> elementsToCheck;
-  for (Element* e = aElement; e; e = e->GetParentElement()) {
+  
+  
+  for (Element* e = aElement; e; e = e->GetFlattenedTreeParentElement()) {
     if (e->GetPrimaryFrame()) {
       
       
