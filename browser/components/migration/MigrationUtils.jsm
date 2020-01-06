@@ -364,13 +364,7 @@ this.MigratorPrototype = {
             resourceDone(false);
           }
 
-          
-          
-          if (migrationType == MigrationUtils.resourceTypes.BOOKMARKS ||
-              migrationType == MigrationUtils.resourceTypes.HISTORY) {
-            await completeDeferred.promise;
-          }
-
+          await completeDeferred.promise;
           await unblockMainThread();
         }
       }
