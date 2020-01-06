@@ -5,6 +5,8 @@
 
 
 #include "nsReferencedElement.h"
+
+#include "mozilla/Encoding.h"
 #include "nsContentUtils.h"
 #include "nsIURI.h"
 #include "nsBindingManager.h"
