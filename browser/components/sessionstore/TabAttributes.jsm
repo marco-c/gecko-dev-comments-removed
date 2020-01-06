@@ -17,7 +17,7 @@ this.EXPORTED_SYMBOLS = ["TabAttributes"];
 
 
 
-const ATTRIBUTES_TO_SKIP = new Set(["image", "muted", "pending", "iconLoadingPrincipal",
+const ATTRIBUTES_TO_SKIP = new Set(["image", "muted", "pending", "iconloadingprincipal",
                                     "skipbackgroundnotify", "activemedia-blocked"]);
 
 
