@@ -29,7 +29,7 @@ add_task(function* () {
   ok(!btn.firstChild, "The frame list button doesn't have any children");
 
   
-  let menu = toolbox.showFramesMenu({target: btn});
+  let menu = yield toolbox.showFramesMenu({target: btn});
   yield once(menu, "open");
 
   

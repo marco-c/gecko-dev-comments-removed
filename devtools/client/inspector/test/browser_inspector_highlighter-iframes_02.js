@@ -44,7 +44,7 @@ add_task(function* () {
 function* switchToFrameContext(frameIndex, toolbox, inspector) {
   
   let btn = toolbox.doc.getElementById("command-button-frames");
-  let menu = toolbox.showFramesMenu({target: btn});
+  let menu = yield toolbox.showFramesMenu({target: btn});
   yield once(menu, "open");
 
   info("Select the iframe in the frame list.");

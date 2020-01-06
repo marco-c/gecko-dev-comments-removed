@@ -50,7 +50,7 @@ add_task(function* () {
   
   
   ok(!btn.classList.contains("checked"), "The checked class must not be present");
-  let menu = toolbox.showFramesMenu({target: btn});
+  let menu = yield toolbox.showFramesMenu({target: btn});
   yield once(menu, "open");
 
   ok(btn.classList.contains("checked"), "The checked class must be set");
