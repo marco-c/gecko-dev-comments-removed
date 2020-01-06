@@ -482,6 +482,11 @@ pref("browser.tabs.drawInTitlebar", true);
 
 
 
+pref("browser.tabs.restorebutton", false);
+
+
+
+
 
 
 pref("browser.tabs.selectOwnerOnClose", true);
