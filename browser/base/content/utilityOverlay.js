@@ -820,14 +820,6 @@ function openTroubleshootingPage() {
 
 
 
-
-function openHealthReport() {
-  openUILinkIn("about:healthreport", "tab");
-}
-
-
-
-
 function openFeedbackPage() {
   var url = Components.classes["@mozilla.org/toolkit/URLFormatterService;1"]
                       .getService(Components.interfaces.nsIURLFormatter)

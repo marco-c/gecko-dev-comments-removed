@@ -13,9 +13,9 @@ add_task(async function runTests() {
 
   let browser = tab.linkedBrowser;
 
-  browser.loadURI("about:healthreport");
+  browser.loadURI("about:about");
   let href = await BrowserTestUtils.browserLoaded(browser);
-  is(href, "about:healthreport", "Check about:healthreport loaded");
+  is(href, "about:about", "Check about:about loaded");
 
   
   
@@ -26,7 +26,7 @@ add_task(async function runTests() {
 
   browser.goBack();
   href = await BrowserTestUtils.browserLoaded(browser);
-  is(href, "about:healthreport", "Check we've gone back to about:healthreport");
+  is(href, "about:about", "Check we've gone back to about:about");
 
   browser.goForward();
   href = await BrowserTestUtils.browserLoaded(browser);

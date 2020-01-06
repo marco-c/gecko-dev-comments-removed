@@ -27,7 +27,6 @@ class GeckoInstance(object):
 
         
         "datareporting.healthreport.documentServerURI": "http://%(server)s/dummy/healthreport/",
-        "datareporting.healthreport.about.reportUrl": "http://%(server)s/dummy/abouthealthreport/",
 
         
         "datareporting.policy.dataSubmissionPolicyBypassNotification": True,
