@@ -19,11 +19,13 @@
 #include "mozilla/Casting.h"
 #include "mozilla/Move.h"
 #include "mozilla/PodOperations.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Unused.h"
 #include "nsCRTGlue.h"
 #include "nsNSSCertificate.h"
 #include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
 #include "nss.h"
 #include "pk11pub.h"
 #include "pkix/Result.h"
@@ -1228,8 +1230,10 @@ NSSCertDBTrustDomain::NoteAuxiliaryExtension(AuxiliaryExtension extension,
 }
 
 SECStatus
-InitializeNSS(const char* dir, bool readOnly, bool loadPKCS11Modules)
+InitializeNSS(const nsACString& dir, bool readOnly, bool loadPKCS11Modules)
 {
+  MOZ_ASSERT(NS_IsMainThread());
+
   
   
   
@@ -1242,9 +1246,20 @@ InitializeNSS(const char* dir, bool readOnly, bool loadPKCS11Modules)
   if (!loadPKCS11Modules) {
     flags |= NSS_INIT_NOMODDB;
   }
+  bool useSQLDB = Preferences::GetBool("security.use_sqldb", false);
+  nsAutoCString dbTypeAndDirectory;
+  
+  
+  const char* dbDirOverride = getenv("MOZPSM_NSSDBDIR_OVERRIDE");
+  if (useSQLDB && (!dbDirOverride || strlen(dbDirOverride) == 0)) {
+    dbTypeAndDirectory.Append("sql:");
+  }
+  dbTypeAndDirectory.Append(dir);
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-          ("InitializeNSS(%s, %d, %d)", dir, readOnly, loadPKCS11Modules));
-  SECStatus srv = NSS_Initialize(dir, "", "", SECMOD_DB, flags);
+          ("InitializeNSS(%s, %d, %d)", dbTypeAndDirectory.get(), readOnly,
+           loadPKCS11Modules));
+  SECStatus srv = NSS_Initialize(dbTypeAndDirectory.get(), "", "",
+                                 SECMOD_DB, flags);
   if (srv != SECSuccess) {
     return srv;
   }
