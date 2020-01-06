@@ -100,7 +100,7 @@ struct WorkaroundsD3D
     
     
     
-    bool callClearTwice = false;
+    bool callClearTwiceOnSmallTarget = false;
 
     
     
