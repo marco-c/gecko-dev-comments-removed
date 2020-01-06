@@ -2236,7 +2236,7 @@ HTMLEditor::GetElementOrParentByTagName(const nsAString& aTagName,
 
     
     if (anchorNode->HasChildNodes() && anchorNode->IsContent()) {
-      node = anchorNode->GetChildAt(selection->AnchorOffset());
+      node = selection->GetChildAtAnchorOffset();
     }
     
     if (!node) {
