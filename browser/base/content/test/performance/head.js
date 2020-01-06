@@ -72,9 +72,6 @@ async function withReflowObserver(testFn, expectedReflows = [], win = window) {
     }
   };
 
-  let els = Cc["@mozilla.org/eventlistenerservice;1"]
-              .getService(Ci.nsIEventListenerService);
-
   
   
   
@@ -141,7 +138,7 @@ async function withReflowObserver(testFn, expectedReflows = [], win = window) {
                     .QueryInterface(Ci.nsIDocShell);
   docShell.addWeakReflowObserver(observer);
 
-  els.addListenerForAllEvents(win, dirtyFrameFn, true);
+  Services.els.addListenerForAllEvents(win, dirtyFrameFn, true);
 
   try {
     dirtyFrameFn();
@@ -157,7 +154,7 @@ async function withReflowObserver(testFn, expectedReflows = [], win = window) {
       }
     }
 
-    els.removeListenerForAllEvents(win, dirtyFrameFn, true);
+    Services.els.removeListenerForAllEvents(win, dirtyFrameFn, true);
     docShell.removeWeakReflowObserver(observer);
   }
 }

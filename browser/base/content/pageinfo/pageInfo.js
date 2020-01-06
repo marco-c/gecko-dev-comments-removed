@@ -333,9 +333,7 @@ function onLoadPageInfo() {
 
   
   loadTab(args);
-  Components.classes["@mozilla.org/observer-service;1"]
-            .getService(Components.interfaces.nsIObserverService)
-            .notifyObservers(window, "page-info-dialog-loaded");
+  Services.obs.notifyObservers(window, "page-info-dialog-loaded");
 }
 
 function loadPageInfo(frameOuterWindowID, imageElement, browser) {
@@ -412,9 +410,7 @@ function resetPageInfo(args) {
   
   var mediaTab = document.getElementById("mediaTab");
   if (!mediaTab.hidden) {
-    Components.classes["@mozilla.org/observer-service;1"]
-              .getService(Components.interfaces.nsIObserverService)
-              .removeObserver(imagePermissionObserver, "perm-changed");
+    Services.obs.removeObserver(imagePermissionObserver, "perm-changed");
     mediaTab.hidden = true;
   }
   gImageView.clear();
@@ -435,9 +431,7 @@ function resetPageInfo(args) {
 function onUnloadPageInfo() {
   
   if (!document.getElementById("mediaTab").hidden) {
-    Components.classes["@mozilla.org/observer-service;1"]
-              .getService(Components.interfaces.nsIObserverService)
-              .removeObserver(imagePermissionObserver, "perm-changed");
+    Services.obs.removeObserver(imagePermissionObserver, "perm-changed");
   }
 
   
@@ -595,9 +589,7 @@ function addImage(imageViewRow) {
     
     if (gImageView.data.length == 1) {
       document.getElementById("mediaTab").hidden = false;
-      Components.classes["@mozilla.org/observer-service;1"]
-                .getService(Components.interfaces.nsIObserverService)
-                .addObserver(imagePermissionObserver, "perm-changed");
+      Services.obs.addObserver(imagePermissionObserver, "perm-changed");
     }
   } else {
     var i = gImageHash[url][type][alt];
@@ -683,9 +675,7 @@ function selectSaveFolder(aCallback) {
   fp.init(window, titleText, nsIFilePicker.modeGetFolder);
   fp.appendFilters(nsIFilePicker.filterAll);
   try {
-    let prefs = Components.classes[PREFERENCES_CONTRACTID].
-                getService(Components.interfaces.nsIPrefBranch);
-    let initialDir = prefs.getComplexValue("browser.download.dir", nsIFile);
+    let initialDir = Services.prefs.getComplexValue("browser.download.dir", nsIFile);
     if (initialDir) {
       fp.displayDirectory = initialDir;
     }
@@ -961,11 +951,9 @@ function makePreview(row) {
 function makeBlockImage(url) {
   var permissionManager = Components.classes[PERMISSION_CONTRACTID]
                                     .getService(nsIPermissionManager);
-  var prefs = Components.classes[PREFERENCES_CONTRACTID]
-                        .getService(Components.interfaces.nsIPrefBranch);
 
   var checkbox = document.getElementById("blockImage");
-  var imagePref = prefs.getIntPref("permissions.default.image");
+  var imagePref = Services.prefs.getIntPref("permissions.default.image");
   if (!(/^https?:/.test(url)) || imagePref == 2)
     
     

@@ -203,9 +203,7 @@ Sanitizer.prototype = {
         try {
           
           
-          let cache = Cc["@mozilla.org/netwerk/cache-storage-service;1"]
-                        .getService(Ci.nsICacheStorageService);
-          cache.clear();
+          Services.cache2.clear();
         } catch (ex) {
           seenException = ex;
         }
@@ -235,18 +233,16 @@ Sanitizer.prototype = {
         
         TelemetryStopwatch.start("FX_SANITIZE_COOKIES_2", refObj);
         try {
-          let cookieMgr = Components.classes["@mozilla.org/cookiemanager;1"]
-                                    .getService(Ci.nsICookieManager);
           if (range) {
             
-            let cookiesEnum = cookieMgr.enumerator;
+            let cookiesEnum = Services.cookies.enumerator;
             while (cookiesEnum.hasMoreElements()) {
               let cookie = cookiesEnum.getNext().QueryInterface(Ci.nsICookie2);
 
               if (cookie.creationTime > range[0]) {
                 
-                cookieMgr.remove(cookie.host, cookie.name, cookie.path,
-                                 false, cookie.originAttributes);
+                Services.cookies.remove(cookie.host, cookie.name, cookie.path,
+                                        false, cookie.originAttributes);
 
                 if (++yieldCounter % YIELD_PERIOD == 0) {
                   await new Promise(resolve => setTimeout(resolve, 0)); 
@@ -255,7 +251,7 @@ Sanitizer.prototype = {
             }
           } else {
             
-            cookieMgr.removeAll();
+            Services.cookies.removeAll();
             await new Promise(resolve => setTimeout(resolve, 0)); 
           }
         } catch (ex) {
@@ -832,9 +828,7 @@ Sanitizer.clearPluginData = async function(range) {
 Sanitizer._prefs = null;
 Sanitizer.__defineGetter__("prefs", function() {
   return Sanitizer._prefs ? Sanitizer._prefs
-    : Sanitizer._prefs = Components.classes["@mozilla.org/preferences-service;1"]
-                         .getService(Components.interfaces.nsIPrefService)
-                         .getBranch(Sanitizer.PREF_DOMAIN);
+    : Sanitizer._prefs = Services.prefs.getBranch(Sanitizer.PREF_DOMAIN);
 });
 
 

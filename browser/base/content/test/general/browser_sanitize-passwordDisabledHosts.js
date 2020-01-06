@@ -2,20 +2,17 @@
 
 
 var tempScope = {};
-Cc["@mozilla.org/moz/jssubscript-loader;1"].getService(Ci.mozIJSSubScriptLoader)
-                                           .loadSubScript("chrome://browser/content/sanitize.js", tempScope);
+Services.scriptloader.loadSubScript("chrome://browser/content/sanitize.js", tempScope);
 var Sanitizer = tempScope.Sanitizer;
 
 add_task(async function() {
   
   await SpecialPowers.pushPrefEnv({"set": [["signon.rememberSignons", true]]});
 
-  var pwmgr = Cc["@mozilla.org/login-manager;1"].getService(Ci.nsILoginManager);
-
   
-  pwmgr.setLoginSavingEnabled("http://example.com", false);
+  Services.logins.setLoginSavingEnabled("http://example.com", false);
   
-  is(pwmgr.getLoginSavingEnabled("http://example.com"), false,
+  is(Services.logins.getLoginSavingEnabled("http://example.com"), false,
      "example.com should be disabled for password saving since we haven't cleared that yet.");
 
   
@@ -37,7 +34,7 @@ add_task(async function() {
   await s.sanitize();
 
   
-  is(pwmgr.getLoginSavingEnabled("http://example.com"), true,
+  is(Services.logins.getLoginSavingEnabled("http://example.com"), true,
      "example.com should be enabled for password saving again now that we've cleared.");
 
   await SpecialPowers.popPrefEnv();
