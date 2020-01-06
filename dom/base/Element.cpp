@@ -166,7 +166,8 @@ using namespace mozilla::dom;
 
 
 
-#if defined(DEBUG) || defined(MOZ_ASAN)
+
+#ifdef MOZ_THREAD_SAFETY_OWNERSHIP_CHECKS_SUPPORTED
 #define EXTRA_DOM_ELEMENT_BYTES 8
 #else
 #define EXTRA_DOM_ELEMENT_BYTES 0
