@@ -523,17 +523,6 @@ nsStyleContext::SetStyleBits()
   
   
 
-  
-  
-  if (mParent && mParent->HasTextDecorationLines()) {
-    AddStyleBit(NS_STYLE_HAS_TEXT_DECORATION_LINES);
-  } else {
-    
-    if (StyleTextReset()->HasTextDecorationLines()) {
-      AddStyleBit(NS_STYLE_HAS_TEXT_DECORATION_LINES);
-    }
-  }
-
   if ((mParent && mParent->HasPseudoElementData()) || IsPseudoElement()) {
     AddStyleBit(NS_STYLE_HAS_PSEUDO_ELEMENT_DATA);
   }
@@ -715,6 +704,17 @@ GeckoStyleContext::ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup)
                "incorrectly based on the old writing mode value");
     nsStyleVisibility* mutableVis = GET_UNIQUE_STYLE_DATA(Visibility);
     mutableVis->mWritingMode = NS_STYLE_WRITING_MODE_HORIZONTAL_TB;
+  }
+
+  
+  
+  if (mParent && mParent->HasTextDecorationLines()) {
+    AddStyleBit(NS_STYLE_HAS_TEXT_DECORATION_LINES);
+  } else {
+    
+    if (StyleTextReset()->HasTextDecorationLines()) {
+      AddStyleBit(NS_STYLE_HAS_TEXT_DECORATION_LINES);
+    }
   }
 
   
