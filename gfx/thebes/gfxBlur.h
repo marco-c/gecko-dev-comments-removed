@@ -75,13 +75,17 @@ public:
 
 
 
+
+
+
     already_AddRefed<gfxContext>
     Init(gfxContext* aDestinationCtx,
          const gfxRect& aRect,
          const mozilla::gfx::IntSize& aSpreadRadius,
          const mozilla::gfx::IntSize& aBlurRadius,
          const gfxRect* aDirtyRect,
-         const gfxRect* aSkipRect);
+         const gfxRect* aSkipRect,
+         bool aUseHardwareAccel = true);
 
     already_AddRefed<DrawTarget>
     InitDrawTarget(const mozilla::gfx::DrawTarget* aReferenceDT,
@@ -89,7 +93,8 @@ public:
                    const mozilla::gfx::IntSize& aSpreadRadius,
                    const mozilla::gfx::IntSize& aBlurRadius,
                    const mozilla::gfx::Rect* aDirtyRect = nullptr,
-                   const mozilla::gfx::Rect* aSkipRect = nullptr);
+                   const mozilla::gfx::Rect* aSkipRect = nullptr,
+                   bool aUseHardwareAccel = true);
 
     
 

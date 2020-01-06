@@ -2639,6 +2639,11 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
     DrawBackgroundColor(clipState, &aRenderingCtx, appUnitsPerPixel);
   }
 
+  if (!drawBackgroundImage) {
+    return DrawResult::SUCCESS; 
+                                
+  }
+
   
   
   Sides skipSides = aParams.frame->GetSkipSides();
@@ -4287,13 +4292,16 @@ nsContextBoxBlur::Init(const nsRect& aRect, nscoord aSpreadRadius,
 
   
   dirtyRect = transform.TransformBounds(dirtyRect);
+  bool useHardwareAccel = !(aFlags & DISABLE_HARDWARE_ACCELERATION_BLUR);
   if (aSkipRect) {
     gfxRect skipRect = transform.TransformBounds(*aSkipRect);
     mContext = mAlphaBoxBlur.Init(aDestinationCtx, rect, spreadRadius,
-                                  blurRadius, &dirtyRect, &skipRect);
+                                  blurRadius, &dirtyRect, &skipRect,
+                                  useHardwareAccel);
   } else {
     mContext = mAlphaBoxBlur.Init(aDestinationCtx, rect, spreadRadius,
-                                  blurRadius, &dirtyRect, nullptr);
+                                  blurRadius, &dirtyRect, nullptr,
+                                  useHardwareAccel);
   }
 
   if (mContext) {

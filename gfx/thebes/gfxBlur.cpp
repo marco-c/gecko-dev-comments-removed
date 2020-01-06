@@ -36,14 +36,16 @@ gfxAlphaBoxBlur::Init(gfxContext* aDestinationCtx,
                       const IntSize& aSpreadRadius,
                       const IntSize& aBlurRadius,
                       const gfxRect* aDirtyRect,
-                      const gfxRect* aSkipRect)
+                      const gfxRect* aSkipRect,
+                      bool aUseHardwareAccel)
 {
   DrawTarget* refDT = aDestinationCtx->GetDrawTarget();
   Maybe<Rect> dirtyRect = aDirtyRect ? Some(ToRect(*aDirtyRect)) : Nothing();
   Maybe<Rect> skipRect = aSkipRect ? Some(ToRect(*aSkipRect)) : Nothing();
   RefPtr<DrawTarget> dt =
     InitDrawTarget(refDT, ToRect(aRect), aSpreadRadius, aBlurRadius,
-                   dirtyRect.ptrOr(nullptr), skipRect.ptrOr(nullptr));
+                   dirtyRect.ptrOr(nullptr), skipRect.ptrOr(nullptr),
+                   aUseHardwareAccel);
   if (!dt) {
     return nullptr;
   }
@@ -60,7 +62,8 @@ gfxAlphaBoxBlur::InitDrawTarget(const DrawTarget* aReferenceDT,
                                 const IntSize& aSpreadRadius,
                                 const IntSize& aBlurRadius,
                                 const Rect* aDirtyRect,
-                                const Rect* aSkipRect)
+                                const Rect* aSkipRect,
+                                bool aUseHardwareAccel)
 {
   mBlur.Init(aRect, aSpreadRadius, aBlurRadius, aDirtyRect, aSkipRect);
   size_t blurDataSize = mBlur.GetSurfaceAllocationSize();
@@ -78,7 +81,7 @@ gfxAlphaBoxBlur::InitDrawTarget(const DrawTarget* aReferenceDT,
   
   
   if (aBlurRadius.IsSquare() && aSpreadRadius.IsEmpty() &&
-      blurDataSize >= 8192 &&
+      aUseHardwareAccel &&
       backend == BackendType::DIRECT2D1_1) {
     mAccelerated = true;
     mDrawTarget =

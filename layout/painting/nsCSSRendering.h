@@ -715,7 +715,8 @@ class nsContextBoxBlur {
 
 public:
   enum {
-    FORCE_MASK = 0x01
+    FORCE_MASK = 0x01,
+    DISABLE_HARDWARE_ACCELERATION_BLUR = 0x02
   };
   
 
