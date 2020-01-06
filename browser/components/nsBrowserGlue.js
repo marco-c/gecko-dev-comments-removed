@@ -483,6 +483,16 @@ BrowserGlue.prototype = {
       case "sync-ui-state:update":
         this._updateFxaBadges();
         break;
+      case "handlersvc-store-initialized":
+        
+        
+        
+        
+        
+        
+        
+        PdfJs.init(true);
+        break;
     }
   },
 
@@ -518,6 +528,7 @@ BrowserGlue.prototype = {
     os.addObserver(this, "flash-plugin-hang");
     os.addObserver(this, "xpi-signature-changed");
     os.addObserver(this, "sync-ui-state:update");
+    os.addObserver(this, "handlersvc-store-initialized");
 
     this._flashHangCount = 0;
     this._firstWindowReady = new Promise(resolve => this._firstWindowLoaded = resolve);
@@ -860,17 +871,9 @@ BrowserGlue.prototype = {
     
     
     
-    
-    
-    
-    
-    PdfJs.init(true);
-    
-    
-    
-    
     Services.ppmm.loadProcessScript("resource://pdf.js/pdfjschildbootstrap.js", true);
     if (PdfJs.enabled) {
+      PdfJs.ensureRegistered();
       Services.ppmm.loadProcessScript("resource://pdf.js/pdfjschildbootstrap-enabled.js", true);
     }
 
@@ -1150,6 +1153,12 @@ BrowserGlue.prototype = {
       setTimeout(function() {
         Services.tm.idleDispatchToMainThread(Services.startup.trackStartupCrashEnd);
       }, STARTUP_CRASHES_END_DELAY_MS);
+    });
+
+    Services.tm.idleDispatchToMainThread(() => {
+      let handlerService = Cc["@mozilla.org/uriloader/handler-service;1"].
+                           getService(Ci.nsIHandlerService);
+      handlerService.asyncInit();
     });
   },
 

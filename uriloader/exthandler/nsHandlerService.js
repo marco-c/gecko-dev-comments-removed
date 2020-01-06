@@ -302,6 +302,9 @@ HandlerService.prototype = {
 
   
   
+  asyncInit: function HS_asyncInit() {
+    
+  },
 
   enumerate: function HS_enumerate() {
     var handlers = Cc["@mozilla.org/array;1"].

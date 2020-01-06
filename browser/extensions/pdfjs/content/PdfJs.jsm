@@ -30,6 +30,10 @@ const PREF_PREVIOUS_ACTION = PREF_PREFIX + ".previousHandler.preferredAction";
 const PREF_PREVIOUS_ASK = PREF_PREFIX +
                           ".previousHandler.alwaysAskBeforeHandling";
 const PREF_DISABLED_PLUGIN_TYPES = "plugin.disable_full_page_plugin_for_types";
+const PREF_ENABLED_CACHE_STATE = PREF_PREFIX + ".enabledCache.state";
+const PREF_ENABLED_CACHE_INITIALIZED = PREF_PREFIX +
+                                       ".enabledCache.initialized";
+const PREF_APP_UPDATE_POSTUPDATE = "app.update.postupdate";
 const TOPIC_PDFJS_HANDLER_CHANGED = "pdfjs:handlerChanged";
 const TOPIC_PLUGINS_LIST_UPDATED = "plugins-list-updated";
 const TOPIC_PLUGIN_INFO_UPDATED = "plugin-info-updated";
@@ -190,7 +194,7 @@ var PdfJs = {
   },
 
   updateRegistration: function updateRegistration() {
-    if (this.enabled) {
+    if (this.checkEnabled()) {
       this.ensureRegistered();
     } else {
       this.ensureUnregistered();
@@ -269,26 +273,7 @@ var PdfJs = {
                                         false);
   },
 
-  
-  observe: function observe(aSubject, aTopic, aData) {
-    if (Services.appinfo.processType !==
-        Services.appinfo.PROCESS_TYPE_DEFAULT) {
-      throw new Error("Only the parent process should be observing PDF " +
-                      "handler changes.");
-    }
-
-    this.updateRegistration();
-    let jsm = "resource://pdf.js/PdfjsChromeUtils.jsm";
-    let PdfjsChromeUtils = Components.utils.import(jsm, {}).PdfjsChromeUtils;
-    PdfjsChromeUtils.notifyChildOfSettingsChange(this.enabled);
-  },
-
-  
-
-
-
-
-  get enabled() {
+  _isEnabled: function _isEnabled() {
     var disabled = getBoolPref(PREF_DISABLED, true);
     if (disabled) {
       return false;
@@ -328,6 +313,47 @@ var PdfJs = {
     return !enabledPluginFound;
   },
 
+  checkEnabled: function checkEnabled() {
+    let isEnabled = this._isEnabled();
+    
+    
+    Services.prefs.setBoolPref(PREF_ENABLED_CACHE_STATE, isEnabled);
+    return isEnabled;
+  },
+
+  
+  observe: function observe(aSubject, aTopic, aData) {
+    if (Services.appinfo.processType !==
+        Services.appinfo.PROCESS_TYPE_DEFAULT) {
+      throw new Error("Only the parent process should be observing PDF " +
+                      "handler changes.");
+    }
+
+    this.updateRegistration();
+    let jsm = "resource://pdf.js/PdfjsChromeUtils.jsm";
+    let PdfjsChromeUtils = Components.utils.import(jsm, {}).PdfjsChromeUtils;
+    PdfjsChromeUtils.notifyChildOfSettingsChange(this.enabled);
+  },
+
+  
+
+
+
+
+  get enabled() {
+    if (!Services.prefs.getBoolPref(PREF_ENABLED_CACHE_INITIALIZED, false)) {
+      
+      
+      
+      if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_POSTUPDATE)) {
+        this.checkEnabled();
+      }
+
+      Services.prefs.setBoolPref(PREF_ENABLED_CACHE_INITIALIZED, true);
+    }
+    return Services.prefs.getBoolPref(PREF_ENABLED_CACHE_STATE, true);
+  },
+
   ensureRegistered: function ensureRegistered() {
     if (this._registered) {
       return;
@@ -350,4 +376,3 @@ var PdfJs = {
     this._registered = false;
   },
 };
-
