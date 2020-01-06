@@ -1298,6 +1298,11 @@ CacheFileIOManager::ShutdownInternal()
   
   mShuttingDown = true;
 
+  if (mTrashTimer) {
+    mTrashTimer->Cancel();
+    mTrashTimer = nullptr;
+  }
+
   
   nsTArray<RefPtr<CacheFileHandle> > handles;
   mHandles.GetAllHandles(&handles);
