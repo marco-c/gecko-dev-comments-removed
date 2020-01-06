@@ -917,6 +917,8 @@ class TreeMetadataEmitter(LoggingMixin):
         for obj in self._process_xpidl(context):
             yield obj
 
+        computed_flags = ComputedFlags(context, context['COMPILE_FLAGS'])
+
         
         
         
@@ -946,18 +948,20 @@ class TreeMetadataEmitter(LoggingMixin):
                 for dll in context['DELAYLOAD_DLLS']])
             context['OS_LIBS'].append('delayimp')
 
-        for v in ['CFLAGS', 'CXXFLAGS', 'CMFLAGS', 'CMMFLAGS', 'ASFLAGS',
-                  'LDFLAGS', 'HOST_CFLAGS', 'HOST_CXXFLAGS']:
+        for v in ['CMFLAGS', 'CMMFLAGS', 'ASFLAGS', 'LDFLAGS',
+                  'HOST_CFLAGS', 'HOST_CXXFLAGS']:
             if v in context and context[v]:
                 passthru.variables['MOZBUILD_' + v] = context[v]
+
+        for v in ['CXXFLAGS', 'CFLAGS']:
+            if v in context and context[v]:
+                computed_flags.resolve_flags('MOZBUILD_%s' % v, context[v])
 
         dist_install = context['DIST_INSTALL']
         if dist_install is True:
             passthru.variables['DIST_INSTALL'] = True
         elif dist_install is False:
             passthru.variables['NO_DIST_INSTALL'] = True
-
-        computed_flags = ComputedFlags(context, context['COMPILE_FLAGS'])
 
         
         
