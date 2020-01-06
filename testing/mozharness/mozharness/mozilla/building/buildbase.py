@@ -1849,6 +1849,38 @@ or run without that action (ie: --no-{action})"
             self.error("'mach build check' did not run successfully. Please "
                        "check log for errors.")
 
+    def _is_configuration_shipped(self):
+        """Determine if the current build configuration is shipped to users.
+
+        This is used to drive alerting so we don't see alerts for build
+        configurations we care less about.
+        """
+        
+        
+        
+        
+        
+
+        
+        if self.config.get('pgo_build'):
+            return True
+
+        
+        if self.config.get('debug_build'):
+            return False
+
+        
+        if self.config.get('platform') == 'macosx64':
+            if not self.config.get('build_variant'):
+                return True
+
+        
+        if self.config.get('platform') == 'android':
+            if not self.config.get('build_variant'):
+                return True
+
+        return False
+
     def _load_build_resources(self):
         p = self.config.get('build_resources_path') % self.query_abs_dirs()
         if not os.path.exists(p):
@@ -1987,21 +2019,30 @@ or run without that action (ie: --no-{action})"
         if not installer_size and not size_measurements:
             return
 
+        
+        
+        
+        def filter_alert(alert):
+            if not self._is_configuration_shipped():
+                alert['shouldAlert'] = False
+
+            return alert
+
         if installer.endswith('.apk'): 
-            yield {
+            yield filter_alert({
                 "name": "installer size",
                 "value": installer_size,
                 "alertChangeType": "absolute",
                 "alertThreshold": (200 * 1024),
                 "subtests": size_measurements
-            }
+            })
         else:
-            yield {
+            yield filter_alert({
                 "name": "installer size",
                 "value": installer_size,
                 "alertThreshold": 1.0,
                 "subtests": size_measurements
-            }
+            })
 
     def _generate_build_stats(self):
         """grab build stats following a compile.
