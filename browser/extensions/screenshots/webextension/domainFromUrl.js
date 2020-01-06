@@ -14,10 +14,10 @@ this.domainFromUrl = (function() {
         domain = "unknown";
       }
     }
-    if (domain.search(/^[a-z0-9.-]{1,1000}$/i) === -1) {
+    if (domain.search(/^[a-z0-9.-_]{1,1000}$/i) === -1) {
       
       
-      domain = domain.replace(/[^a-z0-9.-]/ig, "");
+      domain = domain.replace(/[^a-z0-9.-_]/ig, "");
       if (!domain) {
         domain = "site";
       }
