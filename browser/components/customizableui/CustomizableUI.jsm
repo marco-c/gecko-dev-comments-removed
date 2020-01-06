@@ -519,6 +519,8 @@ var CustomizableUIInternal = {
     }
 
     
+    
+    
     let wrapper = new XULWidgetGroupWrapper(aWidgetId);
     gGroupWrapperCache.set(aWidgetId, wrapper);
     return wrapper;
@@ -1291,9 +1293,6 @@ var CustomizableUIInternal = {
     let nodeName = "toolbar" + aId.match(/spring|spacer|separator/)[0];
     let node = aDocument.createElementNS(kNSXUL, nodeName);
     node.id = this.ensureSpecialWidgetId(aId);
-    if (nodeName == "toolbarspring") {
-      node.flex = 1;
-    }
     return node;
   },
 
@@ -2731,18 +2730,18 @@ var CustomizableUIInternal = {
   },
 
   canWidgetMoveToArea(aWidgetId, aArea) {
-    let placement = this.getPlacementOfWidget(aWidgetId);
-    if (placement && placement.area != aArea) {
-      
-      if (this.isSpecialWidget(aWidgetId) && gAreas.has(aArea) &&
-          gAreas.get(aArea).get("type") == CustomizableUI.TYPE_MENU_PANEL) {
-        return false;
-      }
-      
-      return this.isWidgetRemovable(aWidgetId);
+    
+    if (this.isSpecialWidget(aWidgetId) && gAreas.has(aArea) &&
+        gAreas.get(aArea).get("type") == CustomizableUI.TYPE_MENU_PANEL) {
+      return false;
     }
-
-    return true;
+    let placement = this.getPlacementOfWidget(aWidgetId);
+    
+    if (!placement || placement.area == aArea) {
+      return true;
+    }
+    
+    return this.isWidgetRemovable(aWidgetId);
   },
 
   ensureWidgetPlacedInWindow(aWidgetId, aWindow) {
@@ -3814,6 +3813,15 @@ this.CustomizableUI = {
 
   isBuiltinToolbar(aToolbarId) {
     return CustomizableUIInternal._builtinToolbars.has(aToolbarId);
+  },
+
+  
+
+
+
+
+  createSpecialWidget(aId, aDocument) {
+    return CustomizableUIInternal.createSpecialWidget(aId, aDocument);
   },
 };
 Object.freeze(this.CustomizableUI);
