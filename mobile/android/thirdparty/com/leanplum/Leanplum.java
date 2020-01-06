@@ -1021,7 +1021,7 @@ public class Leanplum {
 
 
 
-  static void stop() {
+  public static void stop() {
     if (Constants.isNoop()) {
       return;
     }
