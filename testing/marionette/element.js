@@ -604,6 +604,14 @@ function findElements(using, value, rootNode, startNode) {
 }
 
 
+
+
+
+
+
+
+
+
 element.isCollection = function(seq) {
   switch (Object.prototype.toString.call(seq)) {
     case "[object Arguments]":
