@@ -242,6 +242,14 @@ StripHandlerFromOBJREF(NotNull<IStream*> aStream)
     return false;
   }
 
+  
+  
+  CLSID zeroClsid = {0};
+  hr = aStream->Write(&zeroClsid, sizeof(CLSID), &bytesWritten);
+  if (FAILED(hr) || bytesWritten != sizeof(CLSID)) {
+    return false;
+  }
+
   return true;
 }
 
