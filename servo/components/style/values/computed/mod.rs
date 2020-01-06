@@ -11,7 +11,7 @@ use font_metrics::FontMetricsProvider;
 use media_queries::Device;
 #[cfg(feature = "gecko")]
 use properties;
-use properties::{ComputedValues, StyleBuilder};
+use properties::{ComputedValuesInner, StyleBuilder};
 use std::f32;
 use std::f64;
 use std::f64::consts::PI;
@@ -72,13 +72,13 @@ pub struct Context<'a> {
     pub device: &'a Device,
 
     
-    pub inherited_style: &'a ComputedValues,
+    pub inherited_style: &'a ComputedValuesInner,
 
     
     
     
     
-    pub layout_parent_style: &'a ComputedValues,
+    pub layout_parent_style: &'a ComputedValuesInner,
 
     
     
@@ -115,7 +115,7 @@ impl<'a> Context<'a> {
     
     pub fn viewport_size(&self) -> Size2D<Au> { self.device.au_viewport_size() }
     
-    pub fn inherited_style(&self) -> &ComputedValues { &self.inherited_style }
+    pub fn inherited_style(&self) -> &ComputedValuesInner { &self.inherited_style }
     
     
     pub fn style(&self) -> &StyleBuilder { &self.style }

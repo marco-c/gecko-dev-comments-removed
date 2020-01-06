@@ -166,6 +166,9 @@ impl PseudoElement {
     pub fn canonical(&self) -> PseudoElement {
         self.clone()
     }
+
+    
+    pub fn pseudo_info(&self) { () }
 }
 
 

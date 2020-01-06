@@ -10,7 +10,7 @@
 use computed_values::display;
 use heapsize::HeapSizeOf;
 use matching::{StyleChange, StyleDifference};
-use properties::ServoComputedValues;
+use properties::ComputedValues;
 use std::fmt;
 
 bitflags! {
@@ -60,8 +60,8 @@ impl HeapSizeOf for ServoRestyleDamage {
 impl ServoRestyleDamage {
     
     
-    pub fn compute_style_difference(old: &ServoComputedValues,
-                                    new: &ServoComputedValues)
+    pub fn compute_style_difference(old: &ComputedValues,
+                                    new: &ComputedValues)
                                     -> StyleDifference {
         let damage = compute_damage(old, new);
         let change = if damage.is_empty() { StyleChange::Unchanged } else { StyleChange::Changed };
@@ -182,7 +182,7 @@ macro_rules! add_if_not_equal(
     })
 );
 
-fn compute_damage(old: &ServoComputedValues, new: &ServoComputedValues) -> ServoRestyleDamage {
+fn compute_damage(old: &ComputedValues, new: &ComputedValues) -> ServoRestyleDamage {
     let mut damage = ServoRestyleDamage::empty();
 
     

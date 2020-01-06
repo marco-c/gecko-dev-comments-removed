@@ -38,7 +38,7 @@ pub use gecko::restyle_damage::GeckoRestyleDamage as RestyleDamage;
 
 
 #[cfg(feature = "servo")]
-pub type PreExistingComputedValues = ::properties::ServoComputedValues;
+pub type PreExistingComputedValues = ::properties::ComputedValues;
 
 
 

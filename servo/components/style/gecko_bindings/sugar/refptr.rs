@@ -211,7 +211,7 @@ impl<T> structs::RefPtr<T> {
     
     
     pub fn set_arc_leaky<U>(&mut self, other: Arc<U>) where U: HasArcFFI<FFIType = T> {
-        *self = unsafe { mem::transmute(other) }; 
+        *self = unsafe { mem::transmute(Arc::into_raw_offset(other)) };
     }
 }
 

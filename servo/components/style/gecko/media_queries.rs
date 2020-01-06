@@ -17,7 +17,7 @@ use gecko_bindings::structs::{nsMediaFeature_ValueType, nsMediaFeature_RangeType
 use gecko_bindings::structs::{nsPresContext, RawGeckoPresContextOwned};
 use media_queries::MediaType;
 use parser::ParserContext;
-use properties::{ComputedValues, StyleBuilder};
+use properties::{ComputedValuesInner, StyleBuilder};
 use properties::longhands::font_size;
 use selectors::parser::SelectorParseError;
 use std::fmt::{self, Write};
@@ -26,7 +26,6 @@ use str::starts_with_ignore_ascii_case;
 use string_cache::Atom;
 use style_traits::{ToCss, ParseError, StyleParseError};
 use style_traits::viewport::ViewportConstraints;
-use stylearc::Arc;
 use values::{CSSFloat, specified};
 use values::computed::{self, ToComputedValue};
 
@@ -37,7 +36,7 @@ pub struct Device {
     
     
     pres_context: RawGeckoPresContextOwned,
-    default_values: Arc<ComputedValues>,
+    default_values: ComputedValuesInner,
     viewport_override: Option<ViewportConstraints>,
     
     
@@ -62,7 +61,7 @@ impl Device {
         assert!(!pres_context.is_null());
         Device {
             pres_context: pres_context,
-            default_values: ComputedValues::default_values(unsafe { &*pres_context }),
+            default_values: ComputedValuesInner::default_values(unsafe { &*pres_context }),
             viewport_override: None,
             root_font_size: AtomicIsize::new(font_size::get_initial_value().0 as isize), 
             used_root_font_size: AtomicBool::new(false),
@@ -78,19 +77,7 @@ impl Device {
 
     
     
-    pub fn default_computed_values(&self) -> &ComputedValues {
-        &*self.default_values
-    }
-
-    
-    
-    pub fn default_computed_values_arc(&self) -> &Arc<ComputedValues> {
-        &self.default_values
-    }
-
-    
-    
-    pub fn default_values_arc(&self) -> &Arc<ComputedValues> {
+    pub fn default_computed_values(&self) -> &ComputedValuesInner {
         &self.default_values
     }
 
@@ -114,7 +101,7 @@ impl Device {
     pub fn reset_computed_values(&mut self) {
         
         self.viewport_override = None;
-        self.default_values = ComputedValues::default_values(self.pres_context());
+        self.default_values = ComputedValuesInner::default_values(self.pres_context());
         self.used_root_font_size.store(false, Ordering::Relaxed);
     }
 
