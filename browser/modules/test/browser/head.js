@@ -228,3 +228,14 @@ function getPopupNotificationNode() {
   return popupNotifications[0];
 }
 
+
+
+
+
+
+
+async function disableNonReleaseActions() {
+  if (AppConstants.MOZ_DEV_EDITION || AppConstants.NIGHTLY_BUILD) {
+    await SpecialPowers.pushPrefEnv({set: [["extensions.webcompat-reporter.enabled", false]]});
+  }
+}
