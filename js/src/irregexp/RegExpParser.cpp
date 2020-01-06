@@ -129,6 +129,12 @@ void
 RegExpBuilder::AddAssertion(RegExpTree* assert)
 {
     FlushText();
+    if (terms_.length() > 0 && terms_.last()->IsAssertion()) {
+        
+        RegExpAssertion* last = terms_.last()->AsAssertion();
+        RegExpAssertion* next = assert->AsAssertion();
+        if (last->assertion_type() == next->assertion_type()) return;
+    }
     terms_.Add(alloc, assert);
 #ifdef DEBUG
     last_added_ = ADD_ASSERT;
