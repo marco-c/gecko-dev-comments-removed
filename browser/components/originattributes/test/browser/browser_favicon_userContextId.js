@@ -7,10 +7,6 @@ const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu } = Components;
 XPCOMUtils.defineLazyModuleGetter(this, "Promise",
   "resource://gre/modules/Promise.jsm");
 
-let EventUtils = {};
-Services.scriptloader.loadSubScript(
-  "chrome://mochikit/content/tests/SimpleTest/EventUtils.js", EventUtils);
-
 const TEST_SITE = "http://example.net";
 const TEST_THIRD_PARTY_SITE = "http://mochi.test:8888";
 
@@ -56,8 +52,8 @@ function clearAllPlacesFavicons() {
   });
 }
 
-function FaviconObserver(aUserContextId, aExpectedCookie, aPageURI, aFaviconURL, aOnlyXUL) {
-  this.reset(aUserContextId, aExpectedCookie, aPageURI, aFaviconURL, aOnlyXUL);
+function FaviconObserver(aUserContextId, aExpectedCookie, aPageURI, aFaviconURL) {
+  this.reset(aUserContextId, aExpectedCookie, aPageURI, aFaviconURL);
 }
 
 FaviconObserver.prototype = {
@@ -112,14 +108,13 @@ FaviconObserver.prototype = {
     }
   },
 
-  reset(aUserContextId, aExpectedCookie, aPageURI, aFaviconURL, aOnlyXUL) {
+  reset(aUserContextId, aExpectedCookie, aPageURI, aFaviconURL) {
     this._curUserContextId = aUserContextId;
     this._expectedCookie = aExpectedCookie;
     this._expectedPrincipal = Services.scriptSecurityManager
                                       .createCodebasePrincipal(aPageURI, { userContextId: aUserContextId });
     this._faviconReqXUL = false;
-    
-    this._faviconReqPlaces = aOnlyXUL === true;
+    this._faviconReqPlaces = false;
     this._faviconURL = aFaviconURL;
     this._faviconLoaded = new Promise.defer();
   },
@@ -206,87 +201,6 @@ async function doTest(aTestPage, aFaviconHost, aFaviconURL) {
   await BrowserTestUtils.removeTab(tabInfo.tab);
 }
 
-async function doTestForAllTabsFavicon(aTestPage, aFaviconHost, aFaviconURL) {
-  let cookies = await generateCookies(aFaviconHost);
-  let pageURI = makeURI(aTestPage);
-
-  
-  let tabBrowser = document.getElementById("tabbrowser-tabs");
-  let allTabsBtn = document.getElementById("alltabs-button");
-  tabBrowser.setAttribute("overflow", true);
-
-  
-  
-  let observer = new FaviconObserver(USER_CONTEXT_ID_PERSONAL, cookies[0], pageURI, aFaviconURL, true);
-
-  
-  let promiseWaitOnFaviconLoaded = waitOnFaviconLoaded(aFaviconURL);
-
-  
-  let tabInfo = await openTabInUserContext(aTestPage, USER_CONTEXT_ID_PERSONAL);
-
-  
-  await promiseWaitOnFaviconLoaded;
-
-  
-  
-  clearAllImageCaches();
-
-  
-  Services.obs.addObserver(observer, "http-on-modify-request");
-
-  
-  let allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsBtn, "popupshown");
-  EventUtils.synthesizeMouseAtCenter(allTabsBtn, {});
-  await observer.promise;
-  await allTabsPopupShownPromise;
-
-  
-  let allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsBtn, "popuphidden");
-  EventUtils.synthesizeMouseAtCenter(allTabsBtn, {});
-  await allTabsPopupHiddenPromise;
-
-  
-  
-  Services.obs.removeObserver(observer, "http-on-modify-request");
-
-  
-  await BrowserTestUtils.removeTab(tabInfo.tab);
-
-  
-  promiseWaitOnFaviconLoaded = waitOnFaviconLoaded(aFaviconURL);
-  tabInfo = await openTabInUserContext(aTestPage, USER_CONTEXT_ID_WORK);
-  await promiseWaitOnFaviconLoaded;
-
-  
-  clearAllImageCaches();
-
-  
-  observer.reset(USER_CONTEXT_ID_WORK, cookies[1], pageURI, aFaviconURL, true);
-
-  
-  Services.obs.addObserver(observer, "http-on-modify-request");
-
-  
-  allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsBtn, "popupshown");
-  EventUtils.synthesizeMouseAtCenter(allTabsBtn, {});
-  await observer.promise;
-  await allTabsPopupShownPromise;
-
-  
-  allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsBtn, "popuphidden");
-  EventUtils.synthesizeMouseAtCenter(allTabsBtn, {});
-  await allTabsPopupHiddenPromise;
-
-  Services.obs.removeObserver(observer, "http-on-modify-request");
-
-  
-  await BrowserTestUtils.removeTab(tabInfo.tab);
-
-  
-  tabBrowser.removeAttribute("overflow");
-}
-
 add_task(async function setup() {
   
   await SpecialPowers.pushPrefEnv({"set": [
@@ -332,34 +246,4 @@ add_task(async function test_thirdPartyFavicon_userContextId() {
   await clearAllPlacesFavicons();
 
   await doTest(TEST_THIRD_PARTY_PAGE, TEST_THIRD_PARTY_SITE, THIRD_PARTY_FAVICON_URI);
-});
-
-add_task(async function test_allTabs_favicon_userContextId() {
-  
-  clearAllImageCaches();
-
-  
-  let networkCache = Cc["@mozilla.org/netwerk/cache-storage-service;1"]
-                        .getService(Ci.nsICacheStorageService);
-  networkCache.clear();
-
-  
-  await clearAllPlacesFavicons();
-
-  await doTestForAllTabsFavicon(TEST_PAGE, TEST_SITE, FAVICON_URI);
-});
-
-add_task(async function test_allTabs_thirdPartyFavicon_userContextId() {
-  
-  clearAllImageCaches();
-
-  
-  let networkCache = Cc["@mozilla.org/netwerk/cache-storage-service;1"]
-                        .getService(Ci.nsICacheStorageService);
-  networkCache.clear();
-
-  
-  await clearAllPlacesFavicons();
-
-  await doTestForAllTabsFavicon(TEST_THIRD_PARTY_PAGE, TEST_THIRD_PARTY_SITE, THIRD_PARTY_FAVICON_URI);
 });
