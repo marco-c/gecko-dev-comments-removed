@@ -1521,6 +1521,14 @@ var CustomizableUIInternal = {
   handleWidgetCommand(aWidget, aNode, aEvent) {
     log.debug("handleWidgetCommand");
 
+    if (aWidget.onBeforeCommand) {
+      try {
+        aWidget.onBeforeCommand.call(null, aEvent);
+      } catch (e) {
+        log.error(e);
+      }
+    }
+
     if (aWidget.type == "button") {
       if (aWidget.onCommand) {
         try {
@@ -2414,6 +2422,10 @@ var CustomizableUIInternal = {
     this.wrapWidgetEventHandler("onCreated", widget);
     this.wrapWidgetEventHandler("onDestroyed", widget);
 
+    if (typeof aData.onBeforeCommand == "function") {
+      widget.onBeforeCommand = aData.onBeforeCommand;
+    }
+
     if (widget.type == "button") {
       widget.onCommand = typeof aData.onCommand == "function" ?
                            aData.onCommand :
@@ -3258,6 +3270,12 @@ this.CustomizableUI = {
     CustomizableUIInternal.endBatchUpdate(aForceDirty);
   },
   
+
+
+
+
+
+
 
 
 
