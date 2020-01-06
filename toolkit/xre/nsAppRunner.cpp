@@ -4441,10 +4441,6 @@ XREMain::XRE_mainRun()
     
     PR_SetEnv(saved.release());
   }
-
-  
-  
-  SandboxBroker::CacheRulesDirectories();
 #endif
 
   SaveStateForAppInitiatedRestart();
