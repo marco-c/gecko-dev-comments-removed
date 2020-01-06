@@ -398,8 +398,8 @@ def set_treeherder_machine_platform(config, tests):
         
         'linux64-asan/opt': 'linux64/asan',
         'linux64-pgo/opt': 'linux64/pgo',
-        'macosx64/debug': 'osx-10-10/debug',
-        'macosx64/opt': 'osx-10-10/opt',
+        'macosx64/debug': 'osx-cross/debug',
+        'macosx64/opt': 'osx-cross/opt',
         'win64-asan/opt': 'windows10-64/asan',
         
         
