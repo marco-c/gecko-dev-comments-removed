@@ -373,13 +373,10 @@ PREF_ClearAllUserPrefs();
 
 
 void
-PREF_RegisterPriorityCallback(const char* aPrefNode,
-                              PrefChangedFunc aCallback,
-                              void* aData);
-void
 PREF_RegisterCallback(const char* aPrefNode,
                       PrefChangedFunc aCallback,
-                      void* aData);
+                      void* aData,
+                      bool aIsPriority);
 nsresult
 PREF_UnregisterCallback(const char* aPrefNode,
                         PrefChangedFunc aCallback,
@@ -449,6 +446,8 @@ struct CallbackNode
 PLDHashTable* gHashTable;
 
 static ArenaAllocator<8192, 4> gPrefNameArena;
+
+
 
 static CallbackNode* gFirstCallback = nullptr;
 static CallbackNode* gLastPriorityNode = nullptr;
@@ -1304,29 +1303,10 @@ PREF_PrefIsLocked(const char* aPrefName)
 
 
 void
-PREF_RegisterPriorityCallback(const char* aPrefNode,
-                              PrefChangedFunc aCallback,
-                              void* aData)
-{
-  NS_PRECONDITION(aPrefNode, "aPrefNode must not be nullptr");
-  NS_PRECONDITION(aCallback, "aCallback must not be nullptr");
-
-  auto node = new CallbackNode();
-  node->mDomain = moz_xstrdup(aPrefNode);
-  node->mFunc = aCallback;
-  node->mData = aData;
-  node->mNext = gFirstCallback;
-  gFirstCallback = node;
-  if (!gLastPriorityNode) {
-    gLastPriorityNode = node;
-  }
-}
-
-
-void
 PREF_RegisterCallback(const char* aPrefNode,
                       PrefChangedFunc aCallback,
-                      void* aData)
+                      void* aData,
+                      bool aIsPriority)
 {
   NS_PRECONDITION(aPrefNode, "aPrefNode must not be nullptr");
   NS_PRECONDITION(aCallback, "aCallback must not be nullptr");
@@ -1335,12 +1315,23 @@ PREF_RegisterCallback(const char* aPrefNode,
   node->mDomain = moz_xstrdup(aPrefNode);
   node->mFunc = aCallback;
   node->mData = aData;
-  if (gLastPriorityNode) {
-    node->mNext = gLastPriorityNode->mNext;
-    gLastPriorityNode->mNext = node;
-  } else {
+
+  if (aIsPriority) {
+    
     node->mNext = gFirstCallback;
     gFirstCallback = node;
+    if (!gLastPriorityNode) {
+      gLastPriorityNode = node;
+    }
+  } else {
+    
+    if (gLastPriorityNode) {
+      node->mNext = gLastPriorityNode->mNext;
+      gLastPriorityNode->mNext = node;
+    } else {
+      node->mNext = gFirstCallback;
+      gFirstCallback = node;
+    }
   }
 }
 
@@ -3176,7 +3167,8 @@ nsPrefBranch::AddObserver(const char* aDomain,
   
   
   const PrefName& pref = GetPrefName(aDomain);
-  PREF_RegisterCallback(pref.get(), NotifyObserver, pCallback);
+  PREF_RegisterCallback(
+    pref.get(), NotifyObserver, pCallback,  false);
   return NS_OK;
 }
 
@@ -5338,8 +5330,10 @@ RegisterPriorityCallback(PrefChangedFunc aCallback,
 
   observer = new ValueObserver(aPref, aCallback, Preferences::ExactMatch);
   observer->AppendClosure(aClosure);
-  PREF_RegisterPriorityCallback(
-    aPref, NotifyObserver, static_cast<nsIObserver*>(observer));
+  PREF_RegisterCallback(aPref,
+                        NotifyObserver,
+                        static_cast<nsIObserver*>(observer),
+                         true);
   gObserverTable->Put(observer, observer);
 }
 
