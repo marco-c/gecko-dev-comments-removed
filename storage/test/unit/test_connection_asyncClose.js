@@ -53,23 +53,25 @@ add_task(function* test_asyncClose_does_not_complete_before_statements() {
 
 
 
-add_task(function* test_double_asyncClose_throws() {
-  let db = yield openAsyncDatabase(getTestDB());
+if (!AppConstants.DEBUG) {
+  add_task(function* test_double_asyncClose_throws() {
+    let db = yield openAsyncDatabase(getTestDB());
 
-  
-  
-  
-  let realClosePromise = yield asyncClose(db);
-  try {
     
-    db.asyncClose();
-    ok(false, "should have thrown");
-  } catch (e) {
-    equal(e.result, Cr.NS_ERROR_NOT_INITIALIZED);
-  }
+    
+    
+    let realClosePromise = yield asyncClose(db);
+    try {
+      
+      db.asyncClose();
+      ok(false, "should have thrown");
+    } catch (e) {
+      equal(e.result, Cr.NS_ERROR_NOT_INITIALIZED);
+    }
 
-  yield realClosePromise;
-});
+    yield realClosePromise;
+  });
+}
 
 
 

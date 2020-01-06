@@ -32,7 +32,6 @@ function run_test() {
   do_register_cleanup(() => (async function cleanup() {
     
     await updateSearchHistory("remove", null);
-    FormHistory.shutdown();
     Services.prefs.clearUserPref("browser.search.suggest.enabled");
   })());
 

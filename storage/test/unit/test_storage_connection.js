@@ -265,24 +265,19 @@ if (!AppConstants.DEBUG) {
   });
 }
 
-add_task(function* test_close_fails_with_async_statement_ran() {
-  let deferred = Promise.defer();
-  let stmt = createStatement("SELECT * FROM test");
-  stmt.executeAsync();
-  stmt.finalize();
 
-  let db = getOpenedDatabase();
-  Assert.throws(() => db.close(), /NS_ERROR_UNEXPECTED/);
+if (!AppConstants.DEBUG) {
+  add_task(function* test_close_fails_with_async_statement_ran() {
+    let stmt = createStatement("SELECT * FROM test");
+    stmt.executeAsync();
+    stmt.finalize();
 
-  
-  db.asyncClose(function() {
+    let db = getOpenedDatabase();
+    Assert.throws(() => db.close(), /NS_ERROR_UNEXPECTED/);
     
     gDBConn = null;
-    deferred.resolve();
   });
-
-  yield deferred.promise;
-});
+}
 
 add_task(function* test_clone_optional_param() {
   let db1 = getService().openUnsharedDatabase(getTestDB());

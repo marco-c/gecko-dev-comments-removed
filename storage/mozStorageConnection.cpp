@@ -369,12 +369,8 @@ WaitForUnlockNotify(sqlite3* aDatabase)
   return srv;
 }
 
-} 
 
 
-
-
-namespace {
 
 class AsyncCloseConnection final: public Runnable
 {
@@ -488,6 +484,32 @@ private:
   nsCOMPtr<mozIStorageCompletionCallback> mCallback;
 };
 
+
+
+
+class CloseListener final :  public mozIStorageCompletionCallback
+{
+public:
+  NS_DECL_ISUPPORTS
+  CloseListener()
+    : mClosed(false)
+  {
+  }
+
+  NS_IMETHOD Complete(nsresult, nsISupports*) override
+  {
+    mClosed = true;
+    return NS_OK;
+  }
+
+  bool mClosed;
+
+private:
+  ~CloseListener() = default;
+};
+
+NS_IMPL_ISUPPORTS(CloseListener, mozIStorageCompletionCallback)
+
 } 
 
 
@@ -517,8 +539,7 @@ Connection::Connection(Service *aService,
 
 Connection::~Connection()
 {
-  (void)Close();
-
+  Unused << Close();
   MOZ_ASSERT(!mAsyncExecutionThread,
              "The async thread has not been shutdown properly!");
 }
@@ -1252,9 +1273,20 @@ Connection::Close()
   
   
   
-  
-  bool asyncCloseWasCalled = !mAsyncExecutionThread;
-  NS_ENSURE_TRUE(asyncCloseWasCalled, NS_ERROR_UNEXPECTED);
+  if (isAsyncExecutionThreadAvailable()) {
+#ifdef DEBUG
+    if (NS_IsMainThread()) {
+      nsCOMPtr<nsIXPConnect> xpc = do_GetService(nsIXPConnect::GetCID());
+      Unused << xpc->DebugDumpJSStack(false, false, false);
+    }
+#endif
+    MOZ_ASSERT(false,
+               "Close() was invoked on a connection that executed asynchronous statements. "
+               "Should have used asyncClose().");
+    
+    Unused << SpinningSynchronousClose();
+    return NS_ERROR_UNEXPECTED;
+  }
 
   
   
@@ -1263,6 +1295,32 @@ Connection::Close()
   NS_ENSURE_SUCCESS(rv, rv);
 
   return internalClose(nativeConn);
+}
+
+NS_IMETHODIMP
+Connection::SpinningSynchronousClose()
+{
+  if (threadOpenedOn != NS_GetCurrentThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(connectionReady());
+  if (!connectionReady()) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  RefPtr<CloseListener> listener = new CloseListener();
+  nsresult rv = AsyncClose(listener);
+  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() {
+    return listener->mClosed;
+  }));
+  MOZ_ASSERT(isClosed(), "The connection should be closed at this point");
+
+  return rv;
 }
 
 NS_IMETHODIMP
@@ -1344,7 +1402,10 @@ Connection::AsyncClose(mozIStorageCompletionCallback *aCallback)
       
       Unused << NS_DispatchToMainThread(completeEvent.forget());
     }
-    return Close();
+    MOZ_ALWAYS_SUCCEEDS(Close());
+    
+    
+    return NS_OK;
   }
 
   

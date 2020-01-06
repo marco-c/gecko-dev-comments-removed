@@ -2,39 +2,39 @@
 
 
 
-function run_test() {
+
+add_task(async function() {
   
 
   
   
   
 
-  
-  {
-    ContentPrefTest.deleteDatabase();
-
-    
-    let cps = Cc["@mozilla.org/content-pref/service;1"].
-              createInstance(Ci.nsIContentPrefService);
-    do_check_true(cps.DBConnection.connectionReady);
-    cps.DBConnection.close();
+  function with_cps_instance(testFn) {
+    let cps = Cc["@mozilla.org/content-pref/service;1"]
+                .createInstance(Ci.nsIContentPrefService)
+                .QueryInterface(Ci.nsIObserver);
+    testFn(cps);
+    let promiseClosed = TestUtils.topicObserved("content-prefs-db-closed");
+    cps.observe(null, "xpcom-shutdown", "");
+    return promiseClosed;
   }
 
   
-  {
-    let dbFile = ContentPrefTest.deleteDatabase();
-
-    let cps = Cc["@mozilla.org/content-pref/service;1"].
-               createInstance(Ci.nsIContentPrefService);
-    cps.DBConnection.close();
-    do_check_true(dbFile.exists());
-
-    
-    cps = Cc["@mozilla.org/content-pref/service;1"].
-          createInstance(Ci.nsIContentPrefService);
+  ContentPrefTest.deleteDatabase();
+  await with_cps_instance(cps => {
     do_check_true(cps.DBConnection.connectionReady);
-    cps.DBConnection.close();
-  }
+  });
+
+  
+
+  ContentPrefTest.deleteDatabase();
+  await with_cps_instance(cps => {});
+
+  
+  await with_cps_instance(cps => {
+    do_check_true(cps.DBConnection.connectionReady);
+  });
 
   
   {
@@ -49,10 +49,9 @@ function run_test() {
     do_check_true(dbFile.exists());
 
     
-    let cps = Cc["@mozilla.org/content-pref/service;1"].
-              createInstance(Ci.nsIContentPrefService);
-    do_check_neq(cps.DBConnection.schemaVersion, 0);
-    cps.DBConnection.close();
+    await with_cps_instance(cps => {
+      do_check_neq(cps.DBConnection.schemaVersion, 0);
+    });
   }
 
   
@@ -69,12 +68,10 @@ function run_test() {
     foStream.close();
 
     
-    let cps = Cc["@mozilla.org/content-pref/service;1"].
-              createInstance(Ci.nsIContentPrefService);
-    do_check_true(backupDBFile.exists());
-    do_check_true(cps.DBConnection.connectionReady);
-
-    cps.DBConnection.close();
+    await with_cps_instance(cps => {
+      do_check_true(backupDBFile.exists());
+      do_check_true(cps.DBConnection.connectionReady);
+    });
   }
 
   
@@ -92,12 +89,10 @@ function run_test() {
     do_check_true(dbFile.exists());
 
     
-    let cps = Cc["@mozilla.org/content-pref/service;1"].
-              createInstance(Ci.nsIContentPrefService);
-    do_check_true(backupDBFile.exists());
-    do_check_true(cps.DBConnection.connectionReady);
-
-    cps.DBConnection.close();
+    await with_cps_instance(cps => {
+      do_check_true(backupDBFile.exists());
+      do_check_true(cps.DBConnection.connectionReady);
+    });
   }
 
 
@@ -108,8 +103,12 @@ function run_test() {
 
   
   var statement = cps.DBConnection.createStatement("PRAGMA synchronous");
-  statement.executeStep();
-  do_check_eq(0, statement.getInt32(0));
+  try {
+    statement.executeStep();
+    do_check_eq(0, statement.getInt32(0));
+  } finally {
+    statement.finalize();
+  }
 
   
 
@@ -460,4 +459,4 @@ function run_test() {
     do_check_true(globalPref.row.groupID == null);
     globalPref.reset();
   }
-}
+});

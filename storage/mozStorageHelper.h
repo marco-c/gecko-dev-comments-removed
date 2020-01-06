@@ -17,6 +17,7 @@
 #include "mozIStorageStatement.h"
 #include "mozIStoragePendingStatement.h"
 #include "nsError.h"
+#include "nsIXPConnect.h"
 
 
 
@@ -225,6 +226,12 @@ protected:
                                     nsIScriptError::errorFlag, "Storage"))) {      \
         cs->LogMessage(e);                                                         \
       }                                                                            \
+    }                                                                              \
+  }                                                                                \
+  if (NS_IsMainThread()) {                                                         \
+    nsCOMPtr<nsIXPConnect> xpc = do_GetService(nsIXPConnect::GetCID());            \
+    if (xpc) {                                                                     \
+      mozilla::Unused << xpc->DebugDumpJSStack(false, false, false);               \
     }                                                                              \
   }                                                                                \
   MOZ_ASSERT(false, "You are trying to use a deprecated mozStorage method. "       \
