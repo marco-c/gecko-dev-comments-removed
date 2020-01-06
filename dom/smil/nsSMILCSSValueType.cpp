@@ -823,17 +823,27 @@ nsSMILCSSValueType::ValueToString(const nsSMILValue& aValue,
     return;
   }
 
-  if (!wrapper->mServoValues.IsEmpty()) {
-    Servo_AnimationValue_Serialize(wrapper->mServoValues[0],
-                                   wrapper->mPropID,
-                                   &aString);
+  if (wrapper->mServoValues.IsEmpty()) {
+    DebugOnly<bool> uncomputeResult =
+      StyleAnimationValue::UncomputeValue(wrapper->mPropID,
+                                          wrapper->mGeckoValue,
+                                          aString);
     return;
   }
 
-  DebugOnly<bool> uncomputeResult =
-    StyleAnimationValue::UncomputeValue(wrapper->mPropID,
-                                        wrapper->mGeckoValue,
-                                        aString);
+  if (nsCSSProps::IsShorthand(wrapper->mPropID)) {
+    
+    
+    
+    Servo_Shorthand_AnimationValues_Serialize(wrapper->mPropID,
+                                              &wrapper->mServoValues,
+                                              &aString);
+    return;
+  }
+
+  Servo_AnimationValue_Serialize(wrapper->mServoValues[0],
+                                 wrapper->mPropID,
+                                 &aString);
 }
 
 
