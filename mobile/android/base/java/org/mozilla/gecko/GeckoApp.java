@@ -114,7 +114,7 @@ public abstract class GeckoApp extends GeckoActivity
                                           BundleEventListener,
                                           GeckoMenu.Callback,
                                           GeckoMenu.MenuPresenter,
-                                          GeckoView.ContentListener,
+                                          GeckoSession.ContentListener,
                                           ScreenOrientationDelegate,
                                           Tabs.OnTabsChangedListener,
                                           ViewTreeObserver.OnGlobalLayoutListener {
@@ -859,11 +859,11 @@ public abstract class GeckoApp extends GeckoActivity
     }
 
     @Override 
-    public void onTitleChange(final GeckoView view, final String title) {
+    public void onTitleChange(final GeckoSession session, final String title) {
     }
 
     @Override 
-    public void onFullScreen(final GeckoView view, final boolean fullScreen) {
+    public void onFullScreen(final GeckoSession session, final boolean fullScreen) {
         if (fullScreen) {
             SnackbarBuilder.builder(this)
                     .message(R.string.fullscreen_warning)
@@ -873,11 +873,17 @@ public abstract class GeckoApp extends GeckoActivity
         ActivityUtils.setFullScreen(this, fullScreen);
     }
 
+    @Override
+    public void onContextMenu(final GeckoSession session, final int screenX,
+                              final int screenY, final String uri,
+                              final String elementSrc) {
+    }
+
     protected void setFullScreen(final boolean fullscreen) {
         ThreadUtils.postToUiThread(new Runnable() {
             @Override
             public void run() {
-                onFullScreen(mLayerView, fullscreen);
+                onFullScreen(mLayerView.getSession(), fullscreen);
             }
         });
     }
@@ -1040,9 +1046,13 @@ public abstract class GeckoApp extends GeckoActivity
         mMainLayout = (RelativeLayout) findViewById(R.id.main_layout);
         mLayerView = (GeckoView) findViewById(R.id.layer_view);
 
-        mLayerView.setChromeUri("chrome://browser/content/browser.xul");
-        mLayerView.setContentListener(this);
+        final GeckoSession session = new GeckoSession();
+        mLayerView.setSession(session);
         mLayerView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+
+        session.getSettings().setString(GeckoViewSettings.CHROME_URI,
+                                        "chrome://browser/content/browser.xul");
+        session.setContentListener(this);
 
         GeckoAccessibility.setDelegate(mLayerView);
 
