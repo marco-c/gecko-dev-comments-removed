@@ -1234,6 +1234,7 @@ var PlacesToolbarHelper = {
 
 
 var BookmarkingUI = {
+  STAR_ID: "star-button",
   BOOKMARK_BUTTON_ID: "bookmarks-menu-button",
   BOOKMARK_BUTTON_SHORTCUT: "addBookmarkAsKb",
   get button() {
@@ -1242,14 +1243,21 @@ var BookmarkingUI = {
     return this.button = widgetGroup.forWindow(window).node;
   },
 
-  
-
   get star() {
+    if (AppConstants.MOZ_PHOTON_THEME) {
+      delete this.star;
+      return this.star = document.getElementById(this.STAR_ID);
+    }
+    
+
     return document.getAnonymousElementByAttribute(this.button, "anonid",
                                                    "button");
   },
 
   get anchor() {
+    if (AppConstants.MOZ_PHOTON_THEME) {
+      return this.star;
+    }
     if (!this._shouldUpdateStarState()) {
       return null;
     }
@@ -1289,8 +1297,8 @@ var BookmarkingUI = {
     }
     if (this._pendingUpdate)
       return this.STATUS_UPDATING;
-    return this.button.hasAttribute("starred") ? this.STATUS_STARRED
-                                               : this.STATUS_UNSTARRED;
+    return this.broadcaster.hasAttribute("starred") ? this.STATUS_STARRED
+                                                    : this.STATUS_UNSTARRED;
   },
 
   get _starredTooltip() {
@@ -1319,7 +1327,9 @@ var BookmarkingUI = {
 
   _currentAreaType: null,
   _shouldUpdateStarState() {
-    return this._currentAreaType == CustomizableUI.TYPE_TOOLBAR;
+    
+    return AppConstants.MOZ_PHOTON_THEME ||
+           this._currentAreaType == CustomizableUI.TYPE_TOOLBAR;
   },
 
   
@@ -1341,7 +1351,11 @@ var BookmarkingUI = {
     
     
     
-    if (this._currentAreaType == CustomizableUI.TYPE_MENU_PANEL) {
+    
+    
+    
+    if (this.button.getAttribute("cui-areatype") == CustomizableUI.TYPE_MENU_PANEL ||
+        (AppConstants.MOZ_PHOTON_THEME && this.button.hasAttribute("overflowedItem"))) {
       this._showSubview();
       event.preventDefault();
       event.stopPropagation();
@@ -1643,7 +1657,9 @@ var BookmarkingUI = {
 
   init() {
     CustomizableUI.addListener(this);
-    this._updateCustomizationState();
+    if (!AppConstants.MOZ_PHOTON_THEME) {
+      this._updateCustomizationState();
+    }
   },
 
   _hasBookmarksObserver: false,
@@ -1716,6 +1732,7 @@ var BookmarkingUI = {
       if (this.broadcaster.hasAttribute("starred")) {
         this.broadcaster.removeAttribute("starred");
         this.broadcaster.removeAttribute("buttontooltiptext");
+        this.broadcaster.removeAttribute("tooltiptext");
       }
       return;
     }
@@ -1723,13 +1740,15 @@ var BookmarkingUI = {
     if (this._itemGuids.size > 0) {
       this.broadcaster.setAttribute("starred", "true");
       this.broadcaster.setAttribute("buttontooltiptext", this._starredTooltip);
-      if (this.button.getAttribute("overflowedItem") == "true") {
+      this.broadcaster.setAttribute("tooltiptext", this._starredTooltip);
+      if (!AppConstants.MOZ_PHOTON_THEME && this.button.getAttribute("overflowedItem") == "true") {
         this.button.setAttribute("label", this._starButtonOverflowedStarredLabel);
       }
     } else {
       this.broadcaster.removeAttribute("starred");
       this.broadcaster.setAttribute("buttontooltiptext", this._unstarredTooltip);
-      if (this.button.getAttribute("overflowedItem") == "true") {
+      this.broadcaster.setAttribute("tooltiptext", this._unstarredTooltip);
+      if (!AppConstants.MOZ_PHOTON_THEME && this.button.getAttribute("overflowedItem") == "true") {
         this.button.setAttribute("label", this._starButtonOverflowedLabel);
       }
     }
@@ -1837,9 +1856,7 @@ var BookmarkingUI = {
     }
 
     
-    let isBookmarked = this._itemGuids.size > 0;
-
-    if (this._currentAreaType == CustomizableUI.TYPE_MENU_PANEL) {
+    if (this.button.getAttribute("cui-areatype") == CustomizableUI.TYPE_MENU_PANEL) {
       this._showSubview();
       return;
     }
@@ -1849,10 +1866,15 @@ var BookmarkingUI = {
       
       widget.node.removeAttribute("closemenu");
     }
+    this.onStarCommand(aEvent);
+  },
 
+  onStarCommand(aEvent) {
     
     if (!this._pendingUpdate) {
-      if (!isBookmarked)
+      let isBookmarked = this._itemGuids.size > 0;
+      
+      if (!isBookmarked && !AppConstants.MOZ_PHOTON_THEME)
         this._showBookmarkedNotification();
       PlacesCommandHook.bookmarkCurrentPage(true);
     }
@@ -1982,8 +2004,9 @@ var BookmarkingUI = {
   },
   onWidgetOverflow(aNode, aContainer) {
     let win = aNode.ownerGlobal;
-    if (aNode.id != this.BOOKMARK_BUTTON_ID || win != window)
+    if (AppConstants.MOZ_PHOTON_THEME || aNode.id != this.BOOKMARK_BUTTON_ID || win != window)
       return;
+
 
     let currentLabel = aNode.getAttribute("label");
     if (!this._starButtonLabel)
@@ -2004,6 +2027,9 @@ var BookmarkingUI = {
     
     
     this._uninitView();
+
+    if (AppConstants.MOZ_PHOTON_THEME)
+      return;
 
     if (aNode.getAttribute("label") != this._starButtonLabel)
       aNode.setAttribute("label", this._starButtonLabel);

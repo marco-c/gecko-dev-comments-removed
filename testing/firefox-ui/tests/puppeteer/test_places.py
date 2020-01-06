@@ -3,7 +3,7 @@
 
 
 from firefox_puppeteer import PuppeteerMixin
-from marionette_driver import By, Wait
+from marionette_driver import Wait
 from marionette_harness import MarionetteTestCase
 
 
@@ -47,7 +47,7 @@ class TestPlaces(PuppeteerMixin, MarionetteTestCase):
         self.puppeteer.places.clear_plugin_data()
 
     def test_bookmarks(self):
-        star_button = self.marionette.find_element(By.ID, 'bookmarks-menu-button')
+        star_button = self.marionette.execute_script("return BookmarkingUI.star")
 
         
         for url in self.urls:
