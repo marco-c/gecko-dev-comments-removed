@@ -489,7 +489,7 @@ private:
   bool                     mProfileShutdown = false;
   
   
-  bool                     mSavePending;
+  bool                     mSavePending = false;
 
   static Preferences*      sPreferences;
   static nsIPrefBranch*    sRootBranch;
