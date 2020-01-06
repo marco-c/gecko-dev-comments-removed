@@ -403,9 +403,8 @@ class FunctionBox : public ObjectBox, public SharedContext
     uint32_t        toStringEnd;
     uint16_t        length;
 
-    uint8_t         generatorKind_;         
-    uint8_t         asyncKindBits_;         
-
+    bool            isGenerator_:1;         
+    bool            isAsync_:1;             
     bool            hasDestructuringArgs:1; 
     bool            hasParameterExprs:1;    
     bool            hasDirectEvalInParameterExpr:1; 
@@ -485,9 +484,15 @@ class FunctionBox : public ObjectBox, public SharedContext
         return usesArguments && usesApply && usesThis && !usesReturn;
     }
 
-    GeneratorKind generatorKind() const { return GeneratorKindFromBit(generatorKind_); }
-    bool isGenerator() const { return generatorKind() == GeneratorKind::Generator; }
-    FunctionAsyncKind asyncKind() const { return AsyncKindFromBits(asyncKindBits_); }
+    bool isGenerator() const { return isGenerator_; }
+    GeneratorKind generatorKind() const {
+        return isGenerator() ? GeneratorKind::Generator : GeneratorKind::NotGenerator;
+    }
+
+    bool isAsync() const { return isAsync_; }
+    FunctionAsyncKind asyncKind() const {
+        return isAsync() ? FunctionAsyncKind::AsyncFunction : FunctionAsyncKind::SyncFunction;
+    }
 
     bool needsFinalYield() const {
         return isGenerator() || isAsync();
@@ -499,7 +504,6 @@ class FunctionBox : public ObjectBox, public SharedContext
         return isGenerator();
     }
 
-    bool isAsync() const { return asyncKind() == AsyncFunction; }
     bool isArrow() const { return function()->isArrow(); }
 
     bool hasRest() const { return hasRest_; }
