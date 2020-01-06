@@ -20,8 +20,26 @@ using namespace mozilla::ipc;
 
 
 
+#if defined(__GNUC__) && !defined(__clang__)
 extern "C" void __gcov_dump();
 extern "C" void __gcov_reset();
+
+void counters_dump() {
+  __gcov_dump();
+}
+
+void counters_reset() {
+  __gcov_reset();
+}
+#else
+void counters_dump() {
+  
+}
+
+void counters_reset() {
+  
+}
+#endif
 
 StaticAutoPtr<CodeCoverageHandler> CodeCoverageHandler::instance;
 
@@ -30,7 +48,7 @@ void CodeCoverageHandler::DumpCounters(int)
   CrossProcessMutexAutoLock lock(*CodeCoverageHandler::Get()->GetMutex());
 
   printf_stderr("[CodeCoverage] Requested dump.\n");
-  __gcov_dump();
+  counters_dump();
   printf_stderr("[CodeCoverage] Dump completed.\n");
 }
 
@@ -39,7 +57,7 @@ void CodeCoverageHandler::ResetCounters(int)
   CrossProcessMutexAutoLock lock(*CodeCoverageHandler::Get()->GetMutex());
 
   printf_stderr("[CodeCoverage] Requested reset.\n");
-  __gcov_reset();
+  counters_reset();
   printf_stderr("[CodeCoverage] Reset completed.\n");
 }
 
