@@ -3165,11 +3165,7 @@ pref("dom.largeAllocationHeader.enabled", true);
 
 
 
-#if defined(NIGHTLY_BUILD)
 pref("browser.tabs.remote.separateFileUriProcess", true);
-#else
-pref("browser.tabs.remote.separateFileUriProcess", false);
-#endif
 
 
 
