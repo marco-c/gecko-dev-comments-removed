@@ -424,12 +424,6 @@ var Addons = {
 
         this.createOptionsInTabButton(optionsBox, addon, addonItem);
         break;
-      case AddonManager.OPTIONS_TYPE_INLINE:
-        
-        optionsBox.classList.add("inner");
-
-        this.createInlineOptions(optionsBox, optionsURL, aListItem);
-        break;
     }
 
     showAddonOptions();
@@ -518,62 +512,6 @@ var Addons = {
     
     
     detailItem.removeAttribute("optionsURL");
-  },
-
-  createInlineOptions(destination, optionsURL, aListItem) {
-    
-    
-    
-    function stripTextNodes(aNode) {
-      var text = "";
-      for (var i = 0; i < aNode.childNodes.length; i++) {
-        if (aNode.childNodes[i].nodeType != document.ELEMENT_NODE) {
-          text += aNode.childNodes[i].textContent;
-          aNode.removeChild(aNode.childNodes[i--]);
-        } else {
-          text += stripTextNodes(aNode.childNodes[i]);
-        }
-      }
-      return text;
-    }
-
-    try {
-      let xhr = new XMLHttpRequest();
-      xhr.open("GET", optionsURL, true);
-      xhr.onload = function(e) {
-        if (xhr.responseXML) {
-          
-          let settings = xhr.responseXML.querySelectorAll(":root > setting");
-          if (settings.length > 0) {
-            for (let i = 0; i < settings.length; i++) {
-              var setting = settings[i];
-              var desc = stripTextNodes(setting).trim();
-              if (!setting.hasAttribute("desc")) {
-                setting.setAttribute("desc", desc);
-              }
-              destination.appendChild(setting);
-            }
-            
-            
-            let event = document.createEvent("Events");
-            event.initEvent("AddonOptionsLoad", true, false);
-            window.dispatchEvent(event);
-          } else {
-            
-            
-            let detailItem = document.querySelector("#addons-details > .addon-item");
-            detailItem.setAttribute("optionsURL", "");
-          }
-
-          
-          let id = aListItem.getAttribute("addonID");
-          Services.obs.notifyObservers(document, AddonManager.OPTIONS_NOTIFICATION_DISPLAYED, id);
-        }
-      };
-      xhr.send(null);
-    } catch (e) {
-      Cu.reportError(e);
-    }
   },
 
   setEnabled: function setEnabled(aValue, aAddon) {
