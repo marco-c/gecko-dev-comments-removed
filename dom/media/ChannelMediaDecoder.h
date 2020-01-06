@@ -79,6 +79,25 @@ private:
   virtual ChannelMediaDecoder* CloneImpl(MediaDecoderInit& aInit) = 0;
   nsresult OpenResource(nsIStreamListener** aStreamListener);
   nsresult Load(BaseMediaResource* aOriginal);
+
+  
+  
+  void NotifyDownloadEnded(nsresult aStatus);
+
+  
+  
+  
+  void NotifyBytesConsumed(int64_t aBytes, int64_t aOffset);
+
+  void SeekingChanged();
+
+  WatchManager<ChannelMediaDecoder> mWatchManager;
+
+  
+  
+  
+  
+  bool mIgnoreProgressData = false;
 };
 
 } 

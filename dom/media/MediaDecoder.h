@@ -353,14 +353,6 @@ private:
   void OnSeekRejected();
   void OnSeekResolved();
 
-  void SeekingChanged()
-  {
-    
-    
-    MOZ_ASSERT(NS_IsMainThread());
-    mIgnoreProgressData = mLogicallySeeking;
-  }
-
   
   void SeekingStarted();
 
@@ -571,23 +563,7 @@ protected:
   
   void NotifyPrincipalChanged();
 
-  
-  
-  
-  void NotifyBytesConsumed(int64_t aBytes, int64_t aOffset);
-
-  
-  
-  
-  void NotifyDownloadEnded(nsresult aStatus);
-
   MozPromiseRequestHolder<SeekPromise> mSeekRequest;
-
-  
-  
-  
-  
-  bool mIgnoreProgressData;
 
   
   void PinForSeek();
