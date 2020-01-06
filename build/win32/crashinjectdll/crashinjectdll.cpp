@@ -24,7 +24,7 @@ BOOL WINAPI DllMain(
   LPVOID lpvReserved
 )
 {
-  if (tid == -1)
+  if (tid == (DWORD)-1)
     
     
     CreateThread(
