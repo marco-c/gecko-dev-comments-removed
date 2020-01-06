@@ -267,18 +267,6 @@ nsXBLResourceLoader::NotifyBoundElements()
             }
 
             if (!sc) {
-              if (ServoStyleSet* servoSet = shell->StyleSet()->GetAsServo()) {
-                
-                
-                
-                
-                
-                
-                Element* element = content->AsElement();
-                if (servoSet->MayTraverseFrom(element)) {
-                  servoSet->StyleNewlyBoundElement(element);
-                }
-              }
               shell->PostRecreateFramesFor(content->AsElement());
             }
           }
