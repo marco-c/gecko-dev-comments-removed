@@ -67,6 +67,8 @@ loader.lazyRequireGetter(this, "HUDService",
   "devtools/client/webconsole/hudservice", true);
 loader.lazyRequireGetter(this, "viewSource",
   "devtools/client/shared/view-source");
+loader.lazyRequireGetter(this, "StyleSheetsFront",
+  "devtools/shared/fronts/stylesheets", true);
 
 loader.lazyGetter(this, "domNodeConstants", () => {
   return require("devtools/shared/dom-node-constants");
@@ -104,6 +106,7 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId) {
 
   this._initInspector = null;
   this._inspector = null;
+  this._styleSheets = null;
 
   
   this.frameMap = new Map();
@@ -629,8 +632,7 @@ Toolbox.prototype = {
       return this._sourceMapURLService;
     }
     let sourceMaps = this._createSourceMapService();
-    this._sourceMapURLService = new SourceMapURLService(this._target, this.threadClient,
-                                                        sourceMaps);
+    this._sourceMapURLService = new SourceMapURLService(this, sourceMaps);
     return this._sourceMapURLService;
   },
 
@@ -2547,6 +2549,12 @@ Toolbox.prototype = {
     outstanding.push(this.destroyPreference());
 
     
+    if (this._styleSheets) {
+      this._styleSheets.destroy();
+      this._styleSheets = null;
+    }
+
+    
     detachThread(this._threadClient);
     this._threadClient = null;
 
@@ -2715,6 +2723,17 @@ Toolbox.prototype = {
     yield this.performance.destroy();
     this._performance = null;
   }),
+
+  
+
+
+
+  initStyleSheetsFront: function () {
+    if (!this._styleSheets && this.target.hasActor("styleSheets")) {
+      this._styleSheets = StyleSheetsFront(this.target.client, this.target.form);
+    }
+    return this._styleSheets;
+  },
 
   
 
