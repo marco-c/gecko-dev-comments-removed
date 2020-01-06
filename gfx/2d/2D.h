@@ -1524,9 +1524,8 @@ public:
 
 
 
-
   static already_AddRefed<NativeFontResource>
-    CreateNativeFontResource(uint8_t *aData, uint32_t aSize, BackendType aBackendType, FontType aFontType, void* aFontContext = nullptr);
+    CreateNativeFontResource(uint8_t *aData, uint32_t aSize, FontType aType, void* aFontContext = nullptr);
 
   
 
@@ -1662,12 +1661,15 @@ public:
 
 
   static bool SetDirect3D11Device(ID3D11Device *aDevice);
+  static bool SetDWriteFactory(IDWriteFactory *aFactory);
   static ID3D11Device *GetDirect3D11Device();
   static ID2D1Device *GetD2D1Device();
   static uint32_t GetD2D1DeviceSeq();
   static IDWriteFactory *GetDWriteFactory();
-  static IDWriteFactory* EnsureDWriteFactory();
   static bool SupportsD2D1();
+
+  static already_AddRefed<GlyphRenderingOptions>
+    CreateDWriteGlyphRenderingOptions(IDWriteRenderingParams *aParams);
 
   static uint64_t GetD2DVRAMUsageDrawTarget();
   static uint64_t GetD2DVRAMUsageSourceSurface();
@@ -1679,10 +1681,7 @@ public:
                                   const RefPtr<UnscaledFont>& aUnscaledFont,
                                   Float aSize,
                                   bool aUseEmbeddedBitmap,
-                                  bool aForceGDIMode,
-                                  IDWriteRenderingParams *aParams,
-                                  Float aGamma,
-                                  Float aContrast);
+                                  bool aForceGDIMode);
 
   static void UpdateSystemTextQuality();
 
@@ -1690,8 +1689,6 @@ private:
   static ID2D1Device *mD2D1Device;
   static ID3D11Device *mD3D11Device;
   static IDWriteFactory *mDWriteFactory;
-  static bool mDWriteFactoryInitialized;
-  static Mutex* mDWriteFactoryLock;
 #endif
 
   static DrawEventRecorder *mRecorder;
