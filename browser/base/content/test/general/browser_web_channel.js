@@ -254,7 +254,7 @@ var gTests = [
 
         channel.send({ command: "unsolicited" }, {
           browser: targetBrowser,
-          principal: Services.scriptSecurityManager.getNoAppCodebasePrincipal(targetURI)
+          principal: Services.scriptSecurityManager.createCodebasePrincipal(targetURI, {}),
         });
 
         await messagePromise;
@@ -290,7 +290,7 @@ var gTests = [
       }, async function(targetBrowser) {
 
         let mismatchURI = Services.io.newURI(HTTP_MISMATCH_PATH);
-        let mismatchPrincipal = Services.scriptSecurityManager.getNoAppCodebasePrincipal(mismatchURI);
+        let mismatchPrincipal = Services.scriptSecurityManager.createCodebasePrincipal(mismatchURI, {});
 
         
         
@@ -299,7 +299,7 @@ var gTests = [
           principal: mismatchPrincipal
         });
 
-        let targetPrincipal = Services.scriptSecurityManager.getNoAppCodebasePrincipal(targetURI);
+        let targetPrincipal = Services.scriptSecurityManager.createCodebasePrincipal(targetURI, {});
 
         
         

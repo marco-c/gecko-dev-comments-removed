@@ -544,7 +544,7 @@ add_task(async function test_offline_cache() {
   
   var URL = "http://www.example.com";
   var URI = makeURI(URL);
-  var principal = Services.scriptSecurityManager.getNoAppCodebasePrincipal(URI);
+  var principal = Services.scriptSecurityManager.createCodebasePrincipal(URI, {});
 
   
   Services.perms.addFromPrincipal(principal, "offline-app", Ci.nsIPermissionManager.ALLOW_ACTION);
