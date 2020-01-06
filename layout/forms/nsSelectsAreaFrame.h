@@ -35,7 +35,9 @@ public:
 protected:
   explicit nsSelectsAreaFrame(nsStyleContext* aContext) :
     nsBlockFrame(aContext, kClassID),
-    mBSizeOfARow(0)
+    
+    
+    mBSizeOfARow(nscoord_MIN)
   {}
 
   
