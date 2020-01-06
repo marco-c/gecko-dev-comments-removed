@@ -209,7 +209,7 @@ pref("dom.compartment_per_addon", true);
 
 
 
-pref("dom.script_loader.bytecode_cache.enabled", false);
+pref("dom.script_loader.bytecode_cache.enabled", true);
 
 
 
