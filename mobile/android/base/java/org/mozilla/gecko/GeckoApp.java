@@ -155,6 +155,9 @@ public abstract class GeckoApp extends GeckoActivity
 
     
     
+    
+    
+    
     public static final String PREFS_IS_FIRST_RUN = "telemetry-isFirstRun";
 
     public static final String SAVED_STATE_IN_BACKGROUND   = "inBackground";
