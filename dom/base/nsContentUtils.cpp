@@ -10514,7 +10514,10 @@ nsContentUtils::UserInteractionObserver::Init()
   
   
   
-  HangMonitor::RegisterAnnotator(*this);
+  RefPtr<UserInteractionObserver> self = this;
+  NS_DispatchToMainThread(NS_NewRunnableFunction([=] () {
+        HangMonitor::RegisterAnnotator(*self);
+      }));
 }
 
 void
