@@ -62,6 +62,13 @@ pref("devtools.inspector.colorWidget.enabled", false);
 pref("devtools.inspector.shapesHighlighter.enabled", true);
 
 
+
+pref("devtools.promote.layoutview", 1);
+
+
+pref("devtools.promote.layoutview.showPromoteBar", true);
+
+
 pref("devtools.gridinspector.gridOutlineMaxColumns", 50);
 pref("devtools.gridinspector.gridOutlineMaxRows", 50);
 pref("devtools.gridinspector.showGridAreas", false);
