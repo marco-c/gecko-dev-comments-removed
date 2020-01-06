@@ -66,12 +66,9 @@ ImageBridgeParent::ImageBridgeParent(MessageLoop* aLoop,
   : mMessageLoop(aLoop)
   , mSetChildThreadPriority(false)
   , mClosed(false)
+  , mCompositorThreadHolder(CompositorThreadHolder::GetSingleton())
 {
   MOZ_ASSERT(NS_IsMainThread());
-
-  mCompositorThreadHolder =
-    new CompositorThreadHolderDebug(IsSameProcess() ? "ImageBridgeSame"
-                                                    : "ImageBridge");
 
   
   

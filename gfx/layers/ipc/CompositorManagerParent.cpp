@@ -41,8 +41,6 @@ CompositorManagerParent::CreateSameProcess()
   
   
   RefPtr<CompositorManagerParent> parent = new CompositorManagerParent();
-  parent->mCompositorThreadHolder =
-    new CompositorThreadHolderDebug("CompositorManagerSame");
   parent->SetOtherProcessId(base::GetCurrentProcId());
   return parent.forget();
 }
@@ -57,8 +55,6 @@ CompositorManagerParent::Create(Endpoint<PCompositorManagerParent>&& aEndpoint)
   MOZ_ASSERT(aEndpoint.OtherPid() != base::GetCurrentProcId());
 
   RefPtr<CompositorManagerParent> bridge = new CompositorManagerParent();
-  bridge->mCompositorThreadHolder =
-    new CompositorThreadHolderDebug("CompositorManagerContent");
 
   RefPtr<Runnable> runnable = NewRunnableMethod<Endpoint<PCompositorManagerParent>&&>(
     "CompositorManagerParent::Bind",
@@ -109,6 +105,7 @@ CompositorManagerParent::CreateSameProcessWidgetCompositorBridge(CSSToLayoutDevi
 }
 
 CompositorManagerParent::CompositorManagerParent()
+  : mCompositorThreadHolder(CompositorThreadHolder::GetSingleton())
 {
 }
 
