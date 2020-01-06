@@ -55,7 +55,7 @@ ToCanonicalSupports(nsISupports* aSupports)
 class nsAutoOwningThread
 {
 public:
-  nsAutoOwningThread() { mThread = PR_GetCurrentThread(); }
+  nsAutoOwningThread();
 
   
   
