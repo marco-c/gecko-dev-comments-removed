@@ -6,6 +6,8 @@
 
 #include "sandboxBroker.h"
 
+#include <string>
+
 #include "base/win/windows_version.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -22,11 +24,18 @@
 #include "nsString.h"
 #include "sandbox/win/src/sandbox.h"
 #include "sandbox/win/src/security_level.h"
+#include "WinUtils.h"
 
 namespace mozilla
 {
 
 sandbox::BrokerServices *SandboxBroker::sBrokerService = nullptr;
+
+
+
+
+
+bool SandboxBroker::sRunningFromNetworkDrive = false;
 
 
 static UniquePtr<nsString> sBinDir;
@@ -45,6 +54,23 @@ void
 SandboxBroker::Initialize(sandbox::BrokerServices* aBrokerServices)
 {
   sBrokerService = aBrokerServices;
+
+  wchar_t exePath[MAX_PATH];
+  if (!::GetModuleFileNameW(nullptr, exePath, MAX_PATH)) {
+    return;
+  }
+
+  std::wstring exeString(exePath);
+  if (!widget::WinUtils::ResolveJunctionPointsAndSymLinks(exeString)) {
+    return;
+  }
+
+  wchar_t volPath[MAX_PATH];
+  if (!::GetVolumePathNameW(exeString.c_str(), volPath, MAX_PATH)) {
+    return;
+  }
+
+  sRunningFromNetworkDrive = (::GetDriveTypeW(volPath) == DRIVE_REMOTE);
 }
 
 static void
@@ -97,6 +123,9 @@ SandboxBroker::SandboxBroker()
 {
   if (sBrokerService) {
     mPolicy = sBrokerService->CreatePolicy();
+    if (sRunningFromNetworkDrive) {
+      mPolicy->SetDoNotUseRestrictingSIDs();
+    }
   } else {
     mPolicy = nullptr;
   }
