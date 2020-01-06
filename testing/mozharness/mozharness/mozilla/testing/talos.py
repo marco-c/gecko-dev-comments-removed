@@ -406,7 +406,15 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
             return
 
         
-        self.setup_py3_virtualenv()
+        os_name = self.platform_name()
+        if 'win' not in os_name and os_name != 'macosx':
+            self.fatal("Aborting: this test is not supported on this platform.")
+
+        
+        
+        if 'win' in os_name:
+            
+            self.setup_py3_virtualenv()
 
         
         self.install_mitmproxy()
@@ -432,9 +440,18 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
 
     def install_mitmproxy(self):
         """Install the mitmproxy tool into the Python 3.x env"""
-        self.info("Installing mitmproxy")
-        self.py3_install_modules(modules=['mitmproxy'])
-        self.mitmdump = os.path.join(self.py3_path_to_executables(), 'mitmdump')
+        if 'win' in self.platform_name():
+            self.info("Installing mitmproxy")
+            self.py3_install_modules(modules=['mitmproxy'])
+            self.mitmdump = os.path.join(self.py3_path_to_executables(), 'mitmdump')
+        else:
+            
+            mitmproxy_bin_url = 'https://github.com/mitmproxy/mitmproxy/releases/download/v2.0.2/mitmproxy-2.0.2-osx.tar.gz'
+            mitmproxy_path = os.path.join(self.talos_path, 'talos', 'mitmproxy')
+            self.mitmdump = os.path.join(mitmproxy_path, 'mitmdump')
+            if not os.path.exists(self.mitmdump):
+                self.download_unpack(mitmproxy_bin_url, mitmproxy_path)
+            self.info('The mitmdump macosx binary is found at: %s' % self.mitmdump)
         self.run_command([self.mitmdump, '--version'], env=self.query_env())
 
     def query_mitmproxy_recording_set(self):

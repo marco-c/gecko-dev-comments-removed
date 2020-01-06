@@ -3,6 +3,7 @@
 
 
 import os
+import psutil
 import sys
 import subprocess
 import time
@@ -81,6 +82,10 @@ def install_mitmproxy_cert(mitmproxy_proc, browser_path, scripts_path):
     LOG.info("Installing mitmxproxy CA certficate into Firefox")
     
     browser_install = os.path.dirname(browser_path)
+    
+    if mozinfo.os == 'mac':
+        browser_install = browser_install[:-14]
+
     LOG.info('Calling configure_mitmproxy with browser folder: %s' % browser_install)
     configure_mitmproxy(browser_install, scripts_path)
     
@@ -104,18 +109,21 @@ def start_mitmproxy_playback(mitmdump_path,
     
     
     param = os.path.join(here, 'alternate-server-replay.py')
+    env = os.environ.copy()
 
     
     if mozinfo.os == 'win':
         param2 = '""' + param.replace('\\', '\\\\\\') + ' ' + \
                  ' '.join(mitmproxy_recordings).replace('\\', '\\\\\\') + '""'
-        env = os.environ.copy()
         sys.path.insert(1, mitmdump_path)
         
         env["PATH"] = os.path.dirname(browser_path) + ";" + env["PATH"]
+    elif mozinfo.os == 'mac':
+        param2 = param + ' ' + ' '.join(mitmproxy_recordings)
+        env["PATH"] = os.path.dirname(browser_path)
     else:
         
-        LOG.error('Aborting: talos mitmproxy is currently only supported on Windows')
+        LOG.error('Aborting: talos mitmproxy is currently only supported on Windows and Mac')
         sys.exit()
 
     command = [mitmdump_path, '-k', '-s', param2]
@@ -125,7 +133,7 @@ def start_mitmproxy_playback(mitmdump_path,
     
     
     mitmproxy_proc = subprocess.Popen(command, env=env)
-    time.sleep(5)
+    time.sleep(10)
     data = mitmproxy_proc.poll()
     if data is None:
         LOG.info("Mitmproxy playback successfully started as pid %d" % mitmproxy_proc.pid)
@@ -138,13 +146,15 @@ def start_mitmproxy_playback(mitmdump_path,
 def stop_mitmproxy_playback(mitmproxy_proc):
     """Stop the mitproxy server playback"""
     LOG.info("Stopping mitmproxy playback, klling process %d" % mitmproxy_proc.pid)
-    mitmproxy_proc.kill()
-    time.sleep(5)
-    exit_code = mitmproxy_proc.poll()
-    if exit_code:
-        LOG.info("Successfully killed the mitmproxy playback process")
+    if mozinfo.os == 'mac':
+        mitmproxy_proc.terminate()
     else:
+        mitmproxy_proc.kill()
+    time.sleep(10)
+    if mitmproxy_proc.pid in psutil.pids():
         
         
         
         LOG.error("Failed to kill the mitmproxy playback process")
+    else:
+        LOG.info("Successfully killed the mitmproxy playback process")
