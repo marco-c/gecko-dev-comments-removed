@@ -1003,6 +1003,11 @@ public:
     return !mDispatchInputEvent;
   }
 
+  bool Destroyed() const
+  {
+    return mDidPreDestroy;
+  }
+
   
 
 

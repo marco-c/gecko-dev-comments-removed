@@ -10,6 +10,7 @@
 #include "HTMLEditUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/EditorUtils.h"
+#include "mozilla/FlushType.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Element.h"
 #include "nsAString.h"
@@ -690,9 +691,16 @@ HTMLEditor::InsertTableRow(int32_t aNumber,
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }
+
   
   
-  return rv;
+  
+  nsCOMPtr<nsIPresShell> ps = GetPresShell();
+  if (ps) {
+    ps->FlushPendingNotifications(FlushType::Frames);
+  }
+
+  return NS_OK;
 }
 
 
