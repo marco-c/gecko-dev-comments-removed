@@ -223,7 +223,21 @@ add_test(function test_Proxy_toJSON() {
     p[`${proxy}Port`] = 42;
     expected[proxy] = "foo:42"
     deepEqual(p.toJSON(), expected);
+
+    
+    p[proxy] = "2001:db8::1";
+    p[`${proxy}Port`] = 42;
+    expected[proxy] = "foo:42"
+    expected[proxy] = "[2001:db8::1]:42";
+    deepEqual(p.toJSON(), expected);
   }
+
+  
+  p = new session.Proxy();
+  p.proxyType = "manual";
+  p.noProxy = ["2001:db8::1"];
+  let expected = {proxyType: "manual", noProxy: "[2001:db8::1]"};
+  deepEqual(p.toJSON(), expected);
 
   run_next_test();
 });
@@ -285,7 +299,7 @@ add_test(function test_Proxy_fromJSON() {
       "foo:443": {hostname: "foo", port: 443},
       "foo:65535": {hostname: "foo", port: 65535},
       "127.0.0.1:42": {hostname: "127.0.0.1", port: 42},
-      "[2001:db8::1]:42": {hostname: "[2001:db8::1]", port: "42"},
+      "[2001:db8::1]:42": {hostname: "2001:db8::1", port: "42"},
     };
 
     
@@ -333,12 +347,18 @@ add_test(function test_Proxy_fromJSON() {
   
   p = new session.Proxy();
   p.proxyType = "manual";
-  for (let noProxy of [[], ["foo"], ["foo", "bar"],
-      ["127.0.0.1"], ["[2001:db8::1"]]) {
+  for (let noProxy of [[], ["foo"], ["foo", "bar"], ["127.0.0.1"]]) {
     let manual = {proxyType: "manual", "noProxy": noProxy}
     p.noProxy = noProxy;
     deepEqual(p, session.Proxy.fromJSON(manual));
   }
+
+  
+  p = new session.Proxy();
+  p.proxyType = "manual";
+  p.noProxy = ["2001:db8::1"];
+  let manual = {proxyType: "manual", "noProxy": ["[2001:db8::1]"]}
+  deepEqual(p, session.Proxy.fromJSON(manual));
 
   run_next_test();
 });
