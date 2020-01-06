@@ -879,8 +879,7 @@ RecordStackFrame(uint32_t , void* aPC, void* ,
 void
 nsTraceRefcnt::WalkTheStack(FILE* aStream)
 {
-  MozStackWalk(PrintStackFrame,  2,  0, aStream,
-               0, nullptr);
+  MozStackWalk(PrintStackFrame,  2,  0, aStream);
 }
 
 
@@ -898,7 +897,7 @@ WalkTheStackCached(FILE* aStream)
     gCodeAddressService = new WalkTheStackCodeAddressService();
   }
   MozStackWalk(PrintStackFrameCached,  2,  0,
-               aStream, 0, nullptr);
+               aStream);
 }
 
 static void
@@ -911,8 +910,7 @@ WalkTheStackSavingLocations(std::vector<void*>& aLocations)
     0 +                         
     1 +                         
     1;                          
-  MozStackWalk(RecordStackFrame, kFramesToSkip,  0,
-               &aLocations, 0, nullptr);
+  MozStackWalk(RecordStackFrame, kFramesToSkip,  0, &aLocations);
 }
 
 

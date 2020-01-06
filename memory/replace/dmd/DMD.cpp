@@ -811,8 +811,7 @@ StackTrace::Get(Thread* aT)
 #else
     int skipFrames = 2;
 #endif
-    bool ok = MozStackWalk(StackWalkCallback, skipFrames, MaxFrames, &tmp, 0,
-                           nullptr);
+    bool ok = MozStackWalk(StackWalkCallback, skipFrames, MaxFrames, &tmp);
 #endif
     if (!ok) {
       tmp.mLength = 0; 
@@ -1631,7 +1630,7 @@ Init(const malloc_table_t* aMallocTable)
   
   
   (void)MozStackWalk(NopStackWalkCallback,  0,
-                      1, nullptr, 0, nullptr);
+                      1, nullptr);
 #endif
 
   gStateLock = InfallibleAllocPolicy::new_<Mutex>();

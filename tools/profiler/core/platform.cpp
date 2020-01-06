@@ -1001,7 +1001,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
 }
 
 #if defined(GP_OS_windows)
-static uintptr_t GetThreadHandle(PlatformData* aData);
+static HANDLE GetThreadHandle(PlatformData* aData);
 #endif
 
 #if defined(USE_FRAME_POINTER_STACK_WALK) || defined(USE_MOZ_STACK_WALK)
@@ -1039,10 +1039,10 @@ DoNativeBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
                           stackEnd);
   }
 #elif defined(USE_MOZ_STACK_WALK)
-  uintptr_t thread = GetThreadHandle(aThreadInfo.GetPlatformData());
+  HANDLE thread = GetThreadHandle(aThreadInfo.GetPlatformData());
   MOZ_ASSERT(thread);
-  MozStackWalk(StackWalkCallback,  0, maxFrames, &aNativeStack,
-               thread,  nullptr);
+  MozStackWalkThread(StackWalkCallback,  0, maxFrames,
+                     &aNativeStack, thread,  nullptr);
 #else
 # error "bad configuration"
 #endif
@@ -1332,9 +1332,8 @@ DoPeriodicSample(PSLockRef aLock, ThreadInfo& aThreadInfo,
 
   ThreadResponsiveness* resp = aThreadInfo.GetThreadResponsiveness();
   if (resp && resp->HasData()) {
-    double delta = resp->GetUnresponsiveDuration(
-      (aNow - CorePS::ProcessStartTime()).ToMilliseconds());
-    buffer.AddEntry(ProfileBufferEntry::Responsiveness(delta));
+    TimeDuration delta = resp->GetUnresponsiveDuration(aNow);
+    buffer.AddEntry(ProfileBufferEntry::Responsiveness(delta.ToMilliseconds()));
   }
 
   if (aRSSMemory != 0) {

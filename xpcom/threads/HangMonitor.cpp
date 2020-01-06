@@ -169,9 +169,8 @@ GetChromeHangReport(Telemetry::ProcessedStack& aStack,
     return;
   }
 
-  MozStackWalk(ChromeStackWalker,  0,  0,
-               reinterpret_cast<void*>(&rawStack),
-               reinterpret_cast<uintptr_t>(winMainThreadHandle), nullptr);
+  MozStackWalkThread(ChromeStackWalker,  0,  0,
+                     &rawStack, winMainThreadHandle, nullptr);
   ret = ::ResumeThread(winMainThreadHandle);
   if (ret == -1) {
     return;

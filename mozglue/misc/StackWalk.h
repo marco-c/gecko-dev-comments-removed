@@ -25,6 +25,7 @@
 
 
 
+
 typedef void
 (*MozWalkStackCallback)(uint32_t aFrameNumber, void* aPC, void* aSP,
                         void* aClosure);
@@ -43,6 +44,22 @@ typedef void
 
 
 
+MFBT_API bool
+MozStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
+             uint32_t aMaxFrames, void* aClosure);
+
+#if defined(_WIN32) && \
+    (defined(_M_IX86) || defined(_M_AMD64) || defined(_M_IA64))
+
+#include <windows.h>
+
+#define MOZ_STACKWALK_SUPPORTS_WINDOWS 1
+
+
+
+
+
+
 
 
 
@@ -54,9 +71,15 @@ typedef void
 
 
 MFBT_API bool
-MozStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
-             uint32_t aMaxFrames, void* aClosure, uintptr_t aThread,
-             void* aPlatformData);
+MozStackWalkThread(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
+                   uint32_t aMaxFrames, void* aClosure,
+                   HANDLE aThread, CONTEXT* aContext);
+
+#else
+
+#define MOZ_STACKWALK_SUPPORTS_WINDOWS 0
+
+#endif
 
 typedef struct
 {
