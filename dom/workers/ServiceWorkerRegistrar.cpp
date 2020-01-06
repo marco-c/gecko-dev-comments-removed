@@ -1061,6 +1061,34 @@ ServiceWorkerRegistrar::ProfileStopped()
 
   PBackgroundChild* child = BackgroundChild::GetForCurrentThread();
   if (!child) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mShuttingDown = true;
+    ShutdownCompleted();
     return;
   }
 
