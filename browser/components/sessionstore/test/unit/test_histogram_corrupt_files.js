@@ -22,20 +22,22 @@ Cu.import("resource:///modules/sessionstore/SessionFile.jsm", this);
 
 
 
-function reset_session(backups = {}) {
+function promise_reset_session(backups = {}) {
+  return (async function() {
+    
+    Telemetry.getHistogramById(HistogramId).clear();
 
-  
-  Telemetry.getHistogramById(HistogramId).clear();
-
-  
-  OS.File.makeDir(SessionFile.Paths.backups);
-  for (let key of SessionFile.Paths.loadOrder) {
-    if (backups.hasOwnProperty(key)) {
-      OS.File.copy(backups[key], SessionFile.Paths[key]);
-    } else {
-      OS.File.remove(SessionFile.Paths[key]);
+    
+    OS.File.makeDir(SessionFile.Paths.backups);
+    for (let key of SessionFile.Paths.loadOrder) {
+      if (backups.hasOwnProperty(key)) {
+        let s = await OS.File.read(backups[key]);
+        await OS.File.writeAtomic(SessionFile.Paths[key], s, {compression: "lz4"});
+      } else {
+        await OS.File.remove(SessionFile.Paths[key]);
+      }
     }
-  }
+  })();
 }
 
 
@@ -54,7 +56,7 @@ add_task(async function test_ensure_histogram_exists_and_empty() {
 
 add_task(async function test_no_files_exist() {
   
-  reset_session();
+  await promise_reset_session();
 
   await SessionFile.read();
   
@@ -72,7 +74,7 @@ add_task(async function test_one_file_valid() {
   
   let invalidSession = "data/sessionstore_invalid.js";
   let validSession = "data/sessionstore_valid.js";
-  reset_session({
+  await promise_reset_session({
     clean: invalidSession,
     cleanBackup: validSession,
     recovery: invalidSession,
@@ -94,7 +96,7 @@ add_task(async function test_one_file_valid() {
 add_task(async function test_all_files_corrupt() {
   
   let invalidSession = "data/sessionstore_invalid.js";
-  reset_session({
+  await promise_reset_session({
     clean: invalidSession,
     cleanBackup: invalidSession,
     recovery: invalidSession,

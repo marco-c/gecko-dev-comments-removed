@@ -3,6 +3,7 @@ var Cc = Components.classes;
 var Ci = Components.interfaces;
 
 Components.utils.import("resource://gre/modules/Services.jsm");
+const {OS} = Cu.import("resource://gre/modules/osfile.jsm", {});
 
 
 function afterSessionStartupInitialization(cb) {
@@ -29,4 +30,12 @@ function afterSessionStartupInitialization(cb) {
   Services.obs.addObserver(startup, "quit-application");
   Services.obs.notifyObservers(null, "final-ui-startup");
   Services.obs.addObserver(observer, "sessionstore-state-finalized");
+}
+
+
+
+async function writeCompressedFile(source, destination) {
+  let s = await OS.File.read(source);
+  await OS.File.writeAtomic(destination, s, {compression: "lz4"});
+  await OS.File.remove(source);
 }
