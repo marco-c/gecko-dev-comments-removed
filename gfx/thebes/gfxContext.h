@@ -284,13 +284,6 @@ public:
     
 
 
-
-    void SetFontSmoothingBackgroundColor(const mozilla::gfx::Color& aColor);
-    mozilla::gfx::Color GetFontSmoothingBackgroundColor();
-
-    
-
-
     already_AddRefed<gfxPattern> GetPattern();
 
     
