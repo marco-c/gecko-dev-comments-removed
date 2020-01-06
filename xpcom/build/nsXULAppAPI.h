@@ -206,11 +206,8 @@ XRE_API(nsresult,
 
 
 
-
-
-
 XRE_API(nsresult,
-        XRE_GetBinaryPath, (const char* aArgv0, nsIFile** aResult))
+        XRE_GetBinaryPath, (nsIFile** aResult))
 
 
 
