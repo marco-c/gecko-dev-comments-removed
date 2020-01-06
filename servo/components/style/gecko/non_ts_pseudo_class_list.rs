@@ -41,7 +41,6 @@
 
 
 
-
 macro_rules! apply_non_ts_list {
     ($apply_macro:ident) => {
         $apply_macro! {
@@ -114,6 +113,9 @@ macro_rules! apply_non_ts_list {
                 ("-moz-use-shadow-tree-root", MozUseShadowTreeRoot, mozUseShadowTreeRoot, _, PSEUDO_CLASS_INTERNAL),
                 ("-moz-is-html", MozIsHTML, mozIsHTML, _, _),
                 ("-moz-placeholder", MozPlaceholder, mozPlaceholder, _, _),
+                ("-moz-lwtheme", MozLWTheme, mozLWTheme, _, _),
+                ("-moz-lwtheme-brighttext", MozLWThemeBrightText, mozLWThemeBrightText, _, _),
+                ("-moz-lwtheme-darktext", MozLWThemeDarkText, mozLWThemeDarkText, _, _),
             ],
             string: [
                 ("-moz-system-metric", MozSystemMetric, mozSystemMetric, _, PSEUDO_CLASS_INTERNAL),
