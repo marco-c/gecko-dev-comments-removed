@@ -2214,6 +2214,14 @@ TryAttachCallStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script, jsb
         }
 
         
+        
+        
+        if (constructing && !fun->hasJITCode()) {
+            *handled = true;
+            return true;
+        }
+
+        
         if (stub->scriptedStubsAreGeneralized()) {
             JitSpew(JitSpew_BaselineIC, "  Chain already has generalized scripted call stub!");
             return true;
