@@ -890,25 +890,8 @@ js::ArraySetLength(JSContext* cx, Handle<ArrayObject*> arr, HandleId id,
     ObjectElements* header = arr->getElementsHeader();
     header->initializedLength = Min(header->initializedLength, newLen);
 
-    if (attrs & JSPROP_READONLY) {
-        if (header->numShiftedElements() > 0) {
-            arr->unshiftElements();
-            header = arr->getElementsHeader();
-        }
-
-        header->setNonwritableArrayLength();
-
-        
-        
-        
-        
-        
-        
-        if (arr->getDenseCapacity() > newLen) {
-            arr->shrinkElements(cx, newLen);
-            arr->getElementsHeader()->capacity = newLen;
-        }
-    }
+    if (attrs & JSPROP_READONLY)
+        arr->setNonWritableLength(cx);
 
     if (!succeeded)
         return result.fail(JSMSG_CANT_TRUNCATE_ARRAY);

@@ -31,6 +31,26 @@ class ArrayObject : public NativeObject
         return getElementsHeader()->length;
     }
 
+    void setNonWritableLength(JSContext* cx) {
+        if (getElementsHeader()->numShiftedElements() > 0)
+            unshiftElements();
+
+        
+        
+        
+        
+        
+        
+        ObjectElements* header = getElementsHeader();
+        uint32_t len = header->initializedLength;
+        if (header->capacity > len) {
+            shrinkElements(cx, len);
+            header = getElementsHeader();
+            header->capacity = len;
+        }
+        header->setNonwritableArrayLength();
+    }
+
     inline void setLength(JSContext* cx, uint32_t length);
 
     
