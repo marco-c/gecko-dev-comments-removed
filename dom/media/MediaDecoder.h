@@ -228,11 +228,6 @@ public:
   virtual void SetPlaybackRate(double aPlaybackRate);
   void SetPreservesPitch(bool aPreservesPitch);
 
-  
-  
-  
-  void SetMinimizePrerollUntilPlaybackStarts();
-
   bool GetMinimizePreroll() const { return mMinimizePreroll; }
 
   
@@ -385,7 +380,6 @@ private:
   
   virtual bool CanPlayThrough();
 
-  void SetAudioChannel(dom::AudioChannel aChannel) { mAudioChannel = aChannel; }
   dom::AudioChannel GetAudioChannel() { return mAudioChannel; }
 
   

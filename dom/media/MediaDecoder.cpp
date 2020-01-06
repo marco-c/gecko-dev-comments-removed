@@ -682,18 +682,6 @@ MediaDecoder::SetStateMachineParameters()
     mAbstractMainThread, this, &MediaDecoder::OnMediaNotSeekable);
 }
 
-void
-MediaDecoder::SetMinimizePrerollUntilPlaybackStarts()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  LOG("SetMinimizePrerollUntilPlaybackStarts()");
-  mMinimizePreroll = true;
-
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(!mDecoderStateMachine);
-}
-
 nsresult
 MediaDecoder::Play()
 {
