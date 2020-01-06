@@ -37,6 +37,7 @@
 #![crate_type = "dylib"]
 
 extern crate byteorder;
+extern crate num_traits;
 extern crate serde as serde_crate;
 
 mod ser;
@@ -45,7 +46,7 @@ pub mod internal;
 
 pub mod read_types {
     
-    pub use ::de::read::{SliceReader, BincodeRead, IoReader};
+    pub use ::de::read::{SliceReader, BincodeRead, IoReadReader};
 }
 
 use std::io::{Read, Write};
@@ -124,7 +125,7 @@ pub fn serialize<T: ?Sized, S>(value: &T, size_limit: S) -> internal::Result<Vec
 
 
 
-pub trait SizeLimit: private::Sealed {
+pub trait SizeLimit {
     
     
     fn add(&mut self, n: u64) -> Result<()>;
@@ -141,11 +142,6 @@ pub struct Bounded(pub u64);
 
 #[derive(Copy, Clone)]
 pub struct Infinite;
-
-struct CountSize {
-    total: u64,
-    limit: Option<u64>,
-}
 
 impl SizeLimit for Bounded {
     #[inline(always)]
@@ -168,14 +164,4 @@ impl SizeLimit for Infinite {
 
     #[inline(always)]
     fn limit(&self) -> Option<u64> { None }
-}
-
-mod private {
-    pub trait Sealed {}
-
-    impl<'a> Sealed for super::de::read::SliceReader<'a> {}
-    impl<R> Sealed for super::de::read::IoReader<R> {}
-    impl Sealed for super::Infinite {}
-    impl Sealed for super::Bounded {}
-    impl Sealed for super::CountSize {}
 }

@@ -4,13 +4,13 @@ extern crate bincode;
 
 use bincode::{serialize, deserialize, Infinite};
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq)]
 struct Entity {
     x: f32,
     y: f32,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq)]
 struct World(Vec<Entity>);
 
 fn main() {
@@ -23,5 +23,5 @@ fn main() {
 
     let decoded: World = deserialize(&encoded[..]).unwrap();
 
-    assert_eq!(world, decoded);
+    assert!(world == decoded);
 }
