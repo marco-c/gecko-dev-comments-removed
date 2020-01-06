@@ -177,7 +177,8 @@ public:
           refchanged.forget());
       } else { 
         WebAudioUtils::LogToDeveloperConsole(mWindowID,
-                                             "BiquadFilterChannelCountChangeWarning");
+                                             "BiquadFilterChannelCountChangeWarning",
+                                             aStream->Graph()->AbstractMainThread());
       }
 
       
