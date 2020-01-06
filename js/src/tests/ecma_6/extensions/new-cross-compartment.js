@@ -18,10 +18,6 @@ var otherStr = new g.String("foo");
 assertEq(otherStr instanceof g.String, true);
 assertEq(otherStr.valueOf(), "foo");
 
-
-
-
-
 try
 {
   var constructor = g.parseInt;
@@ -30,8 +26,9 @@ try
 }
 catch (e)
 {
-  assertEq(e instanceof g.TypeError, true,
-           "THIS REALLY SHOULD BE |e instanceof TypeError|");
+  
+  
+  assertEq(e instanceof TypeError, true);
 }
 
 
