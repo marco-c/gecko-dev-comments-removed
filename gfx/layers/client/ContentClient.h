@@ -203,15 +203,9 @@ protected:
   BufferDecision CalculateBufferForPaint(PaintedLayer* aLayer,
                                          uint32_t aFlags);
 
-  
-
-
-  gfxContentType BufferContentType();
-  
-
-
-
-  bool BufferSizeOkFor(const gfx::IntSize& aSize);
+  static bool ValidBufferSize(BufferSizePolicy aPolicy,
+                              const gfx::IntSize& aBufferSize,
+                              const gfx::IntSize& aVisibleBoundsSize);
 
   
 
