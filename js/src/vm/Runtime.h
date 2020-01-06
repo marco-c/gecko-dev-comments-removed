@@ -455,6 +455,10 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
     
     js::ActiveThreadData<JSAccumulateTelemetryDataCallback> telemetryCallback;
+
+    
+    js::ActiveThreadData<JSSetUseCounterCallback> useCounterCallback;
+
   public:
     
     
@@ -462,6 +466,13 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     void addTelemetry(int id, uint32_t sample, const char* key = nullptr);
 
     void setTelemetryCallback(JSRuntime* rt, JSAccumulateTelemetryDataCallback callback);
+
+    
+    
+    
+    void setUseCounter(JSObject* obj, JSUseCounter counter);
+
+    void setUseCounterCallback(JSRuntime* rt, JSSetUseCounterCallback callback);
 
   public:
     js::UnprotectedData<js::OffThreadPromiseRuntimeState> offThreadPromiseState;
