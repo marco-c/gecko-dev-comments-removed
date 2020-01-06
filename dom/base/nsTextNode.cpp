@@ -273,8 +273,7 @@ nsAttributeTextNode::AttributeChanged(nsIDocument* aDocument,
     
     
     void (nsAttributeTextNode::*update)() = &nsAttributeTextNode::UpdateText;
-    nsContentUtils::AddScriptRunner(
-      NewRunnableMethod("nsAttributeTextNode::AttributeChanged", this, update));
+    nsContentUtils::AddScriptRunner(NewRunnableMethod(this, update));
   }
 }
 

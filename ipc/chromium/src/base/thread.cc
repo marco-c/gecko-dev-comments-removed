@@ -22,7 +22,6 @@ namespace base {
 
 class ThreadQuitTask : public mozilla::Runnable {
  public:
-  ThreadQuitTask() : mozilla::Runnable("ThreadQuitTask") {}
   NS_IMETHOD Run() override {
     MessageLoop::current()->Quit();
     Thread::SetThreadWasQuitProperly(true);

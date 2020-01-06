@@ -5267,16 +5267,12 @@ nsContentUtils::IsInSameAnonymousTree(const nsINode* aNode,
 
 class AnonymousContentDestroyer : public Runnable {
 public:
-  explicit AnonymousContentDestroyer(nsCOMPtr<nsIContent>* aContent)
-    : mozilla::Runnable("AnonymousContentDestroyer")
-  {
+  explicit AnonymousContentDestroyer(nsCOMPtr<nsIContent>* aContent) {
     mContent.swap(*aContent);
     mParent = mContent->GetParent();
     mDoc = mContent->OwnerDoc();
   }
-  explicit AnonymousContentDestroyer(nsCOMPtr<Element>* aElement)
-    : mozilla::Runnable("AnonymousContentDestroyer")
-  {
+  explicit AnonymousContentDestroyer(nsCOMPtr<Element>* aElement) {
     mContent = aElement->forget();
     mParent = mContent->GetParent();
     mDoc = mContent->OwnerDoc();
@@ -10470,9 +10466,9 @@ nsContentUtils::UserInteractionObserver::Init()
   
   
   RefPtr<UserInteractionObserver> self = this;
-  NS_DispatchToMainThread(
-    NS_NewRunnableFunction("nsContentUtils::UserInteractionObserver::Init",
-                           [=]() { HangMonitor::RegisterAnnotator(*self); }));
+  NS_DispatchToMainThread(NS_NewRunnableFunction([=] () {
+        HangMonitor::RegisterAnnotator(*self);
+      }));
 }
 
 void

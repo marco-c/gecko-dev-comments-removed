@@ -746,8 +746,7 @@ XPCJSRuntime::DoCycleCollectionCallback(JSContext* cx)
     
     
     NS_DispatchToCurrentThread(
-      NS_NewRunnableFunction("XPCJSRuntime::DoCycleCollectionCallback",
-                             []() { nsJSContext::CycleCollectNow(nullptr); }));
+            NS_NewRunnableFunction([](){nsJSContext::CycleCollectNow(nullptr);}));
 
     XPCJSRuntime* self = nsXPConnect::GetRuntimeInstance();
     if (!self)
@@ -963,10 +962,9 @@ class LargeAllocationFailureRunnable final : public Runnable
 
   public:
     LargeAllocationFailureRunnable()
-      : mozilla::Runnable("LargeAllocationFailureRunnable")
-      , mMutex("LargeAllocationFailureRunnable::mMutex")
-      , mCondVar(mMutex, "LargeAllocationFailureRunnable::mCondVar")
-      , mWaiting(true)
+      : mMutex("LargeAllocationFailureRunnable::mMutex"),
+        mCondVar(mMutex, "LargeAllocationFailureRunnable::mCondVar"),
+        mWaiting(true)
     {
         MOZ_ASSERT(!NS_IsMainThread());
     }

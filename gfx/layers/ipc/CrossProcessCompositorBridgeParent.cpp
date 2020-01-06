@@ -58,10 +58,7 @@ CrossProcessCompositorBridgeParent::ActorDestroy(ActorDestroyReason aWhy)
 
   
   
-  MessageLoop::current()->PostTask(NewRunnableMethod(
-    "layers::CrossProcessCompositorBridgeParent::DeferredDestroy",
-    this,
-    &CrossProcessCompositorBridgeParent::DeferredDestroy));
+  MessageLoop::current()->PostTask(NewRunnableMethod(this, &CrossProcessCompositorBridgeParent::DeferredDestroy));
 }
 
 PLayerTransactionParent*

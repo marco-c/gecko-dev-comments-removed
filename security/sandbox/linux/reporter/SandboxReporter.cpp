@@ -100,8 +100,9 @@ SandboxReporter::Singleton()
     
     
     
-    NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "SandboxReporter::Singleton", [] { ClearOnShutdown(&sSingleton); }));
+    NS_DispatchToMainThread(NS_NewRunnableFunction([] {
+      ClearOnShutdown(&sSingleton);
+    }));
   }
   return sSingleton.get();
 }

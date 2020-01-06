@@ -226,35 +226,32 @@ NS_IMPL_ISUPPORTS(nsSetDiskSmartSizeCallback, nsITimerCallback)
 class nsSetSmartSizeEvent: public Runnable 
 {
 public:
-  explicit nsSetSmartSizeEvent(int32_t smartSize)
-    : mozilla::Runnable("nsSetSmartSizeEvent")
-    , mSmartSize(smartSize)
-  {
-  }
+    explicit nsSetSmartSizeEvent(int32_t smartSize)
+        : mSmartSize(smartSize) {}
 
-  NS_IMETHOD Run()
-  {
-    NS_ASSERTION(NS_IsMainThread(),
-                 "Setting smart size data off the main thread");
+    NS_IMETHOD Run() 
+    {
+        NS_ASSERTION(NS_IsMainThread(), 
+                     "Setting smart size data off the main thread");
 
-    
-    if (!nsCacheService::IsInitialized())
-      return NS_ERROR_NOT_AVAILABLE;
+        
+        if (!nsCacheService::IsInitialized())
+            return NS_ERROR_NOT_AVAILABLE;
 
-    
-    
-    
-    if (!nsCacheService::gService->mObserver->SmartSizeEnabled())
-      return NS_OK;
+        
+        
+        
+        if (!nsCacheService::gService->mObserver->SmartSizeEnabled())
+            return NS_OK;
 
-    nsCacheService::SetDiskCacheCapacity(mSmartSize);
+        nsCacheService::SetDiskCacheCapacity(mSmartSize);
 
-    nsCOMPtr<nsIPrefBranch> ps = do_GetService(NS_PREFSERVICE_CONTRACTID);
-    if (!ps ||
-        NS_FAILED(ps->SetIntPref(DISK_CACHE_SMART_SIZE_PREF, mSmartSize)))
-      NS_WARNING("Failed to set smart size pref");
+        nsCOMPtr<nsIPrefBranch> ps = do_GetService(NS_PREFSERVICE_CONTRACTID);
+        if (!ps ||
+            NS_FAILED(ps->SetIntPref(DISK_CACHE_SMART_SIZE_PREF, mSmartSize)))
+            NS_WARNING("Failed to set smart size pref");
 
-    return NS_OK;
+        return NS_OK;
     }
 
 private:
@@ -266,25 +263,23 @@ private:
 class nsGetSmartSizeEvent: public Runnable
 {
 public:
-  nsGetSmartSizeEvent(const nsAString& cachePath,
-                      uint32_t currentSize,
-                      bool shouldUseOldMaxSmartSize)
-    : mozilla::Runnable("nsGetSmartSizeEvent")
-    , mCachePath(cachePath)
-    , mCurrentSize(currentSize)
-    , mShouldUseOldMaxSmartSize(shouldUseOldMaxSmartSize)
-  {
-  }
-
-  
-  
-  NS_IMETHOD Run() override
-  {
-    uint32_t size;
-    size = nsCacheProfilePrefObserver::GetSmartCacheSize(
-      mCachePath, mCurrentSize, mShouldUseOldMaxSmartSize);
-    NS_DispatchToMainThread(new nsSetSmartSizeEvent(size));
-    return NS_OK;
+    nsGetSmartSizeEvent(const nsAString& cachePath, uint32_t currentSize,
+                        bool shouldUseOldMaxSmartSize)
+      : mCachePath(cachePath)
+      , mCurrentSize(currentSize)
+      , mShouldUseOldMaxSmartSize(shouldUseOldMaxSmartSize)
+    {}
+   
+    
+    
+    NS_IMETHOD Run() override
+    {
+        uint32_t size;
+        size = nsCacheProfilePrefObserver::GetSmartCacheSize(mCachePath,
+                                                             mCurrentSize,
+                                                             mShouldUseOldMaxSmartSize);
+        NS_DispatchToMainThread(new nsSetSmartSizeEvent(size));
+        return NS_OK;
     }
 
 private:
@@ -295,9 +290,8 @@ private:
 
 class nsBlockOnCacheThreadEvent : public Runnable {
 public:
-  nsBlockOnCacheThreadEvent()
-    : mozilla::Runnable("nsBlockOnCacheThreadEvent")
-  {
+    nsBlockOnCacheThreadEvent()
+    {
     }
     NS_IMETHOD Run() override
     {
@@ -982,10 +976,9 @@ nsCacheProfilePrefObserver::CacheCompressionLevel()
 
 class nsProcessRequestEvent : public Runnable {
 public:
-  explicit nsProcessRequestEvent(nsCacheRequest* aRequest)
-    : mozilla::Runnable("nsProcessRequestEvent")
-  {
-    mRequest = aRequest;
+    explicit nsProcessRequestEvent(nsCacheRequest *aRequest)
+    {
+        mRequest = aRequest;
     }
 
     NS_IMETHOD Run() override
@@ -1024,7 +1017,6 @@ public:
     nsDoomEvent(nsCacheSession *session,
                 const nsACString &key,
                 nsICacheListener *listener)
-      : mozilla::Runnable("nsDoomEvent")
     {
         mKey = *session->ClientID();
         mKey.Append(':');
@@ -1341,13 +1333,11 @@ namespace {
 class EvictionNotifierRunnable : public Runnable
 {
 public:
-  explicit EvictionNotifierRunnable(nsISupports* aSubject)
-    : mozilla::Runnable("EvictionNotifierRunnable")
-    , mSubject(aSubject)
-  {
-  }
+    explicit EvictionNotifierRunnable(nsISupports* aSubject)
+        : mSubject(aSubject)
+    { }
 
-  NS_DECL_NSIRUNNABLE
+    NS_DECL_NSIRUNNABLE
 
 private:
     nsCOMPtr<nsISupports> mSubject;
@@ -1541,12 +1531,10 @@ nsresult nsCacheService::EvictEntriesInternal(nsCacheStoragePolicy storagePolicy
 {
     if (storagePolicy == nsICache::STORE_ANYWHERE) {
         
-        if (!NS_IsMainThread()) {
-          nsCOMPtr<nsIRunnable> event = NewRunnableMethod(
-            "nsCacheService::FireClearNetworkCacheStoredAnywhereNotification",
-            this,
-            &nsCacheService::FireClearNetworkCacheStoredAnywhereNotification);
-          NS_DispatchToMainThread(event);
+        if (!NS_IsMainThread()) { 
+            nsCOMPtr<nsIRunnable> event = NewRunnableMethod(this,
+                                                            &nsCacheService::FireClearNetworkCacheStoredAnywhereNotification);
+            NS_DispatchToMainThread(event);
         } else {
             
             FireClearNetworkCacheStoredAnywhereNotification(); 
@@ -1657,42 +1645,37 @@ nsCacheService::CreateDiskDevice()
 class nsDisableOldMaxSmartSizePrefEvent: public Runnable
 {
 public:
-  nsDisableOldMaxSmartSizePrefEvent()
-    : mozilla::Runnable("nsDisableOldMaxSmartSizePrefEvent")
-  {
-  }
+    nsDisableOldMaxSmartSizePrefEvent() {}
 
-  NS_IMETHOD Run() override
-  {
-    
-    if (!nsCacheService::IsInitialized())
-      return NS_ERROR_NOT_AVAILABLE;
+    NS_IMETHOD Run() override
+    {
+        
+        if (!nsCacheService::IsInitialized())
+            return NS_ERROR_NOT_AVAILABLE;
 
-    nsCOMPtr<nsIPrefBranch> branch = do_GetService(NS_PREFSERVICE_CONTRACTID);
-    if (!branch) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
+        nsCOMPtr<nsIPrefBranch> branch = do_GetService(NS_PREFSERVICE_CONTRACTID);
+        if (!branch) {
+            return NS_ERROR_NOT_AVAILABLE;
+        }
 
-    nsresult rv =
-      branch->SetBoolPref(DISK_CACHE_USE_OLD_MAX_SMART_SIZE_PREF, false);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("Failed to disable old max smart size");
-      return rv;
-    }
+        nsresult rv = branch->SetBoolPref(DISK_CACHE_USE_OLD_MAX_SMART_SIZE_PREF, false);
+        if (NS_FAILED(rv)) {
+            NS_WARNING("Failed to disable old max smart size");
+            return rv;
+        }
 
-    
-    
-    nsCacheService::gService->SetDiskSmartSize_Locked();
+        
+        
+        nsCacheService::gService->SetDiskSmartSize_Locked();
 
-    if (nsCacheService::gService->mObserver->PermittedToSmartSize(branch,
-                                                                  false)) {
-      rv = branch->SetIntPref(DISK_CACHE_CAPACITY_PREF, MAX_CACHE_SIZE);
-      if (NS_FAILED(rv)) {
-        NS_WARNING("Failed to set cache capacity pref");
-      }
-    }
+        if (nsCacheService::gService->mObserver->PermittedToSmartSize(branch, false)) {
+            rv = branch->SetIntPref(DISK_CACHE_CAPACITY_PREF, MAX_CACHE_SIZE);
+            if (NS_FAILED(rv)) {
+                NS_WARNING("Failed to set cache capacity pref");
+            }
+        }
 
-    return NS_OK;
+        return NS_OK;
     }
 };
 
@@ -1873,25 +1856,23 @@ nsCacheService::CreateRequest(nsCacheSession *   session,
 class nsCacheListenerEvent : public Runnable
 {
 public:
-  nsCacheListenerEvent(nsICacheListener* listener,
-                       nsICacheEntryDescriptor* descriptor,
-                       nsCacheAccessMode accessGranted,
-                       nsresult status)
-    : mozilla::Runnable("nsCacheListenerEvent")
-    , mListener(listener)     
-    , mDescriptor(descriptor) 
-    , mAccessGranted(accessGranted)
-    , mStatus(status)
-  {
-  }
+    nsCacheListenerEvent(nsICacheListener *listener,
+                         nsICacheEntryDescriptor *descriptor,
+                         nsCacheAccessMode accessGranted,
+                         nsresult status)
+        : mListener(listener)      
+        , mDescriptor(descriptor)  
+        , mAccessGranted(accessGranted)
+        , mStatus(status)
+    {}
 
-  NS_IMETHOD Run() override
-  {
-    mListener->OnCacheEntryAvailable(mDescriptor, mAccessGranted, mStatus);
+    NS_IMETHOD Run() override
+    {
+        mListener->OnCacheEntryAvailable(mDescriptor, mAccessGranted, mStatus);
 
-    NS_RELEASE(mListener);
-    NS_IF_RELEASE(mDescriptor);
-    return NS_OK;
+        NS_RELEASE(mListener);
+        NS_IF_RELEASE(mDescriptor);
+        return NS_OK;
     }
 
 private:

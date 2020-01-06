@@ -841,8 +841,7 @@ AccessibleWrap::accSelect(
       
       
       nsCOMPtr<nsIRunnable> runnable =
-        mozilla::NewRunnableMethod("Accessible::TakeFocus",
-                                   this, &Accessible::TakeFocus);
+        mozilla::NewRunnableMethod(this, &Accessible::TakeFocus);
       NS_DispatchToMainThread(runnable, NS_DISPATCH_NORMAL);
       return S_OK;
     }

@@ -48,10 +48,7 @@ public:
       
       
       
-      mDeferredTasks.AppendElement(
-        NewRunnableMethod("layers::AsyncPanZoomController::ScrollSnap",
-                          &mApzc,
-                          &AsyncPanZoomController::ScrollSnap));
+      mDeferredTasks.AppendElement(NewRunnableMethod(&mApzc, &AsyncPanZoomController::ScrollSnap));
       return false;
     }
     return true;

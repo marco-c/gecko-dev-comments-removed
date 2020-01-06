@@ -32,12 +32,11 @@ TEST(WatchManager, Shutdown)
   WatchManager<Foo> manager(p, queue);
   Watchable<bool> notifier(false, "notifier");
 
-  queue->Dispatch(NS_NewRunnableFunction(
-    "TestStateWatching::WatchManager_Shutdown_Test::TestBody", [&]() {
-      manager.Watch(notifier, &Foo::Notify);
-      notifier = true;    
-      manager.Shutdown(); 
-    }));
+  queue->Dispatch(NS_NewRunnableFunction([&] () {
+    manager.Watch(notifier, &Foo::Notify);
+    notifier = true; 
+    manager.Shutdown(); 
+  }));
 
   queue->BeginShutdown();
   queue->AwaitShutdownAndIdle();

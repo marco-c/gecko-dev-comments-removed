@@ -61,11 +61,8 @@ class nsInputStreamTeeWriteEvent : public Runnable
 {
 public:
   
-  nsInputStreamTeeWriteEvent(const char* aBuf,
-                             uint32_t aCount,
-                             nsIOutputStream* aSink,
-                             nsInputStreamTee* aTee)
-    : mozilla::Runnable("nsInputStreamTeeWriteEvent")
+  nsInputStreamTeeWriteEvent(const char* aBuf, uint32_t aCount,
+                             nsIOutputStream* aSink, nsInputStreamTee* aTee)
   {
     
     mBuf = (char*)malloc(aCount);

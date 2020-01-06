@@ -1206,18 +1206,14 @@ nsXULTemplateBuilder::AttributeChanged(nsIDocument* aDocument,
         
         
         if (aAttribute == nsGkAtoms::ref)
-          nsContentUtils::AddScriptRunner(
-            NewRunnableMethod("nsXULTemplateBuilder::RunnableRebuild",
-                              this,
-                              &nsXULTemplateBuilder::RunnableRebuild));
+            nsContentUtils::AddScriptRunner(
+                NewRunnableMethod(this, &nsXULTemplateBuilder::RunnableRebuild));
 
         
         
         else if (aAttribute == nsGkAtoms::datasources) {
-          nsContentUtils::AddScriptRunner(
-            NewRunnableMethod("nsXULTemplateBuilder::RunnableLoadAndRebuild",
-                              this,
-                              &nsXULTemplateBuilder::RunnableLoadAndRebuild));
+            nsContentUtils::AddScriptRunner(
+                NewRunnableMethod(this, &nsXULTemplateBuilder::RunnableLoadAndRebuild));
         }
     }
 }
@@ -1237,9 +1233,7 @@ nsXULTemplateBuilder::ContentRemoved(nsIDocument* aDocument,
 
         
         nsContentUtils::AddScriptRunner(
-          NewRunnableMethod("nsXULTemplateBuilder::UninitFalse",
-                            this,
-                            &nsXULTemplateBuilder::UninitFalse));
+            NewRunnableMethod(this, &nsXULTemplateBuilder::UninitFalse));
 
         MOZ_ASSERT(aDocument == mObservedDocument);
         StopObserving();
@@ -1278,9 +1272,7 @@ nsXULTemplateBuilder::NodeWillBeDestroyed(const nsINode* aNode)
     mCompDB = nullptr;
 
     nsContentUtils::AddScriptRunner(
-      NewRunnableMethod("nsXULTemplateBuilder::UninitTrue",
-                        this,
-                        &nsXULTemplateBuilder::UninitTrue));
+        NewRunnableMethod(this, &nsXULTemplateBuilder::UninitTrue));
 }
 
 

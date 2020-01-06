@@ -675,10 +675,8 @@ nsWebBrowserPersist::SerializeNextFile()
         
         
         
-        NS_DispatchToCurrentThread(
-          NewRunnableMethod("nsWebBrowserPersist::FinishDownload",
-                            this,
-                            &nsWebBrowserPersist::FinishDownload));
+        NS_DispatchToCurrentThread(NewRunnableMethod(this,
+            &nsWebBrowserPersist::FinishDownload));
         return;
     }
 
@@ -789,10 +787,8 @@ nsWebBrowserPersist::OnWrite::OnFinish(nsIWebBrowserPersistDocument* aDoc,
             return NS_OK;
         }
     }
-    NS_DispatchToCurrentThread(
-      NewRunnableMethod("nsWebBrowserPersist::SerializeNextFile",
-                        mParent,
-                        &nsWebBrowserPersist::SerializeNextFile));
+    NS_DispatchToCurrentThread(NewRunnableMethod(mParent,
+        &nsWebBrowserPersist::SerializeNextFile));
     return NS_OK;
 }
 
@@ -1794,11 +1790,9 @@ nsWebBrowserPersist::FinishSaveDocumentInternal(nsIURI* aFile,
         
         typedef StoreCopyPassByRRef<decltype(toWalk)> WalkStorage;
         auto saveMethod = &nsWebBrowserPersist::SaveDocumentDeferred;
-        nsCOMPtr<nsIRunnable> saveLater = NewRunnableMethod<WalkStorage>(
-          "nsWebBrowserPersist::FinishSaveDocumentInternal",
-          this,
-          saveMethod,
-          mozilla::Move(toWalk));
+        nsCOMPtr<nsIRunnable> saveLater =
+            NewRunnableMethod<WalkStorage>(this, saveMethod,
+                                           mozilla::Move(toWalk));
         NS_DispatchToCurrentThread(saveLater);
     } else {
         

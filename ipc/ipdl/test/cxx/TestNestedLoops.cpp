@@ -45,10 +45,8 @@ TestNestedLoopsParent::RecvNonce()
     
     
     
-    MessageLoop::current()->PostTask(NewNonOwningRunnableMethod(
-      "_ipdltest::TestNestedLoopsParent::BreakNestedLoop",
-      this,
-      &TestNestedLoopsParent::BreakNestedLoop));
+    MessageLoop::current()->PostTask(
+        NewNonOwningRunnableMethod(this, &TestNestedLoopsParent::BreakNestedLoop));
 
     
     puts(" (sleeping to wait for reply to R ... sorry)");

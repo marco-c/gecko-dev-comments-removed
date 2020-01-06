@@ -76,8 +76,8 @@ TestHangsParent::ShouldContinueFromReplyTimeout()
 
     
     
-    MessageLoop::current()->PostTask(NewNonOwningRunnableMethod(
-      "_ipdltest::TestHangsParent::CleanUp", this, &TestHangsParent::CleanUp));
+    MessageLoop::current()->PostTask(
+        NewNonOwningRunnableMethod(this, &TestHangsParent::CleanUp));
 
     GetIPCChannel()->CloseWithTimeout();
 

@@ -21,8 +21,6 @@ public:
   Delegate* delegate;        
   bool did_signal;           
 
-  Watch() : mozilla::Runnable("ObjectWatcher::Watch") {}
-
   NS_IMETHOD Run() override {
     
     

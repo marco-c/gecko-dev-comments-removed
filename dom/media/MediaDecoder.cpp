@@ -214,36 +214,30 @@ MediaDecoder::ResourceCallback::NotifyDataArrived()
   
   
   mTimerArmed = true;
-  mTimer->InitWithNamedFuncCallback(
-    TimerCallback,
-    this,
-    sDelay,
-    nsITimer::TYPE_ONE_SHOT,
-    "MediaDecoder::ResourceCallback::NotifyDataArrived");
+  mTimer->InitWithFuncCallback(
+    TimerCallback, this, sDelay, nsITimer::TYPE_ONE_SHOT);
 }
 
 void
 MediaDecoder::ResourceCallback::NotifyDataEnded(nsresult aStatus)
 {
   RefPtr<ResourceCallback> self = this;
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-    "MediaDecoder::ResourceCallback::NotifyDataEnded", [=]() {
-      if (!self->mDecoder) {
-        return;
-      }
-      self->mDecoder->NotifyDownloadEnded(aStatus);
-      if (NS_SUCCEEDED(aStatus)) {
-        MediaDecoderOwner* owner = self->GetMediaOwner();
-        MOZ_ASSERT(owner);
-        owner->DownloadSuspended();
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
+    if (!self->mDecoder) {
+      return;
+    }
+    self->mDecoder->NotifyDownloadEnded(aStatus);
+    if (NS_SUCCEEDED(aStatus)) {
+      MediaDecoderOwner* owner = self->GetMediaOwner();
+      MOZ_ASSERT(owner);
+      owner->DownloadSuspended();
 
-        
-        
-        
-        
-        self->mDecoder->NotifySuspendedStatusChanged();
-      }
-    });
+      
+      
+      
+      self->mDecoder->NotifySuspendedStatusChanged();
+    }
+  });
   mAbstractMainThread->Dispatch(r.forget());
 }
 
@@ -270,12 +264,11 @@ MediaDecoder::ResourceCallback::NotifyBytesConsumed(int64_t aBytes,
                                                     int64_t aOffset)
 {
   RefPtr<ResourceCallback> self = this;
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-    "MediaDecoder::ResourceCallback::NotifyBytesConsumed", [=]() {
-      if (self->mDecoder) {
-        self->mDecoder->NotifyBytesConsumed(aBytes, aOffset);
-      }
-    });
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
+    if (self->mDecoder) {
+      self->mDecoder->NotifyBytesConsumed(aBytes, aOffset);
+    }
+  });
   mAbstractMainThread->Dispatch(r.forget());
 }
 
@@ -478,11 +471,10 @@ MediaDecoder::Shutdown()
     
     
     RefPtr<MediaDecoder> self = this;
-    nsCOMPtr<nsIRunnable> r =
-      NS_NewRunnableFunction("MediaDecoder::Shutdown", [self]() {
-        self->mVideoFrameContainer = nullptr;
-        MediaShutdownManager::Instance().Unregister(self);
-      });
+    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self] () {
+      self->mVideoFrameContainer = nullptr;
+      MediaShutdownManager::Instance().Unregister(self);
+    });
     mAbstractMainThread->Dispatch(r.forget());
   }
 

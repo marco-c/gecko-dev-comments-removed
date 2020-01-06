@@ -87,11 +87,8 @@ class BaseTimer_Helper {
   
   class TimerTask : public mozilla::Runnable {
    public:
-     explicit TimerTask(TimeDelta delay)
-       : mozilla::Runnable("base::BaseTimer_Helper::TimerTask")
-       , delay_(delay)
-     {
-       
+    explicit TimerTask(TimeDelta delay) : delay_(delay) {
+      
     }
     virtual ~TimerTask() {}
     BaseTimer_Helper* timer_;

@@ -912,10 +912,7 @@ private:
     
     
     nsCOMPtr<nsIRunnable> runnable = NewNonOwningRunnableMethod<nsresult>(
-      "dom::cache::Manager::CachePutAllAction::OnAsyncCopyComplete",
-      this,
-      &CachePutAllAction::OnAsyncCopyComplete,
-      aRv);
+      this, &CachePutAllAction::OnAsyncCopyComplete, aRv);
     MOZ_ALWAYS_SUCCEEDS(
       mTarget->Dispatch(runnable.forget(), nsIThread::DISPATCH_NORMAL));
   }
@@ -1769,8 +1766,7 @@ Manager::~Manager()
 
   
   
-  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(NewRunnableMethod("nsIThread::Shutdown",
-                                                                ioThread, &nsIThread::Shutdown)));
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(NewRunnableMethod(ioThread, &nsIThread::Shutdown)));
 }
 
 void
