@@ -1385,30 +1385,6 @@ RemoteWindowContext::OpenURI(nsIURI* aURI)
 
 } 
 
-bool
-ContentParent::SetPriorityAndCheckIsAlive(ProcessPriority aPriority)
-{
-  ProcessPriorityManager::SetProcessPriority(this, aPriority);
-
-  
-  
-  
-  
-  
-  
-  
-#ifdef MOZ_WIDGET_GONK
-  siginfo_t info;
-  info.si_pid = 0;
-  if (waitid(P_PID, Pid(), &info, WNOWAIT | WNOHANG | WEXITED) == 0
-    && info.si_pid != 0) {
-    return false;
-  }
-#endif
-
-  return true;
-}
-
 void
 ContentParent::ShutDownProcess(ShutDownMethod aMethod)
 {

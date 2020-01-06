@@ -732,12 +732,6 @@ private:
   void ForwardKnownInfo();
 
   
-  
-  
-  
-  bool SetPriorityAndCheckIsAlive(hal::ProcessPriority aPriority);
-
-  
 
 
 
