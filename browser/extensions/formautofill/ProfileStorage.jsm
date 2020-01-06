@@ -1216,9 +1216,7 @@ class Addresses extends AutofillRecords {
   }
 
   _recordReadProcessor(address) {
-    
-    
-    if (address.country && address.country != "US") {
+    if (address.country && !FormAutofillUtils.supportedCountries.includes(address.country)) {
       delete address.country;
       delete address["country-name"];
     }
