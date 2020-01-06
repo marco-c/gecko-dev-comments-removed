@@ -309,10 +309,9 @@ public:
 
   virtual void CollectJitReturnAddr(void* aAddr) = 0;
 
-  
-  virtual void CollectCodeLocation(
-    const char* aLabel, const char* aStr, int aLineNumber,
-    const mozilla::Maybe<js::ProfileEntry::Category>& aCategory) = 0;
+  virtual void CollectWasmFrame(const char* aLabel) = 0;
+
+  virtual void CollectPseudoEntry(const js::ProfileEntry& aEntry) = 0;
 };
 
 

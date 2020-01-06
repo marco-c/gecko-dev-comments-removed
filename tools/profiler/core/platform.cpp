@@ -716,80 +716,6 @@ public:
 #endif
 };
 
-static bool
-IsChromeJSScript(JSScript* aScript)
-{
-  
-
-  nsIScriptSecurityManager* const secman =
-    nsScriptSecurityManager::GetScriptSecurityManager();
-  NS_ENSURE_TRUE(secman, false);
-
-  JSPrincipals* const principals = JS_GetScriptPrincipals(aScript);
-  return secman->IsSystemPrincipal(nsJSPrincipals::get(principals));
-}
-
-static void
-AddPseudoEntry(uint32_t aFeatures, NotNull<RacyThreadInfo*> aRacyInfo,
-               const js::ProfileEntry& entry,
-               ProfilerStackCollector& aCollector)
-{
-  
-  
-  
-
-  MOZ_ASSERT(entry.kind() == js::ProfileEntry::Kind::CPP_NORMAL ||
-             entry.kind() == js::ProfileEntry::Kind::JS_NORMAL);
-
-  const char* label = entry.label();
-  const char* dynamicString = entry.dynamicString();
-  bool isChromeJSEntry = false;
-  int lineno = -1;
-
-  if (entry.isJs()) {
-    
-    
-    
-    
-    
-    
-    if (label[0] == '\0') {
-      MOZ_ASSERT(dynamicString);
-
-      
-      
-      if (entry.script()) {
-        isChromeJSEntry = IsChromeJSScript(entry.script());
-        if (entry.pc()) {
-          lineno = JS_PCToLineNumber(entry.script(), entry.pc());
-        } else {
-          
-          MOZ_ASSERT(&entry == &aRacyInfo->entries[aRacyInfo->stackSize() - 1]);
-        }
-      }
-
-    } else {
-      MOZ_ASSERT(strcmp(label, "js::RunScript") == 0 && !dynamicString);
-    }
-
-  } else {
-    MOZ_ASSERT(entry.isCpp());
-    lineno = entry.line();
-  }
-
-  if (dynamicString) {
-    
-    if (ProfilerFeature::HasPrivacy(aFeatures) && !isChromeJSEntry) {
-      dynamicString = "(private)";
-    } else if (strlen(dynamicString) >= ProfileBuffer::kMaxFrameKeyLength) {
-      dynamicString = "(too long)";
-    }
-  }
-
-  aCollector.CollectCodeLocation(label, dynamicString, lineno,
-                                 Some(entry.category()));
-}
-
 
 
 
@@ -965,7 +891,10 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
       
       
       if (pseudoEntry.kind() != js::ProfileEntry::Kind::CPP_MARKER_FOR_JS) {
-        AddPseudoEntry(aFeatures, racyInfo, pseudoEntry, aCollector);
+        
+        MOZ_ASSERT_IF(pseudoEntry.isJs() && pseudoEntry.script() && !pseudoEntry.pc(),
+                      &pseudoEntry == &racyInfo->entries[racyInfo->stackSize() - 1]);
+        aCollector.CollectPseudoEntry(pseudoEntry);
       }
       pseudoIndex++;
       continue;
@@ -991,7 +920,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
       
       if (aIsSynchronous ||
           jsFrame.kind == JS::ProfilingFrameIterator::Frame_Wasm) {
-        aCollector.CollectCodeLocation("", jsFrame.label, -1, Nothing());
+        aCollector.CollectWasmFrame(jsFrame.label);
       } else {
         MOZ_ASSERT(jsFrame.kind == JS::ProfilingFrameIterator::Frame_Ion ||
                    jsFrame.kind == JS::ProfilingFrameIterator::Frame_Baseline);
@@ -1346,18 +1275,19 @@ DoSharedSample(PSLockRef aLock, bool aIsSynchronous,
   TimeDuration delta = aNow - CorePS::ProcessStartTime();
   aBuffer.AddEntry(ProfileBufferEntry::Time(delta.ToMilliseconds()));
 
+  ProfileBufferCollector collector(aBuffer, ActivePS::Features(aLock));
   NativeStack nativeStack;
 #if defined(HAVE_NATIVE_UNWIND)
   if (ActivePS::FeatureStackWalk(aLock)) {
     DoNativeBacktrace(aLock, aThreadInfo, aRegs, nativeStack);
 
     MergeStacks(ActivePS::Features(aLock), aIsSynchronous, aThreadInfo, aRegs,
-                nativeStack, aBuffer);
+                nativeStack, collector);
   } else
 #endif
   {
     MergeStacks(ActivePS::Features(aLock), aIsSynchronous, aThreadInfo, aRegs,
-                nativeStack, aBuffer);
+                nativeStack, collector);
 
     
     if (ActivePS::FeatureLeaf(aLock)) {

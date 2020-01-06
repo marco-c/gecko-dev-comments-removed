@@ -13,7 +13,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/RefCounted.h"
 
-class ProfileBuffer final : public ProfilerStackCollector
+class ProfileBuffer final
 {
 public:
   explicit ProfileBuffer(int aEntrySize);
@@ -42,16 +42,9 @@ public:
   
   void AddThreadIdEntry(int aThreadId, LastSample* aLS = nullptr);
 
-  virtual mozilla::Maybe<uint32_t> Generation() override
-  {
-    return mozilla::Some(mGeneration);
-  }
-
-  virtual void CollectNativeLeafAddr(void* aAddr) override;
-  virtual void CollectJitReturnAddr(void* aAddr) override;
-  virtual void CollectCodeLocation(
+  void CollectCodeLocation(
     const char* aLabel, const char* aStr, int aLineNumber,
-    const mozilla::Maybe<js::ProfileEntry::Category>& aCategory) override;
+    const mozilla::Maybe<js::ProfileEntry::Category>& aCategory);
 
   
   static const size_t kMaxFrameKeyLength = 512;
@@ -103,6 +96,31 @@ public:
 
   
   ProfilerMarkerLinkedList mStoredMarkers;
+};
+
+
+
+
+
+
+
+class ProfileBufferCollector final : public ProfilerStackCollector
+{
+public:
+  ProfileBufferCollector(ProfileBuffer& aBuf, uint32_t aFeatures)
+    : mBuf(aBuf)
+    , mFeatures(aFeatures)
+  {}
+
+  virtual mozilla::Maybe<uint32_t> Generation() override;
+  virtual void CollectNativeLeafAddr(void* aAddr) override;
+  virtual void CollectJitReturnAddr(void* aAddr) override;
+  virtual void CollectWasmFrame(const char* aLabel) override;
+  virtual void CollectPseudoEntry(const js::ProfileEntry& aEntry) override;
+
+private:
+  ProfileBuffer& mBuf;
+  uint32_t mFeatures;
 };
 
 #endif
