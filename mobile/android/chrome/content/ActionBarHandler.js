@@ -39,14 +39,14 @@ var ActionBarHandler = {
 
     if (!this._selectionID && e.collapsed) {
       switch (e.reason) {
-        case 'longpressonemptycontent':
-        case 'taponcaret':
+        case "longpressonemptycontent":
+        case "taponcaret":
           
           
           this._init(e.boundingClientRect);
           break;
 
-        case 'updateposition':
+        case "updateposition":
           
           
           break;
@@ -67,14 +67,14 @@ var ActionBarHandler = {
     if (this._selectionID) {
       if (!this._selectionHasChanged()) {
         
-        if (e.reason == 'presscaret' || e.reason == 'scroll') {
+        if (e.reason == "presscaret" || e.reason == "scroll") {
           
           
           this._updateVisibility();
         } else {
           
           this._boundingClientRect = e.boundingClientRect;
-          let forceUpdate = e.reason == 'updateposition' || e.reason == 'releasecaret';
+          let forceUpdate = e.reason == "updateposition" || e.reason == "releasecaret";
           this._sendActionBarActions(forceUpdate);
         }
       } else {

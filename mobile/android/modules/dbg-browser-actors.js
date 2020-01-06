@@ -24,8 +24,7 @@ const { BrowserTabList, BrowserAddonList, sendShutdownEvent } =
 
 
 
-function createRootActor(aConnection)
-{
+function createRootActor(aConnection) {
   let parameters = {
     tabList: new MobileTabList(aConnection),
     addonList: new BrowserAddonList(aConnection),
@@ -51,8 +50,7 @@ function createRootActor(aConnection)
 
 
 
-function MobileTabList(aConnection)
-{
+function MobileTabList(aConnection) {
   BrowserTabList.call(this, aConnection);
 }
 

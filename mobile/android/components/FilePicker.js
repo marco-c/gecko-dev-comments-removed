@@ -11,7 +11,7 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/FileUtils.jsm");
 Cu.import("resource://gre/modules/Messaging.jsm");
 
-Cu.importGlobalProperties(['File']);
+Cu.importGlobalProperties(["File"]);
 
 function FilePicker() {
 }
@@ -209,7 +209,7 @@ FilePicker.prototype = {
     
     
     
-    let win = Services.wm.getMostRecentWindow('navigator:browser');
+    let win = Services.wm.getMostRecentWindow("navigator:browser");
     let tab = win && win.BrowserApp.getTabForWindow(this._domWin.top)
     if (tab) {
       msg.tabId = tab.id;

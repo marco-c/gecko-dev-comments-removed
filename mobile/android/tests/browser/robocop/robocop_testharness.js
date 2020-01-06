@@ -20,9 +20,9 @@ function _evalURI(uri, sandbox) {
 
   
   
-  req.open('GET', theURI.spec + ((/\?/).test(theURI.spec) ? "&slug=" : "?slug=") + (new Date()).getTime(), false);
-  req.setRequestHeader('Cache-Control', 'no-cache');
-  req.setRequestHeader('Pragma', 'no-cache');
+  req.open("GET", theURI.spec + ((/\?/).test(theURI.spec) ? "&slug=" : "?slug=") + (new Date()).getTime(), false);
+  req.setRequestHeader("Cache-Control", "no-cache");
+  req.setRequestHeader("Pragma", "no-cache");
   req.send();
 
   return SpecialPowers.Cu.evalInSandbox(req.responseText, sandbox, "1.8", uri, 1);

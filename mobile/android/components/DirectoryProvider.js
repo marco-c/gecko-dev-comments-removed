@@ -147,8 +147,7 @@ DirectoryProvider.prototype = {
 
     if (prop == NS_APP_DISTRIBUTION_SEARCH_DIR_LIST) {
       this._appendDistroSearchDirs(result);
-    }
-    else {
+    } else {
       
 
 
