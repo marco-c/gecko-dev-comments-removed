@@ -6,12 +6,9 @@
 
 const {utils: Cu, classes: Cc, interfaces: Ci} = Components;
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/CanonicalJSON.jsm");
 Cu.import("resource://shield-recipe-client/lib/LogManager.jsm");
-
-XPCOMUtils.defineLazyModuleGetter(
-  this, "CanonicalJSON", "resource://gre/modules/CanonicalJSON.jsm");
-
+Cu.import("resource://shield-recipe-client/lib/Utils.jsm");
 Cu.importGlobalProperties(["fetch", "URL"]); 
 
 this.EXPORTED_SYMBOLS = ["NormandyApi"];
@@ -22,8 +19,6 @@ const prefs = Services.prefs.getBranch("extensions.shield-recipe-client.");
 let indexPromise = null;
 
 this.NormandyApi = {
-  InvalidSignatureError: class InvalidSignatureError extends Error {},
-
   clearIndexCache() {
     indexPromise = null;
   },
@@ -68,7 +63,7 @@ this.NormandyApi = {
 
   async getApiUrl(name) {
     if (!indexPromise) {
-      const apiBase = new URL(prefs.getCharPref("api_url"));
+      let apiBase = new URL(prefs.getCharPref("api_url"));
       if (!apiBase.pathname.endsWith("/")) {
         apiBase.pathname += "/";
       }
@@ -82,61 +77,46 @@ this.NormandyApi = {
     return this.absolutify(url);
   },
 
-  async fetchSignedObjects(type, filters) {
-    const signedObjectsUrl = await this.getApiUrl(`${type}-signed`);
-    const objectsResponse = await this.get(signedObjectsUrl, filters);
-    const rawText = await objectsResponse.text();
-    const objectsWithSigs = JSON.parse(rawText);
+  async fetchRecipes(filters = {enabled: true}) {
+    const signedRecipesUrl = await this.getApiUrl("recipe-signed");
+    const recipesResponse = await this.get(signedRecipesUrl, filters);
+    const rawText = await recipesResponse.text();
+    const recipesWithSigs = JSON.parse(rawText);
 
-    const verifiedObjects = [];
+    const verifiedRecipes = [];
 
-    for (const objectWithSig of objectsWithSigs) {
-      const {signature, x5u} = objectWithSig.signature;
-      const object = objectWithSig[type];
-
-      const serialized = CanonicalJSON.stringify(object);
-      
-      
-      
-      
+    for (const {recipe, signature: {signature, x5u}} of recipesWithSigs) {
+      const serialized = CanonicalJSON.stringify(recipe);
       if (!rawText.includes(serialized)) {
         log.debug(rawText, serialized);
-        throw new NormandyApi.InvalidSignatureError(
-          `Canonical ${type} serialization does not match!`);
+        throw new Error("Canonical recipe serialization does not match!");
       }
 
-      const certChainResponse = await this.get(this.absolutify(x5u));
+      const certChainResponse = await fetch(this.absolutify(x5u));
       const certChain = await certChainResponse.text();
       const builtSignature = `p384ecdsa=${signature}`;
 
       const verifier = Cc["@mozilla.org/security/contentsignatureverifier;1"]
         .createInstance(Ci.nsIContentSignatureVerifier);
 
-      let valid;
-      try {
-        valid = verifier.verifyContentSignature(
-          serialized,
-          builtSignature,
-          certChain,
-          "normandy.content-signature.mozilla.org"
-        );
-      } catch (err) {
-        throw new NormandyApi.InvalidSignatureError(`${type} signature validation failed: ${err}`);
-      }
-
+      const valid = verifier.verifyContentSignature(
+        serialized,
+        builtSignature,
+        certChain,
+        "normandy.content-signature.mozilla.org"
+      );
       if (!valid) {
-        throw new NormandyApi.InvalidSignatureError(`${type} signature is not valid`);
+        throw new Error("Recipe signature is not valid");
       }
-
-      verifiedObjects.push(object);
+      verifiedRecipes.push(recipe);
     }
 
     log.debug(
-      `Fetched ${verifiedObjects.length} ${type} from the server:`,
-      verifiedObjects.map(r => r.name).join(", ")
+      `Fetched ${verifiedRecipes.length} recipes from the server:`,
+      verifiedRecipes.map(r => r.name).join(", ")
     );
 
-    return verifiedObjects;
+    return verifiedRecipes;
   },
 
   
@@ -155,65 +135,18 @@ this.NormandyApi = {
 
 
 
-
-
-
-  async fetchRecipes(filters = {enabled: true}) {
-    return this.fetchSignedObjects("recipe", filters);
-  },
-
-  
-
-
-
-  async fetchActions(filters = {}) {
-    return this.fetchSignedObjects("action", filters);
+  async fetchActions() {
+    const actionApiUrl = await this.getApiUrl("action-list");
+    const res = await this.get(actionApiUrl);
+    return res.json();
   },
 
   async fetchImplementation(action) {
-    const implementationUrl = new URL(this.absolutify(action.implementation_url));
-
-    
-    const response = await fetch(implementationUrl);
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch action implementation for ${action.name}: ${response.status}`
-      );
-    }
-    const responseText = await response.text();
-
-    
-    
-    
-
-    
-    
-    const parts = implementationUrl.pathname.split("/");
-    const lastNonEmpty = parts.filter(p => p !== "").slice(-1)[0];
-    const [algorithm, ...hashParts] = lastNonEmpty.split("-");
-    const expectedHash = hashParts.join("-");
-
-    if (algorithm !== "sha384") {
-      throw new Error(
-        `Failed to fetch action implemenation for ${action.name}: ` +
-        `Unexpected integrity algorithm, expected "sha384", got ${algorithm}`
-      );
+    const response = await fetch(action.implementation_url);
+    if (response.ok) {
+      return response.text();
     }
 
-    
-    const hasher = Cc["@mozilla.org/security/hash;1"].createInstance(Ci.nsICryptoHash);
-    hasher.init(hasher.SHA384);
-    const dataToHash = new TextEncoder().encode(responseText);
-    hasher.update(dataToHash, dataToHash.length);
-    const useBase64 = true;
-    const hash = hasher.finish(useBase64).replace(/\+/g, "-").replace(/\//g, "_");
-    if (hash !== expectedHash) {
-      throw new Error(
-        `Failed to fetch action implementation for ${action.name}: ` +
-        `Integrity hash does not match content. Expected ${expectedHash} got ${hash}.`
-      );
-    }
-
-    return responseText;
+    throw new Error(`Failed to fetch action implementation for ${action.name}: ${response.status}`);
   },
 };

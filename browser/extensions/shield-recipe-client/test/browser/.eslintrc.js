@@ -8,4 +8,10 @@ module.exports = {
   plugins: [
     "mozilla"
   ],
+
+  globals: {
+    
+    
+    "SimpleTest": false
+  }
 };

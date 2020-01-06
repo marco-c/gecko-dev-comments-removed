@@ -119,8 +119,7 @@ var whitelist = [
   {file: "resource://pdf.js/web/debugger.js"},
 
   
-  {file: "resource://shield-recipe-client-content/shield-content-frame.js"},
-  {file: "resource://shield-recipe-client-content/shield-content-process.js"},
+  {file: "resource://gre/modules/IndexedDB.jsm"},
 
   
   {file: "resource://gre/modules/Localization.jsm"},

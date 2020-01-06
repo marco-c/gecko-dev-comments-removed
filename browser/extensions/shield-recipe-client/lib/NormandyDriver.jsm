@@ -6,13 +6,11 @@
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource:///modules/ShellService.jsm");
 Cu.import("resource://gre/modules/AddonManager.jsm");
 Cu.import("resource://gre/modules/Timer.jsm");
-Cu.import("resource://shield-recipe-client/lib/Addons.jsm");
 Cu.import("resource://shield-recipe-client/lib/LogManager.jsm");
 Cu.import("resource://shield-recipe-client/lib/Storage.jsm");
 Cu.import("resource://shield-recipe-client/lib/Heartbeat.jsm");
@@ -20,9 +18,6 @@ Cu.import("resource://shield-recipe-client/lib/FilterExpressions.jsm");
 Cu.import("resource://shield-recipe-client/lib/ClientEnvironment.jsm");
 Cu.import("resource://shield-recipe-client/lib/PreferenceExperiments.jsm");
 Cu.import("resource://shield-recipe-client/lib/Sampling.jsm");
-
-XPCOMUtils.defineLazyModuleGetter(
-  this, "AddonStudies", "resource://shield-recipe-client/lib/AddonStudies.jsm");
 
 const {generateUUID} = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
 
@@ -161,12 +156,6 @@ this.NormandyDriver = function(sandboxManager) {
       sandboxManager.removeHold(`setTimeout-${token}`);
     },
 
-    addons: {
-      get: sandboxManager.wrapAsync(Addons.get.bind(Addons), {cloneInto: true}),
-      install: sandboxManager.wrapAsync(Addons.install.bind(Addons)),
-      uninstall: sandboxManager.wrapAsync(Addons.uninstall.bind(Addons)),
-    },
-
     
     ratioSample: sandboxManager.wrapAsync(Sampling.ratioSample),
 
@@ -179,51 +168,5 @@ this.NormandyDriver = function(sandboxManager) {
       getAllActive: sandboxManager.wrapAsync(PreferenceExperiments.getAllActive, {cloneInto: true}),
       has: sandboxManager.wrapAsync(PreferenceExperiments.has),
     },
-
-    
-    studies: {
-      start: sandboxManager.wrapAsync(
-        AddonStudies.start.bind(AddonStudies),
-        {cloneArguments: true, cloneInto: true}
-      ),
-      stop: sandboxManager.wrapAsync(AddonStudies.stop.bind(AddonStudies)),
-      get: sandboxManager.wrapAsync(AddonStudies.get.bind(AddonStudies), {cloneInto: true}),
-      getAll: sandboxManager.wrapAsync(AddonStudies.getAll.bind(AddonStudies), {cloneInto: true}),
-      has: sandboxManager.wrapAsync(AddonStudies.has.bind(AddonStudies)),
-    },
-
-    
-    preferences: {
-      getBool: wrapPrefGetter(Services.prefs.getBoolPref),
-      getInt: wrapPrefGetter(Services.prefs.getIntPref),
-      getChar: wrapPrefGetter(Services.prefs.getCharPref),
-      has(name) {
-        return Services.prefs.getPrefType(name) !== Services.prefs.PREF_INVALID;
-      },
-    },
   };
 };
-
-
-
-
-
-
-
-
-
-
-
-
-function wrapPrefGetter(getter) {
-  return (value, defaultValue = undefined) => {
-    
-    
-    
-    const args = [value];
-    if (defaultValue !== undefined) {
-      args.push(defaultValue);
-    }
-    return getter.apply(null, args);
-  };
-}

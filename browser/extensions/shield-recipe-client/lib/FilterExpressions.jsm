@@ -9,12 +9,21 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://shield-recipe-client/lib/Sampling.jsm");
 Cu.import("resource://shield-recipe-client/lib/PreferenceFilters.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "mozjexl", "resource://shield-recipe-client-vendor/mozjexl.js");
-
 this.EXPORTED_SYMBOLS = ["FilterExpressions"];
 
+XPCOMUtils.defineLazyGetter(this, "nodeRequire", () => {
+  const {Loader, Require} = Cu.import("resource://gre/modules/commonjs/toolkit/loader.js", {});
+  const loader = new Loader({
+    paths: {
+      "": "resource://shield-recipe-client/node_modules/",
+    },
+  });
+  return new Require(loader, {});
+});
+
 XPCOMUtils.defineLazyGetter(this, "jexl", () => {
-  const jexl = new mozjexl.Jexl();
+  const {Jexl} = nodeRequire("jexl/lib/Jexl.js");
+  const jexl = new Jexl();
   jexl.addTransforms({
     date: dateString => new Date(dateString),
     stableSample: Sampling.stableSample,
@@ -22,9 +31,7 @@ XPCOMUtils.defineLazyGetter(this, "jexl", () => {
     preferenceValue: PreferenceFilters.preferenceValue,
     preferenceIsUserSet: PreferenceFilters.preferenceIsUserSet,
     preferenceExists: PreferenceFilters.preferenceExists,
-    keys,
   });
-  jexl.addBinaryOp("intersect", 40, operatorIntersect);
   return jexl;
 });
 
@@ -34,32 +41,3 @@ this.FilterExpressions = {
     return jexl.eval(onelineExpr, context);
   },
 };
-
-
-
-
-
-
-
-function keys(obj) {
-  if (typeof obj !== "object" || obj === null) {
-    return undefined;
-  }
-
-  return Object.keys(obj);
-}
-
-
-
-
-
-
-
-
-function operatorIntersect(listA, listB) {
-  if (!Array.isArray(listA) || !Array.isArray(listB)) {
-    return undefined;
-  }
-
-  return listA.filter(item => listB.includes(item));
-}
