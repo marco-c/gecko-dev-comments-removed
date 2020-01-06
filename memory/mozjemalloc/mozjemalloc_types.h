@@ -56,7 +56,6 @@ typedef struct {
 
 	jemalloc_bool	opt_abort;	
 	jemalloc_bool	opt_junk;	
-	jemalloc_bool	opt_sysv;	
 	jemalloc_bool	opt_xmalloc;	
 	jemalloc_bool	opt_zero;	
 	size_t	narenas;	
