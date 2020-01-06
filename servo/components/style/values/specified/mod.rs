@@ -1311,23 +1311,25 @@ impl Parse for Attr {
 
 #[cfg(feature = "gecko")]
 
-pub fn get_id_for_namespace(namespace: &Namespace, context: &ParserContext) -> Result<NamespaceId, ()> {
-    if let Some(map) = context.namespaces {
-        if let Some(ref entry) = map.read().prefixes.get(&namespace.0) {
-            Ok(entry.1)
-        } else {
-            Err(())
+fn get_id_for_namespace(namespace: &Namespace, context: &ParserContext) -> Result<NamespaceId, ()> {
+    let namespaces_map = match context.namespaces {
+        Some(map) => map,
+        None => {
+            
+            
+            return Err(());
         }
-    } else {
-        
-        
-        Err(())
+    };
+
+    match namespaces_map.prefixes.get(&namespace.0) {
+        Some(entry) => Ok(entry.1),
+        None => Err(()),
     }
 }
 
 #[cfg(feature = "servo")]
 
-pub fn get_id_for_namespace(_: &Namespace, _: &ParserContext) -> Result<NamespaceId, ()> {
+fn get_id_for_namespace(_: &Namespace, _: &ParserContext) -> Result<NamespaceId, ()> {
     Ok(())
 }
 
@@ -1340,27 +1342,28 @@ impl Attr {
         let first = input.try(|i| i.expect_ident()).ok();
         if let Ok(token) = input.try(|i| i.next_including_whitespace()) {
             match token {
-                Token::Delim('|') => {
-                    
-                    let second_token = match input.next_including_whitespace()? {
-                        Token::Ident(second) => second,
-                        _ => return Err(()),
-                    };
-                    let ns_with_id = if let Some(ns) = first {
-                        let ns: Namespace = ns.into();
-                        let id = get_id_for_namespace(&ns, context)?;
-                        Some((ns, id))
-                    } else {
-                        None
-                    };
-                    return Ok(Attr {
-                        namespace: ns_with_id,
-                        attribute: second_token.into_owned(),
-                    })
-                }
-                _ => return Err(())
+                Token::Delim('|') => {}
+                _ => return Err(()),
             }
+            
+            let second_token = match input.next_including_whitespace()? {
+                Token::Ident(second) => second,
+                _ => return Err(()),
+            };
+
+            let ns_with_id = if let Some(ns) = first {
+                let ns: Namespace = ns.into();
+                let id = get_id_for_namespace(&ns, context)?;
+                Some((ns, id))
+            } else {
+                None
+            };
+            return Ok(Attr {
+                namespace: ns_with_id,
+                attribute: second_token.into_owned(),
+            })
         }
+
         if let Some(first) = first {
             Ok(Attr {
                 namespace: None,
