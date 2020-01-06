@@ -233,7 +233,7 @@
   
 
   --line-color: #ACACAC;
-  --background-color: var(--theme-body-background);
+  --background-color: var(--theme-toolbar-background);
 }
 
 #debugger-toolbar .breadcrumbs-widget-item::before {
