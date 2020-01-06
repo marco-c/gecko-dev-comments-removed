@@ -1191,44 +1191,24 @@ public:
       ? nsIContentPolicy::TYPE_INTERNAL_AUDIO :
         nsIContentPolicy::TYPE_INTERNAL_VIDEO;
 
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIPrincipal> loadingPrincipal;
-    bool setAttrs = nsContentUtils::GetLoadingPrincipalForXULNode(aElement,
-                                    getter_AddRefs(loadingPrincipal));
-
     nsCOMPtr<nsILoadGroup> loadGroup = aElement->GetDocumentLoadGroup();
     nsCOMPtr<nsIChannel> channel;
-    nsresult rv =
-      NS_NewChannelWithTriggeringPrincipal(getter_AddRefs(channel),
-                                           aElement->mLoadingSrc,
-                                           static_cast<Element*>(aElement),
-                                           loadingPrincipal,
-                                           securityFlags,
-                                           contentPolicyType,
-                                           loadGroup,
-                                           nullptr,   
-                                           nsICachingChannel::LOAD_BYPASS_LOCAL_CACHE_IF_BUSY |
-                                           nsIChannel::LOAD_MEDIA_SNIFFER_OVERRIDES_CONTENT_TYPE |
-                                           nsIChannel::LOAD_CLASSIFY_URI |
-                                           nsIChannel::LOAD_CALL_CONTENT_SNIFFERS);
+    nsresult rv = NS_NewChannel(getter_AddRefs(channel),
+                                aElement->mLoadingSrc,
+                                static_cast<Element*>(aElement),
+                                securityFlags,
+                                contentPolicyType,
+                                loadGroup,
+                                nullptr,   
+                                nsICachingChannel::LOAD_BYPASS_LOCAL_CACHE_IF_BUSY |
+                                nsIChannel::LOAD_MEDIA_SNIFFER_OVERRIDES_CONTENT_TYPE |
+                                nsIChannel::LOAD_CLASSIFY_URI |
+                                nsIChannel::LOAD_CALL_CONTENT_SNIFFERS);
 
     if (NS_FAILED(rv)) {
       
       aElement->NotifyLoadError();
       return;
-    }
-
-    if (setAttrs) {
-      nsCOMPtr<nsILoadInfo> loadInfo = channel->GetLoadInfo();
-      if (loadInfo) {
-        
-        Unused << loadInfo->SetOriginAttributes(loadingPrincipal->OriginAttributesRef());
-      }
     }
 
     nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(channel));
@@ -4912,7 +4892,6 @@ public:
     WatchTarget(aName),
     mElement(aElement),
     mHaveCurrentData(false),
-    mBlocked(false),
     mFinished(false),
     mMutex(aName),
     mPendingNotifyOutput(false)
@@ -4930,21 +4909,9 @@ public:
     if (!mElement || !mHaveCurrentData || mFinished) {
       return MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE;
     }
-    return mBlocked
-        ? MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE_BUFFERING
-        : MediaDecoderOwner::NEXT_FRAME_AVAILABLE;
+    return MediaDecoderOwner::NEXT_FRAME_AVAILABLE;
   }
 
-  void DoNotifyBlocked()
-  {
-    mBlocked = true;
-    NotifyWatchers();
-  }
-  void DoNotifyUnblocked()
-  {
-    mBlocked = false;
-    NotifyWatchers();
-  }
   void DoNotifyOutput()
   {
     {
@@ -4969,22 +4936,6 @@ public:
 
   
   
-  virtual void NotifyBlockingChanged(MediaStreamGraph* aGraph, Blocking aBlocked) override
-  {
-    nsCOMPtr<nsIRunnable> event;
-    if (aBlocked == BLOCKED) {
-      event = NewRunnableMethod(
-        "dom::HTMLMediaElement::StreamListener::DoNotifyBlocked",
-        this,
-        &StreamListener::DoNotifyBlocked);
-    } else {
-      event = NewRunnableMethod(
-        "dom::HTMLMediaElement::StreamListener::DoNotifyUnblocked",
-        this,
-        &StreamListener::DoNotifyUnblocked);
-    }
-    aGraph->DispatchToMainThreadAfterStreamStateUpdate(event.forget());
-  }
   virtual void NotifyHasCurrentData(MediaStreamGraph* aGraph) override
   {
     MutexAutoLock lock(mMutex);
@@ -5011,7 +4962,6 @@ private:
   
   HTMLMediaElement* mElement;
   bool mHaveCurrentData;
-  bool mBlocked;
   bool mFinished;
 
   
