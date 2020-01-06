@@ -54,6 +54,14 @@ impl nsStyleCoord_CalcValue {
     }
 }
 
+impl PartialEq for nsStyleCoord_CalcValue {
+    fn eq(&self, other: &Self) -> bool {
+        self.mLength == other.mLength &&
+            self.mPercent == other.mPercent &&
+            self.mHasPercent == other.mHasPercent
+    }
+}
+
 impl nsStyleSides {
     
     
@@ -192,11 +200,11 @@ impl<'a> CoordDataMut for CornersDataMut<'a> {
     }
 }
 
-#[derive(Copy, Clone)]
 
 
 
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum CoordDataValue {
     
     Null,
