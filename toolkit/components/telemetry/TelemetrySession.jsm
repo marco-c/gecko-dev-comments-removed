@@ -1968,6 +1968,7 @@ var Impl = {
     
     if (needsUpdate) {
       this._sessionActiveTicks++;
+      Telemetry.scalarAdd("browser.engagement.active_ticks", 1);
     }
   },
 
