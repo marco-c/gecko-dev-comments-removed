@@ -1932,6 +1932,11 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
         newInnerWindow->mSessionStorage = nullptr;
 
         newInnerWindow->ClearDocumentDependentSlots(cx);
+
+        
+        
+        rv = newInnerWindow->ExecutionReady();
+        NS_ENSURE_SUCCESS(rv, rv);
       }
     } else {
       newInnerWindow->InnerSetNewDocument(cx, aDocument);
@@ -1939,6 +1944,9 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
       
       JS::Rooted<JSObject*> obj(cx, newInnerGlobal);
       rv = kungFuDeathGrip->InitClasses(obj);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      rv = newInnerWindow->ExecutionReady();
       NS_ENSURE_SUCCESS(rv, rv);
     }
 

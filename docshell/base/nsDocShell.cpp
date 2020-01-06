@@ -13,6 +13,11 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Casting.h"
+#include "mozilla/dom/ClientChannelHelper.h"
+#include "mozilla/dom/ClientHandle.h"
+#include "mozilla/dom/ClientInfo.h"
+#include "mozilla/dom/ClientManager.h"
+#include "mozilla/dom/ClientSource.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLAnchorElement.h"
@@ -3390,6 +3395,80 @@ nsDocShell::GetParentDocshell()
 }
 
 void
+nsDocShell::MaybeCreateInitialClientSource(nsIPrincipal* aPrincipal)
+{
+  
+  
+  if (mScriptGlobal && mScriptGlobal->GetExtantDoc()) {
+    MOZ_DIAGNOSTIC_ASSERT(
+      mScriptGlobal->GetCurrentInnerWindowInternal()->GetClientInfo().isSome());
+    MOZ_DIAGNOSTIC_ASSERT(!mInitialClientSource);
+    return;
+  }
+
+  
+  
+  if (mInitialClientSource) {
+    return;
+  }
+
+  
+  
+  
+  if (!aPrincipal && (mSandboxFlags & SANDBOXED_ORIGIN)) {
+    return;
+  }
+
+  nsIPrincipal* principal = aPrincipal ? aPrincipal
+                                       : GetInheritedPrincipal(false);
+
+  
+  
+  
+  
+  
+  
+  if (!principal) {
+    return;
+  }
+
+  nsCOMPtr<nsPIDOMWindowOuter> win = GetWindow();
+  if (!win) {
+    return;
+  }
+
+  mInitialClientSource =
+    ClientManager::CreateSource(ClientType::Window,
+                                win->EventTargetFor(TaskCategory::Other),
+                                principal);
+
+  
+  
+  
+  mInitialClientSource->DocShellExecutionReady(this);
+}
+
+Maybe<ClientInfo>
+nsDocShell::GetInitialClientInfo() const
+{
+  if (mInitialClientSource) {
+    Maybe<ClientInfo> result;
+    result.emplace(mInitialClientSource->Info());
+    return Move(result);
+  }
+
+  nsGlobalWindowInner* innerWindow =
+    mScriptGlobal ? mScriptGlobal->GetCurrentInnerWindowInternal() : nullptr;
+  nsIDocument* doc = innerWindow ? innerWindow->GetExtantDoc() : nullptr;
+
+  if (!doc || !doc->IsInitialDocument()) {
+    return Maybe<ClientInfo>();
+  }
+
+  return innerWindow->GetClientInfo();
+}
+
+void
 nsDocShell::RecomputeCanExecuteScripts()
 {
   bool old = mCanExecuteScripts;
@@ -5922,6 +6001,9 @@ nsDocShell::Destroy()
   mIsBeingDestroyed = true;
 
   
+  mInitialClientSource.reset();
+
+  
   SetRecordProfileTimelineMarkers(false);
 
   
@@ -7757,6 +7839,10 @@ nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
   mTiming = nullptr;
 
   
+  
+  mInitialClientSource.reset();
+
+  
   if (eCharsetReloadRequested == mCharsetReloadState) {
     mCharsetReloadState = eCharsetReloadStopOrigional;
   } else {
@@ -8252,6 +8338,9 @@ nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
     } else {
       principal = aPrincipal;
     }
+
+    MaybeCreateInitialClientSource(principal);
+
     
     blankDoc = nsContentDLF::CreateBlankDocument(mLoadGroup, principal, this);
     if (blankDoc) {
@@ -11747,6 +11836,24 @@ nsDocShell::DoChannelLoad(nsIChannel* aChannel,
   if (!mAllowContentRetargeting) {
     openFlags |= nsIURILoader::DONT_RETARGET;
   }
+
+  nsCOMPtr<nsPIDOMWindowOuter> win = GetWindow();
+  NS_ENSURE_TRUE(win, NS_ERROR_FAILURE);
+
+  MaybeCreateInitialClientSource();
+
+  
+  
+  
+  
+  
+  Maybe<ClientInfo> noReservedClient;
+  rv = AddClientChannelHelper(aChannel,
+                              Move(noReservedClient),
+                              GetInitialClientInfo(),
+                              win->EventTargetFor(TaskCategory::Other));
+  NS_ENSURE_SUCCESS(rv, rv);
+
   rv = aURILoader->OpenURI(aChannel, openFlags, this);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -15147,6 +15254,12 @@ nsDocShell::InFrameSwap()
     shell = shell->GetParentDocshell();
   } while (shell);
   return false;
+}
+
+UniquePtr<ClientSource>
+nsDocShell::TakeInitialClientSource()
+{
+  return Move(mInitialClientSource);
 }
 
 NS_IMETHODIMP

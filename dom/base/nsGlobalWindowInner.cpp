@@ -4,6 +4,9 @@
 
 
 
+#include "mozilla/dom/ClientManager.h"
+#include "mozilla/dom/ClientSource.h"
+
 #define FORWARD_TO_OUTER(method, args, err_rval)                        \
   PR_BEGIN_MACRO                                                        \
   MOZ_RELEASE_ASSERT(IsInnerWindow());                                  \
@@ -1100,6 +1103,9 @@ nsGlobalWindowInner::FreeInnerObjects()
   mHasVRDisplayActivateEvents = false;
   mVRDisplays.Clear();
 
+  
+  mClientSource.reset();
+
   if (mTabChild) {
     while (mBeforeUnloadListenerCount-- > 0) {
       mTabChild->BeforeUnloadRemoved();
@@ -1354,6 +1360,8 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsGlobalWindowInner)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mIdleRequestExecutor)
   tmp->DisableIdleCallbackRequests();
 
+  tmp->mClientSource.reset();
+
   if (tmp->IsChromeWindow()) {
     NS_IMPL_CYCLE_COLLECTION_UNLINK(mChromeFields.mBrowserDOMWindow)
     if (tmp->mChromeFields.mMessageManager) {
@@ -1517,6 +1525,68 @@ nsGlobalWindowInner::InnerSetNewDocument(JSContext* aCx, nsIDocument* aDocument)
 
   
   mMutationBits = 0;
+}
+
+nsresult
+nsGlobalWindowInner::EnsureClientSource()
+{
+  MOZ_DIAGNOSTIC_ASSERT(mDoc);
+
+  nsCOMPtr<nsIChannel> channel = mDoc->GetChannel();
+  nsCOMPtr<nsILoadInfo> loadInfo = channel ? channel->GetLoadInfo() : nullptr;
+
+  
+  
+  
+  
+  if (loadInfo) {
+    UniquePtr<ClientSource> reservedClient = loadInfo->TakeReservedClientSource();
+    if (reservedClient) {
+      mClientSource.reset();
+      mClientSource = Move(reservedClient);
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  if (!mClientSource) {
+    nsIDocShell* docshell = GetDocShell();
+    if (docshell) {
+      mClientSource = docshell->TakeInitialClientSource();
+    }
+  }
+
+  
+  
+  
+  
+  
+  if (!mClientSource) {
+    mClientSource = ClientManager::CreateSource(ClientType::Window,
+                                                EventTargetFor(TaskCategory::Other),
+                                                mDoc->NodePrincipal());
+    if (NS_WARN_IF(!mClientSource)) {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
+  return NS_OK;
+}
+
+nsresult
+nsGlobalWindowInner::ExecutionReady()
+{
+  nsresult rv = EnsureClientSource();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = mClientSource->WindowExecutionReady(AsInner());
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
 }
 
 void
@@ -2008,6 +2078,12 @@ void
 nsPIDOMWindowInner::SyncStateFromParentWindow()
 {
   nsGlobalWindowInner::Cast(this)->SyncStateFromParentWindow();
+}
+
+Maybe<ClientInfo>
+nsPIDOMWindowInner::GetClientInfo() const
+{
+  return Move(nsGlobalWindowInner::Cast(this)->GetClientInfo());
 }
 
 void
@@ -6119,6 +6195,17 @@ nsGlobalWindowInner::CallOnChildren(Method aMethod)
 
     (inner->*aMethod)();
   }
+}
+
+Maybe<ClientInfo>
+nsGlobalWindowInner::GetClientInfo() const
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  Maybe<ClientInfo> clientInfo;
+  if (mClientSource) {
+    clientInfo.emplace(mClientSource->Info());
+  }
+  return Move(clientInfo);
 }
 
 nsresult

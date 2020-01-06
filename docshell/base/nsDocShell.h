@@ -19,6 +19,7 @@
 #include "nsIDOMStorageManager.h"
 #include "nsDocLoader.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Move.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
@@ -69,6 +70,8 @@ class Encoding;
 class HTMLEditor;
 enum class TaskCategory;
 namespace dom {
+class ClientInfo;
+class ClientSource;
 class EventTarget;
 class PendingGlobalHistoryEntry;
 typedef uint32_t ScreenOrientationInternal;
@@ -823,6 +826,26 @@ protected:
   
   already_AddRefed<nsDocShell> GetParentDocshell();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void MaybeCreateInitialClientSource(nsIPrincipal* aPrincipal = nullptr);
+
+  
+  
+  
+  
+  mozilla::Maybe<mozilla::dom::ClientInfo> GetInitialClientInfo() const;
+
 protected:
   nsresult GetCurScrollPos(int32_t aScrollOrientation, int32_t* aCurPos);
   nsresult SetCurScrollPosEx(int32_t aCurHorizontalPos,
@@ -1149,6 +1172,8 @@ private:
   mozilla::OriginAttributes mOriginAttributes;
 
   mozilla::UniquePtr<mozilla::dom::PendingGlobalHistoryEntry> mPrerenderGlobalHistory;
+
+  mozilla::UniquePtr<mozilla::dom::ClientSource> mInitialClientSource;
 
   
   
