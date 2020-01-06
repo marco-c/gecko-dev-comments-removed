@@ -1433,7 +1433,13 @@ void
 ServoStyleSet::UpdateStylist()
 {
   MOZ_ASSERT(StylistNeedsUpdate());
-  Element* root = mPresContext->Document()->GetDocumentElement();
+
+  
+  
+  
+  Element* root =
+    IsMaster() ? mPresContext->Document()->GetDocumentElement() : nullptr;
+
   Servo_StyleSet_FlushStyleSheets(mRawSet.get(), root);
   mStylistState = StylistState::NotDirty;
 }
