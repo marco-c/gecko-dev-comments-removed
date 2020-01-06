@@ -1,6 +1,3 @@
-
-
-
 const OLD_ADDON_PREF_NAME = "extensions.jid1-NeEaf3sAHdKHPA@jetpack.deviceIdInfo";
 const OLD_ADDON_ID = "jid1-NeEaf3sAHdKHPA@jetpack";
 const ADDON_ID = "screenshots@mozilla.org";
@@ -46,8 +43,28 @@ const prefObserver = {
   }
 };
 
+const appStartupObserver = {
+  register() {
+    Services.obs.addObserver(this, "sessionstore-windows-restored", false); 
+  },
+
+  unregister() {
+    Services.obs.removeObserver(this, "sessionstore-windows-restored", false); 
+  },
+
+  observe() {
+    appStartupDone();
+    this.unregister();
+  }
+}
+
+const APP_STARTUP = 1;
 function startup(data, reason) { 
-  appStartupDone();
+  if (reason === APP_STARTUP) {
+    appStartupObserver.register();
+  } else {
+    appStartupDone();
+  }
   prefObserver.register();
   addonResourceURI = data.resourceURI;
   

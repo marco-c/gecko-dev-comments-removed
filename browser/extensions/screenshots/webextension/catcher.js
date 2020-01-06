@@ -46,12 +46,14 @@ this.catcher = (function() {
   }
 
   
-  exports.watchFunction = function watchFunction(func) {
+  exports.watchFunction = function watchFunction(func, quiet) {
     return function() {
       try {
         return func.apply(this, arguments);
       } catch (e) {
-        exports.unhandled(e);
+        if (!quiet) {
+          exports.unhandled(e);
+        }
         throw e;
       }
     };

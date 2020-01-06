@@ -3,13 +3,12 @@ window.shot = (function () {let exports={};
 
 
 
-
 function assert(condition, ...args) {
   if (condition) {
     return;
   }
   console.error("Failed assertion", ...args);
-  throw new Error("Failed assertion", ...args);
+  throw new Error(`Failed assertion: ${args.join(" ")}`);
 }
 
 

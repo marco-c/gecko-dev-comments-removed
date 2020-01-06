@@ -815,10 +815,6 @@ this.uicontrol = (function() {
       return;
     }
     addHandlers();
-    
-    if (self.options && self.options.styleMyShotsButton) {
-      ui.iframe.addClassName = `styleMyShotsButton-${self.options.styleMyShotsButton.value}`;
-    }
     if (shouldOnboard) {
       setState("onboarding");
     } else {

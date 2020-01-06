@@ -47,7 +47,18 @@ this.takeshot = (function() {
       openedTab = tab;
       return uploadShot(shot);
     }).then(() => {
-      return browser.tabs.update(openedTab.id, {url: shot.viewUrl});
+      return browser.tabs.update(openedTab.id, {url: shot.viewUrl}).then(
+        null,
+        (error) => {
+          
+          
+          if ((/invalid tab id/i).test(error)) {
+            
+            return browser.tabs.create({url: shot.viewUrl});
+          }
+          throw error;
+        }
+      );
     }).then(() => {
       return shot.viewUrl;
     }).catch((error) => {
