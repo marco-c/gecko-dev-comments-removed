@@ -193,7 +193,7 @@ AOMDecoder::ProcessDecode(MediaRawData* aSample)
   while ((img = aom_codec_get_frame(&mCodec, &iter))) {
     
     bool highbd = bool(img->fmt & AOM_IMG_FMT_HIGHBITDEPTH);
-    if (img->bit_depth > 8) {
+    if (highbd) {
       
       aom_img_fmt_t fmt8 = static_cast<aom_img_fmt_t>(img->fmt ^ AOM_IMG_FMT_HIGHBITDEPTH);
       img8.reset(aom_img_alloc(NULL, fmt8, img->d_w, img->d_h, 16));
