@@ -51,6 +51,11 @@ public:
   void PaintHeaderFooter(gfxContext& aRenderingContext,
                          nsPoint aPt, bool aSubpixelAA);
 
+  
+
+
+  void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
+
 protected:
   explicit nsPageFrame(nsStyleContext* aContext);
   virtual ~nsPageFrame();

@@ -100,6 +100,11 @@ public:
 
   bool HasTransformGetter() const override { return true; }
 
+  
+
+
+  void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
+
 #ifdef DEBUG_FRAME_DUMP
   nsresult GetFrameName(nsAString& aResult) const override;
 #endif
