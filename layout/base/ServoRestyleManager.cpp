@@ -1053,8 +1053,14 @@ ServoRestyleManager::SnapshotFor(Element* aElement)
   if (aElement->GetNextElementSibling()) {
     Element* parent = aElement->GetFlattenedTreeParentElementForStyle();
     MOZ_ASSERT(parent);
-    parent->NoteDirtyForServo();
-    parent->SetHasDirtyDescendantsForServo();
+    
+    
+    
+    
+    if (parent->IsInComposedDoc()) {
+      parent->NoteDirtyForServo();
+      parent->SetHasDirtyDescendantsForServo();
+    }
   } else {
     aElement->NoteDirtyForServo();
   }
