@@ -257,8 +257,8 @@ nsBaseChannel::BeginPumpingData()
   
 
   nsCOMPtr<nsIEventTarget> target = GetNeckoTarget();
-  rv = nsInputStreamPump::Create(getter_AddRefs(mPump), stream, -1, -1, 0, 0,
-                                 true, target);
+  rv = nsInputStreamPump::Create(getter_AddRefs(mPump), stream, 0, 0, true,
+                                 target);
   if (NS_SUCCEEDED(rv)) {
     mPumpingData = true;
     mRequest = mPump;

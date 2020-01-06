@@ -5,7 +5,7 @@ function run_test() {
 
   var pump = Cc["@mozilla.org/network/input-stream-pump;1"].
     createInstance(Ci.nsIInputStreamPump);
-  pump.init(stream, -1, -1, 0, 0, false);
+  pump.init(stream, 0, 0, false);
 
   
   

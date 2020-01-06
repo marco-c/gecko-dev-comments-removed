@@ -18,7 +18,6 @@
 #include "nsILoadGroup.h"
 #include "nsNetCID.h"
 #include "nsStreamUtils.h"
-#include "SlicedInputStream.h"
 #include <algorithm>
 
 static NS_DEFINE_CID(kStreamTransportServiceCID, NS_STREAMTRANSPORTSERVICE_CID);
@@ -37,7 +36,6 @@ static mozilla::LazyLogModule gStreamPumpLog("nsStreamPump");
 nsInputStreamPump::nsInputStreamPump()
     : mState(STATE_IDLE)
     , mStreamOffset(0)
-    , mStreamLength(UINT64_MAX)
     , mStatus(NS_OK)
     , mSuspendCount(0)
     , mLoadFlags(LOAD_NORMAL)
@@ -56,8 +54,6 @@ nsInputStreamPump::~nsInputStreamPump()
 nsresult
 nsInputStreamPump::Create(nsInputStreamPump  **result,
                           nsIInputStream      *stream,
-                          int64_t              streamPos,
-                          int64_t              streamLen,
                           uint32_t             segsize,
                           uint32_t             segcount,
                           bool                 closeWhenDone,
@@ -66,8 +62,8 @@ nsInputStreamPump::Create(nsInputStreamPump  **result,
     nsresult rv = NS_ERROR_OUT_OF_MEMORY;
     RefPtr<nsInputStreamPump> pump = new nsInputStreamPump();
     if (pump) {
-        rv = pump->Init(stream, streamPos, streamLen,
-                        segsize, segcount, closeWhenDone, mainThreadTarget);
+        rv = pump->Init(stream, segsize, segcount, closeWhenDone,
+                        mainThreadTarget);
         if (NS_SUCCEEDED(rv)) {
             pump.forget(result);
         }
@@ -298,15 +294,11 @@ nsInputStreamPump::SetLoadGroup(nsILoadGroup *aLoadGroup)
 
 NS_IMETHODIMP
 nsInputStreamPump::Init(nsIInputStream *stream,
-                        int64_t streamPos, int64_t streamLen,
                         uint32_t segsize, uint32_t segcount,
                         bool closeWhenDone, nsIEventTarget *mainThreadTarget)
 {
     NS_ENSURE_TRUE(mState == STATE_IDLE, NS_ERROR_IN_PROGRESS);
 
-    mStreamOffset = uint64_t(streamPos);
-    if (int64_t(streamLen) >= int64_t(0))
-        mStreamLength = uint64_t(streamLen);
     mStream = stream;
     mSegSize = segsize;
     mSegCount = segcount;
@@ -332,10 +324,6 @@ nsInputStreamPump::AsyncRead(nsIStreamListener *listener, nsISupports *ctxt)
     
     
     
-    if (mStreamOffset != UINT64_MAX || mStreamLength != UINT64_MAX) {
-        mStream = new SlicedInputStream(mStream, mStreamOffset, mStreamLength);
-        mStreamOffset = 0;
-    }
 
     bool nonBlocking;
     nsresult rv = mStream->IsNonBlocking(&nonBlocking);
@@ -367,7 +355,6 @@ nsInputStreamPump::AsyncRead(nsIStreamListener *listener, nsISupports *ctxt)
     
     mStream = nullptr;
 
-    
     
     mStreamOffset = 0;
 
@@ -567,75 +554,69 @@ nsInputStreamPump::OnStateTransfer()
     }
     else if (NS_SUCCEEDED(rv) && avail) {
         
-        if (avail > mStreamLength - mStreamOffset)
-            avail = mStreamLength - mStreamOffset;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
-        if (avail) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+        
+        
+        int64_t offsetBefore;
+        nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(mBufferedStream);
+        if (seekable && NS_FAILED(seekable->Tell(&offsetBefore))) {
+            NS_NOTREACHED("Tell failed on readable stream");
+            offsetBefore = 0;
+        }
 
+        uint32_t odaAvail =
+            avail > UINT32_MAX ?
+            UINT32_MAX : uint32_t(avail);
+
+        LOG(("  calling OnDataAvailable [offset=%" PRIu64 " count=%" PRIu64 "(%u)]\n",
+            mStreamOffset, avail, odaAvail));
+
+        {
             
             
-            int64_t offsetBefore;
-            nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(mBufferedStream);
-            if (seekable && NS_FAILED(seekable->Tell(&offsetBefore))) {
-                NS_NOTREACHED("Tell failed on readable stream");
-                offsetBefore = 0;
-            }
+            
+            RecursiveMutexAutoUnlock unlock(mMutex);
+            rv = mListener->OnDataAvailable(this, mListenerContext,
+                                            mBufferedStream, mStreamOffset,
+                                            odaAvail);
+        }
 
-            uint32_t odaAvail =
-                avail > UINT32_MAX ?
-                UINT32_MAX : uint32_t(avail);
-
-            LOG(("  calling OnDataAvailable [offset=%" PRIu64 " count=%" PRIu64 "(%u)]\n",
-                mStreamOffset, avail, odaAvail));
-
-            {
+        
+        if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(mStatus)) {
+            
+            if (seekable) {
                 
                 
-                
-                RecursiveMutexAutoUnlock unlock(mMutex);
-                rv = mListener->OnDataAvailable(this, mListenerContext,
-                                                mBufferedStream, mStreamOffset,
-                                                odaAvail);
-            }
-
-            
-            if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(mStatus)) {
-                
-                if (seekable) {
+                int64_t offsetAfter;
+                if (NS_FAILED(seekable->Tell(&offsetAfter)))
+                    offsetAfter = offsetBefore + odaAvail;
+                if (offsetAfter > offsetBefore)
+                    mStreamOffset += (offsetAfter - offsetBefore);
+                else if (mSuspendCount == 0) {
                     
                     
-                    int64_t offsetAfter;
-                    if (NS_FAILED(seekable->Tell(&offsetAfter)))
-                        offsetAfter = offsetBefore + odaAvail;
-                    if (offsetAfter > offsetBefore)
-                        mStreamOffset += (offsetAfter - offsetBefore);
-                    else if (mSuspendCount == 0) {
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        NS_ERROR("OnDataAvailable implementation consumed no data");
-                        mStatus = NS_ERROR_UNEXPECTED;
-                    }
+                    
+                    
+                    
+                    
+                    
+                    NS_ERROR("OnDataAvailable implementation consumed no data");
+                    mStatus = NS_ERROR_UNEXPECTED;
                 }
-                else
-                    mStreamOffset += odaAvail; 
             }
+            else
+                mStreamOffset += odaAvail; 
         }
     }
 
