@@ -15,9 +15,9 @@
 #include <gtk/gtk.h>
 #include "gtkdrawing.h"
 
-class nsNativeThemeGTK: private nsNativeTheme,
-                        public nsITheme,
-                        public nsIObserver {
+class nsNativeThemeGTK final : private nsNativeTheme,
+                               public nsITheme,
+                               public nsIObserver {
 public:
   NS_DECL_ISUPPORTS_INHERITED
 
@@ -89,8 +89,13 @@ private:
   uint8_t mSafeWidgetStates[1024];    
   static const char* sDisabledEngines[];
 
+  
+  
+  
   void GetCachedWidgetBorder(nsIFrame* aFrame, uint8_t aWidgetType,
                              GtkTextDirection aDirection, nsIntMargin* aResult);
+  uint8_t mBorderCacheValid[(MOZ_GTK_WIDGET_NODE_COUNT + 7) / 8];
+  nsIntMargin mBorderCache[MOZ_GTK_WIDGET_NODE_COUNT];
 };
 
 #endif
