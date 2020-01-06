@@ -2195,6 +2195,10 @@ pref("intl.locale.matchOS",                 false);
 
 
 
+pref("intl.regional_prefs.use_os_locales",  false);
+
+
+
 pref("intl.fallbackCharsetList.ISO-8859-1", "windows-1252");
 pref("font.language.group",                 "chrome://global/locale/intl.properties");
 
