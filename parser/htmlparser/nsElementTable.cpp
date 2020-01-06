@@ -14,596 +14,163 @@
 
 
 
+#ifdef DEBUG
+#define ELEM(tag, parent, leaf) { eHTMLTag_##tag, parent, leaf },
+#else
+#define ELEM(tag, parent, leaf) { parent, leaf },
+#endif
+
 const nsHTMLElement gHTMLElements[] = {
-  {
-             eHTMLTag_unknown,
-     kNone, true
-  },
-  {
-             eHTMLTag_a,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_abbr,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_acronym,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_address,
-     kBlock, false
-  },
-  {
-             eHTMLTag_applet,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_area,
-     kNone, true
-  },
-  {
-             eHTMLTag_article,
-     kBlock, false
-  },
-  {
-             eHTMLTag_aside,
-     kBlock, false
-  },
-  {
-             eHTMLTag_audio,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_b,
-     kFontStyle, false
-  },
-  {
-             eHTMLTag_base,
-     kHeadContent, true
-  },
-  {
-             eHTMLTag_basefont,
-     kSpecial, true
-  },
-  {
-             eHTMLTag_bdo,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_bgsound,
-     (kFlowEntity|kHeadMisc), true
-  },
-  {
-             eHTMLTag_big,
-     kFontStyle, false
-  },
-  {
-             eHTMLTag_blockquote,
-     kBlock, false
-  },
-  {
-             eHTMLTag_body,
-     kHTMLContent, false
-  },
-  {
-             eHTMLTag_br,
-     kSpecial, true
-  },
-  {
-             eHTMLTag_button,
-     kFormControl, false
-  },
-  {
-             eHTMLTag_canvas,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_caption,
-     kNone, false
-  },
-  {
-             eHTMLTag_center,
-     kBlock, false
-  },
-  {
-             eHTMLTag_cite,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_code,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_col,
-     kNone, true
-  },
-  {
-             eHTMLTag_colgroup,
-     kNone, false
-  },
-  {
-             eHTMLTag_content,
-     kNone, false
-  },
-  {
-             eHTMLTag_data,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_datalist,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_dd,
-     kInlineEntity, false
-  },
-  {
-             eHTMLTag_del,
-     kFlowEntity, false
-  },
-  {
-             eHTMLTag_details,
-     kBlock, false
-  },
-  {
-             eHTMLTag_dfn,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_dialog,
-     kBlock, false
-  },
-  {
-             eHTMLTag_dir,
-     kList, false
-  },
-  {
-             eHTMLTag_div,
-     kBlock, false
-  },
-  {
-             eHTMLTag_dl,
-     kBlock, false
-  },
-  {
-             eHTMLTag_dt,
-     kInlineEntity, false
-  },
-  {
-             eHTMLTag_em,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_embed,
-     kSpecial, true
-  },
-  {
-             eHTMLTag_fieldset,
-     kBlock, false
-  },
-  {
-             eHTMLTag_figcaption,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_figure,
-     kBlock, false
-  },
-  {
-             eHTMLTag_font,
-     kFontStyle, false
-  },
-  {
-             eHTMLTag_footer,
-     kBlock, false
-  },
-  {
-             eHTMLTag_form,
-     kBlock, false
-  },
-  {
-             eHTMLTag_frame,
-     kNone, true
-  },
-  {
-             eHTMLTag_frameset,
-     kHTMLContent, false
-  },
-  {
-             eHTMLTag_h1,
-     kHeading, false
-  },
-  {
-             eHTMLTag_h2,
-     kHeading, false
-  },
-  {
-             eHTMLTag_h3,
-     kHeading, false
-  },
-  {
-             eHTMLTag_h4,
-     kHeading, false
-  },
-  {
-             eHTMLTag_h5,
-     kHeading, false
-  },
-  {
-             eHTMLTag_h6,
-     kHeading, false
-  },
-  {
-             eHTMLTag_head,
-     kHTMLContent, false
-  },
-  {
-             eHTMLTag_header,
-     kBlock, false
-  },
-  {
-             eHTMLTag_hgroup,
-     kBlock, false
-  },
-  {
-             eHTMLTag_hr,
-     kBlock, true
-  },
-  {
-             eHTMLTag_html,
-     kNone, false
-  },
-  {
-             eHTMLTag_i,
-     kFontStyle, false
-  },
-  {
-             eHTMLTag_iframe,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_image,
-     kSpecial, true
-  },
-  {
-             eHTMLTag_img,
-     kSpecial, true
-  },
-  {
-             eHTMLTag_input,
-     kFormControl, true
-  },
-  {
-             eHTMLTag_ins,
-     kFlowEntity, false
-  },
-  {
-             eHTMLTag_kbd,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_keygen,
-     kFlowEntity, true
-  },
-  {
-             eHTMLTag_label,
-     kFormControl, false
-  },
-  {
-             eHTMLTag_legend,
-     kNone, false
-  },
-  {
-             eHTMLTag_li,
-     kBlockEntity, false
-  },
-  {
-             eHTMLTag_link,
-     kAllTags - kHeadContent, true
-  },
-  {
-             eHTMLTag_listing,
-     kPreformatted, false
-  },
-  {
-             eHTMLTag_main,
-     kBlock, false
-  },
-  {
-             eHTMLTag_map,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_mark,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_marquee,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_menu,
-     kList, false
-  },
-  {
-             eHTMLTag_menuitem,
-     kFlowEntity, false
-  },
-  {
-             eHTMLTag_meta,
-     kHeadContent, true
-  },
-  {
-             eHTMLTag_meter,
-     kFormControl, false
-  },
-  {
-             eHTMLTag_multicol,
-     kBlock, false
-  },
-  {
-             eHTMLTag_nav,
-     kBlock, false
-  },
-  {
-             eHTMLTag_nobr,
-     kExtensions, false
-  },
-  {
-             eHTMLTag_noembed,
-     kFlowEntity, false
-  },
-  {
-             eHTMLTag_noframes,
-     kFlowEntity, false
-  },
-  {
-             eHTMLTag_noscript,
-     kFlowEntity|kHeadMisc, false
-  },
-  {
-             eHTMLTag_object,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_ol,
-     kList, false
-  },
-  {
-             eHTMLTag_optgroup,
-     kNone, false
-  },
-  {
-             eHTMLTag_option,
-     kNone, false
-  },
-  {
-             eHTMLTag_output,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_p,
-     kBlock, false
-  },
-  {
-             eHTMLTag_param,
-     kSpecial, true
-  },
-  {
-             eHTMLTag_picture,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_plaintext,
-     kExtensions, false
-  },
-  {
-             eHTMLTag_pre,
-     kBlock|kPreformatted, false
-  },
-  {
-             eHTMLTag_progress,
-     kFormControl, false
-  },
-  {
-             eHTMLTag_q,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_rb,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_rp,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_rt,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_rtc,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_ruby,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_s,
-     kFontStyle, false
-  },
-  {
-             eHTMLTag_samp,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_script,
-     (kSpecial|kHeadContent), false
-  },
-  {
-             eHTMLTag_section,
-     kBlock, false
-  },
-  {
-             eHTMLTag_select,
-     kFormControl, false
-  },
-  {
-             eHTMLTag_shadow,
-     kFlowEntity, false
-  },
-  {
-             eHTMLTag_small,
-     kFontStyle, false
-  },
-  {
-             eHTMLTag_source,
-     kSpecial, true
-  },
-  {
-             eHTMLTag_span,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_strike,
-     kFontStyle, false
-  },
-  {
-             eHTMLTag_strong,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_style,
-     kAllTags - kHeadContent, false
-  },
-  {
-             eHTMLTag_sub,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_summary,
-     kBlock, false
-  },
-  {
-             eHTMLTag_sup,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_table,
-     kBlock, false
-  },
-  {
-             eHTMLTag_tbody,
-     kNone, false
-  },
-  {
-             eHTMLTag_td,
-     kNone, false
-  },
-  {
-             eHTMLTag_textarea,
-     kFormControl, false
-  },
-  {
-             eHTMLTag_tfoot,
-     kNone, false
-  },
-  {
-             eHTMLTag_th,
-     kNone, false
-  },
-  {
-             eHTMLTag_thead,
-     kNone, false
-  },
-  {
-             eHTMLTag_template,
-     kNone, false
-  },
-  {
-             eHTMLTag_time,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_title,
-     kHeadContent, false
-  },
-  {
-             eHTMLTag_tr,
-     kNone, false
-  },
-  {
-             eHTMLTag_track,
-     kSpecial, true
-  },
-  {
-             eHTMLTag_tt,
-     kFontStyle, false
-  },
-  {
-             eHTMLTag_u,
-     kFontStyle, false
-  },
-  {
-             eHTMLTag_ul,
-     kList, false
-  },
-  {
-             eHTMLTag_var,
-     kPhrase, false
-  },
-  {
-             eHTMLTag_video,
-     kSpecial, false
-  },
-  {
-             eHTMLTag_wbr,
-     kExtensions, true
-  },
-  {
-             eHTMLTag_xmp,
-     kInlineEntity|kPreformatted, false
-  },
-  {
-             eHTMLTag_text,
-     kFlowEntity, true
-  },
-  {
-             eHTMLTag_whitespace,
-     kFlowEntity|kHeadMisc, true
-  },
-  {
-             eHTMLTag_newline,
-     kFlowEntity|kHeadMisc, true
-  },
-  {
-             eHTMLTag_comment,
-     kFlowEntity|kHeadMisc, false
-  },
-  {
-             eHTMLTag_entity,
-     kFlowEntity, false
-  },
-  {
-             eHTMLTag_doctypeDecl,
-     kFlowEntity, false
-  },
-  {
-             eHTMLTag_markupDecl,
-     kFlowEntity, false
-  },
-  {
-             eHTMLTag_instruction,
-     kFlowEntity, false
-  },
-  {
-             eHTMLTag_userdefined,
-     (kFlowEntity|kHeadMisc), false
-  },
+  ELEM(unknown,     kNone,                       true)
+  ELEM(a,           kSpecial,                    false)
+  ELEM(abbr,        kPhrase,                     false)
+  ELEM(acronym,     kPhrase,                     false)
+  ELEM(address,     kBlock,                      false)
+  ELEM(applet,      kSpecial,                    false)
+  ELEM(area,        kNone,                       true)
+  ELEM(article,     kBlock,                      false)
+  ELEM(aside,       kBlock,                      false)
+  ELEM(audio,       kSpecial,                    false)
+  ELEM(b,           kFontStyle,                  false)
+  ELEM(base,        kHeadContent,                true)
+  ELEM(basefont,    kSpecial,                    true)
+  ELEM(bdo,         kSpecial,                    false)
+  ELEM(bgsound,     (kFlowEntity|kHeadMisc),     true)
+  ELEM(big,         kFontStyle,                  false)
+  ELEM(blockquote,  kBlock,                      false)
+  ELEM(body,        kHTMLContent,                false)
+  ELEM(br,          kSpecial,                    true)
+  ELEM(button,      kFormControl,                false)
+  ELEM(canvas,      kSpecial,                    false)
+  ELEM(caption,     kNone,                       false)
+  ELEM(center,      kBlock,                      false)
+  ELEM(cite,        kPhrase,                     false)
+  ELEM(code,        kPhrase,                     false)
+  ELEM(col,         kNone,                       true)
+  ELEM(colgroup,    kNone,                       false)
+  ELEM(content,     kNone,                       false)
+  ELEM(data,        kPhrase,                     false)
+  ELEM(datalist,    kSpecial,                    false)
+  ELEM(dd,          kInlineEntity,               false)
+  ELEM(del,         kFlowEntity,                 false)
+  ELEM(details,     kBlock,                      false)
+  ELEM(dfn,         kPhrase,                     false)
+  ELEM(dialog,      kBlock,                      false)
+  ELEM(dir,         kList,                       false)
+  ELEM(div,         kBlock,                      false)
+  ELEM(dl,          kBlock,                      false)
+  ELEM(dt,          kInlineEntity,               false)
+  ELEM(em,          kPhrase,                     false)
+  ELEM(embed,       kSpecial,                    true)
+  ELEM(fieldset,    kBlock,                      false)
+  ELEM(figcaption,  kPhrase,                     false)
+  ELEM(figure,      kBlock,                      false)
+  ELEM(font,        kFontStyle,                  false)
+  ELEM(footer,      kBlock,                      false)
+  ELEM(form,        kBlock,                      false)
+  ELEM(frame,       kNone,                       true)
+  ELEM(frameset,    kHTMLContent,                false)
+  ELEM(h1,          kHeading,                    false)
+  ELEM(h2,          kHeading,                    false)
+  ELEM(h3,          kHeading,                    false)
+  ELEM(h4,          kHeading,                    false)
+  ELEM(h5,          kHeading,                    false)
+  ELEM(h6,          kHeading,                    false)
+  ELEM(head,        kHTMLContent,                false)
+  ELEM(header,      kBlock,                      false)
+  ELEM(hgroup,      kBlock,                      false)
+  ELEM(hr,          kBlock,                      true)
+  ELEM(html,        kNone,                       false)
+  ELEM(i,           kFontStyle,                  false)
+  ELEM(iframe,      kSpecial,                    false)
+  ELEM(image,       kSpecial,                    true)
+  ELEM(img,         kSpecial,                    true)
+  ELEM(input,       kFormControl,                true)
+  ELEM(ins,         kFlowEntity,                 false)
+  ELEM(kbd,         kPhrase,                     false)
+  ELEM(keygen,      kFlowEntity,                 true)
+  ELEM(label,       kFormControl,                false)
+  ELEM(legend,      kNone,                       false)
+  ELEM(li,          kBlockEntity,                false)
+  ELEM(link,        kAllTags - kHeadContent,     true)
+  ELEM(listing,     kPreformatted,               false)
+  ELEM(main,        kBlock,                      false)
+  ELEM(map,         kSpecial,                    false)
+  ELEM(mark,        kSpecial,                    false)
+  ELEM(marquee,     kSpecial,                    false)
+  ELEM(menu,        kList,                       false)
+  ELEM(menuitem,    kFlowEntity,                 false)
+  ELEM(meta,        kHeadContent,                true)
+  ELEM(meter,       kFormControl,                false)
+  ELEM(multicol,    kBlock,                      false)
+  ELEM(nav,         kBlock,                      false)
+  ELEM(nobr,        kExtensions,                 false)
+  ELEM(noembed,     kFlowEntity,                 false)
+  ELEM(noframes,    kFlowEntity,                 false)
+  ELEM(noscript,    kFlowEntity|kHeadMisc,       false)
+  ELEM(object,      kSpecial,                    false)
+  ELEM(ol,          kList,                       false)
+  ELEM(optgroup,    kNone,                       false)
+  ELEM(option,      kNone,                       false)
+  ELEM(output,      kSpecial,                    false)
+  ELEM(p,           kBlock,                      false)
+  ELEM(param,       kSpecial,                    true)
+  ELEM(picture,     kSpecial,                    false)
+  ELEM(plaintext,   kExtensions,                 false)
+  ELEM(pre,         kBlock|kPreformatted,        false)
+  ELEM(progress,    kFormControl,                false)
+  ELEM(q,           kSpecial,                    false)
+  ELEM(rb,          kPhrase,                     false)
+  ELEM(rp,          kPhrase,                     false)
+  ELEM(rt,          kPhrase,                     false)
+  ELEM(rtc,         kPhrase,                     false)
+  ELEM(ruby,        kPhrase,                     false)
+  ELEM(s,           kFontStyle,                  false)
+  ELEM(samp,        kPhrase,                     false)
+  ELEM(script,      (kSpecial|kHeadContent),     false)
+  ELEM(section,     kBlock,                      false)
+  ELEM(select,      kFormControl,                false)
+  ELEM(shadow,      kFlowEntity,                 false)
+  ELEM(small,       kFontStyle,                  false)
+  ELEM(source,      kSpecial,                    true)
+  ELEM(span,        kSpecial,                    false)
+  ELEM(strike,      kFontStyle,                  false)
+  ELEM(strong,      kPhrase,                     false)
+  ELEM(style,       kAllTags - kHeadContent,     false)
+  ELEM(sub,         kSpecial,                    false)
+  ELEM(summary,     kBlock,                      false)
+  ELEM(sup,         kSpecial,                    false)
+  ELEM(table,       kBlock,                      false)
+  ELEM(tbody,       kNone,                       false)
+  ELEM(td,          kNone,                       false)
+  ELEM(textarea,    kFormControl,                false)
+  ELEM(tfoot,       kNone,                       false)
+  ELEM(th,          kNone,                       false)
+  ELEM(thead,       kNone,                       false)
+  ELEM(template,    kNone,                       false)
+  ELEM(time,        kPhrase,                     false)
+  ELEM(title,       kHeadContent,                false)
+  ELEM(tr,          kNone,                       false)
+  ELEM(track,       kSpecial,                    true)
+  ELEM(tt,          kFontStyle,                  false)
+  ELEM(u,           kFontStyle,                  false)
+  ELEM(ul,          kList,                       false)
+  ELEM(var,         kPhrase,                     false)
+  ELEM(video,       kSpecial,                    false)
+  ELEM(wbr,         kExtensions,                 true)
+  ELEM(xmp,         kInlineEntity|kPreformatted, false)
+  ELEM(text,        kFlowEntity,                 true)
+  ELEM(whitespace,  kFlowEntity|kHeadMisc,       true)
+  ELEM(newline,     kFlowEntity|kHeadMisc,       true)
+  ELEM(comment,     kFlowEntity|kHeadMisc,       false)
+  ELEM(entity,      kFlowEntity,                 false)
+  ELEM(doctypeDecl, kFlowEntity,                 false)
+  ELEM(markupDecl,  kFlowEntity,                 false)
+  ELEM(instruction, kFlowEntity,                 false)
+  ELEM(userdefined, (kFlowEntity|kHeadMisc),     false)
 };
+
+#undef ELEM
 
 
 
