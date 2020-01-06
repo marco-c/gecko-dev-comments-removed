@@ -5923,7 +5923,13 @@ check_resize_cb (GtkContainer* container, gpointer user_data)
 static void
 screen_composited_changed_cb (GdkScreen* screen, gpointer user_data)
 {
-    GPUProcessManager::Get()->ResetCompositors();
+    
+    
+    
+    
+    if (GPUProcessManager::Get()) {
+        GPUProcessManager::Get()->ResetCompositors();
+    }
 }
 
 static void
