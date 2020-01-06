@@ -504,6 +504,13 @@ nsXBLWindowKeyHandler::HandleEvent(nsIDOMEvent* aEvent)
     }
   }
 
+  
+  
+  if (widgetKeyboardEvent->mFlags.mHandledByAPZ) {
+    aEvent->PreventDefault();
+    return NS_OK;
+  }
+
   nsCOMPtr<nsIAtom> eventTypeAtom =
     ConvertEventToDOMEventType(*widgetKeyboardEvent);
   return WalkHandlers(keyEvent, eventTypeAtom);
