@@ -31,24 +31,7 @@ function promiseOnClearHistoryObserved() {
   });
 }
 
-
-
-
-
-var promiseInit;
-
-function run_test() {
-  
-  
-  
-  promiseInit = promiseTopicObserved(PlacesUtils.TOPIC_INIT_COMPLETE);
-
-  run_next_test();
-}
-
 add_task(async function test_history_clear() {
-  await promiseInit;
-
   await PlacesTestUtils.addVisits([
     { uri: uri("http://typed.mozilla.org/"),
       transition: TRANSITION_TYPED },

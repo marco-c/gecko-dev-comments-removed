@@ -116,7 +116,8 @@ public:
   already_AddRefed<mozIStorageStatement>
   GetStatement(const char (&aQuery)[N])
   {
-    mozIStorageConnection* dbConn = GetDBConn();
+    
+    const mozIStorageConnection* dbConn = GetConstDBConn();
     NS_ENSURE_TRUE(dbConn, nullptr);
     return mDB->GetStatement(aQuery);
   }
@@ -124,7 +125,8 @@ public:
   already_AddRefed<mozIStorageStatement>
   GetStatement(const nsACString& aQuery)
   {
-    mozIStorageConnection* dbConn = GetDBConn();
+    
+    const mozIStorageConnection* dbConn = GetConstDBConn();
     NS_ENSURE_TRUE(dbConn, nullptr);
     return mDB->GetStatement(aQuery);
   }
@@ -150,7 +152,15 @@ private:
   
 
 
+
   mozIStorageConnection* GetDBConn();
+
+  
+
+
+
+
+  const mozIStorageConnection* GetConstDBConn();
 
   
 

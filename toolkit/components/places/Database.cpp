@@ -413,6 +413,7 @@ Database::Database()
   , mClientsShutdown(new ClientsShutdownBlocker())
   , mConnectionShutdown(new ConnectionShutdownBlocker(this))
   , mMaxUrlLength(0)
+  , mCacheObservers(TOPIC_PLACES_INIT_COMPLETE)
 {
   MOZ_ASSERT(!XRE_IsContentProcess(),
              "Cannot instantiate Places in the content process");
@@ -470,24 +471,31 @@ Database::IsShutdownStarted() const
 }
 
 already_AddRefed<mozIStorageAsyncStatement>
-Database::GetAsyncStatement(const nsACString& aQuery) const
+Database::GetAsyncStatement(const nsACString& aQuery)
 {
-  if (IsShutdownStarted()) {
+  if (IsShutdownStarted() || NS_FAILED(EnsureConnection())) {
     return nullptr;
   }
+
   MOZ_ASSERT(NS_IsMainThread());
   return mMainThreadAsyncStatements.GetCachedStatement(aQuery);
 }
 
 already_AddRefed<mozIStorageStatement>
-Database::GetStatement(const nsACString& aQuery) const
+Database::GetStatement(const nsACString& aQuery)
 {
   if (IsShutdownStarted()) {
     return nullptr;
   }
   if (NS_IsMainThread()) {
+    if (NS_FAILED(EnsureConnection())) {
+      return nullptr;
+    }
     return mMainThreadStatements.GetCachedStatement(aQuery);
   }
+  
+  
+  MOZ_ASSERT(mMainConn);
   return mAsyncThreadStatements.GetCachedStatement(aQuery);
 }
 
@@ -513,102 +521,9 @@ Database::Init()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  bool initSucceeded = false;
-  auto guard = MakeScopeExit([&]() {
-    if (!initSucceeded) {
-      
-      
-      
-      Shutdown(false);
-    }
-  });
-
-  nsCOMPtr<mozIStorageService> storage =
-    do_GetService(MOZ_STORAGE_SERVICE_CONTRACTID);
-  NS_ENSURE_STATE(storage);
-
-  
-  bool databaseCreated = false;
-  nsresult rv = InitDatabaseFile(storage, &databaseCreated);
-  if (NS_SUCCEEDED(rv) && databaseCreated) {
-    mDatabaseStatus = nsINavHistoryService::DATABASE_STATUS_CREATE;
-  }
-  else if (rv == NS_ERROR_FILE_CORRUPTED) {
-    
-    mDatabaseStatus = nsINavHistoryService::DATABASE_STATUS_CORRUPT;
-    rv = BackupAndReplaceDatabaseFile(storage);
-    
-  }
-
-  
-  
-  if (NS_FAILED(rv)) {
-    RefPtr<PlacesEvent> lockedEvent = new PlacesEvent(TOPIC_DATABASE_LOCKED);
-    (void)NS_DispatchToMainThread(lockedEvent);
-    return rv;
-  }
-
-  
-  rv = EnsureFaviconsDatabaseFile(storage);
-  if (NS_FAILED(rv)) {
-    RefPtr<PlacesEvent> lockedEvent = new PlacesEvent(TOPIC_DATABASE_LOCKED);
-    (void)NS_DispatchToMainThread(lockedEvent);
-    return rv;
-  }
-
-  
-  
-  bool databaseMigrated = false;
-  rv = SetupDatabaseConnection(storage);
-  if (NS_SUCCEEDED(rv)) {
-    
-    if (NS_FAILED(InitSchema(&databaseMigrated))) {
-      rv = NS_ERROR_FILE_CORRUPTED;
-    }
-  }
-  if (NS_FAILED(rv)) {
-    mDatabaseStatus = nsINavHistoryService::DATABASE_STATUS_CORRUPT;
-    
-    
-    if (rv == NS_ERROR_FILE_CORRUPTED) {
-      rv = BackupAndReplaceDatabaseFile(storage);
-      NS_ENSURE_SUCCESS(rv, rv);
-      
-      rv = SetupDatabaseConnection(storage);
-      NS_ENSURE_SUCCESS(rv, rv);
-      rv = InitSchema(&databaseMigrated);
-    }
-    
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  if (databaseMigrated) {
-    mDatabaseStatus = nsINavHistoryService::DATABASE_STATUS_UPGRADED;
-  }
-
-  if (mDatabaseStatus != nsINavHistoryService::DATABASE_STATUS_OK) {
-    rv = updateSQLiteStatistics(MainConn());
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  
   
   
 
-  rv = InitTempEntities();
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  RefPtr<PlacesEvent> completeEvent =
-    new PlacesEvent(TOPIC_PLACES_INIT_COMPLETE);
-  rv = NS_DispatchToMainThread(completeEvent);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  initSucceeded = true;
   {
     
     nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase = GetProfileChangeTeardownPhase();
@@ -642,7 +557,123 @@ Database::Init()
   if (os) {
     (void)os->AddObserver(this, TOPIC_PROFILE_CHANGE_TEARDOWN, true);
   }
+  return NS_OK;
+}
 
+nsresult
+Database::EnsureConnection()
+{
+  
+  if (mMainConn ||
+      mDatabaseStatus == nsINavHistoryService::DATABASE_STATUS_LOCKED) {
+    return NS_OK;
+  }
+  
+  if (IsShutdownStarted()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  MOZ_ASSERT(NS_IsMainThread(),
+             "Database initialization must happen on the main-thread");
+
+  {
+    bool initSucceeded = false;
+    auto notify = MakeScopeExit([&] () {
+      
+      
+      if (!initSucceeded) {
+        mMainConn = nullptr;
+        mDatabaseStatus = nsINavHistoryService::DATABASE_STATUS_LOCKED;
+      }
+      
+      NS_DispatchToMainThread(
+        NewRunnableMethod("places::Database::EnsureConnection()",
+                          this, &Database::NotifyConnectionInitalized)
+      );
+    });
+
+    nsCOMPtr<mozIStorageService> storage =
+      do_GetService(MOZ_STORAGE_SERVICE_CONTRACTID);
+    NS_ENSURE_STATE(storage);
+
+    
+    bool databaseCreated = false;
+    nsresult rv = InitDatabaseFile(storage, &databaseCreated);
+    if (NS_SUCCEEDED(rv) && databaseCreated) {
+      mDatabaseStatus = nsINavHistoryService::DATABASE_STATUS_CREATE;
+    }
+    else if (rv == NS_ERROR_FILE_CORRUPTED) {
+      
+      mDatabaseStatus = nsINavHistoryService::DATABASE_STATUS_CORRUPT;
+      rv = BackupAndReplaceDatabaseFile(storage);
+      
+    }
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    rv = EnsureFaviconsDatabaseFile(storage);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    
+    bool databaseMigrated = false;
+    rv = SetupDatabaseConnection(storage);
+    if (NS_SUCCEEDED(rv)) {
+      
+      if (NS_FAILED(InitSchema(&databaseMigrated))) {
+        rv = NS_ERROR_FILE_CORRUPTED;
+      }
+    }
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      mDatabaseStatus = nsINavHistoryService::DATABASE_STATUS_CORRUPT;
+      
+      
+      if (rv == NS_ERROR_FILE_CORRUPTED) {
+        rv = BackupAndReplaceDatabaseFile(storage);
+        NS_ENSURE_SUCCESS(rv, rv);
+        
+        rv = SetupDatabaseConnection(storage);
+        NS_ENSURE_SUCCESS(rv, rv);
+        rv = InitSchema(&databaseMigrated);
+      }
+      
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+
+    if (databaseMigrated) {
+      mDatabaseStatus = nsINavHistoryService::DATABASE_STATUS_UPGRADED;
+    }
+
+    if (mDatabaseStatus == nsINavHistoryService::DATABASE_STATUS_UPGRADED ||
+        mDatabaseStatus == nsINavHistoryService::DATABASE_STATUS_CREATE) {
+      MOZ_ALWAYS_SUCCEEDS(updateSQLiteStatistics(mMainConn));
+    }
+
+    
+    
+    
+
+    rv = InitTempEntities();
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    initSucceeded = true;
+  }
+  return NS_OK;
+}
+
+nsresult
+Database::NotifyConnectionInitalized()
+{
+  
+  nsCOMArray<nsIObserver> entries;
+  mCacheObservers.GetEntries(entries);
+  for (int32_t idx = 0; idx < entries.Count(); ++idx) {
+    MOZ_ALWAYS_SUCCEEDS(entries[idx]->Observe(nullptr, TOPIC_PLACES_INIT_COMPLETE, nullptr));
+  }
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  if (obs) {
+    MOZ_ALWAYS_SUCCEEDS(obs->NotifyObservers(nullptr, TOPIC_PLACES_INIT_COMPLETE, nullptr));
+  }
   return NS_OK;
 }
 
@@ -671,45 +702,47 @@ Database::EnsureFaviconsDatabaseFile(nsCOMPtr<mozIStorageService>& aStorage)
   rv = aStorage->OpenUnsharedDatabase(databaseFile, getter_AddRefs(conn));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  auto cleanup = MakeScopeExit([&] () {
+  {
+    
+    auto cleanup = MakeScopeExit([&] () {
+      
+      
+      
+      MOZ_ALWAYS_TRUE(NS_SUCCEEDED(conn->Close()));
+    });
+
+    int32_t defaultPageSize;
+    rv = conn->GetDefaultPageSize(&defaultPageSize);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = SetupDurability(conn, defaultPageSize);
+    NS_ENSURE_SUCCESS(rv, rv);
+
     
     
     
-    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(conn->Close()));
-  });
+    rv = conn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+      "PRAGMA auto_vacuum = INCREMENTAL"
+    ));
+    NS_ENSURE_SUCCESS(rv, rv);
 
-  int32_t defaultPageSize;
-  rv = conn->GetDefaultPageSize(&defaultPageSize);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = SetupDurability(conn, defaultPageSize);
-  NS_ENSURE_SUCCESS(rv, rv);
+    
+    
+    mozStorageTransaction transaction(conn, false);
+    rv = conn->ExecuteSimpleSQL(CREATE_MOZ_ICONS);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = conn->ExecuteSimpleSQL(CREATE_IDX_MOZ_ICONS_ICONURLHASH);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = conn->ExecuteSimpleSQL(CREATE_MOZ_PAGES_W_ICONS);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = conn->ExecuteSimpleSQL(CREATE_IDX_MOZ_PAGES_W_ICONS_ICONURLHASH);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = conn->ExecuteSimpleSQL(CREATE_MOZ_ICONS_TO_PAGES);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = transaction.Commit();
+    NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  
-  rv = conn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-    "PRAGMA auto_vacuum = INCREMENTAL"
-  ));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  mozStorageTransaction transaction(conn, false);
-  rv = conn->ExecuteSimpleSQL(CREATE_MOZ_ICONS);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = conn->ExecuteSimpleSQL(CREATE_IDX_MOZ_ICONS_ICONURLHASH);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = conn->ExecuteSimpleSQL(CREATE_MOZ_PAGES_W_ICONS);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = conn->ExecuteSimpleSQL(CREATE_IDX_MOZ_PAGES_W_ICONS_ICONURLHASH);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = conn->ExecuteSimpleSQL(CREATE_MOZ_ICONS_TO_PAGES);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = transaction.Commit();
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
+    
+  }
 
   return NS_OK;
 }
@@ -2507,7 +2540,7 @@ Database::CreateMobileRoot()
 }
 
 void
-Database::Shutdown(bool aInitSucceeded)
+Database::Shutdown()
 {
   
   MOZ_ASSERT(NS_IsMainThread());
@@ -2525,7 +2558,7 @@ Database::Shutdown(bool aInitSucceeded)
   }
 
 #ifdef DEBUG
-  if (aInitSucceeded) {
+  {
     bool hasResult;
     nsCOMPtr<mozIStorageStatement> stmt;
 
@@ -2594,6 +2627,7 @@ Database::Shutdown(bool aInitSucceeded)
   mClosed = true;
 
   (void)mMainConn->AsyncClose(connectionShutdown);
+  mMainConn = nullptr;
 }
 
 
@@ -2658,8 +2692,8 @@ Database::Observe(nsISupports *aSubject,
     
     
     SpinEventLoopUntil([&]() {
-	return mClientsShutdown->State() == PlacesShutdownBlocker::States::RECEIVED_DONE;
-      });
+      return mClientsShutdown->State() == PlacesShutdownBlocker::States::RECEIVED_DONE;
+    });
 
     {
       nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase = GetProfileBeforeChangePhase();

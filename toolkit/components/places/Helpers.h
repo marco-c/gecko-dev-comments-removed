@@ -232,23 +232,6 @@ bool GetHiddenState(bool aIsRedirect,
 
 
 
-class PlacesEvent : public Runnable
-{
-public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_NSIRUNNABLE
-
-  explicit PlacesEvent(const char* aTopic);
-protected:
-  ~PlacesEvent() {}
-  void Notify();
-
-  const char* const mTopic;
-};
-
-
-
-
 class AsyncStatementCallbackNotifier : public AsyncStatementCallback
 {
 public:

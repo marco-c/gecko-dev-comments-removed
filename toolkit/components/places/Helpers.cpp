@@ -323,37 +323,6 @@ GetHiddenState(bool aIsRedirect,
 
 
 
-PlacesEvent::PlacesEvent(const char* aTopic)
-  : Runnable("places::PlacesEvent")
-  , mTopic(aTopic)
-{
-}
-
-NS_IMETHODIMP
-PlacesEvent::Run()
-{
-  Notify();
-  return NS_OK;
-}
-
-void
-PlacesEvent::Notify()
-{
-  NS_ASSERTION(NS_IsMainThread(), "Must only be used on the main thread!");
-  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-  if (obs) {
-    (void)obs->NotifyObservers(nullptr, mTopic, nullptr);
-  }
-}
-
-NS_IMPL_ISUPPORTS_INHERITED0(
-  PlacesEvent
-, Runnable
-)
-
-
-
-
 NS_IMETHODIMP
 AsyncStatementCallbackNotifier::HandleCompletion(uint16_t aReason)
 {

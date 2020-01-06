@@ -245,7 +245,7 @@ private:
 
 
 
-  nsresult ReadRoots();
+  nsresult EnsureRoots();
 
   nsresult AdjustIndices(int64_t aFolder,
                          int32_t aStartIndex,
@@ -318,6 +318,8 @@ private:
 
   nsMaybeWeakPtrArray<nsINavBookmarkObserver> mObservers;
 
+  
+  
   int64_t mRoot;
   int64_t mMenuRoot;
   int64_t mTagsRoot;

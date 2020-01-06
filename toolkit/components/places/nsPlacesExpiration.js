@@ -841,26 +841,30 @@ nsPlacesExpiration.prototype = {
       let db;
       try {
         db = await PlacesUtils.promiseDBConnection();
+        if (db) {
+          let row = (await db.execute(`SELECT * FROM pragma_page_size(),
+                                                pragma_page_count(),
+                                                pragma_freelist_count(),
+                                                (SELECT count(*) FROM moz_places)`))[0];
+          let pageSize = row.getResultByIndex(0);
+          let pageCount = row.getResultByIndex(1);
+          let freelistCount = row.getResultByIndex(2);
+          let uriCount = row.getResultByIndex(3);
+          let dbSize = (pageCount - freelistCount) * pageSize;
+          let avgURISize = Math.ceil(dbSize / uriCount);
+          
+          
+          if (avgURISize > (URIENTRY_AVG_SIZE * 3)) {
+            avgURISize = URIENTRY_AVG_SIZE;
+          }
+          this._urisLimit = Math.ceil(optimalDatabaseSize / avgURISize);
+        }
       } catch (ex) {
         
         
         
         
         
-      }
-      if (db) {
-        let pageSize = (await db.execute(`PRAGMA page_size`))[0].getResultByIndex(0);
-        let pageCount = (await db.execute(`PRAGMA page_count`))[0].getResultByIndex(0);
-        let freelistCount = (await db.execute(`PRAGMA freelist_count`))[0].getResultByIndex(0);
-        let dbSize = (pageCount - freelistCount) * pageSize;
-        let uriCount = (await db.execute(`SELECT count(*) FROM moz_places`))[0].getResultByIndex(0);
-        let avgURISize = Math.ceil(dbSize / uriCount);
-        
-        
-        if (avgURISize > (URIENTRY_AVG_SIZE * 3)) {
-          avgURISize = URIENTRY_AVG_SIZE;
-        }
-        this._urisLimit = Math.ceil(optimalDatabaseSize / avgURISize);
       }
     }
 

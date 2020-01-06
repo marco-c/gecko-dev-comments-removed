@@ -1,27 +1,39 @@
 const NS_PLACES_INIT_COMPLETE_TOPIC = "places-init-complete";
-const NS_PLACES_DATABASE_LOCKED_TOPIC = "places-database-locked";
+let gLockedConn;
 
-add_task(async function() {
+add_task(async function setup() {
   
   let db = Services.dirsvc.get("ProfD", Ci.nsIFile);
   db.append("places.sqlite");
-  let dbConn = Services.storage.openUnsharedDatabase(db);
+  gLockedConn = Services.storage.openUnsharedDatabase(db);
   Assert.ok(db.exists(), "The database should have been created");
 
   
-  dbConn.executeSimpleSQL("PRAGMA locking_mode = EXCLUSIVE");
+  gLockedConn.executeSimpleSQL("PRAGMA locking_mode = EXCLUSIVE");
   
-  dbConn.executeSimpleSQL("PRAGMA USER_VERSION = 1");
+  gLockedConn.executeSimpleSQL("PRAGMA USER_VERSION = 1");
+});
+
+add_task(async function locked() {
+  
+  
+  
+  let resolved = false;
+  let promiseComplete = promiseTopicObserved(NS_PLACES_INIT_COMPLETE_TOPIC)
+                          .then(() => resolved = true);
+  let history = Cc["@mozilla.org/browser/nav-history-service;1"]
+                  .createInstance(Ci.nsINavHistoryService);
+  
+  await new Promise(resolve => do_timeout(100, resolve));
+  Assert.equal(resolved, false, "The notification should not have been fired yet");
+  
+  Assert.equal(history.databaseStatus, history.DATABASE_STATUS_LOCKED);
+  await promiseComplete;
 
   
-  let promiseLocked = promiseTopicObserved(NS_PLACES_DATABASE_LOCKED_TOPIC);
-  Assert.throws(() => Cc["@mozilla.org/browser/nav-history-service;1"]
-                        .getService(Ci.nsINavHistoryService),
-                /NS_ERROR_XPC_GS_RETURNED_FAILURE/);
-  await promiseLocked;
-
-  
-  dbConn.close();
+  gLockedConn.close();
+  let db = Services.dirsvc.get("ProfD", Ci.nsIFile);
+  db.append("places.sqlite");
   if (db.exists()) {
     try {
       db.remove(false);
@@ -29,10 +41,4 @@ add_task(async function() {
       do_print("Unable to remove dummy places.sqlite");
     }
   }
-
-  
-  let promiseComplete = promiseTopicObserved(NS_PLACES_INIT_COMPLETE_TOPIC);
-  Cc["@mozilla.org/browser/nav-history-service;1"]
-    .getService(Ci.nsINavHistoryService);
-  await promiseComplete;
 });

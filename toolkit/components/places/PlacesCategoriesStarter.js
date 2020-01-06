@@ -4,11 +4,7 @@
 
 
 
-
-
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
+const {utils: Cu, classes: Cc, interfaces: Ci} = Components;
 
 
 const TOPIC_GATHER_TELEMETRY = "gather-telemetry";
@@ -16,11 +12,10 @@ const TOPIC_GATHER_TELEMETRY = "gather-telemetry";
 
 const MAINTENANCE_INTERVAL_SECONDS = 7 * 86400;
 
-
-
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
-Components.utils.import("resource://gre/modules/PlacesUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
+                                  "resource://gre/modules/PlacesUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesDBUtils",
                                   "resource://gre/modules/PlacesDBUtils.jsm");
 
@@ -31,32 +26,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesDBUtils",
 function PlacesCategoriesStarter() {
   Services.obs.addObserver(this, TOPIC_GATHER_TELEMETRY);
   Services.obs.addObserver(this, PlacesUtils.TOPIC_SHUTDOWN);
-
-  
-  let notify = () => {
-    if (!this._notifiedBookmarksSvcReady) {
-      
-      
-      
-      this._notifiedBookmarksSvcReady = true;
-      
-      
-      Cc["@mozilla.org/categorymanager;1"]
-        .getService(Ci.nsICategoryManager)
-        .deleteCategoryEntry("bookmark-observers", "PlacesCategoriesStarter", false);
-      
-      PlacesUtils.observe(null, "bookmarks-service-ready", null);
-    }
-  };
-
-  [ "onItemAdded", "onItemRemoved", "onItemChanged", "onBeginUpdateBatch",
-    "onEndUpdateBatch", "onItemVisited", "onItemMoved"
-  ].forEach(aMethod => this[aMethod] = notify);
 }
 
 PlacesCategoriesStarter.prototype = {
-  
-
   observe: function PCS_observe(aSubject, aTopic, aData) {
     switch (aTopic) {
       case PlacesUtils.TOPIC_SHUTDOWN:
@@ -68,6 +40,10 @@ PlacesCategoriesStarter.prototype = {
         break;
       case TOPIC_GATHER_TELEMETRY:
         PlacesDBUtils.telemetry();
+        break;
+      case PlacesUtils.TOPIC_INIT_COMPLETE:
+        
+        PlacesUtils.keywords;
         break;
       case "idle-daily":
         
@@ -83,19 +59,12 @@ PlacesCategoriesStarter.prototype = {
     }
   },
 
-  
-
   classID: Components.ID("803938d5-e26d-4453-bf46-ad4b26e41114"),
-
   _xpcom_factory: XPCOMUtils.generateSingletonFactory(PlacesCategoriesStarter),
-
   QueryInterface: XPCOMUtils.generateQI([
     Ci.nsIObserver,
-    Ci.nsINavBookmarkObserver
   ])
 };
-
-
 
 var components = [PlacesCategoriesStarter];
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory(components);

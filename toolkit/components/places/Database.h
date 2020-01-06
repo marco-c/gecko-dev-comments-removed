@@ -15,6 +15,7 @@
 #include "mozilla/Attributes.h"
 #include "nsIEventTarget.h"
 #include "Shutdown.h"
+#include "nsCategoryCache.h"
 
 
 
@@ -22,8 +23,6 @@
 
 
 #define TOPIC_PLACES_INIT_COMPLETE "places-init-complete"
-
-#define TOPIC_DATABASE_LOCKED "places-database-locked"
 
 
 
@@ -97,10 +96,21 @@ public:
   
 
 
+  nsresult EnsureConnection();
+
+  
 
 
-  uint16_t GetDatabaseStatus() const
+  nsresult NotifyConnectionInitalized();
+
+  
+
+
+
+
+  uint16_t GetDatabaseStatus()
   {
+    mozilla::Unused << EnsureConnection();
     return mDatabaseStatus;
   }
 
@@ -109,8 +119,9 @@ public:
 
 
 
-  mozIStorageConnection* MainConn() const
+  mozIStorageConnection* MainConn()
   {
+    mozilla::Unused << EnsureConnection();
     return mMainConn;
   }
 
@@ -121,9 +132,9 @@ public:
 
 
 
-  void DispatchToAsyncThread(nsIRunnable* aEvent) const
+  void DispatchToAsyncThread(nsIRunnable* aEvent)
   {
-    if (mClosed) {
+    if (mClosed || NS_FAILED(EnsureConnection())) {
       return;
     }
     nsCOMPtr<nsIEventTarget> target = do_GetInterface(mMainConn);
@@ -146,7 +157,7 @@ public:
 
   template<int N>
   already_AddRefed<mozIStorageStatement>
-  GetStatement(const char (&aQuery)[N]) const
+  GetStatement(const char (&aQuery)[N])
   {
     nsDependentCString query(aQuery, N - 1);
     return GetStatement(query);
@@ -161,7 +172,7 @@ public:
 
 
 
-  already_AddRefed<mozIStorageStatement>  GetStatement(const nsACString& aQuery) const;
+  already_AddRefed<mozIStorageStatement>  GetStatement(const nsACString& aQuery);
 
   
 
@@ -174,7 +185,7 @@ public:
 
   template<int N>
   already_AddRefed<mozIStorageAsyncStatement>
-  GetAsyncStatement(const char (&aQuery)[N]) const
+  GetAsyncStatement(const char (&aQuery)[N])
   {
     nsDependentCString query(aQuery, N - 1);
     return GetAsyncStatement(query);
@@ -189,7 +200,7 @@ public:
 
 
 
-  already_AddRefed<mozIStorageAsyncStatement> GetAsyncStatement(const nsACString& aQuery) const;
+  already_AddRefed<mozIStorageAsyncStatement> GetAsyncStatement(const nsACString& aQuery);
 
   uint32_t MaxUrlLength();
 
@@ -198,9 +209,7 @@ protected:
 
 
 
-
-
-  void Shutdown(bool aInitSucceeded);
+  void Shutdown();
 
   bool IsShutdownStarted() const;
 
@@ -345,6 +354,9 @@ private:
   
   
   uint32_t mMaxUrlLength;
+
+  
+  nsCategoryCache<nsIObserver> mCacheObservers;
 };
 
 } 

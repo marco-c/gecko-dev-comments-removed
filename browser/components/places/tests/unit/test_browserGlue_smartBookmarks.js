@@ -40,10 +40,11 @@ add_task(async function setup() {
   Cc["@mozilla.org/browser/browserglue;1"].getService(Ci.nsIObserver);
 
   
-  PlacesUtils.history;
-
   
-  await promiseTopicObserved("places-browser-init-complete");
+  let promiseComplete = promiseTopicObserved("places-browser-init-complete");
+  Assert.equal(PlacesUtils.history.databaseStatus,
+               PlacesUtils.history.DATABASE_STATUS_CREATE);
+  await promiseComplete;
 
   
   Assert.ok(!Services.prefs.getBoolPref(PREF_AUTO_EXPORT_HTML));
