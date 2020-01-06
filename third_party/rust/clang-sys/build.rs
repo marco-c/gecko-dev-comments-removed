@@ -40,10 +40,21 @@ use std::process::{Command};
 use glob::{MatchOptions};
 
 
+fn find_version(file: &str) -> Option<&str> {
+    if file.starts_with("libclang.so.") {
+        Some(&file[12..])
+    } else if file.starts_with("libclang-") {
+        Some(&file[9..])
+    } else {
+        None
+    }
+}
+
+
 fn parse_version(file: &Path) -> Vec<u32> {
-    let string = file.to_str().unwrap_or("");
-    let components = string.split('.').skip(2);
-    components.map(|s| s.parse::<u32>().unwrap_or(0)).collect()
+    let file = file.file_name().and_then(|f| f.to_str()).unwrap_or("");
+    let version = find_version(file).unwrap_or("");
+    version.split('.').map(|s| s.parse::<u32>().unwrap_or(0)).collect()
 }
 
 
@@ -92,7 +103,7 @@ fn run_llvm_config(arguments: &[&str]) -> Result<String, String> {
 }
 
 
-const SEARCH_LINUX: &'static [&'static str] = &[
+const SEARCH_LINUX: &[&str] = &[
     "/usr/lib*",
     "/usr/lib*/*",
     "/usr/lib*/*/*",
@@ -103,7 +114,7 @@ const SEARCH_LINUX: &'static [&'static str] = &[
 ];
 
 
-const SEARCH_OSX: &'static [&'static str] = &[
+const SEARCH_OSX: &[&str] = &[
     "/usr/local/opt/llvm*/lib",
     "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib",
     "/Library/Developer/CommandLineTools/usr/lib",
@@ -111,7 +122,7 @@ const SEARCH_OSX: &'static [&'static str] = &[
 ];
 
 
-const SEARCH_WINDOWS: &'static [&'static str] = &[
+const SEARCH_WINDOWS: &[&str] = &[
     "C:\\LLVM\\lib",
     "C:\\Program Files*\\LLVM\\lib",
     "C:\\MSYS*\\MinGW*\\lib",
@@ -242,6 +253,7 @@ pub fn find_shared_library() -> Result<PathBuf, String> {
         
         
         files.push("libclang.so.*".into());
+        files.push("libclang-*.so".into());
     }
     if cfg!(target_os="windows") {
         
@@ -277,7 +289,7 @@ fn get_llvm_libraries() -> Vec<String> {
 }
 
 
-const CLANG_LIBRARIES: &'static [&'static str] = &[
+const CLANG_LIBRARIES: &[&str] = &[
     "clang",
     "clangAST",
     "clangAnalysis",
