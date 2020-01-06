@@ -139,6 +139,10 @@ pref("app.update.enabled", true);
 pref("app.update.doorhanger", true);
 
 
+pref("app.update.link.updateAvailableWhatsNew", "update-available-whats-new");
+pref("app.update.link.updateManualWhatsNew", "update-manual-whats-new");
+
+
 
 pref("app.update.download.promptMaxAttempts", 2);
 
