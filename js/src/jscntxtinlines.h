@@ -407,6 +407,9 @@ CheckForInterrupt(JSContext* cx)
     
     if (MOZ_UNLIKELY(cx->hasPendingInterrupt()))
         return cx->handleInterrupt();
+
+    JS_INTERRUPT_POSSIBLY_FAIL();
+
     return true;
 }
 
