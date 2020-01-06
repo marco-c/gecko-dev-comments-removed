@@ -150,7 +150,10 @@ public:
         
         
         
-        eNoSearchForLegacyFamilyNames = 1 << 1
+        eNoSearchForLegacyFamilyNames = 1 << 1,
+
+        
+        eNoAddToNamesMissedWhenSearching = 1 << 2
     };
 
     
