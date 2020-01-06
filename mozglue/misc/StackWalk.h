@@ -9,8 +9,6 @@
 #ifndef mozilla_StackWalk_h
 #define mozilla_StackWalk_h
 
-
-
 #include "mozilla/Types.h"
 #include <stdint.h>
 
