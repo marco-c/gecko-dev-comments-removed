@@ -4251,19 +4251,6 @@ PropagateBits(Element* aElement, uint32_t aBits, nsINode* aStopAt)
 }
 
 
-static inline Element*
-PropagateBitsFromParent(nsINode* aNode, uint32_t aBits, nsINode* aStopAt)
-{
-  MOZ_ASSERT(aNode->IsElement() || aNode == aNode->OwnerDoc());
-  if (!aNode->IsElement()) {
-    return nullptr;
-  }
-
-  Element* parent = aNode->AsElement()->GetFlattenedTreeParentElementForStyle();
-  return PropagateBits(parent, aBits, aStopAt);
-}
-
-
 
 
 
@@ -4341,7 +4328,7 @@ NoteDirtyElement(Element* aElement, uint32_t aBit)
   
   const bool reachedDocRoot = !parent || !PropagateBits(parent, aBit, existingRoot);
 
-  if (!reachedDocRoot) {
+  if (!reachedDocRoot || existingRoot == doc) {
       
       
       doc->SetServoRestyleRoot(existingRoot, existingBits | aBit);
@@ -4349,7 +4336,8 @@ NoteDirtyElement(Element* aElement, uint32_t aBit)
     
     
     
-    if (Element* commonAncestor = PropagateBitsFromParent(existingRoot, existingBits, aElement)) {
+    Element* rootParent = existingRoot->GetFlattenedTreeParentElementForStyle();
+    if (Element* commonAncestor = PropagateBits(rootParent, existingBits, aElement)) {
       
       
       doc->SetServoRestyleRoot(commonAncestor, existingBits | aBit);
