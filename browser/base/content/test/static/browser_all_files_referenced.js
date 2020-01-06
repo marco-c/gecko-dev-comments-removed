@@ -160,8 +160,6 @@ var whitelist = new Set([
   
   {file: "chrome://global/skin/icons/warning-64.png", platforms: ["linux", "win"]},
   
-  {file: "chrome://global/skin/notification/close.png", platforms: ["macosx"]},
-  
   {file: "chrome://global/skin/splitter/grip-bottom.gif", platforms: ["linux"]},
   {file: "chrome://global/skin/splitter/grip-left.gif", platforms: ["linux"]},
   {file: "chrome://global/skin/splitter/grip-right.gif", platforms: ["linux"]},
