@@ -174,7 +174,6 @@ protected:
 
 
 class GLImage;
-class EGLImageImage;
 class SharedRGBImage;
 #ifdef MOZ_WIDGET_ANDROID
 class SurfaceTextureImage;
@@ -233,7 +232,6 @@ public:
   virtual TextureClient* GetTextureClient(KnowsCompositor* aForwarder) { return nullptr; }
 
   
-  virtual EGLImageImage* AsEGLImageImage() { return nullptr; }
   virtual GLImage* AsGLImage() { return nullptr; }
 #ifdef MOZ_WIDGET_ANDROID
   virtual SurfaceTextureImage* AsSurfaceTextureImage() { return nullptr; }

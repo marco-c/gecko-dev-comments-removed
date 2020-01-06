@@ -58,11 +58,6 @@ enum class ImageFormat {
   
 
 
-  EGLIMAGE,
-
-  
-
-
 
   D3D9_RGB32_TEXTURE,
 
