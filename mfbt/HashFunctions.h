@@ -122,11 +122,7 @@ AddU32ToHash(uint32_t aHash, uint32_t aValue)
 
 template<size_t PtrSize>
 inline uint32_t
-AddUintptrToHash(uint32_t aHash, uintptr_t aValue);
-
-template<>
-inline uint32_t
-AddUintptrToHash<4>(uint32_t aHash, uintptr_t aValue)
+AddUintptrToHash(uint32_t aHash, uintptr_t aValue)
 {
   return AddU32ToHash(aHash, static_cast<uint32_t>(aValue));
 }
@@ -135,13 +131,6 @@ template<>
 inline uint32_t
 AddUintptrToHash<8>(uint32_t aHash, uintptr_t aValue)
 {
-  
-
-
-
-
-
-
   uint32_t v1 = static_cast<uint32_t>(aValue);
   uint32_t v2 = static_cast<uint32_t>(static_cast<uint64_t>(aValue) >> 32);
   return AddU32ToHash(AddU32ToHash(aHash, v1), v2);
@@ -156,9 +145,11 @@ AddUintptrToHash<8>(uint32_t aHash, uintptr_t aValue)
 
 
 
-template<typename A>
+template<typename T,
+         bool TypeIsNotIntegral = !mozilla::IsIntegral<T>::value,
+         typename U = typename mozilla::EnableIf<TypeIsNotIntegral>::Type>
 MOZ_MUST_USE inline uint32_t
-AddToHash(uint32_t aHash, A aA)
+AddToHash(uint32_t aHash, T aA)
 {
   
 
@@ -181,11 +172,15 @@ AddToHash(uint32_t aHash, A* aA)
   return detail::AddUintptrToHash<sizeof(uintptr_t)>(aHash, uintptr_t(aA));
 }
 
-template<>
+
+
+
+template<typename T,
+         typename U = typename mozilla::EnableIf<mozilla::IsIntegral<T>::value>::Type>
 MOZ_MUST_USE inline uint32_t
-AddToHash(uint32_t aHash, uintptr_t aA)
+AddToHash(uint32_t aHash, T aA)
 {
-  return detail::AddUintptrToHash<sizeof(uintptr_t)>(aHash, aA);
+  return detail::AddUintptrToHash<sizeof(T)>(aHash, aA);
 }
 
 template<typename A, typename... Args>
