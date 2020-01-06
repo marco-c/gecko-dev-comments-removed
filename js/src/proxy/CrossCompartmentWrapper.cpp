@@ -537,7 +537,8 @@ js::NukeCrossCompartmentWrappers(JSContext* cx,
         
         
         
-        mozilla::Maybe<JSCompartment::WrapperEnum> e;
+        
+        mozilla::Maybe<JSCompartment::NonStringWrapperEnum> e;
         if (MOZ_LIKELY(!nukeAll))
             e.emplace(c, target);
         else
@@ -691,14 +692,10 @@ js::RecomputeWrappers(JSContext* cx, const CompartmentFilter& sourceFilter,
             continue;
 
         
-        for (JSCompartment::WrapperEnum e(c); !e.empty(); e.popFront()) {
+        for (JSCompartment::NonStringWrapperEnum e(c, targetFilter); !e.empty(); e.popFront()) {
             
             CrossCompartmentKey& k = e.front().mutableKey();
             if (!k.is<JSObject*>())
-                continue;
-
-            
-            if (!targetFilter.match(k.compartment()))
                 continue;
 
             
