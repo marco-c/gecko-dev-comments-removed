@@ -245,32 +245,84 @@ function getParentGroups(currentGroup, groupsById) {
 
 
 function limitTopLevelMessageCount(state, record) {
-  let tempRecord = {
-    messagesById: record.messagesById,
-    messagesUiById: record.messagesUiById,
-    messagesTableDataById: record.messagesTableDataById,
-    groupsById: record.groupsById,
-  };
+  let topLevelCount = record.groupsById.size === 0
+    ? record.messagesById.size
+    : getToplevelMessageCount(record);
 
-  let removedMessages = state.removedMessages;
-
-  
-  let topLevelCount = getToplevelMessageCount(tempRecord);
-  while (topLevelCount > logLimit) {
-    removedMessages.push(...removeFirstMessage(tempRecord));
-    topLevelCount--;
+  if (topLevelCount <= logLimit) {
+    return record;
   }
 
-  
-  
-  removedMessages = state.removedMessages.filter(msg => msg.parameters);
+  const removedMessagesId = [];
+  const removedMessages = [];
+  let visibleMessages = [...record.visibleMessages];
 
-  
-  record.set("messagesById", tempRecord.messagesById);
-  record.set("messagesUiById", tempRecord.messagesUiById);
-  record.set("messagesTableDataById", tempRecord.messagesTableDataById);
-  record.set("groupsById", tempRecord.groupsById);
-  record.set("removedMessages", removedMessages);
+  let cleaningGroup = false;
+  record.messagesById.forEach((message, id) => {
+    
+    
+    if (cleaningGroup === true && !message.groupId) {
+      cleaningGroup = false;
+    }
+
+    
+    
+    if (cleaningGroup === false && topLevelCount <= logLimit) {
+      return false;
+    }
+
+    
+    
+    if (cleaningGroup === false && record.groupsById.has(id)) {
+      cleaningGroup = true;
+    }
+
+    if (!message.groupId) {
+      topLevelCount--;
+    }
+
+    removedMessagesId.push(id);
+
+    
+    
+    if (message && message.parameters) {
+      removedMessages.push(message);
+    }
+
+    const index = visibleMessages.indexOf(id);
+    if (index > -1) {
+      visibleMessages.splice(index, 1);
+    }
+
+    return true;
+  });
+
+  if (removedMessages.length > 0) {
+    record.set("removedMessages", record.removedMessages.concat(removedMessages));
+  }
+
+  if (record.visibleMessages.length > visibleMessages.length) {
+    record.set("visibleMessages", visibleMessages);
+  }
+
+  const isInRemovedId = id => removedMessagesId.includes(id);
+  const mapHasRemovedIdKey = map => map.findKey((value, id) => isInRemovedId(id));
+  const cleanUpCollection = map => removedMessagesId.forEach(id => map.remove(id));
+
+  record.set("messagesById", record.messagesById.withMutations(cleanUpCollection));
+
+  if (record.messagesUiById.find(isInRemovedId)) {
+    record.set("messagesUiById", record.messagesUiById.withMutations(cleanUpCollection));
+  }
+  if (mapHasRemovedIdKey(record.messagesTableDataById)) {
+    record.set("messagesTableDataById",
+      record.messagesTableDataById.withMutations(cleanUpCollection));
+  }
+  if (mapHasRemovedIdKey(record.groupsById)) {
+    record.set("groupsById", record.groupsById.withMutations(cleanUpCollection));
+  }
+
+  return record;
 }
 
 
@@ -278,48 +330,7 @@ function limitTopLevelMessageCount(state, record) {
 
 
 function getToplevelMessageCount(record) {
-  return [...record.messagesById].filter(message => !message.groupId).length;
-}
-
-
-
-
-
-
-
-function removeFirstMessage(record) {
-  let firstMessage = record.messagesById.first();
-  record.messagesById = record.messagesById.shift();
-
-  
-  let uiIndex = record.messagesUiById.indexOf(firstMessage);
-  if (uiIndex >= 0) {
-    record.messagesUiById = record.messagesUiById.delete(uiIndex);
-  }
-
-  
-  if (record.messagesTableDataById.has(firstMessage.id)) {
-    record.messagesTableDataById = record.messagesTableDataById.delete(firstMessage.id);
-  }
-
-  
-  if (record.groupsById.has(firstMessage.id)) {
-    record.groupsById = record.groupsById.delete(firstMessage.id);
-  }
-
-  let removedMessages = [firstMessage];
-
-  
-  
-  
-  let message = record.messagesById.first();
-  while (message.groupId == firstMessage.id) {
-    removedMessages.push(...removeFirstMessage(record));
-    message = record.messagesById.first();
-  }
-
-  
-  return removedMessages;
+  return record.messagesById.count(message => !message.groupId);
 }
 
 function shouldMessageBeVisible(message, messagesState, filtersState, checkGroup = true) {
