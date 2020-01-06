@@ -86,7 +86,7 @@ struct APZCTreeManager::TreeBuildingState {
   
   
   
-  std::unordered_map<ScrollableLayerGuid, AsyncPanZoomController*, ScrollableLayerGuidHash> mApzcMap;
+  std::map<ScrollableLayerGuid, AsyncPanZoomController*> mApzcMap;
 };
 
 class APZCTreeManager::CheckerboardFlushObserver : public nsIObserver {
@@ -380,7 +380,7 @@ APZCTreeManager::PushStateToWR(wr::WebRenderAPI* aWrApi,
   
   
   
-  std::unordered_map<ScrollableLayerGuid, HitTestingTreeNode*, ScrollableLayerGuidHash> httnMap;
+  std::map<ScrollableLayerGuid, HitTestingTreeNode*> httnMap;
 
   bool activeAnimations = false;
   uint64_t lastLayersId = -1;
@@ -537,8 +537,6 @@ GetEventRegions(const ScrollNode& aLayer)
   }
   return aLayer.GetEventRegions();
 }
-
-
 
 already_AddRefed<HitTestingTreeNode>
 APZCTreeManager::RecycleOrCreateNode(TreeBuildingState& aState,
@@ -1804,6 +1802,25 @@ APZCTreeManager::GetTargetAPZC(const ScrollableLayerGuid& aGuid)
   return apzc.forget();
 }
 
+static bool
+GuidComparatorIgnoringPresShell(const ScrollableLayerGuid& aOne, const ScrollableLayerGuid& aTwo)
+{
+  return aOne.mLayersId == aTwo.mLayersId
+      && aOne.mScrollId == aTwo.mScrollId;
+}
+
+already_AddRefed<AsyncPanZoomController>
+APZCTreeManager::GetTargetAPZC(const uint64_t& aLayersId,
+                               const FrameMetrics::ViewID& aScrollId)
+{
+  MutexAutoLock lock(mTreeLock);
+  ScrollableLayerGuid guid(aLayersId, 0, aScrollId);
+  RefPtr<HitTestingTreeNode> node = GetTargetNode(guid, &GuidComparatorIgnoringPresShell);
+  MOZ_ASSERT(!node || node->GetApzc()); 
+  RefPtr<AsyncPanZoomController> apzc = node ? node->GetApzc() : nullptr;
+  return apzc.forget();
+}
+
 already_AddRefed<HitTestingTreeNode>
 APZCTreeManager::GetTargetNode(const ScrollableLayerGuid& aGuid,
                                GuidComparator aComparator) const
@@ -1842,13 +1859,6 @@ APZCTreeManager::GetTargetAPZC(const ScreenPoint& aPoint,
     *aOutHitResult = hitResult;
   }
   return target.forget();
-}
-
-static bool
-GuidComparatorIgnoringPresShell(const ScrollableLayerGuid& aOne, const ScrollableLayerGuid& aTwo)
-{
-  return aOne.mLayersId == aTwo.mLayersId
-      && aOne.mScrollId == aTwo.mScrollId;
 }
 
 RefPtr<const OverscrollHandoffChain>

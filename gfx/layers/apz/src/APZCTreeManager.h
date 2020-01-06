@@ -6,7 +6,7 @@
 #ifndef mozilla_layers_APZCTreeManager_h
 #define mozilla_layers_APZCTreeManager_h
 
-#include <unordered_map>                          
+#include <map>                          
 
 #include "gfxPoint.h"                   
 #include "mozilla/Assertions.h"         
@@ -41,7 +41,6 @@ class CompositorBridgeParent;
 class OverscrollHandoffChain;
 struct OverscrollHandoffState;
 struct FlingHandoffState;
-struct ScrollableLayerGuidHash;
 class LayerMetricsWrapper;
 class InputQueue;
 class GeckoContentController;
@@ -460,6 +459,8 @@ public:
   already_AddRefed<AsyncPanZoomController> GetTargetAPZC(const ScreenPoint& aPoint,
                                                          HitTestResult* aOutHitResult,
                                                          HitTestingTreeNode** aOutScrollbarNode = nullptr);
+  already_AddRefed<AsyncPanZoomController> GetTargetAPZC(const uint64_t& aLayersId,
+                                                         const FrameMetrics::ViewID& aScrollId);
   ScreenToParentLayerMatrix4x4 GetScreenToApzcTransform(const AsyncPanZoomController *aApzc) const;
   ParentLayerToScreenMatrix4x4 GetApzcToGeckoTransform(const AsyncPanZoomController *aApzc) const;
 
@@ -547,7 +548,7 @@ private:
   RefPtr<HitTestingTreeNode> mRootNode;
   
 
-  std::unordered_map<ScrollableLayerGuid, ZoomConstraints, ScrollableLayerGuidHash> mZoomConstraints;
+  std::map<ScrollableLayerGuid, ZoomConstraints> mZoomConstraints;
   
 
 
