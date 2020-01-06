@@ -1707,8 +1707,8 @@ public:
     gfxGlyphExtents *GetOrCreateGlyphExtents(int32_t aAppUnitsPerDevUnit);
 
     
-    virtual void SetupGlyphExtents(DrawTarget* aDrawTarget, uint32_t aGlyphID,
-                                   bool aNeedTight, gfxGlyphExtents *aExtents);
+    void SetupGlyphExtents(DrawTarget* aDrawTarget, uint32_t aGlyphID,
+                           bool aNeedTight, gfxGlyphExtents *aExtents);
 
     
     virtual bool SetupCairoFont(DrawTarget* aDrawTarget) = 0;
@@ -1889,7 +1889,7 @@ public:
     }
 
     
-    virtual already_AddRefed<gfxFont>
+    already_AddRefed<gfxFont>
     GetSubSuperscriptFont(int32_t aAppUnitsPerDevPixel);
 
     
@@ -1930,10 +1930,7 @@ protected:
 
     
     
-    
-    
-    
-    virtual already_AddRefed<gfxFont> GetSmallCapsFont();
+    already_AddRefed<gfxFont> GetSmallCapsFont();
 
     
     

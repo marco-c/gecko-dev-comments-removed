@@ -827,7 +827,7 @@ private:
     ShapingState      mShapingState;
 };
 
-class gfxFontGroup : public gfxTextRunFactory {
+class gfxFontGroup final : public gfxTextRunFactory {
 public:
     typedef mozilla::unicode::Script Script;
 
@@ -843,7 +843,7 @@ public:
 
     
     
-    virtual gfxFont* GetFirstValidFont(uint32_t aCh = 0x20);
+    gfxFont* GetFirstValidFont(uint32_t aCh = 0x20);
 
     
     
@@ -852,7 +852,7 @@ public:
 
     const gfxFontStyle *GetStyle() const { return &mStyle; }
 
-    virtual gfxFontGroup *Copy(const gfxFontStyle *aStyle);
+    gfxFontGroup *Copy(const gfxFontStyle *aStyle);
 
     
 
@@ -867,7 +867,7 @@ public:
 
 
 
-    virtual already_AddRefed<gfxTextRun>
+    already_AddRefed<gfxTextRun>
     MakeTextRun(const char16_t *aString, uint32_t aLength,
                 const Parameters *aParams,
                 mozilla::gfx::ShapedTextFlags aFlags,
@@ -879,7 +879,7 @@ public:
 
 
 
-    virtual already_AddRefed<gfxTextRun>
+    already_AddRefed<gfxTextRun>
     MakeTextRun(const uint8_t *aString, uint32_t aLength,
                 const Parameters *aParams,
                 mozilla::gfx::ShapedTextFlags aFlags,
@@ -931,9 +931,9 @@ public:
     
     
     enum { UNDERLINE_OFFSET_NOT_SET = INT16_MAX };
-    virtual gfxFloat GetUnderlineOffset();
+    gfxFloat GetUnderlineOffset();
 
-    virtual already_AddRefed<gfxFont>
+    already_AddRefed<gfxFont>
         FindFontForChar(uint32_t ch, uint32_t prevCh, uint32_t aNextCh,
                         Script aRunScript, gfxFont *aPrevMatchedFont,
                         uint8_t *aMatchType);
@@ -965,7 +965,7 @@ public:
 
     
     
-    virtual void UpdateUserFonts();
+    void UpdateUserFonts();
 
     
     bool ContainsUserFont(const gfxUserFontEntry* aUserFont);
@@ -1197,7 +1197,7 @@ protected:
     
     
     
-    virtual gfxFont* GetFontAt(int32_t i, uint32_t aCh = 0x20);
+    gfxFont* GetFontAt(int32_t i, uint32_t aCh = 0x20);
 
     
     

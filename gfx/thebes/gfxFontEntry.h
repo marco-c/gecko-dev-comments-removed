@@ -396,10 +396,8 @@ protected:
     
     virtual ~gfxFontEntry();
 
-    virtual gfxFont *CreateFontInstance(const gfxFontStyle *aFontStyle, bool aNeedsBold) {
-        NS_NOTREACHED("oops, somebody didn't override CreateFontInstance");
-        return nullptr;
-    }
+    virtual gfxFont *CreateFontInstance(const gfxFontStyle *aFontStyle,
+                                        bool aNeedsBold) = 0;
 
     virtual void CheckForGraphiteTables();
 
