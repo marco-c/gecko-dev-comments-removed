@@ -960,8 +960,19 @@ MacroAssembler::copySlotsFromTemplate(Register obj, const NativeObject* template
                                       uint32_t start, uint32_t end)
 {
     uint32_t nfixed = Min(templateObj->numFixedSlotsForCompilation(), end);
-    for (unsigned i = start; i < nfixed; i++)
-        storeValue(templateObj->getFixedSlot(i), Address(obj, NativeObject::getFixedSlotOffset(i)));
+    for (unsigned i = start; i < nfixed; i++) {
+        
+        
+        
+        
+        
+        Value v;
+        if (templateObj->is<RegExpObject>() && i == RegExpObject::lastIndexSlot())
+            v = Int32Value(0);
+        else
+            v = templateObj->getFixedSlot(i);
+        storeValue(v, Address(obj, NativeObject::getFixedSlotOffset(i)));
+    }
 }
 
 void
