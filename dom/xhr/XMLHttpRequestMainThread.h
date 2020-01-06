@@ -793,12 +793,8 @@ protected:
   bool mWaitingForOnStopRequest;
   bool mProgressTimerIsActive;
   bool mIsHtml;
-  bool mWarnAboutMultipartHtml;
   bool mWarnAboutSyncHtml;
   int64_t mLoadTotal; 
-  
-  
-  uint64_t mDataAvailable;
   
   
   
