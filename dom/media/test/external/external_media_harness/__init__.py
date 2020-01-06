@@ -1,5 +1,0 @@
-
-
-
-
-from runtests import cli
