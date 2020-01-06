@@ -68,7 +68,7 @@ void fillAbortMessage(char (&msg)[N], uintptr_t retAddress) {
 
 
 
-void abort(void)
+extern "C" void abort(void)
 {
 #ifdef MOZ_WIDGET_ANDROID
     char msg[64] = {};
