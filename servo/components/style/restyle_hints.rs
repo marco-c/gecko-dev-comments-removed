@@ -314,6 +314,22 @@ impl<'a, E> MatchAttr for ElementWrapper<'a, E>
     }
 }
 
+#[cfg(feature = "gecko")]
+fn dir_selector_to_state(s: &[u16]) -> ElementState {
+    
+    const LTR: [u16; 4] = [b'l' as u16, b't' as u16, b'r' as u16, 0];
+    const RTL: [u16; 4] = [b'r' as u16, b't' as u16, b'l' as u16, 0];
+    if LTR == *s {
+        IN_LTR_STATE
+    } else if RTL == *s {
+        IN_RTL_STATE
+    } else {
+        
+        
+        ElementState::empty()
+    }
+}
+
 impl<'a, E> Element for ElementWrapper<'a, E>
     where E: TElement,
 {
@@ -333,6 +349,31 @@ impl<'a, E> Element for ElementWrapper<'a, E>
                 return selectors.iter().any(|s| {
                     matches_complex_selector(s, self, relations, _setter)
                 })
+            }
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[cfg(feature = "gecko")]
+        {
+            if let NonTSPseudoClass::Dir(ref s) = *pseudo_class {
+                let selector_flag = dir_selector_to_state(s);
+                if selector_flag.is_empty() {
+                    
+                    return false;
+                }
+                let state = match self.snapshot().and_then(|s| s.state()) {
+                    Some(snapshot_state) => snapshot_state,
+                    None => self.element.get_state(),
+                };
+                return state.contains(selector_flag);
             }
         }
 
@@ -425,6 +466,10 @@ impl<'a, E> Element for ElementWrapper<'a, E>
 
 fn selector_to_state(sel: &Component<SelectorImpl>) -> ElementState {
     match *sel {
+        
+        
+        #[cfg(feature = "gecko")]
+        Component::NonTSPseudoClass(NonTSPseudoClass::Dir(ref s)) => dir_selector_to_state(s),
         Component::NonTSPseudoClass(ref pc) => pc.state_flag(),
         _ => ElementState::empty(),
     }
