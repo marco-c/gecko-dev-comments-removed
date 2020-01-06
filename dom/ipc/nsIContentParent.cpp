@@ -138,6 +138,7 @@ nsIContentParent::AllocPBrowserParent(const TabId& aTabId,
 
   uint32_t chromeFlags = aChromeFlags;
   TabId openerTabId(0);
+  ContentParentId openerCpId(0);
   if (aContext.type() == IPCTabContext::TPopupIPCTabContext) {
     
     
@@ -145,6 +146,7 @@ nsIContentParent::AllocPBrowserParent(const TabId& aTabId,
     const PopupIPCTabContext& popupContext = aContext.get_PopupIPCTabContext();
     auto opener = TabParent::GetFrom(popupContext.opener().get_PBrowserParent());
     openerTabId = opener->GetTabId();
+    openerCpId = opener->Manager()->ChildID();
 
     
     
@@ -178,7 +180,7 @@ nsIContentParent::AllocPBrowserParent(const TabId& aTabId,
     
     
     ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
-    if (!cpm->RegisterRemoteFrame(aTabId, openerTabId, aContext, aCpId)) {
+    if (!cpm->RegisterRemoteFrame(aTabId, openerCpId, openerTabId, aContext, aCpId)) {
       return nullptr;
     }
   }
