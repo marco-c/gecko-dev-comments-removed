@@ -59,8 +59,37 @@ class ZoneGroup
   public:
     ZoneVector& zones() { return zones_.ref(); }
 
+  private:
+    enum class HelperThreadUse : uint32_t
+    {
+        None,
+        Pending,
+        Active
+    };
+
+    mozilla::Atomic<HelperThreadUse> helperThreadUse;
+
+  public:
     
-    mozilla::Atomic<bool> usedByHelperThread;
+    bool createdForHelperThread() const {
+        return helperThreadUse != HelperThreadUse::None;
+    }
+    
+    bool usedByHelperThread() const {
+        return helperThreadUse == HelperThreadUse::Active;
+    }
+    void setCreatedForHelperThread() {
+        MOZ_ASSERT(helperThreadUse == HelperThreadUse::None);
+        helperThreadUse = HelperThreadUse::Pending;
+    }
+    void setUsedByHelperThread() {
+        MOZ_ASSERT(helperThreadUse == HelperThreadUse::Pending);
+        helperThreadUse = HelperThreadUse::Active;
+    }
+    void clearUsedByHelperThread() {
+        MOZ_ASSERT(helperThreadUse != HelperThreadUse::None);
+        helperThreadUse = HelperThreadUse::None;
+    }
 
     explicit ZoneGroup(JSRuntime* runtime);
     ~ZoneGroup();

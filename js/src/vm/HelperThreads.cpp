@@ -36,6 +36,7 @@ using namespace js;
 
 using mozilla::ArrayLength;
 using mozilla::DebugOnly;
+using mozilla::Maybe;
 using mozilla::Unused;
 using mozilla::TimeDuration;
 using mozilla::TimeStamp;
@@ -646,6 +647,14 @@ js::CancelOffThreadParses(JSRuntime* rt)
         if (!found)
             break;
     }
+
+#ifdef DEBUG
+    GlobalHelperThreadState::ParseTaskVector& worklist = HelperThreadState().parseWorklist(lock);
+    for (size_t i = 0; i < worklist.length(); i++) {
+        ParseTask* task = worklist[i];
+        MOZ_ASSERT(!task->runtimeMatches(rt));
+    }
+#endif
 }
 
 bool
@@ -696,8 +705,29 @@ EnsureParserCreatedClasses(JSContext* cx, ParseTaskKind kind)
     return true;
 }
 
+class AutoClearUsedByHelperThread
+{
+    ZoneGroup* group;
+
+  public:
+    AutoClearUsedByHelperThread(JSObject* global)
+      : group(global->zone()->group())
+    {}
+
+    void forget() {
+        group = nullptr;
+    }
+
+    ~AutoClearUsedByHelperThread() {
+        if (group)
+            group->clearUsedByHelperThread();
+    }
+};
+
 static JSObject*
-CreateGlobalForOffThreadParse(JSContext* cx, ParseTaskKind kind, const gc::AutoSuppressGC& nogc)
+CreateGlobalForOffThreadParse(JSContext* cx, ParseTaskKind kind,
+                              Maybe<AutoClearUsedByHelperThread>& clearUseGuard,
+                              const gc::AutoSuppressGC& nogc)
 {
     JSCompartment* currentCompartment = cx->compartment();
 
@@ -722,9 +752,16 @@ CreateGlobalForOffThreadParse(JSContext* cx, ParseTaskKind kind, const gc::AutoS
 
     
     
+    ZoneGroup* group = global->zone()->group();
+    group->setCreatedForHelperThread();
+    clearUseGuard.emplace(global);
+
+    
+    
     
     if (!EnsureParserCreatedClasses(cx, kind))
         return nullptr;
+
     {
         AutoCompartment ac(cx, global);
         if (!EnsureParserCreatedClasses(cx, kind))
@@ -737,19 +774,18 @@ CreateGlobalForOffThreadParse(JSContext* cx, ParseTaskKind kind, const gc::AutoS
 static bool
 QueueOffThreadParseTask(JSContext* cx, ParseTask* task)
 {
-    if (OffThreadParsingMustWaitForGC(cx->runtime())) {
-        AutoLockHelperThreadState lock;
-        if (!HelperThreadState().parseWaitingOnGC(lock).append(task)) {
-            ReportOutOfMemory(cx);
-            return false;
-        }
-    } else {
-        AutoLockHelperThreadState lock;
-        if (!HelperThreadState().parseWorklist(lock).append(task)) {
-            ReportOutOfMemory(cx);
-            return false;
-        }
+    AutoLockHelperThreadState lock;
 
+    bool mustWait = OffThreadParsingMustWaitForGC(cx->runtime());
+
+    auto& queue = mustWait ? HelperThreadState().parseWaitingOnGC(lock)
+                           : HelperThreadState().parseWorklist(lock);
+    if (!queue.append(task)) {
+        ReportOutOfMemory(cx);
+        return false;
+    }
+
+    if (!mustWait) {
         task->activate(cx->runtime());
         HelperThreadState().notifyOne(GlobalHelperThreadState::PRODUCER, lock);
     }
@@ -768,7 +804,8 @@ StartOffThreadParseTask(JSContext* cx, const ReadOnlyCompileOptions& options,
     gc::AutoAssertNoNurseryAlloc noNurseryAlloc;
     AutoSuppressAllocationMetadataBuilder suppressMetadata(cx);
 
-    JSObject* global = CreateGlobalForOffThreadParse(cx, kind, nogc);
+    Maybe<AutoClearUsedByHelperThread> clearUseGuard;
+    JSObject* global = CreateGlobalForOffThreadParse(cx, kind, clearUseGuard, nogc);
     if (!global)
         return false;
 
@@ -780,6 +817,7 @@ StartOffThreadParseTask(JSContext* cx, const ReadOnlyCompileOptions& options,
         return false;
 
     task.forget();
+    clearUseGuard->forget();
 
     return true;
 }
@@ -844,7 +882,7 @@ js::EnqueuePendingParseTasksAfterGC(JSRuntime* rt)
 
         for (size_t i = 0; i < waiting.length(); i++) {
             ParseTask* task = waiting[i];
-            if (task->runtimeMatches(rt) && !task->parseGlobal->zone()->wasGCStarted()) {
+            if (task->runtimeMatches(rt)) {
                 AutoEnterOOMUnsafeRegion oomUnsafe;
                 if (!newTasks.append(task))
                     oomUnsafe.crash("EnqueuePendingParseTasksAfterGC");
@@ -1429,7 +1467,7 @@ js::GCParallelTask::~GCParallelTask()
     
     
 #ifdef DEBUG
-    mozilla::Maybe<AutoLockHelperThreadState> helperLock;
+    Maybe<AutoLockHelperThreadState> helperLock;
     if (!HelperThreadState().isLockedByCurrentThread())
         helperLock.emplace();
     MOZ_ASSERT(state == NotStarted);

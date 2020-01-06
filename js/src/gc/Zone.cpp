@@ -299,8 +299,10 @@ bool
 Zone::canCollect()
 {
     
-    if (usedByHelperThread())
+    
+    if (!isAtomsZone() && group()->createdForHelperThread())
         return false;
+
     JSRuntime* rt = runtimeFromAnyThread();
     if (isAtomsZone() && rt->hasHelperThreadZones())
         return false;
