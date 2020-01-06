@@ -9,6 +9,8 @@
 #define mozilla_net_HttpBackgroundChannelChild_h
 
 #include "mozilla/net/PHttpBackgroundChannelChild.h"
+#include "nsIRunnable.h"
+#include "nsTArray.h"
 
 using mozilla::ipc::IPCResult;
 
@@ -32,6 +34,10 @@ public:
   
   
   void OnChannelClosed();
+
+  
+  
+  void OnStartRequestReceived();
 
   
   void OnBackgroundChannelCreationFailed();
@@ -70,7 +76,26 @@ private:
   
   
   
+  
+  
+  
+  bool IsWaitingOnStartRequest();
+
+  
+  
+  
+  
   RefPtr<HttpChannelChild> mChannelChild;
+
+  
+  bool mStartReceived = false;
+
+  
+  bool mStartSent = false;
+
+  
+  
+  nsTArray<nsCOMPtr<nsIRunnable>> mQueuedRunnables;
 };
 
 } 

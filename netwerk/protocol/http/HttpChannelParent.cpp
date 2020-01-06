@@ -1384,6 +1384,7 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
 {
   LOG(("HttpChannelParent::OnStartRequest [this=%p, aRequest=%p]\n",
        this, aRequest));
+  MOZ_ASSERT(NS_IsMainThread());
 
   MOZ_RELEASE_ASSERT(!mDivertingFromChild,
     "Cannot call OnStartRequest if diverting is set!");
@@ -1492,6 +1493,17 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
     rv = NS_ERROR_UNEXPECTED;
   }
   requestHead->Exit();
+
+  
+  
+  
+  if (NS_SUCCEEDED(rv)) {
+    MOZ_ASSERT(mBgParent);
+    if (!mBgParent->OnStartRequestSent()) {
+      rv = NS_ERROR_UNEXPECTED;
+    }
+  }
+
   return rv;
 }
 
@@ -1502,6 +1514,7 @@ HttpChannelParent::OnStopRequest(nsIRequest *aRequest,
 {
   LOG(("HttpChannelParent::OnStopRequest: [this=%p aRequest=%p status=%" PRIx32 "]\n",
        this, aRequest, static_cast<uint32_t>(aStatusCode)));
+  MOZ_ASSERT(NS_IsMainThread());
 
   MOZ_RELEASE_ASSERT(!mDivertingFromChild,
     "Cannot call OnStopRequest if diverting is set!");
@@ -1525,8 +1538,14 @@ HttpChannelParent::OnStopRequest(nsIRequest *aRequest,
   mChannel->GetCacheReadStart(&timing.cacheReadStart);
   mChannel->GetCacheReadEnd(&timing.cacheReadEnd);
 
-  if (mIPCClosed || !SendOnStopRequest(aStatusCode, timing))
+  
+  
+  MOZ_ASSERT(mIPCClosed || mBgParent);
+
+  if (mIPCClosed ||
+      !mBgParent || !mBgParent->OnStopRequest(aStatusCode, timing)) {
     return NS_ERROR_UNEXPECTED;
+  }
 
   return NS_OK;
 }
@@ -1542,8 +1561,9 @@ HttpChannelParent::OnDataAvailable(nsIRequest *aRequest,
                                    uint64_t aOffset,
                                    uint32_t aCount)
 {
-  LOG(("HttpChannelParent::OnDataAvailable [this=%p aRequest=%p]\n",
-       this, aRequest));
+  LOG(("HttpChannelParent::OnDataAvailable [this=%p aRequest=%p offset=%" PRIu64
+       " count=%" PRIu32 "]\n", this, aRequest, aOffset, aCount));
+  MOZ_ASSERT(NS_IsMainThread());
 
   MOZ_RELEASE_ASSERT(!mDivertingFromChild,
     "Cannot call OnDataAvailable if diverting is set!");
@@ -1570,8 +1590,13 @@ HttpChannelParent::OnDataAvailable(nsIRequest *aRequest,
       return rv;
     }
 
-    if (mIPCClosed || !SendOnTransportAndData(channelStatus, transportStatus,
-                                              aOffset, toRead, data)) {
+    
+    
+    MOZ_ASSERT(mIPCClosed || mBgParent);
+
+    if (mIPCClosed || !mBgParent ||
+        !mBgParent->OnTransportAndData(channelStatus, transportStatus,
+                                       aOffset, toRead, data)) {
       return NS_ERROR_UNEXPECTED;
     }
 
@@ -1593,6 +1618,10 @@ HttpChannelParent::OnProgress(nsIRequest *aRequest,
                               int64_t aProgress,
                               int64_t aProgressMax)
 {
+  LOG(("HttpChannelParent::OnStatus [this=%p progress=%" PRId64 "max=%" PRId64
+       "]\n", this, aProgress, aProgressMax));
+  MOZ_ASSERT(NS_IsMainThread());
+
   
   if (mIgnoreProgress) {
     mIgnoreProgress = false;
@@ -1601,8 +1630,13 @@ HttpChannelParent::OnProgress(nsIRequest *aRequest,
 
   
   
+  MOZ_ASSERT(mIPCClosed || mBgParent);
+
   
-  if (mIPCClosed || !SendOnProgress(aProgress, aProgressMax)) {
+  
+  
+  if (mIPCClosed || !mBgParent
+      || !mBgParent->OnProgress(aProgress, aProgressMax)) {
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -1615,6 +1649,10 @@ HttpChannelParent::OnStatus(nsIRequest *aRequest,
                             nsresult aStatus,
                             const char16_t *aStatusArg)
 {
+  LOG(("HttpChannelParent::OnStatus [this=%p status=%" PRIx32 "]\n",
+       this, static_cast<uint32_t>(aStatus)));
+  MOZ_ASSERT(NS_IsMainThread());
+
   
   if (aStatus == NS_NET_STATUS_RECEIVING_FROM ||
       aStatus == NS_NET_STATUS_READING) {
@@ -1626,7 +1664,11 @@ HttpChannelParent::OnStatus(nsIRequest *aRequest,
   }
 
   
-  if (mIPCClosed || !SendOnStatus(aStatus)) {
+  
+  MOZ_ASSERT(mIPCClosed || mBgParent);
+
+  
+  if (mIPCClosed || !mBgParent || !mBgParent->OnStatus(aStatus)) {
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -1963,14 +2005,11 @@ HttpChannelParent::StartDiversion()
   MOZ_ASSERT(NS_SUCCEEDED(rvdbg));
   mDivertListener = nullptr;
 
-  if (NS_WARN_IF(mIPCClosed || !SendFlushedForDiversion())) {
-    FailDiversion(NS_ERROR_UNEXPECTED);
-    return;
-  }
+  
+  
+  MOZ_ASSERT(mIPCClosed || mBgParent);
 
-  
-  
-  if (NS_WARN_IF(mIPCClosed || !SendDivertMessages())) {
+  if (NS_WARN_IF(mIPCClosed || !mBgParent || !mBgParent->OnDiversion())) {
     FailDiversion(NS_ERROR_UNEXPECTED);
     return;
   }
