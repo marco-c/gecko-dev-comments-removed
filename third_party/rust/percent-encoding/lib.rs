@@ -6,7 +6,32 @@
 
 
 
-use encoding;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use std::ascii::AsciiExt;
 use std::borrow::Cow;
 use std::fmt;
@@ -58,11 +83,11 @@ pub trait EncodeSet: Clone {
 macro_rules! define_encode_set {
     ($(#[$attr: meta])* pub $name: ident = [$base_set: expr] | {$($ch: pat),*}) => {
         $(#[$attr])*
-        #[derive(Copy, Clone)]
+        #[derive(Copy, Clone, Debug)]
         #[allow(non_camel_case_types)]
         pub struct $name;
 
-        impl $crate::percent_encoding::EncodeSet for $name {
+        impl $crate::EncodeSet for $name {
             #[inline]
             fn contains(&self, byte: u8) -> bool {
                 match byte as char {
@@ -77,7 +102,10 @@ macro_rules! define_encode_set {
 }
 
 
-#[derive(Copy, Clone)]
+
+
+
+#[derive(Copy, Clone, Debug)]
 #[allow(non_camel_case_types)]
 pub struct SIMPLE_ENCODE_SET;
 
@@ -90,25 +118,52 @@ impl EncodeSet for SIMPLE_ENCODE_SET {
 
 define_encode_set! {
     /// This encode set is used in the URL parser for query strings.
+    ///
+    /// Aside from special chacters defined in the [`SIMPLE_ENCODE_SET`](struct.SIMPLE_ENCODE_SET.html),
+    /// space, double quote ("), hash (#), and inequality qualifiers (<), (>) are encoded.
     pub QUERY_ENCODE_SET = [SIMPLE_ENCODE_SET] | {' ', '"', '#', '<', '>'}
 }
 
 define_encode_set! {
     /// This encode set is used for path components.
+    ///
+    /// Aside from special chacters defined in the [`SIMPLE_ENCODE_SET`](struct.SIMPLE_ENCODE_SET.html),
+    /// space, double quote ("), hash (#), inequality qualifiers (<), (>), backtick (`),
+    /// question mark (?), and curly brackets ({), (}) are encoded.
     pub DEFAULT_ENCODE_SET = [QUERY_ENCODE_SET] | {'`', '?', '{', '}'}
 }
 
 define_encode_set! {
     /// This encode set is used for on '/'-separated path segment
+    ///
+    /// Aside from special chacters defined in the [`SIMPLE_ENCODE_SET`](struct.SIMPLE_ENCODE_SET.html),
+    /// space, double quote ("), hash (#), inequality qualifiers (<), (>), backtick (`),
+    /// question mark (?), and curly brackets ({), (}), percent sign (%), forward slash (/) are
+    /// encoded.
     pub PATH_SEGMENT_ENCODE_SET = [DEFAULT_ENCODE_SET] | {'%', '/'}
 }
 
 define_encode_set! {
     /// This encode set is used for username and password.
+    ///
+    /// Aside from special chacters defined in the [`SIMPLE_ENCODE_SET`](struct.SIMPLE_ENCODE_SET.html),
+    /// space, double quote ("), hash (#), inequality qualifiers (<), (>), backtick (`),
+    /// question mark (?), and curly brackets ({), (}), forward slash (/), colon (:), semi-colon (;),
+    /// equality (=), at (@), backslash (\\), square brackets ([), (]), caret (\^), and pipe (|) are
+    /// encoded.
     pub USERINFO_ENCODE_SET = [DEFAULT_ENCODE_SET] | {
         '/', ':', ';', '=', '@', '[', '\\', ']', '^', '|'
     }
 }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -146,6 +201,14 @@ pub fn percent_encode_byte(byte: u8) -> &'static str {
 
 
 
+
+
+
+
+
+
+
+
 #[inline]
 pub fn percent_encode<E: EncodeSet>(input: &[u8], encode_set: E) -> PercentEncode<E> {
     PercentEncode {
@@ -157,13 +220,21 @@ pub fn percent_encode<E: EncodeSet>(input: &[u8], encode_set: E) -> PercentEncod
 
 
 
+
+
+
+
+
+
+
+
 #[inline]
 pub fn utf8_percent_encode<E: EncodeSet>(input: &str, encode_set: E) -> PercentEncode<E> {
     percent_encode(input.as_bytes(), encode_set)
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PercentEncode<'a, E: EncodeSet> {
     bytes: &'a [u8],
     encode_set: E,
@@ -241,6 +312,14 @@ impl<'a, E: EncodeSet> From<PercentEncode<'a, E>> for Cow<'a, str> {
 
 
 
+
+
+
+
+
+
+
+
 #[inline]
 pub fn percent_decode(input: &[u8]) -> PercentDecode {
     PercentDecode {
@@ -249,7 +328,7 @@ pub fn percent_decode(input: &[u8]) -> PercentDecode {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PercentDecode<'a> {
     bytes: slice::Iter<'a, u8>,
 }
@@ -339,6 +418,25 @@ impl<'a> PercentDecode<'a> {
     
     
     pub fn decode_utf8_lossy(self) -> Cow<'a, str> {
-        encoding::decode_utf8_lossy(self.clone().into())
+        decode_utf8_lossy(self.clone().into())
     }
 }
+
+fn decode_utf8_lossy(input: Cow<[u8]>) -> Cow<str> {
+    match input {
+        Cow::Borrowed(bytes) => String::from_utf8_lossy(bytes),
+        Cow::Owned(bytes) => {
+            let raw_utf8: *const [u8];
+            match String::from_utf8_lossy(&bytes) {
+                Cow::Borrowed(utf8) => raw_utf8 = utf8.as_bytes(),
+                Cow::Owned(s) => return s.into(),
+            }
+            
+            debug_assert!(raw_utf8 == &*bytes as *const [u8]);
+            
+            unsafe { String::from_utf8_unchecked(bytes) }.into()
+        }
+    }
+}
+
+

@@ -26,6 +26,14 @@ use Url;
 
 
 
+
+
+
+
+
+
+
+#[derive(Debug)]
 pub struct PathSegmentsMut<'a> {
     url: &'a mut Url,
     after_first_slash: usize,
@@ -65,11 +73,26 @@ impl<'a> PathSegmentsMut<'a> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     pub fn clear(&mut self) -> &mut Self {
         self.url.serialization.truncate(self.after_first_slash);
         self
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -117,6 +140,20 @@ impl<'a> PathSegmentsMut<'a> {
         self.extend(Some(segment))
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     

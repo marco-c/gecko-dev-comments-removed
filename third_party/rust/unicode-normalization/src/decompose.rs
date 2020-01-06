@@ -8,6 +8,7 @@
 
 
 
+use std::fmt::{self, Write};
 
 
 fn canonical_sort(comb: &mut [(char, u8)]) {
@@ -131,5 +132,14 @@ impl<I: Iterator<Item=char>> Iterator for Decompositions<I> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         let (lower, _) = self.iter.size_hint();
         (lower, None)
+    }
+}
+
+impl<I: Iterator<Item=char> + Clone> fmt::Display for Decompositions<I> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for c in self.clone() {
+            f.write_char(c)?;
+        }
+        Ok(())
     }
 }

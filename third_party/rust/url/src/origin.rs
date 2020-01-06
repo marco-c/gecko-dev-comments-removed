@@ -50,7 +50,7 @@ pub fn url_origin(url: &Url) -> Origin {
 
 
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum Origin {
     
     Opaque(OpaqueOrigin),
@@ -123,7 +123,7 @@ impl Origin {
 }
 
 
-#[derive(Eq, PartialEq, Clone, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub struct OpaqueOrigin(usize);
 
 #[cfg(feature = "heapsize")]

@@ -81,7 +81,7 @@ pub fn parse_with_encoding<'a>(input: &'a [u8],
 }
 
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Parse<'a> {
     input: &'a [u8],
     encoding: EncodingOverride,
@@ -145,6 +145,7 @@ impl<'a> Parse<'a> {
 }
 
 
+#[derive(Debug)]
 pub struct ParseIntoOwned<'a> {
     inner: Parse<'a>
 }
@@ -168,6 +169,7 @@ pub fn byte_serialize(input: &[u8]) -> ByteSerialize {
 }
 
 
+#[derive(Debug)]
 pub struct ByteSerialize<'a> {
     bytes: &'a [u8],
 }
@@ -209,6 +211,7 @@ impl<'a> Iterator for ByteSerialize<'a> {
 
 
 
+#[derive(Debug)]
 pub struct Serializer<T: Target> {
     target: Option<T>,
     start_position: usize,
