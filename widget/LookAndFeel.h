@@ -157,6 +157,18 @@ public:
     eColorID__moz_mac_secondaryhighlight,
 
     
+    
+    eColorID__moz_mac_vibrancy_light,
+    eColorID__moz_mac_vibrancy_dark,
+    eColorID__moz_mac_menupopup,
+    eColorID__moz_mac_menuitem,
+    eColorID__moz_mac_active_menuitem,
+    eColorID__moz_mac_source_list,
+    eColorID__moz_mac_source_list_selection,
+    eColorID__moz_mac_active_source_list_selection,
+    eColorID__moz_mac_tooltip,
+
+    
 
     
     eColorID__moz_win_accentcolor,

@@ -108,7 +108,7 @@ protected:
   
 
 
-  static const char sColorPrefs[][38];
+  static const char sColorPrefs[][41];
   static int32_t sCachedColors[LookAndFeel::eColorID_LAST_COLOR];
   static int32_t sCachedColorBits[COLOR_CACHE_SIZE];
   static bool sUseNativeColors;
