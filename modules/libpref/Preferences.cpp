@@ -333,29 +333,6 @@ static PLDHashTableOps pref_HashTableOps = {
   nullptr,
 };
 
-typedef void (*PrefsDirtyFunc)();
-static PrefsDirtyFunc gDirtyCallback = nullptr;
-
-static inline void
-MakeDirtyCallback()
-{
-  
-  
-  
-  
-  MOZ_ASSERT(gDirtyCallback);
-  if (gDirtyCallback) {
-    gDirtyCallback();
-  }
-}
-
-
-static void
-PREF_SetDirtyCallback(PrefsDirtyFunc aFunc)
-{
-  gDirtyCallback = aFunc;
-}
-
 
 
 static bool
@@ -852,7 +829,7 @@ PREF_DeleteBranch(const char* aBranchName)
     }
   }
 
-  MakeDirtyCallback();
+  Preferences::HandleDirty();
   return NS_OK;
 }
 
@@ -873,7 +850,7 @@ PREF_ClearUserPref(const char* aPrefName)
     }
 
     pref_DoCallback(aPrefName);
-    MakeDirtyCallback();
+    Preferences::HandleDirty();
   }
   return NS_OK;
 }
@@ -906,7 +883,7 @@ PREF_ClearAllUserPrefs()
     pref_DoCallback(prefString.c_str());
   }
 
-  MakeDirtyCallback();
+  Preferences::HandleDirty();
   return NS_OK;
 }
 
@@ -1123,7 +1100,7 @@ pref_HashPref(const char* aKey,
         
         pref->mPrefFlags.SetHasUserValue(false);
         if (!pref->mPrefFlags.IsLocked()) {
-          MakeDirtyCallback();
+          Preferences::HandleDirty();
           valueChanged = true;
         }
       }
@@ -1134,7 +1111,7 @@ pref_HashPref(const char* aKey,
         pref_SetValue(&pref->mUserPref, pref->mPrefFlags, aValue, aType)
           .SetHasUserValue(true);
       if (!pref->mPrefFlags.IsLocked()) {
-        MakeDirtyCallback();
+        Preferences::HandleDirty();
         valueChanged = true;
       }
     }
@@ -3233,7 +3210,7 @@ namespace mozilla {
 static NS_DEFINE_CID(kZipReaderCID, NS_ZIPREADER_CID);
 
 void
-Preferences::DirtyCallback()
+Preferences::HandleDirty()
 {
   if (!XRE_IsParentProcess()) {
     
@@ -3541,7 +3518,7 @@ public:
                                [fileCopy, rvCopy] {
                                  MOZ_RELEASE_ASSERT(NS_IsMainThread());
                                  if (NS_FAILED(rvCopy)) {
-                                   Preferences::DirtyCallback();
+                                   Preferences::HandleDirty();
                                  }
                                }));
     }
@@ -3930,7 +3907,6 @@ Preferences::SetInitPreferences(nsTArray<PrefSetting>* aPrefs)
 Result<Ok, const char*>
 Preferences::Init()
 {
-  PREF_SetDirtyCallback(&DirtyCallback);
   PREF_Init();
 
   MOZ_TRY(pref_InitInitialObjects());
