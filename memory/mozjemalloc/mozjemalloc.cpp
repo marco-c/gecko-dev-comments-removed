@@ -101,6 +101,7 @@
 
 
 #include "mozmemory_wrap.h"
+#include "mozjemalloc.h"
 #include "mozilla/Sprintf.h"
 
 #ifdef ANDROID
@@ -2266,10 +2267,10 @@ thread_local_arena(bool enabled)
 #endif
 }
 
-MOZ_JEMALLOC_API void
-jemalloc_thread_local_arena_impl(bool enabled)
+template<> inline void
+MozJemalloc::jemalloc_thread_local_arena(bool aEnabled)
 {
-	thread_local_arena(enabled);
+  thread_local_arena(aEnabled);
 }
 
 
@@ -3569,8 +3570,8 @@ isalloc(const void *ptr)
 	return (ret);
 }
 
-MOZ_JEMALLOC_API void
-jemalloc_ptr_info_impl(const void* aPtr, jemalloc_ptr_info_t* aInfo)
+template<> inline void
+MozJemalloc::jemalloc_ptr_info(const void* aPtr, jemalloc_ptr_info_t* aInfo)
 {
   arena_chunk_t* chunk = (arena_chunk_t*)CHUNK_ADDR2BASE(aPtr);
 
@@ -4661,29 +4662,28 @@ MALLOC_OUT:
 
 
 
-
-MOZ_MEMORY_API void *
-malloc_impl(size_t size)
+template<> inline void*
+MozJemalloc::malloc(size_t aSize)
 {
-	void *ret;
+  void* ret;
 
-	if (malloc_init()) {
-		ret = nullptr;
-		goto RETURN;
-	}
+  if (malloc_init()) {
+    ret = nullptr;
+    goto RETURN;
+  }
 
-	if (size == 0) {
-		size = 1;
-	}
+  if (aSize == 0) {
+    aSize = 1;
+  }
 
-	ret = imalloc(size);
+  ret = imalloc(aSize);
 
 RETURN:
-	if (!ret) {
-		errno = ENOMEM;
-	}
+  if (!ret) {
+    errno = ENOMEM;
+  }
 
-	return (ret);
+  return ret;
 }
 
 
@@ -4697,341 +4697,326 @@ RETURN:
 
 
 
-#ifndef MOZ_REPLACE_MALLOC
-#if defined(__GNUC__) && !defined(XP_DARWIN)
-#define MOZ_MEMORY_ELF
-#endif
-#endif 
-
-#ifdef MOZ_MEMORY_ELF
-#define MEMALIGN memalign_internal
-extern "C"
-#else
-#define MEMALIGN memalign_impl
-MOZ_MEMORY_API
-#endif
-void *
-MEMALIGN(size_t alignment, size_t size)
+template<> inline void*
+MozJemalloc::memalign(size_t aAlignment, size_t aSize)
 {
-	void *ret;
+  void* ret;
 
-	MOZ_ASSERT(((alignment - 1) & alignment) == 0);
+  MOZ_ASSERT(((aAlignment - 1) & aAlignment) == 0);
 
-	if (malloc_init()) {
-		ret = nullptr;
-		goto RETURN;
-	}
+  if (malloc_init()) {
+    ret = nullptr;
+    goto RETURN;
+  }
 
-	if (size == 0) {
-		size = 1;
-	}
+  if (aSize == 0) {
+    aSize = 1;
+  }
 
-	alignment = alignment < sizeof(void*) ? sizeof(void*) : alignment;
-	ret = ipalloc(alignment, size);
+  aAlignment = aAlignment < sizeof(void*) ? sizeof(void*) : aAlignment;
+  ret = ipalloc(aAlignment, aSize);
 
 RETURN:
-	return (ret);
+  return ret;
 }
 
-#ifdef MOZ_MEMORY_ELF
-extern void *
-memalign_impl(size_t alignment, size_t size) __attribute__((alias ("memalign_internal"), visibility ("default")));
-#endif
-
-MOZ_MEMORY_API int
-posix_memalign_impl(void **memptr, size_t alignment, size_t size)
+template<> inline int
+MozJemalloc::posix_memalign(void** aMemPtr, size_t aAlignment, size_t aSize)
 {
-	void *result;
+  void* result;
 
-	
-	if (((alignment - 1) & alignment) != 0 || alignment < sizeof(void *)) {
-		return (EINVAL);
-	}
+  
+  if (((aAlignment - 1) & aAlignment) != 0 || aAlignment < sizeof(void*)) {
+    return EINVAL;
+  }
 
-	
+  
 
-	result = MEMALIGN(alignment, size);
+  result = memalign(aAlignment, aSize);
 
-	if (!result)
-		return (ENOMEM);
+  if (!result) {
+    return ENOMEM;
+  }
 
-	*memptr = result;
-	return (0);
+  *aMemPtr = result;
+  return 0;
 }
 
-MOZ_MEMORY_API void *
-aligned_alloc_impl(size_t alignment, size_t size)
+template<> inline void*
+MozJemalloc::aligned_alloc(size_t aAlignment, size_t aSize)
 {
-	if (size % alignment) {
-		return nullptr;
-	}
-	return MEMALIGN(alignment, size);
+  if (aSize % aAlignment) {
+    return nullptr;
+  }
+  return memalign(aAlignment, aSize);
 }
 
-MOZ_MEMORY_API void *
-valloc_impl(size_t size)
+template<> inline void*
+MozJemalloc::valloc(size_t aSize)
 {
-	return (MEMALIGN(GetKernelPageSize(), size));
+  return memalign(GetKernelPageSize(), aSize);
 }
 
-MOZ_MEMORY_API void *
-calloc_impl(size_t num, size_t size)
+template<> inline void*
+MozJemalloc::calloc(size_t aNum, size_t aSize)
 {
-	void *ret;
-	size_t num_size;
+  void *ret;
+  size_t num_size;
 
-	if (malloc_init()) {
-		num_size = 0;
-		ret = nullptr;
-		goto RETURN;
-	}
+  if (malloc_init()) {
+    num_size = 0;
+    ret = nullptr;
+    goto RETURN;
+  }
 
-	num_size = num * size;
-	if (num_size == 0) {
-		num_size = 1;
-	
-
-
+  num_size = aNum * aSize;
+  if (num_size == 0) {
+    num_size = 1;
+  
 
 
-	} else if (((num | size) & (SIZE_T_MAX << (sizeof(size_t) << 2)))
-	    && (num_size / size != num)) {
-		
-		ret = nullptr;
-		goto RETURN;
-	}
 
-	ret = icalloc(num_size);
+
+  } else if (((aNum | aSize) & (SIZE_T_MAX << (sizeof(size_t) << 2)))
+      && (num_size / aSize != aNum)) {
+    
+    ret = nullptr;
+    goto RETURN;
+  }
+
+  ret = icalloc(num_size);
 
 RETURN:
-	if (!ret) {
-		errno = ENOMEM;
-	}
+  if (!ret) {
+    errno = ENOMEM;
+  }
 
-	return (ret);
+  return ret;
 }
 
-MOZ_MEMORY_API void *
-realloc_impl(void *ptr, size_t size)
+template<> inline void*
+MozJemalloc::realloc(void* aPtr, size_t aSize)
 {
-	void *ret;
+  void* ret;
 
-	if (size == 0) {
-		size = 1;
-	}
+  if (aSize == 0) {
+    aSize = 1;
+  }
 
-	if (ptr) {
-		MOZ_ASSERT(malloc_initialized);
+  if (aPtr) {
+    MOZ_ASSERT(malloc_initialized);
 
-		ret = iralloc(ptr, size);
+    ret = iralloc(aPtr, aSize);
 
-		if (!ret) {
-			errno = ENOMEM;
-		}
-	} else {
-		if (malloc_init())
-			ret = nullptr;
-		else
-			ret = imalloc(size);
+    if (!ret) {
+      errno = ENOMEM;
+    }
+  } else {
+    if (malloc_init()) {
+      ret = nullptr;
+    } else {
+      ret = imalloc(aSize);
+    }
 
-		if (!ret) {
-			errno = ENOMEM;
-		}
-	}
+    if (!ret) {
+      errno = ENOMEM;
+    }
+  }
 
-	return (ret);
+  return ret;
 }
 
-MOZ_MEMORY_API void
-free_impl(void *ptr)
+template<> inline void
+MozJemalloc::free(void* aPtr)
 {
-	size_t offset;
+  size_t offset;
 
-	
-
-
-
-	MOZ_ASSERT(CHUNK_ADDR2OFFSET(nullptr) == 0);
-	offset = CHUNK_ADDR2OFFSET(ptr);
-	if (offset != 0)
-		arena_dalloc(ptr, offset);
-	else if (ptr)
-		huge_dalloc(ptr);
-}
+  
 
 
 
-
-
-
-
-
-
-
-MOZ_MEMORY_API size_t
-malloc_good_size_impl(size_t size)
-{
-	
-
-
-
-	if (size < small_min) {
-		
-		size = pow2_ceil(size);
-		
-
-
-
-
-		if (size < (1U << TINY_MIN_2POW))
-			size = (1U << TINY_MIN_2POW);
-	} else if (size <= small_max) {
-		
-		size = QUANTUM_CEILING(size);
-	} else if (size <= bin_maxclass) {
-		
-		size = pow2_ceil(size);
-	} else if (size <= arena_maxclass) {
-		
-		size = PAGE_CEILING(size);
-	} else {
-		
-
-
-
-
-
-		size = PAGE_CEILING(size);
-	}
-	return size;
+  MOZ_ASSERT(CHUNK_ADDR2OFFSET(nullptr) == 0);
+  offset = CHUNK_ADDR2OFFSET(aPtr);
+  if (offset != 0) {
+    arena_dalloc(aPtr, offset);
+  } else if (aPtr) {
+    huge_dalloc(aPtr);
+  }
 }
 
 
-MOZ_MEMORY_API size_t
-malloc_usable_size_impl(MALLOC_USABLE_SIZE_CONST_PTR void *ptr)
+
+
+
+
+
+
+
+
+template<> inline size_t
+MozJemalloc::malloc_good_size(size_t aSize)
 {
-	return (isalloc_validate(ptr));
+  
+
+
+
+  if (aSize < small_min) {
+    
+    aSize = pow2_ceil(aSize);
+    
+
+
+
+
+    if (aSize < (1U << TINY_MIN_2POW))
+      aSize = (1U << TINY_MIN_2POW);
+  } else if (aSize <= small_max) {
+    
+    aSize = QUANTUM_CEILING(aSize);
+  } else if (aSize <= bin_maxclass) {
+    
+    aSize = pow2_ceil(aSize);
+  } else if (aSize <= arena_maxclass) {
+    
+    aSize = PAGE_CEILING(aSize);
+  } else {
+    
+
+
+
+
+
+    aSize = PAGE_CEILING(aSize);
+  }
+  return aSize;
 }
 
-MOZ_JEMALLOC_API void
-jemalloc_stats_impl(jemalloc_stats_t *stats)
+
+template<> inline size_t
+MozJemalloc::malloc_usable_size(usable_ptr_t aPtr)
 {
-	size_t i, non_arena_mapped, chunk_header_size;
+  return isalloc_validate(aPtr);
+}
 
-	MOZ_ASSERT(stats);
+template<> inline void
+MozJemalloc::jemalloc_stats(jemalloc_stats_t* aStats)
+{
+  size_t i, non_arena_mapped, chunk_header_size;
 
-	
+  MOZ_ASSERT(aStats);
 
-
-	stats->opt_junk = opt_junk;
-	stats->opt_zero = opt_zero;
-	stats->narenas = narenas;
-	stats->quantum = quantum;
-	stats->small_max = small_max;
-	stats->large_max = arena_maxclass;
-	stats->chunksize = chunksize;
-	stats->page_size = pagesize;
-	stats->dirty_max = opt_dirty_max;
-
-	
+  
 
 
-	stats->mapped = 0;
-	stats->allocated = 0;
-        stats->waste = 0;
-	stats->page_cache = 0;
-        stats->bookkeeping = 0;
-	stats->bin_unused = 0;
+  aStats->opt_junk = opt_junk;
+  aStats->opt_zero = opt_zero;
+  aStats->narenas = narenas;
+  aStats->quantum = quantum;
+  aStats->small_max = small_max;
+  aStats->large_max = arena_maxclass;
+  aStats->chunksize = chunksize;
+  aStats->page_size = pagesize;
+  aStats->dirty_max = opt_dirty_max;
 
-	non_arena_mapped = 0;
+  
 
-	
-	malloc_mutex_lock(&huge_mtx);
-	non_arena_mapped += huge_mapped;
-	stats->allocated += huge_allocated;
-	MOZ_ASSERT(huge_mapped >= huge_allocated);
-	malloc_mutex_unlock(&huge_mtx);
 
-	
-	malloc_mutex_lock(&base_mtx);
-	non_arena_mapped += base_mapped;
-	stats->bookkeeping += base_committed;
-	MOZ_ASSERT(base_mapped >= base_committed);
-	malloc_mutex_unlock(&base_mtx);
+  aStats->mapped = 0;
+  aStats->allocated = 0;
+  aStats->waste = 0;
+  aStats->page_cache = 0;
+  aStats->bookkeeping = 0;
+  aStats->bin_unused = 0;
 
-	malloc_spin_lock(&arenas_lock);
-	
-	for (i = 0; i < narenas; i++) {
-		arena_t *arena = arenas[i];
-		size_t arena_mapped, arena_allocated, arena_committed, arena_dirty, j,
-		    arena_unused, arena_headers;
-		arena_run_t* run;
-		arena_chunk_map_t* mapelm;
+  non_arena_mapped = 0;
 
-		if (!arena) {
-			continue;
-		}
+  
+  malloc_mutex_lock(&huge_mtx);
+  non_arena_mapped += huge_mapped;
+  aStats->allocated += huge_allocated;
+  MOZ_ASSERT(huge_mapped >= huge_allocated);
+  malloc_mutex_unlock(&huge_mtx);
 
-		arena_headers = 0;
-		arena_unused = 0;
+  
+  malloc_mutex_lock(&base_mtx);
+  non_arena_mapped += base_mapped;
+  aStats->bookkeeping += base_committed;
+  MOZ_ASSERT(base_mapped >= base_committed);
+  malloc_mutex_unlock(&base_mtx);
 
-		malloc_spin_lock(&arena->lock);
+  malloc_spin_lock(&arenas_lock);
+  
+  for (i = 0; i < narenas; i++) {
+    arena_t* arena = arenas[i];
+    size_t arena_mapped, arena_allocated, arena_committed, arena_dirty, j,
+           arena_unused, arena_headers;
+    arena_run_t* run;
+    arena_chunk_map_t* mapelm;
 
-		arena_mapped = arena->stats.mapped;
+    if (!arena) {
+      continue;
+    }
 
-		
-		arena_committed = arena->stats.committed << pagesize_2pow;
+    arena_headers = 0;
+    arena_unused = 0;
 
-		arena_allocated = arena->stats.allocated_small +
-				  arena->stats.allocated_large;
+    malloc_spin_lock(&arena->lock);
 
-		arena_dirty = arena->ndirty << pagesize_2pow;
+    arena_mapped = arena->stats.mapped;
 
-		for (j = 0; j < ntbins + nqbins + nsbins; j++) {
-			arena_bin_t* bin = &arena->bins[j];
-			size_t bin_unused = 0;
+    
+    arena_committed = arena->stats.committed << pagesize_2pow;
 
-			rb_foreach_begin(arena_chunk_map_t, link, &bin->runs, mapelm) {
-				run = (arena_run_t *)(mapelm->bits & ~pagesize_mask);
-				bin_unused += run->nfree * bin->reg_size;
-			} rb_foreach_end(arena_chunk_map_t, link, &bin->runs, mapelm)
+    arena_allocated = arena->stats.allocated_small +
+                      arena->stats.allocated_large;
 
-			if (bin->runcur) {
-				bin_unused += bin->runcur->nfree * bin->reg_size;
-			}
+    arena_dirty = arena->ndirty << pagesize_2pow;
 
-			arena_unused += bin_unused;
-			arena_headers += bin->stats.curruns * bin->reg0_offset;
-		}
+    for (j = 0; j < ntbins + nqbins + nsbins; j++) {
+      arena_bin_t* bin = &arena->bins[j];
+      size_t bin_unused = 0;
 
-		malloc_spin_unlock(&arena->lock);
+      rb_foreach_begin(arena_chunk_map_t, link, &bin->runs, mapelm) {
+        run = (arena_run_t*)(mapelm->bits & ~pagesize_mask);
+        bin_unused += run->nfree * bin->reg_size;
+      } rb_foreach_end(arena_chunk_map_t, link, &bin->runs, mapelm)
 
-		MOZ_ASSERT(arena_mapped >= arena_committed);
-		MOZ_ASSERT(arena_committed >= arena_allocated + arena_dirty);
+      if (bin->runcur) {
+        bin_unused += bin->runcur->nfree * bin->reg_size;
+      }
 
-		
+      arena_unused += bin_unused;
+      arena_headers += bin->stats.curruns * bin->reg0_offset;
+    }
 
-		stats->mapped += arena_mapped;
-		stats->allocated += arena_allocated;
-		stats->page_cache += arena_dirty;
-		stats->waste += arena_committed -
-		    arena_allocated - arena_dirty - arena_unused - arena_headers;
-		stats->bin_unused += arena_unused;
-		stats->bookkeeping += arena_headers;
-	}
-	malloc_spin_unlock(&arenas_lock);
+    malloc_spin_unlock(&arena->lock);
 
-	
-	chunk_header_size =
-	    ((stats->mapped / stats->chunksize) * arena_chunk_header_npages) <<
-	    pagesize_2pow;
+    MOZ_ASSERT(arena_mapped >= arena_committed);
+    MOZ_ASSERT(arena_committed >= arena_allocated + arena_dirty);
 
-	stats->mapped += non_arena_mapped;
-	stats->bookkeeping += chunk_header_size;
-	stats->waste -= chunk_header_size;
+    
 
-	MOZ_ASSERT(stats->mapped >= stats->allocated + stats->waste +
-				stats->page_cache + stats->bookkeeping);
+    aStats->mapped += arena_mapped;
+    aStats->allocated += arena_allocated;
+    aStats->page_cache += arena_dirty;
+    aStats->waste += arena_committed -
+        arena_allocated - arena_dirty - arena_unused - arena_headers;
+    aStats->bin_unused += arena_unused;
+    aStats->bookkeeping += arena_headers;
+  }
+  malloc_spin_unlock(&arenas_lock);
+
+  
+  chunk_header_size =
+      ((aStats->mapped / aStats->chunksize) * arena_chunk_header_npages) <<
+      pagesize_2pow;
+
+  aStats->mapped += non_arena_mapped;
+  aStats->bookkeeping += chunk_header_size;
+  aStats->waste -= chunk_header_size;
+
+  MOZ_ASSERT(aStats->mapped >= aStats->allocated + aStats->waste +
+             aStats->page_cache + aStats->bookkeeping);
 }
 
 #ifdef MALLOC_DOUBLE_PURGE
@@ -5082,25 +5067,26 @@ hard_purge_arena(arena_t *arena)
 	malloc_spin_unlock(&arena->lock);
 }
 
-MOZ_JEMALLOC_API void
-jemalloc_purge_freed_pages_impl()
+template<> inline void
+MozJemalloc::jemalloc_purge_freed_pages()
 {
-	size_t i;
-	malloc_spin_lock(&arenas_lock);
-	for (i = 0; i < narenas; i++) {
-		arena_t *arena = arenas[i];
-		if (arena)
-			hard_purge_arena(arena);
-	}
-	malloc_spin_unlock(&arenas_lock);
+  size_t i;
+  malloc_spin_lock(&arenas_lock);
+  for (i = 0; i < narenas; i++) {
+    arena_t* arena = arenas[i];
+    if (arena) {
+      hard_purge_arena(arena);
+    }
+  }
+  malloc_spin_unlock(&arenas_lock);
 }
 
 #else 
 
-MOZ_JEMALLOC_API void
-jemalloc_purge_freed_pages_impl()
+template<> inline void
+MozJemalloc::jemalloc_purge_freed_pages()
 {
-	
+  
 }
 
 #endif 
@@ -5108,27 +5094,27 @@ jemalloc_purge_freed_pages_impl()
 
 
 #ifdef XP_WIN
+
 void*
-_recalloc(void *ptr, size_t count, size_t size)
+_recalloc(void* aPtr, size_t aCount, size_t aSize)
 {
-	size_t oldsize = ptr ? isalloc(ptr) : 0;
-	size_t newsize = count * size;
+  size_t oldsize = aPtr ? isalloc(aPtr) : 0;
+  size_t newsize = aCount * aSize;
 
-	
-
-
+  
 
 
 
 
 
-	ptr = realloc_impl(ptr, newsize);
-	if (ptr && oldsize < newsize) {
-		memset((void *)((uintptr_t)ptr + oldsize), 0, newsize -
-		    oldsize);
-	}
 
-	return ptr;
+
+  aPtr = MozJemalloc::realloc(aPtr, newsize);
+  if (aPtr && oldsize < newsize) {
+    memset((void*)((uintptr_t)aPtr + oldsize), 0, newsize - oldsize);
+  }
+
+  return aPtr;
 }
 
 
@@ -5136,37 +5122,37 @@ _recalloc(void *ptr, size_t count, size_t size)
 
 
 void*
-_expand(void *ptr, size_t newsize)
+_expand(void* aPtr, size_t newsize)
 {
-	if (isalloc(ptr) >= newsize)
-		return ptr;
+  if (isalloc(aPtr) >= newsize) {
+    return aPtr;
+  }
 
-	return nullptr;
+  return nullptr;
 }
 
 size_t
-_msize(void *ptr)
+_msize(void* aPtr)
 {
-
-	return malloc_usable_size_impl(ptr);
+  return MozJemalloc::malloc_usable_size(aPtr);
 }
 #endif
 
-MOZ_JEMALLOC_API void
-jemalloc_free_dirty_pages_impl(void)
+template<> inline void
+MozJemalloc::jemalloc_free_dirty_pages(void)
 {
-	size_t i;
-	malloc_spin_lock(&arenas_lock);
-	for (i = 0; i < narenas; i++) {
-		arena_t *arena = arenas[i];
+  size_t i;
+  malloc_spin_lock(&arenas_lock);
+  for (i = 0; i < narenas; i++) {
+    arena_t* arena = arenas[i];
 
-		if (arena) {
-			malloc_spin_lock(&arena->lock);
-			arena_purge(arena, true);
-			malloc_spin_unlock(&arena->lock);
-		}
-	}
-	malloc_spin_unlock(&arenas_lock);
+    if (arena) {
+      malloc_spin_lock(&arena->lock);
+      arena_purge(arena, true);
+      malloc_spin_unlock(&arena->lock);
+    }
+  }
+  malloc_spin_unlock(&arenas_lock);
 }
 
 
@@ -5248,6 +5234,46 @@ _malloc_postfork_child(void)
 
 
 
+
+#define MACRO_CALL(a, b) a b
+
+#define MACRO_CALL2(a, b) a b
+
+#define ARGS_HELPER(name, ...) MACRO_CALL2( \
+  MOZ_PASTE_PREFIX_AND_ARG_COUNT(name, ##__VA_ARGS__), \
+  (__VA_ARGS__))
+#define TYPED_ARGS0()
+#define TYPED_ARGS1(t1) t1 arg1
+#define TYPED_ARGS2(t1, t2) TYPED_ARGS1(t1), t2 arg2
+#define TYPED_ARGS3(t1, t2, t3) TYPED_ARGS2(t1, t2), t3 arg3
+
+#define ARGS0()
+#define ARGS1(t1) arg1
+#define ARGS2(t1, t2) ARGS1(t1), arg2
+#define ARGS3(t1, t2, t3) ARGS2(t1, t2), arg3
+
+#define GENERIC_MALLOC_DECL_HELPER(name, return, return_type, ...) \
+  return_type name##_impl(ARGS_HELPER(TYPED_ARGS, ##__VA_ARGS__)) \
+  { \
+    return MozJemalloc::name(ARGS_HELPER(ARGS, ##__VA_ARGS__)); \
+  }
+
+#define GENERIC_MALLOC_DECL(name, return_type, ...) \
+  GENERIC_MALLOC_DECL_HELPER(name, return, return_type, ##__VA_ARGS__)
+#define GENERIC_MALLOC_DECL_VOID(name, ...) \
+  GENERIC_MALLOC_DECL_HELPER(name, , void, ##__VA_ARGS__)
+
+#define MALLOC_DECL(...) MOZ_MEMORY_API MACRO_CALL(GENERIC_MALLOC_DECL, (__VA_ARGS__))
+#define MALLOC_DECL_VOID(...) MOZ_MEMORY_API MACRO_CALL(GENERIC_MALLOC_DECL_VOID, (__VA_ARGS__))
+#define MALLOC_FUNCS MALLOC_FUNCS_MALLOC
+#include "malloc_decls.h"
+
+#define MALLOC_DECL(...) MOZ_JEMALLOC_API MACRO_CALL(GENERIC_MALLOC_DECL, (__VA_ARGS__))
+#define MALLOC_DECL_VOID(...) MOZ_JEMALLOC_API MACRO_CALL(GENERIC_MALLOC_DECL_VOID, (__VA_ARGS__))
+#define MALLOC_FUNCS MALLOC_FUNCS_JEMALLOC
+#include "malloc_decls.h"
+
+
 #ifdef HAVE_DLOPEN
 #  include <dlfcn.h>
 #endif
@@ -5284,10 +5310,10 @@ jemalloc_darwin_init(void)
 
 
 extern "C" {
-MOZ_EXPORT void (*__free_hook)(void *ptr) = free_impl;
-MOZ_EXPORT void *(*__malloc_hook)(size_t size) = malloc_impl;
-MOZ_EXPORT void *(*__realloc_hook)(void *ptr, size_t size) = realloc_impl;
-MOZ_EXPORT void *(*__memalign_hook)(size_t alignment, size_t size) = MEMALIGN;
+MOZ_EXPORT void (*__free_hook)(void*) = free_impl;
+MOZ_EXPORT void* (*__malloc_hook)(size_t) = malloc_impl;
+MOZ_EXPORT void* (*__realloc_hook)(void*, size_t) = realloc_impl;
+MOZ_EXPORT void* (*__memalign_hook)(size_t, size_t) = memalign_impl;
 }
 
 #  elif defined(RTLD_DEEPBIND)
