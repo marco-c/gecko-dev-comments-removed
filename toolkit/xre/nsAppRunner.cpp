@@ -570,6 +570,50 @@ CheckArg(const char* aArg, bool aCheckOSInt = false, const char **aParam = nullp
   return ar;
 }
 
+
+
+
+
+
+
+
+static ArgResult
+CheckArgExists(const char* aArg)
+{
+  char **curarg = gArgv + 1; 
+  while (*curarg) {
+    char *arg = curarg[0];
+
+    if (arg[0] == '-'
+#if defined(XP_WIN)
+        || *arg == '/'
+#endif
+        ) {
+      ++arg;
+      if (*arg == '-')
+        ++arg;
+
+      char delimiter = '=';
+#if defined(XP_WIN)
+      delimiter = ':';
+#endif
+      int i;
+      for (i = 0; arg[i] && arg[i] != delimiter; i++) {}
+      char tmp = arg[i];
+      arg[i] = '\0';
+      bool found = strimatch(aArg, arg);
+      arg[i] = tmp;
+      if (found) {
+        return ARG_FOUND;
+      }
+    }
+
+    ++curarg;
+  }
+
+  return ARG_NONE;
+}
+
 #if defined(XP_WIN)
 
 
@@ -3180,7 +3224,7 @@ XREMain::XRE_mainInit(bool* aExitFlag)
     printf_stderr("*** You are running in chaos test mode. See ChaosMode.h. ***\n");
   }
 
-  if (CheckArg("headless")) {
+  if (CheckArg("headless") || CheckArgExists("screenshot")) {
     PR_SetEnv("MOZ_HEADLESS=1");
   }
 
