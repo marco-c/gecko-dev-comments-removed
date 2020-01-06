@@ -34,11 +34,6 @@ const MessageState = Immutable.Record({
   messagesObjectPropertiesById: Immutable.Map(),
   
   
-  
-  
-  messagesObjectEntriesById: Immutable.Map(),
-  
-  
   groupsById: Immutable.Map(),
   
   currentGroup: null,
@@ -59,7 +54,6 @@ function messages(state = new MessageState(), action, filtersState, prefsState) 
     messagesUiById,
     messagesTableDataById,
     messagesObjectPropertiesById,
-    messagesObjectEntriesById,
     networkMessagesUpdateById,
     groupsById,
     currentGroup,
@@ -213,16 +207,6 @@ function messages(state = new MessageState(), action, filtersState, prefsState) 
           }, messagesObjectPropertiesById.get(action.id))
         )
       );
-    case constants.MESSAGE_OBJECT_ENTRIES_RECEIVE:
-      return state.set(
-        "messagesObjectEntriesById",
-        messagesObjectEntriesById.set(
-          action.id,
-          Object.assign({
-            [action.actor]: action.entries
-          }, messagesObjectEntriesById.get(action.id))
-        )
-      );
 
     case constants.NETWORK_MESSAGE_UPDATE:
       return state.set(
@@ -372,10 +356,6 @@ function limitTopLevelMessageCount(state, record, logLimit) {
     record.set("messagesObjectPropertiesById",
       record.messagesObjectPropertiesById.withMutations(cleanUpCollection));
   }
-  if (mapHasRemovedIdKey(record.messagesObjectEntriesById)) {
-    record.set("messagesObjectEntriesById",
-      record.messagesObjectEntriesById.withMutations(cleanUpCollection));
-  }
   if (objectHasRemovedIdKey(record.repeatById)) {
     record.set("repeatById", cleanUpObject(record.repeatById));
   }
@@ -413,11 +393,6 @@ function getAllActorsInMessage(message, state) {
   const loadedProperties = state.messagesObjectPropertiesById.get(message.id);
   if (loadedProperties) {
     actors.push(...Object.keys(loadedProperties));
-  }
-
-  const loadedEntries = state.messagesObjectEntriesById.get(message.id);
-  if (loadedEntries) {
-    actors.push(...Object.keys(loadedEntries));
   }
 
   return actors;
