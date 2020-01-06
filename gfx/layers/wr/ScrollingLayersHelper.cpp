@@ -175,13 +175,11 @@ ScrollingLayersHelper::DefineAndPushScrollLayer(const FrameMetrics& aMetrics,
   if (!aMetrics.IsScrollable()) {
     return false;
   }
-  LayerRect contentRect = ViewAs<LayerPixel>(
-      aMetrics.GetExpandedScrollableRect() * aMetrics.GetDevPixelsPerCSSPixel(),
-      PixelCastJustification::WebRenderHasUnitResolution);
+  LayoutDeviceRect contentRect =
+      aMetrics.GetExpandedScrollableRect() * aMetrics.GetDevPixelsPerCSSPixel();
   
-  LayerRect clipBounds = ViewAs<LayerPixel>(
-      aMetrics.GetCompositionBounds(),
-      PixelCastJustification::MovingDownToChildren);
+  LayoutDeviceRect clipBounds =
+      LayoutDeviceRect::FromUnknownRect(aMetrics.GetCompositionBounds().ToUnknownRect());
   
   
   

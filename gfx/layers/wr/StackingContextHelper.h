@@ -19,8 +19,6 @@ class nsDisplayList;
 namespace mozilla {
 namespace layers {
 
-class WebRenderLayer;
-
 
 
 
@@ -48,7 +46,7 @@ public:
   
   ~StackingContextHelper();
 
-  void AdjustOrigin(const LayerPoint& aDelta);
+  void AdjustOrigin(const LayoutDevicePoint& aDelta);
 
   
   
@@ -60,10 +58,9 @@ public:
   
   
   
-  wr::LayoutRect ToRelativeLayoutRect(const LayerRect& aRect) const;
   wr::LayoutRect ToRelativeLayoutRect(const LayoutDeviceRect& aRect) const;
   
-  wr::LayoutPoint ToRelativeLayoutPoint(const LayerPoint& aPoint) const
+  wr::LayoutPoint ToRelativeLayoutPoint(const LayoutDevicePoint& aPoint) const
   {
     return wr::ToLayoutPoint(aPoint - mOrigin);
   }
@@ -76,7 +73,7 @@ public:
 
 private:
   wr::DisplayListBuilder* mBuilder;
-  LayerPoint mOrigin;
+  LayoutDevicePoint mOrigin;
   gfx::Matrix4x4 mTransform;
   gfx::Size mScale;
 };

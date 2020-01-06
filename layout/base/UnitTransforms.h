@@ -55,12 +55,7 @@ enum class PixelCastJustification : uint8_t {
   MultipleAsyncTransforms,
   
   
-  NoTransformOnLayer,
-  
-  
-  
-  
-  WebRenderHasUnitResolution
+  NoTransformOnLayer
 };
 
 template <class TargetUnits, class SourceUnits>
