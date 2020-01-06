@@ -708,7 +708,7 @@ protected:
   
   mozilla::UniquePtr<mozilla::Decoder> mDecoder;
 
-  const Encoding* mResponseCharset;
+  nsCString mResponseCharset;
 
   void MatchCharsetAndDecoderToResponseDocument();
 

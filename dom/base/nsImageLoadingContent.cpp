@@ -1128,12 +1128,12 @@ nsImageLoadingContent::StringToURI(const nsAString& aSpec,
   nsCOMPtr<nsIURI> baseURL = thisContent->GetBaseURI();
 
   
-  auto encoding = aDocument->GetDocumentCharacterSet();
+  const nsCString& charset = aDocument->GetDocumentCharacterSet();
 
   
   return NS_NewURI(aURI,
                    aSpec,
-                   encoding,
+                   charset.IsEmpty() ? nullptr : charset.get(),
                    baseURL,
                    nsContentUtils::GetIOService());
 }

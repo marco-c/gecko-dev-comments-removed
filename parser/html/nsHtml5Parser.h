@@ -70,8 +70,15 @@ class nsHtml5Parser final : public nsIParser,
 
 
 
-    virtual void SetDocumentCharset(NotNull<const Encoding*> aEncoding,
-                                    int32_t aSource) override;
+    NS_IMETHOD_(void) SetDocumentCharset(const nsACString& aCharset, int32_t aSource) override;
+
+    
+
+
+    NS_IMETHOD_(void) GetDocumentCharset(nsACString& aCharset, int32_t& aSource) override
+    {
+      NS_NOTREACHED("No one should call this.");
+    }
 
     
 
