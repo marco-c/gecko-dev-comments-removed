@@ -12,10 +12,10 @@ Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("chrome://marionette/content/assert.js");
 Cu.import("chrome://marionette/content/atom.js");
 const {
+  error,
   InvalidSelectorError,
   JavaScriptError,
   NoSuchElementError,
-  pprint,
   StaleElementReferenceError,
 } = Cu.import("chrome://marionette/content/error.js", {});
 Cu.import("chrome://marionette/content/wait.js");
@@ -180,7 +180,7 @@ element.Store = class {
 
     if (element.isStale(el)) {
       throw new StaleElementReferenceError(
-          pprint`The element reference of ${el} stale; ` +
+          error.pprint`The element reference of ${el} stale; ` +
               "either the element is no longer attached to the DOM " +
               "or the document has been refreshed");
     }
@@ -632,12 +632,14 @@ element.generateUUID = function() {
 
 
 
-
 element.isStale = function(el) {
   let doc = el.ownerDocument;
   let win = doc.defaultView;
-  let sameDoc = el.ownerDocument === win.document;
-  return !sameDoc || !el.isConnected;
+
+  if (!win || el.ownerDocument !== win.document) {
+    return true;
+  }
+  return !el.isConnected;
 };
 
 
