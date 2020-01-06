@@ -31,6 +31,8 @@ const MOCHITESTS_DIR =
 const CURRENT_CONTENT_DIR =
   'http://example.com/browser/accessible/tests/browser/';
 
+const LOADED_FRAMESCRIPTS = new Map();
+
 
 
 
@@ -188,7 +190,17 @@ function loadFrameScripts(browser, ...scripts) {
       
       frameScript = `${script.dir}${script.name}`;
     }
+
+    let loadedScriptSet = LOADED_FRAMESCRIPTS.get(frameScript);
+    if (!loadedScriptSet) {
+      loadedScriptSet = new WeakSet();
+      LOADED_FRAMESCRIPTS.set(frameScript, loadedScriptSet);
+    } else if (loadedScriptSet.has(browser)) {
+      continue;
+    }
+
     mm.loadFrameScript(frameScript, false, true);
+    loadedScriptSet.add(browser);
   }
 }
 
@@ -278,6 +290,19 @@ function isDefunct(accessible) {
     }
   }
   return defunct;
+}
+
+
+
+
+
+
+function getAccessibleTagName(acc) {
+  try {
+    return acc.attributes.getStringProperty("tag");
+  } catch (e) {
+    return null;
+  }
 }
 
 
