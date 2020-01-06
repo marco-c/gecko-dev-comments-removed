@@ -5,7 +5,6 @@
 
 
 #include "mozilla/EventQueue.h"
-#include "nsIRunnable.h"
 
 using namespace mozilla;
 
