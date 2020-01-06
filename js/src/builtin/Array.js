@@ -729,10 +729,13 @@ function ArrayIteratorNext() {
     
     var len;
     if (IsPossiblyWrappedTypedArray(a)) {
-        if (PossiblyWrappedTypedArrayHasDetachedBuffer(a))
-            ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
-
         len = PossiblyWrappedTypedArrayLength(a);
+
+        
+        if (len === 0) {
+            if (PossiblyWrappedTypedArrayHasDetachedBuffer(a))
+                ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+        }
     } else {
         len = ToLength(a.length);
     }
