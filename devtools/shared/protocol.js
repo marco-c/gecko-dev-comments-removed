@@ -10,6 +10,7 @@ const { extend } = require("devtools/shared/extend");
 var EventEmitter = require("devtools/shared/event-emitter");
 var {getStack, callFunctionWithAsyncStack} = require("devtools/shared/platform/stack");
 var {settleAll} = require("devtools/shared/DevToolsUtils");
+var {lazyLoadSpec, lazyLoadFront} = require("devtools/shared/specs/index");
 
 
 
@@ -66,6 +67,16 @@ types.getType = function (type) {
   }
 
   
+  if (lazyLoadSpec(type)) {
+    
+    
+    reg = registeredTypes.get(type);
+    if (reg) {
+      return reg;
+    }
+  }
+
+  
   let sep = type.indexOf(":");
   if (sep >= 0) {
     let collection = type.substring(0, sep);
@@ -88,12 +99,6 @@ types.getType = function (type) {
   let pieces = type.split("#", 2);
   if (pieces.length > 1) {
     return types.addActorDetail(type, pieces[0], pieces[1]);
-  }
-
-  
-  if (type === "longstring") {
-    require("devtools/shared/specs/string");
-    return registeredTypes.get("longstring");
   }
 
   throw Error("Unknown type: " + type);
@@ -260,6 +265,13 @@ types.addDictType = function (name, specializations) {
 
 
 types.addActorType = function (name) {
+  
+  
+  
+  
+  if (registeredTypes.has(name)) {
+    return registeredTypes.get(name);
+  }
   let type = types.addType(name, {
     _actor: true,
     category: "actor",
@@ -276,6 +288,15 @@ types.addActorType = function (name) {
       let actorID = typeof (v) === "string" ? v : v.actor;
       let front = ctx.conn.getActor(actorID);
       if (!front) {
+        
+
+        
+        
+        
+        if (!type.frontClass) {
+          lazyLoadFront(name);
+        }
+
         front = new type.frontClass(ctx.conn); 
         front.actorID = actorID;
         ctx.marshallPool().manage(front);
@@ -446,7 +467,10 @@ types.JSON = types.addType("json");
 
 var Arg = function (index, type) {
   this.index = index;
-  this.type = types.getType(type);
+  
+  loader.lazyGetter(this, "type", function () {
+    return types.getType(type);
+  });
 };
 
 Arg.prototype = {
@@ -531,7 +555,10 @@ exports.Option = function (index, type) {
 
 
 var RetVal = function (type) {
-  this.type = types.getType(type);
+  
+  loader.lazyGetter(this, "type", function () {
+    return types.getType(type);
+  });
 };
 
 RetVal.prototype = {
