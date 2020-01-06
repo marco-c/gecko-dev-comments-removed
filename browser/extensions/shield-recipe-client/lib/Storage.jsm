@@ -6,142 +6,84 @@
 
 const {utils: Cu} = Components;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://shield-recipe-client/lib/LogManager.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "JSONFile", "resource://gre/modules/JSONFile.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 
 this.EXPORTED_SYMBOLS = ["Storage"];
 
-const log = LogManager.getLogger("storage");
-let storePromise;
 
-function loadStorage() {
-  if (storePromise === undefined) {
-    const path = OS.Path.join(OS.Constants.Path.profileDir, "shield-recipe-client.json");
-    const storage = new JSONFile({path});
-    storePromise = (async function() {
-      await storage.load();
-      return storage;
-    })();
+XPCOMUtils.defineLazyGetter(this, "lazyStore", async function() {
+  const path = OS.Path.join(OS.Constants.Path.profileDir, "shield-recipe-client.json");
+  const store = new JSONFile({path});
+  await store.load();
+  return store;
+});
+
+this.Storage = class {
+  constructor(prefix) {
+    this.prefix = prefix;
   }
-  return storePromise;
-}
-
-this.Storage = {
-  makeStorage(prefix, sandbox) {
-    if (!sandbox) {
-      throw new Error("No sandbox passed");
-    }
-
-    const storageInterface = {
-      
-
-
-
-
-
-      getItem(keySuffix) {
-        return new sandbox.Promise((resolve, reject) => {
-          loadStorage()
-            .then(store => {
-              const namespace = store.data[prefix] || {};
-              const value = namespace[keySuffix] || null;
-              resolve(Cu.cloneInto(value, sandbox));
-            })
-            .catch(err => {
-              log.error(err);
-              reject(new sandbox.Error());
-            });
-        });
-      },
-
-      
-
-
-
-
-
-      setItem(keySuffix, value) {
-        return new sandbox.Promise((resolve, reject) => {
-          loadStorage()
-            .then(store => {
-              if (!(prefix in store.data)) {
-                store.data[prefix] = {};
-              }
-              store.data[prefix][keySuffix] = Cu.cloneInto(value, {});
-              store.saveSoon();
-              resolve();
-            })
-            .catch(err => {
-              log.error(err);
-              reject(new sandbox.Error());
-            });
-        });
-      },
-
-      
-
-
-
-
-
-      removeItem(keySuffix) {
-        return new sandbox.Promise((resolve, reject) => {
-          loadStorage()
-            .then(store => {
-              if (!(prefix in store.data)) {
-                return;
-              }
-              delete store.data[prefix][keySuffix];
-              store.saveSoon();
-              resolve();
-            })
-            .catch(err => {
-              log.error(err);
-              reject(new sandbox.Error());
-            });
-        });
-      },
-
-      
-
-
-
-
-
-      clear() {
-        return new sandbox.Promise((resolve, reject) => {
-          return loadStorage()
-            .then(store => {
-              store.data[prefix] = {};
-              store.saveSoon();
-              resolve();
-            })
-            .catch(err => {
-              log.error(err);
-              reject(new sandbox.Error());
-            });
-        });
-      },
-    };
-
-    return Cu.cloneInto(storageInterface, sandbox, {
-      cloneFunctions: true,
-    });
-  },
 
   
 
 
-  clearAllStorage() {
-    return loadStorage()
-      .then(store => {
-        store.data = {};
-        store.saveSoon();
-      })
-      .catch(err => {
-        log.error(err);
-      });
-  },
+  static async clearAllStorage() {
+    const store = await lazyStore;
+    store.data = {};
+    store.saveSoon();
+  }
+
+  
+
+
+
+
+
+  async getItem(name) {
+    const store = await lazyStore;
+    const namespace = store.data[this.prefix] || {};
+    return namespace[name] || null;
+  }
+
+  
+
+
+
+
+
+  async setItem(name, value) {
+    const store = await lazyStore;
+    if (!(this.prefix in store.data)) {
+      store.data[this.prefix] = {};
+    }
+    store.data[this.prefix][name] = value;
+    store.saveSoon();
+  }
+
+  
+
+
+
+
+
+  async removeItem(name) {
+    const store = await lazyStore;
+    if (this.prefix in store.data) {
+      delete store.data[this.prefix][name];
+      store.saveSoon();
+    }
+  }
+
+  
+
+
+
+
+
+  async clear() {
+    const store = await lazyStore;
+    store.data[this.prefix] = {};
+    store.saveSoon();
+  }
 };

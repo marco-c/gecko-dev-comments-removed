@@ -48,8 +48,6 @@
 
 
 
-
-
 "use strict";
 
 const {utils: Cu} = Components;
@@ -176,6 +174,7 @@ this.PreferenceExperiments = {
 
 
 
+
   async start({name, branch, preferenceName, preferenceValue, preferenceBranchType, preferenceType}) {
     log.debug(`PreferenceExperiments.start(${name}, ${branch})`);
 
@@ -221,7 +220,8 @@ this.PreferenceExperiments = {
 
     if (prevPrefType !== Services.prefs.PREF_INVALID && prevPrefType !== givenPrefType) {
       throw new Error(
-        `Previous preference value is of type "${prevPrefType}", but was given "${givenPrefType}" (${preferenceType})`
+        `Previous preference value is of type "${prevPrefType}", but was given ` +
+        `"${givenPrefType}" (${preferenceType})`
       );
     }
 

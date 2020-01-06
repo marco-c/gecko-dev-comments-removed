@@ -30,7 +30,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "CleanupManager",
 XPCOMUtils.defineLazyModuleGetter(this, "ActionSandboxManager",
                                   "resource://shield-recipe-client/lib/ActionSandboxManager.jsm");
 
-Cu.importGlobalProperties(["fetch"]); 
+Cu.importGlobalProperties(["fetch"]);
 
 this.EXPORTED_SYMBOLS = ["RecipeRunner"];
 

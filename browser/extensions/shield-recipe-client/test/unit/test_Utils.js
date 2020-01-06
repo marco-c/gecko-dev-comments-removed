@@ -1,6 +1,5 @@
 "use strict";
 
-
 Cu.import("resource://shield-recipe-client/lib/Utils.jsm");
 
 add_task(async function testKeyBy() {
