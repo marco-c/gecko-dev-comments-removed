@@ -5194,19 +5194,12 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
     case WM_SETTINGCHANGE:
     {
-      if (lParam) {
+      if (IsWin10OrLater() && mWindowType == eWindowType_invisible && lParam) {
         auto lParamString = reinterpret_cast<const wchar_t*>(lParam);
-        if (!wcscmp(lParamString, L"ImmersiveColorSet")) {
-          
-          OnSysColorChanged();
-          break;
-        }
-        if (IsWin10OrLater() && mWindowType == eWindowType_invisible) {
-          if (!wcscmp(lParamString, L"UserInteractionMode")) {
-            nsCOMPtr<nsIWindowsUIUtils> uiUtils(do_GetService("@mozilla.org/windows-ui-utils;1"));
-            if (uiUtils) {
-              uiUtils->UpdateTabletModeState();
-            }
+        if (!wcscmp(lParamString, L"UserInteractionMode")) {
+          nsCOMPtr<nsIWindowsUIUtils> uiUtils(do_GetService("@mozilla.org/windows-ui-utils;1"));
+          if (uiUtils) {
+            uiUtils->UpdateTabletModeState();
           }
         }
       }
@@ -7175,19 +7168,6 @@ bool
 nsWindow::IsPopup()
 {
   return mWindowType == eWindowType_popup;
-}
-
-bool
-nsWindow::ShouldUseOffMainThreadCompositing()
-{
-  
-  
-  
-  if (!(HasRemoteContent() && gIsPopupCompositingEnabled) && mTransparencyMode == eTransparencyTransparent) {
-    return false;
-  }
-
-  return nsBaseWidget::ShouldUseOffMainThreadCompositing();
 }
 
 void
