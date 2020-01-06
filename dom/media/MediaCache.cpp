@@ -1572,7 +1572,7 @@ MediaCache::QueueUpdate()
 void
 MediaCache::QueueSuspendedStatusUpdate(int64_t aResourceID)
 {
-  NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
+  mReentrantMonitor.AssertCurrentThreadIn();
   if (!mSuspendedStatusToNotify.Contains(aResourceID)) {
     mSuspendedStatusToNotify.AppendElement(aResourceID);
   }
@@ -2189,12 +2189,13 @@ MediaCacheStream::Close()
     return;
   }
 
+  ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
+
   
   
   
   mMediaCache->QueueSuspendedStatusUpdate(mResourceID);
 
-  ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
   mClosed = true;
   mMediaCache->ReleaseStreamBlocks(this);
   
