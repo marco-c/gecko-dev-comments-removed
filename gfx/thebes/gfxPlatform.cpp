@@ -608,14 +608,11 @@ WebRenderDebugPrefChangeCallback(const char* aPrefName, void*)
   if (Preferences::GetBool(WR_DEBUG_PREF".profiler", false)) {
     flags |= (1 << 0);
   }
-  if (Preferences::GetBool(WR_DEBUG_PREF".render-targets", false)) {
+  if (Preferences::GetBool(WR_DEBUG_PREF".texture-cache", false)) {
     flags |= (1 << 1);
   }
-  if (Preferences::GetBool(WR_DEBUG_PREF".texture-cache", false)) {
+  if (Preferences::GetBool(WR_DEBUG_PREF".render-targets", false)) {
     flags |= (1 << 2);
-  }
-  if (Preferences::GetBool(WR_DEBUG_PREF".alpha-primitives", false)) {
-    flags |= (1 << 3);
   }
 
   gfx::gfxVars::SetWebRenderDebugFlags(flags);
@@ -2355,7 +2352,7 @@ gfxPlatform::InitAcceleration()
 
   if (Preferences::GetBool("media.hardware-video-decoding.enabled", false) &&
 #ifdef XP_WIN
-    Preferences::GetBool("media.windows-media-foundation.use-dxva", true) &&
+      Preferences::GetBool("media.wmf.use-dxva", true) &&
 #endif
       NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING,
                                                discardFailureId, &status))) {

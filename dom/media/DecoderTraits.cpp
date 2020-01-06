@@ -325,7 +325,7 @@ bool DecoderTraits::IsSupportedInVideoDocument(const nsACString& aType)
   
   
   
-  if (!Preferences::GetBool("media.windows-media-foundation.play-stand-alone", true) ||
+  if (!Preferences::GetBool("media.wmf.play-stand-alone", true) ||
       !Preferences::GetBool("media.play-stand-alone", true)) {
     return false;
   }
