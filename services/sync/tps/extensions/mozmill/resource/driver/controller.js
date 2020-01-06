@@ -28,7 +28,7 @@ var sleep = utils.sleep;
 
 var windowMap = windows.map;
 
-waitForEvents = function () {
+var waitForEvents = function () {
 }
 
 waitForEvents.prototype = {
