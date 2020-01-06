@@ -22,10 +22,10 @@ def on_stop(event):
         
         sigaction_fn = gdb.parse_and_eval('__sigaction')
         sigaction_fn(SIGSEGV, 0, buf)
-        AsmJSFaultHandler = gdb.parse_and_eval("AsmJSFaultHandler")
-        if buf['__sigaction_handler']['sa_handler'] == AsmJSFaultHandler:
+        WasmFaultHandler = gdb.parse_and_eval("WasmFaultHandler<(Signal)0>")
+        if buf['__sigaction_handler']['sa_handler'] == WasmFaultHandler:
             
-            print("js/src/gdb/mozilla/asmjs.py: Allowing AsmJSFaultHandler to run.")
+            print("js/src/gdb/mozilla/asmjs.py: Allowing WasmFaultHandler to run.")
 
             
             
