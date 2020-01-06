@@ -12,6 +12,7 @@
 
 
 
+#include <cassert>
 #include <string.h>
 
 #if defined(WIN32)
@@ -80,7 +81,15 @@ CK_RV Test_C_GetSlotList(CK_BBOOL limitToTokensPresent,
   }
 
   
-  CK_ULONG slotCount = (!limitToTokensPresent || tokenPresent ? 1 : 0) + 1;
+  CK_ULONG slotCount = 1;
+  if (!limitToTokensPresent) {
+    
+    slotCount += 2;
+  } else if (tokenPresent) {
+    
+    
+    slotCount++;
+  }
 
   if (pSlotList) {
     if (*pulCount < slotCount) {
@@ -88,11 +97,27 @@ CK_RV Test_C_GetSlotList(CK_BBOOL limitToTokensPresent,
     }
     
     
-    if (slotCount == 1) {
-      pSlotList[0] = 2;
-    } else {
-      pSlotList[0] = 1;
-      pSlotList[1] = 2;
+    switch(slotCount) {
+      case 1:
+        pSlotList[0] = 2;
+        break;
+      case 2:
+        if (tokenPresent) {
+          pSlotList[0] = 1;
+          pSlotList[1] = 2;
+        } else {
+          pSlotList[0] = 2;
+          pSlotList[1] = 3;
+        }
+        break;
+      case 3:
+        pSlotList[0] = 1;
+        pSlotList[1] = 2;
+        pSlotList[2] = 3;
+        break;
+      default:
+        assert("Unexpected slot count in Test_C_GetSlotList");
+        return CKR_GENERAL_ERROR;
     }
   }
 
@@ -102,6 +127,7 @@ CK_RV Test_C_GetSlotList(CK_BBOOL limitToTokensPresent,
 
 static const char TestSlotDescription[] = "Test PKCS11 Slot";
 static const char TestSlot2Description[] = "Test PKCS11 Slot 二";
+static const char TestSlot3Description[] = "Empty PKCS11 Slot";
 
 CK_RV Test_C_GetSlotInfo(CK_SLOT_ID slotID, CK_SLOT_INFO_PTR pInfo)
 {
@@ -118,6 +144,10 @@ CK_RV Test_C_GetSlotInfo(CK_SLOT_ID slotID, CK_SLOT_INFO_PTR pInfo)
     case 2:
       CopyString(pInfo->slotDescription, TestSlot2Description);
       pInfo->flags = CKF_TOKEN_PRESENT | CKF_REMOVABLE_DEVICE;
+      break;
+    case 3:
+      CopyString(pInfo->slotDescription, TestSlot3Description);
+      pInfo->flags = CKF_REMOVABLE_DEVICE;
       break;
     default:
       return CKR_ARGUMENTS_BAD;
