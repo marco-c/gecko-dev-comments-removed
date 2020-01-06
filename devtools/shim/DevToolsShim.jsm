@@ -298,9 +298,10 @@ let addonSdkMethods = [
 
 
 let webExtensionsMethods = [
+  "createWebExtensionInspectedWindowFront",
   "getTargetForTab",
   "getTheme",
-  "createWebExtensionInspectedWindowFront",
+  "openBrowserConsole",
 ];
 
 for (let method of [...addonSdkMethods, ...webExtensionsMethods]) {
