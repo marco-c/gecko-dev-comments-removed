@@ -54,7 +54,7 @@ struct sockaddr_dl;
 #endif 
 #include <netdb.h>
 
-#if defined(FREEBSD) || defined(BSDI) || defined(QNX)
+#if defined(BSDI) || defined(QNX)
 #include <rpc/types.h> 
 #endif
 
