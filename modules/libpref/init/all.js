@@ -1458,10 +1458,6 @@ pref("javascript.options.discardSystemSource", false);
 
 
 
-
-
-
-
 pref("javascript.options.mem.high_water_mark", 128);
 
 

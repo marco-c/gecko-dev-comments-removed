@@ -281,6 +281,9 @@ namespace TuningDefaults {
     static const size_t GCZoneAllocThresholdBase = 30 * 1024 * 1024;
 
     
+    static const size_t MaxMallocBytes = 128 * 1024 * 1024;
+
+    
     static const float ZoneAllocThresholdFactor = 0.9f;
 
     
@@ -323,8 +326,7 @@ namespace TuningDefaults {
     static const uint32_t MaxEmptyChunkCount = 30;
 
     
-    static const int64_t DefaultTimeBudget =
-        SliceBudget::UnlimitedTimeBudget;
+    static const int64_t DefaultTimeBudget = SliceBudget::UnlimitedTimeBudget;
 
     
     static const JSGCMode Mode = JSGC_MODE_INCREMENTAL;
@@ -1159,13 +1161,9 @@ GCRuntime::init(uint32_t maxbytes, uint32_t maxNurseryBytes)
     {
         AutoLockGC lock(rt);
 
-        
-
-
-
         MOZ_ALWAYS_TRUE(tunables.setParameter(JSGC_MAX_BYTES, maxbytes, lock));
         MOZ_ALWAYS_TRUE(tunables.setParameter(JSGC_MAX_NURSERY_BYTES, maxNurseryBytes, lock));
-        setMaxMallocBytes(maxbytes, lock);
+        setMaxMallocBytes(TuningDefaults::MaxMallocBytes, lock);
 
         const char* size = getenv("JSGC_MARK_STACK_LIMIT");
         if (size)
@@ -1436,7 +1434,7 @@ GCRuntime::resetParameter(JSGCParamKey key, AutoLockGC& lock)
 {
     switch (key) {
       case JSGC_MAX_MALLOC_BYTES:
-        setMaxMallocBytes(0xffffffff, lock);
+        setMaxMallocBytes(TuningDefaults::MaxMallocBytes, lock);
         break;
       case JSGC_SLICE_TIME_BUDGET:
         defaultTimeBudget_ = TuningDefaults::DefaultTimeBudget;
