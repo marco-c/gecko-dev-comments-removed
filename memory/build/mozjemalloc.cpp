@@ -515,25 +515,6 @@ static Atomic<size_t, ReleaseAcquire> gRecycledSize;
 static size_t opt_dirty_max = DIRTY_MAX_DEFAULT;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define RUN_BFP 12
-
-#define RUN_MAX_OVRHD 0x0000003dU
-#define RUN_MAX_OVRHD_RELAX 0x00001800U
-
-
 #define CHUNK_CEILING(s) (((s) + kChunkSizeMask) & ~kChunkSizeMask)
 
 
@@ -3020,14 +3001,22 @@ arena_bin_run_size_calc(arena_bin_t* bin, size_t min_run_size)
     }
 
     
-    if (RUN_MAX_OVRHD * (bin->mSizeClass << 3) <= RUN_MAX_OVRHD_RELAX) {
+    if (Fraction(try_reg0_offset, try_run_size) <= arena_bin_t::kRunOverhead) {
       break;
     }
 
     
-    if (Fraction(try_reg0_offset, try_run_size) <= arena_bin_t::kRunOverhead) {
+    
+    
+    
+    
+    
+    
+    
+    if (try_mask_nelms * sizeof(unsigned) >= sizeof(arena_run_t)) {
       break;
     }
+
   }
 
   MOZ_ASSERT(sizeof(arena_run_t) + (sizeof(unsigned) * (good_mask_nelms - 1)) <=
