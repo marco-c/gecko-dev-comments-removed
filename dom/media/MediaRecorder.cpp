@@ -482,7 +482,10 @@ public:
       
       TracksAvailableCallback* tracksAvailableCallback = new TracksAvailableCallback(this);
       domStream->OnTracksAvailable(tracksAvailableCallback);
-    } else if (mRecorder->mAudioNode) {
+      return;
+    }
+
+    if (mRecorder->mAudioNode) {
       
       if (!AudioNodePrincipalSubsumes()) {
         LOG(LogLevel::Warning, ("Session.Start AudioNode principal check failed"));
@@ -494,9 +497,10 @@ public:
 
       
       InitEncoder(ContainerWriter::CREATE_AUDIO_TRACK, trackRate);
-    } else {
-      MOZ_ASSERT(false, "Unknown source");
+      return;
     }
+
+    MOZ_ASSERT(false, "Unknown source");
   }
 
   void Stop()
