@@ -13,6 +13,7 @@ const {
   error,
   WebDriverError,
 } = Cu.import("chrome://marionette/content/error.js", {});
+Cu.import("chrome://marionette/content/evaluate.js");
 Cu.import("chrome://marionette/content/modal.js");
 
 this.EXPORTED_SYMBOLS = ["proxy"];
@@ -126,30 +127,31 @@ proxy.AsyncMessageChannel = class {
       let path = proxy.AsyncMessageChannel.makePath(uuid);
       let cb = msg => {
         this.activeMessageId = null;
+        let {data, type} = msg.json;
 
         switch (msg.json.type) {
           case proxy.AsyncMessageChannel.ReplyType.Ok:
           case proxy.AsyncMessageChannel.ReplyType.Value:
-            resolve(msg.json.data);
+            let payload = evaluate.fromJSON(data);
+            resolve(payload);
             break;
 
           case proxy.AsyncMessageChannel.ReplyType.Error:
-            let err = WebDriverError.fromJSON(msg.json.data);
+            let err = WebDriverError.fromJSON(data);
             reject(err);
             break;
 
           default:
-            throw new TypeError(
-                `Unknown async response type: ${msg.json.type}`);
+            throw new TypeError(`Unknown async response type: ${type}`);
         }
       };
 
       
       
-      this.closeHandler = event => {
-        logger.debug(`Received DOM event ${event.type} for ${event.target}`);
+      this.closeHandler = ({type, target}) => {
+        logger.debug(`Received DOM event ${type} for ${target}`);
 
-        switch (event.type) {
+        switch (type) {
           case "TabClose":
           case "unload":
             this.removeHandlers();
@@ -162,7 +164,7 @@ proxy.AsyncMessageChannel = class {
       
       
       this.dialogueObserver_ = (subject, topic) => {
-        logger.debug(`Received observer notification "${topic}"`);
+        logger.debug(`Received observer notification ${topic}`);
 
         this.removeAllListeners_();
         
@@ -259,17 +261,11 @@ proxy.AsyncMessageChannel = class {
     }
   }
 
-  sendReply_(uuid, type, data = undefined) {
+  sendReply_(uuid, type, payload = undefined) {
     const path = proxy.AsyncMessageChannel.makePath(uuid);
 
-    let payload;
-    if (data && typeof data.toJSON == "function") {
-      payload = data.toJSON();
-    } else {
-      payload = data;
-    }
-
-    const msg = {type, data: payload};
+    let data = evaluate.toJSON(payload);
+    const msg = {type, data};
 
     
     
