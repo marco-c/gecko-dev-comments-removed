@@ -242,6 +242,11 @@ public:
     
     bool IsConnEntryUnderPressure(nsHttpConnectionInfo*);
 
+    uint64_t CurrentTopLevelOuterContentWindowId()
+    {
+        return mCurrentTopLevelOuterContentWindowId;
+    }
+
 private:
     virtual ~nsHttpConnectionMgr();
 
@@ -760,6 +765,11 @@ private:
     nsTArray<RefPtr<PendingTransactionInfo>>*
     GetTransactionPendingQHelper(nsConnectionEntry *ent, nsAHttpTransaction *trans);
 
+    
+    
+    
+    
+    void NotifyConnectionOfWindowIdChange(uint64_t previousWindowId);
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsHttpConnectionMgr::nsHalfOpenSocket, NS_HALFOPENSOCKET_IID)
