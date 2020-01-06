@@ -36,7 +36,6 @@
 #include <unistd.h>
 #endif
 
-#include "base/child_privileges.h"
 #include "base/command_line.h"
 #include "base/process.h"
 
@@ -164,12 +163,6 @@ typedef std::map<std::string, std::string> environment_map;
 bool LaunchApp(const std::vector<std::string>& argv,
                const file_handle_mapping_vector& fds_to_remap,
                const environment_map& env_vars_to_set,
-               ChildPrivileges privs,
-               bool wait, ProcessHandle* process_handle,
-               ProcessArchitecture arch=GetCurrentProcessArchitecture());
-bool LaunchApp(const std::vector<std::string>& argv,
-               const file_handle_mapping_vector& fds_to_remap,
-               const environment_map& env_vars_to_set,
                bool wait, ProcessHandle* process_handle,
                ProcessArchitecture arch=GetCurrentProcessArchitecture());
 
@@ -185,10 +178,6 @@ typedef mozilla::UniquePtr<char*[], FreeEnvVarsArray> EnvironmentArray;
 
 EnvironmentArray BuildEnvironmentArray(const environment_map& env_vars_to_set);
 #endif
-
-
-
-void SetCurrentProcessPrivileges(ChildPrivileges privs);
 
 
 
