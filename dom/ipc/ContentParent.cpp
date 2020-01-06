@@ -550,6 +550,7 @@ GetTelemetryProcessID(const nsAString& remoteType)
 
 } 
 
+nsDataHashtable<nsUint32HashKey, ContentParent*>* ContentParent::sJSPluginContentParents;
 nsTArray<ContentParent*>* ContentParent::sPrivateContent;
 StaticAutoPtr<LinkedList<ContentParent> > ContentParent::sContentParents;
 #if defined(XP_LINUX) && defined(MOZ_CONTENT_SANDBOX)
@@ -880,6 +881,35 @@ ContentParent::GetNewOrUsedBrowserProcess(const nsAString& aRemoteType,
   return p.forget();
 }
 
+ already_AddRefed<ContentParent>
+ContentParent::GetNewOrUsedJSPluginProcess(uint32_t aPluginID,
+                                           const hal::ProcessPriority& aPriority)
+{
+  RefPtr<ContentParent> p;
+  if (sJSPluginContentParents) {
+    p = sJSPluginContentParents->Get(aPluginID);
+  } else {
+    sJSPluginContentParents =
+      new nsDataHashtable<nsUint32HashKey, ContentParent*>();
+  }
+
+  if (p) {
+    return p.forget();
+  }
+
+  p = new ContentParent(aPluginID);
+
+  if (!p->LaunchSubprocess(aPriority)) {
+    return nullptr;
+  }
+
+  p->Init();
+
+  sJSPluginContentParents->Put(aPluginID, p);
+
+  return p.forget();
+}
+
  ProcessPriority
 ContentParent::GetInitialProcessPriority(Element* aFrameElement)
 {
@@ -940,8 +970,14 @@ ContentParent::RecvCreateChildProcess(const IPCTabContext& aContext,
     return IPC_FAIL_NO_REASON(this);
   }
 
-  cp = GetNewOrUsedBrowserProcess(NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE),
-                                  aPriority, this);
+  if (tc.GetTabContext().IsJSPlugin()) {
+    cp = GetNewOrUsedJSPluginProcess(tc.GetTabContext().JSPluginId(),
+                                     aPriority);
+  }
+  else {
+    cp = GetNewOrUsedBrowserProcess(NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE),
+                                    aPriority, this);
+  }
 
   if (!cp) {
     *aCpId = 0;
@@ -953,6 +989,16 @@ ContentParent::RecvCreateChildProcess(const IPCTabContext& aContext,
   *aIsForBrowser = cp->IsForBrowser();
 
   ContentProcessManager *cpm = ContentProcessManager::GetSingleton();
+  if (cp->IsForJSPlugin()) {
+    
+    
+    
+    
+    cpm->RegisterRemoteFrame(aTabId, ChildID(), aOpenerTabId, aContext, cp->ChildID());
+    return IPC_OK();
+  }
+
+  
   cpm->AddContentProcess(cp, this->ChildID());
 
   if (cpm->AddGrandchildProcess(this->ChildID(), cp->ChildID()) &&
@@ -970,27 +1016,22 @@ ContentParent::RecvBridgeToChildProcess(const ContentParentId& aCpId,
   ContentProcessManager *cpm = ContentProcessManager::GetSingleton();
   ContentParent* cp = cpm->GetContentProcessById(aCpId);
 
-  if (cp) {
-    ContentParentId parentId;
-    if (cpm->GetParentProcessId(cp->ChildID(), &parentId) &&
-      parentId == this->ChildID()) {
+  if (cp && cp->CanCommunicateWith(ChildID())) {
+    Endpoint<PContentBridgeParent> parent;
+    Endpoint<PContentBridgeChild> child;
 
-      Endpoint<PContentBridgeParent> parent;
-      Endpoint<PContentBridgeChild> child;
-
-      if (NS_FAILED(PContentBridge::CreateEndpoints(OtherPid(), cp->OtherPid(),
-                                                    &parent, &child))) {
-        return IPC_FAIL(this, "CreateEndpoints failed");
-      }
-
-      *aEndpoint = Move(parent);
-
-      if (!cp->SendInitContentBridgeChild(Move(child))) {
-        return IPC_FAIL(this, "SendInitContentBridgeChild failed");
-      }
-
-      return IPC_OK();
+    if (NS_FAILED(PContentBridge::CreateEndpoints(OtherPid(), cp->OtherPid(),
+                                                  &parent, &child))) {
+      return IPC_FAIL(this, "CreateEndpoints failed");
     }
+
+    *aEndpoint = Move(parent);
+
+    if (!cp->SendInitContentBridgeChild(Move(child))) {
+      return IPC_FAIL(this, "SendInitContentBridgeChild failed");
+    }
+
+    return IPC_OK();
   }
 
   
@@ -1173,15 +1214,21 @@ ContentParent::CreateBrowser(const TabContext& aContext,
 
   RefPtr<nsIContentParent> constructorSender;
   if (isInContentProcess) {
-    MOZ_ASSERT(aContext.IsMozBrowserElement());
+    MOZ_ASSERT(aContext.IsMozBrowserElement() || aContext.IsJSPlugin());
     constructorSender = CreateContentBridgeParent(aContext, initialPriority,
                                                   openerTabId, tabId);
   } else {
     if (aOpenerContentParent) {
       constructorSender = aOpenerContentParent;
     } else {
-      constructorSender =
-        GetNewOrUsedBrowserProcess(remoteType, initialPriority, nullptr);
+      if (aContext.IsJSPlugin()) {
+        constructorSender =
+          GetNewOrUsedJSPluginProcess(aContext.JSPluginId(),
+                                      initialPriority);
+      } else {
+        constructorSender =
+          GetNewOrUsedBrowserProcess(remoteType, initialPriority, nullptr);
+      }
       if (!constructorSender) {
         return nullptr;
       }
@@ -1276,6 +1323,7 @@ ContentParent::CreateContentBridgeParent(const TabContext& aContext,
   ContentBridgeParent* parent = ContentBridgeParent::Create(Move(endpoint));
   parent->SetChildID(cpId);
   parent->SetIsForBrowser(isForBrowser);
+  parent->SetIsForJSPlugin(aContext.IsJSPlugin());
   return parent;
 }
 
@@ -1478,7 +1526,15 @@ ContentParent::ShutDownMessageManager()
 void
 ContentParent::MarkAsTroubled()
 {
-  if (sBrowserContentParents) {
+  if (IsForJSPlugin()) {
+    if (sJSPluginContentParents) {
+      sJSPluginContentParents->Remove(mJSPluginID);
+      if (!sJSPluginContentParents->Count()) {
+        delete sJSPluginContentParents;
+        sJSPluginContentParents = nullptr;
+      }
+    }
+  } else if (sBrowserContentParents) {
     nsTArray<ContentParent*>* contentParents =
       sBrowserContentParents->Get(mRemoteType);
     if (contentParents) {
@@ -1593,12 +1649,8 @@ ContentParent::RecvAllocateLayerTreeId(const ContentParentId& aCpId,
   
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
   RefPtr<ContentParent> contentParent = cpm->GetContentProcessById(aCpId);
-  if (ChildID() != aCpId) {
-    ContentParentId parent;
-    if (!cpm->GetParentProcessId(contentParent->ChildID(), &parent) ||
-        ChildID() != parent) {
-      return IPC_FAIL_NO_REASON(this);
-    }
+  if (ChildID() != aCpId && !contentParent->CanCommunicateWith(ChildID())) {
+    return IPC_FAIL_NO_REASON(this);
   }
 
   
@@ -1614,17 +1666,23 @@ ContentParent::RecvAllocateLayerTreeId(const ContentParentId& aCpId,
 }
 
 mozilla::ipc::IPCResult
-ContentParent::RecvDeallocateLayerTreeId(const uint64_t& aId)
+ContentParent::RecvDeallocateLayerTreeId(const ContentParentId& aCpId,
+                                         const uint64_t& aId)
 {
   GPUProcessManager* gpu = GPUProcessManager::Get();
 
-  if (!gpu->IsLayerTreeIdMapped(aId, OtherPid()))
-  {
+  ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
+  RefPtr<ContentParent> contentParent = cpm->GetContentProcessById(aCpId);
+  if (!contentParent->CanCommunicateWith(ChildID())) {
+    return IPC_FAIL(this, "Spoofed DeallocateLayerTreeId call");
+  }
+
+  if (!gpu->IsLayerTreeIdMapped(aId, contentParent->OtherPid())) {
     
     KillHard("DeallocateLayerTreeId");
   }
 
-  gpu->UnmapLayerTreeId(aId, OtherPid());
+  gpu->UnmapLayerTreeId(aId, contentParent->OtherPid());
 
   return IPC_OK();
 }
@@ -1801,6 +1859,10 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
 bool
 ContentParent::ShouldKeepProcessAlive() const
 {
+  if (IsForJSPlugin()) {
+    return true;
+  }
+
   if (!sBrowserContentParents) {
     return false;
   }
@@ -2033,7 +2095,8 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
 }
 
 ContentParent::ContentParent(ContentParent* aOpener,
-                             const nsAString& aRemoteType)
+                             const nsAString& aRemoteType,
+                             int32_t aJSPluginID)
   : nsIContentParent()
   , mSubprocess(nullptr)
   , mLaunchTS(TimeStamp::Now())
@@ -2041,6 +2104,7 @@ ContentParent::ContentParent(ContentParent* aOpener,
   , mRemoteType(aRemoteType)
   , mChildID(gContentChildID++)
   , mGeolocationWatchID(-1)
+  , mJSPluginID(aJSPluginID)
   , mNumDestroyingTabs(0)
   , mIsAvailable(true)
   , mIsAlive(true)
@@ -2086,9 +2150,14 @@ ContentParent::~ContentParent()
 
   
   MOZ_ASSERT(!sPrivateContent || !sPrivateContent->Contains(this));
-  MOZ_ASSERT(!sBrowserContentParents ||
-             !sBrowserContentParents->Contains(mRemoteType) ||
-             !sBrowserContentParents->Get(mRemoteType)->Contains(this));
+  if (IsForJSPlugin()) {
+    MOZ_ASSERT(!sJSPluginContentParents ||
+               !sJSPluginContentParents->Get(mJSPluginID));
+  } else {
+    MOZ_ASSERT(!sBrowserContentParents ||
+               !sBrowserContentParents->Contains(mRemoteType) ||
+               !sBrowserContentParents->Get(mRemoteType)->Contains(this));
+  }
 }
 
 void
@@ -5211,4 +5280,20 @@ ContentParent::RecvFileCreationRequest(const nsID& aID,
   }
 
   return IPC_OK();
+}
+
+bool
+ContentParent::CanCommunicateWith(ContentParentId aOtherProcess)
+{
+  
+  
+  ContentProcessManager *cpm = ContentProcessManager::GetSingleton();
+  ContentParentId parentId;
+  if (!cpm->GetParentProcessId(ChildID(), &parentId)) {
+    return false;
+  }
+  if (IsForJSPlugin()) {
+    return parentId == ContentParentId(0);
+  }
+  return parentId == aOtherProcess;
 }

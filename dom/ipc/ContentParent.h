@@ -22,6 +22,7 @@
 #include "mozilla/UniquePtr.h"
 
 #include "nsDataHashtable.h"
+#include "nsPluginTags.h"
 #include "nsFrameMessageManager.h"
 #include "nsHashKeys.h"
 #include "nsIObserver.h"
@@ -176,6 +177,14 @@ public:
                              hal::ProcessPriority aPriority =
                              hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
                              ContentParent* aOpener = nullptr);
+
+  
+
+
+
+  static already_AddRefed<ContentParent>
+  GetNewOrUsedJSPluginProcess(uint32_t aPluginID,
+                              const hal::ProcessPriority& aPriority);
 
   
 
@@ -361,6 +370,10 @@ public:
   virtual bool IsForBrowser() const override
   {
     return mIsForBrowser;
+  }
+  virtual bool IsForJSPlugin() const override
+  {
+    return mJSPluginID != nsFakePluginTag::NOT_JSPLUGIN;
   }
 
   GeckoChildProcessHost* Process() const
@@ -668,6 +681,7 @@ private:
 
   static nsClassHashtable<nsStringHashKey, nsTArray<ContentParent*>>* sBrowserContentParents;
   static nsTArray<ContentParent*>* sPrivateContent;
+  static nsDataHashtable<nsUint32HashKey, ContentParent*> *sJSPluginContentParents;
   static StaticAutoPtr<LinkedList<ContentParent> > sContentParents;
 
   static void JoinProcessesIOThread(const nsTArray<ContentParent*>* aProcesses,
@@ -711,8 +725,17 @@ private:
 
   FORWARD_SHMEM_ALLOCATOR_TO(PContentParent)
 
+  explicit ContentParent(int32_t aPluginID)
+    : ContentParent(nullptr, EmptyString(), aPluginID)
+  {}
   ContentParent(ContentParent* aOpener,
-                const nsAString& aRemoteType);
+                const nsAString& aRemoteType)
+    : ContentParent(aOpener, aRemoteType, nsFakePluginTag::NOT_JSPLUGIN)
+  {}
+
+  ContentParent(ContentParent* aOpener,
+                const nsAString& aRemoteType,
+                int32_t aPluginID);
 
   
   
@@ -1050,7 +1073,8 @@ private:
                                                           const TabId& aTabId,
                                                           uint64_t* aId) override;
 
-  virtual mozilla::ipc::IPCResult RecvDeallocateLayerTreeId(const uint64_t& aId) override;
+  virtual mozilla::ipc::IPCResult RecvDeallocateLayerTreeId(const ContentParentId& aCpId,
+                                                            const uint64_t& aId) override;
 
   virtual mozilla::ipc::IPCResult RecvGraphicsError(const nsCString& aError) override;
 
@@ -1153,6 +1177,8 @@ public:
                                const bool& aMinimizeMemoryUsage,
                                const MaybeFileDesc& aDMDFile) override;
 
+  bool CanCommunicateWith(ContentParentId aOtherProcess);
+
 private:
 
   
@@ -1167,6 +1193,12 @@ private:
 
   ContentParentId mChildID;
   int32_t mGeolocationWatchID;
+
+  
+  
+  
+  
+  int32_t mJSPluginID;
 
   nsCString mKillHardAnnotation;
 

@@ -531,13 +531,15 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
     bool MakePluginListener();
 
+    void SetupFrameLoader(int32_t aJSPluginId);
+
     
 
 
 
 
 
-    already_AddRefed<nsIDocShell> SetupFrameLoader(nsIURI *aRecursionCheckURI);
+    already_AddRefed<nsIDocShell> SetupDocShell(nsIURI* aRecursionCheckURI);
 
     
 

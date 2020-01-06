@@ -229,10 +229,13 @@ public:
 
   uint32_t Id() const { return mId; }
 
+  static const int32_t NOT_JSPLUGIN = -1;
+
 private:
   nsFakePluginTag();
   virtual ~nsFakePluginTag();
 
+  
   
   
   

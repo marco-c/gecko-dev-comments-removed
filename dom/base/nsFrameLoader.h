@@ -26,6 +26,7 @@
 #include "nsIWebBrowserPersistable.h"
 #include "nsIFrame.h"
 #include "nsIGroupedSHistory.h"
+#include "nsPluginTags.h"
 
 class nsIURI;
 class nsSubDocumentFrame;
@@ -79,7 +80,8 @@ class nsFrameLoader final : public nsIFrameLoader,
 public:
   static nsFrameLoader* Create(mozilla::dom::Element* aOwner,
                                nsPIDOMWindowOuter* aOpener,
-                               bool aNetworkCreated);
+                               bool aNetworkCreated,
+                               int32_t aJSPluginID = nsFakePluginTag::NOT_JSPLUGIN);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsFrameLoader, nsIFrameLoader)
@@ -230,7 +232,8 @@ public:
 private:
   nsFrameLoader(mozilla::dom::Element* aOwner,
                 nsPIDOMWindowOuter* aOpener,
-                bool aNetworkCreated);
+                bool aNetworkCreated,
+                int32_t aJSPluginID);
   ~nsFrameLoader();
 
   void SetOwnerContent(mozilla::dom::Element* aContent);
@@ -241,6 +244,11 @@ private:
 
 
   bool IsRemoteFrame();
+
+  bool IsForJSPlugin()
+  {
+    return mJSPluginID != nsFakePluginTag::NOT_JSPLUGIN;
+  }
 
   
 
@@ -342,6 +350,8 @@ private:
 
   TabParent* mRemoteBrowser;
   uint64_t mChildID;
+
+  int32_t mJSPluginID;
 
   
   
