@@ -490,11 +490,6 @@ APZEventState::ProcessAPZStateChange(ViewID aViewId,
     mActiveElementManager->HandleTouchEnd();
     break;
   }
-  case APZStateChange::eSentinel:
-    
-    
-    MOZ_ASSERT(false);
-    break;
   }
 }
 

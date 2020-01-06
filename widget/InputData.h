@@ -12,6 +12,7 @@
 #include "nsPoint.h"
 #include "nsTArray.h"
 #include "Units.h"
+#include "mozilla/DefineEnum.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/gfx/MatrixFwd.h"
@@ -31,21 +32,16 @@ namespace dom {
 class Touch;
 } 
 
-enum InputType
-{
-  
-  
-  MULTITOUCH_INPUT,
-  MOUSE_INPUT,
-  PANGESTURE_INPUT,
-  PINCHGESTURE_INPUT,
-  TAPGESTURE_INPUT,
-  SCROLLWHEEL_INPUT,
-  KEYBOARD_INPUT,
-
-  
-  SENTINEL_INPUT,
-};
+MOZ_DEFINE_ENUM(
+  InputType, (
+    MULTITOUCH_INPUT,
+    MOUSE_INPUT,
+    PANGESTURE_INPUT,
+    PINCHGESTURE_INPUT,
+    TAPGESTURE_INPUT,
+    SCROLLWHEEL_INPUT,
+    KEYBOARD_INPUT
+));
 
 class MultiTouchInput;
 class MouseInput;
@@ -191,18 +187,13 @@ public:
 class MultiTouchInput : public InputData
 {
 public:
-  enum MultiTouchType
-  {
-    
-    
-    MULTITOUCH_START,
-    MULTITOUCH_MOVE,
-    MULTITOUCH_END,
-    MULTITOUCH_CANCEL,
-
-    
-    MULTITOUCH_SENTINEL,
-  };
+  MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
+    MultiTouchType, (
+      MULTITOUCH_START,
+      MULTITOUCH_MOVE,
+      MULTITOUCH_END,
+      MULTITOUCH_CANCEL
+  ));
 
   MultiTouchInput(MultiTouchType aType, uint32_t aTime, TimeStamp aTimeStamp,
                   Modifiers aModifiers);
@@ -243,35 +234,26 @@ protected:
   MouseInput();
 
 public:
-  enum MouseType
-  {
-    
-    
-    MOUSE_NONE,
-    MOUSE_MOVE,
-    MOUSE_DOWN,
-    MOUSE_UP,
-    MOUSE_DRAG_START,
-    MOUSE_DRAG_END,
-    MOUSE_WIDGET_ENTER,
-    MOUSE_WIDGET_EXIT,
 
-    
-    MOUSE_SENTINEL,
-  };
+  MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
+    MouseType, (
+      MOUSE_NONE,
+      MOUSE_MOVE,
+      MOUSE_DOWN,
+      MOUSE_UP,
+      MOUSE_DRAG_START,
+      MOUSE_DRAG_END,
+      MOUSE_WIDGET_ENTER,
+      MOUSE_WIDGET_EXIT
+  ));
 
-  enum ButtonType
-  {
-    
-    
-    LEFT_BUTTON,
-    MIDDLE_BUTTON,
-    RIGHT_BUTTON,
-    NONE,
-
-    
-    BUTTON_SENTINEL,
-  };
+  MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
+    ButtonType, (
+      LEFT_BUTTON,
+      MIDDLE_BUTTON,
+      RIGHT_BUTTON,
+      NONE
+  ));
 
   MouseInput(MouseType aType, ButtonType aButtonType, uint16_t aInputSource,
              int16_t aButtons, const ScreenPoint& aPoint, uint32_t aTime,
@@ -307,57 +289,51 @@ protected:
   PanGestureInput();
 
 public:
-  enum PanGestureType
-  {
-    
-    
+  MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
+    PanGestureType, (
+      
+      
+      
+      
+      
+      PANGESTURE_MAYSTART,
 
-    
-    
-    
-    
-    
-    PANGESTURE_MAYSTART,
+      
+      
+      
+      PANGESTURE_CANCELLED,
 
-    
-    
-    
-    PANGESTURE_CANCELLED,
+      
+      
+      
+      PANGESTURE_START,
 
-    
-    
-    
-    PANGESTURE_START,
+      
+      PANGESTURE_PAN,
 
-    
-    PANGESTURE_PAN,
+      
+      
+      
+      PANGESTURE_END,
 
-    
-    
-    
-    PANGESTURE_END,
+      
+      
+      
+      
 
-    
-    
-    
-    
+      
+      
+      
+      PANGESTURE_MOMENTUMSTART,
 
-    
-    
-    
-    PANGESTURE_MOMENTUMSTART,
+      
+      PANGESTURE_MOMENTUMPAN,
 
-    
-    PANGESTURE_MOMENTUMPAN,
-
-    
-    
-    
-    PANGESTURE_MOMENTUMEND,
-
-    
-    PANGESTURE_SENTINEL,
-  };
+      
+      
+      
+      PANGESTURE_MOMENTUMEND
+  ));
 
   PanGestureInput(PanGestureType aType,
                   uint32_t aTime,
@@ -425,17 +401,12 @@ protected:
   PinchGestureInput();
 
 public:
-  enum PinchGestureType
-  {
-    
-    
-    PINCHGESTURE_START,
-    PINCHGESTURE_SCALE,
-    PINCHGESTURE_END,
-
-    
-    PINCHGESTURE_SENTINEL,
-  };
+  MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
+    PinchGestureType, (
+      PINCHGESTURE_START,
+      PINCHGESTURE_SCALE,
+      PINCHGESTURE_END
+  ));
 
   
   
@@ -487,21 +458,16 @@ protected:
   TapGestureInput();
 
 public:
-  enum TapGestureType
-  {
-    
-    
-    TAPGESTURE_LONG,
-    TAPGESTURE_LONG_UP,
-    TAPGESTURE_UP,
-    TAPGESTURE_CONFIRMED,
-    TAPGESTURE_DOUBLE,
-    TAPGESTURE_SECOND, 
-    TAPGESTURE_CANCEL,
-
-    
-    TAPGESTURE_SENTINEL,
-  };
+  MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
+    TapGestureType, (
+      TAPGESTURE_LONG,
+      TAPGESTURE_LONG_UP,
+      TAPGESTURE_UP,
+      TAPGESTURE_CONFIRMED,
+      TAPGESTURE_DOUBLE,
+      TAPGESTURE_SECOND, 
+      TAPGESTURE_CANCEL
+  ));
 
   
   
@@ -539,32 +505,21 @@ protected:
   ScrollWheelInput();
 
 public:
-  enum ScrollDeltaType
-  {
-    
-    
+  MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
+    ScrollDeltaType, (
+      
+      
+      SCROLLDELTA_LINE,
+      SCROLLDELTA_PAGE,
+      SCROLLDELTA_PIXEL
+  ));
 
-    
-    
-    SCROLLDELTA_LINE,
-    SCROLLDELTA_PAGE,
-    SCROLLDELTA_PIXEL,
-
-    
-    SCROLLDELTA_SENTINEL,
-  };
-
-  enum ScrollMode
-  {
-    
-    
-
-    SCROLLMODE_INSTANT,
-    SCROLLMODE_SMOOTH,
-
-    
-    SCROLLMODE_SENTINEL,
-  };
+  MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
+    ScrollMode, (
+      SCROLLMODE_INSTANT,
+      SCROLLMODE_SMOOTH
+    )
+  );
 
   ScrollWheelInput(uint32_t aTime, TimeStamp aTimeStamp, Modifiers aModifiers,
                    ScrollMode aScrollMode, ScrollDeltaType aDeltaType,

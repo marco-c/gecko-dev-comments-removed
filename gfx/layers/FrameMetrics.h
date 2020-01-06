@@ -8,6 +8,7 @@
 
 #include <stdint.h>                     
 #include "Units.h"                      
+#include "mozilla/DefineEnum.h"         
 #include "mozilla/HashFunctions.h"      
 #include "mozilla/Maybe.h"
 #include "mozilla/gfx/BasePoint.h"      
@@ -50,23 +51,22 @@ public:
   static const ViewID START_SCROLL_ID = 2;  
                                         
 
-  enum ScrollOffsetUpdateType : uint8_t {
-    eNone,          
-    eMainThread,    
-    ePending,       
-                    
-                    
-    eUserAction,    
-                    
-                    
-                    
-    eRestore,       
-                    
-                    
-                    
-
-    eSentinel       
-  };
+  MOZ_DEFINE_ENUM_WITH_BASE_AT_CLASS_SCOPE(
+    ScrollOffsetUpdateType, uint8_t, (
+      eNone,          
+      eMainThread,    
+      ePending,       
+                      
+                      
+      eUserAction,    
+                      
+                      
+                      
+      eRestore        
+                      
+                      
+                      
+  ));
 
   FrameMetrics()
     : mScrollId(NULL_SCROLL_ID)

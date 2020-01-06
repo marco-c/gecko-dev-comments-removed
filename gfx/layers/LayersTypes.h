@@ -9,6 +9,7 @@
 #include <stdint.h>                     
 
 #include "Units.h"
+#include "mozilla/DefineEnum.h"         
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/Maybe.h"
 #include "mozilla/TypedEnumBits.h"
@@ -72,12 +73,12 @@ enum class SurfaceMode : int8_t {
   SURFACE_COMPONENT_ALPHA
 };
 
-enum class ScaleMode : int8_t {
-  SCALE_NONE,
-  STRETCH,
-  SENTINEL
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE(
+  ScaleMode, int8_t, (
+    SCALE_NONE,
+    STRETCH
 
-};
+));
 
 struct EventRegions {
   
@@ -304,12 +305,11 @@ private:
   uint64_t mHandle;
 };
 
-enum class ScrollDirection : uint32_t {
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE(ScrollDirection, uint32_t, (
   NONE,
   VERTICAL,
-  HORIZONTAL,
-  SENTINEL 
-};
+  HORIZONTAL
+));
 
 enum class CSSFilterType : int8_t {
   BLUR,

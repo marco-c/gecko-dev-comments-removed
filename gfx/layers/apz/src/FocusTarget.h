@@ -8,7 +8,8 @@
 
 #include <stdint.h> 
 
-#include "FrameMetrics.h" 
+#include "FrameMetrics.h"        
+#include "mozilla/DefineEnum.h"  
 
 class nsIPresShell;
 
@@ -30,15 +31,13 @@ public:
     FrameMetrics::ViewID mVertical;
   };
 
-  enum FocusTargetType
-  {
-    eNone,
-    eRefLayer,
-    eScrollLayer,
+  MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
+    FocusTargetType, (
+      eNone,
+      eRefLayer,
+      eScrollLayer
+  ));
 
-    
-    eSentinel,
-  };
   union FocusTargetData
   {
     uint64_t      mRefLayerId;

@@ -11,6 +11,7 @@
 #include "InputData.h"                  
 #include "Units.h"                      
 #include "mozilla/Assertions.h"         
+#include "mozilla/DefineEnum.h"         
 #include "mozilla/EventForwards.h"      
 #include "nsISupportsImpl.h"
 
@@ -49,15 +50,14 @@ public:
 
 
 
-  enum class TapType {
-    eSingleTap,
-    eDoubleTap,
-    eSecondTap,
-    eLongTap,
-    eLongTapUp,
-
-    eSentinel,
-  };
+  MOZ_DEFINE_ENUM_CLASS_AT_CLASS_SCOPE(
+    TapType, (
+      eSingleTap,
+      eDoubleTap,
+      eSecondTap,
+      eLongTap,
+      eLongTapUp
+  ));
 
   
 
@@ -107,34 +107,32 @@ public:
 
   virtual void DispatchToRepaintThread(already_AddRefed<Runnable> aTask) = 0;
 
-  enum class APZStateChange {
-    
+  MOZ_DEFINE_ENUM_CLASS_AT_CLASS_SCOPE(
+    APZStateChange, (
+      
 
 
-    eTransformBegin,
-    
+      eTransformBegin,
+      
 
 
-    eTransformEnd,
-    
-
-
-
-    eStartTouch,
-    
-
-
-    eStartPanning,
-    
+      eTransformEnd,
+      
 
 
 
-    eEndTouch,
+      eStartTouch,
+      
 
-    
-    
-    eSentinel
-  };
+
+      eStartPanning,
+      
+
+
+
+      eEndTouch
+  ));
+
   
 
 
