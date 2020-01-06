@@ -313,6 +313,7 @@ private:
     Atomic<bool, ReleaseAcquire>    mResponseIsComplete;
 
     
+    
     bool                            mThrottleResponse;
 
     

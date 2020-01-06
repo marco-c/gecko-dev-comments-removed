@@ -231,8 +231,6 @@ public:
     bool TestJoinConnection(const nsACString &hostname, int32_t port);
     bool JoinConnection(const nsACString &hostname, int32_t port);
 
-    void ThrottleResponse(bool aThrottle);
-
     void SetFastOpenStatus(uint8_t tfoStatus) {
         mFastOpenStatus = tfoStatus;
     }
@@ -395,13 +393,6 @@ private:
     bool                           mEarlyDataNegotiated; 
     nsCString                      mEarlyNegotiatedALPN;
     bool                           mDid0RTTSpdy;
-
-    
-    
-    bool                           mResponseThrottled;
-    
-    
-    bool                           mResumeRecvOnUnthrottle;
 
     bool                           mFastOpen;
     uint8_t                        mFastOpenStatus;

@@ -52,7 +52,6 @@ public:
   uint32_t SpdyVersion() override;
   bool TestJoinConnection(const nsACString &hostname, int32_t port) override;
   bool JoinConnection(const nsACString &hostname, int32_t port) override;
-  void ThrottleResponse(bool aThrottle) override;
 
   
   

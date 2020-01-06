@@ -4248,11 +4248,5 @@ Http2Session::RealJoinConnection(const nsACString &hostname, int32_t port,
   return joinedReturn;
 }
 
-void
-Http2Session::ThrottleResponse(bool aThrottle)
-{
-  
-}
-
 } 
 } 
