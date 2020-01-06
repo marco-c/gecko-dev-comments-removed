@@ -1296,7 +1296,11 @@ ContentParent::Init()
       obs->AddObserver(this, sObserverTopics[i], false);
     }
   }
+
+  
+  
   Preferences::AddStrongObserver(this, "");
+
   if (obs) {
     nsAutoString cpId;
     cpId.AppendInt(static_cast<uint64_t>(this->ChildID()));
@@ -2773,7 +2777,6 @@ ContentParent::Observe(nsISupports* aSubject,
                       NS_LITERAL_STRING("-no-forward"))) {
       Unused << SendFlushMemory(nsDependentString(aData));
   }
-  
   else if (!strcmp(aTopic, "nsPref:changed")) {
     
 #define BLACKLIST_ENTRY(s) { s, (sizeof(s)/sizeof(char16_t)) - 1 }
@@ -2781,6 +2784,7 @@ ContentParent::Observe(nsISupports* aSubject,
       const char16_t* mPrefBranch;
       size_t mLen;
     };
+    
     static const BlacklistEntry sContentPrefBranchBlacklist[] = {
       BLACKLIST_ENTRY(u"app.update.lastUpdateTime."),
       BLACKLIST_ENTRY(u"datareporting.policy."),

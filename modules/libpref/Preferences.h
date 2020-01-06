@@ -290,11 +290,14 @@ public:
                                    float aDefault = 0.0f);
 
   
+  
   static void GetPreferences(InfallibleTArray<PrefSetting>* aPrefs);
+  static void SetInitPreferences(nsTArray<PrefSetting>* aPrefs);
+
+  
+  
   static void GetPreference(PrefSetting* aPref);
   static void SetPreference(const PrefSetting& aPref);
-
-  static void SetInitPreferences(nsTArray<PrefSetting>* aPrefs);
 
 #ifdef DEBUG
   static void SetInitPhase(pref_initPhase phase);
