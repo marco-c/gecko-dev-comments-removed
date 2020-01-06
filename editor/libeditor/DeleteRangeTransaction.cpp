@@ -58,11 +58,11 @@ DeleteRangeTransaction::DoTransaction()
   
   nsCOMPtr<nsINode> startContainer = rangeToDelete->GetStartContainer();
   int32_t startOffset = rangeToDelete->StartOffset();
-  nsCOMPtr<nsINode> endParent = rangeToDelete->GetEndContainer();
+  nsCOMPtr<nsINode> endContainer = rangeToDelete->GetEndContainer();
   int32_t endOffset = rangeToDelete->EndOffset();
-  MOZ_ASSERT(startContainer && endParent);
+  MOZ_ASSERT(startContainer && endContainer);
 
-  if (startContainer == endParent) {
+  if (startContainer == endContainer) {
     
     nsresult rv =
       CreateTxnsToDeleteBetween(startContainer, startOffset, endOffset);
@@ -77,7 +77,8 @@ DeleteRangeTransaction::DoTransaction()
     rv = CreateTxnsToDeleteNodesBetween(rangeToDelete);
     NS_ENSURE_SUCCESS(rv, rv);
     
-    rv = CreateTxnsToDeleteContent(endParent, endOffset, nsIEditor::ePrevious);
+    rv = CreateTxnsToDeleteContent(endContainer, endOffset,
+                                   nsIEditor::ePrevious);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 

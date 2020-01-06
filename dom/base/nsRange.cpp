@@ -119,7 +119,7 @@ nsRange::CompareNodeToRange(nsINode* aNode, nsRange* aRange,
   }
 
   nsINode* rangeStartContainer = aRange->GetStartContainer();
-  nsINode* rangeEndParent = aRange->GetEndContainer();
+  nsINode* rangeEndContainer = aRange->GetEndContainer();
   int32_t rangeStartOffset = aRange->StartOffset();
   int32_t rangeEndOffset = aRange->EndOffset();
 
@@ -132,7 +132,7 @@ nsRange::CompareNodeToRange(nsINode* aNode, nsRange* aRange,
   NS_ENSURE_TRUE(!disconnected, NS_ERROR_DOM_WRONG_DOCUMENT_ERR);
 
   
-  *outNodeAfter = nsContentUtils::ComparePoints(rangeEndParent,
+  *outNodeAfter = nsContentUtils::ComparePoints(rangeEndContainer,
                                                 rangeEndOffset,
                                                 parent, nodeEnd,
                                                 &disconnected) < 0;
@@ -290,9 +290,9 @@ nsRange::CreateRange(nsIDOMNode* aStartContainer, int32_t aStartOffset,
                      nsRange** aRange)
 {
   nsCOMPtr<nsINode> startContainer = do_QueryInterface(aStartContainer);
-  nsCOMPtr<nsINode> endParent = do_QueryInterface(aEndParent);
+  nsCOMPtr<nsINode> endContainer = do_QueryInterface(aEndParent);
   return CreateRange(startContainer, aStartOffset,
-                     endParent, aEndOffset, aRange);
+                     endContainer, aEndOffset, aRange);
 }
 
 
@@ -3429,7 +3429,7 @@ nsRange::ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges)
           break; 
         } else {
           
-          nsINode* endParent = range->mEndContainer;
+          nsINode* endContainer = range->mEndContainer;
           int32_t endOffset = range->mEndOffset;
 
           
@@ -3454,7 +3454,7 @@ nsRange::ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges)
               startContainer = parent;
             }
           }
-          rv = CreateRange(startContainer, startOffset, endParent, endOffset,
+          rv = CreateRange(startContainer, startOffset, endContainer, endOffset,
                            getter_AddRefs(newRange));
           if (NS_FAILED(rv) || newRange->Collapsed()) {
             newRange = nullptr;
