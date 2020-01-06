@@ -394,7 +394,11 @@ nsMixedContentBlocker::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
                   nullptr,              
                   requestingPrincipal,
                   &decision);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv)) {
+    autoCallback.DontCallback();
+    aOldChannel->Cancel(NS_ERROR_DOM_BAD_URI);
+    return NS_BINDING_FAILED;
+  }
 
   if (nsMixedContentBlocker::sSendHSTSPriming) {
     
@@ -419,6 +423,7 @@ nsMixedContentBlocker::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   
   if (!NS_CP_ACCEPTED(decision)) {
     autoCallback.DontCallback();
+    aOldChannel->Cancel(NS_ERROR_DOM_BAD_URI);
     return NS_BINDING_FAILED;
   }
 
