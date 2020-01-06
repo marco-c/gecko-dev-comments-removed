@@ -1412,10 +1412,10 @@ Loader::InsertChildSheet(StyleSheet* aSheet,
   MOZ_ASSERT(aParentSheet, "Need a parent to insert into");
   MOZ_ASSERT_IF(aSheet->IsGecko(), aGeckoParentRule && !aServoChildSheet);
   MOZ_ASSERT_IF(aSheet->IsServo(), aServoChildSheet && !aGeckoParentRule);
+  
+  
+  aSheet->SetEnabled(true);
   if (aSheet->IsGecko()) {
-    
-    
-    aSheet->AsGecko()->SetEnabled(true);
     aGeckoParentRule->SetSheet(aSheet->AsGecko()); 
   } else {
     if (!aSheet->AsServo()->RawSheet()) {
@@ -1900,8 +1900,7 @@ Loader::DoSheetComplete(SheetLoadData* aLoadData, nsresult aStatus,
       
       
       
-      MOZ_ASSERT(!(data->mSheet->IsGecko() &&
-                   data->mSheet->AsGecko()->IsModified()),
+      MOZ_ASSERT(!data->mSheet->IsModified(),
                  "should not get marked modified during parsing");
       data->mSheet->SetComplete();
       data->ScheduleLoadEventIfNeeded(aStatus);
