@@ -110,19 +110,12 @@ def run_tests(config, browser_config):
         test['url'] = utils.interpolate(test['url'])
         test['setup'] = utils.interpolate(test['setup'])
         test['cleanup'] = utils.interpolate(test['cleanup'])
-        test['profile'] = config.get('profile')
 
     
     
     
     if browser_config['develop']:
         browser_config['extra_args'] = '--no-remote'
-
-    
-    if browser_config['develop'] or 'try' in str.lower(browser_config['branch_name']):
-        browser_config['preferences']['xpinstall.signatures.required'] = False
-
-    browser_config['preferences']['extensions.allow-non-mpc-extensions'] = True
 
     
     if test.get('fnbpaint', False):
