@@ -1834,9 +1834,7 @@ ScriptSource::appendSubstring(JSContext* cx, StringBuffer& buf, size_t start, si
     PinnedChars chars(cx, this, holder, start, len);
     if (!chars.get())
         return false;
-    
-    
-    if (len > 100 && !buf.ensureTwoByteChars())
+    if (len > SourceDeflateLimit && !buf.ensureTwoByteChars())
         return false;
     return buf.append(chars.get(), len);
 }

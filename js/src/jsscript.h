@@ -502,6 +502,10 @@ class ScriptSource
     void movePendingCompressedSource();
 
   public:
+    
+    
+    static const size_t SourceDeflateLimit = 100;
+
     explicit ScriptSource()
       : refs(0),
         data(SourceType(Missing())),
