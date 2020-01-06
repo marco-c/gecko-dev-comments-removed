@@ -9,6 +9,7 @@
 
 
 
+
 const EXPECTED_APPMENU_OPEN_REFLOWS = [
   {
     stack: [
@@ -28,18 +29,18 @@ const EXPECTED_APPMENU_OPEN_REFLOWS = [
   {
     stack: [
       "get_alignmentPosition@chrome://global/content/bindings/popup.xml",
+      "_calculateMaxHeight@resource:///modules/PanelMultiView.jsm",
       "handleEvent@resource:///modules/PanelMultiView.jsm",
-      "openPopup@chrome://global/content/bindings/popup.xml",
     ],
   },
 
   {
     stack: [
+      "_calculateMaxHeight@resource:///modules/PanelMultiView.jsm",
       "handleEvent@resource:///modules/PanelMultiView.jsm",
-      "openPopup@chrome://global/content/bindings/popup.xml",
     ],
 
-    times: 7, 
+    times: 6, 
   },
 ];
 
@@ -82,10 +83,10 @@ add_task(async function() {
 
   
   await withReflowObserver(async function() {
-    let popupPositioned =
-      BrowserTestUtils.waitForEvent(PanelUI.panel, "popuppositioned");
+    let popupShown =
+      BrowserTestUtils.waitForEvent(PanelUI.panel, "popupshown");
     await PanelUI.show();
-    await popupPositioned;
+    await popupShown;
   }, EXPECTED_APPMENU_OPEN_REFLOWS);
 
   

@@ -293,6 +293,7 @@ this.PanelMultiView = class {
     });
 
     this._panel.addEventListener("popupshowing", this);
+    this._panel.addEventListener("popuppositioned", this);
     this._panel.addEventListener("popuphidden", this);
     this._panel.addEventListener("popupshown", this);
     if (this.panelViews) {
@@ -364,6 +365,7 @@ this.PanelMultiView = class {
     }
     this._panel.removeEventListener("mousemove", this);
     this._panel.removeEventListener("popupshowing", this);
+    this._panel.removeEventListener("popuppositioned", this);
     this._panel.removeEventListener("popupshown", this);
     this._panel.removeEventListener("popuphidden", this);
     this.window.removeEventListener("keydown", this);
@@ -860,6 +862,45 @@ this.PanelMultiView = class {
     return cancel;
   }
 
+  _calculateMaxHeight() {
+    
+    
+    
+    
+    let anchorBox = this._panel.anchorNode.boxObject;
+    let screen = this._screenManager.screenForRect(anchorBox.screenX,
+                                                   anchorBox.screenY,
+                                                   anchorBox.width,
+                                                   anchorBox.height);
+    let availTop = {}, availHeight = {};
+    screen.GetAvailRect({}, availTop, {}, availHeight);
+    let cssAvailTop = availTop.value / screen.defaultCSSScaleFactor;
+
+    
+    
+    let maxHeight;
+    if (this._panel.alignmentPosition.startsWith("before_")) {
+      maxHeight = anchorBox.screenY - cssAvailTop;
+    } else {
+      let anchorScreenBottom = anchorBox.screenY + anchorBox.height;
+      let cssAvailHeight = availHeight.value / screen.defaultCSSScaleFactor;
+      maxHeight = cssAvailTop + cssAvailHeight - anchorScreenBottom;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const EXTRA_MARGIN_PX = 20;
+    maxHeight -= EXTRA_MARGIN_PX;
+    return maxHeight;
+  }
+
   
 
 
@@ -985,53 +1026,26 @@ this.PanelMultiView = class {
         break;
       case "popupshowing": {
         this.node.setAttribute("panelopen", "true");
+        if (this.panelViews && !this.node.hasAttribute("disablekeynav")) {
+          this.window.addEventListener("keydown", this);
+          this._panel.addEventListener("mousemove", this);
+        }
+        break;
+      }
+      case "popuppositioned": {
+        
+        
         
         
         
         
         
         this._panel.autoPosition = false;
-        if (this.panelViews && !this.node.hasAttribute("disablekeynav")) {
-          this.window.addEventListener("keydown", this);
-          this._panel.addEventListener("mousemove", this);
+
+        if (this._panel.state == "showing") {
+          let maxHeight = this._calculateMaxHeight();
+          this._viewStack.style.maxHeight = maxHeight + "px";
         }
-
-        
-        
-        
-        
-        let anchorBox = this._panel.anchorNode.boxObject;
-        let screen = this._screenManager.screenForRect(anchorBox.screenX,
-                                                       anchorBox.screenY,
-                                                       anchorBox.width,
-                                                       anchorBox.height);
-        let availTop = {}, availHeight = {};
-        screen.GetAvailRect({}, availTop, {}, availHeight);
-        let cssAvailTop = availTop.value / screen.defaultCSSScaleFactor;
-
-        
-        
-        let maxHeight;
-        if (this._panel.alignmentPosition.startsWith("before_")) {
-          maxHeight = anchorBox.screenY - cssAvailTop;
-        } else {
-          let anchorScreenBottom = anchorBox.screenY + anchorBox.height;
-          let cssAvailHeight = availHeight.value / screen.defaultCSSScaleFactor;
-          maxHeight = cssAvailTop + cssAvailHeight - anchorScreenBottom;
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        const EXTRA_MARGIN_PX = 20;
-        maxHeight -= EXTRA_MARGIN_PX;
-        this._viewStack.style.maxHeight = maxHeight + "px";
         break;
       }
       case "popupshown":
