@@ -38,7 +38,6 @@ var CustomizationHandler = {
 
     UpdateUrlbarSearchSplitterState();
 
-    CombinedStopReload.uninit();
     PlacesToolbarHelper.customizeStart();
     DownloadsButton.customizeStart();
   },
@@ -66,9 +65,6 @@ var CustomizationHandler = {
     PlacesToolbarHelper.customizeDone();
     DownloadsButton.customizeDone();
 
-    
-    
-    CombinedStopReload.init();
     UpdateUrlbarSearchSplitterState();
 
     
