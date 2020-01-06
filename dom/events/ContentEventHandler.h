@@ -70,6 +70,9 @@ private:
     nsIContent* StartRef() const { return mStart.Ref(); }
     nsIContent* EndRef() const { return mEnd.Ref(); }
 
+    const RangeBoundary& Start() const { return mStart; }
+    const RangeBoundary& End() const { return mEnd; }
+
     
     nsresult CollapseTo(const RawRangeBoundary& aBoundary)
     {
