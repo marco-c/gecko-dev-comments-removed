@@ -20,8 +20,11 @@ const TEST_THRESHOLD = {
 
 
 
-const MULTI_BUCKETS = {
-  "beta": { 1: .5, 4: 1, },
+const MULTI_EXPERIMENT = {
+  "beta": { buckets: { 1: .5, 4: 1, }, 
+            addons: true },
+  "release": { buckets: { 1: .2, 4: 1 }, 
+               addons: false },
 };
 
 const ADDON_ROLLOUT_POLICY = {
@@ -167,7 +170,10 @@ function defineCohort() {
   
   
   
-  if (!(updateChannel in MULTI_BUCKETS) ||
+  
+  
+  if (!(updateChannel in MULTI_EXPERIMENT) ||
+      (!MULTI_EXPERIMENT[updateChannel].addons && cohortPrefix) ||
       !eligibleForMulti ||
       userOptedIn.multi ||
       disqualified) {
@@ -185,7 +191,7 @@ function defineCohort() {
 
   
   
-  let buckets = MULTI_BUCKETS[updateChannel];
+  let buckets = MULTI_EXPERIMENT[updateChannel].buckets;
 
   let multiUserSample = getUserSample(true);
   for (let sampleName of Object.getOwnPropertyNames(buckets)) {
