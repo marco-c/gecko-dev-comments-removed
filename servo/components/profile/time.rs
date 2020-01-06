@@ -328,7 +328,7 @@ impl Profiler {
     
     pub fn get_statistics(data: &[f64]) -> (f64, f64, f64, f64) {
         data.iter().fold(-f64::INFINITY, |a, &b| {
-            debug_assert!(a < b, "Data must be sorted");
+            debug_assert!(a <= b, "Data must be sorted");
             b
         });
 
