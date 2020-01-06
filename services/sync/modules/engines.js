@@ -829,6 +829,8 @@ SyncEngine.prototype = {
   
   applyIncomingBatchSize: DEFAULT_STORE_BATCH_SIZE,
 
+  downloadBatchSize: DEFAULT_DOWNLOAD_BATCH_SIZE,
+
   async initialize() {
     await this.loadToFetch();
     await this.loadPreviousFailed();
@@ -1243,7 +1245,7 @@ SyncEngine.prototype = {
 
     
     if (this.lastModified == null || this.lastModified > this.lastSync) {
-      let { response, records } = await newitems.getBatched();
+      let { response, records } = await newitems.getBatched(this.downloadBatchSize);
       if (!response.success) {
         response.failureCode = ENGINE_DOWNLOAD_FAIL;
         throw response;
@@ -1301,7 +1303,7 @@ SyncEngine.prototype = {
     
     batchSize = this.guidFetchBatchSize;
 
-    while (fetchBatch.length && !aborting) {
+    while (batchSize && fetchBatch.length && !aborting) {
       
       
       newitems.limit = 0;
