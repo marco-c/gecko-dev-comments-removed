@@ -16,9 +16,7 @@ function run_test() {
   
   
   let dbFile = do_get_file("bug476292.sqlite");
-  let profD = Cc["@mozilla.org/file/directory_service;1"].
-             getService(Ci.nsIProperties).
-             get(NS_APP_USER_PROFILE_50_DIR, Ci.nsIFile);
+  let profD = Services.dirsvc.get(NS_APP_USER_PROFILE_50_DIR, Ci.nsIFile);
   dbFile.copyTo(profD, "places.sqlite");
 
   
