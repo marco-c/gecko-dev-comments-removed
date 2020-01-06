@@ -334,6 +334,8 @@ def process_gyp_result(gyp_result, gyp_dir_attrs, path, config, output,
                 
                 
                 context[key] = value + context[key]
+            elif context.get(key) and isinstance(context[key], dict):
+                context[key].update(value)
             else:
                 context[key] = value
 
