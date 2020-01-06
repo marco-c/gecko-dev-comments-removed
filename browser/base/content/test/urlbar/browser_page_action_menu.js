@@ -176,32 +176,25 @@ add_task(async function copyURLFromURLBar() {
 add_task(async function sendToDevice_nonSendable() {
   
   
-  await BrowserTestUtils.withNewTab("about:home", async () => {
-    
-    
-    
-    
-    Assert.equal(
-      window.getComputedStyle(BrowserPageActions.mainButtonNode).display,
-      "none",
-      "Main button should be hidden on about:home"
-    );
-    BrowserPageActions.mainButtonNode.style.display = "-moz-box";
+  await BrowserTestUtils.withNewTab("about:about", async () => {
     await promiseSyncReady();
     
     await promisePageActionPanelOpen();
-    Assert.equal(BrowserPageActions.mainButtonNode.getAttribute("open"),
-      "true", "Main button has 'open' attribute");
-    let sendToDeviceButton =
-      document.getElementById("pageAction-panel-sendToDevice");
-    Assert.ok(sendToDeviceButton.disabled);
+    Assert.equal(BrowserPageActions.mainButtonNode.getAttribute("open"), "true",
+                 "Main button has 'open' attribute");
+    let panelButton =
+      BrowserPageActions.panelButtonNodeForActionID("sendToDevice");
+    Assert.equal(panelButton.disabled, true,
+                 "The panel button should be disabled");
     let hiddenPromise = promisePageActionPanelHidden();
     BrowserPageActions.panelNode.hidePopup();
     await hiddenPromise;
     Assert.ok(!BrowserPageActions.mainButtonNode.hasAttribute("open"),
-      "Main button no longer has 'open' attribute");
+              "Main button no longer has 'open' attribute");
     
-    BrowserPageActions.mainButtonNode.style.removeProperty("display");
+    let urlbarButton =
+      BrowserPageActions.urlbarButtonNodeForActionID("sendToDevice");
+    Assert.equal(urlbarButton, null, "The urlbar button shouldn't exist");
   });
 });
 
@@ -550,7 +543,9 @@ add_task(async function sendToDevice_inUrlbar() {
     let urlbarButton = document.getElementById(
       BrowserPageActions.urlbarButtonNodeIDForActionID(action.id)
     );
-    Assert.ok(!urlbarButton.disabled);
+    Assert.notEqual(urlbarButton, null, "The urlbar button should exist");
+    Assert.ok(!urlbarButton.disabled,
+              "The urlbar button should not be disabled");
     let panelPromise =
       promisePanelShown(BrowserPageActions._activatedActionPanelID);
     EventUtils.synthesizeMouseAtCenter(urlbarButton, {});
