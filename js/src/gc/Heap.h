@@ -362,14 +362,6 @@ static_assert(ArenaSize % CellAlignBytes == 0,
 
 
 
-const size_t ArenaCellIndexBytes = CellAlignBytes;
-const size_t MaxArenaCellIndex = ArenaSize / CellAlignBytes;
-
-
-
-
-
-
 const size_t ArenaBitmapBits = ArenaSize / CellBytesPerMarkBit;
 const size_t ArenaBitmapBytes = DivideAndRoundUp(ArenaBitmapBits, 8);
 const size_t ArenaBitmapWords = DivideAndRoundUp(ArenaBitmapBits, JS_BITS_PER_WORD);

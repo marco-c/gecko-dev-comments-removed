@@ -43,6 +43,14 @@ const size_t CellAlignMask = CellAlignBytes - 1;
 const size_t CellBytesPerMarkBit = CellAlignBytes;
 
 
+
+
+
+
+const size_t ArenaCellIndexBytes = CellAlignBytes;
+const size_t MaxArenaCellIndex = ArenaSize / CellAlignBytes;
+
+
 #ifdef JS_GC_SMALL_CHUNK_SIZE
 const size_t ChunkMarkBitmapOffset = 258104;
 const size_t ChunkMarkBitmapBits = 31744;
