@@ -318,7 +318,7 @@ WebIDLGlobalNameHash::GetNames(JSContext* aCx, JS::Handle<JSObject*> aObj,
     
     
     if ((aNameType == AllNames ||
-         !cache->EntrySlotIfExists(entry->mConstructorId)) &&
+         !cache->HasEntryInSlot(entry->mConstructorId)) &&
         (!entry->mEnabled || entry->mEnabled(aCx, aObj))) {
       JSString* str = JS_AtomizeStringN(aCx, sNames + entry->mNameOffset,
                                         entry->mNameLength);

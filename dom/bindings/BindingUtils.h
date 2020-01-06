@@ -273,6 +273,10 @@ class ProtoAndIfaceCache
       return (*this)[i];
     }
 
+    bool HasEntryInSlot(size_t i) {
+      return (*this)[i];
+    }
+
     JS::Heap<JSObject*>& EntrySlotOrCreate(size_t i) {
       return (*this)[i];
     }
@@ -312,6 +316,17 @@ class ProtoAndIfaceCache
       Page* p = mPages[pageIndex];
       if (!p) {
         return nullptr;
+      }
+      return (*p)[leafIndex];
+    }
+
+    bool HasEntryInSlot(size_t i) {
+      MOZ_ASSERT(i < kProtoAndIfaceCacheCount);
+      size_t pageIndex = i / kPageSize;
+      size_t leafIndex = i % kPageSize;
+      Page* p = mPages[pageIndex];
+      if (!p) {
+        return false;
       }
       return (*p)[leafIndex];
     }
@@ -401,6 +416,14 @@ public:
   
   JSObject* EntrySlotIfExists(size_t i) {
     FORWARD_OPERATION(EntrySlotIfExists, (i));
+  }
+
+  
+  
+  
+  
+  bool HasEntryInSlot(size_t i) {
+    FORWARD_OPERATION(HasEntryInSlot, (i));
   }
 
   
