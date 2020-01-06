@@ -578,6 +578,12 @@ public:
   {
     return mIndeterminate;
   }
+
+  bool IsDraggingRange() const
+  {
+    return mIsDraggingRange;
+  }
+
   
 
   void GetInputMode(nsAString& aValue);
