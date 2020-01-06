@@ -1719,7 +1719,10 @@ public:
 
 
 
-  bool Extend3DContext() const;
+
+
+
+  bool Extend3DContext(const nsStyleDisplay* aStyleDisplay = nullptr) const;
 
   
 
@@ -1739,13 +1742,15 @@ public:
 
   bool In3DContextAndBackfaceIsHidden() const;
 
-  bool IsPreserve3DLeaf() const {
-    return Combines3DTransformWithAncestors() && !Extend3DContext();
+  bool IsPreserve3DLeaf(const nsStyleDisplay* aStyleDisplay = nullptr) const {
+    const nsStyleDisplay* disp = StyleDisplayWithOptionalParam(aStyleDisplay);
+    return Combines3DTransformWithAncestors(disp) &&
+           !Extend3DContext(disp);
   }
 
-  bool HasPerspective() const;
+  bool HasPerspective(const nsStyleDisplay* aStyleDisplay = nullptr) const;
 
-  bool ChildrenHavePerspective() const;
+  bool ChildrenHavePerspective(const nsStyleDisplay* aStyleDisplay = nullptr) const;
 
   
 
@@ -3027,11 +3032,14 @@ public:
 
 
   bool FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
-                              nsSize aNewSize, nsSize* aOldSize = nullptr);
+                              nsSize aNewSize, nsSize* aOldSize = nullptr,
+                              const nsStyleDisplay* aStyleDisplay = nullptr);
 
-  bool FinishAndStoreOverflow(ReflowOutput* aMetrics) {
+  bool FinishAndStoreOverflow(ReflowOutput* aMetrics,
+                              const nsStyleDisplay* aStyleDisplay = nullptr) {
     return FinishAndStoreOverflow(aMetrics->mOverflowAreas,
-                                  nsSize(aMetrics->Width(), aMetrics->Height()));
+                                  nsSize(aMetrics->Width(), aMetrics->Height()),
+                                  nullptr, aStyleDisplay);
   }
 
   
