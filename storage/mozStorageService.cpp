@@ -934,6 +934,13 @@ Service::Observe(nsISupports *, const char *aTopic, const char16_t *)
   } else if (strcmp(aTopic, "xpcom-shutdown") == 0) {
     shutdown();
   } else if (strcmp(aTopic, "xpcom-shutdown-threads") == 0) {
+    
+    
+    
+    
+    
+    RefPtr<Service> kungFuDeathGrip = this;
+
     nsCOMPtr<nsIObserverService> os =
       mozilla::services::GetObserverService();
 
