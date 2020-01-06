@@ -131,6 +131,13 @@ void
 RenderViewMLGPU::RenderAfterBackdropCopy()
 {
   MOZ_ASSERT(mContainer && mContainer->NeedsSurfaceCopy());
+
+  
+  
+  
+  mInvalidBounds = mContainer->GetShadowVisibleRegion().GetBounds().ToUnknownRect() -
+                   GetTargetOffset();
+
   ExecuteRendering();
 }
 
