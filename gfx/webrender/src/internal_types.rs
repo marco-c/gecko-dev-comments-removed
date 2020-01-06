@@ -118,22 +118,8 @@ pub enum VertexAttribute {
     Color,
     ColorTexCoord,
     
-    GlobalPrimId,
-    PrimitiveAddress,
-    TaskIndex,
-    ClipTaskIndex,
-    LayerIndex,
-    ElementIndex,
-    UserData,
-    ZIndex,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum ClearAttribute {
-    
-    Position,
-    
-    Rectangle,
+    Data0,
+    Data1,
 }
 
 #[derive(Clone, Copy, Debug)]
