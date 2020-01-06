@@ -263,22 +263,13 @@ HitTestingTreeNode::Untransform(const ParentLayerPoint& aPoint) const
 }
 
 HitTestResult
-HitTestingTreeNode::HitTest(const ParentLayerPoint& aPoint) const
+HitTestingTreeNode::HitTest(const LayerPoint& aPoint) const
 {
-  
-  
-  MOZ_ASSERT(!IsOutsideClip(aPoint));
-
   if (mOverride & EventRegionsOverride::ForceEmptyHitRegion) {
     return HitTestResult::HitNothing;
   }
 
-  
-  Maybe<LayerPoint> pointInLayerPixels = Untransform(aPoint);
-  if (!pointInLayerPixels) {
-    return HitTestResult::HitNothing;
-  }
-  auto point = LayerIntPoint::Round(pointInLayerPixels.ref());
+  auto point = LayerIntPoint::Round(aPoint);
 
   
   if (!mEventRegions.mHitRegion.Contains(point.x, point.y)) {

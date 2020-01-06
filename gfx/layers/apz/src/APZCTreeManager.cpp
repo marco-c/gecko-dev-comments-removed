@@ -1836,12 +1836,15 @@ APZCTreeManager::GetAPZCAtPoint(HitTestingTreeNode* aNode,
   
   HitTestingTreeNode* resultNode;
   HitTestingTreeNode* root = aNode;
-  std::stack<ParentLayerPoint> hitTestPoints;
-  hitTestPoints.push(aHitTestPoint);
+  std::stack<LayerPoint> hitTestPoints;
+  hitTestPoints.push(ViewAs<LayerPixel>(aHitTestPoint,
+      PixelCastJustification::MovingDownToChildren));
 
   ForEachNode<ReverseIterator>(root,
       [&hitTestPoints](HitTestingTreeNode* aNode) {
-        if (aNode->IsOutsideClip(hitTestPoints.top())) {
+        ParentLayerPoint hitTestPointForParent = ViewAs<ParentLayerPixel>(hitTestPoints.top(),
+            PixelCastJustification::MovingDownToChildren);
+        if (aNode->IsOutsideClip(hitTestPointForParent)) {
           
           
           
@@ -1851,21 +1854,20 @@ APZCTreeManager::GetAPZCAtPoint(HitTestingTreeNode* aNode,
         }
         
         
-        Maybe<LayerPoint> hitTestPointForChildLayers = aNode->Untransform(hitTestPoints.top());
+        Maybe<LayerPoint> hitTestPoint = aNode->Untransform(hitTestPointForParent);
         APZCTM_LOG("Transformed ParentLayer point %s to layer %s\n",
-                Stringify(hitTestPoints.top()).c_str(),
-                hitTestPointForChildLayers ? Stringify(hitTestPointForChildLayers.ref()).c_str() : "nil");
-        if (!hitTestPointForChildLayers) {
+                Stringify(hitTestPointForParent).c_str(),
+                hitTestPoint ? Stringify(hitTestPoint.ref()).c_str() : "nil");
+        if (!hitTestPoint) {
           return TraversalFlag::Skip;
         }
-        hitTestPoints.push(ViewAs<ParentLayerPixel>(hitTestPointForChildLayers.ref(),
-            PixelCastJustification::MovingDownToChildren));
+        hitTestPoints.push(hitTestPoint.ref());
         return TraversalFlag::Continue;
       },
       [&resultNode, &hitTestPoints, &aOutHitResult](HitTestingTreeNode* aNode) {
-        hitTestPoints.pop();
         HitTestResult hitResult = aNode->HitTest(hitTestPoints.top());
-        APZCTM_LOG("Testing ParentLayer point %s against node %p\n",
+        hitTestPoints.pop();
+        APZCTM_LOG("Testing Layer point %s against node %p\n",
                 Stringify(hitTestPoints.top()).c_str(), aNode);
         if (hitResult != HitTestResult::HitNothing) {
           resultNode = aNode;

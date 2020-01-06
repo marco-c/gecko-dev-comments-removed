@@ -110,7 +110,7 @@ public:
   Maybe<LayerPoint> Untransform(const ParentLayerPoint& aPoint) const;
   
 
-  HitTestResult HitTest(const ParentLayerPoint& aPoint) const;
+  HitTestResult HitTest(const LayerPoint& aPoint) const;
   
   EventRegionsOverride GetEventRegionsOverride() const;
 
