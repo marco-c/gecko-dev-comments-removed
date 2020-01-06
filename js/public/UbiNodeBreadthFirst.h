@@ -83,7 +83,7 @@ struct BreadthFirst {
     
     
     
-    BreadthFirst(JSContext* cx, Handler& handler, const JS::AutoRequireNoGC& noGC)
+    BreadthFirst(JSContext* cx, Handler& handler, const JS::AutoCheckCannotGC& noGC)
       : wantNames(true), cx(cx), visited(), handler(handler), pending(),
         traversalBegun(false), stopRequested(false), abandonRequested(false)
     { }
