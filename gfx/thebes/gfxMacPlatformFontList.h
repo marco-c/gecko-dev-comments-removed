@@ -69,16 +69,7 @@ public:
     
     bool HasTrackingTable();
 
-    bool SupportsOpenTypeFeature(Script aScript, uint32_t aFeatureTag) override
-    {
-        
-        
-        
-        if (RequiresAATLayout() && aFeatureTag != HB_TAG('s','m','c','p')) {
-            return false;
-        }
-        return gfxFontEntry::SupportsOpenTypeFeature(aScript, aFeatureTag);
-    }
+    bool SupportsOpenTypeFeature(Script aScript, uint32_t aFeatureTag) override;
 
     
     
@@ -107,6 +98,8 @@ protected:
     bool mIsCFFInitialized;
     bool mHasVariations;
     bool mHasVariationsInitialized;
+    bool mHasAATSmallCaps;
+    bool mHasAATSmallCapsInitialized;
     bool mCheckedForTracking;
     nsTHashtable<nsUint32HashKey> mAvailableTables;
 
