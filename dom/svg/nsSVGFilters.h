@@ -88,7 +88,7 @@ public:
   virtual bool HasValidDimensions() const override;
 
   bool IsNodeOfType(uint32_t aFlags) const override
-    { return !(aFlags & ~(eCONTENT | eFILTER)); }
+    { return !(aFlags & ~eFILTER); }
 
   virtual nsSVGString& GetResultImageName() = 0;
   

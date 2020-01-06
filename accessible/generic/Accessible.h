@@ -179,7 +179,7 @@ public:
 
 
   bool IsContent() const
-    { return GetNode() && GetNode()->IsNodeOfType(nsINode::eCONTENT); }
+    { return GetNode() && GetNode()->IsContent(); }
 
   
 

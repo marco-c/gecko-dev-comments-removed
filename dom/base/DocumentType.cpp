@@ -93,7 +93,7 @@ DocumentType::IsNodeOfType(uint32_t aFlags) const
   
   
   
-  return !(aFlags & ~eCONTENT);
+  return false;
 }
 
 const nsTextFragment*

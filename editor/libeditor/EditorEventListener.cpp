@@ -1104,7 +1104,7 @@ EditorEventListener::Focus(InternalFocusEvent* aFocusEvent)
     return NS_OK;
   }
 
-  if (node->IsNodeOfType(nsINode::eCONTENT)) {
+  if (node->IsContent()) {
     
     
     

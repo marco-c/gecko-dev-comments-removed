@@ -5498,7 +5498,7 @@ nsContentUtils::IsInSameAnonymousTree(const nsINode* aNode,
   NS_PRECONDITION(aContent,
                   "Must have a content to work with");
 
-  if (!aNode->IsNodeOfType(nsINode::eCONTENT)) {
+  if (!aNode->IsContent()) {
     
 
 

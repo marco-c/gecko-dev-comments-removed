@@ -330,9 +330,8 @@ IMEContentObserver::InitWithEditor(nsPresContext* aPresContext,
 
   
   nsCOMPtr<nsISelectionController> selCon;
-  if (mEditableNode->IsNodeOfType(nsINode::eCONTENT)) {
-    nsIFrame* frame =
-      static_cast<nsIContent*>(mEditableNode.get())->GetPrimaryFrame();
+  if (mEditableNode->IsContent()) {
+    nsIFrame* frame = mEditableNode->AsContent()->GetPrimaryFrame();
     if (NS_WARN_IF(!frame)) {
       return false;
     }

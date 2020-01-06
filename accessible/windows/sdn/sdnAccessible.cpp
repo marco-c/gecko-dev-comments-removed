@@ -106,8 +106,9 @@ sdnAccessible::get_nodeInfo(BSTR __RPC_FAR* aNodeName,
   DOMNode->GetNodeValue(nodeValue);
   *aNodeValue = ::SysAllocString(nodeValue.get());
 
-  *aNameSpaceID = mNode->IsNodeOfType(nsINode::eCONTENT) ?
-    static_cast<short>(mNode->AsContent()->GetNameSpaceID()) : 0;
+  *aNameSpaceID = mNode->IsContent()
+    ? static_cast<short>(mNode->AsContent()->GetNameSpaceID())
+    : 0;
 
   
   
