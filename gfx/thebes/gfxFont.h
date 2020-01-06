@@ -337,7 +337,7 @@ protected:
 
     static gfxFontCache *gGlobalCache;
 
-    struct Key {
+    struct MOZ_STACK_CLASS Key {
         const gfxFontEntry* mFontEntry;
         const gfxFontStyle* mStyle;
         const gfxCharacterMap* mUnicodeRangeMap;
@@ -543,7 +543,7 @@ public:
     
 
 
-    struct Parameters {
+    struct MOZ_STACK_CLASS Parameters {
         
         DrawTarget   *mDrawTarget;
         
@@ -2221,7 +2221,7 @@ protected:
 
 
 
-struct TextRunDrawParams {
+struct MOZ_STACK_CLASS TextRunDrawParams {
     RefPtr<mozilla::gfx::DrawTarget> dt;
     gfxContext              *context;
     gfxFont::Spacing        *spacing;
@@ -2240,7 +2240,7 @@ struct TextRunDrawParams {
     bool                     paintSVGGlyphs;
 };
 
-struct FontDrawParams {
+struct MOZ_STACK_CLASS FontDrawParams {
     RefPtr<mozilla::gfx::ScaledFont>            scaledFont;
     RefPtr<mozilla::gfx::GlyphRenderingOptions> renderingOptions;
     mozilla::SVGContextPaint *contextPaint;
@@ -2254,7 +2254,7 @@ struct FontDrawParams {
     bool                      haveColorGlyphs;
 };
 
-struct EmphasisMarkDrawParams {
+struct MOZ_STACK_CLASS EmphasisMarkDrawParams {
     gfxContext* context;
     gfxFont::Spacing* spacing;
     gfxTextRun* mark;
