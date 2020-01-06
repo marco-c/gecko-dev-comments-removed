@@ -13,6 +13,8 @@
 #include "RasterImage.h"
 #include "SurfaceCache.h"
 
+#include "mozilla/SystemGroup.h"
+
 namespace mozilla {
 
 using gfx::IntRect;
@@ -23,11 +25,47 @@ namespace image {
 
 
 
- void
+void
+IDecodingTask::EnsureHasEventTarget(NotNull<RasterImage*> aImage)
+{
+  if (!mEventTarget) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    RefPtr<ProgressTracker> tracker = aImage->GetProgressTracker();
+    if (tracker) {
+      mEventTarget = tracker->GetEventTarget();
+    } else {
+      mEventTarget = SystemGroup::EventTargetFor(TaskCategory::Other);
+    }
+  }
+}
+
+bool
+IDecodingTask::IsOnEventTarget() const
+{
+  
+  
+  
+  
+  bool current = false;
+  mEventTarget->IsOnCurrentThread(&current);
+  return current;
+}
+
+void
 IDecodingTask::NotifyProgress(NotNull<RasterImage*> aImage,
                               NotNull<Decoder*> aDecoder)
 {
   MOZ_ASSERT(aDecoder->HasProgress() && !aDecoder->IsMetadataDecode());
+  EnsureHasEventTarget(aImage);
 
   
   
@@ -42,7 +80,7 @@ IDecodingTask::NotifyProgress(NotNull<RasterImage*> aImage,
   SurfaceFlags surfaceFlags = aDecoder->GetSurfaceFlags();
 
   
-  if (NS_IsMainThread() && !(decoderFlags & DecoderFlags::ASYNC_NOTIFY)) {
+  if (IsOnEventTarget() && !(decoderFlags & DecoderFlags::ASYNC_NOTIFY)) {
     aImage->NotifyProgress(progress, invalidRect, frameCount,
                            decoderFlags, surfaceFlags);
     return;
@@ -50,20 +88,21 @@ IDecodingTask::NotifyProgress(NotNull<RasterImage*> aImage,
 
   
   NotNull<RefPtr<RasterImage>> image = aImage;
-  NS_DispatchToMainThread(NS_NewRunnableFunction(
-                            "IDecodingTask::NotifyProgress",
-                            [=]() -> void {
+  mEventTarget->Dispatch(NS_NewRunnableFunction(
+                           "IDecodingTask::NotifyProgress",
+                           [=]() -> void {
     image->NotifyProgress(progress, invalidRect, frameCount,
                           decoderFlags, surfaceFlags);
-  }));
+  }), NS_DISPATCH_NORMAL);
 }
 
- void
+void
 IDecodingTask::NotifyDecodeComplete(NotNull<RasterImage*> aImage,
                                     NotNull<Decoder*> aDecoder)
 {
   MOZ_ASSERT(aDecoder->HasError() || !aDecoder->InFrame(),
              "Decode complete in the middle of a frame?");
+  EnsureHasEventTarget(aImage);
 
   
   DecoderFinalStatus finalStatus = aDecoder->FinalStatus();
@@ -76,7 +115,7 @@ IDecodingTask::NotifyDecodeComplete(NotNull<RasterImage*> aImage,
   SurfaceFlags surfaceFlags = aDecoder->GetSurfaceFlags();
 
   
-  if (NS_IsMainThread() && !(decoderFlags & DecoderFlags::ASYNC_NOTIFY)) {
+  if (IsOnEventTarget() && !(decoderFlags & DecoderFlags::ASYNC_NOTIFY)) {
     aImage->NotifyDecodeComplete(finalStatus, metadata, telemetry, progress,
                                  invalidRect, frameCount, decoderFlags,
                                  surfaceFlags);
@@ -85,13 +124,13 @@ IDecodingTask::NotifyDecodeComplete(NotNull<RasterImage*> aImage,
 
   
   NotNull<RefPtr<RasterImage>> image = aImage;
-  NS_DispatchToMainThread(NS_NewRunnableFunction(
-                            "IDecodingTask::NotifyDecodeComplete",
-                            [=]() -> void {
+  mEventTarget->Dispatch(NS_NewRunnableFunction(
+                           "IDecodingTask::NotifyDecodeComplete",
+                           [=]() -> void {
     image->NotifyDecodeComplete(finalStatus, metadata, telemetry, progress,
                                 invalidRect, frameCount, decoderFlags,
                                 surfaceFlags);
-  }));
+  }), NS_DISPATCH_NORMAL);
 }
 
 
