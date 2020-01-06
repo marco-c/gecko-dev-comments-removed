@@ -48,6 +48,9 @@ toolchain_run_schema = Schema({
     ),
 
     
+    Required('tc-vcs', default=True): bool,
+
+    
     
     Optional('resources'): [basestring],
 
@@ -120,7 +123,8 @@ def docker_worker_toolchain(config, job, taskdesc):
     if not any(artifact.get('name') == 'public/build' for artifact in artifacts):
         docker_worker_add_public_artifacts(config, job, taskdesc)
 
-    docker_worker_add_tc_vcs_cache(config, job, taskdesc)
+    if run['tc-vcs']:
+        docker_worker_add_tc_vcs_cache(config, job, taskdesc)
     docker_worker_add_gecko_vcs_env_vars(config, job, taskdesc)
     support_vcs_checkout(config, job, taskdesc, sparse=True)
 
