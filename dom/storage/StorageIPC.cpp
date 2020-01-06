@@ -669,6 +669,7 @@ public:
   virtual bool LoadItem(const nsAString& aKey, const nsString& aValue)
   {
     
+    MOZ_ASSERT(!mLoaded);
     if (mLoaded) {
       return false;
     }
@@ -683,8 +684,12 @@ public:
   {
     
     MonitorAutoLock monitor(mMonitor);
+    MOZ_ASSERT(!mLoaded && mRv);
     mLoaded = true;
-    *mRv = aRv;
+    if (mRv) {
+      *mRv = aRv;
+      mRv = nullptr;
+    }
     monitor.Notify();
   }
 

@@ -1091,8 +1091,10 @@ StorageDBThread::DBOperation::Perform(StorageDBThread* aThread)
         break;
       }
     }
-
-    mCache->LoadDone(NS_OK);
+    
+    
+    
+    NS_ENSURE_SUCCESS(rv, rv);
     break;
   }
 
