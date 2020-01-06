@@ -2,7 +2,7 @@
 
 
 """
-Transform the push-apk kind into an actual task description.
+Transform the push-apk-breakpoint kind into an actual task description.
 """
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -11,17 +11,15 @@ import functools
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import Schema
-from taskgraph.util.scriptworker import get_push_apk_scope, get_push_apk_track, \
-    get_push_apk_dry_run_option, get_push_apk_rollout_percentage
+from taskgraph.util.scriptworker import get_push_apk_breakpoint_worker_type
 from taskgraph.util.push_apk import fill_labels_tranform, validate_jobs_schema_transform_partial, \
     validate_dependent_tasks_transform, delete_non_required_fields_transform, generate_dependencies
-
 from voluptuous import Required
 
 
 transforms = TransformSequence()
 
-push_apk_description_schema = Schema({
+push_apk_breakpoint_description_schema = Schema({
     
     Required('dependent-tasks'): object,
     Required('name'): basestring,
@@ -29,18 +27,17 @@ push_apk_description_schema = Schema({
     Required('description'): basestring,
     Required('job-from'): basestring,
     Required('attributes'): object,
+    Required('worker-type'): None,
+    Required('worker'): object,
     Required('treeherder'): object,
     Required('run-on-projects'): list,
-    Required('worker-type'): basestring,
-    Required('worker'): object,
-    Required('scopes'): None,
     Required('deadline-after'): basestring,
 })
 
 validate_jobs_schema_transform = functools.partial(
     validate_jobs_schema_transform_partial,
-    push_apk_description_schema,
-    'PushApk'
+    push_apk_breakpoint_description_schema,
+    'PushApkBreakpoint'
 )
 
 transforms.add(fill_labels_tranform)
@@ -52,25 +49,21 @@ transforms.add(validate_dependent_tasks_transform)
 def make_task_description(config, jobs):
     for job in jobs:
         job['dependencies'] = generate_dependencies(job['dependent-tasks'])
-        job['worker']['upstream-artifacts'] = generate_upstream_artifacts(job['dependencies'])
-        job['worker']['google-play-track'] = get_push_apk_track(config)
-        job['worker']['dry-run'] = get_push_apk_dry_run_option(config)
 
-        rollout_percentage = get_push_apk_rollout_percentage(config)
-        if rollout_percentage is not None:
-            job['worker']['rollout-percentage'] = rollout_percentage
+        worker_type = get_push_apk_breakpoint_worker_type(config)
+        job['worker-type'] = worker_type
 
-        job['scopes'] = [get_push_apk_scope(config)]
+        job['worker']['payload'] = {} if 'human' in worker_type else {
+                'image': 'ubuntu:16.10',
+                'command': [
+                    '/bin/bash',
+                    '-c',
+                    'echo "Dummy task while while bug 1351664 is implemented"'
+                ],
+                'maxRunTime': 600,
+            }
 
         yield job
 
 
 transforms.add(delete_non_required_fields_transform)
-
-
-def generate_upstream_artifacts(dependencies):
-    return [{
-        'taskId': {'task-reference': '<{}>'.format(task_kind)},
-        'taskType': 'signing',
-        'paths': ['public/build/target.apk'],
-    } for task_kind in dependencies.keys() if 'breakpoint' not in task_kind]
