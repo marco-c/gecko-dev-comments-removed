@@ -50,6 +50,9 @@
 #  define APZCTM_LOG(...)
 #endif
 
+
+#define APZ_KEY_LOG(...)
+
 namespace mozilla {
 namespace layers {
 
@@ -185,7 +188,16 @@ public:
   {
     if (mMayChangeFocus) {
       mFocusState.ReceiveFocusChangingEvent();
+
+      APZ_KEY_LOG("Marking input with type=%d as focus changing with seq=%" PRIu64 "\n",
+                  (int)mEvent.mInputType,
+                  mFocusState.LastAPZProcessedEvent());
+    } else {
+      APZ_KEY_LOG("Marking input with type=%d as non focus changing with seq=%" PRIu64 "\n",
+                  (int)mEvent.mInputType,
+                  mFocusState.LastAPZProcessedEvent());
     }
+
     mEvent.mFocusSequenceNumber = mFocusState.LastAPZProcessedEvent();
   }
 
@@ -1249,6 +1261,7 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
       
       if (!gfxPrefs::APZKeyboardEnabled() ||
           gfxPrefs::AccessibilityBrowseWithCaret()) {
+        APZ_KEY_LOG("Skipping key input from invalid prefs\n");
         return result;
       }
 
@@ -1258,6 +1271,8 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
       Maybe<KeyboardShortcut> shortcut = mKeyboardMap.FindMatch(keyInput);
 
       if (!shortcut) {
+        APZ_KEY_LOG("Skipping key input with no shortcut\n");
+
         
         
         if (mFocusState.CanIgnoreKeyboardShortcutMisses()) {
@@ -1269,6 +1284,7 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
       
       
       if (shortcut->mDispatchToContent) {
+        APZ_KEY_LOG("Skipping key input with dispatch-to-content shortcut\n");
         return result;
       }
 
@@ -1299,6 +1315,7 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
       
       
       if (!targetGuid) {
+        APZ_KEY_LOG("Skipping key input with no current focus target\n");
         return result;
       }
 
@@ -1306,12 +1323,16 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
                                                                 targetGuid->mScrollId);
 
       if (!targetApzc) {
+        APZ_KEY_LOG("Skipping key input with focus target but no APZC\n");
         return result;
       }
 
       
       
       keyInput.mAction = action;
+
+      APZ_KEY_LOG("Dispatching key input with apzc=%p\n",
+                  targetApzc.get());
 
       
       result = mInputQueue->ReceiveInputEvent(
