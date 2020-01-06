@@ -289,32 +289,6 @@ impl<'i: 't, 't> Parser<'i, 't> {
     }
 
     
-    #[inline]
-    pub fn skip_whitespace(&mut self) {
-        
-        
-        if self.at_start_of.is_some() {
-            return
-        }
-
-        self.input.tokenizer.skip_whitespace()
-    }
-
-    #[inline]
-    pub(crate) fn skip_cdc_and_cdo(&mut self) {
-        self.input.tokenizer.skip_cdc_and_cdo()
-    }
-
-    #[inline]
-    pub(crate) fn next_byte(&self) -> Option<u8> {
-        let byte = self.input.tokenizer.next_byte();
-        if self.stop_before.contains(Delimiters::from_byte(byte)) {
-            return None
-        }
-        byte
-    }
-
-    
     
     
     
@@ -390,8 +364,14 @@ impl<'i: 't, 't> Parser<'i, 't> {
     
     
     pub fn next(&mut self) -> Result<&Token<'i>, BasicParseError<'i>> {
-        self.skip_whitespace();
-        self.next_including_whitespace_and_comments()
+        loop {
+            match self.next_including_whitespace_and_comments() {
+                Err(e) => return Err(e),
+                Ok(&Token::WhiteSpace(_)) | Ok(&Token::Comment(_)) => {},
+                _ => break
+            }
+        }
+        Ok(self.input.cached_token_ref())
     }
 
     
@@ -479,7 +459,6 @@ impl<'i: 't, 't> Parser<'i, 't> {
     where F: for<'tt> FnMut(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>> {
         let mut values = vec![];
         loop {
-            self.skip_whitespace();  
             values.push(self.parse_until_before(Delimiter::Comma, &mut parse_one)?);
             match self.next() {
                 Err(_) => return Ok(values),
