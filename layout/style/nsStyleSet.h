@@ -259,8 +259,7 @@ class nsStyleSet final
   ProbePseudoElementStyle(mozilla::dom::Element* aParentElement,
                           mozilla::CSSPseudoElementType aType,
                           nsStyleContext* aParentContext,
-                          TreeMatchContext& aTreeMatchContext,
-                          mozilla::dom::Element* aPseudoElement = nullptr);
+                          TreeMatchContext& aTreeMatchContext);
 
   
 
