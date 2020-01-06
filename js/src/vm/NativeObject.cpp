@@ -2236,10 +2236,6 @@ GetNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
         return true;
 
     
-    if (JSID_IS_ATOM(id, cx->names().iteratorIntrinsic))
-        return true;
-
-    
     pc += CodeSpec[*pc].length;
     if (Detecting(cx, script, pc))
         return true;
