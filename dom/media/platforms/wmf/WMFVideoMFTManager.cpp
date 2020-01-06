@@ -164,10 +164,11 @@ GetCompositorBackendType(layers::KnowsCompositor* aKnowsCompositor)
 }
 
 WMFVideoMFTManager::WMFVideoMFTManager(
-                            const VideoInfo& aConfig,
-                            layers::KnowsCompositor* aKnowsCompositor,
-                            layers::ImageContainer* aImageContainer,
-                            bool aDXVAEnabled)
+  const VideoInfo& aConfig,
+  layers::KnowsCompositor* aKnowsCompositor,
+  layers::ImageContainer* aImageContainer,
+  float aFramerate,
+  bool aDXVAEnabled)
   : mVideoInfo(aConfig)
   , mImageSize(aConfig.mImage)
   , mVideoStride(0)
@@ -175,6 +176,7 @@ WMFVideoMFTManager::WMFVideoMFTManager(
   , mDXVAEnabled(aDXVAEnabled)
   , mKnowsCompositor(aKnowsCompositor)
   , mAMDVP9InUse(false)
+  , mFramerate(aFramerate)
   
   
 {
@@ -736,7 +738,7 @@ WMFVideoMFTManager::InitInternal()
                  MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                             RESULT_DETAIL("Fail to get the output media type.")));
 
-  if (mUseHwAccel && !CanUseDXVA(outputType)) {
+  if (mUseHwAccel && !CanUseDXVA(outputType, mFramerate)) {
     mDXVAEnabled = false;
     
     
@@ -859,7 +861,8 @@ WMFVideoMFTManager::Input(MediaRawData* aSample)
   return mDecoder->Input(inputSample);
 }
 
-class SupportsConfigEvent : public Runnable {
+class SupportsConfigEvent : public Runnable
+{
 public:
   SupportsConfigEvent(DXVA2Manager* aDXVA2Manager,
                       IMFMediaType* aMediaType,
@@ -880,7 +883,7 @@ public:
   }
   DXVA2Manager* mDXVA2Manager;
   IMFMediaType* mMediaType;
-  float mFramerate;
+  const float mFramerate;
   bool mSupportsConfig;
 };
 
@@ -900,7 +903,7 @@ public:
 
 
 bool
-WMFVideoMFTManager::CanUseDXVA(IMFMediaType* aType)
+WMFVideoMFTManager::CanUseDXVA(IMFMediaType* aType, float aFramerate)
 {
   MOZ_ASSERT(mDXVA2Manager);
   
@@ -910,12 +913,8 @@ WMFVideoMFTManager::CanUseDXVA(IMFMediaType* aType)
 
   
   
-  float framerate = 1000000.0 / mLastDuration.ToMicroseconds();
-
-  
-  
   RefPtr<SupportsConfigEvent> event =
-    new SupportsConfigEvent(mDXVA2Manager, aType, framerate);
+    new SupportsConfigEvent(mDXVA2Manager, aType, aFramerate);
 
   if (NS_IsMainThread()) {
     event->Run();
