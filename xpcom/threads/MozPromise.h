@@ -134,10 +134,16 @@ protected:
   virtual ~MozPromiseRefcountable() {}
 };
 
+class MozPromiseBase : public MozPromiseRefcountable
+{
+public:
+  virtual void AssertIsDead() = 0;
+};
+
 template<typename T> class MozPromiseHolder;
 template<typename T> class MozPromiseRequestHolder;
 template<typename ResolveValueT, typename RejectValueT, bool IsExclusive>
-class MozPromise : public MozPromiseRefcountable
+class MozPromise : public MozPromiseBase
 {
   static const uint32_t sMagic = 0xcecace11;
 
@@ -427,8 +433,8 @@ protected:
       
       
       
-      if (mCompletionPromise) {
-        mCompletionPromise->AssertIsDead();
+      if (MozPromiseBase* p = CompletionPromise()) {
+        p->AssertIsDead();
       } else {
         MOZ_DIAGNOSTIC_ASSERT(Request::mDisconnected);
       }
@@ -462,11 +468,12 @@ protected:
       
       
       
-      MOZ_DIAGNOSTIC_ASSERT(!mCompletionPromise);
+      MOZ_DIAGNOSTIC_ASSERT(!CompletionPromise());
     }
 
   protected:
-    virtual already_AddRefed<MozPromise> DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) = 0;
+    virtual MozPromiseBase* CompletionPromise() const = 0;
+    virtual void DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) = 0;
 
     void DoResolveOrReject(ResolveOrRejectValue& aValue)
     {
@@ -479,25 +486,17 @@ protected:
       }
 
       
-      RefPtr<MozPromise> result = DoResolveOrRejectInternal(aValue);
-
-      MOZ_DIAGNOSTIC_ASSERT(!mCompletionPromise || result,
-        "Can't do promise chaining for a non-promise-returning method.");
-
-      if (mCompletionPromise && result) {
-        result->ChainTo(mCompletionPromise.forget(), "<chained completion promise>");
-      }
+      DoResolveOrRejectInternal(aValue);
     }
 
     RefPtr<AbstractThread> mResponseTarget; 
 #ifdef PROMISE_DEBUG
     uint32_t mMagic1 = sMagic;
 #endif
-    RefPtr<Private> mCompletionPromise;
+    const char* mCallSite;
 #ifdef PROMISE_DEBUG
     uint32_t mMagic2 = sMagic;
 #endif
-    const char* mCallSite;
   };
 
   
@@ -585,14 +584,19 @@ protected:
     }
 
   protected:
-    already_AddRefed<MozPromise> DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override
+    MozPromiseBase* CompletionPromise() const override
     {
-      RefPtr<MozPromise> completion;
+      return mCompletionPromise;
+    }
+
+    void DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override
+    {
+      RefPtr<MozPromise> result;
       if (aValue.IsResolve()) {
-        completion = InvokeCallbackMethod(
+        result = InvokeCallbackMethod(
           mThisVal.get(), mResolveMethod, MaybeMove(aValue.ResolveValue()));
       } else {
-        completion = InvokeCallbackMethod(
+        result = InvokeCallbackMethod(
           mThisVal.get(), mRejectMethod, MaybeMove(aValue.RejectValue()));
       }
 
@@ -602,13 +606,21 @@ protected:
       
       mThisVal = nullptr;
 
-      return completion.forget();
+      MOZ_DIAGNOSTIC_ASSERT(
+        !mCompletionPromise || result,
+        "Can't do promise chaining for a non-promise-returning method.");
+
+      if (mCompletionPromise && result) {
+        result->ChainTo(mCompletionPromise.forget(),
+                        "<chained completion promise>");
+      }
     }
 
   private:
     RefPtr<ThisType> mThisVal; 
     ResolveMethodType mResolveMethod;
     RejectMethodType mRejectMethod;
+    RefPtr<Private> mCompletionPromise;
   };
 
   template<typename ThisType, typename ResolveRejectMethodType>
@@ -639,9 +651,14 @@ protected:
     }
 
   protected:
-    already_AddRefed<MozPromise> DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override
+    MozPromiseBase* CompletionPromise() const override
     {
-      RefPtr<MozPromise> completion = InvokeCallbackMethod(
+      return mCompletionPromise;
+    }
+
+    void DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override
+    {
+      RefPtr<MozPromise> result = InvokeCallbackMethod(
         mThisVal.get(), mResolveRejectMethod, MaybeMove(aValue));
 
       
@@ -650,12 +667,20 @@ protected:
       
       mThisVal = nullptr;
 
-      return completion.forget();
+      MOZ_DIAGNOSTIC_ASSERT(
+        !mCompletionPromise || result,
+        "Can't do promise chaining for a non-promise-returning method.");
+
+      if (mCompletionPromise && result) {
+        result->ChainTo(mCompletionPromise.forget(),
+                        "<chained completion promise>");
+      }
     }
 
   private:
     RefPtr<ThisType> mThisVal; 
     ResolveRejectMethodType mResolveRejectMethod;
+    RefPtr<Private> mCompletionPromise;
   };
 
   
@@ -692,20 +717,27 @@ protected:
     }
 
   protected:
-    already_AddRefed<MozPromise> DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override
+    MozPromiseBase* CompletionPromise() const override
+    {
+      return mCompletionPromise;
+    }
+
+    void DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override
     {
       
       
       
       
       
-      RefPtr<MozPromise> completion;
+      RefPtr<MozPromise> result;
       if (aValue.IsResolve()) {
-        completion = InvokeCallbackMethod(mResolveFunction.ptr(),
-          &ResolveFunction::operator(), MaybeMove(aValue.ResolveValue()));
+        result = InvokeCallbackMethod(mResolveFunction.ptr(),
+                                      &ResolveFunction::operator(),
+                                      MaybeMove(aValue.ResolveValue()));
       } else {
-        completion = InvokeCallbackMethod(mRejectFunction.ptr(),
-          &RejectFunction::operator(), MaybeMove(aValue.RejectValue()));
+        result = InvokeCallbackMethod(mRejectFunction.ptr(),
+                                      &RejectFunction::operator(),
+                                      MaybeMove(aValue.RejectValue()));
       }
 
       
@@ -715,12 +747,20 @@ protected:
       mResolveFunction.reset();
       mRejectFunction.reset();
 
-      return completion.forget();
+      MOZ_DIAGNOSTIC_ASSERT(
+        !mCompletionPromise || result,
+        "Can't do promise chaining for a non-promise-returning method.");
+
+      if (mCompletionPromise && result) {
+        result->ChainTo(mCompletionPromise.forget(),
+                        "<chained completion promise>");
+      }
     }
 
   private:
     Maybe<ResolveFunction> mResolveFunction; 
     Maybe<RejectFunction> mRejectFunction; 
+    RefPtr<Private> mCompletionPromise;
   };
 
   template<typename ResolveRejectFunction>
@@ -751,14 +791,19 @@ protected:
     }
 
   protected:
-    already_AddRefed<MozPromise> DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override
+    MozPromiseBase* CompletionPromise() const override
+    {
+      return mCompletionPromise;
+    }
+
+    void DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override
     {
       
       
       
       
       
-      RefPtr<MozPromise> completion =
+      RefPtr<MozPromise> result =
         InvokeCallbackMethod(mResolveRejectFunction.ptr(),
                              &ResolveRejectFunction::operator(),
                              MaybeMove(aValue));
@@ -769,11 +814,19 @@ protected:
       
       mResolveRejectFunction.reset();
 
-      return completion.forget();
+      MOZ_DIAGNOSTIC_ASSERT(
+        !mCompletionPromise || result,
+        "Can't do promise chaining for a non-promise-returning method.");
+
+      if (mCompletionPromise && result) {
+        result->ChainTo(mCompletionPromise.forget(),
+                        "<chained completion promise>");
+      }
     }
 
   private:
     Maybe<ResolveRejectFunction> mResolveRejectFunction; 
+    RefPtr<Private> mCompletionPromise;
   };
 
 public:
@@ -928,7 +981,7 @@ public:
   
   
   
-  void AssertIsDead()
+  void AssertIsDead() override
   {
     PROMISE_ASSERT(mMagic1 == sMagic && mMagic2 == sMagic && mMagic3 == sMagic && mMagic4 == &mMutex);
     MutexAutoLock lock(mMutex);
