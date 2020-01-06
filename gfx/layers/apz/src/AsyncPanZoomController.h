@@ -748,6 +748,20 @@ private:
 
   friend class Axis;
 
+public:
+  
+
+
+
+
+
+
+  template <typename Callable>
+  auto CallWithLastContentPaintMetrics(const Callable& callable) const
+    -> decltype(callable(mLastContentPaintMetrics)) {
+    ReentrantMonitorAutoEnter lock(mMonitor);
+    return callable(mLastContentPaintMetrics);
+  }
 
   
 
