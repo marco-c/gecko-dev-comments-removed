@@ -32,6 +32,13 @@ typedef enum {
 
 
 
+
+
+
+
+
+
+
 cubeb_resampler * cubeb_resampler_create(cubeb_stream * stream,
                                          cubeb_stream_params * input_params,
                                          cubeb_stream_params * output_params,
