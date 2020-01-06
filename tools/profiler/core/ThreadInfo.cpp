@@ -243,7 +243,7 @@ ThreadInfo::FlushSamplesAndMarkers(ProfileBuffer* aBuffer,
 
   
   
-  aBuffer->reset();
+  aBuffer->Reset();
 }
 
 size_t

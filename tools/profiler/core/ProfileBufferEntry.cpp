@@ -957,7 +957,7 @@ ProfileBuffer::DuplicateLastSample(int aThreadId,
   MOZ_ASSERT(mEntries[lastSampleStartPos].IsThreadId() &&
              mEntries[lastSampleStartPos].u.mInt == aThreadId);
 
-  addThreadIdEntry(aThreadId, &aLS);
+  AddThreadIdEntry(aThreadId, &aLS);
 
   
   for (int readPos = (lastSampleStartPos + 1) % mEntrySize;
@@ -969,7 +969,7 @@ ProfileBuffer::DuplicateLastSample(int aThreadId,
         return true;
       case ProfileBufferEntry::Kind::Time:
         
-        addEntry(ProfileBufferEntry::Time(
+        AddEntry(ProfileBufferEntry::Time(
           (TimeStamp::Now() - aProcessStartTime).ToMilliseconds()));
         break;
       case ProfileBufferEntry::Kind::Marker:
@@ -977,7 +977,7 @@ ProfileBuffer::DuplicateLastSample(int aThreadId,
         break;
       default:
         
-        addEntry(mEntries[readPos]);
+        AddEntry(mEntries[readPos]);
         break;
     }
   }

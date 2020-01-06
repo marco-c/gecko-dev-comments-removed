@@ -36,15 +36,15 @@ public:
   };
 
   
-  void addEntry(const ProfileBufferEntry& aEntry);
+  void AddEntry(const ProfileBufferEntry& aEntry);
 
   
   
-  void addThreadIdEntry(int aThreadId, LastSample* aLS = nullptr);
+  void AddThreadIdEntry(int aThreadId, LastSample* aLS = nullptr);
 
   
   
-  void addDynamicStringEntry(const char* aStr);
+  void AddDynamicStringEntry(const char* aStr);
 
   
   static const size_t kMaxFrameKeyLength = 512;
@@ -63,11 +63,11 @@ public:
                            const mozilla::TimeStamp& aProcessStartTime,
                            LastSample& aLS);
 
-  void addStoredMarker(ProfilerMarker* aStoredMarker);
+  void AddStoredMarker(ProfilerMarker* aStoredMarker);
 
   
-  void deleteExpiredStoredMarkers();
-  void reset();
+  void DeleteExpiredStoredMarkers();
+  void Reset();
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 

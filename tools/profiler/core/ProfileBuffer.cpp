@@ -25,7 +25,8 @@ ProfileBuffer::~ProfileBuffer()
 }
 
 
-void ProfileBuffer::addEntry(const ProfileBufferEntry& aEntry)
+void
+ProfileBuffer::AddEntry(const ProfileBufferEntry& aEntry)
 {
   mEntries[mWritePos++] = aEntry;
   if (mWritePos == mEntrySize) {
@@ -35,6 +36,7 @@ void ProfileBuffer::addEntry(const ProfileBufferEntry& aEntry)
     mGeneration++;
     mWritePos = 0;
   }
+
   if (mWritePos == mReadPos) {
     
     mEntries[mReadPos] = ProfileBufferEntry();
@@ -42,18 +44,19 @@ void ProfileBuffer::addEntry(const ProfileBufferEntry& aEntry)
   }
 }
 
-void ProfileBuffer::addThreadIdEntry(int aThreadId, LastSample* aLS)
+void
+ProfileBuffer::AddThreadIdEntry(int aThreadId, LastSample* aLS)
 {
   if (aLS) {
     
     aLS->mGeneration = mGeneration;
     aLS->mPos = mWritePos;
   }
-  addEntry(ProfileBufferEntry::ThreadId(aThreadId));
+  AddEntry(ProfileBufferEntry::ThreadId(aThreadId));
 }
 
 void
-ProfileBuffer::addDynamicStringEntry(const char* aStr)
+ProfileBuffer::AddDynamicStringEntry(const char* aStr)
 {
   size_t strLen = strlen(aStr) + 1;   
   for (size_t j = 0; j < strLen; ) {
@@ -66,16 +69,20 @@ ProfileBuffer::addDynamicStringEntry(const char* aStr)
     memcpy(chars, &aStr[j], len);
     j += ProfileBufferEntry::kNumChars;
 
-    addEntry(ProfileBufferEntry::DynamicStringFragment(chars));
+    AddEntry(ProfileBufferEntry::DynamicStringFragment(chars));
   }
 }
 
-void ProfileBuffer::addStoredMarker(ProfilerMarker *aStoredMarker) {
+void
+ProfileBuffer::AddStoredMarker(ProfilerMarker *aStoredMarker)
+{
   aStoredMarker->SetGeneration(mGeneration);
   mStoredMarkers.insert(aStoredMarker);
 }
 
-void ProfileBuffer::deleteExpiredStoredMarkers() {
+void
+ProfileBuffer::DeleteExpiredStoredMarkers()
+{
   
   
   uint32_t generation = mGeneration;
@@ -85,7 +92,9 @@ void ProfileBuffer::deleteExpiredStoredMarkers() {
   }
 }
 
-void ProfileBuffer::reset() {
+void
+ProfileBuffer::Reset()
+{
   mGeneration += 2;
   mReadPos = mWritePos = 0;
 }
