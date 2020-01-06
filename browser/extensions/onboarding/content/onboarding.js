@@ -820,12 +820,6 @@ class Onboarding {
         
         if (tab.getAttribute("data-instant-complete")) {
           this.setToursCompleted([tourId]);
-          
-          telemetry({
-            event: "overlay-cta-click",
-            tour_id: tourId,
-            session_key: this._session_key,
-          });
         }
       } else {
         tab.classList.remove("onboarding-active");
