@@ -5732,3 +5732,6 @@ pref("layers.advanced.filter-layers", 2);
 
 
 pref("dom.xhr.lowercase_header.enabled", false);
+
+
+pref("dom.noopener.newprocess.enabled", true);
