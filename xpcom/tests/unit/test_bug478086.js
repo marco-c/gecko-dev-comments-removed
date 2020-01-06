@@ -13,7 +13,7 @@ function run_test() {
     root.initWithPath("\\\\.");
   } else {
     return; 
-    root.initWithPath("/");
+    
   }
   var drives = root.directoryEntries;
   do_check_true(drives.hasMoreElements());
