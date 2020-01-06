@@ -1269,7 +1269,7 @@ nsLocalFile::CleanupCmdHandlerPath(nsAString& aCommandHandler)
 
   
   uint32_t bufLength = ::ExpandEnvironmentStringsW(handlerCommand.get(),
-                                                   L"", 0);
+                                                   nullptr, 0);
   if (bufLength == 0) 
     return false;
 
