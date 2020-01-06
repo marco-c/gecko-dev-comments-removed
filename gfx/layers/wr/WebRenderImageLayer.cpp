@@ -7,6 +7,7 @@
 
 #include "gfxPrefs.h"
 #include "LayersLogging.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/ImageClient.h"
 #include "mozilla/layers/ScrollingLayersHelper.h"
 #include "mozilla/layers/StackingContextHelper.h"
@@ -191,7 +192,31 @@ WebRenderImageLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
                   Stringify(filter).c_str());
   }
 
-  aBuilder.PushImage(sc.ToRelativeWrRect(rect), clip, filter, mKey.value());
+  if (GetImageClientType() != CompositableType::IMAGE_BRIDGE) {
+    aBuilder.PushImage(sc.ToRelativeWrRect(rect), clip, filter, mKey.value());
+  } else {
+    
+    
+    
+#if defined(XP_WIN)
+    
+    aBuilder.PushImage(sc.ToRelativeWrRect(rect), clip, filter, mKey.value());
+#elif defined(XP_MACOSX)
+    if (gfx::gfxVars::CanUseHardwareVideoDecoding()) {
+      
+      aBuilder.PushYCbCrInterleavedImage(sc.ToRelativeWrRect(rect), clip, mKey.value(), WrYuvColorSpace::Rec601);
+    } else {
+      
+      aBuilder.PushImage(sc.ToRelativeWrRect(rect), clip, filter, mKey.value());
+    }
+#elif defined(MOZ_WIDGET_GTK)
+    
+    aBuilder.PushImage(sc.ToRelativeWrRect(rect), clip, filter, mKey.value());
+#elif defined(ANDROID)
+    
+    aBuilder.PushImage(sc.ToRelativeWrRect(rect), clip, filter, mKey.value());
+#endif
+  }
 }
 
 Maybe<WrImageMask>
