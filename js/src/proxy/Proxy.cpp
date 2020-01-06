@@ -678,6 +678,12 @@ proxy_DeleteProperty(JSContext* cx, HandleObject obj, HandleId id, ObjectOpResul
 }
 
  void
+ProxyObject::traceEdgeToTarget(JSTracer* trc, ProxyObject* obj)
+{
+    TraceCrossCompartmentEdge(trc, obj, obj->slotOfPrivate(), "proxy target");
+}
+
+ void
 ProxyObject::trace(JSTracer* trc, JSObject* obj)
 {
     ProxyObject* proxy = &obj->as<ProxyObject>();
@@ -702,7 +708,8 @@ ProxyObject::trace(JSTracer* trc, JSObject* obj)
 
     
     
-    TraceCrossCompartmentEdge(trc, obj, proxy->slotOfPrivate(), "private");
+
+    traceEdgeToTarget(trc, proxy);
 
     size_t nreserved = proxy->numReservedSlots();
     for (size_t i = 0; i < nreserved; i++) {

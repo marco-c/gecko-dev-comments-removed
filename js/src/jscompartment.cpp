@@ -713,7 +713,7 @@ JSCompartment::traceOutgoingCrossCompartmentWrappers(JSTracer* trc)
 
 
 
-            TraceEdge(trc, wrapper->slotOfPrivate(), "cross-compartment wrapper");
+            ProxyObject::traceEdgeToTarget(trc, wrapper);
         }
     }
 }
