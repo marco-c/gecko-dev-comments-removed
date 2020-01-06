@@ -59,33 +59,33 @@ import java.util.concurrent.Semaphore;
 public class AndroidFxAccount {
   protected static final String LOG_TAG = AndroidFxAccount.class.getSimpleName();
 
-  public static final int CURRENT_SYNC_PREFS_VERSION = 1;
-  public static final int CURRENT_RL_PREFS_VERSION = 1;
+  private static final int CURRENT_SYNC_PREFS_VERSION = 1;
+  private static final int CURRENT_RL_PREFS_VERSION = 1;
 
   
   public static final int CURRENT_ACCOUNT_VERSION = 3;
-  public static final String ACCOUNT_KEY_ACCOUNT_VERSION = "version";
-  public static final String ACCOUNT_KEY_PROFILE = "profile";
-  public static final String ACCOUNT_KEY_IDP_SERVER = "idpServerURI";
+  private static final String ACCOUNT_KEY_ACCOUNT_VERSION = "version";
+  private static final String ACCOUNT_KEY_PROFILE = "profile";
+  private static final String ACCOUNT_KEY_IDP_SERVER = "idpServerURI";
   private static final String ACCOUNT_KEY_PROFILE_SERVER = "profileServerURI";
 
-  public static final String ACCOUNT_KEY_TOKEN_SERVER = "tokenServerURI";       
-  public static final String ACCOUNT_KEY_DESCRIPTOR = "descriptor";
+  private static final String ACCOUNT_KEY_TOKEN_SERVER = "tokenServerURI";       
+  private static final String ACCOUNT_KEY_DESCRIPTOR = "descriptor";
 
-  public static final int CURRENT_BUNDLE_VERSION = 2;
-  public static final String BUNDLE_KEY_BUNDLE_VERSION = "version";
-  public static final String BUNDLE_KEY_STATE_LABEL = "stateLabel";
-  public static final String BUNDLE_KEY_STATE = "state";
-  public static final String BUNDLE_KEY_PROFILE_JSON = "profile";
+  private static final int CURRENT_BUNDLE_VERSION = 2;
+  private static final String BUNDLE_KEY_BUNDLE_VERSION = "version";
+  static final String BUNDLE_KEY_STATE_LABEL = "stateLabel";
+   static final String BUNDLE_KEY_STATE = "state";
+  private static final String BUNDLE_KEY_PROFILE_JSON = "profile";
 
-  public static final String ACCOUNT_KEY_DEVICE_ID = "deviceId";
-  public static final String ACCOUNT_KEY_DEVICE_REGISTRATION_VERSION = "deviceRegistrationVersion";
+  private static final String ACCOUNT_KEY_DEVICE_ID = "deviceId";
+  private static final String ACCOUNT_KEY_DEVICE_REGISTRATION_VERSION = "deviceRegistrationVersion";
   private static final String ACCOUNT_KEY_DEVICE_REGISTRATION_TIMESTAMP = "deviceRegistrationTimestamp";
   private static final String ACCOUNT_KEY_DEVICE_PUSH_REGISTRATION_ERROR = "devicePushRegistrationError";
   private static final String ACCOUNT_KEY_DEVICE_PUSH_REGISTRATION_ERROR_TIME = "devicePushRegistrationErrorTime";
 
   
-  public static final String PROFILE_OAUTH_TOKEN_TYPE = "oauth::profile";
+  private static final String PROFILE_OAUTH_TOKEN_TYPE = "oauth::profile";
 
   
   
@@ -110,7 +110,7 @@ public class AndroidFxAccount {
   private static final String PREF_KEY_LAST_SYNCED_TIMESTAMP = "lastSyncedTimestamp";
 
   protected final Context context;
-  protected final AccountManager accountManager;
+  private final AccountManager accountManager;
   protected final Account account;
 
   
@@ -121,7 +121,7 @@ public class AndroidFxAccount {
 
 
 
-  protected static final ConcurrentHashMap<String, ExtendedJSONObject> perAccountBundleCache =
+  private static final ConcurrentHashMap<String, ExtendedJSONObject> perAccountBundleCache =
       new ConcurrentHashMap<>();
 
   public static void invalidateCaches() {
@@ -175,7 +175,7 @@ public class AndroidFxAccount {
     return this.account;
   }
 
-  protected int getAccountVersion() {
+  private int getAccountVersion() {
     String v = accountManager.getUserData(account, ACCOUNT_KEY_ACCOUNT_VERSION);
     if (v == null) {
       return 0;         
@@ -192,12 +192,12 @@ public class AndroidFxAccount {
 
 
 
-  protected synchronized void persistBundle(ExtendedJSONObject bundle) {
+  private synchronized void persistBundle(ExtendedJSONObject bundle) {
     perAccountBundleCache.put(account.name, bundle);
     accountManager.setUserData(account, ACCOUNT_KEY_DESCRIPTOR, bundle.toJSONString());
   }
 
-  protected ExtendedJSONObject unbundle() {
+   ExtendedJSONObject unbundle() {
     return unbundle(true);
   }
 
@@ -205,7 +205,7 @@ public class AndroidFxAccount {
 
 
 
-  protected synchronized ExtendedJSONObject unbundle(boolean allowCachedBundle) {
+  private synchronized ExtendedJSONObject unbundle(boolean allowCachedBundle) {
     if (allowCachedBundle) {
       final ExtendedJSONObject cachedBundle = perAccountBundleCache.get(account.name);
       if (cachedBundle != null) {
@@ -236,7 +236,7 @@ public class AndroidFxAccount {
     return bundle;
   }
 
-  protected String getBundleData(String key) {
+  private String getBundleData(String key) {
     ExtendedJSONObject o = unbundle();
     if (o == null) {
       return null;
@@ -264,7 +264,7 @@ public class AndroidFxAccount {
     return o.getByteArrayHex(key);
   }
 
-  protected void updateBundleValues(String key, String value, String... more) {
+  private void updateBundleValues(String key, String value, String... more) {
     if (more.length % 2 != 0) {
       throw new IllegalArgumentException("more must be a list of key, value pairs");
     }
@@ -323,7 +323,7 @@ public class AndroidFxAccount {
     return profileURI;
   }
 
-  public String getOAuthServerURI() {
+   String getOAuthServerURI() {
     
     if (isStaging()) {
       return FxAccountConstants.STAGE_OAUTH_SERVER_ENDPOINT;
@@ -361,7 +361,7 @@ public class AndroidFxAccount {
   
 
 
-  public String getSyncPrefsPath() throws GeneralSecurityException, UnsupportedEncodingException {
+  private String getSyncPrefsPath() throws GeneralSecurityException, UnsupportedEncodingException {
     final String tokenServerURI = getTokenServerURI();
     if (tokenServerURI == null) {
       throw new IllegalStateException("No token server URI. Cannot fetch prefs.");
@@ -372,7 +372,7 @@ public class AndroidFxAccount {
     return constructPrefsPath(product, version, tokenServerURI);
   }
 
-  public String getReadingListPrefsPath() throws GeneralSecurityException, UnsupportedEncodingException {
+  private String getReadingListPrefsPath() throws GeneralSecurityException, UnsupportedEncodingException {
     final String product = GlobalConstants.BROWSER_INTENT_PACKAGE + ".reading";
     final long version = CURRENT_RL_PREFS_VERSION;
     return constructPrefsPath(product, version, "");
@@ -382,7 +382,7 @@ public class AndroidFxAccount {
     return context.getSharedPreferences(getSyncPrefsPath(), Utils.SHARED_PREFERENCES_MODE);
   }
 
-  public SharedPreferences getReadingListPrefs() throws UnsupportedEncodingException, GeneralSecurityException {
+  private SharedPreferences getReadingListPrefs() throws UnsupportedEncodingException, GeneralSecurityException {
     return context.getSharedPreferences(getReadingListPrefsPath(), Utils.SHARED_PREFERENCES_MODE);
   }
 
@@ -424,7 +424,7 @@ public class AndroidFxAccount {
         CURRENT_ACCOUNT_VERSION, false, null);
   }
 
-  public static AndroidFxAccount addAndroidAccount(
+   static AndroidFxAccount addAndroidAccount(
       Context context,
       String email,
       String profile,
@@ -511,11 +511,11 @@ public class AndroidFxAccount {
     return fxAccount;
   }
 
-  public void clearSyncPrefs() throws UnsupportedEncodingException, GeneralSecurityException {
+  private void clearSyncPrefs() throws UnsupportedEncodingException, GeneralSecurityException {
     getSyncPrefs().edit().clear().commit();
   }
 
-  public void setAuthoritiesToSyncAutomaticallyMap(Map<String, Boolean> authoritiesToSyncAutomaticallyMap) {
+  private void setAuthoritiesToSyncAutomaticallyMap(Map<String, Boolean> authoritiesToSyncAutomaticallyMap) {
     if (authoritiesToSyncAutomaticallyMap == null) {
       throw new IllegalArgumentException("authoritiesToSyncAutomaticallyMap must not be null");
     }
@@ -533,7 +533,7 @@ public class AndroidFxAccount {
     }
   }
 
-  public Map<String, Boolean> getAuthoritiesToSyncAutomaticallyMap() {
+   Map<String, Boolean> getAuthoritiesToSyncAutomaticallyMap() {
     final Map<String, Boolean> authoritiesToSync = new HashMap<>();
     for (String authority : DEFAULT_AUTHORITIES_TO_SYNC_AUTOMATICALLY_MAP.keySet()) {
       final boolean enabled = ContentResolver.getSyncAutomatically(account, authority);
@@ -588,7 +588,7 @@ public class AndroidFxAccount {
     broadcastAccountStateChangedIntent();
   }
 
-  protected void broadcastAccountStateChangedIntent() {
+  private void broadcastAccountStateChangedIntent() {
     final Intent intent = new Intent(FxAccountConstants.ACCOUNT_STATE_CHANGED_ACTION);
     intent.putExtra(Constants.JSON_KEY_ACCOUNT, account.name);
     LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
@@ -656,7 +656,7 @@ public class AndroidFxAccount {
 
 
 
-  public Intent populateDeletedAccountIntent(final Intent intent) {
+   Intent populateDeletedAccountIntent(final Intent intent) {
     final List<String> tokens = new ArrayList<>();
 
     intent.putExtra(FxAccountConstants.ACCOUNT_DELETED_INTENT_VERSION_KEY,
@@ -736,7 +736,7 @@ public class AndroidFxAccount {
         FxAccountConstants.STAGE_PROFILE_SERVER_ENDPOINT);
   }
 
-  protected void unsafeTransitionToStageEndpoints(String authServerEndpoint, String tokenServerEndpoint, String profileServerEndpoint) {
+  private void unsafeTransitionToStageEndpoints(String authServerEndpoint, String tokenServerEndpoint, String profileServerEndpoint) {
     try {
       getReadingListPrefs().edit().clear().commit();
     } catch (UnsupportedEncodingException | GeneralSecurityException e) {
@@ -852,7 +852,7 @@ public class AndroidFxAccount {
     accountManager.setUserData(account, ACCOUNT_KEY_DEVICE_ID, id);
   }
 
-  public synchronized void setDeviceRegistrationVersion(int deviceRegistrationVersion) {
+  private synchronized void setDeviceRegistrationVersion(int deviceRegistrationVersion) {
     accountManager.setUserData(account, ACCOUNT_KEY_DEVICE_REGISTRATION_VERSION,
         Integer.toString(deviceRegistrationVersion));
   }
@@ -885,7 +885,7 @@ public class AndroidFxAccount {
 
   @SuppressLint("ParcelCreator") 
   private class ProfileResultReceiver extends ResultReceiver {
-    public ProfileResultReceiver(Handler handler) {
+     ProfileResultReceiver(Handler handler) {
       super(handler);
     }
 
@@ -896,7 +896,7 @@ public class AndroidFxAccount {
         case Activity.RESULT_OK:
           final String resultData = bundle.getString(FxAccountProfileService.KEY_RESULT_STRING);
           updateBundleValues(BUNDLE_KEY_PROFILE_JSON, resultData);
-          Logger.info(LOG_TAG, "Profile JSON fetch succeeeded!");
+          Logger.info(LOG_TAG, "Profile JSON fetch succeeded!");
           FxAccountUtils.pii(LOG_TAG, "Profile JSON fetch returned: " + resultData);
           LocalBroadcastManager.getInstance(context).sendBroadcast(makeProfileJSONUpdatedIntent());
           break;
@@ -917,11 +917,11 @@ public class AndroidFxAccount {
 
 
 
-  protected static final Semaphore sLock = new Semaphore(1, true );
+  private static final Semaphore sLock = new Semaphore(1, true );
 
   
   
-  protected String lockTag = null;
+  private String lockTag = null;
 
   
   
