@@ -29,20 +29,20 @@ struct cubeb {
 
 struct cubeb_stream {
   cubeb * context;
-  pthread_t th;			  
-  pthread_mutex_t mtx;		  
-  struct sio_hdl *hdl;		  
-  int active;			  
-  int conv;			  
-  unsigned char *buf;		  
-  unsigned int nfr;		  
-  unsigned int bpf;		  
-  unsigned int pchan;		  
-  uint64_t rdpos;		  
-  uint64_t wrpos;		  
+  pthread_t th;                   
+  pthread_mutex_t mtx;            
+  struct sio_hdl *hdl;            
+  int active;                     
+  int conv;                       
+  unsigned char *buf;             
+  unsigned int nfr;               
+  unsigned int bpf;               
+  unsigned int pchan;             
+  uint64_t rdpos;                 
+  uint64_t wrpos;                 
   cubeb_data_callback data_cb;    
   cubeb_state_callback state_cb;  
-  void *arg;			  
+  void *arg;                      
 };
 
 static void

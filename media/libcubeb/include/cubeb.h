@@ -8,6 +8,7 @@
 #define CUBEB_c2f983e9_c96f_e71c_72c3_bbf62992a382
 
 #include <stdint.h>
+#include <stdlib.h>
 #include "cubeb_export.h"
 
 #if defined(__cplusplus)
@@ -352,16 +353,16 @@ typedef struct {
   unsigned int max_rate;      
   unsigned int min_rate;      
 
-  unsigned int latency_lo; 
-  unsigned int latency_hi; 
+  unsigned int latency_lo;    
+  unsigned int latency_hi;    
 } cubeb_device_info;
 
 
 
 
 typedef struct {
-  uint32_t count;                 
-  cubeb_device_info * device[1];  
+  cubeb_device_info * device; 
+  size_t count;               
 } cubeb_device_collection;
 
 
@@ -612,7 +613,7 @@ CUBEB_EXPORT int cubeb_stream_register_device_changed_callback(cubeb_stream * st
 
 CUBEB_EXPORT int cubeb_enumerate_devices(cubeb * context,
                                          cubeb_device_type devtype,
-                                         cubeb_device_collection ** collection);
+                                         cubeb_device_collection * collection);
 
 
 
