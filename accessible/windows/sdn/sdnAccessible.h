@@ -12,6 +12,7 @@
 #include "IUnknownImpl.h"
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/NotNull.h"
 
 namespace mozilla {
@@ -26,13 +27,14 @@ public:
     if (!mNode)
       MOZ_CRASH();
   }
-  ~sdnAccessible() { }
 
   explicit sdnAccessible(NotNull<AccessibleWrap*> aAccWrap)
     : mNode(aAccWrap->GetNode())
     , mWrap(aAccWrap)
   {
   }
+
+  ~sdnAccessible();
 
   
 
@@ -48,6 +50,18 @@ public:
 
 
   AccessibleWrap* GetAccessible();
+
+  void SetUniqueID(uint32_t aNewUniqueId)
+  {
+    mUniqueId = Some(aNewUniqueId);
+  }
+
+  Maybe<uint32_t> ReleaseUniqueID()
+  {
+    Maybe<uint32_t> result = mUniqueId;
+    mUniqueId = Nothing();
+    return result;
+  }
 
   
   DECL_IUNKNOWN
@@ -119,6 +133,7 @@ public:
 private:
   nsCOMPtr<nsINode> mNode;
   RefPtr<AccessibleWrap> mWrap;
+  Maybe<uint32_t> mUniqueId;
 };
 
 } 

@@ -7,12 +7,15 @@
 #include "MsaaIdGenerator.h"
 
 #include "mozilla/a11y/AccessibleWrap.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Unused.h"
 #include "nsDataHashtable.h"
 #include "nsIXULRuntime.h"
+#include "sdnAccessible.h"
 
 
 
@@ -95,22 +98,38 @@ MsaaIdGenerator::GetID()
   return detail::BuildMsaaID(id, ResolveContentProcessID());
 }
 
-void
-MsaaIdGenerator::ReleaseID(AccessibleWrap* aAccWrap)
+bool
+MsaaIdGenerator::ReleaseID(uint32_t aID)
 {
-  MOZ_ASSERT(aAccWrap);
-  uint32_t id = aAccWrap->GetExistingID();
-  MOZ_ASSERT(id != AccessibleWrap::kNoID);
-  detail::MsaaIDCracker cracked(id);
+  MOZ_ASSERT(aID != AccessibleWrap::kNoID);
+  detail::MsaaIDCracker cracked(aID);
   if (cracked.GetContentProcessId() != ResolveContentProcessID()) {
+    return false;
+  }
+  mIDSet.ReleaseID(cracked.GetUniqueId());
+  return true;
+}
+
+void
+MsaaIdGenerator::ReleaseID(NotNull<AccessibleWrap*> aAccWrap)
+{
+  if (!ReleaseID(aAccWrap->GetExistingID())) {
     
     
     
     
     MOZ_ASSERT(aAccWrap->IsProxy());
-    return;
   }
-  mIDSet.ReleaseID(cracked.GetUniqueId());
+}
+
+void
+MsaaIdGenerator::ReleaseID(NotNull<sdnAccessible*> aSdnAcc)
+{
+  Maybe<uint32_t> id = aSdnAcc->ReleaseUniqueID();
+  if (id.isSome()) {
+    DebugOnly<bool> released = ReleaseID(id.value());
+    MOZ_ASSERT(released);
+  }
 }
 
 bool
