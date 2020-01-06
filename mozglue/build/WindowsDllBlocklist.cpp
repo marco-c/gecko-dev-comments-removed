@@ -243,9 +243,13 @@ static const DllBlockInfo sWindowsDllBlocklist[] = {
   { "idmcchandler5_64.dll", ALL_VERSIONS },
 
   
-  { "nahimic2devprops.dll", ALL_VERSIONS },
+  { "nahimic2devprops.dll", MAKE_VERSION(2, 5, 19, 0xffff) },
   
-  { "nahimicmsiosd.dll", ALL_VERSIONS },
+  { "nahimicmsiosd.dll", UNVERSIONED },
+  
+  { "nahimicvrdevprops.dll", UNVERSIONED },
+  { "nahimic2osd.dll", MAKE_VERSION(2, 5, 19, 0xffff) },
+  { "nahimicmsidevprops.dll", UNVERSIONED },
 
   
   { "klsihk64.dll", MAKE_VERSION(14, 0, 456, 0xffff), DllBlockInfo::BLOCK_WIN8_ONLY },
