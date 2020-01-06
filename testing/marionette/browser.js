@@ -230,7 +230,7 @@ browser.Context = class {
   closeTab() {
     
     
-    if (!this.tabBrowser || this.tabBrowser.tabs.length === 1 || !this.tab) {
+    if (!this.tabBrowser || !this.tabBrowser.tabs || this.tabBrowser.tabs.length === 1 || !this.tab) {
       return this.closeWindow();
     }
 
