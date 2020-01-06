@@ -49,15 +49,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PluralForm",
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-Object.defineProperty(this, "gDecimalSymbol", {
-  configurable: true,
-  enumerable: true,
-  get() {
-    delete this.gDecimalSymbol;
-      return this.gDecimalSymbol = Number(5.4).toLocaleString().match(/\D/);
-  },
-});
-
 var localeNumberFormatCache = new Map();
 function getLocaleNumberFormat(fractionDigits) {
   
@@ -360,52 +351,27 @@ this.DownloadUtils = {
     let dateTimeFull;
 
     
-    
-    
-    
-    
-    if (typeof Intl === "undefined") {
+    if (aDate >= today) {
+      let dts = Services.intl.createDateTimeFormat(undefined, {
+        timeStyle: "short"
+      });
+      dateTimeCompact = dts.format(aDate);
+    } else if (today - aDate < (MS_PER_DAY)) {
       
-      if (aDate >= today) {
-        dateTimeCompact = aDate.toLocaleFormat("%X");
-      } else if (today - aDate < (MS_PER_DAY)) {
-        
-        dateTimeCompact = gBundle.GetStringFromName(gStr.yesterday);
-      } else if (today - aDate < (6 * MS_PER_DAY)) {
-        
-        dateTimeCompact = aDate.toLocaleFormat("%A");
-      } else {
-        
-        let month = aDate.toLocaleFormat("%B");
-        let date = aDate.getDate();
-        dateTimeCompact = gBundle.formatStringFromName(gStr.monthDate, [month, date], 2);
-      }
-
-      dateTimeFull = aDate.toLocaleFormat("%x %X");
+      dateTimeCompact = gBundle.GetStringFromName(gStr.yesterday);
+    } else if (today - aDate < (6 * MS_PER_DAY)) {
+      
+      dateTimeCompact = aDate.toLocaleDateString(undefined, { weekday: "long" });
     } else {
       
-      if (aDate >= today) {
-        let dts = Services.intl.createDateTimeFormat(undefined, {
-          timeStyle: "short"
-        });
-        dateTimeCompact = dts.format(aDate);
-      } else if (today - aDate < (MS_PER_DAY)) {
-        
-        dateTimeCompact = gBundle.GetStringFromName(gStr.yesterday);
-      } else if (today - aDate < (6 * MS_PER_DAY)) {
-        
-        dateTimeCompact = aDate.toLocaleDateString(undefined, { weekday: "long" });
-      } else {
-        
-        let month = aDate.toLocaleDateString(undefined, { month: "long" });
-        let date = aDate.getDate();
-        dateTimeCompact = gBundle.formatStringFromName(gStr.monthDate, [month, date], 2);
-      }
-
-      const dtOptions = { dateStyle: "long", timeStyle: "short" };
-      dateTimeFull =
-        Services.intl.createDateTimeFormat(undefined, dtOptions).format(aDate);
+      let month = aDate.toLocaleDateString(undefined, { month: "long" });
+      let date = aDate.getDate();
+      dateTimeCompact = gBundle.formatStringFromName(gStr.monthDate, [month, date], 2);
     }
+
+    const dtOptions = { dateStyle: "long", timeStyle: "short" };
+    dateTimeFull =
+      Services.intl.createDateTimeFormat(undefined, dtOptions).format(aDate);
 
     return [dateTimeCompact, dateTimeFull];
   },
@@ -504,15 +470,8 @@ this.DownloadUtils = {
     
     if (aBytes === Infinity) {
       aBytes = "Infinity";
-    } else if (typeof Intl != "undefined") {
-      aBytes = getLocaleNumberFormat(fractionDigits)
-                 .format(aBytes);
     } else {
-      
-      aBytes = aBytes.toFixed(fractionDigits);
-      if (gDecimalSymbol != ".") {
-        aBytes = aBytes.replace(".", gDecimalSymbol);
-      }
+      aBytes = getLocaleNumberFormat(fractionDigits).format(aBytes);
     }
 
     return [aBytes, gBundle.GetStringFromName(gStr.units[unitIndex])];
