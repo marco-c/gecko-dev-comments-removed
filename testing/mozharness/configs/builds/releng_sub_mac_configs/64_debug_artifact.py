@@ -16,9 +16,6 @@ config = {
         'sendchange',
     ],
     "buildbot_json_path": "buildprops.json",
-    'exes': {
-        "buildbot": "/tools/buildbot/bin/buildbot",
-    },
     'app_ini_path': '%(obj_dir)s/dist/bin/application.ini',
     
     'enable_signing': False,
@@ -54,7 +51,7 @@ config = {
         
         'XPCOM_DEBUG_BREAK': 'stack-and-abort',
         
-        'PATH': '/tools/python/bin:/tools/buildbot/bin:/opt/local/bin:/usr/bin:'
+        'PATH': '/tools/python/bin:/opt/local/bin:/usr/bin:'
                 '/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/X11/bin',
         
     },
