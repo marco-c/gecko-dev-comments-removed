@@ -566,6 +566,7 @@ pub extern "C" fn wr_window_new(window_id: WrWindowId,
         blob_image_renderer: Some(Box::new(Moz2dImageRenderer::new(workers.clone()))),
         workers: Some(workers.clone()),
         cache_expiry_frames: 60, 
+        enable_render_on_scroll: false,
         ..Default::default()
     };
 
