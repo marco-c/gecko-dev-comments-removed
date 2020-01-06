@@ -22,6 +22,10 @@ Services.prefs.setIntPref("media.preload.default", 3);
 
 
 
+Services.prefs.setIntPref("security.csp.reporting.script-sample.max-length", 4096);
+
+
+
 ExtensionTestUtils.mockAppInfo();
 
 const server = createHttpServer();
@@ -249,6 +253,117 @@ function toHTML(test, opts) {
 
 
 
+function testInlineCSS() {
+  let urls = [];
+  let sources = [];
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  let i = 0;
+  let url = (origin, name, opts = {}) => {
+    let source = `${origin}-${name}`;
+
+    let {href} = new URL(`css-${i++}.png?origin=${encodeURIComponent(origin)}&source=${encodeURIComponent(source)}`,
+                         location.href);
+
+    urls.push(Object.assign({}, opts, {href, origin, source}));
+    return `url("${href}")`;
+  };
+
+  
+
+
+
+
+
+
+
+  let source = (origin, css) => {
+    sources.push({origin, css});
+    return css;
+  };
+
+  
+
+
+
+  let laters = [];
+  let later = (fn) => {
+    laters.push(fn);
+  };
+
+  
+  
+  
+  
+
+  {
+    let li = document.createElement("li");
+    li.setAttribute("style", source("extension", `background: ${url("extension", "li.style-first")}`));
+    li.style.wrappedJSObject.listStyleImage = url("page", "li.style.listStyleImage-second");
+    document.body.appendChild(li);
+  }
+
+  {
+    let li = document.createElement("li");
+    li.wrappedJSObject.setAttribute("style", source("page", `background: ${url("page", "li.style-first", {inline: true})}`));
+    li.style.listStyleImage = url("extension", "li.style.listStyleImage-second");
+    document.body.appendChild(li);
+  }
+
+  {
+    let li = document.createElement("li");
+    document.body.appendChild(li);
+    li.setAttribute("style", source("extension", `background: ${url("extension", "li.style-first")}`));
+    later(() => li.wrappedJSObject.setAttribute("style", source("page", `background: ${url("page", "li.style-second", {inline: true})}`)));
+  }
+
+  {
+    let li = document.createElement("li");
+    document.body.appendChild(li);
+    li.wrappedJSObject.setAttribute("style", source("page", `background: ${url("page", "li.style-first", {inline: true})}`));
+    later(() => li.setAttribute("style", source("extension", `background: ${url("extension", "li.style-second")}`)));
+  }
+
+  {
+    let li = document.createElement("li");
+    document.body.appendChild(li);
+    li.style.cssText = source("extension", `background: ${url("extension", "li.style.cssText-first")}`);
+
+    
+    
+    later(() => { li.style.wrappedJSObject.cssText = `background: ${url("page", "li.style.cssText-second")}`; });
+  }
+
+  setTimeout(() => {
+    for (let fn of laters) {
+      fn();
+    }
+    browser.test.sendMessage("css-sources", {urls, sources});
+  });
+}
+
+
+
+
+
+
 
 
 
@@ -258,6 +373,14 @@ function toHTML(test, opts) {
 
 function injectElements(tests, baseOpts) {
   window.addEventListener("load", () => {
+    if (typeof browser === "object") {
+      try {
+        testInlineCSS();
+      } catch (e) {
+        browser.test.fail(`Error: ${e} :: ${e.stack}`);
+      }
+    }
+
     
     
     let img = document.createElement("img");
@@ -396,10 +519,46 @@ function getInjectionScript(tests, opts) {
   return `
     ${getElementData}
     ${createElement}
+    ${testInlineCSS}
     (${injectElements})(${JSON.stringify(tests)},
                         ${JSON.stringify(opts)});
   `;
 }
+
+
+
+
+
+
+
+
+
+
+
+function getOriginBase(origURL) {
+  let url = new URL(origURL);
+  let origin = url.searchParams.get("origin");
+  url.searchParams.delete("origin");
+
+  return {origin, baseURL: url.href};
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -441,7 +600,8 @@ function computeBaseURLs(tests, expectedSources, forbiddenSources = {}) {
       forbiddenURLs.add(urlPrefix);
     }
   }
-  return {expectedURLs, forbiddenURLs};
+
+  return {expectedURLs, forbiddenURLs, blockedURLs: forbiddenURLs};
 }
 
 
@@ -461,25 +621,81 @@ function computeBaseURLs(tests, expectedSources, forbiddenSources = {}) {
 
 
 
-function awaitLoads({expectedURLs, forbiddenURLs}, origins) {
-  expectedURLs = new Set(expectedURLs);
 
+
+
+
+
+
+
+
+
+
+
+function computeExpectedForbiddenURLs({urls, sources}, cspEnabled = false) {
+  let expectedURLs = new Set();
+  let forbiddenURLs = new Set();
+  let blockedURLs = new Set();
+  let blockedSources = new Set();
+
+  for (let {href, origin, inline} of urls) {
+    let {baseURL} = getOriginBase(href);
+    if (cspEnabled && origin === "page") {
+      if (inline) {
+        forbiddenURLs.add(baseURL);
+      } else {
+        blockedURLs.add(baseURL);
+      }
+    } else {
+      expectedURLs.add(baseURL);
+    }
+  }
+
+  if (cspEnabled) {
+    for (let {origin, css} of sources) {
+      if (origin === "page") {
+        blockedSources.add(css);
+      }
+    }
+  }
+
+  return {expectedURLs, forbiddenURLs, blockedURLs, blockedSources};
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function awaitLoads(urlsPromise, origins) {
   return new Promise(resolve => {
-    let observer = (channel, topic, data) => {
-      channel.QueryInterface(Ci.nsIChannel);
+    let expectedURLs, forbiddenURLs;
+    let queuedChannels = [];
 
+    let observer;
+
+    function checkChannel(channel) {
       let origURL = channel.URI.spec;
-      let url = new URL(origURL);
-      let origin = url.searchParams.get("origin");
-      url.searchParams.delete("origin");
+      let {baseURL, origin} = getOriginBase(origURL);
 
-
-      if (forbiddenURLs.has(url.href)) {
+      if (forbiddenURLs.has(baseURL)) {
         ok(false, `Got unexpected request for forbidden URL ${origURL}`);
       }
 
-      if (expectedURLs.has(url.href)) {
-        expectedURLs.delete(url.href);
+      if (expectedURLs.has(baseURL)) {
+        expectedURLs.delete(baseURL);
 
         equal(channel.loadInfo.triggeringPrincipal.origin,
               origins[origin],
@@ -490,6 +706,24 @@ function awaitLoads({expectedURLs, forbiddenURLs}, origins) {
           do_print("Got all expected requests");
           resolve();
         }
+      }
+    }
+
+    urlsPromise.then(urls => {
+      expectedURLs = new Set(urls.expectedURLs);
+      forbiddenURLs = new Set([...urls.forbiddenURLs,
+                               ...urls.blockedURLs]);
+
+      for (let channel of queuedChannels.splice(0)) {
+        checkChannel(channel.QueryInterface(Ci.nsIChannel));
+      }
+    });
+
+    observer = (channel, topic, data) => {
+      if (expectedURLs) {
+        checkChannel(channel.QueryInterface(Ci.nsIChannel));
+      } else {
+        queuedChannels.push(channel);
       }
     };
     Services.obs.addObserver(observer, "http-on-modify-request");
@@ -513,33 +747,62 @@ function readUTF8InputStream(stream) {
 
 
 
-function awaitCSP({expectedURLs, forbiddenURLs}) {
-  forbiddenURLs = new Set(forbiddenURLs);
-
+function awaitCSP(urlsPromise) {
   return new Promise(resolve => {
-    server.registerPathHandler(CSP_REPORT_PATH, (request, response) => {
-      response.setStatusLine(request.httpVersion, 204, "No Content");
+    let expectedURLs, blockedURLs, blockedSources;
+    let queuedRequests = [];
 
+    function checkRequest(request) {
       let body = JSON.parse(readUTF8InputStream(request.bodyInputStream));
       let report = body["csp-report"];
 
       let origURL = report["blocked-uri"];
-      let url = new URL(origURL);
-      url.searchParams.delete("origin");
+      if (origURL !== "self") {
+        let {baseURL} = getOriginBase(origURL);
 
-      if (expectedURLs.has(url.href)) {
-        ok(false, `Got unexpected CSP report for allowed URL ${origURL}`);
+        if (expectedURLs.has(baseURL)) {
+          ok(false, `Got unexpected CSP report for allowed URL ${origURL}`);
+        }
+
+        if (blockedURLs.has(baseURL)) {
+          blockedURLs.delete(baseURL);
+
+          do_print(`Got CSP report for forbidden URL ${origURL}`);
+        }
       }
 
-      if (forbiddenURLs.has(url.href)) {
-        forbiddenURLs.delete(url.href);
+      let source = report["script-sample"];
+      if (source) {
+        if (blockedSources.has(source)) {
+          blockedSources.delete(source);
 
-        do_print(`Got CSP report for forbidden URL ${origURL}`);
-
-        if (!forbiddenURLs.size) {
-          do_print("Got all expected CSP reports");
-          resolve();
+          do_print(`Got CSP report for forbidden inline source ${JSON.stringify(source)}`);
         }
+      }
+
+      if (!blockedURLs.size && !blockedSources.size) {
+        do_print("Got all expected CSP reports");
+        resolve();
+      }
+    }
+
+    urlsPromise.then(urls => {
+      blockedURLs = new Set(urls.blockedURLs);
+      blockedSources = new Set(urls.blockedSources);
+      ({expectedURLs} = urls);
+
+      for (let request of queuedRequests.splice(0)) {
+        checkRequest(request);
+      }
+    });
+
+    server.registerPathHandler(CSP_REPORT_PATH, (request, response) => {
+      response.setStatusLine(request.httpVersion, 204, "No Content");
+
+      if (expectedURLs) {
+        checkRequest(request);
+      } else {
+        queuedRequests.push(request);
       }
     });
   });
@@ -672,17 +935,34 @@ const pageURI = Services.io.newURI(pageURL);
 
 
 
+function mergeSources(a, b) {
+  return {
+    expectedURLs: new Set([...a.expectedURLs, ...b.expectedURLs]),
+    forbiddenURLs: new Set([...a.forbiddenURLs, ...b.forbiddenURLs]),
+    blockedURLs: new Set([...a.blockedURLs, ...b.blockedURLs]),
+    blockedSources: a.blockedSources || b.blockedSources,
+  };
+}
+
+
+
 
 
 add_task(async function test_contentscript_triggeringPrincipals() {
   let extension = ExtensionTestUtils.loadExtension(EXTENSION_DATA);
   await extension.startup();
 
+  let urlsPromise = extension.awaitMessage("css-sources").then(msg => {
+    return mergeSources(
+      computeExpectedForbiddenURLs(msg),
+      computeBaseURLs(TESTS, SOURCES));
+  });
+
   let origins = {
     page: Services.scriptSecurityManager.createCodebasePrincipal(pageURI, {}).origin,
     extension: Cu.getObjectPrincipal(Cu.Sandbox([extension.extension.principal, pageURL])).origin,
   };
-  let finished = awaitLoads(computeBaseURLs(TESTS, SOURCES), origins);
+  let finished = awaitLoads(urlsPromise, origins);
 
   let contentPage = await ExtensionTestUtils.loadContentPage(pageURL);
 
@@ -711,15 +991,20 @@ add_task(async function test_contentscript_csp() {
   let extension = ExtensionTestUtils.loadExtension(EXTENSION_DATA);
   await extension.startup();
 
+  let urlsPromise = extension.awaitMessage("css-sources").then(msg => {
+    return mergeSources(
+      computeExpectedForbiddenURLs(msg, true),
+      computeBaseURLs(TESTS, EXTENSION_SOURCES, PAGE_SOURCES));
+  });
+
   let origins = {
     page: Services.scriptSecurityManager.createCodebasePrincipal(pageURI, {}).origin,
     extension: Cu.getObjectPrincipal(Cu.Sandbox([extension.extension.principal, pageURL])).origin,
   };
 
-  let baseURLs = computeBaseURLs(TESTS, EXTENSION_SOURCES, PAGE_SOURCES);
   let finished = Promise.all([
-    awaitLoads(baseURLs, origins),
-    checkCSPReports && awaitCSP(baseURLs),
+    awaitLoads(urlsPromise, origins),
+    checkCSPReports && awaitCSP(urlsPromise),
   ]);
 
   let contentPage = await ExtensionTestUtils.loadContentPage(pageURL);
