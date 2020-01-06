@@ -4,8 +4,9 @@
 
 
 
+template <typename T>
 void
-nsTPromiseFlatString_CharT::Init(const substring_type& str)
+nsTPromiseFlatString<T>::Init(const substring_type& str)
 {
   if (str.IsTerminated()) {
     char_type* newData =
@@ -15,8 +16,8 @@ nsTPromiseFlatString_CharT::Init(const substring_type& str)
       str.GetDataFlags() & (DataFlags::TERMINATED | DataFlags::LITERAL);
     
 
-    SetData(newData, newLength, newDataFlags);
+    this->SetData(newData, newLength, newDataFlags);
   } else {
-    Assign(str);
+    this->Assign(str);
   }
 }
