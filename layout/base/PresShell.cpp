@@ -7170,6 +7170,9 @@ PresShell::HandleEvent(nsIFrame* aFrame,
   
   if (mAPZFocusSequenceNumber < aEvent->mFocusSequenceNumber) {
     mAPZFocusSequenceNumber = aEvent->mFocusSequenceNumber;
+
+    
+    aFrame->SchedulePaint(nsIFrame::PAINT_COMPOSITE_ONLY);
   }
 
   if (sPointerEventEnabled) {
