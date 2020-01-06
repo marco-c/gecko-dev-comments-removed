@@ -144,6 +144,7 @@ pub trait MallocShallowSizeOf {
     
     
     
+    
     fn shallow_size_of(&self, ops: &mut MallocSizeOfOps) -> usize;
 }
 
@@ -157,6 +158,12 @@ pub trait MallocUnconditionalSizeOf {
 }
 
 
+pub trait MallocUnconditionalShallowSizeOf {
+    
+    fn unconditional_shallow_size_of(&self, ops: &mut MallocSizeOfOps) -> usize;
+}
+
+
 
 
 pub trait MallocConditionalSizeOf {
@@ -164,6 +171,12 @@ pub trait MallocConditionalSizeOf {
     
     
     fn conditional_size_of(&self, ops: &mut MallocSizeOfOps) -> usize;
+}
+
+
+pub trait MallocConditionalShallowSizeOf {
+    
+    fn conditional_shallow_size_of(&self, ops: &mut MallocSizeOfOps) -> usize;
 }
 
 impl<T> MallocShallowSizeOf for Box<T> {
@@ -294,9 +307,25 @@ impl<K, V, S> MallocSizeOf for HashMap<K, V, S>
 
 
 
+impl<T> MallocUnconditionalShallowSizeOf for Arc<T> {
+    fn unconditional_shallow_size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
+        ops.malloc_size_of(self.heap_ptr())
+    }
+}
+
 impl<T: MallocSizeOf> MallocUnconditionalSizeOf for Arc<T> {
     fn unconditional_size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
-        ops.malloc_size_of(self.heap_ptr()) + (**self).size_of(ops)
+        self.unconditional_shallow_size_of(ops) + (**self).size_of(ops)
+    }
+}
+
+impl<T> MallocConditionalShallowSizeOf for Arc<T> {
+    fn conditional_shallow_size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
+        if ops.have_seen_ptr(self.heap_ptr()) {
+            0
+        } else {
+            self.unconditional_shallow_size_of(ops)
+        }
     }
 }
 
