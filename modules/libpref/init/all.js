@@ -19,7 +19,6 @@
 
 
 
-
 pref("preferences.allow.omt-write", true);
 
 pref("keyword.enabled", false);
@@ -1258,7 +1257,22 @@ pref("dom.min_tracking_timeout_value", 4);
 
 pref("dom.min_tracking_background_timeout_value", 10000);
 
-pref("dom.timeout.tracking_throttling_delay", 30000);
+pref("dom.timeout.throttling_delay", 30000);
+
+
+pref("dom.timeout.background_budget_regeneration_rate", 100);
+
+
+pref("dom.timeout.background_throttling_max_budget", 50);
+
+pref("dom.timeout.foreground_budget_regeneration_rate", 1);
+
+
+pref("dom.timeout.foreground_throttling_max_budget", -1);
+
+pref("dom.timeout.budget_throttling_max_delay", 15000);
+
+pref("dom.timeout.enable_budget_timer_throttling", false);
 
 
 pref("dom.experimental_forms", false);

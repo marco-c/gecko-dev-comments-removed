@@ -84,7 +84,7 @@ public:
 
   
   void OnDocumentLoaded();
-  void StartThrottlingTrackingTimeouts();
+  void StartThrottlingTimeouts();
 
   
   
@@ -115,9 +115,11 @@ public:
   static const uint32_t InvalidFiringId;
 
 private:
-  void MaybeStartThrottleTrackingTimout();
+  void MaybeStartThrottleTimeout();
 
   bool IsBackground() const;
+
+  bool IsActive() const;
 
   uint32_t
   CreateFiringId();
@@ -134,8 +136,14 @@ private:
   TimeDuration
   MinSchedulingDelay() const;
 
-  void RecordExecution(mozilla::dom::Timeout* aRunningTimeout,
-                       mozilla::dom::Timeout* aTimeout);
+  nsresult MaybeSchedule(const TimeStamp& aWhen,
+                         const TimeStamp& aNow = TimeStamp::Now());
+
+  void RecordExecution(Timeout* aRunningTimeout,
+                       Timeout* aTimeout);
+
+  void UpdateBudget(const TimeStamp& aNow,
+                    const TimeDuration& aDuration = TimeDuration());
 
 private:
   struct Timeouts {
@@ -221,8 +229,13 @@ private:
    
   uint32_t                    mIdleCallbackTimeoutCounter;
 
-  nsCOMPtr<nsITimer>          mThrottleTrackingTimeoutsTimer;
+  nsCOMPtr<nsITimer>          mThrottleTimeoutsTimer;
+  mozilla::TimeStamp          mLastBudgetUpdate;
+  mozilla::TimeDuration       mExecutionBudget;
+
+  bool                        mThrottleTimeouts;
   bool                        mThrottleTrackingTimeouts;
+  bool                        mBudgetThrottleTimeouts;
 
   static uint32_t             sNestingLevel;
 };
