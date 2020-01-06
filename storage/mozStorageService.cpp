@@ -322,7 +322,8 @@ Service::unregisterConnection(Connection *aConnection)
         
         
         
-        NS_ProxyRelease(thread, mConnections[i].forget());
+        NS_ProxyRelease(
+          "storage::Service::mConnections", thread, mConnections[i].forget());
 
         mConnections.RemoveElementAt(i);
         return;
@@ -712,13 +713,16 @@ private:
 
   ~AsyncInitDatabase()
   {
-    NS_ReleaseOnMainThread(mStorageFile.forget());
-    NS_ReleaseOnMainThread(mConnection.forget());
+    NS_ReleaseOnMainThread(
+      "AsyncInitDatabase::mStorageFile", mStorageFile.forget());
+    NS_ReleaseOnMainThread(
+      "AsyncInitDatabase::mConnection", mConnection.forget());
 
     
     
     
-    NS_ReleaseOnMainThread(mCallback.forget());
+    NS_ReleaseOnMainThread(
+      "AsyncInitDatabase::mCallback", mCallback.forget());
   }
 
   RefPtr<Connection> mConnection;

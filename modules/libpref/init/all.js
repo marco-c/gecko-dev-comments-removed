@@ -4672,7 +4672,7 @@ pref("network.tcp.keepalive.retry_interval", 1);
 pref("network.tcp.keepalive.probe_count", 4);
 #endif
 
-pref("network.tcp.tcp_fastopen_enable", true);
+pref("network.tcp.tcp_fastopen_enable", false);
 pref("network.tcp.tcp_fastopen_consecutive_failure_limit", 5);
 
 
@@ -4989,7 +4989,7 @@ pref("dom.w3c_touch_events.enabled", 2);
 #endif
 
 
-#if defined(XP_WIN) && defined(NIGHTLY_BUILD)
+#if !defined(ANDROID) && defined(NIGHTLY_BUILD)
 pref("dom.w3c_pointer_events.enabled", true);
 #else
 pref("dom.w3c_pointer_events.enabled", false);
@@ -5733,6 +5733,14 @@ pref("layers.advanced.filter-layers", 2);
 
 
 pref("dom.xhr.lowercase_header.enabled", false);
+
+
+
+#ifdef RELEASE_OR_BETA
+pref("toolkit.crashreporter.include_context_heap", false);
+#else
+pref("toolkit.crashreporter.include_context_heap", true);
+#endif
 
 
 pref("dom.noopener.newprocess.enabled", true);
