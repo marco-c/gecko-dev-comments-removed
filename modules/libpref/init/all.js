@@ -3364,6 +3364,9 @@ pref("dom.ipc.processCount.webLargeAllocation", 10);
 pref("dom.largeAllocationHeader.enabled", true);
 
 
+pref("browser.tabs.remote.autostart", false);
+
+
 
 pref("browser.tabs.remote.separateFileUriProcess", true);
 
