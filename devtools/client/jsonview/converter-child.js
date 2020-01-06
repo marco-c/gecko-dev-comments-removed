@@ -55,7 +55,6 @@ Converter.prototype = {
 
 
 
-
   convert: function (fromStream, fromType, toType, ctx) {
     return fromStream;
   },
@@ -69,97 +68,168 @@ Converter.prototype = {
   },
 
   onStartRequest: function (request, context) {
-    this.channel = request;
-
     
-    
-    
-    let originalType;
-    if (request instanceof Ci.nsIHttpChannel) {
-      try {
-        let header = request.getResponseHeader("Content-Type");
-        originalType = header.split(";")[0];
-      } catch (err) {
-        
-      }
-    } else {
-      let uri = request.QueryInterface(Ci.nsIChannel).URI.spec;
-      let match = uri.match(/^data:(.*?)[,;]/);
-      if (match) {
-        originalType = match[1];
-      }
-    }
-    const JSON_TYPES = ["application/json", "application/manifest+json"];
-    if (!JSON_TYPES.includes(originalType)) {
-      originalType = JSON_TYPES[0];
-    }
-    request.QueryInterface(Ci.nsIWritablePropertyBag);
-    request.setProperty("contentType", originalType);
-
     
     
     request.QueryInterface(Ci.nsIChannel);
-    request.contentType = JSON_TYPES[0];
-    this.charset = request.contentCharset = "UTF-8";
+    request.contentType = "text/html";
+
+    
+    request.contentCharset = "UTF-8";
+
+    
+    fixSave(request);
 
     
     
     
     request.loadInfo.resetPrincipalToInheritToNullPrincipal();
 
+    
     this.listener.onStartRequest(request, context);
+
+    
+    let win = NetworkHelper.getWindowForRequest(request);
+    exportData(win, request);
+    win.addEventListener("DOMContentLoaded", event => {
+      win.addEventListener("contentMessage", onContentMessage, false, true);
+    }, {once: true});
+
+    
+    let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
+                      .createInstance(Ci.nsIScriptableUnicodeConverter);
+    converter.charset = "UTF-8";
+    let stream = converter.convertToInputStream(initialHTML(win.document));
+    this.listener.onDataAvailable(request, context, stream, 0, stream.available());
   },
 
   onStopRequest: function (request, context, statusCode) {
-    let Locale = {
-      $STR: key => {
-        try {
-          return jsonViewStrings.GetStringFromName(key);
-        } catch (err) {
-          console.error(err);
-          return undefined;
-        }
-      }
-    };
-
-    let headers = {
-      response: [],
-      request: []
-    };
-    
-    
-    if (request instanceof Ci.nsIHttpChannel) {
-      request.visitResponseHeaders({
-        visitHeader: function (name, value) {
-          headers.response.push({name: name, value: value});
-        }
-      });
-      request.visitRequestHeaders({
-        visitHeader: function (name, value) {
-          headers.request.push({name: name, value: value});
-        }
-      });
-    }
-
-    let win = NetworkHelper.getWindowForRequest(request);
-    JsonViewUtils.exportIntoContentScope(win, Locale, "Locale");
-    JsonViewUtils.exportIntoContentScope(win, headers, "headers");
-
-    win.addEventListener("DOMContentLoaded", event => {
-      win.addEventListener("contentMessage",
-        onContentMessage.bind(this), false, true);
-      loadJsonViewer(win.document);
-    }, {once: true});
-
-    this.listener.onStopRequest(this.channel, context, statusCode);
+    this.listener.onStopRequest(request, context, statusCode);
     this.listener = null;
   }
 };
 
 
+
+
+function fixSave(request) {
+  let originalType;
+  if (request instanceof Ci.nsIHttpChannel) {
+    try {
+      let header = request.getResponseHeader("Content-Type");
+      originalType = header.split(";")[0];
+    } catch (err) {
+      
+    }
+  } else {
+    let uri = request.QueryInterface(Ci.nsIChannel).URI.spec;
+    let match = uri.match(/^data:(.*?)[,;]/);
+    if (match) {
+      originalType = match[1];
+    }
+  }
+  const JSON_TYPES = ["application/json", "application/manifest+json"];
+  if (!JSON_TYPES.includes(originalType)) {
+    originalType = JSON_TYPES[0];
+  }
+  request.QueryInterface(Ci.nsIWritablePropertyBag);
+  request.setProperty("contentType", originalType);
+}
+
+
+function exportData(win, request) {
+  let Locale = {
+    $STR: key => {
+      try {
+        return jsonViewStrings.GetStringFromName(key);
+      } catch (err) {
+        console.error(err);
+        return undefined;
+      }
+    }
+  };
+  JsonViewUtils.exportIntoContentScope(win, Locale, "Locale");
+
+  let headers = {
+    response: [],
+    request: []
+  };
+  
+  
+  if (request instanceof Ci.nsIHttpChannel) {
+    request.visitResponseHeaders({
+      visitHeader: function (name, value) {
+        headers.response.push({name: name, value: value});
+      }
+    });
+    request.visitRequestHeaders({
+      visitHeader: function (name, value) {
+        headers.request.push({name: name, value: value});
+      }
+    });
+  }
+  JsonViewUtils.exportIntoContentScope(win, headers, "headers");
+}
+
+
+
+
+
+function startTag(qualifiedName, attributes = {}) {
+  return Object.entries(attributes).reduce(function (prev, [attr, value]) {
+    return prev + " " + attr + "=\"" +
+      value.replace(/&/g, "&amp;")
+           .replace(/\u00a0/g, "&nbsp;")
+           .replace(/"/g, "&quot;") +
+      "\"";
+  }, "<" + qualifiedName) + ">";
+}
+
+
+
+function initialHTML(doc) {
+  let os;
+  let platform = Services.appinfo.OS;
+  if (platform.startsWith("WINNT")) {
+    os = "win";
+  } else if (platform.startsWith("Darwin")) {
+    os = "mac";
+  } else {
+    os = "linux";
+  }
+
+  let base = doc.createElement("base");
+  base.href = "resource://devtools/client/jsonview/";
+
+  let style = doc.createElement("link");
+  style.rel = "stylesheet";
+  style.type = "text/css";
+  style.href = "css/main.css";
+
+  let script = doc.createElement("script");
+  script.src = "lib/require.js";
+  script.dataset.main = "viewer-config";
+  script.defer = true;
+
+  let head = doc.createElement("head");
+  head.append(base, style, script);
+
+  return "<!DOCTYPE html>\n" +
+    startTag("html", {
+      "platform": os,
+      "class": "theme-" + JsonViewUtils.getCurrentTheme(),
+      "dir": Services.locale.isAppLocaleRTL ? "rtl" : "ltr"
+    }) +
+    head.outerHTML +
+    startTag("body") +
+    startTag("div", {"id": "content"}) +
+    startTag("plaintext", {"id": "json"});
+}
+
+
 function onContentMessage(e) {
   
-  let win = NetworkHelper.getWindowForRequest(this.channel);
+  let win = this;
   if (win != e.target) {
     return;
   }
@@ -181,53 +251,6 @@ function onContentMessage(e) {
       childProcessMessageManager.sendAsyncMessage(
         "devtools:jsonview:save", {url: value, windowID: windowID});
   }
-}
-
-
-function loadJsonViewer(doc) {
-  function addStyleSheet(url) {
-    let link = doc.createElement("link");
-    link.rel = "stylesheet";
-    link.type = "text/css";
-    link.href = url;
-    doc.head.appendChild(link);
-  }
-
-  let os;
-  let platform = Services.appinfo.OS;
-  if (platform.startsWith("WINNT")) {
-    os = "win";
-  } else if (platform.startsWith("Darwin")) {
-    os = "mac";
-  } else {
-    os = "linux";
-  }
-
-  doc.documentElement.setAttribute("platform", os);
-  doc.documentElement.dataset.contentType = doc.contentType;
-  doc.documentElement.classList.add("theme-" + JsonViewUtils.getCurrentTheme());
-  doc.documentElement.dir = Services.locale.isAppLocaleRTL ? "rtl" : "ltr";
-
-  let base = doc.createElement("base");
-  base.href = "resource://devtools/client/jsonview/";
-  doc.head.appendChild(base);
-
-  addStyleSheet("../themes/variables.css");
-  addStyleSheet("../themes/common.css");
-  addStyleSheet("../themes/toolbars.css");
-  addStyleSheet("css/main.css");
-
-  let json = doc.querySelector("pre");
-  json.id = "json";
-  let content = doc.createElement("div");
-  content.id = "content";
-  content.appendChild(json);
-  doc.body.appendChild(content);
-
-  let script = doc.createElement("script");
-  script.src = "lib/require.js";
-  script.dataset.main = "viewer-config";
-  doc.body.appendChild(script);
 }
 
 function copyHeaders(win, headers) {
