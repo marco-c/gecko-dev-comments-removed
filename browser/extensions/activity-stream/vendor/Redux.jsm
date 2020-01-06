@@ -4,6 +4,12 @@
 
 
 this.EXPORTED_SYMBOLS = ["redux"];
+
+
+
+const self = this;
+this.Object = Object;
+
 this.redux =
  (function(modules) { 
  	
