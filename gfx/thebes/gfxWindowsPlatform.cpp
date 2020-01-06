@@ -1387,25 +1387,32 @@ gfxWindowsPlatform::InitializeD3D11Config()
     d3d11.UserForceEnable("User force-enabled WARP");
   }
 
+  InitializeAdvancedLayersConfig();
+}
+
+ void
+gfxWindowsPlatform::InitializeAdvancedLayersConfig()
+{
   
-  if (d3d11.IsEnabled()) {
-    FeatureState& al = gfxConfig::GetFeature(Feature::ADVANCED_LAYERS);
+  if (!gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
+    return;
+  }
 
-    al.SetDefaultFromPref(
-      gfxPrefs::GetAdvancedLayersEnabledDoNotUseDirectlyPrefName(),
-      true ,
-      gfxPrefs::GetAdvancedLayersEnabledDoNotUseDirectlyPrefDefault());
+  FeatureState& al = gfxConfig::GetFeature(Feature::ADVANCED_LAYERS);
+  al.SetDefaultFromPref(
+    gfxPrefs::GetAdvancedLayersEnabledDoNotUseDirectlyPrefName(),
+    true ,
+    gfxPrefs::GetAdvancedLayersEnabledDoNotUseDirectlyPrefDefault());
 
-    
-    
-    if (al.IsEnabled() && !IsWin8OrLater()) {
-      if (gfxPrefs::AdvancedLayersEnableOnWindows7()) {
-        al.UserEnable("Enabled for Windows 7 via user-preference");
-      } else {
-        al.Disable(FeatureStatus::Disabled,
-                   "Advanced Layers is disabled on Windows 7 by default",
-                   NS_LITERAL_CSTRING("FEATURE_FAILURE_DISABLED_ON_WIN7"));
-      }
+  
+  
+  if (al.IsEnabled() && !IsWin8OrLater()) {
+    if (gfxPrefs::AdvancedLayersEnableOnWindows7()) {
+      al.UserEnable("Enabled for Windows 7 via user-preference");
+    } else {
+      al.Disable(FeatureStatus::Disabled,
+                 "Advanced Layers is disabled on Windows 7 by default",
+                 NS_LITERAL_CSTRING("FEATURE_FAILURE_DISABLED_ON_WIN7"));
     }
   }
 }
