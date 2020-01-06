@@ -9015,23 +9015,24 @@ nsDocument::OnPageShow(bool aPersisted,
 
   UpdateVisibilityState();
 
-  nsCOMPtr<EventTarget> target = aDispatchStartTarget;
-  if (!target) {
-    target = do_QueryInterface(GetWindow());
-  }
+  if (!mIsBeingUsedAsImage) {
+    
+    nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+    if (os) {
+      nsIPrincipal *principal = GetPrincipal();
+      os->NotifyObservers(static_cast<nsIDocument*>(this),
+                          nsContentUtils::IsSystemPrincipal(principal) ?
+                            "chrome-page-shown" :
+                            "content-page-shown",
+                          nullptr);
+    }
 
-  
-  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  if (os) {
-    nsIPrincipal *principal = GetPrincipal();
-    os->NotifyObservers(static_cast<nsIDocument*>(this),
-                        nsContentUtils::IsSystemPrincipal(principal) ?
-                          "chrome-page-shown" :
-                          "content-page-shown",
-                        nullptr);
+    nsCOMPtr<EventTarget> target = aDispatchStartTarget;
+    if (!target) {
+      target = do_QueryInterface(GetWindow());
+    }
+    DispatchPageTransition(target, NS_LITERAL_STRING("pageshow"), aPersisted);
   }
-
-  DispatchPageTransition(target, NS_LITERAL_STRING("pageshow"), aPersisted);
 }
 
 static bool
@@ -9106,26 +9107,27 @@ nsDocument::OnPageHide(bool aPersisted,
 
   ExitPointerLock();
 
-  
-  nsCOMPtr<EventTarget> target = aDispatchStartTarget;
-  if (!target) {
-    target = do_QueryInterface(GetWindow());
-  }
+  if (!mIsBeingUsedAsImage) {
+    
+    nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+    if (os) {
+      nsIPrincipal* principal = GetPrincipal();
+      os->NotifyObservers(static_cast<nsIDocument*>(this),
+                          nsContentUtils::IsSystemPrincipal(principal) ?
+                            "chrome-page-hidden" :
+                            "content-page-hidden",
+                          nullptr);
+    }
 
-  
-  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  if (os) {
-    nsIPrincipal* principal = GetPrincipal();
-    os->NotifyObservers(static_cast<nsIDocument*>(this),
-                        nsContentUtils::IsSystemPrincipal(principal) ?
-                          "chrome-page-hidden" :
-                          "content-page-hidden",
-                        nullptr);
-  }
-
-  {
-    PageUnloadingEventTimeStamp timeStamp(this);
-    DispatchPageTransition(target, NS_LITERAL_STRING("pagehide"), aPersisted);
+    
+    nsCOMPtr<EventTarget> target = aDispatchStartTarget;
+    if (!target) {
+      target = do_QueryInterface(GetWindow());
+    }
+    {
+      PageUnloadingEventTimeStamp timeStamp(this);
+      DispatchPageTransition(target, NS_LITERAL_STRING("pagehide"), aPersisted);
+    }
   }
 
   mVisible = false;
