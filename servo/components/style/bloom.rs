@@ -7,18 +7,9 @@
 
 #![deny(missing_docs)]
 
-use atomic_refcell::{AtomicRefMut, AtomicRefCell};
 use dom::{SendElement, TElement};
-use owning_ref::OwningHandle;
 use selectors::bloom::BloomFilter;
 use smallvec::SmallVec;
-use stylearc::Arc;
-
-
-
-
-thread_local!(static BLOOM_KEY: Arc<AtomicRefCell<BloomFilter>> =
-              Arc::new(AtomicRefCell::new(BloomFilter::new())));
 
 
 
@@ -53,10 +44,7 @@ thread_local!(static BLOOM_KEY: Arc<AtomicRefCell<BloomFilter>> =
 
 pub struct StyleBloom<E: TElement> {
     
-    
-    
-    
-    filter: OwningHandle<Arc<AtomicRefCell<BloomFilter>>, AtomicRefMut<'static, BloomFilter>>,
+    filter: Box<BloomFilter>,
 
     
     
@@ -113,23 +101,11 @@ fn each_relevant_element_hash<E, F>(element: E, mut f: F)
     });
 }
 
-impl<E: TElement> Drop for StyleBloom<E> {
-    fn drop(&mut self) {
-        
-        self.clear();
-    }
-}
-
 impl<E: TElement> StyleBloom<E> {
     
-    
-    
     pub fn new() -> Self {
-        let bloom_arc = BLOOM_KEY.with(|b| b.clone());
-        let filter = OwningHandle::new_with_fn(bloom_arc, |x| unsafe { x.as_ref() }.unwrap().borrow_mut());
-        debug_assert!(filter.is_zeroed(), "Forgot to zero the bloom filter last time");
         StyleBloom {
-            filter: filter,
+            filter: Box::new(BloomFilter::new()),
             elements: Default::default(),
             pushed_hashes: Default::default(),
         }

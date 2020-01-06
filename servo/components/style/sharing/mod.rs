@@ -66,7 +66,6 @@
 
 use Atom;
 use applicable_declarations::ApplicableDeclarationBlock;
-use atomic_refcell::{AtomicRefCell, AtomicRefMut};
 use bit_vec::BitVec;
 use bloom::StyleBloom;
 use cache::{LRUCache, LRUCacheMutIterator};
@@ -74,15 +73,12 @@ use context::{SelectorFlagsMap, SharedStyleContext, StyleContext};
 use data::{ElementData, ElementStyles};
 use dom::{TElement, SendElement};
 use matching::{ChildCascadeRequirement, MatchMethods};
-use owning_ref::OwningHandle;
 use properties::ComputedValues;
 use selector_parser::RestyleDamage;
 use selectors::matching::{ElementSelectorFlags, VisitedHandlingMode};
 use smallvec::SmallVec;
-use std::marker::PhantomData;
 use std::mem;
 use std::ops::Deref;
-use stylearc::Arc;
 use stylist::Stylist;
 
 mod checks;
@@ -97,8 +93,7 @@ mod checks;
 
 
 
-pub const SHARING_CACHE_SIZE: usize = 31;
-const SHARING_CACHE_BACKING_STORE_SIZE: usize = SHARING_CACHE_SIZE + 1;
+pub const STYLE_SHARING_CANDIDATE_CACHE_SIZE: usize = 31;
 
 
 #[derive(Clone, Copy, PartialEq)]
@@ -216,19 +211,12 @@ impl ValidationData {
 
 
 
-
-
-
 #[derive(Debug)]
 pub struct StyleSharingCandidate<E: TElement> {
     
-    element: E,
+    
+    element: SendElement<E>,
     validation_data: ValidationData,
-}
-
-struct FakeCandidate {
-    _element: usize,
-    _validation_data: ValidationData,
 }
 
 impl<E: TElement> Deref for StyleSharingCandidate<E> {
@@ -243,12 +231,12 @@ impl<E: TElement> Deref for StyleSharingCandidate<E> {
 impl<E: TElement> StyleSharingCandidate<E> {
     
     fn class_list(&mut self) -> &[Atom] {
-        self.validation_data.class_list(self.element)
+        self.validation_data.class_list(*self.element)
     }
 
     
     fn pres_hints(&mut self) -> &[ApplicableDeclarationBlock] {
-        self.validation_data.pres_hints(self.element)
+        self.validation_data.pres_hints(*self.element)
     }
 
     
@@ -259,7 +247,7 @@ impl<E: TElement> StyleSharingCandidate<E> {
         bloom: &StyleBloom<E>,
     ) -> &BitVec {
         self.validation_data.revalidation_match_results(
-            self.element,
+            *self.element,
             stylist,
             bloom,
              false,
@@ -474,76 +462,30 @@ pub enum StyleSharingResult {
 
 
 
-
-
-
-
-
-
-
-type SharingCacheBase<Candidate> = LRUCache<[Candidate; SHARING_CACHE_BACKING_STORE_SIZE]>;
-type SharingCache<E> = SharingCacheBase<StyleSharingCandidate<E>>;
-type TypelessSharingCache = SharingCacheBase<FakeCandidate>;
-type StoredSharingCache = Arc<AtomicRefCell<TypelessSharingCache>>;
-
-thread_local!(static SHARING_CACHE_KEY: StoredSharingCache =
-              Arc::new(AtomicRefCell::new(LRUCache::new())));
-
-
-
-
-
-
 pub struct StyleSharingCandidateCache<E: TElement> {
-    
-    cache_typeless: OwningHandle<StoredSharingCache, AtomicRefMut<'static, TypelessSharingCache>>,
-    
-    marker: PhantomData<SendElement<E>>,
+    cache: LRUCache<[StyleSharingCandidate<E>; STYLE_SHARING_CANDIDATE_CACHE_SIZE + 1]>,
     
     
     
     dom_depth: usize,
 }
 
-impl<E: TElement> Drop for StyleSharingCandidateCache<E> {
-    fn drop(&mut self) {
-        self.clear();
-    }
-}
-
 impl<E: TElement> StyleSharingCandidateCache<E> {
-    fn cache(&self) -> &SharingCache<E> {
-        let base: &TypelessSharingCache = &*self.cache_typeless;
-        unsafe { mem::transmute(base) }
-    }
-
-    fn cache_mut(&mut self) -> &mut SharingCache<E> {
-        let base: &mut TypelessSharingCache = &mut *self.cache_typeless;
-        unsafe { mem::transmute(base) }
-    }
-
     
     pub fn new() -> Self {
-        assert_eq!(mem::size_of::<SharingCache<E>>(), mem::size_of::<TypelessSharingCache>());
-        assert_eq!(mem::align_of::<SharingCache<E>>(), mem::align_of::<TypelessSharingCache>());
-        let cache_arc = SHARING_CACHE_KEY.with(|c| c.clone());
-        let cache = OwningHandle::new_with_fn(cache_arc, |x| unsafe { x.as_ref() }.unwrap().borrow_mut());
-        debug_assert_eq!(cache.num_entries(), 0);
-
         StyleSharingCandidateCache {
-            cache_typeless: cache,
-            marker: PhantomData,
+            cache: LRUCache::new(),
             dom_depth: 0,
         }
     }
 
     
     pub fn num_entries(&self) -> usize {
-        self.cache().num_entries()
+        self.cache.num_entries()
     }
 
     fn iter_mut(&mut self) -> LRUCacheMutIterator<StyleSharingCandidate<E>> {
-        self.cache_mut().iter_mut()
+        self.cache.iter_mut()
     }
 
     
@@ -588,20 +530,20 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
             self.clear();
             self.dom_depth = dom_depth;
         }
-        self.cache_mut().insert(StyleSharingCandidate {
-            element: *element,
+        self.cache.insert(StyleSharingCandidate {
+            element: unsafe { SendElement::new(*element) },
             validation_data: validation_data,
         });
     }
 
     
     pub fn touch(&mut self, index: usize) {
-        self.cache_mut().touch(index);
+        self.cache.touch(index);
     }
 
     
     pub fn clear(&mut self) {
-        self.cache_mut().evict_all()
+        self.cache.evict_all()
     }
 
     
@@ -668,7 +610,7 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
         }
 
         debug!("{:?} Cannot share style: {} cache entries", target.element,
-               self.cache().num_entries());
+               self.cache.num_entries());
 
         StyleSharingResult::CannotShare
     }
