@@ -373,6 +373,11 @@ ResponsiveImageSelector::SelectImage(bool aReselect)
   }
 
   double displayDensity = pctx->CSSPixelsToDevPixels(1.0f);
+  double overrideDPPX = pctx->GetOverrideDPPX();
+
+  if (overrideDPPX > 0) {
+    displayDensity = overrideDPPX;
+  }
 
   
   
