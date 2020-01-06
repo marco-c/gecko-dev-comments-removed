@@ -4,7 +4,7 @@
 
 
 #include "gtest/gtest.h"
-#include "mp4_demuxer/Interval.h"
+#include "Interval.h"
 
 using namespace mp4_demuxer;
 using namespace mozilla;

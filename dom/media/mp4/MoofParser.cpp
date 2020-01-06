@@ -2,9 +2,9 @@
 
 
 
-#include "mp4_demuxer/MoofParser.h"
-#include "mp4_demuxer/Box.h"
-#include "mp4_demuxer/SinfParser.h"
+#include "MoofParser.h"
+#include "Box.h"
+#include "SinfParser.h"
 #include <limits>
 #include "Intervals.h"
 

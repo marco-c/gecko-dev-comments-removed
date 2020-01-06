@@ -4,7 +4,7 @@
 
 
 
-#include "mp4_demuxer/ResourceStream.h"
+#include "ResourceStream.h"
 
 namespace mp4_demuxer {
 

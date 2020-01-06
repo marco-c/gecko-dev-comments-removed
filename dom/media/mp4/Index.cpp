@@ -3,10 +3,10 @@
 
 
 #include "BufferReader.h"
-#include "mp4_demuxer/Index.h"
-#include "mp4_demuxer/Interval.h"
-#include "mp4_demuxer/MP4Metadata.h"
-#include "mp4_demuxer/SinfParser.h"
+#include "Index.h"
+#include "Interval.h"
+#include "MP4Metadata.h"
+#include "SinfParser.h"
 #include "nsAutoPtr.h"
 #include "mozilla/RefPtr.h"
 

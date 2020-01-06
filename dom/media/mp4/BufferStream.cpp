@@ -2,7 +2,7 @@
 
 
 
-#include "mp4_demuxer/BufferStream.h"
+#include "BufferStream.h"
 #include "MediaData.h"
 #include "MediaResource.h"
 #include <algorithm>

@@ -4,8 +4,8 @@
 
 
 
-#include "mp4_demuxer/Box.h"
-#include "mp4_demuxer/Stream.h"
+#include "Box.h"
+#include "Stream.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Unused.h"
 #include <algorithm>
