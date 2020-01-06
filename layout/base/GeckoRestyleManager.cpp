@@ -203,6 +203,8 @@ void
 GeckoRestyleManager::ContentStateChanged(nsIContent* aContent,
                                          EventStates aStateMask)
 {
+  MOZ_ASSERT(!mInStyleRefresh);
+
   
   
   if (!aContent->IsElement()) {
@@ -226,6 +228,8 @@ GeckoRestyleManager::AttributeWillChange(Element* aElement,
                                          int32_t aModType,
                                          const nsAttrValue* aNewValue)
 {
+  MOZ_ASSERT(!mInStyleRefresh);
+
   RestyleHintData rsdata;
   nsRestyleHint rshint =
     StyleSet()->HasAttributeDependentStyle(aElement,
