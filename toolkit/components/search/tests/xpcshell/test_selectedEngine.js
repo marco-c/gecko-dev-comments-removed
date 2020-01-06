@@ -8,6 +8,7 @@ const kSelectedEnginePref = "browser.search.selectedEngine";
 
 add_task(async function test_defaultEngine() {
   await asyncInit();
+  await installTestEngine();
 
   do_check_eq(Services.search.currentEngine.name, getDefaultEngineName());
 });

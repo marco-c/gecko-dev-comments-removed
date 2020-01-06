@@ -2,8 +2,6 @@
 
 
 function run_test() {
-  installTestEngine();
-
   
   let url = "http://localhost:0";
 

@@ -4,8 +4,6 @@
 
 
 function run_test() {
-  installTestEngine();
-
   
   Services.prefs.setBoolPref("browser.search.isUS", true);
   

@@ -18,8 +18,6 @@ function promiseTimezoneMessage() {
 }
 
 function run_test() {
-  installTestEngine();
-
   
   let promiseTzMessage = promiseTimezoneMessage();
 

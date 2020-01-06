@@ -33,12 +33,6 @@ function promiseTimezoneMessage() {
   });
 }
 
-function run_test() {
-  installTestEngine();
-
-  run_next_test();
-}
-
 
 
 add_task(async function test_simple() {

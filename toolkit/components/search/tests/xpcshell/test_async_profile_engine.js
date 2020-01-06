@@ -1,8 +1,6 @@
 
 
 
-const NS_APP_USER_SEARCH_DIR  = "UsrSrchPlugns";
-
 function run_test() {
   do_test_pending();
 
@@ -16,7 +14,8 @@ function run_test() {
   
   
   
-  let dir = Services.dirsvc.get(NS_APP_USER_SEARCH_DIR, Ci.nsIFile);
+  let dir = gProfD.clone();
+  dir.append("searchplugins");
   if (!dir.exists())
     dir.create(dir.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
   do_get_file("data/engine-override.xml").copyTo(dir, "bug645970.xml");

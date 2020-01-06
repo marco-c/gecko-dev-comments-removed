@@ -20,13 +20,8 @@ function run_test() {
 
     
     let engines = Services.search.getEngines();
-    do_check_eq(engines.length, 2);
-
-    
-    let engine = Services.search.getEngineByName("addon");
-    do_check_neq(engine, null);
-
-    do_check_eq(engine.description, "addon");
+    do_check_eq(engines.length, 1);
+    do_check_eq(Services.search.getEngineByName("addon"), null);
 
     do_test_finished();
   });
