@@ -4,31 +4,73 @@
 
 
 
+function assert_date_eq(a, b) {
+  if (typeof(a) != "number") {
+    a = PlacesUtils.toPRTime(a);
+  }
+  if (typeof(b) != "number") {
+    b = PlacesUtils.toPRTime(b);
+  }
+  Assert.equal(a, b, "The dates should match");
+}
+
  
 
 
 
+add_task(async function test_bookmarkLastModified() {
+  let bookmark = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.menuGuid,
+    url: "http://www.mozilla.org/",
+    title: "itemTitle"
+  });
 
-function run_test() {
-  var bs = Cc["@mozilla.org/browser/nav-bookmarks-service;1"].
-           getService(Ci.nsINavBookmarksService);
-  var itemId = bs.insertBookmark(bs.bookmarksMenuFolder,
-                                 uri("http://www.mozilla.org/"),
-                                 bs.DEFAULT_INDEX,
-                                 "itemTitle");
-  var dateAdded = bs.getItemDateAdded(itemId);
-  do_check_eq(dateAdded, bs.getItemLastModified(itemId));
+  let guid = bookmark.guid;
 
   
-  
-  
-  
-  bs.setItemLastModified(itemId, dateAdded + 1000);
-  do_check_true(bs.getItemLastModified(itemId) === dateAdded + 1000);
-  do_check_true(bs.getItemDateAdded(itemId) < bs.getItemLastModified(itemId));
-  bs.setItemDateAdded(itemId, dateAdded + 2000);
-  do_check_true(bs.getItemDateAdded(itemId) === dateAdded + 2000);
-  do_check_eq(bs.getItemDateAdded(itemId), bs.getItemLastModified(itemId));
+  bookmark = await PlacesUtils.bookmarks.fetch(guid);
 
-  bs.removeItem(itemId);
-}
+  let dateAdded = PlacesUtils.toPRTime(bookmark.dateAdded);
+  assert_date_eq(dateAdded, bookmark.lastModified);
+
+  
+  
+  
+  
+  await PlacesUtils.bookmarks.update({
+    guid,
+    lastModified: PlacesUtils.toDate(dateAdded + 1000)
+  });
+
+  bookmark = await PlacesUtils.bookmarks.fetch(guid);
+
+  assert_date_eq(bookmark.lastModified, dateAdded + 1000);
+  Assert.ok(bookmark.dateAdded < bookmark.lastModified,
+    "Date added should be earlier than last modified.");
+
+  await PlacesUtils.bookmarks.update({
+    guid,
+    dateAdded: PlacesUtils.toDate(dateAdded + 2000)
+  });
+
+  bookmark = await PlacesUtils.bookmarks.fetch(guid);
+
+  assert_date_eq(bookmark.dateAdded, dateAdded + 2000);
+  assert_date_eq(bookmark.dateAdded, bookmark.lastModified);
+
+  
+  
+  let origLastModified = bookmark.lastModified;
+
+  await PlacesUtils.bookmarks.update({
+    guid,
+    dateAdded: PlacesUtils.toDate(dateAdded - 10000)
+  });
+
+  bookmark = await PlacesUtils.bookmarks.fetch(guid);
+
+  assert_date_eq(bookmark.dateAdded, dateAdded - 10000);
+  assert_date_eq(bookmark.lastModified, origLastModified);
+
+  await PlacesUtils.bookmarks.remove(guid);
+});
