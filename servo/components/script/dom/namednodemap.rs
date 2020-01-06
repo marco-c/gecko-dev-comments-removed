@@ -7,8 +7,8 @@ use dom::bindings::codegen::Bindings::ElementBinding::ElementMethods;
 use dom::bindings::codegen::Bindings::NamedNodeMapBinding;
 use dom::bindings::codegen::Bindings::NamedNodeMapBinding::NamedNodeMapMethods;
 use dom::bindings::error::{Error, Fallible};
-use dom::bindings::js::{JS, Root};
 use dom::bindings::reflector::{Reflector, reflect_dom_object};
+use dom::bindings::root::{Dom, DomRoot};
 use dom::bindings::str::DOMString;
 use dom::bindings::xmlname::namespace_from_domstring;
 use dom::element::Element;
@@ -20,18 +20,18 @@ use std::ascii::AsciiExt;
 #[dom_struct]
 pub struct NamedNodeMap {
     reflector_: Reflector,
-    owner: JS<Element>,
+    owner: Dom<Element>,
 }
 
 impl NamedNodeMap {
     fn new_inherited(elem: &Element) -> NamedNodeMap {
         NamedNodeMap {
             reflector_: Reflector::new(),
-            owner: JS::from_ref(elem),
+            owner: Dom::from_ref(elem),
         }
     }
 
-    pub fn new(window: &Window, elem: &Element) -> Root<NamedNodeMap> {
+    pub fn new(window: &Window, elem: &Element) -> DomRoot<NamedNodeMap> {
         reflect_dom_object(box NamedNodeMap::new_inherited(elem),
                            window, NamedNodeMapBinding::Wrap)
     }
@@ -44,53 +44,53 @@ impl NamedNodeMapMethods for NamedNodeMap {
     }
 
     
-    fn Item(&self, index: u32) -> Option<Root<Attr>> {
-        self.owner.attrs().get(index as usize).map(|js| Root::from_ref(&**js))
+    fn Item(&self, index: u32) -> Option<DomRoot<Attr>> {
+        self.owner.attrs().get(index as usize).map(|js| DomRoot::from_ref(&**js))
     }
 
     
-    fn GetNamedItem(&self, name: DOMString) -> Option<Root<Attr>> {
+    fn GetNamedItem(&self, name: DOMString) -> Option<DomRoot<Attr>> {
         self.owner.get_attribute_by_name(name)
     }
 
     
     fn GetNamedItemNS(&self, namespace: Option<DOMString>, local_name: DOMString)
-                     -> Option<Root<Attr>> {
+                     -> Option<DomRoot<Attr>> {
         let ns = namespace_from_domstring(namespace);
         self.owner.get_attribute(&ns, &LocalName::from(local_name))
     }
 
     
-    fn SetNamedItem(&self, attr: &Attr) -> Fallible<Option<Root<Attr>>> {
+    fn SetNamedItem(&self, attr: &Attr) -> Fallible<Option<DomRoot<Attr>>> {
         self.owner.SetAttributeNode(attr)
     }
 
     
-    fn SetNamedItemNS(&self, attr: &Attr) -> Fallible<Option<Root<Attr>>> {
+    fn SetNamedItemNS(&self, attr: &Attr) -> Fallible<Option<DomRoot<Attr>>> {
         self.SetNamedItem(attr)
     }
 
     
-    fn RemoveNamedItem(&self, name: DOMString) -> Fallible<Root<Attr>> {
+    fn RemoveNamedItem(&self, name: DOMString) -> Fallible<DomRoot<Attr>> {
         let name = self.owner.parsed_name(name);
         self.owner.remove_attribute_by_name(&name).ok_or(Error::NotFound)
     }
 
     
     fn RemoveNamedItemNS(&self, namespace: Option<DOMString>, local_name: DOMString)
-                      -> Fallible<Root<Attr>> {
+                      -> Fallible<DomRoot<Attr>> {
         let ns = namespace_from_domstring(namespace);
         self.owner.remove_attribute(&ns, &LocalName::from(local_name))
             .ok_or(Error::NotFound)
     }
 
     
-    fn IndexedGetter(&self, index: u32) -> Option<Root<Attr>> {
+    fn IndexedGetter(&self, index: u32) -> Option<DomRoot<Attr>> {
         self.Item(index)
     }
 
     
-    fn NamedGetter(&self, name: DOMString) -> Option<Root<Attr>> {
+    fn NamedGetter(&self, name: DOMString) -> Option<DomRoot<Attr>> {
         self.GetNamedItem(name)
     }
 

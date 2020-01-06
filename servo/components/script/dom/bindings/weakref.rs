@@ -12,8 +12,8 @@
 
 
 use core::nonzero::NonZero;
-use dom::bindings::js::Root;
 use dom::bindings::reflector::DomObject;
+use dom::bindings::root::DomRoot;
 use dom::bindings::trace::JSTraceable;
 use heapsize::HeapSizeOf;
 use js::jsapi::{JSTracer, JS_GetReservedSlot, JS_SetReservedSlot};
@@ -85,8 +85,8 @@ impl<T: WeakReferenceable> WeakRef<T> {
     }
 
     
-    pub fn root(&self) -> Option<Root<T>> {
-        unsafe { &*self.ptr.get() }.value.get().map(Root::new)
+    pub fn root(&self) -> Option<DomRoot<T>> {
+        unsafe { &*self.ptr.get() }.value.get().map(DomRoot::new)
     }
 
     
@@ -181,7 +181,7 @@ impl<T: WeakReferenceable> MutableWeakRef<T> {
 
     
     
-    pub fn root(&self) -> Option<Root<T>> {
+    pub fn root(&self) -> Option<DomRoot<T>> {
         unsafe { &*self.cell.get() }.as_ref().and_then(WeakRef::root)
     }
 }

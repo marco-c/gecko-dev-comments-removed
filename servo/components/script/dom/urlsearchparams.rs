@@ -2,14 +2,14 @@
 
 
 
-use dom::bindings::cell::DOMRefCell;
+use dom::bindings::cell::DomRefCell;
 use dom::bindings::codegen::Bindings::URLSearchParamsBinding::URLSearchParamsMethods;
 use dom::bindings::codegen::Bindings::URLSearchParamsBinding::URLSearchParamsWrap;
 use dom::bindings::codegen::UnionTypes::USVStringOrURLSearchParams;
 use dom::bindings::error::Fallible;
 use dom::bindings::iterable::Iterable;
-use dom::bindings::js::Root;
 use dom::bindings::reflector::{Reflector, reflect_dom_object};
+use dom::bindings::root::DomRoot;
 use dom::bindings::str::{DOMString, USVString};
 use dom::bindings::weakref::MutableWeakRef;
 use dom::globalscope::GlobalScope;
@@ -23,7 +23,7 @@ use url::form_urlencoded;
 pub struct URLSearchParams {
     reflector_: Reflector,
     
-    list: DOMRefCell<Vec<(String, String)>>,
+    list: DomRefCell<Vec<(String, String)>>,
     
     url: MutableWeakRef<URL>,
 }
@@ -32,19 +32,19 @@ impl URLSearchParams {
     fn new_inherited(url: Option<&URL>) -> URLSearchParams {
         URLSearchParams {
             reflector_: Reflector::new(),
-            list: DOMRefCell::new(url.map_or(Vec::new(), |url| url.query_pairs())),
+            list: DomRefCell::new(url.map_or(Vec::new(), |url| url.query_pairs())),
             url: MutableWeakRef::new(url),
         }
     }
 
-    pub fn new(global: &GlobalScope, url: Option<&URL>) -> Root<URLSearchParams> {
+    pub fn new(global: &GlobalScope, url: Option<&URL>) -> DomRoot<URLSearchParams> {
         reflect_dom_object(box URLSearchParams::new_inherited(url), global,
                            URLSearchParamsWrap)
     }
 
     
     pub fn Constructor(global: &GlobalScope, init: Option<USVStringOrURLSearchParams>) ->
-                       Fallible<Root<URLSearchParams>> {
+                       Fallible<DomRoot<URLSearchParams>> {
         
         let query = URLSearchParams::new(global, None);
         match init {

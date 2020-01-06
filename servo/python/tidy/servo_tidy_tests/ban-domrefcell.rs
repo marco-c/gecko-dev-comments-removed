@@ -7,12 +7,12 @@
 
 extern crate script;
 
-use script::test::DOMRefCell;
-use script::test::JS;
+use script::test::Dom;
+use script::test::DomRefCell;
 use script::test::Node;
 
 struct Foo {
-    bar: DOMRefCell<JS<Node>>
+    bar: DomRefCell<Dom<Node>>
     
 }
 

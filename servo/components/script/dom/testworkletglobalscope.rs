@@ -2,10 +2,10 @@
 
 
 
-use dom::bindings::cell::DOMRefCell;
+use dom::bindings::cell::DomRefCell;
 use dom::bindings::codegen::Bindings::TestWorkletGlobalScopeBinding;
 use dom::bindings::codegen::Bindings::TestWorkletGlobalScopeBinding::TestWorkletGlobalScopeMethods;
-use dom::bindings::js::Root;
+use dom::bindings::root::DomRoot;
 use dom::bindings::str::DOMString;
 use dom::worklet::WorkletExecutor;
 use dom::workletglobalscope::WorkletGlobalScope;
@@ -24,7 +24,7 @@ pub struct TestWorkletGlobalScope {
     
     worklet_global: WorkletGlobalScope,
     
-    lookup_table: DOMRefCell<HashMap<String, String>>,
+    lookup_table: DomRefCell<HashMap<String, String>>,
 }
 
 impl TestWorkletGlobalScope {
@@ -34,7 +34,7 @@ impl TestWorkletGlobalScope {
                base_url: ServoUrl,
                executor: WorkletExecutor,
                init: &WorkletGlobalScopeInit)
-               -> Root<TestWorkletGlobalScope>
+               -> DomRoot<TestWorkletGlobalScope>
     {
         debug!("Creating test worklet global scope for pipeline {}.", pipeline_id);
         let global = box TestWorkletGlobalScope {

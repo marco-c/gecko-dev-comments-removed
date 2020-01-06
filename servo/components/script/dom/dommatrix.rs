@@ -6,8 +6,8 @@ use dom::bindings::codegen::Bindings::DOMMatrixBinding::{Wrap, DOMMatrixMethods,
 use dom::bindings::codegen::Bindings::DOMMatrixReadOnlyBinding::DOMMatrixReadOnlyMethods;
 use dom::bindings::error::Fallible;
 use dom::bindings::inheritance::Castable;
-use dom::bindings::js::Root;
 use dom::bindings::reflector::reflect_dom_object;
+use dom::bindings::root::DomRoot;
 use dom::dommatrixreadonly::{dommatrixinit_to_matrix, DOMMatrixReadOnly, entries_to_matrix};
 use dom::globalscope::GlobalScope;
 use dom_struct::dom_struct;
@@ -21,7 +21,7 @@ pub struct DOMMatrix {
 
 impl DOMMatrix {
     #[allow(unrooted_must_root)]
-    pub fn new(global: &GlobalScope, is2D: bool, matrix: Transform3D<f64>) -> Root<Self> {
+    pub fn new(global: &GlobalScope, is2D: bool, matrix: Transform3D<f64>) -> DomRoot<Self> {
         let dommatrix = Self::new_inherited(is2D, matrix);
         reflect_dom_object(box dommatrix, global, Wrap)
     }
@@ -33,12 +33,12 @@ impl DOMMatrix {
     }
 
     
-    pub fn Constructor(global: &GlobalScope) -> Fallible<Root<Self>> {
+    pub fn Constructor(global: &GlobalScope) -> Fallible<DomRoot<Self>> {
         Self::Constructor_(global, vec![1.0, 0.0, 0.0, 1.0, 0.0, 0.0])
     }
 
     
-    pub fn Constructor_(global: &GlobalScope, entries: Vec<f64>) -> Fallible<Root<Self>> {
+    pub fn Constructor_(global: &GlobalScope, entries: Vec<f64>) -> Fallible<DomRoot<Self>> {
         entries_to_matrix(&entries[..])
             .map(|(is2D, matrix)| {
                 Self::new(global, is2D, matrix)
@@ -46,14 +46,14 @@ impl DOMMatrix {
     }
 
     
-    pub fn FromMatrix(global: &GlobalScope, other: &DOMMatrixInit) -> Fallible<Root<Self>> {
+    pub fn FromMatrix(global: &GlobalScope, other: &DOMMatrixInit) -> Fallible<DomRoot<Self>> {
         dommatrixinit_to_matrix(&other)
             .map(|(is2D, matrix)| {
                 Self::new(global, is2D, matrix)
             })
     }
 
-    pub fn from_readonly(global: &GlobalScope, ro: &DOMMatrixReadOnly) -> Root<Self> {
+    pub fn from_readonly(global: &GlobalScope, ro: &DOMMatrixReadOnly) -> DomRoot<Self> {
         Self::new(global, ro.is_2d(), ro.matrix().clone())
     }
 }
@@ -280,91 +280,91 @@ impl DOMMatrixMethods for DOMMatrix {
         }
 
         
-        fn MultiplySelf(&self, other:&DOMMatrixInit) -> Fallible<Root<DOMMatrix>> {
+        fn MultiplySelf(&self, other:&DOMMatrixInit) -> Fallible<DomRoot<DOMMatrix>> {
             
             self.upcast::<DOMMatrixReadOnly>().multiply_self(other)
                 
-                .and(Ok(Root::from_ref(&self)))
+                .and(Ok(DomRoot::from_ref(&self)))
         }
 
         
-        fn PreMultiplySelf(&self, other:&DOMMatrixInit) -> Fallible<Root<DOMMatrix>> {
+        fn PreMultiplySelf(&self, other:&DOMMatrixInit) -> Fallible<DomRoot<DOMMatrix>> {
             
             self.upcast::<DOMMatrixReadOnly>().pre_multiply_self(other)
                 
-                .and(Ok(Root::from_ref(&self)))
+                .and(Ok(DomRoot::from_ref(&self)))
         }
 
         
-        fn TranslateSelf(&self, tx: f64, ty: f64, tz: f64) -> Root<DOMMatrix> {
+        fn TranslateSelf(&self, tx: f64, ty: f64, tz: f64) -> DomRoot<DOMMatrix> {
             
             self.upcast::<DOMMatrixReadOnly>().translate_self(tx, ty, tz);
             
-            Root::from_ref(&self)
+            DomRoot::from_ref(&self)
         }
 
         
         fn ScaleSelf(&self, scaleX: f64, scaleY: Option<f64>, scaleZ: f64,
-                            originX: f64, originY: f64, originZ: f64) -> Root<DOMMatrix> {
+                            originX: f64, originY: f64, originZ: f64) -> DomRoot<DOMMatrix> {
             
             self.upcast::<DOMMatrixReadOnly>().scale_self(scaleX, scaleY, scaleZ, originX, originY, originZ);
             
-            Root::from_ref(&self)
+            DomRoot::from_ref(&self)
         }
 
         
-        fn Scale3dSelf(&self, scale: f64, originX: f64, originY: f64, originZ: f64) -> Root<DOMMatrix> {
+        fn Scale3dSelf(&self, scale: f64, originX: f64, originY: f64, originZ: f64) -> DomRoot<DOMMatrix> {
             
             self.upcast::<DOMMatrixReadOnly>().scale_3d_self(scale, originX, originY, originZ);
             
-            Root::from_ref(&self)
+            DomRoot::from_ref(&self)
         }
 
         
-        fn RotateSelf(&self, rotX: f64, rotY: Option<f64>, rotZ: Option<f64>) -> Root<DOMMatrix> {
+        fn RotateSelf(&self, rotX: f64, rotY: Option<f64>, rotZ: Option<f64>) -> DomRoot<DOMMatrix> {
             
             self.upcast::<DOMMatrixReadOnly>().rotate_self(rotX, rotY, rotZ);
             
-            Root::from_ref(&self)
+            DomRoot::from_ref(&self)
         }
 
         
-        fn RotateFromVectorSelf(&self, x: f64, y: f64) -> Root<DOMMatrix> {
+        fn RotateFromVectorSelf(&self, x: f64, y: f64) -> DomRoot<DOMMatrix> {
             
             self.upcast::<DOMMatrixReadOnly>().rotate_from_vector_self(x, y);
             
-            Root::from_ref(&self)
+            DomRoot::from_ref(&self)
         }
 
         
-        fn RotateAxisAngleSelf(&self, x: f64, y: f64, z: f64, angle: f64) -> Root<DOMMatrix> {
+        fn RotateAxisAngleSelf(&self, x: f64, y: f64, z: f64, angle: f64) -> DomRoot<DOMMatrix> {
             
             self.upcast::<DOMMatrixReadOnly>().rotate_axis_angle_self(x, y, z, angle);
             
-            Root::from_ref(&self)
+            DomRoot::from_ref(&self)
         }
 
         
-        fn SkewXSelf(&self, sx: f64) -> Root<DOMMatrix> {
+        fn SkewXSelf(&self, sx: f64) -> DomRoot<DOMMatrix> {
             
             self.upcast::<DOMMatrixReadOnly>().skew_x_self(sx);
             
-            Root::from_ref(&self)
+            DomRoot::from_ref(&self)
         }
 
         
-        fn SkewYSelf(&self, sy: f64) -> Root<DOMMatrix> {
+        fn SkewYSelf(&self, sy: f64) -> DomRoot<DOMMatrix> {
             
             self.upcast::<DOMMatrixReadOnly>().skew_y_self(sy);
             
-            Root::from_ref(&self)
+            DomRoot::from_ref(&self)
         }
 
         
-        fn InvertSelf(&self) -> Root<DOMMatrix> {
+        fn InvertSelf(&self) -> DomRoot<DOMMatrix> {
             
             self.upcast::<DOMMatrixReadOnly>().invert_self();
             
-            Root::from_ref(&self)
+            DomRoot::from_ref(&self)
         }
 }

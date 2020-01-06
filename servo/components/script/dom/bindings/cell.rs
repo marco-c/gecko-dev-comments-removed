@@ -12,14 +12,14 @@ use style::thread_state;
 
 
 #[derive(Clone, Debug, Default, HeapSizeOf, PartialEq)]
-pub struct DOMRefCell<T> {
+pub struct DomRefCell<T> {
     value: RefCell<T>,
 }
 
 
 
 
-impl<T> DOMRefCell<T> {
+impl<T> DomRefCell<T> {
     
     
     
@@ -59,10 +59,10 @@ impl<T> DOMRefCell<T> {
 
 
 
-impl<T> DOMRefCell<T> {
+impl<T> DomRefCell<T> {
     
-    pub fn new(value: T) -> DOMRefCell<T> {
-        DOMRefCell {
+    pub fn new(value: T) -> DomRefCell<T> {
+        DomRefCell {
             value: RefCell::new(value),
         }
     }
@@ -79,7 +79,7 @@ impl<T> DOMRefCell<T> {
     
     
     pub fn borrow(&self) -> Ref<T> {
-        self.try_borrow().expect("DOMRefCell<T> already mutably borrowed")
+        self.try_borrow().expect("DomRefCell<T> already mutably borrowed")
     }
 
     
@@ -93,7 +93,7 @@ impl<T> DOMRefCell<T> {
     
     
     pub fn borrow_mut(&self) -> RefMut<T> {
-        self.try_borrow_mut().expect("DOMRefCell<T> already borrowed")
+        self.try_borrow_mut().expect("DomRefCell<T> already borrowed")
     }
 
     

@@ -9,8 +9,8 @@ use dom::bindings::codegen::Bindings::WorkerGlobalScopeBinding::WorkerGlobalScop
 use dom::bindings::codegen::UnionTypes::RequestOrUSVString;
 use dom::bindings::error::{Error, ErrorResult, Fallible, report_pending_exception};
 use dom::bindings::inheritance::Castable;
-use dom::bindings::js::{MutNullableJS, Root};
 use dom::bindings::reflector::DomObject;
+use dom::bindings::root::{DomRoot, MutNullableDom};
 use dom::bindings::settings_stack::AutoEntryScript;
 use dom::bindings::str::DOMString;
 use dom::bindings::trace::RootedTraceableBox;
@@ -77,8 +77,8 @@ pub struct WorkerGlobalScope {
     closing: Option<Arc<AtomicBool>>,
     #[ignore_heap_size_of = "Defined in js"]
     runtime: Runtime,
-    location: MutNullableJS<WorkerLocation>,
-    navigator: MutNullableJS<WorkerNavigator>,
+    location: MutNullableDom<WorkerLocation>,
+    navigator: MutNullableDom<WorkerNavigator>,
 
     #[ignore_heap_size_of = "Defined in ipc-channel"]
     
@@ -91,7 +91,7 @@ pub struct WorkerGlobalScope {
     from_devtools_receiver: Receiver<DevtoolScriptControlMsg>,
 
     navigation_start_precise: f64,
-    performance: MutNullableJS<Performance>,
+    performance: MutNullableDom<Performance>,
 }
 
 impl WorkerGlobalScope {
@@ -170,12 +170,12 @@ impl WorkerGlobalScope {
 
 impl WorkerGlobalScopeMethods for WorkerGlobalScope {
     
-    fn Self_(&self) -> Root<WorkerGlobalScope> {
-        Root::from_ref(self)
+    fn Self_(&self) -> DomRoot<WorkerGlobalScope> {
+        DomRoot::from_ref(self)
     }
 
     
-    fn Location(&self) -> Root<WorkerLocation> {
+    fn Location(&self) -> DomRoot<WorkerLocation> {
         self.location.or_init(|| {
             WorkerLocation::new(self, self.worker_url.clone())
         })
@@ -236,12 +236,12 @@ impl WorkerGlobalScopeMethods for WorkerGlobalScope {
     }
 
     
-    fn Navigator(&self) -> Root<WorkerNavigator> {
+    fn Navigator(&self) -> DomRoot<WorkerNavigator> {
         self.navigator.or_init(|| WorkerNavigator::new(self))
     }
 
     
-    fn Crypto(&self) -> Root<Crypto> {
+    fn Crypto(&self) -> DomRoot<Crypto> {
         self.upcast::<GlobalScope>().crypto()
     }
 
@@ -316,7 +316,7 @@ impl WorkerGlobalScopeMethods for WorkerGlobalScope {
     }
 
     
-    fn Performance(&self) -> Root<Performance> {
+    fn Performance(&self) -> DomRoot<Performance> {
         self.performance.or_init(|| {
             let global_scope = self.upcast::<GlobalScope>();
             Performance::new(global_scope,

@@ -25,8 +25,8 @@
 use core::nonzero::NonZero;
 use dom::bindings::conversions::ToJSValConvertible;
 use dom::bindings::error::Error;
-use dom::bindings::js::Root;
 use dom::bindings::reflector::{DomObject, Reflector};
+use dom::bindings::root::DomRoot;
 use dom::bindings::trace::trace_reflector;
 use dom::promise::Promise;
 use js::jsapi::JSTracer;
@@ -178,14 +178,14 @@ impl<T: DomObject> Trusted<T> {
     
     
     
-    pub fn root(&self) -> Root<T> {
+    pub fn root(&self) -> DomRoot<T> {
         assert!(LIVE_REFERENCES.with(|ref r| {
             let r = r.borrow();
             let live_references = r.as_ref().unwrap();
             self.owner_thread == (&*live_references) as *const _ as *const libc::c_void
         }));
         unsafe {
-            Root::new(NonZero::new_unchecked(self.refcount.0 as *const T))
+            DomRoot::new(NonZero::new_unchecked(self.refcount.0 as *const T))
         }
     }
 }

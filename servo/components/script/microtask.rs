@@ -7,9 +7,9 @@
 
 
 use dom::bindings::callback::ExceptionHandling;
-use dom::bindings::cell::DOMRefCell;
+use dom::bindings::cell::DomRefCell;
 use dom::bindings::codegen::Bindings::PromiseBinding::PromiseJobCallback;
-use dom::bindings::js::Root;
+use dom::bindings::root::DomRoot;
 use dom::globalscope::GlobalScope;
 use dom::htmlimageelement::ImageElementMicrotask;
 use dom::htmlmediaelement::MediaElementMicrotask;
@@ -24,7 +24,7 @@ use std::rc::Rc;
 #[derive(Default, HeapSizeOf, JSTraceable)]
 pub struct MicrotaskQueue {
     
-    microtask_queue: DOMRefCell<Vec<Microtask>>,
+    microtask_queue: DomRefCell<Vec<Microtask>>,
     
     performing_a_microtask_checkpoint: Cell<bool>,
 }
@@ -60,7 +60,7 @@ impl MicrotaskQueue {
     
     
     pub fn checkpoint<F>(&self, target_provider: F)
-        where F: Fn(PipelineId) -> Option<Root<GlobalScope>>
+        where F: Fn(PipelineId) -> Option<DomRoot<GlobalScope>>
     {
         if self.performing_a_microtask_checkpoint.get() {
             return;

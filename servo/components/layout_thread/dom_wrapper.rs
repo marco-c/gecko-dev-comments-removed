@@ -44,7 +44,7 @@ use script::layout_exports::{Document, Element, Node, Text};
 use script::layout_exports::{HANDLED_SNAPSHOT, HAS_SNAPSHOT};
 use script::layout_exports::{LayoutCharacterDataHelpers, LayoutDocumentHelpers};
 use script::layout_exports::{LayoutElementHelpers, LayoutNodeHelpers, RawLayoutElementHelpers};
-use script::layout_exports::LayoutJS;
+use script::layout_exports::LayoutDom;
 use script::layout_exports::PendingRestyle;
 use script_layout_interface::{HTMLCanvasData, LayoutNodeType, SVGSVGData, TrustedNodeAddress};
 use script_layout_interface::{OpaqueStyleAndLayoutData, StyleData};
@@ -87,7 +87,7 @@ pub unsafe fn drop_style_and_layout_data(data: OpaqueStyleAndLayoutData) {
 #[derive(Clone, Copy)]
 pub struct ServoLayoutNode<'a> {
     
-    node: LayoutJS<Node>,
+    node: LayoutDom<Node>,
 
     
     chain: PhantomData<&'a ()>,
@@ -115,7 +115,7 @@ impl<'a> PartialEq for ServoLayoutNode<'a> {
 }
 
 impl<'ln> ServoLayoutNode<'ln> {
-    fn from_layout_js(n: LayoutJS<Node>) -> ServoLayoutNode<'ln> {
+    fn from_layout_js(n: LayoutDom<Node>) -> ServoLayoutNode<'ln> {
         ServoLayoutNode {
             node: n,
             chain: PhantomData,
@@ -123,11 +123,11 @@ impl<'ln> ServoLayoutNode<'ln> {
     }
 
     pub unsafe fn new(address: &TrustedNodeAddress) -> ServoLayoutNode {
-        ServoLayoutNode::from_layout_js(LayoutJS::from_trusted_node_address(*address))
+        ServoLayoutNode::from_layout_js(LayoutDom::from_trusted_node_address(*address))
     }
 
     
-    pub unsafe fn new_with_this_lifetime(&self, node: &LayoutJS<Node>) -> ServoLayoutNode<'ln> {
+    pub unsafe fn new_with_this_lifetime(&self, node: &LayoutDom<Node>) -> ServoLayoutNode<'ln> {
         ServoLayoutNode {
             node: *node,
             chain: self.chain,
@@ -303,7 +303,7 @@ impl<'le> GetLayoutData for ServoThreadSafeLayoutElement<'le> {
 impl<'ln> ServoLayoutNode<'ln> {
     
     
-    pub unsafe fn get_jsmanaged(&self) -> &LayoutJS<Node> {
+    pub unsafe fn get_jsmanaged(&self) -> &LayoutDom<Node> {
         &self.node
     }
 }
@@ -311,7 +311,7 @@ impl<'ln> ServoLayoutNode<'ln> {
 
 #[derive(Clone, Copy)]
 pub struct ServoLayoutDocument<'ld> {
-    document: LayoutJS<Document>,
+    document: LayoutDom<Document>,
     chain: PhantomData<&'ld ()>,
 }
 
@@ -341,7 +341,7 @@ impl<'ld> ServoLayoutDocument<'ld> {
         unsafe { self.document.style_shared_lock() }
     }
 
-    pub fn from_layout_js(doc: LayoutJS<Document>) -> ServoLayoutDocument<'ld> {
+    pub fn from_layout_js(doc: LayoutDom<Document>) -> ServoLayoutDocument<'ld> {
         ServoLayoutDocument {
             document: doc,
             chain: PhantomData,
@@ -352,7 +352,7 @@ impl<'ld> ServoLayoutDocument<'ld> {
 
 #[derive(Clone, Copy)]
 pub struct ServoLayoutElement<'le> {
-    element: LayoutJS<Element>,
+    element: LayoutDom<Element>,
     chain: PhantomData<&'le ()>,
 }
 
@@ -560,7 +560,7 @@ impl<'le> Hash for ServoLayoutElement<'le> {
 impl<'le> Eq for ServoLayoutElement<'le> {}
 
 impl<'le> ServoLayoutElement<'le> {
-    fn from_layout_js(el: LayoutJS<Element>) -> ServoLayoutElement<'le> {
+    fn from_layout_js(el: LayoutDom<Element>) -> ServoLayoutElement<'le> {
         ServoLayoutElement {
             element: el,
             chain: PhantomData,
@@ -611,7 +611,7 @@ impl<'le> ServoLayoutElement<'le> {
     }
 }
 
-fn as_element<'le>(node: LayoutJS<Node>) -> Option<ServoLayoutElement<'le>> {
+fn as_element<'le>(node: LayoutDom<Node>) -> Option<ServoLayoutElement<'le>> {
     node.downcast().map(ServoLayoutElement::from_layout_js)
 }
 
@@ -828,7 +828,7 @@ impl<'ln> DangerousThreadSafeLayoutNode for ServoThreadSafeLayoutNode<'ln> {
 
 impl<'ln> ServoThreadSafeLayoutNode<'ln> {
     
-    pub unsafe fn new_with_this_lifetime(&self, node: &LayoutJS<Node>) -> ServoThreadSafeLayoutNode<'ln> {
+    pub unsafe fn new_with_this_lifetime(&self, node: &LayoutDom<Node>) -> ServoThreadSafeLayoutNode<'ln> {
         ServoThreadSafeLayoutNode {
             node: self.node.new_with_this_lifetime(node),
             pseudo: PseudoElementType::Normal,
@@ -845,7 +845,7 @@ impl<'ln> ServoThreadSafeLayoutNode<'ln> {
 
     
     
-    unsafe fn get_jsmanaged(&self) -> &LayoutJS<Node> {
+    unsafe fn get_jsmanaged(&self) -> &LayoutDom<Node> {
         self.node.get_jsmanaged()
     }
 }
@@ -915,7 +915,7 @@ impl<'ln> ThreadSafeLayoutNode for ServoThreadSafeLayoutNode<'ln> {
 
     fn is_ignorable_whitespace(&self, context: &SharedStyleContext) -> bool {
         unsafe {
-            let text: LayoutJS<Text> = match self.get_jsmanaged().downcast() {
+            let text: LayoutDom<Text> = match self.get_jsmanaged().downcast() {
                 Some(text) => text,
                 None => return false
             };

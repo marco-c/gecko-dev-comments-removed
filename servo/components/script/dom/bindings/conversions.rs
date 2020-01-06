@@ -34,9 +34,9 @@
 
 use dom::bindings::error::{Error, Fallible};
 use dom::bindings::inheritance::Castable;
-use dom::bindings::js::Root;
 use dom::bindings::num::Finite;
 use dom::bindings::reflector::{DomObject, Reflector};
+use dom::bindings::root::DomRoot;
 use dom::bindings::str::{ByteString, DOMString, USVString};
 use dom::bindings::trace::{JSTraceable, RootedTraceableBox};
 use dom::bindings::utils::DOMClass;
@@ -102,13 +102,13 @@ impl<T: Float + FromJSValConvertible<Config=()>> FromJSValConvertible for Finite
     }
 }
 
-impl <T: DomObject + IDLInterface> FromJSValConvertible for Root<T> {
+impl <T: DomObject + IDLInterface> FromJSValConvertible for DomRoot<T> {
     type Config = ();
 
     unsafe fn from_jsval(_cx: *mut JSContext,
                          value: HandleValue,
                          _config: Self::Config)
-                         -> Result<ConversionResult<Root<T>>, ()> {
+                         -> Result<ConversionResult<DomRoot<T>>, ()> {
         Ok(match root_from_handlevalue(value) {
             Ok(result) => ConversionResult::Success(result),
             Err(()) => ConversionResult::Failure("value is not an object".into()),
@@ -411,10 +411,10 @@ pub fn native_from_object<T>(obj: *mut JSObject) -> Result<*const T, ()>
 
 
 
-pub fn root_from_object<T>(obj: *mut JSObject) -> Result<Root<T>, ()>
+pub fn root_from_object<T>(obj: *mut JSObject) -> Result<DomRoot<T>, ()>
     where T: DomObject + IDLInterface
 {
-    native_from_object(obj).map(|ptr| unsafe { Root::from_ref(&*ptr) })
+    native_from_object(obj).map(|ptr| unsafe { DomRoot::from_ref(&*ptr) })
 }
 
 
@@ -430,7 +430,7 @@ pub fn native_from_handlevalue<T>(v: HandleValue) -> Result<*const T, ()>
 
 
 
-pub fn root_from_handlevalue<T>(v: HandleValue) -> Result<Root<T>, ()>
+pub fn root_from_handlevalue<T>(v: HandleValue) -> Result<DomRoot<T>, ()>
     where T: DomObject + IDLInterface
 {
     if !v.get().is_object() {
@@ -440,13 +440,13 @@ pub fn root_from_handlevalue<T>(v: HandleValue) -> Result<Root<T>, ()>
 }
 
 
-pub fn root_from_handleobject<T>(obj: HandleObject) -> Result<Root<T>, ()>
+pub fn root_from_handleobject<T>(obj: HandleObject) -> Result<DomRoot<T>, ()>
     where T: DomObject + IDLInterface
 {
     root_from_object(obj.get())
 }
 
-impl<T: DomObject> ToJSValConvertible for Root<T> {
+impl<T: DomObject> ToJSValConvertible for DomRoot<T> {
     unsafe fn to_jsval(&self, cx: *mut JSContext, rval: MutableHandleValue) {
         self.reflector().to_jsval(cx, rval);
     }

@@ -38,11 +38,11 @@ use canvas_traits::webgl::{WebGLReceiver, WebGLSender, WebGLShaderId, WebGLTextu
 use cssparser::RGBA;
 use devtools_traits::{CSSError, TimelineMarkerType, WorkerId};
 use dom::abstractworker::SharedRt;
-use dom::bindings::cell::DOMRefCell;
+use dom::bindings::cell::DomRefCell;
 use dom::bindings::error::Error;
-use dom::bindings::js::{JS, Root};
 use dom::bindings::refcounted::{Trusted, TrustedPromise};
 use dom::bindings::reflector::{DomObject, Reflector};
+use dom::bindings::root::{Dom, DomRoot};
 use dom::bindings::str::{DOMString, USVString};
 use dom::bindings::utils::WindowProxyHandler;
 use dom::document::PendingRestyle;
@@ -202,7 +202,7 @@ unsafe impl<T: JSTraceable> JSTraceable for UnsafeCell<T> {
     }
 }
 
-unsafe impl<T: JSTraceable> JSTraceable for DOMRefCell<T> {
+unsafe impl<T: JSTraceable> JSTraceable for DomRefCell<T> {
     unsafe fn trace(&self, trc: *mut JSTracer) {
         (*self).borrow_for_gc_trace().trace(trc)
     }
@@ -804,7 +804,7 @@ impl<T: JSTraceable + 'static> Drop for RootedTraceableBox<T> {
 /// A vector of items to be rooted with `RootedVec`.
 /// Guaranteed to be empty when not rooted.
 /// Usage: `rooted_vec!(let mut v);` or if you have an
-/// iterator of `Root`s, `rooted_vec!(let v <- iterator);`.
+/// iterator of `DomRoot`s, `rooted_vec!(let v <- iterator);`.
 #[allow(unrooted_must_root)]
 #[derive(JSTraceable)]
 #[allow_unrooted_interior]
@@ -840,16 +840,16 @@ impl<'a, T: 'static + JSTraceable> RootedVec<'a, T> {
     }
 }
 
-impl<'a, T: 'static + JSTraceable + DomObject> RootedVec<'a, JS<T>> {
-    /// Create a vector of items of type JS<T> that is rooted for
+impl<'a, T: 'static + JSTraceable + DomObject> RootedVec<'a, Dom<T>> {
+    /// Create a vector of items of type Dom<T> that is rooted for
     /// the lifetime of this struct
-    pub fn from_iter<I>(root: &'a mut RootableVec<JS<T>>, iter: I) -> Self
-        where I: Iterator<Item = Root<T>>
+    pub fn from_iter<I>(root: &'a mut RootableVec<Dom<T>>, iter: I) -> Self
+        where I: Iterator<Item = DomRoot<T>>
     {
         unsafe {
             RootedTraceableSet::add(root);
         }
-        root.v.extend(iter.map(|item| JS::from_ref(&*item)));
+        root.v.extend(iter.map(|item| Dom::from_ref(&*item)));
         RootedVec {
             root: root,
         }
