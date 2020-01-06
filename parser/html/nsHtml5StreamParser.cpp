@@ -14,7 +14,7 @@
 #include "nsHtml5TreeBuilder.h"
 #include "nsHtml5AtomTable.h"
 #include "nsHtml5Module.h"
-#include "nsHtml5StreamParserPtr.h"
+#include "nsHtml5RefPtr.h"
 #include "nsIScriptError.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/UniquePtrExtensions.h"
@@ -1065,8 +1065,7 @@ nsHtml5StreamParser::DoStopRequest()
 class nsHtml5RequestStopper : public Runnable
 {
   private:
-    nsHtml5StreamParserPtr mStreamParser;
-
+    nsHtml5RefPtr<nsHtml5StreamParser> mStreamParser;
   public:
     explicit nsHtml5RequestStopper(nsHtml5StreamParser* aStreamParser)
       : Runnable("nsHtml5RequestStopper")
@@ -1152,10 +1151,9 @@ nsHtml5StreamParser::DoDataAvailable(const uint8_t* aBuffer, uint32_t aLength)
 class nsHtml5DataAvailable : public Runnable
 {
   private:
-    nsHtml5StreamParserPtr mStreamParser;
-    UniquePtr<uint8_t[]> mData;
-    uint32_t mLength;
-
+    nsHtml5RefPtr<nsHtml5StreamParser> mStreamParser;
+    UniquePtr<uint8_t[]>               mData;
+    uint32_t                           mLength;
   public:
     nsHtml5DataAvailable(nsHtml5StreamParser* aStreamParser,
                          UniquePtr<uint8_t[]> aData,
@@ -1350,7 +1348,9 @@ nsHtml5StreamParser::FlushTreeOpsAndDisarmTimer()
   }
   mTreeBuilder->Flush();
   nsCOMPtr<nsIRunnable> runnable(mExecutorFlusher);
-  if (NS_FAILED(DispatchToMain("nsHtml5ExecutorFlusher", runnable.forget()))) {
+  if (NS_FAILED(mExecutor->GetDocument()->Dispatch("nsHtml5ExecutorFlusher",
+                                                   TaskCategory::Other,
+                                                   runnable.forget()))) {
     NS_WARNING("failed to dispatch executor flush event");
   }
 }
@@ -1381,15 +1381,11 @@ nsHtml5StreamParser::ParseAvailableData()
               mFirstBuffer->setEnd(0);
             }
             mTreeBuilder->FlushLoads();
-            {
-              
-              
-              
-              nsCOMPtr<nsIRunnable> runnable(mLoadFlusher);
-              if (NS_FAILED(
-                    DispatchToMain("nsHtml5LoadFlusher", runnable.forget()))) {
-                NS_WARNING("failed to dispatch load flush event");
-              }
+            
+            
+            
+            if (NS_FAILED(NS_DispatchToMainThread(mLoadFlusher))) {
+              NS_WARNING("failed to dispatch load flush event");
             }
             return; 
           case STREAM_ENDED:
@@ -1486,8 +1482,7 @@ nsHtml5StreamParser::ParseAvailableData()
 class nsHtml5StreamParserContinuation : public Runnable
 {
 private:
-  nsHtml5StreamParserPtr mStreamParser;
-
+  nsHtml5RefPtr<nsHtml5StreamParser> mStreamParser;
 public:
   explicit nsHtml5StreamParserContinuation(nsHtml5StreamParser* aStreamParser)
     : Runnable("nsHtml5StreamParserContinuation")
@@ -1654,8 +1649,7 @@ nsHtml5StreamParser::ContinueAfterFailedCharsetSwitch()
 class nsHtml5TimerKungFu : public Runnable
 {
 private:
-  nsHtml5StreamParserPtr mStreamParser;
-
+  nsHtml5RefPtr<nsHtml5StreamParser> mStreamParser;
 public:
   explicit nsHtml5TimerKungFu(nsHtml5StreamParser* aStreamParser)
     : Runnable("nsHtml5TimerKungFu")
@@ -1732,19 +1726,15 @@ nsHtml5StreamParser::TimerFlush()
   if (mMode == VIEW_SOURCE_HTML || mMode == VIEW_SOURCE_XML) {
     mTreeBuilder->Flush(); 
     if (mTokenizer->FlushViewSource()) {
-      nsCOMPtr<nsIRunnable> runnable(mExecutorFlusher);
-      if (NS_FAILED(
-            DispatchToMain("nsHtml5ExecutorFlusher", runnable.forget()))) {
-        NS_WARNING("failed to dispatch executor flush event");
-      }
-    }
+       if (NS_FAILED(NS_DispatchToMainThread(mExecutorFlusher))) {
+         NS_WARNING("failed to dispatch executor flush event");
+       }
+     }
   } else {
     
     
     if (mTreeBuilder->Flush(true)) {
-      nsCOMPtr<nsIRunnable> runnable(mExecutorFlusher);
-      if (NS_FAILED(
-            DispatchToMain("nsHtml5ExecutorFlusher", runnable.forget()))) {
+      if (NS_FAILED(NS_DispatchToMainThread(mExecutorFlusher))) {
         NS_WARNING("failed to dispatch executor flush event");
       }
     }
@@ -1761,20 +1751,7 @@ nsHtml5StreamParser::MarkAsBroken(nsresult aRv)
   mTreeBuilder->MarkAsBroken(aRv);
   mozilla::DebugOnly<bool> hadOps = mTreeBuilder->Flush(false);
   NS_ASSERTION(hadOps, "Should have had the markAsBroken op!");
-  nsCOMPtr<nsIRunnable> runnable(mExecutorFlusher);
-  if (NS_FAILED(DispatchToMain("nsHtml5ExecutorFlusher", runnable.forget()))) {
+  if (NS_FAILED(NS_DispatchToMainThread(mExecutorFlusher))) {
     NS_WARNING("failed to dispatch executor flush event");
   }
-}
-
-nsresult
-nsHtml5StreamParser::DispatchToMain(const char* aName,
-                                    already_AddRefed<nsIRunnable>&& aRunnable)
-{
-  nsCOMPtr<nsIRunnable> runnable(aRunnable);
-  
-  
-  
-  return mExecutor->GetDocument()->Dispatch(
-    aName, TaskCategory::Network, runnable.forget());
 }
