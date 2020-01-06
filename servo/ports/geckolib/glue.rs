@@ -1494,6 +1494,20 @@ pub extern "C" fn Servo_ResolvePseudoStyle(element: RawGeckoElementBorrowed,
 }
 
 #[no_mangle]
+pub extern "C" fn Servo_SetExplicitStyle(element: RawGeckoElementBorrowed,
+                                         style: ServoComputedValuesBorrowed)
+{
+    let element = GeckoElement(element);
+    let style = ComputedValues::as_arc(&style);
+    debug!("Servo_SetExplicitStyle: {:?}", element);
+    
+    
+    debug_assert!(element.get_data().is_none());
+    let mut data = unsafe { element.ensure_data() }.borrow_mut();
+    data.styles.primary = Some(style.clone());
+}
+
+#[no_mangle]
 pub extern "C" fn Servo_HasAuthorSpecifiedRules(element: RawGeckoElementBorrowed,
                                                 rule_type_mask: u32,
                                                 author_colors_allowed: bool)
@@ -1625,6 +1639,14 @@ pub extern "C" fn Servo_ComputedValues_GetVisitedStyle(values: ServoComputedValu
         Some(v) => v.clone().into_strong(),
         None => Strong::null(),
     }
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_ComputedValues_SpecifiesAnimationsOrTransitions(values: ServoComputedValuesBorrowed)
+                                                                        -> bool {
+    let values = ComputedValues::as_arc(&values);
+    let b = values.get_box();
+    b.specifies_animations() || b.specifies_transitions()
 }
 
 
