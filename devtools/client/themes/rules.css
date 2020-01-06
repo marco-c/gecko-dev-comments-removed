@@ -163,6 +163,7 @@
 }
 
 .ruleview-propertyvaluecontainer a {
+  color: var(--theme-highlight-purple);
   cursor: pointer;
 }
 
@@ -601,14 +602,14 @@
 }
 
 .ruleview-selectorhighlighter:hover {
-  filter: var(--theme-icon-checked-filter);
+  filter: url(images/filters.svg#checked-icon-state);
 }
 
 .ruleview-grid.active,
 .ruleview-selectorhighlighter:active,
 .ruleview-selectorhighlighter.highlighted,
 .ruleview-shape.active {
-  filter: var(--theme-icon-checked-filter) brightness(0.9);
+  filter: url(images/filters.svg#checked-icon-state) brightness(0.9);
 }
 
 #ruleview-add-rule-button::before {
