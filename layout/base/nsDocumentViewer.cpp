@@ -3104,6 +3104,7 @@ nsDocumentViewer::SetTextZoom(float aTextZoom)
     return NS_OK;
   }
 
+  bool textZoomChange = (mTextZoom != aTextZoom);
   mTextZoom = aTextZoom;
 
   
@@ -3122,9 +3123,12 @@ nsDocumentViewer::SetTextZoom(float aTextZoom)
   
   mDocument->EnumerateExternalResources(SetExtResourceTextZoom, &ZoomInfo);
 
-  nsContentUtils::DispatchChromeEvent(mDocument, static_cast<nsIDocument*>(mDocument),
-                                      NS_LITERAL_STRING("TextZoomChange"),
-                                      true, true);
+  
+  if (textZoomChange) {
+    nsContentUtils::DispatchChromeEvent(mDocument, static_cast<nsIDocument*>(mDocument),
+                                        NS_LITERAL_STRING("TextZoomChange"),
+                                        true, true);
+  }
 
   return NS_OK;
 }
