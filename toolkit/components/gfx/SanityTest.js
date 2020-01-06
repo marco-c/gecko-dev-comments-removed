@@ -110,8 +110,6 @@ function takeWindowSnapshot(win, ctx) {
 
 
 
-
-
 function verifyVideoRendering(ctx) {
   return testPixel(ctx, 41, 105, 255, 255, 255, 255, 64) &&
     testPixel(ctx, 107, 105, 0, 255, 0, 255, 64) &&
