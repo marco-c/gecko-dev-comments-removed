@@ -24,6 +24,14 @@ function manifestVideo() {
 
 
 
+
+let serverUrl = SpecialPowers.Services.prefs.getCharPref("media.hls.server.url");
+var gHLSTests = [
+  { name: serverUrl + "/bipbop_4x3_variant.m3u8", type:"audio/x-mpegurl", duration:19.95334 }
+];
+
+
+
 var gSmallTests = [
   { name:"small-shot.ogg", type:"audio/ogg", duration:0.276 },
   { name:"small-shot.m4a", type:"audio/mp4", duration:0.29 },
