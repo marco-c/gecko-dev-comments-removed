@@ -282,6 +282,22 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   }
 
   
+  nsAutoCString xdgDataHome(PR_GetEnv("XDG_DATA_HOME"));
+  if (!xdgDataHome.IsEmpty()) {
+    nsAutoCString fontPath(xdgDataHome);
+    fontPath.Append("/fonts");
+    policy->AddDir(rdonly, PromiseFlatCString(fontPath).get());
+  }
+
+  
+  nsAutoCString xdgDataDirs(PR_GetEnv("XDG_DATA_DIRS"));
+  for (const auto& path : xdgDataDirs.Split(':')) {
+    nsAutoCString fontPath(path);
+    fontPath.Append("/fonts");
+    policy->AddDir(rdonly, PromiseFlatCString(fontPath).get());
+  }
+
+  
   
   mozilla::Array<const char*, 3> extraConfDirs = {
     ".config",   
