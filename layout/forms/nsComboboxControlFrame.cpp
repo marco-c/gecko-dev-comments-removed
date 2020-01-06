@@ -1312,7 +1312,6 @@ public:
                           nsReflowStatus&          aStatus) override;
 
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists) override;
 
 protected:
@@ -1347,11 +1346,10 @@ nsComboboxDisplayFrame::Reflow(nsPresContext*           aPresContext,
 
 void
 nsComboboxDisplayFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                         const nsRect&           aDirtyRect,
                                          const nsDisplayListSet& aLists)
 {
   nsDisplayListCollection set;
-  nsBlockFrame::BuildDisplayList(aBuilder, aDirtyRect, set);
+  nsBlockFrame::BuildDisplayList(aBuilder, set);
 
   
   if (mComboBox->IsThemed()) {
@@ -1555,14 +1553,8 @@ void nsDisplayComboboxFocus::Paint(nsDisplayListBuilder* aBuilder,
 
 void
 nsComboboxControlFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                         const nsRect&           aDirtyRect,
                                          const nsDisplayListSet& aLists)
 {
-#ifdef NOISY
-  printf("%p paint at (%d, %d, %d, %d)\n", this,
-    aDirtyRect.x, aDirtyRect.y, aDirtyRect.width, aDirtyRect.height);
-#endif
-
   if (aBuilder->IsForEventDelivery()) {
     
     
@@ -1570,7 +1562,7 @@ nsComboboxControlFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   } else {
     
     
-    nsBlockFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
+    nsBlockFrame::BuildDisplayList(aBuilder, aLists);
   }
 
   

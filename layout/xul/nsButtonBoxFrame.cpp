@@ -92,13 +92,12 @@ nsButtonBoxFrame::DestroyFrom(nsIFrame* aDestructRoot)
 
 void
 nsButtonBoxFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
-                                              const nsRect&           aDirtyRect,
                                               const nsDisplayListSet& aLists)
 {
   
   if (aBuilder->IsForEventDelivery())
     return;
-  nsBoxFrame::BuildDisplayListForChildren(aBuilder, aDirtyRect, aLists);
+  nsBoxFrame::BuildDisplayListForChildren(aBuilder, aLists);
 }
 
 nsresult

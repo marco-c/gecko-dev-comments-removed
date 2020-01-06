@@ -284,7 +284,6 @@ RenderFrameParent::TriggerRepaint()
 void
 RenderFrameParent::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                     nsSubDocumentFrame* aFrame,
-                                    const nsRect& aDirtyRect,
                                     const nsDisplayListSet& aLists)
 {
   

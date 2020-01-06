@@ -143,7 +143,6 @@ nsSVGDisplayContainerFrame::Init(nsIContent*       aContent,
 
 void
 nsSVGDisplayContainerFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                             const nsRect&           aDirtyRect,
                                              const nsDisplayListSet& aLists)
 {
   
@@ -152,7 +151,7 @@ nsSVGDisplayContainerFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     return;
   }
   DisplayOutline(aBuilder, aLists);
-  return BuildDisplayListForNonBlockChildren(aBuilder, aDirtyRect, aLists);
+  return BuildDisplayListForNonBlockChildren(aBuilder, aLists);
 }
 
 void

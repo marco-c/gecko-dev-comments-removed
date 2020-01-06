@@ -51,7 +51,6 @@ public:
   }
 
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists) override;
 
   
@@ -201,9 +200,6 @@ public:
   virtual void InvalidateFrame(uint32_t aDisplayItemKey = 0) override;
   virtual void InvalidateFrameWithRect(const nsRect& aRect, uint32_t aDisplayItemKey = 0) override;
   virtual void InvalidateFrameForRemoval() override { InvalidateFrameSubtree(); }
-
-  
-  void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
 
 protected:
   explicit nsTableColGroupFrame(nsStyleContext* aContext);

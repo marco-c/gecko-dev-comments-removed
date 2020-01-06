@@ -141,11 +141,9 @@ public:
   
   
   virtual void BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
-                                           const nsRect&           aDirtyRect,
                                            const nsDisplayListSet& aLists);
 
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists) override;
 
 #ifdef DEBUG_LAYOUT
@@ -170,11 +168,6 @@ public:
 
 
   virtual bool SupportsOrdinalsInChildren();
-
-  
-
-
-  void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
 
 private:
   explicit nsBoxFrame(nsStyleContext* aContext)

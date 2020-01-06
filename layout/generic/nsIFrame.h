@@ -618,8 +618,6 @@ public:
     , mMayHaveRoundedCorners(false)
     , mHasImageRequest(false)
     , mHasFirstLetterChild(false)
-    , mParentIsWrapperAnonBox(false)
-    , mIsWrapperBoxNeedingRestyle(false)
   {
     mozilla::PodZero(&mOverflow);
   }
@@ -1636,20 +1634,13 @@ public:
 
 
 
-
-
-
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists) {}
   
 
 
 
-
-
   void DisplayCaret(nsDisplayListBuilder* aBuilder,
-                    const nsRect&         aDirtyRect,
                     nsDisplayList*        aList);
 
   
@@ -1684,10 +1675,7 @@ public:
 
 
 
-
-
   void BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
-                                          const nsRect&         aDirtyRect,
                                           nsDisplayList*        aList);
 
   enum {
@@ -1706,7 +1694,6 @@ public:
 
   void BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
                                 nsIFrame*               aChild,
-                                const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists,
                                 uint32_t                aFlags = 0);
 
@@ -3347,9 +3334,6 @@ protected:
   void UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
                                  mozilla::ServoRestyleState& aRestyleState);
 
-  
-  friend class mozilla::ServoRestyleState;
-
 public:
   
   
@@ -4001,23 +3985,6 @@ public:
 
 
 
-  bool ParentIsWrapperAnonBox() const { return mParentIsWrapperAnonBox; }
-  void SetParentIsWrapperAnonBox() { mParentIsWrapperAnonBox = true; }
-
-  
-
-
-  bool IsWrapperAnonBoxNeedingRestyle() const {
-    return mIsWrapperBoxNeedingRestyle;
-  }
-  void SetIsWrapperAnonBoxNeedingRestyle(bool aNeedsRestyle) {
-    mIsWrapperBoxNeedingRestyle = aNeedsRestyle;
-  }
-
-  
-
-
-
 
 
   virtual bool RenumberFrameAndDescendants(int32_t* aOrdinal,
@@ -4063,7 +4030,7 @@ private:
   nsIFrame*        mPrevSibling;  
   DisplayItemArray mDisplayItemData;
 
-  void MarkAbsoluteFramesForDisplayList(nsDisplayListBuilder* aBuilder, const nsRect& aDirtyRect);
+  void MarkAbsoluteFramesForDisplayList(nsDisplayListBuilder* aBuilder);
 
   static void DestroyPaintedPresShellList(nsTArray<nsWeakPtr>* list) {
     list->Clear();
@@ -4159,26 +4126,6 @@ protected:
 
 
   bool mHasFirstLetterChild : 1;
-
-  
-
-
-
-
-
-
-
-
-
-
-  bool mParentIsWrapperAnonBox : 1;
-
-  
-
-
-
-
-  bool mIsWrapperBoxNeedingRestyle : 1;
 
   
 

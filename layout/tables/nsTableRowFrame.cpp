@@ -232,15 +232,6 @@ nsTableRowFrame::InsertFrames(ChildListID  aListID,
   NS_ASSERTION(aListID == kPrincipalList, "unexpected child list");
   NS_ASSERTION(!aPrevFrame || aPrevFrame->GetParent() == this,
                "inserting after sibling frame with different parent");
-  if (mFrames.IsEmpty() ||
-      (aPrevFrame && !aPrevFrame->GetNextSibling())) {
-    
-    
-    
-    AppendFrames(aListID, aFrameList);
-    return;
-  }
-
   DrainSelfOverflowList(); 
   
   const nsFrameList::Slice& newCells = mFrames.InsertFrames(nullptr, aPrevFrame, aFrameList);
@@ -592,10 +583,9 @@ nsTableRowFrame::CalcBSize(const ReflowInput& aReflowInput)
 
 void
 nsTableRowFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                  const nsRect&           aDirtyRect,
                                   const nsDisplayListSet& aLists)
 {
-  nsTableFrame::DisplayGenericTablePart(aBuilder, this, aDirtyRect, aLists);
+  nsTableFrame::DisplayGenericTablePart(aBuilder, this, aLists);
 }
 
 nsIFrame::LogicalSides
