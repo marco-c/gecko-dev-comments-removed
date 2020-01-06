@@ -1187,6 +1187,9 @@ HttpChannelChild::DoOnStopRequest(nsIRequest* aRequest, nsresult aChannelStatus,
   }
   mOnStopRequestCalled = true;
 
+  
+  gHttpHandler->OnStopRequest(this);
+
   ReleaseListeners();
 
   

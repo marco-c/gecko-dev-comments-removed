@@ -3243,6 +3243,9 @@ HttpBaseChannel::DoNotifyListener()
   }
 
   
+  gHttpHandler->OnStopRequest(this);
+
+  
   
   RemoveAsNonTailRequest();
 

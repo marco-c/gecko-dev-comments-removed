@@ -7578,6 +7578,9 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
         mOnStopRequestCalled = true;
     }
 
+    
+    gHttpHandler->OnStopRequest(this);
+
     RemoveAsNonTailRequest();
 
     

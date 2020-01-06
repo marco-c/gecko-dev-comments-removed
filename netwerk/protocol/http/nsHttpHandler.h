@@ -318,6 +318,12 @@ public:
     }
 
     
+    void OnStopRequest(nsIHttpChannel *chan)
+    {
+        NotifyObservers(chan, NS_HTTP_ON_STOP_REQUEST_TOPIC);
+    }
+
+    
     void OnUserAgentRequest(nsIHttpChannel *chan)
     {
       NotifyObservers(chan, NS_HTTP_ON_USERAGENT_REQUEST_TOPIC);
