@@ -665,7 +665,7 @@ public:
     
     uint32_t conservativeRangeStart, conservativeRangeEnd;
     if (index < mLength &&
-        nsIUGenCategory::kLetter ==
+        nsUGenCategory::kLetter ==
           (mText ? GetGenCategory(mText[index])
                  : GetGenCategory(GetUnicodeCharAt(index)))) {
       

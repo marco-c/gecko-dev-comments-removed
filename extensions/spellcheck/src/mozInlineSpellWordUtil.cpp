@@ -12,7 +12,6 @@
 #include "nsIDOMRange.h"
 #include "nsIEditor.h"
 #include "nsIDOMNode.h"
-#include "nsUnicharUtilCIID.h"
 #include "nsUnicodeProperties.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIContent.h"
@@ -851,9 +850,9 @@ WordSplitState::ClassifyCharacter(int32_t aIndex, bool aRecurse) const
 
   
   
-  nsIUGenCategory::nsUGenCategory
-    charCategory = mozilla::unicode::GetGenCategory(mDOMWordText[aIndex]);
-  if (charCategory == nsIUGenCategory::kLetter ||
+  nsUGenCategory charCategory =
+    mozilla::unicode::GetGenCategory(mDOMWordText[aIndex]);
+  if (charCategory == nsUGenCategory::kLetter ||
       IsIgnorableCharacter(mDOMWordText[aIndex]) ||
       mDOMWordText[aIndex] == 0x200C  ||
       mDOMWordText[aIndex] == 0x200D )
@@ -902,10 +901,10 @@ WordSplitState::ClassifyCharacter(int32_t aIndex, bool aRecurse) const
   }
 
   
-  if (charCategory == nsIUGenCategory::kSeparator ||
-      charCategory == nsIUGenCategory::kOther ||
-      charCategory == nsIUGenCategory::kPunctuation ||
-      charCategory == nsIUGenCategory::kSymbol) {
+  if (charCategory == nsUGenCategory::kSeparator ||
+      charCategory == nsUGenCategory::kOther ||
+      charCategory == nsUGenCategory::kPunctuation ||
+      charCategory == nsUGenCategory::kSymbol) {
     
     if (aIndex > 0 &&
         mDOMWordText[aIndex] == '-' &&
@@ -1033,7 +1032,7 @@ WordSplitState::ShouldSkipWord(int32_t aStart, int32_t aLength)
 
   
   for (int32_t i = aStart; i < last; i ++) {
-    if (unicode::GetGenCategory(mDOMWordText[i]) == nsIUGenCategory::kNumber) {
+    if (unicode::GetGenCategory(mDOMWordText[i]) == nsUGenCategory::kNumber) {
       return true;
     }
   }

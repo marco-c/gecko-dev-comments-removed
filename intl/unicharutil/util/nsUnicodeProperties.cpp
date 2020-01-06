@@ -98,41 +98,41 @@ namespace unicode {
 
 
 
-const nsIUGenCategory::nsUGenCategory sDetailedToGeneralCategory[] = {
+const nsUGenCategory sDetailedToGeneralCategory[] = {
   
 
 
 
-               nsIUGenCategory::kOther,
-                nsIUGenCategory::kOther,
-            nsIUGenCategory::kOther,
-           nsIUGenCategory::kOther,
-             nsIUGenCategory::kOther,
-      nsIUGenCategory::kLetter,
-       nsIUGenCategory::kLetter,
-          nsIUGenCategory::kLetter,
-      nsIUGenCategory::kLetter,
-      nsIUGenCategory::kLetter,
-        nsIUGenCategory::kMark,
-        nsIUGenCategory::kMark,
-      nsIUGenCategory::kMark,
-        nsIUGenCategory::kNumber,
-         nsIUGenCategory::kNumber,
-          nsIUGenCategory::kNumber,
-   nsIUGenCategory::kPunctuation,
-      nsIUGenCategory::kPunctuation,
-     nsIUGenCategory::kPunctuation,
-     nsIUGenCategory::kPunctuation,
-   nsIUGenCategory::kPunctuation,
-     nsIUGenCategory::kPunctuation,
-      nsIUGenCategory::kPunctuation,
-       nsIUGenCategory::kSymbol,
-       nsIUGenCategory::kSymbol,
-           nsIUGenCategory::kSymbol,
-          nsIUGenCategory::kSymbol,
-        nsIUGenCategory::kSeparator,
-   nsIUGenCategory::kSeparator,
-       nsIUGenCategory::kSeparator
+               nsUGenCategory::kOther,
+                nsUGenCategory::kOther,
+            nsUGenCategory::kOther,
+           nsUGenCategory::kOther,
+             nsUGenCategory::kOther,
+      nsUGenCategory::kLetter,
+       nsUGenCategory::kLetter,
+          nsUGenCategory::kLetter,
+      nsUGenCategory::kLetter,
+      nsUGenCategory::kLetter,
+        nsUGenCategory::kMark,
+        nsUGenCategory::kMark,
+      nsUGenCategory::kMark,
+        nsUGenCategory::kNumber,
+         nsUGenCategory::kNumber,
+          nsUGenCategory::kNumber,
+   nsUGenCategory::kPunctuation,
+      nsUGenCategory::kPunctuation,
+     nsUGenCategory::kPunctuation,
+     nsUGenCategory::kPunctuation,
+   nsUGenCategory::kPunctuation,
+     nsUGenCategory::kPunctuation,
+      nsUGenCategory::kPunctuation,
+       nsUGenCategory::kSymbol,
+       nsUGenCategory::kSymbol,
+           nsUGenCategory::kSymbol,
+          nsUGenCategory::kSymbol,
+        nsUGenCategory::kSeparator,
+   nsUGenCategory::kSeparator,
+       nsUGenCategory::kSeparator
 };
 
 #ifdef ENABLE_INTL_API

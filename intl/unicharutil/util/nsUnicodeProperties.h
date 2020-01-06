@@ -8,7 +8,7 @@
 #define NS_UNICODEPROPERTIES_H
 
 #include "nsBidiUtils.h"
-#include "nsIUGenCategory.h"
+#include "nsUGenCategory.h"
 #include "nsUnicodeScriptCodes.h"
 #include "harfbuzz/hb.h"
 
@@ -23,7 +23,7 @@ namespace mozilla {
 
 namespace unicode {
 
-extern const nsIUGenCategory::nsUGenCategory sDetailedToGeneralCategory[];
+extern const nsUGenCategory sDetailedToGeneralCategory[];
 
 
 enum VerticalOrientation {
@@ -235,7 +235,7 @@ inline bool IsDefaultIgnorable(uint32_t aCh)
 #endif 
 
 
-inline nsIUGenCategory::nsUGenCategory GetGenCategory(uint32_t aCh) {
+inline nsUGenCategory GetGenCategory(uint32_t aCh) {
   return sDetailedToGeneralCategory[GetGeneralCategory(aCh)];
 }
 
