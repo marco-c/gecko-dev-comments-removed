@@ -1200,9 +1200,10 @@ public:
     
     
     nsCOMPtr<nsIPrincipal> triggeringPrincipal;
-    bool setAttrs = nsContentUtils::GetLoadingPrincipalForXULNode(aElement,
-                                    aElement->mLoadingSrcTriggeringPrincipal,
-                                    getter_AddRefs(triggeringPrincipal));
+    bool setAttrs =
+      nsContentUtils::QueryTriggeringPrincipal(aElement,
+                                               aElement->mLoadingSrcTriggeringPrincipal,
+                                               getter_AddRefs(triggeringPrincipal));
 
     nsCOMPtr<nsILoadGroup> loadGroup = aElement->GetDocumentLoadGroup();
     nsCOMPtr<nsIChannel> channel;

@@ -3091,16 +3091,17 @@ public:
 
 
 
-  static bool
-  GetLoadingPrincipalForXULNode(nsIContent* aLoadingNode,
-                                nsIPrincipal* aDefaultPrincipal,
-                                nsIPrincipal** aTriggeringPrincipal);
 
   static bool
-  GetLoadingPrincipalForXULNode(nsIContent* aLoadingNode,
-                                nsIPrincipal** aTriggeringPrincipal)
+  QueryTriggeringPrincipal(nsIContent* aLoadingNode,
+                           nsIPrincipal* aDefaultPrincipal,
+                           nsIPrincipal** aTriggeringPrincipal);
+
+  static bool
+  QueryTriggeringPrincipal(nsIContent* aLoadingNode,
+                           nsIPrincipal** aTriggeringPrincipal)
   {
-    return GetLoadingPrincipalForXULNode(aLoadingNode, nullptr, aTriggeringPrincipal);
+    return QueryTriggeringPrincipal(aLoadingNode, nullptr, aTriggeringPrincipal);
   }
 
   
@@ -3110,7 +3111,7 @@ public:
 
   static void
   GetContentPolicyTypeForUIImageLoading(nsIContent* aLoadingNode,
-                                        nsIPrincipal** aLoadingPrincipal,
+                                        nsIPrincipal** aTriggeringPrincipal,
                                         nsContentPolicyType& aContentPolicyType,
                                         uint64_t* aRequestContextID);
 

@@ -1044,8 +1044,8 @@ nsImageLoadingContent::LoadImage(nsIURI* aNewURI,
 
   nsCOMPtr<nsIPrincipal> triggeringPrincipal;
   bool result =
-    nsContentUtils::GetLoadingPrincipalForXULNode(content, aTriggeringPrincipal,
-                                                  getter_AddRefs(triggeringPrincipal));
+    nsContentUtils::QueryTriggeringPrincipal(content, aTriggeringPrincipal,
+                                             getter_AddRefs(triggeringPrincipal));
 
   
   

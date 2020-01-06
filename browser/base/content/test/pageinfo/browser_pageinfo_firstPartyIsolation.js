@@ -51,7 +51,7 @@ function testFirstPartyDomain(pageInfo) {
         
         let serial = Components.classes["@mozilla.org/network/serialization-helper;1"]
                                .getService(Components.interfaces.nsISerializationHelper);
-        let loadingPrincipalStr = preview.getAttribute("loadingprincipal");
+        let loadingPrincipalStr = preview.getAttribute("triggeringprincipal");
         let loadingPrincipal = serial.deserializeObject(loadingPrincipalStr);
         Assert.equal(loadingPrincipal.originAttributes.firstPartyDomain, EXPECTED_DOMAIN,
                      "loadingPrincipal should have firstPartyDomain set to " + EXPECTED_DOMAIN);

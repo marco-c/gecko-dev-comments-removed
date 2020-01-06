@@ -769,15 +769,15 @@ ChannelMediaResource::RecreateChannel()
   
   
   
-  nsCOMPtr<nsIPrincipal> loadingPrincipal;
+  nsCOMPtr<nsIPrincipal> triggeringPrincipal;
   bool setAttrs =
-    nsContentUtils::GetLoadingPrincipalForXULNode(element,
-                                                  getter_AddRefs(loadingPrincipal));
+    nsContentUtils::QueryTriggeringPrincipal(element,
+                                             getter_AddRefs(triggeringPrincipal));
 
   nsresult rv = NS_NewChannelWithTriggeringPrincipal(getter_AddRefs(mChannel),
                                                      mURI,
                                                      element,
-                                                     loadingPrincipal,
+                                                     triggeringPrincipal,
                                                      securityFlags,
                                                      contentPolicyType,
                                                      loadGroup,
@@ -789,7 +789,7 @@ ChannelMediaResource::RecreateChannel()
     nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
     if (loadInfo) {
       
-      Unused << loadInfo->SetOriginAttributes(loadingPrincipal->OriginAttributesRef());
+      Unused << loadInfo->SetOriginAttributes(triggeringPrincipal->OriginAttributesRef());
    }
   }
 
