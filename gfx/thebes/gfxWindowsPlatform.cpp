@@ -355,7 +355,7 @@ gfxWindowsPlatform::InitAcceleration()
   UpdateRenderMode();
 
   
-  if (!DWriteAvailable() && GetDefaultContentBackend() == BackendType::SKIA) {
+  if (!DWriteEnabled() && GetDefaultContentBackend() == BackendType::SKIA) {
     InitDWriteSupport();
   }
 
@@ -491,7 +491,7 @@ gfxWindowsPlatform::CreatePlatformFontList()
 
     
     
-    if (IsNotWin7PreRTM() && DWriteAvailable()) {
+    if (IsNotWin7PreRTM() && DWriteEnabled()) {
         pfl = new gfxDWriteFontList();
         if (NS_SUCCEEDED(pfl->InitFontList())) {
             return pfl;
@@ -1103,7 +1103,7 @@ gfxWindowsPlatform::FontsPrefsChanged(const char *aPref)
 void
 gfxWindowsPlatform::SetupClearTypeParams()
 {
-    if (DWriteAvailable()) {
+    if (DWriteEnabled()) {
         
         
         FLOAT gamma = -1.0;
@@ -1526,7 +1526,7 @@ gfxWindowsPlatform::InitializeD2D()
   }
 
   
-  if (!DWriteAvailable() && !InitDWriteSupport()) {
+  if (!DWriteEnabled() && !InitDWriteSupport()) {
     d2d1.SetFailed(FeatureStatus::Failed, "Failed to initialize DirectWrite support",
                    NS_LITERAL_CSTRING("FEATURE_FAILURE_D2D_DWRITE"));
     return;
