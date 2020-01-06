@@ -243,14 +243,6 @@ this.E10SUtils = {
         this.getRemoteTypeForURIObject(aURI, true, remoteType, webNav.currentURI);
     }
 
-    if (sessionHistory.count == 1 && webNav.currentURI.spec == "about:newtab") {
-      
-      
-      
-      
-      return false;
-    }
-
     
     return this.shouldLoadURIInThisProcess(aURI);
   },
