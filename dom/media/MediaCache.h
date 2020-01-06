@@ -256,13 +256,13 @@ public:
   
   
   
-  void NotifyDataStarted(int64_t aOffset);
+  void NotifyDataStarted(uint32_t aLoadID, int64_t aOffset);
   
   
   
   
   
-  void NotifyDataReceived(int64_t aSize, const char* aData);
+  void NotifyDataReceived(uint32_t aLoadID, int64_t aSize, const char* aData);
   
   
   void FlushPartialBlock();
@@ -494,6 +494,9 @@ private:
   ReadMode          mCurrentMode;
   
   bool              mMetadataInPartialBlockBuffer;
+  
+  
+  uint32_t mLoadID = 0;
 
   
   

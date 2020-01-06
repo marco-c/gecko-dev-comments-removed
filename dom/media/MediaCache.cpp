@@ -1389,6 +1389,10 @@ MediaCache::Update()
         stream->mChannelOffset =
           OffsetToBlockIndexUnchecked(desiredOffset) * BLOCK_SIZE;
         actions[i] = stream->mCacheSuspended ? SEEK_AND_RESUME : SEEK;
+        
+        
+        
+        stream->mLoadID = 0;
       } else if (enableReading && stream->mCacheSuspended) {
         actions[i] = RESUME;
       } else if (!enableReading && !stream->mCacheSuspended) {
@@ -1856,15 +1860,18 @@ void
 MediaCacheStream::NotifyDataLength(int64_t aLength)
 {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
+  LOG("Stream %p DataLength: %" PRId64, this, aLength);
 
   ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
   mStreamLength = aLength;
 }
 
 void
-MediaCacheStream::NotifyDataStarted(int64_t aOffset)
+MediaCacheStream::NotifyDataStarted(uint32_t aLoadID, int64_t aOffset)
 {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
+  MOZ_ASSERT(aLoadID > 0);
+  LOG("Stream %p DataStarted: %" PRId64 " aLoadID=%u", this, aOffset, aLoadID);
 
   ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
   NS_WARNING_ASSERTION(aOffset == mChannelOffset,
@@ -1876,6 +1883,7 @@ MediaCacheStream::NotifyDataStarted(int64_t aOffset)
     
     mStreamLength = std::max(mStreamLength, mChannelOffset);
   }
+  mLoadID = aLoadID;
 }
 
 void
@@ -1892,8 +1900,11 @@ MediaCacheStream::UpdatePrincipal(nsIPrincipal* aPrincipal)
 }
 
 void
-MediaCacheStream::NotifyDataReceived(int64_t aSize, const char* aData)
+MediaCacheStream::NotifyDataReceived(uint32_t aLoadID,
+                                     int64_t aSize,
+                                     const char* aData)
 {
+  MOZ_ASSERT(aLoadID > 0);
   
 
   
@@ -1901,11 +1912,25 @@ MediaCacheStream::NotifyDataReceived(int64_t aSize, const char* aData)
   MOZ_DIAGNOSTIC_ASSERT(!mClosed);
 
   ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
+  LOG("Stream %p DataReceived at %" PRId64 " count=%" PRId64 " aLoadID=%u",
+      this,
+      mChannelOffset,
+      aSize,
+      aLoadID);
+
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(mLoadID == aLoadID);
+
+  if (mLoadID != aLoadID) {
+    
+    
+    
+    return;
+  }
   int64_t size = aSize;
   const char* data = aData;
-
-  LOG("Stream %p DataReceived at %" PRId64 " count=%" PRId64,
-      this, mChannelOffset, aSize);
 
   
   while (size > 0) {
