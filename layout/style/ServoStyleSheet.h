@@ -121,6 +121,9 @@ public:
   
   ServoCSSRuleList* GetCssRulesInternal();
 
+  
+  OriginFlags GetOrigin();
+
 protected:
   virtual ~ServoStyleSheet();
 
