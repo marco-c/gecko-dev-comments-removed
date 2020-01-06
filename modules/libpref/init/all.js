@@ -5238,7 +5238,7 @@ pref("urlclassifier.gethashnoise", 4);
 
 pref("urlclassifier.gethash.timeout_ms", 5000);
 
-pref("urlclassifier.update.response_timeout_ms", 5000);
+pref("urlclassifier.update.response_timeout_ms", 15000);
 
 pref("urlclassifier.update.timeout_ms", 60000);
 
@@ -5555,8 +5555,6 @@ pref("narrate.filter-voices", true);
 
 pref("media.gmp.insecure.allow", false);
 #endif
-
-pref("dom.audiochannel.mutedByDefault", false);
 
 
 pref("dom.dialog_element.enabled", false);
