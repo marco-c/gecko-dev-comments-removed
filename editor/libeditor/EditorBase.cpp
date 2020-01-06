@@ -559,12 +559,18 @@ EditorBase::IsSelectionEditable()
     return anchorNode && IsEditable(anchorNode);
   }
 
+  nsINode* anchorNode = selection->GetAnchorNode();
+  nsINode* focusNode = selection->GetFocusNode();
+  if (!anchorNode || !focusNode) {
+    return false;
+  }
+
   
   
   
   bool isSelectionEditable = selection->RangeCount() &&
-                             selection->GetAnchorNode()->IsEditable() &&
-                             selection->GetFocusNode()->IsEditable();
+                             anchorNode->IsEditable() &&
+                             focusNode->IsEditable();
   if (!isSelectionEditable) {
     return false;
   }
