@@ -208,7 +208,7 @@ public:
   
   
   
-  nsresult InitAsClone(MediaCacheStream* aOriginal);
+  void InitAsClone(MediaCacheStream* aOriginal);
 
   
   
