@@ -501,6 +501,16 @@ public:
   }
 
   
+  
+  
+  
+  
+  Span(char* aStr) = delete;
+  Span(const char* aStr) = delete;
+  Span(char16_t* aStr) = delete;
+  Span(const char16_t* aStr) = delete;
+
+  
 
 
   template<size_t N,
@@ -972,10 +982,19 @@ MakeSpan(ElementType* aStartPtr, ElementType* aEndPtr)
 
 
 
-template<class ElementType, size_t N>
+
+
+
+
+
+
+template<class ElementType, size_t N,
+         class = span_details::enable_if_t<
+                   !IsSame<ElementType, const char>::value &&
+                   !IsSame<ElementType, const char16_t>::value>>
 Span<ElementType> MakeSpan(ElementType (&aArr)[N])
 {
-  return Span<ElementType>(aArr);
+  return Span<ElementType>(aArr, N);
 }
 
 
