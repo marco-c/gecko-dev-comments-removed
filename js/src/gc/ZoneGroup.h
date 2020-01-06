@@ -43,7 +43,7 @@ class ZoneGroup
 
     
     
-    UnprotectedData<bool> useExclusiveLocking;
+    UnprotectedData<bool> useExclusiveLocking_;
 
   public:
     CooperatingContext& ownerContext() { return ownerContext_.ref(); }
@@ -103,7 +103,8 @@ class ZoneGroup
     inline bool isGCScheduled();
 
     
-    void setUseExclusiveLocking() { useExclusiveLocking = true; }
+    void setUseExclusiveLocking() { useExclusiveLocking_ = true; }
+    bool useExclusiveLocking() { return useExclusiveLocking_; }
 
     
     void deleteEmptyZone(Zone* zone);
