@@ -81,103 +81,25 @@ static const HANDLE kNoThread = INVALID_HANDLE_VALUE;
 
 
 
-static unsigned int __stdcall
-ThreadEntry(void* aArg)
+Sampler::Sampler(PSLockRef aLock)
 {
-  auto thread = static_cast<SamplerThread*>(aArg);
-  thread->Run();
-  return 0;
-}
-
-SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
-                             double aIntervalMilliseconds)
-    : mActivityGeneration(aActivityGeneration)
-    , mIntervalMicroseconds(
-        std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5))))
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  
-  
-  
-  if (mIntervalMicroseconds < 10*1000) {
-    ::timeBeginPeriod(mIntervalMicroseconds / 1000);
-  }
-
-  
-  
-  
-  mThread = reinterpret_cast<HANDLE>(
-      _beginthreadex(nullptr,
-                      0,
-                     ThreadEntry,
-                     this,
-                      0,
-                     nullptr));
-  if (mThread == 0) {
-    MOZ_CRASH("_beginthreadex failed");
-  }
-}
-
-SamplerThread::~SamplerThread()
-{
-  WaitForSingleObject(mThread, INFINITE);
-
-  
-  if (mThread != kNoThread) {
-    CloseHandle(mThread);
-  }
 }
 
 void
-SamplerThread::Stop(PSLockRef aLock)
+Sampler::Disable(PSLockRef aLock)
 {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mIntervalMicroseconds < 10 * 1000) {
-    ::timeEndPeriod(mIntervalMicroseconds / 1000);
-  }
 }
 
+template<typename Func>
 void
-SamplerThread::SleepMicro(uint32_t aMicroseconds)
-{
-  
-  
-  
-  if (mIntervalMicroseconds >= 1000) {
-    ::Sleep(std::max(1u, aMicroseconds / 1000));
-  } else {
-    TimeStamp start = TimeStamp::Now();
-    TimeStamp end = start + TimeDuration::FromMicroseconds(aMicroseconds);
-
-    
-    if (aMicroseconds >= 1000) {
-      ::Sleep(aMicroseconds / 1000);
-    }
-
-    
-    while (TimeStamp::Now() < end) {
-      _mm_pause();
-    }
-  }
-}
-
-void
-SamplerThread::SuspendAndSampleAndResumeThread(PSLockRef aLock,
-                                               TickSample& aSample)
+Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
+                                         TickSample& aSample,
+                                         const Func& aDoSample)
 {
   HANDLE profiled_thread = aSample.mPlatformData->ProfiledThread();
-  if (profiled_thread == nullptr)
+  if (profiled_thread == nullptr) {
     return;
+  }
 
   
   CONTEXT context;
@@ -226,9 +148,7 @@ SamplerThread::SuspendAndSampleAndResumeThread(PSLockRef aLock,
   aSample.mFP = reinterpret_cast<Address>(context.Ebp);
 #endif
 
-  aSample.mContext = &context;
-
-  Tick(aLock, ActivePS::Buffer(aLock), aSample);
+  aDoSample();
 
   
   
@@ -243,28 +163,126 @@ SamplerThread::SuspendAndSampleAndResumeThread(PSLockRef aLock,
 
 
 
+
+
+
+static unsigned int __stdcall
+ThreadEntry(void* aArg)
+{
+  auto thread = static_cast<SamplerThread*>(aArg);
+  thread->Run();
+  return 0;
+}
+
+SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
+                             double aIntervalMilliseconds)
+    : Sampler(aLock)
+    , mActivityGeneration(aActivityGeneration)
+    , mIntervalMicroseconds(
+        std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5))))
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  if (mIntervalMicroseconds < 10*1000) {
+    ::timeBeginPeriod(mIntervalMicroseconds / 1000);
+  }
+
+  
+  
+  
+  mThread = reinterpret_cast<HANDLE>(
+      _beginthreadex(nullptr,
+                      0,
+                     ThreadEntry,
+                     this,
+                      0,
+                     nullptr));
+  if (mThread == 0) {
+    MOZ_CRASH("_beginthreadex failed");
+  }
+}
+
+SamplerThread::~SamplerThread()
+{
+  WaitForSingleObject(mThread, INFINITE);
+
+  
+  if (mThread != kNoThread) {
+    CloseHandle(mThread);
+  }
+}
+
+void
+SamplerThread::SleepMicro(uint32_t aMicroseconds)
+{
+  
+  
+  
+  if (mIntervalMicroseconds >= 1000) {
+    ::Sleep(std::max(1u, aMicroseconds / 1000));
+  } else {
+    TimeStamp start = TimeStamp::Now();
+    TimeStamp end = start + TimeDuration::FromMicroseconds(aMicroseconds);
+
+    
+    if (aMicroseconds >= 1000) {
+      ::Sleep(aMicroseconds / 1000);
+    }
+
+    
+    while (TimeStamp::Now() < end) {
+      _mm_pause();
+    }
+  }
+}
+
+void
+SamplerThread::Stop(PSLockRef aLock)
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mIntervalMicroseconds < 10 * 1000) {
+    ::timeEndPeriod(mIntervalMicroseconds / 1000);
+  }
+
+  Sampler::Disable(aLock);
+}
+
+
+
+
 static void
 PlatformInit(PSLockRef aLock)
 {
 }
 
 void
-TickSample::PopulateContext(CONTEXT* aContext)
+TickSample::PopulateContext()
 {
   MOZ_ASSERT(mIsSynchronous);
-  MOZ_ASSERT(aContext);
 
-  mContext = aContext;
-  RtlCaptureContext(aContext);
+  CONTEXT context;
+  RtlCaptureContext(&context);
 
 #if defined(GP_ARCH_amd64)
-  mPC = reinterpret_cast<Address>(aContext->Rip);
-  mSP = reinterpret_cast<Address>(aContext->Rsp);
-  mFP = reinterpret_cast<Address>(aContext->Rbp);
+  mPC = reinterpret_cast<Address>(context.Rip);
+  mSP = reinterpret_cast<Address>(context.Rsp);
+  mFP = reinterpret_cast<Address>(context.Rbp);
 #elif defined(GP_ARCH_x86)
-  mPC = reinterpret_cast<Address>(aContext->Eip);
-  mSP = reinterpret_cast<Address>(aContext->Esp);
-  mFP = reinterpret_cast<Address>(aContext->Ebp);
+  mPC = reinterpret_cast<Address>(context.Eip);
+  mSP = reinterpret_cast<Address>(context.Esp);
+  mFP = reinterpret_cast<Address>(context.Ebp);
 #endif
 }
 
