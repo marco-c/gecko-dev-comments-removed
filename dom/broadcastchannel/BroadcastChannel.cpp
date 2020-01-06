@@ -346,7 +346,9 @@ BroadcastChannel::Constructor(const GlobalObject& aGlobal,
   
   PBackgroundChild* actorChild = BackgroundChild::GetOrCreateForCurrentThread();
   if (NS_WARN_IF(!actorChild)) {
-    MOZ_CRASH("Failed to create a PBackgroundChild actor!");
+    
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
   }
 
   PBroadcastChannelChild* actor =
