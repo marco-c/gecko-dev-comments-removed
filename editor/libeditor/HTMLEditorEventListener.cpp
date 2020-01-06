@@ -131,11 +131,9 @@ HTMLEditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
     
     bool nodeIsInSelection = false;
     if (isContextClick && !selection->Collapsed()) {
-      int32_t rangeCount;
-      rv = selection->GetRangeCount(&rangeCount);
-      NS_ENSURE_SUCCESS(rv, rv);
+      uint32_t rangeCount = selection->RangeCount();
 
-      for (int32_t i = 0; i < rangeCount; i++) {
+      for (uint32_t i = 0; i < rangeCount; i++) {
         RefPtr<nsRange> range = selection->GetRangeAt(i);
         if (!range) {
           

@@ -132,10 +132,7 @@ TextEditRules::Init(TextEditor* aTextEditor)
 
   
   
-  int32_t rangeCount;
-  rv = selection->GetRangeCount(&rangeCount);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (!rangeCount) {
+  if (!selection->RangeCount()) {
     rv = mTextEditor->CollapseSelectionToEnd(selection);
     NS_ENSURE_SUCCESS(rv, rv);
   }
