@@ -7207,8 +7207,7 @@ nsCSSFrameConstructor::ReframeTextIfNeeded(nsIContent* aParentContent,
   }
   NS_ASSERTION(!aContent->GetPrimaryFrame(),
                "Text node has a frame and NS_CREATE_FRAME_IF_NON_WHITESPACE");
-  const bool allowLazyConstruction = true;
-  ContentInserted(aParentContent, aContent, nullptr, allowLazyConstruction);
+  ContentInserted(aParentContent, aContent, nullptr, LazyConstructionAllowed::Yes);
 }
 
 #ifdef DEBUG
@@ -7381,7 +7380,7 @@ nsCSSFrameConstructor::CreateNeededFrames(
         inRun = false;
         
         ContentRangeInserted(aContent, firstChildInRun, child, nullptr,
-                             false, 
+                             LazyConstructionAllowed::No,
                              true,  
                              &aTreeMatchContext);
       }
@@ -7390,7 +7389,7 @@ nsCSSFrameConstructor::CreateNeededFrames(
 
   if (inRun) {
     ContentAppended(aContent, firstChildInRun,
-                    false, 
+                    LazyConstructionAllowed::No,
                     true,  
                     &aTreeMatchContext);
   }
@@ -7439,7 +7438,7 @@ void
 nsCSSFrameConstructor::IssueSingleInsertNofications(nsIContent* aContainer,
                                                     nsIContent* aStartChild,
                                                     nsIContent* aEndChild,
-                                                    bool aAllowLazyConstruction,
+                                                    LazyConstructionAllowed aLazyConstructionAllowed,
                                                     bool aForReconstruction)
 {
   for (nsIContent* child = aStartChild;
@@ -7460,7 +7459,7 @@ nsCSSFrameConstructor::IssueSingleInsertNofications(nsIContent* aContainer,
     }
     
     ContentRangeInserted(aContainer, child, child->GetNextSibling(),
-                         mTempFrameTreeState, aAllowLazyConstruction,
+                         mTempFrameTreeState, aLazyConstructionAllowed,
                          aForReconstruction, nullptr);
   }
 }
@@ -7469,7 +7468,7 @@ nsCSSFrameConstructor::InsertionPoint
 nsCSSFrameConstructor::GetRangeInsertionPoint(nsIContent* aContainer,
                                               nsIContent* aStartChild,
                                               nsIContent* aEndChild,
-                                              bool aAllowLazyConstruction,
+                                              LazyConstructionAllowed aLazyConstructionAllowed,
                                               bool aForReconstruction)
 {
   
@@ -7519,7 +7518,7 @@ nsCSSFrameConstructor::GetRangeInsertionPoint(nsIContent* aContainer,
       
       
       IssueSingleInsertNofications(aContainer, aStartChild, aEndChild,
-                                   aAllowLazyConstruction, aForReconstruction);
+                                   aLazyConstructionAllowed, aForReconstruction);
       insertionPoint.mParentFrame = nullptr;
     }
   }
@@ -7591,12 +7590,14 @@ nsCSSFrameConstructor::StyleNewChildRange(nsIContent* aStartChild,
 void
 nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
                                        nsIContent* aFirstNewContent,
-                                       bool aAllowLazyConstruction,
+                                       LazyConstructionAllowed aLazyConstructionAllowed,
                                        bool aForReconstruction,
                                        TreeMatchContext* aProvidedTreeMatchContext)
 {
-  MOZ_ASSERT(!aProvidedTreeMatchContext || !aAllowLazyConstruction);
-  MOZ_ASSERT(!aAllowLazyConstruction || !RestyleManager()->IsInStyleRefresh());
+  MOZ_ASSERT(!aProvidedTreeMatchContext ||
+             aLazyConstructionAllowed == LazyConstructionAllowed::No);
+  MOZ_ASSERT(aLazyConstructionAllowed == LazyConstructionAllowed::No ||
+             !RestyleManager()->IsInStyleRefresh());
 
   AUTO_LAYOUT_PHASE_ENTRY_POINT(mPresShell->GetPresContext(), FrameC);
   NS_PRECONDITION(mUpdateCount != 0,
@@ -7607,7 +7608,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
     printf("nsCSSFrameConstructor::ContentAppended container=%p "
            "first-child=%p lazy=%d\n",
            static_cast<void*>(aContainer), aFirstNewContent,
-           aAllowLazyConstruction);
+           static_cast<int>(aLazyConstructionAllowed));
     if (gReallyNoisyContentUpdates && aContainer) {
       aContainer->List(stdout, 0);
     }
@@ -7661,13 +7662,14 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
       
       
       
-      if (isNewlyAddedContentForServo && aAllowLazyConstruction) {
+      if (isNewlyAddedContentForServo &&
+          aLazyConstructionAllowed == LazyConstructionAllowed::Yes) {
         LazilyStyleNewChildRange(aFirstNewContent, nullptr);
       }
       return;
     }
 
-    if (aAllowLazyConstruction &&
+    if (aLazyConstructionAllowed == LazyConstructionAllowed::Yes &&
         MaybeConstructLazily(CONTENTAPPEND, aContainer, aFirstNewContent)) {
       if (isNewlyAddedContentForServo) {
         LazilyStyleNewChildRange(aFirstNewContent, nullptr);
@@ -7696,7 +7698,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   LAYOUT_PHASE_TEMP_EXIT();
   InsertionPoint insertion =
     GetRangeInsertionPoint(aContainer, aFirstNewContent, nullptr,
-                           aAllowLazyConstruction, aForReconstruction);
+                           aLazyConstructionAllowed, aForReconstruction);
   nsContainerFrame*& parentFrame = insertion.mParentFrame;
   LAYOUT_PHASE_TEMP_REENTER();
   if (!parentFrame) {
@@ -7969,16 +7971,16 @@ bool NotifyListBoxBody(nsPresContext*    aPresContext,
 #endif 
 
 void
-nsCSSFrameConstructor::ContentInserted(nsIContent*            aContainer,
-                                       nsIContent*            aChild,
+nsCSSFrameConstructor::ContentInserted(nsIContent* aContainer,
+                                       nsIContent* aChild,
                                        nsILayoutHistoryState* aFrameState,
-                                       bool                   aAllowLazyConstruction)
+                                       LazyConstructionAllowed aLazyConstructionAllowed)
 {
   ContentRangeInserted(aContainer,
                        aChild,
                        aChild->GetNextSibling(),
                        aFrameState,
-                       aAllowLazyConstruction);
+                       aLazyConstructionAllowed);
 }
 
 
@@ -8004,12 +8006,14 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
                                             nsIContent* aStartChild,
                                             nsIContent* aEndChild,
                                             nsILayoutHistoryState* aFrameState,
-                                            bool aAllowLazyConstruction,
+                                            LazyConstructionAllowed aLazyConstructionAllowed,
                                             bool aForReconstruction,
                                             TreeMatchContext* aProvidedTreeMatchContext)
 {
-  MOZ_ASSERT(!aProvidedTreeMatchContext || !aAllowLazyConstruction);
-  MOZ_ASSERT(!aAllowLazyConstruction || !RestyleManager()->IsInStyleRefresh());
+  MOZ_ASSERT(!aProvidedTreeMatchContext ||
+             aLazyConstructionAllowed == LazyConstructionAllowed::No);
+  MOZ_ASSERT(aLazyConstructionAllowed == LazyConstructionAllowed::No ||
+             !RestyleManager()->IsInStyleRefresh());
 
   AUTO_LAYOUT_PHASE_ENTRY_POINT(mPresShell->GetPresContext(), FrameC);
   NS_PRECONDITION(mUpdateCount != 0,
@@ -8023,7 +8027,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
            "start-child=%p end-child=%p lazy=%d\n",
            static_cast<void*>(aContainer),
            static_cast<void*>(aStartChild), static_cast<void*>(aEndChild),
-           aAllowLazyConstruction);
+           static_cast<int>(aLazyConstructionAllowed));
     if (gReallyNoisyContentUpdates) {
       if (aContainer) {
         aContainer->List(stdout,0);
@@ -8045,7 +8049,8 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 #endif
 
   bool isSingleInsert = (aStartChild->GetNextSibling() == aEndChild);
-  NS_ASSERTION(isSingleInsert || !aAllowLazyConstruction,
+  NS_ASSERTION(isSingleInsert ||
+               aLazyConstructionAllowed == LazyConstructionAllowed::No,
                "range insert shouldn't be lazy");
   NS_ASSERTION(isSingleInsert || aEndChild,
                "range should not include all nodes after aStartChild");
@@ -8064,7 +8069,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
       
       LAYOUT_PHASE_TEMP_EXIT();
       IssueSingleInsertNofications(aContainer, aStartChild, aEndChild,
-                                   aAllowLazyConstruction, aForReconstruction);
+                                   aLazyConstructionAllowed, aForReconstruction);
       LAYOUT_PHASE_TEMP_REENTER();
       return;
     }
@@ -8139,7 +8144,8 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
       
       
       
-      if (isNewlyAddedContentForServo && aAllowLazyConstruction) {
+      if (isNewlyAddedContentForServo &&
+          aLazyConstructionAllowed == LazyConstructionAllowed::Yes) {
         LazilyStyleNewChildRange(aStartChild, aEndChild);
       }
       return;
@@ -8149,7 +8155,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     NS_ASSERTION(!parentFrame || parentFrame->GetContent() == aContainer ||
                  GetDisplayContentsStyleFor(aContainer), "New XBL code is possibly wrong!");
 
-    if (aAllowLazyConstruction &&
+    if (aLazyConstructionAllowed == LazyConstructionAllowed::Yes &&
         MaybeConstructLazily(CONTENTINSERT, aContainer, aStartChild)) {
       if (isNewlyAddedContentForServo) {
         LazilyStyleNewChildRange(aStartChild, aEndChild);
@@ -8186,7 +8192,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     
     LAYOUT_PHASE_TEMP_EXIT();
     insertion = GetRangeInsertionPoint(aContainer, aStartChild, aEndChild,
-                                       aAllowLazyConstruction,
+                                       aLazyConstructionAllowed,
                                        aForReconstruction);
     LAYOUT_PHASE_TEMP_REENTER();
   }
@@ -8204,7 +8210,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     
     LAYOUT_PHASE_TEMP_EXIT();
     IssueSingleInsertNofications(aContainer, aStartChild, aEndChild,
-                                 aAllowLazyConstruction, aForReconstruction);
+                                 aLazyConstructionAllowed, aForReconstruction);
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -8343,7 +8349,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
         
         LAYOUT_PHASE_TEMP_EXIT();
         IssueSingleInsertNofications(aContainer, aStartChild, aEndChild,
-                                     aAllowLazyConstruction, aForReconstruction);
+                                     aLazyConstructionAllowed, aForReconstruction);
         LAYOUT_PHASE_TEMP_REENTER();
         return;
       }
@@ -10063,7 +10069,7 @@ nsCSSFrameConstructor::RecreateFramesForContent(nsIContent* aContent,
         
         ContentRangeInserted(container, aContent, aContent->GetNextSibling(),
                              mTempFrameTreeState,
-                             false, 
+                             LazyConstructionAllowed::No,
                              true,  
                              nullptr);
       }
