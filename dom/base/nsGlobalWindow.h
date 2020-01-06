@@ -739,7 +739,7 @@ public:
     AlwaysContinueSlowScript,
     KillSlowScript
   };
-  SlowScriptResponse ShowSlowScriptDialog();
+  SlowScriptResponse ShowSlowScriptDialog(const nsString& aAddonId);
 
   
   void AddGamepad(uint32_t aIndex, mozilla::dom::Gamepad* aGamepad);
