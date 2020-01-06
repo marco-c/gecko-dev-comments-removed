@@ -259,7 +259,12 @@ function runOMTATest(aTestFunction, aOnSkip, specialPowersForPrefs) {
       .then(loadPaintListener)
       .then(function() {
         
+        
+        
+        
         utils.advanceTimeAndRefresh(0);
+        return waitForPaintsFlushed();
+      }).then(function() {
         div.style.animation = animationName + " 10s";
 
         return waitForPaintsFlushed();
