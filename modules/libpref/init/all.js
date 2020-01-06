@@ -1319,11 +1319,7 @@ pref("dom.forms.number", true);
 pref("dom.forms.color", true);
 
 
-#ifdef NIGHTLY_BUILD
 pref("dom.forms.datetime", true);
-#else
-pref("dom.forms.datetime", false);
-#endif
 
 
 
@@ -5426,9 +5422,9 @@ pref("browser.safebrowsing.debug", false);
 
 pref("browser.safebrowsing.allowOverride", true);
 
-
-
 #ifdef MOZILLA_OFFICIAL
+
+
 pref("browser.safebrowsing.id", "navclient-auto-ffox");
 #else
 pref("browser.safebrowsing.id", "Firefox");
@@ -5841,7 +5837,11 @@ pref("dom.storageManager.prompt.testing.allow", false);
 
 
 
+#ifdef NIGHTLY_BUILD
 pref("browser.storageManager.enabled", true);
+#else
+pref("browser.storageManager.enabled", false);
+#endif
 pref("browser.storageManager.pressureNotification.minIntervalMS", 1200000);
 pref("browser.storageManager.pressureNotification.usageThresholdGB", 5);
 
