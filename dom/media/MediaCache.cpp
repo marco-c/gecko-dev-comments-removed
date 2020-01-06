@@ -2555,12 +2555,6 @@ MediaCacheStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes)
     if (cacheBlock < 0) {
       
 
-      if (count > 0) {
-        
-        
-        break;
-      }
-
       
       
       
@@ -2570,7 +2564,8 @@ MediaCacheStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes)
       while (MediaCacheStream* stream = iter.Next()) {
         if (OffsetToBlockIndexUnchecked(stream->mChannelOffset) ==
               streamBlock &&
-            streamOffset < stream->mChannelOffset) {
+            streamOffset < stream->mChannelOffset &&
+            stream->mChannelOffset == stream->mStreamLength) {
           streamWithPartialBlock = stream;
           break;
         }
@@ -2583,13 +2578,16 @@ MediaCacheStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes)
         
         bytes = std::min(bytes, int64_t(INT32_MAX));
         MOZ_ASSERT(bytes >= 0 && bytes <= aCount, "Bytes out of range.");
-        memcpy(aBuffer,
-          streamWithPartialBlock->mPartialBlockBuffer.get() + offsetInStreamBlock, bytes);
+        memcpy(aBuffer + count,
+               streamWithPartialBlock->mPartialBlockBuffer.get() +
+                 offsetInStreamBlock,
+               bytes);
         if (mCurrentMode == MODE_METADATA) {
           streamWithPartialBlock->mMetadataInPartialBlockBuffer = true;
         }
         streamOffset += bytes;
-        count = bytes;
+        count += bytes;
+        
         break;
       }
 
@@ -2623,13 +2621,16 @@ MediaCacheStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes)
     count += bytes;
   }
 
-  if (count > 0) {
-    
-    
-    mMediaCache->QueueUpdate();
-  }
-  LOG("Stream %p Read at %" PRId64 " count=%d", this, streamOffset-count, count);
   *aBytes = count;
+  if (count == 0) {
+    return NS_OK;
+  }
+
+  
+  
+  mMediaCache->QueueUpdate();
+
+  LOG("Stream %p Read at %" PRId64 " count=%d", this, streamOffset-count, count);
   mStreamOffset = streamOffset;
   return NS_OK;
 }
