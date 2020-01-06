@@ -191,9 +191,12 @@ PopulateScrollData(WebRenderScrollData& aTarget, Layer* aLayer)
 void
 WebRenderLayerManager::CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDisplayList,
                                                               nsDisplayListBuilder* aDisplayListBuilder,
-                                                              StackingContextHelper& aSc,
+                                                              const StackingContextHelper& aSc,
                                                               wr::DisplayListBuilder& aBuilder)
 {
+  bool apzEnabled = AsyncPanZoomEnabled();
+  const ActiveScrolledRoot* lastAsr = nullptr;
+
   nsDisplayList savedItems;
   nsDisplayItem* item;
   while ((item = aDisplayList->RemoveBottom()) != nullptr) {
@@ -233,6 +236,42 @@ WebRenderLayerManager::CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDi
     }
 
     savedItems.AppendToTop(item);
+
+    if (apzEnabled) {
+      const ActiveScrolledRoot* asr = item->GetActiveScrolledRoot();
+      
+      
+      
+      if (asr && asr != lastAsr) {
+        lastAsr = asr;
+        FrameMetrics::ViewID id = nsLayoutUtils::ViewIDForASR(asr);
+        if (mScrollMetadata.find(id) == mScrollMetadata.end()) {
+          
+          
+          
+          Maybe<ScrollMetadata> metadata = asr->mScrollableFrame->ComputeScrollMetadata(
+              nullptr, item->ReferenceFrame(),
+              ContainerLayerParameters(), nullptr);
+          MOZ_ASSERT(metadata);
+          mScrollMetadata[id] = *metadata;
+        }
+      }
+      if (itemType == nsDisplayItem::TYPE_SCROLL_INFO_LAYER) {
+        
+        
+        
+        
+        nsDisplayScrollInfoLayer* info = static_cast<nsDisplayScrollInfoLayer*>(item);
+        UniquePtr<ScrollMetadata> metadata = info->ComputeScrollMetadata(
+            nullptr, ContainerLayerParameters());
+        MOZ_ASSERT(metadata);
+        MOZ_ASSERT(metadata->GetMetrics().IsScrollInfoLayer());
+        FrameMetrics::ViewID id = metadata->GetMetrics().GetScrollId();
+        if (mScrollMetadata.find(id) == mScrollMetadata.end()) {
+          mScrollMetadata[id] = *metadata;
+        }
+      }
+    }
 
     if (!item->CreateWebRenderCommands(aBuilder, aSc, mParentCommands, this,
                                        aDisplayListBuilder)) {
@@ -494,10 +533,14 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
   if (mEndTransactionWithoutLayers) {
     
     
+    
     if (aDisplayList && aDisplayListBuilder) {
       StackingContextHelper sc;
       mParentCommands.Clear();
+      mScrollMetadata.clear();
+
       CreateWebRenderCommandsFromDisplayList(aDisplayList, aDisplayListBuilder, sc, builder);
+
       builder.Finalize(contentSize, mBuiltDisplayList);
     }
 
