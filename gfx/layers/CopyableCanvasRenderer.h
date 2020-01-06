@@ -3,12 +3,12 @@
 
 
 
-#ifndef GFX_COPYABLECANVASLAYER_H
-#define GFX_COPYABLECANVASLAYER_H
+#ifndef GFX_COPYABLECANVASRENDERER_H
+#define GFX_COPYABLECANVASRENDERER_H
 
 #include <stdint.h>                     
+#include "CanvasRenderer.h"
 #include "GLContextTypes.h"             
-#include "Layers.h"                     
 #include "gfxContext.h"                 
 #include "gfxTypes.h"
 #include "gfxPlatform.h"                
@@ -31,29 +31,40 @@ namespace layers {
 
 
 
-class CopyableCanvasLayer : public CanvasLayer
+class CopyableCanvasRenderer : public CanvasRenderer
 {
 public:
-  CopyableCanvasLayer(LayerManager* aLayerManager, void *aImplData);
-
-protected:
-  virtual ~CopyableCanvasLayer();
+  CopyableCanvasRenderer();
+  virtual ~CopyableCanvasRenderer();
 
 public:
-  virtual void Initialize(const Data& aData) override;
+  void Initialize(const CanvasInitializeData& aData) override;
+  bool IsDataValid(const CanvasInitializeData& aData) override;
 
-  virtual bool IsDataValid(const Data& aData) override;
+  void ClearCachedResources() override;
+  void Destroy() override;
 
-  bool IsGLLayer() { return !!mGLContext; }
+  CopyableCanvasRenderer* AsCopyableCanvasRenderer() override { return this; }
+
+  bool NeedsYFlip() const { return mOriginPos == gl::OriginPos::BottomLeft; }
+  bool HasGLContext() const { return !!mGLContext; }
+  bool IsOpaque() const { return mOpaque; }
+
+  PersistentBufferProvider* GetBufferProvider() { return mBufferProvider; }
+
+  already_AddRefed<gfx::SourceSurface> ReadbackSurface();
 
 protected:
   RefPtr<gl::GLContext> mGLContext;
   RefPtr<PersistentBufferProvider> mBufferProvider;
   UniquePtr<gl::SharedSurface> mGLFrontbuffer;
+  RefPtr<AsyncCanvasRenderer> mAsyncRenderer;
 
   bool mIsAlphaPremultiplied;
   gl::OriginPos mOriginPos;
   bool mIsMirror;
+
+  bool mOpaque;
 
   RefPtr<gfx::DataSourceSurface> mCachedTempSurface;
 

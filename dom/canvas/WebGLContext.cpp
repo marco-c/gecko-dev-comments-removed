@@ -1287,9 +1287,7 @@ public:
 
 
     static void PreTransactionCallback(void* data) {
-        WebGLContextUserData* userdata = static_cast<WebGLContextUserData*>(data);
-        HTMLCanvasElement* canvas = userdata->mCanvas;
-        WebGLContext* webgl = static_cast<WebGLContext*>(canvas->GetContextAtIndex(0));
+        WebGLContext* webgl = static_cast<WebGLContext*>(data);
 
         
         webgl->BeginComposition();
@@ -1299,9 +1297,7 @@ public:
 
 
     static void DidTransactionCallback(void* data) {
-        WebGLContextUserData* userdata = static_cast<WebGLContextUserData*>(data);
-        HTMLCanvasElement* canvas = userdata->mCanvas;
-        WebGLContext* webgl = static_cast<WebGLContext*>(canvas->GetContextAtIndex(0));
+        WebGLContext* webgl = static_cast<WebGLContext*>(data);
 
         
         webgl->EndComposition();
@@ -1334,38 +1330,15 @@ WebGLContext::GetCanvasLayer(nsDisplayListBuilder* builder,
 
     WebGLContextUserData* userData = nullptr;
     if (builder->IsPaintingToWindow() && mCanvasElement && !aMirror) {
-        
-        
-        
-        
-        
-        
-
-        
-        
-        
-        
-        
         userData = new WebGLContextUserData(mCanvasElement);
-        canvasLayer->SetDidTransactionCallback(
-            WebGLContextUserData::DidTransactionCallback, userData);
-        canvasLayer->SetPreTransactionCallback(
-            WebGLContextUserData::PreTransactionCallback, userData);
     }
 
     canvasLayer->SetUserData(aMirror ? &gWebGLMirrorLayerUserData : &gWebGLLayerUserData, userData);
 
-    CanvasLayer::Data data;
-    data.mGLContext = gl;
-    data.mSize = nsIntSize(mWidth, mHeight);
-    data.mHasAlpha = gl->Caps().alpha;
-    data.mIsGLAlphaPremult = IsPremultAlpha() || !data.mHasAlpha;
-    data.mIsMirror = aMirror;
-
-    canvasLayer->Initialize(data);
+    CanvasRenderer* canvasRenderer = canvasLayer->CreateOrGetCanvasRenderer();
+    InitializeCanvasRenderer(builder, canvasRenderer, aMirror);
     uint32_t flags = gl->Caps().alpha ? 0 : Layer::CONTENT_OPAQUE;
     canvasLayer->SetContentFlags(flags);
-    canvasLayer->Updated();
 
     mResetLayer = false;
     
@@ -1374,6 +1347,41 @@ WebGLContext::GetCanvasLayer(nsDisplayListBuilder* builder,
     mLayerIsMirror = aMirror;
 
     return canvasLayer.forget();
+}
+
+void
+WebGLContext::InitializeCanvasRenderer(nsDisplayListBuilder* aBuilder,
+                                       CanvasRenderer* aRenderer,
+                                       bool aMirror)
+{
+    CanvasInitializeData data;
+    if (aBuilder->IsPaintingToWindow() && mCanvasElement && !aMirror) {
+        
+        
+        
+        
+        
+        
+
+        
+        
+        
+        
+        
+        data.mPreTransCallback = WebGLContextUserData::PreTransactionCallback;
+        data.mPreTransCallbackData = this;
+        data.mDidTransCallback = WebGLContextUserData::DidTransactionCallback;
+        data.mDidTransCallbackData = this;
+    }
+
+    data.mGLContext = gl;
+    data.mSize = nsIntSize(mWidth, mHeight);
+    data.mHasAlpha = gl->Caps().alpha;
+    data.mIsGLAlphaPremult = IsPremultAlpha() || !data.mHasAlpha;
+    data.mIsMirror = aMirror;
+
+    aRenderer->Initialize(data);
+    aRenderer->SetDirty();
 }
 
 layers::LayersBackend
