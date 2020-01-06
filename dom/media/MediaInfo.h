@@ -229,6 +229,7 @@ public:
     , mCodecSpecificConfig(aOther.mCodecSpecificConfig)
     , mExtraData(aOther.mExtraData)
     , mRotation(aOther.mRotation)
+    , mBitDepth(aOther.mBitDepth)
     , mImageRect(aOther.mImageRect)
     , mAlphaPresent(aOther.mAlphaPresent)
   {
@@ -335,6 +336,9 @@ public:
   
   
   Rotation mRotation;
+
+  
+  uint8_t mBitDepth = 8;
 
 private:
   
