@@ -222,6 +222,13 @@ var loadListener = {
 
 
   handleEvent(event) {
+    
+    
+    if (event.target != curContainer.frame &&
+        event.target != curContainer.frame.document) {
+      return;
+    }
+
     let location = event.target.documentURI || event.target.location.href;
     logger.debug(`Received DOM event "${event.type}" for "${location}"`);
 
@@ -235,23 +242,21 @@ var loadListener = {
         break;
 
       case "pagehide":
-        if (event.target === curContainer.frame.document) {
-          this.seenUnload = true;
+        this.seenUnload = true;
 
-          removeEventListener("hashchange", this);
-          removeEventListener("pagehide", this);
+        removeEventListener("hashchange", this);
+        removeEventListener("pagehide", this);
 
-          
-          addEventListener("DOMContentLoaded", this, false);
-          addEventListener("pageshow", this, false);
-        }
+        
+        addEventListener("DOMContentLoaded", this, false);
+        addEventListener("pageshow", this, false);
+
         break;
 
       case "hashchange":
-        if (event.target === curContainer.frame) {
-          this.stop();
-          sendOk(this.command_id);
-        }
+        this.stop();
+        sendOk(this.command_id);
+
         break;
 
       case "DOMContentLoaded":
@@ -273,13 +278,13 @@ var loadListener = {
           this.stop();
           sendOk(this.command_id);
         }
+
         break;
 
       case "pageshow":
-        if (event.target === curContainer.frame.document) {
-          this.stop();
-          sendOk(this.command_id);
-        }
+        this.stop();
+        sendOk(this.command_id);
+
         break;
     }
   },
