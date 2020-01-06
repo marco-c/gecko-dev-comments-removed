@@ -18,7 +18,7 @@
 window.onload = function () {
   SimpleTest.waitForExplicitFinish();
 
-  let event = require("sdk/event/core");
+  let event = require("devtools/shared/event-emitter");
 
   Task.spawn(function* () {
     let { memory, client } = yield startServerAndGetSelectedTabMemory();

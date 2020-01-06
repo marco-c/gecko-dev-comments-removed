@@ -33,7 +33,7 @@ loader.lazyImporter(this, "ExtensionContent", "resource://gre/modules/ExtensionC
 
 
 
-loader.lazyRequireGetter(this, "events", "sdk/event/core");
+loader.lazyRequireGetter(this, "events", "devtools/shared/event-emitter");
 
 loader.lazyRequireGetter(this, "StyleSheetActor", "devtools/server/actors/stylesheets", true);
 

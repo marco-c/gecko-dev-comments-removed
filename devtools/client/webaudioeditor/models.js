@@ -5,7 +5,7 @@
 
 
 
-const { emit: coreEmit } = require("sdk/event/core");
+const { emit: coreEmit } = require("devtools/shared/event-emitter");
 
 
 

@@ -7,7 +7,7 @@
 
 
 
-const Events = require("sdk/event/core");
+const Events = require("devtools/shared/event-emitter");
 const {ActorClassWithSpec, Actor, FrontClassWithSpec, Front, generateActorSpec} =
   require("devtools/shared/protocol");
 

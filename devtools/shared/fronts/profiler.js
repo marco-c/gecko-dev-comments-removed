@@ -11,7 +11,7 @@ const {
 } = require("devtools/shared/protocol");
 const { profilerSpec } = require("devtools/shared/specs/profiler");
 
-loader.lazyRequireGetter(this, "events", "sdk/event/core");
+loader.lazyRequireGetter(this, "events", "devtools/shared/event-emitter");
 
 
 

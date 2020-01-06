@@ -8,7 +8,7 @@ const { Profiler } = require("devtools/server/performance/profiler");
 const { actorBridgeWithSpec } = require("devtools/server/actors/common");
 const { profilerSpec } = require("devtools/shared/specs/profiler");
 
-loader.lazyRequireGetter(this, "events", "sdk/event/core");
+loader.lazyRequireGetter(this, "events", "devtools/shared/event-emitter");
 
 
 

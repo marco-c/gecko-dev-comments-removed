@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { on, off } = require("sdk/event/core");
+const { on, off } = require("devtools/shared/event-emitter");
 const { Class } = require("sdk/core/heritage");
 
 
