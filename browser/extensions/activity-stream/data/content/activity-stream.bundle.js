@@ -63,10 +63,16 @@
  	__webpack_require__.p = "";
 
  	
- 	return __webpack_require__(__webpack_require__.s = 19);
+ 	return __webpack_require__(__webpack_require__.s = 25);
  })
 
  ([
+
+ (function(module, exports) {
+
+module.exports = React;
+
+ }),
 
  (function(module, exports, __webpack_require__) {
 
@@ -97,7 +103,7 @@ const globalImportContext = typeof Window === "undefined" ? BACKGROUND_PROCESS :
 
 
 const actionTypes = {};
-for (const type of ["BLOCK_URL", "BOOKMARK_URL", "DELETE_BOOKMARK_BY_ID", "DELETE_HISTORY_URL", "DELETE_HISTORY_URL_CONFIRM", "DIALOG_CANCEL", "DIALOG_OPEN", "INIT", "LOCALE_UPDATED", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_UNLOAD", "NEW_TAB_VISIBLE", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "PINNED_SITES_UPDATED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_CHANGED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINK_BLOCKED", "PLACES_LINK_DELETED", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SET_PREF", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_PIN", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "UNINIT"]) {
+for (const type of ["BLOCK_URL", "BOOKMARK_URL", "DELETE_BOOKMARK_BY_ID", "DELETE_HISTORY_URL", "DELETE_HISTORY_URL_CONFIRM", "DIALOG_CANCEL", "DIALOG_OPEN", "FEED_INIT", "INIT", "LOCALE_UPDATED", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_UNLOAD", "NEW_TAB_VISIBLE", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "PINNED_SITES_UPDATED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_CHANGED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINK_BLOCKED", "PLACES_LINK_DELETED", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_REGISTER", "SECTION_ROWS_UPDATE", "SET_PREF", "SNIPPETS_DATA", "SNIPPETS_RESET", "SYSTEM_TICK", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_PIN", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "UNINIT"]) {
   actionTypes[type] = type;
 }
 
@@ -279,19 +285,13 @@ module.exports = {
 
  (function(module, exports) {
 
-module.exports = React;
+module.exports = ReactIntl;
 
  }),
 
  (function(module, exports) {
 
 module.exports = ReactRedux;
-
- }),
-
- (function(module, exports) {
-
-module.exports = ReactIntl;
 
  }),
 
@@ -325,7 +325,8 @@ module.exports = function shortURL(link) {
   
   const eTLDLength = (eTLD || "").length || hostname.match(/\.com$/) && 3;
   const eTLDExtra = eTLDLength > 0 ? -(eTLDLength + 1) : Infinity;
-  return hostname.slice(0, eTLDExtra).toLowerCase() || hostname;
+  
+  return hostname.slice(0, eTLDExtra).toLowerCase() || hostname || link.title;
 };
 
  }),
@@ -335,21 +336,95 @@ module.exports = function shortURL(link) {
 "use strict";
 
 
-const React = __webpack_require__(1);
+const React = __webpack_require__(0);
 
 var _require = __webpack_require__(2);
 
+const injectIntl = _require.injectIntl;
+
+const ContextMenu = __webpack_require__(15);
+
+var _require2 = __webpack_require__(1);
+
+const ac = _require2.actionCreators;
+
+const linkMenuOptions = __webpack_require__(21);
+const DEFAULT_SITE_MENU_OPTIONS = ["CheckPinTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow"];
+
+class LinkMenu extends React.Component {
+  getOptions() {
+    const props = this.props;
+    const site = props.site,
+          index = props.index,
+          source = props.source;
+
+    
+
+    const propOptions = !site.isDefault ? props.options : DEFAULT_SITE_MENU_OPTIONS;
+
+    const options = propOptions.map(o => linkMenuOptions[o](site, index)).map(option => {
+      const action = option.action,
+            id = option.id,
+            type = option.type,
+            userEvent = option.userEvent;
+
+      if (!type && id) {
+        option.label = props.intl.formatMessage(option);
+        option.onClick = () => {
+          props.dispatch(action);
+          if (userEvent) {
+            props.dispatch(ac.UserEvent({
+              event: userEvent,
+              source,
+              action_position: index
+            }));
+          }
+        };
+      }
+      return option;
+    });
+
+    
+    
+    
+    options[0].first = true;
+    options[options.length - 1].last = true;
+    return options;
+  }
+  render() {
+    return React.createElement(ContextMenu, {
+      visible: this.props.visible,
+      onUpdate: this.props.onUpdate,
+      options: this.getOptions() });
+  }
+}
+
+module.exports = injectIntl(LinkMenu);
+module.exports._unconnected = LinkMenu;
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const React = __webpack_require__(0);
+
+var _require = __webpack_require__(3);
+
 const connect = _require.connect;
 
-var _require2 = __webpack_require__(3);
+var _require2 = __webpack_require__(2);
 
 const addLocaleData = _require2.addLocaleData,
       IntlProvider = _require2.IntlProvider;
 
-const TopSites = __webpack_require__(15);
-const Search = __webpack_require__(14);
-const ConfirmDialog = __webpack_require__(10);
-const PreferencesPane = __webpack_require__(13);
+const TopSites = __webpack_require__(19);
+const Search = __webpack_require__(17);
+const ConfirmDialog = __webpack_require__(14);
+const PreferencesPane = __webpack_require__(16);
+const Sections = __webpack_require__(18);
 
 
 const RTL_LIST = ["ar", "he", "fa", "ur"];
@@ -409,6 +484,7 @@ class Base extends React.Component {
           null,
           prefs.showSearch && React.createElement(Search, null),
           prefs.showTopSites && React.createElement(TopSites, null),
+          React.createElement(Sections, null),
           React.createElement(ConfirmDialog, null)
         ),
         React.createElement(PreferencesPane, null)
@@ -426,11 +502,11 @@ module.exports = connect(state => ({ App: state.App, Prefs: state.Prefs }))(Base
 "use strict";
 
 
-var _require = __webpack_require__(0);
+var _require = __webpack_require__(1);
 
 const at = _require.actionTypes;
 
-var _require2 = __webpack_require__(17);
+var _require2 = __webpack_require__(22);
 
 const perfSvc = _require2.perfService;
 
@@ -503,13 +579,13 @@ module.exports = class DetectUserSessionStart {
 
 
 
-var _require = __webpack_require__(18);
+var _require = __webpack_require__(24);
 
 const createStore = _require.createStore,
       combineReducers = _require.combineReducers,
       applyMiddleware = _require.applyMiddleware;
 
-var _require2 = __webpack_require__(0);
+var _require2 = __webpack_require__(1);
 
 const au = _require2.actionUtils;
 
@@ -564,7 +640,12 @@ module.exports = function initStore(reducers) {
   const store = createStore(mergeStateReducer(combineReducers(reducers)), applyMiddleware(messageMiddleware));
 
   addMessageListener(INCOMING_MESSAGE_NAME, msg => {
-    store.dispatch(msg.data);
+    try {
+      store.dispatch(msg.data);
+    } catch (ex) {
+      console.error("Content msg:", msg, "Dispatch error: ", ex); 
+      dump(`Content msg: ${ JSON.stringify(msg) }\nDispatch error: ${ ex }\n${ ex.stack }`);
+    }
   });
 
   return store;
@@ -579,12 +660,279 @@ module.exports.INCOMING_MESSAGE_NAME = INCOMING_MESSAGE_NAME;
  (function(module, exports, __webpack_require__) {
 
 "use strict";
+(function(global) {
+
+const DATABASE_NAME = "snippets_db";
+const DATABASE_VERSION = 1;
+const SNIPPETS_OBJECTSTORE_NAME = "snippets";
+const SNIPPETS_UPDATE_INTERVAL_MS = 14400000; 
 
 
 
 
 
-var _require = __webpack_require__(0);
+
+
+
+
+class SnippetsMap extends Map {
+  constructor() {
+    super(...arguments);
+    this._db = null;
+  }
+
+  set(key, value) {
+    super.set(key, value);
+    return this._dbTransaction(db => db.put(value, key));
+  }
+
+  delete(key, value) {
+    super.delete(key);
+    return this._dbTransaction(db => db.delete(key));
+  }
+
+  clear() {
+    super.clear();
+    return this._dbTransaction(db => db.clear());
+  }
+
+  
+
+
+
+
+
+
+  async connect() {
+    
+    const db = await this._openDB();
+
+    
+    await this._restoreFromDb(db);
+
+    
+    this._db = db;
+  }
+
+  
+
+
+
+
+
+
+
+
+  _dbTransaction(modifier) {
+    if (!this._db) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve, reject) => {
+      const transaction = modifier(this._db.transaction(SNIPPETS_OBJECTSTORE_NAME, "readwrite").objectStore(SNIPPETS_OBJECTSTORE_NAME));
+      transaction.onsuccess = event => resolve();
+
+      
+      transaction.onerror = event => reject(transaction.error);
+    });
+  }
+
+  _openDB() {
+    return new Promise((resolve, reject) => {
+      const openRequest = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
+
+      
+      openRequest.onerror = event => {
+        
+        
+        indexedDB.deleteDatabase(DATABASE_NAME);
+        reject(event);
+      };
+
+      openRequest.onupgradeneeded = event => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains(SNIPPETS_OBJECTSTORE_NAME)) {
+          db.createObjectStore(SNIPPETS_OBJECTSTORE_NAME);
+        }
+      };
+
+      openRequest.onsuccess = event => {
+        let db = event.target.result;
+
+        
+        db.onerror = err => console.error(err); 
+        
+        db.onversionchange = versionChangeEvent => versionChangeEvent.target.close();
+
+        resolve(db);
+      };
+    });
+  }
+
+  _restoreFromDb(db) {
+    return new Promise((resolve, reject) => {
+      let cursorRequest;
+      try {
+        cursorRequest = db.transaction(SNIPPETS_OBJECTSTORE_NAME).objectStore(SNIPPETS_OBJECTSTORE_NAME).openCursor();
+      } catch (err) {
+        
+        reject(err);
+        
+        return;
+      }
+
+      
+      cursorRequest.onerror = event => reject(event);
+
+      cursorRequest.onsuccess = event => {
+        let cursor = event.target.result;
+        
+        if (cursor) {
+          this.set(cursor.key, cursor.value);
+          cursor.continue();
+        } else {
+          
+          resolve();
+        }
+      };
+    });
+  }
+}
+
+
+
+
+
+
+class SnippetsProvider {
+  constructor() {
+    
+    
+    global.gSnippetsMap = new SnippetsMap();
+  }
+
+  get snippetsMap() {
+    return global.gSnippetsMap;
+  }
+
+  async _refreshSnippets() {
+    
+    
+    const cachedVersion = this.snippetsMap.get("snippets-cached-version");
+    if (cachedVersion !== this.version) {
+      this.snippetsMap.clear();
+    }
+
+    
+    const lastUpdate = this.snippetsMap.get("snippets-last-update");
+    const needsUpdate = !(lastUpdate >= 0) || Date.now() - lastUpdate > SNIPPETS_UPDATE_INTERVAL_MS;
+
+    if (needsUpdate && this.snippetsURL) {
+      this.snippetsMap.set("snippets-last-update", Date.now());
+      try {
+        
+        const response = await fetch(this.snippetsURL);
+        if (response.status === 200) {
+          const payload = await response.text();
+
+          this.snippetsMap.set("snippets", payload);
+          this.snippetsMap.set("snippets-cached-version", this.version);
+        }
+      } catch (e) {
+        console.error(e); 
+      }
+    }
+  }
+
+  _showDefaultSnippets() {
+    
+  }
+
+  _showRemoteSnippets() {
+    const snippetsEl = document.getElementById(this.elementId);
+    const containerEl = document.getElementById(this.containerElementId);
+    const payload = this.snippetsMap.get("snippets");
+
+    if (!snippetsEl) {
+      throw new Error(`No element was found with id '${ this.elementId }'.`);
+    }
+
+    
+    if (!payload) {
+      throw new Error("No remote snippets were found in gSnippetsMap.");
+    }
+
+    
+    snippetsEl.innerHTML = payload;
+
+    
+    
+    for (const scriptEl of snippetsEl.getElementsByTagName("script")) {
+      const relocatedScript = document.createElement("script");
+      relocatedScript.text = scriptEl.text;
+      scriptEl.parentNode.replaceChild(relocatedScript, scriptEl);
+    }
+
+    
+    if (containerEl) {
+      containerEl.style.display = "block";
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  async init(options) {
+    Object.assign(this, {
+      snippetsURL: "",
+      version: 0,
+      elementId: "snippets",
+      containerElementId: "snippets-container",
+      connect: true
+    }, options);
+
+    
+    
+    if (this.connect) {
+      try {
+        await this.snippetsMap.connect();
+      } catch (e) {
+        console.error(e); 
+      }
+    }
+
+    
+    await this._refreshSnippets();
+
+    
+    try {
+      this._showRemoteSnippets();
+    } catch (e) {
+      this._showDefaultSnippets(e);
+    }
+  }
+}
+
+module.exports.SnippetsMap = SnippetsMap;
+module.exports.SnippetsProvider = SnippetsProvider;
+module.exports.SNIPPETS_UPDATE_INTERVAL_MS = SNIPPETS_UPDATE_INTERVAL_MS;
+}.call(exports, __webpack_require__(23)))
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+
+
+
+var _require = __webpack_require__(1);
 
 const at = _require.actionTypes;
 
@@ -600,6 +948,7 @@ const INITIAL_STATE = {
     
     version: null
   },
+  Snippets: { initialized: false },
   TopSites: {
     
     initialized: false,
@@ -613,7 +962,8 @@ const INITIAL_STATE = {
   Dialog: {
     visible: false,
     data: {}
-  }
+  },
+  Sections: []
 };
 
 function App() {
@@ -701,6 +1051,9 @@ function TopSites() {
       });
       return hasMatch ? Object.assign({}, prevState, { rows: newRows }) : prevState;
     case at.PLACES_BOOKMARK_ADDED:
+      if (!action.data) {
+        return prevState;
+      }
       newRows = prevState.rows.map(site => {
         if (site && site.url === action.data.url) {
           var _action$data2 = action.data;
@@ -714,6 +1067,9 @@ function TopSites() {
       });
       return Object.assign({}, prevState, { rows: newRows });
     case at.PLACES_BOOKMARK_REMOVED:
+      if (!action.data) {
+        return prevState;
+      }
       newRows = prevState.rows.map(site => {
         if (site && site.url === action.data.url) {
           const newSite = Object.assign({}, site);
@@ -771,7 +1127,61 @@ function Prefs() {
   }
 }
 
-var reducers = { TopSites, App, Prefs, Dialog };
+function Sections() {
+  let prevState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : INITIAL_STATE.Sections;
+  let action = arguments[1];
+
+  let hasMatch;
+  let newState;
+  switch (action.type) {
+    case at.SECTION_DEREGISTER:
+      return prevState.filter(section => section.id !== action.data);
+    case at.SECTION_REGISTER:
+      
+      newState = prevState.map(section => {
+        if (section && section.id === action.data.id) {
+          hasMatch = true;
+          return Object.assign({}, section, action.data);
+        }
+        return section;
+      });
+      
+      
+      if (!hasMatch) {
+        const initialized = action.data.rows && action.data.rows.length > 0;
+        newState.push(Object.assign({ title: "", initialized, rows: [] }, action.data));
+      }
+      return newState;
+    case at.SECTION_ROWS_UPDATE:
+      return prevState.map(section => {
+        if (section && section.id === action.data.id) {
+          return Object.assign({}, section, action.data);
+        }
+        return section;
+      });
+    case at.PLACES_LINK_DELETED:
+    case at.PLACES_LINK_BLOCKED:
+      return prevState.map(section => Object.assign({}, section, { rows: section.rows.filter(site => site.url !== action.data.url) }));
+    default:
+      return prevState;
+  }
+}
+
+function Snippets() {
+  let prevState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : INITIAL_STATE.Snippets;
+  let action = arguments[1];
+
+  switch (action.type) {
+    case at.SNIPPETS_DATA:
+      return Object.assign({}, prevState, { initialized: true }, action.data);
+    case at.SNIPPETS_RESET:
+      return INITIAL_STATE.Snippets;
+    default:
+      return prevState;
+  }
+}
+
+var reducers = { TopSites, App, Snippets, Prefs, Dialog, Sections };
 module.exports = {
   reducers,
   INITIAL_STATE,
@@ -791,17 +1201,163 @@ module.exports = ReactDOM;
 "use strict";
 
 
-const React = __webpack_require__(1);
+const React = __webpack_require__(0);
+const LinkMenu = __webpack_require__(5);
+const shortURL = __webpack_require__(4);
 
 var _require = __webpack_require__(2);
 
+const FormattedMessage = _require.FormattedMessage;
+
+const cardContextTypes = __webpack_require__(13);
+
+
+
+
+
+
+
+
+
+
+class Card extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { showContextMenu: false, activeCard: null };
+  }
+  toggleContextMenu(event, index) {
+    this.setState({ showContextMenu: true, activeCard: index });
+  }
+  render() {
+    var _props = this.props;
+    const index = _props.index,
+          link = _props.link,
+          dispatch = _props.dispatch,
+          contextMenuOptions = _props.contextMenuOptions;
+
+    const isContextMenuOpen = this.state.showContextMenu && this.state.activeCard === index;
+    const hostname = shortURL(link);
+    var _cardContextTypes$lin = cardContextTypes[link.type];
+    const icon = _cardContextTypes$lin.icon,
+          intlID = _cardContextTypes$lin.intlID;
+
+
+    return React.createElement(
+      "li",
+      { className: `card-outer${ isContextMenuOpen ? " active" : "" }` },
+      React.createElement(
+        "a",
+        { href: link.url },
+        React.createElement(
+          "div",
+          { className: "card" },
+          link.image && React.createElement("div", { className: "card-preview-image", style: { backgroundImage: `url(${ link.image })` } }),
+          React.createElement(
+            "div",
+            { className: "card-details" },
+            React.createElement(
+              "div",
+              { className: "card-host-name" },
+              " ",
+              hostname,
+              " "
+            ),
+            React.createElement(
+              "div",
+              { className: `card-text${ link.image ? "" : " full-height" }` },
+              React.createElement(
+                "h4",
+                { className: "card-title" },
+                " ",
+                link.title,
+                " "
+              ),
+              React.createElement(
+                "p",
+                { className: "card-description" },
+                " ",
+                link.description,
+                " "
+              )
+            ),
+            React.createElement(
+              "div",
+              { className: "card-context" },
+              React.createElement("span", { className: `card-context-icon icon icon-${ icon }` }),
+              React.createElement(
+                "div",
+                { className: "card-context-label" },
+                React.createElement(FormattedMessage, { id: intlID, defaultMessage: "Visited" })
+              )
+            )
+          )
+        )
+      ),
+      React.createElement(
+        "button",
+        { className: "context-menu-button",
+          onClick: e => {
+            e.preventDefault();
+            this.toggleContextMenu(e, index);
+          } },
+        React.createElement(
+          "span",
+          { className: "sr-only" },
+          `Open context menu for ${ link.title }`
+        )
+      ),
+      React.createElement(LinkMenu, {
+        dispatch: dispatch,
+        visible: isContextMenuOpen,
+        onUpdate: val => this.setState({ showContextMenu: val }),
+        index: index,
+        site: link,
+        options: link.context_menu_options || contextMenuOptions })
+    );
+  }
+}
+module.exports = Card;
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+module.exports = {
+  history: {
+    intlID: "type_label_visited",
+    icon: "historyItem"
+  },
+  bookmark: {
+    intlID: "type_label_bookmarked",
+    icon: "bookmark"
+  },
+  trending: {
+    intlID: "type_label_recommended",
+    icon: "trending"
+  }
+};
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const React = __webpack_require__(0);
+
+var _require = __webpack_require__(3);
+
 const connect = _require.connect;
 
-var _require2 = __webpack_require__(3);
+var _require2 = __webpack_require__(2);
 
 const FormattedMessage = _require2.FormattedMessage;
 
-var _require3 = __webpack_require__(0);
+var _require3 = __webpack_require__(1);
 
 const actionTypes = _require3.actionTypes,
       ac = _require3.actionCreators;
@@ -910,7 +1466,7 @@ module.exports.Dialog = ConfirmDialog;
 "use strict";
 
 
-const React = __webpack_require__(1);
+const React = __webpack_require__(0);
 
 class ContextMenu extends React.Component {
   constructor(props) {
@@ -974,7 +1530,7 @@ class ContextMenu extends React.Component {
                   this.hideContext();
                   option.onClick();
                 } },
-              option.icon && React.createElement("span", { className: `icon icon-spacer icon-${option.icon}` }),
+              option.icon && React.createElement("span", { className: `icon icon-spacer icon-${ option.icon }` }),
               option.label
             )
           );
@@ -993,91 +1549,18 @@ module.exports = ContextMenu;
 "use strict";
 
 
-const React = __webpack_require__(1);
+const React = __webpack_require__(0);
 
 var _require = __webpack_require__(3);
 
-const injectIntl = _require.injectIntl;
-
-const ContextMenu = __webpack_require__(11);
-
-var _require2 = __webpack_require__(0);
-
-const ac = _require2.actionCreators;
-
-const linkMenuOptions = __webpack_require__(16);
-const DEFAULT_SITE_MENU_OPTIONS = ["CheckPinTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow"];
-
-class LinkMenu extends React.Component {
-  getOptions() {
-    const props = this.props;
-    const site = props.site,
-          index = props.index,
-          source = props.source;
-
-    
-
-    const propOptions = !site.isDefault ? props.options : DEFAULT_SITE_MENU_OPTIONS;
-
-    const options = propOptions.map(o => linkMenuOptions[o](site, index)).map(option => {
-      const action = option.action,
-            id = option.id,
-            type = option.type,
-            userEvent = option.userEvent;
-
-      if (!type && id) {
-        option.label = props.intl.formatMessage(option);
-        option.onClick = () => {
-          props.dispatch(action);
-          if (userEvent) {
-            props.dispatch(ac.UserEvent({
-              event: userEvent,
-              source,
-              action_position: index
-            }));
-          }
-        };
-      }
-      return option;
-    });
-
-    
-    
-    
-    options[0].first = true;
-    options[options.length - 1].last = true;
-    return options;
-  }
-  render() {
-    return React.createElement(ContextMenu, {
-      visible: this.props.visible,
-      onUpdate: this.props.onUpdate,
-      options: this.getOptions() });
-  }
-}
-
-module.exports = injectIntl(LinkMenu);
-module.exports._unconnected = LinkMenu;
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-const React = __webpack_require__(1);
-
-var _require = __webpack_require__(2);
-
 const connect = _require.connect;
 
-var _require2 = __webpack_require__(3);
+var _require2 = __webpack_require__(2);
 
 const injectIntl = _require2.injectIntl,
       FormattedMessage = _require2.FormattedMessage;
 
-var _require3 = __webpack_require__(0);
+var _require3 = __webpack_require__(1);
 
 const ac = _require3.actionCreators;
 
@@ -1138,7 +1621,7 @@ class PreferencesPane extends React.Component {
         "div",
         { className: "prefs-pane-button" },
         React.createElement("button", {
-          className: `prefs-button icon ${isVisible ? "icon-dismiss" : "icon-settings"}`,
+          className: `prefs-button icon ${ isVisible ? "icon-dismiss" : "icon-settings" }`,
           title: props.intl.formatMessage({ id: isVisible ? "settings_pane_done_button" : "settings_pane_button_label" }),
           onClick: this.togglePane })
       ),
@@ -1147,7 +1630,7 @@ class PreferencesPane extends React.Component {
         { className: "prefs-pane" },
         React.createElement(
           "div",
-          { className: `sidebar ${isVisible ? "" : "hidden"}` },
+          { className: `sidebar ${ isVisible ? "" : "hidden" }` },
           React.createElement(
             "div",
             { className: "prefs-modal-inner-wrapper" },
@@ -1164,7 +1647,9 @@ class PreferencesPane extends React.Component {
             React.createElement(PreferencesInput, { className: "showSearch", prefName: "showSearch", value: prefs.showSearch, onChange: this.handleChange,
               titleStringId: "settings_pane_search_header", descStringId: "settings_pane_search_body" }),
             React.createElement(PreferencesInput, { className: "showTopSites", prefName: "showTopSites", value: prefs.showTopSites, onChange: this.handleChange,
-              titleStringId: "settings_pane_topsites_header", descStringId: "settings_pane_topsites_body" })
+              titleStringId: "settings_pane_topsites_header", descStringId: "settings_pane_topsites_body" }),
+            React.createElement(PreferencesInput, { className: "showTopStories", prefName: "feeds.section.topstories", value: prefs["feeds.section.topstories"], onChange: this.handleChange,
+              titleStringId: "settings_pane_pocketstories_header", descStringId: "settings_pane_pocketstories_body" })
           ),
           React.createElement(
             "section",
@@ -1193,18 +1678,18 @@ module.exports.PreferencesInput = PreferencesInput;
 
 
 
-const React = __webpack_require__(1);
+const React = __webpack_require__(0);
 
-var _require = __webpack_require__(2);
+var _require = __webpack_require__(3);
 
 const connect = _require.connect;
 
-var _require2 = __webpack_require__(3);
+var _require2 = __webpack_require__(2);
 
 const FormattedMessage = _require2.FormattedMessage,
       injectIntl = _require2.injectIntl;
 
-var _require3 = __webpack_require__(0);
+var _require3 = __webpack_require__(1);
 
 const ac = _require3.actionCreators;
 
@@ -1291,20 +1776,140 @@ module.exports._unconnected = Search;
 "use strict";
 
 
-const React = __webpack_require__(1);
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-var _require = __webpack_require__(2);
+const React = __webpack_require__(0);
+
+var _require = __webpack_require__(3);
 
 const connect = _require.connect;
 
-var _require2 = __webpack_require__(3);
+var _require2 = __webpack_require__(2);
+
+const FormattedMessage = _require2.FormattedMessage;
+
+const Card = __webpack_require__(12);
+const Topics = __webpack_require__(20);
+
+class Section extends React.Component {
+  render() {
+    var _props = this.props;
+    const id = _props.id,
+          title = _props.title,
+          icon = _props.icon,
+          rows = _props.rows,
+          infoOption = _props.infoOption,
+          emptyState = _props.emptyState,
+          dispatch = _props.dispatch,
+          maxCards = _props.maxCards,
+          contextMenuOptions = _props.contextMenuOptions;
+
+    const initialized = rows && rows.length > 0;
+    const shouldShowTopics = id === "TopStories" && this.props.topics && this.props.read_more_endpoint;
+    
+    
+    return React.createElement(
+      "section",
+      null,
+      React.createElement(
+        "div",
+        { className: "section-top-bar" },
+        React.createElement(
+          "h3",
+          { className: "section-title" },
+          React.createElement("span", { className: `icon icon-small-spacer icon-${ icon }` }),
+          React.createElement(FormattedMessage, title)
+        ),
+        infoOption && React.createElement(
+          "span",
+          { className: "section-info-option" },
+          React.createElement(
+            "span",
+            { className: "sr-only" },
+            React.createElement(FormattedMessage, { id: "section_info_option" })
+          ),
+          React.createElement("img", { className: "info-option-icon" }),
+          React.createElement(
+            "div",
+            { className: "info-option" },
+            infoOption.header && React.createElement(
+              "div",
+              { className: "info-option-header" },
+              React.createElement(FormattedMessage, infoOption.header)
+            ),
+            infoOption.body && React.createElement(
+              "p",
+              { className: "info-option-body" },
+              React.createElement(FormattedMessage, infoOption.body)
+            ),
+            infoOption.link && React.createElement(
+              "a",
+              { href: infoOption.link.href, target: "_blank", rel: "noopener noreferrer", className: "info-option-link" },
+              React.createElement(FormattedMessage, infoOption.link)
+            )
+          )
+        )
+      ),
+      React.createElement(
+        "ul",
+        { className: "section-list", style: { padding: 0 } },
+        rows.slice(0, maxCards).map((link, index) => link && React.createElement(Card, { index: index, dispatch: dispatch, link: link, contextMenuOptions: contextMenuOptions }))
+      ),
+      !initialized && React.createElement(
+        "div",
+        { className: "section-empty-state" },
+        React.createElement(
+          "div",
+          { className: "empty-state" },
+          React.createElement("img", { className: `empty-state-icon icon icon-${ emptyState.icon }` }),
+          React.createElement(
+            "p",
+            { className: "empty-state-message" },
+            React.createElement(FormattedMessage, emptyState.message)
+          )
+        )
+      ),
+      shouldShowTopics && React.createElement(Topics, { topics: this.props.topics, read_more_endpoint: this.props.read_more_endpoint })
+    );
+  }
+}
+
+class Sections extends React.Component {
+  render() {
+    const sections = this.props.Sections;
+    return React.createElement(
+      "div",
+      { className: "sections-list" },
+      sections.map(section => React.createElement(Section, _extends({ key: section.id }, section, { dispatch: this.props.dispatch })))
+    );
+  }
+}
+
+module.exports = connect(state => ({ Sections: state.Sections }))(Sections);
+module.exports._unconnected = Sections;
+module.exports.Section = Section;
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const React = __webpack_require__(0);
+
+var _require = __webpack_require__(3);
+
+const connect = _require.connect;
+
+var _require2 = __webpack_require__(2);
 
 const FormattedMessage = _require2.FormattedMessage;
 
 const shortURL = __webpack_require__(4);
-const LinkMenu = __webpack_require__(12);
+const LinkMenu = __webpack_require__(5);
 
-var _require3 = __webpack_require__(0);
+var _require3 = __webpack_require__(1);
 
 const ac = _require3.actionCreators;
 
@@ -1334,12 +1939,12 @@ class TopSite extends React.Component {
 
     const isContextMenuOpen = this.state.showContextMenu && this.state.activeTile === index;
     const title = link.pinTitle || shortURL(link);
-    const screenshotClassName = `screenshot${link.screenshot ? " active" : ""}`;
-    const topSiteOuterClassName = `top-site-outer${isContextMenuOpen ? " active" : ""}`;
-    const style = { backgroundImage: link.screenshot ? `url(${link.screenshot})` : "none" };
+    const screenshotClassName = `screenshot${ link.screenshot ? " active" : "" }`;
+    const topSiteOuterClassName = `top-site-outer${ isContextMenuOpen ? " active" : "" }`;
+    const style = { backgroundImage: link.screenshot ? `url(${ link.screenshot })` : "none" };
     return React.createElement(
       "li",
-      { className: topSiteOuterClassName, key: link.url },
+      { className: topSiteOuterClassName, key: link.guid || link.url },
       React.createElement(
         "a",
         { onClick: () => this.trackClick(), href: link.url },
@@ -1355,7 +1960,7 @@ class TopSite extends React.Component {
         ),
         React.createElement(
           "div",
-          { className: `title ${link.isPinned ? "pinned" : ""}` },
+          { className: `title ${ link.isPinned ? "pinned" : "" }` },
           link.isPinned && React.createElement("div", { className: "icon icon-pin-small" }),
           React.createElement(
             "span",
@@ -1374,7 +1979,7 @@ class TopSite extends React.Component {
         React.createElement(
           "span",
           { className: "sr-only" },
-          `Open context menu for ${title}`
+          `Open context menu for ${ title }`
         )
       ),
       React.createElement(LinkMenu, {
@@ -1401,7 +2006,7 @@ const TopSites = props => React.createElement(
     "ul",
     { className: "top-sites-list" },
     props.TopSites.rows.map((link, index) => link && React.createElement(TopSite, {
-      key: link.url,
+      key: link.guid || link.url,
       dispatch: props.dispatch,
       link: link,
       index: index }))
@@ -1419,7 +2024,72 @@ module.exports.TopSite = TopSite;
 "use strict";
 
 
-var _require = __webpack_require__(0);
+const React = __webpack_require__(0);
+
+var _require = __webpack_require__(2);
+
+const FormattedMessage = _require.FormattedMessage;
+
+
+class Topic extends React.Component {
+  render() {
+    var _props = this.props;
+    const url = _props.url,
+          name = _props.name;
+
+    return React.createElement(
+      "li",
+      null,
+      React.createElement(
+        "a",
+        { key: name, className: "topic-link", href: url },
+        name
+      )
+    );
+  }
+}
+
+class Topics extends React.Component {
+  render() {
+    var _props2 = this.props;
+    const topics = _props2.topics,
+          read_more_endpoint = _props2.read_more_endpoint;
+
+    return React.createElement(
+      "div",
+      { className: "topic" },
+      React.createElement(
+        "span",
+        null,
+        React.createElement(FormattedMessage, { id: "pocket_read_more" })
+      ),
+      React.createElement(
+        "ul",
+        null,
+        topics.map(t => React.createElement(Topic, { key: t.name, url: t.url, name: t.name }))
+      ),
+      React.createElement(
+        "a",
+        { className: "topic-read-more", href: read_more_endpoint },
+        React.createElement(FormattedMessage, { id: "pocket_read_even_more" }),
+        React.createElement("span", { className: "topic-read-more-logo" })
+      )
+    );
+  }
+}
+
+module.exports = Topics;
+module.exports._unconnected = Topics;
+module.exports.Topic = Topic;
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _require = __webpack_require__(1);
 
 const at = _require.actionTypes,
       ac = _require.actionCreators;
@@ -1614,7 +2284,7 @@ _PerfService.prototype = {
     let entries = this.getEntriesByName(name, "mark");
 
     if (!entries.length) {
-      throw new Error(`No marks with the name ${name}`);
+      throw new Error(`No marks with the name ${ name }`);
     }
 
     let mostRecentEntry = entries[entries.length - 1];
@@ -1632,6 +2302,33 @@ module.exports = {
 
  (function(module, exports) {
 
+var g;
+
+
+g = (function() {
+	return this;
+})();
+
+try {
+	
+	g = g || Function("return this")() || (1,eval)("this");
+} catch(e) {
+	
+	if(typeof window === "object")
+		g = window;
+}
+
+
+
+
+
+module.exports = g;
+
+
+ }),
+
+ (function(module, exports) {
+
 module.exports = Redux;
 
  }),
@@ -1641,21 +2338,26 @@ module.exports = Redux;
 "use strict";
 
 
-const React = __webpack_require__(1);
-const ReactDOM = __webpack_require__(9);
-const Base = __webpack_require__(5);
+const React = __webpack_require__(0);
+const ReactDOM = __webpack_require__(11);
+const Base = __webpack_require__(6);
 
-var _require = __webpack_require__(2);
+var _require = __webpack_require__(3);
 
 const Provider = _require.Provider;
 
-const initStore = __webpack_require__(7);
+const initStore = __webpack_require__(8);
 
-var _require2 = __webpack_require__(8);
+var _require2 = __webpack_require__(10);
 
 const reducers = _require2.reducers;
 
-const DetectUserSessionStart = __webpack_require__(6);
+const DetectUserSessionStart = __webpack_require__(7);
+
+var _require3 = __webpack_require__(9);
+
+const SnippetsProvider = _require3.SnippetsProvider;
+
 
 new DetectUserSessionStart().sendEventOrAddListener();
 
@@ -1666,6 +2368,19 @@ ReactDOM.render(React.createElement(
   { store: store },
   React.createElement(Base, null)
 ), document.getElementById("root"));
+
+
+const snippets = new SnippetsProvider();
+const unsubscribe = store.subscribe(() => {
+  const state = store.getState();
+  if (state.Snippets.initialized) {
+    snippets.init({
+      snippetsURL: state.Snippets.snippetsURL,
+      version: state.Snippets.version
+    });
+    unsubscribe();
+  }
+});
 
  })
  ]);
