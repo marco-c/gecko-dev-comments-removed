@@ -1676,6 +1676,71 @@ IsSignificantChildMaybeThreadSafe(const nsIContent* aContent,
 }
 
  bool
+nsCSSRuleProcessor::LangPseudoMatches(const mozilla::dom::Element* aElement,
+                                      const nsAString* aOverrideLang,
+                                      bool aHasOverrideLang,
+                                      const char16_t* aString,
+                                      const nsIDocument* aDocument)
+{
+  NS_ASSERTION(aString, "null lang parameter");
+  if (!aString || !*aString) {
+    return false;
+  }
+
+  
+  
+  
+  
+  bool haveLanguage = false;
+  nsAutoString language;
+  if (aHasOverrideLang) {
+    if (aOverrideLang) {
+      language = *aOverrideLang;
+      haveLanguage = true;
+    }
+  } else {
+    haveLanguage = aElement->GetLang(language);
+  }
+
+  if (haveLanguage) {
+    return nsStyleUtil::DashMatchCompare(language,
+                                         nsDependentString(aString),
+                                         nsASCIICaseInsensitiveStringComparator());
+  }
+
+  if (aDocument) {
+    
+    
+    
+    
+    aDocument->GetContentLanguage(language);
+
+    nsDependentString langString(aString);
+    language.StripWhitespace();
+    int32_t begin = 0;
+    int32_t len = language.Length();
+    while (begin < len) {
+      int32_t end = language.FindChar(char16_t(','), begin);
+      if (end == kNotFound) {
+        end = len;
+      }
+      if (nsStyleUtil::DashMatchCompare(Substring(language, begin,
+                                                  end-begin),
+                                        langString,
+                                        nsASCIICaseInsensitiveStringComparator())) {
+        return true;
+      }
+      begin = end + 1;
+    }
+    if (begin < len) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+ bool
 nsCSSRuleProcessor::StringPseudoMatches(const mozilla::dom::Element* aElement,
                                         CSSPseudoClassType aPseudo,
                                         const char16_t* aString,
@@ -1788,56 +1853,8 @@ nsCSSRuleProcessor::StringPseudoMatches(const mozilla::dom::Element* aElement,
       break;
 
     case CSSPseudoClassType::lang:
-      {
-        NS_ASSERTION(aString, "null lang parameter");
-        if (!aString || !*aString) {
-          return false;
-        }
-
-        
-        
-        
-        
-        nsAutoString language;
-        if (aElement->GetLang(language)) {
-          if (!nsStyleUtil::DashMatchCompare(language,
-                                             nsDependentString(aString),
-                                             nsASCIICaseInsensitiveStringComparator())) {
-            return false;
-          }
-          
-          break;
-        }
-
-        if (aDocument) {
-          
-          
-          
-          
-          aDocument->GetContentLanguage(language);
-
-          nsDependentString langString(aString);
-          language.StripWhitespace();
-          int32_t begin = 0;
-          int32_t len = language.Length();
-          while (begin < len) {
-            int32_t end = language.FindChar(char16_t(','), begin);
-            if (end == kNotFound) {
-              end = len;
-            }
-            if (nsStyleUtil::DashMatchCompare(Substring(language, begin,
-                                                        end-begin),
-                                              langString,
-                                              nsASCIICaseInsensitiveStringComparator())) {
-              break;
-            }
-            begin = end + 1;
-          }
-          if (begin < len) {
-            
-            break;
-          }
-        }
+      if (LangPseudoMatches(aElement, nullptr, false, aString, aDocument)) {
+        break;
       }
       return false;
 
