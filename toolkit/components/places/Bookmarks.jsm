@@ -479,12 +479,12 @@ var Bookmarks = Object.freeze({
                                            item.parentGuid, item.source ],
                                          { isTagging: false });
         
-        delete item.source;
-
-        
         
         
         await handleBookmarkItemSpecialData(itemId, item);
+
+        
+        delete item.source;
 
         insertInfos[i] = Object.assign({}, item);
       }
@@ -1548,7 +1548,7 @@ async function handleBookmarkItemSpecialData(itemId, item) {
   }
   if ("tags" in item) {
     try {
-      PlacesUtils.tagging.tagURI(NetUtil.newURI(item.url), item.tags, item._source);
+      PlacesUtils.tagging.tagURI(NetUtil.newURI(item.url), item.tags, item.source);
     } catch (ex) {
       
       Cu.reportError(`Unable to set tags "${item.tags.join(", ")}" for ${item.url}: ${ex}`);
