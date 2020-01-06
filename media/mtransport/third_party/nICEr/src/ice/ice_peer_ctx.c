@@ -824,6 +824,11 @@ int nr_ice_peer_ctx_deliver_packet_maybe(nr_ice_peer_ctx *pctx, nr_ice_component
       ABORT(R_REJECTED);
 
     
+    if (peer_comp->active) {
+      peer_comp->active->bytes_recvd += len;
+    }
+
+    
 
     if (pctx->handler) {
       r_log(LOG_ICE,LOG_DEBUG,"ICE-PEER(%s): Delivering data", pctx->label);

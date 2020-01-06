@@ -63,6 +63,10 @@ struct nr_ice_cand_pair_ {
   nr_ice_candidate *remote;           
   char *foundation;                   
 
+  
+  UINT8 bytes_sent;
+  UINT8 bytes_recvd;
+
   nr_stun_client_ctx *stun_client;    
   void *stun_client_handle;
 
