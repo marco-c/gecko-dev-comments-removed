@@ -1338,6 +1338,8 @@ DocAccessible::UnbindFromDocument(Accessible* aAccessible)
       mNodeToAccessibleMap.Get(aAccessible->GetNode()) == aAccessible)
     mNodeToAccessibleMap.Remove(aAccessible->GetNode());
 
+  aAccessible->mStateFlags |= eIsNotInDocument;
+
   
   xpcAccessibleDocument* xpcDoc = GetAccService()->GetCachedXPCDocument(this);
   if (xpcDoc)
