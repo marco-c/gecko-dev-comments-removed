@@ -4,6 +4,10 @@
 
 
 
+
+
+
+
 #ifndef js_GCAPI_h
 #define js_GCAPI_h
 
@@ -11,9 +15,12 @@
 #include "mozilla/Vector.h"
 
 #include "js/GCAnnotations.h"
-#include "js/HeapAPI.h"
 #include "js/UniquePtr.h"
 #include "js/Utility.h"
+
+struct JSContext;
+class JSObject;
+struct JSRuntime;
 
 namespace js {
 namespace gc {
@@ -50,6 +57,8 @@ typedef enum JSGCInvocationKind {
 } JSGCInvocationKind;
 
 namespace JS {
+
+struct Zone;
 
 #define GCREASONS(D)
      \
@@ -445,29 +454,6 @@ IsIncrementalGCInProgress(JSRuntime* rt);
 
 
 
-
-
-
-extern JS_PUBLIC_API(bool)
-IsIncrementalBarrierNeeded(JSContext* cx);
-
-
-
-
-
-extern JS_PUBLIC_API(void)
-IncrementalPreWriteBarrier(JSObject* obj);
-
-
-
-
-
-extern JS_PUBLIC_API(void)
-IncrementalReadBarrier(GCCellPtr thing);
-
-
-
-
 extern JS_PUBLIC_API(bool)
 WasIncrementalGC(JSRuntime* rt);
 
@@ -616,88 +602,6 @@ class JS_PUBLIC_API(AutoCheckCannotGC) : public AutoRequireNoGC
 
 
 
-
-
-extern JS_FRIEND_API(bool)
-UnmarkGrayGCThingRecursively(GCCellPtr thing);
-
-} 
-
-namespace js {
-namespace gc {
-
-static MOZ_ALWAYS_INLINE void
-ExposeGCThingToActiveJS(JS::GCCellPtr thing)
-{
-    
-    
-    
-    if (IsInsideNursery(thing.asCell()))
-        return;
-
-    
-    
-    if (thing.mayBeOwnedByOtherRuntime())
-        return;
-
-    if (IsIncrementalBarrierNeededOnTenuredGCThing(thing))
-        JS::IncrementalReadBarrier(thing);
-    else if (js::gc::detail::TenuredCellIsMarkedGray(thing.asCell()))
-        JS::UnmarkGrayGCThingRecursively(thing);
-
-    MOZ_ASSERT(!js::gc::detail::TenuredCellIsMarkedGray(thing.asCell()));
-}
-
-template <typename T>
-extern JS_PUBLIC_API(bool)
-EdgeNeedsSweepUnbarrieredSlow(T* thingp);
-
-static MOZ_ALWAYS_INLINE bool
-EdgeNeedsSweepUnbarriered(JSObject** objp)
-{
-    
-    
-    
-    MOZ_ASSERT(!JS::CurrentThreadIsHeapMinorCollecting());
-    if (IsInsideNursery(reinterpret_cast<Cell*>(*objp)))
-        return false;
-
-    auto zone = JS::shadow::Zone::asShadowZone(detail::GetGCThingZone(uintptr_t(*objp)));
-    if (!zone->isGCSweepingOrCompacting())
-        return false;
-
-    return EdgeNeedsSweepUnbarrieredSlow(objp);
-}
-
-} 
-} 
-
-namespace JS {
-
-
-
-
-
-
-
-static MOZ_ALWAYS_INLINE void
-ExposeObjectToActiveJS(JSObject* obj)
-{
-    MOZ_ASSERT(obj);
-    MOZ_ASSERT(!js::gc::EdgeNeedsSweepUnbarrieredSlow(&obj));
-    js::gc::ExposeGCThingToActiveJS(GCCellPtr(obj));
-}
-
-static MOZ_ALWAYS_INLINE void
-ExposeScriptToActiveJS(JSScript* script)
-{
-    MOZ_ASSERT(!js::gc::EdgeNeedsSweepUnbarrieredSlow(&script));
-    js::gc::ExposeGCThingToActiveJS(GCCellPtr(script));
-}
-
-
-
-
 extern JS_FRIEND_API(void)
 NotifyGCRootsRemoved(JSContext* cx);
 
@@ -707,6 +611,20 @@ NotifyGCRootsRemoved(JSContext* cx);
 extern JS_FRIEND_API(void)
 NotifyDidPaint(JSContext* cx);
 
+} 
+
+namespace js {
+namespace gc {
+
+
+
+
+
+
+extern JS_PUBLIC_API(JSObject*)
+NewMemoryInfoObject(JSContext* cx);
+
+} 
 } 
 
 #endif 
