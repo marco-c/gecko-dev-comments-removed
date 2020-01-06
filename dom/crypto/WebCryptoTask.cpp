@@ -718,11 +718,15 @@ private:
     }
 
     
-    uint32_t dataLen = mData.Length();
-    uint32_t maxLen = dataLen + 16;
-    if (!mResult.SetLength(maxLen, fallible)) {
+    if (std::numeric_limits<CryptoBuffer::size_type>::max() - 16 < mData.Length()) {
+      return NS_ERROR_DOM_DATA_ERR;
+    }
+
+    
+    if (!mResult.SetLength(mData.Length() + 16, fallible)) {
       return NS_ERROR_DOM_UNKNOWN_ERR;
     }
+
     uint32_t outLen = 0;
 
     
