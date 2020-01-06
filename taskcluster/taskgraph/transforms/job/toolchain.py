@@ -53,7 +53,7 @@ toolchain_run_schema = Schema({
 })
 
 
-def add_optimizations(config, run, taskdesc):
+def add_optimization(config, run, taskdesc):
     files = list(run.get('resources', []))
     
     files.append('taskcluster/taskgraph/transforms/job/toolchain.py')
@@ -81,13 +81,11 @@ def add_optimizations(config, run, taskdesc):
         'digest': digest,
     }
 
-    optimizations = taskdesc.setdefault('optimizations', [])
-
     
     
     for level in reversed(range(int(config.params['level']), 4)):
         subs['level'] = level
-        optimizations.append(['index-search', TOOLCHAIN_INDEX.format(**subs)])
+        taskdesc['optimization'] = {'index-search': [TOOLCHAIN_INDEX.format(**subs)]}
 
     
     taskdesc.setdefault('routes', []).append(
@@ -136,7 +134,7 @@ def docker_worker_toolchain(config, job, taskdesc):
     if 'toolchain-alias' in run:
         attributes['toolchain-alias'] = run['toolchain-alias']
 
-    add_optimizations(config, run, taskdesc)
+    add_optimization(config, run, taskdesc)
 
 
 @run_job_using("generic-worker", "toolchain-script", schema=toolchain_run_schema)
@@ -183,4 +181,4 @@ def windows_toolchain(config, job, taskdesc):
     if 'toolchain-alias' in run:
         attributes['toolchain-alias'] = run['toolchain-alias']
 
-    add_optimizations(config, run, taskdesc)
+    add_optimization(config, run, taskdesc)

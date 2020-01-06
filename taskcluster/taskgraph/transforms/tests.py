@@ -896,7 +896,6 @@ def make_job_description(config, tests):
         jobdesc['name'] = name
         jobdesc['label'] = label
         jobdesc['description'] = test['description']
-        jobdesc['when'] = test.get('when', {})
         jobdesc['attributes'] = attributes
         jobdesc['dependencies'] = {'build': build_label}
 
@@ -926,9 +925,11 @@ def make_job_description(config, tests):
         }
 
         
-        jobdesc['optimizations'] = optimizations = []
-        if config.params['project'] != 'try':
-            optimizations.append(['seta'])
+        if config.params['project'] == 'try':
+            jobdesc['when'] = test.get('when', {})
+        else:
+            
+            jobdesc['optimization'] = {'seta': None}
 
         run = jobdesc['run'] = {}
         run['using'] = 'mozharness-test'
