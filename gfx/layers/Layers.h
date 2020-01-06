@@ -1689,15 +1689,6 @@ public:
 
 
 
-  gfx::Matrix4x4 ComputeTransformToPreserve3DRoot();
-
-  
-
-
-
-
-
-
 
 
 
