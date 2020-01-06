@@ -280,6 +280,9 @@ module.exports = {
     "no-sparse-arrays": "error",
 
     
+    "no-tabs": "error",
+
+    
     "no-trailing-spaces": "error",
 
     

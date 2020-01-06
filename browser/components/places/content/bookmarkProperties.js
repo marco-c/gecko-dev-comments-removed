@@ -371,9 +371,9 @@ var BookmarkPropertiesPanel = {
     }
   },
 
-	
-	
-	
+  
+  
+  
   _batchBlockingDeferred: null,
   _beginBatch() {
     if (this._batching)

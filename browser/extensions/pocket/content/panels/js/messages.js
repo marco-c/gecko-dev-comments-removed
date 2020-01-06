@@ -23,18 +23,18 @@ var pktPanelMessaging = (function() {
  function addMessageListener(panelId, messageId, callback) {
    document.addEventListener(panelPrefixedMessageId(panelId, messageId), function(e) {
 
-			callback(JSON.parse(e.target.getAttribute("payload"))[0]);
+    callback(JSON.parse(e.target.getAttribute("payload"))[0]);
 
-			
-			
+    
+    
 
-		});
+    });
 
-	}
+  }
 
-	function removeMessageListener(panelId, messageId, callback) {
+  function removeMessageListener(panelId, messageId, callback) {
    document.removeEventListener(panelPrefixedMessageId(panelId, messageId), callback);
-	}
+  }
 
  function sendMessage(panelId, messageId, payload, callback) {
    
@@ -44,26 +44,26 @@ var pktPanelMessaging = (function() {
      data: (payload || {})
    };
 
-		
-		if (callback) {
-	        var messageResponseId = messageId + "Response";
-	        var responseListener = function(responsePayload) {
-	            callback(responsePayload);
-	            removeMessageListener(panelId, messageResponseId, responseListener);
-	        }
+    
+    if (callback) {
+      var messageResponseId = messageId + "Response";
+      var responseListener = function(responsePayload) {
+        callback(responsePayload);
+        removeMessageListener(panelId, messageResponseId, responseListener);
+      }
 
-	        addMessageListener(panelId, messageResponseId, responseListener);
-	    }
+      addMessageListener(panelId, messageResponseId, responseListener);
+    }
 
-	    
-		var element = document.createElement("PKTMessageFromPanelElement");
-		element.setAttribute("payload", JSON.stringify([messagePayload]));
-		document.documentElement.appendChild(element);
+      
+    var element = document.createElement("PKTMessageFromPanelElement");
+    element.setAttribute("payload", JSON.stringify([messagePayload]));
+    document.documentElement.appendChild(element);
 
-		var evt = document.createEvent("Events");
-		evt.initEvent(prefixedMessageId(messageId), true, false);
-		element.dispatchEvent(evt);
-	}
+    var evt = document.createEvent("Events");
+    evt.initEvent(prefixedMessageId(messageId), true, false);
+    element.dispatchEvent(evt);
+  }
 
 
     

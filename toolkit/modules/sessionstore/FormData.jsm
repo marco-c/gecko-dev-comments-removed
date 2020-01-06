@@ -14,7 +14,6 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
 
-
 function isRestorationPage(url) {
   return url == "about:sessionrestore" || url == "about:welcomeback";
 }

@@ -377,11 +377,11 @@ this.AccessFu = {
           
           
           
-	  this.autoMove({
-	    delay: 500,
-	    forcePresent: true,
-	    noOpIfOnScreen: true,
-	    moveMethod: 'moveFirst' });
+          this.autoMove({
+            delay: 500,
+            forcePresent: true,
+            noOpIfOnScreen: true,
+            moveMethod: 'moveFirst' });
         }
         break;
       }

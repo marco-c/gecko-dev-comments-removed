@@ -428,7 +428,7 @@ function openTabPrompt(domWin, tabPrompt, args) {
         
         
 
-	Services.tm.spinEventLoopUntil(() => !args.promptActive);
+        Services.tm.spinEventLoopUntil(() => !args.promptActive);
         delete args.promptActive;
 
         if (args.promptAborted)

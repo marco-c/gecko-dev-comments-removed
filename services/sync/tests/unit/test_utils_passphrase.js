@@ -1,3 +1,4 @@
+
 Cu.import("resource://services-sync/util.js");
 
 function run_test() {

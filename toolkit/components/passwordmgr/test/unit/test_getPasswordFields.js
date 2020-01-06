@@ -78,11 +78,13 @@ const TESTCASES = [
   },
   {
     description: "skipEmptyFields should also skip white-space only fields",
+    
     document: `<input id="pw-space" type=password value=" ">
                <input id="pw-tab" type=password value="	">
                <input id="pw-newline" type=password form="form1" value="
 ">
       <form id="form1"></form>`,
+    
     returnedFieldIDsByFormLike: [[], []],
     skipEmptyFields: true,
   },

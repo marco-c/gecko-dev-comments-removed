@@ -63,9 +63,6 @@ module.exports = {
     "no-sequences": "error",
 
     
-    "no-tabs": "error",
-
-    
     "no-template-curly-in-string": "error",
 
     

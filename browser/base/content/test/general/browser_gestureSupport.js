@@ -300,7 +300,7 @@ function test_emitLatchedEvents(eventPrefix, initialDelta, cmd) {
 
   
   test_utils.sendSimpleGestureEvent(eventPrefix + "Update", 0, 0, 0,
-				    -initialDelta, 0);
+                                    -initialDelta, 0);
   cumulativeDelta += -initialDelta;
   if (isIncreasing) {
     expect.dec++;
@@ -321,7 +321,7 @@ function test_emitLatchedEvents(eventPrefix, initialDelta, cmd) {
 
   
   test_utils.sendSimpleGestureEvent(eventPrefix + "Update", 0, 0, 0,
-				    initialDelta, 0);
+                                    initialDelta, 0);
   cumulativeDelta += initialDelta;
   if (isIncreasing) {
     expect.inc++;

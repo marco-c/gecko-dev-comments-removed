@@ -149,8 +149,8 @@ this.ForgetAboutSite = {
         } catch (ex) {
           
         } finally {
-	  resolve();
-	}
+          resolve();
+        }
       }));
     }
 
