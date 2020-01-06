@@ -1731,6 +1731,7 @@ public:
     inline void SweepTearOffs();
 
     
+    
     char* ToString(XPCWrappedNativeTearOff* to = nullptr) const;
 
     static nsIXPCScriptable* GatherProtoScriptable(nsIClassInfo* classInfo);
