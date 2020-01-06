@@ -1054,13 +1054,18 @@ struct ArenaTreeTrait
 };
 
 
+
+
+
+
 class ArenaCollection
 {
 public:
   bool Init()
   {
     mArenas.Init();
-    mDefaultArena = mLock.Init() ? CreateArena() : nullptr;
+    mPrivateArenas.Init();
+    mDefaultArena = mLock.Init() ? CreateArena( false) : nullptr;
     if (mDefaultArena) {
       
       
@@ -1069,22 +1074,54 @@ public:
     return bool(mDefaultArena);
   }
 
-  inline arena_t* GetById(arena_id_t aArenaId);
+  inline arena_t* GetById(arena_id_t aArenaId, bool aIsPrivate);
 
-  arena_t* CreateArena();
+  arena_t* CreateArena(bool aIsPrivate);
 
   void DisposeArena(arena_t* aArena)
   {
     MutexAutoLock lock(mLock);
-    mArenas.Remove(aArena);
+    (mPrivateArenas.Search(aArena) ? mPrivateArenas : mArenas).Remove(aArena);
     
     
     
   }
 
-  using Iterator = RedBlackTree<arena_t, ArenaTreeTrait>::Iterator;
+  using Tree = RedBlackTree<arena_t, ArenaTreeTrait>;
 
-  Iterator iter() { return mArenas.iter(); }
+  struct Iterator : Tree::Iterator
+  {
+    explicit Iterator(Tree* aTree, Tree* aSecondTree)
+      : Tree::Iterator(aTree)
+      , mNextTree(aSecondTree)
+    {
+    }
+
+    Item<Iterator> begin()
+    {
+      return Item<Iterator>(this, *Tree::Iterator::begin());
+    }
+
+    Item<Iterator> end()
+    {
+      return Item<Iterator>(this, nullptr);
+    }
+
+    Tree::TreeNode* Next()
+    {
+      Tree::TreeNode* result = Tree::Iterator::Next();
+      if (!result && mNextTree) {
+	new (this) Iterator(mNextTree, nullptr);
+	result = reinterpret_cast<Tree::TreeNode*>(*Tree::Iterator::begin());
+      }
+      return result;
+    }
+
+  private:
+    Tree* mNextTree;
+  };
+
+  Iterator iter() { return Iterator(&mArenas, &mPrivateArenas); }
 
   inline arena_t* GetDefault() { return mDefaultArena; }
 
@@ -1093,7 +1130,8 @@ public:
 private:
   arena_t* mDefaultArena;
   arena_id_t mLastArenaId;
-  RedBlackTree<arena_t, ArenaTreeTrait> mArenas;
+  Tree mArenas;
+  Tree mPrivateArenas;
 };
 
 static ArenaCollection gArenas;
@@ -2177,7 +2215,7 @@ thread_local_arena(bool enabled)
     
     
     
-    arena = gArenas.CreateArena();
+    arena = gArenas.CreateArena( false);
   } else {
     arena = gArenas.GetDefault();
   }
@@ -3843,7 +3881,7 @@ arena_t::arena_t()
 }
 
 arena_t*
-ArenaCollection::CreateArena()
+ArenaCollection::CreateArena(bool aIsPrivate)
 {
   arena_t* ret = new (fallible_t()) arena_t();
   if (!ret) {
@@ -3862,7 +3900,7 @@ ArenaCollection::CreateArena()
 
   
   ret->mId = mLastArenaId++;
-  mArenas.Insert(ret);
+  (aIsPrivate ? mPrivateArenas : mArenas).Insert(ret);
   return ret;
 }
 
@@ -4731,7 +4769,7 @@ MozJemalloc::jemalloc_free_dirty_pages(void)
 }
 
 inline arena_t*
-ArenaCollection::GetById(arena_id_t aArenaId)
+ArenaCollection::GetById(arena_id_t aArenaId, bool aIsPrivate)
 {
   if (!malloc_initialized) {
     return nullptr;
@@ -4741,7 +4779,7 @@ ArenaCollection::GetById(arena_id_t aArenaId)
   mozilla::AlignedStorage2<arena_t> key;
   key.addr()->mId = aArenaId;
   MutexAutoLock lock(mLock);
-  arena_t* result = mArenas.Search(key.addr());
+  arena_t* result = (aIsPrivate ? mPrivateArenas : mArenas).Search(key.addr());
   MOZ_RELEASE_ASSERT(result);
   return result;
 }
@@ -4752,7 +4790,7 @@ inline arena_id_t
 MozJemalloc::moz_create_arena()
 {
   if (malloc_init()) {
-    arena_t* arena = gArenas.CreateArena();
+    arena_t* arena = gArenas.CreateArena( true);
     return arena->mId;
   }
   return 0;
@@ -4762,7 +4800,7 @@ template<>
 inline void
 MozJemalloc::moz_dispose_arena(arena_id_t aArenaId)
 {
-  arena_t* arena = gArenas.GetById(aArenaId);
+  arena_t* arena = gArenas.GetById(aArenaId,  true);
   if (arena) {
     gArenas.DisposeArena(arena);
   }
@@ -4773,7 +4811,7 @@ MozJemalloc::moz_dispose_arena(arena_id_t aArenaId)
   inline return_type MozJemalloc::moz_arena_##name(                            \
     arena_id_t aArenaId, ARGS_HELPER(TYPED_ARGS, ##__VA_ARGS__))               \
   {                                                                            \
-    BaseAllocator allocator(gArenas.GetById(aArenaId));           \
+    BaseAllocator allocator(gArenas.GetById(aArenaId, /* IsPrivate = */ true));\
     return allocator.name(ARGS_HELPER(ARGS, ##__VA_ARGS__));                   \
   }
 #define MALLOC_FUNCS MALLOC_FUNCS_MALLOC_BASE
