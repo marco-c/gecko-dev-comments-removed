@@ -89,7 +89,7 @@ imgRequest::~imgRequest()
 
 nsresult
 imgRequest::Init(nsIURI *aURI,
-                 nsIURI *aCurrentURI,
+                 nsIURI *aFinalURI,
                  bool aHadInsecureRedirect,
                  nsIRequest *aRequest,
                  nsIChannel *aChannel,
@@ -105,7 +105,7 @@ imgRequest::Init(nsIURI *aURI,
 
   MOZ_ASSERT(!mImage, "Multiple calls to init");
   MOZ_ASSERT(aURI, "No uri");
-  MOZ_ASSERT(aCurrentURI, "No current uri");
+  MOZ_ASSERT(aFinalURI, "No final uri");
   MOZ_ASSERT(aRequest, "No request");
   MOZ_ASSERT(aChannel, "No channel");
 
@@ -116,7 +116,7 @@ imgRequest::Init(nsIURI *aURI,
   mURI = new ImageURL(aURI, rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  mCurrentURI = aCurrentURI;
+  mFinalURI = aFinalURI;
   mRequest = aRequest;
   mChannel = aChannel;
   mTimedChannel = do_QueryInterface(mChannel);
@@ -129,7 +129,7 @@ imgRequest::Init(nsIURI *aURI,
   
   
   
-  if (aURI != aCurrentURI) {
+  if (aURI != aFinalURI) {
     bool isHttps = false;
     bool isChrome = false;
     bool schemeLocal = false;
@@ -437,14 +437,14 @@ nsresult imgRequest::GetURI(ImageURL** aURI)
 }
 
 nsresult
-imgRequest::GetCurrentURI(nsIURI** aURI)
+imgRequest::GetFinalURI(nsIURI** aURI)
 {
   MOZ_ASSERT(aURI);
 
-  LOG_FUNC(gImgLog, "imgRequest::GetCurrentURI");
+  LOG_FUNC(gImgLog, "imgRequest::GetFinalURI");
 
-  if (mCurrentURI) {
-    *aURI = mCurrentURI;
+  if (mFinalURI) {
+    *aURI = mFinalURI;
     NS_ADDREF(*aURI);
     return NS_OK;
   }
@@ -1322,8 +1322,8 @@ imgRequest::OnRedirectVerifyCallback(nsresult result)
   if (LOG_TEST(LogLevel::Debug)) {
     LOG_MSG_WITH_PARAM(gImgLog,
                        "imgRequest::OnChannelRedirect", "old",
-                       mCurrentURI ? mCurrentURI->GetSpecOrDefault().get()
-                                   : "");
+                       mFinalURI ? mFinalURI->GetSpecOrDefault().get()
+                                 : "");
   }
 
   
@@ -1332,9 +1332,9 @@ imgRequest::OnRedirectVerifyCallback(nsresult result)
   bool isHttps = false;
   bool isChrome = false;
   bool schemeLocal = false;
-  if (NS_FAILED(mCurrentURI->SchemeIs("https", &isHttps)) ||
-      NS_FAILED(mCurrentURI->SchemeIs("chrome", &isChrome)) ||
-      NS_FAILED(NS_URIChainHasFlags(mCurrentURI,
+  if (NS_FAILED(mFinalURI->SchemeIs("https", &isHttps)) ||
+      NS_FAILED(mFinalURI->SchemeIs("chrome", &isChrome)) ||
+      NS_FAILED(NS_URIChainHasFlags(mFinalURI,
                                     nsIProtocolHandler::URI_IS_LOCAL_RESOURCE,
                                     &schemeLocal))  ||
       (!isHttps && !isChrome && !schemeLocal)) {
@@ -1353,19 +1353,19 @@ imgRequest::OnRedirectVerifyCallback(nsresult result)
   }
 
   
-  mChannel->GetURI(getter_AddRefs(mCurrentURI));
+  mChannel->GetURI(getter_AddRefs(mFinalURI));
 
   if (LOG_TEST(LogLevel::Debug)) {
     LOG_MSG_WITH_PARAM(gImgLog, "imgRequest::OnChannelRedirect", "new",
-                       mCurrentURI ? mCurrentURI->GetSpecOrDefault().get()
-                                   : "");
+                       mFinalURI ? mFinalURI->GetSpecOrDefault().get()
+                                 : "");
   }
 
   
   
   bool doesNotReturnData = false;
   nsresult rv =
-    NS_URIChainHasFlags(mCurrentURI,
+    NS_URIChainHasFlags(mFinalURI,
                         nsIProtocolHandler::URI_DOES_NOT_RETURN_DATA,
                         &doesNotReturnData);
 
