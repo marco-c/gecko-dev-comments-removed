@@ -8,19 +8,26 @@
 #include "HttpLog.h"
 
 #include "nsHttp.h"
+#include "CacheControlParser.h"
 #include "PLDHashTable.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/HashFunctions.h"
 #include "nsCRT.h"
+#include "nsHttpRequestHead.h"
+#include "nsHttpResponseHead.h"
+#include "nsICacheEntry.h"
+#include "nsIRequest.h"
 #include <errno.h>
 
 namespace mozilla {
 namespace net {
 
 
-#define HTTP_ATOM(_name, _value) nsHttpAtom nsHttp::_name = { _value };
+namespace nsHttp {
+#define HTTP_ATOM(_name, _value) nsHttpAtom _name = { _value };
 #include "nsHttpAtomList.h"
 #undef HTTP_ATOM
+}
 
 
 #define HTTP_ATOM(_name, _value) Unused_ ## _name,
@@ -89,8 +96,9 @@ static const PLDHashTableOps ops = {
 };
 
 
+namespace nsHttp {
 nsresult
-nsHttp::CreateAtomTable()
+CreateAtomTable()
 {
     MOZ_ASSERT(!sAtomTable, "atom table already initialized");
 
@@ -106,7 +114,7 @@ nsHttp::CreateAtomTable()
 
     
     const char *const atoms[] = {
-#define HTTP_ATOM(_name, _value) nsHttp::_name._val,
+#define HTTP_ATOM(_name, _value) _name._val,
 #include "nsHttpAtomList.h"
 #undef HTTP_ATOM
         nullptr
@@ -126,7 +134,7 @@ nsHttp::CreateAtomTable()
 }
 
 void
-nsHttp::DestroyAtomTable()
+DestroyAtomTable()
 {
     delete sAtomTable;
     sAtomTable = nullptr;
@@ -142,14 +150,14 @@ nsHttp::DestroyAtomTable()
 }
 
 Mutex *
-nsHttp::GetLock()
+GetLock()
 {
     return sLock;
 }
 
 
 nsHttpAtom
-nsHttp::ResolveAtom(const char *str)
+ResolveAtom(const char *str)
 {
     nsHttpAtom atom = { nullptr };
 
@@ -213,7 +221,7 @@ static const char kValidTokenMap[128] = {
     1, 1, 1, 0, 1, 0, 1, 0  
 };
 bool
-nsHttp::IsValidToken(const char *start, const char *end)
+IsValidToken(const char *start, const char *end)
 {
     if (start == end)
         return false;
@@ -228,7 +236,7 @@ nsHttp::IsValidToken(const char *start, const char *end)
 }
 
 const char*
-nsHttp::GetProtocolVersion(uint32_t pv)
+GetProtocolVersion(uint32_t pv)
 {
     switch (pv) {
     case HTTP_VERSION_2:
@@ -247,7 +255,7 @@ nsHttp::GetProtocolVersion(uint32_t pv)
 
 
 void
-nsHttp::TrimHTTPWhitespace(const nsACString& aSource, nsACString& aDest)
+TrimHTTPWhitespace(const nsACString& aSource, nsACString& aDest)
 {
   nsAutoCString str(aSource);
 
@@ -259,7 +267,7 @@ nsHttp::TrimHTTPWhitespace(const nsACString& aSource, nsACString& aDest)
 
 
 bool
-nsHttp::IsReasonableHeaderValue(const nsACString &s)
+IsReasonableHeaderValue(const nsACString &s)
 {
   
   
@@ -276,7 +284,7 @@ nsHttp::IsReasonableHeaderValue(const nsACString &s)
 }
 
 const char *
-nsHttp::FindToken(const char *input, const char *token, const char *seps)
+FindToken(const char *input, const char *token, const char *seps)
 {
     if (!input)
         return nullptr;
@@ -303,7 +311,7 @@ nsHttp::FindToken(const char *input, const char *token, const char *seps)
 }
 
 bool
-nsHttp::ParseInt64(const char *input, const char **next, int64_t *r)
+ParseInt64(const char *input, const char **next, int64_t *r)
 {
     MOZ_ASSERT(input);
     MOZ_ASSERT(r);
@@ -328,10 +336,211 @@ nsHttp::ParseInt64(const char *input, const char **next, int64_t *r)
 }
 
 bool
-nsHttp::IsPermanentRedirect(uint32_t httpStatus)
+IsPermanentRedirect(uint32_t httpStatus)
 {
   return httpStatus == 301 || httpStatus == 308;
 }
+
+bool
+ValidationRequired(bool isForcedValid, nsHttpResponseHead *cachedResponseHead,
+                   uint32_t loadFlags, bool allowStaleCacheContent,
+                   bool isImmutable, bool customConditionalRequest,
+                   nsHttpRequestHead &requestHead,
+                   nsICacheEntry *entry, CacheControlParser &cacheControlRequest,
+                   bool fromPreviousSession)
+{
+    
+    
+    
+    
+    if (isForcedValid &&
+        (!cachedResponseHead->ExpiresInPast() ||
+         !cachedResponseHead->MustValidateIfExpired())) {
+        LOG(("NOT validating based on isForcedValid being true.\n"));
+        return false;
+    }
+
+    
+    if (loadFlags & nsIRequest::LOAD_FROM_CACHE || allowStaleCacheContent) {
+        LOG(("NOT validating based on LOAD_FROM_CACHE load flag\n"));
+        return false;
+    }
+
+    
+    
+    if ((loadFlags & nsIRequest::VALIDATE_ALWAYS) && !isImmutable) {
+        LOG(("Validating based on VALIDATE_ALWAYS load flag\n"));
+        return true;
+    }
+
+    
+    
+    if (loadFlags & nsIRequest::VALIDATE_NEVER) {
+        LOG(("VALIDATE_NEVER set\n"));
+        
+        if (cachedResponseHead->NoStore()) {
+            LOG(("Validating based on no-store logic\n"));
+            return true;
+        } else {
+            LOG(("NOT validating based on VALIDATE_NEVER load flag\n"));
+            return false;
+        }
+    }
+
+    
+    if (cachedResponseHead->MustValidate()) {
+        LOG(("Validating based on MustValidate() returning TRUE\n"));
+        return true;
+    }
+
+    
+    
+    if (customConditionalRequest &&
+        !requestHead.HasHeader(nsHttp::If_Match) &&
+        !requestHead.HasHeader(nsHttp::If_Unmodified_Since)) {
+        LOG(("Validating based on a custom conditional request\n"));
+        return true;
+    }
+
+    
+    
+    
+    
+
+    bool doValidation = true;
+    uint32_t now = NowInSeconds();
+
+    uint32_t age = 0;
+    nsresult rv = cachedResponseHead->ComputeCurrentAge(now, now, &age);
+    if (NS_FAILED(rv)) {
+        return true;
+    }
+
+    uint32_t freshness = 0;
+    rv = cachedResponseHead->ComputeFreshnessLifetime(&freshness);
+    if (NS_FAILED(rv)) {
+        return true;
+    }
+
+    uint32_t expiration = 0;
+    rv = entry->GetExpirationTime(&expiration);
+    if (NS_FAILED(rv)) {
+        return true;
+    }
+
+    uint32_t maxAgeRequest, maxStaleRequest, minFreshRequest;
+
+    LOG(("  NowInSeconds()=%u, expiration time=%u, freshness lifetime=%u, age=%u",
+            now, expiration, freshness, age));
+
+    if (cacheControlRequest.NoCache()) {
+        LOG(("  validating, no-cache request"));
+        doValidation = true;
+    } else if (cacheControlRequest.MaxStale(&maxStaleRequest)) {
+        uint32_t staleTime = age > freshness ? age - freshness : 0;
+        doValidation = staleTime > maxStaleRequest;
+        LOG(("  validating=%d, max-stale=%u requested", doValidation, maxStaleRequest));
+    } else if (cacheControlRequest.MaxAge(&maxAgeRequest)) {
+        doValidation = age > maxAgeRequest;
+        LOG(("  validating=%d, max-age=%u requested", doValidation, maxAgeRequest));
+    } else if (cacheControlRequest.MinFresh(&minFreshRequest)) {
+        uint32_t freshTime = freshness > age ? freshness - age : 0;
+        doValidation = freshTime < minFreshRequest;
+        LOG(("  validating=%d, min-fresh=%u requested", doValidation, minFreshRequest));
+    } else if (now <= expiration) {
+        doValidation = false;
+        LOG(("  not validating, expire time not in the past"));
+    } else if (cachedResponseHead->MustValidateIfExpired()) {
+        doValidation = true;
+    } else if (loadFlags & nsIRequest::VALIDATE_ONCE_PER_SESSION) {
+        
+        
+        
+        
+        
+        if (freshness == 0)
+            doValidation = true;
+        else
+            doValidation = fromPreviousSession;
+    } else {
+        doValidation = true;
+    }
+
+    LOG(("%salidating based on expiration time\n", doValidation ? "V" : "Not v"));
+    return doValidation;
+}
+
+nsresult
+GetHttpResponseHeadFromCacheEntry(nsICacheEntry *entry, nsHttpResponseHead *cachedResponseHead)
+{
+    nsXPIDLCString buf;
+    
+    
+    
+    
+    nsresult rv = entry->GetMetaDataElement("original-response-headers", getter_Copies(buf));
+    if (NS_SUCCEEDED(rv)) {
+        rv = cachedResponseHead->ParseCachedOriginalHeaders((char *) buf.get());
+        if (NS_FAILED(rv)) {
+            LOG(("  failed to parse original-response-headers\n"));
+        }
+    }
+
+    buf.Adopt(0);
+    
+    
+    
+    rv = entry->GetMetaDataElement("response-head", getter_Copies(buf));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    
+    
+    rv = cachedResponseHead->ParseCachedHead(buf.get());
+    NS_ENSURE_SUCCESS(rv, rv);
+    buf.Adopt(0);
+
+    return NS_OK;
+}
+
+nsresult
+CheckPartial(nsICacheEntry* aEntry, int64_t *aSize, int64_t *aContentLength,
+             nsHttpResponseHead *responseHead)
+{
+    nsresult rv;
+
+    rv = aEntry->GetDataSize(aSize);
+
+    if (NS_ERROR_IN_PROGRESS == rv) {
+        *aSize = -1;
+        rv = NS_OK;
+    }
+
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (!responseHead) {
+        return NS_ERROR_UNEXPECTED;
+    }
+
+    *aContentLength = responseHead->ContentLength();
+
+    return NS_OK;
+}
+
+void
+DetermineFramingAndImmutability(nsICacheEntry *entry,
+        nsHttpResponseHead *responseHead, bool isHttps,
+        bool *weaklyFramed, bool *isImmutable)
+{
+    nsXPIDLCString framedBuf;
+    nsresult rv = entry->GetMetaDataElement("strongly-framed", getter_Copies(framedBuf));
+    
+    
+    *weaklyFramed = NS_SUCCEEDED(rv) && framedBuf.EqualsLiteral("0");
+    *isImmutable = !*weaklyFramed && isHttps && responseHead->Immutable();
+}
+
+} 
 
 
 template<typename T> void

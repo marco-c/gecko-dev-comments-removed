@@ -22,11 +22,17 @@
 #define NS_HTTP_VERSION_1_1     11
 #define NS_HTTP_VERSION_2_0     20
 
+class nsICacheEntry;
+
 namespace mozilla {
 
 class Mutex;
 
 namespace net {
+    class nsHttpResponseHead;
+    class nsHttpRequestHead;
+    class CacheControlParser;
+
     enum {
         
         
@@ -125,46 +131,46 @@ struct nsHttpAtom
     const char *_val;
 };
 
-struct nsHttp
+namespace nsHttp
 {
-    static MOZ_MUST_USE nsresult CreateAtomTable();
-    static void DestroyAtomTable();
+    MOZ_MUST_USE nsresult CreateAtomTable();
+    void DestroyAtomTable();
 
     
     
     
-    static Mutex *GetLock();
+    Mutex *GetLock();
 
     
-    static nsHttpAtom ResolveAtom(const char *);
-    static nsHttpAtom ResolveAtom(const nsACString &s)
+    nsHttpAtom ResolveAtom(const char *);
+    inline nsHttpAtom ResolveAtom(const nsACString &s)
     {
         return ResolveAtom(PromiseFlatCString(s).get());
     }
 
     
     
-    static bool IsValidToken(const char *start, const char *end);
+    bool IsValidToken(const char *start, const char *end);
 
-    static inline bool IsValidToken(const nsACString &s) {
+    inline bool IsValidToken(const nsACString &s) {
         return IsValidToken(s.BeginReading(), s.EndReading());
     }
 
     
-    static void TrimHTTPWhitespace(const nsACString& aSource,
+    void TrimHTTPWhitespace(const nsACString& aSource,
                                    nsACString& aDest);
 
     
     
     
-    static bool IsReasonableHeaderValue(const nsACString &s);
+    bool IsReasonableHeaderValue(const nsACString &s);
 
     
     
     
     
     
-    static const char *FindToken(const char *input, const char *token,
+    const char *FindToken(const char *input, const char *token,
                                  const char *separators);
 
     
@@ -175,22 +181,40 @@ struct nsHttp
     
     
     
-    static MOZ_MUST_USE bool ParseInt64(const char *input, const char **next,
+    MOZ_MUST_USE bool ParseInt64(const char *input, const char **next,
                                         int64_t *result);
 
     
     
-    static inline MOZ_MUST_USE bool ParseInt64(const char *input,
+    inline MOZ_MUST_USE bool ParseInt64(const char *input,
                                                int64_t *result) {
         const char *next;
         return ParseInt64(input, &next, result) && *next == '\0';
     }
 
     
-    static bool IsPermanentRedirect(uint32_t httpStatus);
+    bool IsPermanentRedirect(uint32_t httpStatus);
 
     
-    static const char* GetProtocolVersion(uint32_t pv);
+    const char* GetProtocolVersion(uint32_t pv);
+
+    bool ValidationRequired(bool isForcedValid, nsHttpResponseHead *cachedResponseHead,
+                   uint32_t loadFlags, bool allowStaleCacheContent,
+                   bool isImmutable, bool customConditionalRequest,
+                   nsHttpRequestHead &requestHead,
+                   nsICacheEntry *entry, CacheControlParser &cacheControlRequest,
+                   bool fromPreviousSession);
+
+    nsresult GetHttpResponseHeadFromCacheEntry(nsICacheEntry *entry,
+                                               nsHttpResponseHead *cachedResponseHead);
+
+    nsresult CheckPartial(nsICacheEntry* aEntry, int64_t *aSize,
+                          int64_t *aContentLength,
+                          nsHttpResponseHead *responseHead);
+
+    void DetermineFramingAndImmutability(nsICacheEntry *entry, nsHttpResponseHead *cachedResponseHead,
+                                         bool isHttps, bool *weaklyFramed,
+                                         bool *isImmutable);
 
     
     
@@ -198,10 +222,10 @@ struct nsHttp
     
     
     
-#define HTTP_ATOM(_name, _value) static nsHttpAtom _name;
+#define HTTP_ATOM(_name, _value) extern nsHttpAtom _name;
 #include "nsHttpAtomList.h"
 #undef HTTP_ATOM
-};
+}
 
 
 
