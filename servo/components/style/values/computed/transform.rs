@@ -4,14 +4,13 @@
 
 
 
-use app_units::Au;
-use euclid::{Rect, Transform3D, Vector3D};
-use std::f32;
+use euclid::{Transform3D, Vector3D};
+use num_traits::Zero;
 use super::{CSSFloat, Either};
 use values::animated::ToAnimatedZero;
 use values::computed::{Angle, Integer, Length, LengthOrPercentage, Number, Percentage};
 use values::computed::{LengthOrNumber, LengthOrPercentageOrNumber};
-use values::generics::transform::{Matrix as GenericMatrix, Matrix3D as GenericMatrix3D};
+use values::generics::transform::{self, Matrix as GenericMatrix, Matrix3D as GenericMatrix3D};
 use values::generics::transform::{Transform as GenericTransform, TransformOperation as GenericTransformOperation};
 use values::generics::transform::TimingFunction as GenericTimingFunction;
 use values::generics::transform::TransformOrigin as GenericTransformOrigin;
@@ -147,18 +146,6 @@ impl PrefixedMatrix {
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-impl From<Matrix3D> for Transform3D<CSSFloat> {
-    #[inline]
-    fn from(m: Matrix3D) -> Self {
-        Transform3D::row_major(
-            m.m11, m.m12, m.m13, m.m14,
-            m.m21, m.m22, m.m23, m.m24,
-            m.m31, m.m32, m.m33, m.m34,
-            m.m41, m.m42, m.m43, m.m44)
-    }
-}
-
-#[cfg_attr(rustfmt, rustfmt_skip)]
 impl From<Transform3D<CSSFloat>> for Matrix3D {
     #[inline]
     fn from(m: Transform3D<CSSFloat>) -> Self {
@@ -168,18 +155,6 @@ impl From<Transform3D<CSSFloat>> for Matrix3D {
             m31: m.m31, m32: m.m32, m33: m.m33, m34: m.m34,
             m41: m.m41, m42: m.m42, m43: m.m43, m44: m.m44
         }
-    }
-}
-
-#[cfg_attr(rustfmt, rustfmt_skip)]
-impl From<Matrix> for Transform3D<CSSFloat> {
-    #[inline]
-    fn from(m: Matrix) -> Self {
-        Transform3D::row_major(
-            m.a, m.b, 0.0, 0.0,
-            m.c, m.d, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0,
-            m.e, m.f, 0.0, 1.0)
     }
 }
 
@@ -280,7 +255,7 @@ impl ToAnimatedZero for TransformOperation {
             GenericTransformOperation::ScaleY(..) => Ok(GenericTransformOperation::ScaleY(1.0)),
             GenericTransformOperation::ScaleZ(..) => Ok(GenericTransformOperation::ScaleZ(1.0)),
             GenericTransformOperation::Rotate3D(x, y, z, a) => {
-                let (x, y, z, _) = Transform::get_normalized_vector_and_angle(x, y, z, a);
+                let (x, y, z, _) = transform::get_normalized_vector_and_angle(x, y, z, a);
                 Ok(GenericTransformOperation::Rotate3D(x, y, z, Angle::zero()))
             },
             GenericTransformOperation::RotateX(_) => Ok(GenericTransformOperation::RotateX(Angle::zero())),
@@ -316,176 +291,5 @@ impl ToAnimatedZero for Transform {
             .iter()
             .map(|op| op.to_animated_zero())
             .collect::<Result<Vec<_>, _>>()?))
-    }
-}
-
-impl Transform {
-    
-    
-    
-    pub fn to_transform_3d_matrix(&self, reference_box: Option<&Rect<Au>>) -> Option<Transform3D<CSSFloat>> {
-        let mut transform = Transform3D::identity();
-        let list = &self.0;
-        if list.len() == 0 {
-            return None;
-        }
-
-        let extract_pixel_length = |lop: &LengthOrPercentage| match *lop {
-            LengthOrPercentage::Length(px) => px.px(),
-            LengthOrPercentage::Percentage(_) => 0.,
-            LengthOrPercentage::Calc(calc) => calc.length().px(),
-        };
-
-        for operation in list {
-            let matrix = match *operation {
-                GenericTransformOperation::Rotate3D(ax, ay, az, theta) => {
-                    let theta = Angle::from_radians(2.0f32 * f32::consts::PI - theta.radians());
-                    let (ax, ay, az, theta) = Self::get_normalized_vector_and_angle(ax, ay, az, theta);
-                    Transform3D::create_rotation(ax, ay, az, theta.into())
-                },
-                GenericTransformOperation::RotateX(theta) => {
-                    let theta = Angle::from_radians(2.0f32 * f32::consts::PI - theta.radians());
-                    Transform3D::create_rotation(1., 0., 0., theta.into())
-                },
-                GenericTransformOperation::RotateY(theta) => {
-                    let theta = Angle::from_radians(2.0f32 * f32::consts::PI - theta.radians());
-                    Transform3D::create_rotation(0., 1., 0., theta.into())
-                },
-                GenericTransformOperation::RotateZ(theta) |
-                GenericTransformOperation::Rotate(theta) => {
-                    let theta = Angle::from_radians(2.0f32 * f32::consts::PI - theta.radians());
-                    Transform3D::create_rotation(0., 0., 1., theta.into())
-                },
-                GenericTransformOperation::Perspective(d) => Self::create_perspective_matrix(d.px()),
-                GenericTransformOperation::Scale3D(sx, sy, sz) => Transform3D::create_scale(sx, sy, sz),
-                GenericTransformOperation::Scale(sx, sy) => Transform3D::create_scale(sx, sy.unwrap_or(sx), 1.),
-                GenericTransformOperation::ScaleX(s) => Transform3D::create_scale(s, 1., 1.),
-                GenericTransformOperation::ScaleY(s) => Transform3D::create_scale(1., s, 1.),
-                GenericTransformOperation::ScaleZ(s) => Transform3D::create_scale(1., 1., s),
-                GenericTransformOperation::Translate3D(tx, ty, tz) => {
-                    let (tx, ty) = match reference_box {
-                        Some(relative_border_box) => {
-                            (
-                                tx.to_pixel_length(relative_border_box.size.width).px(),
-                                ty.to_pixel_length(relative_border_box.size.height).px(),
-                            )
-                        },
-                        None => {
-                            
-                            
-                            
-                            (extract_pixel_length(&tx), extract_pixel_length(&ty))
-                        },
-                    };
-                    let tz = tz.px();
-                    Transform3D::create_translation(tx, ty, tz)
-                },
-                GenericTransformOperation::Translate(tx, Some(ty)) => {
-                    let (tx, ty) = match reference_box {
-                        Some(relative_border_box) => {
-                            (
-                                tx.to_pixel_length(relative_border_box.size.width).px(),
-                                ty.to_pixel_length(relative_border_box.size.height).px(),
-                            )
-                        },
-                        None => {
-                            
-                            
-                            
-                            (extract_pixel_length(&tx), extract_pixel_length(&ty))
-                        },
-                    };
-                    Transform3D::create_translation(tx, ty, 0.)
-                },
-                GenericTransformOperation::TranslateX(t) |
-                GenericTransformOperation::Translate(t, None) => {
-                    let t = match reference_box {
-                        Some(relative_border_box) => t.to_pixel_length(relative_border_box.size.width).px(),
-                        None => {
-                            
-                            
-                            
-                            extract_pixel_length(&t)
-                        },
-                    };
-                    Transform3D::create_translation(t, 0., 0.)
-                },
-                GenericTransformOperation::TranslateY(t) => {
-                    let t = match reference_box {
-                        Some(relative_border_box) => t.to_pixel_length(relative_border_box.size.height).px(),
-                        None => {
-                            
-                            
-                            
-                            extract_pixel_length(&t)
-                        },
-                    };
-                    Transform3D::create_translation(0., t, 0.)
-                },
-                GenericTransformOperation::TranslateZ(z) => Transform3D::create_translation(0., 0., z.px()),
-                GenericTransformOperation::Skew(theta_x, theta_y) => {
-                    Transform3D::create_skew(theta_x.into(), theta_y.unwrap_or(Angle::zero()).into())
-                },
-                GenericTransformOperation::SkewX(theta) => Transform3D::create_skew(theta.into(), Angle::zero().into()),
-                GenericTransformOperation::SkewY(theta) => Transform3D::create_skew(Angle::zero().into(), theta.into()),
-                GenericTransformOperation::Matrix3D(m) => m.into(),
-                GenericTransformOperation::Matrix(m) => m.into(),
-                GenericTransformOperation::PrefixedMatrix3D(_) |
-                GenericTransformOperation::PrefixedMatrix(_) => {
-                    
-                    unreachable!()
-                },
-                GenericTransformOperation::InterpolateMatrix {
-                    ..
-                } |
-                GenericTransformOperation::AccumulateMatrix {
-                    ..
-                } => {
-                    
-                    
-                    
-                    
-                    
-                    return None;
-                },
-            };
-
-            transform = transform.pre_mul(&matrix);
-        }
-
-        Some(transform)
-    }
-
-    
-    #[inline]
-    pub fn create_perspective_matrix(d: CSSFloat) -> Transform3D<f32> {
-        
-        
-        
-        
-        
-        
-        
-        if d <= 0.0 {
-            Transform3D::identity()
-        } else {
-            Transform3D::create_perspective(d)
-        }
-    }
-
-    
-    pub fn get_normalized_vector_and_angle(x: f32, y: f32, z: f32, angle: Angle) -> (f32, f32, f32, Angle) {
-        use euclid::approxeq::ApproxEq;
-        use euclid::num::Zero;
-        let vector = DirectionVector::new(x, y, z);
-        if vector.square_length().approx_eq(&f32::zero()) {
-            
-            
-            
-            (0., 0., 1., Angle::zero())
-        } else {
-            let vector = vector.normalize();
-            (vector.x, vector.y, vector.z, angle)
-        }
     }
 }

@@ -465,6 +465,15 @@ impl NoCalcLength {
 
     
     #[inline]
+    pub fn to_computed_pixel_length_without_context(&self) -> Result<CSSFloat, ()> {
+        match *self {
+            NoCalcLength::Absolute(len) => Ok(len.to_px()),
+            _ => Err(()),
+        }
+    }
+
+    
+    #[inline]
     pub fn from_px(px_value: CSSFloat) -> NoCalcLength {
         NoCalcLength::Absolute(AbsoluteLength::Px(px_value))
     }

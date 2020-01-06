@@ -95,6 +95,13 @@ impl Angle {
     }
 }
 
+impl AsRef<ComputedAngle> for Angle {
+    #[inline]
+    fn as_ref(&self) -> &ComputedAngle {
+        &self.value
+    }
+}
+
 impl Parse for Angle {
     
     fn parse<'i, 't>(
