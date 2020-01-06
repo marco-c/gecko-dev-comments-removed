@@ -4211,14 +4211,16 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         mPaintedLayerDataTree.AddingOwnLayer(clipAGR,
                                              &scrolledClipRect,
                                              uniformColorPtr);
-      } else if (IsScrollThumbLayer(item) && mManager->IsWidgetLayerManager()) {
+      } else if ((*animatedGeometryRoot == item->Frame() &&
+                  *animatedGeometryRoot != mBuilder->RootReferenceFrame()) ||
+                 (IsScrollThumbLayer(item) && mManager->IsWidgetLayerManager())) {
         
         
         mPaintedLayerDataTree.AddingOwnLayer(animatedGeometryRoot->mParentAGR,
                                              clipPtr,
                                              uniformColorPtr);
-      } else if (prerenderedTransform && mManager->IsWidgetLayerManager()) {
-        mPaintedLayerDataTree.AddingOwnLayer(animatedGeometryRoot->mParentAGR,
+      } else if (prerenderedTransform) {
+        mPaintedLayerDataTree.AddingOwnLayer(animatedGeometryRoot,
                                              clipPtr,
                                              uniformColorPtr);
       } else {
