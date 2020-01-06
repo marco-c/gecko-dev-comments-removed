@@ -306,6 +306,7 @@ public class ToolbarEditText extends CustomEditText
         final int textLength = text.length();
         final int resultLength = result.length();
         final int autoCompleteStart = text.getSpanStart(AUTOCOMPLETE_SPAN);
+        final int pathStart = StringUtils.pathStartIndex(getNonAutocompleteText(text));
         mAutoCompleteResult = result;
 
         if (autoCompleteStart > -1) {
@@ -319,6 +320,11 @@ public class ToolbarEditText extends CustomEditText
             }
 
             beginSettingAutocomplete();
+
+            
+            if (pathStart != -1) {
+                text.replace(pathStart, autoCompleteStart, result, pathStart, autoCompleteStart);
+            }
 
             
             
@@ -338,6 +344,13 @@ public class ToolbarEditText extends CustomEditText
             
             if (resultLength <= textLength ||
                     !StringUtils.caseInsensitiveStartsWith(result, text.toString())) {
+                return;
+            }
+
+            
+            
+            if (pathStart != -1 &&
+                    !TextUtils.regionMatches(result, pathStart, text, pathStart, textLength - pathStart)) {
                 return;
             }
 
