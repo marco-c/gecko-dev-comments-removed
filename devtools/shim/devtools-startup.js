@@ -548,7 +548,9 @@ DevToolsStartup.prototype = {
     if (reason) {
       url += "?reason=" + encodeURIComponent(reason);
     }
-    gBrowser.selectedTab = gBrowser.addTab(url);
+
+    
+    gBrowser.selectedTab = gBrowser.addTab(url, {relatedToCurrent: true});
   },
 
   handleConsoleFlag: function (cmdLine) {
