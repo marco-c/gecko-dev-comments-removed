@@ -160,6 +160,9 @@ NewStringIteratorObject(JSContext* cx, NewObjectKind newKind = GenericObject);
 JSObject*
 GetIterator(JSContext* cx, HandleObject obj, unsigned flags);
 
+PropertyIteratorObject*
+LookupInIteratorCache(JSContext* cx, HandleObject obj);
+
 
 
 

@@ -1129,9 +1129,6 @@ struct JSCompartment
 
     js::NativeIterator* enumerators;
 
-    
-    js::PropertyIteratorObject* lastCachedNativeIterator;
-
   private:
     
     JS::CompartmentStats* compartmentStats_;

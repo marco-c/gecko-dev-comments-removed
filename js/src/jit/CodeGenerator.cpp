@@ -160,6 +160,10 @@ typedef JSObject* (*IonBindNameICFn)(JSContext*, HandleScript, IonBindNameIC*, H
 static const VMFunction IonBindNameICInfo =
     FunctionInfo<IonBindNameICFn>(IonBindNameIC::update, "IonBindNameIC::update");
 
+typedef JSObject* (*IonGetIteratorICFn)(JSContext*, HandleScript, IonGetIteratorIC*, HandleValue);
+static const VMFunction IonGetIteratorICInfo =
+    FunctionInfo<IonGetIteratorICFn>(IonGetIteratorIC::update, "IonGetIteratorIC::update");
+
 typedef bool (*IonInICFn)(JSContext*, HandleScript, IonInIC*, HandleValue, HandleObject, bool*);
 static const VMFunction IonInICInfo =
     FunctionInfo<IonInICFn>(IonInIC::update, "IonInIC::update");
@@ -245,6 +249,23 @@ CodeGenerator::visitOutOfLineICFallback(OutOfLineICFallback* ool)
 
         StoreRegisterTo(bindNameIC->output()).generate(this);
         restoreLiveIgnore(lir, StoreRegisterTo(bindNameIC->output()).clobbered());
+
+        masm.jump(ool->rejoin());
+        return;
+      }
+      case CacheKind::GetIterator: {
+        IonGetIteratorIC* getIteratorIC = ic->asGetIteratorIC();
+
+        saveLive(lir);
+
+        pushArg(getIteratorIC->value());
+        icInfo_[cacheInfoIndex].icOffsetForPush = pushArgWithPatch(ImmWord(-1));
+        pushArg(ImmGCPtr(gen->info().script()));
+
+        callVM(IonGetIteratorICInfo, lir);
+
+        StoreRegisterTo(getIteratorIC->output()).generate(this);
+        restoreLiveIgnore(lir, StoreRegisterTo(getIteratorIC->output()).clobbered());
 
         masm.jump(ool->rejoin());
         return;
@@ -9244,163 +9265,18 @@ CodeGenerator::visitArrayJoin(LArrayJoin* lir)
     callVM(ArrayJoinInfo, lir);
 }
 
-typedef JSObject* (*ValueToIteratorFn)(JSContext*, uint32_t, HandleValue);
-static const VMFunction ValueToIteratorInfo =
-    FunctionInfo<ValueToIteratorFn>(ValueToIterator, "ValueToIterator");
-
 void
-CodeGenerator::visitCallIteratorStartV(LCallIteratorStartV* lir)
+CodeGenerator::visitGetIteratorCache(LGetIteratorCache* lir)
 {
-    pushArg(ToValue(lir, LCallIteratorStartV::Value));
-    pushArg(Imm32(lir->mir()->flags()));
-    callVM(ValueToIteratorInfo, lir);
-}
+    LiveRegisterSet liveRegs = lir->safepoint()->liveRegs();
+    TypedOrValueRegister val =
+        toConstantOrRegister(lir, LGetIteratorCache::Value, lir->mir()->value()->type()).reg();
+    Register output = ToRegister(lir->output());
+    Register temp1 = ToRegister(lir->temp1());
+    Register temp2 = ToRegister(lir->temp2());
 
-typedef JSObject* (*GetIteratorFn)(JSContext*, HandleObject, uint32_t);
-static const VMFunction GetIteratorInfo =
-    FunctionInfo<GetIteratorFn>(GetIterator, "GetIterator");
-
-void
-CodeGenerator::visitCallIteratorStartO(LCallIteratorStartO* lir)
-{
-    pushArg(Imm32(lir->mir()->flags()));
-    pushArg(ToRegister(lir->object()));
-    callVM(GetIteratorInfo, lir);
-}
-
-void
-CodeGenerator::branchIfNotEmptyObjectElements(Register obj, Label* target)
-{
-    Label emptyObj;
-    masm.branchPtr(Assembler::Equal,
-                   Address(obj, NativeObject::offsetOfElements()),
-                   ImmPtr(js::emptyObjectElements),
-                   &emptyObj);
-    masm.branchPtr(Assembler::NotEqual,
-                   Address(obj, NativeObject::offsetOfElements()),
-                   ImmPtr(js::emptyObjectElementsShared),
-                   target);
-    masm.bind(&emptyObj);
-}
-
-void
-CodeGenerator::visitIteratorStartO(LIteratorStartO* lir)
-{
-    const Register obj = ToRegister(lir->object());
-    const Register output = ToRegister(lir->output());
-
-    uint32_t flags = lir->mir()->flags();
-
-    OutOfLineCode* ool = oolCallVM(GetIteratorInfo, lir,
-                                   ArgList(obj, Imm32(flags)), StoreRegisterTo(output));
-
-    const Register temp1 = ToRegister(lir->temp1());
-    const Register temp2 = ToRegister(lir->temp2());
-    const Register niTemp = ToRegister(lir->temp3()); 
-
-    
-    MOZ_ASSERT(flags == JSITER_ENUMERATE);
-
-    
-    masm.loadPtr(AbsoluteAddress(gen->compartment->addressOfLastCachedNativeIterator()), output);
-    masm.branchTestPtr(Assembler::Zero, output, output, ool->entry());
-
-    
-    masm.loadObjPrivate(output, JSObject::ITER_CLASS_NFIXED_SLOTS, niTemp);
-
-    
-    masm.branchTest32(Assembler::NonZero, Address(niTemp, offsetof(NativeIterator, flags)),
-                      Imm32(JSITER_ACTIVE|JSITER_UNREUSABLE), ool->entry());
-
-    
-    masm.loadPtr(Address(niTemp, offsetof(NativeIterator, guard_array)), temp2);
-
-    
-    
-    {
-        Address groupAddr(temp2, offsetof(ReceiverGuard, group));
-        Address shapeAddr(temp2, offsetof(ReceiverGuard, shape));
-        Label guardDone, unboxedObject, noExpando;
-        
-        masm.branchPtr(Assembler::NotEqual, groupAddr, ImmWord(0), &unboxedObject);
-
-        
-        masm.loadObjShape(obj, temp1);
-        masm.branchPtr(Assembler::NotEqual, shapeAddr, temp1, ool->entry());
-
-        
-        
-        branchIfNotEmptyObjectElements(obj, ool->entry());
-        masm.jump(&guardDone);
-
-        masm.bind(&unboxedObject);
-        masm.loadObjGroup(obj, temp1);
-        masm.branchPtr(Assembler::NotEqual, groupAddr, temp1, ool->entry());
-        masm.loadPtr(Address(obj, UnboxedPlainObject::offsetOfExpando()), temp1);
-        masm.branchTestPtr(Assembler::Zero, temp1, temp1, &noExpando);
-        branchIfNotEmptyObjectElements(temp1, ool->entry());
-        masm.loadObjShape(temp1, temp1);
-        masm.bind(&noExpando);
-        masm.branchPtr(Assembler::NotEqual, shapeAddr, temp1, ool->entry());
-        masm.bind(&guardDone);
-    }
-
-    
-    
-    
-    Address prototypeShapeAddr(temp2, sizeof(ReceiverGuard) + offsetof(ReceiverGuard, shape));
-    masm.loadObjProto(obj, temp1);
-    branchIfNotEmptyObjectElements(temp1, ool->entry());
-    masm.loadObjShape(temp1, temp1);
-    masm.branchPtr(Assembler::NotEqual, prototypeShapeAddr, temp1, ool->entry());
-
-    
-    
-    
-    masm.loadObjProto(obj, temp1);
-    masm.loadObjProto(temp1, temp1);
-    masm.branchTestPtr(Assembler::NonZero, temp1, temp1, ool->entry());
-
-    
-    masm.guardedCallPreBarrier(Address(niTemp, offsetof(NativeIterator, obj)), MIRType::Object);
-
-    
-    masm.storePtr(obj, Address(niTemp, offsetof(NativeIterator, obj)));
-    masm.or32(Imm32(JSITER_ACTIVE), Address(niTemp, offsetof(NativeIterator, flags)));
-
-    
-    
-    
-    {
-        Label skipBarrier;
-        masm.branchPtrInNurseryChunk(Assembler::NotEqual, obj, temp1, &skipBarrier);
-
-        LiveRegisterSet temps;
-        temps.add(temp1);
-        temps.add(temp2);
-        saveVolatile(temps);
-        emitPostWriteBarrier(output);
-        restoreVolatile(temps);
-        masm.bind(&skipBarrier);
-    }
-
-    
-    masm.loadPtr(AbsoluteAddress(gen->compartment->addressOfEnumerators()), temp1);
-
-    
-    masm.storePtr(temp1, Address(niTemp, NativeIterator::offsetOfNext()));
-
-    
-    masm.loadPtr(Address(temp1, NativeIterator::offsetOfPrev()), temp2);
-    masm.storePtr(temp2, Address(niTemp, NativeIterator::offsetOfPrev()));
-
-    
-    masm.storePtr(niTemp, Address(temp2, NativeIterator::offsetOfNext()));
-
-    
-    masm.storePtr(niTemp, Address(temp1, NativeIterator::offsetOfPrev()));
-
-    masm.bind(ool->rejoin());
+    IonGetIteratorIC ic(liveRegs, val, output, temp1, temp2);
+    addIC(lir, allocateIC(ic));
 }
 
 static void

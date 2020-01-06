@@ -1838,6 +1838,54 @@ BaselineCacheIRCompiler::emitLoadStackValue()
 }
 
 bool
+BaselineCacheIRCompiler::emitGuardAndGetIterator()
+{
+    Register obj = allocator.useRegister(masm, reader.objOperandId());
+
+    AutoScratchRegister scratch1(allocator, masm);
+    AutoScratchRegister scratch2(allocator, masm);
+    AutoScratchRegister niScratch(allocator, masm);
+
+    Address iterAddr(stubAddress(reader.stubOffset()));
+    Address enumeratorsAddr(stubAddress(reader.stubOffset()));
+
+    Register output = allocator.defineRegister(masm, reader.objOperandId());
+
+    FailurePath* failure;
+    if (!addFailurePath(&failure))
+        return false;
+
+    
+    masm.loadPtr(iterAddr, output);
+    masm.loadObjPrivate(output, JSObject::ITER_CLASS_NFIXED_SLOTS, niScratch);
+
+    
+    masm.branchTest32(Assembler::NonZero, Address(niScratch, offsetof(NativeIterator, flags)),
+                      Imm32(JSITER_ACTIVE|JSITER_UNREUSABLE), failure->label());
+
+    
+    Address iterObjAddr(niScratch, offsetof(NativeIterator, obj));
+    EmitPreBarrier(masm, iterObjAddr, MIRType::Object);
+
+    
+    Address iterFlagsAddr(niScratch, offsetof(NativeIterator, flags));
+    masm.storePtr(obj, iterObjAddr);
+    masm.or32(Imm32(JSITER_ACTIVE), iterFlagsAddr);
+
+    
+    emitPostBarrierSlot(output, TypedOrValueRegister(MIRType::Object, AnyRegister(obj)), scratch1);
+
+    
+    
+    
+    masm.loadPtr(enumeratorsAddr, scratch1);
+    masm.loadPtr(Address(scratch1, 0), scratch1);
+    emitRegisterEnumerator(scratch1, niScratch, scratch2);
+
+    return true;
+}
+
+bool
 BaselineCacheIRCompiler::emitGuardDOMExpandoMissingOrGuardShape()
 {
     ValueOperand val = allocator.useValueRegister(masm, reader.valOperandId());
@@ -1913,6 +1961,7 @@ BaselineCacheIRCompiler::init(CacheKind kind)
     switch (kind) {
       case CacheKind::GetProp:
       case CacheKind::TypeOf:
+      case CacheKind::GetIterator:
         MOZ_ASSERT(numInputs == 1);
         allocator.initInputLocation(0, R0);
         break;
@@ -1992,6 +2041,7 @@ jit::AttachBaselineCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
       case CacheKind::HasOwn:
       case CacheKind::BindName:
       case CacheKind::TypeOf:
+      case CacheKind::GetIterator:
         stubDataOffset = sizeof(ICCacheIR_Regular);
         stubKind = CacheIRStubKind::Regular;
         break;

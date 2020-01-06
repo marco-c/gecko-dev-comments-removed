@@ -2331,6 +2331,23 @@ CacheIRCompiler::emitStoreTypedObjectReferenceProp(ValueOperand val, ReferenceTy
 }
 
 void
+CacheIRCompiler::emitRegisterEnumerator(Register enumeratorsList, Register iter, Register scratch)
+{
+    
+    masm.storePtr(enumeratorsList, Address(iter, NativeIterator::offsetOfNext()));
+
+    
+    masm.loadPtr(Address(enumeratorsList, NativeIterator::offsetOfPrev()), scratch);
+    masm.storePtr(scratch, Address(iter, NativeIterator::offsetOfPrev()));
+
+    
+    masm.storePtr(iter, Address(scratch, NativeIterator::offsetOfNext()));
+
+    
+    masm.storePtr(iter, Address(enumeratorsList, NativeIterator::offsetOfPrev()));
+}
+
+void
 CacheIRCompiler::emitPostBarrierShared(Register obj, const ConstantOrRegister& val,
                                        Register scratch, Register maybeIndex)
 {
