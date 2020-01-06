@@ -116,7 +116,8 @@ public:
 
   explicit MediaStreamGraphImpl(GraphDriverType aGraphDriverRequested,
                                 TrackRate aSampleRate,
-                                dom::AudioChannel aChannel);
+                                dom::AudioChannel aChannel,
+                                AbstractThread* aWindow);
 
   
 
@@ -148,6 +149,12 @@ public:
 
 
   void AppendMessage(UniquePtr<ControlMessage> aMessage);
+
+  
+
+
+
+  void Dispatch(already_AddRefed<nsIRunnable>&& aRunnable);
 
   
 
@@ -846,6 +853,7 @@ private:
 #endif
 
   dom::AudioChannel mAudioChannel;
+  const RefPtr<AbstractThread> mAbstractMainThread;
 };
 
 } 
