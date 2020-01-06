@@ -56,8 +56,6 @@ static nsresult
 GetAlgorithmName(const OOS& aAlgorithm,
                   nsString& aName)
 {
-  MOZ_ASSERT(aAlgorithm.IsString()); 
-
   if (aAlgorithm.IsString()) {
     
     aName.Assign(aAlgorithm.GetAsString());
