@@ -1,0 +1,8 @@
+if (helperThreadCount() == 0)
+    quit();
+
+load(libdir + "asserts.js")
+
+
+offThreadCompileModule("export { x };");
+assertThrowsInstanceOf(() => finishOffThreadModule(), SyntaxError);
