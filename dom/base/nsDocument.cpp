@@ -13465,20 +13465,15 @@ nsIDocument::UpdateStyleBackendType()
 
 #ifdef MOZ_STYLO
   if (nsLayoutUtils::StyloEnabled()) {
-    if (IsBeingUsedAsImage()) {
-      
+    
+    
+    
+    
+    
+    
+    if (!nsContentUtils::IsSystemPrincipal(NodePrincipal()) &&
+        !IsXULDocument()) {
       mStyleBackendType = StyleBackendType::Servo;
-    } else if (!mDocumentContainer) {
-      
-      
-    } else if (!IsXULDocument() && IsContentDocument()) {
-      
-      
-      bool isAbout = false;
-      mDocumentURI->SchemeIs("about", &isAbout);
-      if (!isAbout || NS_IsAboutBlank(mDocumentURI)) {
-        mStyleBackendType = StyleBackendType::Servo;
-      }
     }
   }
 #endif
