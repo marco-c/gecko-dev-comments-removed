@@ -177,7 +177,6 @@ SyncScheduler.prototype = {
     if (Status.checkSetup() == STATUS_OK) {
       Svc.Obs.add("wake_notification", this);
       Svc.Obs.add("captive-portal-login-success", this);
-      Svc.Obs.add("sleep_notification", this);
       IdleService.addIdleObserver(this, Svc.Prefs.get("scheduler.idleTime"));
     }
   },
@@ -329,7 +328,6 @@ SyncScheduler.prototype = {
          IdleService.addIdleObserver(this, Svc.Prefs.get("scheduler.idleTime"));
          Svc.Obs.add("wake_notification", this);
          Svc.Obs.add("captive-portal-login-success", this);
-         Svc.Obs.add("sleep_notification", this);
          break;
       case "weave:service:start-over":
          this.setDefaults();
@@ -391,9 +389,6 @@ SyncScheduler.prototype = {
         CommonUtils.nextTick(() => {
           this.scheduleNextSync(3000);
         });
-      case "sleep_notification":
-        this._log.debug("Going to sleep, doing a quick sync.");
-        this.scheduleNextSync(0, ["tabs"], "sleep");
         break;
     }
   },
@@ -495,7 +490,7 @@ SyncScheduler.prototype = {
 
 
 
-  syncIfMPUnlocked(engines, why) {
+  syncIfMPUnlocked: function syncIfMPUnlocked() {
     
     if (Status.login == MASTER_PASSWORD_LOCKED &&
         Utils.mpLocked()) {
@@ -511,15 +506,13 @@ SyncScheduler.prototype = {
       this._log.debug("Not initiating sync: app is shutting down");
       return;
     }
-    Services.tm.dispatchToMainThread(() => {
-      this.service.sync({engines, why});
-    });
+    CommonUtils.nextTick(this.service.sync, this.service);
   },
 
   
 
 
-  scheduleNextSync(interval, engines = null, why = null) {
+  scheduleNextSync: function scheduleNextSync(interval) {
     
     if (interval == null) {
       interval = this.syncInterval;
@@ -550,13 +543,12 @@ SyncScheduler.prototype = {
     
     if (interval <= 0) {
       this._log.trace("Requested sync should happen right away.");
-      this.syncIfMPUnlocked(engines, why);
+      this.syncIfMPUnlocked();
       return;
     }
 
     this._log.debug("Next sync in " + interval + " ms.");
-    CommonUtils.namedTimer(() => { this.syncIfMPUnlocked(engines, why) },
-                           interval, this, "syncTimer");
+    CommonUtils.namedTimer(this.syncIfMPUnlocked, interval, this, "syncTimer");
 
     
     this.nextSync = Date.now() + interval;

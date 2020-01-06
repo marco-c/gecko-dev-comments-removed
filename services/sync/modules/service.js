@@ -908,8 +908,8 @@ Sync11Service.prototype = {
 
   
   
-  async _remoteSetup(infoResponse, fetchConfig = true) {
-    if (fetchConfig && !(await this._fetchServerConfiguration())) {
+  async _remoteSetup(infoResponse) {
+    if (!(await this._fetchServerConfiguration())) {
       return false;
     }
 
@@ -1112,7 +1112,7 @@ Sync11Service.prototype = {
       histogram.add(1);
 
       let synchronizer = new EngineSynchronizer(this);
-      await synchronizer.sync(engineNamesToSync, why); 
+      await synchronizer.sync(engineNamesToSync); 
 
       histogram = Services.telemetry.getHistogramById("WEAVE_COMPLETE_SUCCESS_COUNT");
       histogram.add(1);
