@@ -277,6 +277,10 @@ private:
   void SetInputLayout(ID3D11InputLayout* aLayout);
   void SetVertexShader(ID3D11VertexShader* aShader);
 
+  
+  
+  ID3D11ShaderResourceView* ResolveTextureSourceForShader(TextureSource* aSource);
+
 private:
   RefPtr<ID3D11Device> mDevice;
   RefPtr<ID3D11DeviceContext> mCtx;
