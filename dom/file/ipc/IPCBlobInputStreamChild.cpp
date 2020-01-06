@@ -5,6 +5,7 @@
 
 
 #include "IPCBlobInputStreamChild.h"
+#include "WorkerHolder.h"
 
 namespace mozilla {
 namespace dom {
@@ -13,7 +14,7 @@ namespace {
 
 
 
-class ShutdownRunnable final : public Runnable
+class ShutdownRunnable final : public CancelableRunnable
 {
 public:
   explicit ShutdownRunnable(IPCBlobInputStreamChild* aActor)
@@ -33,7 +34,7 @@ private:
 
 
 
-class StreamNeededRunnable final : public Runnable
+class StreamNeededRunnable final : public CancelableRunnable
 {
 public:
   explicit StreamNeededRunnable(IPCBlobInputStreamChild* aActor)
@@ -79,6 +80,26 @@ private:
   nsCOMPtr<nsIInputStream> mCreatedStream;
 };
 
+class IPCBlobInputStreamWorkerHolder final : public WorkerHolder
+{
+public:
+  explicit IPCBlobInputStreamWorkerHolder(IPCBlobInputStreamChild* aActor)
+    : mActor(aActor)
+  {}
+
+  bool Notify(Status aStatus) override
+  {
+    if (aStatus > Running) {
+      mActor->Shutdown();
+      
+    }
+    return true;
+  }
+
+private:
+  RefPtr<IPCBlobInputStreamChild> mActor;
+};
+
 } 
 
 IPCBlobInputStreamChild::IPCBlobInputStreamChild(const nsID& aID,
@@ -88,7 +109,20 @@ IPCBlobInputStreamChild::IPCBlobInputStreamChild(const nsID& aID,
   , mSize(aSize)
   , mActorAlive(true)
   , mOwningThread(NS_GetCurrentThread())
-{}
+{
+  
+  
+  if (!NS_IsMainThread()) {
+    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+    if (workerPrivate) {
+      UniquePtr<WorkerHolder> workerHolder(
+        new IPCBlobInputStreamWorkerHolder(this));
+      if (workerHolder->HoldWorker(workerPrivate, Canceling)) {
+        mWorkerHolder.swap(workerHolder);
+      }
+    }
+  }
+}
 
 IPCBlobInputStreamChild::~IPCBlobInputStreamChild()
 {}
@@ -100,6 +134,7 @@ IPCBlobInputStreamChild::Shutdown()
 
   RefPtr<IPCBlobInputStreamChild> kungFuDeathGrip = this;
 
+  mWorkerHolder = nullptr;
   mPendingOperations.Clear();
 
   if (mActorAlive) {
@@ -116,6 +151,7 @@ IPCBlobInputStreamChild::ActorDestroy(IProtocol::ActorDestroyReason aReason)
     mActorAlive = false;
   }
 
+  
   Shutdown();
 }
 
