@@ -1,5 +1,6 @@
 
 
+
 const SUGGEST_ALL_PREF = "browser.search.suggest.enabled";
 const SUGGEST_URLBAR_PREF = "browser.urlbar.suggest.searches";
 const CHOICE_PREF = "browser.urlbar.userMadeSearchSuggestionsChoice";
@@ -38,7 +39,7 @@ add_task(async function focus() {
   setupVisibleHint();
   gURLBar.blur();
   let popupPromise = promisePopupShown(gURLBar.popup);
-  gURLBar.focus();
+  focusAndSelectUrlBar(true);
   await popupPromise;
   Assert.ok(gURLBar.popup.popupOpen, "popup should be open");
   assertVisible(true);
@@ -64,21 +65,38 @@ add_task(async function focus() {
   await BrowserTestUtils.loadURI(gBrowser.selectedBrowser, "about:blank");
 });
 
+add_task(async function click_on_focused() {
+  
+  
+  setupVisibleHint();
+  gURLBar.blur();
+  
+  gURLBar.focus();
+  await new Promise(resolve => setTimeout(resolve, 500));
+  Assert.ok(!gURLBar.popup.popupOpen, "popup should be closed");
+
+  let popupPromise = promisePopupShown(gURLBar.popup);
+  EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, { button: 0, type: "mousedown" });
+  await popupPromise;
+
+  Assert.ok(gURLBar.popup.popupOpen, "popup should be open");
+  assertVisible(true);
+  assertFooterVisible(false);
+  Assert.equal(gURLBar.popup._matchCount, 0, "popup should have no results");
+  gURLBar.blur();
+  Assert.ok(!gURLBar.popup.popupOpen, "popup should be closed");
+});
+
 add_task(async function new_tab() {
   
   
   setupVisibleHint();
   gURLBar.blur();
-  let popupPromise = promisePopupShown(gURLBar.popup);
   
   await BrowserTestUtils.synthesizeKey("t", { accelKey: true }, gBrowser.selectedBrowser);
-  await popupPromise;
-  Assert.ok(gURLBar.popup.popupOpen, "popup should be open");
-  assertVisible(true);
-  assertFooterVisible(false);
-  Assert.equal(gURLBar.popup._matchCount, 0, "popup should have no results");
-  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await new Promise(resolve => setTimeout(resolve, 500));
   Assert.ok(!gURLBar.popup.popupOpen, "popup should be closed");
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 add_task(async function privateWindow() {
