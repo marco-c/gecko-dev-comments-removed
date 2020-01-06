@@ -6,7 +6,7 @@
 const global = require("devtools/client/performance/modules/global");
 const demangle = require("devtools/client/shared/demangle");
 const { assert } = require("devtools/shared/DevToolsUtils");
-const { isChromeScheme, isContentScheme, parseURL } =
+const { isChromeScheme, isContentScheme, isWASM, parseURL } =
   require("devtools/client/shared/source-utils");
 
 const { CATEGORY_MASK, CATEGORY_MAPPINGS } = require("devtools/client/performance/modules/categories");
@@ -221,7 +221,9 @@ function computeIsContentAndCategory(frame) {
     schemeStartIndex = 0;
   }
 
-  if (isContentScheme(location, schemeStartIndex)) {
+  
+  
+  if (isContentScheme(location, schemeStartIndex) || isWASM(location)) {
     frame.isContent = true;
     return;
   }
