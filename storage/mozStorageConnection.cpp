@@ -1043,47 +1043,49 @@ Connection::internalClose(sqlite3 *aNativeConnection)
   int srv = ::sqlite3_close(aNativeConnection);
 
   if (srv == SQLITE_BUSY) {
-    
-    
-    SQLiteMutexAutoLock lockedScope(sharedDBMutex);
-    
-    sqlite3_stmt *stmt = nullptr;
-    while ((stmt = ::sqlite3_next_stmt(aNativeConnection, stmt))) {
-      MOZ_LOG(gStorageLog, LogLevel::Debug,
-             ("Auto-finalizing SQL statement '%s' (%p)",
-              ::sqlite3_sql(stmt),
-              stmt));
+    {
+      
+      
+      SQLiteMutexAutoLock lockedScope(sharedDBMutex);
+      
+      sqlite3_stmt *stmt = nullptr;
+      while ((stmt = ::sqlite3_next_stmt(aNativeConnection, stmt))) {
+        MOZ_LOG(gStorageLog, LogLevel::Debug,
+              ("Auto-finalizing SQL statement '%s' (%p)",
+                ::sqlite3_sql(stmt),
+                stmt));
 
 #ifdef DEBUG
-      {
         SmprintfPointer msg = ::mozilla::Smprintf("SQL statement '%s' (%p) should have been finalized before closing the connection",
-                                           ::sqlite3_sql(stmt),
-                                           stmt);
+                                          ::sqlite3_sql(stmt),
+                                          stmt);
         NS_WARNING(msg.get());
-      }
 #endif 
 
-      srv = ::sqlite3_finalize(stmt);
+        srv = ::sqlite3_finalize(stmt);
 
 #ifdef DEBUG
-      if (srv != SQLITE_OK) {
-        SmprintfPointer msg = ::mozilla::Smprintf("Could not finalize SQL statement '%s' (%p)",
-                                           ::sqlite3_sql(stmt),
-                                           stmt);
-        NS_WARNING(msg.get());
-      }
+        if (srv != SQLITE_OK) {
+          SmprintfPointer msg = ::mozilla::Smprintf("Could not finalize SQL statement (%p)",
+                                              stmt);
+          NS_WARNING(msg.get());
+        }
 #endif 
 
-      
-      
-      if (srv == SQLITE_OK) {
-        stmt = nullptr;
+        
+        
+        if (srv == SQLITE_OK) {
+          stmt = nullptr;
+        }
       }
+      
+      
     }
 
     
     
     srv = ::sqlite3_close(aNativeConnection);
+    MOZ_ASSERT(false, "Had to forcibly close the database connection because not all the statements have been finalized.");
   }
 
   if (srv == SQLITE_OK) {
