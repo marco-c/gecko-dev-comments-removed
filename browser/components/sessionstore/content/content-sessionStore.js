@@ -58,24 +58,6 @@ const kLastIndex = Number.MAX_SAFE_INTEGER - 1;
 
 
 
-function createLazy(fn) {
-  let cached = false;
-  let cachedValue = null;
-
-  return function lazy() {
-    if (!cached) {
-      cachedValue = fn();
-      cached = true;
-    }
-
-    return cachedValue;
-  };
-}
-
-
-
-
-
 function mapFrameTree(callback) {
   return (function map(frame, cb) {
     
@@ -595,10 +577,9 @@ var DocShellCapabilitiesListener = {
 
 var SessionStorageListener = {
   init() {
-    let filter = ssu.createDynamicFrameEventFilter(this);
-    addEventListener("MozSessionStorageChanged", filter, true);
     Services.obs.addObserver(this, "browser:purge-domain-data");
     StateChangeNotifier.addObserver(this);
+    this.resetEventListener();
   },
 
   uninit() {
@@ -622,6 +603,21 @@ var SessionStorageListener = {
     this._changes = undefined;
   },
 
+  
+  _listener: null,
+
+  resetEventListener() {
+    if (!this._listener) {
+      this._listener = ssu.createDynamicFrameEventFilter(this);
+      addEventListener("MozSessionStorageChanged", this._listener, true);
+    }
+  },
+
+  removeEventListener() {
+    removeEventListener("MozSessionStorageChanged", this._listener, true);
+    this._listener = null;
+  },
+
   handleEvent(event) {
     if (!docShell) {
       return;
@@ -637,6 +633,8 @@ var SessionStorageListener = {
     
     if (usage > Services.prefs.getIntPref(DOM_STORAGE_LIMIT_PREF)) {
       MessageQueue.push("storage", () => null);
+      this.removeEventListener();
+      this.resetChanges();
       return;
     }
 
@@ -678,6 +676,7 @@ var SessionStorageListener = {
   },
 
   onPageLoadStarted() {
+    this.resetEventListener();
     this.collect();
   }
 };
@@ -799,7 +798,7 @@ var MessageQueue = {
 
 
   push(key, fn) {
-    this._data.set(key, createLazy(fn));
+    this._data.set(key, fn);
 
     if (!this._timeout && !this._timeoutDisabled) {
       

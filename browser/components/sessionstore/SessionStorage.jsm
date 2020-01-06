@@ -38,10 +38,8 @@ this.SessionStorage = Object.freeze({
 
 
 
-
-
-  collect(docShell, frameTree) {
-    return SessionStorageInternal.collect(docShell, frameTree);
+  collect(content) {
+    return SessionStorageInternal.collect(content);
   },
 
   
