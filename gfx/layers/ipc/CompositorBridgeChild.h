@@ -39,6 +39,7 @@ class IAPZCTreeManager;
 class APZCTreeManagerChild;
 class ClientLayerManager;
 class CompositorBridgeParent;
+class CompositorManagerChild;
 class CompositorOptions;
 class TextureClient;
 class TextureClientPool;
@@ -52,7 +53,16 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorBridgeChild, override);
 
-  explicit CompositorBridgeChild(LayerManager *aLayerManager, uint32_t aNamespace);
+  explicit CompositorBridgeChild(CompositorManagerChild* aManager);
+
+  
+
+
+  void InitForContent(uint32_t aNamespace);
+
+  void InitForWidget(uint64_t aProcessToken,
+                     LayerManager* aLayerManager,
+                     uint32_t aNamespace);
 
   void Destroy();
 
@@ -62,30 +72,6 @@ public:
 
 
   bool LookupCompositorFrameMetrics(const FrameMetrics::ViewID aId, FrameMetrics&);
-
-  
-
-
-  static bool InitForContent(Endpoint<PCompositorBridgeChild>&& aEndpoint, uint32_t aNamespace);
-  static bool ReinitForContent(Endpoint<PCompositorBridgeChild>&& aEndpoint, uint32_t aNamespace);
-
-  static RefPtr<CompositorBridgeChild> CreateRemote(
-    const uint64_t& aProcessToken,
-    LayerManager* aLayerManager,
-    Endpoint<PCompositorBridgeChild>&& aEndpoint,
-    uint32_t aNamespace);
-
-  
-
-
-
-  CompositorBridgeParent* InitSameProcess(
-    widget::CompositorWidget* aWidget,
-    const uint64_t& aLayerTreeId,
-    CSSToLayoutDeviceScale aScale,
-    const CompositorOptions& aOptions,
-    bool aUseExternalSurface,
-    const gfx::IntSize& aSurfaceSize);
 
   static CompositorBridgeChild* Get();
 
@@ -237,8 +223,7 @@ private:
   
   virtual ~CompositorBridgeChild();
 
-  void InitIPDL();
-  void DeallocPCompositorBridgeChild() override;
+  void AfterDestroy();
 
   virtual PLayerTransactionChild*
     AllocPLayerTransactionChild(const nsTArray<LayersBackend>& aBackendHints,
@@ -291,6 +276,8 @@ private:
     uint32_t mAPZCId;
   };
 
+  RefPtr<CompositorManagerChild> mCompositorManager;
+
   RefPtr<LayerManager> mLayerManager;
 
   uint32_t mIdNamespace;
@@ -312,6 +299,9 @@ private:
 
   
   bool mCanSend;
+
+  
+  bool mActorDestroyed;
 
   
 
