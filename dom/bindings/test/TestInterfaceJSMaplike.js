@@ -32,7 +32,11 @@ TestInterfaceJSMaplike.prototype = {
 
   clearInternal: function() {
     return this.__DOM_IMPL__.__clear();
-  }
+  },
+
+  __onget: function(key, value) {
+    
+  },
 };
 
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory([TestInterfaceJSMaplike])
