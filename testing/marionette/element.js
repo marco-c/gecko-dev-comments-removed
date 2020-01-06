@@ -165,13 +165,10 @@ element.Store = class {
 
 
 
-
-
-  get(uuid, container) {
+  get(uuid) {
     let el = this.els[uuid];
     if (!el) {
-      throw new NoSuchElementError(`Element reference not seen before: ` +
-                                   `${uuid}`);
+      throw new NoSuchElementError("Element reference not seen before: " + uuid);
     }
 
     try {
@@ -181,7 +178,7 @@ element.Store = class {
       delete this.els[uuid];
     }
 
-    if (element.isStale(el, container.frame, container.shadowRoot)) {
+    if (element.isStale(el)) {
       throw new StaleElementReferenceError(
           error.pprint`The element reference of ${el} stale; ` +
               "either the element is no longer attached to the DOM " +
@@ -636,68 +633,11 @@ element.generateUUID = function() {
 
 
 
-
-
-
-element.isStale = function(el, window, shadowRoot = undefined) {
-  if (typeof window == "undefined") {
-    throw new TypeError("Window global must be provided for staleness check");
-  }
-
-  
-  let wrappedElement, wrappedWindow, wrappedShadowRoot;
-
-  wrappedElement = new XPCNativeWrapper(el);
-  wrappedWindow = new XPCNativeWrapper(window);
-  if (shadowRoot) {
-    wrappedShadowRoot = new XPCNativeWrapper(shadowRoot);
-  }
-
-  let sameDoc = wrappedElement.ownerDocument === wrappedWindow.document;
-  let disconn = element.isDisconnected(
-      wrappedElement,
-      wrappedWindow,
-      wrappedShadowRoot);
-
-  return !el || !sameDoc || disconn;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-element.isDisconnected = function(el, window, shadowRoot = undefined) {
-  assert.defined(window);
-
-  
-  if (window.ShadowRoot && shadowRoot) {
-    if (el.compareDocumentPosition(shadowRoot) &
-        DOCUMENT_POSITION_DISCONNECTED) {
-      return true;
-    }
-
-    
-    let parent = shadowRoot.host;
-    while (parent && !(parent instanceof window.ShadowRoot)) {
-      parent = parent.parentNode;
-    }
-    return element.isDisconnected(shadowRoot.host, window, parent);
-  }
-
-  
-  let docEl = window.document.documentElement;
-  return el.compareDocumentPosition(docEl) &
-      DOCUMENT_POSITION_DISCONNECTED;
+element.isStale = function(el) {
+  let doc = el.ownerDocument;
+  let win = doc.defaultView;
+  let sameDoc = el.ownerDocument === win.document;
+  return !sameDoc || !el.isConnected;
 };
 
 
@@ -961,7 +901,7 @@ element.getPointerInteractablePaintTree = function(el) {
   }
 
   
-  if (element.isDisconnected(el, container.frame, container.shadowRoot)) {
+  if (!el.isConnected) {
     return [];
   }
 
