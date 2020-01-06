@@ -68,7 +68,7 @@ var Native = Cu.import("resource://gre/modules/osfile/osfile_native.jsm", {});
 
 
 function lazyPathGetter(constProp, dirKey) {
-  return function () {
+  return function() {
     let path;
     try {
       path = Services.dirsvc.get(dirKey, Ci.nsIFile).path;
@@ -436,7 +436,7 @@ var Scheduler = this.Scheduler = {
 
       
       let options = null;
-      if (args && args.length >= 1 && typeof args[args.length-1] === "object") {
+      if (args && args.length >= 1 && typeof args[args.length - 1] === "object") {
         options = args[args.length - 1];
       }
 
@@ -512,7 +512,7 @@ const PREF_OSFILE_LOG_REDIRECT = "toolkit.osfile.log.redirect";
 function readDebugPref(prefName, oldPref = false) {
   
   return Services.prefs.getBoolPref(prefName, oldPref);
-};
+}
 
 
 
@@ -1190,10 +1190,10 @@ File.writeAtomic = function writeAtomic(path, buffer, options = {}) {
   
   if ("tmpPath" in options) {
     options.tmpPath = Type.path.toMsg(options.tmpPath);
-  };
+  }
   if (isTypedArray(buffer) && (!("bytes" in options))) {
     options.bytes = buffer.byteLength;
-  };
+  }
   let refObj = {};
   TelemetryStopwatch.start("OSFILE_WRITEATOMIC_JANK_MS", refObj);
   let promise = Scheduler.post("writeAtomic",
@@ -1270,10 +1270,10 @@ var DirectoryIterator = function DirectoryIterator(path, options) {
   this._isClosed = false;
 };
 DirectoryIterator.prototype = {
-  iterator: function () {
+  iterator: function() {
     return this;
   },
-  __iterator__: function () {
+  __iterator__: function() {
     return this;
   },
 

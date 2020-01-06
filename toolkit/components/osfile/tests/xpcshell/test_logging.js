@@ -15,7 +15,7 @@ function run_test() {
 
   
   let consoleListener = {
-    observe: function (aMessage) {
+    observe: function(aMessage) {
       
       if (!(aMessage instanceof Components.interfaces.nsIConsoleMessage)) {
         return;
@@ -29,10 +29,10 @@ function run_test() {
         }
 
         ++messageCount;
-        if(messageCount == 1) {
+        if (messageCount == 1) {
           do_check_eq(aMessage.message, "TEST OS {\"name\":\"test\"}\n");
         }
-        if(messageCount == 2) {
+        if (messageCount == 2) {
           do_check_eq(aMessage.message, "TEST OS name is test\n");
           toggleConsoleListener(false);
           do_test_finished();
@@ -42,7 +42,7 @@ function run_test() {
   };
 
   
-  function toggleConsoleListener (pref) {
+  function toggleConsoleListener(pref) {
     do_print("Setting console listener: " + pref);
     Services.prefs.setBoolPref("toolkit.osfile.log", pref);
     Services.prefs.setBoolPref("toolkit.osfile.log.redirect", pref);
