@@ -365,6 +365,8 @@ PROFILER_FUNC(PseudoStack* profiler_get_pseudo_stack(), nullptr)
 
 
 
+
+
 PROFILER_FUNC_VOID(profiler_add_marker(const char* aMarkerName))
 PROFILER_FUNC_VOID(
   profiler_add_marker(const char* aMarkerName,
