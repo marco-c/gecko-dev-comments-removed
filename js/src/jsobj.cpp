@@ -3151,7 +3151,7 @@ js::ToPrimitiveSlow(JSContext* cx, JSType preferredType, MutableHandleValue vp)
         return false;
 
     
-    if (!method.isUndefined()) {
+    if (!method.isNullOrUndefined()) {
         
         
         if (!IsCallable(method))
