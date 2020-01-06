@@ -710,12 +710,6 @@ HTMLEditRules::DidDoAction(Selection* aSelection,
   }
 }
 
-NS_IMETHODIMP_(bool)
-HTMLEditRules::DocumentIsEmpty()
-{
-  return !!mBogusNode;
-}
-
 nsresult
 HTMLEditRules::GetListState(bool* aMixed,
                             bool* aOL,
@@ -2458,10 +2452,8 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         
         join = true;
 
-        uint32_t rangeCount = aSelection->RangeCount();
-        for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; ++rangeIdx) {
-          OwningNonNull<nsRange> range = *aSelection->GetRangeAt(rangeIdx);
-
+        AutoRangeArray arrayOfRanges(aSelection);
+        for (auto& range : arrayOfRanges.mRanges) {
           
           nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
           TrivialFunctor functor;
