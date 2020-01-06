@@ -61,6 +61,7 @@
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/Unused.h"
 #include "nsIScriptError.h"
 #include "nsIOutputStream.h"
@@ -804,35 +805,6 @@ ScriptLoader::InstantiateModuleTree(ModuleLoadRequest* aRequest)
   return true;
 }
 
- bool
-ScriptLoader::IsBytecodeCacheEnabled()
-{
-  static bool sExposeTestInterfaceEnabled = false;
-  static bool sExposeTestInterfacePrefCached = false;
-  if (!sExposeTestInterfacePrefCached) {
-    sExposeTestInterfacePrefCached = true;
-    Preferences::AddBoolVarCache(&sExposeTestInterfaceEnabled,
-                                 "dom.script_loader.bytecode_cache.enabled",
-                                 false);
-  }
-  return sExposeTestInterfaceEnabled;
-}
-
- bool
-ScriptLoader::IsEagerBytecodeCache()
-{
-  
-  static bool sEagerBytecodeCache = false;
-  static bool sForceBytecodeCachePrefCached = false;
-  if (!sForceBytecodeCachePrefCached) {
-    sForceBytecodeCachePrefCached = true;
-    Preferences::AddBoolVarCache(&sEagerBytecodeCache,
-                                 "dom.script_loader.bytecode_cache.eager",
-                                 false);
-  }
-  return sEagerBytecodeCache;
-}
-
 nsresult
 ScriptLoader::RestartLoad(ScriptLoadRequest* aRequest)
 {
@@ -940,7 +912,8 @@ ScriptLoader::StartLoad(ScriptLoadRequest* aRequest)
   
   aRequest->mCacheInfo = nullptr;
   nsCOMPtr<nsICacheInfoChannel> cic(do_QueryInterface(channel));
-  if (cic && IsBytecodeCacheEnabled() && aRequest->mJSVersion == JSVERSION_DEFAULT) {
+  if (cic && nsContentUtils::IsBytecodeCacheEnabled() &&
+      aRequest->mJSVersion == JSVERSION_DEFAULT) {
     if (!aRequest->IsLoadingSource()) {
       
       
@@ -1882,6 +1855,157 @@ ScriptLoader::FillCompileOptionsForRequest(const AutoJSAPI&jsapi,
   return NS_OK;
 }
 
+ bool
+ScriptLoader::ShouldCacheBytecode(ScriptLoadRequest* aRequest)
+{
+  using mozilla::TimeStamp;
+  using mozilla::TimeDuration;
+
+  
+  
+  
+  if (!aRequest->mCacheInfo) {
+    LOG(("ScriptLoadRequest (%p): Cannot cache anything (cacheInfo = %p)",
+         aRequest, aRequest->mCacheInfo.get()));
+    return false;
+  }
+
+  
+  
+  int32_t strategy = nsContentUtils::BytecodeCacheStrategy();
+
+  
+  bool hasSourceLengthMin = false;
+  bool hasFetchCountMin = false;
+  bool hasTimeSinceLastFetched = false;
+  size_t sourceLengthMin = 100;
+  int32_t fetchCountMin = 5;
+  TimeDuration timeSinceLastFetched;
+
+  LOG(("ScriptLoadRequest (%p): Bytecode-cache: strategy = %d.", aRequest, strategy));
+  switch (strategy) {
+    case -2: {
+      
+      LOG(("ScriptLoadRequest (%p): Bytecode-cache: Encoding disabled.", aRequest));
+      return false;
+    }
+    case -1: {
+      
+      hasSourceLengthMin = false;
+      hasFetchCountMin = false;
+      hasTimeSinceLastFetched = false;
+      break;
+    }
+    default:
+    case 0: {
+      hasSourceLengthMin = true;
+      hasFetchCountMin = true;
+      hasTimeSinceLastFetched = true;
+      sourceLengthMin = 1024;
+      fetchCountMin = 5;
+      timeSinceLastFetched = TimeDuration::FromSeconds(72 * 3600);
+      break;
+    }
+
+    
+    
+    case 1: {
+      hasSourceLengthMin = true;
+      hasFetchCountMin = true;
+      hasTimeSinceLastFetched = false;
+      sourceLengthMin = 1024;
+      fetchCountMin = 5;
+      break;
+    }
+    case 2: {
+      hasSourceLengthMin = true;
+      hasFetchCountMin = false;
+      hasTimeSinceLastFetched = true;
+      sourceLengthMin = 1024;
+      timeSinceLastFetched = TimeDuration::FromSeconds(72 * 3600);
+      break;
+    }
+    case 3: {
+      hasSourceLengthMin = false;
+      hasFetchCountMin = true;
+      hasTimeSinceLastFetched = true;
+      fetchCountMin = 5;
+      timeSinceLastFetched = TimeDuration::FromSeconds(72 * 3600);
+      break;
+    }
+
+    
+    
+    case 4: {
+      hasSourceLengthMin = false;
+      hasFetchCountMin = false;
+      hasTimeSinceLastFetched = true;
+      timeSinceLastFetched = TimeDuration::FromSeconds(72 * 3600);
+      break;
+    }
+    case 5: {
+      hasSourceLengthMin = false;
+      hasFetchCountMin = true;
+      hasTimeSinceLastFetched = false;
+      fetchCountMin = 5;
+      break;
+    }
+    case 6: {
+      hasSourceLengthMin = true;
+      hasFetchCountMin = false;
+      hasTimeSinceLastFetched = false;
+      sourceLengthMin = 1024;
+      break;
+    }
+  }
+
+  
+  
+  
+  if (hasSourceLengthMin && aRequest->mScriptText.length() < sourceLengthMin) {
+    LOG(("ScriptLoadRequest (%p): Bytecode-cache: Script is too small.", aRequest));
+    return false;
+  }
+
+  
+  
+  
+  if (hasFetchCountMin) {
+    int32_t fetchCount = 0;
+    if (NS_FAILED(aRequest->mCacheInfo->GetCacheTokenFetchCount(&fetchCount))) {
+      LOG(("ScriptLoadRequest (%p): Bytecode-cache: Cannot get fetchCount.", aRequest));
+      return false;
+    }
+    LOG(("ScriptLoadRequest (%p): Bytecode-cache: fetchCount = %d.", aRequest, fetchCount));
+    if (fetchCount < fetchCountMin) {
+      return false;
+    }
+  }
+
+  
+  if (hasTimeSinceLastFetched) {
+    uint32_t lastFetched = 0;
+    if (NS_FAILED(aRequest->mCacheInfo->GetCacheTokenLastFetched(&lastFetched))) {
+      LOG(("ScriptLoadRequest (%p): Bytecode-cache: Cannot get lastFetched.", aRequest));
+      return false;
+    }
+    TimeStamp now = TimeStamp::NowLoRes();
+    TimeStamp last = TimeStamp() + TimeDuration::FromSeconds(lastFetched);
+    if (now < last) {
+      LOG(("ScriptLoadRequest (%p): Bytecode-cache: (What?) lastFetched set in the future.", aRequest));
+      return false;
+    }
+    LOG(("ScriptLoadRequest (%p): Bytecode-cache: lastFetched = %f sec. ago.",
+         aRequest, (now - last).ToSeconds()));
+    if (now - last >= timeSinceLastFetched) {
+      return false;
+    }
+  }
+
+  LOG(("ScriptLoadRequest (%p): Bytecode-cache: Trigger encoding.", aRequest));
+  return true;
+}
+
 nsresult
 ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest)
 {
@@ -1987,13 +2111,7 @@ ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest)
         } else {
           MOZ_ASSERT(aRequest->IsSource());
           JS::Rooted<JSScript*> script(aes.cx());
-
-          bool encodeBytecode = false;
-          if (aRequest->mCacheInfo) {
-            MOZ_ASSERT(aRequest->mBytecodeOffset ==
-                       aRequest->mScriptBytecode.length());
-            encodeBytecode = IsEagerBytecodeCache(); 
-          }
+          bool encodeBytecode = ShouldCacheBytecode(aRequest);
 
           {
             nsJSUtils::ExecutionContext exec(aes.cx(), global);
@@ -2018,10 +2136,11 @@ ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest)
             aRequest->mScript = script;
             HoldJSObjects(aRequest);
             TRACE_FOR_TEST(aRequest->mElement, "scriptloader_encode");
+            MOZ_ASSERT(aRequest->mBytecodeOffset == aRequest->mScriptBytecode.length());
             RegisterForBytecodeEncoding(aRequest);
           } else {
-            LOG(("ScriptLoadRequest (%p): Cannot cache anything (rv = %X, script = %p, cacheInfo = %p)",
-                 aRequest, unsigned(rv), script.get(), aRequest->mCacheInfo.get()));
+            LOG(("ScriptLoadRequest (%p): Bytecode-cache: disabled (rv = %X, script = %p)",
+                 aRequest, unsigned(rv), script.get()));
             TRACE_FOR_TEST_NONE(aRequest->mElement, "scriptloader_no_encode");
             aRequest->mCacheInfo = nullptr;
           }

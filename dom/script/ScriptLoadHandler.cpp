@@ -363,7 +363,7 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
   
   
   if (NS_SUCCEEDED(rv) && mRequest->IsSource() &&
-      ScriptLoader::IsBytecodeCacheEnabled()) {
+      nsContentUtils::IsBytecodeCacheEnabled()) {
     mRequest->mCacheInfo = do_QueryInterface(channelRequest);
     LOG(("ScriptLoadRequest (%p): nsICacheInfoChannel = %p",
          mRequest.get(), mRequest->mCacheInfo.get()));

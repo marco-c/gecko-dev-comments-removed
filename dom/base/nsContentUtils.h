@@ -2985,6 +2985,14 @@ public:
   
   static bool IsLowerNetworkPriority() { return sLowerNetworkPriority; }
 
+  
+  
+  static bool IsBytecodeCacheEnabled() { return sIsBytecodeCacheEnabled; }
+
+  
+  
+  static int32_t BytecodeCacheStrategy() { return sBytecodeCacheStrategy; }
+
 private:
   static bool InitializeEventTable();
 
@@ -3115,6 +3123,8 @@ private:
 #ifndef RELEASE_OR_BETA
   static bool sBypassCSSOMOriginCheck;
 #endif
+  static bool sIsBytecodeCacheEnabled;
+  static int32_t sBytecodeCacheStrategy;
   static uint32_t sCookiesLifetimePolicy;
   static uint32_t sCookiesBehavior;
 

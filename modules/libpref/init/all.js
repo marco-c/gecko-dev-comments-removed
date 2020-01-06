@@ -217,7 +217,20 @@ pref("dom.script_loader.bytecode_cache.enabled", false);
 
 
 
-pref("dom.script_loader.bytecode_cache.eager", false);
+
+
+
+
+
+
+
+
+
+
+
+
+
+pref("dom.script_loader.bytecode_cache.strategy", 0);
 
 
 
