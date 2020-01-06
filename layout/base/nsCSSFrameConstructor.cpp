@@ -2001,25 +2001,17 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
   }
 
   uint32_t contentCount = pseudoStyleContext->StyleContent()->ContentCount();
-  bool createdChildElement = false;
   for (uint32_t contentIndex = 0; contentIndex < contentCount; contentIndex++) {
     nsCOMPtr<nsIContent> content =
       CreateGeneratedContent(aState, aParentContent, pseudoStyleContext,
                              contentIndex);
     if (content) {
       container->AppendChildTo(content, false);
-      if (content->IsElement()) {
-        createdChildElement = true;
+      if (content->IsElement() && servoStyle) {
+        
+        
+        mPresShell->StyleSet()->AsServo()->StyleNewSubtree(content->AsElement());
       }
-    }
-  }
-
-  
-  if (servoStyle) {
-    if (createdChildElement) {
-      
-      
-      mPresShell->StyleSet()->AsServo()->StyleNewChildren(container);
     }
   }
 
@@ -2619,10 +2611,6 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
           aDocElement, nullptr, LazyComputeBehavior::Assert);
       display = styleContext->StyleDisplay();
     }
-  } else if (display->mBinding.ForceGet() && aDocElement->IsStyledByServo()) {
-    
-    
-    mPresShell->StyleSet()->AsServo()->StyleNewChildren(aDocElement);
   }
 
   
@@ -5934,18 +5922,6 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
       }
 
       aTag = mDocument->BindingManager()->ResolveTag(aContent, &aNameSpaceID);
-    } else if (display->mBinding.ForceGet()) {
-      if (aContent->IsStyledByServo()) {
-        
-        
-        
-        
-        
-        
-        
-        
-        mPresShell->StyleSet()->AsServo()->StyleNewChildren(aContent->AsElement());
-      }
     }
   }
 
@@ -7519,21 +7495,12 @@ nsCSSFrameConstructor::StyleNewChildRange(nsIContent* aStartChild,
 
   for (nsIContent* child = aStartChild; child != aEndChild;
        child = child->GetNextSibling()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (child->IsElement() && !child->AsElement()->HasServoData()) {
+    if (child->IsElement()) {
       Element* parent = child->AsElement()->GetFlattenedTreeParentElement();
       
       
       if (MOZ_LIKELY(parent) && parent->HasServoData()) {
-        styleSet->StyleNewChildren(parent);
+        styleSet->StyleNewSubtree(child->AsElement());
       }
     }
   }

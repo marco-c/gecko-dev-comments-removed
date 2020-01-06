@@ -185,12 +185,6 @@ public:
   
   
   
-  void ReresolveStyleForBindings(Element* aElement);
-
-  
-  
-  
-  
   
   
   
@@ -316,22 +310,6 @@ public:
 
 
   void StyleNewSubtree(dom::Element* aRoot);
-
-  
-
-
-
-
-
-  void StyleNewChildren(dom::Element* aParent);
-
-  
-
-
-
-
-
-  void StyleNewlyBoundElement(dom::Element* aElement);
 
   
 

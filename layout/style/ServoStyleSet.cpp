@@ -349,20 +349,6 @@ ServoStyleSet::ResolveStyleFor(Element* aElement,
   return ResolveServoStyle(aElement);
 }
 
-void
-ServoStyleSet::ReresolveStyleForBindings(Element* aElement)
-{
-  MOZ_ASSERT(!aElement->HasServoData(), "Should've been cleared before!");
-  StyleNewSubtree(aElement);
-
-  
-  
-  
-  
-  
-  StyleNewChildren(aElement);
-}
-
 
 
 
@@ -1058,7 +1044,7 @@ ServoStyleSet::StyleDocument(ServoTraversalFlags aFlags)
 void
 ServoStyleSet::StyleNewSubtree(Element* aRoot)
 {
-  MOZ_ASSERT(!aRoot->HasServoData(), "Should have called StyleNewChildren");
+  MOZ_ASSERT(!aRoot->HasServoData());
   PreTraverseSync();
   AutoPrepareTraversal guard(this);
 
@@ -1084,72 +1070,6 @@ ServoStyleSet::StyleNewSubtree(Element* aRoot)
                             ServoTraversalFlags::Forgetful |
                             ServoTraversalFlags::ClearAnimationOnlyDirtyDescendants);
     MOZ_ASSERT(!postTraversalRequired);
-  }
-}
-
-void
-ServoStyleSet::StyleNewChildren(Element* aParent)
-{
-  MOZ_ASSERT(aParent->HasServoData(), "Should have called StyleNewSubtree");
-  if (Servo_Element_IsDisplayNone(aParent)) {
-    return;
-  }
-
-  PreTraverseSync();
-  AutoPrepareTraversal guard(this);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  bool hadDirtyDescendants = aParent->HasDirtyDescendantsForServo();
-  aParent->SetHasDirtyDescendantsForServo();
-
-  auto flags = ServoTraversalFlags::UnstyledOnly;
-  if (ShouldTraverseInParallel()) {
-    flags |= ServoTraversalFlags::ParallelTraversal;
-  }
-
-  
-  const SnapshotTable& snapshots = Snapshots();
-  Servo_TraverseSubtree(aParent, mRawSet.get(), &snapshots, flags);
-
-  
-  if (!hadDirtyDescendants) {
-    aParent->UnsetHasDirtyDescendantsForServo();
-  }
-}
-
-void
-ServoStyleSet::StyleNewlyBoundElement(Element* aElement)
-{
-  
-  
-  
-  
-  
-  
-  if (MOZ_LIKELY(aElement->HasServoData())) {
-    StyleNewChildren(aElement);
-  } else {
-    StyleNewSubtree(aElement);
   }
 }
 

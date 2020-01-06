@@ -61,9 +61,6 @@ enum class ServoTraversalFlags : uint32_t {
   ForCSSRuleChanges = 1 << 1,
   
   
-  UnstyledOnly = 1 << 2,
-  
-  
   
   
   Forgetful = 1 << 3,

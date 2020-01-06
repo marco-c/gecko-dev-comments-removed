@@ -383,7 +383,6 @@ nsXBLService::IsChromeOrResourceURI(nsIURI* aURI)
 }
 
 
-
 class MOZ_STACK_CLASS AutoStyleElement
 {
 public:
@@ -403,7 +402,7 @@ public:
     }
 
     if (ServoStyleSet* servoSet = presShell->StyleSet()->GetAsServo()) {
-      servoSet->ReresolveStyleForBindings(mElement);
+      servoSet->StyleNewSubtree(mElement);
     }
   }
 
