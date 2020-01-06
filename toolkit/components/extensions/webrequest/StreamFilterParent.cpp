@@ -121,11 +121,8 @@ StreamFilterParent::CheckListenerChain()
 {
   AssertIsMainThread();
 
-  nsCOMPtr<nsIThreadRetargetableStreamListener> trsl =
-    do_QueryInterface(mOrigListener);
-  if (trsl) {
-    return trsl->CheckListenerChain();
-  }
+  
+  
   return NS_ERROR_FAILURE;
 }
 
