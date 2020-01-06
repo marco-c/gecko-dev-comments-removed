@@ -66,6 +66,7 @@ use std::fmt;
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender, RecvTimeoutError};
 use style_traits::CSSPixel;
+use style_traits::SpeculativePainter;
 use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
 use webrender_api::{ClipId, DevicePixel, ImageKey};
 use webvr_traits::{WebVREvent, WebVRMsg};
@@ -817,7 +818,7 @@ impl From<RecvTimeoutError> for PaintWorkletError {
 }
 
 
-pub trait Painter: Sync + Send {
+pub trait Painter: SpeculativePainter {
     
     fn draw_a_paint_image(&self,
                           size: TypedSize2D<f32, CSSPixel>,
@@ -829,7 +830,7 @@ pub trait Painter: Sync + Send {
 
 
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, HeapSizeOf)]
 pub struct DrawAPaintImageResult {
     
     pub width: u32,

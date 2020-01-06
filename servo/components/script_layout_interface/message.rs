@@ -89,7 +89,7 @@ pub enum Msg {
     UpdateScrollStateFromScript(ScrollState),
 
     
-    RegisterPaint(Atom, Vec<Atom>, Arc<Painter>),
+    RegisterPaint(Atom, Vec<Atom>, Box<Painter>),
 
     
     SetNavigationStart(f64),

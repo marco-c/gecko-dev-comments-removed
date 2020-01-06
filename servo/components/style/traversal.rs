@@ -12,8 +12,11 @@ use matching::{ChildCascadeRequirement, MatchMethods};
 use sharing::StyleSharingTarget;
 use smallvec::SmallVec;
 use style_resolver::StyleResolverForElement;
+#[cfg(feature = "servo")] use style_traits::ToCss;
 use stylist::RuleInclusion;
 use traversal_flags::{TraversalFlags, self};
+#[cfg(feature = "servo")] use values::Either;
+#[cfg(feature = "servo")] use values::generics::image::Image;
 
 
 
@@ -518,6 +521,11 @@ where
                    element);
             clear_descendant_data(element)
         }
+
+        
+        
+        
+        notify_paint_worklet(context, data);
     }
 
     
@@ -713,6 +721,46 @@ where
         new_styles,
         important_rules_changed
     )
+}
+
+#[cfg(feature = "servo")]
+fn notify_paint_worklet<E>(context: &StyleContext<E>, data: &ElementData)
+where
+    E: TElement,
+{
+    
+    
+    
+    
+    if let Some(ref values) = data.styles.primary {
+        for image in &values.get_background().background_image.0 {
+            let (name, arguments) = match *image {
+                Either::Second(Image::PaintWorklet(ref worklet)) => (&worklet.name, &worklet.arguments),
+                _ => continue,
+            };
+            let painter = match context.shared.registered_speculative_painters.get(name) {
+                Some(painter) => painter,
+                None => continue,
+            };
+            let properties = painter.properties().iter()
+                .filter_map(|(name, id)| id.as_shorthand().err().map(|id| (name, id)))
+                .map(|(name, id)| (name.clone(), values.computed_value_to_string(id)))
+                .collect();
+            let arguments = arguments.iter()
+                .map(|argument| argument.to_css_string())
+                .collect();
+            debug!("Notifying paint worklet {}.", painter.name());
+            painter.speculatively_draw_a_paint_image(properties, arguments);
+        }
+    }
+}
+
+#[cfg(feature = "gecko")]
+fn notify_paint_worklet<E>(_context: &StyleContext<E>, _data: &ElementData)
+where
+    E: TElement,
+{
+    
 }
 
 fn note_children<E, D, F>(

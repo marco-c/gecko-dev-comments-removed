@@ -18,10 +18,12 @@ use font_metrics::FontMetricsProvider;
 #[cfg(feature = "gecko")] use gecko_bindings::structs;
 #[cfg(feature = "servo")] use parking_lot::RwLock;
 use properties::ComputedValues;
+#[cfg(feature = "servo")] use properties::PropertyId;
 use rule_tree::StrongRuleNode;
 use selector_parser::{EAGER_PSEUDO_COUNT, SnapshotMap};
 use selectors::matching::ElementSelectorFlags;
 use servo_arc::Arc;
+#[cfg(feature = "servo")] use servo_atoms::Atom;
 use shared_lock::StylesheetGuards;
 use sharing::StyleSharingCandidateCache;
 use std::fmt;
@@ -30,6 +32,7 @@ use std::ops;
 #[cfg(feature = "servo")] use std::sync::mpsc::Sender;
 use style_traits::CSSPixel;
 use style_traits::DevicePixel;
+#[cfg(feature = "servo")] use style_traits::SpeculativePainter;
 use stylist::Stylist;
 use thread_state;
 use time;
@@ -150,6 +153,10 @@ pub struct SharedStyleContext<'a> {
     
     #[cfg(feature = "servo")]
     pub expired_animations: Arc<RwLock<FnvHashMap<OpaqueNode, Vec<Animation>>>>,
+
+    
+    #[cfg(feature = "servo")]
+    pub registered_speculative_painters: &'a RegisteredSpeculativePainters,
 
     
     #[cfg(feature = "servo")]
@@ -676,4 +683,20 @@ pub enum ReflowGoal {
     ForDisplay,
     
     ForScriptQuery,
+}
+
+
+#[cfg(feature = "servo")]
+pub trait RegisteredSpeculativePainter: SpeculativePainter {
+    
+    fn name(&self) -> Atom;
+    
+    fn properties(&self) -> &FnvHashMap<Atom, PropertyId>;
+}
+
+
+#[cfg(feature = "servo")]
+pub trait RegisteredSpeculativePainters: Sync {
+    
+    fn get(&self, name: &Atom) -> Option<&RegisteredSpeculativePainter>;
 }

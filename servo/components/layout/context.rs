@@ -4,7 +4,6 @@
 
 
 
-use fnv::FnvHashMap;
 use fnv::FnvHasher;
 use gfx::display_list::{WebRenderImageInfo, OpaqueNode};
 use gfx::font_cache_thread::FontCacheThread;
@@ -25,8 +24,8 @@ use std::collections::HashMap;
 use std::hash::BuildHasherDefault;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use style::context::RegisteredSpeculativePainter;
 use style::context::SharedStyleContext;
-use style::properties::PropertyId;
 
 thread_local!(static FONT_CONTEXT_KEY: RefCell<Option<FontContext>> = RefCell::new(None));
 
@@ -73,7 +72,7 @@ pub struct LayoutContext<'a> {
                                                   BuildHasherDefault<FnvHasher>>>>,
 
     
-    pub registered_painters: Arc<RwLock<FnvHashMap<Atom, RegisteredPainter>>>,
+    pub registered_painters: &'a RegisteredPainters,
 
     
     
@@ -180,8 +179,10 @@ impl<'a> LayoutContext<'a> {
 }
 
 
-pub struct RegisteredPainter {
-    pub name: Atom,
-    pub properties: FnvHashMap<Atom, PropertyId>,
-    pub painter: Arc<Painter>,
+pub trait RegisteredPainter: RegisteredSpeculativePainter + Painter {}
+
+
+pub trait RegisteredPainters: Sync {
+    
+    fn get(&self, name: &Atom) -> Option<&RegisteredPainter>;
 }
