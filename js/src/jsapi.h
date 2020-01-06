@@ -4663,8 +4663,7 @@ GetModuleHostDefinedField(JSObject* module);
 
 
 extern JS_PUBLIC_API(bool)
-ModuleDeclarationInstantiation(JSContext* cx, JS::HandleObject moduleRecord);
-
+ModuleInstantiate(JSContext* cx, JS::HandleObject moduleRecord);
 
 
 
@@ -4676,7 +4675,7 @@ ModuleDeclarationInstantiation(JSContext* cx, JS::HandleObject moduleRecord);
 
 
 extern JS_PUBLIC_API(bool)
-ModuleEvaluation(JSContext* cx, JS::HandleObject moduleRecord);
+ModuleEvaluate(JSContext* cx, JS::HandleObject moduleRecord);
 
 
 
@@ -4694,6 +4693,12 @@ GetRequestedModules(JSContext* cx, JS::HandleObject moduleRecord);
 
 extern JS_PUBLIC_API(JSScript*)
 GetModuleScript(JSContext* cx, JS::HandleObject moduleRecord);
+
+extern JS_PUBLIC_API(bool)
+IsModuleErrored(JSObject* moduleRecord);
+
+extern JS_PUBLIC_API(JS::Value)
+GetModuleError(JSObject* moduleRecord);
 
 } 
 
