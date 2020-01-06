@@ -4,106 +4,142 @@
 
 "use strict";
 
-const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
+const {interfaces: Ci, utils: Cu} = Components;
 
-Cu.import("resource://gre/modules/Log.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
+
+Cu.import("chrome://marionette/content/assert.js");
 Cu.import("chrome://marionette/content/error.js");
 
-const logger = Log.repository.getLogger("Marionette");
-
-this.EXPORTED_SYMBOLS = ["Cookies"];
+this.EXPORTED_SYMBOLS = ["cookie"];
 
 const IPV4_PORT_EXPR = /:\d+$/;
 
-
-
-
-this.Cookies = class {
-
-  
-
+this.cookie = {
+  manager: Services.cookies,
+};
 
 
 
 
-  constructor(documentFn, chromeProxy) {
-    this.documentFn_ = documentFn;
-    this.chrome = chromeProxy;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+cookie.fromJSON = function (json) {
+  let newCookie = {};
+
+  assert.object(json, error.pprint`Expected cookie object, got ${json}`);
+
+  newCookie.name = assert.string(json.name, "Cookie name must be string");
+  newCookie.value = assert.string(json.value, "Cookie value must be string");
+
+  if (typeof json.path != "undefined") {
+    newCookie.path = assert.string(json.path, "Cookie path must be string");
+  }
+  if (typeof json.secure != "undefined") {
+    newCookie.secure = assert.boolean(json.secure, "Cookie secure flag must be boolean");
+  }
+  if (typeof json.httpOnly != "undefined") {
+    newCookie.httpOnly = assert.boolean(json.httpOnly, "Cookie httpOnly flag must be boolean");
+  }
+  if (typeof json.session != "undefined") {
+    newCookie.session = assert.boolean(json.session, "Cookie session flag must be boolean");
+  }
+  if (typeof json.expiry != "undefined") {
+    newCookie.expiry = assert.positiveInteger(json.expiry, "Cookie expiry must be a positive integer");
   }
 
-  get document() {
-    return this.documentFn_();
+  return newCookie;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+cookie.add = function (newCookie, opts = {}) {
+  assert.string(newCookie.name, "Cookie name must be string");
+  assert.string(newCookie.value, "Cookie value must be string");
+  assert.string(newCookie.domain, "Cookie domain must be string");
+
+  if (typeof newCookie.path == "undefined") {
+    newCookie.path = "/";
   }
 
-  [Symbol.iterator]() {
-    let path = this.document.location.pathname || "/";
-    let cs = this.chrome.getVisibleCookies(path, this.document.location.hostname)[0];
-    return cs[Symbol.iterator]();
+  if (typeof newCookie.expiry == "undefined") {
+    
+    let date = new Date();
+    let now = new Date(Date.now());
+    date.setYear(now.getFullYear() + 20);
+    newCookie.expiry = date.getTime() / 1000;
   }
 
-  
+  if (opts.restrictToHost) {
+    assert.in("restrictToHost", opts,
+        "Missing cookie domain for host restriction test");
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  add(name, value, opts={}) {
-    if (typeof this.document == "undefined" || !this.document.contentType.match(/html/i)) {
-      throw new UnableToSetCookieError(
-          "You may only set cookies on HTML documents: " + this.document.contentType);
-    }
-
-    if (!opts.expiry) {
-      
-      let date = new Date();
-      let now = new Date(Date.now());
-      date.setYear(now.getFullYear() + 20);
-      opts.expiry = date.getTime() / 1000;
-    }
-
-    if (!opts.domain) {
-      opts.domain = this.document.location.host;
-    } else if (this.document.location.host.indexOf(opts.domain) < 0) {
+    if (newCookie.domain !== opts.restrictToHost) {
       throw new InvalidCookieDomainError(
-          "You may only set cookies for the current domain");
+          `Cookies may only be set for the current domain (${opts.restrictToHost})`);
     }
-
-    
-    
-    
-    opts.domain = opts.domain.replace(IPV4_PORT_EXPR, "");
-
-    let cookie = {
-      domain: opts.domain,
-      path: opts.path,
-      name: name,
-      value: value,
-      secure: opts.secure,
-      httpOnly: opts.httpOnly,
-      session: false,
-      expiry: opts.expiry,
-    };
-    if (!this.chrome.addCookie(cookie)) {
-      throw new UnableToSetCookieError();
-    }
-
-    return cookie;
   }
 
   
+  
+  
+  newCookie.domain = newCookie.domain.replace(IPV4_PORT_EXPR, "");
+
+  cookie.manager.add(
+      newCookie.domain,
+      newCookie.path,
+      newCookie.name,
+      newCookie.value,
+      newCookie.secure,
+      newCookie.httpOnly,
+      newCookie.session,
+      newCookie.expiry,
+      {} );
+};
+
+
+
+
+
+
+
+cookie.remove = function (toDelete) {
+  cookie.manager.remove(
+      toDelete.domain,
+      toDelete.name,
+      toDelete.path,
+      false,
+      {} );
+};
 
 
 
@@ -112,20 +148,38 @@ this.Cookies = class {
 
 
 
-  delete(cookie) {
-    let name;
-    if (cookie.hasOwnProperty("name")) {
-      name = cookie.name;
-    } else {
-      name = cookie;
-    }
 
-    for (let candidate of this) {
-      if (candidate.name == name) {
-        if (!this.chrome.deleteCookie(candidate)) {
-          throw new UnknownError("Unable to delete cookie by name: " + name);
-        }
+
+
+
+
+
+
+cookie.iter = function* (host, currentPath = "/") {
+  assert.string(host, "host must be string");
+  assert.string(currentPath, "currentPath must be string");
+
+  const isForCurrentPath = path => currentPath.indexOf(path) != -1;
+
+  let en = cookie.manager.getCookiesFromHost(host, {});
+  while (en.hasMoreElements()) {
+    let cookie = en.getNext().QueryInterface(Ci.nsICookie2);
+    
+    let hostname = host;
+    do {
+      if ((cookie.host == "." + hostname || cookie.host == hostname) &&
+          isForCurrentPath(cookie.path)) {
+        yield {
+          "name": cookie.name,
+          "value": cookie.value,
+          "path": cookie.path,
+          "domain": cookie.host,
+          "secure": cookie.isSecure,
+          "httpOnly": cookie.isHttpOnly,
+          "expiry": cookie.expires,
+        };
       }
-    }
+      hostname = hostname.replace(/^.*?\./, "");
+    } while (hostname.indexOf(".") != -1);
   }
 };
