@@ -98,6 +98,16 @@ l10n_description_schema = Schema({
     Required('tooltool'): _by_platform(Any('internal', 'public')),
 
     
+    
+    Required('docker-image'): _by_platform(Any(
+        
+        {'in-tree': basestring},
+        None,
+    )),
+
+    Optional('toolchains'): _by_platform([basestring]),
+
+    
     Required('treeherder'): {
         
         Required('platform'): _by_platform(basestring),
@@ -240,6 +250,8 @@ def handle_keyed_by(config, jobs):
         "worker-type",
         "description",
         "run-time",
+        "docker-image",
+        "toolchains",
         "tooltool",
         "env",
         "ignore-locales",
@@ -396,12 +408,17 @@ def make_job_description(config, jobs):
             job_description['run']['use-magic-mh-args'] = False
         else:
             job_description['worker'] = {
-                'docker-image': {'in-tree': 'desktop-build'},
                 'max-run-time': job['run-time'],
                 'chain-of-trust': True,
             }
             job_description['run']['tooltool-downloads'] = job['tooltool']
             job_description['run']['need-xvfb'] = True
+
+        if job.get('docker-image'):
+            job_description['worker']['docker-image'] = job['docker-image']
+
+        if job.get('toolchains'):
+            job_description['toolchains'] = job['toolchains']
 
         if job.get('index'):
             job_description['index'] = {
