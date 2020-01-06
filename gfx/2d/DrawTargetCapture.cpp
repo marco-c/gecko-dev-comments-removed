@@ -305,6 +305,15 @@ DrawTargetCaptureImpl::SetTransform(const Matrix& aTransform)
 }
 
 void
+DrawTargetCaptureImpl::Blur(const AlphaBoxBlur& aBlur)
+{
+  
+  MOZ_ASSERT(GetBackendType() == BackendType::SKIA);
+
+  AppendCommand(BlurCommand)(aBlur);
+}
+
+void
 DrawTargetCaptureImpl::ReplayToDrawTarget(DrawTarget* aDT, const Matrix& aTransform)
 {
   uint8_t* start = &mDrawCommandStorage.front();

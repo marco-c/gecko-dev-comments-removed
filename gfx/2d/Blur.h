@@ -82,17 +82,17 @@ public:
   
 
 
-  IntSize GetSize();
+  IntSize GetSize() const;
 
   
 
 
-  int32_t GetStride();
+  int32_t GetStride() const;
 
   
 
 
-  IntRect GetRect();
+  IntRect GetRect() const;
 
   
 
@@ -124,7 +124,7 @@ public:
 
 
 
-  void Blur(uint8_t* aData);
+  void Blur(uint8_t* aData) const;
 
   
 
@@ -139,19 +139,19 @@ private:
 
   void BoxBlur_C(uint8_t* aData,
                  int32_t aLeftLobe, int32_t aRightLobe, int32_t aTopLobe,
-                 int32_t aBottomLobe, uint32_t *aIntegralImage, size_t aIntegralImageStride);
+                 int32_t aBottomLobe, uint32_t *aIntegralImage, size_t aIntegralImageStride) const;
   void BoxBlur_SSE2(uint8_t* aData,
                     int32_t aLeftLobe, int32_t aRightLobe, int32_t aTopLobe,
-                    int32_t aBottomLobe, uint32_t *aIntegralImage, size_t aIntegralImageStride);
+                    int32_t aBottomLobe, uint32_t *aIntegralImage, size_t aIntegralImageStride) const;
 #ifdef BUILD_ARM_NEON
   void BoxBlur_NEON(uint8_t* aData,
                     int32_t aLeftLobe, int32_t aRightLobe, int32_t aTopLobe,
-                    int32_t aBottomLobe, uint32_t *aIntegralImage, size_t aIntegralImageStride);
+                    int32_t aBottomLobe, uint32_t *aIntegralImage, size_t aIntegralImageStride) const;
 #endif
 #ifdef _MIPS_ARCH_LOONGSON3A
   void BoxBlur_LS3(uint8_t* aData,
                     int32_t aLeftLobe, int32_t aRightLobe, int32_t aTopLobe,
-                    int32_t aBottomLobe, uint32_t *aIntegralImage, size_t aIntegralImageStride);
+                    int32_t aBottomLobe, uint32_t *aIntegralImage, size_t aIntegralImageStride) const;
 #endif
 
   static CheckedInt<int32_t> RoundUpToMultipleOf4(int32_t aVal);

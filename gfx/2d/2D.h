@@ -87,6 +87,7 @@ class ScaledFont;
 
 namespace gfx {
 
+class AlphaBoxBlur;
 class ScaledFont;
 class SourceSurface;
 class DataSourceSurface;
@@ -1213,6 +1214,14 @@ public:
 
 
   virtual void PopLayer() { MOZ_CRASH("GFX: PopLayer"); }
+
+  
+
+
+
+  virtual void Blur(const AlphaBoxBlur& aBlur) {
+    MOZ_CRASH("GFX: DoBlur");
+  }
 
   
 
