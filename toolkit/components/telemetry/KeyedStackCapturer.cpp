@@ -12,8 +12,6 @@
 
 namespace {
 
-#if defined(MOZ_GECKO_PROFILER)
-
 
 const uint8_t kMaxKeyLength = 50;
 
@@ -161,7 +159,6 @@ KeyedStackCapturer::Clear()
   mStackInfos.Clear();
   mStacks.Clear();
 }
-#endif
 
 } 
 } 
