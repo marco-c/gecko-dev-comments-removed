@@ -46,62 +46,26 @@ const COMPONENT_ERROR = '`Components` is not available in this context.\n' +
   '    let { Cc, Ci } = require(\'chrome\');\n';
 
 
-
-function freeze(object) {
-  if (prototypeOf(object) === null) {
-      Object.freeze(object);
-  }
-  else {
-    prototypeOf(prototypeOf(object.isPrototypeOf)).
-      constructor. 
-      freeze(object);
-  }
-  return object;
-}
-
-
-const descriptor = iced(function descriptor(object) {
+const descriptor = function descriptor(object) {
   let value = {};
   for (let name of getOwnIdentifiers(object))
     value[name] = getOwnPropertyDescriptor(object, name)
   return value;
-});
-
-
-
-freeze(Object);
-freeze(Object.prototype);
-freeze(Function);
-freeze(Function.prototype);
-freeze(Array);
-freeze(Array.prototype);
-freeze(String);
-freeze(String.prototype);
-
-
-
-
-
-function iced(f) {
-  if (!Object.isFrozen(f)) {
-    f.prototype = undefined;
-  }
-  return freeze(f);
-}
+};
 
 
 
 
 
 
-const override = iced(function override(target, source) {
+const override = function override(target, source) {
   let properties = descriptor(target);
 
   for (let name of getOwnIdentifiers(source || {}))
     properties[name] = getOwnPropertyDescriptor(source, name);
 
   return Object.defineProperties({}, properties);
-});
+};
 
 function sourceURI(uri) { return String(uri).split(" -> ").pop(); }
 
@@ -192,7 +156,7 @@ function join(base, ...paths) {
 
 
 
-const Sandbox = iced(function Sandbox(options) {
+const Sandbox = function Sandbox(options) {
   
   options = {
     
@@ -225,7 +189,7 @@ const Sandbox = iced(function Sandbox(options) {
   delete sandbox.debug;
 
   return sandbox;
-});
+}
 
 
 
@@ -234,7 +198,7 @@ const Sandbox = iced(function Sandbox(options) {
 
 
 
-const evaluate = iced(function evaluate(sandbox, uri, options) {
+const evaluate = function evaluate(sandbox, uri, options) {
   let { source, line, version, encoding } = override({
     encoding: 'UTF-8',
     line: 1,
@@ -244,11 +208,11 @@ const evaluate = iced(function evaluate(sandbox, uri, options) {
 
   return source ? Cu.evalInSandbox(source, sandbox, version, uri, line)
                 : loadSubScript(uri, sandbox, encoding);
-});
+};
 
 
 
-const load = iced(function load(loader, module) {
+const load = function load(loader, module) {
   let { sandboxes, globals, loadModuleHook } = loader;
   let require = Require(loader, module);
 
@@ -364,7 +328,7 @@ const load = iced(function load(loader, module) {
     Object.freeze(module.exports);
 
   return module;
-});
+}
 
 
 function normalizeExt(uri) {
@@ -377,7 +341,7 @@ function normalizeExt(uri) {
 
 
 
-const resolve = iced(function resolve(id, base) {
+const resolve = function resolve(id, base) {
   if (!isRelative(id))
     return id;
 
@@ -395,7 +359,7 @@ const resolve = iced(function resolve(id, base) {
     resolved = './' + resolved;
 
   return resolved;
-});
+}
 
 function addTrailingSlash(path) {
   return path.replace(/\/*$/, "/");
@@ -446,13 +410,13 @@ function compileMapping(paths) {
   };
 }
 
-const resolveURI = iced(function resolveURI(id, mapping) {
+const resolveURI = function resolveURI(id, mapping) {
   
   if (isAbsoluteURI(id))
     return normalizeExt(id);
 
   return normalizeExt(mapping(id))
-});
+}
 
 
 
@@ -508,7 +472,7 @@ function lazyRequireModule(obj, moduleId, prop = moduleId) {
 
 
 
-const Require = iced(function Require(loader, requirer) {
+const Require = function Require(loader, requirer) {
   let {
     modules, mapping, mappingCache, resolve: loaderResolve, load,
     manifest, rootURI, isNative, requireHook
@@ -537,7 +501,6 @@ const Require = iced(function Require(loader, requirer) {
     else if (isJSMURI(uri)) {
       module = modules[uri] = Module(requirement, uri);
       module.exports = Cu.import(uri, {});
-      freeze(module);
     }
     else if (isJSONURI(uri)) {
       let data;
@@ -550,7 +513,6 @@ const Require = iced(function Require(loader, requirer) {
         data = JSON.parse(readURI(uri));
         module = modules[uri] = Module(requirement, uri);
         module.exports = data;
-        freeze(module);
       }
       catch (err) {
         
@@ -638,23 +600,23 @@ const Require = iced(function Require(loader, requirer) {
     };
   };
 
-  return iced(require);
-});
+  return require;
+}
 
 
 
-const Module = iced(function Module(id, uri) {
+const Module = function Module(id, uri) {
   return Object.create(null, {
     id: { enumerable: true, value: id },
     exports: { enumerable: true, writable: true, value: Object.create(null),
                configurable: true },
     uri: { value: uri }
   });
-});
+}
 
 
 
-const unload = iced(function unload(loader, reason) {
+const unload = function unload(loader, reason) {
   
   
   
@@ -664,7 +626,7 @@ const unload = iced(function unload(loader, reason) {
   
   let subject = { wrappedJSObject: loader.destructor };
   notifyObservers(subject, 'sdk:loader:destroy', reason);
-});
+};
 
 
 
@@ -731,7 +693,7 @@ function Loader(options) {
   
   
   
-  let destructor = freeze(Object.create(null));
+  let destructor = Object.create(null);
 
   let mapping = compileMapping(paths);
 
@@ -763,7 +725,7 @@ function Loader(options) {
       }
     });
 
-    modules[uri] = freeze(module);
+    modules[uri] = module;
   }
 
   
@@ -818,7 +780,7 @@ function Loader(options) {
     loadModuleHook: { enumerable: false, value: options.loadModuleHook },
   };
 
-  return freeze(Object.create(null, returnObj));
+  return Object.create(null, returnObj);
 };
 
 var isSystemURI = uri => /^resource:\/\/(gre|devtools|testing-common)\//.test(uri);
