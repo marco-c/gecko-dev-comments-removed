@@ -33,7 +33,8 @@ namespace net {
 class MozURL final
 {
 public:
-  static nsresult Init(const nsACString& aSpec, MozURL** aURL);
+  static nsresult Init(MozURL** aURL, const nsACString& aSpec,
+                       const MozURL* aBaseURL = nullptr);
 
   nsresult GetScheme(nsACString& aScheme);
   nsresult GetSpec(nsACString& aSpec);
