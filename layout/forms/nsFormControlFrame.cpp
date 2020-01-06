@@ -44,11 +44,7 @@ nsFormControlFrame::GetMinISize(gfxContext *aRenderingContext)
 {
   nscoord result;
   DISPLAY_MIN_WIDTH(this, result);
-#if !defined(MOZ_WIDGET_ANDROID)
   result = StyleDisplay()->mAppearance == NS_THEME_NONE ? 0 : DefaultSize();
-#else
-  result = DefaultSize();
-#endif
   return result;
 }
 
@@ -57,11 +53,7 @@ nsFormControlFrame::GetPrefISize(gfxContext *aRenderingContext)
 {
   nscoord result;
   DISPLAY_PREF_WIDTH(this, result);
-#if !defined(MOZ_WIDGET_ANDROID)
   result = StyleDisplay()->mAppearance == NS_THEME_NONE ? 0 : DefaultSize();
-#else
-  result = DefaultSize();
-#endif
   return result;
 }
 
@@ -77,11 +69,10 @@ nsFormControlFrame::ComputeAutoSize(gfxContext*         aRC,
                                     ComputeSizeFlags    aFlags)
 {
   LogicalSize size(aWM, 0, 0);
-#if !defined(MOZ_WIDGET_ANDROID)
   if (StyleDisplay()->mAppearance == NS_THEME_NONE) {
     return size;
   }
-#endif
+
   
   size = nsAtomicContainerFrame::ComputeAutoSize(aRC, aWM, aCBSize,
                                                  aAvailableISize, aMargin,
@@ -96,16 +87,11 @@ nsFormControlFrame::GetLogicalBaseline(WritingMode aWritingMode) const
   NS_ASSERTION(!NS_SUBTREE_DIRTY(this),
                "frame must not be dirty");
 
-
-
-
-#if !defined(MOZ_WIDGET_ANDROID)
   
   
   if (StyleDisplay()->mAppearance == NS_THEME_NONE) {
     return nsAtomicContainerFrame::GetLogicalBaseline(aWritingMode);
   }
-#endif
 
   
   

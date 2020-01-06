@@ -3839,16 +3839,11 @@ nsCSSFrameConstructor::FindInputData(Element* aElement,
   
   
   
-#if !defined(MOZ_WIDGET_ANDROID)
-  
-  
-  
   if ((controlType == NS_FORM_INPUT_CHECKBOX ||
        controlType == NS_FORM_INPUT_RADIO) &&
       aStyleContext->StyleDisplay()->mAppearance == NS_THEME_NONE) {
     return nullptr;
   }
-#endif
 
   return FindDataByInt(controlType, aElement, aStyleContext,
                        sInputData, ArrayLength(sInputData));
