@@ -677,9 +677,9 @@ void CircleArea::GetRect(nsIFrame* aFrame, nsRect& aRect)
 
 
 
-nsImageMap::nsImageMap() :
-  mImageFrame(nullptr),
-  mContainsBlockContents(false)
+nsImageMap::nsImageMap()
+  : mImageFrame(nullptr)
+  , mConsiderWholeSubtree(false)
 {
 }
 
@@ -777,7 +777,7 @@ nsImageMap::SearchForAreas(nsIContent* aParent, bool& aFoundArea,
     }
 
     if (child->IsElement()) {
-      mContainsBlockContents = true;
+      mConsiderWholeSubtree = true;
       SearchForAreas(child, aFoundArea, aFoundAnchor);
     }
   }
@@ -791,7 +791,7 @@ nsImageMap::UpdateAreas()
 
   bool foundArea = false;
   bool foundAnchor = false;
-  mContainsBlockContents = false;
+  mConsiderWholeSubtree = false;
 
   SearchForAreas(mMap, foundArea, foundAnchor);
 #ifdef ACCESSIBILITY
@@ -888,7 +888,7 @@ nsImageMap::Draw(nsIFrame* aFrame, DrawTarget& aDrawTarget,
 void
 nsImageMap::MaybeUpdateAreas(nsIContent *aContent)
 {
-  if (aContent == mMap || mContainsBlockContents) {
+  if (aContent == mMap || mConsiderWholeSubtree) {
     UpdateAreas();
   }
 }
