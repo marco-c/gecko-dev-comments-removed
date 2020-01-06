@@ -623,7 +623,15 @@ public:
 
   
   
-  virtual uint32_t NumSubTextures() const { return 1; }
+  
+  
+  
+  virtual void GetWRImageKeys(nsTArray<wr::ImageKey>& aImageKeys,
+                              const std::function<wr::ImageKey()>& aImageKeyAllocator)
+  {
+    MOZ_ASSERT(aImageKeys.IsEmpty());
+    MOZ_ASSERT_UNREACHABLE("No GetWRImageKeys() implementation for this TextureHost type.");
+  }
 
   
   
@@ -739,7 +747,8 @@ public:
 
   virtual void CreateRenderTexture(const wr::ExternalImageId& aExternalImageId) override;
 
-  virtual uint32_t NumSubTextures() const override;
+  virtual void GetWRImageKeys(nsTArray<wr::ImageKey>& aImageKeys,
+                              const std::function<wr::ImageKey()>& aImageKeyAllocator) override;
 
   virtual void AddWRImage(wr::ResourceUpdateQueue& aResources,
                           Range<const wr::ImageKey>& aImageKeys,
