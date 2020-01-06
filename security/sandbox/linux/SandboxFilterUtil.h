@@ -106,8 +106,6 @@ public:
 #define CASES_FOR_fstatfs   case __NR_fstatfs64: case __NR_fstatfs
 #define CASES_FOR_fcntl   case __NR_fcntl64
 
-#define CASES_FOR_getdents   case __NR_getdents64: case __NR_getdents
-
 #define CASES_FOR_lseek   case __NR_lseek: case __NR__llseek
 #define CASES_FOR_ftruncate   case __NR_ftruncate: case __NR_ftruncate64
 #else
@@ -118,9 +116,15 @@ public:
 #define CASES_FOR_fstatfs   case __NR_fstatfs
 #define CASES_FOR_statfs   case __NR_statfs
 #define CASES_FOR_fcntl   case __NR_fcntl
-#define CASES_FOR_getdents   case __NR_getdents
 #define CASES_FOR_lseek   case __NR_lseek
 #define CASES_FOR_ftruncate   case __NR_ftruncate
+#endif
+
+
+#ifdef __NR_getdents
+#define CASES_FOR_getdents   case __NR_getdents64: case __NR_getdents
+#else
+#define CASES_FOR_getdents   case __NR_getdents64
 #endif
 
 #ifdef __NR_sigprocmask
