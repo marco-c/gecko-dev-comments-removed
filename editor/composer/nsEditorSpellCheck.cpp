@@ -6,6 +6,7 @@
 
 #include <stdlib.h>                     
 
+#include "mozilla/AbstractThread.h"     
 #include "mozilla/Attributes.h"         
 #include "mozilla/Preferences.h"        
 #include "mozilla/dom/Element.h"        

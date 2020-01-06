@@ -7,6 +7,7 @@
 
 #include "HttpLog.h"
 
+#include "mozilla/AbstractThread.h"
 #include "mozilla/ipc/FileDescriptorSetParent.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/net/HttpChannelParent.h"

@@ -2,6 +2,7 @@
 
 #include "IPDLUnitTests.h"      
 
+#include "mozilla/AbstractThread.h"
 #include "mozilla/Unused.h"
 
 namespace mozilla {

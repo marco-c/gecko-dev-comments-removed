@@ -5,6 +5,7 @@
 
 
 #include "ServiceWorkerUpdaterChild.h"
+#include "mozilla/AbstractThread.h"
 
 namespace mozilla {
 namespace dom {

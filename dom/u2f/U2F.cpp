@@ -5,6 +5,7 @@
 
 
 #include "hasht.h"
+#include "mozilla/AbstractThread.h"
 #include "mozilla/dom/CallbackFunction.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/CryptoBuffer.h"
