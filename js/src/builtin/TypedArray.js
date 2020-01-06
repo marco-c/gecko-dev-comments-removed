@@ -1156,8 +1156,15 @@ function TypedArrayCompareInt(x, y) {
 }
 
 
+
 function TypedArraySort(comparefn) {
     
+
+    
+    if (comparefn !== undefined) {
+        if (!IsCallable(comparefn))
+            ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, comparefn));
+    }
 
     
     var obj = this;

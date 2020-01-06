@@ -182,9 +182,14 @@ function ArrayStaticSome(list, callbackfn) {
 }
 
 
+
 function ArraySort(comparefn) {
     
-    var O = ToObject(this);
+    assert(typeof comparefn === "function", "Only called when a comparator is present");
+
+    
+    assert(IsObject(this), "|this| should be an object");
+    var O = this;
 
     
     var len = ToLength(O.length);
