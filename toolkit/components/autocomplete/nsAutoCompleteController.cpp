@@ -367,6 +367,13 @@ nsAutoCompleteController::HandleEnter(bool aIsPopupSelection,
 
   
   StopSearch();
+  
+  
+  
+  if (!mInput) {
+    return NS_OK;
+  }
+
   EnterMatch(aIsPopupSelection, aEvent);
 
   return NS_OK;
