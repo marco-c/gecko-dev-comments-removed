@@ -181,6 +181,7 @@ AsyncImagePipelineManager::UpdateImageKeys(wr::ResourceUpdateQueue& aResources,
   
   
   bool canUpdate = !!previousTexture
+                   && previousTexture->GetSize() == texture->GetSize()
                    && previousTexture->GetFormat() == texture->GetFormat()
                    && aPipeline->mKeys.Length() == numKeys;
 
