@@ -535,7 +535,7 @@ static void GetDefaultPrinterNameFromGlobalPrinters(nsAString &printerName)
 {
   nsCOMPtr<nsIPrinterEnumerator> prtEnum = do_GetService("@mozilla.org/gfx/printerenumerator;1");
   if (prtEnum) {
-    prtEnum->GetDefaultPrinterName(getter_Copies(printerName));
+    prtEnum->GetDefaultPrinterName(printerName);
   }
 }
 
@@ -570,7 +570,7 @@ ShowNativePrintDialog(HWND              aHWnd,
 
   
   nsString printerName;
-  aPrintSettings->GetPrinterName(getter_Copies(printerName));
+  aPrintSettings->GetPrinterName(printerName);
 
   
   if (printerName.IsEmpty()) {
@@ -696,12 +696,12 @@ ShowNativePrintDialog(HWND              aHWnd,
     if (prntdlg.Flags & PD_PRINTTOFILE) {
       char16ptr_t fileName = &(((wchar_t *)devnames)[devnames->wOutputOffset]);
       NS_ASSERTION(wcscmp(fileName, L"FILE:") == 0, "FileName must be `FILE:`");
-      aPrintSettings->SetToFileName(fileName);
+      aPrintSettings->SetToFileName(nsDependentString(fileName));
       aPrintSettings->SetPrintToFile(true);
     } else {
       
       aPrintSettings->SetPrintToFile(false);
-      aPrintSettings->SetToFileName(nullptr);
+      aPrintSettings->SetToFileName(EmptyString());
     }
 
     nsCOMPtr<nsIPrintSettingsWin> psWin(do_QueryInterface(aPrintSettings));
@@ -710,15 +710,15 @@ ShowNativePrintDialog(HWND              aHWnd,
     }
 
     
-    psWin->SetDeviceName(device);
-    psWin->SetDriverName(driver);
+    psWin->SetDeviceName(nsDependentString(device));
+    psWin->SetDriverName(nsDependentString(driver));
 
 #if defined(DEBUG_rods) || defined(DEBUG_dcone)
     wprintf(L"printer: driver %s, device %s  flags: %d\n", driver, device, prntdlg.Flags);
 #endif
     
 
-    aPrintSettings->SetPrinterName(device);
+    aPrintSettings->SetPrinterName(nsDependentString(device));
 
     if (prntdlg.Flags & PD_SELECTION) {
       aPrintSettings->SetPrintRange(nsIPrintSettings::kRangeSelection);

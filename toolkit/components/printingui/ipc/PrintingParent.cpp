@@ -137,17 +137,17 @@ PrintingParent::ShowPrintDialog(PBrowserParent* aParent,
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsString printerName;
-  settings->GetPrinterName(getter_Copies(printerName));
+  settings->GetPrinterName(printerName);
 #ifdef MOZ_X11
   
   
   
   
   if (printerName.IsEmpty()) {
-    mPrintSettingsSvc->GetDefaultPrinterName(getter_Copies(printerName));
-    settings->SetPrinterName(printerName.get());
+    mPrintSettingsSvc->GetDefaultPrinterName(printerName);
+    settings->SetPrinterName(printerName);
   }
-  mPrintSettingsSvc->InitPrintSettingsFromPrinter(printerName.get(), settings);
+  mPrintSettingsSvc->InitPrintSettingsFromPrinter(printerName, settings);
 #endif
 
   
@@ -155,8 +155,7 @@ PrintingParent::ShowPrintDialog(PBrowserParent* aParent,
   if (isPrintPreview || printSilently ||
       Preferences::GetBool("print.always_print_silent", printSilently)) {
     settings->SetIsInitializedFromPrinter(false);
-    mPrintSettingsSvc->InitPrintSettingsFromPrinter(printerName.get(),
-                                                    settings);
+    mPrintSettingsSvc->InitPrintSettingsFromPrinter(printerName, settings);
   } else {
     rv = pps->ShowPrintDialog(parentWin, wbp, settings);
     NS_ENSURE_SUCCESS(rv, rv);

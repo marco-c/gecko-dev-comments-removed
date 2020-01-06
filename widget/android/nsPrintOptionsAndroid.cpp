@@ -12,8 +12,7 @@ public:
   {
     
     SetOutputFormat(nsIPrintSettings::kOutputFormatPDF);
-    SetPrinterName(u"PDF printer");
-    
+    SetPrinterName(NS_LITERAL_STRING("PDF printer"));
   }
 };
 
