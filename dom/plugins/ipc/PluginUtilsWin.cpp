@@ -45,7 +45,7 @@ protected:
   const PluginModuleSet* mAudioNotificationSet;
 };
 
-class AudioNotification : public IMMNotificationClient
+class AudioNotification final : public IMMNotificationClient
 {
 public:
   AudioNotification() :
@@ -68,15 +68,6 @@ public:
     }
 
     mIsRegistered = true;
-  }
-
-  ~AudioNotification()
-  {
-    MOZ_ASSERT(!mIsRegistered,
-      "Destroying AudioNotification without first calling Unregister");
-    if (mDeviceEnum) {
-      mDeviceEnum->Release();
-    }
   }
 
   
@@ -195,6 +186,15 @@ private:
   
   
   PluginModuleSet mAudioNotificationSet;
+
+  ~AudioNotification()
+  {
+    MOZ_ASSERT(!mIsRegistered,
+      "Destroying AudioNotification without first calling Unregister");
+    if (mDeviceEnum) {
+      mDeviceEnum->Release();
+    }
+  }
 };  
 
 

@@ -32,7 +32,7 @@ static const GUID sD3D11TextureUsage =
 
 
 
-class TextureMemoryMeasurer : public IUnknown
+class TextureMemoryMeasurer final : public IUnknown
 {
 public:
   explicit TextureMemoryMeasurer(size_t aMemoryUsed)
@@ -72,6 +72,8 @@ public:
 private:
   int mRefCnt;
   int mMemoryUsed;
+
+  ~TextureMemoryMeasurer() = default;
 };
 
 static DXGI_FORMAT
