@@ -4512,6 +4512,10 @@ var XULBrowserWindow = {
   },
 
   setOverLink(url, anchorElt) {
+    const textToSubURI = Cc["@mozilla.org/intl/texttosuburi;1"].
+                         getService(Ci.nsITextToSubURI);
+    url = textToSubURI.unEscapeURIForUI("UTF-8", url);
+
     
     
     url = url.replace(/[\u200e\u200f\u202a\u202b\u202c\u202d\u202e]/g,
