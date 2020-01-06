@@ -99,7 +99,7 @@ class Toolbar extends Component {
     || !I.is(this.props.requestFilterTypes, nextProps.requestFilterTypes)
 
     
-    || this.refs.searchbox && this.refs.searchbox.focused;
+    || !!(this.refs.searchbox && this.refs.searchbox.focused);
   }
 
   componentWillUnmount() {

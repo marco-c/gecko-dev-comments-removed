@@ -533,26 +533,28 @@ class FirefoxDataProvider {
 
   async _requestData(actor, method) {
     
-    let clientMethodName = "get" + method.charAt(0).toUpperCase() +
-      method.slice(1);
+    let clientMethodName = `get${method.charAt(0).toUpperCase()}${method.slice(1)}`;
     
-    let callbackMethodName = "on" + method.charAt(0).toUpperCase() +
-      method.slice(1);
+    let callbackMethodName = `on${method.charAt(0).toUpperCase()}${method.slice(1)}`;
     
-    let updatingEventName = "UPDATING_" + method.replace(/([A-Z])/g, "_$1").toUpperCase();
+    let updatingEventName = `UPDATING_${method.replace(/([A-Z])/g, "_$1").toUpperCase()}`;
 
-    if (typeof this.webConsoleClient[clientMethodName] == "function") {
-      
-      emit(EVENTS[updatingEventName], actor);
+    
+    emit(EVENTS[updatingEventName], actor);
 
+    let response = await new Promise((resolve, reject) => {
       
-      let response = await this.webConsoleClient[clientMethodName](actor);
+      if (typeof this.webConsoleClient[clientMethodName] === "function") {
+        this.webConsoleClient[clientMethodName](actor, (res) => {
+          resolve(res);
+        });
+      } else {
+        reject(new Error(`Error: No such client method '${clientMethodName}'!`));
+      }
+    });
 
-      
-      response = await this[callbackMethodName](response);
-      return response;
-    }
-    throw new Error("Error: No such client method '" + clientMethodName + "'!");
+    
+    return this[callbackMethodName](response);
   }
 
   
