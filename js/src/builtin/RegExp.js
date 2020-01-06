@@ -309,6 +309,8 @@ function RegExpReplace(string, replaceValue) {
             return RegExpLocalReplaceOptFunc(rx, S, lengthS, replaceValue);
         if (firstDollarIndex !== -1)
             return RegExpLocalReplaceOptSubst(rx, S, lengthS, replaceValue, firstDollarIndex);
+        if (lengthS < 0x7fff)
+            return RegExpLocalReplaceOptShort(rx, S, lengthS, replaceValue);
         return RegExpLocalReplaceOpt(rx, S, lengthS, replaceValue);
     }
 
@@ -392,7 +394,6 @@ function RegExpReplaceSlowPath(rx, S, lengthS, replaceValue,
         if (functionalReplace || firstDollarIndex !== -1) {
             
             replacement = RegExpGetComplexReplacement(result, matched, S, position,
-
                                                       nCaptures, replaceValue,
                                                       functionalReplace, firstDollarIndex);
         } else {
@@ -412,8 +413,8 @@ function RegExpReplaceSlowPath(rx, S, lengthS, replaceValue,
         
         if (position >= nextSourcePosition) {
             
-          accumulatedResult += Substring(S, nextSourcePosition,
-                                         position - nextSourcePosition) + replacement;
+            accumulatedResult += Substring(S, nextSourcePosition,
+                                           position - nextSourcePosition) + replacement;
 
             
             nextSourcePosition = position + matchLength;
@@ -427,9 +428,6 @@ function RegExpReplaceSlowPath(rx, S, lengthS, replaceValue,
     
     return accumulatedResult + Substring(S, nextSourcePosition, lengthS - nextSourcePosition);
 }
-
-
-
 
 
 
@@ -484,13 +482,55 @@ function RegExpGetComplexReplacement(result, matched, S, position,
             
             _DefineDataProperty(captures, capturesLength++, position);
             _DefineDataProperty(captures, capturesLength++, S);
-            return ToString(callFunction(std_Function_apply, replaceValue, null, captures));
+            return ToString(callFunction(std_Function_apply, replaceValue, undefined, captures));
         }
     }
 
     
     return RegExpGetSubstitution(matched, S, position, captures, replaceValue,
                                  firstDollarIndex);
+}
+
+
+
+
+
+
+
+
+function RegExpGetFunctionalReplacement(result, S, position, replaceValue) {
+    
+    
+    assert(result.length >= 1, "RegExpMatcher doesn't return an empty array");
+    var nCaptures = result.length - 1;
+
+    switch (nCaptures) {
+      case 0:
+        return ToString(replaceValue(SPREAD(result, 1), position, S));
+      case 1:
+        return ToString(replaceValue(SPREAD(result, 2), position, S));
+      case 2:
+        return ToString(replaceValue(SPREAD(result, 3), position, S));
+      case 3:
+        return ToString(replaceValue(SPREAD(result, 4), position, S));
+      case 4:
+        return ToString(replaceValue(SPREAD(result, 5), position, S));
+    }
+
+    
+    var captures = [];
+    for (var n = 0; n <= nCaptures; n++) {
+        assert(typeof result[n] === "string" || result[n] === undefined,
+               "RegExpMatcher returns only strings and undefined");
+        _DefineDataProperty(captures, n, result[n]);
+    }
+
+    
+    _DefineDataProperty(captures, nCaptures + 1, position);
+    _DefineDataProperty(captures, nCaptures + 2, S);
+
+    
+    return ToString(callFunction(std_Function_apply, replaceValue, undefined, captures));
 }
 
 
@@ -589,6 +629,16 @@ function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, fullUnicode)
 
 #define FUNC_NAME RegExpLocalReplaceOpt
 #include "RegExpLocalReplaceOpt.h.js"
+#undef FUNC_NAME
+
+
+
+
+
+#define FUNC_NAME RegExpLocalReplaceOptShort
+#define SHORT_STRING
+#include "RegExpLocalReplaceOpt.h.js"
+#undef SHORT_STRING
 #undef FUNC_NAME
 
 
