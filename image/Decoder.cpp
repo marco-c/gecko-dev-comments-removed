@@ -406,6 +406,14 @@ Decoder::PostSize(int32_t aWidth,
   mImageMetadata.SetSize(aWidth, aHeight, aOrientation);
 
   
+  
+  
+  if (!IsExpectedSize()) {
+    PostError();
+    return;
+  }
+
+  
   if (!mOutputSize) {
     mOutputSize = Some(IntSize(aWidth, aHeight));
   }
