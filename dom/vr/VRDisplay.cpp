@@ -541,7 +541,8 @@ VRDisplay::RequestPresent(const nsTArray<VRLayer>& aLayers,
   if (!EventStateManager::IsHandlingUserInput() &&
       !isChromePresentation &&
       !IsHandlingVRNavigationEvent() &&
-      gfxPrefs::VRRequireGesture()) {
+      gfxPrefs::VRRequireGesture() &&
+      !IsPresenting()) {
     
     
     
@@ -560,7 +561,11 @@ VRDisplay::RequestPresent(const nsTArray<VRLayer>& aLayers,
     
     promise->MaybeRejectWithUndefined();
   } else {
-    mPresentation = mClient->BeginPresentation(aLayers, presentationGroup);
+    if (mPresentation) {
+      mPresentation->UpdateLayers(aLayers);
+    } else {
+      mPresentation = mClient->BeginPresentation(aLayers, presentationGroup);
+    }
     mFrameInfo.Clear();
     promise->MaybeResolve(JS::UndefinedHandleValue);
   }

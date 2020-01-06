@@ -231,8 +231,6 @@ VROculusSession::StartPresentation(const IntSize& aSize)
 {
   if (!mPresenting) {
     mPresenting = true;
-    mPresentationSize = aSize;
-    Refresh();
     mTelemetry.Clear();
     mTelemetry.mPresentationStart = TimeStamp::Now();
 
@@ -243,6 +241,10 @@ VROculusSession::StartPresentation(const IntSize& aSize)
       }
     }
   }
+
+  
+  mPresentationSize = aSize;
+  Refresh();
 }
 
 void
