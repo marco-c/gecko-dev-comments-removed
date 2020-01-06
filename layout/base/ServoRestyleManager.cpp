@@ -1205,7 +1205,6 @@ ServoRestyleManager::ProcessAllPendingAttributeAndStateInvalidations()
 void
 ServoRestyleManager::UpdateOnlyAnimationStyles()
 {
-  
   bool doCSS = PresContext()->EffectCompositor()->HasPendingStyleUpdates();
   if (!doCSS) {
     return;
