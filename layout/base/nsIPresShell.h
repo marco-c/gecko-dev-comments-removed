@@ -1507,24 +1507,14 @@ public:
     return mFontSizeInflationDisabledInMasterProcess;
   }
 
-  
-
-
-
-
-
-  bool FontSizeInflationEnabled();
-
-  
-
-
-
-
-
-  void NotifyFontSizeInflationEnabledIsDirty()
-  {
-    mFontSizeInflationEnabledIsDirty = true;
+  bool FontSizeInflationEnabled() const {
+    return mFontSizeInflationEnabled;
   }
+
+  
+
+
+  void RecomputeFontSizeInflationEnabled();
 
   
 
@@ -1593,19 +1583,7 @@ protected:
 
 
 
-
-  void RecomputeFontSizeInflationEnabled();
-
-  
-
-
   bool DetermineFontSizeInflationState();
-
-  
-
-
-
-  void HandleSystemFontScale();
 
   void RecordAlloc(void* aPtr) {
 #ifdef DEBUG

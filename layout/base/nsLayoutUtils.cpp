@@ -1736,6 +1736,33 @@ nsLayoutUtils::GetFloatFromPlaceholder(nsIFrame* aFrame) {
 }
 
 
+bool
+nsLayoutUtils::IsGeneratedContentFor(nsIContent* aContent,
+                                     nsIFrame* aFrame,
+                                     nsAtom* aPseudoElement)
+{
+  NS_PRECONDITION(aFrame, "Must have a frame");
+  NS_PRECONDITION(aPseudoElement, "Must have a pseudo name");
+
+  if (!aFrame->IsGeneratedContentFrame()) {
+    return false;
+  }
+  nsIFrame* parent = aFrame->GetParent();
+  NS_ASSERTION(parent, "Generated content can't be root frame");
+  if (parent->IsGeneratedContentFrame()) {
+    
+    return false;
+  }
+
+  if (aContent && parent->GetContent() != aContent) {
+    return false;
+  }
+
+  return (aFrame->GetContent()->NodeInfo()->NameAtom() == nsGkAtoms::mozgeneratedcontentbefore) ==
+    (aPseudoElement == nsCSSPseudoElements::before);
+}
+
+
 nsIFrame*
 nsLayoutUtils::GetCrossDocParentFrame(const nsIFrame* aFrame,
                                       nsPoint* aExtraOffset)
@@ -9103,16 +9130,16 @@ MaybeReflowForInflationScreenSizeChange(nsPresContext *aPresContext)
 {
   if (aPresContext) {
     nsIPresShell* presShell = aPresContext->GetPresShell();
-    bool fontInflationWasEnabled = presShell->FontSizeInflationEnabled();
-    presShell->NotifyFontSizeInflationEnabledIsDirty();
+    const bool fontInflationWasEnabled = presShell->FontSizeInflationEnabled();
+    presShell->RecomputeFontSizeInflationEnabled();
     bool changed = false;
-    if (presShell && presShell->FontSizeInflationEnabled() &&
+    if (presShell->FontSizeInflationEnabled() &&
         presShell->FontSizeInflationMinTwips() != 0) {
       aPresContext->ScreenSizeInchesForFontInflation(&changed);
     }
 
     changed = changed ||
-      (fontInflationWasEnabled != presShell->FontSizeInflationEnabled());
+      fontInflationWasEnabled != presShell->FontSizeInflationEnabled();
     if (changed) {
       nsCOMPtr<nsIDocShell> docShell = aPresContext->GetDocShell();
       if (docShell) {
