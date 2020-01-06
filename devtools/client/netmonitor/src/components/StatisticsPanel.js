@@ -208,19 +208,16 @@ class StatisticsPanel extends Component {
       } else if (Filters.media(request)) {
         
         type = 6;
-      } else if (Filters.flash(request)) {
-        
-        type = 7;
       } else if (Filters.ws(request)) {
         
-        type = 8;
+        type = 7;
       } else if (Filters.xhr(request)) {
         
         
         type = 3;
       } else {
         
-        type = 9;
+        type = 8;
       }
 
       if (emptyCache || !this.responseIsFresh(request)) {
