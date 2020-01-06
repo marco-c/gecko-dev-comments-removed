@@ -480,12 +480,9 @@ class Dumper:
 
     def RunFileCommand(self, file):
         """Utility function, returns the output of file(1)"""
-        try:
-            
-            
-            return os.popen("file -Lb " + file).read()
-        except:
-            return ""
+        
+        
+        return read_output('file', '-Lb', file)
 
     
     def SourceServerIndexing(self, debug_file, guid, sourceFileStream, vcs_root):
