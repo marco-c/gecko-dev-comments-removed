@@ -40,8 +40,13 @@ public:
 
   const URLInfo& URL() const { return mURL; }
 
+  
+  
+  
   nsIPrincipal* Principal() const;
 
+  
+  
   const URLInfo& PrincipalURL() const;
 
   bool IsTopLevel() const;
