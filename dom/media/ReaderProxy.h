@@ -110,6 +110,8 @@ private:
   Mirror<media::NullableTimeUnit> mDuration;
 
   
+  bool mSeamlessLoopingBlocked;
+  
   bool mSeamlessLoopingEnabled;
 };
 
