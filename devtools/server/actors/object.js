@@ -1934,53 +1934,31 @@ DebuggerServer.ObjectActorPreviewers.Object = [
   },
 
   function PseudoArray({obj, hooks}, grip, rawObj) {
-    let length;
+    
+    
+    
+    
+    
 
     let keys = obj.getOwnPropertyNames();
-    if (keys.length == 0) {
+    let {length} = keys;
+    if (length === 0) {
       return false;
     }
 
     
     
-    if (keys.some((key, i) => parseInt(key, 10) !== i && key !== "length")) {
-      return false;
-    }
-
-    
-    
-    if (keys[keys.length - 1] === "length") {
-      keys.pop();
-      length = DevToolsUtils.getProperty(obj, "length");
-    } else {
-      
-      length = +keys[keys.length - 1] + 1;
-    }
-
-    
-    
-    
-    if (
-      keys.length === 0 ||
-      keys.length !== length ||
-      typeof length !== "number" ||
-      length >>> 0 !== length
-    ) {
-      return false;
-    }
-
-    
-    
-    
-    
-    let prev = length;
-    for (let i = keys.length - 1; i >= 0; --i) {
-      let key = keys[i];
-      let numKey = key >>> 0; 
-      if (numKey + "" !== key || numKey >= prev) {
+    if (keys[length - 1] === "length") {
+      --length;
+      if (length === 0 || length !== DevToolsUtils.getProperty(obj, "length")) {
         return false;
       }
-      prev = numKey;
+    }
+
+    
+    let lastKey = keys[length - 1];
+    if (!isArrayIndex(lastKey) || +lastKey !== length - 1) {
+      return false;
     }
 
     grip.preview = {
