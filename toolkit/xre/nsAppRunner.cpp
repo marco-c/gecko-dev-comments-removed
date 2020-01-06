@@ -1961,17 +1961,17 @@ ProfileLockedDialog(nsIFile* aProfileDir, nsIFile* aProfileLocalDir,
 
     nsXPIDLString killMessage;
 #ifndef XP_MACOSX
-    sb->FormatStringFromName(aUnlocker ? "restartMessageUnlocker"
-                                       : "restartMessageNoUnlocker",
+    sb->FormatStringFromName(aUnlocker ? u"restartMessageUnlocker"
+                                       : u"restartMessageNoUnlocker",
                              params, 2, getter_Copies(killMessage));
 #else
-    sb->FormatStringFromName(aUnlocker ? "restartMessageUnlockerMac"
-                                       : "restartMessageNoUnlockerMac",
+    sb->FormatStringFromName(aUnlocker ? u"restartMessageUnlockerMac"
+                                       : u"restartMessageNoUnlockerMac",
                              params, 2, getter_Copies(killMessage));
 #endif
 
     nsXPIDLString killTitle;
-    sb->FormatStringFromName("restartTitle",
+    sb->FormatStringFromName(u"restartTitle",
                              params, 1, getter_Copies(killTitle));
 
     if (!killMessage || !killTitle)
@@ -2060,11 +2060,10 @@ ProfileMissingDialog(nsINativeAppSupport* aNative)
     nsXPIDLString missingMessage;
 
     
-    sb->FormatStringFromName("profileMissing",
-                             params, 2, getter_Copies(missingMessage));
+    sb->FormatStringFromName(u"profileMissing", params, 2, getter_Copies(missingMessage));
 
     nsXPIDLString missingTitle;
-    sb->FormatStringFromName("profileMissingTitle",
+    sb->FormatStringFromName(u"profileMissingTitle",
                              params, 1, getter_Copies(missingTitle));
 
     if (missingMessage && missingTitle) {
@@ -4470,9 +4469,11 @@ XREMain::XRE_mainRun()
     PR_SetEnv(saved.release());
   }
 
+#if defined(MOZ_SANDBOX)
   
   
   SandboxBroker::CacheRulesDirectories();
+#endif
 #endif
 
   SaveStateForAppInitiatedRestart();
