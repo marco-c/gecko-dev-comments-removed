@@ -2285,16 +2285,27 @@ gfxPlatform::InitAcceleration()
 
   gfxPrefs::GetSingleton();
 
+  nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
+  nsCString discardFailureId;
+  int32_t status;
+
   if (XRE_IsParentProcess()) {
     gfxVars::SetBrowserTabsRemoteAutostart(BrowserTabsRemoteAutostart());
     gfxVars::SetOffscreenFormat(GetOffscreenFormat());
     gfxVars::SetRequiresAcceleratedGLContextForCompositorOGL(
               RequiresAcceleratedGLContextForCompositorOGL());
+#ifdef XP_WIN
+    if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_D3D11_KEYED_MUTEX,
+                                               discardFailureId, &status))) {
+      gfxVars::SetAllowD3D11KeyedMutex(status == nsIGfxInfo::FEATURE_STATUS_OK);
+    } else {
+      
+      
+      gfxCriticalNote << "Cannot evaluate keyed mutex feature status";
+      gfxVars::SetAllowD3D11KeyedMutex(true);
+    }
+#endif
   }
-
-  nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
-  nsCString discardFailureId;
-  int32_t status;
 
   if (Preferences::GetBool("media.hardware-video-decoding.enabled", false) &&
 #ifdef XP_WIN
