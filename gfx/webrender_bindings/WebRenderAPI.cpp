@@ -528,12 +528,14 @@ ResourceUpdateQueue::UpdateImageBuffer(ImageKey aKey,
 void
 ResourceUpdateQueue::UpdateBlobImage(ImageKey aKey,
                                      const ImageDescriptor& aDescriptor,
-                                     wr::Vec_u8& aBytes)
+                                     wr::Vec_u8& aBytes,
+                                     const wr::DeviceUintRect& aDirtyRect)
 {
   wr_resource_updates_update_blob_image(mUpdates,
                                         aKey,
                                         &aDescriptor,
-                                        &aBytes.inner);
+                                        &aBytes.inner,
+                                        aDirtyRect);
 }
 
 void
@@ -631,6 +633,7 @@ WebRenderAPI::RunOnRenderThread(UniquePtr<RendererEvent> aEvent)
 DisplayListBuilder::DisplayListBuilder(PipelineId aId,
                                        const wr::LayoutSize& aContentSize,
                                        size_t aCapacity)
+  : mExtraClipCount(0)
 {
   MOZ_COUNT_CTOR(DisplayListBuilder);
   mWrState = wr_state_new(aId, aContentSize, aCapacity);
@@ -692,72 +695,43 @@ DisplayListBuilder::PopStackingContext()
 }
 
 wr::WrClipId
-DisplayListBuilder::DefineClip(const Maybe<layers::FrameMetrics::ViewID>& aAncestorScrollId,
-                               const Maybe<wr::WrClipId>& aAncestorClipId,
-                               const wr::LayoutRect& aClipRect,
+DisplayListBuilder::DefineClip(const wr::LayoutRect& aClipRect,
                                const nsTArray<wr::ComplexClipRegion>* aComplex,
                                const wr::WrImageMask* aMask)
 {
-  const uint64_t* ancestorClipId = nullptr;
-  if (aAncestorClipId) {
-    ancestorClipId = &(aAncestorClipId.ref().id);
-  }
-  uint64_t clip_id = wr_dp_define_clip(mWrState,
-      aAncestorScrollId.ptrOr(nullptr), ancestorClipId,
-      aClipRect,
+  uint64_t clip_id = wr_dp_define_clip(mWrState, aClipRect,
       aComplex ? aComplex->Elements() : nullptr,
       aComplex ? aComplex->Length() : 0,
       aMask);
-  WRDL_LOG("DefineClip id=%" PRIu64 " as=%s ac=%s r=%s m=%p b=%s complex=%zu\n", mWrState,
-      clip_id,
-      aAncestorScrollId ? Stringify(aAncestorScrollId.ref()).c_str() : "(nil)",
-      aAncestorClipId ? Stringify(aAncestorClipId.ref().id).c_str() : "(nil)",
-      Stringify(aClipRect).c_str(), aMask,
+  WRDL_LOG("DefineClip id=%" PRIu64 " r=%s m=%p b=%s complex=%zu\n", mWrState,
+      clip_id, Stringify(aClipRect).c_str(), aMask,
       aMask ? Stringify(aMask->rect).c_str() : "none",
       aComplex ? aComplex->Length() : 0);
   return wr::WrClipId { clip_id };
 }
 
 void
-DisplayListBuilder::PushClip(const wr::WrClipId& aClipId,
-                             const DisplayItemClipChain* aParent)
+DisplayListBuilder::PushClip(const wr::WrClipId& aClipId, bool aExtra)
 {
   wr_dp_push_clip(mWrState, aClipId.id);
   WRDL_LOG("PushClip id=%" PRIu64 "\n", mWrState, aClipId.id);
-  if (!aParent) {
-    mClipStack.push_back(wr::ScrollOrClipId(aClipId));
+  if (!aExtra) {
+    mClipIdStack.push_back(aClipId);
   } else {
-    auto it = mCacheOverride.insert({ aParent, std::vector<wr::WrClipId>() });
-    it.first->second.push_back(aClipId);
-    WRDL_LOG("Pushing override %p -> %" PRIu64 "\n", mWrState, aParent, aClipId.id);
+    mExtraClipCount++;
   }
 }
 
 void
-DisplayListBuilder::PopClip(const DisplayItemClipChain* aParent)
+DisplayListBuilder::PopClip(bool aExtra)
 {
-  WRDL_LOG("PopClip\n", mWrState);
-  if (!aParent) {
-    MOZ_ASSERT(mClipStack.back().is<wr::WrClipId>());
-    mClipStack.pop_back();
+  WRDL_LOG("PopClip id=%" PRIu64 "\n", mWrState, mClipIdStack.back().id);
+  if (!aExtra) {
+    mClipIdStack.pop_back();
   } else {
-    auto it = mCacheOverride.find(aParent);
-    MOZ_ASSERT(it != mCacheOverride.end());
-    MOZ_ASSERT(!(it->second.empty()));
-    WRDL_LOG("Popping override %p -> %" PRIu64 "\n", mWrState, aParent, it->second.back().id);
-    it->second.pop_back();
-    if (it->second.empty()) {
-      mCacheOverride.erase(it);
-    }
+    mExtraClipCount--;
   }
   wr_dp_pop_clip(mWrState);
-}
-
-Maybe<wr::WrClipId>
-DisplayListBuilder::GetCacheOverride(const DisplayItemClipChain* aParent)
-{
-  auto it = mCacheOverride.find(aParent);
-  return it == mCacheOverride.end() ? Nothing() : Some(it->second.back());
 }
 
 wr::WrStickyId
@@ -779,65 +753,44 @@ DisplayListBuilder::DefineStickyFrame(const wr::LayoutRect& aContentRect,
 }
 
 void
-DisplayListBuilder::PushStickyFrame(const wr::WrStickyId& aStickyId,
-                                    const DisplayItemClipChain* aParent)
+DisplayListBuilder::PushStickyFrame(const wr::WrStickyId& aStickyId)
 {
   wr_dp_push_clip(mWrState, aStickyId.id);
   WRDL_LOG("PushSticky id=%" PRIu64 "\n", mWrState, aStickyId.id);
-  
-  
-  
-  wr::WrClipId stickyIdAsClipId;
-  stickyIdAsClipId.id = aStickyId.id;
-  auto it = mCacheOverride.insert({ aParent, std::vector<wr::WrClipId>() });
-  it.first->second.push_back(stickyIdAsClipId);
-  WRDL_LOG("Pushing override %p -> %" PRIu64 "\n", mWrState, aParent, aStickyId.id);
 }
 
 void
-DisplayListBuilder::PopStickyFrame(const DisplayItemClipChain* aParent)
+DisplayListBuilder::PopStickyFrame()
 {
   WRDL_LOG("PopSticky\n", mWrState);
-  auto it = mCacheOverride.find(aParent);
-  MOZ_ASSERT(it != mCacheOverride.end());
-  MOZ_ASSERT(!(it->second.empty()));
-  WRDL_LOG("Popping override %p -> %" PRIu64 "\n", mWrState, aParent, it->second.back().id);
-  it->second.pop_back();
-  if (it->second.empty()) {
-    mCacheOverride.erase(it);
-  }
   wr_dp_pop_clip(mWrState);
 }
 
 bool
 DisplayListBuilder::IsScrollLayerDefined(layers::FrameMetrics::ViewID aScrollId) const
 {
-  return mScrollIdsDefined.find(aScrollId) != mScrollIdsDefined.end();
+  return mScrollParents.find(aScrollId) != mScrollParents.end();
 }
 
 void
 DisplayListBuilder::DefineScrollLayer(const layers::FrameMetrics::ViewID& aScrollId,
-                                      const Maybe<layers::FrameMetrics::ViewID>& aAncestorScrollId,
-                                      const Maybe<wr::WrClipId>& aAncestorClipId,
                                       const wr::LayoutRect& aContentRect,
                                       const wr::LayoutRect& aClipRect)
 {
-  WRDL_LOG("DefineScrollLayer id=%" PRIu64 " as=%s ac=%s co=%s cl=%s\n", mWrState,
-      aScrollId,
-      aAncestorScrollId ? Stringify(aAncestorScrollId.ref()).c_str() : "(nil)",
-      aAncestorClipId ? Stringify(aAncestorClipId.ref().id).c_str() : "(nil)",
-      Stringify(aContentRect).c_str(), Stringify(aClipRect).c_str());
+  WRDL_LOG("DefineScrollLayer id=%" PRIu64 " co=%s cl=%s\n", mWrState,
+      aScrollId, Stringify(aContentRect).c_str(), Stringify(aClipRect).c_str());
 
-  auto it = mScrollIdsDefined.insert(aScrollId);
+  Maybe<layers::FrameMetrics::ViewID> parent =
+      mScrollIdStack.empty() ? Nothing() : Some(mScrollIdStack.back());
+  auto it = mScrollParents.insert({aScrollId, parent});
   if (it.second) {
     
     
-    const uint64_t* ancestorClipId = nullptr;
-    if (aAncestorClipId) {
-      ancestorClipId = &(aAncestorClipId.ref().id);
-    }
-    wr_dp_define_scroll_layer(mWrState, aScrollId, aAncestorScrollId.ptrOr(nullptr),
-        ancestorClipId, aContentRect, aClipRect);
+    wr_dp_define_scroll_layer(mWrState, aScrollId, aContentRect, aClipRect);
+  } else {
+    
+    
+    MOZ_ASSERT(it.first->second == parent);
   }
 }
 
@@ -846,15 +799,14 @@ DisplayListBuilder::PushScrollLayer(const layers::FrameMetrics::ViewID& aScrollI
 {
   WRDL_LOG("PushScrollLayer id=%" PRIu64 "\n", mWrState, aScrollId);
   wr_dp_push_scroll_layer(mWrState, aScrollId);
-  mClipStack.push_back(wr::ScrollOrClipId(aScrollId));
+  mScrollIdStack.push_back(aScrollId);
 }
 
 void
 DisplayListBuilder::PopScrollLayer()
 {
-  MOZ_ASSERT(mClipStack.back().is<layers::FrameMetrics::ViewID>());
-  WRDL_LOG("PopScrollLayer id=%" PRIu64 "\n", mWrState, mClipStack.back().as<layers::FrameMetrics::ViewID>());
-  mClipStack.pop_back();
+  WRDL_LOG("PopScrollLayer id=%" PRIu64 "\n", mWrState, mScrollIdStack.back());
+  mScrollIdStack.pop_back();
   wr_dp_pop_scroll_layer(mWrState);
 }
 
@@ -866,15 +818,14 @@ DisplayListBuilder::PushClipAndScrollInfo(const layers::FrameMetrics::ViewID& aS
       aClipId ? Stringify(aClipId->id).c_str() : "none");
   wr_dp_push_clip_and_scroll_info(mWrState, aScrollId,
       aClipId ? &(aClipId->id) : nullptr);
-  mClipStack.push_back(wr::ScrollOrClipId(aScrollId));
+  mScrollIdStack.push_back(aScrollId);
 }
 
 void
 DisplayListBuilder::PopClipAndScrollInfo()
 {
-  MOZ_ASSERT(mClipStack.back().is<layers::FrameMetrics::ViewID>());
   WRDL_LOG("PopClipAndScroll\n", mWrState);
-  mClipStack.pop_back();
+  mScrollIdStack.pop_back();
   wr_dp_pop_clip_and_scroll_info(mWrState);
 }
 
@@ -1155,7 +1106,7 @@ DisplayListBuilder::PushBoxShadow(const wr::LayoutRect& aRect,
                                   const wr::ColorF& aColor,
                                   const float& aBlurRadius,
                                   const float& aSpreadRadius,
-                                  const wr::BorderRadius& aBorderRadius,
+                                  const float& aBorderRadius,
                                   const wr::BoxShadowClipMode& aClipMode)
 {
   wr_dp_push_box_shadow(mWrState, aRect, aClip, aIsBackfaceVisible,
@@ -1167,32 +1118,26 @@ DisplayListBuilder::PushBoxShadow(const wr::LayoutRect& aRect,
 Maybe<wr::WrClipId>
 DisplayListBuilder::TopmostClipId()
 {
-  for (auto it = mClipStack.crbegin(); it != mClipStack.crend(); it++) {
-    if (it->is<wr::WrClipId>()) {
-      return Some(it->as<wr::WrClipId>());
-    }
+  if (mClipIdStack.empty()) {
+    return Nothing();
   }
-  return Nothing();
+  return Some(mClipIdStack.back());
 }
 
 layers::FrameMetrics::ViewID
 DisplayListBuilder::TopmostScrollId()
 {
-  for (auto it = mClipStack.crbegin(); it != mClipStack.crend(); it++) {
-    if (it->is<layers::FrameMetrics::ViewID>()) {
-      return it->as<layers::FrameMetrics::ViewID>();
-    }
+  if (mScrollIdStack.empty()) {
+    return layers::FrameMetrics::NULL_SCROLL_ID;
   }
-  return layers::FrameMetrics::NULL_SCROLL_ID;
+  return mScrollIdStack.back();
 }
 
-bool
-DisplayListBuilder::TopmostIsClip()
+Maybe<layers::FrameMetrics::ViewID>
+DisplayListBuilder::ParentScrollIdFor(layers::FrameMetrics::ViewID aScrollId)
 {
-  if (mClipStack.empty()) {
-    return false;
-  }
-  return mClipStack.back().is<wr::WrClipId>();
+  auto it = mScrollParents.find(aScrollId);
+  return (it == mScrollParents.end() ? Nothing() : it->second);
 }
 
 } 

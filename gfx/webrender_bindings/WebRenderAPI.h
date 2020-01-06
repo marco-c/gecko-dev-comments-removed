@@ -9,7 +9,6 @@
 
 #include <vector>
 #include <unordered_map>
-#include <unordered_set>
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/layers/SyncObject.h"
@@ -21,8 +20,6 @@
 #include "Units.h"
 
 namespace mozilla {
-
-struct DisplayItemClipChain;
 
 namespace widget {
 class CompositorWidget;
@@ -86,7 +83,8 @@ public:
 
   void UpdateBlobImage(wr::ImageKey aKey,
                        const ImageDescriptor& aDescriptor,
-                       wr::Vec_u8& aBytes);
+                       wr::Vec_u8& aBytes,
+                       const wr::DeviceUintRect& aDirtyRect);
 
   void UpdateExternalImage(ImageKey aKey,
                            const ImageDescriptor& aDescriptor,
@@ -231,28 +229,22 @@ public:
                            bool aIsBackfaceVisible);
   void PopStackingContext();
 
-  wr::WrClipId DefineClip(const Maybe<layers::FrameMetrics::ViewID>& aAncestorScrollId,
-                          const Maybe<wr::WrClipId>& aAncestorClipId,
-                          const wr::LayoutRect& aClipRect,
+  wr::WrClipId DefineClip(const wr::LayoutRect& aClipRect,
                           const nsTArray<wr::ComplexClipRegion>* aComplex = nullptr,
                           const wr::WrImageMask* aMask = nullptr);
-  void PushClip(const wr::WrClipId& aClipId, const DisplayItemClipChain* aParent = nullptr);
-  void PopClip(const DisplayItemClipChain* aParent = nullptr);
-  Maybe<wr::WrClipId> GetCacheOverride(const DisplayItemClipChain* aParent);
+  void PushClip(const wr::WrClipId& aClipId, bool aExtra = false);
+  void PopClip(bool aExtra = false);
 
   wr::WrStickyId DefineStickyFrame(const wr::LayoutRect& aContentRect,
                                    const wr::StickySideConstraint* aTop,
                                    const wr::StickySideConstraint* aRight,
                                    const wr::StickySideConstraint* aBottom,
                                    const wr::StickySideConstraint* aLeft);
-  void PushStickyFrame(const wr::WrStickyId& aStickyId,
-                       const DisplayItemClipChain* aParent);
-  void PopStickyFrame(const DisplayItemClipChain* aParent);
+  void PushStickyFrame(const wr::WrStickyId& aStickyId);
+  void PopStickyFrame();
 
   bool IsScrollLayerDefined(layers::FrameMetrics::ViewID aScrollId) const;
   void DefineScrollLayer(const layers::FrameMetrics::ViewID& aScrollId,
-                         const Maybe<layers::FrameMetrics::ViewID>& aAncestorScrollId,
-                         const Maybe<wr::WrClipId>& aAncestorClipId,
                          const wr::LayoutRect& aContentRect, 
                          const wr::LayoutRect& aClipRect);
   void PushScrollLayer(const layers::FrameMetrics::ViewID& aScrollId);
@@ -397,7 +389,7 @@ public:
                      const wr::ColorF& aColor,
                      const float& aBlurRadius,
                      const float& aSpreadRadius,
-                     const wr::BorderRadius& aBorderRadius,
+                     const float& aBorderRadius,
                      const wr::BoxShadowClipMode& aClipMode);
 
   
@@ -407,13 +399,15 @@ public:
   
   layers::FrameMetrics::ViewID TopmostScrollId();
   
-  bool TopmostIsClip();
+  
+  
+  Maybe<layers::FrameMetrics::ViewID> ParentScrollIdFor(layers::FrameMetrics::ViewID aScrollId);
 
   
   wr::WrState* Raw() { return mWrState; }
 
   
-  bool HasExtraClip() { return !mCacheOverride.empty(); }
+  bool HasExtraClip() { return mExtraClipCount > 0; }
 
 protected:
   wr::WrState* mWrState;
@@ -421,27 +415,17 @@ protected:
   
   
   
-  std::vector<wr::ScrollOrClipId> mClipStack;
+  
+  std::vector<wr::WrClipId> mClipIdStack;
+  std::vector<layers::FrameMetrics::ViewID> mScrollIdStack;
 
   
   
   
-  std::unordered_set<layers::FrameMetrics::ViewID> mScrollIdsDefined;
+  std::unordered_map<layers::FrameMetrics::ViewID, Maybe<layers::FrameMetrics::ViewID>> mScrollParents;
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  std::unordered_map<const DisplayItemClipChain*, std::vector<wr::WrClipId>> mCacheOverride;
+  uint32_t mExtraClipCount;
 
   friend class WebRenderAPI;
 };
