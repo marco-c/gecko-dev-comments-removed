@@ -34,7 +34,6 @@ class TalosResults(object):
         output all results to appropriate URLs
         - output_formats: a dict mapping formats to a list of URLs
         """
-
         tbpl_output = {}
         try:
 
@@ -175,19 +174,30 @@ class TsResults(Results):
         index = 0
 
         
-        
-        for line in lines:
-            result = {}
-            r = line.strip().split(',')
-            r = [i for i in r if i]
-            if len(r) <= 1:
-                continue
+        if string.startswith('{'):
+            jsonResult = json.loads(string)
+            result = {'runs': {}}
             result['index'] = index
-            result['page'] = r[0]
-            
-            result['runs'] = [float(i) for i in r[1:]]
+            result['page'] = 'NULL'
+
+            for event_label in jsonResult:
+                result['runs'][str(event_label)] = [jsonResult[event_label]]
             self.results.append(result)
-            index += 1
+
+        
+        if not self.results:
+            for line in lines:
+                result = {}
+                r = line.strip().split(',')
+                r = [i for i in r if i]
+                if len(r) <= 1:
+                    continue
+                result['index'] = index
+                result['page'] = r[0]
+                
+                result['runs'] = [float(i) for i in r[1:]]
+                self.results.append(result)
+                index += 1
 
         
         if not self.results:
