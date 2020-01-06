@@ -3838,13 +3838,6 @@ pref("intl.tsf.hack.ms_japanese_ime.do_not_return_no_layout_error_at_first_char"
 
 
 
-
-
-
-pref("intl.tsf.hack.ms_japanese_ime.do_not_associate_imc_on_win10", false);
-
-
-
 pref("intl.tsf.hack.ms_japanese_ime.do_not_return_no_layout_error_at_caret", true);
 
 

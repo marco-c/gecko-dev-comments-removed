@@ -421,19 +421,7 @@ IMEHandler::OnDestroyWindow(nsWindow* aWindow)
 bool
 IMEHandler::NeedsToAssociateIMC()
 {
-  if (sAssociateIMCOnlyWhenIMM_IMEActive) {
-    return IsIMMActive();
-  }
-
-  
-  
-  
-  static const bool sDoNotAssociateIMCWhenMSJapaneseIMEActiveOnWin10 =
-    IsWin10OrLater() &&
-    Preferences::GetBool(
-      "intl.tsf.hack.ms_japanese_ime.do_not_associate_imc_on_win10", true);
-  return !sDoNotAssociateIMCWhenMSJapaneseIMEActiveOnWin10 ||
-         !TSFTextStore::IsMSJapaneseIMEActive();
+  return !sAssociateIMCOnlyWhenIMM_IMEActive || !IsIMMActive();
 }
 #endif 
 
@@ -563,6 +551,13 @@ IMEHandler::OnKeyboardLayoutChanged()
   
 
   if (!sIsIMMEnabled || !IsTSFAvailable()) {
+    return;
+  }
+
+  
+  
+  
+  if (!sAssociateIMCOnlyWhenIMM_IMEActive) {
     return;
   }
 
