@@ -7,7 +7,6 @@
 '''Python usage, esp. virtualenv.
 '''
 
-import distutils.version
 import errno
 import os
 import subprocess
@@ -57,11 +56,6 @@ virtualenv_config_options = [
         "dest": "virtualenv_path",
         "default": "venv",
         "help": "Specify the path to the virtualenv top level directory"
-    }],
-    [["--virtualenv"], {
-        "action": "store",
-        "dest": "virtualenv",
-        "help": "Specify the virtualenv executable to use"
     }],
     [["--find-links"], {
         "action": "extend",
@@ -251,12 +245,6 @@ class VirtualenvMixin(object):
             
             
             default = 'easy_install'
-            if self._is_windows():
-                
-                
-                
-                
-                default = [self.query_python_path(), self.query_python_path('easy_install-script.py')]
             command = self.query_exe('easy_install', default=default, return_type="list")
         else:
             self.fatal("install_module() doesn't understand an install_method of %s!" % install_method)
@@ -280,8 +268,7 @@ class VirtualenvMixin(object):
             if parsed.scheme != 'https':
                 trusted_hosts.add(parsed.hostname)
 
-        if (install_method != 'easy_install' and
-                    self.pip_version >= distutils.version.LooseVersion('6.0')):
+        if install_method != 'easy_install':
             for host in sorted(trusted_hosts):
                 command.extend(['--trusted-host', host])
 
@@ -375,50 +362,15 @@ class VirtualenvMixin(object):
 
         
         
-        if self.topsrcdir:
-            virtualenv = [
-                sys.executable,
-                os.path.join(self.topsrcdir, 'third_party', 'python', 'virtualenv', 'virtualenv.py')
-            ]
-            virtualenv_options = c.get('virtualenv_options', [])
-            
-            
-            
-            
-            virtualenv_options.append('--always-copy')
-
+        
+        virtualenv = [
+            sys.executable,
+            os.path.join(external_tools_path, 'virtualenv', 'virtualenv.py'),
+        ]
+        virtualenv_options = c.get('virtualenv_options', [])
         
         
-        else:
-            virtualenv = c.get('virtualenv', self.query_exe('virtualenv'))
-            if isinstance(virtualenv, str):
-                
-                virtualenv = [virtualenv]
-
-            if not os.path.exists(virtualenv[0]) and not self.which(virtualenv[0]):
-                self.add_summary("The executable '%s' is not found; not creating "
-                                 "virtualenv!" % virtualenv[0], level=FATAL)
-                return -1
-
-            
-            
-            if c.get('virtualenv_python_dll'):
-                
-                
-                dll_name = os.path.basename(c['virtualenv_python_dll'])
-                target = self.query_python_path(dll_name)
-                scripts_dir = os.path.dirname(target)
-                self.mkdir_p(scripts_dir)
-                self.copyfile(c['virtualenv_python_dll'], target, error_level=WARNING)
-
-            
-            for module in ('distribute', 'pip'):
-                if c.get('%s_url' % module):
-                    self.download_file(c['%s_url' % module],
-                                       parent_dir=dirs['abs_work_dir'])
-
-            virtualenv_options = c.get('virtualenv_options',
-                                       ['--no-site-packages', '--distribute'])
+        virtualenv_options.append('--always-copy')
 
         if os.path.exists(self.query_python_path()):
             self.info("Virtualenv %s appears to already exist; skipping virtualenv creation." % self.query_python_path())
@@ -429,17 +381,6 @@ class VirtualenvMixin(object):
                              error_list=VirtualenvErrorList,
                              partial_env={'VIRTUALENV_NO_DOWNLOAD': "1"},
                              halt_on_failure=True)
-
-        
-        
-        pip = self.query_python_path('pip')
-        output = self.get_output_from_command([pip, '--version'],
-                                              halt_on_failure=True)
-        words = output.split()
-        if words[0] != 'pip':
-            self.fatal('pip --version output is weird: %s' % output)
-        pip_version = words[1]
-        self.pip_version = distutils.version.LooseVersion(pip_version)
 
         if not modules:
             modules = c.get('virtualenv_modules', [])
