@@ -48,35 +48,3 @@ this.BindToObject = function BindToObject(fn, self, opt_args) {
 
   return newfn;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Function.prototype.inherits = function(parentCtor) {
-  var tempCtor = function(){};
-  tempCtor.prototype = parentCtor.prototype;
-  this.superClass_ = parentCtor.prototype;
-  this.prototype = new tempCtor();
-}
