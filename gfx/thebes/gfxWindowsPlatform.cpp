@@ -459,7 +459,7 @@ gfxWindowsPlatform::UpdateBackendPrefs()
                         BackendTypeBit(BackendType::SKIA);
   uint32_t contentMask = BackendTypeBit(BackendType::CAIRO) |
                          BackendTypeBit(BackendType::SKIA);
-  BackendType defaultBackend = BackendType::CAIRO;
+  BackendType defaultBackend = BackendType::SKIA;
   if (gfxConfig::IsEnabled(Feature::DIRECT2D) && Factory::GetD2D1Device()) {
     contentMask |= BackendTypeBit(BackendType::DIRECT2D1_1);
     canvasMask |= BackendTypeBit(BackendType::DIRECT2D1_1);
@@ -507,7 +507,7 @@ gfxWindowsPlatform::GetContentBackendFor(mozilla::layers::LayersBackend aLayers)
 
   if (defaultBackend == BackendType::DIRECT2D1_1) {
     
-    return BackendType::CAIRO;
+    return BackendType::SKIA;
   }
 
   
