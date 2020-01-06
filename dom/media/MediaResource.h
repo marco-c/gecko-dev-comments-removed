@@ -165,8 +165,6 @@ public:
 
   
   
-  virtual void SetReadMode(MediaCacheStream::ReadMode aMode) = 0;
-  
   
   
   
@@ -324,6 +322,9 @@ public:
 
   
   virtual void Resume() = 0;
+
+  
+  virtual void SetReadMode(MediaCacheStream::ReadMode aMode) = 0;
 
   
 

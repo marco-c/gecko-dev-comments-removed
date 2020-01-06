@@ -342,9 +342,6 @@ public:
     SLOG("Dispatching AsyncReadMetadata");
 
     
-    Resource()->SetReadMode(MediaCacheStream::MODE_METADATA);
-
-    
     
     Reader()->ReadMetadata()
       ->Then(OwnerThread(), __func__,
@@ -2223,9 +2220,6 @@ MediaDecoderStateMachine::
 DecodeMetadataState::OnMetadataRead(MetadataHolder&& aMetadata)
 {
   mMetadataRequest.Complete();
-
-  
-  Resource()->SetReadMode(MediaCacheStream::MODE_PLAYBACK);
 
   mMaster->mInfo.emplace(*aMetadata.mInfo);
   mMaster->mMediaSeekable = Info().mMediaSeekable;

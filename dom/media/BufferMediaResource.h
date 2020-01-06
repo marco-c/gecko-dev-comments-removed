@@ -43,8 +43,6 @@ private:
     return principal.forget();
   }
   
-  
-  void SetReadMode(MediaCacheStream::ReadMode aMode) override {}
   nsresult ReadAt(int64_t aOffset, char* aBuffer,
                   uint32_t aCount, uint32_t* aBytes) override
   {
