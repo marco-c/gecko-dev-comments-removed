@@ -40,23 +40,6 @@ DirectoryProvider::GetFile(const char *aKey, bool *aPersist, nsIFile* *aResult)
   return NS_ERROR_FAILURE;
 }
 
-static void
-AppendFileKey(const char *key, nsIProperties* aDirSvc,
-              nsCOMArray<nsIFile> &array)
-{
-  nsCOMPtr<nsIFile> file;
-  nsresult rv = aDirSvc->Get(key, NS_GET_IID(nsIFile), getter_AddRefs(file));
-  if (NS_FAILED(rv))
-    return;
-
-  bool exists;
-  rv = file->Exists(&exists);
-  if (NS_FAILED(rv) || !exists)
-    return;
-
-  array.AppendObject(file);
-}
-
 
 
 
@@ -148,23 +131,6 @@ AppendDistroSearchDirs(nsIProperties* aDirSvc, nsCOMArray<nsIFile> &array)
 NS_IMETHODIMP
 DirectoryProvider::GetFiles(const char *aKey, nsISimpleEnumerator* *aResult)
 {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult rv;
-
   if (!strcmp(aKey, NS_APP_DISTRIBUTION_SEARCH_DIR_LIST)) {
     nsCOMPtr<nsIProperties> dirSvc
       (do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID));
@@ -175,37 +141,6 @@ DirectoryProvider::GetFiles(const char *aKey, nsISimpleEnumerator* *aResult)
     AppendDistroSearchDirs(dirSvc, distroFiles);
 
     return NS_NewArrayEnumerator(aResult, distroFiles);
-  }
-
-  if (!strcmp(aKey, NS_APP_SEARCH_DIR_LIST)) {
-    nsCOMPtr<nsIProperties> dirSvc
-      (do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID));
-    if (!dirSvc)
-      return NS_ERROR_FAILURE;
-
-    nsCOMArray<nsIFile> baseFiles;
-
-    AppendFileKey(NS_APP_USER_SEARCH_DIR, dirSvc, baseFiles);
-
-    nsCOMPtr<nsISimpleEnumerator> baseEnum;
-    rv = NS_NewArrayEnumerator(getter_AddRefs(baseEnum), baseFiles);
-    if (NS_FAILED(rv))
-      return rv;
-
-    nsCOMPtr<nsISimpleEnumerator> list;
-    rv = dirSvc->Get(XRE_EXTENSIONS_DIR_LIST,
-                     NS_GET_IID(nsISimpleEnumerator), getter_AddRefs(list));
-    if (NS_FAILED(rv))
-      return rv;
-
-    static char const *const kAppendSPlugins[] = {"searchplugins", nullptr};
-
-    nsCOMPtr<nsISimpleEnumerator> extEnum =
-      new AppendingEnumerator(list, kAppendSPlugins);
-    if (!extEnum)
-      return NS_ERROR_OUT_OF_MEMORY;
-
-    return NS_NewUnionEnumerator(aResult, extEnum, baseEnum);
   }
 
   return NS_ERROR_FAILURE;
