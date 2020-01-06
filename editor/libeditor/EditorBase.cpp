@@ -2504,6 +2504,8 @@ EditorBase::InsertTextImpl(const nsAString& aStringToInsert,
   nsCOMPtr<nsINode> node = *aInOutNode;
   int32_t offset = *aInOutOffset;
 
+  MOZ_ASSERT(node->GetChildAt(offset) == aChildAtOffset);
+
   
   
   
