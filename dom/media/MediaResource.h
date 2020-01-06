@@ -161,9 +161,6 @@ public:
   NS_METHOD_(MozExternalRefCountType) Release(void);
 
   
-  virtual already_AddRefed<nsIPrincipal> GetCurrentPrincipal() = 0;
-
-  
   
   
   
@@ -289,6 +286,9 @@ public:
   
   
   virtual bool IsTransportSeekable() = 0;
+
+  
+  virtual already_AddRefed<nsIPrincipal> GetCurrentPrincipal() = 0;
 
   
 

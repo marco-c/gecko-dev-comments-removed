@@ -37,12 +37,6 @@ protected:
 
 private:
   
-  already_AddRefed<nsIPrincipal> GetCurrentPrincipal() override
-  {
-    nsCOMPtr<nsIPrincipal> principal = mPrincipal;
-    return principal.forget();
-  }
-  
   nsresult ReadAt(int64_t aOffset, char* aBuffer,
                   uint32_t aCount, uint32_t* aBytes) override
   {
