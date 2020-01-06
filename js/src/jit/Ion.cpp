@@ -2484,7 +2484,7 @@ jit::CanEnter(JSContext* cx, RunState& state)
 {
     MOZ_ASSERT(jit::IsIonEnabled(cx));
 
-    JSScript* script = state.script();
+    HandleScript script = state.script();
 
     
     if (!script->canIonCompile())
@@ -2497,8 +2497,6 @@ jit::CanEnter(JSContext* cx, RunState& state)
     
     if (script->hasIonScript() && script->ionScript()->bailoutExpected())
         return Method_Skipped;
-
-    RootedScript rscript(cx, script);
 
     
     
@@ -2529,7 +2527,7 @@ jit::CanEnter(JSContext* cx, RunState& state)
 
     
     
-    if (JitOptions.eagerCompilation && !rscript->hasBaselineScript()) {
+    if (JitOptions.eagerCompilation && !script->hasBaselineScript()) {
         MethodStatus status = CanEnterBaselineMethod(cx, state);
         if (status != Method_Compiled)
             return status;
@@ -2538,14 +2536,14 @@ jit::CanEnter(JSContext* cx, RunState& state)
     
     
     
-    if (rscript->isIonCompilingOffThread() || !rscript->canIonCompile())
+    if (script->isIonCompilingOffThread() || !script->canIonCompile())
         return Method_Skipped;
 
     
-    MethodStatus status = Compile(cx, rscript, nullptr, nullptr);
+    MethodStatus status = Compile(cx, script, nullptr, nullptr);
     if (status != Method_Compiled) {
         if (status == Method_CantCompile)
-            ForbidCompilation(cx, rscript);
+            ForbidCompilation(cx, script);
         return status;
     }
 
@@ -2635,8 +2633,7 @@ BaselineCanEnterAtBranch(JSContext* cx, HandleScript script, BaselineFrame* osrF
     
     
     
-    RootedScript rscript(cx, script);
-    MethodStatus status = Compile(cx, rscript, osrFrame, pc, force);
+    MethodStatus status = Compile(cx, script, osrFrame, pc, force);
     if (status != Method_Compiled) {
         if (status == Method_CantCompile)
             ForbidCompilation(cx, script);
