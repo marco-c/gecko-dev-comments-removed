@@ -12,7 +12,6 @@
 #include "nsIInputStream.h"
 #include "nsTArray.h"
 
-class nsIAsyncInputStream;
 class nsIOutputStream;
 class nsIInputStreamCallback;
 class nsIOutputStreamCallback;
@@ -293,24 +292,5 @@ NS_InputStreamIsCloneable(nsIInputStream* aSource);
 extern nsresult
 NS_CloneInputStream(nsIInputStream* aSource, nsIInputStream** aCloneOut,
                     nsIInputStream** aReplacementOut = nullptr);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern nsresult
-NS_MakeAsyncNonBlockingInputStream(nsIInputStream* aSource,
-                                   nsIAsyncInputStream** aAsyncInputStream);
 
 #endif 
