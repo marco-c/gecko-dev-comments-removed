@@ -44,13 +44,6 @@ typedef struct _nsCocoaWindowList {
   
   BOOL mDisabledNeedsDisplay;
 
-  
-  
-  
-  
-  
-  float mDPI;
-
   NSTrackingArea* mTrackingArea;
 
   NSRect mDirtyRect;
@@ -68,7 +61,6 @@ typedef struct _nsCocoaWindowList {
 - (void)setTitlebarColor:(NSColor*)aColor forActiveWindow:(BOOL)aActive;
 - (NSColor*)titlebarColorForActiveWindow:(BOOL)aActive;
 
-- (float)getDPI;
 
 - (void)mouseEntered:(NSEvent*)aEvent;
 - (void)mouseExited:(NSEvent*)aEvent;
