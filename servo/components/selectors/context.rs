@@ -5,6 +5,7 @@
 use attr::CaseSensitivity;
 use bloom::BloomFilter;
 use nth_index_cache::NthIndexCache;
+use parser::SelectorImpl;
 use tree::OpaqueElement;
 
 
@@ -74,7 +75,10 @@ impl QuirksMode {
 
 
 
-pub struct MatchingContext<'a> {
+pub struct MatchingContext<'a, Impl>
+where
+    Impl: SelectorImpl,
+{
     
     pub matching_mode: MatchingMode,
     
@@ -107,9 +111,13 @@ pub struct MatchingContext<'a> {
 
     quirks_mode: QuirksMode,
     classes_and_ids_case_sensitivity: CaseSensitivity,
+    _impl: ::std::marker::PhantomData<Impl>,
 }
 
-impl<'a> MatchingContext<'a> {
+impl<'a, Impl> MatchingContext<'a, Impl>
+where
+    Impl: SelectorImpl,
+{
     
     pub fn new(
         matching_mode: MatchingMode,
@@ -144,6 +152,7 @@ impl<'a> MatchingContext<'a> {
             classes_and_ids_case_sensitivity: quirks_mode.classes_and_ids_case_sensitivity(),
             scope_element: None,
             nesting_level: 0,
+            _impl: ::std::marker::PhantomData,
         }
     }
 
