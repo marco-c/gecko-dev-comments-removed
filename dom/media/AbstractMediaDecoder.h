@@ -47,21 +47,7 @@ public:
   virtual void NotifyDecodedFrames(const FrameStatisticsData& aStats) = 0;
 
   
-  
-  
-  virtual void NotifyWaitingForKey() { }
-
-  
-  
-  virtual MediaEventSource<void>* WaitingForKeyEvent()
-  {
-    return nullptr;
-  }
-
-  
   virtual AbstractThread* AbstractMainThread() const = 0;
-
-public:
   virtual VideoFrameContainer* GetVideoFrameContainer() = 0;
   virtual mozilla::layers::ImageContainer* GetImageContainer() = 0;
 
