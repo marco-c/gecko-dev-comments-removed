@@ -318,13 +318,7 @@ this.ExtensionTestCommon = class ExtensionTestCommon {
 
 
 
-  static serializeScript(script) {
-    if (Array.isArray(script)) {
-      return script.map(this.serializeScript).join(";");
-    }
-    if (typeof script !== "function") {
-      return script;
-    }
+  static serializeFunction(script) {
     
     const method = /^(async )?(\w+)\(/;
 
@@ -333,7 +327,23 @@ this.ExtensionTestCommon = class ExtensionTestCommon {
     if (match && match[2] !== "function") {
       code = code.replace(method, "$1function $2(");
     }
-    return `(${code})();`;
+    return code;
+  }
+
+  
+
+
+
+
+
+  static serializeScript(script) {
+    if (Array.isArray(script)) {
+      return Array.from(script, this.serializeScript, this).join(";");
+    }
+    if (typeof script !== "function") {
+      return script;
+    }
+    return `(${this.serializeFunction(script)})();`;
   }
 
   
