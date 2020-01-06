@@ -927,13 +927,6 @@ public:
       
       return Error(ECHILD);
 
-      
-      
-      
-    case __NR_inotify_init:
-    case __NR_inotify_init1:
-      return Error(ENOSYS);
-
     case __NR_eventfd2:
       return Allow();
 

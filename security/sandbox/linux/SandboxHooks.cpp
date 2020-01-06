@@ -3,14 +3,15 @@
 
 
 
-#include <dlfcn.h>
-#include <signal.h>
-#include <errno.h>
 
 #include "mozilla/Types.h"
 
+#include <dlfcn.h>
+#include <signal.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/inotify.h>
 
 
 extern int gSeccompTsyncBroadcastSignum;
@@ -69,4 +70,17 @@ pthread_sigmask(int how, const sigset_t* set, sigset_t* oldset)
     dlsym(RTLD_NEXT, "pthread_sigmask");
 
   return HandleSigset(sRealFunc, how, set, oldset, false);
+}
+
+extern "C" MOZ_EXPORT int
+inotify_init(void)
+{
+  return inotify_init1(0);
+}
+
+extern "C" MOZ_EXPORT int
+inotify_init1(int flags)
+{
+  errno = ENOSYS;
+  return -1;
 }
