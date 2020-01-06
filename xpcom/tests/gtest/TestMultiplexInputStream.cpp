@@ -34,6 +34,8 @@ TEST(MultiplexInputStream, Seek_SET)
   nsCOMPtr<nsIMultiplexInputStream> multiplexStream =
     do_CreateInstance("@mozilla.org/io/multiplex-input-stream;1");
   ASSERT_TRUE(multiplexStream);
+  nsCOMPtr<nsIInputStream> stream(do_QueryInterface(multiplexStream));
+  ASSERT_TRUE(stream);
 
   rv = multiplexStream->AppendStream(inputStream1);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
@@ -51,16 +53,16 @@ TEST(MultiplexInputStream, Seek_SET)
   
   rv = seekStream->Seek(nsISeekableStream::NS_SEEK_SET, 1);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
-  rv = multiplexStream->Available(&length);
+  rv = stream->Available(&length);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
   ASSERT_EQ((uint64_t)buf1.Length() + buf2.Length() + buf3.Length() - 1,
             length);
 
   
-  rv = multiplexStream->Read(readBuf, 3, &count);
+  rv = stream->Read(readBuf, 3, &count);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
   ASSERT_EQ((uint64_t)3, count);
-  rv = multiplexStream->Available(&length);
+  rv = stream->Available(&length);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
   ASSERT_EQ((uint64_t)buf1.Length() + buf2.Length() + buf3.Length() - 4,
             length);
@@ -70,15 +72,15 @@ TEST(MultiplexInputStream, Seek_SET)
   rv = seekStream->Seek(nsISeekableStream::NS_SEEK_SET,
                         buf1.Length() + buf2.Length());
   ASSERT_TRUE(NS_SUCCEEDED(rv));
-  rv = multiplexStream->Available(&length);
+  rv = stream->Available(&length);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
   ASSERT_EQ((uint64_t)buf3.Length(), length);
 
   
-  rv = multiplexStream->Read(readBuf, 5, &count);
+  rv = stream->Read(readBuf, 5, &count);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
   ASSERT_EQ((uint64_t)5, count);
-  rv = multiplexStream->Available(&length);
+  rv = stream->Available(&length);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
   ASSERT_EQ((uint64_t)buf3.Length() - 5, length);
   ASSERT_EQ(0, strncmp(readBuf, "Foo b", count));
@@ -86,15 +88,15 @@ TEST(MultiplexInputStream, Seek_SET)
   
   rv = seekStream->Seek(nsISeekableStream::NS_SEEK_SET, buf1.Length());
   ASSERT_TRUE(NS_SUCCEEDED(rv));
-  rv = multiplexStream->Available(&length);
+  rv = stream->Available(&length);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
   ASSERT_EQ((uint64_t)buf2.Length() + buf3.Length(), length);
 
   
-  rv = multiplexStream->Read(readBuf, 6, &count);
+  rv = stream->Read(readBuf, 6, &count);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
   ASSERT_EQ((uint64_t)6, count);
-  rv = multiplexStream->Available(&length);
+  rv = stream->Available(&length);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
   ASSERT_EQ((uint64_t)buf2.Length() - 6 + buf3.Length(), length);
   ASSERT_EQ(0, strncmp(readBuf, "The qu", count));
