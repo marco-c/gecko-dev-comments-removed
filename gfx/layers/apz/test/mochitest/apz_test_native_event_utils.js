@@ -202,17 +202,110 @@ function synthesizeNativeTouch(aElement, aX, aY, aType, aObserver = null, aTouch
 
 
 
+
+
+
+
+
+
+
+
+
+
+function* synthesizeNativeTouchSequences(aElement, aPositions, aObserver = null, aTouchIds = [0]) {
+  
+  
+  var lastNonNullValue = -1;
+  var yields = 0;
+  for (var i = 0; i < aPositions.length; i++) {
+    if (aPositions[i] == null) {
+      yields++;
+      continue;
+    }
+    if (aPositions[i].length != aTouchIds.length) {
+      throw "aPositions[" + i + "] did not have the expected number of positions; expected " + aTouchIds.length + " touch points but found " + aPositions[i].length;
+    }
+    for (var j = 0; j < aTouchIds.length; j++) {
+      if (aPositions[i][j] != null) {
+        lastNonNullValue = ((i - yields) * aTouchIds.length) + j;
+      }
+    }
+  }
+  if (lastNonNullValue < 0) {
+    throw "All values in positions array were null!";
+  }
+
+  
+  
+  
+  var allNullRow = new Array(aTouchIds.length);
+  allNullRow.fill(null);
+  aPositions.push(allNullRow);
+
+  
+  
+  var lastSynthesizeCall = lastNonNullValue + aTouchIds.length;
+
+  
+  var currentPositions = new Array(aTouchIds.length);
+  currentPositions.fill(null);
+
+  
+  yields = 0;
+  for (var i = 0; i < aPositions.length; i++) {
+    if (aPositions[i] == null) {
+      yields++;
+      yield i;
+      continue;
+    }
+    for (var j = 0; j < aTouchIds.length; j++) {
+      if (aPositions[i][j] == null) {
+        
+        if (currentPositions[j] == null) {
+          
+        } else {
+          
+          
+          var thisIndex = ((i - yields) * aTouchIds.length) + j;
+          var observer = (lastSynthesizeCall == thisIndex) ? aObserver : null;
+          synthesizeNativeTouch(aElement, currentPositions[j].x, currentPositions[j].y, SpecialPowers.DOMWindowUtils.TOUCH_REMOVE, observer, aTouchIds[j]);
+          currentPositions[j] = null;
+        }
+      } else {
+        synthesizeNativeTouch(aElement, aPositions[i][j].x, aPositions[i][j].y, SpecialPowers.DOMWindowUtils.TOUCH_CONTACT, null, aTouchIds[j]);
+        currentPositions[j] = aPositions[i][j];
+      }
+    }
+  }
+  return true;
+}
+
+
+
+
+
+
+
+
+
 const TOUCH_SLOP = 1;
 function synthesizeNativeTouchDrag(aElement, aX, aY, aDeltaX, aDeltaY, aObserver = null, aTouchId = 0) {
-  synthesizeNativeTouch(aElement, aX, aY, SpecialPowers.DOMWindowUtils.TOUCH_CONTACT, null, aTouchId);
   var steps = Math.max(Math.abs(aDeltaX), Math.abs(aDeltaY));
+  var positions = new Array();
+  positions.push([{ x: aX, y: aY }]);
   for (var i = 1; i < steps; i++) {
     var dx = i * (aDeltaX / steps);
     var dy = i * (aDeltaY / steps);
-    synthesizeNativeTouch(aElement, aX + dx, aY + dy, SpecialPowers.DOMWindowUtils.TOUCH_CONTACT, null, aTouchId);
+    var pos = { x: aX + dx, y: aY + dy };
+    positions.push([pos]);
   }
-  synthesizeNativeTouch(aElement, aX + aDeltaX, aY + aDeltaY, SpecialPowers.DOMWindowUtils.TOUCH_CONTACT, null, aTouchId);
-  return synthesizeNativeTouch(aElement, aX + aDeltaX, aY + aDeltaY, SpecialPowers.DOMWindowUtils.TOUCH_REMOVE, aObserver, aTouchId);
+  positions.push([{ x: aX + aDeltaX, y: aY + aDeltaY }]);
+  var continuation = synthesizeNativeTouchSequences(aElement, positions, aObserver, [aTouchId]);
+  var yielded = continuation.next();
+  while (!yielded.done) {
+    yielded = continuation.next();
+  }
+  return yielded.value;
 }
 
 function synthesizeNativeTap(aElement, aX, aY, aObserver = null) {
