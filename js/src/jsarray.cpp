@@ -1065,11 +1065,22 @@ js::IsWrappedArrayConstructor(JSContext* cx, const Value& v, bool* result)
     return true;
 }
 
-static bool
+static MOZ_ALWAYS_INLINE bool
 IsArraySpecies(JSContext* cx, HandleObject origArray)
 {
-    if (origArray->is<NativeObject>() && !origArray->is<ArrayObject>())
-        return true;
+    if (MOZ_UNLIKELY(origArray->is<ProxyObject>())) {
+        if (origArray->getClass()->isDOMClass()) {
+            
+            DebugOnly<IsArrayAnswer> answer;
+            MOZ_ASSERT(Proxy::isArray(cx, origArray, &answer));
+            MOZ_ASSERT(answer == IsArrayAnswer::NotArray);
+            return true;
+        }
+    } else {
+        
+        if (!origArray->is<ArrayObject>())
+            return true;
+    }
 
     Value ctor;
     if (!GetPropertyPure(cx, origArray, NameToId(cx->names().constructor), &ctor))
