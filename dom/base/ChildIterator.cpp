@@ -370,7 +370,18 @@ AllChildrenIterator::Seek(nsIContent* aChildToFind)
 void
 AllChildrenIterator::AppendNativeAnonymousChildren()
 {
-  AppendNativeAnonymousChildrenFromFrame(mOriginalContent->GetPrimaryFrame());
+  if (nsIFrame* primaryFrame = mOriginalContent->GetPrimaryFrame()) {
+    
+    AppendNativeAnonymousChildrenFromFrame(primaryFrame);
+
+    
+    AutoTArray<nsIFrame::OwnedAnonBox,8> ownedAnonBoxes;
+    primaryFrame->AppendOwnedAnonBoxes(ownedAnonBoxes);
+    for (nsIFrame::OwnedAnonBox& box : ownedAnonBoxes) {
+      MOZ_ASSERT(box.mAnonBoxFrame->GetContent() == mOriginalContent);
+      AppendNativeAnonymousChildrenFromFrame(box.mAnonBoxFrame);
+    }
+  }
 
   
   
