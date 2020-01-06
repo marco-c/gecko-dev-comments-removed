@@ -1,0 +1,19 @@
+
+
+
+
+"use strict";
+
+const { UPDATE_ANIMATIONS } = require("./index");
+
+module.exports = {
+  
+
+
+  updateAnimations(animations) {
+    return {
+      type: UPDATE_ANIMATIONS,
+      animations,
+    };
+  }
+};
