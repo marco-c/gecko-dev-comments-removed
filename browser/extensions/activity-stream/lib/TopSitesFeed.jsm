@@ -56,7 +56,10 @@ this.TopSitesFeed = class TopSitesFeed {
     this.store.dispatch(ac.BroadcastToContent(action));
   }
   async getLinksWithDefaults(action) {
-    let frecent = await NewTabUtils.activityStreamLinks.getTopSites();
+    
+    const numItems = Math.max(this.store.getState().Prefs.values.topSitesCount,
+      TOP_SITES_SHOWMORE_LENGTH);
+    let frecent = await NewTabUtils.activityStreamLinks.getTopSites({numItems});
     const notBlockedDefaultSites = DEFAULT_TOP_SITES.filter(site => !NewTabUtils.blockedLinks.isBlocked({url: site.url}));
     const defaultUrls = notBlockedDefaultSites.map(site => site.url);
     let pinned = this._getPinnedWithData(frecent);
@@ -86,7 +89,7 @@ this.TopSitesFeed = class TopSitesFeed {
       filterAdult(dedupedUnpinned) : dedupedUnpinned;
 
     
-    return insertPinned(checkedAdult, pinned).slice(0, TOP_SITES_SHOWMORE_LENGTH);
+    return insertPinned(checkedAdult, pinned).slice(0, numItems);
   }
   async refresh(target = null) {
     if (!this._tippyTopProvider.initialized) {
@@ -151,39 +154,66 @@ this.TopSitesFeed = class TopSitesFeed {
       return pinnedLink;
     });
   }
+
+  
+
+
   _broadcastPinnedSitesUpdated() {
-    this.store.dispatch(ac.BroadcastToContent({
-      type: at.PINNED_SITES_UPDATED,
-      data: this._getPinnedWithData()
-    }));
+    
+    this.refresh();
   }
+
+  
+
+
+  _pinSiteAt({label, url}, index) {
+    const toPin = {url};
+    if (label) {
+      toPin.label = label;
+    }
+    NewTabUtils.pinnedLinks.pin(toPin, index);
+  }
+
+  
+
+
   pin(action) {
     const {site, index} = action.data;
-    NewTabUtils.pinnedLinks.pin(site, index);
+    this._pinSiteAt(site, index);
     this._broadcastPinnedSitesUpdated();
   }
+
+  
+
+
   unpin(action) {
     const {site} = action.data;
     NewTabUtils.pinnedLinks.unpin(site);
     this._broadcastPinnedSitesUpdated();
   }
+
+  
+
+
   _insertPin(site, index) {
-    
-    
     
     let pinned = NewTabUtils.pinnedLinks.links;
     if (pinned.length > index && pinned[index]) {
       this._insertPin(pinned[index], index + 1);
     }
-    NewTabUtils.pinnedLinks.pin(site, index);
+    this._pinSiteAt(site, index);
   }
+
+  
+
+
   add(action) {
     
     
     this._insertPin(action.data.site, 0);
-
     this._broadcastPinnedSitesUpdated();
   }
+
   async onAction(action) {
     switch (action.type) {
       case at.INIT:

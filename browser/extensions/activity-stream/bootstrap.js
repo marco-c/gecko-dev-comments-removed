@@ -97,6 +97,38 @@ function onPrefChanged() {
 
 
 
+
+
+
+
+function migratePref(oldPrefName, cbIfNotDefault) {
+  
+  if (!Services.prefs.prefHasUserValue(oldPrefName)) {
+    return;
+  }
+
+  
+  let prefGetter;
+  switch (Services.prefs.getPrefType(oldPrefName)) {
+    case Services.prefs.PREF_BOOL:
+      prefGetter = "getBoolPref";
+      break;
+    case Services.prefs.PREF_INT:
+      prefGetter = "getIntPref";
+      break;
+    case Services.prefs.PREF_STRING:
+      prefGetter = "getStringPref";
+      break;
+  }
+
+  
+  cbIfNotDefault(Services.prefs[prefGetter](oldPrefName));
+  Services.prefs.clearUserPref(oldPrefName);
+}
+
+
+
+
 function onBrowserReady() {
   waitingForBrowserReady = false;
 
@@ -107,6 +139,17 @@ function onBrowserReady() {
   if (Services.prefs.getBoolPref(ACTIVITY_STREAM_ENABLED_PREF, false)) {
     init(startupReason);
   }
+
+  
+  migratePref("browser.newtabpage.rows", rows => {
+    
+    if (rows <= 0) {
+      Services.prefs.setBoolPref("browser.newtabpage.activity-stream.showTopSites", false);
+    } else {
+      
+      Services.prefs.setIntPref("browser.newtabpage.activity-stream.topSitesCount", rows * 6);
+    }
+  });
 }
 
 
