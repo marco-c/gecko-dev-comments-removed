@@ -61,24 +61,30 @@ MessageListener.prototype = {
 
 
 
-this.RemotePages = function(url) {
-  this.url = url;
+this.RemotePages = function(urls) {
+  this.urls = Array.isArray(urls) ? urls : [urls];
   this.messagePorts = new Set();
   this.listener = new MessageListener();
   this.destroyed = false;
 
-  RemotePageManager.addRemotePageListener(url, this.portCreated.bind(this));
+  this.portCreated = this.portCreated.bind(this);
   this.portMessageReceived = this.portMessageReceived.bind(this);
+
+  for (const url of this.urls) {
+    RemotePageManager.addRemotePageListener(url, this.portCreated);
+  }
 }
 
 RemotePages.prototype = {
-  url: null,
+  urls: null,
   messagePorts: null,
   listener: null,
   destroyed: null,
 
   destroy() {
-    RemotePageManager.removeRemotePageListener(this.url);
+    for (const url of this.urls) {
+      RemotePageManager.removeRemotePageListener(url);
+    }
 
     for (let port of this.messagePorts.values()) {
       this.removeMessagePort(port);
