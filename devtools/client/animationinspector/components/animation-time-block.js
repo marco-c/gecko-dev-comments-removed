@@ -58,13 +58,6 @@ AnimationTimeBlock.prototype = {
     this.unrender();
 
     this.animation = animation;
-    let {state} = this.animation;
-
-    
-    
-    
-    const {x, delayX, delayW, endDelayX, endDelayW} =
-      TimeScale.getAnimationDimensions(animation);
 
     
     const summaryEl = createSVGNode({
@@ -72,24 +65,14 @@ AnimationTimeBlock.prototype = {
       nodeType: "svg",
       attributes: {
         "class": "summary",
-        "preserveAspectRatio": "none",
-        "style": `left: ${ x - (state.delay > 0 ? delayW : 0) }%`
+        "preserveAspectRatio": "none"
       }
     });
+    this.updateSummaryGraphViewBox(summaryEl);
 
+    const {state} = this.animation;
     
-    const totalDisplayedDuration = state.playbackRate * TimeScale.getDuration();
-
-    
-    const strokeHeightForViewBox = 0.5 / this.containerEl.clientHeight;
-
-    
-    summaryEl.setAttribute("viewBox",
-                           `${ state.delay < 0 ? state.delay : 0 }
-                            -${ 1 + strokeHeightForViewBox }
-                            ${ totalDisplayedDuration }
-                            ${ 1 + strokeHeightForViewBox * 2 }`);
-
+    const totalDisplayedDuration = this.getTotalDisplayedDuration();
     
     const minSegmentDuration = totalDisplayedDuration / this.containerEl.clientWidth;
     
@@ -131,31 +114,92 @@ AnimationTimeBlock.prototype = {
     
     if (state.delay) {
       
-      createNode({
+      const delayEl = createNode({
         parent: this.containerEl,
         attributes: {
           "class": "delay"
                    + (state.delay < 0 ? " negative" : " positive")
                    + (state.fill === "both" ||
-                      state.fill === "backwards" ? " fill" : ""),
-          "style": `left:${ delayX }%; width:${ delayW }%;`
+                      state.fill === "backwards" ? " fill" : "")
         }
       });
+      this.updateDelayBounds(delayEl);
     }
 
     
     if (state.iterationCount && state.endDelay) {
-      createNode({
+      const endDelayEl = createNode({
         parent: this.containerEl,
         attributes: {
           "class": "end-delay"
                    + (state.endDelay < 0 ? " negative" : " positive")
                    + (state.fill === "both" ||
-                      state.fill === "forwards" ? " fill" : ""),
-          "style": `left:${ endDelayX }%; width:${ endDelayW }%;`
+                      state.fill === "forwards" ? " fill" : "")
         }
       });
+      this.updateEndDelayBounds(endDelayEl);
     }
+  },
+
+  
+
+
+
+
+
+  update: function (animation) {
+    this.animation = animation;
+    this.updateSummaryGraphViewBox(this.containerEl.querySelector(".summary"));
+    const delayEl = this.containerEl.querySelector(".delay");
+    if (delayEl) {
+      this.updateDelayBounds(delayEl);
+    }
+    const endDelayEl = this.containerEl.querySelector(".end-delay");
+    if (endDelayEl) {
+      this.updateEndDelayBounds(endDelayEl);
+    }
+  },
+
+  
+
+
+
+
+  updateSummaryGraphViewBox: function (summaryEl) {
+    const {x, delayW} = TimeScale.getAnimationDimensions(this.animation);
+    const totalDisplayedDuration = this.getTotalDisplayedDuration();
+    const strokeHeightForViewBox = 0.5 / this.containerEl.clientHeight;
+    const {state} = this.animation;
+    summaryEl.setAttribute("viewBox",
+                           `${state.delay < 0 ? state.delay : 0} ` +
+                           `-${1 + strokeHeightForViewBox} ` +
+                           `${totalDisplayedDuration} ` +
+                           `${1 + strokeHeightForViewBox * 2}`);
+    summaryEl.setAttribute("style", `left: ${ x - (state.delay > 0 ? delayW : 0) }%`);
+  },
+
+  
+
+
+
+  updateDelayBounds: function (delayEl) {
+    const {delayX, delayW} = TimeScale.getAnimationDimensions(this.animation);
+    delayEl.style.left = `${ delayX }%`;
+    delayEl.style.width = `${ delayW }%`;
+  },
+
+  
+
+
+
+  updateEndDelayBounds: function (endDelayEl) {
+    const {endDelayX, endDelayW} = TimeScale.getAnimationDimensions(this.animation);
+    endDelayEl.style.left = `${ endDelayX }%`;
+    endDelayEl.style.width = `${ endDelayW }%`;
+  },
+
+  getTotalDisplayedDuration: function () {
+    return this.animation.state.playbackRate * TimeScale.getDuration();
   },
 
   getTooltipText: function (state) {
