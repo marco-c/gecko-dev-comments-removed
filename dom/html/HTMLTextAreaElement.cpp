@@ -225,14 +225,14 @@ NS_IMPL_BOOL_ATTR(HTMLTextAreaElement, Required, required)
 NS_IMPL_UINT_ATTR_NON_ZERO_DEFAULT_VALUE(HTMLTextAreaElement, Rows, rows, DEFAULT_ROWS_TEXTAREA)
 NS_IMPL_STRING_ATTR(HTMLTextAreaElement, Wrap, wrap)
 NS_IMPL_STRING_ATTR(HTMLTextAreaElement, Placeholder, placeholder)
-  
+
 int32_t
 HTMLTextAreaElement::TabIndexDefault()
 {
   return 0;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 HTMLTextAreaElement::GetType(nsAString& aType)
 {
   aType.AssignLiteral("textarea");
@@ -240,7 +240,7 @@ HTMLTextAreaElement::GetType(nsAString& aType)
   return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 HTMLTextAreaElement::GetValue(nsAString& aValue)
 {
   nsAutoString value;
@@ -396,7 +396,7 @@ HTMLTextAreaElement::SetValueInternal(const nsAString& aValue,
   return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 HTMLTextAreaElement::SetValue(const nsAString& aValue)
 {
   
@@ -423,7 +423,7 @@ HTMLTextAreaElement::SetValue(const nsAString& aValue)
   return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 HTMLTextAreaElement::SetUserInput(const nsAString& aValue)
 {
   return SetValueInternal(aValue,
@@ -456,7 +456,7 @@ HTMLTextAreaElement::GetDefaultValue(nsAString& aDefaultValue)
     return NS_ERROR_OUT_OF_MEMORY;
   }
   return NS_OK;
-}  
+}
 
 NS_IMETHODIMP
 HTMLTextAreaElement::SetDefaultValue(const nsAString& aDefaultValue)
@@ -942,7 +942,7 @@ HTMLTextAreaElement::RestoreState(nsPresState* aState)
 {
   nsCOMPtr<nsISupportsString> state
     (do_QueryInterface(aState->GetStateProperty()));
-  
+
   if (state) {
     nsAutoString data;
     state->GetData(data);
