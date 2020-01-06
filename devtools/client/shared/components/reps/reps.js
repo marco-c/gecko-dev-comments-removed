@@ -137,7 +137,7 @@ const escapeRegexp = new RegExp("[" +
 
 "\ufeff" +
 
-"\ufffc-\uffff" +
+"\ufff0-\ufffc\ufffe\uffff" +
 
 "\ud800-\udfff" +
 
@@ -774,7 +774,8 @@ StringRep.propTypes = {
   member: React.PropTypes.any,
   cropLimit: React.PropTypes.number,
   openLink: React.PropTypes.func,
-  className: React.PropTypes.string
+  className: React.PropTypes.string,
+  omitLinkHref: React.PropTypes.bool
 };
 
 function StringRep(props) {
@@ -786,7 +787,8 @@ function StringRep(props) {
     style,
     useQuotes = true,
     escapeWhitespace = true,
-    openLink
+    openLink,
+    omitLinkHref = true
   } = props;
 
   const classNames = ["objectBox", "objectBox-string"];
@@ -828,7 +830,7 @@ function StringRep(props) {
       items.push(a({
         className: "url",
         title: token,
-        href: token,
+        href: omitLinkHref === true ? null : token,
         draggable: false,
         onClick: openLink ? e => {
           e.preventDefault();
@@ -2227,6 +2229,10 @@ function nodeHasAllEntriesInPreview(item) {
     length,
     size
   } = preview;
+
+  if (!entries && !items) {
+    return false;
+  }
 
   return entries ? entries.length === size : items.length === length;
 }
@@ -5141,6 +5147,7 @@ const TreeNode = createFactory(createClass({
   displayName: "TreeNode",
 
   propTypes: {
+    id: PropTypes.any.isRequired,
     index: PropTypes.number.isRequired,
     depth: PropTypes.number.isRequired,
     focused: PropTypes.bool.isRequired,
@@ -5158,6 +5165,7 @@ const TreeNode = createFactory(createClass({
   render() {
     const {
       depth,
+      id,
       item,
       focused,
       expanded,
@@ -5207,6 +5215,7 @@ const TreeNode = createFactory(createClass({
     }
 
     return dom.div({
+      id,
       className: "tree-node" + (focused ? " focused" : ""),
       style: {
         paddingInlineStart,
@@ -5215,7 +5224,8 @@ const TreeNode = createFactory(createClass({
       onClick: this.props.onClick,
       role: "treeitem",
       "aria-level": depth,
-      "aria-expanded": ariaExpanded
+      "aria-expanded": ariaExpanded,
+      "data-expandable": this.props.isExpandable
     }, renderItem(item, depth, focused, arrow, expanded));
   }
 }));
@@ -5418,10 +5428,6 @@ const Tree = createClass({
     isExpanded: PropTypes.func.isRequired,
 
     
-    
-    itemHeight: PropTypes.number.isRequired,
-
-    
 
     
     focused: PropTypes.any,
@@ -5472,25 +5478,16 @@ const Tree = createClass({
 
   getInitialState() {
     return {
-      scroll: 0,
-      height: window.innerHeight,
       seen: new Set()
     };
   },
 
   componentDidMount() {
-    window.addEventListener("resize", this._updateHeight);
     this._autoExpand();
-    this._updateHeight();
   },
 
   componentWillReceiveProps(nextProps) {
     this._autoExpand();
-    this._updateHeight();
-  },
-
-  componentWillUnmount() {
-    window.removeEventListener("resize", this._updateHeight);
   },
 
   _autoExpand() {
@@ -5544,15 +5541,6 @@ const Tree = createClass({
           }
         }
     }
-  },
-
-  
-
-
-  _updateHeight() {
-    this.setState({
-      height: this.refs.tree.clientHeight
-    });
   },
 
   
@@ -5637,22 +5625,23 @@ const Tree = createClass({
 
 
   _focus(index, item) {
-    if (item !== undefined) {
-      const itemStartPosition = index * this.props.itemHeight;
-      const itemEndPosition = (index + 1) * this.props.itemHeight;
+    
+    
+    
+    
 
-      
-      
-      
-      
-      
-      
-      if (this.state.scroll > itemStartPosition) {
-        this.refs.tree.scrollTop = itemStartPosition;
-      } else if (this.state.scroll + this.state.height < itemEndPosition) {
-        this.refs.tree.scrollTop = itemEndPosition - this.state.height;
-      }
-    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     if (this.props.onFocus) {
       this.props.onFocus(item);
@@ -5665,19 +5654,6 @@ const Tree = createClass({
   _onBlur() {
     this._focus(0, undefined);
   },
-
-  
-
-
-
-
-
-  _onScroll: oncePerAnimationFrame(function (e) {
-    this.setState({
-      scroll: Math.max(this.refs.tree.scrollTop, 0),
-      height: this.refs.tree.clientHeight
-    });
-  }),
 
   
 
@@ -5810,8 +5786,10 @@ const Tree = createClass({
 
     const nodes = traversal.map((v, i) => {
       const { item, depth } = traversal[i];
+      const key = this.props.getKey(item, i);
       return TreeNode({
-        key: this.props.getKey(item, i),
+        key,
+        id: key,
         index: i,
         item,
         depth,
@@ -5845,7 +5823,6 @@ const Tree = createClass({
       onKeyDown: this._onKeyDown,
       onKeyPress: this._preventArrowKeyScrolling,
       onKeyUp: this._preventArrowKeyScrolling,
-      onScroll: this._onScroll,
       onFocus: ({ nativeEvent }) => {
         if (focused || !nativeEvent || !this.refs.tree) {
           return;
@@ -5962,9 +5939,14 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_49__;
 
 let enumIndexedProperties = (() => {
   var _ref = _asyncToGenerator(function* (objectClient, start, end) {
-    const { iterator } = yield objectClient.enumProperties({ ignoreNonIndexedProperties: true });
-    const response = yield iteratorSlice(iterator, start, end);
-    return response;
+    try {
+      const { iterator } = yield objectClient.enumProperties({ ignoreNonIndexedProperties: true });
+      const response = yield iteratorSlice(iterator, start, end);
+      return response;
+    } catch (e) {
+      console.error("Error in enumIndexedProperties", e);
+      return {};
+    }
   });
 
   return function enumIndexedProperties(_x, _x2, _x3) {
@@ -5976,10 +5958,14 @@ let enumIndexedProperties = (() => {
 
 let enumNonIndexedProperties = (() => {
   var _ref2 = _asyncToGenerator(function* (objectClient, start, end) {
-    const { iterator } = yield objectClient.enumProperties({ ignoreIndexedProperties: true });
-
-    const response = yield iteratorSlice(iterator, start, end);
-    return response;
+    try {
+      const { iterator } = yield objectClient.enumProperties({ ignoreIndexedProperties: true });
+      const response = yield iteratorSlice(iterator, start, end);
+      return response;
+    } catch (e) {
+      console.error("Error in enumNonIndexedProperties", e);
+      return {};
+    }
   });
 
   return function enumNonIndexedProperties(_x4, _x5, _x6) {
@@ -5989,9 +5975,14 @@ let enumNonIndexedProperties = (() => {
 
 let enumEntries = (() => {
   var _ref3 = _asyncToGenerator(function* (objectClient, start, end) {
-    const { iterator } = yield objectClient.enumEntries();
-    const response = yield iteratorSlice(iterator, start, end);
-    return response;
+    try {
+      const { iterator } = yield objectClient.enumEntries();
+      const response = yield iteratorSlice(iterator, start, end);
+      return response;
+    } catch (e) {
+      console.error("Error in enumEntries", e);
+      return {};
+    }
   });
 
   return function enumEntries(_x7, _x8, _x9) {
@@ -6001,9 +5992,14 @@ let enumEntries = (() => {
 
 let enumSymbols = (() => {
   var _ref4 = _asyncToGenerator(function* (objectClient, start, end) {
-    const { iterator } = yield objectClient.enumSymbols();
-    const response = yield iteratorSlice(iterator, start, end);
-    return response;
+    try {
+      const { iterator } = yield objectClient.enumSymbols();
+      const response = yield iteratorSlice(iterator, start, end);
+      return response;
+    } catch (e) {
+      console.error("Error in enumSymbols", e);
+      return {};
+    }
   });
 
   return function enumSymbols(_x10, _x11, _x12) {
@@ -6011,11 +6007,21 @@ let enumSymbols = (() => {
   };
 })();
 
-function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+let getPrototype = (() => {
+  var _ref5 = _asyncToGenerator(function* (objectClient) {
+    if (typeof objectClient.getPrototype !== "function") {
+      console.error("objectClient.getPrototype is not a function");
+      return Promise.resolve({});
+    }
+    return objectClient.getPrototype();
+  });
 
-function getPrototype(objectClient) {
-  return objectClient.getPrototype();
-}
+  return function getPrototype(_x13) {
+    return _ref5.apply(this, arguments);
+  };
+})();
+
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
 function iteratorSlice(iterator, start, end) {
   start = start || 0;
