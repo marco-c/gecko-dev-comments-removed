@@ -97,11 +97,18 @@ import java.util.concurrent.Future;
             ongoingIconLoad.cancel(true);
         }
 
-        ongoingIconLoad = Icons.with(itemView.getContext())
-                .pageUrl(topSite.getUrl())
-                .skipNetwork()
-                .build()
-                .execute(this);
+        if (TextUtils.isEmpty(topSite.getUrl())) {
+            
+            
+            
+            faviconView.clearImage();
+        } else {
+            ongoingIconLoad = Icons.with(itemView.getContext())
+                    .pageUrl(topSite.getUrl())
+                    .skipNetwork()
+                    .build()
+                    .execute(this);
+        }
 
         final Drawable pinDrawable;
         if (topSite.isPinned()) {
