@@ -4,30 +4,12 @@
 const UNVISITED_BOOKMARK_BONUS = 140;
 
 function promiseFrecencyChanged(expectedURI, expectedFrecency) {
-  return new Promise(resolve => {
-    let obs = new NavHistoryObserver();
-    obs.onFrecencyChanged = (uri, newFrecency) => {
+  return PlacesTestUtils.waitForNotification("onFrecencyChanged",
+    (uri, newFrecency) => {
       Assert.equal(uri.spec, expectedURI, "onFrecencyChanged is triggered for the correct uri.");
       Assert.equal(newFrecency, expectedFrecency, "onFrecencyChanged has the expected frecency");
-      PlacesUtils.history.removeObserver(obs)
-      resolve();
-    };
-
-    PlacesUtils.history.addObserver(obs);
-  });
-}
-
-function promiseManyFrecenciesChanged() {
-  return new Promise(resolve => {
-    let obs = new NavHistoryObserver();
-    obs.onManyFrecenciesChanged = () => {
-      Assert.ok(true, "onManyFrecenciesChanged is triggered.");
-      PlacesUtils.history.removeObserver(obs)
-      resolve();
-    };
-
-    PlacesUtils.history.addObserver(obs);
-  });
+      return true;
+    }, "history");
 }
 
 add_task(async function setup() {
@@ -198,7 +180,10 @@ add_task(async function test_contents_removed() {
                                                  url: "http://example.com/",
                                                  title: "" });
 
-  let manyFrencenciesPromise = promiseManyFrecenciesChanged();
+  let skipDescendantsObserver = expectNotifications(true);
+  let receiveAllObserver = expectNotifications(false);
+  let manyFrencenciesPromise =
+    PlacesTestUtils.waitForNotification("onManyFrecenciesChanged", () => true, "history");
   await PlacesUtils.bookmarks.remove(folder1);
   Assert.strictEqual((await PlacesUtils.bookmarks.fetch(folder1.guid)), null);
   Assert.strictEqual((await PlacesUtils.bookmarks.fetch(bm1.guid)), null);
@@ -206,6 +191,28 @@ add_task(async function test_contents_removed() {
   
   
   await manyFrencenciesPromise;
+
+  let expectedNotifications = [{
+    name: "onItemRemoved",
+    arguments: {
+      guid: folder1.guid,
+    },
+  }];
+
+  
+  skipDescendantsObserver.check(expectedNotifications);
+
+  
+  expectedNotifications.unshift({
+    name: "onItemRemoved",
+    arguments: {
+      guid: bm1.guid
+    },
+  });
+
+  
+  
+  receiveAllObserver.check(expectedNotifications);
 });
 
 
@@ -221,7 +228,8 @@ add_task(async function test_nested_contents_removed() {
                                                  url: "http://example.com/",
                                                  title: "" });
 
-  let manyFrencenciesPromise = promiseManyFrecenciesChanged();
+  let manyFrencenciesPromise =
+    PlacesTestUtils.waitForNotification("onManyFrecenciesChanged", () => true, "history");
   await PlacesUtils.bookmarks.remove(folder1);
   Assert.strictEqual((await PlacesUtils.bookmarks.fetch(folder1.guid)), null);
   Assert.strictEqual((await PlacesUtils.bookmarks.fetch(folder2.guid)), null);
