@@ -4194,6 +4194,13 @@ Element::ClearDataset()
   slots->mDataset = nullptr;
 }
 
+nsDataHashtable<nsRefPtrHashKey<DOMIntersectionObserver>, int32_t>*
+Element::RegisteredIntersectionObservers()
+{
+  nsExtendedDOMSlots* slots = ExtendedDOMSlots();
+  return &slots->mRegisteredIntersectionObservers;
+}
+
 enum nsPreviousIntersectionThreshold {
   eUninitialized = -2,
   eNonIntersecting = -1
@@ -4202,20 +4209,7 @@ enum nsPreviousIntersectionThreshold {
 void
 Element::RegisterIntersectionObserver(DOMIntersectionObserver* aObserver)
 {
-  IntersectionObserverList* observers =
-    static_cast<IntersectionObserverList*>(
-      GetProperty(nsGkAtoms::intersectionobserverlist)
-    );
-
-  if (!observers) {
-    observers = new IntersectionObserverList();
-    observers->Put(aObserver, eUninitialized);
-    SetProperty(nsGkAtoms::intersectionobserverlist, observers,
-                nsINode::DeleteProperty<IntersectionObserverList>);
-    return;
-  }
-
-  observers->LookupForAdd(aObserver).OrInsert([]() {
+  RegisteredIntersectionObservers()->LookupForAdd(aObserver).OrInsert([]() {
     
     
     
@@ -4228,44 +4222,14 @@ Element::RegisterIntersectionObserver(DOMIntersectionObserver* aObserver)
 void
 Element::UnregisterIntersectionObserver(DOMIntersectionObserver* aObserver)
 {
-  IntersectionObserverList* observers =
-    static_cast<IntersectionObserverList*>(
-      GetProperty(nsGkAtoms::intersectionobserverlist)
-    );
-  if (observers) {
-    observers->Remove(aObserver);
-  }
-}
-
-void
-Element::UnlinkIntersectionObservers()
-{
-  IntersectionObserverList* observers =
-    static_cast<IntersectionObserverList*>(
-      GetProperty(nsGkAtoms::intersectionobserverlist)
-    );
-  if (!observers) {
-    return;
-  }
-  for (auto iter = observers->Iter(); !iter.Done(); iter.Next()) {
-    DOMIntersectionObserver* observer = iter.Key();
-    observer->UnlinkElement(*this);
-  }
-  observers->Clear();
+  RegisteredIntersectionObservers()->Remove(aObserver);
 }
 
 bool
 Element::UpdateIntersectionObservation(DOMIntersectionObserver* aObserver, int32_t aThreshold)
 {
-  IntersectionObserverList* observers =
-    static_cast<IntersectionObserverList*>(
-      GetProperty(nsGkAtoms::intersectionobserverlist)
-    );
-  if (!observers) {
-    return false;
-  }
   bool updated = false;
-  if (auto entry = observers->Lookup(aObserver)) {
+  if (auto entry = RegisteredIntersectionObservers()->Lookup(aObserver)) {
     updated = entry.Data() != aThreshold;
     entry.Data() = aThreshold;
   }
@@ -4388,10 +4352,29 @@ BitsArePropagated(const Element* aElement, uint32_t aBits, nsINode* aRestyleRoot
 #endif
 
 static inline void
-AssertNoBitsPropagatedFrom(nsINode* aRoot) {
+AssertNoBitsPropagatedFrom(nsINode* aRoot)
+{
 #ifdef DEBUG
   if (!aRoot || !aRoot->IsElement()) {
     return;
+  }
+
+  
+  
+  
+  
+  
+  
+  for (nsINode* n = aRoot; n; n = n->GetFlattenedTreeParentElementForStyle()) {
+    if (!n->IsInComposedDoc()) {
+      
+      
+      do {
+        aRoot = n;
+        n = n->GetFlattenedTreeParentElementForStyle();
+      } while (n && !n->IsInComposedDoc());
+      break;
+    }
   }
 
   auto* element = aRoot->GetFlattenedTreeParentElementForStyle();
