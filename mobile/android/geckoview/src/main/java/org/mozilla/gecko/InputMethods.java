@@ -74,4 +74,7 @@ final public class InputMethods {
         String inputMethod = getCurrentInputMethod(context);
         return METHOD_SONY.equals(inputMethod);
     }
+
+    
+    public static final int IME_FLAG_NO_PERSONALIZED_LEARNING = 0x1000000;
 }
