@@ -251,6 +251,10 @@ class nsCSPParser {
     nsCSPChildSrcDirective* mChildSrc;
     nsCSPDirective*         mFrameSrc;
 
+    
+    
+    bool                    mParsingFrameAncestorsDir;
+
     cspTokens          mTokens;
     nsIURI*            mSelfURI;
     nsCSPPolicy*       mPolicy;

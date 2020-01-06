@@ -135,6 +135,7 @@ nsCSPParser::nsCSPParser(cspTokens& aTokens,
  , mUnsafeInlineKeywordSrc(nullptr)
  , mChildSrc(nullptr)
  , mFrameSrc(nullptr)
+ , mParsingFrameAncestorsDir(false)
  , mTokens(aTokens)
  , mSelfURI(aSelfURI)
  , mPolicy(nullptr)
@@ -813,6 +814,7 @@ nsCSPParser::sourceExpression()
   if (nsCSPHostSrc *cspHost = hostSource()) {
     
     cspHost->setScheme(parsedScheme);
+    cspHost->setWithinFrameAncestorsDir(mParsingFrameAncestorsDir);
     return cspHost;
   }
   
@@ -1219,6 +1221,9 @@ nsCSPParser::directive()
   mHasHashOrNonce = false;
   mStrictDynamic = false;
   mUnsafeInlineKeywordSrc = nullptr;
+
+  mParsingFrameAncestorsDir =
+    CSP_IsDirective(mCurDir[0], nsIContentSecurityPolicy::FRAME_ANCESTORS_DIRECTIVE);
 
   
   nsTArray<nsCSPBaseSrc*> srcs;
