@@ -123,13 +123,11 @@ public:
   
   virtual void Start() = 0;
   
-  virtual void Stop() = 0;
-  
   virtual void Revive() = 0;
   
   virtual void RemoveCallback() = 0;
   
-  void Shutdown();
+  virtual void Shutdown() = 0;
   
 
 
@@ -272,9 +270,9 @@ public:
   explicit ThreadedDriver(MediaStreamGraphImpl* aGraphImpl);
   virtual ~ThreadedDriver();
   void Start() override;
-  void Stop() override;
   void Revive() override;
   void RemoveCallback() override;
+  void Shutdown() override;
   
 
 
@@ -393,11 +391,11 @@ public:
 
   void Destroy() override;
   void Start() override;
-  void Stop() override;
   void Revive() override;
   void RemoveCallback() override;
   void WaitForNextIteration() override;
   void WakeUp() override;
+  void Shutdown() override;
 #if defined(XP_WIN)
   void ResetDefaultDevice() override;
 #endif
@@ -488,6 +486,8 @@ private:
   bool StartStream();
   friend class AsyncCubebTask;
   bool Init();
+  void Stop();
+
   
   uint32_t mOutputChannels;
   
