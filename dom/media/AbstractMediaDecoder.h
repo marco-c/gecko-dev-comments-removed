@@ -46,11 +46,6 @@ public:
   
   virtual void NotifyDecodedFrames(const FrameStatisticsData& aStats) = 0;
 
-  virtual AbstractCanonical<media::NullableTimeUnit>* CanonicalDurationOrNull()
-  {
-    return nullptr;
-  };
-
   
   
   
