@@ -2677,8 +2677,11 @@ Http2Session::OnTransportStatus(nsITransport* aTransport,
     if (!mFirstHttpTransaction) {
       
       
-      RefPtr<nsHttpConnection> conn = mConnection->HttpConnection();
-      conn->SetEvent(aStatus);
+      
+      if (mConnection) {
+        RefPtr<nsHttpConnection> conn = mConnection->HttpConnection();
+        conn->SetEvent(aStatus);
+      }
     } else {
       mFirstHttpTransaction->OnTransportStatus(aTransport, aStatus, aProgress);
     }
