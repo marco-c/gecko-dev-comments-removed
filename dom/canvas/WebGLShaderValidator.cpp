@@ -53,6 +53,10 @@ ChooseValidatorCompileOptions(const ShBuiltInResources& resources,
         
         options |= SH_REGENERATE_STRUCT_NAMES;
         options |= SH_INIT_OUTPUT_VARIABLES;
+
+        
+        if (gl->Vendor() == gl::GLVendor::Intel) {
+            options |= SH_ADD_AND_TRUE_TO_LOOP_CONDITION;
 #endif
 
         if (!gl->IsANGLE() && gl->Vendor() == gl::GLVendor::Intel) {
