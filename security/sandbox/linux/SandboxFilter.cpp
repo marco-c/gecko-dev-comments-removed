@@ -92,7 +92,7 @@ protected:
   }
 
 private:
-#if defined(ANDROID) && ANDROID_VERSION < 16
+  
   
   
   static intptr_t TKillCompatTrap(const sandbox::arch_seccomp_data& aArgs,
@@ -100,7 +100,6 @@ private:
   {
     return syscall(__NR_tgkill, getpid(), aArgs.args[0], aArgs.args[1]);
   }
-#endif
 
   static intptr_t SetNoNewPrivsTrap(ArgsRef& aArgs, void* aux) {
     if (gSetSandboxFilter == nullptr) {
@@ -241,11 +240,9 @@ public:
         .Else(InvalidSyscall());
     }
 
-#if defined(ANDROID) && ANDROID_VERSION < 16
       
     case __NR_tkill:
       return Trap(TKillCompatTrap, nullptr);
-#endif
 
       
     case __NR_sched_yield:
