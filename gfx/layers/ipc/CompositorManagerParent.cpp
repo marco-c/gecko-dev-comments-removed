@@ -42,18 +42,6 @@ CompositorManagerParent::CreateSameProcess()
   
   RefPtr<CompositorManagerParent> parent = new CompositorManagerParent();
   parent->SetOtherProcessId(base::GetCurrentProcId());
-
-  
-  
-  parent.get()->AddRef();
-  sInstance = parent;
-
-#ifdef COMPOSITOR_MANAGER_PARENT_EXPLICIT_SHUTDOWN
-  if (!sActiveActors) {
-    sActiveActors = new nsTArray<CompositorManagerParent*>();
-  }
-  sActiveActors->AppendElement(parent);
-#endif
   return parent.forget();
 }
 
@@ -133,12 +121,22 @@ CompositorManagerParent::Bind(Endpoint<PCompositorManagerParent>&& aEndpoint)
     return;
   }
 
+  BindComplete();
+}
+
+void
+CompositorManagerParent::BindComplete()
+{
   
   
   AddRef();
 
-#ifdef COMPOSITOR_MANAGER_PARENT_EXPLICIT_SHUTDOWN
   StaticMutexAutoLock lock(sMutex);
+  if (OtherPid() == base::GetCurrentProcId()) {
+    sInstance = this;
+  }
+
+#ifdef COMPOSITOR_MANAGER_PARENT_EXPLICIT_SHUTDOWN
   if (!sActiveActors) {
     sActiveActors = new nsTArray<CompositorManagerParent*>();
   }
