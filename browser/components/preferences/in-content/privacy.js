@@ -1127,13 +1127,6 @@ var gPrivacyPane = {
       malware.sort();
 
       malwareTable.value = malware.join(",");
-
-      
-      let listmanager = Components.classes["@mozilla.org/url-classifier/listmanager;1"]
-                        .getService(Components.interfaces.nsIUrlListManager);
-      if (listmanager) {
-        listmanager.forceUpdates(malwareTable.value);
-      }
     });
 
     
