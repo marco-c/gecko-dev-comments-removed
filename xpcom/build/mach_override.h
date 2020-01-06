@@ -85,7 +85,7 @@ mach_override_ptr(
 
 
 
- 
+
 #ifdef	__cplusplus
 
 #define MACH_OVERRIDE( ORIGINAL_FUNCTION_RETURN_TYPE, ORIGINAL_FUNCTION_NAME, ORIGINAL_FUNCTION_ARGS, ERR )			\
@@ -112,7 +112,7 @@ mach_override_ptr(
 																													\
 		err = mach_override_class__##ORIGINAL_FUNCTION_NAME::override((void*)ORIGINAL_FUNCTION_NAME);				\
 	}
- 
+
 #endif
 
 #ifdef	__cplusplus

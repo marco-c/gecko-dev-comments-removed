@@ -92,7 +92,7 @@ protected:
     virtual nsresult CloneInternal(RefHandlingEnum refHandlingMode,
                                    const nsACString &newRef,
                                    nsIURI** clone);
-    
+
     nsCString mScheme;
     nsCString mPath; 
     nsCString mRef;  

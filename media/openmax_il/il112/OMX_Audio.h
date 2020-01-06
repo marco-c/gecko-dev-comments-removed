@@ -44,7 +44,7 @@ extern "C" {
 
 
 
- 
+
 
 
 
@@ -89,7 +89,7 @@ typedef enum OMX_AUDIO_CODINGTYPE {
     OMX_AUDIO_CodingWMA,         
     OMX_AUDIO_CodingRA,          
     OMX_AUDIO_CodingMIDI,        
-    OMX_AUDIO_CodingKhronosExtensions = 0x6F000000,  
+    OMX_AUDIO_CodingKhronosExtensions = 0x6F000000, 
     OMX_AUDIO_CodingVendorStartUnused = 0x7F000000, 
     OMX_AUDIO_CodingMax = 0x7FFFFFFF
 } OMX_AUDIO_CODINGTYPE;
@@ -125,15 +125,15 @@ typedef struct OMX_AUDIO_PARAM_PORTFORMATTYPE {
 } OMX_AUDIO_PARAM_PORTFORMATTYPE;
 
 
- 
-typedef enum OMX_AUDIO_PCMMODETYPE { 
-    OMX_AUDIO_PCMModeLinear = 0,   
-    OMX_AUDIO_PCMModeALaw,         
-    OMX_AUDIO_PCMModeMULaw,        
-    OMX_AUDIO_PCMModeKhronosExtensions = 0x6F000000,  
+
+typedef enum OMX_AUDIO_PCMMODETYPE {
+    OMX_AUDIO_PCMModeLinear = 0,  
+    OMX_AUDIO_PCMModeALaw,        
+    OMX_AUDIO_PCMModeMULaw,       
+    OMX_AUDIO_PCMModeKhronosExtensions = 0x6F000000, 
     OMX_AUDIO_PCMModeVendorStartUnused = 0x7F000000, 
-    OMX_AUDIO_PCMModeMax = 0x7FFFFFFF 
-} OMX_AUDIO_PCMMODETYPE; 
+    OMX_AUDIO_PCMModeMax = 0x7FFFFFFF
+} OMX_AUDIO_PCMMODETYPE;
 
 
 typedef enum OMX_AUDIO_CHANNELTYPE {
@@ -147,31 +147,31 @@ typedef enum OMX_AUDIO_CHANNELTYPE {
     OMX_AUDIO_ChannelCS   = 0x7,    
     OMX_AUDIO_ChannelLR   = 0x8,    
     OMX_AUDIO_ChannelRR   = 0x9,    
-    OMX_AUDIO_ChannelKhronosExtensions = 0x6F000000,  
+    OMX_AUDIO_ChannelKhronosExtensions = 0x6F000000, 
     OMX_AUDIO_ChannelVendorStartUnused = 0x7F000000, 
-    OMX_AUDIO_ChannelMax  = 0x7FFFFFFF 
+    OMX_AUDIO_ChannelMax  = 0x7FFFFFFF
 } OMX_AUDIO_CHANNELTYPE;
 
 #define OMX_AUDIO_MAXCHANNELS 16  /**< maximum number distinct audio channels that a buffer may contain */
 #define OMX_MIN_PCMPAYLOAD_MSEC 5 /**< Minimum audio buffer payload size for uncompressed (PCM) audio */
 
- 
-typedef struct OMX_AUDIO_PARAM_PCMMODETYPE { 
-    OMX_U32 nSize;                     
-    OMX_VERSIONTYPE nVersion;          
-    OMX_U32 nPortIndex;                
-    OMX_U32 nChannels;                 
-    OMX_NUMERICALDATATYPE eNumData;    
-    OMX_ENDIANTYPE eEndian;            
+
+typedef struct OMX_AUDIO_PARAM_PCMMODETYPE {
+    OMX_U32 nSize;                    
+    OMX_VERSIONTYPE nVersion;         
+    OMX_U32 nPortIndex;               
+    OMX_U32 nChannels;                
+    OMX_NUMERICALDATATYPE eNumData;   
+    OMX_ENDIANTYPE eEndian;           
     OMX_BOOL bInterleaved;            
- 
-    OMX_U32 nBitPerSample;             
+
+    OMX_U32 nBitPerSample;            
     OMX_U32 nSamplingRate;            
- 
-    OMX_AUDIO_PCMMODETYPE ePCMMode;    
+
+    OMX_AUDIO_PCMMODETYPE ePCMMode;   
     OMX_AUDIO_CHANNELTYPE eChannelMapping[OMX_AUDIO_MAXCHANNELS]; 
 
-} OMX_AUDIO_PARAM_PCMMODETYPE; 
+} OMX_AUDIO_PARAM_PCMMODETYPE;
 
 
 
@@ -185,7 +185,7 @@ typedef enum OMX_AUDIO_CHANNELMODETYPE {
     OMX_AUDIO_ChannelModeDual,        
 
     OMX_AUDIO_ChannelModeMono,        
-    OMX_AUDIO_ChannelModeKhronosExtensions = 0x6F000000,  
+    OMX_AUDIO_ChannelModeKhronosExtensions = 0x6F000000, 
     OMX_AUDIO_ChannelModeVendorStartUnused = 0x7F000000, 
     OMX_AUDIO_ChannelModeMax = 0x7FFFFFFF
 } OMX_AUDIO_CHANNELMODETYPE;
@@ -195,7 +195,7 @@ typedef enum OMX_AUDIO_MP3STREAMFORMATTYPE {
     OMX_AUDIO_MP3StreamFormatMP1Layer3 = 0, 
     OMX_AUDIO_MP3StreamFormatMP2Layer3,     
     OMX_AUDIO_MP3StreamFormatMP2_5Layer3,   
-    OMX_AUDIO_MP3StreamFormatKhronosExtensions = 0x6F000000,  
+    OMX_AUDIO_MP3StreamFormatKhronosExtensions = 0x6F000000, 
     OMX_AUDIO_MP3StreamFormatVendorStartUnused = 0x7F000000, 
     OMX_AUDIO_MP3StreamFormatMax = 0x7FFFFFFF
 } OMX_AUDIO_MP3STREAMFORMATTYPE;
@@ -225,7 +225,7 @@ typedef enum OMX_AUDIO_AACSTREAMFORMATTYPE {
     OMX_AUDIO_AACStreamFormatADIF,        
     OMX_AUDIO_AACStreamFormatMP4FF,       
     OMX_AUDIO_AACStreamFormatRAW,         
-    OMX_AUDIO_AACStreamFormatKhronosExtensions = 0x6F000000,  
+    OMX_AUDIO_AACStreamFormatKhronosExtensions = 0x6F000000, 
     OMX_AUDIO_AACStreamFormatVendorStartUnused = 0x7F000000, 
     OMX_AUDIO_AACStreamFormatMax = 0x7FFFFFFF
 } OMX_AUDIO_AACSTREAMFORMATTYPE;
@@ -244,7 +244,7 @@ typedef enum OMX_AUDIO_AACPROFILETYPE{
   OMX_AUDIO_AACObjectERLC = 17,     
   OMX_AUDIO_AACObjectLD = 23,       
   OMX_AUDIO_AACObjectHE_PS = 29,    
-  OMX_AUDIO_AACObjectKhronosExtensions = 0x6F000000,  
+  OMX_AUDIO_AACObjectKhronosExtensions = 0x6F000000, 
   OMX_AUDIO_AACObjectVendorStartUnused = 0x7F000000, 
   OMX_AUDIO_AACObjectMax = 0x7FFFFFFF
 } OMX_AUDIO_AACPROFILETYPE;
@@ -318,7 +318,7 @@ typedef struct OMX_AUDIO_PARAM_VORBISTYPE {
 
 
     OMX_BOOL bDownmix;		  
-     
+
 } OMX_AUDIO_PARAM_VORBISTYPE;
 
 
@@ -328,7 +328,7 @@ typedef enum OMX_AUDIO_WMAFORMATTYPE {
   OMX_AUDIO_WMAFormat7,          
   OMX_AUDIO_WMAFormat8,          
   OMX_AUDIO_WMAFormat9,          
-  OMX_AUDIO_WMAFormatKhronosExtensions = 0x6F000000,  
+  OMX_AUDIO_WMAFormatKhronosExtensions = 0x6F000000, 
   OMX_AUDIO_WMAFormatVendorStartUnused = 0x7F000000, 
   OMX_AUDIO_WMAFormatMax = 0x7FFFFFFF
 } OMX_AUDIO_WMAFORMATTYPE;
@@ -340,7 +340,7 @@ typedef enum OMX_AUDIO_WMAPROFILETYPE {
   OMX_AUDIO_WMAProfileL1,          
   OMX_AUDIO_WMAProfileL2,          
   OMX_AUDIO_WMAProfileL3,          
-  OMX_AUDIO_WMAProfileKhronosExtensions = 0x6F000000,  
+  OMX_AUDIO_WMAProfileKhronosExtensions = 0x6F000000, 
   OMX_AUDIO_WMAProfileVendorStartUnused = 0x7F000000, 
   OMX_AUDIO_WMAProfileMax = 0x7FFFFFFF
 } OMX_AUDIO_WMAPROFILETYPE;
@@ -374,32 +374,32 @@ typedef enum OMX_AUDIO_RAFORMATTYPE {
     OMX_AUDIO_RA10_LOSSLESS,      
     OMX_AUDIO_RA10_MULTICHANNEL,  
     OMX_AUDIO_RA10_VOICE,         
-    OMX_AUDIO_RAFormatKhronosExtensions = 0x6F000000,  
+    OMX_AUDIO_RAFormatKhronosExtensions = 0x6F000000, 
     OMX_AUDIO_RAFormatVendorStartUnused = 0x7F000000, 
     OMX_VIDEO_RAFormatMax = 0x7FFFFFFF
 } OMX_AUDIO_RAFORMATTYPE;
 
- 
-typedef struct OMX_AUDIO_PARAM_RATYPE { 
-    OMX_U32 nSize;               
-    OMX_VERSIONTYPE nVersion;    
-    OMX_U32 nPortIndex;          
-    OMX_U32 nChannels;           
-    OMX_U32 nSamplingRate;       
-    OMX_U32 nBitsPerFrame;       
-    OMX_U32 nSamplePerFrame;     
-    OMX_U32 nCouplingQuantBits;  
-    OMX_U32 nCouplingStartRegion;    
-    OMX_U32 nNumRegions;         
+
+typedef struct OMX_AUDIO_PARAM_RATYPE {
+    OMX_U32 nSize;              
+    OMX_VERSIONTYPE nVersion;   
+    OMX_U32 nPortIndex;         
+    OMX_U32 nChannels;          
+    OMX_U32 nSamplingRate;      
+    OMX_U32 nBitsPerFrame;      
+    OMX_U32 nSamplePerFrame;    
+    OMX_U32 nCouplingQuantBits; 
+    OMX_U32 nCouplingStartRegion;   
+    OMX_U32 nNumRegions;        
     OMX_AUDIO_RAFORMATTYPE eFormat; 
-} OMX_AUDIO_PARAM_RATYPE; 
+} OMX_AUDIO_PARAM_RATYPE;
 
 
 
 typedef enum OMX_AUDIO_SBCALLOCMETHODTYPE {
   OMX_AUDIO_SBCAllocMethodLoudness, 
   OMX_AUDIO_SBCAllocMethodSNR,      
-  OMX_AUDIO_SBCAllocMethodKhronosExtensions = 0x6F000000,  
+  OMX_AUDIO_SBCAllocMethodKhronosExtensions = 0x6F000000, 
   OMX_AUDIO_SBCAllocMethodVendorStartUnused = 0x7F000000, 
   OMX_AUDIO_SBCAllocMethodMax = 0x7FFFFFFF
 } OMX_AUDIO_SBCALLOCMETHODTYPE;
@@ -424,18 +424,18 @@ typedef struct OMX_AUDIO_PARAM_SBCTYPE {
 } OMX_AUDIO_PARAM_SBCTYPE;
 
 
- 
-typedef struct OMX_AUDIO_PARAM_ADPCMTYPE { 
-    OMX_U32 nSize;               
-    OMX_VERSIONTYPE nVersion;    
-    OMX_U32 nPortIndex;          
+
+typedef struct OMX_AUDIO_PARAM_ADPCMTYPE {
+    OMX_U32 nSize;              
+    OMX_VERSIONTYPE nVersion;   
+    OMX_U32 nPortIndex;         
     OMX_U32 nChannels;          
 
- 
-    OMX_U32 nBitsPerSample;      
+
+    OMX_U32 nBitsPerSample;     
     OMX_U32 nSampleRate;        
- 
-} OMX_AUDIO_PARAM_ADPCMTYPE; 
+
+} OMX_AUDIO_PARAM_ADPCMTYPE;
 
 
 
@@ -443,25 +443,25 @@ typedef enum OMX_AUDIO_G723RATE {
     OMX_AUDIO_G723ModeUnused = 0,  
     OMX_AUDIO_G723ModeLow,         
     OMX_AUDIO_G723ModeHigh,        
-    OMX_AUDIO_G723ModeKhronosExtensions = 0x6F000000,  
+    OMX_AUDIO_G723ModeKhronosExtensions = 0x6F000000, 
     OMX_AUDIO_G723ModeVendorStartUnused = 0x7F000000, 
     OMX_AUDIO_G723ModeMax = 0x7FFFFFFF
 } OMX_AUDIO_G723RATE;
 
 
 
-typedef struct OMX_AUDIO_PARAM_G723TYPE { 
-    OMX_U32 nSize;                 
-    OMX_VERSIONTYPE nVersion;      
-    OMX_U32 nPortIndex;            
+typedef struct OMX_AUDIO_PARAM_G723TYPE {
+    OMX_U32 nSize;                
+    OMX_VERSIONTYPE nVersion;     
+    OMX_U32 nPortIndex;           
     OMX_U32 nChannels;            
 
- 
-    OMX_BOOL bDTX;                 
+
+    OMX_BOOL bDTX;                
     OMX_AUDIO_G723RATE eBitRate;  
-    OMX_BOOL bHiPassFilter;        
-    OMX_BOOL bPostFilter;          
-} OMX_AUDIO_PARAM_G723TYPE; 
+    OMX_BOOL bHiPassFilter;       
+    OMX_BOOL bPostFilter;         
+} OMX_AUDIO_PARAM_G723TYPE;
 
 
 
@@ -471,22 +471,22 @@ typedef enum OMX_AUDIO_G726MODE {
     OMX_AUDIO_G726Mode24,          
     OMX_AUDIO_G726Mode32,          
     OMX_AUDIO_G726Mode40,          
-    OMX_AUDIO_G726ModeKhronosExtensions = 0x6F000000,  
+    OMX_AUDIO_G726ModeKhronosExtensions = 0x6F000000, 
     OMX_AUDIO_G726ModeVendorStartUnused = 0x7F000000, 
     OMX_AUDIO_G726ModeMax = 0x7FFFFFFF
 } OMX_AUDIO_G726MODE;
 
 
- 
-typedef struct OMX_AUDIO_PARAM_G726TYPE { 
-    OMX_U32 nSize;               
-    OMX_VERSIONTYPE nVersion;    
-    OMX_U32 nPortIndex;          
+
+typedef struct OMX_AUDIO_PARAM_G726TYPE {
+    OMX_U32 nSize;              
+    OMX_VERSIONTYPE nVersion;   
+    OMX_U32 nPortIndex;         
     OMX_U32 nChannels;          
 
- 
+
      OMX_AUDIO_G726MODE eG726Mode;
-} OMX_AUDIO_PARAM_G726TYPE; 
+} OMX_AUDIO_PARAM_G726TYPE;
 
 
 
@@ -495,7 +495,7 @@ typedef enum OMX_AUDIO_G729TYPE {
     OMX_AUDIO_G729A,              
     OMX_AUDIO_G729B,              
     OMX_AUDIO_G729AB,             
-    OMX_AUDIO_G729KhronosExtensions = 0x6F000000,  
+    OMX_AUDIO_G729KhronosExtensions = 0x6F000000, 
     OMX_AUDIO_G729VendorStartUnused = 0x7F000000, 
     OMX_AUDIO_G729Max = 0x7FFFFFFF
 } OMX_AUDIO_G729TYPE;
@@ -514,23 +514,23 @@ typedef struct OMX_AUDIO_PARAM_G729TYPE {
 } OMX_AUDIO_PARAM_G729TYPE;
 
 
- 
-typedef enum OMX_AUDIO_AMRFRAMEFORMATTYPE { 
+
+typedef enum OMX_AUDIO_AMRFRAMEFORMATTYPE {
     OMX_AUDIO_AMRFrameFormatConformance = 0,  
- 
+
     OMX_AUDIO_AMRFrameFormatIF1,              
- 
+
     OMX_AUDIO_AMRFrameFormatIF2,              
- 
+
     OMX_AUDIO_AMRFrameFormatFSF,              
- 
+
     OMX_AUDIO_AMRFrameFormatRTPPayload,       
- 
-    OMX_AUDIO_AMRFrameFormatITU,               
-    OMX_AUDIO_AMRFrameFormatKhronosExtensions = 0x6F000000,  
+
+    OMX_AUDIO_AMRFrameFormatITU,              
+    OMX_AUDIO_AMRFrameFormatKhronosExtensions = 0x6F000000, 
     OMX_AUDIO_AMRFrameFormatVendorStartUnused = 0x7F000000, 
-    OMX_AUDIO_AMRFrameFormatMax = 0x7FFFFFFF 
-} OMX_AUDIO_AMRFRAMEFORMATTYPE; 
+    OMX_AUDIO_AMRFrameFormatMax = 0x7FFFFFFF
+} OMX_AUDIO_AMRFRAMEFORMATTYPE;
 
 
 
@@ -538,7 +538,7 @@ typedef enum OMX_AUDIO_AMRBANDMODETYPE {
     OMX_AUDIO_AMRBandModeUnused = 0,          
     OMX_AUDIO_AMRBandModeNB0,                 
     OMX_AUDIO_AMRBandModeNB1,                 
-    OMX_AUDIO_AMRBandModeNB2,                  
+    OMX_AUDIO_AMRBandModeNB2,                 
     OMX_AUDIO_AMRBandModeNB3,                 
     OMX_AUDIO_AMRBandModeNB4,                 
     OMX_AUDIO_AMRBandModeNB5,                 
@@ -546,36 +546,36 @@ typedef enum OMX_AUDIO_AMRBANDMODETYPE {
     OMX_AUDIO_AMRBandModeNB7,                 
     OMX_AUDIO_AMRBandModeWB0,                 
     OMX_AUDIO_AMRBandModeWB1,                 
-    OMX_AUDIO_AMRBandModeWB2,                  
-    OMX_AUDIO_AMRBandModeWB3,                  
+    OMX_AUDIO_AMRBandModeWB2,                 
+    OMX_AUDIO_AMRBandModeWB3,                 
     OMX_AUDIO_AMRBandModeWB4,                 
     OMX_AUDIO_AMRBandModeWB5,                 
     OMX_AUDIO_AMRBandModeWB6,                 
     OMX_AUDIO_AMRBandModeWB7,                 
-    OMX_AUDIO_AMRBandModeWB8,                       
-    OMX_AUDIO_AMRBandModeKhronosExtensions = 0x6F000000,  
+    OMX_AUDIO_AMRBandModeWB8,                 
+    OMX_AUDIO_AMRBandModeKhronosExtensions = 0x6F000000, 
     OMX_AUDIO_AMRBandModeVendorStartUnused = 0x7F000000, 
     OMX_AUDIO_AMRBandModeMax = 0x7FFFFFFF
 } OMX_AUDIO_AMRBANDMODETYPE;
-     
 
- 
-typedef enum OMX_AUDIO_AMRDTXMODETYPE { 
-    OMX_AUDIO_AMRDTXModeOff = 0,         
+
+
+typedef enum OMX_AUDIO_AMRDTXMODETYPE {
+    OMX_AUDIO_AMRDTXModeOff = 0,        
     OMX_AUDIO_AMRDTXModeOnVAD1,         
- 
+
     OMX_AUDIO_AMRDTXModeOnVAD2,         
-       
+
     OMX_AUDIO_AMRDTXModeOnAuto,         
- 
+
 
     OMX_AUDIO_AMRDTXasEFR,             
 
-    OMX_AUDIO_AMRDTXModeKhronosExtensions = 0x6F000000,  
+    OMX_AUDIO_AMRDTXModeKhronosExtensions = 0x6F000000, 
     OMX_AUDIO_AMRDTXModeVendorStartUnused = 0x7F000000, 
-    OMX_AUDIO_AMRDTXModeMax = 0x7FFFFFFF 
-} OMX_AUDIO_AMRDTXMODETYPE; 
- 
+    OMX_AUDIO_AMRDTXModeMax = 0x7FFFFFFF
+} OMX_AUDIO_AMRDTXMODETYPE;
+
 
 
 typedef struct OMX_AUDIO_PARAM_AMRTYPE {
@@ -584,7 +584,7 @@ typedef struct OMX_AUDIO_PARAM_AMRTYPE {
     OMX_U32 nPortIndex;                     
     OMX_U32 nChannels;                      
     OMX_U32 nBitRate;                       
-    OMX_AUDIO_AMRBANDMODETYPE eAMRBandMode;  
+    OMX_AUDIO_AMRBANDMODETYPE eAMRBandMode; 
     OMX_AUDIO_AMRDTXMODETYPE  eAMRDTXMode;  
     OMX_AUDIO_AMRFRAMEFORMATTYPE eAMRFrameFormat; 
 } OMX_AUDIO_PARAM_AMRTYPE;
@@ -692,7 +692,7 @@ typedef enum OMX_AUDIO_CDMARATETYPE {
     OMX_AUDIO_CDMARateQuarter,            
     OMX_AUDIO_CDMARateEighth,             
     OMX_AUDIO_CDMARateErasure,            
-    OMX_AUDIO_CDMARateKhronosExtensions = 0x6F000000,  
+    OMX_AUDIO_CDMARateKhronosExtensions = 0x6F000000, 
     OMX_AUDIO_CDMARateVendorStartUnused = 0x7F000000, 
     OMX_AUDIO_CDMARateMax = 0x7FFFFFFF
 } OMX_AUDIO_CDMARATETYPE;
@@ -777,7 +777,7 @@ typedef enum OMX_AUDIO_MIDIFORMATTYPE
     OMX_AUDIO_MIDIFormatXMF0,        
     OMX_AUDIO_MIDIFormatXMF1,        
     OMX_AUDIO_MIDIFormatMobileXMF,   
-    OMX_AUDIO_MIDIFormatKhronosExtensions = 0x6F000000,  
+    OMX_AUDIO_MIDIFormatKhronosExtensions = 0x6F000000, 
     OMX_AUDIO_MIDIFormatVendorStartUnused = 0x7F000000, 
     OMX_AUDIO_MIDIFormatMax = 0x7FFFFFFF
 } OMX_AUDIO_MIDIFORMATTYPE;
@@ -796,10 +796,10 @@ typedef struct OMX_AUDIO_PARAM_MIDITYPE {
 
     OMX_BU32 sMaxPolyphony;        
 
-                                    
+
     OMX_BOOL bLoadDefaultSound;    
 
-    OMX_AUDIO_MIDIFORMATTYPE eMidiFormat;                                                                            
+    OMX_AUDIO_MIDIFORMATTYPE eMidiFormat; 
 } OMX_AUDIO_PARAM_MIDITYPE;
 
 
@@ -812,7 +812,7 @@ typedef enum OMX_AUDIO_MIDISOUNDBANKTYPE {
     OMX_AUDIO_MIDISoundBankDLS2,                 
     OMX_AUDIO_MIDISoundBankMobileDLSBase,        
     OMX_AUDIO_MIDISoundBankMobileDLSPlusOptions, 
-    OMX_AUDIO_MIDISoundBankKhronosExtensions = 0x6F000000,  
+    OMX_AUDIO_MIDISoundBankKhronosExtensions = 0x6F000000, 
     OMX_AUDIO_MIDISoundBankVendorStartUnused = 0x7F000000, 
     OMX_AUDIO_MIDISoundBankMax = 0x7FFFFFFF
 } OMX_AUDIO_MIDISOUNDBANKTYPE;
@@ -826,7 +826,7 @@ typedef enum OMX_AUDIO_MIDISOUNDBANKLAYOUTTYPE {
    OMX_AUDIO_MIDISoundBankLayoutGM,           
    OMX_AUDIO_MIDISoundBankLayoutGM2,          
    OMX_AUDIO_MIDISoundBankLayoutUser,         
-   OMX_AUDIO_MIDISoundBankLayoutKhronosExtensions = 0x6F000000,  
+   OMX_AUDIO_MIDISoundBankLayoutKhronosExtensions = 0x6F000000, 
    OMX_AUDIO_MIDISoundBankLayoutVendorStartUnused = 0x7F000000, 
    OMX_AUDIO_MIDISoundBankLayoutMax = 0x7FFFFFFF
 } OMX_AUDIO_MIDISOUNDBANKLAYOUTTYPE;
@@ -936,7 +936,7 @@ typedef enum OMX_AUDIO_MIDIPLAYBACKSTATETYPE {
 
 
 
-  OMX_AUDIO_MIDIPlayBackStateKhronosExtensions = 0x6F000000,  
+  OMX_AUDIO_MIDIPlayBackStateKhronosExtensions = 0x6F000000, 
   OMX_AUDIO_MIDIPlayBackStateVendorStartUnused = 0x7F000000, 
   OMX_AUDIO_MIDIPlayBackStateMax = 0x7FFFFFFF
 } OMX_AUDIO_MIDIPLAYBACKSTATETYPE;
@@ -954,7 +954,7 @@ typedef struct OMX_AUDIO_CONFIG_MIDISTATUSTYPE {
 
     OMX_U32 nDuration;          
 
-  
+
     OMX_U32 nPosition;          
 
     OMX_BOOL bVibra;            
@@ -978,30 +978,30 @@ typedef struct OMX_AUDIO_CONFIG_MIDISTATUSTYPE {
 
 
 
-typedef struct OMX_AUDIO_CONFIG_MIDIMETAEVENTTYPE{ 
-    OMX_U32 nSize;             
-    OMX_VERSIONTYPE nVersion;  
-    OMX_U32 nPortIndex;        
-    OMX_U32 nIndex;            
-    OMX_U8 nMetaEventType;     
-    OMX_U32 nMetaEventSize;    
+typedef struct OMX_AUDIO_CONFIG_MIDIMETAEVENTTYPE{
+    OMX_U32 nSize;            
+    OMX_VERSIONTYPE nVersion; 
+    OMX_U32 nPortIndex;       
+    OMX_U32 nIndex;           
+    OMX_U8 nMetaEventType;    
+    OMX_U32 nMetaEventSize;   
     OMX_U32 nTrack;           
     OMX_U32 nPosition;        
-} OMX_AUDIO_CONFIG_MIDIMETAEVENTTYPE; 
+} OMX_AUDIO_CONFIG_MIDIMETAEVENTTYPE;
 
 
 
 
- 
-typedef struct OMX_AUDIO_CONFIG_MIDIMETAEVENTDATATYPE{ 
-    OMX_U32 nSize;             
-    OMX_VERSIONTYPE nVersion;  
-    OMX_U32 nPortIndex;        
-    OMX_U32 nIndex;            
-    OMX_U32 nMetaEventSize;    
+
+typedef struct OMX_AUDIO_CONFIG_MIDIMETAEVENTDATATYPE{
+    OMX_U32 nSize;            
+    OMX_VERSIONTYPE nVersion; 
+    OMX_U32 nPortIndex;       
+    OMX_U32 nIndex;           
+    OMX_U32 nMetaEventSize;   
     OMX_U8 nData[1];          
- 
-} OMX_AUDIO_CONFIG__MIDIMETAEVENTDATATYPE; 
+
+} OMX_AUDIO_CONFIG__MIDIMETAEVENTDATATYPE;
 
 
 
@@ -1106,7 +1106,7 @@ typedef struct OMX_AUDIO_CONFIG_CHANNELMUTETYPE {
 
     OMX_BOOL bMute;             
     OMX_BOOL bIsMIDI;           
- 
+
 } OMX_AUDIO_CONFIG_CHANNELMUTETYPE;
 
 
@@ -1114,7 +1114,7 @@ typedef struct OMX_AUDIO_CONFIG_CHANNELMUTETYPE {
 
 
 
- 
+
 typedef struct OMX_AUDIO_CONFIG_LOUDNESSTYPE {
     OMX_U32 nSize;             
     OMX_VERSIONTYPE nVersion;  
@@ -1124,7 +1124,7 @@ typedef struct OMX_AUDIO_CONFIG_LOUDNESSTYPE {
 
 
 
- 
+
 typedef struct OMX_AUDIO_CONFIG_BASSTYPE {
     OMX_U32 nSize;             
     OMX_VERSIONTYPE nVersion;  
@@ -1137,7 +1137,7 @@ typedef struct OMX_AUDIO_CONFIG_BASSTYPE {
 
 
 
- 
+
 typedef struct OMX_AUDIO_CONFIG_TREBLETYPE {
     OMX_U32 nSize;             
     OMX_VERSIONTYPE nVersion;  
@@ -1172,11 +1172,11 @@ typedef struct OMX_AUDIO_CONFIG_EQUALIZERTYPE {
 
 
 
- 
+
 typedef enum OMX_AUDIO_STEREOWIDENINGTYPE {
     OMX_AUDIO_StereoWideningHeadphones,    
     OMX_AUDIO_StereoWideningLoudspeakers,  
-    OMX_AUDIO_StereoWideningKhronosExtensions = 0x6F000000,  
+    OMX_AUDIO_StereoWideningKhronosExtensions = 0x6F000000, 
     OMX_AUDIO_StereoWideningVendorStartUnused = 0x7F000000, 
     OMX_AUDIO_StereoWideningMax = 0x7FFFFFFF
 } OMX_AUDIO_STEREOWIDENINGTYPE;
@@ -1186,7 +1186,7 @@ typedef enum OMX_AUDIO_STEREOWIDENINGTYPE {
 
 
 
- 
+
 typedef struct OMX_AUDIO_CONFIG_STEREOWIDENINGTYPE {
     OMX_U32 nSize;             
     OMX_VERSIONTYPE nVersion;  
@@ -1271,7 +1271,7 @@ typedef enum OMX_AUDIO_ECHOCANTYPE {
 
    OMX_AUDIO_EchoCanCarKit,    
 
-   OMX_AUDIO_EchoCanKhronosExtensions = 0x6F000000,  
+   OMX_AUDIO_EchoCanKhronosExtensions = 0x6F000000, 
    OMX_AUDIO_EchoCanVendorStartUnused = 0x7F000000, 
    OMX_AUDIO_EchoCanMax = 0x7FFFFFFF
 } OMX_AUDIO_ECHOCANTYPE;
@@ -1280,7 +1280,7 @@ typedef enum OMX_AUDIO_ECHOCANTYPE {
 
 
 
- 
+
 typedef struct OMX_AUDIO_CONFIG_ECHOCANCELATIONTYPE {
     OMX_U32 nSize;             
     OMX_VERSIONTYPE nVersion;  
@@ -1292,7 +1292,7 @@ typedef struct OMX_AUDIO_CONFIG_ECHOCANCELATIONTYPE {
 
 
 
- 
+
 typedef struct OMX_AUDIO_CONFIG_NOISEREDUCTIONTYPE {
     OMX_U32 nSize;             
     OMX_VERSIONTYPE nVersion;  

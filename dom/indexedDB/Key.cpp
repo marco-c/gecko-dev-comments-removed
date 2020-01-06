@@ -439,7 +439,7 @@ Key::EncodeAsString(const T* aStart, const T* aEnd, uint8_t aType)
   
   
   uint32_t size = (aEnd - aStart) + 2;
-  
+
   const T* start = aStart;
   const T* end = aEnd;
   for (const T* iter = start; iter < end; ++iter) {
@@ -479,7 +479,7 @@ Key::EncodeAsString(const T* aStart, const T* aEnd, uint8_t aType)
 
   
   *(buffer++) = eTerminator;
-  
+
   NS_ASSERTION(buffer == mBuffer.EndReading(), "Wrote wrong number of bytes");
 }
 
@@ -545,14 +545,14 @@ Key::DecodeString(const unsigned char*& aPos, const unsigned char* aEnd,
 
   
   uint32_t size = 0;
-  const unsigned char* iter; 
+  const unsigned char* iter;
   for (iter = buffer; iter < aEnd && *iter != eTerminator; ++iter) {
     if (*iter & 0x80) {
       iter += (*iter & 0x40) ? 2 : 1;
     }
     ++size;
   }
-  
+
   
   
   if (iter < aEnd) {
@@ -585,13 +585,13 @@ Key::DecodeString(const unsigned char*& aPos, const unsigned char* aEnd,
       }
       *out = (char16_t)c;
     }
-    
+
     ++out;
   }
-  
+
   NS_ASSERTION(!size || out == aString.EndReading(),
                "Should have written the whole string");
-  
+
   aPos = iter + 1;
 }
 

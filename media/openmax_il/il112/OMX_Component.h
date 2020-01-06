@@ -47,12 +47,12 @@ extern "C" {
 #include <OMX_Other.h>
 
 
-typedef enum OMX_PORTDOMAINTYPE { 
-    OMX_PortDomainAudio, 
-    OMX_PortDomainVideo, 
-    OMX_PortDomainImage, 
+typedef enum OMX_PORTDOMAINTYPE {
+    OMX_PortDomainAudio,
+    OMX_PortDomainVideo,
+    OMX_PortDomainImage,
     OMX_PortDomainOther,
-    OMX_PortDomainKhronosExtensions = 0x6F000000,  
+    OMX_PortDomainKhronosExtensions = 0x6F000000, 
     OMX_PortDomainVendorStartUnused = 0x7F000000, 
     OMX_PortDomainMax = 0x7ffffff
 } OMX_PORTDOMAINTYPE;
@@ -86,26 +86,26 @@ typedef struct OMX_PARAM_PORTDEFINITIONTYPE {
 } OMX_PARAM_PORTDEFINITIONTYPE;
 
 
-typedef struct OMX_PARAM_U32TYPE { 
-    OMX_U32 nSize;                     
-    OMX_VERSIONTYPE nVersion;          
-    OMX_U32 nPortIndex;                
+typedef struct OMX_PARAM_U32TYPE {
+    OMX_U32 nSize;                    
+    OMX_VERSIONTYPE nVersion;         
+    OMX_U32 nPortIndex;               
     OMX_U32 nU32;                     
 } OMX_PARAM_U32TYPE;
 
 
 typedef enum OMX_SUSPENSIONPOLICYTYPE {
     OMX_SuspensionDisabled, 
-    OMX_SuspensionEnabled,     
-    OMX_SuspensionPolicyKhronosExtensions = 0x6F000000,  
+    OMX_SuspensionEnabled,  
+    OMX_SuspensionPolicyKhronosExtensions = 0x6F000000, 
     OMX_SuspensionPolicyStartUnused = 0x7F000000, 
     OMX_SuspensionPolicyMax = 0x7fffffff
 } OMX_SUSPENSIONPOLICYTYPE;
 
 
 typedef struct OMX_PARAM_SUSPENSIONPOLICYTYPE {
-    OMX_U32 nSize;                  
-    OMX_VERSIONTYPE nVersion;        
+    OMX_U32 nSize;
+    OMX_VERSIONTYPE nVersion;
     OMX_SUSPENSIONPOLICYTYPE ePolicy;
 } OMX_PARAM_SUSPENSIONPOLICYTYPE;
 
@@ -113,22 +113,22 @@ typedef struct OMX_PARAM_SUSPENSIONPOLICYTYPE {
 typedef enum OMX_SUSPENSIONTYPE {
     OMX_NotSuspended, 
     OMX_Suspended,    
-    OMX_SuspensionKhronosExtensions = 0x6F000000,  
+    OMX_SuspensionKhronosExtensions = 0x6F000000, 
     OMX_SuspensionVendorStartUnused = 0x7F000000, 
     OMX_SuspendMax = 0x7FFFFFFF
 } OMX_SUSPENSIONTYPE;
 
 
 typedef struct OMX_PARAM_SUSPENSIONTYPE {
-    OMX_U32 nSize;                  
-    OMX_VERSIONTYPE nVersion;       
-    OMX_SUSPENSIONTYPE eType;             
+    OMX_U32 nSize;
+    OMX_VERSIONTYPE nVersion;
+    OMX_SUSPENSIONTYPE eType;
 } OMX_PARAM_SUSPENSIONTYPE ;
 
 typedef struct OMX_CONFIG_BOOLEANTYPE {
     OMX_U32 nSize;
     OMX_VERSIONTYPE nVersion;
-    OMX_BOOL bEnabled;    
+    OMX_BOOL bEnabled;
 } OMX_CONFIG_BOOLEANTYPE;
 
 
@@ -171,7 +171,7 @@ typedef enum OMX_METADATACHARSETTYPE {
     OMX_MetadataCharsetJavaConformantUTF8,
     OMX_MetadataCharsetUTF7,
     OMX_MetadataCharsetImapUTF7,
-    OMX_MetadataCharsetUTF16LE, 
+    OMX_MetadataCharsetUTF16LE,
     OMX_MetadataCharsetUTF16BE,
     OMX_MetadataCharsetGB12345,
     OMX_MetadataCharsetHZGB2312,
@@ -197,7 +197,7 @@ typedef enum OMX_METADATACHARSETTYPE {
     OMX_MetadataCharsetISO2022JP1,
     OMX_MetadataCharsetISOEUCJP,
     OMX_MetadataCharsetSMS7Bit,
-    OMX_MetadataCharsetKhronosExtensions = 0x6F000000,  
+    OMX_MetadataCharsetKhronosExtensions = 0x6F000000, 
     OMX_MetadataCharsetVendorStartUnused = 0x7F000000, 
     OMX_MetadataCharsetTypeMax= 0x7FFFFFFF
 } OMX_METADATACHARSETTYPE;
@@ -209,7 +209,7 @@ typedef enum OMX_METADATASCOPETYPE
     OMX_MetadataScopeTopLevel,
     OMX_MetadataScopePortLevel,
     OMX_MetadataScopeNodeLevel,
-    OMX_MetadataScopeKhronosExtensions = 0x6F000000,  
+    OMX_MetadataScopeKhronosExtensions = 0x6F000000, 
     OMX_MetadataScopeVendorStartUnused = 0x7F000000, 
     OMX_MetadataScopeTypeMax = 0x7fffffff
 } OMX_METADATASCOPETYPE;
@@ -220,7 +220,7 @@ typedef enum OMX_METADATASEARCHMODETYPE
     OMX_MetadataSearchValueSizeByIndex,
     OMX_MetadataSearchItemByIndex,
     OMX_MetadataSearchNextItemByKey,
-    OMX_MetadataSearchKhronosExtensions = 0x6F000000,  
+    OMX_MetadataSearchKhronosExtensions = 0x6F000000, 
     OMX_MetadataSearchVendorStartUnused = 0x7F000000, 
     OMX_MetadataSearchTypeMax = 0x7fffffff
 } OMX_METADATASEARCHMODETYPE;
@@ -241,7 +241,7 @@ typedef struct OMX_CONFIG_METADATAITEMTYPE
     OMX_VERSIONTYPE nVersion;
     OMX_METADATASCOPETYPE eScopeMode;
     OMX_U32 nScopeSpecifier;
-    OMX_U32 nMetadataItemIndex;  
+    OMX_U32 nMetadataItemIndex;
     OMX_METADATASEARCHMODETYPE eSearchMode;
     OMX_METADATACHARSETTYPE eKeyCharset;
     OMX_U8 nKeySizeUsed;
@@ -270,28 +270,28 @@ typedef struct OMX_CONFIG_CONTAINERNODEIDTYPE
     OMX_VERSIONTYPE nVersion;
     OMX_BOOL bAllKeys;
     OMX_U32 nParentNodeID;
-    OMX_U32 nNodeIndex; 
-    OMX_U32 nNodeID; 
+    OMX_U32 nNodeIndex;
+    OMX_U32 nNodeID;
     OMX_STRING cNodeName;
     OMX_BOOL bIsLeafType;
 } OMX_CONFIG_CONTAINERNODEIDTYPE;
 
 
-typedef struct OMX_PARAM_METADATAFILTERTYPE 
-{ 
-    OMX_U32 nSize; 
-    OMX_VERSIONTYPE nVersion; 
+typedef struct OMX_PARAM_METADATAFILTERTYPE
+{
+    OMX_U32 nSize;
+    OMX_VERSIONTYPE nVersion;
     OMX_BOOL bAllKeys;	
 
     OMX_METADATACHARSETTYPE eKeyCharset;
-    OMX_U32 nKeySizeUsed; 
-    OMX_U8   nKey [128]; 
+    OMX_U32 nKeySizeUsed;
+    OMX_U8   nKey [128];
     OMX_U32 nLanguageCountrySizeUsed;
     OMX_U8 nLanguageCountry[128];
     OMX_BOOL bEnabled;	
 
 
-} OMX_PARAM_METADATAFILTERTYPE; 
+} OMX_PARAM_METADATAFILTERTYPE;
 
 
 
@@ -354,8 +354,8 @@ typedef struct OMX_COMPONENTTYPE
 
 
     OMX_ERRORTYPE (*GetParameter)(
-            OMX_IN  OMX_HANDLETYPE hComponent, 
-            OMX_IN  OMX_INDEXTYPE nParamIndex,  
+            OMX_IN  OMX_HANDLETYPE hComponent,
+            OMX_IN  OMX_INDEXTYPE nParamIndex,
             OMX_INOUT OMX_PTR pComponentParameterStructure);
 
 
@@ -363,7 +363,7 @@ typedef struct OMX_COMPONENTTYPE
 
 
     OMX_ERRORTYPE (*SetParameter)(
-            OMX_IN  OMX_HANDLETYPE hComponent, 
+            OMX_IN  OMX_HANDLETYPE hComponent,
             OMX_IN  OMX_INDEXTYPE nIndex,
             OMX_IN  OMX_PTR pComponentParameterStructure);
 
@@ -373,7 +373,7 @@ typedef struct OMX_COMPONENTTYPE
 
     OMX_ERRORTYPE (*GetConfig)(
             OMX_IN  OMX_HANDLETYPE hComponent,
-            OMX_IN  OMX_INDEXTYPE nIndex, 
+            OMX_IN  OMX_INDEXTYPE nIndex,
             OMX_INOUT OMX_PTR pComponentConfigStructure);
 
 
@@ -382,7 +382,7 @@ typedef struct OMX_COMPONENTTYPE
 
     OMX_ERRORTYPE (*SetConfig)(
             OMX_IN  OMX_HANDLETYPE hComponent,
-            OMX_IN  OMX_INDEXTYPE nIndex, 
+            OMX_IN  OMX_INDEXTYPE nIndex,
             OMX_IN  OMX_PTR pComponentConfigStructure);
 
 
@@ -402,7 +402,7 @@ typedef struct OMX_COMPONENTTYPE
             OMX_IN  OMX_HANDLETYPE hComponent,
             OMX_OUT OMX_STATETYPE* pState);
 
-    
+
     
 
 
@@ -469,7 +469,7 @@ typedef struct OMX_COMPONENTTYPE
         OMX_IN  OMX_U32 nPort,
         OMX_IN  OMX_HANDLETYPE hTunneledComp,
         OMX_IN  OMX_U32 nTunneledPort,
-        OMX_INOUT  OMX_TUNNELSETUPTYPE* pTunnelSetup); 
+        OMX_INOUT  OMX_TUNNELSETUPTYPE* pTunnelSetup);
 
     
 
@@ -539,7 +539,7 @@ typedef struct OMX_COMPONENTTYPE
 
     OMX_ERRORTYPE (*SetCallbacks)(
             OMX_IN  OMX_HANDLETYPE hComponent,
-            OMX_IN  OMX_CALLBACKTYPE* pCallbacks, 
+            OMX_IN  OMX_CALLBACKTYPE* pCallbacks,
             OMX_IN  OMX_PTR pAppData);
 
     

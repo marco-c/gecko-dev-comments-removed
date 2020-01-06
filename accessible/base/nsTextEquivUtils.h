@@ -121,7 +121,7 @@ private:
 
   static nsresult AppendFromAccessibleChildren(Accessible* aAccessible,
                                                nsAString *aString);
-  
+
   
 
 

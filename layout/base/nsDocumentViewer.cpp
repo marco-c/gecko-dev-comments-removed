@@ -308,8 +308,8 @@ private:
 #ifdef NS_PRINTING
   
   
-  void SetIsPrintingInDocShellTree(nsIDocShellTreeItem* aParentNode, 
-                                   bool                 aIsPrintingOrPP, 
+  void SetIsPrintingInDocShellTree(nsIDocShellTreeItem* aParentNode,
+                                   bool                 aIsPrintingOrPP,
                                    bool                 aStartAtTop);
 #endif 
 
@@ -908,7 +908,7 @@ nsDocumentViewer::InitInternal(nsIWidget* aParentWidget,
       }
       NS_ENSURE_TRUE(mPresContext, NS_ERROR_OUT_OF_MEMORY);
 
-      nsresult rv = mPresContext->Init(mDeviceContext); 
+      nsresult rv = mPresContext->Init(mDeviceContext);
       if (NS_FAILED(rv)) {
         mPresContext = nullptr;
         return rv;
@@ -1526,7 +1526,7 @@ nsDocumentViewer::Open(nsISupports *aState, nsISHEntry *aSHEntry)
       AttachContainerRecurse(shell);
     }
   }
-  
+
   SyncParentSubDocMap();
 
   if (mFocusListener && mDocument) {
@@ -2350,7 +2350,7 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
   }
 
   styleSet->BeginUpdate();
-  
+
   
 
   if (aDocument->IsBeingUsedAsImage()) {
@@ -2670,7 +2670,7 @@ nsDocumentViewer::CreateDeviceContext(nsView* aContainerView)
   NS_PRECONDITION(!mPresShell && !mWindow,
                   "This will screw up our existing presentation");
   NS_PRECONDITION(mDocument, "Gotta have a document here");
-  
+
   nsIDocument* doc = mDocument->GetDisplayDocument();
   if (doc) {
     NS_ASSERTION(!aContainerView, "External resource document embedded somewhere?");
@@ -2684,7 +2684,7 @@ nsDocumentViewer::CreateDeviceContext(nsView* aContainerView)
       }
     }
   }
-  
+
   
   
   nsIWidget* widget = nullptr;
@@ -2831,7 +2831,7 @@ NS_IMETHODIMP nsDocumentViewer::GetContents(const char *mimeType, bool selection
   if (selectionOnly) {
     nsCopySupport::GetSelectionForCopy(mDocument, getter_AddRefs(sel));
     NS_ENSURE_TRUE(sel, NS_ERROR_FAILURE);
-  
+
     bool isCollapsed;
     sel->GetIsCollapsed(&isCollapsed);
     if (isCollapsed)
@@ -3958,7 +3958,7 @@ nsDocumentViewer::Print(nsIPrintSettings*       aPrintSettings,
   
   uint32_t busyFlags = nsIDocShell::BUSY_FLAGS_NONE;
   if ((NS_FAILED(docShell->GetBusyFlags(&busyFlags)) ||
-       (busyFlags != nsIDocShell::BUSY_FLAGS_NONE && busyFlags & nsIDocShell::BUSY_FLAGS_PAGE_LOADING)) && 
+       (busyFlags != nsIDocShell::BUSY_FLAGS_NONE && busyFlags & nsIDocShell::BUSY_FLAGS_PAGE_LOADING)) &&
       !mPrintDocIsFullyLoaded) {
     if (!mPrintIsPending) {
       mCachedPrintSettings           = aPrintSettings;
@@ -4007,7 +4007,7 @@ nsDocumentViewer::Print(nsIPrintSettings*       aPrintSettings,
     NS_ENSURE_STATE(mDeviceContext);
     mPrintEngine = new nsPrintEngine();
 
-    rv = mPrintEngine->Initialize(this, mContainer, mDocument, 
+    rv = mPrintEngine->Initialize(this, mContainer, mDocument,
                                   float(mDeviceContext->AppUnitsPerCSSInch()) /
                                   float(mDeviceContext->AppUnitsPerDevPixel()) /
                                   mPageZoom,
@@ -4040,8 +4040,8 @@ nsDocumentViewer::Print(nsIPrintSettings*       aPrintSettings,
 }
 
 NS_IMETHODIMP
-nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings, 
-                               mozIDOMWindowProxy* aChildDOMWin, 
+nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
+                               mozIDOMWindowProxy* aChildDOMWin,
                                nsIWebProgressListener* aWebProgressListener)
 {
   SetPrintRelated();
@@ -4235,12 +4235,12 @@ NS_IMETHODIMP
 nsDocumentViewer::GetDoingPrint(bool *aDoingPrint)
 {
   NS_ENSURE_ARG_POINTER(aDoingPrint);
-  
+
   *aDoingPrint = false;
   if (mPrintEngine) {
     
     return mPrintEngine->GetDoingPrintPreview(aDoingPrint);
-  } 
+  }
   return NS_OK;
 }
 
@@ -4269,7 +4269,7 @@ nsDocumentViewer::GetCurrentPrintSettings(nsIPrintSettings * *aCurrentPrintSetti
 }
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsDocumentViewer::GetCurrentChildDOMWindow(mozIDOMWindowProxy** aCurrentChildDOMWindow)
 {
   NS_ENSURE_ARG_POINTER(aCurrentChildDOMWindow);
@@ -4314,7 +4314,7 @@ nsDocumentViewer::EnumerateDocumentNames(uint32_t* aCount,
 #endif
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsDocumentViewer::GetIsFramesetFrameSelected(bool *aIsFramesetFrameSelected)
 {
 #ifdef NS_PRINTING
@@ -4353,7 +4353,7 @@ nsDocumentViewer::GetIsFramesetDocument(bool *aIsFramesetDocument)
 #endif
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsDocumentViewer::GetIsIFrameSelected(bool *aIsIFrameSelected)
 {
 #ifdef NS_PRINTING
@@ -4366,7 +4366,7 @@ nsDocumentViewer::GetIsIFrameSelected(bool *aIsIFrameSelected)
 #endif
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsDocumentViewer::GetIsRangeSelection(bool *aIsRangeSelection)
 {
 #ifdef NS_PRINTING
@@ -4385,9 +4385,9 @@ nsDocumentViewer::GetIsRangeSelection(bool *aIsRangeSelection)
 
 
 
-void 
-nsDocumentViewer::SetIsPrintingInDocShellTree(nsIDocShellTreeItem* aParentNode, 
-                                                bool                 aIsPrintingOrPP, 
+void
+nsDocumentViewer::SetIsPrintingInDocShellTree(nsIDocShellTreeItem* aParentNode,
+                                                bool                 aIsPrintingOrPP,
                                                 bool                 aStartAtTop)
 {
   nsCOMPtr<nsIDocShellTreeItem> parentItem(do_QueryInterface(aParentNode));
@@ -4473,7 +4473,7 @@ nsDocumentViewer::GetIsPrinting()
     return mPrintEngine->GetIsPrinting();
   }
 #endif
-  return false; 
+  return false;
 }
 
 
@@ -4513,7 +4513,7 @@ nsDocumentViewer::GetIsPrintPreview()
     return mPrintEngine->GetIsPrintPreview();
   }
 #endif
-  return false; 
+  return false;
 }
 
 
@@ -4579,7 +4579,7 @@ ResetFocusState(nsIDocShell* aDocShell)
   aDocShell->GetDocShellEnumerator(nsIDocShellTreeItem::typeContent,
                                    nsIDocShell::ENUMERATE_FORWARDS,
                                    getter_AddRefs(docShellEnumerator));
-  
+
   nsCOMPtr<nsISupports> currentContainer;
   bool hasMoreDocShells;
   while (NS_SUCCEEDED(docShellEnumerator->HasMoreElements(&hasMoreDocShells))
@@ -4634,7 +4634,7 @@ nsDocumentViewer::ReturnToGalleyPresentation()
 
 
 void
-nsDocumentViewer::OnDonePrinting() 
+nsDocumentViewer::OnDonePrinting()
 {
 #if defined(NS_PRINTING) && defined(NS_PRINT_PREVIEW)
   SetPrintRelated();
@@ -4694,7 +4694,7 @@ NS_IMETHODIMP nsDocumentViewer::SetPageMode(bool aPageMode, nsIPrintSettings* aP
 
   NS_ENSURE_STATE(mDocument);
   if (aPageMode)
-  {    
+  {
     mPresContext = CreatePresContext(mDocument,
         nsPresContext::eContext_PageLayout, FindContainerView());
     NS_ENSURE_TRUE(mPresContext, NS_ERROR_OUT_OF_MEMORY);

@@ -64,21 +64,21 @@
 
 
 typedef OMX_U32    CPresult;
-typedef char *     CPstring;  
+typedef char *     CPstring;
 typedef void *     CPhandle;
 typedef OMX_U32    CPuint;
-typedef OMX_S32    CPint;  
-typedef char       CPbyte;  
+typedef OMX_S32    CPint;
+typedef char       CPbyte;
 typedef OMX_BOOL   CPbool;
 
 
 
 
 typedef enum CP_ORIGINTYPE {
-    CP_OriginBegin,      
-    CP_OriginCur,      
-    CP_OriginEnd,      
-    CP_OriginKhronosExtensions = 0x6F000000,  
+    CP_OriginBegin,
+    CP_OriginCur,
+    CP_OriginEnd,
+    CP_OriginKhronosExtensions = 0x6F000000, 
     CP_OriginVendorStartUnused = 0x7F000000, 
     CP_OriginMax = 0X7FFFFFFF
 } CP_ORIGINTYPE;
@@ -87,10 +87,10 @@ typedef enum CP_ORIGINTYPE {
 
 
 typedef enum CP_ACCESSTYPE {
-    CP_AccessRead,      
-    CP_AccessWrite,  
-    CP_AccessReadWrite ,  
-    CP_AccessKhronosExtensions = 0x6F000000,  
+    CP_AccessRead,
+    CP_AccessWrite,
+    CP_AccessReadWrite ,
+    CP_AccessKhronosExtensions = 0x6F000000, 
     CP_AccessVendorStartUnused = 0x7F000000, 
     CP_AccessMax = 0X7FFFFFFF
 } CP_ACCESSTYPE;
@@ -112,7 +112,7 @@ typedef enum CP_CHECKBYTESRESULTTYPE
     CP_CheckBytesAtEndOfStream,         
 
     CP_CheckBytesOutOfBuffers,          
-    CP_CheckBytesKhronosExtensions = 0x6F000000,  
+    CP_CheckBytesKhronosExtensions = 0x6F000000, 
     CP_CheckBytesVendorStartUnused = 0x7F000000, 
     CP_CheckBytesMax = 0X7FFFFFFF
 } CP_CHECKBYTESRESULTTYPE;
@@ -124,7 +124,7 @@ typedef enum CP_EVENTTYPE{
     CP_BytesAvailable,      	    
     CP_Overflow,  		           
     CP_PipeDisconnected  ,  		    
-    CP_EventKhronosExtensions = 0x6F000000,  
+    CP_EventKhronosExtensions = 0x6F000000, 
     CP_EventVendorStartUnused = 0x7F000000, 
     CP_EventMax = 0X7FFFFFFF
 } CP_EVENTTYPE;
@@ -134,13 +134,13 @@ typedef enum CP_EVENTTYPE{
 
 typedef struct CP_PIPETYPE
 {
-     
+    
     CPresult (*Open)( CPhandle* hContent, CPstring szURI, CP_ACCESSTYPE eAccess );
 
-     
+    
     CPresult (*Close)( CPhandle hContent );
 
-     
+    
     CPresult (*Create)( CPhandle *hContent, CPstring szURI );
 
     
@@ -154,7 +154,7 @@ typedef struct CP_PIPETYPE
 
     
 
-    CPresult (*Read)( CPhandle hContent, CPbyte *pData, CPuint nSize); 
+    CPresult (*Read)( CPhandle hContent, CPbyte *pData, CPuint nSize);
 
     
 
@@ -175,7 +175,7 @@ typedef struct CP_PIPETYPE
 
     
 
-    CPresult (*Write)( CPhandle hContent, CPbyte *data, CPuint nSize); 
+    CPresult (*Write)( CPhandle hContent, CPbyte *data, CPuint nSize);
 
     
 

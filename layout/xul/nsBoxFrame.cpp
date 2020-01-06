@@ -233,14 +233,14 @@ nsBoxFrame::CacheAttributes()
   mHalign = hAlign_Left;
 
   bool orient = false;
-  GetInitialOrientation(orient); 
+  GetInitialOrientation(orient);
   if (orient)
     mState |= NS_STATE_IS_HORIZONTAL;
   else
     mState &= ~NS_STATE_IS_HORIZONTAL;
 
   bool normal = true;
-  GetInitialDirection(normal); 
+  GetInitialDirection(normal);
   if (normal)
     mState |= NS_STATE_IS_DIRECTION_NORMAL;
   else
@@ -248,9 +248,9 @@ nsBoxFrame::CacheAttributes()
 
   GetInitialVAlignment(mValign);
   GetInitialHAlignment(mHalign);
-  
+
   bool equalSize = false;
-  GetInitialEqualSize(equalSize); 
+  GetInitialEqualSize(equalSize);
   if (equalSize)
         mState |= NS_STATE_EQUAL_SIZE;
     else
@@ -266,7 +266,7 @@ nsBoxFrame::CacheAttributes()
 
 #ifdef DEBUG_LAYOUT
   bool debug = mState & NS_STATE_SET_TO_DEBUG;
-  bool debugSet = GetInitialDebug(debug); 
+  bool debugSet = GetInitialDebug(debug);
   if (debugSet) {
         mState |= NS_STATE_DEBUG_WAS_SET;
         if (debug)
@@ -315,7 +315,7 @@ nsBoxFrame::GetInitialHAlignment(nsBoxFrame::Halignment& aHalign)
     aHalign = alignValues[index];
     return true;
   }
-      
+
   
   
   
@@ -331,7 +331,7 @@ nsBoxFrame::GetInitialHAlignment(nsBoxFrame::Halignment& aHalign)
     
     return false;
   }
-  if (index > 0) {    
+  if (index > 0) {
     aHalign = values[index];
     return true;
   }
@@ -540,7 +540,7 @@ nsBoxFrame::GetInitialAutoStretch(bool& aStretch)
 {
   if (!GetContent())
      return false;
-  
+
   
   static nsIContent::AttrValuesArray strings[] =
     {&nsGkAtoms::_empty, &nsGkAtoms::stretch, nullptr};
@@ -578,7 +578,7 @@ nsBoxFrame::HonorPrintBackgroundSettings()
 
 #ifdef DO_NOISY_REFLOW
 static int myCounter = 0;
-static void printSize(char * aDesc, nscoord aSize) 
+static void printSize(char * aDesc, nscoord aSize)
 {
   printf(" %s: ", aDesc);
   if (aSize == NS_UNCONSTRAINEDSIZE) {
@@ -652,7 +652,7 @@ nsBoxFrame::Reflow(nsPresContext*          aPresContext,
 #ifdef DO_NOISY_REFLOW
   printf("\n-------------Starting BoxFrame Reflow ----------------------------\n");
   printf("%p ** nsBF::Reflow %d ", this, myCounter++);
-  
+
   printSize("AW", aReflowInput.AvailableWidth());
   printSize("AH", aReflowInput.AvailableHeight());
   printSize("CW", aReflowInput.ComputedWidth());
@@ -710,12 +710,12 @@ nsBoxFrame::Reflow(nsPresContext*          aPresContext,
   nsRect r(mRect.x, mRect.y, physicalSize.width, physicalSize.height);
 
   SetXULBounds(state, r);
- 
+
   
   XULLayout(state);
+
   
-  
-  
+
   
   LogicalSize boxSize = GetLogicalSize(wm);
   nscoord ascent = boxSize.BSize(wm);
@@ -736,9 +736,9 @@ nsBoxFrame::Reflow(nsPresContext*          aPresContext,
     printf("%p ** nsBF(done) W:%d H:%d  ", this, aDesiredSize.Width(), aDesiredSize.Height());
 
     if (maxElementSize) {
-      printf("MW:%d\n", *maxElementWidth); 
+      printf("MW:%d\n", *maxElementWidth);
     } else {
-      printf("MW:?\n"); 
+      printf("MW:?\n");
     }
 
   }
@@ -787,7 +787,7 @@ nsBoxFrame::GetXULPrefSize(nsBoxLayoutState& aBoxLayoutState)
   nsSize minSize = GetXULMinSize(aBoxLayoutState);
   nsSize maxSize = GetXULMaxSize(aBoxLayoutState);
   mPrefSize = BoundsCheck(minSize, size, maxSize);
- 
+
   return mPrefSize;
 }
 
@@ -846,7 +846,7 @@ nsBoxFrame::GetXULMinSize(nsBoxLayoutState& aBoxLayoutState)
       size = nsBox::GetXULMinSize(aBoxLayoutState);
     }
   }
-  
+
   mMinSize = size;
 
   return size;
@@ -967,7 +967,7 @@ nsBoxFrame::DestroyFrom(nsIFrame* aDestructRoot)
   SetXULLayoutManager(nullptr);
 
   nsContainerFrame::DestroyFrom(aDestructRoot);
-} 
+}
 
 #ifdef DEBUG_LAYOUT
 nsresult
@@ -985,7 +985,7 @@ nsBoxFrame::SetXULDebug(nsBoxLayoutState& aState, bool aDebug)
      } else {
          mState &= ~NS_STATE_CURRENTLY_IN_DEBUG;
      }
- 
+
      SetDebugOnChildList(aState, mFirstChild, aDebug);
 
     MarkIntrinsicISizesDirty();
@@ -1173,7 +1173,7 @@ nsBoxFrame::AttributeChanged(int32_t aNameSpaceID,
       mHalign = nsBoxFrame::hAlign_Left;
 
       bool orient = true;
-      GetInitialOrientation(orient); 
+      GetInitialOrientation(orient);
       if (orient)
         mState |= NS_STATE_IS_HORIZONTAL;
       else
@@ -1190,7 +1190,7 @@ nsBoxFrame::AttributeChanged(int32_t aNameSpaceID,
       GetInitialHAlignment(mHalign);
 
       bool equalSize = false;
-      GetInitialEqualSize(equalSize); 
+      GetInitialEqualSize(equalSize);
       if (equalSize)
         mState |= NS_STATE_EQUAL_SIZE;
       else
@@ -1496,13 +1496,13 @@ nsBoxFrame::PaintXULDebugOverlay(DrawTarget& aDrawTarget, nsPoint aPt)
     bool isHorizontal = IsXULHorizontal();
 
     nscoord x, y, borderSize, spacerSize;
-    
+
     nsRect cr(kid->mRect);
     nsMargin margin;
     kid->GetXULMargin(margin);
     cr.Inflate(margin);
-    
-    if (isHorizontal) 
+
+    if (isHorizontal)
     {
         cr.y = inner.y;
         x = cr.x;
@@ -1518,9 +1518,9 @@ nsBoxFrame::PaintXULDebugOverlay(DrawTarget& aDrawTarget, nsPoint aPt)
     nscoord flex = kid->GetXULFlex();
 
     if (!kid->IsXULCollapsed()) {
-      if (isHorizontal) 
+      if (isHorizontal)
           borderSize = cr.width;
-      else 
+      else
           borderSize = cr.height;
 
       DrawSpacer(GetPresContext(), aDrawTarget, isHorizontal, flex, x, y, borderSize, spacerSize);
@@ -1616,11 +1616,11 @@ nsBoxFrame::FillRect(DrawTarget& aDrawTarget, bool aHorizontal, nscoord x, nscoo
     aDrawTarget.FillRect(rect, white);
 }
 
-void 
+void
 nsBoxFrame::DrawSpacer(nsPresContext* aPresContext, DrawTarget& aDrawTarget,
                        bool aHorizontal, int32_t flex, nscoord x, nscoord y,
                        nscoord size, nscoord spacerSize)
-{    
+{
          nscoord onePixel = aPresContext->IntScaledPixelsToTwips(1);
 
      
@@ -1659,9 +1659,9 @@ nsBoxFrame::GetDebugBorder(nsMargin& aInset)
 {
     aInset.SizeTo(2,2,2,2);
 
-    if (IsXULHorizontal()) 
+    if (IsXULHorizontal())
        aInset.top = 10;
-    else 
+    else
        aInset.left = 10;
 }
 
@@ -1677,7 +1677,7 @@ nsBoxFrame::GetDebugPadding(nsMargin& aPadding)
     aPadding.SizeTo(2,2,2,2);
 }
 
-void 
+void
 nsBoxFrame::PixelMarginToTwips(nsMargin& aMarginPixels)
 {
   nscoord onePixel = nsPresContext::CSSPixelsToAppUnits(1);
@@ -1688,23 +1688,23 @@ nsBoxFrame::PixelMarginToTwips(nsMargin& aMarginPixels)
 }
 
 void
-nsBoxFrame::GetValue(nsPresContext* aPresContext, const nsSize& a, const nsSize& b, char* ch) 
+nsBoxFrame::GetValue(nsPresContext* aPresContext, const nsSize& a, const nsSize& b, char* ch)
 {
     float p2t = aPresContext->ScaledPixelsToTwips();
 
     char width[100];
     char height[100];
-    
+
     if (a.width == NS_INTRINSICSIZE)
         sprintf(width,"%s","INF");
     else
         sprintf(width,"%d", nscoord(a.width));
-    
+
     if (a.height == NS_INTRINSICSIZE)
         sprintf(height,"%s","INF");
-    else 
+    else
         sprintf(height,"%d", nscoord(a.height));
-    
+
 
     sprintf(ch, "(%s%s, %s%s)", width, (b.width != NS_INTRINSICSIZE ? "[SET]" : ""),
                     height, (b.height != NS_INTRINSICSIZE ? "[SET]" : ""));
@@ -1712,12 +1712,12 @@ nsBoxFrame::GetValue(nsPresContext* aPresContext, const nsSize& a, const nsSize&
 }
 
 void
-nsBoxFrame::GetValue(nsPresContext* aPresContext, int32_t a, int32_t b, char* ch) 
+nsBoxFrame::GetValue(nsPresContext* aPresContext, int32_t a, int32_t b, char* ch)
 {
     if (a == NS_INTRINSICSIZE)
-      sprintf(ch, "%d[SET]", b);             
+      sprintf(ch, "%d[SET]", b);
     else
-      sprintf(ch, "%d", a);             
+      sprintf(ch, "%d", a);
 }
 
 nsresult
@@ -1759,7 +1759,7 @@ nsBoxFrame::DisplayDebugInfoFor(nsIFrame*  aBox,
     if ((isHorizontal && y < insideBorder.y + m.top) ||
         (!isHorizontal && x < insideBorder.x + m.left)) {
         
-        while (child) 
+        while (child)
         {
             const nsRect& r = child->mRect;
 
@@ -1808,7 +1808,7 @@ nsBoxFrame::DisplayDebugInfoFor(nsIFrame*  aBox,
                     char calc[100];
                     char flex[100];
                     char ascent[100];
-                  
+
                     nsSize actualSize;
                     GetFrameSizeWithMargin(child, actualSize);
                     nsSize actualSizeCSS (NS_INTRINSICSIZE, NS_INTRINSICSIZE);
@@ -1821,7 +1821,7 @@ nsBoxFrame::DisplayDebugInfoFor(nsIFrame*  aBox,
                     GetValue(aPresContext, ascentSize,  NS_INTRINSICSIZE, ascent);
 
 
-                    printf("min%s, pref%s, max%s, actual%s, flex=%s, ascent=%s\n\n", 
+                    printf("min%s, pref%s, max%s, actual%s, flex=%s, ascent=%s\n\n",
                         min,
                         pref,
                         max,
@@ -1830,7 +1830,7 @@ nsBoxFrame::DisplayDebugInfoFor(nsIFrame*  aBox,
                         ascent
                     );
 
-                    return NS_OK;   
+                    return NS_OK;
             }
 
           child = GetNextXULBox(child);
@@ -1920,7 +1920,7 @@ IsBoxOrdinalLEQ(nsIFrame* aFrame1,
   return aRealFrame1->GetXULOrdinal() <= aRealFrame2->GetXULOrdinal();
 }
 
-void 
+void
 nsBoxFrame::CheckBoxOrder()
 {
   if (SupportsOrdinalsInChildren() &&
@@ -1937,7 +1937,7 @@ nsBoxFrame::LayoutChildAt(nsBoxLayoutState& aState, nsIFrame* aBox, const nsRect
   aBox->SetXULBounds(aState, aRect);
 
   bool layout = NS_SUBTREE_DIRTY(aBox);
-  
+
   if (layout || (oldRect.width != aRect.width || oldRect.height != aRect.height))  {
     return aBox->XULLayout(aState);
   }
@@ -1952,7 +1952,7 @@ nsBoxFrame::XULRelayoutChildAtOrdinal(nsIFrame* aChild)
     return NS_OK;
 
   uint32_t ord = aChild->GetXULOrdinal();
-  
+
   nsIFrame* child = mFrames.FirstChild();
   nsIFrame* newPrevSib = nullptr;
 

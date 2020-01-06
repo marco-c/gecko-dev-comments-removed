@@ -31,7 +31,7 @@ public:
 
 
   virtual void SetBreaks(uint32_t aStart, uint32_t aLength, uint8_t* aBreakBefore) = 0;
-  
+
   
 
 
@@ -65,7 +65,7 @@ class nsLineBreaker {
 public:
   nsLineBreaker();
   ~nsLineBreaker();
-  
+
   static inline bool IsSpace(char16_t u) { return NS_IsSpace(u); }
 
   static inline bool IsComplexASCIIChar(char16_t u)

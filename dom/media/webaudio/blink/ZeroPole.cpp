@@ -43,7 +43,7 @@ void ZeroPole::process(const float *source, float *destination, int framesToProc
     
     const float k1 = 1 / (1 - zero);
     const float k2 = 1 - pole;
-    
+
     
     float lastX = m_lastX;
     float lastY = m_lastY;
@@ -61,7 +61,7 @@ void ZeroPole::process(const float *source, float *destination, int framesToProc
 
         destination[i] = output2;
     }
-    
+
     
     
     #ifndef HAVE_DENORMAL

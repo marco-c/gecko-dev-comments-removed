@@ -92,7 +92,7 @@ public:
   {
     return mEndOffset;
   }
-  
+
   bool IsPositioned() const
   {
     return mIsPositioned;
@@ -102,7 +102,7 @@ public:
   {
     mMaySpanAnonymousSubtrees = aMaySpanAnonymousSubtrees;
   }
-  
+
   
 
 

@@ -29,9 +29,9 @@ public:
                             nsProfileLock(nsProfileLock& src);
 
                             ~nsProfileLock();
- 
+
     nsProfileLock&          operator=(nsProfileLock& rhs);
-                       
+
     
 
 

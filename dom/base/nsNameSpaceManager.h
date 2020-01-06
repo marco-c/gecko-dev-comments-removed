@@ -80,5 +80,5 @@ private:
 
   static mozilla::StaticRefPtr<nsNameSpaceManager> sInstance;
 };
- 
+
 #endif 

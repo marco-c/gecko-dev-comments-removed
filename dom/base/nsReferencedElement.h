@@ -82,7 +82,7 @@ public:
   void Unlink();
 
   void Traverse(nsCycleCollectionTraversalCallback* aCB);
-  
+
 protected:
   
 
@@ -105,7 +105,7 @@ protected:
 
   void HaveNewDocument(nsIDocument* aDocument, bool aWatch,
                        const nsString& aRef);
-  
+
 private:
   static bool Observe(Element* aOldElement,
                         Element* aNewElement, void* aData);
@@ -181,7 +181,7 @@ private:
     nsString mRef;
   };
   friend class DocumentLoadNotification;
-  
+
   nsCOMPtr<nsIAtom>      mWatchID;
   nsCOMPtr<nsIDocument>  mWatchDocument;
   RefPtr<Element> mElement;

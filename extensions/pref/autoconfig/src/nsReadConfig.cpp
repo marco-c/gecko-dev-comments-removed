@@ -28,9 +28,9 @@
 extern mozilla::LazyLogModule MCD;
 
 extern nsresult EvaluateAdminConfigScript(const char *js_buffer, size_t length,
-                                          const char *filename, 
-                                          bool bGlobalContext, 
-                                          bool bCallbacks, 
+                                          const char *filename,
+                                          bool bGlobalContext,
+                                          bool bCallbacks,
                                           bool skipFirstLine);
 extern nsresult CentralizedAdminPrefManagerInit();
 extern nsresult CentralizedAdminPrefManagerFinish();
@@ -79,8 +79,8 @@ nsReadConfig::nsReadConfig() :
 nsresult nsReadConfig::Init()
 {
     nsresult rv;
-    
-    nsCOMPtr<nsIObserverService> observerService = 
+
+    nsCOMPtr<nsIObserverService> observerService =
         do_GetService("@mozilla.org/observer-service;1", &rv);
 
     if (observerService) {
@@ -119,9 +119,9 @@ nsresult nsReadConfig::readConfigFile()
     nsXPIDLCString lockFileName;
     nsXPIDLCString lockVendor;
     uint32_t fileNameLen = 0;
-    
+
     nsCOMPtr<nsIPrefBranch> defaultPrefBranch;
-    nsCOMPtr<nsIPrefService> prefService = 
+    nsCOMPtr<nsIPrefService> prefService =
         do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
     if (NS_FAILED(rv))
         return rv;
@@ -129,11 +129,11 @@ nsresult nsReadConfig::readConfigFile()
     rv = prefService->GetDefaultBranch(nullptr, getter_AddRefs(defaultPrefBranch));
     if (NS_FAILED(rv))
         return rv;
-        
+
     
     
 
-    rv = defaultPrefBranch->GetCharPref("general.config.filename", 
+    rv = defaultPrefBranch->GetCharPref("general.config.filename",
                                   getter_Copies(lockFileName));
 
 
@@ -145,21 +145,21 @@ nsresult nsReadConfig::readConfigFile()
     
     if (!mRead) {
         
-        
+
         rv = CentralizedAdminPrefManagerInit();
         if (NS_FAILED(rv))
             return rv;
-        
+
         
         rv = openAndEvaluateJSFile("prefcalls.js", 0, false, false);
-        if (NS_FAILED(rv)) 
+        if (NS_FAILED(rv))
             return rv;
 
         mRead = true;
     }
     
-  
-  
+
+
     
     
     
@@ -179,30 +179,30 @@ nsresult nsReadConfig::readConfigFile()
                                      lockFileName.get(), static_cast<uint32_t>(rv)));
       return rv;
     }
-    
-    rv = prefBranch->GetCharPref("general.config.filename", 
+
+    rv = prefBranch->GetCharPref("general.config.filename",
                                   getter_Copies(lockFileName));
     if (NS_FAILED(rv))
         
         
         return NS_ERROR_FAILURE;
 
-  
-    rv = prefBranch->GetCharPref("general.config.vendor", 
+
+    rv = prefBranch->GetCharPref("general.config.vendor",
                                   getter_Copies(lockVendor));
     
     if (NS_SUCCEEDED(rv)) {
 
         fileNameLen = strlen(lockFileName);
-    
+
         
         
         
-    
+
         if (PL_strncmp(lockFileName, lockVendor, fileNameLen - 4) != 0)
             return NS_ERROR_FAILURE;
     }
-  
+
     
     nsXPIDLCString urlName;
     rv = prefBranch->GetCharPref("autoadmin.global_config_url",
@@ -219,7 +219,7 @@ nsresult nsReadConfig::readConfigFile()
             return NS_ERROR_FAILURE;
 
     }
-  
+
     return NS_OK;
 } 
 
@@ -235,15 +235,15 @@ nsresult nsReadConfig::openAndEvaluateJSFile(const char *aFileName, int32_t obsc
         nsCOMPtr<nsIFile> jsFile;
         rv = NS_GetSpecialDirectory(NS_GRE_DIR,
                                     getter_AddRefs(jsFile));
-        if (NS_FAILED(rv)) 
+        if (NS_FAILED(rv))
             return rv;
 
         rv = jsFile->AppendNative(nsDependentCString(aFileName));
-        if (NS_FAILED(rv)) 
+        if (NS_FAILED(rv))
             return rv;
 
         rv = NS_NewLocalFileInputStream(getter_AddRefs(inStr), jsFile);
-        if (NS_FAILED(rv)) 
+        if (NS_FAILED(rv))
             return rv;
 
     } else {

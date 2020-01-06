@@ -388,7 +388,7 @@ NS_IMETHODIMP nsXULPopupShownEvent::Run()
 
   WidgetMouseEvent event(true, eXULPopupShown, nullptr,
                          WidgetMouseEvent::eReal);
-  return EventDispatcher::Dispatch(mPopup, mPresContext, &event);                 
+  return EventDispatcher::Dispatch(mPopup, mPresContext, &event);
 }
 
 NS_IMETHODIMP nsXULPopupShownEvent::HandleEvent(nsIDOMEvent* aEvent)
@@ -502,7 +502,7 @@ nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState, nsIFrame* aParentMenu,
   
   
   nsSize prefSize = GetXULPrefSize(aState);
-  nsSize minSize = GetXULMinSize(aState); 
+  nsSize minSize = GetXULMinSize(aState);
   nsSize maxSize = GetXULMaxSize(aState);
 
   if (aSizedToPopup) {
@@ -1245,7 +1245,7 @@ nsMenuPopupFrame::SlideOrResize(nscoord& aScreenPoint, nscoord aSize,
 }
 
 nscoord
-nsMenuPopupFrame::FlipOrResize(nscoord& aScreenPoint, nscoord aSize, 
+nsMenuPopupFrame::FlipOrResize(nscoord& aScreenPoint, nscoord aSize,
                                nscoord aScreenBegin, nscoord aScreenEnd,
                                nscoord aAnchorBegin, nscoord aAnchorEnd,
                                nscoord aMarginBegin, nscoord aMarginEnd,
@@ -1850,7 +1850,7 @@ ConsumeOutsideClicksResult nsMenuPopupFrame::ConsumeOutsideClicks()
 nsIScrollableFrame* nsMenuPopupFrame::GetScrollFrame(nsIFrame* aStart)
 {
   if (!aStart)
-    return nullptr;  
+    return nullptr;
 
   
   nsIFrame* currFrame = aStart;
@@ -2258,7 +2258,7 @@ nsMenuPopupFrame::AttachedDismissalListener()
 
 
 
-nsresult 
+nsresult
 nsMenuPopupFrame::AttributeChanged(int32_t aNameSpaceID,
                                    nsIAtom* aAttribute,
                                    int32_t aModType)
@@ -2266,7 +2266,7 @@ nsMenuPopupFrame::AttributeChanged(int32_t aNameSpaceID,
 {
   nsresult rv = nsBoxFrame::AttributeChanged(aNameSpaceID, aAttribute,
                                              aModType);
-  
+
   if (aAttribute == nsGkAtoms::left || aAttribute == nsGkAtoms::top)
     MoveToAttributePosition();
 

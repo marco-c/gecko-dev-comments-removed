@@ -86,11 +86,11 @@ typedef enum OMX_INDEXTYPE {
     OMX_IndexParamActiveStream,             
     OMX_IndexParamSuspensionPolicy,         
     OMX_IndexParamComponentSuspended,       
-    OMX_IndexConfigCapturing,                
-    OMX_IndexConfigCaptureMode,              
-    OMX_IndexAutoPauseAfterCapture,          
+    OMX_IndexConfigCapturing,               
+    OMX_IndexConfigCaptureMode,             
+    OMX_IndexAutoPauseAfterCapture,         
     OMX_IndexParamContentURI,               
-    OMX_IndexParamCustomContentPipe,         
+    OMX_IndexParamCustomContentPipe,        
     OMX_IndexParamDisableResourceConcealment, 
     OMX_IndexConfigMetadataItemCount,       
     OMX_IndexConfigContainerNodeCount,      
@@ -103,7 +103,7 @@ typedef enum OMX_INDEXTYPE {
 
     OMX_IndexPortStartUnused = 0x02000000,
     OMX_IndexParamPortDefinition,           
-    OMX_IndexParamCompBufferSupplier,        
+    OMX_IndexParamCompBufferSupplier,       
     OMX_IndexReservedStartUnused = 0x03000000,
 
     
@@ -255,7 +255,7 @@ typedef enum OMX_INDEXTYPE {
     OMX_IndexConfigTimeSeekMode,            
 
 
-    OMX_IndexKhronosExtensions = 0x6F000000,  
+    OMX_IndexKhronosExtensions = 0x6F000000, 
     
     OMX_IndexVendorStartUnused = 0x7F000000,
     

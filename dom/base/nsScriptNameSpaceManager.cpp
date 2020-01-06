@@ -177,7 +177,7 @@ nsScriptNameSpaceManager::Init()
 
   
   
-  nsCOMPtr<nsIObserverService> serv = 
+  nsCOMPtr<nsIObserverService> serv =
     mozilla::services::GetObserverService();
 
   if (serv) {

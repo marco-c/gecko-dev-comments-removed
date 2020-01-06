@@ -78,14 +78,14 @@ nsXULLabelFrame::DestroyFrom(nsIFrame* aDestructRoot)
   
   RegUnregAccessKey(false);
   nsBlockFrame::DestroyFrom(aDestructRoot);
-} 
+}
 
 nsresult
 nsXULLabelFrame::AttributeChanged(int32_t aNameSpaceID,
                                   nsIAtom* aAttribute,
                                   int32_t aModType)
 {
-  nsresult rv = nsBlockFrame::AttributeChanged(aNameSpaceID, 
+  nsresult rv = nsBlockFrame::AttributeChanged(aNameSpaceID,
                                                aAttribute, aModType);
 
   

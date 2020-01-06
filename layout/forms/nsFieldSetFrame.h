@@ -76,7 +76,7 @@ public:
   
   void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
 
-#ifdef ACCESSIBILITY  
+#ifdef ACCESSIBILITY
   virtual mozilla::a11y::AccType AccessibleType() override;
 #endif
 

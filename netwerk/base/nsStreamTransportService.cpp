@@ -94,7 +94,7 @@ nsInputStreamTransport::OpenInputStream(uint32_t flags,
     
     
     
- 
+
     bool nonblocking = !(flags & OPEN_BLOCKING);
 
     net_ResolveSegmentParams(segsize, segcount);
@@ -260,7 +260,7 @@ private:
     }
 
     nsCOMPtr<nsIAsyncOutputStream>  mPipeOut;
- 
+
     
     
     nsCOMPtr<nsITransportEventSink> mEventSink;
@@ -308,7 +308,7 @@ nsOutputStreamTransport::OpenOutputStream(uint32_t flags,
     
     
     
- 
+
     bool nonblocking = !(flags & OPEN_BLOCKING);
 
     net_ResolveSegmentParams(segsize, segcount);

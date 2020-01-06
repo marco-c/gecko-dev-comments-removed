@@ -79,7 +79,7 @@ nsMenuBarListener::nsMenuBarListener(nsMenuBarFrame* aMenuBarFrame,
 }
 
 
-nsMenuBarListener::~nsMenuBarListener() 
+nsMenuBarListener::~nsMenuBarListener()
 {
   MOZ_ASSERT(!mEventTarget,
              "OnDestroyMenuBarFrame() should've alreay been called");
@@ -174,7 +174,7 @@ nsMenuBarListener::ToggleMenuActiveState()
 
 nsresult
 nsMenuBarListener::KeyUp(nsIDOMEvent* aKeyEvent)
-{  
+{
   nsCOMPtr<nsIDOMKeyEvent> keyEvent = do_QueryInterface(aKeyEvent);
   if (!keyEvent) {
     return NS_OK;
@@ -236,7 +236,7 @@ nsMenuBarListener::KeyUp(nsIDOMEvent* aKeyEvent)
       return NS_OK; 
     }
   }
-  
+
   return NS_OK; 
 }
 
@@ -312,7 +312,7 @@ nsMenuBarListener::KeyPress(nsIDOMEvent* aKeyEvent)
         aKeyEvent->StopPropagation();
         aKeyEvent->PreventDefault();
       }
-    }    
+    }
 #ifndef XP_MACOSX
     
     else if (nativeKeyEvent->mMessage == eKeyPress && keyCode == NS_VK_F10) {
@@ -448,7 +448,7 @@ nsMenuBarListener::OnWindowDeactivated(nsIDOMEvent* aEvent)
 }
 
 
-nsresult 
+nsresult
 nsMenuBarListener::MouseDown(nsIDOMEvent* aMouseEvent)
 {
   
@@ -496,7 +496,7 @@ nsMenuBarListener::HandleEvent(nsIDOMEvent* aEvent)
 
   nsAutoString eventType;
   aEvent->GetType(eventType);
-  
+
   if (eventType.EqualsLiteral("keyup")) {
     return KeyUp(aEvent);
   }

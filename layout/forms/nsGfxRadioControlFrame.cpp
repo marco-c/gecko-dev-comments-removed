@@ -79,7 +79,7 @@ nsGfxRadioControlFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
   if (!IsVisibleForPainting(aBuilder))
     return;
-  
+
   if (IsThemed())
     return; 
 
@@ -87,7 +87,7 @@ nsGfxRadioControlFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   GetCurrentCheckState(&checked); 
   if (!checked)
     return;
-    
+
   aLists.Content()->AppendNewToTop(new (aBuilder)
     nsDisplayGeneric(aBuilder, this, PaintCheckedRadioButton,
                      "CheckedRadioButton",

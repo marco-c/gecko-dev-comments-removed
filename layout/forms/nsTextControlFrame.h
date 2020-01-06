@@ -87,7 +87,7 @@ public:
 
   virtual nsSize GetXULMinSize(nsBoxLayoutState& aBoxLayoutState) override;
   virtual bool IsXULCollapsed() override;
-  
+
 #ifdef ACCESSIBILITY
   virtual mozilla::a11y::AccType AccessibleType() override;
 #endif
@@ -187,7 +187,7 @@ protected:
 
 public: 
   void SetValueChanged(bool aValueChanged);
-  
+
   
   nsresult MaybeBeginSecureKeyboardInput();
   void MaybeEndSecureKeyboardInput();

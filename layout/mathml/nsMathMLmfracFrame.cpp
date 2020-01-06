@@ -91,7 +91,7 @@ nsMathMLmfracFrame::TransmitAutomaticData()
   return NS_OK;
 }
 
-nscoord 
+nscoord
 nsMathMLmfracFrame::CalcLineThickness(nsPresContext*  aPresContext,
                                       nsStyleContext*  aStyleContext,
                                       nsString&        aThicknessAttribute,
@@ -140,7 +140,7 @@ nsMathMLmfracFrame::CalcLineThickness(nsPresContext*  aPresContext,
   }
 
   
-  if (lineThickness && lineThickness < minimumThickness) 
+  if (lineThickness && lineThickness < minimumThickness)
     lineThickness = minimumThickness;
 
   return lineThickness;
@@ -154,7 +154,7 @@ nsMathMLmfracFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   nsMathMLContainerFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
-  
+
   
   
   if (mIsBevelled) {
@@ -216,7 +216,7 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
   ReflowOutput sizeDen(aDesiredSize.GetWritingMode());
   nsIFrame* frameDen = nullptr;
   nsIFrame* frameNum = mFrames.FirstChild();
-  if (frameNum) 
+  if (frameNum)
     frameDen = frameNum->GetNextSibling();
   if (!frameNum || !frameDen || frameDen->GetNextSibling()) {
     
@@ -367,7 +367,7 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
     
     
     
- 
+
     
     
     
@@ -484,7 +484,7 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
       trailingSpace += coreData.trailingSpace;
     }
     nscoord delta;
-    
+
     
     
     
@@ -517,7 +517,7 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
       numShift += xHeight / 2;
       denShift += xHeight / 4;
     }
-   
+
     
     mBoundingMetrics.ascent = bmNum.ascent + numShift;
     mBoundingMetrics.descent = bmDen.descent + denShift;
@@ -563,7 +563,7 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
 
     mReference.x = 0;
     mReference.y = aDesiredSize.BlockStartAscent();
-    
+
     if (aPlaceOrigin) {
       nscoord dx, dy;
 

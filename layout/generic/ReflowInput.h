@@ -274,7 +274,7 @@ private:
 
   bool ComputeMargin(mozilla::WritingMode aWM,
                      const mozilla::LogicalSize& aPercentBasis);
-  
+
   
 
 
@@ -560,7 +560,7 @@ private:
   
   
   MOZ_INIT_OUTSIDE_CTOR
-  nscoord          mComputedWidth; 
+  nscoord          mComputedWidth;
 
   
   
@@ -864,7 +864,7 @@ public:
     
     return (mFrame->GetStateBits() & NS_FRAME_IS_DIRTY) ||
            IsIResize() ||
-           (IsBResize() && 
+           (IsBResize() &&
             (mFrame->GetStateBits() & NS_FRAME_CONTAINS_RELATIVE_BSIZE));
   }
 

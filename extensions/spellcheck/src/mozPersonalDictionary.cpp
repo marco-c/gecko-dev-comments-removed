@@ -307,7 +307,7 @@ void mozPersonalDictionary::SyncLoadInternal()
     while(!done && ((c == '\n') || (c == '\r'))){
       if( (NS_OK != convStream->Read(&c, 1, &nRead)) || (nRead != 1)) done = true;
     }
-    if (!done){ 
+    if (!done){
       nsAutoString word;
       while((c != '\n') && (c != '\r') && !done){
         word.Append(c);
@@ -430,7 +430,7 @@ NS_IMETHODIMP mozPersonalDictionary::RemoveWord(const char16_t *aWord, const cha
 NS_IMETHODIMP mozPersonalDictionary::IgnoreWord(const char16_t *aWord)
 {
   
-  if (aWord && !mIgnoreTable.GetEntry(aWord)) 
+  if (aWord && !mIgnoreTable.GetEntry(aWord))
     mIgnoreTable.PutEntry(aWord);
   return NS_OK;
 }

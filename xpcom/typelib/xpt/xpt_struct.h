@@ -190,12 +190,12 @@ enum XPTTypeDescriptorTags {
     TD_UINT16            = 5,
     TD_UINT32            = 6,
     TD_UINT64            = 7,
-    TD_FLOAT             = 8, 
+    TD_FLOAT             = 8,
     TD_DOUBLE            = 9,
-    TD_BOOL              = 10,  
-    TD_CHAR              = 11,  
-    TD_WCHAR             = 12, 
-    TD_VOID              = 13,  
+    TD_BOOL              = 10,
+    TD_CHAR              = 11,
+    TD_WCHAR             = 12,
+    TD_VOID              = 13,
     TD_PNSIID            = 14,
     TD_DOMSTRING         = 15,
     TD_PSTRING           = 16,
@@ -264,14 +264,14 @@ struct XPTTypeDescriptor {
 
 union XPTConstValue {
     int8_t    i8;
-    uint8_t   ui8; 
-    int16_t   i16; 
+    uint8_t   ui8;
+    int16_t   i16;
     uint16_t  ui16;
-    int32_t   i32; 
+    int32_t   i32;
     uint32_t  ui32;
-    int64_t   i64; 
-    uint64_t  ui64; 
-    char      ch; 
+    int64_t   i64;
+    uint64_t  ui64;
+    char      ch;
     uint16_t  wch;
 }; 
 

@@ -295,7 +295,7 @@ enum Role {
 
 
   CHECKBUTTON = 44,
-  
+
   
 
 
@@ -304,7 +304,7 @@ enum Role {
 
 
   RADIOBUTTON = 45,
-  
+
   
 
 
@@ -353,7 +353,7 @@ enum Role {
 
 
   DIAGRAM = 53,
-  
+
   
 
 

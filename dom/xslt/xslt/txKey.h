@@ -54,7 +54,7 @@ public:
     static PLDHashNumber HashKey(KeyTypePointer aKey);
 
     enum { ALLOW_MEMMOVE = true };
-    
+
     txKeyValueHashKey mKey;
     RefPtr<txNodeSet> mNodeSet;
 };
@@ -108,12 +108,12 @@ typedef nsTHashtable<txIndexedKeyHashEntry> txIndexedKeyHash;
 
 
 class txXSLKey {
-    
+
 public:
     explicit txXSLKey(const txExpandedName& aName) : mName(aName)
     {
     }
-    
+
     
 
 
@@ -167,7 +167,7 @@ private:
 
 
     nsTArray<Key> mKeys;
-    
+
     
 
 
@@ -184,7 +184,7 @@ public:
         , mKeys(aKeys)
     {
     }
-    
+
     nsresult init();
 
     nsresult getKeyNodes(const txExpandedName& aKeyName,
@@ -200,10 +200,10 @@ private:
 
     
     txIndexedKeyHash mIndexedKeys;
-    
+
     
     const txOwningExpandedNameMap<txXSLKey>& mKeys;
-    
+
     
     RefPtr<txNodeSet> mEmptyNodeSet;
 };

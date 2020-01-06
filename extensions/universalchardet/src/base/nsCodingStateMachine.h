@@ -6,19 +6,19 @@
 #define nsCodingStateMachine_h__
 
 #include "mozilla/ArrayUtils.h"
- 
+
 #include "nsPkgInt.h"
 
 typedef enum {
    eStart = 0,
    eError = 1,
-   eItsMe = 2 
+   eItsMe = 2
 } nsSMState;
 
 #define GETCLASS(c) GETFROMPCK(((unsigned char)(c)), mModel->classTable)
 
 
-typedef struct 
+typedef struct
 {
   nsPkgInt classTable;
   uint32_t classFactor;
@@ -37,8 +37,8 @@ public:
     
     uint32_t byteCls = GETCLASS(c);
     if (mCurrentState == eStart)
-    { 
-      mCurrentBytePos = 0; 
+    {
+      mCurrentBytePos = 0;
       MOZ_ASSERT(byteCls < mModel->charLenTableLength);
       mCurrentCharLen = mModel->charLenTable[byteCls];
     }

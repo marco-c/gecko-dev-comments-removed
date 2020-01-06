@@ -643,7 +643,7 @@ public:
 
 
 
-  static void MapCommonAttributesInto(const nsMappedAttributes* aAttributes, 
+  static void MapCommonAttributesInto(const nsMappedAttributes* aAttributes,
                                       mozilla::GenericSpecifiedValues* aGenericData);
   
 
@@ -662,7 +662,7 @@ public:
   static const MappedAttributeEntry sDivAlignAttributeMap[];
   static const MappedAttributeEntry sBackgroundAttributeMap[];
   static const MappedAttributeEntry sBackgroundColorAttributeMap[];
-  
+
   
 
 

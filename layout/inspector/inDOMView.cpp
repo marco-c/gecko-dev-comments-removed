@@ -458,7 +458,7 @@ inDOMView::GetParentIndex(int32_t rowIndex, int32_t *_retval)
 
   
   *_retval = -1;
-  
+
   inDOMViewNode* checkNode = nullptr;
   int32_t i = rowIndex - 1;
   do {
@@ -467,7 +467,7 @@ inDOMView::GetParentIndex(int32_t rowIndex, int32_t *_retval)
       
       break;
     }
-    
+
     if (checkNode == node->parent) {
       *_retval = i;
       return NS_OK;
@@ -643,7 +643,7 @@ inDOMView::AttributeChanged(nsIDocument* aDocument, dom::Element* aElement,
   }
 
   nsCOMPtr<nsIMutationObserver> kungFuDeathGrip(this);
-  
+
   
   nsCOMPtr<nsIDOMElement> el(do_QueryInterface(aElement));
   nsCOMPtr<nsIDOMAttr> domAttr;
@@ -804,7 +804,7 @@ inDOMView::ContentInserted(nsIDocument *aDocument, nsIContent* aContainer,
     return;
 
   nsCOMPtr<nsIMutationObserver> kungFuDeathGrip(this);
-  
+
   if (!parentNode->isOpen) {
     
     
@@ -877,16 +877,16 @@ inDOMView::ContentRemoved(nsIDocument *aDocument, nsIContent* aContainer,
     return;
 
   nsCOMPtr<nsIMutationObserver> kungFuDeathGrip(this);
-  
+
   
   
   inDOMViewNode* parentNode = oldNode->parent;
   bool isOnlyChild = oldNode->previous == nullptr && oldNode->next == nullptr;
-  
+
   
   
   int32_t oldCount = GetRowCount();
-  
+
   if (oldNode->isOpen)
     CollapseNode(row);
 
@@ -899,7 +899,7 @@ inDOMView::ContentRemoved(nsIDocument *aDocument, nsIContent* aContainer,
     parentNode->isOpen = false;
     mTree->InvalidateRow(NodeToRow(parentNode));
   }
-    
+
   mTree->RowCountChanged(row, GetRowCount() - oldCount);
 }
 

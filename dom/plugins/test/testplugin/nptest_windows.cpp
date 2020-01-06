@@ -77,7 +77,7 @@ pluginInstanceInit(InstanceData* instanceData)
     (NPN_MemAlloc(sizeof(PlatformData)));
   if (!instanceData->platformData)
     return NPERR_OUT_OF_MEMORY_ERROR;
-  
+
   instanceData->platformData->childWindow = nullptr;
   instanceData->platformData->device = nullptr;
   instanceData->platformData->frontBuffer = nullptr;
@@ -344,7 +344,7 @@ pluginWidgetInit(InstanceData* instanceData, void* oldWindow)
   SetSubclass(hWnd, instanceData);
 
   instanceData->platformData->childWindow =
-    ::CreateWindowW(L"SCROLLBAR", L"Dummy child window", 
+    ::CreateWindowW(L"SCROLLBAR", L"Dummy child window",
                     WS_CHILD, 0, 0, CHILD_WIDGET_SIZE, CHILD_WIDGET_SIZE, hWnd, nullptr,
                     nullptr, nullptr);
 }
@@ -624,7 +624,7 @@ addOffset(LONG coord, int32_t offset)
 }
 
 int32_t
-pluginGetClipRegionRectEdge(InstanceData* instanceData, 
+pluginGetClipRegionRectEdge(InstanceData* instanceData,
     int32_t rectIndex, RectEdge edge)
 {
   RGNDATA* data = computeClipRegion(instanceData);
@@ -789,7 +789,7 @@ pluginHandleEvent(InstanceData* instanceData, void* event)
 
   if (pe == nullptr || instanceData == nullptr ||
       instanceData->window.type != NPWindowTypeDrawable)
-    return 0;   
+    return 0;
 
   LRESULT result = 0;
   return handleEventInternal(instanceData, pe, &result);

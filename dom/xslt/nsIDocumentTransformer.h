@@ -1,7 +1,7 @@
 
 
 
- 
+
 #ifndef nsIDocumentTransformer_h__
 #define nsIDocumentTransformer_h__
 
@@ -18,7 +18,7 @@ class nsString;
 
 class nsITransformObserver : public nsISupports
 {
-public: 
+public:
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ITRANSFORMOBSERVER_IID)
 
@@ -37,7 +37,7 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsITransformObserver, NS_ITRANSFORMOBSERVER_IID)
 
 class nsIDocumentTransformer : public nsISupports
 {
-public: 
+public:
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IDOCUMENTTRANSFORMER_IID)
 

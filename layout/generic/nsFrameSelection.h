@@ -107,7 +107,7 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct
   
   
   int32_t mStartOffset;
-  
+
   
   
   
@@ -195,7 +195,7 @@ public:
   typedef mozilla::CaretAssociationHint CaretAssociateHint;
 
   
-  
+
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(nsFrameSelection)
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(nsFrameSelection)
 
@@ -478,7 +478,7 @@ public:
 
   
   nsresult WordExtendForDelete(bool aForward);
-  
+
   
 
 
@@ -493,7 +493,7 @@ public:
 
 
   
-  nsresult IntraLineMove(bool aForward, bool aExtend); 
+  nsresult IntraLineMove(bool aForward, bool aExtend);
 
   
 
@@ -555,7 +555,7 @@ public:
 
 
   void SetMouseDoubleDown(bool aDoubleDown) { mMouseDoubleDownState = aDoubleDown; }
-  
+
   
 
 
@@ -744,7 +744,7 @@ private:
 
   
   int32_t mBatching;
-    
+
   
   nsCOMPtr<nsIContent> mLimiter;
   

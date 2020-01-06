@@ -71,7 +71,7 @@ static const char *kTypeString[] = {
 #define NUMBER_OF_TYPES MOZ_ARRAY_LENGTH(kTypeString)
 uint8_t nsContentBlocker::mBehaviorPref[NUMBER_OF_TYPES];
 
-NS_IMPL_ISUPPORTS(nsContentBlocker, 
+NS_IMPL_ISUPPORTS(nsContentBlocker,
                   nsIContentPolicy,
                   nsIObserver,
                   nsISupportsWeakReference)
@@ -151,7 +151,7 @@ nsContentBlocker::PrefChanged(nsIPrefBranch *aPrefBranch,
 }
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsContentBlocker::ShouldLoad(uint32_t          aContentType,
                              nsIURI           *aContentLocation,
                              nsIURI           *aRequestingLocation,
@@ -171,7 +171,7 @@ nsContentBlocker::ShouldLoad(uint32_t          aContentType,
   
   if (aContentType > NUMBER_OF_TYPES)
     return NS_OK;
-  
+
   
   if (!aContentLocation)
     return NS_OK;
@@ -180,7 +180,7 @@ nsContentBlocker::ShouldLoad(uint32_t          aContentType,
   
   if (aContentType == nsIContentPolicy::TYPE_OBJECT)
     return NS_OK;
-  
+
   
   
   nsAutoCString scheme;
@@ -251,7 +251,7 @@ nsContentBlocker::ShouldProcess(uint32_t          aContentType,
     }
     return NS_OK;
   }
-  
+
   
   
   return ShouldLoad(aContentType, aContentLocation, aRequestingLocation,
@@ -330,7 +330,7 @@ nsContentBlocker::TestPermission(nsIURI *aCurrentURI,
     
     
     
-    
+
     
 
     nsAutoCString currentHost;
@@ -358,21 +358,21 @@ nsContentBlocker::TestPermission(nsIURI *aCurrentURI,
       *aPermission = false;
       return NS_OK;
     }
-    
+
     
     const nsACString& firstTail =
       Substring(firstHost, firstHost.Length() - tail.Length(), tail.Length());
 
     
     
-    if ((firstHost.Length() > tail.Length() && 
-         firstHost.CharAt(firstHost.Length() - tail.Length() - 1) != '.') || 
+    if ((firstHost.Length() > tail.Length() &&
+         firstHost.CharAt(firstHost.Length() - tail.Length() - 1) != '.') ||
         !tail.Equals(firstTail)) {
       *aPermission = false;
     }
     break;
   }
-  
+
   return NS_OK;
 }
 

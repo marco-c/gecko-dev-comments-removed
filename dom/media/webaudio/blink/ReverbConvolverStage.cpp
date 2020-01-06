@@ -93,7 +93,7 @@ void ReverbConvolverStage::process(const float* source)
     MOZ_ASSERT(source);
     if (!source)
         return;
-    
+
     
     
     const float* output = m_fftConvolver->process(m_fftKernel, source);

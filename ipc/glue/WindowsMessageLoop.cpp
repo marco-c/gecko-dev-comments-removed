@@ -803,7 +803,7 @@ MessageChannel::SpinInternalEventLoop()
 
   
   
-  
+
   
   
 
@@ -1449,7 +1449,7 @@ DeferredWindowPosMessage::Run()
   }
 
 #ifdef DEBUG
-  BOOL ret = 
+  BOOL ret =
 #endif
   SetWindowPos(windowPos.hwnd, windowPos.hwndInsertAfter, windowPos.x,
                windowPos.y, windowPos.cx, windowPos.cy, windowPos.flags);

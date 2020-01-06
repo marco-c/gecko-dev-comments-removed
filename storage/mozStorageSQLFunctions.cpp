@@ -192,7 +192,7 @@ levenshteinDistance(const nsAString &aStringS,
         
         
         for (uint32_t si = 1; si <= sLen; si++) {
-            
+
             
             
             const char16_t sch = s[si - 1];
@@ -242,57 +242,57 @@ int
 registerFunctions(sqlite3 *aDB)
 {
   Functions functions[] = {
-    {"lower",               
-      1, 
-      SQLITE_UTF16, 
-      0,        
+    {"lower",
+      1,
+      SQLITE_UTF16,
+      0,
       caseFunction},
-    {"lower",               
-      1, 
-      SQLITE_UTF8,  
-      0,        
+    {"lower",
+      1,
+      SQLITE_UTF8,
+      0,
       caseFunction},
-    {"upper",               
-      1, 
-      SQLITE_UTF16, 
-      (void*)1, 
+    {"upper",
+      1,
+      SQLITE_UTF16,
+      (void*)1,
       caseFunction},
-    {"upper",               
-      1, 
-      SQLITE_UTF8,  
-      (void*)1, 
+    {"upper",
+      1,
+      SQLITE_UTF8,
+      (void*)1,
       caseFunction},
 
-    {"like",                
-      2, 
-      SQLITE_UTF16, 
-      0,        
+    {"like",
+      2,
+      SQLITE_UTF16,
+      0,
       likeFunction},
-    {"like",                
-      2, 
-      SQLITE_UTF8,  
-      0,        
+    {"like",
+      2,
+      SQLITE_UTF8,
+      0,
       likeFunction},
-    {"like",                
-      3, 
-      SQLITE_UTF16, 
-      0,        
+    {"like",
+      3,
+      SQLITE_UTF16,
+      0,
       likeFunction},
-    {"like",                
-      3, 
-      SQLITE_UTF8,  
-      0,        
+    {"like",
+      3,
+      SQLITE_UTF8,
+      0,
       likeFunction},
 
-    {"levenshteinDistance", 
-      2, 
-      SQLITE_UTF16, 
-      0,        
+    {"levenshteinDistance",
+      2,
+      SQLITE_UTF16,
+      0,
       levenshteinDistanceFunction},
-    {"levenshteinDistance", 
-      2, 
-      SQLITE_UTF8,  
-      0,        
+    {"levenshteinDistance",
+      2,
+      SQLITE_UTF8,
+      0,
       levenshteinDistanceFunction},
   };
 
@@ -392,7 +392,7 @@ void levenshteinDistanceFunction(sqlite3_context *aCtx,
   const nsDependentString B(b, bLen);
   int status = levenshteinDistance(A, B, &distance);
   if (status == SQLITE_OK) {
-    ::sqlite3_result_int(aCtx, distance);    
+    ::sqlite3_result_int(aCtx, distance);
   }
   else if (status == SQLITE_NOMEM) {
     ::sqlite3_result_error_nomem(aCtx);

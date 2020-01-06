@@ -29,17 +29,17 @@ class NeckoParent;
 } 
 } 
 
-class nsHTMLDNSPrefetch 
+class nsHTMLDNSPrefetch
 {
 public:
   
   
   
   static bool     IsAllowed(nsIDocument *aDocument);
- 
+
   static nsresult Initialize();
   static nsresult Shutdown();
-  
+
   
   
   
@@ -77,7 +77,7 @@ private:
   static nsresult CancelPrefetch(mozilla::dom::Link *aElement,
                                  uint16_t flags,
                                  nsresult aReason);
-  
+
 public:
   class nsListener final : public nsIDNSListener
   {
@@ -90,7 +90,7 @@ public:
   private:
     ~nsListener() {}
   };
-  
+
   class nsDeferrals final: public nsIWebProgressListener
                          , public nsSupportsWeakReference
                          , public nsIObserver
@@ -101,18 +101,18 @@ public:
     NS_DECL_NSIOBSERVER
 
     nsDeferrals();
-    
+
     void Activate();
     nsresult Add(uint16_t flags, mozilla::dom::Link *aElement);
-    
+
     void RemoveUnboundLinks();
 
   private:
     ~nsDeferrals();
     void Flush();
-    
+
     void SubmitQueue();
-    
+
     uint16_t                  mHead;
     uint16_t                  mTail;
     uint32_t                  mActiveLoaderCount;
@@ -120,10 +120,10 @@ public:
     nsCOMPtr<nsITimer>        mTimer;
     bool                      mTimerArmed;
     static void Tick(nsITimer *aTimer, void *aClosure);
-    
+
     static const int          sMaxDeferred = 512;  
     static const int          sMaxDeferredMask = (sMaxDeferred - 1);
-    
+
     struct deferred_entry
     {
       uint16_t                         mFlags;
@@ -135,4 +135,4 @@ public:
   friend class mozilla::net::NeckoParent;
 };
 
-#endif 
+#endif

@@ -37,7 +37,7 @@ enum nsSortState_direction {
   nsSortState_ascending,
   nsSortState_natural
 };
-  
+
 
 struct nsSortState
 {

@@ -2,7 +2,7 @@
 
 
 
- 
+
 #include "nsCharSetProber.h"
 
 
@@ -10,8 +10,8 @@ bool nsCharSetProber::FilterWithoutEnglishLetters(const char* aBuf, uint32_t aLe
 {
   char *newptr;
   char *prevPtr, *curPtr;
-  
-  bool meetMSB = false;   
+
+  bool meetMSB = false;
   newptr = *newBuf = (char*)malloc(aLen);
   if (!newptr)
     return false;
@@ -22,13 +22,13 @@ bool nsCharSetProber::FilterWithoutEnglishLetters(const char* aBuf, uint32_t aLe
     {
       meetMSB = true;
     }
-    else if (*curPtr < 'A' || (*curPtr > 'Z' && *curPtr < 'a') || *curPtr > 'z') 
+    else if (*curPtr < 'A' || (*curPtr > 'Z' && *curPtr < 'a') || *curPtr > 'z')
     {
       
-      if (meetMSB && curPtr > prevPtr) 
+      if (meetMSB && curPtr > prevPtr)
       
       {
-        while (prevPtr < curPtr) *newptr++ = *prevPtr++;  
+        while (prevPtr < curPtr) *newptr++ = *prevPtr++;
         prevPtr++;
         *newptr++ = ' ';
         meetMSB = false;
@@ -37,8 +37,8 @@ bool nsCharSetProber::FilterWithoutEnglishLetters(const char* aBuf, uint32_t aLe
         prevPtr = curPtr+1;
     }
   }
-  if (meetMSB && curPtr > prevPtr) 
-    while (prevPtr < curPtr) *newptr++ = *prevPtr++;  
+  if (meetMSB && curPtr > prevPtr)
+    while (prevPtr < curPtr) *newptr++ = *prevPtr++;
 
   newLen = newptr - *newBuf;
 
@@ -70,7 +70,7 @@ bool nsCharSetProber::FilterWithEnglishLetters(const char* aBuf, uint32_t aLen, 
       if (curPtr > prevPtr && !isInTag) 
                                         
       {
-        while (prevPtr < curPtr) *newptr++ = *prevPtr++;  
+        while (prevPtr < curPtr) *newptr++ = *prevPtr++;
         prevPtr++;
         *newptr++ = ' ';
       }
@@ -83,7 +83,7 @@ bool nsCharSetProber::FilterWithEnglishLetters(const char* aBuf, uint32_t aLen, 
   
   if (!isInTag)
     while (prevPtr < curPtr)
-      *newptr++ = *prevPtr++;  
+      *newptr++ = *prevPtr++;
 
   newLen = newptr - *newBuf;
 

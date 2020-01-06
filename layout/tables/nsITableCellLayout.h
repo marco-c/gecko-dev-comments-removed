@@ -28,7 +28,7 @@ public:
 
   
   virtual nsresult GetRowIndex(int32_t &aRowIndex) const = 0;
-  
+
   
   virtual nsresult GetColIndex(int32_t &aColIndex) const = 0;
 };

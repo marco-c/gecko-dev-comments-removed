@@ -73,7 +73,7 @@ txNodeSorter::addSortElement(Expr* aSelectExpr, Expr* aLangExpr,
 
     if (!aDataTypeExpr || TX_StringEqualsAtom(dataType, nsGkAtoms::text)) {
         
-        
+
         
         nsAutoString lang;
         if (aLangExpr) {

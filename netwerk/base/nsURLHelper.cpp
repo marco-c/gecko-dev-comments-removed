@@ -229,7 +229,7 @@ net_ParseFileURL(const nsACString &inURL,
 
 
 
-void 
+void
 net_CoalesceDirs(netCoalesceFlags flags, char* path)
 {
     
@@ -245,7 +245,7 @@ net_CoalesceDirs(netCoalesceFlags flags, char* path)
     uint32_t special_ftp_len = 0;
 
     
-    if (flags & NET_COALESCE_DOUBLE_SLASH_IS_ROOT) 
+    if (flags & NET_COALESCE_DOUBLE_SLASH_IS_ROOT)
     {
        
 
@@ -254,12 +254,12 @@ net_CoalesceDirs(netCoalesceFlags flags, char* path)
         if (nsCRT::strncasecmp(path,"/%2F",4) == 0)
             special_ftp_len = 4;
         else if (nsCRT::strncmp(path,"//",2) == 0 )
-            special_ftp_len = 2; 
+            special_ftp_len = 2;
     }
 
     
-    for(; (*fwdPtr != '\0') && 
-            (*fwdPtr != '?') && 
+    for(; (*fwdPtr != '\0') &&
+            (*fwdPtr != '?') &&
             (*fwdPtr != '#'); ++fwdPtr)
     {
     }
@@ -272,7 +272,7 @@ net_CoalesceDirs(netCoalesceFlags flags, char* path)
     }
 
     
-    for(; (fwdPtr != path) && 
+    for(; (fwdPtr != path) &&
             (*fwdPtr != '/'); --fwdPtr)
     {
     }
@@ -281,19 +281,19 @@ net_CoalesceDirs(netCoalesceFlags flags, char* path)
 
     
     
-    for(; (*fwdPtr != '\0') && 
-            (*fwdPtr != '?') && 
+    for(; (*fwdPtr != '\0') &&
+            (*fwdPtr != '?') &&
             (*fwdPtr != '#') &&
             (*lastslash == '\0' || fwdPtr != lastslash); ++fwdPtr)
     {
-        if (*fwdPtr == '%' && *(fwdPtr+1) == '2' && 
+        if (*fwdPtr == '%' && *(fwdPtr+1) == '2' &&
             (*(fwdPtr+2) == 'E' || *(fwdPtr+2) == 'e'))
         {
             *urlPtr++ = '.';
             ++fwdPtr;
             ++fwdPtr;
-        } 
-        else 
+        }
+        else
         {
             *urlPtr++ = *fwdPtr;
         }
@@ -309,8 +309,8 @@ net_CoalesceDirs(netCoalesceFlags flags, char* path)
     fwdPtr = path;
     urlPtr = path;
 
-    for(; (*fwdPtr != '\0') && 
-            (*fwdPtr != '?') && 
+    for(; (*fwdPtr != '\0') &&
+            (*fwdPtr != '?') &&
             (*fwdPtr != '#'); ++fwdPtr)
     {
         if (*fwdPtr == '/' && *(fwdPtr+1) == '.' && *(fwdPtr+2) == '/' )
@@ -318,8 +318,8 @@ net_CoalesceDirs(netCoalesceFlags flags, char* path)
             
             ++fwdPtr;
         }
-        else if(*fwdPtr == '/' && *(fwdPtr+1) == '.' && *(fwdPtr+2) == '.' && 
-                (*(fwdPtr+3) == '/' || 
+        else if(*fwdPtr == '/' && *(fwdPtr+1) == '.' && *(fwdPtr+2) == '.' &&
+                (*(fwdPtr+3) == '/' ||
                     *(fwdPtr+3) == '\0' || 
                     *(fwdPtr+3) == '?' ||  
                     *(fwdPtr+3) == '#'))
@@ -328,9 +328,9 @@ net_CoalesceDirs(netCoalesceFlags flags, char* path)
             
             
             
-            if(traversal > 0 || !(flags & 
+            if(traversal > 0 || !(flags &
                                   NET_COALESCE_ALLOW_RELATIVE_ROOT))
-            { 
+            {
                 if (urlPtr != path)
                     urlPtr--; 
                 for(;*urlPtr != '/' && urlPtr != path; urlPtr--)
@@ -343,7 +343,7 @@ net_CoalesceDirs(netCoalesceFlags flags, char* path)
                 
                 
                 
-                if (urlPtr == path && special_ftp_len > 3) 
+                if (urlPtr == path && special_ftp_len > 3)
                 {
                     ++urlPtr;
                     ++urlPtr;
@@ -353,8 +353,8 @@ net_CoalesceDirs(netCoalesceFlags flags, char* path)
                 
                 if (*fwdPtr == '.' && *(fwdPtr+1) == '\0')
                     ++urlPtr;
-            } 
-            else 
+            }
+            else
             {
                 
                 
@@ -365,7 +365,7 @@ net_CoalesceDirs(netCoalesceFlags flags, char* path)
                 
                 if (special_ftp_len > 3 && urlPtr == path+special_ftp_len-1)
                     ++urlPtr;
-                else 
+                else
                     *urlPtr++ = *fwdPtr;
                 ++fwdPtr;
                 *urlPtr++ = *fwdPtr;
@@ -438,7 +438,7 @@ net_ResolveRelativePath(const nsACString &relativePath,
                 
                 int32_t offset = path.Length() - (needsDelim ? 1 : 2);
                 
-                if (offset < 0 ) 
+                if (offset < 0 )
                     return NS_ERROR_MALFORMED_URI;
                 int32_t pos = path.RFind("/", false, offset);
                 if (pos >= 0)
@@ -747,7 +747,7 @@ net_FindStringEnd(const nsCString& flatStr,
     do {
         
         
-                
+
         
         
         
@@ -772,7 +772,7 @@ net_FindStringEnd(const nsCString& flatStr,
     NS_NOTREACHED("How did we get here?");
     return flatStr.Length();
 }
-                  
+
 
 static uint32_t
 net_FindMediaDelimiter(const nsCString& flatStr,
@@ -786,7 +786,7 @@ net_FindMediaDelimiter(const nsCString& flatStr,
         uint32_t curDelimPos = flatStr.FindCharInSet(delimStr, searchStart);
         if (curDelimPos == uint32_t(kNotFound))
             return flatStr.Length();
-            
+
         char ch = flatStr.CharAt(curDelimPos);
         if (ch == delimiter) {
             
@@ -913,7 +913,7 @@ net_ParseMediaType(const nsACString &aMediaTypeStr,
                 for (const char *c = charset; c != charsetEnd; c++) {
                     if (*c == '\\' && c + 1 != charsetEnd) {
                         
-                        c++;  
+                        c++;
                     }
                     aContentCharset.Append(*c);
                 }
@@ -986,7 +986,7 @@ net_ParseContentType(const nsACString &aHeaderStr,
 
     *aHadCharset = false;
     const nsCString& flatStr = PromiseFlatCString(aHeaderStr);
-    
+
     
     
     uint32_t curTypeStart = 0;
@@ -995,7 +995,7 @@ net_ParseContentType(const nsACString &aHeaderStr,
         
         uint32_t curTypeEnd =
             net_FindMediaDelimiter(flatStr, curTypeStart, ',');
-        
+
         
         
         net_ParseMediaType(Substring(flatStr, curTypeStart,

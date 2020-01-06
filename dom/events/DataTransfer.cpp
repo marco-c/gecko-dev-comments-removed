@@ -318,7 +318,7 @@ DataTransfer::GetTypes(nsTArray<nsString>& aTypes, CallerType aCallerType) const
   
   
   aTypes.Clear();
-  
+
   const nsTArray<RefPtr<DataTransferItem>>* items = mItems->MozItemsAt(0);
   if (NS_WARN_IF(!items)) {
     return;

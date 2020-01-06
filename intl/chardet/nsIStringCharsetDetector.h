@@ -23,7 +23,7 @@
 
 
 class nsIStringCharsetDetector : public nsISupports {
-public:  
+public:
 
    NS_DECLARE_STATIC_IID_ACCESSOR(NS_ISTRINGCHARSETDETECTOR_IID)
   
@@ -34,7 +34,7 @@ public:
 
 
 
-  NS_IMETHOD DoIt(const char* aBytesArray, uint32_t aLen, 
+  NS_IMETHOD DoIt(const char* aBytesArray, uint32_t aLen,
                     const char** oCharset, nsDetectionConfident &oConfident) = 0;
 };
 

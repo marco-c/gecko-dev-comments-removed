@@ -91,14 +91,14 @@ invoke_copy_to_stack(uint32_t* d, uint32_t paramCount, nsXPTCVariant* s)
     }
 }
 
-extern "C" 
+extern "C"
 struct my_params_struct {
-    nsISupports* that;      
-    uint32_t Index;         
-    uint32_t Count;         
-    nsXPTCVariant* params;  
-    uint32_t fn_count;     
-    uint32_t fn_copy;      
+    nsISupports* that;
+    uint32_t Index;
+    uint32_t Count;
+    nsXPTCVariant* params;
+    uint32_t fn_count;
+    uint32_t fn_copy;
 };
 
 XPTC_PUBLIC_API(nsresult)
@@ -138,7 +138,7 @@ XPTC_InvokeByIndex(nsISupports* that, uint32_t methodIndex,
 
 
 
- 
+
   __asm__ __volatile__(
     "ldr	r1, [%1, #12]	\n\t"	
     "ldr	ip, [%1, #16]	\n\t"	
@@ -165,7 +165,7 @@ XPTC_InvokeByIndex(nsISupports* that, uint32_t methodIndex,
     "cmp	r4, #12		\n\t"	
     "ldmgtia	sp!, {r1, r2, r3}\n\t"	
     "subgt	r4, r4, #12	\n\t"	
-    "ldmleia	sp, {r1, r2, r3}\n\t"	 
+    "ldmleia	sp, {r1, r2, r3}\n\t"	
     "addle	sp, sp, r4	\n\t"	
     "movle	r4, #0		\n\t"	
     "mov	lr, pc		\n\t"	
@@ -176,6 +176,6 @@ XPTC_InvokeByIndex(nsISupports* that, uint32_t methodIndex,
     : "r" (&my_params)
     : "r0", "r1", "r2", "r3", "r4", "ip", "lr"
     );
-    
+
   return result;
-}    
+}

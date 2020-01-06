@@ -71,7 +71,7 @@ private:
 
     
     static const unsigned InterpolationFactor;
-    
+
     
     static const unsigned NumberOfTotalElevations;
 

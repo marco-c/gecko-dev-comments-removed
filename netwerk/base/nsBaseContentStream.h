@@ -35,7 +35,7 @@
 
 class nsBaseContentStream : public nsIAsyncInputStream
 {
-public: 
+public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIINPUTSTREAM
   NS_DECL_NSIASYNCINPUTSTREAM

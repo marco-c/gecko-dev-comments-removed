@@ -179,10 +179,10 @@ protected:
   RefPtr<Element>                                 mRoot;
   nsCSSRect                                       mRootMargin;
   nsTArray<double>                                mThresholds;
-  
+
   
   nsTArray<Element*>                              mObservationTargets;
-  
+
   nsTArray<RefPtr<DOMIntersectionObserverEntry>>  mQueuedEntries;
   bool                                            mConnected;
 };

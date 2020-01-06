@@ -168,7 +168,7 @@ XPT_AssertFailed(const char *s, const char *file, uint32_t lineno)
     fprintf(stderr, "Assertion failed: %s, file %s, line %d\n",
             s, file, lineno);
     abort();
-}        
+}
 #endif
 
 static size_t

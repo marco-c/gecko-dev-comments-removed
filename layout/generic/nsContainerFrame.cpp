@@ -464,7 +464,7 @@ nsContainerFrame::ReparentFrameView(nsIFrame* aChildFrame,
     
     aOldParentFrame = aOldParentFrame->GetParent();
     aNewParentFrame = aNewParentFrame->GetParent();
-    
+
     
     
     NS_ASSERTION(aOldParentFrame && aNewParentFrame, "didn't find view");
@@ -488,7 +488,7 @@ nsContainerFrame::ReparentFrameView(nsIFrame* aChildFrame,
   
   nsView* oldParentView = aOldParentFrame->GetClosestView();
   nsView* newParentView = aNewParentFrame->GetClosestView();
-  
+
   
   
   
@@ -523,7 +523,7 @@ nsContainerFrame::ReparentFrameViewList(const nsFrameList& aChildFrameList,
     
     aOldParentFrame = aOldParentFrame->GetParent();
     aNewParentFrame = aNewParentFrame->GetParent();
-    
+
     
     
     NS_ASSERTION(aOldParentFrame && aNewParentFrame, "didn't find view");
@@ -548,7 +548,7 @@ nsContainerFrame::ReparentFrameViewList(const nsFrameList& aChildFrameList,
   
   nsView* oldParentView = aOldParentFrame->GetClosestView();
   nsView* newParentView = aNewParentFrame->GetClosestView();
-  
+
   
   
   

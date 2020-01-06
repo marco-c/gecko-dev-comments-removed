@@ -189,12 +189,12 @@ class StartupCacheDebugOutputStream final
   StartupCacheDebugOutputStream (nsIObjectOutputStream* binaryStream,
                                    nsTHashtable<nsISupportsHashKey>* objectMap)
   : mBinaryStream(binaryStream), mObjectMap(objectMap) { }
-  
+
   NS_FORWARD_SAFE_NSIBINARYOUTPUTSTREAM(mBinaryStream)
   NS_FORWARD_SAFE_NSIOUTPUTSTREAM(mBinaryStream)
-  
+
   bool CheckReferences(nsISupports* aObject);
-  
+
   nsCOMPtr<nsIObjectOutputStream> mBinaryStream;
   nsTHashtable<nsISupportsHashKey> *mObjectMap;
 };

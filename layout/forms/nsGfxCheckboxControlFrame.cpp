@@ -117,11 +117,11 @@ nsGfxCheckboxControlFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                             const nsDisplayListSet& aLists)
 {
   nsFormControlFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
-  
+
   
   if ((!IsChecked() && !IsIndeterminate()) || !IsVisibleForPainting(aBuilder))
     return;   
-    
+
   if (IsThemed())
     return; 
 

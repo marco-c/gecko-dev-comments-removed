@@ -374,7 +374,7 @@ nsDisplayCanvasBackgroundImage::Paint(nsDisplayListBuilder* aBuilder,
     
     
     destRect.Round();
-    RefPtr<DrawTarget> dt = 
+    RefPtr<DrawTarget> dt =
       Frame()->GetProperty(nsIFrame::CachedBackgroundImageDT());
     DrawTarget* destDT = dest->GetDrawTarget();
     if (dt) {
@@ -507,7 +507,7 @@ nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     }
     aLists.BorderBackground()->AppendNewToTop(
         new (aBuilder) nsDisplayCanvasBackgroundColor(aBuilder, this));
-  
+
     if (isThemed) {
       aLists.BorderBackground()->AppendNewToTop(
         new (aBuilder) nsDisplayCanvasThemedBackground(aBuilder, this));
@@ -610,11 +610,11 @@ nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   nsCOMPtr<nsIDocShell> docShell(do_QueryInterface(container));
   if (docShell) {
     docShell->GetHasFocus(&hasFocus);
-    printf("%p - nsCanvasFrame::Paint R:%d,%d,%d,%d  DR: %d,%d,%d,%d\n", this, 
+    printf("%p - nsCanvasFrame::Paint R:%d,%d,%d,%d  DR: %d,%d,%d,%d\n", this,
             mRect.x, mRect.y, mRect.width, mRect.height,
             aDirtyRect.x, aDirtyRect.y, aDirtyRect.width, aDirtyRect.height);
   }
-  printf("%p - Focus: %s   c: %p  DoPaint:%s\n", docShell.get(), hasFocus?"Y":"N", 
+  printf("%p - Focus: %s   c: %p  DoPaint:%s\n", docShell.get(), hasFocus?"Y":"N",
          focusContent.get(), mDoPaintFocus?"Y":"N");
 #endif
 
@@ -623,7 +623,7 @@ nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   if (!StyleVisibility()->IsVisible())
     return;
-  
+
   aLists.Outlines()->AppendNewToTop(new (aBuilder)
     nsDisplayCanvasFocus(aBuilder, this));
 }
@@ -711,7 +711,7 @@ nsCanvasFrame::Reflow(nsPresContext*           aPresContext,
   
   
   
-  SetSize(nsSize(aReflowInput.ComputedWidth(), aReflowInput.ComputedHeight())); 
+  SetSize(nsSize(aReflowInput.ComputedWidth(), aReflowInput.ComputedHeight()));
 
   
   
@@ -788,7 +788,7 @@ nsCanvasFrame::Reflow(nsPresContext*           aPresContext,
       nsIFrame* viewport = PresContext()->GetPresShell()->GetRootFrame();
       viewport->InvalidateFrame();
     }
-    
+
     
     
     

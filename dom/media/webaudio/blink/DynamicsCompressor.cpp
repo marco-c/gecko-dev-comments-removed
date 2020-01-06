@@ -86,7 +86,7 @@ void DynamicsCompressor::setParameterValue(unsigned parameterID, float value)
 void DynamicsCompressor::initializeParameters()
 {
     
-    
+
     m_parameters[ParamThreshold] = -24; 
     m_parameters[ParamKnee] = 30; 
     m_parameters[ParamRatio] = 12; 
@@ -103,7 +103,7 @@ void DynamicsCompressor::initializeParameters()
     m_parameters[ParamFilterStageGain] = 4.4f; 
     m_parameters[ParamFilterStageRatio] = 2;
     m_parameters[ParamFilterAnchor] = 15000 / nyquist();
-    
+
     m_parameters[ParamPostGain] = 0; 
     m_parameters[ParamReduction] = 0; 
 
@@ -267,7 +267,7 @@ void DynamicsCompressor::process(const AudioBlock* sourceChunk, AudioBlock* dest
                          releaseZone3,
                          releaseZone4
                          );
-                         
+
     
     setParameterValue(ParamReduction, m_compressor.meteringGain());
 

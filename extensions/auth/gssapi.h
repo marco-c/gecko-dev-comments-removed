@@ -47,7 +47,7 @@
 #define GSS_CALLCONV __stdcall
 #define GSS_CALLCONV_C __cdecl
 #else
-#define GSS_CALLCONV 
+#define GSS_CALLCONV
 #define GSS_CALLCONV_C
 #endif
 #endif 
@@ -76,7 +76,7 @@
 
 
 #ifndef SIZEOF_LONG
-#undef SIZEOF_LONG 
+#undef SIZEOF_LONG
 #endif
 #ifndef SIZEOF_SHORT
 #undef SIZEOF_SHORT
@@ -112,7 +112,7 @@ EXTERN_C_BEGIN
 typedef void * gss_name_t ;
 typedef void * gss_ctx_id_t ;
 typedef void * gss_cred_id_t ;
- 
+
 
 
 
@@ -448,7 +448,7 @@ extern gss_OID GSS_C_NT_EXPORT_NAME;
 
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_acquire_cred)
 (OM_uint32 *,             
  const gss_name_t,        
@@ -461,14 +461,14 @@ GSS_CALLCONV GSS_FUNC(gss_acquire_cred)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_release_cred)
 (OM_uint32 *,             
  gss_cred_id_t *          
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_init_sec_context)
 (OM_uint32 *,             
  const gss_cred_id_t,     
@@ -486,7 +486,7 @@ GSS_CALLCONV GSS_FUNC(gss_init_sec_context)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_accept_sec_context)
 (OM_uint32 *,             
  gss_ctx_id_t *,          
@@ -502,7 +502,7 @@ GSS_CALLCONV GSS_FUNC(gss_accept_sec_context)
               );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_process_context_token)
 (OM_uint32 *,             
  const gss_ctx_id_t,      
@@ -510,7 +510,7 @@ GSS_CALLCONV GSS_FUNC(gss_process_context_token)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_delete_sec_context)
 (OM_uint32 *,             
  gss_ctx_id_t *,          
@@ -526,7 +526,7 @@ GSS_CALLCONV GSS_FUNC(gss_context_time)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_get_mic)
 (OM_uint32 *,             
  const gss_ctx_id_t,      
@@ -537,7 +537,7 @@ GSS_CALLCONV GSS_FUNC(gss_get_mic)
 
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_verify_mic)
 (OM_uint32 *,             
  const gss_ctx_id_t,      
@@ -547,7 +547,7 @@ GSS_CALLCONV GSS_FUNC(gss_verify_mic)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_wrap)
 (OM_uint32 *,             
  const gss_ctx_id_t,      
@@ -560,7 +560,7 @@ GSS_CALLCONV GSS_FUNC(gss_wrap)
 
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_unwrap)
 (OM_uint32 *,             
  const gss_ctx_id_t,      
@@ -571,7 +571,7 @@ GSS_CALLCONV GSS_FUNC(gss_unwrap)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_display_status)
 (OM_uint32 *,             
  OM_uint32,               
@@ -582,14 +582,14 @@ GSS_CALLCONV GSS_FUNC(gss_display_status)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_indicate_mechs)
 (OM_uint32 *,             
  gss_OID_set *            
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_compare_name)
 (OM_uint32 *,             
  const gss_name_t,        
@@ -598,7 +598,7 @@ GSS_CALLCONV GSS_FUNC(gss_compare_name)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_display_name)
 (OM_uint32 *,             
  const gss_name_t,        
@@ -607,7 +607,7 @@ GSS_CALLCONV GSS_FUNC(gss_display_name)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_import_name)
 (OM_uint32 *,             
  const gss_buffer_t,      
@@ -616,7 +616,7 @@ GSS_CALLCONV GSS_FUNC(gss_import_name)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_export_name)
 (OM_uint32  *,            
  const gss_name_t,        
@@ -624,28 +624,28 @@ GSS_CALLCONV GSS_FUNC(gss_export_name)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_release_name)
 (OM_uint32 *,             
  gss_name_t *             
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_release_buffer)
 (OM_uint32 *,             
  gss_buffer_t             
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_release_oid_set)
 (OM_uint32 *,             
  gss_OID_set *            
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_inquire_cred)
 (OM_uint32 *,             
  const gss_cred_id_t,     
@@ -656,7 +656,7 @@ GSS_CALLCONV GSS_FUNC(gss_inquire_cred)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_inquire_context)
 (OM_uint32 *,             
  const gss_ctx_id_t,      
@@ -670,8 +670,8 @@ GSS_CALLCONV GSS_FUNC(gss_inquire_context)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
-GSS_CALLCONV GSS_FUNC(gss_wrap_size_limit) 
+OM_uint32
+GSS_CALLCONV GSS_FUNC(gss_wrap_size_limit)
 (OM_uint32 *,             
  const gss_ctx_id_t,      
  int,                     
@@ -681,8 +681,8 @@ GSS_CALLCONV GSS_FUNC(gss_wrap_size_limit)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
-GSS_CALLCONV GSS_FUNC(gss_add_cred) 
+OM_uint32
+GSS_CALLCONV GSS_FUNC(gss_add_cred)
 (OM_uint32 *,             
  const gss_cred_id_t,     
  const gss_name_t,        
@@ -697,8 +697,8 @@ GSS_CALLCONV GSS_FUNC(gss_add_cred)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
-GSS_CALLCONV GSS_FUNC(gss_inquire_cred_by_mech) 
+OM_uint32
+GSS_CALLCONV GSS_FUNC(gss_inquire_cred_by_mech)
 (OM_uint32 *,             
  const gss_cred_id_t,     
  const gss_OID,           
@@ -709,7 +709,7 @@ GSS_CALLCONV GSS_FUNC(gss_inquire_cred_by_mech)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_export_sec_context)
 (OM_uint32 *,             
  gss_ctx_id_t *,          
@@ -717,7 +717,7 @@ GSS_CALLCONV GSS_FUNC(gss_export_sec_context)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_import_sec_context)
 (OM_uint32 *,             
  const gss_buffer_t,      
@@ -725,14 +725,14 @@ GSS_CALLCONV GSS_FUNC(gss_import_sec_context)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_create_empty_oid_set)
 (OM_uint32 *,             
  gss_OID_set *            
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_add_oid_set_member)
 (OM_uint32 *,             
  const gss_OID,           
@@ -740,7 +740,7 @@ GSS_CALLCONV GSS_FUNC(gss_add_oid_set_member)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_test_oid_set_member)
 (OM_uint32 *,             
  const gss_OID,           
@@ -749,7 +749,7 @@ GSS_CALLCONV GSS_FUNC(gss_test_oid_set_member)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_inquire_names_for_mech)
 (OM_uint32 *,             
  const gss_OID,           
@@ -757,7 +757,7 @@ GSS_CALLCONV GSS_FUNC(gss_inquire_names_for_mech)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_inquire_mechs_for_name)
 (OM_uint32 *,             
  const gss_name_t,        
@@ -765,7 +765,7 @@ GSS_CALLCONV GSS_FUNC(gss_inquire_mechs_for_name)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_canonicalize_name)
 (OM_uint32 *,             
  const gss_name_t,        
@@ -774,7 +774,7 @@ GSS_CALLCONV GSS_FUNC(gss_canonicalize_name)
  );
 
 GSS_MAKE_TYPEDEF
-OM_uint32 
+OM_uint32
 GSS_CALLCONV GSS_FUNC(gss_duplicate_name)
 (OM_uint32 *,             
  const gss_name_t,        
@@ -793,7 +793,7 @@ GSS_CALLCONV GSS_FUNC(gss_duplicate_name)
 
 
    GSS_MAKE_TYPEDEF
-   OM_uint32 
+   OM_uint32
    GSS_CALLCONV GSS_FUNC(gss_sign)
               (OM_uint32 *,        
                gss_ctx_id_t,       
@@ -804,7 +804,7 @@ GSS_CALLCONV GSS_FUNC(gss_duplicate_name)
 
 
    GSS_MAKE_TYPEDEF
-   OM_uint32 
+   OM_uint32
    GSS_CALLCONV GSS_FUNC(gss_verify)
               (OM_uint32 *,        
                gss_ctx_id_t,       
@@ -827,7 +827,7 @@ GSS_CALLCONV GSS_FUNC(gss_duplicate_name)
 
 
    GSS_MAKE_TYPEDEF
-   OM_uint32 
+   OM_uint32
    GSS_CALLCONV GSS_FUNC(gss_unseal)
               (OM_uint32 *,        
                gss_ctx_id_t,       

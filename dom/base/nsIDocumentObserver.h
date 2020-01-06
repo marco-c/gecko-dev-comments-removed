@@ -115,7 +115,7 @@ public:
 
   virtual void StyleSheetRemoved(mozilla::StyleSheet* aStyleSheet,
                                  bool aDocumentSheet) = 0;
-  
+
   
 
 

@@ -234,7 +234,7 @@ nsIOService::Init()
         prefBranch->AddObserver(NETWORK_CAPTIVE_PORTAL_PREF, this, true);
         PrefsChanged(prefBranch);
     }
-    
+
     
     nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
     if (observerService) {
@@ -313,8 +313,8 @@ nsIOService::InitializeNetworkLinkService()
         return rv;
 
     if (!NS_IsMainThread()) {
-        NS_WARNING("Network link service should be created on main thread"); 
-        return NS_ERROR_FAILURE; 
+        NS_WARNING("Network link service should be created on main thread");
+        return NS_ERROR_FAILURE;
     }
 
     
@@ -500,7 +500,7 @@ nsIOService::GetCachedProtocolHandler(const char *scheme, nsIProtocolHandler **r
     }
     return NS_ERROR_FAILURE;
 }
- 
+
 static bool
 UsesExternalProtocolHandler(const char* aScheme)
 {
@@ -616,7 +616,7 @@ nsIOService::HostnameIsLocalIPAddress(nsIURI *aURI, bool *aResult)
   return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsIOService::GetProtocolFlags(const char* scheme, uint32_t *flags)
 {
     nsCOMPtr<nsIProtocolHandler> handler;
@@ -685,7 +685,7 @@ nsIOService::NewURI(const nsACString &aSpec, const char *aCharset, nsIURI *aBase
 }
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsIOService::NewFileURI(nsIFile *file, nsIURI **result)
 {
     nsresult rv;
@@ -698,7 +698,7 @@ nsIOService::NewFileURI(nsIFile *file, nsIURI **result)
 
     nsCOMPtr<nsIFileProtocolHandler> fileHandler( do_QueryInterface(handler, &rv) );
     if (NS_FAILED(rv)) return rv;
-    
+
     return fileHandler->NewFileURI(file, result);
 }
 
@@ -1088,7 +1088,7 @@ nsIOService::SetOffline(bool offline)
     if (XRE_IsParentProcess()) {
         if (observerService) {
             (void)observerService->NotifyObservers(nullptr,
-                NS_IPC_IOSERVICE_SET_OFFLINE_TOPIC, offline ? 
+                NS_IPC_IOSERVICE_SET_OFFLINE_TOPIC, offline ?
                 u"true" :
                 u"false");
         }
@@ -1252,7 +1252,7 @@ nsIOService::AllowPort(int32_t inPort, const char *scheme, bool *_retval)
         *_retval = false;
         return NS_OK;
     }
-        
+
     
     int32_t badPortListCnt = mRestrictedPortList.Length();
     for (int i=0; i<badPortListCnt; i++)
@@ -1264,7 +1264,7 @@ nsIOService::AllowPort(int32_t inPort, const char *scheme, bool *_retval)
             
             if (!scheme)
                 return NS_OK;
-            
+
             nsCOMPtr<nsIProtocolHandler> handler;
             nsresult rv = GetProtocolHandler(scheme, getter_AddRefs(handler));
             if (NS_FAILED(rv)) return rv;
@@ -1311,7 +1311,7 @@ nsIOService::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
             if (count > 0)
                 gDefaultSegmentCount = count;
     }
-    
+
     if (!pref || strcmp(pref, NECKO_BUFFER_CACHE_SIZE_PREF) == 0) {
         int32_t size;
         if (NS_SUCCEEDED(prefs->GetIntPref(NECKO_BUFFER_CACHE_SIZE_PREF,
@@ -1463,7 +1463,7 @@ nsIOService::Observe(nsISupports *subject,
             mOfflineForProfileChange = false;
             SetOffline(false);
         }
-    } else if (!strcmp(topic, kProfileDoChange)) { 
+    } else if (!strcmp(topic, kProfileDoChange)) {
         if (data && NS_LITERAL_STRING("startup").Equals(data)) {
             
             InitializeNetworkLinkService();
@@ -1698,22 +1698,22 @@ nsIOService::EscapeString(const nsACString& aString,
   return NS_OK;
 }
 
-NS_IMETHODIMP 
-nsIOService::EscapeURL(const nsACString &aStr, 
+NS_IMETHODIMP
+nsIOService::EscapeURL(const nsACString &aStr,
                        uint32_t aFlags, nsACString &aResult)
 {
   aResult.Truncate();
-  NS_EscapeURL(aStr.BeginReading(), aStr.Length(), 
+  NS_EscapeURL(aStr.BeginReading(), aStr.Length(),
                aFlags | esc_AlwaysCopy, aResult);
   return NS_OK;
 }
 
-NS_IMETHODIMP 
-nsIOService::UnescapeString(const nsACString &aStr, 
+NS_IMETHODIMP
+nsIOService::UnescapeString(const nsACString &aStr,
                             uint32_t aFlags, nsACString &aResult)
 {
   aResult.Truncate();
-  NS_UnescapeURL(aStr.BeginReading(), aStr.Length(), 
+  NS_UnescapeURL(aStr.BeginReading(), aStr.Length(),
                  aFlags | esc_AlwaysCopy, aResult);
   return NS_OK;
 }

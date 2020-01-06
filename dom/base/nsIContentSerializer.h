@@ -25,7 +25,7 @@ class Element;
   { 0x93, 0xdf, 0xb6, 0xfa, 0xb5, 0xd5, 0x46, 0x88 } }
 
 class nsIContentSerializer : public nsISupports {
- public: 
+ public:
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ICONTENTSERIALIZER_IID)
 

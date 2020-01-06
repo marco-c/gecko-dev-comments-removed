@@ -85,7 +85,7 @@ private:
   LPVOID mView;
   bool   mIsConnected;
   DWORD  mTimeout;
-  
+
   DISALLOW_COPY_AND_ASSIGN(MiniShmParent);
 };
 

@@ -337,7 +337,7 @@ private:
     static LONG_PTR WINAPI SetWindowLongPtrWHook(HWND hWnd,
                                                  int nIndex,
                                                  LONG_PTR newLong);
-                      
+
 #else
     static LONG WINAPI SetWindowLongAHook(HWND hWnd,
                                           int nIndex,
@@ -360,7 +360,7 @@ private:
     {
       public:
         FlashThrottleAsyncMsg();
-        FlashThrottleAsyncMsg(PluginInstanceChild* aInst, 
+        FlashThrottleAsyncMsg(PluginInstanceChild* aInst,
                               HWND aWnd, UINT aMsg,
                               WPARAM aWParam, LPARAM aLParam,
                               bool isWindowed)
@@ -486,7 +486,7 @@ public:
     const NPCocoaEvent* getCurrentEvent() {
         return mCurrentEvent;
     }
-  
+
     bool CGDraw(CGContextRef ref, nsIntRect aUpdateRect);
 
 #if defined(__i386__)
@@ -592,7 +592,7 @@ private:
 #ifdef XP_MACOSX
     
     
-    PluginUtilsOSX::nsDoubleBufferCARenderer mDoubleBufferCARenderer; 
+    PluginUtilsOSX::nsDoubleBufferCARenderer mDoubleBufferCARenderer;
 #endif
 
     

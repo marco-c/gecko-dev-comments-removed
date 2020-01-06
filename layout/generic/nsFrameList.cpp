@@ -422,7 +422,7 @@ nsFrameList::GetNextVisualFor(nsIFrame* aFrame) const
 {
   if (!mFirstChild)
     return nullptr;
-  
+
   nsIFrame* parent = mFirstChild->GetParent();
   if (!parent)
     return aFrame ? aFrame->GetPrevSibling() : mFirstChild;
@@ -430,7 +430,7 @@ nsFrameList::GetNextVisualFor(nsIFrame* aFrame) const
   nsBidiDirection paraDir = nsBidiPresUtils::ParagraphDirection(mFirstChild);
 
   nsAutoLineIterator iter = parent->GetLineIterator();
-  if (!iter) { 
+  if (!iter) {
     
     if (parent->IsLineFrame()) {
       
@@ -451,7 +451,7 @@ nsFrameList::GetNextVisualFor(nsIFrame* aFrame) const
 
   
   
-  
+
   int32_t thisLine;
   if (aFrame) {
     thisLine = iter->FindLineContaining(aFrame);
@@ -519,7 +519,7 @@ nsFrameList::VerifyList() const
       
       NS_ERROR("loop in frame list.  This will probably hang soon.");
       return;
-    }                           
+    }
     if (!second) {
       break;
     }

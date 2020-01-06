@@ -32,7 +32,7 @@ public:
          ReflowOutput&     aDesiredSize,
          const ReflowInput& aReflowInput,
          nsReflowStatus&          aStatus) override;
-  
+
   virtual nsresult
   Place(DrawTarget*          aDrawTarget,
         bool                 aPlaceOrigin,

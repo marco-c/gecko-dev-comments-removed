@@ -926,17 +926,17 @@ PluginInstanceChild::AnswerNPP_HandleEvent_Shmem(const NPRemoteEvent& event,
                 *handled = false;
                 *rtnmem = mem;
                 return IPC_OK();
-            } 
+            }
         }
         if (!mShContext) {
             void* cgContextByte = mem.get<char>();
-            mShContext = ::CGBitmapContextCreate(cgContextByte, 
+            mShContext = ::CGBitmapContextCreate(cgContextByte,
                               mWindow.width * scaleFactor,
-                              mWindow.height * scaleFactor, 8, 
-                              mWindow.width * 4 * scaleFactor, mShColorSpace, 
+                              mWindow.height * scaleFactor, 8,
+                              mWindow.width * 4 * scaleFactor, mShColorSpace,
                               kCGImageAlphaPremultipliedFirst |
                               kCGBitmapByteOrder32Host);
-    
+
             if (!mShContext) {
                 PLUGIN_LOG_DEBUG(("Could not allocate CGBitmapContext."));
                 *handled = false;
@@ -946,13 +946,13 @@ PluginInstanceChild::AnswerNPP_HandleEvent_Shmem(const NPRemoteEvent& event,
         }
         CGRect clearRect = ::CGRectMake(0, 0, mWindow.width, mWindow.height);
         ::CGContextClearRect(mShContext, clearRect);
-        evcopy.data.draw.context = mShContext; 
+        evcopy.data.draw.context = mShContext;
     } else {
         PLUGIN_LOG_DEBUG(("Invalid event type for AnswerNNP_HandleEvent_Shmem."));
         *handled = false;
         *rtnmem = mem;
         return IPC_OK();
-    } 
+    }
 
     if (!mPluginIface->event) {
         *handled = false;
@@ -1037,10 +1037,10 @@ PluginInstanceChild::AnswerNPP_HandleEvent_IOSurface(const NPRemoteEvent& event,
         mCARenderer->AttachIOSurface(surf);
         if (!mCARenderer->isInit()) {
             void *caLayer = nullptr;
-            NPError result = mPluginIface->getvalue(GetNPP(), 
+            NPError result = mPluginIface->getvalue(GetNPP(),
                                      NPPVpluginCoreAnimationLayer,
                                      &caLayer);
-            
+
             if (result != NPERR_NO_ERROR || !caLayer) {
                 PLUGIN_LOG_DEBUG(("Plugin requested CoreAnimation but did not "
                                   "provide CALayer."));
@@ -1062,7 +1062,7 @@ PluginInstanceChild::AnswerNPP_HandleEvent_IOSurface(const NPRemoteEvent& event,
                           "AnswerNNP_HandleEvent_IOSurface."));
         *handled = false;
         return IPC_FAIL_NO_REASON(this);
-    } 
+    }
 
     mCARenderer->Render(mWindow.width, mWindow.height,
                         mContentsScaleFactor, nullptr);
@@ -1426,7 +1426,7 @@ PluginInstanceChild::CreatePluginWindow()
     
     if (mPluginWindowHWND)
         return true;
-        
+
     if (!RegisterWindowClass())
         return false;
 
@@ -1781,7 +1781,7 @@ PluginInstanceChild::MaybePostKeyMessage(UINT message,
 
 
 
- 
+
 #ifdef _WIN64
 typedef LONG_PTR
   (WINAPI *User32SetWindowLongPtrA)(HWND hWnd,
@@ -1952,7 +1952,7 @@ PluginInstanceChild::TrackPopupHookProc(HMENU hMenu,
   
   wchar_t szClass[21];
   bool haveClass = GetClassNameW(hWnd, szClass, ArrayLength(szClass));
-  if (!haveClass || 
+  if (!haveClass ||
       (wcscmp(szClass, L"MozillaWindowClass") &&
        wcscmp(szClass, L"SWFlash_Placeholder"))) {
       
@@ -2177,7 +2177,7 @@ PluginInstanceChild::WinlessHandleEvent(NPEvent& event)
     
     
     int16_t handled;
-    
+
     HWND focusHwnd = nullptr;
 
     
@@ -2187,7 +2187,7 @@ PluginInstanceChild::WinlessHandleEvent(NPEvent& event)
           (event.event == WM_RBUTTONDOWN || 
            event.event == WM_RBUTTONUP)) {  
       sWinlessPopupSurrogateHWND = mWinlessPopupSurrogateHWND;
-      
+
       
       
       focusHwnd = SetFocus(mWinlessPopupSurrogateHWND);
@@ -2296,7 +2296,7 @@ PluginInstanceChild::EnumThreadWindowsCallback(HWND hWnd,
     wchar_t className[64];
     if (!GetClassNameW(hWnd, className, sizeof(className)/sizeof(char16_t)))
       return TRUE;
-    
+
     if (!wcscmp(className, L"SWFlash_PlaceholderX")) {
         WNDPROC oldWndProc =
             reinterpret_cast<WNDPROC>(GetWindowLongPtr(hWnd, GWLP_WNDPROC));
@@ -2341,14 +2341,14 @@ PluginInstanceChild::SetupFlashMsgThrottle()
 
 WNDPROC
 PluginInstanceChild::FlashThrottleAsyncMsg::GetProc()
-{ 
+{
     if (mInstance) {
         return mWindowed ? mInstance->mPluginWndProc :
                            mInstance->mWinlessThrottleOldWndProc;
     }
     return nullptr;
 }
- 
+
 NS_IMETHODIMP
 PluginInstanceChild::FlashThrottleAsyncMsg::Run()
 {
@@ -2359,7 +2359,7 @@ PluginInstanceChild::FlashThrottleAsyncMsg::Run()
     
     if (!GetProc())
         return NS_OK;
-  
+
     
     CallWindowProc(GetProc(), GetWnd(), GetMsg(), GetWParam(), GetLParam());
     return NS_OK;
@@ -2417,7 +2417,7 @@ PluginInstanceChild::AnswerUpdateWindow()
     if (mPluginWindowHWND) {
         RECT rect;
         if (GetUpdateRect(GetParent(mPluginWindowHWND), &rect, FALSE)) {
-            ::InvalidateRect(mPluginWindowHWND, &rect, FALSE); 
+            ::InvalidateRect(mPluginWindowHWND, &rect, FALSE);
         }
         UpdateWindow(mPluginWindowHWND);
     }
@@ -3659,8 +3659,8 @@ PluginInstanceChild::ShowPluginFrame()
         
         
         rect.IntersectRect(rect,
-                          nsIntRect(0, 0, 
-                          mDoubleBufferCARenderer.GetFrontSurfaceWidth(), 
+                          nsIntRect(0, 0,
+                          mDoubleBufferCARenderer.GetFrontSurfaceWidth(),
                           mDoubleBufferCARenderer.GetFrontSurfaceHeight()));
 
         if (mDrawingModel == NPDrawingModelCoreGraphics) {
@@ -4111,13 +4111,13 @@ PluginInstanceChild::SwapSurfaces()
 
     
     
-    if (mDoubleBufferCARenderer.HasFrontSurface() && 
+    if (mDoubleBufferCARenderer.HasFrontSurface() &&
         mDoubleBufferCARenderer.HasBackSurface() &&
-        (mDoubleBufferCARenderer.GetFrontSurfaceWidth() != 
+        (mDoubleBufferCARenderer.GetFrontSurfaceWidth() !=
             mDoubleBufferCARenderer.GetBackSurfaceWidth() ||
-        mDoubleBufferCARenderer.GetFrontSurfaceHeight() != 
+        mDoubleBufferCARenderer.GetFrontSurfaceHeight() !=
             mDoubleBufferCARenderer.GetBackSurfaceHeight() ||
-        mDoubleBufferCARenderer.GetFrontSurfaceContentsScaleFactor() != 
+        mDoubleBufferCARenderer.GetFrontSurfaceContentsScaleFactor() !=
             mDoubleBufferCARenderer.GetBackSurfaceContentsScaleFactor())) {
 
         mDoubleBufferCARenderer.ClearFrontSurface();

@@ -38,12 +38,12 @@ extern "C" {
 
 
 
-#ifdef __SYMBIAN32__   
+#ifdef __SYMBIAN32__
 #   ifdef __OMX_EXPORTS
 #       define OMX_API __declspec(dllexport)
 #   else
 #       ifdef _WIN32
-#           define OMX_API __declspec(dllexport) 
+#           define OMX_API __declspec(dllexport)
 #       else
 #           define OMX_API __declspec(dllimport)
 #       endif
@@ -65,8 +65,8 @@ extern "C" {
 #endif
 
 #ifndef OMX_APIENTRY
-#define OMX_APIENTRY 
-#endif 
+#define OMX_APIENTRY
+#endif
 
 
 
@@ -103,9 +103,6 @@ extern "C" {
 
 
 
- 
- 
-
 
  
 
@@ -115,7 +112,15 @@ extern "C" {
 
 
 
-  
+
+
+
+
+
+
+
+
+
 
 
 
@@ -123,11 +128,6 @@ extern "C" {
  
 
 
-
- 
- 
-
- 
 
 
 typedef unsigned char OMX_U8;
@@ -164,7 +164,7 @@ typedef signed long long OMX_S64;
 
 #elif defined(WIN32)
 
-   
+
 typedef unsigned __int64  OMX_U64;
 
 
@@ -190,8 +190,8 @@ typedef enum OMX_BOOL {
     OMX_FALSE = 0,
     OMX_TRUE = !OMX_FALSE,
     OMX_BOOL_MAX = 0x7FFFFFFF
-} OMX_BOOL; 
- 
+} OMX_BOOL;
+
 
 
 

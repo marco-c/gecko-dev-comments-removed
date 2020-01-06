@@ -145,19 +145,19 @@ NS_IMETHODIMP
 nsUnknownDecoder::Convert(nsIInputStream *aFromStream,
                           const char *aFromType,
                           const char *aToType,
-                          nsISupports *aCtxt, 
-                          nsIInputStream **aResultStream) 
+                          nsISupports *aCtxt,
+                          nsIInputStream **aResultStream)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-nsUnknownDecoder::AsyncConvertData(const char *aFromType, 
+nsUnknownDecoder::AsyncConvertData(const char *aFromType,
                                    const char *aToType,
-                                   nsIStreamListener *aListener, 
+                                   nsIStreamListener *aListener,
                                    nsISupports *aCtxt)
 {
-  NS_ASSERTION(aListener && aFromType && aToType, 
+  NS_ASSERTION(aListener && aFromType && aToType,
                "null pointer passed into multi mixed converter");
   
   
@@ -175,10 +175,10 @@ nsUnknownDecoder::AsyncConvertData(const char *aFromType,
 
 
 NS_IMETHODIMP
-nsUnknownDecoder::OnDataAvailable(nsIRequest* request, 
+nsUnknownDecoder::OnDataAvailable(nsIRequest* request,
                                   nsISupports *aCtxt,
-                                  nsIInputStream *aStream, 
-                                  uint64_t aSourceOffset, 
+                                  nsIInputStream *aStream,
+                                  uint64_t aSourceOffset,
                                   uint32_t aCount)
 {
   nsresult rv = NS_OK;
@@ -233,7 +233,7 @@ nsUnknownDecoder::OnDataAvailable(nsIRequest* request,
 #ifdef DEBUG
     {
       MutexAutoLock lock(mMutex);
-      NS_ASSERTION(!mContentType.IsEmpty(), 
+      NS_ASSERTION(!mContentType.IsEmpty(),
                    "Content type should be known by now.");
     }
 #endif
@@ -253,7 +253,7 @@ nsUnknownDecoder::OnDataAvailable(nsIRequest* request,
       MutexAutoLock lock(mMutex);
       listener = mNextListener;
     }
-    rv = listener->OnDataAvailable(request, aCtxt, aStream, 
+    rv = listener->OnDataAvailable(request, aCtxt, aStream,
                                    aSourceOffset, aCount);
   }
 
@@ -267,7 +267,7 @@ nsUnknownDecoder::OnDataAvailable(nsIRequest* request,
 
 
 NS_IMETHODIMP
-nsUnknownDecoder::OnStartRequest(nsIRequest* request, nsISupports *aCtxt) 
+nsUnknownDecoder::OnStartRequest(nsIRequest* request, nsISupports *aCtxt)
 {
   nsresult rv = NS_OK;
 
@@ -378,7 +378,7 @@ bool nsUnknownDecoder::AllowSniffing(nsIRequest* aRequest)
   if (!mRequireHTMLsuffix) {
     return true;
   }
-  
+
   nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
   if (!channel) {
     NS_ERROR("QI failed");
@@ -389,7 +389,7 @@ bool nsUnknownDecoder::AllowSniffing(nsIRequest* aRequest)
   if (NS_FAILED(channel->GetURI(getter_AddRefs(uri))) || !uri) {
     return false;
   }
-  
+
   bool isLocalFile = false;
   if (NS_FAILED(uri->SchemeIs("file", &isLocalFile)) || isLocalFile) {
     return false;
@@ -475,18 +475,18 @@ void nsUnknownDecoder::DetermineContentType(nsIRequest* aRequest)
       if (sSnifferEntries[i].mMimeType) {
         MutexAutoLock lock(mMutex);
         mContentType = sSnifferEntries[i].mMimeType;
-        NS_ASSERTION(!mContentType.IsEmpty(), 
+        NS_ASSERTION(!mContentType.IsEmpty(),
                      "Content type should be known by now.");
         return;
       }
       if ((this->*(sSnifferEntries[i].mContentTypeSniffer))(aRequest)) {
 #ifdef DEBUG
         MutexAutoLock lock(mMutex);
-        NS_ASSERTION(!mContentType.IsEmpty(), 
+        NS_ASSERTION(!mContentType.IsEmpty(),
                      "Content type should be known by now.");
 #endif
         return;
-      }        
+      }
     }
   }
 
@@ -504,27 +504,27 @@ void nsUnknownDecoder::DetermineContentType(nsIRequest* aRequest)
   if (SniffForHTML(aRequest)) {
 #ifdef DEBUG
     MutexAutoLock lock(mMutex);
-    NS_ASSERTION(!mContentType.IsEmpty(), 
+    NS_ASSERTION(!mContentType.IsEmpty(),
                  "Content type should be known by now.");
 #endif
     return;
   }
-  
+
   
   
   if (SniffURI(aRequest)) {
 #ifdef DEBUG
     MutexAutoLock lock(mMutex);
-    NS_ASSERTION(!mContentType.IsEmpty(), 
+    NS_ASSERTION(!mContentType.IsEmpty(),
                  "Content type should be known by now.");
 #endif
     return;
   }
-  
+
   LastDitchSniff(aRequest);
 #ifdef DEBUG
   MutexAutoLock lock(mMutex);
-  NS_ASSERTION(!mContentType.IsEmpty(), 
+  NS_ASSERTION(!mContentType.IsEmpty(),
                "Content type should be known by now.");
 #endif
 }
@@ -569,7 +569,7 @@ bool nsUnknownDecoder::SniffForHTML(nsIRequest* aRequest)
     mContentType = TEXT_HTML;
     return true;
   }
-  
+
   uint32_t bufSize = end - str;
   
   
@@ -577,7 +577,7 @@ bool nsUnknownDecoder::SniffForHTML(nsIRequest* aRequest)
   (bufSize >= sizeof(_tagstr) &&                                          \
    (PL_strncasecmp(str, _tagstr " ", sizeof(_tagstr)) == 0 ||             \
     PL_strncasecmp(str, _tagstr ">", sizeof(_tagstr)) == 0))
-    
+
   if (MATCHES_TAG("html")     ||
       MATCHES_TAG("frameset") ||
       MATCHES_TAG("body")     ||
@@ -607,13 +607,13 @@ bool nsUnknownDecoder::SniffForHTML(nsIRequest* aRequest)
       MATCHES_TAG("h6")       ||
       MATCHES_TAG("b")        ||
       MATCHES_TAG("pre")) {
-  
+
     mContentType = TEXT_HTML;
     return true;
   }
 
 #undef MATCHES_TAG
-  
+
   return false;
 }
 
@@ -630,7 +630,7 @@ bool nsUnknownDecoder::SniffForXML(nsIRequest* aRequest)
     MutexAutoLock lock(mMutex);
     mContentType = TEXT_XML;
   }
-  
+
   return true;
 }
 
@@ -690,7 +690,7 @@ bool nsUnknownDecoder::LastDitchSniff(nsIRequest* aRequest)
         (buf[0] == 0xFF && buf[1] == 0xFE) || 
         (buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF) || 
         (buf[0] == 0 && buf[1] == 0 && buf[2] == 0xFE && buf[3] == 0xFF)) { 
-       
+
       mContentType = TEXT_PLAIN;
       return true;
     }

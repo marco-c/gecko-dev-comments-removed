@@ -22,7 +22,7 @@ class TabChild;
 # define NECKO_ERRORS_ARE_FATAL_DEFAULT true
 #else
 # define NECKO_ERRORS_ARE_FATAL_DEFAULT false
-#endif 
+#endif
 
 
 
@@ -83,8 +83,8 @@ class TabChild;
 namespace mozilla {
 namespace net {
 
-inline bool 
-IsNeckoChild() 
+inline bool
+IsNeckoChild()
 {
   static bool didCheck = false;
   static bool amChild = false;

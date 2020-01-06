@@ -141,7 +141,7 @@ nsTextBoxFrame::DestroyFrom(nsIFrame* aDestructRoot)
 bool
 nsTextBoxFrame::AlwaysAppendAccessKey()
 {
-  if (!gAccessKeyPrefInitialized) 
+  if (!gAccessKeyPrefInitialized)
   {
     gAccessKeyPrefInitialized = true;
 
@@ -375,7 +375,7 @@ nsTextBoxFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
         return;
 
     nsLeafBoxFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
-    
+
     aLists.Content()->AppendNewToTop(new (aBuilder)
         nsDisplayXULTextBox(aBuilder, this));
 }
@@ -909,10 +909,10 @@ nsTextBoxFrame::UpdateAccessIndex()
             }
 
             nsAString::const_iterator start, end;
-                
+
             mCroppedTitle.BeginReading(start);
             mCroppedTitle.EndReading(end);
-            
+
             
             nsAString::const_iterator originalStart = start;
 
@@ -931,7 +931,7 @@ nsTextBoxFrame::UpdateAccessIndex()
                 found = RFindInReadable(mAccessKey, start, end,
                                         nsCaseInsensitiveStringComparator());
             }
-            
+
             if (found)
                 mAccessKeyInfo->mAccesskeyIndex = Distance(originalStart, start);
             else
@@ -993,13 +993,13 @@ nsTextBoxFrame::DoXULLayout(nsBoxLayoutState& aBoxLayoutState)
     CalcDrawRect(*aBoxLayoutState.GetRenderingContext());
 
     const nsStyleText* textStyle = StyleText();
-    
+
     nsRect scrollBounds(nsPoint(0, 0), GetSize());
     nsRect textRect = mTextDrawRect;
-    
+
     RefPtr<nsFontMetrics> fontMet =
       nsLayoutUtils::GetFontMetricsForFrame(this, 1.0f);
-    nsBoundingMetrics metrics = 
+    nsBoundingMetrics metrics =
       fontMet->GetInkBoundsForVisualOverflow(mCroppedTitle.get(),
                                              mCroppedTitle.Length(),
                                              aBoxLayoutState.GetRenderingContext()->GetDrawTarget());

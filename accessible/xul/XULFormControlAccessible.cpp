@@ -112,7 +112,7 @@ XULButtonAccessible::NativeState()
       if (checked) {
         state |= states::PRESSED;
         xulButtonElement->GetCheckState(&checkState);
-        if (checkState == nsIDOMXULButtonElement::CHECKSTATE_MIXED) { 
+        if (checkState == nsIDOMXULButtonElement::CHECKSTATE_MIXED) {
           state |= states::MIXED;
         }
       }
@@ -337,9 +337,9 @@ XULCheckboxAccessible::NativeState()
   
   
   uint64_t state = LeafAccessible::NativeState();
-  
+
   state |= states::CHECKABLE;
-  
+
   
   nsCOMPtr<nsIDOMXULCheckboxElement> xulCheckboxElement =
     do_QueryInterface(mContent);
@@ -475,7 +475,7 @@ XULRadioButtonAccessible::ContainerWidget() const
 XULRadioGroupAccessible::
   XULRadioGroupAccessible(nsIContent* aContent, DocAccessible* aDoc) :
   XULSelectControlAccessible(aContent, aDoc)
-{ 
+{
 }
 
 role

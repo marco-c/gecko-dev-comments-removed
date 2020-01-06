@@ -277,7 +277,7 @@ nsChromeTreeOwner::GetHasPrimaryContent(bool* aResult)
 
 
 NS_IMETHODIMP nsChromeTreeOwner::InitWindow(nativeWindow aParentNativeWindow,
-   nsIWidget* parentWidget, int32_t x, int32_t y, int32_t cx, int32_t cy)   
+   nsIWidget* parentWidget, int32_t x, int32_t y, int32_t cx, int32_t cy)
 {
    
    NS_ENSURE_SUCCESS(SetPositionAndSize(x, y, cx, cy, 0), NS_ERROR_FAILURE);
@@ -450,7 +450,7 @@ NS_IMETHODIMP
 nsChromeTreeOwner::OnProgressChange(nsIWebProgress* aWebProgress,
                                     nsIRequest* aRequest,
                                     int32_t aCurSelfProgress,
-                                    int32_t aMaxSelfProgress, 
+                                    int32_t aMaxSelfProgress,
                                     int32_t aCurTotalProgress,
                                     int32_t aMaxTotalProgress)
 {
@@ -495,7 +495,7 @@ NS_IMETHODIMP nsChromeTreeOwner::OnLocationChange(nsIWebProgress* aWebProgress,
   return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsChromeTreeOwner::OnStatusChange(nsIWebProgress* aWebProgress,
                                   nsIRequest* aRequest,
                                   nsresult aStatus,
@@ -506,9 +506,9 @@ nsChromeTreeOwner::OnStatusChange(nsIWebProgress* aWebProgress,
 
 
 
-NS_IMETHODIMP 
-nsChromeTreeOwner::OnSecurityChange(nsIWebProgress *aWebProgress, 
-                                    nsIRequest *aRequest, 
+NS_IMETHODIMP
+nsChromeTreeOwner::OnSecurityChange(nsIWebProgress *aWebProgress,
+                                    nsIRequest *aRequest,
                                     uint32_t state)
 {
     return NS_OK;

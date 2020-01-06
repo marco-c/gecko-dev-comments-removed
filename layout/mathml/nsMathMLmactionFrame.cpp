@@ -43,7 +43,7 @@ GetActionType(nsIContent* aContent)
 
   if (aContent) {
     if (!aContent->GetAttr(kNameSpaceID_None, nsGkAtoms::actiontype_, value))
-      return NS_MATHML_ACTION_TYPE_NONE; 
+      return NS_MATHML_ACTION_TYPE_NONE;
   }
 
   if (value.EqualsLiteral("toggle"))
@@ -103,13 +103,13 @@ nsMathMLmactionFrame::ChildListChanged(int32_t aModType)
 }
 
 
-nsIFrame* 
+nsIFrame*
 nsMathMLmactionFrame::GetSelectedFrame()
 {
   nsAutoString value;
-  int32_t selection; 
+  int32_t selection;
 
-  if ((mActionType & NS_MATHML_ACTION_TYPE_CLASS_BITMASK) == 
+  if ((mActionType & NS_MATHML_ACTION_TYPE_CLASS_BITMASK) ==
        NS_MATHML_ACTION_TYPE_CLASS_ERROR) {
     mSelection = -1;
     mInvalidMarkup = true;
@@ -119,7 +119,7 @@ nsMathMLmactionFrame::GetSelectedFrame()
 
   
   
-  if ((mActionType & NS_MATHML_ACTION_TYPE_CLASS_BITMASK) == 
+  if ((mActionType & NS_MATHML_ACTION_TYPE_CLASS_BITMASK) ==
        NS_MATHML_ACTION_TYPE_CLASS_IGNORE_SELECTION) {
     
     
@@ -134,7 +134,7 @@ nsMathMLmactionFrame::GetSelectedFrame()
   if (!value.IsEmpty()) {
     nsresult errorCode;
     selection = value.ToInteger(&errorCode);
-    if (NS_FAILED(errorCode)) 
+    if (NS_FAILED(errorCode))
       selection = 1;
   }
   else selection = 1; 
@@ -144,7 +144,7 @@ nsMathMLmactionFrame::GetSelectedFrame()
     if (selection > mChildCount || selection < 1)
       selection = -1;
     
-    if (selection == mSelection) 
+    if (selection == mSelection)
       return mSelectedFrame;
   }
 
@@ -152,9 +152,9 @@ nsMathMLmactionFrame::GetSelectedFrame()
   int32_t count = 0;
   nsIFrame* childFrame = mFrames.FirstChild();
   while (childFrame) {
-    if (!mSelectedFrame) 
+    if (!mSelectedFrame)
       mSelectedFrame = childFrame; 
-    if (++count == selection) 
+    if (++count == selection)
       mSelectedFrame = childFrame;
 
     childFrame = childFrame->GetNextSibling();
@@ -211,14 +211,14 @@ nsMathMLmactionFrame::AttributeChanged(int32_t  aNameSpaceID,
       needsReflow = true;
     }
   } else if (aAttribute == nsGkAtoms::selection_) {
-    if ((mActionType & NS_MATHML_ACTION_TYPE_CLASS_BITMASK) == 
+    if ((mActionType & NS_MATHML_ACTION_TYPE_CLASS_BITMASK) ==
          NS_MATHML_ACTION_TYPE_CLASS_USE_SELECTION) {
       needsReflow = true;
     }
   } else {
     
-    return 
-      nsMathMLContainerFrame::AttributeChanged(aNameSpaceID, 
+    return
+      nsMathMLContainerFrame::AttributeChanged(aNameSpaceID,
                                                aAttribute, aModType);
   }
 

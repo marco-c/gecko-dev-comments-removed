@@ -378,7 +378,7 @@ nsStreamConverterService::CanConvert(const char* aFromType,
 
 NS_IMETHODIMP
 nsStreamConverterService::Convert(nsIInputStream *aFromStream,
-                                  const char *aFromType, 
+                                  const char *aFromType,
                                   const char *aToType,
                                   nsISupports *aContext,
                                   nsIInputStream **_retval) {
@@ -455,8 +455,8 @@ nsStreamConverterService::Convert(nsIInputStream *aFromStream,
 
 
 NS_IMETHODIMP
-nsStreamConverterService::AsyncConvertData(const char *aFromType, 
-                                           const char *aToType, 
+nsStreamConverterService::AsyncConvertData(const char *aFromType,
+                                           const char *aToType,
                                            nsIStreamListener *aListener,
                                            nsISupports *aContext,
                                            nsIStreamListener **_retval) {

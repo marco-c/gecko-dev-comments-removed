@@ -245,7 +245,7 @@ nsAlertsIconListener::InitAlertAsync(nsIAlertNotification* aAlert,
 
   if (!notify_is_initted()) {
     
-    nsCOMPtr<nsIStringBundleService> bundleService = 
+    nsCOMPtr<nsIStringBundleService> bundleService =
       do_GetService(NS_STRINGBUNDLE_CONTRACTID);
 
     nsAutoCString appShortName;

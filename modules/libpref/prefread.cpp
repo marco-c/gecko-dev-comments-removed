@@ -604,7 +604,7 @@ PREF_ParseBuf(PrefParseState *ps, const char *buf, int bufLen)
 #ifdef TEST_PREFREAD
 
 static void
-pref_reader(void       *closure, 
+pref_reader(void       *closure,
             const char *pref,
             PrefValue   val,
             PrefType    type,

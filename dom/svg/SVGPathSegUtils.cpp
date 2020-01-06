@@ -75,7 +75,7 @@ SVGPathSegUtils::GetValueAsString(const float* aSeg, nsAString& aValue)
       return;
     }
   }
-  
+
   
   
   

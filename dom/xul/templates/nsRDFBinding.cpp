@@ -29,7 +29,7 @@ RDFBindingSet::AddBinding(nsIAtom* aVar, nsIAtom* aRef, nsIRDFResource* aPredica
     if (mFirst) {
         RDFBinding* binding = mFirst;
 
-        while (binding) { 
+        while (binding) {
             
             if (binding->mSubjectVariable == aVar)
                 newbinding->mHasDependency = true;

@@ -105,7 +105,7 @@ public:
 
   virtual void SetIsDocumentActive(bool aIsActive) override;
 
-  virtual nsresult GetCursor(const nsPoint& aPoint, 
+  virtual nsresult GetCursor(const nsPoint& aPoint,
                              nsIFrame::Cursor& aCursor) override;
 
   
@@ -232,7 +232,7 @@ protected:
                       const ReflowInput& aReflowInput,
                       ReflowOutput& aDesiredSize);
 
-  bool IsFocusable(int32_t *aTabIndex = nullptr, 
+  bool IsFocusable(int32_t *aTabIndex = nullptr,
                    bool aWithMouse = false) override;
 
   
@@ -243,7 +243,7 @@ protected:
   bool IsPaintedByGecko() const;
 
   nsIntPoint GetWindowOriginInPixels(bool aWindowless);
-  
+
   
 
 
@@ -366,7 +366,7 @@ public:
                                              const ContainerLayerParameters& aContainerParameters) override
   {
     return static_cast<nsPluginFrame*>(mFrame)->BuildLayer(aBuilder,
-                                                           aManager, 
+                                                           aManager,
                                                            this,
                                                            aContainerParameters);
   }

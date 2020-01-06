@@ -414,7 +414,7 @@ private:
 
 
   class VideoStreamFactory;
-  
+
   class VideoEncoderConfigBuilder {
   public:
     

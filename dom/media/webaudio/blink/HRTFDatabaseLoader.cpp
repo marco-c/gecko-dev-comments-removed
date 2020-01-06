@@ -49,7 +49,7 @@ already_AddRefed<HRTFDatabaseLoader> HRTFDatabaseLoader::createAndLoadAsynchrono
     MOZ_ASSERT(NS_IsMainThread());
 
     RefPtr<HRTFDatabaseLoader> loader;
-    
+
     if (!s_loaderMap) {
         s_loaderMap = new nsTHashtable<LoaderByRateEntry>();
     }
@@ -185,7 +185,7 @@ void HRTFDatabaseLoader::loadAsynchronously()
     AddRef();
 
     MutexAutoLock locker(m_threadLock);
-    
+
     MOZ_ASSERT(!m_hrtfDatabase.get() && !m_databaseLoaderThread,
                "Called twice");
     
@@ -203,7 +203,7 @@ bool HRTFDatabaseLoader::isLoaded() const
 void HRTFDatabaseLoader::waitForLoaderThreadCompletion()
 {
     MutexAutoLock locker(m_threadLock);
-    
+
     
     if (m_databaseLoaderThread) {
         DebugOnly<PRStatus> status = PR_JoinThread(m_databaseLoaderThread);

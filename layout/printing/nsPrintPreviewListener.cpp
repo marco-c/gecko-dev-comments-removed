@@ -74,7 +74,7 @@ nsPrintPreviewListener::AddListeners()
 
 
 
-nsresult 
+nsresult
 nsPrintPreviewListener::RemoveListeners()
 {
   if (mEventTarget) {
@@ -132,8 +132,8 @@ GetActionForEvent(nsIDOMEvent* aEvent)
 
   static const uint32_t kOKKeyCodes[] = {
     NS_VK_PAGE_UP, NS_VK_PAGE_DOWN,
-    NS_VK_UP,      NS_VK_DOWN, 
-    NS_VK_HOME,    NS_VK_END 
+    NS_VK_UP,      NS_VK_DOWN,
+    NS_VK_HOME,    NS_VK_END
   };
 
   if (keyEvent->mKeyCode == NS_VK_TAB) {

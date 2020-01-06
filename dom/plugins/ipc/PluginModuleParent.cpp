@@ -829,7 +829,7 @@ PluginModuleChromeParent::CleanupFromTimeout(const bool aFromHangUI)
 namespace {
 
 uint64_t
-FileTimeToUTC(const FILETIME& ftime) 
+FileTimeToUTC(const FILETIME& ftime)
 {
   ULARGE_INTEGER li;
   li.LowPart = ftime.dwLowDateTime;
@@ -843,7 +843,7 @@ struct CpuUsageSamples
   uint64_t cpuTimes[2];
 };
 
-bool 
+bool
 GetProcessCpuUsage(const InfallibleTArray<base::ProcessHandle>& processHandles, InfallibleTArray<float>& cpuUsage)
 {
   InfallibleTArray<CpuUsageSamples> samples(processHandles.Length());
@@ -857,7 +857,7 @@ GetProcessCpuUsage(const InfallibleTArray<base::ProcessHandle>& processHandles, 
       NS_WARNING("failed to get process times");
       return false;
     }
-  
+
     CpuUsageSamples s;
     s.sampleTimes[0] = FileTimeToUTC(currentTime);
     s.cpuTimes[0]    = FileTimeToUTC(kernelTime) + FileTimeToUTC(userTime);
@@ -878,7 +878,7 @@ GetProcessCpuUsage(const InfallibleTArray<base::ProcessHandle>& processHandles, 
     }
 
     samples[i].sampleTimes[1] = FileTimeToUTC(currentTime);
-    samples[i].cpuTimes[1]    = FileTimeToUTC(kernelTime) + FileTimeToUTC(userTime);    
+    samples[i].cpuTimes[1]    = FileTimeToUTC(kernelTime) + FileTimeToUTC(userTime);
 
     const uint64_t deltaSampleTime = samples[i].sampleTimes[1] - samples[i].sampleTimes[0];
     const uint64_t deltaCpuTime    = samples[i].cpuTimes[1]    - samples[i].cpuTimes[0];
@@ -1459,7 +1459,7 @@ PluginModuleChromeParent::LaunchHangUI()
         delete mHangUIParent;
         mHangUIParent = nullptr;
     }
-    mHangUIParent = new PluginHangUIParent(this, 
+    mHangUIParent = new PluginHangUIParent(this,
             Preferences::GetInt(kHangUITimeoutPref, 0),
             Preferences::GetInt(kChildTimeoutPref, 0));
     bool retval = mHangUIParent->Init(NS_ConvertUTF8toUTF16(mPluginName));

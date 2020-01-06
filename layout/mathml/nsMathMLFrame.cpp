@@ -35,11 +35,11 @@ nsMathMLFrame::GetMathMLFrameType()
     return GetMathMLFrameTypeFor(mPresentationData.baseFrame);
 
   
-  return eMathMLFrameType_Ordinary;  
+  return eMathMLFrameType_Ordinary;
 }
 
 NS_IMETHODIMP
-nsMathMLFrame::InheritAutomaticData(nsIFrame* aParent) 
+nsMathMLFrame::InheritAutomaticData(nsIFrame* aParent)
 {
   mEmbellishData.flags = 0;
   mEmbellishData.coreFrame = nullptr;
@@ -155,7 +155,7 @@ nsMathMLFrame::GetPresentationDataFrom(nsIFrame*           aFrame,
     
     nsIContent* content = frame->GetContent();
     NS_ASSERTION(content || !frame->GetParent(), 
-                 "dangling frame without a content node"); 
+                 "dangling frame without a content node");
     if (!content)
       break;
 
@@ -270,7 +270,7 @@ nsMathMLFrame::ParseNumericValue(const nsString&   aString,
                                                     cssValue.GetFloatValue()));
     return;
   }
-  
+
   
   *aLengthValue = CalcLength(aPresContext, aStyleContext, cssValue,
                              aFontSizeInflation);
@@ -314,7 +314,7 @@ nsMathMLFrame::DisplayBoundingMetrics(nsDisplayListBuilder* aBuilder,
                                       const nsDisplayListSet& aLists) {
   if (!NS_MATHML_PAINT_BOUNDING_METRICS(mPresentationData.flags))
     return;
-    
+
   nscoord x = aPt.x + aMetrics.leftBearing;
   nscoord y = aPt.y - aMetrics.ascent;
   nscoord w = aMetrics.rightBearing - aMetrics.leftBearing;

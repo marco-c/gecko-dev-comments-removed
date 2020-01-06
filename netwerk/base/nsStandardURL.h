@@ -93,7 +93,7 @@ public:
         
         
         void Merge(const nsCString &spec, const char separator, const URLSegment &right) {
-            if (mLen >= 0 && 
+            if (mLen >= 0 &&
                 *(spec.get() + mPos + mLen) == separator &&
                 mPos + mLen + 1 == right.mPos) {
                 mLen += 1 + right.mLen;
@@ -133,7 +133,7 @@ public:
                                    nsCString& buf,
                                    bool& appended,
                                    uint32_t extraLen = 0);
-         
+
         
         
         
@@ -279,7 +279,7 @@ private:
     
 protected:
     nsCOMPtr<nsIFile>      mFile;  
-    
+
 private:
     char                  *mHostA; 
 

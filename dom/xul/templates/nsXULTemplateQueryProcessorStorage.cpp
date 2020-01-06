@@ -143,7 +143,7 @@ NS_IMPL_ISUPPORTS(nsXULTemplateQueryProcessorStorage,
                   nsIXULTemplateQueryProcessor)
 
 
-nsXULTemplateQueryProcessorStorage::nsXULTemplateQueryProcessorStorage() 
+nsXULTemplateQueryProcessorStorage::nsXULTemplateQueryProcessorStorage()
     : mGenerationStarted(false)
 {
 }

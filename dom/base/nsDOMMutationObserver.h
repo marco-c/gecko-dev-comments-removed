@@ -126,7 +126,7 @@ public:
   RefPtr<nsDOMMutationRecord> mNext;
   nsCOMPtr<nsISupports>         mOwner;
 };
- 
+
 
 
 class nsMutationReceiverBase : public nsStubAnimationObserver
@@ -234,7 +234,7 @@ public:
   {
     mTransientReceivers.RemoveObject(aClone);
   }
-  
+
 protected:
   nsMutationReceiverBase(nsINode* aTarget, nsDOMMutationObserver* aObserver)
     : mTarget(aTarget)
@@ -325,7 +325,7 @@ protected:
   
   
   nsCOMPtr<nsINode>                  mKungFuDeathGrip;
-  
+
 private:
   bool                               mSubtree;
   bool                               mChildList;
@@ -658,7 +658,7 @@ class nsAutoMutationBatch
 public:
   nsAutoMutationBatch()
   : mPreviousBatch(nullptr), mBatchTarget(nullptr), mRemovalDone(false),
-    mFromFirstToLast(false), mAllowNestedBatches(false)    
+    mFromFirstToLast(false), mAllowNestedBatches(false)
   {
   }
 
@@ -713,11 +713,11 @@ public:
       if (sCurrentBatch->mObservers[i].mObserver == aObserver) {
         if (aWantsChildList) {
           sCurrentBatch->mObservers[i].mWantsChildList = aWantsChildList;
-        } 
+        }
         return;
       }
     }
-    BatchObserver* bo = sCurrentBatch->mObservers.AppendElement(); 
+    BatchObserver* bo = sCurrentBatch->mObservers.AppendElement();
     bo->mObserver = aObserver;
     bo->mWantsChildList = aWantsChildList;
   }
@@ -759,7 +759,7 @@ private:
     nsDOMMutationObserver* mObserver;
     bool                   mWantsChildList;
   };
-  
+
   static nsAutoMutationBatch* sCurrentBatch;
   nsAutoMutationBatch* mPreviousBatch;
   AutoTArray<BatchObserver, 2> mObservers;

@@ -292,7 +292,7 @@ void InstallSignalHandlers(const char *aProgname)
     
     {
 	struct rlimit rl;
-	
+
 	if (getrlimit(RLIMIT_NOFILE, &rl) == 0)
 
 	    if (rl.rlim_cur < NOFILES) {

@@ -349,7 +349,7 @@ public:
   void RemoveEventHandler(nsIAtom *aName, const nsAString& aTypeString);
 
   void HandleEvent(nsPresContext* aPresContext,
-                   WidgetEvent* aEvent, 
+                   WidgetEvent* aEvent,
                    nsIDOMEvent** aDOMEvent,
                    dom::EventTarget* aCurrentTarget,
                    nsEventStatus* aEventStatus)

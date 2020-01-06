@@ -68,7 +68,7 @@ public:
     inline int32_t width() const {
         return right-left;
     }
-    
+
     
     inline int32_t height() const {
         return bottom-top;
@@ -83,7 +83,7 @@ public:
         right = rb.x;
         bottom  = rb.y;
     }
-    
+
     
     Point leftTop() const {
         return Point(left, top);
@@ -136,7 +136,7 @@ public:
     void translate(int32_t dx, int32_t dy) { 
         offsetBy(dx, dy);
     }
- 
+
     Rect&   offsetTo(int32_t x, int32_t y);
     Rect&   offsetBy(int32_t x, int32_t y);
     bool    intersect(const Rect& with, Rect* result) const;

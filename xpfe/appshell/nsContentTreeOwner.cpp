@@ -81,7 +81,7 @@ private:
 
 
 
-nsContentTreeOwner::nsContentTreeOwner(bool fPrimary) : mXULWindow(nullptr), 
+nsContentTreeOwner::nsContentTreeOwner(bool fPrimary) : mXULWindow(nullptr),
    mPrimary(fPrimary), mContentTitleSetting(false)
 {
   
@@ -384,7 +384,7 @@ NS_IMETHODIMP nsContentTreeOwner::OnBeforeLinkTraversal(const nsAString &origina
   if (xulBrowserWindow)
     return xulBrowserWindow->OnBeforeLinkTraversal(originalTarget, linkURI,
                                                    linkNode, isAppTab, _retval);
-  
+
   _retval = originalTarget;
   return NS_OK;
 }
@@ -461,7 +461,7 @@ NS_IMETHODIMP nsContentTreeOwner::SetStatusWithContext(uint32_t aStatusType,
     return NS_OK;
 
   NS_ENSURE_STATE(mXULWindow);
-  
+
   nsCOMPtr<nsIXULBrowserWindow> xulBrowserWindow;
   mXULWindow->GetXULBrowserWindow(getter_AddRefs(xulBrowserWindow));
 
@@ -552,7 +552,7 @@ NS_IMETHODIMP nsContentTreeOwner::IsWindowModal(bool *_retval)
 NS_IMETHODIMP nsContentTreeOwner::ExitModalEventLoop(nsresult aStatus)
 {
    NS_ENSURE_STATE(mXULWindow);
-   return mXULWindow->ExitModalLoop(aStatus);   
+   return mXULWindow->ExitModalLoop(aStatus);
 }
 
 
@@ -560,7 +560,7 @@ NS_IMETHODIMP nsContentTreeOwner::ExitModalEventLoop(nsresult aStatus)
 
 
 NS_IMETHODIMP nsContentTreeOwner::InitWindow(nativeWindow aParentNativeWindow,
-   nsIWidget* parentWidget, int32_t x, int32_t y, int32_t cx, int32_t cy)   
+   nsIWidget* parentWidget, int32_t x, int32_t y, int32_t cx, int32_t cy)
 {
    
    NS_ENSURE_SUCCESS(SetPositionAndSize(x, y, cx, cy, 0), NS_ERROR_FAILURE);
@@ -633,7 +633,7 @@ NS_IMETHODIMP nsContentTreeOwner::GetPositionAndSize(int32_t* aX, int32_t* aY,
    int32_t* aCX, int32_t* aCY)
 {
    NS_ENSURE_STATE(mXULWindow);
-   return mXULWindow->GetPositionAndSize(aX, aY, aCX, aCY); 
+   return mXULWindow->GetPositionAndSize(aX, aY, aCX, aCY);
 }
 
 NS_IMETHODIMP nsContentTreeOwner::Repaint(bool aForce)
@@ -728,7 +728,7 @@ NS_IMETHODIMP nsContentTreeOwner::SetTitle(const char16_t* aTitle)
     return NS_OK;
 
   NS_ENSURE_STATE(mXULWindow);
-  
+
   nsAutoString   title;
   nsAutoString   docTitle(aTitle);
 
@@ -832,7 +832,7 @@ nsContentTreeOwner::ProvideWindow(mozIDOMWindowProxy* aParent,
   NS_ENSURE_ARG_POINTER(aParent);
 
   auto* parent = nsPIDOMWindowOuter::From(aParent);
-  
+
   *aReturn = nullptr;
 
   if (!mXULWindow) {
@@ -878,7 +878,7 @@ nsContentTreeOwner::ProvideWindow(mozIDOMWindowProxy* aParent,
         nsCOMPtr<nsIHandlerInfo> info;
         bool found;
         exUrlServ->GetURLHandlerInfoFromOS(aURI, &found, getter_AddRefs(info));
-  
+
         if (info && found) {
           info->LaunchWithURI(aURI, nullptr);
           return NS_ERROR_ABORT;

@@ -8,7 +8,7 @@
 
 #define NUM_OF_CATEGORY 6
 
-#include "nscore.h" 
+#include "nscore.h"
 
 #define ENOUGH_REL_THRESHOLD  100
 #define MAX_REL_THRESHOLD     1000
@@ -30,7 +30,7 @@ public:
     
     if (mTotalRel > MAX_REL_THRESHOLD)   mDone = true;
     if (mDone)       return;
-     
+
     
     order = (aCharLen == 2) ? GetOrder(aStr) : -1;
     if (order != -1 && mLastCharOrder != -1)
@@ -58,7 +58,7 @@ protected:
 
   
   uint32_t mDataThreshold;
-  
+
   
   int32_t  mLastCharOrder;
 
@@ -80,8 +80,8 @@ protected:
   int32_t GetOrder(const char* str)
   {
     
-    if (*str == '\202' && 
-          (unsigned char)*(str+1) >= (unsigned char)0x9f && 
+    if (*str == '\202' &&
+          (unsigned char)*(str+1) >= (unsigned char)0x9f &&
           (unsigned char)*(str+1) <= (unsigned char)0xf1)
       return (unsigned char)*(str+1) - (unsigned char)0x9f;
     return -1;

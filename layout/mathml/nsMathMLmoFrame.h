@@ -23,7 +23,7 @@ public:
   virtual eMathMLFrameType GetMathMLFrameType() override;
 
   virtual void
-  SetAdditionalStyleContext(int32_t          aIndex, 
+  SetAdditionalStyleContext(int32_t          aIndex,
                             nsStyleContext*  aStyleContext) override;
   virtual nsStyleContext*
   GetAdditionalStyleContext(int32_t aIndex) const override;
@@ -83,7 +83,7 @@ protected:
   explicit nsMathMLmoFrame(nsStyleContext* aContext) :
     nsMathMLTokenFrame(aContext, kClassID), mFlags(0), mMinSize(0), mMaxSize(0) {}
   virtual ~nsMathMLmoFrame();
-  
+
   nsMathMLChar     mMathMLChar; 
   nsOperatorFlags  mFlags;
   float            mMinSize;

@@ -12,7 +12,7 @@
 #include "nsCaret.h"
 #include "nsEditorCID.h"
 #include "nsLayoutCID.h"
-#include "nsITextControlFrame.h" 
+#include "nsITextControlFrame.h"
 #include "nsIDOMCharacterData.h"
 #include "nsIDOMDocument.h"
 #include "nsContentCreatorFunctions.h"
@@ -385,7 +385,7 @@ nsTextInputSelectionImpl::SetDisplaySelection(int16_t aToggle)
 {
   if (!mFrameSelection)
     return NS_ERROR_NULL_POINTER;
-  
+
   mFrameSelection->SetDisplaySelection(aToggle);
   return NS_OK;
 }
@@ -410,7 +410,7 @@ NS_IMETHODIMP
 nsTextInputSelectionImpl::GetSelectionFlags(int16_t *aOutEnable)
 {
   *aOutEnable = nsISelectionDisplay::DISPLAY_TEXT;
-  return NS_OK; 
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -438,8 +438,8 @@ nsTextInputSelectionImpl::ScrollSelectionIntoView(
                             int16_t aRegion,
                             int16_t aFlags)
 {
-  if (!mFrameSelection) 
-    return NS_ERROR_FAILURE; 
+  if (!mFrameSelection)
+    return NS_ERROR_FAILURE;
 
   RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
   return frameSelection->ScrollSelectionIntoView(
@@ -800,7 +800,7 @@ class nsTextInputListener : public nsISelectionListener,
 {
 public:
   
- 
+
   explicit nsTextInputListener(nsITextControlElement* aTxtCtrlElement);
 
   
@@ -873,7 +873,7 @@ nsTextInputListener::nsTextInputListener(nsITextControlElement* aTxtCtrlElement)
 {
 }
 
-nsTextInputListener::~nsTextInputListener() 
+nsTextInputListener::~nsTextInputListener()
 {
 }
 
@@ -908,18 +908,18 @@ nsTextInputListener::NotifySelectionChanged(nsIDOMDocument* aDoc, nsISelection* 
   
   
   
-  if (!collapsed && (aReason & (nsISelectionListener::MOUSEUP_REASON | 
+  if (!collapsed && (aReason & (nsISelectionListener::MOUSEUP_REASON |
                                 nsISelectionListener::KEYPRESS_REASON |
                                 nsISelectionListener::SELECTALL_REASON)))
   {
     nsIContent* content = mFrame->GetContent();
-    if (content) 
+    if (content)
     {
       nsCOMPtr<nsIDocument> doc = content->GetComposedDoc();
-      if (doc) 
+      if (doc)
       {
         nsCOMPtr<nsIPresShell> presShell = doc->GetShell();
-        if (presShell) 
+        if (presShell)
         {
           nsEventStatus status = nsEventStatus_eIgnore;
           WidgetEvent event(true, eFormSelect);
@@ -1109,7 +1109,7 @@ nsTextInputListener::UpdateTextInputCommands(const nsAString& commandsToUpdate,
 {
   nsIContent* content = mFrame->GetContent();
   NS_ENSURE_TRUE(content, NS_ERROR_FAILURE);
-  
+
   nsCOMPtr<nsIDocument> doc = content->GetComposedDoc();
   NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
 
@@ -1540,7 +1540,7 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
 
     
     
-    if (content->HasAttr(kNameSpaceID_None, nsGkAtoms::disabled)) 
+    if (content->HasAttr(kNameSpaceID_None, nsGkAtoms::disabled))
       editorFlags |= nsIPlaintextEditor::eEditorDisabledMask;
 
     

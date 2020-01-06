@@ -136,7 +136,7 @@ private:
 
 
   Mutex mMutex;
-  
+
   sqlite3_vfs *mSqliteVFS;
 
   

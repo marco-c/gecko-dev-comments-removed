@@ -299,9 +299,9 @@ public:
 
 
   bool HasWidget() const { return mWindow != nullptr; }
-  
-  void SetForcedRepaint(bool aForceRepaint) { 
-    mForcedRepaint = aForceRepaint; 
+
+  void SetForcedRepaint(bool aForceRepaint) {
+    mForcedRepaint = aForceRepaint;
   }
 
   void SetNeedsWindowPropertiesSync();

@@ -133,7 +133,7 @@ TestOffMainThreadPaintingChild::~TestOffMainThreadPaintingChild()
 {
 }
 
-ipc::IPCResult 
+ipc::IPCResult
 TestOffMainThreadPaintingChild::RecvStartTest(ipc::Endpoint<PTestPaintThreadChild>&& aEndpoint)
 {
   mPaintThread = MakeUnique<base::Thread>("PaintThread");

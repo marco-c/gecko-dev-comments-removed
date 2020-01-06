@@ -61,7 +61,7 @@ typedef enum OMX_IMAGE_CODINGTYPE {
     OMX_IMAGE_CodingPNG,         
     OMX_IMAGE_CodingLZW,         
     OMX_IMAGE_CodingBMP,         
-    OMX_IMAGE_CodingKhronosExtensions = 0x6F000000,  
+    OMX_IMAGE_CodingKhronosExtensions = 0x6F000000, 
     OMX_IMAGE_CodingVendorStartUnused = 0x7F000000, 
     OMX_IMAGE_CodingMax = 0x7FFFFFFF
 } OMX_IMAGE_CODINGTYPE;
@@ -111,9 +111,9 @@ typedef enum OMX_IMAGE_CODINGTYPE {
 typedef struct OMX_IMAGE_PORTDEFINITIONTYPE {
     OMX_STRING cMIMEType;
     OMX_NATIVE_DEVICETYPE pNativeRender;
-    OMX_U32 nFrameWidth; 
+    OMX_U32 nFrameWidth;
     OMX_U32 nFrameHeight;
-    OMX_S32 nStride;     
+    OMX_S32 nStride;
     OMX_U32 nSliceHeight;
     OMX_BOOL bFlagErrorConcealment;
     OMX_IMAGE_CODINGTYPE eCompressionFormat;
@@ -160,7 +160,7 @@ typedef enum OMX_IMAGE_FLASHCONTROLTYPE {
     OMX_IMAGE_FlashControlRedEyeReduction,
     OMX_IMAGE_FlashControlFillin,
     OMX_IMAGE_FlashControlTorch,
-    OMX_IMAGE_FlashControlKhronosExtensions = 0x6F000000,  
+    OMX_IMAGE_FlashControlKhronosExtensions = 0x6F000000, 
     OMX_IMAGE_FlashControlVendorStartUnused = 0x7F000000, 
     OMX_IMAGE_FlashControlMax = 0x7FFFFFFF
 } OMX_IMAGE_FLASHCONTROLTYPE;
@@ -191,12 +191,12 @@ typedef enum OMX_IMAGE_FOCUSCONTROLTYPE {
     OMX_IMAGE_FocusControlOff,
     OMX_IMAGE_FocusControlAuto,
     OMX_IMAGE_FocusControlAutoLock,
-    OMX_IMAGE_FocusControlKhronosExtensions = 0x6F000000,  
+    OMX_IMAGE_FocusControlKhronosExtensions = 0x6F000000, 
     OMX_IMAGE_FocusControlVendorStartUnused = 0x7F000000, 
     OMX_IMAGE_FocusControlMax = 0x7FFFFFFF
 } OMX_IMAGE_FOCUSCONTROLTYPE;
 
- 
+
 
 
 
@@ -235,10 +235,10 @@ typedef struct OMX_IMAGE_CONFIG_FOCUSCONTROLTYPE {
 
 
 typedef struct OMX_IMAGE_PARAM_QFACTORTYPE {
-    OMX_U32 nSize;            
-    OMX_VERSIONTYPE nVersion; 
-    OMX_U32 nPortIndex;       
-    OMX_U32 nQFactor;                                        
+    OMX_U32 nSize;
+    OMX_VERSIONTYPE nVersion;
+    OMX_U32 nPortIndex;
+    OMX_U32 nQFactor;
 } OMX_IMAGE_PARAM_QFACTORTYPE;
 
 
@@ -250,7 +250,7 @@ typedef enum OMX_IMAGE_QUANTIZATIONTABLETYPE {
     OMX_IMAGE_QuantizationTableChroma,
     OMX_IMAGE_QuantizationTableChromaCb,
     OMX_IMAGE_QuantizationTableChromaCr,
-    OMX_IMAGE_QuantizationTableKhronosExtensions = 0x6F000000,  
+    OMX_IMAGE_QuantizationTableKhronosExtensions = 0x6F000000, 
     OMX_IMAGE_QuantizationTableVendorStartUnused = 0x7F000000, 
     OMX_IMAGE_QuantizationTableMax = 0x7FFFFFFF
 } OMX_IMAGE_QUANTIZATIONTABLETYPE;
@@ -292,7 +292,7 @@ typedef enum OMX_IMAGE_HUFFMANTABLETYPE {
     OMX_IMAGE_HuffmanTableACChroma,
     OMX_IMAGE_HuffmanTableDCLuma,
     OMX_IMAGE_HuffmanTableDCChroma,
-    OMX_IMAGE_HuffmanTableKhronosExtensions = 0x6F000000,  
+    OMX_IMAGE_HuffmanTableKhronosExtensions = 0x6F000000, 
     OMX_IMAGE_HuffmanTableVendorStartUnused = 0x7F000000, 
     OMX_IMAGE_HuffmanTableMax = 0x7FFFFFFF
 } OMX_IMAGE_HUFFMANTABLETYPE;

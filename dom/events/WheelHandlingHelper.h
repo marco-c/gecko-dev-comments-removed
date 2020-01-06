@@ -132,7 +132,7 @@ public:
 
 
 
- 
+
   static bool WillHandleDefaultAction(WidgetWheelEvent* aWheelEvent,
                                       AutoWeakFrame& aTargetWeakFrame);
   static bool WillHandleDefaultAction(WidgetWheelEvent* aWheelEvent,

@@ -69,7 +69,7 @@ nsViewManager::nsViewManager()
     
     gViewManagers = new nsTArray<nsViewManager*>;
   }
- 
+
   gViewManagers->AppendElement(this);
 }
 
@@ -140,7 +140,7 @@ nsViewManager::SetRootView(nsView *aView)
 {
   NS_PRECONDITION(!aView || aView->GetViewManager() == this,
                   "Unexpected viewmanager on root view");
-  
+
   
   
   mRootView = aView;
@@ -321,7 +321,7 @@ void nsViewManager::Refresh(nsView* aView, const LayoutDeviceIntRegion& aRegion)
 #endif
     return;
   }
-  
+
   nsIWidget *widget = aView->GetWidget();
   if (!widget) {
     return;
@@ -331,7 +331,7 @@ void nsViewManager::Refresh(nsView* aView, const LayoutDeviceIntRegion& aRegion)
   if (IsPainting()) {
     RootViewManager()->mRecursiveRefreshPending = true;
     return;
-  }  
+  }
 
   {
     nsAutoScriptBlocker scriptBlocker;
@@ -680,7 +680,7 @@ nsViewManager::InvalidateAllViews()
   if (RootViewManager() != this) {
     return RootViewManager()->InvalidateAllViews();
   }
-  
+
   InvalidateViews(mRootView);
 }
 
@@ -848,7 +848,7 @@ void nsViewManager::ReparentWidgets(nsView* aView, nsView *aParent)
 {
   NS_PRECONDITION(aParent, "Must have a parent");
   NS_PRECONDITION(aView, "Must have a view");
-  
+
   
   
   

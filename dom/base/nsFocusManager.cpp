@@ -397,7 +397,7 @@ NS_IMETHODIMP
 nsFocusManager::SetActiveWindow(mozIDOMWindowProxy* aWindow)
 {
   NS_ENSURE_STATE(aWindow);
-  
+
   
   nsCOMPtr<nsPIDOMWindowOuter> piWindow = nsPIDOMWindowOuter::From(aWindow);
   NS_ENSURE_TRUE(piWindow == piWindow->GetPrivateRoot(), NS_ERROR_INVALID_ARG);
@@ -1479,7 +1479,7 @@ nsFocusManager::AdjustWindowFocus(nsPIDOMWindowOuter* aWindow,
     nsCOMPtr<Element> frameElement = window->GetFrameElementInternal();
 
     nsCOMPtr<nsIDocShellTreeItem> dsti = window->GetDocShell();
-    if (!dsti) 
+    if (!dsti)
       return;
     nsCOMPtr<nsIDocShellTreeItem> parentDsti;
     dsti->GetParent(getter_AddRefs(parentDsti));
@@ -1614,7 +1614,7 @@ nsFocusManager::CheckIfFocusable(nsIContent* aContent, uint32_t aFlags)
                         ui->mUserFocus == StyleUserFocus::None) ? -1 : 0;
     return aContent->IsFocusable(&tabIndex, aFlags & FLAG_BYMOUSE) ? aContent : nullptr;
   }
-  
+
   return frame->IsFocusable(nullptr, aFlags & FLAG_BYMOUSE) ? aContent : nullptr;
 }
 
@@ -2526,7 +2526,7 @@ nsFocusManager::GetSelectionLocation(nsIDocument* aDocument,
 
       startContent = do_QueryInterface(startNode);
       if (startContent && startContent->IsElement()) {
-        NS_ASSERTION(startOffset >= 0, "Start offset cannot be negative");  
+        NS_ASSERTION(startOffset >= 0, "Start offset cannot be negative");
         childContent = startContent->GetChildAt(startOffset);
         if (childContent) {
           startContent = childContent;

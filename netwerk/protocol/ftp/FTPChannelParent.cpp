@@ -714,7 +714,7 @@ FTPChannelParent::ResumeForDiversion()
   
   if (NS_WARN_IF(NS_FAILED(Delete()))) {
     FailDiversion(NS_ERROR_UNEXPECTED);
-    return NS_ERROR_UNEXPECTED;   
+    return NS_ERROR_UNEXPECTED;
   }
   return NS_OK;
 }
@@ -902,11 +902,11 @@ FTPChannelParent::AsyncOnChannelRedirect(
     
     nsCOMPtr<nsIHttpChannel> httpChan = do_QueryInterface(newChannel);
     if (!httpChan)
-      return NS_ERROR_UNEXPECTED; 
+      return NS_ERROR_UNEXPECTED;
   }
   mChannel = newChannel;
   callback->OnRedirectVerifyCallback(NS_OK);
-  return NS_OK; 
+  return NS_OK;
 }
 
 NS_IMETHODIMP

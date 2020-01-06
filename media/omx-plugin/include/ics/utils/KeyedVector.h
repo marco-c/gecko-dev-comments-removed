@@ -56,7 +56,7 @@ public:
     inline  size_t          capacity() const            { return mVector.capacity(); }
     
     inline ssize_t          setCapacity(size_t size)    { return mVector.setCapacity(size); }
-    
+
     
 
 
@@ -75,7 +75,7 @@ public:
             
 
 
-             
+
             ssize_t         add(const KEY& key, const VALUE& item);
             ssize_t         replaceValueFor(const KEY& key, const VALUE& item);
             ssize_t         replaceValueAt(size_t index, const VALUE& item);
@@ -86,7 +86,7 @@ public:
 
             ssize_t         removeItem(const KEY& key);
             ssize_t         removeItemsAt(size_t index, size_t count = 1);
-            
+
 private:
             SortedVector< key_value_pair_t<KEY, VALUE> >    mVector;
 };

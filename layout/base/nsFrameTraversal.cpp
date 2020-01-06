@@ -57,8 +57,8 @@ protected:
 
 
 
-  
-  
+
+
   nsIFrame* GetParentFrame(nsIFrame* aFrame);
   
   nsIFrame* GetParentFrameNotPopup(nsIFrame* aFrame);
@@ -75,9 +75,9 @@ protected:
 
 
 
-  
+
   virtual nsIFrame* GetFirstChildInner(nsIFrame* aFrame);
-  virtual nsIFrame* GetLastChildInner(nsIFrame* aFrame);  
+  virtual nsIFrame* GetLastChildInner(nsIFrame* aFrame);
 
   virtual nsIFrame* GetNextSiblingInner(nsIFrame* aFrame);
   virtual nsIFrame* GetPrevSiblingInner(nsIFrame* aFrame);
@@ -115,10 +115,10 @@ public:
 
 protected:
   nsIFrame* GetFirstChildInner(nsIFrame* aFrame) override;
-  nsIFrame* GetLastChildInner(nsIFrame* aFrame) override;  
-  
+  nsIFrame* GetLastChildInner(nsIFrame* aFrame) override;
+
   nsIFrame* GetNextSiblingInner(nsIFrame* aFrame) override;
-  nsIFrame* GetPrevSiblingInner(nsIFrame* aFrame) override;  
+  nsIFrame* GetPrevSiblingInner(nsIFrame* aFrame) override;
 };
 
 
@@ -174,7 +174,7 @@ nsFrameTraversal::~nsFrameTraversal()
 
 NS_IMPL_ISUPPORTS(nsFrameTraversal,nsIFrameTraversal)
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
  nsFrameTraversal::NewFrameTraversal(nsIFrameEnumerator **aEnumerator,
                                      nsPresContext* aPresContext,
                                      nsIFrame *aStart,
@@ -186,7 +186,7 @@ NS_IMETHODIMP
 {
   return NS_NewFrameTraversal(aEnumerator, aPresContext, aStart,
                               static_cast<nsIteratorType>(aType),
-                              aVisual, aLockInScrollView, aFollowOOFs, aSkipPopupChecks);  
+                              aVisual, aLockInScrollView, aFollowOOFs, aSkipPopupChecks);
 }
 
 
@@ -337,7 +337,7 @@ nsFrameIterator::Prev()
     if (result)
       parent = result;
   }
-  
+
   if (parent != getCurrent()) {
     result = parent;
   } else {
@@ -380,7 +380,7 @@ nsFrameIterator::GetParentFrame(nsIFrame* aFrame)
     aFrame = GetPlaceholderFrame(aFrame);
   if (aFrame)
     return aFrame->GetParent();
-  
+
   return nullptr;
 }
 
@@ -394,7 +394,7 @@ nsFrameIterator::GetParentFrameNotPopup(nsIFrame* aFrame)
     if (!IsPopupFrame(parent))
       return parent;
   }
-    
+
   return nullptr;
 }
 
@@ -406,7 +406,7 @@ nsFrameIterator::GetFirstChild(nsIFrame* aFrame)
     return nullptr;
   if (result && mFollowOOFs) {
     result = nsPlaceholderFrame::GetRealFrameFor(result);
-    
+
     if (IsPopupFrame(result))
       result = GetNextSibling(result);
   }
@@ -421,7 +421,7 @@ nsFrameIterator::GetLastChild(nsIFrame* aFrame)
     return nullptr;
   if (result && mFollowOOFs) {
     result = nsPlaceholderFrame::GetRealFrameFor(result);
-    
+
     if (IsPopupFrame(result))
       result = GetPrevSibling(result);
   }

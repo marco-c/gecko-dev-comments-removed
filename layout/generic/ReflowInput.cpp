@@ -773,11 +773,11 @@ ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
       if (!rs) {
         break;
       }
-        
+
       if (rs->mFrame->GetStateBits() & NS_FRAME_CONTAINS_RELATIVE_BSIZE)
         break; 
       rs->mFrame->AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
-      
+
       
       
       if (rs == mCBReflowInput) {
@@ -795,7 +795,7 @@ ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
     
     
     
-    
+
   }
   if (mFrame->GetStateBits() & NS_FRAME_IS_DIRTY) {
     
@@ -1958,13 +1958,13 @@ GetBlockMarginBorderPadding(const ReflowInput* aReflowInput)
 
   
   nsMargin margin = aReflowInput->ComputedPhysicalMargin();
-  if (NS_AUTOMARGIN == margin.top) 
+  if (NS_AUTOMARGIN == margin.top)
     margin.top = 0;
-  if (NS_AUTOMARGIN == margin.bottom) 
+  if (NS_AUTOMARGIN == margin.bottom)
     margin.bottom = 0;
 
   result += margin.top + margin.bottom;
-  result += aReflowInput->ComputedPhysicalBorderPadding().top + 
+  result += aReflowInput->ComputedPhysicalBorderPadding().top +
             aReflowInput->ComputedPhysicalBorderPadding().bottom;
 
   return result;
@@ -1986,7 +1986,7 @@ CalcQuirkContainingBlockHeight(const ReflowInput* aCBReflowInput)
 {
   const ReflowInput* firstAncestorRI = nullptr; 
   const ReflowInput* secondAncestorRI = nullptr; 
-  
+
   
   
   
@@ -2022,7 +2022,7 @@ CalcQuirkContainingBlockHeight(const ReflowInput* aCBReflowInput)
     } else if (LayoutFrameType::PageContent == frameType) {
       nsIFrame* prevInFlow = rs->mFrame->GetPrevInFlow();
       
-      if (prevInFlow) 
+      if (prevInFlow)
         break;
     }
     else {
@@ -2789,7 +2789,7 @@ ReflowInput::CalculateBlockSideMargins(LayoutFrameType aFrameType)
   SetComputedLogicalMargin(margin.ConvertTo(mWritingMode, cbWM));
 }
 
-#define NORMAL_LINE_HEIGHT_FACTOR 1.2f    // in term of emHeight 
+#define NORMAL_LINE_HEIGHT_FACTOR 1.2f    // in term of emHeight
 
 
 
@@ -2850,7 +2850,7 @@ ComputeLineHeight(nsStyleContext* aStyleContext,
   NS_ASSERTION(lhCoord.GetUnit() == eStyleUnit_Normal ||
                lhCoord.GetUnit() == eStyleUnit_Enumerated,
                "bad line-height unit");
-  
+
   if (lhCoord.GetUnit() == eStyleUnit_Enumerated) {
     NS_ASSERTION(lhCoord.GetIntValue() == NS_STYLE_LINE_HEIGHT_BLOCK_HEIGHT,
                  "bad line-height value");

@@ -27,10 +27,10 @@ public:
     kWordBreak_KeepAll  = 2  
   };
 
-  virtual int32_t Next( const char16_t* aText, uint32_t aLen, 
+  virtual int32_t Next( const char16_t* aText, uint32_t aLen,
                         uint32_t aPos) = 0;
 
-  virtual int32_t Prev( const char16_t* aText, uint32_t aLen, 
+  virtual int32_t Prev( const char16_t* aText, uint32_t aLen,
                         uint32_t aPos) = 0;
 
   

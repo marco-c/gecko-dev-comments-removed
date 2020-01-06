@@ -214,10 +214,10 @@ nsImageFrame::DestroyFrom(nsIFrame* aDestructRoot)
 
       imageLoader->RemoveObserver(mListener);
     }
-    
+
     reinterpret_cast<nsImageListener*>(mListener.get())->SetFrame(nullptr);
   }
-  
+
   mListener = nullptr;
 
   
@@ -272,7 +272,7 @@ nsImageFrame::Init(nsIContent*       aContent,
   imageLoader->AddObserver(mListener);
 
   nsPresContext *aPresContext = PresContext();
-  
+
   if (!gIconLoad)
     LoadIcons(aPresContext);
 
@@ -474,7 +474,7 @@ nsImageFrame::ShouldCreateImageFrameFor(Element* aElement,
   
   
   bool useSizedBox;
-  
+
   if (aStyleContext->StyleUIReset()->mForceBrokenImageIcon) {
     useSizedBox = true;
   }
@@ -541,7 +541,7 @@ SizeIsAvailable(imgIRequest* aRequest)
   uint32_t imageStatus = 0;
   nsresult rv = aRequest->GetImageStatus(&imageStatus);
 
-  return NS_SUCCEEDED(rv) && (imageStatus & imgIRequest::STATUS_SIZE_AVAILABLE); 
+  return NS_SUCCEEDED(rv) && (imageStatus & imgIRequest::STATUS_SIZE_AVAILABLE);
 }
 
 nsresult
@@ -584,10 +584,10 @@ nsImageFrame::OnSizeAvailable(imgIRequest* aRequest, imgIContainer* aImage)
   if (intrinsicSizeChanged && (mState & IMAGE_GOTINITIALREFLOW)) {
     
     
-    if (!(mState & IMAGE_SIZECONSTRAINED)) { 
+    if (!(mState & IMAGE_SIZECONSTRAINED)) {
       nsIPresShell *presShell = presContext->GetPresShell();
       NS_ASSERTION(presShell, "No PresShell.");
-      if (presShell) { 
+      if (presShell) {
         presShell->FrameNeedsReflow(this, nsIPresShell::eStyleChange,
                                     NS_FRAME_IS_DIRTY);
       }
@@ -612,7 +612,7 @@ nsImageFrame::OnFrameUpdate(imgIRequest* aRequest, const nsIntRect* aRect)
     
     return NS_OK;
   }
-  
+
   if (mFirstFrameComplete && !StyleVisibility()->IsVisible()) {
     return NS_OK;
   }
@@ -895,7 +895,7 @@ nsImageFrame::ComputeSize(gfxContext *aRenderingContext,
 
 
 
-nsRect 
+nsRect
 nsImageFrame::GetInnerArea() const
 {
   return GetContentRectRelativeToSelf();
@@ -912,7 +912,7 @@ nsImageFrame::GetMapElement() const
 }
 
 
-nscoord 
+nscoord
 nsImageFrame::GetContinuationOffset() const
 {
   nscoord offset = 0;
@@ -990,7 +990,7 @@ nsImageFrame::Reflow(nsPresContext*          aPresContext,
     mState |= IMAGE_GOTINITIALREFLOW;
   }
 
-  mComputedSize = 
+  mComputedSize =
     nsSize(aReflowInput.ComputedWidth(), aReflowInput.ComputedHeight());
 
   aMetrics.Width() = mComputedSize.width;
@@ -999,7 +999,7 @@ nsImageFrame::Reflow(nsPresContext*          aPresContext,
   
   aMetrics.Width()  += aReflowInput.ComputedPhysicalBorderPadding().LeftRight();
   aMetrics.Height() += aReflowInput.ComputedPhysicalBorderPadding().TopBottom();
-  
+
   if (GetPrevInFlow()) {
     aMetrics.Width() = GetPrevInFlow()->GetSize().width;
     nscoord y = GetContinuationOffset();
@@ -1023,8 +1023,8 @@ nsImageFrame::Reflow(nsPresContext*          aPresContext,
   }
   if (aPresContext->IsPaginated() &&
       ((loadStatus & imgIRequest::STATUS_SIZE_AVAILABLE) || (mState & IMAGE_SIZECONSTRAINED)) &&
-      NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableHeight() && 
-      aMetrics.Height() > aReflowInput.AvailableHeight()) { 
+      NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableHeight() &&
+      aMetrics.Height() > aReflowInput.AvailableHeight()) {
     
     
     aMetrics.Height() = std::max(nsPresContext::CSSPixelsToAppUnits(1), aReflowInput.AvailableHeight());
@@ -1125,7 +1125,7 @@ nsImageFrame::MeasureString(const char16_t*     aString,
         break;
       }
     }
-  
+
     
     nscoord width =
       nsLayoutUtils::AppUnitWidthOfStringBidi(aString, len, this, aFontMetrics,
@@ -1389,7 +1389,7 @@ nsImageFrame::DisplayAltFeedback(gfxContext& aRenderingContext,
 
   
   
-  inner.Deflate(nsPresContext::CSSPixelsToAppUnits(ICON_PADDING+ALT_BORDER_WIDTH), 
+  inner.Deflate(nsPresContext::CSSPixelsToAppUnits(ICON_PADDING+ALT_BORDER_WIDTH),
                 nsPresContext::CSSPixelsToAppUnits(ICON_PADDING+ALT_BORDER_WIDTH));
   if (inner.IsEmpty()) {
     return DrawResult::SUCCESS;
@@ -1876,7 +1876,7 @@ nsImageFrame::ShouldDisplaySelection()
 #if IMAGE_EDITOR_CHECK
   
   
-  if (displaySelection == nsISelectionDisplay::DISPLAY_ALL) 
+  if (displaySelection == nsISelectionDisplay::DISPLAY_ALL)
   {
     nsCOMPtr<nsISelectionController> selCon;
     result = GetSelectionController(presContext, getter_AddRefs(selCon));
@@ -1992,7 +1992,7 @@ nsImageFrame::GetAnchorHREFTargetAndNode(nsIURI** aHref, nsString& aTarget,
   return status;
 }
 
-nsresult  
+nsresult
 nsImageFrame::GetContentForEvent(WidgetEvent* aEvent,
                                  nsIContent** aContent)
 {
@@ -2113,7 +2113,7 @@ nsImageFrame::GetCursor(const nsPoint& aPoint,
       
       
       
-      RefPtr<nsStyleContext> areaStyle = 
+      RefPtr<nsStyleContext> areaStyle =
         PresContext()->PresShell()->StyleSet()->
           ResolveStyleFor(area->AsElement(), StyleContext(),
                           LazyComputeBehavior::Allow);
@@ -2294,8 +2294,8 @@ nsImageFrame::SpecToURI(const nsAString& aSpec, nsIIOService *aIOService,
   }
   nsAutoCString charset;
   GetDocumentCharacterSet(charset);
-  NS_NewURI(aURI, aSpec, 
-            charset.IsEmpty() ? nullptr : charset.get(), 
+  NS_NewURI(aURI, aSpec,
+            charset.IsEmpty() ? nullptr : charset.get(),
             baseURI, aIOService);
 }
 

@@ -90,7 +90,7 @@ void PREF_InitParseState(PrefParseState *ps, PrefReader reader,
 
 
 
-        
+
 void PREF_FinalizeParseState(PrefParseState *ps);
 
 

@@ -119,7 +119,7 @@ nsBox::GetBoxName(nsAutoString& aName)
 nsresult
 nsBox::BeginXULLayout(nsBoxLayoutState& aState)
 {
-#ifdef DEBUG_LAYOUT 
+#ifdef DEBUG_LAYOUT
 
   nsBoxAddIndents();
   printf("XULLayout: ");
@@ -260,7 +260,7 @@ nsBox::SetXULBounds(nsBoxLayoutState& aState, const nsRect& aRect, bool aRemoveO
       if ((rect.x != aRect.x) || (rect.y != aRect.y))
         nsContainerFrame::PositionChildViews(this);
     }
-  
+
 
    
 
@@ -297,7 +297,7 @@ nsresult
 nsBox::GetXULBorder(nsMargin& aMargin)
 {
   aMargin.SizeTo(0,0,0,0);
-    
+
   const nsStyleDisplay* disp = StyleDisplay();
   if (disp->mAppearance && gTheme) {
     
@@ -524,7 +524,7 @@ nsBox::SyncLayout(nsBoxLayoutState& aState)
 
 
 
-  
+
 
   if (GetStateBits() & NS_FRAME_IS_DIRTY)
      XULRedraw(aState);
@@ -567,7 +567,7 @@ nsBox::SyncLayout(nsBoxLayoutState& aState)
     
     nsContainerFrame::SyncFrameViewAfterReflow(presContext, this, view,
                                                visualOverflow, flags);
-  } 
+  }
 
   return NS_OK;
 }

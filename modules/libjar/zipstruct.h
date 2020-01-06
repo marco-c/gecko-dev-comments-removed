@@ -32,7 +32,7 @@ typedef struct ZipLocal_
 
 
 
- 
+
 #define ZIPLOCAL_SIZE (4+2+2+2+2+2+4+4+4+2+2)
 
 typedef struct ZipCentral_
@@ -60,7 +60,7 @@ typedef struct ZipCentral_
 
 
 
- 
+
 #define ZIPCENTRAL_SIZE (4+2+2+2+2+2+2+4+4+4+2+2+2+2+2+4+4)
 
 typedef struct ZipEnd_
@@ -79,7 +79,7 @@ typedef struct ZipEnd_
 
 
 
- 
+
 #define ZIPEND_SIZE (4+2+2+2+2+4+4+2)
 
 

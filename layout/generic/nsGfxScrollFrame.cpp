@@ -1390,7 +1390,7 @@ ScrollFrameHelper::ScrollByLine(nsScrollbarFrame* aScrollbar, int32_t aDirection
       return;
     }
   }
-  
+
   nsIntPoint overflow;
   ScrollBy(delta, nsIScrollableFrame::LINES, nsIScrollableFrame::SMOOTH,
            &overflow, nsGkAtoms::other, nsIScrollableFrame::NOT_MOMENTUM,

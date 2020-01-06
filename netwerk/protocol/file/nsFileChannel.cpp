@@ -47,7 +47,7 @@ public:
 
   
   nsresult Status() { return mStatus; }
-  
+
   
   void DoCopy();
 
@@ -114,7 +114,7 @@ nsFileCopyEvent::DoCopy()
       mSink->OnTransportStatus(nullptr, NS_NET_STATUS_WRITING, progress,
                                mLen);
     }
-                               
+
     len -= num;
   }
 
@@ -214,7 +214,7 @@ nsFileUploadContentStream::ReadSegments(nsWriteSegmentFun fun, void *closure,
     
     
     
-    return NS_BASE_STREAM_WOULD_BLOCK;  
+    return NS_BASE_STREAM_WOULD_BLOCK;
   }
 
   
@@ -255,7 +255,7 @@ nsFileUploadContentStream::OnCopyComplete()
 
 
 
-nsFileChannel::nsFileChannel(nsIURI *uri) 
+nsFileChannel::nsFileChannel(nsIURI *uri)
   : mFileURI(uri)
 {
 }
@@ -376,7 +376,7 @@ nsFileChannel::OpenContentStream(bool async, nsIInputStream **result,
   rv = NS_GetFileProtocolHandler(getter_AddRefs(fileHandler));
   if (NS_FAILED(rv))
     return rv;
-    
+
   nsCOMPtr<nsIURI> newURI;
   rv = fileHandler->ReadURLFile(file, getter_AddRefs(newURI));
   if (NS_SUCCEEDED(rv)) {
@@ -438,7 +438,7 @@ nsFileChannel::OpenContentStream(bool async, nsIInputStream **result,
       int64_t size;
       rv = file->GetFileSize(&size);
       if (NS_FAILED(rv)) {
-        if (async && 
+        if (async &&
             (NS_ERROR_FILE_NOT_FOUND == rv ||
              NS_ERROR_FILE_TARGET_DOES_NOT_EXIST == rv)) {
           size = 0;

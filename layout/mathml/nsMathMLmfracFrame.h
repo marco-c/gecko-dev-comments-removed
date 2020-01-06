@@ -83,7 +83,7 @@ public:
   FixInterFrameSpacing(ReflowOutput& aDesiredSize) override;
 
   
-  static nscoord 
+  static nscoord
   CalcLineThickness(nsPresContext*  aPresContext,
                     nsStyleContext*  aStyleContext,
                     nsString&        aThicknessAttribute,

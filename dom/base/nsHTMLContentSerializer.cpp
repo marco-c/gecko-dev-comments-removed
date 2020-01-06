@@ -111,7 +111,7 @@ nsHTMLContentSerializer::SerializeHTMLAttributes(nsIContent* aContent,
       continue;
     }
     bool isJS = IsJavaScript(aContent, attrName, namespaceID, valueStr);
-    
+
     if (((attrName == nsGkAtoms::href &&
           (namespaceID == kNameSpaceID_None ||
            namespaceID == kNameSpaceID_XLink)) ||
@@ -248,7 +248,7 @@ nsHTMLContentSerializer::AppendElementStart(Element* aElement,
       
       
       if (NS_SUCCEEDED(rv))
-        startAttrVal--; 
+        startAttrVal--;
       else
         startAttrVal = 0;
     }
@@ -293,8 +293,8 @@ nsHTMLContentSerializer::AppendElementStart(Element* aElement,
 
   return NS_OK;
 }
-  
-NS_IMETHODIMP 
+
+NS_IMETHODIMP
 nsHTMLContentSerializer::AppendElementEnd(Element* aElement,
                                           nsAString& aStr)
 {
@@ -339,7 +339,7 @@ nsHTMLContentSerializer::AppendElementEnd(Element* aElement,
       mOLStateStack.RemoveElementAt(mOLStateStack.Length() -1);
     }
   }
-  
+
   if (ns == kNameSpaceID_XHTML) {
     nsIParserService* parserService = nsContentUtils::GetParserService();
 
@@ -502,7 +502,7 @@ nsHTMLContentSerializer::AppendAndTranslateEntities(const nsAString& aStr,
     for (uint32_t i = 0; i < len; ++i) {
       const char* entity = nullptr;
       i = FindNextBasicEntity(aStr, len, i, entityTable, &entity);
-      uint32_t normalTextLen = i - start; 
+      uint32_t normalTextLen = i - start;
       if (normalTextLen) {
         NS_ENSURE_TRUE(aOutputStr.Append(Substring(aStr, start, normalTextLen),
                                          mozilla::fallible), false);
@@ -581,7 +581,7 @@ nsHTMLContentSerializer::AppendAndTranslateEntities(const nsAString& aStr,
             }
           }
           else if (NS_SUCCEEDED(mEntityConverter->ConvertToEntity(val,
-                                nsIEntityConverter::entityW3C, 
+                                nsIEntityConverter::entityW3C,
                                 &fullEntityText))) {
             lengthReplaced = 1;
             break;

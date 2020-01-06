@@ -43,7 +43,7 @@ static mozilla::LazyLogModule sGIOLog("gio");
 
 
 static nsresult
-MapGIOResult(gint code) 
+MapGIOResult(gint code)
 {
   switch (code)
   {
@@ -185,7 +185,7 @@ class nsGIOInputStream final : public nsIInputStream
     nsresult       SetContentTypeOfChannel(const char *contentType);
     nsresult       MountVolume();
     nsresult       DoOpenDirectory();
-    nsresult       DoOpenFile(GFileInfo *info);        
+    nsresult       DoOpenFile(GFileInfo *info);
     nsCString             mSpec;
     nsIChannel           *mChannel; 
     GFile                *mHandle;
@@ -206,7 +206,7 @@ class nsGIOInputStream final : public nsIInputStream
 
 
 
- 
+
 void
 nsGIOInputStream::SetMountResult(MountOperationResult result, gint error_code)
 {
@@ -369,7 +369,7 @@ nsGIOInputStream::DoOpen()
     if (error->domain == G_IO_ERROR && error->code == G_IO_ERROR_NOT_MOUNTED) {
       
       g_error_free(error);
-      if (NS_IsMainThread()) 
+      if (NS_IsMainThread())
         return NS_ERROR_NOT_CONNECTED;
       error = nullptr;
       rv = MountVolume();
@@ -427,7 +427,7 @@ nsGIOInputStream::DoRead(char *aBuf, uint32_t aCount, uint32_t *aCountRead)
   nsresult rv = NS_ERROR_NOT_AVAILABLE;
   if (mStream) {
     
-    GError *error = nullptr;    
+    GError *error = nullptr;
     uint32_t bytes_read = g_input_stream_read(G_INPUT_STREAM(mStream),
                                               aBuf,
                                               aCount,
@@ -470,7 +470,7 @@ nsGIOInputStream::DoRead(char *aBuf, uint32_t aCount, uint32_t *aCountRead)
 
         
         const char * fname = g_file_info_get_name(info);
-        if (fname && fname[0] == '.' && 
+        if (fname && fname[0] == '.' &&
             (fname[1] == '\0' || (fname[1] == '.' && fname[2] == '\0')))
         {
           mDirListPtr = mDirListPtr->next;
@@ -713,9 +713,9 @@ mount_enclosing_volume_finished (GObject *source_object,
   GError *error = nullptr;
 
   nsGIOInputStream* istream = static_cast<nsGIOInputStream*>(user_data);
-  
+
   g_file_mount_enclosing_volume_finish(G_FILE (source_object), res, &error);
-  
+
   if (error) {
     g_warning("Mount failed: %s %d", error->message, error->code);
     istream->SetMountResult(MOUNT_OPERATION_FAILED, error->code);

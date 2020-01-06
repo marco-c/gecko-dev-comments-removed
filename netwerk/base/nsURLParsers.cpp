@@ -297,7 +297,7 @@ nsBaseURLParser::ParseFilePath(const char *filepath, int32_t filepathLen,
         ;
     if (*p == '/') {
         
-        if ((p+1 < end && *(p+1) == '.') && 
+        if ((p+1 < end && *(p+1) == '.') &&
            (p+2 == end || (*(p+2) == '.' && p+3 == end)))
             p = end - 1;
         
@@ -390,7 +390,7 @@ nsNoAuthURLParser::ParseAfterScheme(const char *spec, int32_t specLen,
                     nsCRT::IsAsciiAlpha(spec[2]) &&
                     ((specLen == 4) || (spec[4] == '/') || (spec[4] == '\\'))) {
                     pos = 1;
-                    break;  
+                    break;
                 }
                 
                 for (p = spec + 2; p < spec + specLen; ++p) {

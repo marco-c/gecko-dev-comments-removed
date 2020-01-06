@@ -1456,7 +1456,7 @@ nsMathMLChar::StretchEnumContext::EnumCallback(const FontFamilyName& aFamily,
   if (!openTypeTable) {
     if (context->mTablesTried.Contains(glyphTable))
       return true; 
-    
+
     
     context->mTablesTried.AppendElement(glyphTable);
   }
@@ -1624,7 +1624,7 @@ nsMathMLChar::StretchInternal(nsPresContext*           aPresContext,
   if (!maxWidth && !largeop) {
     
     
-    if ((targetSize <= 0) || 
+    if ((targetSize <= 0) ||
         ((isVertical && charSize >= targetSize) ||
          IsSizeOK(charSize, targetSize, aStretchHint)))
       done = true;
@@ -1676,7 +1676,7 @@ nsMathMLChar::StretchInternal(nsPresContext*           aPresContext,
     
     mUnscaledAscent = aDesiredStretchSize.ascent;
   }
-    
+
   if (glyphFound) {
     return NS_OK;
   }
@@ -1693,7 +1693,7 @@ nsMathMLChar::StretchInternal(nsPresContext*           aPresContext,
   if (!Preferences::GetBool("mathml.scale_stretchy_operators.enabled", true)) {
     return NS_OK;
   }
-  
+
   
   if (stretchy) {
     if (isVertical) {
@@ -1861,7 +1861,7 @@ public:
   nsDisplayMathMLCharForeground(nsDisplayListBuilder* aBuilder,
                                 nsIFrame* aFrame, nsMathMLChar* aChar,
 				                uint32_t aIndex, bool aIsSelected)
-    : nsDisplayItem(aBuilder, aFrame), mChar(aChar), 
+    : nsDisplayItem(aBuilder, aFrame), mChar(aChar),
       mIndex(aIndex), mIsSelected(aIsSelected) {
     MOZ_COUNT_CTOR(nsDisplayMathMLCharForeground);
   }
@@ -1884,7 +1884,7 @@ public:
     temp.Inflate(mFrame->PresContext()->AppUnitsPerDevPixel());
     return temp;
   }
-  
+
   virtual void Paint(nsDisplayListBuilder* aBuilder,
                      gfxContext* aCtx) override
   {
@@ -1899,7 +1899,7 @@ public:
     bool snap;
     return GetBounds(aBuilder, &snap);
   }
-  
+
   virtual uint32_t GetPerFrameKey() override {
     return (mIndex << nsDisplayItem::TYPE_BITS)
       | nsDisplayItem::GetPerFrameKey();
@@ -2350,7 +2350,7 @@ nsMathMLChar::PaintHorizontally(nsPresContext* aPresContext,
     
     
     
-    if (bm.rightBearing - bm.leftBearing >= 2 * oneDevPixel) { 
+    if (bm.rightBearing - bm.leftBearing >= 2 * oneDevPixel) {
       start[i] = dx + bm.leftBearing + oneDevPixel; 
       end[i] = dx + bm.rightBearing - oneDevPixel; 
     } else {

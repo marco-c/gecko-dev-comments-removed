@@ -23,7 +23,7 @@ public:
   virtual void Init(nsIContent*       aContent,
                     nsContainerFrame* aParent,
                     nsIFrame*         aPrevInFlow) override;
-  
+
   virtual nsSplittableType GetSplittableType() const override;
 
   virtual void DestroyFrom(nsIFrame* aDestructRoot) override;
@@ -35,7 +35,7 @@ public:
 
 
 
-  
+
   
   virtual nsIFrame* GetPrevContinuation() const override;
   virtual nsIFrame* GetNextContinuation() const override;
@@ -53,14 +53,14 @@ public:
   static bool IsInPrevContinuationChain(nsIFrame* aFrame1, nsIFrame* aFrame2);
   static bool IsInNextContinuationChain(nsIFrame* aFrame1, nsIFrame* aFrame2);
 #endif
-  
+
   
   nsIFrame* GetPrevInFlow() const;
   nsIFrame* GetNextInFlow() const;
 
   virtual nsIFrame* GetPrevInFlowVirtual() const override { return GetPrevInFlow(); }
   virtual nsIFrame* GetNextInFlowVirtual() const override { return GetNextInFlow(); }
-  
+
   
   virtual void SetPrevInFlow(nsIFrame*) override;
   virtual void SetNextInFlow(nsIFrame*) override;

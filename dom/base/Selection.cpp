@@ -89,7 +89,7 @@ static bool IsValidSelectionPoint(nsFrameSelection *aFrameSel, nsINode *aNode);
 static void printRange(nsRange *aDomRange);
 #define DEBUG_OUT_RANGE(x)  printRange(x)
 #else
-#define DEBUG_OUT_RANGE(x)  
+#define DEBUG_OUT_RANGE(x)
 #endif 
 
 
@@ -322,7 +322,7 @@ nsresult NS_NewDomSelection(nsISelection **aDomSelection)
 
 
 
-bool         
+bool
 IsValidSelectionPoint(nsFrameSelection *aFrameSel, nsINode *aNode)
 {
   if (!aFrameSel || !aNode)
@@ -447,12 +447,12 @@ void printRange(nsRange *aDomRange)
   nsINode* endNode = aDomRange->GetEndParent();
   int32_t startOffset = aDomRange->StartOffset();
   int32_t endOffset = aDomRange->EndOffset();
-  
+
   printf("range: 0x%lx\t start: 0x%lx %ld, \t end: 0x%lx,%ld\n",
          (unsigned long)aDomRange,
          (unsigned long)startNode, (long)startOffset,
          (unsigned long)endNode, (long)endOffset);
-         
+
 }
 #endif 
 
@@ -626,7 +626,7 @@ Selection::GetTableCellLocationFromRange(nsRange* aRange,
 
   nsresult result = GetTableSelectionType(aRange, aSelectionType);
   if (NS_FAILED(result)) return result;
-  
+
   
   
   if (*aSelectionType  != nsISelectionPrivate::TABLESELECTION_CELL)
@@ -656,7 +656,7 @@ Selection::GetTableCellLocationFromRange(nsRange* aRange,
 nsresult
 Selection::AddTableCellRange(nsRange* aRange, bool* aDidAddRange,
                              int32_t* aOutIndex)
-{  
+{
   if (!aDidAddRange || !aOutIndex)
     return NS_ERROR_NULL_POINTER;
 
@@ -675,7 +675,7 @@ Selection::AddTableCellRange(nsRange* aRange, bool* aDidAddRange,
   int32_t newRow, newCol, tableMode;
   result = GetTableCellLocationFromRange(aRange, &tableMode, &newRow, &newCol);
   if (NS_FAILED(result)) return result;
-  
+
   
   if (tableMode != nsISelectionPrivate::TABLESELECTION_CELL)
   {
@@ -683,7 +683,7 @@ Selection::AddTableCellRange(nsRange* aRange, bool* aDidAddRange,
     
     return NS_OK;
   }
-  
+
   
   
   if (mFrameSelection->mSelectingTableCellMode == TABLESELECTION_NONE)
@@ -701,15 +701,15 @@ Selection::GetTableSelectionType(nsIDOMRange* aDOMRange,
   if (!aDOMRange || !aTableSelectionType)
     return NS_ERROR_NULL_POINTER;
   nsRange* range = static_cast<nsRange*>(aDOMRange);
-  
+
   *aTableSelectionType = nsISelectionPrivate::TABLESELECTION_NONE;
- 
+
   
   if(!mFrameSelection) return NS_OK;
 
   nsINode* startNode = range->GetStartParent();
   if (!startNode) return NS_ERROR_FAILURE;
-  
+
   nsINode* endNode = range->GetEndParent();
   if (!endNode) return NS_ERROR_FAILURE;
 
@@ -858,7 +858,7 @@ Selection::GetAnchorNode()
 {
   if (!mAnchorFocusRange)
     return nullptr;
-   
+
   if (GetDirection() == eDirNext) {
     return mAnchorFocusRange->GetStartParent();
   }
@@ -1674,7 +1674,7 @@ Selection::GetPrimaryFrameForAnchorNode(nsIFrame** aReturnFrame)
 {
   if (!aReturnFrame)
     return NS_ERROR_NULL_POINTER;
-  
+
   int32_t frameOffset = 0;
   *aReturnFrame = 0;
   nsCOMPtr<nsIContent> content = do_QueryInterface(GetAnchorNode());
@@ -1696,16 +1696,16 @@ Selection::GetPrimaryFrameForFocusNode(nsIFrame** aReturnFrame,
 {
   if (!aReturnFrame)
     return NS_ERROR_NULL_POINTER;
-  
+
   nsCOMPtr<nsIContent> content = do_QueryInterface(GetFocusNode());
   if (!content || !mFrameSelection)
     return NS_ERROR_FAILURE;
-  
+
   int32_t frameOffset = 0;
   *aReturnFrame = 0;
   if (!aOffsetUsed)
     aOffsetUsed = &frameOffset;
-    
+
   CaretAssociationHint hint = mFrameSelection->GetHint();
 
   if (aVisual) {
@@ -1714,7 +1714,7 @@ Selection::GetPrimaryFrameForFocusNode(nsIFrame** aReturnFrame,
     return nsCaret::GetCaretFrameForNodeOffset(mFrameSelection,
       content, FocusOffset(), hint, caretBidiLevel, aReturnFrame, aOffsetUsed);
   }
-  
+
   *aReturnFrame = mFrameSelection->
     GetFrameForNodeOffset(content, FocusOffset(),
                           hint, aOffsetUsed);
@@ -2002,7 +2002,7 @@ Selection::Repaint(nsPresContext* aPresContext)
     return NS_OK;
 
   int32_t i;
-  
+
   for (i = 0; i < arrCount; i++)
   {
     nsresult rv = SelectFrames(aPresContext, mRanges[i].mRange, true);
@@ -2017,7 +2017,7 @@ Selection::Repaint(nsPresContext* aPresContext)
 
 NS_IMETHODIMP
 Selection::GetCanCacheFrameOffset(bool* aCanCacheFrameOffset)
-{ 
+{
   NS_ENSURE_ARG_POINTER(aCanCacheFrameOffset);
 
   if (mCachedOffsetForFrame)
@@ -2028,7 +2028,7 @@ Selection::GetCanCacheFrameOffset(bool* aCanCacheFrameOffset)
   return NS_OK;
 }
 
-NS_IMETHODIMP    
+NS_IMETHODIMP
 Selection::SetCanCacheFrameOffset(bool aCanCacheFrameOffset)
 {
   if (!mCachedOffsetForFrame) {
@@ -2046,7 +2046,7 @@ Selection::SetCanCacheFrameOffset(bool aCanCacheFrameOffset)
   return NS_OK;
 }
 
-NS_IMETHODIMP    
+NS_IMETHODIMP
 Selection::GetCachedFrameOffset(nsIFrame* aFrame, int32_t inOffset,
                                 nsPoint& aPoint)
 {
@@ -2062,7 +2062,7 @@ Selection::GetCachedFrameOffset(nsIFrame* aFrame, int32_t inOffset,
   {
      
      aPoint = mCachedOffsetForFrame->mCachedFrameOffset;
-  } 
+  }
   else
   {
      
@@ -2071,7 +2071,7 @@ Selection::GetCachedFrameOffset(nsIFrame* aFrame, int32_t inOffset,
      if (NS_SUCCEEDED(rv) && mCachedOffsetForFrame->mCanCacheFrameOffset) {
        mCachedOffsetForFrame->mCachedFrameOffset = aPoint;
        mCachedOffsetForFrame->mLastCaretFrame = aFrame;
-       mCachedOffsetForFrame->mLastContentOffset = inOffset; 
+       mCachedOffsetForFrame->mLastContentOffset = inOffset;
      }
   }
 
@@ -2330,7 +2330,7 @@ Selection::AddRangeInternal(nsRange& aRange, nsIDocument* aDocument,
   }
 
   SetAnchorFocusRange(rangeIndex);
-  
+
   
   if (mSelectionType == SelectionType::eNormal) {
     SetInterlinePosition(true);
@@ -2391,7 +2391,7 @@ Selection::RemoveRange(nsRange& aRange, ErrorResult& aRv)
     
     return;
   }
-  
+
   
   int32_t beginOffset, endOffset;
   if (endNode->IsNodeOfType(nsINode::eTEXT)) {
@@ -4063,7 +4063,7 @@ Selection::SelectionLanguageChange(bool aLangRTL)
     nsCOMPtr<nsIContent> focusContent = do_QueryInterface(GetFocusNode());
     nsPrevNextBidiLevels levels = frameSelection->
       GetPrevNextBidiLevels(focusContent, focusOffset, false);
-      
+
     levelBefore = levels.mLevelBefore;
     levelAfter = levels.mLevelAfter;
   }
@@ -4088,11 +4088,11 @@ Selection::SelectionLanguageChange(bool aLangRTL)
     else
       frameSelection->SetCaretBidiLevel(levelAfter);
   }
-  
+
   
   
   frameSelection->InvalidateDesiredPos();
-  
+
   return NS_OK;
 }
 

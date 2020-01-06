@@ -162,7 +162,7 @@ public:
 
 
   bool HasLoadState(LoadState aState) const
-    { return (mLoadState & static_cast<uint32_t>(aState)) == 
+    { return (mLoadState & static_cast<uint32_t>(aState)) ==
         static_cast<uint32_t>(aState); }
 
   

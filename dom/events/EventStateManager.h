@@ -197,7 +197,7 @@ public:
 
   nsresult SetCursor(int32_t aCursor, imgIContainer* aContainer,
                      bool aHaveHotspot, float aHotspotX, float aHotspotY,
-                     nsIWidget* aWidget, bool aLockCursor); 
+                     nsIWidget* aWidget, bool aLockCursor);
 
   static void StartHandlingUserInput()
   {
@@ -1017,11 +1017,11 @@ public:
   
   
   static int32_t sUserInputEventDepth;
-  
+
   static bool sNormalLMouseEventInProcess;
 
   static EventStateManager* sActiveESM;
-  
+
   static void ClearGlobalActiveContent(EventStateManager* aClearer);
 
   

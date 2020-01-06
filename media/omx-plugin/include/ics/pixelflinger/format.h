@@ -104,7 +104,7 @@ typedef struct {
 #endif
 	uint8_t     size;	
     uint8_t     bitsPerPixel;
-    union {    
+    union {
         struct {
             uint8_t     ah;		
             uint8_t     al;		
@@ -118,7 +118,7 @@ typedef struct {
         struct {
             uint8_t h;
             uint8_t l;
-        } __attribute__((__packed__)) c[4];        
+        } __attribute__((__packed__)) c[4];
     } __attribute__((__packed__));
 	uint16_t    components;	
 } GGLFormat;

@@ -85,7 +85,7 @@ nsSyncStreamListener::OnDataAvailable(nsIRequest     *request,
 
     
     
-    NS_ASSERTION(bytesWritten == count, "did not write all data"); 
+    NS_ASSERTION(bytesWritten == count, "did not write all data");
 
     mKeepWaiting = false; 
     return NS_OK;

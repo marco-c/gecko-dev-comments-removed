@@ -123,7 +123,7 @@ Summariser::Rule(uintptr_t aAddress, int aNewReg,
   
   const char* reason1 = nullptr;
   const char* reason2 = nullptr;
-  
+
   
   
   

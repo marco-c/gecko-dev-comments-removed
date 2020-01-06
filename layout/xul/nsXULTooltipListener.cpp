@@ -384,7 +384,7 @@ nsXULTooltipListener::CheckTreeBodyMove(nsIDOMMouseEvent* aMouseEvent)
     nsCOMPtr<nsIContent> currentTooltip = do_QueryReferent(mCurrentTooltip);
     if (currentTooltip && (row != mLastTreeRow || col != mLastTreeCol)) {
       HideTooltip();
-    } 
+    }
 
     mLastTreeRow = row;
     mLastTreeCol = col;
@@ -427,7 +427,7 @@ nsXULTooltipListener::ShowTooltip()
 
       
       
-      currentTooltip->AddSystemEventListener(NS_LITERAL_STRING("popuphiding"), 
+      currentTooltip->AddSystemEventListener(NS_LITERAL_STRING("popuphiding"),
                                              this, false, false);
 
       
@@ -462,7 +462,7 @@ nsXULTooltipListener::ShowTooltip()
 
 #ifdef DEBUG_crap
 static void
-GetTreeCellCoords(nsITreeBoxObject* aTreeBox, nsIContent* aSourceNode, 
+GetTreeCellCoords(nsITreeBoxObject* aTreeBox, nsIContent* aSourceNode,
                   int32_t aRow, nsITreeColumn* aCol, int32_t* aX, int32_t* aY)
 {
   int32_t junk;
@@ -487,7 +487,7 @@ SetTitletipLabel(nsITreeBoxObject* aTreeBox, nsIContent* aTooltip,
   if (view) {
     nsAutoString label;
 #ifdef DEBUG
-    nsresult rv = 
+    nsresult rv =
 #endif
       view->GetCellText(aRow, aCol, label);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Couldn't get the cell text!");
@@ -552,7 +552,7 @@ nsXULTooltipListener::HideTooltip()
 }
 
 static void
-GetImmediateChild(nsIContent* aContent, nsIAtom *aTag, nsIContent** aResult) 
+GetImmediateChild(nsIContent* aContent, nsIAtom *aTag, nsIContent** aResult)
 {
   *aResult = nullptr;
   uint32_t childCount = aContent->GetChildCount();

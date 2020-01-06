@@ -305,7 +305,7 @@ nsHTMLCanvasFrame::Reflow(nsPresContext*           aPresContext,
 
 
 
-nsRect 
+nsRect
 nsHTMLCanvasFrame::GetInnerArea() const
 {
   nsMargin bp = mBorderPadding.GetPhysicalMargin(GetWritingMode());

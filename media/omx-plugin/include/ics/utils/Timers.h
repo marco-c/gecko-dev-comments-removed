@@ -80,7 +80,7 @@ enum {
     SYSTEM_TIME_PROCESS = 2,   
     SYSTEM_TIME_THREAD = 3     
 };
-    
+
 
 #ifdef __cplusplus
 nsecs_t systemTime(int clock = SYSTEM_TIME_MONOTONIC);

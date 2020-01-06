@@ -302,7 +302,7 @@ nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
         !IsFixedPaddingSize(padding->mPadding.GetBEnd(wm))) {
       return true;
     }
-      
+
     
     if (!IsFixedMarginSize(margin->mMargin.GetBStart(wm)) ||
         !IsFixedMarginSize(margin->mMargin.GetBEnd(wm))) {

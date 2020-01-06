@@ -64,7 +64,7 @@ public:
                            nsAString& aStr) override  { return NS_OK; }
   NS_IMETHOD AppendElementStart(mozilla::dom::Element* aElement,
                                 mozilla::dom::Element* aOriginalElement,
-                                nsAString& aStr) override; 
+                                nsAString& aStr) override;
   NS_IMETHOD AppendElementEnd(mozilla::dom::Element* aElement,
                               nsAString& aStr) override;
   NS_IMETHOD Flush(nsAString& aStr) override;
@@ -161,7 +161,7 @@ private:
   uint32_t         mWrapColumn;
 
   
-  uint32_t         mCurrentLineWidth; 
+  uint32_t         mCurrentLineWidth;
 
   
   
@@ -203,7 +203,7 @@ private:
 
   
   AutoTArray<bool, 8> mHasWrittenCellsForRow;
-  
+
   
   AutoTArray<bool, 8> mIsInCiteBlockquote;
 

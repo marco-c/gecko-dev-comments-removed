@@ -494,7 +494,7 @@ nsInputStreamPump::OnInputStreamReady(nsIAsyncInputStream *stream)
             nsresult rv = EnsureWaiting();
             if (NS_SUCCEEDED(rv))
                 break;
-            
+
             
             
             if (NS_SUCCEEDED(mStatus)) {

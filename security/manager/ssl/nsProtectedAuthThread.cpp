@@ -46,13 +46,13 @@ nsProtectedAuthThread::~nsProtectedAuthThread()
 NS_IMETHODIMP nsProtectedAuthThread::Login(nsIObserver *aObserver)
 {
     NS_ENSURE_ARG(aObserver);
-    
+
     if (!mSlot)
         
         return NS_ERROR_FAILURE;
 
     MutexAutoLock lock(mMutex);
-    
+
     if (mIAmRunning || mLoginReady) {
         return NS_OK;
     }
@@ -66,7 +66,7 @@ NS_IMETHODIMP nsProtectedAuthThread::Login(nsIObserver *aObserver)
 
     mIAmRunning = true;
 
-    mThreadHandle = PR_CreateThread(PR_USER_THREAD, nsProtectedAuthThreadRunner, static_cast<void*>(this), 
+    mThreadHandle = PR_CreateThread(PR_USER_THREAD, nsProtectedAuthThreadRunner, static_cast<void*>(this),
         PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
 
     
@@ -132,7 +132,7 @@ void nsProtectedAuthThread::Run(void)
 
         notifyObserver.swap(mNotifyObserver);
     }
-    
+
     if (notifyObserver) {
         DebugOnly<nsresult> rv = NS_DispatchToMainThread(notifyObserver);
 	MOZ_ASSERT(NS_SUCCEEDED(rv),
@@ -144,7 +144,7 @@ void nsProtectedAuthThread::Join()
 {
     if (!mThreadHandle)
         return;
-    
+
     PR_JoinThread(mThreadHandle);
     mThreadHandle = nullptr;
 }

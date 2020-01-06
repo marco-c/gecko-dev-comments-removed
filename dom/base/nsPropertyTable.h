@@ -161,7 +161,7 @@ class nsPropertyTable
 
   void DeleteAllProperties();
 
-  nsPropertyTable() : mPropertyList(nullptr) {}  
+  nsPropertyTable() : mPropertyList(nullptr) {}
   ~nsPropertyTable() {
     DeleteAllProperties();
   }

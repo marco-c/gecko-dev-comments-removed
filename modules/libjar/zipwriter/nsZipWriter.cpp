@@ -238,7 +238,7 @@ NS_IMETHODIMP nsZipWriter::Open(nsIFile *aFile, int32_t aIoFlags)
     
     if (aIoFlags & PR_RDONLY)
         return NS_ERROR_FAILURE;
-    
+
     nsresult rv = aFile->Clone(getter_AddRefs(mFile));
     NS_ENSURE_SUCCESS(rv, rv);
 

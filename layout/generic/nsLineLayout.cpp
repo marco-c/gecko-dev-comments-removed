@@ -1067,7 +1067,7 @@ nsLineLayout::ReflowFrame(nsIFrame* aFrame,
     
     
     bool continuingTextRun = aFrame->CanContinueTextRun();
-    
+
     
     if (!continuingTextRun && !pfd->mSkipWhenTrimmingWhitespace) {
       mTrimmableISize = 0;
@@ -1107,7 +1107,7 @@ nsLineLayout::ReflowFrame(nsIFrame* aFrame,
         
         VerticalAlignFrames(span);
       }
-      
+
       if (!continuingTextRun) {
         if (!psd->mNoWrap && (!LineIsEmpty() || placedFloat)) {
           
@@ -1136,7 +1136,7 @@ nsLineLayout::ReflowFrame(nsIFrame* aFrame,
     PushFrame(aFrame);
     aPushedFrame = true;
   }
-  
+
 #ifdef REALLY_NOISY_REFLOW
   nsFrame::IndentBy(stdout, mSpanDepth);
   printf("End ReflowFrame ");
@@ -1353,7 +1353,7 @@ nsLineLayout::CanPlaceFrame(PerFrameData* pfd,
 #endif
     return true;
   }
- 
+
   
   if (pfd->mSpan && pfd->mSpan->mContainsFloat) {
     
@@ -2879,7 +2879,7 @@ nsLineLayout::ApplyLineJustificationToAnnotations(PerFrameData* aPFD,
   }
 }
 
-nscoord 
+nscoord
 nsLineLayout::ApplyFrameJustification(PerSpanData* aPSD,
                                       JustificationApplicationState& aState)
 {

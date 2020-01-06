@@ -122,12 +122,12 @@ public:
 
 
     void* previous();
-    
+
     
 
 
     void* current();
-    
+
     
 
 

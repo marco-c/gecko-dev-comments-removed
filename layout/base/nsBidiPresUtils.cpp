@@ -174,7 +174,7 @@ struct MOZ_STACK_CLASS BidiParagraphData
 
 
 
-      for (nsIContent* content = aBlockFrame->GetContent() ; content; 
+      for (nsIContent* content = aBlockFrame->GetContent() ; content;
            content = content->GetParent()) {
         if (content->IsNodeOfType(nsINode::eHTML_FORM_CONTROL) ||
             content->IsXULElement()) {
@@ -218,7 +218,7 @@ struct MOZ_STACK_CLASS BidiParagraphData
     return mPresContext->GetBidiEngine().CountRuns(runCount);
   }
 
-  nsresult GetLogicalRun(int32_t aLogicalStart, 
+  nsresult GetLogicalRun(int32_t aLogicalStart,
                          int32_t* aLogicalLimit,
                          nsBidiLevel* aLevel)
   {
@@ -541,10 +541,10 @@ SplitInlineAncestors(nsContainerFrame* aParent,
   while (IsBidiSplittable(parent)) {
     nsContainerFrame* grandparent = parent->GetParent();
     NS_ASSERTION(grandparent, "Couldn't get parent's parent in nsBidiPresUtils::SplitInlineAncestors");
-    
+
     
     if (!frame || frame->GetNextSibling()) {
-    
+
       newParent = static_cast<nsContainerFrame*>(presShell->FrameConstructor()->
         CreateContinuingFrame(presContext, parent, grandparent, false));
 
@@ -559,23 +559,23 @@ SplitInlineAncestors(nsContainerFrame* aParent,
 
       
       newParent->InsertFrames(nsIFrame::kNoReflowPrincipalList, nullptr, tail);
-    
+
       
       nsFrameList temp(newParent, newParent);
       grandparent->InsertFrames(nsIFrame::kNoReflowPrincipalList, parent, temp);
     }
-    
+
     frame = parent;
     parent = grandparent;
   }
-  
+
   return NS_OK;
 }
 
 static void
 MakeContinuationFluid(nsIFrame* aFrame, nsIFrame* aNext)
 {
-  NS_ASSERTION (!aFrame->GetNextInFlow() || aFrame->GetNextInFlow() == aNext, 
+  NS_ASSERTION (!aFrame->GetNextInFlow() || aFrame->GetNextInFlow() == aNext,
                 "next-in-flow is not next continuation!");
   aFrame->SetNextInFlow(aNext);
 
@@ -638,7 +638,7 @@ CreateContinuation(nsIFrame*  aFrame,
   NS_ASSERTION(parent, "Couldn't get frame parent in nsBidiPresUtils::CreateContinuation");
 
   nsresult rv = NS_OK;
-  
+
   
   
   
@@ -657,7 +657,7 @@ CreateContinuation(nsIFrame*  aFrame,
   nsFrameList temp(*aNewFrame, *aNewFrame);
   parent->InsertFrames(nsIFrame::kNoReflowPrincipalList, aFrame, temp);
 
-  if (!aIsFluid) {  
+  if (!aIsFluid) {
     
     rv = SplitInlineAncestors(parent, aFrame);
     if (NS_FAILED(rv)) {
@@ -796,7 +796,7 @@ nsBidiPresUtils::ResolveParagraph(BidiParagraphData* aBpd)
   int32_t     contentTextLength = 0;
 
   nsLineBox* currentLine = nullptr;
-  
+
 #ifdef DEBUG
 #ifdef NOISY_BIDI
   printf("Before Resolve(), mCurrentBlock=%p, mBuffer='%s', frameCount=%d, runCount=%d\n",
@@ -1171,7 +1171,7 @@ nsBidiPresUtils::TraverseFrames(nsBlockInFlowLineIterator* aLineIter,
 
               aBpd->AppendString(Substring(text, start,
                                            std::min(end, endLine) - start));
-              while (end < endLine && nextSibling) { 
+              while (end < endLine && nextSibling) {
                 aBpd->AdvanceAndAppendFrame(&frame, aLineIter, &nextSibling);
                 NS_ASSERTION(frame, "Premature end of continuation chain");
                 frame->GetOffsets(start, end);
@@ -1245,7 +1245,7 @@ nsBidiPresUtils::TraverseFrames(nsBlockInFlowLineIterator* aLineIter,
         
         aBpd->AppendUnichar(kLineSeparator);
         ResolveParagraphWithinBlock(aBpd);
-      } else { 
+      } else {
         
         
         
@@ -1802,14 +1802,14 @@ nsBidiPresUtils::CheckLineOrder(nsIFrame*  aFirstFrameOnLine,
 {
   BidiLineData bld(aFirstFrameOnLine, aNumFramesOnLine);
   int32_t count = bld.FrameCount();
-  
+
   if (aFirstVisual) {
     *aFirstVisual = bld.VisualFrameAt(0);
   }
   if (aLastVisual) {
     *aLastVisual = bld.VisualFrameAt(count-1);
   }
-  
+
   return bld.mIsReordered;
 }
 
@@ -1824,13 +1824,13 @@ nsBidiPresUtils::GetFrameToRightOf(const nsIFrame*  aFrame,
 
   if (aFrame == nullptr && count)
     return bld.VisualFrameAt(0);
-  
+
   for (int32_t i = 0; i < count - 1; i++) {
     if (bld.VisualFrameAt(i) == aFrame) {
       return bld.VisualFrameAt(i+1);
     }
   }
-  
+
   return nullptr;
 }
 
@@ -1842,16 +1842,16 @@ nsBidiPresUtils::GetFrameToLeftOf(const nsIFrame*  aFrame,
   BidiLineData bld(aFirstFrameOnLine, aNumFramesOnLine);
 
   int32_t count = bld.mVisualFrames.Length();
-  
+
   if (aFrame == nullptr && count)
     return bld.VisualFrameAt(count-1);
-  
+
   for (int32_t i = 1; i < count; i++) {
     if (bld.VisualFrameAt(i) == aFrame) {
       return bld.VisualFrameAt(i-1);
     }
   }
-  
+
   return nullptr;
 }
 
@@ -1988,7 +1988,7 @@ nsBidiPresUtils::StripBidiControlCharacters(char16_t* aText,
   }
   aTextLength -= stripLen;
 }
- 
+
 #if 0 
 void
 RemoveDiacritics(char16_t* aText,
@@ -2193,7 +2193,7 @@ nsresult nsBidiPresUtils::ProcessText(const char16_t*       aText,
 
         if (posResolve->visualLeftTwips != kNotFound)
            continue;
-           
+
         
 
 

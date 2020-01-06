@@ -21,13 +21,13 @@ using namespace mozilla;
                                       NS_FRAME_STATE_BIT(31))
 #define COL_GROUP_TYPE_OFFSET        30
 
-nsTableColGroupType 
-nsTableColGroupFrame::GetColType() const 
+nsTableColGroupType
+nsTableColGroupFrame::GetColType() const
 {
   return (nsTableColGroupType)((mState & COL_GROUP_TYPE_BITS) >> COL_GROUP_TYPE_OFFSET);
 }
 
-void nsTableColGroupFrame::SetColType(nsTableColGroupType aType) 
+void nsTableColGroupFrame::SetColType(nsTableColGroupType aType)
 {
   NS_ASSERTION(GetColType() == eColGroupContent,
                "should only call nsTableColGroupFrame::SetColType with aType "
@@ -53,7 +53,7 @@ void nsTableColGroupFrame::ResetColIndices(nsIFrame*       aFirstColGroup,
           !aStartColFrame) {
         colGroupFrame->SetStartColumnIndex(colIndex);
       }
-      nsIFrame* colFrame = aStartColFrame; 
+      nsIFrame* colFrame = aStartColFrame;
       if (!colFrame || (colIndex != aFirstColIndex)) {
         colFrame = colGroupFrame->PrincipalChildList().FirstChild();
       }
@@ -123,13 +123,13 @@ nsTableColGroupFrame::GetLastRealColGroup(nsTableFrame* aTableFrame)
   if (!link.PrevFrame()) {
     return nullptr; 
   }
- 
+
   nsTableColGroupType lastColGroupType =
     static_cast<nsTableColGroupFrame*>(link.PrevFrame())->GetColType();
   if (eColGroupAnonymousCell == lastColGroupType) {
     return static_cast<nsTableColGroupFrame*>(nextToLastColGroup);
   }
- 
+
   return static_cast<nsTableColGroupFrame*>(link.PrevFrame());
 }
 
@@ -141,10 +141,10 @@ nsTableColGroupFrame::SetInitialChildList(ChildListID     aListID,
   MOZ_ASSERT(mFrames.IsEmpty(),
              "unexpected second call to SetInitialChildList");
   MOZ_ASSERT(aListID == kPrincipalList, "unexpected child list");
-  if (aChildList.IsEmpty()) { 
+  if (aChildList.IsEmpty()) {
     GetTableFrame()->AppendAnonymousColFrames(this, GetSpan(),
                                               eColAnonymousColGroup, false);
-    return; 
+    return;
   }
 
   mFrames.AppendFrames(this, aChildList);
@@ -157,7 +157,7 @@ nsTableColGroupFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
 
   if (!aOldStyleContext) 
     return;
-     
+
   nsTableFrame* tableFrame = GetTableFrame();
   if (tableFrame->IsBorderCollapse() &&
       tableFrame->BCRecalcNeeded(aOldStyleContext, StyleContext())) {
@@ -315,14 +315,14 @@ nsTableColGroupFrame::RemoveFrame(ChildListID     aListID,
         col = nextCol;
       }
     }
-    
+
     int32_t colIndex = colFrame->GetColIndex();
     
     RemoveChild(*colFrame, true);
-    
+
     nsTableFrame* tableFrame = GetTableFrame();
     tableFrame->RemoveCol(this, colIndex, true, true);
-    if (mFrames.IsEmpty() && contentRemoval && 
+    if (mFrames.IsEmpty() && contentRemoval &&
         GetColType() == eColGroupContent) {
       tableFrame->AppendAnonymousColFrames(this, GetSpan(),
                                            eColAnonymousColGroup, true);
@@ -361,7 +361,7 @@ nsTableColGroupFrame::Reflow(nsPresContext*          aPresContext,
   DO_GLOBAL_REFLOW_COUNT("nsTableColGroupFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
   NS_ASSERTION(nullptr!=mContent, "bad state -- null content for frame");
-  
+
   const nsStyleVisibility* groupVis = StyleVisibility();
   bool collapseGroup = (NS_STYLE_VISIBILITY_COLLAPSE == groupVis->mVisible);
   if (collapseGroup) {
@@ -369,7 +369,7 @@ nsTableColGroupFrame::Reflow(nsPresContext*          aPresContext,
   }
   
   
-  
+
   for (nsIFrame *kidFrame = mFrames.FirstChild(); kidFrame;
        kidFrame = kidFrame->GetNextSibling()) {
     
@@ -507,10 +507,10 @@ void nsTableColGroupFrame::Dump(int32_t aIndent)
   case eColGroupContent:
     printf(" content ");
     break;
-  case eColGroupAnonymousCol: 
+  case eColGroupAnonymousCol:
     printf(" anonymous-column  ");
     break;
-  case eColGroupAnonymousCell: 
+  case eColGroupAnonymousCell:
     printf(" anonymous-cell ");
     break;
   }

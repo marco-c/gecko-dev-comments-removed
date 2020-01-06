@@ -143,7 +143,7 @@ private:
 
   
   static uint32_t sRecordCnt;
- 
+
   
   static HitRate sHRStats[kNumOfRanges];
 };

@@ -40,7 +40,7 @@
 
 #pragma warning( push )
 
-#pragma warning( disable : 4530 ) 
+#pragma warning( disable : 4530 )
 
 #include <map>
 #include <string>

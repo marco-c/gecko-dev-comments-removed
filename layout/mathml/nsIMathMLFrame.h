@@ -42,7 +42,7 @@ public:
 
  
  
- 
+
  
 
 
@@ -82,14 +82,14 @@ public:
 
 
 
-  NS_IMETHOD 
+  NS_IMETHOD
   Stretch(mozilla::gfx::DrawTarget* aDrawTarget,
           nsStretchDirection   aStretchDirection,
           nsBoundingMetrics&   aContainerSize,
           mozilla::ReflowOutput& aDesiredStretchSize) = 0;
 
  
- 
+
   NS_IMETHOD
   GetEmbellishData(nsEmbellishData& aEmbellishData) = 0;
 

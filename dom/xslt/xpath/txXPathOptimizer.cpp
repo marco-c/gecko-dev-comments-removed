@@ -80,7 +80,7 @@ txXPathOptimizer::optimize(Expr* aInExpr, Expr** aOutExpr)
         if (NS_SUCCEEDED(rv)) {
             *aOutExpr = new txLiteralExpr(exprRes);
         }
-        
+
         return NS_OK;
     }
 
@@ -244,7 +244,7 @@ txXPathOptimizer::optimizeUnion(Expr* aInExpr, Expr** aOutExpr)
             if (step->getAxisIdentifier() != axis) {
                 continue;
             }
-            
+
             
             if (!unionTest) {
                 nsAutoPtr<txNodeTest> owner(unionTest = new txUnionNodeTest);

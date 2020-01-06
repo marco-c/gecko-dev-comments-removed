@@ -389,7 +389,7 @@ nsSimplePageSequenceFrame::GetPrintRange(int32_t* aFromPage, int32_t* aToPage)
 }
 
 
-void 
+void
 nsSimplePageSequenceFrame::SetPageNumberFormat(const char* aPropName, const char* aDefPropVal, bool aPageNumOnly)
 {
   
@@ -546,13 +546,13 @@ nsSimplePageSequenceFrame::DetermineWhetherToPrintPage()
       return;
     } else {
       int32_t length = mPageRanges.Length();
-    
+
       
       if (length && (length % 2 == 0)) {
         mPrintThisPage = false;
-      
+
         int32_t i;
-        for (i = 0; i < length; i += 2) {          
+        for (i = 0; i < length; i += 2) {
           if (mPageRanges[i] <= mPageNum && mPageNum <= mPageRanges[i+1]) {
             mPrintThisPage = true;
             break;
@@ -572,7 +572,7 @@ nsSimplePageSequenceFrame::DetermineWhetherToPrintPage()
       mPrintThisPage = false;  
     }
   }
-  
+
   if (nsIPrintSettings::kRangeSelection == mPrintRangeType) {
     mPrintThisPage = true;
   }
@@ -600,7 +600,7 @@ nsSimplePageSequenceFrame::PrePrintNextPage(nsITimerCallback* aCallback, bool* a
     *aDone = true;
     return NS_ERROR_FAILURE;
   }
-  
+
   DetermineWhetherToPrintPage();
   
   
@@ -627,7 +627,7 @@ nsSimplePageSequenceFrame::PrePrintNextPage(nsITimerCallback* aCallback, bool* a
       NS_ENSURE_SUCCESS(rv, rv);
 
       mCalledBeginPage = true;
-      
+
       RefPtr<gfxContext> renderingContext = dc->CreateRenderingContext();
       NS_ENSURE_TRUE(renderingContext, NS_ERROR_OUT_OF_MEMORY);
 
@@ -684,9 +684,9 @@ nsSimplePageSequenceFrame::ResetPrintCanvasList()
   }
 
   mCurrentCanvasList.Clear();
-  mCurrentCanvasListSetup = false; 
+  mCurrentCanvasListSetup = false;
   return NS_OK;
-} 
+}
 
 NS_IMETHODIMP
 nsSimplePageSequenceFrame::PrintNextPage()
@@ -814,7 +814,7 @@ nsSimplePageSequenceFrame::DoPageEnd()
   ResetPrintCanvasList();
 
   mPageNum++;
-  
+
   return rv;
 }
 
@@ -864,7 +864,7 @@ nsSimplePageSequenceFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
 void
 nsSimplePageSequenceFrame::SetPageNumberFormat(const nsAString& aFormatStr, bool aForPageNumOnly)
-{ 
+{
   NS_ASSERTION(mPageData != nullptr, "mPageData string cannot be null!");
 
   if (aForPageNumOnly) {
@@ -877,7 +877,7 @@ nsSimplePageSequenceFrame::SetPageNumberFormat(const nsAString& aFormatStr, bool
 
 void
 nsSimplePageSequenceFrame::SetDateTimeStr(const nsAString& aDateTimeStr)
-{ 
+{
   NS_ASSERTION(mPageData != nullptr, "mPageData string cannot be null!");
 
   mPageData->mDateTimeStr = aDateTimeStr;

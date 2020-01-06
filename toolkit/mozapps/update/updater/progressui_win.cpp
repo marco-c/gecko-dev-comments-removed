@@ -49,7 +49,7 @@ GetStringsFile(WCHAR filename[MAX_PATH])
 {
   if (!GetModuleFileNameW(nullptr, filename, MAX_PATH))
     return FALSE;
- 
+
   WCHAR *dot = wcsrchr(filename, '.');
   if (!dot || wcsicmp(dot + 1, L"exe"))
     return FALSE;
@@ -76,28 +76,28 @@ CenterDialog(HWND hDlg)
   
   HWND desktop = GetDesktopWindow();
 
-  GetWindowRect(desktop, &rcOwner); 
-  GetWindowRect(hDlg, &rcDlg); 
-  CopyRect(&rc, &rcOwner); 
+  GetWindowRect(desktop, &rcOwner);
+  GetWindowRect(hDlg, &rcDlg);
+  CopyRect(&rc, &rcOwner);
 
   
   
   
   
 
-  OffsetRect(&rcDlg, -rcDlg.left, -rcDlg.top); 
-  OffsetRect(&rc, -rc.left, -rc.top); 
-  OffsetRect(&rc, -rcDlg.right, -rcDlg.bottom); 
+  OffsetRect(&rcDlg, -rcDlg.left, -rcDlg.top);
+  OffsetRect(&rc, -rc.left, -rc.top);
+  OffsetRect(&rc, -rcDlg.right, -rcDlg.bottom);
 
   
   
 
-  SetWindowPos(hDlg, 
-               HWND_TOP, 
-               rcOwner.left + (rc.right / 2), 
-               rcOwner.top + (rc.bottom / 2), 
+  SetWindowPos(hDlg,
+               HWND_TOP,
+               rcOwner.left + (rc.right / 2),
+               rcOwner.top + (rc.bottom / 2),
                0, 0,          
-               SWP_NOSIZE); 
+               SWP_NOSIZE);
 }
 
 static void
@@ -124,7 +124,7 @@ InitDialog(HWND hDlg)
   SendMessage(hWndPro, PBM_SETRANGE, 0, MAKELPARAM(0, 100));
   if (sIndeterminate) {
     LONG_PTR val = GetWindowLongPtr(hWndPro, GWL_STYLE);
-    SetWindowLongPtr(hWndPro, GWL_STYLE, val|PBS_MARQUEE); 
+    SetWindowLongPtr(hWndPro, GWL_STYLE, val|PBS_MARQUEE);
     SendMessage(hWndPro,(UINT) PBM_SETMARQUEE,(WPARAM) TRUE,(LPARAM)50 );
   }
 
@@ -221,7 +221,7 @@ InitProgressUIStrings() {
   if (_waccess(filename, 04)) {
     return -1;
   }
-  
+
   
   
   if (ReadStrings(filename, &sUIStrings) != OK) {

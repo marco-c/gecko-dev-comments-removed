@@ -30,7 +30,7 @@ public:
 
 
     virtual int compareValues(txObject* val1, txObject* val2) = 0;
-    
+
     
 
 

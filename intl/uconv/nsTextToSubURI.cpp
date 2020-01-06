@@ -131,13 +131,13 @@ nsTextToSubURI::convertURItoUnicode(const nsCString& aCharset,
   return encoding->DecodeWithoutBOMHandlingAndWithoutReplacement(aURI, aOut);
 }
 
-NS_IMETHODIMP  nsTextToSubURI::UnEscapeURIForUI(const nsACString & aCharset, 
-                                                const nsACString &aURIFragment, 
+NS_IMETHODIMP  nsTextToSubURI::UnEscapeURIForUI(const nsACString & aCharset,
+                                                const nsACString &aURIFragment,
                                                 nsAString &_retval)
 {
   nsAutoCString unescapedSpec;
   
-  NS_UnescapeURL(PromiseFlatCString(aURIFragment), 
+  NS_UnescapeURL(PromiseFlatCString(aURIFragment),
                  esc_SkipControl | esc_AlwaysCopy, unescapedSpec);
 
   
@@ -189,7 +189,7 @@ nsTextToSubURI::UnEscapeNonAsciiURI(const nsACString& aCharset,
   
   
   
-  if (!IsUTF8(unescapedSpec) && 
+  if (!IsUTF8(unescapedSpec) &&
       (aCharset.LowerCaseEqualsLiteral("utf-16") ||
        aCharset.LowerCaseEqualsLiteral("utf-16be") ||
        aCharset.LowerCaseEqualsLiteral("utf-16le") ||

@@ -159,7 +159,7 @@ private:
 
         
     RefPtr<nsFtpControlConnection> mControlConnection;       
-    bool                            mReceivedControlData;  
+    bool                            mReceivedControlData;
     bool                            mTryingCachedControl;     
     bool                            mRETRFailed;              
     uint64_t                        mFileSize;

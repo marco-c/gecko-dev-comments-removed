@@ -21,7 +21,7 @@ class nsBoxLayoutState;
 
 
 
-class nsGridLayout2 final : public nsStackLayout, 
+class nsGridLayout2 final : public nsStackLayout,
                             public nsIGridPart
 {
 public:

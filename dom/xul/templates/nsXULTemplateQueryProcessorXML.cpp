@@ -378,7 +378,7 @@ nsXULTemplateQueryProcessorXML::TranslateRef(nsISupports* aDatasource,
     
     if (!rootElement)
         return NS_OK;
-    
+
     RefPtr<nsXULTemplateResultXML> result = new nsXULTemplateResultXML(nullptr, rootElement, nullptr);
     result.forget(aRef);
 

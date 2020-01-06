@@ -34,7 +34,7 @@ nsresult nsPrintingPromptService::Init()
 
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPrintingPromptService::ShowPrintDialog(mozIDOMWindowProxy *parent, nsIWebBrowserPrint *webBrowserPrint, nsIPrintSettings *printSettings)
 {
   nsCOMPtr<nsIPrintDialogService> dlgPrint(do_GetService(
@@ -47,7 +47,7 @@ nsPrintingPromptService::ShowPrintDialog(mozIDOMWindowProxy *parent, nsIWebBrows
   return NS_ERROR_FAILURE;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPrintingPromptService::ShowProgress(mozIDOMWindowProxy*      parent,
                                       nsIWebBrowserPrint*      webBrowserPrint,    
                                       nsIPrintSettings*        printSettings,      
@@ -60,7 +60,7 @@ nsPrintingPromptService::ShowProgress(mozIDOMWindowProxy*      parent,
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPrintingPromptService::ShowPageSetup(mozIDOMWindowProxy *parent, nsIPrintSettings *printSettings, nsIObserver *aObs)
 {
   nsCOMPtr<nsIPrintDialogService> dlgPrint(do_GetService(
@@ -72,7 +72,7 @@ nsPrintingPromptService::ShowPageSetup(mozIDOMWindowProxy *parent, nsIPrintSetti
   return NS_ERROR_FAILURE;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPrintingPromptService::ShowPrinterProperties(mozIDOMWindowProxy *parent, const char16_t *printerName, nsIPrintSettings *printSettings)
 {
     return NS_ERROR_NOT_IMPLEMENTED;
@@ -83,35 +83,35 @@ nsPrintingPromptService::ShowPrinterProperties(mozIDOMWindowProxy *parent, const
 
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPrintingPromptService::OnStateChange(nsIWebProgress *aWebProgress, nsIRequest *aRequest, uint32_t aStateFlags, nsresult aStatus)
 {
     return NS_OK;
 }
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPrintingPromptService::OnProgressChange(nsIWebProgress *aWebProgress, nsIRequest *aRequest, int32_t aCurSelfProgress, int32_t aMaxSelfProgress, int32_t aCurTotalProgress, int32_t aMaxTotalProgress)
 {
     return NS_OK;
 }
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPrintingPromptService::OnLocationChange(nsIWebProgress *aWebProgress, nsIRequest *aRequest, nsIURI *location, uint32_t aFlags)
 {
     return NS_OK;
 }
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPrintingPromptService::OnStatusChange(nsIWebProgress *aWebProgress, nsIRequest *aRequest, nsresult aStatus, const char16_t *aMessage)
 {
     return NS_OK;
 }
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPrintingPromptService::OnSecurityChange(nsIWebProgress *aWebProgress, nsIRequest *aRequest, uint32_t state)
 {
     return NS_OK;

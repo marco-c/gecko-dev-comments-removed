@@ -87,13 +87,13 @@ using dom::AutoNoJSAPI;
 
 
 nsXULWindow::nsXULWindow(uint32_t aChromeFlags)
-  : mChromeTreeOwner(nullptr), 
+  : mChromeTreeOwner(nullptr),
     mContentTreeOwner(nullptr),
     mPrimaryContentTreeOwner(nullptr),
     mModalStatus(NS_OK),
     mContinueModalLoop(false),
     mDebuting(false),
-    mChromeLoaded(false), 
+    mChromeLoaded(false),
     mShowAfterLoad(false),
     mIntrinsicallySized(false),
     mCenterAfterLoad(false),
@@ -149,7 +149,7 @@ NS_IMETHODIMP nsXULWindow::GetInterface(const nsIID& aIID, void** aSink)
     rv = EnsurePrompter();
     if (NS_FAILED(rv)) return rv;
     return mPrompter->QueryInterface(aIID, aSink);
-  }   
+  }
   if (aIID.Equals(NS_GET_IID(nsIAuthPrompt))) {
     rv = EnsureAuthPrompter();
     if (NS_FAILED(rv)) return rv;
@@ -172,12 +172,12 @@ NS_IMETHODIMP nsXULWindow::GetInterface(const nsIID& aIID, void** aSink)
     domWindowInternal.forget(aSink);
     return rv;
   }
-  if (aIID.Equals(NS_GET_IID(nsIWebBrowserChrome)) && 
+  if (aIID.Equals(NS_GET_IID(nsIWebBrowserChrome)) &&
     NS_SUCCEEDED(EnsureContentTreeOwner()) &&
     NS_SUCCEEDED(mContentTreeOwner->QueryInterface(aIID, aSink)))
     return NS_OK;
 
-  if (aIID.Equals(NS_GET_IID(nsIEmbeddingSiteWindow)) && 
+  if (aIID.Equals(NS_GET_IID(nsIEmbeddingSiteWindow)) &&
     NS_SUCCEEDED(EnsureContentTreeOwner()) &&
     NS_SUCCEEDED(mContentTreeOwner->QueryInterface(aIID, aSink)))
     return NS_OK;
@@ -307,7 +307,7 @@ NS_IMETHODIMP nsXULWindow::GetIntrinsicallySized(bool* aIntrinsicallySized)
   return NS_OK;
 }
 
-NS_IMETHODIMP nsXULWindow::GetPrimaryContentShell(nsIDocShellTreeItem** 
+NS_IMETHODIMP nsXULWindow::GetPrimaryContentShell(nsIDocShellTreeItem**
    aDocShellTreeItem)
 {
   NS_ENSURE_ARG_POINTER(aDocShellTreeItem);
@@ -375,7 +375,7 @@ NS_IMETHODIMP nsXULWindow::ShowModal()
 
   
   nsCOMPtr<nsIWidget> window = mWindow;
-  nsCOMPtr<nsIXULWindow> tempRef = this;  
+  nsCOMPtr<nsIXULWindow> tempRef = this;
 
   window->SetModal(true);
   mContinueModalLoop = true;
@@ -408,7 +408,7 @@ NS_IMETHODIMP nsXULWindow::ShowModal()
 
 
 NS_IMETHODIMP nsXULWindow::InitWindow(nativeWindow aParentNativeWindow,
-   nsIWidget* parentWidget, int32_t x, int32_t y, int32_t cx, int32_t cy)   
+   nsIWidget* parentWidget, int32_t x, int32_t y, int32_t cx, int32_t cy)
 {
   
   NS_ASSERTION(false, "Not Yet Implemented");
@@ -492,7 +492,7 @@ NS_IMETHODIMP nsXULWindow::Destroy()
     }
   }
 #endif
-   
+
   mDOMWindow = nullptr;
   if (mDocShell) {
     nsCOMPtr<nsIBaseWindow> shellAsWin(do_QueryInterface(mDocShell));
@@ -609,7 +609,7 @@ NS_IMETHODIMP nsXULWindow::GetSize(int32_t* aCX, int32_t* aCY)
   return GetPositionAndSize(nullptr, nullptr, aCX, aCY);
 }
 
-NS_IMETHODIMP nsXULWindow::SetPositionAndSize(int32_t aX, int32_t aY, 
+NS_IMETHODIMP nsXULWindow::SetPositionAndSize(int32_t aX, int32_t aY,
    int32_t aCX, int32_t aCY, uint32_t aFlags)
 {
   
@@ -852,7 +852,7 @@ NS_IMETHODIMP nsXULWindow::SetVisibility(bool aVisibility)
   nsCOMPtr<nsIObserverService> obssvc = services::GetObserverService();
   NS_ASSERTION(obssvc, "Couldn't get observer service.");
   if (obssvc) {
-    obssvc->NotifyObservers(nullptr, "xul-window-visible", nullptr); 
+    obssvc->NotifyObservers(nullptr, "xul-window-visible", nullptr);
   }
 
   mDebuting = false;
@@ -884,7 +884,7 @@ NS_IMETHODIMP nsXULWindow::SetEnabled(bool aEnable)
 NS_IMETHODIMP nsXULWindow::GetMainWidget(nsIWidget** aMainWidget)
 {
   NS_ENSURE_ARG_POINTER(aMainWidget);
-   
+
   *aMainWidget = mWindow;
   NS_IF_ADDREF(*aMainWidget);
   return NS_OK;
@@ -949,7 +949,7 @@ NS_IMETHODIMP nsXULWindow::EnsureContentTreeOwner()
   mContentTreeOwner = new nsContentTreeOwner(false);
   NS_ADDREF(mContentTreeOwner);
   mContentTreeOwner->XULWindow(this);
-   
+
   return NS_OK;
 }
 
@@ -969,11 +969,11 @@ NS_IMETHODIMP nsXULWindow::EnsurePrompter()
 {
   if (mPrompter)
     return NS_OK;
-   
+
   nsCOMPtr<mozIDOMWindowProxy> ourWindow;
   nsresult rv = GetWindowDOMWindow(getter_AddRefs(ourWindow));
   if (NS_SUCCEEDED(rv)) {
-    nsCOMPtr<nsIWindowWatcher> wwatch = 
+    nsCOMPtr<nsIWindowWatcher> wwatch =
         do_GetService(NS_WINDOWWATCHER_CONTRACTID);
     if (wwatch)
       wwatch->GetNewPrompter(ourWindow, getter_AddRefs(mPrompter));
@@ -985,7 +985,7 @@ NS_IMETHODIMP nsXULWindow::EnsureAuthPrompter()
 {
   if (mAuthPrompter)
     return NS_OK;
-      
+
   nsCOMPtr<mozIDOMWindowProxy> ourWindow;
   nsresult rv = GetWindowDOMWindow(getter_AddRefs(ourWindow));
   if (NS_SUCCEEDED(rv)) {
@@ -1083,7 +1083,7 @@ NS_IMETHODIMP nsXULWindow::ForceRoundedDimensions()
 
   return NS_OK;
 }
- 
+
 void nsXULWindow::OnChromeLoaded()
 {
   nsresult rv = EnsureContentTreeOwner();
@@ -2168,7 +2168,7 @@ void nsXULWindow::PlaceWindowLayersBehind(uint32_t aLowLevel,
     nextXULWindow->GetZLevel(&nextZ);
     if (nextZ < aLowLevel)
       break; 
-    
+
     
     nsCOMPtr<nsIBaseWindow> nextBase(do_QueryInterface(nextXULWindow));
     if (nextBase) {

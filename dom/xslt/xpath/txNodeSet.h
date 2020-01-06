@@ -184,7 +184,7 @@ private:
 
 
 
-    txXPathNode* findPosition(const txXPathNode& aNode, 
+    txXPathNode* findPosition(const txXPathNode& aNode,
                               txXPathNode* aFirst,
                               txXPathNode* aLast, bool& aDupe) const;
 

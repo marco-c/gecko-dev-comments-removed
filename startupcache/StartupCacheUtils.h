@@ -17,7 +17,7 @@ namespace mozilla {
 namespace scache {
 
 nsresult
-NewObjectInputStreamFromBuffer(UniquePtr<char[]> buffer, uint32_t len, 
+NewObjectInputStreamFromBuffer(UniquePtr<char[]> buffer, uint32_t len,
                                nsIObjectInputStream** stream);
 
 
@@ -35,7 +35,7 @@ NewObjectOutputWrappedStorageStream(nsIObjectOutputStream **wrapperStream,
 
 
 nsresult
-NewBufferFromStorageStream(nsIStorageStream *storageStream, 
+NewBufferFromStorageStream(nsIStorageStream *storageStream,
                            UniquePtr<char[]>* buffer, uint32_t* len);
 
 nsresult

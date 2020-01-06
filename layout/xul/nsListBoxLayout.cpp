@@ -126,7 +126,7 @@ nsListBoxLayout::LayoutInternal(nsIFrame* aBox, nsBoxLayoutState& aState)
   
   nscoord availableHeight = body->GetAvailableHeight();
   nscoord yOffset = body->GetYPosition();
-  
+
   if (availableHeight <= 0) {
     bool fixed = (body->GetFixedRowSize() != -1);
     if (fixed)
@@ -146,7 +146,7 @@ nsListBoxLayout::LayoutInternal(nsIFrame* aBox, nsBoxLayoutState& aState)
     
     nsRect childRect(box->GetRect());
     box->GetXULMargin(margin);
-    
+
     
     
     
@@ -154,10 +154,10 @@ nsListBoxLayout::LayoutInternal(nsIFrame* aBox, nsBoxLayoutState& aState)
       childRect.x = 0;
       childRect.y = yOffset;
       childRect.width = clientRect.width;
-      
+
       nsSize size = box->GetXULPrefSize(aState);
       body->SetRowHeight(size.height);
-      
+
       childRect.height = rowHeight;
 
       childRect.Deflate(margin);
@@ -184,15 +184,15 @@ nsListBoxLayout::LayoutInternal(nsIFrame* aBox, nsBoxLayoutState& aState)
 
     yOffset += size;
     availableHeight -= size;
-    
+
     box = nsBox::GetNextXULBox(box);
   }
-  
+
   
   
   
   body->PostReflowCallback();
-    
+
   
   
   
@@ -209,4 +209,4 @@ already_AddRefed<nsBoxLayout> NS_NewListBoxLayout()
 {
   RefPtr<nsBoxLayout> layout = new nsListBoxLayout();
   return layout.forget();
-} 
+}

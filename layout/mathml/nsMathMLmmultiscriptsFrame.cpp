@@ -411,7 +411,7 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
                     subScriptSize.BlockStartAscent()));
         bmMultiSub.ascent = std::max(bmMultiSub.ascent, bmSubScript.ascent);
         bmMultiSub.descent = std::max(bmMultiSub.descent, bmSubScript.descent);
-        multiSubSize.Height() = 
+        multiSubSize.Height() =
           std::max(multiSubSize.Height(),
                    subScriptSize.Height() - subScriptSize.BlockStartAscent());
         if (bmSubScript.width)
@@ -492,7 +492,7 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
         
         
         
-        if (tag == nsGkAtoms::mmultiscripts_ || 
+        if (tag == nsGkAtoms::mmultiscripts_ ||
             tag == nsGkAtoms::msubsup_) {
           nscoord subSuperscriptGapMin;
           if (mathFont) {
@@ -550,7 +550,7 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
       (!isSubScript && tag == nsGkAtoms::mmultiscripts_)) {
     
     if (aPlaceOrigin) {
-      if ((count != 2 && (tag == nsGkAtoms::msup_ || 
+      if ((count != 2 && (tag == nsGkAtoms::msup_ ||
           tag == nsGkAtoms::msub_)) ||
           (count != 3 && tag == nsGkAtoms::msubsup_ )) {
         aFrame->ReportChildCountError();

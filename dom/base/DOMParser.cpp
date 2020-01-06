@@ -67,8 +67,8 @@ DOMParser::ParseFromString(const nsAString& aStr, SupportedType aType,
   return document.forget();
 }
 
-NS_IMETHODIMP 
-DOMParser::ParseFromString(const char16_t *str, 
+NS_IMETHODIMP
+DOMParser::ParseFromString(const char16_t *str,
                            const char *contentType,
                            nsIDOMDocument **aResult)
 {
@@ -157,7 +157,7 @@ DOMParser::ParseFromBuffer(const Uint8Array& aBuf, uint32_t aBufLen,
   return document.forget();
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 DOMParser::ParseFromBuffer(const uint8_t *buf,
                            uint32_t bufLen,
                            const char *contentType,
@@ -195,9 +195,9 @@ DOMParser::ParseFromStream(nsIInputStream* aStream,
   return document.forget();
 }
 
-NS_IMETHODIMP 
-DOMParser::ParseFromStream(nsIInputStream *stream, 
-                           const char *charset, 
+NS_IMETHODIMP
+DOMParser::ParseFromStream(nsIInputStream *stream,
+                           const char *charset,
                            int32_t contentLength,
                            const char *contentType,
                            nsIDOMDocument **aResult)
@@ -265,8 +265,8 @@ DOMParser::ParseFromStream(nsIInputStream *stream,
     document->ForceEnableXULXBL();
   }
 
-  rv = document->StartDocumentLoad(kLoadAsData, parserChannel, 
-                                   nullptr, nullptr, 
+  rv = document->StartDocumentLoad(kLoadAsData, parserChannel,
+                                   nullptr, nullptr,
                                    getter_AddRefs(listener),
                                    false);
 
@@ -311,7 +311,7 @@ DOMParser::Init(nsIPrincipal* principal, nsIURI* documentURI,
   mAttemptedInit = true;
   NS_ENSURE_ARG(principal || documentURI);
   mDocumentURI = documentURI;
-  
+
   if (!mDocumentURI) {
     principal->GetURI(getter_AddRefs(mDocumentURI));
     

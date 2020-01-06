@@ -80,7 +80,7 @@ nsMathMLmoFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     nsMathMLTokenFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
   } else {
     DisplayBorderBackgroundOutline(aBuilder, aLists);
-    
+
     
     bool isSelected = false;
     nsRect selectedRect;
@@ -92,7 +92,7 @@ nsMathMLmoFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       isSelected = true;
     }
     mMathMLChar.Display(aBuilder, this, aLists, 0, isSelected ? &selectedRect : nullptr);
-  
+
 #if defined(DEBUG) && defined(SHOW_BOUNDING_BOX)
     
     DisplayBoundingMetrics(aBuilder, this, mReference, mBoundingMetrics, aLists);
@@ -113,7 +113,7 @@ nsMathMLmoFrame::ProcessTextData()
   int32_t length = data.Length();
   char16_t ch = (length == 0) ? char16_t('\0') : data[0];
 
-  if ((length == 1) && 
+  if ((length == 1) &&
       (ch == kApplyFunction  ||
        ch == kInvisibleSeparator ||
        ch == kInvisiblePlus ||
@@ -206,7 +206,7 @@ nsMathMLmoFrame::ProcessOperatorData()
   
   
   mFlags &= NS_MATHML_OPERATOR_MUTABLE |
-            NS_MATHML_OPERATOR_ACCENT | 
+            NS_MATHML_OPERATOR_ACCENT |
             NS_MATHML_OPERATOR_MOVABLELIMITS |
             NS_MATHML_OPERATOR_CENTERED |
             NS_MATHML_OPERATOR_INVISIBLE;
@@ -222,7 +222,7 @@ nsMathMLmoFrame::ProcessOperatorData()
     mEmbellishData.leadingSpace = 0;
     mEmbellishData.trailingSpace = 0;
     if (mMathMLChar.Length() != 1)
-      mEmbellishData.direction = NS_STRETCH_DIRECTION_UNSUPPORTED;  
+      mEmbellishData.direction = NS_STRETCH_DIRECTION_UNSUPPORTED;
     
 
     if (!mFrames.FirstChild()) {

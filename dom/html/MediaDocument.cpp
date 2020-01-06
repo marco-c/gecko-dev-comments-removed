@@ -100,7 +100,7 @@ MediaDocumentStreamListener::OnDataAvailable(nsIRequest* request,
 }
 
 
-const char* const MediaDocument::sFormatNames[4] = 
+const char* const MediaDocument::sFormatNames[4] =
 {
   "MediaTitleWithNoInfo",    
   "MediaTitleWithFile",      
@@ -165,11 +165,11 @@ MediaDocument::StartDocumentLoad(const char*         aCommand,
   
   
   
-    
+
   nsCOMPtr<nsIDocShell> docShell(do_QueryInterface(aContainer));
 
   
-  NS_ENSURE_TRUE(docShell, NS_OK); 
+  NS_ENSURE_TRUE(docShell, NS_OK);
 
   const Encoding* encoding;
   int32_t source;
@@ -297,9 +297,9 @@ MediaDocument::GetFileName(nsAString& aResult, nsIChannel* aChannel)
   
   
   
-  if (mCharacterSetSource != kCharsetUninitialized) {  
+  if (mCharacterSetSource != kCharsetUninitialized) {
     mCharacterSet->Name(docCharset);
-  } else {  
+  } else {
     
     url->GetOriginCharset(docCharset);
     auto encoding = Encoding::ForLabelNoReplacement(docCharset);
@@ -309,7 +309,7 @@ MediaDocument::GetFileName(nsAString& aResult, nsIChannel* aChannel)
   }
 
   nsresult rv;
-  nsCOMPtr<nsITextToSubURI> textToSubURI = 
+  nsCOMPtr<nsITextToSubURI> textToSubURI =
     do_GetService(NS_ITEXTTOSUBURI_CONTRACTID, &rv);
   if (NS_SUCCEEDED(rv)) {
     
@@ -330,7 +330,7 @@ MediaDocument::LinkStylesheet(const nsAString& aStylesheet)
   RefPtr<nsGenericHTMLElement> link = NS_NewHTMLLinkElement(nodeInfo.forget());
   NS_ENSURE_TRUE(link, NS_ERROR_OUT_OF_MEMORY);
 
-  link->SetAttr(kNameSpaceID_None, nsGkAtoms::rel, 
+  link->SetAttr(kNameSpaceID_None, nsGkAtoms::rel,
                 NS_LITERAL_STRING("stylesheet"), true);
 
   link->SetAttr(kNameSpaceID_None, nsGkAtoms::href, aStylesheet, true);
@@ -359,7 +359,7 @@ MediaDocument::LinkScript(const nsAString& aScript)
   return head->AppendChildTo(script, false);
 }
 
-void 
+void
 MediaDocument::UpdateTitleAndCharset(const nsACString& aTypeStr,
                                      nsIChannel* aChannel,
                                      const char* const* aFormatNames,
@@ -381,20 +381,20 @@ MediaDocument::UpdateTitleAndCharset(const nsACString& aTypeStr,
       heightStr.AppendInt(aHeight);
       
       if (!fileStr.IsEmpty()) {
-        const char16_t *formatStrings[4]  = {fileStr.get(), typeStr.get(), 
+        const char16_t *formatStrings[4]  = {fileStr.get(), typeStr.get(),
           widthStr.get(), heightStr.get()};
         NS_ConvertASCIItoUTF16 fmtName(aFormatNames[eWithDimAndFile]);
         mStringBundle->FormatStringFromName(fmtName.get(), formatStrings, 4,
                                             getter_Copies(title));
-      } 
+      }
       else {
-        const char16_t *formatStrings[3]  = {typeStr.get(), widthStr.get(), 
+        const char16_t *formatStrings[3]  = {typeStr.get(), widthStr.get(),
           heightStr.get()};
         NS_ConvertASCIItoUTF16 fmtName(aFormatNames[eWithDim]);
         mStringBundle->FormatStringFromName(fmtName.get(), formatStrings, 3,
                                             getter_Copies(title));
       }
-    } 
+    }
     else {
     
       if (!fileStr.IsEmpty()) {
@@ -410,7 +410,7 @@ MediaDocument::UpdateTitleAndCharset(const nsACString& aTypeStr,
                                             getter_Copies(title));
       }
     }
-  } 
+  }
 
   
   if (aStatus.IsEmpty()) {
@@ -426,14 +426,14 @@ MediaDocument::UpdateTitleAndCharset(const nsACString& aTypeStr,
   }
 }
 
-void 
+void
 MediaDocument::SetScriptGlobalObject(nsIScriptGlobalObject* aGlobalObject)
 {
     nsHTMLDocument::SetScriptGlobalObject(aGlobalObject);
     if (!mDocumentElementInserted && aGlobalObject) {
         mDocumentElementInserted = true;
         nsContentUtils::AddScriptRunner(
-            new nsDocElementCreatedNotificationRunner(this));        
+            new nsDocElementCreatedNotificationRunner(this));
     }
 }
 

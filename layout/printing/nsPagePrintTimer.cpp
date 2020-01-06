@@ -80,7 +80,7 @@ nsPagePrintTimer::StopWatchDogTimer()
 
 
 NS_IMETHODIMP
-nsPagePrintTimer::Run() 
+nsPagePrintTimer::Run()
 {
   bool initNewTimer = true;
   
@@ -102,7 +102,7 @@ nsPagePrintTimer::Run()
   
   
   
-  Stop(); 
+  Stop();
   if (initNewTimer) {
     ++mFiringCount;
     nsresult result = StartTimer(inRange);

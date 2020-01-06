@@ -513,7 +513,7 @@ IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
       
       
       
-      setIMEState = false; 
+      setIMEState = false;
       MOZ_LOG(sISMLog, LogLevel::Debug,
         ("  OnChangeFocusInternal(), doesn't set IME "
          "state because focused element (or document) is already in the child "

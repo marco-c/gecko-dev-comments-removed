@@ -58,7 +58,7 @@ nsGridRowLayout::GetParentGridPart(nsIFrame* aBox, nsIFrame** aParentBox)
   
   
   *aParentBox = nullptr;
-  
+
   
   aBox = nsGrid::GetScrollBox(aBox);
 
@@ -102,14 +102,14 @@ nsGridRowLayout::GetGrid(nsIFrame* aBox, int32_t* aIndex, nsGridRowLayout* aRequ
 
      nsBoxLayout* layout = childBox->GetXULLayoutManager();
      nsIGridPart* gridRow = nsGrid::GetPartFromBox(childBox);
-     if (gridRow) 
+     if (gridRow)
      {
        if (layout == aRequestor) {
           index = count;
           break;
        }
        count += gridRow->GetRowCount();
-     } else 
+     } else
        count++;
 
      child = nsBox::GetNextXULBox(child);
@@ -163,7 +163,7 @@ nsGridRowLayout::GetTotalMargin(nsIFrame* aBox, bool aIsHorizontal)
        {
           if (aIsHorizontal)
               margin.top = 0;
-          else 
+          else
               margin.left = 0;
        }
 
@@ -173,13 +173,13 @@ nsGridRowLayout::GetTotalMargin(nsIFrame* aBox, bool aIsHorizontal)
        {
           if (aIsHorizontal)
               margin.bottom = 0;
-          else 
+          else
               margin.right = 0;
        }
 
     }
   }
-    
+
   
   nsMargin ourMargin;
   aBox->GetXULMargin(ourMargin);

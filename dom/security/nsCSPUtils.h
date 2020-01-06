@@ -213,7 +213,7 @@ class nsCSPBaseSrc {
 
     virtual void invalidate() const
       { mInvalidated = true; }
- 
+
   protected:
     
     

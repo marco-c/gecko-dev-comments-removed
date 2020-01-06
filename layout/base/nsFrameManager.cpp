@@ -560,7 +560,7 @@ nsFrameManager::RestoreFrameState(nsIFrame* aFrame,
                                   nsILayoutHistoryState* aState)
 {
   NS_PRECONDITION(nullptr != aFrame && nullptr != aState, "null parameters passed in");
-  
+
   RestoreFrameStateFor(aFrame, aState);
 
   

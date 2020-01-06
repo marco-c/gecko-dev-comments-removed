@@ -61,21 +61,21 @@ nsPKCS12Blob::ImportFromFile(nsIFile *file)
   nsresult rv = NS_OK;
 
   RetryReason wantRetry;
-  
+
   do {
     rv = ImportFromFileHelper(file, im_standard_prompt, wantRetry);
-    
+
     if (NS_SUCCEEDED(rv) && wantRetry == rr_auto_retry_empty_password_flavors) {
       rv = ImportFromFileHelper(file, im_try_zero_length_secitem, wantRetry);
     }
   }
   while (NS_SUCCEEDED(rv) && (wantRetry != rr_do_not_retry));
-  
+
   return rv;
 }
 
 nsresult
-nsPKCS12Blob::ImportFromFileHelper(nsIFile *file, 
+nsPKCS12Blob::ImportFromFileHelper(nsIFile *file,
                                    nsPKCS12Blob::ImportMode aImportMode,
                                    nsPKCS12Blob::RetryReason &aWantRetry)
 {
@@ -185,7 +185,7 @@ isExtractable(SECKEYPrivateKey *privKey)
 
 
 nsresult
-nsPKCS12Blob::ExportToFile(nsIFile *file, 
+nsPKCS12Blob::ExportToFile(nsIFile *file,
                            nsIX509Cert **certs, int numCerts)
 {
   nsNSSShutDownPreventionLock locker;
@@ -276,9 +276,9 @@ nsPKCS12Blob::ExportToFile(nsIFile *file,
     
     ++numCertsExported;
   }
-  
+
   if (!numCertsExported) goto finish;
-  
+
   
   this->mTmpFile = nullptr;
   file->GetPath(filePath);
@@ -295,7 +295,7 @@ nsPKCS12Blob::ExportToFile(nsIFile *file,
     localFileRef->InitWithPath(filePath);
     file = localFileRef;
   }
-  rv = file->OpenNSPRFileDesc(PR_RDWR|PR_CREATE_FILE|PR_TRUNCATE, 0664, 
+  rv = file->OpenNSPRFileDesc(PR_RDWR|PR_CREATE_FILE|PR_TRUNCATE, 0664,
                               &mTmpFile);
   if (NS_FAILED(rv) || !this->mTmpFile) goto finish;
   
@@ -353,7 +353,7 @@ nsPKCS12Blob::newPKCS12FilePassword(SECItem *unicodePw)
   nsresult rv = NS_OK;
   nsAutoString password;
   nsCOMPtr<nsICertificateDialogs> certDialogs;
-  rv = ::getNSSDialogs(getter_AddRefs(certDialogs), 
+  rv = ::getNSSDialogs(getter_AddRefs(certDialogs),
                        NS_GET_IID(nsICertificateDialogs),
                        NS_CERTIFICATEDIALOGS_CONTRACTID);
   if (NS_FAILED(rv)) return rv;
@@ -373,7 +373,7 @@ nsPKCS12Blob::getPKCS12FilePassword(SECItem *unicodePw)
   nsresult rv = NS_OK;
   nsAutoString password;
   nsCOMPtr<nsICertificateDialogs> certDialogs;
-  rv = ::getNSSDialogs(getter_AddRefs(certDialogs), 
+  rv = ::getNSSDialogs(getter_AddRefs(certDialogs),
                        NS_GET_IID(nsICertificateDialogs),
                        NS_CERTIFICATEDIALOGS_CONTRACTID);
   if (NS_FAILED(rv)) return rv;
@@ -397,7 +397,7 @@ nsPKCS12Blob::inputToDecoder(SEC_PKCS12DecoderContext *dcx, nsIFile *file)
 
   nsCOMPtr<nsIInputStream> fileStream;
   rv = NS_NewLocalFileInputStream(getter_AddRefs(fileStream), file);
-  
+
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -408,8 +408,8 @@ nsPKCS12Blob::inputToDecoder(SEC_PKCS12DecoderContext *dcx, nsIFile *file)
       return rv;
     }
     
-    srv = SEC_PKCS12DecoderUpdate(dcx, 
-				  (unsigned char*) buf, 
+    srv = SEC_PKCS12DecoderUpdate(dcx,
+				  (unsigned char*) buf,
 				  amount);
     if (srv) {
       

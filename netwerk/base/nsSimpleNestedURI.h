@@ -46,7 +46,7 @@ public:
     NS_DECL_NSINESTEDURI
 
     
-  
+
     
     virtual nsresult EqualsInternal(nsIURI* other,
                                     RefHandlingEnum refHandlingMode,
@@ -63,7 +63,7 @@ public:
 
     
     
-    NS_IMETHOD GetClassIDNoAlloc(nsCID *aClassIDNoAlloc) override;  
+    NS_IMETHOD GetClassIDNoAlloc(nsCID *aClassIDNoAlloc) override;
 
 protected:
     nsCOMPtr<nsIURI> mInnerURI;

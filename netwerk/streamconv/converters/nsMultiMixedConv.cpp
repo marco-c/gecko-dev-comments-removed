@@ -47,7 +47,7 @@ nsPartChannel::~nsPartChannel()
 void nsPartChannel::InitializeByteRange(int64_t aStart, int64_t aEnd)
 {
     mIsByteRangeRequest = true;
-    
+
     mByteRangeStart = aStart;
     mByteRangeEnd   = aEnd;
 }
@@ -286,7 +286,7 @@ nsPartChannel::SetNotificationCallbacks(nsIInterfaceRequestor* aCallbacks)
     return mMultipartChannel->SetNotificationCallbacks(aCallbacks);
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPartChannel::GetSecurityInfo(nsISupports * *aSecurityInfo)
 {
     return mMultipartChannel->GetSecurityInfo(aSecurityInfo);
@@ -396,7 +396,7 @@ nsPartChannel::GetIsLastPart(bool *aIsLastPart)
 
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPartChannel::GetIsByteRangeRequest(bool *aIsByteRangeRequest)
 {
     *aIsByteRangeRequest = mIsByteRangeRequest;
@@ -405,7 +405,7 @@ nsPartChannel::GetIsByteRangeRequest(bool *aIsByteRangeRequest)
 }
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPartChannel::GetStartRange(int64_t *aStartRange)
 {
     *aStartRange = mByteRangeStart;
@@ -413,7 +413,7 @@ nsPartChannel::GetStartRange(int64_t *aStartRange)
     return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsPartChannel::GetEndRange(int64_t *aEndRange)
 {
     *aEndRange = mByteRangeEnd;
@@ -922,7 +922,7 @@ nsMultiMixedConv::SendStop(nsresult aStatus)
         
         nsCOMPtr<nsILoadGroup> loadGroup;
         (void) mPartChannel->GetLoadGroup(getter_AddRefs(loadGroup));
-        if (loadGroup) 
+        if (loadGroup)
             (void) loadGroup->RemoveRequest(mPartChannel, mContext, aStatus);
     }
 

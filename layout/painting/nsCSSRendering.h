@@ -114,12 +114,12 @@ struct nsCSSRendering {
 
 
   static void Init();
-  
+
   
 
 
   static void Shutdown();
-  
+
   static bool GetShadowInnerRadii(nsIFrame* aFrame,
                                   const nsRect& aFrameArea,
                                   RectCornerRadii& aOutInnerRadii);

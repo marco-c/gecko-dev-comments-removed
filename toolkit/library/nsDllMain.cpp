@@ -2,7 +2,7 @@
 
 
 
- 
+
 #include <windows.h>
 #include "nsToolkit.h"
 #include "mozilla/Assertions.h"
@@ -13,9 +13,9 @@
 extern "C" {
 #endif
 
-BOOL APIENTRY DllMain(  
-                      HINSTANCE hModule, 
-                      DWORD reason, 
+BOOL APIENTRY DllMain(
+                      HINSTANCE hModule,
+                      DWORD reason,
                       LPVOID lpReserved )
 {
     switch( reason ) {
@@ -25,10 +25,10 @@ BOOL APIENTRY DllMain(
 
         case DLL_THREAD_ATTACH:
             break;
-    
+
         case DLL_THREAD_DETACH:
             break;
-    
+
         case DLL_PROCESS_DETACH:
             nsToolkit::Shutdown();
             break;

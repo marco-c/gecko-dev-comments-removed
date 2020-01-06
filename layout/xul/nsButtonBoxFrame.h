@@ -28,7 +28,7 @@ public:
 
   virtual void DestroyFrom(nsIFrame* aDestructRoot) override;
 
-  virtual nsresult HandleEvent(nsPresContext* aPresContext, 
+  virtual nsresult HandleEvent(nsPresContext* aPresContext,
                                mozilla::WidgetGUIEvent* aEvent,
                                nsEventStatus* aEventStatus) override;
 

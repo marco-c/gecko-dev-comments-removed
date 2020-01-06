@@ -255,7 +255,7 @@ protected:
                            nsIPrincipal* aDocumentPrincipal,
                            nsIParser** aResult);
 
-    nsresult 
+    nsresult
     LoadOverlayInternal(nsIURI* aURI, bool aIsDynamic, bool* aShouldReturn,
                         bool* aFailureFromContent);
 
@@ -604,7 +604,7 @@ protected:
     nsresult
     InsertElement(nsINode* aParent, nsIContent* aChild, bool aNotify);
 
-    static 
+    static
     nsresult
     RemoveElement(nsINode* aParent, nsINode* aChild);
 

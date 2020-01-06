@@ -84,13 +84,13 @@ public:
     
     
     void waitForLoaderThreadCompletion();
-    
+
     HRTFDatabase* database() { return m_hrtfDatabase.get(); }
 
     float databaseSampleRate() const { return m_databaseSampleRate; }
 
     static void shutdown();
-    
+
     
     void load();
 

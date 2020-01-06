@@ -40,10 +40,10 @@ NS_IMPL_ISUPPORTS_INHERITED(nsMathMLElement, nsMathMLElementBase,
                             nsIDOMElement, nsIDOMNode, Link)
 
 static nsresult
-WarnDeprecated(const char16_t* aDeprecatedAttribute, 
+WarnDeprecated(const char16_t* aDeprecatedAttribute,
                const char16_t* aFavoredAttribute, nsIDocument* aDocument)
 {
-  const char16_t *argv[] = 
+  const char16_t *argv[] =
     { aDeprecatedAttribute, aFavoredAttribute };
   return nsContentUtils::
           ReportToConsole(nsIScriptError::warningFlag,
@@ -52,7 +52,7 @@ WarnDeprecated(const char16_t* aDeprecatedAttribute,
                           "DeprecatedSupersededBy", argv, 2);
 }
 
-static nsresult 
+static nsresult
 ReportLengthParseError(const nsString& aValue, nsIDocument* aDocument)
 {
   const char16_t *arg = aValue.get();
@@ -64,11 +64,11 @@ ReportLengthParseError(const nsString& aValue, nsIDocument* aDocument)
 }
 
 static nsresult
-ReportParseErrorNoTag(const nsString& aValue, 
+ReportParseErrorNoTag(const nsString& aValue,
                       nsIAtom*        aAtom,
                       nsIDocument*    aDocument)
 {
-  const char16_t *argv[] = 
+  const char16_t *argv[] =
     { aValue.get(), aAtom->GetUTF16String() };
   return nsContentUtils::
          ReportToConsole(nsIScriptError::errorFlag,
@@ -331,14 +331,14 @@ nsMathMLElement::ParseNamedSpaceValue(const nsString& aString,
        i = -7;
      }
    }
-   if (0 != i) { 
+   if (0 != i) {
      aCSSValue.SetFloatValue(float(i)/float(18), eCSSUnit_EM);
      return true;
    }
-   
+
    return false;
 }
- 
+
 
 
 
@@ -1007,16 +1007,16 @@ nsMathMLElement::IsLink(nsIURI** aURI) const
     
     
     
-    
+
     static nsIContent::AttrValuesArray sTypeVals[] =
       { &nsGkAtoms::_empty, &nsGkAtoms::simple, nullptr };
-    
+
     static nsIContent::AttrValuesArray sShowVals[] =
       { &nsGkAtoms::_empty, &nsGkAtoms::_new, &nsGkAtoms::replace, nullptr };
-    
+
     static nsIContent::AttrValuesArray sActuateVals[] =
       { &nsGkAtoms::_empty, &nsGkAtoms::onRequest, nullptr };
-    
+
     
     href = mAttrsAndChildren.GetAttr(nsGkAtoms::href,
                                      kNameSpaceID_XLink);
@@ -1038,7 +1038,7 @@ nsMathMLElement::IsLink(nsIURI** aURI) const
     nsCOMPtr<nsIURI> baseURI = GetBaseURI();
     
     nsAutoString hrefStr;
-    href->ToString(hrefStr); 
+    href->ToString(hrefStr);
     nsContentUtils::NewURIWithDocumentCharset(aURI, hrefStr,
                                               OwnerDoc(), baseURI);
     
@@ -1062,7 +1062,7 @@ nsMathMLElement::GetLinkTarget(nsAString& aTarget)
 
     static nsIContent::AttrValuesArray sShowVals[] =
       { &nsGkAtoms::_new, &nsGkAtoms::replace, nullptr };
-    
+
     switch (FindAttrValueIn(kNameSpaceID_XLink, nsGkAtoms::show,
                             sShowVals, eCaseMatters)) {
     case 0:

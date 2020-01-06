@@ -78,7 +78,7 @@ enum IPDLUnitTestType {
 
 
 ${ENUM_VALUES}
-    
+
     LastTest = ${LAST_ENUM}
 
 };
@@ -270,7 +270,7 @@ DeferredParentShutdown()
         NewRunnableFunction(DeleteSubprocess, MessageLoop::current()));
 }
 
-void 
+void
 TryThreadedShutdown()
 {
     
@@ -287,7 +287,7 @@ TryThreadedShutdown()
     DeferredParentShutdown();
 }
 
-void 
+void
 ChildCompleted()
 {
     

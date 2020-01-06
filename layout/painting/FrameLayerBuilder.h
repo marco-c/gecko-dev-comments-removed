@@ -500,8 +500,8 @@ public:
 
 
 
-  Layer* GetOldLayerFor(nsDisplayItem* aItem, 
-                        nsDisplayItemGeometry** aOldGeometry = nullptr, 
+  Layer* GetOldLayerFor(nsDisplayItem* aItem,
+                        nsDisplayItemGeometry** aOldGeometry = nullptr,
                         DisplayItemClip** aOldClip = nullptr);
 
   void ClearCachedGeometry(nsDisplayItem* aItem);
@@ -587,7 +587,7 @@ public:
 
 
   void StoreOptimizedLayerForFrame(nsDisplayItem* aItem, Layer* aLayer);
-  
+
   static void RemoveFrameFromLayerManager(const nsIFrame* aFrame,
                                           SmallPointerArray<DisplayItemData>& aArray);
 
@@ -630,14 +630,14 @@ protected:
 
 
 
-  static DisplayItemData* GetDisplayItemDataForManager(nsIFrame* aFrame, 
-                                                       uint32_t aDisplayItemKey, 
+  static DisplayItemData* GetDisplayItemDataForManager(nsIFrame* aFrame,
+                                                       uint32_t aDisplayItemKey,
                                                        LayerManager* aManager);
-  static DisplayItemData* GetDisplayItemDataForManager(nsIFrame* aFrame, 
+  static DisplayItemData* GetDisplayItemDataForManager(nsIFrame* aFrame,
                                                        uint32_t aDisplayItemKey);
   static DisplayItemData* GetDisplayItemDataForManager(nsDisplayItem* aItem, LayerManager* aManager);
-  static DisplayItemData* GetDisplayItemDataForManager(nsIFrame* aFrame, 
-                                                       uint32_t aDisplayItemKey, 
+  static DisplayItemData* GetDisplayItemDataForManager(nsIFrame* aFrame,
+                                                       uint32_t aDisplayItemKey,
                                                        LayerManagerData* aData);
 
   

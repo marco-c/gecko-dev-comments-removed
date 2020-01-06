@@ -101,7 +101,7 @@ nsMenuBarFrame::SetActive(bool aActiveFlag)
 
   NS_NAMED_LITERAL_STRING(active, "DOMMenuBarActive");
   NS_NAMED_LITERAL_STRING(inactive, "DOMMenuBarInactive");
-  
+
   FireDOMEvent(mIsActive ? active : inactive, mContent);
 
   return NS_OK;
@@ -133,7 +133,7 @@ nsMenuBarFrame::ToggleMenuActiveState()
       
       SetActive(true);
       firstFrame->SelectMenu(true);
-      
+
       
       mCurrentMenu = firstFrame;
     }
@@ -319,7 +319,7 @@ nsMenuBarFrame::ChangeMenuItem(nsMenuFrame* aMenuItem,
 
   nsIContent* aOldMenu = nullptr;
   nsIContent* aNewMenu = nullptr;
-  
+
   
   bool wasOpen = false;
   if (mCurrentMenu) {

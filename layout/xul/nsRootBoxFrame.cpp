@@ -86,7 +86,7 @@ public:
       return false;
     return nsBoxFrame::IsFrameOfType(aFlags);
   }
-  
+
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override;
 #endif

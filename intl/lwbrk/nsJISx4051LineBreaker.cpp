@@ -465,7 +465,7 @@ GetClass(uint32_t u)
         };
         return GetClass(NarrowFFEx[l - 0x00e0]);
       }
-    } else if (0x3100 == h) { 
+    } else if (0x3100 == h) {
       if (l <= 0xbf) { 
                        
                        
@@ -923,7 +923,7 @@ nsJISx4051LineBreaker::WordMove(const char16_t* aText, uint32_t aLen,
 
 int32_t
 nsJISx4051LineBreaker::Next(const char16_t* aText, uint32_t aLen,
-                            uint32_t aPos) 
+                            uint32_t aPos)
 {
   NS_ASSERTION(aText, "aText shouldn't be null");
   NS_ASSERTION(aLen > aPos, "Bad position passed to nsJISx4051LineBreaker::Next");
@@ -934,7 +934,7 @@ nsJISx4051LineBreaker::Next(const char16_t* aText, uint32_t aLen,
 
 int32_t
 nsJISx4051LineBreaker::Prev(const char16_t* aText, uint32_t aLen,
-                            uint32_t aPos) 
+                            uint32_t aPos)
 {
   NS_ASSERTION(aText, "aText shouldn't be null");
   NS_ASSERTION(aLen >= aPos && aPos > 0,

@@ -242,7 +242,7 @@ nsParentalControlsService::RequestURIOverrides(nsIArray *aTargets, nsIInterfaceR
   nsCOMPtr<nsIURI> rootURI = do_QueryElementAt(aTargets, 0);
   if (!rootURI)
     return NS_ERROR_INVALID_ARG;
-  
+
   rootURI->GetSpec(rootSpec);
   if (rootSpec.IsEmpty())
     return NS_ERROR_INVALID_ARG;
@@ -272,7 +272,7 @@ nsParentalControlsService::RequestURIOverrides(nsIArray *aTargets, nsIInterfaceR
   if (!uriIdx)
     return NS_ERROR_INVALID_ARG;
 
-  BOOL ret; 
+  BOOL ret;
   RefPtr<IWPCWebSettings> wpcws;
   if (SUCCEEDED(mPC->GetWebSettings(nullptr, getter_AddRefs(wpcws)))) {
     wpcws->RequestURLOverride(hWnd, NS_ConvertUTF8toUTF16(rootSpec).get(),
@@ -311,7 +311,7 @@ nsParentalControlsService::LogFileDownload(bool blocked, nsIURI *aSource, nsIFil
   nsAutoString appName = NS_ConvertUTF8toUTF16(asciiAppName);
 
   static const WCHAR fill[] = L"";
-  
+
   
   EVENT_DATA_DESCRIPTOR eventData[WPC_ARGS_FILEDOWNLOADEVENT_CARGS];
   DWORD dwBlocked = blocked;

@@ -120,7 +120,7 @@ struct nsCounterChangeNode : public nsCounterNode {
                         
                         
                         aPropIndex + (aChangeType == RESET
-                                        ? (INT32_MIN) 
+                                        ? (INT32_MIN)
                                         : (INT32_MIN / 2)),
                         aChangeType)
         , mChangeValue(aChangeValue)

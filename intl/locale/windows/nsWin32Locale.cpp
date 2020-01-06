@@ -13,7 +13,7 @@
 
 using namespace mozilla;
 
-struct iso_pair 
+struct iso_pair
 {
 	const char*	iso_code;
 	DWORD       win_code;
@@ -34,7 +34,7 @@ struct iso_map
 
 
 
- 
+
 static const
 iso_map iso_list[] =
 {
@@ -43,14 +43,14 @@ iso_map iso_list[] =
 		{ "",0}}
 	},
 	{ "ar", LANG_ARABIC, {
-		{ "SA", SUBLANG_ARABIC_SAUDI_ARABIA }, 
-		{ "IQ", SUBLANG_ARABIC_IRAQ },  
-		{ "EG",	SUBLANG_ARABIC_EGYPT },	
+		{ "SA", SUBLANG_ARABIC_SAUDI_ARABIA },
+		{ "IQ", SUBLANG_ARABIC_IRAQ },
+		{ "EG",	SUBLANG_ARABIC_EGYPT },
 		{ "LY", SUBLANG_ARABIC_LIBYA },
 		{ "DZ", SUBLANG_ARABIC_ALGERIA },
 		{ "MA", SUBLANG_ARABIC_MOROCCO },
 		{ "TN", SUBLANG_ARABIC_TUNISIA },
-		{ "OM", SUBLANG_ARABIC_OMAN }, 
+		{ "OM", SUBLANG_ARABIC_OMAN },
 		{ "YE", SUBLANG_ARABIC_YEMEN },
 		{ "SY", SUBLANG_ARABIC_SYRIA },
 		{ "JO", SUBLANG_ARABIC_JORDAN },
@@ -81,7 +81,7 @@ iso_map iso_list[] =
 		{ "CZ", SUBLANG_DEFAULT},
 		{"",0}}
 	},
-	{ "da", LANG_DANISH, { 
+	{ "da", LANG_DANISH, {
 		{ "DK", SUBLANG_DEFAULT },
 		{ "",0}}
 	},
@@ -168,11 +168,11 @@ iso_map iso_list[] =
 		{"",0}}
 	},
 	{ "gl", LANG_GALICIAN, {
-		{ "ES", SUBLANG_DEFAULT }, 
+		{ "ES", SUBLANG_DEFAULT },
 		{ "", 0}}
 	},
 	{ "gu", LANG_GUJARATI, {
-		{ "IN", SUBLANG_DEFAULT }, 
+		{ "IN", SUBLANG_DEFAULT },
 		{ "", 0}}
 	},
 	{"he",	LANG_HEBREW, {
@@ -229,7 +229,7 @@ iso_map iso_list[] =
 		{ "", 0}}
 	},
 	{ "kn", LANG_KANNADA, {
-		{ "IN", SUBLANG_DEFAULT }, 
+		{ "IN", SUBLANG_DEFAULT },
 		{ "", 0}}
 	},
 	{ "ko", LANG_KOREAN, {
@@ -237,7 +237,7 @@ iso_map iso_list[] =
 		{ "", 0}}
 	},
 	{ "kok", LANG_KONKANI, {
-		{ "IN", SUBLANG_DEFAULT }, 
+		{ "IN", SUBLANG_DEFAULT },
 		{ "", 0}}
 	},
 	{ "ky", LANG_KYRGYZ, {
@@ -257,11 +257,11 @@ iso_map iso_list[] =
 		{ "", 0 }}
 	},
 	{ "mn", LANG_MONGOLIAN, {
-		{ "MN", SUBLANG_DEFAULT }, 
+		{ "MN", SUBLANG_DEFAULT },
 		{ "", 0}}
 	},
 	{ "mr", LANG_MARATHI, {
-		{ "IN", SUBLANG_DEFAULT }, 
+		{ "IN", SUBLANG_DEFAULT },
 		{ "", 0}}
 	},
 	{"ms",	LANG_MALAY, {
@@ -287,7 +287,7 @@ iso_map iso_list[] =
 		{ "", 0}}
 	},
 	{ "pa", LANG_PUNJABI, {
-		{ "IN", SUBLANG_DEFAULT }, 
+		{ "IN", SUBLANG_DEFAULT },
 		{ "", 0}}
 	},
 	{"pl",	LANG_POLISH, {
@@ -308,7 +308,7 @@ iso_map iso_list[] =
 		{ "", 0 }}
 	},
 	{ "sa", LANG_SANSKRIT, {
-		{ "IN", SUBLANG_DEFAULT }, 
+		{ "IN", SUBLANG_DEFAULT },
 		{ "", 0}}
 	},
 	{"sk",	LANG_SLOVAK, {
@@ -322,7 +322,7 @@ iso_map iso_list[] =
 	{"sq",	LANG_ALBANIAN, {
 		{ "AL", SUBLANG_DEFAULT },
 		{ "", 0}}
-	},		
+	},
 	
 
 	{"sr",	LANG_SERBIAN, {
@@ -341,11 +341,11 @@ iso_map iso_list[] =
 		{ "", 0}}
 	},
 	{ "ta", LANG_TAMIL, {
-		{ "IN", SUBLANG_DEFAULT }, 
+		{ "IN", SUBLANG_DEFAULT },
 		{ "", 0}}
 	},
 	{ "te", LANG_TELUGU, {
-		{ "IN", SUBLANG_DEFAULT }, 
+		{ "IN", SUBLANG_DEFAULT },
 		{ "", 0}}
 	},
 	{"th",	LANG_THAI, {
@@ -357,7 +357,7 @@ iso_map iso_list[] =
 		{ "", 0}}
 	},
 	{ "tt", LANG_TATAR, {
-		{ "RU", SUBLANG_DEFAULT }, 
+		{ "RU", SUBLANG_DEFAULT },
 		{ "", 0}}
 	},
 	{"uk",	LANG_UKRAINIAN, {
@@ -388,7 +388,7 @@ iso_map iso_list[] =
 };
 
 #define LENGTH_MAPPING_LIST		ArrayLength(iso_list)
-	
+
 
 
 
@@ -399,7 +399,7 @@ iso_map iso_list[] =
 static const
 iso_pair dbg_list[] =
 {
-	{"af",	LANG_AFRIKAANS},		
+	{"af",	LANG_AFRIKAANS},
 	{"ar",	LANG_ARABIC},
 	{"az",	LANG_AZERI},
 	{"be",	LANG_BELARUSIAN},
@@ -453,7 +453,7 @@ iso_pair dbg_list[] =
 	{"sa",  LANG_SANSKRIT},
 	{"sk",	LANG_SLOVAK},
 	{"sl",	LANG_SLOVENIAN},
-	{"sq",	LANG_ALBANIAN},		
+	{"sq",	LANG_ALBANIAN},
 	{"sr",	LANG_SERBIAN},
 	{"sv",	LANG_SWEDISH},
 	{"sw",	LANG_SWAHILI},
@@ -519,7 +519,7 @@ nsWin32Locale::GetPlatformLocale(const nsAString& locale, LCID* winLCID)
       return NS_OK;
     }
   }
-    
+
   return NS_ERROR_FAILURE;
 }
 
@@ -585,7 +585,7 @@ nsWin32Locale::GetXPLocale(LCID winLCID, nsAString& locale)
   
   
   
-  locale.AssignLiteral("en-US"); 
+  locale.AssignLiteral("en-US");
   return;
 }
 

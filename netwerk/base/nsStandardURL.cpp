@@ -187,7 +187,7 @@ nsPrefObserver::Observe(nsISupports *subject,
         nsCOMPtr<nsIPrefBranch> prefBranch( do_QueryInterface(subject) );
         if (prefBranch) {
             PrefsChanged(prefBranch, NS_ConvertUTF16toUTF8(data).get());
-        } 
+        }
     }
     return NS_OK;
 }
@@ -1019,7 +1019,7 @@ nsStandardURL::BuildNormalizedSpec(const char *spec)
     if (mDirectory.mLen > 1) {
         netCoalesceFlags coalesceFlag = NET_COALESCE_NORMAL;
         if (SegmentIs(buf,mScheme,"ftp")) {
-            coalesceFlag = (netCoalesceFlags) (coalesceFlag 
+            coalesceFlag = (netCoalesceFlags) (coalesceFlag
                                         | NET_COALESCE_ALLOW_RELATIVE_ROOT
                                         | NET_COALESCE_DOUBLE_SLASH_IS_ROOT);
         }
@@ -1076,9 +1076,9 @@ nsStandardURL::SegmentIs(const URLSegment &seg1, const char *val, const URLSegme
     if (!val)
         return false;
     if (ignoreCase)
-        return !PL_strncasecmp(mSpec.get() + seg1.mPos, val + seg2.mPos, seg1.mLen); 
+        return !PL_strncasecmp(mSpec.get() + seg1.mPos, val + seg2.mPos, seg1.mLen);
     else
-        return !strncmp(mSpec.get() + seg1.mPos, val + seg2.mPos, seg1.mLen); 
+        return !strncmp(mSpec.get() + seg1.mPos, val + seg2.mPos, seg1.mLen);
 }
 
 int32_t
@@ -1131,7 +1131,7 @@ nsStandardURL::ParseURL(const char *spec, int32_t specLen)
         NS_WARNING("malformed url: no scheme");
     }
 #endif
-     
+
     if (mAuthority.mLen > 0) {
         rv = mParser->ParseAuthority(spec + mAuthority.mPos, mAuthority.mLen,
                                      &mUsername.mPos, &mUsername.mLen,
@@ -2314,7 +2314,7 @@ nsStandardURL::EqualsInternal(nsIURI *unknownOther,
         *result = false;
         return NS_OK;
     }
-    
+
     
     if (SegmentIs(mDirectory, other->mSpec.get(), other->mDirectory) &&
         SegmentIs(mBasename, other->mSpec.get(), other->mBasename) &&
@@ -2335,9 +2335,9 @@ nsStandardURL::EqualsInternal(nsIURI *unknownOther,
         rv = EnsureFile();
         nsresult rv2 = other->EnsureFile();
         
-        if (rv == NS_ERROR_NO_INTERFACE && rv == rv2) 
+        if (rv == NS_ERROR_NO_INTERFACE && rv == rv2)
             return NS_OK;
-        
+
         if (NS_FAILED(rv)) {
             LOG(("nsStandardURL::Equals [this=%p spec=%s] failed to ensure file",
                 this, mSpec.get()));
@@ -2499,7 +2499,7 @@ nsStandardURL::Resolve(const nsACString &in, nsACString &out)
     
     
     
-    rv = mParser->ParseURL(relpath, 
+    rv = mParser->ParseURL(relpath,
                            relpathLen,
                            &scheme.mPos, &scheme.mLen,
                            nullptr, nullptr,
@@ -2507,7 +2507,7 @@ nsStandardURL::Resolve(const nsACString &in, nsACString &out)
 
     
     
-    if (NS_FAILED(rv)) scheme.Reset(); 
+    if (NS_FAILED(rv)) scheme.Reset();
 
     nsAutoCString protocol(Segment(scheme));
     nsAutoCString baseProtocol(Scheme());
@@ -2537,7 +2537,7 @@ nsStandardURL::Resolve(const nsACString &in, nsACString &out)
         
         
         if (SegmentIs(relpath, scheme, "ftp", true)) {
-            coalesceFlag = (netCoalesceFlags) (coalesceFlag 
+            coalesceFlag = (netCoalesceFlags) (coalesceFlag
                                         | NET_COALESCE_ALLOW_RELATIVE_ROOT
                                         | NET_COALESCE_DOUBLE_SLASH_IS_ROOT);
 
@@ -2552,7 +2552,7 @@ nsStandardURL::Resolve(const nsACString &in, nsACString &out)
                 
                 
                 result = NS_strdup(relpath);
-            } else {         
+            } else {
                 
                 
                 
@@ -2563,12 +2563,12 @@ nsStandardURL::Resolve(const nsACString &in, nsACString &out)
             
             
             result = NS_strdup(relpath);
-        }  
+        }
     } else {
         
         
         if (SegmentIs(mScheme,"ftp")) {
-            coalesceFlag = (netCoalesceFlags) (coalesceFlag 
+            coalesceFlag = (netCoalesceFlags) (coalesceFlag
                                         | NET_COALESCE_ALLOW_RELATIVE_ROOT
                                         | NET_COALESCE_DOUBLE_SLASH_IS_ROOT);
         }
@@ -2617,7 +2617,7 @@ nsStandardURL::Resolve(const nsACString &in, nsACString &out)
                     
                     len = mDirectory.mPos + mDirectory.mLen;
                 }
-            } else { 
+            } else {
                 
                 len = mDirectory.mPos + mDirectory.mLen;
             }
@@ -2661,7 +2661,7 @@ nsStandardURL::GetCommonBaseSpec(nsIURI *uri2, nsACString &aResult)
     nsStandardURL *stdurl2;
     nsresult rv = uri2->QueryInterface(kThisImplCID, (void **) &stdurl2);
     isEquals = NS_SUCCEEDED(rv)
-            && SegmentIs(mScheme, stdurl2->mSpec.get(), stdurl2->mScheme)    
+            && SegmentIs(mScheme, stdurl2->mSpec.get(), stdurl2->mScheme)
             && SegmentIs(mHost, stdurl2->mSpec.get(), stdurl2->mHost)
             && SegmentIs(mUsername, stdurl2->mSpec.get(), stdurl2->mUsername)
             && SegmentIs(mPassword, stdurl2->mSpec.get(), stdurl2->mPassword)
@@ -2712,7 +2712,7 @@ nsStandardURL::GetRelativeSpec(nsIURI *uri2, nsACString &aResult)
     nsStandardURL *stdurl2;
     nsresult rv = uri2->QueryInterface(kThisImplCID, (void **) &stdurl2);
     isEquals = NS_SUCCEEDED(rv)
-            && SegmentIs(mScheme, stdurl2->mSpec.get(), stdurl2->mScheme)    
+            && SegmentIs(mScheme, stdurl2->mSpec.get(), stdurl2->mScheme)
             && SegmentIs(mHost, stdurl2->mSpec.get(), stdurl2->mHost)
             && SegmentIs(mUsername, stdurl2->mSpec.get(), stdurl2->mUsername)
             && SegmentIs(mPassword, stdurl2->mSpec.get(), stdurl2->mPassword)
@@ -2782,7 +2782,7 @@ nsStandardURL::GetRelativeSpec(nsIURI *uri2, nsACString &aResult)
 
     
     uint32_t startPos = stdurl2->mScheme.mPos + thatIndex - stdurl2->mSpec.get();
-    aResult.Append(Substring(stdurl2->mSpec, startPos, 
+    aResult.Append(Substring(stdurl2->mSpec, startPos,
                              stdurl2->mSpec.Length() - startPos));
 
     NS_RELEASE(stdurl2);
@@ -3164,7 +3164,7 @@ nsStandardURL::SetFileName(const nsACString &input)
                 mSpec.Replace(mBasename.mPos, oldLen, newFilename);
                 shift = newFilename.Length() - oldLen;
             }
-            
+
             mBasename.mLen = basename.mLen;
             mExtension.mLen = extension.mLen;
             if (mExtension.mLen >= 0)
@@ -3432,9 +3432,9 @@ nsStandardURL::Read(nsIObjectInputStream *stream)
     NS_PRECONDITION(!mHostA, "Shouldn't have cached ASCII host");
     NS_PRECONDITION(mSpecEncoding == eEncoding_Unknown,
                     "Shouldn't have spec encoding here");
-    
+
     nsresult rv;
-    
+
     uint32_t urlType;
     rv = stream->Read32(&urlType);
     if (NS_FAILED(rv)) return rv;
@@ -3537,7 +3537,7 @@ nsStandardURL::Read(nsIObjectInputStream *stream)
         mBasename.Merge(mSpec,  ';', old_param);
         mExtension.Merge(mSpec, ';', old_param);
     }
-    
+
     CALL_RUST_SYNC;
     return NS_OK;
 }
@@ -3739,7 +3739,7 @@ nsStandardURL::Deserialize(const URIParams& aParams)
 
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsStandardURL::GetInterfaces(uint32_t *count, nsIID * **array)
 {
     *count = 0;
@@ -3747,28 +3747,28 @@ nsStandardURL::GetInterfaces(uint32_t *count, nsIID * **array)
     return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsStandardURL::GetScriptableHelper(nsIXPCScriptable **_retval)
 {
     *_retval = nullptr;
     return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsStandardURL::GetContractID(char * *aContractID)
 {
     *aContractID = nullptr;
     return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsStandardURL::GetClassDescription(char * *aClassDescription)
 {
     *aClassDescription = nullptr;
     return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsStandardURL::GetClassID(nsCID * *aClassID)
 {
     *aClassID = (nsCID*) moz_xmalloc(sizeof(nsCID));
@@ -3777,14 +3777,14 @@ nsStandardURL::GetClassID(nsCID * *aClassID)
     return GetClassIDNoAlloc(*aClassID);
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsStandardURL::GetFlags(uint32_t *aFlags)
 {
     *aFlags = nsIClassInfo::MAIN_THREAD_ONLY;
     return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsStandardURL::GetClassIDNoAlloc(nsCID *aClassIDNoAlloc)
 {
     *aClassIDNoAlloc = kStandardURLCID;

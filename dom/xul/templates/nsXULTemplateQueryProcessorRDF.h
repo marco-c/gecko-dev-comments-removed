@@ -54,7 +54,7 @@ public:
 
     
     NS_DECL_NSIXULTEMPLATEQUERYPROCESSOR
-   
+
     
     NS_DECL_NSIRDFOBSERVER
 
@@ -139,7 +139,7 @@ public:
 
 
 
-    nsresult ParseLiteral(const nsString& aParseType, 
+    nsresult ParseLiteral(const nsString& aParseType,
                           const nsString& aValue,
                           nsIRDFNode** aResult);
 

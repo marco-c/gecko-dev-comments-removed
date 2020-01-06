@@ -251,7 +251,7 @@ BlockReflowInput::ComputeBlockAvailSpace(nsIFrame* aFrame,
   
   
   
-  NS_ASSERTION(nsBlockFrame::BlockCanIntersectFloats(aFrame) == 
+  NS_ASSERTION(nsBlockFrame::BlockCanIntersectFloats(aFrame) ==
                  !aBlockAvoidsFloats,
                "unexpected replaced width");
   if (!aBlockAvoidsFloats) {

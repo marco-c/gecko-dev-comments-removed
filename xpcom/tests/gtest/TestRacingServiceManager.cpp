@@ -23,7 +23,7 @@
 
 using namespace mozilla;
 
- 
+
 #define FACTORY_CID1                                 \
 {                                                    \
   0xf93f6bdc,                                        \

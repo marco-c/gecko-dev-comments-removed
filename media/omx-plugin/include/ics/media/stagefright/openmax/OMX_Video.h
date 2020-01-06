@@ -86,7 +86,7 @@ typedef enum OMX_VIDEO_CODINGTYPE {
     OMX_VIDEO_CodingAVC,        
     OMX_VIDEO_CodingMJPEG,      
     OMX_VIDEO_CodingVPX,        
-    OMX_VIDEO_CodingKhronosExtensions = 0x6F000000,  
+    OMX_VIDEO_CodingKhronosExtensions = 0x6F000000, 
     OMX_VIDEO_CodingVendorStartUnused = 0x7F000000, 
     OMX_VIDEO_CodingMax = 0x7FFFFFFF
 } OMX_VIDEO_CODINGTYPE;
@@ -175,7 +175,7 @@ typedef struct OMX_VIDEO_PARAM_PORTFORMATTYPE {
     OMX_VERSIONTYPE nVersion;
     OMX_U32 nPortIndex;
     OMX_U32 nIndex;
-    OMX_VIDEO_CODINGTYPE eCompressionFormat; 
+    OMX_VIDEO_CODINGTYPE eCompressionFormat;
     OMX_COLOR_FORMATTYPE eColorFormat;
     OMX_U32 xFramerate;
 } OMX_VIDEO_PARAM_PORTFORMATTYPE;
@@ -195,7 +195,7 @@ typedef struct OMX_VIDEO_PARAM_PORTFORMATTYPE {
 
 
 typedef struct OMX_VIDEO_PARAM_QUANTIZATIONTYPE {
-    OMX_U32 nSize;            
+    OMX_U32 nSize;
     OMX_VERSIONTYPE nVersion;
     OMX_U32 nPortIndex;
     OMX_U32 nQpI;
@@ -218,13 +218,13 @@ typedef struct OMX_VIDEO_PARAM_QUANTIZATIONTYPE {
 
 
 typedef struct OMX_VIDEO_PARAM_VIDEOFASTUPDATETYPE {
-    OMX_U32 nSize;            
-    OMX_VERSIONTYPE nVersion; 
-    OMX_U32 nPortIndex;       
-    OMX_BOOL bEnableVFU;      
-    OMX_U32 nFirstGOB;                            
-    OMX_U32 nFirstMB;                            
-    OMX_U32 nNumMBs;                                  
+    OMX_U32 nSize;
+    OMX_VERSIONTYPE nVersion;
+    OMX_U32 nPortIndex;
+    OMX_BOOL bEnableVFU;
+    OMX_U32 nFirstGOB;
+    OMX_U32 nFirstMB;
+    OMX_U32 nNumMBs;
 } OMX_VIDEO_PARAM_VIDEOFASTUPDATETYPE;
 
 
@@ -237,7 +237,7 @@ typedef enum OMX_VIDEO_CONTROLRATETYPE {
     OMX_Video_ControlRateConstant,
     OMX_Video_ControlRateVariableSkipFrames,
     OMX_Video_ControlRateConstantSkipFrames,
-    OMX_Video_ControlRateKhronosExtensions = 0x6F000000,  
+    OMX_Video_ControlRateKhronosExtensions = 0x6F000000, 
     OMX_Video_ControlRateVendorStartUnused = 0x7F000000, 
     OMX_Video_ControlRateMax = 0x7FFFFFFF
 } OMX_VIDEO_CONTROLRATETYPE;
@@ -254,11 +254,11 @@ typedef enum OMX_VIDEO_CONTROLRATETYPE {
 
 
 typedef struct OMX_VIDEO_PARAM_BITRATETYPE {
-    OMX_U32 nSize;                          
-    OMX_VERSIONTYPE nVersion;               
-    OMX_U32 nPortIndex;                     
-    OMX_VIDEO_CONTROLRATETYPE eControlRate; 
-    OMX_U32 nTargetBitrate;                 
+    OMX_U32 nSize;
+    OMX_VERSIONTYPE nVersion;
+    OMX_U32 nPortIndex;
+    OMX_VIDEO_CONTROLRATETYPE eControlRate;
+    OMX_U32 nTargetBitrate;
 } OMX_VIDEO_PARAM_BITRATETYPE;
 
 
@@ -270,7 +270,7 @@ typedef enum OMX_VIDEO_MOTIONVECTORTYPE {
     OMX_Video_MotionVectorHalfPel,
     OMX_Video_MotionVectorQuarterPel,
     OMX_Video_MotionVectorEighthPel,
-    OMX_Video_MotionVectorKhronosExtensions = 0x6F000000,  
+    OMX_Video_MotionVectorKhronosExtensions = 0x6F000000, 
     OMX_Video_MotionVectorVendorStartUnused = 0x7F000000, 
     OMX_Video_MotionVectorMax = 0x7FFFFFFF
 } OMX_VIDEO_MOTIONVECTORTYPE;
@@ -309,7 +309,7 @@ typedef enum OMX_VIDEO_INTRAREFRESHTYPE {
     OMX_VIDEO_IntraRefreshCyclic,
     OMX_VIDEO_IntraRefreshAdaptive,
     OMX_VIDEO_IntraRefreshBoth,
-    OMX_VIDEO_IntraRefreshKhronosExtensions = 0x6F000000,  
+    OMX_VIDEO_IntraRefreshKhronosExtensions = 0x6F000000, 
     OMX_VIDEO_IntraRefreshVendorStartUnused = 0x7F000000, 
     OMX_VIDEO_IntraRefreshMax = 0x7FFFFFFF
 } OMX_VIDEO_INTRAREFRESHTYPE;
@@ -385,11 +385,11 @@ typedef struct OMX_VIDEO_PARAM_ERRORCORRECTIONTYPE {
 
 
 typedef struct OMX_VIDEO_PARAM_VBSMCTYPE {
-    OMX_U32 nSize; 
-    OMX_VERSIONTYPE nVersion; 
-    OMX_U32 nPortIndex;       
-    OMX_BOOL b16x16; 
-    OMX_BOOL b16x8; 
+    OMX_U32 nSize;
+    OMX_VERSIONTYPE nVersion;
+    OMX_U32 nPortIndex;
+    OMX_BOOL b16x16;
+    OMX_BOOL b16x8;
     OMX_BOOL b8x16;
     OMX_BOOL b8x8;
     OMX_BOOL b8x4;
@@ -423,18 +423,18 @@ typedef struct OMX_VIDEO_PARAM_VBSMCTYPE {
 
 
 typedef enum OMX_VIDEO_H263PROFILETYPE {
-    OMX_VIDEO_H263ProfileBaseline            = 0x01,        
-    OMX_VIDEO_H263ProfileH320Coding          = 0x02,          
-    OMX_VIDEO_H263ProfileBackwardCompatible  = 0x04,  
-    OMX_VIDEO_H263ProfileISWV2               = 0x08,               
-    OMX_VIDEO_H263ProfileISWV3               = 0x10,               
-    OMX_VIDEO_H263ProfileHighCompression     = 0x20,     
-    OMX_VIDEO_H263ProfileInternet            = 0x40,            
-    OMX_VIDEO_H263ProfileInterlace           = 0x80,           
-    OMX_VIDEO_H263ProfileHighLatency         = 0x100,         
-    OMX_VIDEO_H263ProfileKhronosExtensions = 0x6F000000,  
+    OMX_VIDEO_H263ProfileBaseline            = 0x01,
+    OMX_VIDEO_H263ProfileH320Coding          = 0x02,
+    OMX_VIDEO_H263ProfileBackwardCompatible  = 0x04,
+    OMX_VIDEO_H263ProfileISWV2               = 0x08,
+    OMX_VIDEO_H263ProfileISWV3               = 0x10,
+    OMX_VIDEO_H263ProfileHighCompression     = 0x20,
+    OMX_VIDEO_H263ProfileInternet            = 0x40,
+    OMX_VIDEO_H263ProfileInterlace           = 0x80,
+    OMX_VIDEO_H263ProfileHighLatency         = 0x100,
+    OMX_VIDEO_H263ProfileKhronosExtensions = 0x6F000000, 
     OMX_VIDEO_H263ProfileVendorStartUnused = 0x7F000000, 
-    OMX_VIDEO_H263ProfileMax                 = 0x7FFFFFFF  
+    OMX_VIDEO_H263ProfileMax                 = 0x7FFFFFFF
 } OMX_VIDEO_H263PROFILETYPE;
 
 
@@ -443,17 +443,17 @@ typedef enum OMX_VIDEO_H263PROFILETYPE {
 
 
 typedef enum OMX_VIDEO_H263LEVELTYPE {
-    OMX_VIDEO_H263Level10  = 0x01,  
-    OMX_VIDEO_H263Level20  = 0x02,      
-    OMX_VIDEO_H263Level30  = 0x04,      
-    OMX_VIDEO_H263Level40  = 0x08,      
-    OMX_VIDEO_H263Level45  = 0x10,      
-    OMX_VIDEO_H263Level50  = 0x20,      
-    OMX_VIDEO_H263Level60  = 0x40,      
-    OMX_VIDEO_H263Level70  = 0x80, 
-    OMX_VIDEO_H263LevelKhronosExtensions = 0x6F000000,  
+    OMX_VIDEO_H263Level10  = 0x01,
+    OMX_VIDEO_H263Level20  = 0x02,
+    OMX_VIDEO_H263Level30  = 0x04,
+    OMX_VIDEO_H263Level40  = 0x08,
+    OMX_VIDEO_H263Level45  = 0x10,
+    OMX_VIDEO_H263Level50  = 0x20,
+    OMX_VIDEO_H263Level60  = 0x40,
+    OMX_VIDEO_H263Level70  = 0x80,
+    OMX_VIDEO_H263LevelKhronosExtensions = 0x6F000000, 
     OMX_VIDEO_H263LevelVendorStartUnused = 0x7F000000, 
-    OMX_VIDEO_H263LevelMax = 0x7FFFFFFF  
+    OMX_VIDEO_H263LevelMax = 0x7FFFFFFF
 } OMX_VIDEO_H263LEVELTYPE;
 
 
@@ -476,7 +476,7 @@ typedef enum OMX_VIDEO_PICTURETYPE {
     OMX_VIDEO_PictureTypeEI  = 0x11,
     OMX_VIDEO_PictureTypeEP  = 0x12,
     OMX_VIDEO_PictureTypeS   = 0x14,
-    OMX_VIDEO_PictureTypeKhronosExtensions = 0x6F000000,  
+    OMX_VIDEO_PictureTypeKhronosExtensions = 0x6F000000, 
     OMX_VIDEO_PictureTypeVendorStartUnused = 0x7F000000, 
     OMX_VIDEO_PictureTypeMax = 0x7FFFFFFF
 } OMX_VIDEO_PICTURETYPE;
@@ -535,9 +535,9 @@ typedef enum OMX_VIDEO_MPEG2PROFILETYPE {
     OMX_VIDEO_MPEG2ProfileSNR,         
     OMX_VIDEO_MPEG2ProfileSpatial,     
     OMX_VIDEO_MPEG2ProfileHigh,        
-    OMX_VIDEO_MPEG2ProfileKhronosExtensions = 0x6F000000,  
+    OMX_VIDEO_MPEG2ProfileKhronosExtensions = 0x6F000000, 
     OMX_VIDEO_MPEG2ProfileVendorStartUnused = 0x7F000000, 
-    OMX_VIDEO_MPEG2ProfileMax = 0x7FFFFFFF  
+    OMX_VIDEO_MPEG2ProfileMax = 0x7FFFFFFF
 } OMX_VIDEO_MPEG2PROFILETYPE;
 
 
@@ -546,13 +546,13 @@ typedef enum OMX_VIDEO_MPEG2PROFILETYPE {
 
 
 typedef enum OMX_VIDEO_MPEG2LEVELTYPE {
-    OMX_VIDEO_MPEG2LevelLL = 0,   
-    OMX_VIDEO_MPEG2LevelML,       
-    OMX_VIDEO_MPEG2LevelH14,      
-    OMX_VIDEO_MPEG2LevelHL,         
-    OMX_VIDEO_MPEG2LevelKhronosExtensions = 0x6F000000,  
+    OMX_VIDEO_MPEG2LevelLL = 0,  
+    OMX_VIDEO_MPEG2LevelML,      
+    OMX_VIDEO_MPEG2LevelH14,     
+    OMX_VIDEO_MPEG2LevelHL,      
+    OMX_VIDEO_MPEG2LevelKhronosExtensions = 0x6F000000, 
     OMX_VIDEO_MPEG2LevelVendorStartUnused = 0x7F000000, 
-    OMX_VIDEO_MPEG2LevelMax = 0x7FFFFFFF  
+    OMX_VIDEO_MPEG2LevelMax = 0x7FFFFFFF
 } OMX_VIDEO_MPEG2LEVELTYPE;
 
 
@@ -569,13 +569,13 @@ typedef enum OMX_VIDEO_MPEG2LEVELTYPE {
 
 
 typedef struct OMX_VIDEO_PARAM_MPEG2TYPE {
-    OMX_U32 nSize;           
+    OMX_U32 nSize;
     OMX_VERSIONTYPE nVersion;
-    OMX_U32 nPortIndex;      
-    OMX_U32 nPFrames;        
-    OMX_U32 nBFrames;        
+    OMX_U32 nPortIndex;
+    OMX_U32 nPFrames;
+    OMX_U32 nBFrames;
     OMX_VIDEO_MPEG2PROFILETYPE eProfile;
-	OMX_VIDEO_MPEG2LEVELTYPE eLevel;   
+	OMX_VIDEO_MPEG2LEVELTYPE eLevel;
 } OMX_VIDEO_PARAM_MPEG2TYPE;
 
 
@@ -601,25 +601,25 @@ typedef struct OMX_VIDEO_PARAM_MPEG2TYPE {
 
 
 typedef enum OMX_VIDEO_MPEG4PROFILETYPE {
-    OMX_VIDEO_MPEG4ProfileSimple           = 0x01,        
-    OMX_VIDEO_MPEG4ProfileSimpleScalable   = 0x02,    
-    OMX_VIDEO_MPEG4ProfileCore             = 0x04,              
-    OMX_VIDEO_MPEG4ProfileMain             = 0x08,             
-    OMX_VIDEO_MPEG4ProfileNbit             = 0x10,              
-    OMX_VIDEO_MPEG4ProfileScalableTexture  = 0x20,   
-    OMX_VIDEO_MPEG4ProfileSimpleFace       = 0x40,        
-    OMX_VIDEO_MPEG4ProfileSimpleFBA        = 0x80,         
-    OMX_VIDEO_MPEG4ProfileBasicAnimated    = 0x100,     
-    OMX_VIDEO_MPEG4ProfileHybrid           = 0x200,            
-    OMX_VIDEO_MPEG4ProfileAdvancedRealTime = 0x400,  
-    OMX_VIDEO_MPEG4ProfileCoreScalable     = 0x800,      
-    OMX_VIDEO_MPEG4ProfileAdvancedCoding   = 0x1000,    
-    OMX_VIDEO_MPEG4ProfileAdvancedCore     = 0x2000,      
+    OMX_VIDEO_MPEG4ProfileSimple           = 0x01,
+    OMX_VIDEO_MPEG4ProfileSimpleScalable   = 0x02,
+    OMX_VIDEO_MPEG4ProfileCore             = 0x04,
+    OMX_VIDEO_MPEG4ProfileMain             = 0x08,
+    OMX_VIDEO_MPEG4ProfileNbit             = 0x10,
+    OMX_VIDEO_MPEG4ProfileScalableTexture  = 0x20,
+    OMX_VIDEO_MPEG4ProfileSimpleFace       = 0x40,
+    OMX_VIDEO_MPEG4ProfileSimpleFBA        = 0x80,
+    OMX_VIDEO_MPEG4ProfileBasicAnimated    = 0x100,
+    OMX_VIDEO_MPEG4ProfileHybrid           = 0x200,
+    OMX_VIDEO_MPEG4ProfileAdvancedRealTime = 0x400,
+    OMX_VIDEO_MPEG4ProfileCoreScalable     = 0x800,
+    OMX_VIDEO_MPEG4ProfileAdvancedCoding   = 0x1000,
+    OMX_VIDEO_MPEG4ProfileAdvancedCore     = 0x2000,
     OMX_VIDEO_MPEG4ProfileAdvancedScalable = 0x4000,
     OMX_VIDEO_MPEG4ProfileAdvancedSimple   = 0x8000,
-    OMX_VIDEO_MPEG4ProfileKhronosExtensions = 0x6F000000,  
+    OMX_VIDEO_MPEG4ProfileKhronosExtensions = 0x6F000000, 
     OMX_VIDEO_MPEG4ProfileVendorStartUnused = 0x7F000000, 
-    OMX_VIDEO_MPEG4ProfileMax              = 0x7FFFFFFF  
+    OMX_VIDEO_MPEG4ProfileMax              = 0x7FFFFFFF
 } OMX_VIDEO_MPEG4PROFILETYPE;
 
 
@@ -628,17 +628,17 @@ typedef enum OMX_VIDEO_MPEG4PROFILETYPE {
 
 
 typedef enum OMX_VIDEO_MPEG4LEVELTYPE {
-    OMX_VIDEO_MPEG4Level0  = 0x01,      
-    OMX_VIDEO_MPEG4Level0b = 0x02,      
-    OMX_VIDEO_MPEG4Level1  = 0x04,    
-    OMX_VIDEO_MPEG4Level2  = 0x08,    
-    OMX_VIDEO_MPEG4Level3  = 0x10,    
-    OMX_VIDEO_MPEG4Level4  = 0x20,     
-    OMX_VIDEO_MPEG4Level4a = 0x40,     
-    OMX_VIDEO_MPEG4Level5  = 0x80,     
-    OMX_VIDEO_MPEG4LevelKhronosExtensions = 0x6F000000,  
+    OMX_VIDEO_MPEG4Level0  = 0x01,   
+    OMX_VIDEO_MPEG4Level0b = 0x02,   
+    OMX_VIDEO_MPEG4Level1  = 0x04,   
+    OMX_VIDEO_MPEG4Level2  = 0x08,   
+    OMX_VIDEO_MPEG4Level3  = 0x10,   
+    OMX_VIDEO_MPEG4Level4  = 0x20,   
+    OMX_VIDEO_MPEG4Level4a = 0x40,   
+    OMX_VIDEO_MPEG4Level5  = 0x80,   
+    OMX_VIDEO_MPEG4LevelKhronosExtensions = 0x6F000000, 
     OMX_VIDEO_MPEG4LevelVendorStartUnused = 0x7F000000, 
-    OMX_VIDEO_MPEG4LevelMax = 0x7FFFFFFF  
+    OMX_VIDEO_MPEG4LevelMax = 0x7FFFFFFF
 } OMX_VIDEO_MPEG4LEVELTYPE;
 
 
@@ -699,7 +699,7 @@ typedef enum OMX_VIDEO_WMVFORMATTYPE {
     OMX_VIDEO_WMVFormat7      = 0x02,   
     OMX_VIDEO_WMVFormat8      = 0x04,   
     OMX_VIDEO_WMVFormat9      = 0x08,   
-    OMX_VIDEO_WMFFormatKhronosExtensions = 0x6F000000,  
+    OMX_VIDEO_WMFFormatKhronosExtensions = 0x6F000000, 
     OMX_VIDEO_WMFFormatVendorStartUnused = 0x7F000000, 
     OMX_VIDEO_WMVFormatMax    = 0x7FFFFFFF
 } OMX_VIDEO_WMVFORMATTYPE;
@@ -715,7 +715,7 @@ typedef enum OMX_VIDEO_WMVFORMATTYPE {
 
 
 typedef struct OMX_VIDEO_PARAM_WMVTYPE {
-    OMX_U32 nSize; 
+    OMX_U32 nSize;
     OMX_VERSIONTYPE nVersion;
     OMX_U32 nPortIndex;
     OMX_VIDEO_WMVFORMATTYPE eFormat;
@@ -730,7 +730,7 @@ typedef enum OMX_VIDEO_RVFORMATTYPE {
     OMX_VIDEO_RVFormat8,          
     OMX_VIDEO_RVFormat9,          
     OMX_VIDEO_RVFormatG2,         
-    OMX_VIDEO_RVFormatKhronosExtensions = 0x6F000000,  
+    OMX_VIDEO_RVFormatKhronosExtensions = 0x6F000000, 
     OMX_VIDEO_RVFormatVendorStartUnused = 0x7F000000, 
     OMX_VIDEO_RVFormatMax = 0x7FFFFFFF
 } OMX_VIDEO_RVFORMATTYPE;
@@ -789,9 +789,9 @@ typedef enum OMX_VIDEO_AVCPROFILETYPE {
     OMX_VIDEO_AVCProfileHigh10   = 0x10,   
     OMX_VIDEO_AVCProfileHigh422  = 0x20,   
     OMX_VIDEO_AVCProfileHigh444  = 0x40,   
-    OMX_VIDEO_AVCProfileKhronosExtensions = 0x6F000000,  
+    OMX_VIDEO_AVCProfileKhronosExtensions = 0x6F000000, 
     OMX_VIDEO_AVCProfileVendorStartUnused = 0x7F000000, 
-    OMX_VIDEO_AVCProfileMax      = 0x7FFFFFFF  
+    OMX_VIDEO_AVCProfileMax      = 0x7FFFFFFF
 } OMX_VIDEO_AVCPROFILETYPE;
 
 
@@ -816,9 +816,9 @@ typedef enum OMX_VIDEO_AVCLEVELTYPE {
     OMX_VIDEO_AVCLevel42  = 0x2000,   
     OMX_VIDEO_AVCLevel5   = 0x4000,   
     OMX_VIDEO_AVCLevel51  = 0x8000,   
-    OMX_VIDEO_AVCLevelKhronosExtensions = 0x6F000000,  
+    OMX_VIDEO_AVCLevelKhronosExtensions = 0x6F000000, 
     OMX_VIDEO_AVCLevelVendorStartUnused = 0x7F000000, 
-    OMX_VIDEO_AVCLevelMax = 0x7FFFFFFF  
+    OMX_VIDEO_AVCLevelMax = 0x7FFFFFFF
 } OMX_VIDEO_AVCLEVELTYPE;
 
 
@@ -833,7 +833,7 @@ typedef enum OMX_VIDEO_AVCLOOPFILTERTYPE {
     OMX_VIDEO_AVCLoopFilterEnable = 0,
     OMX_VIDEO_AVCLoopFilterDisable,
     OMX_VIDEO_AVCLoopFilterDisableSliceBoundary,
-    OMX_VIDEO_AVCLoopFilterKhronosExtensions = 0x6F000000,  
+    OMX_VIDEO_AVCLoopFilterKhronosExtensions = 0x6F000000, 
     OMX_VIDEO_AVCLoopFilterVendorStartUnused = 0x7F000000, 
     OMX_VIDEO_AVCLoopFilterMax = 0x7FFFFFFF
 } OMX_VIDEO_AVCLOOPFILTERTYPE;
@@ -893,39 +893,39 @@ typedef enum OMX_VIDEO_AVCLOOPFILTERTYPE {
 
 
 typedef struct OMX_VIDEO_PARAM_AVCTYPE {
-    OMX_U32 nSize;                 
-    OMX_VERSIONTYPE nVersion;      
-    OMX_U32 nPortIndex;            
-    OMX_U32 nSliceHeaderSpacing;  
-    OMX_U32 nPFrames;     
-    OMX_U32 nBFrames;     
+    OMX_U32 nSize;
+    OMX_VERSIONTYPE nVersion;
+    OMX_U32 nPortIndex;
+    OMX_U32 nSliceHeaderSpacing;
+    OMX_U32 nPFrames;
+    OMX_U32 nBFrames;
     OMX_BOOL bUseHadamard;
-    OMX_U32 nRefFrames;  
+    OMX_U32 nRefFrames;
 	OMX_U32 nRefIdx10ActiveMinus1;
 	OMX_U32 nRefIdx11ActiveMinus1;
-    OMX_BOOL bEnableUEP;  
-    OMX_BOOL bEnableFMO;  
-    OMX_BOOL bEnableASO;  
-    OMX_BOOL bEnableRS;   
+    OMX_BOOL bEnableUEP;
+    OMX_BOOL bEnableFMO;
+    OMX_BOOL bEnableASO;
+    OMX_BOOL bEnableRS;
     OMX_VIDEO_AVCPROFILETYPE eProfile;
-	OMX_VIDEO_AVCLEVELTYPE eLevel; 
-    OMX_U32 nAllowedPictureTypes;  
-	OMX_BOOL bFrameMBsOnly;        									
-    OMX_BOOL bMBAFF;               
-    OMX_BOOL bEntropyCodingCABAC;  
-    OMX_BOOL bWeightedPPrediction; 
-    OMX_U32 nWeightedBipredicitonMode; 
+	OMX_VIDEO_AVCLEVELTYPE eLevel;
+    OMX_U32 nAllowedPictureTypes;
+	OMX_BOOL bFrameMBsOnly;
+    OMX_BOOL bMBAFF;
+    OMX_BOOL bEntropyCodingCABAC;
+    OMX_BOOL bWeightedPPrediction;
+    OMX_U32 nWeightedBipredicitonMode;
     OMX_BOOL bconstIpred ;
-    OMX_BOOL bDirect8x8Inference;  
+    OMX_BOOL bDirect8x8Inference;
 	OMX_BOOL bDirectSpatialTemporal;
 	OMX_U32 nCabacInitIdc;
 	OMX_VIDEO_AVCLOOPFILTERTYPE eLoopFilterMode;
 } OMX_VIDEO_PARAM_AVCTYPE;
 
 typedef struct OMX_VIDEO_PARAM_PROFILELEVELTYPE {
-   OMX_U32 nSize;                 
-   OMX_VERSIONTYPE nVersion;      
-   OMX_U32 nPortIndex;            
+   OMX_U32 nSize;
+   OMX_VERSIONTYPE nVersion;
+   OMX_U32 nPortIndex;
    OMX_U32 eProfile;      
 
    OMX_U32 eLevel;        
@@ -946,10 +946,10 @@ typedef struct OMX_VIDEO_PARAM_PROFILELEVELTYPE {
 
 
 typedef struct OMX_VIDEO_CONFIG_BITRATETYPE {
-    OMX_U32 nSize;                          
-    OMX_VERSIONTYPE nVersion;               
-    OMX_U32 nPortIndex;                     
-    OMX_U32 nEncodeBitrate;                 
+    OMX_U32 nSize;
+    OMX_VERSIONTYPE nVersion;
+    OMX_U32 nPortIndex;
+    OMX_U32 nEncodeBitrate;
 } OMX_VIDEO_CONFIG_BITRATETYPE;
 
 
@@ -1008,7 +1008,7 @@ typedef enum OMX_VIDEO_AVCSLICEMODETYPE {
     OMX_VIDEO_SLICEMODE_AVCDefault = 0,
     OMX_VIDEO_SLICEMODE_AVCMBSlice,
     OMX_VIDEO_SLICEMODE_AVCByteSlice,
-    OMX_VIDEO_SLICEMODE_AVCKhronosExtensions = 0x6F000000,  
+    OMX_VIDEO_SLICEMODE_AVCKhronosExtensions = 0x6F000000, 
     OMX_VIDEO_SLICEMODE_AVCVendorStartUnused = 0x7F000000, 
     OMX_VIDEO_SLICEMODE_AVCLevelMax = 0x7FFFFFFF
 } OMX_VIDEO_AVCSLICEMODETYPE;
@@ -1025,7 +1025,7 @@ typedef enum OMX_VIDEO_AVCSLICEMODETYPE {
 
 
 typedef struct OMX_VIDEO_PARAM_AVCSLICEFMO {
-    OMX_U32 nSize; 
+    OMX_U32 nSize;
     OMX_VERSIONTYPE nVersion;
     OMX_U32 nPortIndex;
     OMX_U8 nNumSliceGroups;
@@ -1044,7 +1044,7 @@ typedef struct OMX_VIDEO_PARAM_AVCSLICEFMO {
 
 
 typedef struct OMX_VIDEO_CONFIG_AVCINTRAPERIOD {
-    OMX_U32 nSize; 
+    OMX_U32 nSize;
     OMX_VERSIONTYPE nVersion;
     OMX_U32 nPortIndex;
     OMX_U32 nIDRPeriod;
@@ -1061,7 +1061,7 @@ typedef struct OMX_VIDEO_CONFIG_AVCINTRAPERIOD {
 
 
 typedef struct OMX_VIDEO_CONFIG_NALSIZE {
-    OMX_U32 nSize; 
+    OMX_U32 nSize;
     OMX_VERSIONTYPE nVersion;
     OMX_U32 nPortIndex;
     OMX_U32 nNaluBytes;

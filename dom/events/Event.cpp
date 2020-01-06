@@ -124,7 +124,7 @@ Event::InitPresContextData(nsPresContext* aPresContext)
   }
 }
 
-Event::~Event() 
+Event::~Event()
 {
   NS_ASSERT_OWNINGTHREAD(Event);
 
@@ -1335,7 +1335,7 @@ using namespace mozilla::dom;
 already_AddRefed<Event>
 NS_NewDOMEvent(EventTarget* aOwner,
                nsPresContext* aPresContext,
-               WidgetEvent* aEvent) 
+               WidgetEvent* aEvent)
 {
   RefPtr<Event> it = new Event(aOwner, aPresContext, aEvent);
   return it.forget();

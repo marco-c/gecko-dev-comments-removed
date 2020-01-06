@@ -49,9 +49,9 @@ public:
   
   
   virtual void GetInitialOrientation(bool& aHorizontal) override { aHorizontal = false; }
-  virtual bool GetInitialHAlignment(Halignment& aHalign) override { aHalign = hAlign_Left; return true; } 
-  virtual bool GetInitialVAlignment(Valignment& aValign) override { aValign = vAlign_Top; return true; } 
-  virtual bool GetInitialAutoStretch(bool& aStretch) override { aStretch = true; return true; } 
+  virtual bool GetInitialHAlignment(Halignment& aHalign) override { aHalign = hAlign_Left; return true; }
+  virtual bool GetInitialVAlignment(Valignment& aValign) override { aValign = vAlign_Top; return true; }
+  virtual bool GetInitialAutoStretch(bool& aStretch) override { aStretch = true; return true; }
 
   nsIFrame* GetCaptionBox(nsRect& aCaptionRect);
 };
@@ -157,7 +157,7 @@ nsGroupBoxFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       aLists.BorderBackground());
     aLists.BorderBackground()->AppendNewToTop(new (aBuilder)
       nsDisplayXULGroupBorder(aBuilder, this));
-    
+
     DisplayOutline(aBuilder, aLists);
   }
 
@@ -247,7 +247,7 @@ nsGroupBoxFrame::PaintBorder(gfxContext& aRenderingContext,
       nsCSSRendering::PaintBorder(presContext, aRenderingContext, this,
                                   aDirtyRect, rect, mStyleContext,
                                   PaintBorderFlags::SYNC_DECODE_IMAGES, skipSides);
-  
+
     aRenderingContext.Restore();
     
 
@@ -262,7 +262,7 @@ nsGroupBoxFrame::PaintBorder(gfxContext& aRenderingContext,
       nsCSSRendering::PaintBorder(presContext, aRenderingContext, this,
                                   aDirtyRect, rect, mStyleContext,
                                   PaintBorderFlags::SYNC_DECODE_IMAGES, skipSides);
-    
+
     aRenderingContext.Restore();
   } else {
     result &=

@@ -36,7 +36,7 @@ FocusManager::FocusedAccessible() const
 
   nsINode* focusedNode = FocusedDOMNode();
   if (focusedNode) {
-    DocAccessible* doc = 
+    DocAccessible* doc =
       GetAccService()->GetDocAccessible(focusedNode->OwnerDoc());
     return doc ? doc->GetAccessibleEvenIfNotInMapOrContainer(focusedNode) : nullptr;
   }
@@ -59,7 +59,7 @@ FocusManager::IsFocused(const Accessible* aAccessible) const
     
     
     if (focusedNode->OwnerDoc() == aAccessible->GetNode()->OwnerDoc()) {
-      DocAccessible* doc = 
+      DocAccessible* doc =
         GetAccService()->GetDocAccessible(focusedNode->OwnerDoc());
       return aAccessible ==
         (doc ? doc->GetAccessibleEvenIfNotInMapOrContainer(focusedNode) : nullptr);

@@ -145,7 +145,7 @@ nsViewSourceHandler::NewSrcdocChannel(nsIURI *aURI,
     return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsViewSourceHandler::AllowPort(int32_t port, const char *scheme, bool *_retval)
 {
     

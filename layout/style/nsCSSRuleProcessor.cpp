@@ -1161,7 +1161,7 @@ nsCSSRuleProcessor::InitSystemMetrics()
   if (NS_SUCCEEDED(rv) && metricResult) {
     sSystemMetrics->AppendElement(nsGkAtoms::touch_enabled);
   }
- 
+
   rv = LookAndFeel::GetInt(LookAndFeel::eIntID_SwipeAnimationEnabled,
                            &metricResult);
   if (NS_SUCCEEDED(rv) && metricResult) {
@@ -3143,7 +3143,7 @@ nsCSSRuleProcessor::AppendFontFaceRules(
     if (!aArray.AppendElements(cascade->mFontFaceRules))
       return false;
   }
-  
+
   return true;
 }
 
@@ -3187,7 +3187,7 @@ nsCSSRuleProcessor::AppendPageRules(
       return false;
     }
   }
-  
+
   return true;
 }
 

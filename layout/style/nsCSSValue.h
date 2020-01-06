@@ -635,7 +635,7 @@ public:
 
 
 
-  bool      IsFixedLengthUnit() const  
+  bool      IsFixedLengthUnit() const
     { return mUnit == eCSSUnit_PhysicalMillimeter; }
   
 
@@ -646,7 +646,7 @@ public:
 
 
 
-  bool      IsRelativeLengthUnit() const  
+  bool      IsRelativeLengthUnit() const
     { return eCSSUnit_EM <= mUnit && mUnit <= eCSSUnit_RootEM; }
   
 
@@ -661,11 +661,11 @@ public:
     { return IsPercentLengthUnit(mUnit); }
   static bool IsFloatUnit(nsCSSUnit aUnit)
     { return eCSSUnit_Number <= aUnit; }
-  bool      IsAngularUnit() const  
+  bool      IsAngularUnit() const
     { return eCSSUnit_Degree <= mUnit && mUnit <= eCSSUnit_Turn; }
-  bool      IsFrequencyUnit() const  
+  bool      IsFrequencyUnit() const
     { return eCSSUnit_Hertz <= mUnit && mUnit <= eCSSUnit_Kilohertz; }
-  bool      IsTimeUnit() const  
+  bool      IsTimeUnit() const
     { return eCSSUnit_Seconds <= mUnit && mUnit <= eCSSUnit_Milliseconds; }
   bool      IsCalcUnit() const
     { return eCSSUnit_Calc <= mUnit && mUnit <= eCSSUnit_Calc_Divided; }
@@ -1413,8 +1413,8 @@ struct nsCSSValueTriplet {
     {
         MOZ_COUNT_CTOR(nsCSSValueTriplet);
     }
-    nsCSSValueTriplet(const nsCSSValue& aXValue, 
-                      const nsCSSValue& aYValue, 
+    nsCSSValueTriplet(const nsCSSValue& aXValue,
+                      const nsCSSValue& aYValue,
                       const nsCSSValue& aZValue)
         : mXValue(aXValue), mYValue(aYValue), mZValue(aZValue)
     {

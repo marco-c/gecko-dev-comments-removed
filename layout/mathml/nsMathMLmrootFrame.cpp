@@ -45,7 +45,7 @@ nsMathMLmrootFrame::Init(nsIContent*       aContent,
                          nsIFrame*         aPrevInFlow)
 {
   nsMathMLContainerFrame::Init(aContent, aParent, aPrevInFlow);
-  
+
   nsPresContext *presContext = PresContext();
 
   
@@ -83,7 +83,7 @@ nsMathMLmrootFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   nsMathMLContainerFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
-  
+
   
   
   if (!NS_MATHML_HAS_ERROR(mPresentationData.flags)) {
@@ -263,7 +263,7 @@ nsMathMLmrootFrame::Reflow(nsPresContext*          aPresContext,
   nsBoundingMetrics radicalSize;
   mSqrChar.Stretch(aPresContext, drawTarget,
                    fontSizeInflation,
-                   NS_STRETCH_DIRECTION_VERTICAL, 
+                   NS_STRETCH_DIRECTION_VERTICAL,
                    contSize, radicalSize,
                    NS_STRETCH_LARGER,
                    StyleVisibility()->mDirection);
@@ -274,12 +274,12 @@ nsMathMLmrootFrame::Reflow(nsPresContext*          aPresContext,
   
   
   mBoundingMetrics.ascent = bmBase.ascent + psi + ruleThickness;
-  mBoundingMetrics.descent = 
+  mBoundingMetrics.descent =
     std::max(bmBase.descent,
            (bmSqr.ascent + bmSqr.descent - mBoundingMetrics.ascent));
   mBoundingMetrics.width = bmSqr.width + bmBase.width;
   mBoundingMetrics.leftBearing = bmSqr.leftBearing;
-  mBoundingMetrics.rightBearing = bmSqr.width + 
+  mBoundingMetrics.rightBearing = bmSqr.width +
     std::max(bmBase.width, bmBase.rightBearing); 
 
   aDesiredSize.SetBlockStartAscent(mBoundingMetrics.ascent + leading);
@@ -290,7 +290,7 @@ nsMathMLmrootFrame::Reflow(nsPresContext*          aPresContext,
 
   
   
-  
+
   
   
   float raiseIndexPercent = 0.6f;
@@ -307,7 +307,7 @@ nsMathMLmrootFrame::Reflow(nsPresContext*          aPresContext,
 
   nscoord indexClearance = 0;
   if (mBoundingMetrics.ascent < indexRaisedAscent) {
-    indexClearance = 
+    indexClearance =
       indexRaisedAscent - mBoundingMetrics.ascent; 
     mBoundingMetrics.ascent = indexRaisedAscent;
     nscoord descent = aDesiredSize.Height() - aDesiredSize.BlockStartAscent();
@@ -319,7 +319,7 @@ nsMathMLmrootFrame::Reflow(nsPresContext*          aPresContext,
   GetRadicalXOffsets(bmIndex.width, bmSqr.width, fm, &dxIndex, &dxSqr);
 
   mBoundingMetrics.width = dxSqr + bmSqr.width + bmBase.width;
-  mBoundingMetrics.leftBearing = 
+  mBoundingMetrics.leftBearing =
     std::min(dxIndex + bmIndex.leftBearing, dxSqr + bmSqr.leftBearing);
   mBoundingMetrics.rightBearing = dxSqr + bmSqr.width +
     std::max(bmBase.width, bmBase.rightBearing);
@@ -408,7 +408,7 @@ nsMathMLmrootFrame::GetAdditionalStyleContext(int32_t aIndex) const
 }
 
 void
-nsMathMLmrootFrame::SetAdditionalStyleContext(int32_t          aIndex, 
+nsMathMLmrootFrame::SetAdditionalStyleContext(int32_t          aIndex,
                                               nsStyleContext*  aStyleContext)
 {
   switch (aIndex) {

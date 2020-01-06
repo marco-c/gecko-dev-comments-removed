@@ -74,7 +74,7 @@ public:
 
 #ifdef DEBUG_FRAME_DUMP
   void List(FILE* out = stderr, const char* aPrefix = "", uint32_t aFlags = 0) const override;
-#endif  
+#endif
 
   
 
@@ -384,7 +384,7 @@ public:
 
   virtual bool DrainSelfOverflowList() override;
 
-  
+
   
 
 
@@ -616,7 +616,7 @@ protected:
 
 
   inline nsFrameList* StealOverflowFrames();
-  
+
   
 
 
@@ -823,7 +823,7 @@ public:
     {
       if (mTracker) mTracker->BeginFinish(mChild);
     }
-    ~AutoFinish() 
+    ~AutoFinish()
     {
       if (mTracker) mTracker->EndFinish(mChild);
     }

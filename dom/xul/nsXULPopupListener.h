@@ -52,7 +52,7 @@ private:
     nsCOMPtr<mozilla::dom::Element> mElement;
 
     
-    nsCOMPtr<nsIContent> mPopupContent; 
+    nsCOMPtr<nsIContent> mPopupContent;
 
     
     bool mIsContext;

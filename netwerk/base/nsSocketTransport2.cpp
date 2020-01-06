@@ -115,7 +115,7 @@ static PRErrorCode RandomizeConnectError(PRErrorCode code)
         struct {
             PRErrorCode err_code;
             const char *err_name;
-        } 
+        }
         errors[] = {
             
             
@@ -459,7 +459,7 @@ nsSocketInputStream::CloseWithStatus(nsresult reason)
                static_cast<uint32_t>(reason)));
 
     
- 
+
     nsresult rv;
     {
         MutexAutoLock lock(mTransport->mLock);
@@ -611,7 +611,7 @@ nsSocketOutputStream::Write(const char *buf, uint32_t count, uint32_t *countWrit
 
         if (NS_FAILED(mCondition))
             return mCondition;
-        
+
         fd = mTransport->GetFD_LockedAlsoDuringFastOpen();
         if (!fd)
             return NS_BASE_STREAM_WOULD_BLOCK;
@@ -720,7 +720,7 @@ nsSocketOutputStream::CloseWithStatus(nsresult reason)
                 static_cast<uint32_t>(reason)));
 
     
- 
+
     nsresult rv;
     {
         MutexAutoLock lock(mTransport->mLock);
@@ -1200,7 +1200,7 @@ nsSocketTransport::BuildSocket(PRFileDesc *&fd, bool &proxyTransparent, bool &us
 
             if (mProxyTransparentResolvesHost)
                 controlFlags |= nsISocketProvider::PROXY_RESOLVES_HOST;
-            
+
             if (mConnectionFlags & nsISocketTransport::ANONYMOUS_CONNECT)
                 controlFlags |= nsISocketProvider::ANONYMOUS_CONNECT;
 
@@ -2130,7 +2130,7 @@ nsSocketTransport::OnSocketEvent(uint32_t type, nsresult status, nsISupports *pa
     default:
         SOCKET_LOG(("  unhandled event!\n"));
     }
-    
+
     if (NS_FAILED(mCondition)) {
         SOCKET_LOG(("  after event [this=%p cond=%"  PRIx32 "]\n", this,
                     static_cast<uint32_t>(mCondition)));

@@ -65,7 +65,7 @@ enum MaiInterfaceType {
     MAI_INTERFACE_SELECTION,
     MAI_INTERFACE_TABLE,
     MAI_INTERFACE_TEXT,
-    MAI_INTERFACE_DOCUMENT, 
+    MAI_INTERFACE_DOCUMENT,
     MAI_INTERFACE_IMAGE, 
     MAI_INTERFACE_TABLE_CELL
 };
@@ -102,13 +102,13 @@ static GType GetAtkTypeForMai(MaiInterfaceType type)
 }
 
 #define NON_USER_EVENT ":system"
-    
+
 
 
 
 static const GInterfaceInfo atk_if_infos[] = {
     {(GInterfaceInitFunc)componentInterfaceInitCB,
-     (GInterfaceFinalizeFunc) nullptr, nullptr}, 
+     (GInterfaceFinalizeFunc) nullptr, nullptr},
     {(GInterfaceInitFunc)actionInterfaceInitCB,
      (GInterfaceFinalizeFunc) nullptr, nullptr},
     {(GInterfaceInitFunc)valueInterfaceInitCB,
@@ -328,7 +328,7 @@ AccessibleWrap::GetAtkObject(Accessible* acc)
 {
     void *atkObjPtr = nullptr;
     acc->GetNativeInterface(&atkObjPtr);
-    return atkObjPtr ? ATK_OBJECT(atkObjPtr) : nullptr;    
+    return atkObjPtr ? ATK_OBJECT(atkObjPtr) : nullptr;
 }
 
 
@@ -372,7 +372,7 @@ AccessibleWrap::CreateMaiInterfaces(void)
     
     if (AsTable())
       interfacesBits |= 1 << MAI_INTERFACE_TABLE;
- 
+
     if (AsTableCell())
       interfacesBits |= 1 << MAI_INTERFACE_TABLE_CELL;
 

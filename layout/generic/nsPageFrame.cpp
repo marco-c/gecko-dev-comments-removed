@@ -177,7 +177,7 @@ nsPageFrame::GetFrameName(nsAString& aResult) const
 }
 #endif
 
-void 
+void
 nsPageFrame::ProcessSpecialCodes(const nsString& aStr, nsString& aNewStr)
 {
 
@@ -233,7 +233,7 @@ nsPageFrame::ProcessSpecialCodes(const nsString& aStr, nsString& aNewStr)
 
 nscoord nsPageFrame::GetXPosition(gfxContext&          aRenderingContext,
                                   nsFontMetrics&       aFontMetrics,
-                                  const nsRect&        aRect, 
+                                  const nsRect&        aRect,
                                   int32_t              aJust,
                                   const nsString&      aStr)
 {
@@ -362,10 +362,10 @@ nsPageFrame::DrawHeaderFooter(gfxContext&          aRenderingContext,
           str.Truncate();
         }
       }
-    } else { 
+    } else {
       return; 
     }
-    
+
     if (HasRTLChars(str)) {
       PresContext()->SetBidiEnabled();
     }
@@ -598,9 +598,9 @@ nsPageFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
 
 void
-nsPageFrame::SetPageNumInfo(int32_t aPageNumber, int32_t aTotalPages) 
-{ 
-  mPageNum     = aPageNumber; 
+nsPageFrame::SetPageNumInfo(int32_t aPageNumber, int32_t aTotalPages)
+{
+  mPageNum     = aPageNumber;
   mTotNumPages = aTotalPages;
 }
 
@@ -657,8 +657,8 @@ nsPageFrame::PaintHeaderFooter(gfxContext& aRenderingContext,
 }
 
 void
-nsPageFrame::SetSharedPageData(nsSharedPageData* aPD) 
-{ 
+nsPageFrame::SetSharedPageData(nsSharedPageData* aPD)
+{
   mPD = aPD;
   
   nsPageContentFrame * pcf = static_cast<nsPageContentFrame*>(mFrames.FirstChild());
@@ -734,7 +734,7 @@ nsPageBreakFrame::Reflow(nsPresContext*           aPresContext,
   
   
   mHaveReflowed = true;
-  aStatus.Reset(); 
+  aStatus.Reset();
 }
 
 #ifdef DEBUG_FRAME_DUMP

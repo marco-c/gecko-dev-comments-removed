@@ -13,7 +13,7 @@
 
 
 
-BOOL CalculateRegistryPathFromFilePath(const LPCWSTR filePath, 
+BOOL CalculateRegistryPathFromFilePath(const LPCWSTR filePath,
                                        LPWSTR registryPath);
 
 #endif

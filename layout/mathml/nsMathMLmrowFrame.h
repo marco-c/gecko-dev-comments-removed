@@ -35,7 +35,7 @@ public:
   }
 
   virtual eMathMLFrameType
-  GetMathMLFrameType() override; 
+  GetMathMLFrameType() override;
 
   bool
   IsMrowLike() override {

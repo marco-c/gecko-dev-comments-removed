@@ -30,12 +30,12 @@ class nsLocale : public nsILocale {
 
 public:
 	nsLocale(void);
-	
+
 	
 	NS_DECL_NSILOCALE
 
 protected:
-	
+
 	NS_IMETHOD AddCategory(const nsAString& category, const nsAString& value);
 
 	static PLHashNumber Hash_HashFunction(const void* key);

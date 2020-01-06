@@ -30,7 +30,7 @@ using namespace mozilla;
 
 
 const int LocaleListLength = 6;
-const char* LocaleList[LocaleListLength] = 
+const char* LocaleList[LocaleListLength] =
 {
 	NSILOCALE_COLLATE,
 	NSILOCALE_CTYPE,
@@ -65,7 +65,7 @@ static int posix_locale_category[LocaleListLength] =
 class nsLocaleService: public nsILocaleService {
 
 public:
-	
+
 	
 	
 	
@@ -93,7 +93,7 @@ protected:
 
 
 
-nsLocaleService::nsLocaleService(void) 
+nsLocaleService::nsLocaleService(void)
 {
 #ifdef XP_WIN
     nsAutoString        xpLocale;
@@ -161,7 +161,7 @@ nsLocaleService::nsLocaleService(void)
     }
     mSystemLocale = do_QueryInterface(resultLocale);
     mApplicationLocale = do_QueryInterface(resultLocale);
-       
+
 #endif 
 
 #ifdef XP_MACOSX

@@ -90,7 +90,7 @@ mozilla::ipc::IPCResult
 TestUrgencyChild::RecvStart()
 {
   uint32_t result;
-  
+
   
   
   test_ = kFirstTestBegin;

@@ -47,7 +47,7 @@ protected:
   explicit nsMathMLmmultiscriptsFrame(nsStyleContext* aContext)
     : nsMathMLContainerFrame(aContext, kClassID) {}
   virtual ~nsMathMLmmultiscriptsFrame();
-  
+
 
 };
 

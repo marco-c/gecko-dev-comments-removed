@@ -84,7 +84,7 @@ nsAccUtils::GetDefaultLevel(Accessible* aAccessible)
     Accessible* parent = aAccessible->Parent();
     
     
-    if (parent && parent->Role() == roles::TREE_TABLE) 
+    if (parent && parent->Role() == roles::TREE_TABLE)
       return 1;
   }
 

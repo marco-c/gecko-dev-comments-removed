@@ -149,7 +149,7 @@ public:
                                 nsStyleContext*   aStyleContext,
                                 float             aFontSizeInflation);
 
-  static nscoord 
+  static nscoord
   CalcLength(nsPresContext*   aPresContext,
              nsStyleContext*   aStyleContext,
              const nsCSSValue& aCSSValue,
@@ -193,20 +193,20 @@ public:
   }
 
   
-  static void 
+  static void
   GetSubDropFromChild(nsIFrame*       aChild,
                       nscoord&        aSubDrop,
-                      float           aFontSizeInflation) 
+                      float           aFontSizeInflation)
   {
     RefPtr<nsFontMetrics> fm =
       nsLayoutUtils::GetFontMetricsForFrame(aChild, aFontSizeInflation);
     GetSubDrop(fm, aSubDrop);
   }
 
-  static void 
+  static void
   GetSupDropFromChild(nsIFrame*       aChild,
                       nscoord&        aSupDrop,
-                      float           aFontSizeInflation) 
+                      float           aFontSizeInflation)
   {
     RefPtr<nsFontMetrics> fm =
       nsLayoutUtils::GetFontMetricsForFrame(aChild, aFontSizeInflation);
@@ -215,7 +215,7 @@ public:
 
   static void
   GetSkewCorrectionFromChild(nsIFrame*       aChild,
-                             nscoord&        aSkewCorrection) 
+                             nscoord&        aSkewCorrection)
   {
     
     
@@ -224,8 +224,8 @@ public:
 
   
   static void
-  GetSubScriptShifts(nsFontMetrics* fm, 
-                     nscoord&        aSubScriptShift1, 
+  GetSubScriptShifts(nsFontMetrics* fm,
+                     nscoord&        aSubScriptShift1,
                      nscoord&        aSubScriptShift2)
   {
     nscoord xHeight = fm->XHeight();
@@ -235,9 +235,9 @@ public:
 
   
   static void
-  GetSupScriptShifts(nsFontMetrics* fm, 
-                     nscoord&        aSupScriptShift1, 
-                     nscoord&        aSupScriptShift2, 
+  GetSupScriptShifts(nsFontMetrics* fm,
+                     nscoord&        aSupScriptShift1,
+                     nscoord&        aSupScriptShift2,
                      nscoord&        aSupScriptShift3)
   {
     nscoord xHeight = fm->XHeight();
@@ -265,9 +265,9 @@ public:
   }
 
   static void
-  GetNumeratorShifts(nsFontMetrics* fm, 
-                     nscoord&        numShift1, 
-                     nscoord&        numShift2, 
+  GetNumeratorShifts(nsFontMetrics* fm,
+                     nscoord&        numShift1,
+                     nscoord&        numShift2,
                      nscoord&        numShift3)
   {
     nscoord xHeight = fm->XHeight();
@@ -277,8 +277,8 @@ public:
   }
 
   static void
-  GetDenominatorShifts(nsFontMetrics* fm, 
-                       nscoord&        denShift1, 
+  GetDenominatorShifts(nsFontMetrics* fm,
+                       nscoord&        denShift1,
                        nscoord&        denShift2)
   {
     nscoord xHeight = fm->XHeight();
@@ -306,7 +306,7 @@ public:
   }
 
   static void
-  GetBigOpSpacings(nsFontMetrics* fm, 
+  GetBigOpSpacings(nsFontMetrics* fm,
                    nscoord&        bigOpSpacing1,
                    nscoord&        bigOpSpacing2,
                    nscoord&        bigOpSpacing3,
@@ -370,12 +370,12 @@ protected:
 
   
   nsEmbellishData mEmbellishData;
-  
+
   
   nsBoundingMetrics mBoundingMetrics;
+
   
-  
-  nsPoint mReference; 
+  nsPoint mReference;
 };
 
 #endif 

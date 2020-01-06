@@ -42,7 +42,7 @@ public:
        long column,
        BSTR *description);
 
-  virtual  HRESULT STDMETHODCALLTYPE get_columnExtentAt( 
+  virtual  HRESULT STDMETHODCALLTYPE get_columnExtentAt(
        long row,
        long column,
        long *nColumnsSpanned);
@@ -161,7 +161,7 @@ public:
        long *nColumns);
 
   virtual  HRESULT STDMETHODCALLTYPE get_selectedRows(
-       long **selectedRows, 
+       long **selectedRows,
        long *nRows);
 
 protected:

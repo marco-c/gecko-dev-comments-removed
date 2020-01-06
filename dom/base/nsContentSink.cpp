@@ -254,7 +254,7 @@ nsContentSink::StyleSheetLoaded(StyleSheet* aSheet,
       
       ScrollToRef();
     }
-    
+
     mScriptLoader->RemoveParserBlockingScriptExecutionBlocker();
   }
 
@@ -265,16 +265,16 @@ nsresult
 nsContentSink::ProcessHTTPHeaders(nsIChannel* aChannel)
 {
   nsCOMPtr<nsIHttpChannel> httpchannel(do_QueryInterface(aChannel));
-  
+
   if (!httpchannel) {
     return NS_OK;
   }
 
   
   
-  
+
   nsAutoCString linkHeader;
-  
+
   nsresult rv = httpchannel->GetResponseHeader(NS_LITERAL_CSTRING("link"),
                                                linkHeader);
   if (NS_SUCCEEDED(rv) && !linkHeader.IsEmpty()) {
@@ -293,7 +293,7 @@ nsContentSink::ProcessHTTPHeaders(nsIChannel* aChannel)
       mProcessLinkHeaderEvent.Forget();
     }
   }
-  
+
   return NS_OK;
 }
 
@@ -371,24 +371,24 @@ nsContentSink::LinkContextIsOurDocument(const nsAString& aAnchor)
   
   nsCOMPtr<nsIURI> contextUri;
   nsresult rv = docUri->CloneIgnoringRef(getter_AddRefs(contextUri));
-  
+
   if (NS_FAILED(rv)) {
     
     return false;
   }
-  
+
   
   nsCOMPtr<nsIURI> resolvedUri;
   rv = NS_NewURI(getter_AddRefs(resolvedUri), aAnchor,
       nullptr, contextUri);
-  
+
   if (NS_FAILED(rv)) {
     
     return false;
   }
 
   bool same;
-  rv = contextUri->Equals(resolvedUri, &same); 
+  rv = contextUri->Equals(resolvedUri, &same);
   if (NS_FAILED(rv)) {
     
     return false;
@@ -480,7 +480,7 @@ nsContentSink::ProcessLinkHeader(const nsAString& aLinkData)
     last = end - 1;
 
     bool wasQuotedString = false;
-    
+
     
     while (*end != kNullCh && *end != kSemicolon && *end != kComma) {
       char16_t ch = *end;
@@ -492,9 +492,9 @@ nsContentSink::ProcessLinkHeader(const nsAString& aLinkData)
         if (quote == kLessThan) {
           quote = kGreaterThan;
         }
-        
+
         wasQuotedString = (ch == kQuote);
-        
+
         char16_t* closeQuote = (end + 1);
 
         
@@ -579,7 +579,7 @@ nsContentSink::ProcessLinkHeader(const nsAString& aLinkData)
             
             char16_t* unescaped = value;
             char16_t *src = value;
-            
+
             while (*src != kNullCh) {
               if (*src == kBackSlash && *(src + 1) != kNullCh) {
                 src++;
@@ -589,7 +589,7 @@ nsContentSink::ProcessLinkHeader(const nsAString& aLinkData)
 
             *unescaped = kNullCh;
           }
-          
+
           if (attr.LowerCaseEqualsLiteral("rel")) {
             if (rel.IsEmpty()) {
               rel = value;
@@ -661,13 +661,13 @@ nsContentSink::ProcessLinkHeader(const nsAString& aLinkData)
       media.Truncate();
       anchor.Truncate();
       crossOrigin.SetIsVoid(true);
-      
+
       seenParameters = false;
     }
 
     start = ++end;
   }
-                
+
   href.Trim(" \t\n\r\f"); 
   if (!href.IsEmpty() && !rel.IsEmpty()) {
     rv = ProcessLink(anchor, href, rel,
@@ -759,7 +759,7 @@ nsContentSink::ProcessStyleLink(nsIContent* aElement,
   nsCOMPtr<nsIURI> url;
   nsresult rv = NS_NewURI(getter_AddRefs(url), aHref, nullptr,
                           mDocument->GetDocBaseURI());
-  
+
   if (NS_FAILED(rv)) {
     
     return NS_OK;
@@ -787,7 +787,7 @@ nsContentSink::ProcessStyleLink(nsIContent* aElement,
                                  integrity, mRunsToCompletion ? nullptr : this,
                                  &isAlternate);
   NS_ENSURE_SUCCESS(rv, rv);
-  
+
   if (!isAlternate && !mRunsToCompletion) {
     ++mPendingSheetCount;
     mScriptLoader->AddParserBlockingScriptExecutionBlocker();
@@ -819,7 +819,7 @@ nsContentSink::ProcessMETATag(nsIContent* aContent)
     aContent->GetAttr(kNameSpaceID_None, nsGkAtoms::content, result);
     if (!result.IsEmpty()) {
       nsCOMPtr<nsIAtom> fieldAtom(NS_Atomize(header));
-      rv = ProcessHeaderData(fieldAtom, result, aContent); 
+      rv = ProcessHeaderData(fieldAtom, result, aContent);
     }
   }
   NS_ENSURE_SUCCESS(rv, rv);
@@ -1193,7 +1193,7 @@ nsContentSink::StartLayout(bool aIgnorePendingSheets)
     
     return;
   }
-  
+
   mDeferredLayoutStart = true;
 
   if (!aIgnorePendingSheets && WaitForPendingSheets()) {
@@ -1246,7 +1246,7 @@ nsContentSink::NotifyAppend(nsIContent* aContainer, uint32_t aStartIndex)
   }
 
   mInNotification++;
-  
+
   {
     
     MOZ_AUTO_DOC_UPDATE(mDocument, UPDATE_CONTENT_MODEL, !mBeganUpdate);
@@ -1267,7 +1267,7 @@ nsContentSink::Notify(nsITimer *timer)
     mDroppedTimer = true;
     return NS_OK;
   }
-  
+
   if (WaitForPendingSheets()) {
     mDeferredFlushTags = true;
   } else {
@@ -1505,7 +1505,7 @@ nsContentSink::DidBuildModelImpl(bool aTerminated)
                 "timeout"));
     mNotificationTimer->Cancel();
     mNotificationTimer = nullptr;
-  }	
+  }
 }
 
 void
@@ -1515,7 +1515,7 @@ nsContentSink::DropParserAndPerfHint(void)
     
     return;
   }
-  
+
   
   
   
@@ -1566,13 +1566,13 @@ nsContentSink::WillParseImpl(void)
       mDocument->IsInBackgroundWindow() ||
       ((currentTime - mBeginLoadTime) > uint32_t(sInitialPerfTime) &&
        (currentTime - lastEventTime) < uint32_t(sInteractiveTime));
-    
+
     if (mDynamicLowerValue != newDynLower) {
       FavorPerformanceHint(!newDynLower, 0);
       mDynamicLowerValue = newDynLower;
     }
   }
-  
+
   mDeflectedCount = 0;
   mHasPendingEvent = false;
 

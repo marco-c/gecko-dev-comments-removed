@@ -238,7 +238,7 @@ private:
 
 
   SQLiteMutex &mDBMutex;
-  
+
   
 
 

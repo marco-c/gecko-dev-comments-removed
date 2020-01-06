@@ -307,7 +307,7 @@ nsCacheEntryDescriptor::SetDataSize(uint32_t dataSize)
     } else {
         NS_WARNING("failed SetDataSize() on memory cache object!");
     }
-    
+
     return rv;
 }
 
@@ -427,7 +427,7 @@ nsCacheEntryDescriptor::GetStoragePolicy(nsCacheStoragePolicy *result)
     NS_ENSURE_ARG_POINTER(result);
     nsCacheServiceAutoLock lock(LOCK_TELEM(NSCACHEENTRYDESCRIPTOR_GETSTORAGEPOLICY));
     if (!mCacheEntry)  return NS_ERROR_NOT_AVAILABLE;
-    
+
     *result = mCacheEntry->StoragePolicy();
     return NS_OK;
 }
@@ -439,7 +439,7 @@ nsCacheEntryDescriptor::SetStoragePolicy(nsCacheStoragePolicy policy)
     nsCacheServiceAutoLock lock(LOCK_TELEM(NSCACHEENTRYDESCRIPTOR_SETSTORAGEPOLICY));
     if (!mCacheEntry)  return NS_ERROR_NOT_AVAILABLE;
     
-    
+
     bool        storageEnabled = false;
     storageEnabled = nsCacheService::IsStorageEnabledForPolicy_Locked(policy);
     if (!storageEnabled)    return NS_ERROR_FAILURE;
@@ -447,12 +447,12 @@ nsCacheEntryDescriptor::SetStoragePolicy(nsCacheStoragePolicy policy)
     
     if (!(mAccessGranted & nsICache::ACCESS_WRITE))
         return NS_ERROR_NOT_AVAILABLE;
-    
+
     
     if (mCacheEntry->StoragePolicy() == nsICache::STORE_IN_MEMORY &&
         policy != nsICache::STORE_IN_MEMORY)
         return NS_ERROR_NOT_AVAILABLE;
-        
+
     mCacheEntry->SetStoragePolicy(policy);
     mCacheEntry->MarkEntryDirty();
     return NS_OK;
@@ -641,7 +641,7 @@ nsCacheEntryDescriptor::SetMetaDataElement(const char *key, const char *value)
 NS_IMETHODIMP
 nsCacheEntryDescriptor::VisitMetaData(nsICacheMetaDataVisitor * visitor)
 {
-    nsCacheServiceAutoLock lock(LOCK_TELEM(NSCACHEENTRYDESCRIPTOR_VISITMETADATA)); 
+    nsCacheServiceAutoLock lock(LOCK_TELEM(NSCACHEENTRYDESCRIPTOR_VISITMETADATA));
     
     NS_ENSURE_ARG_POINTER(visitor);
     if (!mCacheEntry)  return NS_ERROR_NOT_AVAILABLE;
@@ -898,8 +898,8 @@ NS_INTERFACE_MAP_BEGIN(nsCacheEntryDescriptor::nsDecompressInputStreamWrapper)
 NS_INTERFACE_MAP_END_THREADSAFE
 
 NS_IMETHODIMP nsCacheEntryDescriptor::
-nsDecompressInputStreamWrapper::Read(char *    buf, 
-                                     uint32_t  count, 
+nsDecompressInputStreamWrapper::Read(char *    buf,
+                                     uint32_t  count,
                                      uint32_t *countRead)
 {
     mozilla::MutexAutoLock lock(mLock);
@@ -940,7 +940,7 @@ nsDecompressInputStreamWrapper::Read(char *    buf,
     
     
     while (NS_SUCCEEDED(rv) &&
-           zerr == Z_OK && 
+           zerr == Z_OK &&
            mZstream.avail_out > 0 &&
            count > 0) {
         if (mZstream.avail_in == 0) {

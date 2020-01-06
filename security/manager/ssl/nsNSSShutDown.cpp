@@ -218,7 +218,7 @@ bool nsNSSShutDownList::construct(const StaticMutexAutoLock& )
 }
 
 nsNSSActivityState::nsNSSActivityState()
-:mNSSActivityStateLock("nsNSSActivityState.mNSSActivityStateLock"), 
+:mNSSActivityStateLock("nsNSSActivityState.mNSSActivityStateLock"),
  mNSSActivityChanged(mNSSActivityStateLock,
                      "nsNSSActivityState.mNSSActivityStateLock"),
  mNSSActivityCounter(0),

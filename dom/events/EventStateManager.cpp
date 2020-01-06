@@ -784,7 +784,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       
       if (modifierMask) {
         bool matchesContentAccessKey = (modifierMask == Prefs::ContentAccessModifierMask());
-        
+
         if (modifierMask == Prefs::ChromeAccessModifierMask() ||
             matchesContentAccessKey) {
           AutoTArray<uint32_t, 10> accessCharCodes;
@@ -1408,7 +1408,7 @@ EventStateManager::CreateClickHoldTimer(nsPresContext* inPresContext,
     if (nsContentUtils::HasNonEmptyAttr(mGestureDownContent, kNameSpaceID_None,
                                         nsGkAtoms::popup))
       return;
-    
+
     
     if (mGestureDownContent->IsXULElement(nsGkAtoms::menubutton))
       return;
@@ -1547,13 +1547,13 @@ EventStateManager::FireContextClick()
                              WidgetMouseEvent::eReal);
       event.mClickCount = 1;
       FillInEventFromGestureDown(&event);
-        
+
       
       if (mCurrentTarget)
       {
         RefPtr<nsFrameSelection> frameSel =
           mCurrentTarget->GetFrameSelection();
-        
+
         if (frameSel && frameSel->GetDragState()) {
           
           
@@ -2960,7 +2960,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       
       if (nsEventStatus_eConsumeNoDefault != *aStatus &&
           !aEvent->DefaultPrevented()) {
-        nsCOMPtr<nsIContent> newFocus;      
+        nsCOMPtr<nsIContent> newFocus;
         bool suppressBlur = false;
         if (mCurrentTarget) {
           mCurrentTarget->GetContentForEvent(aEvent, getter_AddRefs(newFocus));
@@ -4145,7 +4145,7 @@ EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
   nsCOMPtr<nsIContent> lastOverElement = wrapper->mLastOverElement;
 
   bool isPointer = aMouseEvent->mClass == ePointerEventClass;
-  
+
   EnterLeaveDispatcher enterDispatcher(this, aContent, lastOverElement,
                                        aMouseEvent,
                                        isPointer ? ePointerEnter : eMouseEnter);
@@ -4900,7 +4900,7 @@ EventStateManager::SetContentState(nsIContent* aContent, EventStates aState)
     } else {
       NS_ASSERTION(aState == NS_EVENT_STATE_HOVER, "How did that happen?");
       nsIContent* newHover;
-      
+
       if (mPresContext->IsDynamic()) {
         newHover = aContent;
       } else {

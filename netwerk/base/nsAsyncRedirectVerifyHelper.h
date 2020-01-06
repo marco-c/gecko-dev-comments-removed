@@ -43,10 +43,10 @@ public:
 
 
     nsresult DelegateOnChannelRedirect(nsIChannelEventSink *sink,
-                                       nsIChannel *oldChannel, 
+                                       nsIChannel *oldChannel,
                                        nsIChannel *newChannel,
                                        uint32_t flags);
- 
+
     
 
 
@@ -82,7 +82,7 @@ protected:
     nsresult                 mResult; 
 
     void InitCallback();
-    
+
     
 
 
@@ -90,7 +90,7 @@ protected:
 
 private:
     ~nsAsyncRedirectVerifyHelper();
-    
+
     bool IsOldChannelCanceled();
 };
 

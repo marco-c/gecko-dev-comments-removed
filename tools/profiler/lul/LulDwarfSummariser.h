@@ -32,7 +32,7 @@ public:
 
   
   virtual void Log(const char* str) { mLog(str); }
-  
+
 private:
   
   

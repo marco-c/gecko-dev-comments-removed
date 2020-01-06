@@ -147,7 +147,7 @@ nsresult nsJSThunk::EvaluateScript(nsIChannel *aChannel,
         
         return NS_ERROR_DOM_RETVAL_UNDEFINED;
     }
-    
+
     NS_ENSURE_ARG_POINTER(aChannel);
 
     
@@ -342,7 +342,7 @@ public:
 
     
     void EvaluateScript();
-    
+
 protected:
     virtual ~nsJSChannel();
 
@@ -351,7 +351,7 @@ protected:
     void NotifyListener();
 
     void CleanupStrongRefs();
-    
+
 protected:
     nsCOMPtr<nsIChannel>    mStreamChannel;
     nsCOMPtr<nsIPropertyBag2> mPropertyBag;
@@ -479,9 +479,9 @@ nsJSChannel::GetStatus(nsresult *aResult)
     if (NS_SUCCEEDED(mStatus) && mOpenedStreamChannel) {
         return mStreamChannel->GetStatus(aResult);
     }
-    
+
     *aResult = mStatus;
-        
+
     return NS_OK;
 }
 
@@ -493,7 +493,7 @@ nsJSChannel::Cancel(nsresult aStatus)
     if (mOpenedStreamChannel) {
         mStreamChannel->Cancel(aStatus);
     }
-    
+
     return NS_OK;
 }
 
@@ -582,7 +582,7 @@ nsJSChannel::AsyncOpen(nsIStreamListener *aListener, nsISupports *aContext)
     if (!mOriginalInnerWindow) {
         return NS_ERROR_NOT_AVAILABLE;
     }
-    
+
     mListener = aListener;
 
     mIsActive = true;
@@ -695,7 +695,7 @@ nsJSChannel::EvaluateScript()
     
     
     
-    
+
     if (NS_SUCCEEDED(mStatus)) {
         nsresult rv = mIOThunk->EvaluateScript(mStreamChannel, mPopupState,
                                                mExecutionPolicy,
@@ -706,7 +706,7 @@ nsJSChannel::EvaluateScript()
             mStatus = rv;
         }
     }
-    
+
     
     nsCOMPtr<nsILoadGroup> loadGroup;
     mStreamChannel->GetLoadGroup(getter_AddRefs(loadGroup));
@@ -727,7 +727,7 @@ nsJSChannel::EvaluateScript()
         }
         return;
     }
-    
+
     
     
     
@@ -774,7 +774,7 @@ nsJSChannel::EvaluateScript()
         }
         return;
     }
-    
+
     mStatus = mStreamChannel->AsyncOpen2(this);
     if (NS_SUCCEEDED(mStatus)) {
         
@@ -792,7 +792,7 @@ nsJSChannel::EvaluateScript()
             
             
         }
-        
+
     } else if (mIsAsync) {
         NotifyListener();
     }
@@ -863,7 +863,7 @@ nsJSChannel::SetLoadFlags(nsLoadFlags aLoadFlags)
 
     
     
-    
+
     mLoadFlags = aLoadFlags & ~LOAD_DOCUMENT_URI;
 
     if (bogusLoadBackground) {
@@ -909,7 +909,7 @@ nsJSChannel::SetLoadGroup(nsILoadGroup* aLoadGroup)
             }
         }
     }
-    
+
     return mStreamChannel->SetLoadGroup(aLoadGroup);
 }
 
@@ -949,7 +949,7 @@ nsJSChannel::SetNotificationCallbacks(nsIInterfaceRequestor* aCallbacks)
     return mStreamChannel->SetNotificationCallbacks(aCallbacks);
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsJSChannel::GetSecurityInfo(nsISupports * *aSecurityInfo)
 {
     return mStreamChannel->GetSecurityInfo(aSecurityInfo);
@@ -1027,12 +1027,12 @@ nsJSChannel::OnStartRequest(nsIRequest* aRequest,
 {
     NS_ENSURE_TRUE(aRequest == mStreamChannel, NS_ERROR_UNEXPECTED);
 
-    return mListener->OnStartRequest(this, aContext);    
+    return mListener->OnStartRequest(this, aContext);
 }
 
 NS_IMETHODIMP
 nsJSChannel::OnDataAvailable(nsIRequest* aRequest,
-                             nsISupports* aContext, 
+                             nsISupports* aContext,
                              nsIInputStream* aInputStream,
                              uint64_t aOffset,
                              uint32_t aCount)
@@ -1058,7 +1058,7 @@ nsJSChannel::OnStopRequest(nsIRequest* aRequest,
     if (NS_FAILED(mStatus)) {
         aStatus = mStatus;
     }
-    
+
     nsresult rv = listener->OnStopRequest(this, aContext, aStatus);
 
     nsCOMPtr<nsILoadGroup> loadGroup;
@@ -1076,7 +1076,7 @@ NS_IMETHODIMP
 nsJSChannel::SetExecutionPolicy(uint32_t aPolicy)
 {
     NS_ENSURE_ARG(aPolicy <= EXECUTE_NORMAL);
-    
+
     mExecutionPolicy = aPolicy;
     return NS_OK;
 }
@@ -1142,14 +1142,14 @@ nsJSProtocolHandler::Create(nsISupports *aOuter, REFNSIID aIID, void **aResult)
     return rv;
 }
 
-nsresult 
-nsJSProtocolHandler::EnsureUTF8Spec(const nsCString& aSpec, const char *aCharset, 
+nsresult
+nsJSProtocolHandler::EnsureUTF8Spec(const nsCString& aSpec, const char *aCharset,
                                     nsACString &aUTF8Spec)
 {
   aUTF8Spec.Truncate();
 
   nsresult rv;
-  
+
   if (!mTextToSubURI) {
     mTextToSubURI = do_GetService(NS_ITEXTTOSUBURI_CONTRACTID, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1256,7 +1256,7 @@ nsJSProtocolHandler::NewChannel(nsIURI* uri, nsIChannel* *result)
     return NewChannel2(uri, nullptr, result);
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsJSProtocolHandler::AllowPort(int32_t port, const char *scheme, bool *_retval)
 {
     
@@ -1420,7 +1420,7 @@ nsJSURI::EqualsInternal(nsIURI* aOther,
     return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsJSURI::GetClassIDNoAlloc(nsCID *aClassIDNoAlloc)
 {
     *aClassIDNoAlloc = kJSURICID;

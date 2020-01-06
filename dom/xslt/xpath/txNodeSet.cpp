@@ -291,7 +291,7 @@ nsresult txNodeSet::add(const txNodeSet& aNodes, transferOp aTransfer,
     }
     mStart = insertPos;
     mEnd = mEndBuffer;
-    
+
     return NS_OK;
 }
 
@@ -513,7 +513,7 @@ bool txNodeSet::ensureGrowSize(int32_t aSize)
         memmove(dest, mStart, oldSize * sizeof(txXPathNode));
         mStart = dest;
         mEnd = dest + oldSize;
-            
+
         return true;
     }
 

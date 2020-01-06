@@ -133,7 +133,7 @@ nsHTTPCompressConv::OnStopRequest(nsIRequest* request, nsISupports *aContext,
 {
   nsresult status = aStatus;
   LOG(("nsHttpCompresssConv %p onstop %" PRIx32 "\n", this, static_cast<uint32_t>(aStatus)));
-  
+
   
   
   
@@ -434,7 +434,7 @@ nsHTTPCompressConv::OnDataAvailable(nsIRequest* request,
           if (bytesWritten) {
             rv = do_OnDataAvailable(request, aContext, aSourceOffset, (char *)mOutBuffer, bytesWritten);
             if (NS_FAILED (rv)) {
-              return rv; 
+              return rv;
             }
           }
         } else if (code == Z_BUF_ERROR) {

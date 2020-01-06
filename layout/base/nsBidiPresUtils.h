@@ -100,7 +100,7 @@ public:
 
   nsBidiPresUtils();
   ~nsBidiPresUtils();
-  
+
   
 
 
@@ -226,7 +226,7 @@ public:
                                           aFontMetrics,
                                           MODE_DRAW, aX, aY, aPosResolve, aPosResolveCount, nullptr);
   }
-  
+
   static nscoord MeasureTextWidth(const char16_t*     aText,
                                   int32_t              aLength,
                                   nsBidiLevel          aBaseLevel,
@@ -266,7 +266,7 @@ public:
   static nsIFrame* GetFrameToRightOf(const nsIFrame*  aFrame,
                                      nsIFrame*        aFirstFrameOnLine,
                                      int32_t          aNumFramesOnLine);
-    
+
   
 
 
@@ -279,7 +279,7 @@ public:
                                     int32_t          aNumFramesOnLine);
 
   static nsIFrame* GetFirstLeaf(nsIFrame* aFrame);
-    
+
   
 
 
@@ -512,7 +512,7 @@ private:
                                         mozilla::WritingMode aLineWM,
                                         const nsSize& aContainerSize,
                                         nscoord aStart);
-  
+
   
 
 
@@ -557,7 +557,7 @@ private:
                                 int32_t&         aRunCount,
                                 uint8_t&         aCharType,
                                 uint8_t&         aPrevCharType);
-  
+
   static void StripBidiControlCharacters(char16_t* aText,
                                          int32_t&   aTextLength);
 };

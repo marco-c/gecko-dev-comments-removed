@@ -229,7 +229,7 @@ enum Endianness {
   kLittleEndian,     
   kUnsetEndian,      
 };
- 
+
 
 
 
@@ -278,7 +278,7 @@ class Section {
     contents_.append(size, (char) byte);
     return *this;
   }
-      
+
   
   
   
@@ -414,7 +414,7 @@ class Section {
               const Label &set_label)
         : offset(set_offset), endianness(set_endianness), size(set_size),
           label(set_label) { }
-      
+
     
     size_t offset;
 
@@ -433,7 +433,7 @@ class Section {
 
   
   string contents_;
-  
+
   
   vector<Reference> references_;
 

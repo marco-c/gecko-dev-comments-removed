@@ -117,7 +117,7 @@ txExprLexer::parse(const nsAString& aPattern)
         return NS_ERROR_XPATH_INVALID_VAR_NAME;
       }
       defType = Token::VAR_REFERENCE;
-    } 
+    }
     
     
 

@@ -93,7 +93,7 @@ static NS_DEFINE_CID(kPlacesInitCompleteCID,
 static NS_DEFINE_CID(kSessionStoreWindowRestoredCID,
   NS_SESSION_STORE_WINDOW_RESTORED_EVENT_CID);
 static NS_DEFINE_CID(kXPCOMShutdownCID,
-  NS_XPCOM_SHUTDOWN_EVENT_CID);  
+  NS_XPCOM_SHUTDOWN_EVENT_CID);
 #endif 
 
 using namespace mozilla;

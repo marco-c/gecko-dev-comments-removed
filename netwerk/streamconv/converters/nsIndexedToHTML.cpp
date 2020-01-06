@@ -57,11 +57,11 @@ nsIndexedToHTML::Create(nsISupports *aOuter, REFNSIID aIID, void **aResult) {
     nsresult rv;
     if (aOuter)
         return NS_ERROR_NO_AGGREGATION;
-    
+
     nsIndexedToHTML* _s = new nsIndexedToHTML();
     if (_s == nullptr)
         return NS_ERROR_OUT_OF_MEMORY;
-    
+
     rv = _s->QueryInterface(aIID, aResult);
     return rv;
 }
@@ -106,7 +106,7 @@ nsIndexedToHTML::OnStartRequest(nsIRequest* request, nsISupports *aContext) {
     if (NS_FAILED(rv)) {
         request->Cancel(rv);
     }
-    
+
     rv = mListener->OnStartRequest(request, aContext);
     if (NS_FAILED(rv)) return rv;
 
@@ -149,7 +149,7 @@ nsIndexedToHTML::DoOnStartRequest(nsIRequest* request, nsISupports *aContext,
 
     rv = mParser->SetListener(this);
     if (NS_FAILED(rv)) return rv;
-    
+
     rv = mParser->OnStartRequest(request, aContext);
     if (NS_FAILED(rv)) return rv;
 
@@ -178,7 +178,7 @@ nsIndexedToHTML::DoOnStartRequest(nsIRequest* request, nsISupports *aContext,
         
         
         
-        
+
         nsAutoCString pw;
         rv = uri->GetPassword(pw);
         if (NS_FAILED(rv)) return rv;
@@ -206,15 +206,15 @@ nsIndexedToHTML::DoOnStartRequest(nsIRequest* request, nsISupports *aContext,
         rv = fileUrl->GetFile(getter_AddRefs(file));
         if (NS_FAILED(rv)) return rv;
         file->SetFollowLinks(true);
-        
+
         nsAutoCString url;
         rv = net_GetURLSpecFromFile(file, url);
         if (NS_FAILED(rv)) return rv;
         baseUri.Assign(url);
-        
+
         nsCOMPtr<nsIFile> parent;
         rv = file->GetParent(getter_AddRefs(parent));
-        
+
         if (parent && NS_SUCCEEDED(rv)) {
             net_GetURLSpecFromDir(parent, url);
             if (NS_FAILED(rv)) return rv;
@@ -537,7 +537,7 @@ nsIndexedToHTML::DoOnStartRequest(nsIRequest* request, nsISupports *aContext,
     
     AppendNonAsciiToNCR(title, buffer);
 
-    buffer.AppendLiteral("</title>\n");    
+    buffer.AppendLiteral("</title>\n");
 
     
     
@@ -574,7 +574,7 @@ nsIndexedToHTML::DoOnStartRequest(nsIRequest* request, nsISupports *aContext,
     buffer.AppendLiteral("</head>\n<body dir=\"");
     buffer.Append(direction);
     buffer.AppendLiteral("\">\n<h1>");
-    
+
     const char16_t* formatHeading[] = {
         htmlEscSpec.get()
     };
@@ -584,7 +584,7 @@ nsIndexedToHTML::DoOnStartRequest(nsIRequest* request, nsISupports *aContext,
                                        sizeof(formatHeading)/sizeof(char16_t*),
                                        getter_Copies(title));
     if (NS_FAILED(rv)) return rv;
-    
+
     AppendNonAsciiToNCR(title, buffer);
     buffer.AppendLiteral("</h1>\n");
 
@@ -661,7 +661,7 @@ nsIndexedToHTML::OnStopRequest(nsIRequest* request, nsISupports *aContext,
 
     mParser->OnStopRequest(request, aContext, aStatus);
     mParser = nullptr;
-    
+
     return mListener->OnStopRequest(request, aContext, aStatus);
 }
 
@@ -866,7 +866,7 @@ nsIndexedToHTML::OnInformationAvailable(nsIRequest *aRequest,
     
     AppendNonAsciiToNCR(escaped, pushBuffer);
     pushBuffer.AppendLiteral("</td>\n <td></td>\n <td></td>\n <td></td>\n</tr>\n");
-    
+
     return SendToListener(aRequest, aCtxt, pushBuffer);
 }
 

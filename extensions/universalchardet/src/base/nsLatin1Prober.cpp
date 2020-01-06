@@ -16,7 +16,7 @@
 #define ASO    7        // accent small other
 #define CLASS_NUM   8    // total classes
 
-static const unsigned char Latin1_CharToClass[] = 
+static const unsigned char Latin1_CharToClass[] =
 {
   OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,   
   OTH, OTH, OTH, OTH, OTH, OTH, OTH, OTH,   
@@ -58,16 +58,16 @@ static const unsigned char Latin1_CharToClass[] =
 
 
 
-static const unsigned char Latin1ClassModel[] = 
+static const unsigned char Latin1ClassModel[] =
 {
 
   0,  0,  0,  0,  0,  0,  0,  0,
   0,  3,  3,  3,  3,  3,  3,  3,
-  0,  3,  3,  3,  3,  3,  3,  3, 
+  0,  3,  3,  3,  3,  3,  3,  3,
   0,  3,  3,  3,  1,  1,  3,  3,
   0,  3,  3,  3,  1,  2,  1,  2,
-  0,  3,  3,  3,  3,  3,  3,  3, 
-  0,  3,  1,  3,  1,  1,  1,  3, 
+  0,  3,  3,  3,  3,  3,  3,  3,
+  0,  3,  1,  3,  1,  1,  1,  3,
   0,  3,  1,  3,  1,  1,  3,  3,
 };
 
@@ -89,7 +89,7 @@ nsProbingState nsLatin1Prober::HandleData(const char* aBuf, uint32_t aLen)
     newBuf1 = (char*)aBuf;
     newLen1 = aLen;
   }
-  
+
   unsigned char charClass;
   unsigned char freq;
   for (uint32_t i = 0; i < newLen1; i++)
@@ -114,7 +114,7 @@ float nsLatin1Prober::GetConfidence(void)
 {
   if (mState == eNotMe)
     return 0.01f;
-  
+
   float confidence;
   uint32_t total = 0;
   for (int32_t i = 0; i < FREQ_CAT_NUM; i++)
@@ -130,7 +130,7 @@ float nsLatin1Prober::GetConfidence(void)
 
   if (confidence < 0.0f)
     confidence = 0.0f;
-  
+
   
   
   confidence *= 0.50f;

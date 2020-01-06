@@ -32,7 +32,7 @@ public:
 
     txStylesheet();
     nsresult init();
-    
+
     NS_INLINE_DECL_REFCOUNTING(txStylesheet)
 
     nsresult findTemplate(const txXPathNode& aNode,
@@ -119,35 +119,35 @@ private:
 
     
     txList mImportFrames;
-    
+
     
     txOutputFormat mOutputFormat;
 
     
     
     txList mTemplateInstructions;
-    
+
     
     ImportFrame* mRootFrame;
-    
+
     
     txExpandedNameMap<txInstruction> mNamedTemplates;
-    
+
     
     txOwningExpandedNameMap<txDecimalFormat> mDecimalFormats;
 
     
     txExpandedNameMap<txInstruction> mAttributeSets;
-    
+
     
     txOwningExpandedNameMap<GlobalVariable> mGlobalVariables;
-    
+
     
     txOwningExpandedNameMap<txXSLKey> mKeys;
-    
+
     
     nsTArray<nsAutoPtr<txStripSpaceTest> > mStripSpaceTests;
-    
+
     
     nsAutoPtr<txInstruction> mContainerTemplate;
     nsAutoPtr<txInstruction> mCharactersTemplate;

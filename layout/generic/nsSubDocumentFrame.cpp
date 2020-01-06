@@ -858,7 +858,7 @@ nsSubDocumentFrame::AttributeChanged(int32_t aNameSpaceID,
   if (aNameSpaceID != kNameSpaceID_None) {
     return NS_OK;
   }
-  
+
   
   if (aAttribute == nsGkAtoms::noresize) {
     

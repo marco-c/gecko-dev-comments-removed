@@ -54,11 +54,11 @@ public:
     double elevationAngle() const { return m_elevationAngle; }
     unsigned numberOfAzimuths() const { return NumberOfTotalAzimuths; }
     float sampleRate() const { return m_sampleRate; }
-    
+
     
     
     void getKernelsFromAzimuth(double azimuthBlend, unsigned azimuthIndex, HRTFKernel* &kernelL, HRTFKernel* &kernelR, double& frameDelayL, double& frameDelayR);
-    
+
     
     static const unsigned NumberOfTotalAzimuths;
 

@@ -235,7 +235,7 @@ nsXULPopupListener::FireFocusOnTargetContent(nsIDOMNode* aTargetNode, bool aIsTo
     
     
     RefPtr<nsPresContext> context = shell->GetPresContext();
- 
+
     nsCOMPtr<nsIContent> content = do_QueryInterface(aTargetNode);
     nsIFrame* targetFrame = content->GetPrimaryFrame();
     if (!targetFrame) return NS_ERROR_FAILURE;
@@ -259,7 +259,7 @@ nsXULPopupListener::FireFocusOnTargetContent(nsIDOMNode* aTargetNode, bool aIsTo
           }
         }
         currFrame = currFrame->GetParent();
-    } 
+    }
 
     nsIFocusManager* fm = nsFocusManager::GetFocusManager();
     if (fm) {
@@ -305,7 +305,7 @@ nsXULPopupListener::ClosePopup()
 } 
 
 static already_AddRefed<nsIContent>
-GetImmediateChild(nsIContent* aContent, nsIAtom *aTag) 
+GetImmediateChild(nsIContent* aContent, nsIAtom *aTag)
 {
   for (nsIContent* child = aContent->GetFirstChild();
        child;

@@ -146,7 +146,7 @@ protected:
     NS_NewRDFXMLDataSource(nsIRDFDataSource** aResult);
 
     inline bool IsLoading() {
-        return (mLoadState == eLoadState_Pending) || 
+        return (mLoadState == eLoadState_Pending) ||
                (mLoadState == eLoadState_Loading);
     }
 
@@ -297,14 +297,14 @@ public:
         nsCOMPtr<rdfIDataSource> rdfds = do_QueryInterface(mInner, &rv);
         if (NS_FAILED(rv)) return rv;
         return rdfds->VisitAllSubjects(aVisitor);
-    } 
+    }
 
     NS_IMETHOD VisitAllTriples(rdfITripleVisitor *aVisitor) override {
         nsresult rv;
         nsCOMPtr<rdfIDataSource> rdfds = do_QueryInterface(mInner, &rv);
         if (NS_FAILED(rv)) return rv;
         return rdfds->VisitAllTriples(aVisitor);
-    } 
+    }
 
     
     bool
@@ -471,7 +471,7 @@ RDFXMLDataSourceImpl::BlockingParse(nsIURI* aURL, nsIStreamListener* aConsumer)
     
     
     
-    
+
     nsCOMPtr<nsIChannel> channel;
 
     
@@ -750,7 +750,7 @@ RDFXMLDataSourceImpl::rdfXMLFlush(nsIURI *aURI)
     
     
     nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(aURI);
-    
+
     if (fileURL) {
         nsCOMPtr<nsIFile> file;
         fileURL->GetFile(getter_AddRefs(file));
@@ -771,7 +771,7 @@ RDFXMLDataSourceImpl::rdfXMLFlush(nsIURI *aURI)
 
             rv = Serialize(bufferedOut);
             if (NS_FAILED(rv)) return rv;
-            
+
             
             
             nsCOMPtr<nsISafeOutputStream> safeStream = do_QueryInterface(bufferedOut, &rv);

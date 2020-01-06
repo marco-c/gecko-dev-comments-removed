@@ -117,7 +117,7 @@ nsHttpNegotiateAuth::GetAuthFlags(uint32_t *flags)
     
     
     
-    *flags = CONNECTION_BASED | IDENTITY_IGNORED; 
+    *flags = CONNECTION_BASED | IDENTITY_IGNORED;
     return NS_OK;
 }
 

@@ -177,7 +177,7 @@ ThirdPartyUtil::IsThirdPartyWindow(mozIDOMWindowProxy* aWindow,
 
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 ThirdPartyUtil::IsThirdPartyChannel(nsIChannel* aChannel,
                                     nsIURI* aURI,
                                     bool* aResult)

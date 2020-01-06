@@ -62,7 +62,7 @@ public:
   NS_DECL_NSITHREADRETARGETABLEREQUEST
   NS_DECL_NSITHREADRETARGETABLESTREAMLISTENER
 
-  nsBaseChannel(); 
+  nsBaseChannel();
 
   
   nsresult Init() {
@@ -166,7 +166,7 @@ public:
   
   
   nsISupports *SecurityInfo() {
-    return mSecurityInfo; 
+    return mSecurityInfo;
   }
   void SetSecurityInfo(nsISupports *info) {
     mSecurityInfo = info;

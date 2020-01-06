@@ -227,7 +227,7 @@ public:
                            uint32_t defaultCacheEntryLifetime, 
                            uint32_t defaultGracePeriod, 
                            nsHostResolver **resolver);
-    
+
     
 
 
@@ -329,7 +329,7 @@ private:
     nsresult ConditionallyRefreshRecord(nsHostRecord *rec, const char *host);
 
     static void  MoveQueue(nsHostRecord *aRec, PRCList &aDestQ);
-    
+
     static void ThreadFunc(void *);
 
     enum {

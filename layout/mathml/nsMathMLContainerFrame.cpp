@@ -349,7 +349,7 @@ nsMathMLContainerFrame::Stretch(DrawTarget*          aDrawTarget,
         
         SaveReflowAndBoundingMetricsFor(baseFrame, childSize,
                                         childSize.mBoundingMetrics);
-        
+
         
         
         
@@ -370,7 +370,7 @@ nsMathMLContainerFrame::Stretch(DrawTarget*          aDrawTarget,
               mathMLFrame = do_QueryFrame(childFrame);
               if (mathMLFrame) {
                 
-                GetReflowAndBoundingMetricsFor(childFrame, 
+                GetReflowAndBoundingMetricsFor(childFrame,
                   childSize, childSize.mBoundingMetrics);
                 
                 mathMLFrame->Stretch(aDrawTarget, stretchDir,
@@ -834,7 +834,7 @@ nsMathMLContainerFrame::ReflowChild(nsIFrame*                aChildFrame,
   nsInlineFrame* inlineFrame = do_QueryFrame(aChildFrame);
   NS_ASSERTION(!inlineFrame, "Inline frames should be wrapped in blocks");
 #endif
-  
+
   nsContainerFrame::
          ReflowChild(aChildFrame, aPresContext, aDesiredSize, aReflowInput,
                      0, 0, NS_FRAME_NO_MOVE_FRAME, aStatus);
@@ -912,8 +912,8 @@ nsMathMLContainerFrame::Reflow(nsPresContext*           aPresContext,
 
     
     nsStretchDirection stretchDir =
-      NS_MATHML_WILL_STRETCH_ALL_CHILDREN_VERTICALLY(mPresentationData.flags) 
-      ? NS_STRETCH_DIRECTION_VERTICAL 
+      NS_MATHML_WILL_STRETCH_ALL_CHILDREN_VERTICALLY(mPresentationData.flags)
+      ? NS_STRETCH_DIRECTION_VERTICAL
       : NS_STRETCH_DIRECTION_HORIZONTAL;
 
     
@@ -1449,7 +1449,7 @@ nsMathMLContainerFrame::TransmitAutomaticDataForMrowLikeElement()
   nsIFrame *childFrame, *baseFrame;
   bool embellishedOpFound = false;
   nsEmbellishData embellishData;
-  
+
   for (childFrame = PrincipalChildList().FirstChild();
        childFrame;
        childFrame = childFrame->GetNextSibling()) {
@@ -1524,7 +1524,7 @@ nsresult
 nsMathMLContainerFrame::ReportParseError(const char16_t* aAttribute,
                                          const char16_t* aValue)
 {
-  const char16_t* argv[] = 
+  const char16_t* argv[] =
     { aValue, aAttribute, mContent->NodeInfo()->NameAtom()->GetUTF16String() };
   return ReportErrorToConsole("AttributeParsingError", argv, 3);
 }

@@ -62,7 +62,7 @@ class MOZ_STACK_CLASS AncestorFilter {
 #ifdef DEBUG
   void AssertHasAllAncestors(mozilla::dom::Element *aElement) const;
 #endif
-  
+
  private:
   
   
@@ -105,7 +105,7 @@ struct MOZ_STACK_CLASS TreeMatchContext {
     mHaveRelevantLink = false;
     mVisitedHandling = nsRuleWalker::eRelevantLinkVisited;
   }
-  
+
   void ResetForUnvisitedMatching() {
     NS_PRECONDITION(mForStyling, "Why is this being called?");
     mHaveRelevantLink = false;
@@ -164,7 +164,7 @@ struct MOZ_STACK_CLASS TreeMatchContext {
       mStyleScopes.TruncateLength(mStyleScopes.Length() - 1);
     }
   }
- 
+
   bool PopStyleScopeForSelectorMatching(mozilla::dom::Element* aElement)
   {
     NS_ASSERTION(mForScopedStyle, "only call PopStyleScopeForSelectorMatching "
@@ -479,7 +479,7 @@ struct MOZ_STACK_CLASS ElementDependentRuleProcessorData :
     NS_PRECONDITION(aTreeMatchContext.mForStyling == !!aRuleWalker,
                     "Should be styling if and only if we have a rule walker");
   }
-  
+
   mozilla::dom::Element* const mElement; 
   TreeMatchContext& mTreeMatchContext;
 };
@@ -487,7 +487,7 @@ struct MOZ_STACK_CLASS ElementDependentRuleProcessorData :
 struct MOZ_STACK_CLASS ElementRuleProcessorData :
                           public ElementDependentRuleProcessorData {
   ElementRuleProcessorData(nsPresContext* aPresContext,
-                           mozilla::dom::Element* aElement, 
+                           mozilla::dom::Element* aElement,
                            nsRuleWalker* aRuleWalker,
                            TreeMatchContext& aTreeMatchContext)
     : ElementDependentRuleProcessorData(aPresContext, aElement, aRuleWalker,

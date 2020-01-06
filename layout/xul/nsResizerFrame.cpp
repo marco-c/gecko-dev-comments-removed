@@ -104,7 +104,7 @@ nsResizerFrame::HandleEvent(nsPresContext* aPresContext,
           
           if (rv != NS_ERROR_NOT_IMPLEMENTED)
              break;
-             
+
           
           
           window->GetPositionAndSize(&mMouseDownRect.x, &mMouseDownRect.y,

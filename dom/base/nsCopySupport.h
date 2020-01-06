@@ -35,7 +35,7 @@ class nsCopySupport
     
     
     static nsresult GetContents(const nsACString& aMimeType, uint32_t aFlags, nsISelection *aSel, nsIDocument *aDoc, nsAString& outdata);
-    
+
     static nsresult ImageCopy(nsIImageLoadingContent* aImageElement,
                               nsILoadContext* aLoadContext,
                               int32_t aCopyFlags);

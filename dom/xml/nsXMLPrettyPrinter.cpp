@@ -2,7 +2,7 @@
 
 
 
- 
+
 #include "nsXMLPrettyPrinter.h"
 #include "nsContentUtils.h"
 #include "nsICSSDeclaration.h"

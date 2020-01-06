@@ -90,7 +90,7 @@ nsViewSourceChannel::Init(nsIURI* uri)
     mApplicationCacheChannel = do_QueryInterface(mChannel);
     mUploadChannel = do_QueryInterface(mChannel);
     mPostChannel = do_QueryInterface(mChannel);
-    
+
     return NS_OK;
 }
 
@@ -298,13 +298,13 @@ nsViewSourceChannel::AsyncOpen(nsIStreamListener *aListener, nsISupports *ctxt)
 
 
 
-    
+
     nsCOMPtr<nsILoadGroup> loadGroup;
     mChannel->GetLoadGroup(getter_AddRefs(loadGroup));
     if (loadGroup)
         loadGroup->AddRequest(static_cast<nsIViewSourceChannel*>
                                          (this), nullptr);
-    
+
     nsresult rv = NS_OK;
     nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
     if (loadInfo && loadInfo->GetEnforceSecurity()) {
@@ -322,7 +322,7 @@ nsViewSourceChannel::AsyncOpen(nsIStreamListener *aListener, nsISupports *ctxt)
     if (NS_SUCCEEDED(rv)) {
         mOpened = true;
     }
-    
+
     return rv;
 }
 
@@ -379,7 +379,7 @@ nsViewSourceChannel::SetLoadFlags(uint32_t aLoadFlags)
     
     
     
- 
+
     
     
     
@@ -402,7 +402,7 @@ nsViewSourceChannel::SetLoadFlags(uint32_t aLoadFlags)
 }
 
 NS_IMETHODIMP
-nsViewSourceChannel::GetContentType(nsACString &aContentType) 
+nsViewSourceChannel::GetContentType(nsACString &aContentType)
 {
     NS_ENSURE_TRUE(mChannel, NS_ERROR_FAILURE);
 
@@ -456,7 +456,7 @@ nsViewSourceChannel::SetContentType(const nsACString &aContentType)
         
         return NS_ERROR_NOT_AVAILABLE;
     }
-    
+
     mContentType = aContentType;
     return NS_OK;
 }
@@ -597,7 +597,7 @@ nsViewSourceChannel::SetNotificationCallbacks(nsIInterfaceRequestor* aNotificati
     return mChannel->SetNotificationCallbacks(aNotificationCallbacks);
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsViewSourceChannel::GetSecurityInfo(nsISupports * *aSecurityInfo)
 {
     NS_ENSURE_TRUE(mChannel, NS_ERROR_FAILURE);
@@ -607,7 +607,7 @@ nsViewSourceChannel::GetSecurityInfo(nsISupports * *aSecurityInfo)
 
 
 NS_IMETHODIMP
-nsViewSourceChannel::GetOriginalContentType(nsACString &aContentType) 
+nsViewSourceChannel::GetOriginalContentType(nsACString &aContentType)
 {
     NS_ENSURE_TRUE(mChannel, NS_ERROR_FAILURE);
 
@@ -670,7 +670,7 @@ nsViewSourceChannel::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
     mCachingChannel = do_QueryInterface(aRequest);
     mCacheInfoChannel = do_QueryInterface(mChannel);
     mUploadChannel = do_QueryInterface(aRequest);
-    
+
     return mListener->OnStartRequest(static_cast<nsIViewSourceChannel*>
                                                 (this),
                                      aContext);
@@ -704,7 +704,7 @@ NS_IMETHODIMP
 nsViewSourceChannel::OnDataAvailable(nsIRequest *aRequest, nsISupports* aContext,
                                      nsIInputStream *aInputStream,
                                      uint64_t aSourceOffset,
-                                     uint32_t aLength) 
+                                     uint32_t aLength)
 {
     NS_ENSURE_TRUE(mListener, NS_ERROR_FAILURE);
     return mListener->OnDataAvailable(static_cast<nsIViewSourceChannel*>

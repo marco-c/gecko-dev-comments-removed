@@ -305,7 +305,7 @@ protected:
   
   
   uint8_t mRunsToCompletion : 1;
-  
+
   
   
   

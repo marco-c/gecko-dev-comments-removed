@@ -124,7 +124,7 @@ pluginInstanceShutdown(InstanceData* instanceData)
   instanceData->platformData = 0;
 }
 
-static void 
+static void
 SetCairoRGBA(cairo_t* cairoWindow, uint32_t rgba)
 {
   float b = (rgba & 0xFF) / 255.0;
@@ -394,7 +394,7 @@ pluginHandleEvent(InstanceData* instanceData, void* event)
                 expose.x, expose.y, expose.width, expose.height,
                 window.x, window.y, window.width, window.height);
       return 0;
-    }      
+    }
 
     GdkRectangle invalidRect =
       { expose.x, expose.y, expose.width, expose.height };
@@ -612,7 +612,7 @@ int32_t pluginGetClipRegionRectCount(InstanceData* instanceData)
   return nrects;
 }
 
-int32_t pluginGetClipRegionRectEdge(InstanceData* instanceData, 
+int32_t pluginGetClipRegionRectEdge(InstanceData* instanceData,
     int32_t rectIndex, RectEdge edge)
 {
   GdkRegion* region = computeClipRegion(instanceData);

@@ -56,22 +56,22 @@ enum {
 
     
     ANDROID_PRIORITY_BACKGROUND     =  10,
-    
+
     
     ANDROID_PRIORITY_NORMAL         =   0,
-    
+
     
     ANDROID_PRIORITY_FOREGROUND     =  -2,
 
     
     ANDROID_PRIORITY_DISPLAY        =  -4,
-    
+
     
     ANDROID_PRIORITY_URGENT_DISPLAY =  HAL_PRIORITY_URGENT_DISPLAY,
-    
+
     
     ANDROID_PRIORITY_AUDIO          = -16,
-    
+
     
     ANDROID_PRIORITY_URGENT_AUDIO   = -19,
 
@@ -224,7 +224,7 @@ public:
         PRIVATE = 0,
         SHARED = 1
     };
-    
+
                 Mutex();
                 Mutex(const char* name);
                 Mutex(int type, const char* name = NULL);
@@ -250,11 +250,11 @@ public:
 
 private:
     friend class Condition;
-    
+
     
                 Mutex(const Mutex&);
     Mutex&      operator = (const Mutex&);
-    
+
 #if defined(HAVE_PTHREADS)
     pthread_mutex_t mMutex;
 #else
@@ -302,7 +302,7 @@ inline status_t Mutex::tryLock() {
 
 
 
- 
+
 typedef Mutex::Autolock AutoMutex;
 
 
@@ -507,7 +507,7 @@ public:
     virtual status_t    run(    const char* name = 0,
                                 int32_t priority = PRIORITY_DEFAULT,
                                 size_t stack = 0);
-    
+
     
     
     
@@ -515,7 +515,7 @@ public:
 
     
     virtual status_t    readyToRun();
-    
+
     
     
     
@@ -529,7 +529,7 @@ public:
 protected:
     
             bool        exitPending() const;
-    
+
 private:
     
     

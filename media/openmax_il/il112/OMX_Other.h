@@ -58,7 +58,7 @@ typedef enum OMX_OTHER_FORMATTYPE {
     OMX_OTHER_FormatVendorReserved = 1000, 
 
 
-    OMX_OTHER_FormatKhronosExtensions = 0x6F000000,  
+    OMX_OTHER_FormatKhronosExtensions = 0x6F000000, 
     OMX_OTHER_FormatVendorStartUnused = 0x7F000000, 
     OMX_OTHER_FormatMax = 0x7FFFFFFF
 } OMX_OTHER_FORMATTYPE;
@@ -75,7 +75,7 @@ typedef enum OMX_TIME_SEEKMODETYPE {
 
 
 
-    OMX_TIME_SeekModeKhronosExtensions = 0x6F000000,  
+    OMX_TIME_SeekModeKhronosExtensions = 0x6F000000, 
     OMX_TIME_SeekModeVendorStartUnused = 0x7F000000, 
     OMX_TIME_SeekModeMax = 0x7FFFFFFF
 } OMX_TIME_SEEKMODETYPE;
@@ -108,21 +108,21 @@ typedef struct OMX_TIME_CONFIG_SEEKMODETYPE {
 
 
 
-	
+
 typedef struct OMX_TIME_CONFIG_TIMESTAMPTYPE {
     OMX_U32 nSize;               
     OMX_VERSIONTYPE nVersion;    
 
     OMX_U32 nPortIndex;     
-    OMX_TICKS nTimestamp;  	      
-} OMX_TIME_CONFIG_TIMESTAMPTYPE;  
+    OMX_TICKS nTimestamp;  	     
+} OMX_TIME_CONFIG_TIMESTAMPTYPE;
 
 
 typedef enum OMX_TIME_UPDATETYPE {
       OMX_TIME_UpdateRequestFulfillment,    
       OMX_TIME_UpdateScaleChanged,	        
       OMX_TIME_UpdateClockStateChanged,     
-      OMX_TIME_UpdateKhronosExtensions = 0x6F000000,  
+      OMX_TIME_UpdateKhronosExtensions = 0x6F000000, 
       OMX_TIME_UpdateVendorStartUnused = 0x7F000000, 
       OMX_TIME_UpdateMax = 0x7FFFFFFF
 } OMX_TIME_UPDATETYPE;
@@ -132,7 +132,7 @@ typedef enum OMX_TIME_REFCLOCKTYPE {
       OMX_TIME_RefClockNone,    
       OMX_TIME_RefClockAudio,	
       OMX_TIME_RefClockVideo,   
-      OMX_TIME_RefClockKhronosExtensions = 0x6F000000,  
+      OMX_TIME_RefClockKhronosExtensions = 0x6F000000, 
       OMX_TIME_RefClockVendorStartUnused = 0x7F000000, 
       OMX_TIME_RefClockMax = 0x7FFFFFFF
 } OMX_TIME_REFCLOCKTYPE;
@@ -144,7 +144,7 @@ typedef enum OMX_TIME_CLOCKSTATE {
 
 
       OMX_TIME_ClockStateStopped,             
-      OMX_TIME_ClockStateKhronosExtensions = 0x6F000000,  
+      OMX_TIME_ClockStateKhronosExtensions = 0x6F000000, 
       OMX_TIME_ClockStateVendorStartUnused = 0x7F000000, 
       OMX_TIME_ClockStateMax = 0x7FFFFFFF
 } OMX_TIME_CLOCKSTATE;
@@ -181,7 +181,7 @@ typedef struct OMX_TIME_CONFIG_MEDIATIMEREQUESTTYPE {
 
 
 
-    OMX_TICKS nMediaTimestamp;   
+    OMX_TICKS nMediaTimestamp;  
     OMX_TICKS nOffset;          
 
 } OMX_TIME_CONFIG_MEDIATIMEREQUESTTYPE;
@@ -221,7 +221,7 @@ typedef struct OMX_TIME_MEDIATIMETYPE {
 
     OMX_TIME_UPDATETYPE eUpdateType; 
     OMX_TICKS nMediaTimestamp;      
- 
+
     OMX_TICKS nOffset;              
 
 
@@ -233,20 +233,20 @@ typedef struct OMX_TIME_MEDIATIMETYPE {
     OMX_S32 xScale;                 
     OMX_TIME_CLOCKSTATE eState;     
                                     
-} OMX_TIME_MEDIATIMETYPE;  
+} OMX_TIME_MEDIATIMETYPE;
 
 
 
 
 
- 
+
 typedef struct OMX_TIME_CONFIG_SCALETYPE {
     OMX_U32 nSize;                  
     OMX_VERSIONTYPE nVersion;       
     OMX_S32 xScale;                 
 
 } OMX_TIME_CONFIG_SCALETYPE;
- 
+
 
 #define OMX_CLOCKPORT0 0x00000001
 #define OMX_CLOCKPORT1 0x00000002
@@ -268,7 +268,7 @@ typedef struct OMX_TIME_CONFIG_SCALETYPE {
 
 
 
-    
+
 typedef struct OMX_TIME_CONFIG_CLOCKSTATETYPE {
     OMX_U32 nSize;              
     OMX_VERSIONTYPE nVersion;   
@@ -288,7 +288,7 @@ typedef struct OMX_TIME_CONFIG_CLOCKSTATETYPE {
 typedef struct OMX_TIME_CONFIG_ACTIVEREFCLOCKTYPE {
     OMX_U32 nSize;                  
     OMX_VERSIONTYPE nVersion;       
-    OMX_TIME_REFCLOCKTYPE eClock;                           
+    OMX_TIME_REFCLOCKTYPE eClock;   
 } OMX_TIME_CONFIG_ACTIVEREFCLOCKTYPE;
 
 
@@ -327,7 +327,7 @@ typedef struct OMX_OTHER_PARAM_PORTFORMATTYPE {
     OMX_U32 nPortIndex; 
     OMX_U32 nIndex; 
     OMX_OTHER_FORMATTYPE eFormat; 
-} OMX_OTHER_PARAM_PORTFORMATTYPE; 
+} OMX_OTHER_PARAM_PORTFORMATTYPE;
 
 #ifdef __cplusplus
 }

@@ -43,10 +43,10 @@ public:
 
   friend nsIFrame* NS_NewListBoxBodyFrame(nsIPresShell* aPresShell,
                                           nsStyleContext* aContext);
-  
+
   
   virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent, 
+                    nsContainerFrame* aParent,
                     nsIFrame*         aPrevInFlow) override;
   virtual void DestroyFrom(nsIFrame* aDestructRoot) override;
 
@@ -158,7 +158,7 @@ protected:
       , mUp(aUp)
       , mDelta(aDelta)
     {}
-  
+
     NS_IMETHOD Run() override
     {
       if (!mFrame) {
@@ -203,7 +203,7 @@ protected:
 
   
   int32_t mCurrentIndex; 
-  int32_t mOldIndex; 
+  int32_t mOldIndex;
   int32_t mYPosition;
   int32_t mTimePerRow;
 

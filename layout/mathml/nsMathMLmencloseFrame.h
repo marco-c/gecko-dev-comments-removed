@@ -48,23 +48,23 @@ public:
 
   friend nsIFrame* NS_NewMathMLmencloseFrame(nsIPresShell*   aPresShell,
                                              nsStyleContext* aContext);
-  
+
   virtual nsresult
   Place(DrawTarget*          aDrawTarget,
         bool                 aPlaceOrigin,
         ReflowOutput& aDesiredSize) override;
-  
+
   virtual nsresult
   MeasureForWidth(DrawTarget* aDrawTarget,
                   ReflowOutput& aDesiredSize) override;
-  
+
   virtual nsresult
   AttributeChanged(int32_t         aNameSpaceID,
                    nsIAtom*        aAttribute,
                    int32_t         aModType) override;
-  
+
   virtual void
-  SetAdditionalStyleContext(int32_t          aIndex, 
+  SetAdditionalStyleContext(int32_t          aIndex,
                             nsStyleContext*  aStyleContext) override;
   virtual nsStyleContext*
   GetAdditionalStyleContext(int32_t aIndex) const override;

@@ -206,7 +206,7 @@ public:
   }
 
 private:
-  NodeInfo() = delete; 
+  NodeInfo() = delete;
   NodeInfo(const NodeInfo& aOther) = delete;
 
   

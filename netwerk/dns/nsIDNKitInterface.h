@@ -74,7 +74,7 @@ typedef enum {
 
 
 
-      
+
 typedef enum {
 	idn_biditype_r_al,
 	idn_biditype_l,

@@ -24,11 +24,11 @@ nsMathMLsemanticsFrame::~nsMathMLsemanticsFrame()
 {
 }
 
-nsIFrame* 
+nsIFrame*
 nsMathMLsemanticsFrame::GetSelectedFrame()
 {
   
-  nsIFrame* childFrame = mFrames.FirstChild(); 
+  nsIFrame* childFrame = mFrames.FirstChild();
   mSelectedFrame = childFrame;
 
   

@@ -260,7 +260,7 @@ public:
 
   
   virtual gfxMatrix GetCanvasTM() override;
-  
+
   
   uint32_t GetNumberOfChars(nsIContent* aContent);
   float GetComputedTextLength(nsIContent* aContent);

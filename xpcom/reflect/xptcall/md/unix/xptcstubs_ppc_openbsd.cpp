@@ -71,7 +71,7 @@ PrepareAndDispatch(nsXPTCStubBase* self,
         const nsXPTParamInfo& param = info->GetParam(i);
         const nsXPTType& type = param.GetType();
         nsXPTCMiniVariant* dp = &dispatchParams[i];
-	
+
         if (!param.IsOut() && type == nsXPTType::T_DOUBLE) {
             if (fpr < FPR_COUNT)
                 dp->val.d = fprData[fpr++];

@@ -54,7 +54,7 @@ enum {
     GRALLOC_USAGE_SW_READ_OFTEN         = 0x00000003,
     
     GRALLOC_USAGE_SW_READ_MASK          = 0x0000000F,
-    
+
     
     GRALLOC_USAGE_SW_WRITE_NEVER        = 0x00000000,
     
@@ -109,7 +109,7 @@ enum {
 
 typedef struct gralloc_module_t {
     struct hw_module_t common;
-    
+
     
 
 
@@ -142,49 +142,49 @@ typedef struct gralloc_module_t {
 
     int (*unregisterBuffer)(struct gralloc_module_t const* module,
             buffer_handle_t handle);
-    
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     int (*lock)(struct gralloc_module_t const* module,
             buffer_handle_t handle, int usage,
             int l, int t, int w, int h,
             void** vaddr);
 
-    
+
     
 
 
 
-    
+
     int (*unlock)(struct gralloc_module_t const* module,
             buffer_handle_t handle);
 
@@ -216,7 +216,7 @@ typedef struct alloc_device_t {
 
 
 
-    
+
     int (*alloc)(struct alloc_device_t* dev,
             int w, int h, int format, int usage,
             buffer_handle_t* handle, int* stride);
@@ -246,9 +246,9 @@ typedef struct alloc_device_t {
 
 
 
-static inline int gralloc_open(const struct hw_module_t* module, 
+static inline int gralloc_open(const struct hw_module_t* module,
         struct alloc_device_t** device) {
-    return module->methods->open(module, 
+    return module->methods->open(module,
             GRALLOC_HARDWARE_GPU0, (struct hw_device_t**)device);
 }
 

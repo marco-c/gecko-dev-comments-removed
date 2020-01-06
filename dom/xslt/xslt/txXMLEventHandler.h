@@ -83,7 +83,7 @@ public:
 
 
 
-    virtual nsresult processingInstruction(const nsString& aTarget, 
+    virtual nsresult processingInstruction(const nsString& aTarget,
                                            const nsString& aData) = 0;
 
     

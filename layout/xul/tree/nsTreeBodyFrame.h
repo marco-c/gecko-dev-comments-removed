@@ -274,7 +274,7 @@ protected:
                        nscoord&            aCurrX);
 
   
-  DrawResult PaintCheckbox(int32_t              aRowIndex, 
+  DrawResult PaintCheckbox(int32_t              aRowIndex,
                            nsTreeColumn*        aColumn,
                            const nsRect&        aCheckboxRect,
                            nsPresContext*       aPresContext,
@@ -291,7 +291,7 @@ protected:
                                 nsDisplayListBuilder* aBuilder);
 
   
-  DrawResult PaintDropFeedback(const nsRect&        aDropFeedbackRect, 
+  DrawResult PaintDropFeedback(const nsRect&        aDropFeedbackRect,
                                nsPresContext*       aPresContext,
                                gfxContext&          aRenderingContext,
                                const nsRect&        aDirtyRect,
@@ -300,7 +300,7 @@ protected:
   
   
   DrawResult PaintBackgroundLayer(nsStyleContext*      aStyleContext,
-                                  nsPresContext*       aPresContext, 
+                                  nsPresContext*       aPresContext,
                                   gfxContext&          aRenderingContext,
                                   const nsRect&        aRect,
                                   const nsRect&        aDirtyRect);

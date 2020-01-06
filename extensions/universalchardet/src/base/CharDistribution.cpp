@@ -13,7 +13,7 @@
 
 
 float CharDistributionAnalysis::GetConfidence(void)
-{ 
+{
   
   
   

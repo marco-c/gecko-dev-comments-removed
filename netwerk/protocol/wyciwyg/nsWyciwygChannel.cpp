@@ -44,7 +44,7 @@ nsWyciwygChannel::nsWyciwygChannel()
 {
 }
 
-nsWyciwygChannel::~nsWyciwygChannel() 
+nsWyciwygChannel::~nsWyciwygChannel()
 {
   if (mLoadInfo) {
     NS_ReleaseOnMainThread(
@@ -81,7 +81,7 @@ nsWyciwygChannel::GetName(nsACString &aName)
 {
   return mURI->GetSpec(aName);
 }
- 
+
 NS_IMETHODIMP
 nsWyciwygChannel::IsPending(bool *aIsPending)
 {
@@ -108,7 +108,7 @@ nsWyciwygChannel::Cancel(nsresult status)
   
   return NS_OK;
 }
- 
+
 NS_IMETHODIMP
 nsWyciwygChannel::Suspend()
 {
@@ -117,7 +117,7 @@ nsWyciwygChannel::Suspend()
   
   return NS_OK;
 }
- 
+
 NS_IMETHODIMP
 nsWyciwygChannel::Resume()
 {
@@ -256,7 +256,7 @@ nsWyciwygChannel::SetNotificationCallbacks(nsIInterfaceRequestor* aNotificationC
   return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsWyciwygChannel::GetSecurityInfo(nsISupports * *aSecurityInfo)
 {
   NS_IF_ADDREF(*aSecurityInfo = mSecurityInfo);

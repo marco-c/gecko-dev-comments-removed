@@ -183,7 +183,7 @@ nsTableWrapperFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
   nsDisplayListCollection set;
   BuildDisplayListForInnerTable(aBuilder, aDirtyRect, set);
-  
+
   nsDisplayListSet captionSet(set, set.BlockBorderBackgrounds());
   BuildDisplayListForChild(aBuilder, mCaptionFrames.FirstChild(),
                            aDirtyRect, captionSet);
@@ -595,7 +595,7 @@ nsTableWrapperFrame::GetCaptionOrigin(uint32_t             aCaptionSide,
   if (mCaptionFrames.IsEmpty()) {
     return NS_OK;
   }
-  
+
   NS_ASSERTION(NS_AUTOMARGIN != aCaptionMargin.IStart(aWM) &&
                NS_AUTOMARGIN != aCaptionMargin.BStart(aWM) &&
                NS_AUTOMARGIN != aCaptionMargin.BEnd(aWM),
@@ -685,7 +685,7 @@ nsTableWrapperFrame::GetInnerOrigin(uint32_t             aCaptionSide,
                NS_AUTOMARGIN != aInnerMargin.BStart(aWM) &&
                NS_AUTOMARGIN != aInnerMargin.BEnd(aWM),
                "The computed inner margin is auto?");
-  
+
   aOrigin.I(aWM) = aOrigin.B(aWM) = 0;
   if ((NS_UNCONSTRAINEDSIZE == aInnerSize.ISize(aWM)) ||
       (NS_UNCONSTRAINEDSIZE == aInnerSize.BSize(aWM)) ||
@@ -721,7 +721,7 @@ nsTableWrapperFrame::GetInnerOrigin(uint32_t             aCaptionSide,
       aOrigin.I(aWM) = aInnerMargin.IStart(aWM);
       break;
   }
-  
+
   
   switch (aCaptionSide) {
     case NS_STYLE_CAPTION_SIDE_BOTTOM:
@@ -883,7 +883,7 @@ nsTableWrapperFrame::Reflow(nsPresContext*           aPresContext,
     captionFirstReflow =
       mCaptionFrames.FirstChild()->HasAnyStateBits(NS_FRAME_FIRST_REFLOW);
   }
-  
+
   
   WritingMode wm = aOuterRI.GetWritingMode();
   uint8_t captionSide = GetCaptionSide();

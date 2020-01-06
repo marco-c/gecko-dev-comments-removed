@@ -300,7 +300,7 @@ public:
         return mRules.AppendElement(nsTemplateRule(aRuleNode, aAction,
                                     aQuerySet));
     }
-    
+
     void RemoveRule(nsTemplateRule *aRule)
     {
         mRules.RemoveElementAt(aRule - mRules.Elements());

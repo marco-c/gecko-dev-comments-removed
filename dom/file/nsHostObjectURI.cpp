@@ -200,7 +200,7 @@ nsHostObjectURI::EqualsInternal(nsIURI* aOther,
     *aResult = false;
     return NS_OK;
   }
-  
+
   RefPtr<nsHostObjectURI> otherUri;
   aOther->QueryInterface(kHOSTOBJECTURICID, getter_AddRefs(otherUri));
   if (!otherUri) {
@@ -228,7 +228,7 @@ nsHostObjectURI::EqualsInternal(nsIURI* aOther,
 }
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsHostObjectURI::GetInterfaces(uint32_t *count, nsIID * **array)
 {
   *count = 0;
@@ -236,14 +236,14 @@ nsHostObjectURI::GetInterfaces(uint32_t *count, nsIID * **array)
   return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsHostObjectURI::GetScriptableHelper(nsIXPCScriptable **_retval)
 {
   *_retval = nullptr;
   return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsHostObjectURI::GetContractID(char * *aContractID)
 {
   
@@ -252,14 +252,14 @@ nsHostObjectURI::GetContractID(char * *aContractID)
   return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsHostObjectURI::GetClassDescription(char * *aClassDescription)
 {
   *aClassDescription = nullptr;
   return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsHostObjectURI::GetClassID(nsCID * *aClassID)
 {
   
@@ -270,14 +270,14 @@ nsHostObjectURI::GetClassID(nsCID * *aClassID)
   return GetClassIDNoAlloc(*aClassID);
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsHostObjectURI::GetFlags(uint32_t *aFlags)
 {
   *aFlags = nsIClassInfo::MAIN_THREAD_ONLY;
   return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsHostObjectURI::GetClassIDNoAlloc(nsCID *aClassIDNoAlloc)
 {
   *aClassIDNoAlloc = kHOSTOBJECTURICID;

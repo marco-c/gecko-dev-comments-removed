@@ -20,8 +20,8 @@
 
 #pragma comment(linker, "/SUBSYSTEM:windows")
 
-SERVICE_STATUS gSvcStatus = { 0 }; 
-SERVICE_STATUS_HANDLE gSvcStatusHandle = nullptr; 
+SERVICE_STATUS gSvcStatus = { 0 };
+SERVICE_STATUS_HANDLE gSvcStatusHandle = nullptr;
 HANDLE gWorkDoneEvent = nullptr;
 HANDLE gThread = nullptr;
 bool gServiceControlStopping = false;
@@ -31,7 +31,7 @@ bool gServiceControlStopping = false;
 
 BOOL GetLogDirectoryPath(WCHAR *path);
 
-int 
+int
 wmain(int argc, WCHAR **argv)
 {
   
@@ -67,7 +67,7 @@ wmain(int argc, WCHAR **argv)
     LOG(("The service was installed successfully"));
     LogFinish();
     return 0;
-  } 
+  }
 
   if (!lstrcmpi(argv[1], L"upgrade")) {
     WCHAR updatePath[MAX_PATH + 1];
@@ -107,10 +107,10 @@ wmain(int argc, WCHAR **argv)
     return DoesBinaryMatchAllowedCertificates(argv[2], argv[3], FALSE) ? 0 : 1;
   }
 
-  SERVICE_TABLE_ENTRYW DispatchTable[] = { 
-    { SVC_NAME, (LPSERVICE_MAIN_FUNCTIONW) SvcMain }, 
-    { nullptr, nullptr } 
-  }; 
+  SERVICE_TABLE_ENTRYW DispatchTable[] = {
+    { SVC_NAME, (LPSERVICE_MAIN_FUNCTIONW) SvcMain },
+    { nullptr, nullptr }
+  };
 
   
   
@@ -254,10 +254,10 @@ SvcMain(DWORD argc, LPWSTR *argv)
   gSvcStatusHandle = RegisterServiceCtrlHandlerW(SVC_NAME, SvcCtrlHandler);
   if (!gSvcStatusHandle) {
     LOG_WARN(("RegisterServiceCtrlHandler failed.  (%d)", GetLastError()));
-    ExecuteServiceCommand(argc, argv);  
+    ExecuteServiceCommand(argc, argv);
     LogFinish();
     exit(1);
-  } 
+  }
 
   
   gSvcStatus.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
@@ -282,7 +282,7 @@ SvcMain(DWORD argc, LPWSTR *argv)
   
   
   
-  ExecuteServiceCommand(argc, argv);  
+  ExecuteServiceCommand(argc, argv);
   LogFinish();
 
   SetEvent(gWorkDoneEvent);
@@ -304,8 +304,8 @@ SvcMain(DWORD argc, LPWSTR *argv)
 
 
 void
-ReportSvcStatus(DWORD currentState, 
-                DWORD exitCode, 
+ReportSvcStatus(DWORD currentState,
+                DWORD exitCode,
                 DWORD waitHint)
 {
   static DWORD dwCheckPoint = 1;
@@ -314,11 +314,11 @@ ReportSvcStatus(DWORD currentState,
   gSvcStatus.dwWin32ExitCode = exitCode;
   gSvcStatus.dwWaitHint = waitHint;
 
-  if (SERVICE_START_PENDING == currentState || 
+  if (SERVICE_START_PENDING == currentState ||
       SERVICE_STOP_PENDING == currentState) {
     gSvcStatus.dwControlsAccepted = 0;
   } else {
-    gSvcStatus.dwControlsAccepted = SERVICE_ACCEPT_STOP | 
+    gSvcStatus.dwControlsAccepted = SERVICE_ACCEPT_STOP |
                                     SERVICE_ACCEPT_SHUTDOWN;
   }
 

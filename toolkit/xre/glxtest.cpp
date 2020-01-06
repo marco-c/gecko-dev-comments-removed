@@ -171,10 +171,10 @@ void glxtest()
   void *libgl = dlopen(LIBGL_FILENAME, RTLD_LAZY);
   if (!libgl)
     fatal_error("Unable to load " LIBGL_FILENAME);
-  
+
   typedef void* (* PFNGLXGETPROCADDRESS) (const char *);
   PFNGLXGETPROCADDRESS glXGetProcAddress = cast<PFNGLXGETPROCADDRESS>(dlsym(libgl, "glXGetProcAddress"));
-  
+
   if (!glXGetProcAddress)
     fatal_error("Unable to find glXGetProcAddress in " LIBGL_FILENAME);
 
@@ -213,7 +213,7 @@ void glxtest()
   Display *dpy = XOpenDisplay(nullptr);
   if (!dpy)
     fatal_error("Unable to open a connection to the X server");
-  
+
   
   if (!glXQueryExtension(dpy, nullptr, nullptr))
     fatal_error("GLX extension missing");
@@ -249,7 +249,7 @@ void glxtest()
   glXMakeCurrent(dpy, window, context);
 
   
-  void* glXBindTexImageEXT = glXGetProcAddress("glXBindTexImageEXT"); 
+  void* glXBindTexImageEXT = glXGetProcAddress("glXBindTexImageEXT");
 
   
   enum { bufsize = 1024 };

@@ -78,7 +78,7 @@ public:
   
   bool IsExplicitlySet() const
     { return !!mAnimVal || mIsBaseSet; }
-  
+
   bool IsAnimating() const {
     return !!mAnimVal;
   }

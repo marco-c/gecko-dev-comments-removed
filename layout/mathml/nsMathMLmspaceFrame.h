@@ -32,7 +32,7 @@ public:
          ReflowOutput&     aDesiredSize,
          const ReflowInput& aReflowInput,
          nsReflowStatus&          aStatus) override;
-  
+
 protected:
   explicit nsMathMLmspaceFrame(nsStyleContext* aContext) :
     nsMathMLContainerFrame(aContext, kClassID), mWidth(0), mHeight(0), mDepth(0) {}
@@ -48,7 +48,7 @@ private:
   nscoord mDepth;
 
   
-  void 
+  void
   ProcessAttributes(nsPresContext* aPresContext);
 };
 

@@ -150,7 +150,7 @@ nsXULPopupManager::nsXULPopupManager() :
                                kPrefDevtoolsDisableAutoHide, false);
 }
 
-nsXULPopupManager::~nsXULPopupManager() 
+nsXULPopupManager::~nsXULPopupManager()
 {
   NS_ASSERTION(!mPopups, "XUL popups still open");
 }
@@ -647,7 +647,7 @@ nsXULPopupManager::InitTriggerEvent(nsIDOMEvent* aEvent, nsIContent* aPopup,
             return;
           nsIFrame* rootDocumentRootFrame = rootDocPresContext->
               PresShell()->FrameManager()->GetRootFrame();
-          if ((event->mClass == eMouseEventClass || 
+          if ((event->mClass == eMouseEventClass ||
                event->mClass == eMouseScrollEventClass ||
                event->mClass == eWheelEventClass) &&
                !event->AsGUIEvent()->mWidget) {
@@ -1042,7 +1042,7 @@ nsXULPopupManager::HidePopup(nsIContent* aPopup,
           child = child->GetChild();
         }
       }
-      
+
       deselectMenu = aDeselectMenu;
       popupToHide = topMenu->Content();
       popupFrame = topMenu->Frame();
@@ -2189,10 +2189,10 @@ nsXULPopupManager::HandleKeyboardNavigation(uint32_t aKeyCode)
   
   if (mActiveMenuBar) {
     nsMenuFrame* currentMenu = mActiveMenuBar->GetCurrentMenuItem();
-  
+
     if (NS_DIRECTION_IS_INLINE(theDirection)) {
       nsMenuFrame* nextItem = (theDirection == eNavigationDirection_End) ?
-                              GetNextMenuItem(mActiveMenuBar, currentMenu, false, true) : 
+                              GetNextMenuItem(mActiveMenuBar, currentMenu, false, true) :
                               GetPreviousMenuItem(mActiveMenuBar, currentMenu, false, true);
       mActiveMenuBar->ChangeMenuItem(nextItem, true, true);
       return true;
@@ -2695,7 +2695,7 @@ nsXULPopupManager::KeyDown(nsIDOMKeyEvent* aKeyEvent)
         }
 
         
-        item = nullptr; 
+        item = nullptr;
       }
       aKeyEvent->AsEvent()->StopPropagation();
       aKeyEvent->AsEvent()->PreventDefault();

@@ -15,11 +15,11 @@ net_GetURLSpecFromActualFile(nsIFile *aFile, nsACString &result)
 {
     nsresult rv;
     nsAutoString path;
-  
+
     
     rv = aFile->GetPath(path);
     if (NS_FAILED(rv)) return rv;
-  
+
     
     path.ReplaceChar(char16_t(0x5Cu), char16_t(0x2Fu));
 
@@ -71,9 +71,9 @@ net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result)
         specPtr = &buf;
     else
         specPtr = &aURL;
-    
+
     nsAutoCString directory, fileBaseName, fileExtension;
-    
+
     rv = net_ParseFileURL(*specPtr, directory, fileBaseName, fileExtension);
     if (NS_FAILED(rv)) return rv;
 
@@ -84,14 +84,14 @@ net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result)
         if (path.Length() > 2 && path.CharAt(2) == '|')
             path.SetCharAt(':', 2);
         path.ReplaceChar('/', '\\');
-    }    
+    }
     if (!fileBaseName.IsEmpty())
         NS_EscapeURL(fileBaseName, esc_FileBaseName|esc_AlwaysCopy, path);
     if (!fileExtension.IsEmpty()) {
         path += '.';
         NS_EscapeURL(fileExtension, esc_FileExtension|esc_AlwaysCopy, path);
     }
-    
+
     NS_UnescapeURL(path);
     if (path.Length() != strlen(path.get()))
         return NS_ERROR_FILE_INVALID_PATH;
@@ -106,7 +106,7 @@ net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result)
         
         
         
-    else 
+    else
         
         rv = localFile->InitWithNativePath(path);
 

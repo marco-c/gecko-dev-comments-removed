@@ -76,7 +76,7 @@ protected:
   static void Notify(void* aData) {
     static_cast<nsScrollbarButtonFrame*>(aData)->Notify();
   }
-  
+
   bool mCursorOnThis;
 };
 

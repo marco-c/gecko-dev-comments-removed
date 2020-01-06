@@ -31,7 +31,7 @@ class nsLineLayout {
   using BlockReflowInput = mozilla::BlockReflowInput;
   using ReflowInput = mozilla::ReflowInput;
   using ReflowOutput = mozilla::ReflowOutput;
-  
+
 public:
   
 
@@ -165,13 +165,13 @@ public:
 
   bool LineIsBreakable() const;
 
-  bool GetLineEndsInBR() const 
-  { 
+  bool GetLineEndsInBR() const
+  {
     return mLineEndsInBR;
   }
 
-  void SetLineEndsInBR(bool aOn) 
-  { 
+  void SetLineEndsInBR(bool aOn)
+  {
     mLineEndsInBR = aOn;
   }
 
@@ -312,13 +312,13 @@ public:
   {
     return mLastOptionalBreakPriority;
   }
-  
+
   
 
 
-  
+
   bool NeedsBackup() { return mNeedBackup; }
-  
+
   
   
   
@@ -350,7 +350,7 @@ public:
   nsLineList::iterator* GetLine() {
     return mGotLineBox ? &mLineBox : nullptr;
   }
-  
+
   
 
 
@@ -408,7 +408,7 @@ protected:
 
   nsIFrame* mLastOptionalBreakFrame;
   nsIFrame* mForceBreakFrame;
-  
+
   
   friend class nsInlineFrame;
 
@@ -468,7 +468,7 @@ protected:
     
     mozilla::JustificationInfo mJustificationInfo;
     mozilla::JustificationAssignment mJustificationAssignment;
-    
+
     
     bool mRelativePos : 1;
     bool mIsTextFrame : 1;
@@ -584,7 +584,7 @@ protected:
   int32_t     mForceBreakFrameOffset;
 
   nscoord mMinLineBSize;
-  
+
   
   
   nscoord mTextIndent;
@@ -605,7 +605,7 @@ protected:
   
   
   nscoord mFinalLineBSize;
-  
+
   
   
   nscoord mTrimmableISize;

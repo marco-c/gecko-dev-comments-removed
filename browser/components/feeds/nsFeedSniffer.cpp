@@ -66,8 +66,8 @@ nsFeedSniffer::ConvertEncodedData(nsIRequest* request,
       ToLowerCase(contentEncoding);
 
       nsCOMPtr<nsIStreamListener> converter;
-      rv = converterService->AsyncConvertData(contentEncoding.get(), 
-                                              "uncompressed", this, nullptr, 
+      rv = converterService->AsyncConvertData(contentEncoding.get(),
+                                              "uncompressed", this, nullptr,
                                               getter_AddRefs(converter));
       NS_ENSURE_SUCCESS(rv, rv);
 
@@ -160,7 +160,7 @@ IsDocumentElement(const char *start, const char* end)
     
     if (*start != '?' && *start != '!')
       return false;
-    
+
     
     
     
@@ -184,7 +184,7 @@ IsDocumentElement(const char *start, const char* end)
 
 
 static bool
-ContainsTopLevelSubstring(nsACString& dataString, const char *substring) 
+ContainsTopLevelSubstring(nsACString& dataString, const char *substring)
 {
   nsACString::const_iterator start, end;
   dataString.BeginReading(start);
@@ -203,9 +203,9 @@ ContainsTopLevelSubstring(nsACString& dataString, const char *substring)
 }
 
 NS_IMETHODIMP
-nsFeedSniffer::GetMIMETypeFromContent(nsIRequest* request, 
-                                      const uint8_t* data, 
-                                      uint32_t length, 
+nsFeedSniffer::GetMIMETypeFromContent(nsIRequest* request,
+                                      const uint8_t* data,
+                                      uint32_t length,
                                       nsACString& sniffedType)
 {
   nsCOMPtr<nsIHttpChannel> channel(do_QueryInterface(request));
@@ -357,17 +357,17 @@ nsFeedSniffer::AppendSegmentToString(nsIInputStream* inputStream,
 
 NS_IMETHODIMP
 nsFeedSniffer::OnDataAvailable(nsIRequest* request, nsISupports* context,
-                               nsIInputStream* stream, uint64_t offset, 
+                               nsIInputStream* stream, uint64_t offset,
                                uint32_t count)
 {
   uint32_t read;
-  return stream->ReadSegments(AppendSegmentToString, &mDecodedData, count, 
+  return stream->ReadSegments(AppendSegmentToString, &mDecodedData, count,
                               &read);
 }
 
 NS_IMETHODIMP
-nsFeedSniffer::OnStopRequest(nsIRequest* request, nsISupports* context, 
+nsFeedSniffer::OnStopRequest(nsIRequest* request, nsISupports* context,
                              nsresult status)
 {
-  return NS_OK; 
+  return NS_OK;
 }

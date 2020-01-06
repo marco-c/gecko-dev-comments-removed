@@ -275,7 +275,7 @@ Vacuumer::HandleCompletion(uint16_t aReason)
     nsAutoCString prefName(PREF_VACUUM_BRANCH);
     prefName += mDBFilename;
     DebugOnly<nsresult> rv = Preferences::SetInt(prefName.get(), now);
-    MOZ_ASSERT(NS_SUCCEEDED(rv), "Should be able to set a preference"); 
+    MOZ_ASSERT(NS_SUCCEEDED(rv), "Should be able to set a preference");
   }
 
   notifyCompletion(aReason == REASON_FINISHED);

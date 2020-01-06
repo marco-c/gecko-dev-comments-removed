@@ -255,7 +255,7 @@ public:
 #ifdef XP_WIN
   
   static uint8_t GetWindowsThemeIdentifier();
-  static void SetWindowsThemeIdentifier(uint8_t aId) { 
+  static void SetWindowsThemeIdentifier(uint8_t aId) {
     sWinThemeId = aId;
   }
 #endif

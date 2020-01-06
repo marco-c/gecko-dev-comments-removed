@@ -2,13 +2,13 @@
 
 
 
- 
 
 
 
 
 
- 
+
+
 #include "nsString.h"
 
 #include "nsIFindService.h"
@@ -31,14 +31,14 @@ public:
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIFINDSERVICE
- 
+
 protected:
 
   virtual ~nsFindService();
 
   nsString        mSearchString;
   nsString        mReplaceString;
-  
+
   bool            mFindBackwards;
   bool            mWrapFind;
   bool            mEntireWord;

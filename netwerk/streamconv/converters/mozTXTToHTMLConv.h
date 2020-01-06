@@ -64,7 +64,7 @@ protected:
 
 
 
-  void CompleteAbbreviatedURL(const char16_t * aInString, int32_t aInLength, 
+  void CompleteAbbreviatedURL(const char16_t * aInString, int32_t aInLength,
                               const uint32_t pos, nsString& aOutString);
 
 
@@ -210,7 +210,7 @@ private:
 
 
 
-  void CalculateURLBoundaries(const char16_t * aInString, int32_t aInStringLength, 
+  void CalculateURLBoundaries(const char16_t * aInString, int32_t aInStringLength,
      const uint32_t pos, const uint32_t whathasbeendone,
      const modetype check, const uint32_t start, const uint32_t end,
      nsString& txtURL, nsString& desc,
@@ -245,7 +245,7 @@ private:
 
   bool StructPhraseHit(const char16_t * aInString, int32_t aInStringLength, bool col0,
      const char16_t* tagTXT,
-     int32_t aTagTxtLen, 
+     int32_t aTagTxtLen,
      const char* tagHTML, const char* attributeHTML,
      nsString& aOutputString, uint32_t& openTags);
 

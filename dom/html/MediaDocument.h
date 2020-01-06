@@ -73,10 +73,10 @@ protected:
 
   nsCOMPtr<nsIStringBundle>     mStringBundle;
   static const char* const      sFormatNames[4];
-  
+
 private:
   enum                          {eWithNoInfo, eWithFile, eWithDim, eWithDimAndFile};
-  bool                          mDocumentElementInserted;   
+  bool                          mDocumentElementInserted;
 };
 
 

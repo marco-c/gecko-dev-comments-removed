@@ -38,8 +38,8 @@ namespace android {
 
 
 
-template<typename T> 
-class List 
+template<typename T>
+class List
 {
 protected:
     
@@ -67,23 +67,23 @@ protected:
     
 
 
-    
+
     template <typename TYPE>
     struct CONST_ITERATOR {
         typedef _Node const * NodePtr;
         typedef const TYPE Type;
     };
-    
+
     template <typename TYPE>
     struct NON_CONST_ITERATOR {
         typedef _Node* NodePtr;
         typedef TYPE Type;
     };
-    
+
     template<
         typename U,
         template <class> class Constness
-    > 
+    >
     class _ListIterator {
         typedef _ListIterator<U, Constness>     _Iter;
         typedef typename Constness<U>::NodePtr  _NodePtr;
@@ -95,14 +95,14 @@ protected:
         _ListIterator() {}
         _ListIterator(const _Iter& rhs) : mpNode(rhs.mpNode) {}
         ~_ListIterator() {}
+
         
         
         
         
-        
-        template<typename V> explicit 
+        template<typename V> explicit
         _ListIterator(const V& rhs) : mpNode(rhs.mpNode) {}
-        
+
 
         
 
@@ -113,21 +113,21 @@ protected:
         
 
 
-        inline bool operator==(const _Iter& right) const { 
+        inline bool operator==(const _Iter& right) const {
             return mpNode == right.mpNode; }
-        
-        inline bool operator!=(const _Iter& right) const { 
+
+        inline bool operator!=(const _Iter& right) const {
             return mpNode != right.mpNode; }
 
         
 
 
         template<typename OTHER>
-        inline bool operator==(const OTHER& right) const { 
+        inline bool operator==(const OTHER& right) const {
             return mpNode == right.mpNode; }
-        
+
         template<typename OTHER>
-        inline bool operator!=(const OTHER& right) const { 
+        inline bool operator!=(const OTHER& right) const {
             return mpNode != right.mpNode; }
 
         
@@ -190,17 +190,17 @@ public:
 
 
 
-    inline iterator begin() { 
-        return iterator(mpMiddle->getNext()); 
+    inline iterator begin() {
+        return iterator(mpMiddle->getNext());
     }
-    inline const_iterator begin() const { 
-        return const_iterator(const_cast<_Node const*>(mpMiddle->getNext())); 
+    inline const_iterator begin() const {
+        return const_iterator(const_cast<_Node const*>(mpMiddle->getNext()));
     }
-    inline iterator end() { 
-        return iterator(mpMiddle); 
+    inline iterator end() {
+        return iterator(mpMiddle);
     }
-    inline const_iterator end() const { 
-        return const_iterator(const_cast<_Node const*>(mpMiddle)); 
+    inline const_iterator end() const {
+        return const_iterator(const_cast<_Node const*>(mpMiddle));
     }
 
     
@@ -208,7 +208,7 @@ public:
     void push_back(const T& val) { insert(end(), val); }
 
     
-    iterator insert(iterator posn, const T& val) 
+    iterator insert(iterator posn, const T& val)
     {
         _Node* newNode = new _Node(val);        
         newNode->setNext(posn.getNode());
@@ -269,9 +269,9 @@ public:
         typename U,
         template <class> class CL,
         template <class> class CR
-    > 
+    >
     ptrdiff_t distance(
-            _ListIterator<U, CL> first, _ListIterator<U, CR> last) const 
+            _ListIterator<U, CL> first, _ListIterator<U, CR> last) const
     {
         ptrdiff_t count = 0;
         while (first != last) {

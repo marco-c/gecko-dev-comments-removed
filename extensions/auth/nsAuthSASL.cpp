@@ -17,7 +17,7 @@ nsAuthSASL::nsAuthSASL()
     mSASLReady = false;
 }
 
-void nsAuthSASL::Reset() 
+void nsAuthSASL::Reset()
 {
     mSASLReady = false;
 }
@@ -33,18 +33,18 @@ nsAuthSASL::Init(const char *serviceName,
                  const char16_t *password)
 {
     nsresult rv;
-    
+
     NS_ASSERTION(username, "SASL requires a username");
     NS_ASSERTION(!domain && !password, "unexpected credentials");
 
     mUsername = username;
-    
+
     
     serviceFlags |= REQ_MUTUAL_AUTH;
-   
+
     
     const char *contractID = NS_AUTH_MODULE_CONTRACTID_PREFIX "kerb-gss";
-    
+
     nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
     if (prefs) {
         bool val;
@@ -52,7 +52,7 @@ nsAuthSASL::Init(const char *serviceName,
         if (NS_SUCCEEDED(rv) && val)
             contractID = NS_AUTH_MODULE_CONTRACTID_PREFIX "kerb-sspi";
     }
-    
+
     mInnerModule = do_CreateInstance(contractID, &rv);
     
     NS_ENSURE_SUCCESS(rv, rv);
@@ -73,8 +73,8 @@ nsAuthSASL::GetNextToken(const void *inToken,
     char *message;
     uint32_t unwrappedTokenLen, messageLen;
     nsAutoCString userbuf;
-    
-    if (!mInnerModule) 
+
+    if (!mInnerModule)
         return NS_ERROR_NOT_INITIALIZED;
 
     if (mSASLReady) {
@@ -90,18 +90,18 @@ nsAuthSASL::GetNextToken(const void *inToken,
         
 
         
-        rv = mInnerModule->Unwrap(inToken, inTokenLen, &unwrappedToken, 
+        rv = mInnerModule->Unwrap(inToken, inTokenLen, &unwrappedToken,
                                   &unwrappedTokenLen);
         if (NS_FAILED(rv)) {
             Reset();
             return rv;
         }
-        
+
         
         
         
         free(unwrappedToken);
-        
+
         NS_CopyUnicodeToNative(mUsername, userbuf);
         messageLen = userbuf.Length() + 4 + 1;
         message = (char *)moz_xmalloc(messageLen);
@@ -116,13 +116,13 @@ nsAuthSASL::GetNextToken(const void *inToken,
         strcpy(message+4, userbuf.get());
         
         
-        rv = mInnerModule->Wrap((void *) message, messageLen-1, false, 
+        rv = mInnerModule->Wrap((void *) message, messageLen-1, false,
                                 outToken, outTokenLen);
         free(message);
         Reset(); 
         return NS_SUCCEEDED(rv) ? NS_SUCCESS_AUTH_FINISHED : rv;
     }
-    rv = mInnerModule->GetNextToken(inToken, inTokenLen, outToken, 
+    rv = mInnerModule->GetNextToken(inToken, inTokenLen, outToken,
                                     outTokenLen);
     if (rv == NS_SUCCESS_AUTH_FINISHED) {
         mSASLReady = true;

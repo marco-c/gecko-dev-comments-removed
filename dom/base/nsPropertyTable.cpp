@@ -62,7 +62,7 @@ public:
   void*              mDtorData;       
   bool               mTransfer;       
                                       
-  
+
   PropertyList*      mNext;
 };
 

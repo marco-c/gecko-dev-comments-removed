@@ -1784,7 +1784,7 @@ void CacheEntry::DoomFile()
       LOG(("  file doomed"));
       return;
     }
-    
+
     if (NS_ERROR_FILE_NOT_FOUND == rv) {
       
       

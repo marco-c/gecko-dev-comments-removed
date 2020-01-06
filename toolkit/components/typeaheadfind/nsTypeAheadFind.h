@@ -45,19 +45,19 @@ protected:
   nsresult PrefsReset();
 
   void SaveFind();
-  void PlayNotFoundSound(); 
+  void PlayNotFoundSound();
   nsresult GetWebBrowserFind(nsIDocShell *aDocShell,
                              nsIWebBrowserFind **aWebBrowserFind);
 
-  void RangeStartsInsideLink(nsIDOMRange *aRange, nsIPresShell *aPresShell, 
+  void RangeStartsInsideLink(nsIDOMRange *aRange, nsIPresShell *aPresShell,
                              bool *aIsInsideLink, bool *aIsStartingLink);
 
-  void GetSelection(nsIPresShell *aPresShell, nsISelectionController **aSelCon, 
+  void GetSelection(nsIPresShell *aPresShell, nsISelectionController **aSelCon,
                     nsISelection **aDomSel);
   
   
   bool IsRangeVisible(nsIPresShell *aPresShell, nsPresContext *aPresContext,
-                        nsIDOMRange *aRange, bool aMustBeVisible, 
+                        nsIDOMRange *aRange, bool aMustBeVisible,
                         bool aGetTopVisibleLeaf, nsIDOMRange **aNewRange,
                         bool *aUsesIndependentSelection);
   nsresult FindItNow(nsIPresShell *aPresShell, bool aIsLinksOnly,
@@ -96,7 +96,7 @@ protected:
   
   nsCOMPtr<nsISound> mSoundInterface;
   bool mIsSoundInitialized;
-  
+
   
   nsCOMPtr<nsIDOMRange> mStartFindRange;
   nsCOMPtr<nsIDOMRange> mSearchRange;

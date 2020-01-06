@@ -31,7 +31,7 @@ NS_IMPL_ISUPPORTS_INHERITED(HTMLFrameSetElement, nsGenericHTMLElement,
 
 NS_IMPL_ELEMENT_CLONE(HTMLFrameSetElement)
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 HTMLFrameSetElement::SetCols(const nsAString& aCols)
 {
   ErrorResult rv;
@@ -48,7 +48,7 @@ HTMLFrameSetElement::GetCols(nsAString& aCols)
   return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 HTMLFrameSetElement::SetRows(const nsAString& aRows)
 {
   ErrorResult rv;
@@ -115,7 +115,7 @@ HTMLFrameSetElement::GetRowSpec(int32_t *aNumValues,
   NS_PRECONDITION(aSpecs, "Must have a pointer to an array of nsFramesetSpecs");
   *aNumValues = 0;
   *aSpecs = nullptr;
-  
+
   if (!mRowSpecs) {
     const nsAttrValue* value = GetParsedAttr(nsGkAtoms::rows);
     if (value && value->Type() == nsAttrValue::eString) {
@@ -185,7 +185,7 @@ HTMLFrameSetElement::ParseAttribute(int32_t aNamespaceID,
       return aResult.ParseIntWithBounds(aValue, 0, 100);
     }
   }
-  
+
   return nsGenericHTMLElement::ParseAttribute(aNamespaceID, aAttribute, aValue,
                                               aResult);
 }
@@ -226,7 +226,7 @@ HTMLFrameSetElement::ParseRowCol(const nsAString & aValue,
   
   spec.StripChars(" \n\r\t\"\'");
   spec.Trim(",");
-  
+
   
   static_assert(NS_MAX_FRAMESET_SPEC_COUNT * sizeof(nsFramesetSpec) < (1 << 30),
                 "Too many frameset specs allowed to allocate");
@@ -246,7 +246,7 @@ HTMLFrameSetElement::ParseRowCol(const nsAString & aValue,
 
   
   bool isInQuirks = InNavQuirksMode(OwnerDoc());
-      
+
   
 
   int32_t start = 0;
@@ -308,7 +308,7 @@ HTMLFrameSetElement::ParseRowCol(const nsAString & aValue,
           specs[i].mValue = 1;
         }
       }
-        
+
       
       
       

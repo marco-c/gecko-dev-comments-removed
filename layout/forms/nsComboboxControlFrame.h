@@ -233,7 +233,7 @@ protected:
   friend class nsResizeDropdownAtFinalPosition;
 
   
-  void ReflowDropdown(nsPresContext*          aPresContext, 
+  void ReflowDropdown(nsPresContext*          aPresContext,
                       const ReflowInput& aReflowInput);
 
   enum DropDownPositionState {
@@ -262,7 +262,7 @@ protected:
   private:
     nsComboboxControlFrame *mControlFrame;
   };
-  
+
   
 
 
@@ -299,7 +299,7 @@ protected:
   
   
   nscoord mDisplayISize;
-  
+
   nsRevocableEventPtr<RedisplayTextEvent> mRedisplayTextEvent;
 
   int32_t               mRecentSelectedIndex;

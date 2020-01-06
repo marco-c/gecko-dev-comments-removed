@@ -26,7 +26,7 @@ public:
 
 
 
-  NS_IMETHOD RemoveOption(int32_t index) = 0; 
+  NS_IMETHOD RemoveOption(int32_t index) = 0;
 
   
 

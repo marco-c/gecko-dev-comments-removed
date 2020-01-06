@@ -57,7 +57,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
 
   NS_IMETHOD AppendComment(nsIContent* aComment, int32_t aStartOffset,
                            int32_t aEndOffset, nsAString& aStr) override;
-  
+
   NS_IMETHOD AppendDoctype(nsIContent *aDoctype,
                            nsAString& aStr) override;
 
@@ -359,7 +359,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
 
   
   nsCString mCharset;
-  
+
   
   uint32_t   mColPos;
 
@@ -419,4 +419,4 @@ private:
 nsresult
 NS_NewXMLContentSerializer(nsIContentSerializer** aSerializer);
 
-#endif 
+#endif

@@ -10,7 +10,7 @@
 
 
 
-LPCTSTR UACHelper::PrivsToDisable[] = { 
+LPCTSTR UACHelper::PrivsToDisable[] = {
   SE_ASSIGNPRIMARYTOKEN_NAME,
   SE_AUDIT_NAME,
   SE_BACKUP_NAME,
@@ -66,7 +66,7 @@ UACHelper::OpenUserToken(DWORD sessionID)
 {
   HMODULE module = LoadLibraryW(L"wtsapi32.dll");
   HANDLE token = nullptr;
-  decltype(WTSQueryUserToken)* wtsQueryUserToken = 
+  decltype(WTSQueryUserToken)* wtsQueryUserToken =
     (decltype(WTSQueryUserToken)*) GetProcAddress(module, "WTSQueryUserToken");
   if (wtsQueryUserToken) {
     wtsQueryUserToken(sessionID, &token);
@@ -92,7 +92,7 @@ UACHelper::OpenLinkedToken(HANDLE token)
   TOKEN_LINKED_TOKEN tlt;
   HANDLE hNewLinkedToken = nullptr;
   DWORD len;
-  if (GetTokenInformation(token, (TOKEN_INFORMATION_CLASS)TokenLinkedToken, 
+  if (GetTokenInformation(token, (TOKEN_INFORMATION_CLASS)TokenLinkedToken,
                           &tlt, sizeof(TOKEN_LINKED_TOKEN), &len)) {
     token = tlt.LinkedToken;
     hNewLinkedToken = token;
@@ -109,12 +109,12 @@ UACHelper::OpenLinkedToken(HANDLE token)
 
 
 
-BOOL 
+BOOL
 UACHelper::SetPrivilege(HANDLE token, LPCTSTR priv, BOOL enable)
 {
   LUID luidOfPriv;
   if (!LookupPrivilegeValue(nullptr, priv, &luidOfPriv)) {
-    return FALSE; 
+    return FALSE;
   }
 
   TOKEN_PRIVILEGES tokenPriv;
@@ -125,8 +125,8 @@ UACHelper::SetPrivilege(HANDLE token, LPCTSTR priv, BOOL enable)
   SetLastError(ERROR_SUCCESS);
   if (!AdjustTokenPrivileges(token, false, &tokenPriv,
                              sizeof(tokenPriv), nullptr, nullptr)) {
-    return FALSE; 
-  } 
+    return FALSE;
+  }
 
   return GetLastError() == ERROR_SUCCESS;
 }
@@ -142,8 +142,8 @@ UACHelper::SetPrivilege(HANDLE token, LPCTSTR priv, BOOL enable)
 
 
 BOOL
-UACHelper::DisableUnneededPrivileges(HANDLE token, 
-                                     LPCTSTR *unneededPrivs, 
+UACHelper::DisableUnneededPrivileges(HANDLE token,
+                                     LPCTSTR *unneededPrivs,
                                      size_t count)
 {
   HANDLE obtainedToken = nullptr;
@@ -189,10 +189,10 @@ UACHelper::DisableUnneededPrivileges(HANDLE token,
 BOOL
 UACHelper::DisablePrivileges(HANDLE token)
 {
-  static const size_t PrivsToDisableSize = 
+  static const size_t PrivsToDisableSize =
     sizeof(UACHelper::PrivsToDisable) / sizeof(UACHelper::PrivsToDisable[0]);
 
-  return DisableUnneededPrivileges(token, UACHelper::PrivsToDisable, 
+  return DisableUnneededPrivileges(token, UACHelper::PrivsToDisable,
                                    PrivsToDisableSize);
 }
 

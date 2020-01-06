@@ -757,7 +757,7 @@ xDlError(sqlite3_vfs *vfs, int nByte, char *zErrMsg)
   orig_vfs->xDlError(orig_vfs, nByte, zErrMsg);
 }
 
-void 
+void
 (*xDlSym(sqlite3_vfs *vfs, void *pHdle, const char *zSym))(void){
   sqlite3_vfs *orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
   return orig_vfs->xDlSym(orig_vfs, pHdle, zSym);
@@ -843,7 +843,7 @@ sqlite3_vfs* ConstructTelemetryVFS()
 #define EXPECTED_VFS     "unix"
 #define EXPECTED_VFS_NFS "unix-excl"
 #endif
-  
+
   bool expected_vfs;
   sqlite3_vfs *vfs;
   if (Preferences::GetBool(PREF_NFS_FILESYSTEM)) {

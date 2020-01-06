@@ -27,14 +27,14 @@ private:
     nsDirectoryIndexStream();
     
 
- 
+
     nsresult Init(nsIFile* aDir);
     ~nsDirectoryIndexStream();
 
 public:
     
 
- 
+
     static nsresult
     Create(nsIFile* aDir, nsIInputStream** aStreamResult);
 

@@ -995,7 +995,7 @@ nsColumnSetFrame::DrainOverflowColumns()
       mFrames.InsertFrames(this, nullptr, *overflows);
     }
   }
-  
+
   
   
   AutoFrameListPtr overflows(presContext, StealOverflowFrames());

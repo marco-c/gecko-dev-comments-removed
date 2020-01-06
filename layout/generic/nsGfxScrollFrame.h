@@ -723,7 +723,7 @@ public:
   virtual nscoord GetPrefISize(gfxContext *aRenderingContext) override;
   virtual nsresult GetXULPadding(nsMargin& aPadding) override;
   virtual bool IsXULCollapsed() override;
-  
+
   virtual void Reflow(nsPresContext*           aPresContext,
                       ReflowOutput&     aDesiredSize,
                       const ReflowInput& aReflowInput,
@@ -1033,7 +1033,7 @@ public:
   void SetZoomableByAPZ(bool aZoomable) override {
     mHelper.SetZoomableByAPZ(aZoomable);
   }
-  
+
   ScrollSnapInfo GetScrollSnapInfo() const override {
     return mHelper.GetScrollSnapInfo();
   }
@@ -1084,7 +1084,7 @@ protected:
   
   
   bool InInitialReflow() const;
-  
+
   
 
 
@@ -1198,18 +1198,18 @@ public:
   nsresult XULLayout(nsBoxLayoutState& aState);
   void LayoutScrollArea(nsBoxLayoutState& aState, const nsPoint& aScrollPosition);
 
-  static bool AddRemoveScrollbar(bool& aHasScrollbar, 
-                                   nscoord& aXY, 
-                                   nscoord& aSize, 
-                                   nscoord aSbSize, 
-                                   bool aOnRightOrBottom, 
+  static bool AddRemoveScrollbar(bool& aHasScrollbar,
+                                   nscoord& aXY,
+                                   nscoord& aSize,
+                                   nscoord aSbSize,
+                                   bool aOnRightOrBottom,
                                    bool aAdd);
-  
-  bool AddRemoveScrollbar(nsBoxLayoutState& aState, 
-                            bool aOnRightOrBottom, 
-                            bool aHorizontal, 
+
+  bool AddRemoveScrollbar(nsBoxLayoutState& aState,
+                            bool aOnRightOrBottom,
+                            bool aHorizontal,
                             bool aAdd);
-  
+
   bool AddHorizontalScrollbar (nsBoxLayoutState& aState, bool aOnBottom);
   bool AddVerticalScrollbar   (nsBoxLayoutState& aState, bool aOnRight);
   void RemoveHorizontalScrollbar(nsBoxLayoutState& aState, bool aOnBottom);
@@ -1505,7 +1505,7 @@ protected:
   nsXULScrollFrame(nsStyleContext* aContext, bool aIsRoot,
                    bool aClipAllDescendants);
 
-  void ClampAndSetBounds(nsBoxLayoutState& aState, 
+  void ClampAndSetBounds(nsBoxLayoutState& aState,
                          nsRect& aRect,
                          nsPoint aScrollPosition,
                          bool aRemoveOverflowAreas = false) {

@@ -1057,7 +1057,7 @@ XULDocument::ContentAppended(nsIDocument* aDocument,
                              int32_t aNewIndexInContainer)
 {
     NS_ASSERTION(aDocument == this, "unexpected doc");
-    
+
     
     nsCOMPtr<nsIMutationObserver> kungFuDeathGrip(this);
 
@@ -1144,7 +1144,7 @@ XULDocument::ResolveForwardReferences()
 
     NS_ASSERTION(mResolutionPhase == nsForwardReference::eStart,
                  "nested ResolveForwardReferences()");
-        
+
     
     
     
@@ -1222,7 +1222,7 @@ XULDocument::GetElementsByAttribute(const nsAString& aAttribute,
                                             true,
                                             attrAtom,
                                             kNameSpaceID_Unknown);
-    
+
     return list.forget();
 }
 
@@ -2001,7 +2001,7 @@ XULDocument::PrepareToLoadPrototype(nsIURI* aURI, const char* aCommand,
     if (NS_FAILED(rv)) {
         mCurrentPrototype = nullptr;
         return rv;
-    }    
+    }
 
     
     if (! mMasterPrototype) {
@@ -2326,7 +2326,7 @@ XULDocument::PrepareToWalk()
 
         rv = AppendChildTo(root, false);
         if (NS_FAILED(rv)) return rv;
-        
+
         rv = AddElementToRefMap(root);
         if (NS_FAILED(rv)) return rv;
 
@@ -2414,7 +2414,7 @@ XULDocument::InsertXMLStylesheetPI(const nsXULPrototypePI* aProtoPI,
     if (rv == NS_ERROR_OUT_OF_MEMORY) {
         return rv;
     }
-    
+
     return NS_OK;
 }
 
@@ -2772,7 +2772,7 @@ XULDocument::ResumeWalk()
             
             
             
-            bool processingOverlayHookupNodes = (mState == eState_Overlay) && 
+            bool processingOverlayHookupNodes = (mState == eState_Overlay) &&
                                                   (mContextStack.Depth() == 1);
 
             NS_ASSERTION(element || processingOverlayHookupNodes,
@@ -3104,7 +3104,7 @@ XULDocument::DoneWalking()
                     mPendingOverlayLoadNotifications =
                         new nsInterfaceHashtable<nsURIHashKey,nsIObserver>;
                 }
-                
+
                 mPendingOverlayLoadNotifications->Get(overlayURI, getter_AddRefs(obs));
                 if (!obs) {
                     mOverlayLoadObservers->Get(overlayURI, getter_AddRefs(obs));
@@ -4441,7 +4441,7 @@ XULDocument::ParserObserver::OnStartRequest(nsIRequest *request,
         
         mPrototype = nullptr;
     }
-        
+
     return NS_OK;
 }
 

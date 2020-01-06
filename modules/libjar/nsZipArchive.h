@@ -153,9 +153,9 @@ public:
 
 
 
-  
+
   nsZipItem* GetItem(const char * aEntryName);
-  
+
   
 
 
@@ -313,9 +313,9 @@ private:
   
   uint8_t* ReadOrCopy(uint32_t *aBytesRead, bool aCopy);
 
-  nsZipItem *mItem; 
-  uint8_t  *mBuf; 
-  uint32_t  mBufSize; 
+  nsZipItem *mItem;
+  uint8_t  *mBuf;
+  uint32_t  mBufSize;
   z_stream  mZs;
 #ifdef MOZ_JAR_BROTLI
   BrotliStateStruct* mBrotliState;

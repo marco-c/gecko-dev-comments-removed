@@ -118,7 +118,7 @@ public:
         mElements = aSet.mElements;
         NS_IF_ADDREF(mElements);
         return *this; }
-        
+
     ~MemoryElementSet() {
         MOZ_COUNT_DTOR(MemoryElementSet);
         NS_IF_RELEASE(mElements); }

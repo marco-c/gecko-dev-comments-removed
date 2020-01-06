@@ -44,7 +44,7 @@ public:
 
   
   virtual void DidSetStyleContext(nsStyleContext* aOldStyleContext) override;
-  
+
   virtual void AppendFrames(ChildListID     aListID,
                             nsFrameList&    aFrameList) override;
   virtual void InsertFrames(ChildListID     aListID,
@@ -215,7 +215,7 @@ public:
   void SetBStartBCBorderWidth(BCPixelSize aWidth) { mBStartBorderWidth = aWidth; }
   void SetBEndBCBorderWidth(BCPixelSize aWidth) { mBEndBorderWidth = aWidth; }
   mozilla::LogicalMargin GetBCBorderWidth(mozilla::WritingMode aWM);
-                             
+
   
 
 
@@ -260,7 +260,7 @@ protected:
                             const mozilla::LogicalSize& aAvailSize,
                             bool                        aBorderCollapse,
                             TableCellReflowInput&     aReflowInput);
-  
+
   virtual LogicalSides GetLogicalSkipSides(const ReflowInput* aReflowInput = nullptr) const override;
 
   

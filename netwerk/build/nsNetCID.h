@@ -50,7 +50,7 @@
 
 
 #define NS_PROXYAUTOCONFIG_CONTRACTID \
-    "@mozilla.org/network/proxy-auto-config;1" 
+    "@mozilla.org/network/proxy-auto-config;1"
 #define NS_PROXYAUTOCONFIG_CID                       \
 { /* 63ac8c66-1dd2-11b2-b070-84d00d3eaece */         \
     0x63ac8c66,                                      \

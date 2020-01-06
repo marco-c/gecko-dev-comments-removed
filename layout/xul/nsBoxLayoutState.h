@@ -63,13 +63,13 @@ public:
   const ReflowInput* OuterReflowInput() { return mOuterReflowInput; }
 
   uint16_t GetReflowDepth() { return mReflowDepth; }
-  
+
 private:
   RefPtr<nsPresContext> mPresContext;
   gfxContext *mRenderingContext;
   const ReflowInput *mOuterReflowInput;
   uint32_t mLayoutFlags;
-  uint16_t mReflowDepth; 
+  uint16_t mReflowDepth;
   bool mPaintingDisabled;
 };
 

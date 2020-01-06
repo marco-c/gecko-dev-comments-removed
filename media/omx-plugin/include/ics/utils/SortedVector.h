@@ -36,18 +36,18 @@ class SortedVector : private SortedVectorImpl
 
 public:
             typedef TYPE    value_type;
-    
+
     
 
 
-    
+
                             SortedVector();
                             SortedVector(const SortedVector<TYPE>& rhs);
     virtual                 ~SortedVector();
 
     
-    const SortedVector<TYPE>&   operator = (const SortedVector<TYPE>& rhs) const;    
-    SortedVector<TYPE>&         operator = (const SortedVector<TYPE>& rhs);    
+    const SortedVector<TYPE>&   operator = (const SortedVector<TYPE>& rhs) const;
+    SortedVector<TYPE>&         operator = (const SortedVector<TYPE>& rhs);
 
     
 
@@ -71,7 +71,7 @@ public:
     
 
 
-     
+
     
     inline  const TYPE*     array() const;
 
@@ -81,11 +81,11 @@ public:
 
             
             ssize_t         indexOf(const TYPE& item) const;
-            
+
             
             size_t          orderOf(const TYPE& item) const;
-            
-    
+
+
     
 
 
@@ -105,7 +105,7 @@ public:
 
             
             ssize_t         add(const TYPE& item);
-            
+
             
             TYPE&           editItemAt(size_t index) {
                 return *( static_cast<TYPE *>(VectorImpl::editItemLocation(index)) );
@@ -114,7 +114,7 @@ public:
             
             ssize_t         merge(const Vector<TYPE>& vector);
             ssize_t         merge(const SortedVector<TYPE>& vector);
-            
+
             
             ssize_t         remove(const TYPE&);
 
@@ -122,7 +122,7 @@ public:
     inline  ssize_t         removeItemsAt(size_t index, size_t count = 1);
     
     inline  ssize_t         removeAt(size_t index)  { return removeItemsAt(index); }
-            
+
 protected:
     virtual void    do_construct(void* storage, size_t num) const;
     virtual void    do_destroy(void* storage, size_t num) const;
@@ -161,13 +161,13 @@ SortedVector<TYPE>::~SortedVector() {
 template<class TYPE> inline
 SortedVector<TYPE>& SortedVector<TYPE>::operator = (const SortedVector<TYPE>& rhs) {
     SortedVectorImpl::operator = (rhs);
-    return *this; 
+    return *this;
 }
 
 template<class TYPE> inline
 const SortedVector<TYPE>& SortedVector<TYPE>::operator = (const SortedVector<TYPE>& rhs) const {
     SortedVectorImpl::operator = (rhs);
-    return *this; 
+    return *this;
 }
 
 template<class TYPE> inline

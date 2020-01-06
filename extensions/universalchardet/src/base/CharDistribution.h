@@ -9,7 +9,7 @@
 #include "nscore.h"
 
 #define ENOUGH_DATA_THRESHOLD 1024
- 
+
 class CharDistributionAnalysis
 {
 public:
@@ -17,7 +17,7 @@ public:
 
   
   void HandleData(const char* aBuf, uint32_t aLen) {}
-  
+
   
   void HandleOneChar(const char* aStr, uint32_t aCharLen)
   {
@@ -59,7 +59,7 @@ protected:
   
   
   virtual int32_t GetOrder(const char* str) {return -1;}
-  
+
   
   bool     mDone;
 
@@ -94,8 +94,8 @@ protected:
   
   
   
-  int32_t GetOrder(const char* str) 
-  { if ((unsigned char)*str >= (unsigned char)0xc4)  
+  int32_t GetOrder(const char* str)
+  { if ((unsigned char)*str >= (unsigned char)0xc4)
       return 94*((unsigned char)str[0]-(unsigned char)0xc4) + (unsigned char)str[1] - (unsigned char)0xa1;
     else
       return -1;
@@ -112,8 +112,8 @@ protected:
   
   
   
-  int32_t GetOrder(const char* str) 
-  { if ((unsigned char)*str >= (unsigned char)0xb0)  
+  int32_t GetOrder(const char* str)
+  { if ((unsigned char)*str >= (unsigned char)0xb0)
       return 94*((unsigned char)str[0]-(unsigned char)0xb0) + (unsigned char)str[1] - (unsigned char)0xa1;
     else
       return -1;
@@ -129,8 +129,8 @@ protected:
   
   
   
-  int32_t GetOrder(const char* str) 
-  { if ((unsigned char)*str >= (unsigned char)0xb0 && (unsigned char)str[1] >= (unsigned char)0xa1)  
+  int32_t GetOrder(const char* str)
+  { if ((unsigned char)*str >= (unsigned char)0xb0 && (unsigned char)str[1] >= (unsigned char)0xa1)
       return 94*((unsigned char)str[0]-(unsigned char)0xb0) + (unsigned char)str[1] - (unsigned char)0xa1;
     else
       return -1;
@@ -147,8 +147,8 @@ protected:
   
   
   
-  int32_t GetOrder(const char* str) 
-  { if ((unsigned char)*str >= (unsigned char)0xa4)  
+  int32_t GetOrder(const char* str)
+  { if ((unsigned char)*str >= (unsigned char)0xa4)
       if ((unsigned char)str[1] >= (unsigned char)0xa1)
         return 157*((unsigned char)str[0]-(unsigned char)0xa4) + (unsigned char)str[1] - (unsigned char)0xa1 +63;
       else
@@ -167,12 +167,12 @@ protected:
   
   
   
-  int32_t GetOrder(const char* str) 
-  { 
+  int32_t GetOrder(const char* str)
+  {
     int32_t order;
-    if ((unsigned char)*str >= (unsigned char)0x81 && (unsigned char)*str <= (unsigned char)0x9f)  
+    if ((unsigned char)*str >= (unsigned char)0x81 && (unsigned char)*str <= (unsigned char)0x9f)
       order = 188 * ((unsigned char)str[0]-(unsigned char)0x81);
-    else if ((unsigned char)*str >= (unsigned char)0xe0 && (unsigned char)*str <= (unsigned char)0xef)  
+    else if ((unsigned char)*str >= (unsigned char)0xe0 && (unsigned char)*str <= (unsigned char)0xef)
       order = 188 * ((unsigned char)str[0]-(unsigned char)0xe0 + 31);
     else
       return -1;
@@ -192,8 +192,8 @@ protected:
   
   
   
-  int32_t GetOrder(const char* str) 
-  { if ((unsigned char)*str >= (unsigned char)0xa0)  
+  int32_t GetOrder(const char* str)
+  { if ((unsigned char)*str >= (unsigned char)0xa0)
       return 94*((unsigned char)str[0]-(unsigned char)0xa1) + (unsigned char)str[1] - (unsigned char)0xa1;
     else
       return -1;

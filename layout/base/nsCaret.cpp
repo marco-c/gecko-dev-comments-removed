@@ -168,7 +168,7 @@ nsresult nsCaret::Init(nsIPresShell *inPresShell)
   if (privateSelection)
     privateSelection->AddSelectionListener(this);
   mDomSelectionWeak = do_GetWeakReference(domSelection);
-  
+
   return NS_OK;
 }
 
@@ -213,7 +213,7 @@ void nsCaret::Terminate()
 {
   
   
-  
+
   StopBlinking();
   mBlinkTimer = nullptr;
 
@@ -487,7 +487,7 @@ void nsCaret::SchedulePaint()
   f->SchedulePaint();
 }
 
-void nsCaret::SetVisibilityDuringSelection(bool aVisibility) 
+void nsCaret::SetVisibilityDuringSelection(bool aVisibility)
 {
   mShowDuringSelection = aVisibility;
   SchedulePaint();
@@ -707,7 +707,7 @@ nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection*    aFrameSelection,
   
   
   AdjustCaretFrameForLineEnd(&theFrame, &theFrameOffset);
-  
+
   
   
   
@@ -733,7 +733,7 @@ nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection*    aFrameSelection,
     {
       nsPrevNextBidiLevels levels = aFrameSelection->
         GetPrevNextBidiLevels(aContentNode, aOffset, false);
-    
+
       
       if (levels.mFrameBefore || levels.mFrameAfter)
       {
@@ -760,7 +760,7 @@ nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection*    aFrameSelection,
                 theFrame->GetOffsets(start, end);
                 theFrameOffset = end;
               }
-              else 
+              else
               {
                 
                 
@@ -795,7 +795,7 @@ nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection*    aFrameSelection,
                 theFrame->GetOffsets(start, end);
                 theFrameOffset = start;
               }
-              else 
+              else
               {
                 
                 

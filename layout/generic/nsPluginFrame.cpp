@@ -231,7 +231,7 @@ nsPluginFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
     nsView* view = GetView();
     nsViewManager* vm = view->GetViewManager();
     if (vm) {
-      nsViewVisibility visibility = 
+      nsViewVisibility visibility =
         IsHidden() ? nsViewVisibility_kHide : nsViewVisibility_kShow;
       vm->SetViewVisibility(view, visibility);
     }
@@ -254,7 +254,7 @@ nsPluginFrame::PrepForDrawing(nsIWidget *aWidget)
   mWidget = aWidget;
 
   nsView* view = GetView();
-  NS_ASSERTION(view, "Object frames must have views");  
+  NS_ASSERTION(view, "Object frames must have views");
   if (!view) {
     return NS_ERROR_FAILURE;
   }
@@ -267,7 +267,7 @@ nsPluginFrame::PrepForDrawing(nsIWidget *aWidget)
   
   
   
-  
+
   nsView* parentWithView;
   nsPoint origin;
   nsRect r(0, 0, mRect.width, mRect.height);
@@ -603,13 +603,13 @@ nsresult
 nsPluginFrame::CallSetWindow(bool aCheckIsHidden)
 {
   NPWindow *win = nullptr;
- 
+
   nsresult rv = NS_ERROR_FAILURE;
   RefPtr<nsNPAPIPluginInstance> pi;
   if (!mInstanceOwner ||
       NS_FAILED(rv = mInstanceOwner->GetInstance(getter_AddRefs(pi))) ||
       !pi ||
-      NS_FAILED(rv = mInstanceOwner->GetWindow(win)) || 
+      NS_FAILED(rv = mInstanceOwner->GetWindow(win)) ||
       !win)
     return rv;
 
@@ -767,7 +767,7 @@ nsPluginFrame::IsHidden(bool aCheckVisibilityStyle) const
 {
   if (aCheckVisibilityStyle) {
     if (!StyleVisibility()->IsVisibleOrCollapsed())
-      return true;    
+      return true;
   }
 
   

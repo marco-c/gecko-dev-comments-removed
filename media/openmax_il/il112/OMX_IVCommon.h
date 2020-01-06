@@ -96,7 +96,7 @@ typedef enum OMX_COLOR_FORMATTYPE {
     OMX_COLOR_Format16bitBGR565,
     OMX_COLOR_Format18bitRGB666,
     OMX_COLOR_Format18bitARGB1665,
-    OMX_COLOR_Format19bitARGB1666, 
+    OMX_COLOR_Format19bitARGB1666,
     OMX_COLOR_Format24bitRGB888,
     OMX_COLOR_Format24bitBGR888,
     OMX_COLOR_Format24bitARGB1887,
@@ -119,18 +119,18 @@ typedef enum OMX_COLOR_FORMATTYPE {
     OMX_COLOR_FormatRawBayer8bit,
     OMX_COLOR_FormatRawBayer10bit,
     OMX_COLOR_FormatRawBayer8bitcompressed,
-    OMX_COLOR_FormatL2, 
-    OMX_COLOR_FormatL4, 
-    OMX_COLOR_FormatL8, 
-    OMX_COLOR_FormatL16, 
-    OMX_COLOR_FormatL24, 
+    OMX_COLOR_FormatL2,
+    OMX_COLOR_FormatL4,
+    OMX_COLOR_FormatL8,
+    OMX_COLOR_FormatL16,
+    OMX_COLOR_FormatL24,
     OMX_COLOR_FormatL32,
     OMX_COLOR_FormatYUV420PackedSemiPlanar,
     OMX_COLOR_FormatYUV422PackedSemiPlanar,
     OMX_COLOR_Format18BitBGR666,
     OMX_COLOR_Format24BitARGB6666,
     OMX_COLOR_Format24BitABGR6666,
-    OMX_COLOR_FormatKhronosExtensions = 0x6F000000,  
+    OMX_COLOR_FormatKhronosExtensions = 0x6F000000, 
     OMX_COLOR_FormatVendorStartUnused = 0x7F000000, 
     OMX_COLOR_FormatMax = 0x7FFFFFFF
 } OMX_COLOR_FORMATTYPE;
@@ -143,7 +143,7 @@ typedef enum OMX_COLOR_FORMATTYPE {
 
 typedef struct OMX_CONFIG_COLORCONVERSIONTYPE {
     OMX_U32 nSize;              
-    OMX_VERSIONTYPE nVersion;    
+    OMX_VERSIONTYPE nVersion;   
     OMX_U32 nPortIndex;         
     OMX_S32 xColorMatrix[3][3]; 
     OMX_S32 xColorOffset[4];    
@@ -157,7 +157,7 @@ typedef struct OMX_CONFIG_COLORCONVERSIONTYPE {
 
 typedef struct OMX_CONFIG_SCALEFACTORTYPE {
     OMX_U32 nSize;            
-    OMX_VERSIONTYPE nVersion;  
+    OMX_VERSIONTYPE nVersion; 
     OMX_U32 nPortIndex;       
     OMX_S32 xWidth;           
     OMX_S32 xHeight;          
@@ -176,10 +176,10 @@ typedef enum OMX_IMAGEFILTERTYPE {
     OMX_ImageFilterOilPaint,
     OMX_ImageFilterHatch,
     OMX_ImageFilterGpen,
-    OMX_ImageFilterAntialias, 
-    OMX_ImageFilterDeRing,       
+    OMX_ImageFilterAntialias,
+    OMX_ImageFilterDeRing,
     OMX_ImageFilterSolarize,
-    OMX_ImageFilterKhronosExtensions = 0x6F000000,  
+    OMX_ImageFilterKhronosExtensions = 0x6F000000, 
     OMX_ImageFilterVendorStartUnused = 0x7F000000, 
     OMX_ImageFilterMax = 0x7FFFFFFF
 } OMX_IMAGEFILTERTYPE;
@@ -217,7 +217,7 @@ typedef struct OMX_CONFIG_IMAGEFILTERTYPE {
 
 typedef struct OMX_CONFIG_COLORENHANCEMENTTYPE {
     OMX_U32 nSize;
-    OMX_VERSIONTYPE nVersion; 
+    OMX_VERSIONTYPE nVersion;
     OMX_U32 nPortIndex;
     OMX_BOOL bColorEnhancement;
     OMX_U8 nCustomizedU;
@@ -265,7 +265,7 @@ typedef enum OMX_COLORBLENDTYPE {
     OMX_ColorBlendAnd,
     OMX_ColorBlendOr,
     OMX_ColorBlendInvert,
-    OMX_ColorBlendKhronosExtensions = 0x6F000000,  
+    OMX_ColorBlendKhronosExtensions = 0x6F000000, 
     OMX_ColorBlendVendorStartUnused = 0x7F000000, 
     OMX_ColorBlendMax = 0x7FFFFFFF
 } OMX_COLORBLENDTYPE;
@@ -322,7 +322,7 @@ typedef struct OMX_CONFIG_ROTATIONTYPE {
     OMX_U32 nSize;
     OMX_VERSIONTYPE nVersion;
     OMX_U32 nPortIndex;
-    OMX_S32 nRotation; 
+    OMX_S32 nRotation;
 } OMX_CONFIG_ROTATIONTYPE;
 
 
@@ -339,10 +339,10 @@ typedef enum OMX_MIRRORTYPE {
     OMX_MirrorNone = 0,
     OMX_MirrorVertical,
     OMX_MirrorHorizontal,
-    OMX_MirrorBoth, 
-    OMX_MirrorKhronosExtensions = 0x6F000000,  
+    OMX_MirrorBoth,
+    OMX_MirrorKhronosExtensions = 0x6F000000, 
     OMX_MirrorVendorStartUnused = 0x7F000000, 
-    OMX_MirrorMax = 0x7FFFFFFF   
+    OMX_MirrorMax = 0x7FFFFFFF
 } OMX_MIRRORTYPE;
 
 
@@ -357,7 +357,7 @@ typedef enum OMX_MIRRORTYPE {
 
 typedef struct OMX_CONFIG_MIRRORTYPE {
     OMX_U32 nSize;
-    OMX_VERSIONTYPE nVersion; 
+    OMX_VERSIONTYPE nVersion;
     OMX_U32 nPortIndex;
     OMX_MIRRORTYPE  eMirror;
 } OMX_CONFIG_MIRRORTYPE;
@@ -372,7 +372,7 @@ typedef struct OMX_CONFIG_MIRRORTYPE {
 
 
 
-                      
+
 typedef struct OMX_CONFIG_POINTTYPE {
     OMX_U32 nSize;
     OMX_VERSIONTYPE nVersion;
@@ -396,9 +396,9 @@ typedef struct OMX_CONFIG_POINTTYPE {
 
 typedef struct OMX_CONFIG_RECTTYPE {
     OMX_U32 nSize;
-    OMX_VERSIONTYPE nVersion;  
-    OMX_U32 nPortIndex; 
-    OMX_S32 nLeft; 
+    OMX_VERSIONTYPE nVersion;
+    OMX_U32 nPortIndex;
+    OMX_S32 nLeft;
     OMX_S32 nTop;
     OMX_U32 nWidth;
     OMX_U32 nHeight;
@@ -457,7 +457,7 @@ typedef enum OMX_WHITEBALCONTROLTYPE {
     OMX_WhiteBalControlIncandescent,
     OMX_WhiteBalControlFlash,
     OMX_WhiteBalControlHorizon,
-    OMX_WhiteBalControlKhronosExtensions = 0x6F000000,  
+    OMX_WhiteBalControlKhronosExtensions = 0x6F000000, 
     OMX_WhiteBalControlVendorStartUnused = 0x7F000000, 
     OMX_WhiteBalControlMax = 0x7FFFFFFF
 } OMX_WHITEBALCONTROLTYPE;
@@ -494,7 +494,7 @@ typedef enum OMX_EXPOSURECONTROLTYPE {
     OMX_ExposureControlBeach,
     OMX_ExposureControlLargeAperture,
     OMX_ExposureControlSmallApperture,
-    OMX_ExposureControlKhronosExtensions = 0x6F000000,  
+    OMX_ExposureControlKhronosExtensions = 0x6F000000, 
     OMX_ExposureControlVendorStartUnused = 0x7F000000, 
     OMX_ExposureControlMax = 0x7FFFFFFF
 } OMX_EXPOSURECONTROLTYPE;
@@ -700,7 +700,7 @@ typedef enum OMX_TRANSITIONEFFECTTYPE {
     OMX_EffectDissolve,
     OMX_EffectWipe,
     OMX_EffectUnspecifiedMixOfTwoScenes,
-    OMX_EffectKhronosExtensions = 0x6F000000,  
+    OMX_EffectKhronosExtensions = 0x6F000000, 
     OMX_EffectVendorStartUnused = 0x7F000000, 
     OMX_EffectMax = 0x7FFFFFFF
 } OMX_TRANSITIONEFFECTTYPE;
@@ -733,7 +733,7 @@ typedef enum OMX_DATAUNITTYPE {
     OMX_DataUnitVideoSegment,
     OMX_DataUnitSeveralSegments,
     OMX_DataUnitArbitraryStreamSection,
-    OMX_DataUnitKhronosExtensions = 0x6F000000,  
+    OMX_DataUnitKhronosExtensions = 0x6F000000, 
     OMX_DataUnitVendorStartUnused = 0x7F000000, 
     OMX_DataUnitMax = 0x7FFFFFFF
 } OMX_DATAUNITTYPE;
@@ -748,7 +748,7 @@ typedef enum OMX_DATAUNITENCAPSULATIONTYPE {
     OMX_DataEncapsulationElementaryStream,
     OMX_DataEncapsulationGenericPayload,
     OMX_DataEncapsulationRtpPayload,
-    OMX_DataEncapsulationKhronosExtensions = 0x6F000000,  
+    OMX_DataEncapsulationKhronosExtensions = 0x6F000000, 
     OMX_DataEncapsulationVendorStartUnused = 0x7F000000, 
     OMX_DataEncapsulationMax = 0x7FFFFFFF
 } OMX_DATAUNITENCAPSULATIONTYPE;
@@ -759,7 +759,7 @@ typedef enum OMX_DATAUNITENCAPSULATIONTYPE {
 
 typedef struct OMX_PARAM_DATAUNITTYPE {
     OMX_U32 nSize;            
-    OMX_VERSIONTYPE nVersion;  
+    OMX_VERSIONTYPE nVersion; 
     OMX_U32 nPortIndex;       
     OMX_DATAUNITTYPE eUnitType;
     OMX_DATAUNITENCAPSULATIONTYPE eEncapsulationType;
@@ -774,7 +774,7 @@ typedef enum OMX_DITHERTYPE {
     OMX_DitherOrdered,
     OMX_DitherErrorDiffusion,
     OMX_DitherOther,
-    OMX_DitherKhronosExtensions = 0x6F000000,  
+    OMX_DitherKhronosExtensions = 0x6F000000, 
     OMX_DitherVendorStartUnused = 0x7F000000, 
     OMX_DitherMax = 0x7FFFFFFF
 } OMX_DITHERTYPE;
@@ -785,7 +785,7 @@ typedef enum OMX_DITHERTYPE {
 
 typedef struct OMX_CONFIG_DITHERTYPE {
     OMX_U32 nSize;            
-    OMX_VERSIONTYPE nVersion;  
+    OMX_VERSIONTYPE nVersion; 
     OMX_U32 nPortIndex;       
     OMX_DITHERTYPE eDither;   
 } OMX_CONFIG_DITHERTYPE;
@@ -806,16 +806,16 @@ typedef struct OMX_CONFIG_CAPTUREMODETYPE {
 } OMX_CONFIG_CAPTUREMODETYPE;
 
 typedef enum OMX_METERINGTYPE {
- 
+
     OMX_MeteringModeAverage,     
     OMX_MeteringModeSpot,  	      
     OMX_MeteringModeMatrix,      
- 
-    OMX_MeteringKhronosExtensions = 0x6F000000,  
+
+    OMX_MeteringKhronosExtensions = 0x6F000000, 
     OMX_MeteringVendorStartUnused = 0x7F000000, 
     OMX_EVModeMax = 0x7fffffff
 } OMX_METERINGTYPE;
- 
+
 typedef struct OMX_CONFIG_EXPOSUREVALUETYPE {
     OMX_U32 nSize;
     OMX_VERSIONTYPE nVersion;
@@ -824,8 +824,8 @@ typedef struct OMX_CONFIG_EXPOSUREVALUETYPE {
     OMX_S32 xEVCompensation;      
     OMX_U32 nApertureFNumber;     
     OMX_BOOL bAutoAperture;		
-    OMX_U32 nShutterSpeedMsec;     
-    OMX_BOOL bAutoShutterSpeed;	 
+    OMX_U32 nShutterSpeedMsec;    
+    OMX_BOOL bAutoShutterSpeed;	
     OMX_U32 nSensitivity;         
     OMX_BOOL bAutoSensitivity;	
 } OMX_CONFIG_EXPOSUREVALUETYPE;
@@ -871,7 +871,7 @@ typedef enum OMX_FOCUSSTATUSTYPE {
     OMX_FocusStatusReached,
     OMX_FocusStatusUnableToReach,
     OMX_FocusStatusLost,
-    OMX_FocusStatusKhronosExtensions = 0x6F000000,  
+    OMX_FocusStatusKhronosExtensions = 0x6F000000, 
     OMX_FocusStatusVendorStartUnused = 0x7F000000, 
     OMX_FocusStatusMax = 0x7FFFFFFF
 } OMX_FOCUSSTATUSTYPE;

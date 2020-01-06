@@ -194,7 +194,7 @@ nsRDFXMLSerializer::EnsureNewPrefix()
         while (iter != mNameSpaces.last() && isNewPrefix) {
             isNewPrefix = (iter->mPrefix != prefix);
             ++iter;
-        } 
+        }
     } while (!isNewPrefix);
     return prefix.forget();
 }
@@ -267,7 +267,7 @@ nsRDFXMLSerializer::IsContainerProperty(nsIRDFResource* aProperty)
         return true;
 
     return false;
-} 
+}
 
 
 
@@ -439,7 +439,7 @@ nsRDFXMLSerializer::SerializeChildAssertion(nsIOutputStream* aStream,
         nsAutoCString n;
         n.AppendInt(value);
 
-        rv = rdf_BlockingWrite(aStream, kRDFParseTypeInteger, 
+        rv = rdf_BlockingWrite(aStream, kRDFParseTypeInteger,
                                sizeof(kRDFParseTypeInteger) - 1);
         if (NS_FAILED(rv)) return rv;
         rv = rdf_BlockingWrite(aStream, n);
@@ -452,7 +452,7 @@ nsRDFXMLSerializer::SerializeChildAssertion(nsIOutputStream* aStream,
         nsAutoCString s;
         rdf_FormatDate(value, s);
 
-        rv = rdf_BlockingWrite(aStream, kRDFParseTypeDate, 
+        rv = rdf_BlockingWrite(aStream, kRDFParseTypeDate,
                                sizeof(kRDFParseTypeDate) - 1);
         if (NS_FAILED(rv)) return rv;
         rv = rdf_BlockingWrite(aStream, s);
@@ -733,7 +733,7 @@ nsRDFXMLSerializer::SerializeMember(nsIOutputStream* aStream,
 
 static const char kRDFLIOpen[] = "    <RDF:li";
     nsresult rv = rdf_BlockingWrite(aStream, kRDFLIOpen,
-                                    sizeof(kRDFLIOpen) - 1); 
+                                    sizeof(kRDFLIOpen) - 1);
     if (NS_FAILED(rv)) return rv;
 
     if ((resource = do_QueryInterface(aMember)) != nullptr) {
@@ -776,7 +776,7 @@ static const char kRDFLIOpenGT[] = ">";
         nsAutoCString n;
         n.AppendInt(value);
 
-        rv = rdf_BlockingWrite(aStream, kRDFParseTypeInteger, 
+        rv = rdf_BlockingWrite(aStream, kRDFParseTypeInteger,
                                sizeof(kRDFParseTypeInteger) - 1);
         if (NS_FAILED(rv)) return rv;
         rv = rdf_BlockingWrite(aStream, n);
@@ -789,7 +789,7 @@ static const char kRDFLIOpenGT[] = ">";
         nsAutoCString s;
         rdf_FormatDate(value, s);
 
-        rv = rdf_BlockingWrite(aStream, kRDFParseTypeDate, 
+        rv = rdf_BlockingWrite(aStream, kRDFParseTypeDate,
                                sizeof(kRDFParseTypeDate) - 1);
         if (NS_FAILED(rv)) return rv;
         rv = rdf_BlockingWrite(aStream, s);
@@ -1048,13 +1048,13 @@ QNameCollector::Visit(nsIRDFNode* aSubject, nsIRDFResource* aPredicate,
 
     return NS_OK;
 }
-    
+
 nsresult
 nsRDFXMLSerializer::CollectNamespaces()
 {
     
     
-    nsCOMPtr<rdfITripleVisitor> collector = 
+    nsCOMPtr<rdfITripleVisitor> collector =
         new QNameCollector(this);
     nsCOMPtr<rdfIDataSource> ds = do_QueryInterface(mDataSource); 
     NS_ENSURE_TRUE(collector && ds, NS_ERROR_FAILURE);

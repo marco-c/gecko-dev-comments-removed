@@ -398,7 +398,7 @@ imgFrame::Optimize(DrawTarget* aTarget)
 {
   MOZ_ASSERT(NS_IsMainThread());
   mMonitor.AssertCurrentThreadOwns();
-  
+
   if (mLockCount > 0 || !mOptimizable) {
     
     return NS_OK;

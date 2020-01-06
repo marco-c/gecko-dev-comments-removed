@@ -124,14 +124,14 @@ NS_IMPL_ISUPPORTS(nsRequestObserverProxy,
 
 
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsRequestObserverProxy::OnStartRequest(nsIRequest *request,
                                        nsISupports *context)
 {
     MOZ_ASSERT(!context || context == mContext);
     LOG(("nsRequestObserverProxy::OnStartRequest [this=%p req=%p]\n", this, request));
 
-    nsOnStartRequestEvent *ev = 
+    nsOnStartRequestEvent *ev =
         new nsOnStartRequestEvent(this, request);
     if (!ev)
         return NS_ERROR_OUT_OF_MEMORY;
@@ -143,7 +143,7 @@ nsRequestObserverProxy::OnStartRequest(nsIRequest *request,
     return rv;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsRequestObserverProxy::OnStopRequest(nsIRequest *request,
                                       nsISupports *context,
                                       nsresult status)
@@ -157,7 +157,7 @@ nsRequestObserverProxy::OnStopRequest(nsIRequest *request,
     
     
 
-    nsOnStopRequestEvent *ev = 
+    nsOnStopRequestEvent *ev =
         new nsOnStopRequestEvent(this, request);
     if (!ev)
         return NS_ERROR_OUT_OF_MEMORY;

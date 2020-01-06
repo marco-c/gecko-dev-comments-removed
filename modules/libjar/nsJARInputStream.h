@@ -35,20 +35,20 @@ class nsJARInputStream final : public nsIInputStream
     , mCurPos(0)
     , mArrPos(0)
     , mMode(MODE_NOTINITED)
-    { 
+    {
       memset(&mZs, 0, sizeof(z_stream));
     }
 
     NS_DECL_THREADSAFE_ISUPPORTS
     NS_DECL_NSIINPUTSTREAM
-   
+
     
     nsresult InitFile(nsJAR *aJar, nsZipItem *item);
 
     nsresult InitDirectory(nsJAR *aJar,
                            const nsACString& aJarDirSpec,
                            const char* aDir);
-  
+
   private:
     ~nsJARInputStream() { Close(); }
 

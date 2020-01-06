@@ -203,7 +203,7 @@ nsresult
 RootAccessible::RemoveEventListeners()
 {
   nsCOMPtr<EventTarget> target = mDocumentNode;
-  if (target) { 
+  if (target) {
     for (const char* const* e = kEventTypes,
                    * const* e_end = ArrayEnd(kEventTypes);
          e < e_end; ++e) {
@@ -285,7 +285,7 @@ RootAccessible::ProcessDOMEvent(nsIDOMEvent* aDOMEvent)
     GetDocAccessible(origTargetNode->OwnerDoc());
   NS_ASSERTION(targetDocument, "No document while accessible is in document?!");
 
-  Accessible* accessible = 
+  Accessible* accessible =
     targetDocument->GetAccessibleOrContainer(origTargetNode);
   if (!accessible)
     return;
@@ -531,7 +531,7 @@ RootAccessible::HandlePopupShownEvent(Accessible* aAccessible)
       return;
 
     roles::Role comboboxRole = combobox->Role();
-    if (comboboxRole == roles::COMBOBOX || 
+    if (comboboxRole == roles::COMBOBOX ||
 	comboboxRole == roles::AUTOCOMPLETE) {
       RefPtr<AccEvent> event =
         new AccStateChangeEvent(combobox, states::EXPANDED, true);

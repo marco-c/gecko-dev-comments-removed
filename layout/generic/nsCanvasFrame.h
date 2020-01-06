@@ -200,7 +200,7 @@ public:
   {
     mFrame->DeleteProperty(nsIFrame::CachedBackgroundImageDT());
   }
- 
+
   
   
   virtual bool SupportsOptimizingToImage() override { return false; }
@@ -208,8 +208,8 @@ public:
   bool IsSingleFixedPositionImage(nsDisplayListBuilder* aBuilder,
                                   const nsRect& aClipRect,
                                   gfxRect* aDestRect);
-  
-  
+
+
   NS_DISPLAY_DECL_NAME("CanvasBackgroundImage", TYPE_CANVAS_BACKGROUND_IMAGE)
 };
 

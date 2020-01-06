@@ -29,9 +29,9 @@ using mozilla::LogLevel;
 mozilla::LazyLogModule MCD("MCD");
 
 extern nsresult EvaluateAdminConfigScript(const char *js_buffer, size_t length,
-                                          const char *filename, 
-                                          bool bGlobalContext, 
-                                          bool bCallbacks, 
+                                          const char *filename,
+                                          bool bGlobalContext,
+                                          bool bCallbacks,
                                           bool skipFirstLine);
 
 
@@ -48,15 +48,15 @@ nsresult nsAutoConfig::Init()
 
     nsresult rv;
     mLoaded = false;
-    
+
     
     nsCOMPtr<nsIObserverService> observerService =
         do_GetService("@mozilla.org/observer-service;1", &rv);
-    if (NS_FAILED(rv)) 
+    if (NS_FAILED(rv))
         return rv;
 
     rv = observerService->AddObserver(this,"profile-after-change", true);
-    
+
     return rv;
 }
 
@@ -67,14 +67,14 @@ nsAutoConfig::~nsAutoConfig()
 
 NS_IMETHODIMP nsAutoConfig::GetConfigURL(char **aConfigURL)
 {
-    if (!aConfigURL) 
+    if (!aConfigURL)
         return NS_ERROR_NULL_POINTER;
 
     if (mConfigURL.IsEmpty()) {
         *aConfigURL = nullptr;
         return NS_OK;
     }
-    
+
     *aConfigURL = ToNewCString(mConfigURL);
     if (!*aConfigURL)
         return NS_ERROR_OUT_OF_MEMORY;
@@ -96,16 +96,16 @@ nsAutoConfig::OnStartRequest(nsIRequest *request, nsISupports *context)
 
 
 NS_IMETHODIMP
-nsAutoConfig::OnDataAvailable(nsIRequest *request, 
+nsAutoConfig::OnDataAvailable(nsIRequest *request,
                               nsISupports *context,
-                              nsIInputStream *aIStream, 
+                              nsIInputStream *aIStream,
                               uint64_t aSourceOffset,
                               uint32_t aLength)
-{    
+{
     uint32_t amt, size;
     nsresult rv;
     char buf[1024];
-    
+
     while (aLength) {
         size = std::min<size_t>(aLength, sizeof(buf));
         rv = aIStream->Read(buf, size, &amt);
@@ -142,21 +142,21 @@ nsAutoConfig::OnStopRequest(nsIRequest *request, nsISupports *context,
             return readOfflineFile();
         }
     }
+
     
-    
-    
+
     rv = EvaluateAdminConfigScript(mBuf.get(), mBuf.Length(),
                               nullptr, false,true, false);
     if (NS_SUCCEEDED(rv)) {
 
         
-        rv = writeFailoverFile(); 
+        rv = writeFailoverFile();
 
-        if (NS_FAILED(rv)) 
+        if (NS_FAILED(rv))
             NS_WARNING("Error writing failover.jsc file");
 
         
-        mLoaded = true;  
+        mLoaded = true;
 
         return NS_OK;
     }
@@ -166,7 +166,7 @@ nsAutoConfig::OnStopRequest(nsIRequest *request, nsISupports *context,
 }
 
 
-NS_IMETHODIMP nsAutoConfig::Notify(nsITimer *timer) 
+NS_IMETHODIMP nsAutoConfig::Notify(nsITimer *timer)
 {
     downloadAutoConfig();
     return NS_OK;
@@ -177,8 +177,8 @@ NS_IMETHODIMP nsAutoConfig::Notify(nsITimer *timer)
 
 
 
-NS_IMETHODIMP nsAutoConfig::Observe(nsISupports *aSubject, 
-                                    const char *aTopic, 
+NS_IMETHODIMP nsAutoConfig::Observe(nsISupports *aSubject,
+                                    const char *aTopic,
                                     const char16_t *someData)
 {
     nsresult rv = NS_OK;
@@ -187,11 +187,11 @@ NS_IMETHODIMP nsAutoConfig::Observe(nsISupports *aSubject,
         
         
         
-        
+
         rv = downloadAutoConfig();
 
-    }  
-   
+    }
+
     return rv;
 }
 
@@ -201,13 +201,13 @@ nsresult nsAutoConfig::downloadAutoConfig()
     nsAutoCString emailAddr;
     nsXPIDLCString urlName;
     static bool firstTime = true;
-    
+
     if (mConfigURL.IsEmpty()) {
         MOZ_LOG(MCD, LogLevel::Debug, ("global config url is empty - did you set autoadmin.global_config_url?\n"));
         NS_WARNING("AutoConfig called without global_config_url");
         return NS_OK;
     }
-    
+
     
     
     
@@ -224,27 +224,27 @@ nsresult nsAutoConfig::downloadAutoConfig()
     if (!mPrefBranch) {
         nsCOMPtr<nsIPrefService> prefs =
             do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
-        if (NS_FAILED(rv)) 
+        if (NS_FAILED(rv))
             return rv;
-    
+
         rv = prefs->GetBranch(nullptr,getter_AddRefs(mPrefBranch));
         if (NS_FAILED(rv))
             return rv;
     }
-    
+
     
     nsCOMPtr<nsIIOService> ios = do_GetService(NS_IOSERVICE_CONTRACTID, &rv);
-    if (NS_FAILED(rv)) 
+    if (NS_FAILED(rv))
         return rv;
-    
+
     bool offline;
     rv = ios->GetOffline(&offline);
-    if (NS_FAILED(rv)) 
+    if (NS_FAILED(rv))
         return rv;
-    
+
     if (offline) {
         bool offlineFailover;
-        rv = mPrefBranch->GetBoolPref("autoadmin.offline_failover", 
+        rv = mPrefBranch->GetBoolPref("autoadmin.offline_failover",
                                       &offlineFailover);
         
         if (NS_SUCCEEDED(rv) && offlineFailover)
@@ -266,14 +266,14 @@ nsresult nsAutoConfig::downloadAutoConfig()
 
 
             mConfigURL.Append('?');
-            mConfigURL.Append(emailAddr); 
+            mConfigURL.Append(emailAddr);
         }
     }
-    
+
     
     nsCOMPtr<nsIURI> url;
     nsCOMPtr<nsIChannel> channel;
-    
+
     rv = NS_NewURI(getter_AddRefs(url), mConfigURL.get(), nullptr, nullptr);
     if (NS_FAILED(rv))
     {
@@ -293,7 +293,7 @@ nsresult nsAutoConfig::downloadAutoConfig()
                        nsIRequest::INHIBIT_PERSISTENT_CACHING |
                        nsIRequest::LOAD_BYPASS_CACHE);
 
-    if (NS_FAILED(rv)) 
+    if (NS_FAILED(rv))
         return rv;
 
     rv = channel->AsyncOpen2(this);
@@ -301,14 +301,14 @@ nsresult nsAutoConfig::downloadAutoConfig()
         readOfflineFile();
         return rv;
     }
-    
+
     
     
     
     
     if (firstTime) {
         firstTime = false;
-    
+
         
 
 
@@ -320,23 +320,23 @@ nsresult nsAutoConfig::downloadAutoConfig()
         if (!mozilla::SpinEventLoopUntil([&]() { return mLoaded; })) {
             return NS_ERROR_FAILURE;
         }
-        
+
         int32_t minutes;
-        rv = mPrefBranch->GetIntPref("autoadmin.refresh_interval", 
+        rv = mPrefBranch->GetIntPref("autoadmin.refresh_interval",
                                      &minutes);
         if (NS_SUCCEEDED(rv) && minutes > 0) {
             
             
             mTimer = do_CreateInstance("@mozilla.org/timer;1",&rv);
-            if (NS_FAILED(rv)) 
+            if (NS_FAILED(rv))
                 return rv;
-            rv = mTimer->InitWithCallback(this, minutes * 60 * 1000, 
+            rv = mTimer->InitWithCallback(this, minutes * 60 * 1000,
                              nsITimer::TYPE_REPEATING_SLACK);
-            if (NS_FAILED(rv)) 
+            if (NS_FAILED(rv))
                 return rv;
         }
     } 
-    
+
     return NS_OK;
 } 
 
@@ -345,58 +345,58 @@ nsresult nsAutoConfig::downloadAutoConfig()
 nsresult nsAutoConfig::readOfflineFile()
 {
     nsresult rv;
+
     
-    
 
 
 
-    mLoaded = true; 
+    mLoaded = true;
 
     bool failCache;
     rv = mPrefBranch->GetBoolPref("autoadmin.failover_to_cached", &failCache);
     if (NS_SUCCEEDED(rv) && !failCache) {
         
-        
+
         nsCOMPtr<nsIIOService> ios =
             do_GetService(NS_IOSERVICE_CONTRACTID, &rv);
-        if (NS_FAILED(rv)) 
+        if (NS_FAILED(rv))
             return rv;
-        
+
         bool offline;
         rv = ios->GetOffline(&offline);
-        if (NS_FAILED(rv)) 
+        if (NS_FAILED(rv))
             return rv;
 
         if (!offline) {
             rv = ios->SetOffline(true);
-            if (NS_FAILED(rv)) 
+            if (NS_FAILED(rv))
                 return rv;
         }
-        
+
         
         
         rv = mPrefBranch->SetBoolPref("network.online", false);
-        if (NS_FAILED(rv)) 
+        if (NS_FAILED(rv))
             return rv;
 
         mPrefBranch->LockPref("network.online");
         return NS_OK;
     }
-    
+
     
 
 
 
-    
-    nsCOMPtr<nsIFile> failoverFile; 
+
+    nsCOMPtr<nsIFile> failoverFile;
     rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
                                 getter_AddRefs(failoverFile));
-    if (NS_FAILED(rv)) 
+    if (NS_FAILED(rv))
         return rv;
-    
+
     failoverFile->AppendNative(NS_LITERAL_CSTRING("failover.jsc"));
     rv = evaluateLocalFile(failoverFile);
-    if (NS_FAILED(rv)) 
+    if (NS_FAILED(rv))
         NS_WARNING("Couldn't open failover.jsc, going back to default prefs");
     return NS_OK;
 }
@@ -405,11 +405,11 @@ nsresult nsAutoConfig::evaluateLocalFile(nsIFile *file)
 {
     nsresult rv;
     nsCOMPtr<nsIInputStream> inStr;
-    
+
     rv = NS_NewLocalFileInputStream(getter_AddRefs(inStr), file);
-    if (NS_FAILED(rv)) 
+    if (NS_FAILED(rv))
         return rv;
-        
+
     int64_t fileSize;
     file->GetFileSize(&fileSize);
     uint32_t fs = fileSize; 
@@ -420,7 +420,7 @@ nsresult nsAutoConfig::evaluateLocalFile(nsIFile *file)
     uint32_t amt = 0;
     rv = inStr->Read(buf, fs, &amt);
     if (NS_SUCCEEDED(rv)) {
-      EvaluateAdminConfigScript(buf, fs, nullptr, false, 
+      EvaluateAdminConfigScript(buf, fs, nullptr, false,
                                 true, false);
     }
     inStr->Close();
@@ -431,19 +431,19 @@ nsresult nsAutoConfig::evaluateLocalFile(nsIFile *file)
 nsresult nsAutoConfig::writeFailoverFile()
 {
     nsresult rv;
-    nsCOMPtr<nsIFile> failoverFile; 
+    nsCOMPtr<nsIFile> failoverFile;
     nsCOMPtr<nsIOutputStream> outStr;
     uint32_t amt;
-    
+
     rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
                                 getter_AddRefs(failoverFile));
-    if (NS_FAILED(rv)) 
+    if (NS_FAILED(rv))
         return rv;
-    
+
     failoverFile->AppendNative(NS_LITERAL_CSTRING("failover.jsc"));
-    
+
     rv = NS_NewLocalFileOutputStream(getter_AddRefs(outStr), failoverFile);
-    if (NS_FAILED(rv)) 
+    if (NS_FAILED(rv))
         return rv;
     rv = outStr->Write(mBuf.get(),mBuf.Length(),&amt);
     outStr->Close();
@@ -452,18 +452,18 @@ nsresult nsAutoConfig::writeFailoverFile()
 
 nsresult nsAutoConfig::getEmailAddr(nsACString & emailAddr)
 {
-    
+
     nsresult rv;
     nsXPIDLCString prefValue;
-    
-    
-
-
-
-
 
     
-    rv = mPrefBranch->GetCharPref("mail.accountmanager.defaultaccount", 
+
+
+
+
+
+
+    rv = mPrefBranch->GetCharPref("mail.accountmanager.defaultaccount",
                                   getter_Copies(prefValue));
     if (NS_SUCCEEDED(rv) && !prefValue.IsEmpty()) {
         emailAddr = NS_LITERAL_CSTRING("mail.account.") +
@@ -485,17 +485,17 @@ nsresult nsAutoConfig::getEmailAddr(nsACString & emailAddr)
     }
     else {
         
-        rv = mPrefBranch->GetCharPref("mail.identity.useremail", 
+        rv = mPrefBranch->GetCharPref("mail.identity.useremail",
                                   getter_Copies(prefValue));
         if (NS_SUCCEEDED(rv) && !prefValue.IsEmpty())
             emailAddr = prefValue;
         else
             PromptForEMailAddress(emailAddr);
     }
-    
+
     return NS_OK;
 }
-        
+
 nsresult nsAutoConfig::PromptForEMailAddress(nsACString &emailAddress)
 {
     nsresult rv;

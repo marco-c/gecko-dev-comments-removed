@@ -51,7 +51,7 @@ nsHTMLDNSPrefetch::Initialize()
     NS_WARNING("Initialize() called twice");
     return NS_OK;
   }
-  
+
   sPrefetches = new nsHTMLDNSPrefetch::nsDeferrals();
   NS_ADDREF(sPrefetches);
 
@@ -62,16 +62,16 @@ nsHTMLDNSPrefetch::Initialize()
 
   Preferences::AddBoolVarCache(&sDisablePrefetchHTTPSPref,
                                "network.dns.disablePrefetchFromHTTPS");
+
   
-  
-  sDisablePrefetchHTTPSPref = 
+  sDisablePrefetchHTTPSPref =
     Preferences::GetBool("network.dns.disablePrefetchFromHTTPS", true);
-  
+
   NS_IF_RELEASE(sDNSService);
   nsresult rv;
   rv = CallGetService(kDNSServiceCID, &sDNSService);
   if (NS_FAILED(rv)) return rv;
-  
+
   if (IsNeckoChild())
     NeckoChild::InitNeckoChild();
 
@@ -90,7 +90,7 @@ nsHTMLDNSPrefetch::Shutdown()
   NS_IF_RELEASE(sDNSService);
   NS_IF_RELEASE(sPrefetches);
   NS_IF_RELEASE(sDNSListener);
-  
+
   return NS_OK;
 }
 
@@ -329,7 +329,7 @@ nsHTMLDNSPrefetch::nsDeferrals::Add(uint16_t flags, Link *aElement)
     mTimer->InitWithNamedFuncCallback(Tick, this, 2000, nsITimer::TYPE_ONE_SHOT,
                                       "nsHTMLDNSPrefetch::nsDeferrals::Tick");
   }
-  
+
   return NS_OK;
 }
 
@@ -401,7 +401,7 @@ void
 nsHTMLDNSPrefetch::nsDeferrals::Activate()
 {
   
-  nsCOMPtr<nsIWebProgress> progress = 
+  nsCOMPtr<nsIWebProgress> progress =
     do_GetService(NS_DOCUMENTLOADER_SERVICE_CONTRACTID);
   if (progress)
     progress->AddProgressListener(this, nsIWebProgress::NOTIFY_STATE_DOCUMENT);
@@ -429,34 +429,34 @@ nsHTMLDNSPrefetch::nsDeferrals::RemoveUnboundLinks()
 
 
 
-void 
+void
 nsHTMLDNSPrefetch::nsDeferrals::Tick(nsITimer *aTimer, void *aClosure)
 {
   nsHTMLDNSPrefetch::nsDeferrals *self = (nsHTMLDNSPrefetch::nsDeferrals *) aClosure;
 
   NS_ASSERTION(NS_IsMainThread(), "nsDeferrals::Tick must be on main thread");
   NS_ASSERTION(self->mTimerArmed, "Timer is not armed");
-  
+
   self->mTimerArmed = false;
 
   
   
   
-  if (!self->mActiveLoaderCount) 
+  if (!self->mActiveLoaderCount)
     self->SubmitQueue();
 }
 
 
 
-NS_IMETHODIMP 
-nsHTMLDNSPrefetch::nsDeferrals::OnStateChange(nsIWebProgress* aWebProgress, 
-                                              nsIRequest *aRequest, 
-                                              uint32_t progressStateFlags, 
+NS_IMETHODIMP
+nsHTMLDNSPrefetch::nsDeferrals::OnStateChange(nsIWebProgress* aWebProgress,
+                                              nsIRequest *aRequest,
+                                              uint32_t progressStateFlags,
                                               nsresult aStatus)
 {
   
   NS_ASSERTION(NS_IsMainThread(), "nsDeferrals::OnStateChange must be on main thread");
-  
+
   if (progressStateFlags & STATE_IS_DOCUMENT) {
     if (progressStateFlags & STATE_STOP) {
 
@@ -471,16 +471,16 @@ nsHTMLDNSPrefetch::nsDeferrals::OnStateChange(nsIWebProgress* aWebProgress,
     else if (progressStateFlags & STATE_START)
       mActiveLoaderCount++;
   }
-            
+
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsHTMLDNSPrefetch::nsDeferrals::OnProgressChange(nsIWebProgress *aProgress,
-                                                 nsIRequest *aRequest, 
-                                                 int32_t curSelfProgress, 
-                                                 int32_t maxSelfProgress, 
-                                                 int32_t curTotalProgress, 
+                                                 nsIRequest *aRequest,
+                                                 int32_t curSelfProgress,
+                                                 int32_t maxSelfProgress,
+                                                 int32_t curTotalProgress,
                                                  int32_t maxTotalProgress)
 {
   return NS_OK;
@@ -495,7 +495,7 @@ nsHTMLDNSPrefetch::nsDeferrals::OnLocationChange(nsIWebProgress* aWebProgress,
   return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsHTMLDNSPrefetch::nsDeferrals::OnStatusChange(nsIWebProgress* aWebProgress,
                                                nsIRequest* aRequest,
                                                nsresult aStatus,
@@ -504,9 +504,9 @@ nsHTMLDNSPrefetch::nsDeferrals::OnStatusChange(nsIWebProgress* aWebProgress,
   return NS_OK;
 }
 
-NS_IMETHODIMP 
-nsHTMLDNSPrefetch::nsDeferrals::OnSecurityChange(nsIWebProgress *aWebProgress, 
-                                                 nsIRequest *aRequest, 
+NS_IMETHODIMP
+nsHTMLDNSPrefetch::nsDeferrals::OnSecurityChange(nsIWebProgress *aWebProgress,
+                                                 nsIRequest *aRequest,
                                                  uint32_t state)
 {
   return NS_OK;
@@ -521,6 +521,6 @@ nsHTMLDNSPrefetch::nsDeferrals::Observe(nsISupports *subject,
 {
   if (!strcmp(topic, "xpcom-shutdown"))
     Flush();
-  
+
   return NS_OK;
 }

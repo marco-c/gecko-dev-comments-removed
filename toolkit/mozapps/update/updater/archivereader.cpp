@@ -119,7 +119,7 @@ ArchiveReader::VerifySignature()
 
 
 int
-ArchiveReader::VerifyProductInformation(const char *MARChannelID, 
+ArchiveReader::VerifyProductInformation(const char *MARChannelID,
                                         const char *appVersion)
 {
   if (!mArchive) {
@@ -127,7 +127,7 @@ ArchiveReader::VerifyProductInformation(const char *MARChannelID,
   }
 
   ProductInformationBlock productInfoBlock;
-  int rv = mar_read_product_info_block(mArchive, 
+  int rv = mar_read_product_info_block(mArchive,
                                        &productInfoBlock);
   if (rv != OK) {
     return COULD_NOT_READ_PRODUCT_INFO_BLOCK_ERROR;
@@ -163,7 +163,7 @@ ArchiveReader::VerifyProductInformation(const char *MARChannelID,
 
 
 
-    int versionCompareResult = 
+    int versionCompareResult =
       mozilla::CompareVersions(appVersion, productInfoBlock.productVersion);
     if (1 == versionCompareResult) {
       rv = VERSION_DOWNGRADE_ERROR;

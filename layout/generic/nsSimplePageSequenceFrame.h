@@ -76,7 +76,7 @@ public:
   NS_IMETHOD SetPageNo(int32_t aPageNo) { return NS_OK;}
   NS_IMETHOD SetSelectionHeight(nscoord aYOffset, nscoord aHeight) override { mYSelOffset = aYOffset; mSelectionHeight = aHeight; return NS_OK; }
   NS_IMETHOD SetTotalNumPages(int32_t aTotal) override { mTotalPages = aTotal; return NS_OK; }
-  
+
   
   NS_IMETHOD GetSTFPercent(float& aSTFPercent) override;
 

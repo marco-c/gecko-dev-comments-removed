@@ -61,7 +61,7 @@ public:
   NS_IMETHOD Run();
 
   RefPtr<nsNSSHttpRequestSession> mRequestSession;
-  
+
   RefPtr<nsHTTPListener> mListener;
   bool mResponsibleForDoneSignal;
   TimeStamp mStartTime;
@@ -142,7 +142,7 @@ nsHTTPDownloadEvent::Run()
     nsCOMPtr<nsIUploadChannel> uploadChannel(do_QueryInterface(chan));
     NS_ENSURE_STATE(uploadChannel);
 
-    rv = uploadChannel->SetUploadStream(uploadStream, 
+    rv = uploadChannel->SetUploadStream(uploadStream,
                                         mRequestSession->mPostContentType,
                                         -1);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -174,7 +174,7 @@ nsHTTPDownloadEvent::Run()
   NS_ADDREF(mListener->mLoadGroup);
   mListener->mLoadGroupOwnerThread = PR_GetCurrentThread();
 
-  rv = NS_NewStreamLoader(getter_AddRefs(mListener->mLoader), 
+  rv = NS_NewStreamLoader(getter_AddRefs(mListener->mLoader),
                           mListener);
 
   if (NS_SUCCEEDED(rv)) {
@@ -430,7 +430,7 @@ nsNSSHttpRequestSession::internal_send_receive_attempt(bool &retryable_error,
       wait_interval = PR_MicrosecondsToInterval(50);
     }
     else
-    { 
+    {
       
       
       wait_interval = PR_MillisecondsToInterval(250);
@@ -614,7 +614,7 @@ nsHTTPListener::OnStreamComplete(nsIStreamLoader* aLoader,
   nsCOMPtr<nsIHttpChannel> hchan;
 
   nsresult rv = aLoader->GetRequest(getter_AddRefs(req));
-  
+
   if (NS_FAILED(aStatus))
   {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
@@ -683,16 +683,16 @@ ShowProtectedAuthPrompt(PK11SlotInfo* slot, nsIInterfaceRequestor *ir)
       NS_ADDREF(protectedAuthRunnable);
 
       protectedAuthRunnable->SetParams(slot);
-      
+
       nsCOMPtr<nsIProtectedAuthThread> runnable = do_QueryInterface(protectedAuthRunnable);
       if (runnable)
       {
         nsrv = dialogs->DisplayProtectedAuth(ir, runnable);
-              
+
         
         
         protectedAuthRunnable->Join();
-              
+
         if (NS_SUCCEEDED(nsrv))
         {
           SECStatus rv = protectedAuthRunnable->GetResult();
@@ -722,7 +722,7 @@ class PK11PasswordPromptRunnable : public SyncRunnableBase
                                  , public nsNSSShutDownObject
 {
 public:
-  PK11PasswordPromptRunnable(PK11SlotInfo* slot, 
+  PK11PasswordPromptRunnable(PK11SlotInfo* slot,
                              nsIInterfaceRequestor* ir)
     : mResult(nullptr),
       mSlot(slot),

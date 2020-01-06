@@ -77,7 +77,7 @@ struct IPCByteRange
 {
   int32_t offset;
   uint32_t length;
-};  
+};
 
 typedef nsTArray<IPCByteRange> IPCByteRanges;
 
@@ -207,9 +207,9 @@ NPPVariableToString(NPPVariable aVar)
         VARSTR(NPPVpluginScriptableNPObject);
 
         VARSTR(NPPVformValue);
-  
+
         VARSTR(NPPVpluginUrlRequestsDisplayedBool);
-  
+
         VARSTR(NPPVpluginWantsAllNetworkStreams);
 
 #ifdef XP_MACOSX
@@ -713,7 +713,7 @@ struct ParamTraits<NPNURLVariable>
   }
 };
 
-  
+
 template<>
 struct ParamTraits<NPCoordinateSpace>
 {

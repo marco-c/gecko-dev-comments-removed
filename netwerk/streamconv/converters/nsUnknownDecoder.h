@@ -84,7 +84,7 @@ protected:
   
   
   bool AllowSniffing(nsIRequest* aRequest);
-  
+
   
   
   bool SniffForHTML(nsIRequest* aRequest);
@@ -110,10 +110,10 @@ protected:
 
   struct nsSnifferEntry {
     typedef bool (nsUnknownDecoder::*TypeSniffFunc)(nsIRequest* aRequest);
-    
+
     const char* mBytes;
     uint32_t mByteLen;
-    
+
     
     const char* mMimeType;
     TypeSniffFunc mContentTypeSniffer;

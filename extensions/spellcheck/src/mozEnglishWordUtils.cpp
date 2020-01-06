@@ -59,7 +59,7 @@ NS_IMETHODIMP mozEnglishWordUtils::GetRootForm(const char16_t *aWord, uint32_t t
   switch (ct)
     {
     case HuhCap:
-    case NoCap: 
+    case NoCap:
       tmpPtr = (char16_t **)moz_xmalloc(sizeof(char16_t *));
       if (!tmpPtr)
         return NS_ERROR_OUT_OF_MEMORY;
@@ -71,7 +71,7 @@ NS_IMETHODIMP mozEnglishWordUtils::GetRootForm(const char16_t *aWord, uint32_t t
       *words = tmpPtr;
       *count = 1;
       break;
-    
+
 
     case AllCap:
       tmpPtr = (char16_t **)moz_xmalloc(sizeof(char16_t *) * 3);
@@ -101,8 +101,8 @@ NS_IMETHODIMP mozEnglishWordUtils::GetRootForm(const char16_t *aWord, uint32_t t
       *words = tmpPtr;
       *count = 3;
       break;
- 
-    case InitCap:  
+
+    case InitCap:
       tmpPtr = (char16_t **)moz_xmalloc(sizeof(char16_t *) * 2);
       if (!tmpPtr)
         return NS_ERROR_OUT_OF_MEMORY;
@@ -154,10 +154,10 @@ NS_IMETHODIMP mozEnglishWordUtils::FindNextWord(const char16_t *word, uint32_t l
       }
     startWord=p;
     while((p < endbuf) && ((ucIsAlpha(*p))||(*p=='\'')))
-      { 
+      {
         p++;
       }
-    
+
     
     
     
@@ -168,16 +168,16 @@ NS_IMETHODIMP mozEnglishWordUtils::FindNextWord(const char16_t *word, uint32_t l
 
         
         
-       
+
         if (mURLDetector)
         {
           int32_t startPos = -1;
-          int32_t endPos = -1;        
+          int32_t endPos = -1;
 
           mURLDetector->FindURLInPlaintext(startWord, endbuf - startWord, p - startWord, &startPos, &endPos);
 
           
-          if (startPos != -1 && endPos != -1) { 
+          if (startPos != -1 && endPos != -1) {
             startWord = p + endPos + 1; 
             p = startWord; 
 
@@ -205,10 +205,10 @@ NS_IMETHODIMP mozEnglishWordUtils::FindNextWord(const char16_t *word, uint32_t l
   return NS_OK;
 }
 
-mozEnglishWordUtils::myspCapitalization 
+mozEnglishWordUtils::myspCapitalization
 mozEnglishWordUtils::captype(const nsString &word)
 {
-  char16_t* lword=ToNewUnicode(word);  
+  char16_t* lword=ToNewUnicode(word);
   ToUpperCase(lword,lword,word.Length());
   if(word.Equals(lword)){
     free(lword);
@@ -254,7 +254,7 @@ NS_IMETHODIMP mozEnglishWordUtils::FromRootForm(const char16_t *aWord, const cha
     nsAutoString capTest(tmpPtr[i]);
     mozEnglishWordUtils::myspCapitalization newCt=captype(capTest);
     if(newCt == NoCap){
-      switch(ct) 
+      switch(ct)
         {
         case HuhCap:
         case NoCap:
@@ -263,7 +263,7 @@ NS_IMETHODIMP mozEnglishWordUtils::FromRootForm(const char16_t *aWord, const cha
           ToUpperCase(tmpPtr[i],tmpPtr[i],length);
           rv = NS_OK;
           break;
-        case InitCap:  
+        case InitCap:
           ToUpperCase(tmpPtr[i],tmpPtr[i],1);
           rv = NS_OK;
           break;

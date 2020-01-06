@@ -45,7 +45,7 @@ nsFtpChannel::SetUploadStream(nsIInputStream *stream,
     mUploadStream = stream;
 
     
- 
+
     return NS_OK;
 }
 
@@ -141,7 +141,7 @@ public:
         : mTarget(aTarget)
         , mEventTarget(GetCurrentThreadEventTarget())
     { }
-        
+
     NS_DECL_THREADSAFE_ISUPPORTS
     NS_DECL_NSIFTPEVENTSINK
 

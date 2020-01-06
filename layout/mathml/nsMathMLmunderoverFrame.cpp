@@ -401,7 +401,7 @@ nsMathMLmunderoverFrame::Place(DrawTarget*          aDrawTarget,
                                                           this, 0, 0,
                                                           fontSizeInflation);
     }
-    
+
   }
 
   
@@ -428,7 +428,7 @@ nsMathMLmunderoverFrame::Place(DrawTarget*          aDrawTarget,
   if (underFrame && mContent->IsMathMLElement(nsGkAtoms::munderover_)) {
     overFrame = underFrame->GetNextSibling();
   }
-  
+
   if (mContent->IsMathMLElement(nsGkAtoms::munder_)) {
     if (!baseFrame || !underFrame || underFrame->GetNextSibling()) {
       
@@ -487,10 +487,10 @@ nsMathMLmunderoverFrame::Place(DrawTarget*          aDrawTarget,
 
   if (!NS_MATHML_EMBELLISH_IS_ACCENTUNDER(mEmbellishData.flags)) {
     
-    nscoord bigOpSpacing2, bigOpSpacing4, bigOpSpacing5, dummy; 
-    GetBigOpSpacings (fm, 
-                      dummy, bigOpSpacing2, 
-                      dummy, bigOpSpacing4, 
+    nscoord bigOpSpacing2, bigOpSpacing4, bigOpSpacing5, dummy;
+    GetBigOpSpacings (fm,
+                      dummy, bigOpSpacing2,
+                      dummy, bigOpSpacing4,
                       bigOpSpacing5);
     if (mathFont) {
       
@@ -525,15 +525,15 @@ nsMathMLmunderoverFrame::Place(DrawTarget*          aDrawTarget,
   nscoord overDelta1 = 0; 
   nscoord overDelta2 = 0; 
 
-  if (!NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags)) {    
+  if (!NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags)) {
     
     
     
     
-    nscoord bigOpSpacing1, bigOpSpacing3, bigOpSpacing5, dummy; 
-    GetBigOpSpacings (fm, 
-                      bigOpSpacing1, dummy, 
-                      bigOpSpacing3, dummy, 
+    nscoord bigOpSpacing1, bigOpSpacing3, bigOpSpacing5, dummy;
+    GetBigOpSpacings (fm,
+                      bigOpSpacing1, dummy,
+                      bigOpSpacing3, dummy,
                       bigOpSpacing5);
     if (mathFont) {
       
@@ -553,7 +553,7 @@ nsMathMLmunderoverFrame::Place(DrawTarget*          aDrawTarget,
     
     
     
-    if (bmOver.descent < 0)    
+    if (bmOver.descent < 0)
       overDelta1 = std::max(bigOpSpacing1, (bigOpSpacing3 - (bmOver.ascent + bmOver.descent)));
   }
   else {
@@ -634,7 +634,7 @@ nsMathMLmunderoverFrame::Place(DrawTarget*          aDrawTarget,
   }
 
   if (NS_MATHML_EMBELLISH_IS_ACCENTOVER(mEmbellishData.flags)) {
-    mBoundingMetrics.width = bmBase.width; 
+    mBoundingMetrics.width = bmBase.width;
     if (alignPosition == center) {
       dxOver += correction;
     }
@@ -645,7 +645,7 @@ nsMathMLmunderoverFrame::Place(DrawTarget*          aDrawTarget,
       dxOver += correction/2;
     }
   }
-  
+
   if (alignPosition == center) {
     dxOver += (mBoundingMetrics.width - overWidth)/2;
     dxBase = (mBoundingMetrics.width - bmBase.width)/2;
@@ -654,12 +654,12 @@ nsMathMLmunderoverFrame::Place(DrawTarget*          aDrawTarget,
     dxBase = mBoundingMetrics.width - bmBase.width;
   }
 
-  mBoundingMetrics.ascent = 
+  mBoundingMetrics.ascent =
     bmBase.ascent + overDelta1 + bmOver.ascent + bmOver.descent;
   mBoundingMetrics.descent = bmBase.descent;
-  mBoundingMetrics.leftBearing = 
+  mBoundingMetrics.leftBearing =
     std::min(dxBase + bmBase.leftBearing, dxOver + bmOver.leftBearing);
-  mBoundingMetrics.rightBearing = 
+  mBoundingMetrics.rightBearing =
     std::max(dxBase + bmBase.rightBearing, dxOver + bmOver.rightBearing);
 
   
@@ -707,11 +707,11 @@ nsMathMLmunderoverFrame::Place(DrawTarget*          aDrawTarget,
   mBoundingMetrics.width =
     std::max(dxAnonymousBase + bmAnonymousBase.width, dxUnder + bmUnder.width);
   
-  mBoundingMetrics.descent = 
+  mBoundingMetrics.descent =
     bmAnonymousBase.descent + underDelta1 + bmUnder.ascent + bmUnder.descent;
   mBoundingMetrics.leftBearing =
     std::min(dxAnonymousBase + bmAnonymousBase.leftBearing, dxUnder + bmUnder.leftBearing);
-  mBoundingMetrics.rightBearing = 
+  mBoundingMetrics.rightBearing =
     std::max(dxAnonymousBase + bmAnonymousBase.rightBearing, dxUnder + bmUnder.rightBearing);
 
   aDesiredSize.SetBlockStartAscent(ascentAnonymousBase);

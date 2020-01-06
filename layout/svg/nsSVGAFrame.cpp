@@ -46,7 +46,7 @@ public:
 #endif
   
   virtual void NotifySVGChanged(uint32_t aFlags) override;
-  
+
   
   virtual gfxMatrix GetCanvasTM() override;
 

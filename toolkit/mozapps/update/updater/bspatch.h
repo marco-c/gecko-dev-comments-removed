@@ -38,7 +38,7 @@
 typedef struct MBSPatchHeader_ {
   
   char tag[8];
-  
+
   
   uint32_t slen;
 

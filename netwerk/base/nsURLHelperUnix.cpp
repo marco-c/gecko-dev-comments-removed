@@ -10,7 +10,7 @@
 #include "nsIFile.h"
 #include "nsNativeCharsetUtils.h"
 
-nsresult 
+nsresult
 net_GetURLSpecFromActualFile(nsIFile *aFile, nsACString &result)
 {
     nsresult rv;
@@ -29,10 +29,10 @@ net_GetURLSpecFromActualFile(nsIFile *aFile, nsACString &result)
         CopyUTF16toUTF8(path, ePath);
     else
         ePath = nativePath;
-    
+
     nsAutoCString escPath;
     NS_NAMED_LITERAL_CSTRING(prefix, "file://");
-        
+
     
     if (NS_EscapeURL(ePath.get(), -1, esc_Directory+esc_Forced, escPath))
         escPath.Insert(prefix, 0);
@@ -59,7 +59,7 @@ net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result)
     rv = NS_NewNativeLocalFile(EmptyCString(), true, getter_AddRefs(localFile));
     if (NS_FAILED(rv))
       return rv;
-    
+
     nsAutoCString directory, fileBaseName, fileExtension, path;
 
     rv = net_ParseFileURL(aURL, directory, fileBaseName, fileExtension);
@@ -84,7 +84,7 @@ net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result)
         if (NS_FAILED(rv))
           return rv;
     }
-    
+
     NS_UnescapeURL(path);
     if (path.Length() != strlen(path.get()))
         return NS_ERROR_FILE_INVALID_PATH;
@@ -101,7 +101,7 @@ net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result)
             
             
     }
-    else 
+    else
         
         rv = localFile->InitWithNativePath(path);
 

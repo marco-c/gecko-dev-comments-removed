@@ -38,7 +38,7 @@ nsMathMLmpaddedFrame::~nsMathMLmpaddedFrame()
 }
 
 NS_IMETHODIMP
-nsMathMLmpaddedFrame::InheritAutomaticData(nsIFrame* aParent) 
+nsMathMLmpaddedFrame::InheritAutomaticData(nsIFrame* aParent)
 {
   
   nsMathMLContainerFrame::InheritAutomaticData(aParent);
@@ -67,7 +67,7 @@ nsMathMLmpaddedFrame::ProcessAttributes()
   mWidthSign = NS_MATHML_SIGN_INVALID;
   mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::width, value);
   if (!value.IsEmpty()) {
-    if (!ParseAttribute(value, mWidthSign, mWidth, mWidthPseudoUnit)) {      
+    if (!ParseAttribute(value, mWidthSign, mWidth, mWidthPseudoUnit)) {
       ReportParseError(nsGkAtoms::width->GetUTF16String(), value.get());
     }
   }
@@ -94,7 +94,7 @@ nsMathMLmpaddedFrame::ProcessAttributes()
   mLeadingSpaceSign = NS_MATHML_SIGN_INVALID;
   mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::lspace_, value);
   if (!value.IsEmpty()) {
-    if (!ParseAttribute(value, mLeadingSpaceSign, mLeadingSpace, 
+    if (!ParseAttribute(value, mLeadingSpaceSign, mLeadingSpace,
                         mLeadingSpacePseudoUnit)) {
       ReportParseError(nsGkAtoms::lspace_->GetUTF16String(), value.get());
     }
@@ -109,7 +109,7 @@ nsMathMLmpaddedFrame::ProcessAttributes()
       ReportParseError(nsGkAtoms::voffset_->GetUTF16String(), value.get());
     }
   }
-  
+
 }
 
 
@@ -225,7 +225,7 @@ nsMathMLmpaddedFrame::ParseAttribute(nsString&   aString,
     
     
     number.Append(unit); 
-    if (nsMathMLElement::ParseNumericValue(number, aCSSValue, 
+    if (nsMathMLElement::ParseNumericValue(number, aCSSValue,
                                            nsMathMLElement::
                                            PARSE_SUPPRESS_WARNINGS, nullptr))
       return true;
@@ -421,7 +421,7 @@ nsMathMLmpaddedFrame::Place(DrawTarget*          aDrawTarget,
 
   nscoord dx = (StyleVisibility()->mDirection ?
                 width - initialWidth - lspace : lspace);
-    
+
   aDesiredSize.SetBlockStartAscent(height);
   aDesiredSize.Width() = mBoundingMetrics.width;
   aDesiredSize.Height() = depth + aDesiredSize.BlockStartAscent();

@@ -80,7 +80,7 @@ public:
   
   
   
-  
+
   
   explicit nsCaseTransformTextRunFactory(mozilla::UniquePtr<nsTransformingTextRunFactory> aInnerTransformingTextRunFactory,
                                          bool aAllUppercase = false)
@@ -139,7 +139,7 @@ public:
       delete mFactory;
     }
   }
-  
+
   void SetCapitalization(uint32_t aStart, uint32_t aLength,
                          bool* aCapitalization);
   virtual bool SetPotentialLineBreaks(Range aRange,

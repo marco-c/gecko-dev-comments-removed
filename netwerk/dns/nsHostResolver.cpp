@@ -89,7 +89,7 @@ MoveCList(PRCList &from, PRCList &to)
         to.next->prev = &to;
         to.prev->next = &to;
         PR_INIT_CLIST(&from);
-    }             
+    }
 }
 
 
@@ -415,7 +415,7 @@ HostDB_MatchEntry(const PLDHashEntryHdr *entry,
                   const void *key)
 {
     const nsHostDBEnt *he = static_cast<const nsHostDBEnt *>(entry);
-    const nsHostKey *hk = static_cast<const nsHostKey *>(key); 
+    const nsHostKey *hk = static_cast<const nsHostKey *>(key);
 
     return !strcmp(he->rec->host ? he->rec->host : "",
                    hk->host ? hk->host : "") &&
@@ -696,7 +696,7 @@ nsHostResolver::Shutdown()
     }
 
 #ifdef NS_BUILD_REFCNT_LOGGING
-    
+
     
     
     
@@ -717,11 +717,11 @@ nsHostResolver::Shutdown()
     }
 }
 
-void 
+void
 nsHostResolver::MoveQueue(nsHostRecord *aRec, PRCList &aDestQ)
 {
     NS_ASSERTION(aRec->onQueue, "Moving Host Record Not Currently Queued");
-    
+
     PR_REMOVE_LINK(aRec);
     PR_APPEND_LINK(aRec, &aDestQ);
 }
@@ -760,7 +760,7 @@ nsHostResolver::ResolveHost(const char             *host,
             
             
             memset(&tempAddr, 0, sizeof(PRNetAddr));
-            
+
             
             
             
@@ -792,7 +792,7 @@ nsHostResolver::ResolveHost(const char             *host,
                 
                 
                 ConditionallyRefreshRecord(he->rec, host);
-                
+
                 if (he->rec->negative) {
                     LOG(("  Negative cache entry for host [%s%s%s].\n",
                          LOG_HOST(host, netInterface)));
@@ -1062,7 +1062,7 @@ nsHostResolver::IssueLookup(nsHostRecord *rec)
         PR_REMOVE_LINK(rec);
         mEvictionQSize--;
     }
-    
+
     switch (nsHostRecord::GetPriority(rec->flags)) {
         case nsHostRecord::DNS_PRIORITY_HIGH:
             PR_APPEND_LINK(rec, &mHighQ);
@@ -1077,12 +1077,12 @@ nsHostResolver::IssueLookup(nsHostRecord *rec)
             break;
     }
     mPendingCount++;
-    
+
     rec->resolving = true;
     rec->onQueue = true;
 
     rv = ConditionallyCreateThread(rec);
-    
+
     LOG (("  DNS thread counters: total=%d any-live=%d idle=%d pending=%d\n",
           static_cast<uint32_t>(mThreadCount),
           static_cast<uint32_t>(mActiveAnyThreadCount),
@@ -1133,7 +1133,7 @@ nsHostResolver::GetHostToLookup(nsHostRecord **result)
 
     while (!mShutdown) {
         
-        
+
 #if TTL_AVAILABLE
         #define SET_GET_TTL(var, val) \
             (var)->mGetTtl = sGetTtlEnabled && (val)
@@ -1155,7 +1155,7 @@ nsHostResolver::GetHostToLookup(nsHostRecord **result)
                 SET_GET_TTL(*result, true);
                 return true;
             }
-            
+
             if (!PR_CLIST_IS_EMPTY(&mLowQ)) {
                 DeQueue (mLowQ, result);
                 mActiveAnyThreadCount++;
@@ -1164,7 +1164,7 @@ nsHostResolver::GetHostToLookup(nsHostRecord **result)
                 return true;
             }
         }
-        
+
         
         
         if (timedOut)
@@ -1174,13 +1174,13 @@ nsHostResolver::GetHostToLookup(nsHostRecord **result)
         
         
         
-        
+
         mNumIdleThreads++;
         mIdleThreadCV.Wait(timeout);
         mNumIdleThreads--;
-        
+
         now = PR_IntervalNow();
-        
+
         if ((PRIntervalTime)(now - epoch) >= timeout)
             timedOut = true;
         else {
@@ -1191,7 +1191,7 @@ nsHostResolver::GetHostToLookup(nsHostRecord **result)
             epoch = now;
         }
     }
-    
+
     
     return false;
 }
@@ -1322,7 +1322,7 @@ nsHostResolver::OnLookupComplete(nsHostRecord* rec, nsresult status, AddrInfo* n
         rec->negative = !rec->addr_info;
         PrepareRecordExpiration(rec);
         rec->resolving = false;
-        
+
         if (rec->usingAnyThread) {
             mActiveAnyThreadCount--;
             rec->usingAnyThread = false;

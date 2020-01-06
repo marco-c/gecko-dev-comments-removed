@@ -50,88 +50,88 @@ public:
     CLSID GetClassID() const;
 
   public: 
-    virtual  HRESULT STDMETHODCALLTYPE get_accParent( 
+    virtual  HRESULT STDMETHODCALLTYPE get_accParent(
          IDispatch __RPC_FAR *__RPC_FAR *ppdispParent) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE get_accChildCount( 
+    virtual  HRESULT STDMETHODCALLTYPE get_accChildCount(
          long __RPC_FAR *pcountChildren) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE get_accChild( 
+    virtual  HRESULT STDMETHODCALLTYPE get_accChild(
          VARIANT varChild,
          IDispatch __RPC_FAR *__RPC_FAR *ppdispChild) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE get_accName( 
+    virtual  HRESULT STDMETHODCALLTYPE get_accName(
          VARIANT varChild,
          BSTR __RPC_FAR *pszName) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE get_accValue( 
+    virtual  HRESULT STDMETHODCALLTYPE get_accValue(
          VARIANT varChild,
          BSTR __RPC_FAR *pszValue) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE get_accDescription( 
+    virtual  HRESULT STDMETHODCALLTYPE get_accDescription(
          VARIANT varChild,
          BSTR __RPC_FAR *pszDescription) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE get_accRole( 
+    virtual  HRESULT STDMETHODCALLTYPE get_accRole(
          VARIANT varChild,
          VARIANT __RPC_FAR *pvarRole) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE get_accState( 
+    virtual  HRESULT STDMETHODCALLTYPE get_accState(
          VARIANT varChild,
          VARIANT __RPC_FAR *pvarState) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE get_accHelp( 
+    virtual  HRESULT STDMETHODCALLTYPE get_accHelp(
          VARIANT varChild,
          BSTR __RPC_FAR *pszHelp) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE get_accHelpTopic( 
+    virtual  HRESULT STDMETHODCALLTYPE get_accHelpTopic(
          BSTR __RPC_FAR *pszHelpFile,
          VARIANT varChild,
          long __RPC_FAR *pidTopic) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE get_accKeyboardShortcut( 
+    virtual  HRESULT STDMETHODCALLTYPE get_accKeyboardShortcut(
          VARIANT varChild,
          BSTR __RPC_FAR *pszKeyboardShortcut) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE get_accFocus( 
+    virtual  HRESULT STDMETHODCALLTYPE get_accFocus(
          VARIANT __RPC_FAR *pvarChild) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE get_accSelection( 
+    virtual  HRESULT STDMETHODCALLTYPE get_accSelection(
          VARIANT __RPC_FAR *pvarChildren) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE get_accDefaultAction( 
+    virtual  HRESULT STDMETHODCALLTYPE get_accDefaultAction(
          VARIANT varChild,
          BSTR __RPC_FAR *pszDefaultAction) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE accSelect( 
+    virtual  HRESULT STDMETHODCALLTYPE accSelect(
          long flagsSelect,
          VARIANT varChild) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE accLocation( 
+    virtual  HRESULT STDMETHODCALLTYPE accLocation(
          long __RPC_FAR *pxLeft,
          long __RPC_FAR *pyTop,
          long __RPC_FAR *pcxWidth,
          long __RPC_FAR *pcyHeight,
          VARIANT varChild) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE accNavigate( 
+    virtual  HRESULT STDMETHODCALLTYPE accNavigate(
          long navDir,
          VARIANT varStart,
          VARIANT __RPC_FAR *pvarEndUpAt) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE accHitTest( 
+    virtual  HRESULT STDMETHODCALLTYPE accHitTest(
          long xLeft,
          long yTop,
          VARIANT __RPC_FAR *pvarChild) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE accDoDefaultAction( 
+    virtual  HRESULT STDMETHODCALLTYPE accDoDefaultAction(
          VARIANT varChild) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE put_accName( 
+    virtual  HRESULT STDMETHODCALLTYPE put_accName(
          VARIANT varChild,
          BSTR szName) override;
 
-    virtual  HRESULT STDMETHODCALLTYPE put_accValue( 
+    virtual  HRESULT STDMETHODCALLTYPE put_accValue(
          VARIANT varChild,
          BSTR szValue) override;
 

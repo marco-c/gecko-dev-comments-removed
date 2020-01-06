@@ -36,7 +36,7 @@
 
 using namespace std;
 using namespace mozilla;
- 
+
 namespace WebCore {
 
 const int elevationSpacing = irc_composite_c_r0195_elevation_interval;
@@ -214,7 +214,7 @@ nsReturnRef<HRTFElevation> HRTFElevation::createBuiltin(int elevation, float sam
         elevation > firstElevation + numberOfElevations * elevationSpacing ||
         (elevation / elevationSpacing) * elevationSpacing != elevation)
         return nsReturnRef<HRTFElevation>();
-        
+
     
     
     
@@ -242,7 +242,7 @@ nsReturnRef<HRTFElevation> HRTFElevation::createBuiltin(int elevation, float sam
         int actualElevation = min(elevation, maxElevation);
 
         kernelListL[interpolatedIndex] = calculateKernelForAzimuthElevation(rawIndex * AzimuthSpacing, actualElevation, resampler, sampleRate);
-            
+
         interpolatedIndex += InterpolationFactor;
     }
 
@@ -260,7 +260,7 @@ nsReturnRef<HRTFElevation> HRTFElevation::createBuiltin(int elevation, float sam
             kernelListL[i + jj] = HRTFKernel::createInterpolatedKernel(kernelListL[i], kernelListL[j], x);
         }
     }
-    
+
     return nsReturnRef<HRTFElevation>(new HRTFElevation(&kernelListL, elevation, sampleRate));
 }
 
@@ -269,15 +269,15 @@ nsReturnRef<HRTFElevation> HRTFElevation::createByInterpolatingSlices(HRTFElevat
     MOZ_ASSERT(hrtfElevation1 && hrtfElevation2);
     if (!hrtfElevation1 || !hrtfElevation2)
         return nsReturnRef<HRTFElevation>();
-        
+
     MOZ_ASSERT(x >= 0.0 && x < 1.0);
-    
+
     HRTFKernelList kernelListL;
     kernelListL.SetLength(NumberOfTotalAzimuths);
 
     const HRTFKernelList& kernelListL1 = hrtfElevation1->kernelListL();
     const HRTFKernelList& kernelListL2 = hrtfElevation2->kernelListL();
-    
+
     
     for (unsigned i = 0; i < NumberOfTotalAzimuths; ++i) {
         kernelListL[i] = HRTFKernel::createInterpolatedKernel(kernelListL1[i], kernelListL2[i], x);
@@ -285,7 +285,7 @@ nsReturnRef<HRTFElevation> HRTFElevation::createByInterpolatingSlices(HRTFElevat
 
     
     double angle = (1.0 - x) * hrtfElevation1->elevationAngle() + x * hrtfElevation2->elevationAngle();
-    
+
     return nsReturnRef<HRTFElevation>(new HRTFElevation(&kernelListL, static_cast<int>(angle), sampleRate));
 }
 
@@ -295,7 +295,7 @@ void HRTFElevation::getKernelsFromAzimuth(double azimuthBlend, unsigned azimuthI
     MOZ_ASSERT(checkAzimuthBlend);
     if (!checkAzimuthBlend)
         azimuthBlend = 0.0;
-    
+
     unsigned numKernels = m_kernelListL.Length();
 
     bool isIndexGood = azimuthIndex < numKernels;
@@ -305,7 +305,7 @@ void HRTFElevation::getKernelsFromAzimuth(double azimuthBlend, unsigned azimuthI
         kernelR = 0;
         return;
     }
-    
+
     
     
     kernelL = m_kernelListL[azimuthIndex];

@@ -53,7 +53,7 @@ typedef enum OMX_COMMANDTYPE
     OMX_CommandPortDisable, 
     OMX_CommandPortEnable,  
     OMX_CommandMarkBuffer,  
-    OMX_CommandKhronosExtensions = 0x6F000000,  
+    OMX_CommandKhronosExtensions = 0x6F000000, 
     OMX_CommandVendorStartUnused = 0x7F000000, 
     OMX_CommandMax = 0X7FFFFFFF
 } OMX_COMMANDTYPE;
@@ -108,7 +108,7 @@ typedef enum OMX_STATETYPE
     OMX_StateWaitForResources, 
 
 
-    OMX_StateKhronosExtensions = 0x6F000000,  
+    OMX_StateKhronosExtensions = 0x6F000000, 
     OMX_StateVendorStartUnused = 0x7F000000, 
     OMX_StateMax = 0X7FFFFFFF
 } OMX_STATETYPE;
@@ -188,7 +188,7 @@ typedef enum OMX_ERRORTYPE
 
   
 
-  OMX_ErrorResourcesPreempted = (OMX_S32) 0x80001013, 
+  OMX_ErrorResourcesPreempted = (OMX_S32) 0x80001013,
 
   
 
@@ -212,7 +212,7 @@ typedef enum OMX_ERRORTYPE
   OMX_ErrorIncorrectStateTransition = (OMX_S32) 0x80001017,
 
   
-  OMX_ErrorIncorrectStateOperation = (OMX_S32) 0x80001018, 
+  OMX_ErrorIncorrectStateOperation = (OMX_S32) 0x80001018,
 
   
   OMX_ErrorUnsupportedSetting = (OMX_S32) 0x80001019,
@@ -237,7 +237,7 @@ typedef enum OMX_ERRORTYPE
   OMX_ErrorMbErrorsInFrame = (OMX_S32) 0x8000101F,
 
   
-  OMX_ErrorFormatNotDetected = (OMX_S32) 0x80001020, 
+  OMX_ErrorFormatNotDetected = (OMX_S32) 0x80001020,
 
   
   OMX_ErrorContentPipeOpenFailed = (OMX_S32) 0x80001021,
@@ -251,7 +251,7 @@ typedef enum OMX_ERRORTYPE
   
   OMX_ErrorTunnelingUnsupported = (OMX_S32) 0x80001024,
 
-  OMX_ErrorKhronosExtensions = (OMX_S32)0x8F000000,  
+  OMX_ErrorKhronosExtensions = (OMX_S32)0x8F000000, 
   OMX_ErrorVendorStartUnused = (OMX_S32)0x90000000, 
   OMX_ErrorMax = 0x7FFFFFFF
 } OMX_ERRORTYPE;
@@ -296,7 +296,7 @@ typedef struct OMX_PARAM_COMPONENTROLETYPE {
 
 
 
-#define OMX_BUFFERFLAG_EOS 0x00000001 
+#define OMX_BUFFERFLAG_EOS 0x00000001
 
 
 
@@ -325,7 +325,7 @@ typedef struct OMX_PARAM_COMPONENTROLETYPE {
 
 #define OMX_BUFFERFLAG_STARTTIME 0x00000002
 
- 
+
 
 
 
@@ -409,7 +409,7 @@ typedef struct OMX_BUFFERHEADERTYPE
     OMX_PTR pAppPrivate;        
 
     OMX_PTR pPlatformPrivate;   
- 
+
     OMX_PTR pInputPortPrivate;  
 
     OMX_PTR pOutputPortPrivate; 
@@ -450,9 +450,9 @@ typedef struct OMX_BUFFERHEADERTYPE
 
 typedef enum OMX_EXTRADATATYPE
 {
-   OMX_ExtraDataNone = 0,                               
+   OMX_ExtraDataNone = 0,                       
    OMX_ExtraDataQuantization,                   
-   OMX_ExtraDataKhronosExtensions = 0x6F000000,  
+   OMX_ExtraDataKhronosExtensions = 0x6F000000, 
    OMX_ExtraDataVendorStartUnused = 0x7F000000, 
    OMX_ExtraDataMax = 0x7FFFFFFF
 } OMX_EXTRADATATYPE;
@@ -460,7 +460,7 @@ typedef enum OMX_EXTRADATATYPE
 
 typedef struct OMX_OTHER_EXTRADATATYPE  {
     OMX_U32 nSize;
-    OMX_VERSIONTYPE nVersion;               
+    OMX_VERSIONTYPE nVersion;
     OMX_U32 nPortIndex;
     OMX_EXTRADATATYPE eType;       
     OMX_U32 nDataSize;   
@@ -473,7 +473,7 @@ typedef struct OMX_PORT_PARAM_TYPE {
     OMX_VERSIONTYPE nVersion;   
     OMX_U32 nPorts;             
     OMX_U32 nStartPortNumber;   
-} OMX_PORT_PARAM_TYPE; 
+} OMX_PORT_PARAM_TYPE;
 
 
 typedef enum OMX_EVENTTYPE
@@ -482,14 +482,14 @@ typedef enum OMX_EVENTTYPE
     OMX_EventError,               
     OMX_EventMark,                
     OMX_EventPortSettingsChanged, 
-    OMX_EventBufferFlag,           
+    OMX_EventBufferFlag,          
     OMX_EventResourcesAcquired,   
 
 
    OMX_EventComponentResumed,     
    OMX_EventDynamicResourcesAvailable, 
    OMX_EventPortFormatDetected,      
-   OMX_EventKhronosExtensions = 0x6F000000,  
+   OMX_EventKhronosExtensions = 0x6F000000, 
    OMX_EventVendorStartUnused = 0x7F000000, 
    OMX_EventMax = 0x7FFFFFFF
 } OMX_EVENTTYPE;
@@ -603,7 +603,7 @@ typedef enum OMX_BUFFERSUPPLIERTYPE
 
     OMX_BufferSupplyInput,             
     OMX_BufferSupplyOutput,            
-    OMX_BufferSupplyKhronosExtensions = 0x6F000000,  
+    OMX_BufferSupplyKhronosExtensions = 0x6F000000, 
     OMX_BufferSupplyVendorStartUnused = 0x7F000000, 
     OMX_BufferSupplyMax = 0x7FFFFFFF
 } OMX_BUFFERSUPPLIERTYPE;
@@ -624,19 +624,19 @@ typedef struct OMX_PARAM_BUFFERSUPPLIERTYPE {
 
 
 
-#define OMX_PORTTUNNELFLAG_READONLY 0x00000001 
+#define OMX_PORTTUNNELFLAG_READONLY 0x00000001
 
 
 
 
 
 
-   
+
 typedef struct OMX_TUNNELSETUPTYPE
 {
     OMX_U32 nTunnelFlags;             
     OMX_BUFFERSUPPLIERTYPE eSupplier; 
-} OMX_TUNNELSETUPTYPE; 
+} OMX_TUNNELSETUPTYPE;
 
 
 
@@ -857,7 +857,7 @@ typedef struct OMX_TUNNELSETUPTYPE
 
 
 
-        
+
 #define OMX_GetConfig(                                      \
         hComponent,                                         \
         nConfigIndex,                                       \
@@ -1024,7 +1024,7 @@ typedef struct OMX_TUNNELSETUPTYPE
 
 
 
-    
+
 #define OMX_AllocateBuffer(                                 \
         hComponent,                                         \
         ppBuffer,                                           \
@@ -1275,7 +1275,7 @@ OMX_API OMX_ERRORTYPE OMX_APIENTRY OMX_ComponentNameEnum(
 
 
 OMX_API OMX_ERRORTYPE OMX_APIENTRY OMX_GetHandle(
-    OMX_OUT OMX_HANDLETYPE* pHandle, 
+    OMX_OUT OMX_HANDLETYPE* pHandle,
     OMX_IN  OMX_STRING cComponentName,
     OMX_IN  OMX_PTR pAppData,
     OMX_IN  OMX_CALLBACKTYPE* pCallBacks);
@@ -1354,7 +1354,7 @@ OMX_API OMX_ERRORTYPE OMX_APIENTRY OMX_SetupTunnel(
     OMX_IN  OMX_U32 nPortOutput,
     OMX_IN  OMX_HANDLETYPE hInput,
     OMX_IN  OMX_U32 nPortInput);
-    
+
 
 OMX_API OMX_ERRORTYPE   OMX_GetContentPipe(
     OMX_OUT OMX_HANDLETYPE *hPipe,
@@ -1387,7 +1387,7 @@ OMX_API OMX_ERRORTYPE   OMX_GetContentPipe(
 
 
 
-OMX_API OMX_ERRORTYPE OMX_GetComponentsOfRole ( 
+OMX_API OMX_ERRORTYPE OMX_GetComponentsOfRole (
 	OMX_IN      OMX_STRING role,
     OMX_INOUT   OMX_U32 *pNumComps,
     OMX_INOUT   OMX_U8  **compNames);
@@ -1417,8 +1417,8 @@ OMX_API OMX_ERRORTYPE OMX_GetComponentsOfRole (
 
 
 
-OMX_API OMX_ERRORTYPE OMX_GetRolesOfComponent ( 
-	OMX_IN      OMX_STRING compName, 
+OMX_API OMX_ERRORTYPE OMX_GetRolesOfComponent (
+	OMX_IN      OMX_STRING compName,
     OMX_INOUT   OMX_U32 *pNumRoles,
     OMX_OUT     OMX_U8 **roles);
 

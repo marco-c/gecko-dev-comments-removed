@@ -233,7 +233,7 @@ public:
 
 
 
-    nsresult 
+    nsresult
     CompileExtendedQuery(nsIContent* aRuleElement,
                          nsIContent* aActionElement,
                          nsIAtom* aMemberVariable,
@@ -259,7 +259,7 @@ public:
 
 
 
-    nsresult 
+    nsresult
     CompileSimpleQuery(nsIContent* aRuleElement,
                        nsTemplateQuerySet* aQuerySet,
                        bool* aCanUseTemplate);
@@ -376,9 +376,9 @@ public:
     SubstituteTextAppendText(nsXULTemplateBuilder* aThis, const nsAString& aText, void* aClosure);
 
     static void
-    SubstituteTextReplaceVariable(nsXULTemplateBuilder* aThis, const nsAString& aVariable, void* aClosure);    
+    SubstituteTextReplaceVariable(nsXULTemplateBuilder* aThis, const nsAString& aVariable, void* aClosure);
 
-    nsresult 
+    nsresult
     IsSystemPrincipal(nsIPrincipal *principal, bool *result);
 
     

@@ -19,13 +19,13 @@ int launchWindows(int children, int maxtime) {
   STARTUPINFO startup;
   PROCESS_INFORMATION procinfo;
   BOOL rv = 0;
-  
+
   _stprintf(cmdline, _T("proclaunch.exe %d %d"), children, maxtime);
   ZeroMemory(&startup, sizeof(STARTUPINFO));
   startup.cb = sizeof(STARTUPINFO);
-  
+
   ZeroMemory(&procinfo, sizeof(PROCESS_INFORMATION));
-  
+
   printf("Launching process!\n");
   rv = CreateProcess(NULL,
                 cmdline,
@@ -39,8 +39,8 @@ int launchWindows(int children, int maxtime) {
                 &procinfo);
 
   if (!rv) {
-    DWORD dw = GetLastError(); 
-    printf("error: %d\n", dw); 
+    DWORD dw = GetLastError();
+    printf("error: %d\n", dw);
   }
   CloseHandle(procinfo.hProcess);
   CloseHandle(procinfo.hThread);
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
     
     
     dict = iniparser_load(argv[1]);
-    
+
   } else if (argc == 3) {
     
     
@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
         sprintf(maxkey, "%s:maxtime", token);
         c = iniparser_getint(dict, childkey, 0);
         m = iniparser_getint(dict, maxkey, 10);
-        
+
         
         #ifdef _WIN32
           launchWindows(c, m);
@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
         children--;
       }
     #else
-      sprintf(cmd, "./proclaunch %d %d &", 0, maxtime); 
+      sprintf(cmd, "./proclaunch %d %d &", 0, maxtime);
       printf("Launching child process: %s\n", cmd);
       while (children  > 0) {
         system(cmd);

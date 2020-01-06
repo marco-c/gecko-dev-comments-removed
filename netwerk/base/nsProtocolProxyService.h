@@ -2,7 +2,7 @@
 
 
 
- 
+
 #ifndef nsProtocolProxyService_h__
 #define nsProtocolProxyService_h__
 

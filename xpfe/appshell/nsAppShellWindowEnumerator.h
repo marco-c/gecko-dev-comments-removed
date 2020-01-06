@@ -32,7 +32,7 @@ struct nsWindowInfo
                             *mOlder;
   nsWindowInfo              *mLower,   
                             *mHigher;
-  
+
   bool TypeEquals(const nsAString &aType);
   void   InsertAfter(nsWindowInfo *inOlder, nsWindowInfo *inHigher);
   void   Unlink(bool inAge, bool inZ);

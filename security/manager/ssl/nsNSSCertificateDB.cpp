@@ -286,8 +286,8 @@ nsNSSCertificateDB::handleCACertDownload(NotNull<nsIArray*> x509Certs,
       
       selCertIndex = 0;
       certToShow = cert0;
-    } else 
-    if (certn_2IssuerName.Equals(certn_1SubjectName)) { 
+    } else
+    if (certn_2IssuerName.Equals(certn_1SubjectName)) {
       
       
       selCertIndex = numCerts-1;
@@ -304,7 +304,7 @@ nsNSSCertificateDB::handleCACertDownload(NotNull<nsIArray*> x509Certs,
     return NS_ERROR_FAILURE;
 
   nsCOMPtr<nsICertificateDialogs> dialogs;
-  nsresult rv = ::getNSSDialogs(getter_AddRefs(dialogs), 
+  nsresult rv = ::getNSSDialogs(getter_AddRefs(dialogs),
                                 NS_GET_IID(nsICertificateDialogs),
                                 NS_CERTIFICATEDIALOGS_CONTRACTID);
   if (NS_FAILED(rv)) {
@@ -662,8 +662,8 @@ nsNSSCertificateDB::ImportValidCACertsInList(const UniqueCERTCertList& filteredC
   return NS_OK;
 }
 
-void nsNSSCertificateDB::DisplayCertificateAlert(nsIInterfaceRequestor *ctx, 
-                                                 const char *stringID, 
+void nsNSSCertificateDB::DisplayCertificateAlert(nsIInterfaceRequestor *ctx,
+                                                 const char *stringID,
                                                  nsIX509Cert *certToShow,
                                                  const nsNSSShutDownPreventionLock &)
 {
@@ -765,7 +765,7 @@ nsNSSCertificateDB::ImportUserCertificate(uint8_t* data, uint32_t length,
   return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsNSSCertificateDB::DeleteCertificate(nsIX509Cert *aCert)
 {
   NS_ENSURE_ARG_POINTER(aCert);
@@ -795,15 +795,15 @@ nsNSSCertificateDB::DeleteCertificate(nsIX509Cert *aCert)
     
     
     nsNSSCertTrust trust(0, 0, 0);
-    srv = CERT_ChangeCertTrust(CERT_GetDefaultCertDB(), 
+    srv = CERT_ChangeCertTrust(CERT_GetDefaultCertDB(),
                                cert.get(), trust.GetTrust());
   }
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("cert deleted: %d", srv));
   return (srv) ? NS_ERROR_FAILURE : NS_OK;
 }
 
-NS_IMETHODIMP 
-nsNSSCertificateDB::SetCertTrust(nsIX509Cert *cert, 
+NS_IMETHODIMP
+nsNSSCertificateDB::SetCertTrust(nsIX509Cert *cert,
                                  uint32_t type,
                                  uint32_t trusted)
 {
@@ -828,21 +828,21 @@ nsNSSCertificateDB::SetCertTrust(nsIX509Cert *cert,
     trust.AddCATrust(!!(trusted & nsIX509CertDB::TRUSTED_SSL),
                      !!(trusted & nsIX509CertDB::TRUSTED_EMAIL),
                      !!(trusted & nsIX509CertDB::TRUSTED_OBJSIGN));
-    srv = CERT_ChangeCertTrust(CERT_GetDefaultCertDB(), 
+    srv = CERT_ChangeCertTrust(CERT_GetDefaultCertDB(),
                                nsscert.get(),
                                trust.GetTrust());
   } else if (type == nsIX509Cert::SERVER_CERT) {
     
     trust.SetValidPeer();
     trust.AddPeerTrust(trusted & nsIX509CertDB::TRUSTED_SSL, 0, 0);
-    srv = CERT_ChangeCertTrust(CERT_GetDefaultCertDB(), 
+    srv = CERT_ChangeCertTrust(CERT_GetDefaultCertDB(),
                                nsscert.get(),
                                trust.GetTrust());
   } else if (type == nsIX509Cert::EMAIL_CERT) {
     
     trust.SetValidPeer();
     trust.AddPeerTrust(0, !!(trusted & nsIX509CertDB::TRUSTED_EMAIL), 0);
-    srv = CERT_ChangeCertTrust(CERT_GetDefaultCertDB(), 
+    srv = CERT_ChangeCertTrust(CERT_GetDefaultCertDB(),
                                nsscert.get(),
                                trust.GetTrust());
   } else {
@@ -852,8 +852,8 @@ nsNSSCertificateDB::SetCertTrust(nsIX509Cert *cert,
   return MapSECStatus(srv);
 }
 
-NS_IMETHODIMP 
-nsNSSCertificateDB::IsCertTrusted(nsIX509Cert *cert, 
+NS_IMETHODIMP
+nsNSSCertificateDB::IsCertTrusted(nsIX509Cert *cert,
                                   uint32_t certType,
                                   uint32_t trustType,
                                   bool *_isTrusted)
@@ -1118,7 +1118,7 @@ nsNSSCertificateDB::ConstructX509(const nsACString& certDER,
 }
 
 void
-nsNSSCertificateDB::get_default_nickname(CERTCertificate *cert, 
+nsNSSCertificateDB::get_default_nickname(CERTCertificate *cert,
                                          nsIInterfaceRequestor* ctx,
                                          nsCString &nickname,
                                          const nsNSSShutDownPreventionLock &)
@@ -1322,7 +1322,7 @@ nsNSSCertificateDB::SetCertTrustFromString(nsIX509Cert* cert,
   return MapSECStatus(srv);
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 nsNSSCertificateDB::GetCerts(nsIX509CertList **_retval)
 {
   nsNSSShutDownPreventionLock locker;

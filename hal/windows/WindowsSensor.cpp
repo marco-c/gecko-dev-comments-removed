@@ -117,7 +117,7 @@ EnableSensorNotifications(SensorType aSensor)
   RefPtr<ISensorManager> manager;
   if (FAILED(CoCreateInstance(CLSID_SensorManager, nullptr,
                               CLSCTX_INPROC_SERVER,
-                              IID_ISensorManager, 
+                              IID_ISensorManager,
                               getter_AddRefs(manager)))) {
     return;
   }

@@ -11,7 +11,7 @@ namespace mozilla {
 namespace net {
 
 
-NS_IMPL_ISUPPORTS(nsProxyInfo, nsProxyInfo, nsIProxyInfo) 
+NS_IMPL_ISUPPORTS(nsProxyInfo, nsProxyInfo, nsIProxyInfo)
 
 NS_IMETHODIMP
 nsProxyInfo::GetHost(nsACString &result)

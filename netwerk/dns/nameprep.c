@@ -198,7 +198,7 @@ idn_nameprep_isprohibited(idn_nameprep_t handle, const uint32_t *str,
 
 	return (idn_nameprep_check(handle->prohibited_proc, str, found));
 }
-		
+
 idn_result_t
 idn_nameprep_isunassigned(idn_nameprep_t handle, const uint32_t *str,
 			  const uint32_t **found) {
@@ -209,7 +209,7 @@ idn_nameprep_isunassigned(idn_nameprep_t handle, const uint32_t *str,
 
 	return (idn_nameprep_check(handle->unassigned_proc, str, found));
 }
-		
+
 static idn_result_t
 idn_nameprep_check(nameprep_checkproc proc, const uint32_t *str,
 		   const uint32_t **found) {
@@ -284,7 +284,7 @@ idn_nameprep_isvalidbidi(idn_nameprep_t handle, const uint32_t *str,
 			
 			*found = str;
 			return (idn_success);
-		} else { 
+		} else {
 			last_char = (*(handle->biditype_proc))(v);
 			if (found_r_al && last_char == idn_biditype_l) {
 				*found = str;

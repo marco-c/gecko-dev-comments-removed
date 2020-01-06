@@ -92,7 +92,7 @@ protected:
 
     
     nsCOMPtr<nsIInputStreamPump>        mPump;
-    
+
     
     nsCOMPtr<nsICacheEntry>             mCacheEntry;
     nsCOMPtr<nsIOutputStream>           mCacheOutputStream;

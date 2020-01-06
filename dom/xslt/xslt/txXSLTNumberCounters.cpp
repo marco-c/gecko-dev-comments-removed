@@ -12,10 +12,10 @@ public:
     txDecimalCounter() : mMinLength(1), mGroupSize(50)
     {
     }
-    
+
     txDecimalCounter(int32_t aMinLength, int32_t aGroupSize,
                      const nsAString& mGroupSeparator);
-    
+
     virtual void appendNumber(int32_t aNumber, nsAString& aDest);
 
 private:
@@ -31,7 +31,7 @@ public:
     }
 
     virtual void appendNumber(int32_t aNumber, nsAString& aDest);
-    
+
 private:
     char16_t mOffset;
 };
@@ -58,7 +58,7 @@ txFormattedCounter::getCounterFor(const nsString& aToken,
     int32_t length = aToken.Length();
     NS_ASSERTION(length, "getting counter for empty token");
     aCounter = 0;
-    
+
     if (length == 1) {
         char16_t ch = aToken.CharAt(0);
         switch (ch) {
@@ -67,12 +67,12 @@ txFormattedCounter::getCounterFor(const nsString& aToken,
             case 'I':
                 aCounter = new txRomanCounter(ch == 'I');
                 break;
-            
+
             case 'a':
             case 'A':
                 aCounter = new txAlphaCounter(ch);
                 break;
-            
+
             case '1':
             default:
                 
@@ -83,7 +83,7 @@ txFormattedCounter::getCounterFor(const nsString& aToken,
         MOZ_ASSERT(aCounter);
         return NS_OK;
     }
-    
+
     
     int32_t i;
     for (i = 0; i < length-1; ++i) {
@@ -128,7 +128,7 @@ void txDecimalCounter::appendNumber(int32_t aNumber, nsAString& aDest)
     while (pos > end) {
         buf[--pos] = '0';
     }
-    
+
     
     
     
@@ -173,7 +173,7 @@ void txAlphaCounter::appendNumber(int32_t aNumber, nsAString& aDest)
         aNumber /= 26;
         buf[--pos] = ch + mOffset;
     }
-    
+
     aDest.Append(buf + pos, (uint32_t)(11 - pos));
 }
 
@@ -200,7 +200,7 @@ void txRomanCounter::appendNumber(int32_t aNumber, nsAString& aDest)
     }
 
     int32_t posValue;
-    
+
     
     posValue = aNumber / 100;
     aNumber %= 100;

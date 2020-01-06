@@ -65,7 +65,7 @@ public:
                           int32_t* aIndex);
 
   nsISupports* NamedItemInternal(const nsAString& aName, bool aFlushContent);
-  
+
   
 
 
@@ -114,7 +114,7 @@ protected:
 
   
   void FlushPendingNotifications();
-  
+
   
   
   

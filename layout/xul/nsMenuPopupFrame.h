@@ -234,7 +234,7 @@ public:
 
   nsPopupLevel PopupLevel() const
   {
-    return PopupLevel(IsNoAutoHide()); 
+    return PopupLevel(IsNoAutoHide());
   }
 
   
@@ -490,7 +490,7 @@ protected:
   
   
   
-  nscoord FlipOrResize(nscoord& aScreenPoint, nscoord aSize, 
+  nscoord FlipOrResize(nscoord& aScreenPoint, nscoord aSize,
                        nscoord aScreenBegin, nscoord aScreenEnd,
                        nscoord aAnchorBegin, nscoord aAnchorEnd,
                        nscoord aMarginBegin, nscoord aMarginEnd,

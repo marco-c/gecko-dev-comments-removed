@@ -72,7 +72,7 @@ public:
 
 
   virtual void OnContentReset() = 0;
-  
+
   
 
 

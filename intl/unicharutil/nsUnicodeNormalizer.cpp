@@ -184,7 +184,7 @@ mdn__unicode_decompose(int32_t compat, uint32_t *v, size_t vlen,
 	seqidx = decompose_char(c, &seq);
 	if (seqidx == 0 || (compat == 0 && (seqidx & DECOMP_COMPAT) != 0))
 		return (NS_SUCCESS_UNORM_NOTFOUND);
-	
+
 	
 
 
@@ -211,7 +211,7 @@ mdn__unicode_decompose(int32_t compat, uint32_t *v, size_t vlen,
 		}
 
 	} while ((*seq++ & END_BIT) == 0);
-	
+
 	*decomp_lenp = v - vorg;
 
 	return (NS_OK);
@@ -340,8 +340,8 @@ mdn_normalize(bool do_composition, bool compat,
 	workbuf_init(&wb);
 
 	nsAString::const_iterator start, end;
-	aSrcStr.BeginReading(start); 
-	aSrcStr.EndReading(end); 
+	aSrcStr.BeginReading(start);
+	aSrcStr.EndReading(end);
 
 	while (start != end) {
 		uint32_t c;
@@ -467,7 +467,7 @@ again:
 	
 }
 
-static void		
+static void
 get_class(workbuf_t *wb) {
 	int32_t i;
 
@@ -546,7 +546,7 @@ compose(workbuf_t *wb) {
 }
 
 static nsresult
-flush_before_cur(workbuf_t *wb, nsAString& aToStr) 
+flush_before_cur(workbuf_t *wb, nsAString& aToStr)
 {
 	int32_t i;
 
@@ -651,25 +651,25 @@ workbuf_removevoid(workbuf_t *wb) {
 	wb->last = j;
 }
 
-nsresult  
+nsresult
 nsUnicodeNormalizer::NormalizeUnicodeNFD( const nsAString& aSrc, nsAString& aDest)
 {
   return mdn_normalize(false, false, aSrc, aDest);
 }
 
-nsresult  
+nsresult
 nsUnicodeNormalizer::NormalizeUnicodeNFC( const nsAString& aSrc, nsAString& aDest)
 {
   return mdn_normalize(true, false, aSrc, aDest);
 }
 
-nsresult  
+nsresult
 nsUnicodeNormalizer::NormalizeUnicodeNFKD( const nsAString& aSrc, nsAString& aDest)
 {
   return mdn_normalize(false, true, aSrc, aDest);
 }
 
-nsresult  
+nsresult
 nsUnicodeNormalizer::NormalizeUnicodeNFKC( const nsAString& aSrc, nsAString& aDest)
 {
   return mdn_normalize(true, true, aSrc, aDest);

@@ -20,7 +20,7 @@ static bool pathBeginsWithVolName(const nsACString& path, nsACString& firstPathC
   
   
   
-  
+
   if (!gVolumeList) {
     gVolumeList = new nsTArray<nsCString>;
     if (!gVolumeList) {
@@ -32,7 +32,7 @@ static bool pathBeginsWithVolName(const nsACString& path, nsACString& firstPathC
   if (!gVolumeList->Length()) {
     OSErr err;
     ItemCount volumeIndex = 1;
-    
+
     do {
       HFSUniStr255 volName;
       FSRef rootDirectory;
@@ -46,7 +46,7 @@ static bool pathBeginsWithVolName(const nsACString& path, nsACString& firstPathC
       }
     } while (err == noErr);
   }
-  
+
   
   nsACString::const_iterator start;
   path.BeginReading(start);
@@ -55,7 +55,7 @@ static bool pathBeginsWithVolName(const nsACString& path, nsACString& firstPathC
   path.EndReading(directory_end);
   nsACString::const_iterator component_end(start);
   FindCharInReadable('/', component_end, directory_end);
-  
+
   nsAutoCString flatComponent((Substring(start, component_end)));
   NS_UnescapeURL(flatComponent);
   int32_t foundIndex = gVolumeList->IndexOf(flatComponent);
@@ -108,13 +108,13 @@ static void SwapSlashColon(char *s)
       *s = '/';
     s++;
   }
-} 
+}
 
 nsresult
 net_GetURLSpecFromActualFile(nsIFile *aFile, nsACString &result)
 {
   
-  
+
   nsresult rv;
   nsAutoCString ePath;
 
@@ -125,7 +125,7 @@ net_GetURLSpecFromActualFile(nsIFile *aFile, nsACString &result)
 
   nsAutoCString escPath;
   NS_NAMED_LITERAL_CSTRING(prefix, "file://");
-      
+
   
   if (NS_EscapeURL(ePath.get(), ePath.Length(), esc_Directory+esc_Forced, escPath))
     escPath.Insert(prefix, 0);
@@ -153,7 +153,7 @@ net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result)
   rv = NS_NewNativeLocalFile(EmptyCString(), true, getter_AddRefs(localFile));
   if (NS_FAILED(rv))
     return rv;
-  
+
   nsAutoCString directory, fileBaseName, fileExtension, path;
   bool bHFSPath = false;
 
@@ -170,7 +170,7 @@ net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result)
     
     
     nsAutoCString possibleVolName;
-    if (pathBeginsWithVolName(directory, possibleVolName)) {        
+    if (pathBeginsWithVolName(directory, possibleVolName)) {
       
       
       

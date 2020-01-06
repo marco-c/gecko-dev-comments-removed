@@ -240,7 +240,7 @@ protected:
     PLDHashTable mForwardArcs;
     PLDHashTable mReverseArcs;
 
-    nsCOMArray<nsIRDFObserver> mObservers;  
+    nsCOMArray<nsIRDFObserver> mObservers;
     uint32_t                   mNumObservers;
 
     
@@ -253,8 +253,8 @@ protected:
 
     
     nsresult
-    LockedAssert(nsIRDFResource* source, 
-                 nsIRDFResource* property, 
+    LockedAssert(nsIRDFResource* source,
+                 nsIRDFResource* property,
                  nsIRDFNode* target,
                  bool tv);
 
@@ -1137,9 +1137,9 @@ InMemoryDataSource::LockedAssert(nsIRDFResource* aSource,
 
 NS_IMETHODIMP
 InMemoryDataSource::Assert(nsIRDFResource* aSource,
-                           nsIRDFResource* aProperty, 
+                           nsIRDFResource* aProperty,
                            nsIRDFNode* aTarget,
-                           bool aTruthValue) 
+                           bool aTruthValue)
 {
     NS_PRECONDITION(aSource != nullptr, "null ptr");
     if (! aSource)
@@ -1473,7 +1473,7 @@ InMemoryDataSource::RemoveObserver(nsIRDFObserver* aObserver)
     return NS_OK;
 }
 
-NS_IMETHODIMP 
+NS_IMETHODIMP
 InMemoryDataSource::HasArcIn(nsIRDFNode *aNode, nsIRDFResource *aArc, bool *result)
 {
     Assertion* ass = GetReverseArcs(aNode);
@@ -1955,7 +1955,7 @@ InMemoryDataSource::VisitAllTriples(rdfITripleVisitor *aVisitor)
     --mReadCount;
 
     return rv;
-} 
+}
 
 
 

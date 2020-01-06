@@ -98,10 +98,10 @@ nsRange::CompareNodeToRange(nsINode* aNode, nsRange* aRange,
   
   
   
-  
-  if (!aRange || !aRange->IsPositioned()) 
-    return NS_ERROR_UNEXPECTED; 
-  
+
+  if (!aRange || !aRange->IsPositioned())
+    return NS_ERROR_UNEXPECTED;
+
   
   int32_t nodeStart, nodeEnd;
   nsINode* parent = aNode->GetParentNode();
@@ -237,7 +237,7 @@ nsRange::IsNodeSelected(nsINode* aNode, uint32_t aStartOffset,
 
 
 
-nsRange::~nsRange() 
+nsRange::~nsRange()
 {
   NS_ASSERTION(!IsInSelection(), "deleting nsRange that is in use");
 
@@ -3191,7 +3191,7 @@ nsRange::GetBoundingClientRect(bool aClampToEdge, bool aFlushLayout)
   CollectClientRectsAndText(&accumulator, nullptr, this, mStartParent,
     mStartOffset, mEndParent, mEndOffset, aClampToEdge, aFlushLayout);
 
-  nsRect r = accumulator.mResultRect.IsEmpty() ? accumulator.mFirstRect : 
+  nsRect r = accumulator.mResultRect.IsEmpty() ? accumulator.mFirstRect :
     accumulator.mResultRect;
   rect->SetLayoutRect(r);
   return rect.forget();
