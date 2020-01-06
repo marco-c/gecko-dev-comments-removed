@@ -266,6 +266,17 @@ IMEStateManager::NotifyIMEOfBlurForChildProcess()
   }
 
   MOZ_ASSERT(sFocusedIMEWidget);
+
+  if (MOZ_LOG_TEST(sISMLog, LogLevel::Debug) && sTextCompositions) {
+    RefPtr<TextComposition> composition =
+      sTextCompositions->GetCompositionFor(sFocusedIMEWidget);
+    if (composition) {
+      MOZ_LOG(sISMLog, LogLevel::Debug,
+        ("  NotifyIMEOfBlurForChildProcess(), sFocusedIMEWidget still has "
+         "composition"));
+    }
+  }
+
   NotifyIME(NOTIFY_IME_OF_BLUR, sFocusedIMEWidget, sFocusedIMETabParent);
 
   MOZ_ASSERT(!sFocusedIMETabParent);
@@ -486,9 +497,12 @@ IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
     if (composition) {
       
       
+      
+      
+      
+      
       if (aPresContext ||
-          !sFocusedIMEWidget->IMENotificationRequestsRef().
-           WantDuringDeactive()) {
+          !oldWidget->IMENotificationRequestsRef().WantDuringDeactive()) {
         MOZ_LOG(sISMLog, LogLevel::Info,
           ("  OnChangeFocusInternal(), requesting to commit composition to "
            "the (previous) focused widget"));
