@@ -663,21 +663,6 @@ element.makeWebElement = function(uuid) {
   };
 };
 
-
-
-
-
-
-
-
-
-
-element.isWebElementReference = function(ref) {
-  let properties = Object.getOwnPropertyNames(ref);
-  return properties.includes(element.Key) ||
-      properties.includes(element.LegacyKey);
-};
-
 element.generateUUID = function() {
   let uuid = uuidGen.generateUUID().toString();
   return uuid.substring(1, uuid.length - 1);
