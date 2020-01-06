@@ -16,6 +16,7 @@
 #include "PlatformDecoderModule.h"
 #include "ImageContainer.h"
 #include "mozilla/Span.h"
+#include "ReorderQueue.h"
 
 namespace mozilla {
 
@@ -128,6 +129,8 @@ protected:
   void ActorDestroy(ActorDestroyReason aWhy) override;
   bool SendBufferToCDM(uint32_t aSizeInBytes);
 
+  void ReorderAndReturnOutput(RefPtr<VideoData>&& aFrame);
+
   void RejectPromise(uint32_t aPromiseId,
                      nsresult aError,
                      const nsCString& aErrorMessage);
@@ -172,6 +175,15 @@ protected:
   bool mIsShutdown = false;
   bool mVideoDecoderInitialized = false;
   bool mActorDestroyed = false;
+
+  
+  
+  
+  
+  
+  
+  uint32_t mMaxRefFrames = 0;
+  ReorderQueue mReorderQueue;
 };
 
 } 
