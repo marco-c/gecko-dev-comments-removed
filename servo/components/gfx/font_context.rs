@@ -135,7 +135,7 @@ impl FontContext {
 
         let mut fonts: SmallVec<[Rc<RefCell<Font>>; 8]> = SmallVec::new();
 
-        for family in &style.font_family.0 {
+        for family in style.font_family.0.iter() {
             
             let mut cache_hit = false;
             for cached_font_entry in &self.layout_font_cache {
