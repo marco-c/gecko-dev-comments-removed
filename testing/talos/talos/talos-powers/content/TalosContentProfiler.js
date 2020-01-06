@@ -201,8 +201,14 @@ var TalosContentProfiler;
 
 
 
-    resume(marker = "") {
-      if (initted) {
+
+
+
+
+
+
+    resume(marker = "", inittedInParent = false) {
+      if (initted || inittedInParent) {
         return sendEventAndWait("Profiler:Resume", { marker });
       }
       return Promise.resolve();
@@ -214,8 +220,14 @@ var TalosContentProfiler;
 
 
 
-    pause(marker = "") {
-      if (initted) {
+
+
+
+
+
+
+    pause(marker = "", inittedInParent = false) {
+      if (initted || inittedInParent) {
         return sendEventAndWait("Profiler:Pause", { marker });
       }
 
