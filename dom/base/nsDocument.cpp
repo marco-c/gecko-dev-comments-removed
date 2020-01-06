@@ -13235,9 +13235,11 @@ nsDocument::PrincipalFlashClassification()
 {
   nsresult rv;
 
+  bool httpOnly = Preferences::GetBool("plugins.http_https_only", true);
+  bool flashBlock = Preferences::GetBool("plugins.flashBlock.enabled", false);
+
   
-  
-  if (!Preferences::GetBool("plugins.flashBlock.enabled")) {
+  if (!httpOnly && !flashBlock) {
     return FlashClassification::Unknown;
   }
 
@@ -13250,6 +13252,26 @@ nsDocument::PrincipalFlashClassification()
   rv = principal->GetURI(getter_AddRefs(classificationURI));
   if (NS_FAILED(rv) || !classificationURI) {
     return FlashClassification::Denied;
+  }
+
+  if (httpOnly) {
+    
+    
+    
+    
+    
+    nsAutoCString scheme;
+    rv = classificationURI->GetScheme(scheme);
+    if (NS_WARN_IF(NS_FAILED(rv)) ||
+        !(scheme.EqualsLiteral("http") || scheme.EqualsLiteral("https"))) {
+      return FlashClassification::Denied;
+    }
+  }
+
+  
+  
+  if (!flashBlock) {
+    return FlashClassification::Unknown;
   }
 
   nsAutoCString allowTables, allowExceptionsTables,
