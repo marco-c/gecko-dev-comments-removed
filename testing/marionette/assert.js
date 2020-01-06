@@ -47,8 +47,8 @@ this.assert = {};
 
 assert.session = function(driver, msg = "") {
   assert.that(sessionID => sessionID,
-      msg, InvalidSessionIDError)(driver.sessionId);
-  return driver.sessionId;
+      msg, InvalidSessionIDError)(driver.sessionID);
+  return driver.sessionID;
 };
 
 
