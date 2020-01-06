@@ -276,14 +276,19 @@ async function testFileAccess() {
   
   let tests = [];
 
+  
+  
+  
   let profileDir = GetProfileDir();
-  tests.push({
-    desc:     "profile dir",                
-    ok:       false,                        
-    browser:  webBrowser,                   
-    file:     profileDir,                   
-    minLevel: minProfileReadSandboxLevel(), 
-  });
+  if (!isLinux()) {
+    tests.push({
+      desc:     "profile dir",                
+      ok:       false,                        
+      browser:  webBrowser,                   
+      file:     profileDir,                   
+      minLevel: minProfileReadSandboxLevel(), 
+    });
+  }
   if (fileContentProcessEnabled) {
     tests.push({
       desc:     "profile dir",
@@ -336,19 +341,15 @@ async function testFileAccess() {
     }
   }
 
-  
-  
-  
-  if (isLinux()) {
-    todo(level >= minHomeReadSandboxLevel(), "enable /var test on Linux?");
-  }
-  if (isMac()) {
+  if (isMac() || isLinux()) {
     let varDir = GetDir("/var");
 
-    
-    
-    varDir.normalize();
-    Assert.ok(varDir.path === "/private/var", "/var resolves to /private/var");
+    if (isMac()) {
+      
+      
+      varDir.normalize();
+      Assert.ok(varDir.path === "/private/var", "/var resolves to /private/var");
+    }
 
     tests.push({
       desc:     "/var",

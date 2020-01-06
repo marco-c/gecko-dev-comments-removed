@@ -1117,8 +1117,10 @@ pref("security.sandbox.content.level", 1);
 
 
 
-pref("security.sandbox.content.level", 2);
+
+pref("security.sandbox.content.level", 3);
 pref("security.sandbox.content.write_path_whitelist", "");
+pref("security.sandbox.content.read_path_whitelist", "");
 pref("security.sandbox.content.syscall_whitelist", "");
 #endif
 
@@ -1134,7 +1136,7 @@ pref("security.sandbox.content.tempDirSuffix", "");
 #if defined(MOZ_SANDBOX)
 
 
-#if defined(XP_WIN) || defined(XP_MACOSX)
+#if defined(XP_WIN)
 pref("security.sandbox.logging.enabled", false);
 #else
 pref("security.sandbox.logging.enabled", true);

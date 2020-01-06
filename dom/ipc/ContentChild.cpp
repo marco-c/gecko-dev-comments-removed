@@ -1458,6 +1458,23 @@ GetDirectoryPath(const char *aPath) {
 }
 #endif 
 
+static nsresult
+NormalizePath(const char* aPath, nsCString& aOutPath)
+{
+  nsresult rv;
+
+  nsCOMPtr<nsIFile> file;
+  rv = NS_NewLocalFile(NS_ConvertUTF8toUTF16(aPath), true, getter_AddRefs(file));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = file->Normalize();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = file->GetNativePath(aOutPath);
+  NS_ENSURE_SUCCESS(rv, rv);
+  return NS_OK;
+}
+
 static bool
 StartMacOSContentSandbox()
 {
@@ -1502,6 +1519,15 @@ StartMacOSContentSandbox()
   }
 
   bool isFileProcess = cc->GetRemoteType().EqualsLiteral(FILE_REMOTE_TYPE);
+  char *developer_repo_dir = nullptr;
+  char *developer_obj_dir = nullptr;
+  if (mozilla::IsDevelopmentBuild()) {
+    
+    
+    
+    developer_repo_dir = PR_GetEnv("MOZ_DEVELOPER_REPO_DIR");
+    developer_obj_dir = PR_GetEnv("MOZ_DEVELOPER_OBJ_DIR");
+  }
 
   MacSandboxInfo info;
   info.type = MacSandboxType_Content;
@@ -1528,24 +1554,21 @@ StartMacOSContentSandbox()
     info.testingReadPath2.assign(testingReadPath2.get());
   }
 
-  if (mozilla::IsDevelopmentBuild()) {
-    nsCOMPtr<nsIFile> repoDir;
-    rv = mozilla::GetRepoDir(getter_AddRefs(repoDir));
-    if (NS_FAILED(rv)) {
-      MOZ_CRASH("Failed to get path to repo dir");
-    }
+  if (developer_repo_dir) {
     nsCString repoDirPath;
-    Unused << repoDir->GetNativePath(repoDirPath);
-    info.testingReadPath3.assign(repoDirPath.get());
-
-    nsCOMPtr<nsIFile> objDir;
-    rv = mozilla::GetObjDir(getter_AddRefs(objDir));
+    rv = NormalizePath(developer_repo_dir, repoDirPath);
     if (NS_FAILED(rv)) {
-      MOZ_CRASH("Failed to get path to build object dir");
+      MOZ_CRASH("Failed to normalize repo path");
     }
+    info.testingReadPath3.assign(repoDirPath.get());
+  }
 
+  if (developer_obj_dir) {
     nsCString objDirPath;
-    Unused << objDir->GetNativePath(objDirPath);
+    rv = NormalizePath(developer_obj_dir, objDirPath);
+    if (NS_FAILED(rv)) {
+      MOZ_CRASH("Failed to normalize obj dir path");
+    }
     info.testingReadPath4.assign(objDirPath.get());
   }
 
@@ -1622,7 +1645,10 @@ ContentChild::RecvSetProcessSandbox(const MaybeFileDesc& aBroker)
         }
       }
     }
-    sandboxEnabled = SetContentProcessSandbox(brokerFd, syscallWhitelist);
+    ContentChild* cc = ContentChild::GetSingleton();
+    bool isFileProcess = cc->GetRemoteType().EqualsLiteral(FILE_REMOTE_TYPE);
+    sandboxEnabled = SetContentProcessSandbox(brokerFd, isFileProcess,
+                                              syscallWhitelist);
   }
 #elif defined(XP_WIN)
   mozilla::SandboxTarget::Instance()->StartSandbox();

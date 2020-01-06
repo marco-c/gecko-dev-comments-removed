@@ -11,10 +11,13 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SandboxSettings.h"
+#include "mozilla/dom/ContentChild.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsAppDirectoryServiceDefs.h"
 #include "SpecialSystemDirectory.h"
 
 #ifdef ANDROID
@@ -42,14 +45,16 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   
 #if defined(MOZ_CONTENT_SANDBOX)
   SandboxBroker::Policy* policy = new SandboxBroker::Policy;
-  policy->AddDir(rdonly, "/");
   policy->AddDir(rdwrcr, "/dev/shm");
+  
+  
   
   
   
   nsCOMPtr<nsIFile> tmpDir;
   nsresult rv = GetSpecialSystemDirectory(OS_TemporaryDirectory,
                                           getter_AddRefs(tmpDir));
+
   if (NS_SUCCEEDED(rv)) {
     nsAutoCString tmpPath;
     rv = tmpDir->GetNativePath(tmpPath);
@@ -82,13 +87,131 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   }
 #endif
 
+  
+  
+  if (Preferences::GetInt("security.sandbox.content.level") <= 2) {
+    policy->AddDir(rdonly, "/");
+    mCommonContentPolicy.reset(policy);
+    return;
+  }
+  policy->AddPath(rdonly, "/dev/urandom");
+  policy->AddPath(rdonly, "/proc/cpuinfo");
+  policy->AddPath(rdonly, "/proc/meminfo");
+  policy->AddDir(rdonly, "/lib");
+  policy->AddDir(rdonly, "/etc");
+  policy->AddDir(rdonly, "/usr/share");
+  policy->AddDir(rdonly, "/usr/local/share");
+  policy->AddDir(rdonly, "/usr/lib");
+  policy->AddDir(rdonly, "/usr/lib32");
+  policy->AddDir(rdonly, "/usr/lib64");
+  policy->AddDir(rdonly, "/usr/X11R6/lib/X11/fonts");
+  policy->AddDir(rdonly, "/usr/tmp");
+  policy->AddDir(rdonly, "/var/tmp");
+  policy->AddDir(rdonly, "/sys/devices/cpu");
+  policy->AddDir(rdonly, "/sys/devices/system/cpu");
+
+  
+  
+  mozilla::Array<const char*, 3> confDirs = {
+    ".config",
+    ".themes",
+    ".fonts",
+  };
+
+  nsCOMPtr<nsIFile> homeDir;
+  rv = GetSpecialSystemDirectory(Unix_HomeDirectory, getter_AddRefs(homeDir));
+  if (NS_SUCCEEDED(rv)) {
+    nsCOMPtr<nsIFile> confDir;
+
+    for (auto dir : confDirs) {
+      rv = homeDir->Clone(getter_AddRefs(confDir));
+      if (NS_SUCCEEDED(rv)) {
+        rv = confDir->AppendNative(nsDependentCString(dir));
+        if (NS_SUCCEEDED(rv)) {
+          nsAutoCString tmpPath;
+          rv = confDir->GetNativePath(tmpPath);
+          if (NS_SUCCEEDED(rv)) {
+            policy->AddDir(rdonly, tmpPath.get());
+          }
+        }
+      }
+    }
+
+    
+    rv = homeDir->Clone(getter_AddRefs(confDir));
+    if (NS_SUCCEEDED(rv)) {
+      rv = confDir->AppendNative(NS_LITERAL_CSTRING(".local"));
+      if (NS_SUCCEEDED(rv)) {
+        rv = confDir->AppendNative(NS_LITERAL_CSTRING("share"));
+      }
+      if (NS_SUCCEEDED(rv)) {
+        nsAutoCString tmpPath;
+        rv = confDir->GetNativePath(tmpPath);
+        if (NS_SUCCEEDED(rv)) {
+          policy->AddDir(rdonly, tmpPath.get());
+        }
+      }
+    }
+
+    
+    rv = homeDir->Clone(getter_AddRefs(confDir));
+    if (NS_SUCCEEDED(rv)) {
+      rv = confDir->AppendNative(NS_LITERAL_CSTRING(".fonts.conf"));
+      if (NS_SUCCEEDED(rv)) {
+        nsAutoCString tmpPath;
+        rv = confDir->GetNativePath(tmpPath);
+        if (NS_SUCCEEDED(rv)) {
+          policy->AddPath(rdonly, tmpPath.get());
+        }
+      }
+    }
+
+    
+    rv = homeDir->Clone(getter_AddRefs(confDir));
+    if (NS_SUCCEEDED(rv)) {
+      rv = confDir->AppendNative(NS_LITERAL_CSTRING(".pangorc"));
+      if (NS_SUCCEEDED(rv)) {
+        nsAutoCString tmpPath;
+        rv = confDir->GetNativePath(tmpPath);
+        if (NS_SUCCEEDED(rv)) {
+          policy->AddPath(rdonly, tmpPath.get());
+        }
+      }
+    }
+  }
+
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIFile> ffDir;
+  rv = NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(ffDir));
+  if (NS_SUCCEEDED(rv)) {
+    nsAutoCString tmpPath;
+    rv = ffDir->GetNativePath(tmpPath);
+    if (NS_SUCCEEDED(rv)) {
+      policy->AddDir(rdonly, tmpPath.get());
+    }
+  }
+
+  if (mozilla::IsDevelopmentBuild()) {
+    
+    
+    
+    const char *developer_repo_dir = PR_GetEnv("MOZ_DEVELOPER_REPO_DIR");
+    if (developer_repo_dir) {
+      policy->AddDir(rdonly, developer_repo_dir);
+    }
+  }
+
   mCommonContentPolicy.reset(policy);
 #endif
 }
 
 #ifdef MOZ_CONTENT_SANDBOX
 UniquePtr<SandboxBroker::Policy>
-SandboxBrokerPolicyFactory::GetContentPolicy(int aPid)
+SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
 {
   
   
@@ -104,20 +227,42 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid)
     policy(new SandboxBroker::Policy(*mCommonContentPolicy));
 
   
+  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/maps", aPid).get());
+
+  
+  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/statm", aPid).get());
+  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/smaps", aPid).get());
   
   
-  nsAdoptingCString extraPathString =
+  
+  nsAdoptingCString extraReadPathString =
+    Preferences::GetCString("security.sandbox.content.read_path_whitelist");
+  AddDynamicPathList(policy.get(), extraReadPathString, rdonly);
+  nsAdoptingCString extraWritePathString =
     Preferences::GetCString("security.sandbox.content.write_path_whitelist");
-  if (extraPathString) {
-    for (const nsACString& path : extraPathString.Split(',')) {
-      nsCString trimPath(path);
-      trimPath.Trim(" ", true, true);
-      policy->AddDynamic(rdwr, trimPath.get());
-    }
+  AddDynamicPathList(policy.get(), extraWritePathString, rdwr);
+
+  
+  if (aFileProcess) {
+    policy->AddDir(rdonly, "/");
   }
 
   
   return policy;
+
+}
+
+void
+SandboxBrokerPolicyFactory::AddDynamicPathList(SandboxBroker::Policy *policy,
+                                               nsAdoptingCString& pathList,
+                                               int perms) {
+ if (pathList) {
+    for (const nsACString& path : pathList.Split(',')) {
+      nsCString trimPath(path);
+      trimPath.Trim(" ", true, true);
+      policy->AddDynamic(perms, trimPath.get());
+    }
+  }
 }
 
 #endif 

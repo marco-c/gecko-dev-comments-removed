@@ -685,7 +685,8 @@ SandboxEarlyInit(GeckoProcessType aType)
 
 
 bool
-SetContentProcessSandbox(int aBrokerFd, std::vector<int>& aSyscallWhitelist)
+SetContentProcessSandbox(int aBrokerFd, bool aFileProcess,
+                         std::vector<int>& aSyscallWhitelist)
 {
   if (!SandboxInfo::Get().Test(SandboxInfo::kEnabledForContent)) {
     if (aBrokerFd >= 0) {
@@ -694,7 +695,8 @@ SetContentProcessSandbox(int aBrokerFd, std::vector<int>& aSyscallWhitelist)
     return false;
   }
 
-  gSandboxReporterClient.emplace(SandboxReport::ProcType::CONTENT);
+  gSandboxReporterClient.emplace(aFileProcess ? SandboxReport::ProcType::FILE
+                                              : SandboxReport::ProcType::CONTENT);
 
   
   static Maybe<SandboxBrokerClient> sBroker;
