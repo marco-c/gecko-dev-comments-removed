@@ -295,8 +295,7 @@ nsDisplayTextOverflowMarker::CreateWebRenderCommands(mozilla::wr::DisplayListBui
                                                      layers::WebRenderLayerManager* aManager,
                                                      nsDisplayListBuilder* aDisplayListBuilder)
 {
-  if (!gfxPrefs::LayersAllowTextLayers() ||
-      !CanUseAdvancedLayer(aDisplayListBuilder->GetWidgetLayerManager())) {
+  if (!gfxPrefs::LayersAllowTextLayers()) {
       return false;
   }
 
@@ -307,20 +306,13 @@ nsDisplayTextOverflowMarker::CreateWebRenderCommands(mozilla::wr::DisplayListBui
   }
 
   
-  RefPtr<TextDrawTarget> textDrawer = new TextDrawTarget();
+  RefPtr<TextDrawTarget> textDrawer = new TextDrawTarget(aSc);
   RefPtr<gfxContext> captureCtx = gfxContext::CreateOrNull(textDrawer);
   
   textDrawer->StartDrawing(TextDrawTarget::Phase::eGlyphs);
   Paint(aDisplayListBuilder, captureCtx);
 
-  if (!textDrawer->CanSerializeFonts()) {
-    return false;
-  }
-
-  textDrawer->CreateWebRenderCommands(aBuilder, aSc, aManager, this, bounds);
-
-
-  return true;
+  return textDrawer->CreateWebRenderCommands(aBuilder, aSc, aManager, this, bounds);
 }
 
 

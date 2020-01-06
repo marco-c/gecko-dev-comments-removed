@@ -236,6 +236,8 @@ public:
   void PushStickyFrame(const wr::WrStickyId& aStickyId);
   void PopStickyFrame();
 
+  void PushBuiltDisplayList(wr::BuiltDisplayList &dl);
+
   bool IsScrollLayerDefined(layers::FrameMetrics::ViewID aScrollId) const;
   void DefineScrollLayer(const layers::FrameMetrics::ViewID& aScrollId,
                          const wr::LayoutRect& aContentRect, 
@@ -356,7 +358,7 @@ public:
   void PushText(const wr::LayoutRect& aBounds,
                 const wr::LayoutRect& aClip,
                 bool aIsBackfaceVisible,
-                const gfx::Color& aColor,
+                const wr::ColorF& aColor,
                 wr::FontInstanceKey aFontKey,
                 Range<const wr::GlyphInstance> aGlyphBuffer,
                 const wr::GlyphOptions* aGlyphOptions = nullptr);

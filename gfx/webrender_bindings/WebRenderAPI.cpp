@@ -754,6 +754,15 @@ DisplayListBuilder::PopStickyFrame()
   wr_dp_pop_clip(mWrState);
 }
 
+void
+DisplayListBuilder::PushBuiltDisplayList(BuiltDisplayList &dl)
+{
+  WRDL_LOG("PushBuiltDisplayList\n", mWrState);
+  wr_dp_push_built_display_list(mWrState,
+                                dl.dl_desc,
+                                &dl.dl.inner);
+}
+
 bool
 DisplayListBuilder::IsScrollLayerDefined(layers::FrameMetrics::ViewID aScrollId) const
 {
@@ -1032,13 +1041,13 @@ void
 DisplayListBuilder::PushText(const wr::LayoutRect& aBounds,
                              const wr::LayoutRect& aClip,
                              bool aIsBackfaceVisible,
-                             const gfx::Color& aColor,
+                             const wr::ColorF& aColor,
                              wr::FontInstanceKey aFontKey,
                              Range<const wr::GlyphInstance> aGlyphBuffer,
                              const wr::GlyphOptions* aGlyphOptions)
 {
   wr_dp_push_text(mWrState, aBounds, aClip, aIsBackfaceVisible,
-                  ToColorF(aColor),
+                  aColor,
                   aFontKey,
                   &aGlyphBuffer[0], aGlyphBuffer.length(),
                   aGlyphOptions);
