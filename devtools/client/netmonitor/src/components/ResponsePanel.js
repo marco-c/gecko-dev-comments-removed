@@ -39,7 +39,6 @@ class ResponsePanel extends Component {
     return {
       request: PropTypes.object.isRequired,
       openLink: PropTypes.func,
-      connector: PropTypes.object.isRequired,
     };
   }
 
@@ -55,36 +54,6 @@ class ResponsePanel extends Component {
 
     this.updateImageDimemsions = this.updateImageDimemsions.bind(this);
     this.isJSON = this.isJSON.bind(this);
-  }
-
-  
-
-
-  componentDidMount() {
-    this.maybeFetchResponseContent(this.props);
-  }
-
-  
-
-
-
-  componentWillReceiveProps(nextProps) {
-    this.maybeFetchResponseContent(nextProps);
-  }
-
-  
-
-
-
-
-  maybeFetchResponseContent(props) {
-    if (props.request.responseContentAvailable &&
-        (!props.request.responseContent ||
-         !props.request.responseContent.content)) {
-      
-      
-      props.connector.requestData(props.request.id, "responseContent");
-    }
   }
 
   updateImageDimemsions({ target }) {

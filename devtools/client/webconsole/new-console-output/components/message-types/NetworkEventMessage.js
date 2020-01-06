@@ -116,9 +116,6 @@ function NetworkEventMessage({
     sendHTTPRequest: () => {},
     setPreferences: () => {},
     triggerActivity: () => {},
-    requestData: (requestId, dataType) => {
-      return serviceContainer.requestData(requestId, dataType);
-    },
   };
 
   

@@ -8,7 +8,6 @@
 
 
 
-
 "use strict";
 
 
@@ -16,9 +15,6 @@
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/framework/test/shared-head.js",
   this);
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/netmonitor/test/shared-head.js", this);
 
 var {HUDService} = require("devtools/client/webconsole/hudservice");
 var WCUL10n = require("devtools/client/webconsole/webconsole-l10n");
