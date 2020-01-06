@@ -5781,7 +5781,7 @@ pref("security.mixed_content.hsts_priming_request_timeout", 2000);
 
 
 
-pref("security.data_uri.unique_opaque_origin", true);
+pref("security.data_uri.unique_opaque_origin", false);
 
 
 
