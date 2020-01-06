@@ -1162,6 +1162,11 @@ var PlacesToolbarHelper = {
     
     CustomizableUI.addListener(this);
 
+    if (!this._isObservingToolbars) {
+      this._isObservingToolbars = true;
+      window.addEventListener("toolbarvisibilitychange", this);
+    }
+
     
     
     
@@ -1170,8 +1175,9 @@ var PlacesToolbarHelper = {
     
     let toolbar = this._getParentToolbar(viewElt);
     if (!toolbar || toolbar.collapsed || this._isCustomizing ||
-        getComputedStyle(toolbar, "").display == "none")
+        getComputedStyle(toolbar, "").display == "none") {
       return;
+    }
 
     new PlacesToolbar(this._place);
     if (forceToolbarOverflowCheck) {
@@ -1179,7 +1185,19 @@ var PlacesToolbarHelper = {
     }
   },
 
+  handleEvent(event) {
+    switch (event.type) {
+      case "toolbarvisibilitychange":
+        this._resetView();
+        break;
+    }
+  },
+
   uninit: function PTH_uninit() {
+    if (this._isObservingToolbars) {
+      delete this._isObservingToolbars;
+      window.removeEventListener("toolbarvisibilitychange", this);
+    }
     CustomizableUI.removeListener(this);
   },
 
