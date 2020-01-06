@@ -518,6 +518,13 @@ WebRenderLayerManager::GenerateFallbackData(nsDisplayItem* aItem,
     clippedBounds = itemBounds.Intersect(clip.GetClipRect());
   }
 
+  
+  
+  
+  
+  nsRegion visibleRegion(clippedBounds);
+  aItem->ComputeVisibility(aDisplayListBuilder, &visibleRegion);
+
   const int32_t appUnitsPerDevPixel = aItem->Frame()->PresContext()->AppUnitsPerDevPixel();
   LayerRect bounds = ViewAs<LayerPixel>(
       LayoutDeviceRect::FromAppUnits(clippedBounds, appUnitsPerDevPixel),
