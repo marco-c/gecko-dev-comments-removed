@@ -140,8 +140,7 @@ public:
         
         
         
-        SizeOfState state(moz_malloc_size_of);
-        ImageMemoryCounter counter(image, state,  true);
+        ImageMemoryCounter counter(image, moz_malloc_size_of,  true);
 
         n += counter.Values().DecodedHeap();
         n += counter.Values().DecodedNonHeap();
@@ -410,8 +409,7 @@ private:
       return;
     }
 
-    SizeOfState state(ImagesMallocSizeOf);
-    ImageMemoryCounter counter(image, state, aIsUsed);
+    ImageMemoryCounter counter(image, ImagesMallocSizeOf, aIsUsed);
 
     aArray->AppendElement(Move(counter));
   }

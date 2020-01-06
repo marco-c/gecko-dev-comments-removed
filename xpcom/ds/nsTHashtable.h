@@ -148,17 +148,12 @@ public:
 
 
 
+
   EntryType* PutEntry(KeyType aKey)
   {
     
     return static_cast<EntryType*>(mTable.Add(EntryType::KeyToPointer(aKey)));
   }
-
-  
-
-
-
-
 
   MOZ_MUST_USE
   EntryType* PutEntry(KeyType aKey, const fallible_t&)

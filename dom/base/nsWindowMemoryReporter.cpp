@@ -52,18 +52,18 @@ AddNonJSSizeOfWindowAndItsDescendents(nsGlobalWindow* aWindow,
                                       nsTabSizes* aSizes)
 {
   
-  SizeOfState state(moz_malloc_size_of);
-  nsWindowSizes windowSizes(state);
+  nsWindowSizes windowSizes(moz_malloc_size_of);
   aWindow->AddSizeOfIncludingThis(&windowSizes);
+  windowSizes.addToTabSizes(aSizes);
 
   
+  nsWindowSizes innerWindowSizes(moz_malloc_size_of);
   nsGlobalWindow* inner = aWindow->IsOuterWindow() ? aWindow->GetCurrentInnerWindowInternal()
                                                    : nullptr;
   if (inner) {
-    inner->AddSizeOfIncludingThis(&windowSizes);
+    inner->AddSizeOfIncludingThis(&innerWindowSizes);
+    innerWindowSizes.addToTabSizes(aSizes);
   }
-
-  windowSizes.addToTabSizes(aSizes);
 
   nsCOMPtr<nsIDOMWindowCollection> frames = aWindow->GetFrames();
 
@@ -309,10 +309,7 @@ CollectWindowReports(nsGlobalWindow *aWindow,
   ReportCount(censusWindowPath, _pathTail, _amount, NS_LITERAL_CSTRING(_desc), \
               aHandleReport, aData);
 
-  
-  
-  SizeOfState state(WindowsMallocSizeOf);
-  nsWindowSizes windowSizes(state);
+  nsWindowSizes windowSizes(WindowsMallocSizeOf);
   aWindow->AddSizeOfIncludingThis(&windowSizes);
 
   REPORT_SIZE("/dom/element-nodes", windowSizes.mDOMElementNodesSize,
@@ -521,8 +518,7 @@ nsWindowMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
   WindowPaths topWindowPaths;
 
   
-  SizeOfState fakeState(nullptr);   
-  nsWindowSizes windowTotalSizes(fakeState);
+  nsWindowSizes windowTotalSizes(nullptr);
   nsCOMPtr<amIAddonManager> addonManager;
   if (XRE_IsParentProcess()) {
     

@@ -2579,12 +2579,12 @@ nsINode::GetAccessibleNode()
 }
 
 size_t
-nsINode::SizeOfExcludingThis(SizeOfState& aState) const
+nsINode::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
 {
   size_t n = 0;
   EventListenerManager* elm = GetExistingListenerManager();
   if (elm) {
-    n += elm->SizeOfIncludingThis(aState.mMallocSizeOf);
+    n += elm->SizeOfIncludingThis(aMallocSizeOf);
   }
 
   

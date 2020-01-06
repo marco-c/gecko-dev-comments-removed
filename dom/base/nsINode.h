@@ -19,7 +19,6 @@
 #include "nsTObserverArray.h"       
 #include "mozilla/ErrorResult.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/SizeOfState.h"    
 #include "mozilla/dom/EventTarget.h" 
 #include "js/TypeDecls.h"     
 #include "mozilla/dom/DOMString.h"
@@ -269,8 +268,7 @@ private:
 
 
 #define NS_DECL_SIZEOF_EXCLUDING_THIS \
-  virtual size_t SizeOfExcludingThis(mozilla::SizeOfState& aState) \
-    const override;
+  virtual size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
 
 
 
@@ -328,15 +326,15 @@ public:
   
   
   
-  virtual size_t SizeOfExcludingThis(mozilla::SizeOfState& aState) const;
+  virtual size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
   
   
   
   
   
-  virtual size_t SizeOfIncludingThis(mozilla::SizeOfState& aState) const {
-    return aState.mMallocSizeOf(this) + SizeOfExcludingThis(aState);
+  virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+    return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
   friend class nsNodeUtils;

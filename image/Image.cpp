@@ -15,7 +15,7 @@ namespace image {
 
 
 ImageMemoryCounter::ImageMemoryCounter(Image* aImage,
-                                       SizeOfState& aState,
+                                       MallocSizeOf aMallocSizeOf,
                                        bool aIsUsed)
   : mIsUsed(aIsUsed)
 {
@@ -36,8 +36,8 @@ ImageMemoryCounter::ImageMemoryCounter(Image* aImage,
   mType = aImage->GetType();
 
   
-  mValues.SetSource(aImage->SizeOfSourceWithComputedFallback(aState));
-  aImage->CollectSizeOfSurfaces(mSurfaces, aState.mMallocSizeOf);
+  mValues.SetSource(aImage->SizeOfSourceWithComputedFallback(aMallocSizeOf));
+  aImage->CollectSizeOfSurfaces(mSurfaces, aMallocSizeOf);
 
   
   for (const SurfaceMemoryCounter& surfaceCounter : mSurfaces) {
