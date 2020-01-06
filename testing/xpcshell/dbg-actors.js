@@ -2,7 +2,7 @@
 
 
 
-'use strict';
+"use strict";
 
 const { Promise } = Cu.import("resource://gre/modules/Promise.jsm", {});
 var { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
@@ -19,8 +19,7 @@ const { BrowserTabList } = devtools.require("devtools/server/actors/webbrowser")
 
 
 
-function createRootActor(connection)
-{
+function createRootActor(connection) {
   let parameters = {
     tabList: new XPCSTTabList(connection),
     globalActorFactories: DebuggerServer.globalActorFactories,
@@ -37,8 +36,7 @@ function createRootActor(connection)
 
 
 
-function XPCSTTabList(connection)
-{
+function XPCSTTabList(connection) {
   BrowserTabList.call(this, connection);
 }
 
