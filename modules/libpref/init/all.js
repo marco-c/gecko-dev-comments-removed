@@ -3839,7 +3839,9 @@ pref("intl.tsf.hack.ms_japanese_ime.do_not_return_no_layout_error_at_first_char"
 
 
 
-pref("intl.tsf.hack.ms_japanese_ime.do_not_associate_imc_on_win10", true);
+
+
+pref("intl.tsf.hack.ms_japanese_ime.do_not_associate_imc_on_win10", false);
 
 
 
@@ -5738,11 +5740,12 @@ pref("layout.css.servo.enabled", false);
 
 
 
+#ifdef RELEASE
 
 
 pref("security.mixed_content.send_hsts_priming", false);
 pref("security.mixed_content.use_hsts", false);
-#ifdef EARLY_BETA_OR_EARLIER
+#else
 
 
 pref("security.mixed_content.send_hsts_priming", true);
