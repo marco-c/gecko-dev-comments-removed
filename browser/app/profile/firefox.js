@@ -499,8 +499,6 @@ pref("browser.bookmarks.autoExportHTML",          false);
 
 pref("browser.bookmarks.max_backups",             15);
 
-pref("browser.bookmarks.showRecentlyBookmarked",  true);
-
 
 pref("browser.bookmarks.openInTabClosesMenu", true);
 
