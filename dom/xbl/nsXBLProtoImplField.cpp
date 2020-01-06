@@ -155,7 +155,7 @@ InstallXBLField(JSContext* cx,
   
   
   
-  nsISupports* native = xpc::UnwrapReflectorToISupports(thisObj);
+  nsCOMPtr<nsISupports> native = xpc::UnwrapReflectorToISupports(thisObj);
   if (!native) {
     
     

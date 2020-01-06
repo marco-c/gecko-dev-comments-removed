@@ -766,7 +766,7 @@ nsXPConnect::GetWrappedNativeOfJSObject(JSContext * aJSContext,
     return NS_OK;
 }
 
-nsISupports*
+already_AddRefed<nsISupports>
 xpc::UnwrapReflectorToISupports(JSObject* reflector)
 {
     
@@ -779,13 +779,16 @@ xpc::UnwrapReflectorToISupports(JSObject* reflector)
         XPCWrappedNative* wn = XPCWrappedNative::Get(reflector);
         if (!wn)
             return nullptr;
-        return wn->Native();
+        nsCOMPtr<nsISupports> native = wn->Native();
+        return native.forget();
     }
 
     
+    
+    
     nsCOMPtr<nsISupports> canonical =
         do_QueryInterface(mozilla::dom::UnwrapDOMObjectToISupports(reflector));
-    return canonical;
+    return canonical.forget();
 }
 
 NS_IMETHODIMP

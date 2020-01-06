@@ -413,7 +413,7 @@ Throw(JSContext* cx, nsresult rv);
 
 
 
-nsISupports*
+already_AddRefed<nsISupports>
 UnwrapReflectorToISupports(JSObject* reflector);
 
 

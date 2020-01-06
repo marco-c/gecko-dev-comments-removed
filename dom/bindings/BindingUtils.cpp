@@ -2380,8 +2380,10 @@ GlobalObject::GetAsSupports() const
   
   
   
-  mGlobalObject = xpc::UnwrapReflectorToISupports(mGlobalJSObject);
-  if (mGlobalObject) {
+  nsCOMPtr<nsISupports> supp = xpc::UnwrapReflectorToISupports(mGlobalJSObject);
+  if (supp) {
+    
+    mGlobalObject = supp;
     return mGlobalObject;
   }
 
@@ -3269,7 +3271,7 @@ UnwrapArgImpl(JSContext* cx,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  nsISupports *iface = xpc::UnwrapReflectorToISupports(src);
+  nsCOMPtr<nsISupports> iface = xpc::UnwrapReflectorToISupports(src);
   if (iface) {
     if (NS_FAILED(iface->QueryInterface(iid, ppArg))) {
       return NS_ERROR_XPC_BAD_CONVERT_JS;
@@ -3318,7 +3320,7 @@ UnwrapXPConnectImpl(JSContext* cx,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  nsISupports *iface = xpc::UnwrapReflectorToISupports(obj);
+  nsCOMPtr<nsISupports> iface = xpc::UnwrapReflectorToISupports(obj);
   if (!iface) {
     return NS_ERROR_XPC_BAD_CONVERT_JS;
   }
