@@ -50,11 +50,6 @@ public:
 
   LayerRect Bounds();
   LayerRect BoundsForStackingContext();
-protected:
-  BoundsTransformMatrix BoundsTransform();
-  Maybe<LayerRect> ClipRect();
-
-  void DumpLayerInfo(const char* aLayerType, const LayerRect& aRect);
 
   
   
@@ -62,6 +57,12 @@ protected:
   
   
   Maybe<WrImageMask> BuildWrMaskLayer(const StackingContextHelper* aUnapplySc);
+
+protected:
+  BoundsTransformMatrix BoundsTransform();
+  Maybe<LayerRect> ClipRect();
+
+  void DumpLayerInfo(const char* aLayerType, const LayerRect& aRect);
 };
 
 } 

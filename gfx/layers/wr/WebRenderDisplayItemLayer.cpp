@@ -44,9 +44,6 @@ WebRenderDisplayItemLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
   WrImageMask* imageMask = mask.ptrOr(nullptr);
 
   ParentLayerRect clip = GetLocalTransformTyped().TransformBounds(Bounds());
-  if (GetClipRect()) {
-    clip = ParentLayerRect(GetClipRect().ref());
-  }
 
   
   

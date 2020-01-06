@@ -20,9 +20,12 @@ ScrollingLayersHelper::ScrollingLayersHelper(WebRenderLayer* aLayer,
                                              const StackingContextHelper& aStackingContext)
   : mLayer(aLayer)
   , mBuilder(&aBuilder)
+  , mPushedLayerLocalClip(false)
 {
   if (!mLayer->WrManager()->AsyncPanZoomEnabled()) {
     
+    
+    PushLayerLocalClip(aStackingContext);
     return;
   }
 
@@ -86,15 +89,40 @@ ScrollingLayersHelper::ScrollingLayersHelper(WebRenderLayer* aLayer,
     
     mBuilder->PushClipAndScrollInfo(scrollsWith.valueOr(0), clipId.ptrOr(nullptr));
   }
+
+  PushLayerLocalClip(aStackingContext);
+}
+
+void
+ScrollingLayersHelper::PushLayerLocalClip(const StackingContextHelper& aStackingContext)
+{
+  Layer* layer = mLayer->GetLayer();
+  Maybe<ParentLayerRect> clip;
+  if (const Maybe<ParentLayerIntRect>& rect = layer->GetClipRect()) {
+    clip = Some(IntRectToRect(rect.ref()));
+  } else if (layer->GetMaskLayer()) {
+    
+    
+    clip = Some(layer->GetLocalTransformTyped().TransformBounds(mLayer->Bounds()));
+  }
+  if (clip) {
+    Maybe<WrImageMask> mask = mLayer->BuildWrMaskLayer(nullptr);
+    LayerRect clipRect = ViewAs<LayerPixel>(clip.ref(),
+        PixelCastJustification::MovingDownToChildren);
+    mBuilder->PushClip(aStackingContext.ToRelativeWrRect(clipRect), mask.ptrOr(nullptr));
+    mPushedLayerLocalClip = true;
+  }
 }
 
 ScrollingLayersHelper::~ScrollingLayersHelper()
 {
+  Layer* layer = mLayer->GetLayer();
+  if (mPushedLayerLocalClip) {
+    mBuilder->PopClip();
+  }
   if (!mLayer->WrManager()->AsyncPanZoomEnabled()) {
     return;
   }
-
-  Layer* layer = mLayer->GetLayer();
   if (layer->GetIsFixedPosition()) {
     mBuilder->PopClipAndScrollInfo();
   }
