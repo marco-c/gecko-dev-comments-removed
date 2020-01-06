@@ -217,6 +217,8 @@ MOZ_GTEST_BENCH(TestStandardURL, NormalizePerf, [] {
 });
 
 
+#ifndef XP_MACOSX
+
 MOZ_GTEST_BENCH(TestStandardURL, NormalizePerfFails, [] {
     nsAutoCString result;
     for (int i = 0; i < 20000; i++) {
@@ -232,3 +234,4 @@ MOZ_GTEST_BENCH(TestStandardURL, NormalizePerfFails, [] {
       ASSERT_EQ(NS_ERROR_FAILURE, Test_NormalizeIPv4(encHost5, result));
     }
 });
+#endif
