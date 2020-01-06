@@ -8,6 +8,7 @@
 
 #include "nsTArray.h"
 #include "nsXULAppAPI.h"
+#include "mozilla/TelemetryProcessEnums.h"
 
 
 
@@ -32,7 +33,8 @@ namespace TelemetryIPC {
 
 
 
-void AccumulateChildHistograms(GeckoProcessType aProcessType, const nsTArray<Telemetry::Accumulation>& aAccumulations);
+void AccumulateChildHistograms(Telemetry::ProcessID aProcessType,
+                               const nsTArray<Telemetry::Accumulation>& aAccumulations);
 
 
 
@@ -40,7 +42,8 @@ void AccumulateChildHistograms(GeckoProcessType aProcessType, const nsTArray<Tel
 
 
 
-void AccumulateChildKeyedHistograms(GeckoProcessType aProcessType, const nsTArray<Telemetry::KeyedAccumulation>& aAccumulations);
+void AccumulateChildKeyedHistograms(Telemetry::ProcessID aProcessType,
+                                    const nsTArray<Telemetry::KeyedAccumulation>& aAccumulations);
 
 
 
@@ -48,7 +51,8 @@ void AccumulateChildKeyedHistograms(GeckoProcessType aProcessType, const nsTArra
 
 
 
-void UpdateChildScalars(GeckoProcessType aProcessType, const nsTArray<Telemetry::ScalarAction>& aScalarActions);
+void UpdateChildScalars(Telemetry::ProcessID aProcessType,
+                        const nsTArray<Telemetry::ScalarAction>& aScalarActions);
 
 
 
@@ -56,7 +60,8 @@ void UpdateChildScalars(GeckoProcessType aProcessType, const nsTArray<Telemetry:
 
 
 
-void UpdateChildKeyedScalars(GeckoProcessType aProcessType, const nsTArray<Telemetry::KeyedScalarAction>& aScalarActions);
+void UpdateChildKeyedScalars(Telemetry::ProcessID aProcessType,
+                             const nsTArray<Telemetry::KeyedScalarAction>& aScalarActions);
 
 
 
@@ -64,7 +69,8 @@ void UpdateChildKeyedScalars(GeckoProcessType aProcessType, const nsTArray<Telem
 
 
 
-void RecordChildEvents(GeckoProcessType aProcessType, const nsTArray<Telemetry::ChildEventData>& aEvents);
+void RecordChildEvents(Telemetry::ProcessID aProcessType,
+                       const nsTArray<Telemetry::ChildEventData>& aEvents);
 
 }
 }
