@@ -60,12 +60,12 @@ nsFirstLetterFrame::Init(nsIContent*       aContent,
     
     
     
-    nsStyleContext* parentStyleContext = mStyleContext->GetParentAllowServo();
-    if (parentStyleContext) {
-      newSC = PresContext()->StyleSet()->
-        ResolveStyleForFirstLetterContinuation(parentStyleContext);
-      SetStyleContextWithoutNotification(newSC);
-    }
+    nsIFrame* styleParent =
+      CorrectStyleParentFrame(aParent, nsCSSPseudoElements::firstLetter);
+    nsStyleContext* parentStyleContext = styleParent->StyleContext();
+    newSC = PresContext()->StyleSet()->
+      ResolveStyleForFirstLetterContinuation(parentStyleContext);
+    SetStyleContextWithoutNotification(newSC);
   }
 
   nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
@@ -378,14 +378,23 @@ nsFirstLetterFrame::DrainOverflowFrames(nsPresContext* aPresContext)
   
   nsIFrame* kid = mFrames.FirstChild();
   if (kid) {
-    RefPtr<nsStyleContext> sc;
     nsIContent* kidContent = kid->GetContent();
     if (kidContent) {
       NS_ASSERTION(kidContent->IsNodeOfType(nsINode::eTEXT),
                    "should contain only text nodes");
-      nsStyleContext* parentSC = prevInFlow ? mStyleContext->GetParentAllowServo() :
-                                              mStyleContext;
-      sc = aPresContext->StyleSet()->ResolveStyleForText(kidContent, parentSC);
+      nsStyleContext* parentSC;
+      if (prevInFlow) {
+        
+        nsIFrame* styleParent =
+          CorrectStyleParentFrame(GetParent(),
+                                  nsCSSPseudoElements::firstLetter);
+        parentSC = styleParent->StyleContext();
+      } else {
+        
+        parentSC = mStyleContext;
+      }
+      RefPtr<nsStyleContext> sc =
+        aPresContext->StyleSet()->ResolveStyleForText(kidContent, parentSC);
       kid->SetStyleContext(sc);
       nsLayoutUtils::MarkDescendantsDirty(kid);
     }
