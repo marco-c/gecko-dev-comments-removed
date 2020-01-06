@@ -126,12 +126,6 @@ ENGINE_APPLY_FAIL:                     "error.engine.reason.apply_fail",
 ENGINE_BATCH_INTERRUPTED:              "error.engine.reason.batch_interrupted",
 
 
-INFO_COLLECTIONS:                      "collections",
-INFO_COLLECTION_USAGE:                 "collection_usage",
-INFO_COLLECTION_COUNTS:                "collection_counts",
-INFO_QUOTA:                            "quota",
-
-
 kSyncMasterPasswordLocked:             "User elected to leave Master Password locked",
 kSyncWeaveDisabled:                    "Weave is disabled",
 kSyncNetworkOffline:                   "Network is offline",

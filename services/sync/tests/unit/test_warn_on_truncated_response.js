@@ -5,7 +5,6 @@
 
 Cu.import("resource://testing-common/httpd.js");
 Cu.import("resource://services-sync/resource.js");
-Cu.import("resource://services-sync/rest.js");
 
 function run_test() {
   initTestLogging("Trace");
@@ -65,29 +64,4 @@ add_task(async function test_async_resource_logs_content_length_mismatch() {
   notEqual(warnMessages.length, 0, "test that warning was logged");
   notEqual(content.length, contentLength);
   await promiseStopServer(httpServer);
-});
-
-add_test(function test_sync_storage_request_logs_content_length_mismatch() {
-  _("Issuing request.");
-  let httpServer = httpd_setup({"/content": contentHandler});
-  let request = new SyncStorageRequest(httpServer.baseURI + "/content");
-  let warnMessages = getWarningMessages(request._log);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  request.charset = "";
-
-  request.get(function(error) {
-    equal(error, null);
-    equal(this.response.body, BODY);
-    notEqual(warnMessages.length, 0, "test that a warning was logged");
-    notEqual(BODY.length, contentLength);
-    httpServer.stop(run_next_test);
-  });
 });
