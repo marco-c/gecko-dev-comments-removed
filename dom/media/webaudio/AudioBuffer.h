@@ -54,6 +54,11 @@ public:
                   nullptr, aRv);
   }
 
+  
+  static already_AddRefed<AudioBuffer>
+  Create(nsPIDOMWindowInner* aWindow, float aSampleRate,
+         AudioChunk&& aInitialContents);
+
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(AudioBuffer)
