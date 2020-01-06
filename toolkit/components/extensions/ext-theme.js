@@ -29,11 +29,26 @@ class Theme {
 
   constructor(baseURI, logger) {
     
-    this.lwtStyles = {
-      icons: {},
-    };
+    this.baseProperties = {};
+
+    
+    this.windowOverrides = new WeakMap();
+
     this.baseURI = baseURI;
     this.logger = logger;
+  }
+
+  
+
+
+
+
+
+  getWindowTheme(window) {
+    if (this.windowOverrides.has(window)) {
+      return this.windowOverrides.get(window);
+    }
+    return this.baseProperties;
   }
 
   
@@ -46,6 +61,10 @@ class Theme {
 
 
   load(details, targetWindow) {
+    this.lwtStyles = {
+      icons: {},
+    };
+
     if (targetWindow) {
       this.lwtStyles.window = getWinUtils(targetWindow).outerWindowID;
     }
@@ -70,6 +89,11 @@ class Theme {
     if (this.lwtStyles.headerURL &&
         this.lwtStyles.accentcolor &&
         this.lwtStyles.textcolor) {
+      if (!targetWindow) {
+        this.baseProperties = details;
+      } else {
+        this.windowOverrides.set(targetWindow, details);
+      }
       LightweightThemeManager.fallbackThemeData = this.lwtStyles;
       Services.obs.notifyObservers(null,
         "lightweight-theme-styling-update",
@@ -245,7 +269,7 @@ class Theme {
 
 
   unload(targetWindow) {
-    let lwtStyles = {
+    this.lwtStyles = {
       headerURL: "",
       accentcolor: "",
       additionalBackgrounds: "",
@@ -256,16 +280,20 @@ class Theme {
     };
 
     if (targetWindow) {
-      lwtStyles.window = getWinUtils(targetWindow).outerWindowID;
+      this.lwtStyles.window = getWinUtils(targetWindow).outerWindowID;
+      this.windowOverrides.set(targetWindow, {});
+    } else {
+      this.windowOverrides = new WeakMap();
+      this.baseProperties = {};
     }
 
     for (let icon of ICONS) {
-      lwtStyles.icons[`--${icon}--icon`] = "";
+      this.lwtStyles.icons[`--${icon}--icon`] = "";
     }
     LightweightThemeManager.fallbackThemeData = null;
     Services.obs.notifyObservers(null,
       "lightweight-theme-styling-update",
-      JSON.stringify(lwtStyles));
+      JSON.stringify(this.lwtStyles));
   }
 }
 
@@ -299,6 +327,23 @@ this.theme = class extends ExtensionAPI {
 
     return {
       theme: {
+        getCurrent: (windowId) => {
+          
+          if (!this.theme) {
+            return Promise.resolve({});
+          }
+
+          
+          if (!windowId) {
+            return Promise.resolve(this.theme.getWindowTheme(windowTracker.topWindow));
+          }
+
+          const browserWindow = windowTracker.getWindow(windowId, context);
+          if (!browserWindow) {
+            return Promise.reject(`Invalid window ID: ${windowId}`);
+          }
+          return Promise.resolve(this.theme.getWindowTheme(browserWindow));
+        },
         update: (windowId, details) => {
           if (!gThemesEnabled) {
             
