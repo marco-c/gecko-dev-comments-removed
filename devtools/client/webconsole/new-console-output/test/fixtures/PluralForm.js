@@ -6,10 +6,9 @@
 module.exports = {
   PluralForm: {
     get: function (occurence, str) {
-      
-      
-      if (str === "messageRepeats.tooltip2") {
-        return `${occurence} repeats`;
+      if (str.includes(";")) {
+        const [singular, plural] = str.split(";");
+        return occurence > 1 ? plural : singular;
       }
 
       return str;

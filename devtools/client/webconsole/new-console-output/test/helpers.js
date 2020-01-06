@@ -34,7 +34,7 @@ function setupActions() {
 
 
 
-function setupStore(input, hud, options) {
+function setupStore(input = [], hud, options) {
   const store = configureStore(hud, options);
 
   
