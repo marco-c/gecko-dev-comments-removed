@@ -1022,9 +1022,6 @@ public:
     static bool UpdateInterpositionWhitelist(JSContext* cx,
                                              nsIAddonInterposition* interposition);
 
-    void SetAddonCallInterposition() { mHasCallInterpositions = true; }
-    bool HasCallInterposition() { return mHasCallInterpositions; };
-
     static bool AllowCPOWsInAddon(JSContext* cx, JSAddonId* addonId, bool allow);
 
 protected:
@@ -1071,10 +1068,6 @@ private:
     
     
     nsCOMPtr<nsIAddonInterposition>  mInterposition;
-
-    
-    
-    bool mHasCallInterpositions;
 
     JS::WeakMapPtr<JSObject*, JSObject*> mXrayExpandos;
 
@@ -3018,6 +3011,9 @@ bool ReportWrapperDenial(JSContext* cx, JS::HandleId id, WrapperDenialType type,
 
 class CompartmentPrivate
 {
+    CompartmentPrivate() = delete;
+    CompartmentPrivate(const CompartmentPrivate&) = delete;
+
 public:
     enum LocationHint {
         LocationHintRegular,
@@ -3071,6 +3067,11 @@ public:
     
     
     bool waiveInterposition;
+
+    
+    
+    
+    bool addonCallInterposition;
 
     
     
@@ -3151,6 +3152,8 @@ public:
             return;
         locationURI = aLocationURI;
     }
+
+    void SetAddonCallInterposition() { addonCallInterposition = true; }
 
     JSObject2WrappedJSMap* GetWrappedJSMap() const { return mWrappedJSMap; }
     void UpdateWeakPointersAfterGC();
