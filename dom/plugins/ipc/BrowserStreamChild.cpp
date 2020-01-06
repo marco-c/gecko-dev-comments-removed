@@ -22,7 +22,6 @@ BrowserStreamChild::BrowserStreamChild(PluginInstanceChild* instance,
   , mStreamStatus(kStreamOpen)
   , mDestroyPending(NOT_DESTROYED)
   , mNotifyPending(false)
-  , mStreamAsFilePending(false)
   , mInstanceDying(false)
   , mState(CONSTRUCTING)
   , mURL(url)
@@ -60,6 +59,15 @@ BrowserStreamChild::StreamConstructed(
   rv = mInstance->mPluginIface->newstream(
     &mInstance->mData, const_cast<char*>(NullableStringGet(mimeType)),
     &mStream, seekable, stype);
+
+  
+  if (*stype != NP_NORMAL) {
+    rv = NPERR_INVALID_PARAM;
+    
+    (void) mInstance->mPluginIface
+      ->destroystream(&mInstance->mData, &mStream, NPRES_NETWORK_ERR);
+  }
+
   if (rv != NPERR_NO_ERROR) {
     mState = DELETING;
     if (mStreamNotify) {
@@ -109,26 +117,6 @@ BrowserStreamChild::RecvWrite(const int32_t& offset,
 }
 
 mozilla::ipc::IPCResult
-BrowserStreamChild::RecvNPP_StreamAsFile(const nsCString& fname)
-{
-  PLUGIN_LOG_DEBUG(("%s (fname=%s)", FULLFUNCTION, fname.get()));
-
-  AssertPluginThread();
-
-  if (ALIVE != mState)
-    MOZ_CRASH("Unexpected state: received file after NPP_DestroyStream?");
-
-  if (kStreamOpen != mStreamStatus)
-    return IPC_OK();
-
-  mStreamAsFilePending = true;
-  mStreamAsFileName = fname;
-  EnsureDeliveryPending();
-
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult
 BrowserStreamChild::RecvNPP_DestroyStream(const NPReason& reason)
 {
   PLUGIN_LOG_DEBUG_METHOD;
@@ -156,27 +144,6 @@ BrowserStreamChild::Recv__delete__()
   return IPC_OK();
 }
 
-NPError
-BrowserStreamChild::NPN_RequestRead(NPByteRange* aRangeList)
-{
-  PLUGIN_LOG_DEBUG_FUNCTION;
-
-  AssertPluginThread();
-
-  if (ALIVE != mState || kStreamOpen != mStreamStatus)
-    return NPERR_GENERIC_ERROR;
-
-  IPCByteRanges ranges;
-  for (; aRangeList; aRangeList = aRangeList->next) {
-    IPCByteRange br = {aRangeList->offset, aRangeList->length};
-    ranges.AppendElement(br);
-  }
-
-  NPError result;
-  CallNPN_RequestRead(ranges, &result);
-  return result;
-}
-
 void
 BrowserStreamChild::EnsureDeliveryPending()
 {
@@ -198,20 +165,6 @@ BrowserStreamChild::Deliver()
   NS_ASSERTION(kStreamOpen != mStreamStatus || 0 == mPendingData.Length(),
                "Exit out of the data-delivery loop with pending data");
   mPendingData.Clear();
-
-  
-  
-  
-  
-  
-  
-  
-  if (mStreamAsFilePending) {
-    if (mStreamStatus == kStreamOpen)
-      mInstance->mPluginIface->asfile(&mInstance->mData, &mStream,
-                                      mStreamAsFileName.get());
-    mStreamAsFilePending = false;
-  }
 
   if (DESTROY_PENDING == mDestroyPending) {
     mDestroyPending = DESTROYED;
