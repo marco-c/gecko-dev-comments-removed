@@ -19,6 +19,8 @@
 #ifndef wasm_process_h
 #define wasm_process_h
 
+#include "mozilla/Atomics.h"
+
 namespace js {
 namespace wasm {
 
@@ -34,6 +36,11 @@ LookupCodeSegment(const void* pc);
 
 const Code*
 LookupCode(const void* pc);
+
+
+
+
+extern mozilla::Atomic<bool> CodeExists;
 
 
 
