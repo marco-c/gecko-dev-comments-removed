@@ -16,7 +16,7 @@ use shared_lock::StylesheetGuards;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 #[cfg(feature = "gecko")]
-use stylesheets::{MallocSizeOfWithRepeats, SizeOfState};
+use stylesheets::SizeOfState;
 
 bitflags! {
     flags RestyleFlags: u8 {
@@ -261,6 +261,17 @@ impl ElementStyles {
     pub fn is_display_none(&self) -> bool {
         self.primary().get_box().clone_display() == display::T::none
     }
+
+    #[cfg(feature = "gecko")]
+    fn malloc_size_of_children_excluding_cvs(&self, _state: &mut SizeOfState) -> usize {
+        
+        
+
+        
+        
+
+        0
+    }
 }
 
 
@@ -270,20 +281,6 @@ impl fmt::Debug for ElementStyles {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "ElementStyles {{ primary: {:?}, pseudos: {:?} }}",
                self.primary.as_ref().map(|x| &x.rules), self.pseudos)
-    }
-}
-
-#[cfg(feature = "gecko")]
-impl MallocSizeOfWithRepeats for ElementStyles {
-    fn malloc_size_of_children(&self, state: &mut SizeOfState) -> usize {
-        let mut n = 0;
-        if let Some(ref primary) = self.primary {
-            n += primary.malloc_size_of_children(state)
-        };
-
-        
-
-        n
     }
 }
 
@@ -436,12 +433,11 @@ impl ElementData {
     pub fn clear_restyle_flags_and_damage(&mut self) {
         self.restyle.clear_restyle_flags_and_damage();
     }
-}
 
-#[cfg(feature = "gecko")]
-impl MallocSizeOfWithRepeats for ElementData {
-    fn malloc_size_of_children(&self, state: &mut SizeOfState) -> usize {
-        let n = self.styles.malloc_size_of_children(state);
+    
+    #[cfg(feature = "gecko")]
+    pub fn malloc_size_of_children_excluding_cvs(&self, state: &mut SizeOfState) -> usize {
+        let n = self.styles.malloc_size_of_children_excluding_cvs(state);
 
         
 
