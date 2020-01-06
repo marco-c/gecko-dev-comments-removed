@@ -10255,23 +10255,25 @@ nsContentUtils::AppendNativeAnonymousChildren(
     nsTArray<nsIContent*>& aKids,
     uint32_t aFlags)
 {
-  if (nsIFrame* primaryFrame = aContent->GetPrimaryFrame()) {
-    
-    AppendNativeAnonymousChildrenFromFrame(primaryFrame, aKids, aFlags);
+  if (aContent->MayHaveAnonymousChildren()) {
+    if (nsIFrame* primaryFrame = aContent->GetPrimaryFrame()) {
+      
+      AppendNativeAnonymousChildrenFromFrame(primaryFrame, aKids, aFlags);
 
-    
-    AutoTArray<nsIFrame::OwnedAnonBox, 8> ownedAnonBoxes;
-    primaryFrame->AppendOwnedAnonBoxes(ownedAnonBoxes);
-    for (nsIFrame::OwnedAnonBox& box : ownedAnonBoxes) {
-      MOZ_ASSERT(box.mAnonBoxFrame->GetContent() == aContent);
-      AppendNativeAnonymousChildrenFromFrame(box.mAnonBoxFrame, aKids, aFlags);
+      
+      AutoTArray<nsIFrame::OwnedAnonBox, 8> ownedAnonBoxes;
+      primaryFrame->AppendOwnedAnonBoxes(ownedAnonBoxes);
+      for (nsIFrame::OwnedAnonBox& box : ownedAnonBoxes) {
+        MOZ_ASSERT(box.mAnonBoxFrame->GetContent() == aContent);
+        AppendNativeAnonymousChildrenFromFrame(box.mAnonBoxFrame, aKids, aFlags);
+      }
     }
-  }
 
-  
-  if (auto nac = static_cast<ManualNAC*>(
-        aContent->GetProperty(nsGkAtoms::manualNACProperty))) {
-    aKids.AppendElements(*nac);
+    
+    if (auto nac = static_cast<ManualNAC*>(
+          aContent->GetProperty(nsGkAtoms::manualNACProperty))) {
+      aKids.AppendElements(*nac);
+    }
   }
 
   
