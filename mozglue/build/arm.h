@@ -70,16 +70,16 @@
 #  endif
 
   
-
-#  if defined(__ARM_NEON__)
-#    define MOZILLA_PRESUME_NEON 1
-#  endif
-
-  
 #  if defined(__linux__) || defined(ANDROID)
 #    define MOZILLA_ARM_HAVE_CPUID_DETECTION 1
 #  endif
 
+#endif
+
+
+
+#if defined(__ARM_NEON)
+#  define MOZILLA_PRESUME_NEON 1
 #endif
 
 namespace mozilla {
