@@ -170,7 +170,8 @@ element.Store = class {
   get(uuid, container) {
     let el = this.els[uuid];
     if (!el) {
-      throw new JavaScriptError(`Element reference not seen before: ${uuid}`);
+      throw new NoSuchElementError(`Element reference not seen before: ` +
+                                   `${uuid}`);
     }
 
     try {
