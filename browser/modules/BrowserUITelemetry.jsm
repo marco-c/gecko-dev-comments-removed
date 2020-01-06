@@ -52,13 +52,15 @@ const LEGACY_PANEL_PLACEMENTS = [
 XPCOMUtils.defineLazyGetter(this, "DEFAULT_AREA_PLACEMENTS", function() {
   let result = {
     "nav-bar": [
+      "back-button",
+      "forward-button",
+      "stop-reload-button",
+      "home-button",
       "urlbar-container",
       "search-container",
       "bookmarks-menu-button",
-      "pocket-button",
       "downloads-button",
-      "home-button",
-      "social-share-button",
+      "sidebar-button",
     ],
     
     
@@ -75,10 +77,6 @@ XPCOMUtils.defineLazyGetter(this, "DEFAULT_AREA_PLACEMENTS", function() {
       "personal-bookmarks",
     ],
   };
-
-  if (AppConstants.MOZ_PHOTON_THEME) {
-    result["nav-bar"].push("sidebar-button");
-  }
 
   if (gPhotonStructure) {
     result["widget-overflow-fixed-list"] = [];
