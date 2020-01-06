@@ -608,10 +608,10 @@ struct ParseTask
     
     
     
-    JSScript* script;
+    GCVector<JSScript*, 1> scripts;
 
     
-    ScriptSourceObject* sourceObject;
+    GCVector<ScriptSourceObject*, 1> sourceObjects;
 
     
     
