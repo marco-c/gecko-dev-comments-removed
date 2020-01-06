@@ -207,15 +207,15 @@ Handler::MarshalInterface(IStream* pStm, REFIID riid, void* pv,
 
 #if defined(MOZ_MSCOM_REMARSHAL_NO_HANDLER)
   
-  
-  seekTo.QuadPart = objrefPos.QuadPart;
-  hr = pStm->Seek(seekTo, STREAM_SEEK_SET, nullptr);
+  ULARGE_INTEGER endPos;
+  hr = pStm->Seek(seekTo, STREAM_SEEK_CUR, &endPos);
   if (FAILED(hr)) {
     return hr;
   }
 
   
-  if (!StripHandlerFromOBJREF(WrapNotNull(pStm))) {
+  if (!StripHandlerFromOBJREF(WrapNotNull(pStm), objrefPos.QuadPart,
+                              endPos.QuadPart)) {
     return E_FAIL;
   }
 

@@ -22,8 +22,12 @@ namespace mscom {
 
 
 
+
+
 bool
-StripHandlerFromOBJREF(NotNull<IStream*> aStream);
+StripHandlerFromOBJREF(NotNull<IStream*> aStream,
+                       const uint64_t aStart,
+                       const uint64_t aEnd);
 
 } 
 } 

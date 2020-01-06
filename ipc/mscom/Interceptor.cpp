@@ -306,15 +306,18 @@ Interceptor::MarshalInterface(IStream* pStm, REFIID riid, void* pv,
     DWORD callerTid;
     if (::CoGetCallerTID(&callerTid) == S_FALSE && callerTid != chromeMainTid) {
       
+
       
-      seekTo.QuadPart = objrefPos.QuadPart;
-      hr = pStm->Seek(seekTo, STREAM_SEEK_SET, nullptr);
+      
+      ULARGE_INTEGER endPos;
+      hr = pStm->Seek(seekTo, STREAM_SEEK_CUR, &endPos);
       if (FAILED(hr)) {
         return hr;
       }
 
       
-      if (!StripHandlerFromOBJREF(WrapNotNull(pStm))) {
+      if (!StripHandlerFromOBJREF(WrapNotNull(pStm), objrefPos.QuadPart,
+                                  endPos.QuadPart)) {
         return E_FAIL;
       }
 
