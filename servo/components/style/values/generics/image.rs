@@ -18,13 +18,13 @@ use values::specified::url::SpecifiedUrl;
 
 #[derive(Clone, PartialEq, ToComputedValue)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub enum Image<Gradient, ImageRect> {
+pub enum Image<Gradient, MozImageRect> {
     
     Url(SpecifiedUrl),
     
     Gradient(Gradient),
     
-    Rect(ImageRect),
+    Rect(MozImageRect),
     
     Element(Atom),
     
@@ -69,7 +69,7 @@ pub enum GradientKind<LineDirection, Length, LengthOrPercentage, Position> {
 }
 
 
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue)]
+#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue, ToCss)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum EndingShape<Length, LengthOrPercentage> {
     
@@ -89,7 +89,7 @@ pub enum Circle<Length> {
 }
 
 
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue)]
+#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue, ToCss)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum Ellipse<LengthOrPercentage> {
     
@@ -152,10 +152,11 @@ impl ToCss for PaintWorklet {
 
 
 
-#[derive(Clone, Debug, PartialEq, ToComputedValue)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[allow(missing_docs)]
-pub struct ImageRect<NumberOrPercentage> {
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[css(function)]
+#[derive(Clone, Debug, PartialEq, ToComputedValue, ToCss)]
+pub struct MozImageRect<NumberOrPercentage> {
     pub url: SpecifiedUrl,
     pub top: NumberOrPercentage,
     pub bottom: NumberOrPercentage,
@@ -285,29 +286,25 @@ pub trait LineDirection {
         where W: fmt::Write;
 }
 
-impl<L, LoP> ToCss for EndingShape<L, LoP>
-    where L: ToCss, LoP: ToCss,
+impl<L> ToCss for Circle<L>
+where
+    L: ToCss,
 {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
+    where
+        W: fmt::Write,
+    {
         match *self {
-            EndingShape::Circle(Circle::Extent(ShapeExtent::FarthestCorner)) |
-            EndingShape::Circle(Circle::Extent(ShapeExtent::Cover)) => {
+            Circle::Extent(ShapeExtent::FarthestCorner) |
+            Circle::Extent(ShapeExtent::Cover) => {
                 dest.write_str("circle")
             },
-            EndingShape::Circle(Circle::Extent(keyword)) => {
+            Circle::Extent(keyword) => {
                 dest.write_str("circle ")?;
                 keyword.to_css(dest)
             },
-            EndingShape::Circle(Circle::Radius(ref length)) => {
+            Circle::Radius(ref length) => {
                 length.to_css(dest)
-            },
-            EndingShape::Ellipse(Ellipse::Extent(keyword)) => {
-                keyword.to_css(dest)
-            },
-            EndingShape::Ellipse(Ellipse::Radii(ref x, ref y)) => {
-                x.to_css(dest)?;
-                dest.write_str(" ")?;
-                y.to_css(dest)
             },
         }
     }
@@ -335,23 +332,5 @@ impl<C, L> ToCss for ColorStop<C, L>
             position.to_css(dest)?;
         }
         Ok(())
-    }
-}
-
-impl<C> ToCss for ImageRect<C>
-    where C: ToCss,
-{
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
-        dest.write_str("-moz-image-rect(")?;
-        self.url.to_css(dest)?;
-        dest.write_str(", ")?;
-        self.top.to_css(dest)?;
-        dest.write_str(", ")?;
-        self.right.to_css(dest)?;
-        dest.write_str(", ")?;
-        self.bottom.to_css(dest)?;
-        dest.write_str(", ")?;
-        self.left.to_css(dest)?;
-        dest.write_str(")")
     }
 }
