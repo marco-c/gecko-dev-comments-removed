@@ -889,12 +889,6 @@ ChannelMediaResource::UpdatePrincipal()
 void
 ChannelMediaResource::CacheClientUpdatePrincipal()
 {
-  
-  if (NS_IsMainThread()) {
-    UpdatePrincipal();
-    return;
-  }
-
   SystemGroup::Dispatch(
     TaskCategory::Other,
     NewRunnableMethod("ChannelMediaResource::UpdatePrincipal",

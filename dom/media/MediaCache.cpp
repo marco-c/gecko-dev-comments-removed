@@ -1884,19 +1884,16 @@ MediaCacheStream::NotifyDataReceived(int64_t aSize, const char* aData)
   
   MOZ_DIAGNOSTIC_ASSERT(!mClosed);
 
-  
-  
-  
-  
-  
+  ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
   {
+    
+    
     MediaCache::ResourceStreamIterator iter(mMediaCache, mResourceID);
     while (MediaCacheStream* stream = iter.Next()) {
       stream->mClient->CacheClientUpdatePrincipal();
     }
   }
 
-  ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
   int64_t size = aSize;
   const char* data = aData;
 
