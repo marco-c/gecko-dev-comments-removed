@@ -4249,7 +4249,7 @@ Element::UnlinkIntersectionObservers()
   }
   for (auto iter = observers->Iter(); !iter.Done(); iter.Next()) {
     DOMIntersectionObserver* observer = iter.Key();
-    observer->UnlinkTarget(*this);
+    observer->UnlinkElement(*this);
   }
   observers->Clear();
 }

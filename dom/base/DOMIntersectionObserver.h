@@ -116,7 +116,11 @@ class DOMIntersectionObserver final : public nsISupports,
 public:
   DOMIntersectionObserver(already_AddRefed<nsPIDOMWindowInner>&& aOwner,
                           mozilla::dom::IntersectionCallback& aCb)
-  : mOwner(aOwner), mDocument(mOwner->GetExtantDoc()), mCallback(&aCb), mConnected(false)
+  : mOwner(aOwner),
+    mDocument(mOwner->GetExtantDoc()),
+    mCallback(&aCb),
+    mRoot(nullptr),
+    mConnected(false)
   {
   }
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -152,7 +156,7 @@ public:
   void Observe(Element& aTarget);
   void Unobserve(Element& aTarget);
 
-  void UnlinkTarget(Element& aTarget);
+  void UnlinkElement(Element& aTarget);
   void Disconnect();
 
   void TakeRecords(nsTArray<RefPtr<DOMIntersectionObserverEntry>>& aRetVal);
@@ -176,7 +180,8 @@ protected:
   nsCOMPtr<nsPIDOMWindowInner>                    mOwner;
   RefPtr<nsIDocument>                             mDocument;
   RefPtr<mozilla::dom::IntersectionCallback>      mCallback;
-  RefPtr<Element>                                 mRoot;
+  
+  Element*                                        mRoot;
   nsCSSRect                                       mRootMargin;
   nsTArray<double>                                mThresholds;
 
