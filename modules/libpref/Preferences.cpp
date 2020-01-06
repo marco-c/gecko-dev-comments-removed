@@ -2818,31 +2818,26 @@ nsPrefBranch::DeleteBranch(const char* aStartingAt)
   }
 
   const PrefName& pref = GetPrefName(aStartingAt);
-  const char* branchName = pref.get();
-  size_t len = strlen(branchName);
+  nsAutoCString branchName(pref.get());
 
   
-  
-  
-  
-  
-  nsAutoCString branch_dot(branchName);
-  if (len > 1 && branchName[len - 1] != '.') {
-    branch_dot += '.';
+  if (branchName.Length() > 1 &&
+      !StringEndsWith(branchName, NS_LITERAL_CSTRING("."))) {
+    branchName += '.';
   }
 
-  
-  const char* to_delete = branch_dot.get();
-  MOZ_ASSERT(to_delete);
-  len = strlen(to_delete);
+  const nsACString& branchNameNoDot =
+    Substring(branchName, 0, branchName.Length() - 1);
+
   for (auto iter = gHashTable->Iter(); !iter.Done(); iter.Next()) {
     auto entry = static_cast<PrefHashEntry*>(iter.Get());
 
     
     
-    if (PL_strncmp(entry->mKey, to_delete, len) == 0 ||
-        (len - 1 == strlen(entry->mKey) &&
-         PL_strncmp(entry->mKey, to_delete, len - 1) == 0)) {
+    
+    
+    nsDependentCString key(entry->mKey);
+    if (StringBeginsWith(key, branchName) || key.Equals(branchNameNoDot)) {
       iter.Remove();
     }
   }
