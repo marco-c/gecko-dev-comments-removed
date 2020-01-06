@@ -6,9 +6,14 @@
 
 use app_units::Au;
 use properties::animated_properties::Animatable;
-use values::CSSFloat;
+use values::{CSSInteger, CSSFloat};
 use values::computed::length::{Length, LengthOrPercentage};
-use values::generics::text::{LineHeight as GenericLineHeight, Spacing};
+use values::generics::text::InitialLetter as GenericInitialLetter;
+use values::generics::text::LineHeight as GenericLineHeight;
+use values::generics::text::Spacing;
+
+
+pub type InitialLetter = GenericInitialLetter<CSSFloat, CSSInteger>;
 
 
 pub type LetterSpacing = Spacing<Length>;

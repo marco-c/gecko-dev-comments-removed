@@ -329,8 +329,8 @@ pub fn concat_serialize_idents<W>(prefix: &str, suffix: &str,
 
 
 
-#[derive(Clone, Copy, PartialEq, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, PartialEq, ToCss)]
 pub enum RepeatCount {
     
     Number(Integer),
@@ -338,16 +338,6 @@ pub enum RepeatCount {
     AutoFill,
     
     AutoFit,
-}
-
-impl ToCss for RepeatCount {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
-        match *self {
-            RepeatCount::Number(ref c) => c.to_css(dest),
-            RepeatCount::AutoFill => dest.write_str("auto-fill"),
-            RepeatCount::AutoFit => dest.write_str("auto-fit"),
-        }
-    }
 }
 
 impl Parse for RepeatCount {

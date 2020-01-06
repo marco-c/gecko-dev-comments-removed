@@ -4,11 +4,8 @@
 
 
 
-use std::fmt;
-use style_traits::ToCss;
 
-
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue)]
+#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, ToComputedValue, ToCss)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum BackgroundSize<LengthOrPercentageOrAuto> {
     
@@ -30,23 +27,5 @@ impl<L> From<L> for BackgroundSize<L>
     #[inline]
     fn from(value: L) -> Self {
         BackgroundSize::Explicit { width: value.clone(), height: value }
-    }
-}
-
-impl<L> ToCss for BackgroundSize<L>
-    where L: ToCss
-{
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
-        where W: fmt::Write
-    {
-        match *self {
-            BackgroundSize::Explicit { ref width, ref height } => {
-                width.to_css(dest)?;
-                dest.write_str(" ")?;
-                height.to_css(dest)
-            },
-            BackgroundSize::Cover => dest.write_str("cover"),
-            BackgroundSize::Contain => dest.write_str("contain"),
-        }
     }
 }
