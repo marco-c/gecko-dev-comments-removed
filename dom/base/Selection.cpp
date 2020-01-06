@@ -3482,9 +3482,9 @@ Selection::GetSelectionEndPointGeometry(SelectionRegion aRegion, nsRect* aRect)
     aRect->x = pt.x;
   } else if (mFrameSelection->GetHint() == CARET_ASSOCIATE_BEFORE) {
     
-    aRect->x = frame->GetRect().width;
+    aRect->x = frame->GetRect().Width();
   }
-  aRect->height = frame->GetRect().height;
+  aRect->SetHeight(frame->GetRect().Height());
 
   return frame;
 }
