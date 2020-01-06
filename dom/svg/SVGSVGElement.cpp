@@ -4,43 +4,26 @@
 
 
 
-#include <stdint.h>
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/ContentEvents.h"
-#include "mozilla/EventDispatcher.h"
-#include "mozilla/Likely.h"
-
-#include "nsGkAtoms.h"
-#include "nsLayoutUtils.h"
-#include "nsLayoutStylesheetCache.h"
-#include "DOMSVGNumber.h"
-#include "DOMSVGLength.h"
-#include "nsSVGAngle.h"
-#include "nsCOMPtr.h"
-#include "nsIPresShell.h"
-#include "nsContentUtils.h"
-#include "nsIDocument.h"
-#include "mozilla/dom/SVGMatrix.h"
-#include "DOMSVGPoint.h"
-#include "nsIFrame.h"
-#include "nsFrameSelection.h"
-#include "nsISVGSVGFrame.h" 
-#include "mozilla/dom/SVGRect.h"
-#include "nsError.h"
-#include "nsSVGDisplayableFrame.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/SVGSVGElementBinding.h"
-#include "nsSVGUtils.h"
+#include "mozilla/dom/SVGMatrix.h"
 #include "mozilla/dom/SVGViewElement.h"
-#include "nsStyleUtil.h"
-#include "SVGContentUtils.h"
+#include "mozilla/EventDispatcher.h"
 
-#include "nsSMILTimeContainer.h"
+#include "DOMSVGLength.h"
+#include "DOMSVGNumber.h"
+#include "DOMSVGPoint.h"
+#include "nsLayoutStylesheetCache.h"
+#include "nsSVGAngle.h"
+#include "nsFrameSelection.h"
+#include "nsIFrame.h"
+#include "nsISVGSVGFrame.h"
 #include "nsSMILAnimationController.h"
-#include "nsSMILTypes.h"
+#include "nsSMILTimeContainer.h"
+#include "nsSVGDisplayableFrame.h"
+#include "nsSVGUtils.h"
 #include "SVGAngle.h"
-#include <algorithm>
-#include "prtime.h"
 
 NS_IMPL_NS_NEW_NAMESPACED_SVG_ELEMENT_CHECK_PARSER(SVG)
 
@@ -49,13 +32,19 @@ using namespace mozilla::gfx;
 namespace mozilla {
 namespace dom {
 
-class SVGAnimatedLength;
+nsSVGEnumMapping SVGSVGElement::sZoomAndPanMap[] = {
+  {&nsGkAtoms::disable, SVG_ZOOMANDPAN_DISABLE},
+  {&nsGkAtoms::magnify, SVG_ZOOMANDPAN_MAGNIFY},
+  {nullptr, 0}
+};
 
-JSObject*
-SVGSVGElement::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
+nsSVGElement::EnumInfo SVGSVGElement::sEnumInfo[1] =
 {
-  return SVGSVGElementBinding::Wrap(aCx, this, aGivenProto);
-}
+  { &nsGkAtoms::zoomAndPan,
+    sZoomAndPanMap,
+    SVG_ZOOMANDPAN_MAGNIFY
+  }
+};
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(DOMSVGTranslatePoint, nsISVGPoint,
                                    mElement)
@@ -70,10 +59,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DOMSVGTranslatePoint)
   NS_INTERFACE_MAP_ENTRY(mozilla::nsISVGPoint)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
-
-SVGSVGElement::~SVGSVGElement()
-{
-}
 
 DOMSVGPoint*
 DOMSVGTranslatePoint::Copy()
@@ -111,35 +96,11 @@ DOMSVGTranslatePoint::MatrixTransform(SVGMatrix& matrix)
   return point.forget();
 }
 
-SVGView::SVGView()
+JSObject*
+SVGSVGElement::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
 {
-  mZoomAndPan.Init(SVGSVGElement::ZOOMANDPAN,
-                   SVG_ZOOMANDPAN_MAGNIFY);
-  mViewBox.Init();
-  mPreserveAspectRatio.Init();
+  return SVGSVGElementBinding::Wrap(aCx, this, aGivenProto);
 }
-
-nsSVGElement::LengthInfo SVGSVGElement::sLengthInfo[4] =
-{
-  { &nsGkAtoms::x, 0, nsIDOMSVGLength::SVG_LENGTHTYPE_NUMBER, SVGContentUtils::X },
-  { &nsGkAtoms::y, 0, nsIDOMSVGLength::SVG_LENGTHTYPE_NUMBER, SVGContentUtils::Y },
-  { &nsGkAtoms::width, 100, nsIDOMSVGLength::SVG_LENGTHTYPE_PERCENTAGE, SVGContentUtils::X },
-  { &nsGkAtoms::height, 100, nsIDOMSVGLength::SVG_LENGTHTYPE_PERCENTAGE, SVGContentUtils::Y },
-};
-
-nsSVGEnumMapping SVGSVGElement::sZoomAndPanMap[] = {
-  {&nsGkAtoms::disable, SVG_ZOOMANDPAN_DISABLE},
-  {&nsGkAtoms::magnify, SVG_ZOOMANDPAN_MAGNIFY},
-  {nullptr, 0}
-};
-
-nsSVGElement::EnumInfo SVGSVGElement::sEnumInfo[1] =
-{
-  { &nsGkAtoms::zoomAndPan,
-    sZoomAndPanMap,
-    SVG_ZOOMANDPAN_MAGNIFY
-  }
-};
 
 
 
@@ -167,14 +128,20 @@ NS_INTERFACE_TABLE_HEAD_CYCLE_COLLECTION_INHERITED(SVGSVGElement)
                                nsIDOMSVGElement)
 NS_INTERFACE_TABLE_TAIL_INHERITING(SVGSVGElementBase)
 
+SVGView::SVGView()
+{
+  mZoomAndPan.Init(SVGSVGElement::ZOOMANDPAN,
+                   SVG_ZOOMANDPAN_MAGNIFY);
+  mViewBox.Init();
+  mPreserveAspectRatio.Init();
+}
+
 
 
 
 SVGSVGElement::SVGSVGElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo,
                              FromParser aFromParser)
   : SVGSVGElementBase(aNodeInfo),
-    mViewportWidth(0),
-    mViewportHeight(0),
     mCurrentTranslate(0.0f, 0.0f),
     mCurrentScale(1.0f),
     mPreviousTranslate(0.0f, 0.0f),
@@ -182,8 +149,11 @@ SVGSVGElement::SVGSVGElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo
     mStartAnimationOnBindToTree(aFromParser == NOT_FROM_PARSER ||
                                 aFromParser == FROM_PARSER_FRAGMENT ||
                                 aFromParser == FROM_PARSER_XSLT),
-    mImageNeedsTransformInvalidation(false),
-    mHasChildrenOnlyTransform(false)
+    mImageNeedsTransformInvalidation(false)
+{
+}
+
+SVGSVGElement::~SVGSVGElement()
 {
 }
 
@@ -218,7 +188,6 @@ SVGSVGElement::Height()
 {
   return mLengthAttributes[ATTR_HEIGHT].ToDOMAnimatedLength(this);
 }
-
 float
 SVGSVGElement::PixelUnitToMillimeterX()
 {
@@ -242,7 +211,6 @@ SVGSVGElement::ScreenPixelToMillimeterY()
 {
   return ScreenPixelToMillimeterX();
 }
-
 bool
 SVGSVGElement::UseCurrentView()
 {
@@ -426,38 +394,6 @@ SVGSVGElement::CreateSVGTransformFromMatrix(SVGMatrix& matrix)
 
 
 
-already_AddRefed<SVGAnimatedRect>
-SVGSVGElement::ViewBox()
-{
-  return mViewBox.ToSVGAnimatedRect(this);
-}
-
-already_AddRefed<DOMSVGAnimatedPreserveAspectRatio>
-SVGSVGElement::PreserveAspectRatio()
-{
-  return mPreserveAspectRatio.ToDOMAnimatedPreserveAspectRatio(this);
-}
-
-uint16_t
-SVGSVGElement::ZoomAndPan()
-{
-  return mEnumAttributes[ZOOMANDPAN].GetAnimValue();
-}
-
-void
-SVGSVGElement::SetZoomAndPan(uint16_t aZoomAndPan, ErrorResult& rv)
-{
-  if (aZoomAndPan == SVG_ZOOMANDPAN_DISABLE ||
-      aZoomAndPan == SVG_ZOOMANDPAN_MAGNIFY) {
-    mEnumAttributes[ZOOMANDPAN].SetBaseValue(aZoomAndPan, this);
-    return;
-  }
-
-  rv.ThrowRangeError<MSG_INVALID_ZOOMANDPAN_VALUE_ERROR>();
-}
-
-
-
 
 void
 SVGSVGElement::SetCurrentScaleTranslate(float s, float x, float y)
@@ -472,7 +408,7 @@ SVGSVGElement::SetCurrentScaleTranslate(float s, float x, float y)
     s = CURRENT_SCALE_MIN;
   else if (s > CURRENT_SCALE_MAX)
     s = CURRENT_SCALE_MAX;
-  
+
   
   
   
@@ -486,7 +422,7 @@ SVGSVGElement::SetCurrentScaleTranslate(float s, float x, float y)
   
   mPreviousScale = mCurrentScale;
   mPreviousTranslate = mCurrentTranslate;
-  
+
   mCurrentScale = s;
   mCurrentTranslate = SVGPoint(x, y);
 
@@ -511,6 +447,27 @@ SVGSVGElement::SetCurrentTranslate(float x, float y)
   SetCurrentScaleTranslate(mCurrentScale, x, y);
 }
 
+
+
+uint16_t
+SVGSVGElement::ZoomAndPan()
+{
+  return mEnumAttributes[ZOOMANDPAN].GetAnimValue();
+}
+
+void
+SVGSVGElement::SetZoomAndPan(uint16_t aZoomAndPan, ErrorResult& rv)
+{
+  if (aZoomAndPan == SVG_ZOOMANDPAN_DISABLE ||
+      aZoomAndPan == SVG_ZOOMANDPAN_MAGNIFY) {
+    mEnumAttributes[ZOOMANDPAN].SetBaseValue(aZoomAndPan, this);
+    return;
+  }
+
+  rv.ThrowRangeError<MSG_INVALID_ZOOMANDPAN_VALUE_ERROR>();
+}
+
+
 nsSMILTimeContainer*
 SVGSVGElement::GetTimedDocumentRoot()
 {
@@ -530,45 +487,76 @@ SVGSVGElement::GetTimedDocumentRoot()
 }
 
 
-
-
-NS_IMETHODIMP_(bool)
-SVGSVGElement::IsAttributeMapped(const nsIAtom* name) const
+nsresult
+SVGSVGElement::BindToTree(nsIDocument* aDocument,
+                          nsIContent* aParent,
+                          nsIContent* aBindingParent,
+                          bool aCompileEventHandlers)
 {
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  nsSMILAnimationController* smilController = nullptr;
 
-  if (!IsInner() && (name == nsGkAtoms::width || name == nsGkAtoms::height)) {
-    return true;
+  if (aDocument) {
+    smilController = aDocument->GetAnimationController();
+    if (smilController) {
+      
+      if (WillBeOutermostSVG(aParent, aBindingParent)) {
+        
+        if (!mTimedDocumentRoot) {
+          mTimedDocumentRoot = new nsSMILTimeContainer();
+        }
+      } else {
+        
+        
+        
+        mTimedDocumentRoot = nullptr;
+        mStartAnimationOnBindToTree = true;
+      }
+    }
   }
 
-  static const MappedAttributeEntry* const map[] = {
-    sColorMap,
-    sFEFloodMap,
-    sFillStrokeMap,
-    sFiltersMap,
-    sFontSpecificationMap,
-    sGradientStopMap,
-    sGraphicsMap,
-    sLightingEffectsMap,
-    sMarkersMap,
-    sTextContentElementsMap,
-    sViewportsMap
-  };
+  nsresult rv = SVGGraphicsElement::BindToTree(aDocument, aParent,
+                                              aBindingParent,
+                                              aCompileEventHandlers);
+  NS_ENSURE_SUCCESS(rv,rv);
 
-  return FindAttributeDependence(name, map) ||
-    SVGSVGElementBase::IsAttributeMapped(name);
+  nsIDocument* doc = GetComposedDoc();
+  if (doc) {
+    
+    
+    
+    auto cache = nsLayoutStylesheetCache::For(doc->GetStyleBackendType());
+    doc->EnsureOnDemandBuiltInUASheet(cache->SVGSheet());
+  }
+
+  if (mTimedDocumentRoot && smilController) {
+    rv = mTimedDocumentRoot->SetParent(smilController);
+    if (mStartAnimationOnBindToTree) {
+      mTimedDocumentRoot->Begin();
+      mStartAnimationOnBindToTree = false;
+    }
+  }
+
+  return rv;
 }
 
+void
+SVGSVGElement::UnbindFromTree(bool aDeep, bool aNullParent)
+{
+  if (mTimedDocumentRoot) {
+    mTimedDocumentRoot->SetParent(nullptr);
+  }
 
+  SVGGraphicsElement::UnbindFromTree(aDeep, aNullParent);
+}
 
+nsSVGAnimatedTransformList*
+SVGSVGElement::GetAnimatedTransformList(uint32_t aFlags)
+{
+  if (!(aFlags & DO_ALLOCATE) && mSVGView && mSVGView->mTransforms) {
+    return mSVGView->mTransforms;
+  }
+  return SVGGraphicsElement::GetAnimatedTransformList(aFlags);
+}
 
 nsresult
 SVGSVGElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
@@ -601,162 +589,45 @@ SVGSVGElement::IsEventAttributeName(nsIAtom* aName)
 
 
 
-
-
-
-
-
-
-
-inline float
-ComputeSynthesizedViewBoxDimension(const nsSVGLength2& aLength,
-                                   float aViewportLength,
-                                   const SVGSVGElement* aSelf)
+int32_t
+SVGSVGElement::GetIntrinsicWidth()
 {
-  if (aLength.IsPercentage()) {
-    return aViewportLength * aLength.GetAnimValInSpecifiedUnits() / 100.0f;
+  if (mLengthAttributes[ATTR_WIDTH].IsPercentage()) {
+    return -1;
   }
-
-  return aLength.GetAnimValue(const_cast<SVGSVGElement*>(aSelf));
+  
+  
+  
+  
+  float width = mLengthAttributes[ATTR_WIDTH].GetAnimValue(this);
+  return nsSVGUtils::ClampToInt(width);
 }
 
-
-
-
-gfx::Matrix
-SVGSVGElement::GetViewBoxTransform() const
+int32_t
+SVGSVGElement::GetIntrinsicHeight()
 {
-  float viewportWidth, viewportHeight;
-  if (IsInner()) {
-    SVGSVGElement *ctx = GetCtx();
-    viewportWidth = mLengthAttributes[ATTR_WIDTH].GetAnimValue(ctx);
-    viewportHeight = mLengthAttributes[ATTR_HEIGHT].GetAnimValue(ctx);
-  } else {
-    viewportWidth = mViewportWidth;
-    viewportHeight = mViewportHeight;
+  if (mLengthAttributes[ATTR_HEIGHT].IsPercentage()) {
+    return -1;
   }
-
-  if (viewportWidth <= 0.0f || viewportHeight <= 0.0f) {
-    return gfx::Matrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0); 
-  }
-
-  nsSVGViewBoxRect viewBox =
-    GetViewBoxWithSynthesis(viewportWidth, viewportHeight);
-
-  if (viewBox.width <= 0.0f || viewBox.height <= 0.0f) {
-    return gfx::Matrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0); 
-  }
-
-  return SVGContentUtils::GetViewBoxTransform(viewportWidth, viewportHeight,
-                                              viewBox.x, viewBox.y,
-                                              viewBox.width, viewBox.height,
-                                              GetPreserveAspectRatioWithOverride());
+  
+  
+  
+  
+  float height = mLengthAttributes[ATTR_HEIGHT].GetAnimValue(this);
+  return nsSVGUtils::ClampToInt(height);
 }
 
 void
-SVGSVGElement::UpdateHasChildrenOnlyTransform()
+SVGSVGElement::FlushImageTransformInvalidation()
 {
-  bool hasChildrenOnlyTransform =
-    HasViewBoxOrSyntheticViewBox() ||
-    (IsRoot() && (mCurrentTranslate != SVGPoint(0.0f, 0.0f) ||
-                  mCurrentScale != 1.0f));
-  mHasChildrenOnlyTransform = hasChildrenOnlyTransform;
-}
+  MOZ_ASSERT(!GetParent(), "Should only be called on root node");
+  MOZ_ASSERT(OwnerDoc()->IsBeingUsedAsImage(),
+             "Should only be called on image documents");
 
-void
-SVGSVGElement::ChildrenOnlyTransformChanged(uint32_t aFlags)
-{
-  
-  MOZ_ASSERT(!(GetPrimaryFrame()->GetStateBits() & NS_FRAME_IS_NONDISPLAY),
-             "Non-display SVG frames don't maintain overflow rects");
-
-  nsChangeHint changeHint;
-
-  bool hadChildrenOnlyTransform = mHasChildrenOnlyTransform;
-
-  UpdateHasChildrenOnlyTransform();
-
-  if (hadChildrenOnlyTransform != mHasChildrenOnlyTransform) {
-    
-    
-    changeHint = nsChangeHint_ReconstructFrame;
-  } else {
-    
-    changeHint = nsChangeHint(nsChangeHint_UpdateOverflow |
-                              nsChangeHint_ChildrenOnlyTransform);
+  if (mImageNeedsTransformInvalidation) {
+    InvalidateTransformNotifyFrame();
+    mImageNeedsTransformInvalidation = false;
   }
-
-  
-  
-  
-  
-  
-  if ((changeHint & nsChangeHint_ReconstructFrame) ||
-      !(aFlags & eDuringReflow)) {
-    nsLayoutUtils::PostRestyleEvent(this, nsRestyleHint(0), changeHint);
-  }
-}
-
-nsresult
-SVGSVGElement::BindToTree(nsIDocument* aDocument,
-                          nsIContent* aParent,
-                          nsIContent* aBindingParent,
-                          bool aCompileEventHandlers)
-{
-  nsSMILAnimationController* smilController = nullptr;
-
-  if (aDocument) {
-    smilController = aDocument->GetAnimationController();
-    if (smilController) {
-      
-      if (WillBeOutermostSVG(aParent, aBindingParent)) {
-        
-        if (!mTimedDocumentRoot) {
-          mTimedDocumentRoot = new nsSMILTimeContainer();
-        }
-      } else {
-        
-        
-        
-        mTimedDocumentRoot = nullptr;
-        mStartAnimationOnBindToTree = true;
-      }
-    }
-  }
-
-  nsresult rv = SVGSVGElementBase::BindToTree(aDocument, aParent,
-                                              aBindingParent,
-                                              aCompileEventHandlers);
-  NS_ENSURE_SUCCESS(rv,rv);
-
-  nsIDocument* doc = GetComposedDoc();
-  if (doc) {
-    
-    
-    
-    auto cache = nsLayoutStylesheetCache::For(doc->GetStyleBackendType());
-    doc->EnsureOnDemandBuiltInUASheet(cache->SVGSheet());
-  }
-
-  if (mTimedDocumentRoot && smilController) {
-    rv = mTimedDocumentRoot->SetParent(smilController);
-    if (mStartAnimationOnBindToTree) {
-      mTimedDocumentRoot->Begin();
-      mStartAnimationOnBindToTree = false;
-    }
-  }
-
-  return rv;
-}
-
-void
-SVGSVGElement::UnbindFromTree(bool aDeep, bool aNullParent)
-{
-  if (mTimedDocumentRoot) {
-    mTimedDocumentRoot->SetParent(nullptr);
-  }
-
-  SVGSVGElementBase::UnbindFromTree(aDeep, aNullParent);
 }
 
 
@@ -800,289 +671,11 @@ SVGSVGElement::HasPreserveAspectRatio()
     mPreserveAspectRatio.IsAnimated();
 }
 
-SVGViewElement*
-SVGSVGElement::GetCurrentViewElement() const
-{
-  if (mCurrentViewID) {
-    
-    nsIDocument* doc = GetUncomposedDoc();
-    if (doc) {
-      Element *element = doc->GetElementById(*mCurrentViewID);
-      if (element && element->IsSVGElement(nsGkAtoms::view)) {
-        return static_cast<SVGViewElement*>(element);
-      }
-    }
-  }
-  return nullptr;
-}
-
-nsSVGViewBoxRect
-SVGSVGElement::GetViewBoxWithSynthesis(
-  float aViewportWidth, float aViewportHeight) const
-{
-  
-  SVGViewElement* viewElement = GetCurrentViewElement();
-  if (viewElement && viewElement->mViewBox.HasRect()) {
-    return viewElement->mViewBox.GetAnimValue();
-  }
-  if (mSVGView && mSVGView->mViewBox.HasRect()) {
-    return mSVGView->mViewBox.GetAnimValue();
-  }
-  if (mViewBox.HasRect()) {
-    return mViewBox.GetAnimValue();
-  }
-
-  if (ShouldSynthesizeViewBox()) {
-    
-    
-    return nsSVGViewBoxRect(0, 0,
-              ComputeSynthesizedViewBoxDimension(mLengthAttributes[ATTR_WIDTH],
-                                                 mViewportWidth, this),
-              ComputeSynthesizedViewBoxDimension(mLengthAttributes[ATTR_HEIGHT],
-                                                 mViewportHeight, this));
-
-  }
-
-  
-  
-  return nsSVGViewBoxRect(0, 0, aViewportWidth, aViewportHeight);
-}
-
-SVGPreserveAspectRatio
-SVGSVGElement::GetPreserveAspectRatioWithOverride() const
-{
-  nsIDocument* doc = GetUncomposedDoc();
-  if (doc && doc->IsBeingUsedAsImage()) {
-    const SVGPreserveAspectRatio *pAROverridePtr = GetPreserveAspectRatioProperty();
-    if (pAROverridePtr) {
-      return *pAROverridePtr;
-    }
-  }
-
-  SVGViewElement* viewElement = GetCurrentViewElement();
-
-  
-  
-  
-  if (!((viewElement && viewElement->mViewBox.HasRect()) ||
-        (mSVGView && mSVGView->mViewBox.HasRect()) ||
-        mViewBox.HasRect()) &&
-      ShouldSynthesizeViewBox()) {
-    
-    return SVGPreserveAspectRatio(SVG_PRESERVEASPECTRATIO_NONE, SVG_MEETORSLICE_SLICE);
-  }
-
-  if (viewElement && viewElement->mPreserveAspectRatio.IsExplicitlySet()) {
-    return viewElement->mPreserveAspectRatio.GetAnimValue();
-  }
-  if (mSVGView && mSVGView->mPreserveAspectRatio.IsExplicitlySet()) {
-    return mSVGView->mPreserveAspectRatio.GetAnimValue();
-  }
-  return mPreserveAspectRatio.GetAnimValue();
-}
-
-
-
-
-float
-SVGSVGElement::GetLength(uint8_t aCtxType)
-{
-  float h, w;
-
-  SVGViewElement* viewElement = GetCurrentViewElement();
-  const nsSVGViewBoxRect* viewbox = nullptr;
-
-  
-  if (viewElement && viewElement->mViewBox.HasRect()) {
-    viewbox = &viewElement->mViewBox.GetAnimValue();
-  } else if (mSVGView && mSVGView->mViewBox.HasRect()) {
-    viewbox = &mSVGView->mViewBox.GetAnimValue();
-  } else if (mViewBox.HasRect()) {
-    viewbox = &mViewBox.GetAnimValue();
-  }
-
-  if (viewbox) {
-    w = viewbox->width;
-    h = viewbox->height;
-  } else if (IsInner()) {
-    SVGSVGElement *ctx = GetCtx();
-    w = mLengthAttributes[ATTR_WIDTH].GetAnimValue(ctx);
-    h = mLengthAttributes[ATTR_HEIGHT].GetAnimValue(ctx);
-  } else if (ShouldSynthesizeViewBox()) {
-    w = ComputeSynthesizedViewBoxDimension(mLengthAttributes[ATTR_WIDTH],
-                                           mViewportWidth, this);
-    h = ComputeSynthesizedViewBoxDimension(mLengthAttributes[ATTR_HEIGHT],
-                                           mViewportHeight, this);
-  } else {
-    w = mViewportWidth;
-    h = mViewportHeight;
-  }
-
-  w = std::max(w, 0.0f);
-  h = std::max(h, 0.0f);
-
-  switch (aCtxType) {
-  case SVGContentUtils::X:
-    return w;
-  case SVGContentUtils::Y:
-    return h;
-  case SVGContentUtils::XY:
-    return float(SVGContentUtils::ComputeNormalizedHypotenuse(w, h));
-  }
-  return 0;
-}
-
-
-
-
- gfxMatrix
-SVGSVGElement::PrependLocalTransformsTo(const gfxMatrix& aMatrix,
-                                        SVGTransformTypes aWhich) const
-{
-  
-  gfxMatrix userToParent;
-
-  if (aWhich == eUserSpaceToParent || aWhich == eAllTransforms) {
-    userToParent = GetUserToParentTransform(mAnimateMotionTransform,
-                                            mSVGView && mSVGView->mTransforms
-                                              ? mSVGView->mTransforms
-                                              : mTransforms);
-    if (aWhich == eUserSpaceToParent) {
-      return userToParent * aMatrix;
-    }
-  }
-
-  gfxMatrix childToUser;
-
-  if (IsInner()) {
-    float x, y;
-    const_cast<SVGSVGElement*>(this)->GetAnimatedLengthValues(&x, &y, nullptr);
-    childToUser = ThebesMatrix(GetViewBoxTransform().PostTranslate(x, y));
-  } else if (IsRoot()) {
-    childToUser = ThebesMatrix(GetViewBoxTransform()
-                                 .PostScale(mCurrentScale, mCurrentScale)
-                                 .PostTranslate(mCurrentTranslate.GetX(),
-                                                mCurrentTranslate.GetY()));
-  } else {
-    
-    childToUser = ThebesMatrix(GetViewBoxTransform());
-  }
-
-  if (aWhich == eAllTransforms) {
-    return childToUser * userToParent * aMatrix;
-  }
-
-  MOZ_ASSERT(aWhich == eChildToUserSpace, "Unknown TransformTypes");
-
-  
-  
-  
-  
-  
-  
-  
-  return childToUser * aMatrix;
-}
-
-nsSVGAnimatedTransformList*
-SVGSVGElement::GetAnimatedTransformList(uint32_t aFlags)
-{
-  if (!(aFlags & DO_ALLOCATE) && mSVGView && mSVGView->mTransforms) {
-    return mSVGView->mTransforms;
-  }
-  return SVGSVGElementBase::GetAnimatedTransformList(aFlags);
-}
-
- bool
-SVGSVGElement::HasValidDimensions() const
-{
-  return !IsInner() ||
-    ((!mLengthAttributes[ATTR_WIDTH].IsExplicitlySet() ||
-       mLengthAttributes[ATTR_WIDTH].GetAnimValInSpecifiedUnits() > 0) &&
-     (!mLengthAttributes[ATTR_HEIGHT].IsExplicitlySet() ||
-       mLengthAttributes[ATTR_HEIGHT].GetAnimValInSpecifiedUnits() > 0));
-}
-
-nsSVGElement::LengthAttributesInfo
-SVGSVGElement::GetLengthInfo()
-{
-  return LengthAttributesInfo(mLengthAttributes, sLengthInfo,
-                              ArrayLength(sLengthInfo));
-}
-
 nsSVGElement::EnumAttributesInfo
 SVGSVGElement::GetEnumInfo()
 {
   return EnumAttributesInfo(mEnumAttributes, sEnumInfo,
                             ArrayLength(sEnumInfo));
-}
-
-nsSVGViewBox*
-SVGSVGElement::GetViewBox()
-{
-  return &mViewBox;
-}
-
-SVGAnimatedPreserveAspectRatio *
-SVGSVGElement::GetPreserveAspectRatio()
-{
-  return &mPreserveAspectRatio;
-}
-
-bool
-SVGSVGElement::HasViewBoxRect() const
-{
-  SVGViewElement* viewElement = GetCurrentViewElement();
-  if ((viewElement && viewElement->mViewBox.HasRect()) ||
-      (mSVGView && mSVGView->mViewBox.HasRect())) {
-    return true;
-  }
-  return mViewBox.HasRect();
-}
-
-bool
-SVGSVGElement::ShouldSynthesizeViewBox() const
-{
-  MOZ_ASSERT(!HasViewBoxRect(), "Should only be called if we lack a viewBox");
-
-  return IsRoot() && OwnerDoc()->IsBeingUsedAsImage();
-}
-
-bool
-SVGSVGElement::SetPreserveAspectRatioProperty(const SVGPreserveAspectRatio& aPAR)
-{
-  SVGPreserveAspectRatio* pAROverridePtr = new SVGPreserveAspectRatio(aPAR);
-  nsresult rv = SetProperty(nsGkAtoms::overridePreserveAspectRatio,
-                            pAROverridePtr,
-                            nsINode::DeleteProperty<SVGPreserveAspectRatio>,
-                            true);
-  MOZ_ASSERT(rv != NS_PROPTABLE_PROP_OVERWRITTEN,
-             "Setting override value when it's already set...?");
-
-  if (MOZ_UNLIKELY(NS_FAILED(rv))) {
-    
-    delete pAROverridePtr;
-    return false;
-  }
-  return true;
-}
-
-const SVGPreserveAspectRatio*
-SVGSVGElement::GetPreserveAspectRatioProperty() const
-{
-  void* valPtr = GetProperty(nsGkAtoms::overridePreserveAspectRatio);
-  if (valPtr) {
-    return static_cast<SVGPreserveAspectRatio*>(valPtr);
-  }
-  return nullptr;
-}
-
-bool
-SVGSVGElement::ClearPreserveAspectRatioProperty()
-{
-  void* valPtr = UnsetProperty(nsGkAtoms::overridePreserveAspectRatio);
-  delete static_cast<SVGPreserveAspectRatio*>(valPtr);
-  return valPtr;
 }
 
 void
@@ -1131,45 +724,112 @@ SVGSVGElement::ClearImageOverridePreserveAspectRatio()
   }
 }
 
-void
-SVGSVGElement::FlushImageTransformInvalidation()
+bool
+SVGSVGElement::SetPreserveAspectRatioProperty(const SVGPreserveAspectRatio& aPAR)
 {
-  MOZ_ASSERT(!GetParent(), "Should only be called on root node");
-  MOZ_ASSERT(OwnerDoc()->IsBeingUsedAsImage(),
-             "Should only be called on image documents");
+  SVGPreserveAspectRatio* pAROverridePtr = new SVGPreserveAspectRatio(aPAR);
+  nsresult rv = SetProperty(nsGkAtoms::overridePreserveAspectRatio,
+                            pAROverridePtr,
+                            nsINode::DeleteProperty<SVGPreserveAspectRatio>,
+                            true);
+  MOZ_ASSERT(rv != NS_PROPTABLE_PROP_OVERWRITTEN,
+             "Setting override value when it's already set...?");
 
-  if (mImageNeedsTransformInvalidation) {
-    InvalidateTransformNotifyFrame();
-    mImageNeedsTransformInvalidation = false;
+  if (MOZ_UNLIKELY(NS_FAILED(rv))) {
+    
+    delete pAROverridePtr;
+    return false;
   }
+  return true;
 }
 
-int32_t
-SVGSVGElement::GetIntrinsicWidth()
+const SVGPreserveAspectRatio*
+SVGSVGElement::GetPreserveAspectRatioProperty() const
 {
-  if (mLengthAttributes[ATTR_WIDTH].IsPercentage()) {
-    return -1;
+  void* valPtr = GetProperty(nsGkAtoms::overridePreserveAspectRatio);
+  if (valPtr) {
+    return static_cast<SVGPreserveAspectRatio*>(valPtr);
   }
-  
-  
-  
-  
-  float width = mLengthAttributes[ATTR_WIDTH].GetAnimValue(this);
-  return nsSVGUtils::ClampToInt(width);
+  return nullptr;
 }
 
-int32_t
-SVGSVGElement::GetIntrinsicHeight()
+bool
+SVGSVGElement::ClearPreserveAspectRatioProperty()
 {
-  if (mLengthAttributes[ATTR_HEIGHT].IsPercentage()) {
-    return -1;
+  void* valPtr = UnsetProperty(nsGkAtoms::overridePreserveAspectRatio);
+  delete static_cast<SVGPreserveAspectRatio*>(valPtr);
+  return valPtr;
+}
+
+
+SVGPreserveAspectRatio
+SVGSVGElement::GetPreserveAspectRatioWithOverride() const
+{
+  nsIDocument* doc = GetUncomposedDoc();
+  if (doc && doc->IsBeingUsedAsImage()) {
+    const SVGPreserveAspectRatio *pAROverridePtr = GetPreserveAspectRatioProperty();
+    if (pAROverridePtr) {
+      return *pAROverridePtr;
+    }
   }
+
+  SVGViewElement* viewElement = GetCurrentViewElement();
+
   
   
   
-  
-  float height = mLengthAttributes[ATTR_HEIGHT].GetAnimValue(this);
-  return nsSVGUtils::ClampToInt(height);
+  if (!((viewElement && viewElement->mViewBox.HasRect()) ||
+        (mSVGView && mSVGView->mViewBox.HasRect()) ||
+        mViewBox.HasRect()) &&
+      ShouldSynthesizeViewBox()) {
+    
+    return SVGPreserveAspectRatio(SVG_PRESERVEASPECTRATIO_NONE, SVG_MEETORSLICE_SLICE);
+  }
+
+  if (viewElement && viewElement->mPreserveAspectRatio.IsExplicitlySet()) {
+    return viewElement->mPreserveAspectRatio.GetAnimValue();
+  }
+  if (mSVGView && mSVGView->mPreserveAspectRatio.IsExplicitlySet()) {
+    return mSVGView->mPreserveAspectRatio.GetAnimValue();
+  }
+  return mPreserveAspectRatio.GetAnimValue();
+}
+
+SVGViewElement*
+SVGSVGElement::GetCurrentViewElement() const
+{
+  if (mCurrentViewID) {
+    
+    nsIDocument* doc = GetUncomposedDoc();
+    if (doc) {
+      Element *element = doc->GetElementById(*mCurrentViewID);
+      if (element && element->IsSVGElement(nsGkAtoms::view)) {
+        return static_cast<SVGViewElement*>(element);
+      }
+    }
+  }
+  return nullptr;
+}
+
+const nsSVGViewBox&
+SVGSVGElement::GetViewBoxInternal() const
+{
+  SVGViewElement* viewElement = GetCurrentViewElement();
+
+  if (viewElement && viewElement->mViewBox.HasRect()) {
+    return viewElement->mViewBox;
+  } else if (mSVGView && mSVGView->mViewBox.HasRect()) {
+    return mSVGView->mViewBox;
+  }
+
+  return mViewBox;
+}
+
+nsSVGAnimatedTransformList*
+SVGSVGElement::GetTransformInternal() const
+{
+  return (mSVGView && mSVGView->mTransforms)
+         ? mSVGView->mTransforms: mTransforms;
 }
 
 } 

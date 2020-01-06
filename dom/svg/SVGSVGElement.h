@@ -7,50 +7,41 @@
 #ifndef mozilla_dom_SVGSVGElement_h
 #define mozilla_dom_SVGSVGElement_h
 
-#include "mozilla/dom/FromParser.h"
-#include "nsAutoPtr.h"
-#include "nsIContentInlines.h"
-#include "nsISVGPoint.h"
-#include "nsSVGEnum.h"
-#include "nsSVGLength2.h"
-#include "SVGGraphicsElement.h"
-#include "SVGImageContext.h"
-#include "nsSVGViewBox.h"
-#include "SVGPreserveAspectRatio.h"
-#include "SVGAnimatedPreserveAspectRatio.h"
-#include "mozilla/Attributes.h"
+#include "SVGViewportElement.h"
 
 nsresult NS_NewSVGSVGElement(nsIContent **aResult,
                              already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
                              mozilla::dom::FromParser aFromParser);
 
 class nsSMILTimeContainer;
-class nsSVGOuterSVGFrame;
-class nsSVGInnerSVGFrame;
 
 namespace mozilla {
-class AutoPreserveAspectRatioOverride;
-class AutoSVGTimeSetRestore;
-class DOMSVGAnimatedPreserveAspectRatio;
+class AutoSVGViewHandler;
+class SVGFragmentIdentifier;
+class EventChainPreVisitor;
 class DOMSVGLength;
 class DOMSVGNumber;
-class EventChainPreVisitor;
-class SVGFragmentIdentifier;
-class AutoSVGViewHandler;
 
 namespace dom {
 class SVGAngle;
-class SVGAnimatedRect;
 class SVGMatrix;
-class SVGTransform;
-class SVGViewElement;
 class SVGIRect;
-
 class SVGSVGElement;
+
+
+class SVGView {
+public:
+  SVGView();
+
+  nsSVGEnum                             mZoomAndPan;
+  nsSVGViewBox                          mViewBox;
+  SVGAnimatedPreserveAspectRatio        mPreserveAspectRatio;
+  nsAutoPtr<nsSVGAnimatedTransformList> mTransforms;
+};
 
 class DOMSVGTranslatePoint final : public nsISVGPoint {
 public:
-  DOMSVGTranslatePoint(SVGPoint* aPt, SVGSVGElement *aElement)
+  DOMSVGTranslatePoint(SVGPoint* aPt, SVGSVGElement* aElement)
     : nsISVGPoint(aPt, true), mElement(aElement) {}
 
   explicit DOMSVGTranslatePoint(DOMSVGTranslatePoint* aPt)
@@ -76,45 +67,17 @@ private:
   ~DOMSVGTranslatePoint() {}
 };
 
-class svgFloatSize {
-public:
-  svgFloatSize(float aWidth, float aHeight)
-    : width(aWidth)
-    , height(aHeight)
-  {}
-  bool operator!=(const svgFloatSize& rhs) {
-    return width != rhs.width || height != rhs.height;
-  }
-  float width;
-  float height;
-};
-
-
-class SVGView {
-  friend class mozilla::AutoSVGViewHandler;
-  friend class mozilla::dom::SVGSVGElement;
-public:
-  SVGView();
-
-private:
-  nsSVGEnum                             mZoomAndPan;
-  nsSVGViewBox                          mViewBox;
-  SVGAnimatedPreserveAspectRatio        mPreserveAspectRatio;
-  nsAutoPtr<nsSVGAnimatedTransformList> mTransforms;
-};
-
-typedef SVGGraphicsElement SVGSVGElementBase;
+typedef SVGViewportElement SVGSVGElementBase;
 
 class SVGSVGElement final : public SVGSVGElementBase
 {
   friend class ::nsSVGOuterSVGFrame;
-  friend class ::nsSVGInnerSVGFrame;
-  friend class mozilla::AutoPreserveAspectRatioOverride;
-  friend class mozilla::AutoSVGTimeSetRestore;
-  friend class mozilla::dom::SVGView;
   friend class mozilla::SVGFragmentIdentifier;
   friend class mozilla::AutoSVGViewHandler;
+  friend class mozilla::AutoPreserveAspectRatioOverride;
+  friend class mozilla::dom::SVGView;
 
+protected:
   SVGSVGElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo,
                 FromParser aFromParser);
   virtual JSObject* WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto) override;
@@ -140,122 +103,13 @@ public:
   void SetCurrentScaleTranslate(float s, float x, float y);
 
   
-
-
-  const SVGPoint& GetCurrentTranslate() { return mCurrentTranslate; }
-  float GetCurrentScale() { return mCurrentScale; }
-
-  
-
-
-
-  const SVGPoint& GetPreviousTranslate() { return mPreviousTranslate; }
-  float GetPreviousScale() { return mPreviousScale; }
-
-  nsSMILTimeContainer* GetTimedDocumentRoot();
-
-  
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsIAtom* aAttribute) const override;
   virtual nsresult GetEventTargetParent(
                      EventChainPreVisitor& aVisitor) override;
-
   virtual bool IsEventAttributeName(nsIAtom* aName) override;
 
   
-  virtual gfxMatrix PrependLocalTransformsTo(
-    const gfxMatrix &aMatrix,
-    SVGTransformTypes aWhich = eAllTransforms) const override;
-  virtual nsSVGAnimatedTransformList*
-	  GetAnimatedTransformList(uint32_t aFlags = 0) override;
-  virtual bool HasValidDimensions() const override;
-
-  
-  float GetLength(uint8_t mCtxType);
-
-  
-
-  
-
-
-
-
-
-  int32_t GetIntrinsicWidth();
-  int32_t GetIntrinsicHeight();
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  bool HasViewBoxRect() const;
-
-  
-
-
-
-
-
-
-  bool ShouldSynthesizeViewBox() const;
-
-  bool HasViewBoxOrSyntheticViewBox() const {
-    return HasViewBoxRect() || ShouldSynthesizeViewBox();
-  }
-
-  gfx::Matrix GetViewBoxTransform() const;
-
-  bool HasChildrenOnlyTransform() const {
-    return mHasChildrenOnlyTransform;
-  }
-
-  void UpdateHasChildrenOnlyTransform();
-
-  enum ChildrenOnlyTransformChangedFlags {
-    eDuringReflow = 1
-  };
-
-  
-
-
-
-
-
-
-
-
-
-  void ChildrenOnlyTransformChanged(uint32_t aFlags = 0);
-
-  
-  
-  
-  virtual void FlushImageTransformInvalidation();
-
   virtual nsresult Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
                          bool aPreallocateChildren) const override;
-
-  
-  
-  bool IsOverriddenBy(const nsAString &aViewID) const {
-    return mCurrentViewID && mCurrentViewID->Equals(aViewID);
-  }
-
-  svgFloatSize GetViewportSize() const {
-    return svgFloatSize(mViewportWidth, mViewportHeight);
-  }
-
-  void SetViewportSize(const svgFloatSize& aSize) {
-    mViewportWidth  = aSize.width;
-    mViewportHeight = aSize.height;
-  }
 
   
   already_AddRefed<SVGAnimatedLength> X();
@@ -290,52 +144,60 @@ public:
   already_AddRefed<SVGTransform> CreateSVGTransform();
   already_AddRefed<SVGTransform> CreateSVGTransformFromMatrix(SVGMatrix& matrix);
   using nsINode::GetElementById; 
-  already_AddRefed<SVGAnimatedRect> ViewBox();
-  already_AddRefed<DOMSVGAnimatedPreserveAspectRatio> PreserveAspectRatio();
   uint16_t ZoomAndPan();
   void SetZoomAndPan(uint16_t aZoomAndPan, ErrorResult& rv);
-  virtual nsSVGViewBox* GetViewBox() override;
 
-private:
   
 
   virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                               nsIContent* aBindingParent,
                               bool aCompileEventHandlers) override;
   virtual void UnbindFromTree(bool aDeep, bool aNullParent) override;
+  virtual nsSVGAnimatedTransformList*
+    GetAnimatedTransformList(uint32_t aFlags = 0) override;
 
   
 
-  SVGViewElement* GetCurrentViewElement() const;
-
   
   
-  
-  void SetImageOverridePreserveAspectRatio(const SVGPreserveAspectRatio& aPAR);
-  void ClearImageOverridePreserveAspectRatio();
-
-  
-  
-  bool SetPreserveAspectRatioProperty(const SVGPreserveAspectRatio& aPAR);
-  const SVGPreserveAspectRatio* GetPreserveAspectRatioProperty() const;
-  bool ClearPreserveAspectRatioProperty();
-
-  bool IsRoot() const {
-    NS_ASSERTION((IsInUncomposedDoc() && !GetParent()) ==
-                 (OwnerDoc() && (OwnerDoc()->GetRootElement() == this)),
-                 "Can't determine if we're root");
-    return IsInUncomposedDoc() && !GetParent();
+  bool IsOverriddenBy(const nsAString &aViewID) const {
+    return mCurrentViewID && mCurrentViewID->Equals(aViewID);
   }
 
+  nsSMILTimeContainer* GetTimedDocumentRoot();
+
+  
+
   
 
 
 
-  bool IsInner() const {
-    const nsIContent *parent = GetFlattenedTreeParent();
-    return parent && parent->IsSVGElement() &&
-           !parent->IsSVGElement(nsGkAtoms::foreignObject);
+
+
+  int32_t GetIntrinsicWidth();
+  int32_t GetIntrinsicHeight();
+
+  
+  
+  
+  virtual void FlushImageTransformInvalidation();
+
+  svgFloatSize GetViewportSize() const {
+    return svgFloatSize(mViewportWidth, mViewportHeight);
   }
+
+  void SetViewportSize(const svgFloatSize& aSize) {
+    mViewportWidth  = aSize.width;
+    mViewportHeight = aSize.height;
+  }
+
+private:
+  
+
+  virtual SVGViewElement* GetCurrentViewElement() const;
+  virtual SVGPreserveAspectRatio GetPreserveAspectRatioWithOverride() const override;
+
+  
 
   
 
@@ -357,24 +219,25 @@ private:
   
   bool HasPreserveAspectRatio();
 
- 
-
-
-
-
-  nsSVGViewBoxRect GetViewBoxWithSynthesis(
-      float aViewportWidth, float aViewportHeight) const;
   
+  
+  
+  void SetImageOverridePreserveAspectRatio(const SVGPreserveAspectRatio& aPAR);
+  void ClearImageOverridePreserveAspectRatio();
 
+  
+  
+  bool SetPreserveAspectRatioProperty(const SVGPreserveAspectRatio& aPAR);
+  const SVGPreserveAspectRatio* GetPreserveAspectRatioProperty() const;
+  bool ClearPreserveAspectRatioProperty();
 
+  virtual SVGPoint GetCurrentTranslate() const override
+  { return mCurrentTranslate; }
+  virtual float GetCurrentScale() const override
+  { return mCurrentScale; }
 
-  SVGPreserveAspectRatio GetPreserveAspectRatioWithOverride() const;
-
-  virtual LengthAttributesInfo GetLengthInfo() override;
-
-  enum { ATTR_X, ATTR_Y, ATTR_WIDTH, ATTR_HEIGHT };
-  nsSVGLength2 mLengthAttributes[4];
-  static LengthInfo sLengthInfo[4];
+  virtual const nsSVGViewBox& GetViewBoxInternal() const override;
+  virtual nsSVGAnimatedTransformList* GetTransformInternal() const override;
 
   virtual EnumAttributesInfo GetEnumInfo() override;
 
@@ -382,26 +245,6 @@ private:
   nsSVGEnum mEnumAttributes[1];
   static nsSVGEnumMapping sZoomAndPanMap[];
   static EnumInfo sEnumInfo[1];
-
-  virtual SVGAnimatedPreserveAspectRatio *GetPreserveAspectRatio() override;
-
-  nsSVGViewBox                   mViewBox;
-  SVGAnimatedPreserveAspectRatio mPreserveAspectRatio;
-
-  
-  
-  nsAutoPtr<nsString>            mCurrentViewID;
-  nsAutoPtr<SVGView>             mSVGView;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  float mViewportWidth, mViewportHeight;
 
   
   
@@ -420,47 +263,16 @@ private:
   
   
   bool     mStartAnimationOnBindToTree;
+
   bool     mImageNeedsTransformInvalidation;
-  bool     mHasChildrenOnlyTransform;
+
+  
+  
+  nsAutoPtr<nsString>            mCurrentViewID;
+  nsAutoPtr<SVGView>             mSVGView;
 };
 
 } 
-
-class MOZ_RAII AutoPreserveAspectRatioOverride
-{
-public:
-  AutoPreserveAspectRatioOverride(const Maybe<SVGImageContext>& aSVGContext,
-                                  dom::SVGSVGElement* aRootElem
-                                  MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : mRootElem(aRootElem)
-    , mDidOverride(false)
-  {
-    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    MOZ_ASSERT(mRootElem, "No SVG node to manage?");
-
-    if (aSVGContext.isSome() &&
-        aSVGContext->GetPreserveAspectRatio().isSome()) {
-      
-      
-      
-      mRootElem->SetImageOverridePreserveAspectRatio(
-                   *aSVGContext->GetPreserveAspectRatio());
-      mDidOverride = true;
-    }
-  }
-
-  ~AutoPreserveAspectRatioOverride()
-  {
-    if (mDidOverride) {
-      mRootElem->ClearImageOverridePreserveAspectRatio();
-    }
-  }
-
-private:
-  const RefPtr<dom::SVGSVGElement> mRootElem;
-  bool mDidOverride;
-  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-};
 
 class MOZ_RAII AutoSVGTimeSetRestore
 {
@@ -483,6 +295,42 @@ public:
 private:
   const RefPtr<dom::SVGSVGElement> mRootElem;
   const float mOriginalTime;
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+};
+
+class MOZ_RAII AutoPreserveAspectRatioOverride
+{
+public:
+  AutoPreserveAspectRatioOverride(const Maybe<SVGImageContext>& aSVGContext,
+                                  dom::SVGSVGElement* aRootElem
+                                  MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+    : mRootElem(aRootElem)
+    , mDidOverride(false)
+  {
+    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+    MOZ_ASSERT(mRootElem, "No SVG/Symbol node to manage?");
+
+    if (aSVGContext.isSome() &&
+        aSVGContext->GetPreserveAspectRatio().isSome()) {
+      
+      
+      
+      mRootElem->SetImageOverridePreserveAspectRatio(
+                   *aSVGContext->GetPreserveAspectRatio());
+      mDidOverride = true;
+    }
+  }
+
+  ~AutoPreserveAspectRatioOverride()
+  {
+    if (mDidOverride) {
+      mRootElem->ClearImageOverridePreserveAspectRatio();
+    }
+  }
+
+private:
+  const RefPtr<dom::SVGSVGElement> mRootElem;
+  bool mDidOverride;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
