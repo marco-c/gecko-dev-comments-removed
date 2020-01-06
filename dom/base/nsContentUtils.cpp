@@ -10269,6 +10269,12 @@ nsContentUtils::AppendNativeAnonymousChildren(
   }
 
   
+  if (auto nac = static_cast<ManualNAC*>(
+        aContent->GetProperty(nsGkAtoms::manualNACProperty))) {
+    aKids.AppendElements(*nac);
+  }
+
+  
   
   if (!(aFlags & nsIContent::eSkipDocumentLevelNativeAnonymousContent) &&
       aContent == aContent->OwnerDoc()->GetRootElement()) {

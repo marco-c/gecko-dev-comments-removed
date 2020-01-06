@@ -2161,6 +2161,7 @@ GK_ATOM(apzCallbackTransform, "apzCallbackTransform")
 GK_ATOM(restylableAnonymousNode, "restylableAnonymousNode")
 GK_ATOM(paintRequestTime, "PaintRequestTime")
 GK_ATOM(pseudoProperty, "PseudoProperty")  
+GK_ATOM(manualNACProperty, "ManualNACProperty") 
 
 
 GK_ATOM(Japanese, "ja")
