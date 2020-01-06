@@ -221,6 +221,7 @@ def write_artifact(filename, data):
 
 
 def get_action_yml(parameters):
+    
     templates = Templates(os.path.join(GECKO, "taskcluster/taskgraph"))
     action_parameters = parameters.copy()
 
