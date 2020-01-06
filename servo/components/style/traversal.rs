@@ -509,7 +509,7 @@ where
         if data.styles.is_display_none() {
             debug!("{:?} style is display:none - clearing data from descendants.",
                    element);
-            clear_descendant_data(element)
+            unsafe { clear_descendant_data(element); }
         }
 
         
@@ -830,25 +830,29 @@ where
 }
 
 
-pub fn clear_descendant_data<E>(el: E)
+
+
+
+pub unsafe fn clear_descendant_data<E>(root: E)
 where
     E: TElement,
 {
-    for kid in el.as_node().traversal_children() {
-        if let Some(kid) = kid.as_element() {
-            
-            
-            
-            
-            
-            if kid.get_data().is_some() {
-                unsafe { kid.clear_data() };
-                clear_descendant_data(kid);
+    let mut parents = SmallVec::<[E; 32]>::new();
+    parents.push(root);
+    while let Some(p) = parents.pop() {
+        for kid in p.as_node().traversal_children() {
+            if let Some(kid) = kid.as_element() {
+                
+                
+                
+                
+                
+                if kid.get_data().is_some() {
+                    kid.clear_data();
+                    parents.push(kid);
+                }
             }
         }
-    }
-
-    unsafe {
-        el.clear_descendants_bits();
+        p.clear_descendants_bits();
     }
 }
