@@ -1070,6 +1070,17 @@ nsXMLContentSink::HandleEndElement(const char16_t *aName,
                isTemplateElement, "Wrong element being closed");
 #endif
 
+  
+  
+  
+  int32_t stackLen = mContentStack.Length();
+  if (mNotifyLevel >= stackLen) {
+    if (numFlushed < content->GetChildCount()) {
+      NotifyAppend(content, numFlushed);
+    }
+    mNotifyLevel = stackLen - 1;
+  }
+
   result = CloseElement(content);
 
   if (mCurrentHead == content) {
@@ -1085,13 +1096,6 @@ nsXMLContentSink::HandleEndElement(const char16_t *aName,
     MaybeStartLayout(false);
   }
 
-  int32_t stackLen = mContentStack.Length();
-  if (mNotifyLevel >= stackLen) {
-    if (numFlushed < content->GetChildCount()) {
-      NotifyAppend(content, numFlushed);
-    }
-    mNotifyLevel = stackLen - 1;
-  }
   DidAddContent();
 
   if (content->IsSVGElement(nsGkAtoms::svg)) {
