@@ -324,7 +324,11 @@ nsFirstLetterFrame::CreateContinuationForFloatingParent(nsPresContext* aPresCont
   
   
   
-  nsStyleContext* parentSC = this->StyleContext()->GetParentAllowServo();
+  
+  
+  
+  
+  nsStyleContext* parentSC = parent->StyleContext();
   if (parentSC) {
     RefPtr<nsStyleContext> newSC;
     newSC = presShell->StyleSet()->ResolveStyleForFirstLetterContinuation(parentSC);
