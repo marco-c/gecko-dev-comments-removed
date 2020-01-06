@@ -165,7 +165,7 @@ public:
   
   already_AddRefed<nsStyleContext>
   ResolvePseudoElementStyle(dom::Element* aOriginatingElement,
-                            mozilla::CSSPseudoElementType aType,
+                            CSSPseudoElementType aType,
                             nsStyleContext* aParentContext,
                             dom::Element* aPseudoElement);
 
@@ -181,7 +181,8 @@ public:
   
   
   already_AddRefed<ServoComputedValues>
-  ResolveTransientServoStyle(dom::Element* aElement, nsIAtom* aPseudoTag);
+  ResolveTransientServoStyle(dom::Element* aElement,
+                             CSSPseudoElementType aPseudoTag);
 
   
   
@@ -307,7 +308,8 @@ public:
   bool AppendFontFaceRules(nsTArray<nsFontFaceRuleContainer>& aArray);
 
   already_AddRefed<ServoComputedValues>
-  GetBaseComputedValuesForElement(dom::Element* aElement, nsIAtom* aPseudoTag);
+  GetBaseComputedValuesForElement(dom::Element* aElement,
+                                  CSSPseudoElementType aPseudoType);
 
   
 
@@ -431,8 +433,8 @@ private:
     }
   }
 
-  already_AddRefed<ServoComputedValues> ResolveStyleLazily(dom::Element* aElement,
-                                                           nsIAtom* aPseudoTag);
+  already_AddRefed<ServoComputedValues>
+    ResolveStyleLazily(dom::Element* aElement, CSSPseudoElementType aPseudoType);
 
   void RunPostTraversalTasks();
 

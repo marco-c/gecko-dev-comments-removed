@@ -380,7 +380,7 @@ protected:
   
   
   void EnsureBaseStyle(const AnimationProperty& aProperty,
-                       nsIAtom* aPseudoAtom,
+                       CSSPseudoElementType aPseudoType,
                        nsPresContext* aPresContext,
                        RefPtr<ServoComputedValues>& aBaseComputedValues);
 

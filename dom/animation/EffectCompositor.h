@@ -247,7 +247,7 @@ public:
   bool PreTraverse();
 
   
-  bool PreTraverse(dom::Element* aElement, nsIAtom* aPseudoTagOrNull);
+  bool PreTraverse(dom::Element* aElement, CSSPseudoElementType aPseudoType);
 
   
   
