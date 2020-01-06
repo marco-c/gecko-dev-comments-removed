@@ -878,6 +878,7 @@ pref("gfx.webrender.force-angle", true);
 #endif
 
 pref("gfx.webrender.highlight-painted-layers", false);
+pref("gfx.webrender.layers-free", true);
 pref("gfx.webrender.blob-images", false);
 
 
@@ -1926,7 +1927,7 @@ pref("network.IDN_show_punycode", false);
 
 
 
-pref("network.IDN.restriction_profile", "high");
+pref("network.IDN.restriction_profile", "moderate");
 pref("network.IDN.use_whitelist", false);
 
 
@@ -2653,6 +2654,9 @@ pref("services.blocklist.signing.enforced", true);
 
 
 pref("services.blocklist.update_enabled", true);
+
+
+pref("security.onecrl.via.amo", false);
 
 
 
@@ -5906,5 +5910,9 @@ pref("toolkit.crashreporter.include_context_heap", true);
 
 pref("dom.noopener.newprocess.enabled", true);
 
+#ifdef XP_WIN
+pref("layers.omtp.enabled", true);
+#else
 pref("layers.omtp.enabled", false);
+#endif
 pref("layers.omtp.force-sync", false);
