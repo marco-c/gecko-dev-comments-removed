@@ -833,7 +833,9 @@ HttpObserverManager = {
         try {
           let result = callback(data);
 
-          if (channel.canModify && result && typeof result === "object" && opts.blocking) {
+          
+          
+          if ((channel.canModify || data.isProxy) && typeof result === "object" && opts.blocking) {
             handlerResults.push({opts, result});
           }
         } catch (e) {
@@ -865,6 +867,16 @@ HttpObserverManager = {
           }
         }
 
+        if (kind === "authRequired" && result.authCredentials && channel.authPromptCallback) {
+          channel.authPromptCallback(result.authCredentials);
+        }
+
+        
+        
+        if (!channel.canModify) {
+          continue;
+        }
+
         if (result.cancel) {
           channel.suspended = false;
           channel.cancel(Cr.NS_ERROR_ABORT);
@@ -890,11 +902,8 @@ HttpObserverManager = {
         if (opts.responseHeaders && result.responseHeaders && responseHeaders) {
           responseHeaders.applyChanges(result.responseHeaders);
         }
-
-        if (kind === "authRequired" && result.authCredentials && channel.authPromptCallback) {
-          channel.authPromptCallback(result.authCredentials);
-        }
       }
+
       
       
       if (kind === "authRequired" && channel.authPromptForward) {

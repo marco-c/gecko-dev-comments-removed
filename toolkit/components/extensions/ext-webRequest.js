@@ -19,7 +19,15 @@ function WebRequestEventManager(context, eventName) {
     let listener = data => {
       
       
-      if (data.isSystemPrincipal) {
+      
+      let isProxyAuth = data.isProxy && context.extension.hasPermission("proxy");
+
+      
+      
+      
+      
+      
+      if (data.isSystemPrincipal && !isProxyAuth) {
         return;
       }
 
@@ -31,7 +39,7 @@ function WebRequestEventManager(context, eventName) {
       
       const origin = data.documentUrl;
       const own = origin && origin.startsWith(context.extension.getURL());
-      if (origin && !own && !hosts.matches(data.documentURI)) {
+      if (origin && !own && !isProxyAuth && !hosts.matches(data.documentURI)) {
         return;
       }
 
