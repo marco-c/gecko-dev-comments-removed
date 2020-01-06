@@ -66,6 +66,9 @@ public class Experiments {
     public static final String ACTIVITY_STREAM_OPT_OUT = "activity-stream-opt-out";
 
     
+    public static final String CUSTOM_TABS = "custom-tabs";
+
+    
     public static final String COMPACT_TABS = "compact-tabs";
 
     
