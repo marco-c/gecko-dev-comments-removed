@@ -142,9 +142,19 @@ public:
 
 
 
+
   bool OverridesCSP(nsIPrincipal* aDocumentPrincipal)
   {
-    return mKind == eExpandedPrincipal && FastSubsumes(aDocumentPrincipal);
+    
+    
+    if (mKind == eExpandedPrincipal) {
+      return FastSubsumes(aDocumentPrincipal);
+    }
+    
+    
+    
+    return (AddonPolicy() &&
+            !BasePrincipal::Cast(aDocumentPrincipal)->AddonPolicy());
   }
 
 protected:
