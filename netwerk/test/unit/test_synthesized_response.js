@@ -17,17 +17,8 @@ function make_uri(url) {
   return ios.newURI(url);
 }
 
-function isParentProcess() {
-    let appInfo = Cc["@mozilla.org/xre/app-info;1"];
-    return (!appInfo || appInfo.getService(Ci.nsIXULRuntime).processType == Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT);
-}
 
-if (isParentProcess()) {
-  
-  
-  
-  Cc["@mozilla.org/netwerk/cache-storage-service;1"].getService(Ci.nsICacheStorageService);
-}
+Cc["@mozilla.org/netwerk/cache-storage-service;1"].getService(Ci.nsICacheStorageService);
 
 var gotOnProgress;
 var gotOnStatus;
