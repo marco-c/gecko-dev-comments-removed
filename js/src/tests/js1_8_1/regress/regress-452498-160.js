@@ -22,11 +22,6 @@ function test()
   printStatus (summary);
 
 
-  (eval("(function(){ this.watch(\"x\", function () { new function () { return y; } } ); const y = undefined });"))();
-  x = NaN;
-  reportCompare(expect, actual, summary + ': 2');
-
-
   ({ set z(v){},  set y(v) { return --x; }, set w(v) { return --w; } });
   reportCompare(expect, actual, summary + ': 3');
 
