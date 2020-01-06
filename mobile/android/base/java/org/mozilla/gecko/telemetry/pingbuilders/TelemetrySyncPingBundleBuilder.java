@@ -38,9 +38,12 @@ import java.util.TimeZone;
 
 
 
+
+
+
 public class TelemetrySyncPingBundleBuilder extends TelemetryPingBuilder {
     private static final String PING_TYPE = "sync";
-    private static final int PING_BUNDLE_VERSION = 5; 
+    private static final int PING_BUNDLE_VERSION = 4; 
     private static final int PING_SYNC_DATA_FORMAT_VERSION = 1; 
 
     public static final String UPLOAD_REASON_FIRST = "first";
