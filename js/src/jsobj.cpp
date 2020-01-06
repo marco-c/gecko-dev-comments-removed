@@ -3177,6 +3177,20 @@ js::ToPrimitiveSlow(JSContext* cx, JSType preferredType, MutableHandleValue vp)
 }
 
 
+bool
+js::ToPropertyKeySlow(JSContext* cx, HandleValue argument, MutableHandleId result)
+{
+    MOZ_ASSERT(argument.isObject());
+
+    
+    RootedValue key(cx, argument);
+    if (!ToPrimitiveSlow(cx, JSTYPE_STRING, &key))
+        return false;
+
+    
+    return ValueToId<CanGC>(cx, key, result);
+}
+
 
 
 bool

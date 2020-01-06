@@ -583,17 +583,17 @@ HasNoToPrimitiveMethodPure(JSObject* obj, JSContext* cx)
     return !prop;
 }
 
+extern bool
+ToPropertyKeySlow(JSContext* cx, HandleValue argument, MutableHandleId result);
 
-inline bool
+
+MOZ_ALWAYS_INLINE bool
 ToPropertyKey(JSContext* cx, HandleValue argument, MutableHandleId result)
 {
-    
-    RootedValue key(cx, argument);
-    if (!ToPrimitive(cx, JSTYPE_STRING, &key))
-        return false;
+    if (MOZ_LIKELY(argument.isPrimitive()))
+        return ValueToId<CanGC>(cx, argument, result);
 
-    
-    return ValueToId<CanGC>(cx, key, result);
+    return ToPropertyKeySlow(cx, argument, result);
 }
 
 
