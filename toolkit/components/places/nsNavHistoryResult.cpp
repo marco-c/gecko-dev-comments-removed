@@ -2460,7 +2460,10 @@ nsNavHistoryQueryResultNode::OnVisit(nsIURI* aURI, int64_t aVisitId,
       nsresult rv = history->VisitIdToResultNode(aVisitId, mOptions,
                                                  getter_AddRefs(addition));
       NS_ENSURE_SUCCESS(rv, rv);
-      NS_ENSURE_STATE(addition);
+      if (!addition) {
+        
+        return NS_OK;
+      }
       addition->mTransitionType = aTransitionType;
       if (!history->EvaluateQueryForNode(mQueries, mOptions, addition))
         return NS_OK; 
@@ -3854,7 +3857,10 @@ nsNavHistoryFolderResultNode::OnItemVisited(int64_t aItemId,
   rv = history->VisitIdToResultNode(aVisitId, mOptions,
                                     getter_AddRefs(visitNode));
   NS_ENSURE_SUCCESS(rv, rv);
-  NS_ENSURE_STATE(visitNode);
+  if (!visitNode) {
+    
+    return NS_OK;
+  }
   node->mFrecency = visitNode->mFrecency;
 
   if (AreChildrenVisible()) {
