@@ -234,7 +234,7 @@ public:
     uint64_t mVersion;
 #endif
 
-    void checkVersion() {
+    void checkVersion() const {
       
       MOZ_ASSERT_IF(mSet, mSet->mVersion == mVersion);
     }
@@ -274,17 +274,17 @@ public:
       checkVersion();
     }
 
-    bool operator==(const ConstIterator& other) {
+    bool operator==(const ConstIterator& other) const {
       MOZ_ASSERT(mSet == other.mSet);
       checkVersion();
       return mPos == other.mPos;
     }
 
-    bool operator!=(const ConstIterator& other) {
+    bool operator!=(const ConstIterator& other) const {
       return !(*this == other);
     }
 
-    T operator*() {
+    T operator*() const {
       MOZ_ASSERT(mSet);
       MOZ_ASSERT(mPos < kMaxBits);
       MOZ_ASSERT(mSet->contains(T(mPos)));
