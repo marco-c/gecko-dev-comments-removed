@@ -17,9 +17,6 @@ this.frame = {};
 const FRAME_SCRIPT = "chrome://marionette/content/listener.js";
 
 
-var remoteFrames = [];
-
-
 
 
 
@@ -151,14 +148,14 @@ frame.Manager = class {
 
     
     
-    for (let i = 0; i < remoteFrames.length; i++) {
-      let f = remoteFrames[i];
+    for (let i = 0; i < this.remoteFrames.length; i++) {
+      let f = this.remoteFrames[i];
       let fmm = f.messageManager.get();
       try {
         fmm.sendAsyncMessage("aliveCheck", {});
       } catch (e) {
         if (e.result == Cr.NS_ERROR_NOT_INITIALIZED) {
-          remoteFrames.splice(i--, 1);
+          this.remoteFrames.splice(i--, 1);
           continue;
         }
       }
@@ -178,7 +175,7 @@ frame.Manager = class {
     this.addMessageManagerListeners(mm);
     let f = new frame.RemoteFrame(winId, frameId);
     f.messageManager = Cu.getWeakReference(mm);
-    remoteFrames.push(f);
+    this.remoteFrames.push(f);
     this.currentRemoteFrame = f;
 
     mm.loadFrameScript(FRAME_SCRIPT, true, true);
