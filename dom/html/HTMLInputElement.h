@@ -944,7 +944,17 @@ protected:
 
 
 
-  nsresult SetValueInternal(const nsAString& aValue, uint32_t aFlags);
+
+
+  nsresult SetValueInternal(const nsAString& aValue,
+                            const nsAString* aOldValue,
+                            uint32_t aFlags);
+
+  nsresult SetValueInternal(const nsAString& aValue,
+                            uint32_t aFlags)
+  {
+    return SetValueInternal(aValue, nullptr, aFlags);
+  }
 
   
   

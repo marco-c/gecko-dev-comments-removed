@@ -2492,7 +2492,8 @@ nsTextEditorState::GetValue(nsAString& aValue, bool aIgnoreWrap) const
 }
 
 bool
-nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
+nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
+                            uint32_t aFlags)
 {
   nsAutoString newValue(aValue);
 
@@ -2505,6 +2506,9 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
   
   if (mIsCommittingComposition) {
     mValueBeingSet = aValue;
+    
+    
+    aOldValue = nullptr;
   }
 
   
@@ -2525,7 +2529,15 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
         
         
         nsAutoString currentValue;
-        mBoundFrame->GetText(currentValue);
+        if (aOldValue) {
+#ifdef DEBUG
+          mBoundFrame->GetText(currentValue);
+          MOZ_ASSERT(currentValue.Equals(*aOldValue));
+#endif
+          currentValue.Assign(*aOldValue);
+        } else {
+          mBoundFrame->GetText(currentValue);
+        }
         if (newValue == currentValue) {
           
           
@@ -2533,6 +2545,9 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
           
           return true;
         }
+        
+        
+        aOldValue = nullptr;
       }
       
       
@@ -2593,7 +2608,15 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
 #endif
 
     nsAutoString currentValue;
-    mBoundFrame->GetText(currentValue);
+    if (aOldValue) {
+#ifdef DEBUG
+      mBoundFrame->GetText(currentValue);
+      MOZ_ASSERT(currentValue.Equals(*aOldValue));
+#endif
+      currentValue.Assign(*aOldValue);
+    } else {
+      mBoundFrame->GetText(currentValue);
+    }
 
     AutoWeakFrame weakFrame(mBoundFrame);
 
