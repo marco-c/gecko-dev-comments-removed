@@ -2108,6 +2108,10 @@ DocAccessible::DoARIAOwnsRelocation(Accessible* aOwner)
                     "candidate", child, nullptr);
 #endif
 
+    if (owned->IndexOf(child) < idx) {
+      continue; 
+    }
+
     
     if (child->Parent() == aOwner) {
       int32_t indexInParent = child->IndexInParent();
@@ -2137,10 +2141,6 @@ DocAccessible::DoARIAOwnsRelocation(Accessible* aOwner)
     }
 
     MOZ_ASSERT(owned->SafeElementAt(idx) != child, "Already in place!");
-
-    if (owned->IndexOf(child) < idx) {
-      continue; 
-    }
 
     
     if (child->Parent() != aOwner) {
