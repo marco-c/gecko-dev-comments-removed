@@ -3230,6 +3230,12 @@ nsPermissionManager::GetKeyForOrigin(const nsACString& aOrigin, nsACString& aKey
     aKey.Truncate();
     return;
   }
+
+  
+  
+  attrs.mPrivateBrowsingId = 0;
+
+  
   attrs.StripAttributes(OriginAttributes::STRIP_USER_CONTEXT_ID |
                         OriginAttributes::STRIP_FIRST_PARTY_DOMAIN);
 
